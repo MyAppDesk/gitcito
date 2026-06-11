@@ -1,0 +1,9 @@
+node_modules/
+out/
+dist/
+*.log
+.DS_Store
+examples/playground/
+
+# TypeScript incremental build cache
+*.tsbuildinfo

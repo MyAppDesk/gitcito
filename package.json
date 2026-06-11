@@ -1,0 +1,58 @@
+{
+  "name": "gitcito",
+  "productName": "Gitcito",
+  "version": "0.1.0",
+  "description": "A lightweight Git client built with Electron, React and clean architecture",
+  "main": "out/main/index.js",
+  "license": "MIT",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "dist:mac": "CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac",
+    "preview": "electron-vite preview",
+    "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
+    "postinstall": "electron-rebuild -f -w node-pty || true"
+  },
+  "build": {
+    "appId": "com.gitcito.desktop",
+    "productName": "Gitcito",
+    "files": [
+      "out/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "buildResources": "build"
+    },
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "icon": "build/icon.icns"
+    }
+  },
+  "dependencies": {
+    "@fontsource/nunito": "^5.2.7",
+    "@xterm/addon-fit": "^0.10.0",
+    "@xterm/xterm": "^5.5.0",
+    "framer-motion": "^11.11.9",
+    "highlight.js": "^11.11.1",
+    "lucide-react": "^0.453.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "simple-git": "^3.27.0",
+    "zustand": "^4.5.5"
+  },
+  "optionalDependencies": {
+    "node-pty": "^1.0.0"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^3.6.0",
+    "@types/node": "^20.16.11",
+    "@types/react": "^18.3.11",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.2",
+    "electron": "^31.7.0",
+    "electron-builder": "^24.13.3",
+    "electron-vite": "^2.3.0",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.9"
+  }
+}

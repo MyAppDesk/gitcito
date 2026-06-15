@@ -10,6 +10,7 @@
 #   8. octopus-merge       — three independent feature branches ready for an octopus/sequential merge
 #   9. tags-and-releases   — annotated + lightweight tags, hotfix branch, breaking v2 release
 #  10. detached-head       — repo left in detached HEAD state for graph display testing
+#  11. collaborators       — realistic team history with 4 distinct authors across branches
 #
 # Usage:  bash examples/setup-playground.sh
 # Re-running wipes and recreates the playground.
@@ -868,6 +869,131 @@ TARGET=$(git -C "$R" rev-parse HEAD~2)  # commit 3
 git -C "$R" checkout -q "$TARGET"
 # HEAD is now detached at version 3; main→v5, stable→v4
 
+# ─── 11. collaborators ───────────────────────────────────────────────────────
+# A realistic team repo: 4 authors (Alice, Bob, Carol, Dave) commit across main
+# and two feature branches, then Alice merges everything. Good for testing
+# author avatars/initials and co-author display in the graph.
+R="$ROOT/collaborators"
+new_repo "$R"
+
+# Helper: commit as a specific author; optional 5th arg is extra trailer lines (Co-authored-by etc.)
+collab_commit() {
+  local dir="$1" name="$2" email="$3" msg="$4" trailers="${5:-}"
+  local full_msg="$msg"
+  if [ -n "$trailers" ]; then
+    full_msg="$(printf '%s\n\n%s' "$msg" "$trailers")"
+  fi
+  GIT_AUTHOR_NAME="$name" GIT_AUTHOR_EMAIL="$email" \
+  GIT_COMMITTER_NAME="$name" GIT_COMMITTER_EMAIL="$email" \
+    git -C "$dir" commit -q --allow-empty -m "$full_msg"
+}
+
+# Seed README as Alice
+cat > "$R/README.md" <<'EOF'
+# Team Project
+
+A shared repo for collaboration testing.
+EOF
+cat > "$R/app.js" <<'EOF'
+// Main entry point
+function main() {
+  console.log('Hello, team!');
+}
+main();
+EOF
+git -C "$R" add -A
+collab_commit "$R" "Alice Liddell" "alice@example.com" "feat: initial project scaffold"
+
+# Bob adds auth module on main, Carol pair-programmed
+cat > "$R/auth.js" <<'EOF'
+// Auth module
+function login(user, pass) {
+  return user === 'admin' && pass === 'secret';
+}
+module.exports = { login };
+EOF
+git -C "$R" add -A
+collab_commit "$R" "Bob Marley" "bob@example.com" "feat: add basic auth module" \
+  "Co-authored-by: Carol Danvers <carol@example.com>"
+
+# Carol branches off to build the API
+git -C "$R" checkout -qb feat/api
+cat > "$R/api.js" <<'EOF'
+const { login } = require('./auth');
+function handleRequest(req) {
+  if (!login(req.user, req.pass)) return { status: 401 };
+  return { status: 200, data: 'ok' };
+}
+module.exports = { handleRequest };
+EOF
+git -C "$R" add -A
+collab_commit "$R" "Carol Danvers" "carol@example.com" "feat: add API request handler"
+
+# Carol and Alice co-authored the list endpoint
+cat >> "$R/api.js" <<'EOF'
+
+function handleList(req) {
+  return { status: 200, data: [] };
+}
+module.exports = { handleRequest, handleList };
+EOF
+git -C "$R" add -A
+collab_commit "$R" "Carol Danvers" "carol@example.com" "feat: add list endpoint" \
+  "Co-authored-by: Alice Liddell <alice@example.com>"
+
+# Dave branches off main to build the UI
+git -C "$R" checkout -q main
+git -C "$R" checkout -qb feat/ui
+cat > "$R/ui.html" <<'EOF'
+<!DOCTYPE html>
+<html>
+  <head><title>Team App</title></head>
+  <body>
+    <h1>Login</h1>
+    <form><input name="user"/><input name="pass" type="password"/><button>Go</button></form>
+  </body>
+</html>
+EOF
+git -C "$R" add -A
+# Dave + Bob + Carol all worked on the login UI
+collab_commit "$R" "Dave Grohl" "dave@example.com" "feat: add login UI" \
+  "Co-authored-by: Bob Marley <bob@example.com>
+Co-authored-by: Carol Danvers <carol@example.com>"
+
+cat >> "$R/ui.html" <<'EOF'
+<!-- dashboard placeholder -->
+EOF
+git -C "$R" add -A
+collab_commit "$R" "Dave Grohl" "dave@example.com" "feat: add dashboard placeholder" \
+  "Co-authored-by: Alice Liddell <alice@example.com>"
+
+# Alice merges both feature branches into main
+git -C "$R" checkout -q main
+GIT_AUTHOR_NAME="Alice Liddell" GIT_AUTHOR_EMAIL="alice@example.com" \
+GIT_COMMITTER_NAME="Alice Liddell" GIT_COMMITTER_EMAIL="alice@example.com" \
+  git -C "$R" merge -q --no-ff feat/api -m "Merge feat/api into main (Carol's API layer)"
+
+GIT_AUTHOR_NAME="Alice Liddell" GIT_AUTHOR_EMAIL="alice@example.com" \
+GIT_COMMITTER_NAME="Alice Liddell" GIT_COMMITTER_EMAIL="alice@example.com" \
+  git -C "$R" merge -q --no-ff feat/ui -m "Merge feat/ui into main (Dave's login UI)"
+
+# Bob adds a final hotfix on main
+cat >> "$R/auth.js" <<'EOF'
+
+function logout(session) {
+  session.token = null;
+}
+module.exports = { login, logout };
+EOF
+git -C "$R" add -A
+collab_commit "$R" "Bob Marley" "bob@example.com" "fix: add logout to auth module" \
+  "Co-authored-by: Dave Grohl <dave@example.com>"
+
+# Alice tags the release
+GIT_AUTHOR_NAME="Alice Liddell" GIT_AUTHOR_EMAIL="alice@example.com" \
+GIT_COMMITTER_NAME="Alice Liddell" GIT_COMMITTER_EMAIL="alice@example.com" \
+  git -C "$R" tag -a v1.0.0 -m "Release v1.0.0 — team effort"
+
 echo
 echo "Playground ready! Open these repos in KrakenLite:"
 echo "  $ROOT/merge-conflict      → merge 'feature' into main ⇒ content conflicts + modify/delete"
@@ -880,3 +1006,4 @@ echo "  $ROOT/multi-remote        → origin + upstream diverged; local has 1 un
 echo "  $ROOT/octopus-merge       → merge feat/auth feat/api feat/ui (all touch different files)"
 echo "  $ROOT/tags-and-releases   → v1.0.0–v2.0.0 annotated tags, lightweight patch tag, hotfix branch"
 echo "  $ROOT/detached-head       → HEAD detached at version 3; main→v5, stable→v4"
+echo "  $ROOT/collaborators       → 4 authors (Alice/Bob/Carol/Dave), 2 feature branches, merge commits, v1.0.0 tag"

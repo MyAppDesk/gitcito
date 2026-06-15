@@ -37,11 +37,11 @@ import { LANGUAGES, useT, type TranslationKey } from '../i18n'
 type SettingsPage = 'profile' | 'integrations' | 'ai' | 'themes' | 'general'
 
 const PAGES: { id: SettingsPage; key: TranslationKey; icon: React.ReactNode }[] = [
+  { id: 'general', key: 'settings.general', icon: <Settings2 size={13} /> },
   { id: 'profile', key: 'settings.profile', icon: <UserCircle2 size={13} /> },
   { id: 'integrations', key: 'settings.integrations', icon: <Plug size={13} /> },
   { id: 'ai', key: 'settings.ai', icon: <Bot size={13} /> },
-  { id: 'themes', key: 'settings.themes', icon: <Palette size={13} /> },
-  { id: 'general', key: 'settings.general', icon: <Settings2 size={13} /> }
+  { id: 'themes', key: 'settings.themes', icon: <Palette size={13} /> }
 ]
 
 const COMMIT_STYLES: { id: CommitStyle; key: TranslationKey }[] = [
@@ -333,6 +333,21 @@ function AIPage({ profile, edit }: { profile: Profile; edit: (p: Partial<Profile
             </option>
           ))}
         </select>
+      </label>
+
+      <label className="settings-toggle-card" style={{ marginTop: 12 }}>
+        <input
+          type="checkbox"
+          checked={ai.generateDescription}
+          onChange={(e) => edit({ ai: { ...ai, generateDescription: e.target.checked } })}
+        />
+        <span className="settings-toggle-control" aria-hidden="true">
+          <span className="settings-toggle-thumb" />
+        </span>
+        <span className="settings-toggle-copy">
+          <strong>{t('settings.generateDescription')}</strong>
+          <span className="settings-hint">{t('settings.generateDescriptionHint')}</span>
+        </span>
       </label>
 
       <details className="settings-advanced">
@@ -765,6 +780,21 @@ function GeneralPage(): React.JSX.Element {
               <span className="settings-hint">{t('settings.relativeDatesHint')}</span>
             </span>
           </label>
+
+          <label className="settings-toggle-card">
+            <input
+              type="checkbox"
+              checked={settings.commitAvatars}
+              onChange={(e) => update((s) => ({ ...s, commitAvatars: e.target.checked }))}
+            />
+            <span className="settings-toggle-control" aria-hidden="true">
+              <span className="settings-toggle-thumb" />
+            </span>
+            <span className="settings-toggle-copy">
+              <strong>{t('settings.commitAvatars')}</strong>
+              <span className="settings-hint">{t('settings.commitAvatarsHint')}</span>
+            </span>
+          </label>
         </div>
       </section>
 
@@ -812,7 +842,7 @@ export function SettingsPanel({ initialPage }: { initialPage?: SettingsPage } = 
   const { settings, addProfile, deleteProfile } = useSettingsStore()
   const openModal = useUIStore((s) => s.openModal)
   const [selectedId, setSelectedId] = useState(settings.activeProfileId)
-  const [page, setPage] = useState<SettingsPage>(initialPage ?? 'profile')
+  const [page, setPage] = useState<SettingsPage>(initialPage ?? 'general')
   const t = useT()
 
   const profile = settings.profiles.find((p) => p.id === selectedId) ?? settings.profiles[0]

@@ -47,6 +47,8 @@ export type ModalSpec =
     }
   | { kind: 'clone'; onClone: (repo: { path: string; name: string }) => void }
   | { kind: 'settings'; page?: 'profile' | 'integrations' | 'ai' | 'themes' | 'general' }
+  | { kind: 'launcher'; groupId?: string }
+  | { kind: 'create-repo'; onCreate: (repo: { path: string; name: string }) => void }
 
 export type FileViewSource =
   | { type: 'wip'; staged: boolean; untracked: boolean }
@@ -92,7 +94,6 @@ interface UIState {
   graphFilter: string
   busy: string | null
   fileView: FileViewState | null
-  fileListView: 'path' | 'tree'
   conflictView: ConflictViewState | null
   scrollToHash: string | null
   layout: PanelLayout
@@ -107,7 +108,6 @@ interface UIState {
   setGraphFilter(filter: string): void
   setBusy(label: string | null): void
   setFileView(view: FileViewState | null): void
-  setFileListView(view: 'path' | 'tree'): void
   setConflictView(view: ConflictViewState | null): void
   requestScrollTo(hash: string | null): void
   setLayout(partial: Partial<PanelLayout>): void
@@ -123,7 +123,6 @@ export const useUIStore = create<UIState>((set, get) => ({
   graphFilter: '',
   busy: null,
   fileView: null,
-  fileListView: 'path',
   conflictView: null,
   scrollToHash: null,
   layout: loadLayout(),
@@ -144,7 +143,6 @@ export const useUIStore = create<UIState>((set, get) => ({
   setGraphFilter: (graphFilter) => set({ graphFilter }),
   setBusy: (busy) => set({ busy }),
   setFileView: (fileView) => set({ fileView }),
-  setFileListView: (fileListView) => set({ fileListView }),
   setConflictView: (conflictView) => set({ conflictView }),
   requestScrollTo: (scrollToHash) => set({ scrollToHash }),
   setLayout: (partial) => {

@@ -11,7 +11,9 @@ import { FileListView } from './FileListView'
 type ListName = 'staged' | 'unstaged'
 
 export function ViewToggle(): React.JSX.Element {
-  const { fileListView, setFileListView } = useUIStore()
+  const fileListView = useSettingsStore((s) => s.settings.fileListView ?? 'path')
+  const update = useSettingsStore((s) => s.update)
+  const setFileListView = (v: 'path' | 'tree'): void => update((s) => ({ ...s, fileListView: v }))
   return (
     <div className="view-toggle">
       <button

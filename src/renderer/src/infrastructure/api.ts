@@ -102,6 +102,7 @@ export const gitApi = {
 
   clone: (parentDir: string, url: string, name: string, host?: RepoHost, token?: string) =>
     call<string>('clone', parentDir, url, name, host, token),
+  init: (parentDir: string, name: string) => call<string>('init', parentDir, name),
 
   mergeState: (path: string) => call<ConflictOpKind | null>('mergeState', path),
   conflictVersions: (path: string, file: string) => call<ConflictVersions>('conflictVersions', path, file),

@@ -6,6 +6,7 @@ import { useUIStore } from '../stores/ui'
 import { repoActions } from '../stores/repo'
 import { FileListView } from './FileListView'
 import { ViewToggle } from './CommitComposer'
+import { Avatar } from './Avatar'
 import type { RepoData } from '../stores/repo'
 
 export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }): React.JSX.Element {
@@ -76,9 +77,7 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
     <div className="details">
       <div className="details-info">
         <div className="commit-header">
-          <div className="avatar" title={commit.email}>
-            {commit.author.slice(0, 1).toUpperCase()}
-          </div>
+          <Avatar email={commit.email} name={commit.author} size={38} className="avatar" title={commit.email} />
           <div className="commit-meta">
             <strong>{commit.author}</strong>
             <span>{new Date(commit.date * 1000).toLocaleString()}</span>

@@ -1,17 +1,29 @@
-import { useEffect, useMemo, useRef } from 'react'
-import { Archive, GitCommitHorizontal, Tag, Laptop, Github, Gitlab, Cloud, Server } from 'lucide-react'
-import type { GraphCommit, StashInfo } from '../../../shared/types'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Archive, GitCommitHorizontal, Tag, Laptop, Github, Gitlab, Cloud, Server, Check, Settings2 } from 'lucide-react'
+import type { GraphCommit, StashInfo, GraphColumnId, GraphColumns } from '../../../shared/types'
+import { defaultGraphColumns } from '../../../shared/types'
 import { layoutGraph, colorFor } from '../graph/layout'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
 import { useUIStore, type MenuItem } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { useT } from '../i18n'
+import { Avatar } from './Avatar'
 
 const ROW_H = 28
-const LANE_W = 15
-const LEFT_PAD = 14
+const LANE_W = 18
+const LEFT_PAD = 16
 const NODE_R = 4.5
-const REF_COL = 168
+const AVA = 20 // avatar node diameter
+
+const COL_MIN: Record<GraphColumnId, number> = { branch: 90, graph: 40, message: 120, author: 80, date: 56, sha: 56 }
+const COL_LABEL: Record<GraphColumnId, string> = {
+  branch: 'BRANCH / TAG',
+  graph: 'GRAPH',
+  message: 'COMMIT MESSAGE',
+  author: 'AUTHOR',
+  date: 'DATE',
+  sha: 'SHA'
+}
 
 const WIP_HASH = '__WIP__'
 
@@ -19,8 +31,6 @@ interface RefBadge {
   label: string
   kind: 'head' | 'local' | 'remote' | 'tag'
 }
-
-const REF_PRIORITY: Record<RefBadge['kind'], number> = { head: 0, local: 1, tag: 2, remote: 3 }
 
 function parseRefs(refs: string[]): RefBadge[] {
   const out: RefBadge[] = []
@@ -45,6 +55,69 @@ function mergeableRefs(refs: string[]): string[] {
     out.push(ref.label)
   }
   return out
+}
+
+/**
+ * A branch/tag label as shown next to a commit. A local branch and its
+ * remote-tracking counterpart (e.g. `main` + `origin/main`) collapse into a
+ * single group so the graph isn't littered with "+N" chips.
+ */
+interface RefGroup {
+  key: string
+  label: string
+  kind: 'head' | 'local' | 'remote' | 'tag'
+  isHead: boolean
+  isLocal: boolean
+  isTag: boolean
+  remotes: string[]
+}
+
+function buildRefGroups(refs: string[], remoteNames: Set<string>): RefGroup[] {
+  const branches = new Map<string, RefGroup>()
+  const tags: RefGroup[] = []
+  const branch = (name: string): RefGroup => {
+    let g = branches.get(name)
+    if (!g) {
+      g = { key: `b:${name}`, label: name, kind: 'local', isHead: false, isLocal: false, isTag: false, remotes: [] }
+      branches.set(name, g)
+    }
+    return g
+  }
+  // A ref is remote-tracking only when its prefix is an actual remote name —
+  // local branches may contain slashes too (e.g. `backup/pre-cleanup-push`).
+  const remoteSplit = (r: string): { remote: string; name: string } | null => {
+    const slash = r.indexOf('/')
+    if (slash <= 0) return null
+    const remote = r.slice(0, slash)
+    return remoteNames.has(remote) ? { remote, name: r.slice(slash + 1) } : null
+  }
+  for (const r of refs) {
+    if (r === 'HEAD') continue
+    if (r.startsWith('HEAD ->')) {
+      const g = branch(r.replace('HEAD ->', '').trim())
+      g.isHead = true
+      g.isLocal = true
+    } else if (r.startsWith('tag:')) {
+      const label = r.replace('tag:', '').trim()
+      tags.push({ key: `t:${label}`, label, kind: 'tag', isHead: false, isLocal: false, isTag: true, remotes: [] })
+    } else {
+      const rem = remoteSplit(r)
+      if (rem) {
+        if (rem.name === 'HEAD') continue // origin/HEAD is a symbolic alias — pure noise
+        const g = branch(rem.name)
+        if (!g.remotes.includes(rem.remote)) g.remotes.push(rem.remote)
+      } else {
+        branch(r).isLocal = true
+      }
+    }
+  }
+  const rank = (g: RefGroup): number => (g.isHead ? 0 : g.isLocal ? 1 : 2)
+  const groups = [...branches.values()].map<RefGroup>((g) => ({
+    ...g,
+    kind: g.isHead ? 'head' : g.isLocal ? 'local' : 'remote'
+  }))
+  groups.sort((a, b) => rank(a) - rank(b) || a.label.localeCompare(b.label))
+  return [...groups, ...tags]
 }
 
 /** Pick a small provider icon for a remote URL's host. */
@@ -72,6 +145,93 @@ function edgePath(x1: number, y1: number, x2: number, y2: number): string {
   return `M ${x1} ${y1} C ${x1} ${y1 + ROW_H * 0.7}, ${x2} ${y1 + ROW_H * 0.3}, ${x2} ${bendY} L ${x2} ${y2}`
 }
 
+/** Resizable / toggleable column header, GitKraken-style. */
+function GraphColumnsHeader({
+  columns,
+  branchCol,
+  graphCol,
+  onResize,
+  onMenu
+}: {
+  columns: GraphColumns
+  branchCol: number
+  graphCol: number
+  onResize: (id: GraphColumnId, width: number) => void
+  onMenu: (x: number, y: number) => void
+}): React.JSX.Element {
+  const [guideX, setGuideX] = useState<number | null>(null)
+
+  const startResize = (id: GraphColumnId, e: React.MouseEvent): void => {
+    e.preventDefault()
+    e.stopPropagation()
+    const startX = e.clientX
+    const startW = columns[id].width
+    const move = (ev: MouseEvent): void => setGuideX(ev.clientX)
+    const up = (ev: MouseEvent): void => {
+      window.removeEventListener('mousemove', move)
+      window.removeEventListener('mouseup', up)
+      setGuideX(null)
+      onResize(id, Math.max(COL_MIN[id], startW + ev.clientX - startX))
+    }
+    window.addEventListener('mousemove', move)
+    window.addEventListener('mouseup', up)
+  }
+
+  const handle = (id: GraphColumnId): React.JSX.Element => (
+    <span className="col-resize" onMouseDown={(e) => startResize(id, e)} />
+  )
+
+  return (
+    <div className="graph-header">
+      {columns.branch.visible && (
+        <div className="ghc" style={{ width: branchCol }}>
+          <span className="ghc-label">{COL_LABEL.branch}</span>
+          {handle('branch')}
+        </div>
+      )}
+      {columns.graph.visible && (
+        <div className="ghc ghc-graph" style={{ width: graphCol }}>
+          <span className="ghc-label">{COL_LABEL.graph}</span>
+        </div>
+      )}
+      {columns.message.visible && (
+        <div className="ghc ghc-flex">
+          <span className="ghc-label">{COL_LABEL.message}</span>
+        </div>
+      )}
+      {columns.author.visible && (
+        <div className="ghc" style={{ width: columns.author.width }}>
+          <span className="ghc-label">{COL_LABEL.author}</span>
+          {handle('author')}
+        </div>
+      )}
+      {columns.date.visible && (
+        <div className="ghc" style={{ width: columns.date.width }}>
+          <span className="ghc-label">{COL_LABEL.date}</span>
+          {handle('date')}
+        </div>
+      )}
+      {columns.sha.visible && (
+        <div className="ghc" style={{ width: columns.sha.width }}>
+          <span className="ghc-label">{COL_LABEL.sha}</span>
+          {handle('sha')}
+        </div>
+      )}
+      <button
+        className="ghc-gear"
+        title="Columns"
+        onClick={(e) => {
+          const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
+          onMenu(r.right, r.bottom)
+        }}
+      >
+        <Settings2 size={13} />
+      </button>
+      {guideX != null && <div className="col-guide" style={{ left: guideX }} />}
+    </div>
+  )
+}
+
 export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
   const select = useRepoStore((s) => s.select)
   const loadMore = useRepoStore((s) => s.loadMore)
@@ -80,7 +240,28 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
   const requestScrollTo = useUIStore((s) => s.requestScrollTo)
   const relativeDates = useSettingsStore((s) => s.settings.relativeDates ?? true)
   const autoLoadOnScroll = useSettingsStore((s) => s.settings.autoLoadOnScroll ?? true)
+  const columns = useSettingsStore((s) => s.settings.graphColumns ?? defaultGraphColumns())
+  const updateSettings = useSettingsStore((s) => s.update)
   const t = useT()
+
+  const setColumn = (id: GraphColumnId, patch: Partial<{ width: number; visible: boolean }>): void =>
+    updateSettings((s) => {
+      const cols = s.graphColumns ?? defaultGraphColumns()
+      return { ...s, graphColumns: { ...cols, [id]: { ...cols[id], ...patch } } }
+    })
+
+  const openColumnsMenu = (x: number, y: number): void => {
+    const ids: GraphColumnId[] = ['branch', 'graph', 'message', 'author', 'date', 'sha']
+    const items: MenuItem[] = ids.map((id) => ({
+      label: `${columns[id].visible ? '✓ ' : '   '}${COL_LABEL[id]}`,
+      onClick: () => setColumn(id, { visible: !columns[id].visible })
+    }))
+    items.push({ separator: true }, {
+      label: 'Reset columns',
+      onClick: () => updateSettings((s) => ({ ...s, graphColumns: defaultGraphColumns() }))
+    })
+    openContextMenu(x, y, items)
+  }
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const fmtDate = (unix: number): string =>
@@ -90,6 +271,7 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
     (repo.status?.staged.length ?? 0) + (repo.status?.unstaged.length ?? 0) + (repo.status?.conflicted.length ?? 0) > 0
 
   const stashBySha = useMemo(() => new Map(repo.stashes.map((s) => [s.sha, s])), [repo.stashes])
+  const remoteNames = useMemo(() => new Set(repo.remotes.map((r) => r.name)), [repo.remotes])
 
   const displayCommits = useMemo<GraphCommit[]>(() => {
     if (repo.commits.length === 0) return repo.commits
@@ -131,10 +313,11 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
 
   const layout = useMemo(() => layoutGraph(displayCommits), [displayCommits])
 
-  const graphWidth = LEFT_PAD + Math.min(layout.laneCount, 24) * LANE_W + 18
+  const graphAuto = LEFT_PAD + Math.min(layout.laneCount, 24) * LANE_W + 18
   const totalHeight = displayCommits.length * ROW_H
   const filter = graphFilter.trim().toLowerCase()
-  const refCol = displayCommits.some((c) => c.refs.length > 0) ? REF_COL : 0
+  const branchCol = columns.branch.visible ? columns.branch.width : 0
+  const graphCol = columns.graph.visible ? (columns.graph.width > 0 ? columns.graph.width : graphAuto) : 0
 
   // Scroll the graph to a requested commit (e.g. when clicking a branch).
   useEffect(() => {
@@ -260,15 +443,15 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
     { label: 'Copy SHA', onClick: () => void navigator.clipboard.writeText(s.sha) }
   ]
 
-  // Context menu for a branch/tag pill shown next to a commit in the graph.
-  const refMenu = (b: RefBadge, c: GraphCommit): MenuItem[] => {
-    if (b.kind === 'tag') {
+  // Context menu for a branch/tag group shown next to a commit in the graph.
+  const groupMenu = (g: RefGroup, c: GraphCommit): MenuItem[] => {
+    if (g.isTag) {
       const remoteName = repo.remotes[0]?.name ?? 'origin'
       return [
-        { label: `Checkout ${b.label}`, onClick: () => void repoActions.checkout(repo.path, b.label) },
-        { label: 'Copy tag name', onClick: () => void navigator.clipboard.writeText(b.label) },
+        { label: `Checkout ${g.label}`, onClick: () => void repoActions.checkout(repo.path, g.label) },
+        { label: 'Copy tag name', onClick: () => void navigator.clipboard.writeText(g.label) },
         ...(repo.remotes.length
-          ? [{ label: `Push tag to ${remoteName}`, onClick: () => void repoActions.pushTag(repo.path, b.label, remoteName) } satisfies MenuItem]
+          ? [{ label: `Push tag to ${remoteName}`, onClick: () => void repoActions.pushTag(repo.path, g.label, remoteName) } satisfies MenuItem]
           : []),
         { separator: true },
         {
@@ -278,101 +461,115 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
             openModal({
               kind: 'confirm',
               title: 'Delete tag',
-              message: `Delete tag "${b.label}"?`,
+              message: `Delete tag "${g.label}"?`,
               danger: true,
               confirmLabel: 'Delete',
-              onConfirm: () => void repoActions.deleteTag(repo.path, b.label)
+              onConfirm: () => void repoActions.deleteTag(repo.path, g.label)
             })
         }
       ]
     }
-    if (b.kind === 'remote') {
-      const slash = b.label.indexOf('/')
-      const remote = b.label.slice(0, slash)
-      const name = b.label.slice(slash + 1)
-      return [
-        { label: `Checkout ${name} as local branch`, onClick: () => void repoActions.checkoutRemote(repo.path, b.label, name) },
-        { label: 'Copy branch name', onClick: () => void navigator.clipboard.writeText(b.label) },
-        { separator: true },
-        {
-          label: `Delete ${name} from ${remote}`,
-          danger: true,
-          onClick: () =>
-            openModal({
-              kind: 'confirm',
-              title: 'Delete remote branch',
-              message: `Delete "${b.label}" from ${remote}?`,
-              danger: true,
-              confirmLabel: 'Delete',
-              onConfirm: () => void repoActions.deleteRemoteBranch(repo.path, remote, name)
-            })
-        }
-      ]
+
+    const isCurrent = repo.branches.current.trim() === g.label
+    const items: MenuItem[] = []
+    if (g.isLocal) {
+      items.push({ label: `Checkout ${g.label}`, disabled: isCurrent, onClick: () => void repoActions.checkout(repo.path, g.label) })
+    } else if (g.remotes.length) {
+      const full = `${g.remotes[0]}/${g.label}`
+      items.push({ label: `Checkout ${g.label} as local branch`, onClick: () => void repoActions.checkoutRemote(repo.path, full, g.label) })
     }
-    // local / head branch
-    const isCurrent = repo.branches.current.trim() === b.label
-    return [
-      { label: `Checkout ${b.label}`, disabled: isCurrent, onClick: () => void repoActions.checkout(repo.path, b.label) },
-      { label: 'Copy branch name', onClick: () => void navigator.clipboard.writeText(b.label) },
-      {
-        label: 'Create tag here…',
-        onClick: () =>
-          openModal({
-            kind: 'input',
-            title: 'Create tag',
-            label: `Tag at ${c.hash.slice(0, 7)}`,
-            placeholder: 'v1.0.0',
-            submitLabel: 'Create',
-            onSubmit: (name) => void repoActions.createTag(repo.path, name, c.hash)
-          })
-      },
-      ...(isCurrent ? [{ label: 'Push branch', onClick: () => void repoActions.push(repo.path) } satisfies MenuItem] : []),
-      { separator: true },
-      {
-        label: 'Delete branch',
+    items.push({ label: 'Copy branch name', onClick: () => void navigator.clipboard.writeText(g.label) })
+    items.push({
+      label: 'Create tag here…',
+      onClick: () =>
+        openModal({
+          kind: 'input',
+          title: 'Create tag',
+          label: `Tag at ${c.hash.slice(0, 7)}`,
+          placeholder: 'v1.0.0',
+          submitLabel: 'Create',
+          onSubmit: (name) => void repoActions.createTag(repo.path, name, c.hash)
+        })
+    })
+    if (g.isLocal && isCurrent) items.push({ label: 'Push branch', onClick: () => void repoActions.push(repo.path) })
+
+    const deletions: MenuItem[] = []
+    if (g.isLocal) {
+      deletions.push({
+        label: 'Delete local branch',
         danger: true,
         disabled: isCurrent,
         onClick: () =>
           openModal({
             kind: 'confirm',
             title: 'Delete branch',
-            message: `Delete branch "${b.label}"?`,
+            message: `Delete branch "${g.label}"?`,
             danger: true,
             confirmLabel: 'Delete',
-            onConfirm: () => void repoActions.deleteBranch(repo.path, b.label, c.hash)
+            onConfirm: () => void repoActions.deleteBranch(repo.path, g.label, c.hash)
           })
-      }
-    ]
-  }
-
-  // A tiny presence glyph for each ref pill: laptop (local), provider icon
-  // (remote-tracking) or tag.
-  const badgeIcon = (b: RefBadge): React.JSX.Element => {
-    if (b.kind === 'tag') return <Tag size={9} className="ref-ic" />
-    if (b.kind === 'remote') {
-      const remote = b.label.slice(0, b.label.indexOf('/'))
-      const url = repo.remotes.find((r) => r.name === remote)?.url
-      return <span className="ref-ic">{providerIcon(url, 9)}</span>
+      })
     }
-    return <Laptop size={9} className="ref-ic" />
+    for (const remote of g.remotes) {
+      deletions.push({
+        label: `Delete ${g.label} from ${remote}`,
+        danger: true,
+        onClick: () =>
+          openModal({
+            kind: 'confirm',
+            title: 'Delete remote branch',
+            message: `Delete "${remote}/${g.label}" from ${remote}?`,
+            danger: true,
+            confirmLabel: 'Delete',
+            onConfirm: () => void repoActions.deleteRemoteBranch(repo.path, remote, g.label)
+          })
+      })
+    }
+    if (deletions.length) items.push({ separator: true }, ...deletions)
+    return items
   }
 
-  const renderBadge = (b: RefBadge, c: GraphCommit, key: React.Key): React.JSX.Element => (
-    <span
-      key={key}
-      className={`ref-badge ref-${b.kind}`}
-      title={b.label}
-      onClick={(e) => e.stopPropagation()}
-      onContextMenu={(e) => {
-        e.preventDefault()
-        e.stopPropagation()
-        openContextMenu(e.clientX, e.clientY, refMenu(b, c))
-      }}
-    >
-      {badgeIcon(b)}
-      <span className="ref-text">{b.label}</span>
-    </span>
-  )
+  // Presence glyphs for a ref group: tag, laptop (has local) and/or a provider
+  // icon per remote that tracks the branch.
+  const groupIcons = (g: RefGroup): React.JSX.Element => {
+    if (g.isTag) return <Tag size={9} className="ref-ic" />
+    return (
+      <>
+        {g.isLocal && <Laptop size={9} className="ref-ic" />}
+        {g.remotes.map((remote) => {
+          const url = repo.remotes.find((r) => r.name === remote)?.url
+          return (
+            <span key={remote} className="ref-ic">
+              {providerIcon(url, 9)}
+            </span>
+          )
+        })}
+      </>
+    )
+  }
+
+  const renderGroup = (g: RefGroup, c: GraphCommit): React.JSX.Element => {
+    const title = g.isTag
+      ? g.label
+      : `${g.label}${g.isLocal ? ' · local' : ''}${g.remotes.length ? ` · ${g.remotes.join(', ')}` : ''}`
+    return (
+      <span
+        key={g.key}
+        className={`ref-badge ref-${g.kind}`}
+        title={title}
+        onClick={(e) => e.stopPropagation()}
+        onContextMenu={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          openContextMenu(e.clientX, e.clientY, groupMenu(g, c))
+        }}
+      >
+        {g.isHead && <Check size={10} className="ref-check" />}
+        {groupIcons(g)}
+        <span className="ref-text">{g.label}</span>
+      </span>
+    )
+  }
 
   if (repo.loading) {
     return (
@@ -393,9 +590,19 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
   }
 
   return (
-    <div className="graph-scroll" ref={scrollRef} onScroll={onScroll}>
+    <div className="graph-wrap">
+      <GraphColumnsHeader
+        columns={columns}
+        branchCol={branchCol}
+        graphCol={graphCol}
+        onResize={(id, width) => setColumn(id, { width })}
+        onMenu={openColumnsMenu}
+      />
+      <div className="graph-scroll" ref={scrollRef} onScroll={onScroll}>
       <div className="graph-canvas" style={{ height: totalHeight }}>
-        <svg className="graph-svg" width={graphWidth} height={totalHeight} style={{ left: refCol }}>
+        {columns.graph.visible && (
+        <>
+        <svg className="graph-svg" width={graphCol} height={totalHeight} style={{ left: branchCol }}>
           {layout.edges.map((e, i) => {
             const x1 = LEFT_PAD + e.fromLane * LANE_W
             const y1 = e.fromRow * ROW_H + ROW_H / 2
@@ -437,25 +644,69 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
                 </g>
               )
             }
-            return (
-              <g key={c.hash}>
+            if (isWip) {
+              return (
                 <circle
+                  key={c.hash}
                   cx={cx}
                   cy={cy}
-                  r={NODE_R + (isWip ? 1 : 0)}
-                  fill={isWip ? 'transparent' : colorFor(n.color)}
+                  r={NODE_R + 1}
+                  fill="transparent"
                   stroke={colorFor(n.color)}
                   strokeWidth={2}
-                  strokeDasharray={isWip ? '2.5 2.5' : undefined}
+                  strokeDasharray="2.5 2.5"
                   className="graph-node"
                 />
-                {c.parents.length > 1 && !isWip && (
-                  <circle cx={cx} cy={cy} r={1.8} fill="var(--bg-1)" />
-                )}
-              </g>
-            )
+              )
+            }
+            // Normal commits are drawn as avatar nodes in the HTML overlay below.
+            return null
           })}
         </svg>
+
+        {/* Avatar nodes overlay — the gravatar/generated avatar sits on the
+            commit "ball", with a connector line from any branch labels. */}
+        <div className="graph-nodes">
+          {displayCommits.map((c) => {
+            const n = layout.nodes.get(c.hash)
+            if (!n) return null
+            if (c.hash === WIP_HASH || stashBySha.has(c.hash)) return null
+            const x = branchCol + LEFT_PAD + n.lane * LANE_W
+            const y = n.row * ROW_H + ROW_H / 2
+            const color = colorFor(n.color)
+            const hasRefs = buildRefGroups(c.refs, remoteNames).length > 0
+            const connStart = branchCol - 6
+            return (
+              <div key={c.hash}>
+                {hasRefs && branchCol > 0 && x - AVA / 2 > connStart && (
+                  <div
+                    className="node-connector"
+                    style={{ left: connStart, width: x - AVA / 2 - connStart, top: y, background: color }}
+                  />
+                )}
+                <div
+                  className="node-ava"
+                  style={{ left: x, top: y, boxShadow: `0 0 0 2px ${color}` }}
+                  title={c.author}
+                >
+                  <Avatar email={c.email} name={c.author} size={AVA} />
+                  {c.coAuthors?.slice(0, 2).map((a, i) => (
+                    <Avatar
+                      key={i}
+                      email={a.email}
+                      name={a.name}
+                      size={13}
+                      className="node-coauthor"
+                      title={`Co-author: ${a.name}`}
+                    />
+                  ))}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+        </>
+        )}
 
         {displayCommits.map((c, row) => {
           const isWip = c.hash === WIP_HASH
@@ -464,8 +715,7 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
             (isWip && repo.selected?.type === 'wip') ||
             (stash != null && repo.selected?.type === 'stash' && repo.selected.sha === c.hash) ||
             (repo.selected?.type === 'commit' && repo.selected.hash === c.hash)
-          const badges = parseRefs(c.refs)
-          const sortedBadges = [...badges].sort((a, b) => REF_PRIORITY[a.kind] - REF_PRIORITY[b.kind])
+          const groups = buildRefGroups(c.refs, remoteNames)
           const matches =
             filter.length > 0 &&
             (c.subject.toLowerCase().includes(filter) ||
@@ -481,7 +731,7 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
             <div
               key={c.hash}
               className={`graph-row ${selected ? 'selected' : ''} ${dimmed ? 'dimmed' : ''} ${matches ? 'matched' : ''}`}
-              style={{ top: row * ROW_H, height: ROW_H, paddingLeft: refCol + graphWidth }}
+              style={{ top: row * ROW_H, height: ROW_H, paddingLeft: branchCol + graphCol }}
               onClick={() =>
                 select(
                   repo.path,
@@ -498,45 +748,55 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
                 else if (!isWip) openContextMenu(e.clientX, e.clientY, commitMenu(c))
               }}
             >
-              {refCol > 0 && badges.length > 0 && (
-                <div className="graph-refs" style={{ width: refCol }}>
-                  {sortedBadges.length === 1 ? (
-                    renderBadge(sortedBadges[0], c, 0)
+              {branchCol > 0 && groups.length > 0 && (
+                <div className="graph-refs" style={{ width: branchCol }}>
+                  {groups.length <= 2 ? (
+                    groups.map((g) => renderGroup(g, c))
                   ) : (
                     <>
                       <span className="ref-collapsed">
-                        {renderBadge(sortedBadges[0], c, 'primary')}
-                        <span className="ref-more-chip">+{sortedBadges.length - 1}</span>
+                        {renderGroup(groups[0], c)}
+                        <span className="ref-more-chip">+{groups.length - 1}</span>
                       </span>
-                      <div className="graph-refs-pop">{sortedBadges.map((b, i) => renderBadge(b, c, i))}</div>
+                      <div className="graph-refs-pop">{groups.map((g) => renderGroup(g, c))}</div>
                     </>
                   )}
                 </div>
               )}
-              {isWip ? (
-                <>
-                  <span className="row-subject wip-subject">Work in progress</span>
-                  <span className="wip-count">{wipCount} file change{wipCount === 1 ? '' : 's'}</span>
-                </>
-              ) : stash ? (
-                <>
-                  <span className="ref-badge ref-stash">
-                    <Archive size={10} /> stash@{`{${stash.index}}`}
+              {columns.message.visible &&
+                (isWip ? (
+                  <span className="row-subject wip-subject">
+                    Work in progress
+                    <span className="wip-count">
+                      &nbsp;· {wipCount} file change{wipCount === 1 ? '' : 's'}
+                    </span>
                   </span>
+                ) : stash ? (
                   <span className="row-subject stash-subject" title={stash.message}>
+                    <span className="ref-badge ref-stash">
+                      <Archive size={10} /> stash@{`{${stash.index}}`}
+                    </span>
                     {stash.message}
                   </span>
-                  <span className="row-date">{fmtDate(stash.date)}</span>
-                </>
-              ) : (
-                <>
+                ) : (
                   <span className="row-subject" title={c.subject}>
                     {c.subject}
                   </span>
-                  <span className="row-author">{c.author}</span>
-                  <span className="row-sha">{c.hash.slice(0, 7)}</span>
-                  <span className="row-date">{fmtDate(c.date)}</span>
-                </>
+                ))}
+              {columns.author.visible && (
+                <span className="row-author" style={{ flex: `0 0 ${columns.author.width}px`, maxWidth: columns.author.width }}>
+                  {isWip || stash ? '' : c.author}
+                </span>
+              )}
+              {columns.date.visible && (
+                <span className="row-date" style={{ flex: `0 0 ${columns.date.width}px`, width: columns.date.width }}>
+                  {isWip ? '' : stash ? fmtDate(stash.date) : fmtDate(c.date)}
+                </span>
+              )}
+              {columns.sha.visible && (
+                <span className="row-sha" style={{ flex: `0 0 ${columns.sha.width}px`, width: columns.sha.width }}>
+                  {isWip ? '' : stash ? stash.sha.slice(0, 7) : c.hash.slice(0, 7)}
+                </span>
               )}
             </div>
           )
@@ -548,6 +808,7 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
           {t('graph.loadMore')}
         </button>
       )}
+      </div>
     </div>
   )
 }

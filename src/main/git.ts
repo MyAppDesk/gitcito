@@ -27,6 +27,19 @@ import type {
 const SEP = '\x1f'
 const REC = '\x1e'
 
+/** Parse `Co-authored-by` trailer values ("Name <email>") into authors. */
+function parseCoAuthors(raw: string | undefined): import('../shared/types').CommitAuthor[] {
+  if (!raw) return []
+  return raw
+    .split('\x1d')
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const m = line.match(/^(.*?)\s*<([^>]*)>\s*$/)
+      return m ? { name: m[1].trim(), email: m[2].trim() } : { name: line, email: '' }
+    })
+}
+
 const gitFor = (repoPath: string): SimpleGit => simpleGit(repoPath)
 
 /** Inject credentials into an https clone URL so private integration repos can be cloned non-interactively. */
@@ -152,10 +165,15 @@ export const gitService = {
     try {
       raw = await git.raw([
         'log',
-        '--all',
+        // Real refs only — excludes `refs/original/*` filter-branch backups and
+        // other internal refs that `--all` would surface as ghost lanes.
+        '--branches',
+        '--tags',
+        '--remotes',
+        'HEAD',
         '--date-order',
         `--max-count=${maxCount}`,
-        `--pretty=format:%H${SEP}%P${SEP}%an${SEP}%ae${SEP}%at${SEP}%D${SEP}%s${REC}`
+        `--pretty=format:%H${SEP}%P${SEP}%an${SEP}%ae${SEP}%at${SEP}%D${SEP}%s${SEP}%(trailers:key=Co-authored-by,valueonly,separator=%x1d)${REC}`
       ])
     } catch {
       return [] // empty repository
@@ -165,7 +183,7 @@ export const gitService = {
       .map((r) => r.trim())
       .filter(Boolean)
       .map((rec) => {
-        const [hash, parents, author, email, date, refs, subject] = rec.split(SEP)
+        const [hash, parents, author, email, date, refs, subject, coauthors] = rec.split(SEP)
         return {
           hash,
           parents: parents ? parents.split(' ').filter(Boolean) : [],
@@ -178,7 +196,8 @@ export const gitService = {
                 .map((s) => s.trim())
                 .filter(Boolean)
             : [],
-          subject: subject ?? ''
+          subject: subject ?? '',
+          coAuthors: parseCoAuthors(coauthors)
         }
       })
   },
@@ -761,6 +780,16 @@ export const gitService = {
         /* non-fatal */
       }
     }
+    return target
+  },
+
+  async init(parentDir: string, name: string): Promise<string> {
+    const { mkdir } = await import('fs/promises')
+    const folder = name.trim() || 'my-repo'
+    const target = join(parentDir, folder)
+    if (existsSync(target)) throw new Error(`A folder named "${folder}" already exists here.`)
+    await mkdir(target, { recursive: true })
+    await simpleGit(target).init()
     return target
   },
 

@@ -106,10 +106,14 @@ function styleGuidance(cfg: AIConfig, branch: string): string {
 }
 
 function buildSystemPrompt(cfg: AIConfig, ctx: AICommitContext): string {
+  const descRule =
+    cfg.generateDescription === false
+      ? '- "description": always null. Do not write a body; put everything meaningful in the summary.'
+      : '- "description": 1-4 short bullet lines explaining the why/what, or empty string for trivial changes.'
   return `You are an expert software engineer writing git commit messages.
 Given a staged diff, reply ONLY with a JSON object: {"summary": "...", "description": "..."}.
 - "summary": max 72 chars, imperative mood. ${styleGuidance(cfg, ctx.branch)}
-- "description": 1-4 short bullet lines explaining the why/what, or empty string for trivial changes.
+${descRule}
 No markdown fences, no extra text.`
 }
 
@@ -138,13 +142,15 @@ async function generateCommitMessage(diff: string, cfg: AIConfig, ctx: AICommitC
 
   const json = (await res.json()) as { choices?: { message?: { content?: string } }[] }
   const content = json.choices?.[0]?.message?.content ?? ''
+  // Honour the toggle even if the model ignores the instruction and returns a body anyway.
+  const omitDesc = cfg.generateDescription === false
   try {
     const cleaned = content.replace(/^```(json)?/m, '').replace(/```$/m, '').trim()
     const parsed = JSON.parse(cleaned) as Partial<AICommitMessage>
-    return { summary: parsed.summary ?? '', description: parsed.description ?? '' }
+    return { summary: parsed.summary ?? '', description: omitDesc ? '' : (parsed.description ?? '') }
   } catch {
     const [first, ...rest] = content.split('\n')
-    return { summary: first.trim(), description: rest.join('\n').trim() }
+    return { summary: first.trim(), description: omitDesc ? '' : rest.join('\n').trim() }
   }
 }
 

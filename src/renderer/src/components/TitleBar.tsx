@@ -2,55 +2,24 @@ import { Plus, FolderGit2, Layers, X, ChevronDown, Minus, Square, Settings } fro
 import { motion } from 'framer-motion'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore, type MenuItem } from '../stores/ui'
-import type { RepoRef, TabState } from '../../../shared/types'
+import type { TabState } from '../../../shared/types'
 import gitcitoMark from '../assets/gitcito-mark.png'
 
-async function pickRepo(): Promise<RepoRef | null> {
-  const path = await window.api.selectDirectory()
-  if (!path) return null
-  return { path, name: path.split('/').pop() ?? path }
-}
-
 export function TitleBar(): React.JSX.Element {
-  const { settings, openRepoTab, createGroupTab, addRepoToGroup, setGroupActiveRepo, closeTab, setActiveTab, renameTab } =
-    useSettingsStore()
-  const { openContextMenu, openModal, toast } = useUIStore()
+  const { settings, setGroupActiveRepo, closeTab, setActiveTab, renameTab } = useSettingsStore()
+  const { openContextMenu, openModal } = useUIStore()
   const isMac = window.api.platform === 'darwin'
 
-  const openRepo = async (): Promise<void> => {
-    const repo = await pickRepo()
-    if (repo) openRepoTab(repo)
-  }
-
-  const plusMenu = (e: React.MouseEvent): void => {
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-    openContextMenu(rect.left, rect.bottom + 4, [
-      { label: 'Open repository…', onClick: () => void openRepo() },
-      { label: 'Clone repository…', onClick: () => openModal({ kind: 'clone', onClone: (repo) => openRepoTab(repo) }) },
-      {
-        label: 'New group…',
-        onClick: () =>
-          openModal({
-            kind: 'input',
-            title: 'New group',
-            label: 'Group name',
-            placeholder: 'My projects',
-            submitLabel: 'Create',
-            onSubmit: (name) => createGroupTab(name)
-          })
-      }
-    ])
+  const plusMenu = (): void => {
+    openModal({ kind: 'launcher' })
   }
 
   const tabMenu = (tab: TabState): MenuItem[] => {
     const items: MenuItem[] = []
     if (tab.kind === 'group') {
       items.push({
-        label: 'Add repository to group…',
-        onClick: async () => {
-          const repo = await pickRepo()
-          if (repo) addRepoToGroup(tab.id, repo)
-        }
+        label: 'Manage repositories…',
+        onClick: () => openModal({ kind: 'launcher', groupId: tab.id })
       })
     }
     items.push(
@@ -81,12 +50,12 @@ export function TitleBar(): React.JSX.Element {
     }))
     items.push({ separator: true })
     items.push({
-      label: 'Add repository…',
-      onClick: async () => {
-        const repo = await pickRepo()
-        if (repo) addRepoToGroup(tab.id, repo)
-      }
+      label: 'Manage repositories…',
+      onClick: () => openModal({ kind: 'launcher', groupId: tab.id })
     })
+    if (tab.activeRepoPath) {
+      items.push({ label: 'View group home', onClick: () => setGroupActiveRepo(tab.id, null) })
+    }
     openContextMenu(rect.left, rect.bottom + 4, items)
   }
 
@@ -101,7 +70,13 @@ export function TitleBar(): React.JSX.Element {
             key={tab.id}
             layout
             className={`tab ${tab.id === settings.activeTabId ? 'active' : ''}`}
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => {
+              if (tab.id === settings.activeTabId && tab.kind === 'group' && tab.activeRepoPath) {
+                setGroupActiveRepo(tab.id, null)
+              } else {
+                setActiveTab(tab.id)
+              }
+            }}
             onContextMenu={(e) => {
               e.preventDefault()
               openContextMenu(e.clientX, e.clientY, tabMenu(tab))
@@ -136,7 +111,7 @@ export function TitleBar(): React.JSX.Element {
             </button>
           </motion.div>
         ))}
-        <button className="tab-add" title="Open repository or group" onClick={plusMenu}>
+        <button className="tab-add" title="Open repository or group" onClick={() => plusMenu()}>
           <Plus size={15} />
         </button>
       </div>

@@ -3,9 +3,10 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { X, Globe, Github, Gitlab, Cloud, Server, Loader2, Search, Lock, ExternalLink, Plug, FolderGit2, Folder } from 'lucide-react'
 import { useUIStore, type ModalSpec } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
-import { hostingApi, gitApi } from '../infrastructure/api'
+import { hostingApi, gitApi, shellApi } from '../infrastructure/api'
 import type { RemoteRepo, RepoHost } from '../../../shared/types'
 import { SettingsPanel } from './SettingsPanel'
+import { LauncherPanel, type LauncherItem } from './Welcome'
 
 function InputModal({ spec }: { spec: Extract<ModalSpec, { kind: 'input' }> }): React.JSX.Element {
   const closeModal = useUIStore((s) => s.closeModal)
@@ -537,6 +538,178 @@ function ConfirmModal({ spec }: { spec: Extract<ModalSpec, { kind: 'confirm' }> 
   )
 }
 
+function CreateRepoModal({ spec }: { spec: Extract<ModalSpec, { kind: 'create-repo' }> }): React.JSX.Element {
+  const closeModal = useUIStore((s) => s.closeModal)
+  const toast = useUIStore((s) => s.toast)
+  const [name, setName] = useState('')
+  const [dir, setDir] = useState('')
+  const [creating, setCreating] = useState(false)
+
+  const valid = !!name.trim() && !!dir.trim() && !creating
+
+  const browse = async (): Promise<void> => {
+    const picked = await window.api.selectDirectory('Choose where to create the repository')
+    if (picked) setDir(picked)
+  }
+
+  const submit = async (): Promise<void> => {
+    if (!valid) return
+    setCreating(true)
+    try {
+      const path = await gitApi.init(dir.trim(), name.trim())
+      closeModal()
+      spec.onCreate({ path, name: name.trim() })
+      toast('success', `Created ${name.trim()}`)
+    } catch (e) {
+      toast('error', e instanceof Error ? e.message : String(e))
+      setCreating(false)
+    }
+  }
+
+  return (
+    <>
+      <h3 className="modal-title-row">
+        <FolderGit2 size={17} /> Create repository
+      </h3>
+      <label className="modal-label">Create in</label>
+      <div className="repo-org-row">
+        <input
+          className="modal-input"
+          value={dir}
+          placeholder="Parent folder for the new repository"
+          onChange={(e) => setDir(e.target.value)}
+        />
+        <button className="btn ghost" type="button" onClick={() => void browse()}>
+          <Folder size={14} /> Browse
+        </button>
+      </div>
+      <label className="modal-label">Repository name</label>
+      <input
+        autoFocus
+        className="modal-input"
+        value={name}
+        placeholder="my-project"
+        onChange={(e) => setName(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') void submit()
+          if (e.key === 'Escape') closeModal()
+        }}
+      />
+      {dir && name && <div className="modal-hint">{`${dir.replace(/\/+$/, '')}/${name.trim()}`}</div>}
+      <div className="modal-actions">
+        <button className="btn ghost" onClick={closeModal} type="button" disabled={creating}>
+          Cancel
+        </button>
+        <button className="btn primary" disabled={!valid} onClick={() => void submit()} type="button">
+          {creating ? <><Loader2 size={14} className="spin" /> Creating…</> : 'Create'}
+        </button>
+      </div>
+    </>
+  )
+}
+
+function LauncherModal({ spec }: { spec: Extract<ModalSpec, { kind: 'launcher' }> }): React.JSX.Element {
+  const { closeModal, openModal } = useUIStore()
+  const { settings, openRepoTab, createGroupTab, addRepoToGroup, removeRepoFromGroup, renameRepoInGroup, reorderReposInGroup } = useSettingsStore()
+
+  const groupTab = spec.groupId ? settings.tabs.find((t) => t.id === spec.groupId) : undefined
+
+  const openRepo = async (): Promise<void> => {
+    const path = await window.api.selectDirectory()
+    if (!path) return
+    const repo = { path, name: path.split('/').pop() ?? path }
+    if (spec.groupId) {
+      addRepoToGroup(spec.groupId, repo)
+    } else {
+      closeModal()
+      openRepoTab(repo)
+    }
+  }
+
+  const cloneRepo = (): void => {
+    closeModal()
+    openModal({
+      kind: 'clone',
+      onClone: (repo) => {
+        if (spec.groupId) addRepoToGroup(spec.groupId, repo)
+        else openRepoTab(repo)
+      }
+    })
+  }
+
+  const createRepo = (): void => {
+    closeModal()
+    openModal({
+      kind: 'create-repo',
+      onCreate: (repo) => {
+        if (spec.groupId) addRepoToGroup(spec.groupId, repo)
+        else openRepoTab(repo)
+      }
+    })
+  }
+
+  const createGroup = (): void => {
+    closeModal()
+    openModal({
+      kind: 'input',
+      title: 'New group',
+      label: 'Group name',
+      placeholder: 'My projects',
+      submitLabel: 'Create',
+      onSubmit: (name) => createGroupTab(name)
+    })
+  }
+
+  const items: LauncherItem[] = spec.groupId && groupTab
+    ? groupTab.repos.map((r) => ({
+        name: r.name,
+        path: r.path,
+        onRemove: () => removeRepoFromGroup(spec.groupId!, r.path),
+        onRename: (newName) => renameRepoInGroup(spec.groupId!, r.path, newName)
+      }))
+    : settings.recentRepos.map((r) => ({
+        name: r.name,
+        path: r.path,
+        onSelect: () => {
+          closeModal()
+          openRepoTab(r)
+        }
+      }))
+
+  const recentItems: LauncherItem[] | undefined = spec.groupId && groupTab
+    ? settings.recentRepos
+        .filter((r) => !groupTab.repos.some((gr) => gr.path === r.path))
+        .map((r) => ({
+          name: r.name,
+          path: r.path,
+          onSelect: () => addRepoToGroup(spec.groupId!, r)
+        }))
+    : undefined
+
+  const listTitle = spec.groupId
+    ? groupTab?.repos.length ? 'REPOSITORIES' : undefined
+    : settings.recentRepos.length ? 'RECENT' : undefined
+
+  const emptyMessage = spec.groupId ? 'No repositories in this group.' : undefined
+
+  return (
+    <>
+      <h3>{spec.groupId ? `Manage — ${groupTab?.name ?? 'Group'}` : 'Open Repository'}</h3>
+      <LauncherPanel
+        onOpen={() => void openRepo()}
+        onClone={cloneRepo}
+        onCreate={createRepo}
+        onCreateGroup={spec.groupId ? undefined : createGroup}
+        onReorder={spec.groupId ? (from, to) => reorderReposInGroup(spec.groupId!, from, to) : undefined}
+        items={items}
+        listTitle={listTitle}
+        emptyMessage={emptyMessage}
+        recentItems={recentItems}
+      />
+    </>
+  )
+}
+
 export function ModalHost(): React.JSX.Element {
   const { modal, closeModal } = useUIStore()
 
@@ -576,6 +749,8 @@ export function ModalHost(): React.JSX.Element {
             {modal.kind === 'addRemote' && <AddRemoteModal spec={modal} />}
             {modal.kind === 'clone' && <CloneModal spec={modal} />}
             {modal.kind === 'settings' && <SettingsPanel initialPage={modal.page} />}
+            {modal.kind === 'launcher' && <LauncherModal spec={modal} />}
+            {modal.kind === 'create-repo' && <CreateRepoModal spec={modal} />}
           </motion.div>
         </motion.div>
       )}

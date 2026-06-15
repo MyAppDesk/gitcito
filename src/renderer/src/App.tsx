@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { GitMerge, FolderGit2 } from 'lucide-react'
+import { GitMerge } from 'lucide-react'
 import { useSettingsStore } from './stores/settings'
 import { useRepoStore, repoActions, type RepoData } from './stores/repo'
 import { useUIStore } from './stores/ui'
+import type { TabState } from '../../shared/types'
 import { applyAppTheme, applyCodeTheme, findAppTheme, findCodeTheme } from './theme/themes'
 import { TitleBar } from './components/TitleBar'
 import { Toolbar } from './components/Toolbar'
@@ -18,30 +19,68 @@ import { TerminalPanel } from './components/TerminalPanel'
 import { ContextMenu } from './components/ContextMenu'
 import { ModalHost } from './components/ModalHost'
 import { Toasts } from './components/Toasts'
-import { Welcome } from './components/Welcome'
+import { Welcome, LauncherPanel, type LauncherItem } from './components/Welcome'
 import { ResizeHandle } from './components/ResizeHandle'
 import gitcitoLaunch from './assets/gitcito-launch.png'
 
-function GroupEmpty({ tabId }: { tabId: string }): React.JSX.Element {
-  const addRepoToGroup = useSettingsStore((s) => s.addRepoToGroup)
+function GroupView({ tab }: { tab: TabState }): React.JSX.Element {
+  const { settings, addRepoToGroup, removeRepoFromGroup, renameRepoInGroup, reorderReposInGroup, setGroupActiveRepo } = useSettingsStore()
+  const openModal = useUIStore((s) => s.openModal)
+
+  const openRepo = async (): Promise<void> => {
+    const path = await window.api.selectDirectory()
+    if (!path) return
+    addRepoToGroup(tab.id, { path, name: path.split('/').pop() ?? path })
+  }
+
+  const cloneRepo = (): void => {
+    openModal({ kind: 'clone', onClone: (repo) => addRepoToGroup(tab.id, repo) })
+  }
+
+  const createRepo = (): void => {
+    openModal({ kind: 'create-repo', onCreate: (repo) => addRepoToGroup(tab.id, repo) })
+  }
+
+  const items: LauncherItem[] = tab.repos.map((r) => ({
+    name: r.name,
+    path: r.path,
+    onSelect: () => setGroupActiveRepo(tab.id, r.path),
+    onRemove: () => removeRepoFromGroup(tab.id, r.path),
+    onRename: (newName) => renameRepoInGroup(tab.id, r.path, newName)
+  }))
+
+  const recentItems: LauncherItem[] = settings.recentRepos
+    .filter((r) => !tab.repos.some((gr) => gr.path === r.path))
+    .map((r) => ({
+      name: r.name,
+      path: r.path,
+      onSelect: () => addRepoToGroup(tab.id, r)
+    }))
+
   return (
     <div className="welcome">
-      <div className="welcome-card">
+      <motion.div
+        className="welcome-card"
+        initial={{ opacity: 0, y: 24, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ type: 'spring', stiffness: 260, damping: 24 }}
+      >
         <div className="welcome-logo">
           <img className="welcome-art" src={gitcitoLaunch} alt="" draggable={false} />
         </div>
-        <h1>This group is empty</h1>
-        <p>Add a repository to start working in this group.</p>
-        <button
-          className="btn primary big"
-          onClick={async () => {
-            const path = await window.api.selectDirectory()
-            if (path) addRepoToGroup(tabId, { path, name: path.split('/').pop() ?? path })
-          }}
-        >
-          <FolderGit2 size={17} /> Add repository to group
-        </button>
-      </div>
+        <h1>{tab.name}</h1>
+        <p>Manage repositories in this group.</p>
+        <LauncherPanel
+          onOpen={() => void openRepo()}
+          onClone={cloneRepo}
+          onCreate={createRepo}
+          onReorder={(from, to) => reorderReposInGroup(tab.id, from, to)}
+          items={items}
+          listTitle={tab.repos.length > 0 ? 'REPOSITORIES' : undefined}
+          emptyMessage="No repositories yet."
+          recentItems={recentItems}
+        />
+      </motion.div>
     </div>
   )
 }
@@ -186,7 +225,7 @@ export default function App(): React.JSX.Element {
       <TitleBar />
 
       {!activeTab && <Welcome />}
-      {activeTab && activeTab.kind === 'group' && activeTab.repos.length === 0 && <GroupEmpty tabId={activeTab.id} />}
+      {activeTab && activeTab.kind === 'group' && !repo && <GroupView tab={activeTab} />}
 
       {activeTab && repo && (
         <>

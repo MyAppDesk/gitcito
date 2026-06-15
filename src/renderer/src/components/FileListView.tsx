@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { ChevronDown, ChevronRight, FileText, FolderOpen, Folder } from 'lucide-react'
 import type { FileEntry } from '../../../shared/types'
-import { useUIStore } from '../stores/ui'
+import { useSettingsStore } from '../stores/settings'
 
 export function statusClass(s: string): string {
   switch (s) {
@@ -137,7 +137,7 @@ function TreeLevel({
 }
 
 export function FileListView(props: FileListProps): React.JSX.Element {
-  const view = useUIStore((s) => s.fileListView)
+  const view = useSettingsStore((s) => s.settings.fileListView ?? 'path')
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
   const tree = useMemo(() => (view === 'tree' ? buildTree(props.files) : []), [view, props.files])
 

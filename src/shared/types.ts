@@ -1,5 +1,10 @@
 // ─── Shared domain types (used by main, preload and renderer) ───────────────
 
+export interface CommitAuthor {
+  name: string
+  email: string
+}
+
 export interface GraphCommit {
   hash: string
   parents: string[]
@@ -8,6 +13,7 @@ export interface GraphCommit {
   date: number // unix seconds
   refs: string[]
   subject: string
+  coAuthors?: CommitAuthor[]
 }
 
 export interface BranchInfo {
@@ -207,6 +213,7 @@ export interface AIConfig {
   model: string
   commitStyle: CommitStyle
   customInstructions: string
+  generateDescription: boolean
 }
 
 export interface Profile {
@@ -250,12 +257,35 @@ export interface AppSettings {
   loadMoreCount: number
   autoLoadOnScroll: boolean
   relativeDates: boolean
+  commitAvatars: boolean
+  fileListView: 'path' | 'tree'
+  graphColumns: GraphColumns
   autoFetchMinutes: number
   confirmForcePush: boolean
   sidebarOrder: string[]
 }
 
 export type Language = 'en' | 'es'
+
+export type GraphColumnId = 'branch' | 'graph' | 'message' | 'author' | 'date' | 'sha'
+
+export interface GraphColumn {
+  width: number // px; for 'message' it is a flex column and width is ignored; for 'graph' 0 = auto
+  visible: boolean
+}
+
+export type GraphColumns = Record<GraphColumnId, GraphColumn>
+
+export function defaultGraphColumns(): GraphColumns {
+  return {
+    branch: { width: 168, visible: true },
+    graph: { width: 0, visible: true },
+    message: { width: 0, visible: true },
+    author: { width: 160, visible: true },
+    date: { width: 80, visible: true },
+    sha: { width: 74, visible: false }
+  }
+}
 
 export interface AppThemeColors {
   bg0: string
@@ -323,7 +353,8 @@ export function defaultProfile(): Profile {
       apiKey: '',
       model: 'gpt-4o-mini',
       commitStyle: 'auto',
-      customInstructions: ''
+      customInstructions: '',
+      generateDescription: true
     }
   }
 }
@@ -345,6 +376,9 @@ export function defaultSettings(): AppSettings {
     loadMoreCount: 400,
     autoLoadOnScroll: true,
     relativeDates: true,
+    commitAvatars: true,
+    fileListView: 'path',
+    graphColumns: defaultGraphColumns(),
     autoFetchMinutes: 0,
     confirmForcePush: true,
     sidebarOrder: ['local', 'remotes', 'prs', 'tags', 'stashes', 'worktrees']

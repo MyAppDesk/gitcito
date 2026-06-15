@@ -33,7 +33,10 @@ interface SettingsState {
   openRepoTab(repo: RepoRef): void
   createGroupTab(name: string): void
   addRepoToGroup(tabId: string, repo: RepoRef): void
-  setGroupActiveRepo(tabId: string, path: string): void
+  removeRepoFromGroup(tabId: string, path: string): void
+  renameRepoInGroup(tabId: string, path: string, newName: string): void
+  reorderReposInGroup(tabId: string, fromPath: string, toPath: string): void
+  setGroupActiveRepo(tabId: string, path: string | null): void
   closeTab(tabId: string): void
   setActiveTab(tabId: string): void
   renameTab(tabId: string, name: string): void
@@ -63,6 +66,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     settings.loadMoreCount = settings.loadMoreCount ?? sd.loadMoreCount
     settings.autoLoadOnScroll = settings.autoLoadOnScroll ?? sd.autoLoadOnScroll
     settings.relativeDates = settings.relativeDates ?? sd.relativeDates
+    settings.commitAvatars = settings.commitAvatars ?? sd.commitAvatars
+    settings.fileListView = settings.fileListView ?? sd.fileListView
+    settings.graphColumns = { ...sd.graphColumns, ...(settings.graphColumns ?? {}) }
     settings.autoFetchMinutes = settings.autoFetchMinutes ?? sd.autoFetchMinutes
     settings.confirmForcePush = settings.confirmForcePush ?? sd.confirmForcePush
     settings.sidebarOrder =
@@ -130,6 +136,42 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
           ? { ...t, repos: [...t.repos, repo], activeRepoPath: t.activeRepoPath ?? repo.path }
           : t
       )
+    })),
+
+  removeRepoFromGroup: (tabId, path) =>
+    get().update((s) => ({
+      ...s,
+      tabs: s.tabs.map((t) => {
+        if (t.id !== tabId) return t
+        const repos = t.repos.filter((r) => r.path !== path)
+        const activeRepoPath = t.activeRepoPath === path ? (repos[0]?.path ?? null) : t.activeRepoPath
+        return { ...t, repos, activeRepoPath }
+      })
+    })),
+
+  renameRepoInGroup: (tabId, path, newName) =>
+    get().update((s) => ({
+      ...s,
+      tabs: s.tabs.map((t) =>
+        t.id === tabId
+          ? { ...t, repos: t.repos.map((r) => (r.path === path ? { ...r, name: newName } : r)) }
+          : t
+      )
+    })),
+
+  reorderReposInGroup: (tabId, fromPath, toPath) =>
+    get().update((s) => ({
+      ...s,
+      tabs: s.tabs.map((t) => {
+        if (t.id !== tabId) return t
+        const repos = [...t.repos]
+        const fromIdx = repos.findIndex((r) => r.path === fromPath)
+        const toIdx = repos.findIndex((r) => r.path === toPath)
+        if (fromIdx < 0 || toIdx < 0 || fromIdx === toIdx) return t
+        const [item] = repos.splice(fromIdx, 1)
+        repos.splice(toIdx, 0, item)
+        return { ...t, repos }
+      })
     })),
 
   setGroupActiveRepo: (tabId, path) =>

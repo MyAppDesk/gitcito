@@ -393,12 +393,18 @@ textarea:focus {
 .count-pill {
   font-style: normal;
   background: var(--accent);
-  color: #0a1220;
+  color: #fff;
   font-weight: 700;
   border-radius: 8px;
   font-size: 9px;
-  padding: 0 5px;
+  line-height: 1;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 4px;
   margin-left: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .toolbar-center {
@@ -684,7 +690,7 @@ textarea:focus {
   min-height: 0;
 }
 
-/* Column header (GitKraken-style): resizable + toggleable columns. */
+/* Column header: resizable + toggleable columns. */
 .graph-header {
   position: relative;
   display: flex;
@@ -698,7 +704,6 @@ textarea:focus {
   letter-spacing: 0.04em;
   color: var(--text-2);
   user-select: none;
-  padding-right: 28px;
 }
 .ghc {
   position: relative;
@@ -707,6 +712,7 @@ textarea:focus {
   flex: 0 0 auto;
   padding: 0 9px;
   overflow: hidden;
+  border-right: 1px solid var(--border);
 }
 .ghc-flex {
   flex: 1 1 auto;
@@ -719,32 +725,26 @@ textarea:focus {
 }
 .col-resize {
   position: absolute;
-  right: 0;
   top: 0;
   bottom: 0;
-  width: 7px;
+  width: 8px;
   cursor: col-resize;
-  z-index: 2;
+  z-index: 4;
+}
+.col-resize-right {
+  right: -4px;
+}
+.col-resize-left {
+  left: -4px;
 }
 .col-resize:hover {
   background: var(--accent);
   opacity: 0.5;
 }
-.col-guide {
-  position: fixed;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  background: var(--accent);
-  z-index: 200;
-  pointer-events: none;
-}
 .ghc-gear {
-  position: absolute;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  width: 28px;
+  flex: 0 0 26px;
+  width: 26px;
+  align-self: stretch;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -772,6 +772,7 @@ textarea:focus {
   position: absolute;
   top: 0;
   left: 0;
+  overflow: hidden;
   pointer-events: none;
   z-index: 1;
 }
@@ -780,13 +781,15 @@ textarea:focus {
   transition: r 0.1s;
 }
 
-/* Avatar-node overlay sitting on the commit balls. */
+/* Avatar-node overlay sitting on the commit balls. Clipped to the graph
+   region so nodes never spill over the message column when the graph/branch
+   columns are resized narrower than the lanes need. */
 .graph-nodes {
   position: absolute;
   top: 0;
   left: 0;
-  right: 0;
   bottom: 0;
+  overflow: hidden;
   pointer-events: none;
   z-index: 2;
 }
@@ -804,16 +807,6 @@ textarea:focus {
   border-radius: 2px;
   opacity: 0.5;
 }
-.node-coauthor {
-  position: absolute;
-  right: -5px;
-  bottom: -5px;
-  border: 2px solid var(--bg-1);
-}
-.node-coauthor:nth-of-type(3) {
-  right: 4px;
-  bottom: -7px;
-}
 .ref-check {
   margin-right: 3px;
   flex-shrink: 0;
@@ -825,8 +818,9 @@ textarea:focus {
   right: 0;
   display: flex;
   align-items: center;
-  gap: 7px;
-  padding-right: 16px;
+  gap: 0;
+  /* Matches the header's 26px gear cell so column edges line up. */
+  padding-right: 26px;
   cursor: pointer;
   border-radius: 0;
   transition: background 0.08s, opacity 0.15s;
@@ -853,6 +847,7 @@ textarea:focus {
 .row-subject {
   flex: 1;
   min-width: 80px;
+  padding: 0 9px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -877,7 +872,7 @@ textarea:focus {
 .row-author {
   color: var(--text-2);
   font-size: 11.5px;
-  max-width: 130px;
+  padding: 0 9px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -887,13 +882,20 @@ textarea:focus {
   font-family: var(--mono);
   font-size: 10.5px;
   color: var(--text-2);
+  padding: 0 9px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .row-date {
   color: var(--text-2);
   font-size: 11px;
-  width: 56px;
+  padding: 0 9px;
   text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .ref-badge {
@@ -920,7 +922,7 @@ textarea:focus {
   opacity: 0.85;
 }
 
-/* Left ref gutter — GitKraken-style branch/tag labels next to the graph */
+/* Left ref gutter — branch/tag labels next to the graph */
 .graph-refs {
   position: absolute;
   left: 0;
@@ -1069,6 +1071,46 @@ textarea:focus {
   display: flex;
   gap: 10px;
   padding: 16px 16px 8px;
+}
+
+.commit-author-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.commit-profile-link {
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-2);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.commit-header:hover .commit-profile-link,
+.commit-coauthor-row:hover .commit-profile-link {
+  opacity: 1;
+}
+
+.commit-profile-link:hover {
+  color: var(--accent);
+  opacity: 1;
+}
+
+.commit-coauthors {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 16px 10px 64px;
+}
+
+.commit-coauthor-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-2);
+  opacity: 0.85;
 }
 
 /* Person avatar: generated background, optional Gravatar <img> on top. */
@@ -1268,6 +1310,37 @@ textarea:focus {
   min-height: 0;
   flex: 1;
   border-bottom: 1px solid var(--border-soft);
+  transition: flex-grow 0.2s ease, flex-basis 0.2s ease;
+}
+.composer-lists.dragging .stage-section {
+  transition: none;
+}
+.stage-section.collapsed {
+  flex: 0 0 auto !important;
+  min-height: 0;
+}
+.stage-collapse {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-2);
+  border-radius: 4px;
+  margin-left: -4px;
+  transition: color 0.12s, background 0.12s;
+}
+.stage-collapse:hover {
+  color: var(--text-0);
+  background: var(--bg-3);
+}
+.stage-collapse .chevron {
+  transition: transform 0.18s ease;
+}
+.stage-collapse .chevron.collapsed {
+  transform: rotate(-90deg);
+}
+.composer-split-rh {
+  position: relative;
+  z-index: 6;
 }
 .stage-section .stage-list {
   overflow-y: auto;
@@ -1444,11 +1517,180 @@ textarea:focus {
   border-top: 1px solid var(--border);
   background: var(--bg-0);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.terminal-container {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.terminal-main {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.terminal-empty {
+  flex: 1;
+}
+
+/* Active group fills the area; inactive groups toggled via inline display:none. */
+.terminal-group {
+  position: absolute;
+  inset: 0;
+  display: flex;
+}
+
+/* Each panel + its trailing split handle share a flex slot whose grow weight
+   is the panel's stored `flex`, so splits are independently resizable. */
+.terminal-split-wrap {
+  display: flex;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.terminal-split {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.term-split-rh {
+  flex: 0 0 6px;
+  width: 6px;
+  margin: 0;
+  cursor: col-resize;
+  border-left: 1px solid var(--border);
+}
+
+.terminal-split.focused::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow: inset 0 1px 0 var(--accent, #6c5ce7);
 }
 
 .terminal-host {
-  height: 260px;
-  padding: 8px 10px 4px;
+  height: 100%;
+  padding: 6px 8px 4px;
+  overflow: hidden;
+}
+
+.terminal-host-inner {
+  height: 100%;
+}
+
+/* ─── Terminal right-side list ──────────────────────────────────────────── */
+
+.terminal-list {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--border);
+  background: var(--bg-0);
+  overflow: hidden;
+}
+
+/* Collapsed strip — just a reopen button. */
+.terminal-list-collapsed {
+  flex-shrink: 0;
+  width: 28px;
+  display: flex;
+  justify-content: center;
+  padding-top: 6px;
+  border-left: 1px solid var(--border);
+  background: var(--bg-0);
+}
+
+.terminal-list-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.terminal-list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 28px;
+  padding: 0 6px 0 10px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border-soft);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+
+.terminal-list-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.terminal-list-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 6px 0 10px;
+  cursor: pointer;
+  color: var(--text-1);
+  font-size: 12px;
+}
+
+.terminal-list-row:hover {
+  background: var(--bg-1);
+}
+
+.terminal-list-row.active {
+  background: var(--bg-2, var(--bg-1));
+  color: var(--text-0);
+}
+
+.terminal-list-row.child {
+  padding-left: 12px;
+  font-size: 11.5px;
+  color: var(--text-2);
+}
+
+.terminal-list-row .row-icon {
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+.terminal-list-row .row-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.terminal-list-row .tree-connector {
+  flex-shrink: 0;
+  width: 10px;
+  text-align: center;
+  color: var(--text-3, var(--text-2));
+  font-family: monospace;
+}
+
+.terminal-list-row .row-actions {
+  display: none;
+  align-items: center;
+  gap: 2px;
+}
+
+.terminal-list-row:hover .row-actions,
+.terminal-list-row.active .row-actions {
+  display: flex;
 }
 
 /* ─── Status bar ────────────────────────────────────────────────────────── */
@@ -1469,6 +1711,29 @@ textarea:focus {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.status-path-btn {
+  all: unset;
+  cursor: pointer;
+  border-radius: 3px;
+  padding: 1px 4px;
+  margin-left: -4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 50%;
+  overflow: hidden;
+}
+
+.status-path-btn:hover {
+  background: var(--bg-2);
+  color: var(--text-0);
+}
+
+.status-path-icon {
+  flex-shrink: 0;
+  opacity: 0.6;
 }
 
 /* ─── Context menu ──────────────────────────────────────────────────────── */
@@ -1567,6 +1832,7 @@ textarea:focus {
   color: var(--text-1);
   line-height: 1.5;
   font-size: 12.5px;
+  white-space: pre-line;
 }
 
 .modal-title-row {
@@ -1611,6 +1877,43 @@ textarea:focus {
 
 .modal-input + .modal-label {
   margin-top: 12px;
+}
+
+.remote-mode-toggle {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 14px;
+  padding: 3px;
+  background: var(--bg-3);
+  border-radius: 8px;
+}
+.remote-mode-toggle button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 4px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--text-2);
+  transition: color 0.12s, background 0.12s;
+}
+.remote-mode-toggle button:hover {
+  color: var(--text-1);
+}
+.remote-mode-toggle button.active {
+  color: var(--text-0);
+  background: var(--bg-1);
+}
+
+.owner-select {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.owner-select select {
+  flex: 1;
 }
 
 .modal-hint {
@@ -2243,6 +2546,32 @@ textarea:focus {
   flex-shrink: 0;
   border-right: 1px solid var(--border-soft);
   padding-right: 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.settings-madeby {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto;
+  padding: 10px 6px 2px;
+  color: var(--text-2);
+  font-size: 11px;
+  font-weight: 600;
+  transition: color 0.12s;
+}
+
+.settings-madeby:hover {
+  color: var(--text-1);
+}
+
+.settings-madeby img {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
 }
 
 .settings-side-header {
@@ -2319,23 +2648,6 @@ textarea:focus {
   gap: 6px;
 }
 
-.settings-card {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  padding: 16px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: var(--bg-2);
-}
-
-.settings-card-header {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.settings-card-header h4,
 .settings-general-header h4 {
   margin-top: 0;
 }
@@ -2683,6 +2995,52 @@ textarea:focus {
   flex: 1;
   overflow: auto;
   min-height: 0;
+  position: relative;
+}
+
+/* AI "Explain" affordance */
+.fv-explain-btn {
+  flex-shrink: 0;
+}
+.fv-explain-panel {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  width: min(420px, 60%);
+  max-height: 60%;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+  z-index: 5;
+}
+.fv-explain-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border-soft);
+  background: var(--bg-2);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-1);
+}
+.fv-explain-head span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.fv-explain-body {
+  padding: 12px 14px;
+  overflow: auto;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-0);
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 .fv-error {
   padding: 18px;
@@ -2983,6 +3341,9 @@ textarea:focus {
   gap: 8px;
 }
 
+.conflict-section {
+  flex: 0 0 auto;
+}
 .conflict-section .stage-list {
   max-height: 180px;
 }
@@ -3502,6 +3863,42 @@ textarea:focus {
 }
 
 /* ─── Theme settings UI ─────────────────────────────────────────────────── */
+
+.theme-mode-switch {
+  display: inline-flex;
+  gap: 4px;
+  margin-top: 10px;
+  padding: 4px;
+  border-radius: 11px;
+  background: var(--bg-2);
+  border: 1px solid var(--border-soft);
+}
+.theme-mode-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-1);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.theme-mode-btn:hover {
+  color: var(--text-0);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+.theme-mode-btn.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.settings-section-title {
+  margin-bottom: 0;
+}
 
 .theme-grid {
   display: grid;

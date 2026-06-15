@@ -21,12 +21,20 @@ const api = {
   ai: {
     commitMessage: (diff: string, cfg: unknown, ctx: unknown): Promise<unknown> =>
       ipcRenderer.invoke('ai:commitMessage', diff, cfg, ctx),
-    listModels: (cfg: unknown): Promise<unknown> => ipcRenderer.invoke('ai:listModels', cfg)
+    listModels: (cfg: unknown): Promise<unknown> => ipcRenderer.invoke('ai:listModels', cfg),
+    explainCode: (code: string, lang: string, cfg: unknown): Promise<unknown> =>
+      ipcRenderer.invoke('ai:explainCode', code, lang, cfg),
+    resolveConflict: (file: string, content: string, cfg: unknown): Promise<unknown> =>
+      ipcRenderer.invoke('ai:resolveConflict', file, content, cfg)
   },
 
   hosting: {
     listRepos: (provider: string, token: string, org?: string): Promise<unknown> =>
       ipcRenderer.invoke('hosting:listRepos', provider, token, org),
+    listOwners: (provider: string, token: string, org?: string): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:listOwners', provider, token, org),
+    createRepo: (provider: string, token: string, opts: unknown, org?: string): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:createRepo', provider, token, opts, org),
     listPRs: (remoteUrl: string, tokens: unknown): Promise<unknown> =>
       ipcRenderer.invoke('hosting:listPRs', remoteUrl, tokens),
     openCreatePR: (remoteUrl: string, source: string, target: string): Promise<boolean> =>

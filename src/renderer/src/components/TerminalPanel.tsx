@@ -1,71 +1,49 @@
-import { useEffect, useRef } from 'react'
-import { Terminal } from '@xterm/xterm'
-import { FitAddon } from '@xterm/addon-fit'
+import { useEffect, useLayoutEffect, useRef } from 'react'
+import { getOrCreateTerm } from './terminalRegistry'
 
-export function TerminalPanel({ cwd }: { cwd: string }): React.JSX.Element {
+// Renders one persisted terminal by attaching its registry-owned DOM container.
+// The xterm instance + PTY outlive this component (repo/group/tab switches).
+export function TerminalPanel({
+  panelId,
+  cwd,
+  active
+}: {
+  panelId: string
+  cwd: string
+  active: boolean
+}): React.JSX.Element {
   const hostRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const host = hostRef.current
     if (!host) return
+    const handle = getOrCreateTerm(panelId, cwd)
+    host.appendChild(handle.container)
+    handle.fitSafely()
 
-    const term = new Terminal({
-      fontFamily: 'SF Mono, JetBrains Mono, Menlo, monospace',
-      fontSize: 12.5,
-      cursorBlink: true,
-      theme: {
-        background: '#0f1220',
-        foreground: '#d6dbe8',
-        cursor: '#6c5ce7',
-        selectionBackground: '#2b3759',
-        black: '#1c1f2b',
-        blue: '#6c5ce7',
-        green: '#00e6a8',
-        red: '#ff5c7a',
-        yellow: '#ff7a1a',
-        magenta: '#00d4ff',
-        cyan: '#00d4ff'
-      }
-    })
-    const fit = new FitAddon()
-    term.loadAddon(fit)
-    term.open(host)
-    fit.fit()
-
-    let termId: number | null = null
-    let disposed = false
-    const cleanups: (() => void)[] = []
-
-    void window.api.term.create(cwd, term.cols, term.rows).then((id) => {
-      if (disposed) {
-        window.api.term.kill(id)
-        return
-      }
-      termId = id
-      cleanups.push(window.api.term.onData(id, (data) => term.write(data)))
-      cleanups.push(window.api.term.onExit(id, () => term.write('\r\n\x1b[90m[process exited]\x1b[0m\r\n')))
-      term.onData((data) => window.api.term.input(id, data))
-      term.onResize(({ cols, rows }) => window.api.term.resize(id, cols, rows))
-      term.focus()
-    })
-
-    const observer = new ResizeObserver(() => {
-      try {
-        fit.fit()
-      } catch {
-        /* ignore */
-      }
-    })
+    const observer = new ResizeObserver(() => handle.fitSafely())
     observer.observe(host)
 
     return () => {
-      disposed = true
       observer.disconnect()
-      cleanups.forEach((c) => c())
-      if (termId != null) window.api.term.kill(termId)
-      term.dispose()
+      // Detach (keep instance alive); container re-attaches on next mount.
+      if (handle.container.parentElement === host) host.removeChild(handle.container)
     }
-  }, [cwd])
+  }, [panelId, cwd])
 
-  return <div className="terminal-host" ref={hostRef} />
+  // Refit + focus when this panel becomes the visible one.
+  useEffect(() => {
+    if (!active) return
+    const handle = getOrCreateTerm(panelId, cwd)
+    handle.fitSafely()
+    handle.term.focus()
+  }, [active, panelId, cwd])
+
+  return (
+    <div
+      className="terminal-host"
+      ref={hostRef}
+      onClick={() => getOrCreateTerm(panelId, cwd).term.focus()}
+    />
+  )
 }

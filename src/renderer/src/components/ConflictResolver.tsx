@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Check, GitMerge, Plus, X } from 'lucide-react'
+import { Check, GitMerge, Plus, Sparkles, Loader2, X } from 'lucide-react'
 import hljs from 'highlight.js'
-import { gitApi } from '../infrastructure/api'
+import { gitApi, aiApi } from '../infrastructure/api'
+import { useSettingsStore } from '../stores/settings'
 import { useUIStore, type ConflictViewState } from '../stores/ui'
 import { repoActions, useRepoStore } from '../stores/repo'
 import { useT } from '../i18n'
@@ -135,6 +136,7 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
   const [touched, setTouched] = useState<Set<number>>(new Set())
   const [editOutput, setEditOutput] = useState('')
   const [saving, setSaving] = useState(false)
+  const [aiResolving, setAiResolving] = useState(false)
   const editRef = useRef<HTMLTextAreaElement>(null)
   const highlightRef = useRef<HTMLPreElement>(null)
 
@@ -228,6 +230,23 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
 
   const handleEditChange = (val: string): void => {
     setEditOutput(val)
+  }
+
+  // Ask the AI for a merged proposal. It lands in the editable output pane for review —
+  // it is never saved automatically.
+  const aiResolve = async (): Promise<void> => {
+    if (content === null) return
+    setAiResolving(true)
+    try {
+      const merged = await aiApi.resolveConflict(file, content, useSettingsStore.getState().activeProfile().ai)
+      setEditOutput(merged)
+      setTouched(new Set(hunks.map((h) => h.index))) // enable Save; user still reviews
+      toast('info', t('conflict.aiProposed'))
+    } catch (err) {
+      toast('error', err instanceof Error ? err.message : String(err))
+    } finally {
+      setAiResolving(false)
+    }
   }
 
   const save = async (): Promise<void> => {
@@ -333,6 +352,14 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
           </button>
           <button className="btn ghost tiny" onClick={() => setAll(null)}>
             {t('conflict.none')}
+          </button>
+          <button
+            className="btn ghost tiny"
+            disabled={aiResolving || saving}
+            title={t('conflict.aiResolveHint')}
+            onClick={() => void aiResolve()}
+          >
+            {aiResolving ? <Loader2 size={12} className="spin" /> : <Sparkles size={12} />} {t('conflict.aiResolve')}
           </button>
           <button className="btn primary small" disabled={!allResolved || saving} onClick={() => void save()}>
             <Check size={13} /> {t('conflict.saveResolution')}

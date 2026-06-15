@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
-import { X, GitCommitHorizontal } from 'lucide-react'
+import { X, GitCommitHorizontal, Sparkles, Loader2 } from 'lucide-react'
 import hljs from 'highlight.js'
 import type { BlameLine, FileHistoryEntry } from '../../../shared/types'
-import { gitApi } from '../infrastructure/api'
+import { gitApi, aiApi } from '../infrastructure/api'
+import { useSettingsStore } from '../stores/settings'
 import { useUIStore, type FileViewMode, type FileViewState } from '../stores/ui'
+import { useT } from '../i18n'
 import { DiffViewer } from './DiffViewer'
 import { ImageDiff } from './ImageDiff'
 import { GRAPH_COLORS } from '../graph/layout'
@@ -83,16 +85,45 @@ function imageDiffRefs(view: FileViewState): { before: string | null; after?: st
 
 export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element {
   const setFileView = useUIStore((s) => s.setFileView)
+  const toast = useUIStore((s) => s.toast)
+  const t = useT()
   const [content, setContent] = useState<string | null>(null)
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [imgDiff, setImgDiff] = useState<{ before: string | null; after: string | null } | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [blame, setBlame] = useState<BlameLine[]>([])
   const [history, setHistory] = useState<FileHistoryEntry[]>([])
+  const [explain, setExplain] = useState<string | null>(null)
+  const [explaining, setExplaining] = useState(false)
 
   const { repoPath, file, mode, source } = view
   const lang = guessLanguage(file)
   const fileIsImage = isImage(file)
+  const canExplain = !fileIsImage && (mode === 'file' || mode === 'diff') && !!content
+
+  const runExplain = async (): Promise<void> => {
+    if (!content) return
+    // Prefer a highlighted selection; fall back to the whole file/diff.
+    const sel = window.getSelection()?.toString().trim()
+    const snippet = sel && sel.length > 1 ? sel : content
+    setExplaining(true)
+    setExplain(null)
+    try {
+      const text = await aiApi.explainCode(snippet, lang, useSettingsStore.getState().activeProfile().ai)
+      setExplain(text || t('explain.empty'))
+    } catch (err) {
+      setExplain(null)
+      toast('error', err instanceof Error ? err.message : String(err))
+    } finally {
+      setExplaining(false)
+    }
+  }
+
+  // Drop a stale explanation when the file/source/mode changes.
+  useEffect(() => {
+    setExplain(null)
+    setExplaining(false)
+  }, [repoPath, file, mode, source.type])
 
   // Blame can't run on images or files that don't exist in history (untracked/new).
   const isUntracked =
@@ -208,6 +239,16 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
             </button>
           ))}
         </div>
+        {canExplain && (
+          <button
+            className="btn ghost small fv-explain-btn"
+            disabled={explaining}
+            title={t('explain.title')}
+            onClick={() => void runExplain()}
+          >
+            {explaining ? <Loader2 size={13} className="spin" /> : <Sparkles size={13} />} {t('explain.action')}
+          </button>
+        )}
         <button className="icon-btn" title="Close (Esc)" onClick={() => setFileView(null)}>
           <X size={15} />
         </button>
@@ -288,6 +329,18 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
               </button>
             ))}
             {history.length === 0 && <div className="fv-error">No history for this file</div>}
+          </div>
+        )}
+
+        {explain !== null && (
+          <div className="fv-explain-panel">
+            <div className="fv-explain-head">
+              <span><Sparkles size={13} /> {t('explain.heading')}</span>
+              <button className="icon-btn" title={t('common.close')} onClick={() => setExplain(null)}>
+                <X size={14} />
+              </button>
+            </div>
+            <div className="fv-explain-body">{explain}</div>
           </div>
         )}
       </div>

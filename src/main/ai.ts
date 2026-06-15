@@ -154,9 +154,78 @@ async function generateCommitMessage(diff: string, cfg: AIConfig, ctx: AICommitC
   }
 }
 
+/** Single OpenAI-compatible chat completion returning the raw message text. */
+async function chatComplete(
+  cfg: AIConfig,
+  messages: { role: 'system' | 'user'; content: string }[],
+  temperature = 0.2
+): Promise<string> {
+  const base = baseUrl(cfg.endpoint)
+  if (!cfg.apiKey && !isLocal(base)) throw new Error('No AI API key configured. Add one in Settings → AI.')
+
+  let res: Response
+  try {
+    res = await fetch(`${base}/chat/completions`, {
+      method: 'POST',
+      headers: authHeaders(cfg),
+      body: JSON.stringify({ model: cfg.model || 'gpt-4o-mini', temperature, messages })
+    })
+  } catch (err) {
+    const reason = fetchFailureReason(err)
+    throw new Error(`Could not reach ${base}.${reason ? ` ${reason}` : ''}`)
+  }
+  if (!res.ok) {
+    const body = await res.text().catch(() => '')
+    throw new Error(`AI request failed (${res.status}): ${body.slice(0, 200)}`)
+  }
+  const json = (await res.json()) as { choices?: { message?: { content?: string } }[] }
+  return json.choices?.[0]?.message?.content ?? ''
+}
+
+function clip(text: string, max = 16000): string {
+  return text.length > max ? text.slice(0, max) + '\n…(truncated)' : text
+}
+
+/** Plain-language explanation of a code file or snippet. */
+async function explainCode(code: string, lang: string, cfg: AIConfig): Promise<string> {
+  const system = `You are an expert software engineer explaining code to a colleague.
+Explain what the given ${lang || 'source'} code does in clear, plain language.
+Lead with a one-sentence summary, then short bullet points for the key parts and any
+notable side effects, edge cases, or risks. Be concise. Do not restate the code line by
+line. Use markdown, but no code fences unless quoting a short identifier.`
+  return (await chatComplete(cfg, [
+    { role: 'system', content: system },
+    { role: 'user', content: clip(code) }
+  ])).trim()
+}
+
+/** Propose a merged file from raw content containing git conflict markers. */
+async function resolveConflictAI(file: string, content: string, cfg: AIConfig): Promise<string> {
+  const system = `You are resolving a git merge conflict in "${file}".
+The input contains conflict markers: <<<<<<< (ours), ======= , >>>>>>> (theirs), and
+optionally ||||||| (base). Produce the correct merged file that preserves the intent of
+BOTH sides where compatible. Keep all non-conflicting content unchanged.
+Reply with ONLY the full resolved file content. No conflict markers, no markdown fences,
+no commentary, no explanations.`
+  const out = await chatComplete(
+    cfg,
+    [
+      { role: 'system', content: system },
+      { role: 'user', content: clip(content, 24000) }
+    ],
+    0.1
+  )
+  // Strip a stray ```lang fence if the model added one despite instructions.
+  return out.replace(/^```[^\n]*\n?/, '').replace(/\n?```\s*$/, '').replace(/\s+$/, '')
+}
+
 export function registerAiHandlers(): void {
   ipcMain.handle('ai:commitMessage', (_e, diff: string, cfg: AIConfig, ctx: AICommitContext) =>
     generateCommitMessage(diff, cfg, ctx)
   )
   ipcMain.handle('ai:listModels', (_e, cfg: AIConfig) => listModels(cfg))
+  ipcMain.handle('ai:explainCode', (_e, code: string, lang: string, cfg: AIConfig) => explainCode(code, lang, cfg))
+  ipcMain.handle('ai:resolveConflict', (_e, file: string, content: string, cfg: AIConfig) =>
+    resolveConflictAI(file, content, cfg)
+  )
 }

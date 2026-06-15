@@ -1,5 +1,12 @@
 import { ipcMain, shell } from 'electron'
-import type { HostingProvider, PullRequest, RemoteRepo, RepoHost } from '../shared/types'
+import type {
+  CreateRepoOpts,
+  HostingProvider,
+  PullRequest,
+  RemoteOwner,
+  RemoteRepo,
+  RepoHost
+} from '../shared/types'
 
 interface ParsedRemote {
   provider: HostingProvider
@@ -192,9 +199,177 @@ async function listRepositories(provider: RepoHost, token: string, org?: string)
   return data.value.map((r) => ({ name: `${r.project.name}/${r.name}`, url: r.remoteUrl }))
 }
 
+async function ghJson<T>(url: string, token: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(url, {
+    ...init,
+    headers: {
+      Accept: 'application/vnd.github+json',
+      Authorization: `Bearer ${token}`,
+      ...(init?.body ? { 'Content-Type': 'application/json' } : {}),
+      ...(init?.headers as Record<string, string>)
+    }
+  })
+  if (!res.ok) {
+    const msg = (await res.json().catch(() => null)) as { message?: string } | null
+    throw new Error(msg?.message ? `GitHub: ${msg.message}` : `GitHub API error (${res.status})`)
+  }
+  return res.json() as Promise<T>
+}
+
+/** Accounts a new repo can be created under: the authenticated user plus their orgs/groups. */
+async function listOwners(provider: RepoHost, token: string, org?: string): Promise<RemoteOwner[]> {
+  if (!token.trim()) throw new Error(`Not connected. Add a ${provider} token in Settings → Integrations.`)
+
+  if (provider === 'github') {
+    const user = await ghJson<{ login: string; avatar_url: string }>('https://api.github.com/user', token)
+    const orgs = await ghJson<Array<{ login: string; avatar_url: string }>>(
+      'https://api.github.com/user/orgs?per_page=100',
+      token
+    )
+    return [
+      { id: user.login, login: user.login, avatarUrl: user.avatar_url, type: 'user' },
+      ...orgs.map((o) => ({ id: o.login, login: o.login, avatarUrl: o.avatar_url, type: 'org' as const }))
+    ]
+  }
+
+  if (provider === 'gitlab') {
+    const headers = { 'PRIVATE-TOKEN': token }
+    const user = (await (await fetch('https://gitlab.com/api/v4/user', { headers })).json()) as {
+      id: number
+      username: string
+      avatar_url: string | null
+      namespace_id?: number
+    }
+    const groupsRes = await fetch('https://gitlab.com/api/v4/groups?min_access_level=30&per_page=100', { headers })
+    const groups = (await groupsRes.json()) as Array<{ id: number; full_path: string; avatar_url: string | null }>
+    return [
+      { id: String(user.id), login: user.username, avatarUrl: user.avatar_url ?? undefined, type: 'user' },
+      ...groups.map((g) => ({
+        id: String(g.id),
+        login: g.full_path,
+        avatarUrl: g.avatar_url ?? undefined,
+        type: 'org' as const
+      }))
+    ]
+  }
+
+  if (provider === 'bitbucket') {
+    const auth = token.includes(':') ? `Basic ${Buffer.from(token).toString('base64')}` : `Bearer ${token}`
+    const wsRes = await fetch('https://api.bitbucket.org/2.0/workspaces?pagelen=100', {
+      headers: { Authorization: auth }
+    })
+    if (!wsRes.ok) throw new Error(`Bitbucket API error (${wsRes.status})`)
+    const data = (await wsRes.json()) as {
+      values: Array<{ slug: string; name: string; links?: { avatar?: { href: string } } }>
+    }
+    return data.values.map((w) => ({
+      id: w.slug,
+      login: w.slug,
+      avatarUrl: w.links?.avatar?.href,
+      type: 'org' as const
+    }))
+  }
+
+  // Azure DevOps — projects under the given organization act as "owners" for new repos.
+  if (!org?.trim()) throw new Error('Enter your Azure DevOps organization.')
+  const auth = Buffer.from(`:${token}`).toString('base64')
+  const res = await fetch(
+    `https://dev.azure.com/${encodeURIComponent(org.trim())}/_apis/projects?api-version=7.1`,
+    { headers: { Authorization: `Basic ${auth}` } }
+  )
+  if (!res.ok) throw new Error(`Azure DevOps API error (${res.status})`)
+  const data = (await res.json()) as { value: Array<{ id: string; name: string }> }
+  return data.value.map((p) => ({ id: p.id, login: p.name, type: 'org' as const }))
+}
+
+/** Create a new repository on the host and return its clone URL. */
+async function createRepository(
+  provider: RepoHost,
+  token: string,
+  opts: CreateRepoOpts,
+  org?: string
+): Promise<RemoteRepo> {
+  if (!token.trim()) throw new Error(`Not connected. Add a ${provider} token in Settings → Integrations.`)
+  if (!opts.name.trim()) throw new Error('Repository name is required.')
+
+  if (provider === 'github') {
+    const url =
+      opts.ownerType === 'org'
+        ? `https://api.github.com/orgs/${encodeURIComponent(opts.owner)}/repos`
+        : 'https://api.github.com/user/repos'
+    const repo = await ghJson<{ full_name: string; clone_url: string; private: boolean }>(url, token, {
+      method: 'POST',
+      body: JSON.stringify({ name: opts.name, description: opts.description || undefined, private: opts.private })
+    })
+    return { name: repo.full_name, url: repo.clone_url, private: repo.private }
+  }
+
+  if (provider === 'gitlab') {
+    const res = await fetch('https://gitlab.com/api/v4/projects', {
+      method: 'POST',
+      headers: { 'PRIVATE-TOKEN': token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: opts.name,
+        description: opts.description || undefined,
+        visibility: opts.private ? 'private' : 'public',
+        namespace_id: opts.ownerId ? Number(opts.ownerId) : undefined
+      })
+    })
+    if (!res.ok) {
+      const msg = (await res.json().catch(() => null)) as { message?: unknown } | null
+      throw new Error(`GitLab: ${msg?.message ? JSON.stringify(msg.message) : res.status}`)
+    }
+    const repo = (await res.json()) as { path_with_namespace: string; http_url_to_repo: string; visibility: string }
+    return { name: repo.path_with_namespace, url: repo.http_url_to_repo, private: repo.visibility !== 'public' }
+  }
+
+  if (provider === 'bitbucket') {
+    const auth = token.includes(':') ? `Basic ${Buffer.from(token).toString('base64')}` : `Bearer ${token}`
+    const slug = opts.name.trim().toLowerCase().replace(/\s+/g, '-')
+    const res = await fetch(`https://api.bitbucket.org/2.0/repositories/${opts.owner}/${slug}`, {
+      method: 'POST',
+      headers: { Authorization: auth, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ scm: 'git', is_private: opts.private, description: opts.description || undefined })
+    })
+    if (!res.ok) throw new Error(`Bitbucket API error (${res.status})`)
+    const repo = (await res.json()) as {
+      full_name: string
+      is_private: boolean
+      links: { clone: Array<{ name: string; href: string }> }
+    }
+    return {
+      name: repo.full_name,
+      url: repo.links.clone.find((c) => c.name === 'https')?.href ?? repo.links.clone[0]?.href ?? '',
+      private: repo.is_private
+    }
+  }
+
+  // Azure DevOps — create a repo inside a project of the organization.
+  if (!org?.trim()) throw new Error('Enter your Azure DevOps organization.')
+  if (!opts.project?.trim()) throw new Error('Select an Azure DevOps project.')
+  const auth = Buffer.from(`:${token}`).toString('base64')
+  const res = await fetch(
+    `https://dev.azure.com/${encodeURIComponent(org.trim())}/${encodeURIComponent(opts.project)}/_apis/git/repositories?api-version=7.1`,
+    {
+      method: 'POST',
+      headers: { Authorization: `Basic ${auth}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: opts.name, project: { id: opts.owner } })
+    }
+  )
+  if (!res.ok) throw new Error(`Azure DevOps API error (${res.status})`)
+  const repo = (await res.json()) as { name: string; remoteUrl: string; project: { name: string } }
+  return { name: `${repo.project.name}/${repo.name}`, url: repo.remoteUrl }
+}
+
 export function registerHostingHandlers(): void {
   ipcMain.handle('hosting:listRepos', (_e, provider: RepoHost, token: string, org?: string) =>
     listRepositories(provider, token, org)
+  )
+  ipcMain.handle('hosting:listOwners', (_e, provider: RepoHost, token: string, org?: string) =>
+    listOwners(provider, token, org)
+  )
+  ipcMain.handle('hosting:createRepo', (_e, provider: RepoHost, token: string, opts: CreateRepoOpts, org?: string) =>
+    createRepository(provider, token, opts, org)
   )
   ipcMain.handle('hosting:listPRs', (_e, remoteUrl: string, tokens: { github?: string; azure?: string }) =>
     listPullRequests(remoteUrl, tokens)

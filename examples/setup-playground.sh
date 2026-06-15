@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Creates throwaway git repos under examples/playground/ to test KrakenLite features:
+# Creates throwaway git repos under examples/playground/ to test Gitcito features:
 #   1. merge-conflict      — merge `feature` into `main` → several conflicts to resolve visually
 #   2. cherry-pick         — cherry-pick commits from `feature` (one clean, one conflicting)
 #   3. stash-picking       — a stash with several files (incl. an untracked one) for partial apply
@@ -229,7 +229,7 @@ EOF
 git -C "$R" add -A && git -C "$R" commit -qm "main: upgrade utils — date-fns + Intl"
 
 git -C "$R" checkout -q feature
-# left on feature; user rebases onto main in KrakenLite
+# left on feature; user rebases onto main in Gitcito
 
 # ─── 5. interactive-rebase ────────────────────────────────────────────────────
 # messy-feature has 6 commits: real code mixed with WIPs and fixup commits — ideal for squash/reorder
@@ -902,7 +902,7 @@ function main() {
 main();
 EOF
 git -C "$R" add -A
-collab_commit "$R" "Alice Liddell" "alice@example.com" "feat: initial project scaffold"
+collab_commit "$R" "Alice Liddell" "alice-liddell@users.noreply.github.com" "feat: initial project scaffold"
 
 # Bob adds auth module on main, Carol pair-programmed
 cat > "$R/auth.js" <<'EOF'
@@ -913,8 +913,8 @@ function login(user, pass) {
 module.exports = { login };
 EOF
 git -C "$R" add -A
-collab_commit "$R" "Bob Marley" "bob@example.com" "feat: add basic auth module" \
-  "Co-authored-by: Carol Danvers <carol@example.com>"
+collab_commit "$R" "Bob Marley" "bob-marley@users.noreply.github.com" "feat: add basic auth module" \
+  "Co-authored-by: Carol Danvers <carol-danvers@users.noreply.github.com>"
 
 # Carol branches off to build the API
 git -C "$R" checkout -qb feat/api
@@ -927,7 +927,7 @@ function handleRequest(req) {
 module.exports = { handleRequest };
 EOF
 git -C "$R" add -A
-collab_commit "$R" "Carol Danvers" "carol@example.com" "feat: add API request handler"
+collab_commit "$R" "Carol Danvers" "carol-danvers@users.noreply.github.com" "feat: add API request handler"
 
 # Carol and Alice co-authored the list endpoint
 cat >> "$R/api.js" <<'EOF'
@@ -938,8 +938,8 @@ function handleList(req) {
 module.exports = { handleRequest, handleList };
 EOF
 git -C "$R" add -A
-collab_commit "$R" "Carol Danvers" "carol@example.com" "feat: add list endpoint" \
-  "Co-authored-by: Alice Liddell <alice@example.com>"
+collab_commit "$R" "Carol Danvers" "carol-danvers@users.noreply.github.com" "feat: add list endpoint" \
+  "Co-authored-by: Alice Liddell <alice-liddell@users.noreply.github.com>"
 
 # Dave branches off main to build the UI
 git -C "$R" checkout -q main
@@ -956,25 +956,25 @@ cat > "$R/ui.html" <<'EOF'
 EOF
 git -C "$R" add -A
 # Dave + Bob + Carol all worked on the login UI
-collab_commit "$R" "Dave Grohl" "dave@example.com" "feat: add login UI" \
-  "Co-authored-by: Bob Marley <bob@example.com>
-Co-authored-by: Carol Danvers <carol@example.com>"
+collab_commit "$R" "Dave Grohl" "dave-grohl@users.noreply.github.com" "feat: add login UI" \
+  "Co-authored-by: Bob Marley <bob-marley@users.noreply.github.com>
+Co-authored-by: Carol Danvers <carol-danvers@users.noreply.github.com>"
 
 cat >> "$R/ui.html" <<'EOF'
 <!-- dashboard placeholder -->
 EOF
 git -C "$R" add -A
-collab_commit "$R" "Dave Grohl" "dave@example.com" "feat: add dashboard placeholder" \
-  "Co-authored-by: Alice Liddell <alice@example.com>"
+collab_commit "$R" "Dave Grohl" "dave-grohl@users.noreply.github.com" "feat: add dashboard placeholder" \
+  "Co-authored-by: Alice Liddell <alice-liddell@users.noreply.github.com>"
 
 # Alice merges both feature branches into main
 git -C "$R" checkout -q main
-GIT_AUTHOR_NAME="Alice Liddell" GIT_AUTHOR_EMAIL="alice@example.com" \
-GIT_COMMITTER_NAME="Alice Liddell" GIT_COMMITTER_EMAIL="alice@example.com" \
+GIT_AUTHOR_NAME="Alice Liddell" GIT_AUTHOR_EMAIL="alice-liddell@users.noreply.github.com" \
+GIT_COMMITTER_NAME="Alice Liddell" GIT_COMMITTER_EMAIL="alice-liddell@users.noreply.github.com" \
   git -C "$R" merge -q --no-ff feat/api -m "Merge feat/api into main (Carol's API layer)"
 
-GIT_AUTHOR_NAME="Alice Liddell" GIT_AUTHOR_EMAIL="alice@example.com" \
-GIT_COMMITTER_NAME="Alice Liddell" GIT_COMMITTER_EMAIL="alice@example.com" \
+GIT_AUTHOR_NAME="Alice Liddell" GIT_AUTHOR_EMAIL="alice-liddell@users.noreply.github.com" \
+GIT_COMMITTER_NAME="Alice Liddell" GIT_COMMITTER_EMAIL="alice-liddell@users.noreply.github.com" \
   git -C "$R" merge -q --no-ff feat/ui -m "Merge feat/ui into main (Dave's login UI)"
 
 # Bob adds a final hotfix on main
@@ -986,16 +986,16 @@ function logout(session) {
 module.exports = { login, logout };
 EOF
 git -C "$R" add -A
-collab_commit "$R" "Bob Marley" "bob@example.com" "fix: add logout to auth module" \
-  "Co-authored-by: Dave Grohl <dave@example.com>"
+collab_commit "$R" "Bob Marley" "bob-marley@users.noreply.github.com" "fix: add logout to auth module" \
+  "Co-authored-by: Dave Grohl <dave-grohl@users.noreply.github.com>"
 
 # Alice tags the release
-GIT_AUTHOR_NAME="Alice Liddell" GIT_AUTHOR_EMAIL="alice@example.com" \
-GIT_COMMITTER_NAME="Alice Liddell" GIT_COMMITTER_EMAIL="alice@example.com" \
+GIT_AUTHOR_NAME="Alice Liddell" GIT_AUTHOR_EMAIL="alice-liddell@users.noreply.github.com" \
+GIT_COMMITTER_NAME="Alice Liddell" GIT_COMMITTER_EMAIL="alice-liddell@users.noreply.github.com" \
   git -C "$R" tag -a v1.0.0 -m "Release v1.0.0 — team effort"
 
 echo
-echo "Playground ready! Open these repos in KrakenLite:"
+echo "Playground ready! Open these repos in Gitcito:"
 echo "  $ROOT/merge-conflict      → merge 'feature' into main ⇒ content conflicts + modify/delete"
 echo "  $ROOT/cherry-pick         → cherry-pick two 'feature' commits (one clean, one conflicting)"
 echo "  $ROOT/stash-picking       → click the stash node and apply only some files"

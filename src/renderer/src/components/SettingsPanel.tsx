@@ -16,23 +16,35 @@ import {
   Palette,
   Check,
   Settings2,
-  ExternalLink
+  ExternalLink,
+  Sun,
+  Moon,
+  Monitor
 } from 'lucide-react'
 import hljs from 'highlight.js'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
 import { gitApi, aiApi } from '../infrastructure/api'
 import { AI_PROVIDERS, type AIProvider, type CommitStyle, type Profile } from '../../../shared/types'
-import type { AppTheme, AppThemeColors, CodeTheme, CodeThemeColors } from '../../../shared/types'
+import type {
+  AppTheme,
+  AppThemeColors,
+  CodeTheme,
+  CodeThemeColors,
+  ThemeMode
+} from '../../../shared/types'
 import {
   APP_THEMES,
   CODE_THEMES,
   allAppThemes,
   allCodeThemes,
   findAppTheme,
-  findCodeTheme
+  findCodeTheme,
+  resolveAppColors,
+  resolveCodeColors
 } from '../theme/themes'
 import { LANGUAGES, useT, type TranslationKey } from '../i18n'
+import madLogo from '../assets/mad-high.png'
 
 type SettingsPage = 'profile' | 'integrations' | 'ai' | 'themes' | 'general'
 
@@ -372,6 +384,21 @@ function AIPage({ profile, edit }: { profile: Profile; edit: (p: Partial<Profile
             onChange={(e) => edit({ ai: { ...ai, customInstructions: e.target.value } })}
           />
         </label>
+
+        <label className="settings-toggle-card" style={{ marginTop: 12 }}>
+          <input
+            type="checkbox"
+            checked={ai.coAuthor !== false}
+            onChange={(e) => edit({ ai: { ...ai, coAuthor: e.target.checked } })}
+          />
+          <span className="settings-toggle-control" aria-hidden="true">
+            <span className="settings-toggle-thumb" />
+          </span>
+          <span className="settings-toggle-copy">
+            <strong>{t('settings.coAuthor')}</strong>
+            <span className="settings-hint">{t('settings.coAuthorHint')}</span>
+          </span>
+        </label>
       </details>
     </>
   )
@@ -419,8 +446,18 @@ const PREVIEW_CODE = `function greet(name) {
 
 const uid = (): string => Math.random().toString(36).slice(2, 8)
 
-function AppThemeSwatch({ theme }: { theme: AppTheme }): React.JSX.Element {
-  const c = theme.colors
+/** True when a hex colour is light enough to read on a dark background. */
+function isLightText(hex: string): boolean {
+  const h = hex.replace('#', '')
+  const full = h.length === 3 ? h.split('').map((x) => x + x).join('') : h
+  const r = parseInt(full.slice(0, 2), 16)
+  const g = parseInt(full.slice(2, 4), 16)
+  const b = parseInt(full.slice(4, 6), 16)
+  return (r * 0.299 + g * 0.587 + b * 0.114) > 140
+}
+
+function AppThemeSwatch({ colors }: { colors: AppThemeColors }): React.JSX.Element {
+  const c = colors
   return (
     <div className="theme-swatch" style={{ background: c.bg1 }}>
       <div className="theme-swatch-row">
@@ -439,10 +476,13 @@ function AppThemeSwatch({ theme }: { theme: AppTheme }): React.JSX.Element {
   )
 }
 
-function CodeThemeSwatch({ theme }: { theme: CodeTheme }): React.JSX.Element {
-  const c = theme.colors
+function CodeThemeSwatch({ colors }: { colors: CodeThemeColors }): React.JSX.Element {
+  const c = colors
+  // Preview on a neutral backdrop that matches the palette's brightness so
+  // light code themes stay legible.
+  const bg = isLightText(c.text) ? '#14161f' : '#f4f5fb'
   return (
-    <div className="theme-swatch" style={{ background: '#14161f', padding: '6px 8px', fontFamily: 'var(--mono)', fontSize: 9 }}>
+    <div className="theme-swatch" style={{ background: bg, padding: '6px 8px', fontFamily: 'var(--mono)', fontSize: 9 }}>
       <div style={{ color: c.keyword }}>const <span style={{ color: c.function }}>fn</span> = () =&gt; {'{'}</div>
       <div style={{ color: c.comment }}>&nbsp;&nbsp;// note</div>
       <div>&nbsp;&nbsp;<span style={{ color: c.keyword }}>return</span> <span style={{ color: c.string }}>"hi"</span></div>
@@ -450,14 +490,14 @@ function CodeThemeSwatch({ theme }: { theme: CodeTheme }): React.JSX.Element {
   )
 }
 
-function CodePreview({ theme }: { theme: CodeTheme }): React.JSX.Element {
+function CodePreview({ colors }: { colors: CodeThemeColors }): React.JSX.Element {
   let html: string
   try {
     html = hljs.highlight(PREVIEW_CODE, { language: 'javascript' }).value
   } catch {
     html = PREVIEW_CODE
   }
-  const c = theme.colors
+  const c = colors
   const style = {
     '--code-text': c.text,
     '--code-comment': c.comment,
@@ -488,24 +528,38 @@ function ThemesPage(): React.JSX.Element {
   const toast = useUIStore((s) => s.toast)
   const t = useT()
 
+  const mode = settings.themeMode
   const appThemes = allAppThemes(settings.customAppThemes)
   const codeThemes = allCodeThemes(settings.customCodeThemes)
   const currentApp = findAppTheme(settings.appThemeId, settings.customAppThemes)
   const currentCode = findCodeTheme(settings.codeThemeId, settings.customCodeThemes)
+  const currentCodeColors = resolveCodeColors(currentCode, mode)
 
-  // Custom editor drafts (seeded from current selection).
-  const [appDraft, setAppDraft] = useState<AppThemeColors>(currentApp.colors)
+  // Custom editor drafts (seeded from the current selection in the active mode).
+  const [appDraft, setAppDraft] = useState<AppThemeColors>(resolveAppColors(currentApp, mode))
   const [appName, setAppName] = useState('My theme')
-  const [codeDraft, setCodeDraft] = useState<CodeThemeColors>(currentCode.colors)
+  const [codeDraft, setCodeDraft] = useState<CodeThemeColors>(resolveCodeColors(currentCode, mode))
   const [codeName, setCodeName] = useState('My code theme')
   const [showAppEditor, setShowAppEditor] = useState(false)
   const [showCodeEditor, setShowCodeEditor] = useState(false)
 
+  const setMode = (m: ThemeMode): void => update((s) => ({ ...s, themeMode: m }))
   const selectApp = (id: string): void => update((s) => ({ ...s, appThemeId: id }))
   const selectCode = (id: string): void => update((s) => ({ ...s, codeThemeId: id }))
 
+  const MODES: { id: ThemeMode; key: TranslationKey; icon: React.ReactNode }[] = [
+    { id: 'light', key: 'settings.modeLight', icon: <Sun size={13} /> },
+    { id: 'dark', key: 'settings.modeDark', icon: <Moon size={13} /> },
+    { id: 'auto', key: 'settings.modeAuto', icon: <Monitor size={13} /> }
+  ]
+
   const saveAppTheme = (): void => {
-    const theme: AppTheme = { id: `custom-app-${uid()}`, name: appName || 'Custom', colors: appDraft }
+    const theme: AppTheme = {
+      id: `custom-app-${uid()}`,
+      name: appName || 'Custom',
+      light: appDraft,
+      dark: appDraft
+    }
     update((s) => ({
       ...s,
       customAppThemes: [...s.customAppThemes, theme],
@@ -516,7 +570,12 @@ function ThemesPage(): React.JSX.Element {
   }
 
   const saveCodeTheme = (): void => {
-    const theme: CodeTheme = { id: `custom-code-${uid()}`, name: codeName || 'Custom', colors: codeDraft }
+    const theme: CodeTheme = {
+      id: `custom-code-${uid()}`,
+      name: codeName || 'Custom',
+      light: codeDraft,
+      dark: codeDraft
+    }
     update((s) => ({
       ...s,
       customCodeThemes: [...s.customCodeThemes, theme],
@@ -543,7 +602,25 @@ function ThemesPage(): React.JSX.Element {
   return (
     <>
       <h4>
-        <Palette size={14} /> App theme
+        <Palette size={14} /> {t('settings.appearance')}
+      </h4>
+      <p className="settings-hint">{t('settings.appearanceHint')}</p>
+      <div className="theme-mode-switch">
+        {MODES.map((m) => (
+          <button
+            key={m.id}
+            type="button"
+            className={`theme-mode-btn ${mode === m.id ? 'active' : ''}`}
+            onClick={() => setMode(m.id)}
+          >
+            {m.icon}
+            <span>{t(m.key)}</span>
+          </button>
+        ))}
+      </div>
+
+      <h4 style={{ marginTop: 22 }}>
+        <Palette size={14} /> {t('settings.appTheme')}
       </h4>
       <div className="theme-grid">
         {appThemes.map((t) => (
@@ -552,9 +629,9 @@ function ThemesPage(): React.JSX.Element {
             className={`theme-card ${t.id === settings.appThemeId ? 'selected' : ''}`}
             onClick={() => selectApp(t.id)}
             onDoubleClick={() => !t.builtin && deleteAppTheme(t.id)}
-            title={t.builtin ? t.name : `${t.name} (double-click to delete)`}
+            title={t.builtin ? t.name : t.name}
           >
-            <AppThemeSwatch theme={t} />
+            <AppThemeSwatch colors={resolveAppColors(t, mode)} />
             <div className="theme-card-label">
               <span>{t.name}</span>
               {t.id === settings.appThemeId && <Check size={13} className="theme-check" />}
@@ -566,16 +643,16 @@ function ThemesPage(): React.JSX.Element {
         className="btn ghost small"
         style={{ marginTop: 10 }}
         onClick={() => {
-          setAppDraft(currentApp.colors)
+          setAppDraft(resolveAppColors(currentApp, mode))
           setShowAppEditor((v) => !v)
         }}
       >
-        <Plus size={13} /> Create custom app theme
+        <Plus size={13} /> {t('settings.createAppTheme')}
       </button>
       {showAppEditor && (
         <div className="theme-custom-editor">
           <label>
-            Theme name
+            {t('settings.themeName')}
             <input value={appName} onChange={(e) => setAppName(e.target.value)} />
           </label>
           <div className="theme-color-grid">
@@ -592,17 +669,17 @@ function ThemesPage(): React.JSX.Element {
           </div>
           <div className="theme-editor-actions">
             <button className="btn primary small" onClick={saveAppTheme}>
-              Save theme
+              {t('settings.saveTheme')}
             </button>
             <button className="btn ghost small" onClick={() => setShowAppEditor(false)}>
-              Cancel
+              {t('common.cancel')}
             </button>
           </div>
         </div>
       )}
 
       <h4 style={{ marginTop: 22 }}>
-        <Palette size={14} /> Code theme
+        <Palette size={14} /> {t('settings.codeTheme')}
       </h4>
       <div className="theme-grid">
         {codeThemes.map((t) => (
@@ -611,9 +688,9 @@ function ThemesPage(): React.JSX.Element {
             className={`theme-card ${t.id === settings.codeThemeId ? 'selected' : ''}`}
             onClick={() => selectCode(t.id)}
             onDoubleClick={() => !t.builtin && deleteCodeTheme(t.id)}
-            title={t.builtin ? t.name : `${t.name} (double-click to delete)`}
+            title={t.builtin ? t.name : t.name}
           >
-            <CodeThemeSwatch theme={t} />
+            <CodeThemeSwatch colors={resolveCodeColors(t, mode)} />
             <div className="theme-card-label">
               <span>{t.name}</span>
               {t.id === settings.codeThemeId && <Check size={13} className="theme-check" />}
@@ -622,11 +699,11 @@ function ThemesPage(): React.JSX.Element {
         ))}
       </div>
 
-      <CodePreview theme={currentCode} />
+      <CodePreview colors={currentCodeColors} />
 
       <label style={{ marginTop: 12 }}>
         <span className="range-label">
-          Code font size
+          {t('settings.codeFontSize')}
           <span className="range-value">{settings.codeFontSize}px</span>
         </span>
         <input
@@ -642,16 +719,16 @@ function ThemesPage(): React.JSX.Element {
         className="btn ghost small"
         style={{ marginTop: 10 }}
         onClick={() => {
-          setCodeDraft(currentCode.colors)
+          setCodeDraft(resolveCodeColors(currentCode, mode))
           setShowCodeEditor((v) => !v)
         }}
       >
-        <Plus size={13} /> Create custom code theme
+        <Plus size={13} /> {t('settings.createCodeTheme')}
       </button>
       {showCodeEditor && (
         <div className="theme-custom-editor">
           <label>
-            Theme name
+            {t('settings.themeName')}
             <input value={codeName} onChange={(e) => setCodeName(e.target.value)} />
           </label>
           <div className="theme-color-grid">
@@ -666,13 +743,13 @@ function ThemesPage(): React.JSX.Element {
               </label>
             ))}
           </div>
-          <CodePreview theme={{ id: 'draft', name: 'draft', colors: codeDraft }} />
+          <CodePreview colors={codeDraft} />
           <div className="theme-editor-actions">
             <button className="btn primary small" onClick={saveCodeTheme}>
-              Save code theme
+              {t('settings.saveCodeTheme')}
             </button>
             <button className="btn ghost small" onClick={() => setShowCodeEditor(false)}>
-              Cancel
+              {t('common.cancel')}
             </button>
           </div>
         </div>
@@ -695,145 +772,146 @@ function GeneralPage(): React.JSX.Element {
         <p className="settings-hint">{t('settings.generalIntro')}</p>
       </div>
 
-      <section className="settings-card">
-        <div className="settings-card-header">
-          <h4>{t('settings.language')}</h4>
-          <p className="settings-hint">{t('settings.languageHint')}</p>
-        </div>
+      <label className="settings-field">
+        <span className="settings-field-label">{t('settings.language')}</span>
+        <select
+          value={settings.language}
+          onChange={(e) => update((s) => ({ ...s, language: e.target.value as typeof s.language }))}
+        >
+          {LANGUAGES.map((l) => (
+            <option key={l.id} value={l.id}>
+              {l.label}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <h4 className="settings-section-title">{t('settings.graph')}</h4>
+      <p className="settings-hint">{t('settings.graphIntro')}</p>
+
+      <div className="settings-grid two">
         <label className="settings-field">
-          <span className="settings-field-label">{t('settings.language')}</span>
-          <select
-            value={settings.language}
-            onChange={(e) => update((s) => ({ ...s, language: e.target.value as typeof s.language }))}
-          >
-            {LANGUAGES.map((l) => (
-              <option key={l.id} value={l.id}>
-                {l.label}
-              </option>
-            ))}
-          </select>
+          <span className="settings-field-label">{t('settings.initialCommitCount')}</span>
+          <input
+            type="number"
+            min={50}
+            max={5000}
+            step={50}
+            value={settings.initialCommitCount}
+            onChange={(e) =>
+              update((s) => ({ ...s, initialCommitCount: Math.max(50, Number(e.target.value) || 50) }))
+            }
+          />
+          <span className="settings-hint">{t('settings.initialCommitCountHint')}</span>
         </label>
-      </section>
 
-      <section className="settings-card">
-        <div className="settings-card-header">
-          <h4>{t('settings.graph')}</h4>
-          <p className="settings-hint">{t('settings.graphIntro')}</p>
-        </div>
+        <label className="settings-field">
+          <span className="settings-field-label">{t('settings.loadMoreCount')}</span>
+          <input
+            type="number"
+            min={50}
+            max={5000}
+            step={50}
+            value={settings.loadMoreCount}
+            onChange={(e) => update((s) => ({ ...s, loadMoreCount: Math.max(50, Number(e.target.value) || 50) }))}
+          />
+        </label>
+      </div>
 
-        <div className="settings-grid two">
-          <label className="settings-field">
-            <span className="settings-field-label">{t('settings.initialCommitCount')}</span>
-            <input
-              type="number"
-              min={50}
-              max={5000}
-              step={50}
-              value={settings.initialCommitCount}
-              onChange={(e) =>
-                update((s) => ({ ...s, initialCommitCount: Math.max(50, Number(e.target.value) || 50) }))
-              }
-            />
-            <span className="settings-hint">{t('settings.initialCommitCountHint')}</span>
-          </label>
-
-          <label className="settings-field">
-            <span className="settings-field-label">{t('settings.loadMoreCount')}</span>
-            <input
-              type="number"
-              min={50}
-              max={5000}
-              step={50}
-              value={settings.loadMoreCount}
-              onChange={(e) => update((s) => ({ ...s, loadMoreCount: Math.max(50, Number(e.target.value) || 50) }))}
-            />
-          </label>
-        </div>
-
-        <div className="settings-toggle-list">
-          <label className="settings-toggle-card">
-            <input
-              type="checkbox"
-              checked={settings.autoLoadOnScroll}
-              onChange={(e) => update((s) => ({ ...s, autoLoadOnScroll: e.target.checked }))}
-            />
-            <span className="settings-toggle-control" aria-hidden="true">
-              <span className="settings-toggle-thumb" />
-            </span>
-            <span className="settings-toggle-copy">
-              <strong>{t('settings.autoLoadOnScroll')}</strong>
-              <span className="settings-hint">{t('settings.autoLoadOnScrollHint')}</span>
-            </span>
-          </label>
-
-          <label className="settings-toggle-card">
-            <input
-              type="checkbox"
-              checked={settings.relativeDates}
-              onChange={(e) => update((s) => ({ ...s, relativeDates: e.target.checked }))}
-            />
-            <span className="settings-toggle-control" aria-hidden="true">
-              <span className="settings-toggle-thumb" />
-            </span>
-            <span className="settings-toggle-copy">
-              <strong>{t('settings.relativeDates')}</strong>
-              <span className="settings-hint">{t('settings.relativeDatesHint')}</span>
-            </span>
-          </label>
-
-          <label className="settings-toggle-card">
-            <input
-              type="checkbox"
-              checked={settings.commitAvatars}
-              onChange={(e) => update((s) => ({ ...s, commitAvatars: e.target.checked }))}
-            />
-            <span className="settings-toggle-control" aria-hidden="true">
-              <span className="settings-toggle-thumb" />
-            </span>
-            <span className="settings-toggle-copy">
-              <strong>{t('settings.commitAvatars')}</strong>
-              <span className="settings-hint">{t('settings.commitAvatarsHint')}</span>
-            </span>
-          </label>
-        </div>
-      </section>
-
-      <section className="settings-card">
-        <div className="settings-card-header">
-          <h4>{t('settings.behaviour')}</h4>
-          <p className="settings-hint">{t('settings.behaviourIntro')}</p>
-        </div>
-
-        <div className="settings-grid">
-          <label className="settings-field">
-            <span className="settings-field-label">{t('settings.autoFetch')}</span>
-            <input
-              type="number"
-              min={0}
-              max={120}
-              step={1}
-              value={settings.autoFetchMinutes}
-              onChange={(e) => update((s) => ({ ...s, autoFetchMinutes: Math.max(0, Number(e.target.value) || 0) }))}
-            />
-            <span className="settings-hint">{t('settings.autoFetchHint')}</span>
-          </label>
-        </div>
-
+      <div className="settings-toggle-list">
         <label className="settings-toggle-card">
           <input
             type="checkbox"
-            checked={settings.confirmForcePush}
-            onChange={(e) => update((s) => ({ ...s, confirmForcePush: e.target.checked }))}
+            checked={settings.autoLoadOnScroll}
+            onChange={(e) => update((s) => ({ ...s, autoLoadOnScroll: e.target.checked }))}
           />
           <span className="settings-toggle-control" aria-hidden="true">
             <span className="settings-toggle-thumb" />
           </span>
           <span className="settings-toggle-copy">
-            <strong>{t('settings.confirmForcePush')}</strong>
-            <span className="settings-hint">{t('settings.confirmForcePushHint')}</span>
+            <strong>{t('settings.autoLoadOnScroll')}</strong>
+            <span className="settings-hint">{t('settings.autoLoadOnScrollHint')}</span>
           </span>
         </label>
-      </section>
+
+        <label className="settings-toggle-card">
+          <input
+            type="checkbox"
+            checked={settings.relativeDates}
+            onChange={(e) => update((s) => ({ ...s, relativeDates: e.target.checked }))}
+          />
+          <span className="settings-toggle-control" aria-hidden="true">
+            <span className="settings-toggle-thumb" />
+          </span>
+          <span className="settings-toggle-copy">
+            <strong>{t('settings.relativeDates')}</strong>
+            <span className="settings-hint">{t('settings.relativeDatesHint')}</span>
+          </span>
+        </label>
+
+        <label className="settings-toggle-card">
+          <input
+            type="checkbox"
+            checked={settings.commitAvatars}
+            onChange={(e) => update((s) => ({ ...s, commitAvatars: e.target.checked }))}
+          />
+          <span className="settings-toggle-control" aria-hidden="true">
+            <span className="settings-toggle-thumb" />
+          </span>
+          <span className="settings-toggle-copy">
+            <strong>{t('settings.commitAvatars')}</strong>
+            <span className="settings-hint">{t('settings.commitAvatarsHint')}</span>
+          </span>
+        </label>
+      </div>
+
+      <h4 className="settings-section-title">{t('settings.behaviour')}</h4>
+      <p className="settings-hint">{t('settings.behaviourIntro')}</p>
+
+      <div className="settings-grid">
+        <label className="settings-field">
+          <span className="settings-field-label">{t('settings.autoFetch')}</span>
+          <input
+            type="number"
+            min={0}
+            max={120}
+            step={1}
+            value={settings.autoFetchMinutes}
+            onChange={(e) => update((s) => ({ ...s, autoFetchMinutes: Math.max(0, Number(e.target.value) || 0) }))}
+          />
+          <span className="settings-hint">{t('settings.autoFetchHint')}</span>
+        </label>
+      </div>
+
+      <label className="settings-toggle-card">
+        <input
+          type="checkbox"
+          checked={settings.confirmForcePush}
+          onChange={(e) => update((s) => ({ ...s, confirmForcePush: e.target.checked }))}
+        />
+        <span className="settings-toggle-control" aria-hidden="true">
+          <span className="settings-toggle-thumb" />
+        </span>
+        <span className="settings-toggle-copy">
+          <strong>{t('settings.confirmForcePush')}</strong>
+          <span className="settings-hint">{t('settings.confirmForcePushHint')}</span>
+        </span>
+      </label>
+
+      <label className="settings-toggle-card">
+        <input
+          type="checkbox"
+          checked={settings.mergeCommit}
+          onChange={(e) => update((s) => ({ ...s, mergeCommit: e.target.checked }))}
+        />
+        <span className="settings-toggle-control" aria-hidden="true">
+          <span className="settings-toggle-thumb" />
+        </span>
+        <span className="settings-toggle-copy">
+          <strong>{t('settings.mergeCommit')}</strong>
+          <span className="settings-hint">{t('settings.mergeCommitHint')}</span>
+        </span>
+      </label>
     </div>
   )
 }
@@ -918,6 +996,16 @@ export function SettingsPanel({ initialPage }: { initialPage?: SettingsPage } = 
               <span>{t(p.key)}</span>
             </button>
           ))}
+
+          <button
+            className="settings-madeby"
+            type="button"
+            title="myappdesk.dev"
+            onClick={() => void window.api.openExternal('https://myappdesk.dev')}
+          >
+            <img src={madLogo} alt="MyAppDesk" draggable={false} />
+            <span>{t('settings.madeBy')}</span>
+          </button>
         </aside>
 
         <div className="settings-form">

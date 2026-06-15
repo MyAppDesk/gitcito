@@ -11,6 +11,22 @@ import { settingsApi } from '../infrastructure/api'
 
 const uid = (): string => Math.random().toString(36).slice(2, 10)
 
+// Map pre-dynamic-theme ids onto the new merged light/dark theme ids.
+const LEGACY_APP_THEME_IDS: Record<string, string> = {
+  'gitcito-light': 'gitcito',
+  'gitcito-contrast': 'contrast',
+  'solarized-dark': 'solarized',
+  'github-light': 'github'
+}
+const LEGACY_CODE_THEME_IDS: Record<string, string> = {
+  'gitcito-dark': 'gitcito',
+  'gitcito-light-code': 'gitcito',
+  'dracula-code': 'dracula',
+  'github-code': 'github',
+  'monokai-code': 'monokai',
+  'nord-code': 'nord'
+}
+
 let saveTimer: ReturnType<typeof setTimeout> | null = null
 function persist(settings: AppSettings): void {
   if (saveTimer) clearTimeout(saveTimer)
@@ -58,6 +74,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     const sd = defaultSettings()
     settings.appThemeId = settings.appThemeId ?? sd.appThemeId
     settings.codeThemeId = settings.codeThemeId ?? sd.codeThemeId
+    settings.themeMode = settings.themeMode ?? sd.themeMode
+    // Migrate legacy single-mode theme ids to the new dynamic theme ids.
+    settings.appThemeId = LEGACY_APP_THEME_IDS[settings.appThemeId] ?? settings.appThemeId
+    settings.codeThemeId = LEGACY_CODE_THEME_IDS[settings.codeThemeId] ?? settings.codeThemeId
     settings.codeFontSize = settings.codeFontSize ?? sd.codeFontSize
     settings.customAppThemes = settings.customAppThemes ?? []
     settings.customCodeThemes = settings.customCodeThemes ?? []
@@ -71,6 +91,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     settings.graphColumns = { ...sd.graphColumns, ...(settings.graphColumns ?? {}) }
     settings.autoFetchMinutes = settings.autoFetchMinutes ?? sd.autoFetchMinutes
     settings.confirmForcePush = settings.confirmForcePush ?? sd.confirmForcePush
+    settings.mergeCommit = settings.mergeCommit ?? sd.mergeCommit
     settings.sidebarOrder =
       settings.sidebarOrder && settings.sidebarOrder.length ? settings.sidebarOrder : sd.sidebarOrder
     set({ settings, loaded: true })

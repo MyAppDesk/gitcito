@@ -25,9 +25,13 @@ interface PreloadApi {
   ai: {
     commitMessage(diff: string, cfg: unknown, ctx: unknown): Promise<unknown>
     listModels(cfg: unknown): Promise<unknown>
+    explainCode(code: string, lang: string, cfg: unknown): Promise<unknown>
+    resolveConflict(file: string, content: string, cfg: unknown): Promise<unknown>
   }
   hosting: {
     listRepos(provider: string, token: string, org?: string): Promise<unknown>
+    listOwners(provider: string, token: string, org?: string): Promise<unknown>
+    createRepo(provider: string, token: string, opts: unknown, org?: string): Promise<unknown>
     listPRs(remoteUrl: string, tokens: unknown): Promise<unknown>
     openCreatePR(remoteUrl: string, source: string, target: string): Promise<boolean>
   }

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { GitMerge } from 'lucide-react'
+import { GitMerge, FolderOpen } from 'lucide-react'
 import { useSettingsStore } from './stores/settings'
 import { useRepoStore, repoActions, type RepoData } from './stores/repo'
 import { useUIStore } from './stores/ui'
@@ -15,7 +15,7 @@ import { ConflictResolver } from './components/ConflictResolver'
 import { CommitDetails } from './components/CommitDetails'
 import { StashDetails } from './components/StashDetails'
 import { CommitComposer } from './components/CommitComposer'
-import { TerminalPanel } from './components/TerminalPanel'
+import { TerminalContainer } from './components/TerminalContainer'
 import { ContextMenu } from './components/ContextMenu'
 import { ModalHost } from './components/ModalHost'
 import { Toasts } from './components/Toasts'
@@ -151,16 +151,26 @@ export default function App(): React.JSX.Element {
     void useSettingsStore.getState().load()
   }, [])
 
-  // Apply selected app + code themes whenever they change.
+  // Apply selected app + code themes whenever they change. When the appearance
+  // mode is "auto" we also react to live OS light/dark changes.
   useEffect(() => {
-    applyAppTheme(findAppTheme(settings.appThemeId, settings.customAppThemes))
-    applyCodeTheme(
-      findCodeTheme(settings.codeThemeId, settings.customCodeThemes),
-      settings.codeFontSize
-    )
+    const apply = (): void => {
+      applyAppTheme(findAppTheme(settings.appThemeId, settings.customAppThemes), settings.themeMode)
+      applyCodeTheme(
+        findCodeTheme(settings.codeThemeId, settings.customCodeThemes),
+        settings.themeMode,
+        settings.codeFontSize
+      )
+    }
+    apply()
+    if (settings.themeMode !== 'auto') return undefined
+    const mq = window.matchMedia('(prefers-color-scheme: dark)')
+    mq.addEventListener('change', apply)
+    return () => mq.removeEventListener('change', apply)
   }, [
     settings.appThemeId,
     settings.codeThemeId,
+    settings.themeMode,
     settings.codeFontSize,
     settings.customAppThemes,
     settings.customCodeThemes
@@ -303,12 +313,19 @@ export default function App(): React.JSX.Element {
                   onChange={(v) => setLayout({ terminalHeight: v })}
                   onDragging={setResizing}
                 />
-                <TerminalPanel cwd={repo.path} />
+                <TerminalContainer cwd={repo.path} />
               </motion.div>
             )}
           </AnimatePresence>
           <footer className="statusbar">
-            <span className="status-path">{repo.path}</span>
+            <button
+              className="status-path status-path-btn"
+              title="Show in Finder"
+              onClick={() => window.api.shell.showItemInFolder(repo.path)}
+            >
+              <FolderOpen size={11} className="status-path-icon" />
+              {repo.path}
+            </button>
             <span className="status-right">
               {repo.branches.current} · {settings.profiles.find((p) => p.id === settings.activeProfileId)?.name}
             </span>

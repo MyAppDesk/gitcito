@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { Archive, GitCommitHorizontal, Tag, Laptop, Github, Gitlab, Cloud, Server, Check, Settings2 } from 'lucide-react'
 import type { GraphCommit, StashInfo, GraphColumnId, GraphColumns } from '../../../shared/types'
 import { defaultGraphColumns } from '../../../shared/types'
@@ -145,7 +145,7 @@ function edgePath(x1: number, y1: number, x2: number, y2: number): string {
   return `M ${x1} ${y1} C ${x1} ${y1 + ROW_H * 0.7}, ${x2} ${y1 + ROW_H * 0.3}, ${x2} ${bendY} L ${x2} ${y2}`
 }
 
-/** Resizable / toggleable column header, GitKraken-style. */
+/** Resizable / toggleable column header. */
 function GraphColumnsHeader({
   columns,
   branchCol,
@@ -159,26 +159,33 @@ function GraphColumnsHeader({
   onResize: (id: GraphColumnId, width: number) => void
   onMenu: (x: number, y: number) => void
 }): React.JSX.Element {
-  const [guideX, setGuideX] = useState<number | null>(null)
-
-  const startResize = (id: GraphColumnId, e: React.MouseEvent): void => {
+  // `side` = which edge of the column the handle sits on. A left-edge handle
+  // resizes the column inward as you drag right (its left border moves), so the
+  // divider *left of* a column resizes that column — what users expect.
+  const startResize = (id: GraphColumnId, side: 'left' | 'right', e: React.MouseEvent): void => {
     e.preventDefault()
     e.stopPropagation()
     const startX = e.clientX
-    const startW = columns[id].width
-    const move = (ev: MouseEvent): void => setGuideX(ev.clientX)
-    const up = (ev: MouseEvent): void => {
+    // The graph column may be in `auto` mode (stored width 0); seed the drag
+    // from its currently-rendered width so it doesn't jump on first move.
+    const startW = id === 'graph' ? graphCol : columns[id].width
+    const move = (ev: MouseEvent): void => {
+      const delta = ev.clientX - startX
+      const w = side === 'left' ? startW - delta : startW + delta
+      onResize(id, Math.max(COL_MIN[id], w))
+    }
+    const up = (): void => {
       window.removeEventListener('mousemove', move)
       window.removeEventListener('mouseup', up)
-      setGuideX(null)
-      onResize(id, Math.max(COL_MIN[id], startW + ev.clientX - startX))
+      document.body.style.cursor = ''
     }
+    document.body.style.cursor = 'col-resize'
     window.addEventListener('mousemove', move)
     window.addEventListener('mouseup', up)
   }
 
-  const handle = (id: GraphColumnId): React.JSX.Element => (
-    <span className="col-resize" onMouseDown={(e) => startResize(id, e)} />
+  const handle = (id: GraphColumnId, side: 'left' | 'right'): React.JSX.Element => (
+    <span className={`col-resize col-resize-${side}`} onMouseDown={(e) => startResize(id, side, e)} />
   )
 
   return (
@@ -186,12 +193,13 @@ function GraphColumnsHeader({
       {columns.branch.visible && (
         <div className="ghc" style={{ width: branchCol }}>
           <span className="ghc-label">{COL_LABEL.branch}</span>
-          {handle('branch')}
+          {handle('branch', 'right')}
         </div>
       )}
       {columns.graph.visible && (
         <div className="ghc ghc-graph" style={{ width: graphCol }}>
           <span className="ghc-label">{COL_LABEL.graph}</span>
+          {handle('graph', 'right')}
         </div>
       )}
       {columns.message.visible && (
@@ -201,20 +209,20 @@ function GraphColumnsHeader({
       )}
       {columns.author.visible && (
         <div className="ghc" style={{ width: columns.author.width }}>
+          {handle('author', 'left')}
           <span className="ghc-label">{COL_LABEL.author}</span>
-          {handle('author')}
         </div>
       )}
       {columns.date.visible && (
         <div className="ghc" style={{ width: columns.date.width }}>
+          {handle('date', 'left')}
           <span className="ghc-label">{COL_LABEL.date}</span>
-          {handle('date')}
         </div>
       )}
       {columns.sha.visible && (
         <div className="ghc" style={{ width: columns.sha.width }}>
+          {handle('sha', 'left')}
           <span className="ghc-label">{COL_LABEL.sha}</span>
-          {handle('sha')}
         </div>
       )}
       <button
@@ -227,7 +235,6 @@ function GraphColumnsHeader({
       >
         <Settings2 size={13} />
       </button>
-      {guideX != null && <div className="col-guide" style={{ left: guideX }} />}
     </div>
   )
 }
@@ -344,18 +351,9 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
   const commitMenu = (c: GraphCommit): MenuItem[] => {
     const currentBranch = repo.branches.current.trim()
     const mergeItems = mergeableRefs(c.refs).map<MenuItem>((ref) => ({
-      label: `Merge ${ref} into…`,
+      label: `Merge ${ref} into ${currentBranch}`,
       disabled: !currentBranch || ref === currentBranch,
-      onClick: () =>
-        openModal({
-          kind: 'input',
-          title: 'Merge branches',
-          label: `Target branch for ${ref}`,
-          initial: currentBranch,
-          placeholder: 'main',
-          submitLabel: 'Merge',
-          onSubmit: (target) => void repoActions.mergeInto(repo.path, ref, target)
-        })
+      onClick: () => void repoActions.merge(repo.path, ref)
     }))
 
     return [
@@ -548,6 +546,19 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
     )
   }
 
+  // Double-clicking a branch/tag badge checks it out — the same action as the
+  // context menu's "Checkout". No-op on the current branch.
+  const checkoutGroup = (g: RefGroup): void => {
+    if (g.isTag) {
+      void repoActions.checkout(repo.path, g.label)
+    } else if (g.isLocal) {
+      if (repo.branches.current.trim() === g.label) return
+      void repoActions.checkout(repo.path, g.label)
+    } else if (g.remotes.length) {
+      void repoActions.checkoutRemote(repo.path, `${g.remotes[0]}/${g.label}`, g.label)
+    }
+  }
+
   const renderGroup = (g: RefGroup, c: GraphCommit): React.JSX.Element => {
     const title = g.isTag
       ? g.label
@@ -558,6 +569,10 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
         className={`ref-badge ref-${g.kind}`}
         title={title}
         onClick={(e) => e.stopPropagation()}
+        onDoubleClick={(e) => {
+          e.stopPropagation()
+          checkoutGroup(g)
+        }}
         onContextMenu={(e) => {
           e.preventDefault()
           e.stopPropagation()
@@ -665,8 +680,10 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
         </svg>
 
         {/* Avatar nodes overlay — the gravatar/generated avatar sits on the
-            commit "ball", with a connector line from any branch labels. */}
-        <div className="graph-nodes">
+            commit "ball", with a connector line from any branch labels. The
+            overlay is clipped to the branch+graph region so avatars never spill
+            over the commit messages when columns are resized too narrow. */}
+        <div className="graph-nodes" style={{ width: branchCol + graphCol }}>
           {displayCommits.map((c) => {
             const n = layout.nodes.get(c.hash)
             if (!n) return null
@@ -687,19 +704,9 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
                 <div
                   className="node-ava"
                   style={{ left: x, top: y, boxShadow: `0 0 0 2px ${color}` }}
-                  title={c.author}
+                  title={[c.author, ...(c.coAuthors?.map((a) => `+ ${a.name}`) ?? [])].join('\n')}
                 >
                   <Avatar email={c.email} name={c.author} size={AVA} />
-                  {c.coAuthors?.slice(0, 2).map((a, i) => (
-                    <Avatar
-                      key={i}
-                      email={a.email}
-                      name={a.name}
-                      size={13}
-                      className="node-coauthor"
-                      title={`Co-author: ${a.name}`}
-                    />
-                  ))}
                 </div>
               </div>
             )

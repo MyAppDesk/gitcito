@@ -17,7 +17,8 @@ import {
   Server,
   Laptop,
   Plus,
-  Lock
+  Lock,
+  ExternalLink
 } from 'lucide-react'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
 import { useUIStore, type MenuItem } from '../stores/ui'
@@ -185,7 +186,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   const remoteUrl = (name: string): string | undefined => repo.remotes.find((r) => r.name === name)?.url
 
   // Small icon strip: a laptop for "on this computer" plus one icon per remote
-  // that has the same branch, collapsing extras into a "+N" badge (GitKraken-style).
+  // that has the same branch, collapsing extras into a "+N" badge.
   const Presence = ({ remoteNames, local = true }: { remoteNames: string[]; local?: boolean }): React.JSX.Element => {
     const shown = remoteNames.slice(0, 2)
     const extra = remoteNames.length - shown.length
@@ -394,32 +395,53 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   const addRemote = (): void =>
     openModal({
       kind: 'addRemote',
+      path,
       defaultName: repo.remotes.length === 0 ? 'origin' : '',
       existingNames: repo.remotes.map((r) => r.name),
-      onSubmit: (name, url) => void repoActions.addRemote(path, name, url)
+      matchName: path.split(/[/\\]/).filter(Boolean).pop()
     })
 
-  const remoteMgmtMenu = (remoteName: string, url?: string): MenuItem[] => [
-    {
-      label: t('sidebar.addRemote'),
-      onClick: () => addRemote()
-    },
-    ...(url ? [{ label: 'Copy remote URL', onClick: (): void => void navigator.clipboard.writeText(url) }] : []),
-    { separator: true },
-    {
-      label: t('sidebar.removeRemote'),
-      danger: true,
-      onClick: () =>
-        openModal({
-          kind: 'confirm',
-          title: t('sidebar.removeRemote'),
-          message: `Remove remote "${remoteName}"? Its remote-tracking branches will be deleted locally.`,
-          danger: true,
-          confirmLabel: t('sidebar.removeRemote'),
-          onConfirm: () => void repoActions.removeRemote(path, remoteName)
-        })
-    }
-  ]
+  // Turn a git remote URL into a browsable web URL (best effort, https hosts only).
+  const webUrl = (url?: string): string | undefined => {
+    if (!url) return undefined
+    const m = /^(?:git@|https?:\/\/(?:[^@/]+@)?)([^:/]+)[:/](.+?)(?:\.git)?\/?$/.exec(url.trim())
+    return m ? `https://${m[1]}/${m[2]}` : url.startsWith('http') ? url : undefined
+  }
+
+  const remoteMgmtMenu = (remoteName: string, url?: string): MenuItem[] => {
+    const web = webUrl(url)
+    return [
+      { label: t('sidebar.addRemote'), onClick: () => addRemote() },
+      { label: `Fetch ${remoteName}`, onClick: () => void repoActions.fetchRemote(path, remoteName) },
+      {
+        label: `Edit ${remoteName}`,
+        onClick: () =>
+          openModal({
+            kind: 'editRemote',
+            path,
+            name: remoteName,
+            url: url ?? ''
+          })
+      },
+      { separator: true },
+      ...(web ? [{ label: 'Open on web', onClick: (): void => void shellApi.openExternal(web) }] : []),
+      ...(url ? [{ label: 'Copy remote URL', onClick: (): void => void navigator.clipboard.writeText(url) }] : []),
+      { separator: true },
+      {
+        label: t('sidebar.removeRemote'),
+        danger: true,
+        onClick: () =>
+          openModal({
+            kind: 'confirm',
+            title: t('sidebar.removeRemote'),
+            message: `Remove remote "${remoteName}"? Its remote-tracking branches will be deleted locally.`,
+            danger: true,
+            confirmLabel: t('sidebar.removeRemote'),
+            onConfirm: () => void repoActions.removeRemote(path, remoteName)
+          })
+      }
+    ]
+  }
 
 
   const reorder = (from: string, to: string): void => {
@@ -511,6 +533,18 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
                 e.preventDefault()
                 openContextMenu(e.clientX, e.clientY, remoteMgmtMenu(remote.name, remote.url))
               }}
+              actions={webUrl(remote.url) ? (
+                <span
+                  className="icon-btn"
+                  title={`Open ${remote.name} on web`}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    void shellApi.openExternal(webUrl(remote.url)!)
+                  }}
+                >
+                  <ExternalLink size={12} />
+                </span>
+              ) : undefined}
             >
               {branches.length === 0 && <div className="sb-empty">{t('sidebar.noBranches')}</div>}
               {branches.map((b) => (

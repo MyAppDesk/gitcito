@@ -297,6 +297,23 @@ export const gitService = {
     return null
   },
 
+  // The message git prepared for an in-progress merge/cherry-pick/revert
+  // (e.g. "Merge branch 'main' into feat/ui"). Empty if none is pending. Comment
+  // lines (starting with '#') are stripped so it can prefill the commit composer.
+  async mergeMessage(repoPath: string): Promise<string> {
+    const git = gitFor(repoPath)
+    const gitPath = async (name: string): Promise<string> => (await git.raw(['rev-parse', '--git-path', name])).trim()
+    const abs = (p: string): string => (p.startsWith('/') ? p : join(repoPath, p))
+    const msgPath = abs(await gitPath('MERGE_MSG'))
+    if (!existsSync(msgPath)) return ''
+    const raw = await readFile(msgPath, 'utf-8')
+    return raw
+      .split('\n')
+      .filter((line) => !line.startsWith('#'))
+      .join('\n')
+      .trim()
+  },
+
   async conflictVersions(repoPath: string, file: string): Promise<ConflictVersions> {
     const git = gitFor(repoPath)
     const show = async (stage: number): Promise<string | null> => {
@@ -378,12 +395,35 @@ export const gitService = {
     return rs.map((r) => ({ name: r.name, url: r.refs.fetch || r.refs.push }))
   },
 
-  async addRemote(repoPath: string, name: string, url: string): Promise<void> {
-    await gitFor(repoPath).addRemote(name, url)
+  async addRemote(repoPath: string, name: string, url: string, pushUrl?: string): Promise<void> {
+    const git = gitFor(repoPath)
+    await git.addRemote(name, url)
+    if (pushUrl && pushUrl !== url) await git.remote(['set-url', '--push', name, pushUrl])
   },
 
   async removeRemote(repoPath: string, name: string): Promise<void> {
     await gitFor(repoPath).removeRemote(name)
+  },
+
+  // Rename a remote and/or update its fetch & push URLs in one shot.
+  async editRemote(
+    repoPath: string,
+    oldName: string,
+    newName: string,
+    url: string,
+    pushUrl?: string
+  ): Promise<void> {
+    const git = gitFor(repoPath)
+    if (newName && newName !== oldName) await git.remote(['rename', oldName, newName])
+    const name = newName || oldName
+    if (url) await git.remote(['set-url', name, url])
+    // An empty pushUrl resets the push URL to mirror the fetch URL.
+    if (pushUrl && pushUrl !== url) await git.remote(['set-url', '--push', name, pushUrl])
+    else await git.remote(['set-url', '--push', name, url || pushUrl || '']).catch(() => undefined)
+  },
+
+  async fetchRemote(repoPath: string, name: string): Promise<void> {
+    await gitFor(repoPath).fetch([name, '--prune'])
   },
 
   // ─── Branch / nav operations ───────────────────────────────────────────────
@@ -414,14 +454,14 @@ export const gitService = {
     await gitFor(repoPath).branch(['-m', oldName, newName])
   },
 
-  async merge(repoPath: string, ref: string): Promise<void> {
-    await gitFor(repoPath).merge([ref])
+  async merge(repoPath: string, ref: string, noFf = false): Promise<void> {
+    await gitFor(repoPath).merge([...(noFf ? ['--no-ff'] : []), ref])
   },
 
-  async mergeInto(repoPath: string, source: string, target: string): Promise<void> {
+  async mergeInto(repoPath: string, source: string, target: string, noFf = false): Promise<void> {
     const git = gitFor(repoPath)
     await git.checkout(target)
-    await git.merge([source])
+    await git.merge([...(noFf ? ['--no-ff'] : []), source])
   },
 
   async rebase(repoPath: string, onto: string): Promise<void> {
@@ -621,6 +661,11 @@ export const gitService = {
 
   async stagedDiff(repoPath: string): Promise<string> {
     return gitFor(repoPath).raw(['diff', '--cached'])
+  },
+
+  /** Full patch of a single commit (vs its first parent; root commit shows full tree). */
+  async commitDiff(repoPath: string, hash: string): Promise<string> {
+    return gitFor(repoPath).raw(['show', '--format=', '--first-parent', hash])
   },
 
   // ─── File inspection (file view / blame / history) ──────────────────────

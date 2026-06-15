@@ -114,6 +114,24 @@ export interface RemoteRepo {
   avatarUrl?: string // owner/namespace avatar from the provider
 }
 
+/** An account or organization/workspace a new repo can be created under. */
+export interface RemoteOwner {
+  id: string // login/slug (gh/bb), numeric namespace id (gitlab)
+  login: string // display name and path segment
+  avatarUrl?: string
+  type: 'user' | 'org'
+}
+
+export interface CreateRepoOpts {
+  owner: string // user login / org / workspace slug
+  ownerType: 'user' | 'org'
+  ownerId?: string // gitlab namespace id
+  project?: string // azure project
+  name: string
+  description?: string
+  private: boolean
+}
+
 export interface BlameLine {
   sha: string
   author: string
@@ -214,7 +232,11 @@ export interface AIConfig {
   commitStyle: CommitStyle
   customInstructions: string
   generateDescription: boolean
+  coAuthor: boolean
 }
+
+/** Co-author trailer appended when AIConfig.coAuthor is enabled (default on). */
+export const MYAPPDESK_COAUTHOR = 'MyAppDesk <team@myappdesk.dev>'
 
 export interface Profile {
   id: string
@@ -249,6 +271,7 @@ export interface AppSettings {
   recentRepos: RepoRef[]
   appThemeId: string
   codeThemeId: string
+  themeMode: ThemeMode
   codeFontSize: number
   customAppThemes: AppTheme[]
   customCodeThemes: CodeTheme[]
@@ -262,10 +285,15 @@ export interface AppSettings {
   graphColumns: GraphColumns
   autoFetchMinutes: number
   confirmForcePush: boolean
+  /** Force a merge commit even when a fast-forward is possible. */
+  mergeCommit: boolean
   sidebarOrder: string[]
 }
 
 export type Language = 'en' | 'es'
+
+/** App appearance: a fixed mode or follow the operating system. */
+export type ThemeMode = 'light' | 'dark' | 'auto'
 
 export type GraphColumnId = 'branch' | 'graph' | 'message' | 'author' | 'date' | 'sha'
 
@@ -309,7 +337,8 @@ export interface AppTheme {
   id: string
   name: string
   builtin?: boolean
-  colors: AppThemeColors
+  light: AppThemeColors
+  dark: AppThemeColors
 }
 
 export interface CodeThemeColors {
@@ -334,7 +363,8 @@ export interface CodeTheme {
   id: string
   name: string
   builtin?: boolean
-  colors: CodeThemeColors
+  light: CodeThemeColors
+  dark: CodeThemeColors
 }
 
 export function defaultProfile(): Profile {
@@ -354,7 +384,8 @@ export function defaultProfile(): Profile {
       model: 'gpt-4o-mini',
       commitStyle: 'auto',
       customInstructions: '',
-      generateDescription: true
+      generateDescription: true,
+      coAuthor: true
     }
   }
 }
@@ -366,8 +397,9 @@ export function defaultSettings(): AppSettings {
     tabs: [],
     activeTabId: null,
     recentRepos: [],
-    appThemeId: 'gitcito-light',
-    codeThemeId: 'gitcito-light-code',
+    appThemeId: 'gitcito',
+    codeThemeId: 'gitcito',
+    themeMode: 'auto',
     codeFontSize: 12,
     customAppThemes: [],
     customCodeThemes: [],
@@ -381,6 +413,7 @@ export function defaultSettings(): AppSettings {
     graphColumns: defaultGraphColumns(),
     autoFetchMinutes: 0,
     confirmForcePush: true,
+    mergeCommit: true,
     sidebarOrder: ['local', 'remotes', 'prs', 'tags', 'stashes', 'worktrees']
   }
 }

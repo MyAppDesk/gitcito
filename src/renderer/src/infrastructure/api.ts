@@ -17,6 +17,8 @@ import type {
   HostingProvider,
   RepoHost,
   RemoteRepo,
+  RemoteOwner,
+  CreateRepoOpts,
   WorktreeInfo
 } from '../../../shared/types'
 
@@ -30,8 +32,12 @@ export const gitApi = {
   status: (path: string) => call<RepoStatus>('status', path),
   stashes: (path: string) => call<StashInfo[]>('stashes', path),
   remotes: (path: string) => call<RemoteInfo[]>('remotes', path),
-  addRemote: (path: string, name: string, url: string) => call<void>('addRemote', path, name, url),
+  addRemote: (path: string, name: string, url: string, pushUrl?: string) =>
+    call<void>('addRemote', path, name, url, pushUrl),
   removeRemote: (path: string, name: string) => call<void>('removeRemote', path, name),
+  editRemote: (path: string, oldName: string, newName: string, url: string, pushUrl?: string) =>
+    call<void>('editRemote', path, oldName, newName, url, pushUrl),
+  fetchRemote: (path: string, name: string) => call<void>('fetchRemote', path, name),
 
   checkout: (path: string, ref: string) => call<void>('checkout', path, ref),
   checkoutRemote: (path: string, fullName: string, localName: string) =>
@@ -42,8 +48,9 @@ export const gitApi = {
   deleteRemoteBranch: (path: string, remote: string, name: string) =>
     call<void>('deleteRemoteBranch', path, remote, name),
   renameBranch: (path: string, oldName: string, newName: string) => call<void>('renameBranch', path, oldName, newName),
-  merge: (path: string, ref: string) => call<void>('merge', path, ref),
-  mergeInto: (path: string, source: string, target: string) => call<void>('mergeInto', path, source, target),
+  merge: (path: string, ref: string, noFf?: boolean) => call<void>('merge', path, ref, noFf),
+  mergeInto: (path: string, source: string, target: string, noFf?: boolean) =>
+    call<void>('mergeInto', path, source, target, noFf),
   rebase: (path: string, onto: string) => call<void>('rebase', path, onto),
 
   fetchAll: (path: string) => call<void>('fetchAll', path),
@@ -84,6 +91,7 @@ export const gitApi = {
     call<string>('stashFileDiff', path, sha, file, untracked),
   commitFileDiff: (path: string, hash: string, file: string) => call<string>('commitFileDiff', path, hash, file),
   stagedDiff: (path: string) => call<string>('stagedDiff', path),
+  commitDiff: (path: string, hash: string) => call<string>('commitDiff', path, hash),
 
   fileContent: (path: string, file: string, ref?: string) => call<string>('fileContent', path, file, ref),
   fileDataUrl: (path: string, file: string, ref?: string) => call<string>('fileDataUrl', path, file, ref),
@@ -105,6 +113,7 @@ export const gitApi = {
   init: (parentDir: string, name: string) => call<string>('init', parentDir, name),
 
   mergeState: (path: string) => call<ConflictOpKind | null>('mergeState', path),
+  mergeMessage: (path: string) => call<string>('mergeMessage', path),
   conflictVersions: (path: string, file: string) => call<ConflictVersions>('conflictVersions', path, file),
   resolveConflict: (path: string, file: string, content: string) => call<void>('resolveConflict', path, file, content),
   conflictTakeSide: (path: string, file: string, side: ConflictSide) => call<void>('conflictTakeSide', path, file, side),
@@ -120,12 +129,17 @@ export const settingsApi = {
 export const aiApi = {
   commitMessage: (diff: string, cfg: AIConfig, ctx: { branch: string }) =>
     window.api.ai.commitMessage(diff, cfg, ctx) as Promise<{ summary: string; description: string }>,
-  listModels: (cfg: AIConfig) => window.api.ai.listModels(cfg) as Promise<string[]>
+  listModels: (cfg: AIConfig) => window.api.ai.listModels(cfg) as Promise<string[]>,
+  explainCode: (code: string, lang: string, cfg: AIConfig) =>
+    window.api.ai.explainCode(code, lang, cfg) as Promise<string>,
+  resolveConflict: (file: string, content: string, cfg: AIConfig) =>
+    window.api.ai.resolveConflict(file, content, cfg) as Promise<string>
 }
 
 export const shellApi = {
   revealInFolder: (fullPath: string) => window.api.shell.showItemInFolder(fullPath),
   openPath: (fullPath: string) => window.api.shell.openPath(fullPath),
+  openExternal: (url: string) => window.api.openExternal(url),
   revealLabel:
     window.api.platform === 'darwin'
       ? 'Reveal in Finder'
@@ -137,6 +151,10 @@ export const shellApi = {
 export const hostingApi = {
   listRepos: (provider: RepoHost, token: string, org?: string) =>
     window.api.hosting.listRepos(provider, token, org) as Promise<RemoteRepo[]>,
+  listOwners: (provider: RepoHost, token: string, org?: string) =>
+    window.api.hosting.listOwners(provider, token, org) as Promise<RemoteOwner[]>,
+  createRepo: (provider: RepoHost, token: string, opts: CreateRepoOpts, org?: string) =>
+    window.api.hosting.createRepo(provider, token, opts, org) as Promise<RemoteRepo>,
   listPRs: (remoteUrl: string, tokens: { github?: string; azure?: string }) =>
     window.api.hosting.listPRs(remoteUrl, tokens) as Promise<{ provider: HostingProvider; prs: PullRequest[] }>,
   openCreatePR: (remoteUrl: string, source: string, target: string) =>

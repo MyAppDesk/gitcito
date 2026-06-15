@@ -57,6 +57,13 @@ const en = {
   'conflict.keepTheirs': 'Keep theirs',
   'conflict.deleteFile': 'Delete file',
   'conflict.stageAsIs': 'Stage as-is',
+  'conflict.aiResolve': 'AI resolve',
+  'conflict.aiResolveHint': 'Let the AI propose a merge. Review it in the output before saving — nothing is applied automatically.',
+  'conflict.aiProposed': 'AI proposed a merge — review the output, then save.',
+  'explain.action': 'Explain',
+  'explain.title': 'Explain this file with AI',
+  'explain.heading': 'AI explanation',
+  'explain.empty': 'The AI returned no explanation.',
 
   // Graph
   'graph.loadMore': 'Load more commits…',
@@ -88,6 +95,9 @@ const en = {
   'settings.autoFetchHint': '0 disables automatic background fetching.',
   'settings.confirmForcePush': 'Confirm before force push',
   'settings.confirmForcePushHint': 'Ask for confirmation before any force push.',
+  'settings.mergeCommit': 'Always create a merge commit',
+  'settings.mergeCommitHint':
+    'Force a merge commit even when a fast-forward is possible, so merges show a "Merge branch …" commit.',
 
   // Settings — sidebars
   'settings.profilesHeader': 'PROFILES',
@@ -133,6 +143,10 @@ const en = {
   'settings.customInstructions': 'Custom instructions',
   'settings.customInstructionsPlaceholder':
     'e.g. Always write commit messages in Spanish; keep summary under 50 chars…',
+  'settings.coAuthor': 'Add MyAppDesk as co-author',
+  'settings.coAuthorHint':
+    'Append a Co-authored-by trailer (team@myappdesk.dev) to commits made from gitcito.',
+  'settings.madeBy': 'with ♥ from MyAppDesk',
   'commitStyle.auto': 'Auto — ticket from branch, else conventional',
   'commitStyle.ticket': 'Ticket — “CMS-124: add login form”',
   'commitStyle.conventional': 'Conventional — “feat: add login form”',
@@ -140,6 +154,11 @@ const en = {
   'commitStyle.plain': 'Plain — “add login form”',
 
   // Settings — themes page
+  'settings.appearance': 'Appearance',
+  'settings.appearanceHint': 'Light, dark, or follow the operating system.',
+  'settings.modeLight': 'Light',
+  'settings.modeDark': 'Dark',
+  'settings.modeAuto': 'Auto',
   'settings.appTheme': 'App theme',
   'settings.codeTheme': 'Code theme',
   'settings.createAppTheme': 'Create custom app theme',
@@ -219,6 +238,13 @@ const es: Dict = {
   'conflict.keepTheirs': 'Conservar suyo',
   'conflict.deleteFile': 'Eliminar archivo',
   'conflict.stageAsIs': 'Preparar tal cual',
+  'conflict.aiResolve': 'Resolver con IA',
+  'conflict.aiResolveHint': 'Deja que la IA proponga una fusión. Revísala en el resultado antes de guardar — no se aplica nada automáticamente.',
+  'conflict.aiProposed': 'La IA propuso una fusión — revisa el resultado y guarda.',
+  'explain.action': 'Explicar',
+  'explain.title': 'Explicar este archivo con IA',
+  'explain.heading': 'Explicación de la IA',
+  'explain.empty': 'La IA no devolvió ninguna explicación.',
 
   'graph.loadMore': 'Cargar más commits…',
   'graph.loading': 'Cargando grafo…',
@@ -248,6 +274,9 @@ const es: Dict = {
   'settings.autoFetchHint': '0 desactiva el fetch automático en segundo plano.',
   'settings.confirmForcePush': 'Confirmar antes de force push',
   'settings.confirmForcePushHint': 'Pedir confirmación antes de cualquier force push.',
+  'settings.mergeCommit': 'Crear siempre un commit de merge',
+  'settings.mergeCommitHint':
+    'Forzar un commit de merge aunque sea posible un fast-forward, para que los merges muestren un commit "Merge branch …".',
 
   'settings.profilesHeader': 'PERFILES',
   'settings.sectionsHeader': 'SECCIONES',
@@ -289,12 +318,21 @@ const es: Dict = {
   'settings.customInstructions': 'Instrucciones personalizadas',
   'settings.customInstructionsPlaceholder':
     'p. ej. Escribe siempre los mensajes en español; resumen de menos de 50 caracteres…',
+  'settings.coAuthor': 'Añadir MyAppDesk como coautor',
+  'settings.coAuthorHint':
+    'Añade un trailer Co-authored-by (team@myappdesk.dev) a los commits hechos desde gitcito.',
+  'settings.madeBy': 'con ♥ de MyAppDesk',
   'commitStyle.auto': 'Auto — ticket desde la rama, si no convencional',
   'commitStyle.ticket': 'Ticket — “CMS-124: añadir formulario de login”',
   'commitStyle.conventional': 'Convencional — “feat: añadir formulario de login”',
   'commitStyle.gitmoji': 'Gitmoji — “✨ añadir formulario de login”',
   'commitStyle.plain': 'Simple — “añadir formulario de login”',
 
+  'settings.appearance': 'Apariencia',
+  'settings.appearanceHint': 'Claro, oscuro o seguir el sistema operativo.',
+  'settings.modeLight': 'Claro',
+  'settings.modeDark': 'Oscuro',
+  'settings.modeAuto': 'Auto',
   'settings.appTheme': 'Tema de la app',
   'settings.codeTheme': 'Tema del código',
   'settings.createAppTheme': 'Crear tema de app personalizado',

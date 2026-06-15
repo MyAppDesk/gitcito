@@ -14,6 +14,21 @@ export function TitleBar(): React.JSX.Element {
     openModal({ kind: 'launcher' })
   }
 
+  const confirmCloseGroup = (tab: TabState): void => {
+    if (tab.kind === 'group' && tab.repos.length > 1) {
+      openModal({
+        kind: 'confirm',
+        title: 'Close group',
+        message: `"${tab.name}" has ${tab.repos.length} repositories. Close it?`,
+        danger: true,
+        confirmLabel: 'Close',
+        onConfirm: () => closeTab(tab.id)
+      })
+    } else {
+      closeTab(tab.id)
+    }
+  }
+
   const tabMenu = (tab: TabState): MenuItem[] => {
     const items: MenuItem[] = []
     if (tab.kind === 'group') {
@@ -36,7 +51,7 @@ export function TitleBar(): React.JSX.Element {
           })
       },
       { separator: true },
-      { label: 'Close tab', onClick: () => closeTab(tab.id) }
+      { label: 'Close tab', onClick: () => confirmCloseGroup(tab) }
     )
     return items
   }
@@ -104,7 +119,7 @@ export function TitleBar(): React.JSX.Element {
               className="tab-close"
               onClick={(e) => {
                 e.stopPropagation()
-                closeTab(tab.id)
+                confirmCloseGroup(tab)
               }}
             >
               <X size={12} />

@@ -85,6 +85,10 @@ function isConflictErrorMessage(msg: string): boolean {
   return /\bCONFLICT(S)?\b|Automatic merge failed|after resolving the conflicts|CHERRY_PICK_HEAD/i.test(msg)
 }
 
+function isNonFastForwardError(msg: string): boolean {
+  return /\[rejected\]|non-fast-forward|fetch first|tip of your current branch is behind|Updates were rejected/i.test(msg)
+}
+
 function conflictHint(msg: string): string {
   if (/CHERRY_PICK_HEAD/i.test(msg)) return 'Cherry-pick paused due to conflicts. Resolve files in the Conflicted files panel, then Continue.'
   if (/rebase/i.test(msg)) return 'Rebase paused due to conflicts. Resolve files in the Conflicted files panel, then Continue.'
@@ -226,6 +230,43 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
 
 // ─── Use-cases (application layer) ─────────────────────────────────────────
 
+// Push the branch, surfacing a helpful recovery dialog when the remote rejects
+// a non-force push because it has commits we don't have locally.
+async function runPush(path: string, branch: string, force: boolean): Promise<boolean> {
+  const ui = useUIStore.getState()
+  const label = force ? `Force pushed ${branch}` : `Pushed ${branch}`
+  ui.setBusy(force ? `Force pushing ${branch}` : `Pushing ${branch}`)
+  try {
+    await gitApi.push(path, branch, { force })
+    toast('success', label)
+    return true
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    if (!force && isNonFastForwardError(message)) {
+      useUIStore.getState().openModal({
+        kind: 'confirm',
+        title: 'Push rejected',
+        message: `The remote "${branch}" has commits that you don't have locally, so the push was rejected.\n\nPull the remote changes first (recommended) — this keeps both sets of commits. Force pushing instead overwrites the remote with your local history and can discard others' work.`,
+        confirmLabel: 'Pull (rebase) & push',
+        onConfirm: () => {
+          void repoActions.pull(path, 'rebase').then((ok) => {
+            if (ok) void runPush(path, branch, false)
+          })
+        },
+        secondaryLabel: 'Force push',
+        secondaryDanger: true,
+        onSecondary: () => void runPush(path, branch, true)
+      })
+      return false
+    }
+    toast('error', message)
+    return false
+  } finally {
+    useUIStore.getState().setBusy(null)
+    await useRepoStore.getState().refresh(path)
+  }
+}
+
 export const repoActions = {
   checkout: (path: string, ref: string) => {
     const prev = useRepoStore.getState().repos[path]?.branches.current
@@ -265,14 +306,33 @@ export const repoActions = {
       .getState()
       .run(path, `Deleted ${remote}/${name}`, () => gitApi.deleteRemoteBranch(path, remote, name)),
 
-  addRemote: (path: string, name: string, url: string) =>
+  addRemote: (path: string, name: string, url: string, pushUrl?: string) =>
     useRepoStore.getState().run(path, `Added remote ${name}`, async () => {
-      await gitApi.addRemote(path, name, url)
+      await gitApi.addRemote(path, name, url, pushUrl)
       await gitApi.fetchAll(path)
     }),
 
   removeRemote: (path: string, name: string) =>
     useRepoStore.getState().run(path, `Removed remote ${name}`, () => gitApi.removeRemote(path, name)),
+
+  editRemote: (path: string, oldName: string, newName: string, url: string, pushUrl?: string) =>
+    useRepoStore
+      .getState()
+      .run(path, `Updated remote ${newName || oldName}`, () =>
+        gitApi.editRemote(path, oldName, newName, url, pushUrl)
+      ),
+
+  fetchRemote: (path: string, name: string) =>
+    useRepoStore.getState().run(path, `Fetched ${name}`, () => gitApi.fetchRemote(path, name)),
+
+  // Add a remote, then push the current branch to it (used by the "create remote & push" flow).
+  addRemoteAndPush: (path: string, name: string, url: string, pushUrl?: string) =>
+    useRepoStore.getState().run(path, `Pushed to ${name}`, async () => {
+      await gitApi.addRemote(path, name, url, pushUrl)
+      const branch = useRepoStore.getState().repos[path]?.branches.current
+      if (branch) await gitApi.push(path, branch, { remote: name })
+      await gitApi.fetchAll(path)
+    }),
 
   renameBranch: (path: string, oldName: string, newName: string) =>
     useRepoStore.getState().run(path, `Renamed ${oldName} → ${newName}`, () => gitApi.renameBranch(path, oldName, newName), {
@@ -281,19 +341,25 @@ export const repoActions = {
       redo: () => gitApi.renameBranch(path, oldName, newName)
     }),
 
-  merge: (path: string, ref: string) =>
-    useRepoStore.getState().run(path, `Merged ${ref}`, () => gitApi.merge(path, ref), {
+  merge: (path: string, ref: string) => {
+    const noFf = useSettingsStore.getState().settings.mergeCommit
+    return useRepoStore.getState().run(path, `Merged ${ref}`, () => gitApi.merge(path, ref, noFf), {
       label: `merge ${ref}`,
       undo: () => gitApi.reset(path, 'ORIG_HEAD', 'hard'),
-      redo: () => gitApi.merge(path, ref)
-    }),
+      redo: () => gitApi.merge(path, ref, noFf)
+    })
+  },
 
-  mergeInto: (path: string, source: string, target: string) =>
-    useRepoStore.getState().run(path, `Merged ${source} into ${target}`, () => gitApi.mergeInto(path, source, target), {
-      label: `merge ${source} into ${target}`,
-      undo: () => gitApi.reset(path, 'ORIG_HEAD', 'hard'),
-      redo: () => gitApi.mergeInto(path, source, target)
-    }),
+  mergeInto: (path: string, source: string, target: string) => {
+    const noFf = useSettingsStore.getState().settings.mergeCommit
+    return useRepoStore
+      .getState()
+      .run(path, `Merged ${source} into ${target}`, () => gitApi.mergeInto(path, source, target, noFf), {
+        label: `merge ${source} into ${target}`,
+        undo: () => gitApi.reset(path, 'ORIG_HEAD', 'hard'),
+        redo: () => gitApi.mergeInto(path, source, target, noFf)
+      })
+  },
 
   rebase: (path: string, onto: string) =>
     useRepoStore.getState().run(path, `Rebased onto ${onto}`, () => gitApi.rebase(path, onto), {
@@ -314,11 +380,27 @@ export const repoActions = {
       }),
 
   push: (path: string, force = false) => {
-    const branch = useRepoStore.getState().repos[path]?.branches.current
+    const repo = useRepoStore.getState().repos[path]
+    const branch = repo?.branches.current
     if (!branch) return Promise.resolve(false)
-    return useRepoStore
-      .getState()
-      .run(path, force ? `Force pushed ${branch}` : `Pushed ${branch}`, () => gitApi.push(path, branch, { force }))
+    if (!repo?.remotes.length) {
+      useUIStore.getState().openModal({
+        kind: 'confirm',
+        title: 'No remote',
+        message: 'There are no remotes to push to, would you like to add one?',
+        confirmLabel: 'Yes',
+        onConfirm: () =>
+          useUIStore.getState().openModal({
+            kind: 'addRemote',
+            path,
+            defaultName: 'origin',
+            existingNames: [],
+            matchName: path.split(/[/\\]/).filter(Boolean).pop()
+          })
+      })
+      return Promise.resolve(false)
+    }
+    return runPush(path, branch, force)
   },
 
   stash: (path: string, message?: string) =>

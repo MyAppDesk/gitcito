@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { X, Globe, Github, Gitlab, Cloud, Server, Loader2, Search, Lock, ExternalLink, Plug, FolderGit2, Folder } from 'lucide-react'
+import { X, Globe, Github, Gitlab, Cloud, Server, Loader2, Search, Lock, ExternalLink, Plug, FolderGit2, Folder, Plus, Check } from 'lucide-react'
 import { useUIStore, type ModalSpec } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { hostingApi, gitApi, shellApi } from '../infrastructure/api'
-import type { RemoteRepo, RepoHost } from '../../../shared/types'
+import { repoActions } from '../stores/repo'
+import type { CreateRepoOpts, RemoteOwner, RemoteRepo, RepoHost } from '../../../shared/types'
 import { SettingsPanel } from './SettingsPanel'
 import { LauncherPanel, type LauncherItem } from './Welcome'
 
@@ -110,13 +111,15 @@ function RepoPicker({
   onPick,
   selectedUrl,
   profileId,
-  onProfile
+  onProfile,
+  matchName
 }: {
   host: RepoHost
   onPick: (repo: RemoteRepo) => void
   selectedUrl: string
   profileId: string
   onProfile: (id: string) => void
+  matchName?: string
 }): React.JSX.Element {
   const openModal = useUIStore((s) => s.openModal)
   const closeModal = useUIStore((s) => s.closeModal)
@@ -159,8 +162,18 @@ function RepoPicker({
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
     if (!repos) return []
-    return q ? repos.filter((r) => r.name.toLowerCase().includes(q)) : repos
-  }, [repos, search])
+    const list = q ? repos.filter((r) => r.name.toLowerCase().includes(q)) : [...repos]
+    const m = matchName?.trim().toLowerCase()
+    if (!m) return list
+    // Surface repos matching the local folder name without hiding the rest.
+    const rank = (r: RemoteRepo): number => {
+      const base = r.name.toLowerCase().split('/').pop() ?? r.name.toLowerCase()
+      if (base === m) return 0
+      if (base.includes(m) || m.includes(base)) return 1
+      return 2
+    }
+    return list.sort((a, b) => rank(a) - rank(b))
+  }, [repos, search, matchName])
 
   const profileSelector = profiles.length > 1 && (
     <label className="repo-profile">
@@ -270,33 +283,269 @@ function RepoPicker({
   )
 }
 
+/** Account/org/workspace selector backed by the host's `listOwners` API. */
+function OwnerSelect({
+  host,
+  token,
+  org,
+  value,
+  onChange
+}: {
+  host: RepoHost
+  token: string
+  org?: string
+  value: RemoteOwner | null
+  onChange: (owner: RemoteOwner | null) => void
+}): React.JSX.Element {
+  const [owners, setOwners] = useState<RemoteOwner[] | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    if (host === 'azure' && !org?.trim()) {
+      setOwners(null)
+      return
+    }
+    setLoading(true)
+    setError(null)
+    hostingApi
+      .listOwners(host, token, org)
+      .then((list) => {
+        if (cancelled) return
+        setOwners(list)
+        if (list.length && !value) onChange(list[0])
+      })
+      .catch((e) => !cancelled && setError(e instanceof Error ? e.message : String(e)))
+      .finally(() => !cancelled && setLoading(false))
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [host, token, org])
+
+  if (loading) {
+    return (
+      <div className="repo-list-state">
+        <Loader2 size={14} className="spin" /> Loading accounts…
+      </div>
+    )
+  }
+  if (error) return <div className="modal-hint danger">{error}</div>
+  if (!owners?.length) return <div className="modal-hint">No accounts available.</div>
+
+  const HostIcon = PROVIDER_ICONS[host]
+  return (
+    <div className="owner-select">
+      {value?.avatarUrl ? (
+        <img className="repo-row-avatar" src={value.avatarUrl} alt="" />
+      ) : (
+        <span className="repo-row-avatar fallback">
+          <HostIcon size={13} />
+        </span>
+      )}
+      <select
+        className="modal-input"
+        value={value?.id ?? ''}
+        onChange={(e) => onChange(owners.find((o) => o.id === e.target.value) ?? null)}
+      >
+        {owners.map((o) => (
+          <option key={o.id} value={o.id}>
+            {o.login}
+            {o.type === 'user' ? '' : ' (org)'}
+          </option>
+        ))}
+      </select>
+    </div>
+  )
+}
+
+/** Create-a-new-repo form for a host, with a fallback to attach an existing repo. */
+function ProviderCreateForm({
+  host,
+  spec,
+  profileId,
+  onProfile
+}: {
+  host: RepoHost
+  spec: Extract<ModalSpec, { kind: 'addRemote' }>
+  profileId: string
+  onProfile: (id: string) => void
+}): React.JSX.Element {
+  const closeModal = useUIStore((s) => s.closeModal)
+  const toast = useUIStore((s) => s.toast)
+  const profiles = useSettingsStore((s) => s.settings.profiles)
+  const profile = profiles.find((p) => p.id === profileId) ?? profiles[0]
+  const token = profile[HOST_META[host].tokenField]
+
+  const [mode, setMode] = useState<'create' | 'existing'>('create')
+  const [owner, setOwner] = useState<RemoteOwner | null>(null)
+  const [azureOrg, setAzureOrg] = useState('')
+  const [repoName, setRepoName] = useState(spec.matchName ?? '')
+  const [remoteName, setRemoteName] = useState(spec.defaultName || 'origin')
+  const [description, setDescription] = useState('')
+  const [isPrivate, setIsPrivate] = useState(true)
+  const [busy, setBusy] = useState(false)
+  // existing-repo path
+  const [existingUrl, setExistingUrl] = useState('')
+
+  const duplicate = spec.existingNames.includes(remoteName.trim())
+  const canCreate = !!repoName.trim() && !!remoteName.trim() && !duplicate && !!owner && !busy
+  const canAttach = !!existingUrl.trim() && !!remoteName.trim() && !duplicate && !busy
+
+  const create = async (): Promise<void> => {
+    if (!canCreate || !owner) return
+    setBusy(true)
+    try {
+      const opts: CreateRepoOpts = {
+        owner: host === 'azure' ? owner.id : owner.login,
+        ownerType: owner.type,
+        ownerId: host === 'gitlab' ? owner.id : undefined,
+        project: host === 'azure' ? owner.login : undefined,
+        name: repoName.trim(),
+        description: description.trim() || undefined,
+        private: isPrivate
+      }
+      const repo = await hostingApi.createRepo(host, token, opts, azureOrg)
+      closeModal()
+      await repoActions.addRemoteAndPush(spec.path, remoteName.trim(), repo.url)
+    } catch (e) {
+      setBusy(false)
+      toast('error', e instanceof Error ? e.message : String(e))
+    }
+  }
+
+  const attach = (): void => {
+    if (!canAttach) return
+    closeModal()
+    void repoActions.addRemote(spec.path, remoteName.trim(), existingUrl.trim())
+  }
+
+  const remoteNameField = (
+    <>
+      <label className="modal-label">Remote Name</label>
+      <input
+        className="modal-input"
+        value={remoteName}
+        placeholder="origin"
+        onChange={(e) => setRemoteName(e.target.value)}
+      />
+      {duplicate && <div className="modal-hint danger">A remote named “{remoteName.trim()}” already exists.</div>}
+    </>
+  )
+
+  return (
+    <>
+      <div className="remote-mode-toggle">
+        <button
+          type="button"
+          className={mode === 'create' ? 'active' : ''}
+          onClick={() => setMode('create')}
+        >
+          <Plus size={13} /> Create new
+        </button>
+        <button
+          type="button"
+          className={mode === 'existing' ? 'active' : ''}
+          onClick={() => setMode('existing')}
+        >
+          <Search size={13} /> Use existing
+        </button>
+      </div>
+
+      {mode === 'create' ? (
+        <>
+          {host === 'azure' && (
+            <>
+              <label className="modal-label">Organization</label>
+              <input
+                className="modal-input"
+                value={azureOrg}
+                placeholder="my-azure-org"
+                onChange={(e) => setAzureOrg(e.target.value)}
+              />
+            </>
+          )}
+          <label className="modal-label">{host === 'azure' ? 'Project' : 'Account'}</label>
+          <OwnerSelect host={host} token={token} org={azureOrg} value={owner} onChange={setOwner} />
+
+          <label className="modal-label">Repository Name</label>
+          <input
+            autoFocus
+            className="modal-input"
+            value={repoName}
+            placeholder="my-repo"
+            onChange={(e) => setRepoName(e.target.value)}
+          />
+
+          {remoteNameField}
+
+          <label className="modal-label">Description</label>
+          <input
+            className="modal-input"
+            value={description}
+            placeholder="Optional"
+            onChange={(e) => setDescription(e.target.value)}
+          />
+
+          <label className="modal-label">Access</label>
+          <select className="modal-input" value={isPrivate ? 'private' : 'public'} onChange={(e) => setIsPrivate(e.target.value === 'private')}>
+            <option value="public">Public</option>
+            <option value="private">Private</option>
+          </select>
+
+          <div className="modal-actions">
+            <button className="btn ghost" onClick={closeModal} type="button">
+              Cancel
+            </button>
+            <button className="btn primary" disabled={!canCreate} onClick={() => void create()} type="button">
+              {busy ? <Loader2 size={14} className="spin" /> : 'Create remote and push local refs'}
+            </button>
+          </div>
+        </>
+      ) : (
+        <>
+          <RepoPicker
+            host={host}
+            onPick={(repo) => setExistingUrl(repo.url)}
+            selectedUrl={existingUrl}
+            profileId={profileId}
+            onProfile={onProfile}
+            matchName={spec.matchName}
+          />
+          {remoteNameField}
+          {existingUrl && <div className="modal-hint">{existingUrl}</div>}
+          <div className="modal-actions">
+            <button className="btn ghost" onClick={closeModal} type="button">
+              Cancel
+            </button>
+            <button className="btn primary" disabled={!canAttach} onClick={attach} type="button">
+              Add Remote
+            </button>
+          </div>
+        </>
+      )}
+    </>
+  )
+}
+
 function AddRemoteModal({ spec }: { spec: Extract<ModalSpec, { kind: 'addRemote' }> }): React.JSX.Element {
   const closeModal = useUIStore((s) => s.closeModal)
   const activeProfileId = useSettingsStore((s) => s.settings.activeProfileId)
   const [provider, setProvider] = useState<RemoteProviderId>('url')
   const [profileId, setProfileId] = useState(activeProfileId)
-  const [url, setUrl] = useState('')
-  const [name, setName] = useState(spec.defaultName)
-  const [nameTouched, setNameTouched] = useState(false)
+  // URL-tab state
+  const [name, setName] = useState(spec.defaultName || 'origin')
+  const [pullUrl, setPullUrl] = useState('')
+  const [pushUrl, setPushUrl] = useState('')
 
   const duplicate = spec.existingNames.includes(name.trim())
-  const valid = !!url.trim() && !!name.trim() && !duplicate
+  const urlValid = !!pullUrl.trim() && !!name.trim() && !duplicate
 
-  const changeProvider = (id: RemoteProviderId): void => {
-    setProvider(id)
-    setUrl('')
-    if (!nameTouched) setName(spec.defaultName)
-  }
-
-  const pickRepo = (repo: RemoteRepo): void => {
-    setUrl(repo.url)
-    if (!nameTouched) setName(repoToName(repo))
-  }
-
-  const submit = (): void => {
-    if (!valid) return
+  const submitUrl = (): void => {
+    if (!urlValid) return
     closeModal()
-    spec.onSubmit(name.trim(), url.trim())
+    void repoActions.addRemote(spec.path, name.trim(), pullUrl.trim(), pushUrl.trim() || undefined)
   }
 
   return (
@@ -312,7 +561,7 @@ function AddRemoteModal({ spec }: { spec: Extract<ModalSpec, { kind: 'addRemote'
             <button
               key={p.id}
               className={`remote-tab ${provider === p.id ? 'active' : ''}`}
-              onClick={() => changeProvider(p.id)}
+              onClick={() => setProvider(p.id)}
               type="button"
             >
               <Icon size={20} />
@@ -324,46 +573,96 @@ function AddRemoteModal({ spec }: { spec: Extract<ModalSpec, { kind: 'addRemote'
 
       {provider === 'url' ? (
         <>
-          <label className="modal-label">Remote URL</label>
+          <label className="modal-label">Name</label>
           <input
             autoFocus
             className="modal-input"
-            value={url}
-            placeholder="https://github.com/me/repo.git"
-            onChange={(e) => setUrl(e.target.value)}
+            value={name}
+            placeholder="origin"
+            onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') submit()
+              if (e.key === 'Enter') submitUrl()
               if (e.key === 'Escape') closeModal()
             }}
           />
+          {duplicate && <div className="modal-hint danger">A remote named “{name.trim()}” already exists.</div>}
+          <label className="modal-label">Pull URL</label>
+          <input
+            className="modal-input"
+            value={pullUrl}
+            placeholder="https://github.com/me/repo.git"
+            onChange={(e) => setPullUrl(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') submitUrl()
+              if (e.key === 'Escape') closeModal()
+            }}
+          />
+          <label className="modal-label">Push URL</label>
+          <input
+            className="modal-input"
+            value={pushUrl}
+            placeholder="Leave blank to match the pull URL"
+            onChange={(e) => setPushUrl(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') submitUrl()
+              if (e.key === 'Escape') closeModal()
+            }}
+          />
+          <div className="modal-actions">
+            <button className="btn ghost" onClick={closeModal} type="button">
+              Cancel
+            </button>
+            <button className="btn primary" disabled={!urlValid} onClick={submitUrl} type="button">
+              Add Remote
+            </button>
+          </div>
         </>
       ) : (
-        <RepoPicker host={provider} onPick={pickRepo} selectedUrl={url} profileId={profileId} onProfile={setProfileId} />
+        <ProviderCreateForm host={provider} spec={spec} profileId={profileId} onProfile={setProfileId} />
       )}
+    </>
+  )
+}
 
+function EditRemoteModal({ spec }: { spec: Extract<ModalSpec, { kind: 'editRemote' }> }): React.JSX.Element {
+  const closeModal = useUIStore((s) => s.closeModal)
+  const [name, setName] = useState(spec.name)
+  const [url, setUrl] = useState(spec.url)
+  const [pushUrl, setPushUrl] = useState(spec.pushUrl ?? '')
+
+  const valid = !!name.trim() && !!url.trim()
+  const submit = (): void => {
+    if (!valid) return
+    closeModal()
+    void repoActions.editRemote(spec.path, spec.name, name.trim(), url.trim(), pushUrl.trim() || undefined)
+  }
+
+  return (
+    <>
+      <h3 className="modal-title-row">
+        <Cloud size={17} /> Edit Remote
+      </h3>
       <label className="modal-label">Name</label>
+      <input autoFocus className="modal-input" value={name} onChange={(e) => setName(e.target.value)} />
+      <label className="modal-label">Pull URL</label>
+      <input className="modal-input" value={url} onChange={(e) => setUrl(e.target.value)} />
+      <label className="modal-label">Push URL</label>
       <input
         className="modal-input"
-        value={name}
-        placeholder="origin"
-        onChange={(e) => {
-          setNameTouched(true)
-          setName(e.target.value)
-        }}
+        value={pushUrl}
+        placeholder="Leave blank to match the pull URL"
+        onChange={(e) => setPushUrl(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === 'Enter') submit()
           if (e.key === 'Escape') closeModal()
         }}
       />
-      {duplicate && <div className="modal-hint danger">A remote named “{name.trim()}” already exists.</div>}
-      {provider !== 'url' && url && <div className="modal-hint">{url}</div>}
-
       <div className="modal-actions">
         <button className="btn ghost" onClick={closeModal} type="button">
           Cancel
         </button>
         <button className="btn primary" disabled={!valid} onClick={submit} type="button">
-          Add Remote
+          <Check size={14} /> Save
         </button>
       </div>
     </>
@@ -524,6 +823,17 @@ function ConfirmModal({ spec }: { spec: Extract<ModalSpec, { kind: 'confirm' }> 
         <button className="btn ghost" onClick={closeModal}>
           Cancel
         </button>
+        {spec.secondaryLabel && spec.onSecondary && (
+          <button
+            className={`btn ${spec.secondaryDanger ? 'danger' : 'ghost'}`}
+            onClick={() => {
+              closeModal()
+              spec.onSecondary?.()
+            }}
+          >
+            {spec.secondaryLabel}
+          </button>
+        )}
         <button
           className={`btn ${spec.danger ? 'danger' : 'primary'}`}
           onClick={() => {
@@ -747,6 +1057,7 @@ export function ModalHost(): React.JSX.Element {
             {modal.kind === 'input' && <InputModal spec={modal} />}
             {modal.kind === 'confirm' && <ConfirmModal spec={modal} />}
             {modal.kind === 'addRemote' && <AddRemoteModal spec={modal} />}
+            {modal.kind === 'editRemote' && <EditRemoteModal spec={modal} />}
             {modal.kind === 'clone' && <CloneModal spec={modal} />}
             {modal.kind === 'settings' && <SettingsPanel initialPage={modal.page} />}
             {modal.kind === 'launcher' && <LauncherModal spec={modal} />}

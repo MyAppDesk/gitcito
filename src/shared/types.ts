@@ -421,7 +421,7 @@ export function defaultSettings(): AppSettings {
     commitAvatars: true,
     fileListView: 'path',
     graphColumns: defaultGraphColumns(),
-    autoFetchMinutes: 0,
+    autoFetchMinutes: 5,
     confirmForcePush: true,
     mergeCommit: true,
     sidebarOrder: ['local', 'remotes', 'prs', 'tags', 'stashes', 'worktrees']

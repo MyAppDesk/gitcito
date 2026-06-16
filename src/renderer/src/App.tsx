@@ -192,7 +192,7 @@ export default function App(): React.JSX.Element {
   // so changes made outside the app (editor, terminal) show up immediately.
   useEffect(() => {
     if (!activeRepoPath) return
-    const refresh = (): void => void useRepoStore.getState().refresh(activeRepoPath)
+    const refresh = (): void => void useRepoStore.getState().refresh(activeRepoPath, { light: true })
     const onVisible = (): void => {
       if (document.visibilityState === 'visible') refresh()
     }
@@ -207,7 +207,10 @@ export default function App(): React.JSX.Element {
   // Periodic light refresh of the active repo (status + branches drift).
   useEffect(() => {
     if (!activeRepoPath) return
-    const interval = setInterval(() => void useRepoStore.getState().refresh(activeRepoPath), 20000)
+    const interval = setInterval(
+      () => void useRepoStore.getState().refresh(activeRepoPath, { light: true }),
+      20000
+    )
     return () => clearInterval(interval)
   }, [activeRepoPath])
 

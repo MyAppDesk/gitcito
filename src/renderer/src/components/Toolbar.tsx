@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import {
   Undo2,
   Redo2,
@@ -16,12 +17,30 @@ import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 
+/** Short human-readable "time since" label, e.g. "now", "3m ago", "2h ago". */
+function timeSince(at: number | null): string {
+  if (!at) return 'never'
+  const diff = (Date.now() - at) / 1000
+  if (diff < 10) return 'just now'
+  if (diff < 60) return `${Math.floor(diff)}s ago`
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
+  return `${Math.floor(diff / 86400)}d ago`
+}
+
 export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
   const { undo, redo } = useRepoStore()
   const { openContextMenu, openModal, toggleTerminal, terminalOpen, graphFilter, setGraphFilter, busy } = useUIStore()
   const confirmForcePush = useSettingsStore((s) => s.settings.confirmForcePush)
   const path = repo.path
   const current = repo.branches.locals.find((b) => b.isCurrent)
+
+  // Re-render every 15s so the relative "last fetched / refreshed" labels stay current.
+  const [, setTick] = useState(0)
+  useEffect(() => {
+    const id = setInterval(() => setTick((n) => n + 1), 15000)
+    return () => clearInterval(id)
+  }, [])
 
   const pullMenu = (e: React.MouseEvent): void => {
     e.stopPropagation()
@@ -161,6 +180,10 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
         ) : (
           <span className="repo-indicator">
             {repo.name} <i>·</i> {repo.branches.current || 'no branch'}
+            <i>·</i>
+            <span className="repo-sync-time" title={`Fetched ${timeSince(repo.lastFetchAt)}`}>
+              fetched {timeSince(repo.lastFetchAt)}
+            </span>
           </span>
         )}
       </div>
@@ -176,7 +199,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
         </div>
         <button
           className="tool-btn icon-only"
-          title="Refresh"
+          title={`Refresh (last refreshed ${timeSince(repo.lastRefreshAt)})`}
           onClick={() => void useRepoStore.getState().refresh(path)}
         >
           <RefreshCw size={16} />

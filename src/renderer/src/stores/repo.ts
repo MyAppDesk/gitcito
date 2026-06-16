@@ -44,6 +44,10 @@ export interface RepoData {
   undoStack: UndoEntry[]
   redoStack: UndoEntry[]
   remoteTagNames: string[]
+  /** Epoch ms of the last successful view refresh (local read of repo state). */
+  lastRefreshAt: number | null
+  /** Epoch ms of the last successful network fetch/pull of remotes. */
+  lastFetchAt: number | null
 }
 
 const emptyRepo = (path: string): RepoData => ({
@@ -63,7 +67,9 @@ const emptyRepo = (path: string): RepoData => ({
   maxCount: useSettingsStore.getState().settings.initialCommitCount ?? 400,
   undoStack: [],
   redoStack: [],
-  remoteTagNames: []
+  remoteTagNames: [],
+  lastRefreshAt: null,
+  lastFetchAt: null
 })
 
 interface RepoStoreState {
@@ -72,7 +78,7 @@ interface RepoStoreState {
   drafts: Record<string, string>
 
   ensure(path: string): Promise<void>
-  refresh(path: string): Promise<void>
+  refresh(path: string, opts?: { light?: boolean }): Promise<void>
   patch(path: string, partial: Partial<RepoData>): void
   select(path: string, sel: Selection | null): void
   setDraft(path: string, value: string): void
@@ -117,12 +123,15 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
     await get().refresh(path)
   },
 
-  refresh: async (path) => {
+  refresh: async (path, opts) => {
     const { patch } = get()
     const maxCount = get().repos[path]?.maxCount ?? 400
+    // A "light" refresh skips the (potentially large) commit-log query and only
+    // re-reads cheap local state. Used by the periodic poll and on window focus.
+    const light = opts?.light ?? false
     try {
       const [commits, branches, status, stashes, remotes, mergeState, worktrees] = await Promise.all([
-        gitApi.log(path, maxCount),
+        light ? Promise.resolve(get().repos[path]?.commits ?? []) : gitApi.log(path, maxCount),
         gitApi.branches(path),
         gitApi.status(path),
         gitApi.stashes(path),
@@ -130,7 +139,17 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
         gitApi.mergeState(path),
         gitApi.worktrees(path).catch(() => [])
       ])
-      patch(path, { commits, branches, status, stashes, remotes, mergeState, worktrees, loading: false })
+      patch(path, {
+        commits,
+        branches,
+        status,
+        stashes,
+        remotes,
+        mergeState,
+        worktrees,
+        loading: false,
+        lastRefreshAt: Date.now()
+      })
     } catch (err) {
       patch(path, { loading: false })
       toast('error', err instanceof Error ? err.message : String(err))
@@ -385,16 +404,21 @@ export const repoActions = {
       redo: () => gitApi.rebase(path, onto)
     }),
 
-  fetchAll: (path: string) => useRepoStore.getState().run(path, 'Fetched all remotes', () => gitApi.fetchAll(path)),
+  fetchAll: async (path: string) => {
+    const ok = await useRepoStore.getState().run(path, 'Fetched all remotes', () => gitApi.fetchAll(path))
+    if (ok) useRepoStore.getState().patch(path, { lastFetchAt: Date.now() })
+    return ok
+  },
 
-  pull: (path: string, mode: 'default' | 'ff-only' | 'rebase') =>
-    useRepoStore
-      .getState()
-      .run(path, `Pulled (${mode})`, () => gitApi.pull(path, mode), {
-        label: `pull ${mode}`,
-        undo: () => gitApi.reset(path, 'ORIG_HEAD', 'hard'),
-        redo: () => gitApi.pull(path, mode)
-      }),
+  pull: async (path: string, mode: 'default' | 'ff-only' | 'rebase') => {
+    const ok = await useRepoStore.getState().run(path, `Pulled (${mode})`, () => gitApi.pull(path, mode), {
+      label: `pull ${mode}`,
+      undo: () => gitApi.reset(path, 'ORIG_HEAD', 'hard'),
+      redo: () => gitApi.pull(path, mode)
+    })
+    if (ok) useRepoStore.getState().patch(path, { lastFetchAt: Date.now() })
+    return ok
+  },
 
   push: (path: string, force = false) => {
     const repo = useRepoStore.getState().repos[path]

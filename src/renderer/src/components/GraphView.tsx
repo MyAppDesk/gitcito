@@ -922,17 +922,9 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
             const x = branchCol + Math.min(LEFT_PAD + n.lane * LANE_W, graphCol - ballR - 1)
             const y = n.row * ROW_H + ROW_H / 2
             const color = colorFor(n.color)
-            const hasRefs = buildRefGroups(c.refs, remoteNames).length > 0
-            const connStart = branchCol - 6
             const ghost = preview != null && !preview.hashes.has(c.hash)
             return (
               <div key={c.hash} className={ghost ? 'node-ghost' : undefined}>
-                {hasRefs && branchCol > 0 && x - ballR > connStart && (
-                  <div
-                    className="node-connector"
-                    style={{ left: connStart, width: x - ballR - connStart, top: y, background: color }}
-                  />
-                )}
                 {!isMerge && (
                   <div
                     className="node-ava"
@@ -1007,11 +999,18 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
                   />
                 )
               })()}
-              {branchCol > 0 && groups.length > 0 && (
-                <div className="graph-refs" style={{ width: branchCol }}>
-                  {(() => {
-                    const laneColor = colorFor(layout.nodes.get(c.hash)?.color ?? 0)
-                    return groups.length <= 1 ? (
+              {branchCol > 0 && groups.length > 0 && (() => {
+                const node = layout.nodes.get(c.hash)
+                const laneColor = colorFor(node?.color ?? 0)
+                const isMerge = c.parents.length >= 2
+                const ballR = isMerge ? 6 : AVA / 2
+                const ballX = node
+                  ? branchCol + Math.min(LEFT_PAD + node.lane * LANE_W, graphCol - ballR - 1)
+                  : branchCol
+                const refsWidth = graphCol > 0 ? Math.max(branchCol, ballX - ballR) : branchCol
+                return (
+                  <div className="graph-refs" style={{ width: refsWidth }}>
+                    {groups.length <= 1 ? (
                       groups.map((g) => renderGroup(g, c, laneColor))
                     ) : (
                       <span className="ref-collapsed">
@@ -1021,10 +1020,13 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
                           {groups.slice(1).map((g) => renderGroup(g, c, laneColor))}
                         </div>
                       </span>
-                    )
-                  })()}
-                </div>
-              )}
+                    )}
+                    {graphCol > 0 && node && (
+                      <div className="node-connector" style={{ background: laneColor }} />
+                    )}
+                  </div>
+                )
+              })()}
               {/* Hover hint: a commit with no ref of its own shows the branch
                   that contains it (ghosted) while hovered — purely informational. */}
               {branchCol > 0 && groups.length === 0 && !isWip && !stash && hoverRow === c.hash && branchOf.get(c.hash) && (

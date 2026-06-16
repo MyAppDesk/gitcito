@@ -451,6 +451,10 @@ textarea:focus {
   color: var(--border);
   margin: 0 4px;
 }
+.repo-sync-time {
+  color: var(--text-3, var(--text-2));
+  opacity: 0.75;
+}
 
 .busy-indicator {
   display: flex;
@@ -844,11 +848,26 @@ textarea:focus {
   transition: left 0.15s ease;
 }
 .node-connector {
-  position: absolute;
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  align-self: center;
   height: 2px;
-  transform: translateY(-50%);
   border-radius: 2px;
   opacity: 0.5;
+}
+/* Vertical cap at the badge side so the line reads as |---- rather than a
+   raw cut edge. */
+.node-connector::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 2px;
+  height: 10px;
+  border-radius: 2px;
+  transform: translateY(-50%);
+  background: inherit;
 }
 .ref-check {
   flex-shrink: 0;
@@ -1034,8 +1053,9 @@ textarea:focus {
   border: 1px solid var(--border);
   background: transparent;
   color: var(--text-1);
-  flex: 1;
+  flex: 0 1 auto;
   min-width: 0;
+  max-width: 100%;
   cursor: context-menu;
 }
 .ref-badge .ref-text {
@@ -1057,7 +1077,7 @@ textarea:focus {
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 0 8px;
+  padding: 0 0 0 8px;
   z-index: 3;
 }
 .ref-collapsed {
@@ -1065,7 +1085,8 @@ textarea:focus {
   align-items: center;
   gap: 4px;
   min-width: 0;
-  flex: 1;
+  max-width: 100%;
+  flex: 0 1 auto;
   position: relative;
 }
 .ref-more-chip {

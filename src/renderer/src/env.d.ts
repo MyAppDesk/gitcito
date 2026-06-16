@@ -42,6 +42,10 @@ interface PreloadApi {
     maximize(): void
     close(): void
   }
+  watch: {
+    repo(path: string | null): Promise<void>
+    onChange(cb: (payload: { path: string; light: boolean }) => void): () => void
+  }
 }
 
 declare global {

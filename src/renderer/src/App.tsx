@@ -214,6 +214,23 @@ export default function App(): React.JSX.Element {
     return () => clearInterval(interval)
   }, [activeRepoPath])
 
+  // Near real-time refresh driven by a file system watcher on the repo. The
+  // main process watches the working tree and .git directory and pushes change
+  // events; .git changes (branches/commits/merge) trigger a full refresh while
+  // working-tree edits only need a light (status) refresh.
+  useEffect(() => {
+    if (!activeRepoPath) return
+    void window.api.watch.repo(activeRepoPath)
+    const off = window.api.watch.onChange(({ path, light }) => {
+      if (path !== activeRepoPath) return
+      void useRepoStore.getState().refresh(activeRepoPath, { light })
+    })
+    return () => {
+      off()
+      void window.api.watch.repo(null)
+    }
+  }, [activeRepoPath])
+
   // Optional automatic background fetch of remotes.
   useEffect(() => {
     const minutes = settings.autoFetchMinutes ?? 0

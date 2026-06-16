@@ -42,7 +42,9 @@ const api = {
     generateCodeTheme: (prompt: string, cfg: unknown): Promise<unknown> =>
       ipcRenderer.invoke('ai:generateCodeTheme', prompt, cfg),
     generateBranchName: (description: string, cfg: unknown, ctx: unknown): Promise<unknown> =>
-      ipcRenderer.invoke('ai:generateBranchName', description, cfg, ctx)
+      ipcRenderer.invoke('ai:generateBranchName', description, cfg, ctx),
+    reviewPR: (diff: string, cfg: unknown): Promise<unknown> =>
+      ipcRenderer.invoke('ai:reviewPR', diff, cfg)
   },
 
   hosting: {
@@ -54,6 +56,8 @@ const api = {
       ipcRenderer.invoke('hosting:createRepo', provider, token, opts, org),
     listPRs: (remoteUrl: string, tokens: unknown): Promise<unknown> =>
       ipcRenderer.invoke('hosting:listPRs', remoteUrl, tokens),
+    ciStatuses: (remoteUrl: string, shas: string[], token: string): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:ciStatuses', remoteUrl, shas, token),
     openCreatePR: (remoteUrl: string, source: string, target: string): Promise<boolean> =>
       ipcRenderer.invoke('hosting:openCreatePR', remoteUrl, source, target)
   },

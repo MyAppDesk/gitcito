@@ -37,12 +37,14 @@ interface PreloadApi {
     generateAppTheme(prompt: string, cfg: unknown): Promise<unknown>
     generateCodeTheme(prompt: string, cfg: unknown): Promise<unknown>
     generateBranchName(description: string, cfg: unknown, ctx: unknown): Promise<unknown>
+    reviewPR(diff: string, cfg: unknown): Promise<unknown>
   }
   hosting: {
     listRepos(provider: string, token: string, org?: string): Promise<unknown>
     listOwners(provider: string, token: string, org?: string): Promise<unknown>
     createRepo(provider: string, token: string, opts: unknown, org?: string): Promise<unknown>
     listPRs(remoteUrl: string, tokens: unknown): Promise<unknown>
+    ciStatuses(remoteUrl: string, shas: string[], token: string): Promise<unknown>
     openCreatePR(remoteUrl: string, source: string, target: string): Promise<boolean>
   }
   term: TermApi

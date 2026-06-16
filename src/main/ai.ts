@@ -544,6 +544,32 @@ Rules:
   return result.trim().replace(/^['"`]|['"`]$/g, '').split('\n')[0].trim()
 }
 
+export interface PRReviewResult {
+  summary: string
+  risks: string
+  suggestions: string
+}
+
+async function reviewPR(diff: string, cfg: AIConfig): Promise<PRReviewResult> {
+  const system = `You are an expert software engineer performing a pull request review.
+Analyze the provided git diff and return a structured JSON object with these exact keys:
+- "summary": 2-4 sentences describing what this PR does and its overall quality.
+- "risks": bullet points of potential bugs, security issues, performance concerns, or breaking changes. Use "-" for each bullet. Empty string if none.
+- "suggestions": bullet points of concrete improvement suggestions. Use "-" for each bullet. Empty string if none.
+Reply ONLY with valid JSON: {"summary": "...", "risks": "...", "suggestions": "..."}. No markdown fences.`
+  const out = await chatComplete(cfg, [
+    { role: 'system', content: system },
+    { role: 'user', content: clip(diff, 24000) }
+  ], 0.2)
+  try {
+    const cleaned = out.replace(/^```(json)?/m, '').replace(/```$/m, '').trim()
+    const parsed = JSON.parse(cleaned) as Partial<PRReviewResult>
+    return { summary: parsed.summary ?? '', risks: parsed.risks ?? '', suggestions: parsed.suggestions ?? '' }
+  } catch {
+    return { summary: out.trim(), risks: '', suggestions: '' }
+  }
+}
+
 export function registerAiHandlers(): void {
   ipcMain.handle('ai:commitMessage', (_e, diff: string, cfg: AIConfig, ctx: AICommitContext) =>
     generateCommitMessage(diff, cfg, ctx)
@@ -569,4 +595,5 @@ export function registerAiHandlers(): void {
   ipcMain.handle('ai:generateBranchName', (_e, description: string, cfg: AIConfig, ctx: { username?: string }) =>
     generateBranchName(description, cfg, ctx)
   )
+  ipcMain.handle('ai:reviewPR', (_e, diff: string, cfg: AIConfig) => reviewPR(diff, cfg))
 }

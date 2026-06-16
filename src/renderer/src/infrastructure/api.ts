@@ -1,12 +1,15 @@
 import type {
   BlameLine,
+  BranchCompareResult,
   BranchesPayload,
+  CiStatus,
   ConflictOpKind,
   ConflictSide,
   ConflictVersions,
   FileEntry,
   FileHistoryEntry,
   GraphCommit,
+  RebaseStep,
   RemoteInfo,
   RepoStatus,
   RepoSummary,
@@ -121,7 +124,15 @@ export const gitApi = {
   resolveConflict: (path: string, file: string, content: string) => call<void>('resolveConflict', path, file, content),
   conflictTakeSide: (path: string, file: string, side: ConflictSide) => call<void>('conflictTakeSide', path, file, side),
   conflictOpContinue: (path: string, kind: ConflictOpKind) => call<void>('conflictOpContinue', path, kind),
-  conflictOpAbort: (path: string, kind: ConflictOpKind) => call<void>('conflictOpAbort', path, kind)
+  conflictOpAbort: (path: string, kind: ConflictOpKind) => call<void>('conflictOpAbort', path, kind),
+
+  interactiveRebaseSteps: (path: string, base: string) =>
+    call<{ hash: string; subject: string }[]>('interactiveRebaseSteps', path, base),
+  runInteractiveRebase: (path: string, base: string, steps: RebaseStep[]) =>
+    call<void>('runInteractiveRebase', path, base, steps),
+  stagePatch: (path: string, patch: string) => call<void>('stagePatch', path, patch),
+  compareBranches: (path: string, a: string, b: string) =>
+    call<BranchCompareResult>('compareBranches', path, a, b)
 }
 
 export const settingsApi = {
@@ -166,7 +177,9 @@ export const aiApi = {
   generateCodeTheme: (prompt: string, cfg: AIConfig) =>
     window.api.ai.generateCodeTheme(prompt, cfg) as Promise<{ name: string; light: CodeThemeColors; dark: CodeThemeColors }>,
   generateBranchName: (description: string, cfg: AIConfig, ctx: { username?: string }) =>
-    window.api.ai.generateBranchName(description, cfg, ctx) as Promise<string>
+    window.api.ai.generateBranchName(description, cfg, ctx) as Promise<string>,
+  reviewPR: (diff: string, cfg: AIConfig) =>
+    window.api.ai.reviewPR(diff, cfg) as Promise<{ summary: string; risks: string; suggestions: string }>
 }
 
 export const shellApi = {
@@ -192,6 +205,8 @@ export const hostingApi = {
     window.api.hosting.createRepo(provider, token, opts, org) as Promise<RemoteRepo>,
   listPRs: (remoteUrl: string, tokens: { github?: string; azure?: string }) =>
     window.api.hosting.listPRs(remoteUrl, tokens) as Promise<{ provider: HostingProvider; prs: PullRequest[] }>,
+  ciStatuses: (remoteUrl: string, shas: string[], token: string) =>
+    window.api.hosting.ciStatuses(remoteUrl, shas, token) as Promise<Record<string, CiStatus>>,
   openCreatePR: (remoteUrl: string, source: string, target: string) =>
     window.api.hosting.openCreatePR(remoteUrl, source, target)
 }

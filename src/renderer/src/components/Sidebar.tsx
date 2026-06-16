@@ -18,7 +18,8 @@ import {
   Laptop,
   Plus,
   Lock,
-  ExternalLink
+  ExternalLink,
+  Sparkles
 } from 'lucide-react'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
 import { useUIStore, type MenuItem } from '../stores/ui'
@@ -134,6 +135,8 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   const requestScrollTo = useUIStore((s) => s.requestScrollTo)
   const sidebarOrder = useSettingsStore((s) => s.settings.sidebarOrder)
   const updateSettings = useSettingsStore((s) => s.update)
+  const activeProfile = useSettingsStore((s) => s.activeProfile)
+  const aiEnabled = activeProfile().ai.enabled !== false
   const t = useT()
   const [filter, setFilter] = useState('')
   const [dragId, setDragId] = useState<string | null>(null)
@@ -314,6 +317,11 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       disabled: b.isCurrent,
       onClick: () => void repoActions.rebase(path, b.name)
     },
+    {
+      label: `Compare with ${repo.branches.current}…`,
+      disabled: b.isCurrent,
+      onClick: () => openModal({ kind: 'branch-compare', repoPath: path, branchA: b.name, branchB: repo.branches.current ?? 'HEAD' })
+    },
     { separator: true },
     {
       label: 'Rename…',
@@ -359,6 +367,10 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       onClick: () => void repoActions.checkoutRemote(path, b.fullName, b.name)
     },
     { label: `Merge ${b.fullName} into ${repo.branches.current}`, onClick: () => void repoActions.merge(path, b.fullName) },
+    {
+      label: `Compare with ${repo.branches.current}…`,
+      onClick: () => openModal({ kind: 'branch-compare', repoPath: path, branchA: b.fullName, branchB: repo.branches.current ?? 'HEAD' })
+    },
     { separator: true },
     { label: 'Copy branch name', onClick: () => void navigator.clipboard.writeText(b.fullName) },
     {
@@ -652,6 +664,24 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
             <span className="sb-name">
               #{pr.id} {pr.title}
             </span>
+            {aiEnabled && pr.sourceBranch && pr.targetBranch && (
+              <span
+                className="icon-btn sb-ai-review"
+                title="AI PR review"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  openModal({
+                    kind: 'ai-pr-review',
+                    repoPath: path,
+                    prTitle: pr.title,
+                    sourceBranch: pr.sourceBranch!,
+                    targetBranch: pr.targetBranch!
+                  })
+                }}
+              >
+                <Sparkles size={11} />
+              </span>
+            )}
           </div>
         ))}
       </Section>

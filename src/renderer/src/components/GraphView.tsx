@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Archive, GitCommitHorizontal, Tag, Laptop, Github, Gitlab, Cloud, Server, Check, Settings2, Pencil, Plus, Minus } from 'lucide-react'
-import type { GraphCommit, StashInfo, GraphColumnId, GraphColumns, FileEntry } from '../../../shared/types'
+import { Archive, GitCommitHorizontal, Tag, Laptop, Github, Gitlab, Cloud, Server, Check, Settings2, Pencil, Plus, Minus, CheckCircle2, XCircle, Clock, MinusCircle } from 'lucide-react'
+import type { CiStatus, GraphCommit, StashInfo, GraphColumnId, GraphColumns, FileEntry } from '../../../shared/types'
 import { defaultGraphColumns } from '../../../shared/types'
 import { layoutGraph, colorFor } from '../graph/layout'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
@@ -160,6 +160,17 @@ function edgePath(x1: number, y1: number, x2: number, y2: number): string {
     // Branch edge: straight down in own lane, sharp corner, exit left to parent lane
     return `M ${x1} ${y1} L ${x1} ${y2 - r} Q ${x1} ${y2} ${x1 - r} ${y2} L ${x2} ${y2}`
   }
+}
+
+function CiBadge({ status, onClick }: { status: CiStatus; onClick: () => void }): React.JSX.Element {
+  const { state, jobs } = status
+  const title = jobs.map((j) => `${j.name}: ${j.state}`).join('\n') || state
+  let icon: React.ReactNode
+  if (state === 'success') icon = <CheckCircle2 size={12} className="ci-badge ci-success" />
+  else if (state === 'failure') icon = <XCircle size={12} className="ci-badge ci-failure" />
+  else if (state === 'pending') icon = <Clock size={12} className="ci-badge ci-pending" />
+  else icon = <MinusCircle size={12} className="ci-badge ci-neutral" />
+  return <span title={title} onClick={onClick} style={{ display: 'contents' }}>{icon}</span>
 }
 
 /** Resizable / toggleable column header. */
@@ -443,6 +454,11 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
     if (repo.remotes.length) void repoActions.refreshRemoteTags(repo.path)
   }, [repo.path, repo.remotes])
 
+  // Fetch CI statuses for visible commits (GitHub only, requires token).
+  useEffect(() => {
+    void repoActions.refreshCiStatuses(repo.path)
+  }, [repo.path, repo.commits.length])
+
   // Auto-load more commits when scrolling near the bottom.
   const onScroll = (): void => {
     if (!autoLoadOnScroll) return
@@ -520,7 +536,18 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
     },
     { separator: true },
     { label: 'Copy SHA', onClick: () => void navigator.clipboard.writeText(c.hash) },
-    { label: 'Copy commit message', onClick: () => void navigator.clipboard.writeText(c.subject) }
+    { label: 'Copy commit message', onClick: () => void navigator.clipboard.writeText(c.subject) },
+    { separator: true },
+    {
+      label: 'Interactive rebase from here…',
+      onClick: () =>
+        openModal({
+          kind: 'interactive-rebase',
+          repoPath: repo.path,
+          base: c.hash,
+          baseSubject: c.subject
+        })
+    }
     ]
   }
 
@@ -1111,6 +1138,16 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
                 <span className="row-sha" style={{ flex: `0 0 ${columns.sha.width}px`, width: columns.sha.width }}>
                   {isWip ? '' : stash ? stash.sha.slice(0, 7) : c.hash.slice(0, 7)}
                 </span>
+              )}
+              {!isWip && !stash && repo.ciStatuses[c.hash] && (
+                <CiBadge
+                  status={repo.ciStatuses[c.hash]}
+                  onClick={() => {
+                    const jobs = repo.ciStatuses[c.hash]?.jobs ?? []
+                    const first = jobs.find((j) => j.url)
+                    if (first?.url) void window.api.openExternal(first.url)
+                  }}
+                />
               )}
             </div>
           )

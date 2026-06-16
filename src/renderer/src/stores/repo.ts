@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type {
   BranchesPayload,
+  CiStatus,
   ConflictOpKind,
   ConflictSide,
   GraphCommit,
@@ -48,6 +49,7 @@ export interface RepoData {
   lastRefreshAt: number | null
   /** Epoch ms of the last successful network fetch/pull of remotes. */
   lastFetchAt: number | null
+  ciStatuses: Record<string, CiStatus>
 }
 
 const emptyRepo = (path: string): RepoData => ({
@@ -69,7 +71,8 @@ const emptyRepo = (path: string): RepoData => ({
   redoStack: [],
   remoteTagNames: [],
   lastRefreshAt: null,
-  lastFetchAt: null
+  lastFetchAt: null,
+  ciStatuses: {}
 })
 
 interface RepoStoreState {
@@ -85,6 +88,7 @@ interface RepoStoreState {
   loadMore(path: string): void
   refreshPRs(path: string): Promise<void>
   refreshRemoteTags(path: string): Promise<void>
+  refreshCiStatuses(path: string): Promise<void>
 
   run(path: string, label: string, fn: () => Promise<void>, undoEntry?: UndoEntry): Promise<boolean>
   undo(path: string): Promise<void>
@@ -172,6 +176,22 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
     if (!remote) return
     const names = await gitApi.getRemoteTags(path, remote).catch(() => [])
     get().patch(path, { remoteTagNames: names })
+  },
+
+  refreshCiStatuses: async (path) => {
+    const repo = get().repos[path]
+    const origin = repo?.remotes.find((r) => r.name === 'origin') ?? repo?.remotes[0]
+    if (!origin) return
+    const profile = useSettingsStore.getState().activeProfile()
+    const token = profile.githubToken
+    if (!token) return
+    const shas = (repo?.commits ?? []).slice(0, 40).map((c) => c.hash)
+    if (!shas.length) return
+    const existing = repo?.ciStatuses ?? {}
+    const toFetch = shas.filter((sha) => !existing[sha])
+    if (!toFetch.length) return
+    const fresh = await hostingApi.ciStatuses(origin.url, toFetch, token).catch(() => ({}))
+    get().patch(path, { ciStatuses: { ...existing, ...fresh } })
   },
 
   refreshPRs: async (path) => {
@@ -538,6 +558,7 @@ export const repoActions = {
     useRepoStore.getState().run(path, `Deleted tag ${name} from ${remote}`, () => gitApi.deleteRemoteTag(path, name, remote)),
 
   refreshRemoteTags: (path: string) => useRepoStore.getState().refreshRemoteTags(path),
+  refreshCiStatuses: (path: string) => useRepoStore.getState().refreshCiStatuses(path),
 
   stage: (path: string, files: string[]) =>
     useRepoStore.getState().run(path, `Staged ${files.length} file(s)`, () => gitApi.stage(path, files)),

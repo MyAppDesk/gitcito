@@ -1,5 +1,8 @@
 import { ipcMain, shell } from 'electron'
 import type {
+  CiJob,
+  CiState,
+  CiStatus,
   CreateRepoOpts,
   HostingProvider,
   PullRequest,
@@ -361,6 +364,61 @@ async function createRepository(
   return { name: `${repo.project.name}/${repo.name}`, url: repo.remoteUrl }
 }
 
+function ghCiState(conclusion: string | null, status: string): CiState {
+  if (status !== 'completed') return 'pending'
+  if (conclusion === 'success') return 'success'
+  if (conclusion === 'neutral' || conclusion === 'skipped') return 'neutral'
+  return 'failure'
+}
+
+async function fetchCiStatuses(
+  remoteUrl: string,
+  shas: string[],
+  token: string
+): Promise<Record<string, CiStatus>> {
+  const parsed = parseRemoteUrl(remoteUrl)
+  if (!parsed || parsed.provider !== 'github' || !token) return {}
+
+  const result: Record<string, CiStatus> = {}
+  const headers: Record<string, string> = {
+    Accept: 'application/vnd.github+json',
+    Authorization: `Bearer ${token}`
+  }
+
+  await Promise.all(
+    shas.slice(0, 40).map(async (sha) => {
+      try {
+        const res = await fetch(
+          `https://api.github.com/repos/${parsed.owner}/${parsed.repo}/commits/${sha}/check-runs?per_page=30`,
+          { headers }
+        )
+        if (!res.ok) return
+        const data = (await res.json()) as {
+          check_runs: Array<{ name: string; status: string; conclusion: string | null; html_url: string }>
+        }
+        const runs = data.check_runs ?? []
+        if (!runs.length) return
+        const jobs: CiJob[] = runs.map((r) => ({
+          name: r.name,
+          state: ghCiState(r.conclusion, r.status),
+          url: r.html_url
+        }))
+        const overallState: CiState = jobs.some((j) => j.state === 'failure')
+          ? 'failure'
+          : jobs.some((j) => j.state === 'pending')
+            ? 'pending'
+            : jobs.every((j) => j.state === 'neutral')
+              ? 'neutral'
+              : 'success'
+        result[sha] = { state: overallState, jobs }
+      } catch {
+        /* skip failed SHA */
+      }
+    })
+  )
+  return result
+}
+
 export function registerHostingHandlers(): void {
   ipcMain.handle('hosting:listRepos', (_e, provider: RepoHost, token: string, org?: string) =>
     listRepositories(provider, token, org)
@@ -373,6 +431,9 @@ export function registerHostingHandlers(): void {
   )
   ipcMain.handle('hosting:listPRs', (_e, remoteUrl: string, tokens: { github?: string; azure?: string }) =>
     listPullRequests(remoteUrl, tokens)
+  )
+  ipcMain.handle('hosting:ciStatuses', (_e, remoteUrl: string, shas: string[], token: string) =>
+    fetchCiStatuses(remoteUrl, shas, token)
   )
   ipcMain.handle('hosting:openCreatePR', (_e, remoteUrl: string, source: string, target: string) => {
     const url = createPullRequestUrl(remoteUrl, source, target)

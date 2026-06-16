@@ -63,6 +63,9 @@ export type ModalSpec =
   | { kind: 'launcher'; groupId?: string }
   | { kind: 'create-repo'; onCreate: (repo: { path: string; name: string }) => void }
   | { kind: 'ai-config-wizard'; repoPath: string; repoName: string }
+  | { kind: 'interactive-rebase'; repoPath: string; base: string; baseSubject: string }
+  | { kind: 'branch-compare'; repoPath: string; branchA: string; branchB: string }
+  | { kind: 'ai-pr-review'; repoPath: string; prTitle: string; sourceBranch: string; targetBranch: string }
 
 export type FileViewSource =
   | { type: 'wip'; staged: boolean; untracked: boolean }

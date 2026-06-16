@@ -1,11 +1,13 @@
 import { ipcMain } from 'electron'
 import { simpleGit, SimpleGit } from 'simple-git'
 import { basename, join } from 'path'
-import { readFile, writeFile } from 'fs/promises'
+import { readFile, writeFile, unlink } from 'fs/promises'
+import { tmpdir } from 'os'
 import { existsSync } from 'fs'
 import { spawn } from 'child_process'
 import type {
   BlameLine,
+  BranchCompareResult,
   ConflictSide,
   BranchesPayload,
   BranchInfo,
@@ -19,6 +21,7 @@ import type {
   RemoteInfo,
   RepoStatus,
   RepoSummary,
+  RebaseStep,
   StashInfo,
   TagInfo,
   WorktreeInfo
@@ -862,6 +865,90 @@ export const gitService = {
     await mkdir(target, { recursive: true })
     await simpleGit(target).init()
     return target
+  },
+
+  // ─── Interactive rebase ────────────────────────────────────────────────────
+
+  async interactiveRebaseSteps(repoPath: string, base: string): Promise<{ hash: string; subject: string }[]> {
+    const out = await gitFor(repoPath)
+      .raw(['log', '--reverse', `${base}..HEAD`, `--format=%H${SEP}%s`])
+      .catch(() => '')
+    return out
+      .split('\n')
+      .filter(Boolean)
+      .map((line) => {
+        const idx = line.indexOf(SEP)
+        return { hash: line.slice(0, idx), subject: line.slice(idx + 1) }
+      })
+  },
+
+  async runInteractiveRebase(repoPath: string, base: string, steps: RebaseStep[]): Promise<void> {
+    const tmpTodo = join(tmpdir(), `gitcito-rebase-${Date.now()}.txt`)
+    const lines: string[] = []
+    for (const s of steps) {
+      if (s.action === 'drop') {
+        lines.push(`drop ${s.hash.slice(0, 7)} ${s.subject}`)
+      } else if (s.action === 'reword' && s.newMessage) {
+        lines.push(`pick ${s.hash.slice(0, 7)} ${s.subject}`)
+        const escaped = s.newMessage.replace(/\\/g, '\\\\').replace(/'/g, "'\\''")
+        lines.push(`exec git commit --amend -m '${escaped}'`)
+      } else {
+        lines.push(`${s.action} ${s.hash.slice(0, 7)} ${s.subject}`)
+      }
+    }
+    await writeFile(tmpTodo, lines.join('\n') + '\n', 'utf-8')
+    try {
+      await simpleGit(repoPath)
+        .env({ ...process.env, GIT_SEQUENCE_EDITOR: `cp ${JSON.stringify(tmpTodo)}`, GIT_EDITOR: 'true' })
+        .raw(['rebase', '-i', base])
+    } finally {
+      await unlink(tmpTodo).catch(() => {})
+    }
+  },
+
+  // ─── Patch staging ─────────────────────────────────────────────────────────
+
+  async stagePatch(repoPath: string, patch: string): Promise<void> {
+    const tmpPatch = join(tmpdir(), `gitcito-patch-${Date.now()}.patch`)
+    await writeFile(tmpPatch, patch, 'utf-8')
+    try {
+      await gitFor(repoPath).raw(['apply', '--cached', tmpPatch])
+    } finally {
+      await unlink(tmpPatch).catch(() => {})
+    }
+  },
+
+  // ─── Branch comparison ─────────────────────────────────────────────────────
+
+  async compareBranches(repoPath: string, a: string, b: string): Promise<BranchCompareResult> {
+    const git = gitFor(repoPath)
+    const parseLog = async (range: string): Promise<GraphCommit[]> => {
+      const out = await git
+        .raw(['log', range, `--pretty=format:%H${SEP}%P${SEP}%an${SEP}%ae${SEP}%at${SEP}%D${SEP}%s${REC}`])
+        .catch(() => '')
+      return out
+        .split(REC)
+        .map((r) => r.trim())
+        .filter(Boolean)
+        .map((rec) => {
+          const [hash, parents, author, email, date, refs, subject] = rec.split(SEP)
+          return {
+            hash,
+            parents: parents ? parents.split(' ').filter(Boolean) : [],
+            author,
+            email,
+            date: +date,
+            refs: refs ? refs.split(',').map((s) => s.trim()).filter(Boolean) : [],
+            subject: subject ?? ''
+          }
+        })
+    }
+    const [aheadCommits, behindCommits, diff] = await Promise.all([
+      parseLog(`${b}..${a}`),
+      parseLog(`${a}..${b}`),
+      git.raw(['diff', `${b}...${a}`]).catch(() => '')
+    ])
+    return { aheadCommits, behindCommits, diff }
   },
 
   async version(): Promise<string> {

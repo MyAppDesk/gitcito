@@ -6,6 +6,7 @@ interface DiffLine {
   text: string
   oldNo: number | null
   newNo: number | null
+  hunkIdx: number
 }
 
 function escapeHtml(text: string): string {
@@ -25,6 +26,7 @@ function parseDiff(diff: string): DiffLine[] {
   const out: DiffLine[] = []
   let oldNo = 0
   let newNo = 0
+  let hunkIdx = -1
   for (const line of diff.split('\n')) {
     if (line.startsWith('@@')) {
       const m = /@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/.exec(line)
@@ -32,22 +34,53 @@ function parseDiff(diff: string): DiffLine[] {
         oldNo = +m[1]
         newNo = +m[2]
       }
-      out.push({ kind: 'hunk', text: line, oldNo: null, newNo: null })
+      hunkIdx++
+      out.push({ kind: 'hunk', text: line, oldNo: null, newNo: null, hunkIdx })
     } else if (line.startsWith('+++') || line.startsWith('---') || line.startsWith('diff ') || line.startsWith('index ')) {
-      out.push({ kind: 'meta', text: line, oldNo: null, newNo: null })
+      out.push({ kind: 'meta', text: line, oldNo: null, newNo: null, hunkIdx })
     } else if (line.startsWith('+')) {
-      out.push({ kind: 'add', text: line.slice(1), oldNo: null, newNo: newNo++ })
+      out.push({ kind: 'add', text: line.slice(1), oldNo: null, newNo: newNo++, hunkIdx })
     } else if (line.startsWith('-')) {
-      out.push({ kind: 'del', text: line.slice(1), oldNo: oldNo++, newNo: null })
+      out.push({ kind: 'del', text: line.slice(1), oldNo: oldNo++, newNo: null, hunkIdx })
     } else {
-      out.push({ kind: 'ctx', text: line.startsWith(' ') ? line.slice(1) : line, oldNo: oldNo++, newNo: newNo++ })
+      out.push({ kind: 'ctx', text: line.startsWith(' ') ? line.slice(1) : line, oldNo: oldNo++, newNo: newNo++, hunkIdx })
     }
   }
   return out
 }
 
-export function DiffViewer({ diff, lang = '' }: { diff: string; lang?: string }): React.JSX.Element {
+function extractHunks(diff: string): { header: string; hunks: string[] } {
+  const rawLines = diff.split('\n')
+  const headerLines: string[] = []
+  const hunks: string[] = []
+  let currentHunk: string[] | null = null
+
+  for (const line of rawLines) {
+    if (line.startsWith('@@')) {
+      if (currentHunk) hunks.push(currentHunk.join('\n'))
+      currentHunk = [line]
+    } else if (currentHunk !== null) {
+      currentHunk.push(line)
+    } else {
+      headerLines.push(line)
+    }
+  }
+  if (currentHunk) hunks.push(currentHunk.join('\n'))
+
+  return { header: headerLines.join('\n'), hunks }
+}
+
+export function DiffViewer({
+  diff,
+  lang = '',
+  onStageHunk
+}: {
+  diff: string
+  lang?: string
+  onStageHunk?: (patch: string) => void
+}): React.JSX.Element {
   const lines = useMemo(() => parseDiff(diff), [diff])
+  const hunkData = useMemo(() => (onStageHunk ? extractHunks(diff) : null), [diff, onStageHunk])
 
   if (!diff.trim()) return <div className="diff-empty">No changes to display</div>
 
@@ -61,6 +94,17 @@ export function DiffViewer({ diff, lang = '' }: { diff: string; lang?: string })
               <span className="diff-gutter" />
               <span className="diff-gutter" />
               <span className="diff-text">{l.text}</span>
+              {onStageHunk && hunkData && (
+                <button
+                  className="btn ghost tiny diff-stage-hunk"
+                  onClick={() => {
+                    const patch = `${hunkData.header}\n${hunkData.hunks[l.hunkIdx] ?? ''}\n`
+                    onStageHunk(patch)
+                  }}
+                >
+                  Stage hunk
+                </button>
+              )}
             </div>
           )
         }

@@ -307,7 +307,22 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
         )}
 
         {!error && content !== null && imgDiff === null && mode === 'diff' && (
-          <DiffViewer diff={content} lang={lang} />
+          <DiffViewer
+            diff={content}
+            lang={lang}
+            onStageHunk={
+              source.type === 'wip' && !source.staged && !source.untracked
+                ? async (patch) => {
+                    try {
+                      await gitApi.stagePatch(repoPath, patch)
+                      setRefreshKey((k) => k + 1)
+                    } catch (err) {
+                      toast('error', err instanceof Error ? err.message : String(err))
+                    }
+                  }
+                : undefined
+            }
+          />
         )}
 
         {!error && imageUrl !== null && mode === 'file' && (

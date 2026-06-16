@@ -9,6 +9,9 @@ import type { CreateRepoOpts, RemoteOwner, RemoteRepo, RepoHost } from '../../..
 import { SettingsPanel } from './SettingsPanel'
 import { LauncherPanel, type LauncherItem } from './Welcome'
 import { AIConfigWizard } from './AIConfigWizard'
+import { InteractiveRebase } from './InteractiveRebase'
+import { BranchComparison } from './BranchComparison'
+import { AIPRReview } from './AIPRReview'
 
 function InputModal({ spec }: { spec: Extract<ModalSpec, { kind: 'input' }> }): React.JSX.Element {
   const closeModal = useUIStore((s) => s.closeModal)
@@ -1121,7 +1124,13 @@ export function ModalHost(): React.JSX.Element {
           }}
         >
           <motion.div
-            className={`modal ${modal.kind === 'settings' || modal.kind === 'ai-config-wizard' ? 'modal-wide' : ''}`}
+            className={`modal ${
+              modal.kind === 'settings' || modal.kind === 'ai-config-wizard'
+                ? 'modal-wide'
+                : modal.kind === 'interactive-rebase' || modal.kind === 'branch-compare' || modal.kind === 'ai-pr-review'
+                  ? 'modal-tall'
+                  : ''
+            }`}
             initial={{ opacity: 0, scale: 0.94, y: 16 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 8 }}
@@ -1140,6 +1149,15 @@ export function ModalHost(): React.JSX.Element {
             {modal.kind === 'launcher' && <LauncherModal spec={modal} />}
             {modal.kind === 'create-repo' && <CreateRepoModal spec={modal} />}
             {modal.kind === 'ai-config-wizard' && <AIConfigWizard spec={modal} />}
+            {modal.kind === 'interactive-rebase' && (
+              <InteractiveRebase repoPath={modal.repoPath} base={modal.base} baseSubject={modal.baseSubject} />
+            )}
+            {modal.kind === 'branch-compare' && (
+              <BranchComparison repoPath={modal.repoPath} branchA={modal.branchA} branchB={modal.branchB} />
+            )}
+            {modal.kind === 'ai-pr-review' && (
+              <AIPRReview repoPath={modal.repoPath} prTitle={modal.prTitle} sourceBranch={modal.sourceBranch} targetBranch={modal.targetBranch} />
+            )}
           </motion.div>
         </motion.div>
       )}

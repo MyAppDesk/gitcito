@@ -147,6 +147,32 @@ export interface FileHistoryEntry {
   subject: string
 }
 
+export interface RebaseStep {
+  action: 'pick' | 'squash' | 'fixup' | 'drop' | 'reword'
+  hash: string
+  subject: string
+  newMessage?: string
+}
+
+export type CiState = 'success' | 'failure' | 'pending' | 'neutral'
+
+export interface CiJob {
+  name: string
+  state: CiState
+  url?: string
+}
+
+export interface CiStatus {
+  state: CiState
+  jobs: CiJob[]
+}
+
+export interface BranchCompareResult {
+  aheadCommits: GraphCommit[]
+  behindCommits: GraphCommit[]
+  diff: string
+}
+
 export interface WorktreeInfo {
   path: string
   branch: string | null

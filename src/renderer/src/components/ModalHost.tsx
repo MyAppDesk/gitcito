@@ -48,6 +48,41 @@ function InputModal({ spec }: { spec: Extract<ModalSpec, { kind: 'input' }> }): 
   )
 }
 
+function CreateBranchModal({ spec }: { spec: Extract<ModalSpec, { kind: 'create-branch' }> }): React.JSX.Element {
+  const closeModal = useUIStore((s) => s.closeModal)
+  const [name, setName] = useState('')
+
+  const submit = (): void => {
+    if (!name.trim()) return
+    closeModal()
+    void repoActions.createBranch(spec.path, name.trim())
+  }
+
+  return (
+    <>
+      <h3>Create branch</h3>
+      <label className="modal-label">
+        {spec.currentBranch ? `Branch from ${spec.currentBranch}` : 'Branch name'}
+      </label>
+      <input
+        autoFocus
+        className="modal-input"
+        value={name}
+        placeholder="feature/my-branch"
+        onChange={(e) => setName(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') submit()
+          if (e.key === 'Escape') closeModal()
+        }}
+      />
+      <div className="modal-actions">
+        <button className="btn ghost" onClick={closeModal}>Cancel</button>
+        <button className="btn primary" disabled={!name.trim()} onClick={submit}>Create & checkout</button>
+      </div>
+    </>
+  )
+}
+
 const REMOTE_PROVIDERS = [
   { id: 'url', label: 'URL' },
   { id: 'github', label: 'GitHub' },
@@ -1096,6 +1131,7 @@ export function ModalHost(): React.JSX.Element {
               <X size={15} />
             </button>
             {modal.kind === 'input' && <InputModal spec={modal} />}
+            {modal.kind === 'create-branch' && <CreateBranchModal spec={modal} />}
             {modal.kind === 'confirm' && <ConfirmModal spec={modal} />}
             {modal.kind === 'addRemote' && <AddRemoteModal spec={modal} />}
             {modal.kind === 'editRemote' && <EditRemoteModal spec={modal} />}

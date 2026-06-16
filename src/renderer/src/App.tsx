@@ -20,6 +20,7 @@ import { ContextMenu } from './components/ContextMenu'
 import { ModalHost } from './components/ModalHost'
 import { Toasts } from './components/Toasts'
 import { Welcome, LauncherPanel, type LauncherItem } from './components/Welcome'
+import { OnboardingWizard } from './components/OnboardingWizard'
 import { ResizeHandle } from './components/ResizeHandle'
 import gitcitoLaunch from './assets/gitcito-launch.png'
 
@@ -253,6 +254,8 @@ export default function App(): React.JSX.Element {
   return (
     <div className="app">
       <TitleBar />
+
+      {!settings.onboardingCompleted && <OnboardingWizard />}
 
       {!activeTab && <Welcome />}
       {activeTab && activeTab.kind === 'group' && !repo && <GroupView tab={activeTab} />}

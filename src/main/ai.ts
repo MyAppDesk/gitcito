@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron'
-import type { AIConfig, ConflictStyle, ExplainStyle } from '../shared/types'
+import type { AIConfig, AppThemeColors, BranchNamingStyle, CodeThemeColors, ConflictStyle, ExplainStyle } from '../shared/types'
 
 export interface AICommitMessage {
   summary: string
@@ -415,6 +415,135 @@ Suggest additional configuration files that would be valuable for this project.`
   }
 }
 
+async function generateAppTheme(
+  prompt: string,
+  cfg: AIConfig
+): Promise<{ name: string; light: AppThemeColors; dark: AppThemeColors }> {
+  const system = `You are a UI color palette expert. Generate a complete app color theme with DISTINCT light and dark variants.
+
+Reply ONLY with valid JSON (no markdown fences):
+{
+  "name": "Theme Name",
+  "light": { "bg0":"#hex","bg1":"#hex","bg2":"#hex","bg3":"#hex","bg4":"#hex","border":"#hex","borderSoft":"#hex","text0":"#hex","text1":"#hex","text2":"#hex","accent":"#hex","green":"#hex","red":"#hex","yellow":"#hex","purple":"#hex" },
+  "dark":  { "bg0":"#hex","bg1":"#hex","bg2":"#hex","bg3":"#hex","bg4":"#hex","border":"#hex","borderSoft":"#hex","text0":"#hex","text1":"#hex","text2":"#hex","accent":"#hex","green":"#hex","red":"#hex","yellow":"#hex","purple":"#hex" }
+}
+
+LIGHT mode rules (bg values must be LIGHT, text must be DARK):
+- bg0: the main window background — very light (e.g. #f5f5f5, #ffffff, #f0ebe3). Luminance > 85%.
+- bg1–bg4: progressively slightly darker panels/surfaces, still clearly light
+- text0: near-black or very dark (e.g. #1a1a1a, #111827). Luminance < 20%.
+- text1: medium dark (e.g. #374151). text2: muted (e.g. #6b7280)
+- border: subtle light gray (e.g. #e5e7eb). borderSoft: even subtler (e.g. #f0f0f0)
+
+DARK mode rules (bg values must be DARK, text must be LIGHT):
+- bg0: the main window background — very dark (e.g. #0f1117, #1a1a2e, #1e1e1e). Luminance < 15%.
+- bg1–bg4: progressively slightly lighter dark panels, but still clearly dark
+- text0: near-white or very light (e.g. #f0f0f0, #e2e8f0). Luminance > 85%.
+- text1: lighter gray (e.g. #94a3b8). text2: muted (e.g. #64748b)
+- border: dark gray (e.g. #2d2d2d). borderSoft: subtler dark (e.g. #252525)
+
+Shared rules:
+- accent: the theme's signature color (buttons, links, highlights) — keep hue consistent across both modes, adjust lightness
+- green/red/yellow/purple: semantic status colors — keep recognizable in both modes
+- bg0 in light and bg0 in dark must look COMPLETELY DIFFERENT — one clearly light, one clearly dark
+- All values must be valid 6-digit hex colors`
+
+  const response = await chatComplete(cfg, [
+    { role: 'system', content: system },
+    { role: 'user', content: `Theme description: ${prompt}` }
+  ], 0.7)
+
+  try {
+    const cleaned = response.replace(/^```(json)?/m, '').replace(/```$/m, '').trim()
+    const parsed = JSON.parse(cleaned) as { name?: string; light?: AppThemeColors; dark?: AppThemeColors }
+    if (!parsed.name || !parsed.light || !parsed.dark) throw new Error('incomplete response')
+    return { name: parsed.name, light: parsed.light, dark: parsed.dark }
+  } catch {
+    throw new Error('AI returned an invalid theme. Try again with a different description.')
+  }
+}
+
+async function generateCodeTheme(
+  prompt: string,
+  cfg: AIConfig
+): Promise<{ name: string; light: CodeThemeColors; dark: CodeThemeColors }> {
+  const system = `You are a syntax highlighting color theme expert. Generate a complete code editor theme with DISTINCT light and dark variants.
+
+Reply ONLY with valid JSON (no markdown fences):
+{
+  "name": "Theme Name",
+  "light": { "bg":"#hex","text":"#hex","comment":"#hex","keyword":"#hex","string":"#hex","number":"#hex","function":"#hex","title":"#hex","variable":"#hex","type":"#hex","builtin":"#hex","attr":"#hex","tag":"#hex","operator":"#hex","meta":"#hex" },
+  "dark":  { "bg":"#hex","text":"#hex","comment":"#hex","keyword":"#hex","string":"#hex","number":"#hex","function":"#hex","title":"#hex","variable":"#hex","type":"#hex","builtin":"#hex","attr":"#hex","tag":"#hex","operator":"#hex","meta":"#hex" }
+}
+
+LIGHT mode rules (editor background must be LIGHT):
+- bg: very light editor background (e.g. #ffffff, #fafafa, #f8f4f0). Luminance > 90%.
+- text: near-black default code color (e.g. #1a1a1a, #24292e). High contrast on light bg.
+- comment: muted medium tone (e.g. #6a737d, #998866) — readable but de-emphasized
+- All token colors must be dark enough to read clearly on the light bg
+
+DARK mode rules (editor background must be DARK):
+- bg: very dark editor background (e.g. #1e1e1e, #0d1117, #1a1b26). Luminance < 15%.
+- text: light default code color (e.g. #d4d4d4, #abb2bf). High contrast on dark bg.
+- comment: muted mid-tone (e.g. #6a737d, #5c6370) — readable but de-emphasized
+- All token colors must be light enough to read clearly on the dark bg
+
+Shared rules:
+- bg in light and bg in dark must look COMPLETELY DIFFERENT — one clearly light, one clearly dark
+- Each token type should use a distinct hue to maximize visual differentiation
+- Keep keyword/string/function hues thematically consistent with the prompt's color palette
+- All values must be valid 6-digit hex colors`
+
+  const response = await chatComplete(cfg, [
+    { role: 'system', content: system },
+    { role: 'user', content: `Theme description: ${prompt}` }
+  ], 0.7)
+
+  try {
+    const cleaned = response.replace(/^```(json)?/m, '').replace(/```$/m, '').trim()
+    const parsed = JSON.parse(cleaned) as { name?: string; light?: CodeThemeColors; dark?: CodeThemeColors }
+    if (!parsed.name || !parsed.light || !parsed.dark) throw new Error('incomplete response')
+    return { name: parsed.name, light: parsed.light, dark: parsed.dark }
+  } catch {
+    throw new Error('AI returned an invalid theme. Try again with a different description.')
+  }
+}
+
+function branchStyleGuidance(style: BranchNamingStyle | undefined, username?: string): string {
+  const name = username?.split(' ')[0]?.toLowerCase().replace(/[^a-z0-9]/g, '') || 'dev'
+  switch (style) {
+    case 'prefix/ticket-description':
+      return `Use the format "prefix/TICKET-slug". Extract ticket/issue numbers (e.g. CMS-123, JIRA-456) if present. Pick prefix from: feature, fix, chore, docs, test, refactor, hotfix. If no ticket found, fall back to "prefix/slug". Example: feature/CMS-123-add-login-form`
+    case 'username/prefix/description':
+      return `Use the format "${name}/prefix/slug". Username is always "${name}". Pick prefix from: feature, fix, chore, docs, test, refactor, hotfix. Example: ${name}/feature/add-login-form`
+    case 'plain':
+      return `Plain slug only, no prefix, no slashes. Example: add-login-form`
+    case 'prefix/description':
+    default:
+      return `Use the format "prefix/slug". Pick prefix from: feature, fix, chore, docs, test, refactor, hotfix. Example: feature/add-login-form`
+  }
+}
+
+async function generateBranchName(
+  description: string,
+  cfg: AIConfig,
+  ctx: { username?: string }
+): Promise<string> {
+  const styleGuide = branchStyleGuidance(cfg.branchNamingStyle, ctx.username)
+  const system = `You are a git branch naming expert.
+Given a description of work, generate a short, valid branch name.
+Convention: ${styleGuide}
+Rules:
+- Lowercase only, hyphens instead of spaces or special chars
+- Keep slug concise (3–6 words max after the prefix)
+- Reply with ONLY the branch name. No quotes, no explanation, no newlines.`
+  const result = await chatComplete(cfg, [
+    { role: 'system', content: system },
+    { role: 'user', content: description }
+  ], 0.3)
+  return result.trim().replace(/^['"`]|['"`]$/g, '').split('\n')[0].trim()
+}
+
 export function registerAiHandlers(): void {
   ipcMain.handle('ai:commitMessage', (_e, diff: string, cfg: AIConfig, ctx: AICommitContext) =>
     generateCommitMessage(diff, cfg, ctx)
@@ -435,4 +564,9 @@ export function registerAiHandlers(): void {
       suggestArtifacts(repoName, selectedTools, context, alreadySelected, cfg)
   )
   ipcMain.handle('ai:smartStage', (_e, files: SmartStageFile[], cfg: AIConfig) => smartStageFiles(files, cfg))
+  ipcMain.handle('ai:generateAppTheme', (_e, prompt: string, cfg: AIConfig) => generateAppTheme(prompt, cfg))
+  ipcMain.handle('ai:generateCodeTheme', (_e, prompt: string, cfg: AIConfig) => generateCodeTheme(prompt, cfg))
+  ipcMain.handle('ai:generateBranchName', (_e, description: string, cfg: AIConfig, ctx: { username?: string }) =>
+    generateBranchName(description, cfg, ctx)
+  )
 }

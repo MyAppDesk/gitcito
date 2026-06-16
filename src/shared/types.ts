@@ -167,6 +167,9 @@ export type ExplainStyle = 'normal' | 'concise' | 'detailed' | 'eli5' | 'caveman
 /** How the AI shapes the output when resolving merge conflicts. */
 export type ConflictStyle = 'clean' | 'commented' | 'conservative'
 
+/** Branch naming convention used when generating branch names with AI. */
+export type BranchNamingStyle = 'prefix/description' | 'prefix/ticket-description' | 'username/prefix/description' | 'plain'
+
 export type AIProvider = 'openai' | 'anthropic' | 'openrouter' | 'groq' | 'mistral' | 'ollama' | 'custom'
 
 export interface AIProviderPreset {
@@ -239,6 +242,7 @@ export interface AIConfig {
   commitStyle: CommitStyle
   explainStyle: ExplainStyle
   conflictStyle: ConflictStyle
+  branchNamingStyle: BranchNamingStyle
   customInstructions: string
   generateDescription: boolean
   coAuthor: boolean
@@ -297,6 +301,7 @@ export interface AppSettings {
   /** Force a merge commit even when a fast-forward is possible. */
   mergeCommit: boolean
   sidebarOrder: string[]
+  onboardingCompleted: boolean
 }
 
 export type Language = 'en' | 'es'
@@ -395,6 +400,7 @@ export function defaultProfile(): Profile {
       commitStyle: 'auto',
       explainStyle: 'normal',
       conflictStyle: 'clean',
+      branchNamingStyle: 'prefix/description',
       customInstructions: '',
       generateDescription: true,
       coAuthor: true
@@ -426,6 +432,7 @@ export function defaultSettings(): AppSettings {
     autoFetchMinutes: 5,
     confirmForcePush: true,
     mergeCommit: true,
-    sidebarOrder: ['local', 'remotes', 'prs', 'tags', 'stashes', 'worktrees']
+    sidebarOrder: ['local', 'remotes', 'prs', 'tags', 'stashes', 'worktrees'],
+    onboardingCompleted: false
   }
 }

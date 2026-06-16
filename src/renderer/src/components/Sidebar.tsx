@@ -519,7 +519,24 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
 
   const sections: Record<string, React.JSX.Element> = {
     local: (
-      <Section title={t('sidebar.local')} icon={<GitBranch size={13} />} count={locals.length} {...dragProps('local')}>
+      <Section
+        title={t('sidebar.local')}
+        icon={<GitBranch size={13} />}
+        count={locals.length}
+        {...dragProps('local')}
+        actions={
+          <span
+            className="icon-btn"
+            title={t('sidebar.createBranch')}
+            onClick={(e) => {
+              e.stopPropagation()
+              openModal({ kind: 'create-branch', path, currentBranch: repo.branches.current })
+            }}
+          >
+            <Plus size={11} />
+          </span>
+        }
+      >
         {locals.map((b) => (
           <div
             key={b.name}

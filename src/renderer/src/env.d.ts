@@ -18,16 +18,25 @@ interface PreloadApi {
   shell: {
     showItemInFolder(fullPath: string): Promise<void>
     openPath(fullPath: string): Promise<string>
+    writeFiles(repoPath: string, files: unknown[]): Promise<void>
   }
   settings: {
     get(): Promise<unknown>
     set(settings: unknown): Promise<void>
+    importFile(): Promise<unknown>
+    exportFile(settings: unknown): Promise<boolean>
   }
   ai: {
     commitMessage(diff: string, cfg: unknown, ctx: unknown): Promise<unknown>
     listModels(cfg: unknown): Promise<unknown>
     explainCode(code: string, lang: string, cfg: unknown): Promise<unknown>
     resolveConflict(file: string, content: string, cfg: unknown): Promise<unknown>
+    generateConfig(repoName: string, artifacts: unknown[], context: string, cfg: unknown): Promise<unknown>
+    suggestArtifacts(repoName: string, selectedTools: string[], context: string, alreadySelected: unknown[], cfg: unknown): Promise<unknown>
+    smartStage(files: unknown[], cfg: unknown): Promise<unknown>
+    generateAppTheme(prompt: string, cfg: unknown): Promise<unknown>
+    generateCodeTheme(prompt: string, cfg: unknown): Promise<unknown>
+    generateBranchName(description: string, cfg: unknown, ctx: unknown): Promise<unknown>
   }
   hosting: {
     listRepos(provider: string, token: string, org?: string): Promise<unknown>

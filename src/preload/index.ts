@@ -18,7 +18,9 @@ const api = {
 
   settings: {
     get: (): Promise<unknown> => ipcRenderer.invoke('settings:get'),
-    set: (settings: unknown): Promise<void> => ipcRenderer.invoke('settings:set', settings)
+    set: (settings: unknown): Promise<void> => ipcRenderer.invoke('settings:set', settings),
+    importFile: (): Promise<unknown> => ipcRenderer.invoke('settings:importFile'),
+    exportFile: (settings: unknown): Promise<boolean> => ipcRenderer.invoke('settings:exportFile', settings)
   },
 
   ai: {
@@ -34,7 +36,13 @@ const api = {
     suggestArtifacts: (repoName: string, selectedTools: unknown, context: string, alreadySelected: unknown, cfg: unknown): Promise<unknown> =>
       ipcRenderer.invoke('ai:suggestArtifacts', repoName, selectedTools, context, alreadySelected, cfg),
     smartStage: (files: unknown, cfg: unknown): Promise<unknown> =>
-      ipcRenderer.invoke('ai:smartStage', files, cfg)
+      ipcRenderer.invoke('ai:smartStage', files, cfg),
+    generateAppTheme: (prompt: string, cfg: unknown): Promise<unknown> =>
+      ipcRenderer.invoke('ai:generateAppTheme', prompt, cfg),
+    generateCodeTheme: (prompt: string, cfg: unknown): Promise<unknown> =>
+      ipcRenderer.invoke('ai:generateCodeTheme', prompt, cfg),
+    generateBranchName: (description: string, cfg: unknown, ctx: unknown): Promise<unknown> =>
+      ipcRenderer.invoke('ai:generateBranchName', description, cfg, ctx)
   },
 
   hosting: {

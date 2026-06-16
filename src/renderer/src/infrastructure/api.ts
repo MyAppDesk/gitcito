@@ -19,7 +19,9 @@ import type {
   RemoteRepo,
   RemoteOwner,
   CreateRepoOpts,
-  WorktreeInfo
+  WorktreeInfo,
+  AppThemeColors,
+  CodeThemeColors
 } from '../../../shared/types'
 
 // Typed adapter over the IPC bridge — the only place that talks to window.api.
@@ -124,7 +126,9 @@ export const gitApi = {
 
 export const settingsApi = {
   get: () => window.api.settings.get() as Promise<AppSettings>,
-  set: (s: AppSettings) => window.api.settings.set(s)
+  set: (s: AppSettings) => window.api.settings.set(s),
+  importFile: () => window.api.settings.importFile() as Promise<AppSettings | null>,
+  exportFile: (s: AppSettings) => window.api.settings.exportFile(s)
 }
 
 export interface ArtifactRequest {
@@ -156,7 +160,13 @@ export const aiApi = {
   suggestArtifacts: (repoName: string, selectedTools: string[], context: string, alreadySelected: ArtifactRequest[], cfg: AIConfig) =>
     window.api.ai.suggestArtifacts(repoName, selectedTools, context, alreadySelected, cfg) as Promise<{ suggestions: ArtifactSuggestion[] }>,
   smartStage: (files: { path: string; status: string }[], cfg: AIConfig) =>
-    window.api.ai.smartStage(files, cfg) as Promise<{ toStage: string[]; reason: string }>
+    window.api.ai.smartStage(files, cfg) as Promise<{ toStage: string[]; reason: string }>,
+  generateAppTheme: (prompt: string, cfg: AIConfig) =>
+    window.api.ai.generateAppTheme(prompt, cfg) as Promise<{ name: string; light: AppThemeColors; dark: AppThemeColors }>,
+  generateCodeTheme: (prompt: string, cfg: AIConfig) =>
+    window.api.ai.generateCodeTheme(prompt, cfg) as Promise<{ name: string; light: CodeThemeColors; dark: CodeThemeColors }>,
+  generateBranchName: (description: string, cfg: AIConfig, ctx: { username?: string }) =>
+    window.api.ai.generateBranchName(description, cfg, ctx) as Promise<string>
 }
 
 export const shellApi = {

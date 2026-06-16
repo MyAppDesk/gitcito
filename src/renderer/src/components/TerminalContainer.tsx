@@ -1,11 +1,13 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   Plus,
   SquareSplitHorizontal,
   Trash2,
   SquareTerminal,
   PanelRightClose,
-  PanelRightOpen
+  PanelRightOpen,
+  ChevronRight,
+  ChevronDown
 } from 'lucide-react'
 import { TerminalPanel } from './TerminalPanel'
 import { ResizeHandle } from './ResizeHandle'
@@ -103,6 +105,16 @@ export function TerminalContainer({ cwd }: { cwd: string }): React.JSX.Element {
 
   const collapsed = layout.terminalListCollapsed
   const listWidth = layout.terminalListWidth
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
+
+  const toggleGroupCollapse = (groupId: string): void => {
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev)
+      if (next.has(groupId)) next.delete(groupId)
+      else next.add(groupId)
+      return next
+    })
+  }
 
   // First open for this repo creates an initial terminal.
   useEffect(() => {
@@ -170,13 +182,27 @@ export function TerminalContainer({ cwd }: { cwd: string }): React.JSX.Element {
             <div className="terminal-list-body">
               {groups.map((group) => {
                 const split = group.panels.length > 1
+                const groupCollapsed = collapsedGroups.has(group.id)
                 return (
                   <div key={group.id} className="terminal-list-group">
                     <div
                       className={`terminal-list-row${group.id === activeGroupId ? ' active' : ''}`}
                       onClick={() => setActiveGroup(cwd, group.id)}
                     >
-                      <SquareTerminal size={13} className="row-icon" />
+                      {split ? (
+                        <button
+                          className="icon-btn row-collapse-btn"
+                          title={groupCollapsed ? 'Expand' : 'Collapse'}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            toggleGroupCollapse(group.id)
+                          }}
+                        >
+                          {groupCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
+                        </button>
+                      ) : (
+                        <SquareTerminal size={13} className="row-icon" />
+                      )}
                       <span className="row-label">{group.title}</span>
                       <span className="row-actions">
                         <button
@@ -201,39 +227,42 @@ export function TerminalContainer({ cwd }: { cwd: string }): React.JSX.Element {
                         </button>
                       </span>
                     </div>
-                    {split &&
-                      group.panels.map((panel, i) => (
-                        <div
-                          key={panel.id}
-                          className={`terminal-list-row child${
-                            group.id === activeGroupId && panel.id === group.activePanelId
-                              ? ' active'
-                              : ''
-                          }`}
-                          onClick={() => {
-                            setActiveGroup(cwd, group.id)
-                            setActivePanel(cwd, group.id, panel.id)
-                          }}
-                        >
-                          <span className="tree-connector">
-                            {i === group.panels.length - 1 ? '└' : '├'}
-                          </span>
-                          <SquareTerminal size={12} className="row-icon" />
-                          <span className="row-label">{group.title}</span>
-                          <span className="row-actions">
-                            <button
-                              className="icon-btn"
-                              title="Kill panel"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                removePanel(cwd, group.id, panel.id)
-                              }}
-                            >
-                              <Trash2 size={12} />
-                            </button>
-                          </span>
-                        </div>
-                      ))}
+                    {split && (
+                      <div className={`terminal-list-children${groupCollapsed ? ' collapsed' : ''}`}>
+                        {group.panels.map((panel, i) => (
+                          <div
+                            key={panel.id}
+                            className={`terminal-list-row child${
+                              group.id === activeGroupId && panel.id === group.activePanelId
+                                ? ' active'
+                                : ''
+                            }`}
+                            onClick={() => {
+                              setActiveGroup(cwd, group.id)
+                              setActivePanel(cwd, group.id, panel.id)
+                            }}
+                          >
+                            <span className="tree-connector">
+                              {i === group.panels.length - 1 ? '└' : '├'}
+                            </span>
+                            <SquareTerminal size={12} className="row-icon" />
+                            <span className="row-label">{group.title}</span>
+                            <span className="row-actions">
+                              <button
+                                className="icon-btn"
+                                title="Kill panel"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  removePanel(cwd, group.id, panel.id)
+                                }}
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )
               })}

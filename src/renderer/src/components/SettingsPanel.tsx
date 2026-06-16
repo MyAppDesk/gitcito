@@ -19,13 +19,18 @@ import {
   ExternalLink,
   Sun,
   Moon,
-  Monitor
+  Monitor,
+  Sparkles,
+  Download,
+  Upload,
+  AlertTriangle,
+  HardDrive
 } from 'lucide-react'
 import hljs from 'highlight.js'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
-import { gitApi, aiApi } from '../infrastructure/api'
-import { AI_PROVIDERS, type AIProvider, type CommitStyle, type ConflictStyle, type ExplainStyle, type Profile } from '../../../shared/types'
+import { gitApi, aiApi, settingsApi } from '../infrastructure/api'
+import { AI_PROVIDERS, type AIProvider, type AppSettings, type BranchNamingStyle, type CommitStyle, type ConflictStyle, type ExplainStyle, type Profile } from '../../../shared/types'
 import type {
   AppTheme,
   AppThemeColors,
@@ -46,14 +51,15 @@ import {
 import { LANGUAGES, useT, type TranslationKey } from '../i18n'
 import madLogo from '../assets/mad-high.png'
 
-type SettingsPage = 'profile' | 'integrations' | 'ai' | 'themes' | 'general'
+type SettingsPage = 'profile' | 'integrations' | 'ai' | 'themes' | 'general' | 'data'
 
 const PAGES: { id: SettingsPage; key: TranslationKey; icon: React.ReactNode }[] = [
   { id: 'general', key: 'settings.general', icon: <Settings2 size={13} /> },
   { id: 'profile', key: 'settings.profile', icon: <UserCircle2 size={13} /> },
   { id: 'integrations', key: 'settings.integrations', icon: <Plug size={13} /> },
   { id: 'ai', key: 'settings.ai', icon: <Bot size={13} /> },
-  { id: 'themes', key: 'settings.themes', icon: <Palette size={13} /> }
+  { id: 'themes', key: 'settings.themes', icon: <Palette size={13} /> },
+  { id: 'data', key: 'settings.data', icon: <HardDrive size={13} /> }
 ]
 
 const COMMIT_STYLES: { id: CommitStyle; key: TranslationKey }[] = [
@@ -80,6 +86,13 @@ const CONFLICT_STYLES: { id: ConflictStyle; key: TranslationKey }[] = [
   { id: 'clean', key: 'conflictStyle.clean' },
   { id: 'commented', key: 'conflictStyle.commented' },
   { id: 'conservative', key: 'conflictStyle.conservative' }
+]
+
+const BRANCH_NAMING_STYLES: { id: BranchNamingStyle; key: TranslationKey }[] = [
+  { id: 'prefix/description', key: 'branchNamingStyle.prefix/description' },
+  { id: 'prefix/ticket-description', key: 'branchNamingStyle.prefix/ticket-description' },
+  { id: 'username/prefix/description', key: 'branchNamingStyle.username/prefix/description' },
+  { id: 'plain', key: 'branchNamingStyle.plain' }
 ]
 
 function ProfilePage({ profile, edit }: { profile: Profile; edit: (p: Partial<Profile>) => void }): React.JSX.Element {
@@ -184,7 +197,7 @@ const INTEGRATIONS = [
   }
 ] as const
 
-function IntegrationsPage({
+export function IntegrationsPage({
   profile,
   edit
 }: {
@@ -257,7 +270,7 @@ function IntegrationsPage({
   )
 }
 
-function AIPage({ profile, edit }: { profile: Profile; edit: (p: Partial<Profile>) => void }): React.JSX.Element {
+export function AIPage({ profile, edit }: { profile: Profile; edit: (p: Partial<Profile>) => void }): React.JSX.Element {
   const toast = useUIStore((s) => s.toast)
   const t = useT()
   const [models, setModels] = useState<string[]>([])
@@ -425,6 +438,21 @@ function AIPage({ profile, edit }: { profile: Profile; edit: (p: Partial<Profile
       </label>
       <span className="settings-hint">{t('settings.conflictStyleHint')}</span>
 
+      <h4>{t('settings.branchNamingStyle')}</h4>
+      <label>
+        <select
+          value={ai.branchNamingStyle ?? 'prefix/description'}
+          onChange={(e) => edit({ ai: { ...ai, branchNamingStyle: e.target.value as BranchNamingStyle } })}
+        >
+          {BRANCH_NAMING_STYLES.map((s) => (
+            <option key={s.id} value={s.id}>
+              {t(s.key)}
+            </option>
+          ))}
+        </select>
+      </label>
+      <span className="settings-hint">{t('settings.branchNamingStyleHint')}</span>
+
       <details className="settings-advanced">
         <summary>
           <ChevronDown size={13} /> {t('settings.advanced')}
@@ -588,6 +616,7 @@ function CodePreview({ colors }: { colors: CodeThemeColors }): React.JSX.Element
 
 function ThemesPage(): React.JSX.Element {
   const settings = useSettingsStore((s) => s.settings)
+  const activeProfile = useSettingsStore((s) => s.activeProfile())
   const update = useSettingsStore((s) => s.update)
   const toast = useUIStore((s) => s.toast)
   const t = useT()
@@ -598,6 +627,7 @@ function ThemesPage(): React.JSX.Element {
   const currentApp = findAppTheme(settings.appThemeId, settings.customAppThemes)
   const currentCode = findCodeTheme(settings.codeThemeId, settings.customCodeThemes)
   const currentCodeColors = resolveCodeColors(currentCode, mode)
+  const aiEnabled = activeProfile.ai.enabled
 
   // Custom editor drafts (seeded from the current selection in the active mode).
   const [appDraft, setAppDraft] = useState<AppThemeColors>(resolveAppColors(currentApp, mode))
@@ -606,6 +636,47 @@ function ThemesPage(): React.JSX.Element {
   const [codeName, setCodeName] = useState('My code theme')
   const [showAppEditor, setShowAppEditor] = useState(false)
   const [showCodeEditor, setShowCodeEditor] = useState(false)
+
+  const [showAppAIPrompt, setShowAppAIPrompt] = useState(false)
+  const [appAIPrompt, setAppAIPrompt] = useState('')
+  const [generatingApp, setGeneratingApp] = useState(false)
+  const [showCodeAIPrompt, setShowCodeAIPrompt] = useState(false)
+  const [codeAIPrompt, setCodeAIPrompt] = useState('')
+  const [generatingCode, setGeneratingCode] = useState(false)
+
+  const generateAppThemeAI = async (): Promise<void> => {
+    if (!appAIPrompt.trim()) return
+    setGeneratingApp(true)
+    try {
+      const result = await aiApi.generateAppTheme(appAIPrompt.trim(), activeProfile.ai)
+      setAppDraft(mode === 'dark' ? result.dark : result.light)
+      setAppName(result.name)
+      setShowAppAIPrompt(false)
+      setAppAIPrompt('')
+      setShowAppEditor(true)
+    } catch (err) {
+      toast('error', err instanceof Error ? err.message : 'AI theme generation failed.')
+    } finally {
+      setGeneratingApp(false)
+    }
+  }
+
+  const generateCodeThemeAI = async (): Promise<void> => {
+    if (!codeAIPrompt.trim()) return
+    setGeneratingCode(true)
+    try {
+      const result = await aiApi.generateCodeTheme(codeAIPrompt.trim(), activeProfile.ai)
+      setCodeDraft(mode === 'dark' ? result.dark : result.light)
+      setCodeName(result.name)
+      setShowCodeAIPrompt(false)
+      setCodeAIPrompt('')
+      setShowCodeEditor(true)
+    } catch (err) {
+      toast('error', err instanceof Error ? err.message : 'AI theme generation failed.')
+    } finally {
+      setGeneratingCode(false)
+    }
+  }
 
   const setMode = (m: ThemeMode): void => update((s) => ({ ...s, themeMode: m }))
   const selectApp = (id: string): void => update((s) => ({ ...s, appThemeId: id }))
@@ -683,36 +754,71 @@ function ThemesPage(): React.JSX.Element {
         ))}
       </div>
 
-      <h4 style={{ marginTop: 22 }}>
-        <Palette size={14} /> {t('settings.appTheme')}
-      </h4>
-      <div className="theme-grid">
-        {appThemes.map((t) => (
+      <div className="theme-section-header" style={{ marginTop: 22 }}>
+        <h4><Palette size={14} /> {t('settings.appTheme')}</h4>
+        <div className="theme-section-actions">
           <button
-            key={t.id}
-            className={`theme-card ${t.id === settings.appThemeId ? 'selected' : ''}`}
-            onClick={() => selectApp(t.id)}
-            onDoubleClick={() => !t.builtin && deleteAppTheme(t.id)}
-            title={t.builtin ? t.name : t.name}
+            className="theme-icon-btn"
+            title={t('settings.createAppTheme')}
+            onClick={() => { setAppDraft(resolveAppColors(currentApp, mode)); setShowAppEditor((v) => !v) }}
           >
-            <AppThemeSwatch colors={resolveAppColors(t, mode)} />
-            <div className="theme-card-label">
-              <span>{t.name}</span>
-              {t.id === settings.appThemeId && <Check size={13} className="theme-check" />}
-            </div>
+            <Plus size={14} />
           </button>
+          {aiEnabled && (
+            <button
+              className="theme-icon-btn"
+              title={t('settings.generateWithAI')}
+              onClick={() => { setShowAppAIPrompt((v) => !v); setShowAppEditor(false) }}
+            >
+              <Sparkles size={14} />
+            </button>
+          )}
+        </div>
+      </div>
+      <div className="theme-grid">
+        {appThemes.map((th) => (
+          <div
+            key={th.id}
+            role="button"
+            tabIndex={0}
+            className={`theme-card ${th.id === settings.appThemeId ? 'selected' : ''}`}
+            onClick={() => selectApp(th.id)}
+            onKeyDown={(e) => e.key === 'Enter' && selectApp(th.id)}
+          >
+            <AppThemeSwatch colors={resolveAppColors(th, mode)} />
+            <div className="theme-card-label">
+              <span>{th.name}</span>
+              {th.id === settings.appThemeId && <Check size={13} className="theme-check" />}
+            </div>
+            {!th.builtin && (
+              <button
+                className="theme-card-delete"
+                title="Delete theme"
+                onClick={(e) => { e.stopPropagation(); deleteAppTheme(th.id) }}
+              >
+                <Trash2 size={11} />
+              </button>
+            )}
+          </div>
         ))}
       </div>
-      <button
-        className="btn ghost small"
-        style={{ marginTop: 10 }}
-        onClick={() => {
-          setAppDraft(resolveAppColors(currentApp, mode))
-          setShowAppEditor((v) => !v)
-        }}
-      >
-        <Plus size={13} /> {t('settings.createAppTheme')}
-      </button>
+      {showAppAIPrompt && (
+        <div className="theme-ai-prompt">
+          <input
+            autoFocus
+            value={appAIPrompt}
+            onChange={(e) => setAppAIPrompt(e.target.value)}
+            placeholder={t('settings.aiThemePromptPlaceholder')}
+            onKeyDown={(e) => e.key === 'Enter' && !generatingApp && generateAppThemeAI()}
+          />
+          <button className="btn primary small" onClick={generateAppThemeAI} disabled={generatingApp || !appAIPrompt.trim()}>
+            {generatingApp ? <><Loader2 size={13} className="spin" /> {t('settings.generating')}</> : <><Sparkles size={13} /> Generate</>}
+          </button>
+          <button className="btn ghost small" onClick={() => { setShowAppAIPrompt(false); setAppAIPrompt('') }}>
+            {t('common.cancel')}
+          </button>
+        </div>
+      )}
       {showAppEditor && (
         <div className="theme-custom-editor">
           <label>
@@ -742,53 +848,83 @@ function ThemesPage(): React.JSX.Element {
         </div>
       )}
 
-      <h4 style={{ marginTop: 22 }}>
-        <Palette size={14} /> {t('settings.codeTheme')}
-      </h4>
-      <div className="theme-grid">
-        {codeThemes.map((t) => (
+      <div className="theme-section-header" style={{ marginTop: 22 }}>
+        <h4><Palette size={14} /> {t('settings.codeTheme')}</h4>
+        <div className="theme-section-actions">
           <button
-            key={t.id}
-            className={`theme-card ${t.id === settings.codeThemeId ? 'selected' : ''}`}
-            onClick={() => selectCode(t.id)}
-            onDoubleClick={() => !t.builtin && deleteCodeTheme(t.id)}
-            title={t.builtin ? t.name : t.name}
+            className="theme-icon-btn"
+            title={t('settings.createCodeTheme')}
+            onClick={() => { setCodeDraft(resolveCodeColors(currentCode, mode)); setShowCodeEditor((v) => !v) }}
           >
-            <CodeThemeSwatch colors={resolveCodeColors(t, mode)} />
-            <div className="theme-card-label">
-              <span>{t.name}</span>
-              {t.id === settings.codeThemeId && <Check size={13} className="theme-check" />}
-            </div>
+            <Plus size={14} />
           </button>
+          {aiEnabled && (
+            <button
+              className="theme-icon-btn"
+              title={t('settings.generateWithAI')}
+              onClick={() => { setShowCodeAIPrompt((v) => !v); setShowCodeEditor(false) }}
+            >
+              <Sparkles size={14} />
+            </button>
+          )}
+          <div className="theme-font-size-inline">
+            <span>{settings.codeFontSize}px</span>
+            <input
+              type="range"
+              min={10}
+              max={20}
+              value={settings.codeFontSize}
+              onChange={(e) => update((s) => ({ ...s, codeFontSize: Number(e.target.value) }))}
+            />
+          </div>
+        </div>
+      </div>
+      <div className="theme-grid">
+        {codeThemes.map((th) => (
+          <div
+            key={th.id}
+            role="button"
+            tabIndex={0}
+            className={`theme-card ${th.id === settings.codeThemeId ? 'selected' : ''}`}
+            onClick={() => selectCode(th.id)}
+            onKeyDown={(e) => e.key === 'Enter' && selectCode(th.id)}
+          >
+            <CodeThemeSwatch colors={resolveCodeColors(th, mode)} />
+            <div className="theme-card-label">
+              <span>{th.name}</span>
+              {th.id === settings.codeThemeId && <Check size={13} className="theme-check" />}
+            </div>
+            {!th.builtin && (
+              <button
+                className="theme-card-delete"
+                title="Delete theme"
+                onClick={(e) => { e.stopPropagation(); deleteCodeTheme(th.id) }}
+              >
+                <Trash2 size={11} />
+              </button>
+            )}
+          </div>
         ))}
       </div>
 
       <CodePreview colors={currentCodeColors} />
-
-      <label style={{ marginTop: 12 }}>
-        <span className="range-label">
-          {t('settings.codeFontSize')}
-          <span className="range-value">{settings.codeFontSize}px</span>
-        </span>
-        <input
-          type="range"
-          min={10}
-          max={20}
-          value={settings.codeFontSize}
-          onChange={(e) => update((s) => ({ ...s, codeFontSize: Number(e.target.value) }))}
-        />
-      </label>
-
-      <button
-        className="btn ghost small"
-        style={{ marginTop: 10 }}
-        onClick={() => {
-          setCodeDraft(resolveCodeColors(currentCode, mode))
-          setShowCodeEditor((v) => !v)
-        }}
-      >
-        <Plus size={13} /> {t('settings.createCodeTheme')}
-      </button>
+      {showCodeAIPrompt && (
+        <div className="theme-ai-prompt">
+          <input
+            autoFocus
+            value={codeAIPrompt}
+            onChange={(e) => setCodeAIPrompt(e.target.value)}
+            placeholder={t('settings.aiThemePromptPlaceholder')}
+            onKeyDown={(e) => e.key === 'Enter' && !generatingCode && generateCodeThemeAI()}
+          />
+          <button className="btn primary small" onClick={generateCodeThemeAI} disabled={generatingCode || !codeAIPrompt.trim()}>
+            {generatingCode ? <><Loader2 size={13} className="spin" /> {t('settings.generating')}</> : <><Sparkles size={13} /> Generate</>}
+          </button>
+          <button className="btn ghost small" onClick={() => { setShowCodeAIPrompt(false); setCodeAIPrompt('') }}>
+            {t('common.cancel')}
+          </button>
+        </div>
+      )}
       {showCodeEditor && (
         <div className="theme-custom-editor">
           <label>
@@ -819,6 +955,130 @@ function ThemesPage(): React.JSX.Element {
         </div>
       )}
     </>
+  )
+}
+
+function detectSettingsSecrets(s: AppSettings): boolean {
+  return (s.profiles ?? []).some(
+    (p) => !!p.githubToken || !!p.azureToken || !!p.gitlabToken || !!p.bitbucketToken || !!p.ai?.apiKey
+  )
+}
+
+function stripSettingsSecrets(s: AppSettings): AppSettings {
+  return {
+    ...s,
+    profiles: s.profiles.map((p) => ({
+      ...p,
+      githubToken: '',
+      azureToken: '',
+      gitlabToken: '',
+      bitbucketToken: '',
+      ai: p.ai ? { ...p.ai, apiKey: '' } : p.ai
+    }))
+  }
+}
+
+function DataManagementSection(): React.JSX.Element {
+  const settings = useSettingsStore((s) => s.settings)
+  const update = useSettingsStore((s) => s.update)
+  const toast = useUIStore((s) => s.toast)
+  const [exporting, setExporting] = useState(false)
+  const [importing, setImporting] = useState(false)
+  const [exportIncludeSecrets, setExportIncludeSecrets] = useState(false)
+  const [showExportWarn, setShowExportWarn] = useState(false)
+
+  const doExport = async (): Promise<void> => {
+    setExporting(true)
+    try {
+      const data = exportIncludeSecrets ? settings : stripSettingsSecrets(settings)
+      const ok = await settingsApi.exportFile(data)
+      if (ok) toast('success', 'Settings exported')
+    } catch {
+      toast('error', 'Export failed')
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  const doImport = async (): Promise<void> => {
+    setImporting(true)
+    try {
+      const result = await settingsApi.importFile()
+      if (!result) return
+      const raw = result as AppSettings
+      const hasSecrets = detectSettingsSecrets(raw)
+      if (hasSecrets) {
+        toast('info', 'Imported file contains tokens — they have been kept. Review in Integrations.')
+      }
+      update((s) => ({ ...s, ...raw }))
+      toast('success', 'Settings imported')
+    } catch {
+      toast('error', 'Import failed')
+    } finally {
+      setImporting(false)
+    }
+  }
+
+  return (
+    <div>
+      <h4 className="settings-section-title">Import / Export</h4>
+      <p className="settings-hint">
+        Share settings between machines. API keys and tokens are stripped by default on export.
+      </p>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
+        <button className="btn ghost small" onClick={() => void doImport()} disabled={importing}>
+          {importing ? <Loader2 size={13} className="spin" /> : <Upload size={13} />}
+          Import settings
+        </button>
+        <button
+          className="btn ghost small"
+          onClick={() => {
+            if (exportIncludeSecrets) setShowExportWarn(true)
+            else void doExport()
+          }}
+          disabled={exporting}
+        >
+          {exporting ? <Loader2 size={13} className="spin" /> : <Download size={13} />}
+          Export settings
+        </button>
+      </div>
+      <label className="settings-toggle-card" style={{ marginTop: 12 }}>
+        <input
+          type="checkbox"
+          checked={exportIncludeSecrets}
+          onChange={(e) => {
+            setExportIncludeSecrets(e.target.checked)
+            if (!e.target.checked) setShowExportWarn(false)
+          }}
+        />
+        <span className="settings-toggle-control" aria-hidden="true">
+          <span className="settings-toggle-thumb" />
+        </span>
+        <span className="settings-toggle-copy">
+          <strong>Include API keys and tokens</strong>
+          <span className="settings-hint">Keep the exported file secure — anyone with it can access your services.</span>
+        </span>
+      </label>
+      {showExportWarn && (
+        <div style={{
+          display: 'flex', gap: 10, alignItems: 'flex-start', marginTop: 10,
+          background: 'color-mix(in srgb, var(--yellow) 10%, var(--bg-3))',
+          border: '1px solid color-mix(in srgb, var(--yellow) 25%, transparent)',
+          borderRadius: 8, padding: '10px 12px', fontSize: 12, color: 'var(--text-1)'
+        }}>
+          <AlertTriangle size={14} style={{ flexShrink: 0, marginTop: 1 }} color="var(--yellow)" />
+          <div>
+            <strong>This will include API keys and tokens in the exported file.</strong>
+            <br />
+            Keep the file secure — anyone with it can access your services.
+            <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+              <button className="btn danger small" onClick={() => { setShowExportWarn(false); void doExport() }}>Export anyway</button>
+              <button className="btn ghost small" onClick={() => { setShowExportWarn(false); setExportIncludeSecrets(false) }}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -976,12 +1236,28 @@ function GeneralPage(): React.JSX.Element {
           <span className="settings-hint">{t('settings.mergeCommitHint')}</span>
         </span>
       </label>
+
+    </div>
+  )
+}
+
+function DataPage(): React.JSX.Element {
+  const t = useT()
+  return (
+    <div className="settings-general">
+      <div className="settings-general-header">
+        <h4>
+          <HardDrive size={14} /> {t('settings.data')}
+        </h4>
+        <p className="settings-hint">{t('settings.dataIntro')}</p>
+      </div>
+      <DataManagementSection />
     </div>
   )
 }
 
 const LAST_PAGE_KEY = 'gitcito.settings.lastPage'
-const PAGE_IDS: SettingsPage[] = ['profile', 'integrations', 'ai', 'themes', 'general']
+const PAGE_IDS: SettingsPage[] = ['profile', 'integrations', 'ai', 'themes', 'general', 'data']
 
 function readLastPage(): SettingsPage {
   const stored = localStorage.getItem(LAST_PAGE_KEY)
@@ -1100,6 +1376,7 @@ export function SettingsPanel({ initialPage }: { initialPage?: SettingsPage } = 
           {page === 'ai' && <AIPage profile={profile} edit={edit} />}
           {page === 'themes' && <ThemesPage />}
           {page === 'general' && <GeneralPage />}
+          {page === 'data' && <DataPage />}
         </div>
       </div>
     </div>

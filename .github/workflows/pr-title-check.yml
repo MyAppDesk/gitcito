@@ -23,7 +23,3 @@ jobs:
             build
             ci
           requireScope: false
-          subjectPattern: ^[A-Z].+$
-          subjectPatternError: |
-            Subject must start with an uppercase letter.
-            Example: "feat: Add dark mode support"

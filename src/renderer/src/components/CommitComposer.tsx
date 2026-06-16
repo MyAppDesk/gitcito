@@ -182,6 +182,40 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
     ])
   }
 
+  const handleFolderContext = (list: ListName, files: FileEntry[]) => (folderPath: string, e: React.MouseEvent) => {
+    e.preventDefault()
+    const inFolder = files.filter((f) => f.path === folderPath || f.path.startsWith(`${folderPath}/`))
+    const targets = inFolder.map((f) => f.path)
+    if (targets.length === 0) return
+    const label = `"${folderPath}/" (${targets.length} file${targets.length === 1 ? '' : 's'})`
+    useUIStore.getState().openContextMenu(e.clientX, e.clientY, [
+      list === 'staged'
+        ? { label: `Unstage folder (${targets.length})`, onClick: () => void repoActions.unstage(path, targets) }
+        : { label: `Stage folder (${targets.length})`, onClick: () => void repoActions.stage(path, targets) },
+      { separator: true },
+      { label: shellApi.revealLabel, onClick: () => void shellApi.revealInFolder(`${path}/${folderPath}`) },
+      { separator: true },
+      {
+        label: 'Discard changes in folder',
+        danger: true,
+        onClick: () =>
+          useUIStore.getState().openModal({
+            kind: 'confirm',
+            title: 'Discard changes',
+            message: `Discard changes in ${label}? This cannot be undone.`,
+            danger: true,
+            confirmLabel: 'Discard',
+            onConfirm: async () => {
+              const untracked = inFolder.filter((f) => f.untracked).map((f) => f.path)
+              const tracked = inFolder.filter((f) => !f.untracked).map((f) => f.path)
+              if (tracked.length) await repoActions.discard(path, tracked, false)
+              if (untracked.length) await repoActions.discard(path, untracked, true)
+            }
+          })
+      }
+    ])
+  }
+
   const stageAction = (list: ListName) => (file: FileEntry) => (
     <button
       className="btn ghost tiny file-stage-btn"
@@ -363,6 +397,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
                   selected={selection.list === 'unstaged' ? selection.paths : undefined}
                   onFileClick={handleClick('unstaged', unstaged)}
                   onFileContext={handleContext('unstaged', unstaged)}
+                  onFolderContext={handleFolderContext('unstaged', unstaged)}
                   action={stageAction('unstaged')}
                 />
                 {unstaged.length === 0 && <div className="sb-empty">Working tree clean</div>}
@@ -423,6 +458,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
                   selected={selection.list === 'staged' ? selection.paths : undefined}
                   onFileClick={handleClick('staged', staged)}
                   onFileContext={handleContext('staged', staged)}
+                  onFolderContext={handleFolderContext('staged', staged)}
                   action={stageAction('staged')}
                 />
                 {staged.length === 0 && <div className="sb-empty">Nothing staged</div>}

@@ -220,6 +220,35 @@ textarea:focus {
   font-size: 12px;
 }
 
+.tab-status {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-left: 1px;
+}
+
+.tab-status-wip {
+  background: var(--text-2);
+  opacity: 0.55;
+}
+
+.tab-status-conflict {
+  background: #e5a23d;
+  box-shadow: 0 0 0 0 rgba(229, 162, 61, 0.5);
+  animation: tab-status-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes tab-status-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(229, 162, 61, 0.45);
+  }
+  50% {
+    box-shadow: 0 0 0 3px rgba(229, 162, 61, 0);
+  }
+}
+
 .tab-close,
 .tab-chevron {
   display: flex;
@@ -799,6 +828,7 @@ textarea:focus {
   border-radius: 50%;
   display: flex;
   background: var(--bg-1);
+  transition: left 0.15s ease;
 }
 .node-connector {
   position: absolute;
@@ -808,7 +838,6 @@ textarea:focus {
   opacity: 0.5;
 }
 .ref-check {
-  margin-right: 3px;
   flex-shrink: 0;
 }
 
@@ -838,6 +867,31 @@ textarea:focus {
 
 .graph-row.dimmed {
   opacity: 0.25;
+}
+
+/* Branch preview: commits outside the hovered branch's history fade back. */
+.graph-row.ghosted {
+  opacity: 0.32;
+}
+
+.graph-edge {
+  transition: opacity 0.15s;
+}
+
+.graph-nodes > div {
+  transition: opacity 0.15s;
+}
+.node-ghost {
+  opacity: 0.22;
+}
+
+/* Ghosted branch label shown on ancestor rows during hover preview. Dashed +
+   faded so it reads as a transient hint, not a real ref attached here. */
+.ref-badge.preview-hint {
+  border-style: dashed;
+  opacity: 0.6;
+  pointer-events: none;
+  cursor: default;
 }
 
 .graph-row.matched .row-subject {
@@ -901,13 +955,17 @@ textarea:focus {
 .ref-badge {
   display: inline-flex;
   align-items: center;
+  gap: 4px;
   font-size: 10px;
-  font-weight: 600;
-  padding: 1.5px 7px;
-  border-radius: 9px;
+  font-weight: 500;
+  padding: 2px 6px;
+  border-radius: 4px;
   white-space: nowrap;
-  border: 1px solid;
-  max-width: 150px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-1);
+  flex: 1;
+  min-width: 0;
   cursor: context-menu;
 }
 .ref-badge .ref-text {
@@ -917,9 +975,7 @@ textarea:focus {
 }
 .ref-badge .ref-ic {
   display: inline-flex;
-  vertical-align: -1px;
-  margin-right: 3px;
-  opacity: 0.85;
+  opacity: 0.8;
 }
 
 /* Left ref gutter — branch/tag labels next to the graph */
@@ -930,16 +986,16 @@ textarea:focus {
   bottom: 0;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
   gap: 4px;
-  padding-right: 9px;
+  padding: 0 8px;
   z-index: 3;
 }
 .ref-collapsed {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 4px;
   min-width: 0;
+  flex: 1;
 }
 .ref-more-chip {
   flex-shrink: 0;
@@ -975,25 +1031,12 @@ textarea:focus {
 }
 
 .ref-head {
-  background: rgba(63, 208, 164, 0.13);
-  border-color: rgba(63, 208, 164, 0.5);
   color: var(--green);
+  font-weight: 700;
 }
-.ref-local {
-  background: rgba(88, 166, 255, 0.1);
-  border-color: rgba(88, 166, 255, 0.45);
-  color: var(--accent);
-}
-.ref-remote {
-  background: rgba(181, 133, 247, 0.1);
-  border-color: rgba(181, 133, 247, 0.4);
-  color: var(--purple);
-}
-.ref-tag {
-  background: rgba(242, 204, 96, 0.1);
-  border-color: rgba(242, 204, 96, 0.45);
-  color: var(--yellow);
-}
+.ref-local { color: var(--text-1); }
+.ref-remote { color: var(--purple); }
+.ref-tag { color: var(--yellow); }
 .ref-stash {
   background: rgba(242, 204, 96, 0.08);
   border-color: rgba(242, 204, 96, 0.4);
@@ -3048,6 +3091,176 @@ textarea:focus {
   font-size: 12px;
   font-family: var(--mono, ui-monospace, monospace);
   white-space: pre-wrap;
+}
+
+/* ─── Rich file preview (markdown / pdf / media / sheet / word) ─────────── */
+.md-preview {
+  white-space: normal;
+  word-break: break-word;
+  color: var(--text-0);
+  font-size: 13px;
+  line-height: 1.65;
+}
+/* Full-pane markdown/word preview (not the floating explain panel). */
+.fv-body > .md-preview {
+  padding: 20px 26px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+.md-preview h1,
+.md-preview h2,
+.md-preview h3,
+.md-preview h4 {
+  color: var(--text-0);
+  line-height: 1.3;
+  margin: 1.2em 0 0.5em;
+}
+.md-preview h1 {
+  font-size: 1.7em;
+  border-bottom: 1px solid var(--border-soft);
+  padding-bottom: 0.3em;
+}
+.md-preview h2 {
+  font-size: 1.4em;
+  border-bottom: 1px solid var(--border-soft);
+  padding-bottom: 0.25em;
+}
+.md-preview h3 {
+  font-size: 1.2em;
+}
+.md-preview p {
+  margin: 0.6em 0;
+}
+.md-preview a {
+  color: var(--accent);
+  text-decoration: none;
+}
+.md-preview a:hover {
+  text-decoration: underline;
+}
+.md-preview ul,
+.md-preview ol {
+  padding-left: 1.6em;
+  margin: 0.5em 0;
+}
+.md-preview li {
+  margin: 0.2em 0;
+}
+.md-preview code {
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 0.88em;
+  background: var(--bg-3);
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+}
+.md-preview pre {
+  background: var(--bg-0);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 12px 14px;
+  overflow: auto;
+  margin: 0.8em 0;
+}
+.md-preview pre code {
+  background: none;
+  padding: 0;
+  font-size: 0.85em;
+  line-height: 1.5;
+}
+.md-preview blockquote {
+  margin: 0.8em 0;
+  padding: 0.2em 1em;
+  border-left: 3px solid var(--border);
+  color: var(--text-1);
+}
+.md-preview table {
+  border-collapse: collapse;
+  margin: 0.8em 0;
+  font-size: 0.9em;
+}
+.md-preview th,
+.md-preview td {
+  border: 1px solid var(--border);
+  padding: 6px 10px;
+}
+.md-preview th {
+  background: var(--bg-2);
+}
+.md-preview img {
+  max-width: 100%;
+}
+.md-preview hr {
+  border: none;
+  border-top: 1px solid var(--border-soft);
+  margin: 1.2em 0;
+}
+
+.pdf-preview {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: var(--bg-0);
+}
+
+.media-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 20px;
+}
+.media-preview video {
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 8px;
+}
+.media-preview audio {
+  width: min(520px, 90%);
+}
+
+.sheet-preview {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.sheet-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border-soft);
+  flex-wrap: wrap;
+  flex: none;
+}
+.sheet-tab {
+  padding: 4px 12px;
+  font-size: 12px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: var(--bg-2);
+  color: var(--text-1);
+  cursor: pointer;
+}
+.sheet-tab.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--text-0);
+}
+.sheet-body {
+  overflow: auto;
+  padding: 12px;
+}
+.sheet-body table {
+  border-collapse: collapse;
+  font-size: 12px;
+  font-family: var(--mono, ui-monospace, monospace);
+}
+.sheet-body td,
+.sheet-body th {
+  border: 1px solid var(--border);
+  padding: 4px 8px;
+  color: var(--text-0);
+  white-space: nowrap;
 }
 
 /* File content view */

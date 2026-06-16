@@ -25,6 +25,7 @@ interface FileListProps {
   selected?: Set<string>
   onFileClick: (file: FileEntry, e: React.MouseEvent) => void
   onFileContext?: (file: FileEntry, e: React.MouseEvent) => void
+  onFolderContext?: (folderPath: string, e: React.MouseEvent) => void
   action?: (file: FileEntry) => React.ReactNode
 }
 
@@ -120,6 +121,7 @@ function TreeLevel({
               className="tree-folder"
               style={{ paddingLeft: 14 + depth * 14 }}
               onClick={() => toggle(n.path)}
+              onContextMenu={(e) => props.onFolderContext?.(n.path, e)}
               title={n.path}
             >
               {collapsed.has(n.path) ? <ChevronRight size={12} /> : <ChevronDown size={12} />}

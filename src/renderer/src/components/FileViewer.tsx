@@ -8,9 +8,13 @@ import { useUIStore, type FileViewMode, type FileViewState } from '../stores/ui'
 import { useT } from '../i18n'
 import { DiffViewer } from './DiffViewer'
 import { ImageDiff } from './ImageDiff'
+import { PreviewPane } from './PreviewPane'
+import { renderMarkdown } from '../preview/markdown'
+import { previewKind, isBinaryKind } from '../preview/registry'
 import { GRAPH_COLORS } from '../graph/layout'
 
 const MODES: { id: FileViewMode; label: string }[] = [
+  { id: 'preview', label: 'Preview' },
   { id: 'file', label: 'File View' },
   { id: 'diff', label: 'Diff View' },
   { id: 'blame', label: 'Blame' },
@@ -99,6 +103,12 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
   const { repoPath, file, mode, source } = view
   const lang = guessLanguage(file)
   const fileIsImage = isImage(file)
+  const pvKind = previewKind(file)
+  // Image files already render inline in File view, so they don't need a
+  // separate Preview tab. Binary docs (pdf/video/audio/sheet/word) have no
+  // meaningful text view — they offer Preview + History only.
+  const previewable = !!pvKind && !fileIsImage
+  const binaryDoc = !!pvKind && isBinaryKind(pvKind) && !fileIsImage
   const canExplain = !fileIsImage && (mode === 'file' || mode === 'diff') && !!content
 
   const runExplain = async (): Promise<void> => {
@@ -129,13 +139,17 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
   const isUntracked =
     (source.type === 'wip' && source.untracked) || (source.type === 'stash' && source.untracked)
   const blameAvailable = !fileIsImage && !isUntracked
-  const modes = MODES.filter((m) => m.id !== 'blame' || blameAvailable)
+  let modes = MODES.filter((m) => m.id !== 'blame' || blameAvailable)
+  if (!previewable) modes = modes.filter((m) => m.id !== 'preview')
+  if (binaryDoc) modes = modes.filter((m) => m.id === 'preview' || m.id === 'history')
+  const modeAvailable = modes.some((m) => m.id === mode)
 
-  // If the active mode is no longer available for this file, fall back to File view.
+  // If the active mode isn't available for this file, fall back to the first
+  // available one (Preview for binary docs, File view otherwise).
   useEffect(() => {
-    if (mode === 'blame' && !blameAvailable) setFileView({ ...view, mode: 'file' })
+    if (!modeAvailable && modes[0]) setFileView({ ...view, mode: modes[0].id })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, blameAvailable])
+  }, [mode, modeAvailable])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
@@ -153,6 +167,11 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
     setError(null)
     const load = async (): Promise<void> => {
       try {
+        if (mode === 'preview') {
+          // PreviewPane fetches its own content; just clear the loading spinner.
+          if (!cancelled) setContent('')
+          return
+        }
         if (fileIsImage && mode === 'diff') {
           const refs = imageDiffRefs(view)
           const result = await gitApi.imageDiff(repoPath, file, refs.before, refs.after)
@@ -256,10 +275,14 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
 
       <div className="fv-body">
         {error && <div className="fv-error">{error}</div>}
-        {!error && content === null && (
+        {!error && content === null && mode !== 'preview' && (
           <div className="graph-empty">
             <div className="spinner" />
           </div>
+        )}
+
+        {!error && mode === 'preview' && pvKind && (
+          <PreviewPane repoPath={repoPath} file={file} ref={sourceRef(view)} kind={pvKind} />
         )}
 
         {!error && imgDiff !== null && mode === 'diff' && (
@@ -340,7 +363,10 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
                 <X size={14} />
               </button>
             </div>
-            <div className="fv-explain-body">{explain}</div>
+            <div
+              className="fv-explain-body md-preview"
+              dangerouslySetInnerHTML={{ __html: renderMarkdown(explain) }}
+            />
           </div>
         )}
       </div>

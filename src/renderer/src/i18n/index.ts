@@ -64,6 +64,8 @@ const en = {
   'explain.title': 'Explain this file with AI',
   'explain.heading': 'AI explanation',
   'explain.empty': 'The AI returned no explanation.',
+  'preview.empty': 'Nothing to preview.',
+  'preview.unsupported': 'No preview available for this file type.',
 
   // Graph
   'graph.loadMore': 'Load more commits…',
@@ -245,6 +247,8 @@ const es: Dict = {
   'explain.title': 'Explicar este archivo con IA',
   'explain.heading': 'Explicación de la IA',
   'explain.empty': 'La IA no devolvió ninguna explicación.',
+  'preview.empty': 'Nada que previsualizar.',
+  'preview.unsupported': 'No hay vista previa para este tipo de archivo.',
 
   'graph.loadMore': 'Cargar más commits…',
   'graph.loading': 'Cargando grafo…',

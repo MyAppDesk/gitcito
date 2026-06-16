@@ -2,13 +2,28 @@ import { Plus, FolderGit2, Layers, X, ChevronDown, Minus, Square, Settings } fro
 import { motion } from 'framer-motion'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore, type MenuItem } from '../stores/ui'
+import { useRepoStore } from '../stores/repo'
 import type { TabState } from '../../../shared/types'
 import gitcitoMark from '../assets/gitcito-mark.png'
+
+type TabStatus = 'conflict' | 'wip' | null
 
 export function TitleBar(): React.JSX.Element {
   const { settings, setGroupActiveRepo, closeTab, setActiveTab, renameTab } = useSettingsStore()
   const { openContextMenu, openModal } = useUIStore()
+  const repos = useRepoStore((s) => s.repos)
   const isMac = window.api.platform === 'darwin'
+
+  const tabStatus = (tab: TabState): TabStatus => {
+    let wip = false
+    for (const ref of tab.repos) {
+      const data = repos[ref.path]
+      if (!data) continue
+      if (data.mergeState || (data.status?.conflicted.length ?? 0) > 0) return 'conflict'
+      if ((data.status?.staged.length ?? 0) + (data.status?.unstaged.length ?? 0) > 0) wip = true
+    }
+    return wip ? 'wip' : null
+  }
 
   const plusMenu = (): void => {
     openModal({ kind: 'launcher' })
@@ -80,7 +95,9 @@ export function TitleBar(): React.JSX.Element {
         <img className="logo-mark" src={gitcitoMark} alt="" draggable={false} /> Gitcito
       </div>
       <div className="tabs">
-        {settings.tabs.map((tab) => (
+        {settings.tabs.map((tab) => {
+          const status = tabStatus(tab)
+          return (
           <motion.div
             key={tab.id}
             layout
@@ -110,6 +127,12 @@ export function TitleBar(): React.JSX.Element {
                 </span>
               )}
             </span>
+            {status && (
+              <span
+                className={`tab-status tab-status-${status}`}
+                title={status === 'conflict' ? 'Conflicts in progress' : 'Uncommitted changes'}
+              />
+            )}
             {tab.kind === 'group' && (
               <button className="tab-chevron" title="Switch repository" onClick={(e) => groupRepoMenu(tab, e)}>
                 <ChevronDown size={12} />
@@ -125,7 +148,8 @@ export function TitleBar(): React.JSX.Element {
               <X size={12} />
             </button>
           </motion.div>
-        ))}
+          )
+        })}
         <button className="tab-add" title="Open repository or group" onClick={() => plusMenu()}>
           <Plus size={15} />
         </button>

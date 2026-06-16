@@ -21,7 +21,9 @@ function createWindow(): void {
     backgroundColor: '#0e0f15',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: false
+      sandbox: false,
+      // Enables Chromium's built-in PDF viewer for the file previewer.
+      plugins: true
     }
   })
 

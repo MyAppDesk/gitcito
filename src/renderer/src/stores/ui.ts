@@ -66,7 +66,7 @@ export type FileViewSource =
   | { type: 'commit'; hash: string }
   | { type: 'stash'; sha: string; untracked: boolean }
 
-export type FileViewMode = 'diff' | 'file' | 'blame' | 'history'
+export type FileViewMode = 'preview' | 'diff' | 'file' | 'blame' | 'history'
 
 export interface FileViewState {
   repoPath: string

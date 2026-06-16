@@ -106,20 +106,34 @@ function mapStatusCode(code: string): FileChangeKind {
   }
 }
 
-function imageMime(file: string): string {
+/** MIME type by extension, covering images plus the binary formats the file
+ *  previewer can render (pdf, video, audio, office docs). Unknown extensions
+ *  fall back to a generic binary type so the data URL is still well-formed. */
+function fileMime(file: string): string {
   const ext = (file.split('.').pop() || '').toLowerCase()
-  return ext === 'svg'
-    ? 'image/svg+xml'
-    : ext === 'jpg' || ext === 'jpeg'
-      ? 'image/jpeg'
-      : ext === 'ico'
-        ? 'image/x-icon'
-        : `image/${ext}`
+  const map: Record<string, string> = {
+    // images
+    svg: 'image/svg+xml', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png',
+    gif: 'image/gif', webp: 'image/webp', bmp: 'image/bmp', ico: 'image/x-icon', avif: 'image/avif',
+    // documents
+    pdf: 'application/pdf',
+    // video
+    mp4: 'video/mp4', webm: 'video/webm', ogv: 'video/ogg', mov: 'video/quicktime', m4v: 'video/mp4',
+    // audio
+    mp3: 'audio/mpeg', wav: 'audio/wav', ogg: 'audio/ogg', m4a: 'audio/mp4', flac: 'audio/flac', aac: 'audio/aac',
+    // office
+    xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    xls: 'application/vnd.ms-excel',
+    docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+  }
+  return map[ext] || `application/octet-stream`
 }
 
-/** Read an image as a base64 data URL. Returns null if the file is missing at
- *  the given ref (e.g. an added/deleted side of a diff) instead of throwing. */
-async function readImageDataUrl(repoPath: string, file: string, ref?: string): Promise<string | null> {
+/** Read a file as a base64 data URL (mime by extension). Returns null if the
+ *  file is missing at the given ref (e.g. an added/deleted side of a diff)
+ *  instead of throwing. */
+async function readFileDataUrl(repoPath: string, file: string, ref?: string): Promise<string | null> {
   try {
     let buf: Buffer
     if (!ref) {
@@ -139,7 +153,7 @@ async function readImageDataUrl(repoPath: string, file: string, ref?: string): P
         )
       })
     }
-    return `data:${imageMime(file)};base64,${buf.toString('base64')}`
+    return `data:${fileMime(file)};base64,${buf.toString('base64')}`
   } catch {
     return null
   }
@@ -676,7 +690,7 @@ export const gitService = {
   },
 
   async fileDataUrl(repoPath: string, file: string, ref?: string): Promise<string> {
-    const url = await readImageDataUrl(repoPath, file, ref)
+    const url = await readFileDataUrl(repoPath, file, ref)
     if (url === null) throw new Error(`Cannot read image: ${file}`)
     return url
   },
@@ -688,8 +702,8 @@ export const gitService = {
     afterRef?: string
   ): Promise<{ before: string | null; after: string | null }> {
     const [before, after] = await Promise.all([
-      beforeRef == null ? Promise.resolve(null) : readImageDataUrl(repoPath, file, beforeRef),
-      readImageDataUrl(repoPath, file, afterRef)
+      beforeRef == null ? Promise.resolve(null) : readFileDataUrl(repoPath, file, beforeRef),
+      readFileDataUrl(repoPath, file, afterRef)
     ])
     return { before, after }
   },

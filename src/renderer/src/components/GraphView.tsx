@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Archive, GitCommitHorizontal, Tag, Laptop, Github, Gitlab, Cloud, Server, Check, Settings2 } from 'lucide-react'
 import type { GraphCommit, StashInfo, GraphColumnId, GraphColumns } from '../../../shared/types'
 import { defaultGraphColumns } from '../../../shared/types'
@@ -15,7 +15,7 @@ const LEFT_PAD = 16
 const NODE_R = 4.5
 const AVA = 20 // avatar node diameter
 
-const COL_MIN: Record<GraphColumnId, number> = { branch: 90, graph: 40, message: 120, author: 80, date: 56, sha: 56 }
+const COL_MIN: Record<GraphColumnId, number> = { branch: 90, graph: 8, message: 120, author: 80, date: 56, sha: 56 }
 const COL_LABEL: Record<GraphColumnId, string> = {
   branch: 'BRANCH / TAG',
   graph: 'GRAPH',
@@ -130,6 +130,17 @@ function providerIcon(url: string | undefined, size: number): React.JSX.Element 
   return <Cloud size={size} />
 }
 
+/** Black or white text, whichever contrasts better with a hex lane color. */
+function contrastText(hex: string): string {
+  const h = hex.replace('#', '')
+  const r = parseInt(h.slice(0, 2), 16)
+  const g = parseInt(h.slice(2, 4), 16)
+  const b = parseInt(h.slice(4, 6), 16)
+  // Perceived luminance (sRGB weights). Bright lanes → dark text.
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+  return lum > 0.6 ? '#10121a' : '#fff'
+}
+
 function timeAgo(unixSeconds: number): string {
   const diff = Date.now() / 1000 - unixSeconds
   if (diff < 60) return 'now'
@@ -141,8 +152,14 @@ function timeAgo(unixSeconds: number): string {
 
 function edgePath(x1: number, y1: number, x2: number, y2: number): string {
   if (x1 === x2) return `M ${x1} ${y1} L ${x2} ${y2}`
-  const bendY = Math.min(y1 + ROW_H, y2)
-  return `M ${x1} ${y1} C ${x1} ${y1 + ROW_H * 0.7}, ${x2} ${y1 + ROW_H * 0.3}, ${x2} ${bendY} L ${x2} ${y2}`
+  const r = Math.min(7, Math.abs(x2 - x1) * 0.45)
+  if (x2 > x1) {
+    // Merge edge: exit right at child row, sharp corner, straight down to parent
+    return `M ${x1} ${y1} L ${x2 - r} ${y1} Q ${x2} ${y1} ${x2} ${y1 + r} L ${x2} ${y2}`
+  } else {
+    // Branch edge: straight down in own lane, sharp corner, exit left to parent lane
+    return `M ${x1} ${y1} L ${x1} ${y2 - r} Q ${x1} ${y2} ${x1 - r} ${y2} L ${x2} ${y2}`
+  }
 }
 
 /** Resizable / toggleable column header. */
@@ -319,6 +336,58 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
   }, [repo.commits, repo.stashes, hasWip, repo.status])
 
   const layout = useMemo(() => layoutGraph(displayCommits), [displayCommits])
+
+  // Branch preview: hovering a branch/tag label ghosts every commit that isn't
+  // an ancestor of that ref's tip, so the branch's own history stands out.
+  const [previewHash, setPreviewHash] = useState<string | null>(null)
+  // Row hovered with no ref of its own — show which branch contains it.
+  const [hoverRow, setHoverRow] = useState<string | null>(null)
+  const preview = useMemo(() => {
+    if (!previewHash) return null
+    const byHash = new Map(displayCommits.map((c) => [c.hash, c]))
+    const hashes = new Set<string>()
+    const rows = new Set<number>()
+    const stack = [previewHash]
+    while (stack.length) {
+      const h = stack.pop()!
+      if (hashes.has(h)) continue
+      hashes.add(h)
+      const node = layout.nodes.get(h)
+      if (node) rows.add(node.row)
+      for (const p of byHash.get(h)?.parents ?? []) stack.push(p)
+    }
+    return { hashes, rows }
+  }, [previewHash, displayCommits, layout])
+
+  // Owning branch per commit: walk each branch tip's ancestry and tag every
+  // commit with the *nearest* tip (fewest steps away). Feature commits end up
+  // owned by their feature branch rather than mainline. Used to label a hovered
+  // commit that carries no ref of its own.
+  const branchOf = useMemo(() => {
+    const byHash = new Map(displayCommits.map((c) => [c.hash, c]))
+    const owner = new Map<string, string>()
+    const bestDepth = new Map<string, number>()
+    const tips: { hash: string; label: string; rank: number }[] = []
+    for (const c of displayCommits) {
+      for (const g of buildRefGroups(c.refs, remoteNames)) {
+        if (g.isTag) continue
+        tips.push({ hash: c.hash, label: g.label, rank: g.isHead ? 0 : g.isLocal ? 1 : 2 })
+      }
+    }
+    tips.sort((a, b) => a.rank - b.rank) // local/HEAD claim ties first
+    for (const tip of tips) {
+      const stack: [string, number][] = [[tip.hash, 0]]
+      while (stack.length) {
+        const [h, d] = stack.pop()!
+        const prev = bestDepth.get(h)
+        if (prev !== undefined && prev <= d) continue
+        bestDepth.set(h, d)
+        owner.set(h, tip.label)
+        for (const p of byHash.get(h)?.parents ?? []) stack.push([p, d + 1])
+      }
+    }
+    return owner
+  }, [displayCommits, remoteNames])
 
   const graphAuto = LEFT_PAD + Math.min(layout.laneCount, 24) * LANE_W + 18
   const totalHeight = displayCommits.length * ROW_H
@@ -530,15 +599,15 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
   // Presence glyphs for a ref group: tag, laptop (has local) and/or a provider
   // icon per remote that tracks the branch.
   const groupIcons = (g: RefGroup): React.JSX.Element => {
-    if (g.isTag) return <Tag size={9} className="ref-ic" />
+    if (g.isTag) return <Tag size={10} className="ref-ic" />
     return (
       <>
-        {g.isLocal && <Laptop size={9} className="ref-ic" />}
+        {g.isLocal && <Laptop size={10} className="ref-ic" />}
         {g.remotes.map((remote) => {
           const url = repo.remotes.find((r) => r.name === remote)?.url
           return (
             <span key={remote} className="ref-ic">
-              {providerIcon(url, 9)}
+              {providerIcon(url, 10)}
             </span>
           )
         })}
@@ -559,15 +628,25 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
     }
   }
 
-  const renderGroup = (g: RefGroup, c: GraphCommit): React.JSX.Element => {
+  const renderGroup = (g: RefGroup, c: GraphCommit, laneColor?: string): React.JSX.Element => {
     const title = g.isTag
       ? g.label
       : `${g.label}${g.isLocal ? ' · local' : ''}${g.remotes.length ? ` · ${g.remotes.join(', ')}` : ''}`
+    // Active branch (HEAD) gets a solid lane-colored pill so it stands out as
+    // the checked-out branch; others keep the soft lane tint.
+    const laneStyle: React.CSSProperties | undefined = laneColor
+      ? g.isHead
+        ? { borderColor: laneColor, background: laneColor, color: contrastText(laneColor) }
+        : { borderColor: laneColor + '90', background: laneColor + '20' }
+      : undefined
     return (
       <span
         key={g.key}
         className={`ref-badge ref-${g.kind}`}
+        style={laneStyle}
         title={title}
+        onMouseEnter={() => setPreviewHash(c.hash)}
+        onMouseLeave={() => setPreviewHash((h) => (h === c.hash ? null : h))}
         onClick={(e) => e.stopPropagation()}
         onDoubleClick={(e) => {
           e.stopPropagation()
@@ -617,67 +696,89 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
       <div className="graph-canvas" style={{ height: totalHeight }}>
         {columns.graph.visible && (
         <>
-        <svg className="graph-svg" width={graphCol} height={totalHeight} style={{ left: branchCol }}>
-          {layout.edges.map((e, i) => {
-            const x1 = LEFT_PAD + e.fromLane * LANE_W
-            const y1 = e.fromRow * ROW_H + ROW_H / 2
-            const x2 = LEFT_PAD + e.toLane * LANE_W
-            const y2 = e.toRow * ROW_H + ROW_H / 2
-            return (
-              <path
-                key={i}
-                d={edgePath(x1, y1, x2, y2)}
-                stroke={colorFor(e.color)}
-                strokeWidth={2}
-                fill="none"
-                opacity={0.85}
-              />
-            )
-          })}
-          {displayCommits.map((c) => {
-            const n = layout.nodes.get(c.hash)
-            if (!n) return null
-            const cx = LEFT_PAD + n.lane * LANE_W
-            const cy = n.row * ROW_H + ROW_H / 2
-            const isWip = c.hash === WIP_HASH
-            const isStash = stashBySha.has(c.hash)
-            if (isStash) {
-              return (
-                <g key={c.hash}>
-                  <rect
-                    x={cx - 5.5}
-                    y={cy - 5.5}
-                    width={11}
-                    height={11}
-                    rx={3}
-                    fill="var(--bg-1)"
-                    stroke={colorFor(n.color)}
+        {(() => {
+          const clampX = (x: number) => Math.min(x, graphCol - NODE_R - 1)
+          return (
+            <svg className="graph-svg" width={graphCol} height={totalHeight} style={{ left: branchCol }}>
+              {[...layout.edges].sort((a, b) => Math.max(a.fromLane, a.toLane) - Math.max(b.fromLane, b.toLane)).map((e, i) => {
+                const x1 = clampX(LEFT_PAD + e.fromLane * LANE_W)
+                const y1 = e.fromRow * ROW_H + ROW_H / 2
+                const x2 = clampX(LEFT_PAD + e.toLane * LANE_W)
+                const y2 = e.toRow * ROW_H + ROW_H / 2
+                const ghost = preview != null && !preview.rows.has(e.fromRow)
+                return (
+                  <path
+                    key={i}
+                    className="graph-edge"
+                    d={edgePath(x1, y1, x2, y2)}
+                    stroke={colorFor(e.color)}
                     strokeWidth={2}
-                    className="graph-node"
+                    strokeLinecap="round"
+                    fill="none"
+                    opacity={ghost ? 0.1 : 0.85}
                   />
-                  <rect x={cx - 2.5} y={cy - 1} width={5} height={1.6} rx={0.8} fill={colorFor(n.color)} />
-                </g>
-              )
-            }
-            if (isWip) {
-              return (
-                <circle
-                  key={c.hash}
-                  cx={cx}
-                  cy={cy}
-                  r={NODE_R + 1}
-                  fill="transparent"
-                  stroke={colorFor(n.color)}
-                  strokeWidth={2}
-                  strokeDasharray="2.5 2.5"
-                  className="graph-node"
-                />
-              )
-            }
-            // Normal commits are drawn as avatar nodes in the HTML overlay below.
-            return null
-          })}
-        </svg>
+                )
+              })}
+              {displayCommits.map((c) => {
+                const n = layout.nodes.get(c.hash)
+                if (!n) return null
+                const cx = clampX(LEFT_PAD + n.lane * LANE_W)
+                const cy = n.row * ROW_H + ROW_H / 2
+                const isWip = c.hash === WIP_HASH
+                const isStash = stashBySha.has(c.hash)
+                if (isStash) {
+                  return (
+                    <g key={c.hash}>
+                      <rect
+                        x={cx - 5.5}
+                        y={cy - 5.5}
+                        width={11}
+                        height={11}
+                        rx={3}
+                        fill="var(--bg-1)"
+                        stroke={colorFor(n.color)}
+                        strokeWidth={2}
+                        className="graph-node"
+                      />
+                      <rect x={cx - 2.5} y={cy - 1} width={5} height={1.6} rx={0.8} fill={colorFor(n.color)} />
+                    </g>
+                  )
+                }
+                if (isWip) {
+                  return (
+                    <circle
+                      key={c.hash}
+                      cx={cx}
+                      cy={cy}
+                      r={NODE_R + 1}
+                      fill="transparent"
+                      stroke={colorFor(n.color)}
+                      strokeWidth={2}
+                      strokeDasharray="2.5 2.5"
+                      className="graph-node"
+                    />
+                  )
+                }
+                if (c.parents.length >= 2) {
+                  return (
+                    <circle
+                      key={c.hash}
+                      cx={cx}
+                      cy={cy}
+                      r={5}
+                      fill={colorFor(n.color)}
+                      stroke="var(--bg-1)"
+                      strokeWidth={1.5}
+                      className="graph-node"
+                    />
+                  )
+                }
+                // Normal commits drawn as avatar nodes in the HTML overlay below.
+                return null
+              })}
+            </svg>
+          )
+        })()}
 
         {/* Avatar nodes overlay — the gravatar/generated avatar sits on the
             commit "ball", with a connector line from any branch labels. The
@@ -688,26 +789,33 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
             const n = layout.nodes.get(c.hash)
             if (!n) return null
             if (c.hash === WIP_HASH || stashBySha.has(c.hash)) return null
-            const x = branchCol + LEFT_PAD + n.lane * LANE_W
+            // Merge commits render as a small SVG dot (above), not an avatar —
+            // but they still get a connector line from their branch label.
+            const isMerge = c.parents.length >= 2
+            const ballR = isMerge ? 6 : AVA / 2
+            const x = branchCol + Math.min(LEFT_PAD + n.lane * LANE_W, graphCol - ballR - 1)
             const y = n.row * ROW_H + ROW_H / 2
             const color = colorFor(n.color)
             const hasRefs = buildRefGroups(c.refs, remoteNames).length > 0
             const connStart = branchCol - 6
+            const ghost = preview != null && !preview.hashes.has(c.hash)
             return (
-              <div key={c.hash}>
-                {hasRefs && branchCol > 0 && x - AVA / 2 > connStart && (
+              <div key={c.hash} className={ghost ? 'node-ghost' : undefined}>
+                {hasRefs && branchCol > 0 && x - ballR > connStart && (
                   <div
                     className="node-connector"
-                    style={{ left: connStart, width: x - AVA / 2 - connStart, top: y, background: color }}
+                    style={{ left: connStart, width: x - ballR - connStart, top: y, background: color }}
                   />
                 )}
-                <div
-                  className="node-ava"
-                  style={{ left: x, top: y, boxShadow: `0 0 0 2px ${color}` }}
-                  title={[c.author, ...(c.coAuthors?.map((a) => `+ ${a.name}`) ?? [])].join('\n')}
-                >
-                  <Avatar email={c.email} name={c.author} size={AVA} />
-                </div>
+                {!isMerge && (
+                  <div
+                    className="node-ava"
+                    style={{ left: x, top: y, boxShadow: `0 0 0 2px ${color}` }}
+                    title={[c.author, ...(c.coAuthors?.map((a) => `+ ${a.name}`) ?? [])].join('\n')}
+                  >
+                    <Avatar email={c.email} name={c.author} size={AVA} />
+                  </div>
+                )}
               </div>
             )
           })}
@@ -729,6 +837,7 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
               c.author.toLowerCase().includes(filter) ||
               c.hash.startsWith(filter))
           const dimmed = filter.length > 0 && !matches && !isWip
+          const ghosted = preview != null && !preview.hashes.has(c.hash)
           const wipCount =
             (repo.status?.staged.length ?? 0) +
             (repo.status?.unstaged.length ?? 0) +
@@ -737,8 +846,10 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
           return (
             <div
               key={c.hash}
-              className={`graph-row ${selected ? 'selected' : ''} ${dimmed ? 'dimmed' : ''} ${matches ? 'matched' : ''}`}
+              className={`graph-row ${selected ? 'selected' : ''} ${dimmed ? 'dimmed' : ''} ${matches ? 'matched' : ''} ${ghosted ? 'ghosted' : ''}`}
               style={{ top: row * ROW_H, height: ROW_H, paddingLeft: branchCol + graphCol }}
+              onMouseEnter={() => setHoverRow(c.hash)}
+              onMouseLeave={() => setHoverRow((h) => (h === c.hash ? null : h))}
               onClick={() =>
                 select(
                   repo.path,
@@ -755,19 +866,59 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
                 else if (!isWip) openContextMenu(e.clientX, e.clientY, commitMenu(c))
               }}
             >
+              {columns.graph.visible && (() => {
+                const n = layout.nodes.get(c.hash)
+                if (!n) return null
+                return (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      left: branchCol + graphCol + 3,
+                      top: 4,
+                      bottom: 4,
+                      width: 2,
+                      borderRadius: 1,
+                      background: colorFor(n.color),
+                      opacity: 0.55,
+                      pointerEvents: 'none',
+                    }}
+                  />
+                )
+              })()}
               {branchCol > 0 && groups.length > 0 && (
                 <div className="graph-refs" style={{ width: branchCol }}>
-                  {groups.length <= 2 ? (
-                    groups.map((g) => renderGroup(g, c))
-                  ) : (
-                    <>
-                      <span className="ref-collapsed">
-                        {renderGroup(groups[0], c)}
-                        <span className="ref-more-chip">+{groups.length - 1}</span>
+                  {(() => {
+                    const laneColor = colorFor(layout.nodes.get(c.hash)?.color ?? 0)
+                    return groups.length <= 2 ? (
+                      groups.map((g) => renderGroup(g, c, laneColor))
+                    ) : (
+                      <>
+                        <span className="ref-collapsed">
+                          {renderGroup(groups[0], c, laneColor)}
+                          <span className="ref-more-chip">+{groups.length - 1}</span>
+                        </span>
+                        <div className="graph-refs-pop">{groups.map((g) => renderGroup(g, c, laneColor))}</div>
+                      </>
+                    )
+                  })()}
+                </div>
+              )}
+              {/* Hover hint: a commit with no ref of its own shows the branch
+                  that contains it (ghosted) while hovered — purely informational. */}
+              {branchCol > 0 && groups.length === 0 && !isWip && !stash && hoverRow === c.hash && branchOf.get(c.hash) && (
+                <div className="graph-refs" style={{ width: branchCol }}>
+                  {(() => {
+                    const laneColor = colorFor(layout.nodes.get(c.hash)?.color ?? 0)
+                    return (
+                      <span
+                        className="ref-badge ref-local preview-hint"
+                        style={{ borderColor: laneColor + '90', background: laneColor + '20' }}
+                      >
+                        <Laptop size={10} className="ref-ic" />
+                        <span className="ref-text">{branchOf.get(c.hash)}</span>
                       </span>
-                      <div className="graph-refs-pop">{groups.map((g) => renderGroup(g, c))}</div>
-                    </>
-                  )}
+                    )
+                  })()}
                 </div>
               )}
               {columns.message.visible &&

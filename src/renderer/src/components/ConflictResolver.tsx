@@ -126,6 +126,7 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
   const toast = useUIStore((s) => s.toast)
   const refresh = useRepoStore((s) => s.refresh)
   const t = useT()
+  const aiEnabled = useSettingsStore((s) => s.activeProfile().ai.enabled !== false)
   const [content, setContent] = useState<string | null>(null)
   const [versions, setVersions] = useState<ConflictVersions | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -353,14 +354,16 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
           <button className="btn ghost tiny" onClick={() => setAll(null)}>
             {t('conflict.none')}
           </button>
-          <button
-            className="btn ghost tiny"
-            disabled={aiResolving || saving}
-            title={t('conflict.aiResolveHint')}
-            onClick={() => void aiResolve()}
-          >
-            {aiResolving ? <Loader2 size={12} className="spin" /> : <Sparkles size={12} />} {t('conflict.aiResolve')}
-          </button>
+          {aiEnabled && (
+            <button
+              className="btn ghost tiny"
+              disabled={aiResolving || saving}
+              title={t('conflict.aiResolveHint')}
+              onClick={() => void aiResolve()}
+            >
+              {aiResolving ? <Loader2 size={12} className="spin" /> : <Sparkles size={12} />} {t('conflict.aiResolve')}
+            </button>
+          )}
           <button className="btn primary small" disabled={!allResolved || saving} onClick={() => void save()}>
             <Check size={13} /> {t('conflict.saveResolution')}
           </button>

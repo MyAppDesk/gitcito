@@ -33,6 +33,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
   const { undo, redo } = useRepoStore()
   const { openContextMenu, openModal, toggleTerminal, terminalOpen, graphFilter, setGraphFilter, busy } = useUIStore()
   const confirmForcePush = useSettingsStore((s) => s.settings.confirmForcePush)
+  const aiEnabled = useSettingsStore((s) => s.activeProfile().ai.enabled !== false)
   const path = repo.path
   const current = repo.branches.locals.find((b) => b.isCurrent)
 
@@ -190,20 +191,22 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
       </div>
 
       <div className="toolbar-group right">
-        <button
-          className="tool-btn"
-          title="Generate AI configuration files for this repository"
-          onClick={() =>
-            openModal({
-              kind: 'ai-config-wizard',
-              repoPath: path,
-              repoName: repo.name
-            })
-          }
-        >
-          <Wand2 size={15} />
-          <span>AI Config</span>
-        </button>
+        {aiEnabled && (
+          <button
+            className="tool-btn"
+            title="Generate AI configuration files for this repository"
+            onClick={() =>
+              openModal({
+                kind: 'ai-config-wizard',
+                repoPath: path,
+                repoName: repo.name
+              })
+            }
+          >
+            <Wand2 size={15} />
+            <span>AI Config</span>
+          </button>
+        )}
         <div className="graph-search">
           <Search size={13} />
           <input

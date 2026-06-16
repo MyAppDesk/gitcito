@@ -78,6 +78,8 @@ const en = {
   'settings.profile': 'Profile',
   'settings.integrations': 'Integrations',
   'settings.ai': 'AI',
+  'settings.aiEnabled': 'Enable AI features',
+  'settings.aiEnabledHint': 'When disabled, all AI buttons and suggestions are hidden across the app.',
   'settings.themes': 'Themes',
   'settings.general': 'General',
   'settings.language': 'Language',

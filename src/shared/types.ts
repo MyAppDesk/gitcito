@@ -231,6 +231,7 @@ export const AI_PROVIDERS: AIProviderPreset[] = [
 ]
 
 export interface AIConfig {
+  enabled: boolean
   provider: AIProvider
   endpoint: string
   apiKey: string
@@ -386,6 +387,7 @@ export function defaultProfile(): Profile {
     gitlabToken: '',
     bitbucketToken: '',
     ai: {
+      enabled: true,
       provider: 'openai',
       endpoint: 'https://api.openai.com/v1',
       apiKey: '',

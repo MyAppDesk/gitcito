@@ -50,6 +50,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
   const fileView = useUIStore((s) => s.fileView)
   const setFileView = useUIStore((s) => s.setFileView)
   const activeProfile = useSettingsStore((s) => s.activeProfile)
+  const aiEnabled = useSettingsStore((s) => s.activeProfile().ai.enabled !== false)
 
   const layout = useUIStore((s) => s.layout)
   const setLayout = useUIStore((s) => s.setLayout)
@@ -395,15 +396,17 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
             <span>Unstaged files</span>
             <span className="sb-count">{unstaged.length}</span>
             <div className="stage-header-actions">
-              <motion.button
-                className="btn ai-stage-btn"
-                title="Auto-select files to stage with AI"
-                disabled={aiStageBusy || unstaged.length === 0}
-                onClick={() => void autoStageWithAI()}
-                whileTap={{ scale: 0.92 }}
-              >
-                {aiStageBusy ? <Loader2 size={14} className="spin" /> : <Sparkles size={14} />}
-              </motion.button>
+              {aiEnabled && (
+                <motion.button
+                  className="btn ai-stage-btn"
+                  title="Auto-select files to stage with AI"
+                  disabled={aiStageBusy || unstaged.length === 0}
+                  onClick={() => void autoStageWithAI()}
+                  whileTap={{ scale: 0.92 }}
+                >
+                  {aiStageBusy ? <Loader2 size={14} className="spin" /> : <Sparkles size={14} />}
+                </motion.button>
+              )}
               <button
                 className="btn ghost tiny"
                 disabled={unstaged.length === 0}
@@ -513,15 +516,17 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
             maxLength={100}
             onChange={(e) => setSummary(e.target.value)}
           />
-          <motion.button
-            className="ai-btn"
-            title="Generate commit message with AI"
-            disabled={aiBusy || staged.length === 0}
-            onClick={() => void generateWithAI()}
-            whileTap={{ scale: 0.92 }}
-          >
-            {aiBusy ? <Loader2 size={15} className="spin" /> : <Sparkles size={14} />}
-          </motion.button>
+          {aiEnabled && (
+            <motion.button
+              className="ai-btn"
+              title="Generate commit message with AI"
+              disabled={aiBusy || staged.length === 0}
+              onClick={() => void generateWithAI()}
+              whileTap={{ scale: 0.92 }}
+            >
+              {aiBusy ? <Loader2 size={15} className="spin" /> : <Sparkles size={14} />}
+            </motion.button>
+          )}
         </div>
         <textarea
           className="commit-description"

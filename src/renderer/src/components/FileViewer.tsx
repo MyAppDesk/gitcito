@@ -91,6 +91,7 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
   const setFileView = useUIStore((s) => s.setFileView)
   const toast = useUIStore((s) => s.toast)
   const t = useT()
+  const aiEnabled = useSettingsStore((s) => s.activeProfile().ai.enabled !== false)
   const [content, setContent] = useState<string | null>(null)
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [imgDiff, setImgDiff] = useState<{ before: string | null; after: string | null } | null>(null)
@@ -274,7 +275,7 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
             </button>
           ))}
         </div>
-        {canExplain && (
+        {canExplain && aiEnabled && (
           <button
             className="btn ghost small fv-explain-btn"
             disabled={explaining}

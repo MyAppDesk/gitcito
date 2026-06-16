@@ -295,6 +295,22 @@ function AIPage({ profile, edit }: { profile: Profile; edit: (p: Partial<Profile
 
   return (
     <>
+      <label className="settings-toggle-card">
+        <input
+          type="checkbox"
+          checked={ai.enabled !== false}
+          onChange={(e) => edit({ ai: { ...ai, enabled: e.target.checked } })}
+        />
+        <span className="settings-toggle-control" aria-hidden="true">
+          <span className="settings-toggle-thumb" />
+        </span>
+        <span className="settings-toggle-copy">
+          <strong>{t('settings.aiEnabled')}</strong>
+          <span className="settings-hint">{t('settings.aiEnabledHint')}</span>
+        </span>
+      </label>
+
+      <div style={ai.enabled === false ? { opacity: 0.4, pointerEvents: 'none' } : undefined}>
       <h4>
         <Bot size={14} /> {t('settings.provider')}
       </h4>
@@ -447,6 +463,7 @@ function AIPage({ profile, edit }: { profile: Profile; edit: (p: Partial<Profile
           </span>
         </label>
       </details>
+      </div>
     </>
   )
 }

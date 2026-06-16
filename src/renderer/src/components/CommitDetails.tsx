@@ -36,6 +36,7 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
   const setFileView = useUIStore((s) => s.setFileView)
   const toast = useUIStore((s) => s.toast)
   const activeProfile = useSettingsStore((s) => s.activeProfile)
+  const aiEnabled = useSettingsStore((s) => s.activeProfile().ai.enabled !== false)
   const commit: GraphCommit | undefined = repo.commits.find((c) => c.hash === hash)
 
   useEffect(() => {
@@ -148,7 +149,7 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
                   <SquarePen size={13} />
                 </button>
               )}
-              {canAmendMessage && (
+              {canAmendMessage && aiEnabled && (
                 <motion.button
                   className="icon-btn commit-edit-btn"
                   type="button"

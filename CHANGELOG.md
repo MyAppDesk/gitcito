@@ -1,5 +1,14 @@
 
 
+## [0.2.0](https://github.com/MyAppDesk/gitcito/compare/v0.1.1...v0.2.0) (2026-06-16)
+
+
+### Features
+
+* add AI PR review feature with structured feedback ([8a6d21b](https://github.com/MyAppDesk/gitcito/commit/8a6d21ba5372cab4e345dd915d6146aa6d1cf9e0))
+* add AI theme and branch name generation features ([0e44ae1](https://github.com/MyAppDesk/gitcito/commit/0e44ae121311e2ddcc2abfa3b586901983a9612d))
+* add CreateBranchModal component for branch creation ([8940a39](https://github.com/MyAppDesk/gitcito/commit/8940a39856d32385b973da60c9831d8c8d97d36c))
+
 ## [0.1.1](https://github.com/MyAppDesk/gitcito/compare/v0.1.0...v0.1.1) (2026-06-16)
 
 

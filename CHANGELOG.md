@@ -1,5 +1,12 @@
 
 
+## [0.1.1](https://github.com/MyAppDesk/gitcito/compare/v0.1.0...v0.1.1) (2026-06-16)
+
+
+### Bug Fixes
+
+* allow lowercase subject in PR title check ([c575155](https://github.com/MyAppDesk/gitcito/commit/c575155af901bfda1bc05481ce40a51726fdf89f))
+
 ## 0.1.0 (2026-06-16)
 
 

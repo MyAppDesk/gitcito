@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron'
-import type { AIConfig } from '../shared/types'
+import type { AIConfig, ConflictStyle, ExplainStyle } from '../shared/types'
 
 export interface AICommitMessage {
   summary: string
@@ -95,6 +95,14 @@ function styleGuidance(cfg: AIConfig, branch: string): string {
     case 'plain':
       rule = 'Write a plain imperative summary with no prefixes, no emoji, no ticket references.'
       break
+    case 'caveman':
+      rule =
+        'Write the summary in exaggerated caveman speak: short, broken sentences in ALL CAPS, e.g. "ME ADD LOGIN. CODE GOOD.". No prefixes or emoji. Keep it understandable.'
+      break
+    case 'haiku':
+      rule =
+        'Write the summary as a single-line haiku (5-7-5 syllables) describing the change, separating the three parts with " / ". No prefixes or emoji.'
+      break
     case 'auto':
     default:
       rule = ticketRule ?? conventional
@@ -103,6 +111,40 @@ function styleGuidance(cfg: AIConfig, branch: string): string {
 
   const custom = cfg.customInstructions?.trim()
   return custom ? `${rule}\nAdditional user rules (highest priority): ${custom}` : rule
+}
+
+/** Tone instruction for code explanations. */
+function explainStyleGuidance(style: ExplainStyle | undefined): string {
+  switch (style) {
+    case 'concise':
+      return 'Be extremely concise: a one-line summary and at most two short bullets.'
+    case 'detailed':
+      return 'Be thorough: walk through the logic step by step, including edge cases, complexity, and potential bugs.'
+    case 'eli5':
+      return 'Explain it like I am five: very simple words and everyday analogies, no jargon.'
+    case 'caveman':
+      return 'Use exaggerated caveman speak: short, broken sentences and ALL CAPS for emphasis (e.g. "CODE TAKE NUMBER. CODE ADD. CODE GIVE BACK."). Stay accurate and understandable.'
+    case 'pirate':
+      return 'Speak like a salty pirate, with nautical slang and the odd "Arr". Stay accurate and understandable.'
+    case 'formal':
+      return 'Use a formal, academic tone suitable for technical documentation.'
+    case 'normal':
+    default:
+      return 'Use a clear, friendly, professional tone.'
+  }
+}
+
+/** Output-shaping instruction for AI merge-conflict resolution. */
+function conflictStyleGuidance(style: ConflictStyle | undefined): string {
+  switch (style) {
+    case 'commented':
+      return "Where you combine or choose between the conflicting sides, add a brief inline comment using the file's comment syntax noting what was done (e.g. \"// merged: kept both validations\"). Keep comments short and only at resolved spots."
+    case 'conservative':
+      return 'Be conservative: make the smallest possible change. When the two sides cannot be safely combined, prefer keeping BOTH behaviours over dropping either.'
+    case 'clean':
+    default:
+      return 'Produce a clean result with no extra comments about the merge.'
+  }
 }
 
 function buildSystemPrompt(cfg: AIConfig, ctx: AICommitContext): string {
@@ -188,11 +230,13 @@ function clip(text: string, max = 16000): string {
 
 /** Plain-language explanation of a code file or snippet. */
 async function explainCode(code: string, lang: string, cfg: AIConfig): Promise<string> {
+  const tone = explainStyleGuidance(cfg.explainStyle)
   const system = `You are an expert software engineer explaining code to a colleague.
 Explain what the given ${lang || 'source'} code does in clear, plain language.
 Lead with a one-sentence summary, then short bullet points for the key parts and any
 notable side effects, edge cases, or risks. Be concise. Do not restate the code line by
-line. Use markdown, but no code fences unless quoting a short identifier.`
+line. Use markdown, but no code fences unless quoting a short identifier.
+Tone: ${tone}`
   return (await chatComplete(cfg, [
     { role: 'system', content: system },
     { role: 'user', content: clip(code) }
@@ -201,10 +245,12 @@ line. Use markdown, but no code fences unless quoting a short identifier.`
 
 /** Propose a merged file from raw content containing git conflict markers. */
 async function resolveConflictAI(file: string, content: string, cfg: AIConfig): Promise<string> {
+  const styleRule = conflictStyleGuidance(cfg.conflictStyle)
   const system = `You are resolving a git merge conflict in "${file}".
 The input contains conflict markers: <<<<<<< (ours), ======= , >>>>>>> (theirs), and
 optionally ||||||| (base). Produce the correct merged file that preserves the intent of
 BOTH sides where compatible. Keep all non-conflicting content unchanged.
+${styleRule}
 Reply with ONLY the full resolved file content. No conflict markers, no markdown fences,
 no commentary, no explanations.`
   const out = await chatComplete(

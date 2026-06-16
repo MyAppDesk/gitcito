@@ -25,7 +25,7 @@ import hljs from 'highlight.js'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
 import { gitApi, aiApi } from '../infrastructure/api'
-import { AI_PROVIDERS, type AIProvider, type CommitStyle, type Profile } from '../../../shared/types'
+import { AI_PROVIDERS, type AIProvider, type CommitStyle, type ConflictStyle, type ExplainStyle, type Profile } from '../../../shared/types'
 import type {
   AppTheme,
   AppThemeColors,
@@ -61,7 +61,25 @@ const COMMIT_STYLES: { id: CommitStyle; key: TranslationKey }[] = [
   { id: 'ticket', key: 'commitStyle.ticket' },
   { id: 'conventional', key: 'commitStyle.conventional' },
   { id: 'gitmoji', key: 'commitStyle.gitmoji' },
-  { id: 'plain', key: 'commitStyle.plain' }
+  { id: 'plain', key: 'commitStyle.plain' },
+  { id: 'caveman', key: 'commitStyle.caveman' },
+  { id: 'haiku', key: 'commitStyle.haiku' }
+]
+
+const EXPLAIN_STYLES: { id: ExplainStyle; key: TranslationKey }[] = [
+  { id: 'normal', key: 'explainStyle.normal' },
+  { id: 'concise', key: 'explainStyle.concise' },
+  { id: 'detailed', key: 'explainStyle.detailed' },
+  { id: 'eli5', key: 'explainStyle.eli5' },
+  { id: 'caveman', key: 'explainStyle.caveman' },
+  { id: 'pirate', key: 'explainStyle.pirate' },
+  { id: 'formal', key: 'explainStyle.formal' }
+]
+
+const CONFLICT_STYLES: { id: ConflictStyle; key: TranslationKey }[] = [
+  { id: 'clean', key: 'conflictStyle.clean' },
+  { id: 'commented', key: 'conflictStyle.commented' },
+  { id: 'conservative', key: 'conflictStyle.conservative' }
 ]
 
 function ProfilePage({ profile, edit }: { profile: Profile; edit: (p: Partial<Profile>) => void }): React.JSX.Element {
@@ -334,7 +352,6 @@ function AIPage({ profile, edit }: { profile: Profile; edit: (p: Partial<Profile
 
       <h4>{t('settings.commitStyle')}</h4>
       <label>
-        {t('settings.style')}
         <select
           value={ai.commitStyle}
           onChange={(e) => edit({ ai: { ...ai, commitStyle: e.target.value as CommitStyle } })}
@@ -361,6 +378,36 @@ function AIPage({ profile, edit }: { profile: Profile; edit: (p: Partial<Profile
           <span className="settings-hint">{t('settings.generateDescriptionHint')}</span>
         </span>
       </label>
+
+      <h4>{t('settings.explainStyle')}</h4>
+      <label>
+        <select
+          value={ai.explainStyle ?? 'normal'}
+          onChange={(e) => edit({ ai: { ...ai, explainStyle: e.target.value as ExplainStyle } })}
+        >
+          {EXPLAIN_STYLES.map((s) => (
+            <option key={s.id} value={s.id}>
+              {t(s.key)}
+            </option>
+          ))}
+        </select>
+      </label>
+      <span className="settings-hint">{t('settings.explainStyleHint')}</span>
+
+      <h4>{t('settings.conflictStyle')}</h4>
+      <label>
+        <select
+          value={ai.conflictStyle ?? 'clean'}
+          onChange={(e) => edit({ ai: { ...ai, conflictStyle: e.target.value as ConflictStyle } })}
+        >
+          {CONFLICT_STYLES.map((s) => (
+            <option key={s.id} value={s.id}>
+              {t(s.key)}
+            </option>
+          ))}
+        </select>
+      </label>
+      <span className="settings-hint">{t('settings.conflictStyleHint')}</span>
 
       <details className="settings-advanced">
         <summary>
@@ -916,13 +963,25 @@ function GeneralPage(): React.JSX.Element {
   )
 }
 
+const LAST_PAGE_KEY = 'gitcito.settings.lastPage'
+const PAGE_IDS: SettingsPage[] = ['profile', 'integrations', 'ai', 'themes', 'general']
+
+function readLastPage(): SettingsPage {
+  const stored = localStorage.getItem(LAST_PAGE_KEY)
+  return stored && (PAGE_IDS as string[]).includes(stored) ? (stored as SettingsPage) : 'general'
+}
+
 export function SettingsPanel({ initialPage }: { initialPage?: SettingsPage } = {}): React.JSX.Element {
   const { settings, addProfile, deleteProfile } = useSettingsStore()
   const openModal = useUIStore((s) => s.openModal)
   const [selectedId, setSelectedId] = useState(settings.activeProfileId)
-  const [page, setPage] = useState<SettingsPage>(initialPage ?? 'general')
+  const [page, setPage] = useState<SettingsPage>(initialPage ?? readLastPage())
   const [version, setVersion] = useState('')
   const t = useT()
+
+  useEffect(() => {
+    localStorage.setItem(LAST_PAGE_KEY, page)
+  }, [page])
 
   useEffect(() => {
     void window.api.appVersion().then(setVersion)

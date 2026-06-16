@@ -159,7 +159,13 @@ export interface WorktreeInfo {
 
 // ─── Settings / profiles ─────────────────────────────────────────────────────
 
-export type CommitStyle = 'auto' | 'conventional' | 'gitmoji' | 'ticket' | 'plain'
+export type CommitStyle = 'auto' | 'conventional' | 'gitmoji' | 'ticket' | 'plain' | 'caveman' | 'haiku'
+
+/** Tone/persona used when the AI explains code. */
+export type ExplainStyle = 'normal' | 'concise' | 'detailed' | 'eli5' | 'caveman' | 'pirate' | 'formal'
+
+/** How the AI shapes the output when resolving merge conflicts. */
+export type ConflictStyle = 'clean' | 'commented' | 'conservative'
 
 export type AIProvider = 'openai' | 'anthropic' | 'openrouter' | 'groq' | 'mistral' | 'ollama' | 'custom'
 
@@ -230,6 +236,8 @@ export interface AIConfig {
   apiKey: string
   model: string
   commitStyle: CommitStyle
+  explainStyle: ExplainStyle
+  conflictStyle: ConflictStyle
   customInstructions: string
   generateDescription: boolean
   coAuthor: boolean
@@ -383,6 +391,8 @@ export function defaultProfile(): Profile {
       apiKey: '',
       model: 'gpt-4o-mini',
       commitStyle: 'auto',
+      explainStyle: 'normal',
+      conflictStyle: 'clean',
       customInstructions: '',
       generateDescription: true,
       coAuthor: true

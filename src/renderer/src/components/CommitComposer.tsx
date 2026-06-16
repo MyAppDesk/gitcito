@@ -40,6 +40,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
   const [description, setDescription] = useState('')
   const [amend, setAmend] = useState(false)
   const [aiBusy, setAiBusy] = useState(false)
+  const [aiStageBusy, setAiStageBusy] = useState(false)
   const [selection, setSelection] = useState<{ list: ListName; paths: Set<string> }>({
     list: 'unstaged',
     paths: new Set()
@@ -253,6 +254,29 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
     }
   }
 
+  const autoStageWithAI = async (): Promise<void> => {
+    if (unstaged.length === 0) return
+    setAiStageBusy(true)
+    try {
+      const files = unstaged.map((f) => ({ path: f.path, status: f.status }))
+      const result = await aiApi.smartStage(files, activeProfile().ai)
+      if (result.toStage.length === 0) {
+        toast('info', 'AI found nothing worth staging')
+        return
+      }
+      await repoActions.stage(path, result.toStage)
+      const skipped = files.length - result.toStage.length
+      const msg = skipped > 0
+        ? `Staged ${result.toStage.length} file${result.toStage.length === 1 ? '' : 's'}, skipped ${skipped} (${result.reason})`
+        : `Staged ${result.toStage.length} file${result.toStage.length === 1 ? '' : 's'} (${result.reason})`
+      toast('success', msg)
+    } catch (err) {
+      toast('error', err instanceof Error ? err.message : String(err))
+    } finally {
+      setAiStageBusy(false)
+    }
+  }
+
   const doCommit = async (): Promise<void> => {
     let message = description.trim() ? `${summary.trim()}\n\n${description.trim()}` : summary.trim()
     if (!message) return
@@ -370,18 +394,29 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
             </button>
             <span>Unstaged files</span>
             <span className="sb-count">{unstaged.length}</span>
-            <button
-              className="btn ghost tiny"
-              disabled={unstaged.length === 0}
-              onClick={() => {
-                if (selectedCount('unstaged') > 1) {
-                  void repoActions.stage(path, [...selection.paths])
-                  setSelection({ list: 'unstaged', paths: new Set() })
-                } else void repoActions.stageAll(path)
-              }}
-            >
-              {selectedCount('unstaged') > 1 ? `Stage selected (${selectedCount('unstaged')})` : 'Stage all'}
-            </button>
+            <div className="stage-header-actions">
+              <motion.button
+                className="btn ai-stage-btn"
+                title="Auto-select files to stage with AI"
+                disabled={aiStageBusy || unstaged.length === 0}
+                onClick={() => void autoStageWithAI()}
+                whileTap={{ scale: 0.92 }}
+              >
+                {aiStageBusy ? <Loader2 size={14} className="spin" /> : <Sparkles size={14} />}
+              </motion.button>
+              <button
+                className="btn ghost tiny"
+                disabled={unstaged.length === 0}
+                onClick={() => {
+                  if (selectedCount('unstaged') > 1) {
+                    void repoActions.stage(path, [...selection.paths])
+                    setSelection({ list: 'unstaged', paths: new Set() })
+                  } else void repoActions.stageAll(path)
+                }}
+              >
+                {selectedCount('unstaged') > 1 ? `Stage selected (${selectedCount('unstaged')})` : 'Stage all'}
+              </button>
+            </div>
           </div>
           <AnimatePresence initial={false}>
             {!layout.composerUnstagedCollapsed && (

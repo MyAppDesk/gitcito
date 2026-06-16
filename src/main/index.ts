@@ -1,5 +1,6 @@
 import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
-import { join } from 'path'
+import { join, dirname } from 'path'
+import { writeFile, mkdir, chmod } from 'fs/promises'
 import icon from '../../resources/icon.png?asset'
 import { registerGitHandlers } from './git'
 import { registerSettingsHandlers } from './settings'
@@ -65,6 +66,20 @@ app.whenReady().then(() => {
   })
 
   ipcMain.handle('shell:openPath', (_e, fullPath: string) => shell.openPath(fullPath))
+
+  ipcMain.handle(
+    'shell:writeFiles',
+    async (_e, repoPath: string, files: { path: string; content: string }[]) => {
+      for (const file of files) {
+        const fullPath = join(repoPath, file.path)
+        await mkdir(dirname(fullPath), { recursive: true })
+        await writeFile(fullPath, file.content, 'utf-8')
+        if (file.path.startsWith('.git/hooks/')) {
+          await chmod(fullPath, 0o755)
+        }
+      }
+    }
+  )
 
   ipcMain.on('window:minimize', (e) => BrowserWindow.fromWebContents(e.sender)?.minimize())
   ipcMain.on('window:maximize', (e) => {

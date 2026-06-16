@@ -11,7 +11,9 @@ const api = {
 
   shell: {
     showItemInFolder: (fullPath: string): Promise<void> => ipcRenderer.invoke('shell:showItemInFolder', fullPath),
-    openPath: (fullPath: string): Promise<string> => ipcRenderer.invoke('shell:openPath', fullPath)
+    openPath: (fullPath: string): Promise<string> => ipcRenderer.invoke('shell:openPath', fullPath),
+    writeFiles: (repoPath: string, files: unknown): Promise<void> =>
+      ipcRenderer.invoke('shell:writeFiles', repoPath, files)
   },
 
   settings: {
@@ -26,7 +28,13 @@ const api = {
     explainCode: (code: string, lang: string, cfg: unknown): Promise<unknown> =>
       ipcRenderer.invoke('ai:explainCode', code, lang, cfg),
     resolveConflict: (file: string, content: string, cfg: unknown): Promise<unknown> =>
-      ipcRenderer.invoke('ai:resolveConflict', file, content, cfg)
+      ipcRenderer.invoke('ai:resolveConflict', file, content, cfg),
+    generateConfig: (repoName: string, artifacts: unknown, context: string, cfg: unknown): Promise<unknown> =>
+      ipcRenderer.invoke('ai:generateConfig', repoName, artifacts, context, cfg),
+    suggestArtifacts: (repoName: string, selectedTools: unknown, context: string, alreadySelected: unknown, cfg: unknown): Promise<unknown> =>
+      ipcRenderer.invoke('ai:suggestArtifacts', repoName, selectedTools, context, alreadySelected, cfg),
+    smartStage: (files: unknown, cfg: unknown): Promise<unknown> =>
+      ipcRenderer.invoke('ai:smartStage', files, cfg)
   },
 
   hosting: {

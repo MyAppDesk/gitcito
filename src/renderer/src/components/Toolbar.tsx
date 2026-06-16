@@ -11,7 +11,8 @@ import {
   TerminalSquare,
   Search,
   RefreshCw,
-  Loader2
+  Loader2,
+  Wand2
 } from 'lucide-react'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
 import { useUIStore } from '../stores/ui'
@@ -189,6 +190,20 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
       </div>
 
       <div className="toolbar-group right">
+        <button
+          className="tool-btn"
+          title="Generate AI configuration files for this repository"
+          onClick={() =>
+            openModal({
+              kind: 'ai-config-wizard',
+              repoPath: path,
+              repoName: repo.name
+            })
+          }
+        >
+          <Wand2 size={15} />
+          <span>AI Config</span>
+        </button>
         <div className="graph-search">
           <Search size={13} />
           <input

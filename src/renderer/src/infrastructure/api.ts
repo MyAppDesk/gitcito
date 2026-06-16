@@ -127,6 +127,22 @@ export const settingsApi = {
   set: (s: AppSettings) => window.api.settings.set(s)
 }
 
+export interface ArtifactRequest {
+  path: string
+  description: string
+}
+
+export interface GeneratedFile {
+  path: string
+  content: string
+}
+
+export interface ArtifactSuggestion {
+  path: string
+  description: string
+  reason: string
+}
+
 export const aiApi = {
   commitMessage: (diff: string, cfg: AIConfig, ctx: { branch: string }) =>
     window.api.ai.commitMessage(diff, cfg, ctx) as Promise<{ summary: string; description: string }>,
@@ -134,13 +150,21 @@ export const aiApi = {
   explainCode: (code: string, lang: string, cfg: AIConfig) =>
     window.api.ai.explainCode(code, lang, cfg) as Promise<string>,
   resolveConflict: (file: string, content: string, cfg: AIConfig) =>
-    window.api.ai.resolveConflict(file, content, cfg) as Promise<string>
+    window.api.ai.resolveConflict(file, content, cfg) as Promise<string>,
+  generateConfig: (repoName: string, artifacts: ArtifactRequest[], context: string, cfg: AIConfig) =>
+    window.api.ai.generateConfig(repoName, artifacts, context, cfg) as Promise<{ files: GeneratedFile[] }>,
+  suggestArtifacts: (repoName: string, selectedTools: string[], context: string, alreadySelected: ArtifactRequest[], cfg: AIConfig) =>
+    window.api.ai.suggestArtifacts(repoName, selectedTools, context, alreadySelected, cfg) as Promise<{ suggestions: ArtifactSuggestion[] }>,
+  smartStage: (files: { path: string; status: string }[], cfg: AIConfig) =>
+    window.api.ai.smartStage(files, cfg) as Promise<{ toStage: string[]; reason: string }>
 }
 
 export const shellApi = {
   revealInFolder: (fullPath: string) => window.api.shell.showItemInFolder(fullPath),
   openPath: (fullPath: string) => window.api.shell.openPath(fullPath),
   openExternal: (url: string) => window.api.openExternal(url),
+  writeFiles: (repoPath: string, files: GeneratedFile[]) =>
+    window.api.shell.writeFiles(repoPath, files) as Promise<void>,
   revealLabel:
     window.api.platform === 'darwin'
       ? 'Reveal in Finder'

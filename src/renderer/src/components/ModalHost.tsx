@@ -8,6 +8,7 @@ import { repoActions } from '../stores/repo'
 import type { CreateRepoOpts, RemoteOwner, RemoteRepo, RepoHost } from '../../../shared/types'
 import { SettingsPanel } from './SettingsPanel'
 import { LauncherPanel, type LauncherItem } from './Welcome'
+import { AIConfigWizard } from './AIConfigWizard'
 
 function InputModal({ spec }: { spec: Extract<ModalSpec, { kind: 'input' }> }): React.JSX.Element {
   const closeModal = useUIStore((s) => s.closeModal)
@@ -1084,7 +1085,7 @@ export function ModalHost(): React.JSX.Element {
           }}
         >
           <motion.div
-            className={`modal ${modal.kind === 'settings' ? 'modal-wide' : ''}`}
+            className={`modal ${modal.kind === 'settings' || modal.kind === 'ai-config-wizard' ? 'modal-wide' : ''}`}
             initial={{ opacity: 0, scale: 0.94, y: 16 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 8 }}
@@ -1101,6 +1102,7 @@ export function ModalHost(): React.JSX.Element {
             {modal.kind === 'settings' && <SettingsPanel initialPage={modal.page} />}
             {modal.kind === 'launcher' && <LauncherModal spec={modal} />}
             {modal.kind === 'create-repo' && <CreateRepoModal spec={modal} />}
+            {modal.kind === 'ai-config-wizard' && <AIConfigWizard spec={modal} />}
           </motion.div>
         </motion.div>
       )}

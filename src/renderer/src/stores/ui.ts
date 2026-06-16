@@ -60,6 +60,7 @@ export type ModalSpec =
   | { kind: 'settings'; page?: 'profile' | 'integrations' | 'ai' | 'themes' | 'general' }
   | { kind: 'launcher'; groupId?: string }
   | { kind: 'create-repo'; onCreate: (repo: { path: string; name: string }) => void }
+  | { kind: 'ai-config-wizard'; repoPath: string; repoName: string }
 
 export type FileViewSource =
   | { type: 'wip'; staged: boolean; untracked: boolean }

@@ -265,6 +265,156 @@ no commentary, no explanations.`
   return out.replace(/^```[^\n]*\n?/, '').replace(/\n?```\s*$/, '').replace(/\s+$/, '')
 }
 
+export interface ArtifactRequest {
+  path: string
+  description: string
+}
+
+export interface GeneratedFile {
+  path: string
+  content: string
+}
+
+export interface ArtifactSuggestion {
+  path: string
+  description: string
+  reason: string
+}
+
+async function generateProjectConfig(
+  repoName: string,
+  artifacts: ArtifactRequest[],
+  context: string,
+  cfg: AIConfig
+): Promise<{ files: GeneratedFile[] }> {
+  const system = `You are a developer productivity expert generating AI tool configuration files for a software project.
+Reply ONLY with valid JSON: {"files": [{"path": "...", "content": "..."}]}
+Rules:
+- Paths are relative to the repo root (e.g. "CLAUDE.md", ".cursor/rules/project.mdc")
+- Content must be complete and production-ready — no placeholders, no TODOs
+- For shell scripts (.git/hooks/*), output executable sh scripts with a proper shebang line
+- No markdown fences or commentary outside the JSON object`
+
+  const fileList = artifacts.map((a) => `- ${a.path}: ${a.description}`).join('\n')
+  const user = `Project name: ${repoName}${context.trim() ? `\nProject description: ${context.trim()}` : ''}
+
+Generate these configuration files:
+${fileList}`
+
+  const response = await chatComplete(
+    cfg,
+    [
+      { role: 'system', content: system },
+      { role: 'user', content: user }
+    ],
+    0.3
+  )
+
+  try {
+    const cleaned = response.replace(/^```(json)?/m, '').replace(/```$/m, '').trim()
+    const parsed = JSON.parse(cleaned) as { files?: GeneratedFile[] }
+    return { files: Array.isArray(parsed.files) ? parsed.files : [] }
+  } catch {
+    throw new Error('AI returned invalid JSON. Try again or reduce the number of selected artifacts.')
+  }
+}
+
+export interface SmartStageFile {
+  path: string
+  status: string
+}
+
+export interface SmartStageResult {
+  toStage: string[]
+  reason: string
+}
+
+async function smartStageFiles(files: SmartStageFile[], cfg: AIConfig): Promise<SmartStageResult> {
+  const system = `You are a git expert deciding which changed files should be staged for a commit.
+
+STAGE these kinds of files:
+- Source code changes (.ts, .tsx, .js, .jsx, .py, .go, .rs, .java, .rb, .php, .cs, .cpp, .c, .h, .swift, .kt)
+- Tests, documentation, migrations, SQL
+- Intentional config changes (tsconfig, vite.config, package.json changes that aren't just lockfile, .eslintrc, etc.)
+- Assets, styles, templates that were deliberately edited
+
+DO NOT STAGE:
+- Lock files: package-lock.json, yarn.lock, pnpm-lock.yaml, Cargo.lock, poetry.lock, Gemfile.lock, composer.lock
+- Build/compile output: dist/, build/, out/, .next/, .nuxt/, __pycache__/, *.pyc, *.class, *.o, *.d.ts in dist
+- Environment & secrets: .env, .env.local, .env.production, .env.development, *.pem, *.key, secrets.*
+- OS & editor garbage: .DS_Store, Thumbs.db, desktop.ini, .idea/, *.swp, *.swo, *~
+- Log files: *.log, npm-debug.log, yarn-error.log
+- Coverage & cache: coverage/, .nyc_output/, .cache/, .parcel-cache/
+
+Reply ONLY with valid JSON (no markdown fences):
+{"toStage": ["path/to/file.ts", ...], "reason": "one sentence explaining what you staged and what you excluded"}`
+
+  const fileList = files.map((f) => `${f.status}: ${f.path}`).join('\n')
+  const response = await chatComplete(cfg, [
+    { role: 'system', content: system },
+    { role: 'user', content: `Changed files:\n${fileList}` }
+  ])
+
+  try {
+    const cleaned = response.replace(/^```(json)?/m, '').replace(/```$/m, '').trim()
+    const parsed = JSON.parse(cleaned) as { toStage?: unknown; reason?: unknown }
+    const toStage = Array.isArray(parsed.toStage) ? (parsed.toStage as unknown[]).filter((p) => typeof p === 'string') as string[] : []
+    // Validate returned paths actually exist in the input
+    const validPaths = new Set(files.map((f) => f.path))
+    return {
+      toStage: toStage.filter((p) => validPaths.has(p)),
+      reason: typeof parsed.reason === 'string' ? parsed.reason : ''
+    }
+  } catch {
+    return { toStage: files.map((f) => f.path), reason: 'Could not parse AI response — staged all files.' }
+  }
+}
+
+async function suggestArtifacts(
+  repoName: string,
+  selectedTools: string[],
+  context: string,
+  alreadySelected: ArtifactRequest[],
+  cfg: AIConfig
+): Promise<{ suggestions: ArtifactSuggestion[] }> {
+  const alreadyList = alreadySelected.map((a) => `- ${a.path}`).join('\n')
+  const system = `You are a developer productivity expert. Given a project description and the AI tools a developer is using, suggest ADDITIONAL configuration files that would be valuable — beyond what they have already selected.
+Reply ONLY with valid JSON: {"suggestions": [{"path": "...", "description": "...", "reason": "..."}]}
+Rules:
+- path: file path relative to repo root
+- description: one sentence — what the file does/contains
+- reason: one sentence — why this specific project would benefit from it
+- Suggest only files not already in the "already selected" list
+- Limit to 6–10 high-value suggestions
+- Paths must be real, recognised config file paths for the tools listed
+- No markdown fences or commentary outside the JSON`
+
+  const user = `Project name: ${repoName}
+${context.trim() ? `Project description: ${context.trim()}\n` : ''}Selected tools: ${selectedTools.join(', ')}
+
+Already selected files (do NOT suggest these again):
+${alreadyList || '(none)'}
+
+Suggest additional configuration files that would be valuable for this project.`
+
+  const response = await chatComplete(
+    cfg,
+    [
+      { role: 'system', content: system },
+      { role: 'user', content: user }
+    ],
+    0.4
+  )
+
+  try {
+    const cleaned = response.replace(/^```(json)?/m, '').replace(/```$/m, '').trim()
+    const parsed = JSON.parse(cleaned) as { suggestions?: ArtifactSuggestion[] }
+    return { suggestions: Array.isArray(parsed.suggestions) ? parsed.suggestions : [] }
+  } catch {
+    return { suggestions: [] }
+  }
+}
+
 export function registerAiHandlers(): void {
   ipcMain.handle('ai:commitMessage', (_e, diff: string, cfg: AIConfig, ctx: AICommitContext) =>
     generateCommitMessage(diff, cfg, ctx)
@@ -274,4 +424,15 @@ export function registerAiHandlers(): void {
   ipcMain.handle('ai:resolveConflict', (_e, file: string, content: string, cfg: AIConfig) =>
     resolveConflictAI(file, content, cfg)
   )
+  ipcMain.handle(
+    'ai:generateConfig',
+    (_e, repoName: string, artifacts: ArtifactRequest[], context: string, cfg: AIConfig) =>
+      generateProjectConfig(repoName, artifacts, context, cfg)
+  )
+  ipcMain.handle(
+    'ai:suggestArtifacts',
+    (_e, repoName: string, selectedTools: string[], context: string, alreadySelected: ArtifactRequest[], cfg: AIConfig) =>
+      suggestArtifacts(repoName, selectedTools, context, alreadySelected, cfg)
+  )
+  ipcMain.handle('ai:smartStage', (_e, files: SmartStageFile[], cfg: AIConfig) => smartStageFiles(files, cfg))
 }

@@ -280,9 +280,9 @@ export default function App(): React.JSX.Element {
                   />
                   <div className="right-panel-inner" style={{ width: layout.panelWidth }}>
                     {forceConflictPanel ? (
-                      <CommitComposer repo={repo} />
+                      <CommitComposer key={repo.path} repo={repo} />
                     ) : repo.selected?.type === 'wip' ? (
-                      <CommitComposer repo={repo} />
+                      <CommitComposer key={repo.path} repo={repo} />
                     ) : repo.selected?.type === 'stash' ? (
                       <StashDetails repo={repo} sha={repo.selected.sha} />
                     ) : repo.selected?.type === 'commit' ? (

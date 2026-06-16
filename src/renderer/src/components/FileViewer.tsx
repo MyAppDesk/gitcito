@@ -100,7 +100,22 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
   const [explain, setExplain] = useState<string | null>(null)
   const [explaining, setExplaining] = useState(false)
 
+  const [refreshKey, setRefreshKey] = useState(0)
+
   const { repoPath, file, mode, source } = view
+
+  // Re-fetch working-tree content when the window regains focus/visibility.
+  useEffect(() => {
+    if (source.type !== 'wip') return
+    const refresh = (): void => setRefreshKey((k) => k + 1)
+    const onVisible = (): void => { if (document.visibilityState === 'visible') refresh() }
+    window.addEventListener('focus', refresh)
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      window.removeEventListener('focus', refresh)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [source.type])
   const lang = guessLanguage(file)
   const fileIsImage = isImage(file)
   const pvKind = previewKind(file)
@@ -226,6 +241,7 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
     repoPath,
     file,
     mode,
+    refreshKey,
     source.type,
     source.type === 'commit' ? source.hash : source.type === 'stash' ? source.sha : source.staged
   ])

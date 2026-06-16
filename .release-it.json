@@ -3,8 +3,7 @@
     "commitMessage": "chore: release v${version}",
     "tagName": "v${version}",
     "requireCleanWorkingDir": true,
-    "commitArgs": ["--no-verify"],
-    "tagArgs": ["--no-verify"]
+    "commitArgs": ["--no-verify"]
   },
   "github": {
     "release": false

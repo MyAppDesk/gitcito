@@ -1,0 +1,58 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    # 'true' when the macOS signing cert secret is configured. Drives whether the
+    # mac build is signed + notarized or shipped unsigned. See docs/code-signing-macos.md.
+    env:
+      HAS_APPLE_CERT: ${{ secrets.CSC_LINK != '' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # macOS WITH signing secrets -> signed + notarized.
+      - name: Build and publish (signed macOS)
+        if: matrix.os == 'macos-latest' && env.HAS_APPLE_CERT == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: npm run release -- --config.mac.notarize=true
+
+      # Everything else: unsigned macOS (no secrets), or Windows/Linux.
+      # CSC_IDENTITY_AUTO_DISCOVERY=false stops electron-builder from failing
+      # when no signing identity is present (harmless on Windows/Linux).
+      - name: Build and publish (unsigned)
+        if: matrix.os != 'macos-latest' || env.HAS_APPLE_CERT != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+        run: npm run release

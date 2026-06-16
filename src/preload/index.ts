@@ -7,6 +7,7 @@ const api = {
 
   selectDirectory: (title?: string): Promise<string | null> => ipcRenderer.invoke('dialog:selectDirectory', title),
   openExternal: (url: string): Promise<void> => ipcRenderer.invoke('shell:openExternal', url),
+  appVersion: (): Promise<string> => ipcRenderer.invoke('app:version'),
 
   shell: {
     showItemInFolder: (fullPath: string): Promise<void> => ipcRenderer.invoke('shell:showItemInFolder', fullPath),

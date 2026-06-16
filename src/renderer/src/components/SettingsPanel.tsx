@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Plus,
   Trash2,
@@ -921,7 +921,12 @@ export function SettingsPanel({ initialPage }: { initialPage?: SettingsPage } = 
   const openModal = useUIStore((s) => s.openModal)
   const [selectedId, setSelectedId] = useState(settings.activeProfileId)
   const [page, setPage] = useState<SettingsPage>(initialPage ?? 'general')
+  const [version, setVersion] = useState('')
   const t = useT()
+
+  useEffect(() => {
+    void window.api.appVersion().then(setVersion)
+  }, [])
 
   const profile = settings.profiles.find((p) => p.id === selectedId) ?? settings.profiles[0]
   const edit = (partial: Partial<Profile>): void =>
@@ -945,57 +950,59 @@ export function SettingsPanel({ initialPage }: { initialPage?: SettingsPage } = 
       <h3>{t('settings.title')}</h3>
       <div className="settings-body">
         <aside className="settings-profiles">
-          <div className="settings-side-header">
-            <span>{t('settings.profilesHeader')}</span>
-            <button
-              className="icon-btn"
-              title={t('settings.newProfile')}
-              onClick={() => {
-                addProfile(`Profile ${settings.profiles.length + 1}`)
-                setSelectedId(useSettingsStore.getState().settings.activeProfileId)
-              }}
-            >
-              <Plus size={14} />
-            </button>
-          </div>
-          {settings.profiles.map((p) => (
-            <div key={p.id} className={`profile-row ${p.id === selectedId ? 'selected' : ''}`}>
+          <div className="settings-side-scroll">
+            <div className="settings-side-header">
+              <span>{t('settings.profilesHeader')}</span>
               <button
-                className="profile-item"
-                onClick={() => setSelectedId(p.id)}
+                className="icon-btn"
+                title={t('settings.newProfile')}
+                onClick={() => {
+                  addProfile(`Profile ${settings.profiles.length + 1}`)
+                  setSelectedId(useSettingsStore.getState().settings.activeProfileId)
+                }}
               >
-                <UserCircle2 size={15} />
-                <span>{p.name}</span>
-                {p.id === settings.activeProfileId && <BadgeCheck size={13} className="profile-active-mark" />}
+                <Plus size={14} />
               </button>
-              {settings.profiles.length > 1 && (
-                <button
-                  className="icon-btn danger profile-delete"
-                  title={t('settings.deleteProfile')}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    confirmDeleteProfile(p.id, p.name)
-                  }}
-                >
-                  <Trash2 size={13} />
-                </button>
-              )}
             </div>
-          ))}
+            {settings.profiles.map((p) => (
+              <div key={p.id} className={`profile-row ${p.id === selectedId ? 'selected' : ''}`}>
+                <button
+                  className="profile-item"
+                  onClick={() => setSelectedId(p.id)}
+                >
+                  <UserCircle2 size={15} />
+                  <span>{p.name}</span>
+                  {p.id === settings.activeProfileId && <BadgeCheck size={13} className="profile-active-mark" />}
+                </button>
+                {settings.profiles.length > 1 && (
+                  <button
+                    className="icon-btn danger profile-delete"
+                    title={t('settings.deleteProfile')}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      confirmDeleteProfile(p.id, p.name)
+                    }}
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                )}
+              </div>
+            ))}
 
-          <div className="settings-side-header pages">
-            <span>{t('settings.sectionsHeader')}</span>
+            <div className="settings-side-header pages">
+              <span>{t('settings.sectionsHeader')}</span>
+            </div>
+            {PAGES.map((p) => (
+              <button
+                key={p.id}
+                className={`profile-item ${page === p.id ? 'selected' : ''}`}
+                onClick={() => setPage(p.id)}
+              >
+                {p.icon}
+                <span>{t(p.key)}</span>
+              </button>
+            ))}
           </div>
-          {PAGES.map((p) => (
-            <button
-              key={p.id}
-              className={`profile-item ${page === p.id ? 'selected' : ''}`}
-              onClick={() => setPage(p.id)}
-            >
-              {p.icon}
-              <span>{t(p.key)}</span>
-            </button>
-          ))}
 
           <button
             className="settings-madeby"
@@ -1004,7 +1011,10 @@ export function SettingsPanel({ initialPage }: { initialPage?: SettingsPage } = 
             onClick={() => void window.api.openExternal('https://myappdesk.dev')}
           >
             <img src={madLogo} alt="MyAppDesk" draggable={false} />
-            <span>{t('settings.madeBy')}</span>
+            <div className="settings-madeby-text">
+              <span>{t('settings.madeBy')}</span>
+              {version && <span className="settings-version">v{version}</span>}
+            </div>
           </button>
         </aside>
 

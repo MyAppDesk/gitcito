@@ -9,6 +9,13 @@
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "dist:mac": "CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac",
+    "dist:win": "electron-builder --win",
+    "dist:linux": "electron-builder --linux",
+    "release": "npm run build && electron-builder --publish always",
+    "postversion": "git push --follow-tags",
+    "ship:patch": "npm version patch",
+    "ship:minor": "npm version minor",
+    "ship:major": "npm version major",
     "preview": "electron-vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
     "postinstall": "electron-rebuild -f -w node-pty || true"
@@ -21,11 +28,40 @@
       "package.json"
     ],
     "directories": {
-      "buildResources": "build"
+      "buildResources": "build",
+      "output": "dist"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "MyAppDesk",
+      "repo": "gitcito"
     },
     "mac": {
       "category": "public.app-category.developer-tools",
-      "icon": "build/icon.icns"
+      "icon": "build/icon.icns",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "target": [
+        { "target": "dmg", "arch": ["arm64", "x64"] },
+        { "target": "zip", "arch": ["arm64", "x64"] }
+      ]
+    },
+    "win": {
+      "icon": "build/icon.png",
+      "target": [
+        { "target": "nsis", "arch": ["x64"] }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "linux": {
+      "icon": "build/icon.png",
+      "category": "Development",
+      "target": ["AppImage", "deb"]
     }
   },
   "dependencies": {

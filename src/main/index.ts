@@ -57,6 +57,8 @@ app.whenReady().then(() => {
     if (/^https?:\/\//.test(url)) shell.openExternal(url)
   })
 
+  ipcMain.handle('app:version', () => app.getVersion())
+
   ipcMain.handle('shell:showItemInFolder', (_e, fullPath: string) => {
     shell.showItemInFolder(fullPath)
   })

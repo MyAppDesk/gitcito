@@ -14,6 +14,7 @@ interface PreloadApi {
   git(method: string, ...args: unknown[]): Promise<unknown>
   selectDirectory(title?: string): Promise<string | null>
   openExternal(url: string): Promise<void>
+  appVersion(): Promise<string>
   shell: {
     showItemInFolder(fullPath: string): Promise<void>
     openPath(fullPath: string): Promise<string>

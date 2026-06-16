@@ -16,13 +16,13 @@
       ]
     },
     {
-      "name": "Ship: patch (x.x.+1)",
+      "name": "Release: patch (x.x.+1)",
       "type": "node",
       "request": "launch",
       "runtimeExecutable": "npm",
       "runtimeArgs": [
         "run",
-        "ship:patch"
+        "release:patch"
       ],
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
@@ -31,13 +31,13 @@
       ]
     },
     {
-      "name": "Ship: minor (x.+1.0)",
+      "name": "Release: minor (x.+1.0)",
       "type": "node",
       "request": "launch",
       "runtimeExecutable": "npm",
       "runtimeArgs": [
         "run",
-        "ship:minor"
+        "release:minor"
       ],
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
@@ -46,13 +46,13 @@
       ]
     },
     {
-      "name": "Ship: major (+1.0.0)",
+      "name": "Release: major (+1.0.0)",
       "type": "node",
       "request": "launch",
       "runtimeExecutable": "npm",
       "runtimeArgs": [
         "run",
-        "ship:major"
+        "release:major"
       ],
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",

@@ -1,7 +1,7 @@
 {
   "name": "gitcito",
   "productName": "Gitcito",
-  "version": "0.9.0",
+  "version": "0.0.0",
   "description": "A lightweight Git client built with Electron, React and clean architecture",
   "main": "out/main/index.js",
   "license": "MIT",
@@ -13,13 +13,13 @@
     "dist:win": "electron-builder --win",
     "dist:linux": "electron-builder --linux",
     "release": "npm run build && electron-builder --publish always",
-    "postversion": "git push --follow-tags",
-    "ship:patch": "npm version patch",
-    "ship:minor": "npm version minor",
-    "ship:major": "npm version major",
+    "release:patch": "release-it --release-as patch",
+    "release:minor": "release-it --release-as minor",
+    "release:major": "release-it --release-as major",
     "preview": "electron-vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
-    "postinstall": "electron-rebuild -f -w node-pty || true"
+    "postinstall": "electron-rebuild -f -w node-pty || true",
+    "prepare": "husky"
   },
   "build": {
     "appId": "com.gitcito.desktop",
@@ -105,7 +105,10 @@
     "node-pty": "^1.0.0"
   },
   "devDependencies": {
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
     "@electron/rebuild": "^3.6.0",
+    "@release-it/conventional-changelog": "^8.0.1",
     "@types/node": "^20.16.11",
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.1",
@@ -113,6 +116,8 @@
     "electron": "^31.7.0",
     "electron-builder": "^24.13.3",
     "electron-vite": "^2.3.0",
+    "husky": "^9.1.7",
+    "release-it": "^17.1.1",
     "typescript": "^5.6.3",
     "vite": "^5.4.9"
   }

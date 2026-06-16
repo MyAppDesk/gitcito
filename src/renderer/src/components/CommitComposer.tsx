@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Sparkles, Loader2, Trash2, AlignLeft, FolderTree, GitMerge, ChevronDown } from 'lucide-react'
 import { MYAPPDESK_COAUTHOR, type FileEntry } from '../../../shared/types'
 import { gitApi, aiApi, shellApi } from '../infrastructure/api'
-import { repoActions, type RepoData } from '../stores/repo'
+import { repoActions, useRepoStore, type RepoData } from '../stores/repo'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { FileListView } from './FileListView'
@@ -35,7 +35,8 @@ export function ViewToggle(): React.JSX.Element {
 }
 
 export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element {
-  const [summary, setSummary] = useState('')
+  const summary = useRepoStore((s) => s.drafts[repo.path] ?? '')
+  const setSummary = useRepoStore((s) => s.setDraft).bind(null, repo.path)
   const [description, setDescription] = useState('')
   const [amend, setAmend] = useState(false)
   const [aiBusy, setAiBusy] = useState(false)

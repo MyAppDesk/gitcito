@@ -81,6 +81,7 @@ export const gitApi = {
   deleteTag: (path: string, name: string) => call<void>('deleteTag', path, name),
   pushTag: (path: string, name: string, remote?: string) => call<void>('pushTag', path, name, remote),
   deleteRemoteTag: (path: string, name: string, remote?: string) => call<void>('deleteRemoteTag', path, name, remote),
+  getRemoteTags: (path: string, remote?: string) => call<string[]>('getRemoteTags', path, remote),
 
   diffFile: (path: string, file: string, staged: boolean, untracked: boolean) =>
     call<string>('diffFile', path, file, staged, untracked),

@@ -601,6 +601,18 @@ export const gitService = {
     await gitFor(repoPath).push([remote, '--delete', `refs/tags/${name}`])
   },
 
+  async getRemoteTags(repoPath: string, remote = 'origin'): Promise<string[]> {
+    try {
+      const out = await gitFor(repoPath).raw(['ls-remote', '--tags', '--refs', remote])
+      return out.split('\n').filter(Boolean).map((line) => {
+        const ref = line.split('\t')[1] ?? ''
+        return ref.replace('refs/tags/', '')
+      })
+    } catch {
+      return []
+    }
+  },
+
   // ─── Diffs ─────────────────────────────────────────────────────────────────
 
   async diffFile(repoPath: string, file: string, staged: boolean, untracked: boolean): Promise<string> {

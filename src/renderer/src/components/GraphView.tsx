@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Archive, GitCommitHorizontal, Tag, Laptop, Github, Gitlab, Cloud, Server, Check, Settings2 } from 'lucide-react'
-import type { GraphCommit, StashInfo, GraphColumnId, GraphColumns } from '../../../shared/types'
+import { Archive, GitCommitHorizontal, Tag, Laptop, Github, Gitlab, Cloud, Server, Check, Settings2, Pencil, Plus, Minus } from 'lucide-react'
+import type { GraphCommit, StashInfo, GraphColumnId, GraphColumns, FileEntry } from '../../../shared/types'
 import { defaultGraphColumns } from '../../../shared/types'
 import { layoutGraph, colorFor } from '../graph/layout'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
@@ -259,6 +259,8 @@ function GraphColumnsHeader({
 export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
   const select = useRepoStore((s) => s.select)
   const loadMore = useRepoStore((s) => s.loadMore)
+  const draft = useRepoStore((s) => s.drafts[repo.path] ?? '')
+  const setDraft = useRepoStore((s) => s.setDraft)
   const { openContextMenu, openModal, graphFilter } = useUIStore()
   const scrollToHash = useUIStore((s) => s.scrollToHash)
   const requestScrollTo = useUIStore((s) => s.requestScrollTo)
@@ -293,6 +295,27 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
 
   const hasWip =
     (repo.status?.staged.length ?? 0) + (repo.status?.unstaged.length ?? 0) + (repo.status?.conflicted.length ?? 0) > 0
+
+  // Break the working-tree changes down by kind (added / modified / deleted),
+  // deduped by path so a file that's both staged and unstaged counts once.
+  const wipStats = useMemo(() => {
+    const all: FileEntry[] = [
+      ...(repo.status?.staged ?? []),
+      ...(repo.status?.unstaged ?? []),
+      ...(repo.status?.conflicted ?? [])
+    ]
+    const byPath = new Map<string, FileEntry>()
+    for (const f of all) if (!byPath.has(f.path)) byPath.set(f.path, f)
+    let added = 0
+    let modified = 0
+    let deleted = 0
+    for (const f of byPath.values()) {
+      if (f.untracked || f.status === 'A') added++
+      else if (f.status === 'D') deleted++
+      else modified++
+    }
+    return { added, modified, deleted, total: byPath.size }
+  }, [repo.status])
 
   const stashBySha = useMemo(() => new Map(repo.stashes.map((s) => [s.sha, s])), [repo.stashes])
   const remoteNames = useMemo(() => new Set(repo.remotes.map((r) => r.name)), [repo.remotes])
@@ -407,6 +430,11 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
     requestScrollTo(null)
   }, [scrollToHash, displayCommits, requestScrollTo])
 
+  // Refresh remote tag names when the repo or its remotes change.
+  useEffect(() => {
+    if (repo.remotes.length) void repoActions.refreshRemoteTags(repo.path)
+  }, [repo.path, repo.remotes])
+
   // Auto-load more commits when scrolling near the bottom.
   const onScroll = (): void => {
     if (!autoLoadOnScroll) return
@@ -510,19 +538,109 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
     { label: 'Copy SHA', onClick: () => void navigator.clipboard.writeText(s.sha) }
   ]
 
+  const tagRemoteUrl = (remoteUrl: string, tagName: string): string | null => {
+    const gh = /github\.com[/:]([^/]+)\/([^/]+?)(\.git)?$/.exec(remoteUrl)
+    if (gh) return `https://github.com/${gh[1]}/${gh[2]}/releases/tag/${tagName}`
+    const az = /dev\.azure\.com\/([^/]+)\/([^/]+)\/_git\/([^/]+?)(\.git)?$/.exec(remoteUrl)
+    if (az) return `https://dev.azure.com/${az[1]}/${az[2]}/_git/${az[3]}?version=GT${tagName}`
+    return null
+  }
+
   // Context menu for a branch/tag group shown next to a commit in the graph.
   const groupMenu = (g: RefGroup, c: GraphCommit): MenuItem[] => {
     if (g.isTag) {
       const remoteName = repo.remotes[0]?.name ?? 'origin'
+      const currentBranch = repo.branches.current.trim()
+      const isPushed = repo.remoteTagNames.includes(g.label)
+      const remUrl = repo.remotes.find((r) => r.name === remoteName)?.url
+      const webUrl = remUrl ? tagRemoteUrl(remUrl, g.label) : null
       return [
         { label: `Checkout ${g.label}`, onClick: () => void repoActions.checkout(repo.path, g.label) },
-        { label: 'Copy tag name', onClick: () => void navigator.clipboard.writeText(g.label) },
-        ...(repo.remotes.length
-          ? [{ label: `Push tag to ${remoteName}`, onClick: () => void repoActions.pushTag(repo.path, g.label, remoteName) } satisfies MenuItem]
-          : []),
+        { label: 'Checkout this commit (detached)', onClick: () => void repoActions.checkout(repo.path, c.hash) },
+        {
+          label: 'Create worktree from this commit…',
+          onClick: () =>
+            openModal({
+              kind: 'input',
+              title: 'Add worktree',
+              label: `Path for worktree at ${g.label}`,
+              placeholder: `../${g.label}-worktree`,
+              submitLabel: 'Add',
+              onSubmit: (dir) => {
+                if (dir.trim()) void repoActions.worktreeAdd(repo.path, dir.trim(), g.label, false)
+              }
+            })
+        },
         { separator: true },
         {
-          label: 'Delete tag',
+          label: `Rebase ${currentBranch} onto ${g.label}`,
+          disabled: !currentBranch,
+          onClick: () => void repoActions.rebase(repo.path, g.label)
+        },
+        {
+          label: 'Create branch here…',
+          onClick: () =>
+            openModal({
+              kind: 'input',
+              title: 'Create branch',
+              label: `Branch from ${g.label}`,
+              placeholder: 'feature/my-branch',
+              submitLabel: 'Create',
+              onSubmit: (name) => void repoActions.createBranch(repo.path, name, c.hash)
+            })
+        },
+        { separator: true },
+        {
+          label: `Reset ${currentBranch} to here — soft`,
+          disabled: !currentBranch,
+          onClick: () => void repoActions.reset(repo.path, g.label, 'soft')
+        },
+        {
+          label: `Reset ${currentBranch} to here — mixed`,
+          disabled: !currentBranch,
+          onClick: () => void repoActions.reset(repo.path, g.label, 'mixed')
+        },
+        {
+          label: `Reset ${currentBranch} to here — hard`,
+          danger: true,
+          disabled: !currentBranch,
+          onClick: () =>
+            openModal({
+              kind: 'confirm',
+              title: 'Hard reset',
+              message: `Hard reset to ${g.label}? All uncommitted work will be lost.`,
+              danger: true,
+              confirmLabel: 'Hard reset',
+              onConfirm: () => void repoActions.reset(repo.path, g.label, 'hard')
+            })
+        },
+        { separator: true },
+        { label: 'Copy tag name', onClick: () => void navigator.clipboard.writeText(g.label) },
+        { label: 'Copy SHA', onClick: () => void navigator.clipboard.writeText(c.hash) },
+        ...(webUrl
+          ? [{ label: `Copy link to ${g.label} on ${remoteName}`, onClick: () => void navigator.clipboard.writeText(webUrl) } satisfies MenuItem]
+          : []),
+        { separator: true },
+        ...(repo.remotes.length && !isPushed
+          ? [{ label: `Push ${g.label} to ${remoteName}`, onClick: () => void repoActions.pushTag(repo.path, g.label, remoteName) } satisfies MenuItem]
+          : []),
+        ...(repo.remotes.length && isPushed
+          ? [{
+              label: `Delete ${g.label} from ${remoteName}`,
+              danger: true,
+              onClick: () =>
+                openModal({
+                  kind: 'confirm',
+                  title: 'Delete remote tag',
+                  message: `Delete tag "${g.label}" from ${remoteName}?`,
+                  danger: true,
+                  confirmLabel: 'Delete',
+                  onConfirm: () => void repoActions.deleteRemoteTag(repo.path, g.label, remoteName)
+                })
+            } satisfies MenuItem]
+          : []),
+        {
+          label: `Delete ${g.label} locally`,
           danger: true,
           onClick: () =>
             openModal({
@@ -599,7 +717,15 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
   // Presence glyphs for a ref group: tag, laptop (has local) and/or a provider
   // icon per remote that tracks the branch.
   const groupIcons = (g: RefGroup): React.JSX.Element => {
-    if (g.isTag) return <Tag size={10} className="ref-ic" />
+    if (g.isTag) {
+      const isPushed = repo.remoteTagNames.includes(g.label)
+      return (
+        <>
+          <Tag size={10} className="ref-ic" />
+          {isPushed && <Cloud size={10} className="ref-ic" />}
+        </>
+      )
+    }
     return (
       <>
         {g.isLocal && <Laptop size={10} className="ref-ic" />}
@@ -630,7 +756,7 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
 
   const renderGroup = (g: RefGroup, c: GraphCommit, laneColor?: string): React.JSX.Element => {
     const title = g.isTag
-      ? g.label
+      ? `${g.label}${repo.remoteTagNames.includes(g.label) ? ' · pushed' : ' · local only'}`
       : `${g.label}${g.isLocal ? ' · local' : ''}${g.remotes.length ? ` · ${g.remotes.join(', ')}` : ''}`
     // Active branch (HEAD) gets a solid lane-colored pill so it stands out as
     // the checked-out branch; others keep the soft lane tint.
@@ -838,10 +964,6 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
               c.hash.startsWith(filter))
           const dimmed = filter.length > 0 && !matches && !isWip
           const ghosted = preview != null && !preview.hashes.has(c.hash)
-          const wipCount =
-            (repo.status?.staged.length ?? 0) +
-            (repo.status?.unstaged.length ?? 0) +
-            (repo.status?.conflicted.length ?? 0)
 
           return (
             <div
@@ -889,16 +1011,16 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
                 <div className="graph-refs" style={{ width: branchCol }}>
                   {(() => {
                     const laneColor = colorFor(layout.nodes.get(c.hash)?.color ?? 0)
-                    return groups.length <= 2 ? (
+                    return groups.length <= 1 ? (
                       groups.map((g) => renderGroup(g, c, laneColor))
                     ) : (
-                      <>
-                        <span className="ref-collapsed">
-                          {renderGroup(groups[0], c, laneColor)}
-                          <span className="ref-more-chip">+{groups.length - 1}</span>
-                        </span>
-                        <div className="graph-refs-pop">{groups.map((g) => renderGroup(g, c, laneColor))}</div>
-                      </>
+                      <span className="ref-collapsed">
+                        {renderGroup(groups[0], c, laneColor)}
+                        <span className="ref-more-chip">+{groups.length - 1}</span>
+                        <div className="graph-refs-pop">
+                          {groups.slice(1).map((g) => renderGroup(g, c, laneColor))}
+                        </div>
+                      </span>
                     )
                   })()}
                 </div>
@@ -924,9 +1046,33 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
               {columns.message.visible &&
                 (isWip ? (
                   <span className="row-subject wip-subject">
-                    Work in progress
-                    <span className="wip-count">
-                      &nbsp;· {wipCount} file change{wipCount === 1 ? '' : 's'}
+                    <input
+                      className="wip-input"
+                      placeholder="Work in progress"
+                      value={draft}
+                      maxLength={100}
+                      onChange={(e) => setDraft(repo.path, e.target.value)}
+                      onKeyDown={(e) => e.stopPropagation()}
+                    />
+                    <span className="wip-stats">
+                      {wipStats.added > 0 && (
+                        <span className="wip-stat wip-add" title={`${wipStats.added} added`}>
+                          <Plus size={11} />
+                          {wipStats.added}
+                        </span>
+                      )}
+                      {wipStats.modified > 0 && (
+                        <span className="wip-stat wip-mod" title={`${wipStats.modified} modified`}>
+                          <Pencil size={10} />
+                          {wipStats.modified}
+                        </span>
+                      )}
+                      {wipStats.deleted > 0 && (
+                        <span className="wip-stat wip-del" title={`${wipStats.deleted} deleted`}>
+                          <Minus size={11} />
+                          {wipStats.deleted}
+                        </span>
+                      )}
                     </span>
                   </span>
                 ) : stash ? (

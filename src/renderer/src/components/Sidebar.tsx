@@ -218,34 +218,76 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
 
   const tagMenu = (tag: TagInfo): MenuItem[] => {
     const remoteName = repo.remotes[0]?.name ?? 'origin'
+    const currentBranch = repo.branches.current.trim()
+    const isPushed = repo.remoteTagNames.includes(tag.name)
+    const remUrl = repo.remotes.find((r) => r.name === remoteName)?.url
+    const tagWebUrl = (url: string, name: string): string | null => {
+      const gh = /github\.com[/:]([^/]+)\/([^/]+?)(\.git)?$/.exec(url)
+      if (gh) return `https://github.com/${gh[1]}/${gh[2]}/releases/tag/${name}`
+      const az = /dev\.azure\.com\/([^/]+)\/([^/]+)\/_git\/([^/]+?)(\.git)?$/.exec(url)
+      if (az) return `https://dev.azure.com/${az[1]}/${az[2]}/_git/${az[3]}?version=GT${name}`
+      return null
+    }
+    const webUrl = remUrl ? tagWebUrl(remUrl, tag.name) : null
     return [
       { label: `Checkout ${tag.name}`, onClick: () => void repoActions.checkout(path, tag.name) },
-      { label: 'Copy tag name', onClick: () => void navigator.clipboard.writeText(tag.name) },
       { separator: true },
-      ...(repo.remotes.length
-        ? [{ label: `Push tag to ${remoteName}`, onClick: () => void repoActions.pushTag(path, tag.name, remoteName) } satisfies MenuItem]
+      {
+        label: `Rebase ${currentBranch} onto ${tag.name}`,
+        disabled: !currentBranch,
+        onClick: () => void repoActions.rebase(path, tag.name)
+      },
+      {
+        label: `Reset ${currentBranch} to here — soft`,
+        disabled: !currentBranch,
+        onClick: () => void repoActions.reset(path, tag.name, 'soft')
+      },
+      {
+        label: `Reset ${currentBranch} to here — mixed`,
+        disabled: !currentBranch,
+        onClick: () => void repoActions.reset(path, tag.name, 'mixed')
+      },
+      {
+        label: `Reset ${currentBranch} to here — hard`,
+        danger: true,
+        disabled: !currentBranch,
+        onClick: () =>
+          openModal({
+            kind: 'confirm',
+            title: 'Hard reset',
+            message: `Hard reset to ${tag.name}? All uncommitted work will be lost.`,
+            danger: true,
+            confirmLabel: 'Hard reset',
+            onConfirm: () => void repoActions.reset(path, tag.name, 'hard')
+          })
+      },
+      { separator: true },
+      { label: 'Copy tag name', onClick: () => void navigator.clipboard.writeText(tag.name) },
+      ...(webUrl
+        ? [{ label: `Copy link to ${tag.name} on ${remoteName}`, onClick: () => void navigator.clipboard.writeText(webUrl) } satisfies MenuItem]
         : []),
       { label: 'Create tag here…', onClick: createTagAtHead },
       { separator: true },
-      ...(repo.remotes.length
-        ? [
-            {
-              label: `Delete from ${remoteName}`,
-              danger: true,
-              onClick: () =>
-                openModal({
-                  kind: 'confirm',
-                  title: 'Delete remote tag',
-                  message: `Delete tag "${tag.name}" from ${remoteName}?`,
-                  danger: true,
-                  confirmLabel: 'Delete',
-                  onConfirm: () => void repoActions.deleteRemoteTag(path, tag.name, remoteName)
-                })
-            } satisfies MenuItem
-          ]
+      ...(repo.remotes.length && !isPushed
+        ? [{ label: `Push ${tag.name} to ${remoteName}`, onClick: () => void repoActions.pushTag(path, tag.name, remoteName) } satisfies MenuItem]
+        : []),
+      ...(repo.remotes.length && isPushed
+        ? [{
+            label: `Delete ${tag.name} from ${remoteName}`,
+            danger: true,
+            onClick: () =>
+              openModal({
+                kind: 'confirm',
+                title: 'Delete remote tag',
+                message: `Delete tag "${tag.name}" from ${remoteName}?`,
+                danger: true,
+                confirmLabel: 'Delete',
+                onConfirm: () => void repoActions.deleteRemoteTag(path, tag.name, remoteName)
+              })
+          } satisfies MenuItem]
         : []),
       {
-        label: 'Delete tag',
+        label: `Delete ${tag.name} locally`,
         danger: true,
         onClick: () =>
           openModal({
@@ -618,21 +660,27 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         }
       >
         {tags.length === 0 && <div className="sb-empty">{t('sidebar.noTags')}</div>}
-        {tags.map((tag) => (
-          <div
-            key={tag.name}
-            className="sb-item"
-            onClick={() => goToBranch(tag.sha)}
-            onContextMenu={(e) => {
-              e.preventDefault()
-              openContextMenu(e.clientX, e.clientY, tagMenu(tag))
-            }}
-            title={tag.name}
-          >
-            <Tag size={11} className="sb-tag-icon" />
-            <span className="sb-name">{tag.name}</span>
-          </div>
-        ))}
+        {tags.map((tag) => {
+          const isPushed = repo.remoteTagNames.includes(tag.name)
+          return (
+            <div
+              key={tag.name}
+              className="sb-item"
+              onClick={() => goToBranch(tag.sha)}
+              onContextMenu={(e) => {
+                e.preventDefault()
+                openContextMenu(e.clientX, e.clientY, tagMenu(tag))
+              }}
+              title={`${tag.name}${repo.remotes.length ? (isPushed ? ' · pushed' : ' · local only') : ''}`}
+            >
+              <Tag size={11} className="sb-tag-icon" />
+              <span className="sb-name">{tag.name}</span>
+              {repo.remotes.length > 0 && (
+                <Cloud size={10} className={`sb-tag-cloud ${isPushed ? 'pushed' : 'unpushed'}`} />
+              )}
+            </div>
+          )
+        })}
       </Section>
     ),
     stashes: (

@@ -676,6 +676,19 @@ textarea:focus {
   flex-shrink: 0;
 }
 
+.sb-tag-cloud {
+  flex-shrink: 0;
+  margin-left: auto;
+}
+.sb-tag-cloud.pushed {
+  color: var(--accent);
+  opacity: 0.75;
+}
+.sb-tag-cloud.unpushed {
+  color: var(--text-3, #555);
+  opacity: 0.5;
+}
+
 .pr-open {
   color: var(--green);
 }
@@ -912,10 +925,67 @@ textarea:focus {
 .wip-subject {
   display: flex;
   align-items: center;
-  gap: 0;
+  gap: 8px;
   color: var(--accent);
   font-style: normal;
   font-weight: 600;
+  min-width: 0;
+}
+
+.wip-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 320px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px dashed transparent;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 600;
+  padding: 1px 0;
+  outline: none;
+}
+
+.wip-input::placeholder {
+  color: var(--accent);
+  opacity: 0.65;
+}
+
+.wip-input:hover {
+  border-bottom-color: var(--border-soft);
+}
+
+.wip-input:focus {
+  border-bottom-color: var(--accent);
+  box-shadow: none;
+}
+
+.wip-stats {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.wip-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+}
+
+.wip-stat.wip-add {
+  color: var(--green);
+}
+
+.wip-stat.wip-mod {
+  color: var(--accent);
+}
+
+.wip-stat.wip-del {
+  color: var(--red);
 }
 
 .wip-count {
@@ -996,6 +1066,7 @@ textarea:focus {
   gap: 4px;
   min-width: 0;
   flex: 1;
+  position: relative;
 }
 .ref-more-chip {
   flex-shrink: 0;
@@ -1011,23 +1082,30 @@ textarea:focus {
 .graph-refs-pop {
   display: none;
 }
-.graph-refs:hover .ref-collapsed {
-  display: none;
-}
-.graph-refs:hover .graph-refs-pop {
+.ref-collapsed:hover .graph-refs-pop {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: flex-start;
   gap: 3px;
   position: absolute;
-  right: 9px;
-  top: 3px;
+  left: 0;
+  top: calc(100% + 4px);
   padding: 5px;
   background: var(--bg-2);
   border: 1px solid var(--border);
   border-radius: 10px;
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
   z-index: 30;
+}
+/* Invisible bridge spanning the gap between the chip and the popup so the
+   hover state survives while the mouse travels down into the submenu. */
+.ref-collapsed:hover .graph-refs-pop::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -6px;
+  height: 6px;
 }
 
 .ref-head {

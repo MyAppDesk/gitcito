@@ -43,6 +43,7 @@ export interface RepoData {
   maxCount: number
   undoStack: UndoEntry[]
   redoStack: UndoEntry[]
+  remoteTagNames: string[]
 }
 
 const emptyRepo = (path: string): RepoData => ({
@@ -61,18 +62,23 @@ const emptyRepo = (path: string): RepoData => ({
   loading: true,
   maxCount: useSettingsStore.getState().settings.initialCommitCount ?? 400,
   undoStack: [],
-  redoStack: []
+  redoStack: [],
+  remoteTagNames: []
 })
 
 interface RepoStoreState {
   repos: Record<string, RepoData>
+  /** Per-repo commit summary draft, shared between the WIP graph row and the composer. */
+  drafts: Record<string, string>
 
   ensure(path: string): Promise<void>
   refresh(path: string): Promise<void>
   patch(path: string, partial: Partial<RepoData>): void
   select(path: string, sel: Selection | null): void
+  setDraft(path: string, value: string): void
   loadMore(path: string): void
   refreshPRs(path: string): Promise<void>
+  refreshRemoteTags(path: string): Promise<void>
 
   run(path: string, label: string, fn: () => Promise<void>, undoEntry?: UndoEntry): Promise<boolean>
   undo(path: string): Promise<void>
@@ -98,9 +104,12 @@ function conflictHint(msg: string): string {
 
 export const useRepoStore = create<RepoStoreState>((set, get) => ({
   repos: {},
+  drafts: {},
 
   patch: (path, partial) =>
     set((s) => ({ repos: { ...s.repos, [path]: { ...(s.repos[path] ?? emptyRepo(path)), ...partial } } })),
+
+  setDraft: (path, value) => set((s) => ({ drafts: { ...s.drafts, [path]: value } })),
 
   ensure: async (path) => {
     if (get().repos[path]) return
@@ -136,6 +145,14 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
     const step = useSettingsStore.getState().settings.loadMoreCount ?? 400
     get().patch(path, { maxCount: repo.maxCount + step })
     void get().refresh(path)
+  },
+
+  refreshRemoteTags: async (path) => {
+    const repo = get().repos[path]
+    const remote = repo?.remotes[0]?.name
+    if (!remote) return
+    const names = await gitApi.getRemoteTags(path, remote).catch(() => [])
+    get().patch(path, { remoteTagNames: names })
   },
 
   refreshPRs: async (path) => {
@@ -495,6 +512,8 @@ export const repoActions = {
 
   deleteRemoteTag: (path: string, name: string, remote = 'origin') =>
     useRepoStore.getState().run(path, `Deleted tag ${name} from ${remote}`, () => gitApi.deleteRemoteTag(path, name, remote)),
+
+  refreshRemoteTags: (path: string) => useRepoStore.getState().refreshRemoteTags(path),
 
   stage: (path: string, files: string[]) =>
     useRepoStore.getState().run(path, `Staged ${files.length} file(s)`, () => gitApi.stage(path, files)),

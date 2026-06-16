@@ -1951,12 +1951,77 @@ textarea:focus {
 }
 
 .owner-select {
+  position: relative;
+}
+.owner-trigger,
+.owner-option {
   display: flex;
   align-items: center;
   gap: 8px;
+  width: 100%;
+  text-align: left;
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 9px;
+  color: var(--text-0);
+  font-size: 12.5px;
 }
-.owner-select select {
+.owner-trigger:hover {
+  border-color: var(--accent);
+}
+.owner-label {
   flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.owner-tag {
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+  color: var(--text-2);
+  background: var(--bg-3);
+  border-radius: 4px;
+  padding: 1px 4px;
+}
+.owner-chevron {
+  flex-shrink: 0;
+  color: var(--text-2);
+}
+.owner-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  max-height: 240px;
+  overflow-y: auto;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.owner-option {
+  border-color: transparent;
+}
+.owner-option:hover {
+  background: var(--bg-3);
+}
+.owner-option.selected {
+  border-color: var(--accent);
+}
+.owner-check {
+  flex-shrink: 0;
+  color: var(--accent);
 }
 
 .modal-hint {

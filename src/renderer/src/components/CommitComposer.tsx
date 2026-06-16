@@ -496,7 +496,24 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
         />
         <div className="commit-actions">
           <label className="amend-check">
-            <input type="checkbox" checked={amend} onChange={(e) => setAmend(e.target.checked)} />
+            <input
+              type="checkbox"
+              checked={amend}
+              onChange={(e) => {
+                const on = e.target.checked
+                setAmend(on)
+                // Prefill the composer with HEAD's message so amend doesn't start blank.
+                if (on && !summary.trim() && !description.trim()) {
+                  void gitApi.getCommitMessage(path, 'HEAD').then((msg) => {
+                    const text = msg.trim()
+                    if (!text) return
+                    const [first, ...rest] = text.split('\n')
+                    setSummary(first)
+                    setDescription(rest.join('\n').trim())
+                  })
+                }
+              }}
+            />
             Amend
           </label>
           <button

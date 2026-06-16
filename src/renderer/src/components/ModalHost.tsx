@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { X, Globe, Github, Gitlab, Cloud, Server, Loader2, Search, Lock, ExternalLink, Plug, FolderGit2, Folder, Plus, Check } from 'lucide-react'
+import { X, Globe, Github, Gitlab, Cloud, Server, Loader2, Search, Lock, ExternalLink, Plug, FolderGit2, Folder, Plus, Check, ChevronDown } from 'lucide-react'
 import { useUIStore, type ModalSpec } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { hostingApi, gitApi, shellApi } from '../infrastructure/api'
@@ -300,6 +300,17 @@ function OwnerSelect({
   const [owners, setOwners] = useState<RemoteOwner[] | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [open, setOpen] = useState(false)
+  const ddRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const onDown = (e: MouseEvent): void => {
+      if (ddRef.current && !ddRef.current.contains(e.target as Node)) setOpen(false)
+    }
+    window.addEventListener('mousedown', onDown)
+    return () => window.removeEventListener('mousedown', onDown)
+  }, [open])
 
   useEffect(() => {
     let cancelled = false
@@ -335,27 +346,55 @@ function OwnerSelect({
   if (!owners?.length) return <div className="modal-hint">No accounts available.</div>
 
   const HostIcon = PROVIDER_ICONS[host]
+  const avatar = (o: RemoteOwner | null): React.JSX.Element =>
+    o?.avatarUrl ? (
+      <img className="repo-row-avatar" src={o.avatarUrl} alt="" loading="lazy" />
+    ) : (
+      <span className="repo-row-avatar fallback">
+        <HostIcon size={13} />
+      </span>
+    )
+
   return (
-    <div className="owner-select">
-      {value?.avatarUrl ? (
-        <img className="repo-row-avatar" src={value.avatarUrl} alt="" />
-      ) : (
-        <span className="repo-row-avatar fallback">
-          <HostIcon size={13} />
+    <div className="owner-select" ref={ddRef}>
+      <button type="button" className="owner-trigger" onClick={() => setOpen((v) => !v)}>
+        {avatar(value)}
+        <span className="owner-label">
+          {value ? value.login : 'Select account'}
+          {value && value.type !== 'user' && <span className="owner-tag">org</span>}
         </span>
-      )}
-      <select
-        className="modal-input"
-        value={value?.id ?? ''}
-        onChange={(e) => onChange(owners.find((o) => o.id === e.target.value) ?? null)}
-      >
-        {owners.map((o) => (
-          <option key={o.id} value={o.id}>
-            {o.login}
-            {o.type === 'user' ? '' : ' (org)'}
-          </option>
-        ))}
-      </select>
+        <ChevronDown size={14} className="owner-chevron" />
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            className="owner-menu"
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.12 }}
+          >
+            {owners.map((o) => (
+              <button
+                key={o.id}
+                type="button"
+                className={`owner-option ${value?.id === o.id ? 'selected' : ''}`}
+                onClick={() => {
+                  onChange(o)
+                  setOpen(false)
+                }}
+              >
+                {avatar(o)}
+                <span className="owner-label">
+                  {o.login}
+                  {o.type !== 'user' && <span className="owner-tag">org</span>}
+                </span>
+                {value?.id === o.id && <Check size={13} className="owner-check" />}
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

@@ -291,7 +291,15 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const fmtDate = (unix: number): string =>
-    relativeDates ? timeAgo(unix) : new Date(unix * 1000).toLocaleDateString()
+    relativeDates
+      ? timeAgo(unix)
+      : new Date(unix * 1000).toLocaleString(undefined, {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+        })
 
   const hasWip =
     (repo.status?.staged.length ?? 0) + (repo.status?.unstaged.length ?? 0) + (repo.status?.conflicted.length ?? 0) > 0

@@ -6,6 +6,7 @@ import { registerSettingsHandlers } from './settings'
 import { registerAiHandlers } from './ai'
 import { registerHostingHandlers } from './hosting'
 import { registerTerminalHandlers } from './terminal'
+import { registerWatcherHandlers } from './watcher'
 
 function createWindow(): void {
   const win = new BrowserWindow({
@@ -77,6 +78,7 @@ app.whenReady().then(() => {
   registerAiHandlers()
   registerHostingHandlers()
   registerTerminalHandlers()
+  registerWatcherHandlers()
 
   createWindow()
   app.on('activate', () => {

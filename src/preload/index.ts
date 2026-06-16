@@ -64,6 +64,15 @@ const api = {
     minimize: (): void => ipcRenderer.send('window:minimize'),
     maximize: (): void => ipcRenderer.send('window:maximize'),
     close: (): void => ipcRenderer.send('window:close')
+  },
+
+  watch: {
+    repo: (path: string | null): Promise<void> => ipcRenderer.invoke('watch:repo', path),
+    onChange: (cb: (payload: { path: string; light: boolean }) => void): (() => void) => {
+      const listener = (_e: unknown, payload: { path: string; light: boolean }): void => cb(payload)
+      ipcRenderer.on('repo:changed', listener)
+      return () => ipcRenderer.removeListener('repo:changed', listener)
+    }
   }
 }
 

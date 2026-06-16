@@ -1,112 +1,22 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { X, Globe, Github, Gitlab, Cloud, Server, Loader2, Search, Lock, ExternalLink, Plug, FolderGit2, Folder, Plus, Check, ChevronDown, Sparkles, GitBranchPlus } from 'lucide-react'
+import { X, Globe, Github, Gitlab, Cloud, Server, Loader2, Search, Lock, ExternalLink, Plug, FolderGit2, Folder, Plus, Check, ChevronDown } from 'lucide-react'
 import { useUIStore, type ModalSpec } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
-import { hostingApi, gitApi, shellApi, aiApi } from '../infrastructure/api'
+import { hostingApi, gitApi, shellApi } from '../infrastructure/api'
 import { repoActions } from '../stores/repo'
 import type { CreateRepoOpts, RemoteOwner, RemoteRepo, RepoHost } from '../../../shared/types'
 import { SettingsPanel } from './SettingsPanel'
 import { LauncherPanel, type LauncherItem } from './Welcome'
 import { AIConfigWizard } from './AIConfigWizard'
-import { useT } from '../i18n'
-
-function CreateBranchModal({ spec }: { spec: Extract<ModalSpec, { kind: 'create-branch' }> }): React.JSX.Element {
-  const closeModal = useUIStore((s) => s.closeModal)
-  const toast = useUIStore((s) => s.toast)
-  const t = useT()
-  const activeProfileId = useSettingsStore((s) => s.settings.activeProfileId)
-  const profiles = useSettingsStore((s) => s.settings.profiles)
-  const profile = profiles.find((p) => p.id === activeProfileId) ?? profiles[0]
-  const aiEnabled = profile.ai.enabled !== false
-
-  const [name, setName] = useState('')
-  const [description, setDescription] = useState('')
-  const [generating, setGenerating] = useState(false)
-
-  const generate = async (): Promise<void> => {
-    if (!description.trim()) return
-    setGenerating(true)
-    try {
-      const result = await aiApi.generateBranchName(description.trim(), profile.ai, { username: profile.gitName || undefined })
-      setName(result)
-    } catch (e) {
-      toast('error', e instanceof Error ? e.message : String(e))
-    } finally {
-      setGenerating(false)
-    }
-  }
-
-  const submit = (): void => {
-    if (!name.trim()) return
-    closeModal()
-    void repoActions.createBranch(spec.path, name.trim())
-  }
-
-  return (
-    <>
-      <h3 className="modal-title-row">
-        <GitBranchPlus size={17} /> {t('branch.createTitle')}
-      </h3>
-      <p className="modal-message" style={{ marginBottom: 12 }}>
-        {t('branch.fromLabel')}: <strong>{spec.currentBranch}</strong>
-      </p>
-
-      {aiEnabled && (
-        <>
-          <label className="modal-label">{t('branch.descriptionLabel')}</label>
-          <textarea
-            className="modal-input"
-            rows={3}
-            value={description}
-            placeholder={t('branch.descriptionPlaceholder')}
-            onChange={(e) => setDescription(e.target.value)}
-          />
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
-            <button
-              className="btn ghost small"
-              disabled={!description.trim() || generating}
-              onClick={() => void generate()}
-              type="button"
-            >
-              {generating ? <Loader2 size={13} className="spin" /> : <Sparkles size={13} />}
-              {t('branch.generateWithAI')}
-            </button>
-          </div>
-        </>
-      )}
-
-      <label className="modal-label">{t('branch.nameLabel')}</label>
-      <input
-        autoFocus={!aiEnabled}
-        className="modal-input"
-        value={name}
-        placeholder={t('branch.namePlaceholder')}
-        onChange={(e) => setName(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') submit()
-          if (e.key === 'Escape') closeModal()
-        }}
-      />
-
-      <div className="modal-actions">
-        <button className="btn ghost" onClick={closeModal} type="button">
-          {t('common.cancel')}
-        </button>
-        <button className="btn primary" disabled={!name.trim()} onClick={submit} type="button">
-          {t('branch.createCheckout')}
-        </button>
-      </div>
-    </>
-  )
-}
 
 function InputModal({ spec }: { spec: Extract<ModalSpec, { kind: 'input' }> }): React.JSX.Element {
   const closeModal = useUIStore((s) => s.closeModal)
   const [value, setValue] = useState(spec.initial ?? '')
+  const canSubmit = spec.allowEmpty || !!value.trim()
 
   const submit = (): void => {
-    if (!value.trim()) return
+    if (!canSubmit) return
     closeModal()
     spec.onSubmit(value.trim())
   }
@@ -130,7 +40,7 @@ function InputModal({ spec }: { spec: Extract<ModalSpec, { kind: 'input' }> }): 
         <button className="btn ghost" onClick={closeModal}>
           Cancel
         </button>
-        <button className="btn primary" disabled={!value.trim()} onClick={submit}>
+        <button className="btn primary" disabled={!canSubmit} onClick={submit}>
           {spec.submitLabel ?? 'OK'}
         </button>
       </div>
@@ -1194,7 +1104,6 @@ export function ModalHost(): React.JSX.Element {
             {modal.kind === 'launcher' && <LauncherModal spec={modal} />}
             {modal.kind === 'create-repo' && <CreateRepoModal spec={modal} />}
             {modal.kind === 'ai-config-wizard' && <AIConfigWizard spec={modal} />}
-            {modal.kind === 'create-branch' && <CreateBranchModal spec={modal} />}
           </motion.div>
         </motion.div>
       )}

@@ -29,6 +29,7 @@ export type ModalSpec =
       placeholder?: string
       initial?: string
       submitLabel?: string
+      allowEmpty?: boolean
       onSubmit: (value: string) => void
     }
   | {
@@ -61,7 +62,6 @@ export type ModalSpec =
   | { kind: 'launcher'; groupId?: string }
   | { kind: 'create-repo'; onCreate: (repo: { path: string; name: string }) => void }
   | { kind: 'ai-config-wizard'; repoPath: string; repoName: string }
-  | { kind: 'create-branch'; path: string; currentBranch: string }
 
 export type FileViewSource =
   | { type: 'wip'; staged: boolean; untracked: boolean }

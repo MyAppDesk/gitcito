@@ -131,7 +131,16 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
         <button
           className="tool-btn"
           title="Create branch at HEAD"
-          onClick={() => openModal({ kind: 'create-branch', path, currentBranch: repo.branches.current })}
+          onClick={() =>
+            openModal({
+              kind: 'input',
+              title: 'Create branch',
+              label: `Branch from ${repo.branches.current}`,
+              placeholder: 'feature/my-branch',
+              submitLabel: 'Create & checkout',
+              onSubmit: (name) => void repoActions.createBranch(path, name)
+            })
+          }
         >
           <GitBranchPlus size={17} />
           <span>Branch</span>
@@ -145,7 +154,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
               title: 'Stash changes',
               label: 'Stash message (optional)',
               placeholder: 'WIP on login form',
-              initial: ' ',
+              allowEmpty: true,
               submitLabel: 'Stash',
               onSubmit: (msg) => void repoActions.stash(path, msg.trim() || undefined)
             })

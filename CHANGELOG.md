@@ -1,5 +1,12 @@
 
 
+## [0.13.1](https://github.com/MyAppDesk/gitcito/compare/v0.13.0...v0.13.1) (2026-06-17)
+
+
+### Features
+
+* add reset panel option to sidebar ([e21e43a](https://github.com/MyAppDesk/gitcito/commit/e21e43ab0124baf9bb71c4488cd9e24c37d9f652))
+
 ## [0.13.0](https://github.com/MyAppDesk/gitcito/compare/v0.12.0...v0.13.0) (2026-06-17)
 
 

@@ -173,9 +173,11 @@ async function launch(shot, theme) {
   if (activePath) {
     await page.evaluate((p) => window.__shot.waitForRepo(p), activePath).catch(() => {})
   }
-  // Freeze caret + scrollbars for clean frames.
+  // Freeze caret, scrollbars, animations and transitions for clean, deterministic frames.
   await page.addStyleTag({
-    content: '::-webkit-scrollbar{display:none!important} *{caret-color:transparent!important}'
+    content:
+      '::-webkit-scrollbar{display:none!important}' +
+      '*{caret-color:transparent!important;animation-play-state:paused!important;transition:none!important;transition-duration:0s!important}'
   })
   await page.evaluate(() => document.fonts.ready)
 

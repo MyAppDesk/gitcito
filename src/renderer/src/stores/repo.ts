@@ -606,6 +606,27 @@ export const repoActions = {
   discard: (path: string, files: string[], untracked: boolean) =>
     useRepoStore.getState().run(path, `Discarded ${files.length} file(s)`, () => gitApi.discard(path, files, untracked)),
 
+  addToGitignore: (path: string, patterns: string[], label?: string) =>
+    useRepoStore.getState().run(path, `Added ${label ?? `${patterns.length} entr${patterns.length === 1 ? 'y' : 'ies'}`} to .gitignore`, async () => {
+      const added = await gitApi.addToGitignore(path, patterns)
+      if (added.length === 0) useUIStore.getState().toast('info', 'Already in .gitignore')
+    }),
+
+  untrack: (path: string, files: string[], deleteFromDisk: boolean, label?: string) =>
+    useRepoStore.getState().run(
+      path,
+      deleteFromDisk
+        ? `Removed ${label ?? `${files.length} file(s)`} from Git and disk`
+        : `Untracked ${label ?? `${files.length} file(s)`}`,
+      () => gitApi.untrack(path, files, deleteFromDisk)
+    ),
+
+  ignoreAndUntrack: (path: string, files: string[], patterns: string[], label?: string) =>
+    useRepoStore.getState().run(path, `Ignored ${label ?? `${files.length} file(s)`}`, async () => {
+      await gitApi.untrack(path, files, false)
+      await gitApi.addToGitignore(path, patterns)
+    }),
+
   worktreeAdd: (path: string, dir: string, branch: string, newBranch: boolean) =>
     useRepoStore.getState().run(path, `Added worktree ${dir}`, () => gitApi.worktreeAdd(path, dir, branch, newBranch)),
 

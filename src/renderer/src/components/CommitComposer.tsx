@@ -4,7 +4,7 @@ import { Sparkles, Loader2, Trash2, AlignLeft, FolderTree, GitMerge, ChevronDown
 import { MYAPPDESK_COAUTHOR, type FileEntry } from '../../../shared/types'
 import { gitApi, aiApi, shellApi } from '../infrastructure/api'
 import { repoActions, useRepoStore, type RepoData } from '../stores/repo'
-import { useUIStore } from '../stores/ui'
+import { useUIStore, type MenuItem } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { FileListView } from './FileListView'
 import {
@@ -235,6 +235,59 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
       ? [...selection.paths]
       : [file.path]
 
+  // Builds the ".gitignore / stop tracking" menu items shared by the file and
+  // folder context menus. For folders, pass `folderPath` so a single anchored
+  // `folder/` pattern is written and `git rm -r` untracks the whole subtree.
+  const buildIgnoreMenu = (entries: FileEntry[], displayLabel: string, folderPath?: string): MenuItem[] => {
+    const isFolder = folderPath !== undefined
+    const patterns = isFolder ? [`/${folderPath}/`] : entries.map((f) => `/${f.path}`)
+    const hasTracked = entries.some((f) => !f.untracked)
+    const trackTargets = isFolder ? [folderPath] : entries.filter((f) => !f.untracked).map((f) => f.path)
+    const items: MenuItem[] = [
+      { separator: true },
+      { label: 'Add to .gitignore', onClick: () => void repoActions.addToGitignore(path, patterns, displayLabel) }
+    ]
+    if (hasTracked) {
+      items.push({
+        label: 'Add to .gitignore & stop tracking',
+        onClick: () =>
+          useUIStore.getState().openModal({
+            kind: 'confirm',
+            title: 'Ignore & stop tracking',
+            message: `Add ${displayLabel} to .gitignore and stop tracking it in Git. The file(s) stay on disk.`,
+            confirmLabel: 'Ignore & untrack',
+            onConfirm: () => void repoActions.ignoreAndUntrack(path, trackTargets, patterns, displayLabel)
+          })
+      })
+      items.push({ separator: true })
+      items.push({
+        label: 'Stop tracking (keep on disk)',
+        onClick: () =>
+          useUIStore.getState().openModal({
+            kind: 'confirm',
+            title: 'Stop tracking',
+            message: `Stop tracking ${displayLabel} in Git? The file(s) stay on disk but will be removed from the repository on the next commit.`,
+            confirmLabel: 'Stop tracking',
+            onConfirm: () => void repoActions.untrack(path, trackTargets, false, displayLabel)
+          })
+      })
+      items.push({
+        label: 'Delete from Git and disk',
+        danger: true,
+        onClick: () =>
+          useUIStore.getState().openModal({
+            kind: 'confirm',
+            title: 'Delete from Git and disk',
+            message: `Remove ${displayLabel} from version control and permanently delete from disk? This cannot be undone.`,
+            danger: true,
+            confirmLabel: 'Delete',
+            onConfirm: () => void repoActions.untrack(path, trackTargets, true, displayLabel)
+          })
+      })
+    }
+    return items
+  }
+
   const handleContext = (list: ListName, files: FileEntry[]) => (file: FileEntry, e: React.MouseEvent) => {
     e.preventDefault()
     const targets = pathsFor(list, file)
@@ -265,7 +318,8 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
               if (untracked.length) await repoActions.discard(path, untracked, true)
             }
           })
-      }
+      },
+      ...buildIgnoreMenu(targetFiles, label)
     ])
   }
 
@@ -299,7 +353,8 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
               if (untracked.length) await repoActions.discard(path, untracked, true)
             }
           })
-      }
+      },
+      ...buildIgnoreMenu(inFolder, `"${folderPath}/"`, folderPath)
     ])
   }
 

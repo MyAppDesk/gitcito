@@ -622,6 +622,42 @@ export const gitService = {
     else await git.raw(['checkout', '--', ...files])
   },
 
+  /**
+   * Append repo-relative patterns to the repository's root `.gitignore`,
+   * skipping any that are already present. Patterns should be supplied
+   * pre-formatted (e.g. anchored with a leading `/`, folders with a
+   * trailing `/`). Returns the patterns that were actually added.
+   */
+  async addToGitignore(repoPath: string, patterns: string[]): Promise<string[]> {
+    const file = join(repoPath, '.gitignore')
+    let current = ''
+    try {
+      current = await readFile(file, 'utf8')
+    } catch {
+      current = ''
+    }
+    const existing = new Set(current.split(/\r?\n/).map((l) => l.trim()).filter(Boolean))
+    const toAdd = patterns.map((p) => p.trim()).filter((p) => p && !existing.has(p))
+    if (toAdd.length === 0) return []
+    const needsNl = current.length > 0 && !current.endsWith('\n')
+    const next = current + (needsNl ? '\n' : '') + toAdd.join('\n') + '\n'
+    await writeFile(file, next, 'utf8')
+    return toAdd
+  },
+
+  /**
+   * Stop tracking files/folders. By default they are removed from the index
+   * only (kept on disk); when `deleteFromDisk` is true they are also removed
+   * from the working tree. `-r` allows folders; `--ignore-unmatch` keeps the
+   * call safe if a path was already untracked.
+   */
+  async untrack(repoPath: string, files: string[], deleteFromDisk = false): Promise<void> {
+    if (files.length === 0) return
+    const args = ['rm', '-r', '--ignore-unmatch']
+    if (!deleteFromDisk) args.push('--cached')
+    await gitFor(repoPath).raw([...args, '--', ...files])
+  },
+
   async commit(repoPath: string, message: string, amend = false): Promise<void> {
     const git = gitFor(repoPath)
     await git.commit(message, amend ? ['--amend'] : [])

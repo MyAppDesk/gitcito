@@ -130,3 +130,45 @@ describe('branch + stage + commit', () => {
     expect((await gitService.status(R)).staged.length).toBe(0)
   })
 })
+
+describe('gitignore + untrack', () => {
+  it('adds patterns to .gitignore without duplicating', async () => {
+    const R = cloneFixture('bisect-bug')
+    writeFileSync(join(R, 'debug.log'), 'noise\n')
+
+    // New untracked file shows up before being ignored.
+    expect((await gitService.status(R)).unstaged.some((f) => f.path === 'debug.log')).toBe(true)
+
+    const added = await gitService.addToGitignore(R, ['/debug.log'])
+    expect(added).toEqual(['/debug.log'])
+    expect(readFileSync(join(R, '.gitignore'), 'utf8')).toContain('/debug.log')
+
+    // Now ignored, so it no longer surfaces as an untracked change.
+    expect((await gitService.status(R)).unstaged.some((f) => f.path === 'debug.log')).toBe(false)
+
+    // Re-adding the same pattern is a no-op.
+    expect(await gitService.addToGitignore(R, ['/debug.log'])).toEqual([])
+  })
+
+  it('stops tracking a file but keeps it on disk', async () => {
+    const R = cloneFixture('bisect-bug')
+    expect(existsSync(join(R, 'math.js'))).toBe(true)
+
+    await gitService.untrack(R, ['math.js'], false)
+
+    // File remains on disk, but is staged for deletion from the index.
+    expect(existsSync(join(R, 'math.js'))).toBe(true)
+    expect((await gitService.status(R)).staged.some((f) => f.path === 'math.js' && f.status === 'D')).toBe(true)
+  })
+
+  it('deletes a tracked file from Git and disk', async () => {
+    const R = cloneFixture('bisect-bug')
+    expect(existsSync(join(R, 'tax.js'))).toBe(true)
+
+    await gitService.untrack(R, ['tax.js'], true)
+
+    expect(existsSync(join(R, 'tax.js'))).toBe(false)
+    expect((await gitService.status(R)).staged.some((f) => f.path === 'tax.js' && f.status === 'D')).toBe(true)
+  })
+})
+

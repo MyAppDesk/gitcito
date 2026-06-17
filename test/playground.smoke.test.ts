@@ -21,7 +21,8 @@ const EXPECTED = [
   'submodules-worktrees',
   'reflog-recovery',
   'binary-images-unicode',
-  'deep-history-monorepo'
+  'deep-history-monorepo',
+  'image-showcase'
 ]
 
 describe('playground fixtures', () => {

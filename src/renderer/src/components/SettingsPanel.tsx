@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import {
   Plus,
@@ -1579,19 +1579,34 @@ function AnalyticsSection({ aiEnabled }: { aiEnabled: boolean }): React.JSX.Elem
 }
 
 function RepoHistorySection(): React.JSX.Element {
-  const repo = useSettingsStore((s) => s.activeRepo())
+  const activeRepo = useSettingsStore((s) => s.activeRepo())
+  const recentRepos = useSettingsStore((s) => s.settings.recentRepos)
+
+  // Include the active repo in the list even if it isn't in recentRepos yet
+  const allRepos = useMemo(() => {
+    if (!activeRepo || recentRepos.some((r) => r.path === activeRepo.path)) return recentRepos
+    return [activeRepo, ...recentRepos]
+  }, [activeRepo, recentRepos])
+
+  const [selectedPath, setSelectedPath] = useState<string>(() => activeRepo?.path ?? recentRepos[0]?.path ?? '')
   const [stats, setStats] = useState<RepoStats | null>(null)
   const [loading, setLoading] = useState(false)
 
+  // Follow the active repo when the user switches tabs
   useEffect(() => {
-    if (!repo) {
+    if (activeRepo?.path) setSelectedPath(activeRepo.path)
+  }, [activeRepo?.path])
+
+  useEffect(() => {
+    if (!selectedPath) {
       setStats(null)
       return
     }
     let cancelled = false
     setLoading(true)
+    setStats(null)
     void gitApi
-      .repoStats(repo.path)
+      .repoStats(selectedPath)
       .then((s) => {
         if (!cancelled) setStats(s)
       })
@@ -1604,7 +1619,7 @@ function RepoHistorySection(): React.JSX.Element {
     return () => {
       cancelled = true
     }
-  }, [repo])
+  }, [selectedPath])
 
   const perDay = stats ? stats.perDay.slice(-90).map((d) => ({ label: d.date, value: d.count })) : []
   const topAuthors = stats ? stats.authors.slice(0, 6) : []
@@ -1616,45 +1631,58 @@ function RepoHistorySection(): React.JSX.Element {
         Repository history
       </h4>
       <p className="settings-hint">
-        Commit statistics for the active repository{repo ? ` (${repo.name})` : ''}, read from its git history.
+        Commit statistics read from the repository's git history.
       </p>
 
-      {!repo ? (
+      {allRepos.length === 0 ? (
         <p className="settings-hint" style={{ marginTop: 12 }}>Open a repository to see its history.</p>
-      ) : loading ? (
-        <p className="settings-hint" style={{ marginTop: 12 }}>
-          <Loader2 size={13} className="spin" style={{ verticalAlign: '-2px', marginRight: 6 }} />
-          Reading history…
-        </p>
-      ) : !stats || stats.totalCommits === 0 ? (
-        <p className="settings-hint" style={{ marginTop: 12 }}>No commits found.</p>
       ) : (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10, marginTop: 12 }}>
-            <StatCard label="Total commits" value={String(stats.totalCommits)} />
-            <StatCard label="Authors" value={String(stats.authors.length)} />
-            <StatCard label="First commit" value={stats.first ? new Date(stats.first * 1000).toLocaleDateString() : '—'} />
-            <StatCard label="Latest commit" value={stats.last ? new Date(stats.last * 1000).toLocaleDateString() : '—'} />
-          </div>
+          <label className="settings-field" style={{ maxWidth: 320, marginTop: 12 }}>
+            <span className="settings-field-label">Repository</span>
+            <select value={selectedPath} onChange={(e) => setSelectedPath(e.target.value)}>
+              {allRepos.map((r) => (
+                <option key={r.path} value={r.path}>{r.name}</option>
+              ))}
+            </select>
+          </label>
 
-          {perDay.length > 1 && (
-            <div style={{ marginTop: 16 }}>
-              <div style={{ fontSize: 11, color: 'var(--text-2)' }}>Commits per day (last {perDay.length})</div>
-              <MiniBars data={perDay} color="var(--green)" />
-            </div>
-          )}
-
-          <div style={{ marginTop: 16 }}>
-            <div style={{ fontSize: 11, color: 'var(--text-2)', marginBottom: 6 }}>Top authors</div>
-            {topAuthors.map((a) => (
-              <div key={a.name} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '4px 0', borderTop: '1px solid var(--border-soft)' }}>
-                <span style={{ color: 'var(--text-1)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                  <GitCommit size={12} /> {a.name}
-                </span>
-                <span style={{ color: 'var(--text-2)' }}>{a.commits}</span>
+          {loading ? (
+            <p className="settings-hint" style={{ marginTop: 12 }}>
+              <Loader2 size={13} className="spin" style={{ verticalAlign: '-2px', marginRight: 6 }} />
+              Reading history…
+            </p>
+          ) : !stats || stats.totalCommits === 0 ? (
+            <p className="settings-hint" style={{ marginTop: 12 }}>No commits found.</p>
+          ) : (
+            <>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10, marginTop: 12 }}>
+                <StatCard label="Total commits" value={String(stats.totalCommits)} />
+                <StatCard label="Authors" value={String(stats.authors.length)} />
+                <StatCard label="First commit" value={stats.first ? new Date(stats.first * 1000).toLocaleDateString() : '—'} />
+                <StatCard label="Latest commit" value={stats.last ? new Date(stats.last * 1000).toLocaleDateString() : '—'} />
               </div>
-            ))}
-          </div>
+
+              {perDay.length > 1 && (
+                <div style={{ marginTop: 16 }}>
+                  <div style={{ fontSize: 11, color: 'var(--text-2)' }}>Commits per day (last {perDay.length})</div>
+                  <MiniBars data={perDay} color="var(--green)" />
+                </div>
+              )}
+
+              <div style={{ marginTop: 16 }}>
+                <div style={{ fontSize: 11, color: 'var(--text-2)', marginBottom: 6 }}>Top authors</div>
+                {topAuthors.map((a) => (
+                  <div key={a.name} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '4px 0', borderTop: '1px solid var(--border-soft)' }}>
+                    <span style={{ color: 'var(--text-1)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      <GitCommit size={12} /> {a.name}
+                    </span>
+                    <span style={{ color: 'var(--text-2)' }}>{a.commits}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </>
       )}
     </div>

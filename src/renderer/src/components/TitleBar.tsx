@@ -24,7 +24,7 @@ type DropTarget =
 export function TitleBar(): React.JSX.Element {
   const {
     settings, setGroupActiveRepo, closeTab, setActiveTab, renameTab,
-    setTabColor, toggleTabCollapsed, removeRepoFromGroup,
+    setTabColor, toggleTabCollapsed, removeRepoFromGroup, renameRepoInGroup,
     reorderTabs, moveTabIntoGroup, ejectRepoFromGroup,
     moveRepoBetweenGroups, reorderReposInGroup
   } = useSettingsStore()
@@ -274,7 +274,22 @@ export function TitleBar(): React.JSX.Element {
     return items
   }
 
-  const repoInGroupMenu = (groupTab: TabState, repoPath: string): MenuItem[] => [
+  const repoInGroupMenu = (groupTab: GroupTab, repoPath: string): MenuItem[] => [
+    {
+      label: 'Rename…',
+      onClick: () => {
+        const currentName = groupTab.repos.find((r) => r.path === repoPath)?.name ?? ''
+        openModal({
+          kind: 'input',
+          title: 'Rename repository',
+          label: 'Name',
+          initial: currentName,
+          submitLabel: 'Rename',
+          onSubmit: (name) => renameRepoInGroup(groupTab.id, repoPath, name)
+        })
+      }
+    },
+    { separator: true },
     {
       label: 'Eject to standalone tab',
       onClick: () => ejectRepoFromGroup(groupTab.id, repoPath, null)

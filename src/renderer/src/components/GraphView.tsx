@@ -544,8 +544,13 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
   }, [repo.path, repo.remotes])
 
   // Fetch CI statuses for visible commits (GitHub only, requires token).
+  // Poll every 15s so a pending badge updates once the CI/deploy finishes —
+  // refreshCiStatuses no-ops when there is nothing missing or pending to fetch,
+  // so an idle (all-resolved) repo makes no network calls.
   useEffect(() => {
     void repoActions.refreshCiStatuses(repo.path)
+    const id = setInterval(() => void repoActions.refreshCiStatuses(repo.path), 15000)
+    return () => clearInterval(id)
   }, [repo.path, repo.commits.length])
 
   // Auto-load more commits when scrolling near the bottom.

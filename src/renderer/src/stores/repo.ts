@@ -188,7 +188,13 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
     const shas = (repo?.commits ?? []).slice(0, 40).map((c) => c.hash)
     if (!shas.length) return
     const existing = repo?.ciStatuses ?? {}
-    const toFetch = shas.filter((sha) => !existing[sha])
+    // Refetch shas we have never seen AND ones still pending — a pending entry
+    // would otherwise stay cached forever, leaving the badge stuck on the clock
+    // icon even after the CI/deploy completed.
+    const toFetch = shas.filter((sha) => {
+      const cur = existing[sha]
+      return !cur || cur.state === 'pending'
+    })
     if (!toFetch.length) return
     const fresh = await hostingApi.ciStatuses(origin.url, toFetch, token).catch(() => ({}))
     get().patch(path, { ciStatuses: { ...existing, ...fresh } })

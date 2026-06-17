@@ -17,6 +17,7 @@ import type {
   AIConfig,
   AppSettings,
   PullRequest,
+  ReleaseInfo,
   HostingProvider,
   RepoHost,
   RemoteRepo,
@@ -220,6 +221,8 @@ export const hostingApi = {
     window.api.hosting.createRepo(provider, token, opts, org) as Promise<RemoteRepo>,
   listPRs: (remoteUrl: string, tokens: { github?: string; azure?: string }) =>
     window.api.hosting.listPRs(remoteUrl, tokens) as Promise<{ provider: HostingProvider; prs: PullRequest[] }>,
+  listReleases: (remoteUrl: string, tokens: { github?: string }) =>
+    window.api.hosting.listReleases(remoteUrl, tokens) as Promise<{ provider: HostingProvider; releases: ReleaseInfo[] }>,
   ciStatuses: (remoteUrl: string, shas: string[], token: string) =>
     window.api.hosting.ciStatuses(remoteUrl, shas, token) as Promise<Record<string, CiStatus>>,
   openCreatePR: (remoteUrl: string, source: string, target: string) =>

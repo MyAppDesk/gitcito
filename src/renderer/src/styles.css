@@ -875,6 +875,111 @@ textarea:focus {
   color: var(--text-2);
 }
 
+/* Releases */
+.sb-release-icon {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+.sb-release-badge {
+  color: var(--accent);
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+.badge.release-draft {
+  background: var(--bg-4);
+  color: var(--text-2);
+}
+.badge.release-pre {
+  background: rgba(245, 159, 11, 0.15);
+  color: #f59e0b;
+}
+.sb-item.release .icon-btn {
+  margin-left: auto;
+  opacity: 0;
+}
+.sb-item.release:hover .icon-btn {
+  opacity: 0.8;
+}
+.sb-sections-btn {
+  margin-right: -4px;
+}
+
+/* Release page tab */
+.release-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+.release-meta-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--mono, monospace);
+  font-size: 12px;
+  color: var(--text-2);
+}
+.changelog-source[role='button'] {
+  cursor: pointer;
+}
+.changelog-source[role='button']:hover {
+  color: var(--accent, #8b5cf6);
+  border-color: var(--accent, #8b5cf6);
+}
+.release-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 24px;
+  padding: 6px;
+  border-radius: 8px;
+  background: var(--bg-2);
+  border: 1px solid var(--border-soft);
+}
+.release-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  max-width: 42%;
+  padding: 4px 8px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-1);
+  font-size: 12px;
+  font-family: var(--mono, monospace);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.release-nav-btn.right {
+  flex-direction: row;
+  justify-content: flex-end;
+}
+.release-nav-btn span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.release-nav-btn:hover:not(:disabled) {
+  background: var(--bg-3);
+  color: var(--accent, #8b5cf6);
+}
+.release-nav-btn:disabled {
+  opacity: 0;
+  cursor: default;
+  pointer-events: none;
+}
+.release-nav-current {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--mono, monospace);
+  color: var(--text-2);
+}
+
 .icon-btn {
   display: inline-flex;
   align-items: center;

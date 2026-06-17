@@ -104,6 +104,21 @@ export interface PullRequest {
 
 export type HostingProvider = 'github' | 'azure' | null
 
+/** A release published on the hosting platform (GitHub). Most map 1:1 to a
+ *  tag; only draft releases can be tagless until they are published. */
+export interface ReleaseInfo {
+  id: number
+  /** Tag the release points at. Null for unpublished drafts with no tag yet. */
+  tag: string | null
+  name: string | null
+  body: string | null
+  /** ISO date; null for drafts that were never published. */
+  publishedAt: string | null
+  url: string
+  prerelease: boolean
+  draft: boolean
+}
+
 export type RepoHost = 'github' | 'gitlab' | 'bitbucket' | 'azure'
 
 export interface RemoteRepo {
@@ -396,7 +411,9 @@ export interface PageTab extends TabBase {
   page: PageContent
 }
 
-export type PageContent = { type: 'changelog' }
+export type PageContent =
+  | { type: 'changelog' }
+  | { type: 'release'; release: ReleaseInfo; repoPath: string }
 
 /** A published GitHub release, as surfaced to the changelog page. */
 export interface AppRelease {
@@ -450,6 +467,8 @@ export interface AppSettings {
   /** Force a merge commit even when a fast-forward is possible. */
   mergeCommit: boolean
   sidebarOrder: string[]
+  /** Sidebar section ids the user has hidden via the visibility toggle. */
+  sidebarHidden: string[]
   onboardingCompleted: boolean
   /** Auto-open the changelog page tab after the app updates to a new version. */
   autoOpenChangelog: boolean
@@ -599,7 +618,8 @@ export function defaultSettings(): AppSettings {
     autoFetchMinutes: 5,
     confirmForcePush: true,
     mergeCommit: true,
-    sidebarOrder: ['local', 'remotes', 'prs', 'tags', 'stashes', 'worktrees'],
+    sidebarOrder: ['local', 'remotes', 'prs', 'tags', 'releases', 'stashes', 'worktrees'],
+    sidebarHidden: [],
     onboardingCompleted: false,
     autoOpenChangelog: true
   }

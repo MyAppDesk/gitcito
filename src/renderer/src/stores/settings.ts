@@ -12,6 +12,15 @@ import { settingsApi } from '../infrastructure/api'
 
 const uid = (): string => Math.random().toString(36).slice(2, 10)
 
+/** Tab title for a page tab. Release tabs read "repo - version" so several
+ *  releases from different repos stay distinguishable in the tab strip. */
+function pageTabName(page: PageContent): string {
+  if (page.type !== 'release') return "What's new"
+  const repo = page.repoPath.split('/').pop() || page.repoPath
+  const version = page.release.tag || page.release.name || `#${page.release.id}`
+  return `${repo} - ${version}`
+}
+
 export const GROUP_COLORS = [
   '#6366f1', '#ec4899', '#f59e0b', '#10b981',
   '#3b82f6', '#8b5cf6', '#ef4444', '#14b8a6',
@@ -56,6 +65,8 @@ interface SettingsState {
   openRepoTab(repo: RepoRef): void
   /** Open (or focus the existing) non-repo page tab, e.g. the changelog. */
   openPageTab(page: PageContent): void
+  /** Replace an existing page tab's content in place (e.g. prev/next release). */
+  navigatePageTab(tabId: string, page: PageContent): void
   createGroupTab(name: string): void
   addRepoToGroup(tabId: string, repo: RepoRef): void
   removeRepoFromGroup(tabId: string, path: string): void
@@ -117,6 +128,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     settings.mergeCommit = settings.mergeCommit ?? sd.mergeCommit
     settings.sidebarOrder =
       settings.sidebarOrder && settings.sidebarOrder.length ? settings.sidebarOrder : sd.sidebarOrder
+    settings.sidebarHidden = settings.sidebarHidden ?? sd.sidebarHidden
     settings.autoOpenChangelog = settings.autoOpenChangelog ?? sd.autoOpenChangelog
     set({ settings, loaded: true })
   },
@@ -168,13 +180,26 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
   openPageTab: (page) =>
     get().update((s) => {
-      // One tab per page type — focus it if already open.
-      const existing = s.tabs.find((t) => t.kind === 'page' && t.page.type === page.type)
+      // One tab per page identity — focus it if already open. Changelog is a
+      // singleton; releases are keyed by release id so each opens its own tab.
+      const existing = s.tabs.find(
+        (t) =>
+          t.kind === 'page' &&
+          t.page.type === page.type &&
+          (page.type !== 'release' || (t.page.type === 'release' && t.page.release.id === page.release.id))
+      )
       if (existing) return { ...s, activeTabId: existing.id }
-      const name = page.type === 'changelog' ? "What's new" : page.type
-      const tab: TabState = { id: uid(), kind: 'page', name, page }
+      const tab: TabState = { id: uid(), kind: 'page', name: pageTabName(page), page }
       return { ...s, tabs: [...s.tabs, tab], activeTabId: tab.id }
     }),
+
+  navigatePageTab: (tabId, page) =>
+    get().update((s) => ({
+      ...s,
+      tabs: s.tabs.map((t) =>
+        t.id === tabId && t.kind === 'page' ? { ...t, page, name: pageTabName(page) } : t
+      )
+    })),
 
   createGroupTab: (name) =>
     get().update((s) => {

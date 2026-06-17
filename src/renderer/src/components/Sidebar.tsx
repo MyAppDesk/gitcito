@@ -16,14 +16,16 @@ import {
   Plus,
   Lock,
   ExternalLink,
-  Sparkles
+  Sparkles,
+  Rocket,
+  Settings2
 } from 'lucide-react'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
 import { useUIStore, type MenuItem } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { hostingApi, shellApi } from '../infrastructure/api'
 import { useT } from '../i18n'
-import type { BranchInfo, RemoteBranchInfo, StashInfo, TagInfo, WorktreeInfo } from '../../../shared/types'
+import type { BranchInfo, ReleaseInfo, RemoteBranchInfo, StashInfo, TagInfo, WorktreeInfo } from '../../../shared/types'
 
 import { RemoteIcon } from './RemoteIcon'
 
@@ -120,10 +122,13 @@ function Section({
 export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   const { openContextMenu, openModal } = useUIStore()
   const refreshPRs = useRepoStore((s) => s.refreshPRs)
+  const refreshReleases = useRepoStore((s) => s.refreshReleases)
   const select = useRepoStore((s) => s.select)
   const requestScrollTo = useUIStore((s) => s.requestScrollTo)
   const sidebarOrder = useSettingsStore((s) => s.settings.sidebarOrder)
+  const sidebarHidden = useSettingsStore((s) => s.settings.sidebarHidden)
   const updateSettings = useSettingsStore((s) => s.update)
+  const openPageTab = useSettingsStore((s) => s.openPageTab)
   const activeProfile = useSettingsStore((s) => s.activeProfile)
   const aiEnabled = activeProfile().ai.enabled !== false
   const t = useT()
@@ -152,6 +157,18 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   const tags = useMemo(
     () => repo.branches.tags.filter((t) => !f || t.name.toLowerCase().includes(f)),
     [repo.branches.tags, f]
+  )
+  const releases = useMemo(
+    () =>
+      repo.releases.filter(
+        (r) => !f || (r.name ?? '').toLowerCase().includes(f) || (r.tag ?? '').toLowerCase().includes(f)
+      ),
+    [repo.releases, f]
+  )
+  // Tag names that have a published release behind them → drives the badge in the Tags section.
+  const releaseTagNames = useMemo(
+    () => new Set(repo.releases.map((r) => r.tag).filter((t): t is string => !!t)),
+    [repo.releases]
   )
 
   const remoteGroups = useMemo(() => {
@@ -487,6 +504,24 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   }
 
 
+  const sectionLabels: Record<string, string> = {
+    local: t('sidebar.local'),
+    remotes: t('sidebar.remotes'),
+    prs: t('sidebar.pullRequests'),
+    tags: t('sidebar.tags'),
+    releases: t('sidebar.releases'),
+    stashes: t('sidebar.stashes'),
+    worktrees: t('sidebar.worktrees')
+  }
+
+  const toggleSection = (id: string): void =>
+    updateSettings((s) => ({
+      ...s,
+      sidebarHidden: s.sidebarHidden.includes(id)
+        ? s.sidebarHidden.filter((x) => x !== id)
+        : [...s.sidebarHidden, id]
+    }))
+
   const reorder = (from: string, to: string): void => {
     if (from === to) return
     updateSettings((s) => {
@@ -698,6 +733,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         {tags.length === 0 && <div className="sb-empty">{t('sidebar.noTags')}</div>}
         {tags.map((tag) => {
           const isPushed = repo.remoteTagNames.includes(tag.name)
+          const isRelease = releaseTagNames.has(tag.name)
           return (
             <div
               key={tag.name}
@@ -707,10 +743,11 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
                 e.preventDefault()
                 openContextMenu(e.clientX, e.clientY, tagMenu(tag))
               }}
-              title={`${tag.name}${repo.remotes.length ? (isPushed ? ' · pushed' : ' · local only') : ''}`}
+              title={`${tag.name}${isRelease ? ' · release' : ''}${repo.remotes.length ? (isPushed ? ' · pushed' : ' · local only') : ''}`}
             >
               <Tag size={11} className="sb-tag-icon" />
               <span className="sb-name">{tag.name}</span>
+              {isRelease && <Rocket size={10} className="sb-release-badge" />}
               {repo.remotes.length > 0 && (
                 <Cloud size={10} className={`sb-tag-cloud ${isPushed ? 'pushed' : 'unpushed'}`} />
               )}
@@ -719,6 +756,74 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         })}
       </Section>
     ),
+    releases: (() => {
+      const origin = repo.remotes.find((r) => r.name === 'origin') ?? repo.remotes[0]
+      const base = webUrl(origin?.url)
+      const releasesUrl = base ? `${base}/releases` : undefined
+      return (
+        <Section
+          title={t('sidebar.releases')}
+          icon={<Rocket size={13} />}
+          count={releases.length}
+          defaultOpen={false}
+          {...dragProps('releases')}
+          actions={
+            <>
+              {releasesUrl && (
+                <span
+                  className="icon-btn"
+                  title={t('sidebar.openReleases')}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    void shellApi.openExternal(releasesUrl)
+                  }}
+                >
+                  <ExternalLink size={12} />
+                </span>
+              )}
+              <span
+                className="icon-btn"
+                title={t('sidebar.fetchReleases')}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  void refreshReleases(path)
+                }}
+              >
+                <RefreshCw size={12} />
+              </span>
+            </>
+          }
+        >
+          {releases.length === 0 && <div className="sb-empty">{t('sidebar.noReleases')}</div>}
+          {releases.map((rel: ReleaseInfo) => {
+            const label = rel.name || rel.tag || `#${rel.id}`
+            return (
+              <div
+                key={rel.id}
+                className="sb-item release"
+                onClick={() => openPageTab({ type: 'release', release: rel, repoPath: path })}
+                title={label}
+              >
+                <Rocket size={11} className="sb-release-icon" />
+                <span className="sb-name">{label}</span>
+                {rel.draft && <span className="badge release-draft">draft</span>}
+                {rel.prerelease && <span className="badge release-pre">pre</span>}
+                <span
+                  className="icon-btn"
+                  title="Open on web"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    void shellApi.openExternal(rel.url)
+                  }}
+                >
+                  <ExternalLink size={11} />
+                </span>
+              </div>
+            )
+          })}
+        </Section>
+      )
+    })(),
     stashes: (
       <Section title={t('sidebar.stashes')} icon={<Archive size={13} />} count={repo.stashes.length} {...dragProps('stashes')}>
         {repo.stashes.length === 0 && <div className="sb-empty">{t('sidebar.noStashes')}</div>}
@@ -783,16 +888,38 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
 
   const order = sidebarOrder.filter((id) => sections[id])
   for (const id of Object.keys(sections)) if (!order.includes(id)) order.push(id)
+  const visibleOrder = order.filter((id) => !sidebarHidden.includes(id))
+
+  const openSectionsMenu = (x: number, y: number): void => {
+    const items: MenuItem[] = order.map((id) => ({
+      label: `${sidebarHidden.includes(id) ? '   ' : '✓ '}${sectionLabels[id] ?? id}`,
+      onClick: () => toggleSection(id)
+    }))
+    if (sidebarHidden.length) {
+      items.push({ separator: true }, { label: t('sidebar.showAllSections'), onClick: () => updateSettings((s) => ({ ...s, sidebarHidden: [] })) })
+    }
+    openContextMenu(x, y, items)
+  }
 
   return (
     <aside className="sidebar">
       <div className="sb-filter">
         <Search size={13} />
         <input placeholder={t('sidebar.filter')} value={filter} onChange={(e) => setFilter(e.target.value)} />
+        <span
+          className="icon-btn sb-sections-btn"
+          title={t('sidebar.sections')}
+          onClick={(e) => {
+            const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
+            openSectionsMenu(r.right, r.bottom)
+          }}
+        >
+          <Settings2 size={13} />
+        </span>
       </div>
 
       <div className="sb-scroll">
-        {order.map((id) => (
+        {visibleOrder.map((id) => (
           <Fragment key={id}>{sections[id]}</Fragment>
         ))}
       </div>

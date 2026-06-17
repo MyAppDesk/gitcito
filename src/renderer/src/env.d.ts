@@ -51,6 +51,7 @@ interface PreloadApi {
     listOwners(provider: string, token: string, org?: string): Promise<unknown>
     createRepo(provider: string, token: string, opts: unknown, org?: string): Promise<unknown>
     listPRs(remoteUrl: string, tokens: unknown): Promise<unknown>
+    listReleases(remoteUrl: string, tokens: unknown): Promise<unknown>
     ciStatuses(remoteUrl: string, shas: string[], token: string): Promise<unknown>
     openCreatePR(remoteUrl: string, source: string, target: string): Promise<boolean>
   }

@@ -6,6 +6,7 @@ import type {
   CreateRepoOpts,
   HostingProvider,
   PullRequest,
+  ReleaseInfo,
   RemoteOwner,
   RemoteRepo,
   RepoHost
@@ -100,6 +101,45 @@ async function listPullRequests(
       targetBranch: p.targetRefName.replace('refs/heads/', ''),
       url: `${base}/_git/${encodeURIComponent(parsed.repo)}/pullrequest/${p.pullRequestId}`,
       isDraft: p.isDraft
+    }))
+  }
+}
+
+async function listReleases(
+  remoteUrl: string,
+  tokens: { github?: string }
+): Promise<{ provider: HostingProvider; releases: ReleaseInfo[] }> {
+  const parsed = parseRemoteUrl(remoteUrl)
+  // Releases are a GitHub concept; Azure DevOps "releases" are pipelines, not this.
+  if (!parsed || parsed.provider !== 'github') return { provider: parsed?.provider ?? null, releases: [] }
+
+  const headers: Record<string, string> = { Accept: 'application/vnd.github+json' }
+  if (tokens.github) headers['Authorization'] = `Bearer ${tokens.github}`
+  const res = await fetch(`https://api.github.com/repos/${parsed.owner}/${parsed.repo}/releases?per_page=50`, {
+    headers
+  })
+  if (!res.ok) throw new Error(`GitHub API error (${res.status})`)
+  const data = (await res.json()) as Array<{
+    id: number
+    tag_name: string | null
+    name: string | null
+    body: string | null
+    draft: boolean
+    prerelease: boolean
+    published_at: string | null
+    html_url: string
+  }>
+  return {
+    provider: 'github',
+    releases: data.map((r) => ({
+      id: r.id,
+      tag: r.tag_name || null,
+      name: r.name,
+      body: r.body,
+      publishedAt: r.published_at,
+      url: r.html_url,
+      prerelease: r.prerelease,
+      draft: r.draft
     }))
   }
 }
@@ -431,6 +471,9 @@ export function registerHostingHandlers(): void {
   )
   ipcMain.handle('hosting:listPRs', (_e, remoteUrl: string, tokens: { github?: string; azure?: string }) =>
     listPullRequests(remoteUrl, tokens)
+  )
+  ipcMain.handle('hosting:listReleases', (_e, remoteUrl: string, tokens: { github?: string }) =>
+    listReleases(remoteUrl, tokens)
   )
   ipcMain.handle('hosting:ciStatuses', (_e, remoteUrl: string, shas: string[], token: string) =>
     fetchCiStatuses(remoteUrl, shas, token)

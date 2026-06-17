@@ -67,6 +67,8 @@ const api = {
       ipcRenderer.invoke('hosting:createRepo', provider, token, opts, org),
     listPRs: (remoteUrl: string, tokens: unknown): Promise<unknown> =>
       ipcRenderer.invoke('hosting:listPRs', remoteUrl, tokens),
+    listReleases: (remoteUrl: string, tokens: unknown): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:listReleases', remoteUrl, tokens),
     ciStatuses: (remoteUrl: string, shas: string[], token: string): Promise<unknown> =>
       ipcRenderer.invoke('hosting:ciStatuses', remoteUrl, shas, token),
     openCreatePR: (remoteUrl: string, source: string, target: string): Promise<boolean> =>

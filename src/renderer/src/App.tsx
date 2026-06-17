@@ -22,6 +22,7 @@ import { Toasts } from './components/Toasts'
 import { Welcome, LauncherPanel, type LauncherItem } from './components/Welcome'
 import { OnboardingWizard } from './components/OnboardingWizard'
 import { ChangelogPage } from './components/ChangelogPage'
+import { ReleasePage } from './components/ReleasePage'
 import { ResizeHandle } from './components/ResizeHandle'
 import gitcitoLaunch from './assets/gitcito-launch.png'
 
@@ -93,6 +94,8 @@ function PageView({ tab }: { tab: PageTab }): React.JSX.Element {
   switch (tab.page.type) {
     case 'changelog':
       return <ChangelogPage />
+    case 'release':
+      return <ReleasePage tab={tab} />
     default:
       return <Welcome />
   }
@@ -272,6 +275,21 @@ export default function App(): React.JSX.Element {
     )
     return () => clearInterval(interval)
   }, [activeRepoPath])
+
+  // Periodic silent refresh of hosting data (PRs + releases). Tied to the same
+  // user-configured cadence as the background remote fetch — these live behind
+  // the network/token, change in lockstep with what a fetch would surface, and
+  // must not toast on failure, so they stay quiet and follow autoFetchMinutes.
+  useEffect(() => {
+    const minutes = settings.autoFetchMinutes ?? 0
+    if (!activeRepoPath || minutes <= 0) return
+    const poll = (): void => {
+      void useRepoStore.getState().refreshPRs(activeRepoPath, { silent: true })
+      void useRepoStore.getState().refreshReleases(activeRepoPath, { silent: true })
+    }
+    const interval = setInterval(poll, minutes * 60_000)
+    return () => clearInterval(interval)
+  }, [activeRepoPath, settings.autoFetchMinutes])
 
   // Near real-time refresh driven by a file system watcher on the repo. The
   // main process watches the working tree and .git directory and pushes change

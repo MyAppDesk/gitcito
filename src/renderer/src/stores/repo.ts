@@ -6,6 +6,7 @@ import type {
   ConflictSide,
   GraphCommit,
   PullRequest,
+  ReleaseInfo,
   RemoteInfo,
   RepoStatus,
   StashInfo,
@@ -38,6 +39,8 @@ export interface RepoData {
   worktrees: WorktreeInfo[]
   prs: PullRequest[]
   prProvider: HostingProvider
+  releases: ReleaseInfo[]
+  releaseProvider: HostingProvider
   mergeState: ConflictOpKind | null
   selected: Selection | null
   loading: boolean
@@ -63,6 +66,8 @@ const emptyRepo = (path: string): RepoData => ({
   worktrees: [],
   prs: [],
   prProvider: null,
+  releases: [],
+  releaseProvider: null,
   mergeState: null,
   selected: null,
   loading: true,
@@ -86,7 +91,8 @@ interface RepoStoreState {
   select(path: string, sel: Selection | null): void
   setDraft(path: string, value: string): void
   loadMore(path: string): void
-  refreshPRs(path: string): Promise<void>
+  refreshPRs(path: string, opts?: { silent?: boolean }): Promise<void>
+  refreshReleases(path: string, opts?: { silent?: boolean }): Promise<void>
   refreshRemoteTags(path: string): Promise<void>
   refreshCiStatuses(path: string): Promise<void>
 
@@ -125,6 +131,11 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
     if (get().repos[path]) return
     get().patch(path, {})
     await get().refresh(path)
+    // Hosting data (PRs, releases) lives behind the network, so it is fetched
+    // after the local refresh and kept silent — a missing token or offline box
+    // should not spam error toasts every time a repo is opened.
+    void get().refreshPRs(path, { silent: true })
+    void get().refreshReleases(path, { silent: true })
   },
 
   refresh: async (path, opts) => {
@@ -200,7 +211,7 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
     get().patch(path, { ciStatuses: { ...existing, ...fresh } })
   },
 
-  refreshPRs: async (path) => {
+  refreshPRs: async (path, opts) => {
     const repo = get().repos[path]
     const origin = repo?.remotes.find((r) => r.name === 'origin') ?? repo?.remotes[0]
     if (!origin) return
@@ -212,7 +223,22 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
       })
       get().patch(path, { prs, prProvider: provider })
     } catch (err) {
-      toast('error', err instanceof Error ? err.message : String(err))
+      if (!opts?.silent) toast('error', err instanceof Error ? err.message : String(err))
+    }
+  },
+
+  refreshReleases: async (path, opts) => {
+    const repo = get().repos[path]
+    const origin = repo?.remotes.find((r) => r.name === 'origin') ?? repo?.remotes[0]
+    if (!origin) return
+    const profile = useSettingsStore.getState().activeProfile()
+    try {
+      const { provider, releases } = await hostingApi.listReleases(origin.url, {
+        github: profile.githubToken || undefined
+      })
+      get().patch(path, { releases, releaseProvider: provider })
+    } catch (err) {
+      if (!opts?.silent) toast('error', err instanceof Error ? err.message : String(err))
     }
   },
 

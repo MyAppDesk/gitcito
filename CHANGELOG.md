@@ -1,5 +1,17 @@
 
 
+## [0.14.0](https://github.com/MyAppDesk/gitcito/compare/v0.13.2...v0.14.0) (2026-06-17)
+
+
+### Features
+
+* add functionality to manage .gitignore and untrack files ([6e96a11](https://github.com/MyAppDesk/gitcito/commit/6e96a1135402dfd7464b6d4604dff6b4fe10d873))
+
+
+### Bug Fixes
+
+* update gitignore-untrack scenario and improve RTL handling ([aa999c1](https://github.com/MyAppDesk/gitcito/commit/aa999c1b2317cdef641ffc299d82698a5b83098c))
+
 ## [0.13.2](https://github.com/MyAppDesk/gitcito/compare/v0.13.1...v0.13.2) (2026-06-17)
 
 

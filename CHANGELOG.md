@@ -1,5 +1,13 @@
 
 
+## [0.12.0](https://github.com/MyAppDesk/gitcito/compare/v0.11.0...v0.12.0) (2026-06-17)
+
+
+### Features
+
+* add function to clean stash messages in git service ([5dc5d40](https://github.com/MyAppDesk/gitcito/commit/5dc5d407523af85f7bb04afd688847d96407b19a))
+* parse stash subjects to separate branch and message ([5742cb9](https://github.com/MyAppDesk/gitcito/commit/5742cb97a23638b19d8ae3de5e787637a5244e2a))
+
 ## [0.11.0](https://github.com/MyAppDesk/gitcito/compare/v0.10.0...v0.11.0) (2026-06-17)
 
 

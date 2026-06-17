@@ -28,6 +28,7 @@ import { useUIStore, type MenuItem } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { hostingApi, shellApi } from '../infrastructure/api'
 import { useT } from '../i18n'
+import { defaultSettings } from '../../../shared/types'
 import type { BranchInfo, ReleaseInfo, RemoteBranchInfo, StashInfo, TagInfo, WorktreeInfo, SubmoduleInfo } from '../../../shared/types'
 
 import { RemoteIcon } from './RemoteIcon'
@@ -1081,6 +1082,13 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     if (sidebarHidden.length) {
       items.push({ separator: true }, { label: t('sidebar.showAllSections'), onClick: () => updateSettings((s) => ({ ...s, sidebarHidden: [] })) })
     }
+    items.push({ separator: true }, {
+      label: t('sidebar.resetPanel'),
+      onClick: () => {
+        const sd = defaultSettings()
+        updateSettings((s) => ({ ...s, sidebarOrder: sd.sidebarOrder, sidebarHidden: sd.sidebarHidden }))
+      }
+    })
     openContextMenu(x, y, items)
   }
 

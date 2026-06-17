@@ -327,17 +327,6 @@ textarea:focus {
   filter: brightness(1.15);
 }
 
-/* Colored bottom bar runs under chip and all in-group tabs — Chrome style */
-.tab-group-chip::after {
-  content: '';
-  position: absolute;
-  bottom: -3px;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: var(--group-color, #6366f1);
-}
-
 .tab-group-chip .tab-status {
   background: rgba(255, 255, 255, 0.85);
   box-shadow: none;
@@ -353,6 +342,64 @@ textarea:focus {
 @keyframes tab-status-pulse-white {
   0%, 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.45); }
   50%       { box-shadow: 0 0 0 3px rgba(255, 255, 255, 0); }
+}
+
+/* ── drag-and-drop drop indicators ──────────────────────────────────────── */
+.drop-before-tab,
+.drop-before-repo {
+  box-shadow: -3px 0 0 0 var(--accent);
+}
+
+.drop-after-tab,
+.drop-after-repo {
+  box-shadow: 3px 0 0 0 var(--accent);
+}
+
+.drop-into-group {
+  box-shadow: 0 0 0 2px var(--accent);
+  filter: brightness(1.25);
+}
+
+/* ── eject drop zones ────────────────────────────────────────────────────── */
+.tab-drop-zone {
+  width: 0;
+  height: 32px;
+  align-self: flex-end;
+  flex-shrink: 0;
+  position: relative;
+  pointer-events: none;
+  transition: width 0.1s ease;
+}
+
+.tab-drop-zone.visible {
+  width: 8px;
+  pointer-events: auto;
+}
+
+.tab-drop-zone.visible.active::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2px;
+  border-radius: 2px;
+  background: var(--accent);
+  box-shadow: 0 0 5px var(--accent);
+}
+
+.tab[draggable],
+.tab.in-group[draggable],
+.tab-group-chip[draggable] {
+  cursor: grab;
+}
+
+.tab[draggable]:active,
+.tab.in-group[draggable]:active,
+.tab-group-chip[draggable]:active {
+  cursor: grabbing;
+  opacity: 0.6;
 }
 
 .tab.in-group {
@@ -930,6 +977,80 @@ textarea:focus {
 .ghc-gear:hover {
   color: var(--text-0);
 }
+.ghc-filter {
+  flex: 0 0 18px;
+  width: 18px;
+  margin-left: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+}
+.ghc-filter:hover {
+  color: var(--text-0);
+}
+.ghc-filter.active {
+  color: var(--accent);
+}
+
+/* Reorderable column headers */
+.ghc-drag {
+  cursor: grab;
+}
+.ghc-drag.dragging {
+  opacity: 0.4;
+}
+.ghc-drag.drop-target {
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+/* Column filter dropdown (deploy status, author, …) */
+.col-filter-menu {
+  position: fixed;
+  z-index: 1000;
+  min-width: 170px;
+  max-height: 340px;
+  overflow-y: auto;
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 5px;
+  box-shadow: 0 14px 42px rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(8px);
+}
+.col-filter-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  text-align: left;
+  padding: 5px 9px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  color: var(--text-0);
+  transition: background 0.08s;
+}
+.col-filter-item:hover {
+  background: var(--accent);
+  color: #0a1220;
+}
+.col-filter-check {
+  flex: 0 0 12px;
+  font-size: 11px;
+}
+.col-filter-icon {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+}
+.col-filter-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 .graph-scroll {
   flex: 1;
@@ -1157,6 +1278,14 @@ textarea:focus {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.row-deploy {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  overflow: hidden;
 }
 
 .row-date {
@@ -2675,7 +2804,7 @@ textarea:focus {
 
 .toast {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 9px;
   max-width: 380px;
   padding: 10px 14px;
@@ -2684,6 +2813,47 @@ textarea:focus {
   border: 1px solid var(--border);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
   font-size: 12.5px;
+}
+.toast > svg:first-child {
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+
+.toast-body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.toast-msg {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.toast-msg.clickable {
+  cursor: pointer;
+}
+.toast-msg.expanded {
+  display: block;
+  -webkit-line-clamp: unset;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+.toast-more {
+  margin-top: 3px;
+  padding: 0 !important;
+  font-size: 11px;
+  color: var(--accent) !important;
+  background: none;
+}
+.toast-more:hover {
+  text-decoration: underline;
+}
+.toast-actions {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 2px;
 }
 
 .toast-success {

@@ -1,5 +1,12 @@
 
 
+## [0.11.0](https://github.com/MyAppDesk/gitcito/compare/v0.10.0...v0.11.0) (2026-06-17)
+
+
+### Features
+
+* add profile switcher component to the title bar ([66d3282](https://github.com/MyAppDesk/gitcito/commit/66d32820cc0057cf8f6946a29973e4c350c8b180))
+
 ## [0.10.0](https://github.com/MyAppDesk/gitcito/compare/v0.9.1...v0.10.0) (2026-06-17)
 
 

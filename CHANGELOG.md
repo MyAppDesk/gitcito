@@ -1,5 +1,12 @@
 
 
+## [0.8.0](https://github.com/MyAppDesk/gitcito/compare/v0.7.0...v0.8.0) (2026-06-17)
+
+
+### Features
+
+* open external links in default browser instead of app ([5cbf10d](https://github.com/MyAppDesk/gitcito/commit/5cbf10dd7213c00fe6ba2b1384666468ee142ff1))
+
 ## [0.7.0](https://github.com/MyAppDesk/gitcito/compare/v0.6.0...v0.7.0) (2026-06-17)
 
 

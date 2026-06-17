@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Archive, GitCommitHorizontal, Tag, Laptop, Github, Gitlab, Cloud, Server, Check, Settings2, Pencil, Plus, Minus, CheckCircle2, XCircle, Clock, MinusCircle } from 'lucide-react'
+import { Archive, GitCommitHorizontal, Tag, Laptop, Cloud, Check, Settings2, Pencil, Plus, Minus, CheckCircle2, XCircle, Clock, MinusCircle } from 'lucide-react'
 import type { CiStatus, GraphCommit, StashInfo, GraphColumnId, GraphColumns, FileEntry } from '../../../shared/types'
 import { defaultGraphColumns } from '../../../shared/types'
 import { layoutGraph, colorFor } from '../graph/layout'
@@ -8,6 +8,7 @@ import { useUIStore, type MenuItem } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { useT } from '../i18n'
 import { Avatar } from './Avatar'
+import { RemoteIcon } from './RemoteIcon'
 
 const ROW_H = 28
 const LANE_W = 18
@@ -120,15 +121,6 @@ function buildRefGroups(refs: string[], remoteNames: Set<string>): RefGroup[] {
   return [...groups, ...tags]
 }
 
-/** Pick a small provider icon for a remote URL's host. */
-function providerIcon(url: string | undefined, size: number): React.JSX.Element {
-  const u = (url ?? '').toLowerCase()
-  if (u.includes('github.com')) return <Github size={size} />
-  if (u.includes('gitlab')) return <Gitlab size={size} />
-  if (u.includes('bitbucket')) return <Cloud size={size} />
-  if (u.includes('dev.azure.com') || u.includes('visualstudio.com') || u.includes('azure')) return <Server size={size} />
-  return <Cloud size={size} />
-}
 
 /** Black or white text, whichever contrasts better with a hex lane color. */
 function contrastText(hex: string): string {
@@ -768,7 +760,7 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
           const url = repo.remotes.find((r) => r.name === remote)?.url
           return (
             <span key={remote} className="ref-ic">
-              {providerIcon(url, 10)}
+              <RemoteIcon url={url} size={10} />
             </span>
           )
         })}

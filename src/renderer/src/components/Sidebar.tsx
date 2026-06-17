@@ -12,9 +12,6 @@ import {
   Check,
   FolderGit2,
   GripVertical,
-  Github,
-  Gitlab,
-  Server,
   Laptop,
   Plus,
   Lock,
@@ -28,15 +25,7 @@ import { hostingApi, shellApi } from '../infrastructure/api'
 import { useT } from '../i18n'
 import type { BranchInfo, RemoteBranchInfo, StashInfo, TagInfo, WorktreeInfo } from '../../../shared/types'
 
-/** Pick a provider icon based on a remote URL's host. */
-function remoteIcon(url?: string, size = 13): React.JSX.Element {
-  const u = (url ?? '').toLowerCase()
-  if (u.includes('github.com')) return <Github size={size} />
-  if (u.includes('gitlab.com') || u.includes('gitlab')) return <Gitlab size={size} />
-  if (u.includes('bitbucket.org') || u.includes('bitbucket')) return <Cloud size={size} />
-  if (u.includes('dev.azure.com') || u.includes('visualstudio.com') || u.includes('azure')) return <Server size={size} />
-  return <Cloud size={size} />
-}
+import { RemoteIcon } from './RemoteIcon'
 
 interface SectionProps {
   title: string
@@ -201,7 +190,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         {local && <Laptop size={11} className="presence-local" />}
         {shown.map((rm) => (
           <span key={rm} className="presence-remote">
-            {remoteIcon(remoteUrl(rm), 11)}
+            <RemoteIcon url={remoteUrl(rm)} size={11} />
           </span>
         ))}
         {extra > 0 && <span className="presence-more">+{extra}</span>}
@@ -597,7 +586,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
               key={remote.name}
               nested
               title={remote.name.toUpperCase()}
-              icon={remoteIcon(remote.url)}
+              icon={<RemoteIcon url={remote.url} />}
               count={branches.length}
               defaultOpen={remote.name === 'origin'}
               onHeaderContextMenu={(e) => {

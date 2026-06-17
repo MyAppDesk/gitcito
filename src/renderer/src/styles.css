@@ -485,6 +485,97 @@ textarea:focus {
   color: var(--text-0);
 }
 
+/* Profile selector in the title bar (left of Settings). */
+.profile-switcher {
+  -webkit-app-region: no-drag;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  align-self: flex-end;
+  height: 32px;
+  max-width: 200px;
+  padding: 0 8px 0 6px;
+  border-radius: 7px;
+  color: var(--text-1);
+  transition: background 0.15s, color 0.15s;
+}
+.profile-switcher:hover,
+.profile-switcher.open {
+  background: var(--bg-3);
+  color: var(--text-0);
+}
+.profile-switcher-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.profile-switcher-chevron {
+  flex: 0 0 auto;
+  color: var(--text-2);
+}
+
+.profile-switcher-menu {
+  position: fixed;
+  z-index: 1000;
+  min-width: 190px;
+  max-width: 280px;
+  max-height: 360px;
+  overflow-y: auto;
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 5px;
+  box-shadow: 0 14px 42px rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(8px);
+}
+.profile-switcher-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  padding: 6px 9px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  color: var(--text-0);
+  transition: background 0.08s, color 0.08s;
+}
+.profile-switcher-item:hover {
+  background: var(--accent);
+  color: #0a1220;
+}
+.profile-switcher-check {
+  flex: 0 0 12px;
+  font-size: 11px;
+}
+.profile-switcher-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.profile-switcher-plus {
+  flex: 0 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px dashed var(--border-strong, var(--border));
+  color: var(--text-2);
+}
+.profile-switcher-item:hover .profile-switcher-plus {
+  color: #0a1220;
+  border-color: currentColor;
+}
+.profile-switcher-sep {
+  height: 1px;
+  margin: 5px 4px;
+  background: var(--border);
+}
+
 .window-controls {
   -webkit-app-region: no-drag;
   display: flex;

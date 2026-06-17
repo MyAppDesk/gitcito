@@ -438,9 +438,7 @@ export default function App(): React.JSX.Element {
             <span className="status-right">
               <ZoomControl compact />
               <span className="status-sep" />
-              <span className="status-branch-profile">
-                {repo.branches.current} · {settings.profiles.find((p) => p.id === settings.activeProfileId)?.name}
-              </span>
+              <span className="status-branch-profile">{repo.branches.current}</span>
               {appVersion && (
                 <>
                   <span className="status-sep" />

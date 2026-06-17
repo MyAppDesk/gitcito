@@ -5,6 +5,7 @@ import { useSettingsStore } from '../stores/settings'
 import { useUIStore, type MenuItem } from '../stores/ui'
 import { useRepoStore } from '../stores/repo'
 import type { GroupTab, TabState } from '../../../shared/types'
+import { ProfileSwitcher } from './ProfileSwitcher'
 import gitcitoMark from '../assets/gitcito-mark.png'
 
 type TabStatus = 'conflict' | 'wip' | null
@@ -502,6 +503,7 @@ export function TitleBar(): React.JSX.Element {
           <Plus size={15} />
         </button>
       </div>
+      <ProfileSwitcher />
       <button
         className="titlebar-action"
         title="Settings"

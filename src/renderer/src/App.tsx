@@ -164,6 +164,22 @@ export default function App(): React.JSX.Element {
     void useSettingsStore.getState().load()
   }, [])
 
+  // Open http(s) links in the user's default browser instead of navigating
+  // inside the app window. Catches plain <a href> clicks (e.g. rendered
+  // changelog/markdown) which the main-process window-open handler misses.
+  useEffect(() => {
+    const onClick = (e: MouseEvent): void => {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey) return
+      const anchor = (e.target as HTMLElement | null)?.closest('a')
+      const href = anchor?.getAttribute('href')
+      if (!href || !/^https?:\/\//i.test(href)) return
+      e.preventDefault()
+      void window.api.openExternal(href)
+    }
+    document.addEventListener('click', onClick)
+    return () => document.removeEventListener('click', onClick)
+  }, [])
+
   // Detect app upgrades. The first run that records a version is silent; any
   // later version change opens the changelog tab (unless the user disabled it).
   useEffect(() => {

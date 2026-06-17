@@ -88,7 +88,7 @@
 ## 🖼️ Screenshots
 
 ### In motion
-| Browse commits | Gitcito light → Nord dark |
+| Browse commits |  Light → Dark |
 |---|---|
 | ![Walking through commit details](docs/screenshots/clip-commit-details.gif) | ![Switching from Gitcito light to the Nord dark theme](docs/screenshots/clip-themes.gif) |
 

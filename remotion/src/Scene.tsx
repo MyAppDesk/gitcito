@@ -36,6 +36,14 @@ export const ShotScene: React.FC<{
         </div>
       </AbsoluteFill>
 
+      {/* Scrim so captions stay readable over light-theme screenshots. */}
+      <AbsoluteFill
+        style={{
+          background: 'linear-gradient(to top, rgba(7,8,12,0.92) 0%, rgba(7,8,12,0.7) 14%, rgba(7,8,12,0) 30%)',
+          opacity: Math.min(inT, out)
+        }}
+      />
+
       <div
         style={{
           position: 'absolute',
@@ -48,8 +56,8 @@ export const ShotScene: React.FC<{
         }}
       >
         <div style={{ display: 'inline-block', height: 4, width: 56, background: accent, borderRadius: 4, marginBottom: 18 }} />
-        <div style={{ color: '#fff', fontSize: 46, fontWeight: 800, letterSpacing: -0.5 }}>{title}</div>
-        <div style={{ color: 'rgba(255,255,255,0.62)', fontSize: 24, fontWeight: 500, marginTop: 8 }}>{subtitle}</div>
+        <div style={{ color: '#fff', fontSize: 46, fontWeight: 800, letterSpacing: -0.5, textShadow: '0 2px 12px rgba(0,0,0,0.7)' }}>{title}</div>
+        <div style={{ color: 'rgba(255,255,255,0.82)', fontSize: 24, fontWeight: 500, marginTop: 8, textShadow: '0 2px 10px rgba(0,0,0,0.7)' }}>{subtitle}</div>
       </div>
     </AbsoluteFill>
   )

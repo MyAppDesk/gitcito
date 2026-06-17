@@ -17,6 +17,10 @@
     "release:minor": "release-it --release-as minor",
     "release:major": "release-it --release-as major",
     "preview": "electron-vite preview",
+    "playground": "bash examples/setup-playground.sh",
+    "playground:rebuild": "PLAYGROUND_FORCE=1 bash examples/setup-playground.sh",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
     "postinstall": "electron-rebuild -f -w node-pty || true",
     "prepare": "husky"
@@ -119,6 +123,7 @@
     "husky": "^9.1.7",
     "release-it": "^17.1.1",
     "typescript": "^5.6.3",
-    "vite": "^5.4.9"
+    "vite": "^5.4.9",
+    "vitest": "^2.1.9"
   }
 }

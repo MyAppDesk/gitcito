@@ -1,5 +1,12 @@
 
 
+## [0.3.0](https://github.com/MyAppDesk/gitcito/compare/v0.2.0...v0.3.0) (2026-06-17)
+
+
+### Features
+
+* enhance release workflow to include changelog extraction ([4edbf92](https://github.com/MyAppDesk/gitcito/commit/4edbf927ec99504301cc4c31aab562c7ce6e96e6))
+
 ## [0.2.0](https://github.com/MyAppDesk/gitcito/compare/v0.1.1...v0.2.0) (2026-06-16)
 
 

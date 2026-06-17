@@ -324,6 +324,7 @@ export interface AppSettings {
   commitAvatars: boolean
   fileListView: 'path' | 'tree'
   graphColumns: GraphColumns
+  graphColumnOrder: GraphFlowColumnId[]
   autoFetchMinutes: number
   confirmForcePush: boolean
   /** Force a merge commit even when a fast-forward is possible. */
@@ -337,7 +338,7 @@ export type Language = 'en' | 'es'
 /** App appearance: a fixed mode or follow the operating system. */
 export type ThemeMode = 'light' | 'dark' | 'auto'
 
-export type GraphColumnId = 'branch' | 'graph' | 'message' | 'author' | 'date' | 'sha'
+export type GraphColumnId = 'branch' | 'graph' | 'message' | 'deployment' | 'author' | 'date' | 'sha'
 
 export interface GraphColumn {
   width: number // px; for 'message' it is a flex column and width is ignored; for 'graph' 0 = auto
@@ -351,10 +352,22 @@ export function defaultGraphColumns(): GraphColumns {
     branch: { width: 168, visible: true },
     graph: { width: 0, visible: true },
     message: { width: 0, visible: true },
+    deployment: { width: 90, visible: true },
     author: { width: 160, visible: true },
     date: { width: 80, visible: true },
     sha: { width: 74, visible: false }
   }
+}
+
+/**
+ * Left-to-right order of the data columns that flow after the graph. `branch`
+ * and `graph` are the fixed structural area on the left and are never part of
+ * this list — they always render first.
+ */
+export type GraphFlowColumnId = Exclude<GraphColumnId, 'branch' | 'graph'>
+
+export function defaultGraphColumnOrder(): GraphFlowColumnId[] {
+  return ['message', 'author', 'date', 'sha', 'deployment']
 }
 
 export interface AppThemeColors {
@@ -457,6 +470,7 @@ export function defaultSettings(): AppSettings {
     commitAvatars: true,
     fileListView: 'path',
     graphColumns: defaultGraphColumns(),
+    graphColumnOrder: defaultGraphColumnOrder(),
     autoFetchMinutes: 5,
     confirmForcePush: true,
     mergeCommit: true,

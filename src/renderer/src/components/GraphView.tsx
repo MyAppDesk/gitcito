@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Archive, GitCommitHorizontal, Tag, Laptop, Cloud, Check, Settings2, Pencil, Plus, Minus, CheckCircle2, XCircle, Clock, MinusCircle } from 'lucide-react'
-import type { CiStatus, GraphCommit, StashInfo, GraphColumnId, GraphColumns, FileEntry } from '../../../shared/types'
-import { defaultGraphColumns } from '../../../shared/types'
+import type { CiState, CiStatus, GraphCommit, StashInfo, GraphColumnId, GraphFlowColumnId, GraphColumns, FileEntry } from '../../../shared/types'
+import { defaultGraphColumns, defaultGraphColumnOrder } from '../../../shared/types'
+import { GraphHeaderFilter, type FilterOption } from './GraphHeaderFilter'
 import { layoutGraph, colorFor } from '../graph/layout'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
 import { useUIStore, type MenuItem } from '../stores/ui'
@@ -16,11 +17,12 @@ const LEFT_PAD = 16
 const NODE_R = 4.5
 const AVA = 20 // avatar node diameter
 
-const COL_MIN: Record<GraphColumnId, number> = { branch: 90, graph: 8, message: 120, author: 80, date: 56, sha: 56 }
+const COL_MIN: Record<GraphColumnId, number> = { branch: 90, graph: 8, message: 120, deployment: 70, author: 80, date: 56, sha: 56 }
 const COL_LABEL: Record<GraphColumnId, string> = {
   branch: 'BRANCH / TAG',
   graph: 'GRAPH',
   message: 'COMMIT MESSAGE',
+  deployment: 'DEPLOY',
   author: 'AUTHOR',
   date: 'DATE',
   sha: 'SHA'
@@ -165,26 +167,39 @@ function CiBadge({ status, onClick }: { status: CiStatus; onClick: () => void })
   return <span title={title} onClick={onClick} style={{ display: 'contents' }}>{icon}</span>
 }
 
-/** Resizable / toggleable column header. */
+/** Resizable / toggleable / reorderable column header. */
 function GraphColumnsHeader({
   columns,
+  order,
   branchCol,
   graphCol,
   onResize,
-  onMenu
+  onMenu,
+  onReorder,
+  renderFilter
 }: {
   columns: GraphColumns
+  order: GraphFlowColumnId[]
   branchCol: number
   graphCol: number
   onResize: (id: GraphColumnId, width: number) => void
   onMenu: (x: number, y: number) => void
+  onReorder: (from: GraphFlowColumnId, to: GraphFlowColumnId) => void
+  renderFilter?: (id: GraphFlowColumnId) => React.ReactNode
 }): React.JSX.Element {
+  const [dragId, setDragId] = useState<GraphFlowColumnId | null>(null)
+  const [dropId, setDropId] = useState<GraphFlowColumnId | null>(null)
+  // True while a resize handle is being dragged. The header cells are HTML5
+  // `draggable` for reordering, so grabbing a handle would otherwise kick off a
+  // column-move drag instead of a resize — this flag cancels that dragstart.
+  const resizing = useRef(false)
   // `side` = which edge of the column the handle sits on. A left-edge handle
   // resizes the column inward as you drag right (its left border moves), so the
   // divider *left of* a column resizes that column — what users expect.
   const startResize = (id: GraphColumnId, side: 'left' | 'right', e: React.MouseEvent): void => {
     e.preventDefault()
     e.stopPropagation()
+    resizing.current = true
     const startX = e.clientX
     // The graph column may be in `auto` mode (stored width 0); seed the drag
     // from its currently-rendered width so it doesn't jump on first move.
@@ -198,6 +213,8 @@ function GraphColumnsHeader({
       window.removeEventListener('mousemove', move)
       window.removeEventListener('mouseup', up)
       document.body.style.cursor = ''
+      // Defer so the cell's `onDragStart` (if any) still sees resizing === true.
+      setTimeout(() => (resizing.current = false), 0)
     }
     document.body.style.cursor = 'col-resize'
     window.addEventListener('mousemove', move)
@@ -205,7 +222,12 @@ function GraphColumnsHeader({
   }
 
   const handle = (id: GraphColumnId, side: 'left' | 'right'): React.JSX.Element => (
-    <span className={`col-resize col-resize-${side}`} onMouseDown={(e) => startResize(id, side, e)} />
+    <span
+      className={`col-resize col-resize-${side}`}
+      draggable={false}
+      onDragStart={(e) => e.preventDefault()}
+      onMouseDown={(e) => startResize(id, side, e)}
+    />
   )
 
   return (
@@ -222,29 +244,47 @@ function GraphColumnsHeader({
           {handle('graph', 'right')}
         </div>
       )}
-      {columns.message.visible && (
-        <div className="ghc ghc-flex">
-          <span className="ghc-label">{COL_LABEL.message}</span>
-        </div>
-      )}
-      {columns.author.visible && (
-        <div className="ghc" style={{ width: columns.author.width }}>
-          {handle('author', 'left')}
-          <span className="ghc-label">{COL_LABEL.author}</span>
-        </div>
-      )}
-      {columns.date.visible && (
-        <div className="ghc" style={{ width: columns.date.width }}>
-          {handle('date', 'left')}
-          <span className="ghc-label">{COL_LABEL.date}</span>
-        </div>
-      )}
-      {columns.sha.visible && (
-        <div className="ghc" style={{ width: columns.sha.width }}>
-          {handle('sha', 'left')}
-          <span className="ghc-label">{COL_LABEL.sha}</span>
-        </div>
-      )}
+      {order
+        .filter((id) => columns[id].visible)
+        .map((id) => {
+          const isFlex = id === 'message'
+          return (
+            <div
+              key={id}
+              className={`ghc ghc-drag ${isFlex ? 'ghc-flex' : ''} ${dragId === id ? 'dragging' : ''} ${dropId === id ? 'drop-target' : ''}`}
+              style={isFlex ? undefined : { width: columns[id].width }}
+              draggable
+              onDragStart={(e) => {
+                if (resizing.current) {
+                  e.preventDefault()
+                  return
+                }
+                setDragId(id)
+                e.dataTransfer.effectAllowed = 'move'
+              }}
+              onDragOver={(e) => {
+                e.preventDefault()
+                e.dataTransfer.dropEffect = 'move'
+                if (dragId && dragId !== id) setDropId(id)
+              }}
+              onDragLeave={() => setDropId((d) => (d === id ? null : d))}
+              onDrop={(e) => {
+                e.preventDefault()
+                if (dragId && dragId !== id) onReorder(dragId, id)
+                setDragId(null)
+                setDropId(null)
+              }}
+              onDragEnd={() => {
+                setDragId(null)
+                setDropId(null)
+              }}
+            >
+              {!isFlex && handle(id, 'left')}
+              <span className="ghc-label">{COL_LABEL[id]}</span>
+              {renderFilter?.(id)}
+            </div>
+          )
+        })}
       <button
         className="ghc-gear"
         title="Columns"
@@ -264,12 +304,13 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
   const loadMore = useRepoStore((s) => s.loadMore)
   const draft = useRepoStore((s) => s.drafts[repo.path] ?? '')
   const setDraft = useRepoStore((s) => s.setDraft)
-  const { openContextMenu, openModal, graphFilter } = useUIStore()
+  const { openContextMenu, openModal, graphFilter, ciFilter, setCiFilter, authorFilter, setAuthorFilter } = useUIStore()
   const scrollToHash = useUIStore((s) => s.scrollToHash)
   const requestScrollTo = useUIStore((s) => s.requestScrollTo)
   const relativeDates = useSettingsStore((s) => s.settings.relativeDates ?? true)
   const autoLoadOnScroll = useSettingsStore((s) => s.settings.autoLoadOnScroll ?? true)
   const columns = useSettingsStore((s) => s.settings.graphColumns ?? defaultGraphColumns())
+  const columnOrder = useSettingsStore((s) => s.settings.graphColumnOrder ?? defaultGraphColumnOrder())
   const updateSettings = useSettingsStore((s) => s.update)
   const t = useT()
 
@@ -279,15 +320,27 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
       return { ...s, graphColumns: { ...cols, [id]: { ...cols[id], ...patch } } }
     })
 
+  const reorderColumns = (from: GraphFlowColumnId, to: GraphFlowColumnId): void =>
+    updateSettings((s) => {
+      const order = [...(s.graphColumnOrder ?? defaultGraphColumnOrder())]
+      const fi = order.indexOf(from)
+      const ti = order.indexOf(to)
+      if (fi < 0 || ti < 0 || fi === ti) return s
+      order.splice(fi, 1)
+      order.splice(fi < ti ? order.indexOf(to) + 1 : order.indexOf(to), 0, from)
+      return { ...s, graphColumnOrder: order }
+    })
+
   const openColumnsMenu = (x: number, y: number): void => {
-    const ids: GraphColumnId[] = ['branch', 'graph', 'message', 'author', 'date', 'sha']
+    const ids: GraphColumnId[] = ['branch', 'graph', ...columnOrder]
     const items: MenuItem[] = ids.map((id) => ({
       label: `${columns[id].visible ? '✓ ' : '   '}${COL_LABEL[id]}`,
       onClick: () => setColumn(id, { visible: !columns[id].visible })
     }))
     items.push({ separator: true }, {
       label: 'Reset columns',
-      onClick: () => updateSettings((s) => ({ ...s, graphColumns: defaultGraphColumns() }))
+      onClick: () =>
+        updateSettings((s) => ({ ...s, graphColumns: defaultGraphColumns(), graphColumnOrder: defaultGraphColumnOrder() }))
     })
     openContextMenu(x, y, items)
   }
@@ -428,6 +481,50 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
   const filter = graphFilter.trim().toLowerCase()
   const branchCol = columns.branch.visible ? columns.branch.width : 0
   const graphCol = columns.graph.visible ? (columns.graph.width > 0 ? columns.graph.width : graphAuto) : 0
+
+  // Distinct authors present in the loaded commits, for the author filter menu.
+  const authorOptions = useMemo<FilterOption[]>(() => {
+    const byName = new Map<string, string>() // name -> email (first seen)
+    for (const c of displayCommits) {
+      if (!c.author || c.hash === WIP_HASH) continue
+      if (!byName.has(c.author)) byName.set(c.author, c.email)
+    }
+    const opts: FilterOption[] = [{ value: '', label: 'All authors' }]
+    for (const [name, email] of [...byName].sort((a, b) => a[0].localeCompare(b[0]))) {
+      opts.push({ value: name, label: name, icon: <Avatar email={email} name={name} size={16} /> })
+    }
+    return opts
+  }, [displayCommits])
+
+  const ciOptions: FilterOption[] = [
+    { value: 'all', label: 'All' },
+    { value: 'success', label: 'Success', icon: <CheckCircle2 size={13} className="ci-badge ci-success" /> },
+    { value: 'failure', label: 'Failure', icon: <XCircle size={13} className="ci-badge ci-failure" /> },
+    { value: 'pending', label: 'Pending', icon: <Clock size={13} className="ci-badge ci-pending" /> },
+    { value: 'neutral', label: 'Neutral', icon: <MinusCircle size={13} className="ci-badge ci-neutral" /> }
+  ]
+
+  const renderFilter = (id: GraphFlowColumnId): React.ReactNode => {
+    if (id === 'deployment')
+      return (
+        <GraphHeaderFilter
+          active={ciFilter}
+          options={ciOptions}
+          onSelect={(v) => setCiFilter(v as CiState | 'all')}
+          title="Filter by deployment status"
+        />
+      )
+    if (id === 'author')
+      return (
+        <GraphHeaderFilter
+          active={authorFilter ?? ''}
+          options={authorOptions}
+          onSelect={(v) => setAuthorFilter(v === '' ? null : v)}
+          title="Filter by author"
+        />
+      )
+    return null
+  }
 
   // Scroll the graph to a requested commit (e.g. when clicking a branch).
   useEffect(() => {
@@ -840,10 +937,13 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
     <div className="graph-wrap">
       <GraphColumnsHeader
         columns={columns}
+        order={columnOrder}
         branchCol={branchCol}
         graphCol={graphCol}
         onResize={(id, width) => setColumn(id, { width })}
         onMenu={openColumnsMenu}
+        onReorder={reorderColumns}
+        renderFilter={renderFilter}
       />
       <div className="graph-scroll" ref={scrollRef} onScroll={onScroll}>
       <div className="graph-canvas" style={{ height: totalHeight }}>
@@ -981,7 +1081,10 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
             (c.subject.toLowerCase().includes(filter) ||
               c.author.toLowerCase().includes(filter) ||
               c.hash.startsWith(filter))
-          const dimmed = filter.length > 0 && !matches && !isWip
+          const ci = isWip || stash ? undefined : repo.ciStatuses[c.hash]
+          const ciDimmed = ciFilter !== 'all' && !isWip && ci?.state !== ciFilter
+          const authorDimmed = authorFilter != null && !isWip && !stash && c.author !== authorFilter
+          const dimmed = ((filter.length > 0 && !matches) || ciDimmed || authorDimmed) && !isWip
           const ghosted = preview != null && !preview.hashes.has(c.hash)
 
           return (
@@ -1072,75 +1175,101 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
                   })()}
                 </div>
               )}
-              {columns.message.visible &&
-                (isWip ? (
-                  <span className="row-subject wip-subject">
-                    <input
-                      className="wip-input"
-                      placeholder="Work in progress"
-                      value={draft}
-                      maxLength={100}
-                      onChange={(e) => setDraft(repo.path, e.target.value)}
-                      onKeyDown={(e) => e.stopPropagation()}
-                    />
-                    <span className="wip-stats">
-                      {wipStats.added > 0 && (
-                        <span className="wip-stat wip-add" title={`${wipStats.added} added`}>
-                          <Plus size={11} />
-                          {wipStats.added}
+              {columnOrder
+                .filter((id) => columns[id].visible)
+                .map((id) => {
+                  if (id === 'message')
+                    return isWip ? (
+                      <span key="message" className="row-subject wip-subject">
+                        <input
+                          className="wip-input"
+                          placeholder="Work in progress"
+                          value={draft}
+                          maxLength={100}
+                          onChange={(e) => setDraft(repo.path, e.target.value)}
+                          onKeyDown={(e) => e.stopPropagation()}
+                        />
+                        <span className="wip-stats">
+                          {wipStats.added > 0 && (
+                            <span className="wip-stat wip-add" title={`${wipStats.added} added`}>
+                              <Plus size={11} />
+                              {wipStats.added}
+                            </span>
+                          )}
+                          {wipStats.modified > 0 && (
+                            <span className="wip-stat wip-mod" title={`${wipStats.modified} modified`}>
+                              <Pencil size={10} />
+                              {wipStats.modified}
+                            </span>
+                          )}
+                          {wipStats.deleted > 0 && (
+                            <span className="wip-stat wip-del" title={`${wipStats.deleted} deleted`}>
+                              <Minus size={11} />
+                              {wipStats.deleted}
+                            </span>
+                          )}
                         </span>
-                      )}
-                      {wipStats.modified > 0 && (
-                        <span className="wip-stat wip-mod" title={`${wipStats.modified} modified`}>
-                          <Pencil size={10} />
-                          {wipStats.modified}
+                      </span>
+                    ) : stash ? (
+                      <span key="message" className="row-subject stash-subject" title={stash.message}>
+                        <span className="ref-badge ref-stash">
+                          <Archive size={10} /> stash@{`{${stash.index}}`}
                         </span>
-                      )}
-                      {wipStats.deleted > 0 && (
-                        <span className="wip-stat wip-del" title={`${wipStats.deleted} deleted`}>
-                          <Minus size={11} />
-                          {wipStats.deleted}
-                        </span>
-                      )}
+                        {stash.message}
+                      </span>
+                    ) : (
+                      <span key="message" className="row-subject" title={c.subject}>
+                        {c.subject}
+                      </span>
+                    )
+                  if (id === 'deployment')
+                    return (
+                      <span
+                        key="deployment"
+                        className="row-deploy"
+                        style={{ flex: `0 0 ${columns.deployment.width}px`, width: columns.deployment.width }}
+                      >
+                        {ci && (
+                          <CiBadge
+                            status={ci}
+                            onClick={() => {
+                              const first = ci.jobs.find((j) => j.url)
+                              if (first?.url) void window.api.openExternal(first.url)
+                            }}
+                          />
+                        )}
+                      </span>
+                    )
+                  if (id === 'author')
+                    return (
+                      <span
+                        key="author"
+                        className="row-author"
+                        style={{ flex: `0 0 ${columns.author.width}px`, maxWidth: columns.author.width }}
+                      >
+                        {isWip || stash ? '' : c.author}
+                      </span>
+                    )
+                  if (id === 'date')
+                    return (
+                      <span
+                        key="date"
+                        className="row-date"
+                        style={{ flex: `0 0 ${columns.date.width}px`, width: columns.date.width }}
+                      >
+                        {isWip ? '' : stash ? fmtDate(stash.date) : fmtDate(c.date)}
+                      </span>
+                    )
+                  return (
+                    <span
+                      key="sha"
+                      className="row-sha"
+                      style={{ flex: `0 0 ${columns.sha.width}px`, width: columns.sha.width }}
+                    >
+                      {isWip ? '' : stash ? stash.sha.slice(0, 7) : c.hash.slice(0, 7)}
                     </span>
-                  </span>
-                ) : stash ? (
-                  <span className="row-subject stash-subject" title={stash.message}>
-                    <span className="ref-badge ref-stash">
-                      <Archive size={10} /> stash@{`{${stash.index}}`}
-                    </span>
-                    {stash.message}
-                  </span>
-                ) : (
-                  <span className="row-subject" title={c.subject}>
-                    {c.subject}
-                  </span>
-                ))}
-              {columns.author.visible && (
-                <span className="row-author" style={{ flex: `0 0 ${columns.author.width}px`, maxWidth: columns.author.width }}>
-                  {isWip || stash ? '' : c.author}
-                </span>
-              )}
-              {columns.date.visible && (
-                <span className="row-date" style={{ flex: `0 0 ${columns.date.width}px`, width: columns.date.width }}>
-                  {isWip ? '' : stash ? fmtDate(stash.date) : fmtDate(c.date)}
-                </span>
-              )}
-              {columns.sha.visible && (
-                <span className="row-sha" style={{ flex: `0 0 ${columns.sha.width}px`, width: columns.sha.width }}>
-                  {isWip ? '' : stash ? stash.sha.slice(0, 7) : c.hash.slice(0, 7)}
-                </span>
-              )}
-              {!isWip && !stash && repo.ciStatuses[c.hash] && (
-                <CiBadge
-                  status={repo.ciStatuses[c.hash]}
-                  onClick={() => {
-                    const jobs = repo.ciStatuses[c.hash]?.jobs ?? []
-                    const first = jobs.find((j) => j.url)
-                    if (first?.url) void window.api.openExternal(first.url)
-                  }}
-                />
-              )}
+                  )
+                })}
             </div>
           )
         })}

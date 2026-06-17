@@ -1,4 +1,7 @@
 import { create } from 'zustand'
+import type { CiState } from '../../../shared/types'
+
+export type CiFilter = 'all' | CiState
 
 export interface Toast {
   id: number
@@ -126,6 +129,8 @@ interface UIState {
   toasts: Toast[]
   terminalOpen: boolean
   graphFilter: string
+  ciFilter: CiFilter
+  authorFilter: string | null
   busy: string | null
   fileView: FileViewState | null
   conflictView: ConflictViewState | null
@@ -140,6 +145,8 @@ interface UIState {
   dismissToast(id: number): void
   toggleTerminal(): void
   setGraphFilter(filter: string): void
+  setCiFilter(filter: CiFilter): void
+  setAuthorFilter(author: string | null): void
   setBusy(label: string | null): void
   setFileView(view: FileViewState | null): void
   setConflictView(view: ConflictViewState | null): void
@@ -155,6 +162,8 @@ export const useUIStore = create<UIState>((set, get) => ({
   toasts: [],
   terminalOpen: false,
   graphFilter: '',
+  ciFilter: 'all',
+  authorFilter: null,
   busy: null,
   fileView: null,
   conflictView: null,
@@ -175,6 +184,8 @@ export const useUIStore = create<UIState>((set, get) => ({
 
   toggleTerminal: () => set({ terminalOpen: !get().terminalOpen }),
   setGraphFilter: (graphFilter) => set({ graphFilter }),
+  setCiFilter: (ciFilter) => set({ ciFilter }),
+  setAuthorFilter: (authorFilter) => set({ authorFilter }),
   setBusy: (busy) => set({ busy }),
   setFileView: (fileView) => set({ fileView }),
   setConflictView: (conflictView) => set({ conflictView }),

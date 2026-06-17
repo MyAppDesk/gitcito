@@ -57,12 +57,16 @@ interface SettingsState {
   addRepoToGroup(tabId: string, repo: RepoRef): void
   removeRepoFromGroup(tabId: string, path: string): void
   renameRepoInGroup(tabId: string, path: string, newName: string): void
-  reorderReposInGroup(tabId: string, fromPath: string, toPath: string): void
+  reorderReposInGroup(tabId: string, fromPath: string, toPath: string | null): void
   setGroupActiveRepo(tabId: string, path: string | null): void
   closeTab(tabId: string): void
   setActiveTab(tabId: string): void
   renameTab(tabId: string, name: string): void
   setTabColor(tabId: string, color: string): void
+  reorderTabs(fromId: string, toId: string, before: boolean): void
+  moveTabIntoGroup(fromTabId: string, toGroupTabId: string): void
+  ejectRepoFromGroup(tabId: string, repoPath: string, insertBeforeTabId: string | null): void
+  moveRepoBetweenGroups(fromTabId: string, repoPath: string, toTabId: string, insertBeforeRepoPath: string | null): void
   toggleTabCollapsed(tabId: string): void
 
   activeTab(): TabState | null
@@ -97,6 +101,14 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     settings.commitAvatars = settings.commitAvatars ?? sd.commitAvatars
     settings.fileListView = settings.fileListView ?? sd.fileListView
     settings.graphColumns = { ...sd.graphColumns, ...(settings.graphColumns ?? {}) }
+    // Keep the order list complete: drop unknown ids, append any newly-added
+    // columns (e.g. `deployment`) that an older saved order is missing.
+    {
+      const valid = new Set(sd.graphColumnOrder)
+      const saved = (settings.graphColumnOrder ?? []).filter((id) => valid.has(id))
+      const seen = new Set(saved)
+      settings.graphColumnOrder = [...saved, ...sd.graphColumnOrder.filter((id) => !seen.has(id))]
+    }
     settings.autoFetchMinutes = settings.autoFetchMinutes ?? sd.autoFetchMinutes
     settings.confirmForcePush = settings.confirmForcePush ?? sd.confirmForcePush
     settings.mergeCommit = settings.mergeCommit ?? sd.mergeCommit
@@ -203,10 +215,14 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         if (t.id !== tabId) return t
         const repos = [...t.repos]
         const fromIdx = repos.findIndex((r) => r.path === fromPath)
-        const toIdx = repos.findIndex((r) => r.path === toPath)
-        if (fromIdx < 0 || toIdx < 0 || fromIdx === toIdx) return t
+        if (fromIdx < 0) return t
         const [item] = repos.splice(fromIdx, 1)
-        repos.splice(toIdx, 0, item)
+        if (toPath === null) {
+          repos.push(item)
+        } else {
+          const toIdx = repos.findIndex((r) => r.path === toPath)
+          if (toIdx < 0) { repos.push(item) } else { repos.splice(toIdx, 0, item) }
+        }
         return { ...t, repos }
       })
     })),
@@ -236,6 +252,77 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
   toggleTabCollapsed: (tabId) =>
     get().update((s) => ({ ...s, tabs: s.tabs.map((t) => (t.id === tabId ? { ...t, collapsed: !t.collapsed } : t)) })),
+
+  reorderTabs: (fromId, toId, before) =>
+    get().update((s) => {
+      if (fromId === toId) return s
+      const from = s.tabs.find((t) => t.id === fromId)
+      if (!from) return s
+      const tabs = s.tabs.filter((t) => t.id !== fromId)
+      const toIdx = tabs.findIndex((t) => t.id === toId)
+      if (toIdx < 0) return s
+      tabs.splice(before ? toIdx : toIdx + 1, 0, from)
+      return { ...s, tabs }
+    }),
+
+  moveTabIntoGroup: (fromTabId, toGroupTabId) =>
+    get().update((s) => {
+      const from = s.tabs.find((t) => t.id === fromTabId)
+      const toGroup = s.tabs.find((t) => t.id === toGroupTabId)
+      if (!from || from.kind !== 'repo' || !toGroup || toGroup.kind !== 'group') return s
+      const repo = from.repos[0]
+      if (!repo) return s
+      const tabs = s.tabs
+        .filter((t) => t.id !== fromTabId)
+        .map((t) =>
+          t.id === toGroupTabId
+            ? { ...t, repos: [...t.repos, repo], activeRepoPath: t.activeRepoPath ?? repo.path }
+            : t
+        )
+      const activeTabId = s.activeTabId === fromTabId ? toGroupTabId : s.activeTabId
+      return { ...s, tabs, activeTabId }
+    }),
+
+  ejectRepoFromGroup: (tabId, repoPath, insertBeforeTabId) =>
+    get().update((s) => {
+      const group = s.tabs.find((t) => t.id === tabId)
+      if (!group || group.kind !== 'group') return s
+      const repo = group.repos.find((r) => r.path === repoPath)
+      if (!repo) return s
+      const repos = group.repos.filter((r) => r.path !== repoPath)
+      const activeRepoPath = group.activeRepoPath === repoPath ? (repos[0]?.path ?? null) : group.activeRepoPath
+      const updatedGroup = repos.length > 0 ? { ...group, repos, activeRepoPath } : null
+      const newTab: TabState = { id: uid(), kind: 'repo', name: repo.name, repos: [repo], activeRepoPath: repo.path }
+      let tabs = s.tabs.map((t) => (t.id === tabId ? updatedGroup : t)).filter(Boolean) as TabState[]
+      const insertIdx = insertBeforeTabId ? tabs.findIndex((t) => t.id === insertBeforeTabId) : -1
+      if (insertIdx >= 0) tabs.splice(insertIdx, 0, newTab)
+      else tabs.push(newTab)
+      return { ...s, tabs }
+    }),
+
+  moveRepoBetweenGroups: (fromTabId, repoPath, toTabId, insertBeforeRepoPath) =>
+    get().update((s) => {
+      const fromGroup = s.tabs.find((t) => t.id === fromTabId)
+      if (!fromGroup || fromGroup.kind !== 'group') return s
+      const repo = fromGroup.repos.find((r) => r.path === repoPath)
+      if (!repo) return s
+      const fromRepos = fromGroup.repos.filter((r) => r.path !== repoPath)
+      const fromActiveRepoPath = fromGroup.activeRepoPath === repoPath ? (fromRepos[0]?.path ?? null) : fromGroup.activeRepoPath
+      const tabs = s.tabs
+        .map((t) => {
+          if (t.id === fromTabId) return fromRepos.length > 0 ? { ...t, repos: fromRepos, activeRepoPath: fromActiveRepoPath } : null
+          if (t.id === toTabId && t.kind === 'group') {
+            const toRepos = [...t.repos]
+            const insertIdx = insertBeforeRepoPath ? toRepos.findIndex((r) => r.path === insertBeforeRepoPath) : -1
+            if (insertIdx >= 0) toRepos.splice(insertIdx, 0, repo)
+            else toRepos.push(repo)
+            return { ...t, repos: toRepos, activeRepoPath: t.activeRepoPath ?? repo.path }
+          }
+          return t
+        })
+        .filter(Boolean) as TabState[]
+      return { ...s, tabs }
+    }),
 
   activeTab: () => {
     const { settings } = get()

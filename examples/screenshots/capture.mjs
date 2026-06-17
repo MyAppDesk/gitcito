@@ -55,8 +55,15 @@ function hasFfmpeg() {
 }
 
 async function ensurePrereqs() {
-  if (!existsSync(MAIN)) {
-    console.log('▶ building app (out/ missing)…')
+  // Always rebuild so screenshots/GIFs reflect the latest source, not a stale
+  // out/ from a previous run. Pass --no-build to reuse the existing bundle.
+  if (flags.has('--no-build')) {
+    if (!existsSync(MAIN)) {
+      console.log('▶ building app (out/ missing)…')
+      await sh('npm', ['run', 'build'])
+    }
+  } else {
+    console.log('▶ building app…')
     await sh('npm', ['run', 'build'])
   }
   if (!existsSync(join(PLAYGROUND, 'MANIFEST.tsv'))) {

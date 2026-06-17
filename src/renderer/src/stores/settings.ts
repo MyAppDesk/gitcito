@@ -170,15 +170,21 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     })),
 
   removeRepoFromGroup: (tabId, path) =>
-    get().update((s) => ({
-      ...s,
-      tabs: s.tabs.map((t) => {
+    get().update((s) => {
+      const mapped = s.tabs.map((t) => {
         if (t.id !== tabId) return t
         const repos = t.repos.filter((r) => r.path !== path)
         const activeRepoPath = t.activeRepoPath === path ? (repos[0]?.path ?? null) : t.activeRepoPath
         return { ...t, repos, activeRepoPath }
       })
-    })),
+      const isEmpty = mapped.find((t) => t.id === tabId)?.repos.length === 0
+      if (!isEmpty) return { ...s, tabs: mapped }
+      const idx = mapped.findIndex((t) => t.id === tabId)
+      const tabs = mapped.filter((t) => t.id !== tabId)
+      const activeTabId =
+        s.activeTabId === tabId ? (tabs[Math.min(idx, tabs.length - 1)]?.id ?? null) : s.activeTabId
+      return { ...s, tabs, activeTabId }
+    }),
 
   renameRepoInGroup: (tabId, path, newName) =>
     get().update((s) => ({

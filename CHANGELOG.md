@@ -1,5 +1,22 @@
 
 
+## [0.4.0](https://github.com/MyAppDesk/gitcito/compare/v0.3.0...v0.4.0) (2026-06-17)
+
+
+### Features
+
+* add group color selection modal and functionality ([e3cf9a2](https://github.com/MyAppDesk/gitcito/commit/e3cf9a2b07aad367562dabe60b1e5ba4eaec3412))
+* add group tab status indicators for non-active repos ([4c200af](https://github.com/MyAppDesk/gitcito/commit/4c200affc45bcbfd4bd054766fe22d4b471e61da))
+* add playground lib and scenarios for git operations ([d35f46d](https://github.com/MyAppDesk/gitcito/commit/d35f46dfcea7ab274bb904151ed39030189ca651))
+* add statusLabel function for file status representation ([c8403c4](https://github.com/MyAppDesk/gitcito/commit/c8403c4aad35a767488adca9215f8a3d9553b68a))
+
+
+### Bug Fixes
+
+* adjust toast animation position for better visibility ([e8ba0cd](https://github.com/MyAppDesk/gitcito/commit/e8ba0cdcaae755c19d2589998e7fa02e3a5964bb))
+* handle empty tabs when removing repo from group ([0caecaa](https://github.com/MyAppDesk/gitcito/commit/0caecaa5bc3858b40978601fe2eace449a32a672))
+* suppress commit-message editor during git operations ([d1b795d](https://github.com/MyAppDesk/gitcito/commit/d1b795d079bd4e08394829c98c8720eb095d3e59))
+
 ## [0.3.0](https://github.com/MyAppDesk/gitcito/compare/v0.2.0...v0.3.0) (2026-06-17)
 
 

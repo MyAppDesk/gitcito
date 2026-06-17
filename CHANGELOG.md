@@ -1,5 +1,13 @@
 
 
+## [0.13.0](https://github.com/MyAppDesk/gitcito/compare/v0.12.0...v0.13.0) (2026-06-17)
+
+
+### Bug Fixes
+
+* enhance style tag for cleaner screenshot frames ([50d9c74](https://github.com/MyAppDesk/gitcito/commit/50d9c7488f8b4c0ad6433ce105598ac795695ede))
+* improve styling for GraphView component and popup ([c5b9784](https://github.com/MyAppDesk/gitcito/commit/c5b97848521e962c45e1e9ef5275ad477f470db6))
+
 ## [0.12.0](https://github.com/MyAppDesk/gitcito/compare/v0.11.0...v0.12.0) (2026-06-17)
 
 

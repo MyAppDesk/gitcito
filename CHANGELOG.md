@@ -1,5 +1,13 @@
 
 
+## [0.6.0](https://github.com/MyAppDesk/gitcito/compare/v0.5.0...v0.6.0) (2026-06-17)
+
+
+### Features
+
+* add AI theme generation and improve theme management ([922e775](https://github.com/MyAppDesk/gitcito/commit/922e7754de2d3c0dd671417fee0967932e752e04))
+* add screenshot automation and new launch configurations ([4b6e065](https://github.com/MyAppDesk/gitcito/commit/4b6e0654694e1083c9804374aa894b645dc671d6))
+
 ## [0.5.0](https://github.com/MyAppDesk/gitcito/compare/v0.4.0...v0.5.0) (2026-06-17)
 
 

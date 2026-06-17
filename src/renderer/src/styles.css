@@ -815,6 +815,42 @@ textarea:focus {
   white-space: nowrap;
   font-size: 12.3px;
 }
+.sb-sub-ref {
+  flex: 0 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10.5px;
+  opacity: 0.75;
+  max-width: 45%;
+}
+
+/* Submodule rows: leading status icon + glyph, GitKraken-style. */
+.sb-item.sb-submodule {
+  padding-left: 12px;
+  gap: 5px;
+}
+.sb-sm-status {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+.sb-sm-icon.ok {
+  color: var(--green);
+}
+.sb-sm-icon.sync {
+  color: var(--yellow);
+}
+.sb-sm-icon.warn {
+  color: var(--yellow);
+}
+.sb-sm-icon.conflict {
+  color: var(--red);
+}
+.sb-sm-glyph {
+  flex: 0 0 auto;
+  opacity: 0.55;
+}
 .sb-empty {
   padding: 6px 26px;
   color: var(--text-2);
@@ -2344,6 +2380,83 @@ textarea:focus {
 .status-path-icon {
   flex-shrink: 0;
   opacity: 0.6;
+}
+
+.status-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+}
+
+.status-version {
+  opacity: 0.6;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── Zoom control ──────────────────────────────────────────────────────── */
+
+.zoom-control {
+  position: fixed;
+  right: 12px;
+  bottom: 10px;
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  opacity: 0.55;
+  transition: opacity 0.12s;
+}
+
+.zoom-control:hover {
+  opacity: 1;
+}
+
+/* Lift clear of the status bar when it is visible. */
+.zoom-control.raised {
+  bottom: 32px;
+}
+
+.zoom-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  color: var(--text-1);
+  transition: background 0.08s, color 0.08s;
+}
+
+.zoom-btn:hover:not(:disabled) {
+  background: var(--bg-2);
+  color: var(--text-0);
+}
+
+.zoom-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.zoom-level {
+  min-width: 44px;
+  padding: 0 4px;
+  height: 22px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-1);
+  transition: background 0.08s, color 0.08s;
+}
+
+.zoom-level:hover {
+  background: var(--bg-2);
+  color: var(--text-0);
 }
 
 /* ─── Context menu ──────────────────────────────────────────────────────── */

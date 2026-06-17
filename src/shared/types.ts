@@ -198,6 +198,37 @@ export interface WorktreeInfo {
   detached: boolean
 }
 
+/**
+ * State of a submodule, derived from `git submodule status`:
+ * - `initialized`: checked out at the commit recorded by the superproject.
+ * - `modified`: checked out at a different commit than recorded ('+').
+ * - `uninitialized`: registered in `.gitmodules` but not checked out ('-').
+ * - `conflict`: has a merge conflict ('U').
+ */
+export type SubmoduleStatus = 'initialized' | 'modified' | 'uninitialized' | 'conflict'
+
+export interface SubmoduleInfo {
+  /** Logical name from `.gitmodules` (the `[submodule "<name>"]` key). */
+  name: string
+  /** Path of the submodule within the superproject working tree. */
+  path: string
+  /** Configured remote URL from `.gitmodules`, if any. */
+  url: string
+  /** Currently checked-out commit (or recorded commit when uninitialized). */
+  sha: string
+  /** Commit the superproject pins this submodule to (gitlink in HEAD tree). */
+  recordedSha: string
+  /** Branch the submodule tracks, from `.gitmodules`, if pinned to one. */
+  branch: string | null
+  /** Human-readable ref shown by git, e.g. `heads/main` or `v1.0-3-gabc`. */
+  describe: string | null
+  status: SubmoduleStatus
+  /** Commits the checkout is ahead of the recorded pointer (only when modified). */
+  ahead: number
+  /** Commits the checkout is behind the recorded pointer (only when modified). */
+  behind: number
+}
+
 // ─── Settings / profiles ─────────────────────────────────────────────────────
 
 export type CommitStyle = 'auto' | 'conventional' | 'gitmoji' | 'ticket' | 'plain' | 'caveman' | 'haiku'
@@ -353,6 +384,22 @@ export interface Analytics {
 
 export function emptyAnalytics(): Analytics {
   return { since: 0, retentionDays: 0, days: [], aiTotal: emptyAIUsageStat(), aiByFeature: {}, aiByModel: {} }
+}
+
+/** One recorded git operation, kept as a machine-local, append-only log. */
+export interface LogEntry {
+  /** Unix ms when the operation finished. */
+  ts: number
+  /** Filesystem path of the repository the operation ran against ('' for app-level ops). */
+  repoPath: string
+  /** Display name (basename of repoPath), '' for app-level ops. */
+  repoName: string
+  /** Which activity the operation maps to. */
+  event: ActivityEvent
+  /** Whether the operation completed successfully. */
+  ok: boolean
+  /** Truncated error message when `ok` is false. */
+  error?: string
 }
 
 /** Aggregated commit history for a single repository, read from `git log`. */
@@ -618,7 +665,7 @@ export function defaultSettings(): AppSettings {
     autoFetchMinutes: 5,
     confirmForcePush: true,
     mergeCommit: true,
-    sidebarOrder: ['local', 'remotes', 'prs', 'tags', 'releases', 'stashes', 'worktrees'],
+    sidebarOrder: ['local', 'remotes', 'stashes', 'tags', 'prs', 'releases', 'worktrees', 'submodules'],
     sidebarHidden: [],
     onboardingCompleted: false,
     autoOpenChangelog: true

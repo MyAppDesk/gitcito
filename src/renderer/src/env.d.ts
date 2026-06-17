@@ -46,6 +46,10 @@ interface PreloadApi {
     clear(): Promise<unknown>
     setRetention(days: number): Promise<unknown>
   }
+  log: {
+    get(): Promise<unknown>
+    clear(): Promise<unknown>
+  }
   hosting: {
     listRepos(provider: string, token: string, org?: string): Promise<unknown>
     listOwners(provider: string, token: string, org?: string): Promise<unknown>
@@ -60,6 +64,10 @@ interface PreloadApi {
     minimize(): void
     maximize(): void
     close(): void
+  }
+  zoom: {
+    get(): number
+    set(factor: number): void
   }
   watch: {
     repo(path: string | null): Promise<void>

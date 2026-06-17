@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer, webFrame } from 'electron'
 
 const api = {
   platform: process.platform,
@@ -58,6 +58,11 @@ const api = {
     setRetention: (days: number): Promise<unknown> => ipcRenderer.invoke('analytics:setRetention', days)
   },
 
+  log: {
+    get: (): Promise<unknown> => ipcRenderer.invoke('log:get'),
+    clear: (): Promise<unknown> => ipcRenderer.invoke('log:clear')
+  },
+
   hosting: {
     listRepos: (provider: string, token: string, org?: string): Promise<unknown> =>
       ipcRenderer.invoke('hosting:listRepos', provider, token, org),
@@ -97,6 +102,11 @@ const api = {
     minimize: (): void => ipcRenderer.send('window:minimize'),
     maximize: (): void => ipcRenderer.send('window:maximize'),
     close: (): void => ipcRenderer.send('window:close')
+  },
+
+  zoom: {
+    get: (): number => webFrame.getZoomFactor(),
+    set: (factor: number): void => webFrame.setZoomFactor(factor)
   },
 
   watch: {

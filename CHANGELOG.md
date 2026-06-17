@@ -1,5 +1,18 @@
 
 
+## [0.10.0](https://github.com/MyAppDesk/gitcito/compare/v0.9.1...v0.10.0) (2026-06-17)
+
+
+### Features
+
+* add file content search functionality in commit panel ([45e4161](https://github.com/MyAppDesk/gitcito/commit/45e4161cc6d8aedf7f9c175883e9cf494a8ac262))
+* add full-page operation log component ([8def956](https://github.com/MyAppDesk/gitcito/commit/8def95607b2e0c253d98b608771c09477cd6a1a4))
+* add logging functionality and display app version ([918a9b1](https://github.com/MyAppDesk/gitcito/commit/918a9b13a268a0f36b405630749996b49f5e36e1))
+* add operation log section and zoom control component ([883f7a3](https://github.com/MyAppDesk/gitcito/commit/883f7a3b91a6369ae37be30044532961231d992a))
+* add release management functionality and UI components ([ce9e179](https://github.com/MyAppDesk/gitcito/commit/ce9e179aaacf21d4e470b21d0acebbbfd9886c8d))
+* add submodule management in sidebar and git service ([d9e7b1b](https://github.com/MyAppDesk/gitcito/commit/d9e7b1b0cc6c93c3df628cf37d87567483aef106))
+* add tag web link functionality and improve sidebar UI ([2b09cf5](https://github.com/MyAppDesk/gitcito/commit/2b09cf53de2dcfa70974944b7045315da54d0d0b))
+
 ## [0.9.1](https://github.com/MyAppDesk/gitcito/compare/v0.9.0...v0.9.1) (2026-06-17)
 
 ## [0.9.0](https://github.com/MyAppDesk/gitcito/compare/v0.8.0...v0.9.0) (2026-06-17)

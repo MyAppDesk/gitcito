@@ -1,5 +1,19 @@
 
 
+## [0.7.0](https://github.com/MyAppDesk/gitcito/compare/v0.6.0...v0.7.0) (2026-06-17)
+
+
+### Features
+
+* add analytics for AI usage and git activity events ([9ab8742](https://github.com/MyAppDesk/gitcito/commit/9ab87422c17105dc963bc631240263586214f15a))
+* add analytics tracking and changelog components ([69368c3](https://github.com/MyAppDesk/gitcito/commit/69368c3cae3b39394d4d27d8da415979fe7caf2e))
+* add polling for CI statuses in GraphView component ([81b812f](https://github.com/MyAppDesk/gitcito/commit/81b812f70ad74a15fc98689512e9bb553b0b1d08))
+
+
+### Bug Fixes
+
+* update README and enhance text visibility in Scene ([3c17c4f](https://github.com/MyAppDesk/gitcito/commit/3c17c4ffba1b578f7b4567fafa05021dc4d001a4))
+
 ## [0.6.0](https://github.com/MyAppDesk/gitcito/compare/v0.5.0...v0.6.0) (2026-06-17)
 
 

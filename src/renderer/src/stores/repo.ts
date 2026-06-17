@@ -11,7 +11,8 @@ import type {
   RepoStatus,
   StashInfo,
   HostingProvider,
-  WorktreeInfo
+  WorktreeInfo,
+  SubmoduleInfo
 } from '../../../shared/types'
 import { gitApi, hostingApi } from '../infrastructure/api'
 import { useUIStore } from './ui'
@@ -37,6 +38,7 @@ export interface RepoData {
   stashes: StashInfo[]
   remotes: RemoteInfo[]
   worktrees: WorktreeInfo[]
+  submodules: SubmoduleInfo[]
   prs: PullRequest[]
   prProvider: HostingProvider
   releases: ReleaseInfo[]
@@ -64,6 +66,7 @@ const emptyRepo = (path: string): RepoData => ({
   stashes: [],
   remotes: [],
   worktrees: [],
+  submodules: [],
   prs: [],
   prProvider: null,
   releases: [],
@@ -145,14 +148,15 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
     // re-reads cheap local state. Used by the periodic poll and on window focus.
     const light = opts?.light ?? false
     try {
-      const [commits, branches, status, stashes, remotes, mergeState, worktrees] = await Promise.all([
+      const [commits, branches, status, stashes, remotes, mergeState, worktrees, submodules] = await Promise.all([
         light ? Promise.resolve(get().repos[path]?.commits ?? []) : gitApi.log(path, maxCount),
         gitApi.branches(path),
         gitApi.status(path),
         gitApi.stashes(path),
         gitApi.remotes(path),
         gitApi.mergeState(path),
-        gitApi.worktrees(path).catch(() => [])
+        gitApi.worktrees(path).catch(() => []),
+        gitApi.submodules(path).catch(() => [])
       ])
       patch(path, {
         commits,
@@ -162,6 +166,7 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
         remotes,
         mergeState,
         worktrees,
+        submodules,
         loading: false,
         lastRefreshAt: Date.now()
       })
@@ -605,5 +610,24 @@ export const repoActions = {
     useRepoStore.getState().run(path, `Added worktree ${dir}`, () => gitApi.worktreeAdd(path, dir, branch, newBranch)),
 
   worktreeRemove: (path: string, dir: string, force = false) =>
-    useRepoStore.getState().run(path, `Removed worktree ${dir}`, () => gitApi.worktreeRemove(path, dir, force))
+    useRepoStore.getState().run(path, `Removed worktree ${dir}`, () => gitApi.worktreeRemove(path, dir, force)),
+
+  submoduleAdd: (path: string, url: string, dir: string, branch?: string) =>
+    useRepoStore.getState().run(path, `Added submodule ${dir}`, () => gitApi.submoduleAdd(path, url, dir, branch)),
+
+  submoduleUpdate: (path: string, dir?: string) =>
+    useRepoStore
+      .getState()
+      .run(path, dir ? `Updated submodule ${dir}` : 'Updated submodules', () => gitApi.submoduleUpdate(path, dir, true)),
+
+  submoduleSync: (path: string, dir?: string) =>
+    useRepoStore
+      .getState()
+      .run(path, dir ? `Synced submodule ${dir}` : 'Synced submodules', () => gitApi.submoduleSync(path, dir)),
+
+  submoduleSetUrl: (path: string, name: string, url: string) =>
+    useRepoStore.getState().run(path, `Updated URL for ${name}`, () => gitApi.submoduleSetUrl(path, name, url)),
+
+  submoduleRemove: (path: string, dir: string) =>
+    useRepoStore.getState().run(path, `Removed submodule ${dir}`, () => gitApi.submoduleRemove(path, dir))
 }

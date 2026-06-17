@@ -24,9 +24,11 @@ import type {
   RemoteOwner,
   CreateRepoOpts,
   WorktreeInfo,
+  SubmoduleInfo,
   AppThemeColors,
   CodeThemeColors,
   Analytics,
+  LogEntry,
   RepoStats
 } from '../../../shared/types'
 
@@ -120,6 +122,15 @@ export const gitApi = {
     call<void>('worktreeAdd', path, dir, branch, newBranch),
   worktreeRemove: (path: string, dir: string, force?: boolean) => call<void>('worktreeRemove', path, dir, force),
 
+  submodules: (path: string) => call<SubmoduleInfo[]>('submodules', path),
+  submoduleAdd: (path: string, url: string, dir: string, branch?: string) =>
+    call<void>('submoduleAdd', path, url, dir, branch),
+  submoduleUpdate: (path: string, dir?: string, init?: boolean) => call<void>('submoduleUpdate', path, dir, init),
+  submoduleSync: (path: string, dir?: string) => call<void>('submoduleSync', path, dir),
+  submoduleSetUrl: (path: string, name: string, url: string) => call<void>('submoduleSetUrl', path, name, url),
+  submoduleDeinit: (path: string, dir: string, force?: boolean) => call<void>('submoduleDeinit', path, dir, force),
+  submoduleRemove: (path: string, dir: string) => call<void>('submoduleRemove', path, dir),
+
   getUser: (path: string) => call<{ name: string; email: string }>('getUser', path),
   setUser: (path: string, name: string, email: string) => call<void>('setUser', path, name, email),
 
@@ -196,6 +207,11 @@ export const analyticsApi = {
   get: () => window.api.analytics.get() as Promise<Analytics>,
   clear: () => window.api.analytics.clear() as Promise<Analytics>,
   setRetention: (days: number) => window.api.analytics.setRetention(days) as Promise<Analytics>
+}
+
+export const logApi = {
+  get: () => window.api.log.get() as Promise<LogEntry[]>,
+  clear: () => window.api.log.clear() as Promise<LogEntry[]>
 }
 
 export const shellApi = {

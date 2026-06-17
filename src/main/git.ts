@@ -26,9 +26,12 @@ import type {
   StashInfo,
   TagInfo,
   WorktreeInfo,
+  SubmoduleInfo,
+  SubmoduleStatus,
   ActivityEvent
 } from '../shared/types'
 import { recordEvent } from './analytics'
+import { recordLog } from './log'
 
 const SEP = '\x1f'
 const REC = '\x1e'
@@ -895,6 +898,134 @@ export const gitService = {
     await gitFor(repoPath).raw(args)
   },
 
+  // ─── Submodules ──────────────────────────────────────────────────────────
+
+  async submodules(repoPath: string): Promise<SubmoduleInfo[]> {
+    const git = gitFor(repoPath)
+    // `.gitmodules` is the source of truth for registered submodules; without it
+    // there is nothing to show (and `git submodule status` would print nothing).
+    const config = await git.raw(['config', '--file', '.gitmodules', '--list']).catch(() => '')
+    if (!config.trim()) return []
+
+    // name → { path, url, branch }, built from `submodule.<name>.<key>=<value>`.
+    const meta = new Map<string, { path?: string; url?: string; branch?: string }>()
+    for (const line of config.split('\n').filter(Boolean)) {
+      const eq = line.indexOf('=')
+      if (eq < 0) continue
+      const key = line.slice(0, eq)
+      const value = line.slice(eq + 1)
+      const m = /^submodule\.(.+)\.(path|url|branch)$/.exec(key)
+      if (!m) continue
+      const entry = meta.get(m[1]) ?? {}
+      entry[m[2] as 'path' | 'url' | 'branch'] = value
+      meta.set(m[1], entry)
+    }
+
+    // `git submodule status` reports the live state. The leading char encodes
+    // status, followed by the SHA, the path, and an optional `(describe)`.
+    const statusOut = await git.raw(['submodule', 'status']).catch(() => '')
+    const statusByPath = new Map<string, { sha: string; status: SubmoduleStatus; describe: string | null }>()
+    for (const line of statusOut.split('\n').filter(Boolean)) {
+      const m = /^([ +\-U])([0-9a-f]{7,40})\s+(.+?)(?:\s+\((.+)\))?$/.exec(line)
+      if (!m) continue
+      const flag = m[1]
+      const status: SubmoduleStatus =
+        flag === '+' ? 'modified' : flag === '-' ? 'uninitialized' : flag === 'U' ? 'conflict' : 'initialized'
+      statusByPath.set(m[3], { sha: m[2], status, describe: m[4] ?? null })
+    }
+
+    // The commit each submodule is *pinned* to lives as a gitlink (mode 160000)
+    // in the superproject's HEAD tree. Used to measure drift for modified ones.
+    const recordedByPath = new Map<string, string>()
+    const tree = await git.raw(['ls-tree', '-r', 'HEAD']).catch(() => '')
+    for (const line of tree.split('\n').filter(Boolean)) {
+      const m = /^160000 commit ([0-9a-f]{40})\t(.+)$/.exec(line)
+      if (m) recordedByPath.set(m[2], m[1])
+    }
+
+    const result: SubmoduleInfo[] = []
+    for (const [name, info] of meta) {
+      if (!info.path) continue
+      const st = statusByPath.get(info.path)
+      const recordedSha = recordedByPath.get(info.path) ?? ''
+      let ahead = 0
+      let behind = 0
+      // For a checked-out submodule sitting off its recorded commit, count the
+      // divergence so the UI can render an out-of-sync "↑n / ↓n" indicator.
+      if (st?.status === 'modified' && recordedSha && st.sha && recordedSha !== st.sha) {
+        const counts = await gitFor(join(repoPath, info.path))
+          .raw(['rev-list', '--left-right', '--count', `${recordedSha}...${st.sha}`])
+          .catch(() => '')
+        const parts = counts.trim().split(/\s+/)
+        if (parts.length === 2) {
+          behind = Number(parts[0]) || 0
+          ahead = Number(parts[1]) || 0
+        }
+      }
+      result.push({
+        name,
+        path: info.path,
+        url: info.url ?? '',
+        branch: info.branch ?? null,
+        sha: st?.sha ?? '',
+        recordedSha,
+        describe: st?.describe ?? null,
+        status: st?.status ?? 'uninitialized',
+        ahead,
+        behind
+      })
+    }
+    result.sort((a, b) => a.path.localeCompare(b.path))
+    return result
+  },
+
+  async submoduleAdd(repoPath: string, url: string, path: string, branch?: string): Promise<void> {
+    const args = ['submodule', 'add']
+    if (branch) args.push('-b', branch)
+    args.push('--', url, path)
+    await gitFor(repoPath).raw(args)
+  },
+
+  /** Update a submodule's remote URL in `.gitmodules` and sync the live config. */
+  async submoduleSetUrl(repoPath: string, name: string, url: string): Promise<void> {
+    const git = gitFor(repoPath)
+    await git.raw(['config', '--file', '.gitmodules', `submodule.${name}.url`, url])
+    await git.raw(['submodule', 'sync', '--', name]).catch(() => '')
+  },
+
+  async submoduleUpdate(repoPath: string, path?: string, init = true): Promise<void> {
+    const args = ['submodule', 'update']
+    if (init) args.push('--init')
+    args.push('--recursive')
+    if (path) args.push('--', path)
+    await gitFor(repoPath).raw(args)
+  },
+
+  async submoduleSync(repoPath: string, path?: string): Promise<void> {
+    const args = ['submodule', 'sync', '--recursive']
+    if (path) args.push('--', path)
+    await gitFor(repoPath).raw(args)
+  },
+
+  async submoduleDeinit(repoPath: string, path: string, force = false): Promise<void> {
+    const args = ['submodule', 'deinit']
+    if (force) args.push('--force')
+    args.push('--', path)
+    await gitFor(repoPath).raw(args)
+  },
+
+  /**
+   * Fully removes a submodule: deinit, drop the working tree from the index,
+   * and strip its `.gitmodules` stanza so it no longer shows up.
+   */
+  async submoduleRemove(repoPath: string, path: string): Promise<void> {
+    const git = gitFor(repoPath)
+    await git.raw(['submodule', 'deinit', '--force', '--', path]).catch(() => '')
+    await git.raw(['rm', '--force', '--', path]).catch(() => '')
+    // `git rm` of a submodule may leave the stale .git metadata behind.
+    await git.raw(['config', '--remove-section', `submodule.${path}`]).catch(() => '')
+  },
+
   // ─── Config / profiles ─────────────────────────────────────────────────────
 
   async getUser(repoPath: string): Promise<{ name: string; email: string }> {
@@ -1080,9 +1211,23 @@ export function registerGitHandlers(): void {
   ipcMain.handle('git', async (_e, method: string, ...args: unknown[]) => {
     const fn = (gitService as Record<string, unknown>)[method]
     if (typeof fn !== 'function') throw new Error(`Unknown git method: ${method}`)
-    const result = await (fn as (...a: unknown[]) => Promise<unknown>)(...args)
     const event = eventForCall(method, args)
-    if (event) void recordEvent(event)
-    return result
+    // First positional arg is the repo path for almost every method; clone/init
+    // operate before a repo exists locally, so they are recorded as app-level.
+    const repoPath =
+      event && typeof args[0] === 'string' && method !== 'clone' && method !== 'init' ? (args[0] as string) : ''
+    try {
+      const result = await (fn as (...a: unknown[]) => Promise<unknown>)(...args)
+      if (event) {
+        void recordEvent(event)
+        void recordLog({ event, repoPath, ok: true })
+      }
+      return result
+    } catch (err) {
+      if (event) {
+        void recordLog({ event, repoPath, ok: false, error: err instanceof Error ? err.message : String(err) })
+      }
+      throw err
+    }
   })
 }

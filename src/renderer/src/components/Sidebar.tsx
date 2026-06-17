@@ -12,6 +12,7 @@ import {
   Check,
   FolderGit2,
   Boxes,
+  AlertTriangle,
   GripVertical,
   Laptop,
   Plus,
@@ -131,6 +132,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   const sidebarHidden = useSettingsStore((s) => s.settings.sidebarHidden)
   const updateSettings = useSettingsStore((s) => s.update)
   const openPageTab = useSettingsStore((s) => s.openPageTab)
+  const openRepoTab = useSettingsStore((s) => s.openRepoTab)
   const activeProfile = useSettingsStore((s) => s.activeProfile)
   const aiEnabled = activeProfile().ai.enabled !== false
   const t = useT()
@@ -524,6 +526,74 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   }
 
 
+  const submoduleMenu = (sm: SubmoduleInfo): MenuItem[] => {
+    const absPath = `${path.replace(/\/+$/, '')}/${sm.path}`
+    const web = webUrl(sm.url)
+    const initialized = sm.status !== 'uninitialized'
+    return [
+      { label: t('sidebar.updateSubmodule'), onClick: () => void repoActions.submoduleUpdate(path, sm.path) },
+      { label: t('sidebar.syncSubmodule'), onClick: () => void repoActions.submoduleSync(path, sm.path) },
+      { separator: true },
+      {
+        label: t('sidebar.openSubmodule'),
+        disabled: !initialized,
+        onClick: () => openRepoTab({ path: absPath, name: sm.path.split('/').pop() ?? sm.path })
+      },
+      { label: t('sidebar.editSubmodule'), onClick: () => editSubmodule(sm) },
+      { label: t('sidebar.revealWorktree'), onClick: () => void shellApi.revealInFolder(absPath) },
+      { separator: true },
+      { label: t('sidebar.copyPath'), onClick: () => void navigator.clipboard.writeText(absPath) },
+      ...(sm.url ? [{ label: t('sidebar.copySubmoduleUrl'), onClick: (): void => void navigator.clipboard.writeText(sm.url) }] : []),
+      ...(web ? [{ label: t('sidebar.openOnWeb'), onClick: (): void => void shellApi.openExternal(web) }] : []),
+      { separator: true },
+      {
+        label: t('sidebar.removeSubmodule'),
+        danger: true,
+        onClick: () =>
+          openModal({
+            kind: 'confirm',
+            title: t('sidebar.removeSubmodule'),
+            message: `Remove submodule "${sm.path}"? This deinitializes it and removes it from the index and .gitmodules.`,
+            danger: true,
+            confirmLabel: t('common.delete'),
+            onConfirm: () => void repoActions.submoduleRemove(path, sm.path)
+          })
+      }
+    ]
+  }
+
+  const editSubmodule = (sm: SubmoduleInfo): void =>
+    openModal({
+      kind: 'input',
+      title: `${t('sidebar.editSubmodule')} · ${sm.path}`,
+      label: t('sidebar.submoduleUrlLabel'),
+      placeholder: 'https://github.com/org/repo.git',
+      initial: sm.url,
+      submitLabel: t('common.save'),
+      onSubmit: (value) => {
+        const url = value.trim()
+        if (!url || url === sm.url) return
+        void repoActions.submoduleSetUrl(path, sm.name, url)
+      }
+    })
+
+  const addSubmodule = (): void =>
+    openModal({
+      kind: 'input',
+      title: t('sidebar.addSubmodule'),
+      label: 'URL · path (e.g. https://… vendor/lib)',
+      placeholder: 'https://github.com/org/repo.git  vendor/lib',
+      submitLabel: t('common.add'),
+      onSubmit: (value) => {
+        const parts = value.trim().split(/\s+/)
+        const url = parts[0]
+        const dir = parts[1]
+        if (!url || !dir) return
+        void repoActions.submoduleAdd(path, url, dir)
+      }
+    })
+
+
   const sectionLabels: Record<string, string> = {
     local: t('sidebar.local'),
     remotes: t('sidebar.remotes'),
@@ -531,7 +601,8 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     tags: t('sidebar.tags'),
     releases: t('sidebar.releases'),
     stashes: t('sidebar.stashes'),
-    worktrees: t('sidebar.worktrees')
+    worktrees: t('sidebar.worktrees'),
+    submodules: t('sidebar.submodules')
   }
 
   const toggleSection = (id: string): void =>
@@ -928,6 +999,71 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
             {w.isMain && <span className="badge">main</span>}
           </div>
         ))}
+      </Section>
+    ),
+    submodules: (
+      <Section
+        title={t('sidebar.submodules')}
+        icon={<Boxes size={13} />}
+        count={repo.submodules.length}
+        defaultOpen={false}
+        {...dragProps('submodules')}
+        actions={
+          <span
+            className="icon-btn"
+            title={t('sidebar.addSubmodule')}
+            onClick={(e) => {
+              e.stopPropagation()
+              addSubmodule()
+            }}
+          >
+            <Plus size={11} />
+          </span>
+        }
+      >
+        {repo.submodules.length === 0 && <div className="sb-empty">{t('sidebar.noSubmodules')}</div>}
+        {repo.submodules.map((sm) => {
+          const statusIcon =
+            sm.status === 'initialized' ? (
+              <Check size={13} className="sb-sm-icon ok" />
+            ) : sm.status === 'modified' ? (
+              <RefreshCw size={12} className="sb-sm-icon sync" />
+            ) : sm.status === 'conflict' ? (
+              <AlertTriangle size={12} className="sb-sm-icon conflict" />
+            ) : (
+              <AlertTriangle size={12} className="sb-sm-icon warn" />
+            )
+          const statusTip =
+            sm.status === 'initialized'
+              ? `${t('sidebar.submoduleInSync')} ${repo.name}`
+              : sm.status === 'modified'
+                ? `${t('sidebar.submoduleOutOfSync')} ${repo.name}`
+                : sm.status === 'conflict'
+                  ? t('sidebar.submoduleConflictTip')
+                  : t('sidebar.submoduleNeedsInit')
+          return (
+            <div
+              key={sm.path}
+              className="sb-item sb-submodule"
+              onDoubleClick={() => void shellApi.revealInFolder(`${path.replace(/\/+$/, '')}/${sm.path}`)}
+              onContextMenu={(e) => {
+                e.preventDefault()
+                openContextMenu(e.clientX, e.clientY, submoduleMenu(sm))
+              }}
+              title={`${sm.path}${sm.url ? ` → ${sm.url}` : ''}\n${statusTip}${sm.sha ? `\n${sm.sha.slice(0, 10)}` : ''}`}
+            >
+              <span className="sb-sm-status" title={statusTip}>
+                {statusIcon}
+              </span>
+              <Boxes size={12} className="sb-sm-glyph text-2" />
+              <span className="sb-name">{sm.path}</span>
+              {sm.describe && <span className="sb-sub-ref text-2">{sm.describe}</span>}
+              {sm.ahead > 0 && <span className="badge ahead">↑{sm.ahead}</span>}
+              {sm.behind > 0 && <span className="badge behind">↓{sm.behind}</span>}
+              {sm.status === 'uninitialized' && <span className="badge">{t('sidebar.submoduleUninit')}</span>}
+            </div>
+          )
+        })}
       </Section>
     )
   }

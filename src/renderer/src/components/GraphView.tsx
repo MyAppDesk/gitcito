@@ -1148,7 +1148,7 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
                     {groups.length <= 1 ? (
                       groups.map((g) => renderGroup(g, c, laneColor))
                     ) : (
-                      <span className="ref-collapsed">
+                      <span className="ref-collapsed" style={{ '--lane': laneColor } as React.CSSProperties}>
                         {renderGroup(groups[0], c, laneColor)}
                         <span className="ref-more-chip">+{groups.length - 1}</span>
                         <div className="graph-refs-pop">

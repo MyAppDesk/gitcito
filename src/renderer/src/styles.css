@@ -1649,10 +1649,10 @@ textarea:focus {
   flex-shrink: 0;
   font-size: 9.5px;
   font-weight: 700;
-  color: var(--text-2);
-  background: var(--bg-3);
-  border: 1px solid var(--border);
-  border-radius: 7px;
+  color: var(--text-1);
+  background: color-mix(in srgb, var(--lane, var(--bg-3)) 20%, var(--bg-3));
+  border: 1px solid color-mix(in srgb, var(--lane, var(--border)) 55%, var(--border));
+  border-radius: 4px;
   padding: 1px 5px;
   cursor: default;
 }
@@ -1666,14 +1666,26 @@ textarea:focus {
   gap: 3px;
   position: absolute;
   left: 0;
-  top: calc(100% + 4px);
+  top: calc(100% + 2px);
   padding: 5px;
-  background: var(--bg-2);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+  background: color-mix(in srgb, var(--lane, var(--bg-2)) 30%, var(--bg-1));
+  border: 1px solid color-mix(in srgb, var(--lane, var(--border)) 65%, var(--border));
+  border-radius: 4px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
   z-index: 30;
 }
+/* Items inside the popup are plain rows — no individual borders or backgrounds */
+.graph-refs-pop .ref-badge {
+  border-color: transparent !important;
+  background: transparent !important;
+  padding: 1px 4px;
+  width: 100%;
+  border-radius: 3px;
+}
+.graph-refs-pop .ref-badge:hover {
+  background: color-mix(in srgb, var(--lane, var(--bg-3)) 25%, var(--bg-3)) !important;
+}
+
 /* Invisible bridge spanning the gap between the chip and the popup so the
    hover state survives while the mouse travels down into the submenu. */
 .ref-collapsed:hover .graph-refs-pop::before {
@@ -1681,8 +1693,8 @@ textarea:focus {
   position: absolute;
   left: 0;
   right: 0;
-  top: -6px;
-  height: 6px;
+  top: -4px;
+  height: 4px;
 }
 
 .ref-head {
@@ -1691,7 +1703,12 @@ textarea:focus {
 }
 .ref-local { color: var(--text-1); }
 .ref-remote { color: var(--purple); }
-.ref-tag { color: var(--yellow); }
+.ref-tag {
+  color: var(--yellow);
+  border-color: transparent;
+  background: transparent;
+  opacity: 0.85;
+}
 .ref-stash {
   background: rgba(242, 204, 96, 0.08);
   border-color: rgba(242, 204, 96, 0.4);

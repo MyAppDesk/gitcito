@@ -11,6 +11,12 @@ import { settingsApi } from '../infrastructure/api'
 
 const uid = (): string => Math.random().toString(36).slice(2, 10)
 
+export const GROUP_COLORS = [
+  '#6366f1', '#ec4899', '#f59e0b', '#10b981',
+  '#3b82f6', '#8b5cf6', '#ef4444', '#14b8a6',
+  '#f97316', '#06b6d4'
+]
+
 // Map pre-dynamic-theme ids onto the new merged light/dark theme ids.
 const LEGACY_APP_THEME_IDS: Record<string, string> = {
   'gitcito-light': 'gitcito',
@@ -56,6 +62,8 @@ interface SettingsState {
   closeTab(tabId: string): void
   setActiveTab(tabId: string): void
   renameTab(tabId: string, name: string): void
+  setTabColor(tabId: string, color: string): void
+  toggleTabCollapsed(tabId: string): void
 
   activeTab(): TabState | null
   activeRepo(): RepoRef | null
@@ -144,7 +152,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
   createGroupTab: (name) =>
     get().update((s) => {
-      const tab: TabState = { id: uid(), kind: 'group', name, repos: [], activeRepoPath: null }
+      const groupCount = s.tabs.filter((t) => t.kind === 'group').length
+      const color = GROUP_COLORS[groupCount % GROUP_COLORS.length]
+      const tab: TabState = { id: uid(), kind: 'group', name, repos: [], activeRepoPath: null, color }
       return { ...s, tabs: [...s.tabs, tab], activeTabId: tab.id }
     }),
 
@@ -214,6 +224,12 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
   renameTab: (tabId, name) =>
     get().update((s) => ({ ...s, tabs: s.tabs.map((t) => (t.id === tabId ? { ...t, name } : t)) })),
+
+  setTabColor: (tabId, color) =>
+    get().update((s) => ({ ...s, tabs: s.tabs.map((t) => (t.id === tabId ? { ...t, color } : t)) })),
+
+  toggleTabCollapsed: (tabId) =>
+    get().update((s) => ({ ...s, tabs: s.tabs.map((t) => (t.id === tabId ? { ...t, collapsed: !t.collapsed } : t)) })),
 
   activeTab: () => {
     const { settings } = get()

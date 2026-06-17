@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { X, Globe, Github, Gitlab, Cloud, Server, Loader2, Search, Lock, ExternalLink, Plug, FolderGit2, Folder, Plus, Check, ChevronDown } from 'lucide-react'
 import { useUIStore, type ModalSpec } from '../stores/ui'
-import { useSettingsStore } from '../stores/settings'
+import { useSettingsStore, GROUP_COLORS } from '../stores/settings'
 import { hostingApi, gitApi, shellApi } from '../infrastructure/api'
 import { repoActions } from '../stores/repo'
 import type { CreateRepoOpts, RemoteOwner, RemoteRepo, RepoHost } from '../../../shared/types'
@@ -12,6 +12,54 @@ import { AIConfigWizard } from './AIConfigWizard'
 import { InteractiveRebase } from './InteractiveRebase'
 import { BranchComparison } from './BranchComparison'
 import { AIPRReview } from './AIPRReview'
+
+function GroupColorModal({ spec }: { spec: Extract<ModalSpec, { kind: 'group-color' }> }): React.JSX.Element {
+  const closeModal = useUIStore((s) => s.closeModal)
+  const [custom, setCustom] = useState(spec.current ?? '')
+
+  const select = (color: string): void => {
+    closeModal()
+    spec.onSelect(color)
+  }
+
+  return (
+    <>
+      <h3>Group color</h3>
+      <div className="group-color-swatches">
+        {GROUP_COLORS.map((c) => (
+          <button
+            key={c}
+            className={`group-color-swatch ${spec.current === c ? 'selected' : ''}`}
+            style={{ background: c }}
+            onClick={() => select(c)}
+          >
+            {spec.current === c && <Check size={12} />}
+          </button>
+        ))}
+      </div>
+      <label className="modal-label">Custom color</label>
+      <div className="group-color-custom">
+        <input
+          type="color"
+          className="group-color-input"
+          value={custom || '#6366f1'}
+          onChange={(e) => setCustom(e.target.value)}
+        />
+        <input
+          className="modal-input"
+          value={custom}
+          placeholder="#rrggbb"
+          onChange={(e) => setCustom(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter' && custom) select(custom) }}
+        />
+      </div>
+      <div className="modal-actions">
+        <button className="btn ghost" onClick={closeModal}>Cancel</button>
+        <button className="btn primary" disabled={!custom} onClick={() => select(custom)}>Apply</button>
+      </div>
+    </>
+  )
+}
 
 function InputModal({ spec }: { spec: Extract<ModalSpec, { kind: 'input' }> }): React.JSX.Element {
   const closeModal = useUIStore((s) => s.closeModal)
@@ -1158,6 +1206,7 @@ export function ModalHost(): React.JSX.Element {
             {modal.kind === 'ai-pr-review' && (
               <AIPRReview repoPath={modal.repoPath} prTitle={modal.prTitle} sourceBranch={modal.sourceBranch} targetBranch={modal.targetBranch} />
             )}
+            {modal.kind === 'group-color' && <GroupColorModal spec={modal} />}
           </motion.div>
         </motion.div>
       )}

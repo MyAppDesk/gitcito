@@ -300,6 +300,8 @@ export interface TabState {
   name: string
   repos: RepoRef[]
   activeRepoPath: string | null
+  color?: string
+  collapsed?: boolean
 }
 
 export interface AppSettings {

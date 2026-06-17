@@ -189,6 +189,16 @@ export default function App(): React.JSX.Element {
     else void ensure(activeRepoPath)
   }, [activeRepoPath, ensure])
 
+  // Ensure all repos across all tabs have at least a light status load so
+  // group tab status dots are populated even for non-active repos.
+  useEffect(() => {
+    for (const tab of settings.tabs) {
+      for (const ref of tab.repos) {
+        if (ref.path !== activeRepoPath) void ensure(ref.path)
+      }
+    }
+  }, [settings.tabs, ensure, activeRepoPath])
+
   // Refresh the active repo whenever the window regains focus / visibility,
   // so changes made outside the app (editor, terminal) show up immediately.
   useEffect(() => {

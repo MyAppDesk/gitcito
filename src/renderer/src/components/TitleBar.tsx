@@ -143,6 +143,7 @@ export function TitleBar(): React.JSX.Element {
           // group tab
           const groupColor = tab.color ?? '#6366f1'
           const isActiveGroup = tab.id === settings.activeTabId
+          const groupStatus = tabStatus(tab)
 
           const handleGroupContext = (e: React.MouseEvent): void => {
             e.preventDefault()
@@ -168,6 +169,12 @@ export function TitleBar(): React.JSX.Element {
                 onContextMenu={handleGroupContext}
               >
                 {tab.name}
+                {groupStatus && (
+                  <span
+                    className={`tab-status tab-status-${groupStatus}`}
+                    title={groupStatus === 'conflict' ? 'Conflicts in progress' : 'Uncommitted changes'}
+                  />
+                )}
               </button>
 
               <AnimatePresence initial={false}>

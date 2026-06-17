@@ -149,6 +149,13 @@ function mapStatusCode(code: string): FileChangeKind {
   }
 }
 
+/** Git records a stash's reflog subject as `WIP on <branch>: …` or
+ *  `On <branch>: <message>`. The UI already shows a `stash@{N}` badge, so the
+ *  prefix is redundant noise — strip it to leave just the meaningful message. */
+function cleanStashMessage(message: string): string {
+  return message.replace(/^(?:WIP on|On) [^:]*:\s*/, '').trim() || message
+}
+
 /** MIME type by extension, covering images plus the binary formats the file
  *  previewer can render (pdf, video, audio, office docs). Unknown extensions
  *  fall back to a generic binary type so the data URL is still well-formed. */
@@ -299,7 +306,12 @@ export const gitService = {
 
     const tags: TagInfo[] = []
     try {
-      const out = await git.raw(['for-each-ref', `--format=%(refname:short)${SEP}%(objectname:short)`, 'refs/tags'])
+      const out = await git.raw([
+        'for-each-ref',
+        '--sort=-version:refname',
+        `--format=%(refname:short)${SEP}%(objectname:short)`,
+        'refs/tags'
+      ])
       for (const line of out.split('\n').filter(Boolean)) {
         const [name, sha] = line.split(SEP)
         tags.push({ name, sha })
@@ -443,7 +455,7 @@ export const gitService = {
             parentSha: parentList[0] ?? '',
             untrackedSha: parentList[2] ?? null,
             date: +date,
-            message
+            message: cleanStashMessage(message ?? '')
           }
         })
     } catch {

@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import hljs from 'highlight.js'
+import { highlightHtml, type HighlightLayer } from './FileSearchBar'
 
 interface DiffLine {
   kind: 'add' | 'del' | 'hunk' | 'meta' | 'ctx'
@@ -73,10 +74,12 @@ function extractHunks(diff: string): { header: string; hunks: string[] } {
 export function DiffViewer({
   diff,
   lang = '',
+  highlightLayers = [],
   onStageHunk
 }: {
   diff: string
   lang?: string
+  highlightLayers?: HighlightLayer[]
   onStageHunk?: (patch: string) => void
 }): React.JSX.Element {
   const lines = useMemo(() => parseDiff(diff), [diff])
@@ -115,7 +118,7 @@ export function DiffViewer({
             <span className="diff-sign">{l.kind === 'add' ? '+' : l.kind === 'del' ? '-' : ' '}</span>
             <span
               className="diff-text"
-              dangerouslySetInnerHTML={{ __html: highlightLine(l.text, lang) || '&nbsp;' }}
+              dangerouslySetInnerHTML={{ __html: highlightHtml(highlightLine(l.text, lang), highlightLayers) || '&nbsp;' }}
             />
           </div>
         )

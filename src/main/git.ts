@@ -746,6 +746,40 @@ export const gitService = {
     return gitFor(repoPath).raw(['show', `${ref}:${file}`])
   },
 
+  /**
+   * Filter the given changed-file paths down to those whose working-tree content
+   * matches `query`. Used by the commit panel's search bar. Reads files directly
+   * (only the handful of changed files), so it covers tracked + untracked alike.
+   * Returns `files` unchanged when the query is empty; `[]` for an invalid regex.
+   */
+  async searchFileContents(
+    repoPath: string,
+    files: string[],
+    query: string,
+    opts?: { caseSensitive?: boolean; wholeWord?: boolean; regex?: boolean }
+  ): Promise<string[]> {
+    if (!query) return files
+    let pattern: RegExp
+    try {
+      const src = opts?.regex ? query : query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      const body = opts?.wholeWord ? `\\b${src}\\b` : src
+      pattern = new RegExp(body, opts?.caseSensitive ? '' : 'i')
+    } catch {
+      return []
+    }
+    const matched = await Promise.all(
+      files.map(async (f) => {
+        try {
+          const content = await readFile(join(repoPath, f), 'utf-8')
+          return pattern.test(content) ? f : null
+        } catch {
+          return null // binary, deleted, or unreadable
+        }
+      })
+    )
+    return matched.filter((f): f is string => f !== null)
+  },
+
   async fileDataUrl(repoPath: string, file: string, ref?: string): Promise<string> {
     const url = await readFileDataUrl(repoPath, file, ref)
     if (url === null) throw new Error(`Cannot read image: ${file}`)

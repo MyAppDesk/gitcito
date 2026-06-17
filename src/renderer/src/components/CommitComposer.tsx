@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Sparkles, Loader2, Trash2, AlignLeft, FolderTree, GitMerge, ChevronDown } from 'lucide-react'
 import { MYAPPDESK_COAUTHOR, type FileEntry } from '../../../shared/types'
@@ -7,6 +7,14 @@ import { repoActions, useRepoStore, type RepoData } from '../stores/repo'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { FileListView } from './FileListView'
+import {
+  FileSearchBar,
+  EMPTY_FILTER,
+  isFilterActive,
+  matchesGlobList,
+  buildQueryRegExp,
+  type FileFilter
+} from './FileSearchBar'
 
 type ListName = 'staged' | 'unstaged'
 
@@ -63,6 +71,79 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
   const unstaged = status?.unstaged ?? []
   const conflicted = status?.conflicted ?? []
   const path = repo.path
+
+  // ─── File search / filter (path globs + content search) ───────────────────
+  const [filter, setFilter] = useState<FileFilter>(EMPTY_FILTER)
+  // Paths whose working-tree content matches the search query; null = no active
+  // content query (so the content dimension is ignored by the filter).
+  const [contentMatches, setContentMatches] = useState<Set<string> | null>(null)
+  const query = filter.query.trim()
+  const setFileSearch = useUIStore((s) => s.setFileSearch)
+
+  // Content search: ask the backend which changed files contain the query.
+  useEffect(() => {
+    if (!query || filter.mode !== 'content') {
+      setContentMatches(null)
+      return
+    }
+    const allPaths = [...new Set([...unstaged, ...staged, ...conflicted].map((f) => f.path))]
+    let cancelled = false
+    const t = setTimeout(() => {
+      void gitApi
+        .searchFileContents(path, allPaths, query, {
+          caseSensitive: filter.caseSensitive,
+          wholeWord: filter.wholeWord,
+          regex: filter.regex
+        })
+        .then((paths) => {
+          if (!cancelled) setContentMatches(new Set(paths))
+        })
+        .catch(() => {
+          if (!cancelled) setContentMatches(new Set())
+        })
+    }, 200)
+    return () => {
+      cancelled = true
+      clearTimeout(t)
+    }
+  }, [query, filter.mode, filter.caseSensitive, filter.wholeWord, filter.regex, path, unstaged, staged, conflicted])
+
+  // Mirror the active content query into the UI store so the center file/diff
+  // view highlights the same matches.
+  useEffect(() => {
+    if (query && filter.mode === 'content') {
+      setFileSearch({
+        query,
+        caseSensitive: filter.caseSensitive,
+        wholeWord: filter.wholeWord,
+        regex: filter.regex
+      })
+    } else {
+      setFileSearch(null)
+    }
+  }, [query, filter.mode, filter.caseSensitive, filter.wholeWord, filter.regex, setFileSearch])
+  useEffect(() => () => useUIStore.getState().setFileSearch(null), [])
+
+  // For file-name search, match the path with the same query/toggles.
+  const nameRe = useMemo(
+    () => (filter.mode === 'name' ? buildQueryRegExp(filter) : null),
+    [filter.mode, filter.query, filter.caseSensitive, filter.wholeWord, filter.regex]
+  )
+
+  const matchesFilter = (f: FileEntry): boolean => {
+    if (filter.include.trim() && !matchesGlobList(f.path, filter.include)) return false
+    if (filter.exclude.trim() && matchesGlobList(f.path, filter.exclude)) return false
+    if (query) {
+      if (filter.mode === 'name') {
+        if (nameRe && !nameRe.test(f.path)) return false
+      } else if (contentMatches && !contentMatches.has(f.path)) return false
+    }
+    return true
+  }
+  const active = isFilterActive(filter)
+  const fUnstaged = useMemo(() => (active ? unstaged.filter(matchesFilter) : unstaged), [unstaged, filter, contentMatches, active])
+  const fStaged = useMemo(() => (active ? staged.filter(matchesFilter) : staged), [staged, filter, contentMatches, active])
+  const fConflicted = useMemo(() => (active ? conflicted.filter(matchesFilter) : conflicted), [conflicted, filter, contentMatches, active])
 
   // When a merge/cherry-pick/revert is in progress, prefill the composer with the
   // message git already prepared (e.g. "Merge branch 'main' into feat/ui") — so
@@ -137,12 +218,15 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
       lastClicked.current = file.path
     }
     setSelection({ list, paths })
-    // Open in the center panel (keep the right panel as-is).
+    // Open in the center panel (keep the right panel as-is). During a content
+    // search, open the full File view — the diff only shows changed lines, so a
+    // match elsewhere in the file would otherwise be invisible.
+    const contentSearch = filter.mode === 'content' && !!query
     setFileView({
       repoPath: path,
       file: file.path,
       source: { type: 'wip', staged: list === 'staged', untracked: !!file.untracked },
-      mode: useUIStore.getState().fileView?.mode === 'file' ? 'file' : 'diff'
+      mode: contentSearch || useUIStore.getState().fileView?.mode === 'file' ? 'file' : 'diff'
     })
   }
 
@@ -315,6 +399,8 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
         <ViewToggle />
       </div>
 
+      <FileSearchBar value={filter} onChange={setFilter} />
+
       <div className={`composer-lists${splitDragging ? ' dragging' : ''}`}>
         {conflicted.length > 0 && (
           <div className={`stage-section conflict-section${layout.composerConflictedCollapsed ? ' collapsed' : ''}`}>
@@ -328,7 +414,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
               </button>
               <GitMerge size={13} />
               <span>Conflicted files</span>
-              <span className="sb-count">{conflicted.length}</span>
+              <span className="sb-count">{active ? `${fConflicted.length}/${conflicted.length}` : conflicted.length}</span>
             </div>
             <AnimatePresence initial={false}>
               {!layout.composerConflictedCollapsed && (
@@ -340,7 +426,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
                   transition={{ duration: 0.18, ease: 'easeOut' }}
                 >
               <FileListView
-                files={conflicted}
+                files={fConflicted}
                 current={null}
                 onFileClick={(f) => useUIStore.getState().setConflictView({ repoPath: path, file: f.path })}
                 onFileContext={(f, e) => {
@@ -374,6 +460,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
                   </button>
                 )}
               />
+              {active && fConflicted.length === 0 && <div className="sb-empty">No conflicts match</div>}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -394,7 +481,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
               <ChevronDown size={13} className={`chevron${layout.composerUnstagedCollapsed ? ' collapsed' : ''}`} />
             </button>
             <span>Unstaged files</span>
-            <span className="sb-count">{unstaged.length}</span>
+            <span className="sb-count">{active ? `${fUnstaged.length}/${unstaged.length}` : unstaged.length}</span>
             <div className="stage-header-actions">
               {aiEnabled && (
                 <motion.button
@@ -431,15 +518,18 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
                 transition={{ duration: 0.18, ease: 'easeOut' }}
               >
                 <FileListView
-                  files={unstaged}
+                  files={fUnstaged}
                   current={currentFile}
                   selected={selection.list === 'unstaged' ? selection.paths : undefined}
-                  onFileClick={handleClick('unstaged', unstaged)}
-                  onFileContext={handleContext('unstaged', unstaged)}
-                  onFolderContext={handleFolderContext('unstaged', unstaged)}
+                  onFileClick={handleClick('unstaged', fUnstaged)}
+                  onFileContext={handleContext('unstaged', fUnstaged)}
+                  onFolderContext={handleFolderContext('unstaged', fUnstaged)}
                   action={stageAction('unstaged')}
                 />
                 {unstaged.length === 0 && <div className="sb-empty">Working tree clean</div>}
+                {unstaged.length > 0 && fUnstaged.length === 0 && (
+                  <div className="sb-empty">No files match</div>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
@@ -468,7 +558,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
               <ChevronDown size={13} className={`chevron${layout.composerStagedCollapsed ? ' collapsed' : ''}`} />
             </button>
             <span>Staged files</span>
-            <span className="sb-count">{staged.length}</span>
+            <span className="sb-count">{active ? `${fStaged.length}/${staged.length}` : staged.length}</span>
             <button
               className="btn ghost tiny"
               disabled={staged.length === 0}
@@ -492,15 +582,18 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
                 transition={{ duration: 0.18, ease: 'easeOut' }}
               >
                 <FileListView
-                  files={staged}
+                  files={fStaged}
                   current={currentFile}
                   selected={selection.list === 'staged' ? selection.paths : undefined}
-                  onFileClick={handleClick('staged', staged)}
-                  onFileContext={handleContext('staged', staged)}
-                  onFolderContext={handleFolderContext('staged', staged)}
+                  onFileClick={handleClick('staged', fStaged)}
+                  onFileContext={handleContext('staged', fStaged)}
+                  onFolderContext={handleFolderContext('staged', fStaged)}
                   action={stageAction('staged')}
                 />
                 {staged.length === 0 && <div className="sb-empty">Nothing staged</div>}
+                {staged.length > 0 && fStaged.length === 0 && (
+                  <div className="sb-empty">No files match</div>
+                )}
               </motion.div>
             )}
           </AnimatePresence>

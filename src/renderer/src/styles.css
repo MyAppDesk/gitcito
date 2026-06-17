@@ -6228,3 +6228,235 @@ input[type='range']:focus-visible {
   padding: 1px 7px;
   white-space: nowrap;
 }
+
+/* ─── Commit panel file search / filter bar ─────────────────────────────── */
+.file-search {
+  display: flex;
+  flex-direction: column;
+  padding: 6px 10px 8px;
+  border-bottom: 1px solid var(--border-soft);
+  gap: 6px;
+}
+
+.fs-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.fs-expand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 22px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+  border-radius: 5px;
+}
+.fs-expand:hover {
+  background: var(--bg-3);
+  color: var(--text-0);
+}
+.fs-expand.has-globs {
+  color: var(--accent);
+}
+.fs-expand .chevron {
+  transition: transform 0.16s ease;
+}
+.fs-expand .chevron.open {
+  transform: rotate(90deg);
+}
+
+.fs-input-wrap {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: 6px;
+  background: var(--bg-0);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0 6px 0 8px;
+  height: 28px;
+}
+.fs-input-wrap:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.fs-search-icon {
+  flex-shrink: 0;
+  color: var(--text-2);
+}
+.fs-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-0);
+  font-size: 12.5px;
+}
+.fs-input::placeholder {
+  color: var(--text-2);
+}
+
+.fs-toggles {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+.fs-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 20px;
+  padding: 0 4px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-2);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+}
+.fs-toggle:hover {
+  background: var(--bg-3);
+  color: var(--text-0);
+}
+.fs-toggle.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.fs-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: hidden;
+  padding-left: 28px;
+}
+
+.fs-mode-switch {
+  display: inline-flex;
+  align-self: flex-start;
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.fs-mode-switch button {
+  border: none;
+  background: transparent;
+  color: var(--text-2);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  cursor: pointer;
+}
+.fs-mode-switch button:hover {
+  color: var(--text-0);
+}
+.fs-mode-switch button.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.fs-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.fs-field-label {
+  font-size: 10.5px;
+  color: var(--text-2);
+}
+.fs-glob-input {
+  background: var(--bg-0);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 8px;
+  color: var(--text-0);
+  font-size: 12px;
+  outline: none;
+}
+.fs-glob-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.fs-glob-input::placeholder {
+  color: var(--text-2);
+}
+
+/* Right-panel filter match highlight in the center file/diff view */
+mark.search-hit {
+  background: rgba(255, 213, 0, 0.32);
+  color: inherit;
+  border-radius: 2px;
+}
+/* In-file find (Ctrl+F) matches — distinct from the filter highlight */
+mark.find-hit {
+  background: rgba(108, 92, 231, 0.4);
+  color: inherit;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgba(108, 92, 231, 0.7);
+}
+mark.find-hit.active {
+  background: rgba(255, 159, 28, 0.85);
+  box-shadow: 0 0 0 1px rgba(255, 159, 28, 1);
+}
+
+/* ─── In-file find bar ───────────────────────────────────────────────────── */
+.fv-find {
+  position: sticky;
+  top: 8px;
+  z-index: 5;
+  width: fit-content;
+  margin: 8px 10px 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+}
+.fv-find-icon {
+  flex-shrink: 0;
+  color: var(--text-2);
+  margin-left: 2px;
+}
+.fv-find-input {
+  width: 180px;
+  background: var(--bg-0);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 4px 7px;
+  color: var(--text-0);
+  font-size: 12.5px;
+  outline: none;
+}
+.fv-find-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.fv-find-toggles {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.fv-find-count {
+  min-width: 38px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}

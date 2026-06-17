@@ -102,6 +102,12 @@ export const gitApi = {
   commitDiff: (path: string, hash: string) => call<string>('commitDiff', path, hash),
 
   fileContent: (path: string, file: string, ref?: string) => call<string>('fileContent', path, file, ref),
+  searchFileContents: (
+    path: string,
+    files: string[],
+    query: string,
+    opts?: { caseSensitive?: boolean; wholeWord?: boolean; regex?: boolean }
+  ) => call<string[]>('searchFileContents', path, files, query, opts),
   fileDataUrl: (path: string, file: string, ref?: string) => call<string>('fileDataUrl', path, file, ref),
   imageDiff: (path: string, file: string, beforeRef: string | null, afterRef?: string) =>
     call<{ before: string | null; after: string | null }>('imageDiff', path, file, beforeRef, afterRef),

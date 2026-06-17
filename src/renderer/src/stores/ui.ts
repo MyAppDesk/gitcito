@@ -90,6 +90,15 @@ export interface ConflictViewState {
   file: string
 }
 
+/** Active content-search term, mirrored from the commit panel so the center
+ *  file/diff view can highlight matches. null = nothing to highlight. */
+export interface FileSearchState {
+  query: string
+  caseSensitive: boolean
+  wholeWord: boolean
+  regex: boolean
+}
+
 export interface PanelLayout {
   sidebarWidth: number
   panelWidth: number
@@ -134,6 +143,7 @@ interface UIState {
   busy: string | null
   fileView: FileViewState | null
   conflictView: ConflictViewState | null
+  fileSearch: FileSearchState | null
   scrollToHash: string | null
   layout: PanelLayout
 
@@ -150,6 +160,7 @@ interface UIState {
   setBusy(label: string | null): void
   setFileView(view: FileViewState | null): void
   setConflictView(view: ConflictViewState | null): void
+  setFileSearch(search: FileSearchState | null): void
   requestScrollTo(hash: string | null): void
   setLayout(partial: Partial<PanelLayout>): void
 }
@@ -167,6 +178,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   busy: null,
   fileView: null,
   conflictView: null,
+  fileSearch: null,
   scrollToHash: null,
   layout: loadLayout(),
 
@@ -189,6 +201,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   setBusy: (busy) => set({ busy }),
   setFileView: (fileView) => set({ fileView }),
   setConflictView: (conflictView) => set({ conflictView }),
+  setFileSearch: (fileSearch) => set({ fileSearch }),
   requestScrollTo: (scrollToHash) => set({ scrollToHash }),
   setLayout: (partial) => {
     const layout = { ...get().layout, ...partial }

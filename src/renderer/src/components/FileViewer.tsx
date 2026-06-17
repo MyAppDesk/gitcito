@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { X, GitCommitHorizontal, Sparkles, Loader2 } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { X, GitCommitHorizontal, Sparkles, Loader2, Search, ChevronUp, ChevronDown } from 'lucide-react'
 import hljs from 'highlight.js'
 import type { BlameLine, FileHistoryEntry } from '../../../shared/types'
 import { gitApi, aiApi } from '../infrastructure/api'
@@ -7,6 +7,7 @@ import { useSettingsStore } from '../stores/settings'
 import { useUIStore, type FileViewMode, type FileViewState } from '../stores/ui'
 import { useT } from '../i18n'
 import { DiffViewer } from './DiffViewer'
+import { buildQueryRegExp, highlightHtml, type HighlightLayer } from './FileSearchBar'
 import { ImageDiff } from './ImageDiff'
 import { PreviewPane } from './PreviewPane'
 import { renderMarkdown } from '../preview/markdown'
@@ -90,6 +91,49 @@ function imageDiffRefs(view: FileViewState): { before: string | null; after?: st
 export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element {
   const setFileView = useUIStore((s) => s.setFileView)
   const toast = useUIStore((s) => s.toast)
+  const fileSearch = useUIStore((s) => s.fileSearch)
+  const searchRe = useMemo(() => (fileSearch ? buildQueryRegExp(fileSearch, true) : null), [fileSearch])
+  const bodyRef = useRef<HTMLDivElement>(null)
+
+  // ─── In-file find (Ctrl/Cmd+F) — layers on top of the right-panel filter ───
+  const [findOpen, setFindOpen] = useState(false)
+  const [find, setFind] = useState({ query: '', caseSensitive: false, wholeWord: false, regex: false })
+  const [hitCount, setHitCount] = useState(0)
+  const [activeHit, setActiveHit] = useState(0)
+  const findInputRef = useRef<HTMLInputElement>(null)
+  const findRe = useMemo(
+    () => (find.query ? buildQueryRegExp(find, true) : null),
+    [find.query, find.caseSensitive, find.wholeWord, find.regex]
+  )
+  // Find layer first so it wins overlaps and is the navigable one; the filter
+  // layer from the right panel stays as a secondary highlight ("more matches").
+  const layers = useMemo<HighlightLayer[]>(() => {
+    const ls: HighlightLayer[] = []
+    if (findRe) ls.push({ re: findRe, className: 'find-hit' })
+    if (searchRe) ls.push({ re: searchRe, className: 'search-hit' })
+    return ls
+  }, [findRe, searchRe])
+
+  const openFind = (): void => {
+    setFindOpen(true)
+    setFind((f) =>
+      f.query
+        ? f
+        : {
+            query: fileSearch?.query ?? '',
+            caseSensitive: fileSearch?.caseSensitive ?? false,
+            wholeWord: fileSearch?.wholeWord ?? false,
+            regex: fileSearch?.regex ?? false
+          }
+    )
+    requestAnimationFrame(() => {
+      findInputRef.current?.focus()
+      findInputRef.current?.select()
+    })
+  }
+  const closeFind = (): void => setFindOpen(false)
+  const goHit = (delta: number): void =>
+    setActiveHit((i) => (hitCount ? (i + delta + hitCount) % hitCount : 0))
   const t = useT()
   const aiEnabled = useSettingsStore((s) => s.activeProfile().ai.enabled !== false)
   const [content, setContent] = useState<string | null>(null)
@@ -169,11 +213,20 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape' && !useUIStore.getState().modal) setFileView(null)
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'f') {
+        e.preventDefault()
+        openFind()
+        return
+      }
+      if (e.key === 'Escape' && !useUIStore.getState().modal) {
+        if (findOpen) closeFind()
+        else setFileView(null)
+      }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [setFileView])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [setFileView, findOpen, fileSearch])
 
   useEffect(() => {
     let cancelled = false
@@ -247,6 +300,35 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
     source.type === 'commit' ? source.hash : source.type === 'stash' ? source.sha : source.staged
   ])
 
+  // Recount find hits whenever the query/content/layers change; clamp active.
+  useEffect(() => {
+    const id = requestAnimationFrame(() => {
+      const marks = bodyRef.current?.querySelectorAll('mark.find-hit')
+      const n = marks?.length ?? 0
+      setHitCount(n)
+      setActiveHit((i) => (n ? Math.min(i, n - 1) : 0))
+    })
+    return () => cancelAnimationFrame(id)
+  }, [findRe, searchRe, content, mode, file])
+
+  // Mark the active find hit and scroll it into view.
+  useEffect(() => {
+    const marks = bodyRef.current?.querySelectorAll('mark.find-hit')
+    if (!marks || marks.length === 0) return
+    marks.forEach((m, i) => m.classList.toggle('active', i === activeHit))
+    marks[activeHit]?.scrollIntoView({ block: 'center' })
+  }, [activeHit, hitCount, findRe])
+
+  // When only the right-panel filter is active (no find open), scroll to its
+  // first match so the user sees why the file matched.
+  useEffect(() => {
+    if (findOpen || !searchRe || content === null) return
+    const id = requestAnimationFrame(() => {
+      bodyRef.current?.querySelector('mark.search-hit')?.scrollIntoView({ block: 'center' })
+    })
+    return () => cancelAnimationFrame(id)
+  }, [searchRe, content, mode, file, findOpen])
+
   const sourceChip =
     source.type === 'commit' ? (
       <span className="fv-chip commit">{source.hash.slice(0, 7)}</span>
@@ -290,7 +372,62 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
         </button>
       </div>
 
-      <div className="fv-body">
+      <div className="fv-body" ref={bodyRef}>
+        {findOpen && (
+          <div className="fv-find">
+            <Search size={13} className="fv-find-icon" />
+            <input
+              ref={findInputRef}
+              className="fv-find-input"
+              placeholder="Find in file"
+              value={find.query}
+              spellCheck={false}
+              onChange={(e) => setFind((f) => ({ ...f, query: e.target.value }))}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  goHit(e.shiftKey ? -1 : 1)
+                } else if (e.key === 'Escape') {
+                  e.preventDefault()
+                  closeFind()
+                }
+              }}
+            />
+            <div className="fv-find-toggles">
+              <button
+                className={`fs-toggle${find.caseSensitive ? ' active' : ''}`}
+                title="Match Case"
+                onClick={() => setFind((f) => ({ ...f, caseSensitive: !f.caseSensitive }))}
+              >
+                Aa
+              </button>
+              <button
+                className={`fs-toggle${find.wholeWord ? ' active' : ''}`}
+                title="Match Whole Word"
+                onClick={() => setFind((f) => ({ ...f, wholeWord: !f.wholeWord }))}
+              >
+                ab
+              </button>
+              <button
+                className={`fs-toggle${find.regex ? ' active' : ''}`}
+                title="Use Regular Expression"
+                onClick={() => setFind((f) => ({ ...f, regex: !f.regex }))}
+              >
+                .*
+              </button>
+            </div>
+            <span className="fv-find-count">{hitCount ? `${activeHit + 1}/${hitCount}` : '0/0'}</span>
+            <button className="icon-btn" title="Previous (Shift+Enter)" disabled={!hitCount} onClick={() => goHit(-1)}>
+              <ChevronUp size={14} />
+            </button>
+            <button className="icon-btn" title="Next (Enter)" disabled={!hitCount} onClick={() => goHit(1)}>
+              <ChevronDown size={14} />
+            </button>
+            <button className="icon-btn" title="Close (Esc)" onClick={closeFind}>
+              <X size={14} />
+            </button>
+          </div>
+        )}
         {error && <div className="fv-error">{error}</div>}
         {!error && content === null && mode !== 'preview' && (
           <div className="graph-empty">
@@ -310,6 +447,7 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
           <DiffViewer
             diff={content}
             lang={lang}
+            highlightLayers={layers}
             onStageHunk={
               source.type === 'wip' && !source.staged && !source.untracked
                 ? async (patch) => {
@@ -338,7 +476,7 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
                 <span className="code-no">{i + 1}</span>
                 <span
                   className="code-text"
-                  dangerouslySetInnerHTML={{ __html: highlightLine(l, lang) || '&nbsp;' }}
+                  dangerouslySetInnerHTML={{ __html: highlightHtml(highlightLine(l, lang), layers) || '&nbsp;' }}
                 />
               </div>
             ))}
@@ -361,7 +499,7 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
                 <span className="code-no">{b.lineNo}</span>
                 <span
                   className="code-text"
-                  dangerouslySetInnerHTML={{ __html: highlightLine(b.text, lang) || '&nbsp;' }}
+                  dangerouslySetInnerHTML={{ __html: highlightHtml(highlightLine(b.text, lang), layers) || '&nbsp;' }}
                 />
               </div>
             ))}

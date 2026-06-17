@@ -2024,6 +2024,13 @@ textarea:focus {
   text-align: left;
   font-size: 12px;
 }
+/* RTL direction truncates long paths at the start. Prepend an invisible
+   Left-to-Right Mark so leading bidi-neutral chars (e.g. the dot in
+   ".gitignore") aren't reordered to the end, which made them render as
+   "gitignore.". */
+.file-path::before {
+  content: '\200E';
+}
 
 .file-status {
   font-family: var(--mono);
@@ -3448,6 +3455,10 @@ textarea:focus {
   white-space: nowrap;
   direction: rtl;
   text-align: left;
+}
+/* See .file-path::before — keep leading bidi-neutral chars in place. */
+.recent-item span::before {
+  content: '\200E';
 }
 
 /* ─── Launcher panel ────────────────────────────────────────────────────── */

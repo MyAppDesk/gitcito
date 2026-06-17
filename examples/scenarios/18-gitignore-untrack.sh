@@ -2,7 +2,8 @@
 # 18. gitignore-untrack — exercise right-click "Add to .gitignore" / "Stop tracking".
 #
 # Leaves the repo with a mix of states so every menu branch is reachable:
-#   • Tracked files that SHOULD be ignored (committed by mistake):
+#   • Tracked files that SHOULD be ignored (committed by mistake, left dirty so
+#     they appear in the commit panel right away):
 #       - .env                  → secret accidentally committed
 #       - debug.log             → log accidentally committed
 #       - build/                → a whole folder of build output, tracked
@@ -43,4 +44,12 @@ echo "transient" > "$R/cache.tmp"
 mkdir -p "$R/node_modules/left-pad"
 echo '{"name":"left-pad"}' > "$R/node_modules/left-pad/package.json"
 
-summary "gitignore-untrack" "tracked .env/debug.log/build + untracked cache.tmp/node_modules to ignore & untrack"
+# Leave the tracked-but-should-be-ignored files DIRTY so they surface in the
+# commit panel immediately (a clean tracked file isn't listed). Now you can
+# right-click .env / debug.log and exercise "Add to .gitignore & stop tracking"
+# without having to touch them first.
+echo "API_KEY=sk-do-not-commit-me-1234567890" >> "$R/.env"
+echo "2026-06-18T00:05:00Z [warn] still logging to a committed file" >> "$R/debug.log"
+echo "console.log('rebundled')" > "$R/build/bundle.js"
+
+summary "gitignore-untrack" "tracked .env/debug.log/build (dirty) + untracked cache.tmp/node_modules to ignore & untrack"

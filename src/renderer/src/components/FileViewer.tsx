@@ -299,7 +299,7 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
         )}
 
         {!error && mode === 'preview' && pvKind && (
-          <PreviewPane repoPath={repoPath} file={file} ref={sourceRef(view)} kind={pvKind} />
+          <PreviewPane repoPath={repoPath} file={file} gitRef={sourceRef(view)} kind={pvKind} />
         )}
 
         {!error && imgDiff !== null && mode === 'diff' && (

@@ -3,6 +3,10 @@ import { contextBridge, ipcRenderer } from 'electron'
 const api = {
   platform: process.platform,
 
+  // True when launched with `--shot` (forwarded by the main process via
+  // webPreferences.additionalArguments). Gates the screenshot-automation bridge.
+  shotMode: process.argv.includes('--shot'),
+
   git: (method: string, ...args: unknown[]): Promise<unknown> => ipcRenderer.invoke('git', method, ...args),
 
   selectDirectory: (title?: string): Promise<string | null> => ipcRenderer.invoke('dialog:selectDirectory', title),

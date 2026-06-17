@@ -25,7 +25,10 @@ function createWindow(): void {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
       // Enables Chromium's built-in PDF viewer for the file previewer.
-      plugins: true
+      plugins: true,
+      // Forward the screenshot-automation flag into the renderer/preload
+      // process so the capture harness can enable its store bridge.
+      additionalArguments: process.argv.includes('--shot') ? ['--shot'] : []
     }
   })
 

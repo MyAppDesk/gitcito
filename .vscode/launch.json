@@ -6,73 +6,99 @@
       "type": "node",
       "request": "launch",
       "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron-vite",
-      "runtimeArgs": [
-        "dev"
-      ],
+      "runtimeArgs": ["dev"],
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
-      "skipFiles": [
-        "<node_internals>/**"
-      ]
+      "skipFiles": ["<node_internals>/**"],
+      "presentation": { "group": "1_app", "order": 1 }
+    },
+    {
+      "name": "Screenshots: regenerate",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "screenshots"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"],
+      "presentation": { "group": "2_media", "order": 1 }
+    },
+    {
+      "name": "Screenshots: regenerate + GIFs",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "screenshots:gif"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"],
+      "presentation": { "group": "2_media", "order": 2 }
+    },
+    {
+      "name": "Video: render promo",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "video"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"],
+      "presentation": { "group": "2_media", "order": 3 }
+    },
+    {
+      "name": "Video: Remotion studio",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "video:studio"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"],
+      "presentation": { "group": "2_media", "order": 4 }
     },
     {
       "name": "Release: patch (x.x.+1)",
       "type": "node",
       "request": "launch",
       "runtimeExecutable": "npm",
-      "runtimeArgs": [
-        "run",
-        "release:patch"
-      ],
+      "runtimeArgs": ["run", "release:patch"],
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
-      "skipFiles": [
-        "<node_internals>/**"
-      ]
+      "skipFiles": ["<node_internals>/**"],
+      "presentation": { "group": "3_release", "order": 1 }
     },
     {
       "name": "Release: minor (x.+1.0)",
       "type": "node",
       "request": "launch",
       "runtimeExecutable": "npm",
-      "runtimeArgs": [
-        "run",
-        "release:minor"
-      ],
+      "runtimeArgs": ["run", "release:minor"],
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
-      "skipFiles": [
-        "<node_internals>/**"
-      ]
+      "skipFiles": ["<node_internals>/**"],
+      "presentation": { "group": "3_release", "order": 2 }
     },
     {
       "name": "Release: major (+1.0.0)",
       "type": "node",
       "request": "launch",
       "runtimeExecutable": "npm",
-      "runtimeArgs": [
-        "run",
-        "release:major"
-      ],
+      "runtimeArgs": ["run", "release:major"],
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
-      "skipFiles": [
-        "<node_internals>/**"
-      ]
+      "skipFiles": ["<node_internals>/**"],
+      "presentation": { "group": "3_release", "order": 3 }
     },
     {
       "name": "Generate Playground",
       "type": "node",
       "request": "launch",
       "runtimeExecutable": "bash",
-      "runtimeArgs": [
-        "${workspaceFolder}/examples/setup-playground.sh"
-      ],
+      "runtimeArgs": ["${workspaceFolder}/examples/setup-playground.sh"],
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
-      "skipFiles": [
-        "<node_internals>/**"
-      ]
+      "skipFiles": ["<node_internals>/**"],
+      "presentation": { "group": "4_data", "order": 1 }
     }
   ]
 }

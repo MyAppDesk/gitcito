@@ -52,11 +52,13 @@ function dataUrlToArrayBuffer(dataUrl: string): ArrayBuffer {
 interface Props {
   repoPath: string
   file: string
-  ref?: string
+  // NB: must NOT be named `ref` — React reserves that prop and would treat a
+  // string git ref as a component ref (crashes when previewing a commit/stash).
+  gitRef?: string
   kind: PreviewKind
 }
 
-export function PreviewPane({ repoPath, file, ref, kind }: Props): React.JSX.Element {
+export function PreviewPane({ repoPath, file, gitRef, kind }: Props): React.JSX.Element {
   const t = useT()
   const [dataUrl, setDataUrl] = useState<string | null>(null)
   const [text, setText] = useState<string | null>(null)
@@ -68,7 +70,7 @@ export function PreviewPane({ repoPath, file, ref, kind }: Props): React.JSX.Ele
 
   // Re-fetch working-tree files when the window regains focus/visibility.
   useEffect(() => {
-    if (ref !== undefined) return
+    if (gitRef !== undefined) return
     const refresh = (): void => setRefreshKey((k) => k + 1)
     const onVisible = (): void => { if (document.visibilityState === 'visible') refresh() }
     window.addEventListener('focus', refresh)
@@ -77,7 +79,7 @@ export function PreviewPane({ repoPath, file, ref, kind }: Props): React.JSX.Ele
       window.removeEventListener('focus', refresh)
       document.removeEventListener('visibilitychange', onVisible)
     }
-  }, [ref])
+  }, [gitRef])
 
   useEffect(() => {
     let cancelled = false
@@ -91,13 +93,13 @@ export function PreviewPane({ repoPath, file, ref, kind }: Props): React.JSX.Ele
     const load = async (): Promise<void> => {
       try {
         if (kind === 'markdown') {
-          let src = await gitApi.fileContent(repoPath, file, ref)
-          src = await resolveMarkdownImages(src, repoPath, file, ref)
+          let src = await gitApi.fileContent(repoPath, file, gitRef)
+          src = await resolveMarkdownImages(src, repoPath, file, gitRef)
           if (!cancelled) setText(src)
           return
         }
         // Everything else is binary: pull a data URL once, then decode per kind.
-        const url = await gitApi.fileDataUrl(repoPath, file, ref)
+        const url = await gitApi.fileDataUrl(repoPath, file, gitRef)
         if (cancelled) return
         if (kind === 'image' || kind === 'pdf' || kind === 'video' || kind === 'audio') {
           setDataUrl(url)
@@ -123,7 +125,7 @@ export function PreviewPane({ repoPath, file, ref, kind }: Props): React.JSX.Ele
     return () => {
       cancelled = true
     }
-  }, [repoPath, file, ref, kind, refreshKey])
+  }, [repoPath, file, gitRef, kind, refreshKey])
 
   const mdHtml = useMemo(() => (text !== null ? renderMarkdown(text) : null), [text])
 

@@ -11,6 +11,7 @@ interface TermApi {
 
 interface PreloadApi {
   platform: string
+  shotMode: boolean
   git(method: string, ...args: unknown[]): Promise<unknown>
   selectDirectory(title?: string): Promise<string | null>
   openExternal(url: string): Promise<void>

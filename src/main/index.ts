@@ -7,6 +7,7 @@ import { registerGitHandlers } from './git'
 import { registerSettingsHandlers } from './settings'
 import { registerAiHandlers } from './ai'
 import { registerAnalyticsHandlers } from './analytics'
+import { registerLogHandlers } from './log'
 import { registerHostingHandlers } from './hosting'
 import { registerTerminalHandlers } from './terminal'
 import { registerWatcherHandlers } from './watcher'
@@ -130,6 +131,7 @@ app.whenReady().then(() => {
   registerSettingsHandlers()
   registerAiHandlers()
   registerAnalyticsHandlers()
+  registerLogHandlers()
   registerHostingHandlers()
   registerTerminalHandlers()
   registerWatcherHandlers()

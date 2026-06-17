@@ -32,7 +32,7 @@
 - **Commit graph** with branches, merges and octopus merges drawn properly — in light or dark.
 - **Customisable graph columns**: show/hide, resize and reorder branch, message, author, date, SHA and deployment columns.
 - **Inline CI status**. GitHub Actions check-runs (pass/fail/pending) shown right on the commit row.
-- **Branches, remotes, tags, stashes & worktrees**, all in one reorderable, searchable sidebar.
+- **Branches, remotes, tags, stashes, worktrees & submodules**, all in one reorderable, searchable sidebar.
 - **Commit details**: changed-files tree/flat view, author, SHA, co-authors, copy & open externally.
 - **Per-file blame & history**, with a follow-the-line jump from blame straight into the diff.
 - **Search & filter** commits by message, author, SHA or deployment status.
@@ -59,6 +59,7 @@
 - **Stashes** with untracked files, messages, per-file apply, and a details/diff view.
 - **Tags**: create/delete locally, push or delete on the remote, browse remote tags.
 - **Worktrees**: create, remove and open a linked worktree in its own window.
+- **Submodules**: add, update (init & checkout), sync URLs, and remove, with live in-sync / modified / uninitialized status.
 
 ### Hosting & pull requests
 - **Pull requests** — list and inspect open PRs straight from the sidebar.

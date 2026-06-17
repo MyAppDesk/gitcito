@@ -24,6 +24,7 @@ import { OnboardingWizard } from './components/OnboardingWizard'
 import { ChangelogPage } from './components/ChangelogPage'
 import { ReleasePage } from './components/ReleasePage'
 import { ResizeHandle } from './components/ResizeHandle'
+import { ZoomControl } from './components/ZoomControl'
 import gitcitoLaunch from './assets/gitcito-launch.png'
 
 function GroupView({ tab }: { tab: GroupTab }): React.JSX.Element {
@@ -162,9 +163,14 @@ export default function App(): React.JSX.Element {
   const layout = useUIStore((s) => s.layout)
   const setLayout = useUIStore((s) => s.setLayout)
   const [resizing, setResizing] = useState(false)
+  const [appVersion, setAppVersion] = useState('')
 
   useEffect(() => {
     void useSettingsStore.getState().load()
+  }, [])
+
+  useEffect(() => {
+    void window.api.appVersion().then(setAppVersion)
   }, [])
 
   // Open http(s) links in the user's default browser instead of navigating
@@ -427,7 +433,10 @@ export default function App(): React.JSX.Element {
               {repo.path}
             </button>
             <span className="status-right">
-              {repo.branches.current} · {settings.profiles.find((p) => p.id === settings.activeProfileId)?.name}
+              <span className="status-branch-profile">
+                {repo.branches.current} · {settings.profiles.find((p) => p.id === settings.activeProfileId)?.name}
+              </span>
+              {appVersion && <span className="status-version">v{appVersion}</span>}
             </span>
           </footer>
         </>
@@ -436,6 +445,7 @@ export default function App(): React.JSX.Element {
       <ContextMenu />
       <ModalHost />
       <Toasts />
+      <ZoomControl raised={!!(activeTab && repo)} />
     </div>
   )
 }

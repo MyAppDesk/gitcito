@@ -15,6 +15,7 @@ const uid = (): string => Math.random().toString(36).slice(2, 10)
 /** Tab title for a page tab. Release tabs read "repo - version" so several
  *  releases from different repos stay distinguishable in the tab strip. */
 function pageTabName(page: PageContent): string {
+  if (page.type === 'logs') return 'Operation log'
   if (page.type !== 'release') return "What's new"
   const repo = page.repoPath.split('/').pop() || page.repoPath
   const version = page.release.tag || page.release.name || `#${page.release.id}`

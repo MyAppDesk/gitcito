@@ -22,6 +22,7 @@ import { Toasts } from './components/Toasts'
 import { Welcome, LauncherPanel, type LauncherItem } from './components/Welcome'
 import { OnboardingWizard } from './components/OnboardingWizard'
 import { ChangelogPage } from './components/ChangelogPage'
+import { LogsPage } from './components/LogsPage'
 import { ReleasePage } from './components/ReleasePage'
 import { ResizeHandle } from './components/ResizeHandle'
 import { ZoomControl } from './components/ZoomControl'
@@ -95,6 +96,8 @@ function PageView({ tab }: { tab: PageTab }): React.JSX.Element {
   switch (tab.page.type) {
     case 'changelog':
       return <ChangelogPage />
+    case 'logs':
+      return <LogsPage />
     case 'release':
       return <ReleasePage tab={tab} />
     default:
@@ -433,10 +436,23 @@ export default function App(): React.JSX.Element {
               {repo.path}
             </button>
             <span className="status-right">
+              <ZoomControl compact />
+              <span className="status-sep" />
               <span className="status-branch-profile">
                 {repo.branches.current} · {settings.profiles.find((p) => p.id === settings.activeProfileId)?.name}
               </span>
-              {appVersion && <span className="status-version">v{appVersion}</span>}
+              {appVersion && (
+                <>
+                  <span className="status-sep" />
+                  <button
+                    className="status-version status-version-btn"
+                    title="View changelog"
+                    onClick={() => useSettingsStore.getState().openPageTab({ type: 'changelog' })}
+                  >
+                    v{appVersion}
+                  </button>
+                </>
+              )}
             </span>
           </footer>
         </>
@@ -445,7 +461,6 @@ export default function App(): React.JSX.Element {
       <ContextMenu />
       <ModalHost />
       <Toasts />
-      <ZoomControl raised={!!(activeTab && repo)} />
     </div>
   )
 }

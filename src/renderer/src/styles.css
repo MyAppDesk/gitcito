@@ -2383,15 +2383,36 @@ textarea:focus {
 }
 
 .status-right {
+  align-self: stretch;
   display: flex;
   align-items: center;
   gap: 10px;
   white-space: nowrap;
 }
 
+.status-sep {
+  align-self: stretch;
+  width: 1px;
+  background: var(--border-soft);
+}
+
 .status-version {
   opacity: 0.6;
   font-variant-numeric: tabular-nums;
+}
+
+.status-version-btn {
+  all: unset;
+  cursor: pointer;
+  border-radius: 3px;
+  padding: 1px 5px;
+  transition: background 0.08s, opacity 0.08s, color 0.08s;
+}
+
+.status-version-btn:hover {
+  background: var(--bg-2);
+  color: var(--text-0);
+  opacity: 1;
 }
 
 /* ─── Zoom control ──────────────────────────────────────────────────────── */
@@ -2420,6 +2441,40 @@ textarea:focus {
 /* Lift clear of the status bar when it is visible. */
 .zoom-control.raised {
   bottom: 32px;
+}
+
+/* Inline variant embedded in the status bar. */
+.zoom-control.compact {
+  position: static;
+  z-index: auto;
+  padding: 0;
+  gap: 0;
+  background: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  opacity: 0.7;
+}
+
+.zoom-control.compact:hover {
+  opacity: 1;
+}
+
+.zoom-control.compact .zoom-btn {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+}
+
+.zoom-control.compact .zoom-level {
+  min-width: 34px;
+  height: 16px;
+  padding: 0 3px;
+  font-size: 11px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .zoom-btn {

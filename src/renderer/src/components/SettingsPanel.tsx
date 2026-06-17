@@ -31,15 +31,13 @@ import {
   Activity,
   BarChart3,
   GitCommit,
-  ScrollText,
-  CheckCircle2,
-  XCircle
+  ScrollText
 } from 'lucide-react'
 import hljs from 'highlight.js'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
 import { gitApi, aiApi, settingsApi, analyticsApi, logApi } from '../infrastructure/api'
-import { AI_PROVIDERS, emptyAnalytics, type AIProvider, type Analytics, type AIUsageStat, type ActivityEvent, type LogEntry, type RepoStats, type AppSettings, type BranchNamingStyle, type CommitStyle, type ConflictStyle, type ExplainStyle, type Profile } from '../../../shared/types'
+import { AI_PROVIDERS, emptyAnalytics, type AIProvider, type Analytics, type AIUsageStat, type ActivityEvent, type RepoStats, type AppSettings, type BranchNamingStyle, type CommitStyle, type ConflictStyle, type ExplainStyle, type Profile } from '../../../shared/types'
 import type {
   AppTheme,
   AppThemeColors,
@@ -1663,71 +1661,18 @@ function RepoHistorySection(): React.JSX.Element {
   )
 }
 
-/** Singular, verb-style labels for an operation log row. Falls back to EVENT_LABELS. */
-const EVENT_LOG_LABELS: Partial<Record<ActivityEvent, string>> = {
-  commit: 'Committed',
-  amend: 'Amended commit',
-  push: 'Pushed',
-  pull: 'Pulled',
-  fetch: 'Fetched',
-  branchCreate: 'Created branch',
-  branchDelete: 'Deleted branch',
-  merge: 'Merged',
-  rebase: 'Rebased',
-  stash: 'Stashed',
-  stashPop: 'Popped stash',
-  conflictResolved: 'Resolved conflict',
-  tagCreate: 'Created tag',
-  cherryPick: 'Cherry-picked',
-  revert: 'Reverted',
-  repoOpen: 'Opened repo',
-  clone: 'Cloned',
-  init: 'Initialized repo'
-}
-
-function logTimeLabel(ms: number): string {
-  const diff = Date.now() - ms
-  const sec = Math.round(diff / 1000)
-  if (sec < 60) return 'just now'
-  const min = Math.round(sec / 60)
-  if (min < 60) return `${min}m ago`
-  const hr = Math.round(min / 60)
-  if (hr < 24) return `${hr}h ago`
-  const day = Math.round(hr / 24)
-  if (day < 7) return `${day}d ago`
-  return new Date(ms).toLocaleDateString()
-}
-
-/** Chronological, append-only log of git operations this app has run, filterable by repo. */
+/** Summary card for the operation log; the full, filterable log opens as a page tab. */
 function OperationLogSection(): React.JSX.Element {
-  const toast = useUIStore((s) => s.toast)
-  const [entries, setEntries] = useState<LogEntry[]>([])
-  const [repoFilter, setRepoFilter] = useState<string>('all')
+  const [count, setCount] = useState<number | null>(null)
 
   useEffect(() => {
-    void logApi.get().then(setEntries)
+    void logApi.get().then((e) => setCount(e.length))
   }, [])
 
-  const clear = async (): Promise<void> => {
-    setEntries(await logApi.clear())
-    setRepoFilter('all')
-    toast('success', 'Log cleared')
+  const open = (): void => {
+    useSettingsStore.getState().openPageTab({ type: 'logs' })
+    useUIStore.getState().closeModal()
   }
-
-  // Distinct repos seen in the log, for the filter dropdown.
-  const repos = Array.from(
-    new Map(
-      entries
-        .filter((e) => e.repoPath)
-        .map((e) => [e.repoPath, e.repoName || e.repoPath] as const)
-    )
-  ).sort((a, b) => a[1].localeCompare(b[1]))
-
-  const filtered = entries
-    .filter((e) => repoFilter === 'all' || e.repoPath === repoFilter)
-    .slice()
-    .reverse()
-    .slice(0, 200)
 
   return (
     <div style={{ marginTop: 28 }}>
@@ -1736,80 +1681,18 @@ function OperationLogSection(): React.JSX.Element {
         Operation log
       </h4>
       <p className="settings-hint">
-        Recent git operations gitcito ran, newest first. Stored locally on this machine.
+        Every git operation gitcito ran, with success/failure, filterable by repository. Stored locally on this machine.
       </p>
-
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginTop: 12 }}>
-        <label className="settings-field" style={{ maxWidth: 260 }}>
-          <span className="settings-field-label">Repository</span>
-          <select value={repoFilter} onChange={(e) => setRepoFilter(e.target.value)}>
-            <option value="all">All repositories</option>
-            {repos.map(([path, name]) => (
-              <option key={path} value={path}>
-                {name}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-
-      {filtered.length === 0 ? (
-        <p className="settings-hint" style={{ marginTop: 12 }}>No operations recorded yet.</p>
-      ) : (
-        <div
-          style={{
-            marginTop: 12,
-            border: '1px solid var(--border-soft)',
-            borderRadius: 8,
-            maxHeight: 300,
-            overflowY: 'auto'
-          }}
-        >
-          {filtered.map((e, i) => (
-            <div
-              key={`${e.ts}-${i}`}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                padding: '6px 10px',
-                fontSize: 12,
-                borderTop: i === 0 ? 'none' : '1px solid var(--border-soft)'
-              }}
-            >
-              {e.ok ? (
-                <CheckCircle2 size={13} color="var(--green)" style={{ flexShrink: 0 }} />
-              ) : (
-                <XCircle size={13} color="var(--red)" style={{ flexShrink: 0 }} />
-              )}
-              <span style={{ color: 'var(--text-1)', flexShrink: 0 }}>
-                {EVENT_LOG_LABELS[e.event] ?? EVENT_LABELS[e.event] ?? e.event}
-              </span>
-              <span
-                style={{
-                  color: 'var(--text-2)',
-                  flex: 1,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                {e.repoName || 'app'}
-                {!e.ok && e.error ? ` — ${e.error}` : ''}
-              </span>
-              <span style={{ color: 'var(--text-2)', flexShrink: 0 }} title={new Date(e.ts).toLocaleString()}>
-                {logTimeLabel(e.ts)}
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div style={{ marginTop: 14 }}>
-        <button className="btn ghost small" onClick={() => void clear()} disabled={entries.length === 0}>
-          <Trash2 size={13} />
-          Clear log
+        <button className="btn ghost small" onClick={open}>
+          <ScrollText size={13} />
+          Open operation log
         </button>
+        {count !== null && (
+          <span className="settings-hint">
+            {count === 0 ? 'No operations recorded yet.' : `${count} operation${count === 1 ? '' : 's'} recorded.`}
+          </span>
+        )}
       </div>
     </div>
   )

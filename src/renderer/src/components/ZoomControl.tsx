@@ -15,8 +15,15 @@ function loadZoom(): number {
 
 /** Floating control in the bottom-right corner that adjusts the app zoom via
  *  Electron's webFrame. The level persists across sessions and also responds
- *  to the standard Cmd/Ctrl +/-/0 shortcuts. */
-export function ZoomControl({ raised = false }: { raised?: boolean }): React.JSX.Element {
+ *  to the standard Cmd/Ctrl +/-/0 shortcuts. When `compact` is set it renders
+ *  inline (e.g. inside the status bar) without the floating panel chrome. */
+export function ZoomControl({
+  raised = false,
+  compact = false
+}: {
+  raised?: boolean
+  compact?: boolean
+}): React.JSX.Element {
   const [factor, setFactor] = useState(loadZoom)
 
   const apply = useCallback((next: number): void => {
@@ -66,7 +73,9 @@ export function ZoomControl({ raised = false }: { raised?: boolean }): React.JSX
   }, [zoomIn, zoomOut, reset])
 
   return (
-    <div className={`zoom-control${raised ? ' raised' : ''}`}>
+    <div
+      className={`zoom-control${compact ? ' compact' : ''}${raised ? ' raised' : ''}`}
+    >
       <button
         className="zoom-btn"
         title="Zoom out"

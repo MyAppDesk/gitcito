@@ -460,6 +460,7 @@ export interface PageTab extends TabBase {
 
 export type PageContent =
   | { type: 'changelog' }
+  | { type: 'logs' }
   | { type: 'release'; release: ReleaseInfo; repoPath: string }
 
 /** A published GitHub release, as surfaced to the changelog page. */

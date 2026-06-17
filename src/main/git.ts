@@ -366,7 +366,12 @@ export const gitService = {
   },
 
   async conflictOpContinue(repoPath: string, kind: ConflictOpKind): Promise<void> {
-    const git = gitFor(repoPath)
+    // Suppress the commit-message editor on --continue. Pass core.editor via a
+    // `-c` arg (with allowUnsafeEditor) rather than `.env()`: simple-git's
+    // unsafe-operations guard scans the *entire* env object handed to `.env()`,
+    // so spreading process.env would trip on inherited vars like PAGER /
+    // GIT_ASKPASS. The child still inherits the parent env naturally.
+    const git = simpleGit(repoPath, { unsafe: { allowUnsafeEditor: true } })
     const noEditor = ['-c', 'core.editor=true']
     if (kind === 'merge') await git.raw([...noEditor, 'merge', '--continue'])
     else if (kind === 'cherry-pick') await git.raw([...noEditor, 'cherry-pick', '--continue'])
@@ -898,9 +903,19 @@ export const gitService = {
     }
     await writeFile(tmpTodo, lines.join('\n') + '\n', 'utf-8')
     try {
-      await simpleGit(repoPath)
-        .env({ ...process.env, GIT_SEQUENCE_EDITOR: `cp ${JSON.stringify(tmpTodo)}`, GIT_EDITOR: 'true' })
-        .raw(['rebase', '-i', base])
+      // Drive the rebase todo via `-c sequence.editor` (copies our generated
+      // todo over git's) and silence the commit editor via `-c core.editor`.
+      // Use `-c` args rather than `.env()` so simple-git's unsafe guard doesn't
+      // scan (and reject) inherited env vars such as PAGER / GIT_ASKPASS.
+      await simpleGit(repoPath, { unsafe: { allowUnsafeEditor: true } }).raw([
+        '-c',
+        `sequence.editor=cp ${JSON.stringify(tmpTodo)}`,
+        '-c',
+        'core.editor=true',
+        'rebase',
+        '-i',
+        base
+      ])
     } finally {
       await unlink(tmpTodo).catch(() => {})
     }

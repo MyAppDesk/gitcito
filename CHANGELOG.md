@@ -1,5 +1,13 @@
 
 
+## [0.9.0](https://github.com/MyAppDesk/gitcito/compare/v0.8.0...v0.9.0) (2026-06-17)
+
+
+### Features
+
+* add image-showcase scenario for before/after image diff ([9744fa7](https://github.com/MyAppDesk/gitcito/commit/9744fa7746f536b997a8121cc90d1c1fdc34840d))
+* add shimmer effect for unread 'What's new' tab ([ec9f0da](https://github.com/MyAppDesk/gitcito/commit/ec9f0da1de25711285b7ef75ca149c46b67d9b9a))
+
 ## [0.8.0](https://github.com/MyAppDesk/gitcito/compare/v0.7.0...v0.8.0) (2026-06-17)
 
 

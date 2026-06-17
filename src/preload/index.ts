@@ -12,6 +12,7 @@ const api = {
   selectDirectory: (title?: string): Promise<string | null> => ipcRenderer.invoke('dialog:selectDirectory', title),
   openExternal: (url: string): Promise<void> => ipcRenderer.invoke('shell:openExternal', url),
   appVersion: (): Promise<string> => ipcRenderer.invoke('app:version'),
+  appReleases: (): Promise<unknown> => ipcRenderer.invoke('app:releases'),
 
   shell: {
     showItemInFolder: (fullPath: string): Promise<void> => ipcRenderer.invoke('shell:showItemInFolder', fullPath),
@@ -49,6 +50,12 @@ const api = {
       ipcRenderer.invoke('ai:generateBranchName', description, cfg, ctx),
     reviewPR: (diff: string, cfg: unknown): Promise<unknown> =>
       ipcRenderer.invoke('ai:reviewPR', diff, cfg)
+  },
+
+  analytics: {
+    get: (): Promise<unknown> => ipcRenderer.invoke('analytics:get'),
+    clear: (): Promise<unknown> => ipcRenderer.invoke('analytics:clear'),
+    setRetention: (days: number): Promise<unknown> => ipcRenderer.invoke('analytics:setRetention', days)
   },
 
   hosting: {

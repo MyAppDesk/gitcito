@@ -16,6 +16,7 @@ interface PreloadApi {
   selectDirectory(title?: string): Promise<string | null>
   openExternal(url: string): Promise<void>
   appVersion(): Promise<string>
+  appReleases(): Promise<import('../../shared/types').AppRelease[]>
   shell: {
     showItemInFolder(fullPath: string): Promise<void>
     openPath(fullPath: string): Promise<string>
@@ -39,6 +40,11 @@ interface PreloadApi {
     generateCodeTheme(prompt: string, cfg: unknown): Promise<unknown>
     generateBranchName(description: string, cfg: unknown, ctx: unknown): Promise<unknown>
     reviewPR(diff: string, cfg: unknown): Promise<unknown>
+  }
+  analytics: {
+    get(): Promise<unknown>
+    clear(): Promise<unknown>
+    setRetention(days: number): Promise<unknown>
   }
   hosting: {
     listRepos(provider: string, token: string, org?: string): Promise<unknown>

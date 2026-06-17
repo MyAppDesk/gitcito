@@ -26,13 +26,17 @@ import {
   Download,
   Upload,
   AlertTriangle,
-  HardDrive
+  HardDrive,
+  Database,
+  Activity,
+  BarChart3,
+  GitCommit
 } from 'lucide-react'
 import hljs from 'highlight.js'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
-import { gitApi, aiApi, settingsApi } from '../infrastructure/api'
-import { AI_PROVIDERS, type AIProvider, type AppSettings, type BranchNamingStyle, type CommitStyle, type ConflictStyle, type ExplainStyle, type Profile } from '../../../shared/types'
+import { gitApi, aiApi, settingsApi, analyticsApi } from '../infrastructure/api'
+import { AI_PROVIDERS, emptyAnalytics, type AIProvider, type Analytics, type AIUsageStat, type ActivityEvent, type RepoStats, type AppSettings, type BranchNamingStyle, type CommitStyle, type ConflictStyle, type ExplainStyle, type Profile } from '../../../shared/types'
 import type {
   AppTheme,
   AppThemeColors,
@@ -1303,12 +1307,365 @@ function GeneralPage(): React.JSX.Element {
         </span>
       </label>
 
+      <label className="settings-toggle-card">
+        <input
+          type="checkbox"
+          checked={settings.autoOpenChangelog}
+          onChange={(e) => update((s) => ({ ...s, autoOpenChangelog: e.target.checked }))}
+        />
+        <span className="settings-toggle-control" aria-hidden="true">
+          <span className="settings-toggle-thumb" />
+        </span>
+        <span className="settings-toggle-copy">
+          <strong>{t('settings.autoOpenChangelog')}</strong>
+          <span className="settings-hint">{t('settings.autoOpenChangelogHint')}</span>
+        </span>
+      </label>
+
+    </div>
+  )
+}
+
+function RepoDataSection(): React.JSX.Element {
+  const settings = useSettingsStore((s) => s.settings)
+  const update = useSettingsStore((s) => s.update)
+  const toast = useUIStore((s) => s.toast)
+  const count = settings.recentRepos.length
+
+  const clear = (): void => {
+    update((s) => ({ ...s, recentRepos: [] }))
+    toast('success', 'Recent repositories cleared')
+  }
+
+  return (
+    <div style={{ marginTop: 28 }}>
+      <h4 className="settings-section-title">
+        <Database size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />
+        Cached repositories
+      </h4>
+      <p className="settings-hint">
+        The list of recently opened repositories used for quick access. Clearing it does not touch any repository on disk.
+      </p>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10 }}>
+        <button className="btn ghost small" onClick={clear} disabled={count === 0}>
+          <Trash2 size={13} />
+          Clear recent repositories
+        </button>
+        <span className="settings-hint">{count === 0 ? 'No cached repositories' : `${count} cached`}</span>
+      </div>
+    </div>
+  )
+}
+
+const USAGE_FEATURE_LABELS: Record<string, string> = {
+  commitMessage: 'Commit messages',
+  explainCode: 'Explain code',
+  resolveConflict: 'Conflict resolution',
+  generateConfig: 'Config generation',
+  suggestArtifacts: 'Artifact suggestions',
+  smartStage: 'Smart staging',
+  generateAppTheme: 'App themes',
+  generateCodeTheme: 'Code themes',
+  generateBranchName: 'Branch names',
+  reviewPR: 'PR review'
+}
+
+const EVENT_LABELS: Record<ActivityEvent, string> = {
+  commit: 'Commits',
+  amend: 'Amends',
+  push: 'Pushes',
+  pull: 'Pulls',
+  fetch: 'Fetches',
+  branchCreate: 'Branches created',
+  branchDelete: 'Branches deleted',
+  merge: 'Merges',
+  rebase: 'Rebases',
+  stash: 'Stashes',
+  stashPop: 'Stash pops',
+  conflictResolved: 'Conflicts resolved',
+  tagCreate: 'Tags created',
+  cherryPick: 'Cherry-picks',
+  revert: 'Reverts',
+  repoOpen: 'Repos opened',
+  clone: 'Clones',
+  init: 'Repos initialized'
+}
+
+const RETENTION_OPTIONS: { label: string; value: number }[] = [
+  { label: 'Keep forever', value: 0 },
+  { label: '1 year', value: 365 },
+  { label: '180 days', value: 180 },
+  { label: '90 days', value: 90 },
+  { label: '30 days', value: 30 }
+]
+
+function fmtTokens(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`
+  return String(n)
+}
+
+function fmtCost(n: number): string {
+  if (n <= 0) return '—'
+  return n < 0.01 ? '<$0.01' : `$${n.toFixed(2)}`
+}
+
+function StatCard({ label, value }: { label: string; value: string }): React.JSX.Element {
+  return (
+    <div style={{ background: 'var(--bg-3)', border: '1px solid var(--border-soft)', borderRadius: 8, padding: '10px 12px' }}>
+      <div style={{ fontSize: 11, color: 'var(--text-2)' }}>{label}</div>
+      <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-0)', marginTop: 2 }}>{value}</div>
+    </div>
+  )
+}
+
+/** Compact bar chart. Each bar's height is proportional to value; hover for the exact figure. */
+function MiniBars({ data, color }: { data: { label: string; value: number }[]; color: string }): React.JSX.Element {
+  const max = Math.max(1, ...data.map((d) => d.value))
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 2, height: 64, marginTop: 10 }}>
+      {data.map((d, i) => (
+        <div
+          key={i}
+          title={`${d.label}: ${d.value}`}
+          style={{
+            flex: 1,
+            minWidth: 2,
+            height: `${d.value ? Math.max(4, (d.value / max) * 100) : 2}%`,
+            background: d.value ? color : 'var(--border-soft)',
+            borderRadius: 2
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
+function AnalyticsSection({ aiEnabled }: { aiEnabled: boolean }): React.JSX.Element {
+  const toast = useUIStore((s) => s.toast)
+  const [data, setData] = useState<Analytics>(emptyAnalytics())
+
+  useEffect(() => {
+    void analyticsApi.get().then(setData)
+  }, [])
+
+  const clear = async (): Promise<void> => {
+    setData(await analyticsApi.clear())
+    toast('success', 'Analytics cleared')
+  }
+
+  const setRetention = async (days: number): Promise<void> => {
+    setData(await analyticsApi.setRetention(days))
+  }
+
+  // Aggregate event counts across every recorded day.
+  const eventTotals: Partial<Record<ActivityEvent, number>> = {}
+  for (const day of data.days) {
+    for (const [k, v] of Object.entries(day.events)) {
+      eventTotals[k as ActivityEvent] = (eventTotals[k as ActivityEvent] ?? 0) + (v ?? 0)
+    }
+  }
+  const events = (Object.entries(eventTotals) as [ActivityEvent, number][])
+    .map(([key, count]) => ({ label: EVENT_LABELS[key] ?? key, count }))
+    .sort((a, b) => b.count - a.count)
+
+  // Per-day activity bars: last 90 recorded days, summing all event types.
+  const daily = data.days
+    .slice(-90)
+    .map((d) => ({ label: d.date, value: Object.values(d.events).reduce((s, n) => s + (n ?? 0), 0) }))
+  const totalActions = events.reduce((s, e) => s + e.count, 0)
+
+  const aiFeatures = Object.entries(data.aiByFeature)
+    .map(([key, stat]) => ({ label: USAGE_FEATURE_LABELS[key] ?? key, stat }))
+    .sort((a, b) => b.stat.totalTokens - a.stat.totalTokens)
+  const aiHasData = data.aiTotal.requests > 0
+  const knownCost = Object.values(data.aiByModel).some((s: AIUsageStat) => s.cost > 0)
+
+  return (
+    <div style={{ marginTop: 28 }}>
+      <h4 className="settings-section-title">
+        <Activity size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />
+        Activity analytics
+      </h4>
+      <p className="settings-hint">
+        What you do in gitcito over time{data.since ? `, since ${new Date(data.since).toLocaleDateString()}` : ''}. Stored locally on this machine.
+      </p>
+
+      <label className="settings-field" style={{ maxWidth: 220, marginTop: 12 }}>
+        <span className="settings-field-label">History retention</span>
+        <select value={data.retentionDays} onChange={(e) => void setRetention(Number(e.target.value))}>
+          {RETENTION_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+        <span className="settings-hint">Older daily buckets are pruned automatically.</span>
+      </label>
+
+      {totalActions === 0 ? (
+        <p className="settings-hint" style={{ marginTop: 12 }}>No activity recorded yet.</p>
+      ) : (
+        <>
+          {daily.length > 1 && (
+            <div style={{ marginTop: 16 }}>
+              <div style={{ fontSize: 11, color: 'var(--text-2)' }}>Daily activity ({daily.length} day{daily.length === 1 ? '' : 's'})</div>
+              <MiniBars data={daily} color="var(--accent)" />
+            </div>
+          )}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10, marginTop: 16 }}>
+            {events.map((e) => (
+              <StatCard key={e.label} label={e.label} value={String(e.count)} />
+            ))}
+          </div>
+        </>
+      )}
+
+      {aiEnabled && (
+        <div style={{ marginTop: 24 }}>
+          <h5 style={{ margin: '0 0 4px', fontSize: 13, color: 'var(--text-0)' }}>AI usage</h5>
+          <p className="settings-hint">
+            Tokens consumed by AI features. Costs are rough estimates from public list prices and may not match your bill.
+          </p>
+          {!aiHasData ? (
+            <p className="settings-hint" style={{ marginTop: 10 }}>No AI usage recorded yet.</p>
+          ) : (
+            <>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 10, marginTop: 12 }}>
+                <StatCard label="Requests" value={String(data.aiTotal.requests)} />
+                <StatCard label="Total tokens" value={fmtTokens(data.aiTotal.totalTokens)} />
+                <StatCard label="Prompt / Completion" value={`${fmtTokens(data.aiTotal.promptTokens)} / ${fmtTokens(data.aiTotal.completionTokens)}`} />
+                <StatCard label="Est. cost" value={fmtCost(data.aiTotal.cost)} />
+              </div>
+              <table style={{ width: '100%', marginTop: 16, borderCollapse: 'collapse', fontSize: 12 }}>
+                <thead>
+                  <tr style={{ color: 'var(--text-2)', textAlign: 'left' }}>
+                    <th style={{ padding: '4px 6px', fontWeight: 500 }}>Feature</th>
+                    <th style={{ padding: '4px 6px', fontWeight: 500, textAlign: 'right' }}>Requests</th>
+                    <th style={{ padding: '4px 6px', fontWeight: 500, textAlign: 'right' }}>Tokens</th>
+                    <th style={{ padding: '4px 6px', fontWeight: 500, textAlign: 'right' }}>Est. cost</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {aiFeatures.map((f) => (
+                    <tr key={f.label} style={{ borderTop: '1px solid var(--border-soft)' }}>
+                      <td style={{ padding: '5px 6px', color: 'var(--text-1)' }}>{f.label}</td>
+                      <td style={{ padding: '5px 6px', textAlign: 'right' }}>{f.stat.requests}</td>
+                      <td style={{ padding: '5px 6px', textAlign: 'right' }}>{fmtTokens(f.stat.totalTokens)}</td>
+                      <td style={{ padding: '5px 6px', textAlign: 'right' }}>{fmtCost(f.stat.cost)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {!knownCost && (
+                <p className="settings-hint" style={{ marginTop: 8 }}>
+                  No cost estimate available for the model(s) in use — only token counts are tracked.
+                </p>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      <div style={{ marginTop: 18 }}>
+        <button className="btn ghost small" onClick={() => void clear()}>
+          <Trash2 size={13} />
+          Clear analytics
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function RepoHistorySection(): React.JSX.Element {
+  const repo = useSettingsStore((s) => s.activeRepo())
+  const [stats, setStats] = useState<RepoStats | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (!repo) {
+      setStats(null)
+      return
+    }
+    let cancelled = false
+    setLoading(true)
+    void gitApi
+      .repoStats(repo.path)
+      .then((s) => {
+        if (!cancelled) setStats(s)
+      })
+      .catch(() => {
+        if (!cancelled) setStats(null)
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [repo])
+
+  const perDay = stats ? stats.perDay.slice(-90).map((d) => ({ label: d.date, value: d.count })) : []
+  const topAuthors = stats ? stats.authors.slice(0, 6) : []
+
+  return (
+    <div style={{ marginTop: 28 }}>
+      <h4 className="settings-section-title">
+        <BarChart3 size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />
+        Repository history
+      </h4>
+      <p className="settings-hint">
+        Commit statistics for the active repository{repo ? ` (${repo.name})` : ''}, read from its git history.
+      </p>
+
+      {!repo ? (
+        <p className="settings-hint" style={{ marginTop: 12 }}>Open a repository to see its history.</p>
+      ) : loading ? (
+        <p className="settings-hint" style={{ marginTop: 12 }}>
+          <Loader2 size={13} className="spin" style={{ verticalAlign: '-2px', marginRight: 6 }} />
+          Reading history…
+        </p>
+      ) : !stats || stats.totalCommits === 0 ? (
+        <p className="settings-hint" style={{ marginTop: 12 }}>No commits found.</p>
+      ) : (
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10, marginTop: 12 }}>
+            <StatCard label="Total commits" value={String(stats.totalCommits)} />
+            <StatCard label="Authors" value={String(stats.authors.length)} />
+            <StatCard label="First commit" value={stats.first ? new Date(stats.first * 1000).toLocaleDateString() : '—'} />
+            <StatCard label="Latest commit" value={stats.last ? new Date(stats.last * 1000).toLocaleDateString() : '—'} />
+          </div>
+
+          {perDay.length > 1 && (
+            <div style={{ marginTop: 16 }}>
+              <div style={{ fontSize: 11, color: 'var(--text-2)' }}>Commits per day (last {perDay.length})</div>
+              <MiniBars data={perDay} color="var(--green)" />
+            </div>
+          )}
+
+          <div style={{ marginTop: 16 }}>
+            <div style={{ fontSize: 11, color: 'var(--text-2)', marginBottom: 6 }}>Top authors</div>
+            {topAuthors.map((a) => (
+              <div key={a.name} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '4px 0', borderTop: '1px solid var(--border-soft)' }}>
+                <span style={{ color: 'var(--text-1)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <GitCommit size={12} /> {a.name}
+                </span>
+                <span style={{ color: 'var(--text-2)' }}>{a.commits}</span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   )
 }
 
 function DataPage(): React.JSX.Element {
   const t = useT()
+  const aiEnabled = useSettingsStore((s) => {
+    const p = s.settings.profiles.find((p) => p.id === s.settings.activeProfileId) ?? s.settings.profiles[0]
+    return p?.ai.enabled ?? false
+  })
   return (
     <div className="settings-general">
       <div className="settings-general-header">
@@ -1318,6 +1675,9 @@ function DataPage(): React.JSX.Element {
         <p className="settings-hint">{t('settings.dataIntro')}</p>
       </div>
       <DataManagementSection />
+      <RepoDataSection />
+      <AnalyticsSection aiEnabled={aiEnabled} />
+      <RepoHistorySection />
     </div>
   )
 }
@@ -1333,6 +1693,7 @@ function readLastPage(): SettingsPage {
 export function SettingsPanel({ initialPage }: { initialPage?: SettingsPage } = {}): React.JSX.Element {
   const { settings, addProfile, deleteProfile } = useSettingsStore()
   const openModal = useUIStore((s) => s.openModal)
+  const closeModal = useUIStore((s) => s.closeModal)
   const [selectedId, setSelectedId] = useState(settings.activeProfileId)
   const [page, setPage] = useState<SettingsPage>(initialPage ?? readLastPage())
   const [version, setVersion] = useState('')
@@ -1422,18 +1783,32 @@ export function SettingsPanel({ initialPage }: { initialPage?: SettingsPage } = 
             ))}
           </div>
 
-          <button
-            className="settings-madeby"
-            type="button"
-            title="myappdesk.dev"
-            onClick={() => void window.api.openExternal('https://myappdesk.dev')}
-          >
-            <img src={madLogo} alt="MyAppDesk" draggable={false} />
-            <div className="settings-madeby-text">
+          <div className="settings-footer">
+            <button
+              className="settings-madeby"
+              type="button"
+              title="myappdesk.dev"
+              onClick={() => void window.api.openExternal('https://myappdesk.dev')}
+            >
+              <img src={madLogo} alt="MyAppDesk" draggable={false} />
               <span>{t('settings.madeBy')}</span>
-              {version && <span className="settings-version">v{version}</span>}
-            </div>
-          </button>
+            </button>
+            {version && (
+              <button
+                className="settings-version-btn"
+                type="button"
+                title={t('settings.viewChangelog')}
+                onClick={() => {
+                  useSettingsStore.getState().openPageTab({ type: 'changelog' })
+                  closeModal()
+                }}
+              >
+                <Sparkles size={12} />
+                <span className="settings-version">v{version}</span>
+                <span className="settings-version-cta">{t('settings.viewChangelog')}</span>
+              </button>
+            )}
+          </div>
         </aside>
 
         <div className="settings-form">

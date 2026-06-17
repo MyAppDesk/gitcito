@@ -24,7 +24,9 @@ import type {
   CreateRepoOpts,
   WorktreeInfo,
   AppThemeColors,
-  CodeThemeColors
+  CodeThemeColors,
+  Analytics,
+  RepoStats
 } from '../../../shared/types'
 
 // Typed adapter over the IPC bridge — the only place that talks to window.api.
@@ -132,7 +134,8 @@ export const gitApi = {
     call<void>('runInteractiveRebase', path, base, steps),
   stagePatch: (path: string, patch: string) => call<void>('stagePatch', path, patch),
   compareBranches: (path: string, a: string, b: string) =>
-    call<BranchCompareResult>('compareBranches', path, a, b)
+    call<BranchCompareResult>('compareBranches', path, a, b),
+  repoStats: (path: string, sinceDays?: number) => call<RepoStats>('repoStats', path, sinceDays)
 }
 
 export const settingsApi = {
@@ -180,6 +183,12 @@ export const aiApi = {
     window.api.ai.generateBranchName(description, cfg, ctx) as Promise<string>,
   reviewPR: (diff: string, cfg: AIConfig) =>
     window.api.ai.reviewPR(diff, cfg) as Promise<{ summary: string; risks: string; suggestions: string }>
+}
+
+export const analyticsApi = {
+  get: () => window.api.analytics.get() as Promise<Analytics>,
+  clear: () => window.api.analytics.clear() as Promise<Analytics>,
+  setRetention: (days: number) => window.api.analytics.setRetention(days) as Promise<Analytics>
 }
 
 export const shellApi = {

@@ -5,7 +5,7 @@ import { useUIStore, type ModalSpec } from '../stores/ui'
 import { useSettingsStore, GROUP_COLORS } from '../stores/settings'
 import { hostingApi, gitApi, shellApi } from '../infrastructure/api'
 import { repoActions } from '../stores/repo'
-import type { CreateRepoOpts, RemoteOwner, RemoteRepo, RepoHost } from '../../../shared/types'
+import type { CreateRepoOpts, GroupTab, RemoteOwner, RemoteRepo, RepoHost } from '../../../shared/types'
 import { SettingsPanel } from './SettingsPanel'
 import { LauncherPanel, type LauncherItem } from './Welcome'
 import { AIConfigWizard } from './AIConfigWizard'
@@ -1049,7 +1049,9 @@ function LauncherModal({ spec }: { spec: Extract<ModalSpec, { kind: 'launcher' }
   const { closeModal, openModal } = useUIStore()
   const { settings, openRepoTab, createGroupTab, addRepoToGroup, removeRepoFromGroup, renameRepoInGroup, reorderReposInGroup } = useSettingsStore()
 
-  const groupTab = spec.groupId ? settings.tabs.find((t) => t.id === spec.groupId) : undefined
+  const groupTab = spec.groupId
+    ? settings.tabs.find((t): t is GroupTab => t.id === spec.groupId && t.kind === 'group')
+    : undefined
 
   const openRepo = async (): Promise<void> => {
     const path = await window.api.selectDirectory()

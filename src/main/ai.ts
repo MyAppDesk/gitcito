@@ -1,5 +1,21 @@
 import { ipcMain } from 'electron'
 import type { AIConfig, AppThemeColors, BranchNamingStyle, CodeThemeColors, ConflictStyle, ExplainStyle } from '../shared/types'
+import { recordAIUsage, type TokenUsage } from './analytics'
+
+/** Token-usage block as returned by OpenAI-compatible (and native Anthropic) APIs. */
+interface ApiUsage {
+  prompt_tokens?: number
+  completion_tokens?: number
+  total_tokens?: number
+  input_tokens?: number
+  output_tokens?: number
+}
+
+function parseUsage(raw: ApiUsage | undefined): TokenUsage {
+  const prompt = raw?.prompt_tokens ?? raw?.input_tokens ?? 0
+  const completion = raw?.completion_tokens ?? raw?.output_tokens ?? 0
+  return { promptTokens: prompt, completionTokens: completion, totalTokens: raw?.total_tokens ?? prompt + completion }
+}
 
 export interface AICommitMessage {
   summary: string
@@ -182,7 +198,8 @@ async function generateCommitMessage(diff: string, cfg: AIConfig, ctx: AICommitC
     throw new Error(`AI request failed (${res.status}): ${body.slice(0, 200)}`)
   }
 
-  const json = (await res.json()) as { choices?: { message?: { content?: string } }[] }
+  const json = (await res.json()) as { choices?: { message?: { content?: string } }[]; usage?: ApiUsage }
+  void recordAIUsage('commitMessage', cfg.model || 'gpt-4o-mini', parseUsage(json.usage))
   const content = json.choices?.[0]?.message?.content ?? ''
   // Honour the toggle even if the model ignores the instruction and returns a body anyway.
   const omitDesc = cfg.generateDescription === false
@@ -200,6 +217,7 @@ async function generateCommitMessage(diff: string, cfg: AIConfig, ctx: AICommitC
 async function chatComplete(
   cfg: AIConfig,
   messages: { role: 'system' | 'user'; content: string }[],
+  feature: string,
   temperature = 0.2
 ): Promise<string> {
   const base = baseUrl(cfg.endpoint)
@@ -220,7 +238,8 @@ async function chatComplete(
     const body = await res.text().catch(() => '')
     throw new Error(`AI request failed (${res.status}): ${body.slice(0, 200)}`)
   }
-  const json = (await res.json()) as { choices?: { message?: { content?: string } }[] }
+  const json = (await res.json()) as { choices?: { message?: { content?: string } }[]; usage?: ApiUsage }
+  void recordAIUsage(feature, cfg.model || 'gpt-4o-mini', parseUsage(json.usage))
   return json.choices?.[0]?.message?.content ?? ''
 }
 
@@ -240,7 +259,7 @@ Tone: ${tone}`
   return (await chatComplete(cfg, [
     { role: 'system', content: system },
     { role: 'user', content: clip(code) }
-  ])).trim()
+  ], 'explainCode')).trim()
 }
 
 /** Propose a merged file from raw content containing git conflict markers. */
@@ -259,6 +278,7 @@ no commentary, no explanations.`
       { role: 'system', content: system },
       { role: 'user', content: clip(content, 24000) }
     ],
+    'resolveConflict',
     0.1
   )
   // Strip a stray ```lang fence if the model added one despite instructions.
@@ -307,6 +327,7 @@ ${fileList}`
       { role: 'system', content: system },
       { role: 'user', content: user }
     ],
+    'generateConfig',
     0.3
   )
 
@@ -353,7 +374,7 @@ Reply ONLY with valid JSON (no markdown fences):
   const response = await chatComplete(cfg, [
     { role: 'system', content: system },
     { role: 'user', content: `Changed files:\n${fileList}` }
-  ])
+  ], 'smartStage')
 
   try {
     const cleaned = response.replace(/^```(json)?/m, '').replace(/```$/m, '').trim()
@@ -403,6 +424,7 @@ Suggest additional configuration files that would be valuable for this project.`
       { role: 'system', content: system },
       { role: 'user', content: user }
     ],
+    'suggestArtifacts',
     0.4
   )
 
@@ -451,7 +473,7 @@ Shared rules:
   const response = await chatComplete(cfg, [
     { role: 'system', content: system },
     { role: 'user', content: `Theme description: ${prompt}` }
-  ], 0.7)
+  ], 'generateAppTheme', 0.7)
 
   try {
     const cleaned = response.replace(/^```(json)?/m, '').replace(/```$/m, '').trim()
@@ -497,7 +519,7 @@ Shared rules:
   const response = await chatComplete(cfg, [
     { role: 'system', content: system },
     { role: 'user', content: `Theme description: ${prompt}` }
-  ], 0.7)
+  ], 'generateCodeTheme', 0.7)
 
   try {
     const cleaned = response.replace(/^```(json)?/m, '').replace(/```$/m, '').trim()
@@ -540,7 +562,7 @@ Rules:
   const result = await chatComplete(cfg, [
     { role: 'system', content: system },
     { role: 'user', content: description }
-  ], 0.3)
+  ], 'generateBranchName', 0.3)
   return result.trim().replace(/^['"`]|['"`]$/g, '').split('\n')[0].trim()
 }
 
@@ -560,7 +582,7 @@ Reply ONLY with valid JSON: {"summary": "...", "risks": "...", "suggestions": ".
   const out = await chatComplete(cfg, [
     { role: 'system', content: system },
     { role: 'user', content: clip(diff, 24000) }
-  ], 0.2)
+  ], 'reviewPR', 0.2)
   try {
     const cleaned = out.replace(/^```(json)?/m, '').replace(/```$/m, '').trim()
     const parsed = JSON.parse(cleaned) as Partial<PRReviewResult>

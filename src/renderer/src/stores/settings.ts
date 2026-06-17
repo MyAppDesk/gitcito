@@ -3,6 +3,7 @@ import {
   defaultProfile,
   defaultSettings,
   type AppSettings,
+  type PageContent,
   type Profile,
   type RepoRef,
   type TabState
@@ -53,6 +54,8 @@ interface SettingsState {
   deleteProfile(id: string): void
 
   openRepoTab(repo: RepoRef): void
+  /** Open (or focus the existing) non-repo page tab, e.g. the changelog. */
+  openPageTab(page: PageContent): void
   createGroupTab(name: string): void
   addRepoToGroup(tabId: string, repo: RepoRef): void
   removeRepoFromGroup(tabId: string, path: string): void
@@ -114,6 +117,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     settings.mergeCommit = settings.mergeCommit ?? sd.mergeCommit
     settings.sidebarOrder =
       settings.sidebarOrder && settings.sidebarOrder.length ? settings.sidebarOrder : sd.sidebarOrder
+    settings.autoOpenChangelog = settings.autoOpenChangelog ?? sd.autoOpenChangelog
     set({ settings, loaded: true })
   },
 
@@ -162,6 +166,16 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       return { ...s, tabs: [...s.tabs, tab], activeTabId: tab.id, recentRepos }
     }),
 
+  openPageTab: (page) =>
+    get().update((s) => {
+      // One tab per page type — focus it if already open.
+      const existing = s.tabs.find((t) => t.kind === 'page' && t.page.type === page.type)
+      if (existing) return { ...s, activeTabId: existing.id }
+      const name = page.type === 'changelog' ? "What's new" : page.type
+      const tab: TabState = { id: uid(), kind: 'page', name, page }
+      return { ...s, tabs: [...s.tabs, tab], activeTabId: tab.id }
+    }),
+
   createGroupTab: (name) =>
     get().update((s) => {
       const groupCount = s.tabs.filter((t) => t.kind === 'group').length
@@ -175,7 +189,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       ...s,
       recentRepos: [repo, ...s.recentRepos.filter((r) => r.path !== repo.path)].slice(0, 8),
       tabs: s.tabs.map((t) =>
-        t.id === tabId && !t.repos.some((r) => r.path === repo.path)
+        t.id === tabId && t.kind !== 'page' && !t.repos.some((r) => r.path === repo.path)
           ? { ...t, repos: [...t.repos, repo], activeRepoPath: t.activeRepoPath ?? repo.path }
           : t
       )
@@ -184,12 +198,13 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   removeRepoFromGroup: (tabId, path) =>
     get().update((s) => {
       const mapped = s.tabs.map((t) => {
-        if (t.id !== tabId) return t
+        if (t.id !== tabId || t.kind === 'page') return t
         const repos = t.repos.filter((r) => r.path !== path)
         const activeRepoPath = t.activeRepoPath === path ? (repos[0]?.path ?? null) : t.activeRepoPath
         return { ...t, repos, activeRepoPath }
       })
-      const isEmpty = mapped.find((t) => t.id === tabId)?.repos.length === 0
+      const found = mapped.find((t) => t.id === tabId)
+      const isEmpty = found != null && found.kind !== 'page' && found.repos.length === 0
       if (!isEmpty) return { ...s, tabs: mapped }
       const idx = mapped.findIndex((t) => t.id === tabId)
       const tabs = mapped.filter((t) => t.id !== tabId)
@@ -202,7 +217,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     get().update((s) => ({
       ...s,
       tabs: s.tabs.map((t) =>
-        t.id === tabId
+        t.id === tabId && t.kind !== 'page'
           ? { ...t, repos: t.repos.map((r) => (r.path === path ? { ...r, name: newName } : r)) }
           : t
       )
@@ -212,7 +227,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     get().update((s) => ({
       ...s,
       tabs: s.tabs.map((t) => {
-        if (t.id !== tabId) return t
+        if (t.id !== tabId || t.kind === 'page') return t
         const repos = [...t.repos]
         const fromIdx = repos.findIndex((r) => r.path === fromPath)
         if (fromIdx < 0) return t
@@ -230,7 +245,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   setGroupActiveRepo: (tabId, path) =>
     get().update((s) => ({
       ...s,
-      tabs: s.tabs.map((t) => (t.id === tabId ? { ...t, activeRepoPath: path } : t))
+      tabs: s.tabs.map((t) => (t.id === tabId && t.kind !== 'page' ? { ...t, activeRepoPath: path } : t))
     })),
 
   closeTab: (tabId) =>
@@ -251,7 +266,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     get().update((s) => ({ ...s, tabs: s.tabs.map((t) => (t.id === tabId ? { ...t, color } : t)) })),
 
   toggleTabCollapsed: (tabId) =>
-    get().update((s) => ({ ...s, tabs: s.tabs.map((t) => (t.id === tabId ? { ...t, collapsed: !t.collapsed } : t)) })),
+    get().update((s) => ({ ...s, tabs: s.tabs.map((t) => (t.id === tabId && t.kind === 'group' ? { ...t, collapsed: !t.collapsed } : t)) })),
 
   reorderTabs: (fromId, toId, before) =>
     get().update((s) => {
@@ -275,7 +290,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       const tabs = s.tabs
         .filter((t) => t.id !== fromTabId)
         .map((t) =>
-          t.id === toGroupTabId
+          t.id === toGroupTabId && t.kind === 'group'
             ? { ...t, repos: [...t.repos, repo], activeRepoPath: t.activeRepoPath ?? repo.path }
             : t
         )
@@ -331,7 +346,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
   activeRepo: () => {
     const tab = get().activeTab()
-    if (!tab || !tab.activeRepoPath) return null
+    if (!tab || tab.kind === 'page' || !tab.activeRepoPath) return null
     return tab.repos.find((r) => r.path === tab.activeRepoPath) ?? null
   }
 }))

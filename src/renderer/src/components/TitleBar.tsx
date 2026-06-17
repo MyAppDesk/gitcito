@@ -1,10 +1,10 @@
 import { useRef, useState } from 'react'
-import { Plus, FolderGit2, X, Minus, Square, Settings } from 'lucide-react'
+import { Plus, FolderGit2, X, Minus, Square, Settings, Sparkles } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore, type MenuItem } from '../stores/ui'
 import { useRepoStore } from '../stores/repo'
-import type { TabState } from '../../../shared/types'
+import type { GroupTab, TabState } from '../../../shared/types'
 import gitcitoMark from '../assets/gitcito-mark.png'
 
 type TabStatus = 'conflict' | 'wip' | null
@@ -160,7 +160,7 @@ export function TitleBar(): React.JSX.Element {
     if (d.kind === 'repo') {
       if (d.tabId === tabId) {
         // Reorder within same group
-        const group = settings.tabs.find((t) => t.id === tabId)
+        const group = settings.tabs.find((t): t is GroupTab => t.id === tabId && t.kind === 'group')
         const groupRepos = group?.repos ?? []
         const targetIdx = groupRepos.findIndex((r) => r.path === repoPath)
         if (dt.kind === 'after-repo') {
@@ -189,6 +189,7 @@ export function TitleBar(): React.JSX.Element {
 
   // ── status helpers ──────────────────────────────────────────────────────
   const tabStatus = (tab: TabState): TabStatus => {
+    if (tab.kind === 'page') return null
     let wip = false
     for (const ref of tab.repos) {
       const data = repos[ref.path]
@@ -226,6 +227,9 @@ export function TitleBar(): React.JSX.Element {
   }
 
   const tabMenu = (tab: TabState): MenuItem[] => {
+    if (tab.kind === 'page') {
+      return [{ label: 'Close tab', onClick: () => closeTab(tab.id) }]
+    }
     const items: MenuItem[] = []
     if (tab.kind === 'group') {
       items.push({
@@ -338,6 +342,44 @@ export function TitleBar(): React.JSX.Element {
                   onClick={(e) => {
                     e.stopPropagation()
                     confirmCloseGroup(tab)
+                  }}
+                >
+                  <X size={12} />
+                </button>
+              </motion.div>
+            ]
+          }
+
+          if (tab.kind === 'page') {
+            const dc = dropClass(dropTarget, 'before-tab', tab.id) || dropClass(dropTarget, 'after-tab', tab.id)
+            return [
+              zone,
+              <motion.div
+                key={tab.id}
+                layout
+                className={`tab tab-page ${tab.id === settings.activeTabId ? 'active' : ''} ${dc}`}
+                draggable
+                onDragStart={onDragStart({ kind: 'tab', tabId: tab.id }) as any}
+                onDragEnd={onDragEnd as any}
+                onDragOver={onDragOverTab(tab.id)}
+                onDrop={onDropTab(tab.id)}
+                {...middleClose(() => closeTab(tab.id))}
+                onClick={() => setActiveTab(tab.id)}
+                onContextMenu={(e) => {
+                  e.preventDefault()
+                  openContextMenu(e.clientX, e.clientY, tabMenu(tab))
+                }}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.15 }}
+              >
+                <Sparkles size={13} />
+                <span className="tab-name">{tab.name}</span>
+                <button
+                  className="tab-close"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    closeTab(tab.id)
                   }}
                 >
                   <X size={12} />

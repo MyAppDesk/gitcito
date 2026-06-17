@@ -4,7 +4,7 @@ import { GitMerge, FolderOpen } from 'lucide-react'
 import { useSettingsStore } from './stores/settings'
 import { useRepoStore, repoActions, type RepoData } from './stores/repo'
 import { useUIStore } from './stores/ui'
-import type { TabState } from '../../shared/types'
+import { tabActiveRepoPath, tabRepos, type GroupTab, type PageTab } from '../../shared/types'
 import { applyAppTheme, applyCodeTheme, findAppTheme, findCodeTheme } from './theme/themes'
 import { TitleBar } from './components/TitleBar'
 import { Toolbar } from './components/Toolbar'
@@ -21,10 +21,11 @@ import { ModalHost } from './components/ModalHost'
 import { Toasts } from './components/Toasts'
 import { Welcome, LauncherPanel, type LauncherItem } from './components/Welcome'
 import { OnboardingWizard } from './components/OnboardingWizard'
+import { ChangelogPage } from './components/ChangelogPage'
 import { ResizeHandle } from './components/ResizeHandle'
 import gitcitoLaunch from './assets/gitcito-launch.png'
 
-function GroupView({ tab }: { tab: TabState }): React.JSX.Element {
+function GroupView({ tab }: { tab: GroupTab }): React.JSX.Element {
   const { settings, addRepoToGroup, removeRepoFromGroup, renameRepoInGroup, reorderReposInGroup, setGroupActiveRepo } = useSettingsStore()
   const openModal = useUIStore((s) => s.openModal)
 
@@ -84,6 +85,17 @@ function GroupView({ tab }: { tab: TabState }): React.JSX.Element {
       </motion.div>
     </div>
   )
+}
+
+/** Renders a non-repo page tab. Dispatches on the page type so new page
+ *  kinds (docs, etc.) are a single added case. */
+function PageView({ tab }: { tab: PageTab }): React.JSX.Element {
+  switch (tab.page.type) {
+    case 'changelog':
+      return <ChangelogPage />
+    default:
+      return <Welcome />
+  }
 }
 
 function ConflictBanner({ repo }: { repo: RepoData }): React.JSX.Element | null {
@@ -152,6 +164,26 @@ export default function App(): React.JSX.Element {
     void useSettingsStore.getState().load()
   }, [])
 
+  // Detect app upgrades. The first run that records a version is silent; any
+  // later version change opens the changelog tab (unless the user disabled it).
+  useEffect(() => {
+    if (!settingsLoaded) return
+    let cancelled = false
+    void window.api.appVersion().then((v) => {
+      if (cancelled) return
+      const store = useSettingsStore.getState()
+      const seen = store.settings.lastSeenVersion
+      if (seen === v) return
+      store.update((s) => ({ ...s, lastSeenVersion: v }))
+      if (seen !== undefined && store.settings.autoOpenChangelog) {
+        store.openPageTab({ type: 'changelog' })
+      }
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [settingsLoaded])
+
   // Apply selected app + code themes whenever they change. When the appearance
   // mode is "auto" we also react to live OS light/dark changes.
   useEffect(() => {
@@ -178,7 +210,7 @@ export default function App(): React.JSX.Element {
   ])
 
   const activeTab = settings.tabs.find((t) => t.id === settings.activeTabId) ?? null
-  const activeRepoPath = activeTab?.activeRepoPath ?? null
+  const activeRepoPath = activeTab ? tabActiveRepoPath(activeTab) : null
 
   useEffect(() => {
     if (!activeRepoPath) return
@@ -193,7 +225,7 @@ export default function App(): React.JSX.Element {
   // group tab status dots are populated even for non-active repos.
   useEffect(() => {
     for (const tab of settings.tabs) {
-      for (const ref of tab.repos) {
+      for (const ref of tabRepos(tab)) {
         if (ref.path !== activeRepoPath) void ensure(ref.path)
       }
     }
@@ -269,6 +301,7 @@ export default function App(): React.JSX.Element {
 
       {!activeTab && <Welcome />}
       {activeTab && activeTab.kind === 'group' && !repo && <GroupView tab={activeTab} />}
+      {activeTab && activeTab.kind === 'page' && <PageView tab={activeTab} />}
 
       {activeTab && repo && (
         <>

@@ -2,9 +2,11 @@ import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join, dirname } from 'path'
 import { writeFile, mkdir, chmod } from 'fs/promises'
 import icon from '../../resources/icon.png?asset'
+import type { AppRelease } from '../shared/types'
 import { registerGitHandlers } from './git'
 import { registerSettingsHandlers } from './settings'
 import { registerAiHandlers } from './ai'
+import { registerAnalyticsHandlers } from './analytics'
 import { registerHostingHandlers } from './hosting'
 import { registerTerminalHandlers } from './terminal'
 import { registerWatcherHandlers } from './watcher'
@@ -64,6 +66,39 @@ app.whenReady().then(() => {
 
   ipcMain.handle('app:version', () => app.getVersion())
 
+  // Public release notes from GitHub. Done in main (not the renderer) because the
+  // renderer CSP forbids cross-origin requests; no token needed for public repos.
+  ipcMain.handle('app:releases', async (): Promise<AppRelease[]> => {
+    try {
+      const res = await fetch('https://api.github.com/repos/MyAppDesk/gitcito/releases?per_page=20', {
+        headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'gitcito' }
+      })
+      if (!res.ok) return []
+      const json = (await res.json()) as Array<{
+        tag_name: string
+        name: string | null
+        body: string | null
+        published_at: string
+        html_url: string
+        draft: boolean
+        prerelease: boolean
+      }>
+      if (!Array.isArray(json)) return []
+      return json
+        .filter((r) => !r.draft)
+        .map((r) => ({
+          tag: r.tag_name,
+          name: r.name,
+          body: r.body,
+          publishedAt: r.published_at,
+          url: r.html_url,
+          prerelease: r.prerelease
+        }))
+    } catch {
+      return []
+    }
+  })
+
   ipcMain.handle('shell:showItemInFolder', (_e, fullPath: string) => {
     shell.showItemInFolder(fullPath)
   })
@@ -94,6 +129,7 @@ app.whenReady().then(() => {
   registerGitHandlers()
   registerSettingsHandlers()
   registerAiHandlers()
+  registerAnalyticsHandlers()
   registerHostingHandlers()
   registerTerminalHandlers()
   registerWatcherHandlers()

@@ -22,13 +22,50 @@ import type {
   RepoStatus,
   RepoSummary,
   RebaseStep,
+  RepoStats,
   StashInfo,
   TagInfo,
-  WorktreeInfo
+  WorktreeInfo,
+  ActivityEvent
 } from '../shared/types'
+import { recordEvent } from './analytics'
 
 const SEP = '\x1f'
 const REC = '\x1e'
+
+/**
+ * Maps a git IPC method to the activity event it should record on success.
+ * `commit` is special-cased in the dispatcher (amend flag → 'amend').
+ */
+const EVENT_FOR_METHOD: Record<string, ActivityEvent> = {
+  push: 'push',
+  pull: 'pull',
+  fetchAll: 'fetch',
+  fetchRemote: 'fetch',
+  amendCommitMessage: 'amend',
+  createBranch: 'branchCreate',
+  deleteBranch: 'branchDelete',
+  deleteRemoteBranch: 'branchDelete',
+  merge: 'merge',
+  mergeInto: 'merge',
+  rebase: 'rebase',
+  runInteractiveRebase: 'rebase',
+  stash: 'stash',
+  stashPop: 'stashPop',
+  resolveConflict: 'conflictResolved',
+  conflictTakeSide: 'conflictResolved',
+  createTag: 'tagCreate',
+  cherryPick: 'cherryPick',
+  revertCommit: 'revert',
+  open: 'repoOpen',
+  clone: 'clone',
+  init: 'init'
+}
+
+function eventForCall(method: string, args: unknown[]): ActivityEvent | null {
+  if (method === 'commit') return args[2] === true ? 'amend' : 'commit'
+  return EVENT_FOR_METHOD[method] ?? null
+}
 
 /** Parse `Co-authored-by` trailer values ("Name <email>") into authors. */
 function parseCoAuthors(raw: string | undefined): import('../shared/types').CommitAuthor[] {
@@ -966,6 +1003,39 @@ export const gitService = {
     return { aheadCommits, behindCommits, diff }
   },
 
+  /** Per-day commit counts and author tallies from the repo's history. `sinceDays` 0 = whole history. */
+  async repoStats(repoPath: string, sinceDays = 0): Promise<RepoStats> {
+    const git = gitFor(repoPath)
+    const args = ['log', '--no-merges', `--pretty=format:%at${SEP}%an`]
+    if (sinceDays > 0) args.push(`--since=${sinceDays}.days.ago`)
+    const out = await git.raw(args).catch(() => '')
+    const perDayMap = new Map<string, number>()
+    const authorMap = new Map<string, number>()
+    let first = 0
+    let last = 0
+    let totalCommits = 0
+    for (const line of out.split('\n')) {
+      const [at, ...nameParts] = line.split(SEP)
+      const ts = +at
+      if (!ts) continue
+      const name = nameParts.join(SEP).trim() || 'Unknown'
+      totalCommits += 1
+      if (!last || ts > last) last = ts
+      if (!first || ts < first) first = ts
+      const d = new Date(ts * 1000)
+      const key = `${d.getFullYear()}-${`${d.getMonth() + 1}`.padStart(2, '0')}-${`${d.getDate()}`.padStart(2, '0')}`
+      perDayMap.set(key, (perDayMap.get(key) ?? 0) + 1)
+      authorMap.set(name, (authorMap.get(name) ?? 0) + 1)
+    }
+    const perDay = [...perDayMap.entries()]
+      .map(([date, count]) => ({ date, count }))
+      .sort((a, b) => a.date.localeCompare(b.date))
+    const authors = [...authorMap.entries()]
+      .map(([name, commits]) => ({ name, commits }))
+      .sort((a, b) => b.commits - a.commits)
+    return { totalCommits, first, last, perDay, authors }
+  },
+
   async version(): Promise<string> {
     const res = await simpleGit().version()
     return `${res.major}.${res.minor}.${res.patch}`
@@ -976,6 +1046,9 @@ export function registerGitHandlers(): void {
   ipcMain.handle('git', async (_e, method: string, ...args: unknown[]) => {
     const fn = (gitService as Record<string, unknown>)[method]
     if (typeof fn !== 'function') throw new Error(`Unknown git method: ${method}`)
-    return (fn as (...a: unknown[]) => Promise<unknown>)(...args)
+    const result = await (fn as (...a: unknown[]) => Promise<unknown>)(...args)
+    const event = eventForCall(method, args)
+    if (event) void recordEvent(event)
+    return result
   })
 }

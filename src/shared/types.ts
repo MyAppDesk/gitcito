@@ -277,6 +277,78 @@ export interface AIConfig {
 /** Co-author trailer appended when AIConfig.coAuthor is enabled (default on). */
 export const MYAPPDESK_COAUTHOR = 'MyAppDesk <team@myappdesk.dev>'
 
+// ─── Analytics & instrumentation ─────────────────────────────────────────────
+
+/** Accumulated token counts (and estimated cost) for a slice of AI usage. */
+export interface AIUsageStat {
+  requests: number
+  promptTokens: number
+  completionTokens: number
+  totalTokens: number
+  /** Estimated USD, computed from a built-in price table. 0 if model unknown. */
+  cost: number
+}
+
+export function emptyAIUsageStat(): AIUsageStat {
+  return { requests: 0, promptTokens: 0, completionTokens: 0, totalTokens: 0, cost: 0 }
+}
+
+/** Activity events recorded as the user drives gitcito. */
+export type ActivityEvent =
+  | 'commit'
+  | 'amend'
+  | 'push'
+  | 'pull'
+  | 'fetch'
+  | 'branchCreate'
+  | 'branchDelete'
+  | 'merge'
+  | 'rebase'
+  | 'stash'
+  | 'stashPop'
+  | 'conflictResolved'
+  | 'tagCreate'
+  | 'cherryPick'
+  | 'revert'
+  | 'repoOpen'
+  | 'clone'
+  | 'init'
+
+/** One local calendar day of recorded activity. */
+export interface DayBucket {
+  date: string // 'YYYY-MM-DD' (local time)
+  events: Partial<Record<ActivityEvent, number>>
+  ai: AIUsageStat
+}
+
+/**
+ * Persisted, machine-local activity ledger. Holds a per-day timeline plus
+ * lifetime AI token totals (broken down by feature and model).
+ */
+export interface Analytics {
+  /** Unix ms of the first recorded entry, 0 when nothing recorded yet. */
+  since: number
+  /** Days of history to keep; 0 = keep forever. Older buckets are pruned. */
+  retentionDays: number
+  days: DayBucket[]
+  aiTotal: AIUsageStat
+  aiByFeature: Record<string, AIUsageStat>
+  aiByModel: Record<string, AIUsageStat>
+}
+
+export function emptyAnalytics(): Analytics {
+  return { since: 0, retentionDays: 0, days: [], aiTotal: emptyAIUsageStat(), aiByFeature: {}, aiByModel: {} }
+}
+
+/** Aggregated commit history for a single repository, read from `git log`. */
+export interface RepoStats {
+  totalCommits: number
+  first: number // unix seconds of oldest commit in range, 0 if none
+  last: number // unix seconds of newest commit, 0 if none
+  perDay: { date: string; count: number }[]
+  authors: { name: string; commits: number }[]
+}
+
 export interface Profile {
   id: string
   name: string
@@ -294,14 +366,62 @@ export interface RepoRef {
   name: string
 }
 
-export interface TabState {
+/** Fields shared by every tab regardless of kind. */
+interface TabBase {
   id: string
-  kind: 'repo' | 'group'
   name: string
+  color?: string
+}
+
+/** A standalone single-repository tab. */
+export interface RepoTab extends TabBase {
+  kind: 'repo'
   repos: RepoRef[]
   activeRepoPath: string | null
-  color?: string
+}
+
+/** A collection of repositories shown under one collapsible chip. */
+export interface GroupTab extends TabBase {
+  kind: 'group'
+  repos: RepoRef[]
+  activeRepoPath: string | null
   collapsed?: boolean
+}
+
+/** A non-repository "page" tab (changelog today; docs/others later).
+ *  The discriminant lives on `page.type` so new page kinds slot in here
+ *  without touching repo/group plumbing. */
+export interface PageTab extends TabBase {
+  kind: 'page'
+  page: PageContent
+}
+
+export type PageContent = { type: 'changelog' }
+
+/** A published GitHub release, as surfaced to the changelog page. */
+export interface AppRelease {
+  tag: string
+  name: string | null
+  body: string | null
+  publishedAt: string
+  url: string
+  prerelease: boolean
+}
+
+export type TabState = RepoTab | GroupTab | PageTab
+
+/** Tabs that carry repositories (everything except page tabs). */
+export type RepoBearingTab = RepoTab | GroupTab
+
+/** Repos for any tab — empty for page tabs. Lets callers iterate tabs
+ *  without narrowing the union by hand. */
+export function tabRepos(tab: TabState): RepoRef[] {
+  return tab.kind === 'page' ? [] : tab.repos
+}
+
+/** Active repo path for any tab — null for page tabs. */
+export function tabActiveRepoPath(tab: TabState): string | null {
+  return tab.kind === 'page' ? null : tab.activeRepoPath
 }
 
 export interface AppSettings {
@@ -331,6 +451,11 @@ export interface AppSettings {
   mergeCommit: boolean
   sidebarOrder: string[]
   onboardingCompleted: boolean
+  /** Auto-open the changelog page tab after the app updates to a new version. */
+  autoOpenChangelog: boolean
+  /** Last app version the user has seen the changelog for. Undefined until the
+   *  first run that records it; used to detect upgrades. */
+  lastSeenVersion?: string
 }
 
 export type Language = 'en' | 'es'
@@ -475,6 +600,7 @@ export function defaultSettings(): AppSettings {
     confirmForcePush: true,
     mergeCommit: true,
     sidebarOrder: ['local', 'remotes', 'prs', 'tags', 'stashes', 'worktrees'],
-    onboardingCompleted: false
+    onboardingCompleted: false,
+    autoOpenChangelog: true
   }
 }

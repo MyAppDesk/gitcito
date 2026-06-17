@@ -171,6 +171,14 @@ const en = {
   'settings.coAuthorHint':
     'Append a Co-authored-by trailer (team@myappdesk.dev) to commits made from gitcito.',
   'settings.madeBy': 'with ♥ from MyAppDesk',
+  'settings.autoOpenChangelog': 'Open changelog after updates',
+  'settings.autoOpenChangelogHint':
+    'Show what’s new in a tab automatically when gitcito updates to a new version.',
+  'settings.viewChangelog': 'See what’s new',
+  'changelog.title': 'What’s new',
+  'changelog.checking': 'Checking for updates…',
+  'changelog.live': 'Latest from GitHub',
+  'changelog.bundled': 'Bundled with this build',
   'commitStyle.auto': 'Auto — ticket from branch, else conventional',
   'commitStyle.ticket': 'Ticket — “CMS-124: add login form”',
   'commitStyle.conventional': 'Conventional — “feat: add login form”',
@@ -385,6 +393,14 @@ const es: Dict = {
   'settings.coAuthorHint':
     'Añade un trailer Co-authored-by (team@myappdesk.dev) a los commits hechos desde gitcito.',
   'settings.madeBy': 'con ♥ de MyAppDesk',
+  'settings.autoOpenChangelog': 'Abrir novedades tras actualizar',
+  'settings.autoOpenChangelogHint':
+    'Muestra las novedades en una pestaña automáticamente cuando gitcito se actualiza a una nueva versión.',
+  'settings.viewChangelog': 'Ver novedades',
+  'changelog.title': 'Novedades',
+  'changelog.checking': 'Buscando actualizaciones…',
+  'changelog.live': 'Lo último desde GitHub',
+  'changelog.bundled': 'Incluido en esta versión',
   'commitStyle.auto': 'Auto — ticket desde la rama, si no convencional',
   'commitStyle.ticket': 'Ticket — “CMS-124: añadir formulario de login”',
   'commitStyle.conventional': 'Convencional — “feat: añadir formulario de login”',

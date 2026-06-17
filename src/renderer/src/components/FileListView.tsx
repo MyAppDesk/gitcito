@@ -6,6 +6,7 @@ import { useSettingsStore } from '../stores/settings'
 export function statusClass(s: string): string {
   switch (s) {
     case 'A':
+    case 'C':
     case '?':
       return 'st-add'
     case 'D':
@@ -16,6 +17,23 @@ export function statusClass(s: string): string {
       return 'st-conflict'
     default:
       return 'st-mod'
+  }
+}
+
+export function statusLabel(s: string): string {
+  switch (s) {
+    case 'A':
+    case 'C':
+    case '?':
+      return '+'
+    case 'D':
+      return '-'
+    case 'R':
+      return 'R'
+    case 'U':
+      return '!'
+    default:
+      return 'M'
   }
 }
 
@@ -91,7 +109,7 @@ function FileRowInner({
     >
       <FileText size={13} />
       <span className="file-path">{label}</span>
-      <span className={`file-status ${statusClass(file.status)}`}>{file.status}</span>
+      <span className={`file-status ${statusClass(file.status)}`}>{statusLabel(file.status)}</span>
       {props.action?.(file)}
     </div>
   )

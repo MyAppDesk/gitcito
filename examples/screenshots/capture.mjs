@@ -155,7 +155,9 @@ async function launch(shot, theme) {
   await writeFile(join(userDataDir, 'gitcito-settings.json'), JSON.stringify(seedSettings(shot, theme), null, 2))
 
   const app = await electron.launch({
-    args: [MAIN, '--shot', `--user-data-dir=${userDataDir}`],
+    // --disable-gpu forces software (CPU) rasterization so pixel output is
+    // identical across runs, eliminating GPU/subpixel-antialiasing drift.
+    args: [MAIN, '--shot', `--user-data-dir=${userDataDir}`, '--disable-gpu'],
     cwd: ROOT
   })
   const page = await app.firstWindow()
@@ -196,7 +198,7 @@ async function capturePng(shot) {
       await settle(page)
       const suffix = (shot.themes ?? ['dark']).length > 1 ? `-${theme}` : ''
       const file = join(OUT_DIR, `${shot.out}${suffix}.png`)
-      await page.screenshot({ path: file })
+      await page.screenshot({ path: file, animations: 'disabled' })
       console.log(`  ✓ ${file.replace(ROOT + '/', '')}`)
     } finally {
       await app.close()

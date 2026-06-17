@@ -1,5 +1,14 @@
 
 
+## [0.5.0](https://github.com/MyAppDesk/gitcito/compare/v0.4.0...v0.5.0) (2026-06-17)
+
+
+### Features
+
+* add copy functionality and expand/collapse toasts ([8c0a4cb](https://github.com/MyAppDesk/gitcito/commit/8c0a4cb59ed113debb984539b291b0e89ef3431c))
+* add GraphHeaderFilter component for filtering options ([e53c249](https://github.com/MyAppDesk/gitcito/commit/e53c249f2baf6271fa777d96e5d3d8f4a4c3ff09))
+* implement drag-and-drop functionality for tabs and repos ([19d3a12](https://github.com/MyAppDesk/gitcito/commit/19d3a1245e9e64517337d758bb089c1d31c09b20))
+
 ## [0.4.0](https://github.com/MyAppDesk/gitcito/compare/v0.3.0...v0.4.0) (2026-06-17)
 
 

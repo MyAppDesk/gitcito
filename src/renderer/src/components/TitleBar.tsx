@@ -357,7 +357,7 @@ export function TitleBar(): React.JSX.Element {
               <motion.div
                 key={tab.id}
                 layout
-                className={`tab tab-page ${tab.id === settings.activeTabId ? 'active' : ''} ${dc}`}
+                className={`tab tab-page ${tab.id === settings.activeTabId ? 'active' : 'tab-shimmer'} ${dc}`}
                 draggable
                 onDragStart={onDragStart({ kind: 'tab', tabId: tab.id }) as any}
                 onDragEnd={onDragEnd as any}

@@ -3211,6 +3211,49 @@ textarea:focus {
   color: var(--accent, #8b5cf6);
 }
 
+/* Shimmer to draw attention to an unread "What's new" tab. */
+.tab.tab-page.tab-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.tab.tab-page.tab-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 30%,
+    color-mix(in srgb, var(--accent, #8b5cf6) 45%, transparent) 50%,
+    transparent 70%
+  );
+  transform: translateX(-100%);
+  animation: tab-shimmer-sweep 2.6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.tab.tab-page.tab-shimmer:hover::after {
+  animation-play-state: paused;
+  opacity: 0;
+}
+
+@keyframes tab-shimmer-sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  /* Sweep then long pause so it pulses, not strobes. */
+  40%,
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tab.tab-page.tab-shimmer::after {
+    animation: none;
+  }
+}
+
 .changelog-page {
   flex: 1;
   min-height: 0;

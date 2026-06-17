@@ -150,10 +150,13 @@ function mapStatusCode(code: string): FileChangeKind {
 }
 
 /** Git records a stash's reflog subject as `WIP on <branch>: …` or
- *  `On <branch>: <message>`. The UI already shows a `stash@{N}` badge, so the
- *  prefix is redundant noise — strip it to leave just the meaningful message. */
-function cleanStashMessage(message: string): string {
-  return message.replace(/^(?:WIP on|On) [^:]*:\s*/, '').trim() || message
+ *  `On <branch>: <message>`. Split it into the originating branch and the
+ *  meaningful message; the UI shows them separately so the redundant prefix
+ *  isn't repeated inline. */
+function parseStashSubject(subject: string): { branch: string | null; message: string } {
+  const m = subject.match(/^(?:WIP on|On) ([^:]*):\s*(.*)$/)
+  if (!m) return { branch: null, message: subject }
+  return { branch: m[1] || null, message: (m[2] || '').trim() || subject }
 }
 
 /** MIME type by extension, covering images plus the binary formats the file
@@ -449,13 +452,15 @@ export const gitService = {
         .map((line, i) => {
           const [sha, parents, date, message] = line.split(SEP)
           const parentList = (parents ?? '').split(' ').filter(Boolean)
+          const { branch, message: cleanMessage } = parseStashSubject(message ?? '')
           return {
             index: i,
             sha,
             parentSha: parentList[0] ?? '',
             untrackedSha: parentList[2] ?? null,
             date: +date,
-            message: cleanStashMessage(message ?? '')
+            message: cleanMessage,
+            branch
           }
         })
     } catch {

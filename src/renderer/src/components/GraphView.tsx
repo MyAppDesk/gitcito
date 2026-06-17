@@ -1218,9 +1218,8 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
                     ) : stash ? (
                       <span key="message" className="row-subject stash-subject" title={stash.message}>
                         <span className="ref-badge ref-stash">
-                          <Archive size={10} /> stash@{`{${stash.index}}`}
+                          <Archive size={10} /> {stash.message}
                         </span>
-                        {stash.message}
                       </span>
                     ) : (
                       <span key="message" className="row-subject" title={c.subject}>

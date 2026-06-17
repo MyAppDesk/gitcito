@@ -906,6 +906,31 @@ textarea:focus {
   white-space: nowrap;
   font-size: 12.3px;
 }
+.sb-stash-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.sb-stash-message {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sb-stash-branch {
+  flex: 0 0 auto;
+  margin-left: auto;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  color: var(--text-2);
+  font-size: 10px;
+  max-width: 40%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .sb-sub-ref {
   flex: 0 1 auto;
   overflow: hidden;
@@ -1680,6 +1705,23 @@ textarea:focus {
 .stash-subject {
   font-style: italic;
   opacity: 0.85;
+}
+
+/* Subtle pill showing the branch a stash was created on, used in the graph
+ * row and the stash details panel. */
+.stash-branch-tag {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  color: var(--text-2);
+  font-size: 10.5px;
+  font-style: normal;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 .graph-empty {

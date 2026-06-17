@@ -84,12 +84,12 @@ export function StashDetails({ repo, sha }: { repo: RepoData; sha: string }): Re
             <Archive size={15} />
           </div>
           <div className="commit-meta">
-            <strong>{`stash@{${stash.index}}`}</strong>
+            <strong>{stash.message}</strong>
+            {stash.branch && <span className="stash-branch-tag">{stash.branch}</span>}
             <span>{new Date(stash.date * 1000).toLocaleString()}</span>
             <code>{stash.sha.slice(0, 10)}</code>
           </div>
         </div>
-        <p className="commit-subject">{stash.message}</p>
 
         <div className="stash-actions">
           <button className="btn" onClick={() => void repoActions.stashApply(repo.path, stash.index)}>

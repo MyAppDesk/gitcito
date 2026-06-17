@@ -78,6 +78,7 @@ export interface StashInfo {
   parentSha: string
   untrackedSha: string | null
   message: string
+  branch: string | null
   date: number
 }
 

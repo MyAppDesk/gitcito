@@ -955,8 +955,9 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
             }}
             title={s.message}
           >
-            <span className="sb-name">
-              {`{${s.index}}`} {s.message}
+            <span className="sb-name sb-stash-name">
+              <span className="sb-stash-message">{s.message}</span>
+              {s.branch && <span className="sb-stash-branch">{s.branch}</span>}
             </span>
           </div>
         ))}

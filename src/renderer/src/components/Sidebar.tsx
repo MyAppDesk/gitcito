@@ -11,6 +11,7 @@ import {
   RefreshCw,
   Check,
   FolderGit2,
+  Boxes,
   GripVertical,
   Laptop,
   Plus,
@@ -18,14 +19,15 @@ import {
   ExternalLink,
   Sparkles,
   Rocket,
-  Settings2
+  Settings2,
+  ArrowUpRight
 } from 'lucide-react'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
 import { useUIStore, type MenuItem } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { hostingApi, shellApi } from '../infrastructure/api'
 import { useT } from '../i18n'
-import type { BranchInfo, ReleaseInfo, RemoteBranchInfo, StashInfo, TagInfo, WorktreeInfo } from '../../../shared/types'
+import type { BranchInfo, ReleaseInfo, RemoteBranchInfo, StashInfo, TagInfo, WorktreeInfo, SubmoduleInfo } from '../../../shared/types'
 
 import { RemoteIcon } from './RemoteIcon'
 
@@ -165,11 +167,12 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       ),
     [repo.releases, f]
   )
-  // Tag names that have a published release behind them → drives the badge in the Tags section.
-  const releaseTagNames = useMemo(
-    () => new Set(repo.releases.map((r) => r.tag).filter((t): t is string => !!t)),
-    [repo.releases]
-  )
+  // Tag name → its release, so the Tags section can jump straight to a release.
+  const releaseByTag = useMemo(() => {
+    const map = new Map<string, (typeof repo.releases)[number]>()
+    for (const r of repo.releases) if (r.tag && !map.has(r.tag)) map.set(r.tag, r)
+    return map
+  }, [repo.releases])
 
   const remoteGroups = useMemo(() => {
     const map = new Map<string, RemoteBranchInfo[]>()
@@ -193,6 +196,18 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   }, [repo.branches.remotes])
 
   const remoteUrl = (name: string): string | undefined => repo.remotes.find((r) => r.name === name)?.url
+
+  // The hosting-platform web URL for a tag (GitHub release page / Azure tag
+  // view). Used by both the tag context menu and the hover-to-open cloud icon.
+  const tagWebLink = (tagName: string): string | null => {
+    const url = repo.remotes[0]?.url
+    if (!url) return null
+    const gh = /github\.com[/:]([^/]+)\/([^/]+?)(\.git)?$/.exec(url)
+    if (gh) return `https://github.com/${gh[1]}/${gh[2]}/releases/tag/${tagName}`
+    const az = /dev\.azure\.com\/([^/]+)\/([^/]+)\/_git\/([^/]+?)(\.git)?$/.exec(url)
+    if (az) return `https://dev.azure.com/${az[1]}/${az[2]}/_git/${az[3]}?version=GT${tagName}`
+    return null
+  }
 
   // Small icon strip: a laptop for "on this computer" plus one icon per remote
   // that has the same branch, collapsing extras into a "+N" badge.
@@ -229,16 +244,18 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     const remoteName = repo.remotes[0]?.name ?? 'origin'
     const currentBranch = repo.branches.current.trim()
     const isPushed = repo.remoteTagNames.includes(tag.name)
-    const remUrl = repo.remotes.find((r) => r.name === remoteName)?.url
-    const tagWebUrl = (url: string, name: string): string | null => {
-      const gh = /github\.com[/:]([^/]+)\/([^/]+?)(\.git)?$/.exec(url)
-      if (gh) return `https://github.com/${gh[1]}/${gh[2]}/releases/tag/${name}`
-      const az = /dev\.azure\.com\/([^/]+)\/([^/]+)\/_git\/([^/]+?)(\.git)?$/.exec(url)
-      if (az) return `https://dev.azure.com/${az[1]}/${az[2]}/_git/${az[3]}?version=GT${name}`
-      return null
-    }
-    const webUrl = remUrl ? tagWebUrl(remUrl, tag.name) : null
+    const webUrl = tagWebLink(tag.name)
+    const release = releaseByTag.get(tag.name)
     return [
+      ...(release
+        ? [
+            {
+              label: `Go to release ${release.name || release.tag || tag.name}`,
+              onClick: () => openPageTab({ type: 'release', release, repoPath: path })
+            } satisfies MenuItem,
+            { separator: true } satisfies MenuItem
+          ]
+        : []),
       { label: `Checkout ${tag.name}`, onClick: () => void repoActions.checkout(path, tag.name) },
       { separator: true },
       {
@@ -273,7 +290,10 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       { separator: true },
       { label: 'Copy tag name', onClick: () => void navigator.clipboard.writeText(tag.name) },
       ...(webUrl
-        ? [{ label: `Copy link to ${tag.name} on ${remoteName}`, onClick: () => void navigator.clipboard.writeText(webUrl) } satisfies MenuItem]
+        ? [
+            { label: `Open ${tag.name} on ${remoteName}`, onClick: () => void shellApi.openExternal(webUrl) } satisfies MenuItem,
+            { label: `Copy link to ${tag.name} on ${remoteName}`, onClick: () => void navigator.clipboard.writeText(webUrl) } satisfies MenuItem
+          ]
         : []),
       { label: 'Create tag here…', onClick: createTagAtHead },
       { separator: true },
@@ -733,7 +753,8 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         {tags.length === 0 && <div className="sb-empty">{t('sidebar.noTags')}</div>}
         {tags.map((tag) => {
           const isPushed = repo.remoteTagNames.includes(tag.name)
-          const isRelease = releaseTagNames.has(tag.name)
+          const release = releaseByTag.get(tag.name)
+          const tagLink = repo.remotes.length ? tagWebLink(tag.name) : null
           return (
             <div
               key={tag.name}
@@ -743,14 +764,39 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
                 e.preventDefault()
                 openContextMenu(e.clientX, e.clientY, tagMenu(tag))
               }}
-              title={`${tag.name}${isRelease ? ' · release' : ''}${repo.remotes.length ? (isPushed ? ' · pushed' : ' · local only') : ''}`}
+              title={`${tag.name}${release ? ' · release' : ''}${repo.remotes.length ? (isPushed ? ' · pushed' : ' · local only') : ''}`}
             >
               <Tag size={11} className="sb-tag-icon" />
               <span className="sb-name">{tag.name}</span>
-              {isRelease && <Rocket size={10} className="sb-release-badge" />}
-              {repo.remotes.length > 0 && (
-                <Cloud size={10} className={`sb-tag-cloud ${isPushed ? 'pushed' : 'unpushed'}`} />
+              {release && (
+                <span
+                  className="sb-tag-action"
+                  title={`Go to release ${release.name || release.tag || tag.name}`}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    openPageTab({ type: 'release', release, repoPath: path })
+                  }}
+                >
+                  <Rocket size={10} className="sb-release-badge icon-base" />
+                  <ArrowUpRight size={11} className="icon-hover" />
+                </span>
               )}
+              {repo.remotes.length > 0 &&
+                (tagLink && isPushed ? (
+                  <span
+                    className="sb-tag-action sb-tag-cloud pushed"
+                    title={`Open ${tag.name} on remote`}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      void shellApi.openExternal(tagLink)
+                    }}
+                  >
+                    <Cloud size={10} className="icon-base" />
+                    <ArrowUpRight size={11} className="icon-hover" />
+                  </span>
+                ) : (
+                  <Cloud size={10} className={`sb-tag-cloud ${isPushed ? 'pushed' : 'unpushed'}`} />
+                ))}
             </div>
           )
         })}
@@ -903,9 +949,11 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
 
   return (
     <aside className="sidebar">
-      <div className="sb-filter">
-        <Search size={13} />
-        <input placeholder={t('sidebar.filter')} value={filter} onChange={(e) => setFilter(e.target.value)} />
+      <div className="sb-filter-row">
+        <div className="sb-filter">
+          <Search size={13} />
+          <input placeholder={t('sidebar.filter')} value={filter} onChange={(e) => setFilter(e.target.value)} />
+        </div>
         <span
           className="icon-btn sb-sections-btn"
           title={t('sidebar.sections')}

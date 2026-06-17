@@ -674,11 +674,18 @@ textarea:focus {
   flex-direction: column;
 }
 
-.sb-filter {
+.sb-filter-row {
   display: flex;
   align-items: center;
   gap: 6px;
   margin: 10px;
+}
+.sb-filter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
   padding: 0 10px;
   height: 30px;
   background: var(--bg-0);
@@ -866,6 +873,41 @@ textarea:focus {
 .sb-tag-cloud.unpushed {
   color: var(--text-3, #555);
   opacity: 0.5;
+}
+
+/* Tag icons that turn into an "open" affordance on hover. */
+.sb-tag-action {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  cursor: pointer;
+}
+.sb-tag-action .icon-base,
+.sb-tag-action .icon-hover {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+.sb-tag-action .icon-hover {
+  opacity: 0;
+  color: var(--accent);
+  transform: translate(-1px, 1px) scale(0.8);
+}
+.sb-tag-action:hover .icon-base {
+  opacity: 0;
+  transform: translate(1px, -1px) scale(0.8);
+}
+.sb-tag-action:hover .icon-hover {
+  opacity: 1;
+  transform: translate(0, 0) scale(1);
+}
+.sb-tag-action.sb-tag-cloud {
+  margin-left: 0;
 }
 
 .pr-open {

@@ -163,7 +163,7 @@ textarea:focus {
   display: flex;
   align-items: flex-end;
   height: 100%;
-  gap: 4px;
+  gap: 1px;
   flex: 1;
   min-width: 0;
   overflow-x: auto;

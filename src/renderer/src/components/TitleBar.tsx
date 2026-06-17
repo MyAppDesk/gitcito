@@ -51,6 +51,20 @@ export function TitleBar(): React.JSX.Element {
     clearDrop()
   }
 
+  // Middle-click closes a tab/repo. preventDefault on mousedown suppresses
+  // the browser autoscroll cursor.
+  const middleClose = (fn: () => void) => ({
+    onMouseDown: (e: React.MouseEvent) => {
+      if (e.button === 1) e.preventDefault()
+    },
+    onAuxClick: (e: React.MouseEvent) => {
+      if (e.button !== 1) return
+      e.preventDefault()
+      e.stopPropagation()
+      fn()
+    }
+  })
+
   const sideOf = (e: React.DragEvent): 'before' | 'after' => {
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
     return e.clientX < rect.left + rect.width / 2 ? 'before' : 'after'
@@ -301,6 +315,7 @@ export function TitleBar(): React.JSX.Element {
                 onDragEnd={onDragEnd as any}
                 onDragOver={onDragOverTab(tab.id)}
                 onDrop={onDropTab(tab.id)}
+                {...middleClose(() => confirmCloseGroup(tab))}
                 onClick={() => setActiveTab(tab.id)}
                 onContextMenu={(e) => {
                   e.preventDefault()
@@ -365,6 +380,7 @@ export function TitleBar(): React.JSX.Element {
                 draggable
                 onDragStart={onDragStart({ kind: 'tab', tabId: tab.id })}
                 onDragEnd={onDragEnd}
+                {...middleClose(() => confirmCloseGroup(tab))}
                 onClick={() => toggleTabCollapsed(tab.id)}
                 onContextMenu={handleGroupContext}
               >
@@ -394,6 +410,7 @@ export function TitleBar(): React.JSX.Element {
                       onDragEnd={onDragEnd as any}
                       onDragOver={onDragOverRepo(tab.id, repo.path)}
                       onDrop={onDropRepo(tab.id, repo.path)}
+                      {...middleClose(() => removeRepoFromGroup(tab.id, repo.path))}
                       onClick={() => {
                         setActiveTab(tab.id)
                         setGroupActiveRepo(tab.id, repo.path)

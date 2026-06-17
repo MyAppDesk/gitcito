@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import {
   Plus,
   Trash2,
+  X,
   UserCircle2,
   Bot,
   Github,
@@ -632,8 +634,11 @@ function ThemesPage(): React.JSX.Element {
   // Custom editor drafts (seeded from the current selection in the active mode).
   const [appDraft, setAppDraft] = useState<AppThemeColors>(resolveAppColors(currentApp, mode))
   const [appName, setAppName] = useState('My theme')
+  // AI-generated counterpart for the mode NOT currently being edited (null for manual edits).
+  const [appOther, setAppOther] = useState<AppThemeColors | null>(null)
   const [codeDraft, setCodeDraft] = useState<CodeThemeColors>(resolveCodeColors(currentCode, mode))
   const [codeName, setCodeName] = useState('My code theme')
+  const [codeOther, setCodeOther] = useState<CodeThemeColors | null>(null)
   const [showAppEditor, setShowAppEditor] = useState(false)
   const [showCodeEditor, setShowCodeEditor] = useState(false)
 
@@ -650,6 +655,7 @@ function ThemesPage(): React.JSX.Element {
     try {
       const result = await aiApi.generateAppTheme(appAIPrompt.trim(), activeProfile.ai)
       setAppDraft(mode === 'dark' ? result.dark : result.light)
+      setAppOther(mode === 'dark' ? result.light : result.dark)
       setAppName(result.name)
       setShowAppAIPrompt(false)
       setAppAIPrompt('')
@@ -667,6 +673,7 @@ function ThemesPage(): React.JSX.Element {
     try {
       const result = await aiApi.generateCodeTheme(codeAIPrompt.trim(), activeProfile.ai)
       setCodeDraft(mode === 'dark' ? result.dark : result.light)
+      setCodeOther(mode === 'dark' ? result.light : result.dark)
       setCodeName(result.name)
       setShowCodeAIPrompt(false)
       setCodeAIPrompt('')
@@ -692,8 +699,8 @@ function ThemesPage(): React.JSX.Element {
     const theme: AppTheme = {
       id: `custom-app-${uid()}`,
       name: appName || 'Custom',
-      light: appDraft,
-      dark: appDraft
+      light: mode === 'dark' ? (appOther ?? appDraft) : appDraft,
+      dark: mode === 'dark' ? appDraft : (appOther ?? appDraft)
     }
     update((s) => ({
       ...s,
@@ -708,8 +715,8 @@ function ThemesPage(): React.JSX.Element {
     const theme: CodeTheme = {
       id: `custom-code-${uid()}`,
       name: codeName || 'Custom',
-      light: codeDraft,
-      dark: codeDraft
+      light: mode === 'dark' ? (codeOther ?? codeDraft) : codeDraft,
+      dark: mode === 'dark' ? codeDraft : (codeOther ?? codeDraft)
     }
     update((s) => ({
       ...s,
@@ -760,7 +767,7 @@ function ThemesPage(): React.JSX.Element {
           <button
             className="theme-icon-btn"
             title={t('settings.createAppTheme')}
-            onClick={() => { setAppDraft(resolveAppColors(currentApp, mode)); setShowAppEditor((v) => !v) }}
+            onClick={() => { setAppDraft(resolveAppColors(currentApp, mode)); setAppOther(null); setShowAppEditor((v) => !v) }}
           >
             <Plus size={14} />
           </button>
@@ -803,49 +810,59 @@ function ThemesPage(): React.JSX.Element {
         ))}
       </div>
       {showAppAIPrompt && (
-        <div className="theme-ai-prompt">
-          <input
-            autoFocus
-            value={appAIPrompt}
-            onChange={(e) => setAppAIPrompt(e.target.value)}
-            placeholder={t('settings.aiThemePromptPlaceholder')}
-            onKeyDown={(e) => e.key === 'Enter' && !generatingApp && generateAppThemeAI()}
-          />
-          <button className="btn primary small" onClick={generateAppThemeAI} disabled={generatingApp || !appAIPrompt.trim()}>
-            {generatingApp ? <><Loader2 size={13} className="spin" /> {t('settings.generating')}</> : <><Sparkles size={13} /> Generate</>}
-          </button>
-          <button className="btn ghost small" onClick={() => { setShowAppAIPrompt(false); setAppAIPrompt('') }}>
-            {t('common.cancel')}
-          </button>
-        </div>
-      )}
-      {showAppEditor && (
-        <div className="theme-custom-editor">
-          <label>
-            {t('settings.themeName')}
-            <input value={appName} onChange={(e) => setAppName(e.target.value)} />
-          </label>
-          <div className="theme-color-grid">
-            {APP_COLOR_FIELDS.map((f) => (
-              <label key={f.key} className="theme-color-field">
-                <input
-                  type="color"
-                  value={appDraft[f.key]}
-                  onChange={(e) => setAppDraft((d) => ({ ...d, [f.key]: e.target.value }))}
-                />
-                <span>{f.label}</span>
-              </label>
-            ))}
-          </div>
-          <div className="theme-editor-actions">
-            <button className="btn primary small" onClick={saveAppTheme}>
-              {t('settings.saveTheme')}
+        <ThemeDialog
+          title={<><Sparkles size={15} /> {t('settings.generateWithAI')}</>}
+          onClose={() => { setShowAppAIPrompt(false); setAppAIPrompt('') }}
+        >
+          <div className="theme-ai-prompt">
+            <input
+              autoFocus
+              value={appAIPrompt}
+              onChange={(e) => setAppAIPrompt(e.target.value)}
+              placeholder={t('settings.aiThemePromptPlaceholder')}
+              onKeyDown={(e) => e.key === 'Enter' && !generatingApp && generateAppThemeAI()}
+            />
+            <button className="btn primary small" onClick={generateAppThemeAI} disabled={generatingApp || !appAIPrompt.trim()}>
+              {generatingApp ? <><Loader2 size={13} className="spin" /> {t('settings.generating')}</> : <><Sparkles size={13} /> Generate</>}
             </button>
-            <button className="btn ghost small" onClick={() => setShowAppEditor(false)}>
+            <button className="btn ghost small" onClick={() => { setShowAppAIPrompt(false); setAppAIPrompt('') }}>
               {t('common.cancel')}
             </button>
           </div>
-        </div>
+        </ThemeDialog>
+      )}
+      {showAppEditor && (
+        <ThemeDialog
+          title={<><Palette size={15} /> {t('settings.createAppTheme')}</>}
+          onClose={() => setShowAppEditor(false)}
+        >
+          <div className="theme-custom-editor">
+            <label>
+              {t('settings.themeName')}
+              <input value={appName} onChange={(e) => setAppName(e.target.value)} />
+            </label>
+            <div className="theme-color-grid">
+              {APP_COLOR_FIELDS.map((f) => (
+                <label key={f.key} className="theme-color-field">
+                  <input
+                    type="color"
+                    value={appDraft[f.key]}
+                    onChange={(e) => setAppDraft((d) => ({ ...d, [f.key]: e.target.value }))}
+                  />
+                  <span>{f.label}</span>
+                </label>
+              ))}
+            </div>
+            <div className="theme-editor-actions">
+              <button className="btn primary small" onClick={saveAppTheme}>
+                {t('settings.saveTheme')}
+              </button>
+              <button className="btn ghost small" onClick={() => setShowAppEditor(false)}>
+                {t('common.cancel')}
+              </button>
+            </div>
+          </div>
+        </ThemeDialog>
       )}
 
       <div className="theme-section-header" style={{ marginTop: 22 }}>
@@ -854,7 +871,7 @@ function ThemesPage(): React.JSX.Element {
           <button
             className="theme-icon-btn"
             title={t('settings.createCodeTheme')}
-            onClick={() => { setCodeDraft(resolveCodeColors(currentCode, mode)); setShowCodeEditor((v) => !v) }}
+            onClick={() => { setCodeDraft(resolveCodeColors(currentCode, mode)); setCodeOther(null); setShowCodeEditor((v) => !v) }}
           >
             <Plus size={14} />
           </button>
@@ -909,52 +926,101 @@ function ThemesPage(): React.JSX.Element {
 
       <CodePreview colors={currentCodeColors} />
       {showCodeAIPrompt && (
-        <div className="theme-ai-prompt">
-          <input
-            autoFocus
-            value={codeAIPrompt}
-            onChange={(e) => setCodeAIPrompt(e.target.value)}
-            placeholder={t('settings.aiThemePromptPlaceholder')}
-            onKeyDown={(e) => e.key === 'Enter' && !generatingCode && generateCodeThemeAI()}
-          />
-          <button className="btn primary small" onClick={generateCodeThemeAI} disabled={generatingCode || !codeAIPrompt.trim()}>
-            {generatingCode ? <><Loader2 size={13} className="spin" /> {t('settings.generating')}</> : <><Sparkles size={13} /> Generate</>}
-          </button>
-          <button className="btn ghost small" onClick={() => { setShowCodeAIPrompt(false); setCodeAIPrompt('') }}>
-            {t('common.cancel')}
-          </button>
-        </div>
-      )}
-      {showCodeEditor && (
-        <div className="theme-custom-editor">
-          <label>
-            {t('settings.themeName')}
-            <input value={codeName} onChange={(e) => setCodeName(e.target.value)} />
-          </label>
-          <div className="theme-color-grid">
-            {CODE_COLOR_FIELDS.map((f) => (
-              <label key={f.key} className="theme-color-field">
-                <input
-                  type="color"
-                  value={codeDraft[f.key]}
-                  onChange={(e) => setCodeDraft((d) => ({ ...d, [f.key]: e.target.value }))}
-                />
-                <span>{f.label}</span>
-              </label>
-            ))}
-          </div>
-          <CodePreview colors={codeDraft} />
-          <div className="theme-editor-actions">
-            <button className="btn primary small" onClick={saveCodeTheme}>
-              {t('settings.saveCodeTheme')}
+        <ThemeDialog
+          title={<><Sparkles size={15} /> {t('settings.generateWithAI')}</>}
+          onClose={() => { setShowCodeAIPrompt(false); setCodeAIPrompt('') }}
+        >
+          <div className="theme-ai-prompt">
+            <input
+              autoFocus
+              value={codeAIPrompt}
+              onChange={(e) => setCodeAIPrompt(e.target.value)}
+              placeholder={t('settings.aiThemePromptPlaceholder')}
+              onKeyDown={(e) => e.key === 'Enter' && !generatingCode && generateCodeThemeAI()}
+            />
+            <button className="btn primary small" onClick={generateCodeThemeAI} disabled={generatingCode || !codeAIPrompt.trim()}>
+              {generatingCode ? <><Loader2 size={13} className="spin" /> {t('settings.generating')}</> : <><Sparkles size={13} /> Generate</>}
             </button>
-            <button className="btn ghost small" onClick={() => setShowCodeEditor(false)}>
+            <button className="btn ghost small" onClick={() => { setShowCodeAIPrompt(false); setCodeAIPrompt('') }}>
               {t('common.cancel')}
             </button>
           </div>
-        </div>
+        </ThemeDialog>
+      )}
+      {showCodeEditor && (
+        <ThemeDialog
+          title={<><Palette size={15} /> {t('settings.createCodeTheme')}</>}
+          onClose={() => setShowCodeEditor(false)}
+        >
+          <div className="theme-custom-editor">
+            <label>
+              {t('settings.themeName')}
+              <input value={codeName} onChange={(e) => setCodeName(e.target.value)} />
+            </label>
+            <div className="theme-color-grid">
+              {CODE_COLOR_FIELDS.map((f) => (
+                <label key={f.key} className="theme-color-field">
+                  <input
+                    type="color"
+                    value={codeDraft[f.key]}
+                    onChange={(e) => setCodeDraft((d) => ({ ...d, [f.key]: e.target.value }))}
+                  />
+                  <span>{f.label}</span>
+                </label>
+              ))}
+            </div>
+            <CodePreview colors={codeDraft} />
+            <div className="theme-editor-actions">
+              <button className="btn primary small" onClick={saveCodeTheme}>
+                {t('settings.saveCodeTheme')}
+              </button>
+              <button className="btn ghost small" onClick={() => setShowCodeEditor(false)}>
+                {t('common.cancel')}
+              </button>
+            </div>
+          </div>
+        </ThemeDialog>
       )}
     </>
+  )
+}
+
+function ThemeDialog({
+  title,
+  onClose,
+  children
+}: {
+  title: ReactNode
+  onClose: () => void
+  children: ReactNode
+}): React.ReactElement {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  return createPortal(
+    <div
+      className="modal-backdrop"
+      style={{ zIndex: 1000 }}
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose()
+      }}
+    >
+      <div className="modal">
+        <button className="modal-close" onClick={onClose}>
+          <X size={15} />
+        </button>
+        <div className="modal-title-row" style={{ marginBottom: 14 }}>
+          {title}
+        </div>
+        {children}
+      </div>
+    </div>,
+    document.body
   )
 }
 

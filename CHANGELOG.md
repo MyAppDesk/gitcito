@@ -1,5 +1,12 @@
 
 
+## [0.15.1](https://github.com/MyAppDesk/gitcito/compare/v0.15.0...v0.15.1) (2026-06-18)
+
+
+### Bug Fixes
+
+* improve GIF capture timing for accurate playback ([85bc1bb](https://github.com/MyAppDesk/gitcito/commit/85bc1bbaa100e340af4d63785cf9c54f363648ae))
+
 ## [0.15.0](https://github.com/MyAppDesk/gitcito/compare/v0.14.0...v0.15.0) (2026-06-18)
 
 

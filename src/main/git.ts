@@ -632,7 +632,20 @@ export const gitService = {
   },
 
   async checkoutRemote(repoPath: string, fullName: string, localName: string): Promise<void> {
-    await gitFor(repoPath).checkout(['-b', localName, '--track', fullName])
+    const git = gitFor(repoPath)
+    // If a local branch with that name already exists, just switch to it
+    // instead of trying to recreate a tracking branch (which would fail with
+    // "a branch named '<x>' already exists").
+    const branches = await git.branchLocal()
+    if (branches.all.includes(localName)) {
+      await git.checkout(localName)
+      // Fast-forward the existing local branch to the remote tip so the
+      // checkout actually brings in the remote changes. --ff-only is safe:
+      // if the branches have diverged it errors instead of merging silently.
+      await git.merge(['--ff-only', fullName])
+    } else {
+      await git.checkout(['-b', localName, '--track', fullName])
+    }
   },
 
   async createBranch(repoPath: string, name: string, at?: string, checkout = true): Promise<void> {

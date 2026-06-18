@@ -204,6 +204,21 @@ export interface CreateRepoOpts {
   private: boolean
 }
 
+/** Options for opening a pull/merge request from the app. */
+export interface CreatePrOpts {
+  title: string
+  body: string
+  source: string // head branch
+  target: string // base branch
+  draft: boolean
+}
+
+/** Result of a created PR/MR. */
+export interface CreatePrResult {
+  url: string
+  number: number
+}
+
 export interface BlameLine {
   sha: string
   author: string

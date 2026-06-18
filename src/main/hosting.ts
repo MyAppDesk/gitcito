@@ -4,6 +4,8 @@ import type {
   CiState,
   CiStatus,
   CreateRepoOpts,
+  CreatePrOpts,
+  CreatePrResult,
   HostingProvider,
   PullRequest,
   ReleaseInfo,
@@ -153,6 +155,71 @@ function createPullRequestUrl(remoteUrl: string, source: string, target: string)
   return `https://dev.azure.com/${parsed.owner}/${encodeURIComponent(parsed.project)}/_git/${encodeURIComponent(
     parsed.repo
   )}/pullrequestcreate?sourceRef=${encodeURIComponent(source)}&targetRef=${encodeURIComponent(target)}`
+}
+
+/**
+ * Create a pull/merge request. GitHub is fully supported; Azure DevOps too.
+ * (GitLab/Bitbucket creation is tracked separately under hosting verification —
+ * their remotes aren't parsed by parseRemoteUrl yet.)
+ */
+async function createPullRequest(
+  remoteUrl: string,
+  tokens: { github?: string; azure?: string },
+  opts: CreatePrOpts
+): Promise<CreatePrResult> {
+  const parsed = parseRemoteUrl(remoteUrl)
+  if (!parsed) throw new Error('Unrecognized remote — PR creation supports GitHub and Azure DevOps.')
+
+  if (parsed.provider === 'github') {
+    if (!tokens.github) throw new Error('Add a GitHub token in Settings → Integrations.')
+    const res = await fetch(`https://api.github.com/repos/${parsed.owner}/${parsed.repo}/pulls`, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/vnd.github+json',
+        Authorization: `Bearer ${tokens.github}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        title: opts.title,
+        head: opts.source,
+        base: opts.target,
+        body: opts.body,
+        draft: opts.draft
+      })
+    })
+    if (!res.ok) {
+      const detail = (await res.json().catch(() => null)) as { message?: string; errors?: { message?: string }[] } | null
+      const msg = detail?.errors?.map((e) => e.message).filter(Boolean).join('; ') || detail?.message
+      throw new Error(`GitHub: ${msg || `API error (${res.status})`}`)
+    }
+    const d = (await res.json()) as { html_url: string; number: number }
+    return { url: d.html_url, number: d.number }
+  }
+
+  // Azure DevOps
+  if (!tokens.azure) throw new Error('Azure DevOps requires a PAT. Add one in Settings → Integrations.')
+  const auth = Buffer.from(`:${tokens.azure}`).toString('base64')
+  const base = `https://dev.azure.com/${parsed.owner}/${encodeURIComponent(parsed.project)}`
+  const res = await fetch(
+    `${base}/_apis/git/repositories/${encodeURIComponent(parsed.repo)}/pullrequests?api-version=7.1`,
+    {
+      method: 'POST',
+      headers: { Authorization: `Basic ${auth}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sourceRefName: `refs/heads/${opts.source}`,
+        targetRefName: `refs/heads/${opts.target}`,
+        title: opts.title,
+        description: opts.body,
+        isDraft: opts.draft
+      })
+    }
+  )
+  if (!res.ok) throw new Error(`Azure DevOps API error (${res.status})`)
+  const d = (await res.json()) as { pullRequestId: number }
+  return {
+    url: `${base}/_git/${encodeURIComponent(parsed.repo)}/pullrequest/${d.pullRequestId}`,
+    number: d.pullRequestId
+  }
 }
 
 async function listRepositories(provider: RepoHost, token: string, org?: string): Promise<RemoteRepo[]> {
@@ -483,4 +550,9 @@ export function registerHostingHandlers(): void {
     if (url) shell.openExternal(url)
     return url != null
   })
+  ipcMain.handle(
+    'hosting:createPR',
+    (_e, remoteUrl: string, tokens: { github?: string; azure?: string }, opts: CreatePrOpts) =>
+      createPullRequest(remoteUrl, tokens, opts)
+  )
 }

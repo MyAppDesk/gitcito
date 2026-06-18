@@ -60,6 +60,7 @@ interface PreloadApi {
     listReleases(remoteUrl: string, tokens: unknown): Promise<unknown>
     ciStatuses(remoteUrl: string, shas: string[], token: string): Promise<unknown>
     openCreatePR(remoteUrl: string, source: string, target: string): Promise<boolean>
+    createPR(remoteUrl: string, tokens: unknown, opts: unknown): Promise<unknown>
   }
   term: TermApi
   window: {

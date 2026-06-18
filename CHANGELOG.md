@@ -1,5 +1,29 @@
 
 
+## [0.15.0](https://github.com/MyAppDesk/gitcito/compare/v0.14.0...v0.15.0) (2026-06-18)
+
+
+### Features
+
+* add AI branch naming feature to CreateBranchModal ([bca4977](https://github.com/MyAppDesk/gitcito/commit/bca49775868ce3bcdef976bb4a9d2336ba80bfd0))
+* add bisect functionality with UI integration ([6ed8522](https://github.com/MyAppDesk/gitcito/commit/6ed852203d987114412541aa9470581e357f4fcb))
+* add branch and repository switcher in toolbar ([a8d09b4](https://github.com/MyAppDesk/gitcito/commit/a8d09b4838b62cbc7e4da8d2666924ac5caab05a))
+* add commit template support for prefilled commit messages ([f4aa924](https://github.com/MyAppDesk/gitcito/commit/f4aa9242804724e07bc5ad9772fe8f020097a62a))
+* add Create PR functionality with modal support ([1720d58](https://github.com/MyAppDesk/gitcito/commit/1720d58ae3de414ba6a7d684c630af179898e7fd))
+* add Git LFS support with tracking and management UI ([babb915](https://github.com/MyAppDesk/gitcito/commit/babb915639a4faa4ee78c2163de5b678aea040a4))
+* add hooks management with pre-commit and commit-msg hooks ([ae1f71a](https://github.com/MyAppDesk/gitcito/commit/ae1f71ab136b7d62c038af593e348b352564d264))
+* add ignore modal for selecting patterns and locations ([9bfd3df](https://github.com/MyAppDesk/gitcito/commit/9bfd3df747942eea3fb6bb0fd849fb36b6a82c24))
+* add issue detail and state management functionality ([46bbac5](https://github.com/MyAppDesk/gitcito/commit/46bbac5de605334af990a223346c5bd8fc3b0127))
+* add milestone management features and UI components ([b9670f4](https://github.com/MyAppDesk/gitcito/commit/b9670f48f9da0a05b1a19dfbcab84bdf0cb105bc))
+* add patch apply functionality with export and import ([959a441](https://github.com/MyAppDesk/gitcito/commit/959a4414d346a1ebb4ff56eb9e2333d310b54b4a))
+* add pull request detail, comment, review, and merge functions ([9e99f6e](https://github.com/MyAppDesk/gitcito/commit/9e99f6e610548abefe0f9a0f3cbac533588f1811))
+* add reflog functionality for recovering lost commits ([e2c5f17](https://github.com/MyAppDesk/gitcito/commit/e2c5f179d1bcef671753b38c027a0bfa617ecb20))
+* add sparse-checkout functionality with UI support ([0ebdf3a](https://github.com/MyAppDesk/gitcito/commit/0ebdf3a0e9afaea55e04d3c4d4f6079b95a69ece))
+* add support for commit signing with SSH and badges ([d0cfb9a](https://github.com/MyAppDesk/gitcito/commit/d0cfb9ae78bf2eb5482a5951de0f02095ad3a81f))
+* enhance checkoutRemote to handle existing local branches ([2cac993](https://github.com/MyAppDesk/gitcito/commit/2cac993f5f12e3533165e09315a74ec384ae3e93))
+* enhance create PR modal with branch selection and validation ([39518ca](https://github.com/MyAppDesk/gitcito/commit/39518ca3d3726cadb3ca439e827fc5700cf011cd))
+* implement line-level staging for individual diff lines ([07c1017](https://github.com/MyAppDesk/gitcito/commit/07c101775eeae13520b9d8e6dca86d663cc448d2))
+
 ## [0.14.0](https://github.com/MyAppDesk/gitcito/compare/v0.13.2...v0.14.0) (2026-06-17)
 
 

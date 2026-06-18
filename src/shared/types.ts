@@ -412,6 +412,14 @@ export interface RepoStats {
   authors: { name: string; commits: number }[]
 }
 
+/** One entry from `git reflog` — the recovery net for lost/rewound commits. */
+export interface ReflogEntry {
+  sha: string
+  selector: string // e.g. "HEAD@{0}"
+  action: string // full reflog subject, e.g. "commit: …" or "reset: moving to HEAD~1"
+  date: number // unix seconds
+}
+
 export interface Profile {
   id: string
   name: string

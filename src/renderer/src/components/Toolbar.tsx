@@ -12,7 +12,8 @@ import {
   Search,
   RefreshCw,
   Loader2,
-  Wand2
+  Wand2,
+  History
 } from 'lucide-react'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
 import { useUIStore } from '../stores/ui'
@@ -171,6 +172,14 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
         >
           <ArchiveRestore size={17} />
           <span>Pop</span>
+        </button>
+        <button
+          className="tool-btn"
+          title="Reflog — recover lost commits"
+          onClick={() => openModal({ kind: 'reflog', repoPath: path })}
+        >
+          <History size={17} />
+          <span>Reflog</span>
         </button>
       </div>
 

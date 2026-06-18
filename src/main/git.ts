@@ -23,6 +23,7 @@ import type {
   RepoSummary,
   RebaseStep,
   RepoStats,
+  ReflogEntry,
   StashInfo,
   TagInfo,
   WorktreeInfo,
@@ -1186,6 +1187,29 @@ export const gitService = {
     } finally {
       await unlink(tmpPatch).catch(() => {})
     }
+  },
+
+  // ─── Reflog (recovery) ─────────────────────────────────────────────────────
+
+  /**
+   * Read `git reflog` for a ref (default HEAD). Each entry is a point history
+   * passed through — checkout/reset/amend/rebase all leave a trace, so this is
+   * the net for recovering "lost" commits. Restore by checking out, resetting,
+   * or branching from an entry's sha via the existing reset/checkout/branch ops.
+   */
+  async reflog(repoPath: string, ref = 'HEAD', max = 200): Promise<ReflogEntry[]> {
+    const git = gitFor(repoPath)
+    const out = await git
+      .raw(['reflog', 'show', `--max-count=${max}`, `--format=%H${SEP}%gD${SEP}%gs${SEP}%ct${REC}`, ref])
+      .catch(() => '')
+    return out
+      .split(REC)
+      .map((r) => r.trim())
+      .filter(Boolean)
+      .map((rec) => {
+        const [sha, selector, action, date] = rec.split(SEP)
+        return { sha, selector: selector ?? '', action: action ?? '', date: +date || 0 }
+      })
   },
 
   // ─── Branch comparison ─────────────────────────────────────────────────────

@@ -12,6 +12,7 @@ import { AIConfigWizard } from './AIConfigWizard'
 import { InteractiveRebase } from './InteractiveRebase'
 import { BranchComparison } from './BranchComparison'
 import { AIPRReview } from './AIPRReview'
+import { ReflogModal } from './ReflogModal'
 
 function GroupColorModal({ spec }: { spec: Extract<ModalSpec, { kind: 'group-color' }> }): React.JSX.Element {
   const closeModal = useUIStore((s) => s.closeModal)
@@ -1177,7 +1178,10 @@ export function ModalHost(): React.JSX.Element {
             className={`modal ${
               modal.kind === 'settings' || modal.kind === 'ai-config-wizard'
                 ? 'modal-wide'
-                : modal.kind === 'interactive-rebase' || modal.kind === 'branch-compare' || modal.kind === 'ai-pr-review'
+                : modal.kind === 'interactive-rebase' ||
+                    modal.kind === 'branch-compare' ||
+                    modal.kind === 'ai-pr-review' ||
+                    modal.kind === 'reflog'
                   ? 'modal-tall'
                   : ''
             }`}
@@ -1209,6 +1213,7 @@ export function ModalHost(): React.JSX.Element {
               <AIPRReview repoPath={modal.repoPath} prTitle={modal.prTitle} sourceBranch={modal.sourceBranch} targetBranch={modal.targetBranch} />
             )}
             {modal.kind === 'group-color' && <GroupColorModal spec={modal} />}
+            {modal.kind === 'reflog' && <ReflogModal repoPath={modal.repoPath} />}
           </motion.div>
         </motion.div>
       )}

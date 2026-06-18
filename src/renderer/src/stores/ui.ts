@@ -70,6 +70,7 @@ export type ModalSpec =
   | { kind: 'branch-compare'; repoPath: string; branchA: string; branchB: string }
   | { kind: 'ai-pr-review'; repoPath: string; prTitle: string; sourceBranch: string; targetBranch: string }
   | { kind: 'group-color'; tabId: string; current?: string; onSelect: (color: string) => void }
+  | { kind: 'reflog'; repoPath: string }
 
 export type FileViewSource =
   | { type: 'wip'; staged: boolean; untracked: boolean }

@@ -29,7 +29,8 @@ import type {
   CodeThemeColors,
   Analytics,
   LogEntry,
-  RepoStats
+  RepoStats,
+  ReflogEntry
 } from '../../../shared/types'
 
 // Typed adapter over the IPC bridge — the only place that talks to window.api.
@@ -90,6 +91,7 @@ export const gitApi = {
   cherryPick: (path: string, hash: string, noCommit?: boolean) => call<void>('cherryPick', path, hash, noCommit),
   revertCommit: (path: string, hash: string) => call<void>('revertCommit', path, hash),
   reset: (path: string, ref: string, mode: 'soft' | 'mixed' | 'hard') => call<void>('reset', path, ref, mode),
+  reflog: (path: string, ref?: string, max?: number) => call<ReflogEntry[]>('reflog', path, ref, max),
   createTag: (path: string, name: string, hash?: string) => call<void>('createTag', path, name, hash),
   deleteTag: (path: string, name: string) => call<void>('deleteTag', path, name),
   pushTag: (path: string, name: string, remote?: string) => call<void>('pushTag', path, name, remote),

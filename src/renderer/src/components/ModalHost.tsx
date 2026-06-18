@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { X, Globe, Github, Gitlab, Cloud, Server, Loader2, Search, Lock, ExternalLink, Plug, FolderGit2, Folder, Plus, Check, ChevronDown } from 'lucide-react'
+import { X, Globe, Github, Gitlab, Cloud, Server, Loader2, Search, Lock, ExternalLink, Plug, FolderGit2, Folder, Plus, Check, ChevronDown, Sparkles } from 'lucide-react'
 import { useUIStore, type ModalSpec } from '../stores/ui'
 import { useSettingsStore, GROUP_COLORS } from '../stores/settings'
-import { hostingApi, gitApi, shellApi } from '../infrastructure/api'
+import { hostingApi, gitApi, shellApi, aiApi } from '../infrastructure/api'
 import { repoActions } from '../stores/repo'
 import type { CreateRepoOpts, GroupTab, RemoteOwner, RemoteRepo, RepoHost } from '../../../shared/types'
 import { SettingsPanel } from './SettingsPanel'
@@ -107,7 +107,13 @@ function InputModal({ spec }: { spec: Extract<ModalSpec, { kind: 'input' }> }): 
 
 function CreateBranchModal({ spec }: { spec: Extract<ModalSpec, { kind: 'create-branch' }> }): React.JSX.Element {
   const closeModal = useUIStore((s) => s.closeModal)
+  const toast = useUIStore((s) => s.toast)
+  const profile = useSettingsStore((s) => s.activeProfile())
+  const aiEnabled = profile.ai.enabled !== false
+
   const [name, setName] = useState('')
+  const [description, setDescription] = useState('')
+  const [aiBusy, setAiBusy] = useState(false)
 
   const submit = (): void => {
     if (!name.trim()) return
@@ -115,9 +121,46 @@ function CreateBranchModal({ spec }: { spec: Extract<ModalSpec, { kind: 'create-
     void repoActions.createBranch(spec.path, name.trim())
   }
 
+  const generate = async (): Promise<void> => {
+    if (!description.trim() || aiBusy) return
+    setAiBusy(true)
+    try {
+      const suggested = await aiApi.generateBranchName(description.trim(), profile.ai, {
+        username: profile.gitName || undefined
+      })
+      if (suggested.trim()) setName(suggested.trim())
+    } catch (err) {
+      toast('error', err instanceof Error ? err.message : String(err))
+    } finally {
+      setAiBusy(false)
+    }
+  }
+
   return (
     <>
       <h3>Create branch</h3>
+
+      {aiEnabled && (
+        <div className="cb-ai">
+          <label className="modal-label">Describe the task (optional) — let AI name the branch</label>
+          <div className="cb-ai-row">
+            <input
+              className="modal-input"
+              value={description}
+              placeholder="e.g. fix login redirect loop on Safari"
+              onChange={(e) => setDescription(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') void generate()
+                if (e.key === 'Escape') closeModal()
+              }}
+            />
+            <button className="btn ghost" onClick={() => void generate()} disabled={aiBusy || !description.trim()}>
+              {aiBusy ? <Loader2 size={13} className="spin" /> : <Sparkles size={13} />} Generate
+            </button>
+          </div>
+        </div>
+      )}
+
       <label className="modal-label">
         {spec.currentBranch ? `Branch from ${spec.currentBranch}` : 'Branch name'}
       </label>

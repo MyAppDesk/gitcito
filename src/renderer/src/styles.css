@@ -7498,6 +7498,33 @@ mark.find-hit.active {
   margin-top: 2px;
 }
 
+/* ── Create branch: AI naming ── */
+.cb-ai {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+.cb-ai .modal-label {
+  margin-top: 0;
+}
+.cb-ai-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.cb-ai-row .modal-input {
+  flex: 1;
+}
+.cb-ai-row .btn {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
 /* ── Create PR ── */
 .pr-branches {
   font-size: 12.5px;

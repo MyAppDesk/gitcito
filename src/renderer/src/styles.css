@@ -7498,6 +7498,49 @@ mark.find-hit.active {
   margin-top: 2px;
 }
 
+/* ── Issue detail page (tab) ── */
+.issue-page { display: flex; gap: 18px; height: 100%; overflow: hidden; padding: 18px 22px; }
+.issue-main { flex: 1; min-width: 0; overflow-y: auto; padding-right: 6px; }
+.issue-side { flex: 0 0 240px; display: flex; flex-direction: column; gap: 14px; border-left: 1px solid var(--border); padding-left: 16px; overflow-y: auto; }
+.issue-head { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+.issue-head h2 { font-size: 18px; margin: 0; flex: 1; min-width: 0; }
+.issue-num { color: var(--text-3); font-weight: 400; }
+.issue-head .icon-btn { flex: 0 0 auto; }
+.issue-state {
+  display: inline-flex; align-items: center; gap: 5px; flex: 0 0 auto;
+  font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 20px; color: #fff;
+}
+.issue-state.issue-open { background: var(--ok, #2ea043); }
+.issue-state.issue-closed { background: #8957e5; }
+.issue-by { font-size: 12px; color: var(--text-3); margin-bottom: 12px; }
+.issue-body {
+  font-size: 13px; line-height: 1.6; color: var(--text-0); white-space: pre-wrap;
+  background: var(--bg-2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; margin-bottom: 16px;
+}
+.issue-body-empty { color: var(--text-3); font-style: italic; }
+.issue-section-title { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.03em; margin: 12px 0 8px; }
+.issue-count { color: var(--text-3); }
+.issue-comment { background: var(--bg-2); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; }
+.issue-comment-head { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--text-3); margin-bottom: 4px; }
+.issue-comment-head strong { color: var(--text-1); }
+.issue-comment-body { font-size: 13px; color: var(--text-0); white-space: pre-wrap; line-height: 1.5; }
+.issue-input {
+  width: 100%; min-height: 80px; font-size: 13px; line-height: 1.5; font-family: inherit;
+  background: var(--bg-1); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; color: var(--text-0); resize: vertical;
+  margin-top: 6px;
+}
+.issue-actions { display: flex; gap: 8px; margin-top: 8px; }
+.issue-branch-btn { width: 100%; justify-content: center; display: inline-flex; align-items: center; gap: 6px; }
+.issue-field-label { display: flex; align-items: center; gap: 5px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 700; color: var(--text-3); margin-bottom: 5px; }
+.issue-field-val { font-size: 12.5px; color: var(--text-1); }
+.issue-none { color: var(--text-3); }
+.issue-labels { display: flex; flex-wrap: wrap; gap: 4px; }
+.issue-label { font-size: 11px; padding: 2px 8px; border-radius: 20px; background: var(--bg-3); color: var(--text-1); }
+.issue-linked-pr { display: block; font-size: 12px; color: var(--accent); margin-bottom: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.issue-side-note { font-size: 10.5px; color: var(--text-3); line-height: 1.4; margin: 4px 0 0; }
+.issue-loading { display: flex; align-items: center; gap: 8px; padding: 20px 0; color: var(--text-3); }
+.issue-error { padding: 12px; color: var(--danger, #d1242f); }
+
 /* ── PR detail ── */
 .prd-empty { display: flex; align-items: center; gap: 8px; padding: 24px 8px; color: var(--text-3); font-size: 13px; }
 .prd-error { padding: 12px; color: var(--danger, #d1242f); font-size: 13px; }

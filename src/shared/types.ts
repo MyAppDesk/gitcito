@@ -201,6 +201,30 @@ export interface IssueInfo {
   comments: number
 }
 
+/** A pull request linked to an issue (via cross-reference). */
+export interface LinkedPr {
+  number: number
+  title: string
+  url: string
+  state: string
+}
+
+/** Full detail for one issue (all fields + conversation + linked PRs). */
+export interface IssueDetail {
+  number: number
+  title: string
+  body: string
+  author: string
+  state: 'open' | 'closed'
+  url: string
+  labels: string[]
+  assignees: string[]
+  milestone: string | null
+  createdAt: string
+  comments: PrComment[]
+  linkedPrs: LinkedPr[]
+}
+
 export type PrReviewEvent = 'APPROVE' | 'REQUEST_CHANGES' | 'COMMENT'
 export type PrMergeMethod = 'merge' | 'squash' | 'rebase'
 
@@ -598,6 +622,7 @@ export type PageContent =
   | { type: 'changelog' }
   | { type: 'logs' }
   | { type: 'release'; release: ReleaseInfo; repoPath: string }
+  | { type: 'issue'; issue: IssueInfo; repoPath: string; remoteUrl: string }
 
 /** A published GitHub release, as surfaced to the changelog page. */
 export interface AppRelease {

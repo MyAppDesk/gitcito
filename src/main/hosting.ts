@@ -11,6 +11,8 @@ import type {
   PrDetail,
   PrReview,
   IssueInfo,
+  IssueDetail,
+  LinkedPr,
   PrReviewEvent,
   PrMergeMethod,
   ReleaseInfo,
@@ -361,6 +363,75 @@ async function listIssues(
   }
 }
 
+async function issueDetail(
+  remoteUrl: string,
+  tokens: { github?: string },
+  number: number
+): Promise<IssueDetail> {
+  const { owner, repo, token } = ghRepoOf(remoteUrl, tokens.github)
+  const api = `https://api.github.com/repos/${owner}/${repo}`
+  const [issue, comments, timeline] = await Promise.all([
+    ghJson<{
+      number: number
+      title: string
+      body: string | null
+      user: { login: string } | null
+      state: string
+      html_url: string
+      created_at: string
+      labels: Array<{ name: string } | string>
+      assignees: Array<{ login: string }> | null
+      milestone: { title: string } | null
+    }>(`${api}/issues/${number}`, token),
+    ghJson<Array<{ user: { login: string } | null; body: string; created_at: string }>>(
+      `${api}/issues/${number}/comments?per_page=100`,
+      token
+    ),
+    ghJson<
+      Array<{
+        event: string
+        source?: { issue?: { number: number; title: string; html_url: string; state: string; pull_request?: unknown } }
+      }>
+    >(`${api}/issues/${number}/timeline?per_page=100`, token).catch(() => [])
+  ])
+
+  const linkedMap = new Map<number, LinkedPr>()
+  for (const ev of timeline) {
+    const si = ev.event === 'cross-referenced' ? ev.source?.issue : undefined
+    if (si?.pull_request) {
+      linkedMap.set(si.number, { number: si.number, title: si.title, url: si.html_url, state: si.state })
+    }
+  }
+
+  return {
+    number: issue.number,
+    title: issue.title,
+    body: issue.body ?? '',
+    author: issue.user?.login ?? 'unknown',
+    state: issue.state === 'closed' ? 'closed' : 'open',
+    url: issue.html_url,
+    labels: issue.labels.map((l) => (typeof l === 'string' ? l : l.name)),
+    assignees: (issue.assignees ?? []).map((a) => a.login),
+    milestone: issue.milestone?.title ?? null,
+    createdAt: issue.created_at,
+    comments: comments.map((c) => ({ author: c.user?.login ?? 'unknown', body: c.body, createdAt: c.created_at })),
+    linkedPrs: [...linkedMap.values()]
+  }
+}
+
+async function setIssueState(
+  remoteUrl: string,
+  tokens: { github?: string },
+  number: number,
+  state: 'open' | 'closed'
+): Promise<void> {
+  const { owner, repo, token } = ghRepoOf(remoteUrl, tokens.github)
+  await ghJson(`https://api.github.com/repos/${owner}/${repo}/issues/${number}`, token, {
+    method: 'PATCH',
+    body: JSON.stringify({ state })
+  })
+}
+
 async function listRepositories(provider: RepoHost, token: string, org?: string): Promise<RemoteRepo[]> {
   if (provider === 'github') {
     if (!token.trim()) throw new Error('Not connected. Add a GitHub token in Settings → Integrations.')
@@ -460,6 +531,15 @@ async function ghJson<T>(url: string, token: string, init?: RequestInit): Promis
   })
   if (!res.ok) {
     const msg = (await res.json().catch(() => null)) as { message?: string } | null
+    // Surface when the rate limit resets so the user knows how long to wait.
+    if (res.status === 403 || res.status === 429) {
+      const remaining = res.headers.get('x-ratelimit-remaining')
+      const reset = res.headers.get('x-ratelimit-reset')
+      if (remaining === '0' && reset) {
+        const at = new Date(+reset * 1000).toLocaleTimeString()
+        throw new Error(`GitHub rate limit exceeded — resets at ${at}.`)
+      }
+    }
     throw new Error(msg?.message ? `GitHub: ${msg.message}` : `GitHub API error (${res.status})`)
   }
   return res.json() as Promise<T>
@@ -712,5 +792,13 @@ export function registerHostingHandlers(): void {
   )
   ipcMain.handle('hosting:listIssues', (_e, remoteUrl: string, tokens: { github?: string }) =>
     listIssues(remoteUrl, tokens)
+  )
+  ipcMain.handle('hosting:issueDetail', (_e, remoteUrl: string, tokens: { github?: string }, number: number) =>
+    issueDetail(remoteUrl, tokens, number)
+  )
+  ipcMain.handle(
+    'hosting:setIssueState',
+    (_e, remoteUrl: string, tokens: { github?: string }, number: number, state: 'open' | 'closed') =>
+      setIssueState(remoteUrl, tokens, number, state)
   )
 }

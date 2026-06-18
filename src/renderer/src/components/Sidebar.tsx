@@ -856,14 +856,25 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
           <div
             key={issue.number}
             className="sb-item pr"
-            onClick={() => void window.api.openExternal(issue.url)}
+            onClick={() => {
+              const origin = repo.remotes.find((r) => r.name === 'origin') ?? repo.remotes[0]
+              if (origin)
+                useSettingsStore.getState().openPageTab({ type: 'issue', issue, repoPath: path, remoteUrl: origin.url })
+            }}
             title={issue.title}
           >
             <CircleDot size={12} className="pr-open" />
             <span className="sb-name">
               #{issue.number} {issue.title}
             </span>
-            <span className="icon-btn sb-pr-open" title="Open in browser">
+            <span
+              className="icon-btn sb-pr-open"
+              title="Open in browser"
+              onClick={(e) => {
+                e.stopPropagation()
+                void window.api.openExternal(issue.url)
+              }}
+            >
               <ExternalLink size={11} />
             </span>
           </div>

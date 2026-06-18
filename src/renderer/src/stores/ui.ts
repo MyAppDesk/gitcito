@@ -62,7 +62,7 @@ export type ModalSpec =
       pushUrl?: string
     }
   | { kind: 'clone'; onClone: (repo: { path: string; name: string }) => void }
-  | { kind: 'create-branch'; path: string; currentBranch?: string }
+  | { kind: 'create-branch'; path: string; currentBranch?: string; description?: string }
   | { kind: 'settings'; page?: 'profile' | 'integrations' | 'ai' | 'themes' | 'general' }
   | { kind: 'launcher'; groupId?: string }
   | { kind: 'create-repo'; onCreate: (repo: { path: string; name: string }) => void }

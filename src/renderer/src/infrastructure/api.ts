@@ -21,6 +21,7 @@ import type {
   PrReviewEvent,
   PrMergeMethod,
   IssueInfo,
+  IssueDetail,
   ReleaseInfo,
   HostingProvider,
   RepoHost,
@@ -301,5 +302,9 @@ export const hostingApi = {
   prMerge: (remoteUrl: string, tokens: { github?: string }, number: number, method: PrMergeMethod) =>
     window.api.hosting.prMerge(remoteUrl, tokens, number, method) as Promise<void>,
   listIssues: (remoteUrl: string, tokens: { github?: string }) =>
-    window.api.hosting.listIssues(remoteUrl, tokens) as Promise<{ provider: HostingProvider; issues: IssueInfo[] }>
+    window.api.hosting.listIssues(remoteUrl, tokens) as Promise<{ provider: HostingProvider; issues: IssueInfo[] }>,
+  issueDetail: (remoteUrl: string, tokens: { github?: string }, number: number) =>
+    window.api.hosting.issueDetail(remoteUrl, tokens, number) as Promise<IssueDetail>,
+  setIssueState: (remoteUrl: string, tokens: { github?: string }, number: number, state: 'open' | 'closed') =>
+    window.api.hosting.setIssueState(remoteUrl, tokens, number, state) as Promise<void>
 }

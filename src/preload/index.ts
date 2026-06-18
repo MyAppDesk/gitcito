@@ -80,7 +80,9 @@ const api = {
     ciStatuses: (remoteUrl: string, shas: string[], token: string): Promise<unknown> =>
       ipcRenderer.invoke('hosting:ciStatuses', remoteUrl, shas, token),
     openCreatePR: (remoteUrl: string, source: string, target: string): Promise<boolean> =>
-      ipcRenderer.invoke('hosting:openCreatePR', remoteUrl, source, target)
+      ipcRenderer.invoke('hosting:openCreatePR', remoteUrl, source, target),
+    createPR: (remoteUrl: string, tokens: unknown, opts: unknown): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:createPR', remoteUrl, tokens, opts)
   },
 
   term: {

@@ -23,6 +23,8 @@ import type {
   RemoteRepo,
   RemoteOwner,
   CreateRepoOpts,
+  CreatePrOpts,
+  CreatePrResult,
   WorktreeInfo,
   SubmoduleInfo,
   AppThemeColors,
@@ -281,5 +283,7 @@ export const hostingApi = {
   ciStatuses: (remoteUrl: string, shas: string[], token: string) =>
     window.api.hosting.ciStatuses(remoteUrl, shas, token) as Promise<Record<string, CiStatus>>,
   openCreatePR: (remoteUrl: string, source: string, target: string) =>
-    window.api.hosting.openCreatePR(remoteUrl, source, target)
+    window.api.hosting.openCreatePR(remoteUrl, source, target),
+  createPR: (remoteUrl: string, tokens: { github?: string; azure?: string }, opts: CreatePrOpts) =>
+    window.api.hosting.createPR(remoteUrl, tokens, opts) as Promise<CreatePrResult>
 }

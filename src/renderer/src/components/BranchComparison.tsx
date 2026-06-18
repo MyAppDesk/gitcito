@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Loader2 } from 'lucide-react'
 import type { BranchCompareResult } from '../../../shared/types'
-import { gitApi, hostingApi } from '../infrastructure/api'
+import { gitApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
 import { useRepoStore } from '../stores/repo'
 import { useSettingsStore } from '../stores/settings'
@@ -31,7 +31,6 @@ export function BranchComparison({
 
   const [result, setResult] = useState<BranchCompareResult | null>(null)
   const [loading, setLoading] = useState(true)
-  const [prBusy, setPrBusy] = useState(false)
 
   useEffect(() => {
     setLoading(true)
@@ -44,17 +43,25 @@ export function BranchComparison({
     })
   }, [repoPath, branchA, branchB])
 
-  const openPR = async (): Promise<void> => {
+  const openPR = (): void => {
     const origin = repo?.remotes.find((r) => r.name === 'origin') ?? repo?.remotes[0]
-    if (!origin) { toast('error', 'No remote found'); return }
-    setPrBusy(true)
-    try {
-      await hostingApi.openCreatePR(origin.url, branchA, branchB)
-    } catch (err) {
-      toast('error', err instanceof Error ? err.message : String(err))
-    } finally {
-      setPrBusy(false)
+    if (!origin) {
+      toast('error', 'No remote found')
+      return
     }
+    const ahead = result?.aheadCommits ?? []
+    // One commit → use its subject; otherwise fall back to the branch name.
+    const defaultTitle = ahead.length === 1 ? ahead[0].subject : branchA
+    const defaultBody = ahead.map((c) => `- ${c.subject}`).join('\n')
+    useUIStore.getState().openModal({
+      kind: 'create-pr',
+      repoPath,
+      remoteUrl: origin.url,
+      source: branchA,
+      target: branchB,
+      defaultTitle,
+      defaultBody
+    })
   }
 
   const hasToken = !!(profile.githubToken || profile.azureToken || profile.gitlabToken || profile.bitbucketToken)
@@ -62,20 +69,22 @@ export function BranchComparison({
   return (
     <div className="bc-root">
       <div className="bc-header">
-        <h3>Compare branches</h3>
-        <span className="bc-labels">
-          <span className="bc-branch-a">{branchA}</span>
-          <span className="bc-vs">vs</span>
-          <span className="bc-branch-b">{branchB}</span>
-        </span>
-        <div className="bc-header-actions">
-          {hasToken && (
-            <button className="btn ghost small" onClick={openPR} disabled={prBusy}>
-              {prBusy ? <Loader2 size={12} className="spin" /> : null} Open PR
-            </button>
-          )}
-          <button className="btn ghost small" onClick={closeModal}>Close</button>
+        <div className="bc-header-top">
+          <h3>Compare branches</h3>
+          <div className="bc-header-actions">
+            {hasToken && (
+              <button className="btn primary small" onClick={openPR}>
+                Create PR…
+              </button>
+            )}
+            <button className="btn ghost small" onClick={closeModal}>Close</button>
+          </div>
         </div>
+        <span className="bc-labels">
+          <span className="bc-branch-a" title={branchA}>{branchA}</span>
+          <span className="bc-vs">into</span>
+          <span className="bc-branch-b" title={branchB}>{branchB}</span>
+        </span>
       </div>
 
       {loading ? (

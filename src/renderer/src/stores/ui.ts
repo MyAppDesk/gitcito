@@ -76,6 +76,15 @@ export type ModalSpec =
   | { kind: 'hooks'; repoPath: string }
   | { kind: 'lfs'; repoPath: string }
   | { kind: 'sparse'; repoPath: string }
+  | {
+      kind: 'create-pr'
+      repoPath: string
+      remoteUrl?: string
+      source?: string
+      target?: string
+      defaultTitle?: string
+      defaultBody?: string
+    }
 
 export type FileViewSource =
   | { type: 'wip'; staged: boolean; untracked: boolean }

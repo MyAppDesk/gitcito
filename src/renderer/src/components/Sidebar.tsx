@@ -26,7 +26,7 @@ import {
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
 import { useUIStore, type MenuItem } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
-import { hostingApi, shellApi } from '../infrastructure/api'
+import { shellApi } from '../infrastructure/api'
 import { useT } from '../i18n'
 import { defaultSettings } from '../../../shared/types'
 import type { BranchInfo, ReleaseInfo, RemoteBranchInfo, StashInfo, TagInfo, WorktreeInfo, SubmoduleInfo } from '../../../shared/types'
@@ -366,11 +366,8 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     },
     { label: 'Push branch', onClick: () => void repoActions.push(path) },
     {
-      label: 'Start pull request…',
-      onClick: async () => {
-        const origin = repo.remotes.find((r) => r.name === 'origin') ?? repo.remotes[0]
-        if (origin) await hostingApi.openCreatePR(origin.url, b.name, 'main')
-      }
+      label: 'Create pull request…',
+      onClick: () => openModal({ kind: 'create-pr', repoPath: path, source: b.name })
     },
     { separator: true },
     { label: 'Copy branch name', onClick: () => void navigator.clipboard.writeText(b.name) },
@@ -761,16 +758,28 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         defaultOpen={false}
         {...dragProps('prs')}
         actions={
-          <span
-            className="icon-btn"
-            title={t('sidebar.fetchPRs')}
-            onClick={(e) => {
-              e.stopPropagation()
-              void refreshPRs(path)
-            }}
-          >
-            <RefreshCw size={12} />
-          </span>
+          <>
+            <span
+              className="icon-btn"
+              title="Create pull request"
+              onClick={(e) => {
+                e.stopPropagation()
+                openModal({ kind: 'create-pr', repoPath: path })
+              }}
+            >
+              <Plus size={12} />
+            </span>
+            <span
+              className="icon-btn"
+              title={t('sidebar.fetchPRs')}
+              onClick={(e) => {
+                e.stopPropagation()
+                void refreshPRs(path)
+              }}
+            >
+              <RefreshCw size={12} />
+            </span>
+          </>
         }
       >
         {repo.prs.length === 0 && <div className="sb-empty">{t('sidebar.noPRs')}</div>}
@@ -798,6 +807,16 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
                 <Sparkles size={11} />
               </span>
             )}
+            <span
+              className="icon-btn sb-pr-open"
+              title="Open in browser"
+              onClick={(e) => {
+                e.stopPropagation()
+                void window.api.openExternal(pr.url)
+              }}
+            >
+              <ExternalLink size={11} />
+            </span>
           </div>
         ))}
       </Section>

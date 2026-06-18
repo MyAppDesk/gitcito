@@ -650,6 +650,10 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
         })
     },
     { separator: true },
+    {
+      label: 'Create pull request…',
+      onClick: () => openModal({ kind: 'create-pr', repoPath: repo.path, source: repo.branches.current ?? undefined })
+    },
     { label: 'Export as patch…', onClick: () => void exportPatch(c) },
     { label: 'Copy SHA', onClick: () => void navigator.clipboard.writeText(c.hash) },
     { label: 'Copy commit message', onClick: () => void navigator.clipboard.writeText(c.subject) },

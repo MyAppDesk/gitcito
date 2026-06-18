@@ -75,6 +75,7 @@ export type ModalSpec =
   | { kind: 'bisect'; repoPath: string }
   | { kind: 'hooks'; repoPath: string }
   | { kind: 'lfs'; repoPath: string }
+  | { kind: 'sparse'; repoPath: string }
 
 export type FileViewSource =
   | { type: 'wip'; staged: boolean; untracked: boolean }

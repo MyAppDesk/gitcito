@@ -31,6 +31,7 @@ import type {
   HookInfo,
   LfsInfo,
   LfsFile,
+  SparseCheckoutInfo,
   StashInfo,
   TagInfo,
   WorktreeInfo,
@@ -949,6 +950,39 @@ export const gitService = {
     await gitFor(repoPath).raw(['lfs', 'prune'])
   },
 
+  // ─── Sparse-checkout ─────────────────────────────────────────────────────────
+
+  /** Cone-mode sparse-checkout state + the top-level dirs available to toggle. */
+  async sparseCheckoutInfo(repoPath: string): Promise<SparseCheckoutInfo> {
+    const git = gitFor(repoPath)
+    const cfg = async (key: string): Promise<string> =>
+      (await git.raw(['config', '--get', key]).catch(() => '')).trim()
+    const enabled = (await cfg('core.sparseCheckout')) === 'true'
+    const cone = (await cfg('core.sparseCheckoutCone')) === 'true'
+    const norm = (s: string): string => s.trim().replace(/^\/+|\/+$/g, '')
+    const dirs = enabled
+      ? (await git.raw(['sparse-checkout', 'list']).catch(() => ''))
+          .split('\n')
+          .map(norm)
+          .filter(Boolean)
+      : []
+    const topLevelDirs = (await git.raw(['ls-tree', '--name-only', '-d', 'HEAD']).catch(() => ''))
+      .split('\n')
+      .map(norm)
+      .filter(Boolean)
+    return { enabled, cone, dirs, topLevelDirs }
+  },
+
+  /** Enable cone-mode sparse-checkout and restrict the working tree to `dirs`. */
+  async sparseCheckoutSet(repoPath: string, dirs: string[]): Promise<void> {
+    await gitFor(repoPath).raw(['sparse-checkout', 'set', '--cone', ...dirs])
+  },
+
+  /** Disable sparse-checkout — restore the full working tree. */
+  async sparseCheckoutDisable(repoPath: string): Promise<void> {
+    await gitFor(repoPath).raw(['sparse-checkout', 'disable'])
+  },
+
   async cherryPick(repoPath: string, hash: string, noCommit = false): Promise<void> {
     const args = ['cherry-pick']
     if (noCommit) args.push('-n')
@@ -1377,13 +1411,16 @@ export const gitService = {
     url: string,
     name: string,
     host?: string,
-    token?: string
+    token?: string,
+    filter?: string
   ): Promise<string> {
     const folder = name.trim() || basename(url).replace(/\.git$/, '') || 'repository'
     const target = join(parentDir, folder)
     if (existsSync(target)) throw new Error(`A folder named "${folder}" already exists here.`)
     const cloneUrl = authedCloneUrl(url, host, token)
-    await simpleGit(parentDir).clone(cloneUrl, folder)
+    // A blob filter (e.g. "blob:none") makes this a partial clone — history without
+    // file blobs, fetched on demand. Great for very large repos.
+    await simpleGit(parentDir).clone(cloneUrl, folder, filter ? [`--filter=${filter}`] : undefined)
     // Reset the origin URL back to the token-free version so the PAT is not persisted on disk.
     if (cloneUrl !== url) {
       try {

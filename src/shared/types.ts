@@ -56,6 +56,14 @@ export interface LfsFile {
   downloaded: boolean // true = real content present, false = pointer only
 }
 
+/** Cone-mode sparse-checkout state for a repo. */
+export interface SparseCheckoutInfo {
+  enabled: boolean // core.sparseCheckout is on
+  cone: boolean // cone mode (directory-based)
+  dirs: string[] // currently-included top-level directories
+  topLevelDirs: string[] // all top-level directories in HEAD (toggle candidates)
+}
+
 /** Git LFS state for a repo. */
 export interface LfsInfo {
   installed: boolean // the git-lfs binary is available

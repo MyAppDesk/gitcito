@@ -19,7 +19,8 @@ import {
   Webhook,
   Boxes,
   FileDiff,
-  GitCommit
+  GitCommit,
+  FolderTree
 } from 'lucide-react'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
 import { useUIStore } from '../stores/ui'
@@ -103,6 +104,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
       { separator: true },
       { label: 'Git hooks…', icon: <Webhook size={15} />, onClick: () => openModal({ kind: 'hooks', repoPath: path }) },
       { label: 'Git LFS…', icon: <Boxes size={15} />, onClick: () => openModal({ kind: 'lfs', repoPath: path }) },
+      { label: 'Sparse-checkout…', icon: <FolderTree size={15} />, onClick: () => openModal({ kind: 'sparse', repoPath: path }) },
       { separator: true },
       { label: 'Apply patch to working tree…', icon: <FileDiff size={15} />, onClick: () => applyPatchFile(false) },
       { label: 'Apply patch & commit (git am)…', icon: <GitCommit size={15} />, onClick: () => applyPatchFile(true) }

@@ -16,6 +16,7 @@ import { ReflogModal } from './ReflogModal'
 import { BisectModal } from './BisectModal'
 import { HooksModal } from './HooksModal'
 import { LfsModal } from './LfsModal'
+import { SparseCheckoutModal } from './SparseCheckoutModal'
 
 function GroupColorModal({ spec }: { spec: Extract<ModalSpec, { kind: 'group-color' }> }): React.JSX.Element {
   const closeModal = useUIStore((s) => s.closeModal)
@@ -812,6 +813,7 @@ function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): 
   const [nameTouched, setNameTouched] = useState(false)
   const [dir, setDir] = useState('')
   const [cloning, setCloning] = useState(false)
+  const [partial, setPartial] = useState(false)
 
   const profile = profiles.find((p) => p.id === profileId) ?? profiles[0]
   const host: RepoHost | null = provider === 'url' ? null : provider
@@ -843,7 +845,14 @@ function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): 
     setCloning(true)
     try {
       const token = host ? profile[HOST_META[host].tokenField] : undefined
-      const path = await gitApi.clone(dir.trim(), url.trim(), name.trim(), host ?? undefined, token)
+      const path = await gitApi.clone(
+        dir.trim(),
+        url.trim(),
+        name.trim(),
+        host ?? undefined,
+        token,
+        partial ? 'blob:none' : undefined
+      )
       closeModal()
       spec.onClone({ path, name: name.trim() })
       toast('success', `Cloned ${name.trim()}`)
@@ -925,6 +934,13 @@ function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): 
       />
       {provider !== 'url' && url && <div className="modal-hint">{url}</div>}
       {dir && name && <div className="modal-hint">{`${dir.replace(/\/+$/, '')}/${name.trim()}`}</div>}
+
+      <label className="clone-partial">
+        <input type="checkbox" checked={partial} onChange={(e) => setPartial(e.target.checked)} />
+        <span>
+          Partial clone <code>--filter=blob:none</code> — fetch file contents on demand (faster for huge repos)
+        </span>
+      </label>
 
       <div className="modal-actions">
         <button className="btn ghost" onClick={closeModal} type="button" disabled={cloning}>
@@ -1186,7 +1202,8 @@ export function ModalHost(): React.JSX.Element {
                     modal.kind === 'ai-pr-review' ||
                     modal.kind === 'reflog' ||
                     modal.kind === 'hooks' ||
-                    modal.kind === 'lfs'
+                    modal.kind === 'lfs' ||
+                    modal.kind === 'sparse'
                   ? 'modal-tall'
                   : ''
             }`}
@@ -1222,6 +1239,7 @@ export function ModalHost(): React.JSX.Element {
             {modal.kind === 'bisect' && <BisectModal repoPath={modal.repoPath} />}
             {modal.kind === 'hooks' && <HooksModal repoPath={modal.repoPath} />}
             {modal.kind === 'lfs' && <LfsModal repoPath={modal.repoPath} />}
+            {modal.kind === 'sparse' && <SparseCheckoutModal repoPath={modal.repoPath} />}
           </motion.div>
         </motion.div>
       )}

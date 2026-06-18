@@ -7381,3 +7381,73 @@ mark.find-hit.active {
   gap: 8px;
   margin-top: 12px;
 }
+
+/* ── Sparse-checkout ── */
+.sparse-sub {
+  font-size: 12px;
+  color: var(--text-3);
+  margin: 2px 0 12px;
+}
+.sparse-empty {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 24px 8px;
+  color: var(--text-3);
+  font-size: 13px;
+}
+.sparse-status {
+  font-size: 12px;
+  color: var(--text-2);
+  margin-bottom: 8px;
+}
+.sparse-status.on {
+  color: var(--ok, #2ea043);
+}
+.sparse-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  max-height: 48vh;
+  overflow-y: auto;
+  padding-right: 4px;
+  margin-bottom: 8px;
+}
+.sparse-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.sparse-row:hover {
+  background: var(--bg-2);
+}
+.sparse-dir {
+  font-size: 12.5px;
+  font-family: var(--mono);
+  color: var(--text-0);
+}
+.sparse-warn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--warn, #d29922);
+  margin: 4px 0 8px;
+}
+
+/* ── Clone: partial-clone toggle ── */
+.clone-partial {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--text-2);
+  cursor: pointer;
+}
+.clone-partial input {
+  margin-top: 2px;
+}

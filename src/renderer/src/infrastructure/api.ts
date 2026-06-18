@@ -34,7 +34,8 @@ import type {
   BisectStatus,
   SigningConfig,
   HooksInfo,
-  LfsInfo
+  LfsInfo,
+  SparseCheckoutInfo
 } from '../../../shared/types'
 
 // Typed adapter over the IPC bridge — the only place that talks to window.api.
@@ -165,11 +166,15 @@ export const gitApi = {
   lfsPull: (path: string) => call<void>('lfsPull', path),
   lfsPrune: (path: string) => call<void>('lfsPrune', path),
 
+  sparseCheckoutInfo: (path: string) => call<SparseCheckoutInfo>('sparseCheckoutInfo', path),
+  sparseCheckoutSet: (path: string, dirs: string[]) => call<void>('sparseCheckoutSet', path, dirs),
+  sparseCheckoutDisable: (path: string) => call<void>('sparseCheckoutDisable', path),
+
   getUser: (path: string) => call<{ name: string; email: string }>('getUser', path),
   setUser: (path: string, name: string, email: string) => call<void>('setUser', path, name, email),
 
-  clone: (parentDir: string, url: string, name: string, host?: RepoHost, token?: string) =>
-    call<string>('clone', parentDir, url, name, host, token),
+  clone: (parentDir: string, url: string, name: string, host?: RepoHost, token?: string, filter?: string) =>
+    call<string>('clone', parentDir, url, name, host, token, filter),
   init: (parentDir: string, name: string) => call<string>('init', parentDir, name),
 
   mergeState: (path: string) => call<ConflictOpKind | null>('mergeState', path),

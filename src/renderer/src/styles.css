@@ -6728,6 +6728,34 @@ input[type='range']:focus-visible {
   white-space: nowrap;
 }
 
+/* ── Line-level staging ── */
+.diff-line.selectable {
+  cursor: pointer;
+}
+.diff-line.selectable:hover {
+  filter: brightness(1.12);
+}
+.diff-line.line-selected {
+  box-shadow: inset 3px 0 0 var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+.diff-select-bar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--border);
+  font-size: 11.5px;
+  color: var(--text-2);
+}
+.diff-select-bar span {
+  margin-right: auto;
+}
+
 /* ─── Commit panel file search / filter bar ─────────────────────────────── */
 .file-search {
   display: flex;

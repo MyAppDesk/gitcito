@@ -32,6 +32,23 @@ export interface SigningConfig {
   key: string // user.signingkey ('' if unset)
 }
 
+/** State of one git hook file in the repo's hooks directory. */
+export interface HookInfo {
+  name: string // e.g. 'pre-commit'
+  exists: boolean // a real (non-.sample) hook file is present
+  executable: boolean // exec bit set — git only runs executable hooks
+  sample: boolean // only the shipped `<name>.sample` template exists
+  size: number // bytes of the real hook (0 when absent)
+}
+
+/** Snapshot of a repo's hooks directory + framework detection. */
+export interface HooksInfo {
+  hooksDir: string // resolved hooks directory (honours core.hooksPath)
+  customHooksPath: boolean // core.hooksPath is set (custom/framework-managed)
+  preCommitFramework: boolean // a .pre-commit-config.yaml(.yml) is present
+  hooks: HookInfo[]
+}
+
 export interface BranchInfo {
   name: string
   sha: string

@@ -1,7 +1,7 @@
 import { ipcMain } from 'electron'
 import { simpleGit, SimpleGit } from 'simple-git'
 import { basename, join } from 'path'
-import { readFile, writeFile, unlink } from 'fs/promises'
+import { readFile, writeFile, unlink, stat, chmod, mkdir } from 'fs/promises'
 import { tmpdir, homedir } from 'os'
 import { existsSync } from 'fs'
 import { spawn } from 'child_process'
@@ -27,6 +27,8 @@ import type {
   BisectStatus,
   CommitSignature,
   SigningConfig,
+  HooksInfo,
+  HookInfo,
   StashInfo,
   TagInfo,
   WorktreeInfo,
@@ -104,6 +106,38 @@ function mapSignature(char: string | undefined): CommitSignature {
     default: // 'N' or empty — no signature
       return 'none'
   }
+}
+
+/** Common client-side git hooks, in the order git documents them. */
+const KNOWN_HOOKS = [
+  'applypatch-msg',
+  'pre-applypatch',
+  'post-applypatch',
+  'pre-commit',
+  'pre-merge-commit',
+  'prepare-commit-msg',
+  'commit-msg',
+  'post-commit',
+  'pre-rebase',
+  'post-checkout',
+  'post-merge',
+  'pre-push',
+  'post-rewrite',
+  'pre-auto-gc'
+]
+
+/** Resolve a repo's hooks directory, honouring a custom `core.hooksPath`. */
+async function resolveHooksDir(git: SimpleGit, repoPath: string): Promise<{ dir: string; custom: boolean }> {
+  const custom = (await git.raw(['config', '--get', 'core.hooksPath']).catch(() => '')).trim()
+  if (custom) {
+    let p = custom
+    if (p === '~' || p.startsWith('~/')) p = join(homedir(), p.slice(1))
+    else if (!p.startsWith('/')) p = join(repoPath, p)
+    return { dir: p, custom: true }
+  }
+  const gitDir = (await git.raw(['rev-parse', '--git-path', 'hooks']).catch(() => '')).trim()
+  const dir = gitDir ? (gitDir.startsWith('/') ? gitDir : join(repoPath, gitDir)) : join(repoPath, '.git', 'hooks')
+  return { dir, custom: false }
 }
 
 const gitFor = (repoPath: string): SimpleGit => simpleGit(repoPath)
@@ -793,6 +827,76 @@ export const gitService = {
       if (opts.key) await git.raw(['config', 'user.signingkey', opts.key])
       else await git.raw(['config', '--unset', 'user.signingkey']).catch(() => {})
     }
+  },
+
+  // ─── Hooks ─────────────────────────────────────────────────────────────────
+
+  /** Enumerate the repo's hooks + detect a custom hooksPath / pre-commit framework. */
+  async hooksInfo(repoPath: string): Promise<HooksInfo> {
+    const git = gitFor(repoPath)
+    const { dir, custom } = await resolveHooksDir(git, repoPath)
+    const preCommitFramework =
+      existsSync(join(repoPath, '.pre-commit-config.yaml')) || existsSync(join(repoPath, '.pre-commit-config.yml'))
+    const hooks: HookInfo[] = []
+    for (const name of KNOWN_HOOKS) {
+      const p = join(dir, name)
+      let exists = false
+      let executable = false
+      let size = 0
+      try {
+        const st = await stat(p)
+        exists = st.isFile()
+        size = st.size
+        executable = (st.mode & 0o111) !== 0
+      } catch {
+        /* no real hook by this name */
+      }
+      const sample = !exists && existsSync(`${p}.sample`)
+      hooks.push({ name, exists, executable, sample, size })
+    }
+    return { hooksDir: dir, customHooksPath: custom, preCommitFramework, hooks }
+  },
+
+  /**
+   * Read a hook's contents for editing. Falls back to the shipped `.sample`
+   * template, then to a minimal shebang, so the editor is never blank.
+   */
+  async readHook(repoPath: string, name: string): Promise<string> {
+    const git = gitFor(repoPath)
+    const { dir } = await resolveHooksDir(git, repoPath)
+    const p = join(dir, name)
+    const real = await readFile(p, 'utf-8').catch(() => null)
+    if (real !== null) return real
+    const sample = await readFile(`${p}.sample`, 'utf-8').catch(() => null)
+    if (sample !== null) return sample
+    return '#!/bin/sh\n'
+  },
+
+  /** Write a hook and make it executable (so git will run it). */
+  async writeHook(repoPath: string, name: string, content: string): Promise<void> {
+    const git = gitFor(repoPath)
+    const { dir } = await resolveHooksDir(git, repoPath)
+    await mkdir(dir, { recursive: true }).catch(() => {})
+    const p = join(dir, name)
+    await writeFile(p, content, 'utf-8')
+    await chmod(p, 0o755)
+  },
+
+  /** Toggle a hook's executable bit — git only runs hooks that are executable. */
+  async setHookEnabled(repoPath: string, name: string, enabled: boolean): Promise<void> {
+    const git = gitFor(repoPath)
+    const { dir } = await resolveHooksDir(git, repoPath)
+    const p = join(dir, name)
+    const st = await stat(p)
+    const mode = enabled ? st.mode | 0o755 : st.mode & ~0o111
+    await chmod(p, mode)
+  },
+
+  /** Delete a hook file. The shipped `.sample` template (if any) is left intact. */
+  async deleteHook(repoPath: string, name: string): Promise<void> {
+    const git = gitFor(repoPath)
+    const { dir } = await resolveHooksDir(git, repoPath)
+    await unlink(join(dir, name)).catch(() => {})
   },
 
   async cherryPick(repoPath: string, hash: string, noCommit = false): Promise<void> {

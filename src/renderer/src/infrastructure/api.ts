@@ -32,7 +32,8 @@ import type {
   RepoStats,
   ReflogEntry,
   BisectStatus,
-  SigningConfig
+  SigningConfig,
+  HooksInfo
 } from '../../../shared/types'
 
 // Typed adapter over the IPC bridge — the only place that talks to window.api.
@@ -147,6 +148,13 @@ export const gitApi = {
   signingConfig: (path: string) => call<SigningConfig>('signingConfig', path),
   setSigningConfig: (path: string, opts: { sign?: boolean; format?: string; key?: string }) =>
     call<void>('setSigningConfig', path, opts),
+
+  hooksInfo: (path: string) => call<HooksInfo>('hooksInfo', path),
+  readHook: (path: string, name: string) => call<string>('readHook', path, name),
+  writeHook: (path: string, name: string, content: string) => call<void>('writeHook', path, name, content),
+  setHookEnabled: (path: string, name: string, enabled: boolean) =>
+    call<void>('setHookEnabled', path, name, enabled),
+  deleteHook: (path: string, name: string) => call<void>('deleteHook', path, name),
 
   getUser: (path: string) => call<{ name: string; email: string }>('getUser', path),
   setUser: (path: string, name: string, email: string) => call<void>('setUser', path, name, email),

@@ -72,6 +72,7 @@ export type ModalSpec =
   | { kind: 'group-color'; tabId: string; current?: string; onSelect: (color: string) => void }
   | { kind: 'reflog'; repoPath: string }
   | { kind: 'bisect'; repoPath: string }
+  | { kind: 'hooks'; repoPath: string }
 
 export type FileViewSource =
   | { type: 'wip'; staged: boolean; untracked: boolean }

@@ -14,7 +14,8 @@ import {
   Loader2,
   Wand2,
   History,
-  Bug
+  Bug,
+  Webhook
 } from 'lucide-react'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
 import { useUIStore } from '../stores/ui'
@@ -189,6 +190,14 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
         >
           <Bug size={17} />
           <span>Bisect</span>
+        </button>
+        <button
+          className="tool-btn"
+          title="Manage git hooks"
+          onClick={() => openModal({ kind: 'hooks', repoPath: path })}
+        >
+          <Webhook size={17} />
+          <span>Hooks</span>
         </button>
       </div>
 

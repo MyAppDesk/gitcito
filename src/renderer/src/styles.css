@@ -7156,3 +7156,114 @@ mark.find-hit.active {
 .commit-sig-row .sig-badge span {
   font-size: 12px;
 }
+
+/* ── Hooks manager ── */
+.hooks-empty {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 24px 8px;
+  color: var(--text-3);
+  font-size: 13px;
+}
+.hooks-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 7px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text-2);
+  margin-bottom: 8px;
+}
+.hooks-dir {
+  font-size: 11px;
+  color: var(--text-3);
+  font-family: var(--mono);
+  margin: 0 0 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hooks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 52vh;
+  overflow-y: auto;
+  padding-right: 4px;
+  margin-bottom: 8px;
+}
+.hooks-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: var(--bg-2);
+  border: 1px solid transparent;
+}
+.hooks-row:hover {
+  border-color: var(--border);
+}
+.hooks-name {
+  flex: 1;
+  font-size: 12.5px;
+  color: var(--text-0);
+}
+.hooks-state {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-weight: 700;
+  min-width: 64px;
+  text-align: right;
+}
+.hooks-state.hooks-active {
+  color: var(--ok, #2ea043);
+}
+.hooks-state.hooks-disabled {
+  color: var(--warn, #d29922);
+}
+.hooks-state.hooks-sample,
+.hooks-state.hooks-none {
+  color: var(--text-3);
+}
+.hooks-row-actions {
+  display: flex;
+  gap: 2px;
+}
+.hooks-back {
+  display: inline-flex;
+  align-items: center;
+  background: transparent;
+  border: none;
+  color: var(--text-2);
+  cursor: pointer;
+  padding: 0;
+  margin-right: 4px;
+  vertical-align: -3px;
+}
+.hooks-back:hover {
+  color: var(--text-0);
+}
+.hooks-editor {
+  width: 100%;
+  min-height: 46vh;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.5;
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 10px;
+  color: var(--text-0);
+  resize: vertical;
+}
+.hooks-hint {
+  font-size: 11px;
+  color: var(--text-3);
+  margin: 6px 0 10px;
+}

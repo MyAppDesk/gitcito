@@ -166,6 +166,29 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
     })
   }, [repo.mergeState, path, summary, description])
 
+  // Prefill from the repo's commit.template (.gitmessage) when the composer is
+  // empty and no merge is in progress. Comment lines (leading '#') are dropped
+  // to match git's default template cleanup, so they never end up committed.
+  const templatePrefilledFor = useRef<string | null>(null)
+  useEffect(() => {
+    if (repo.mergeState) return // merge prefill takes priority
+    if (templatePrefilledFor.current === path || summary.trim() || description.trim()) return
+    templatePrefilledFor.current = path
+    void gitApi.commitTemplate(path).then((tpl) => {
+      const text = tpl
+        .split('\n')
+        .filter((l) => !l.startsWith('#'))
+        .join('\n')
+        .trim()
+      if (!text) return
+      // Bail if the user started typing while the template was loading.
+      if (useRepoStore.getState().drafts[path]?.trim() || description.trim()) return
+      const [first, ...rest] = text.split('\n')
+      setSummary(first)
+      setDescription(rest.join('\n').trim())
+    })
+  }, [repo.mergeState, path, summary, description])
+
   // Drag the divider between the Unstaged and Staged lists to repartition space.
   const startSplitDrag = (e: React.PointerEvent<HTMLDivElement>): void => {
     e.preventDefault()

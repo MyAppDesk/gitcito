@@ -2,7 +2,7 @@ import { ipcMain } from 'electron'
 import { simpleGit, SimpleGit } from 'simple-git'
 import { basename, join } from 'path'
 import { readFile, writeFile, unlink } from 'fs/promises'
-import { tmpdir } from 'os'
+import { tmpdir, homedir } from 'os'
 import { existsSync } from 'fs'
 import { spawn } from 'child_process'
 import type {
@@ -728,6 +728,20 @@ export const gitService = {
 
   async amendCommitMessage(repoPath: string, message: string): Promise<void> {
     await gitFor(repoPath).raw(['commit', '--amend', '--only', '-m', message])
+  },
+
+  /**
+   * Contents of the repo's `commit.template` (.gitmessage), or '' if none is
+   * configured / the file is missing. Path is resolved against ~ and the repo
+   * root so both absolute and relative `commit.template` settings work.
+   */
+  async commitTemplate(repoPath: string): Promise<string> {
+    const tpl = (await gitFor(repoPath).raw(['config', '--get', 'commit.template']).catch(() => '')).trim()
+    if (!tpl) return ''
+    let p = tpl
+    if (p === '~' || p.startsWith('~/')) p = join(homedir(), p.slice(1))
+    else if (!p.startsWith('/')) p = join(repoPath, p)
+    return readFile(p, 'utf-8').catch(() => '')
   },
 
   async cherryPick(repoPath: string, hash: string, noCommit = false): Promise<void> {

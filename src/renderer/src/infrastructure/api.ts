@@ -87,6 +87,7 @@ export const gitApi = {
     call<void>('untrack', path, files, deleteFromDisk),
   commit: (path: string, message: string, amend?: boolean) => call<void>('commit', path, message, amend),
   getCommitMessage: (path: string, hash: string) => call<string>('getCommitMessage', path, hash),
+  commitTemplate: (path: string) => call<string>('commitTemplate', path),
   amendCommitMessage: (path: string, message: string) => call<void>('amendCommitMessage', path, message),
 
   cherryPick: (path: string, hash: string, noCommit?: boolean) => call<void>('cherryPick', path, hash, noCommit),

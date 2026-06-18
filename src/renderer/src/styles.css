@@ -705,8 +705,67 @@ textarea:focus {
 .toolbar-center {
   flex: 1;
   display: flex;
+  align-items: center;
   justify-content: center;
+  gap: 6px;
   min-width: 0;
+}
+
+/* GitKraken-style repository ▸ branch switcher on the left. */
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+  max-width: 320px;
+}
+.repo-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: var(--radius);
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-0);
+  cursor: pointer;
+  min-width: 0;
+}
+.repo-pill:hover {
+  background: var(--bg-3);
+  border-color: var(--border);
+}
+.repo-pill-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
+.repo-pill-label {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-3);
+  line-height: 1.1;
+}
+.repo-pill-stack strong {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  max-width: 130px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.repo-pill svg {
+  color: var(--text-3);
+  flex: 0 0 auto;
+}
+.repo-pill-arrow {
+  color: var(--text-3);
+  flex: 0 0 auto;
 }
 
 .repo-indicator {
@@ -2582,6 +2641,18 @@ textarea:focus {
   background: var(--bg-2);
   color: var(--text-0);
   opacity: 1;
+}
+
+.status-branch-btn {
+  all: unset;
+  cursor: pointer;
+  border-radius: 3px;
+  padding: 1px 6px;
+  transition: background 0.08s, color 0.08s;
+}
+.status-branch-btn:hover {
+  background: var(--bg-2);
+  color: var(--text-0);
 }
 
 /* ─── Zoom control ──────────────────────────────────────────────────────── */

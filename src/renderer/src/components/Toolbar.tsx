@@ -20,8 +20,12 @@ import {
   Boxes,
   FileDiff,
   GitCommit,
-  FolderTree
+  FolderTree,
+  ChevronRight,
+  FolderGit2,
+  GitBranch
 } from 'lucide-react'
+import type { MenuItem } from '../stores/ui'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
@@ -111,8 +115,75 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
     ])
   }
 
+  // Repository switcher — lists every open repo (standalone tabs + group members).
+  const repoMenu = (e: React.MouseEvent): void => {
+    e.stopPropagation()
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    const s = useSettingsStore.getState()
+    const items: MenuItem[] = []
+    for (const tab of s.settings.tabs) {
+      if (tab.kind !== 'repo' && tab.kind !== 'group') continue
+      for (const r of tab.repos) {
+        items.push({
+          label: `${r.path === path ? '✓ ' : '   '}${r.name}`,
+          onClick: () => {
+            s.setActiveTab(tab.id)
+            if (tab.kind === 'group') s.setGroupActiveRepo(tab.id, r.path)
+          }
+        })
+      }
+    }
+    items.push(
+      { separator: true },
+      { label: 'Open repository…', icon: <FolderGit2 size={15} />, onClick: () => openModal({ kind: 'launcher' }) }
+    )
+    openContextMenu(rect.left, rect.bottom + 6, items)
+  }
+
+  // Branch switcher — checkout a local branch, or create a new one.
+  const branchMenu = (e: React.MouseEvent): void => {
+    e.stopPropagation()
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    const items: MenuItem[] = repo.branches.locals.map((b) => ({
+      label: `${b.isCurrent ? '✓ ' : '   '}${b.name}`,
+      onClick: () => {
+        if (!b.isCurrent) void repoActions.checkout(path, b.name)
+      }
+    }))
+    items.push(
+      { separator: true },
+      {
+        label: 'New branch…',
+        icon: <GitBranchPlus size={15} />,
+        onClick: () => openModal({ kind: 'create-branch', path, currentBranch: repo.branches.current })
+      }
+    )
+    openContextMenu(rect.left, rect.bottom + 6, items)
+  }
+
   return (
     <div className="toolbar">
+      <div className="toolbar-left">
+        <button className="repo-pill" onClick={repoMenu} title="Switch repository">
+          <span className="repo-pill-stack">
+            <span className="repo-pill-label">repository</span>
+            <strong>{repo.name}</strong>
+          </span>
+          <ChevronDown size={13} />
+        </button>
+        <ChevronRight size={14} className="repo-pill-arrow" />
+        <button className="repo-pill" onClick={branchMenu} title="Switch branch">
+          <span className="repo-pill-stack">
+            <span className="repo-pill-label">branch</span>
+            <strong>
+              <GitBranch size={12} /> {repo.branches.current || 'no branch'}
+            </strong>
+          </span>
+          <ChevronDown size={13} />
+        </button>
+      </div>
+
+      <div className="toolbar-center">
       <div className="toolbar-group">
         <button
           className="tool-btn"
@@ -201,23 +272,14 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
         </button>
       </div>
 
-      <div className="toolbar-center">
-        {busy ? (
-          <span className="busy-indicator">
-            <Loader2 size={13} className="spin" /> {busy}
-          </span>
-        ) : (
-          <span className="repo-indicator">
-            {repo.name} <i>·</i> {repo.branches.current || 'no branch'}
-            <i>·</i>
-            <span className="repo-sync-time" title={`Fetched ${timeSince(repo.lastFetchAt)}`}>
-              fetched {timeSince(repo.lastFetchAt)}
-            </span>
-          </span>
-        )}
       </div>
 
       <div className="toolbar-group right">
+        {busy && (
+          <span className="busy-indicator" title={`Fetched ${timeSince(repo.lastFetchAt)}`}>
+            <Loader2 size={13} className="spin" /> {busy}
+          </span>
+        )}
         {aiEnabled && (
           <button
             className="tool-btn"

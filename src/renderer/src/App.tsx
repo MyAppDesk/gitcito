@@ -444,7 +444,22 @@ export default function App(): React.JSX.Element {
             <span className="status-right">
               <ZoomControl compact />
               <span className="status-sep" />
-              <span className="status-branch-profile">{repo.branches.current}</span>
+              <button
+                className="status-branch-profile status-branch-btn"
+                title="Switch branch"
+                onClick={(e) => {
+                  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+                  const items = repo.branches.locals.map((b) => ({
+                    label: `${b.isCurrent ? '✓ ' : '   '}${b.name}`,
+                    onClick: () => {
+                      if (!b.isCurrent) void repoActions.checkout(repo.path, b.name)
+                    }
+                  }))
+                  useUIStore.getState().openContextMenu(rect.left, rect.top - 6 - items.length * 28, items)
+                }}
+              >
+                {repo.branches.current}
+              </button>
               {appVersion && (
                 <>
                   <span className="status-sep" />

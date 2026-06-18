@@ -226,30 +226,58 @@ async function captureGif(shot) {
   const fps = 12
   try {
     await settle(page, 600)
-    const session = await page.context().newCDPSession(page)
-    const frames = []
-    session.on('Page.screencastFrame', async (f) => {
-      frames.push(Buffer.from(f.data, 'base64'))
-      await session.send('Page.screencastFrameAck', { sessionId: f.sessionId }).catch(() => {})
-    })
-    await session.send('Page.startScreencast', { format: 'png', everyNthFrame: 1, maxWidth: WIDTH, maxHeight: HEIGHT })
-    await shot.gif.drive(page, repoPathsFor(shot))
-    await page.waitForTimeout(shot.gif.durationMs)
-    await session.send('Page.stopScreencast')
 
-    // Write captured frames and let ffmpeg sample them at a steady fps.
+    // Sample frames at a steady wall-clock rate. A CDP screencast only emits
+    // frames on visual change, so static holds (e.g. dwelling on a theme)
+    // collapse to a couple of frames while transitions burst — and since
+    // ffmpeg replays every frame at a fixed fps, real dwell time is lost and
+    // swaps look instant. Grabbing one screenshot per 1/fps tick instead keeps
+    // GIF playback proportional to how long each state was actually on screen.
+    const frames = []
+    const frameMs = 1000 / fps
+    let capturing = true
+    const captureStart = Date.now()
+    const sampler = (async () => {
+      while (capturing) {
+        const t0 = Date.now()
+        try {
+          frames.push(await page.screenshot({ type: 'png' }))
+        } catch {
+          // page closing mid-shot — stop quietly
+          break
+        }
+        const rest = frameMs - (Date.now() - t0)
+        if (rest > 0) await page.waitForTimeout(rest)
+      }
+    })()
+
+    // durationMs is the total clip length: drive runs inside it, then we hold
+    // on the final frame for whatever time is left (if any).
+    const driveStart = Date.now()
+    await shot.gif.drive(page, repoPathsFor(shot))
+    const tail = shot.gif.durationMs - (Date.now() - driveStart)
+    if (tail > 0) await page.waitForTimeout(tail)
+    capturing = false
+    await sampler
+    const elapsedSec = (Date.now() - captureStart) / 1000
+
+    // Write captured frames. page.screenshot rarely sustains a full `fps`, so
+    // feed ffmpeg the *actual* capture rate as the input framerate — that sets
+    // each frame's real duration so the GIF runs at true speed — then resample
+    // to a steady `fps` for smooth playback without changing total length.
     let i = 0
     for (const buf of frames) await writeFile(join(framesDir, `f${String(i++).padStart(4, '0')}.png`), buf)
     if (!frames.length) {
       console.warn(`  ⚠ ${shot.out}: no frames captured`)
       return
     }
+    const inputFps = elapsedSec > 0 ? frames.length / elapsedSec : fps
     const out = join(OUT_DIR, `${shot.out}.gif`)
     const palette = join(framesDir, 'palette.png')
     const vf = `fps=${fps},scale=900:-1:flags=lanczos`
-    await sh('ffmpeg', ['-y', '-framerate', String(fps), '-i', join(framesDir, 'f%04d.png'), '-vf', `${vf},palettegen`, palette])
+    await sh('ffmpeg', ['-y', '-framerate', String(inputFps), '-i', join(framesDir, 'f%04d.png'), '-vf', `${vf},palettegen`, palette])
     await sh('ffmpeg', [
-      '-y', '-framerate', String(fps), '-i', join(framesDir, 'f%04d.png'), '-i', palette,
+      '-y', '-framerate', String(inputFps), '-i', join(framesDir, 'f%04d.png'), '-i', palette,
       '-lavfi', `${vf} [x]; [x][1:v] paletteuse`, out
     ])
     console.log(`  ✓ ${out.replace(ROOT + '/', '')} (${frames.length} frames)`)

@@ -253,8 +253,9 @@ export const shots = [
 ]
 
 // ── Animated clips (GIF) ──────────────────────────────────────────────────────
-// Captured via real-time screencast, so motion is smooth. Each clip loads a repo
-// then runs `drive(page)` while frames are recorded for `durationMs`.
+// Captured by sampling screenshots at a steady fps, so GIF playback stays
+// proportional to real time. Each clip loads a repo then runs `drive(page)`;
+// `durationMs` is the total clip length (drive + hold on the final frame).
 /** @type {Shot[]} */
 export const clips = [
   {

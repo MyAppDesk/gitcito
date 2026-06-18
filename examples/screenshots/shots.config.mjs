@@ -134,6 +134,121 @@ export const shots = [
     drive: async (page) => {
       await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'themes' }))
     }
+  },
+
+  // ── Features added since v0.12 ──────────────────────────────────────────────
+  {
+    // Signature column + verified/unverified/unsigned badges in the graph.
+    out: 'signed-commits',
+    repos: ['signed-commits'],
+    themes: ['light', 'dark']
+  },
+  {
+    // Reflog recovery modal — checkout / branch / reset from any past HEAD move.
+    out: 'reflog',
+    repos: ['reflog-recovery'],
+    themes: ['dark'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['reflog-recovery']
+      await page.evaluate((p) => window.__shot.ui.getState().openModal({ kind: 'reflog', repoPath: p }), repo)
+      await page.waitForTimeout(700)
+    }
+  },
+  {
+    // Guided git bisect.
+    out: 'bisect',
+    repos: ['bisect-bug'],
+    themes: ['dark'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['bisect-bug']
+      await page.evaluate((p) => window.__shot.ui.getState().openModal({ kind: 'bisect', repoPath: p }), repo)
+      await page.waitForTimeout(500)
+    }
+  },
+  {
+    // Git hooks manager (active / disabled / sample + framework banner).
+    out: 'hooks',
+    repos: ['hooks'],
+    themes: ['dark'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['hooks']
+      await page.evaluate((p) => window.__shot.ui.getState().openModal({ kind: 'hooks', repoPath: p }), repo)
+      await page.waitForTimeout(700)
+    }
+  },
+  {
+    // Git LFS manager — tracked patterns + LFS files.
+    out: 'lfs',
+    repos: ['lfs-assets'],
+    themes: ['dark'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['lfs-assets']
+      await page.evaluate((p) => window.__shot.ui.getState().openModal({ kind: 'lfs', repoPath: p }), repo)
+      await page.waitForTimeout(800)
+    }
+  },
+  {
+    // Cone-mode sparse-checkout editor.
+    out: 'sparse-checkout',
+    repos: ['deep-history-monorepo'],
+    themes: ['dark'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['deep-history-monorepo']
+      await page.evaluate((p) => window.__shot.ui.getState().openModal({ kind: 'sparse', repoPath: p }), repo)
+      await page.waitForTimeout(700)
+    }
+  },
+  {
+    // Create-PR form, prefilled from a branch's commits.
+    out: 'create-pr',
+    repos: ['pr-ready-branch'],
+    themes: ['dark'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['pr-ready-branch']
+      await page.evaluate((p) => {
+        const s = window.__shot
+        const r = s.repo.getState().repos[p]
+        const origin = r.remotes.find((x) => x.name === 'origin') ?? r.remotes[0]
+        s.ui.getState().openModal({
+          kind: 'create-pr',
+          repoPath: p,
+          remoteUrl: origin && origin.url,
+          source: 'feat/awesome-feature',
+          target: 'main',
+          defaultTitle: 'feat: add awesome feature',
+          defaultBody: '- add awesome() helper\n- wire awesome() into app\n- document awesome feature'
+        })
+      }, repo)
+      await page.waitForTimeout(500)
+    }
+  },
+  {
+    // .gitignore chooser — pattern type × which .gitignore.
+    out: 'gitignore-chooser',
+    repos: ['gitignore-untrack'],
+    themes: ['dark'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['gitignore-untrack']
+      await page.evaluate(
+        (p) =>
+          window.__shot.ui
+            .getState()
+            .openModal({ kind: 'ignore', repoPath: p, targetPath: 'build/bundle.js', isFolder: false }),
+        repo
+      )
+      await page.waitForTimeout(300)
+    }
+  },
+  {
+    // Commit composer prefilled from commit.template (.gitmessage).
+    out: 'commit-template',
+    repos: ['commit-template'],
+    themes: ['dark'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['commit-template']
+      await page.evaluate((p) => window.__shot.repo.getState().select(p, { type: 'wip' }), repo)
+      await page.waitForTimeout(500)
+    }
   }
 ]
 

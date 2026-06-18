@@ -68,10 +68,13 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }
 
 export function Toasts(): React.JSX.Element {
   const { toasts, dismissToast } = useUIStore()
+  // In screenshot mode, hide transient toasts so README shots never capture a
+  // stray "error invoking…" popup from background hosting/git calls.
+  const visible = window.api?.shotMode ? [] : toasts
   return (
     <div className="toasts">
       <AnimatePresence>
-        {toasts.map((t) => (
+        {visible.map((t) => (
           <ToastItem key={t.id} toast={t} onDismiss={() => dismissToast(t.id)} />
         ))}
       </AnimatePresence>

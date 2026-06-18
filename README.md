@@ -40,11 +40,13 @@
 
 ### Working with changes
 - **Commit composer** with message styles: Auto, Conventional, Gitmoji, Ticket, Plain — even Caveman or Haiku.
-- **Stage / unstage / discard**, down to **individual hunks**, with a tree or flat file list and a drag-to-resize split.
+- **Stage / unstage / discard**, down to **individual hunks — or individual lines** picked right in the diff.
 - **Amend**, persistent drafts, and auto-prefilled messages during merge / cherry-pick / revert.
+- **Commit templates** (`commit.template` / `.gitmessage`) prefill the composer; comment lines are stripped.
 - **Diff viewer** with syntax highlighting and one-click hunk staging.
 - **Image diff** with side-by-side / swipe comparison for changed images.
 - **Conflict resolver** with ours / theirs / per-line picking and an editable output pane.
+- **Smart .gitignore** — ignore a file, `*.ext`, or a folder, written to the closest folder's `.gitignore` or the repo root, with a live preview.
 
 ### Branching, merging & history surgery
 - **Interactive rebase** — drag to reorder, squash, fixup, reword or drop, in a visual editor.
@@ -52,6 +54,12 @@
 - **Branch comparison**: ahead/behind counts, full diff, and a one-click "open a PR" hand-off.
 - **Merge** with fast-forward or forced merge-commit; **rebase onto** any ref.
 - Create / checkout / rename / delete local & remote branches, with per-remote presence badges.
+- **Repository ▸ branch switcher** in the toolbar (GitKraken-style), plus a branch switch right in the status bar.
+
+### Recovery, safety & forensics
+- **Reflog viewer** — every move of `HEAD` (and branches), with checkout / new-branch / hard-reset from any past entry. The "undo my mistake" net.
+- **Guided bisect** — mark commits good/bad, watch the range narrow, land on the first bad commit.
+- **Commit signing** (GPG / SSH / X.509) with a per-repo toggle and a **verified / unverified / expired** badge in a dedicated, reorderable signature column.
 
 ### Sync, stashes, tags & worktrees
 - **Pull** (default, fast-forward-only or rebase) and **push** with safe `--force-with-lease` + optional confirmation.
@@ -60,12 +68,19 @@
 - **Tags**: create/delete locally, push or delete on the remote, browse remote tags.
 - **Worktrees**: create, remove and open a linked worktree in its own window.
 - **Submodules**: add, update (init & checkout), sync URLs, and remove, with live in-sync / modified / uninitialized status.
+- **Git LFS** — detect git-lfs, manage tracked patterns, see downloaded vs pointer files, pull & prune.
+- **Sparse-checkout** (cone mode) to limit the working tree to the folders you pick, plus a **partial clone** (`--filter=blob:none`) option.
+- **Patches** — export a commit as a `.patch`, and apply one to the working tree (`git apply`) or as a commit (`git am`).
+- **Git hooks manager** — list, enable/disable, edit and create hooks; detects a custom `core.hooksPath` and pre-commit framework.
 
 ### Hosting & pull requests
-- **Pull requests** — list and inspect open PRs straight from the sidebar.
+- **Create pull requests** from the app — branch dropdowns, prefilled title/body from the branch's commits, draft toggle; from branch-compare, the graph, the PR panel `+`, or an issue (auto-`Closes #N`).
+- **Review PRs** — open conversation + review state, comment, approve / request changes, and **merge** (merge / squash / rebase).
+- **Issues** — browse open issues, then a full **issue tab**: body, comments, labels, assignees, milestone, Projects v2 fields (Priority/Start/Target/Effort), close/reopen, and **create a branch for an issue** (with AI naming).
+- **Milestones** — a sidebar list with progress, and a **milestone tab** showing its issues.
 - **Clone or create repositories** on your hosting accounts without leaving the app.
 - **Per-profile tokens** for multiple accounts / orgs.
-- _GitHub is the battle-tested path; GitLab, Bitbucket & Azure plumbing exists but is unverified — see the disclaimer above._
+- _GitHub is the battle-tested path (PR create/review/merge, issues, milestones, project fields); GitLab, Bitbucket & Azure plumbing exists but is unverified — see the disclaimer above._
 
 ### AI assist
 - **Commit messages** — summary (and optional body) generated from your staged diff, in your chosen style.
@@ -102,6 +117,32 @@ Bundle related repositories into a group, then open, clone or create. Recents al
 | | |
 |---|---|
 | ![Commit graph, light theme](docs/screenshots/graph-light.png) | ![Commit graph, dark theme](docs/screenshots/graph-dark.png) |
+
+### Signed commits
+Verified / unverified / unsigned badges in a dedicated, reorderable signature column.
+
+| | |
+|---|---|
+| ![Signature column, light theme](docs/screenshots/signed-commits-light.png) | ![Signature column, dark theme](docs/screenshots/signed-commits-dark.png) |
+
+### Recovery & forensics
+| Reflog | Bisect |
+|---|---|
+| ![Reflog recovery](docs/screenshots/reflog.png) | ![Guided bisect](docs/screenshots/bisect.png) |
+
+### Plumbing power tools
+| Git hooks | Git LFS |
+|---|---|
+| ![Git hooks manager](docs/screenshots/hooks.png) | ![Git LFS manager](docs/screenshots/lfs.png) |
+
+| Sparse-checkout | Smart .gitignore |
+|---|---|
+| ![Cone-mode sparse-checkout](docs/screenshots/sparse-checkout.png) | ![.gitignore chooser](docs/screenshots/gitignore-chooser.png) |
+
+### Pull requests & commit templates
+| Create a pull request | Commit template |
+|---|---|
+| ![Create pull request form](docs/screenshots/create-pr.png) | ![Composer prefilled from .gitmessage](docs/screenshots/commit-template.png) |
 
 ### Conflict resolver
 ![Conflict resolver with ours / theirs / output panes](docs/screenshots/conflict-resolver.png)

@@ -66,8 +66,16 @@ async function ensurePrereqs() {
     console.log('▶ building app…')
     await sh('npm', ['run', 'build'])
   }
-  if (!existsSync(join(PLAYGROUND, 'MANIFEST.tsv'))) {
-    console.log('▶ seeding playground repos…')
+  // Always reseed the full playground (unless --no-seed): partial runs of
+  // setup-playground.sh wipe the dir and leave only one repo, which would make
+  // most shots capture a "directory does not exist" error.
+  if (flags.has('--no-seed')) {
+    if (!existsSync(join(PLAYGROUND, 'MANIFEST.tsv'))) {
+      console.log('▶ seeding playground repos…')
+      await sh('bash', ['examples/setup-playground.sh'])
+    }
+  } else {
+    console.log('▶ seeding playground repos (full)…')
     await sh('bash', ['examples/setup-playground.sh'])
   }
   await mkdir(OUT_DIR, { recursive: true })

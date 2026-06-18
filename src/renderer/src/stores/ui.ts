@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import type { ReactNode } from 'react'
 import type { CiState } from '../../../shared/types'
 
 export type CiFilter = 'all' | CiState
@@ -11,7 +12,7 @@ export interface Toast {
 
 export interface MenuItem {
   label?: string
-  icon?: string
+  icon?: ReactNode
   danger?: boolean
   separator?: boolean
   disabled?: boolean
@@ -73,6 +74,7 @@ export type ModalSpec =
   | { kind: 'reflog'; repoPath: string }
   | { kind: 'bisect'; repoPath: string }
   | { kind: 'hooks'; repoPath: string }
+  | { kind: 'lfs'; repoPath: string }
 
 export type FileViewSource =
   | { type: 'wip'; staged: boolean; untracked: boolean }

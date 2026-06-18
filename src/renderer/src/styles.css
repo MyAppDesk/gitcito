@@ -2698,7 +2698,9 @@ textarea:focus {
 }
 
 .menu-item {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   width: 100%;
   text-align: left;
   padding: 7px 12px;
@@ -2706,6 +2708,15 @@ textarea:focus {
   font-size: 12.5px;
   color: var(--text-0);
   transition: background 0.08s;
+}
+.menu-item-icon {
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-2);
+  flex-shrink: 0;
+}
+.menu-item:hover:not(:disabled) .menu-item-icon {
+  color: inherit;
 }
 .menu-item:hover:not(:disabled) {
   background: var(--accent);
@@ -7266,4 +7277,107 @@ mark.find-hit.active {
   font-size: 11px;
   color: var(--text-3);
   margin: 6px 0 10px;
+}
+
+/* ── Git LFS ── */
+.lfs-empty {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 24px 8px;
+  color: var(--text-3);
+  font-size: 13px;
+}
+.lfs-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 9px 11px;
+  border-radius: 7px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  font-size: 12.5px;
+  color: var(--text-2);
+}
+.lfs-banner.warn {
+  border-color: var(--warn, #d29922);
+}
+.lfs-banner a {
+  color: var(--accent);
+}
+.lfs-hint {
+  font-size: 12px;
+  color: var(--text-3);
+  margin: 0 0 10px;
+}
+.lfs-section-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 700;
+  color: var(--text-3);
+  margin: 12px 0 6px;
+}
+.lfs-count {
+  color: var(--text-2);
+  font-weight: 600;
+}
+.lfs-track-add {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.lfs-track-add .modal-input {
+  flex: 1;
+}
+.lfs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 30vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.lfs-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--bg-2);
+}
+.lfs-pattern {
+  flex: 1;
+  font-size: 12.5px;
+  color: var(--text-0);
+}
+.lfs-file {
+  flex: 1;
+  font-size: 12px;
+  color: var(--text-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lfs-oid {
+  font-size: 10.5px;
+  color: var(--text-3);
+}
+.lfs-state {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+}
+.lfs-state.lfs-have {
+  color: var(--ok, #2ea043);
+}
+.lfs-state.lfs-pointer {
+  color: var(--text-3);
+}
+.lfs-actions {
+  justify-content: flex-start;
+  gap: 8px;
+  margin-top: 12px;
 }

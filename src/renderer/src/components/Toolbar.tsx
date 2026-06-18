@@ -13,10 +13,13 @@ import {
   RefreshCw,
   Loader2,
   Wand2,
+  Wrench,
   History,
   Bug,
   Webhook,
-  FileDiff
+  Boxes,
+  FileDiff,
+  GitCommit
 } from 'lucide-react'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
 import { useUIStore } from '../stores/ui'
@@ -86,17 +89,23 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
     ])
   }
 
-  const patchMenu = (e: React.MouseEvent): void => {
+  const toolsMenu = (e: React.MouseEvent): void => {
     e.stopPropagation()
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-    const pick = (am: boolean): void => {
+    const applyPatchFile = (am: boolean): void => {
       void window.api.openPatch().then((res) => {
         if (res) void repoActions.applyPatch(path, res.content, am)
       })
     }
     openContextMenu(rect.left, rect.bottom + 6, [
-      { label: 'Apply patch to working tree…', onClick: () => pick(false) },
-      { label: 'Apply patch & commit (git am)…', onClick: () => pick(true) }
+      { label: 'Reflog — recover lost commits', icon: <History size={15} />, onClick: () => openModal({ kind: 'reflog', repoPath: path }) },
+      { label: 'Bisect — find a bad commit', icon: <Bug size={15} />, onClick: () => openModal({ kind: 'bisect', repoPath: path }) },
+      { separator: true },
+      { label: 'Git hooks…', icon: <Webhook size={15} />, onClick: () => openModal({ kind: 'hooks', repoPath: path }) },
+      { label: 'Git LFS…', icon: <Boxes size={15} />, onClick: () => openModal({ kind: 'lfs', repoPath: path }) },
+      { separator: true },
+      { label: 'Apply patch to working tree…', icon: <FileDiff size={15} />, onClick: () => applyPatchFile(false) },
+      { label: 'Apply patch & commit (git am)…', icon: <GitCommit size={15} />, onClick: () => applyPatchFile(true) }
     ])
   }
 
@@ -190,33 +199,12 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
           <ArchiveRestore size={17} />
           <span>Pop</span>
         </button>
-        <button
-          className="tool-btn"
-          title="Reflog — recover lost commits"
-          onClick={() => openModal({ kind: 'reflog', repoPath: path })}
-        >
-          <History size={17} />
-          <span>Reflog</span>
-        </button>
-        <button
-          className="tool-btn"
-          title="Bisect — find the commit that introduced a bug"
-          onClick={() => openModal({ kind: 'bisect', repoPath: path })}
-        >
-          <Bug size={17} />
-          <span>Bisect</span>
-        </button>
-        <button
-          className="tool-btn"
-          title="Manage git hooks"
-          onClick={() => openModal({ kind: 'hooks', repoPath: path })}
-        >
-          <Webhook size={17} />
-          <span>Hooks</span>
-        </button>
-        <button className="tool-btn" title="Apply a patch file" onClick={patchMenu}>
-          <FileDiff size={17} />
-          <span>Patch</span>
+        <button className="tool-btn split" title="Reflog, bisect, hooks, LFS, patches" onClick={toolsMenu}>
+          <Wrench size={16} />
+          <span>Tools</span>
+          <span className="split-arrow">
+            <ChevronDown size={13} />
+          </span>
         </button>
       </div>
 

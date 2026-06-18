@@ -56,6 +56,7 @@ export function ContextMenu(): React.JSX.Element {
                   item.onClick?.()
                 }}
               >
+                {item.icon && <span className="menu-item-icon">{item.icon}</span>}
                 {item.label}
               </button>
             )

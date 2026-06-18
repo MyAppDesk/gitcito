@@ -15,6 +15,7 @@ import { AIPRReview } from './AIPRReview'
 import { ReflogModal } from './ReflogModal'
 import { BisectModal } from './BisectModal'
 import { HooksModal } from './HooksModal'
+import { LfsModal } from './LfsModal'
 
 function GroupColorModal({ spec }: { spec: Extract<ModalSpec, { kind: 'group-color' }> }): React.JSX.Element {
   const closeModal = useUIStore((s) => s.closeModal)
@@ -1184,7 +1185,8 @@ export function ModalHost(): React.JSX.Element {
                     modal.kind === 'branch-compare' ||
                     modal.kind === 'ai-pr-review' ||
                     modal.kind === 'reflog' ||
-                    modal.kind === 'hooks'
+                    modal.kind === 'hooks' ||
+                    modal.kind === 'lfs'
                   ? 'modal-tall'
                   : ''
             }`}
@@ -1219,6 +1221,7 @@ export function ModalHost(): React.JSX.Element {
             {modal.kind === 'reflog' && <ReflogModal repoPath={modal.repoPath} />}
             {modal.kind === 'bisect' && <BisectModal repoPath={modal.repoPath} />}
             {modal.kind === 'hooks' && <HooksModal repoPath={modal.repoPath} />}
+            {modal.kind === 'lfs' && <LfsModal repoPath={modal.repoPath} />}
           </motion.div>
         </motion.div>
       )}

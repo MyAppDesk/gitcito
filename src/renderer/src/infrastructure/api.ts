@@ -33,7 +33,8 @@ import type {
   ReflogEntry,
   BisectStatus,
   SigningConfig,
-  HooksInfo
+  HooksInfo,
+  LfsInfo
 } from '../../../shared/types'
 
 // Typed adapter over the IPC bridge — the only place that talks to window.api.
@@ -157,6 +158,12 @@ export const gitApi = {
   setHookEnabled: (path: string, name: string, enabled: boolean) =>
     call<void>('setHookEnabled', path, name, enabled),
   deleteHook: (path: string, name: string) => call<void>('deleteHook', path, name),
+
+  lfsInfo: (path: string) => call<LfsInfo>('lfsInfo', path),
+  lfsTrack: (path: string, pattern: string) => call<void>('lfsTrack', path, pattern),
+  lfsUntrack: (path: string, pattern: string) => call<void>('lfsUntrack', path, pattern),
+  lfsPull: (path: string) => call<void>('lfsPull', path),
+  lfsPrune: (path: string) => call<void>('lfsPrune', path),
 
   getUser: (path: string) => call<{ name: string; email: string }>('getUser', path),
   setUser: (path: string, name: string, email: string) => call<void>('setUser', path, name, email),

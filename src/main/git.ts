@@ -29,6 +29,8 @@ import type {
   SigningConfig,
   HooksInfo,
   HookInfo,
+  LfsInfo,
+  LfsFile,
   StashInfo,
   TagInfo,
   WorktreeInfo,
@@ -897,6 +899,54 @@ export const gitService = {
     const git = gitFor(repoPath)
     const { dir } = await resolveHooksDir(git, repoPath)
     await unlink(join(dir, name)).catch(() => {})
+  },
+
+  // ─── Git LFS ───────────────────────────────────────────────────────────────
+
+  /** LFS state: whether git-lfs is installed, tracked patterns, and LFS files. */
+  async lfsInfo(repoPath: string): Promise<LfsInfo> {
+    const git = gitFor(repoPath)
+    const installed = await git
+      .raw(['lfs', 'version'])
+      .then(() => true)
+      .catch(() => false)
+    if (!installed) return { installed: false, enabled: false, patterns: [], files: [] }
+
+    const ga = await readFile(join(repoPath, '.gitattributes'), 'utf-8').catch(() => '')
+    const patterns = ga
+      .split('\n')
+      .map((l) => l.trim())
+      .filter((l) => l && !l.startsWith('#') && /filter=lfs/.test(l))
+      .map((l) => l.split(/\s+/)[0])
+
+    const out = await git.raw(['lfs', 'ls-files']).catch(() => '')
+    const files: LfsFile[] = []
+    for (const line of out.split('\n').map((l) => l.trim()).filter(Boolean)) {
+      // Format: "<oid> <* or -> <path>"  (* = downloaded, - = pointer only)
+      const m = line.match(/^(\S+)\s+([*-])\s+(.+)$/)
+      if (m) files.push({ oid: m[1], downloaded: m[2] === '*', path: m[3] })
+    }
+    return { installed: true, enabled: patterns.length > 0 || files.length > 0, patterns, files }
+  },
+
+  /** Track a glob pattern with LFS (writes .gitattributes). */
+  async lfsTrack(repoPath: string, pattern: string): Promise<void> {
+    await gitFor(repoPath).raw(['lfs', 'track', pattern])
+  },
+
+  /** Stop tracking a pattern with LFS. */
+  async lfsUntrack(repoPath: string, pattern: string): Promise<void> {
+    await gitFor(repoPath).raw(['lfs', 'untrack', pattern])
+  },
+
+  /** Download LFS content for pointers in the working tree. */
+  async lfsPull(repoPath: string): Promise<void> {
+    await gitFor(repoPath).raw(['lfs', 'pull'])
+  },
+
+  /** Prune old/unreferenced LFS objects from local storage. */
+  async lfsPrune(repoPath: string): Promise<void> {
+    await gitFor(repoPath).raw(['lfs', 'prune'])
   },
 
   async cherryPick(repoPath: string, hash: string, noCommit = false): Promise<void> {

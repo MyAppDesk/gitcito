@@ -49,6 +49,21 @@ export interface HooksInfo {
   hooks: HookInfo[]
 }
 
+/** One file tracked by Git LFS (from `git lfs ls-files`). */
+export interface LfsFile {
+  path: string
+  oid: string // short object id
+  downloaded: boolean // true = real content present, false = pointer only
+}
+
+/** Git LFS state for a repo. */
+export interface LfsInfo {
+  installed: boolean // the git-lfs binary is available
+  enabled: boolean // the repo tracks anything via LFS
+  patterns: string[] // tracked glob patterns from .gitattributes
+  files: LfsFile[]
+}
+
 export interface BranchInfo {
   name: string
   sha: string

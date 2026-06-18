@@ -12,7 +12,6 @@ import {
   Search,
   RefreshCw,
   Loader2,
-  Wand2,
   Wrench,
   History,
   Bug,
@@ -29,6 +28,7 @@ import type { MenuItem } from '../stores/ui'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
+import gitcitoIcon from '../assets/gitcito_icon.png'
 
 /** Short human-readable "time since" label, e.g. "now", "3m ago", "2h ago". */
 function timeSince(at: number | null): string {
@@ -283,7 +283,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
         {aiEnabled && (
           <button
             className="tool-btn"
-            title="Generate AI configuration files for this repository"
+            title="Ask the AI to act on this repo, or generate AI configuration files"
             onClick={() =>
               openModal({
                 kind: 'ai-config-wizard',
@@ -292,7 +292,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
               })
             }
           >
-            <Wand2 size={15} />
+            <img src={gitcitoIcon} alt="" className="tool-btn-icon" width={15} height={15} />
             <span>AI Config</span>
           </button>
         )}

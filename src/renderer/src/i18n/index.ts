@@ -5,6 +5,7 @@ import { useSettingsStore } from '../stores/settings'
 
 const en = {
   // Sidebar sections
+  'sidebar.files': 'FILES',
   'sidebar.local': 'LOCAL',
   'sidebar.remotes': 'REMOTES',
   'sidebar.pullRequests': 'PULL REQUESTS',
@@ -267,6 +268,7 @@ export type TranslationKey = keyof Dict
 
 const es: Dict = {
   'sidebar.local': 'LOCALES',
+  'sidebar.files': 'ARCHIVOS',
   'sidebar.remotes': 'REMOTOS',
   'sidebar.pullRequests': 'PULL REQUESTS',
   'sidebar.issues': 'INCIDENCIAS',

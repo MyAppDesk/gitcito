@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron'
-import type { AIConfig, AppThemeColors, BranchNamingStyle, CodeThemeColors, ConflictStyle, ExplainStyle } from '../shared/types'
+import type { AIConfig, AppThemeColors, AskPlan, BranchNamingStyle, CodeThemeColors, ConflictStyle, ExplainStyle, RepoStatus } from '../shared/types'
 import { recordAIUsage, type TokenUsage } from './analytics'
 
 /** Token-usage block as returned by OpenAI-compatible (and native Anthropic) APIs. */
@@ -592,7 +592,67 @@ Reply ONLY with valid JSON: {"summary": "...", "risks": "...", "suggestions": ".
   }
 }
 
+/**
+ * Interpret a free-form instruction (e.g. "ignore all *.tsx files", "commit the
+ * unstaged .md files") against the repo's current working-tree state and return a
+ * concrete, executable plan. The model resolves globs/intents to literal paths and
+ * patterns using the file lists below — the renderer just applies the actions.
+ */
+async function planRepoActions(prompt: string, status: RepoStatus, cfg: AIConfig): Promise<AskPlan> {
+  const list = (files: { path: string }[]): string => files.map((f) => f.path).join('\n') || '(none)'
+  const stateBlock = `Current branch: ${status.current}
+Staged files:
+${list(status.staged)}
+Unstaged/untracked files:
+${list(status.unstaged)}
+Conflicted files:
+${list(status.conflicted)}`
+
+  const system = `You translate a user's plain-language git instruction into a concrete plan of actions for the Gitcito desktop app to execute.
+
+You are given the repository's current working-tree state. Resolve any globs or descriptions (e.g. "*.tsx", "the markdown files", "everything unstaged") to LITERAL repo-relative file paths drawn ONLY from the lists provided. Never invent paths that aren't listed (except .gitignore patterns, which are literal glob strings the user wants ignored).
+
+Reply ONLY with valid JSON (no markdown fences) matching:
+{
+  "summary": "one short sentence describing the plan",
+  "actions": [ ...zero or more actions... ],
+  "note": "optional — set only when you cannot fulfill the request; then actions must be []"
+}
+
+Each action is one of:
+- {"type":"gitignore","patterns":["*.tsx"],"description":"Ignore all .tsx files"}
+- {"type":"stage","files":["a.ts"],"description":"Stage a.ts"}
+- {"type":"unstage","files":["a.ts"],"description":"Unstage a.ts"}
+- {"type":"commit","message":"...","files":["README.md"],"description":"Commit the .md files"}
+
+Rules:
+- For a commit, set "files" to the paths to include; they will be staged before committing. Omit "files" to commit what is already staged.
+- "message" must be a concise, conventional commit message.
+- If nothing matches (e.g. the user asks to commit .md files but none exist), return actions: [] and explain in "note".
+- Keep the plan minimal — only the actions needed to satisfy the instruction.`
+
+  const out = await chatComplete(cfg, [
+    { role: 'system', content: system },
+    { role: 'user', content: `${stateBlock}\n\nInstruction: ${clip(prompt, 4000)}` }
+  ], 'planActions', 0.1)
+
+  try {
+    const cleaned = out.replace(/^```(json)?/m, '').replace(/```$/m, '').trim()
+    const parsed = JSON.parse(cleaned) as Partial<AskPlan>
+    return {
+      summary: parsed.summary ?? '',
+      actions: Array.isArray(parsed.actions) ? parsed.actions : [],
+      note: parsed.note
+    }
+  } catch {
+    return { summary: '', actions: [], note: out.trim() || 'The AI returned an unreadable response.' }
+  }
+}
+
 export function registerAiHandlers(): void {
+  ipcMain.handle('ai:planActions', (_e, prompt: string, status: RepoStatus, cfg: AIConfig) =>
+    planRepoActions(prompt, status, cfg)
+  )
   ipcMain.handle('ai:commitMessage', (_e, diff: string, cfg: AIConfig, ctx: AICommitContext) =>
     generateCommitMessage(diff, cfg, ctx)
   )

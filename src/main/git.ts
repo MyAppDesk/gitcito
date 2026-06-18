@@ -1,7 +1,7 @@
-import { ipcMain } from 'electron'
+import { ipcMain, shell } from 'electron'
 import { simpleGit, SimpleGit } from 'simple-git'
 import { basename, join } from 'path'
-import { readFile, writeFile, unlink, stat, chmod, mkdir } from 'fs/promises'
+import { readFile, writeFile, unlink, stat, chmod, mkdir, readdir, rename } from 'fs/promises'
 import { tmpdir, homedir } from 'os'
 import { existsSync } from 'fs'
 import { spawn } from 'child_process'
@@ -37,6 +37,8 @@ import type {
   WorktreeInfo,
   SubmoduleInfo,
   SubmoduleStatus,
+  TreeEntry,
+  TreeStatusKind,
   ActivityEvent
 } from '../shared/types'
 import { recordEvent } from './analytics'
@@ -798,6 +800,111 @@ export const gitService = {
     const args = ['rm', '-r', '--ignore-unmatch']
     if (!deleteFromDisk) args.push('--cached')
     await gitFor(repoPath).raw([...args, '--', ...files])
+  },
+
+  // ─── Project tree (working-directory file explorer) ──────────────────────
+
+  /**
+   * Immediate children of `relDir` (repo-relative POSIX path; '' = root).
+   * The `.git` directory is hidden. Sorted folders-first, then by name.
+   * Lazy per-directory listing keeps huge trees (node_modules) responsive.
+   */
+  async listDir(repoPath: string, relDir = ''): Promise<TreeEntry[]> {
+    const abs = join(repoPath, relDir)
+    const ents = await readdir(abs, { withFileTypes: true })
+    const out: TreeEntry[] = []
+    for (const e of ents) {
+      if (relDir === '' && e.name === '.git') continue
+      const dir = e.isDirectory()
+      const path = relDir ? `${relDir}/${e.name}` : e.name
+      out.push({ name: e.name, path, dir })
+    }
+    out.sort((a, b) => (a.dir === b.dir ? a.name.localeCompare(b.name) : a.dir ? -1 : 1))
+    return out
+  },
+
+  /**
+   * Map of repo-relative path → status kind for every changed/untracked/ignored
+   * path, from a single `git status --porcelain --ignored -uall` call. Directory
+   * paths are also populated with an aggregated status so folders can show a dot
+   * when something inside them changed. Clean tracked files are absent (= clean).
+   */
+  async treeStatus(repoPath: string): Promise<Record<string, TreeStatusKind>> {
+    const git = gitFor(repoPath)
+    const raw = await git.raw(['status', '--porcelain=v1', '--ignored', '-uall', '-z']).catch(() => '')
+    const out: Record<string, TreeStatusKind> = {}
+    // Priority when a folder aggregates mixed child statuses (higher wins).
+    const rank: Record<TreeStatusKind, number> = {
+      conflicted: 6, modified: 5, added: 4, deleted: 3, renamed: 2, untracked: 1, ignored: 0
+    }
+    const bump = (p: string, kind: TreeStatusKind): void => {
+      const cur = out[p]
+      if (!cur || rank[kind] > rank[cur]) out[p] = kind
+    }
+    const records = raw.split('\0').filter(Boolean)
+    for (let i = 0; i < records.length; i++) {
+      const rec = records[i]
+      const xy = rec.slice(0, 2)
+      let path = rec.slice(3)
+      // Renames/copies emit "R  new\0old" — the old path is the next NUL field.
+      if (xy[0] === 'R' || xy[0] === 'C') i++
+      const kind: TreeStatusKind =
+        xy === '!!' ? 'ignored'
+          : xy === '??' ? 'untracked'
+          : xy.includes('U') || xy === 'AA' || xy === 'DD' ? 'conflicted'
+          : xy.includes('R') ? 'renamed'
+          : xy.includes('A') ? 'added'
+          : xy.includes('D') ? 'deleted'
+          : 'modified'
+      path = path.replace(/\/$/, '')
+      bump(path, kind)
+      // Propagate to ancestor directories (ignored stays leaf-only so whole
+      // ignored trees don't paint every parent grey).
+      if (kind !== 'ignored') {
+        let slash = path.lastIndexOf('/')
+        while (slash > 0) {
+          bump(path.slice(0, slash), kind)
+          slash = path.lastIndexOf('/', slash - 1)
+        }
+      }
+    }
+    return out
+  },
+
+  /** Create an empty file or a directory at `relPath` (repo-relative). */
+  async fsCreate(repoPath: string, relPath: string, isDir: boolean): Promise<void> {
+    const abs = join(repoPath, relPath)
+    if (existsSync(abs)) throw new Error(`Already exists: ${relPath}`)
+    if (isDir) {
+      await mkdir(abs, { recursive: true })
+    } else {
+      await mkdir(join(abs, '..'), { recursive: true })
+      await writeFile(abs, '', 'utf8')
+    }
+  },
+
+  /** Rename/move a path within the repo (uses `git mv` when tracked so history
+   *  follows, else a plain fs rename for untracked paths). */
+  async fsRename(repoPath: string, from: string, to: string): Promise<void> {
+    if (from === to) return
+    const dest = join(repoPath, to)
+    if (existsSync(dest)) throw new Error(`Already exists: ${to}`)
+    await mkdir(join(dest, '..'), { recursive: true })
+    const tracked = (await gitFor(repoPath).raw(['ls-files', '--', from]).catch(() => '')).trim()
+    if (tracked) {
+      await gitFor(repoPath).raw(['mv', from, to])
+    } else {
+      await rename(join(repoPath, from), dest)
+    }
+  },
+
+  /** Move paths to the OS trash (recoverable). Refuses paths outside the repo. */
+  async fsDelete(repoPath: string, relPaths: string[]): Promise<void> {
+    for (const rel of relPaths) {
+      const abs = join(repoPath, rel)
+      if (!abs.startsWith(repoPath)) throw new Error(`Refusing to delete outside repo: ${rel}`)
+      await shell.trashItem(abs)
+    }
   },
 
   async commit(repoPath: string, message: string, amend = false): Promise<void> {

@@ -23,8 +23,12 @@ import {
   Sparkles,
   Rocket,
   Settings2,
-  ArrowUpRight
+  ArrowUpRight,
+  FolderTree,
+  FilePlus,
+  FolderPlus
 } from 'lucide-react'
+import { FileTree } from './FileTree'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
 import { useUIStore, type MenuItem } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
@@ -594,7 +598,21 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     })
 
 
+  const promptCreateRoot = (isDir: boolean): void =>
+    openModal({
+      kind: 'input',
+      title: isDir ? 'New folder' : 'New file',
+      label: 'At repository root',
+      placeholder: isDir ? 'components' : 'index.ts',
+      submitLabel: 'Create',
+      onSubmit: (name) => {
+        const clean = name.trim().replace(/^\/+|\/+$/g, '')
+        if (clean) void repoActions.fsCreate(path, clean, isDir)
+      }
+    })
+
   const sectionLabels: Record<string, string> = {
+    files: t('sidebar.files'),
     local: t('sidebar.local'),
     remotes: t('sidebar.remotes'),
     prs: t('sidebar.pullRequests'),
@@ -646,7 +664,45 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     }
   })
 
+  const changeCount =
+    (repo.status?.staged.length ?? 0) + (repo.status?.unstaged.length ?? 0) + (repo.status?.conflicted.length ?? 0)
+
   const sections: Record<string, React.JSX.Element> = {
+    files: (
+      <Section
+        title={t('sidebar.files')}
+        icon={<FolderTree size={13} />}
+        count={changeCount}
+        defaultOpen={false}
+        {...dragProps('files')}
+        actions={
+          <>
+            <span
+              className="icon-btn"
+              title="New file at root"
+              onClick={(e) => {
+                e.stopPropagation()
+                promptCreateRoot(false)
+              }}
+            >
+              <FilePlus size={12} />
+            </span>
+            <span
+              className="icon-btn"
+              title="New folder at root"
+              onClick={(e) => {
+                e.stopPropagation()
+                promptCreateRoot(true)
+              }}
+            >
+              <FolderPlus size={12} />
+            </span>
+          </>
+        }
+      >
+        <FileTree repo={repo} />
+      </Section>
+    ),
     local: (
       <Section
         title={t('sidebar.local')}

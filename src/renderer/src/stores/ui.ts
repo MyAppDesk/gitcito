@@ -92,6 +92,9 @@ export type FileViewSource =
   | { type: 'wip'; staged: boolean; untracked: boolean }
   | { type: 'commit'; hash: string }
   | { type: 'stash'; sha: string; untracked: boolean }
+  // A plain working-tree file opened from the project tree. Read from disk
+  // (no git ref) and editable in place.
+  | { type: 'tree' }
 
 export type FileViewMode = 'preview' | 'diff' | 'file' | 'blame' | 'history'
 
@@ -163,6 +166,9 @@ interface UIState {
   fileSearch: FileSearchState | null
   scrollToHash: string | null
   layout: PanelLayout
+  /** True while the in-app file editor holds unsaved changes — drives the
+   *  discard guard before navigating away. */
+  editorDirty: boolean
 
   openContextMenu(x: number, y: number, items: MenuItem[]): void
   closeContextMenu(): void
@@ -176,6 +182,7 @@ interface UIState {
   setAuthorFilter(author: string | null): void
   setBusy(label: string | null): void
   setFileView(view: FileViewState | null): void
+  setEditorDirty(dirty: boolean): void
   setConflictView(view: ConflictViewState | null): void
   setFileSearch(search: FileSearchState | null): void
   requestScrollTo(hash: string | null): void
@@ -198,6 +205,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   fileSearch: null,
   scrollToHash: null,
   layout: loadLayout(),
+  editorDirty: false,
 
   openContextMenu: (x, y, items) => set({ contextMenu: { x, y, items } }),
   closeContextMenu: () => set({ contextMenu: null }),
@@ -217,6 +225,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   setAuthorFilter: (authorFilter) => set({ authorFilter }),
   setBusy: (busy) => set({ busy }),
   setFileView: (fileView) => set({ fileView }),
+  setEditorDirty: (editorDirty) => set({ editorDirty }),
   setConflictView: (conflictView) => set({ conflictView }),
   setFileSearch: (fileSearch) => set({ fileSearch }),
   requestScrollTo: (scrollToHash) => set({ scrollToHash }),

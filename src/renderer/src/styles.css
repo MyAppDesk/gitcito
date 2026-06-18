@@ -2904,6 +2904,83 @@ textarea:focus {
   border-bottom-color: var(--accent);
 }
 
+/* AI Config: tab bar + Ask panel */
+.ai-config-tabs .remote-tab {
+  flex-direction: row;
+  padding: 9px 4px;
+  font-size: 12px;
+}
+.tool-btn-icon {
+  object-fit: contain;
+  border-radius: 3px;
+}
+.ai-ask-examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.ai-ask-chip {
+  padding: 4px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-2);
+  color: var(--text-2);
+  font-size: 11px;
+  transition: color 0.12s, border-color 0.12s, background 0.12s;
+}
+.ai-ask-chip:hover {
+  color: var(--text-0);
+  border-color: var(--accent);
+  background: var(--bg-3);
+}
+.ai-ask-plan {
+  margin-top: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: var(--bg-2);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ai-ask-plan-summary {
+  font-size: 12.5px;
+  color: var(--text-1);
+}
+.ai-ask-action {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 12px;
+  min-width: 0;
+}
+.ai-ask-action-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: var(--bg-3);
+  color: var(--text-1);
+  font-size: 10.5px;
+  font-weight: 600;
+}
+.ai-ask-action-desc {
+  color: var(--text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ai-ask-note {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--text-2);
+}
+
 .modal-input + .modal-label {
   margin-top: 12px;
 }
@@ -7830,3 +7907,103 @@ mark.find-hit.active {
 .pr-actions-spacer {
   flex: 1;
 }
+
+/* ─── Project tree (file explorer) ─────────────────────────────────────── */
+.file-tree {
+  display: flex;
+  flex-direction: column;
+  padding: 2px 0 4px;
+  user-select: none;
+}
+.tree-loading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  color: var(--text-2);
+  font-size: 12px;
+}
+.tree-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding-right: 8px;
+  font-size: 12.5px;
+  color: var(--text-1);
+  cursor: pointer;
+  border-radius: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.tree-row:hover {
+  background: var(--bg-2);
+}
+.tree-row.selected {
+  background: var(--accent-soft);
+  color: var(--text-0);
+}
+.tree-arrow {
+  width: 13px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-2);
+}
+.tree-icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-2);
+}
+.tree-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tree-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: currentColor;
+  opacity: 0.9;
+}
+/* Status colors mirror VSCode's git decorations. */
+.tree-row.st-untracked .tree-name,
+.tree-row.st-untracked .tree-icon { color: var(--green); }
+.tree-row.st-added .tree-name,
+.tree-row.st-added .tree-icon { color: var(--green); }
+.tree-row.st-modified .tree-name,
+.tree-row.st-modified .tree-icon { color: var(--yellow); }
+.tree-row.st-renamed .tree-name,
+.tree-row.st-renamed .tree-icon { color: var(--yellow); }
+.tree-row.st-deleted .tree-name { color: var(--red); text-decoration: line-through; }
+.tree-row.st-deleted .tree-icon { color: var(--red); }
+.tree-row.st-conflicted .tree-name,
+.tree-row.st-conflicted .tree-icon { color: var(--red); }
+.tree-row.st-ignored .tree-name,
+.tree-row.st-ignored .tree-icon { color: var(--text-2); opacity: 0.6; }
+
+/* In-app file editor */
+.file-editor {
+  flex: 1;
+  width: 100%;
+  min-height: 100%;
+  resize: none;
+  border: none;
+  outline: none;
+  background: var(--bg-0);
+  color: var(--text-0);
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: var(--code-font-size, 12px);
+  line-height: 1.55;
+  padding: 8px 12px;
+  tab-size: 2;
+  white-space: pre;
+  overflow: auto;
+}
+.fv-chip.working { background: rgba(108, 92, 231, 0.16); color: var(--accent); }
+.fv-chip.working.dirty { background: rgba(255, 122, 26, 0.18); color: var(--yellow); }
+.fv-save-btn { display: inline-flex; align-items: center; gap: 4px; }

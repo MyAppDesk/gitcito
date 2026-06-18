@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { X, GitCommitHorizontal, Sparkles, Loader2, Search, ChevronUp, ChevronDown } from 'lucide-react'
+import { X, GitCommitHorizontal, Sparkles, Loader2, Search, ChevronUp, ChevronDown, Pencil, Save } from 'lucide-react'
 import hljs from 'highlight.js'
 import type { BlameLine, FileHistoryEntry } from '../../../shared/types'
-import { gitApi, aiApi } from '../infrastructure/api'
+import { gitApi, aiApi, shellApi } from '../infrastructure/api'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore, type FileViewMode, type FileViewState } from '../stores/ui'
 import { useT } from '../i18n'
@@ -68,6 +68,7 @@ function shaColor(sha: string): string {
 function sourceRef(view: FileViewState): string | undefined {
   if (view.source.type === 'commit') return view.source.hash
   if (view.source.type === 'stash') return view.source.untracked ? `${view.source.sha}^3` : view.source.sha
+  if (view.source.type === 'tree') return undefined
   return view.source.staged ? ':0' : undefined
 }
 
@@ -84,12 +85,15 @@ function imageDiffRefs(view: FileViewState): { before: string | null; after?: st
   if (s.type === 'commit') return { before: `${s.hash}^`, after: s.hash }
   if (s.type === 'stash')
     return s.untracked ? { before: null, after: `${s.sha}^3` } : { before: `${s.sha}^1`, after: s.sha }
+  if (s.type === 'tree') return { before: 'HEAD', after: undefined }
   if (s.untracked) return { before: null, after: undefined }
   return { before: 'HEAD', after: s.staged ? ':0' : undefined }
 }
 
 export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element {
   const setFileView = useUIStore((s) => s.setFileView)
+  const setEditorDirty = useUIStore((s) => s.setEditorDirty)
+  const openModal = useUIStore((s) => s.openModal)
   const toast = useUIStore((s) => s.toast)
   const fileSearch = useUIStore((s) => s.fileSearch)
   const searchRe = useMemo(() => (fileSearch ? buildQueryRegExp(fileSearch, true) : null), [fileSearch])
@@ -147,6 +151,11 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
 
   const [refreshKey, setRefreshKey] = useState(0)
 
+  // ─── In-app editing (project-tree files only) ───
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState('')
+  const [saving, setSaving] = useState(false)
+
   const { repoPath, file, mode, source } = view
 
   // Re-fetch working-tree content when the window regains focus/visibility.
@@ -170,6 +179,62 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
   const previewable = !!pvKind && !fileIsImage
   const binaryDoc = !!pvKind && isBinaryKind(pvKind) && !fileIsImage
   const canExplain = !fileIsImage && (mode === 'file' || mode === 'diff') && !!content
+
+  // Only plain working-tree files (opened from the project tree) are editable,
+  // and only in File view of a text file.
+  const editable = source.type === 'tree' && mode === 'file' && !fileIsImage && !binaryDoc && content !== null
+  const dirty = editing && content !== null && draft !== content
+
+  // Keep the draft in sync with freshly-loaded content while not dirty; never
+  // clobber unsaved edits on a background refresh.
+  useEffect(() => {
+    if (content !== null && !dirty) setDraft(content)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [content])
+
+  // Mirror the dirty flag to the store so navigation guards can see it; leaving
+  // the viewer (or the file) always clears it.
+  useEffect(() => {
+    setEditorDirty(dirty)
+  }, [dirty, setEditorDirty])
+  useEffect(() => {
+    setEditing(false)
+  }, [file, repoPath])
+  useEffect(() => () => setEditorDirty(false), [setEditorDirty])
+
+  const saveDraft = async (): Promise<void> => {
+    if (!dirty || saving) return
+    setSaving(true)
+    try {
+      await shellApi.writeFiles(repoPath, [{ path: file, content: draft }])
+      setContent(draft)
+      setEditorDirty(false)
+      toast('success', `Saved ${file.split('/').pop()}`)
+    } catch (err) {
+      toast('error', err instanceof Error ? err.message : String(err))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  // Guarded close — prompt before throwing away unsaved edits.
+  const requestClose = (): void => {
+    if (dirty) {
+      openModal({
+        kind: 'confirm',
+        title: 'Discard changes',
+        message: `Discard unsaved changes to ${file.split('/').pop()}?`,
+        danger: true,
+        confirmLabel: 'Discard',
+        onConfirm: () => {
+          setEditorDirty(false)
+          setFileView(null)
+        }
+      })
+    } else {
+      setFileView(null)
+    }
+  }
 
   const runExplain = async (): Promise<void> => {
     if (!content) return
@@ -202,6 +267,8 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
   let modes = MODES.filter((m) => m.id !== 'blame' || blameAvailable)
   if (!previewable) modes = modes.filter((m) => m.id !== 'preview')
   if (binaryDoc) modes = modes.filter((m) => m.id === 'preview' || m.id === 'history')
+  // A plain working-tree file has no commit/stash to diff against here.
+  if (source.type === 'tree') modes = modes.filter((m) => m.id !== 'diff')
   const modeAvailable = modes.some((m) => m.id === mode)
 
   // If the active mode isn't available for this file, fall back to the first
@@ -213,6 +280,11 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's' && editable) {
+        e.preventDefault()
+        void saveDraft()
+        return
+      }
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'f') {
         e.preventDefault()
         openFind()
@@ -220,13 +292,13 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
       }
       if (e.key === 'Escape' && !useUIStore.getState().modal) {
         if (findOpen) closeFind()
-        else setFileView(null)
+        else requestClose()
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [setFileView, findOpen, fileSearch])
+  }, [setFileView, findOpen, fileSearch, editable, dirty, draft, content, saving])
 
   useEffect(() => {
     let cancelled = false
@@ -264,7 +336,9 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
               ? await gitApi.commitFileDiff(repoPath, source.hash, file)
               : source.type === 'stash'
                 ? await gitApi.stashFileDiff(repoPath, source.sha, file, source.untracked)
-                : await gitApi.diffFile(repoPath, file, source.staged, source.untracked)
+                : source.type === 'wip'
+                  ? await gitApi.diffFile(repoPath, file, source.staged, source.untracked)
+                  : ''
           if (!cancelled) setContent(text)
         } else if (mode === 'file') {
           const text = await gitApi.fileContent(repoPath, file, sourceRef(view))
@@ -297,7 +371,7 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
     mode,
     refreshKey,
     source.type,
-    source.type === 'commit' ? source.hash : source.type === 'stash' ? source.sha : source.staged
+    source.type === 'commit' ? source.hash : source.type === 'stash' ? source.sha : source.type === 'wip' ? source.staged : ''
   ])
 
   // Recount find hits whenever the query/content/layers change; clamp active.
@@ -334,6 +408,8 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
       <span className="fv-chip commit">{source.hash.slice(0, 7)}</span>
     ) : source.type === 'stash' ? (
       <span className="fv-chip stash">Stash</span>
+    ) : source.type === 'tree' ? (
+      <span className={`fv-chip working${dirty ? ' dirty' : ''}`}>{dirty ? 'Unsaved' : 'Working tree'}</span>
     ) : (
       <span className={`fv-chip ${source.staged ? 'staged' : 'unstaged'}`}>{source.staged ? 'Staged' : 'Unstaged'}</span>
     )
@@ -367,7 +443,22 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
             {explaining ? <Loader2 size={13} className="spin" /> : <Sparkles size={13} />} {t('explain.action')}
           </button>
         )}
-        <button className="icon-btn" title="Close (Esc)" onClick={() => setFileView(null)}>
+        {editable && !editing && (
+          <button className="btn ghost small" title="Edit file" onClick={() => setEditing(true)}>
+            <Pencil size={13} /> Edit
+          </button>
+        )}
+        {editable && editing && (
+          <button
+            className="btn small fv-save-btn"
+            disabled={!dirty || saving}
+            title="Save (⌘S)"
+            onClick={() => void saveDraft()}
+          >
+            {saving ? <Loader2 size={13} className="spin" /> : <Save size={13} />} Save
+          </button>
+        )}
+        <button className="icon-btn" title="Close (Esc)" onClick={requestClose}>
           <X size={15} />
         </button>
       </div>
@@ -469,7 +560,28 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
           </div>
         )}
 
-        {!error && content !== null && imageUrl === null && mode === 'file' && (
+        {!error && content !== null && imageUrl === null && mode === 'file' && editing && (
+          <textarea
+            className="file-editor"
+            value={draft}
+            spellCheck={false}
+            autoFocus
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              // Insert a real tab instead of moving focus.
+              if (e.key === 'Tab') {
+                e.preventDefault()
+                const ta = e.currentTarget
+                const { selectionStart: s, selectionEnd: en } = ta
+                const next = draft.slice(0, s) + '  ' + draft.slice(en)
+                setDraft(next)
+                requestAnimationFrame(() => ta.setSelectionRange(s + 2, s + 2))
+              }
+            }}
+          />
+        )}
+
+        {!error && content !== null && imageUrl === null && mode === 'file' && !editing && (
           <div className="file-content hljs">
             {content.split('\n').map((l, i) => (
               <div className="code-line" key={i}>

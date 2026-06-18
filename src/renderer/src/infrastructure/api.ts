@@ -1,4 +1,5 @@
 import type {
+  AskPlan,
   BlameLine,
   BranchCompareResult,
   BranchesPayload,
@@ -43,7 +44,9 @@ import type {
   SigningConfig,
   HooksInfo,
   LfsInfo,
-  SparseCheckoutInfo
+  SparseCheckoutInfo,
+  TreeEntry,
+  TreeStatusKind
 } from '../../../shared/types'
 
 // Typed adapter over the IPC bridge — the only place that talks to window.api.
@@ -99,6 +102,12 @@ export const gitApi = {
     call<string[]>('addToGitignoreAt', path, dir, patterns),
   untrack: (path: string, files: string[], deleteFromDisk?: boolean) =>
     call<void>('untrack', path, files, deleteFromDisk),
+
+  listDir: (path: string, relDir?: string) => call<TreeEntry[]>('listDir', path, relDir),
+  treeStatus: (path: string) => call<Record<string, TreeStatusKind>>('treeStatus', path),
+  fsCreate: (path: string, relPath: string, isDir: boolean) => call<void>('fsCreate', path, relPath, isDir),
+  fsRename: (path: string, from: string, to: string) => call<void>('fsRename', path, from, to),
+  fsDelete: (path: string, relPaths: string[]) => call<void>('fsDelete', path, relPaths),
   commit: (path: string, message: string, amend?: boolean) => call<void>('commit', path, message, amend),
   getCommitMessage: (path: string, hash: string) => call<string>('getCommitMessage', path, hash),
   commitTemplate: (path: string) => call<string>('commitTemplate', path),
@@ -249,7 +258,9 @@ export const aiApi = {
   generateBranchName: (description: string, cfg: AIConfig, ctx: { username?: string }) =>
     window.api.ai.generateBranchName(description, cfg, ctx) as Promise<string>,
   reviewPR: (diff: string, cfg: AIConfig) =>
-    window.api.ai.reviewPR(diff, cfg) as Promise<{ summary: string; risks: string; suggestions: string }>
+    window.api.ai.reviewPR(diff, cfg) as Promise<{ summary: string; risks: string; suggestions: string }>,
+  planActions: (prompt: string, status: RepoStatus, cfg: AIConfig) =>
+    window.api.ai.planActions(prompt, status, cfg) as Promise<AskPlan>
 }
 
 export const analyticsApi = {

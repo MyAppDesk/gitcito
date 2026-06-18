@@ -52,7 +52,9 @@ const api = {
     generateBranchName: (description: string, cfg: unknown, ctx: unknown): Promise<unknown> =>
       ipcRenderer.invoke('ai:generateBranchName', description, cfg, ctx),
     reviewPR: (diff: string, cfg: unknown): Promise<unknown> =>
-      ipcRenderer.invoke('ai:reviewPR', diff, cfg)
+      ipcRenderer.invoke('ai:reviewPR', diff, cfg),
+    planActions: (prompt: string, status: unknown, cfg: unknown): Promise<unknown> =>
+      ipcRenderer.invoke('ai:planActions', prompt, status, cfg)
   },
 
   analytics: {

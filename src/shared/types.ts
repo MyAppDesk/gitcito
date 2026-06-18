@@ -118,6 +118,20 @@ export interface RepoStatus {
   conflicted: FileEntry[]
 }
 
+/** Working-tree status of a tree node, derived from `git status --ignored`.
+ *  Directories report the most "interesting" status of their descendants. */
+export type TreeStatusKind = 'modified' | 'added' | 'untracked' | 'ignored' | 'deleted' | 'renamed' | 'conflicted'
+
+/** One immediate child of a directory in the project tree. */
+export interface TreeEntry {
+  /** Base name (no path). */
+  name: string
+  /** Repo-relative POSIX path. */
+  path: string
+  /** True for directories. */
+  dir: boolean
+}
+
 export type ConflictOpKind = 'merge' | 'cherry-pick' | 'rebase' | 'revert'
 export type ConflictSide = 'ours' | 'theirs' | 'delete'
 
@@ -480,6 +494,23 @@ export interface AIConfig {
 
 /** Co-author trailer appended when AIConfig.coAuthor is enabled (default on). */
 export const MYAPPDESK_COAUTHOR = 'MyAppDesk <team@myappdesk.dev>'
+
+/** A single repo mutation produced by the AI "Ask" feature, ready to execute. */
+export type AskAction =
+  | { type: 'gitignore'; patterns: string[]; description: string }
+  | { type: 'stage'; files: string[]; description: string }
+  | { type: 'unstage'; files: string[]; description: string }
+  | { type: 'commit'; message: string; files?: string[]; description: string }
+
+/** Result of interpreting a free-form instruction against the repo's current state. */
+export interface AskPlan {
+  /** One-line, human-readable summary of what will happen. */
+  summary: string
+  /** Ordered actions to apply. Empty if the instruction can't be fulfilled. */
+  actions: AskAction[]
+  /** Set when the instruction is unsupported/ambiguous; actions is then empty. */
+  note?: string
+}
 
 // ─── Analytics & instrumentation ─────────────────────────────────────────────
 
@@ -856,7 +887,7 @@ export function defaultSettings(): AppSettings {
     autoFetchMinutes: 5,
     confirmForcePush: true,
     mergeCommit: true,
-    sidebarOrder: ['local', 'remotes', 'stashes', 'tags', 'prs', 'issues', 'milestones', 'releases', 'worktrees', 'submodules'],
+    sidebarOrder: ['files', 'local', 'remotes', 'stashes', 'tags', 'prs', 'issues', 'milestones', 'releases', 'worktrees', 'submodules'],
     sidebarHidden: [],
     onboardingCompleted: false,
     autoOpenChangelog: true

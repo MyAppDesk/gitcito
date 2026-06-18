@@ -3,13 +3,14 @@ import {
   Bot, Github, MousePointer2, Wind, Terminal, Code2, GitCommit,
   Loader2, ChevronRight, ChevronLeft, Check, FileText, Wand2,
   Sparkles, Plus, X, Server, MessageSquare, Zap, SlidersHorizontal,
-  HelpCircle, FolderOpen
+  HelpCircle, FolderOpen, Send, Play, AlertTriangle, EyeOff, FilePlus, FileMinus
 } from 'lucide-react'
 import { marked } from 'marked'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
-import { aiApi, shellApi, type GeneratedFile, type ArtifactRequest, type ArtifactSuggestion } from '../infrastructure/api'
-import type { AIConfig } from '../../../shared/types'
+import { useRepoStore } from '../stores/repo'
+import { aiApi, gitApi, shellApi, type GeneratedFile, type ArtifactRequest, type ArtifactSuggestion } from '../infrastructure/api'
+import type { AIConfig, AskAction, AskPlan } from '../../../shared/types'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -138,6 +139,15 @@ export function AIConfigWizard({
   const activeProfileId = useSettingsStore((s) => s.settings.activeProfileId)
   const profiles = useSettingsStore((s) => s.settings.profiles)
   const aiCfg: AIConfig = (profiles.find((p) => p.id === activeProfileId) ?? profiles[0]).ai
+
+  const [tab, setTab] = useState<'ask' | 'config'>('ask')
+
+  // ── Ask tab ──────────────────────────────────────────────────────────────────
+  const [askPrompt, setAskPrompt] = useState('')
+  const [planning, setPlanning] = useState(false)
+  const [plan, setPlan] = useState<AskPlan | null>(null)
+  const [applying, setApplying] = useState(false)
+  const [askError, setAskError] = useState<string | null>(null)
 
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1)
 
@@ -351,6 +361,152 @@ export function AIConfigWizard({
     }
   }
 
+  // ── Ask handlers ─────────────────────────────────────────────────────────────
+
+  const askPlan = async (): Promise<void> => {
+    const instruction = askPrompt.trim()
+    if (!instruction) return
+    setAskError(null)
+    setPlan(null)
+    setPlanning(true)
+    try {
+      const status = await gitApi.status(spec.repoPath)
+      const result = await aiApi.planActions(instruction, status, aiCfg)
+      setPlan(result)
+    } catch (e) {
+      setAskError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setPlanning(false)
+    }
+  }
+
+  const applyPlan = async (): Promise<void> => {
+    if (!plan || plan.actions.length === 0) return
+    setApplying(true)
+    try {
+      for (const a of plan.actions) {
+        if (a.type === 'gitignore') await gitApi.addToGitignore(spec.repoPath, a.patterns)
+        else if (a.type === 'stage') await gitApi.stage(spec.repoPath, a.files)
+        else if (a.type === 'unstage') await gitApi.unstage(spec.repoPath, a.files)
+        else if (a.type === 'commit') {
+          if (a.files && a.files.length > 0) await gitApi.stage(spec.repoPath, a.files)
+          await gitApi.commit(spec.repoPath, a.message)
+        }
+      }
+      await useRepoStore.getState().refresh(spec.repoPath)
+      closeModal()
+      toast('success', `Applied ${plan.actions.length} action${plan.actions.length !== 1 ? 's' : ''} to ${spec.repoName}`)
+    } catch (e) {
+      toast('error', e instanceof Error ? e.message : String(e))
+      setApplying(false)
+    }
+  }
+
+  // ── Tab bar (shared by both tabs) ─────────────────────────────────────────────
+
+  const Tabs = (): React.JSX.Element => (
+    <div className="remote-tabs ai-config-tabs">
+      <button
+        type="button"
+        className={`remote-tab ${tab === 'ask' ? 'active' : ''}`}
+        onClick={() => setTab('ask')}
+      >
+        <MessageSquare size={16} /> <span>Ask</span>
+      </button>
+      <button
+        type="button"
+        className={`remote-tab ${tab === 'config' ? 'active' : ''}`}
+        onClick={() => setTab('config')}
+      >
+        <Wand2 size={16} /> <span>Config</span>
+      </button>
+    </div>
+  )
+
+  // ── Ask tab render ─────────────────────────────────────────────────────────
+
+  if (tab === 'ask') {
+    const ACTION_META: Record<AskAction['type'], { Icon: typeof Bot; label: string }> = {
+      gitignore: { Icon: EyeOff, label: 'Ignore' },
+      stage: { Icon: FilePlus, label: 'Stage' },
+      unstage: { Icon: FileMinus, label: 'Unstage' },
+      commit: { Icon: GitCommit, label: 'Commit' }
+    }
+    return (
+      <>
+        <h3 className="modal-title-row"><Bot size={17} /> AI Assistant</h3>
+        <Tabs />
+        <p className="modal-message" style={{ marginBottom: 10 }}>
+          Describe what you want to do in plain language — the AI turns it into git actions you can review before applying.
+        </p>
+        <textarea
+          className="modal-input wizard-context-area"
+          placeholder={`e.g. "ignore all *.tsx files" or "create a commit with the unstaged .md files"`}
+          value={askPrompt}
+          onChange={(e) => setAskPrompt(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) void askPlan() }}
+          rows={3}
+          autoFocus
+        />
+        <div className="ai-ask-examples">
+          {['Ignore all *.log files', 'Commit the unstaged .md files', 'Unstage everything'].map((ex) => (
+            <button key={ex} type="button" className="ai-ask-chip" onClick={() => setAskPrompt(ex)}>
+              {ex}
+            </button>
+          ))}
+        </div>
+
+        {askError && <div className="modal-hint danger" style={{ marginTop: 8 }}>{askError}</div>}
+
+        {plan && (
+          <div className="ai-ask-plan">
+            {plan.summary && <div className="ai-ask-plan-summary">{plan.summary}</div>}
+            {plan.actions.length > 0 ? (
+              plan.actions.map((a, i) => {
+                const meta = ACTION_META[a.type]
+                const Icon = meta.Icon
+                const detail =
+                  a.type === 'gitignore' ? a.patterns.join(', ')
+                    : a.type === 'commit' ? `“${a.message}”${a.files?.length ? ` · ${a.files.join(', ')}` : ''}`
+                      : a.files.join(', ')
+                return (
+                  <div key={i} className="ai-ask-action">
+                    <span className="ai-ask-action-badge"><Icon size={12} /> {meta.label}</span>
+                    <span className="ai-ask-action-desc" title={detail}>{a.description || detail}</span>
+                  </div>
+                )
+              })
+            ) : (
+              <div className="ai-ask-note">
+                <AlertTriangle size={13} /> {plan.note || 'Nothing to do for that instruction.'}
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="modal-actions" style={{ marginTop: 14 }}>
+          <button className="btn ghost" onClick={closeModal} type="button" disabled={applying}>Cancel</button>
+          {plan && plan.actions.length > 0 ? (
+            <>
+              <button className="btn ghost" type="button" disabled={applying} onClick={() => void askPlan()}>
+                {planning ? <><Loader2 size={13} className="spin" /> Re-planning…</> : <>Re-plan</>}
+              </button>
+              <button className="btn primary" type="button" disabled={applying} onClick={() => void applyPlan()}>
+                {applying
+                  ? <><Loader2 size={14} className="spin" /> Applying…</>
+                  : <><Play size={14} /> Apply {plan.actions.length} action{plan.actions.length !== 1 ? 's' : ''}</>}
+              </button>
+            </>
+          ) : (
+            <button className="btn primary" type="button" disabled={planning || !askPrompt.trim()} onClick={() => void askPlan()}>
+              {planning ? <><Loader2 size={14} className="spin" /> Thinking…</> : <><Send size={14} /> Plan actions</>}
+            </button>
+          )}
+        </div>
+      </>
+    )
+  }
+
   // ── Step indicator ─────────────────────────────────────────────────────────
 
   const STEP_LABELS = ['What', 'Tools', 'Files', 'Preview']
@@ -378,6 +534,7 @@ export function AIConfigWizard({
     return (
       <>
         <h3 className="modal-title-row"><Wand2 size={17} /> Generate AI Config</h3>
+        <Tabs />
         <StepBar />
         <p className="modal-message" style={{ marginBottom: 14 }}>
           What do you want to configure?
@@ -422,6 +579,7 @@ export function AIConfigWizard({
     return (
       <>
         <h3 className="modal-title-row"><Wand2 size={17} /> Generate AI Config</h3>
+        <Tabs />
         <StepBar />
         <p className="modal-message" style={{ marginBottom: 14 }}>
           Which AI tools do you use?
@@ -503,6 +661,7 @@ export function AIConfigWizard({
     return (
       <>
         <h3 className="modal-title-row"><Wand2 size={17} /> Generate AI Config</h3>
+        <Tabs />
         <StepBar />
 
         <div className="wizard-artifacts-list">

@@ -14,7 +14,8 @@ import type {
   StashInfo,
   HostingProvider,
   WorktreeInfo,
-  SubmoduleInfo
+  SubmoduleInfo,
+  TreeStatusKind
 } from '../../../shared/types'
 import { gitApi, hostingApi } from '../infrastructure/api'
 import { useUIStore } from './ui'
@@ -59,6 +60,8 @@ export interface RepoData {
   /** Epoch ms of the last successful network fetch/pull of remotes. */
   lastFetchAt: number | null
   ciStatuses: Record<string, CiStatus>
+  /** Repo-relative path → working-tree status, for the project tree colors. */
+  treeStatus: Record<string, TreeStatusKind>
 }
 
 const emptyRepo = (path: string): RepoData => ({
@@ -86,7 +89,8 @@ const emptyRepo = (path: string): RepoData => ({
   remoteTagNames: [],
   lastRefreshAt: null,
   lastFetchAt: null,
-  ciStatuses: {}
+  ciStatuses: {},
+  treeStatus: {}
 })
 
 interface RepoStoreState {
@@ -158,16 +162,18 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
     // re-reads cheap local state. Used by the periodic poll and on window focus.
     const light = opts?.light ?? false
     try {
-      const [commits, branches, status, stashes, remotes, mergeState, worktrees, submodules] = await Promise.all([
-        light ? Promise.resolve(get().repos[path]?.commits ?? []) : gitApi.log(path, maxCount),
-        gitApi.branches(path),
-        gitApi.status(path),
-        gitApi.stashes(path),
-        gitApi.remotes(path),
-        gitApi.mergeState(path),
-        gitApi.worktrees(path).catch(() => []),
-        gitApi.submodules(path).catch(() => [])
-      ])
+      const [commits, branches, status, stashes, remotes, mergeState, worktrees, submodules, treeStatus] =
+        await Promise.all([
+          light ? Promise.resolve(get().repos[path]?.commits ?? []) : gitApi.log(path, maxCount),
+          gitApi.branches(path),
+          gitApi.status(path),
+          gitApi.stashes(path),
+          gitApi.remotes(path),
+          gitApi.mergeState(path),
+          gitApi.worktrees(path).catch(() => []),
+          gitApi.submodules(path).catch(() => []),
+          gitApi.treeStatus(path).catch(() => ({}))
+        ])
       patch(path, {
         commits,
         branches,
@@ -177,6 +183,7 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
         mergeState,
         worktrees,
         submodules,
+        treeStatus,
         loading: false,
         lastRefreshAt: Date.now()
       })
@@ -697,5 +704,19 @@ export const repoActions = {
     useRepoStore.getState().run(path, `Updated URL for ${name}`, () => gitApi.submoduleSetUrl(path, name, url)),
 
   submoduleRemove: (path: string, dir: string) =>
-    useRepoStore.getState().run(path, `Removed submodule ${dir}`, () => gitApi.submoduleRemove(path, dir))
+    useRepoStore.getState().run(path, `Removed submodule ${dir}`, () => gitApi.submoduleRemove(path, dir)),
+
+  // ─── Project tree file operations ───
+  fsCreate: (path: string, relPath: string, isDir: boolean) =>
+    useRepoStore
+      .getState()
+      .run(path, `Created ${isDir ? 'folder' : 'file'} ${relPath}`, () => gitApi.fsCreate(path, relPath, isDir)),
+
+  fsRename: (path: string, from: string, to: string) =>
+    useRepoStore.getState().run(path, `Renamed ${from} → ${to}`, () => gitApi.fsRename(path, from, to)),
+
+  fsDelete: (path: string, relPaths: string[], label?: string) =>
+    useRepoStore
+      .getState()
+      .run(path, `Moved ${label ?? `${relPaths.length} item(s)`} to trash`, () => gitApi.fsDelete(path, relPaths))
 }

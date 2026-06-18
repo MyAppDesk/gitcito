@@ -42,6 +42,7 @@ interface PreloadApi {
     generateCodeTheme(prompt: string, cfg: unknown): Promise<unknown>
     generateBranchName(description: string, cfg: unknown, ctx: unknown): Promise<unknown>
     reviewPR(diff: string, cfg: unknown): Promise<unknown>
+    planActions(prompt: string, status: unknown, cfg: unknown): Promise<unknown>
   }
   analytics: {
     get(): Promise<unknown>

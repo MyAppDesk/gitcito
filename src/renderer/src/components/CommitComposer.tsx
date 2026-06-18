@@ -266,9 +266,15 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
     const patterns = isFolder ? [`/${folderPath}/`] : entries.map((f) => `/${f.path}`)
     const hasTracked = entries.some((f) => !f.untracked)
     const trackTargets = isFolder ? [folderPath] : entries.filter((f) => !f.untracked).map((f) => f.path)
+    const ignoreTarget = isFolder ? folderPath! : entries[0].path
     const items: MenuItem[] = [
       { separator: true },
-      { label: 'Add to .gitignore', onClick: () => void repoActions.addToGitignore(path, patterns, displayLabel) }
+      { label: 'Add to .gitignore', onClick: () => void repoActions.addToGitignore(path, patterns, displayLabel) },
+      {
+        label: 'Ignore… (choose pattern & location)',
+        onClick: () =>
+          useUIStore.getState().openModal({ kind: 'ignore', repoPath: path, targetPath: ignoreTarget, isFolder })
+      }
     ]
     if (hasTracked) {
       items.push({

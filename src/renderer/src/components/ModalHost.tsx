@@ -18,6 +18,7 @@ import { HooksModal } from './HooksModal'
 import { LfsModal } from './LfsModal'
 import { SparseCheckoutModal } from './SparseCheckoutModal'
 import { CreatePRModal } from './CreatePRModal'
+import { IgnoreModal } from './IgnoreModal'
 
 function GroupColorModal({ spec }: { spec: Extract<ModalSpec, { kind: 'group-color' }> }): React.JSX.Element {
   const closeModal = useUIStore((s) => s.closeModal)
@@ -1285,6 +1286,7 @@ export function ModalHost(): React.JSX.Element {
             {modal.kind === 'lfs' && <LfsModal repoPath={modal.repoPath} />}
             {modal.kind === 'sparse' && <SparseCheckoutModal repoPath={modal.repoPath} />}
             {modal.kind === 'create-pr' && <CreatePRModal spec={modal} />}
+            {modal.kind === 'ignore' && <IgnoreModal spec={modal} />}
           </motion.div>
         </motion.div>
       )}

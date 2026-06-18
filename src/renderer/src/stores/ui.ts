@@ -76,6 +76,7 @@ export type ModalSpec =
   | { kind: 'hooks'; repoPath: string }
   | { kind: 'lfs'; repoPath: string }
   | { kind: 'sparse'; repoPath: string }
+  | { kind: 'ignore'; repoPath: string; targetPath: string; isFolder: boolean }
   | {
       kind: 'create-pr'
       repoPath: string

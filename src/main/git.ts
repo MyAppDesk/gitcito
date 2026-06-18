@@ -749,7 +749,15 @@ export const gitService = {
    * trailing `/`). Returns the patterns that were actually added.
    */
   async addToGitignore(repoPath: string, patterns: string[]): Promise<string[]> {
-    const file = join(repoPath, '.gitignore')
+    return gitService.addToGitignoreAt(repoPath, '', patterns)
+  },
+
+  /**
+   * Append patterns to the .gitignore in `dir` (relative to the repo; '' = root).
+   * Creates the file if absent, skips entries already present.
+   */
+  async addToGitignoreAt(repoPath: string, dir: string, patterns: string[]): Promise<string[]> {
+    const file = join(repoPath, dir, '.gitignore')
     let current = ''
     try {
       current = await readFile(file, 'utf8')
@@ -761,6 +769,7 @@ export const gitService = {
     if (toAdd.length === 0) return []
     const needsNl = current.length > 0 && !current.endsWith('\n')
     const next = current + (needsNl ? '\n' : '') + toAdd.join('\n') + '\n'
+    await mkdir(join(repoPath, dir), { recursive: true }).catch(() => {})
     await writeFile(file, next, 'utf8')
     return toAdd
   },

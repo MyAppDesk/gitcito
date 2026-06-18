@@ -89,6 +89,8 @@ export const gitApi = {
   unstageAll: (path: string) => call<void>('unstageAll', path),
   discard: (path: string, files: string[], untracked: boolean) => call<void>('discard', path, files, untracked),
   addToGitignore: (path: string, patterns: string[]) => call<string[]>('addToGitignore', path, patterns),
+  addToGitignoreAt: (path: string, dir: string, patterns: string[]) =>
+    call<string[]>('addToGitignoreAt', path, dir, patterns),
   untrack: (path: string, files: string[], deleteFromDisk?: boolean) =>
     call<void>('untrack', path, files, deleteFromDisk),
   commit: (path: string, message: string, amend?: boolean) => call<void>('commit', path, message, amend),

@@ -617,6 +617,12 @@ export const repoActions = {
       if (added.length === 0) useUIStore.getState().toast('info', 'Already in .gitignore')
     }),
 
+  addToGitignoreAt: (path: string, dir: string, patterns: string[], label?: string) =>
+    useRepoStore.getState().run(path, `Added ${label ?? patterns.join(', ')} to .gitignore`, async () => {
+      const added = await gitApi.addToGitignoreAt(path, dir, patterns)
+      if (added.length === 0) useUIStore.getState().toast('info', 'Already in .gitignore')
+    }),
+
   untrack: (path: string, files: string[], deleteFromDisk: boolean, label?: string) =>
     useRepoStore.getState().run(
       path,

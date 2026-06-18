@@ -24,6 +24,8 @@ import { OnboardingWizard } from './components/OnboardingWizard'
 import { ChangelogPage } from './components/ChangelogPage'
 import { LogsPage } from './components/LogsPage'
 import { ReleasePage } from './components/ReleasePage'
+import { IssueDetailPage } from './components/IssueDetailPage'
+import { MilestoneDetailPage } from './components/MilestoneDetailPage'
 import { ResizeHandle } from './components/ResizeHandle'
 import { ZoomControl } from './components/ZoomControl'
 import gitcitoLaunch from './assets/gitcito-launch.png'
@@ -100,6 +102,10 @@ function PageView({ tab }: { tab: PageTab }): React.JSX.Element {
       return <LogsPage />
     case 'release':
       return <ReleasePage tab={tab} />
+    case 'issue':
+      return <IssueDetailPage page={tab.page} />
+    case 'milestone':
+      return <MilestoneDetailPage page={tab.page} />
     default:
       return <Welcome />
   }

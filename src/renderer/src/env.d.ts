@@ -66,6 +66,10 @@ interface PreloadApi {
     prReview(remoteUrl: string, tokens: unknown, number: number, event: string, body: string): Promise<unknown>
     prMerge(remoteUrl: string, tokens: unknown, number: number, method: string): Promise<unknown>
     listIssues(remoteUrl: string, tokens: unknown): Promise<unknown>
+    issueDetail(remoteUrl: string, tokens: unknown, number: number): Promise<unknown>
+    setIssueState(remoteUrl: string, tokens: unknown, number: number, state: string): Promise<unknown>
+    listMilestones(remoteUrl: string, tokens: unknown): Promise<unknown>
+    milestoneIssues(remoteUrl: string, tokens: unknown, number: number): Promise<unknown>
   }
   term: TermApi
   window: {

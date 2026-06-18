@@ -16,6 +16,8 @@ const uid = (): string => Math.random().toString(36).slice(2, 10)
  *  releases from different repos stay distinguishable in the tab strip. */
 function pageTabName(page: PageContent): string {
   if (page.type === 'logs') return 'Operation log'
+  if (page.type === 'issue') return `#${page.issue.number} ${page.issue.title}`
+  if (page.type === 'milestone') return `🏁 ${page.milestone.title}`
   if (page.type !== 'release') return "What's new"
   const repo = page.repoPath.split('/').pop() || page.repoPath
   const version = page.release.tag || page.release.name || `#${page.release.id}`
@@ -187,7 +189,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         (t) =>
           t.kind === 'page' &&
           t.page.type === page.type &&
-          (page.type !== 'release' || (t.page.type === 'release' && t.page.release.id === page.release.id))
+          (page.type !== 'release' || (t.page.type === 'release' && t.page.release.id === page.release.id)) &&
+          (page.type !== 'issue' || (t.page.type === 'issue' && t.page.issue.number === page.issue.number)) &&
+          (page.type !== 'milestone' ||
+            (t.page.type === 'milestone' && t.page.milestone.number === page.milestone.number))
       )
       if (existing) return { ...s, activeTabId: existing.id }
       const tab: TabState = { id: uid(), kind: 'page', name: pageTabName(page), page }

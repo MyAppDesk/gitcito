@@ -114,7 +114,7 @@ function CreateBranchModal({ spec }: { spec: Extract<ModalSpec, { kind: 'create-
   const aiEnabled = profile.ai.enabled !== false
 
   const [name, setName] = useState('')
-  const [description, setDescription] = useState('')
+  const [description, setDescription] = useState(spec.description ?? '')
   const [aiBusy, setAiBusy] = useState(false)
 
   const submit = (): void => {

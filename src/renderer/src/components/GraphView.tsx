@@ -553,7 +553,9 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
   // so an idle (all-resolved) repo makes no network calls.
   useEffect(() => {
     void repoActions.refreshCiStatuses(repo.path)
-    const id = setInterval(() => void repoActions.refreshCiStatuses(repo.path), 15000)
+    // Poll at 60s (not 15s): each tick can fan out up to ~40 check-run requests,
+    // so 15s blew through GitHub's 5000/hr authenticated limit on busy repos.
+    const id = setInterval(() => void repoActions.refreshCiStatuses(repo.path), 60000)
     return () => clearInterval(id)
   }, [repo.path, repo.commits.length])
 

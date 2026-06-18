@@ -92,7 +92,15 @@ const api = {
     prMerge: (remoteUrl: string, tokens: unknown, number: number, method: string): Promise<unknown> =>
       ipcRenderer.invoke('hosting:prMerge', remoteUrl, tokens, number, method),
     listIssues: (remoteUrl: string, tokens: unknown): Promise<unknown> =>
-      ipcRenderer.invoke('hosting:listIssues', remoteUrl, tokens)
+      ipcRenderer.invoke('hosting:listIssues', remoteUrl, tokens),
+    issueDetail: (remoteUrl: string, tokens: unknown, number: number): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:issueDetail', remoteUrl, tokens, number),
+    setIssueState: (remoteUrl: string, tokens: unknown, number: number, state: string): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:setIssueState', remoteUrl, tokens, number, state),
+    listMilestones: (remoteUrl: string, tokens: unknown): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:listMilestones', remoteUrl, tokens),
+    milestoneIssues: (remoteUrl: string, tokens: unknown, number: number): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:milestoneIssues', remoteUrl, tokens, number)
   },
 
   term: {

@@ -82,7 +82,17 @@ const api = {
     openCreatePR: (remoteUrl: string, source: string, target: string): Promise<boolean> =>
       ipcRenderer.invoke('hosting:openCreatePR', remoteUrl, source, target),
     createPR: (remoteUrl: string, tokens: unknown, opts: unknown): Promise<unknown> =>
-      ipcRenderer.invoke('hosting:createPR', remoteUrl, tokens, opts)
+      ipcRenderer.invoke('hosting:createPR', remoteUrl, tokens, opts),
+    prDetail: (remoteUrl: string, tokens: unknown, number: number): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:prDetail', remoteUrl, tokens, number),
+    prComment: (remoteUrl: string, tokens: unknown, number: number, body: string): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:prComment', remoteUrl, tokens, number, body),
+    prReview: (remoteUrl: string, tokens: unknown, number: number, event: string, body: string): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:prReview', remoteUrl, tokens, number, event, body),
+    prMerge: (remoteUrl: string, tokens: unknown, number: number, method: string): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:prMerge', remoteUrl, tokens, number, method),
+    listIssues: (remoteUrl: string, tokens: unknown): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:listIssues', remoteUrl, tokens)
   },
 
   term: {

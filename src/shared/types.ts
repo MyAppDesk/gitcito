@@ -161,6 +161,49 @@ export interface PullRequest {
 
 export type HostingProvider = 'github' | 'azure' | null
 
+/** A comment on a pull request's conversation. */
+export interface PrComment {
+  author: string
+  body: string
+  createdAt: string
+}
+
+/** A submitted review on a pull request. */
+export interface PrReview {
+  author: string
+  state: 'APPROVED' | 'CHANGES_REQUESTED' | 'COMMENTED' | 'DISMISSED' | 'PENDING'
+}
+
+/** Full detail for one pull request (conversation + review state). */
+export interface PrDetail {
+  number: number
+  title: string
+  body: string
+  author: string
+  source: string
+  target: string
+  draft: boolean
+  state: 'open' | 'closed'
+  merged: boolean
+  mergeable: boolean | null
+  url: string
+  comments: PrComment[]
+  reviews: PrReview[]
+}
+
+/** A repository issue (not a PR). */
+export interface IssueInfo {
+  number: number
+  title: string
+  author: string
+  state: 'open' | 'closed'
+  url: string
+  comments: number
+}
+
+export type PrReviewEvent = 'APPROVE' | 'REQUEST_CHANGES' | 'COMMENT'
+export type PrMergeMethod = 'merge' | 'squash' | 'rebase'
+
 /** A release published on the hosting platform (GitHub). Most map 1:1 to a
  *  tag; only draft releases can be tagless until they are published. */
 export interface ReleaseInfo {

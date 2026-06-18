@@ -17,6 +17,10 @@ import type {
   AIConfig,
   AppSettings,
   PullRequest,
+  PrDetail,
+  PrReviewEvent,
+  PrMergeMethod,
+  IssueInfo,
   ReleaseInfo,
   HostingProvider,
   RepoHost,
@@ -287,5 +291,15 @@ export const hostingApi = {
   openCreatePR: (remoteUrl: string, source: string, target: string) =>
     window.api.hosting.openCreatePR(remoteUrl, source, target),
   createPR: (remoteUrl: string, tokens: { github?: string; azure?: string }, opts: CreatePrOpts) =>
-    window.api.hosting.createPR(remoteUrl, tokens, opts) as Promise<CreatePrResult>
+    window.api.hosting.createPR(remoteUrl, tokens, opts) as Promise<CreatePrResult>,
+  prDetail: (remoteUrl: string, tokens: { github?: string }, number: number) =>
+    window.api.hosting.prDetail(remoteUrl, tokens, number) as Promise<PrDetail>,
+  prComment: (remoteUrl: string, tokens: { github?: string }, number: number, body: string) =>
+    window.api.hosting.prComment(remoteUrl, tokens, number, body) as Promise<void>,
+  prReview: (remoteUrl: string, tokens: { github?: string }, number: number, event: PrReviewEvent, body: string) =>
+    window.api.hosting.prReview(remoteUrl, tokens, number, event, body) as Promise<void>,
+  prMerge: (remoteUrl: string, tokens: { github?: string }, number: number, method: PrMergeMethod) =>
+    window.api.hosting.prMerge(remoteUrl, tokens, number, method) as Promise<void>,
+  listIssues: (remoteUrl: string, tokens: { github?: string }) =>
+    window.api.hosting.listIssues(remoteUrl, tokens) as Promise<{ provider: HostingProvider; issues: IssueInfo[] }>
 }

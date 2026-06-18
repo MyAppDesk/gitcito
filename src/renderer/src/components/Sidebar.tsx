@@ -7,6 +7,7 @@ import {
   Tag,
   Archive,
   GitPullRequest,
+  CircleDot,
   Search,
   RefreshCw,
   Check,
@@ -596,6 +597,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     local: t('sidebar.local'),
     remotes: t('sidebar.remotes'),
     prs: t('sidebar.pullRequests'),
+    issues: t('sidebar.issues'),
     tags: t('sidebar.tags'),
     releases: t('sidebar.releases'),
     stashes: t('sidebar.stashes'),
@@ -784,7 +786,15 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       >
         {repo.prs.length === 0 && <div className="sb-empty">{t('sidebar.noPRs')}</div>}
         {repo.prs.map((pr) => (
-          <div key={pr.id} className="sb-item pr" onDoubleClick={() => void window.api.openExternal(pr.url)} title={pr.title}>
+          <div
+            key={pr.id}
+            className="sb-item pr"
+            onClick={() => {
+              const origin = repo.remotes.find((r) => r.name === 'origin') ?? repo.remotes[0]
+              if (origin) openModal({ kind: 'pr-detail', repoPath: path, remoteUrl: origin.url, number: pr.id })
+            }}
+            title={pr.title}
+          >
             <GitPullRequest size={12} className={pr.isDraft ? 'pr-draft' : 'pr-open'} />
             <span className="sb-name">
               #{pr.id} {pr.title}
@@ -815,6 +825,45 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
                 void window.api.openExternal(pr.url)
               }}
             >
+              <ExternalLink size={11} />
+            </span>
+          </div>
+        ))}
+      </Section>
+    ),
+    issues: (
+      <Section
+        title={t('sidebar.issues')}
+        icon={<CircleDot size={13} />}
+        count={repo.issues.length}
+        defaultOpen={false}
+        {...dragProps('issues')}
+        actions={
+          <span
+            className="icon-btn"
+            title={t('sidebar.issues')}
+            onClick={(e) => {
+              e.stopPropagation()
+              void useRepoStore.getState().refreshIssues(path)
+            }}
+          >
+            <RefreshCw size={12} />
+          </span>
+        }
+      >
+        {repo.issues.length === 0 && <div className="sb-empty">{t('sidebar.noIssues')}</div>}
+        {repo.issues.map((issue) => (
+          <div
+            key={issue.number}
+            className="sb-item pr"
+            onClick={() => void window.api.openExternal(issue.url)}
+            title={issue.title}
+          >
+            <CircleDot size={12} className="pr-open" />
+            <span className="sb-name">
+              #{issue.number} {issue.title}
+            </span>
+            <span className="icon-btn sb-pr-open" title="Open in browser">
               <ExternalLink size={11} />
             </span>
           </div>

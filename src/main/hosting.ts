@@ -8,6 +8,11 @@ import type {
   CreatePrResult,
   HostingProvider,
   PullRequest,
+  PrDetail,
+  PrReview,
+  IssueInfo,
+  PrReviewEvent,
+  PrMergeMethod,
   ReleaseInfo,
   RemoteOwner,
   RemoteRepo,
@@ -219,6 +224,140 @@ async function createPullRequest(
   return {
     url: `${base}/_git/${encodeURIComponent(parsed.repo)}/pullrequest/${d.pullRequestId}`,
     number: d.pullRequestId
+  }
+}
+
+/** Resolve a GitHub remote to {owner, repo} or throw (these B2 ops are GitHub-only for now). */
+function ghRepoOf(remoteUrl: string, token?: string): { owner: string; repo: string; token: string } {
+  const parsed = parseRemoteUrl(remoteUrl)
+  if (!parsed || parsed.provider !== 'github') {
+    throw new Error('This action currently supports GitHub repositories only.')
+  }
+  if (!token) throw new Error('Add a GitHub token in Settings → Integrations.')
+  return { owner: parsed.owner, repo: parsed.repo, token }
+}
+
+async function pullRequestDetail(
+  remoteUrl: string,
+  tokens: { github?: string },
+  number: number
+): Promise<PrDetail> {
+  const { owner, repo, token } = ghRepoOf(remoteUrl, tokens.github)
+  const api = `https://api.github.com/repos/${owner}/${repo}`
+  const [pr, comments, reviews] = await Promise.all([
+    ghJson<{
+      number: number
+      title: string
+      body: string | null
+      user: { login: string }
+      head: { ref: string }
+      base: { ref: string }
+      draft: boolean
+      state: string
+      merged: boolean
+      mergeable: boolean | null
+      html_url: string
+    }>(`${api}/pulls/${number}`, token),
+    ghJson<Array<{ user: { login: string } | null; body: string; created_at: string }>>(
+      `${api}/issues/${number}/comments?per_page=100`,
+      token
+    ),
+    ghJson<Array<{ user: { login: string } | null; state: string }>>(
+      `${api}/pulls/${number}/reviews?per_page=100`,
+      token
+    )
+  ])
+  return {
+    number: pr.number,
+    title: pr.title,
+    body: pr.body ?? '',
+    author: pr.user.login,
+    source: pr.head.ref,
+    target: pr.base.ref,
+    draft: pr.draft,
+    state: pr.state === 'closed' ? 'closed' : 'open',
+    merged: pr.merged,
+    mergeable: pr.mergeable,
+    url: pr.html_url,
+    comments: comments.map((c) => ({ author: c.user?.login ?? 'unknown', body: c.body, createdAt: c.created_at })),
+    reviews: reviews
+      .filter((r) => r.state !== 'PENDING')
+      .map((r) => ({ author: r.user?.login ?? 'unknown', state: r.state as PrReview['state'] }))
+  }
+}
+
+async function commentOnPr(
+  remoteUrl: string,
+  tokens: { github?: string },
+  number: number,
+  body: string
+): Promise<void> {
+  const { owner, repo, token } = ghRepoOf(remoteUrl, tokens.github)
+  await ghJson(`https://api.github.com/repos/${owner}/${repo}/issues/${number}/comments`, token, {
+    method: 'POST',
+    body: JSON.stringify({ body })
+  })
+}
+
+async function reviewPr(
+  remoteUrl: string,
+  tokens: { github?: string },
+  number: number,
+  event: PrReviewEvent,
+  body: string
+): Promise<void> {
+  const { owner, repo, token } = ghRepoOf(remoteUrl, tokens.github)
+  await ghJson(`https://api.github.com/repos/${owner}/${repo}/pulls/${number}/reviews`, token, {
+    method: 'POST',
+    body: JSON.stringify({ event, body: body || undefined })
+  })
+}
+
+async function mergePr(
+  remoteUrl: string,
+  tokens: { github?: string },
+  number: number,
+  method: PrMergeMethod
+): Promise<void> {
+  const { owner, repo, token } = ghRepoOf(remoteUrl, tokens.github)
+  await ghJson(`https://api.github.com/repos/${owner}/${repo}/pulls/${number}/merge`, token, {
+    method: 'PUT',
+    body: JSON.stringify({ merge_method: method })
+  })
+}
+
+async function listIssues(
+  remoteUrl: string,
+  tokens: { github?: string }
+): Promise<{ provider: HostingProvider; issues: IssueInfo[] }> {
+  const parsed = parseRemoteUrl(remoteUrl)
+  if (!parsed || parsed.provider !== 'github' || !tokens.github) {
+    return { provider: parsed?.provider ?? null, issues: [] }
+  }
+  const data = await ghJson<
+    Array<{
+      number: number
+      title: string
+      user: { login: string } | null
+      state: string
+      html_url: string
+      comments: number
+      pull_request?: unknown
+    }>
+  >(`https://api.github.com/repos/${parsed.owner}/${parsed.repo}/issues?state=open&per_page=50`, tokens.github)
+  return {
+    provider: 'github',
+    // The issues endpoint also returns PRs — filter them out.
+    issues: data
+      .filter((i) => !i.pull_request)
+      .map((i) => ({
+        number: i.number,
+        title: i.title,
+        author: i.user?.login ?? 'unknown',
+        state: i.state === 'closed' ? 'closed' : 'open',
+        url: i.html_url,
+        comments: i.comments
+      }))
   }
 }
 
@@ -554,5 +693,24 @@ export function registerHostingHandlers(): void {
     'hosting:createPR',
     (_e, remoteUrl: string, tokens: { github?: string; azure?: string }, opts: CreatePrOpts) =>
       createPullRequest(remoteUrl, tokens, opts)
+  )
+  ipcMain.handle('hosting:prDetail', (_e, remoteUrl: string, tokens: { github?: string }, number: number) =>
+    pullRequestDetail(remoteUrl, tokens, number)
+  )
+  ipcMain.handle('hosting:prComment', (_e, remoteUrl: string, tokens: { github?: string }, number: number, body: string) =>
+    commentOnPr(remoteUrl, tokens, number, body)
+  )
+  ipcMain.handle(
+    'hosting:prReview',
+    (_e, remoteUrl: string, tokens: { github?: string }, number: number, event: PrReviewEvent, body: string) =>
+      reviewPr(remoteUrl, tokens, number, event, body)
+  )
+  ipcMain.handle(
+    'hosting:prMerge',
+    (_e, remoteUrl: string, tokens: { github?: string }, number: number, method: PrMergeMethod) =>
+      mergePr(remoteUrl, tokens, number, method)
+  )
+  ipcMain.handle('hosting:listIssues', (_e, remoteUrl: string, tokens: { github?: string }) =>
+    listIssues(remoteUrl, tokens)
   )
 }

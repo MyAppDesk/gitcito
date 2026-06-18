@@ -6,6 +6,7 @@ import type {
   ConflictSide,
   GraphCommit,
   PullRequest,
+  IssueInfo,
   ReleaseInfo,
   RemoteInfo,
   RepoStatus,
@@ -41,6 +42,7 @@ export interface RepoData {
   submodules: SubmoduleInfo[]
   prs: PullRequest[]
   prProvider: HostingProvider
+  issues: IssueInfo[]
   releases: ReleaseInfo[]
   releaseProvider: HostingProvider
   mergeState: ConflictOpKind | null
@@ -69,6 +71,7 @@ const emptyRepo = (path: string): RepoData => ({
   submodules: [],
   prs: [],
   prProvider: null,
+  issues: [],
   releases: [],
   releaseProvider: null,
   mergeState: null,
@@ -95,6 +98,7 @@ interface RepoStoreState {
   setDraft(path: string, value: string): void
   loadMore(path: string): void
   refreshPRs(path: string, opts?: { silent?: boolean }): Promise<void>
+  refreshIssues(path: string, opts?: { silent?: boolean }): Promise<void>
   refreshReleases(path: string, opts?: { silent?: boolean }): Promise<void>
   refreshRemoteTags(path: string): Promise<void>
   refreshCiStatuses(path: string): Promise<void>
@@ -138,6 +142,7 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
     // after the local refresh and kept silent — a missing token or offline box
     // should not spam error toasts every time a repo is opened.
     void get().refreshPRs(path, { silent: true })
+    void get().refreshIssues(path, { silent: true })
     void get().refreshReleases(path, { silent: true })
   },
 
@@ -227,6 +232,19 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
         azure: profile.azureToken || undefined
       })
       get().patch(path, { prs, prProvider: provider })
+    } catch (err) {
+      if (!opts?.silent) toast('error', err instanceof Error ? err.message : String(err))
+    }
+  },
+
+  refreshIssues: async (path, opts) => {
+    const repo = get().repos[path]
+    const origin = repo?.remotes.find((r) => r.name === 'origin') ?? repo?.remotes[0]
+    if (!origin) return
+    const profile = useSettingsStore.getState().activeProfile()
+    try {
+      const { issues } = await hostingApi.listIssues(origin.url, { github: profile.githubToken || undefined })
+      get().patch(path, { issues })
     } catch (err) {
       if (!opts?.silent) toast('error', err instanceof Error ? err.message : String(err))
     }

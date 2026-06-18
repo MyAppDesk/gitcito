@@ -61,6 +61,11 @@ interface PreloadApi {
     ciStatuses(remoteUrl: string, shas: string[], token: string): Promise<unknown>
     openCreatePR(remoteUrl: string, source: string, target: string): Promise<boolean>
     createPR(remoteUrl: string, tokens: unknown, opts: unknown): Promise<unknown>
+    prDetail(remoteUrl: string, tokens: unknown, number: number): Promise<unknown>
+    prComment(remoteUrl: string, tokens: unknown, number: number, body: string): Promise<unknown>
+    prReview(remoteUrl: string, tokens: unknown, number: number, event: string, body: string): Promise<unknown>
+    prMerge(remoteUrl: string, tokens: unknown, number: number, method: string): Promise<unknown>
+    listIssues(remoteUrl: string, tokens: unknown): Promise<unknown>
   }
   term: TermApi
   window: {

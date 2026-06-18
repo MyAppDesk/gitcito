@@ -10,6 +10,7 @@ import { useSettingsStore } from '../stores/settings'
 import { useT } from '../i18n'
 import { Avatar } from './Avatar'
 import { RemoteIcon } from './RemoteIcon'
+import { SignatureBadge } from './SignatureBadge'
 
 const ROW_H = 28
 const LANE_W = 18
@@ -17,7 +18,7 @@ const LEFT_PAD = 16
 const NODE_R = 4.5
 const AVA = 20 // avatar node diameter
 
-const COL_MIN: Record<GraphColumnId, number> = { branch: 90, graph: 8, message: 120, deployment: 70, author: 80, date: 56, sha: 56 }
+const COL_MIN: Record<GraphColumnId, number> = { branch: 90, graph: 8, message: 120, deployment: 70, author: 80, date: 56, sha: 56, signature: 56 }
 const COL_LABEL: Record<GraphColumnId, string> = {
   branch: 'BRANCH / TAG',
   graph: 'GRAPH',
@@ -25,7 +26,8 @@ const COL_LABEL: Record<GraphColumnId, string> = {
   deployment: 'DEPLOY',
   author: 'AUTHOR',
   date: 'DATE',
-  sha: 'SHA'
+  sha: 'SHA',
+  signature: 'SIGNATURE'
 }
 
 const WIP_HASH = '__WIP__'
@@ -1262,6 +1264,16 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
                         style={{ flex: `0 0 ${columns.date.width}px`, width: columns.date.width }}
                       >
                         {isWip ? '' : stash ? fmtDate(stash.date) : fmtDate(c.date)}
+                      </span>
+                    )
+                  if (id === 'signature')
+                    return (
+                      <span
+                        key="signature"
+                        className="row-signature"
+                        style={{ flex: `0 0 ${columns.signature.width}px`, width: columns.signature.width }}
+                      >
+                        {!isWip && !stash && <SignatureBadge signature={c.signature} signer={c.signer} />}
                       </span>
                     )
                   return (

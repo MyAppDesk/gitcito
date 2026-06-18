@@ -9,6 +9,7 @@ import { repoActions } from '../stores/repo'
 import { FileListView } from './FileListView'
 import { ViewToggle } from './CommitComposer'
 import { Avatar } from './Avatar'
+import { SignatureBadge } from './SignatureBadge'
 import type { RepoData } from '../stores/repo'
 
 function profileUrl(name: string, email: string, remotes: RemoteInfo[]): string | undefined {
@@ -133,6 +134,11 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
               )}
             </span>
             <span>{new Date(commit.date * 1000).toLocaleString()}</span>
+            {commit.signature && commit.signature !== 'none' && (
+              <span className="commit-sig-row">
+                <SignatureBadge signature={commit.signature} signer={commit.signer} withText />
+              </span>
+            )}
             <div className="commit-meta-row">
               <code>{commit.hash.slice(0, 10)}</code>
               {canAmendMessage && (

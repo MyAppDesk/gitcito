@@ -25,6 +25,8 @@ import type {
   RepoStats,
   ReflogEntry,
   BisectStatus,
+  CommitSignature,
+  SigningConfig,
   StashInfo,
   TagInfo,
   WorktreeInfo,
@@ -83,6 +85,25 @@ function parseCoAuthors(raw: string | undefined): import('../shared/types').Comm
       const m = line.match(/^(.*?)\s*<([^>]*)>\s*$/)
       return m ? { name: m[1].trim(), email: m[2].trim() } : { name: line, email: '' }
     })
+}
+
+/** Normalise git's `%G?` signature char into a {@link CommitSignature}. */
+function mapSignature(char: string | undefined): CommitSignature {
+  switch ((char ?? '').trim()) {
+    case 'G':
+      return 'good'
+    case 'U': // good signature, unknown validity
+    case 'E': // signature present but cannot be checked (e.g. missing public key)
+      return 'unverified'
+    case 'X': // expired signature
+    case 'Y': // signature made by an expired key
+      return 'expired'
+    case 'B': // bad signature
+    case 'R': // good signature made by a revoked key
+      return 'bad'
+    default: // 'N' or empty — no signature
+      return 'none'
+  }
 }
 
 const gitFor = (repoPath: string): SimpleGit => simpleGit(repoPath)
@@ -299,7 +320,7 @@ export const gitService = {
         'HEAD',
         '--date-order',
         `--max-count=${maxCount}`,
-        `--pretty=format:%H${SEP}%P${SEP}%an${SEP}%ae${SEP}%at${SEP}%D${SEP}%s${SEP}%(trailers:key=Co-authored-by,valueonly,separator=%x1d)${REC}`
+        `--pretty=format:%H${SEP}%P${SEP}%an${SEP}%ae${SEP}%at${SEP}%D${SEP}%s${SEP}%(trailers:key=Co-authored-by,valueonly,separator=%x1d)${SEP}%G?${SEP}%GS${REC}`
       ])
     } catch {
       return [] // empty repository
@@ -309,7 +330,8 @@ export const gitService = {
       .map((r) => r.trim())
       .filter(Boolean)
       .map((rec) => {
-        const [hash, parents, author, email, date, refs, subject, coauthors] = rec.split(SEP)
+        const [hash, parents, author, email, date, refs, subject, coauthors, sigChar, signer] = rec.split(SEP)
+        const signature = mapSignature(sigChar)
         return {
           hash,
           parents: parents ? parents.split(' ').filter(Boolean) : [],
@@ -323,7 +345,9 @@ export const gitService = {
                 .filter(Boolean)
             : [],
           subject: subject ?? '',
-          coAuthors: parseCoAuthors(coauthors)
+          coAuthors: parseCoAuthors(coauthors),
+          signature: signature === 'none' ? undefined : signature,
+          signer: signer?.trim() || undefined
         }
       })
   },
@@ -742,6 +766,33 @@ export const gitService = {
     if (p === '~' || p.startsWith('~/')) p = join(homedir(), p.slice(1))
     else if (!p.startsWith('/')) p = join(repoPath, p)
     return readFile(p, 'utf-8').catch(() => '')
+  },
+
+  /** Read this repo's commit-signing configuration. */
+  async signingConfig(repoPath: string): Promise<SigningConfig> {
+    const git = gitFor(repoPath)
+    const get = async (key: string): Promise<string> =>
+      (await git.raw(['config', '--get', key]).catch(() => '')).trim()
+    const [sign, format, key] = await Promise.all([
+      get('commit.gpgsign'),
+      get('gpg.format'),
+      get('user.signingkey')
+    ])
+    return { sign: sign === 'true', format: format || 'openpgp', key }
+  },
+
+  /** Update this repo's commit-signing configuration (only provided fields). */
+  async setSigningConfig(
+    repoPath: string,
+    opts: { sign?: boolean; format?: string; key?: string }
+  ): Promise<void> {
+    const git = gitFor(repoPath)
+    if (opts.sign !== undefined) await git.raw(['config', 'commit.gpgsign', String(opts.sign)])
+    if (opts.format !== undefined) await git.raw(['config', 'gpg.format', opts.format])
+    if (opts.key !== undefined) {
+      if (opts.key) await git.raw(['config', 'user.signingkey', opts.key])
+      else await git.raw(['config', '--unset', 'user.signingkey']).catch(() => {})
+    }
   },
 
   async cherryPick(repoPath: string, hash: string, noCommit = false): Promise<void> {

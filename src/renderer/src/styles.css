@@ -1587,6 +1587,18 @@ textarea:focus {
   overflow: hidden;
 }
 
+.row-signature {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  overflow: hidden;
+}
+/* In its own column the badge needs no right margin. */
+.row-signature .sig-badge {
+  margin-right: 0;
+}
+
 .row-date {
   color: var(--text-2);
   font-size: 11px;
@@ -7113,4 +7125,34 @@ mark.find-hit.active {
   font-size: 12.5px;
   color: var(--text-1);
   margin-top: 2px;
+}
+
+/* ── Signature badges ── */
+.sig-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  vertical-align: -2px;
+  margin-right: 5px;
+}
+.sig-badge.sig-good {
+  color: var(--ok, #2ea043);
+}
+.sig-badge.sig-unverified {
+  color: var(--text-3);
+}
+.sig-badge.sig-expired {
+  color: var(--warn, #d29922);
+}
+.sig-badge.sig-bad {
+  color: var(--danger, #d1242f);
+}
+.commit-sig-row {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  margin: 2px 0;
+}
+.commit-sig-row .sig-badge span {
+  font-size: 12px;
 }

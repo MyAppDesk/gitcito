@@ -5,6 +5,13 @@ export interface CommitAuthor {
   email: string
 }
 
+/**
+ * Verification state of a commit's signature, normalised from git's `%G?`:
+ * good = valid; unverified = signed but key/validity unknown; bad = invalid or
+ * revoked; expired = signature/key expired; none = unsigned.
+ */
+export type CommitSignature = 'good' | 'unverified' | 'bad' | 'expired' | 'none'
+
 export interface GraphCommit {
   hash: string
   parents: string[]
@@ -14,6 +21,15 @@ export interface GraphCommit {
   refs: string[]
   subject: string
   coAuthors?: CommitAuthor[]
+  signature?: CommitSignature // omitted when unsigned
+  signer?: string // signing identity (%GS), when known
+}
+
+/** Per-repo commit-signing configuration. */
+export interface SigningConfig {
+  sign: boolean // commit.gpgsign
+  format: string // gpg.format: openpgp | ssh | x509
+  key: string // user.signingkey ('' if unset)
 }
 
 export interface BranchInfo {
@@ -552,7 +568,15 @@ export type Language = 'en' | 'es'
 /** App appearance: a fixed mode or follow the operating system. */
 export type ThemeMode = 'light' | 'dark' | 'auto'
 
-export type GraphColumnId = 'branch' | 'graph' | 'message' | 'deployment' | 'author' | 'date' | 'sha'
+export type GraphColumnId =
+  | 'branch'
+  | 'graph'
+  | 'message'
+  | 'deployment'
+  | 'author'
+  | 'date'
+  | 'sha'
+  | 'signature'
 
 export interface GraphColumn {
   width: number // px; for 'message' it is a flex column and width is ignored; for 'graph' 0 = auto
@@ -569,7 +593,8 @@ export function defaultGraphColumns(): GraphColumns {
     deployment: { width: 90, visible: true },
     author: { width: 160, visible: true },
     date: { width: 80, visible: true },
-    sha: { width: 74, visible: false }
+    sha: { width: 74, visible: true },
+    signature: { width: 96, visible: true }
   }
 }
 
@@ -581,7 +606,7 @@ export function defaultGraphColumns(): GraphColumns {
 export type GraphFlowColumnId = Exclude<GraphColumnId, 'branch' | 'graph'>
 
 export function defaultGraphColumnOrder(): GraphFlowColumnId[] {
-  return ['message', 'author', 'date', 'sha', 'deployment']
+  return ['message', 'author', 'date', 'sha', 'signature', 'deployment']
 }
 
 export interface AppThemeColors {

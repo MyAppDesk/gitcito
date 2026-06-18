@@ -31,7 +31,8 @@ import type {
   LogEntry,
   RepoStats,
   ReflogEntry,
-  BisectStatus
+  BisectStatus,
+  SigningConfig
 } from '../../../shared/types'
 
 // Typed adapter over the IPC bridge — the only place that talks to window.api.
@@ -142,6 +143,10 @@ export const gitApi = {
   submoduleSetUrl: (path: string, name: string, url: string) => call<void>('submoduleSetUrl', path, name, url),
   submoduleDeinit: (path: string, dir: string, force?: boolean) => call<void>('submoduleDeinit', path, dir, force),
   submoduleRemove: (path: string, dir: string) => call<void>('submoduleRemove', path, dir),
+
+  signingConfig: (path: string) => call<SigningConfig>('signingConfig', path),
+  setSigningConfig: (path: string, opts: { sign?: boolean; format?: string; key?: string }) =>
+    call<void>('setSigningConfig', path, opts),
 
   getUser: (path: string) => call<{ name: string; email: string }>('getUser', path),
   setUser: (path: string, name: string, email: string) => call<void>('setUser', path, name, email),

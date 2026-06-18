@@ -37,7 +37,7 @@ import hljs from 'highlight.js'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
 import { gitApi, aiApi, settingsApi, analyticsApi, logApi } from '../infrastructure/api'
-import { AI_PROVIDERS, emptyAnalytics, type AIProvider, type Analytics, type AIUsageStat, type ActivityEvent, type RepoStats, type AppSettings, type BranchNamingStyle, type CommitStyle, type ConflictStyle, type ExplainStyle, type Profile } from '../../../shared/types'
+import { AI_PROVIDERS, emptyAnalytics, type AIProvider, type Analytics, type AIUsageStat, type ActivityEvent, type RepoStats, type AppSettings, type BranchNamingStyle, type CommitStyle, type ConflictStyle, type ExplainStyle, type Profile, type SigningConfig } from '../../../shared/types'
 import type {
   AppTheme,
   AppThemeColors,
@@ -102,6 +102,98 @@ const BRANCH_NAMING_STYLES: { id: BranchNamingStyle; key: TranslationKey }[] = [
   { id: 'plain', key: 'branchNamingStyle.plain' }
 ]
 
+/**
+ * Per-repo commit-signing controls (commit.gpgsign / gpg.format / user.signingkey).
+ * Signing is a repository setting, not a profile one — it always targets the
+ * currently active repo. Lives under the profile page next to the git identity.
+ */
+function SigningSection(): React.JSX.Element {
+  const { activeRepo } = useSettingsStore()
+  const toast = useUIStore((s) => s.toast)
+  const repo = activeRepo()
+
+  const [cfg, setCfg] = useState<SigningConfig | null>(null)
+  const [busy, setBusy] = useState(false)
+
+  useEffect(() => {
+    if (!repo) {
+      setCfg(null)
+      return
+    }
+    let cancelled = false
+    void gitApi.signingConfig(repo.path).then((c) => !cancelled && setCfg(c))
+    return () => {
+      cancelled = true
+    }
+  }, [repo])
+
+  const save = async (): Promise<void> => {
+    if (!repo || !cfg) return
+    setBusy(true)
+    try {
+      await gitApi.setSigningConfig(repo.path, { sign: cfg.sign, format: cfg.format, key: cfg.key })
+      toast('success', `Signing settings saved for ${repo.name}`)
+    } catch (err) {
+      toast('error', err instanceof Error ? err.message : String(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <>
+      <h4>
+        <BadgeCheck size={14} /> Commit signing{repo ? ` · ${repo.name}` : ''}
+      </h4>
+      {!repo ? (
+        <p className="settings-hint">Open a repository to configure commit signing.</p>
+      ) : !cfg ? (
+        <p className="settings-hint">
+          <Loader2 size={13} className="spin" /> Loading…
+        </p>
+      ) : (
+        <>
+          <label className="settings-toggle-card">
+            <input
+              type="checkbox"
+              checked={cfg.sign}
+              onChange={(e) => setCfg({ ...cfg, sign: e.target.checked })}
+            />
+            <span className="settings-toggle-control" aria-hidden="true">
+              <span className="settings-toggle-thumb" />
+            </span>
+            <span className="settings-toggle-copy">
+              <strong>Sign all commits in this repository</strong>
+              <span className="settings-hint">Sets commit.gpgsign so new commits are signed automatically.</span>
+            </span>
+          </label>
+          <div className="form-row two">
+            <label>
+              Format
+              <select value={cfg.format} onChange={(e) => setCfg({ ...cfg, format: e.target.value })}>
+                <option value="openpgp">OpenPGP (GPG)</option>
+                <option value="ssh">SSH</option>
+                <option value="x509">X.509 (S/MIME)</option>
+              </select>
+            </label>
+            <label>
+              Signing key
+              <input
+                value={cfg.key}
+                placeholder={cfg.format === 'ssh' ? '~/.ssh/id_ed25519.pub' : 'GPG key id'}
+                onChange={(e) => setCfg({ ...cfg, key: e.target.value })}
+              />
+            </label>
+          </div>
+          <button className="btn ghost small" onClick={() => void save()} disabled={busy}>
+            {busy ? <Loader2 size={13} className="spin" /> : null} Save signing settings
+          </button>
+        </>
+      )}
+    </>
+  )
+}
+
 function ProfilePage({ profile, edit }: { profile: Profile; edit: (p: Partial<Profile>) => void }): React.JSX.Element {
   const { settings, setActiveProfile, deleteProfile, activeRepo } = useSettingsStore()
   const toast = useUIStore((s) => s.toast)
@@ -160,6 +252,8 @@ function ProfilePage({ profile, edit }: { profile: Profile; edit: (p: Partial<Pr
       <button className="btn ghost small" onClick={() => void applyToRepo()}>
         {t('settings.applyIdentity')}
       </button>
+
+      <SigningSection />
     </>
   )
 }

@@ -78,11 +78,12 @@ export type ModalSpec =
   | { kind: 'sparse'; repoPath: string }
   | {
       kind: 'create-pr'
-      remoteUrl: string
-      source: string
-      target: string
-      defaultTitle: string
-      defaultBody: string
+      repoPath: string
+      remoteUrl?: string
+      source?: string
+      target?: string
+      defaultTitle?: string
+      defaultBody?: string
     }
 
 export type FileViewSource =

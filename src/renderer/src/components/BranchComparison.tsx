@@ -55,6 +55,7 @@ export function BranchComparison({
     const defaultBody = ahead.map((c) => `- ${c.subject}`).join('\n')
     useUIStore.getState().openModal({
       kind: 'create-pr',
+      repoPath,
       remoteUrl: origin.url,
       source: branchA,
       target: branchB,
@@ -68,20 +69,22 @@ export function BranchComparison({
   return (
     <div className="bc-root">
       <div className="bc-header">
-        <h3>Compare branches</h3>
-        <span className="bc-labels">
-          <span className="bc-branch-a">{branchA}</span>
-          <span className="bc-vs">vs</span>
-          <span className="bc-branch-b">{branchB}</span>
-        </span>
-        <div className="bc-header-actions">
-          {hasToken && (
-            <button className="btn ghost small" onClick={openPR}>
-              Create PR…
-            </button>
-          )}
-          <button className="btn ghost small" onClick={closeModal}>Close</button>
+        <div className="bc-header-top">
+          <h3>Compare branches</h3>
+          <div className="bc-header-actions">
+            {hasToken && (
+              <button className="btn primary small" onClick={openPR}>
+                Create PR…
+              </button>
+            )}
+            <button className="btn ghost small" onClick={closeModal}>Close</button>
+          </div>
         </div>
+        <span className="bc-labels">
+          <span className="bc-branch-a" title={branchA}>{branchA}</span>
+          <span className="bc-vs">into</span>
+          <span className="bc-branch-b" title={branchB}>{branchB}</span>
+        </span>
       </div>
 
       {loading ? (

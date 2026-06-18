@@ -420,6 +420,19 @@ export interface ReflogEntry {
   date: number // unix seconds
 }
 
+/** Snapshot of an in-progress (or just-finished) `git bisect` session. */
+export interface BisectStatus {
+  inProgress: boolean
+  needGood: boolean // still needs an initial good commit before narrowing starts
+  needBad: boolean // still needs an initial bad commit
+  currentSha: string // commit to test now (HEAD); '' when finished or not started
+  currentSubject: string
+  remainingSteps: number // git's "roughly N steps" estimate; -1 when unknown
+  finished: boolean // the first bad commit has been identified
+  firstBadSha: string
+  firstBadSubject: string
+}
+
 export interface Profile {
   id: string
   name: string

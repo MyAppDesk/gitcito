@@ -13,7 +13,8 @@ import {
   RefreshCw,
   Loader2,
   Wand2,
-  History
+  History,
+  Bug
 } from 'lucide-react'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
 import { useUIStore } from '../stores/ui'
@@ -180,6 +181,14 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
         >
           <History size={17} />
           <span>Reflog</span>
+        </button>
+        <button
+          className="tool-btn"
+          title="Bisect — find the commit that introduced a bug"
+          onClick={() => openModal({ kind: 'bisect', repoPath: path })}
+        >
+          <Bug size={17} />
+          <span>Bisect</span>
         </button>
       </div>
 

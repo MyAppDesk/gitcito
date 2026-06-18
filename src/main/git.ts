@@ -24,6 +24,7 @@ import type {
   RebaseStep,
   RepoStats,
   ReflogEntry,
+  BisectStatus,
   StashInfo,
   TagInfo,
   WorktreeInfo,
@@ -210,6 +211,63 @@ async function readFileDataUrl(repoPath: string, file: string, ref?: string): Pr
     return `data:${fileMime(file)};base64,${buf.toString('base64')}`
   } catch {
     return null
+  }
+}
+
+/**
+ * Build a {@link BisectStatus} snapshot from the current repo state plus the
+ * stdout of the bisect command that just ran (git prints progress like
+ * "Bisecting: N revisions left … (roughly M steps)" and, on completion,
+ * "<sha> is the first bad commit" — both to stdout).
+ */
+async function buildBisectStatus(repoPath: string, lastOut = ''): Promise<BisectStatus> {
+  const git = gitFor(repoPath)
+  const gitPath = async (name: string): Promise<string> => (await git.raw(['rev-parse', '--git-path', name])).trim()
+  const absPath = (p: string): string => (p.startsWith('/') ? p : join(repoPath, p))
+  const inProgress = existsSync(absPath(await gitPath('BISECT_START')))
+
+  const empty: BisectStatus = {
+    inProgress: false,
+    needGood: false,
+    needBad: false,
+    currentSha: '',
+    currentSubject: '',
+    remainingSteps: -1,
+    finished: false,
+    firstBadSha: '',
+    firstBadSubject: ''
+  }
+  if (!inProgress) return empty
+
+  const finishedMatch = lastOut.match(/([0-9a-f]{40}) is the first bad commit/)
+  const stepsMatch = lastOut.match(/roughly (\d+) step/)
+  const needGood = /waiting for good|waiting for both/.test(lastOut)
+  const needBad = /waiting for both|bad commit/.test(lastOut) && !/bad commit known/.test(lastOut)
+
+  let firstBadSha = ''
+  let firstBadSubject = ''
+  if (finishedMatch) {
+    firstBadSha = finishedMatch[1]
+    firstBadSubject = (await git.raw(['log', '-1', '--pretty=%s', firstBadSha]).catch(() => '')).trim()
+  }
+
+  let currentSha = ''
+  let currentSubject = ''
+  if (!finishedMatch && !needGood && !needBad) {
+    currentSha = (await git.raw(['rev-parse', 'HEAD']).catch(() => '')).trim()
+    currentSubject = (await git.raw(['log', '-1', '--pretty=%s', 'HEAD']).catch(() => '')).trim()
+  }
+
+  return {
+    inProgress: true,
+    needGood,
+    needBad,
+    currentSha,
+    currentSubject,
+    remainingSteps: stepsMatch ? +stepsMatch[1] : -1,
+    finished: !!finishedMatch,
+    firstBadSha,
+    firstBadSubject
   }
 }
 
@@ -1210,6 +1268,36 @@ export const gitService = {
         const [sha, selector, action, date] = rec.split(SEP)
         return { sha, selector: selector ?? '', action: action ?? '', date: +date || 0 }
       })
+  },
+
+  // ─── Bisect ────────────────────────────────────────────────────────────────
+
+  /** Current bisect state (used when (re)opening the UI mid-session). */
+  async bisectStatus(repoPath: string): Promise<BisectStatus> {
+    return buildBisectStatus(repoPath)
+  },
+
+  /** Begin a bisect session. Caller then marks HEAD good/bad to seed the range. */
+  async bisectStart(repoPath: string): Promise<BisectStatus> {
+    const out = await gitFor(repoPath).raw(['bisect', 'start']).catch(() => '')
+    return buildBisectStatus(repoPath, out)
+  },
+
+  /**
+   * Mark a commit during bisect. `term` is good/bad/skip; `rev` defaults to the
+   * current candidate (HEAD). Git narrows the range and checks out the next
+   * commit to test, or reports the first bad commit when done.
+   */
+  async bisectMark(repoPath: string, term: 'good' | 'bad' | 'skip', rev?: string): Promise<BisectStatus> {
+    const args = ['bisect', term]
+    if (rev) args.push(rev)
+    const out = await gitFor(repoPath).raw(args)
+    return buildBisectStatus(repoPath, out)
+  },
+
+  /** End the bisect session and return to the original branch/HEAD. */
+  async bisectReset(repoPath: string): Promise<void> {
+    await gitFor(repoPath).raw(['bisect', 'reset'])
   },
 
   // ─── Branch comparison ─────────────────────────────────────────────────────

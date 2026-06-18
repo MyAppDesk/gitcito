@@ -30,7 +30,8 @@ import type {
   Analytics,
   LogEntry,
   RepoStats,
-  ReflogEntry
+  ReflogEntry,
+  BisectStatus
 } from '../../../shared/types'
 
 // Typed adapter over the IPC bridge — the only place that talks to window.api.
@@ -92,6 +93,11 @@ export const gitApi = {
   revertCommit: (path: string, hash: string) => call<void>('revertCommit', path, hash),
   reset: (path: string, ref: string, mode: 'soft' | 'mixed' | 'hard') => call<void>('reset', path, ref, mode),
   reflog: (path: string, ref?: string, max?: number) => call<ReflogEntry[]>('reflog', path, ref, max),
+  bisectStatus: (path: string) => call<BisectStatus>('bisectStatus', path),
+  bisectStart: (path: string) => call<BisectStatus>('bisectStart', path),
+  bisectMark: (path: string, term: 'good' | 'bad' | 'skip', rev?: string) =>
+    call<BisectStatus>('bisectMark', path, term, rev),
+  bisectReset: (path: string) => call<void>('bisectReset', path),
   createTag: (path: string, name: string, hash?: string) => call<void>('createTag', path, name, hash),
   deleteTag: (path: string, name: string) => call<void>('deleteTag', path, name),
   pushTag: (path: string, name: string, remote?: string) => call<void>('pushTag', path, name, remote),

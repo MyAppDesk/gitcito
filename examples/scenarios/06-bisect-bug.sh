@@ -113,9 +113,10 @@ git bisect bad                        # HEAD is broken
 git bisect good <sha>                 # see .bisect-hint for the SHA
 ```
 
-Test command for each step:
+Test command for each step (requires ./discount directly so it works on every
+commit in the good..bad range, before the barrel index.js exists):
 ```sh
-node -e "const {discount}=require('.'); console.assert(discount(100,20)===80,'BROKEN: got '+discount(100,20))"
+node -e "const {discount}=require('./discount'); console.assert(discount(100,20)===80,'BROKEN: got '+discount(100,20))"
 ```
 EOF
 git -C "$R" add -A && git -C "$R" commit -qm "docs: README with bisect instructions"
@@ -145,7 +146,7 @@ EOF
 git -C "$R" add -A && git -C "$R" commit -qm "chore: add stats to barrel export"
 
 GOOD_SHA=$(git -C "$R" log --oneline | grep "feat: discount function" | awk '{print $1}')
-printf '# Run:\n#   git bisect start\n#   git bisect bad                # HEAD is broken\n#   git bisect good %s   # last known-good\n#\n# Test: node -e "const {discount}=require('"'"'.'"'"'); console.assert(discount(100,20)===80)"\n' \
+printf '# Run:\n#   git bisect start\n#   git bisect bad                # HEAD is broken\n#   git bisect good %s   # last known-good\n#\n# Test: node -e "const {discount}=require('"'"'./discount'"'"'); console.assert(discount(100,20)===80)"\n' \
   "$GOOD_SHA" > "$R/.bisect-hint"
 git -C "$R" add -A && git -C "$R" commit -qm "chore: add .bisect-hint"
 

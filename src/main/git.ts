@@ -1469,6 +1469,28 @@ export const gitService = {
     await gitFor(repoPath).raw(['bisect', 'reset'])
   },
 
+  // ─── Patches ───────────────────────────────────────────────────────────────
+
+  /** Generate a mailbox-style patch (format-patch) for `count` commits ending at `ref`. */
+  async formatPatch(repoPath: string, ref: string, count = 1): Promise<string> {
+    return gitFor(repoPath).raw(['format-patch', `-${count}`, ref, '--stdout'])
+  },
+
+  /**
+   * Apply a patch. `am=true` uses `git am` (applies AND commits, preserving the
+   * author/message from a format-patch mailbox); otherwise `git apply` patches
+   * the working tree without committing. Both use 3-way merge for better fuzz.
+   */
+  async applyPatch(repoPath: string, content: string, am = false): Promise<void> {
+    const tmp = join(tmpdir(), `gitcito-apply-${Date.now()}.patch`)
+    await writeFile(tmp, content, 'utf-8')
+    try {
+      await gitFor(repoPath).raw(am ? ['am', '--3way', tmp] : ['apply', '--3way', tmp])
+    } finally {
+      await unlink(tmp).catch(() => {})
+    }
+  },
+
   // ─── Branch comparison ─────────────────────────────────────────────────────
 
   async compareBranches(repoPath: string, a: string, b: string): Promise<BranchCompareResult> {

@@ -1,6 +1,6 @@
 import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join, dirname } from 'path'
-import { writeFile, mkdir, chmod } from 'fs/promises'
+import { writeFile, readFile, mkdir, chmod } from 'fs/promises'
 import icon from '../../resources/icon.png?asset'
 import type { AppRelease } from '../shared/types'
 import { registerGitHandlers } from './git'
@@ -63,6 +63,29 @@ app.whenReady().then(() => {
 
   ipcMain.handle('shell:openExternal', (_e, url: string) => {
     if (/^https?:\/\//.test(url)) shell.openExternal(url)
+  })
+
+  // Save a generated patch to a user-chosen file. Returns the path, or null if cancelled.
+  ipcMain.handle('dialog:savePatch', async (_e, defaultName: string, content: string) => {
+    const { canceled, filePath } = await dialog.showSaveDialog({
+      title: 'Export patch',
+      defaultPath: defaultName,
+      filters: [{ name: 'Patch', extensions: ['patch', 'diff'] }]
+    })
+    if (canceled || !filePath) return null
+    await writeFile(filePath, content, 'utf-8')
+    return filePath
+  })
+
+  // Open a patch/diff file. Returns { path, content } or null if cancelled.
+  ipcMain.handle('dialog:openPatch', async () => {
+    const { canceled, filePaths } = await dialog.showOpenDialog({
+      title: 'Apply patch',
+      filters: [{ name: 'Patch', extensions: ['patch', 'diff'] }, { name: 'All files', extensions: ['*'] }],
+      properties: ['openFile']
+    })
+    if (canceled || !filePaths[0]) return null
+    return { path: filePaths[0], content: await readFile(filePaths[0], 'utf-8') }
   })
 
   ipcMain.handle('app:version', () => app.getVersion())

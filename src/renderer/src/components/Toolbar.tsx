@@ -15,7 +15,8 @@ import {
   Wand2,
   History,
   Bug,
-  Webhook
+  Webhook,
+  FileDiff
 } from 'lucide-react'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
 import { useUIStore } from '../stores/ui'
@@ -82,6 +83,20 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
           })
         }
       }
+    ])
+  }
+
+  const patchMenu = (e: React.MouseEvent): void => {
+    e.stopPropagation()
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    const pick = (am: boolean): void => {
+      void window.api.openPatch().then((res) => {
+        if (res) void repoActions.applyPatch(path, res.content, am)
+      })
+    }
+    openContextMenu(rect.left, rect.bottom + 6, [
+      { label: 'Apply patch to working tree…', onClick: () => pick(false) },
+      { label: 'Apply patch & commit (git am)…', onClick: () => pick(true) }
     ])
   }
 
@@ -198,6 +213,10 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
         >
           <Webhook size={17} />
           <span>Hooks</span>
+        </button>
+        <button className="tool-btn" title="Apply a patch file" onClick={patchMenu}>
+          <FileDiff size={17} />
+          <span>Patch</span>
         </button>
       </div>
 

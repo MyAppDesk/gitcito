@@ -578,6 +578,11 @@ export const repoActions = {
   reset: (path: string, ref: string, mode: 'soft' | 'mixed' | 'hard') =>
     useRepoStore.getState().run(path, `Reset (${mode}) to ${ref.slice(0, 7)}`, () => gitApi.reset(path, ref, mode)),
 
+  applyPatch: (path: string, content: string, am: boolean) =>
+    useRepoStore
+      .getState()
+      .run(path, am ? 'Applied patch (git am)' : 'Applied patch', () => gitApi.applyPatch(path, content, am)),
+
   createTag: (path: string, name: string, hash?: string) =>
     useRepoStore.getState().run(path, `Created tag ${name}`, () => gitApi.createTag(path, name, hash), {
       label: `tag ${name}`,

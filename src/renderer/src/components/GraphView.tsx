@@ -11,6 +11,7 @@ import { useT } from '../i18n'
 import { Avatar } from './Avatar'
 import { RemoteIcon } from './RemoteIcon'
 import { SignatureBadge } from './SignatureBadge'
+import { gitApi } from '../infrastructure/api'
 
 const ROW_H = 28
 const LANE_W = 18
@@ -307,6 +308,7 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
   const draft = useRepoStore((s) => s.drafts[repo.path] ?? '')
   const setDraft = useRepoStore((s) => s.setDraft)
   const { openContextMenu, openModal, graphFilter, ciFilter, setCiFilter, authorFilter, setAuthorFilter } = useUIStore()
+  const toast = useUIStore((s) => s.toast)
   const scrollToHash = useUIStore((s) => s.scrollToHash)
   const requestScrollTo = useUIStore((s) => s.requestScrollTo)
   const relativeDates = useSettingsStore((s) => s.settings.relativeDates ?? true)
@@ -565,6 +567,23 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
     }
   }
 
+  const exportPatch = async (c: GraphCommit): Promise<void> => {
+    try {
+      const patch = await gitApi.formatPatch(repo.path, c.hash, 1)
+      const slug =
+        c.subject
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, '')
+          .slice(0, 50) || 'patch'
+      const name = `${c.hash.slice(0, 7)}-${slug}.patch`
+      const saved = await window.api.savePatch(name, patch)
+      if (saved) toast('success', `Exported ${name}`)
+    } catch (err) {
+      toast('error', err instanceof Error ? err.message : String(err))
+    }
+  }
+
   const commitMenu = (c: GraphCommit): MenuItem[] => {
     const currentBranch = repo.branches.current.trim()
     const mergeItems = mergeableRefs(c.refs).map<MenuItem>((ref) => ({
@@ -631,6 +650,7 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
         })
     },
     { separator: true },
+    { label: 'Export as patch…', onClick: () => void exportPatch(c) },
     { label: 'Copy SHA', onClick: () => void navigator.clipboard.writeText(c.hash) },
     { label: 'Copy commit message', onClick: () => void navigator.clipboard.writeText(c.subject) },
     { separator: true },

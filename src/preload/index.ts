@@ -10,6 +10,9 @@ const api = {
   git: (method: string, ...args: unknown[]): Promise<unknown> => ipcRenderer.invoke('git', method, ...args),
 
   selectDirectory: (title?: string): Promise<string | null> => ipcRenderer.invoke('dialog:selectDirectory', title),
+  savePatch: (defaultName: string, content: string): Promise<string | null> =>
+    ipcRenderer.invoke('dialog:savePatch', defaultName, content),
+  openPatch: (): Promise<{ path: string; content: string } | null> => ipcRenderer.invoke('dialog:openPatch'),
   openExternal: (url: string): Promise<void> => ipcRenderer.invoke('shell:openExternal', url),
   appVersion: (): Promise<string> => ipcRenderer.invoke('app:version'),
   appReleases: (): Promise<unknown> => ipcRenderer.invoke('app:releases'),

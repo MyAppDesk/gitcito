@@ -115,6 +115,8 @@ export const gitApi = {
   stashFileDiff: (path: string, sha: string, file: string, untracked?: boolean) =>
     call<string>('stashFileDiff', path, sha, file, untracked),
   commitFileDiff: (path: string, hash: string, file: string) => call<string>('commitFileDiff', path, hash, file),
+  formatPatch: (path: string, ref: string, count?: number) => call<string>('formatPatch', path, ref, count),
+  applyPatch: (path: string, content: string, am?: boolean) => call<void>('applyPatch', path, content, am),
   stagedDiff: (path: string) => call<string>('stagedDiff', path),
   commitDiff: (path: string, hash: string) => call<string>('commitDiff', path, hash),
 

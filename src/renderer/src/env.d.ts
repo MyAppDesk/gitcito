@@ -14,6 +14,8 @@ interface PreloadApi {
   shotMode: boolean
   git(method: string, ...args: unknown[]): Promise<unknown>
   selectDirectory(title?: string): Promise<string | null>
+  savePatch(defaultName: string, content: string): Promise<string | null>
+  openPatch(): Promise<{ path: string; content: string } | null>
   openExternal(url: string): Promise<void>
   appVersion(): Promise<string>
   appReleases(): Promise<import('../../shared/types').AppRelease[]>

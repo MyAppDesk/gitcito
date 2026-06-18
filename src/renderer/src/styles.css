@@ -7538,8 +7538,31 @@ mark.find-hit.active {
 .issue-label { font-size: 11px; padding: 2px 8px; border-radius: 20px; background: var(--bg-3); color: var(--text-1); }
 .issue-linked-pr { display: block; font-size: 12px; color: var(--accent); margin-bottom: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .issue-side-note { font-size: 10.5px; color: var(--text-3); line-height: 1.4; margin: 4px 0 0; }
+.issue-side-note code { font-size: 10px; color: var(--text-2); }
+.issue-project-fields { display: flex; flex-direction: column; gap: 4px; }
+.issue-project-field { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; }
+.issue-pf-name { color: var(--text-3); }
+.issue-pf-val { color: var(--text-1); font-weight: 500; text-align: right; }
+.sb-milestone-pct { font-size: 10.5px; color: var(--text-3); font-variant-numeric: tabular-nums; }
 .issue-loading { display: flex; align-items: center; gap: 8px; padding: 20px 0; color: var(--text-3); }
 .issue-error { padding: 12px; color: var(--danger, #d1242f); }
+
+/* ── Milestone detail page (tab) ── */
+.ms-page { height: 100%; overflow-y: auto; padding: 22px 26px; max-width: 760px; }
+.ms-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.ms-head h2 { font-size: 18px; margin: 0; flex: 1; min-width: 0; }
+.ms-meta { display: flex; gap: 14px; font-size: 12.5px; color: var(--text-2); margin-bottom: 10px; }
+.ms-due { display: inline-flex; align-items: center; gap: 5px; }
+.ms-progress { height: 8px; background: var(--bg-3); border-radius: 5px; overflow: hidden; }
+.ms-progress-bar { height: 100%; background: var(--ok, #2ea043); border-radius: 5px; }
+.ms-progress-label { font-size: 11.5px; color: var(--text-3); margin: 4px 0 14px; }
+.ms-empty { font-size: 13px; color: var(--text-3); padding: 8px 0; }
+.ms-issues { display: flex; flex-direction: column; gap: 2px; }
+.ms-issue { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 7px; background: var(--bg-2); cursor: pointer; }
+.ms-issue:hover { background: var(--bg-3); }
+.ms-issue-open { color: var(--ok, #2ea043); flex: 0 0 auto; }
+.ms-issue-closed { color: #8957e5; flex: 0 0 auto; }
+.ms-issue-title { font-size: 13px; color: var(--text-0); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ── PR detail ── */
 .prd-empty { display: flex; align-items: center; gap: 8px; padding: 24px 8px; color: var(--text-3); font-size: 13px; }

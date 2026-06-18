@@ -8,6 +8,7 @@ import {
   Archive,
   GitPullRequest,
   CircleDot,
+  Milestone,
   Search,
   RefreshCw,
   Check,
@@ -598,6 +599,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     remotes: t('sidebar.remotes'),
     prs: t('sidebar.pullRequests'),
     issues: t('sidebar.issues'),
+    milestones: t('sidebar.milestones'),
     tags: t('sidebar.tags'),
     releases: t('sidebar.releases'),
     stashes: t('sidebar.stashes'),
@@ -879,6 +881,65 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
             </span>
           </div>
         ))}
+      </Section>
+    ),
+    milestones: (
+      <Section
+        title={t('sidebar.milestones')}
+        icon={<Milestone size={13} />}
+        count={repo.milestones.filter((m) => m.state === 'open').length}
+        defaultOpen={false}
+        {...dragProps('milestones')}
+        actions={
+          <span
+            className="icon-btn"
+            title={t('sidebar.milestones')}
+            onClick={(e) => {
+              e.stopPropagation()
+              void useRepoStore.getState().refreshMilestones(path)
+            }}
+          >
+            <RefreshCw size={12} />
+          </span>
+        }
+      >
+        {repo.milestones.filter((m) => m.state === 'open').length === 0 && (
+          <div className="sb-empty">{t('sidebar.noMilestones')}</div>
+        )}
+        {repo.milestones
+          .filter((m) => m.state === 'open')
+          .map((m) => {
+          const total = m.openIssues + m.closedIssues
+          const pct = total > 0 ? Math.round((m.closedIssues / total) * 100) : 0
+          return (
+            <div
+              key={m.number}
+              className="sb-item milestone"
+              onClick={() => {
+                const origin = repo.remotes.find((r) => r.name === 'origin') ?? repo.remotes[0]
+                if (origin)
+                  useSettingsStore
+                    .getState()
+                    .openPageTab({ type: 'milestone', milestone: m, repoPath: path, remoteUrl: origin.url })
+              }}
+              title={`${m.title}${m.dueOn ? ` · due ${new Date(m.dueOn).toLocaleDateString()}` : ''}`}
+            >
+              <Milestone size={12} className={m.state === 'closed' ? 'pr-draft' : 'pr-open'} />
+              <span className="sb-name">{m.title}</span>
+              <span className="sb-milestone-pct">{pct}%</span>
+              <span
+                className="icon-btn sb-pr-open"
+                title="Open in browser"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  void window.api.openExternal(m.url)
+                }}
+              >
+                <ExternalLink size={11} />
+              </span>
+            </div>
+          )
+        })}
       </Section>
     ),
     tags: (

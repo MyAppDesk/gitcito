@@ -22,6 +22,7 @@ import type {
   PrMergeMethod,
   IssueInfo,
   IssueDetail,
+  MilestoneInfo,
   ReleaseInfo,
   HostingProvider,
   RepoHost,
@@ -306,5 +307,12 @@ export const hostingApi = {
   issueDetail: (remoteUrl: string, tokens: { github?: string }, number: number) =>
     window.api.hosting.issueDetail(remoteUrl, tokens, number) as Promise<IssueDetail>,
   setIssueState: (remoteUrl: string, tokens: { github?: string }, number: number, state: 'open' | 'closed') =>
-    window.api.hosting.setIssueState(remoteUrl, tokens, number, state) as Promise<void>
+    window.api.hosting.setIssueState(remoteUrl, tokens, number, state) as Promise<void>,
+  listMilestones: (remoteUrl: string, tokens: { github?: string }) =>
+    window.api.hosting.listMilestones(remoteUrl, tokens) as Promise<{
+      provider: HostingProvider
+      milestones: MilestoneInfo[]
+    }>,
+  milestoneIssues: (remoteUrl: string, tokens: { github?: string }, number: number) =>
+    window.api.hosting.milestoneIssues(remoteUrl, tokens, number) as Promise<IssueInfo[]>
 }

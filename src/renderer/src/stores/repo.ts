@@ -7,6 +7,7 @@ import type {
   GraphCommit,
   PullRequest,
   IssueInfo,
+  MilestoneInfo,
   ReleaseInfo,
   RemoteInfo,
   RepoStatus,
@@ -43,6 +44,7 @@ export interface RepoData {
   prs: PullRequest[]
   prProvider: HostingProvider
   issues: IssueInfo[]
+  milestones: MilestoneInfo[]
   releases: ReleaseInfo[]
   releaseProvider: HostingProvider
   mergeState: ConflictOpKind | null
@@ -72,6 +74,7 @@ const emptyRepo = (path: string): RepoData => ({
   prs: [],
   prProvider: null,
   issues: [],
+  milestones: [],
   releases: [],
   releaseProvider: null,
   mergeState: null,
@@ -99,6 +102,7 @@ interface RepoStoreState {
   loadMore(path: string): void
   refreshPRs(path: string, opts?: { silent?: boolean }): Promise<void>
   refreshIssues(path: string, opts?: { silent?: boolean }): Promise<void>
+  refreshMilestones(path: string, opts?: { silent?: boolean }): Promise<void>
   refreshReleases(path: string, opts?: { silent?: boolean }): Promise<void>
   refreshRemoteTags(path: string): Promise<void>
   refreshCiStatuses(path: string): Promise<void>
@@ -143,6 +147,7 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
     // should not spam error toasts every time a repo is opened.
     void get().refreshPRs(path, { silent: true })
     void get().refreshIssues(path, { silent: true })
+    void get().refreshMilestones(path, { silent: true })
     void get().refreshReleases(path, { silent: true })
   },
 
@@ -245,6 +250,19 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
     try {
       const { issues } = await hostingApi.listIssues(origin.url, { github: profile.githubToken || undefined })
       get().patch(path, { issues })
+    } catch (err) {
+      if (!opts?.silent) toast('error', err instanceof Error ? err.message : String(err))
+    }
+  },
+
+  refreshMilestones: async (path, opts) => {
+    const repo = get().repos[path]
+    const origin = repo?.remotes.find((r) => r.name === 'origin') ?? repo?.remotes[0]
+    if (!origin) return
+    const profile = useSettingsStore.getState().activeProfile()
+    try {
+      const { milestones } = await hostingApi.listMilestones(origin.url, { github: profile.githubToken || undefined })
+      get().patch(path, { milestones })
     } catch (err) {
       if (!opts?.silent) toast('error', err instanceof Error ? err.message : String(err))
     }

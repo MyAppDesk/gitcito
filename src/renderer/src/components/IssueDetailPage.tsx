@@ -9,7 +9,8 @@ import {
   Milestone,
   GitPullRequest,
   GitBranchPlus,
-  MessageSquare
+  MessageSquare,
+  ClipboardList
 } from 'lucide-react'
 import type { IssueDetail, PageContent } from '../../../shared/types'
 import { hostingApi } from '../infrastructure/api'
@@ -24,6 +25,8 @@ export function IssueDetailPage({ page }: { page: IssuePage }): React.JSX.Elemen
   const toast = useUIStore((s) => s.toast)
   const openModal = useUIStore((s) => s.openModal)
   const profile = useSettingsStore((s) => s.activeProfile())
+  const openPageTab = useSettingsStore((s) => s.openPageTab)
+  const milestones = useRepoStore((s) => s.repos[repoPath]?.milestones ?? [])
   const tokens = { github: profile.githubToken || undefined }
 
   const [detail, setDetail] = useState<IssueDetail | null>(null)
@@ -74,6 +77,18 @@ export function IssueDetailPage({ page }: { page: IssuePage }): React.JSX.Elemen
       path: repoPath,
       currentBranch: useRepoStore.getState().repos[repoPath]?.branches.current,
       description: `${issue.title} (closes #${issue.number})`
+    })
+  }
+
+  const createPr = (): void => {
+    openModal({
+      kind: 'create-pr',
+      repoPath,
+      remoteUrl,
+      source: useRepoStore.getState().repos[repoPath]?.branches.current,
+      defaultTitle: issue.title,
+      // The closing keyword auto-links the PR to this issue on GitHub.
+      defaultBody: `Closes #${issue.number}\n\n`
     })
   }
 
@@ -146,6 +161,9 @@ export function IssueDetailPage({ page }: { page: IssuePage }): React.JSX.Elemen
         <button className="btn primary small issue-branch-btn" onClick={createBranch}>
           <GitBranchPlus size={13} /> Create branch for issue
         </button>
+        <button className="btn ghost small issue-branch-btn" onClick={createPr}>
+          <GitPullRequest size={13} /> Create PR (closes #{issue.number})
+        </button>
 
         <div className="issue-field">
           <div className="issue-field-label">
@@ -177,8 +195,28 @@ export function IssueDetailPage({ page }: { page: IssuePage }): React.JSX.Elemen
           <div className="issue-field-label">
             <Milestone size={12} /> Milestone
           </div>
-          <div className="issue-field-val">{detail?.milestone ?? <span className="issue-none">None</span>}</div>
+          <div className="issue-field-val">
+            {(() => {
+              if (!detail?.milestone) return <span className="issue-none">None</span>
+              const m = milestones.find((x) => x.title === detail.milestone)
+              if (!m) return detail.milestone
+              return (
+                <a
+                  href="#"
+                  className="issue-linked-pr"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    openPageTab({ type: 'milestone', milestone: m, repoPath, remoteUrl })
+                  }}
+                >
+                  {detail.milestone}
+                </a>
+              )
+            })()}
+          </div>
         </div>
+        {/* TODO: Fix this — Linked PRs (from timeline cross-references) are unreliable;
+            hidden until reworked (likely needs GraphQL closingIssuesReferences). Do not delete.
         <div className="issue-field">
           <div className="issue-field-label">
             <GitPullRequest size={12} /> Linked PRs
@@ -204,10 +242,22 @@ export function IssueDetailPage({ page }: { page: IssuePage }): React.JSX.Elemen
             )}
           </div>
         </div>
-        <p className="issue-side-note">
-          Linked branches created via GitHub&apos;s “Create a branch” aren&apos;t exposed by the REST API, so they
-          can&apos;t be listed here.
-        </p>
+        */}
+        {detail?.projectFields.map((g) => (
+          <div key={g.project} className="issue-field">
+            <div className="issue-field-label">
+              <ClipboardList size={12} /> {g.project}
+            </div>
+            <div className="issue-project-fields">
+              {g.fields.map((f) => (
+                <div key={f.name} className="issue-project-field">
+                  <span className="issue-pf-name">{f.name}</span>
+                  <span className="issue-pf-val">{f.value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
       </aside>
     </div>
   )

@@ -13,6 +13,8 @@ import type {
   IssueInfo,
   IssueDetail,
   LinkedPr,
+  MilestoneInfo,
+  ProjectFieldGroup,
   PrReviewEvent,
   PrMergeMethod,
   ReleaseInfo,
@@ -363,6 +365,115 @@ async function listIssues(
   }
 }
 
+async function listMilestones(
+  remoteUrl: string,
+  tokens: { github?: string }
+): Promise<{ provider: HostingProvider; milestones: MilestoneInfo[] }> {
+  const parsed = parseRemoteUrl(remoteUrl)
+  if (!parsed || parsed.provider !== 'github' || !tokens.github) {
+    return { provider: parsed?.provider ?? null, milestones: [] }
+  }
+  const data = await ghJson<
+    Array<{
+      number: number
+      title: string
+      description: string | null
+      state: string
+      due_on: string | null
+      open_issues: number
+      closed_issues: number
+      html_url: string
+    }>
+  >(`https://api.github.com/repos/${parsed.owner}/${parsed.repo}/milestones?state=all&per_page=50`, tokens.github)
+  return {
+    provider: 'github',
+    milestones: data.map((m) => ({
+      number: m.number,
+      title: m.title,
+      description: m.description ?? '',
+      state: m.state === 'closed' ? 'closed' : 'open',
+      dueOn: m.due_on,
+      openIssues: m.open_issues,
+      closedIssues: m.closed_issues,
+      url: m.html_url
+    }))
+  }
+}
+
+/**
+ * Projects v2 custom fields for an issue (Priority, Start/Target date, Effort, …).
+ * GraphQL-only and requires the token's `read:project` scope — best-effort, so any
+ * error (missing scope, no project) yields an empty list rather than failing.
+ */
+async function fetchProjectFields(
+  owner: string,
+  repo: string,
+  number: number,
+  token: string
+): Promise<ProjectFieldGroup[]> {
+  const query = `query($owner:String!,$repo:String!,$number:Int!){
+    repository(owner:$owner,name:$repo){
+      issue(number:$number){
+        projectItems(first:10){ nodes{
+          project{ title }
+          fieldValues(first:30){ nodes{
+            __typename
+            ... on ProjectV2ItemFieldTextValue { text field{ ... on ProjectV2FieldCommon { name } } }
+            ... on ProjectV2ItemFieldNumberValue { number field{ ... on ProjectV2FieldCommon { name } } }
+            ... on ProjectV2ItemFieldDateValue { date field{ ... on ProjectV2FieldCommon { name } } }
+            ... on ProjectV2ItemFieldSingleSelectValue { name field{ ... on ProjectV2FieldCommon { name } } }
+            ... on ProjectV2ItemFieldIterationValue { title field{ ... on ProjectV2FieldCommon { name } } }
+          } }
+        } }
+      }
+    }
+  }`
+  try {
+    const res = await fetch('https://api.github.com/graphql', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, variables: { owner, repo, number } })
+    })
+    if (!res.ok) return []
+    const json = (await res.json()) as {
+      data?: {
+        repository?: {
+          issue?: {
+            projectItems?: {
+              nodes?: Array<{
+                project?: { title?: string }
+                fieldValues?: {
+                  nodes?: Array<Record<string, unknown> & { field?: { name?: string } }>
+                }
+              }>
+            }
+          }
+        }
+      }
+    }
+    const items = json.data?.repository?.issue?.projectItems?.nodes ?? []
+    const groups: ProjectFieldGroup[] = []
+    for (const item of items) {
+      const fields: { name: string; value: string }[] = []
+      for (const fv of item.fieldValues?.nodes ?? []) {
+        const name = fv.field?.name
+        if (!name) continue // skip non-custom values (no field name)
+        const value =
+          (fv.text as string) ??
+          (fv.name as string) ??
+          (fv.title as string) ??
+          (fv.date as string) ??
+          (typeof fv.number === 'number' ? String(fv.number) : undefined)
+        if (value != null && value !== '') fields.push({ name, value })
+      }
+      if (fields.length) groups.push({ project: item.project?.title ?? 'Project', fields })
+    }
+    return groups
+  } catch {
+    return []
+  }
+}
+
 async function issueDetail(
   remoteUrl: string,
   tokens: { github?: string },
@@ -370,7 +481,7 @@ async function issueDetail(
 ): Promise<IssueDetail> {
   const { owner, repo, token } = ghRepoOf(remoteUrl, tokens.github)
   const api = `https://api.github.com/repos/${owner}/${repo}`
-  const [issue, comments, timeline] = await Promise.all([
+  const [issue, comments, timeline, projectFields] = await Promise.all([
     ghJson<{
       number: number
       title: string
@@ -392,7 +503,8 @@ async function issueDetail(
         event: string
         source?: { issue?: { number: number; title: string; html_url: string; state: string; pull_request?: unknown } }
       }>
-    >(`${api}/issues/${number}/timeline?per_page=100`, token).catch(() => [])
+    >(`${api}/issues/${number}/timeline?per_page=100`, token).catch(() => []),
+    fetchProjectFields(owner, repo, number, token)
   ])
 
   const linkedMap = new Map<number, LinkedPr>()
@@ -415,8 +527,39 @@ async function issueDetail(
     milestone: issue.milestone?.title ?? null,
     createdAt: issue.created_at,
     comments: comments.map((c) => ({ author: c.user?.login ?? 'unknown', body: c.body, createdAt: c.created_at })),
-    linkedPrs: [...linkedMap.values()]
+    linkedPrs: [...linkedMap.values()],
+    projectFields
   }
+}
+
+/** Issues belonging to a milestone (open + closed). GitHub only. */
+async function milestoneIssues(
+  remoteUrl: string,
+  tokens: { github?: string },
+  number: number
+): Promise<IssueInfo[]> {
+  const { owner, repo, token } = ghRepoOf(remoteUrl, tokens.github)
+  const data = await ghJson<
+    Array<{
+      number: number
+      title: string
+      user: { login: string } | null
+      state: string
+      html_url: string
+      comments: number
+      pull_request?: unknown
+    }>
+  >(`https://api.github.com/repos/${owner}/${repo}/issues?milestone=${number}&state=all&per_page=100`, token)
+  return data
+    .filter((i) => !i.pull_request)
+    .map((i) => ({
+      number: i.number,
+      title: i.title,
+      author: i.user?.login ?? 'unknown',
+      state: i.state === 'closed' ? 'closed' : 'open',
+      url: i.html_url,
+      comments: i.comments
+    }))
 }
 
 async function setIssueState(
@@ -792,6 +935,12 @@ export function registerHostingHandlers(): void {
   )
   ipcMain.handle('hosting:listIssues', (_e, remoteUrl: string, tokens: { github?: string }) =>
     listIssues(remoteUrl, tokens)
+  )
+  ipcMain.handle('hosting:listMilestones', (_e, remoteUrl: string, tokens: { github?: string }) =>
+    listMilestones(remoteUrl, tokens)
+  )
+  ipcMain.handle('hosting:milestoneIssues', (_e, remoteUrl: string, tokens: { github?: string }, number: number) =>
+    milestoneIssues(remoteUrl, tokens, number)
   )
   ipcMain.handle('hosting:issueDetail', (_e, remoteUrl: string, tokens: { github?: string }, number: number) =>
     issueDetail(remoteUrl, tokens, number)

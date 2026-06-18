@@ -96,7 +96,11 @@ const api = {
     issueDetail: (remoteUrl: string, tokens: unknown, number: number): Promise<unknown> =>
       ipcRenderer.invoke('hosting:issueDetail', remoteUrl, tokens, number),
     setIssueState: (remoteUrl: string, tokens: unknown, number: number, state: string): Promise<unknown> =>
-      ipcRenderer.invoke('hosting:setIssueState', remoteUrl, tokens, number, state)
+      ipcRenderer.invoke('hosting:setIssueState', remoteUrl, tokens, number, state),
+    listMilestones: (remoteUrl: string, tokens: unknown): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:listMilestones', remoteUrl, tokens),
+    milestoneIssues: (remoteUrl: string, tokens: unknown, number: number): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:milestoneIssues', remoteUrl, tokens, number)
   },
 
   term: {

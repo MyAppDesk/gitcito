@@ -201,6 +201,24 @@ export interface IssueInfo {
   comments: number
 }
 
+/** A repository milestone. */
+export interface MilestoneInfo {
+  number: number
+  title: string
+  description: string
+  state: 'open' | 'closed'
+  dueOn: string | null
+  openIssues: number
+  closedIssues: number
+  url: string
+}
+
+/** A Projects v2 custom-field value on an issue (GraphQL-only). */
+export interface ProjectFieldGroup {
+  project: string
+  fields: { name: string; value: string }[]
+}
+
 /** A pull request linked to an issue (via cross-reference). */
 export interface LinkedPr {
   number: number
@@ -223,6 +241,7 @@ export interface IssueDetail {
   createdAt: string
   comments: PrComment[]
   linkedPrs: LinkedPr[]
+  projectFields: ProjectFieldGroup[]
 }
 
 export type PrReviewEvent = 'APPROVE' | 'REQUEST_CHANGES' | 'COMMENT'
@@ -623,6 +642,7 @@ export type PageContent =
   | { type: 'logs' }
   | { type: 'release'; release: ReleaseInfo; repoPath: string }
   | { type: 'issue'; issue: IssueInfo; repoPath: string; remoteUrl: string }
+  | { type: 'milestone'; milestone: MilestoneInfo; repoPath: string; remoteUrl: string }
 
 /** A published GitHub release, as surfaced to the changelog page. */
 export interface AppRelease {
@@ -836,7 +856,7 @@ export function defaultSettings(): AppSettings {
     autoFetchMinutes: 5,
     confirmForcePush: true,
     mergeCommit: true,
-    sidebarOrder: ['local', 'remotes', 'stashes', 'tags', 'prs', 'releases', 'worktrees', 'submodules'],
+    sidebarOrder: ['local', 'remotes', 'stashes', 'tags', 'prs', 'issues', 'milestones', 'releases', 'worktrees', 'submodules'],
     sidebarHidden: [],
     onboardingCompleted: false,
     autoOpenChangelog: true

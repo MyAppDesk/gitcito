@@ -28,6 +28,8 @@ export function IgnoreModal({ spec }: { spec: Extract<ModalSpec, { kind: 'ignore
 
   const [type, setType] = useState(typeOptions[0].v)
   const [location, setLocation] = useState<'closest' | 'root'>(canLocation ? 'closest' : 'root')
+  const [stopTracking, setStopTracking] = useState(false)
+  const [deleteDisk, setDeleteDisk] = useState(false)
 
   const dir = location === 'root' ? '' : parent
   const rel = location === 'root' ? targetPath : base
@@ -44,8 +46,18 @@ export function IgnoreModal({ spec }: { spec: Extract<ModalSpec, { kind: 'ignore
 
   const apply = (): void => {
     closeModal()
-    void repoActions.addToGitignoreAt(repoPath, dir, [line], line)
+    if (stopTracking) {
+      void repoActions.ignoreAndUntrackAt(repoPath, dir, [line], [targetPath], deleteDisk, line)
+    } else {
+      void repoActions.addToGitignoreAt(repoPath, dir, [line], line)
+    }
   }
+
+  const applyLabel = stopTracking
+    ? deleteDisk
+      ? 'Ignore & delete'
+      : 'Ignore & stop tracking'
+    : 'Add to .gitignore'
 
   return (
     <>
@@ -95,12 +107,36 @@ export function IgnoreModal({ spec }: { spec: Extract<ModalSpec, { kind: 'ignore
         <code>{line}</code>
       </div>
 
+      <div className="ig-group-label">Also</div>
+      <div className="ig-options">
+        <label className="ig-check">
+          <input
+            type="checkbox"
+            checked={stopTracking}
+            onChange={(e) => {
+              setStopTracking(e.target.checked)
+              if (!e.target.checked) setDeleteDisk(false)
+            }}
+          />
+          <span>Stop tracking in Git (removes from the repo on next commit)</span>
+        </label>
+        <label className={`ig-check${stopTracking ? '' : ' disabled'}`}>
+          <input
+            type="checkbox"
+            disabled={!stopTracking}
+            checked={deleteDisk}
+            onChange={(e) => setDeleteDisk(e.target.checked)}
+          />
+          <span>Also delete from disk</span>
+        </label>
+      </div>
+
       <div className="modal-actions">
         <button className="btn ghost" onClick={closeModal}>
           Cancel
         </button>
-        <button className="btn primary" onClick={apply}>
-          Add to .gitignore
+        <button className={`btn ${deleteDisk ? 'danger' : 'primary'}`} onClick={apply}>
+          {applyLabel}
         </button>
       </div>
     </>

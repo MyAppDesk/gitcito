@@ -753,8 +753,32 @@ export const gitService = {
 
   async discard(repoPath: string, files: string[], untracked: boolean): Promise<void> {
     const git = gitFor(repoPath)
-    if (untracked) await git.clean('f', ['--', ...files])
-    else await git.raw(['checkout', '--', ...files])
+    if (untracked) {
+      await git.clean('f', ['--', ...files])
+      return
+    }
+    // Per-file so one tricky path doesn't fail the whole batch:
+    //  1. `checkout -- f` restores a modified file from the index (keeps staged
+    //     changes — the common case, unchanged behavior).
+    //  2. staged deletions/renames aren't in the index, so fall back to
+    //     `checkout HEAD -- f` to bring the file back from the last commit.
+    //  3. staged-new files don't exist in HEAD either, so drop them from the
+    //     index and disk with `rm -f`.
+    for (const f of files) {
+      try {
+        await git.raw(['checkout', '--', f])
+        continue
+      } catch {
+        /* not in index — try HEAD */
+      }
+      try {
+        await git.raw(['checkout', 'HEAD', '--', f])
+        continue
+      } catch {
+        /* not in HEAD — staged-new */
+      }
+      await git.raw(['rm', '-f', '--', f]).catch(() => {})
+    }
   },
 
   /**
@@ -1252,8 +1276,20 @@ export const gitService = {
   // ─── File inspection (file view / blame / history) ──────────────────────
 
   async fileContent(repoPath: string, file: string, ref?: string): Promise<string> {
-    if (!ref) return readFile(join(repoPath, file), 'utf-8')
-    return gitFor(repoPath).raw(['show', `${ref}:${file}`])
+    if (!ref) {
+      // Working-tree read; empty if the file was deleted on disk.
+      return readFile(join(repoPath, file), 'utf-8').catch(() => '')
+    }
+    try {
+      return await gitFor(repoPath).raw(['show', `${ref}:${file}`])
+    } catch {
+      // The ref view may be missing — e.g. a staged deletion isn't in the index
+      // (':0'). Fall back to the on-disk copy, then the last committed version,
+      // so File view shows something instead of a fatal error.
+      const onDisk = await readFile(join(repoPath, file), 'utf-8').catch(() => null)
+      if (onDisk !== null) return onDisk
+      return gitFor(repoPath).raw(['show', `HEAD:${file}`]).catch(() => '')
+    }
   },
 
   /**

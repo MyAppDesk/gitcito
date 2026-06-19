@@ -7792,6 +7792,18 @@ mark.find-hit.active {
   font-size: 11px;
   color: var(--text-3);
 }
+.ig-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--text-1);
+  cursor: pointer;
+}
+.ig-check.disabled {
+  opacity: 0.45;
+  cursor: default;
+}
 .ig-preview {
   display: flex;
   align-items: center;

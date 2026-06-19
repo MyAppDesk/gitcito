@@ -681,6 +681,27 @@ export const repoActions = {
       await gitApi.addToGitignore(path, patterns)
     }),
 
+  // Like ignoreAndUntrack, but writes to the .gitignore in `dir` (matches the
+  // Ignore modal's chosen location) and optionally deletes the file from disk.
+  ignoreAndUntrackAt: (
+    path: string,
+    dir: string,
+    patterns: string[],
+    files: string[],
+    deleteFromDisk: boolean,
+    label?: string
+  ) =>
+    useRepoStore.getState().run(
+      path,
+      deleteFromDisk
+        ? `Ignored & deleted ${label ?? `${files.length} file(s)`}`
+        : `Ignored & stopped tracking ${label ?? `${files.length} file(s)`}`,
+      async () => {
+        await gitApi.addToGitignoreAt(path, dir, patterns)
+        await gitApi.untrack(path, files, deleteFromDisk)
+      }
+    ),
+
   worktreeAdd: (path: string, dir: string, branch: string, newBranch: boolean) =>
     useRepoStore.getState().run(path, `Added worktree ${dir}`, () => gitApi.worktreeAdd(path, dir, branch, newBranch)),
 

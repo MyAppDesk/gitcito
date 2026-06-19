@@ -1,5 +1,18 @@
 
 
+## [0.17.0](https://github.com/MyAppDesk/gitcito/compare/v0.16.0...v0.17.0) (2026-06-19)
+
+
+### Features
+
+* add ignore and untrack functionality in IgnoreModal ([17d72c1](https://github.com/MyAppDesk/gitcito/commit/17d72c1ae6dfc9d020b8bbf1eb4485ccef3748f6))
+* add rename stash functionality to git service and UI ([2e7046d](https://github.com/MyAppDesk/gitcito/commit/2e7046d2c8b08cba321140957ce95b5e1d6dcf76))
+
+
+### Bug Fixes
+
+* handle readdir errors gracefully in listDir method ([ab02907](https://github.com/MyAppDesk/gitcito/commit/ab02907e614ad1f8da681f8533b9ba13a4863954))
+
 ## [0.16.0](https://github.com/MyAppDesk/gitcito/compare/v0.15.1...v0.16.0) (2026-06-19)
 
 

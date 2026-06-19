@@ -1,7 +1,7 @@
 {
   "name": "gitcito",
   "productName": "Gitcito",
-  "version": "0.16.0",
+  "version": "0.17.0",
   "description": "A lightweight Git client built with Electron, React and clean architecture",
   "main": "out/main/index.js",
   "license": "MIT",

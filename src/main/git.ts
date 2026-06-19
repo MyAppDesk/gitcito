@@ -865,7 +865,10 @@ export const gitService = {
    */
   async listDir(repoPath: string, relDir = ''): Promise<TreeEntry[]> {
     const abs = join(repoPath, relDir)
-    const ents = await readdir(abs, { withFileTypes: true })
+    // A folder can vanish or become unreadable between listing and a re-read
+    // (e.g. a tool regenerates .husky/_, a watcher refresh races a delete).
+    // Treat that as an empty folder rather than surfacing a scary ENOENT.
+    const ents = await readdir(abs, { withFileTypes: true }).catch(() => [])
     const out: TreeEntry[] = []
     for (const e of ents) {
       if (relDir === '' && e.name === '.git') continue

@@ -29,6 +29,7 @@ import {
   FolderPlus
 } from 'lucide-react'
 import { FileTree } from './FileTree'
+import { FileSearchBar, EMPTY_FILTER, type FileFilter } from './FileSearchBar'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
 import { useUIStore, type MenuItem } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
@@ -144,6 +145,8 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   const aiEnabled = activeProfile().ai.enabled !== false
   const t = useT()
   const [filter, setFilter] = useState('')
+  const [tab, setTab] = useState<'git' | 'files'>('git')
+  const [fileFilter, setFileFilter] = useState<FileFilter>(EMPTY_FILTER)
   const [dragId, setDragId] = useState<string | null>(null)
   const [overId, setOverId] = useState<string | null>(null)
   const path = repo.path
@@ -612,7 +615,6 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     })
 
   const sectionLabels: Record<string, string> = {
-    files: t('sidebar.files'),
     local: t('sidebar.local'),
     remotes: t('sidebar.remotes'),
     prs: t('sidebar.pullRequests'),
@@ -664,45 +666,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     }
   })
 
-  const changeCount =
-    (repo.status?.staged.length ?? 0) + (repo.status?.unstaged.length ?? 0) + (repo.status?.conflicted.length ?? 0)
-
   const sections: Record<string, React.JSX.Element> = {
-    files: (
-      <Section
-        title={t('sidebar.files')}
-        icon={<FolderTree size={13} />}
-        count={changeCount}
-        defaultOpen={false}
-        {...dragProps('files')}
-        actions={
-          <>
-            <span
-              className="icon-btn"
-              title="New file at root"
-              onClick={(e) => {
-                e.stopPropagation()
-                promptCreateRoot(false)
-              }}
-            >
-              <FilePlus size={12} />
-            </span>
-            <span
-              className="icon-btn"
-              title="New folder at root"
-              onClick={(e) => {
-                e.stopPropagation()
-                promptCreateRoot(true)
-              }}
-            >
-              <FolderPlus size={12} />
-            </span>
-          </>
-        }
-      >
-        <FileTree repo={repo} />
-      </Section>
-    ),
     local: (
       <Section
         title={t('sidebar.local')}
@@ -1290,28 +1254,67 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
 
   return (
     <aside className="sidebar">
-      <div className="sb-filter-row">
-        <div className="sb-filter">
-          <Search size={13} />
-          <input placeholder={t('sidebar.filter')} value={filter} onChange={(e) => setFilter(e.target.value)} />
-        </div>
-        <span
-          className="icon-btn sb-sections-btn"
-          title={t('sidebar.sections')}
-          onClick={(e) => {
-            const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
-            openSectionsMenu(r.right, r.bottom)
-          }}
+      <div className="sb-tabs">
+        <button
+          className={`sb-tab ${tab === 'git' ? 'active' : ''}`}
+          onClick={() => setTab('git')}
         >
-          <Settings2 size={13} />
-        </span>
+          <GitBranch size={13} /> {t('sidebar.tabGit')}
+        </button>
+        <button
+          className={`sb-tab ${tab === 'files' ? 'active' : ''}`}
+          onClick={() => setTab('files')}
+        >
+          <FolderTree size={13} /> {t('sidebar.files')}
+        </button>
       </div>
 
-      <div className="sb-scroll">
-        {visibleOrder.map((id) => (
-          <Fragment key={id}>{sections[id]}</Fragment>
-        ))}
-      </div>
+      {tab === 'git' ? (
+        <>
+          <div className="sb-filter-row">
+            <div className="sb-filter">
+              <Search size={13} />
+              <input placeholder={t('sidebar.filter')} value={filter} onChange={(e) => setFilter(e.target.value)} />
+            </div>
+            <span
+              className="icon-btn sb-sections-btn"
+              title={t('sidebar.sections')}
+              onClick={(e) => {
+                const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
+                openSectionsMenu(r.right, r.bottom)
+              }}
+            >
+              <Settings2 size={13} />
+            </span>
+          </div>
+
+          <div className="sb-scroll">
+            {visibleOrder.map((id) => (
+              <Fragment key={id}>{sections[id]}</Fragment>
+            ))}
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="sb-files-toolbar">
+            <span className="sb-files-label" title={repo.path}>{repo.name}</span>
+            <span className="sb-files-actions">
+              <span className="icon-btn" title="New file at root" onClick={() => promptCreateRoot(false)}>
+                <FilePlus size={13} />
+              </span>
+              <span className="icon-btn" title="New folder at root" onClick={() => promptCreateRoot(true)}>
+                <FolderPlus size={13} />
+              </span>
+            </span>
+          </div>
+          <div className="sb-files-search">
+            <FileSearchBar value={fileFilter} onChange={setFileFilter} />
+          </div>
+          <div className="sb-scroll">
+            <FileTree repo={repo} filter={fileFilter} />
+          </div>
+        </>
+      )}
     </aside>
   )
 }

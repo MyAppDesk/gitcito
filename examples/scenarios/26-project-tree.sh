@@ -41,6 +41,14 @@ Read me first.
 EOF
 git -C "$R" add -A && git -C "$R" commit -qm "initial project tree"
 
+# Commit the .gitignore on its own FIRST — before anything is staged below, so
+# the staged rename/add don't get swept into this commit.
+cat > "$R/.gitignore" <<'EOF'
+/dist/
+/.env
+EOF
+git -C "$R" add "$R/.gitignore" && git -C "$R" commit -qm "add .gitignore"
+
 # ── Now dirty it up so each status decoration is present ─────────────────
 # modified
 echo "export const sub = (a: number, b: number): number => a - b" >> "$R/src/util.ts"
@@ -64,12 +72,7 @@ cat > "$R/src/draft.ts" <<'EOF'
 export const draft = 1
 EOF
 
-# ignored (gitignored content — should render dim grey)
-cat > "$R/.gitignore" <<'EOF'
-/dist/
-/.env
-EOF
-git -C "$R" add "$R/.gitignore" && git -C "$R" commit -qm "add .gitignore"
+# ignored content (gitignored — should render dim grey)
 mkdir -p "$R/dist/assets"
 echo "console.log('bundled')" > "$R/dist/bundle.js"
 echo "body{margin:0}" > "$R/dist/assets/style.css"

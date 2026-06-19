@@ -7986,24 +7986,110 @@ mark.find-hit.active {
 .tree-row.st-ignored .tree-name,
 .tree-row.st-ignored .tree-icon { color: var(--text-2); opacity: 0.6; }
 
-/* In-app file editor */
-.file-editor {
-  flex: 1;
-  width: 100%;
-  min-height: 100%;
-  resize: none;
-  border: none;
-  outline: none;
+/* In-app file editor — a transparent textarea over a highlighted backdrop so
+ * typing shows live syntax highlighting without a heavy editor dependency.
+ * The two layers MUST share identical font metrics, padding and wrapping. */
+.code-editor {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
   background: var(--bg-0);
-  color: var(--text-0);
+}
+.code-editor-pre,
+.code-editor-area {
+  margin: 0;
+  border: 0;
+  padding: 8px 12px;
   font-family: var(--mono, ui-monospace, monospace);
   font-size: var(--code-font-size, 12px);
   line-height: 1.55;
-  padding: 8px 12px;
   tab-size: 2;
   white-space: pre;
+  word-wrap: normal;
+  position: absolute;
+  inset: 0;
+}
+.code-editor-pre {
+  pointer-events: none;
+  overflow: hidden;
+  color: var(--text-0);
+  z-index: 0;
+}
+.code-editor-area {
+  z-index: 1;
+  resize: none;
+  outline: none;
   overflow: auto;
+  color: transparent;
+  background: transparent;
+  caret-color: var(--text-0);
 }
 .fv-chip.working { background: rgba(108, 92, 231, 0.16); color: var(--accent); }
 .fv-chip.working.dirty { background: rgba(255, 122, 26, 0.18); color: var(--yellow); }
 .fv-save-btn { display: inline-flex; align-items: center; gap: 4px; }
+
+/* ─── Sidebar Git/Files tabs ───────────────────────────────────────────── */
+.sb-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 8px 4px;
+  flex-shrink: 0;
+}
+.sb-tab {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 28px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-2);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.sb-tab:hover { color: var(--text-1); background: var(--bg-2); }
+.sb-tab.active { background: var(--accent-soft); color: var(--accent); }
+
+.sb-files-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px 6px;
+  flex-shrink: 0;
+}
+.sb-files-label {
+  flex: 1;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sb-files-actions { display: inline-flex; gap: 2px; }
+.sb-files-search { padding: 0 8px 4px; flex-shrink: 0; }
+
+/* Flat search-result rows */
+.tree-row.tree-result { padding-left: 8px; height: 26px; }
+.tree-result-name {
+  flex: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  overflow: hidden;
+}
+.tree-result-base { overflow: hidden; text-overflow: ellipsis; }
+.tree-result-dir {
+  font-size: 11px;
+  color: var(--text-2);
+  opacity: 0.8;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

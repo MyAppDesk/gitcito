@@ -98,6 +98,8 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
   const fileSearch = useUIStore((s) => s.fileSearch)
   const searchRe = useMemo(() => (fileSearch ? buildQueryRegExp(fileSearch, true) : null), [fileSearch])
   const bodyRef = useRef<HTMLDivElement>(null)
+  const editorRef = useRef<HTMLTextAreaElement>(null)
+  const preRef = useRef<HTMLPreElement>(null)
 
   // ─── In-file find (Ctrl/Cmd+F) — layers on top of the right-panel filter ───
   const [findOpen, setFindOpen] = useState(false)
@@ -159,8 +161,9 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
   const { repoPath, file, mode, source } = view
 
   // Re-fetch working-tree content when the window regains focus/visibility.
+  // Suspended while editing so a window-focus reload can't discard the buffer.
   useEffect(() => {
-    if (source.type !== 'wip') return
+    if (source.type !== 'wip' || editing) return
     const refresh = (): void => setRefreshKey((k) => k + 1)
     const onVisible = (): void => { if (document.visibilityState === 'visible') refresh() }
     window.addEventListener('focus', refresh)
@@ -169,7 +172,7 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
       window.removeEventListener('focus', refresh)
       document.removeEventListener('visibilitychange', onVisible)
     }
-  }, [source.type])
+  }, [source.type, editing])
   const lang = guessLanguage(file)
   const fileIsImage = isImage(file)
   const pvKind = previewKind(file)
@@ -180,17 +183,15 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
   const binaryDoc = !!pvKind && isBinaryKind(pvKind) && !fileIsImage
   const canExplain = !fileIsImage && (mode === 'file' || mode === 'diff') && !!content
 
-  // Only plain working-tree files (opened from the project tree) are editable,
-  // and only in File view of a text file.
-  const editable = source.type === 'tree' && mode === 'file' && !fileIsImage && !binaryDoc && content !== null
+  // A real on-disk working-tree file (project tree, or any WIP entry). These can
+  // be edited; the editor always reads/writes the working copy even when the
+  // File view is otherwise showing the staged (':0') version.
+  const onDiskFile = source.type === 'tree' || source.type === 'wip'
+  // The file can be edited at all (drives the Edit button, shown from any mode).
+  const editableFile = onDiskFile && !fileIsImage && !binaryDoc
+  // The editor is actually mounted (File view + editing toggled on).
+  const editable = editableFile && mode === 'file' && content !== null
   const dirty = editing && content !== null && draft !== content
-
-  // Keep the draft in sync with freshly-loaded content while not dirty; never
-  // clobber unsaved edits on a background refresh.
-  useEffect(() => {
-    if (content !== null && !dirty) setDraft(content)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [content])
 
   // Mirror the dirty flag to the store so navigation guards can see it; leaving
   // the viewer (or the file) always clears it.
@@ -215,6 +216,25 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
     } finally {
       setSaving(false)
     }
+  }
+
+  // Syntax-highlighted backdrop for the editor. A trailing newline keeps the
+  // last (possibly empty) line rendered so the textarea and backdrop align.
+  const editorHtml = useMemo(
+    () => draft.split('\n').map((l) => highlightLine(l, lang) || '&nbsp;').join('\n') + '\n',
+    [draft, lang]
+  )
+  const syncEditorScroll = (): void => {
+    if (preRef.current && editorRef.current) {
+      preRef.current.scrollTop = editorRef.current.scrollTop
+      preRef.current.scrollLeft = editorRef.current.scrollLeft
+    }
+  }
+
+  // Enter edit mode — switch to File view first (the editor only lives there).
+  const startEditing = (): void => {
+    if (mode !== 'file') setFileView({ ...view, mode: 'file' })
+    setEditing(true)
   }
 
   // Guarded close — prompt before throwing away unsaved edits.
@@ -341,8 +361,17 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
                   : ''
           if (!cancelled) setContent(text)
         } else if (mode === 'file') {
-          const text = await gitApi.fileContent(repoPath, file, sourceRef(view))
-          if (!cancelled) setContent(text)
+          // While editing, always read the on-disk working copy (ignore the
+          // staged ':0' ref) so edits and saves target the real file.
+          const ref = editing && onDiskFile ? undefined : sourceRef(view)
+          const text = await gitApi.fileContent(repoPath, file, ref)
+          if (!cancelled) {
+            setContent(text)
+            // Seed the editor buffer from this authoritative load (entering edit
+            // or switching file/mode). User keystrokes never trigger a reload, so
+            // this can't clobber unsaved typing.
+            if (editing) setDraft(text)
+          }
         } else if (mode === 'blame') {
           const lines = await gitApi.blameFile(repoPath, file, blameRef(view))
           if (!cancelled) {
@@ -370,6 +399,7 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
     file,
     mode,
     refreshKey,
+    editing,
     source.type,
     source.type === 'commit' ? source.hash : source.type === 'stash' ? source.sha : source.type === 'wip' ? source.staged : ''
   ])
@@ -443,8 +473,8 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
             {explaining ? <Loader2 size={13} className="spin" /> : <Sparkles size={13} />} {t('explain.action')}
           </button>
         )}
-        {editable && !editing && (
-          <button className="btn ghost small" title="Edit file" onClick={() => setEditing(true)}>
+        {editableFile && !(editable && editing) && (
+          <button className="btn ghost small" title="Edit file" onClick={startEditing}>
             <Pencil size={13} /> Edit
           </button>
         )}
@@ -561,24 +591,34 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
         )}
 
         {!error && content !== null && imageUrl === null && mode === 'file' && editing && (
-          <textarea
-            className="file-editor"
-            value={draft}
-            spellCheck={false}
-            autoFocus
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => {
-              // Insert a real tab instead of moving focus.
-              if (e.key === 'Tab') {
-                e.preventDefault()
-                const ta = e.currentTarget
-                const { selectionStart: s, selectionEnd: en } = ta
-                const next = draft.slice(0, s) + '  ' + draft.slice(en)
-                setDraft(next)
-                requestAnimationFrame(() => ta.setSelectionRange(s + 2, s + 2))
-              }
-            }}
-          />
+          <div className="code-editor">
+            <pre
+              ref={preRef}
+              className="code-editor-pre hljs"
+              aria-hidden="true"
+              dangerouslySetInnerHTML={{ __html: editorHtml }}
+            />
+            <textarea
+              ref={editorRef}
+              className="code-editor-area"
+              value={draft}
+              spellCheck={false}
+              autoFocus
+              onScroll={syncEditorScroll}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                // Insert a real tab instead of moving focus.
+                if (e.key === 'Tab') {
+                  e.preventDefault()
+                  const ta = e.currentTarget
+                  const { selectionStart: s, selectionEnd: en } = ta
+                  const next = draft.slice(0, s) + '  ' + draft.slice(en)
+                  setDraft(next)
+                  requestAnimationFrame(() => ta.setSelectionRange(s + 2, s + 2))
+                }
+              }}
+            />
+          </div>
         )}
 
         {!error && content !== null && imageUrl === null && mode === 'file' && !editing && (

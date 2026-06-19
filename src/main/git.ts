@@ -824,6 +824,19 @@ export const gitService = {
   },
 
   /**
+   * Flat list of every searchable file path (repo-relative POSIX): tracked plus
+   * untracked-but-not-ignored, the same scope VSCode searches by default. Fast —
+   * `ls-files` skips node_modules/etc via the ignore rules, no fs walk.
+   */
+  async listFiles(repoPath: string): Promise<string[]> {
+    const raw = await gitFor(repoPath)
+      .raw(['ls-files', '--cached', '--others', '--exclude-standard', '-z'])
+      .catch(() => '')
+    // De-dupe (a path can appear in both cached + others briefly during edits).
+    return Array.from(new Set(raw.split('\0').filter(Boolean)))
+  },
+
+  /**
    * Map of repo-relative path → status kind for every changed/untracked/ignored
    * path, from a single `git status --porcelain --ignored -uall` call. Directory
    * paths are also populated with an aggregated status so folders can show a dot

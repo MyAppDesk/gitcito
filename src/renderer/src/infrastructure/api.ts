@@ -104,6 +104,7 @@ export const gitApi = {
     call<void>('untrack', path, files, deleteFromDisk),
 
   listDir: (path: string, relDir?: string) => call<TreeEntry[]>('listDir', path, relDir),
+  listFiles: (path: string) => call<string[]>('listFiles', path),
   treeStatus: (path: string) => call<Record<string, TreeStatusKind>>('treeStatus', path),
   fsCreate: (path: string, relPath: string, isDir: boolean) => call<void>('fsCreate', path, relPath, isDir),
   fsRename: (path: string, from: string, to: string) => call<void>('fsRename', path, from, to),

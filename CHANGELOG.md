@@ -1,5 +1,13 @@
 
 
+## [0.16.0](https://github.com/MyAppDesk/gitcito/compare/v0.15.1...v0.16.0) (2026-06-19)
+
+
+### Features
+
+* add .gitignore handling and file search functionality ([4e564d6](https://github.com/MyAppDesk/gitcito/commit/4e564d6983b507c239575525e3574dcc8a7e2368))
+* add project-tree scenario for file status visualization ([cd041fe](https://github.com/MyAppDesk/gitcito/commit/cd041fef58e4adb6f326e02970848331f2849cce))
+
 ## [0.15.1](https://github.com/MyAppDesk/gitcito/compare/v0.15.0...v0.15.1) (2026-06-18)
 
 

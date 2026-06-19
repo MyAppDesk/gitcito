@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Archive } from 'lucide-react'
+import { Archive, Pencil } from 'lucide-react'
 import type { FileEntry, StashInfo } from '../../../shared/types'
 import { gitApi, shellApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
@@ -84,7 +84,28 @@ export function StashDetails({ repo, sha }: { repo: RepoData; sha: string }): Re
             <Archive size={15} />
           </div>
           <div className="commit-meta">
-            <strong>{stash.message}</strong>
+            <strong className="stash-title-row">
+              {stash.message}
+              <span
+                className="icon-btn stash-rename-btn"
+                title="Rename stash"
+                onClick={() =>
+                  openModal({
+                    kind: 'input',
+                    title: 'Rename stash',
+                    label: 'New stash message',
+                    initial: stash.message,
+                    submitLabel: 'Rename',
+                    onSubmit: (message) => {
+                      const m = message.trim()
+                      if (m && m !== stash.message) void repoActions.renameStash(repo.path, stash.index, m)
+                    }
+                  })
+                }
+              >
+                <Pencil size={12} />
+              </span>
+            </strong>
             {stash.branch && <span className="stash-branch-tag">{stash.branch}</span>}
             <span>{new Date(stash.date * 1000).toLocaleString()}</span>
             <code>{stash.sha.slice(0, 10)}</code>

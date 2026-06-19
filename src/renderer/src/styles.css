@@ -954,6 +954,11 @@ textarea:focus {
   border-left-color: var(--green);
   background: rgba(63, 208, 164, 0.07);
 }
+.sb-item.multi-sel {
+  background: var(--accent-soft);
+  border-left-color: var(--accent);
+  color: var(--text-0);
+}
 .sb-current-mark {
   color: var(--green);
   margin-left: -16px;
@@ -8105,3 +8110,9 @@ mark.find-hit.active {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Stash title with inline rename pen */
+.stash-title-row { display: inline-flex; align-items: center; gap: 6px; }
+.stash-rename-btn { opacity: 0; flex-shrink: 0; }
+.commit-header:hover .stash-rename-btn { opacity: 0.7; }
+.stash-rename-btn:hover { opacity: 1; }

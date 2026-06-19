@@ -727,6 +727,36 @@ export const gitService = {
     await gitFor(repoPath).stash(['drop', `stash@{${index}}`])
   },
 
+  /**
+   * Rename a stash by rewriting its reflog subject in place. Git has no native
+   * rename, but `stash@{n}` is just an entry in `logs/refs/stash` — editing the
+   * message after the tab keeps the stash's commit and stack position intact.
+   * The `WIP on <branch>:` / `On <branch>:` prefix is preserved so the branch
+   * label still shows; only the user-facing message is replaced.
+   */
+  async renameStash(repoPath: string, index: number, message: string): Promise<void> {
+    const git = gitFor(repoPath)
+    let logPath = (await git.raw(['rev-parse', '--git-path', 'logs/refs/stash'])).trim()
+    if (!logPath) throw new Error('No stash reflog found')
+    if (!logPath.startsWith('/')) logPath = join(repoPath, logPath)
+    const raw = await readFile(logPath, 'utf8')
+    const lines = raw.split('\n')
+    // The reflog is oldest-first, so stash@{0} is the last non-empty line.
+    const nonEmpty: number[] = []
+    lines.forEach((l, i) => l.length > 0 && nonEmpty.push(i))
+    const target = nonEmpty.length - 1 - index
+    if (target < 0 || target >= nonEmpty.length) throw new Error(`No stash at index ${index}`)
+    const fileIdx = nonEmpty[target]
+    const tab = lines[fileIdx].indexOf('\t')
+    if (tab < 0) throw new Error('Malformed stash reflog entry')
+    const meta = lines[fileIdx].slice(0, tab)
+    const subject = lines[fileIdx].slice(tab + 1)
+    const prefix = /^((?:WIP on|On) [^:]*:\s*)/.exec(subject)?.[1] ?? ''
+    lines[fileIdx] = `${meta}\t${prefix}${message.trim()}`
+    // split/join round-trips the trailing newline (last element stays '').
+    await writeFile(logPath, lines.join('\n'), 'utf8')
+  },
+
   async stashApplyFiles(repoPath: string, sha: string, tracked: string[], untracked: string[]): Promise<void> {
     const git = gitFor(repoPath)
     if (tracked.length) await git.raw(['restore', '--source', sha, '--worktree', '--', ...tracked])

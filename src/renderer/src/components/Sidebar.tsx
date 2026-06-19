@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState } from 'react'
+import { Fragment, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   ChevronRight,
@@ -151,6 +151,145 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   const [overId, setOverId] = useState<string | null>(null)
   const path = repo.path
   const f = filter.trim().toLowerCase()
+
+  // ─── Multi-select (Cmd/Ctrl-click toggle, Shift-click range) ───
+  // One section "owns" the selection at a time; `kind` namespaces the ids.
+  const [sel, setSel] = useState<{ kind: string; ids: string[] } | null>(null)
+  const lastClick = useRef<{ kind: string; id: string } | null>(null)
+  const isSel = (kind: string, id: string): boolean => sel?.kind === kind && sel.ids.includes(id)
+  const clearSel = (): void => setSel(null)
+
+  // Returns true when the click was a multi-select gesture (caller skips its
+  // normal navigate/select action).
+  const onSelectClick = (kind: string, id: string, ordered: string[], e: React.MouseEvent): boolean => {
+    if (e.metaKey || e.ctrlKey) {
+      setSel((prev) =>
+        !prev || prev.kind !== kind
+          ? { kind, ids: [id] }
+          : prev.ids.includes(id)
+            ? { kind, ids: prev.ids.filter((x) => x !== id) }
+            : { kind, ids: [...prev.ids, id] }
+      )
+      lastClick.current = { kind, id }
+      return true
+    }
+    if (e.shiftKey && lastClick.current?.kind === kind) {
+      const a = ordered.indexOf(lastClick.current.id)
+      const b = ordered.indexOf(id)
+      if (a !== -1 && b !== -1) {
+        const range = ordered.slice(Math.min(a, b), Math.max(a, b) + 1)
+        setSel((prev) => ({ kind, ids: Array.from(new Set([...(prev?.kind === kind ? prev.ids : []), ...range])) }))
+        return true
+      }
+    }
+    lastClick.current = { kind, id }
+    clearSel()
+    return false
+  }
+
+  // Picks the bulk menu when right-clicking inside a multi-selection, else the
+  // single-item menu. `bulk` receives the selected ids (≥2).
+  const ctxMenu = (
+    e: React.MouseEvent,
+    kind: string,
+    id: string,
+    single: () => MenuItem[],
+    bulk: (ids: string[]) => MenuItem[]
+  ): void => {
+    e.preventDefault()
+    const ids = isSel(kind, id) && sel && sel.ids.length > 1 ? sel.ids : null
+    openContextMenu(e.clientX, e.clientY, ids ? bulk(ids) : single())
+  }
+
+  const localBulkMenu = (names: string[]): MenuItem[] => {
+    const deletable = names.filter((n) => n !== repo.branches.current.trim())
+    return [
+      {
+        label: `Delete ${deletable.length} branches`,
+        danger: true,
+        disabled: deletable.length === 0,
+        onClick: () =>
+          openModal({
+            kind: 'confirm',
+            title: 'Delete branches',
+            message: `Delete ${deletable.length} local branches? This cannot be undone.\n\n${deletable.join('\n')}`,
+            danger: true,
+            confirmLabel: `Delete ${deletable.length}`,
+            onConfirm: () => {
+              void repoActions.deleteBranches(path, deletable)
+              clearSel()
+            }
+          })
+      }
+    ]
+  }
+
+  const remoteBulkMenu = (fullNames: string[]): MenuItem[] => {
+    const items = fullNames
+      .map((fn) => repo.branches.remotes.find((r) => r.fullName === fn))
+      .filter((r): r is RemoteBranchInfo => !!r)
+      .map((r) => ({ remote: r.remote, name: r.name }))
+    return [
+      {
+        label: `Delete ${items.length} remote branches`,
+        danger: true,
+        disabled: items.length === 0,
+        onClick: () =>
+          openModal({
+            kind: 'confirm',
+            title: 'Delete remote branches',
+            message: `Delete ${items.length} branches from their remotes? This affects everyone using the remote and cannot be undone.\n\n${fullNames.join('\n')}`,
+            danger: true,
+            confirmLabel: `Delete ${items.length}`,
+            onConfirm: () => {
+              void repoActions.deleteRemoteBranches(path, items)
+              clearSel()
+            }
+          })
+      }
+    ]
+  }
+
+  const stashBulkMenu = (ids: string[]): MenuItem[] => {
+    const indices = ids.map(Number)
+    return [
+      {
+        label: `Drop ${indices.length} stashes`,
+        danger: true,
+        onClick: () =>
+          openModal({
+            kind: 'confirm',
+            title: 'Drop stashes',
+            message: `Drop ${indices.length} stashes? This cannot be undone.`,
+            danger: true,
+            confirmLabel: `Drop ${indices.length}`,
+            onConfirm: () => {
+              void repoActions.stashDropMany(path, indices)
+              clearSel()
+            }
+          })
+      }
+    ]
+  }
+
+  const tagBulkMenu = (names: string[]): MenuItem[] => [
+    {
+      label: `Delete ${names.length} tags`,
+      danger: true,
+      onClick: () =>
+        openModal({
+          kind: 'confirm',
+          title: 'Delete tags',
+          message: `Delete ${names.length} tags locally? This cannot be undone.\n\n${names.join('\n')}`,
+          danger: true,
+          confirmLabel: `Delete ${names.length}`,
+          onConfirm: () => {
+            void repoActions.deleteTags(path, names)
+            clearSel()
+          }
+        })
+    }
+  ]
 
   // Click a branch → select & scroll the graph to its tip commit.
   const goToBranch = (sha: string): void => {
@@ -423,10 +562,24 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     }
   ]
 
+  const renameStash = (s: StashInfo): void =>
+    openModal({
+      kind: 'input',
+      title: 'Rename stash',
+      label: 'New stash message',
+      initial: s.message,
+      submitLabel: 'Rename',
+      onSubmit: (message) => {
+        const m = message.trim()
+        if (m && m !== s.message) void repoActions.renameStash(path, s.index, m)
+      }
+    })
+
   const stashMenu = (s: StashInfo): MenuItem[] => [
     { label: 'Pop stash', onClick: () => void repoActions.stashPop(path, s.index) },
     { label: 'Apply stash (keep)', onClick: () => void repoActions.stashApply(path, s.index) },
     { separator: true },
+    { label: 'Rename…', onClick: () => renameStash(s) },
     { label: 'Copy stash message', onClick: () => void navigator.clipboard.writeText(s.message) },
     { separator: true },
     {
@@ -666,6 +819,11 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     }
   })
 
+  const localIds = locals.map((b) => b.name)
+  const remoteIds = remotes.map((b) => b.fullName)
+  const tagIds = tags.map((t) => t.name)
+  const stashIds = repo.stashes.map((s) => String(s.index))
+
   const sections: Record<string, React.JSX.Element> = {
     local: (
       <Section
@@ -689,13 +847,12 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         {locals.map((b) => (
           <div
             key={b.name}
-            className={`sb-item ${b.isCurrent ? 'current' : ''}`}
-            onClick={() => goToBranch(b.sha)}
-            onDoubleClick={() => !b.isCurrent && void repoActions.checkout(path, b.name)}
-            onContextMenu={(e) => {
-              e.preventDefault()
-              openContextMenu(e.clientX, e.clientY, localMenu(b))
+            className={`sb-item ${b.isCurrent ? 'current' : ''} ${isSel('local', b.name) ? 'multi-sel' : ''}`}
+            onClick={(e) => {
+              if (!onSelectClick('local', b.name, localIds, e)) goToBranch(b.sha)
             }}
+            onDoubleClick={() => !b.isCurrent && void repoActions.checkout(path, b.name)}
+            onContextMenu={(e) => ctxMenu(e, 'local', b.name, () => localMenu(b), localBulkMenu)}
             title={`${b.name}${b.upstream ? ` → ${b.upstream}` : ''}`}
           >
             {b.isCurrent && <Check size={12} className="sb-current-mark" />}
@@ -758,12 +915,10 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
               {branches.map((b) => (
                 <div
                   key={b.fullName}
-                  className="sb-item"
+                  className={`sb-item ${isSel('remote', b.fullName) ? 'multi-sel' : ''}`}
+                  onClick={(e) => void onSelectClick('remote', b.fullName, remoteIds, e)}
                   onDoubleClick={() => void repoActions.checkoutRemote(path, b.fullName, b.name)}
-                  onContextMenu={(e) => {
-                    e.preventDefault()
-                    openContextMenu(e.clientX, e.clientY, remoteMenu(b))
-                  }}
+                  onContextMenu={(e) => ctxMenu(e, 'remote', b.fullName, () => remoteMenu(b), remoteBulkMenu)}
                   title={b.fullName}
                 >
                   <span className="sb-name">{b.name}</span>
@@ -990,12 +1145,11 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
           return (
             <div
               key={tag.name}
-              className="sb-item"
-              onClick={() => goToBranch(tag.sha)}
-              onContextMenu={(e) => {
-                e.preventDefault()
-                openContextMenu(e.clientX, e.clientY, tagMenu(tag))
+              className={`sb-item ${isSel('tag', tag.name) ? 'multi-sel' : ''}`}
+              onClick={(e) => {
+                if (!onSelectClick('tag', tag.name, tagIds, e)) goToBranch(tag.sha)
               }}
+              onContextMenu={(e) => ctxMenu(e, 'tag', tag.name, () => tagMenu(tag), tagBulkMenu)}
               title={`${tag.name}${release ? ' · release' : ''}${repo.remotes.length ? (isPushed ? ' · pushed' : ' · local only') : ''}`}
             >
               <Tag size={11} className="sb-tag-icon" />
@@ -1108,12 +1262,12 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         {repo.stashes.map((s) => (
           <div
             key={s.index}
-            className={`sb-item ${repo.selected?.type === 'stash' && repo.selected.sha === s.sha ? 'current' : ''}`}
-            onClick={() => select(path, { type: 'stash', index: s.index, sha: s.sha })}
-            onContextMenu={(e) => {
-              e.preventDefault()
-              openContextMenu(e.clientX, e.clientY, stashMenu(s))
+            className={`sb-item ${repo.selected?.type === 'stash' && repo.selected.sha === s.sha ? 'current' : ''} ${isSel('stash', String(s.index)) ? 'multi-sel' : ''}`}
+            onClick={(e) => {
+              if (!onSelectClick('stash', String(s.index), stashIds, e))
+                select(path, { type: 'stash', index: s.index, sha: s.sha })
             }}
+            onContextMenu={(e) => ctxMenu(e, 'stash', String(s.index), () => stashMenu(s), stashBulkMenu)}
             title={s.message}
           >
             <span className="sb-name sb-stash-name">

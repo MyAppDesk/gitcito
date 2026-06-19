@@ -89,6 +89,7 @@ export const gitApi = {
   stashPop: (path: string, index?: number) => call<void>('stashPop', path, index),
   stashApply: (path: string, index?: number) => call<void>('stashApply', path, index),
   stashDrop: (path: string, index?: number) => call<void>('stashDrop', path, index),
+  renameStash: (path: string, index: number, message: string) => call<void>('renameStash', path, index, message),
   stashApplyFiles: (path: string, sha: string, tracked: string[], untracked: string[]) =>
     call<void>('stashApplyFiles', path, sha, tracked, untracked),
 

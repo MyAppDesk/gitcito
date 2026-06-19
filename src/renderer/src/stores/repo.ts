@@ -571,6 +571,9 @@ export const repoActions = {
   stashDrop: (path: string, index = 0) =>
     useRepoStore.getState().run(path, 'Dropped stash', () => gitApi.stashDrop(path, index)),
 
+  renameStash: (path: string, index: number, message: string) =>
+    useRepoStore.getState().run(path, 'Renamed stash', () => gitApi.renameStash(path, index, message)),
+
   commit: (path: string, message: string, amend = false) =>
     useRepoStore.getState().run(path, amend ? 'Amended commit' : 'Committed', () => gitApi.commit(path, message, amend), {
       label: 'commit',
@@ -726,6 +729,28 @@ export const repoActions = {
 
   submoduleRemove: (path: string, dir: string) =>
     useRepoStore.getState().run(path, `Removed submodule ${dir}`, () => gitApi.submoduleRemove(path, dir)),
+
+  // ─── Bulk operations (multi-select in the sidebar) ───
+  deleteBranches: (path: string, names: string[]) =>
+    useRepoStore.getState().run(path, `Deleted ${names.length} branches`, async () => {
+      for (const n of names) await gitApi.deleteBranch(path, n, true)
+    }),
+
+  deleteRemoteBranches: (path: string, items: { remote: string; name: string }[]) =>
+    useRepoStore.getState().run(path, `Deleted ${items.length} remote branches`, async () => {
+      for (const it of items) await gitApi.deleteRemoteBranch(path, it.remote, it.name)
+    }),
+
+  stashDropMany: (path: string, indices: number[]) =>
+    useRepoStore.getState().run(path, `Dropped ${indices.length} stashes`, async () => {
+      // Drop highest-index first — each drop renumbers the lower entries.
+      for (const i of [...indices].sort((a, b) => b - a)) await gitApi.stashDrop(path, i)
+    }),
+
+  deleteTags: (path: string, names: string[]) =>
+    useRepoStore.getState().run(path, `Deleted ${names.length} tags`, async () => {
+      for (const n of names) await gitApi.deleteTag(path, n)
+    }),
 
   // ─── Project tree file operations ───
   fsCreate: (path: string, relPath: string, isDir: boolean) =>

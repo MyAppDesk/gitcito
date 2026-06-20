@@ -26,6 +26,7 @@ import { ChangelogPage } from './components/ChangelogPage'
 import { LogsPage } from './components/LogsPage'
 import { NotificationsPage } from './components/NotificationsPage'
 import { InsightsPage } from './components/InsightsPage'
+import { VaultPage } from './components/VaultPage'
 import { ReleasePage } from './components/ReleasePage'
 import { IssueDetailPage } from './components/IssueDetailPage'
 import { MilestoneDetailPage } from './components/MilestoneDetailPage'
@@ -117,6 +118,8 @@ function PageView({ tab }: { tab: PageTab }): React.JSX.Element {
       return <NotificationsPage />
     case 'insights':
       return <InsightsPage repoPath={tab.page.repoPath} />
+    case 'vault':
+      return <VaultPage repoPath={tab.page.repoPath} />
     case 'release':
       return <ReleasePage tab={tab} />
     case 'issue':
@@ -212,6 +215,14 @@ export default function App(): React.JSX.Element {
         if (path) {
           e.preventDefault()
           useUIStore.getState().openModal({ kind: 'code-search', repoPath: path })
+        }
+      } else if ((e.metaKey || e.ctrlKey) && e.shiftKey && !e.altKey && e.key.toLowerCase() === 'v') {
+        const st = useSettingsStore.getState()
+        const tab = st.settings.tabs.find((t) => t.id === st.settings.activeTabId)
+        const path = tab ? tabActiveRepoPath(tab) : null
+        if (path) {
+          e.preventDefault()
+          st.openPageTab({ type: 'vault', repoPath: path })
         }
       }
     }

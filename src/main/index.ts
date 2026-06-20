@@ -11,6 +11,7 @@ import { registerLogHandlers } from './log'
 import { registerHostingHandlers } from './hosting'
 import { registerTerminalHandlers } from './terminal'
 import { registerWatcherHandlers } from './watcher'
+import { registerVaultHandlers } from './vault'
 
 function createWindow(): void {
   const win = new BrowserWindow({
@@ -158,6 +159,7 @@ app.whenReady().then(() => {
   registerHostingHandlers()
   registerTerminalHandlers()
   registerWatcherHandlers()
+  registerVaultHandlers()
 
   createWindow()
   app.on('activate', () => {

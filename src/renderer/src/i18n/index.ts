@@ -210,6 +210,9 @@ const en = {
   'settings.maskSecrets': 'Mask secret values',
   'settings.maskSecretsHint':
     'Hide values in .env / key / credential files (KEY=••••••) in the diff, file and blame views. Display-only — use the eye toggle to reveal. Never changes the file or what you stage.',
+  'settings.openVault': 'Open vault',
+  'settings.openVaultHint':
+    'A local, OS-keychain-encrypted store for secrets — per-repo and global. Never synced, never committed. Also reachable with ⌘⇧V.',
   'changelog.title': 'What’s new',
   'changelog.checking': 'Checking for updates…',
   'changelog.live': 'Latest from GitHub',
@@ -468,6 +471,9 @@ const es: Dict = {
   'settings.maskSecrets': 'Ocultar valores secretos',
   'settings.maskSecretsHint':
     'Oculta los valores en archivos .env / clave / credenciales (KEY=••••••) en el diff, el visor y el blame. Solo visual — usa el ojo para revelar. Nunca cambia el archivo ni lo que preparas.',
+  'settings.openVault': 'Abrir baúl',
+  'settings.openVaultHint':
+    'Un almacén local de secretos cifrado con el llavero del sistema — por repo y global. Nunca se sincroniza ni se commitea. También con ⌘⇧V.',
   'settings.viewChangelog': 'Ver novedades',
   'changelog.title': 'Novedades',
   'changelog.checking': 'Buscando actualizaciones…',

@@ -67,6 +67,7 @@
 - **Smart .gitignore** — ignore a file, `*.ext`, or a folder, written to the closest folder's `.gitignore` or the repo root, with a live preview.
 - **Secret masking** — values in `.env*`, `*.pem`, `*.key`, `id_rsa`, `credentials.*` and friends render as `KEY=••••••` in the diff, file and blame views, so a screenshot or screen-share never leaks them. On by default; an eye-toggle reveals them per view, and it's display-only (never touches the file or what you stage).
 - **Secret guard** — committing a secret-looking file pops a confirm with a one-click **Ignore & untrack**, and pushing a repo that *tracks* secrets warns first (once per session). `.env.example` / `.sample` / `.template` are treated as safe templates.
+- **Vault** — a **secure, fully local** secret store: encrypted at rest with your **OS keychain** (Electron `safeStorage`), with **global** and **per-repo** scopes. It’s **not a file** and has nothing to do with your `.env` — entries are *associated* with a repo but **never written into it, committed or pushed**. Switch between any known repo, reveal / copy a value, or “Copy as .env” a whole set. Reachable from the tools menu, Settings, the command palette or `⌘⇧V`. **Nothing ever leaves your machine — no sync, no cloud.**
 
 ### Branching, merging & history surgery
 - **Stacked branches** — build a chain of dependent branches (Graphite-style), see the stack visualised bottom→top with per-level commit counts, and **restack** to cascade-rebase the whole chain (`rebase --onto`, so parent rewrites don't duplicate commits) when a lower branch changes. Open a PR for each level against its parent. Parent links live in git config, so they travel with the repo.
@@ -143,6 +144,11 @@
 | WIP snapshots | Changelog generator |
 |---|---|
 | ![WIP snapshot list with restore and auto interval](docs/screenshots/snapshots.png) | ![Conventional-commit changelog grouped by type](docs/screenshots/changelog-gen.png) |
+
+### Secrets vault
+Secure & fully local — secrets encrypted with your OS keychain, global and per-repo, never synced and never committed.
+
+![Vault with global and per-repo encrypted secret entries](docs/screenshots/vault.png)
 
 ### In motion
 | Browse commits |  Light → Dark |

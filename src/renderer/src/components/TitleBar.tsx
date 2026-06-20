@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Plus, FolderGit2, X, Minus, Square, Settings, Sparkles, Bell, BarChart3, ScrollText, CircleDot, Flag, Tag, Download, ArrowDownToLine } from 'lucide-react'
+import { Plus, FolderGit2, X, Minus, Square, Settings, Sparkles, Bell, BarChart3, ScrollText, CircleDot, Flag, Tag, Download, ArrowDownToLine, KeyRound } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore, type MenuItem } from '../stores/ui'
@@ -17,6 +17,8 @@ function pageTabIcon(type: string): React.JSX.Element {
       return <Bell size={13} />
     case 'insights':
       return <BarChart3 size={13} />
+    case 'vault':
+      return <KeyRound size={13} />
     case 'logs':
       return <ScrollText size={13} />
     case 'issue':

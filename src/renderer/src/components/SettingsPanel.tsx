@@ -19,6 +19,7 @@ import {
   Check,
   Settings2,
   ShieldCheck,
+  KeyRound,
   ExternalLink,
   Sun,
   Moon,
@@ -38,7 +39,7 @@ import hljs from 'highlight.js'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
 import { gitApi, aiApi, settingsApi, analyticsApi, logApi } from '../infrastructure/api'
-import { AI_PROVIDERS, emptyAnalytics, type AIProvider, type Analytics, type AIUsageStat, type ActivityEvent, type RepoStats, type AppSettings, type BranchNamingStyle, type CommitStyle, type ConflictStyle, type ExplainStyle, type Profile, type SigningConfig } from '../../../shared/types'
+import { AI_PROVIDERS, emptyAnalytics, tabActiveRepoPath, type AIProvider, type Analytics, type AIUsageStat, type ActivityEvent, type RepoStats, type AppSettings, type BranchNamingStyle, type CommitStyle, type ConflictStyle, type ExplainStyle, type Profile, type SigningConfig } from '../../../shared/types'
 import type {
   AppTheme,
   AppThemeColors,
@@ -1251,7 +1252,18 @@ function DataManagementSection(): React.JSX.Element {
 function GeneralPage(): React.JSX.Element {
   const settings = useSettingsStore((s) => s.settings)
   const update = useSettingsStore((s) => s.update)
+  const openPageTab = useSettingsStore((s) => s.openPageTab)
+  const closeModal = useUIStore((s) => s.closeModal)
   const t = useT()
+
+  // Active repo, so the vault button can target the current repository.
+  const activeTab = settings.tabs.find((tb) => tb.id === settings.activeTabId)
+  const activeRepoPath = activeTab ? tabActiveRepoPath(activeTab) : null
+  const openVault = (): void => {
+    if (!activeRepoPath) return
+    openPageTab({ type: 'vault', repoPath: activeRepoPath })
+    closeModal()
+  }
 
   return (
     <div className="settings-general">
@@ -1435,6 +1447,13 @@ function GeneralPage(): React.JSX.Element {
           <span className="settings-hint">{t('settings.maskSecretsHint')}</span>
         </span>
       </label>
+
+      <div style={{ marginTop: 12 }}>
+        <button className="btn ghost small" onClick={openVault} disabled={!activeRepoPath} title={activeRepoPath ? undefined : 'Open a repository first'}>
+          <KeyRound size={13} /> {t('settings.openVault')}
+        </button>
+        <span className="settings-hint" style={{ display: 'block', marginTop: 6 }}>{t('settings.openVaultHint')}</span>
+      </div>
 
     </div>
   )

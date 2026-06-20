@@ -703,6 +703,22 @@ export interface ChangelogResult {
   count: number // commits included
 }
 
+/** One secret stored in the local, OS-keychain-encrypted vault. */
+export interface VaultEntry {
+  id: string
+  key: string
+  value: string
+  note?: string
+  updatedAt: number
+}
+
+/** Vault contents for a repo: its own entries plus the cross-repo global ones. */
+export interface VaultListResult {
+  available: boolean // OS encryption (safeStorage) usable on this machine
+  repo: VaultEntry[]
+  global: VaultEntry[]
+}
+
 /** A saved WIP snapshot (a `git stash create` commit kept under refs/gitcito/wip). */
 export interface SnapshotInfo {
   ref: string // full ref name (refs/gitcito/wip/<ts>)
@@ -785,6 +801,7 @@ export type PageContent =
   | { type: 'logs' }
   | { type: 'notifications' }
   | { type: 'insights'; repoPath: string }
+  | { type: 'vault'; repoPath: string }
   | { type: 'release'; release: ReleaseInfo; repoPath: string }
   | { type: 'issue'; issue: IssueInfo; repoPath: string; remoteUrl: string }
   | { type: 'milestone'; milestone: MilestoneInfo; repoPath: string; remoteUrl: string }

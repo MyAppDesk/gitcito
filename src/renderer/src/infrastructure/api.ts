@@ -53,7 +53,9 @@ import type {
   StackInfo,
   RepoInsights,
   ChangelogResult,
-  SnapshotInfo
+  SnapshotInfo,
+  VaultEntry,
+  VaultListResult
 } from '../../../shared/types'
 
 // Typed adapter over the IPC bridge — the only place that talks to window.api.
@@ -306,6 +308,14 @@ export const analyticsApi = {
 export const logApi = {
   get: () => window.api.log.get() as Promise<LogEntry[]>,
   clear: () => window.api.log.clear() as Promise<LogEntry[]>
+}
+
+export const vaultApi = {
+  list: (repoPath: string) => window.api.vault.list(repoPath) as Promise<VaultListResult>,
+  upsert: (scope: 'repo' | 'global', repoPath: string, entry: Partial<VaultEntry>) =>
+    window.api.vault.upsert(scope, repoPath, entry) as Promise<VaultListResult>,
+  remove: (scope: 'repo' | 'global', repoPath: string, id: string) =>
+    window.api.vault.remove(scope, repoPath, id) as Promise<VaultListResult>
 }
 
 export const shellApi = {

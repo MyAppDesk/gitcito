@@ -373,6 +373,23 @@ export const shots = [
     }
   },
   {
+    // Local vault — OS-keychain-encrypted secrets, per-repo + global.
+    out: 'vault',
+    repos: ['secrets'],
+    themes: ['dark'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['secrets']
+      await page.evaluate(async (r) => {
+        await window.api.vault.upsert('global', '', { key: 'OPENAI_API_KEY', value: 'sk-demo-abc123def456', note: 'shared across repos' })
+        await window.api.vault.upsert('global', '', { key: 'NPM_TOKEN', value: 'npm_demoTokenValue', note: '' })
+        await window.api.vault.upsert('repo', r, { key: 'DATABASE_URL', value: 'postgres://user:pass@db/app', note: 'staging' })
+        await window.api.vault.upsert('repo', r, { key: 'STRIPE_SECRET', value: 'sk_test_demo', note: '' })
+        window.__shot.settings.getState().openPageTab({ type: 'vault', repoPath: r })
+      }, repo)
+      await page.waitForTimeout(900)
+    }
+  },
+  {
     // Repository insights — churn, hotspots, contributors.
     out: 'insights',
     repos: ['insights'],

@@ -62,6 +62,13 @@ const api = {
     clear: (): Promise<unknown> => ipcRenderer.invoke('analytics:clear'),
     setRetention: (days: number): Promise<unknown> => ipcRenderer.invoke('analytics:setRetention', days)
   },
+  vault: {
+    list: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('vault:list', repoPath),
+    upsert: (scope: string, repoPath: string, entry: unknown): Promise<unknown> =>
+      ipcRenderer.invoke('vault:upsert', scope, repoPath, entry),
+    remove: (scope: string, repoPath: string, id: string): Promise<unknown> =>
+      ipcRenderer.invoke('vault:remove', scope, repoPath, id)
+  },
 
   log: {
     get: (): Promise<unknown> => ipcRenderer.invoke('log:get'),

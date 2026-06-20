@@ -49,6 +49,11 @@ interface PreloadApi {
     clear(): Promise<unknown>
     setRetention(days: number): Promise<unknown>
   }
+  vault: {
+    list(repoPath: string): Promise<unknown>
+    upsert(scope: string, repoPath: string, entry: unknown): Promise<unknown>
+    remove(scope: string, repoPath: string, id: string): Promise<unknown>
+  }
   log: {
     get(): Promise<unknown>
     clear(): Promise<unknown>

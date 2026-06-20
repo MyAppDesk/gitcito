@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { SplitSquareHorizontal } from 'lucide-react'
 import { highlightHtml, type HighlightLayer } from './FileSearchBar'
 import { highlightLine } from '../lib/highlight'
+import { maskSecretLine } from '../lib/secrets'
 
 interface DiffLine {
   kind: 'add' | 'del' | 'hunk' | 'meta' | 'ctx'
@@ -217,11 +218,14 @@ export function DiffViewer({
   diff,
   lang = '',
   highlightLayers = [],
+  maskValues = false,
   onStageHunk
 }: {
   diff: string
   lang?: string
   highlightLayers?: HighlightLayer[]
+  /** Mask secret values (KEY=••••) in displayed lines — secret files only. */
+  maskValues?: boolean
   onStageHunk?: (patch: string) => void
 }): React.JSX.Element {
   const lines = useMemo(() => parseDiff(diff), [diff])
@@ -340,8 +344,9 @@ export function DiffViewer({
               dangerouslySetInnerHTML={{
                 __html:
                   (() => {
-                    let html = highlightHtml(highlightLine(l.text, lang), highlightLayers)
-                    const wr = wordDiffOn ? wordRanges.get(i) : undefined
+                    const text = maskValues ? maskSecretLine(l.text) : l.text
+                    let html = highlightHtml(highlightLine(text, lang), highlightLayers)
+                    const wr = !maskValues && wordDiffOn ? wordRanges.get(i) : undefined
                     if (wr) html = markRanges(html, wr, l.kind === 'add' ? 'word-add' : 'word-del')
                     return html
                   })() || '&nbsp;'

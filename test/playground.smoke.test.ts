@@ -22,7 +22,25 @@ const EXPECTED = [
   'reflog-recovery',
   'binary-images-unicode',
   'deep-history-monorepo',
-  'image-showcase'
+  'image-showcase',
+  'submodule-states',
+  'gitignore-untrack',
+  'signed-commits',
+  'pr-ready-branch',
+  'lfs-assets',
+  'patch-apply',
+  'hooks',
+  'commit-template',
+  'line-staging',
+  'project-tree',
+  'command-palette',
+  'code-search',
+  'stacked-branches',
+  'insights',
+  'changelog',
+  'word-diff',
+  'snapshots',
+  'secrets'
 ]
 
 describe('playground fixtures', () => {

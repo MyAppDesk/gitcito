@@ -20,6 +20,10 @@ import type {
 import { gitApi, hostingApi } from '../infrastructure/api'
 import { useUIStore } from './ui'
 import { useSettingsStore } from './settings'
+import { isSecretFile } from '../lib/secrets'
+
+/** Repos already warned this session about pushing tracked secrets (don't nag). */
+const secretPushWarned = new Set<string>()
 
 export type Selection =
   | { type: 'commit'; hash: string }
@@ -576,10 +580,28 @@ export const repoActions = {
     return ok
   },
 
-  push: (path: string, force = false) => {
+  push: async (path: string, force = false): Promise<boolean> => {
     const repo = useRepoStore.getState().repos[path]
     const branch = repo?.branches.current
-    if (!branch) return Promise.resolve(false)
+    if (!branch) return false
+    // Secret guard: if the repo tracks credential-looking files, warn once per
+    // session before publishing them to a remote.
+    if (!secretPushWarned.has(path)) {
+      const tracked = await gitApi.listTrackedFiles(path).catch(() => [] as string[])
+      const secrets = tracked.filter(isSecretFile)
+      if (secrets.length > 0) {
+        secretPushWarned.add(path)
+        useUIStore.getState().openModal({
+          kind: 'confirm',
+          danger: true,
+          title: 'Push tracked secret files?',
+          message: `This repo tracks files that usually hold credentials:\n\n${secrets.slice(0, 10).join('\n')}${secrets.length > 10 ? `\n…and ${secrets.length - 10} more` : ''}\n\nPushing publishes them to the remote. Push anyway?`,
+          confirmLabel: 'Push anyway',
+          onConfirm: () => void repoActions.push(path, force)
+        })
+        return false
+      }
+    }
     if (!repo?.remotes.length) {
       useUIStore.getState().openModal({
         kind: 'confirm',

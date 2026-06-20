@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-  User, Bot, Palette, Plug, Check, ChevronRight, ChevronLeft,
+  User, Bot, Palette, Plug, Check, ChevronRight, ChevronLeft, ShieldCheck,
   Upload, AlertTriangle, Sun, Moon, Monitor, Loader2
 } from 'lucide-react'
 import { useSettingsStore } from '../stores/settings'
@@ -316,6 +316,14 @@ function IntegrationsStep({
             })
           }}
         />
+      </div>
+      <div className="onboarding-secret-note">
+        <ShieldCheck size={15} />
+        <span>
+          Tokens are stored locally. Gitcito also <strong>masks secret values</strong> (
+          <code>KEY=••••••</code> in <code>.env</code> / key files) and <strong>warns</strong> before you commit or
+          push them — toggle in Settings → General.
+        </span>
       </div>
     </>
   )

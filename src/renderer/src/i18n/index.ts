@@ -206,6 +206,10 @@ const en = {
   'settings.autoOpenChangelogHint':
     'Show what’s new in a tab automatically when gitcito updates to a new version.',
   'settings.viewChangelog': 'See what’s new',
+  'settings.security': 'Security',
+  'settings.maskSecrets': 'Mask secret values',
+  'settings.maskSecretsHint':
+    'Hide values in .env / key / credential files (KEY=••••••) in the diff, file and blame views. Display-only — use the eye toggle to reveal. Never changes the file or what you stage.',
   'changelog.title': 'What’s new',
   'changelog.checking': 'Checking for updates…',
   'changelog.live': 'Latest from GitHub',
@@ -460,6 +464,10 @@ const es: Dict = {
   'settings.autoOpenChangelog': 'Abrir novedades tras actualizar',
   'settings.autoOpenChangelogHint':
     'Muestra las novedades en una pestaña automáticamente cuando gitcito se actualiza a una nueva versión.',
+  'settings.security': 'Seguridad',
+  'settings.maskSecrets': 'Ocultar valores secretos',
+  'settings.maskSecretsHint':
+    'Oculta los valores en archivos .env / clave / credenciales (KEY=••••••) en el diff, el visor y el blame. Solo visual — usa el ojo para revelar. Nunca cambia el archivo ni lo que preparas.',
   'settings.viewChangelog': 'Ver novedades',
   'changelog.title': 'Novedades',
   'changelog.checking': 'Buscando actualizaciones…',

@@ -8697,3 +8697,20 @@ button.insights-row:hover { background: var(--bg-2); }
   border-radius: 6px;
   color: var(--text-0);
 }
+
+/* ─── Onboarding secret note ───────────────────────────────────────────── */
+.onboarding-secret-note {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  margin-top: 14px;
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-1);
+  background: var(--bg-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+}
+.onboarding-secret-note svg { color: var(--accent); flex-shrink: 0; margin-top: 1px; }
+.onboarding-secret-note code { font-size: 11px; }

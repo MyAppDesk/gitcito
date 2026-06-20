@@ -8,6 +8,7 @@ import { useUIStore, type MenuItem } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { FileListView } from './FileListView'
 import { lintCommit, subjectCounterLevel, SUBJECT_IDEAL_LEN } from '../lib/commitLint'
+import { isSecretFile } from '../lib/secrets'
 import {
   FileSearchBar,
   EMPTY_FILTER,
@@ -449,13 +450,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
     }
   }
 
-  const doCommit = async (): Promise<void> => {
-    let message = description.trim() ? `${summary.trim()}\n\n${description.trim()}` : summary.trim()
-    if (!message) return
-    const trailer = `Co-authored-by: ${MYAPPDESK_COAUTHOR}`
-    if (activeProfile().ai.coAuthor !== false && !message.includes(trailer)) {
-      message = `${message}\n\n${trailer}`
-    }
+  const runCommit = async (message: string): Promise<void> => {
     const ok = await repoActions.commit(path, message, amend)
     if (ok) {
       setSummary('')
@@ -463,6 +458,32 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
       setAmend(false)
       setFileView(null)
     }
+  }
+
+  const doCommit = async (): Promise<void> => {
+    let message = description.trim() ? `${summary.trim()}\n\n${description.trim()}` : summary.trim()
+    if (!message) return
+    const trailer = `Co-authored-by: ${MYAPPDESK_COAUTHOR}`
+    if (activeProfile().ai.coAuthor !== false && !message.includes(trailer)) {
+      message = `${message}\n\n${trailer}`
+    }
+    // Secret guard: warn before writing credential-looking files into history.
+    const secretFiles = staged.filter((f) => isSecretFile(f.path)).map((f) => f.path)
+    if (secretFiles.length > 0) {
+      useUIStore.getState().openModal({
+        kind: 'confirm',
+        danger: true,
+        title: secretFiles.length === 1 ? 'Commit a secret file?' : `Commit ${secretFiles.length} secret files?`,
+        message: `These staged files usually hold credentials:\n\n${secretFiles.join('\n')}\n\nCommitting writes their contents into git history (hard to fully erase later). Untrack & .gitignore them instead?`,
+        confirmLabel: 'Commit anyway',
+        onConfirm: () => void runCommit(message),
+        secondaryLabel: 'Ignore & untrack',
+        secondaryDanger: false,
+        onSecondary: () => void repoActions.ignoreAndUntrack(path, secretFiles, secretFiles)
+      })
+      return
+    }
+    await runCommit(message)
   }
 
   // Partition the remaining space between the Unstaged and Staged lists.

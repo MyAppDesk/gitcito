@@ -8,6 +8,8 @@ import { useT } from '../i18n'
 import { DiffViewer } from './DiffViewer'
 import { buildQueryRegExp, highlightHtml, type HighlightLayer } from './FileSearchBar'
 import { fileExt, guessLanguage, highlightLine } from '../lib/highlight'
+import { isSecretFile, maskSecretLine } from '../lib/secrets'
+import { Eye, EyeOff } from 'lucide-react'
 import { ImageDiff } from './ImageDiff'
 import { PreviewPane } from './PreviewPane'
 import { renderMarkdown } from '../preview/markdown'
@@ -128,6 +130,13 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
   const [saving, setSaving] = useState(false)
 
   const { repoPath, file, mode, source } = view
+
+  // Secret masking: KEY=•••• in .env/key files, on by default, per-view reveal.
+  const maskSecretsSetting = useSettingsStore((s) => s.settings.maskSecrets)
+  const [revealSecrets, setRevealSecrets] = useState(false)
+  const fileIsSecret = isSecretFile(file)
+  const maskOn = fileIsSecret && maskSecretsSetting && !revealSecrets
+  const maybeMask = (l: string): string => (maskOn ? maskSecretLine(l) : l)
 
   // Re-fetch working-tree content when the window regains focus/visibility.
   // Suspended while editing so a window-focus reload can't discard the buffer.
@@ -432,6 +441,15 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
             </button>
           ))}
         </div>
+        {fileIsSecret && maskSecretsSetting && (
+          <button
+            className="btn ghost small"
+            title={revealSecrets ? 'Hide secret values' : 'Secret values are masked — click to reveal'}
+            onClick={() => setRevealSecrets((v) => !v)}
+          >
+            {revealSecrets ? <EyeOff size={13} /> : <Eye size={13} />} {revealSecrets ? 'Hide' : 'Reveal'}
+          </button>
+        )}
         {canExplain && aiEnabled && (
           <button
             className="btn ghost small fv-explain-btn"
@@ -538,6 +556,7 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
             diff={content}
             lang={lang}
             highlightLayers={layers}
+            maskValues={maskOn}
             onStageHunk={
               source.type === 'wip' && !source.staged && !source.untracked
                 ? async (patch) => {
@@ -597,7 +616,7 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
                 <span className="code-no">{i + 1}</span>
                 <span
                   className="code-text"
-                  dangerouslySetInnerHTML={{ __html: highlightHtml(highlightLine(l, lang), layers) || '&nbsp;' }}
+                  dangerouslySetInnerHTML={{ __html: highlightHtml(highlightLine(maybeMask(l), lang), layers) || '&nbsp;' }}
                 />
               </div>
             ))}
@@ -620,7 +639,7 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
                 <span className="code-no">{b.lineNo}</span>
                 <span
                   className="code-text"
-                  dangerouslySetInnerHTML={{ __html: highlightHtml(highlightLine(b.text, lang), layers) || '&nbsp;' }}
+                  dangerouslySetInnerHTML={{ __html: highlightHtml(highlightLine(maybeMask(b.text), lang), layers) || '&nbsp;' }}
                 />
               </div>
             ))}

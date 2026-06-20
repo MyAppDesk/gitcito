@@ -65,6 +65,8 @@
 - **Image diff** with side-by-side / swipe comparison for changed images.
 - **Conflict resolver** with ours / theirs / per-line picking and an editable output pane.
 - **Smart .gitignore** — ignore a file, `*.ext`, or a folder, written to the closest folder's `.gitignore` or the repo root, with a live preview.
+- **Secret masking** — values in `.env*`, `*.pem`, `*.key`, `id_rsa`, `credentials.*` and friends render as `KEY=••••••` in the diff, file and blame views, so a screenshot or screen-share never leaks them. On by default; an eye-toggle reveals them per view, and it's display-only (never touches the file or what you stage).
+- **Secret guard** — committing a secret-looking file pops a confirm with a one-click **Ignore & untrack**, and pushing a repo that *tracks* secrets warns first (once per session). `.env.example` / `.sample` / `.template` are treated as safe templates.
 
 ### Branching, merging & history surgery
 - **Stacked branches** — build a chain of dependent branches (Graphite-style), see the stack visualised bottom→top with per-level commit counts, and **restack** to cascade-rebase the whole chain (`rebase --onto`, so parent rewrites don't duplicate commits) when a lower branch changes. Open a PR for each level against its parent. Parent links live in git config, so they travel with the repo.
@@ -126,6 +128,21 @@
 - **Undo / redo**, a first-run onboarding wizard, and **i18n** (English & Spanish) out of the box.
 
 ## 🖼️ Screenshots
+
+### Command palette & code search
+| Command palette (`⌘K`) | Code search (`⌘⇧F`) |
+|---|---|
+| ![Fuzzy command palette grouped by actions and branches](docs/screenshots/command-palette.png) | ![Working-tree code search with grouped, syntax-highlighted hits](docs/screenshots/code-search.png) |
+
+### Insights & stacks
+| Repository insights | Branch stack |
+|---|---|
+| ![Insights dashboard: churn, contributors and hotspots](docs/screenshots/insights.png) | ![Branch stack with restack and per-level PRs](docs/screenshots/branch-stack.png) |
+
+### Safety net & changelog
+| WIP snapshots | Changelog generator |
+|---|---|
+| ![WIP snapshot list with restore and auto interval](docs/screenshots/snapshots.png) | ![Conventional-commit changelog grouped by type](docs/screenshots/changelog-gen.png) |
 
 ### In motion
 | Browse commits |  Light → Dark |

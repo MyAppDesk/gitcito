@@ -18,6 +18,7 @@ import {
   Palette,
   Check,
   Settings2,
+  ShieldCheck,
   ExternalLink,
   Sun,
   Moon,
@@ -1414,6 +1415,24 @@ function GeneralPage(): React.JSX.Element {
         <span className="settings-toggle-copy">
           <strong>{t('settings.autoOpenChangelog')}</strong>
           <span className="settings-hint">{t('settings.autoOpenChangelogHint')}</span>
+        </span>
+      </label>
+
+      <h4>
+        <ShieldCheck size={14} /> {t('settings.security')}
+      </h4>
+      <label className="settings-toggle-card">
+        <input
+          type="checkbox"
+          checked={settings.maskSecrets}
+          onChange={(e) => update((s) => ({ ...s, maskSecrets: e.target.checked }))}
+        />
+        <span className="settings-toggle-control" aria-hidden="true">
+          <span className="settings-toggle-thumb" />
+        </span>
+        <span className="settings-toggle-copy">
+          <strong>{t('settings.maskSecrets')}</strong>
+          <span className="settings-hint">{t('settings.maskSecretsHint')}</span>
         </span>
       </label>
 

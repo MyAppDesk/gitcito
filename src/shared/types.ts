@@ -848,6 +848,8 @@ export interface AppSettings {
   autoOpenChangelog: boolean
   /** Minutes between automatic WIP snapshots (0 = off). */
   wipSnapshotMinutes: number
+  /** Mask secret values (KEY=••••) in .env/key files in the diff & file viewer. */
+  maskSecrets: boolean
   /** Last app version the user has seen the changelog for. Undefined until the
    *  first run that records it; used to detect upgrades. */
   lastSeenVersion?: string
@@ -1007,6 +1009,7 @@ export function defaultSettings(): AppSettings {
     sidebarHidden: [],
     onboardingCompleted: false,
     autoOpenChangelog: true,
-    wipSnapshotMinutes: 0
+    wipSnapshotMinutes: 0,
+    maskSecrets: true
   }
 }

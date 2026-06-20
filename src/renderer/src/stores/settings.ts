@@ -136,6 +136,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     settings.sidebarHidden = settings.sidebarHidden ?? sd.sidebarHidden
     settings.autoOpenChangelog = settings.autoOpenChangelog ?? sd.autoOpenChangelog
     settings.wipSnapshotMinutes = settings.wipSnapshotMinutes ?? sd.wipSnapshotMinutes
+    settings.maskSecrets = settings.maskSecrets ?? sd.maskSecrets
     set({ settings, loaded: true })
   },
 

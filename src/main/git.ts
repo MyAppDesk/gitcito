@@ -747,12 +747,11 @@ export const gitService = {
         )
         const parentTip = (await git.revparse([parent]).catch(() => '')).trim()
         // Restack needed when the parent tip is not yet an ancestor of branch.
+        // (merge-base --is-ancestor signals via exit code, which simple-git does
+        // not reliably reject on — compare the merge-base sha instead.)
         if (parentTip) {
-          const isAncestor = await git
-            .raw(['merge-base', '--is-ancestor', parentTip, name])
-            .then(() => true)
-            .catch(() => false)
-          needsRestack = !isAncestor
+          const base = (await git.raw(['merge-base', parentTip, name]).catch(() => '')).trim()
+          needsRestack = base !== parentTip
         }
       }
       branches.push({ name, parent, isCurrent: name === current, ahead, needsRestack })
@@ -771,11 +770,9 @@ export const gitService = {
     for (const b of info.branches) {
       if (!b.parent) continue
       const parentTip = (await git.revparse([b.parent])).trim()
-      const isAncestor = await git
-        .raw(['merge-base', '--is-ancestor', parentTip, b.name])
-        .then(() => true)
-        .catch(() => false)
-      if (isAncestor) {
+      const mergeBase = (await git.raw(['merge-base', parentTip, b.name]).catch(() => '')).trim()
+      if (mergeBase === parentTip) {
+        // Parent tip already in this branch — nothing to replay.
         await git.raw(['config', `branch.${b.name}.gitcitobase`, parentTip])
         continue
       }
@@ -1022,6 +1019,12 @@ export const gitService = {
       .catch(() => '')
     // De-dupe (a path can appear in both cached + others briefly during edits).
     return Array.from(new Set(raw.split('\0').filter(Boolean)))
+  },
+
+  /** Tracked files only (in the index) — for the push-time secret guard. */
+  async listTrackedFiles(repoPath: string): Promise<string[]> {
+    const raw = await gitFor(repoPath).raw(['ls-files', '--cached', '-z']).catch(() => '')
+    return raw.split('\0').filter(Boolean)
   },
 
   /**

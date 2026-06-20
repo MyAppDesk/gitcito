@@ -313,6 +313,75 @@ export const shots = [
       )
       await page.waitForTimeout(800)
     }
+  },
+  {
+    // Command palette (⌘K) — fuzzy jump to branches / commits / files / actions.
+    out: 'command-palette',
+    repos: ['command-palette'],
+    themes: ['dark'],
+    drive: async (page) => {
+      await page.evaluate(() => window.__shot.ui.getState().toggleCommandPalette())
+      await page.waitForTimeout(300)
+      await page.fill('.cmdp-input', 'feat').catch(() => {})
+      await page.waitForTimeout(400)
+    }
+  },
+  {
+    // In-app code search (⌘⇧F) — git grep across the working tree.
+    out: 'code-search',
+    repos: ['code-search'],
+    themes: ['dark'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['code-search']
+      await page.evaluate((p) => window.__shot.ui.getState().openModal({ kind: 'code-search', repoPath: p }), repo)
+      await page.waitForTimeout(300)
+      await page.fill('.codesearch-input', 'TODO').catch(() => {})
+      await page.waitForTimeout(600)
+    }
+  },
+  {
+    // Branch stack — dependent branches with restack.
+    out: 'branch-stack',
+    repos: ['stacked-branches'],
+    themes: ['dark'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['stacked-branches']
+      await page.evaluate((p) => window.__shot.ui.getState().openModal({ kind: 'stack', repoPath: p }), repo)
+      await page.waitForTimeout(700)
+    }
+  },
+  {
+    // WIP snapshots — uncommitted-work safety net.
+    out: 'snapshots',
+    repos: ['snapshots'],
+    themes: ['dark'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['snapshots']
+      await page.evaluate((p) => window.__shot.ui.getState().openModal({ kind: 'snapshots', repoPath: p }), repo)
+      await page.waitForTimeout(700)
+    }
+  },
+  {
+    // Conventional-commit changelog generator.
+    out: 'changelog-gen',
+    repos: ['changelog'],
+    themes: ['dark'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['changelog']
+      await page.evaluate((p) => window.__shot.ui.getState().openModal({ kind: 'changelog-gen', repoPath: p }), repo)
+      await page.waitForTimeout(1200)
+    }
+  },
+  {
+    // Repository insights — churn, hotspots, contributors.
+    out: 'insights',
+    repos: ['insights'],
+    themes: ['dark'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['insights']
+      await page.evaluate((p) => window.__shot.settings.getState().openPageTab({ type: 'insights', repoPath: p }), repo)
+      await page.waitForTimeout(1800)
+    }
   }
 ]
 

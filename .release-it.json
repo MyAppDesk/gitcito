@@ -1,6 +1,6 @@
 {
   "hooks": {
-    "before:init": "node scripts/check-screenshots.mjs"
+    "before:init": ["node scripts/clear-git-lock.mjs", "node scripts/check-screenshots.mjs"]
   },
   "git": {
     "commitMessage": "chore: release v${version}",

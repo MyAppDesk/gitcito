@@ -52,7 +52,8 @@ import type {
   GitHubNotification,
   StackInfo,
   RepoInsights,
-  ChangelogResult
+  ChangelogResult,
+  SnapshotInfo
 } from '../../../shared/types'
 
 // Typed adapter over the IPC bridge — the only place that talks to window.api.
@@ -238,7 +239,11 @@ export const gitApi = {
   repoInsights: (path: string, sinceDays?: number) => call<RepoInsights>('repoInsights', path, sinceDays),
   generateChangelog: (path: string, opts?: { from?: string; to?: string; version?: string }) =>
     call<ChangelogResult>('generateChangelog', path, opts),
-  writeChangelogFile: (path: string, markdown: string) => call<void>('writeChangelogFile', path, markdown)
+  writeChangelogFile: (path: string, markdown: string) => call<void>('writeChangelogFile', path, markdown),
+  createSnapshot: (path: string, auto?: boolean) => call<SnapshotInfo | null>('createSnapshot', path, auto),
+  listSnapshots: (path: string) => call<SnapshotInfo[]>('listSnapshots', path),
+  restoreSnapshot: (path: string, sha: string) => call<void>('restoreSnapshot', path, sha),
+  deleteSnapshot: (path: string, ref: string) => call<void>('deleteSnapshot', path, ref)
 }
 
 export const settingsApi = {

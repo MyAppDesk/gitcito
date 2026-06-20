@@ -54,7 +54,7 @@
 - **Insights** — a repo dashboard from your git history: summary cards (commits/day, contributors, files touched, lines changed), a **weekly churn** chart (additions vs deletions), **top contributors** (commits + lines), and **file hotspots** (most-changed files, click straight into a file's history). Filter by 30d / 90d / 1y / all.
 
 ### Working with changes
-- **Commit composer** with message styles: Auto, Conventional, Gitmoji, Ticket, Plain — even Caveman or Haiku.
+- **Commit composer** with message styles: Auto, Conventional, Gitmoji, Ticket, Plain — even Caveman or Haiku. A live **message linter** flags subject length (with a char counter), trailing periods, non-imperative/lowercase subjects and over-wide body lines — hints, never a hard gate.
 - **Stage / unstage / discard**, down to **individual hunks — or individual lines** picked right in the diff.
 - **Amend**, persistent drafts, and auto-prefilled messages during merge / cherry-pick / revert.
 - **Commit templates** (`commit.template` / `.gitmessage`) prefill the composer; comment lines are stripped.
@@ -75,6 +75,7 @@
 
 ### Recovery, safety & forensics
 - **Reflog viewer** — every move of `HEAD` (and branches), with checkout / new-branch / hard-reset from any past entry. The "undo my mistake" net.
+- **WIP snapshots** — a safety net for uncommitted work: capture your tracked changes + staged index as a `git stash create` commit pinned under `refs/gitcito/wip` (never touches your working tree or stash list). Take one manually or let it run automatically every 5 / 15 / 30 min, then restore or delete any snapshot.
 - **Guided bisect** — mark commits good/bad, watch the range narrow, land on the first bad commit.
 - **Commit signing** (GPG / SSH / X.509) with a per-repo toggle and a **verified / unverified / expired** badge in a dedicated, reorderable signature column.
 

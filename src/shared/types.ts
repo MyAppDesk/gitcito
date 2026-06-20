@@ -685,6 +685,15 @@ export interface ChangelogResult {
   count: number // commits included
 }
 
+/** A saved WIP snapshot (a `git stash create` commit kept under refs/gitcito/wip). */
+export interface SnapshotInfo {
+  ref: string // full ref name (refs/gitcito/wip/<ts>)
+  sha: string
+  time: number // unix seconds
+  files: number // changed files captured
+  auto: boolean // created by the timer vs. manually
+}
+
 /** One entry from `git reflog` — the recovery net for lost/rewound commits. */
 export interface ReflogEntry {
   sha: string
@@ -819,6 +828,8 @@ export interface AppSettings {
   onboardingCompleted: boolean
   /** Auto-open the changelog page tab after the app updates to a new version. */
   autoOpenChangelog: boolean
+  /** Minutes between automatic WIP snapshots (0 = off). */
+  wipSnapshotMinutes: number
   /** Last app version the user has seen the changelog for. Undefined until the
    *  first run that records it; used to detect upgrades. */
   lastSeenVersion?: string
@@ -977,6 +988,7 @@ export function defaultSettings(): AppSettings {
     sidebarOrder: ['local', 'remotes', 'stashes', 'tags', 'prs', 'issues', 'milestones', 'releases', 'worktrees', 'submodules'],
     sidebarHidden: [],
     onboardingCompleted: false,
-    autoOpenChangelog: true
+    autoOpenChangelog: true,
+    wipSnapshotMinutes: 0
   }
 }

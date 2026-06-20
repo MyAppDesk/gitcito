@@ -135,6 +135,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       settings.sidebarOrder && settings.sidebarOrder.length ? settings.sidebarOrder : sd.sidebarOrder
     settings.sidebarHidden = settings.sidebarHidden ?? sd.sidebarHidden
     settings.autoOpenChangelog = settings.autoOpenChangelog ?? sd.autoOpenChangelog
+    settings.wipSnapshotMinutes = settings.wipSnapshotMinutes ?? sd.wipSnapshotMinutes
     set({ settings, loaded: true })
   },
 

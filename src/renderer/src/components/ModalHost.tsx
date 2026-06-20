@@ -23,6 +23,8 @@ import { PRDetailModal } from './PRDetailModal'
 import { CodeSearchModal } from './CodeSearchModal'
 import { StackModal } from './StackModal'
 import { ChangelogGenModal } from './ChangelogGenModal'
+import { SnapshotsModal } from './SnapshotsModal'
+import { ErrorBoundary } from './ErrorBoundary'
 
 function GroupColorModal({ spec }: { spec: Extract<ModalSpec, { kind: 'group-color' }> }): React.JSX.Element {
   const closeModal = useUIStore((s) => s.closeModal)
@@ -1267,6 +1269,7 @@ export function ModalHost(): React.JSX.Element {
             <button className="modal-close" onClick={closeModal}>
               <X size={15} />
             </button>
+            <ErrorBoundary key={modal.kind} label="This dialog hit an error" onReset={closeModal}>
             {modal.kind === 'input' && <InputModal spec={modal} />}
             {modal.kind === 'create-branch' && <CreateBranchModal spec={modal} />}
             {modal.kind === 'confirm' && <ConfirmModal spec={modal} />}
@@ -1291,6 +1294,7 @@ export function ModalHost(): React.JSX.Element {
             {modal.kind === 'code-search' && <CodeSearchModal repoPath={modal.repoPath} />}
             {modal.kind === 'stack' && <StackModal repoPath={modal.repoPath} />}
             {modal.kind === 'changelog-gen' && <ChangelogGenModal repoPath={modal.repoPath} />}
+            {modal.kind === 'snapshots' && <SnapshotsModal repoPath={modal.repoPath} />}
             {modal.kind === 'bisect' && <BisectModal repoPath={modal.repoPath} />}
             {modal.kind === 'hooks' && <HooksModal repoPath={modal.repoPath} />}
             {modal.kind === 'lfs' && <LfsModal repoPath={modal.repoPath} />}
@@ -1300,6 +1304,7 @@ export function ModalHost(): React.JSX.Element {
             {modal.kind === 'pr-detail' && (
               <PRDetailModal repoPath={modal.repoPath} remoteUrl={modal.remoteUrl} number={modal.number} />
             )}
+            </ErrorBoundary>
           </motion.div>
         </motion.div>
       )}

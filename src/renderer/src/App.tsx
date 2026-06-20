@@ -358,6 +358,17 @@ export default function App(): React.JSX.Element {
     return () => clearInterval(interval)
   }, [activeRepoPath, settings.autoFetchMinutes])
 
+  // Optional periodic WIP snapshot — a silent safety net for uncommitted work.
+  useEffect(() => {
+    const minutes = settings.wipSnapshotMinutes ?? 0
+    if (!activeRepoPath || minutes <= 0) return
+    const interval = setInterval(
+      () => void window.api.git('createSnapshot', activeRepoPath, true).catch(() => {}),
+      minutes * 60_000
+    )
+    return () => clearInterval(interval)
+  }, [activeRepoPath, settings.wipSnapshotMinutes])
+
   const repo = activeRepoPath ? repos[activeRepoPath] : null
   const forceConflictPanel = !!repo?.mergeState && (repo.status?.conflicted.length ?? 0) > 0
 

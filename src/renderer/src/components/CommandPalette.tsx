@@ -22,7 +22,8 @@ import {
   Search,
   Bell,
   Layers,
-  BarChart3
+  BarChart3,
+  Camera
 } from 'lucide-react'
 import { useUIStore } from '../stores/ui'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
@@ -121,6 +122,7 @@ export function CommandPalette(): React.JSX.Element {
       { id: 'code-search', title: 'Search code…', group: 'Actions', keywords: 'grep find text content history pickaxe', icon: <Search size={15} />, run: act(() => ui.openModal({ kind: 'code-search', repoPath: path })) },
       { id: 'terminal', title: 'Toggle integrated terminal', group: 'Actions', keywords: 'shell console pty', icon: <TerminalSquare size={15} />, run: act(() => ui.toggleTerminal()) },
       { id: 'reflog', title: 'Open reflog', group: 'Actions', keywords: 'recovery undo history head', icon: <History size={15} />, run: act(() => ui.openModal({ kind: 'reflog', repoPath: path })) },
+      { id: 'snapshots', title: 'WIP snapshots…', group: 'Actions', keywords: 'safety net stash backup auto save recover', icon: <Camera size={15} />, run: act(() => ui.openModal({ kind: 'snapshots', repoPath: path })) },
       { id: 'bisect', title: 'Start bisect', group: 'Actions', keywords: 'debug find bug', icon: <Bug size={15} />, run: act(() => ui.openModal({ kind: 'bisect', repoPath: path })) },
       { id: 'hooks', title: 'Manage git hooks', group: 'Actions', keywords: 'pre-commit', icon: <Webhook size={15} />, run: act(() => ui.openModal({ kind: 'hooks', repoPath: path })) },
       { id: 'lfs', title: 'Manage Git LFS', group: 'Actions', keywords: 'large file storage', icon: <Boxes size={15} />, run: act(() => ui.openModal({ kind: 'lfs', repoPath: path })) },

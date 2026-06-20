@@ -7,6 +7,7 @@ import { repoActions, useRepoStore, type RepoData } from '../stores/repo'
 import { useUIStore, type MenuItem } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { FileListView } from './FileListView'
+import { lintCommit, subjectCounterLevel, SUBJECT_IDEAL_LEN } from '../lib/commitLint'
 import {
   FileSearchBar,
   EMPTY_FILTER,
@@ -46,6 +47,8 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
   const summary = useRepoStore((s) => s.drafts[repo.path] ?? '')
   const setSummary = useRepoStore((s) => s.setDraft).bind(null, repo.path)
   const [description, setDescription] = useState('')
+  const lintHints = useMemo(() => lintCommit(summary, description), [summary, description])
+  const subjLevel = subjectCounterLevel(summary.trim().length)
   const [amend, setAmend] = useState(false)
   const [aiBusy, setAiBusy] = useState(false)
   const [aiStageBusy, setAiStageBusy] = useState(false)
@@ -693,6 +696,11 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
             maxLength={100}
             onChange={(e) => setSummary(e.target.value)}
           />
+          {summary.trim().length > 0 && (
+            <span className={`commit-counter ${subjLevel}`} title={`Subject length (aim for ≤ ${SUBJECT_IDEAL_LEN})`}>
+              {summary.trim().length}
+            </span>
+          )}
           {aiEnabled && (
             <motion.button
               className="ai-btn"
@@ -712,6 +720,15 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
           rows={3}
           onChange={(e) => setDescription(e.target.value)}
         />
+        {lintHints.length > 0 && (
+          <ul className="commit-lint">
+            {lintHints.map((h, i) => (
+              <li key={i} className={`commit-lint-item ${h.level}`}>
+                {h.text}
+              </li>
+            ))}
+          </ul>
+        )}
         <div className="commit-actions">
           <label className="amend-check">
             <input

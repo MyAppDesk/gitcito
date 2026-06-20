@@ -48,7 +48,8 @@ import type {
   AuthorStat,
   FileHotspot,
   ChurnPoint,
-  ChangelogResult
+  ChangelogResult,
+  SnapshotInfo
 } from '../shared/types'
 import { recordEvent } from './analytics'
 import { recordLog } from './log'
@@ -2209,6 +2210,63 @@ export const gitService = {
     if (count === 0) out.push('_No commits in this range._', '')
 
     return { markdown: out.join('\n').trimEnd() + '\n', count }
+  },
+
+  // ─── WIP snapshots ─────────────────────────────────────────────────────
+  // A lightweight safety net: `git stash create` builds a commit capturing the
+  // working tree + index WITHOUT touching either or the stash list. We pin it
+  // under refs/gitcito/wip/<ts> so it survives gc and is browseable/restorable.
+
+  /** Take a snapshot of the current changes. Returns null when nothing changed. */
+  async createSnapshot(repoPath: string, auto = false, max = 30): Promise<SnapshotInfo | null> {
+    const git = gitFor(repoPath)
+    const status = await git.status().catch(() => null)
+    if (!status || status.isClean()) return null
+    const ts = Math.floor(Date.now() / 1000)
+    const label = `gitcito-wip ${new Date(ts * 1000).toISOString()}${auto ? ' (auto)' : ''}`
+    const sha = (await git.raw(['stash', 'create', label]).catch(() => '')).trim()
+    if (!sha) return null
+    const ref = `refs/gitcito/wip/${ts}${auto ? '-a' : '-m'}`
+    await git.raw(['update-ref', ref, sha])
+    // Prune oldest beyond `max`.
+    const all = await gitService.listSnapshots(repoPath)
+    for (const old of all.slice(max)) await git.raw(['update-ref', '-d', old.ref]).catch(() => {})
+    const files = await git
+      .raw(['stash', 'show', '--name-only', sha])
+      .then((o) => o.split('\n').filter(Boolean).length)
+      .catch(() => 0)
+    return { ref, sha, time: ts, files, auto }
+  },
+
+  /** All saved snapshots, newest first. */
+  async listSnapshots(repoPath: string): Promise<SnapshotInfo[]> {
+    const git = gitFor(repoPath)
+    // NB: for-each-ref does NOT interpret %xHH hex escapes (that's a git-log
+    // pretty-format feature). refname/sha/unixtime contain no spaces, so a plain
+    // space is a safe field separator here.
+    const raw = await git
+      .raw(['for-each-ref', '--sort=-creatordate', '--format=%(refname) %(objectname) %(creatordate:unix)', 'refs/gitcito/wip'])
+      .catch(() => '')
+    const out: SnapshotInfo[] = []
+    for (const line of raw.split('\n')) {
+      if (!line.trim()) continue
+      const [ref, sha, time] = line.split(' ')
+      const files = await git
+        .raw(['stash', 'show', '--name-only', sha])
+        .then((o) => o.split('\n').filter(Boolean).length)
+        .catch(() => 0)
+      out.push({ ref, sha, time: Number(time), files, auto: ref.endsWith('-a') })
+    }
+    return out
+  },
+
+  /** Apply a snapshot back into the working tree (does not delete it). */
+  async restoreSnapshot(repoPath: string, sha: string): Promise<void> {
+    await gitFor(repoPath).raw(['stash', 'apply', sha])
+  },
+
+  async deleteSnapshot(repoPath: string, ref: string): Promise<void> {
+    await gitFor(repoPath).raw(['update-ref', '-d', ref]).catch(() => {})
   },
 
   /** Prepend a changelog block to CHANGELOG.md (created if absent). */

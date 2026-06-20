@@ -16,8 +16,10 @@
 > [!WARNING]
 > **Honest disclaimer.** Gitcito is young and some things genuinely haven't been
 > tested yet. As of now, treat these as _aspirational_:
-> - **Azure DevOps**, **Bitbucket** and **GitLab** integrations. Tokens are
->   stored and the plumbing exists, but only **GitHub** is properly battle-tested.
+> - **Azure DevOps**, **Bitbucket** and **GitLab** integrations. **Listing and
+>   creating** PRs/MRs now works on all four hosts; PR _detail / review / merge_
+>   are still GitHub-only. Tokens are stored and the plumbing exists, but only
+>   **GitHub** is properly battle-tested.
 > - Any **AI provider that isn't OpenAI**. The call shape is OpenAI-compatible,
 >   so others _should_ work, but they're unverified.
 >
@@ -25,7 +27,7 @@
 > nothing (or are hidden) on other hosts — even if a token is stored:
 > - **Inline CI status** (GitHub Actions check-runs on the commit row).
 > - **Pull request review, comment & merge** (PR _detail_, approve / request
->   changes, and merge / squash / rebase). PR _creation_ also works on Azure DevOps.
+>   changes, and merge / squash / rebase). PR/MR _creation & listing_ also work on GitLab, Bitbucket and Azure DevOps.
 > - **Issues** browsing & the issue tab, **milestones**, and **Projects v2 fields**
 >   (Priority / Start / Target / Effort).
 > - **Releases** browsing in the sidebar / changelog page.
@@ -94,7 +96,7 @@
 - **Git hooks manager** — list, enable/disable, edit and create hooks; detects a custom `core.hooksPath` and pre-commit framework.
 
 ### Hosting & pull requests
-- **Create pull requests** from the app — branch dropdowns, prefilled title/body from the branch's commits, draft toggle; from branch-compare, the graph, the PR panel `+`, or an issue (auto-`Closes #N`).
+- **Create pull / merge requests** from the app — branch dropdowns, prefilled title/body from the branch's commits, draft toggle; from branch-compare, the graph, the PR panel `+`, or an issue (auto-`Closes #N`). Works on **GitHub, GitLab, Bitbucket and Azure DevOps**, and open PRs/MRs are listed in the sidebar for all four.
 - **Review PRs** _(GitHub only)_ — open conversation + review state, **inline review threads** (line comments grouped by file:line with diff-hunk context, with reply), comment, approve / request changes, and **merge** (merge / squash / rebase).
 - **Issues** _(GitHub only)_ — browse open issues, then a full **issue tab**: body, comments, labels, assignees, milestone, Projects v2 fields (Priority/Start/Target/Effort), close/reopen, and **create a branch for an issue** (with AI naming).
 - **Milestones** _(GitHub only)_ — a sidebar list with progress, and a **milestone tab** showing its issues.
@@ -102,7 +104,7 @@
 - **Notifications inbox** _(GitHub only)_ — your whole GitHub inbox (review requests, mentions, CI activity…) across every repo, with unread / all filters, mark-one / mark-all read, and one click to open. Reachable from the toolbar bell, the command palette, or `⌘K`.
 - **Clone or create repositories** on your hosting accounts without leaving the app.
 - **Per-profile tokens** for multiple accounts / orgs.
-- _GitHub is the battle-tested path (PR create/review/merge, issues, milestones, project fields); GitLab, Bitbucket & Azure plumbing exists but is unverified — see the disclaimer above._
+- _GitHub is the battle-tested path (PR create/review/merge, issues, milestones, project fields). GitLab, Bitbucket & Azure support PR/MR listing + creation; their detail/review/merge are not implemented yet — see the disclaimer above._
 
 ### AI assist
 - **Commit messages** — summary (and optional body) generated from your staged diff, in your chosen style.

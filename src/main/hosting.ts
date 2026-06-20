@@ -45,15 +45,98 @@ export function parseRemoteUrl(url: string): ParsedRemote | null {
   m = /([^/@:]+)\.visualstudio\.com\/([^/]+)\/_git\/([^/]+?)(\.git)?$/.exec(url)
   if (m) return { provider: 'azure', owner: m[1], project: decodeURIComponent(m[2]), repo: decodeURIComponent(m[3]) }
 
+  // GitLab: namespace may be multi-level (group/subgroup/repo) — owner holds the
+  // full namespace path, repo the last segment.
+  m = /gitlab\.com[/:](.+?)(?:\.git)?$/.exec(url)
+  if (m) {
+    const full = m[1]
+    const i = full.lastIndexOf('/')
+    if (i > 0) return { provider: 'gitlab', owner: full.slice(0, i), project: '', repo: full.slice(i + 1) }
+  }
+
+  m = /bitbucket\.org[/:]([^/]+)\/(.+?)(?:\.git)?$/.exec(url)
+  if (m) return { provider: 'bitbucket', owner: m[1], project: '', repo: m[2] }
+
   return null
+}
+
+/** Bitbucket auth: an "app password" is stored as user:password → Basic; a raw
+ *  access token → Bearer. */
+function bitbucketAuth(token: string): string {
+  return token.includes(':') ? `Basic ${Buffer.from(token).toString('base64')}` : `Bearer ${token}`
 }
 
 async function listPullRequests(
   remoteUrl: string,
-  tokens: { github?: string; azure?: string }
+  tokens: { github?: string; azure?: string; gitlab?: string; bitbucket?: string }
 ): Promise<{ provider: HostingProvider; prs: PullRequest[] }> {
   const parsed = parseRemoteUrl(remoteUrl)
   if (!parsed) return { provider: null, prs: [] }
+
+  // GitLab merge requests
+  if (parsed.provider === 'gitlab') {
+    if (!tokens.gitlab) return { provider: 'gitlab', prs: [] }
+    const pid = encodeURIComponent(`${parsed.owner}/${parsed.repo}`)
+    const res = await fetch(
+      `https://gitlab.com/api/v4/projects/${pid}/merge_requests?state=opened&per_page=30`,
+      { headers: { 'PRIVATE-TOKEN': tokens.gitlab } }
+    )
+    if (!res.ok) throw new Error(`GitLab API error (${res.status})`)
+    const data = (await res.json()) as Array<{
+      iid: number
+      title: string
+      author: { username: string }
+      source_branch: string
+      target_branch: string
+      web_url: string
+      draft?: boolean
+      work_in_progress?: boolean
+    }>
+    return {
+      provider: 'gitlab',
+      prs: data.map((p) => ({
+        id: p.iid,
+        title: p.title,
+        author: p.author?.username ?? 'unknown',
+        sourceBranch: p.source_branch,
+        targetBranch: p.target_branch,
+        url: p.web_url,
+        isDraft: !!(p.draft || p.work_in_progress)
+      }))
+    }
+  }
+
+  // Bitbucket pull requests
+  if (parsed.provider === 'bitbucket') {
+    if (!tokens.bitbucket) return { provider: 'bitbucket', prs: [] }
+    const res = await fetch(
+      `https://api.bitbucket.org/2.0/repositories/${parsed.owner}/${parsed.repo}/pullrequests?state=OPEN&pagelen=30`,
+      { headers: { Authorization: bitbucketAuth(tokens.bitbucket) } }
+    )
+    if (!res.ok) throw new Error(`Bitbucket API error (${res.status})`)
+    const data = (await res.json()) as {
+      values: Array<{
+        id: number
+        title: string
+        author: { display_name: string }
+        source: { branch: { name: string } }
+        destination: { branch: { name: string } }
+        links: { html: { href: string } }
+      }>
+    }
+    return {
+      provider: 'bitbucket',
+      prs: data.values.map((p) => ({
+        id: p.id,
+        title: p.title,
+        author: p.author?.display_name ?? 'unknown',
+        sourceBranch: p.source?.branch?.name ?? '',
+        targetBranch: p.destination?.branch?.name ?? '',
+        url: p.links.html.href,
+        isDraft: false
+      }))
+    }
+  }
 
   if (parsed.provider === 'github') {
     const headers: Record<string, string> = { Accept: 'application/vnd.github+json' }
@@ -163,6 +246,12 @@ function createPullRequestUrl(remoteUrl: string, source: string, target: string)
   if (parsed.provider === 'github') {
     return `https://github.com/${parsed.owner}/${parsed.repo}/compare/${target}...${source}?expand=1`
   }
+  if (parsed.provider === 'gitlab') {
+    return `https://gitlab.com/${parsed.owner}/${parsed.repo}/-/merge_requests/new?merge_request%5Bsource_branch%5D=${encodeURIComponent(source)}&merge_request%5Btarget_branch%5D=${encodeURIComponent(target)}`
+  }
+  if (parsed.provider === 'bitbucket') {
+    return `https://bitbucket.org/${parsed.owner}/${parsed.repo}/pull-requests/new?source=${encodeURIComponent(source)}&dest=${encodeURIComponent(target)}`
+  }
   return `https://dev.azure.com/${parsed.owner}/${encodeURIComponent(parsed.project)}/_git/${encodeURIComponent(
     parsed.repo
   )}/pullrequestcreate?sourceRef=${encodeURIComponent(source)}&targetRef=${encodeURIComponent(target)}`
@@ -175,11 +264,57 @@ function createPullRequestUrl(remoteUrl: string, source: string, target: string)
  */
 async function createPullRequest(
   remoteUrl: string,
-  tokens: { github?: string; azure?: string },
+  tokens: { github?: string; azure?: string; gitlab?: string; bitbucket?: string },
   opts: CreatePrOpts
 ): Promise<CreatePrResult> {
   const parsed = parseRemoteUrl(remoteUrl)
-  if (!parsed) throw new Error('Unrecognized remote — PR creation supports GitHub and Azure DevOps.')
+  if (!parsed) throw new Error('Unrecognized remote — PR creation supports GitHub, GitLab, Bitbucket and Azure DevOps.')
+
+  // GitLab merge request
+  if (parsed.provider === 'gitlab') {
+    if (!tokens.gitlab) throw new Error('Add a GitLab token in Settings → Integrations.')
+    const pid = encodeURIComponent(`${parsed.owner}/${parsed.repo}`)
+    const res = await fetch(`https://gitlab.com/api/v4/projects/${pid}/merge_requests`, {
+      method: 'POST',
+      headers: { 'PRIVATE-TOKEN': tokens.gitlab, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        source_branch: opts.source,
+        target_branch: opts.target,
+        title: opts.draft ? `Draft: ${opts.title}` : opts.title,
+        description: opts.body
+      })
+    })
+    if (!res.ok) {
+      const d = (await res.json().catch(() => null)) as { message?: unknown } | null
+      throw new Error(`GitLab: ${typeof d?.message === 'string' ? d.message : `API error (${res.status})`}`)
+    }
+    const d = (await res.json()) as { iid: number; web_url: string }
+    return { url: d.web_url, number: d.iid }
+  }
+
+  // Bitbucket pull request
+  if (parsed.provider === 'bitbucket') {
+    if (!tokens.bitbucket) throw new Error('Add a Bitbucket token in Settings → Integrations.')
+    const res = await fetch(
+      `https://api.bitbucket.org/2.0/repositories/${parsed.owner}/${parsed.repo}/pullrequests`,
+      {
+        method: 'POST',
+        headers: { Authorization: bitbucketAuth(tokens.bitbucket), 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: opts.title,
+          description: opts.body,
+          source: { branch: { name: opts.source } },
+          destination: { branch: { name: opts.target } }
+        })
+      }
+    )
+    if (!res.ok) {
+      const d = (await res.json().catch(() => null)) as { error?: { message?: string } } | null
+      throw new Error(`Bitbucket: ${d?.error?.message || `API error (${res.status})`}`)
+    }
+    const d = (await res.json()) as { id: number; links: { html: { href: string } } }
+    return { url: d.links.html.href, number: d.id }
+  }
 
   if (parsed.provider === 'github') {
     if (!tokens.github) throw new Error('Add a GitHub token in Settings → Integrations.')
@@ -1017,7 +1152,7 @@ export function registerHostingHandlers(): void {
   ipcMain.handle('hosting:createRepo', (_e, provider: RepoHost, token: string, opts: CreateRepoOpts, org?: string) =>
     createRepository(provider, token, opts, org)
   )
-  ipcMain.handle('hosting:listPRs', (_e, remoteUrl: string, tokens: { github?: string; azure?: string }) =>
+  ipcMain.handle('hosting:listPRs', (_e, remoteUrl: string, tokens: { github?: string; azure?: string; gitlab?: string; bitbucket?: string }) =>
     listPullRequests(remoteUrl, tokens)
   )
   ipcMain.handle('hosting:listReleases', (_e, remoteUrl: string, tokens: { github?: string }) =>
@@ -1033,7 +1168,7 @@ export function registerHostingHandlers(): void {
   })
   ipcMain.handle(
     'hosting:createPR',
-    (_e, remoteUrl: string, tokens: { github?: string; azure?: string }, opts: CreatePrOpts) =>
+    (_e, remoteUrl: string, tokens: { github?: string; azure?: string; gitlab?: string; bitbucket?: string }, opts: CreatePrOpts) =>
       createPullRequest(remoteUrl, tokens, opts)
   )
   ipcMain.handle('hosting:prDetail', (_e, remoteUrl: string, tokens: { github?: string }, number: number) =>

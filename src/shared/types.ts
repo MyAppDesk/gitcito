@@ -217,7 +217,7 @@ export interface PullRequest {
   isDraft: boolean
 }
 
-export type HostingProvider = 'github' | 'azure' | null
+export type HostingProvider = 'github' | 'azure' | 'gitlab' | 'bitbucket' | null
 
 /** A comment on a pull request's conversation. */
 export interface PrComment {

@@ -51,7 +51,12 @@ export function CreatePRModal({ spec }: { spec: Extract<ModalSpec, { kind: 'crea
     }
   }, [spec.repoPath, source, target, remoteUrl])
 
-  const tokens = { github: profile.githubToken || undefined, azure: profile.azureToken || undefined }
+  const tokens = {
+    github: profile.githubToken || undefined,
+    azure: profile.azureToken || undefined,
+    gitlab: profile.gitlabToken || undefined,
+    bitbucket: profile.bitbucketToken || undefined
+  }
   const valid = !!remoteUrl && !!source && !!target && source !== target && !!title.trim() && !busy
 
   const submit = async (): Promise<void> => {

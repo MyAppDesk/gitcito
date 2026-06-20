@@ -241,7 +241,9 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
     try {
       const { provider, prs } = await hostingApi.listPRs(origin.url, {
         github: profile.githubToken || undefined,
-        azure: profile.azureToken || undefined
+        azure: profile.azureToken || undefined,
+        gitlab: profile.gitlabToken || undefined,
+        bitbucket: profile.bitbucketToken || undefined
       })
       get().patch(path, { prs, prProvider: provider })
     } catch (err) {

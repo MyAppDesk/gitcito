@@ -328,7 +328,7 @@ export const hostingApi = {
     window.api.hosting.listOwners(provider, token, org) as Promise<RemoteOwner[]>,
   createRepo: (provider: RepoHost, token: string, opts: CreateRepoOpts, org?: string) =>
     window.api.hosting.createRepo(provider, token, opts, org) as Promise<RemoteRepo>,
-  listPRs: (remoteUrl: string, tokens: { github?: string; azure?: string }) =>
+  listPRs: (remoteUrl: string, tokens: { github?: string; azure?: string; gitlab?: string; bitbucket?: string }) =>
     window.api.hosting.listPRs(remoteUrl, tokens) as Promise<{ provider: HostingProvider; prs: PullRequest[] }>,
   listReleases: (remoteUrl: string, tokens: { github?: string }) =>
     window.api.hosting.listReleases(remoteUrl, tokens) as Promise<{ provider: HostingProvider; releases: ReleaseInfo[] }>,
@@ -336,7 +336,7 @@ export const hostingApi = {
     window.api.hosting.ciStatuses(remoteUrl, shas, token) as Promise<Record<string, CiStatus>>,
   openCreatePR: (remoteUrl: string, source: string, target: string) =>
     window.api.hosting.openCreatePR(remoteUrl, source, target),
-  createPR: (remoteUrl: string, tokens: { github?: string; azure?: string }, opts: CreatePrOpts) =>
+  createPR: (remoteUrl: string, tokens: { github?: string; azure?: string; gitlab?: string; bitbucket?: string }, opts: CreatePrOpts) =>
     window.api.hosting.createPR(remoteUrl, tokens, opts) as Promise<CreatePrResult>,
   prDetail: (remoteUrl: string, tokens: { github?: string }, number: number) =>
     window.api.hosting.prDetail(remoteUrl, tokens, number) as Promise<PrDetail>,

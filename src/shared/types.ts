@@ -232,6 +232,23 @@ export interface PrReview {
   state: 'APPROVED' | 'CHANGES_REQUESTED' | 'COMMENTED' | 'DISMISSED' | 'PENDING'
 }
 
+/** One comment within an inline review thread. */
+export interface PrReviewComment {
+  id: number
+  author: string
+  body: string
+  createdAt: string
+}
+
+/** An inline review thread anchored to a file/line in the PR diff. */
+export interface PrReviewThread {
+  path: string
+  line: number | null
+  diffHunk: string // the surrounding diff context GitHub returns
+  rootId: number // id of the first comment (reply target)
+  comments: PrReviewComment[]
+}
+
 /** Full detail for one pull request (conversation + review state). */
 export interface PrDetail {
   number: number
@@ -247,6 +264,7 @@ export interface PrDetail {
   url: string
   comments: PrComment[]
   reviews: PrReview[]
+  reviewThreads: PrReviewThread[]
 }
 
 /** A repository issue (not a PR). */

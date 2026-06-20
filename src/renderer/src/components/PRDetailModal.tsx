@@ -33,6 +33,8 @@ export function PRDetailModal({
   const [comment, setComment] = useState('')
   const [busy, setBusy] = useState(false)
   const [mergeMethod, setMergeMethod] = useState<PrMergeMethod>('merge')
+  // Per-thread reply drafts, keyed by the thread root id.
+  const [replies, setReplies] = useState<Record<number, string>>({})
 
   const tokens = { github: profile.githubToken || undefined }
 
@@ -71,6 +73,18 @@ export function PRDetailModal({
   const review = (event: PrReviewEvent): void =>
     void act(() => hostingApi.prReview(remoteUrl, tokens, number, event, comment.trim()).then(() => setComment('')), `Review submitted`)
   const merge = (): void => void act(() => hostingApi.prMerge(remoteUrl, tokens, number, mergeMethod), 'Pull request merged')
+
+  const replyToThread = (rootId: number): void => {
+    const body = (replies[rootId] ?? '').trim()
+    if (!body) return
+    void act(
+      () =>
+        hostingApi
+          .prReplyReviewComment(remoteUrl, tokens, number, rootId, body)
+          .then(() => setReplies((r) => ({ ...r, [rootId]: '' }))),
+      'Reply posted'
+    )
+  }
 
   const approvals = pr?.reviews.filter((r) => r.state === 'APPROVED').length ?? 0
   const changesReq = pr?.reviews.filter((r) => r.state === 'CHANGES_REQUESTED').length ?? 0
@@ -136,6 +150,56 @@ export function PRDetailModal({
               </div>
             ))}
           </div>
+
+          {pr.reviewThreads.length > 0 && (
+            <>
+              <div className="prd-section-title">
+                Review threads <span className="prd-count">{pr.reviewThreads.length}</span>
+              </div>
+              <div className="prd-threads">
+                {pr.reviewThreads.map((th) => (
+                  <div key={th.rootId} className="prd-thread">
+                    <div className="prd-thread-loc" title={th.path}>
+                      {th.path}
+                      {th.line != null ? `:${th.line}` : ''}
+                    </div>
+                    {th.diffHunk && (
+                      <pre className="prd-thread-hunk">
+                        {th.diffHunk.split('\n').slice(-4).join('\n')}
+                      </pre>
+                    )}
+                    {th.comments.map((c) => (
+                      <div key={c.id} className="prd-comment">
+                        <div className="prd-comment-head">
+                          <strong>{c.author}</strong>
+                          <span>{new Date(c.createdAt).toLocaleString()}</span>
+                        </div>
+                        <div className="prd-comment-body">{c.body}</div>
+                      </div>
+                    ))}
+                    <div className="prd-thread-reply">
+                      <input
+                        className="prd-reply-input"
+                        placeholder="Reply…"
+                        value={replies[th.rootId] ?? ''}
+                        onChange={(e) => setReplies((r) => ({ ...r, [th.rootId]: e.target.value }))}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') replyToThread(th.rootId)
+                        }}
+                      />
+                      <button
+                        className="btn ghost tiny"
+                        onClick={() => replyToThread(th.rootId)}
+                        disabled={busy || !(replies[th.rootId] ?? '').trim()}
+                      >
+                        Reply
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
 
           <textarea
             className="prd-input"

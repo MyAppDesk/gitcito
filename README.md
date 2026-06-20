@@ -95,7 +95,7 @@
 
 ### Hosting & pull requests
 - **Create pull requests** from the app — branch dropdowns, prefilled title/body from the branch's commits, draft toggle; from branch-compare, the graph, the PR panel `+`, or an issue (auto-`Closes #N`).
-- **Review PRs** _(GitHub only)_ — open conversation + review state, comment, approve / request changes, and **merge** (merge / squash / rebase).
+- **Review PRs** _(GitHub only)_ — open conversation + review state, **inline review threads** (line comments grouped by file:line with diff-hunk context, with reply), comment, approve / request changes, and **merge** (merge / squash / rebase).
 - **Issues** _(GitHub only)_ — browse open issues, then a full **issue tab**: body, comments, labels, assignees, milestone, Projects v2 fields (Priority/Start/Target/Effort), close/reopen, and **create a branch for an issue** (with AI naming).
 - **Milestones** _(GitHub only)_ — a sidebar list with progress, and a **milestone tab** showing its issues.
 - **Releases** _(GitHub only)_ — browse a repo's releases in the sidebar and a changelog page.

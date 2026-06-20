@@ -32,6 +32,7 @@ import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
 import { useSettingsStore } from '../stores/settings'
 import { gitApi } from '../infrastructure/api'
 import { tabActiveRepoPath } from '../../../shared/types'
+import { getFrecency, frecencyScore, bumpFrecency } from '../lib/frecency'
 
 interface Command {
   id: string
@@ -67,7 +68,7 @@ function fuzzyScore(query: string, text: string): number | null {
   return score
 }
 
-const GROUP_ORDER = ['Actions', 'Branches', 'Commits', 'Files']
+const GROUP_ORDER = ['Recent', 'Actions', 'Branches', 'Commits', 'Files']
 
 export function CommandPalette(): React.JSX.Element {
   const open = useUIStore((s) => s.commandPaletteOpen)
@@ -184,20 +185,34 @@ export function CommandPalette(): React.JSX.Element {
     return list
   }, [repo, files, setOpen])
 
-  // Filter + rank. With no query, show actions/branches first (commits & files
-  // are huge — they only appear once the user types).
+  // Usage stats, refreshed each time the palette opens.
+  const frec = useMemo(() => (open ? getFrecency() : {}), [open])
+
+  // Filter + rank. With no query, show a Recent group (most-used) then
+  // actions/branches; commits & files only appear once the user types.
   const results = useMemo(() => {
     if (!query.trim()) {
-      return commands.filter((c) => c.group === 'Actions' || c.group === 'Branches').slice(0, 60)
+      const recents = commands
+        .map((c) => ({ c, f: frecencyScore(frec[c.id]) }))
+        .filter((x) => x.f > 0)
+        .sort((a, b) => b.f - a.f)
+        .slice(0, 6)
+        .map((x) => ({ ...x.c, group: 'Recent' }))
+      const recentIds = new Set(recents.map((r) => r.id))
+      const base = commands.filter(
+        (c) => (c.group === 'Actions' || c.group === 'Branches') && !recentIds.has(c.id)
+      )
+      return [...recents, ...base].slice(0, 60)
     }
     const scored: { cmd: Command; score: number }[] = []
     for (const cmd of commands) {
       const hay = `${cmd.title} ${cmd.subtitle ?? ''} ${cmd.keywords ?? ''}`
       const s = fuzzyScore(query.trim(), hay)
-      if (s !== null) scored.push({ cmd, score: s })
+      // Nudge frequently-used commands up within their group.
+      if (s !== null) scored.push({ cmd, score: s + frecencyScore(frec[cmd.id]) })
     }
     // Keep groups contiguous (so each header renders once) — rank by group
-    // order first, then by match score within the group.
+    // order first, then by (score + frecency) within the group.
     scored.sort((a, b) => {
       const ga = GROUP_ORDER.indexOf(a.cmd.group)
       const gb = GROUP_ORDER.indexOf(b.cmd.group)
@@ -205,7 +220,7 @@ export function CommandPalette(): React.JSX.Element {
       return b.score - a.score
     })
     return scored.slice(0, 60).map((s) => s.cmd)
-  }, [commands, query])
+  }, [commands, query, frec])
 
   useEffect(() => setActive(0), [query])
 
@@ -214,6 +229,13 @@ export function CommandPalette(): React.JSX.Element {
     const el = listRef.current?.querySelector(`[data-idx="${active}"]`)
     el?.scrollIntoView({ block: 'nearest' })
   }, [active])
+
+  // Record usage (frecency), then run.
+  const fire = (cmd: Command | undefined): void => {
+    if (!cmd) return
+    bumpFrecency(cmd.id)
+    cmd.run()
+  }
 
   const onKeyDown = (e: React.KeyboardEvent): void => {
     if (e.key === 'ArrowDown') {
@@ -224,7 +246,7 @@ export function CommandPalette(): React.JSX.Element {
       setActive((a) => Math.max(a - 1, 0))
     } else if (e.key === 'Enter') {
       e.preventDefault()
-      results[active]?.run()
+      fire(results[active])
     } else if (e.key === 'Escape') {
       e.preventDefault()
       setOpen(false)
@@ -249,7 +271,7 @@ export function CommandPalette(): React.JSX.Element {
         data-idx={idx}
         className={`cmdp-row ${idx === active ? 'active' : ''}`}
         onMouseMove={() => setActive(idx)}
-        onClick={() => cmd.run()}
+        onClick={() => fire(cmd)}
       >
         <span className="cmdp-icon">{cmd.icon}</span>
         <span className="cmdp-text">

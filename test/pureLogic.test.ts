@@ -4,6 +4,7 @@ import { lintCommit, subjectCounterLevel } from '../src/renderer/src/lib/commitL
 import { isSecretFile, maskSecretLine } from '../src/renderer/src/lib/secrets'
 import { comboFromEvent, formatCombo, effectiveBindings, matchShortcut } from '../src/renderer/src/lib/shortcuts'
 import { autolink, remoteWebUrl } from '../src/renderer/src/lib/autolink'
+import { frecencyScore } from '../src/renderer/src/lib/frecency'
 
 // Minimal KeyboardEvent stand-in for the pure shortcut helpers.
 const ev = (key: string, mods: { meta?: boolean; ctrl?: boolean; shift?: boolean; alt?: boolean } = {}): KeyboardEvent =>
@@ -126,5 +127,20 @@ describe('autolink', () => {
     const out = autolink('fix #12 by @ana', 'https://github.com/o/r')
     expect(Array.isArray(out)).toBe(true) // split into text + anchor nodes
     expect((out as unknown[]).length).toBeGreaterThan(1)
+  })
+})
+
+describe('frecency score', () => {
+  const now = 1_000 * 86_400_000 // a fixed "now"
+  it('is 0 for unknown entries', () => {
+    expect(frecencyScore(undefined, now)).toBe(0)
+  })
+  it('rewards recent + frequent over old + rare', () => {
+    const recentFreq = frecencyScore({ n: 8, t: now }, now)
+    const oldRare = frecencyScore({ n: 1, t: now - 60 * 86_400_000 }, now)
+    expect(recentFreq).toBeGreaterThan(oldRare)
+  })
+  it('caps the count contribution', () => {
+    expect(frecencyScore({ n: 999, t: now }, now)).toBe(frecencyScore({ n: 10, t: now }, now))
   })
 })

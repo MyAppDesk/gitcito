@@ -35,28 +35,6 @@
       "presentation": { "group": "2_media", "order": 2 }
     },
     {
-      "name": "Video: render promo",
-      "type": "node",
-      "request": "launch",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "video"],
-      "cwd": "${workspaceFolder}",
-      "console": "integratedTerminal",
-      "skipFiles": ["<node_internals>/**"],
-      "presentation": { "group": "2_media", "order": 3 }
-    },
-    {
-      "name": "Video: Remotion studio",
-      "type": "node",
-      "request": "launch",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "video:studio"],
-      "cwd": "${workspaceFolder}",
-      "console": "integratedTerminal",
-      "skipFiles": ["<node_internals>/**"],
-      "presentation": { "group": "2_media", "order": 4 }
-    },
-    {
       "name": "Release: patch (x.x.+1)",
       "type": "node",
       "request": "launch",

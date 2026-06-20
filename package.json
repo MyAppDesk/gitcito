@@ -21,8 +21,6 @@
     "playground:rebuild": "PLAYGROUND_FORCE=1 bash examples/setup-playground.sh",
     "screenshots": "node examples/screenshots/capture.mjs",
     "screenshots:gif": "node examples/screenshots/capture.mjs --gif",
-    "video": "cd remotion && { [ -d node_modules ] || npm install; } && npm run render",
-    "video:studio": "cd remotion && { [ -d node_modules ] || npm install; } && npm run studio",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",

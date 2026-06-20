@@ -1,5 +1,27 @@
 
 
+## [0.18.0](https://github.com/MyAppDesk/gitcito/compare/v0.17.0...v0.18.0) (2026-06-20)
+
+
+### Features
+
+* add changelog generator and UI for changelog creation ([39c0e5b](https://github.com/MyAppDesk/gitcito/commit/39c0e5b2a535c0d9f4d00fc1d223148cefd1c794))
+* add code search feature with working tree and history ([e97e67d](https://github.com/MyAppDesk/gitcito/commit/e97e67dedf2c9e614f4b50d593067f982c833c50))
+* add command palette for fuzzy navigation of branches, commits, files ([5f7a533](https://github.com/MyAppDesk/gitcito/commit/5f7a533088348a2752443f7a0274997e6212fc03))
+* add drag-and-drop for branch merge and rebase operations ([777915f](https://github.com/MyAppDesk/gitcito/commit/777915ff5a5ab6908825063fc30f4a4554420831))
+* add GitHub notifications inbox and related functionality ([c5c973c](https://github.com/MyAppDesk/gitcito/commit/c5c973c03a7aeb65c79d66e37fdb8c7976e20064))
+* add inline review threads for pull requests ([4f3dcb4](https://github.com/MyAppDesk/gitcito/commit/4f3dcb41acc2b3b3f47a0434b4740b28cb2402de))
+* add repository insights dashboard and related components ([845bfe5](https://github.com/MyAppDesk/gitcito/commit/845bfe593219b83d28997ce653e21161867cc905))
+* add script to clear stale git lock before release ([5b216ff](https://github.com/MyAppDesk/gitcito/commit/5b216ffd411585147dcf45a4431ae22d9660e304))
+* add stacked branches feature with UI support ([0dcaca4](https://github.com/MyAppDesk/gitcito/commit/0dcaca4ebdfb99c2b782225c10477934b5d36cd7))
+* add WIP snapshots for uncommitted work safety net ([cca0b6b](https://github.com/MyAppDesk/gitcito/commit/cca0b6b9e9343f2d21f7fdb23b6bc52db5e4512a))
+* add word-level diff toggle to highlight changed tokens ([97c9376](https://github.com/MyAppDesk/gitcito/commit/97c9376376229cd0f1e74446bf2112bda859d91f))
+
+
+### Bug Fixes
+
+* handle undefined reviewThreads in PRDetailModal ([937645c](https://github.com/MyAppDesk/gitcito/commit/937645c57096a849585a97efdcc22021ef16431e))
+
 ## [0.17.0](https://github.com/MyAppDesk/gitcito/compare/v0.16.0...v0.17.0) (2026-06-19)
 
 

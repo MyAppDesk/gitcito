@@ -644,6 +644,41 @@ export interface RepoStats {
   authors: { name: string; commits: number }[]
 }
 
+/** Per-file change frequency + line churn — the "hotspots" of a repo. */
+export interface FileHotspot {
+  path: string
+  commits: number // number of commits that touched this file
+  added: number
+  removed: number
+}
+
+/** Per-author contribution totals. */
+export interface AuthorStat {
+  name: string
+  commits: number
+  added: number
+  removed: number
+}
+
+/** A weekly churn bucket (lines added/removed, commit count). */
+export interface ChurnPoint {
+  week: string // ISO date of the week's Monday
+  added: number
+  removed: number
+  commits: number
+}
+
+/** Aggregated repository insights from a single `git log --numstat` pass. */
+export interface RepoInsights {
+  totalCommits: number
+  first: number // unix seconds of oldest commit in range
+  last: number // unix seconds of newest commit
+  filesTouched: number
+  authors: AuthorStat[]
+  hotspots: FileHotspot[]
+  churn: ChurnPoint[]
+}
+
 /** One entry from `git reflog` — the recovery net for lost/rewound commits. */
 export interface ReflogEntry {
   sha: string
@@ -716,6 +751,7 @@ export type PageContent =
   | { type: 'changelog' }
   | { type: 'logs' }
   | { type: 'notifications' }
+  | { type: 'insights'; repoPath: string }
   | { type: 'release'; release: ReleaseInfo; repoPath: string }
   | { type: 'issue'; issue: IssueInfo; repoPath: string; remoteUrl: string }
   | { type: 'milestone'; milestone: MilestoneInfo; repoPath: string; remoteUrl: string }

@@ -16,6 +16,8 @@ const uid = (): string => Math.random().toString(36).slice(2, 10)
  *  releases from different repos stay distinguishable in the tab strip. */
 function pageTabName(page: PageContent): string {
   if (page.type === 'logs') return 'Operation log'
+  if (page.type === 'notifications') return 'Notifications'
+  if (page.type === 'insights') return 'Insights'
   if (page.type === 'issue') return `#${page.issue.number} ${page.issue.title}`
   if (page.type === 'milestone') return `🏁 ${page.milestone.title}`
   if (page.type !== 'release') return "What's new"

@@ -50,7 +50,8 @@ import type {
   CodeSearchHit,
   HistorySearchHit,
   GitHubNotification,
-  StackInfo
+  StackInfo,
+  RepoInsights
 } from '../../../shared/types'
 
 // Typed adapter over the IPC bridge — the only place that talks to window.api.
@@ -232,7 +233,8 @@ export const gitApi = {
   stagePatch: (path: string, patch: string) => call<void>('stagePatch', path, patch),
   compareBranches: (path: string, a: string, b: string) =>
     call<BranchCompareResult>('compareBranches', path, a, b),
-  repoStats: (path: string, sinceDays?: number) => call<RepoStats>('repoStats', path, sinceDays)
+  repoStats: (path: string, sinceDays?: number) => call<RepoStats>('repoStats', path, sinceDays),
+  repoInsights: (path: string, sinceDays?: number) => call<RepoInsights>('repoInsights', path, sinceDays)
 }
 
 export const settingsApi = {

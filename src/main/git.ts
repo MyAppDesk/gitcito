@@ -43,7 +43,11 @@ import type {
   CodeSearchHit,
   HistorySearchHit,
   StackInfo,
-  StackBranch
+  StackBranch,
+  RepoInsights,
+  AuthorStat,
+  FileHotspot,
+  ChurnPoint
 } from '../shared/types'
 import { recordEvent } from './analytics'
 import { recordLog } from './log'
@@ -2040,6 +2044,88 @@ export const gitService = {
       .map(([name, commits]) => ({ name, commits }))
       .sort((a, b) => b.commits - a.commits)
     return { totalCommits, first, last, perDay, authors }
+  },
+
+  /**
+   * Rich repository insights from one `git log --numstat` pass: per-file change
+   * frequency + churn (hotspots), per-author contribution totals, and a weekly
+   * churn timeline. Renames are followed; binary files (numstat "-") count as a
+   * touch but contribute no line counts.
+   */
+  async repoInsights(repoPath: string, sinceDays = 0): Promise<RepoInsights> {
+    const git = gitFor(repoPath)
+    // \x01 prefixes each commit header so it's distinguishable from numstat rows.
+    const args = ['log', '--no-merges', '--numstat', '-M', `--pretty=format:\x01%at${SEP}%an`]
+    if (sinceDays > 0) args.push(`--since=${sinceDays}.days.ago`)
+    const out = await git.raw(args).catch(() => '')
+
+    const authorMap = new Map<string, AuthorStat>()
+    const fileMap = new Map<string, FileHotspot>()
+    const churnMap = new Map<string, ChurnPoint>()
+    let totalCommits = 0
+    let first = 0
+    let last = 0
+    let curAuthor = 'Unknown'
+    let curWeek = ''
+    let curTs = 0
+
+    // ISO Monday of the week containing `ts` (seconds), as YYYY-MM-DD.
+    const weekOf = (ts: number): string => {
+      const d = new Date(ts * 1000)
+      const day = (d.getUTCDay() + 6) % 7 // 0 = Monday
+      d.setUTCDate(d.getUTCDate() - day)
+      return `${d.getUTCFullYear()}-${`${d.getUTCMonth() + 1}`.padStart(2, '0')}-${`${d.getUTCDate()}`.padStart(2, '0')}`
+    }
+
+    for (const line of out.split('\n')) {
+      if (line.startsWith('\x01')) {
+        const [at, name] = line.slice(1).split(SEP)
+        curTs = +at || 0
+        curAuthor = (name ?? '').trim() || 'Unknown'
+        curWeek = weekOf(curTs)
+        totalCommits += 1
+        if (!last || curTs > last) last = curTs
+        if (!first || curTs < first) first = curTs
+        const a = authorMap.get(curAuthor) ?? { name: curAuthor, commits: 0, added: 0, removed: 0 }
+        a.commits += 1
+        authorMap.set(curAuthor, a)
+        const w = churnMap.get(curWeek) ?? { week: curWeek, added: 0, removed: 0, commits: 0 }
+        w.commits += 1
+        churnMap.set(curWeek, w)
+        continue
+      }
+      if (!line.trim()) continue
+      // numstat row: "<added>\t<removed>\t<path>" ("-" for binary).
+      const parts = line.split('\t')
+      if (parts.length < 3) continue
+      const added = parts[0] === '-' ? 0 : Number(parts[0]) || 0
+      const removed = parts[1] === '-' ? 0 : Number(parts[1]) || 0
+      // For renames numstat shows "old => new" (or "{a => b}/c"); keep the new path.
+      let path = parts.slice(2).join('\t')
+      if (path.includes('=>')) {
+        path = path.replace(/\{[^}]*=>\s*([^}]*)\}/g, '$1').replace(/.*=>\s*/, '').trim()
+      }
+      const f = fileMap.get(path) ?? { path, commits: 0, added: 0, removed: 0 }
+      f.commits += 1
+      f.added += added
+      f.removed += removed
+      fileMap.set(path, f)
+      const a = authorMap.get(curAuthor)
+      if (a) {
+        a.added += added
+        a.removed += removed
+      }
+      const w = churnMap.get(curWeek)
+      if (w) {
+        w.added += added
+        w.removed += removed
+      }
+    }
+
+    const authors = [...authorMap.values()].sort((a, b) => b.commits - a.commits)
+    const hotspots = [...fileMap.values()].sort((a, b) => b.commits - a.commits).slice(0, 30)
+    const churn = [...churnMap.values()].sort((a, b) => a.week.localeCompare(b.week))
+    return { totalCommits, first, last, filesTouched: fileMap.size, authors, hotspots, churn }
   },
 
   async version(): Promise<string> {

@@ -25,6 +25,7 @@ import { OnboardingWizard } from './components/OnboardingWizard'
 import { ChangelogPage } from './components/ChangelogPage'
 import { LogsPage } from './components/LogsPage'
 import { NotificationsPage } from './components/NotificationsPage'
+import { InsightsPage } from './components/InsightsPage'
 import { ReleasePage } from './components/ReleasePage'
 import { IssueDetailPage } from './components/IssueDetailPage'
 import { MilestoneDetailPage } from './components/MilestoneDetailPage'
@@ -104,6 +105,8 @@ function PageView({ tab }: { tab: PageTab }): React.JSX.Element {
       return <LogsPage />
     case 'notifications':
       return <NotificationsPage />
+    case 'insights':
+      return <InsightsPage repoPath={tab.page.repoPath} />
     case 'release':
       return <ReleasePage tab={tab} />
     case 'issue':

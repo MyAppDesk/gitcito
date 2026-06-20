@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Plus, FolderGit2, X, Minus, Square, Settings, Sparkles } from 'lucide-react'
+import { Plus, FolderGit2, X, Minus, Square, Settings, Sparkles, Bell, BarChart3, ScrollText, CircleDot, Flag, Tag } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore, type MenuItem } from '../stores/ui'
@@ -9,6 +9,26 @@ import { ProfileSwitcher } from './ProfileSwitcher'
 import gitcitoMark from '../assets/gitcito-mark.png'
 
 type TabStatus = 'conflict' | 'wip' | null
+
+/** Icon for a page tab, by page type. */
+function pageTabIcon(type: string): React.JSX.Element {
+  switch (type) {
+    case 'notifications':
+      return <Bell size={13} />
+    case 'insights':
+      return <BarChart3 size={13} />
+    case 'logs':
+      return <ScrollText size={13} />
+    case 'issue':
+      return <CircleDot size={13} />
+    case 'milestone':
+      return <Flag size={13} />
+    case 'release':
+      return <Tag size={13} />
+    default:
+      return <Sparkles size={13} />
+  }
+}
 
 // ── drag types ──────────────────────────────────────────────────────────────
 type DragItem =
@@ -389,7 +409,7 @@ export function TitleBar(): React.JSX.Element {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.15 }}
               >
-                <Sparkles size={13} />
+                {pageTabIcon(tab.page.type)}
                 <span className="tab-name">{tab.name}</span>
                 <button
                   className="tab-close"

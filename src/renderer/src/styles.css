@@ -8217,3 +8217,99 @@ mark.find-hit.active {
   color: var(--text-2);
   font-size: 13px;
 }
+
+/* ─── Code search modal (⌘⇧F) ──────────────────────────────────────────── */
+.codesearch { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.codesearch-tabs { display: flex; gap: 6px; margin: 8px 0 12px; }
+.codesearch-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--border-soft);
+  background: var(--bg-2);
+  color: var(--text-1);
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.codesearch-tab.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--text-0);
+}
+.codesearch-input-row { display: flex; align-items: center; gap: 8px; position: relative; }
+.codesearch-icon { color: var(--text-2); flex-shrink: 0; }
+.codesearch-input { flex: 1; }
+.codesearch-opts { display: flex; gap: 2px; flex-shrink: 0; }
+.codesearch-opt {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-2);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.codesearch-opt:hover { background: var(--bg-3); color: var(--text-1); }
+.codesearch-opt.on {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.codesearch-meta { font-size: 11px; color: var(--text-2); padding: 8px 2px 6px; }
+.codesearch-loading { display: inline-flex; align-items: center; gap: 6px; }
+.codesearch-hint { font-style: italic; }
+.codesearch-results { flex: 1; overflow-y: auto; min-height: 0; }
+.codesearch-filegroup { margin-bottom: 10px; }
+.codesearch-filename {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-1);
+  padding: 4px 6px;
+  position: sticky;
+  top: 0;
+  background: var(--bg-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.codesearch-hit {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  padding: 4px 6px 4px 14px;
+  border: none;
+  background: transparent;
+  color: var(--text-1);
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: var(--code-font, monospace);
+  font-size: 12px;
+}
+.codesearch-hit:hover { background: var(--bg-3); }
+.codesearch-lineno { color: var(--text-2); flex-shrink: 0; min-width: 34px; text-align: right; }
+.codesearch-text { white-space: pre; overflow: hidden; text-overflow: ellipsis; }
+.codesearch-text.hljs { background: transparent; color: var(--code-text, var(--text-1)); }
+.codesearch-commit {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  padding: 8px 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-0);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.codesearch-commit:hover { background: var(--bg-3); }
+.codesearch-commit-icon { color: var(--text-2); flex-shrink: 0; }
+.codesearch-commit-body { display: flex; flex-direction: column; min-width: 0; }
+.codesearch-commit-subject { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.codesearch-commit-meta { font-size: 11px; color: var(--text-2); }

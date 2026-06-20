@@ -189,6 +189,14 @@ export default function App(): React.JSX.Element {
       if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'k') {
         e.preventDefault()
         useUIStore.getState().toggleCommandPalette()
+      } else if ((e.metaKey || e.ctrlKey) && e.shiftKey && !e.altKey && e.key.toLowerCase() === 'f') {
+        const st = useSettingsStore.getState()
+        const tab = st.settings.tabs.find((t) => t.id === st.settings.activeTabId)
+        const path = tab ? tabActiveRepoPath(tab) : null
+        if (path) {
+          e.preventDefault()
+          useUIStore.getState().openModal({ kind: 'code-search', repoPath: path })
+        }
       }
     }
     window.addEventListener('keydown', onKey)

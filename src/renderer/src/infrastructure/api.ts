@@ -46,7 +46,9 @@ import type {
   LfsInfo,
   SparseCheckoutInfo,
   TreeEntry,
-  TreeStatusKind
+  TreeStatusKind,
+  CodeSearchHit,
+  HistorySearchHit
 } from '../../../shared/types'
 
 // Typed adapter over the IPC bridge — the only place that talks to window.api.
@@ -150,6 +152,16 @@ export const gitApi = {
     query: string,
     opts?: { caseSensitive?: boolean; wholeWord?: boolean; regex?: boolean }
   ) => call<string[]>('searchFileContents', path, files, query, opts),
+  grepWorkingTree: (
+    path: string,
+    query: string,
+    opts?: { caseSensitive?: boolean; wholeWord?: boolean; regex?: boolean; max?: number }
+  ) => call<CodeSearchHit[]>('grepWorkingTree', path, query, opts),
+  searchHistory: (
+    path: string,
+    query: string,
+    opts?: { caseSensitive?: boolean; regex?: boolean; max?: number }
+  ) => call<HistorySearchHit[]>('searchHistory', path, query, opts),
   fileDataUrl: (path: string, file: string, ref?: string) => call<string>('fileDataUrl', path, file, ref),
   imageDiff: (path: string, file: string, beforeRef: string | null, afterRef?: string) =>
     call<{ before: string | null; after: string | null }>('imageDiff', path, file, beforeRef, afterRef),

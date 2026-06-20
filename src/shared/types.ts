@@ -25,6 +25,21 @@ export interface GraphCommit {
   signer?: string // signing identity (%GS), when known
 }
 
+/** One working-tree match from a `git grep` content search. */
+export interface CodeSearchHit {
+  file: string
+  line: number
+  text: string
+}
+
+/** One commit from a history pickaxe search (`git log -S` / `-G`). */
+export interface HistorySearchHit {
+  hash: string
+  author: string
+  date: number // unix seconds
+  subject: string
+}
+
 /** Per-repo commit-signing configuration. */
 export interface SigningConfig {
   sign: boolean // commit.gpgsign

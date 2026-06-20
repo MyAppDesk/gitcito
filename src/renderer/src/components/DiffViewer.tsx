@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import hljs from 'highlight.js'
 import { highlightHtml, type HighlightLayer } from './FileSearchBar'
+import { highlightLine } from '../lib/highlight'
 
 interface DiffLine {
   kind: 'add' | 'del' | 'hunk' | 'meta' | 'ctx'
@@ -8,19 +8,6 @@ interface DiffLine {
   oldNo: number | null
   newNo: number | null
   hunkIdx: number
-}
-
-function escapeHtml(text: string): string {
-  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-}
-
-function highlightLine(text: string, lang: string): string {
-  if (!lang || !hljs.getLanguage(lang)) return escapeHtml(text)
-  try {
-    return hljs.highlight(text, { language: lang }).value
-  } catch {
-    return escapeHtml(text)
-  }
 }
 
 function parseDiff(diff: string): DiffLine[] {

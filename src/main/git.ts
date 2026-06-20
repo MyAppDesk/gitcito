@@ -39,7 +39,9 @@ import type {
   SubmoduleStatus,
   TreeEntry,
   TreeStatusKind,
-  ActivityEvent
+  ActivityEvent,
+  CodeSearchHit,
+  HistorySearchHit
 } from '../shared/types'
 import { recordEvent } from './analytics'
 import { recordLog } from './log'
@@ -1357,6 +1359,75 @@ export const gitService = {
       })
     )
     return matched.filter((f): f is string => f !== null)
+  },
+
+  /**
+   * Working-tree code search via `git grep -n` (tracked + untracked, honouring
+   * .gitignore). Returns up to `max` file:line:text hits. git grep exits 1 when
+   * nothing matches, which simple-git throws on — that's a clean empty result.
+   */
+  async grepWorkingTree(
+    repoPath: string,
+    query: string,
+    opts?: { caseSensitive?: boolean; wholeWord?: boolean; regex?: boolean; max?: number }
+  ): Promise<CodeSearchHit[]> {
+    if (!query.trim()) return []
+    const max = opts?.max ?? 500
+    const args = ['grep', '-n', '-I', '--no-color', '--untracked', '--full-name']
+    if (!opts?.caseSensitive) args.push('-i')
+    if (opts?.wholeWord) args.push('-w')
+    args.push(opts?.regex ? '-E' : '-F')
+    args.push('-e', query, '--')
+    let raw = ''
+    try {
+      raw = await gitFor(repoPath).raw(args)
+    } catch {
+      return [] // no matches (exit 1) or invalid pattern
+    }
+    const hits: CodeSearchHit[] = []
+    for (const line of raw.split('\n')) {
+      if (!line) continue
+      const m = /^(.*?):(\d+):(.*)$/.exec(line)
+      if (!m) continue
+      hits.push({ file: m[1], line: Number(m[2]), text: m[3].slice(0, 400) })
+      if (hits.length >= max) break
+    }
+    return hits
+  },
+
+  /**
+   * History pickaxe: commits that changed the number of occurrences of `query`
+   * (`-S`, literal) or whose diff matches it (`-G`, regex). The "who introduced
+   * / removed this string" search.
+   */
+  async searchHistory(
+    repoPath: string,
+    query: string,
+    opts?: { caseSensitive?: boolean; regex?: boolean; max?: number }
+  ): Promise<HistorySearchHit[]> {
+    if (!query.trim()) return []
+    const max = opts?.max ?? 200
+    const args = [
+      'log',
+      `--max-count=${max}`,
+      `--pretty=format:%H${SEP}%an${SEP}%at${SEP}%s${REC}`
+    ]
+    if (!opts?.caseSensitive) args.push('--regexp-ignore-case')
+    args.push(opts?.regex ? `-G${query}` : `-S${query}`)
+    let raw = ''
+    try {
+      raw = await gitFor(repoPath).raw(args)
+    } catch {
+      return []
+    }
+    return raw
+      .split(REC)
+      .map((r) => r.trim())
+      .filter(Boolean)
+      .map((rec) => {
+        const [hash, author, date, subject] = rec.split(SEP)
+        return { hash, author, date: Number(date), subject }
+      })
   },
 
   async fileDataUrl(repoPath: string, file: string, ref?: string): Promise<string> {

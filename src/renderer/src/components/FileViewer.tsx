@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { X, GitCommitHorizontal, Sparkles, Loader2, Search, ChevronUp, ChevronDown, Pencil, Save } from 'lucide-react'
-import hljs from 'highlight.js'
 import type { BlameLine, FileHistoryEntry } from '../../../shared/types'
 import { gitApi, aiApi, shellApi } from '../infrastructure/api'
 import { useSettingsStore } from '../stores/settings'
@@ -8,6 +7,7 @@ import { useUIStore, type FileViewMode, type FileViewState } from '../stores/ui'
 import { useT } from '../i18n'
 import { DiffViewer } from './DiffViewer'
 import { buildQueryRegExp, highlightHtml, type HighlightLayer } from './FileSearchBar'
+import { fileExt, guessLanguage, highlightLine } from '../lib/highlight'
 import { ImageDiff } from './ImageDiff'
 import { PreviewPane } from './PreviewPane'
 import { renderMarkdown } from '../preview/markdown'
@@ -24,39 +24,8 @@ const MODES: { id: FileViewMode; label: string }[] = [
 
 const IMAGE_EXTS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'ico', 'svg', 'avif'])
 
-function fileExt(name: string): string {
-  return name.split('.').pop()?.toLowerCase() || ''
-}
-
 function isImage(name: string): boolean {
   return IMAGE_EXTS.has(fileExt(name))
-}
-
-function guessLanguage(filename: string): string {
-  const ext = fileExt(filename)
-  const map: Record<string, string> = {
-    js: 'javascript', jsx: 'javascript', mjs: 'javascript', cjs: 'javascript',
-    ts: 'typescript', tsx: 'typescript', py: 'python', rb: 'ruby', go: 'go',
-    rs: 'rust', java: 'java', cpp: 'cpp', cc: 'cpp', c: 'c', h: 'cpp',
-    cs: 'csharp', php: 'php', swift: 'swift', kt: 'kotlin', scala: 'scala',
-    sh: 'bash', bash: 'bash', zsh: 'bash', json: 'json', xml: 'xml',
-    html: 'xml', htm: 'xml', vue: 'xml', css: 'css', scss: 'scss', less: 'less',
-    md: 'markdown', markdown: 'markdown', yml: 'yaml', yaml: 'yaml',
-    toml: 'ini', ini: 'ini', sql: 'sql', r: 'r', dart: 'dart', lua: 'lua',
-    pl: 'perl', dockerfile: 'dockerfile', makefile: 'makefile'
-  }
-  return map[ext] || ''
-}
-
-function highlightLine(text: string, lang: string): string {
-  if (!lang || !hljs.getLanguage(lang)) {
-    return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-  }
-  try {
-    return hljs.highlight(text, { language: lang }).value
-  } catch {
-    return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-  }
 }
 
 function shaColor(sha: string): string {

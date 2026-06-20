@@ -48,6 +48,7 @@
 - **Commit details**: changed-files tree/flat view, author, SHA, co-authors, copy & open externally.
 - **Per-file blame & history**, with a follow-the-line jump from blame straight into the diff.
 - **Search & filter** commits by message, author, SHA or deployment status.
+- **Code search** (`⌘⇧F` / `Ctrl+Shift+F`). Search file **contents** across the working tree (`git grep`, tracked + untracked, with case / whole-word / regex) — results are **syntax-highlighted** with the match marked — or run a **history pickaxe** (`git log -S` / `-G`) to find the commits that introduced or removed a string. Click a hit to jump to the file or commit.
 - **Progressive history** with configurable page size, auto-load-on-scroll and optional Gravatar avatars.
 
 ### Working with changes

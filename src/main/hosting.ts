@@ -11,6 +11,7 @@ import type {
   PullRequest,
   PrDetail,
   PrReview,
+  PrReviewThread,
   IssueInfo,
   IssueDetail,
   LinkedPr,
@@ -249,7 +250,7 @@ async function pullRequestDetail(
 ): Promise<PrDetail> {
   const { owner, repo, token } = ghRepoOf(remoteUrl, tokens.github)
   const api = `https://api.github.com/repos/${owner}/${repo}`
-  const [pr, comments, reviews] = await Promise.all([
+  const [pr, comments, reviews, reviewComments] = await Promise.all([
     ghJson<{
       number: number
       title: string
@@ -270,8 +271,41 @@ async function pullRequestDetail(
     ghJson<Array<{ user: { login: string } | null; state: string }>>(
       `${api}/pulls/${number}/reviews?per_page=100`,
       token
-    )
+    ),
+    ghJson<
+      Array<{
+        id: number
+        user: { login: string } | null
+        body: string
+        created_at: string
+        path: string
+        line: number | null
+        original_line: number | null
+        diff_hunk: string
+        in_reply_to_id?: number
+      }>
+    >(`${api}/pulls/${number}/comments?per_page=100`, token).catch(() => [])
   ])
+
+  // Group inline review comments into threads. Replies (in_reply_to_id) attach to
+  // their root; roots are keyed by their own id. Ordered by first comment.
+  const threadById = new Map<number, PrReviewThread>()
+  const sortedRC = [...reviewComments].sort((a, b) => a.created_at.localeCompare(b.created_at))
+  for (const rc of sortedRC) {
+    const rootId = rc.in_reply_to_id ?? rc.id
+    const comment = { id: rc.id, author: rc.user?.login ?? 'unknown', body: rc.body, createdAt: rc.created_at }
+    const existing = threadById.get(rootId)
+    if (existing) existing.comments.push(comment)
+    else
+      threadById.set(rootId, {
+        path: rc.path,
+        line: rc.line ?? rc.original_line,
+        diffHunk: rc.diff_hunk,
+        rootId,
+        comments: [comment]
+      })
+  }
+  const reviewThreads = [...threadById.values()]
   return {
     number: pr.number,
     title: pr.title,
@@ -287,8 +321,24 @@ async function pullRequestDetail(
     comments: comments.map((c) => ({ author: c.user?.login ?? 'unknown', body: c.body, createdAt: c.created_at })),
     reviews: reviews
       .filter((r) => r.state !== 'PENDING')
-      .map((r) => ({ author: r.user?.login ?? 'unknown', state: r.state as PrReview['state'] }))
+      .map((r) => ({ author: r.user?.login ?? 'unknown', state: r.state as PrReview['state'] })),
+    reviewThreads
   }
+}
+
+/** Reply to an inline review thread (POST a comment in reply to `inReplyTo`). */
+async function replyReviewComment(
+  remoteUrl: string,
+  tokens: { github?: string },
+  number: number,
+  inReplyTo: number,
+  body: string
+): Promise<void> {
+  const { owner, repo, token } = ghRepoOf(remoteUrl, tokens.github)
+  await ghJson(`https://api.github.com/repos/${owner}/${repo}/pulls/${number}/comments`, token, {
+    method: 'POST',
+    body: JSON.stringify({ body, in_reply_to: inReplyTo })
+  })
 }
 
 async function commentOnPr(
@@ -991,6 +1041,11 @@ export function registerHostingHandlers(): void {
   )
   ipcMain.handle('hosting:prComment', (_e, remoteUrl: string, tokens: { github?: string }, number: number, body: string) =>
     commentOnPr(remoteUrl, tokens, number, body)
+  )
+  ipcMain.handle(
+    'hosting:prReplyReviewComment',
+    (_e, remoteUrl: string, tokens: { github?: string }, number: number, inReplyTo: number, body: string) =>
+      replyReviewComment(remoteUrl, tokens, number, inReplyTo, body)
   )
   ipcMain.handle(
     'hosting:prReview',

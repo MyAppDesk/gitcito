@@ -8655,3 +8655,45 @@ button.insights-row:hover { background: var(--bg-2); }
   background: var(--accent-soft);
   border-radius: 6px;
 }
+
+/* ─── PR inline review threads ─────────────────────────────────────────── */
+.prd-threads { display: flex; flex-direction: column; gap: 12px; margin-bottom: 12px; }
+.prd-thread {
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: var(--bg-2);
+}
+.prd-thread-loc {
+  font-family: var(--mono, monospace);
+  font-size: 11px;
+  color: var(--text-1);
+  margin-bottom: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  direction: rtl;
+  text-align: left;
+}
+.prd-thread-hunk {
+  font-family: var(--mono, monospace);
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--text-2);
+  background: var(--bg-0);
+  border-radius: 6px;
+  padding: 6px 8px;
+  margin: 0 0 8px;
+  overflow-x: auto;
+  white-space: pre;
+}
+.prd-thread-reply { display: flex; gap: 6px; margin-top: 8px; }
+.prd-reply-input {
+  flex: 1;
+  font-size: 12px;
+  padding: 5px 8px;
+  background: var(--bg-0);
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  color: var(--text-0);
+}

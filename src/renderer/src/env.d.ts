@@ -64,6 +64,7 @@ interface PreloadApi {
     createPR(remoteUrl: string, tokens: unknown, opts: unknown): Promise<unknown>
     prDetail(remoteUrl: string, tokens: unknown, number: number): Promise<unknown>
     prComment(remoteUrl: string, tokens: unknown, number: number, body: string): Promise<unknown>
+    prReplyReviewComment(remoteUrl: string, tokens: unknown, number: number, inReplyTo: number, body: string): Promise<unknown>
     prReview(remoteUrl: string, tokens: unknown, number: number, event: string, body: string): Promise<unknown>
     prMerge(remoteUrl: string, tokens: unknown, number: number, method: string): Promise<unknown>
     listNotifications(token: string, all?: boolean): Promise<unknown>

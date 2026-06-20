@@ -18,6 +18,7 @@ import { CommitComposer } from './components/CommitComposer'
 import { TerminalContainer } from './components/TerminalContainer'
 import { ContextMenu } from './components/ContextMenu'
 import { ModalHost } from './components/ModalHost'
+import { CommandPalette } from './components/CommandPalette'
 import { Toasts } from './components/Toasts'
 import { Welcome, LauncherPanel, type LauncherItem } from './components/Welcome'
 import { OnboardingWizard } from './components/OnboardingWizard'
@@ -180,6 +181,18 @@ export default function App(): React.JSX.Element {
 
   useEffect(() => {
     void window.api.appVersion().then(setAppVersion)
+  }, [])
+
+  // Global command palette toggle (Cmd/Ctrl+K).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        useUIStore.getState().toggleCommandPalette()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
   }, [])
 
   // Open http(s) links in the user's default browser instead of navigating
@@ -479,6 +492,7 @@ export default function App(): React.JSX.Element {
 
       <ContextMenu />
       <ModalHost />
+      <CommandPalette />
       <Toasts />
     </div>
   )

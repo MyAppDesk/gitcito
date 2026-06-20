@@ -156,6 +156,8 @@ interface UIState {
   contextMenu: ContextMenuState | null
   modal: ModalSpec | null
   toasts: Toast[]
+  /** Cmd/Ctrl+K command palette — fuzzy jump to branches, commits, files, actions. */
+  commandPaletteOpen: boolean
   terminalOpen: boolean
   graphFilter: string
   ciFilter: CiFilter
@@ -174,6 +176,8 @@ interface UIState {
   closeContextMenu(): void
   openModal(modal: ModalSpec): void
   closeModal(): void
+  setCommandPalette(open: boolean): void
+  toggleCommandPalette(): void
   toast(kind: Toast['kind'], message: string): void
   dismissToast(id: number): void
   toggleTerminal(): void
@@ -195,6 +199,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   contextMenu: null,
   modal: null,
   toasts: [],
+  commandPaletteOpen: false,
   terminalOpen: false,
   graphFilter: '',
   ciFilter: 'all',
@@ -211,6 +216,8 @@ export const useUIStore = create<UIState>((set, get) => ({
   closeContextMenu: () => set({ contextMenu: null }),
   openModal: (modal) => set({ modal }),
   closeModal: () => set({ modal: null }),
+  setCommandPalette: (commandPaletteOpen) => set({ commandPaletteOpen }),
+  toggleCommandPalette: () => set({ commandPaletteOpen: !get().commandPaletteOpen }),
 
   toast: (kind, message) => {
     const id = ++toastId

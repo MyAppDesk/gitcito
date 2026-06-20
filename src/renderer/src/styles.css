@@ -8116,3 +8116,104 @@ mark.find-hit.active {
 .stash-rename-btn { opacity: 0; flex-shrink: 0; }
 .commit-header:hover .stash-rename-btn { opacity: 0.7; }
 .stash-rename-btn:hover { opacity: 1; }
+
+/* ─── Command palette (Cmd/Ctrl+K) ─────────────────────────────────────── */
+.cmdp-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(5, 6, 10, 0.5);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 12vh;
+}
+.cmdp {
+  width: min(640px, 92vw);
+  max-height: 64vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+.cmdp-input-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.cmdp-search-icon { color: var(--text-2); flex-shrink: 0; }
+.cmdp-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--text-0);
+  font-size: 15px;
+  outline: none;
+}
+.cmdp-input::placeholder { color: var(--text-2); }
+.cmdp-kbd {
+  font-size: 10px;
+  color: var(--text-2);
+  background: var(--bg-3);
+  border: 1px solid var(--border-soft);
+  border-radius: 5px;
+  padding: 2px 6px;
+  text-transform: uppercase;
+}
+.cmdp-list {
+  overflow-y: auto;
+  padding: 6px;
+}
+.cmdp-group {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-2);
+  padding: 8px 10px 4px;
+}
+.cmdp-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  color: var(--text-0);
+  cursor: pointer;
+}
+.cmdp-row.active { background: var(--accent-soft); }
+.cmdp-icon { color: var(--text-1); flex-shrink: 0; display: flex; }
+.cmdp-row.active .cmdp-icon { color: var(--accent); }
+.cmdp-text { display: flex; flex-direction: column; min-width: 0; }
+.cmdp-title {
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cmdp-sub {
+  font-size: 11px;
+  color: var(--text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cmdp-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 32px;
+  color: var(--text-2);
+  font-size: 13px;
+}

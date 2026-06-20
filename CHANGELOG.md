@@ -1,5 +1,19 @@
 
 
+## [0.19.0](https://github.com/MyAppDesk/gitcito/compare/v0.18.0...v0.19.0) (2026-06-20)
+
+
+### Features
+
+* add secret masking and guard for sensitive files ([d30bb7d](https://github.com/MyAppDesk/gitcito/commit/d30bb7d5b11b01e636d2be02c2676b3690f3792a))
+* add secure local vault for managing secrets ([ba01368](https://github.com/MyAppDesk/gitcito/commit/ba013682dcd361339fd219263298861f099fd0ff))
+* add support for GitLab and Bitbucket in PR handling ([3bfc7a1](https://github.com/MyAppDesk/gitcito/commit/3bfc7a16e71c530574edb1cd7e9dbc8c7eb6734e))
+
+
+### Bug Fixes
+
+* update tab class logic for changelog type ([68a37ac](https://github.com/MyAppDesk/gitcito/commit/68a37ac3c4bf790168783267bed36e6f09e4ab75))
+
 ## [0.18.0](https://github.com/MyAppDesk/gitcito/compare/v0.17.0...v0.18.0) (2026-06-20)
 
 

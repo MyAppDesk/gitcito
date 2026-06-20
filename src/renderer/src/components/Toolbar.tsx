@@ -22,7 +22,8 @@ import {
   FolderTree,
   ChevronRight,
   FolderGit2,
-  GitBranch
+  GitBranch,
+  Bell
 } from 'lucide-react'
 import type { MenuItem } from '../stores/ui'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
@@ -46,6 +47,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
   const { openContextMenu, openModal, toggleTerminal, terminalOpen, graphFilter, setGraphFilter, busy } = useUIStore()
   const confirmForcePush = useSettingsStore((s) => s.settings.confirmForcePush)
   const aiEnabled = useSettingsStore((s) => s.activeProfile().ai.enabled !== false)
+  const hasGithubToken = useSettingsStore((s) => !!s.activeProfile().githubToken)
   const path = repo.path
   const current = repo.branches.locals.find((b) => b.isCurrent)
 
@@ -304,6 +306,15 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
             onChange={(e) => setGraphFilter(e.target.value)}
           />
         </div>
+        {hasGithubToken && (
+          <button
+            className="tool-btn icon-only"
+            title="GitHub notifications"
+            onClick={() => useSettingsStore.getState().openPageTab({ type: 'notifications' })}
+          >
+            <Bell size={16} />
+          </button>
+        )}
         <button
           className="tool-btn icon-only"
           title={`Refresh (last refreshed ${timeSince(repo.lastRefreshAt)})`}

@@ -48,7 +48,8 @@ import type {
   TreeEntry,
   TreeStatusKind,
   CodeSearchHit,
-  HistorySearchHit
+  HistorySearchHit,
+  GitHubNotification
 } from '../../../shared/types'
 
 // Typed adapter over the IPC bridge — the only place that talks to window.api.
@@ -327,6 +328,12 @@ export const hostingApi = {
     window.api.hosting.prReview(remoteUrl, tokens, number, event, body) as Promise<void>,
   prMerge: (remoteUrl: string, tokens: { github?: string }, number: number, method: PrMergeMethod) =>
     window.api.hosting.prMerge(remoteUrl, tokens, number, method) as Promise<void>,
+  listNotifications: (token: string, all?: boolean) =>
+    window.api.hosting.listNotifications(token, all) as Promise<GitHubNotification[]>,
+  markNotificationRead: (token: string, id: string) =>
+    window.api.hosting.markNotificationRead(token, id) as Promise<void>,
+  markAllNotificationsRead: (token: string) =>
+    window.api.hosting.markAllNotificationsRead(token) as Promise<void>,
   listIssues: (remoteUrl: string, tokens: { github?: string }) =>
     window.api.hosting.listIssues(remoteUrl, tokens) as Promise<{ provider: HostingProvider; issues: IssueInfo[] }>,
   issueDetail: (remoteUrl: string, tokens: { github?: string }, number: number) =>

@@ -40,6 +40,20 @@ export interface HistorySearchHit {
   subject: string
 }
 
+/** One GitHub notification thread (token-level, across all repos). */
+export interface GitHubNotification {
+  id: string // thread id (used to mark read)
+  reason: string // e.g. review_requested, mention, assign, ci_activity
+  title: string
+  type: string // PullRequest | Issue | Release | Commit | Discussion | …
+  repoFullName: string // owner/repo
+  repoUrl: string // repository html_url
+  number: number | null // PR / issue number when derivable
+  unread: boolean
+  updatedAt: number // unix seconds
+  url: string // best-effort web URL to open
+}
+
 /** Per-repo commit-signing configuration. */
 export interface SigningConfig {
   sign: boolean // commit.gpgsign
@@ -686,6 +700,7 @@ export interface PageTab extends TabBase {
 export type PageContent =
   | { type: 'changelog' }
   | { type: 'logs' }
+  | { type: 'notifications' }
   | { type: 'release'; release: ReleaseInfo; repoPath: string }
   | { type: 'issue'; issue: IssueInfo; repoPath: string; remoteUrl: string }
   | { type: 'milestone'; milestone: MilestoneInfo; repoPath: string; remoteUrl: string }

@@ -24,6 +24,7 @@ import { Welcome, LauncherPanel, type LauncherItem } from './components/Welcome'
 import { OnboardingWizard } from './components/OnboardingWizard'
 import { ChangelogPage } from './components/ChangelogPage'
 import { LogsPage } from './components/LogsPage'
+import { NotificationsPage } from './components/NotificationsPage'
 import { ReleasePage } from './components/ReleasePage'
 import { IssueDetailPage } from './components/IssueDetailPage'
 import { MilestoneDetailPage } from './components/MilestoneDetailPage'
@@ -101,6 +102,8 @@ function PageView({ tab }: { tab: PageTab }): React.JSX.Element {
       return <ChangelogPage />
     case 'logs':
       return <LogsPage />
+    case 'notifications':
+      return <NotificationsPage />
     case 'release':
       return <ReleasePage tab={tab} />
     case 'issue':

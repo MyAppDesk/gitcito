@@ -6,6 +6,7 @@ import type {
   CreateRepoOpts,
   CreatePrOpts,
   CreatePrResult,
+  GitHubNotification,
   HostingProvider,
   PullRequest,
   PrDetail,
@@ -888,6 +889,74 @@ async function fetchCiStatuses(
   return result
 }
 
+/**
+ * GitHub notifications for the authenticated user, across every repo the token
+ * can see. Token-level (no remote needed). `all=false` ⇒ unread only.
+ */
+async function listNotifications(token: string, all = false): Promise<GitHubNotification[]> {
+  if (!token?.trim()) return []
+  const data = await ghJson<
+    Array<{
+      id: string
+      reason: string
+      unread: boolean
+      updated_at: string
+      subject: { title: string; url: string | null; type: string }
+      repository: { full_name: string; html_url: string }
+    }>
+  >(`https://api.github.com/notifications?all=${all ? 'true' : 'false'}&per_page=50`, token)
+
+  return data.map((n) => {
+    // subject.url is an API url (…/repos/o/r/issues/5 or …/pulls/5). Derive the
+    // trailing number and a browser URL — note PRs use the singular /pull/.
+    const tail = n.subject.url?.split('/').pop() ?? ''
+    const number = /^\d+$/.test(tail) ? Number(tail) : null
+    let url = n.repository.html_url
+    if (number != null) {
+      if (n.subject.type === 'PullRequest') url = `${n.repository.html_url}/pull/${number}`
+      else if (n.subject.type === 'Issue') url = `${n.repository.html_url}/issues/${number}`
+    } else if (n.subject.type === 'Release') {
+      url = `${n.repository.html_url}/releases`
+    }
+    return {
+      id: n.id,
+      reason: n.reason,
+      title: n.subject.title,
+      type: n.subject.type,
+      repoFullName: n.repository.full_name,
+      repoUrl: n.repository.html_url,
+      number,
+      unread: n.unread,
+      updatedAt: Math.floor(new Date(n.updated_at).getTime() / 1000),
+      url
+    }
+  })
+}
+
+async function markNotificationRead(token: string, id: string): Promise<void> {
+  if (!token?.trim()) return
+  await ghJson<unknown>(`https://api.github.com/notifications/threads/${id}`, token, { method: 'PATCH' }).catch(() => {
+    /* already read / gone — non-fatal */
+  })
+}
+
+async function markAllNotificationsRead(token: string): Promise<void> {
+  if (!token?.trim()) return
+  // The PUT /notifications endpoint returns 202 with an empty body; ghJson would
+  // choke parsing JSON, so call fetch directly.
+  await fetch('https://api.github.com/notifications', {
+    method: 'PUT',
+    headers: {
+      Accept: 'application/vnd.github+json',
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ read: true })
+  }).catch(() => {
+    /* non-fatal */
+  })
+}
+
 export function registerHostingHandlers(): void {
   ipcMain.handle('hosting:listRepos', (_e, provider: RepoHost, token: string, org?: string) =>
     listRepositories(provider, token, org)
@@ -932,6 +1001,15 @@ export function registerHostingHandlers(): void {
     'hosting:prMerge',
     (_e, remoteUrl: string, tokens: { github?: string }, number: number, method: PrMergeMethod) =>
       mergePr(remoteUrl, tokens, number, method)
+  )
+  ipcMain.handle('hosting:listNotifications', (_e, token: string, all?: boolean) =>
+    listNotifications(token, all)
+  )
+  ipcMain.handle('hosting:markNotificationRead', (_e, token: string, id: string) =>
+    markNotificationRead(token, id)
+  )
+  ipcMain.handle('hosting:markAllNotificationsRead', (_e, token: string) =>
+    markAllNotificationsRead(token)
   )
   ipcMain.handle('hosting:listIssues', (_e, remoteUrl: string, tokens: { github?: string }) =>
     listIssues(remoteUrl, tokens)

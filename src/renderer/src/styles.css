@@ -8313,3 +8313,51 @@ mark.find-hit.active {
 .codesearch-commit-body { display: flex; flex-direction: column; min-width: 0; }
 .codesearch-commit-subject { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .codesearch-commit-meta { font-size: 11px; color: var(--text-2); }
+
+/* ─── Notifications inbox ───────────────────────────────────────────────── */
+.notif-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+}
+.notif-row.unread { background: var(--accent-soft); }
+.notif-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: transparent;
+}
+.notif-row.unread .notif-dot { background: var(--accent); }
+.notif-type { color: var(--text-1); flex-shrink: 0; display: flex; }
+.notif-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-0);
+}
+.notif-title { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.notif-row.unread .notif-title { font-weight: 600; }
+.notif-meta { font-size: 11px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.notif-reason { color: var(--text-1); }
+.notif-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-2);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.notif-action:hover { background: var(--bg-3); color: var(--text-0); }

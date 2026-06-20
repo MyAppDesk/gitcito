@@ -29,6 +29,7 @@
 > - **Issues** browsing & the issue tab, **milestones**, and **Projects v2 fields**
 >   (Priority / Start / Target / Effort).
 > - **Releases** browsing in the sidebar / changelog page.
+> - **Notifications inbox** (your GitHub notifications across all repos).
 > - **GitHub profile links** from commit authors, and the in-app **"What's new"**
 >   changelog (pulled from Gitcito's own GitHub releases).
 >
@@ -92,6 +93,7 @@
 - **Issues** _(GitHub only)_ — browse open issues, then a full **issue tab**: body, comments, labels, assignees, milestone, Projects v2 fields (Priority/Start/Target/Effort), close/reopen, and **create a branch for an issue** (with AI naming).
 - **Milestones** _(GitHub only)_ — a sidebar list with progress, and a **milestone tab** showing its issues.
 - **Releases** _(GitHub only)_ — browse a repo's releases in the sidebar and a changelog page.
+- **Notifications inbox** _(GitHub only)_ — your whole GitHub inbox (review requests, mentions, CI activity…) across every repo, with unread / all filters, mark-one / mark-all read, and one click to open. Reachable from the toolbar bell, the command palette, or `⌘K`.
 - **Clone or create repositories** on your hosting accounts without leaving the app.
 - **Per-profile tokens** for multiple accounts / orgs.
 - _GitHub is the battle-tested path (PR create/review/merge, issues, milestones, project fields); GitLab, Bitbucket & Azure plumbing exists but is unverified — see the disclaimer above._

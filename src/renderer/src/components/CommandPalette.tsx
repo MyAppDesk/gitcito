@@ -19,7 +19,8 @@ import {
   GitPullRequest,
   SunMoon,
   Plus,
-  Search
+  Search,
+  Bell
 } from 'lucide-react'
 import { useUIStore } from '../stores/ui'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
@@ -120,6 +121,7 @@ export function CommandPalette(): React.JSX.Element {
       { id: 'lfs', title: 'Manage Git LFS', group: 'Actions', keywords: 'large file storage', icon: <Boxes size={15} />, run: act(() => ui.openModal({ kind: 'lfs', repoPath: path })) },
       { id: 'sparse', title: 'Sparse-checkout…', group: 'Actions', keywords: 'cone partial', icon: <FolderTree size={15} />, run: act(() => ui.openModal({ kind: 'sparse', repoPath: path })) },
       { id: 'theme', title: 'Toggle light / dark theme', group: 'Actions', keywords: 'appearance dark light mode', icon: <SunMoon size={15} />, run: act(() => useSettingsStore.getState().update((s) => ({ ...s, themeMode: s.themeMode === 'dark' ? 'light' : 'dark' }))) },
+      { id: 'notifications', title: 'GitHub notifications', group: 'Actions', keywords: 'inbox review mention github bell', icon: <Bell size={15} />, run: act(() => useSettingsStore.getState().openPageTab({ type: 'notifications' })) },
       { id: 'changelog', title: "Open What's new (changelog)", group: 'Actions', keywords: 'release notes version', icon: <FileText size={15} />, run: act(() => useSettingsStore.getState().openPageTab({ type: 'changelog' })) },
       { id: 'settings', title: 'Open settings', group: 'Actions', keywords: 'preferences config', icon: <Settings size={15} />, run: act(() => ui.openModal({ kind: 'settings' })) }
     )

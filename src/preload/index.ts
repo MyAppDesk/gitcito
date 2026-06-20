@@ -93,6 +93,12 @@ const api = {
       ipcRenderer.invoke('hosting:prReview', remoteUrl, tokens, number, event, body),
     prMerge: (remoteUrl: string, tokens: unknown, number: number, method: string): Promise<unknown> =>
       ipcRenderer.invoke('hosting:prMerge', remoteUrl, tokens, number, method),
+    listNotifications: (token: string, all?: boolean): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:listNotifications', token, all),
+    markNotificationRead: (token: string, id: string): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:markNotificationRead', token, id),
+    markAllNotificationsRead: (token: string): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:markAllNotificationsRead', token),
     listIssues: (remoteUrl: string, tokens: unknown): Promise<unknown> =>
       ipcRenderer.invoke('hosting:listIssues', remoteUrl, tokens),
     issueDetail: (remoteUrl: string, tokens: unknown, number: number): Promise<unknown> =>

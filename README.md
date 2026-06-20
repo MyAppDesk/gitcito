@@ -48,7 +48,7 @@
 - **Customisable graph columns**: show/hide, resize and reorder branch, message, author, date, SHA and deployment columns.
 - **Inline CI status** _(GitHub only)_. GitHub Actions check-runs (pass/fail/pending) shown right on the commit row.
 - **Branches, remotes, tags, stashes, worktrees & submodules**, all in one reorderable, searchable sidebar.
-- **Commit details**: changed-files tree/flat view, author, SHA, co-authors, copy & open externally.
+- **Commit details**: changed-files tree/flat view, author, SHA, co-authors, copy & open externally. `#123` issue/PR refs and `@mentions` (in commit subjects, PR & issue bodies/comments) are **autolinked** to the host.
 - **Per-file blame & history**, with a follow-the-line jump from blame straight into the diff.
 - **Search & filter** commits by message, author, SHA or deployment status.
 - **Code search** (`⌘⇧F` / `Ctrl+Shift+F`). Search file **contents** across the working tree (`git grep`, tracked + untracked, with case / whole-word / regex) — results are **syntax-highlighted** with the match marked — or run a **history pickaxe** (`git log -S` / `-G`) to find the commits that introduced or removed a string. Click a hit to jump to the file or commit.
@@ -61,12 +61,12 @@
 - **Amend**, persistent drafts, and auto-prefilled messages during merge / cherry-pick / revert.
 - **Commit templates** (`commit.template` / `.gitmessage`) prefill the composer; comment lines are stripped.
 - **Changelog generator** — turn Conventional-Commit messages between two refs (defaults to the latest tag → HEAD) into a grouped changelog (Features / Fixes / Performance…, with breaking changes surfaced first). Copy it, or prepend it straight to `CHANGELOG.md`.
-- **Diff viewer** with syntax highlighting and one-click hunk staging, plus a **word-level diff** toggle that highlights just the changed tokens within edited lines (red on the old, green on the new).
+- **Diff viewer** with syntax highlighting and one-click hunk staging, a **unified ↔ split (side-by-side)** toggle, plus a **word-level diff** toggle that highlights just the changed tokens within edited lines (red on the old, green on the new).
 - **Image diff** with side-by-side / swipe comparison for changed images.
 - **Conflict resolver** with ours / theirs / per-line picking and an editable output pane.
 - **Smart .gitignore** — ignore a file, `*.ext`, or a folder, written to the closest folder's `.gitignore` or the repo root, with a live preview.
 - **Secret masking** — values in `.env*`, `*.pem`, `*.key`, `id_rsa`, `credentials.*` and friends render as `KEY=••••••` in the diff, file and blame views, so a screenshot or screen-share never leaks them. On by default; an eye-toggle reveals them per view, and it's display-only (never touches the file or what you stage).
-- **Secret guard** — committing a secret-looking file pops a confirm with a one-click **Ignore & untrack**, and pushing a repo that *tracks* secrets warns first (once per session). `.env.example` / `.sample` / `.template` are treated as safe templates.
+- **Secret & large-file guard** — committing a secret-looking file **or an oversized blob** pops one confirm (with sizes) and a one-click **Ignore & untrack**; pushing a repo that *tracks* secrets warns first (once per session). `.env.example` / `.sample` / `.template` are treated as safe templates; the size threshold is configurable in Settings → Security.
 - **Vault** — a **secure, fully local** secret store: encrypted at rest with your **OS keychain** (Electron `safeStorage`), with **global** and **per-repo** scopes. It’s **not a file** and has nothing to do with your `.env` — entries are *associated* with a repo but **never written into it, committed or pushed**. Switch between any known repo, reveal / copy a value, or “Copy as .env” a whole set. Reachable from the tools menu, Settings, the command palette or `⌘⇧V`. **Nothing ever leaves your machine — no sync, no cloud.**
 
 ### Branching, merging & history surgery
@@ -126,6 +126,7 @@
 - **9 built-in themes** (Gitcito, Nord, Dracula, Solarized, GitHub, Monokai, Midnight, Contrast, Daltonic), each with light & dark — plus custom and **AI-generated** themes, and adjustable code font size.
 - **Light, dark or follow-OS**, switchable live.
 - **Profiles** with separate Git identities and integration tokens.
+- **Keyboard shortcuts** with a `?` cheatsheet — and the core navigation shortcuts (palette, code search, vault) are **rebindable**, with conflict handling and per-shortcut reset.
 - **Undo / redo**, a first-run onboarding wizard, and **i18n** (English & Spanish) out of the box.
 
 ## 🖼️ Screenshots
@@ -207,9 +208,9 @@ Drag to reorder, squash, fixup, reword or drop — in a visual editor.
 ![Conflict resolver with ours / theirs / output panes](docs/screenshots/conflict-resolver.png)
 
 ### Diffs & previews
-| Image diff | Markdown preview |
-|---|---|
-| ![Side-by-side image diff](docs/screenshots/image-diff.png) | ![Markdown preview pane](docs/screenshots/markdown-preview.png) |
+| Split (side-by-side) diff | Image diff | Markdown preview |
+|---|---|---|
+| ![Side-by-side split diff with word-level highlighting](docs/screenshots/split-diff.png) | ![Side-by-side image diff](docs/screenshots/image-diff.png) | ![Markdown preview pane](docs/screenshots/markdown-preview.png) |
 
 ### Settings
 | AI | Themes |

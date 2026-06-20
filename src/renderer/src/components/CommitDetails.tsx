@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { SquarePen, ExternalLink, Sparkles, Loader2 } from 'lucide-react'
 import type { FileEntry, GraphCommit, RemoteInfo } from '../../../shared/types'
+import { autolink, remoteWebUrl } from '../lib/autolink'
 import { gitApi, aiApi, shellApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
@@ -216,7 +217,7 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
             }}
           />
         ) : (
-          <p className="commit-subject">{commit.subject}</p>
+          <p className="commit-subject">{autolink(commit.subject, remoteWebUrl(repo.remotes.find((r) => r.name === 'origin')?.url ?? repo.remotes[0]?.url))}</p>
         )}
 
         <div className="panel-toolbar">

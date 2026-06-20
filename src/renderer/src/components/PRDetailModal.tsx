@@ -13,6 +13,7 @@ import { hostingApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { useRepoStore } from '../stores/repo'
+import { autolink, remoteWebUrl } from '../lib/autolink'
 
 export function PRDetailModal({
   repoPath,
@@ -133,7 +134,7 @@ export function PRDetailModal({
             </div>
           )}
 
-          {pr.body.trim() && <div className="prd-body">{pr.body}</div>}
+          {pr.body.trim() && <div className="prd-body">{autolink(pr.body, remoteWebUrl(remoteUrl))}</div>}
 
           <div className="prd-section-title">
             Conversation {pr.comments.length > 0 && <span className="prd-count">{pr.comments.length}</span>}
@@ -146,7 +147,7 @@ export function PRDetailModal({
                   <strong>{c.author}</strong>
                   <span>{new Date(c.createdAt).toLocaleString()}</span>
                 </div>
-                <div className="prd-comment-body">{c.body}</div>
+                <div className="prd-comment-body">{autolink(c.body, remoteWebUrl(remoteUrl))}</div>
               </div>
             ))}
           </div>
@@ -174,7 +175,7 @@ export function PRDetailModal({
                           <strong>{c.author}</strong>
                           <span>{new Date(c.createdAt).toLocaleString()}</span>
                         </div>
-                        <div className="prd-comment-body">{c.body}</div>
+                        <div className="prd-comment-body">{autolink(c.body, remoteWebUrl(remoteUrl))}</div>
                       </div>
                     ))}
                     <div className="prd-thread-reply">

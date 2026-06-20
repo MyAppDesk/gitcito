@@ -16,6 +16,7 @@ import type { IssueDetail, PageContent } from '../../../shared/types'
 import { hostingApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
+import { autolink, remoteWebUrl } from '../lib/autolink'
 import { useRepoStore } from '../stores/repo'
 
 type IssuePage = Extract<PageContent, { type: 'issue' }>
@@ -120,7 +121,7 @@ export function IssueDetailPage({ page }: { page: IssuePage }): React.JSX.Elemen
               {detail.author} opened this · {new Date(detail.createdAt).toLocaleString()}
             </div>
             {detail.body.trim() ? (
-              <div className="issue-body">{detail.body}</div>
+              <div className="issue-body">{autolink(detail.body, remoteWebUrl(remoteUrl))}</div>
             ) : (
               <div className="issue-body issue-body-empty">No description provided.</div>
             )}
@@ -135,7 +136,7 @@ export function IssueDetailPage({ page }: { page: IssuePage }): React.JSX.Elemen
                   <strong>{c.author}</strong>
                   <span>{new Date(c.createdAt).toLocaleString()}</span>
                 </div>
-                <div className="issue-comment-body">{c.body}</div>
+                <div className="issue-comment-body">{autolink(c.body, remoteWebUrl(remoteUrl))}</div>
               </div>
             ))}
 

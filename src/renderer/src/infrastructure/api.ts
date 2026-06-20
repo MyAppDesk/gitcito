@@ -298,6 +298,8 @@ export const aiApi = {
     window.api.ai.generateBranchName(description, cfg, ctx) as Promise<string>,
   reviewPR: (diff: string, cfg: AIConfig) =>
     window.api.ai.reviewPR(diff, cfg) as Promise<{ summary: string; risks: string; suggestions: string }>,
+  prDescription: (commits: string, diff: string, cfg: AIConfig) =>
+    window.api.ai.prDescription(commits, diff, cfg) as Promise<{ title: string; body: string }>,
   planActions: (prompt: string, status: RepoStatus, cfg: AIConfig) =>
     window.api.ai.planActions(prompt, status, cfg) as Promise<AskPlan>
 }

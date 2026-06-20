@@ -113,7 +113,7 @@
 - **Commit messages** — summary (and optional body) generated from your staged diff, in your chosen style.
 - **Explain this file** in plain language (Normal, Concise, ELI5, … even Pirate) in a side panel.
 - **AI conflict resolution** proposes a merge into the editable output; never auto-applies.
-- **AI PR review** summarises a diff and flags risks; **AI branch naming** from a description.
+- **AI PR review** summarises a diff and flags risks; **AI branch naming** from a description; **AI PR description** drafts a title + Markdown body from the branch's commits and diff, right in the Create-PR form.
 - **Project-config wizard** scaffolds `.gitignore`, CI workflows, agent rules and more.
 - **Generate themes** from a prompt, and **smart-stage** suggestions for what to commit.
 - Presets for **OpenAI, Anthropic, OpenRouter, Groq, Mistral and Ollama** (local), or any OpenAI-compatible endpoint; live model fetching and custom instructions.

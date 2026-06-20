@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { GitPullRequest, Loader2, ExternalLink, ArrowRight } from 'lucide-react'
-import { gitApi, hostingApi } from '../infrastructure/api'
+import { GitPullRequest, Loader2, ExternalLink, ArrowRight, Sparkles } from 'lucide-react'
+import { gitApi, hostingApi, aiApi } from '../infrastructure/api'
 import { useUIStore, type ModalSpec } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { useRepoStore } from '../stores/repo'
@@ -31,6 +31,31 @@ export function CreatePRModal({ spec }: { spec: Extract<ModalSpec, { kind: 'crea
   const [body, setBody] = useState(spec.defaultBody ?? '')
   const [draft, setDraft] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [aiBusy, setAiBusy] = useState(false)
+  const aiEnabled = profile.ai?.enabled !== false
+
+  // Draft the PR title + body from the branch's commits + diff via AI.
+  const aiDraft = async (): Promise<void> => {
+    if (!source || !target || source === target) return
+    setAiBusy(true)
+    try {
+      const cmp = await gitApi.compareBranches(spec.repoPath, source, target)
+      const commits = cmp.aheadCommits.map((c) => `- ${c.subject}`).join('\n')
+      const { title: t, body: b } = await aiApi.prDescription(commits, cmp.diff, profile.ai)
+      if (t) {
+        titleTouched.current = true
+        setTitle(t)
+      }
+      if (b) {
+        bodyTouched.current = true
+        setBody(b)
+      }
+    } catch (err) {
+      toast('error', err instanceof Error ? err.message : String(err))
+    } finally {
+      setAiBusy(false)
+    }
+  }
 
   // Auto-fill title/body from the commits unique to `source` — unless the opener
   // already supplied a title, or the user has started editing the fields.
@@ -123,7 +148,19 @@ export function CreatePRModal({ spec }: { spec: Extract<ModalSpec, { kind: 'crea
         placeholder="Pull request title"
       />
 
-      <label className="modal-label">Description</label>
+      <div className="pr-desc-label">
+        <label className="modal-label">Description</label>
+        {aiEnabled && (
+          <button
+            className="btn ghost small"
+            onClick={() => void aiDraft()}
+            disabled={aiBusy || !remoteUrl || source === target}
+            title="Draft title & description from the branch's commits with AI"
+          >
+            {aiBusy ? <Loader2 size={13} className="spin" /> : <Sparkles size={13} />} AI draft
+          </button>
+        )}
+      </div>
       <textarea
         className="pr-body"
         value={body}

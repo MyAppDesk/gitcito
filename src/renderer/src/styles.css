@@ -8822,3 +8822,6 @@ button.insights-row:hover { background: var(--bg-2); }
 }
 .cheat-reset:hover:not(:disabled) { background: var(--bg-3); color: var(--text-0); }
 .cheat-reset:disabled { opacity: 0; cursor: default; }
+
+/* ─── AI PR draft button ───────────────────────────────────────────────── */
+.pr-desc-label { display: flex; align-items: center; justify-content: space-between; gap: 8px; }

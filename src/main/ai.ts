@@ -592,6 +592,39 @@ Reply ONLY with valid JSON: {"summary": "...", "risks": "...", "suggestions": ".
   }
 }
 
+export interface PRDescriptionResult {
+  title: string
+  body: string
+}
+
+/** Draft a PR title + Markdown body from a branch's commit subjects and diff. */
+async function prDescription(commits: string, diff: string, cfg: AIConfig): Promise<PRDescriptionResult> {
+  const system = `You write clear, concise pull request descriptions.
+Given a branch's commit subjects and its diff, return a JSON object:
+- "title": a single-line PR title (imperative, no trailing period, ≤ 70 chars).
+- "body": GitHub-flavored Markdown — a short summary paragraph, then a "## Changes" bullet list of the notable changes, and a "## Notes" section only if useful.
+Reply ONLY with valid JSON: {"title": "...", "body": "..."}. No markdown fences.`
+  const user = `Commit subjects:\n${clip(commits, 4000)}\n\nDiff:\n${clip(diff, 20000)}`
+  const out = await chatComplete(
+    cfg,
+    [
+      { role: 'system', content: system },
+      { role: 'user', content: user }
+    ],
+    'prDescription',
+    0.3
+  )
+  try {
+    const cleaned = out.replace(/^```(json)?/m, '').replace(/```$/m, '').trim()
+    const parsed = JSON.parse(cleaned) as Partial<PRDescriptionResult>
+    return { title: (parsed.title ?? '').trim(), body: (parsed.body ?? '').trim() }
+  } catch {
+    // Fall back to the first line as title, rest as body.
+    const [first, ...rest] = out.trim().split('\n')
+    return { title: first.trim(), body: rest.join('\n').trim() }
+  }
+}
+
 /**
  * Interpret a free-form instruction (e.g. "ignore all *.tsx files", "commit the
  * unstaged .md files") against the repo's current working-tree state and return a
@@ -678,4 +711,7 @@ export function registerAiHandlers(): void {
     generateBranchName(description, cfg, ctx)
   )
   ipcMain.handle('ai:reviewPR', (_e, diff: string, cfg: AIConfig) => reviewPR(diff, cfg))
+  ipcMain.handle('ai:prDescription', (_e, commits: string, diff: string, cfg: AIConfig) =>
+    prDescription(commits, diff, cfg)
+  )
 }

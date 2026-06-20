@@ -373,6 +373,31 @@ export const shots = [
     }
   },
   {
+    // Keyboard shortcut cheatsheet (rebindable).
+    out: 'cheatsheet',
+    repos: ['command-palette'],
+    themes: ['dark'],
+    drive: async (page) => {
+      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'cheatsheet' }))
+      await page.waitForTimeout(500)
+    }
+  },
+  {
+    // Side-by-side (split) diff with word-level highlighting.
+    out: 'split-diff',
+    repos: ['word-diff'],
+    themes: ['dark'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['word-diff']
+      await page.evaluate((p) => {
+        window.__shot.ui.getState().setFileView({ repoPath: p, file: 'config.ts', source: { type: 'wip', staged: false, untracked: false }, mode: 'diff' })
+      }, repo)
+      await page.waitForTimeout(500)
+      await page.click('.diff-toggles button:first-child').catch(() => {})
+      await page.waitForTimeout(500)
+    }
+  },
+  {
     // Local vault — OS-keychain-encrypted secrets, per-repo + global.
     out: 'vault',
     repos: ['secrets'],

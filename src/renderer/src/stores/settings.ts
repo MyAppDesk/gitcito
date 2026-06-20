@@ -138,6 +138,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     settings.autoOpenChangelog = settings.autoOpenChangelog ?? sd.autoOpenChangelog
     settings.wipSnapshotMinutes = settings.wipSnapshotMinutes ?? sd.wipSnapshotMinutes
     settings.maskSecrets = settings.maskSecrets ?? sd.maskSecrets
+    settings.shortcuts = settings.shortcuts ?? sd.shortcuts
+    settings.largeFileKb = settings.largeFileKb ?? sd.largeFileKb
     set({ settings, loaded: true })
   },
 

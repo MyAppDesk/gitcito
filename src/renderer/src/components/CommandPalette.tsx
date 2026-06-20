@@ -24,7 +24,8 @@ import {
   Layers,
   BarChart3,
   Camera,
-  KeyRound
+  KeyRound,
+  Keyboard
 } from 'lucide-react'
 import { useUIStore } from '../stores/ui'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
@@ -132,7 +133,8 @@ export function CommandPalette(): React.JSX.Element {
       { id: 'theme', title: 'Toggle light / dark theme', group: 'Actions', keywords: 'appearance dark light mode', icon: <SunMoon size={15} />, run: act(() => useSettingsStore.getState().update((s) => ({ ...s, themeMode: s.themeMode === 'dark' ? 'light' : 'dark' }))) },
       { id: 'notifications', title: 'GitHub notifications', group: 'Actions', keywords: 'inbox review mention github bell', icon: <Bell size={15} />, run: act(() => useSettingsStore.getState().openPageTab({ type: 'notifications' })) },
       { id: 'changelog', title: "Open What's new (changelog)", group: 'Actions', keywords: 'release notes version', icon: <FileText size={15} />, run: act(() => useSettingsStore.getState().openPageTab({ type: 'changelog' })) },
-      { id: 'settings', title: 'Open settings', group: 'Actions', keywords: 'preferences config', icon: <Settings size={15} />, run: act(() => ui.openModal({ kind: 'settings' })) }
+      { id: 'settings', title: 'Open settings', group: 'Actions', keywords: 'preferences config', icon: <Settings size={15} />, run: act(() => ui.openModal({ kind: 'settings' })) },
+      { id: 'cheatsheet', title: 'Keyboard shortcuts', group: 'Actions', keywords: 'shortcuts keys cheatsheet rebind hotkeys', icon: <Keyboard size={15} />, run: act(() => ui.openModal({ kind: 'cheatsheet' })) }
     )
 
     // ── Branches ── (checkout)

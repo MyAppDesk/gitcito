@@ -33,6 +33,7 @@ import { MilestoneDetailPage } from './components/MilestoneDetailPage'
 import { ResizeHandle } from './components/ResizeHandle'
 import { ZoomControl } from './components/ZoomControl'
 import gitcitoLaunch from './assets/gitcito-launch.png'
+import { matchShortcut, effectiveBindings } from './lib/shortcuts'
 
 function GroupView({ tab }: { tab: GroupTab }): React.JSX.Element {
   const { settings, addRepoToGroup, removeRepoFromGroup, renameRepoInGroup, reorderReposInGroup, setGroupActiveRepo } = useSettingsStore()
@@ -202,24 +203,39 @@ export default function App(): React.JSX.Element {
     void window.api.appVersion().then(setAppVersion)
   }, [])
 
-  // Global command palette toggle (Cmd/Ctrl+K).
+  // Global keyboard shortcuts, dispatched from the central registry so bindings
+  // stay user-customizable (settings.shortcuts).
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
-      if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'k') {
-        e.preventDefault()
-        useUIStore.getState().toggleCommandPalette()
-      } else if ((e.metaKey || e.ctrlKey) && e.shiftKey && !e.altKey && e.key.toLowerCase() === 'f') {
-        const st = useSettingsStore.getState()
+      const target = e.target as HTMLElement | null
+      const typing = !!target?.closest('input, textarea, [contenteditable="true"]')
+      const st = useSettingsStore.getState()
+      const ui = useUIStore.getState()
+      const activeRepoPath = (): string | null => {
         const tab = st.settings.tabs.find((t) => t.id === st.settings.activeTabId)
-        const path = tab ? tabActiveRepoPath(tab) : null
+        return tab ? tabActiveRepoPath(tab) : null
+      }
+
+      // `?` opens the shortcut cheatsheet (when not typing).
+      if (!typing && e.key === '?' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        e.preventDefault()
+        ui.openModal({ kind: 'cheatsheet' })
+        return
+      }
+
+      const id = matchShortcut(e, effectiveBindings(st.settings.shortcuts))
+      if (!id) return
+      if (id === 'command-palette') {
+        e.preventDefault()
+        ui.toggleCommandPalette()
+      } else if (id === 'code-search') {
+        const path = activeRepoPath()
         if (path) {
           e.preventDefault()
-          useUIStore.getState().openModal({ kind: 'code-search', repoPath: path })
+          ui.openModal({ kind: 'code-search', repoPath: path })
         }
-      } else if ((e.metaKey || e.ctrlKey) && e.shiftKey && !e.altKey && e.key.toLowerCase() === 'v') {
-        const st = useSettingsStore.getState()
-        const tab = st.settings.tabs.find((t) => t.id === st.settings.activeTabId)
-        const path = tab ? tabActiveRepoPath(tab) : null
+      } else if (id === 'vault') {
+        const path = activeRepoPath()
         if (path) {
           e.preventDefault()
           st.openPageTab({ type: 'vault', repoPath: path })

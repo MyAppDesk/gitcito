@@ -2,6 +2,12 @@ import { describe, it, expect } from 'vitest'
 import { parseRemoteUrl } from '../src/main/hosting'
 import { lintCommit, subjectCounterLevel } from '../src/renderer/src/lib/commitLint'
 import { isSecretFile, maskSecretLine } from '../src/renderer/src/lib/secrets'
+import { comboFromEvent, formatCombo, effectiveBindings, matchShortcut } from '../src/renderer/src/lib/shortcuts'
+import { autolink, remoteWebUrl } from '../src/renderer/src/lib/autolink'
+
+// Minimal KeyboardEvent stand-in for the pure shortcut helpers.
+const ev = (key: string, mods: { meta?: boolean; ctrl?: boolean; shift?: boolean; alt?: boolean } = {}): KeyboardEvent =>
+  ({ key, metaKey: !!mods.meta, ctrlKey: !!mods.ctrl, shiftKey: !!mods.shift, altKey: !!mods.alt }) as KeyboardEvent
 
 // Pure-function unit tests — no git, no DOM.
 
@@ -79,5 +85,46 @@ describe('secret masking', () => {
     expect(maskSecretLine('TOKEN: abc123')).toBe('TOKEN: ••••••')
     expect(maskSecretLine('# a comment')).toBe('# a comment')
     expect(maskSecretLine('not an assignment')).toBe('not an assignment')
+  })
+})
+
+describe('keyboard shortcuts', () => {
+  it('normalizes events to combos (mod for meta/ctrl), ignoring modifier-only', () => {
+    expect(comboFromEvent(ev('k', { meta: true }))).toBe('mod+k')
+    expect(comboFromEvent(ev('F', { ctrl: true, shift: true }))).toBe('mod+shift+f')
+    expect(comboFromEvent(ev('Shift'))).toBeNull()
+  })
+
+  it('formats combos for display (platform-aware)', () => {
+    expect(formatCombo('mod+shift+f')).toMatch(/(⌘⇧F|Ctrl\+Shift\+F)/)
+    expect(formatCombo('mod+k')).toMatch(/(⌘K|Ctrl\+K)/)
+  })
+
+  it('effective bindings apply overrides over defaults', () => {
+    const b = effectiveBindings({ 'command-palette': 'mod+p' })
+    expect(b['command-palette']).toBe('mod+p')
+    expect(b['code-search']).toBe('mod+shift+f') // untouched default
+  })
+
+  it('matchShortcut resolves the bound id', () => {
+    const b = effectiveBindings(undefined)
+    expect(matchShortcut(ev('k', { meta: true }), b)).toBe('command-palette')
+    expect(matchShortcut(ev('v', { ctrl: true, shift: true }), b)).toBe('vault')
+    expect(matchShortcut(ev('x', { meta: true }), b)).toBeNull()
+  })
+})
+
+describe('autolink', () => {
+  it('derives the web URL from ssh + https remotes', () => {
+    expect(remoteWebUrl('git@github.com:o/r.git')).toBe('https://github.com/o/r')
+    expect(remoteWebUrl('https://gitlab.com/g/s/r.git')).toBe('https://gitlab.com/g/s/r')
+    expect(remoteWebUrl(undefined)).toBeUndefined()
+  })
+
+  it('returns plain text when no repo URL, and nodes when refs present', () => {
+    expect(autolink('fix #12 by @ana', undefined)).toBe('fix #12 by @ana')
+    const out = autolink('fix #12 by @ana', 'https://github.com/o/r')
+    expect(Array.isArray(out)).toBe(true) // split into text + anchor nodes
+    expect((out as unknown[]).length).toBeGreaterThan(1)
   })
 })

@@ -867,6 +867,10 @@ export interface AppSettings {
   wipSnapshotMinutes: number
   /** Mask secret values (KEY=••••) in .env/key files in the diff & file viewer. */
   maskSecrets: boolean
+  /** Custom keyboard-shortcut overrides: shortcut id → combo (e.g. "mod+k"). */
+  shortcuts: Record<string, string>
+  /** Warn before committing files larger than this many KB (0 = off). */
+  largeFileKb: number
   /** Last app version the user has seen the changelog for. Undefined until the
    *  first run that records it; used to detect upgrades. */
   lastSeenVersion?: string
@@ -1027,6 +1031,8 @@ export function defaultSettings(): AppSettings {
     onboardingCompleted: false,
     autoOpenChangelog: true,
     wipSnapshotMinutes: 0,
-    maskSecrets: true
+    maskSecrets: true,
+    shortcuts: {},
+    largeFileKb: 5120
   }
 }

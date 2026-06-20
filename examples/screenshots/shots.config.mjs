@@ -249,6 +249,70 @@ export const shots = [
       await page.evaluate((p) => window.__shot.repo.getState().select(p, { type: 'wip' }), repo)
       await page.waitForTimeout(500)
     }
+  },
+  {
+    // Integrated terminal — a real PTY (xterm + node-pty) docked under the repo.
+    out: 'terminal',
+    repos: ['deep-history-monorepo'],
+    themes: ['dark'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['deep-history-monorepo']
+      await page.evaluate((p) => window.__shot.repo.getState().select(p, { type: 'wip' }), repo)
+      await page.waitForTimeout(300)
+      // Open the terminal pane (the flag only toggles, so guard it).
+      await page.evaluate(() => {
+        const ui = window.__shot.ui.getState()
+        if (!ui.terminalOpen) ui.toggleTerminal()
+      })
+      await page.waitForTimeout(1200)
+      // Type a command so the shot shows real output, not a bare prompt.
+      await page.click('.xterm').catch(() => {})
+      await page.keyboard.type('git log --oneline -8')
+      await page.keyboard.press('Enter')
+      await page.waitForTimeout(900)
+    }
+  },
+  {
+    // Files tab — the working-tree project browser (FolderTree) beside a preview.
+    out: 'file-tree',
+    repos: ['project-tree'],
+    themes: ['light'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['project-tree']
+      // Switch the sidebar to its Files tab (local state → click the tab button).
+      await page.click('.sb-tabs .sb-tab:nth-child(2)').catch(() => {})
+      await page.waitForTimeout(300)
+      // Open a source file in the preview pane so the right side isn't empty.
+      await page.evaluate((p) => {
+        window.__shot.ui.getState().setFileView({
+          repoPath: p,
+          file: 'src/app.ts',
+          source: { type: 'tree' },
+          mode: 'file'
+        })
+      }, repo)
+      await page.waitForTimeout(500)
+    }
+  },
+  {
+    // Interactive rebase — drag to reorder, squash, fixup, reword or drop.
+    out: 'interactive-rebase',
+    repos: ['interactive-rebase'],
+    themes: ['dark'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['interactive-rebase']
+      await page.evaluate(
+        (p) =>
+          window.__shot.ui.getState().openModal({
+            kind: 'interactive-rebase',
+            repoPath: p,
+            base: 'main',
+            baseSubject: 'initial commit'
+          }),
+        repo
+      )
+      await page.waitForTimeout(800)
+    }
   }
 ]
 

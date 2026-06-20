@@ -21,6 +21,17 @@
 > - Any **AI provider that isn't OpenAI**. The call shape is OpenAI-compatible,
 >   so others _should_ work, but they're unverified.
 >
+> **GitHub-only features.** Some things talk directly to the GitHub API and do
+> nothing (or are hidden) on other hosts — even if a token is stored:
+> - **Inline CI status** (GitHub Actions check-runs on the commit row).
+> - **Pull request review, comment & merge** (PR _detail_, approve / request
+>   changes, and merge / squash / rebase). PR _creation_ also works on Azure DevOps.
+> - **Issues** browsing & the issue tab, **milestones**, and **Projects v2 fields**
+>   (Priority / Start / Target / Effort).
+> - **Releases** browsing in the sidebar / changelog page.
+> - **GitHub profile links** from commit authors, and the in-app **"What's new"**
+>   changelog (pulled from Gitcito's own GitHub releases).
+>
 > If it breaks: well, **it works on my machine**. PRs welcome. 💜
 
 ---
@@ -31,7 +42,7 @@
 - **Repo groups & tabs**. Bundle related repositories into a named, colour-coded group, switch between them in tabs (drag to reorder, eject or regroup), and jump back via recents.
 - **Commit graph** with branches, merges and octopus merges drawn properly — in light or dark.
 - **Customisable graph columns**: show/hide, resize and reorder branch, message, author, date, SHA and deployment columns.
-- **Inline CI status**. GitHub Actions check-runs (pass/fail/pending) shown right on the commit row.
+- **Inline CI status** _(GitHub only)_. GitHub Actions check-runs (pass/fail/pending) shown right on the commit row.
 - **Branches, remotes, tags, stashes, worktrees & submodules**, all in one reorderable, searchable sidebar.
 - **Commit details**: changed-files tree/flat view, author, SHA, co-authors, copy & open externally.
 - **Per-file blame & history**, with a follow-the-line jump from blame straight into the diff.
@@ -75,9 +86,10 @@
 
 ### Hosting & pull requests
 - **Create pull requests** from the app — branch dropdowns, prefilled title/body from the branch's commits, draft toggle; from branch-compare, the graph, the PR panel `+`, or an issue (auto-`Closes #N`).
-- **Review PRs** — open conversation + review state, comment, approve / request changes, and **merge** (merge / squash / rebase).
-- **Issues** — browse open issues, then a full **issue tab**: body, comments, labels, assignees, milestone, Projects v2 fields (Priority/Start/Target/Effort), close/reopen, and **create a branch for an issue** (with AI naming).
-- **Milestones** — a sidebar list with progress, and a **milestone tab** showing its issues.
+- **Review PRs** _(GitHub only)_ — open conversation + review state, comment, approve / request changes, and **merge** (merge / squash / rebase).
+- **Issues** _(GitHub only)_ — browse open issues, then a full **issue tab**: body, comments, labels, assignees, milestone, Projects v2 fields (Priority/Start/Target/Effort), close/reopen, and **create a branch for an issue** (with AI naming).
+- **Milestones** _(GitHub only)_ — a sidebar list with progress, and a **milestone tab** showing its issues.
+- **Releases** _(GitHub only)_ — browse a repo's releases in the sidebar and a changelog page.
 - **Clone or create repositories** on your hosting accounts without leaving the app.
 - **Per-profile tokens** for multiple accounts / orgs.
 - _GitHub is the battle-tested path (PR create/review/merge, issues, milestones, project fields); GitLab, Bitbucket & Azure plumbing exists but is unverified — see the disclaimer above._
@@ -138,6 +150,18 @@ Verified / unverified / unsigned badges in a dedicated, reorderable signature co
 | Sparse-checkout | Smart .gitignore |
 |---|---|
 | ![Cone-mode sparse-checkout](docs/screenshots/sparse-checkout.png) | ![.gitignore chooser](docs/screenshots/gitignore-chooser.png) |
+
+### Files browser & integrated terminal
+Browse the working tree in the **Files** tab with a live preview, and drop into a real PTY (xterm + node-pty) docked under the repo — multiple tabs per repo.
+
+| Files tab + preview | Integrated terminal |
+|---|---|
+| ![Working-tree file browser with code preview](docs/screenshots/file-tree.png) | ![Integrated terminal under the commit graph](docs/screenshots/terminal.png) |
+
+### Interactive rebase
+Drag to reorder, squash, fixup, reword or drop — in a visual editor.
+
+![Interactive rebase editor](docs/screenshots/interactive-rebase.png)
 
 ### Pull requests & commit templates
 | Create a pull request | Commit template |

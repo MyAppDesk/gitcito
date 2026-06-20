@@ -8770,3 +8770,55 @@ button.insights-row:hover { background: var(--bg-2); }
   background: rgba(230, 160, 30, 0.12); border: 1px solid rgba(230,160,30,0.35); border-radius: 8px;
 }
 .vault-unavailable svg { color: #e0a020; flex-shrink: 0; margin-top: 1px; }
+
+/* ─── Split (side-by-side) diff ────────────────────────────────────────── */
+.diff-toggles { position: sticky; top: 4px; float: right; z-index: 3; display: flex; gap: 6px; margin: 2px 6px 0 0; }
+.diff-toggles .diff-word-toggle { position: static; float: none; margin: 0; }
+.diff-split { display: flex; flex-direction: column; clear: both; }
+.diff-split-hunk {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bg-2); color: var(--code-comment, var(--text-2));
+  padding: 1px 8px; border-top: 1px solid var(--border-soft); border-bottom: 1px solid var(--border-soft);
+}
+.diff-split-hunk .diff-text { flex: 1; }
+.diff-split-row { display: grid; grid-template-columns: 1fr 1fr; }
+.diff-split-cell {
+  display: flex; align-items: baseline; gap: 8px;
+  padding: 0 8px; min-width: 0; overflow: hidden;
+  border-right: 1px solid var(--border-soft);
+}
+.diff-split-cell .diff-text { white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; flex: 1; }
+.diff-split-cell.del { background: var(--diff-del-bg, rgba(229, 72, 77, 0.14)); }
+.diff-split-cell.add { background: var(--diff-add-bg, rgba(46, 160, 67, 0.16)); }
+.diff-split-cell.empty { background: var(--bg-1); }
+.diff-split-cell .diff-gutter { flex-shrink: 0; }
+
+/* ─── Keyboard cheatsheet ──────────────────────────────────────────────── */
+.cheatsheet { display: flex; flex-direction: column; min-height: 0; }
+.cheat-section { margin-top: 14px; }
+.cheat-section h4 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-2); margin: 0 0 6px; }
+.cheat-row { display: flex; align-items: center; gap: 10px; padding: 5px 0; }
+.cheat-label { flex: 1; font-size: 13px; color: var(--text-0); }
+.cheat-key {
+  font-family: var(--app-font, inherit);
+  font-size: 12px;
+  min-width: 44px;
+  text-align: center;
+  color: var(--text-0);
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 3px 9px;
+  cursor: pointer;
+}
+.cheat-key:hover { border-color: var(--accent); color: var(--accent); }
+.cheat-key.fixed { cursor: default; color: var(--text-1); background: var(--bg-2); }
+.cheat-key.fixed:hover { border-color: var(--border); color: var(--text-1); }
+.cheat-capturing { font-size: 12px; color: var(--accent); flex-shrink: 0; min-width: 160px; text-align: center; }
+.cheat-reset {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; flex-shrink: 0;
+  border: none; background: transparent; color: var(--text-2); border-radius: 6px; cursor: pointer;
+}
+.cheat-reset:hover:not(:disabled) { background: var(--bg-3); color: var(--text-0); }
+.cheat-reset:disabled { opacity: 0; cursor: default; }

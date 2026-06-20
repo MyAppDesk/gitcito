@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { SplitSquareHorizontal } from 'lucide-react'
+import { SplitSquareHorizontal, Columns2 } from 'lucide-react'
 import { highlightHtml, type HighlightLayer } from './FileSearchBar'
 import { highlightLine } from '../lib/highlight'
 import { maskSecretLine } from '../lib/secrets'
@@ -234,6 +234,9 @@ export function DiffViewer({
   const [wordDiffOn, setWordDiffOn] = useState(() => localStorage.getItem('gitcito-word-diff') !== 'off')
   useEffect(() => localStorage.setItem('gitcito-word-diff', wordDiffOn ? 'on' : 'off'), [wordDiffOn])
 
+  const [splitView, setSplitView] = useState(() => localStorage.getItem('gitcito-split-diff') === 'on')
+  useEffect(() => localStorage.setItem('gitcito-split-diff', splitView ? 'on' : 'off'), [splitView])
+
   // Per-line changed-character ranges, computed by pairing each block of
   // consecutive deletions with the additions that immediately follow it.
   const wordRanges = useMemo(() => {
@@ -261,6 +264,51 @@ export function DiffViewer({
     return map
   }, [lines])
 
+  // Side-by-side rows: ctx lines mirror both sides; each del-run is zipped with
+  // the following add-run (leftovers become one-sided rows).
+  const splitRows = useMemo(() => {
+    type Cell = { idx: number; no: number | null; text: string; kind: 'del' | 'add' | 'ctx' }
+    const rows: { hunk?: string; hunkIdx?: number; left?: Cell; right?: Cell }[] = []
+    let i = 0
+    while (i < lines.length) {
+      const l = lines[i]
+      if (l.kind === 'meta') { i++; continue }
+      if (l.kind === 'hunk') { rows.push({ hunk: l.text, hunkIdx: l.hunkIdx }); i++; continue }
+      if (l.kind === 'ctx') {
+        rows.push({
+          left: { idx: i, no: l.oldNo, text: l.text, kind: 'ctx' },
+          right: { idx: i, no: l.newNo, text: l.text, kind: 'ctx' }
+        })
+        i++
+        continue
+      }
+      const dels: number[] = []
+      while (i < lines.length && lines[i].kind === 'del') dels.push(i++)
+      const adds: number[] = []
+      while (i < lines.length && lines[i].kind === 'add') adds.push(i++)
+      const n = Math.max(dels.length, adds.length)
+      for (let k = 0; k < n; k++) {
+        const li = dels[k]
+        const ri = adds[k]
+        rows.push({
+          left: li != null ? { idx: li, no: lines[li].oldNo, text: lines[li].text, kind: 'del' } : undefined,
+          right: ri != null ? { idx: ri, no: lines[ri].newNo, text: lines[ri].text, kind: 'add' } : undefined
+        })
+      }
+    }
+    return rows
+  }, [lines])
+
+  // Render one cell's HTML: syntax highlight → search layers → word marks (or
+  // secret mask). Shared by unified and split views.
+  const cellHtml = (text: string, idx: number, kind: 'add' | 'del' | 'ctx'): string => {
+    const t = maskValues ? maskSecretLine(text) : text
+    let html = highlightHtml(highlightLine(t, lang), highlightLayers)
+    const wr = !maskValues && wordDiffOn && kind !== 'ctx' ? wordRanges.get(idx) : undefined
+    if (wr) html = markRanges(html, wr, kind === 'add' ? 'word-add' : 'word-del')
+    return html || '&nbsp;'
+  }
+
   // Line-level staging selection (only when staging is enabled). Keyed by index
   // into `lines`; cleared whenever the diff changes.
   const [selected, setSelected] = useState<Set<number>>(new Set())
@@ -285,16 +333,64 @@ export function DiffViewer({
   const hasWordDiffs = wordRanges.size > 0
 
   return (
-    <div className="diff-viewer hljs">
-      {hasWordDiffs && (
+    <div className={`diff-viewer hljs ${splitView ? 'is-split' : ''}`}>
+      <div className="diff-toggles">
         <button
-          className={`diff-word-toggle ${wordDiffOn ? 'on' : ''}`}
-          title="Highlight changed words within edited lines"
-          onClick={() => setWordDiffOn((v) => !v)}
+          className={`diff-word-toggle ${splitView ? 'on' : ''}`}
+          title="Side-by-side (split) view"
+          onClick={() => setSplitView((v) => !v)}
         >
-          <SplitSquareHorizontal size={12} /> Word diff
+          <Columns2 size={12} /> Split
         </button>
-      )}
+        {hasWordDiffs && (
+          <button
+            className={`diff-word-toggle ${wordDiffOn ? 'on' : ''}`}
+            title="Highlight changed words within edited lines"
+            onClick={() => setWordDiffOn((v) => !v)}
+          >
+            <SplitSquareHorizontal size={12} /> Word diff
+          </button>
+        )}
+      </div>
+      {splitView ? (
+        <div className="diff-split">
+          {splitRows.map((r, i) =>
+            r.hunk !== undefined ? (
+              <div key={i} className="diff-split-hunk">
+                <span className="diff-text">{r.hunk}</span>
+                {onStageHunk && hunkData && r.hunkIdx !== undefined && (
+                  <button
+                    className="btn ghost tiny diff-stage-hunk"
+                    onClick={() => onStageHunk(`${hunkData.header}\n${hunkData.hunks[r.hunkIdx as number] ?? ''}\n`)}
+                  >
+                    Stage hunk
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div key={i} className="diff-split-row">
+                <div className={`diff-split-cell ${r.left ? r.left.kind : 'empty'}`}>
+                  <span className="diff-gutter">{r.left?.no ?? ''}</span>
+                  {r.left ? (
+                    <span className="diff-text" dangerouslySetInnerHTML={{ __html: cellHtml(r.left.text, r.left.idx, r.left.kind) }} />
+                  ) : (
+                    <span className="diff-text" />
+                  )}
+                </div>
+                <div className={`diff-split-cell ${r.right ? r.right.kind : 'empty'}`}>
+                  <span className="diff-gutter">{r.right?.no ?? ''}</span>
+                  {r.right ? (
+                    <span className="diff-text" dangerouslySetInnerHTML={{ __html: cellHtml(r.right.text, r.right.idx, r.right.kind) }} />
+                  ) : (
+                    <span className="diff-text" />
+                  )}
+                </div>
+              </div>
+            )
+          )}
+        </div>
+      ) : (
+        <>
       {onStageHunk && selected.size > 0 && (
         <div className="diff-select-bar">
           <span>{selected.size} line{selected.size === 1 ? '' : 's'} selected</span>
@@ -341,20 +437,13 @@ export function DiffViewer({
             <span className="diff-sign">{l.kind === 'add' ? '+' : l.kind === 'del' ? '-' : ' '}</span>
             <span
               className="diff-text"
-              dangerouslySetInnerHTML={{
-                __html:
-                  (() => {
-                    const text = maskValues ? maskSecretLine(l.text) : l.text
-                    let html = highlightHtml(highlightLine(text, lang), highlightLayers)
-                    const wr = !maskValues && wordDiffOn ? wordRanges.get(i) : undefined
-                    if (wr) html = markRanges(html, wr, l.kind === 'add' ? 'word-add' : 'word-del')
-                    return html
-                  })() || '&nbsp;'
-              }}
+              dangerouslySetInnerHTML={{ __html: cellHtml(l.text, i, l.kind as 'add' | 'del' | 'ctx') }}
             />
           </div>
         )
       })}
+        </>
+      )}
     </div>
   )
 }

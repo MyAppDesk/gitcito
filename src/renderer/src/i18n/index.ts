@@ -213,6 +213,8 @@ const en = {
   'settings.openVault': 'Open vault',
   'settings.openVaultHint':
     'A local, OS-keychain-encrypted store for secrets — per-repo and global. Never synced, never committed. Also reachable with ⌘⇧V.',
+  'settings.largeFileWarn': 'Warn before committing files larger than (MB)',
+  'settings.largeFileWarnHint': 'Catches oversized or binary blobs before they bloat history. Set to 0 to disable.',
   'changelog.title': 'What’s new',
   'changelog.checking': 'Checking for updates…',
   'changelog.live': 'Latest from GitHub',
@@ -474,6 +476,8 @@ const es: Dict = {
   'settings.openVault': 'Abrir baúl',
   'settings.openVaultHint':
     'Un almacén local de secretos cifrado con el llavero del sistema — por repo y global. Nunca se sincroniza ni se commitea. También con ⌘⇧V.',
+  'settings.largeFileWarn': 'Avisar antes de commitear archivos mayores de (MB)',
+  'settings.largeFileWarnHint': 'Detecta blobs enormes o binarios antes de que inflen el historial. Pon 0 para desactivar.',
   'settings.viewChangelog': 'Ver novedades',
   'changelog.title': 'Novedades',
   'changelog.checking': 'Buscando actualizaciones…',

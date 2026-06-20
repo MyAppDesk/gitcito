@@ -1027,6 +1027,31 @@ export const gitService = {
     return raw.split('\0').filter(Boolean)
   },
 
+  /** Byte size + binary-ness of working-tree files — for the large-file commit guard. */
+  async fileSizes(repoPath: string, files: string[]): Promise<Record<string, { size: number; binary: boolean }>> {
+    const out: Record<string, { size: number; binary: boolean }> = {}
+    await Promise.all(
+      files.map(async (f) => {
+        try {
+          const abs = join(repoPath, f)
+          const st = await stat(abs)
+          // Sniff the first 8KB for a NUL byte → treat as binary.
+          let binary = false
+          try {
+            const buf = await readFile(abs)
+            binary = buf.subarray(0, 8192).includes(0)
+          } catch {
+            /* unreadable → leave non-binary */
+          }
+          out[f] = { size: st.size, binary }
+        } catch {
+          /* missing/deleted → skip */
+        }
+      })
+    )
+    return out
+  },
+
   /**
    * Map of repo-relative path → status kind for every changed/untracked/ignored
    * path, from a single `git status --porcelain --ignored -uall` call. Directory

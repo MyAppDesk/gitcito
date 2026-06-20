@@ -20,6 +20,13 @@ import {
 
 type ListName = 'staged' | 'unstaged'
 
+/** Human-readable byte size, e.g. 7.3 MB. */
+function fmtBytes(n: number): string {
+  if (n >= 1024 * 1024) return `${(n / (1024 * 1024)).toFixed(1)} MB`
+  if (n >= 1024) return `${Math.round(n / 1024)} KB`
+  return `${n} B`
+}
+
 export function ViewToggle(): React.JSX.Element {
   const fileListView = useSettingsStore((s) => s.settings.fileListView ?? 'path')
   const update = useSettingsStore((s) => s.update)
@@ -62,6 +69,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
   const fileView = useUIStore((s) => s.fileView)
   const setFileView = useUIStore((s) => s.setFileView)
   const activeProfile = useSettingsStore((s) => s.activeProfile)
+  const largeFileKb = useSettingsStore((s) => s.settings.largeFileKb)
   const aiEnabled = useSettingsStore((s) => s.activeProfile().ai.enabled !== false)
 
   const layout = useUIStore((s) => s.layout)
@@ -467,19 +475,34 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
     if (activeProfile().ai.coAuthor !== false && !message.includes(trailer)) {
       message = `${message}\n\n${trailer}`
     }
-    // Secret guard: warn before writing credential-looking files into history.
-    const secretFiles = staged.filter((f) => isSecretFile(f.path)).map((f) => f.path)
-    if (secretFiles.length > 0) {
+    // Pre-commit guard: flag credential-looking files and oversized blobs before
+    // they enter history. Both are hard to fully erase later.
+    const flagged: { path: string; reason: string }[] = []
+    for (const f of staged) if (isSecretFile(f.path)) flagged.push({ path: f.path, reason: 'secret' })
+    if (largeFileKb > 0) {
+      const sizes = await gitApi
+        .fileSizes(path, staged.map((f) => f.path))
+        .catch(() => ({}) as Record<string, { size: number; binary: boolean }>)
+      for (const f of staged) {
+        const info = sizes[f.path]
+        if (info && info.size > largeFileKb * 1024 && !flagged.some((x) => x.path === f.path)) {
+          flagged.push({ path: f.path, reason: `${fmtBytes(info.size)}${info.binary ? ', binary' : ''}` })
+        }
+      }
+    }
+    if (flagged.length > 0) {
+      const all = flagged.map((f) => f.path)
       useUIStore.getState().openModal({
         kind: 'confirm',
         danger: true,
-        title: secretFiles.length === 1 ? 'Commit a secret file?' : `Commit ${secretFiles.length} secret files?`,
-        message: `These staged files usually hold credentials:\n\n${secretFiles.join('\n')}\n\nCommitting writes their contents into git history (hard to fully erase later). Untrack & .gitignore them instead?`,
+        title: flagged.length === 1 ? 'Commit this file?' : `Commit ${flagged.length} flagged files?`,
+        message:
+          `These staged files look risky to commit:\n\n${flagged.map((f) => `• ${f.path} (${f.reason})`).join('\n')}\n\n` +
+          `Secrets land in history hard to erase; large blobs bloat the repo forever. Untrack & .gitignore them instead?`,
         confirmLabel: 'Commit anyway',
         onConfirm: () => void runCommit(message),
         secondaryLabel: 'Ignore & untrack',
-        secondaryDanger: false,
-        onSecondary: () => void repoActions.ignoreAndUntrack(path, secretFiles, secretFiles)
+        onSecondary: () => void repoActions.ignoreAndUntrack(path, all, all)
       })
       return
     }

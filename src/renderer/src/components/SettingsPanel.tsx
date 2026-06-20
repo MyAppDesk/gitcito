@@ -1448,6 +1448,19 @@ function GeneralPage(): React.JSX.Element {
         </span>
       </label>
 
+      <label style={{ marginTop: 12 }}>
+        {t('settings.largeFileWarn')}
+        <input
+          type="number"
+          min={0}
+          step={1}
+          value={Math.round((settings.largeFileKb ?? 0) / 1024)}
+          onChange={(e) => update((s) => ({ ...s, largeFileKb: Math.max(0, Number(e.target.value) || 0) * 1024 }))}
+          style={{ maxWidth: 120 }}
+        />
+      </label>
+      <span className="settings-hint">{t('settings.largeFileWarnHint')}</span>
+
       <div style={{ marginTop: 12 }}>
         <button className="btn ghost small" onClick={openVault} disabled={!activeRepoPath} title={activeRepoPath ? undefined : 'Open a repository first'}>
           <KeyRound size={13} /> {t('settings.openVault')}

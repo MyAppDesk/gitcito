@@ -3,77 +3,13 @@ import { SplitSquareHorizontal, Columns2 } from 'lucide-react'
 import { highlightHtml, type HighlightLayer } from './FileSearchBar'
 import { highlightLine } from '../lib/highlight'
 import { maskSecretLine } from '../lib/secrets'
-
-interface DiffLine {
-  kind: 'add' | 'del' | 'hunk' | 'meta' | 'ctx'
-  text: string
-  oldNo: number | null
-  newNo: number | null
-  hunkIdx: number
-}
-
-type Range = [number, number] // [start, end) in decoded-character coords
-
-/** Tokenize into words / whitespace runs / single punctuation for word-diffing. */
-function tokenize(s: string): string[] {
-  return s.match(/\s+|[A-Za-z0-9_]+|[^\sA-Za-z0-9_]/g) ?? []
-}
-
-/**
- * Word-level diff of two lines. Returns the changed character ranges on each
- * side (delRanges over `a`, addRanges over `b`) via a classic LCS over tokens.
- */
-function wordDiff(a: string, b: string): { del: Range[]; add: Range[] } {
-  const ta = tokenize(a)
-  const tb = tokenize(b)
-  const n = ta.length
-  const m = tb.length
-  // LCS length table.
-  const dp: number[][] = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0))
-  for (let i = n - 1; i >= 0; i--) {
-    for (let j = m - 1; j >= 0; j--) {
-      dp[i][j] = ta[i] === tb[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1])
-    }
-  }
-  const del: Range[] = []
-  const add: Range[] = []
-  let i = 0
-  let j = 0
-  let aPos = 0
-  let bPos = 0
-  const push = (arr: Range[], start: number, end: number): void => {
-    const last = arr[arr.length - 1]
-    if (last && last[1] === start) last[1] = end // coalesce adjacent
-    else arr.push([start, end])
-  }
-  while (i < n && j < m) {
-    if (ta[i] === tb[j]) {
-      aPos += ta[i].length
-      bPos += tb[j].length
-      i++
-      j++
-    } else if (dp[i + 1][j] >= dp[i][j + 1]) {
-      push(del, aPos, aPos + ta[i].length)
-      aPos += ta[i].length
-      i++
-    } else {
-      push(add, bPos, bPos + tb[j].length)
-      bPos += tb[j].length
-      j++
-    }
-  }
-  while (i < n) {
-    push(del, aPos, aPos + ta[i].length)
-    aPos += ta[i].length
-    i++
-  }
-  while (j < m) {
-    push(add, bPos, bPos + tb[j].length)
-    bPos += tb[j].length
-    j++
-  }
-  return { del, add }
-}
+import {
+  parseDiff,
+  wordRangesByLine,
+  buildSplitRows,
+  type DiffLine,
+  type Range
+} from '../lib/diff'
 
 /**
  * Wrap the given decoded-character ranges in <mark class> within an HTML string
@@ -104,33 +40,6 @@ function markRanges(html: string, ranges: Range[], cls: string): string {
     if (open) out += '</mark>'
     return out
   })
-}
-
-function parseDiff(diff: string): DiffLine[] {
-  const out: DiffLine[] = []
-  let oldNo = 0
-  let newNo = 0
-  let hunkIdx = -1
-  for (const line of diff.split('\n')) {
-    if (line.startsWith('@@')) {
-      const m = /@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/.exec(line)
-      if (m) {
-        oldNo = +m[1]
-        newNo = +m[2]
-      }
-      hunkIdx++
-      out.push({ kind: 'hunk', text: line, oldNo: null, newNo: null, hunkIdx })
-    } else if (line.startsWith('+++') || line.startsWith('---') || line.startsWith('diff ') || line.startsWith('index ')) {
-      out.push({ kind: 'meta', text: line, oldNo: null, newNo: null, hunkIdx })
-    } else if (line.startsWith('+')) {
-      out.push({ kind: 'add', text: line.slice(1), oldNo: null, newNo: newNo++, hunkIdx })
-    } else if (line.startsWith('-')) {
-      out.push({ kind: 'del', text: line.slice(1), oldNo: oldNo++, newNo: null, hunkIdx })
-    } else {
-      out.push({ kind: 'ctx', text: line.startsWith(' ') ? line.slice(1) : line, oldNo: oldNo++, newNo: newNo++, hunkIdx })
-    }
-  }
-  return out
 }
 
 function extractHunks(diff: string): { header: string; hunks: string[] } {
@@ -237,67 +146,11 @@ export function DiffViewer({
   const [splitView, setSplitView] = useState(() => localStorage.getItem('gitcito-split-diff') === 'on')
   useEffect(() => localStorage.setItem('gitcito-split-diff', splitView ? 'on' : 'off'), [splitView])
 
-  // Per-line changed-character ranges, computed by pairing each block of
-  // consecutive deletions with the additions that immediately follow it.
-  const wordRanges = useMemo(() => {
-    const map = new Map<number, Range[]>()
-    let i = 0
-    while (i < lines.length) {
-      if (lines[i].kind !== 'del') {
-        i++
-        continue
-      }
-      const dels: number[] = []
-      while (i < lines.length && lines[i].kind === 'del') dels.push(i++)
-      const adds: number[] = []
-      while (i < lines.length && lines[i].kind === 'add') adds.push(i++)
-      // Only word-diff a balanced-ish edit; zip line-by-line.
-      const pairs = Math.min(dels.length, adds.length)
-      for (let k = 0; k < pairs; k++) {
-        const d = lines[dels[k]]
-        const a = lines[adds[k]]
-        const { del, add } = wordDiff(d.text, a.text)
-        if (del.length) map.set(dels[k], del)
-        if (add.length) map.set(adds[k], add)
-      }
-    }
-    return map
-  }, [lines])
+  // Per-line changed-character ranges (for word-level highlighting).
+  const wordRanges = useMemo(() => wordRangesByLine(lines), [lines])
 
-  // Side-by-side rows: ctx lines mirror both sides; each del-run is zipped with
-  // the following add-run (leftovers become one-sided rows).
-  const splitRows = useMemo(() => {
-    type Cell = { idx: number; no: number | null; text: string; kind: 'del' | 'add' | 'ctx' }
-    const rows: { hunk?: string; hunkIdx?: number; left?: Cell; right?: Cell }[] = []
-    let i = 0
-    while (i < lines.length) {
-      const l = lines[i]
-      if (l.kind === 'meta') { i++; continue }
-      if (l.kind === 'hunk') { rows.push({ hunk: l.text, hunkIdx: l.hunkIdx }); i++; continue }
-      if (l.kind === 'ctx') {
-        rows.push({
-          left: { idx: i, no: l.oldNo, text: l.text, kind: 'ctx' },
-          right: { idx: i, no: l.newNo, text: l.text, kind: 'ctx' }
-        })
-        i++
-        continue
-      }
-      const dels: number[] = []
-      while (i < lines.length && lines[i].kind === 'del') dels.push(i++)
-      const adds: number[] = []
-      while (i < lines.length && lines[i].kind === 'add') adds.push(i++)
-      const n = Math.max(dels.length, adds.length)
-      for (let k = 0; k < n; k++) {
-        const li = dels[k]
-        const ri = adds[k]
-        rows.push({
-          left: li != null ? { idx: li, no: lines[li].oldNo, text: lines[li].text, kind: 'del' } : undefined,
-          right: ri != null ? { idx: ri, no: lines[ri].newNo, text: lines[ri].text, kind: 'add' } : undefined
-        })
-      }
-    }
-    return rows
-  }, [lines])
+  // Side-by-side rows (ctx mirrored, del-runs zipped with following add-runs).
+  const splitRows = useMemo(() => buildSplitRows(lines), [lines])
 
   // Render one cell's HTML: syntax highlight → search layers → word marks (or
   // secret mask). Shared by unified and split views.

@@ -442,6 +442,25 @@ export const repoActions = {
       .getState()
       .run(path, `Deleted ${remote}/${name}`, () => gitApi.deleteRemoteBranch(path, remote, name)),
 
+  // ─── Stacked branches ───
+  // Create a new branch on top of the current one and record the dependency.
+  createStackedBranch: (path: string, name: string) => {
+    const parent = useRepoStore.getState().repos[path]?.branches.current
+    return useRepoStore.getState().run(path, `Created stacked branch ${name}`, async () => {
+      await gitApi.createBranch(path, name)
+      if (parent) await gitApi.stackSetParent(path, name, parent)
+    })
+  },
+
+  stackSetParent: (path: string, branch: string, parent: string) =>
+    useRepoStore.getState().run(path, `Stacked ${branch} on ${parent}`, () => gitApi.stackSetParent(path, branch, parent)),
+
+  stackClearParent: (path: string, branch: string) =>
+    useRepoStore.getState().run(path, `Removed ${branch} from its stack`, () => gitApi.stackClearParent(path, branch)),
+
+  stackRestack: (path: string, leaf: string) =>
+    useRepoStore.getState().run(path, `Restacked ${leaf}`, () => gitApi.stackRestack(path, leaf)),
+
   addRemote: (path: string, name: string, url: string, pushUrl?: string) =>
     useRepoStore.getState().run(path, `Added remote ${name}`, async () => {
       await gitApi.addRemote(path, name, url, pushUrl)

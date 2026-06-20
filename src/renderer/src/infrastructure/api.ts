@@ -49,7 +49,8 @@ import type {
   TreeStatusKind,
   CodeSearchHit,
   HistorySearchHit,
-  GitHubNotification
+  GitHubNotification,
+  StackInfo
 } from '../../../shared/types'
 
 // Typed adapter over the IPC bridge — the only place that talks to window.api.
@@ -77,6 +78,11 @@ export const gitApi = {
   deleteBranch: (path: string, name: string, force?: boolean) => call<void>('deleteBranch', path, name, force),
   deleteRemoteBranch: (path: string, remote: string, name: string) =>
     call<void>('deleteRemoteBranch', path, remote, name),
+  stackInfo: (path: string, leaf?: string) => call<StackInfo>('stackInfo', path, leaf),
+  stackSetParent: (path: string, branch: string, parent: string) =>
+    call<void>('stackSetParent', path, branch, parent),
+  stackClearParent: (path: string, branch: string) => call<void>('stackClearParent', path, branch),
+  stackRestack: (path: string, leaf: string) => call<void>('stackRestack', path, leaf),
   renameBranch: (path: string, oldName: string, newName: string) => call<void>('renameBranch', path, oldName, newName),
   merge: (path: string, ref: string, noFf?: boolean) => call<void>('merge', path, ref, noFf),
   mergeInto: (path: string, source: string, target: string, noFf?: boolean) =>

@@ -73,6 +73,7 @@ export type ModalSpec =
   | { kind: 'group-color'; tabId: string; current?: string; onSelect: (color: string) => void }
   | { kind: 'reflog'; repoPath: string }
   | { kind: 'code-search'; repoPath: string }
+  | { kind: 'stack'; repoPath: string }
   | { kind: 'bisect'; repoPath: string }
   | { kind: 'hooks'; repoPath: string }
   | { kind: 'lfs'; repoPath: string }

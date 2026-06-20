@@ -8361,3 +8361,64 @@ mark.find-hit.active {
   cursor: pointer;
 }
 .notif-action:hover { background: var(--bg-3); color: var(--text-0); }
+
+/* ─── Branch stack modal ───────────────────────────────────────────────── */
+.stack-modal { display: flex; flex-direction: column; min-height: 0; }
+.stack-toolbar { display: flex; align-items: center; gap: 8px; margin: 12px 0; flex-wrap: wrap; }
+.stack-list { overflow-y: auto; min-height: 0; }
+.stack-node { display: flex; gap: 10px; }
+.stack-node-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 18px;
+  flex-shrink: 0;
+  position: relative;
+}
+/* vertical connector line between nodes */
+.stack-node-rail::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--border);
+}
+.stack-node:first-child .stack-node-rail::before { top: 14px; }
+.stack-node.trunk .stack-node-rail::before { bottom: 50%; }
+.stack-node-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--bg-3);
+  border: 2px solid var(--border);
+  margin-top: 9px;
+  z-index: 1;
+}
+.stack-node.current .stack-node-dot { background: var(--accent); border-color: var(--accent); }
+.stack-trunk-icon { color: var(--text-2); margin-top: 8px; z-index: 1; background: var(--bg-1); }
+.stack-node-body {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 0 12px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.stack-node.trunk .stack-node-body { display: flex; align-items: center; gap: 8px; border-bottom: none; }
+.stack-node-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.stack-node-name { font-size: 13px; font-weight: 600; color: var(--text-0); }
+.stack-node.trunk .stack-node-name { font-weight: 500; color: var(--text-1); }
+.stack-node-ahead { font-size: 11px; color: var(--text-2); margin-left: auto; }
+.stack-badge {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: var(--bg-3);
+  color: var(--text-2);
+}
+.stack-badge.current { background: var(--accent-soft); color: var(--accent); }
+.stack-badge.warn { background: rgba(230, 160, 30, 0.18); color: #e0a020; }
+.stack-node-actions { display: flex; gap: 14px; margin-top: 6px; flex-wrap: wrap; }
+.stack-node-actions .link-btn.danger { color: var(--red, #e5484d); }

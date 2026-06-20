@@ -23,7 +23,8 @@ import {
   ChevronRight,
   FolderGit2,
   GitBranch,
-  Bell
+  Bell,
+  Layers
 } from 'lucide-react'
 import type { MenuItem } from '../stores/ui'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
@@ -108,6 +109,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
       { label: 'Reflog — recover lost commits', icon: <History size={15} />, onClick: () => openModal({ kind: 'reflog', repoPath: path }) },
       { label: 'Bisect — find a bad commit', icon: <Bug size={15} />, onClick: () => openModal({ kind: 'bisect', repoPath: path }) },
       { separator: true },
+      { label: 'Branch stack…', icon: <Layers size={15} />, onClick: () => openModal({ kind: 'stack', repoPath: path }) },
       { label: 'Git hooks…', icon: <Webhook size={15} />, onClick: () => openModal({ kind: 'hooks', repoPath: path }) },
       { label: 'Git LFS…', icon: <Boxes size={15} />, onClick: () => openModal({ kind: 'lfs', repoPath: path }) },
       { label: 'Sparse-checkout…', icon: <FolderTree size={15} />, onClick: () => openModal({ kind: 'sparse', repoPath: path }) },
@@ -265,7 +267,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
           <ArchiveRestore size={17} />
           <span>Pop</span>
         </button>
-        <button className="tool-btn split" title="Reflog, bisect, hooks, LFS, patches" onClick={toolsMenu}>
+        <button className="tool-btn split" title="Reflog, bisect, branch stack, hooks, LFS, patches" onClick={toolsMenu}>
           <Wrench size={16} />
           <span>Tools</span>
           <span className="split-arrow">

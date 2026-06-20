@@ -54,6 +54,21 @@ export interface GitHubNotification {
   url: string // best-effort web URL to open
 }
 
+/** One branch within a stack (chain of dependent branches). */
+export interface StackBranch {
+  name: string
+  parent: string | null // tracked parent branch, null for the trunk base
+  isCurrent: boolean
+  ahead: number // own commits not in parent
+  needsRestack: boolean // parent tip moved — branch must be rebased onto it
+}
+
+/** A stack: ordered bottom (closest to trunk) → top (leaf). */
+export interface StackInfo {
+  trunk: string // base branch the stack sits on ('' if unknown)
+  branches: StackBranch[]
+}
+
 /** Per-repo commit-signing configuration. */
 export interface SigningConfig {
   sign: boolean // commit.gpgsign

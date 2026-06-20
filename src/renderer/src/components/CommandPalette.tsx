@@ -20,7 +20,8 @@ import {
   SunMoon,
   Plus,
   Search,
-  Bell
+  Bell,
+  Layers
 } from 'lucide-react'
 import { useUIStore } from '../stores/ui'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
@@ -113,6 +114,7 @@ export function CommandPalette(): React.JSX.Element {
       { id: 'stash', title: 'Stash changes', group: 'Actions', keywords: 'save shelve', icon: <Archive size={15} />, run: act(() => void repoActions.stash(path)) },
       { id: 'create-branch', title: 'Create branch…', group: 'Actions', keywords: 'new', icon: <Plus size={15} />, run: act(() => ui.openModal({ kind: 'create-branch', path, currentBranch: repo.branches.current })) },
       { id: 'create-pr', title: 'Create pull request…', group: 'Actions', keywords: 'pr github merge request', icon: <GitPullRequest size={15} />, run: act(() => ui.openModal({ kind: 'create-pr', repoPath: path, source: repo.branches.current })) },
+      { id: 'stack', title: 'Branch stack…', group: 'Actions', keywords: 'stacked branches graphite restack dependent', icon: <Layers size={15} />, run: act(() => ui.openModal({ kind: 'stack', repoPath: path })) },
       { id: 'code-search', title: 'Search code…', group: 'Actions', keywords: 'grep find text content history pickaxe', icon: <Search size={15} />, run: act(() => ui.openModal({ kind: 'code-search', repoPath: path })) },
       { id: 'terminal', title: 'Toggle integrated terminal', group: 'Actions', keywords: 'shell console pty', icon: <TerminalSquare size={15} />, run: act(() => ui.toggleTerminal()) },
       { id: 'reflog', title: 'Open reflog', group: 'Actions', keywords: 'recovery undo history head', icon: <History size={15} />, run: act(() => ui.openModal({ kind: 'reflog', repoPath: path })) },

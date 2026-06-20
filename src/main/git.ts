@@ -41,7 +41,9 @@ import type {
   TreeStatusKind,
   ActivityEvent,
   CodeSearchHit,
-  HistorySearchHit
+  HistorySearchHit,
+  StackInfo,
+  StackBranch
 } from '../shared/types'
 import { recordEvent } from './analytics'
 import { recordLog } from './log'
@@ -664,6 +666,120 @@ export const gitService = {
 
   async deleteRemoteBranch(repoPath: string, remote: string, name: string): Promise<void> {
     await gitFor(repoPath).push([remote, '--delete', name])
+  },
+
+  // ─── Stacked branches ──────────────────────────────────────────────────
+  // A "stack" is a chain of dependent branches where each is based on the one
+  // below it. We persist the parent (and the parent tip we last rebased onto)
+  // in git config under branch.<name>.gitcitoparent / .gitcitobase, so the
+  // metadata travels with the repo and never touches history.
+
+  /** Record (or change) a branch's stack parent, snapshotting the parent tip. */
+  async stackSetParent(repoPath: string, branch: string, parent: string): Promise<void> {
+    const git = gitFor(repoPath)
+    const tip = (await git.revparse([parent])).trim()
+    await git.raw(['config', `branch.${branch}.gitcitoparent`, parent])
+    await git.raw(['config', `branch.${branch}.gitcitobase`, tip])
+  },
+
+  /** Stop tracking a branch as part of a stack. */
+  async stackClearParent(repoPath: string, branch: string): Promise<void> {
+    const git = gitFor(repoPath)
+    await git.raw(['config', '--unset', `branch.${branch}.gitcitoparent`]).catch(() => {})
+    await git.raw(['config', '--unset', `branch.${branch}.gitcitobase`]).catch(() => {})
+  },
+
+  /**
+   * The stack containing `leaf` (defaults to the current branch): walk parent
+   * links down to the trunk, then report each level bottom→top with its own
+   * commit count and whether its parent has moved (needs a restack).
+   */
+  async stackInfo(repoPath: string, leaf?: string): Promise<StackInfo> {
+    const git = gitFor(repoPath)
+    const current = (await git.revparse(['--abbrev-ref', 'HEAD']).catch(() => '')).trim()
+    const head = leaf || current
+    if (!head || head === 'HEAD') return { trunk: '', branches: [] }
+
+    // Read all recorded parents in one shot.
+    const raw = await git
+      .raw(['config', '--get-regexp', '^branch\\..*\\.gitcitoparent$'])
+      .catch(() => '')
+    const parents: Record<string, string> = {}
+    for (const line of raw.split('\n')) {
+      if (!line.trim()) continue
+      const sp = line.indexOf(' ')
+      if (sp < 0) continue
+      const key = line.slice(0, sp) // branch.<name>.gitcitoparent
+      const val = line.slice(sp + 1).trim()
+      const name = key.slice('branch.'.length, key.length - '.gitcitoparent'.length)
+      parents[name] = val
+    }
+
+    // Walk down to the trunk, guarding against cycles.
+    const chainTopDown: string[] = []
+    const seen = new Set<string>()
+    let cur: string | null = head
+    while (cur && parents[cur] && !seen.has(cur)) {
+      seen.add(cur)
+      chainTopDown.push(cur)
+      cur = parents[cur]
+    }
+    // The bottom-most tracked branch (if any) keeps its parent as trunk; if the
+    // leaf itself isn't tracked, the stack is just the leaf on top of `cur`.
+    if (chainTopDown.length === 0) chainTopDown.push(head)
+    const trunk = parents[chainTopDown[chainTopDown.length - 1]] ?? cur ?? ''
+    const ordered = chainTopDown.slice().reverse() // bottom → top
+
+    const branches: StackBranch[] = []
+    for (const name of ordered) {
+      const parent = parents[name] ?? null
+      let ahead = 0
+      let needsRestack = false
+      if (parent) {
+        ahead = Number(
+          (await git.raw(['rev-list', '--count', `${parent}..${name}`]).catch(() => '0')).trim()
+        )
+        const parentTip = (await git.revparse([parent]).catch(() => '')).trim()
+        // Restack needed when the parent tip is not yet an ancestor of branch.
+        if (parentTip) {
+          const isAncestor = await git
+            .raw(['merge-base', '--is-ancestor', parentTip, name])
+            .then(() => true)
+            .catch(() => false)
+          needsRestack = !isAncestor
+        }
+      }
+      branches.push({ name, parent, isCurrent: name === current, ahead, needsRestack })
+    }
+    return { trunk, branches }
+  },
+
+  /**
+   * Restack the chain ending at `leaf`: bottom→top, rebase each branch onto its
+   * parent's current tip using the recorded base (so parent rewrites don't
+   * duplicate commits). Leaves you back on `leaf`. Throws on conflict.
+   */
+  async stackRestack(repoPath: string, leaf: string): Promise<void> {
+    const git = gitFor(repoPath)
+    const info = await gitService.stackInfo(repoPath, leaf)
+    for (const b of info.branches) {
+      if (!b.parent) continue
+      const parentTip = (await git.revparse([b.parent])).trim()
+      const isAncestor = await git
+        .raw(['merge-base', '--is-ancestor', parentTip, b.name])
+        .then(() => true)
+        .catch(() => false)
+      if (isAncestor) {
+        await git.raw(['config', `branch.${b.name}.gitcitobase`, parentTip])
+        continue
+      }
+      let base = (await git.raw(['config', '--get', `branch.${b.name}.gitcitobase`]).catch(() => '')).trim()
+      if (!base) base = (await git.raw(['merge-base', b.parent, b.name])).trim()
+      // 3-arg form checks out b.name and rebases its commits since `base` onto parentTip.
+      await git.raw(['rebase', '--onto', parentTip, base, b.name])
+      await git.raw(['config', `branch.${b.name}.gitcitobase`, parentTip])
+    }
+    await git.checkout(leaf)
   },
 
   async renameBranch(repoPath: string, oldName: string, newName: string): Promise<void> {

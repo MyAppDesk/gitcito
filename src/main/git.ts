@@ -1386,8 +1386,9 @@ export const gitService = {
 
   // ─── Diffs ─────────────────────────────────────────────────────────────────
 
-  async diffFile(repoPath: string, file: string, staged: boolean, untracked: boolean): Promise<string> {
+  async diffFile(repoPath: string, file: string, staged: boolean, untracked: boolean, ignoreWs = false): Promise<string> {
     const git = gitFor(repoPath)
+    const ws = ignoreWs ? ['-w'] : []
     if (untracked) {
       try {
         const content = await readFile(`${repoPath}/${file}`, 'utf-8')
@@ -1404,7 +1405,7 @@ export const gitService = {
         return ''
       }
     }
-    return git.raw(staged ? ['diff', '--cached', '--', file] : ['diff', '--', file])
+    return git.raw(staged ? ['diff', '--cached', ...ws, '--', file] : ['diff', ...ws, '--', file])
   },
 
   async commitFiles(repoPath: string, hash: string): Promise<FileEntry[]> {
@@ -1422,8 +1423,8 @@ export const gitService = {
     return files
   },
 
-  async commitFileDiff(repoPath: string, hash: string, file: string): Promise<string> {
-    return gitFor(repoPath).raw(['show', '--format=', hash, '--', file])
+  async commitFileDiff(repoPath: string, hash: string, file: string, ignoreWs = false): Promise<string> {
+    return gitFor(repoPath).raw(['show', '--format=', ...(ignoreWs ? ['-w'] : []), hash, '--', file])
   },
 
   async stashFiles(repoPath: string, sha: string, untrackedSha?: string | null): Promise<FileEntry[]> {
@@ -1448,12 +1449,13 @@ export const gitService = {
     return files
   },
 
-  async stashFileDiff(repoPath: string, sha: string, file: string, untracked?: boolean): Promise<string> {
+  async stashFileDiff(repoPath: string, sha: string, file: string, untracked?: boolean, ignoreWs = false): Promise<string> {
     const git = gitFor(repoPath)
+    const ws = ignoreWs ? ['-w'] : []
     if (untracked) {
-      return git.raw(['diff-tree', '--root', '--no-commit-id', '-p', `${sha}^3`, '--', file])
+      return git.raw(['diff-tree', '--root', '--no-commit-id', '-p', ...ws, `${sha}^3`, '--', file])
     }
-    return git.raw(['diff', `${sha}^1`, sha, '--', file])
+    return git.raw(['diff', ...ws, `${sha}^1`, sha, '--', file])
   },
 
   async stagedDiff(repoPath: string): Promise<string> {

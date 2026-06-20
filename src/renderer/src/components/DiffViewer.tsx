@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { SplitSquareHorizontal, Columns2 } from 'lucide-react'
+import { SplitSquareHorizontal, Columns2, Pilcrow } from 'lucide-react'
 import { highlightHtml, type HighlightLayer } from './FileSearchBar'
 import { highlightLine } from '../lib/highlight'
 import { maskSecretLine } from '../lib/secrets'
@@ -128,6 +128,8 @@ export function DiffViewer({
   lang = '',
   highlightLayers = [],
   maskValues = false,
+  ignoreWs = false,
+  onToggleIgnoreWs,
   onStageHunk
 }: {
   diff: string
@@ -135,6 +137,10 @@ export function DiffViewer({
   highlightLayers?: HighlightLayer[]
   /** Mask secret values (KEY=••••) in displayed lines — secret files only. */
   maskValues?: boolean
+  /** Whether the diff was fetched ignoring whitespace (drives the toggle state). */
+  ignoreWs?: boolean
+  /** Re-fetch the diff with/without `-w`. When absent, the toggle is hidden. */
+  onToggleIgnoreWs?: () => void
   onStageHunk?: (patch: string) => void
 }): React.JSX.Element {
   const lines = useMemo(() => parseDiff(diff), [diff])
@@ -188,6 +194,15 @@ export function DiffViewer({
   return (
     <div className={`diff-viewer hljs ${splitView ? 'is-split' : ''}`}>
       <div className="diff-toggles">
+        {onToggleIgnoreWs && (
+          <button
+            className={`diff-word-toggle ${ignoreWs ? 'on' : ''}`}
+            title="Ignore whitespace changes"
+            onClick={onToggleIgnoreWs}
+          >
+            <Pilcrow size={12} /> Whitespace
+          </button>
+        )}
         <button
           className={`diff-word-toggle ${splitView ? 'on' : ''}`}
           title="Side-by-side (split) view"

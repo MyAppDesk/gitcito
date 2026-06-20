@@ -148,14 +148,15 @@ export const gitApi = {
   deleteRemoteTag: (path: string, name: string, remote?: string) => call<void>('deleteRemoteTag', path, name, remote),
   getRemoteTags: (path: string, remote?: string) => call<string[]>('getRemoteTags', path, remote),
 
-  diffFile: (path: string, file: string, staged: boolean, untracked: boolean) =>
-    call<string>('diffFile', path, file, staged, untracked),
+  diffFile: (path: string, file: string, staged: boolean, untracked: boolean, ignoreWs?: boolean) =>
+    call<string>('diffFile', path, file, staged, untracked, ignoreWs),
   commitFiles: (path: string, hash: string) => call<FileEntry[]>('commitFiles', path, hash),
   stashFiles: (path: string, sha: string, untrackedSha?: string | null) =>
     call<FileEntry[]>('stashFiles', path, sha, untrackedSha),
-  stashFileDiff: (path: string, sha: string, file: string, untracked?: boolean) =>
-    call<string>('stashFileDiff', path, sha, file, untracked),
-  commitFileDiff: (path: string, hash: string, file: string) => call<string>('commitFileDiff', path, hash, file),
+  stashFileDiff: (path: string, sha: string, file: string, untracked?: boolean, ignoreWs?: boolean) =>
+    call<string>('stashFileDiff', path, sha, file, untracked, ignoreWs),
+  commitFileDiff: (path: string, hash: string, file: string, ignoreWs?: boolean) =>
+    call<string>('commitFileDiff', path, hash, file, ignoreWs),
   formatPatch: (path: string, ref: string, count?: number) => call<string>('formatPatch', path, ref, count),
   applyPatch: (path: string, content: string, am?: boolean) => call<void>('applyPatch', path, content, am),
   stagedDiff: (path: string) => call<string>('stagedDiff', path),

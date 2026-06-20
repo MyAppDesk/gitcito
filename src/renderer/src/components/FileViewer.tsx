@@ -123,6 +123,7 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
   const [explaining, setExplaining] = useState(false)
 
   const [refreshKey, setRefreshKey] = useState(0)
+  const [ignoreWs, setIgnoreWs] = useState(false)
 
   // ─── In-app editing (project-tree files only) ───
   const [editing, setEditing] = useState(false)
@@ -331,11 +332,11 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
         if (mode === 'diff') {
           const text =
             source.type === 'commit'
-              ? await gitApi.commitFileDiff(repoPath, source.hash, file)
+              ? await gitApi.commitFileDiff(repoPath, source.hash, file, ignoreWs)
               : source.type === 'stash'
-                ? await gitApi.stashFileDiff(repoPath, source.sha, file, source.untracked)
+                ? await gitApi.stashFileDiff(repoPath, source.sha, file, source.untracked, ignoreWs)
                 : source.type === 'wip'
-                  ? await gitApi.diffFile(repoPath, file, source.staged, source.untracked)
+                  ? await gitApi.diffFile(repoPath, file, source.staged, source.untracked, ignoreWs)
                   : ''
           if (!cancelled) setContent(text)
         } else if (mode === 'file') {
@@ -378,6 +379,7 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
     mode,
     refreshKey,
     editing,
+    ignoreWs,
     source.type,
     source.type === 'commit' ? source.hash : source.type === 'stash' ? source.sha : source.type === 'wip' ? source.staged : ''
   ])
@@ -557,6 +559,8 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
             lang={lang}
             highlightLayers={layers}
             maskValues={maskOn}
+            ignoreWs={ignoreWs}
+            onToggleIgnoreWs={() => setIgnoreWs((v) => !v)}
             onStageHunk={
               source.type === 'wip' && !source.staged && !source.untracked
                 ? async (patch) => {

@@ -61,7 +61,7 @@
 - **Amend**, persistent drafts, and auto-prefilled messages during merge / cherry-pick / revert.
 - **Commit templates** (`commit.template` / `.gitmessage`) prefill the composer; comment lines are stripped.
 - **Changelog generator** — turn Conventional-Commit messages between two refs (defaults to the latest tag → HEAD) into a grouped changelog (Features / Fixes / Performance…, with breaking changes surfaced first). Copy it, or prepend it straight to `CHANGELOG.md`.
-- **Diff viewer** with syntax highlighting and one-click hunk staging, a **unified ↔ split (side-by-side)** toggle, plus a **word-level diff** toggle that highlights just the changed tokens within edited lines (red on the old, green on the new).
+- **Diff viewer** with syntax highlighting and one-click hunk staging, a **unified ↔ split (side-by-side)** toggle, an **ignore-whitespace** toggle, plus a **word-level diff** toggle that highlights just the changed tokens within edited lines (red on the old, green on the new).
 - **Image diff** with side-by-side / swipe comparison for changed images.
 - **Conflict resolver** with ours / theirs / per-line picking and an editable output pane.
 - **Smart .gitignore** — ignore a file, `*.ext`, or a folder, written to the closest folder's `.gitignore` or the repo root, with a live preview.

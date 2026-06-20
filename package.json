@@ -19,7 +19,6 @@
     "preview": "electron-vite preview",
     "playground": "bash examples/setup-playground.sh",
     "playground:rebuild": "PLAYGROUND_FORCE=1 bash examples/setup-playground.sh",
-    "screenshots": "node examples/screenshots/capture.mjs",
     "screenshots:gif": "node examples/screenshots/capture.mjs --gif",
     "test": "vitest run",
     "test:watch": "vitest",

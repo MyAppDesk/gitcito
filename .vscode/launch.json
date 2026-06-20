@@ -17,17 +17,6 @@
       "type": "node",
       "request": "launch",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "screenshots"],
-      "cwd": "${workspaceFolder}",
-      "console": "integratedTerminal",
-      "skipFiles": ["<node_internals>/**"],
-      "presentation": { "group": "2_media", "order": 1 }
-    },
-    {
-      "name": "Screenshots: regenerate + GIFs",
-      "type": "node",
-      "request": "launch",
-      "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "screenshots:gif"],
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",

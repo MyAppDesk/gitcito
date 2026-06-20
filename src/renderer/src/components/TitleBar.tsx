@@ -1,9 +1,9 @@
 import { useRef, useState } from 'react'
-import { Plus, FolderGit2, X, Minus, Square, Settings, Sparkles, Bell, BarChart3, ScrollText, CircleDot, Flag, Tag } from 'lucide-react'
+import { Plus, FolderGit2, X, Minus, Square, Settings, Sparkles, Bell, BarChart3, ScrollText, CircleDot, Flag, Tag, Download, ArrowDownToLine } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore, type MenuItem } from '../stores/ui'
-import { useRepoStore } from '../stores/repo'
+import { useRepoStore, repoActions } from '../stores/repo'
 import type { GroupTab, TabState } from '../../../shared/types'
 import { ProfileSwitcher } from './ProfileSwitcher'
 import gitcitoMark from '../assets/gitcito-mark.png'
@@ -253,6 +253,20 @@ export function TitleBar(): React.JSX.Element {
     }
     const items: MenuItem[] = []
     if (tab.kind === 'group') {
+      if (tab.repos.length > 0) {
+        const paths = tab.repos.map((r) => r.path)
+        items.push({
+          label: `Fetch all (${paths.length})`,
+          icon: <Download size={15} />,
+          onClick: () => void repoActions.batch(paths, 'fetch')
+        })
+        items.push({
+          label: `Pull all (${paths.length})`,
+          icon: <ArrowDownToLine size={15} />,
+          onClick: () => void repoActions.batch(paths, 'pull')
+        })
+        items.push({ separator: true })
+      }
       items.push({
         label: 'Manage repositories…',
         onClick: () => openModal({ kind: 'launcher', groupId: tab.id })

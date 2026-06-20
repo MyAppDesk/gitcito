@@ -523,10 +523,45 @@ export const repoActions = {
       redo: () => gitApi.rebase(path, onto)
     }),
 
+  rebaseOnto: (path: string, branch: string, onto: string) =>
+    useRepoStore.getState().run(path, `Rebased ${branch} onto ${onto}`, () => gitApi.rebaseOnto(path, branch, onto), {
+      label: `rebase ${branch} onto ${onto}`,
+      undo: () => gitApi.reset(path, 'ORIG_HEAD', 'hard'),
+      redo: () => gitApi.rebaseOnto(path, branch, onto)
+    }),
+
   fetchAll: async (path: string) => {
     const ok = await useRepoStore.getState().run(path, 'Fetched all remotes', () => gitApi.fetchAll(path))
     if (ok) useRepoStore.getState().patch(path, { lastFetchAt: Date.now() })
     return ok
+  },
+
+  // ─── Multi-repo batch (group tabs) ───
+  // Run fetch/pull across several repos with a single summary toast instead of
+  // one per repo. Returns nothing; refreshes each affected repo afterwards.
+  batch: async (paths: string[], op: 'fetch' | 'pull', mode: 'default' | 'ff-only' | 'rebase' = 'default') => {
+    if (paths.length === 0) return
+    const ui = useUIStore.getState()
+    const verb = op === 'fetch' ? 'Fetching' : 'Pulling'
+    let done = 0
+    let failed = 0
+    for (const path of paths) {
+      ui.setBusy(`${verb} ${path.split('/').pop()} (${done + failed + 1}/${paths.length})`)
+      try {
+        if (op === 'fetch') await gitApi.fetchAll(path)
+        else await gitApi.pull(path, mode)
+        useRepoStore.getState().patch(path, { lastFetchAt: Date.now() })
+        done++
+      } catch {
+        failed++
+      }
+      // Refresh repos already in the store so their graph/badges update.
+      if (useRepoStore.getState().repos[path]) await useRepoStore.getState().refresh(path)
+    }
+    ui.setBusy(null)
+    const label = op === 'fetch' ? 'Fetched' : 'Pulled'
+    if (failed === 0) toast('success', `${label} ${done} repositor${done === 1 ? 'y' : 'ies'}`)
+    else toast(done ? 'info' : 'error', `${label} ${done}/${paths.length} — ${failed} failed`)
   },
 
   pull: async (path: string, mode: 'default' | 'ff-only' | 'rebase') => {

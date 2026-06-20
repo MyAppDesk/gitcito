@@ -149,6 +149,9 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   const [fileFilter, setFileFilter] = useState<FileFilter>(EMPTY_FILTER)
   const [dragId, setDragId] = useState<string | null>(null)
   const [overId, setOverId] = useState<string | null>(null)
+  // Drag-a-branch-onto-another (merge / rebase gesture).
+  const [dragBranch, setDragBranch] = useState<string | null>(null)
+  const [dropBranch, setDropBranch] = useState<string | null>(null)
   const path = repo.path
   const f = filter.trim().toLowerCase()
 
@@ -480,6 +483,14 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
           })
       }
     ]
+  }
+
+  // Dropped branch `source` onto `target`: offer merge / rebase.
+  const branchDropMenu = (source: string, target: string, x: number, y: number): void => {
+    openContextMenu(x, y, [
+      { label: `Merge ${source} → ${target}`, onClick: () => void repoActions.mergeInto(path, source, target) },
+      { label: `Rebase ${source} onto ${target}`, onClick: () => void repoActions.rebaseOnto(path, source, target) }
+    ])
   }
 
   const localMenu = (b: BranchInfo): MenuItem[] => [
@@ -847,7 +858,32 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         {locals.map((b) => (
           <div
             key={b.name}
-            className={`sb-item ${b.isCurrent ? 'current' : ''} ${isSel('local', b.name) ? 'multi-sel' : ''}`}
+            className={`sb-item ${b.isCurrent ? 'current' : ''} ${isSel('local', b.name) ? 'multi-sel' : ''} ${dropBranch === b.name ? 'branch-drop-over' : ''}`}
+            draggable
+            onDragStart={(e) => {
+              setDragBranch(b.name)
+              e.dataTransfer.effectAllowed = 'link'
+              e.dataTransfer.setData('text/plain', b.name)
+            }}
+            onDragEnd={() => {
+              setDragBranch(null)
+              setDropBranch(null)
+            }}
+            onDragOver={(e) => {
+              if (dragBranch && dragBranch !== b.name) {
+                e.preventDefault()
+                e.dataTransfer.dropEffect = 'link'
+                if (dropBranch !== b.name) setDropBranch(b.name)
+              }
+            }}
+            onDragLeave={() => dropBranch === b.name && setDropBranch(null)}
+            onDrop={(e) => {
+              e.preventDefault()
+              const source = dragBranch
+              setDragBranch(null)
+              setDropBranch(null)
+              if (source && source !== b.name) branchDropMenu(source, b.name, e.clientX, e.clientY)
+            }}
             onClick={(e) => {
               if (!onSelectClick('local', b.name, localIds, e)) goToBranch(b.sha)
             }}

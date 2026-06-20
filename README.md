@@ -70,6 +70,7 @@
 - **Cherry-pick, revert, and reset** (soft / mixed / hard) from the graph.
 - **Branch comparison**: ahead/behind counts, full diff, and a one-click "open a PR" hand-off.
 - **Merge** with fast-forward or forced merge-commit; **rebase onto** any ref.
+- **Drag a branch onto another** in the sidebar to merge it in or rebase it on top — a quick gesture for the two most common branch ops.
 - Create / checkout / rename / delete local & remote branches, with per-remote presence badges.
 - **Repository ▸ branch switcher** in the toolbar (GitKraken-style), plus a branch switch right in the status bar.
 
@@ -82,6 +83,7 @@
 ### Sync, stashes, tags & worktrees
 - **Pull** (default, fast-forward-only or rebase) and **push** with safe `--force-with-lease` + optional confirmation.
 - **Fetch all & prune**, plus background **auto-fetch** on a configurable interval and a "fetched X ago" badge.
+- **Multi-repo batch** — **Fetch all** / **Pull all** every repository in a group at once (from the group home or the group tab's right-click menu), with a single summary of what succeeded.
 - **Stashes** with untracked files, messages, per-file apply, and a details/diff view.
 - **Tags**: create/delete locally, push or delete on the remote, browse remote tags.
 - **Worktrees**: create, remove and open a linked worktree in its own window.

@@ -8644,3 +8644,14 @@ button.insights-row:hover { background: var(--bg-2); }
 .commit-lint-item.warn::before { content: '⚠'; color: #e0a020; }
 .commit-lint-item.error::before { content: '✕'; color: var(--red, #e5484d); }
 .commit-lint-item.error { color: var(--text-1); }
+
+/* ─── Group batch ops ──────────────────────────────────────────────────── */
+.group-batch-row { display: flex; gap: 8px; justify-content: center; margin: 0 0 14px; }
+
+/* ─── Drag-a-branch-onto-another (merge/rebase) ────────────────────────── */
+.sb-item.branch-drop-over {
+  outline: 2px dashed var(--accent);
+  outline-offset: -2px;
+  background: var(--accent-soft);
+  border-radius: 6px;
+}

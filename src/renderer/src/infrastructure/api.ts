@@ -91,6 +91,7 @@ export const gitApi = {
   mergeInto: (path: string, source: string, target: string, noFf?: boolean) =>
     call<void>('mergeInto', path, source, target, noFf),
   rebase: (path: string, onto: string) => call<void>('rebase', path, onto),
+  rebaseOnto: (path: string, branch: string, onto: string) => call<void>('rebaseOnto', path, branch, onto),
 
   fetchAll: (path: string) => call<void>('fetchAll', path),
   pull: (path: string, mode: 'default' | 'ff-only' | 'rebase') => call<void>('pull', path, mode),

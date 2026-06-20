@@ -806,6 +806,13 @@ export const gitService = {
     await gitFor(repoPath).rebase([onto])
   },
 
+  /** Check out `branch` then rebase it onto `onto` (for the drag-to-rebase gesture). */
+  async rebaseOnto(repoPath: string, branch: string, onto: string): Promise<void> {
+    const git = gitFor(repoPath)
+    await git.checkout(branch)
+    await git.rebase([onto])
+  },
+
   async rebaseAbort(repoPath: string): Promise<void> {
     await gitFor(repoPath).rebase(['--abort'])
   },

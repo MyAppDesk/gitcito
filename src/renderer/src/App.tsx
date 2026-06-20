@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { GitMerge, FolderOpen } from 'lucide-react'
+import { GitMerge, FolderOpen, Download, ArrowDownToLine } from 'lucide-react'
 import { useSettingsStore } from './stores/settings'
 import { useRepoStore, repoActions, type RepoData } from './stores/repo'
 import { useUIStore } from './stores/ui'
@@ -80,6 +80,16 @@ function GroupView({ tab }: { tab: GroupTab }): React.JSX.Element {
         </div>
         <h1>{tab.name}</h1>
         <p>Manage repositories in this group.</p>
+        {tab.repos.length > 0 && (
+          <div className="group-batch-row">
+            <button className="btn ghost small" onClick={() => void repoActions.batch(tab.repos.map((r) => r.path), 'fetch')}>
+              <Download size={13} /> Fetch all ({tab.repos.length})
+            </button>
+            <button className="btn ghost small" onClick={() => void repoActions.batch(tab.repos.map((r) => r.path), 'pull')}>
+              <ArrowDownToLine size={13} /> Pull all
+            </button>
+          </div>
+        )}
         <LauncherPanel
           onOpen={() => void openRepo()}
           onClone={cloneRepo}

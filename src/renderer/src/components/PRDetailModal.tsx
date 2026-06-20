@@ -151,7 +151,7 @@ export function PRDetailModal({
             ))}
           </div>
 
-          {pr.reviewThreads.length > 0 && (
+          {(pr.reviewThreads?.length ?? 0) > 0 && (
             <>
               <div className="prd-section-title">
                 Review threads <span className="prd-count">{pr.reviewThreads.length}</span>

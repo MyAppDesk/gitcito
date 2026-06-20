@@ -8497,3 +8497,30 @@ button.insights-row:hover { background: var(--bg-2); }
 .insights-bar-fill { display: block; height: 100%; border-radius: 4px; }
 .insights-bar-fill.hot { background: linear-gradient(90deg, #fdcb6e, #e17055); }
 .insights-row-val { font-size: 11px; color: var(--text-2); white-space: nowrap; }
+
+/* ─── Changelog generator ──────────────────────────────────────────────── */
+.clgen { display: flex; flex-direction: column; min-height: 0; }
+.clgen-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto;
+  gap: 10px;
+  align-items: end;
+  margin: 12px 0 6px;
+}
+.clgen-controls .btn { height: 34px; }
+.clgen-meta { font-size: 11px; color: var(--text-2); min-height: 16px; margin-bottom: 6px; }
+.clgen-preview {
+  flex: 1;
+  min-height: 240px;
+  width: 100%;
+  resize: none;
+  font-family: var(--code-font, monospace);
+  font-size: 12.5px;
+  line-height: 1.5;
+  padding: 12px;
+  background: var(--bg-0);
+  color: var(--text-0);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+@media (max-width: 720px) { .clgen-controls { grid-template-columns: 1fr 1fr; } }

@@ -58,6 +58,7 @@
 - **Stage / unstage / discard**, down to **individual hunks — or individual lines** picked right in the diff.
 - **Amend**, persistent drafts, and auto-prefilled messages during merge / cherry-pick / revert.
 - **Commit templates** (`commit.template` / `.gitmessage`) prefill the composer; comment lines are stripped.
+- **Changelog generator** — turn Conventional-Commit messages between two refs (defaults to the latest tag → HEAD) into a grouped changelog (Features / Fixes / Performance…, with breaking changes surfaced first). Copy it, or prepend it straight to `CHANGELOG.md`.
 - **Diff viewer** with syntax highlighting and one-click hunk staging.
 - **Image diff** with side-by-side / swipe comparison for changed images.
 - **Conflict resolver** with ours / theirs / per-line picking and an editable output pane.

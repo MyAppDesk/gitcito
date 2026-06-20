@@ -25,7 +25,8 @@ import {
   GitBranch,
   Bell,
   Layers,
-  BarChart3
+  BarChart3,
+  FileText
 } from 'lucide-react'
 import type { MenuItem } from '../stores/ui'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
@@ -116,6 +117,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
       { label: 'Git LFS…', icon: <Boxes size={15} />, onClick: () => openModal({ kind: 'lfs', repoPath: path }) },
       { label: 'Sparse-checkout…', icon: <FolderTree size={15} />, onClick: () => openModal({ kind: 'sparse', repoPath: path }) },
       { separator: true },
+      { label: 'Generate changelog…', icon: <FileText size={15} />, onClick: () => openModal({ kind: 'changelog-gen', repoPath: path }) },
       { label: 'Apply patch to working tree…', icon: <FileDiff size={15} />, onClick: () => applyPatchFile(false) },
       { label: 'Apply patch & commit (git am)…', icon: <GitCommit size={15} />, onClick: () => applyPatchFile(true) }
     ])

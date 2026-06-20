@@ -679,6 +679,12 @@ export interface RepoInsights {
   churn: ChurnPoint[]
 }
 
+/** Output of the conventional-commit changelog generator. */
+export interface ChangelogResult {
+  markdown: string
+  count: number // commits included
+}
+
 /** One entry from `git reflog` — the recovery net for lost/rewound commits. */
 export interface ReflogEntry {
   sha: string

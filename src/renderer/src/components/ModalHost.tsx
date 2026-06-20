@@ -22,6 +22,7 @@ import { IgnoreModal } from './IgnoreModal'
 import { PRDetailModal } from './PRDetailModal'
 import { CodeSearchModal } from './CodeSearchModal'
 import { StackModal } from './StackModal'
+import { ChangelogGenModal } from './ChangelogGenModal'
 
 function GroupColorModal({ spec }: { spec: Extract<ModalSpec, { kind: 'group-color' }> }): React.JSX.Element {
   const closeModal = useUIStore((s) => s.closeModal)
@@ -1253,7 +1254,8 @@ export function ModalHost(): React.JSX.Element {
                     modal.kind === 'lfs' ||
                     modal.kind === 'sparse' ||
                     modal.kind === 'pr-detail' ||
-                    modal.kind === 'code-search'
+                    modal.kind === 'code-search' ||
+                    modal.kind === 'changelog-gen'
                   ? 'modal-tall'
                   : ''
             }`}
@@ -1288,6 +1290,7 @@ export function ModalHost(): React.JSX.Element {
             {modal.kind === 'reflog' && <ReflogModal repoPath={modal.repoPath} />}
             {modal.kind === 'code-search' && <CodeSearchModal repoPath={modal.repoPath} />}
             {modal.kind === 'stack' && <StackModal repoPath={modal.repoPath} />}
+            {modal.kind === 'changelog-gen' && <ChangelogGenModal repoPath={modal.repoPath} />}
             {modal.kind === 'bisect' && <BisectModal repoPath={modal.repoPath} />}
             {modal.kind === 'hooks' && <HooksModal repoPath={modal.repoPath} />}
             {modal.kind === 'lfs' && <LfsModal repoPath={modal.repoPath} />}

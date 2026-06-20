@@ -47,7 +47,8 @@ import type {
   RepoInsights,
   AuthorStat,
   FileHotspot,
-  ChurnPoint
+  ChurnPoint,
+  ChangelogResult
 } from '../shared/types'
 import { recordEvent } from './analytics'
 import { recordLog } from './log'
@@ -2126,6 +2127,97 @@ export const gitService = {
     const hotspots = [...fileMap.values()].sort((a, b) => b.commits - a.commits).slice(0, 30)
     const churn = [...churnMap.values()].sort((a, b) => a.week.localeCompare(b.week))
     return { totalCommits, first, last, filesTouched: fileMap.size, authors, hotspots, churn }
+  },
+
+  /**
+   * Build a Conventional-Commits changelog for the range `from..to` (defaults to
+   * the latest tag → HEAD). Commits are parsed as `type(scope)!: subject`,
+   * grouped by type with breaking changes surfaced first.
+   */
+  async generateChangelog(
+    repoPath: string,
+    opts?: { from?: string; to?: string; version?: string }
+  ): Promise<ChangelogResult> {
+    const git = gitFor(repoPath)
+    const to = opts?.to?.trim() || 'HEAD'
+    // Default `from` to the most recent tag reachable from `to`, if any.
+    let from = opts?.from?.trim() || ''
+    if (!from) from = (await git.raw(['describe', '--tags', '--abbrev=0', to]).catch(() => '')).trim()
+    const range = from ? `${from}..${to}` : to
+
+    const raw = await git
+      .raw(['log', range, '--no-merges', `--pretty=format:%h${SEP}%s${SEP}%b${REC}`])
+      .catch(() => '')
+
+    const GROUPS: { key: string; title: string }[] = [
+      { key: 'feat', title: '✨ Features' },
+      { key: 'fix', title: '🐛 Bug Fixes' },
+      { key: 'perf', title: '⚡ Performance' },
+      { key: 'refactor', title: '♻️ Refactoring' },
+      { key: 'docs', title: '📝 Documentation' },
+      { key: 'test', title: '✅ Tests' },
+      { key: 'build', title: '📦 Build' },
+      { key: 'ci', title: '🤖 CI' },
+      { key: 'style', title: '💄 Styles' },
+      { key: 'chore', title: '🔧 Chores' },
+      { key: 'revert', title: '⏪ Reverts' }
+    ]
+    const buckets = new Map<string, string[]>()
+    const breaking: string[] = []
+    const other: string[] = []
+    let count = 0
+
+    const re = /^(\w+)(?:\(([^)]*)\))?(!)?:\s*(.+)$/
+    for (const rec of raw.split(REC)) {
+      const t = rec.trim()
+      if (!t) continue
+      const [hash, subject, body] = t.split(SEP)
+      if (!subject) continue
+      count += 1
+      const m = re.exec(subject.trim())
+      const isBreaking = !!m?.[3] || /BREAKING[ -]CHANGE/.test(body ?? '')
+      if (m) {
+        const [, type, scope, , desc] = m
+        const line = `- ${scope ? `**${scope}:** ` : ''}${desc} (\`${hash}\`)`
+        if (isBreaking) breaking.push(line)
+        const key = type.toLowerCase()
+        if (GROUPS.some((g) => g.key === key)) {
+          const arr = buckets.get(key) ?? []
+          arr.push(line)
+          buckets.set(key, arr)
+        } else {
+          other.push(line)
+        }
+      } else {
+        const line = `- ${subject.trim()} (\`${hash}\`)`
+        if (isBreaking) breaking.push(line)
+        other.push(line)
+      }
+    }
+
+    const date = new Date().toISOString().slice(0, 10)
+    const heading = opts?.version?.trim() || (from ? `${from}..${to}` : to)
+    const out: string[] = [`## ${heading} (${date})`, '']
+    if (breaking.length) {
+      out.push('### ⚠ BREAKING CHANGES', '', ...breaking, '')
+    }
+    for (const g of GROUPS) {
+      const arr = buckets.get(g.key)
+      if (arr?.length) out.push(`### ${g.title}`, '', ...arr, '')
+    }
+    if (other.length) out.push('### Other', '', ...other, '')
+    if (count === 0) out.push('_No commits in this range._', '')
+
+    return { markdown: out.join('\n').trimEnd() + '\n', count }
+  },
+
+  /** Prepend a changelog block to CHANGELOG.md (created if absent). */
+  async writeChangelogFile(repoPath: string, markdown: string): Promise<void> {
+    const file = join(repoPath, 'CHANGELOG.md')
+    const existing = await readFile(file, 'utf-8').catch(() => '')
+    const header = '# Changelog\n\n'
+    const bodyExisting = existing.startsWith(header) ? existing.slice(header.length) : existing
+    await writeFile(file, `${header}${markdown.trimEnd()}\n\n${bodyExisting}`.trimEnd() + '\n', 'utf-8')
   },
 
   async version(): Promise<string> {

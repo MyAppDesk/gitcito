@@ -51,7 +51,8 @@ import type {
   HistorySearchHit,
   GitHubNotification,
   StackInfo,
-  RepoInsights
+  RepoInsights,
+  ChangelogResult
 } from '../../../shared/types'
 
 // Typed adapter over the IPC bridge — the only place that talks to window.api.
@@ -234,7 +235,10 @@ export const gitApi = {
   compareBranches: (path: string, a: string, b: string) =>
     call<BranchCompareResult>('compareBranches', path, a, b),
   repoStats: (path: string, sinceDays?: number) => call<RepoStats>('repoStats', path, sinceDays),
-  repoInsights: (path: string, sinceDays?: number) => call<RepoInsights>('repoInsights', path, sinceDays)
+  repoInsights: (path: string, sinceDays?: number) => call<RepoInsights>('repoInsights', path, sinceDays),
+  generateChangelog: (path: string, opts?: { from?: string; to?: string; version?: string }) =>
+    call<ChangelogResult>('generateChangelog', path, opts),
+  writeChangelogFile: (path: string, markdown: string) => call<void>('writeChangelogFile', path, markdown)
 }
 
 export const settingsApi = {

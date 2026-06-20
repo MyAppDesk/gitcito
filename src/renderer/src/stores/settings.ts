@@ -80,6 +80,7 @@ interface SettingsState {
   reorderReposInGroup(tabId: string, fromPath: string, toPath: string | null): void
   setGroupActiveRepo(tabId: string, path: string | null): void
   closeTab(tabId: string): void
+  reopenClosedTab(): void
   setActiveTab(tabId: string): void
   renameTab(tabId: string, name: string): void
   setTabColor(tabId: string, color: string): void
@@ -92,6 +93,9 @@ interface SettingsState {
   activeTab(): TabState | null
   activeRepo(): RepoRef | null
 }
+
+/** Session-only stack of recently closed tabs, for reopen (⌘⇧T). */
+const closedTabStack: { tab: TabState; idx: number }[] = []
 
 export const useSettingsStore = create<SettingsState>((set, get) => ({
   settings: defaultSettings(),
@@ -289,11 +293,26 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   closeTab: (tabId) =>
     get().update((s) => {
       const idx = s.tabs.findIndex((t) => t.id === tabId)
+      const closed = s.tabs[idx]
+      if (closed) closedTabStack.push({ tab: closed, idx }) // for ⌘⇧T
+      if (closedTabStack.length > 10) closedTabStack.shift()
       const tabs = s.tabs.filter((t) => t.id !== tabId)
       const activeTabId =
         s.activeTabId === tabId ? (tabs[Math.min(idx, tabs.length - 1)]?.id ?? null) : s.activeTabId
       return { ...s, tabs, activeTabId }
     }),
+
+  reopenClosedTab: () => {
+    const last = closedTabStack.pop()
+    if (!last) return
+    get().update((s) => {
+      // Skip if a tab with that id somehow already exists.
+      if (s.tabs.some((t) => t.id === last.tab.id)) return { ...s, activeTabId: last.tab.id }
+      const tabs = [...s.tabs]
+      tabs.splice(Math.min(last.idx, tabs.length), 0, last.tab)
+      return { ...s, tabs, activeTabId: last.tab.id }
+    })
+  },
 
   setActiveTab: (tabId) => get().update((s) => ({ ...s, activeTabId: tabId })),
 

@@ -223,6 +223,13 @@ export default function App(): React.JSX.Element {
         return
       }
 
+      // Reopen the last closed tab (⌘⇧T).
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && !e.altKey && e.key.toLowerCase() === 't') {
+        e.preventDefault()
+        st.reopenClosedTab()
+        return
+      }
+
       const id = matchShortcut(e, effectiveBindings(st.settings.shortcuts))
       if (!id) return
       if (id === 'command-palette') {

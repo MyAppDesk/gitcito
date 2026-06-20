@@ -126,7 +126,7 @@
 - **9 built-in themes** (Gitcito, Nord, Dracula, Solarized, GitHub, Monokai, Midnight, Contrast, Daltonic), each with light & dark — plus custom and **AI-generated** themes, and adjustable code font size.
 - **Light, dark or follow-OS**, switchable live.
 - **Profiles** with separate Git identities and integration tokens.
-- **Keyboard shortcuts** with a `?` cheatsheet — and the core navigation shortcuts (palette, code search, vault) are **rebindable**, with conflict handling and per-shortcut reset.
+- **Keyboard shortcuts** with a `?` cheatsheet — core navigation shortcuts (palette, code search, vault) are **rebindable** with conflict handling and per-shortcut reset, and **⌘⇧T reopens the last closed tab**.
 - **Undo / redo**, a first-run onboarding wizard, and **i18n** (English & Spanish) out of the box.
 
 ## 🖼️ Screenshots

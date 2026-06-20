@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { SplitSquareHorizontal } from 'lucide-react'
 import { highlightHtml, type HighlightLayer } from './FileSearchBar'
 import { highlightLine } from '../lib/highlight'
 
@@ -8,6 +9,100 @@ interface DiffLine {
   oldNo: number | null
   newNo: number | null
   hunkIdx: number
+}
+
+type Range = [number, number] // [start, end) in decoded-character coords
+
+/** Tokenize into words / whitespace runs / single punctuation for word-diffing. */
+function tokenize(s: string): string[] {
+  return s.match(/\s+|[A-Za-z0-9_]+|[^\sA-Za-z0-9_]/g) ?? []
+}
+
+/**
+ * Word-level diff of two lines. Returns the changed character ranges on each
+ * side (delRanges over `a`, addRanges over `b`) via a classic LCS over tokens.
+ */
+function wordDiff(a: string, b: string): { del: Range[]; add: Range[] } {
+  const ta = tokenize(a)
+  const tb = tokenize(b)
+  const n = ta.length
+  const m = tb.length
+  // LCS length table.
+  const dp: number[][] = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0))
+  for (let i = n - 1; i >= 0; i--) {
+    for (let j = m - 1; j >= 0; j--) {
+      dp[i][j] = ta[i] === tb[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1])
+    }
+  }
+  const del: Range[] = []
+  const add: Range[] = []
+  let i = 0
+  let j = 0
+  let aPos = 0
+  let bPos = 0
+  const push = (arr: Range[], start: number, end: number): void => {
+    const last = arr[arr.length - 1]
+    if (last && last[1] === start) last[1] = end // coalesce adjacent
+    else arr.push([start, end])
+  }
+  while (i < n && j < m) {
+    if (ta[i] === tb[j]) {
+      aPos += ta[i].length
+      bPos += tb[j].length
+      i++
+      j++
+    } else if (dp[i + 1][j] >= dp[i][j + 1]) {
+      push(del, aPos, aPos + ta[i].length)
+      aPos += ta[i].length
+      i++
+    } else {
+      push(add, bPos, bPos + tb[j].length)
+      bPos += tb[j].length
+      j++
+    }
+  }
+  while (i < n) {
+    push(del, aPos, aPos + ta[i].length)
+    aPos += ta[i].length
+    i++
+  }
+  while (j < m) {
+    push(add, bPos, bPos + tb[j].length)
+    bPos += tb[j].length
+    j++
+  }
+  return { del, add }
+}
+
+/**
+ * Wrap the given decoded-character ranges in <mark class> within an HTML string
+ * (post-hljs/search-highlight), tracking a running decoded offset across all
+ * tag-free segments so marks never break tags or entities.
+ */
+function markRanges(html: string, ranges: Range[], cls: string): string {
+  if (ranges.length === 0) return html
+  const inRange = (idx: number): boolean => ranges.some(([s, e]) => idx >= s && idx < e)
+  let pos = 0
+  return html.replace(/(<[^>]+>)|([^<]+)/g, (_m, tag, text) => {
+    if (tag) return tag
+    const tokens = (text as string).match(/&[a-zA-Z][a-zA-Z0-9]*;|&#\d+;|&#x[0-9a-fA-F]+;|[\s\S]/g) ?? []
+    let out = ''
+    let open = false
+    for (const tok of tokens) {
+      const hit = inRange(pos)
+      if (hit && !open) {
+        out += `<mark class="${cls}">`
+        open = true
+      } else if (!hit && open) {
+        out += '</mark>'
+        open = false
+      }
+      out += tok
+      pos++
+    }
+    if (open) out += '</mark>'
+    return out
+  })
 }
 
 function parseDiff(diff: string): DiffLine[] {
@@ -132,6 +227,36 @@ export function DiffViewer({
   const lines = useMemo(() => parseDiff(diff), [diff])
   const hunkData = useMemo(() => (onStageHunk ? extractHunks(diff) : null), [diff, onStageHunk])
 
+  const [wordDiffOn, setWordDiffOn] = useState(() => localStorage.getItem('gitcito-word-diff') !== 'off')
+  useEffect(() => localStorage.setItem('gitcito-word-diff', wordDiffOn ? 'on' : 'off'), [wordDiffOn])
+
+  // Per-line changed-character ranges, computed by pairing each block of
+  // consecutive deletions with the additions that immediately follow it.
+  const wordRanges = useMemo(() => {
+    const map = new Map<number, Range[]>()
+    let i = 0
+    while (i < lines.length) {
+      if (lines[i].kind !== 'del') {
+        i++
+        continue
+      }
+      const dels: number[] = []
+      while (i < lines.length && lines[i].kind === 'del') dels.push(i++)
+      const adds: number[] = []
+      while (i < lines.length && lines[i].kind === 'add') adds.push(i++)
+      // Only word-diff a balanced-ish edit; zip line-by-line.
+      const pairs = Math.min(dels.length, adds.length)
+      for (let k = 0; k < pairs; k++) {
+        const d = lines[dels[k]]
+        const a = lines[adds[k]]
+        const { del, add } = wordDiff(d.text, a.text)
+        if (del.length) map.set(dels[k], del)
+        if (add.length) map.set(adds[k], add)
+      }
+    }
+    return map
+  }, [lines])
+
   // Line-level staging selection (only when staging is enabled). Keyed by index
   // into `lines`; cleared whenever the diff changes.
   const [selected, setSelected] = useState<Set<number>>(new Set())
@@ -153,8 +278,19 @@ export function DiffViewer({
 
   if (!diff.trim()) return <div className="diff-empty">No changes to display</div>
 
+  const hasWordDiffs = wordRanges.size > 0
+
   return (
     <div className="diff-viewer hljs">
+      {hasWordDiffs && (
+        <button
+          className={`diff-word-toggle ${wordDiffOn ? 'on' : ''}`}
+          title="Highlight changed words within edited lines"
+          onClick={() => setWordDiffOn((v) => !v)}
+        >
+          <SplitSquareHorizontal size={12} /> Word diff
+        </button>
+      )}
       {onStageHunk && selected.size > 0 && (
         <div className="diff-select-bar">
           <span>{selected.size} line{selected.size === 1 ? '' : 's'} selected</span>
@@ -201,7 +337,15 @@ export function DiffViewer({
             <span className="diff-sign">{l.kind === 'add' ? '+' : l.kind === 'del' ? '-' : ' '}</span>
             <span
               className="diff-text"
-              dangerouslySetInnerHTML={{ __html: highlightHtml(highlightLine(l.text, lang), highlightLayers) || '&nbsp;' }}
+              dangerouslySetInnerHTML={{
+                __html:
+                  (() => {
+                    let html = highlightHtml(highlightLine(l.text, lang), highlightLayers)
+                    const wr = wordDiffOn ? wordRanges.get(i) : undefined
+                    if (wr) html = markRanges(html, wr, l.kind === 'add' ? 'word-add' : 'word-del')
+                    return html
+                  })() || '&nbsp;'
+              }}
             />
           </div>
         )

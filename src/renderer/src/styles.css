@@ -8524,3 +8524,35 @@ button.insights-row:hover { background: var(--bg-2); }
   border-radius: 8px;
 }
 @media (max-width: 720px) { .clgen-controls { grid-template-columns: 1fr 1fr; } }
+
+/* ─── Word-level diff ──────────────────────────────────────────────────── */
+.diff-word-toggle {
+  position: sticky;
+  top: 4px;
+  float: right;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 2px 6px 0 0;
+  padding: 3px 9px;
+  font-size: 11px;
+  font-family: var(--app-font, inherit);
+  color: var(--text-2);
+  background: var(--bg-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.diff-word-toggle:hover { color: var(--text-0); }
+.diff-word-toggle.on { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+.diff-text mark.word-del {
+  background: rgba(229, 72, 77, 0.32);
+  color: inherit;
+  border-radius: 2px;
+}
+.diff-text mark.word-add {
+  background: rgba(46, 160, 67, 0.34);
+  color: inherit;
+  border-radius: 2px;
+}

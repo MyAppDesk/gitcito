@@ -1260,7 +1260,8 @@ export function ModalHost(): React.JSX.Element {
                     modal.kind === 'sparse' ||
                     modal.kind === 'pr-detail' ||
                     modal.kind === 'code-search' ||
-                    modal.kind === 'changelog-gen'
+                    modal.kind === 'changelog-gen' ||
+                    modal.kind === 'repo-settings'
                   ? 'modal-tall'
                   : ''
             }`}

@@ -377,6 +377,31 @@ export function IntegrationsPage({
   )
 }
 
+/** Launches the AI assistant (Ask actions + generate config) for the active repo. */
+function AIAssistantLauncher(): React.JSX.Element {
+  const settings = useSettingsStore((s) => s.settings)
+  const openModal = useUIStore((s) => s.openModal)
+  const closeModal = useUIStore((s) => s.closeModal)
+  const t = useT()
+  const activeTab = settings.tabs.find((tb) => tb.id === settings.activeTabId)
+  const repoPath = activeTab ? tabActiveRepoPath(activeTab) : null
+  const repoName = repoPath ? repoPath.split('/').pop() ?? repoPath : ''
+  return (
+    <button
+      className="btn ghost small"
+      disabled={!repoPath}
+      title={repoPath ? undefined : 'Open a repository first'}
+      onClick={() => {
+        if (!repoPath) return
+        closeModal()
+        openModal({ kind: 'ai-config-wizard', repoPath, repoName })
+      }}
+    >
+      <Sparkles size={13} /> {t('settings.openAiAssistant')}
+    </button>
+  )
+}
+
 export function AIPage({ profile, edit }: { profile: Profile; edit: (p: Partial<Profile>) => void }): React.JSX.Element {
   const toast = useUIStore((s) => s.toast)
   const t = useT()
@@ -431,6 +456,14 @@ export function AIPage({ profile, edit }: { profile: Profile; edit: (p: Partial<
       </label>
 
       <div style={ai.enabled === false ? { opacity: 0.4, pointerEvents: 'none' } : undefined}>
+      <h4>
+        <Sparkles size={14} /> {t('settings.aiAssistant')}
+      </h4>
+      <span className="settings-hint">{t('settings.aiAssistantHint')}</span>
+      <div style={{ marginTop: 8, marginBottom: 6 }}>
+        <AIAssistantLauncher />
+      </div>
+
       <h4>
         <Bot size={14} /> {t('settings.provider')}
       </h4>
@@ -1615,7 +1648,7 @@ function MiniBars({ data, color }: { data: { label: string; value: number }[]; c
   )
 }
 
-function AnalyticsSection({ aiEnabled }: { aiEnabled: boolean }): React.JSX.Element {
+export function AnalyticsSection({ aiEnabled }: { aiEnabled: boolean }): React.JSX.Element {
   const toast = useUIStore((s) => s.toast)
   const [data, setData] = useState<Analytics>(emptyAnalytics())
 
@@ -1751,7 +1784,7 @@ function AnalyticsSection({ aiEnabled }: { aiEnabled: boolean }): React.JSX.Elem
   )
 }
 
-function RepoHistorySection(): React.JSX.Element {
+export function RepoHistorySection(): React.JSX.Element {
   const activeRepo = useSettingsStore((s) => s.activeRepo())
   const recentRepos = useSettingsStore((s) => s.settings.recentRepos)
 
@@ -1863,7 +1896,7 @@ function RepoHistorySection(): React.JSX.Element {
 }
 
 /** Summary card for the operation log; the full, filterable log opens as a page tab. */
-function OperationLogSection(): React.JSX.Element {
+export function OperationLogSection(): React.JSX.Element {
   const [count, setCount] = useState<number | null>(null)
 
   useEffect(() => {
@@ -1901,10 +1934,6 @@ function OperationLogSection(): React.JSX.Element {
 
 function DataPage(): React.JSX.Element {
   const t = useT()
-  const aiEnabled = useSettingsStore((s) => {
-    const p = s.settings.profiles.find((p) => p.id === s.settings.activeProfileId) ?? s.settings.profiles[0]
-    return p?.ai.enabled ?? false
-  })
   return (
     <div className="settings-general">
       <div className="settings-general-header">
@@ -1915,9 +1944,7 @@ function DataPage(): React.JSX.Element {
       </div>
       <DataManagementSection />
       <RepoDataSection />
-      <AnalyticsSection aiEnabled={aiEnabled} />
-      <RepoHistorySection />
-      <OperationLogSection />
+      <p className="settings-hint" style={{ marginTop: 12 }}>{t('settings.analyticsMoved')}</p>
     </div>
   )
 }

@@ -8855,3 +8855,8 @@ button.insights-row:hover { background: var(--bg-2); }
 }
 .bms-opt:hover { background: var(--accent-soft); }
 .bms-opt.add { color: var(--accent); }
+
+/* ─── Repo settings tabs ───────────────────────────────────────────────── */
+.repo-settings { display: flex; flex-direction: column; min-height: 0; }
+.repo-settings-tabs { display: flex; gap: 6px; margin: 10px 0; flex-wrap: wrap; }
+.repo-settings-body { overflow-y: auto; min-height: 0; flex: 1; }

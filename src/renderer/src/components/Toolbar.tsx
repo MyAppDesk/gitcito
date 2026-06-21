@@ -35,7 +35,6 @@ import type { MenuItem } from '../stores/ui'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
-import gitcitoIcon from '../assets/gitcito_icon.png'
 
 /** Short human-readable "time since" label, e.g. "now", "3m ago", "2h ago". */
 function timeSince(at: number | null): string {
@@ -52,7 +51,6 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
   const { undo, redo } = useRepoStore()
   const { openContextMenu, openModal, toggleTerminal, terminalOpen, graphFilter, setGraphFilter, busy } = useUIStore()
   const confirmForcePush = useSettingsStore((s) => s.settings.confirmForcePush)
-  const aiEnabled = useSettingsStore((s) => s.activeProfile().ai.enabled !== false)
   const hasGithubToken = useSettingsStore((s) => !!s.activeProfile().githubToken)
   const path = repo.path
   const current = repo.branches.locals.find((b) => b.isCurrent)
@@ -299,22 +297,6 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
           <span className="busy-indicator" title={`Fetched ${timeSince(repo.lastFetchAt)}`}>
             <Loader2 size={13} className="spin" /> {busy}
           </span>
-        )}
-        {aiEnabled && (
-          <button
-            className="tool-btn"
-            title="Ask the AI to act on this repo, or generate AI configuration files"
-            onClick={() =>
-              openModal({
-                kind: 'ai-config-wizard',
-                repoPath: path,
-                repoName: repo.name
-              })
-            }
-          >
-            <img src={gitcitoIcon} alt="" className="tool-btn-icon" width={15} height={15} />
-            <span>AI Config</span>
-          </button>
         )}
         <div className="graph-search">
           <Search size={13} />

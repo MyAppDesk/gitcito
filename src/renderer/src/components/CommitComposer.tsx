@@ -70,6 +70,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
   const setFileView = useUIStore((s) => s.setFileView)
   const activeProfile = useSettingsStore((s) => s.activeProfile)
   const largeFileKb = useSettingsStore((s) => s.settings.largeFileKb)
+  const protectedBranches = useSettingsStore((s) => s.settings.protectedBranches)
   const aiEnabled = useSettingsStore((s) => s.activeProfile().ai.enabled !== false)
 
   const layout = useUIStore((s) => s.layout)
@@ -490,19 +491,24 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
         }
       }
     }
-    if (flagged.length > 0) {
+    // Protected-branch warning (committing straight to main/master/…).
+    const onProtected = !amend && protectedBranches.map((b) => b.trim()).includes(repo.branches.current)
+
+    if (flagged.length > 0 || onProtected) {
       const all = flagged.map((f) => f.path)
+      const parts: string[] = []
+      if (onProtected) parts.push(`• You're committing directly to protected branch "${repo.branches.current}"`)
+      for (const f of flagged) parts.push(`• ${f.path} (${f.reason})`)
       useUIStore.getState().openModal({
         kind: 'confirm',
         danger: true,
-        title: flagged.length === 1 ? 'Commit this file?' : `Commit ${flagged.length} flagged files?`,
-        message:
-          `These staged files look risky to commit:\n\n${flagged.map((f) => `• ${f.path} (${f.reason})`).join('\n')}\n\n` +
-          `Secrets land in history hard to erase; large blobs bloat the repo forever. Untrack & .gitignore them instead?`,
+        title: onProtected && flagged.length === 0 ? 'Commit to a protected branch?' : 'Commit anyway?',
+        message: `Heads up before this commit:\n\n${parts.join('\n')}\n\nSecrets land in history hard to erase; large blobs bloat the repo forever.`,
         confirmLabel: 'Commit anyway',
         onConfirm: () => void runCommit(message),
-        secondaryLabel: 'Ignore & untrack',
-        onSecondary: () => void repoActions.ignoreAndUntrack(path, all, all)
+        // Offer untrack only when files were flagged.
+        secondaryLabel: all.length > 0 ? 'Ignore & untrack' : undefined,
+        onSecondary: all.length > 0 ? () => void repoActions.ignoreAndUntrack(path, all, all) : undefined
       })
       return
     }

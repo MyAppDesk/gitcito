@@ -580,10 +580,25 @@ export const repoActions = {
     return ok
   },
 
-  push: async (path: string, force = false): Promise<boolean> => {
+  push: async (path: string, force = false, protectedConfirmed = false): Promise<boolean> => {
     const repo = useRepoStore.getState().repos[path]
     const branch = repo?.branches.current
     if (!branch) return false
+    // Force-pushing a protected branch rewrites shared history — confirm first.
+    if (force && !protectedConfirmed) {
+      const protectedBranches = useSettingsStore.getState().settings.protectedBranches ?? []
+      if (protectedBranches.map((b) => b.trim()).includes(branch)) {
+        useUIStore.getState().openModal({
+          kind: 'confirm',
+          danger: true,
+          title: 'Force-push a protected branch?',
+          message: `"${branch}" is a protected branch. Force-pushing rewrites history others may have pulled. Continue?`,
+          confirmLabel: 'Force push',
+          onConfirm: () => void repoActions.push(path, true, true)
+        })
+        return false
+      }
+    }
     // Secret guard: if the repo tracks credential-looking files, warn once per
     // session before publishing them to a remote.
     if (!secretPushWarned.has(path)) {

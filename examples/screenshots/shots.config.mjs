@@ -417,6 +417,7 @@ export const shots = [
         const btn = [...document.querySelectorAll('.repo-settings-tabs button')].find((b) => /History/.test(b.textContent || ''))
         if (btn) btn.click()
       })
+      await page.waitForTimeout(400)
       await page.waitForTimeout(700)
     }
   },

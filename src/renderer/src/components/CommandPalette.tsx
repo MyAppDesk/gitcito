@@ -26,7 +26,8 @@ import {
   Camera,
   KeyRound,
   Keyboard,
-  CircleDot
+  CircleDot,
+  Sparkles
 } from 'lucide-react'
 import { useUIStore } from '../stores/ui'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
@@ -77,6 +78,7 @@ export function CommandPalette(): React.JSX.Element {
   const repos = useRepoStore((s) => s.repos)
   const tabs = useSettingsStore((s) => s.settings.tabs)
   const activeTabId = useSettingsStore((s) => s.settings.activeTabId)
+  const aiEnabled = useSettingsStore((s) => s.activeProfile().ai.enabled !== false)
 
   const activeTab = tabs.find((t) => t.id === activeTabId) ?? null
   const repoPath = activeTab ? tabActiveRepoPath(activeTab) : null
@@ -131,6 +133,7 @@ export function CommandPalette(): React.JSX.Element {
       { id: 'changelog-gen', title: 'Generate changelog…', group: 'Actions', keywords: 'conventional commits release notes changelog', icon: <FileText size={15} />, run: act(() => ui.openModal({ kind: 'changelog-gen', repoPath: path })) },
       { id: 'vault', title: 'Open vault', group: 'Actions', keywords: 'secrets vault credentials keychain env password store', icon: <KeyRound size={15} />, run: act(() => useSettingsStore.getState().openPageTab({ type: 'vault', repoPath: path })) },
       { id: 'code-search', title: 'Search code…', group: 'Actions', keywords: 'grep find text content history pickaxe', icon: <Search size={15} />, run: act(() => ui.openModal({ kind: 'code-search', repoPath: path })) },
+      ...(aiEnabled ? [{ id: 'ai-assistant', title: 'AI assistant / config…', group: 'Actions', keywords: 'ai config wizard ask actions generate', icon: <Sparkles size={15} />, run: act(() => ui.openModal({ kind: 'ai-config-wizard', repoPath: path, repoName: repo.name })) } as Command] : []),
       { id: 'terminal', title: 'Toggle integrated terminal', group: 'Actions', keywords: 'shell console pty', icon: <TerminalSquare size={15} />, run: act(() => ui.toggleTerminal()) },
       { id: 'reflog', title: 'Open reflog', group: 'Actions', keywords: 'recovery undo history head', icon: <History size={15} />, run: act(() => ui.openModal({ kind: 'reflog', repoPath: path })) },
       { id: 'snapshots', title: 'WIP snapshots…', group: 'Actions', keywords: 'safety net stash backup auto save recover', icon: <Camera size={15} />, run: act(() => ui.openModal({ kind: 'snapshots', repoPath: path })) },
@@ -194,7 +197,7 @@ export function CommandPalette(): React.JSX.Element {
     }
 
     return list
-  }, [repo, files, setOpen])
+  }, [repo, files, setOpen, aiEnabled])
 
   // Usage stats, refreshed each time the palette opens.
   const frec = useMemo(() => (open ? getFrecency() : {}), [open])

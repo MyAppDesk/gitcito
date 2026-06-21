@@ -5,6 +5,7 @@ import { gitApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
 import { useRepoStore } from '../stores/repo'
 import type { RepoInsights } from '../../../shared/types'
+import { useT } from '../i18n'
 
 const RANGES: { label: string; days: number }[] = [
   { label: '30d', days: 30 },
@@ -20,6 +21,7 @@ function fmt(n: number): string {
 }
 
 export function InsightsPage({ repoPath }: { repoPath: string }): React.JSX.Element {
+  const t = useT()
   const toast = useUIStore((s) => s.toast)
   const setFileView = useUIStore((s) => s.setFileView)
   const repoName = useRepoStore((s) => s.repos[repoPath]?.name ?? repoPath.split('/').pop())
@@ -65,8 +67,8 @@ export function InsightsPage({ repoPath }: { repoPath: string }): React.JSX.Elem
           <div className="changelog-title">
             <BarChart3 size={20} />
             <div>
-              <h1>Insights</h1>
-              <span className="settings-hint">{repoName} — contribution, churn and hotspots from your git history.</span>
+              <h1>{t('insights.title')}</h1>
+              <span className="settings-hint">{repoName} {t('insights.subtitle')}</span>
             </div>
           </div>
         </header>
@@ -80,12 +82,12 @@ export function InsightsPage({ repoPath }: { repoPath: string }): React.JSX.Elem
             ))}
           </div>
           <button className="btn ghost small" onClick={() => setDays((d) => d)} disabled={loading} style={{ marginLeft: 'auto' }}>
-            <RefreshCw size={13} className={loading ? 'spin' : undefined} /> {loading ? 'Loading…' : 'Refresh'}
+            <RefreshCw size={13} className={loading ? 'spin' : undefined} /> {loading ? t('insights.loading') : t('insights.refresh')}
           </button>
         </div>
 
         {!data || data.totalCommits === 0 ? (
-          <p className="settings-hint">{loading ? 'Crunching history…' : 'No commits in this range.'}</p>
+          <p className="settings-hint">{loading ? t('insights.crunching') : t('insights.noCommits')}</p>
         ) : (
           <>
             {/* ── Summary cards ── */}
@@ -93,30 +95,30 @@ export function InsightsPage({ repoPath }: { repoPath: string }): React.JSX.Elem
               <div className="insights-card">
                 <GitCommit size={15} />
                 <span className="insights-card-num">{fmt(data.totalCommits)}</span>
-                <span className="insights-card-label">commits · {perDay}/day</span>
+                <span className="insights-card-label">{t('insights.commits')} · {perDay}/day</span>
               </div>
               <div className="insights-card">
                 <Users size={15} />
                 <span className="insights-card-num">{fmt(data.authors.length)}</span>
-                <span className="insights-card-label">contributors</span>
+                <span className="insights-card-label">{t('insights.contributors')}</span>
               </div>
               <div className="insights-card">
                 <FileText size={15} />
                 <span className="insights-card-num">{fmt(data.filesTouched)}</span>
-                <span className="insights-card-label">files touched</span>
+                <span className="insights-card-label">{t('insights.filesTouched')}</span>
               </div>
               <div className="insights-card">
                 <Flame size={15} />
                 <span className="insights-card-num">
                   <span className="ins-add">+{fmt(totalAdded)}</span> <span className="ins-del">−{fmt(totalRemoved)}</span>
                 </span>
-                <span className="insights-card-label">lines changed</span>
+                <span className="insights-card-label">{t('insights.linesChanged')}</span>
               </div>
             </div>
 
             {/* ── Churn timeline ── */}
             <section className="insights-section">
-              <h2>Weekly churn</h2>
+              <h2>{t('insights.weeklyChurn')}</h2>
               <div className="churn-chart">
                 {data.churn.map((c) => {
                   const h = ((c.added + c.removed) / maxChurn) * 100
@@ -138,7 +140,7 @@ export function InsightsPage({ repoPath }: { repoPath: string }): React.JSX.Elem
             <div className="insights-cols">
               {/* ── Top authors ── */}
               <section className="insights-section">
-                <h2>Top contributors</h2>
+                <h2>{t('insights.topContributors')}</h2>
                 <div className="insights-rows">
                   {data.authors.slice(0, 12).map((a, i) => (
                     <div key={a.name} className="insights-row">
@@ -161,7 +163,7 @@ export function InsightsPage({ repoPath }: { repoPath: string }): React.JSX.Elem
 
               {/* ── Hotspots ── */}
               <section className="insights-section">
-                <h2>Hotspots — most-changed files</h2>
+                <h2>{t('insights.hotspots')}</h2>
                 <div className="insights-rows">
                   {data.hotspots.map((h) => (
                     <button

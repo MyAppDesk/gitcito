@@ -16,6 +16,7 @@ import { hostingApi, shellApi } from '../infrastructure/api'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
 import type { GitHubNotification } from '../../../shared/types'
+import { useT } from '../i18n'
 
 /** Friendly label for GitHub's `reason` field. */
 const REASON_LABELS: Record<string, string> = {
@@ -65,6 +66,7 @@ function timeLabel(sec: number): string {
 
 /** GitHub notifications inbox (token-level, across all repos). Page tab. */
 export function NotificationsPage(): React.JSX.Element {
+  const t = useT()
   const toast = useUIStore((s) => s.toast)
   const token = useSettingsStore((s) => s.activeProfile().githubToken) ?? ''
 
@@ -106,7 +108,7 @@ export function NotificationsPage(): React.JSX.Element {
   const markAllRead = async (): Promise<void> => {
     await hostingApi.markAllNotificationsRead(token).catch(() => {})
     setItems((cur) => cur.map((x) => ({ ...x, unread: false })))
-    toast('success', 'Marked all as read')
+    toast('success', t('notif.markedAll'))
   }
 
   const unreadCount = useMemo(() => items.filter((i) => i.unread).length, [items])
@@ -128,10 +130,8 @@ export function NotificationsPage(): React.JSX.Element {
           <div className="changelog-title">
             <Bell size={20} />
             <div>
-              <h1>Notifications</h1>
-              <span className="settings-hint">
-                Your GitHub inbox — review requests, mentions, CI activity and more, across every repo.
-              </span>
+              <h1>{t('notif.title')}</h1>
+              <span className="settings-hint">{t('notif.subtitle')}</span>
             </div>
           </div>
         </header>
@@ -139,15 +139,15 @@ export function NotificationsPage(): React.JSX.Element {
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 14 }}>
           <div className="codesearch-tabs" style={{ margin: 0 }}>
             <button className={`codesearch-tab ${!showAll ? 'active' : ''}`} onClick={() => setShowAll(false)}>
-              Unread {unreadCount > 0 ? `(${unreadCount})` : ''}
+              {t('notif.unread')} {unreadCount > 0 ? `(${unreadCount})` : ''}
             </button>
             <button className={`codesearch-tab ${showAll ? 'active' : ''}`} onClick={() => setShowAll(true)}>
-              All
+              {t('notif.all')}
             </button>
           </div>
           <button className="btn ghost small" onClick={() => void refresh()} disabled={loading || !token}>
             <RefreshCw size={13} className={loading ? 'spin' : undefined} />
-            Refresh
+            {t('notif.refresh')}
           </button>
           <button
             className="btn ghost small"
@@ -156,16 +156,14 @@ export function NotificationsPage(): React.JSX.Element {
             style={{ marginLeft: 'auto' }}
           >
             <CheckCheck size={13} />
-            Mark all read
+            {t('notif.markAllRead')}
           </button>
         </div>
 
         {!token ? (
-          <p className="settings-hint">
-            No GitHub token on this profile. Add one in Settings → Integrations to see your notifications.
-          </p>
+          <p className="settings-hint">{t('notif.noToken')}</p>
         ) : items.length === 0 ? (
-          <p className="settings-hint">{loading ? 'Loading…' : showAll ? 'No notifications.' : 'No unread notifications. 🎉'}</p>
+          <p className="settings-hint">{loading ? t('notif.loading') : showAll ? t('notif.noneAll') : t('notif.noneUnread')}</p>
         ) : (
           <div style={{ border: '1px solid var(--border-soft)', borderRadius: 8, overflow: 'hidden' }}>
             {items.map((n, i) => (
@@ -186,11 +184,11 @@ export function NotificationsPage(): React.JSX.Element {
                   </span>
                 </button>
                 {n.unread && (
-                  <button className="notif-action" title="Mark as read" onClick={() => void markRead(n)}>
+                  <button className="notif-action" title={t('notif.markRead')} onClick={() => void markRead(n)}>
                     <Check size={14} />
                   </button>
                 )}
-                <button className="notif-action" title="Open in browser" onClick={() => open(n)}>
+                <button className="notif-action" title={t('notif.openBrowser')} onClick={() => open(n)}>
                   <ExternalLink size={14} />
                 </button>
               </div>

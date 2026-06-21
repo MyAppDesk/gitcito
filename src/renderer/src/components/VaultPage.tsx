@@ -7,6 +7,7 @@ import { useRepoStore } from '../stores/repo'
 import { useSettingsStore } from '../stores/settings'
 import { tabRepos } from '../../../shared/types'
 import type { VaultEntry, VaultListResult } from '../../../shared/types'
+import { useT } from '../i18n'
 
 type Scope = 'repo' | 'global'
 
@@ -28,6 +29,7 @@ function EntryRow({
   onCopy: (v: string) => void
   onDelete: () => void
 }): React.JSX.Element {
+  const t = useT()
   const [revealed, setRevealed] = useState(false)
   const [copied, setCopied] = useState(false)
   const show = revealed || forceReveal
@@ -43,13 +45,13 @@ function EntryRow({
       </span>
       <span className="vault-value mono">{show ? entry.value : '•'.repeat(Math.min(entry.value.length || 6, 18))}</span>
       {entry.note && <span className="vault-note" title={entry.note}>{entry.note}</span>}
-      <button className="vault-act" title={revealed ? 'Hide' : 'Reveal'} onClick={() => setRevealed((v) => !v)}>
+      <button className="vault-act" title={revealed ? t('vault.hide') : t('vault.reveal')} onClick={() => setRevealed((v) => !v)}>
         {show ? <EyeOff size={14} /> : <Eye size={14} />}
       </button>
-      <button className="vault-act" title="Copy value" onClick={copy}>
+      <button className="vault-act" title={t('vault.copyValue')} onClick={copy}>
         {copied ? <Check size={14} /> : <Copy size={14} />}
       </button>
-      <button className="vault-act danger" title="Delete" onClick={onDelete}>
+      <button className="vault-act danger" title={t('vault.delete')} onClick={onDelete}>
         <Trash2 size={14} />
       </button>
     </div>
@@ -57,6 +59,7 @@ function EntryRow({
 }
 
 export function VaultPage({ repoPath }: { repoPath: string }): React.JSX.Element {
+  const t = useT()
   const toast = useUIStore((s) => s.toast)
   const tabs = useSettingsStore((s) => s.settings.tabs)
   const recents = useSettingsStore((s) => s.settings.recentRepos)
@@ -95,7 +98,7 @@ export function VaultPage({ repoPath }: { repoPath: string }): React.JSX.Element
   const copyAsEnv = (entries: VaultEntry[]): void => {
     if (entries.length === 0) return
     void navigator.clipboard.writeText(entries.map((e) => `${e.key}=${e.value}`).join('\n'))
-    toast('success', `Copied ${entries.length} as KEY=value`)
+    toast('success', `${entries.length} ${t('vault.copiedEnv')}`)
   }
 
   const saveDraft = async (): Promise<void> => {
@@ -108,7 +111,7 @@ export function VaultPage({ repoPath }: { repoPath: string }): React.JSX.Element
       })
     )
     setDraft(null)
-    toast('success', 'Saved to vault')
+    toast('success', t('vault.saved'))
   }
 
   const del = async (scope: Scope, id: string): Promise<void> => {
@@ -129,12 +132,12 @@ export function VaultPage({ repoPath }: { repoPath: string }): React.JSX.Element
         </h2>
         <div className="vault-section-actions">
           {entries.length > 0 && (
-            <button className="btn ghost small" title="Copy all as KEY=value" onClick={() => copyAsEnv(entries)}>
-              <ClipboardCopy size={13} /> Copy as .env
+            <button className="btn ghost small" title={t('vault.copyAllTitle')} onClick={() => copyAsEnv(entries)}>
+              <ClipboardCopy size={13} /> {t('vault.copyAsEnv')}
             </button>
           )}
           <button className="btn ghost small" onClick={() => setDraft({ scope, key: '', value: '', note: '' })}>
-            <Plus size={13} /> Add
+            <Plus size={13} /> {t('vault.add')}
           </button>
         </div>
       </div>
@@ -143,13 +146,13 @@ export function VaultPage({ repoPath }: { repoPath: string }): React.JSX.Element
         <div className="vault-draft">
           <input className="modal-input" placeholder="KEY" value={draft.key} autoFocus onChange={(e) => setDraft({ ...draft, key: e.target.value })} />
           <input className="modal-input" placeholder="value" value={draft.value} onChange={(e) => setDraft({ ...draft, value: e.target.value })} />
-          <input className="modal-input" placeholder="note (optional)" value={draft.note} onChange={(e) => setDraft({ ...draft, note: e.target.value })} onKeyDown={(e) => e.key === 'Enter' && void saveDraft()} />
-          <button className="btn primary small" onClick={() => void saveDraft()} disabled={!draft.key.trim()}>Save</button>
-          <button className="btn ghost small" onClick={() => setDraft(null)}>Cancel</button>
+          <input className="modal-input" placeholder={t('vault.notePlaceholder')} value={draft.note} onChange={(e) => setDraft({ ...draft, note: e.target.value })} onKeyDown={(e) => e.key === 'Enter' && void saveDraft()} />
+          <button className="btn primary small" onClick={() => void saveDraft()} disabled={!draft.key.trim()}>{t('vault.save')}</button>
+          <button className="btn ghost small" onClick={() => setDraft(null)}>{t('vault.cancel')}</button>
         </div>
       )}
       {entries.length === 0 ? (
-        <div className="vault-empty">No entries yet.</div>
+        <div className="vault-empty">{t('vault.noEntries')}</div>
       ) : (
         <div className="vault-list">
           {entries.map((e) => (
@@ -163,7 +166,7 @@ export function VaultPage({ repoPath }: { repoPath: string }): React.JSX.Element
   // The repo-scope header carries the repo switcher.
   const repoTitle = (
     <span className="vault-repo-select">
-      Repo:
+      {t('vault.repo')}
       <select value={selectedRepo} onChange={(e) => setSelectedRepo(e.target.value)}>
         {knownRepos.map((r) => (
           <option key={r.path} value={r.path}>
@@ -181,39 +184,33 @@ export function VaultPage({ repoPath }: { repoPath: string }): React.JSX.Element
           <div className="changelog-title">
             <KeyRound size={20} />
             <div>
-              <h1>Vault</h1>
-              <span className="settings-hint">Secure, fully local secret store — encrypted with your OS keychain.</span>
+              <h1>{t('vault.title')}</h1>
+              <span className="settings-hint">{t('vault.subtitle')}</span>
             </div>
           </div>
         </header>
 
         <div className="vault-explainer">
           <Info size={15} />
-          <span>
-            The vault is <strong>not a file</strong> and has nothing to do with your <code>.env</code>. It’s an
-            encrypted key/value store that lives only on this machine — entries are tied to a <strong>repo</strong> (or
-            kept <strong>global</strong>), but they’re <strong>never written into the repo and never committed or
-            pushed</strong>. Use it to keep secrets handy: reveal, copy a value, or “Copy as .env” to paste a whole set
-            where you actually need it.
-          </span>
+          <span>{t('vault.explainer')}</span>
         </div>
 
         {data && !data.available ? (
           <div className="vault-unavailable">
             <ShieldAlert size={16} />
-            <span>OS encryption isn’t available on this machine, so the vault is disabled. (On Linux this needs a keychain / libsecret.)</span>
+            <span>{t('vault.unavailable')}</span>
           </div>
         ) : !data ? (
-          <p className="settings-hint">{loading ? 'Unlocking…' : ''}</p>
+          <p className="settings-hint">{loading ? t('vault.unlocking') : ''}</p>
         ) : (
           <>
             <div className="vault-toolbar">
               <button className="btn ghost small" onClick={() => setRevealAll((v) => !v)}>
-                {revealAll ? <EyeOff size={13} /> : <Eye size={13} />} {revealAll ? 'Hide all' : 'Reveal all'}
+                {revealAll ? <EyeOff size={13} /> : <Eye size={13} />} {revealAll ? t('vault.hideAll') : t('vault.revealAll')}
               </button>
             </div>
-            {section('global', 'Global', <Globe size={15} />, data.global, 'Shared across every repo on this machine — handy to reference elsewhere.')}
-            {section('repo', repoTitle, <FolderGit2 size={15} />, data.repo, 'Secrets associated with the selected repository (switch repos above).')}
+            {section('global', t('vault.global'), <Globe size={15} />, data.global, t('vault.globalHint'))}
+            {section('repo', repoTitle, <FolderGit2 size={15} />, data.repo, t('vault.repoHint'))}
           </>
         )}
       </motion.div>

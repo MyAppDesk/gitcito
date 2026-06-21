@@ -4,7 +4,10 @@ import { basename, join } from 'path'
 import { readFile, writeFile, unlink, stat, chmod, mkdir, readdir, rename } from 'fs/promises'
 import { tmpdir, homedir } from 'os'
 import { existsSync } from 'fs'
-import { spawn } from 'child_process'
+import { spawn, execFile } from 'child_process'
+import { promisify } from 'util'
+
+const pexecFile = promisify(execFile)
 import type {
   BlameLine,
   BranchCompareResult,
@@ -824,19 +827,13 @@ export const gitService = {
    * Runs non-interactively (the auto-generated todo is accepted as-is).
    */
   async autosquash(repoPath: string, base: string): Promise<void> {
-    // Use `-c …editor=true` rather than env vars: simple-git rejects an env that
-    // carries PAGER (the "allowUnsafePager" guard), and config flags accept the
-    // auto-generated rebase todo without opening an editor.
-    await gitFor(repoPath).raw([
-      '-c',
-      'core.editor=true',
-      '-c',
-      'sequence.editor=true',
-      'rebase',
-      '-i',
-      '--autosquash',
-      base
-    ])
+    // Run via execFile, not simple-git: simple-git refuses both a PAGER env
+    // (allowUnsafePager) and `-c core.editor` (allowUnsafeEditor). Real git with
+    // these *_EDITOR vars set to true accepts the auto-generated todo without
+    // opening an editor.
+    await pexecFile('git', ['-C', repoPath, 'rebase', '-i', '--autosquash', base], {
+      env: { ...process.env, GIT_SEQUENCE_EDITOR: 'true', GIT_EDITOR: 'true' }
+    })
   },
 
   // ─── Sync operations ───────────────────────────────────────────────────────

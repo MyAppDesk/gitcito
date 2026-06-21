@@ -1,11 +1,69 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Settings, X, ShieldCheck, Loader2, BarChart3, History, ScrollText } from 'lucide-react'
-import { gitApi } from '../infrastructure/api'
+import { gitApi, logApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
 import { useRepoStore } from '../stores/repo'
 import { useSettingsStore } from '../stores/settings'
-import { AnalyticsSection, RepoHistorySection, OperationLogSection } from './SettingsPanel'
+import { AnalyticsSection, RepoHistorySection } from './SettingsPanel'
 import { useT } from '../i18n'
+import type { LogEntry } from '../../../shared/types'
+
+function relTime(ms: number): string {
+  const m = Math.round((Date.now() - ms) / 60000)
+  if (m < 1) return 'just now'
+  if (m < 60) return `${m}m ago`
+  const h = Math.round(m / 60)
+  if (h < 24) return `${h}h ago`
+  return new Date(ms).toLocaleString()
+}
+
+/** This repo's recent operation log, inline; the full filterable log opens as a page. */
+function RepoLogsTab({ repoPath }: { repoPath: string }): React.JSX.Element {
+  const closeModal = useUIStore((s) => s.closeModal)
+  const [entries, setEntries] = useState<LogEntry[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    logApi
+      .get()
+      .then((all) => setEntries(all.filter((e) => e.repoPath === repoPath).reverse()))
+      .finally(() => setLoading(false))
+  }, [repoPath])
+
+  const openAll = (): void => {
+    useSettingsStore.getState().openPageTab({ type: 'logs' })
+    closeModal()
+  }
+
+  return (
+    <>
+      <div className="repo-logs-head">
+        <span className="settings-hint">Git operations gitcito ran on this repo, newest first.</span>
+        <button className="btn ghost small" onClick={openAll}>
+          <ScrollText size={13} /> Open full operation log
+        </button>
+      </div>
+      {loading ? (
+        <div style={{ padding: 12 }}>
+          <Loader2 size={15} className="spin" />
+        </div>
+      ) : entries.length === 0 ? (
+        <p className="settings-hint" style={{ marginTop: 10 }}>No operations recorded for this repo yet.</p>
+      ) : (
+        <div className="repo-logs-list">
+          {entries.map((e, i) => (
+            <div key={`${e.ts}-${i}`} className="repo-log-row">
+              <span className={`repo-log-dot ${e.ok ? 'ok' : 'fail'}`} />
+              <span className="repo-log-event">{e.event}</span>
+              <span className="repo-log-err">{!e.ok && e.error ? e.error : ''}</span>
+              <span className="repo-log-time">{relTime(e.ts)}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  )
+}
 
 type Tab = 'general' | 'analytics' | 'history' | 'logs'
 
@@ -172,7 +230,7 @@ export function RepoSettingsModal({ repoPath }: { repoPath: string }): React.JSX
         {tab === 'general' && <GeneralTab repoPath={repoPath} />}
         {tab === 'analytics' && <AnalyticsSection aiEnabled={aiEnabled} />}
         {tab === 'history' && <RepoHistorySection />}
-        {tab === 'logs' && <OperationLogSection />}
+        {tab === 'logs' && <RepoLogsTab repoPath={repoPath} />}
       </div>
     </div>
   )

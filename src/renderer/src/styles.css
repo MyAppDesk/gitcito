@@ -8860,3 +8860,18 @@ button.insights-row:hover { background: var(--bg-2); }
 .repo-settings { display: flex; flex-direction: column; min-height: 0; }
 .repo-settings-tabs { display: flex; gap: 6px; margin: 10px 0; flex-wrap: wrap; }
 .repo-settings-body { overflow-y: auto; min-height: 0; flex: 1; }
+
+/* ─── Repo logs tab ────────────────────────────────────────────────────── */
+.repo-logs-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.repo-logs-list { border: 1px solid var(--border-soft); border-radius: 8px; overflow: hidden; }
+.repo-log-row {
+  display: grid; grid-template-columns: 10px 130px 1fr auto; align-items: center; gap: 10px;
+  padding: 6px 12px; font-size: 12.5px; border-top: 1px solid var(--border-soft);
+}
+.repo-log-row:first-child { border-top: none; }
+.repo-log-dot { width: 7px; height: 7px; border-radius: 50%; }
+.repo-log-dot.ok { background: var(--green, #2ea043); }
+.repo-log-dot.fail { background: var(--red, #e5484d); }
+.repo-log-event { color: var(--text-1); }
+.repo-log-err { color: var(--red, #e5484d); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.repo-log-time { color: var(--text-2); white-space: nowrap; }

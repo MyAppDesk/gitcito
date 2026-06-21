@@ -1,5 +1,24 @@
 
 
+## [0.22.0](https://github.com/MyAppDesk/gitcito/compare/v0.21.0...v0.22.0) (2026-06-21)
+
+
+### Features
+
+* filter the commit graph by path ([2755ab8](https://github.com/MyAppDesk/gitcito/commit/2755ab8f14fd8b134e08ab2fc79376aadc8eba17))
+* open a branch in a worktree from the sidebar ([ae0d15c](https://github.com/MyAppDesk/gitcito/commit/ae0d15c238fac22de3dbfa976689e086f267c37c))
+* recall recent commit messages with up/down in the composer ([2237764](https://github.com/MyAppDesk/gitcito/commit/223776487fbf24c5b617de79fcf271bf01b30bc5))
+* show an unread badge on the notifications bell ([07b9a25](https://github.com/MyAppDesk/gitcito/commit/07b9a256f46972df1742270912e76e9ca7d53ad3))
+* show CI checks in the PR detail ([dd7b275](https://github.com/MyAppDesk/gitcito/commit/dd7b275cd65b62924fdaf531a6f84443d5499d0a))
+* translate the code-search, stack, snapshots and changelog dialogs ([d0cdaa0](https://github.com/MyAppDesk/gitcito/commit/d0cdaa052c1ddd2e23af9fe8c594e9676b5cc1b9))
+* translate the command palette and keyboard cheatsheet ([155ce10](https://github.com/MyAppDesk/gitcito/commit/155ce10c4f5fda7a03579e471b26a29c840fb417))
+* translate the vault, insights and notifications pages ([f1912b0](https://github.com/MyAppDesk/gitcito/commit/f1912b0ace19883335e3a9eaffc6e00317d8dfda))
+
+
+### Performance Improvements
+
+* virtualize the commit graph for large repos ([2f75dd9](https://github.com/MyAppDesk/gitcito/commit/2f75dd997a6d1f95e2e4e3a9924506379b81c770))
+
 ## [0.21.0](https://github.com/MyAppDesk/gitcito/compare/v0.20.0...v0.21.0) (2026-06-21)
 
 

@@ -1,5 +1,20 @@
 
 
+## [0.20.0](https://github.com/MyAppDesk/gitcito/compare/v0.19.0...v0.20.0) (2026-06-21)
+
+
+### Features
+
+* add customizable keyboard shortcuts and cheatsheet ([a4bbd3c](https://github.com/MyAppDesk/gitcito/commit/a4bbd3cfe5ce7cd9b4051da2a10df826d56337cc))
+* add ignore-whitespace toggle to the diff viewer ([4075f44](https://github.com/MyAppDesk/gitcito/commit/4075f447f590b8f0fc61ce31d248d0c54dcb5a23))
+* add Security and Shortcuts tabs to settings ([a33981d](https://github.com/MyAppDesk/gitcito/commit/a33981dcc62a1cfd774a7521b6c1264bdcbf5583))
+* add side-by-side (split) diff view ([1877d75](https://github.com/MyAppDesk/gitcito/commit/1877d756cba34932391fda257100428a4b242a42))
+* autolink issue/PR refs and [@mentions](https://github.com/mentions) ([2f8b87b](https://github.com/MyAppDesk/gitcito/commit/2f8b87b874ec8ac4c6682d048cf13959541056ae)), closes [#123](https://github.com/MyAppDesk/gitcito/issues/123)
+* draft PR title and description with AI ([72477dc](https://github.com/MyAppDesk/gitcito/commit/72477dc8599ed47d0a3e4e22edf17bbad66aa8e3))
+* guard against committing large or binary files ([9f8a1e7](https://github.com/MyAppDesk/gitcito/commit/9f8a1e74fb41227f8f4d8019b73a6e66bbf65af4))
+* reopen the last closed tab with cmd+shift+t ([757dd11](https://github.com/MyAppDesk/gitcito/commit/757dd1174394a08257814bcb4620af5e14e8dc8e))
+* surface recent and frequent commands in the palette ([d20aa88](https://github.com/MyAppDesk/gitcito/commit/d20aa882e9855a040fa5145f33671471d450d5f5))
+
 ## [0.19.0](https://github.com/MyAppDesk/gitcito/compare/v0.18.0...v0.19.0) (2026-06-20)
 
 

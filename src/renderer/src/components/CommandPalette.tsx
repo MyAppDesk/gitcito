@@ -27,7 +27,8 @@ import {
   KeyRound,
   Keyboard,
   CircleDot,
-  Sparkles
+  Sparkles,
+  ArrowLeftRight
 } from 'lucide-react'
 import { useUIStore } from '../stores/ui'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
@@ -140,6 +141,12 @@ export function CommandPalette(): React.JSX.Element {
           : []
       })(),
       { id: 'stack', title: t('cmd.stack'), group: 'Actions', keywords: 'stacked branches graphite restack dependent', icon: <Layers size={15} />, run: act(() => ui.openModal({ kind: 'stack', repoPath: path })) },
+      { id: 'compare-refs', title: t('cmd.compareRefs'), group: 'Actions', keywords: 'compare diff branches refs tags ahead behind range', icon: <ArrowLeftRight size={15} />, run: act(() => {
+        const cur = repo.branches.current || 'HEAD'
+        const base = repo.branches.locals.find((bb) => /^(main|master)$/.test(bb.name) && bb.name !== cur)?.name
+          ?? repo.branches.locals.find((bb) => bb.name !== cur)?.name ?? cur
+        ui.openModal({ kind: 'branch-compare', repoPath: path, branchA: cur, branchB: base })
+      }) },
       { id: 'insights', title: t('cmd.insights'), group: 'Actions', keywords: 'stats churn hotspots authors contributors graph analytics', icon: <BarChart3 size={15} />, run: act(() => useSettingsStore.getState().openPageTab({ type: 'insights', repoPath: path })) },
       { id: 'changelog-gen', title: t('cmd.changelogGen'), group: 'Actions', keywords: 'conventional commits release notes changelog', icon: <FileText size={15} />, run: act(() => ui.openModal({ kind: 'changelog-gen', repoPath: path })) },
       { id: 'vault', title: t('cmd.vault'), group: 'Actions', keywords: 'secrets vault credentials keychain env password store', icon: <KeyRound size={15} />, run: act(() => useSettingsStore.getState().openPageTab({ type: 'vault', repoPath: path })) },

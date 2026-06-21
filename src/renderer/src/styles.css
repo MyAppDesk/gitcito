@@ -6840,6 +6840,16 @@ input[type='range']:focus-visible {
 .bc-branch-a { background: var(--accent-dim, rgba(99,102,241,.15)); color: var(--accent); }
 .bc-branch-b { background: var(--bg-3); color: var(--text-1); }
 .bc-vs { font-size: 11px; color: var(--text-3); flex: 0 0 auto; }
+.bc-ref-input {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 42%;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 3px 8px;
+}
+.bc-swap { flex: 0 0 auto; padding: 4px; color: var(--text-2); }
+.bc-swap:hover { color: var(--accent); }
 .bc-header-actions { display: flex; gap: 6px; align-items: center; margin-left: auto; }
 .bc-loading { display: flex; justify-content: center; padding: 40px; }
 .bc-body { display: flex; flex-direction: column; flex: 1; overflow: hidden; gap: 10px; }

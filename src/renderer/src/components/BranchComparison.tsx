@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { Loader2 } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { Loader2, ArrowLeftRight } from 'lucide-react'
 import type { BranchCompareResult } from '../../../shared/types'
 import { gitApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
@@ -29,19 +29,39 @@ export function BranchComparison({
   const repo = useRepoStore((s) => s.repos[repoPath])
   const profile = useSettingsStore((s) => s.activeProfile())
 
+  // Both refs are editable so this works as a general "compare any two refs"
+  // tool, not just branch-vs-current. A is the compare ref, B is the base.
+  const [a, setA] = useState(branchA)
+  const [b, setB] = useState(branchB)
   const [result, setResult] = useState<BranchCompareResult | null>(null)
   const [loading, setLoading] = useState(true)
 
+  // Every ref the user can pick from, for the datalist (free-typing a raw SHA
+  // also works, since compareBranches just passes the strings to git).
+  const refOptions = useMemo<string[]>(() => {
+    const out: string[] = []
+    for (const l of repo?.branches.locals ?? []) out.push(l.name)
+    for (const r of repo?.branches.remotes ?? []) out.push(r.fullName)
+    for (const tg of repo?.branches.tags ?? []) out.push(tg.name)
+    return [...new Set(out)]
+  }, [repo?.branches])
+
   useEffect(() => {
+    if (!a.trim() || !b.trim()) return
     setLoading(true)
-    gitApi.compareBranches(repoPath, branchA, branchB).then((r) => {
+    gitApi.compareBranches(repoPath, a.trim(), b.trim()).then((r) => {
       setResult(r)
       setLoading(false)
     }).catch((err) => {
       toast('error', err instanceof Error ? err.message : String(err))
       setLoading(false)
     })
-  }, [repoPath, branchA, branchB])
+  }, [repoPath, a, b])
+
+  const swap = (): void => {
+    setA(b)
+    setB(a)
+  }
 
   const openPR = (): void => {
     const origin = repo?.remotes.find((r) => r.name === 'origin') ?? repo?.remotes[0]
@@ -51,14 +71,14 @@ export function BranchComparison({
     }
     const ahead = result?.aheadCommits ?? []
     // One commit → use its subject; otherwise fall back to the branch name.
-    const defaultTitle = ahead.length === 1 ? ahead[0].subject : branchA
+    const defaultTitle = ahead.length === 1 ? ahead[0].subject : a
     const defaultBody = ahead.map((c) => `- ${c.subject}`).join('\n')
     useUIStore.getState().openModal({
       kind: 'create-pr',
       repoPath,
       remoteUrl: origin.url,
-      source: branchA,
-      target: branchB,
+      source: a,
+      target: b,
       defaultTitle,
       defaultBody
     })
@@ -81,9 +101,30 @@ export function BranchComparison({
           </div>
         </div>
         <span className="bc-labels">
-          <span className="bc-branch-a" title={branchA}>{branchA}</span>
-          <span className="bc-vs">into</span>
-          <span className="bc-branch-b" title={branchB}>{branchB}</span>
+          <input
+            className="modal-input bc-ref-input"
+            list="bc-refs"
+            value={a}
+            spellCheck={false}
+            placeholder="ref / sha"
+            onChange={(e) => setA(e.target.value)}
+          />
+          <button className="btn ghost icon-only bc-swap" title="Swap" onClick={swap}>
+            <ArrowLeftRight size={13} />
+          </button>
+          <input
+            className="modal-input bc-ref-input"
+            list="bc-refs"
+            value={b}
+            spellCheck={false}
+            placeholder="ref / sha"
+            onChange={(e) => setB(e.target.value)}
+          />
+          <datalist id="bc-refs">
+            {refOptions.map((r) => (
+              <option key={r} value={r} />
+            ))}
+          </datalist>
         </span>
       </div>
 
@@ -95,7 +136,7 @@ export function BranchComparison({
             <div className="bc-commits-col">
               <div className="bc-col-title">
                 <span className="bc-badge ahead">{result.aheadCommits.length}</span>
-                commits in <strong>{branchA}</strong> not in {branchB}
+                commits in <strong>{a}</strong> not in {b}
               </div>
               <div className="bc-commits-list">
                 {result.aheadCommits.length === 0 ? (
@@ -114,7 +155,7 @@ export function BranchComparison({
             <div className="bc-commits-col">
               <div className="bc-col-title">
                 <span className="bc-badge behind">{result.behindCommits.length}</span>
-                commits in <strong>{branchB}</strong> not in {branchA}
+                commits in <strong>{b}</strong> not in {a}
               </div>
               <div className="bc-commits-list">
                 {result.behindCommits.length === 0 ? (
@@ -133,7 +174,7 @@ export function BranchComparison({
           </div>
 
           <div className="bc-diff-section">
-            <div className="bc-diff-title">Combined diff ({branchB}…{branchA})</div>
+            <div className="bc-diff-title">Combined diff ({b}…{a})</div>
             {result.diff.trim() ? (
               <div className="bc-diff-scroll">
                 <DiffViewer diff={result.diff} />

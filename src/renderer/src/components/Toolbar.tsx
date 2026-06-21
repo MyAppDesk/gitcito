@@ -30,7 +30,8 @@ import {
   Camera,
   KeyRound,
   Settings,
-  Sparkles
+  Sparkles,
+  ArrowLeftRight
 } from 'lucide-react'
 import type { MenuItem } from '../stores/ui'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
@@ -117,6 +118,18 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
       { label: 'Vault — local encrypted secrets', icon: <KeyRound size={15} />, onClick: () => useSettingsStore.getState().openPageTab({ type: 'vault', repoPath: path }) },
       { label: 'Bisect — find a bad commit', icon: <Bug size={15} />, onClick: () => openModal({ kind: 'bisect', repoPath: path }) },
       { separator: true },
+      {
+        label: 'Compare refs…',
+        icon: <ArrowLeftRight size={15} />,
+        onClick: () => {
+          const cur = repo.branches.current || 'HEAD'
+          const base =
+            repo.branches.locals.find((b) => /^(main|master)$/.test(b.name) && b.name !== cur)?.name ??
+            repo.branches.locals.find((b) => b.name !== cur)?.name ??
+            cur
+          openModal({ kind: 'branch-compare', repoPath: path, branchA: cur, branchB: base })
+        }
+      },
       { label: 'Branch stack…', icon: <Layers size={15} />, onClick: () => openModal({ kind: 'stack', repoPath: path }) },
       { label: 'Insights — churn & hotspots', icon: <BarChart3 size={15} />, onClick: () => useSettingsStore.getState().openPageTab({ type: 'insights', repoPath: path }) },
       { label: 'Git hooks…', icon: <Webhook size={15} />, onClick: () => openModal({ kind: 'hooks', repoPath: path }) },

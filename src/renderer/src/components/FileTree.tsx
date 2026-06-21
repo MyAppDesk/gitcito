@@ -263,6 +263,8 @@ export function FileTree({
     { separator: true },
     ...ignoreMenu(node),
     { separator: true },
+    { label: 'Filter graph by this path', onClick: () => useUIStore.getState().setPathFilter(node.path) },
+    { separator: true },
     { label: shellApi.revealLabel, onClick: () => void shellApi.revealInFolder(abs(path, node.path)) },
     { label: 'Open in default app', onClick: () => void shellApi.openPath(abs(path, node.path)) },
     { label: 'Copy path', onClick: () => void navigator.clipboard.writeText(node.path) }

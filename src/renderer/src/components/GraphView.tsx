@@ -308,6 +308,24 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
   const draft = useRepoStore((s) => s.drafts[repo.path] ?? '')
   const setDraft = useRepoStore((s) => s.setDraft)
   const { openContextMenu, openModal, graphFilter, ciFilter, setCiFilter, authorFilter, setAuthorFilter } = useUIStore()
+  const pathFilter = useUIStore((s) => s.pathFilter)
+  const setPathFilter = useUIStore((s) => s.setPathFilter)
+  // Hashes that touched the path filter (null = filter off / still loading-as-all).
+  const [pathHashes, setPathHashes] = useState<Set<string> | null>(null)
+  useEffect(() => {
+    if (!pathFilter) {
+      setPathHashes(null)
+      return
+    }
+    let cancelled = false
+    void gitApi
+      .commitsTouchingPath(repo.path, pathFilter)
+      .then((hs) => !cancelled && setPathHashes(new Set(hs)))
+      .catch(() => !cancelled && setPathHashes(new Set()))
+    return () => {
+      cancelled = true
+    }
+  }, [pathFilter, repo.path])
   const toast = useUIStore((s) => s.toast)
   const scrollToHash = useUIStore((s) => s.scrollToHash)
   const requestScrollTo = useUIStore((s) => s.requestScrollTo)
@@ -984,6 +1002,17 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
 
   return (
     <div className="graph-wrap">
+      {pathFilter && (
+        <div className="path-filter-bar">
+          <span>
+            Showing commits touching <code>{pathFilter}</code>
+            {pathHashes ? ` (${pathHashes.size})` : '…'}
+          </span>
+          <button className="btn ghost tiny" onClick={() => setPathFilter(null)}>
+            Clear
+          </button>
+        </div>
+      )}
       <GraphColumnsHeader
         columns={columns}
         order={columnOrder}
@@ -1133,7 +1162,8 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
           const ci = isWip || stash ? undefined : repo.ciStatuses[c.hash]
           const ciDimmed = ciFilter !== 'all' && !isWip && ci?.state !== ciFilter
           const authorDimmed = authorFilter != null && !isWip && !stash && c.author !== authorFilter
-          const dimmed = ((filter.length > 0 && !matches) || ciDimmed || authorDimmed) && !isWip
+          const pathDimmed = pathHashes != null && !isWip && !stash && !pathHashes.has(c.hash)
+          const dimmed = ((filter.length > 0 && !matches) || ciDimmed || authorDimmed || pathDimmed) && !isWip
           const ghosted = preview != null && !preview.hashes.has(c.hash)
 
           return (

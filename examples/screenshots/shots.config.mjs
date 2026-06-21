@@ -404,6 +404,16 @@ export const shots = [
     }
   },
   {
+    // Graph filtered by a path — non-matching commits dimmed.
+    out: 'graph-path-filter',
+    repos: ['insights'],
+    themes: ['dark'],
+    drive: async (page) => {
+      await page.evaluate(() => window.__shot.ui.getState().setPathFilter('src/core.js'))
+      await page.waitForTimeout(700)
+    }
+  },
+  {
     // Repository settings — tabbed (general / analytics / history / logs).
     out: 'repo-settings',
     repos: ['deep-history-monorepo'],

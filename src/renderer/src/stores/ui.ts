@@ -171,6 +171,8 @@ interface UIState {
   graphFilter: string
   ciFilter: CiFilter
   authorFilter: string | null
+  /** Dim commits that didn't touch this path (file/folder). null = off. */
+  pathFilter: string | null
   busy: string | null
   fileView: FileViewState | null
   conflictView: ConflictViewState | null
@@ -194,6 +196,7 @@ interface UIState {
   setGraphFilter(filter: string): void
   setCiFilter(filter: CiFilter): void
   setAuthorFilter(author: string | null): void
+  setPathFilter(path: string | null): void
   setBusy(label: string | null): void
   setFileView(view: FileViewState | null): void
   setEditorDirty(dirty: boolean): void
@@ -215,6 +218,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   graphFilter: '',
   ciFilter: 'all',
   authorFilter: null,
+  pathFilter: null,
   busy: null,
   fileView: null,
   conflictView: null,
@@ -242,6 +246,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   setGraphFilter: (graphFilter) => set({ graphFilter }),
   setCiFilter: (ciFilter) => set({ ciFilter }),
   setAuthorFilter: (authorFilter) => set({ authorFilter }),
+  setPathFilter: (pathFilter) => set({ pathFilter }),
   setBusy: (busy) => set({ busy }),
   setFileView: (fileView) => set({ fileView }),
   setEditorDirty: (editorDirty) => set({ editorDirty }),

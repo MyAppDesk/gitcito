@@ -50,7 +50,7 @@
 - **Branches, remotes, tags, stashes, worktrees & submodules**, all in one reorderable, searchable sidebar.
 - **Commit details**: changed-files tree/flat view, author, SHA, co-authors, copy & open externally. `#123` issue/PR refs and `@mentions` (in commit subjects, PR & issue bodies/comments) are **autolinked** to the host.
 - **Per-file blame & history**, with a follow-the-line jump from blame straight into the diff.
-- **Search & filter** commits by message, author, SHA or deployment status.
+- **Search & filter** commits by message, author, SHA or deployment status — or **filter by path** (right-click a file/folder → "Filter graph by this path", or ⌘K) to spotlight only the commits that touched it.
 - **Code search** (`⌘⇧F` / `Ctrl+Shift+F`). Search file **contents** across the working tree (`git grep`, tracked + untracked, with case / whole-word / regex) — results are **syntax-highlighted** with the match marked — or run a **history pickaxe** (`git log -S` / `-G`) to find the commits that introduced or removed a string. Click a hit to jump to the file or commit.
 - **Progressive history** with configurable page size, auto-load-on-scroll and optional Gravatar avatars.
 - **Insights** — a repo dashboard from your git history: summary cards (commits/day, contributors, files touched, lines changed), a **weekly churn** chart (additions vs deletions), **top contributors** (commits + lines), and **file hotspots** (most-changed files, click straight into a file's history). Filter by 30d / 90d / 1y / all.

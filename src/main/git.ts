@@ -1068,6 +1068,14 @@ export const gitService = {
     return raw.split('\0').filter(Boolean)
   },
 
+  /** Commit hashes that touched `path` (file or folder) — for the graph path filter. */
+  async commitsTouchingPath(repoPath: string, path: string, max = 1000): Promise<string[]> {
+    const raw = await gitFor(repoPath)
+      .raw(['log', '--format=%H', `--max-count=${max}`, '--', path])
+      .catch(() => '')
+    return raw.split('\n').filter(Boolean)
+  },
+
   /** Byte size + binary-ness of working-tree files — for the large-file commit guard. */
   async fileSizes(repoPath: string, files: string[]): Promise<Record<string, { size: number; binary: boolean }>> {
     const out: Record<string, { size: number; binary: boolean }> = {}

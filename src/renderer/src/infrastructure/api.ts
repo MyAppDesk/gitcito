@@ -124,6 +124,8 @@ export const gitApi = {
   listDir: (path: string, relDir?: string) => call<TreeEntry[]>('listDir', path, relDir),
   listFiles: (path: string) => call<string[]>('listFiles', path),
   listTrackedFiles: (path: string) => call<string[]>('listTrackedFiles', path),
+  commitsTouchingPath: (path: string, target: string) =>
+    call<string[]>('commitsTouchingPath', path, target),
   protectedBranches: (path: string) => call<string[]>('protectedBranches', path),
   setProtectedBranches: (path: string, branches: string[]) =>
     call<void>('setProtectedBranches', path, branches),

@@ -115,7 +115,7 @@
 - **Explain this file** in plain language (Normal, Concise, ELI5, … even Pirate) in a side panel.
 - **AI conflict resolution** proposes a merge into the editable output; never auto-applies.
 - **AI PR review** summarises a diff and flags risks; **AI branch naming** from a description; **AI PR description** drafts a title + Markdown body from the branch's commits and diff, right in the Create-PR form.
-- **AI assistant** (Settings → AI) — ask the AI to act on the repo, and a **project-config wizard** that scaffolds `.gitignore`, CI workflows, agent rules and more.
+- **AI assistant** — a **Run** button in the toolbar asks the AI to act on the repo (resolve globs/intents to staged changes), and the repo-settings **AI** tab runs a **project-config wizard** that scaffolds `.gitignore`, CI workflows, agent rules and more. Both appear only when AI is enabled.
 - **Generate themes** from a prompt, and **smart-stage** suggestions for what to commit.
 - Presets for **OpenAI, Anthropic, OpenRouter, Groq, Mistral and Ollama** (local), or any OpenAI-compatible endpoint; live model fetching and custom instructions.
 

@@ -132,7 +132,7 @@ function parseMarkdown(content: string): string {
 export function AIConfigWizard({
   spec
 }: {
-  spec: { repoPath: string; repoName: string }
+  spec: { repoPath: string; repoName: string; initialTab?: 'ask' | 'config' }
 }): React.JSX.Element {
   const closeModal = useUIStore((s) => s.closeModal)
   const toast = useUIStore((s) => s.toast)
@@ -140,7 +140,7 @@ export function AIConfigWizard({
   const profiles = useSettingsStore((s) => s.settings.profiles)
   const aiCfg: AIConfig = (profiles.find((p) => p.id === activeProfileId) ?? profiles[0]).ai
 
-  const [tab, setTab] = useState<'ask' | 'config'>('ask')
+  const [tab, setTab] = useState<'ask' | 'config'>(spec.initialTab ?? 'ask')
 
   // ── Ask tab ──────────────────────────────────────────────────────────────────
   const [askPrompt, setAskPrompt] = useState('')

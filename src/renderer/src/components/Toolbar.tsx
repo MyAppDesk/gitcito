@@ -29,7 +29,8 @@ import {
   FileText,
   Camera,
   KeyRound,
-  Settings
+  Settings,
+  Sparkles
 } from 'lucide-react'
 import type { MenuItem } from '../stores/ui'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
@@ -52,6 +53,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
   const { openContextMenu, openModal, toggleTerminal, terminalOpen, graphFilter, setGraphFilter, busy } = useUIStore()
   const confirmForcePush = useSettingsStore((s) => s.settings.confirmForcePush)
   const hasGithubToken = useSettingsStore((s) => !!s.activeProfile().githubToken)
+  const aiEnabled = useSettingsStore((s) => s.activeProfile().ai.enabled !== false)
   const path = repo.path
   const current = repo.branches.locals.find((b) => b.isCurrent)
 
@@ -274,6 +276,16 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
           <ArchiveRestore size={17} />
           <span>Pop</span>
         </button>
+        {aiEnabled && (
+          <button
+            className="tool-btn"
+            title="Ask the AI to act on this repo"
+            onClick={() => openModal({ kind: 'ai-config-wizard', repoPath: path, repoName: repo.name, initialTab: 'ask' })}
+          >
+            <Sparkles size={16} />
+            <span>Run</span>
+          </button>
+        )}
         <button className="tool-btn split" title="Reflog, bisect, branch stack, hooks, LFS, patches" onClick={toolsMenu}>
           <Wrench size={16} />
           <span>Tools</span>

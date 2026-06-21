@@ -66,7 +66,7 @@ export type ModalSpec =
   | { kind: 'settings'; page?: 'profile' | 'integrations' | 'ai' | 'themes' | 'general' | 'security' | 'shortcuts' | 'data' }
   | { kind: 'launcher'; groupId?: string }
   | { kind: 'create-repo'; onCreate: (repo: { path: string; name: string }) => void }
-  | { kind: 'ai-config-wizard'; repoPath: string; repoName: string }
+  | { kind: 'ai-config-wizard'; repoPath: string; repoName: string; initialTab?: 'ask' | 'config' }
   | { kind: 'interactive-rebase'; repoPath: string; base: string; baseSubject: string }
   | { kind: 'branch-compare'; repoPath: string; branchA: string; branchB: string }
   | { kind: 'ai-pr-review'; repoPath: string; prTitle: string; sourceBranch: string; targetBranch: string }

@@ -165,6 +165,8 @@ interface UIState {
   toasts: Toast[]
   /** Cmd/Ctrl+K command palette — fuzzy jump to branches, commits, files, actions. */
   commandPaletteOpen: boolean
+  /** Unread GitHub notification count for the toolbar bell badge. */
+  githubUnread: number
   terminalOpen: boolean
   graphFilter: string
   ciFilter: CiFilter
@@ -185,6 +187,7 @@ interface UIState {
   closeModal(): void
   setCommandPalette(open: boolean): void
   toggleCommandPalette(): void
+  setGithubUnread(n: number): void
   toast(kind: Toast['kind'], message: string): void
   dismissToast(id: number): void
   toggleTerminal(): void
@@ -207,6 +210,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   modal: null,
   toasts: [],
   commandPaletteOpen: false,
+  githubUnread: 0,
   terminalOpen: false,
   graphFilter: '',
   ciFilter: 'all',
@@ -225,6 +229,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   closeModal: () => set({ modal: null }),
   setCommandPalette: (commandPaletteOpen) => set({ commandPaletteOpen }),
   toggleCommandPalette: () => set({ commandPaletteOpen: !get().commandPaletteOpen }),
+  setGithubUnread: (githubUnread) => set({ githubUnread }),
 
   toast: (kind, message) => {
     const id = ++toastId

@@ -51,6 +51,7 @@ function timeSince(at: number | null): string {
 export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
   const { undo, redo } = useRepoStore()
   const { openContextMenu, openModal, toggleTerminal, terminalOpen, graphFilter, setGraphFilter, busy } = useUIStore()
+  const githubUnread = useUIStore((s) => s.githubUnread)
   const confirmForcePush = useSettingsStore((s) => s.settings.confirmForcePush)
   const hasGithubToken = useSettingsStore((s) => !!s.activeProfile().githubToken)
   const aiEnabled = useSettingsStore((s) => s.activeProfile().ai.enabled !== false)
@@ -321,11 +322,12 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
         </div>
         {hasGithubToken && (
           <button
-            className="tool-btn icon-only"
+            className="tool-btn icon-only notif-bell"
             title="GitHub notifications"
             onClick={() => useSettingsStore.getState().openPageTab({ type: 'notifications' })}
           >
             <Bell size={16} />
+            {githubUnread > 0 && <span className="notif-badge">{githubUnread > 99 ? '99+' : githubUnread}</span>}
           </button>
         )}
         <button

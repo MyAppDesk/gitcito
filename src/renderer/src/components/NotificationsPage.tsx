@@ -110,6 +110,11 @@ export function NotificationsPage(): React.JSX.Element {
   }
 
   const unreadCount = useMemo(() => items.filter((i) => i.unread).length, [items])
+  const setGithubUnread = useUIStore((s) => s.setGithubUnread)
+  // Keep the toolbar bell badge in sync with what's shown here.
+  useEffect(() => {
+    if (!loading) setGithubUnread(unreadCount)
+  }, [unreadCount, loading, setGithubUnread])
 
   return (
     <div className="changelog-page">

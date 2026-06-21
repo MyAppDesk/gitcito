@@ -34,6 +34,7 @@ import { ResizeHandle } from './components/ResizeHandle'
 import { ZoomControl } from './components/ZoomControl'
 import gitcitoLaunch from './assets/gitcito-launch.png'
 import { matchShortcut, effectiveBindings } from './lib/shortcuts'
+import { hostingApi } from './infrastructure/api'
 
 function GroupView({ tab }: { tab: GroupTab }): React.JSX.Element {
   const { settings, addRepoToGroup, removeRepoFromGroup, renameRepoInGroup, reorderReposInGroup, setGroupActiveRepo } = useSettingsStore()
@@ -401,6 +402,26 @@ export default function App(): React.JSX.Element {
     const interval = setInterval(() => void repoActions.fetchAll(activeRepoPath), minutes * 60_000)
     return () => clearInterval(interval)
   }, [activeRepoPath, settings.autoFetchMinutes])
+
+  // Poll the GitHub notifications inbox for an unread count (toolbar bell badge).
+  // Initial fetch on load + repeat on the auto-fetch cadence; silent on failure.
+  useEffect(() => {
+    const token = useSettingsStore.getState().activeProfile().githubToken
+    if (!token) {
+      useUIStore.getState().setGithubUnread(0)
+      return
+    }
+    const poll = (): void => {
+      void hostingApi
+        .listNotifications(token, false)
+        .then((n) => useUIStore.getState().setGithubUnread(n.length))
+        .catch(() => {})
+    }
+    poll()
+    const minutes = Math.max(settings.autoFetchMinutes ?? 0, 5)
+    const interval = setInterval(poll, minutes * 60_000)
+    return () => clearInterval(interval)
+  }, [settings.autoFetchMinutes, settings.activeProfileId])
 
   // Optional periodic WIP snapshot — a silent safety net for uncommitted work.
   useEffect(() => {

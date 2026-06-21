@@ -1,5 +1,30 @@
 
 
+## [0.21.0](https://github.com/MyAppDesk/gitcito/compare/v0.20.0...v0.21.0) (2026-06-21)
+
+
+### Features
+
+* add a New issue button to the sidebar Issues section ([0a786ef](https://github.com/MyAppDesk/gitcito/commit/0a786ef8598902dbbf2417598d0c2f30f97cb153))
+* add an AI assistant entry to the command palette ([0508cf1](https://github.com/MyAppDesk/gitcito/commit/0508cf18dcc36f0680b0a2303ae72a95e5b86ea4))
+* add settings deep-links to the command palette ([d384e2d](https://github.com/MyAppDesk/gitcito/commit/d384e2dd2747fe66bfafb464f77df1041f46b5d1))
+* create GitHub issues and set PR reviewers/labels/assignees ([b79619e](https://github.com/MyAppDesk/gitcito/commit/b79619e31ef722e78445e8235aaf315bec00de07))
+* drop the AI tab from repo settings, keep the toolbar Run button ([5f5e833](https://github.com/MyAppDesk/gitcito/commit/5f5e833e04925f3cf888cd1c8c2177e8ddd88394))
+* fixup and autosquash from the commit graph ([ce6f87b](https://github.com/MyAppDesk/gitcito/commit/ce6f87bbd66322305688835689066f6bc0b2aeba))
+* make protected branches per-repo with a repo-settings panel ([28bccff](https://github.com/MyAppDesk/gitcito/commit/28bccffaa9b66d9a48416810166818ca80e2ffa8))
+* reorganize repo settings tabs and move the AI assistant into settings ([f8b72b7](https://github.com/MyAppDesk/gitcito/commit/f8b72b7de1f365880de325515a3c56bef2900e51))
+* show the repo's operation log inline in repo settings ([46f56c7](https://github.com/MyAppDesk/gitcito/commit/46f56c7e0c03dcaf055bd56861023b29c744ee61))
+* split AI into a Run button and a repo-settings AI tab ([d1fab85](https://github.com/MyAppDesk/gitcito/commit/d1fab85784de545bb070073e7413ecff07fad569))
+* translate the repository-settings and create-issue dialogs ([cb6edc8](https://github.com/MyAppDesk/gitcito/commit/cb6edc89b6ac5f1eb0f9c3c6a9ce11e1fcdc3765))
+* warn before committing or force-pushing to a protected branch ([2fbdf4b](https://github.com/MyAppDesk/gitcito/commit/2fbdf4b4c151bf4316fc9d88d8c768371a428afd))
+
+
+### Bug Fixes
+
+* autosquash failing with a PAGER env error ([be3468c](https://github.com/MyAppDesk/gitcito/commit/be3468c2cbbd00b35ed2f4f893eac2c1cb9b07e6))
+* label the repository settings toolbar button ([cd3679c](https://github.com/MyAppDesk/gitcito/commit/cd3679cc74c1f36af8253e4088902a013363173e))
+* run autosquash via execFile to bypass simple-git editor guard ([737ccb7](https://github.com/MyAppDesk/gitcito/commit/737ccb7c5bdeaa64175d16a0eb366f977c05b739))
+
 ## [0.20.0](https://github.com/MyAppDesk/gitcito/compare/v0.19.0...v0.20.0) (2026-06-21)
 
 

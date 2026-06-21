@@ -235,11 +235,12 @@ npm run dev            # launch in dev mode
 npm run build          # build
 npm run dist:mac       # package a macOS app
 npm run typecheck      # type-check both configs
+npm test               # run the vitest suite
+npm run playground     # (re)generate the example repos under examples/playground
 
-npm run screenshots    # regenerate docs/screenshots from the playground repos
-npm run screenshots:gif  # …including the animated GIF clips (needs ffmpeg)
-npm run video          # render the 1080p promo (remotion/out/GitcitoVideo.mp4)
-npm run video:studio   # live-preview the promo in Remotion Studio
+# Screenshots: render from the playground repos (omit the flag for PNGs only)
+node examples/screenshots/capture.mjs          # all PNG shots
+npm run screenshots:gif                        # …including animated GIF clips (needs ffmpeg)
 ```
 
 **From VS Code:** the same tasks are wired into the *Run and Debug* panel

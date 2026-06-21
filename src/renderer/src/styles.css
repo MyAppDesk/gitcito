@@ -1420,6 +1420,8 @@ textarea:focus {
   overflow: auto;
   position: relative;
 }
+.graph-scroll:focus,
+.graph-scroll:focus-visible { outline: none; }
 
 .graph-canvas {
   position: relative;

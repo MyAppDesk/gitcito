@@ -20,6 +20,7 @@ export const SHORTCUTS: ShortcutDef[] = [
 /** Fixed (non-rebindable) shortcuts, shown in the cheatsheet for reference. */
 export const FIXED_SHORTCUTS: { label: string; combo: string; category: string }[] = [
   { label: 'Keyboard shortcuts', combo: '?', category: 'Help' },
+  { label: 'Navigate commits', combo: '↑ ↓ / j k', category: 'Navigation' },
   { label: 'Reopen closed tab', combo: 'mod+shift+t', category: 'Navigation' },
   { label: 'Save file', combo: 'mod+s', category: 'Editing' },
   { label: 'Undo', combo: 'mod+z', category: 'Editing' },

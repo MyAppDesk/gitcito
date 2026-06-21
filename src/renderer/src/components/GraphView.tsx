@@ -615,6 +615,47 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
     }
   }
 
+  // Keyboard navigation: ↑/↓ or k/j move the selection between rows, Enter is a
+  // no-op (selecting already opens the detail). Ignored while typing in an input.
+  const selectedRow = useMemo(() => {
+    const sel = repo.selected
+    const hash = !sel ? null : sel.type === 'wip' ? WIP_HASH : sel.type === 'stash' ? sel.sha : sel.hash
+    if (!hash) return -1
+    return displayCommits.findIndex((c) => c.hash === hash)
+  }, [repo.selected, displayCommits])
+
+  const selectRow = (row: number): void => {
+    const c = displayCommits[row]
+    if (!c) return
+    select(
+      repo.path,
+      c.hash === WIP_HASH
+        ? { type: 'wip' }
+        : stashBySha.has(c.hash)
+          ? { type: 'stash', index: stashBySha.get(c.hash)!.index, sha: c.hash }
+          : { type: 'commit', hash: c.hash }
+    )
+    // Keep the newly-selected row inside the viewport (windowing mounts it).
+    const el = scrollRef.current
+    if (el) {
+      const top = row * ROW_H
+      if (top < el.scrollTop) el.scrollTo({ top })
+      else if (top + ROW_H > el.scrollTop + el.clientHeight) el.scrollTo({ top: top - el.clientHeight + ROW_H })
+    }
+  }
+
+  const onGraphKeyDown = (e: React.KeyboardEvent): void => {
+    const tag = (e.target as HTMLElement).tagName
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || e.metaKey || e.ctrlKey || e.altKey) return
+    if (e.key === 'ArrowDown' || e.key === 'j') {
+      e.preventDefault()
+      selectRow(Math.min((selectedRow < 0 ? -1 : selectedRow) + 1, displayCommits.length - 1))
+    } else if (e.key === 'ArrowUp' || e.key === 'k') {
+      e.preventDefault()
+      selectRow(Math.max((selectedRow < 0 ? displayCommits.length : selectedRow) - 1, 0))
+    }
+  }
+
   const exportPatch = async (c: GraphCommit): Promise<void> => {
     try {
       const patch = await gitApi.formatPatch(repo.path, c.hash, 1)
@@ -1051,7 +1092,7 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
         onReorder={reorderColumns}
         renderFilter={renderFilter}
       />
-      <div className="graph-scroll" ref={scrollRef} onScroll={onScroll}>
+      <div className="graph-scroll" ref={scrollRef} onScroll={onScroll} tabIndex={0} onKeyDown={onGraphKeyDown}>
       <div className="graph-canvas" style={{ height: totalHeight }}>
         {columns.graph.visible && (
         <>
@@ -1206,7 +1247,8 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
               style={{ top: row * ROW_H, height: ROW_H, paddingLeft: branchCol + graphCol }}
               onMouseEnter={() => setHoverRow(c.hash)}
               onMouseLeave={() => setHoverRow((h) => (h === c.hash ? null : h))}
-              onClick={() =>
+              onClick={() => {
+                scrollRef.current?.focus({ preventScroll: true })
                 select(
                   repo.path,
                   isWip
@@ -1215,7 +1257,7 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
                       ? { type: 'stash', index: stash.index, sha: stash.sha }
                       : { type: 'commit', hash: c.hash }
                 )
-              }
+              }}
               onContextMenu={(e) => {
                 e.preventDefault()
                 if (stash) openContextMenu(e.clientX, e.clientY, stashMenu(stash))

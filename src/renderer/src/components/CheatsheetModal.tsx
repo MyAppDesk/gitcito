@@ -18,6 +18,7 @@ const LABEL_KEYS: Record<string, TranslationKey> = {
   'Search code': 'sc.searchCode',
   'Open vault': 'sc.openVault',
   'Keyboard shortcuts': 'sc.keyboardShortcuts',
+  'Navigate commits': 'sc.navigateCommits',
   'Reopen closed tab': 'sc.reopenTab',
   'Save file': 'sc.saveFile',
   Undo: 'sc.undo',

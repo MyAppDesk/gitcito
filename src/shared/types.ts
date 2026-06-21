@@ -249,6 +249,16 @@ export interface PrReviewThread {
   comments: PrReviewComment[]
 }
 
+/** One CI check-run on a PR's head commit. */
+export interface PrCheck {
+  name: string
+  /** queued | in_progress | completed */
+  status: string
+  /** success | failure | neutral | cancelled | skipped | timed_out | action_required | null (while running) */
+  conclusion: string | null
+  url: string // details/logs URL
+}
+
 /** Full detail for one pull request (conversation + review state). */
 export interface PrDetail {
   number: number

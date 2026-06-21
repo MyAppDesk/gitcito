@@ -8,7 +8,7 @@ import {
   MessageSquare,
   GitMerge
 } from 'lucide-react'
-import type { PrDetail, PrReviewEvent, PrMergeMethod } from '../../../shared/types'
+import type { PrDetail, PrReviewEvent, PrMergeMethod, PrCheck } from '../../../shared/types'
 import { hostingApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
@@ -29,6 +29,7 @@ export function PRDetailModal({
   const profile = useSettingsStore((s) => s.activeProfile())
 
   const [pr, setPr] = useState<PrDetail | null>(null)
+  const [checks, setChecks] = useState<PrCheck[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [comment, setComment] = useState('')
@@ -43,6 +44,7 @@ export function PRDetailModal({
     setError(null)
     try {
       setPr(await hostingApi.prDetail(remoteUrl, tokens, number))
+      void hostingApi.prChecks(remoteUrl, tokens, number).then(setChecks).catch(() => setChecks([]))
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
     }
@@ -132,6 +134,31 @@ export function PRDetailModal({
                 </span>
               )}
             </div>
+          )}
+
+          {checks.length > 0 && (
+            <>
+              <div className="prd-section-title">
+                Checks <span className="prd-count">{checks.length}</span>
+              </div>
+              <div className="prd-checks">
+                {checks.map((c, i) => {
+                  const state = c.status !== 'completed' ? 'pending' : c.conclusion === 'success' ? 'pass' : c.conclusion === 'failure' || c.conclusion === 'timed_out' ? 'fail' : 'neutral'
+                  return (
+                    <div key={i} className="prd-check">
+                      <span className={`prd-check-dot ${state}`} />
+                      <span className="prd-check-name">{c.name}</span>
+                      <span className="prd-check-state">{c.status === 'completed' ? c.conclusion : c.status}</span>
+                      {c.url && (
+                        <button className="prd-check-logs" title="View logs" onClick={() => void window.api.openExternal(c.url)}>
+                          <ExternalLink size={12} />
+                        </button>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </>
           )}
 
           {pr.body.trim() && <div className="prd-body">{autolink(pr.body, remoteWebUrl(remoteUrl))}</div>}

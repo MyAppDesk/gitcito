@@ -12,6 +12,7 @@ import type {
   PrDetail,
   PrReview,
   PrReviewThread,
+  PrCheck,
   IssueInfo,
   IssueDetail,
   LinkedPr,
@@ -459,6 +460,26 @@ async function pullRequestDetail(
       .map((r) => ({ author: r.user?.login ?? 'unknown', state: r.state as PrReview['state'] })),
     reviewThreads
   }
+}
+
+/** CI check-runs on a PR's head commit (GitHub only). */
+async function pullRequestChecks(
+  remoteUrl: string,
+  tokens: { github?: string },
+  number: number
+): Promise<PrCheck[]> {
+  const { owner, repo, token } = ghRepoOf(remoteUrl, tokens.github)
+  const api = `https://api.github.com/repos/${owner}/${repo}`
+  const pr = await ghJson<{ head: { sha: string } }>(`${api}/pulls/${number}`, token)
+  const data = await ghJson<{
+    check_runs: Array<{ name: string; status: string; conclusion: string | null; html_url: string | null; details_url: string | null }>
+  }>(`${api}/commits/${pr.head.sha}/check-runs?per_page=100`, token).catch(() => ({ check_runs: [] }))
+  return data.check_runs.map((c) => ({
+    name: c.name,
+    status: c.status,
+    conclusion: c.conclusion,
+    url: c.html_url || c.details_url || ''
+  }))
 }
 
 /** Reply to an inline review thread (POST a comment in reply to `inReplyTo`). */
@@ -1233,6 +1254,9 @@ export function registerHostingHandlers(): void {
     'hosting:prReplyReviewComment',
     (_e, remoteUrl: string, tokens: { github?: string }, number: number, inReplyTo: number, body: string) =>
       replyReviewComment(remoteUrl, tokens, number, inReplyTo, body)
+  )
+  ipcMain.handle('hosting:prChecks', (_e, remoteUrl: string, tokens: { github?: string }, number: number) =>
+    pullRequestChecks(remoteUrl, tokens, number)
   )
   ipcMain.handle(
     'hosting:prReview',

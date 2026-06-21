@@ -222,6 +222,11 @@ Drag to reorder, squash, fixup, reword or drop — in a visual editor.
 |---|---|
 | ![Security settings: mask secrets, large-file guard, vault](docs/screenshots/settings-security.png) | ![Shortcuts settings: rebindable keyboard shortcuts](docs/screenshots/settings-shortcuts.png) |
 
+### Per-repo settings
+Protected branches, analytics, history and the operation log — per repository, from the gear next to the toolbar tools.
+
+![Repository settings with general / analytics / history / logs tabs](docs/screenshots/repo-settings.png)
+
 ## 🚀 Development
 
 ```bash

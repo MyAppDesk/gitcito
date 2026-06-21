@@ -404,6 +404,23 @@ export const shots = [
     }
   },
   {
+    // Repository settings — tabbed (general / analytics / history / logs).
+    out: 'repo-settings',
+    repos: ['deep-history-monorepo'],
+    themes: ['dark'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['deep-history-monorepo']
+      await page.evaluate((p) => window.__shot.ui.getState().openModal({ kind: 'repo-settings', repoPath: p }), repo)
+      await page.waitForTimeout(400)
+      // Click the History tab to confirm the relocated section renders.
+      await page.evaluate(() => {
+        const btn = [...document.querySelectorAll('.repo-settings-tabs button')].find((b) => /History/.test(b.textContent || ''))
+        if (btn) btn.click()
+      })
+      await page.waitForTimeout(700)
+    }
+  },
+  {
     // Side-by-side (split) diff with word-level highlighting.
     out: 'split-diff',
     repos: ['word-diff'],

@@ -1052,16 +1052,33 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         defaultOpen={false}
         {...dragProps('issues')}
         actions={
-          <span
-            className="icon-btn"
-            title={t('sidebar.issues')}
-            onClick={(e) => {
-              e.stopPropagation()
-              void useRepoStore.getState().refreshIssues(path)
-            }}
-          >
-            <RefreshCw size={12} />
-          </span>
+          <>
+            {(() => {
+              const origin = repo.remotes.find((r) => r.name === 'origin') ?? repo.remotes[0]
+              return origin ? (
+                <span
+                  className="icon-btn"
+                  title="New issue"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    openModal({ kind: 'create-issue', repoPath: path, remoteUrl: origin.url })
+                  }}
+                >
+                  <Plus size={13} />
+                </span>
+              ) : null
+            })()}
+            <span
+              className="icon-btn"
+              title={t('sidebar.issues')}
+              onClick={(e) => {
+                e.stopPropagation()
+                void useRepoStore.getState().refreshIssues(path)
+              }}
+            >
+              <RefreshCw size={12} />
+            </span>
+          </>
         }
       >
         {repo.issues.length === 0 && <div className="sb-empty">{t('sidebar.noIssues')}</div>}

@@ -12,6 +12,20 @@ import {
 } from '../lib/shortcuts'
 
 export function CheatsheetModal(): React.JSX.Element {
+  return (
+    <div className="cheatsheet">
+      <h3>
+        <Keyboard size={17} style={{ verticalAlign: '-3px', marginRight: 6 }} />
+        Keyboard shortcuts
+      </h3>
+      <ShortcutEditor />
+    </div>
+  )
+}
+
+/** The shortcut list + rebinding UI, reused by the cheatsheet modal and the
+ *  Settings → Shortcuts tab. */
+export function ShortcutEditor(): React.JSX.Element {
   const custom = useSettingsStore((s) => s.settings.shortcuts)
   const update = useSettingsStore((s) => s.update)
   const toast = useUIStore((s) => s.toast)
@@ -86,11 +100,7 @@ export function CheatsheetModal(): React.JSX.Element {
   }, {})
 
   return (
-    <div className="cheatsheet">
-      <h3>
-        <Keyboard size={17} style={{ verticalAlign: '-3px', marginRight: 6 }} />
-        Keyboard shortcuts
-      </h3>
+    <>
       <p className="settings-hint">Click a shortcut to rebind it. Customizations are saved per machine.</p>
 
       <div className="cheat-section">
@@ -110,6 +120,6 @@ export function CheatsheetModal(): React.JSX.Element {
           ))}
         </div>
       ))}
-    </div>
+    </>
   )
 }

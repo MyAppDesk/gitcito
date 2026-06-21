@@ -20,6 +20,7 @@ import {
   Settings2,
   ShieldCheck,
   KeyRound,
+  Keyboard as KeyboardIcon,
   ExternalLink,
   Sun,
   Moon,
@@ -58,9 +59,10 @@ import {
   resolveCodeColors
 } from '../theme/themes'
 import { LANGUAGES, useT, type TranslationKey } from '../i18n'
+import { ShortcutEditor } from './CheatsheetModal'
 import madLogo from '../assets/mad-high.png'
 
-type SettingsPage = 'profile' | 'integrations' | 'ai' | 'themes' | 'general' | 'data'
+type SettingsPage = 'profile' | 'integrations' | 'ai' | 'themes' | 'general' | 'security' | 'shortcuts' | 'data'
 
 const PAGES: { id: SettingsPage; key: TranslationKey; icon: React.ReactNode }[] = [
   { id: 'general', key: 'settings.general', icon: <Settings2 size={13} /> },
@@ -68,6 +70,8 @@ const PAGES: { id: SettingsPage; key: TranslationKey; icon: React.ReactNode }[] 
   { id: 'integrations', key: 'settings.integrations', icon: <Plug size={13} /> },
   { id: 'ai', key: 'settings.ai', icon: <Bot size={13} /> },
   { id: 'themes', key: 'settings.themes', icon: <Palette size={13} /> },
+  { id: 'security', key: 'settings.security', icon: <ShieldCheck size={13} /> },
+  { id: 'shortcuts', key: 'settings.shortcuts', icon: <KeyboardIcon size={13} /> },
   { id: 'data', key: 'settings.data', icon: <HardDrive size={13} /> }
 ]
 
@@ -1252,18 +1256,7 @@ function DataManagementSection(): React.JSX.Element {
 function GeneralPage(): React.JSX.Element {
   const settings = useSettingsStore((s) => s.settings)
   const update = useSettingsStore((s) => s.update)
-  const openPageTab = useSettingsStore((s) => s.openPageTab)
-  const closeModal = useUIStore((s) => s.closeModal)
   const t = useT()
-
-  // Active repo, so the vault button can target the current repository.
-  const activeTab = settings.tabs.find((tb) => tb.id === settings.activeTabId)
-  const activeRepoPath = activeTab ? tabActiveRepoPath(activeTab) : null
-  const openVault = (): void => {
-    if (!activeRepoPath) return
-    openPageTab({ type: 'vault', repoPath: activeRepoPath })
-    closeModal()
-  }
 
   return (
     <div className="settings-general">
@@ -1429,10 +1422,33 @@ function GeneralPage(): React.JSX.Element {
           <span className="settings-hint">{t('settings.autoOpenChangelogHint')}</span>
         </span>
       </label>
+    </div>
+  )
+}
 
-      <h4>
-        <ShieldCheck size={14} /> {t('settings.security')}
-      </h4>
+function SecurityPage(): React.JSX.Element {
+  const settings = useSettingsStore((s) => s.settings)
+  const update = useSettingsStore((s) => s.update)
+  const openPageTab = useSettingsStore((s) => s.openPageTab)
+  const closeModal = useUIStore((s) => s.closeModal)
+  const t = useT()
+
+  const activeTab = settings.tabs.find((tb) => tb.id === settings.activeTabId)
+  const activeRepoPath = activeTab ? tabActiveRepoPath(activeTab) : null
+  const openVault = (): void => {
+    if (!activeRepoPath) return
+    openPageTab({ type: 'vault', repoPath: activeRepoPath })
+    closeModal()
+  }
+
+  return (
+    <div className="settings-general">
+      <div className="settings-general-header">
+        <h4>
+          <ShieldCheck size={14} /> {t('settings.security')}
+        </h4>
+      </div>
+
       <label className="settings-toggle-card">
         <input
           type="checkbox"
@@ -1461,13 +1477,23 @@ function GeneralPage(): React.JSX.Element {
       </label>
       <span className="settings-hint">{t('settings.largeFileWarnHint')}</span>
 
-      <div style={{ marginTop: 12 }}>
+      <h4 style={{ marginTop: 18 }}>
+        <KeyRound size={14} /> {t('settings.vault')}
+      </h4>
+      <div>
         <button className="btn ghost small" onClick={openVault} disabled={!activeRepoPath} title={activeRepoPath ? undefined : 'Open a repository first'}>
           <KeyRound size={13} /> {t('settings.openVault')}
         </button>
         <span className="settings-hint" style={{ display: 'block', marginTop: 6 }}>{t('settings.openVaultHint')}</span>
       </div>
+    </div>
+  )
+}
 
+function ShortcutsPage(): React.JSX.Element {
+  return (
+    <div className="settings-general">
+      <ShortcutEditor />
     </div>
   )
 }
@@ -2029,6 +2055,8 @@ export function SettingsPanel({ initialPage }: { initialPage?: SettingsPage } = 
           {page === 'ai' && <AIPage profile={profile} edit={edit} />}
           {page === 'themes' && <ThemesPage />}
           {page === 'general' && <GeneralPage />}
+          {page === 'security' && <SecurityPage />}
+          {page === 'shortcuts' && <ShortcutsPage />}
           {page === 'data' && <DataPage />}
         </div>
       </div>

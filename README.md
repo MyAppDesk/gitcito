@@ -217,6 +217,10 @@ Drag to reorder, squash, fixup, reword or drop — in a visual editor.
 |---|---|
 | ![AI settings page](docs/screenshots/settings-ai.png) | ![Theme settings page](docs/screenshots/settings-themes.png) |
 
+| Security | Shortcuts |
+|---|---|
+| ![Security settings: mask secrets, large-file guard, vault](docs/screenshots/settings-security.png) | ![Shortcuts settings: rebindable keyboard shortcuts](docs/screenshots/settings-shortcuts.png) |
+
 ## 🚀 Development
 
 ```bash

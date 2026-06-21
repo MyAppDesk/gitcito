@@ -136,6 +136,27 @@ export const shots = [
     }
   },
 
+  {
+    // Settings → Shortcuts tab (rebindable shortcut editor).
+    out: 'settings-shortcuts',
+    repos: ['octopus-merge'],
+    themes: ['dark'],
+    drive: async (page) => {
+      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'shortcuts' }))
+      await page.waitForTimeout(400)
+    }
+  },
+  {
+    // Settings → Security tab (mask secrets, large-file guard, vault entry).
+    out: 'settings-security',
+    repos: ['octopus-merge'],
+    themes: ['dark'],
+    drive: async (page) => {
+      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'security' }))
+      await page.waitForTimeout(400)
+    }
+  },
+
   // ── Features added since v0.12 ──────────────────────────────────────────────
   {
     // Signature column + verified/unverified/unsigned badges in the graph.

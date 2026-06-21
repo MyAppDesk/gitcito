@@ -824,9 +824,19 @@ export const gitService = {
    * Runs non-interactively (the auto-generated todo is accepted as-is).
    */
   async autosquash(repoPath: string, base: string): Promise<void> {
-    await gitFor(repoPath)
-      .env({ ...process.env, GIT_SEQUENCE_EDITOR: 'true', GIT_EDITOR: 'true' })
-      .rebase(['-i', '--autosquash', base])
+    // Use `-c …editor=true` rather than env vars: simple-git rejects an env that
+    // carries PAGER (the "allowUnsafePager" guard), and config flags accept the
+    // auto-generated rebase todo without opening an editor.
+    await gitFor(repoPath).raw([
+      '-c',
+      'core.editor=true',
+      '-c',
+      'sequence.editor=true',
+      'rebase',
+      '-i',
+      '--autosquash',
+      base
+    ])
   },
 
   // ─── Sync operations ───────────────────────────────────────────────────────

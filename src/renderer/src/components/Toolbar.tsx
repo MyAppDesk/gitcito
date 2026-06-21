@@ -282,11 +282,12 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
           </span>
         </button>
         <button
-          className="tool-btn icon-only"
+          className="tool-btn"
           title="Repository settings"
           onClick={() => openModal({ kind: 'repo-settings', repoPath: path })}
         >
           <Settings size={16} />
+          <span>Settings</span>
         </button>
       </div>
 

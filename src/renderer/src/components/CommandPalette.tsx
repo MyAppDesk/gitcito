@@ -35,6 +35,16 @@ import { useSettingsStore } from '../stores/settings'
 import { gitApi } from '../infrastructure/api'
 import { tabActiveRepoPath } from '../../../shared/types'
 import { getFrecency, frecencyScore, bumpFrecency } from '../lib/frecency'
+import { useT, type TranslationKey } from '../i18n'
+
+// Display label for a group id (groups stay English internally for sorting).
+const GROUP_KEYS: Record<string, TranslationKey> = {
+  Recent: 'cmdp.group.recent',
+  Actions: 'cmdp.group.actions',
+  Branches: 'cmdp.group.branches',
+  Commits: 'cmdp.group.commits',
+  Files: 'cmdp.group.files'
+}
 
 interface Command {
   id: string
@@ -73,6 +83,7 @@ function fuzzyScore(query: string, text: string): number | null {
 const GROUP_ORDER = ['Recent', 'Actions', 'Branches', 'Commits', 'Files']
 
 export function CommandPalette(): React.JSX.Element {
+  const t = useT()
   const open = useUIStore((s) => s.commandPaletteOpen)
   const setOpen = useUIStore((s) => s.setCommandPalette)
   const repos = useRepoStore((s) => s.repos)
@@ -115,42 +126,42 @@ export function CommandPalette(): React.JSX.Element {
 
     // ── Actions ──
     list.push(
-      { id: 'fetch', title: 'Fetch all remotes', group: 'Actions', keywords: 'sync remote prune', icon: <Download size={15} />, run: act(() => void repoActions.fetchAll(path)) },
-      { id: 'pull', title: 'Pull', group: 'Actions', keywords: 'sync merge', icon: <ArrowDownToLine size={15} />, run: act(() => void repoActions.pull(path, 'default')) },
-      { id: 'push', title: 'Push', group: 'Actions', keywords: 'sync upload', icon: <Upload size={15} />, run: act(() => void repoActions.push(path)) },
-      { id: 'commit', title: 'Commit changes…', group: 'Actions', keywords: 'wip staging compose', icon: <GitCommit size={15} />, run: act(() => useRepoStore.getState().select(path, { type: 'wip' })) },
-      { id: 'stash', title: 'Stash changes', group: 'Actions', keywords: 'save shelve', icon: <Archive size={15} />, run: act(() => void repoActions.stash(path)) },
-      { id: 'create-branch', title: 'Create branch…', group: 'Actions', keywords: 'new', icon: <Plus size={15} />, run: act(() => ui.openModal({ kind: 'create-branch', path, currentBranch: repo.branches.current })) },
-      { id: 'create-pr', title: 'Create pull request…', group: 'Actions', keywords: 'pr github merge request', icon: <GitPullRequest size={15} />, run: act(() => ui.openModal({ kind: 'create-pr', repoPath: path, source: repo.branches.current })) },
+      { id: 'fetch', title: t('cmd.fetch'), group: 'Actions', keywords: 'sync remote prune', icon: <Download size={15} />, run: act(() => void repoActions.fetchAll(path)) },
+      { id: 'pull', title: t('cmd.pull'), group: 'Actions', keywords: 'sync merge', icon: <ArrowDownToLine size={15} />, run: act(() => void repoActions.pull(path, 'default')) },
+      { id: 'push', title: t('cmd.push'), group: 'Actions', keywords: 'sync upload', icon: <Upload size={15} />, run: act(() => void repoActions.push(path)) },
+      { id: 'commit', title: t('cmd.commit'), group: 'Actions', keywords: 'wip staging compose', icon: <GitCommit size={15} />, run: act(() => useRepoStore.getState().select(path, { type: 'wip' })) },
+      { id: 'stash', title: t('cmd.stash'), group: 'Actions', keywords: 'save shelve', icon: <Archive size={15} />, run: act(() => void repoActions.stash(path)) },
+      { id: 'create-branch', title: t('cmd.createBranch'), group: 'Actions', keywords: 'new', icon: <Plus size={15} />, run: act(() => ui.openModal({ kind: 'create-branch', path, currentBranch: repo.branches.current })) },
+      { id: 'create-pr', title: t('cmd.createPr'), group: 'Actions', keywords: 'pr github merge request', icon: <GitPullRequest size={15} />, run: act(() => ui.openModal({ kind: 'create-pr', repoPath: path, source: repo.branches.current })) },
       ...((): Command[] => {
         const origin = repo.remotes.find((r) => r.name === 'origin') ?? repo.remotes[0]
         return origin
-          ? [{ id: 'create-issue', title: 'Create issue…', group: 'Actions', keywords: 'github issue new bug report', icon: <CircleDot size={15} />, run: act(() => ui.openModal({ kind: 'create-issue', repoPath: path, remoteUrl: origin.url })) } as Command]
+          ? [{ id: 'create-issue', title: t('cmd.createIssue'), group: 'Actions', keywords: 'github issue new bug report', icon: <CircleDot size={15} />, run: act(() => ui.openModal({ kind: 'create-issue', repoPath: path, remoteUrl: origin.url })) } as Command]
           : []
       })(),
-      { id: 'stack', title: 'Branch stack…', group: 'Actions', keywords: 'stacked branches graphite restack dependent', icon: <Layers size={15} />, run: act(() => ui.openModal({ kind: 'stack', repoPath: path })) },
-      { id: 'insights', title: 'Repository insights', group: 'Actions', keywords: 'stats churn hotspots authors contributors graph analytics', icon: <BarChart3 size={15} />, run: act(() => useSettingsStore.getState().openPageTab({ type: 'insights', repoPath: path })) },
-      { id: 'changelog-gen', title: 'Generate changelog…', group: 'Actions', keywords: 'conventional commits release notes changelog', icon: <FileText size={15} />, run: act(() => ui.openModal({ kind: 'changelog-gen', repoPath: path })) },
-      { id: 'vault', title: 'Open vault', group: 'Actions', keywords: 'secrets vault credentials keychain env password store', icon: <KeyRound size={15} />, run: act(() => useSettingsStore.getState().openPageTab({ type: 'vault', repoPath: path })) },
-      { id: 'code-search', title: 'Search code…', group: 'Actions', keywords: 'grep find text content history pickaxe', icon: <Search size={15} />, run: act(() => ui.openModal({ kind: 'code-search', repoPath: path })) },
-      { id: 'filter-path', title: 'Filter graph by path…', group: 'Actions', keywords: 'path file folder history touched commits filter', icon: <FolderTree size={15} />, run: act(() => ui.openModal({ kind: 'input', title: 'Filter graph by path', label: 'File or folder path (relative to repo root)', placeholder: 'src/main', submitLabel: 'Filter', onSubmit: (v) => ui.setPathFilter(v.trim() || null) })) },
-      ...(aiEnabled ? [{ id: 'ai-assistant', title: 'AI assistant / config…', group: 'Actions', keywords: 'ai config wizard ask actions generate', icon: <Sparkles size={15} />, run: act(() => ui.openModal({ kind: 'ai-config-wizard', repoPath: path, repoName: repo.name })) } as Command] : []),
-      { id: 'terminal', title: 'Toggle integrated terminal', group: 'Actions', keywords: 'shell console pty', icon: <TerminalSquare size={15} />, run: act(() => ui.toggleTerminal()) },
-      { id: 'reflog', title: 'Open reflog', group: 'Actions', keywords: 'recovery undo history head', icon: <History size={15} />, run: act(() => ui.openModal({ kind: 'reflog', repoPath: path })) },
-      { id: 'snapshots', title: 'WIP snapshots…', group: 'Actions', keywords: 'safety net stash backup auto save recover', icon: <Camera size={15} />, run: act(() => ui.openModal({ kind: 'snapshots', repoPath: path })) },
-      { id: 'bisect', title: 'Start bisect', group: 'Actions', keywords: 'debug find bug', icon: <Bug size={15} />, run: act(() => ui.openModal({ kind: 'bisect', repoPath: path })) },
-      { id: 'hooks', title: 'Manage git hooks', group: 'Actions', keywords: 'pre-commit', icon: <Webhook size={15} />, run: act(() => ui.openModal({ kind: 'hooks', repoPath: path })) },
-      { id: 'lfs', title: 'Manage Git LFS', group: 'Actions', keywords: 'large file storage', icon: <Boxes size={15} />, run: act(() => ui.openModal({ kind: 'lfs', repoPath: path })) },
-      { id: 'sparse', title: 'Sparse-checkout…', group: 'Actions', keywords: 'cone partial', icon: <FolderTree size={15} />, run: act(() => ui.openModal({ kind: 'sparse', repoPath: path })) },
-      { id: 'theme', title: 'Toggle light / dark theme', group: 'Actions', keywords: 'appearance dark light mode', icon: <SunMoon size={15} />, run: act(() => useSettingsStore.getState().update((s) => ({ ...s, themeMode: s.themeMode === 'dark' ? 'light' : 'dark' }))) },
-      { id: 'notifications', title: 'GitHub notifications', group: 'Actions', keywords: 'inbox review mention github bell', icon: <Bell size={15} />, run: act(() => useSettingsStore.getState().openPageTab({ type: 'notifications' })) },
-      { id: 'changelog', title: "Open What's new (changelog)", group: 'Actions', keywords: 'release notes version', icon: <FileText size={15} />, run: act(() => useSettingsStore.getState().openPageTab({ type: 'changelog' })) },
-      { id: 'settings', title: 'Open settings', group: 'Actions', keywords: 'preferences config', icon: <Settings size={15} />, run: act(() => ui.openModal({ kind: 'settings' })) },
-      { id: 'settings-security', title: 'Settings: Security', group: 'Actions', keywords: 'preferences mask secrets large file protected branch vault', icon: <Settings size={15} />, run: act(() => ui.openModal({ kind: 'settings', page: 'security' })) },
-      { id: 'settings-shortcuts', title: 'Settings: Shortcuts', group: 'Actions', keywords: 'preferences keybindings rebind keys', icon: <Settings size={15} />, run: act(() => ui.openModal({ kind: 'settings', page: 'shortcuts' })) },
-      { id: 'settings-ai', title: 'Settings: AI', group: 'Actions', keywords: 'preferences openai model provider', icon: <Settings size={15} />, run: act(() => ui.openModal({ kind: 'settings', page: 'ai' })) },
-      { id: 'settings-themes', title: 'Settings: Themes', group: 'Actions', keywords: 'preferences appearance colors', icon: <Settings size={15} />, run: act(() => ui.openModal({ kind: 'settings', page: 'themes' })) },
-      { id: 'cheatsheet', title: 'Keyboard shortcuts', group: 'Actions', keywords: 'shortcuts keys cheatsheet rebind hotkeys', icon: <Keyboard size={15} />, run: act(() => ui.openModal({ kind: 'cheatsheet' })) }
+      { id: 'stack', title: t('cmd.stack'), group: 'Actions', keywords: 'stacked branches graphite restack dependent', icon: <Layers size={15} />, run: act(() => ui.openModal({ kind: 'stack', repoPath: path })) },
+      { id: 'insights', title: t('cmd.insights'), group: 'Actions', keywords: 'stats churn hotspots authors contributors graph analytics', icon: <BarChart3 size={15} />, run: act(() => useSettingsStore.getState().openPageTab({ type: 'insights', repoPath: path })) },
+      { id: 'changelog-gen', title: t('cmd.changelogGen'), group: 'Actions', keywords: 'conventional commits release notes changelog', icon: <FileText size={15} />, run: act(() => ui.openModal({ kind: 'changelog-gen', repoPath: path })) },
+      { id: 'vault', title: t('cmd.vault'), group: 'Actions', keywords: 'secrets vault credentials keychain env password store', icon: <KeyRound size={15} />, run: act(() => useSettingsStore.getState().openPageTab({ type: 'vault', repoPath: path })) },
+      { id: 'code-search', title: t('cmd.codeSearch'), group: 'Actions', keywords: 'grep find text content history pickaxe', icon: <Search size={15} />, run: act(() => ui.openModal({ kind: 'code-search', repoPath: path })) },
+      { id: 'filter-path', title: t('cmd.filterPath'), group: 'Actions', keywords: 'path file folder history touched commits filter', icon: <FolderTree size={15} />, run: act(() => ui.openModal({ kind: 'input', title: t('cmdp.filterTitle'), label: t('cmdp.filterLabel'), placeholder: 'src/main', submitLabel: t('cmdp.filterSubmit'), onSubmit: (v) => ui.setPathFilter(v.trim() || null) })) },
+      ...(aiEnabled ? [{ id: 'ai-assistant', title: t('cmd.aiAssistant'), group: 'Actions', keywords: 'ai config wizard ask actions generate', icon: <Sparkles size={15} />, run: act(() => ui.openModal({ kind: 'ai-config-wizard', repoPath: path, repoName: repo.name })) } as Command] : []),
+      { id: 'terminal', title: t('cmd.terminal'), group: 'Actions', keywords: 'shell console pty', icon: <TerminalSquare size={15} />, run: act(() => ui.toggleTerminal()) },
+      { id: 'reflog', title: t('cmd.reflog'), group: 'Actions', keywords: 'recovery undo history head', icon: <History size={15} />, run: act(() => ui.openModal({ kind: 'reflog', repoPath: path })) },
+      { id: 'snapshots', title: t('cmd.snapshots'), group: 'Actions', keywords: 'safety net stash backup auto save recover', icon: <Camera size={15} />, run: act(() => ui.openModal({ kind: 'snapshots', repoPath: path })) },
+      { id: 'bisect', title: t('cmd.bisect'), group: 'Actions', keywords: 'debug find bug', icon: <Bug size={15} />, run: act(() => ui.openModal({ kind: 'bisect', repoPath: path })) },
+      { id: 'hooks', title: t('cmd.hooks'), group: 'Actions', keywords: 'pre-commit', icon: <Webhook size={15} />, run: act(() => ui.openModal({ kind: 'hooks', repoPath: path })) },
+      { id: 'lfs', title: t('cmd.lfs'), group: 'Actions', keywords: 'large file storage', icon: <Boxes size={15} />, run: act(() => ui.openModal({ kind: 'lfs', repoPath: path })) },
+      { id: 'sparse', title: t('cmd.sparse'), group: 'Actions', keywords: 'cone partial', icon: <FolderTree size={15} />, run: act(() => ui.openModal({ kind: 'sparse', repoPath: path })) },
+      { id: 'theme', title: t('cmd.theme'), group: 'Actions', keywords: 'appearance dark light mode', icon: <SunMoon size={15} />, run: act(() => useSettingsStore.getState().update((s) => ({ ...s, themeMode: s.themeMode === 'dark' ? 'light' : 'dark' }))) },
+      { id: 'notifications', title: t('cmd.notifications'), group: 'Actions', keywords: 'inbox review mention github bell', icon: <Bell size={15} />, run: act(() => useSettingsStore.getState().openPageTab({ type: 'notifications' })) },
+      { id: 'changelog', title: t('cmd.changelog'), group: 'Actions', keywords: 'release notes version', icon: <FileText size={15} />, run: act(() => useSettingsStore.getState().openPageTab({ type: 'changelog' })) },
+      { id: 'settings', title: t('cmd.settings'), group: 'Actions', keywords: 'preferences config', icon: <Settings size={15} />, run: act(() => ui.openModal({ kind: 'settings' })) },
+      { id: 'settings-security', title: t('cmd.settingsSecurity'), group: 'Actions', keywords: 'preferences mask secrets large file protected branch vault', icon: <Settings size={15} />, run: act(() => ui.openModal({ kind: 'settings', page: 'security' })) },
+      { id: 'settings-shortcuts', title: t('cmd.settingsShortcuts'), group: 'Actions', keywords: 'preferences keybindings rebind keys', icon: <Settings size={15} />, run: act(() => ui.openModal({ kind: 'settings', page: 'shortcuts' })) },
+      { id: 'settings-ai', title: t('cmd.settingsAi'), group: 'Actions', keywords: 'preferences openai model provider', icon: <Settings size={15} />, run: act(() => ui.openModal({ kind: 'settings', page: 'ai' })) },
+      { id: 'settings-themes', title: t('cmd.settingsThemes'), group: 'Actions', keywords: 'preferences appearance colors', icon: <Settings size={15} />, run: act(() => ui.openModal({ kind: 'settings', page: 'themes' })) },
+      { id: 'cheatsheet', title: t('cmd.cheatsheet'), group: 'Actions', keywords: 'shortcuts keys cheatsheet rebind hotkeys', icon: <Keyboard size={15} />, run: act(() => ui.openModal({ kind: 'cheatsheet' })) }
     )
 
     // ── Branches ── (checkout)
@@ -159,7 +170,7 @@ export function CommandPalette(): React.JSX.Element {
       list.push({
         id: `branch:${b.name}`,
         title: b.name,
-        subtitle: 'Checkout branch',
+        subtitle: t('cmdp.checkoutBranch'),
         group: 'Branches',
         keywords: 'checkout switch',
         icon: <GitBranch size={15} />,
@@ -198,7 +209,7 @@ export function CommandPalette(): React.JSX.Element {
     }
 
     return list
-  }, [repo, files, setOpen, aiEnabled])
+  }, [repo, files, setOpen, aiEnabled, t])
 
   // Usage stats, refreshed each time the palette opens.
   const frec = useMemo(() => (open ? getFrecency() : {}), [open])
@@ -276,7 +287,7 @@ export function CommandPalette(): React.JSX.Element {
       lastGroup = cmd.group
       rows.push(
         <div key={`h:${cmd.group}`} className="cmdp-group">
-          {cmd.group}
+          {GROUP_KEYS[cmd.group] ? t(GROUP_KEYS[cmd.group]) : cmd.group}
         </div>
       )
     }
@@ -322,7 +333,7 @@ export function CommandPalette(): React.JSX.Element {
               <input
                 ref={inputRef}
                 className="cmdp-input"
-                placeholder={repo ? 'Search branches, commits, files, actions…' : 'Open a repository to use the command palette'}
+                placeholder={repo ? t('cmdp.placeholder') : t('cmdp.placeholderNoRepo')}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={onKeyDown}
@@ -336,7 +347,7 @@ export function CommandPalette(): React.JSX.Element {
               ) : (
                 <div className="cmdp-empty">
                   <Zap size={18} />
-                  <span>{repo ? 'No matches' : 'No repository open'}</span>
+                  <span>{repo ? t('cmdp.noMatches') : t('cmdp.noRepo')}</span>
                 </div>
               )}
             </div>

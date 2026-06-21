@@ -10,13 +10,35 @@ import {
   comboFromEvent,
   type ShortcutDef
 } from '../lib/shortcuts'
+import { useT, type TranslationKey } from '../i18n'
+
+// Map the English shortcut labels/categories (data layer) to translation keys.
+const LABEL_KEYS: Record<string, TranslationKey> = {
+  'Command palette': 'sc.commandPalette',
+  'Search code': 'sc.searchCode',
+  'Open vault': 'sc.openVault',
+  'Keyboard shortcuts': 'sc.keyboardShortcuts',
+  'Reopen closed tab': 'sc.reopenTab',
+  'Save file': 'sc.saveFile',
+  Undo: 'sc.undo',
+  Redo: 'sc.redo',
+  'Find in file': 'sc.findInFile',
+  'Close dialog / panel': 'sc.closeDialog'
+}
+const CAT_KEYS: Record<string, TranslationKey> = {
+  Navigation: 'sc.cat.navigation',
+  Help: 'sc.cat.help',
+  Editing: 'sc.cat.editing',
+  General: 'sc.cat.general'
+}
 
 export function CheatsheetModal(): React.JSX.Element {
+  const t = useT()
   return (
     <div className="cheatsheet">
       <h3>
         <Keyboard size={17} style={{ verticalAlign: '-3px', marginRight: 6 }} />
-        Keyboard shortcuts
+        {t('cheat.title')}
       </h3>
       <ShortcutEditor />
     </div>
@@ -26,10 +48,14 @@ export function CheatsheetModal(): React.JSX.Element {
 /** The shortcut list + rebinding UI, reused by the cheatsheet modal and the
  *  Settings → Shortcuts tab. */
 export function ShortcutEditor(): React.JSX.Element {
+  const t = useT()
   const custom = useSettingsStore((s) => s.settings.shortcuts)
   const update = useSettingsStore((s) => s.update)
   const toast = useUIStore((s) => s.toast)
   const [capturing, setCapturing] = useState<string | null>(null)
+
+  const tLabel = (label: string): string => (LABEL_KEYS[label] ? t(LABEL_KEYS[label]) : label)
+  const tCat = (cat: string): string => (CAT_KEYS[cat] ? t(CAT_KEYS[cat]) : cat)
 
   const bindings = useMemo(() => effectiveBindings(custom), [custom])
 
@@ -47,7 +73,7 @@ export function ShortcutEditor(): React.JSX.Element {
       if (!combo) return // modifier only — keep waiting
       // Require at least one modifier so a bare letter can't shadow typing.
       if (!/(^|\+)(mod|alt)(\+|$)/.test(combo)) {
-        toast('info', 'Use a modifier (⌘/Ctrl or ⌥) in the shortcut.')
+        toast('info', t('cheat.needModifier'))
         return
       }
       const clash = Object.entries(bindings).find(([id, c]) => c === combo && id !== capturing)
@@ -56,7 +82,10 @@ export function ShortcutEditor(): React.JSX.Element {
         if (clash) delete next[clash[0]] // freed; falls back to its default
         return { ...s, shortcuts: next }
       })
-      if (clash) toast('info', `Reassigned — ${SHORTCUTS.find((x) => x.id === clash[0])?.label} reset to default.`)
+      if (clash) {
+        const clashLabel = SHORTCUTS.find((x) => x.id === clash[0])?.label ?? ''
+        toast('info', `${tLabel(clashLabel)} — ${t('cheat.resetMsg')}`)
+      }
       setCapturing(null)
     }
     window.addEventListener('keydown', onKey, true)
@@ -74,17 +103,17 @@ export function ShortcutEditor(): React.JSX.Element {
 
   const row = (def: ShortcutDef): React.JSX.Element => (
     <div className="cheat-row" key={def.id}>
-      <span className="cheat-label">{def.label}</span>
+      <span className="cheat-label">{tLabel(def.label)}</span>
       {capturing === def.id ? (
-        <span className="cheat-capturing">Press keys… (Esc to cancel)</span>
+        <span className="cheat-capturing">{t('cheat.pressKeys')}</span>
       ) : (
-        <kbd className="cheat-key" onClick={() => setCapturing(def.id)} title="Click to rebind">
+        <kbd className="cheat-key" onClick={() => setCapturing(def.id)} title={t('cheat.clickRebind')}>
           {formatCombo(bindings[def.id])}
         </kbd>
       )}
       <button
         className="cheat-reset"
-        title="Reset to default"
+        title={t('cheat.resetDefault')}
         disabled={!isCustom(def.id)}
         onClick={() => reset(def.id)}
       >
@@ -101,19 +130,19 @@ export function ShortcutEditor(): React.JSX.Element {
 
   return (
     <>
-      <p className="settings-hint">Click a shortcut to rebind it. Customizations are saved per machine.</p>
+      <p className="settings-hint">{t('cheat.hint')}</p>
 
       <div className="cheat-section">
-        <h4>Customizable</h4>
+        <h4>{t('cheat.customizable')}</h4>
         {SHORTCUTS.map(row)}
       </div>
 
       {Object.entries(fixedByCat).map(([cat, items]) => (
         <div className="cheat-section" key={cat}>
-          <h4>{cat}</h4>
+          <h4>{tCat(cat)}</h4>
           {items.map((s) => (
             <div className="cheat-row" key={s.label}>
-              <span className="cheat-label">{s.label}</span>
+              <span className="cheat-label">{tLabel(s.label)}</span>
               <kbd className="cheat-key fixed">{formatCombo(s.combo)}</kbd>
               <span className="cheat-reset" />
             </div>

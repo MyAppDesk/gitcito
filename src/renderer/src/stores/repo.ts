@@ -600,8 +600,8 @@ export const repoActions = {
     if (!branch) return false
     // Force-pushing a protected branch rewrites shared history — confirm first.
     if (force && !protectedConfirmed) {
-      const protectedBranches = useSettingsStore.getState().settings.protectedBranches ?? []
-      if (protectedBranches.map((b) => b.trim()).includes(branch)) {
+      const protectedBranches = await gitApi.protectedBranches(path).catch(() => [] as string[])
+      if (protectedBranches.includes(branch)) {
         useUIStore.getState().openModal({
           kind: 'confirm',
           danger: true,

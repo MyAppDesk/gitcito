@@ -28,7 +28,8 @@ import {
   BarChart3,
   FileText,
   Camera,
-  KeyRound
+  KeyRound,
+  Settings
 } from 'lucide-react'
 import type { MenuItem } from '../stores/ui'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
@@ -281,6 +282,13 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
           <span className="split-arrow">
             <ChevronDown size={13} />
           </span>
+        </button>
+        <button
+          className="tool-btn icon-only"
+          title="Repository settings"
+          onClick={() => openModal({ kind: 'repo-settings', repoPath: path })}
+        >
+          <Settings size={16} />
         </button>
       </div>
 

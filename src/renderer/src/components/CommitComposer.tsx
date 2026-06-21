@@ -70,7 +70,6 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
   const setFileView = useUIStore((s) => s.setFileView)
   const activeProfile = useSettingsStore((s) => s.activeProfile)
   const largeFileKb = useSettingsStore((s) => s.settings.largeFileKb)
-  const protectedBranches = useSettingsStore((s) => s.settings.protectedBranches)
   const aiEnabled = useSettingsStore((s) => s.activeProfile().ai.enabled !== false)
 
   const layout = useUIStore((s) => s.layout)
@@ -492,7 +491,8 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
       }
     }
     // Protected-branch warning (committing straight to main/master/…).
-    const onProtected = !amend && protectedBranches.map((b) => b.trim()).includes(repo.branches.current)
+    const protectedList = await gitApi.protectedBranches(path).catch(() => [] as string[])
+    const onProtected = !amend && protectedList.includes(repo.branches.current)
 
     if (flagged.length > 0 || onProtected) {
       const all = flagged.map((f) => f.path)

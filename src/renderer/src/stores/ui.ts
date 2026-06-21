@@ -78,6 +78,7 @@ export type ModalSpec =
   | { kind: 'snapshots'; repoPath: string }
   | { kind: 'cheatsheet' }
   | { kind: 'create-issue'; repoPath: string; remoteUrl: string }
+  | { kind: 'repo-settings'; repoPath: string }
   | { kind: 'bisect'; repoPath: string }
   | { kind: 'hooks'; repoPath: string }
   | { kind: 'lfs'; repoPath: string }

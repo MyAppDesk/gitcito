@@ -1477,21 +1477,7 @@ function SecurityPage(): React.JSX.Element {
       </label>
       <span className="settings-hint">{t('settings.largeFileWarnHint')}</span>
 
-      <label style={{ marginTop: 12 }}>
-        {t('settings.protectedBranches')}
-        <input
-          type="text"
-          value={(settings.protectedBranches ?? []).join(', ')}
-          placeholder="main, master"
-          onChange={(e) =>
-            update((s) => ({
-              ...s,
-              protectedBranches: e.target.value.split(',').map((b) => b.trim()).filter(Boolean)
-            }))
-          }
-        />
-      </label>
-      <span className="settings-hint">{t('settings.protectedBranchesHint')}</span>
+      <span className="settings-hint" style={{ display: 'block', marginTop: 12 }}>{t('settings.protectedBranchesMoved')}</span>
 
       <h4 style={{ marginTop: 18 }}>
         <KeyRound size={14} /> {t('settings.vault')}

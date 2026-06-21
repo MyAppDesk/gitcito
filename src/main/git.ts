@@ -1036,6 +1036,25 @@ export const gitService = {
     return Array.from(new Set(raw.split('\0').filter(Boolean)))
   },
 
+  /**
+   * Per-repo protected branches, stored in git config (gitcito.protectedbranches,
+   * comma-joined) so they travel with the repo. Unset → default main/master.
+   */
+  async protectedBranches(repoPath: string): Promise<string[]> {
+    const raw = await gitFor(repoPath).raw(['config', '--get', 'gitcito.protectedbranches']).catch(() => null)
+    if (raw === null) return ['main', 'master'] // never configured → sensible default
+    return raw
+      .trim()
+      .split(',')
+      .map((b) => b.trim())
+      .filter(Boolean)
+  },
+
+  async setProtectedBranches(repoPath: string, branches: string[]): Promise<void> {
+    const value = branches.map((b) => b.trim()).filter(Boolean).join(',')
+    await gitFor(repoPath).raw(['config', 'gitcito.protectedbranches', value])
+  },
+
   /** Tracked files only (in the index) — for the push-time secret guard. */
   async listTrackedFiles(repoPath: string): Promise<string[]> {
     const raw = await gitFor(repoPath).raw(['ls-files', '--cached', '-z']).catch(() => '')

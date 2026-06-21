@@ -871,8 +871,6 @@ export interface AppSettings {
   shortcuts: Record<string, string>
   /** Warn before committing files larger than this many KB (0 = off). */
   largeFileKb: number
-  /** Branch names to warn about committing/force-pushing directly to. */
-  protectedBranches: string[]
   /** Last app version the user has seen the changelog for. Undefined until the
    *  first run that records it; used to detect upgrades. */
   lastSeenVersion?: string
@@ -1035,7 +1033,6 @@ export function defaultSettings(): AppSettings {
     wipSnapshotMinutes: 0,
     maskSecrets: true,
     shortcuts: {},
-    largeFileKb: 5120,
-    protectedBranches: ['main', 'master']
+    largeFileKb: 5120
   }
 }

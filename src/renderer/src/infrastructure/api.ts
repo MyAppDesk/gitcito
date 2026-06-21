@@ -124,6 +124,9 @@ export const gitApi = {
   listDir: (path: string, relDir?: string) => call<TreeEntry[]>('listDir', path, relDir),
   listFiles: (path: string) => call<string[]>('listFiles', path),
   listTrackedFiles: (path: string) => call<string[]>('listTrackedFiles', path),
+  protectedBranches: (path: string) => call<string[]>('protectedBranches', path),
+  setProtectedBranches: (path: string, branches: string[]) =>
+    call<void>('setProtectedBranches', path, branches),
   fileSizes: (path: string, files: string[]) =>
     call<Record<string, { size: number; binary: boolean }>>('fileSizes', path, files),
   treeStatus: (path: string) => call<Record<string, TreeStatusKind>>('treeStatus', path),

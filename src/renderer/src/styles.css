@@ -8828,3 +8828,30 @@ button.insights-row:hover { background: var(--bg-2); }
 
 /* ─── Create-PR meta fields ────────────────────────────────────────────── */
 .pr-meta { margin-top: 10px; }
+
+/* ─── Branch multi-select (repo settings) ──────────────────────────────── */
+.bms { position: relative; margin-top: 8px; }
+.bms-control {
+  display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+  min-height: 36px; padding: 5px 8px;
+  background: var(--bg-0); border: 1px solid var(--border); border-radius: 8px; cursor: text;
+}
+.bms-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 12px; padding: 2px 4px 2px 8px;
+  background: var(--accent-soft); color: var(--accent); border-radius: 6px;
+}
+.bms-chip-x { display: inline-flex; border: none; background: transparent; color: inherit; cursor: pointer; padding: 0; }
+.bms-input { flex: 1; min-width: 100px; border: none; background: transparent; color: var(--text-0); font-size: 13px; outline: none; }
+.bms-menu {
+  position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 5;
+  max-height: 200px; overflow-y: auto;
+  background: var(--bg-1); border: 1px solid var(--border); border-radius: 8px;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.4); padding: 4px;
+}
+.bms-opt {
+  display: block; width: 100%; text-align: left; padding: 6px 10px;
+  border: none; background: transparent; color: var(--text-0); border-radius: 6px; cursor: pointer; font-size: 13px;
+}
+.bms-opt:hover { background: var(--accent-soft); }
+.bms-opt.add { color: var(--accent); }

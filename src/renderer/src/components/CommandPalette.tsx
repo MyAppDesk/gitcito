@@ -135,6 +135,10 @@ export function CommandPalette(): React.JSX.Element {
       { id: 'notifications', title: 'GitHub notifications', group: 'Actions', keywords: 'inbox review mention github bell', icon: <Bell size={15} />, run: act(() => useSettingsStore.getState().openPageTab({ type: 'notifications' })) },
       { id: 'changelog', title: "Open What's new (changelog)", group: 'Actions', keywords: 'release notes version', icon: <FileText size={15} />, run: act(() => useSettingsStore.getState().openPageTab({ type: 'changelog' })) },
       { id: 'settings', title: 'Open settings', group: 'Actions', keywords: 'preferences config', icon: <Settings size={15} />, run: act(() => ui.openModal({ kind: 'settings' })) },
+      { id: 'settings-security', title: 'Settings: Security', group: 'Actions', keywords: 'preferences mask secrets large file protected branch vault', icon: <Settings size={15} />, run: act(() => ui.openModal({ kind: 'settings', page: 'security' })) },
+      { id: 'settings-shortcuts', title: 'Settings: Shortcuts', group: 'Actions', keywords: 'preferences keybindings rebind keys', icon: <Settings size={15} />, run: act(() => ui.openModal({ kind: 'settings', page: 'shortcuts' })) },
+      { id: 'settings-ai', title: 'Settings: AI', group: 'Actions', keywords: 'preferences openai model provider', icon: <Settings size={15} />, run: act(() => ui.openModal({ kind: 'settings', page: 'ai' })) },
+      { id: 'settings-themes', title: 'Settings: Themes', group: 'Actions', keywords: 'preferences appearance colors', icon: <Settings size={15} />, run: act(() => ui.openModal({ kind: 'settings', page: 'themes' })) },
       { id: 'cheatsheet', title: 'Keyboard shortcuts', group: 'Actions', keywords: 'shortcuts keys cheatsheet rebind hotkeys', icon: <Keyboard size={15} />, run: act(() => ui.openModal({ kind: 'cheatsheet' })) }
     )
 

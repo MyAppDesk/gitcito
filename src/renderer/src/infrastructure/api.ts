@@ -378,6 +378,14 @@ export const hostingApi = {
     window.api.hosting.issueDetail(remoteUrl, tokens, number) as Promise<IssueDetail>,
   setIssueState: (remoteUrl: string, tokens: { github?: string }, number: number, state: 'open' | 'closed') =>
     window.api.hosting.setIssueState(remoteUrl, tokens, number, state) as Promise<void>,
+  createIssue: (remoteUrl: string, tokens: { github?: string }, opts: { title: string; body?: string }) =>
+    window.api.hosting.createIssue(remoteUrl, tokens, opts) as Promise<{ number: number; url: string }>,
+  applyPrMeta: (
+    remoteUrl: string,
+    tokens: { github?: string },
+    number: number,
+    meta: { reviewers?: string[]; labels?: string[]; assignees?: string[] }
+  ) => window.api.hosting.applyPrMeta(remoteUrl, tokens, number, meta) as Promise<void>,
   listMilestones: (remoteUrl: string, tokens: { github?: string }) =>
     window.api.hosting.listMilestones(remoteUrl, tokens) as Promise<{
       provider: HostingProvider

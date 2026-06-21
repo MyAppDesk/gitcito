@@ -8825,3 +8825,6 @@ button.insights-row:hover { background: var(--bg-2); }
 
 /* ─── AI PR draft button ───────────────────────────────────────────────── */
 .pr-desc-label { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+
+/* ─── Create-PR meta fields ────────────────────────────────────────────── */
+.pr-meta { margin-top: 10px; }

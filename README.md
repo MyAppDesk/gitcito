@@ -99,7 +99,8 @@
 - **Git hooks manager** — list, enable/disable, edit and create hooks; detects a custom `core.hooksPath` and pre-commit framework.
 
 ### Hosting & pull requests
-- **Create pull / merge requests** from the app — branch dropdowns, prefilled title/body from the branch's commits, draft toggle; from branch-compare, the graph, the PR panel `+`, or an issue (auto-`Closes #N`). Works on **GitHub, GitLab, Bitbucket and Azure DevOps**, and open PRs/MRs are listed in the sidebar for all four.
+- **Create pull / merge requests** from the app — branch dropdowns, prefilled title/body from the branch's commits, draft toggle, and (GitHub) **reviewers / labels / assignees** applied on create; from branch-compare, the graph, the PR panel `+`, or an issue (auto-`Closes #N`). Works on **GitHub, GitLab, Bitbucket and Azure DevOps**, and open PRs/MRs are listed in the sidebar for all four.
+- **Create issues** _(GitHub)_ from the app (title + Markdown body) via the command palette.
 - **Review PRs** _(GitHub only)_ — open conversation + review state, **inline review threads** (line comments grouped by file:line with diff-hunk context, with reply), comment, approve / request changes, and **merge** (merge / squash / rebase).
 - **Issues** _(GitHub only)_ — browse open issues, then a full **issue tab**: body, comments, labels, assignees, milestone, Projects v2 fields (Priority/Start/Target/Effort), close/reopen, and **create a branch for an issue** (with AI naming).
 - **Milestones** _(GitHub only)_ — a sidebar list with progress, and a **milestone tab** showing its issues.

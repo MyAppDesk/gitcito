@@ -25,7 +25,8 @@ import {
   BarChart3,
   Camera,
   KeyRound,
-  Keyboard
+  Keyboard,
+  CircleDot
 } from 'lucide-react'
 import { useUIStore } from '../stores/ui'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
@@ -119,6 +120,12 @@ export function CommandPalette(): React.JSX.Element {
       { id: 'stash', title: 'Stash changes', group: 'Actions', keywords: 'save shelve', icon: <Archive size={15} />, run: act(() => void repoActions.stash(path)) },
       { id: 'create-branch', title: 'Create branch…', group: 'Actions', keywords: 'new', icon: <Plus size={15} />, run: act(() => ui.openModal({ kind: 'create-branch', path, currentBranch: repo.branches.current })) },
       { id: 'create-pr', title: 'Create pull request…', group: 'Actions', keywords: 'pr github merge request', icon: <GitPullRequest size={15} />, run: act(() => ui.openModal({ kind: 'create-pr', repoPath: path, source: repo.branches.current })) },
+      ...((): Command[] => {
+        const origin = repo.remotes.find((r) => r.name === 'origin') ?? repo.remotes[0]
+        return origin
+          ? [{ id: 'create-issue', title: 'Create issue…', group: 'Actions', keywords: 'github issue new bug report', icon: <CircleDot size={15} />, run: act(() => ui.openModal({ kind: 'create-issue', repoPath: path, remoteUrl: origin.url })) } as Command]
+          : []
+      })(),
       { id: 'stack', title: 'Branch stack…', group: 'Actions', keywords: 'stacked branches graphite restack dependent', icon: <Layers size={15} />, run: act(() => ui.openModal({ kind: 'stack', repoPath: path })) },
       { id: 'insights', title: 'Repository insights', group: 'Actions', keywords: 'stats churn hotspots authors contributors graph analytics', icon: <BarChart3 size={15} />, run: act(() => useSettingsStore.getState().openPageTab({ type: 'insights', repoPath: path })) },
       { id: 'changelog-gen', title: 'Generate changelog…', group: 'Actions', keywords: 'conventional commits release notes changelog', icon: <FileText size={15} />, run: act(() => ui.openModal({ kind: 'changelog-gen', repoPath: path })) },

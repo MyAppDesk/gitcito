@@ -32,6 +32,9 @@ export function CreatePRModal({ spec }: { spec: Extract<ModalSpec, { kind: 'crea
   const [draft, setDraft] = useState(false)
   const [busy, setBusy] = useState(false)
   const [aiBusy, setAiBusy] = useState(false)
+  const [reviewers, setReviewers] = useState('')
+  const [labels, setLabels] = useState('')
+  const [assignees, setAssignees] = useState('')
   const aiEnabled = profile.ai?.enabled !== false
 
   // Draft the PR title + body from the branch's commits + diff via AI.
@@ -83,12 +86,29 @@ export function CreatePRModal({ spec }: { spec: Extract<ModalSpec, { kind: 'crea
     bitbucket: profile.bitbucketToken || undefined
   }
   const valid = !!remoteUrl && !!source && !!target && source !== target && !!title.trim() && !busy
+  const isGitHub = /github\.com/i.test(remoteUrl ?? '')
+
+  const splitList = (s: string): string[] =>
+    s
+      .split(',')
+      .map((x) => x.trim().replace(/^@/, ''))
+      .filter(Boolean)
 
   const submit = async (): Promise<void> => {
     if (!valid) return
     setBusy(true)
     try {
       const res = await hostingApi.createPR(remoteUrl, tokens, { title: title.trim(), body, source, target, draft })
+      // Best-effort: apply reviewers / labels / assignees (GitHub only).
+      if (isGitHub && (reviewers.trim() || labels.trim() || assignees.trim())) {
+        await hostingApi
+          .applyPrMeta(remoteUrl, tokens, res.number, {
+            reviewers: splitList(reviewers),
+            labels: splitList(labels),
+            assignees: splitList(assignees)
+          })
+          .catch(() => {})
+      }
       closeModal()
       toast('success', `Created PR #${res.number}`)
       void window.api.openExternal(res.url)
@@ -171,6 +191,23 @@ export function CreatePRModal({ spec }: { spec: Extract<ModalSpec, { kind: 'crea
         placeholder="Describe the change…"
         spellCheck
       />
+
+      {isGitHub && (
+        <div className="pr-meta">
+          <label className="modal-label">Reviewers</label>
+          <input className="modal-input" value={reviewers} onChange={(e) => setReviewers(e.target.value)} placeholder="octocat, hubot (comma-separated logins)" />
+          <div className="form-row two">
+            <label>
+              Labels
+              <input className="modal-input" value={labels} onChange={(e) => setLabels(e.target.value)} placeholder="bug, enhancement" />
+            </label>
+            <label>
+              Assignees
+              <input className="modal-input" value={assignees} onChange={(e) => setAssignees(e.target.value)} placeholder="octocat" />
+            </label>
+          </div>
+        </div>
+      )}
 
       <label className="pr-draft">
         <input type="checkbox" checked={draft} onChange={(e) => setDraft(e.target.checked)} />

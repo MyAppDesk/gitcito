@@ -761,6 +761,58 @@ async function setIssueState(
   })
 }
 
+/** Create a new issue. GitHub only. Returns its number + web URL. */
+async function createIssue(
+  remoteUrl: string,
+  tokens: { github?: string },
+  opts: { title: string; body?: string }
+): Promise<{ number: number; url: string }> {
+  const { owner, repo, token } = ghRepoOf(remoteUrl, tokens.github)
+  const d = await ghJson<{ number: number; html_url: string }>(
+    `https://api.github.com/repos/${owner}/${repo}/issues`,
+    token,
+    { method: 'POST', body: JSON.stringify({ title: opts.title, body: opts.body || '' }) }
+  )
+  return { number: d.number, url: d.html_url }
+}
+
+/**
+ * Best-effort apply reviewers / labels / assignees to a PR after creation.
+ * Each call is independent; a failure on one doesn't block the others.
+ */
+async function applyPrMeta(
+  remoteUrl: string,
+  tokens: { github?: string },
+  number: number,
+  meta: { reviewers?: string[]; labels?: string[]; assignees?: string[] }
+): Promise<void> {
+  const { owner, repo, token } = ghRepoOf(remoteUrl, tokens.github)
+  const api = `https://api.github.com/repos/${owner}/${repo}`
+  const tasks: Promise<unknown>[] = []
+  if (meta.reviewers?.length)
+    tasks.push(
+      ghJson(`${api}/pulls/${number}/requested_reviewers`, token, {
+        method: 'POST',
+        body: JSON.stringify({ reviewers: meta.reviewers })
+      }).catch(() => {})
+    )
+  if (meta.labels?.length)
+    tasks.push(
+      ghJson(`${api}/issues/${number}/labels`, token, {
+        method: 'POST',
+        body: JSON.stringify({ labels: meta.labels })
+      }).catch(() => {})
+    )
+  if (meta.assignees?.length)
+    tasks.push(
+      ghJson(`${api}/issues/${number}/assignees`, token, {
+        method: 'POST',
+        body: JSON.stringify({ assignees: meta.assignees })
+      }).catch(() => {})
+    )
+  await Promise.all(tasks)
+}
+
 async function listRepositories(provider: RepoHost, token: string, org?: string): Promise<RemoteRepo[]> {
   if (provider === 'github') {
     if (!token.trim()) throw new Error('Not connected. Add a GitHub token in Settings → Integrations.')
@@ -1217,5 +1269,15 @@ export function registerHostingHandlers(): void {
     'hosting:setIssueState',
     (_e, remoteUrl: string, tokens: { github?: string }, number: number, state: 'open' | 'closed') =>
       setIssueState(remoteUrl, tokens, number, state)
+  )
+  ipcMain.handle(
+    'hosting:createIssue',
+    (_e, remoteUrl: string, tokens: { github?: string }, opts: { title: string; body?: string }) =>
+      createIssue(remoteUrl, tokens, opts)
+  )
+  ipcMain.handle(
+    'hosting:applyPrMeta',
+    (_e, remoteUrl: string, tokens: { github?: string }, number: number, meta: { reviewers?: string[]; labels?: string[]; assignees?: string[] }) =>
+      applyPrMeta(remoteUrl, tokens, number, meta)
   )
 }

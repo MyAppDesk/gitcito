@@ -77,6 +77,7 @@ export type ModalSpec =
   | { kind: 'changelog-gen'; repoPath: string }
   | { kind: 'snapshots'; repoPath: string }
   | { kind: 'cheatsheet' }
+  | { kind: 'create-issue'; repoPath: string; remoteUrl: string }
   | { kind: 'bisect'; repoPath: string }
   | { kind: 'hooks'; repoPath: string }
   | { kind: 'lfs'; repoPath: string }

@@ -26,6 +26,7 @@ import { ChangelogGenModal } from './ChangelogGenModal'
 import { SnapshotsModal } from './SnapshotsModal'
 import { ErrorBoundary } from './ErrorBoundary'
 import { CheatsheetModal } from './CheatsheetModal'
+import { CreateIssueModal } from './CreateIssueModal'
 
 function GroupColorModal({ spec }: { spec: Extract<ModalSpec, { kind: 'group-color' }> }): React.JSX.Element {
   const closeModal = useUIStore((s) => s.closeModal)
@@ -1297,6 +1298,7 @@ export function ModalHost(): React.JSX.Element {
             {modal.kind === 'changelog-gen' && <ChangelogGenModal repoPath={modal.repoPath} />}
             {modal.kind === 'snapshots' && <SnapshotsModal repoPath={modal.repoPath} />}
             {modal.kind === 'cheatsheet' && <CheatsheetModal />}
+            {modal.kind === 'create-issue' && <CreateIssueModal repoPath={modal.repoPath} remoteUrl={modal.remoteUrl} />}
             {modal.kind === 'bisect' && <BisectModal repoPath={modal.repoPath} />}
             {modal.kind === 'hooks' && <HooksModal repoPath={modal.repoPath} />}
             {modal.kind === 'lfs' && <LfsModal repoPath={modal.repoPath} />}

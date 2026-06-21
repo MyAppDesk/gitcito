@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Settings, X, ShieldCheck, Loader2, BarChart3, History, ScrollText, Sparkles } from 'lucide-react'
+import { Settings, X, ShieldCheck, Loader2, BarChart3, History, ScrollText } from 'lucide-react'
 import { gitApi, logApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
 import { useRepoStore } from '../stores/repo'
@@ -65,7 +65,7 @@ function RepoLogsTab({ repoPath }: { repoPath: string }): React.JSX.Element {
   )
 }
 
-type Tab = 'general' | 'ai' | 'analytics' | 'history' | 'logs'
+type Tab = 'general' | 'analytics' | 'history' | 'logs'
 
 /** A chip multi-select: pick from the repo's branches or type a free value. */
 function BranchMultiSelect({
@@ -203,14 +203,11 @@ function GeneralTab({ repoPath }: { repoPath: string }): React.JSX.Element {
 export function RepoSettingsModal({ repoPath }: { repoPath: string }): React.JSX.Element {
   const repo = useRepoStore((s) => s.repos[repoPath])
   const aiEnabled = useSettingsStore((s) => s.activeProfile().ai.enabled !== false)
-  const openModal = useUIStore((s) => s.openModal)
   const t = useT()
   const [tab, setTab] = useState<Tab>('general')
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: 'general', label: t('repoSettings.general'), icon: <Settings size={13} /> },
-    // AI tab only when AI features are enabled.
-    ...(aiEnabled ? [{ id: 'ai' as Tab, label: t('repoSettings.ai'), icon: <Sparkles size={13} /> }] : []),
     { id: 'analytics', label: t('repoSettings.analytics'), icon: <BarChart3 size={13} /> },
     { id: 'history', label: t('repoSettings.history'), icon: <History size={13} /> },
     { id: 'logs', label: t('repoSettings.logs'), icon: <ScrollText size={13} /> }
@@ -231,22 +228,6 @@ export function RepoSettingsModal({ repoPath }: { repoPath: string }): React.JSX
       </div>
       <div className="repo-settings-body">
         {tab === 'general' && <GeneralTab repoPath={repoPath} />}
-        {tab === 'ai' && (
-          <>
-            <h4 style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Sparkles size={14} /> {t('repoSettings.aiConfig')}
-            </h4>
-            <span className="settings-hint">{t('repoSettings.aiConfigHint')}</span>
-            <div style={{ marginTop: 10 }}>
-              <button
-                className="btn ghost small"
-                onClick={() => openModal({ kind: 'ai-config-wizard', repoPath, repoName: repo?.name ?? '', initialTab: 'config' })}
-              >
-                <Sparkles size={13} /> {t('repoSettings.generateConfig')}
-              </button>
-            </div>
-          </>
-        )}
         {tab === 'analytics' && <AnalyticsSection aiEnabled={aiEnabled} />}
         {tab === 'history' && <RepoHistorySection />}
         {tab === 'logs' && <RepoLogsTab repoPath={repoPath} />}

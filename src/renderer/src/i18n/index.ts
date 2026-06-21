@@ -108,10 +108,6 @@ const en = {
   // Repository settings + create issue
   'repoSettings.title': 'Repository settings',
   'repoSettings.general': 'General',
-  'repoSettings.ai': 'AI',
-  'repoSettings.aiConfig': 'AI config files',
-  'repoSettings.aiConfigHint': 'Scaffold .gitignore, CI workflows, agent rules and more for this repo with AI.',
-  'repoSettings.generateConfig': 'Generate config files…',
   'repoSettings.analytics': 'Analytics',
   'repoSettings.history': 'History',
   'repoSettings.logs': 'Logs',
@@ -402,10 +398,6 @@ const es: Dict = {
 
   'repoSettings.title': 'Ajustes del repositorio',
   'repoSettings.general': 'General',
-  'repoSettings.ai': 'IA',
-  'repoSettings.aiConfig': 'Archivos de configuración con IA',
-  'repoSettings.aiConfigHint': 'Genera .gitignore, workflows de CI, reglas de agente y más para este repo con IA.',
-  'repoSettings.generateConfig': 'Generar archivos…',
   'repoSettings.analytics': 'Analíticas',
   'repoSettings.history': 'Historial',
   'repoSettings.logs': 'Registro',

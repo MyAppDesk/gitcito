@@ -91,7 +91,7 @@
 - **Multi-repo batch** — **Fetch all** / **Pull all** every repository in a group at once (from the group home or the group tab's right-click menu), with a single summary of what succeeded.
 - **Stashes** with untracked files, messages, per-file apply, and a details/diff view.
 - **Tags**: create/delete locally, push or delete on the remote, browse remote tags.
-- **Worktrees**: create, remove and open a linked worktree in its own window.
+- **Worktrees**: create, remove and open a linked worktree in its own window — or right-click any local branch → **Open in a worktree** to spin one up in a sibling folder and open it as a tab.
 - **Submodules**: add, update (init & checkout), sync URLs, and remove, with live in-sync / modified / uninitialized status.
 - **Git LFS** — detect git-lfs, manage tracked patterns, see downloaded vs pointer files, pull & prune.
 - **Sparse-checkout** (cone mode) to limit the working tree to the folders you pick, plus a **partial clone** (`--filter=blob:none`) option.

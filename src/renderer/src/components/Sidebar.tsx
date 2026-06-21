@@ -493,8 +493,19 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     ])
   }
 
+  // Create a worktree for `branch` in a sibling folder and open it as a tab.
+  const openInWorktree = async (branch: string): Promise<void> => {
+    const segs = path.split(/[/\\]/).filter(Boolean)
+    const repoName = segs[segs.length - 1]
+    const parent = path.slice(0, path.length - repoName.length - 1)
+    const dir = `${parent}/${repoName}--${branch.replace(/[^\w.-]+/g, '-')}`
+    const ok = await repoActions.worktreeAdd(path, dir, branch, false)
+    if (ok) useSettingsStore.getState().openRepoTab({ path: dir, name: `${repoName} · ${branch}` })
+  }
+
   const localMenu = (b: BranchInfo): MenuItem[] => [
     { label: `Checkout ${b.name}`, disabled: b.isCurrent, onClick: () => void repoActions.checkout(path, b.name) },
+    { label: `Open ${b.name} in a worktree`, onClick: () => void openInWorktree(b.name) },
     {
       label: `Merge ${b.name} into ${repo.branches.current}`,
       disabled: b.isCurrent,

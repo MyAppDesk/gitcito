@@ -451,6 +451,24 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
   const [previewHash, setPreviewHash] = useState<string | null>(null)
   // Row hovered with no ref of its own — show which branch contains it.
   const [hoverRow, setHoverRow] = useState<string | null>(null)
+
+  // ── Virtualized rendering ──
+  // Every row/node/edge is absolutely positioned by its row index, so we can
+  // mount only the slice intersecting the viewport. The canvas keeps its full
+  // height, so the scrollbar and scroll-to-commit (which scrolls by `idx*ROW_H`)
+  // stay correct regardless of which rows are in the DOM.
+  const [scrollTop, setScrollTop] = useState(0)
+  const [viewportH, setViewportH] = useState(0)
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+    const measure = (): void => setViewportH(el.clientHeight)
+    measure()
+    if (typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
   const preview = useMemo(() => {
     if (!previewHash) return null
     const byHash = new Map(displayCommits.map((c) => [c.hash, c]))
@@ -500,6 +518,15 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
 
   const graphAuto = LEFT_PAD + Math.min(layout.laneCount, 24) * LANE_W + 18
   const totalHeight = displayCommits.length * ROW_H
+
+  // Visible row window [firstRow, lastRow] with overscan. Before the viewport is
+  // measured, fall back to a generous height so the first paint isn't blank.
+  const OVERSCAN = 6
+  const effViewport = viewportH || 1000
+  const firstRow = Math.max(0, Math.floor(scrollTop / ROW_H) - OVERSCAN)
+  const lastRow = Math.min(displayCommits.length - 1, Math.ceil((scrollTop + effViewport) / ROW_H) + OVERSCAN)
+  const visibleRows: number[] = []
+  for (let i = firstRow; i <= lastRow; i++) visibleRows.push(i)
   const filter = graphFilter.trim().toLowerCase()
   const branchCol = columns.branch.visible ? columns.branch.width : 0
   const graphCol = columns.graph.visible ? (columns.graph.width > 0 ? columns.graph.width : graphAuto) : 0
@@ -579,9 +606,10 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
 
   // Auto-load more commits when scrolling near the bottom.
   const onScroll = (): void => {
-    if (!autoLoadOnScroll) return
     const el = scrollRef.current
     if (!el) return
+    setScrollTop(el.scrollTop)
+    if (!autoLoadOnScroll) return
     if (el.scrollTop + el.clientHeight >= el.scrollHeight - ROW_H * 4 && repo.commits.length >= repo.maxCount) {
       loadMore(repo.path)
     }
@@ -1031,7 +1059,9 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
           const clampX = (x: number) => Math.min(x, graphCol - NODE_R - 1)
           return (
             <svg className="graph-svg" width={graphCol} height={totalHeight} style={{ left: branchCol }}>
-              {[...layout.edges].sort((a, b) => Math.max(a.fromLane, a.toLane) - Math.max(b.fromLane, b.toLane)).map((e, i) => {
+              {[...layout.edges]
+                .filter((e) => Math.max(e.fromRow, e.toRow) >= firstRow && Math.min(e.fromRow, e.toRow) <= lastRow)
+                .sort((a, b) => Math.max(a.fromLane, a.toLane) - Math.max(b.fromLane, b.toLane)).map((e, i) => {
                 const x1 = clampX(LEFT_PAD + e.fromLane * LANE_W)
                 const y1 = e.fromRow * ROW_H + ROW_H / 2
                 const x2 = clampX(LEFT_PAD + e.toLane * LANE_W)
@@ -1050,7 +1080,8 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
                   />
                 )
               })}
-              {displayCommits.map((c) => {
+              {visibleRows.map((row) => {
+                const c = displayCommits[row]
                 const n = layout.nodes.get(c.hash)
                 if (!n) return null
                 const cx = clampX(LEFT_PAD + n.lane * LANE_W)
@@ -1116,7 +1147,8 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
             overlay is clipped to the branch+graph region so avatars never spill
             over the commit messages when columns are resized too narrow. */}
         <div className="graph-nodes" style={{ width: branchCol + graphCol }}>
-          {displayCommits.map((c) => {
+          {visibleRows.map((row) => {
+            const c = displayCommits[row]
             const n = layout.nodes.get(c.hash)
             if (!n) return null
             if (c.hash === WIP_HASH || stashBySha.has(c.hash)) return null
@@ -1146,7 +1178,8 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
         </>
         )}
 
-        {displayCommits.map((c, row) => {
+        {visibleRows.map((row) => {
+          const c = displayCommits[row]
           const isWip = c.hash === WIP_HASH
           const stash = stashBySha.get(c.hash)
           const selected =

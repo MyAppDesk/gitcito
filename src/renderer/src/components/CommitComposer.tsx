@@ -55,6 +55,22 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
   const summary = useRepoStore((s) => s.drafts[repo.path] ?? '')
   const setSummary = useRepoStore((s) => s.setDraft).bind(null, repo.path)
   const [description, setDescription] = useState('')
+  // Commit message recall: ↑/↓ in the summary cycles recent commit subjects.
+  const histIdx = useRef(-1)
+  const histSaved = useRef('')
+  const recentMessages = useMemo(() => {
+    const seen = new Set<string>()
+    const out: string[] = []
+    for (const c of repo.commits) {
+      const s = c.subject.trim()
+      if (s && !seen.has(s)) {
+        seen.add(s)
+        out.push(s)
+        if (out.length >= 25) break
+      }
+    }
+    return out
+  }, [repo.commits])
   const lintHints = useMemo(() => lintCommit(summary, description), [summary, description])
   const subjLevel = subjectCounterLevel(summary.trim().length)
   const [amend, setAmend] = useState(false)
@@ -742,9 +758,26 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
           <input
             className="commit-summary"
             placeholder="Commit summary"
+            title="↑ / ↓ recall recent commit messages"
             value={summary}
             maxLength={100}
-            onChange={(e) => setSummary(e.target.value)}
+            onChange={(e) => {
+              histIdx.current = -1 // typing cancels history navigation
+              setSummary(e.target.value)
+            }}
+            onKeyDown={(e) => {
+              const recents = recentMessages
+              if (e.key === 'ArrowUp' && recents.length) {
+                e.preventDefault()
+                if (histIdx.current === -1) histSaved.current = summary
+                histIdx.current = Math.min(histIdx.current + 1, recents.length - 1)
+                setSummary(recents[histIdx.current])
+              } else if (e.key === 'ArrowDown' && histIdx.current >= 0) {
+                e.preventDefault()
+                histIdx.current -= 1
+                setSummary(histIdx.current === -1 ? histSaved.current : recents[histIdx.current])
+              }
+            }}
           />
           {summary.trim().length > 0 && (
             <span className={`commit-counter ${subjLevel}`} title={`Subject length (aim for ≤ ${SUBJECT_IDEAL_LEN})`}>

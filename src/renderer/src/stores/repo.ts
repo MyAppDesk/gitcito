@@ -536,6 +536,20 @@ export const repoActions = {
       redo: () => gitApi.rebaseOnto(path, branch, onto)
     }),
 
+  commitFixup: (path: string, targetSha: string) =>
+    useRepoStore.getState().run(path, `Created fixup! for ${targetSha.slice(0, 7)}`, () => gitApi.commitFixup(path, targetSha), {
+      label: 'fixup commit',
+      undo: () => gitApi.reset(path, 'HEAD~1', 'soft'),
+      redo: () => gitApi.commitFixup(path, targetSha)
+    }),
+
+  autosquash: (path: string, base: string) =>
+    useRepoStore.getState().run(path, 'Autosquashed fixups', () => gitApi.autosquash(path, base), {
+      label: 'autosquash',
+      undo: () => gitApi.reset(path, 'ORIG_HEAD', 'hard'),
+      redo: () => gitApi.autosquash(path, base)
+    }),
+
   fetchAll: async (path: string) => {
     const ok = await useRepoStore.getState().run(path, 'Fetched all remotes', () => gitApi.fetchAll(path))
     if (ok) useRepoStore.getState().patch(path, { lastFetchAt: Date.now() })

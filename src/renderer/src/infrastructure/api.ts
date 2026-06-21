@@ -94,6 +94,8 @@ export const gitApi = {
     call<void>('mergeInto', path, source, target, noFf),
   rebase: (path: string, onto: string) => call<void>('rebase', path, onto),
   rebaseOnto: (path: string, branch: string, onto: string) => call<void>('rebaseOnto', path, branch, onto),
+  commitFixup: (path: string, targetSha: string) => call<void>('commitFixup', path, targetSha),
+  autosquash: (path: string, base: string) => call<void>('autosquash', path, base),
 
   fetchAll: (path: string) => call<void>('fetchAll', path),
   pull: (path: string, mode: 'default' | 'ff-only' | 'rebase') => call<void>('pull', path, mode),

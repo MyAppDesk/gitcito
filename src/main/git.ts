@@ -814,6 +814,21 @@ export const gitService = {
     await gitFor(repoPath).rebase(['--abort'])
   },
 
+  /** Commit the staged changes as a `fixup!` of `targetSha` (for autosquash). */
+  async commitFixup(repoPath: string, targetSha: string): Promise<void> {
+    await gitFor(repoPath).raw(['commit', `--fixup=${targetSha}`])
+  },
+
+  /**
+   * Rebase onto `base`, auto-ordering and folding any fixup!/squash! commits.
+   * Runs non-interactively (the auto-generated todo is accepted as-is).
+   */
+  async autosquash(repoPath: string, base: string): Promise<void> {
+    await gitFor(repoPath)
+      .env({ ...process.env, GIT_SEQUENCE_EDITOR: 'true', GIT_EDITOR: 'true' })
+      .rebase(['-i', '--autosquash', base])
+  },
+
   // ─── Sync operations ───────────────────────────────────────────────────────
 
   async fetchAll(repoPath: string): Promise<void> {

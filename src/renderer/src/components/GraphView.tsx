@@ -669,6 +669,22 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
           base: c.hash,
           baseSubject: c.subject
         })
+    },
+    {
+      label: 'Fixup staged changes into this commit',
+      disabled: (repo.status?.staged.length ?? 0) === 0,
+      onClick: () => void repoActions.commitFixup(repo.path, c.hash)
+    },
+    {
+      label: 'Autosquash fixups from here',
+      onClick: () =>
+        openModal({
+          kind: 'confirm',
+          title: 'Autosquash',
+          message: `Rebase onto ${c.hash.slice(0, 7)} and fold any fixup!/squash! commits into their targets? This rewrites the commits after it.`,
+          confirmLabel: 'Autosquash',
+          onConfirm: () => void repoActions.autosquash(repo.path, c.hash)
+        })
     }
     ]
   }

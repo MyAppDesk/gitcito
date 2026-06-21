@@ -71,7 +71,7 @@
 
 ### Branching, merging & history surgery
 - **Stacked branches** — build a chain of dependent branches (Graphite-style), see the stack visualised bottom→top with per-level commit counts, and **restack** to cascade-rebase the whole chain (`rebase --onto`, so parent rewrites don't duplicate commits) when a lower branch changes. Open a PR for each level against its parent. Parent links live in git config, so they travel with the repo.
-- **Interactive rebase** — drag to reorder, squash, fixup, reword or drop, in a visual editor.
+- **Interactive rebase** — drag to reorder, squash, fixup, reword or drop, in a visual editor. Plus one-click **autosquash**: "fixup staged changes into this commit" creates a `fixup!`, and "autosquash from here" folds all `fixup!`/`squash!` commits into their targets.
 - **Cherry-pick, revert, and reset** (soft / mixed / hard) from the graph.
 - **Branch comparison**: ahead/behind counts, full diff, and a one-click "open a PR" hand-off.
 - **Merge** with fast-forward or forced merge-commit; **rebase onto** any ref.

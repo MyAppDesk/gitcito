@@ -5,6 +5,7 @@ import { useUIStore } from '../stores/ui'
 import { useRepoStore } from '../stores/repo'
 import { useSettingsStore } from '../stores/settings'
 import { AnalyticsSection, RepoHistorySection, OperationLogSection } from './SettingsPanel'
+import { useT } from '../i18n'
 
 type Tab = 'general' | 'analytics' | 'history' | 'logs'
 
@@ -12,11 +13,13 @@ type Tab = 'general' | 'analytics' | 'history' | 'logs'
 function BranchMultiSelect({
   options,
   value,
-  onChange
+  onChange,
+  placeholder = 'Add a branch…'
 }: {
   options: string[]
   value: string[]
   onChange: (next: string[]) => void
+  placeholder?: string
 }): React.JSX.Element {
   const [text, setText] = useState('')
   const [open, setOpen] = useState(false)
@@ -56,7 +59,7 @@ function BranchMultiSelect({
         <input
           className="bms-input"
           value={text}
-          placeholder={value.length ? '' : 'Add a branch…'}
+          placeholder={value.length ? '' : placeholder}
           onFocus={() => setOpen(true)}
           onChange={(e) => { setText(e.target.value); setOpen(true) }}
           onKeyDown={(e) => {
@@ -86,6 +89,7 @@ function BranchMultiSelect({
 function GeneralTab({ repoPath }: { repoPath: string }): React.JSX.Element {
   const closeModal = useUIStore((s) => s.closeModal)
   const toast = useUIStore((s) => s.toast)
+  const t = useT()
   const repo = useRepoStore((s) => s.repos[repoPath])
   const branchOptions = useMemo(() => repo?.branches.locals.map((b) => b.name) ?? [], [repo])
   const [protectedBranches, setProtected] = useState<string[]>([])
@@ -116,24 +120,22 @@ function GeneralTab({ repoPath }: { repoPath: string }): React.JSX.Element {
   return (
     <>
       <h4 style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-        <ShieldCheck size={14} /> Protected branches
+        <ShieldCheck size={14} /> {t('repoSettings.protectedBranches')}
       </h4>
-      <span className="settings-hint">
-        Warns before committing or force-pushing directly to these branches. Stored per-repo in git config.
-      </span>
+      <span className="settings-hint">{t('repoSettings.protectedBranchesHint')}</span>
       {loading ? (
         <div style={{ padding: 12 }}>
           <Loader2 size={15} className="spin" />
         </div>
       ) : (
-        <BranchMultiSelect options={branchOptions} value={protectedBranches} onChange={setProtected} />
+        <BranchMultiSelect options={branchOptions} value={protectedBranches} onChange={setProtected} placeholder={t('repoSettings.addBranch')} />
       )}
       <div className="modal-actions">
         <button className="btn ghost" onClick={closeModal} disabled={saving}>
-          Cancel
+          {t('common.cancel')}
         </button>
         <button className="btn primary" onClick={() => void save()} disabled={saving || loading}>
-          {saving ? <Loader2 size={14} className="spin" /> : null} Save
+          {saving ? <Loader2 size={14} className="spin" /> : null} {t('common.save')}
         </button>
       </div>
     </>
@@ -143,20 +145,21 @@ function GeneralTab({ repoPath }: { repoPath: string }): React.JSX.Element {
 export function RepoSettingsModal({ repoPath }: { repoPath: string }): React.JSX.Element {
   const repo = useRepoStore((s) => s.repos[repoPath])
   const aiEnabled = useSettingsStore((s) => s.activeProfile().ai.enabled !== false)
+  const t = useT()
   const [tab, setTab] = useState<Tab>('general')
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
-    { id: 'general', label: 'General', icon: <Settings size={13} /> },
-    { id: 'analytics', label: 'Analytics', icon: <BarChart3 size={13} /> },
-    { id: 'history', label: 'History', icon: <History size={13} /> },
-    { id: 'logs', label: 'Logs', icon: <ScrollText size={13} /> }
+    { id: 'general', label: t('repoSettings.general'), icon: <Settings size={13} /> },
+    { id: 'analytics', label: t('repoSettings.analytics'), icon: <BarChart3 size={13} /> },
+    { id: 'history', label: t('repoSettings.history'), icon: <History size={13} /> },
+    { id: 'logs', label: t('repoSettings.logs'), icon: <ScrollText size={13} /> }
   ]
 
   return (
     <div className="repo-settings">
       <h3>
         <Settings size={16} style={{ verticalAlign: '-3px', marginRight: 6 }} />
-        Repository settings — {repo?.name}
+        {t('repoSettings.title')} — {repo?.name}
       </h3>
       <div className="repo-settings-tabs">
         {tabs.map((tb) => (

@@ -4,10 +4,12 @@ import { hostingApi, shellApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { useRepoStore } from '../stores/repo'
+import { useT } from '../i18n'
 
 export function CreateIssueModal({ repoPath, remoteUrl }: { repoPath: string; remoteUrl: string }): React.JSX.Element {
   const closeModal = useUIStore((s) => s.closeModal)
   const toast = useUIStore((s) => s.toast)
+  const t = useT()
   const profile = useSettingsStore((s) => s.activeProfile())
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
@@ -20,7 +22,7 @@ export function CreateIssueModal({ repoPath, remoteUrl }: { repoPath: string; re
     setBusy(true)
     try {
       const { url } = await hostingApi.createIssue(remoteUrl, tokens, { title: title.trim(), body: body.trim() })
-      toast('success', 'Issue created')
+      toast('success', t('issue.created'))
       void useRepoStore.getState().refreshIssues(repoPath, { silent: true })
       void shellApi.openExternal(url)
       closeModal()
@@ -35,33 +37,33 @@ export function CreateIssueModal({ repoPath, remoteUrl }: { repoPath: string; re
     <>
       <h3>
         <CircleDot size={16} style={{ verticalAlign: '-3px', marginRight: 6 }} />
-        New issue
+        {t('issue.new')}
       </h3>
-      <label className="modal-label">Title</label>
+      <label className="modal-label">{t('issue.titleLabel')}</label>
       <input
         autoFocus
         className="modal-input"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        placeholder="Issue title"
+        placeholder={t('issue.titlePlaceholder')}
         onKeyDown={(e) => {
           if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) void submit()
         }}
       />
-      <label className="modal-label">Description</label>
+      <label className="modal-label">{t('issue.descriptionLabel')}</label>
       <textarea
         className="pr-body"
         value={body}
         onChange={(e) => setBody(e.target.value)}
-        placeholder="Describe the issue… (Markdown supported)"
+        placeholder={t('issue.descriptionPlaceholder')}
         spellCheck
       />
       <div className="modal-actions">
         <button className="btn ghost" onClick={closeModal} disabled={busy}>
-          Cancel
+          {t('common.cancel')}
         </button>
         <button className="btn primary" onClick={() => void submit()} disabled={busy || !title.trim()}>
-          {busy ? <Loader2 size={14} className="spin" /> : <CircleDot size={14} />} Create issue
+          {busy ? <Loader2 size={14} className="spin" /> : <CircleDot size={14} />} {t('issue.create')}
         </button>
       </div>
     </>

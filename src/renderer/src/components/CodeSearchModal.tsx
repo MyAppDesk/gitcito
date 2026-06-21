@@ -6,10 +6,12 @@ import { useRepoStore } from '../stores/repo'
 import { buildQueryRegExp, highlightHtml, type HighlightLayer } from './FileSearchBar'
 import { guessLanguage, highlightLine } from '../lib/highlight'
 import type { CodeSearchHit, HistorySearchHit } from '../../../shared/types'
+import { useT } from '../i18n'
 
 type Tab = 'files' | 'history'
 
 export function CodeSearchModal({ repoPath }: { repoPath: string }): React.JSX.Element {
+  const t = useT()
   const closeModal = useUIStore((s) => s.closeModal)
   const setFileView = useUIStore((s) => s.setFileView)
   const setFileSearch = useUIStore((s) => s.setFileSearch)
@@ -92,14 +94,14 @@ export function CodeSearchModal({ repoPath }: { repoPath: string }): React.JSX.E
 
   return (
     <div className="codesearch">
-      <h3>Search code</h3>
+      <h3>{t('search.title')}</h3>
 
       <div className="codesearch-tabs">
         <button className={`codesearch-tab ${tab === 'files' ? 'active' : ''}`} onClick={() => setTab('files')}>
-          <FileText size={13} /> Working tree
+          <FileText size={13} /> {t('search.workingTree')}
         </button>
         <button className={`codesearch-tab ${tab === 'history' ? 'active' : ''}`} onClick={() => setTab('history')}>
-          <GitCommit size={13} /> History (pickaxe)
+          <GitCommit size={13} /> {t('search.history')}
         </button>
       </div>
 
@@ -108,14 +110,14 @@ export function CodeSearchModal({ repoPath }: { repoPath: string }): React.JSX.E
         <input
           ref={inputRef}
           className="modal-input codesearch-input"
-          placeholder={tab === 'files' ? 'Search file contents…' : 'Find commits that added/removed text…'}
+          placeholder={tab === 'files' ? t('search.filesPlaceholder') : t('search.historyPlaceholder')}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
         <div className="codesearch-opts">
           <button
             className={`codesearch-opt ${caseSensitive ? 'on' : ''}`}
-            title="Case sensitive"
+            title={t('search.caseSensitive')}
             onClick={() => setCaseSensitive((v) => !v)}
           >
             <CaseSensitive size={15} />
@@ -123,7 +125,7 @@ export function CodeSearchModal({ repoPath }: { repoPath: string }): React.JSX.E
           {tab === 'files' && (
             <button
               className={`codesearch-opt ${wholeWord ? 'on' : ''}`}
-              title="Whole word"
+              title={t('search.wholeWord')}
               onClick={() => setWholeWord((v) => !v)}
             >
               <WholeWord size={15} />
@@ -131,7 +133,7 @@ export function CodeSearchModal({ repoPath }: { repoPath: string }): React.JSX.E
           )}
           <button
             className={`codesearch-opt ${regex ? 'on' : ''}`}
-            title="Regular expression"
+            title={t('search.regex')}
             onClick={() => setRegex((v) => !v)}
           >
             <Regex size={15} />
@@ -142,7 +144,7 @@ export function CodeSearchModal({ repoPath }: { repoPath: string }): React.JSX.E
       <div className="codesearch-meta">
         {loading ? (
           <span className="codesearch-loading">
-            <Loader2 size={13} className="spin" /> Searching…
+            <Loader2 size={13} className="spin" /> {t('search.searching')}
           </span>
         ) : query.trim() ? (
           <span>
@@ -152,9 +154,7 @@ export function CodeSearchModal({ repoPath }: { repoPath: string }): React.JSX.E
           </span>
         ) : (
           <span className="codesearch-hint">
-            {tab === 'files'
-              ? 'Searches tracked + untracked files (honours .gitignore).'
-              : 'Lists commits whose diff changes the matched text.'}
+            {tab === 'files' ? t('search.filesHint') : t('search.historyHint')}
           </span>
         )}
       </div>

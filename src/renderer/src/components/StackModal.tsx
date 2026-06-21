@@ -4,8 +4,10 @@ import { gitApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
 import { useRepoStore, repoActions } from '../stores/repo'
 import type { StackInfo } from '../../../shared/types'
+import { useT } from '../i18n'
 
 export function StackModal({ repoPath }: { repoPath: string }): React.JSX.Element {
+  const t = useT()
   const openModal = useUIStore((s) => s.openModal)
   const repo = useRepoStore((s) => s.repos[repoPath])
   const [info, setInfo] = useState<StackInfo | null>(null)
@@ -34,7 +36,7 @@ export function StackModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
   const newStacked = (): void => {
     openModal({
       kind: 'input',
-      title: 'New stacked branch',
+      title: t('stack.newStacked'),
       label: `Create a branch on top of "${repo?.branches.current ?? 'current'}"`,
       placeholder: 'feature/part-2',
       submitLabel: 'Create',
@@ -63,16 +65,13 @@ export function StackModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
     <div className="stack-modal">
       <h3>
         <Layers size={17} style={{ verticalAlign: '-3px', marginRight: 6 }} />
-        Branch stack
+        {t('stack.title')}
       </h3>
-      <p className="settings-hint">
-        A chain of dependent branches. Each sits on top of the one below; restack to cascade-rebase the whole
-        chain when a lower branch changes.
-      </p>
+      <p className="settings-hint">{t('stack.intro')}</p>
 
       <div className="stack-toolbar">
         <button className="btn ghost small" onClick={newStacked} disabled={!repo}>
-          <Plus size={13} /> New stacked branch
+          <Plus size={13} /> {t('stack.newStacked')}
         </button>
         <button
           className="btn primary small"
@@ -80,18 +79,16 @@ export function StackModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
           disabled={!anyRestack || !leaf}
           title={anyRestack ? 'Cascade-rebase the stack onto current parents' : 'Nothing to restack'}
         >
-          <RefreshCw size={13} /> Restack
+          <RefreshCw size={13} /> {t('stack.restack')}
         </button>
         <button className="btn ghost small" onClick={() => void reload()} style={{ marginLeft: 'auto' }}>
-          <RefreshCw size={13} className={loading ? 'spin' : undefined} /> Refresh
+          <RefreshCw size={13} className={loading ? 'spin' : undefined} /> {t('stack.refresh')}
         </button>
       </div>
 
       {branches.length === 0 ? (
         <p className="settings-hint">
-          {loading
-            ? 'Loading…'
-            : 'This branch isn’t part of a stack. Create a stacked branch, or set a parent on an existing branch to start one.'}
+          {loading ? 'Loading…' : t('stack.empty')}
         </p>
       ) : (
         <div className="stack-list">
@@ -103,8 +100,8 @@ export function StackModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
               <div className="stack-node-body">
                 <div className="stack-node-head">
                   <span className="stack-node-name">{b.name}</span>
-                  {b.isCurrent && <span className="stack-badge current">current</span>}
-                  {b.needsRestack && <span className="stack-badge warn">needs restack</span>}
+                  {b.isCurrent && <span className="stack-badge current">{t('stack.current')}</span>}
+                  {b.needsRestack && <span className="stack-badge warn">{t('stack.needsRestack')}</span>}
                   <span className="stack-node-ahead">
                     {b.ahead} commit{b.ahead === 1 ? '' : 's'}
                   </span>
@@ -112,11 +109,11 @@ export function StackModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
                 <div className="stack-node-actions">
                   {!b.isCurrent && (
                     <button className="link-btn" onClick={() => void after(repoActions.checkout(repoPath, b.name))}>
-                      <Check size={12} /> Checkout
+                      <Check size={12} /> {t('stack.checkout')}
                     </button>
                   )}
                   <button className="link-btn" onClick={() => setParent(b.name)}>
-                    <ArrowUpDown size={12} /> Set parent
+                    <ArrowUpDown size={12} /> {t('stack.setParent')}
                   </button>
                   {b.parent && (
                     <button className="link-btn" onClick={() => createPr(b.name, b.parent)}>
@@ -125,7 +122,7 @@ export function StackModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
                   )}
                   {b.parent && (
                     <button className="link-btn danger" onClick={() => void after(repoActions.stackClearParent(repoPath, b.name))}>
-                      <X size={12} /> Untrack
+                      <X size={12} /> {t('stack.untrack')}
                     </button>
                   )}
                 </div>
@@ -139,7 +136,7 @@ export function StackModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
               </div>
               <div className="stack-node-body">
                 <span className="stack-node-name">{info.trunk}</span>
-                <span className="stack-badge">base</span>
+                <span className="stack-badge">{t('stack.base')}</span>
               </div>
             </div>
           )}

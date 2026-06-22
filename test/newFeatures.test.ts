@@ -165,6 +165,19 @@ describe('squashCommits (multi-select squash)', () => {
   })
 })
 
+describe('interactive rebase edit', () => {
+  it('pauses the rebase at an edit step', async () => {
+    const R = cloneFixture('changelog')
+    const raw = await gitService.interactiveRebaseSteps(R, 'HEAD~3') // oldest-first
+    const steps = raw.map((s, i) => ({ ...s, action: i === 0 ? ('edit' as const) : ('pick' as const) }))
+
+    await gitService.runInteractiveRebase(R, 'HEAD~3', steps)
+
+    expect(await gitService.mergeState(R)).toBe('rebase') // stopped for amending
+    await gitService.rebaseAbort(R) // clean up
+  })
+})
+
 describe('contributors (co-author picker)', () => {
   it('lists distinct authors with name + email', async () => {
     const R = repoPath('insights') // seeded with Alice / Bob / Carol

@@ -12,7 +12,8 @@ const ACTION_LABELS: Record<ActionKind, string> = {
   squash: 'Squash',
   fixup: 'Fixup',
   drop: 'Drop',
-  reword: 'Reword'
+  reword: 'Reword',
+  edit: 'Edit'
 }
 
 interface StepRow extends RebaseStep {
@@ -78,7 +79,10 @@ export function InteractiveRebase({
     setBusy(true)
     try {
       await gitApi.runInteractiveRebase(repoPath, base, steps)
-      toast('success', 'Interactive rebase completed')
+      // An `edit` step pauses the rebase for amending — say so instead of
+      // claiming completion.
+      const paused = steps.some((s) => s.action === 'edit')
+      toast('success', paused ? 'Rebase paused — amend, then Continue' : 'Interactive rebase completed')
       closeModal()
       await refresh(repoPath)
     } catch (err) {

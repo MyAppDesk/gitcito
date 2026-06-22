@@ -416,7 +416,7 @@ export interface FileHistoryEntry {
 }
 
 export interface RebaseStep {
-  action: 'pick' | 'squash' | 'fixup' | 'drop' | 'reword'
+  action: 'pick' | 'squash' | 'fixup' | 'drop' | 'reword' | 'edit'
   hash: string
   subject: string
   newMessage?: string

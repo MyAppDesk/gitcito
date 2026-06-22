@@ -44,7 +44,7 @@
 ### Repository & history
 - **Command palette** (`⌘K` / `Ctrl+K`). Fuzzy-jump to any branch (checkout), commit (scroll-to in the graph), working-tree file, or action (fetch, pull, push, stash, terminal, reflog, settings…) without leaving the keyboard — and it **remembers what you use**, surfacing recents first and ranking frequent commands higher.
 - **Repo groups & tabs**. Bundle related repositories into a named, colour-coded group, switch between them in tabs (drag to reorder, eject or regroup), and jump back via recents.
-- **Commit graph** with branches, merges and octopus merges drawn properly — in light or dark. Windowed rendering keeps it smooth on huge histories, and **↑/↓ or `j`/`k`** walk the selection between commits.
+- **Commit graph** with branches, merges and octopus merges drawn properly — in light or dark. Windowed rendering keeps it smooth on huge histories, **↑/↓ or `j`/`k`** walk the selection between commits, and a **linear (first-parent) view** toggle hides merged-in side branches.
 - **Multi-select commits** — `⌘`/`Ctrl`-click to toggle, `⇧`-click for a range, then right-click to **cherry-pick** the lot onto the current branch, **squash** a contiguous run into one, **export a combined patch**, or copy their SHAs.
 - **Customisable graph columns**: show/hide, resize and reorder branch, message, author, date, SHA and deployment columns.
 - **Inline CI status** _(GitHub only)_. GitHub Actions check-runs (pass/fail/pending) shown right on the commit row.
@@ -57,7 +57,7 @@
 - **Insights** — a repo dashboard from your git history: summary cards (commits/day, contributors, files touched, lines changed), a **weekly churn** chart (additions vs deletions), **top contributors** (commits + lines), and **file hotspots** (most-changed files, click straight into a file's history). Filter by 30d / 90d / 1y / all.
 
 ### Working with changes
-- **Commit composer** with message styles: Auto, Conventional, Gitmoji, Ticket, Plain — even Caveman or Haiku. The composer adapts a **prefix helper** to your chosen style — a Conventional-Commit **type dropdown** (`feat:`, `fix(scope)!:`…), a **gitmoji picker**, or a **ticket-key field** (`ABC-123:`, seeded from the branch). **↑/↓ recalls recent commit messages**, and a live **message linter** flags subject length (with a char counter), trailing periods, non-imperative/lowercase subjects and over-wide body lines — hints, never a hard gate.
+- **Commit composer** with message styles: Auto, Conventional, Gitmoji, Ticket, Plain — even Caveman or Haiku. The composer adapts a **prefix helper** to your chosen style — a Conventional-Commit **type dropdown** (`feat:`, `fix(scope)!:`…), a **gitmoji picker**, or a **ticket-key field** (`ABC-123:`, seeded from the branch). **↑/↓ recalls recent commit messages**, a **co-author picker** adds `Co-authored-by:` trailers from the repo's contributors, and a live **message linter** flags subject length (with a char counter), trailing periods, non-imperative/lowercase subjects and over-wide body lines — hints, never a hard gate.
 - **Stage / unstage / discard**, down to **individual hunks — or individual lines** picked right in the diff.
 - **Amend**, persistent drafts, and auto-prefilled messages during merge / cherry-pick / revert.
 - **Commit templates** (`commit.template` / `.gitmessage`) prefill the composer; comment lines are stripped.
@@ -90,7 +90,7 @@
 - **Pull** (default, fast-forward-only or rebase) and **push** with safe `--force-with-lease` + optional confirmation.
 - **Fetch all & prune**, plus background **auto-fetch** on a configurable interval and a "fetched X ago" badge.
 - **Multi-repo batch** — **Fetch all** / **Pull all** every repository in a group at once (from the group home or the group tab's right-click menu), with a single summary of what succeeded.
-- **Stashes** with untracked files, messages, per-file apply, and a details/diff view — plus **partial stash** (tick just the files you want, optionally `--keep-index`).
+- **Stashes** with untracked files, messages, per-file apply, and a details/diff view — plus **partial stash** (tick just the files you want, optionally `--keep-index`) and **stash → branch** (`git stash branch`) when a stash won't apply cleanly.
 - **Tags**: create lightweight, **annotated (with a message) or GPG/SSH-signed** tags, delete locally, push or delete on the remote, browse remote tags.
 - **Worktrees**: create, remove and open a linked worktree in its own window — or right-click any local branch → **Open in a worktree** to spin one up in a sibling folder and open it as a tab.
 - **Submodules**: add, update (init & checkout), sync URLs, and remove, with live in-sync / modified / uninitialized status.
@@ -102,7 +102,7 @@
 ### Hosting & pull requests
 - **Create pull / merge requests** from the app — branch dropdowns, prefilled title/body from the branch's commits, draft toggle, and (GitHub) **reviewers / labels / assignees** applied on create; from branch-compare, the graph, the PR panel `+`, or an issue (auto-`Closes #N`). Works on **GitHub, GitLab, Bitbucket and Azure DevOps**, and open PRs/MRs are listed in the sidebar for all four.
 - **Create issues** _(GitHub)_ from the app (title + Markdown body) via the command palette.
-- **Review PRs** _(GitHub only)_ — open conversation + review state, a **checks** panel (CI check-runs with pass/fail/pending + view-logs links), **inline review threads** (line comments grouped by file:line with diff-hunk context, with reply), comment, approve / request changes, and **merge** (merge / squash / rebase).
+- **Review PRs** _(GitHub only)_ — open conversation + review state, a **checks** panel (CI check-runs with pass/fail/pending + view-logs links), a **file-by-file viewed checklist** (per-file ✓ with progress), **inline review threads** (line comments grouped by file:line with diff-hunk context, with reply), comment, approve / request changes, and **merge** (merge / squash / rebase).
 - **Issues** _(GitHub only)_ — browse open issues, then a full **issue tab**: body, comments, labels, assignees, milestone, Projects v2 fields (Priority/Start/Target/Effort), close/reopen, and **create a branch for an issue** (with AI naming).
 - **Milestones** _(GitHub only)_ — a sidebar list with progress, and a **milestone tab** showing its issues.
 - **Releases** _(GitHub only)_ — browse a repo's releases in the sidebar and a changelog page.

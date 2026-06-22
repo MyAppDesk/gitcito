@@ -488,7 +488,12 @@ export default function App(): React.JSX.Element {
     <div className="app">
       <TitleBar />
 
+      {/*
+      Normal:
       {!settings.onboardingCompleted && <OnboardingWizard />}
+      Always
+      <OnboardingWizard />
+      */}
 
       {!activeTab && <Welcome />}
       {activeTab && activeTab.kind === 'group' && !repo && <GroupView tab={activeTab} />}

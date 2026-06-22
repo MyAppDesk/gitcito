@@ -366,6 +366,16 @@ export function OnboardingWizard(): React.JSX.Element {
   const next = (): void => { setDir(1); setStep((s) => s + 1) }
   const back = (): void => { setDir(-1); setStep((s) => s - 1) }
 
+  // Enter advances on the form steps (not Welcome, where the import box owns focus).
+  const onKeyDown = (e: React.KeyboardEvent): void => {
+    if (e.key !== 'Enter' || step === 0) return
+    const el = e.target as HTMLElement
+    if (el.tagName === 'TEXTAREA' || el.tagName === 'BUTTON' || el.tagName === 'A') return
+    e.preventDefault()
+    if (step < TOTAL_STEPS) next()
+    else finish()
+  }
+
   const doImport = async (): Promise<void> => {
     setImporting(true)
     try {
@@ -418,6 +428,7 @@ export function OnboardingWizard(): React.JSX.Element {
         initial={{ opacity: 0, scale: 0.96, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ type: 'spring', stiffness: 280, damping: 26 }}
+        onKeyDown={onKeyDown}
       >
         {step > 0 && (
           <div className="onboarding-progress">
@@ -467,15 +478,22 @@ export function OnboardingWizard(): React.JSX.Element {
               <button className="btn ghost" onClick={back}>
                 <ChevronLeft size={14} /> Back
               </button>
-              {step < TOTAL_STEPS ? (
-                <button className="btn primary" onClick={next}>
-                  Next <ChevronRight size={14} />
-                </button>
-              ) : (
-                <button className="btn primary" onClick={finish}>
-                  <Check size={14} /> Let's go!
-                </button>
-              )}
+              <div className="onboarding-footer-right">
+                {step < TOTAL_STEPS && (
+                  <button className="onboarding-skip" onClick={finish}>
+                    Skip for now
+                  </button>
+                )}
+                {step < TOTAL_STEPS ? (
+                  <button className="btn primary" onClick={next}>
+                    Next <ChevronRight size={14} />
+                  </button>
+                ) : (
+                  <button className="btn primary" onClick={finish}>
+                    <Check size={14} /> Let's go!
+                  </button>
+                )}
+              </div>
             </>
           )}
         </div>

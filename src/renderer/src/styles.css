@@ -6508,6 +6508,26 @@ input[type='range']:focus-visible {
   gap: 10px;
 }
 
+.onboarding-footer-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.onboarding-skip {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+  padding: 4px 2px;
+  transition: color 0.12s;
+}
+.onboarding-skip:hover {
+  color: var(--text-0);
+}
+
 /* Welcome step */
 .onboarding-welcome {
   display: flex;

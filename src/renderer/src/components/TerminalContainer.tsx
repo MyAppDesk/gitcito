@@ -220,8 +220,9 @@ export function TerminalContainer({ cwd }: { cwd: string }): React.JSX.Element {
               {groups.map((group) => {
                 const split = group.panels.length > 1
                 const groupCollapsed = collapsedGroups.has(group.id)
-                const headPanelId = split ? group.activePanelId : group.panels[0].id
-                const groupName = nameFor(group.title, headPanelId)
+                // Groups keep a stable numbered name; only panels auto-name to
+                // their running process. Manual alias still wins.
+                const groupName = group.title.trim() || `zsh ${group.num}`
                 const editingGroup = editing?.groupId === group.id && editing.panelId === null
                 const openGroupMenu = (e: React.MouseEvent): void => {
                   e.preventDefault()

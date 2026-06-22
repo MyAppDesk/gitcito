@@ -12,7 +12,9 @@ export interface TermPanel {
 
 export interface TermGroup {
   id: string
-  /** Manual alias for the group. Empty = fall back to auto-detected process name. */
+  /** Stable display number → default label "zsh N". Never changes with the process. */
+  num: number
+  /** Manual alias for the group. Empty = fall back to the numbered default. */
   title: string
   panels: TermPanel[]
   activePanelId: string
@@ -28,9 +30,15 @@ function uid(prefix: string): string {
   return `${prefix}-${++_seq}`
 }
 
-function mkGroup(cwd: string): TermGroup {
+/** Next stable group number for a repo: one past the highest existing, so it
+ *  never reuses a number and stays put when other groups are closed. */
+function nextNum(groups: TermGroup[]): number {
+  return groups.reduce((m, g) => Math.max(m, g.num), 0) + 1
+}
+
+function mkGroup(cwd: string, num: number): TermGroup {
   const panel: TermPanel = { id: uid('panel'), cwd, flex: 1 }
-  return { id: uid('group'), title: '', panels: [panel], activePanelId: panel.id }
+  return { id: uid('group'), num, title: '', panels: [panel], activePanelId: panel.id }
 }
 
 function emptyRepo(): RepoTerms {
@@ -58,16 +66,16 @@ export const useTerminalsStore = create<TerminalsState>((set, get) => ({
   ensureRepo: (repoPath, cwd) => {
     const cur = get().byRepo[repoPath]
     if (cur && cur.groups.length > 0) return
-    const group = mkGroup(cwd)
+    const group = mkGroup(cwd, 1)
     set((s) => ({
       byRepo: { ...s.byRepo, [repoPath]: { groups: [group], activeGroupId: group.id } }
     }))
   },
 
   addGroup: (repoPath, cwd) => {
-    const group = mkGroup(cwd)
     set((s) => {
       const repo = s.byRepo[repoPath] ?? emptyRepo()
+      const group = mkGroup(cwd, nextNum(repo.groups))
       return {
         byRepo: {
           ...s.byRepo,

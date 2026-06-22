@@ -140,7 +140,7 @@ export const shots = [
     // Settings → Shortcuts tab (rebindable shortcut editor).
     out: 'settings-shortcuts',
     repos: ['octopus-merge'],
-    themes: ['dark'],
+    themes: ['light'],
     drive: async (page) => {
       await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'shortcuts' }))
       await page.waitForTimeout(400)
@@ -150,7 +150,7 @@ export const shots = [
     // Settings → Security tab (mask secrets, large-file guard, vault entry).
     out: 'settings-security',
     repos: ['octopus-merge'],
-    themes: ['dark'],
+    themes: ['light'],
     drive: async (page) => {
       await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'security' }))
       await page.waitForTimeout(400)
@@ -168,7 +168,7 @@ export const shots = [
     // Reflog recovery modal — checkout / branch / reset from any past HEAD move.
     out: 'reflog',
     repos: ['reflog-recovery'],
-    themes: ['dark'],
+    themes: ['light'],
     drive: async (page, repoPaths) => {
       const repo = repoPaths['reflog-recovery']
       await page.evaluate((p) => window.__shot.ui.getState().openModal({ kind: 'reflog', repoPath: p }), repo)
@@ -179,7 +179,7 @@ export const shots = [
     // Guided git bisect.
     out: 'bisect',
     repos: ['bisect-bug'],
-    themes: ['dark'],
+    themes: ['light'],
     drive: async (page, repoPaths) => {
       const repo = repoPaths['bisect-bug']
       await page.evaluate((p) => window.__shot.ui.getState().openModal({ kind: 'bisect', repoPath: p }), repo)
@@ -190,7 +190,7 @@ export const shots = [
     // Git hooks manager (active / disabled / sample + framework banner).
     out: 'hooks',
     repos: ['hooks'],
-    themes: ['dark'],
+    themes: ['light'],
     drive: async (page, repoPaths) => {
       const repo = repoPaths['hooks']
       await page.evaluate((p) => window.__shot.ui.getState().openModal({ kind: 'hooks', repoPath: p }), repo)
@@ -201,7 +201,7 @@ export const shots = [
     // Git LFS manager — tracked patterns + LFS files.
     out: 'lfs',
     repos: ['lfs-assets'],
-    themes: ['dark'],
+    themes: ['light'],
     drive: async (page, repoPaths) => {
       const repo = repoPaths['lfs-assets']
       await page.evaluate((p) => window.__shot.ui.getState().openModal({ kind: 'lfs', repoPath: p }), repo)
@@ -212,7 +212,7 @@ export const shots = [
     // Cone-mode sparse-checkout editor.
     out: 'sparse-checkout',
     repos: ['deep-history-monorepo'],
-    themes: ['dark'],
+    themes: ['light'],
     drive: async (page, repoPaths) => {
       const repo = repoPaths['deep-history-monorepo']
       await page.evaluate((p) => window.__shot.ui.getState().openModal({ kind: 'sparse', repoPath: p }), repo)
@@ -223,7 +223,7 @@ export const shots = [
     // Create-PR form, prefilled from a branch's commits.
     out: 'create-pr',
     repos: ['pr-ready-branch'],
-    themes: ['dark'],
+    themes: ['light'],
     drive: async (page, repoPaths) => {
       const repo = repoPaths['pr-ready-branch']
       await page.evaluate((p) => {
@@ -247,7 +247,7 @@ export const shots = [
     // .gitignore chooser — pattern type × which .gitignore.
     out: 'gitignore-chooser',
     repos: ['gitignore-untrack'],
-    themes: ['dark'],
+    themes: ['light'],
     drive: async (page, repoPaths) => {
       const repo = repoPaths['gitignore-untrack']
       await page.evaluate(
@@ -264,7 +264,7 @@ export const shots = [
     // Commit composer prefilled from commit.template (.gitmessage).
     out: 'commit-template',
     repos: ['commit-template'],
-    themes: ['dark'],
+    themes: ['light'],
     drive: async (page, repoPaths) => {
       const repo = repoPaths['commit-template']
       await page.evaluate((p) => window.__shot.repo.getState().select(p, { type: 'wip' }), repo)
@@ -276,6 +276,7 @@ export const shots = [
     out: 'terminal',
     repos: ['deep-history-monorepo'],
     themes: ['dark'],
+    appTheme: 'midnight',
     drive: async (page, repoPaths) => {
       const repo = repoPaths['deep-history-monorepo']
       await page.evaluate((p) => window.__shot.repo.getState().select(p, { type: 'wip' }), repo)
@@ -320,6 +321,7 @@ export const shots = [
     out: 'interactive-rebase',
     repos: ['interactive-rebase'],
     themes: ['dark'],
+    appTheme: 'solarized',
     drive: async (page, repoPaths) => {
       const repo = repoPaths['interactive-rebase']
       await page.evaluate(
@@ -340,6 +342,7 @@ export const shots = [
     out: 'command-palette',
     repos: ['command-palette'],
     themes: ['dark'],
+    appTheme: 'nord',
     drive: async (page) => {
       await page.evaluate(() => window.__shot.ui.getState().toggleCommandPalette())
       await page.waitForTimeout(300)
@@ -352,6 +355,7 @@ export const shots = [
     out: 'code-search',
     repos: ['code-search'],
     themes: ['dark'],
+    appTheme: 'dracula',
     drive: async (page, repoPaths) => {
       const repo = repoPaths['code-search']
       await page.evaluate((p) => window.__shot.ui.getState().openModal({ kind: 'code-search', repoPath: p }), repo)
@@ -364,7 +368,7 @@ export const shots = [
     // Branch stack — dependent branches with restack.
     out: 'branch-stack',
     repos: ['stacked-branches'],
-    themes: ['dark'],
+    themes: ['light'],
     drive: async (page, repoPaths) => {
       const repo = repoPaths['stacked-branches']
       await page.evaluate((p) => window.__shot.ui.getState().openModal({ kind: 'stack', repoPath: p }), repo)
@@ -375,7 +379,7 @@ export const shots = [
     // WIP snapshots — uncommitted-work safety net.
     out: 'snapshots',
     repos: ['snapshots'],
-    themes: ['dark'],
+    themes: ['light'],
     drive: async (page, repoPaths) => {
       const repo = repoPaths['snapshots']
       await page.evaluate((p) => window.__shot.ui.getState().openModal({ kind: 'snapshots', repoPath: p }), repo)
@@ -386,7 +390,7 @@ export const shots = [
     // Conventional-commit changelog generator.
     out: 'changelog-gen',
     repos: ['changelog'],
-    themes: ['dark'],
+    themes: ['light'],
     drive: async (page, repoPaths) => {
       const repo = repoPaths['changelog']
       await page.evaluate((p) => window.__shot.ui.getState().openModal({ kind: 'changelog-gen', repoPath: p }), repo)
@@ -398,6 +402,7 @@ export const shots = [
     out: 'cheatsheet',
     repos: ['command-palette'],
     themes: ['dark'],
+    appTheme: 'monokai',
     drive: async (page) => {
       await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'cheatsheet' }))
       await page.waitForTimeout(500)
@@ -407,7 +412,7 @@ export const shots = [
     // Graph filtered by a path — non-matching commits dimmed.
     out: 'graph-path-filter',
     repos: ['insights'],
-    themes: ['dark'],
+    themes: ['light'],
     drive: async (page) => {
       await page.evaluate(() => window.__shot.ui.getState().setPathFilter('src/core.js'))
       await page.waitForTimeout(700)
@@ -417,7 +422,7 @@ export const shots = [
     // Repository settings — tabbed (general / analytics / history / logs).
     out: 'repo-settings',
     repos: ['deep-history-monorepo'],
-    themes: ['dark'],
+    themes: ['light'],
     drive: async (page, repoPaths) => {
       const repo = repoPaths['deep-history-monorepo']
       await page.evaluate((p) => window.__shot.ui.getState().openModal({ kind: 'repo-settings', repoPath: p }), repo)
@@ -435,7 +440,7 @@ export const shots = [
     // Side-by-side (split) diff with word-level highlighting.
     out: 'split-diff',
     repos: ['word-diff'],
-    themes: ['dark'],
+    themes: ['light'],
     drive: async (page, repoPaths) => {
       const repo = repoPaths['word-diff']
       await page.evaluate((p) => {
@@ -450,7 +455,7 @@ export const shots = [
     // Local vault — OS-keychain-encrypted secrets, per-repo + global.
     out: 'vault',
     repos: ['secrets'],
-    themes: ['dark'],
+    themes: ['light'],
     drive: async (page, repoPaths) => {
       const repo = repoPaths['secrets']
       await page.evaluate(async (r) => {
@@ -467,7 +472,7 @@ export const shots = [
     // Repository insights — churn, hotspots, contributors.
     out: 'insights',
     repos: ['insights'],
-    themes: ['dark'],
+    themes: ['light'],
     drive: async (page, repoPaths) => {
       const repo = repoPaths['insights']
       await page.evaluate((p) => window.__shot.settings.getState().openPageTab({ type: 'insights', repoPath: p }), repo)

@@ -160,6 +160,30 @@ async function resolveHooksDir(git: SimpleGit, repoPath: string): Promise<{ dir:
 
 const gitFor = (repoPath: string): SimpleGit => simpleGit(repoPath)
 
+/**
+ * Auto-stash. If the working tree is dirty, shelve it under a
+ * NAMED stash (visible in the stash list), run the operation, then restore it.
+ *
+ *  - Clean tree → runs the op directly, no stash.
+ *  - Op fails    → the named stash is left untouched so the user's changes stay
+ *                  recoverable; the original error is surfaced.
+ *  - Pop conflicts on restore → git keeps the named stash and the conflict
+ *                  surfaces to the user to resolve (their changes aren't lost).
+ */
+async function withAutoStash<T>(
+  repoPath: string,
+  label: string,
+  op: () => Promise<T>
+): Promise<T> {
+  const git = gitFor(repoPath)
+  const st = await git.status()
+  if (st.files.length === 0) return op()
+  await git.stash(['push', '--include-untracked', '-m', `Auto-stash before ${label}`])
+  const result = await op() // if this throws, the named stash is left for recovery
+  await git.stash(['pop']) // a pop conflict throws; git keeps the stash regardless
+  return result
+}
+
 /** Inject credentials into an https clone URL so private integration repos can be cloned non-interactively. */
 function authedCloneUrl(url: string, host?: string, token?: string): string {
   if (!token || !token.trim() || !/^https:\/\//i.test(url)) return url
@@ -653,13 +677,16 @@ export const gitService = {
     // "a branch named '<x>' already exists").
     const branches = await git.branchLocal()
     if (branches.all.includes(localName)) {
-      await git.checkout(localName)
       // Fast-forward the existing local branch to the remote tip so the
       // checkout actually brings in the remote changes. --ff-only is safe:
       // if the branches have diverged it errors instead of merging silently.
-      // --autostash shelves a dirty working tree before the FF and reapplies
-      // it after (GitKraken-style), so local edits don't abort the update.
-      await git.merge(['--ff-only', '--autostash', fullName])
+      // withAutoStash shelves a dirty working tree under a named stash before
+      // the FF and restores it after, so local edits don't
+      // abort the update.
+      await withAutoStash(repoPath, `checkout ${localName}`, async () => {
+        await git.checkout(localName)
+        await git.merge(['--ff-only', fullName])
+      })
     } else {
       await git.checkout(['-b', localName, '--track', fullName])
     }
@@ -807,13 +834,17 @@ export const gitService = {
   },
 
   async merge(repoPath: string, ref: string, noFf = false): Promise<void> {
-    await gitFor(repoPath).merge([...(noFf ? ['--no-ff'] : []), '--autostash', ref])
+    await withAutoStash(repoPath, `merge ${ref}`, () =>
+      gitFor(repoPath).merge([...(noFf ? ['--no-ff'] : []), ref])
+    )
   },
 
   async mergeInto(repoPath: string, source: string, target: string, noFf = false): Promise<void> {
     const git = gitFor(repoPath)
-    await git.checkout(target)
-    await git.merge([...(noFf ? ['--no-ff'] : []), '--autostash', source])
+    await withAutoStash(repoPath, `merge ${source} into ${target}`, async () => {
+      await git.checkout(target)
+      await git.merge([...(noFf ? ['--no-ff'] : []), source])
+    })
   },
 
   async rebase(repoPath: string, onto: string): Promise<void> {
@@ -871,10 +902,10 @@ export const gitService = {
 
   async pull(repoPath: string, mode: 'default' | 'ff-only' | 'rebase' = 'default'): Promise<void> {
     const git = gitFor(repoPath)
-    const args: string[] = ['--autostash']
+    const args: string[] = []
     if (mode === 'ff-only') args.push('--ff-only')
     if (mode === 'rebase') args.push('--rebase')
-    await git.pull(args)
+    await withAutoStash(repoPath, 'pull', () => git.pull(args))
   },
 
   async push(repoPath: string, branch: string, opts: { force?: boolean; remote?: string } = {}): Promise<void> {

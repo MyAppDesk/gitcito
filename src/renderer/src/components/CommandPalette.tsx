@@ -132,6 +132,7 @@ export function CommandPalette(): React.JSX.Element {
       { id: 'push', title: t('cmd.push'), group: 'Actions', keywords: 'sync upload', icon: <Upload size={15} />, run: act(() => void repoActions.push(path)) },
       { id: 'commit', title: t('cmd.commit'), group: 'Actions', keywords: 'wip staging compose', icon: <GitCommit size={15} />, run: act(() => useRepoStore.getState().select(path, { type: 'wip' })) },
       { id: 'stash', title: t('cmd.stash'), group: 'Actions', keywords: 'save shelve', icon: <Archive size={15} />, run: act(() => void repoActions.stash(path)) },
+      { id: 'stash-partial', title: t('cmd.stashSelected'), group: 'Actions', keywords: 'partial stash selected files keep-index shelve', icon: <Archive size={15} />, run: act(() => ui.openModal({ kind: 'stash-partial', repoPath: path })) },
       { id: 'create-branch', title: t('cmd.createBranch'), group: 'Actions', keywords: 'new', icon: <Plus size={15} />, run: act(() => ui.openModal({ kind: 'create-branch', path, currentBranch: repo.branches.current })) },
       { id: 'create-pr', title: t('cmd.createPr'), group: 'Actions', keywords: 'pr github merge request', icon: <GitPullRequest size={15} />, run: act(() => ui.openModal({ kind: 'create-pr', repoPath: path, source: repo.branches.current })) },
       ...((): Command[] => {

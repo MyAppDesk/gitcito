@@ -865,6 +865,24 @@ export const gitService = {
     await gitFor(repoPath).stash(args)
   },
 
+  /**
+   * Stash a chosen subset of changes (partial stash). With `paths`, only those
+   * pathspecs are stashed; empty/omitted stashes everything. `keepIndex` leaves
+   * the staged index intact in the working tree (`git stash push --keep-index`).
+   */
+  async stashPush(
+    repoPath: string,
+    message?: string,
+    paths?: string[],
+    keepIndex = false
+  ): Promise<void> {
+    const args = ['push', '--include-untracked']
+    if (keepIndex) args.push('--keep-index')
+    if (message) args.push('-m', message)
+    if (paths && paths.length) args.push('--', ...paths)
+    await gitFor(repoPath).stash(args)
+  },
+
   async stashPop(repoPath: string, index = 0): Promise<void> {
     await gitFor(repoPath).stash(['pop', `stash@{${index}}`])
   },

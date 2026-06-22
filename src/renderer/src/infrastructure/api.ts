@@ -103,6 +103,8 @@ export const gitApi = {
     call<void>('push', path, branch, opts),
 
   stash: (path: string, message?: string) => call<void>('stash', path, message),
+  stashPush: (path: string, message?: string, paths?: string[], keepIndex?: boolean) =>
+    call<void>('stashPush', path, message, paths, keepIndex),
   stashPop: (path: string, index?: number) => call<void>('stashPop', path, index),
   stashApply: (path: string, index?: number) => call<void>('stashApply', path, index),
   stashDrop: (path: string, index?: number) => call<void>('stashDrop', path, index),

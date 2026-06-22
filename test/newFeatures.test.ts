@@ -1,4 +1,6 @@
 import { describe, it, expect, afterAll } from 'vitest'
+import { writeFileSync, existsSync } from 'node:fs'
+import { join } from 'node:path'
 import { gitService } from '../src/main/git'
 import { repoPath } from './helpers'
 import { cloneFixture, cleanupFixtures } from './fixtures'
@@ -92,5 +94,20 @@ describe('rebaseOnto (drag-to-rebase)', () => {
     expect((await gitService.open(R)).current).toBe('feature/api')
     const log = await gitService.log(R)
     expect(log.some((c) => c.subject.includes('hotfix'))).toBe(true)
+  })
+})
+
+describe('stashPush (partial stash)', () => {
+  it('stashes only the selected file, leaving the rest dirty', async () => {
+    const R = cloneFixture('snapshots')
+    writeFileSync(join(R, 'partial-a.txt'), 'a\n')
+    writeFileSync(join(R, 'partial-b.txt'), 'b\n')
+
+    await gitService.stashPush(R, 'only a', ['partial-a.txt'])
+
+    expect(existsSync(join(R, 'partial-a.txt'))).toBe(false) // stashed away
+    expect(existsSync(join(R, 'partial-b.txt'))).toBe(true) // left behind
+    const stashes = await gitService.stashes(R)
+    expect(stashes[0]?.message).toContain('only a')
   })
 })

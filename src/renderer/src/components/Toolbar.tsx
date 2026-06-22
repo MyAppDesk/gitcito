@@ -264,7 +264,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
           <span>Branch</span>
         </button>
         <button
-          className="tool-btn"
+          className="tool-btn split"
           title="Stash work in progress"
           onClick={() =>
             openModal({
@@ -280,6 +280,36 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
         >
           <Archive size={17} />
           <span>Stash</span>
+          <span
+            className="split-arrow"
+            onClick={(e) => {
+              e.stopPropagation()
+              const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+              openContextMenu(rect.left, rect.bottom + 6, [
+                {
+                  label: 'Stash all changes…',
+                  icon: <Archive size={15} />,
+                  onClick: () =>
+                    openModal({
+                      kind: 'input',
+                      title: 'Stash changes',
+                      label: 'Stash message (optional)',
+                      placeholder: 'WIP on login form',
+                      allowEmpty: true,
+                      submitLabel: 'Stash',
+                      onSubmit: (msg) => void repoActions.stash(path, msg.trim() || undefined)
+                    })
+                },
+                {
+                  label: 'Stash selected files…',
+                  icon: <Archive size={15} />,
+                  onClick: () => openModal({ kind: 'stash-partial', repoPath: path })
+                }
+              ])
+            }}
+          >
+            <ChevronDown size={13} />
+          </span>
         </button>
         <button
           className="tool-btn"

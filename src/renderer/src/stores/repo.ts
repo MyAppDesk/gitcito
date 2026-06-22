@@ -658,6 +658,18 @@ export const repoActions = {
       redo: () => gitApi.stash(path, message)
     }),
 
+  stashPush: (path: string, message: string | undefined, paths: string[], keepIndex: boolean) =>
+    useRepoStore.getState().run(
+      path,
+      `Stashed ${paths.length} file${paths.length === 1 ? '' : 's'}`,
+      () => gitApi.stashPush(path, message, paths, keepIndex),
+      {
+        label: 'stash',
+        undo: () => gitApi.stashPop(path, 0),
+        redo: () => gitApi.stashPush(path, message, paths, keepIndex)
+      }
+    ),
+
   stashPop: (path: string, index = 0) =>
     useRepoStore.getState().run(path, 'Popped stash', () => gitApi.stashPop(path, index), {
       label: 'stash pop',

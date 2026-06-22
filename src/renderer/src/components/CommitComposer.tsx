@@ -7,7 +7,7 @@ import { repoActions, useRepoStore, type RepoData } from '../stores/repo'
 import { useUIStore, type MenuItem } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { FileListView } from './FileListView'
-import { lintCommit, subjectCounterLevel, SUBJECT_IDEAL_LEN, CC_TYPES, parseCcPrefix, applyCcType } from '../lib/commitLint'
+import { lintCommit, subjectCounterLevel, SUBJECT_IDEAL_LEN, CC_TYPES, parseCcPrefix, applyCcType, GITMOJIS, parseGitmojiPrefix, applyGitmoji } from '../lib/commitLint'
 import { isSecretFile } from '../lib/secrets'
 import {
   FileSearchBar,
@@ -77,6 +77,11 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
   const applyCcTypeToDraft = (ty: string): void => {
     histIdx.current = -1
     setSummary(applyCcType(summary, ty))
+  }
+  const currentGitmoji = parseGitmojiPrefix(summary).emoji
+  const applyGitmojiToDraft = (emoji: string): void => {
+    histIdx.current = -1
+    setSummary(applyGitmoji(summary, emoji))
   }
   const [amend, setAmend] = useState(false)
   const [aiBusy, setAiBusy] = useState(false)
@@ -774,6 +779,21 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
               {CC_TYPES.map((ty) => (
                 <option key={ty} value={ty}>
                   {ty}
+                </option>
+              ))}
+            </select>
+          )}
+          {commitStyle === 'gitmoji' && (
+            <select
+              className="commit-type commit-gitmoji"
+              title="Gitmoji"
+              value={currentGitmoji}
+              onChange={(e) => applyGitmojiToDraft(e.target.value)}
+            >
+              <option value="">🙂</option>
+              {GITMOJIS.map((g) => (
+                <option key={g.emoji} value={g.emoji}>
+                  {g.emoji} {g.label}
                 </option>
               ))}
             </select>

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { parseRemoteUrl } from '../src/main/hosting'
-import { lintCommit, subjectCounterLevel, parseCcPrefix, applyCcType } from '../src/renderer/src/lib/commitLint'
+import { lintCommit, subjectCounterLevel, parseCcPrefix, applyCcType, parseGitmojiPrefix, applyGitmoji } from '../src/renderer/src/lib/commitLint'
 import { isSecretFile, maskSecretLine } from '../src/renderer/src/lib/secrets'
 import { comboFromEvent, formatCombo, effectiveBindings, matchShortcut } from '../src/renderer/src/lib/shortcuts'
 import { autolink, remoteWebUrl } from '../src/renderer/src/lib/autolink'
@@ -89,6 +89,22 @@ describe('conventional-commit type prefix', () => {
 
   it('strips the type when cleared', () => {
     expect(applyCcType('fix: bug', '')).toBe('bug')
+  })
+})
+
+describe('gitmoji prefix', () => {
+  it('detects a leading gitmoji', () => {
+    expect(parseGitmojiPrefix('✨ add thing')).toEqual({ emoji: '✨', rest: 'add thing' })
+  })
+
+  it('treats a plain subject as having no gitmoji', () => {
+    expect(parseGitmojiPrefix('add thing').emoji).toBe('')
+  })
+
+  it('adds, swaps and strips the leading gitmoji', () => {
+    expect(applyGitmoji('add thing', '✨')).toBe('✨ add thing')
+    expect(applyGitmoji('✨ add thing', '🐛')).toBe('🐛 add thing')
+    expect(applyGitmoji('✨ add thing', '')).toBe('add thing')
   })
 })
 

@@ -72,3 +72,38 @@ export function applyCcType(summary: string, type: string): string {
   const { rest, scope, bang } = parseCcPrefix(summary)
   return type ? `${type}${scope}${bang}: ${rest}` : rest
 }
+
+/** Common gitmoji, each with a short intent label (shown in the picker). */
+export const GITMOJIS: { emoji: string; label: string }[] = [
+  { emoji: '✨', label: 'feature' },
+  { emoji: '🐛', label: 'fix' },
+  { emoji: '📝', label: 'docs' },
+  { emoji: '💄', label: 'ui / style' },
+  { emoji: '♻️', label: 'refactor' },
+  { emoji: '⚡️', label: 'performance' },
+  { emoji: '✅', label: 'tests' },
+  { emoji: '👷', label: 'ci' },
+  { emoji: '🔧', label: 'config / chore' },
+  { emoji: '⏪️', label: 'revert' },
+  { emoji: '🎉', label: 'init' },
+  { emoji: '🔥', label: 'remove' },
+  { emoji: '🚧', label: 'wip' },
+  { emoji: '🔒️', label: 'security' },
+  { emoji: '⬆️', label: 'upgrade deps' },
+  { emoji: '🚀', label: 'deploy' }
+]
+
+/** Find a leading gitmoji on the summary (empty emoji if none). */
+export function parseGitmojiPrefix(summary: string): { emoji: string; rest: string } {
+  for (const g of GITMOJIS) {
+    if (summary === g.emoji) return { emoji: g.emoji, rest: '' }
+    if (summary.startsWith(g.emoji + ' ')) return { emoji: g.emoji, rest: summary.slice(g.emoji.length + 1) }
+  }
+  return { emoji: '', rest: summary }
+}
+
+/** Apply (or, with an empty emoji, strip) a leading gitmoji on the subject. */
+export function applyGitmoji(summary: string, emoji: string): string {
+  const { rest } = parseGitmojiPrefix(summary)
+  return emoji ? `${emoji} ${rest}` : rest
+}

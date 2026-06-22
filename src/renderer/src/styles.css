@@ -4686,6 +4686,22 @@ textarea:focus {
 }
 
 /* Blame view */
+.blame-rewind-bar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 10px;
+  margin-bottom: 4px;
+  font-family: var(--font, sans-serif);
+  font-size: 12px;
+  background: var(--accent-soft);
+  border-bottom: 1px solid var(--border);
+}
+.blame-rewind-bar code { font-family: var(--mono, monospace); }
+
 .blame-view {
   font-family: var(--mono, ui-monospace, monospace);
   font-size: var(--code-font-size, 12px);

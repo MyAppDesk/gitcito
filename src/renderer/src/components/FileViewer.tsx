@@ -63,6 +63,7 @@ function imageDiffRefs(view: FileViewState): { before: string | null; after?: st
 
 export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element {
   const setFileView = useUIStore((s) => s.setFileView)
+  const openContextMenu = useUIStore((s) => s.openContextMenu)
   const setEditorDirty = useUIStore((s) => s.setEditorDirty)
   const openModal = useUIStore((s) => s.openModal)
   const toast = useUIStore((s) => s.toast)
@@ -118,6 +119,9 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
   const [imgDiff, setImgDiff] = useState<{ before: string | null; after: string | null } | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [blame, setBlame] = useState<BlameLine[]>([])
+  // When set, blame is computed at this ref instead of the view's ref — lets you
+  // walk a line's history backwards via "reblame at parent".
+  const [blameOverrideRef, setBlameOverrideRef] = useState<string | null>(null)
   const [history, setHistory] = useState<FileHistoryEntry[]>([])
   const [explain, setExplain] = useState<string | null>(null)
   const [explaining, setExplaining] = useState(false)
@@ -131,6 +135,9 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
   const [saving, setSaving] = useState(false)
 
   const { repoPath, file, mode, source } = view
+
+  // Clear any blame "rewind" when switching files/repos.
+  useEffect(() => setBlameOverrideRef(null), [file, repoPath])
 
   // Secret masking: KEY=•••• in .env/key files, on by default, per-view reveal.
   const maskSecretsSetting = useSettingsStore((s) => s.settings.maskSecrets)
@@ -352,7 +359,7 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
             if (editing) setDraft(text)
           }
         } else if (mode === 'blame') {
-          const lines = await gitApi.blameFile(repoPath, file, blameRef(view))
+          const lines = await gitApi.blameFile(repoPath, file, blameOverrideRef ?? blameRef(view))
           if (!cancelled) {
             setBlame(lines)
             setContent('')
@@ -378,6 +385,7 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
     file,
     mode,
     refreshKey,
+    blameOverrideRef,
     editing,
     ignoreWs,
     source.type,
@@ -629,13 +637,29 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
 
         {!error && content !== null && mode === 'blame' && (
           <div className="blame-view hljs">
+            {blameOverrideRef && (
+              <div className="blame-rewind-bar">
+                <span>Blaming at <code>{blameOverrideRef}</code></span>
+                <button className="btn ghost tiny" onClick={() => setBlameOverrideRef(null)}>
+                  Back to latest
+                </button>
+              </div>
+            )}
             {blame.map((b) => (
               <div className="blame-line" key={b.lineNo}>
                 <button
                   className="blame-meta"
                   style={{ borderLeftColor: shaColor(b.sha) }}
-                  title={`${b.sha.slice(0, 10)} — ${new Date(b.date * 1000).toLocaleDateString()}`}
+                  title={`${b.sha.slice(0, 10)} — ${new Date(b.date * 1000).toLocaleDateString()}\nRight-click for more`}
                   onClick={() => setFileView({ ...view, source: { type: 'commit', hash: b.sha }, mode: 'diff' })}
+                  onContextMenu={(e) => {
+                    e.preventDefault()
+                    openContextMenu(e.clientX, e.clientY, [
+                      { label: `Open ${b.sha.slice(0, 7)} diff`, onClick: () => setFileView({ ...view, source: { type: 'commit', hash: b.sha }, mode: 'diff' }) },
+                      { label: 'Reblame before this commit', onClick: () => setBlameOverrideRef(`${b.sha}^`) },
+                      { label: 'Copy SHA', onClick: () => void navigator.clipboard.writeText(b.sha) }
+                    ])
+                  }}
                 >
                   <code>{b.sha.slice(0, 7)}</code>
                   <span>{b.author}</span>

@@ -44,7 +44,7 @@
 ### Repository & history
 - **Command palette** (`⌘K` / `Ctrl+K`). Fuzzy-jump to any branch (checkout), commit (scroll-to in the graph), working-tree file, or action (fetch, pull, push, stash, terminal, reflog, settings…) without leaving the keyboard — and it **remembers what you use**, surfacing recents first and ranking frequent commands higher.
 - **Repo groups & tabs**. Bundle related repositories into a named, colour-coded group, switch between them in tabs (drag to reorder, eject or regroup), and jump back via recents.
-- **Commit graph** with branches, merges and octopus merges drawn properly — in light or dark. Windowed rendering keeps it smooth on huge histories, **↑/↓ or `j`/`k`** walk the selection between commits, and a **linear (first-parent) view** toggle hides merged-in side branches.
+- **Commit graph** with branches, merges and octopus merges drawn properly — in light or dark. Windowed rendering keeps it smooth on huge histories, **↑/↓ or `j`/`k`** walk the selection between commits, a **linear (first-parent) view** toggle hides merged-in side branches, and commits that arrived in your **last fetch/pull are flagged "new"**.
 - **Multi-select commits** — `⌘`/`Ctrl`-click to toggle, `⇧`-click for a range, then right-click to **cherry-pick** the lot onto the current branch, **squash** a contiguous run into one, **export a combined patch**, or copy their SHAs.
 - **Customisable graph columns**: show/hide, resize and reorder branch, message, author, date, SHA and deployment columns.
 - **Inline CI status** _(GitHub only)_. GitHub Actions check-runs (pass/fail/pending) shown right on the commit row.
@@ -54,7 +54,7 @@
 - **Search & filter** commits by message, author, SHA or deployment status — or **filter by path** (right-click a file/folder → "Filter graph by this path", or ⌘K) to spotlight only the commits that touched it.
 - **Code search** (`⌘⇧F` / `Ctrl+Shift+F`). Search file **contents** across the working tree (`git grep`, tracked + untracked, with case / whole-word / regex) — results are **syntax-highlighted** with the match marked — or run a **history pickaxe** (`git log -S` / `-G`) to find the commits that introduced or removed a string. Click a hit to jump to the file or commit.
 - **Progressive history** with configurable page size, auto-load-on-scroll and optional Gravatar avatars.
-- **Insights** — a repo dashboard from your git history: summary cards (commits/day, contributors, files touched, lines changed), a **weekly churn** chart (additions vs deletions), **top contributors** (commits + lines), and **file hotspots** (most-changed files, click straight into a file's history). Filter by 30d / 90d / 1y / all.
+- **Insights** _(in the repo-settings dialog)_ — a repo dashboard from your git history: summary cards (commits/day, contributors, files touched, lines changed), a **weekly churn** chart (additions vs deletions), **top contributors** (commits + lines), and **file hotspots** (most-changed files, click straight into a file's history). Filter by 30d / 90d / 1y / all.
 
 ### Working with changes
 - **Commit composer** with message styles: Auto, Conventional, Gitmoji, Ticket, Plain — even Caveman or Haiku. The composer adapts a **prefix helper** to your chosen style — a Conventional-Commit **type dropdown** (`feat:`, `fix(scope)!:`…), a **gitmoji picker**, or a **ticket-key field** (`ABC-123:`, seeded from the branch). **↑/↓ recalls recent commit messages**, a **co-author picker** adds `Co-authored-by:` trailers from the repo's contributors, and a live **message linter** flags subject length (with a char counter), trailing periods, non-imperative/lowercase subjects and over-wide body lines — hints, never a hard gate.
@@ -72,7 +72,7 @@
 
 ### Branching, merging & history surgery
 - **Stacked branches** — build a chain of dependent branches (Graphite-style), see the stack visualised bottom→top with per-level commit counts, and **restack** to cascade-rebase the whole chain (`rebase --onto`, so parent rewrites don't duplicate commits) when a lower branch changes. Open a PR for each level against its parent. Parent links live in git config, so they travel with the repo.
-- **Interactive rebase** — drag to reorder, squash, fixup, reword or drop, in a visual editor. Plus one-click **autosquash**: "fixup staged changes into this commit" creates a `fixup!`, and "autosquash from here" folds all `fixup!`/`squash!` commits into their targets.
+- **Interactive rebase** — drag to reorder, squash, fixup, reword, edit (stop to amend) or drop, in a visual editor. Plus one-click **autosquash**: "fixup staged changes into this commit" creates a `fixup!`, and "autosquash from here" folds all `fixup!`/`squash!` commits into their targets.
 - **Cherry-pick, revert, and reset** (soft / mixed / hard) from the graph.
 - **Compare any two refs**: pick a base and a compare ref (branch, tag or raw SHA — with a swap button), see ahead/behind counts, the full combined diff, and a one-click "open a PR" hand-off. From the sidebar (compare a branch with the current one), the Tools menu or `⌘K`.
 - **Merge** with fast-forward or forced merge-commit; **rebase onto** any ref.

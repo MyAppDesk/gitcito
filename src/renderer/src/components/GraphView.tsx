@@ -1396,20 +1396,39 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
               {columns.graph.visible && (() => {
                 const n = layout.nodes.get(c.hash)
                 if (!n) return null
+                const col = colorFor(n.color)
+                // Start the lead-in at this node's own x (its lane), so the
+                // gradient visually "comes out" of each commit / stash.
+                const nodeX = branchCol + Math.min(LEFT_PAD + n.lane * LANE_W, graphCol - NODE_R - 1)
+                const barX = branchCol + graphCol + 3
                 return (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      left: branchCol + graphCol + 3,
-                      top: 4,
-                      bottom: 4,
-                      width: 2,
-                      borderRadius: 1,
-                      background: colorFor(n.color),
-                      opacity: 0.55,
-                      pointerEvents: 'none',
-                    }}
-                  />
+                  <>
+                    {/* Soft lead-in: transparent at the node → lane colour @0.25
+                        at the solid bar. */}
+                    <div
+                      style={{
+                        position: 'absolute',
+                        left: nodeX,
+                        width: Math.max(0, barX - nodeX),
+                        top: 4,
+                        bottom: 4,
+                        background: `linear-gradient(90deg, transparent, ${col}40)`,
+                        pointerEvents: 'none',
+                      }}
+                    />
+                    <div
+                      style={{
+                        position: 'absolute',
+                        left: barX,
+                        top: 4,
+                        bottom: 4,
+                        width: 2,
+                        borderRadius: 1,
+                        background: col,
+                        pointerEvents: 'none',
+                      }}
+                    />
+                  </>
                 )
               })()}
               {branchCol > 0 && groups.length > 0 && (() => {

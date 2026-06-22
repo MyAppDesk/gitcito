@@ -4,6 +4,12 @@
 # A repo that (intentionally, for the demo) tracks a .env plus a key file, then
 # dirties the .env. Open the diff or file view: values render masked by default
 # (KEY=••••••), with an eye toggle to reveal. A normal source file is unaffected.
+#
+# Also exercises:
+#  - file preview text selection: open config.ts, drag-select code, ⌘C copies it.
+#  - vault .env paste: copy the .env body, open Vault (or Repo Settings → Vault),
+#    click "Paste .env", paste, Import → each KEY=value lands as a secret; blank
+#    lines and # comments are dropped, quotes stripped, repeat keys overwrite.
 R="$ROOT/secrets"
 new_repo "$R"
 
@@ -37,4 +43,4 @@ JWT_SECRET="rotated-signing-key"
 SENTRY_DSN=https://abc@o123.ingest.sentry.io/456
 EOF
 
-summary "secrets" "secret masking: open .env / deploy.pem → values masked (eye toggle reveals); config.ts unaffected"
+summary "secrets" "secret masking + text-selection in preview + Vault 'Paste .env' bulk import (copy this repo's .env into the vault)"

@@ -9,11 +9,13 @@ import {
   ShieldAlert,
   Globe,
   ClipboardCopy,
+  ClipboardPaste,
   Loader2
 } from 'lucide-react'
 import { vaultApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
+import { parseDotenv } from '../lib/dotenv'
 import { useT } from '../i18n'
 import type { VaultEntry, VaultListResult } from '../../../shared/types'
 
@@ -71,6 +73,7 @@ export function RepoVaultTab({ repoPath }: { repoPath: string }): React.JSX.Elem
   const closeModal = useUIStore((s) => s.closeModal)
   const [data, setData] = useState<VaultListResult | null>(null)
   const [draft, setDraft] = useState<{ key: string; value: string; note: string } | null>(null)
+  const [pasteText, setPasteText] = useState<string | null>(null)
   const [revealAll, setRevealAll] = useState(false)
 
   const reload = useCallback(async (): Promise<void> => {
@@ -100,6 +103,24 @@ export function RepoVaultTab({ repoPath }: { repoPath: string }): React.JSX.Elem
     )
     setDraft(null)
     toast('success', t('vault.saved'))
+  }
+
+  const importEnv = async (): Promise<void> => {
+    if (pasteText === null) return
+    const parsed = parseDotenv(pasteText)
+    if (parsed.length === 0) {
+      toast('error', t('vault.envNone'))
+      return
+    }
+    const existingEntries = data?.repo ?? []
+    let result: VaultListResult | null = null
+    for (const p of parsed) {
+      const existing = existingEntries.find((e) => e.key === p.key)
+      result = await vaultApi.upsert('repo', repoPath, { id: existing?.id, key: p.key, value: p.value, note: existing?.note })
+    }
+    if (result) setData(result)
+    setPasteText(null)
+    toast('success', `${parsed.length} ${t('vault.envImported')}`)
   }
 
   const del = async (id: string): Promise<void> => setData(await vaultApi.remove('repo', repoPath, id))
@@ -140,10 +161,30 @@ export function RepoVaultTab({ repoPath }: { repoPath: string }): React.JSX.Elem
                 {revealAll ? <EyeOff size={13} /> : <Eye size={13} />} {revealAll ? t('vault.hideAll') : t('vault.revealAll')}
               </button>
             )}
+            <button className="btn ghost small" title={t('vault.pasteEnvTitle')} onClick={() => setPasteText('')}>
+              <ClipboardPaste size={13} /> {t('vault.pasteEnv')}
+            </button>
             <button className="btn ghost small" onClick={() => setDraft({ key: '', value: '', note: '' })}>
               <Plus size={13} /> {t('vault.add')}
             </button>
           </div>
+
+          {pasteText !== null && (
+            <div className="vault-paste">
+              <textarea
+                className="modal-input vault-paste-area"
+                placeholder={t('vault.pastePlaceholder')}
+                value={pasteText}
+                autoFocus
+                spellCheck={false}
+                onChange={(e) => setPasteText(e.target.value)}
+              />
+              <div className="vault-paste-actions">
+                <button className="btn primary small" onClick={() => void importEnv()} disabled={!pasteText.trim()}>{t('vault.import')}</button>
+                <button className="btn ghost small" onClick={() => setPasteText(null)}>{t('vault.cancel')}</button>
+              </div>
+            </div>
+          )}
 
           {draft && (
             <div className="vault-draft">

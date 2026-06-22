@@ -12,11 +12,13 @@ import {
   ShieldAlert,
   Info,
   ClipboardCopy,
+  ClipboardPaste,
   Loader2
 } from 'lucide-react'
 import { vaultApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
 import type { VaultEntry, VaultListResult } from '../../../shared/types'
+import { parseDotenv } from '../lib/dotenv'
 import { useT } from '../i18n'
 
 function EntryRow({
@@ -72,6 +74,7 @@ export function VaultPage(): React.JSX.Element {
   const toast = useUIStore((s) => s.toast)
   const [data, setData] = useState<VaultListResult | null>(null)
   const [draft, setDraft] = useState<{ key: string; value: string; note: string } | null>(null)
+  const [pasteText, setPasteText] = useState<string | null>(null)
   const [revealAll, setRevealAll] = useState(false)
 
   // Global entries don't depend on a repo; pass an empty path.
@@ -102,6 +105,23 @@ export function VaultPage(): React.JSX.Element {
     )
     setDraft(null)
     toast('success', t('vault.saved'))
+  }
+
+  const importEnv = async (): Promise<void> => {
+    if (pasteText === null) return
+    const parsed = parseDotenv(pasteText)
+    if (parsed.length === 0) {
+      toast('error', t('vault.envNone'))
+      return
+    }
+    let result: VaultListResult | null = null
+    for (const p of parsed) {
+      const existing = entries.find((e) => e.key === p.key)
+      result = await vaultApi.upsert('global', '', { id: existing?.id, key: p.key, value: p.value, note: existing?.note })
+    }
+    if (result) setData(result)
+    setPasteText(null)
+    toast('success', `${parsed.length} ${t('vault.envImported')}`)
   }
 
   const del = async (id: string): Promise<void> => setData(await vaultApi.remove('global', '', id))
@@ -152,11 +172,31 @@ export function VaultPage(): React.JSX.Element {
                     {revealAll ? <EyeOff size={13} /> : <Eye size={13} />} {revealAll ? t('vault.hideAll') : t('vault.revealAll')}
                   </button>
                 )}
+                <button className="btn ghost small" title={t('vault.pasteEnvTitle')} onClick={() => setPasteText('')}>
+                  <ClipboardPaste size={13} /> {t('vault.pasteEnv')}
+                </button>
                 <button className="btn primary small" onClick={() => setDraft({ key: '', value: '', note: '' })}>
                   <Plus size={13} /> {t('vault.add')}
                 </button>
               </div>
             </div>
+
+            {pasteText !== null && (
+              <div className="vault-paste">
+                <textarea
+                  className="modal-input vault-paste-area"
+                  placeholder={t('vault.pastePlaceholder')}
+                  value={pasteText}
+                  autoFocus
+                  spellCheck={false}
+                  onChange={(e) => setPasteText(e.target.value)}
+                />
+                <div className="vault-paste-actions">
+                  <button className="btn primary small" onClick={() => void importEnv()} disabled={!pasteText.trim()}>{t('vault.import')}</button>
+                  <button className="btn ghost small" onClick={() => setPasteText(null)}>{t('vault.cancel')}</button>
+                </div>
+              </div>
+            )}
 
             {draft && (
               <div className="vault-draft">

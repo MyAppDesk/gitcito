@@ -4617,6 +4617,8 @@ textarea:focus {
   color: var(--text-0);
   font-size: 13px;
   line-height: 1.65;
+  user-select: text;
+  -webkit-user-select: text;
 }
 /* Full-pane markdown/word preview (not the floating explain panel). */
 .fv-body > .md-preview {
@@ -4807,6 +4809,9 @@ textarea:focus {
 .code-text {
   flex: 1;
   min-width: 0;
+  user-select: text;
+  -webkit-user-select: text;
+  cursor: text;
 }
 
 /* Blame view */
@@ -8952,6 +8957,28 @@ button.insights-row:hover { background: var(--bg-2); }
   background: var(--bg-2);
   border: 1px solid var(--border-soft);
   border-radius: 8px;
+}
+.vault-paste {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 10px 0;
+  padding: 10px;
+  background: var(--bg-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+}
+.vault-paste-area {
+  width: 100%;
+  min-height: 120px;
+  resize: vertical;
+  font-family: var(--mono, monospace);
+  line-height: 1.5;
+}
+.vault-paste-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
 }
 .vault-list { margin-top: 10px; border: 1px solid var(--border-soft); border-radius: 8px; overflow: hidden; }
 .vault-row {

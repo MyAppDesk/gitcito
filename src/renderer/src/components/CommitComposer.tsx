@@ -7,7 +7,7 @@ import { repoActions, useRepoStore, type RepoData } from '../stores/repo'
 import { useUIStore, type MenuItem } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { FileListView } from './FileListView'
-import { lintCommit, subjectCounterLevel, SUBJECT_IDEAL_LEN, CC_TYPES, parseCcPrefix, applyCcType, GITMOJIS, parseGitmojiPrefix, applyGitmoji } from '../lib/commitLint'
+import { lintCommit, subjectCounterLevel, SUBJECT_IDEAL_LEN, CC_TYPES, parseCcPrefix, applyCcType, GITMOJIS, parseGitmojiPrefix, applyGitmoji, parseTicketPrefix, ticketFromBranch } from '../lib/commitLint'
 import { isSecretFile } from '../lib/secrets'
 import {
   FileSearchBar,
@@ -90,6 +90,16 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
       { label: '🙂  none', onClick: () => applyGitmojiToDraft('') },
       ...GITMOJIS.map((g) => ({ label: `${g.emoji}  ${g.label}`, onClick: () => applyGitmojiToDraft(g.emoji) }))
     ])
+  }
+  // Ticket field is free-text while typing; it only writes a `KEY-123:` prefix
+  // once the key is complete, and strips it when cleared.
+  const [ticketField, setTicketField] = useState(() => parseTicketPrefix(summary).ticket)
+  const onTicketChange = (v: string): void => {
+    setTicketField(v)
+    histIdx.current = -1
+    const rest = parseTicketPrefix(summary).rest
+    const key = v.trim().toUpperCase()
+    setSummary(/^[A-Z][A-Z0-9]+-\d+$/.test(key) ? `${key}: ${rest}` : rest)
   }
   const [amend, setAmend] = useState(false)
   const [aiBusy, setAiBusy] = useState(false)
@@ -796,6 +806,16 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
             <button type="button" className="commit-type commit-gitmoji" title="Gitmoji" onClick={openGitmojiMenu}>
               {currentGitmoji || '🙂'}
             </button>
+          )}
+          {commitStyle === 'ticket' && (
+            <input
+              className="commit-type commit-ticket"
+              title="Ticket key — prefixes the subject as KEY-123:"
+              placeholder={ticketFromBranch(repo.branches.current) || 'ABC-123'}
+              value={ticketField}
+              spellCheck={false}
+              onChange={(e) => onTicketChange(e.target.value)}
+            />
           )}
           <input
             className="commit-summary"

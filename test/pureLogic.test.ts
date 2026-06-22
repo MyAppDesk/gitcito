@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { parseRemoteUrl } from '../src/main/hosting'
-import { lintCommit, subjectCounterLevel, parseCcPrefix, applyCcType, parseGitmojiPrefix, applyGitmoji } from '../src/renderer/src/lib/commitLint'
+import { lintCommit, subjectCounterLevel, parseCcPrefix, applyCcType, parseGitmojiPrefix, applyGitmoji, parseTicketPrefix, applyTicket, ticketFromBranch } from '../src/renderer/src/lib/commitLint'
 import { isSecretFile, maskSecretLine } from '../src/renderer/src/lib/secrets'
 import { comboFromEvent, formatCombo, effectiveBindings, matchShortcut } from '../src/renderer/src/lib/shortcuts'
 import { autolink, remoteWebUrl } from '../src/renderer/src/lib/autolink'
@@ -105,6 +105,24 @@ describe('gitmoji prefix', () => {
     expect(applyGitmoji('add thing', '✨')).toBe('✨ add thing')
     expect(applyGitmoji('✨ add thing', '🐛')).toBe('🐛 add thing')
     expect(applyGitmoji('✨ add thing', '')).toBe('add thing')
+  })
+})
+
+describe('ticket prefix', () => {
+  it('parses a KEY-123 prefix and ignores plain subjects', () => {
+    expect(parseTicketPrefix('ABC-12: do x')).toEqual({ ticket: 'ABC-12', rest: 'do x' })
+    expect(parseTicketPrefix('do x').ticket).toBe('')
+  })
+
+  it('adds, swaps (uppercased) and strips the ticket prefix', () => {
+    expect(applyTicket('do x', 'abc-12')).toBe('ABC-12: do x')
+    expect(applyTicket('ABC-12: do x', 'DEF-9')).toBe('DEF-9: do x')
+    expect(applyTicket('ABC-12: do x', '')).toBe('do x')
+  })
+
+  it('extracts a ticket key from a branch name', () => {
+    expect(ticketFromBranch('feature/ABC-123-login')).toBe('ABC-123')
+    expect(ticketFromBranch('main')).toBe('')
   })
 })
 

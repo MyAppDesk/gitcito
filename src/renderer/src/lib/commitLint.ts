@@ -107,3 +107,23 @@ export function applyGitmoji(summary: string, emoji: string): string {
   const { rest } = parseGitmojiPrefix(summary)
   return emoji ? `${emoji} ${rest}` : rest
 }
+
+const TICKET_PREFIX = /^([A-Z][A-Z0-9]+-\d+):\s*/
+
+/** Split a leading `KEY-123: ` ticket prefix from the subject (empty if none). */
+export function parseTicketPrefix(summary: string): { ticket: string; rest: string } {
+  const m = TICKET_PREFIX.exec(summary)
+  return m ? { ticket: m[1], rest: summary.slice(m[0].length) } : { ticket: '', rest: summary }
+}
+
+/** Apply (or, with an empty ticket, strip) a `KEY-123: ` prefix on the subject. */
+export function applyTicket(summary: string, ticket: string): string {
+  const { rest } = parseTicketPrefix(summary)
+  const t = ticket.trim().toUpperCase()
+  return t ? `${t}: ${rest}` : rest
+}
+
+/** Pull a ticket key out of a branch name, if present (e.g. `feat/ABC-123-x`). */
+export function ticketFromBranch(branch: string): string {
+  return /([A-Z][A-Z0-9]+-\d+)/.exec(branch ?? '')?.[1] ?? ''
+}

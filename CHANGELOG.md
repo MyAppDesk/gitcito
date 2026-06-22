@@ -1,5 +1,12 @@
 
 
+## [1.6.0](https://github.com/MyAppDesk/gitcito/compare/v1.5.0...v1.6.0) (2026-06-22)
+
+
+### Features
+
+* add bulk import of secrets from pasted .env file ([ff4675c](https://github.com/MyAppDesk/gitcito/commit/ff4675c06738649bf5389860b368227e46dad06e))
+
 ## [1.5.0](https://github.com/MyAppDesk/gitcito/compare/v1.4.0...v1.5.0) (2026-06-22)
 
 

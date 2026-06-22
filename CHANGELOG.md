@@ -1,6 +1,6 @@
 
 
-## [1.0.0](https://github.com/MyAppDesk/gitcito/compare/v0.22.0...v1.0.0) (2026-06-22)
+## [0.23.0](https://github.com/MyAppDesk/gitcito/compare/v0.22.0...v0.23.0) (2026-06-22)
 
 
 ### Features

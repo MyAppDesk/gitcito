@@ -260,6 +260,22 @@ function ProfilePage({ profile, edit }: { profile: Profile; edit: (p: Partial<Pr
       </button>
 
       <SigningSection />
+
+      <h4>{t('settings.preferences')}</h4>
+      <label>
+        {t('settings.commitStyle')}
+        <select
+          value={profile.ai.commitStyle}
+          onChange={(e) => edit({ ai: { ...profile.ai, commitStyle: e.target.value as CommitStyle } })}
+        >
+          {COMMIT_STYLES.map((s) => (
+            <option key={s.id} value={s.id}>
+              {t(s.key)}
+            </option>
+          ))}
+        </select>
+        <span className="settings-hint">{t('settings.commitStyleHint')}</span>
+      </label>
     </>
   )
 }
@@ -486,19 +502,6 @@ export function AIPage({ profile, edit }: { profile: Profile; edit: (p: Partial<
         </div>
       </label>
 
-      <h4>{t('settings.commitStyle')}</h4>
-      <label>
-        <select
-          value={ai.commitStyle}
-          onChange={(e) => edit({ ai: { ...ai, commitStyle: e.target.value as CommitStyle } })}
-        >
-          {COMMIT_STYLES.map((s) => (
-            <option key={s.id} value={s.id}>
-              {t(s.key)}
-            </option>
-          ))}
-        </select>
-      </label>
 
       <label className="settings-toggle-card" style={{ marginTop: 12 }}>
         <input

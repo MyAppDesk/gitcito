@@ -92,6 +92,9 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
   const activeProfile = useSettingsStore((s) => s.activeProfile)
   const largeFileKb = useSettingsStore((s) => s.settings.largeFileKb)
   const aiEnabled = useSettingsStore((s) => s.activeProfile().ai.enabled !== false)
+  // The Conventional-Commit type dropdown shows only when the profile's commit
+  // style is Conventional (Settings → Profile → Preferences).
+  const commitStyle = useSettingsStore((s) => s.activeProfile().ai.commitStyle)
 
   const layout = useUIStore((s) => s.layout)
   const setLayout = useUIStore((s) => s.setLayout)
@@ -760,19 +763,21 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
 
       <div className="commit-box">
         <div className="commit-summary-row">
-          <select
-            className="commit-type"
-            title="Conventional-Commit type"
-            value={currentCcType}
-            onChange={(e) => applyCcTypeToDraft(e.target.value)}
-          >
-            <option value="">type</option>
-            {CC_TYPES.map((ty) => (
-              <option key={ty} value={ty}>
-                {ty}
-              </option>
-            ))}
-          </select>
+          {commitStyle === 'conventional' && (
+            <select
+              className="commit-type"
+              title="Conventional-Commit type"
+              value={currentCcType}
+              onChange={(e) => applyCcTypeToDraft(e.target.value)}
+            >
+              <option value="">type</option>
+              {CC_TYPES.map((ty) => (
+                <option key={ty} value={ty}>
+                  {ty}
+                </option>
+              ))}
+            </select>
+          )}
           <input
             className="commit-summary"
             placeholder="Commit summary"

@@ -377,7 +377,9 @@ const en = {
   'settings.explainStyleHint': 'Tone the AI uses when explaining code.',
   'settings.conflictStyle': 'Conflict resolution style',
   'settings.conflictStyleHint': 'How the AI shapes the file when resolving merge conflicts.',
-  'settings.generateDescription': 'Generate description',
+  'settings.generateDescription': 'Generate commit description',
+  'settings.preferences': 'Preferences',
+  'settings.commitStyleHint': 'How commit messages are formatted — used by the composer’s helpers and by AI generation.',
   'settings.generateDescriptionHint':
     'Let the AI write a commit body. When off, only the summary line is produced.',
   'settings.advanced': 'Advanced settings',
@@ -845,7 +847,9 @@ const es: Dict = {
   'settings.explainStyleHint': 'Tono que usa la IA al explicar código.',
   'settings.conflictStyle': 'Estilo de resolución de conflictos',
   'settings.conflictStyleHint': 'Cómo formatea la IA el archivo al resolver conflictos de fusión.',
-  'settings.generateDescription': 'Generar descripción',
+  'settings.generateDescription': 'Generar descripción del commit',
+  'settings.preferences': 'Preferencias',
+  'settings.commitStyleHint': 'Cómo se formatean los mensajes de commit — lo usan los ayudantes del editor y la generación con IA.',
   'settings.generateDescriptionHint':
     'Deja que la IA escriba el cuerpo del commit. Si se desactiva, solo se genera el resumen.',
   'settings.advanced': 'Ajustes avanzados',

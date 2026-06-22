@@ -422,9 +422,9 @@ export const shots = [
       const repo = repoPaths['deep-history-monorepo']
       await page.evaluate((p) => window.__shot.ui.getState().openModal({ kind: 'repo-settings', repoPath: p }), repo)
       await page.waitForTimeout(400)
-      // Click the History tab to confirm the relocated section renders.
+      // Click the Insights tab to show the relocated repo-insights dashboard.
       await page.evaluate(() => {
-        const btn = [...document.querySelectorAll('.repo-settings-tabs button')].find((b) => /History/.test(b.textContent || ''))
+        const btn = [...document.querySelectorAll('.repo-settings-tabs button')].find((b) => /Insights|Métricas/.test(b.textContent || ''))
         if (btn) btn.click()
       })
       await page.waitForTimeout(500)

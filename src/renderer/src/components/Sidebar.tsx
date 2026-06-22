@@ -1381,16 +1381,30 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         defaultOpen={false}
         {...dragProps('submodules')}
         actions={
-          <span
-            className="icon-btn"
-            title={t('sidebar.addSubmodule')}
-            onClick={(e) => {
-              e.stopPropagation()
-              addSubmodule()
-            }}
-          >
-            <Plus size={11} />
-          </span>
+          <>
+            {repo.submodules.length > 0 && (
+              <span
+                className="icon-btn"
+                title={t('sidebar.updateAllSubmodules')}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  void repoActions.submoduleUpdate(path)
+                }}
+              >
+                <RefreshCw size={11} />
+              </span>
+            )}
+            <span
+              className="icon-btn"
+              title={t('sidebar.addSubmodule')}
+              onClick={(e) => {
+                e.stopPropagation()
+                addSubmodule()
+              }}
+            >
+              <Plus size={11} />
+            </span>
+          </>
         }
       >
         {repo.submodules.length === 0 && <div className="sb-empty">{t('sidebar.noSubmodules')}</div>}

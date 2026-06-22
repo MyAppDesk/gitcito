@@ -582,6 +582,11 @@ export type AskAction =
   | { type: 'stage'; files: string[]; description: string }
   | { type: 'unstage'; files: string[]; description: string }
   | { type: 'commit'; message: string; files?: string[]; description: string }
+  | { type: 'stash'; files?: string[]; message?: string; description: string }
+  | { type: 'discard'; files: string[]; description: string }
+  | { type: 'branch'; name: string; at?: string; checkout?: boolean; description: string }
+  | { type: 'checkout'; ref: string; description: string }
+  | { type: 'tag'; name: string; message?: string; description: string }
 
 /** Result of interpreting a free-form instruction against the repo's current state. */
 export interface AskPlan {

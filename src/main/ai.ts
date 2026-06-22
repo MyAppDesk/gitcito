@@ -657,10 +657,19 @@ Each action is one of:
 - {"type":"stage","files":["a.ts"],"description":"Stage a.ts"}
 - {"type":"unstage","files":["a.ts"],"description":"Unstage a.ts"}
 - {"type":"commit","message":"...","files":["README.md"],"description":"Commit the .md files"}
+- {"type":"stash","files":["a.ts"],"message":"optional label","description":"Stash a.ts"}
+- {"type":"discard","files":["a.ts"],"description":"Discard uncommitted changes to a.ts"}
+- {"type":"branch","name":"feature/x","at":"main","checkout":true,"description":"Create branch feature/x"}
+- {"type":"checkout","ref":"main","description":"Switch to main"}
+- {"type":"tag","name":"v1.2.0","message":"optional annotation","description":"Tag the current commit v1.2.0"}
 
 Rules:
 - For a commit, set "files" to the paths to include; they will be staged before committing. Omit "files" to commit what is already staged.
-- "message" must be a concise, conventional commit message.
+- For a stash, set "files" to the specific paths to stash; omit "files" to stash all changes. "message" is an optional label.
+- "message" (commit) must be a concise, conventional commit message.
+- "discard" permanently throws away uncommitted changes to the listed files — only use it when the user clearly asks to discard / revert / throw away local changes.
+- For "branch", "at" is the start point (default: current branch); "checkout" switches to it after creating (default true).
+- ONLY use the action types listed above. If the instruction needs anything else (push, pull, fetch, reset, rebase, revert, merge, delete a branch, force operations, etc.), return actions: [] and explain in "note" that it must be done from the dedicated UI.
 - If nothing matches (e.g. the user asks to commit .md files but none exist), return actions: [] and explain in "note".
 - Keep the plan minimal — only the actions needed to satisfy the instruction.`
 

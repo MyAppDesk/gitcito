@@ -259,6 +259,15 @@ export interface PrCheck {
   url: string // details/logs URL
 }
 
+/** A changed file in a pull request (file-by-file review checklist). */
+export interface PrFile {
+  filename: string
+  /** added | modified | removed | renamed */
+  status: string
+  additions: number
+  deletions: number
+}
+
 /** Full detail for one pull request (conversation + review state). */
 export interface PrDetail {
   number: number

@@ -8,7 +8,7 @@ import {
   MessageSquare,
   GitMerge
 } from 'lucide-react'
-import type { PrDetail, PrReviewEvent, PrMergeMethod, PrCheck } from '../../../shared/types'
+import type { PrDetail, PrReviewEvent, PrMergeMethod, PrCheck, PrFile } from '../../../shared/types'
 import { hostingApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
@@ -30,6 +30,25 @@ export function PRDetailModal({
 
   const [pr, setPr] = useState<PrDetail | null>(null)
   const [checks, setChecks] = useState<PrCheck[]>([])
+  const [files, setFiles] = useState<PrFile[]>([])
+  // "Viewed" ticks are local + persisted per repo+PR (GitHub's viewed state isn't
+  // exposed via a simple REST call).
+  const viewedKey = `gitcito-pr-viewed:${remoteUrl}#${number}`
+  const [viewed, setViewed] = useState<Set<string>>(() => {
+    try {
+      return new Set(JSON.parse(localStorage.getItem(viewedKey) || '[]') as string[])
+    } catch {
+      return new Set()
+    }
+  })
+  const toggleViewed = (f: string): void =>
+    setViewed((cur) => {
+      const next = new Set(cur)
+      if (next.has(f)) next.delete(f)
+      else next.add(f)
+      localStorage.setItem(viewedKey, JSON.stringify([...next]))
+      return next
+    })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [comment, setComment] = useState('')
@@ -45,6 +64,7 @@ export function PRDetailModal({
     try {
       setPr(await hostingApi.prDetail(remoteUrl, tokens, number))
       void hostingApi.prChecks(remoteUrl, tokens, number).then(setChecks).catch(() => setChecks([]))
+      void hostingApi.prFiles(remoteUrl, tokens, number).then(setFiles).catch(() => setFiles([]))
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
     }
@@ -162,6 +182,28 @@ export function PRDetailModal({
           )}
 
           {pr.body.trim() && <div className="prd-body">{autolink(pr.body, remoteWebUrl(remoteUrl))}</div>}
+
+          {files.length > 0 && (
+            <>
+              <div className="prd-section-title">
+                Files <span className="prd-count">{viewed.size}/{files.length} viewed</span>
+              </div>
+              <div className="prd-files">
+                {files.map((f) => (
+                  <label key={f.filename} className={`prd-file ${viewed.has(f.filename) ? 'viewed' : ''}`}>
+                    <input type="checkbox" checked={viewed.has(f.filename)} onChange={() => toggleViewed(f.filename)} />
+                    <span className={`prd-file-status st-${f.status}`} title={f.status}>
+                      {f.status === 'added' ? 'A' : f.status === 'removed' ? 'D' : f.status === 'renamed' ? 'R' : 'M'}
+                    </span>
+                    <span className="prd-file-name" title={f.filename}>{f.filename}</span>
+                    <span className="prd-file-stat">
+                      <span className="ins-add">+{f.additions}</span> <span className="ins-del">−{f.deletions}</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </>
+          )}
 
           <div className="prd-section-title">
             Conversation {pr.comments.length > 0 && <span className="prd-count">{pr.comments.length}</span>}

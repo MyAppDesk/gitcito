@@ -380,6 +380,8 @@ export const hostingApi = {
     window.api.hosting.prReplyReviewComment(remoteUrl, tokens, number, inReplyTo, body) as Promise<void>,
   prChecks: (remoteUrl: string, tokens: { github?: string }, number: number) =>
     window.api.hosting.prChecks(remoteUrl, tokens, number) as Promise<import('../../../shared/types').PrCheck[]>,
+  prFiles: (remoteUrl: string, tokens: { github?: string }, number: number) =>
+    window.api.hosting.prFiles(remoteUrl, tokens, number) as Promise<import('../../../shared/types').PrFile[]>,
   prReview: (remoteUrl: string, tokens: { github?: string }, number: number, event: PrReviewEvent, body: string) =>
     window.api.hosting.prReview(remoteUrl, tokens, number, event, body) as Promise<void>,
   prMerge: (remoteUrl: string, tokens: { github?: string }, number: number, method: PrMergeMethod) =>

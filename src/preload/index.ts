@@ -102,6 +102,8 @@ const api = {
       ipcRenderer.invoke('hosting:prReplyReviewComment', remoteUrl, tokens, number, inReplyTo, body),
     prChecks: (remoteUrl: string, tokens: unknown, number: number): Promise<unknown> =>
       ipcRenderer.invoke('hosting:prChecks', remoteUrl, tokens, number),
+    prFiles: (remoteUrl: string, tokens: unknown, number: number): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:prFiles', remoteUrl, tokens, number),
     prReview: (remoteUrl: string, tokens: unknown, number: number, event: string, body: string): Promise<unknown> =>
       ipcRenderer.invoke('hosting:prReview', remoteUrl, tokens, number, event, body),
     prMerge: (remoteUrl: string, tokens: unknown, number: number, method: string): Promise<unknown> =>

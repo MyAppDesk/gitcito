@@ -13,6 +13,7 @@ import type {
   PrReview,
   PrReviewThread,
   PrCheck,
+  PrFile,
   IssueInfo,
   IssueDetail,
   LinkedPr,
@@ -480,6 +481,20 @@ async function pullRequestChecks(
     conclusion: c.conclusion,
     url: c.html_url || c.details_url || ''
   }))
+}
+
+/** Changed files in a PR (for the file-by-file review checklist). */
+async function pullRequestFiles(
+  remoteUrl: string,
+  tokens: { github?: string },
+  number: number
+): Promise<PrFile[]> {
+  const { owner, repo, token } = ghRepoOf(remoteUrl, tokens.github)
+  const data = await ghJson<Array<{ filename: string; status: string; additions: number; deletions: number }>>(
+    `https://api.github.com/repos/${owner}/${repo}/pulls/${number}/files?per_page=300`,
+    token
+  ).catch(() => [])
+  return data.map((f) => ({ filename: f.filename, status: f.status, additions: f.additions, deletions: f.deletions }))
 }
 
 /** Reply to an inline review thread (POST a comment in reply to `inReplyTo`). */
@@ -1254,6 +1269,9 @@ export function registerHostingHandlers(): void {
     'hosting:prReplyReviewComment',
     (_e, remoteUrl: string, tokens: { github?: string }, number: number, inReplyTo: number, body: string) =>
       replyReviewComment(remoteUrl, tokens, number, inReplyTo, body)
+  )
+  ipcMain.handle('hosting:prFiles', (_e, remoteUrl: string, tokens: { github?: string }, number: number) =>
+    pullRequestFiles(remoteUrl, tokens, number)
   )
   ipcMain.handle('hosting:prChecks', (_e, remoteUrl: string, tokens: { github?: string }, number: number) =>
     pullRequestChecks(remoteUrl, tokens, number)

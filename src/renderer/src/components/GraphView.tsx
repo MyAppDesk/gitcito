@@ -758,7 +758,10 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
     const rows = displayCommits.map((c, i) => (multi.has(c.hash) ? i : -1)).filter((i) => i >= 0)
     const contiguous = rows.length >= 2 && rows[rows.length - 1] - rows[0] === rows.length - 1
     const headHash = repo.commits.find((c) => c.refs.some((r) => r.startsWith('HEAD')))?.hash
-    const canSquash = contiguous && sel[0] === headHash
+    // The oldest commit must have a parent (soft-reset to `oldest^`), so a range
+    // reaching the root commit can't be squashed this way.
+    const oldestCommit = sel.length ? displayCommits.find((c) => c.hash === sel[sel.length - 1]) : undefined
+    const canSquash = contiguous && sel[0] === headHash && (oldestCommit?.parents.length ?? 0) > 0
     const subjectOf = (h: string): string => displayCommits.find((c) => c.hash === h)?.subject ?? ''
 
     const items: MenuItem[] = [

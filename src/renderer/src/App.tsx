@@ -431,8 +431,12 @@ export default function App(): React.JSX.Element {
             if (!notifPrimed.current || !notify) continue
             if (n.reason !== 'review_requested' && n.reason !== 'ci_activity') continue
             const heading = n.reason === 'review_requested' ? 'Review requested' : 'CI activity'
-            const note = new Notification(`${heading} · ${n.repoFullName}`, { body: n.title })
-            note.onclick = () => void window.api.openExternal(n.url)
+            try {
+              const note = new Notification(`${heading} · ${n.repoFullName}`, { body: n.title })
+              note.onclick = () => void window.api.openExternal(n.url)
+            } catch {
+              // OS notifications unavailable / denied — ignore, keep polling.
+            }
           }
           notifPrimed.current = true
         })

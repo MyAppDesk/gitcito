@@ -203,4 +203,15 @@ describe('stashPush (partial stash)', () => {
     const stashes = await gitService.stashes(R)
     expect(stashes[0]?.message).toContain('only a')
   })
+
+  it('keeps staged changes in the tree with keepIndex', async () => {
+    const R = cloneFixture('snapshots')
+    writeFileSync(join(R, 'keep.txt'), 'keep\n')
+    await gitService.stageAll(R)
+
+    await gitService.stashPush(R, 'keep test', ['keep.txt'], true)
+
+    expect(existsSync(join(R, 'keep.txt'))).toBe(true) // --keep-index leaves it staged
+    expect((await gitService.stashes(R)).length).toBe(1)
+  })
 })

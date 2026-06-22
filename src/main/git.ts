@@ -1433,8 +1433,21 @@ export const gitService = {
     await gitFor(repoPath).reset([`--${mode}`, ref])
   },
 
-  async createTag(repoPath: string, name: string, hash?: string): Promise<void> {
-    await gitFor(repoPath).tag(hash ? [name, hash] : [name])
+  async createTag(
+    repoPath: string,
+    name: string,
+    hash?: string,
+    opts?: { message?: string; sign?: boolean }
+  ): Promise<void> {
+    const args: string[] = []
+    // A message (or signing) makes it an annotated/signed tag object; otherwise
+    // it stays a lightweight tag (just a ref).
+    if (opts?.sign) args.push('-s')
+    else if (opts?.message) args.push('-a')
+    if (opts?.message) args.push('-m', opts.message)
+    args.push(name)
+    if (hash) args.push(hash)
+    await gitFor(repoPath).tag(args)
   },
 
   async deleteTag(repoPath: string, name: string): Promise<void> {

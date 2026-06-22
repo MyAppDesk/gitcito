@@ -769,15 +769,7 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
     },
     {
       label: 'Create tag here…',
-      onClick: () =>
-        openModal({
-          kind: 'input',
-          title: 'Create tag',
-          label: `Tag at ${c.hash.slice(0, 7)}`,
-          placeholder: 'v1.0.0',
-          submitLabel: 'Create',
-          onSubmit: (name) => void repoActions.createTag(repo.path, name, c.hash)
-        })
+      onClick: () => openModal({ kind: 'create-tag', repoPath: repo.path, hash: c.hash, at: c.hash.slice(0, 7) })
     },
     { separator: true },
     { label: 'Checkout this commit (detached)', onClick: () => void repoActions.checkout(repo.path, c.hash) },
@@ -997,15 +989,7 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
     items.push({ label: 'Copy branch name', onClick: () => void navigator.clipboard.writeText(g.label) })
     items.push({
       label: 'Create tag here…',
-      onClick: () =>
-        openModal({
-          kind: 'input',
-          title: 'Create tag',
-          label: `Tag at ${c.hash.slice(0, 7)}`,
-          placeholder: 'v1.0.0',
-          submitLabel: 'Create',
-          onSubmit: (name) => void repoActions.createTag(repo.path, name, c.hash)
-        })
+      onClick: () => openModal({ kind: 'create-tag', repoPath: repo.path, hash: c.hash, at: c.hash.slice(0, 7) })
     })
     if (g.isLocal && isCurrent) items.push({ label: 'Push branch', onClick: () => void repoActions.push(repo.path) })
 

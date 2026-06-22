@@ -758,11 +758,11 @@ export const repoActions = {
       .getState()
       .run(path, am ? 'Applied patch (git am)' : 'Applied patch', () => gitApi.applyPatch(path, content, am)),
 
-  createTag: (path: string, name: string, hash?: string) =>
-    useRepoStore.getState().run(path, `Created tag ${name}`, () => gitApi.createTag(path, name, hash), {
+  createTag: (path: string, name: string, hash?: string, opts?: { message?: string; sign?: boolean }) =>
+    useRepoStore.getState().run(path, `Created tag ${name}`, () => gitApi.createTag(path, name, hash, opts), {
       label: `tag ${name}`,
       undo: () => gitApi.deleteTag(path, name),
-      redo: () => gitApi.createTag(path, name, hash)
+      redo: () => gitApi.createTag(path, name, hash, opts)
     }),
 
   deleteTag: (path: string, name: string) =>

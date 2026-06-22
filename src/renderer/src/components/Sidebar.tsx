@@ -384,15 +384,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     )
   }
 
-  const createTagAtHead = (): void =>
-    openModal({
-      kind: 'input',
-      title: 'Create tag',
-      label: 'Tag name (at current HEAD)',
-      placeholder: 'v1.0.0',
-      submitLabel: 'Create',
-      onSubmit: (name) => void repoActions.createTag(path, name)
-    })
+  const createTagAtHead = (): void => openModal({ kind: 'create-tag', repoPath: path, at: 'HEAD' })
 
   const tagMenu = (tag: TagInfo): MenuItem[] => {
     const remoteName = repo.remotes[0]?.name ?? 'origin'

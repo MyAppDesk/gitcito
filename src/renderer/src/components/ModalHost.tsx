@@ -25,6 +25,7 @@ import { StackModal } from './StackModal'
 import { ChangelogGenModal } from './ChangelogGenModal'
 import { SnapshotsModal } from './SnapshotsModal'
 import { StashPartialModal } from './StashPartialModal'
+import { CreateTagModal } from './CreateTagModal'
 import { ErrorBoundary } from './ErrorBoundary'
 import { CheatsheetModal } from './CheatsheetModal'
 import { CreateIssueModal } from './CreateIssueModal'
@@ -1301,6 +1302,7 @@ export function ModalHost(): React.JSX.Element {
             {modal.kind === 'changelog-gen' && <ChangelogGenModal repoPath={modal.repoPath} />}
             {modal.kind === 'snapshots' && <SnapshotsModal repoPath={modal.repoPath} />}
             {modal.kind === 'stash-partial' && <StashPartialModal repoPath={modal.repoPath} />}
+            {modal.kind === 'create-tag' && <CreateTagModal repoPath={modal.repoPath} hash={modal.hash} at={modal.at} />}
             {modal.kind === 'cheatsheet' && <CheatsheetModal />}
             {modal.kind === 'create-issue' && <CreateIssueModal repoPath={modal.repoPath} remoteUrl={modal.remoteUrl} />}
             {modal.kind === 'repo-settings' && <RepoSettingsModal repoPath={modal.repoPath} />}

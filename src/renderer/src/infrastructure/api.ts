@@ -153,7 +153,8 @@ export const gitApi = {
   bisectMark: (path: string, term: 'good' | 'bad' | 'skip', rev?: string) =>
     call<BisectStatus>('bisectMark', path, term, rev),
   bisectReset: (path: string) => call<void>('bisectReset', path),
-  createTag: (path: string, name: string, hash?: string) => call<void>('createTag', path, name, hash),
+  createTag: (path: string, name: string, hash?: string, opts?: { message?: string; sign?: boolean }) =>
+    call<void>('createTag', path, name, hash, opts),
   deleteTag: (path: string, name: string) => call<void>('deleteTag', path, name),
   pushTag: (path: string, name: string, remote?: string) => call<void>('pushTag', path, name, remote),
   deleteRemoteTag: (path: string, name: string, remote?: string) => call<void>('deleteRemoteTag', path, name, remote),

@@ -1,5 +1,6 @@
 import { describe, it, expect, afterAll } from 'vitest'
 import { writeFileSync, existsSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
 import { join } from 'node:path'
 import { gitService } from '../src/main/git'
 import { repoPath } from './helpers'
@@ -123,6 +124,22 @@ describe('cherryPickMany (multi-select graph)', () => {
     expect(after[0].subject).toBe('add cpm-two') // newest pick ends on top
     expect(after[1].subject).toBe('add cpm-one')
     expect(existsSync(join(R, 'cpm-one.txt'))).toBe(true)
+  })
+})
+
+describe('createTag (annotated tags)', () => {
+  const tagType = (R: string, name: string): string =>
+    execFileSync('git', ['-C', R, 'cat-file', '-t', name]).toString().trim()
+
+  it('creates a lightweight tag by default and an annotated tag with a message', async () => {
+    const R = cloneFixture('changelog')
+    await gitService.createTag(R, 'light-1')
+    expect(tagType(R, 'light-1')).toBe('commit') // lightweight → points straight at the commit
+
+    await gitService.createTag(R, 'annot-1', undefined, { message: 'release notes' })
+    expect(tagType(R, 'annot-1')).toBe('tag') // annotated → a tag object
+    const msg = execFileSync('git', ['-C', R, 'tag', '-l', '--format=%(contents)', 'annot-1']).toString()
+    expect(msg).toContain('release notes')
   })
 })
 

@@ -1,5 +1,41 @@
 
 
+## [1.0.0](https://github.com/MyAppDesk/gitcito/compare/v0.22.0...v1.0.0) (2026-06-22)
+
+
+### Features
+
+* add a co-author picker to the commit composer ([0278dc4](https://github.com/MyAppDesk/gitcito/commit/0278dc418c865bb2f61f8ee5371314ecac49b3ee))
+* add a conventional-commit type dropdown to the composer ([d0fc498](https://github.com/MyAppDesk/gitcito/commit/d0fc49812c901906d845a264b68c381754cff264))
+* add a first-parent linear view toggle to the graph ([4b9822b](https://github.com/MyAppDesk/gitcito/commit/4b9822b4a167326f5c66d99f5aea765759865eee))
+* add a gitmoji picker to the composer for the gitmoji commit style ([838059e](https://github.com/MyAppDesk/gitcito/commit/838059e98224a112d66be014bff194a116122e42))
+* add a ticket-key field to the composer for the ticket commit style ([9374adb](https://github.com/MyAppDesk/gitcito/commit/9374adbeea6532e52b06a86d2bd034a953a86b16))
+* compare any two refs from a ref picker ([4de182d](https://github.com/MyAppDesk/gitcito/commit/4de182d6d4cdfe96c6a333f0e223fe401f535330))
+* copy a host permalink to a file at the viewed commit ([a280134](https://github.com/MyAppDesk/gitcito/commit/a280134fbb2f259e2261d0926ff1da6c109d961d))
+* create a branch from a stash entry ([96c7b76](https://github.com/MyAppDesk/gitcito/commit/96c7b768e862212a46fb87019f00d3d7231eefc4))
+* create annotated and signed tags ([8441d7f](https://github.com/MyAppDesk/gitcito/commit/8441d7f7ba03b372b90421abb5843ec94666516c))
+* file-by-file viewed checklist in the PR detail ([bbd6485](https://github.com/MyAppDesk/gitcito/commit/bbd6485e46930a8c23c9face8ed08582ef40e15f))
+* find within a diff with match navigation ([6c901de](https://github.com/MyAppDesk/gitcito/commit/6c901de2babf1fa5248b6992ad6a968f88fe6fee))
+* mark commits that arrived in the last fetch or pull ([ca9f87c](https://github.com/MyAppDesk/gitcito/commit/ca9f87cdfe0507adbeb32f0b4438544693426cd4))
+* move commit-style choice to profile preferences and gate the type dropdown ([a548a6e](https://github.com/MyAppDesk/gitcito/commit/a548a6e915461529daa7f8295814b9233aae8aa4))
+* move repository insights into the repo settings dialog ([0388b04](https://github.com/MyAppDesk/gitcito/commit/0388b0478ceaef715909bcf9ff7ac6474b308871))
+* multi-select commits in the graph for batch cherry-pick and patch export ([a9a21e9](https://github.com/MyAppDesk/gitcito/commit/a9a21e95a5e25765ec3b31511580e26d338a8817))
+* navigate commits in the graph with arrow keys and j/k ([8aed544](https://github.com/MyAppDesk/gitcito/commit/8aed54404edcfc8a1afb814cca056c030c26ab84))
+* optional desktop notifications for review-requested and CI inbox items ([03d80a0](https://github.com/MyAppDesk/gitcito/commit/03d80a0bb788f6d328896561af48c5309b1d15ee))
+* rename a branch and move it on the remote in one step ([6191070](https://github.com/MyAppDesk/gitcito/commit/6191070ddfcd880ccfb3c4d2b68243a5fc689f70))
+* show contributor avatars in the co-author picker and tidy the toolbar divider ([e6a5397](https://github.com/MyAppDesk/gitcito/commit/e6a5397cdc76755f7e147fad7932bb581ad37cb8))
+* show only the emoji in the collapsed gitmoji picker ([f0bdf52](https://github.com/MyAppDesk/gitcito/commit/f0bdf527c46eef2c905fdd6c8d01912c3a819797))
+* squash a contiguous multi-selection of commits into one ([563794f](https://github.com/MyAppDesk/gitcito/commit/563794f6e9ca1d3e2fbbb2525eaf80691de58636))
+* stash a selected subset of changes ([74b472a](https://github.com/MyAppDesk/gitcito/commit/74b472a18283a1deab5692ce882ad32e3acb662e))
+* support the edit action in interactive rebase ([ffc1840](https://github.com/MyAppDesk/gitcito/commit/ffc1840024b7a6cca79b53fe12afde18a3c37d97))
+* update all submodules from the sidebar in one click ([8b48caf](https://github.com/MyAppDesk/gitcito/commit/8b48cafb8f05a1d1b96ad1eaf7d37a567fc3670a))
+* walk blame backwards by reblaming before a line's commit ([a52fee6](https://github.com/MyAppDesk/gitcito/commit/a52fee662b97fd75c41fe64b8635eb80f496e5cd))
+
+
+### Bug Fixes
+
+* guard squash at the root commit and harden desktop notifications ([88629f8](https://github.com/MyAppDesk/gitcito/commit/88629f86b1f71a6c3a20dc1c40b1ce6cda2cb8f4))
+
 ## [0.22.0](https://github.com/MyAppDesk/gitcito/compare/v0.21.0...v0.22.0) (2026-06-21)
 
 

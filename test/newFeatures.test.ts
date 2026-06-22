@@ -165,6 +165,16 @@ describe('squashCommits (multi-select squash)', () => {
   })
 })
 
+describe('contributors (co-author picker)', () => {
+  it('lists distinct authors with name + email', async () => {
+    const R = repoPath('insights') // seeded with Alice / Bob / Carol
+    const people = await gitService.contributors(R)
+    expect(people.length).toBeGreaterThanOrEqual(3)
+    expect(people.every((p) => p.name && p.email.includes('@'))).toBe(true)
+    expect(new Set(people.map((p) => p.email.toLowerCase())).size).toBe(people.length) // deduped
+  })
+})
+
 describe('stashToBranch (stash → branch)', () => {
   it('creates the branch, applies the stash there and drops it', async () => {
     const R = cloneFixture('changelog')

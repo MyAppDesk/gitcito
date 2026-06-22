@@ -2265,6 +2265,7 @@ textarea:focus {
 }
 .commit-type:hover { color: var(--text-1); }
 .commit-gitmoji { display: flex; align-items: center; justify-content: center; min-width: 34px; font-size: 15px; }
+.commit-coauthor { display: flex; align-items: center; justify-content: center; min-width: 34px; }
 .commit-ticket { width: 88px; flex: 0 0 auto; text-transform: uppercase; }
 .commit-ticket::placeholder { text-transform: none; }
 

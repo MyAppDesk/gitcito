@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Sparkles, Loader2, Trash2, AlignLeft, FolderTree, GitMerge, ChevronDown } from 'lucide-react'
+import { Sparkles, Loader2, Trash2, AlignLeft, FolderTree, GitMerge, ChevronDown, Users } from 'lucide-react'
 import { MYAPPDESK_COAUTHOR, type FileEntry } from '../../../shared/types'
 import { gitApi, aiApi, shellApi } from '../infrastructure/api'
 import { repoActions, useRepoStore, type RepoData } from '../stores/repo'
@@ -91,6 +91,29 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
       ...GITMOJIS.map((g) => ({ label: `${g.emoji}  ${g.label}`, onClick: () => applyGitmojiToDraft(g.emoji) }))
     ])
   }
+  // Co-author picker: append `Co-authored-by:` trailers from the repo's
+  // contributors to the commit body.
+  const coAuthorsRef = useRef<{ name: string; email: string }[]>([])
+  const addCoAuthor = (c: { name: string; email: string }): void => {
+    const trailer = `Co-authored-by: ${c.name} <${c.email}>`
+    if (description.includes(trailer)) return
+    setDescription((d) => (d.trim() ? `${d.replace(/\s+$/, '')}\n${trailer}` : trailer))
+  }
+  const openCoAuthorMenu = async (e: React.MouseEvent): Promise<void> => {
+    const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    if (!coAuthorsRef.current.length) {
+      coAuthorsRef.current = await gitApi.contributors(path).catch(() => [])
+    }
+    const list = coAuthorsRef.current
+    openContextMenu(
+      r.left,
+      r.bottom + 4,
+      list.length
+        ? list.map((c) => ({ label: `${c.name} <${c.email}>`, onClick: () => addCoAuthor(c) }))
+        : [{ label: 'No other contributors found', disabled: true, onClick: () => {} }]
+    )
+  }
+
   // Ticket field is free-text while typing; it only writes a `KEY-123:` prefix
   // once the key is complete, and strips it when cleared.
   const [ticketField, setTicketField] = useState(() => parseTicketPrefix(summary).ticket)
@@ -846,6 +869,9 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
               {summary.trim().length}
             </span>
           )}
+          <button className="commit-type commit-coauthor" title="Add a co-author" onClick={(e) => void openCoAuthorMenu(e)}>
+            <Users size={14} />
+          </button>
           {aiEnabled && (
             <motion.button
               className="ai-btn"

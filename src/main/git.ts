@@ -2204,6 +2204,24 @@ export const gitService = {
    * churn timeline. Renames are followed; binary files (numstat "-") count as a
    * touch but contribute no line counts.
    */
+  /** Distinct commit authors (name + email), most-frequent first — for the
+   *  composer's co-author picker. */
+  async contributors(repoPath: string, max = 100): Promise<{ name: string; email: string }[]> {
+    const out = await gitFor(repoPath)
+      .raw(['log', '--no-merges', '-5000', `--pretty=format:%an${SEP}%ae`])
+      .catch(() => '')
+    const counts = new Map<string, { name: string; email: string; n: number }>()
+    for (const line of out.split('\n')) {
+      const [name, email] = line.split(SEP)
+      if (!name || !email) continue
+      const key = email.toLowerCase()
+      const e = counts.get(key)
+      if (e) e.n++
+      else counts.set(key, { name, email, n: 1 })
+    }
+    return [...counts.values()].sort((a, b) => b.n - a.n).slice(0, max).map(({ name, email }) => ({ name, email }))
+  },
+
   async repoInsights(repoPath: string, sinceDays = 0): Promise<RepoInsights> {
     const git = gitFor(repoPath)
     // \x01 prefixes each commit header so it's distinguishable from numstat rows.

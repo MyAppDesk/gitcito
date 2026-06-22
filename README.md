@@ -45,19 +45,19 @@
 - **Command palette** (`⌘K` / `Ctrl+K`). Fuzzy-jump to any branch (checkout), commit (scroll-to in the graph), working-tree file, or action (fetch, pull, push, stash, terminal, reflog, settings…) without leaving the keyboard — and it **remembers what you use**, surfacing recents first and ranking frequent commands higher.
 - **Repo groups & tabs**. Bundle related repositories into a named, colour-coded group, switch between them in tabs (drag to reorder, eject or regroup), and jump back via recents.
 - **Commit graph** with branches, merges and octopus merges drawn properly — in light or dark. Windowed rendering keeps it smooth on huge histories, and **↑/↓ or `j`/`k`** walk the selection between commits.
-- **Multi-select commits** — `⌘`/`Ctrl`-click to toggle, `⇧`-click for a range, then right-click to **cherry-pick** the lot onto the current branch, **export a combined patch**, or copy their SHAs.
+- **Multi-select commits** — `⌘`/`Ctrl`-click to toggle, `⇧`-click for a range, then right-click to **cherry-pick** the lot onto the current branch, **squash** a contiguous run into one, **export a combined patch**, or copy their SHAs.
 - **Customisable graph columns**: show/hide, resize and reorder branch, message, author, date, SHA and deployment columns.
 - **Inline CI status** _(GitHub only)_. GitHub Actions check-runs (pass/fail/pending) shown right on the commit row.
 - **Branches, remotes, tags, stashes, worktrees & submodules**, all in one reorderable, searchable sidebar.
 - **Commit details**: changed-files tree/flat view, author, SHA, co-authors, copy & open externally. `#123` issue/PR refs and `@mentions` (in commit subjects, PR & issue bodies/comments) are **autolinked** to the host.
-- **Per-file blame & history**, with a follow-the-line jump from blame straight into the diff.
+- **Per-file blame & history**, with a follow-the-line jump from blame straight into the diff — and a right-click **"reblame before this commit"** to walk a line's history backwards.
 - **Search & filter** commits by message, author, SHA or deployment status — or **filter by path** (right-click a file/folder → "Filter graph by this path", or ⌘K) to spotlight only the commits that touched it.
 - **Code search** (`⌘⇧F` / `Ctrl+Shift+F`). Search file **contents** across the working tree (`git grep`, tracked + untracked, with case / whole-word / regex) — results are **syntax-highlighted** with the match marked — or run a **history pickaxe** (`git log -S` / `-G`) to find the commits that introduced or removed a string. Click a hit to jump to the file or commit.
 - **Progressive history** with configurable page size, auto-load-on-scroll and optional Gravatar avatars.
 - **Insights** — a repo dashboard from your git history: summary cards (commits/day, contributors, files touched, lines changed), a **weekly churn** chart (additions vs deletions), **top contributors** (commits + lines), and **file hotspots** (most-changed files, click straight into a file's history). Filter by 30d / 90d / 1y / all.
 
 ### Working with changes
-- **Commit composer** with message styles: Auto, Conventional, Gitmoji, Ticket, Plain — even Caveman or Haiku. A **Conventional-Commit type dropdown** prefixes the subject (`feat:`, `fix(scope)!:`…) in one click, **↑/↓ recalls recent commit messages**, and a live **message linter** flags subject length (with a char counter), trailing periods, non-imperative/lowercase subjects and over-wide body lines — hints, never a hard gate.
+- **Commit composer** with message styles: Auto, Conventional, Gitmoji, Ticket, Plain — even Caveman or Haiku. The composer adapts a **prefix helper** to your chosen style — a Conventional-Commit **type dropdown** (`feat:`, `fix(scope)!:`…), a **gitmoji picker**, or a **ticket-key field** (`ABC-123:`, seeded from the branch). **↑/↓ recalls recent commit messages**, and a live **message linter** flags subject length (with a char counter), trailing periods, non-imperative/lowercase subjects and over-wide body lines — hints, never a hard gate.
 - **Stage / unstage / discard**, down to **individual hunks — or individual lines** picked right in the diff.
 - **Amend**, persistent drafts, and auto-prefilled messages during merge / cherry-pick / revert.
 - **Commit templates** (`commit.template` / `.gitmessage`) prefill the composer; comment lines are stripped.
@@ -106,7 +106,7 @@
 - **Issues** _(GitHub only)_ — browse open issues, then a full **issue tab**: body, comments, labels, assignees, milestone, Projects v2 fields (Priority/Start/Target/Effort), close/reopen, and **create a branch for an issue** (with AI naming).
 - **Milestones** _(GitHub only)_ — a sidebar list with progress, and a **milestone tab** showing its issues.
 - **Releases** _(GitHub only)_ — browse a repo's releases in the sidebar and a changelog page.
-- **Notifications inbox** _(GitHub only)_ — your whole GitHub inbox (review requests, mentions, CI activity…) across every repo, with unread / all filters, mark-one / mark-all read, and one click to open. The toolbar **bell shows an unread badge** (polled in the background); also reachable from the command palette or `⌘K`.
+- **Notifications inbox** _(GitHub only)_ — your whole GitHub inbox (review requests, mentions, CI activity…) across every repo, with unread / all filters, mark-one / mark-all read, and one click to open. The toolbar **bell shows an unread badge** (polled in the background); also reachable from the command palette or `⌘K`. Optional **desktop notifications** raise an OS alert when a review is requested or CI runs (Settings → General).
 - **Clone or create repositories** on your hosting accounts without leaving the app.
 - **Per-profile tokens** for multiple accounts / orgs.
 - _GitHub is the battle-tested path (PR create/review/merge, issues, milestones, project fields). GitLab, Bitbucket & Azure support PR/MR listing + creation; their detail/review/merge are not implemented yet — see the disclaimer above._

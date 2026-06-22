@@ -1,5 +1,13 @@
 
 
+## [1.1.1](https://github.com/MyAppDesk/gitcito/compare/v1.1.0...v1.1.1) (2026-06-22)
+
+
+### Chores
+
+* exercise the in-app auto-update flow end to end — no functional changes.
+
+
 ## [1.1.0](https://github.com/MyAppDesk/gitcito/compare/v1.0.0...v1.1.0) (2026-06-22)
 
 

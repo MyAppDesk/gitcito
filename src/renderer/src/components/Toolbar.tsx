@@ -335,6 +335,11 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
             <ChevronDown size={13} />
           </span>
         </button>
+      </div>
+
+      <div className="toolbar-sep" />
+
+      <div className="toolbar-group">
         <button
           className="tool-btn"
           title="Repository settings"

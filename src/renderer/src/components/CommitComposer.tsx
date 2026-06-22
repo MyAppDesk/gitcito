@@ -7,6 +7,7 @@ import { repoActions, useRepoStore, type RepoData } from '../stores/repo'
 import { useUIStore, type MenuItem } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { FileListView } from './FileListView'
+import { Avatar } from './Avatar'
 import { lintCommit, subjectCounterLevel, SUBJECT_IDEAL_LEN, CC_TYPES, parseCcPrefix, applyCcType, GITMOJIS, parseGitmojiPrefix, applyGitmoji, parseTicketPrefix, ticketFromBranch } from '../lib/commitLint'
 import { isSecretFile } from '../lib/secrets'
 import {
@@ -109,7 +110,11 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
       r.left,
       r.bottom + 4,
       list.length
-        ? list.map((c) => ({ label: `${c.name} <${c.email}>`, onClick: () => addCoAuthor(c) }))
+        ? list.map((c) => ({
+            label: `${c.name} · ${c.email}`,
+            icon: <Avatar email={c.email} name={c.name} size={16} />,
+            onClick: () => addCoAuthor(c)
+          }))
         : [{ label: 'No other contributors found', disabled: true, onClick: () => {} }]
     )
   }

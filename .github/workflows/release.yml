@@ -68,14 +68,13 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Extract changelog for this version
-        id: changelog
         run: |
           VERSION="${{ github.ref_name }}"
           VERSION="${VERSION#v}"
-          NOTES=$(awk "/^## \[${VERSION}\]/{flag=1; next} /^## /{flag=0} flag" CHANGELOG.md | sed '/^$/d' | head -100)
-          echo "notes<<EOF" >> $GITHUB_OUTPUT
-          echo "$NOTES" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          # Write to a file (not a shell arg) so notes containing quotes,
+          # backticks or $() never get re-interpreted by the shell.
+          awk "/^## \[${VERSION}\]/{flag=1; next} /^## /{flag=0} flag" CHANGELOG.md \
+            | sed '/^$/d' | head -100 > release-notes.md
 
       - name: Publish the release
         env:
@@ -85,4 +84,4 @@ jobs:
             --repo "${{ github.repository }}" \
             --draft=false \
             --latest \
-            --notes "${{ steps.changelog.outputs.notes }}"
+            --notes-file release-notes.md

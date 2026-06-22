@@ -730,18 +730,50 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
   }
 
   const multiMenu = (): MenuItem[] => {
-    const sel = orderedSelection()
-    return [
+    const sel = orderedSelection() // newest-first
+    // Squash only when the selection is a contiguous run reaching the branch tip
+    // (HEAD), since it's done by a soft reset to the oldest commit's parent.
+    const rows = displayCommits.map((c, i) => (multi.has(c.hash) ? i : -1)).filter((i) => i >= 0)
+    const contiguous = rows.length >= 2 && rows[rows.length - 1] - rows[0] === rows.length - 1
+    const headHash = repo.commits.find((c) => c.refs.some((r) => r.startsWith('HEAD')))?.hash
+    const canSquash = contiguous && sel[0] === headHash
+    const subjectOf = (h: string): string => displayCommits.find((c) => c.hash === h)?.subject ?? ''
+
+    const items: MenuItem[] = [
       {
         label: `Cherry-pick ${sel.length} commits onto ${repo.branches.current.trim() || 'HEAD'}`,
         disabled: !repo.branches.current.trim(),
         onClick: () => void repoActions.cherryPickMany(repo.path, sel)
       },
-      { label: `Export ${sel.length} commits as a patch…`, onClick: () => void exportManyPatches(sel) },
+      { label: `Export ${sel.length} commits as a patch…`, onClick: () => void exportManyPatches(sel) }
+    ]
+    if (canSquash) {
+      const oldest = sel[sel.length - 1]
+      const defaultMsg = [...sel].reverse().map(subjectOf).filter(Boolean).join('; ')
+      items.push({
+        label: `Squash ${sel.length} commits into one`,
+        onClick: () =>
+          openModal({
+            kind: 'input',
+            title: 'Squash commits',
+            label: `Combine ${sel.length} commits into a single commit`,
+            placeholder: 'Squashed commit message',
+            initial: defaultMsg,
+            submitLabel: 'Squash',
+            onSubmit: (msg) => {
+              const message = msg.trim() || defaultMsg
+              setMulti(new Set())
+              void repoActions.squashCommits(repo.path, oldest, message, sel.length)
+            }
+          })
+      })
+    }
+    items.push(
       { separator: true },
       { label: `Copy ${sel.length} SHAs`, onClick: () => void navigator.clipboard.writeText(sel.join('\n')) },
       { label: 'Clear selection', onClick: () => setMulti(new Set()) }
-    ]
+    )
+    return items
   }
 
   const commitMenu = (c: GraphCommit): MenuItem[] => {

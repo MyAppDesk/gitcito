@@ -836,6 +836,19 @@ export const gitService = {
     })
   },
 
+  /**
+   * Squash a contiguous run of the newest commits (HEAD down to and including
+   * `oldestSha`) into a single commit with `message`. Implemented as a soft
+   * reset to `oldestSha^` followed by one commit, so it only applies when the
+   * selection reaches the branch tip. `ORIG_HEAD` is left pointing at the old
+   * tip, so undo is a hard reset to it.
+   */
+  async squashCommits(repoPath: string, oldestSha: string, message: string): Promise<void> {
+    const git = gitFor(repoPath)
+    await git.raw(['reset', '--soft', `${oldestSha}^`])
+    await git.raw(['commit', '-m', message])
+  },
+
   // ─── Sync operations ───────────────────────────────────────────────────────
 
   async fetchAll(repoPath: string): Promise<void> {

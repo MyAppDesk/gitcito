@@ -104,6 +104,8 @@ export const gitApi = {
 
   cherryPickMany: (path: string, hashes: string[], noCommit?: boolean) =>
     call<void>('cherryPickMany', path, hashes, noCommit),
+  squashCommits: (path: string, oldestSha: string, message: string) =>
+    call<void>('squashCommits', path, oldestSha, message),
   stash: (path: string, message?: string) => call<void>('stash', path, message),
   stashPush: (path: string, message?: string, paths?: string[], keepIndex?: boolean) =>
     call<void>('stashPush', path, message, paths, keepIndex),

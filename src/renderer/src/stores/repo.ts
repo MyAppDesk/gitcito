@@ -722,6 +722,14 @@ export const repoActions = {
           redo: () => gitApi.cherryPick(path, hash)
         }),
 
+  // Squash a contiguous run of the newest commits into one.
+  squashCommits: (path: string, oldestSha: string, message: string, count: number) =>
+    useRepoStore.getState().run(path, `Squashed ${count} commits`, () => gitApi.squashCommits(path, oldestSha, message), {
+      label: 'squash',
+      undo: () => gitApi.reset(path, 'ORIG_HEAD', 'hard'),
+      redo: () => gitApi.squashCommits(path, oldestSha, message)
+    }),
+
   // Cherry-pick several commits (passed newest-first; applied oldest-first).
   cherryPickMany: (path: string, hashes: string[]) => {
     const ordered = [...hashes].reverse()

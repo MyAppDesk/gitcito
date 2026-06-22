@@ -143,6 +143,28 @@ describe('createTag (annotated tags)', () => {
   })
 })
 
+describe('squashCommits (multi-select squash)', () => {
+  it('folds a contiguous run of the newest commits into one', async () => {
+    const R = cloneFixture('changelog')
+    for (const n of ['a', 'b', 'c']) {
+      writeFileSync(join(R, `sq-${n}.txt`), `${n}\n`)
+      await gitService.stageAll(R)
+      await gitService.commit(R, `add ${n}`)
+    }
+    const before = await gitService.log(R) // c, b, a, …
+    const oldest = before[1].hash // squash the top two: c (HEAD) + b
+
+    await gitService.squashCommits(R, oldest, 'squash b and c')
+
+    const after = await gitService.log(R)
+    expect(after[0].subject).toBe('squash b and c')
+    expect(after.length).toBe(before.length - 1)
+    expect(after.some((c) => c.subject === 'add a')).toBe(true) // untouched
+    // Both squashed files survive in the tree.
+    expect(existsSync(join(R, 'sq-b.txt')) && existsSync(join(R, 'sq-c.txt'))).toBe(true)
+  })
+})
+
 describe('stashPush (partial stash)', () => {
   it('stashes only the selected file, leaving the rest dirty', async () => {
     const R = cloneFixture('snapshots')

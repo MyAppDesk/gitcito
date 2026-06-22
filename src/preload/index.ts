@@ -9,6 +9,12 @@ const api = {
 
   git: (method: string, ...args: unknown[]): Promise<unknown> => ipcRenderer.invoke('git', method, ...args),
 
+  onCloneProgress: (cb: (p: unknown) => void): (() => void) => {
+    const listener = (_e: unknown, p: unknown): void => cb(p)
+    ipcRenderer.on('clone:progress', listener)
+    return () => ipcRenderer.removeListener('clone:progress', listener)
+  },
+
   selectDirectory: (title?: string): Promise<string | null> => ipcRenderer.invoke('dialog:selectDirectory', title),
   savePatch: (defaultName: string, content: string): Promise<string | null> =>
     ipcRenderer.invoke('dialog:savePatch', defaultName, content),

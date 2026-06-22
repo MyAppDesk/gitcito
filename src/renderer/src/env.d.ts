@@ -14,6 +14,7 @@ interface PreloadApi {
   platform: string
   shotMode: boolean
   git(method: string, ...args: unknown[]): Promise<unknown>
+  onCloneProgress(cb: (p: import('../../shared/types').CloneProgress) => void): () => void
   selectDirectory(title?: string): Promise<string | null>
   savePatch(defaultName: string, content: string): Promise<string | null>
   openPatch(): Promise<{ path: string; content: string } | null>

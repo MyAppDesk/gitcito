@@ -52,7 +52,8 @@ import type {
   FileHotspot,
   ChurnPoint,
   ChangelogResult,
-  SnapshotInfo
+  SnapshotInfo,
+  CloneProgress
 } from '../shared/types'
 import { recordEvent } from './analytics'
 import { recordLog } from './log'
@@ -158,7 +159,19 @@ async function resolveHooksDir(git: SimpleGit, repoPath: string): Promise<{ dir:
   return { dir, custom: false }
 }
 
-const gitFor = (repoPath: string): SimpleGit => simpleGit(repoPath)
+// Cache one SimpleGit instance per repo. simple-git serializes tasks within a
+// single instance, so reusing the instance makes every op on a repo run
+// sequentially — preventing concurrent ops (e.g. a user checkout racing a
+// watcher-triggered status refresh) from colliding on `.git/index.lock`.
+const gitInstances = new Map<string, SimpleGit>()
+const gitFor = (repoPath: string): SimpleGit => {
+  let git = gitInstances.get(repoPath)
+  if (!git) {
+    git = simpleGit(repoPath)
+    gitInstances.set(repoPath, git)
+  }
+  return git
+}
 
 /**
  * Auto-stash. If the working tree is dirty, shelve it under a
@@ -2011,15 +2024,24 @@ export const gitService = {
     name: string,
     host?: string,
     token?: string,
-    filter?: string
+    filter?: string,
+    onProgress?: (p: CloneProgress) => void
   ): Promise<string> {
     const folder = name.trim() || basename(url).replace(/\.git$/, '') || 'repository'
     const target = join(parentDir, folder)
     if (existsSync(target)) throw new Error(`A folder named "${folder}" already exists here.`)
     const cloneUrl = authedCloneUrl(url, host, token)
+    // Streaming the underlying `git clone --progress` so the UI can show real progress;
+    // simpleGit auto-appends --progress when a progress handler is configured.
+    const git = simpleGit({
+      baseDir: parentDir,
+      progress: onProgress
+        ? ({ stage, progress, processed, total }) => onProgress({ stage, progress, processed, total })
+        : undefined
+    })
     // A blob filter (e.g. "blob:none") makes this a partial clone — history without
     // file blobs, fetched on demand. Great for very large repos.
-    await simpleGit(parentDir).clone(cloneUrl, folder, filter ? [`--filter=${filter}`] : undefined)
+    await git.clone(cloneUrl, folder, filter ? [`--filter=${filter}`] : undefined)
     // Reset the origin URL back to the token-free version so the PAT is not persisted on disk.
     if (cloneUrl !== url) {
       try {
@@ -2502,6 +2524,16 @@ export function registerGitHandlers(): void {
     const fn = (gitService as Record<string, unknown>)[method]
     if (typeof fn !== 'function') throw new Error(`Unknown git method: ${method}`)
     const event = eventForCall(method, args)
+    // Stream clone progress back to the renderer. Functions can't cross IPC, so the
+    // callback is appended here (after the renderer's positional args).
+    if (method === 'clone') {
+      args = [
+        ...args,
+        (p: CloneProgress) => {
+          if (!_e.sender.isDestroyed()) _e.sender.send('clone:progress', p)
+        }
+      ]
+    }
     // First positional arg is the repo path for almost every method; clone/init
     // operate before a repo exists locally, so they are recorded as app-level.
     const repoPath =

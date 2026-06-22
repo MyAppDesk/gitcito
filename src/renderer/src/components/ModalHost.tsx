@@ -5,7 +5,7 @@ import { useUIStore, type ModalSpec } from '../stores/ui'
 import { useSettingsStore, GROUP_COLORS } from '../stores/settings'
 import { hostingApi, gitApi, shellApi, aiApi } from '../infrastructure/api'
 import { repoActions } from '../stores/repo'
-import type { CreateRepoOpts, GroupTab, RemoteOwner, RemoteRepo, RepoHost } from '../../../shared/types'
+import type { CloneProgress, CreateRepoOpts, GroupTab, RemoteOwner, RemoteRepo, RepoHost } from '../../../shared/types'
 import { SettingsPanel } from './SettingsPanel'
 import { LauncherPanel, type LauncherItem } from './Welcome'
 import { AIConfigWizard } from './AIConfigWizard'
@@ -862,14 +862,19 @@ function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): 
   const toast = useUIStore((s) => s.toast)
   const profiles = useSettingsStore((s) => s.settings.profiles)
   const activeProfileId = useSettingsStore((s) => s.settings.activeProfileId)
+  const lastClonePath = useSettingsStore((s) => s.settings.lastClonePath)
+  const updateSettings = useSettingsStore((s) => s.update)
   const [provider, setProvider] = useState<RemoteProviderId>('url')
   const [profileId, setProfileId] = useState(activeProfileId)
   const [url, setUrl] = useState('')
   const [name, setName] = useState('')
   const [nameTouched, setNameTouched] = useState(false)
-  const [dir, setDir] = useState('')
+  const [dir, setDir] = useState(lastClonePath ?? '')
   const [cloning, setCloning] = useState(false)
   const [partial, setPartial] = useState(false)
+  const [progress, setProgress] = useState<CloneProgress | null>(null)
+
+  useEffect(() => window.api.onCloneProgress(setProgress), [])
 
   const profile = profiles.find((p) => p.id === profileId) ?? profiles[0]
   const host: RepoHost | null = provider === 'url' ? null : provider
@@ -899,6 +904,7 @@ function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): 
   const submit = async (): Promise<void> => {
     if (!valid) return
     setCloning(true)
+    setProgress(null)
     try {
       const token = host ? profile[HOST_META[host].tokenField] : undefined
       const path = await gitApi.clone(
@@ -909,6 +915,7 @@ function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): 
         token,
         partial ? 'blob:none' : undefined
       )
+      updateSettings((s) => ({ ...s, lastClonePath: dir.trim() }))
       closeModal()
       spec.onClone({ path, name: name.trim() })
       toast('success', `Cloned ${name.trim()}`)
@@ -997,6 +1004,23 @@ function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): 
           Partial clone <code>--filter=blob:none</code> — fetch file contents on demand (faster for huge repos)
         </span>
       </label>
+
+      {cloning && (
+        <div className="clone-progress">
+          <div className="clone-progress-head">
+            <span>{progress ? `${progress.stage}…` : 'Starting…'}</span>
+            {progress && progress.total > 0 && (
+              <span className="clone-progress-pct">{Math.round(progress.progress)}%</span>
+            )}
+          </div>
+          <div className="clone-progress-track">
+            <div
+              className={`clone-progress-bar ${progress && progress.total > 0 ? '' : 'indeterminate'}`}
+              style={progress && progress.total > 0 ? { width: `${progress.progress}%` } : undefined}
+            />
+          </div>
+        </div>
+      )}
 
       <div className="modal-actions">
         <button className="btn ghost" onClick={closeModal} type="button" disabled={cloning}>

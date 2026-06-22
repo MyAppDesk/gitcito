@@ -789,6 +789,14 @@ export interface SnapshotInfo {
   auto: boolean // created by the timer vs. manually
 }
 
+/** Progress event streamed from `git clone --progress` while a clone runs. */
+export interface CloneProgress {
+  stage: string // 'counting' | 'compressing' | 'receiving' | 'resolving' | 'checking out' | ...
+  progress: number // 0–100 for the current stage
+  processed: number
+  total: number
+}
+
 /** One entry from `git reflog` — the recovery net for lost/rewound commits. */
 export interface ReflogEntry {
   sha: string
@@ -971,6 +979,8 @@ export interface AppSettings {
   shortcuts: Record<string, string>
   /** Warn before committing files larger than this many KB (0 = off). */
   largeFileKb: number
+  /** Parent folder of the last clone, used to pre-fill the clone dialog. */
+  lastClonePath?: string
   /** Last app version the user has seen the changelog for. Undefined until the
    *  first run that records it; used to detect upgrades. */
   lastSeenVersion?: string

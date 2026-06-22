@@ -8806,6 +8806,31 @@ button.insights-row:hover { background: var(--bg-2); }
 /* ─── Split (side-by-side) diff ────────────────────────────────────────── */
 .diff-toggles { position: sticky; top: 4px; float: right; z-index: 3; display: flex; gap: 6px; margin: 2px 6px 0 0; }
 .diff-toggles .diff-word-toggle { position: static; float: none; margin: 0; }
+.diff-viewer:focus, .diff-viewer:focus-visible { outline: none; }
+
+/* In-diff find bar */
+.diff-find {
+  position: sticky;
+  top: 4px;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 2px 6px 6px;
+  padding: 4px 8px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+.diff-find-icon { color: var(--text-3); flex: 0 0 auto; }
+.diff-find-input { flex: 1 1 0; min-width: 0; background: transparent; border: none; outline: none; color: var(--text-1); font-size: 12px; }
+.diff-find-count { font-size: 11px; color: var(--text-3); flex: 0 0 auto; min-width: 32px; text-align: right; }
+.diff-find-btn { display: flex; padding: 2px; color: var(--text-2); border-radius: 4px; }
+.diff-find-btn:hover:not(:disabled) { background: var(--bg-3); color: var(--text-1); }
+.diff-find-btn:disabled { opacity: 0.35; cursor: default; }
+mark.diff-find-hit { background: rgba(255, 213, 0, 0.32); color: inherit; border-radius: 2px; }
+mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .diff-split { display: flex; flex-direction: column; clear: both; }
 .diff-split-hunk {
   display: flex; align-items: center; gap: 8px;

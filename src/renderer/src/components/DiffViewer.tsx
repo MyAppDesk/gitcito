@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
-import { SplitSquareHorizontal, Columns2, Pilcrow } from 'lucide-react'
-import { highlightHtml, type HighlightLayer } from './FileSearchBar'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { SplitSquareHorizontal, Columns2, Pilcrow, Search, ChevronUp, ChevronDown, X } from 'lucide-react'
+import { highlightHtml, buildQueryRegExp, type HighlightLayer } from './FileSearchBar'
 import { highlightLine } from '../lib/highlight'
 import { maskSecretLine } from '../lib/secrets'
 import {
@@ -158,11 +158,28 @@ export function DiffViewer({
   // Side-by-side rows (ctx mirrored, del-runs zipped with following add-runs).
   const splitRows = useMemo(() => buildSplitRows(lines), [lines])
 
+  // ── In-diff find (⌘F) ──
+  const viewerRef = useRef<HTMLDivElement>(null)
+  const findInputRef = useRef<HTMLInputElement>(null)
+  const [findOpen, setFindOpen] = useState(false)
+  const [findQuery, setFindQuery] = useState('')
+  const [matchIdx, setMatchIdx] = useState(0)
+  const [matchCount, setMatchCount] = useState(0)
+  const findRe = useMemo(
+    () => (findQuery.trim() ? buildQueryRegExp({ query: findQuery.trim(), caseSensitive: false, wholeWord: false, regex: false }, true) : null),
+    [findQuery]
+  )
+  // The find layer rides on top of any externally-supplied search layers.
+  const layers = useMemo<HighlightLayer[]>(
+    () => (findRe ? [...highlightLayers, { re: findRe, className: 'diff-find-hit' }] : highlightLayers),
+    [highlightLayers, findRe]
+  )
+
   // Render one cell's HTML: syntax highlight → search layers → word marks (or
   // secret mask). Shared by unified and split views.
   const cellHtml = (text: string, idx: number, kind: 'add' | 'del' | 'ctx'): string => {
     const t = maskValues ? maskSecretLine(text) : text
-    let html = highlightHtml(highlightLine(t, lang), highlightLayers)
+    let html = highlightHtml(highlightLine(t, lang), layers)
     const wr = !maskValues && wordDiffOn && kind !== 'ctx' ? wordRanges.get(idx) : undefined
     if (wr) html = markRanges(html, wr, kind === 'add' ? 'word-add' : 'word-del')
     return html || '&nbsp;'
@@ -187,12 +204,62 @@ export function DiffViewer({
     setSelected(new Set())
   }
 
+  // Recount find matches whenever the query or rendered content changes.
+  useEffect(() => {
+    const root = viewerRef.current
+    if (!root || !findRe) {
+      setMatchCount(0)
+      return
+    }
+    const n = root.querySelectorAll('.diff-find-hit').length
+    setMatchCount(n)
+    setMatchIdx((i) => (n ? Math.min(i, n - 1) : 0))
+  }, [findRe, diff, splitView, wordDiffOn, maskValues])
+
+  // Highlight + scroll the active match into view.
+  useEffect(() => {
+    const root = viewerRef.current
+    if (!root) return
+    const hits = root.querySelectorAll<HTMLElement>('.diff-find-hit')
+    hits.forEach((h, i) => h.classList.toggle('current', i === matchIdx))
+    hits[matchIdx]?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+  }, [matchIdx, matchCount])
+
+  const stepMatch = (dir: 1 | -1): void => {
+    if (matchCount === 0) return
+    setMatchIdx((i) => (i + dir + matchCount) % matchCount)
+  }
+
+  const openFind = (): void => {
+    setFindOpen(true)
+    requestAnimationFrame(() => findInputRef.current?.select())
+  }
+  const closeFind = (): void => {
+    setFindOpen(false)
+    setFindQuery('')
+  }
+
+  const onViewerKeyDown = (e: React.KeyboardEvent): void => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'f') {
+      e.preventDefault()
+      e.stopPropagation()
+      openFind()
+    } else if (e.key === 'Escape' && findOpen) {
+      closeFind()
+    }
+  }
+
   if (!diff.trim()) return <div className="diff-empty">No changes to display</div>
 
   const hasWordDiffs = wordRanges.size > 0
 
   return (
-    <div className={`diff-viewer hljs ${splitView ? 'is-split' : ''}`}>
+    <div
+      className={`diff-viewer hljs ${splitView ? 'is-split' : ''}`}
+      ref={viewerRef}
+      tabIndex={0}
+      onKeyDown={onViewerKeyDown}
+    >
       <div className="diff-toggles">
         {onToggleIgnoreWs && (
           <button
@@ -219,7 +286,41 @@ export function DiffViewer({
             <SplitSquareHorizontal size={12} /> Word diff
           </button>
         )}
+        <button className={`diff-word-toggle ${findOpen ? 'on' : ''}`} title="Find in diff (⌘F)" onClick={openFind}>
+          <Search size={12} /> Find
+        </button>
       </div>
+      {findOpen && (
+        <div className="diff-find">
+          <Search size={13} className="diff-find-icon" />
+          <input
+            ref={findInputRef}
+            className="diff-find-input"
+            placeholder="Find in diff…"
+            value={findQuery}
+            onChange={(e) => setFindQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                stepMatch(e.shiftKey ? -1 : 1)
+              } else if (e.key === 'Escape') {
+                e.preventDefault()
+                closeFind()
+              }
+            }}
+          />
+          <span className="diff-find-count">{matchCount ? `${matchIdx + 1}/${matchCount}` : findQuery ? '0/0' : ''}</span>
+          <button className="diff-find-btn" title="Previous (⇧↵)" disabled={matchCount === 0} onClick={() => stepMatch(-1)}>
+            <ChevronUp size={14} />
+          </button>
+          <button className="diff-find-btn" title="Next (↵)" disabled={matchCount === 0} onClick={() => stepMatch(1)}>
+            <ChevronDown size={14} />
+          </button>
+          <button className="diff-find-btn" title="Close (Esc)" onClick={closeFind}>
+            <X size={14} />
+          </button>
+        </div>
+      )}
       {splitView ? (
         <div className="diff-split">
           {splitRows.map((r, i) =>

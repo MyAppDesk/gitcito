@@ -1,5 +1,12 @@
 
 
+## [1.4.0](https://github.com/MyAppDesk/gitcito/compare/v1.3.0...v1.4.0) (2026-06-22)
+
+
+### Features
+
+* add support for stash, discard, branch, checkout, and tag actions ([0e2f377](https://github.com/MyAppDesk/gitcito/commit/0e2f3778a45188606b676496f7eaf168bf1a43b7))
+
 ## [1.3.0](https://github.com/MyAppDesk/gitcito/compare/v1.2.0...v1.3.0) (2026-06-22)
 
 

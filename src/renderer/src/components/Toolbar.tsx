@@ -25,7 +25,6 @@ import {
   GitBranch,
   Bell,
   Layers,
-  BarChart3,
   FileText,
   Camera,
   KeyRound,
@@ -131,7 +130,6 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
         }
       },
       { label: 'Branch stack…', icon: <Layers size={15} />, onClick: () => openModal({ kind: 'stack', repoPath: path }) },
-      { label: 'Insights — churn & hotspots', icon: <BarChart3 size={15} />, onClick: () => useSettingsStore.getState().openPageTab({ type: 'insights', repoPath: path }) },
       { label: 'Git hooks…', icon: <Webhook size={15} />, onClick: () => openModal({ kind: 'hooks', repoPath: path }) },
       { label: 'Git LFS…', icon: <Boxes size={15} />, onClick: () => openModal({ kind: 'lfs', repoPath: path }) },
       { label: 'Sparse-checkout…', icon: <FolderTree size={15} />, onClick: () => openModal({ kind: 'sparse', repoPath: path }) },

@@ -148,7 +148,7 @@ export function CommandPalette(): React.JSX.Element {
           ?? repo.branches.locals.find((bb) => bb.name !== cur)?.name ?? cur
         ui.openModal({ kind: 'branch-compare', repoPath: path, branchA: cur, branchB: base })
       }) },
-      { id: 'insights', title: t('cmd.insights'), group: 'Actions', keywords: 'stats churn hotspots authors contributors graph analytics', icon: <BarChart3 size={15} />, run: act(() => useSettingsStore.getState().openPageTab({ type: 'insights', repoPath: path })) },
+      { id: 'insights', title: t('cmd.insights'), group: 'Actions', keywords: 'stats churn hotspots authors contributors graph analytics repo settings', icon: <BarChart3 size={15} />, run: act(() => ui.openModal({ kind: 'repo-settings', repoPath: path, tab: 'insights' })) },
       { id: 'changelog-gen', title: t('cmd.changelogGen'), group: 'Actions', keywords: 'conventional commits release notes changelog', icon: <FileText size={15} />, run: act(() => ui.openModal({ kind: 'changelog-gen', repoPath: path })) },
       { id: 'vault', title: t('cmd.vault'), group: 'Actions', keywords: 'secrets vault credentials keychain env password store', icon: <KeyRound size={15} />, run: act(() => useSettingsStore.getState().openPageTab({ type: 'vault', repoPath: path })) },
       { id: 'code-search', title: t('cmd.codeSearch'), group: 'Actions', keywords: 'grep find text content history pickaxe', icon: <Search size={15} />, run: act(() => ui.openModal({ kind: 'code-search', repoPath: path })) },

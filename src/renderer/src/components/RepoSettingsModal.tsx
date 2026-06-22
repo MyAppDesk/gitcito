@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Settings, X, ShieldCheck, Loader2, BarChart3, History, ScrollText } from 'lucide-react'
+import { Settings, X, ShieldCheck, Loader2, BarChart3, History, ScrollText, Flame } from 'lucide-react'
 import { gitApi, logApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
 import { useRepoStore } from '../stores/repo'
 import { useSettingsStore } from '../stores/settings'
 import { AnalyticsSection, RepoHistorySection } from './SettingsPanel'
+import { InsightsPage } from './InsightsPage'
 import { useT } from '../i18n'
 import type { LogEntry } from '../../../shared/types'
 
@@ -65,7 +66,7 @@ function RepoLogsTab({ repoPath }: { repoPath: string }): React.JSX.Element {
   )
 }
 
-type Tab = 'general' | 'analytics' | 'history' | 'logs'
+type Tab = 'general' | 'analytics' | 'insights' | 'history' | 'logs'
 
 /** A chip multi-select: pick from the repo's branches or type a free value. */
 function BranchMultiSelect({
@@ -200,15 +201,16 @@ function GeneralTab({ repoPath }: { repoPath: string }): React.JSX.Element {
   )
 }
 
-export function RepoSettingsModal({ repoPath }: { repoPath: string }): React.JSX.Element {
+export function RepoSettingsModal({ repoPath, initialTab }: { repoPath: string; initialTab?: Tab }): React.JSX.Element {
   const repo = useRepoStore((s) => s.repos[repoPath])
   const aiEnabled = useSettingsStore((s) => s.activeProfile().ai.enabled !== false)
   const t = useT()
-  const [tab, setTab] = useState<Tab>('general')
+  const [tab, setTab] = useState<Tab>(initialTab ?? 'general')
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: 'general', label: t('repoSettings.general'), icon: <Settings size={13} /> },
     { id: 'analytics', label: t('repoSettings.analytics'), icon: <BarChart3 size={13} /> },
+    { id: 'insights', label: t('repoSettings.insights'), icon: <Flame size={13} /> },
     { id: 'history', label: t('repoSettings.history'), icon: <History size={13} /> },
     { id: 'logs', label: t('repoSettings.logs'), icon: <ScrollText size={13} /> }
   ]
@@ -229,6 +231,7 @@ export function RepoSettingsModal({ repoPath }: { repoPath: string }): React.JSX
       <div className="repo-settings-body">
         {tab === 'general' && <GeneralTab repoPath={repoPath} />}
         {tab === 'analytics' && <AnalyticsSection aiEnabled={aiEnabled} />}
+        {tab === 'insights' && <InsightsPage repoPath={repoPath} />}
         {tab === 'history' && <RepoHistorySection />}
         {tab === 'logs' && <RepoLogsTab repoPath={repoPath} />}
       </div>

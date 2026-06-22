@@ -80,7 +80,7 @@ export type ModalSpec =
   | { kind: 'create-tag'; repoPath: string; hash?: string; at?: string }
   | { kind: 'cheatsheet' }
   | { kind: 'create-issue'; repoPath: string; remoteUrl: string }
-  | { kind: 'repo-settings'; repoPath: string }
+  | { kind: 'repo-settings'; repoPath: string; tab?: 'general' | 'analytics' | 'insights' | 'history' | 'logs' }
   | { kind: 'bisect'; repoPath: string }
   | { kind: 'hooks'; repoPath: string }
   | { kind: 'lfs'; repoPath: string }

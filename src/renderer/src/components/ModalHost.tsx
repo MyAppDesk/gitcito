@@ -1305,7 +1305,7 @@ export function ModalHost(): React.JSX.Element {
             {modal.kind === 'create-tag' && <CreateTagModal repoPath={modal.repoPath} hash={modal.hash} at={modal.at} />}
             {modal.kind === 'cheatsheet' && <CheatsheetModal />}
             {modal.kind === 'create-issue' && <CreateIssueModal repoPath={modal.repoPath} remoteUrl={modal.remoteUrl} />}
-            {modal.kind === 'repo-settings' && <RepoSettingsModal repoPath={modal.repoPath} />}
+            {modal.kind === 'repo-settings' && <RepoSettingsModal repoPath={modal.repoPath} initialTab={modal.tab} />}
             {modal.kind === 'bisect' && <BisectModal repoPath={modal.repoPath} />}
             {modal.kind === 'hooks' && <HooksModal repoPath={modal.repoPath} />}
             {modal.kind === 'lfs' && <LfsModal repoPath={modal.repoPath} />}

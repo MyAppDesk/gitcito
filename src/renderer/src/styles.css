@@ -4046,6 +4046,80 @@ textarea:focus {
   line-height: 1.6;
 }
 
+.changelog-stepper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--bg-2);
+  border: 1px solid var(--border-soft);
+}
+
+.changelog-step-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  border-radius: 7px;
+  border: 1px solid var(--border-soft);
+  background: var(--bg-1);
+  color: var(--text-1);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+
+.changelog-step-btn:hover:not(:disabled) {
+  color: var(--accent, #8b5cf6);
+  border-color: var(--accent, #8b5cf6);
+}
+
+.changelog-step-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.changelog-step-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1 1 auto;
+  justify-content: center;
+}
+
+.changelog-step-tag {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-0);
+  font-variant-numeric: tabular-nums;
+}
+
+.changelog-step-installed {
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--accent, #8b5cf6);
+  background: color-mix(in srgb, var(--accent, #8b5cf6) 14%, transparent);
+}
+
+.changelog-step-date {
+  font-size: 11px;
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.changelog-empty {
+  color: var(--text-2);
+  font-size: 13px;
+  font-style: italic;
+}
+
 .settings-side-header {
   display: flex;
   align-items: center;

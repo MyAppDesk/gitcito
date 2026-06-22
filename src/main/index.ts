@@ -12,6 +12,7 @@ import { registerHostingHandlers } from './hosting'
 import { registerTerminalHandlers } from './terminal'
 import { registerWatcherHandlers } from './watcher'
 import { registerVaultHandlers } from './vault'
+import { registerUpdaterHandlers, checkForUpdatesOnLaunch } from './updater'
 
 function createWindow(): void {
   const win = new BrowserWindow({
@@ -160,8 +161,10 @@ app.whenReady().then(() => {
   registerTerminalHandlers()
   registerWatcherHandlers()
   registerVaultHandlers()
+  registerUpdaterHandlers()
 
   createWindow()
+  checkForUpdatesOnLaunch()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })

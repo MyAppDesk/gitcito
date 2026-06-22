@@ -100,6 +100,13 @@ interface PreloadApi {
     repo(path: string | null): Promise<void>
     onChange(cb: (payload: { path: string; light: boolean }) => void): () => void
   }
+  updates: {
+    getState(): Promise<import('../../shared/types').UpdateState>
+    check(): Promise<void>
+    download(): Promise<void>
+    install(): void
+    onEvent(cb: (state: import('../../shared/types').UpdateState) => void): () => void
+  }
 }
 
 declare global {

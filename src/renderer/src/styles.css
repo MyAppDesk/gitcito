@@ -2687,6 +2687,40 @@ textarea:focus {
   opacity: 1;
 }
 
+.status-update-badge {
+  all: unset;
+  position: relative;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  margin-left: 4px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  color: var(--accent);
+  transition: background 0.08s;
+}
+
+.status-update-badge:hover {
+  background: var(--accent-soft);
+}
+
+.status-update-dot {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 2px var(--bg-1);
+  animation: update-pulse 2s ease-in-out infinite;
+}
+
+@keyframes update-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+
 .status-branch-btn {
   all: unset;
   cursor: pointer;
@@ -9024,3 +9058,155 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .prd-check-state { color: var(--text-2); font-size: 11px; }
 .prd-check-logs { display: inline-flex; border: none; background: transparent; color: var(--text-2); cursor: pointer; padding: 2px; border-radius: 4px; }
 .prd-check-logs:hover { color: var(--accent); }
+
+/* ── In-app update: banner, buttons, settings entry, changelog callout ── */
+
+.update-banner {
+  position: fixed;
+  right: 18px;
+  bottom: 42px;
+  z-index: 60;
+  width: 320px;
+  padding: 16px;
+  border-radius: 14px;
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--border-soft);
+  overflow: hidden;
+}
+
+.update-banner::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent), transparent);
+}
+
+.update-banner-close {
+  all: unset;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  cursor: pointer;
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 6px;
+  color: var(--text-2);
+  transition: background 0.1s, color 0.1s;
+}
+.update-banner-close:hover { background: var(--bg-3); color: var(--text-0); }
+
+.update-banner-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.update-banner-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.update-banner-text { display: flex; flex-direction: column; line-height: 1.2; }
+.update-banner-text strong { color: var(--text-0); font-size: 13px; }
+.update-banner-version {
+  color: var(--accent);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.update-banner-sub {
+  margin: 0 0 12px;
+  color: var(--text-2);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.update-banner-progress { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.update-banner-bar {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--bg-3);
+  overflow: hidden;
+}
+.update-banner-fill { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
+.update-banner-pct {
+  color: var(--text-2);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  min-width: 30px;
+  text-align: right;
+}
+
+.update-banner-actions { display: flex; gap: 8px; }
+
+.update-btn {
+  all: unset;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  transition: background 0.1s, opacity 0.1s, transform 0.05s;
+}
+.update-btn:active { transform: translateY(1px); }
+.update-btn-primary { background: var(--accent); color: #fff; flex: 1; }
+.update-btn-primary:hover { opacity: 0.9; }
+.update-btn-primary:disabled { opacity: 0.6; cursor: default; }
+.update-btn-ghost { background: var(--bg-3); color: var(--text-1); }
+.update-btn-ghost:hover { background: var(--bg-4); color: var(--text-0); }
+
+.update-banner-skip {
+  all: unset;
+  cursor: pointer;
+  display: block;
+  margin: 10px auto 0;
+  color: var(--text-3);
+  font-size: 11px;
+  text-align: center;
+  transition: color 0.1s;
+}
+.update-banner-skip:hover { color: var(--text-1); text-decoration: underline; }
+
+/* Settings footer "update available" variant */
+.settings-update-btn { color: var(--accent) !important; }
+.settings-update-btn .settings-version-cta { color: var(--accent); }
+
+/* Changelog page: newer-version callout */
+.changelog-update-callout {
+  margin: 0 0 20px;
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+}
+.changelog-update-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--accent);
+}
+.changelog-update-head > div { display: flex; flex-direction: column; line-height: 1.2; }
+.changelog-update-head strong { color: var(--text-0); font-size: 14px; }
+.changelog-update-version { color: var(--accent); font-size: 12px; font-variant-numeric: tabular-nums; }
+.changelog-update-head .update-btn { margin-left: auto; flex: 0 0 auto; }
+.changelog-update-notes {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-soft);
+  font-size: 13px;
+}

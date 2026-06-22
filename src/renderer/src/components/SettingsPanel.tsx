@@ -39,6 +39,7 @@ import {
 import hljs from 'highlight.js'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
+import { useUpdatesStore, hasPendingUpdate } from '../stores/updates'
 import { gitApi, aiApi, settingsApi, analyticsApi, logApi } from '../infrastructure/api'
 import { AI_PROVIDERS, emptyAnalytics, tabActiveRepoPath, type AIProvider, type Analytics, type AIUsageStat, type ActivityEvent, type RepoStats, type AppSettings, type BranchNamingStyle, type CommitStyle, type ConflictStyle, type ExplainStyle, type Profile, type SigningConfig } from '../../../shared/types'
 import type {
@@ -1949,6 +1950,13 @@ export function SettingsPanel({ initialPage }: { initialPage?: SettingsPage } = 
   const [selectedId, setSelectedId] = useState(settings.activeProfileId)
   const [page, setPage] = useState<SettingsPage>(initialPage ?? readLastPage())
   const [version, setVersion] = useState('')
+  const updateStatus = useUpdatesStore((s) => s.status)
+  const updateInfo = useUpdatesStore((s) => s.info)
+  const revealUpdate = useUpdatesStore((s) => s.reveal)
+  const pendingUpdate = hasPendingUpdate(
+    { status: updateStatus, info: updateInfo } as never,
+    settings.skippedUpdateVersion
+  )
   const t = useT()
 
   useEffect(() => {
@@ -2045,20 +2053,38 @@ export function SettingsPanel({ initialPage }: { initialPage?: SettingsPage } = 
               <img src={madLogo} alt="MyAppDesk" draggable={false} />
               <span>{t('settings.madeBy')}</span>
             </button>
-            {version && (
+            {version && pendingUpdate && updateInfo ? (
               <button
-                className="settings-version-btn"
+                className="settings-version-btn settings-update-btn"
                 type="button"
-                title={t('settings.viewChangelog')}
+                title={t('update.available.title')}
                 onClick={() => {
-                  useSettingsStore.getState().openPageTab({ type: 'changelog' })
+                  revealUpdate()
                   closeModal()
                 }}
               >
-                <Sparkles size={12} />
+                <Download size={12} />
                 <span className="settings-version">v{version}</span>
-                <span className="settings-version-cta">{t('settings.viewChangelog')}</span>
+                <span className="settings-version-cta">
+                  {t('update.updateTo')} v{updateInfo.version}
+                </span>
               </button>
+            ) : (
+              version && (
+                <button
+                  className="settings-version-btn"
+                  type="button"
+                  title={t('settings.viewChangelog')}
+                  onClick={() => {
+                    useSettingsStore.getState().openPageTab({ type: 'changelog' })
+                    closeModal()
+                  }}
+                >
+                  <Sparkles size={12} />
+                  <span className="settings-version">v{version}</span>
+                  <span className="settings-version-cta">{t('settings.viewChangelog')}</span>
+                </button>
+              )
             )}
           </div>
         </aside>

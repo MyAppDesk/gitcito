@@ -20,6 +20,8 @@ import { ContextMenu } from './components/ContextMenu'
 import { ModalHost } from './components/ModalHost'
 import { CommandPalette } from './components/CommandPalette'
 import { Toasts } from './components/Toasts'
+import { UpdateBanner } from './components/UpdateBanner'
+import { useUpdatesStore, hasPendingUpdate } from './stores/updates'
 import { Welcome, LauncherPanel, type LauncherItem } from './components/Welcome'
 import { OnboardingWizard } from './components/OnboardingWizard'
 import { ChangelogPage } from './components/ChangelogPage'
@@ -195,6 +197,13 @@ export default function App(): React.JSX.Element {
   const setLayout = useUIStore((s) => s.setLayout)
   const [resizing, setResizing] = useState(false)
   const [appVersion, setAppVersion] = useState('')
+  const updateStatus = useUpdatesStore((s) => s.status)
+  const updateInfo = useUpdatesStore((s) => s.info)
+  const revealUpdate = useUpdatesStore((s) => s.reveal)
+  const pendingUpdate = hasPendingUpdate(
+    { status: updateStatus, info: updateInfo } as never,
+    settings.skippedUpdateVersion
+  )
 
   useEffect(() => {
     void useSettingsStore.getState().load()
@@ -202,6 +211,11 @@ export default function App(): React.JSX.Element {
 
   useEffect(() => {
     void window.api.appVersion().then(setAppVersion)
+  }, [])
+
+  // Subscribe to update events and kick the first check.
+  useEffect(() => {
+    useUpdatesStore.getState().init()
   }, [])
 
   // Global keyboard shortcuts, dispatched from the central registry so bindings
@@ -598,6 +612,16 @@ export default function App(): React.JSX.Element {
                   >
                     v{appVersion}
                   </button>
+                  {pendingUpdate && updateInfo && (
+                    <button
+                      className="status-update-badge"
+                      title={`v${updateInfo.version} available`}
+                      onClick={revealUpdate}
+                    >
+                      <Download size={12} />
+                      <span className="status-update-dot" />
+                    </button>
+                  )}
                 </>
               )}
             </span>
@@ -609,6 +633,7 @@ export default function App(): React.JSX.Element {
       <ModalHost />
       <CommandPalette />
       <Toasts />
+      <UpdateBanner />
     </div>
   )
 }

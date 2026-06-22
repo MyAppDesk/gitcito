@@ -835,6 +835,43 @@ export interface AppRelease {
   prerelease: boolean
 }
 
+/** Lifecycle of an in-app update, mirrored from electron-updater into the UI. */
+export type UpdateStatus =
+  | 'idle'
+  | 'checking'
+  | 'available'
+  | 'not-available'
+  | 'downloading'
+  | 'downloaded'
+  | 'error'
+
+/** The update that is available / downloaded. */
+export interface UpdateInfo {
+  version: string
+  notes: string | null
+  releaseDate?: string
+  /** GitHub release page, used as the manual-download fallback. */
+  url?: string
+}
+
+export interface UpdateProgress {
+  percent: number
+  bytesPerSecond: number
+  transferred: number
+  total: number
+}
+
+export interface UpdateState {
+  status: UpdateStatus
+  info: UpdateInfo | null
+  progress: UpdateProgress | null
+  error: string | null
+  /** False in dev / unpackaged builds where electron-updater can't install.
+   *  The renderer still surfaces "new version available" and falls back to
+   *  opening the release page for the download. */
+  supported: boolean
+}
+
 export type TabState = RepoTab | GroupTab | PageTab
 
 /** Tabs that carry repositories (everything except page tabs). */
@@ -895,6 +932,9 @@ export interface AppSettings {
   /** Last app version the user has seen the changelog for. Undefined until the
    *  first run that records it; used to detect upgrades. */
   lastSeenVersion?: string
+  /** Version the user chose to skip via "don't show again". The new-version
+   *  banner stays hidden for exactly this version; a later one shows again. */
+  skippedUpdateVersion?: string
 }
 
 export type Language = 'en' | 'es'

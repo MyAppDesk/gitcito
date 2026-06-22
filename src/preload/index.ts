@@ -166,6 +166,18 @@ const api = {
       ipcRenderer.on('repo:changed', listener)
       return () => ipcRenderer.removeListener('repo:changed', listener)
     }
+  },
+
+  updates: {
+    getState: (): Promise<unknown> => ipcRenderer.invoke('update:getState'),
+    check: (): Promise<void> => ipcRenderer.invoke('update:check'),
+    download: (): Promise<void> => ipcRenderer.invoke('update:download'),
+    install: (): void => ipcRenderer.send('update:install'),
+    onEvent: (cb: (state: unknown) => void): (() => void) => {
+      const listener = (_e: unknown, state: unknown): void => cb(state)
+      ipcRenderer.on('update:event', listener)
+      return () => ipcRenderer.removeListener('update:event', listener)
+    }
   }
 }
 

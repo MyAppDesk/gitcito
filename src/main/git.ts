@@ -657,7 +657,9 @@ export const gitService = {
       // Fast-forward the existing local branch to the remote tip so the
       // checkout actually brings in the remote changes. --ff-only is safe:
       // if the branches have diverged it errors instead of merging silently.
-      await git.merge(['--ff-only', fullName])
+      // --autostash shelves a dirty working tree before the FF and reapplies
+      // it after (GitKraken-style), so local edits don't abort the update.
+      await git.merge(['--ff-only', '--autostash', fullName])
     } else {
       await git.checkout(['-b', localName, '--track', fullName])
     }
@@ -805,13 +807,13 @@ export const gitService = {
   },
 
   async merge(repoPath: string, ref: string, noFf = false): Promise<void> {
-    await gitFor(repoPath).merge([...(noFf ? ['--no-ff'] : []), ref])
+    await gitFor(repoPath).merge([...(noFf ? ['--no-ff'] : []), '--autostash', ref])
   },
 
   async mergeInto(repoPath: string, source: string, target: string, noFf = false): Promise<void> {
     const git = gitFor(repoPath)
     await git.checkout(target)
-    await git.merge([...(noFf ? ['--no-ff'] : []), source])
+    await git.merge([...(noFf ? ['--no-ff'] : []), '--autostash', source])
   },
 
   async rebase(repoPath: string, onto: string): Promise<void> {
@@ -869,7 +871,7 @@ export const gitService = {
 
   async pull(repoPath: string, mode: 'default' | 'ff-only' | 'rebase' = 'default'): Promise<void> {
     const git = gitFor(repoPath)
-    const args: string[] = []
+    const args: string[] = ['--autostash']
     if (mode === 'ff-only') args.push('--ff-only')
     if (mode === 'rebase') args.push('--rebase')
     await git.pull(args)

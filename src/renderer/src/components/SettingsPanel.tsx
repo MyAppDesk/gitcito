@@ -1399,6 +1399,21 @@ function GeneralPage(): React.JSX.Element {
       <label className="settings-toggle-card">
         <input
           type="checkbox"
+          checked={settings.desktopNotifications ?? false}
+          onChange={(e) => update((s) => ({ ...s, desktopNotifications: e.target.checked }))}
+        />
+        <span className="settings-toggle-control" aria-hidden="true">
+          <span className="settings-toggle-thumb" />
+        </span>
+        <span className="settings-toggle-copy">
+          <strong>{t('settings.desktopNotifications')}</strong>
+          <span className="settings-hint">{t('settings.desktopNotificationsHint')}</span>
+        </span>
+      </label>
+
+      <label className="settings-toggle-card">
+        <input
+          type="checkbox"
           checked={settings.mergeCommit}
           onChange={(e) => update((s) => ({ ...s, mergeCommit: e.target.checked }))}
         />

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { GitMerge, FolderOpen, Download, ArrowDownToLine } from 'lucide-react'
 import { useSettingsStore } from './stores/settings'
@@ -405,8 +405,15 @@ export default function App(): React.JSX.Element {
 
   // Poll the GitHub notifications inbox for an unread count (toolbar bell badge).
   // Initial fetch on load + repeat on the auto-fetch cadence; silent on failure.
+  // Optionally raises an OS notification for new review-requested / CI items.
+  const notifSeen = useRef<Set<string>>(new Set())
+  const notifPrimed = useRef(false)
   useEffect(() => {
     const token = useSettingsStore.getState().activeProfile().githubToken
+    // Reset the per-profile seen-set so switching accounts doesn't leak IDs and
+    // doesn't replay the new account's whole inbox as desktop notifications.
+    notifSeen.current = new Set()
+    notifPrimed.current = false
     if (!token) {
       useUIStore.getState().setGithubUnread(0)
       return
@@ -414,7 +421,21 @@ export default function App(): React.JSX.Element {
     const poll = (): void => {
       void hostingApi
         .listNotifications(token, false)
-        .then((n) => useUIStore.getState().setGithubUnread(n.length))
+        .then((items) => {
+          useUIStore.getState().setGithubUnread(items.length)
+          const notify = useSettingsStore.getState().settings.desktopNotifications
+          for (const n of items) {
+            if (notifSeen.current.has(n.id)) continue
+            notifSeen.current.add(n.id)
+            // Don't fire on the first poll (would dump the existing backlog).
+            if (!notifPrimed.current || !notify) continue
+            if (n.reason !== 'review_requested' && n.reason !== 'ci_activity') continue
+            const heading = n.reason === 'review_requested' ? 'Review requested' : 'CI activity'
+            const note = new Notification(`${heading} · ${n.repoFullName}`, { body: n.title })
+            note.onclick = () => void window.api.openExternal(n.url)
+          }
+          notifPrimed.current = true
+        })
         .catch(() => {})
     }
     poll()

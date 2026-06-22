@@ -864,6 +864,8 @@ export interface AppSettings {
   graphColumns: GraphColumns
   graphColumnOrder: GraphFlowColumnId[]
   autoFetchMinutes: number
+  /** Raise an OS notification for new review-requested / CI inbox items. */
+  desktopNotifications?: boolean
   confirmForcePush: boolean
   /** Force a merge commit even when a fast-forward is possible. */
   mergeCommit: boolean
@@ -1034,6 +1036,7 @@ export function defaultSettings(): AppSettings {
     graphColumns: defaultGraphColumns(),
     graphColumnOrder: defaultGraphColumnOrder(),
     autoFetchMinutes: 5,
+    desktopNotifications: false,
     confirmForcePush: true,
     mergeCommit: true,
     sidebarOrder: ['local', 'remotes', 'stashes', 'tags', 'prs', 'issues', 'milestones', 'releases', 'worktrees', 'submodules'],

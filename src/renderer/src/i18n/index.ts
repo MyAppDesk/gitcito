@@ -334,6 +334,9 @@ const en = {
   'settings.autoFetchHint': '0 disables automatic background fetching.',
   'settings.confirmForcePush': 'Confirm before force push',
   'settings.confirmForcePushHint': 'Ask for confirmation before any force push.',
+  'settings.desktopNotifications': 'Desktop notifications',
+  'settings.desktopNotificationsHint':
+    'Raise an OS notification when a review is requested or CI runs on your GitHub inbox.',
   'settings.mergeCommit': 'Always create a merge commit',
   'settings.mergeCommitHint':
     'Force a merge commit even when a fast-forward is possible, so merges show a "Merge branch …" commit.',
@@ -808,6 +811,9 @@ const es: Dict = {
   'settings.autoFetchHint': '0 desactiva el fetch automático en segundo plano.',
   'settings.confirmForcePush': 'Confirmar antes de force push',
   'settings.confirmForcePushHint': 'Pedir confirmación antes de cualquier force push.',
+  'settings.desktopNotifications': 'Notificaciones de escritorio',
+  'settings.desktopNotificationsHint':
+    'Mostrar una notificación del sistema cuando te piden revisión o hay actividad de CI en tu bandeja de GitHub.',
   'settings.mergeCommit': 'Crear siempre un commit de merge',
   'settings.mergeCommitHint':
     'Forzar un commit de merge aunque sea posible un fast-forward, para que los merges muestren un commit "Merge branch …".',

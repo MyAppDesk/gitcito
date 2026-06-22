@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { X, GitCommitHorizontal, Sparkles, Loader2, Search, ChevronUp, ChevronDown, Pencil, Save } from 'lucide-react'
+import { X, GitCommitHorizontal, Sparkles, Loader2, Search, ChevronUp, ChevronDown, Pencil, Save, Link2 } from 'lucide-react'
 import type { BlameLine, FileHistoryEntry } from '../../../shared/types'
 import { gitApi, aiApi, shellApi } from '../infrastructure/api'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore, type FileViewMode, type FileViewState } from '../stores/ui'
+import { useRepoStore } from '../stores/repo'
+import { filePermalink } from '../lib/autolink'
 import { useT } from '../i18n'
 import { DiffViewer } from './DiffViewer'
 import { buildQueryRegExp, highlightHtml, type HighlightLayer } from './FileSearchBar'
@@ -168,6 +170,10 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
   const previewable = !!pvKind && !fileIsImage
   const binaryDoc = !!pvKind && isBinaryKind(pvKind) && !fileIsImage
   const canExplain = !fileIsImage && (mode === 'file' || mode === 'diff') && !!content
+  // Host permalink to this file at the viewed commit (commit source + a remote).
+  const repoData = useRepoStore((s) => s.repos[repoPath])
+  const originUrl = repoData?.remotes.find((r) => r.name === 'origin')?.url ?? repoData?.remotes[0]?.url
+  const permalink = source.type === 'commit' ? filePermalink(originUrl, source.hash, file) : undefined
 
   // A real on-disk working-tree file (project tree, or any WIP entry). These can
   // be edited; the editor always reads/writes the working copy even when the
@@ -468,6 +474,18 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
             onClick={() => void runExplain()}
           >
             {explaining ? <Loader2 size={13} className="spin" /> : <Sparkles size={13} />} {t('explain.action')}
+          </button>
+        )}
+        {permalink && (
+          <button
+            className="btn ghost small"
+            title="Copy a host link to this file at this commit"
+            onClick={() => {
+              void navigator.clipboard.writeText(permalink)
+              toast('success', 'Permalink copied')
+            }}
+          >
+            <Link2 size={13} /> Link
           </button>
         )}
         {editableFile && !(editable && editing) && (

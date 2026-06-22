@@ -8,6 +8,19 @@ export function remoteWebUrl(url?: string): string | undefined {
   return url.startsWith('http') ? url.replace(/\.git$/, '') : undefined
 }
 
+/** A host blob/permalink URL for `file` at commit `sha`. Handles GitHub/Gitea,
+ *  GitLab (`/-/blob`) and Bitbucket (`/src`); other hosts fall back to GitHub
+ *  style. Returns undefined when the remote isn't a recognisable web host. */
+export function filePermalink(remoteUrl: string | undefined, sha: string, file: string): string | undefined {
+  const base = remoteWebUrl(remoteUrl)
+  if (!base) return undefined
+  const path = file.split('/').map(encodeURIComponent).join('/')
+  const host = base.replace(/^https:\/\//, '').split('/')[0]
+  if (host.includes('gitlab')) return `${base}/-/blob/${sha}/${path}`
+  if (host.includes('bitbucket')) return `${base}/src/${sha}/${path}`
+  return `${base}/blob/${sha}/${path}`
+}
+
 const TOKEN = /(#\d+)|(\B@[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})?)/g
 
 /**

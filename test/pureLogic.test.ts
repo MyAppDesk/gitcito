@@ -3,7 +3,7 @@ import { parseRemoteUrl } from '../src/main/hosting'
 import { lintCommit, subjectCounterLevel, parseCcPrefix, applyCcType, parseGitmojiPrefix, applyGitmoji, parseTicketPrefix, applyTicket, ticketFromBranch } from '../src/renderer/src/lib/commitLint'
 import { isSecretFile, maskSecretLine } from '../src/renderer/src/lib/secrets'
 import { comboFromEvent, formatCombo, effectiveBindings, matchShortcut } from '../src/renderer/src/lib/shortcuts'
-import { autolink, remoteWebUrl } from '../src/renderer/src/lib/autolink'
+import { autolink, remoteWebUrl, filePermalink } from '../src/renderer/src/lib/autolink'
 import { frecencyScore } from '../src/renderer/src/lib/frecency'
 
 // Minimal KeyboardEvent stand-in for the pure shortcut helpers.
@@ -183,6 +183,13 @@ describe('autolink', () => {
     const out = autolink('fix #12 by @ana', 'https://github.com/o/r')
     expect(Array.isArray(out)).toBe(true) // split into text + anchor nodes
     expect((out as unknown[]).length).toBeGreaterThan(1)
+  })
+
+  it('builds host-specific file permalinks', () => {
+    expect(filePermalink('git@github.com:o/r.git', 'abc123', 'src/a.ts')).toBe('https://github.com/o/r/blob/abc123/src/a.ts')
+    expect(filePermalink('https://gitlab.com/g/s/r.git', 'abc', 'x.ts')).toBe('https://gitlab.com/g/s/r/-/blob/abc/x.ts')
+    expect(filePermalink('git@bitbucket.org:o/r.git', 'abc', 'x.ts')).toBe('https://bitbucket.org/o/r/src/abc/x.ts')
+    expect(filePermalink(undefined, 'abc', 'x.ts')).toBeUndefined()
   })
 })
 

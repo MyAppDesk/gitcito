@@ -1,5 +1,12 @@
 
 
+## [1.3.0](https://github.com/MyAppDesk/gitcito/compare/v1.2.0...v1.3.0) (2026-06-22)
+
+
+### Features
+
+* add changelog stepper for browsing releases ([1cb6043](https://github.com/MyAppDesk/gitcito/commit/1cb60430c83474ca6c6a2fe7106760499d2e5181))
+
 ## [1.2.0](https://github.com/MyAppDesk/gitcito/compare/v1.1.1...v1.2.0) (2026-06-22)
 
 

@@ -502,6 +502,11 @@ export const repoActions = {
       redo: () => gitApi.renameBranch(path, oldName, newName)
     }),
 
+  renameBranchRemote: (path: string, oldName: string, newName: string, remote: string) =>
+    useRepoStore
+      .getState()
+      .run(path, `Renamed ${oldName} → ${newName} (incl. ${remote})`, () => gitApi.renameBranchRemote(path, oldName, newName, remote)),
+
   merge: (path: string, ref: string) => {
     const noFf = useSettingsStore.getState().settings.mergeCommit
     return useRepoStore.getState().run(path, `Merged ${ref}`, () => gitApi.merge(path, ref, noFf), {

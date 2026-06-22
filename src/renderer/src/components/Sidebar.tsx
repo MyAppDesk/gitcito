@@ -526,6 +526,25 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
           onSubmit: (name) => void repoActions.renameBranch(path, b.name, name)
         })
     },
+    ...(b.upstream
+      ? [
+          {
+            label: 'Rename (incl. remote)…',
+            onClick: (): void =>
+              openModal({
+                kind: 'input',
+                title: 'Rename branch (incl. remote)',
+                label: `New name for ${b.name} — also renames ${b.upstream}`,
+                initial: b.name,
+                submitLabel: 'Rename',
+                onSubmit: (name) => {
+                  const remote = (b.upstream ?? '').split('/')[0]
+                  if (name.trim() && remote) void repoActions.renameBranchRemote(path, b.name, name.trim(), remote)
+                }
+              })
+          }
+        ]
+      : []),
     { label: 'Push branch', onClick: () => void repoActions.push(path) },
     {
       label: 'Create pull request…',

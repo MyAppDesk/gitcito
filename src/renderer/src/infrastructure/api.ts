@@ -89,6 +89,8 @@ export const gitApi = {
   stackClearParent: (path: string, branch: string) => call<void>('stackClearParent', path, branch),
   stackRestack: (path: string, leaf: string) => call<void>('stackRestack', path, leaf),
   renameBranch: (path: string, oldName: string, newName: string) => call<void>('renameBranch', path, oldName, newName),
+  renameBranchRemote: (path: string, oldName: string, newName: string, remote: string) =>
+    call<void>('renameBranchRemote', path, oldName, newName, remote),
   merge: (path: string, ref: string, noFf?: boolean) => call<void>('merge', path, ref, noFf),
   mergeInto: (path: string, source: string, target: string, noFf?: boolean) =>
     call<void>('mergeInto', path, source, target, noFf),

@@ -792,6 +792,18 @@ export const gitService = {
     await gitFor(repoPath).branch(['-m', oldName, newName])
   },
 
+  /**
+   * Rename a branch and move it on the remote too: local `-m`, delete the old
+   * upstream branch, then push the new name and set it as upstream. The remote
+   * delete is best-effort (e.g. a protected branch may refuse).
+   */
+  async renameBranchRemote(repoPath: string, oldName: string, newName: string, remote: string): Promise<void> {
+    const git = gitFor(repoPath)
+    await git.branch(['-m', oldName, newName])
+    await git.push([remote, '--delete', oldName]).catch(() => undefined)
+    await git.push(['-u', remote, newName])
+  },
+
   async merge(repoPath: string, ref: string, noFf = false): Promise<void> {
     await gitFor(repoPath).merge([...(noFf ? ['--no-ff'] : []), ref])
   },

@@ -1,5 +1,14 @@
 
 
+## [1.1.0](https://github.com/MyAppDesk/gitcito/compare/v1.0.0...v1.1.0) (2026-06-22)
+
+
+### Features
+
+* **in-app auto-update** — Gitcito now checks for new versions on launch and updates itself: a polished banner walks you from "update available" through download progress to "restart & install", a download badge sits beside the version in the status bar, and Settings shows an "Update to vX" entry. Skip a version to silence it until the next one ships.
+* the What’s-new page now shows the notes for your installed version, with a callout on top when a newer release is available.
+
+
 ## [1.0.0](https://github.com/MyAppDesk/gitcito/compare/v0.23.0...v1.0.0) (2026-06-22)
 
 First stable release. Signed and notarized macOS builds with the rounded app icon; no functional changes since 0.23.0.

@@ -13,6 +13,11 @@ import { registerTerminalHandlers } from './terminal'
 import { registerWatcherHandlers } from './watcher'
 import { registerVaultHandlers } from './vault'
 import { registerUpdaterHandlers, checkForUpdatesOnLaunch } from './updater'
+import { fixPath } from './fix-path'
+
+// GUI launches inherit a minimal PATH; restore the login-shell PATH so spawned
+// git (and its hooks, e.g. husky → npm) find node/npm. Runs before any spawn.
+fixPath()
 
 function createWindow(): void {
   const win = new BrowserWindow({

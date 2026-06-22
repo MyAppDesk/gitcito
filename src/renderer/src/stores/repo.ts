@@ -677,6 +677,9 @@ export const repoActions = {
       redo: () => gitApi.stashPop(path, 0)
     }),
 
+  stashToBranch: (path: string, branch: string, index = 0) =>
+    useRepoStore.getState().run(path, `Created branch ${branch} from stash`, () => gitApi.stashToBranch(path, branch, index)),
+
   stashApply: (path: string, index = 0) =>
     useRepoStore.getState().run(path, 'Applied stash', () => gitApi.stashApply(path, index)),
 

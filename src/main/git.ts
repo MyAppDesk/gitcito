@@ -909,6 +909,16 @@ export const gitService = {
   },
 
   /**
+   * Create a new branch from a stash and apply it there (`git stash branch`).
+   * Branches off the commit the stash was made on, checks it out, applies the
+   * stash, and drops it on success — handy when a stash won't apply cleanly onto
+   * the current branch.
+   */
+  async stashToBranch(repoPath: string, branch: string, index = 0): Promise<void> {
+    await gitFor(repoPath).stash(['branch', branch, `stash@{${index}}`])
+  },
+
+  /**
    * Rename a stash by rewriting its reflog subject in place. Git has no native
    * rename, but `stash@{n}` is just an entry in `logs/refs/stash` — editing the
    * message after the tab keeps the stash's commit and stack position intact.

@@ -874,6 +874,20 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
   const stashMenu = (s: StashInfo): MenuItem[] => [
     { label: 'Apply stash (keep)', onClick: () => void repoActions.stashApply(repo.path, s.index) },
     { label: 'Pop stash', onClick: () => void repoActions.stashPop(repo.path, s.index) },
+    {
+      label: 'Create branch from stash…',
+      onClick: () =>
+        openModal({
+          kind: 'input',
+          title: 'Branch from stash',
+          label: 'New branch name (the stash is applied there, then dropped)',
+          placeholder: 'fix/wip-from-stash',
+          submitLabel: 'Create',
+          onSubmit: (name) => {
+            if (name.trim()) void repoActions.stashToBranch(repo.path, name.trim(), s.index)
+          }
+        })
+    },
     { separator: true },
     { label: 'Copy stash message', onClick: () => void navigator.clipboard.writeText(s.message) },
     {

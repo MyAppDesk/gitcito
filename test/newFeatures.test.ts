@@ -165,6 +165,21 @@ describe('squashCommits (multi-select squash)', () => {
   })
 })
 
+describe('stashToBranch (stash → branch)', () => {
+  it('creates the branch, applies the stash there and drops it', async () => {
+    const R = cloneFixture('changelog')
+    writeFileSync(join(R, 'wip.txt'), 'wip\n')
+    await gitService.stash(R, 'wip work')
+    expect((await gitService.stashes(R)).length).toBe(1)
+
+    await gitService.stashToBranch(R, 'wip-branch')
+
+    expect((await gitService.open(R)).current).toBe('wip-branch') // checked out
+    expect(existsSync(join(R, 'wip.txt'))).toBe(true) // stash applied
+    expect((await gitService.stashes(R)).length).toBe(0) // dropped
+  })
+})
+
 describe('stashPush (partial stash)', () => {
   it('stashes only the selected file, leaving the rest dirty', async () => {
     const R = cloneFixture('snapshots')

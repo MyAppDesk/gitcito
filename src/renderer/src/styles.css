@@ -711,7 +711,7 @@ textarea:focus {
   min-width: 0;
 }
 
-/* GitKraken-style repository ▸ branch switcher on the left. */
+/* Repository ▸ branch switcher on the left. */
 .toolbar-left {
   display: flex;
   align-items: center;
@@ -1005,7 +1005,7 @@ textarea:focus {
   max-width: 45%;
 }
 
-/* Submodule rows: leading status icon + glyph, GitKraken-style. */
+/* Submodule rows: leading status icon + glyph. */
 .sb-item.sb-submodule {
   padding-left: 12px;
   gap: 5px;
@@ -1816,10 +1816,25 @@ textarea:focus {
   gap: 4px;
   font-family: var(--mono, ui-monospace, monospace);
   font-weight: 500;
+  /* Let a long stash message truncate with an ellipsis instead of overflowing. */
+  max-width: 100%;
+  min-width: 0;
+}
+.ref-stash svg {
+  flex-shrink: 0;
+}
+.ref-stash .stash-msg {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 .stash-subject {
   font-style: italic;
   opacity: 0.85;
+  display: flex;
+  align-items: center;
+  min-width: 0;
 }
 
 /* Subtle pill showing the branch a stash was created on, used in the graph

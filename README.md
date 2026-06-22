@@ -78,7 +78,7 @@
 - **Merge** with fast-forward or forced merge-commit; **rebase onto** any ref.
 - **Drag a branch onto another** in the sidebar to merge it in or rebase it on top — a quick gesture for the two most common branch ops.
 - Create / checkout / rename / delete local & remote branches, with per-remote presence badges.
-- **Repository ▸ branch switcher** in the toolbar (GitKraken-style), plus a branch switch right in the status bar.
+- **Repository ▸ branch switcher** in the toolbar, plus a branch switch right in the status bar.
 
 ### Recovery, safety & forensics
 - **Reflog viewer** — every move of `HEAD` (and branches), with checkout / new-branch / hard-reset from any past entry. The "undo my mistake" net.

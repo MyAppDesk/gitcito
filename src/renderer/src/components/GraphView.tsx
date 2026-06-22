@@ -432,15 +432,29 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
       }
       commits = repo.commits.filter((c) => chain.has(c.hash))
     }
-    const stashesByParent = new Map<string, StashInfo[]>()
+    const out: GraphCommit[] = [...commits]
+    // Stashes float to their chronological slot (by the time they were made),
+    // not glued above their parent commit — the edge still descends to the
+    // parent. Insert newest-first by date, but never below the stash's own
+    // parent (keeps the edge pointing downward / topology valid).
     for (const s of repo.stashes) {
-      const list = stashesByParent.get(s.parentSha) ?? []
-      list.push(s)
-      stashesByParent.set(s.parentSha, list)
+      const stashCommit: GraphCommit = {
+        hash: s.sha,
+        parents: [s.parentSha],
+        author: '',
+        email: '',
+        date: s.date,
+        refs: [],
+        subject: s.message
+      }
+      const parentIdx = out.findIndex((c) => c.hash === s.parentSha)
+      let dateIdx = out.findIndex((c) => c.date < s.date)
+      if (dateIdx === -1) dateIdx = out.length
+      const idx = parentIdx === -1 ? dateIdx : Math.min(dateIdx, parentIdx)
+      out.splice(idx, 0, stashCommit)
     }
-    const out: GraphCommit[] = []
     if (hasWip) {
-      out.push({
+      out.unshift({
         hash: WIP_HASH,
         parents: head ? [head.hash] : [],
         author: '',
@@ -450,24 +464,14 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
         subject: '// WIP'
       })
     }
-    for (const c of commits) {
-      for (const s of stashesByParent.get(c.hash) ?? []) {
-        out.push({
-          hash: s.sha,
-          parents: [s.parentSha],
-          author: '',
-          email: '',
-          date: s.date,
-          refs: [],
-          subject: s.message
-        })
-      }
-      out.push(c)
-    }
     return out
   }, [repo.commits, repo.stashes, hasWip, repo.status, linearOnly])
 
-  const layout = useMemo(() => layoutGraph(displayCommits), [displayCommits])
+  // Stashes are laid out as right-side spurs so they never displace the trunk.
+  const layout = useMemo(
+    () => layoutGraph(displayCommits, new Set(stashBySha.keys())),
+    [displayCommits, stashBySha]
+  )
 
   // Branch preview: hovering a branch/tag label ghosts every commit that isn't
   // an ancestor of that ref's tip, so the branch's own history stands out.
@@ -1235,6 +1239,9 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
                 const x2 = clampX(LEFT_PAD + e.toLane * LANE_W)
                 const y2 = e.toRow * ROW_H + ROW_H / 2
                 const ghost = preview != null && !preview.rows.has(e.fromRow)
+                // Edges leaving a WIP / stash node are dashed (uncommitted work).
+                const fromHash = displayCommits[e.fromRow]?.hash
+                const dashed = fromHash != null && (fromHash === WIP_HASH || stashBySha.has(fromHash))
                 return (
                   <path
                     key={i}
@@ -1243,6 +1250,7 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
                     stroke={colorFor(e.color)}
                     strokeWidth={2}
                     strokeLinecap="round"
+                    strokeDasharray={dashed ? '3 3' : undefined}
                     fill="none"
                     opacity={ghost ? 0.1 : 0.85}
                   />
@@ -1275,13 +1283,15 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
                   )
                 }
                 if (isWip) {
+                  // Bigger hollow ring. Opaque bg fill hides the connector line
+                  // that would otherwise show through the centre.
                   return (
                     <circle
                       key={c.hash}
                       cx={cx}
                       cy={cy}
-                      r={NODE_R + 1}
-                      fill="transparent"
+                      r={NODE_R + 3}
+                      fill="var(--bg-1)"
                       stroke={colorFor(n.color)}
                       strokeWidth={2}
                       strokeDasharray="2.5 2.5"
@@ -1486,7 +1496,8 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
                     ) : stash ? (
                       <span key="message" className="row-subject stash-subject" title={stash.message}>
                         <span className="ref-badge ref-stash">
-                          <Archive size={10} /> {stash.message}
+                          <Archive size={10} />
+                          <span className="stash-msg">{stash.message}</span>
                         </span>
                       </span>
                     ) : (

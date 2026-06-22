@@ -8935,7 +8935,7 @@ button.insights-row:hover { background: var(--bg-2); }
 }
 .vault-explainer svg { color: var(--accent); flex-shrink: 0; margin-top: 1px; }
 .vault-explainer code { font-size: 11px; }
-.vault-toolbar { display: flex; justify-content: flex-end; margin-bottom: 10px; }
+.vault-toolbar { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-bottom: 10px; }
 .vault-section { margin-bottom: 26px; }
 .vault-section-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 4px; }
 .vault-section-head h2 { display: flex; align-items: center; gap: 7px; font-size: 14px; margin: 0; min-width: 0; }
@@ -8980,6 +8980,80 @@ button.insights-row:hover { background: var(--bg-2); }
   padding: 12px 14px; font-size: 13px; color: var(--text-1);
   background: rgba(230, 160, 30, 0.12); border: 1px solid rgba(230,160,30,0.35); border-radius: 8px;
 }
+.vault-scope-badge {
+  display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0; margin-top: 4px;
+  padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 600;
+  color: var(--accent, #8b5cf6); background: var(--accent-soft, color-mix(in srgb, var(--accent, #8b5cf6) 14%, transparent));
+  border: 1px solid var(--border-soft);
+}
+
+/* ── Repo Settings → Info tab ─────────────────────────────────────────── */
+.repo-info-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin-bottom: 12px;
+}
+.repo-info-head .settings-hint { margin: 0; }
+
+.repo-info-editor {
+  overflow: hidden;
+  margin-bottom: 14px; padding: 12px;
+  background: var(--bg-2); border: 1px solid var(--border-soft); border-radius: 10px;
+}
+.repo-info-editor-row { display: flex; gap: 8px; margin-bottom: 8px; }
+.repo-info-field-pick {
+  display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto;
+  padding: 0 8px 0 10px; background: var(--bg-1);
+  border: 1px solid var(--border-soft); border-radius: 8px;
+}
+.repo-info-field-pick select {
+  border: none; background: transparent; color: var(--text-0);
+  font-size: 13px; padding: 7px 2px; cursor: pointer; outline: none;
+}
+.repo-info-field-icon { display: inline-flex; color: var(--accent, #8b5cf6); }
+.repo-info-editor-row .modal-input { flex: 1 1 auto; }
+.repo-info-editor-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
+
+.repo-info-empty {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  padding: 32px 16px; text-align: center; color: var(--text-2);
+}
+.repo-info-empty p { margin: 0; font-size: 13px; max-width: 320px; }
+
+.repo-info-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+.repo-info-card {
+  display: flex; align-items: center; gap: 10px; min-width: 0;
+  padding: 10px 12px; background: var(--bg-2);
+  border: 1px solid var(--border-soft); border-radius: 10px;
+  transition: border-color 0.12s, background 0.12s;
+}
+.repo-info-card:hover { border-color: var(--accent, #8b5cf6); }
+.repo-info-card:hover .repo-info-card-actions { opacity: 1; }
+.repo-info-card-icon {
+  display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
+  width: 34px; height: 34px; border-radius: 9px;
+  color: var(--accent, #8b5cf6);
+  background: var(--accent-soft, color-mix(in srgb, var(--accent, #8b5cf6) 12%, transparent));
+}
+.repo-info-card-main { display: flex; flex-direction: column; min-width: 0; flex: 1 1 auto; }
+.repo-info-card-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+  color: var(--text-2);
+}
+.repo-info-card-value {
+  font-size: 13px; color: var(--text-0);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.repo-info-card-value.link {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: none; border: none; padding: 0; cursor: pointer; text-align: left;
+  color: var(--accent, #8b5cf6); max-width: 100%;
+}
+.repo-info-card-value.link:hover { text-decoration: underline; }
+.repo-info-card-value.link svg { flex: 0 0 auto; opacity: 0.7; }
+.repo-info-card-actions { display: flex; gap: 2px; flex: 0 0 auto; opacity: 0; transition: opacity 0.12s; }
 .vault-unavailable svg { color: #e0a020; flex-shrink: 0; margin-top: 1px; }
 
 /* ─── Split (side-by-side) diff ────────────────────────────────────────── */

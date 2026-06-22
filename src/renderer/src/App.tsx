@@ -123,7 +123,7 @@ function PageView({ tab }: { tab: PageTab }): React.JSX.Element {
     case 'insights':
       return <InsightsPage repoPath={tab.page.repoPath} />
     case 'vault':
-      return <VaultPage repoPath={tab.page.repoPath} />
+      return <VaultPage />
     case 'release':
       return <ReleasePage tab={tab} />
     case 'issue':
@@ -257,11 +257,8 @@ export default function App(): React.JSX.Element {
           ui.openModal({ kind: 'code-search', repoPath: path })
         }
       } else if (id === 'vault') {
-        const path = activeRepoPath()
-        if (path) {
-          e.preventDefault()
-          st.openPageTab({ type: 'vault', repoPath: path })
-        }
+        e.preventDefault()
+        st.openPageTab({ type: 'vault' })
       }
     }
     window.addEventListener('keydown', onKey)

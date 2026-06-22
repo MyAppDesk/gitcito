@@ -114,7 +114,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
     openContextMenu(rect.left, rect.bottom + 6, [
       { label: 'Reflog — recover lost commits', icon: <History size={15} />, onClick: () => openModal({ kind: 'reflog', repoPath: path }) },
       { label: 'WIP snapshots — safety net', icon: <Camera size={15} />, onClick: () => openModal({ kind: 'snapshots', repoPath: path }) },
-      { label: 'Vault — local encrypted secrets', icon: <KeyRound size={15} />, onClick: () => useSettingsStore.getState().openPageTab({ type: 'vault', repoPath: path }) },
+      { label: 'Vault — global encrypted secrets', icon: <KeyRound size={15} />, onClick: () => useSettingsStore.getState().openPageTab({ type: 'vault' }) },
       { label: 'Bisect — find a bad commit', icon: <Bug size={15} />, onClick: () => openModal({ kind: 'bisect', repoPath: path }) },
       { separator: true },
       {

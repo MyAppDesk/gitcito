@@ -40,8 +40,8 @@ import hljs from 'highlight.js'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
 import { useUpdatesStore, hasPendingUpdate } from '../stores/updates'
-import { gitApi, aiApi, settingsApi, analyticsApi, logApi } from '../infrastructure/api'
-import { AI_PROVIDERS, emptyAnalytics, tabActiveRepoPath, type AIProvider, type Analytics, type AIUsageStat, type ActivityEvent, type RepoStats, type AppSettings, type BranchNamingStyle, type CommitStyle, type ConflictStyle, type ExplainStyle, type Profile, type SigningConfig } from '../../../shared/types'
+import { gitApi, aiApi, settingsApi, analyticsApi, logApi, infoApi, vaultApi } from '../infrastructure/api'
+import { AI_PROVIDERS, emptyAnalytics, type AIProvider, type Analytics, type AIUsageStat, type ActivityEvent, type RepoStats, type AppSettings, type BranchNamingStyle, type CommitStyle, type ConflictStyle, type ExplainStyle, type Profile, type SigningConfig, type SettingsBundle } from '../../../shared/types'
 import type {
   AppTheme,
   AppThemeColors,
@@ -1165,8 +1165,17 @@ function DataManagementSection(): React.JSX.Element {
   const doExport = async (): Promise<void> => {
     setExporting(true)
     try {
-      const data = exportIncludeSecrets ? settings : stripSettingsSecrets(settings)
-      const ok = await settingsApi.exportFile(data)
+      // Bundle everything except the machine-local analytics/usage ledger (it
+      // lives in its own store and is never part of settings). Secrets — profile
+      // API tokens AND the vault — only go in when the user opts in.
+      const bundle: SettingsBundle = {
+        __gitcito: 'settings-export',
+        version: 1,
+        settings: exportIncludeSecrets ? settings : stripSettingsSecrets(settings),
+        info: await infoApi.exportAll()
+      }
+      if (exportIncludeSecrets) bundle.vault = await vaultApi.exportAll()
+      const ok = await settingsApi.exportFile(bundle)
       if (ok) toast('success', 'Settings exported')
     } catch {
       toast('error', 'Export failed')
@@ -1180,12 +1189,17 @@ function DataManagementSection(): React.JSX.Element {
     try {
       const result = await settingsApi.importFile()
       if (!result) return
-      const raw = result as AppSettings
-      const hasSecrets = detectSettingsSecrets(raw)
-      if (hasSecrets) {
+      // New format is a SettingsBundle; older exports are a bare AppSettings.
+      const isBundle = !!result && typeof result === 'object' && '__gitcito' in result
+      const bundle = isBundle ? (result as SettingsBundle) : null
+      const incomingSettings = bundle ? bundle.settings : (result as AppSettings)
+
+      if (detectSettingsSecrets(incomingSettings)) {
         toast('info', 'Imported file contains tokens — they have been kept. Review in Integrations.')
       }
-      update((s) => ({ ...s, ...raw }))
+      if (incomingSettings) update((s) => ({ ...s, ...incomingSettings }))
+      if (bundle?.info) await infoApi.importAll(bundle.info)
+      if (bundle?.vault) await vaultApi.importAll(bundle.vault)
       toast('success', 'Settings imported')
     } catch {
       toast('error', 'Import failed')
@@ -1198,7 +1212,8 @@ function DataManagementSection(): React.JSX.Element {
     <div>
       <h4 className="settings-section-title">Import / Export</h4>
       <p className="settings-hint">
-        Share settings between machines. API keys and tokens are stripped by default on export.
+        Back up or move everything between machines — settings, profiles, themes and per-repo Info.
+        Usage analytics stay local. API keys, tokens and the secrets Vault are stripped unless you opt in below.
       </p>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
         <button className="btn ghost small" onClick={() => void doImport()} disabled={importing}>
@@ -1230,8 +1245,8 @@ function DataManagementSection(): React.JSX.Element {
           <span className="settings-toggle-thumb" />
         </span>
         <span className="settings-toggle-copy">
-          <strong>Include API keys and tokens</strong>
-          <span className="settings-hint">Keep the exported file secure — anyone with it can access your services.</span>
+          <strong>Include API keys, tokens & Vault secrets</strong>
+          <span className="settings-hint">Keep the exported file secure — anyone with it can access your services and secrets.</span>
         </span>
       </label>
       {showExportWarn && (
@@ -1243,7 +1258,7 @@ function DataManagementSection(): React.JSX.Element {
         }}>
           <AlertTriangle size={14} style={{ flexShrink: 0, marginTop: 1 }} color="var(--yellow)" />
           <div>
-            <strong>This will include API keys and tokens in the exported file.</strong>
+            <strong>This will include API keys, tokens and your Vault secrets in the exported file.</strong>
             <br />
             Keep the file secure — anyone with it can access your services.
             <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
@@ -1452,11 +1467,8 @@ function SecurityPage(): React.JSX.Element {
   const closeModal = useUIStore((s) => s.closeModal)
   const t = useT()
 
-  const activeTab = settings.tabs.find((tb) => tb.id === settings.activeTabId)
-  const activeRepoPath = activeTab ? tabActiveRepoPath(activeTab) : null
   const openVault = (): void => {
-    if (!activeRepoPath) return
-    openPageTab({ type: 'vault', repoPath: activeRepoPath })
+    openPageTab({ type: 'vault' })
     closeModal()
   }
 
@@ -1502,7 +1514,7 @@ function SecurityPage(): React.JSX.Element {
         <KeyRound size={14} /> {t('settings.vault')}
       </h4>
       <div>
-        <button className="btn ghost small" onClick={openVault} disabled={!activeRepoPath} title={activeRepoPath ? undefined : 'Open a repository first'}>
+        <button className="btn ghost small" onClick={openVault}>
           <KeyRound size={13} /> {t('settings.openVault')}
         </button>
         <span className="settings-hint" style={{ display: 'block', marginTop: 6 }}>{t('settings.openVaultHint')}</span>

@@ -69,7 +69,20 @@ const api = {
     upsert: (scope: string, repoPath: string, entry: unknown): Promise<unknown> =>
       ipcRenderer.invoke('vault:upsert', scope, repoPath, entry),
     remove: (scope: string, repoPath: string, id: string): Promise<unknown> =>
-      ipcRenderer.invoke('vault:remove', scope, repoPath, id)
+      ipcRenderer.invoke('vault:remove', scope, repoPath, id),
+    exportAll: (): Promise<unknown> => ipcRenderer.invoke('vault:exportAll'),
+    importAll: (data: unknown): Promise<unknown> => ipcRenderer.invoke('vault:importAll', data)
+  },
+  info: {
+    list: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('info:list', repoPath),
+    upsert: (repoPath: string, entry: unknown): Promise<unknown> =>
+      ipcRenderer.invoke('info:upsert', repoPath, entry),
+    remove: (repoPath: string, id: string): Promise<unknown> =>
+      ipcRenderer.invoke('info:remove', repoPath, id),
+    reorder: (repoPath: string, ids: string[]): Promise<unknown> =>
+      ipcRenderer.invoke('info:reorder', repoPath, ids),
+    exportAll: (): Promise<unknown> => ipcRenderer.invoke('info:exportAll'),
+    importAll: (data: unknown): Promise<unknown> => ipcRenderer.invoke('info:importAll', data)
   },
 
   log: {

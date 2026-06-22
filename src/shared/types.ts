@@ -588,6 +588,19 @@ export type AskAction =
   | { type: 'checkout'; ref: string; description: string }
   | { type: 'tag'; name: string; message?: string; description: string }
 
+/** A full app backup: settings plus the separate info & vault stores. Written
+ *  by Settings → Data → Export. `vault` and the profile API tokens are only
+ *  present when the user opts into "include secrets"; `info` is always included
+ *  (non-secret). Analytics/usage live in their own machine-local store and are
+ *  never exported. */
+export interface SettingsBundle {
+  __gitcito: 'settings-export'
+  version: 1
+  settings: AppSettings
+  info?: InfoExport
+  vault?: VaultExport
+}
+
 /** Result of interpreting a free-form instruction against the repo's current state. */
 export interface AskPlan {
   /** One-line, human-readable summary of what will happen. */
@@ -743,6 +756,30 @@ export interface VaultListResult {
   global: VaultEntry[]
 }
 
+/** Whole-vault payload for backup/transfer (all repos + global). */
+export interface VaultExport {
+  repos: Record<string, VaultEntry[]>
+  global: VaultEntry[]
+}
+
+/** Whole-info payload for backup/transfer (all repos). */
+export interface InfoExport {
+  repos: Record<string, InfoEntry[]>
+}
+
+/** A non-private, per-repo info field (App ID, website, social links…). Stored
+ *  in plaintext — unlike the vault, this is reference metadata, not secrets. */
+export interface InfoEntry {
+  id: string
+  /** Display label, e.g. "Bundle ID". */
+  label: string
+  /** The value itself, e.g. "com.acme.app" or a URL/handle. */
+  value: string
+  /** Key into the field-preset catalog (chooses the icon + link behaviour). */
+  field: string
+  updatedAt: number
+}
+
 /** A saved WIP snapshot (a `git stash create` commit kept under refs/gitcito/wip). */
 export interface SnapshotInfo {
   ref: string // full ref name (refs/gitcito/wip/<ts>)
@@ -825,7 +862,7 @@ export type PageContent =
   | { type: 'logs' }
   | { type: 'notifications' }
   | { type: 'insights'; repoPath: string }
-  | { type: 'vault'; repoPath: string }
+  | { type: 'vault' }
   | { type: 'release'; release: ReleaseInfo; repoPath: string }
   | { type: 'issue'; issue: IssueInfo; repoPath: string; remoteUrl: string }
   | { type: 'milestone'; milestone: MilestoneInfo; repoPath: string; remoteUrl: string }

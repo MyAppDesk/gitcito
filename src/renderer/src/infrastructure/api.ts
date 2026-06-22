@@ -55,7 +55,10 @@ import type {
   ChangelogResult,
   SnapshotInfo,
   VaultEntry,
-  VaultListResult
+  VaultListResult,
+  VaultExport,
+  InfoEntry,
+  InfoExport
 } from '../../../shared/types'
 
 // Typed adapter over the IPC bridge — the only place that talks to window.api.
@@ -276,8 +279,8 @@ export const gitApi = {
 export const settingsApi = {
   get: () => window.api.settings.get() as Promise<AppSettings>,
   set: (s: AppSettings) => window.api.settings.set(s),
-  importFile: () => window.api.settings.importFile() as Promise<AppSettings | null>,
-  exportFile: (s: AppSettings) => window.api.settings.exportFile(s)
+  importFile: () => window.api.settings.importFile() as Promise<unknown>,
+  exportFile: (data: unknown) => window.api.settings.exportFile(data)
 }
 
 export interface ArtifactRequest {
@@ -340,7 +343,21 @@ export const vaultApi = {
   upsert: (scope: 'repo' | 'global', repoPath: string, entry: Partial<VaultEntry>) =>
     window.api.vault.upsert(scope, repoPath, entry) as Promise<VaultListResult>,
   remove: (scope: 'repo' | 'global', repoPath: string, id: string) =>
-    window.api.vault.remove(scope, repoPath, id) as Promise<VaultListResult>
+    window.api.vault.remove(scope, repoPath, id) as Promise<VaultListResult>,
+  exportAll: () => window.api.vault.exportAll() as Promise<VaultExport>,
+  importAll: (data: VaultExport) => window.api.vault.importAll(data) as Promise<void>
+}
+
+export const infoApi = {
+  list: (repoPath: string) => window.api.info.list(repoPath) as Promise<InfoEntry[]>,
+  upsert: (repoPath: string, entry: Partial<InfoEntry>) =>
+    window.api.info.upsert(repoPath, entry) as Promise<InfoEntry[]>,
+  remove: (repoPath: string, id: string) =>
+    window.api.info.remove(repoPath, id) as Promise<InfoEntry[]>,
+  reorder: (repoPath: string, ids: string[]) =>
+    window.api.info.reorder(repoPath, ids) as Promise<InfoEntry[]>,
+  exportAll: () => window.api.info.exportAll() as Promise<InfoExport>,
+  importAll: (data: InfoExport) => window.api.info.importAll(data) as Promise<void>
 }
 
 export const shellApi = {

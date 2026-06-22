@@ -12,6 +12,7 @@ import { registerHostingHandlers } from './hosting'
 import { registerTerminalHandlers } from './terminal'
 import { registerWatcherHandlers } from './watcher'
 import { registerVaultHandlers } from './vault'
+import { registerInfoHandlers } from './info'
 import { registerUpdaterHandlers, checkForUpdatesOnLaunch } from './updater'
 import { fixPath } from './fix-path'
 
@@ -166,6 +167,7 @@ app.whenReady().then(() => {
   registerTerminalHandlers()
   registerWatcherHandlers()
   registerVaultHandlers()
+  registerInfoHandlers()
   registerUpdaterHandlers()
 
   createWindow()

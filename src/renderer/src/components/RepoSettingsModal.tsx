@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Settings, X, ShieldCheck, Loader2, BarChart3, History, ScrollText, Flame } from 'lucide-react'
+import { Settings, X, ShieldCheck, Loader2, BarChart3, History, ScrollText, Flame, Info, KeyRound } from 'lucide-react'
 import { gitApi, logApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
 import { useRepoStore } from '../stores/repo'
 import { useSettingsStore } from '../stores/settings'
 import { AnalyticsSection, RepoHistorySection } from './SettingsPanel'
 import { InsightsPage } from './InsightsPage'
+import { RepoInfoTab } from './RepoInfoTab'
+import { RepoVaultTab } from './RepoVaultTab'
 import { useT } from '../i18n'
 import type { LogEntry } from '../../../shared/types'
 
@@ -66,7 +68,7 @@ function RepoLogsTab({ repoPath }: { repoPath: string }): React.JSX.Element {
   )
 }
 
-type Tab = 'general' | 'analytics' | 'insights' | 'history' | 'logs'
+type Tab = 'general' | 'info' | 'vault' | 'analytics' | 'insights' | 'history' | 'logs'
 
 /** A chip multi-select: pick from the repo's branches or type a free value. */
 function BranchMultiSelect({
@@ -209,6 +211,8 @@ export function RepoSettingsModal({ repoPath, initialTab }: { repoPath: string; 
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: 'general', label: t('repoSettings.general'), icon: <Settings size={13} /> },
+    { id: 'info', label: t('repoSettings.info'), icon: <Info size={13} /> },
+    { id: 'vault', label: t('repoSettings.vault'), icon: <KeyRound size={13} /> },
     { id: 'analytics', label: t('repoSettings.analytics'), icon: <BarChart3 size={13} /> },
     { id: 'insights', label: t('repoSettings.insights'), icon: <Flame size={13} /> },
     { id: 'history', label: t('repoSettings.history'), icon: <History size={13} /> },
@@ -230,6 +234,8 @@ export function RepoSettingsModal({ repoPath, initialTab }: { repoPath: string; 
       </div>
       <div className="repo-settings-body">
         {tab === 'general' && <GeneralTab repoPath={repoPath} />}
+        {tab === 'info' && <RepoInfoTab repoPath={repoPath} />}
+        {tab === 'vault' && <RepoVaultTab repoPath={repoPath} />}
         {tab === 'analytics' && <AnalyticsSection aiEnabled={aiEnabled} />}
         {tab === 'insights' && <InsightsPage repoPath={repoPath} />}
         {tab === 'history' && <RepoHistorySection />}

@@ -54,6 +54,16 @@ interface PreloadApi {
     list(repoPath: string): Promise<unknown>
     upsert(scope: string, repoPath: string, entry: unknown): Promise<unknown>
     remove(scope: string, repoPath: string, id: string): Promise<unknown>
+    exportAll(): Promise<unknown>
+    importAll(data: unknown): Promise<unknown>
+  }
+  info: {
+    list(repoPath: string): Promise<unknown>
+    upsert(repoPath: string, entry: unknown): Promise<unknown>
+    remove(repoPath: string, id: string): Promise<unknown>
+    reorder(repoPath: string, ids: string[]): Promise<unknown>
+    exportAll(): Promise<unknown>
+    importAll(data: unknown): Promise<unknown>
   }
   log: {
     get(): Promise<unknown>

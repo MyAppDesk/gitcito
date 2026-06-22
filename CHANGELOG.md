@@ -1,5 +1,20 @@
 
 
+## [1.7.0](https://github.com/MyAppDesk/gitcito/compare/v1.6.0...v1.7.0) (2026-06-22)
+
+
+### Features
+
+* add --autostash option to git merge and pull commands ([1943f2b](https://github.com/MyAppDesk/gitcito/commit/1943f2b312783c4062f26a8efc273af74b26b7d5))
+* add auto-stash functionality for git operations ([4feda48](https://github.com/MyAppDesk/gitcito/commit/4feda48cfcde381b123031e6853d62f57ad67086))
+* add terminal naming with auto and manual options ([6b5e1b1](https://github.com/MyAppDesk/gitcito/commit/6b5e1b1a943539b21a20ac64f6e875233f475abe))
+* implement stable numbering for terminal groups ([987c29e](https://github.com/MyAppDesk/gitcito/commit/987c29e802cfd9c1a22b3524119e730d4a0acdee))
+
+
+### Bug Fixes
+
+* improve stash handling and layout in GraphView ([1753d40](https://github.com/MyAppDesk/gitcito/commit/1753d403ee5b2dd4d0356c2116881238a6e8c91d))
+
 ## [1.6.0](https://github.com/MyAppDesk/gitcito/compare/v1.5.0...v1.6.0) (2026-06-22)
 
 

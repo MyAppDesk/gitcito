@@ -44,7 +44,8 @@
 ### Repository & history
 - **Command palette** (`⌘K` / `Ctrl+K`). Fuzzy-jump to any branch (checkout), commit (scroll-to in the graph), working-tree file, or action (fetch, pull, push, stash, terminal, reflog, settings…) without leaving the keyboard — and it **remembers what you use**, surfacing recents first and ranking frequent commands higher.
 - **Repo groups & tabs**. Bundle related repositories into a named, colour-coded group, switch between them in tabs (drag to reorder, eject or regroup), and jump back via recents.
-- **Commit graph** with branches, merges and octopus merges drawn properly — in light or dark.
+- **Commit graph** with branches, merges and octopus merges drawn properly — in light or dark. Windowed rendering keeps it smooth on huge histories, and **↑/↓ or `j`/`k`** walk the selection between commits.
+- **Multi-select commits** — `⌘`/`Ctrl`-click to toggle, `⇧`-click for a range, then right-click to **cherry-pick** the lot onto the current branch, **export a combined patch**, or copy their SHAs.
 - **Customisable graph columns**: show/hide, resize and reorder branch, message, author, date, SHA and deployment columns.
 - **Inline CI status** _(GitHub only)_. GitHub Actions check-runs (pass/fail/pending) shown right on the commit row.
 - **Branches, remotes, tags, stashes, worktrees & submodules**, all in one reorderable, searchable sidebar.
@@ -56,12 +57,12 @@
 - **Insights** — a repo dashboard from your git history: summary cards (commits/day, contributors, files touched, lines changed), a **weekly churn** chart (additions vs deletions), **top contributors** (commits + lines), and **file hotspots** (most-changed files, click straight into a file's history). Filter by 30d / 90d / 1y / all.
 
 ### Working with changes
-- **Commit composer** with message styles: Auto, Conventional, Gitmoji, Ticket, Plain — even Caveman or Haiku. **↑/↓ recalls recent commit messages.** A live **message linter** flags subject length (with a char counter), trailing periods, non-imperative/lowercase subjects and over-wide body lines — hints, never a hard gate.
+- **Commit composer** with message styles: Auto, Conventional, Gitmoji, Ticket, Plain — even Caveman or Haiku. A **Conventional-Commit type dropdown** prefixes the subject (`feat:`, `fix(scope)!:`…) in one click, **↑/↓ recalls recent commit messages**, and a live **message linter** flags subject length (with a char counter), trailing periods, non-imperative/lowercase subjects and over-wide body lines — hints, never a hard gate.
 - **Stage / unstage / discard**, down to **individual hunks — or individual lines** picked right in the diff.
 - **Amend**, persistent drafts, and auto-prefilled messages during merge / cherry-pick / revert.
 - **Commit templates** (`commit.template` / `.gitmessage`) prefill the composer; comment lines are stripped.
 - **Changelog generator** — turn Conventional-Commit messages between two refs (defaults to the latest tag → HEAD) into a grouped changelog (Features / Fixes / Performance…, with breaking changes surfaced first). Copy it, or prepend it straight to `CHANGELOG.md`.
-- **Diff viewer** with syntax highlighting and one-click hunk staging, a **unified ↔ split (side-by-side)** toggle, an **ignore-whitespace** toggle, plus a **word-level diff** toggle that highlights just the changed tokens within edited lines (red on the old, green on the new).
+- **Diff viewer** with syntax highlighting and one-click hunk staging, a **unified ↔ split (side-by-side)** toggle, an **ignore-whitespace** toggle, a **word-level diff** toggle that highlights just the changed tokens within edited lines (red on the old, green on the new), and an in-diff **find** (`⌘F`) that highlights and steps through matches.
 - **Image diff** with side-by-side / swipe comparison for changed images.
 - **Conflict resolver** with ours / theirs / per-line picking and an editable output pane.
 - **Smart .gitignore** — ignore a file, `*.ext`, or a folder, written to the closest folder's `.gitignore` or the repo root, with a live preview.
@@ -73,7 +74,7 @@
 - **Stacked branches** — build a chain of dependent branches (Graphite-style), see the stack visualised bottom→top with per-level commit counts, and **restack** to cascade-rebase the whole chain (`rebase --onto`, so parent rewrites don't duplicate commits) when a lower branch changes. Open a PR for each level against its parent. Parent links live in git config, so they travel with the repo.
 - **Interactive rebase** — drag to reorder, squash, fixup, reword or drop, in a visual editor. Plus one-click **autosquash**: "fixup staged changes into this commit" creates a `fixup!`, and "autosquash from here" folds all `fixup!`/`squash!` commits into their targets.
 - **Cherry-pick, revert, and reset** (soft / mixed / hard) from the graph.
-- **Branch comparison**: ahead/behind counts, full diff, and a one-click "open a PR" hand-off.
+- **Compare any two refs**: pick a base and a compare ref (branch, tag or raw SHA — with a swap button), see ahead/behind counts, the full combined diff, and a one-click "open a PR" hand-off. From the sidebar (compare a branch with the current one), the Tools menu or `⌘K`.
 - **Merge** with fast-forward or forced merge-commit; **rebase onto** any ref.
 - **Drag a branch onto another** in the sidebar to merge it in or rebase it on top — a quick gesture for the two most common branch ops.
 - Create / checkout / rename / delete local & remote branches, with per-remote presence badges.
@@ -89,8 +90,8 @@
 - **Pull** (default, fast-forward-only or rebase) and **push** with safe `--force-with-lease` + optional confirmation.
 - **Fetch all & prune**, plus background **auto-fetch** on a configurable interval and a "fetched X ago" badge.
 - **Multi-repo batch** — **Fetch all** / **Pull all** every repository in a group at once (from the group home or the group tab's right-click menu), with a single summary of what succeeded.
-- **Stashes** with untracked files, messages, per-file apply, and a details/diff view.
-- **Tags**: create/delete locally, push or delete on the remote, browse remote tags.
+- **Stashes** with untracked files, messages, per-file apply, and a details/diff view — plus **partial stash** (tick just the files you want, optionally `--keep-index`).
+- **Tags**: create lightweight, **annotated (with a message) or GPG/SSH-signed** tags, delete locally, push or delete on the remote, browse remote tags.
 - **Worktrees**: create, remove and open a linked worktree in its own window — or right-click any local branch → **Open in a worktree** to spin one up in a sibling folder and open it as a tab.
 - **Submodules**: add, update (init & checkout), sync URLs, and remove, with live in-sync / modified / uninitialized status.
 - **Git LFS** — detect git-lfs, manage tracked patterns, see downloaded vs pointer files, pull & prune.

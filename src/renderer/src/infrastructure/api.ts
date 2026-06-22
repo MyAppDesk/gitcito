@@ -102,6 +102,8 @@ export const gitApi = {
   push: (path: string, branch: string, opts?: { force?: boolean; remote?: string }) =>
     call<void>('push', path, branch, opts),
 
+  cherryPickMany: (path: string, hashes: string[], noCommit?: boolean) =>
+    call<void>('cherryPickMany', path, hashes, noCommit),
   stash: (path: string, message?: string) => call<void>('stash', path, message),
   stashPush: (path: string, message?: string, paths?: string[], keepIndex?: boolean) =>
     call<void>('stashPush', path, message, paths, keepIndex),

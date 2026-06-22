@@ -1415,6 +1415,16 @@ export const gitService = {
     await gitFor(repoPath).raw(args)
   },
 
+  // Cherry-pick several commits in one go. Hashes are applied in the given
+  // order, so callers should pass them oldest-first to preserve history order.
+  async cherryPickMany(repoPath: string, hashes: string[], noCommit = false): Promise<void> {
+    if (!hashes.length) return
+    const args = ['cherry-pick']
+    if (noCommit) args.push('-n')
+    args.push(...hashes)
+    await gitFor(repoPath).raw(args)
+  },
+
   async revertCommit(repoPath: string, hash: string): Promise<void> {
     await gitFor(repoPath).raw(['revert', '--no-edit', hash])
   },

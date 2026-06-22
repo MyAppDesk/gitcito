@@ -722,6 +722,16 @@ export const repoActions = {
           redo: () => gitApi.cherryPick(path, hash)
         }),
 
+  // Cherry-pick several commits (passed newest-first; applied oldest-first).
+  cherryPickMany: (path: string, hashes: string[]) => {
+    const ordered = [...hashes].reverse()
+    return useRepoStore.getState().run(path, `Cherry-picked ${hashes.length} commits`, () => gitApi.cherryPickMany(path, ordered), {
+      label: 'cherry-pick',
+      undo: () => gitApi.reset(path, `HEAD~${hashes.length}`, 'hard'),
+      redo: () => gitApi.cherryPickMany(path, ordered)
+    })
+  },
+
   conflictContinue: (path: string, kind: ConflictOpKind) =>
     useRepoStore.getState().run(path, `Continued ${kind}`, () => gitApi.conflictOpContinue(path, kind)),
 

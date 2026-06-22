@@ -97,6 +97,35 @@ describe('rebaseOnto (drag-to-rebase)', () => {
   })
 })
 
+describe('cherryPickMany (multi-select graph)', () => {
+  it('applies several commits onto another branch in order', async () => {
+    const R = cloneFixture('changelog')
+    const base = (await gitService.open(R)).current
+
+    // Build two independent commits (new files ⇒ conflict-free picks) on a side
+    // branch, then return to base and cherry-pick them across.
+    await gitService.createBranch(R, 'donor', 'HEAD')
+    await gitService.checkout(R, 'donor')
+    writeFileSync(join(R, 'cpm-one.txt'), '1\n')
+    await gitService.stageAll(R)
+    await gitService.commit(R, 'add cpm-one')
+    writeFileSync(join(R, 'cpm-two.txt'), '2\n')
+    await gitService.stageAll(R)
+    await gitService.commit(R, 'add cpm-two')
+
+    const donorLog = await gitService.log(R) // newest-first: cpm-two, cpm-one, …
+    const selection = [donorLog[0].hash, donorLog[1].hash] // as the UI collects it
+
+    await gitService.checkout(R, base)
+    await gitService.cherryPickMany(R, [...selection].reverse()) // oldest-first
+
+    const after = await gitService.log(R)
+    expect(after[0].subject).toBe('add cpm-two') // newest pick ends on top
+    expect(after[1].subject).toBe('add cpm-one')
+    expect(existsSync(join(R, 'cpm-one.txt'))).toBe(true)
+  })
+})
+
 describe('stashPush (partial stash)', () => {
   it('stashes only the selected file, leaving the rest dirty', async () => {
     const R = cloneFixture('snapshots')

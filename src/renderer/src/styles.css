@@ -1515,6 +1515,11 @@ textarea:focus {
   opacity: 0.25;
 }
 
+.graph-row.multi-selected {
+  background: var(--accent-soft);
+  box-shadow: inset 2px 0 0 var(--accent), inset 0 0 0 1px var(--accent);
+}
+
 /* Branch preview: commits outside the hovered branch's history fade back. */
 .graph-row.ghosted {
   opacity: 0.32;

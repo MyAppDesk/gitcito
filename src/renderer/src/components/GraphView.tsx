@@ -452,6 +452,12 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
   // Row hovered with no ref of its own — show which branch contains it.
   const [hoverRow, setHoverRow] = useState<string | null>(null)
 
+  // Multi-selection (⌘/Ctrl-click toggles, Shift-click extends a range). Holds
+  // real commit hashes only — WIP / stash rows are excluded. Used for batch
+  // cherry-pick / patch export from the context menu.
+  const [multi, setMulti] = useState<Set<string>>(new Set())
+  const [anchorRow, setAnchorRow] = useState<number | null>(null)
+
   // ── Virtualized rendering ──
   // Every row/node/edge is absolutely positioned by its row index, so we can
   // mount only the slice intersecting the viewport. The canvas keeps its full
@@ -671,6 +677,71 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
     } catch (err) {
       toast('error', err instanceof Error ? err.message : String(err))
     }
+  }
+
+  // ── Multi-selection helpers ──
+  // Selected hashes, newest-first (display order). A real commit is one that
+  // isn't the WIP placeholder or a stash entry.
+  const isRealCommit = (hash: string): boolean => hash !== WIP_HASH && !stashBySha.has(hash)
+  const orderedSelection = (): string[] => displayCommits.map((c) => c.hash).filter((h) => multi.has(h))
+
+  const rowClick = (e: React.MouseEvent, row: number, c: GraphCommit): void => {
+    scrollRef.current?.focus({ preventScroll: true })
+    const isWip = c.hash === WIP_HASH
+    const stash = stashBySha.get(c.hash)
+    // Modifier-clicks only apply to real commits; fall through otherwise.
+    if (isRealCommit(c.hash) && (e.shiftKey || e.metaKey || e.ctrlKey)) {
+      if (e.shiftKey && anchorRow != null) {
+        const [lo, hi] = anchorRow < row ? [anchorRow, row] : [row, anchorRow]
+        const range = new Set(multi)
+        for (let i = lo; i <= hi; i++) {
+          const h = displayCommits[i].hash
+          if (isRealCommit(h)) range.add(h)
+        }
+        setMulti(range)
+      } else {
+        const next = new Set(multi)
+        if (next.has(c.hash)) next.delete(c.hash)
+        else next.add(c.hash)
+        setMulti(next)
+        setAnchorRow(row)
+      }
+      return
+    }
+    // Plain click: clear any multi-selection and select normally.
+    if (multi.size) setMulti(new Set())
+    setAnchorRow(isRealCommit(c.hash) ? row : null)
+    select(
+      repo.path,
+      isWip ? { type: 'wip' } : stash ? { type: 'stash', index: stash.index, sha: stash.sha } : { type: 'commit', hash: c.hash }
+    )
+  }
+
+  const exportManyPatches = async (hashes: string[]): Promise<void> => {
+    try {
+      // Oldest-first so the combined patch reads in history order.
+      const ordered = [...hashes].reverse()
+      const parts = await Promise.all(ordered.map((h) => gitApi.formatPatch(repo.path, h, 1)))
+      const saved = await window.api.savePatch(`${ordered.length}-commits.patch`, parts.join('\n'))
+      if (saved) toast('success', `Exported ${ordered.length} patches`)
+    } catch (err) {
+      toast('error', err instanceof Error ? err.message : String(err))
+    }
+  }
+
+  const multiMenu = (): MenuItem[] => {
+    const sel = orderedSelection()
+    return [
+      {
+        label: `Cherry-pick ${sel.length} commits onto ${repo.branches.current.trim() || 'HEAD'}`,
+        disabled: !repo.branches.current.trim(),
+        onClick: () => void repoActions.cherryPickMany(repo.path, sel)
+      },
+      { label: `Export ${sel.length} commits as a patch…`, onClick: () => void exportManyPatches(sel) },
+      { separator: true },
+      { label: `Copy ${sel.length} SHAs`, onClick: () => void navigator.clipboard.writeText(sel.join('\n')) },
+      { label: 'Clear selection', onClick: () => setMulti(new Set()) }
+    ]
   }
 
   const commitMenu = (c: GraphCommit): MenuItem[] => {
@@ -1243,24 +1314,16 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
           return (
             <div
               key={c.hash}
-              className={`graph-row ${selected ? 'selected' : ''} ${dimmed ? 'dimmed' : ''} ${matches ? 'matched' : ''} ${ghosted ? 'ghosted' : ''}`}
+              className={`graph-row ${selected ? 'selected' : ''} ${multi.has(c.hash) ? 'multi-selected' : ''} ${dimmed ? 'dimmed' : ''} ${matches ? 'matched' : ''} ${ghosted ? 'ghosted' : ''}`}
               style={{ top: row * ROW_H, height: ROW_H, paddingLeft: branchCol + graphCol }}
               onMouseEnter={() => setHoverRow(c.hash)}
               onMouseLeave={() => setHoverRow((h) => (h === c.hash ? null : h))}
-              onClick={() => {
-                scrollRef.current?.focus({ preventScroll: true })
-                select(
-                  repo.path,
-                  isWip
-                    ? { type: 'wip' }
-                    : stash
-                      ? { type: 'stash', index: stash.index, sha: stash.sha }
-                      : { type: 'commit', hash: c.hash }
-                )
-              }}
+              onClick={(e) => rowClick(e, row, c)}
               onContextMenu={(e) => {
                 e.preventDefault()
-                if (stash) openContextMenu(e.clientX, e.clientY, stashMenu(stash))
+                // A right-click on one of several selected rows acts on the batch.
+                if (multi.size > 1 && multi.has(c.hash)) openContextMenu(e.clientX, e.clientY, multiMenu())
+                else if (stash) openContextMenu(e.clientX, e.clientY, stashMenu(stash))
                 else if (!isWip) openContextMenu(e.clientX, e.clientY, commitMenu(c))
               }}
             >

@@ -31,6 +31,7 @@
     "productName": "Gitcito",
     "files": [
       "out/**/*",
+      "resources/**",
       "package.json"
     ],
     "directories": {

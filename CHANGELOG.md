@@ -1,5 +1,13 @@
 
 
+## [1.2.0](https://github.com/MyAppDesk/gitcito/compare/v1.1.1...v1.2.0) (2026-06-22)
+
+
+### Features
+
+* add fixPath function to restore full PATH for GUI apps ([a6e103a](https://github.com/MyAppDesk/gitcito/commit/a6e103acbf6894ce5396e36f8a33f97342b4500a))
+* enhance onboarding wizard with keyboard navigation ([d7a5197](https://github.com/MyAppDesk/gitcito/commit/d7a51971d4de8255e4111b9759bacadb52453d38))
+
 ## [1.1.1](https://github.com/MyAppDesk/gitcito/compare/v1.1.0...v1.1.1) (2026-06-22)
 
 

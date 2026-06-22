@@ -1,5 +1,12 @@
 
 
+## [1.8.0](https://github.com/MyAppDesk/gitcito/compare/v1.7.0...v1.8.0) (2026-06-22)
+
+
+### Features
+
+* add clone progress tracking and UI updates ([e992704](https://github.com/MyAppDesk/gitcito/commit/e992704406a16cfe96dfff6424a61d7ad7a171b6))
+
 ## [1.7.0](https://github.com/MyAppDesk/gitcito/compare/v1.6.0...v1.7.0) (2026-06-22)
 
 

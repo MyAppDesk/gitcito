@@ -1,5 +1,12 @@
 
 
+## [1.5.0](https://github.com/MyAppDesk/gitcito/compare/v1.4.0...v1.5.0) (2026-06-22)
+
+
+### Features
+
+* add info handlers and UI for repository metadata management ([8872148](https://github.com/MyAppDesk/gitcito/commit/887214816175efb929129229dc8114eb9342ae27))
+
 ## [1.4.0](https://github.com/MyAppDesk/gitcito/compare/v1.3.0...v1.4.0) (2026-06-22)
 
 

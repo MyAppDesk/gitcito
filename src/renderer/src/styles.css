@@ -2264,6 +2264,7 @@ textarea:focus {
   cursor: pointer;
 }
 .commit-type:hover { color: var(--text-1); }
+.commit-gitmoji { display: flex; align-items: center; justify-content: center; min-width: 34px; font-size: 15px; }
 
 .ai-btn {
   display: flex;

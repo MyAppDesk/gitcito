@@ -83,6 +83,14 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
     histIdx.current = -1
     setSummary(applyGitmoji(summary, emoji))
   }
+  // Gitmoji picker shows just the emoji collapsed, but emoji + label in the menu.
+  const openGitmojiMenu = (e: React.MouseEvent): void => {
+    const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    openContextMenu(r.left, r.bottom + 4, [
+      { label: '🙂  none', onClick: () => applyGitmojiToDraft('') },
+      ...GITMOJIS.map((g) => ({ label: `${g.emoji}  ${g.label}`, onClick: () => applyGitmojiToDraft(g.emoji) }))
+    ])
+  }
   const [amend, setAmend] = useState(false)
   const [aiBusy, setAiBusy] = useState(false)
   const [aiStageBusy, setAiStageBusy] = useState(false)
@@ -92,6 +100,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
   })
   const lastClicked = useRef<string | null>(null)
   const toast = useUIStore((s) => s.toast)
+  const openContextMenu = useUIStore((s) => s.openContextMenu)
   const fileView = useUIStore((s) => s.fileView)
   const setFileView = useUIStore((s) => s.setFileView)
   const activeProfile = useSettingsStore((s) => s.activeProfile)
@@ -784,19 +793,9 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
             </select>
           )}
           {commitStyle === 'gitmoji' && (
-            <select
-              className="commit-type commit-gitmoji"
-              title="Gitmoji"
-              value={currentGitmoji}
-              onChange={(e) => applyGitmojiToDraft(e.target.value)}
-            >
-              <option value="">🙂</option>
-              {GITMOJIS.map((g) => (
-                <option key={g.emoji} value={g.emoji}>
-                  {g.emoji} {g.label}
-                </option>
-              ))}
-            </select>
+            <button type="button" className="commit-type commit-gitmoji" title="Gitmoji" onClick={openGitmojiMenu}>
+              {currentGitmoji || '🙂'}
+            </button>
           )}
           <input
             className="commit-summary"

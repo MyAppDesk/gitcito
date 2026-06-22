@@ -1,5 +1,6 @@
 import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
+import { useTermTitlesStore } from '../stores/termTitles'
 
 export interface TermHandle {
   term: Terminal
@@ -61,6 +62,7 @@ export function getOrCreateTerm(panelId: string, cwd: string): TermHandle {
     dispose() {
       cleanups.forEach((c) => c())
       if (handle.ptyId != null) window.api.term.kill(handle.ptyId)
+      useTermTitlesStore.getState().clear(panelId)
       term.dispose()
       container.remove()
       registry.delete(panelId)
@@ -79,6 +81,16 @@ export function getOrCreateTerm(panelId: string, cwd: string): TermHandle {
     )
     term.onData((data) => window.api.term.input(id, data))
     term.onResize(({ cols, rows }) => window.api.term.resize(id, cols, rows))
+
+    // Poll the foreground process name (VSCode-style auto title).
+    const poll = (): void => {
+      void window.api.term.procName(id).then((name) => {
+        if (name) useTermTitlesStore.getState().set(panelId, name)
+      })
+    }
+    poll()
+    const timer = window.setInterval(poll, 2000)
+    cleanups.push(() => window.clearInterval(timer))
   })
 
   return handle

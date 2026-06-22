@@ -6,10 +6,13 @@ export interface TermPanel {
   cwd: string
   /** Flex weight within its group; controls split width. Defaults to 1. */
   flex: number
+  /** Manual alias for this panel. Overrides the auto-detected process name. */
+  title?: string
 }
 
 export interface TermGroup {
   id: string
+  /** Manual alias for the group. Empty = fall back to auto-detected process name. */
   title: string
   panels: TermPanel[]
   activePanelId: string
@@ -27,7 +30,7 @@ function uid(prefix: string): string {
 
 function mkGroup(cwd: string): TermGroup {
   const panel: TermPanel = { id: uid('panel'), cwd, flex: 1 }
-  return { id: uid('group'), title: 'zsh', panels: [panel], activePanelId: panel.id }
+  return { id: uid('group'), title: '', panels: [panel], activePanelId: panel.id }
 }
 
 function emptyRepo(): RepoTerms {
@@ -44,6 +47,8 @@ interface TerminalsState {
   splitGroup(repoPath: string, groupId: string, cwd: string): void
   removePanel(repoPath: string, groupId: string, panelId: string): void
   setActivePanel(repoPath: string, groupId: string, panelId: string): void
+  setGroupTitle(repoPath: string, groupId: string, title: string): void
+  setPanelTitle(repoPath: string, groupId: string, panelId: string, title: string): void
   resizePanels(repoPath: string, groupId: string, aId: string, aFlex: number, bId: string, bFlex: number): void
 }
 
@@ -135,6 +140,28 @@ export const useTerminalsStore = create<TerminalsState>((set, get) => ({
       if (!repo) return s
       const groups = repo.groups.map((g) =>
         g.id === groupId ? { ...g, activePanelId: panelId } : g
+      )
+      return { byRepo: { ...s.byRepo, [repoPath]: { ...repo, groups } } }
+    })
+  },
+
+  setGroupTitle: (repoPath, groupId, title) => {
+    set((s) => {
+      const repo = s.byRepo[repoPath]
+      if (!repo) return s
+      const groups = repo.groups.map((g) => (g.id === groupId ? { ...g, title } : g))
+      return { byRepo: { ...s.byRepo, [repoPath]: { ...repo, groups } } }
+    })
+  },
+
+  setPanelTitle: (repoPath, groupId, panelId, title) => {
+    set((s) => {
+      const repo = s.byRepo[repoPath]
+      if (!repo) return s
+      const groups = repo.groups.map((g) =>
+        g.id === groupId
+          ? { ...g, panels: g.panels.map((p) => (p.id === panelId ? { ...p, title } : p)) }
+          : g
       )
       return { byRepo: { ...s.byRepo, [repoPath]: { ...repo, groups } } }
     })

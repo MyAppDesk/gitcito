@@ -2592,6 +2592,18 @@ textarea:focus {
   white-space: nowrap;
 }
 
+.terminal-list-row .row-label-input {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg-1, var(--bg-0));
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  color: var(--text-0);
+  font: inherit;
+  padding: 1px 5px;
+  outline: none;
+}
+
 .terminal-list-row .tree-connector {
   flex-shrink: 0;
   width: 10px;

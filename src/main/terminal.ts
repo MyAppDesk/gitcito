@@ -5,6 +5,8 @@ interface TermSession {
   write(data: string): void
   resize(cols: number, rows: number): void
   kill(): void
+  /** Name of the foreground process running in the pty (e.g. zsh, claude, vim). */
+  procName(): string
 }
 
 let nextId = 1
@@ -23,6 +25,8 @@ function createPty(wc: WebContents, id: number, cwd: string, cols: number, rows:
       kill(): void
       onData(cb: (data: string) => void): void
       onExit(cb: () => void): void
+      /** node-pty getter: title of the current foreground process. */
+      readonly process: string
     }
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const pty = require('node-pty') as {
@@ -43,7 +47,14 @@ function createPty(wc: WebContents, id: number, cwd: string, cols: number, rows:
     return {
       write: (d) => p.write(d),
       resize: (c, r) => p.resize(c, r),
-      kill: () => p.kill()
+      kill: () => p.kill(),
+      procName: () => {
+        try {
+          return p.process
+        } catch {
+          return ''
+        }
+      }
     }
   } catch {
     return null
@@ -93,7 +104,8 @@ function createFallback(wc: WebContents, id: number, cwd: string): TermSession {
       }
     },
     resize: () => undefined,
-    kill: () => child.kill()
+    kill: () => child.kill(),
+    procName: () => defaultShell().split('/').pop() || ''
   }
 }
 
@@ -104,6 +116,7 @@ export function registerTerminalHandlers(): void {
     sessions.set(id, session)
     return id
   })
+  ipcMain.handle('term:process', (_e, id: number) => sessions.get(id)?.procName() ?? '')
   ipcMain.on('term:input', (_e, id: number, data: string) => sessions.get(id)?.write(data))
   ipcMain.on('term:resize', (_e, id: number, cols: number, rows: number) => sessions.get(id)?.resize(cols, rows))
   ipcMain.on('term:kill', (_e, id: number) => {

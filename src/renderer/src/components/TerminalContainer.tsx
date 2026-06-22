@@ -7,11 +7,13 @@ import {
   PanelRightClose,
   PanelRightOpen,
   ChevronRight,
-  ChevronDown
+  ChevronDown,
+  Pencil
 } from 'lucide-react'
 import { TerminalPanel } from './TerminalPanel'
 import { ResizeHandle } from './ResizeHandle'
 import { useTerminalsStore, type TermGroup } from '../stores/terminals'
+import { useTermTitlesStore } from '../stores/termTitles'
 import { useUIStore } from '../stores/ui'
 
 const MIN_PANEL_PX = 80
@@ -99,13 +101,48 @@ export function TerminalContainer({ cwd }: { cwd: string }): React.JSX.Element {
   const splitGroup = useTerminalsStore((s) => s.splitGroup)
   const removePanel = useTerminalsStore((s) => s.removePanel)
   const setActivePanel = useTerminalsStore((s) => s.setActivePanel)
+  const setGroupTitle = useTerminalsStore((s) => s.setGroupTitle)
+  const setPanelTitle = useTerminalsStore((s) => s.setPanelTitle)
+  const autoTitles = useTermTitlesStore((s) => s.byPanel)
   const toggleTerminal = useUIStore((s) => s.toggleTerminal)
+  const openContextMenu = useUIStore((s) => s.openContextMenu)
   const layout = useUIStore((s) => s.layout)
   const setLayout = useUIStore((s) => s.setLayout)
 
   const collapsed = layout.terminalListCollapsed
   const listWidth = layout.terminalListWidth
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
+  // Inline rename target: panelId null = renaming the group itself.
+  const [editing, setEditing] = useState<{ groupId: string; panelId: string | null } | null>(null)
+  const [draft, setDraft] = useState('')
+
+  // Manual alias wins; otherwise show the auto-detected foreground process name.
+  const nameFor = (alias: string | undefined, panelId: string): string =>
+    (alias && alias.trim()) || autoTitles[panelId] || 'zsh'
+
+  const startRename = (groupId: string, panelId: string | null, current: string): void => {
+    setEditing({ groupId, panelId })
+    setDraft(current)
+  }
+  const commitRename = (): void => {
+    if (!editing) return
+    const title = draft.trim()
+    if (editing.panelId) setPanelTitle(cwd, editing.groupId, editing.panelId, title)
+    else setGroupTitle(cwd, editing.groupId, title)
+    setEditing(null)
+  }
+  const renameInputProps = {
+    autoFocus: true,
+    className: 'row-label-input',
+    value: draft,
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => setDraft(e.target.value),
+    onClick: (e: React.MouseEvent) => e.stopPropagation(),
+    onBlur: commitRename,
+    onKeyDown: (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter') commitRename()
+      else if (e.key === 'Escape') setEditing(null)
+    }
+  }
 
   const toggleGroupCollapse = (groupId: string): void => {
     setCollapsedGroups((prev) => {
@@ -183,11 +220,37 @@ export function TerminalContainer({ cwd }: { cwd: string }): React.JSX.Element {
               {groups.map((group) => {
                 const split = group.panels.length > 1
                 const groupCollapsed = collapsedGroups.has(group.id)
+                const headPanelId = split ? group.activePanelId : group.panels[0].id
+                const groupName = nameFor(group.title, headPanelId)
+                const editingGroup = editing?.groupId === group.id && editing.panelId === null
+                const openGroupMenu = (e: React.MouseEvent): void => {
+                  e.preventDefault()
+                  openContextMenu(e.clientX, e.clientY, [
+                    {
+                      label: 'Rename…',
+                      icon: <Pencil size={13} />,
+                      onClick: () => startRename(group.id, null, groupName)
+                    },
+                    {
+                      label: 'Split terminal',
+                      icon: <SquareSplitHorizontal size={13} />,
+                      onClick: () => splitGroup(cwd, group.id, cwd)
+                    },
+                    { separator: true },
+                    {
+                      label: 'Kill terminal',
+                      icon: <Trash2 size={13} />,
+                      danger: true,
+                      onClick: () => removeGroup(cwd, group.id)
+                    }
+                  ])
+                }
                 return (
                   <div key={group.id} className="terminal-list-group">
                     <div
                       className={`terminal-list-row${group.id === activeGroupId ? ' active' : ''}`}
                       onClick={() => setActiveGroup(cwd, group.id)}
+                      onContextMenu={openGroupMenu}
                     >
                       {split ? (
                         <button
@@ -203,8 +266,31 @@ export function TerminalContainer({ cwd }: { cwd: string }): React.JSX.Element {
                       ) : (
                         <SquareTerminal size={13} className="row-icon" />
                       )}
-                      <span className="row-label">{group.title}</span>
+                      {editingGroup ? (
+                        <input {...renameInputProps} />
+                      ) : (
+                        <span
+                          className="row-label"
+                          title="Double-click to rename"
+                          onDoubleClick={(e) => {
+                            e.stopPropagation()
+                            startRename(group.id, null, groupName)
+                          }}
+                        >
+                          {groupName}
+                        </span>
+                      )}
                       <span className="row-actions">
+                        <button
+                          className="icon-btn"
+                          title="Rename terminal"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            startRename(group.id, null, groupName)
+                          }}
+                        >
+                          <Pencil size={13} />
+                        </button>
                         <button
                           className="icon-btn"
                           title="Split terminal"
@@ -229,38 +315,85 @@ export function TerminalContainer({ cwd }: { cwd: string }): React.JSX.Element {
                     </div>
                     {split && (
                       <div className={`terminal-list-children${groupCollapsed ? ' collapsed' : ''}`}>
-                        {group.panels.map((panel, i) => (
-                          <div
-                            key={panel.id}
-                            className={`terminal-list-row child${
-                              group.id === activeGroupId && panel.id === group.activePanelId
-                                ? ' active'
-                                : ''
-                            }`}
-                            onClick={() => {
-                              setActiveGroup(cwd, group.id)
-                              setActivePanel(cwd, group.id, panel.id)
-                            }}
-                          >
-                            <span className="tree-connector">
-                              {i === group.panels.length - 1 ? '└' : '├'}
-                            </span>
-                            <SquareTerminal size={12} className="row-icon" />
-                            <span className="row-label">{group.title}</span>
-                            <span className="row-actions">
-                              <button
-                                className="icon-btn"
-                                title="Kill panel"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  removePanel(cwd, group.id, panel.id)
-                                }}
-                              >
-                                <Trash2 size={12} />
-                              </button>
-                            </span>
-                          </div>
-                        ))}
+                        {group.panels.map((panel, i) => {
+                          const panelName = nameFor(panel.title, panel.id)
+                          const editingPanel =
+                            editing?.groupId === group.id && editing.panelId === panel.id
+                          const openPanelMenu = (e: React.MouseEvent): void => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            openContextMenu(e.clientX, e.clientY, [
+                              {
+                                label: 'Rename…',
+                                icon: <Pencil size={13} />,
+                                onClick: () => startRename(group.id, panel.id, panelName)
+                              },
+                              { separator: true },
+                              {
+                                label: 'Kill panel',
+                                icon: <Trash2 size={13} />,
+                                danger: true,
+                                onClick: () => removePanel(cwd, group.id, panel.id)
+                              }
+                            ])
+                          }
+                          return (
+                            <div
+                              key={panel.id}
+                              className={`terminal-list-row child${
+                                group.id === activeGroupId && panel.id === group.activePanelId
+                                  ? ' active'
+                                  : ''
+                              }`}
+                              onClick={() => {
+                                setActiveGroup(cwd, group.id)
+                                setActivePanel(cwd, group.id, panel.id)
+                              }}
+                              onContextMenu={openPanelMenu}
+                            >
+                              <span className="tree-connector">
+                                {i === group.panels.length - 1 ? '└' : '├'}
+                              </span>
+                              <SquareTerminal size={12} className="row-icon" />
+                              {editingPanel ? (
+                                <input {...renameInputProps} />
+                              ) : (
+                                <span
+                                  className="row-label"
+                                  title="Double-click to rename"
+                                  onDoubleClick={(e) => {
+                                    e.stopPropagation()
+                                    startRename(group.id, panel.id, panelName)
+                                  }}
+                                >
+                                  {panelName}
+                                </span>
+                              )}
+                              <span className="row-actions">
+                                <button
+                                  className="icon-btn"
+                                  title="Rename panel"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    startRename(group.id, panel.id, panelName)
+                                  }}
+                                >
+                                  <Pencil size={12} />
+                                </button>
+                                <button
+                                  className="icon-btn"
+                                  title="Kill panel"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    removePanel(cwd, group.id, panel.id)
+                                  }}
+                                >
+                                  <Trash2 size={12} />
+                                </button>
+                              </span>
+                            </div>
+                          )
+                        })}
                       </div>
                     )}
                   </div>

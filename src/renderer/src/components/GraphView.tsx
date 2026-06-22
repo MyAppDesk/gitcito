@@ -335,6 +335,9 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
   const columnOrder = useSettingsStore((s) => s.settings.graphColumnOrder ?? defaultGraphColumnOrder())
   const updateSettings = useSettingsStore((s) => s.update)
   const t = useT()
+  // First-parent-only view: hides merged side-branches. Persisted per machine.
+  const [linearOnly, setLinearOnly] = useState(() => localStorage.getItem('gitcito-graph-linear') === 'on')
+  useEffect(() => localStorage.setItem('gitcito-graph-linear', linearOnly ? 'on' : 'off'), [linearOnly])
 
   const setColumn = (id: GraphColumnId, patch: Partial<{ width: number; visible: boolean }>): void =>
     updateSettings((s) => {
@@ -359,11 +362,18 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
       label: `${columns[id].visible ? '✓ ' : '   '}${COL_LABEL[id]}`,
       onClick: () => setColumn(id, { visible: !columns[id].visible })
     }))
-    items.push({ separator: true }, {
-      label: 'Reset columns',
-      onClick: () =>
-        updateSettings((s) => ({ ...s, graphColumns: defaultGraphColumns(), graphColumnOrder: defaultGraphColumnOrder() }))
-    })
+    items.push(
+      { separator: true },
+      {
+        label: `${linearOnly ? '✓ ' : '   '}Linear history (first-parent)`,
+        onClick: () => setLinearOnly((v) => !v)
+      },
+      {
+        label: 'Reset columns',
+        onClick: () =>
+          updateSettings((s) => ({ ...s, graphColumns: defaultGraphColumns(), graphColumnOrder: defaultGraphColumnOrder() }))
+      }
+    )
     openContextMenu(x, y, items)
   }
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -408,6 +418,19 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
 
   const displayCommits = useMemo<GraphCommit[]>(() => {
     if (repo.commits.length === 0) return repo.commits
+    const head = repo.commits.find((c) => c.refs.some((r) => r.startsWith('HEAD')))
+    // Linear view: keep only HEAD's first-parent chain (hides merged-in branches).
+    let commits = repo.commits
+    if (linearOnly && head) {
+      const byHash = new Map(repo.commits.map((c) => [c.hash, c]))
+      const chain = new Set<string>()
+      let cur: GraphCommit | undefined = head
+      while (cur && !chain.has(cur.hash)) {
+        chain.add(cur.hash)
+        cur = cur.parents[0] ? byHash.get(cur.parents[0]) : undefined
+      }
+      commits = repo.commits.filter((c) => chain.has(c.hash))
+    }
     const stashesByParent = new Map<string, StashInfo[]>()
     for (const s of repo.stashes) {
       const list = stashesByParent.get(s.parentSha) ?? []
@@ -416,7 +439,6 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
     }
     const out: GraphCommit[] = []
     if (hasWip) {
-      const head = repo.commits.find((c) => c.refs.some((r) => r.startsWith('HEAD')))
       out.push({
         hash: WIP_HASH,
         parents: head ? [head.hash] : [],
@@ -427,7 +449,7 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
         subject: '// WIP'
       })
     }
-    for (const c of repo.commits) {
+    for (const c of commits) {
       for (const s of stashesByParent.get(c.hash) ?? []) {
         out.push({
           hash: s.sha,
@@ -442,7 +464,7 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
       out.push(c)
     }
     return out
-  }, [repo.commits, repo.stashes, hasWip, repo.status])
+  }, [repo.commits, repo.stashes, hasWip, repo.status, linearOnly])
 
   const layout = useMemo(() => layoutGraph(displayCommits), [displayCommits])
 

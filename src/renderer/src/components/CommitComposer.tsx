@@ -7,7 +7,7 @@ import { repoActions, useRepoStore, type RepoData } from '../stores/repo'
 import { useUIStore, type MenuItem } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { FileListView } from './FileListView'
-import { lintCommit, subjectCounterLevel, SUBJECT_IDEAL_LEN } from '../lib/commitLint'
+import { lintCommit, subjectCounterLevel, SUBJECT_IDEAL_LEN, CC_TYPES, parseCcPrefix, applyCcType } from '../lib/commitLint'
 import { isSecretFile } from '../lib/secrets'
 import {
   FileSearchBar,
@@ -73,6 +73,11 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
   }, [repo.commits])
   const lintHints = useMemo(() => lintCommit(summary, description), [summary, description])
   const subjLevel = subjectCounterLevel(summary.trim().length)
+  const currentCcType = parseCcPrefix(summary).type
+  const applyCcTypeToDraft = (ty: string): void => {
+    histIdx.current = -1
+    setSummary(applyCcType(summary, ty))
+  }
   const [amend, setAmend] = useState(false)
   const [aiBusy, setAiBusy] = useState(false)
   const [aiStageBusy, setAiStageBusy] = useState(false)
@@ -755,6 +760,19 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
 
       <div className="commit-box">
         <div className="commit-summary-row">
+          <select
+            className="commit-type"
+            title="Conventional-Commit type"
+            value={currentCcType}
+            onChange={(e) => applyCcTypeToDraft(e.target.value)}
+          >
+            <option value="">type</option>
+            {CC_TYPES.map((ty) => (
+              <option key={ty} value={ty}>
+                {ty}
+              </option>
+            ))}
+          </select>
           <input
             className="commit-summary"
             placeholder="Commit summary"

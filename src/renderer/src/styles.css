@@ -2252,6 +2252,19 @@ textarea:focus {
   flex: 1;
 }
 
+.commit-type {
+  flex: 0 0 auto;
+  align-self: stretch;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-1);
+  color: var(--text-2);
+  font-size: 12px;
+  padding: 0 6px;
+  cursor: pointer;
+}
+.commit-type:hover { color: var(--text-1); }
+
 .ai-btn {
   display: flex;
   align-items: center;

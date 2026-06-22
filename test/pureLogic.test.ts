@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { parseRemoteUrl } from '../src/main/hosting'
-import { lintCommit, subjectCounterLevel } from '../src/renderer/src/lib/commitLint'
+import { lintCommit, subjectCounterLevel, parseCcPrefix, applyCcType } from '../src/renderer/src/lib/commitLint'
 import { isSecretFile, maskSecretLine } from '../src/renderer/src/lib/secrets'
 import { comboFromEvent, formatCombo, effectiveBindings, matchShortcut } from '../src/renderer/src/lib/shortcuts'
 import { autolink, remoteWebUrl } from '../src/renderer/src/lib/autolink'
@@ -67,6 +67,28 @@ describe('commit lint', () => {
     expect(subjectCounterLevel(10)).toBe('')
     expect(subjectCounterLevel(60)).toBe('warn')
     expect(subjectCounterLevel(80)).toBe('error')
+  })
+})
+
+describe('conventional-commit type prefix', () => {
+  it('parses an existing type, scope and breaking marker', () => {
+    expect(parseCcPrefix('feat(api)!: add x')).toEqual({ type: 'feat', scope: '(api)', bang: '!', rest: 'add x' })
+  })
+
+  it('treats a non-conventional subject as having no type', () => {
+    expect(parseCcPrefix('add x').type).toBe('')
+  })
+
+  it('adds a type to a bare subject', () => {
+    expect(applyCcType('add endpoint', 'feat')).toBe('feat: add endpoint')
+  })
+
+  it('swaps the type while preserving scope, marker and subject', () => {
+    expect(applyCcType('feat(api)!: add x', 'fix')).toBe('fix(api)!: add x')
+  })
+
+  it('strips the type when cleared', () => {
+    expect(applyCcType('fix: bug', '')).toBe('bug')
   })
 })
 

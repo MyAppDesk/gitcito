@@ -51,3 +51,24 @@ export function subjectCounterLevel(len: number): '' | 'warn' | 'error' {
 }
 
 export const SUBJECT_IDEAL_LEN = SUBJECT_IDEAL
+
+/** Conventional-Commit types (matches the project's commitlint allow-list). */
+export const CC_TYPES = ['feat', 'fix', 'docs', 'style', 'refactor', 'perf', 'test', 'build', 'ci', 'chore', 'revert'] as const
+
+const CC_PREFIX = /^(\w+)(\([^)]*\))?(!)?:\s*/
+
+/** Split a summary into its Conventional-Commit prefix parts (empty type if none). */
+export function parseCcPrefix(summary: string): { type: string; scope: string; bang: string; rest: string } {
+  const m = CC_PREFIX.exec(summary)
+  if (m && (CC_TYPES as readonly string[]).includes(m[1])) {
+    return { type: m[1], scope: m[2] ?? '', bang: m[3] ?? '', rest: summary.slice(m[0].length) }
+  }
+  return { type: '', scope: '', bang: '', rest: summary }
+}
+
+/** Apply (or, with an empty type, strip) a Conventional-Commit type prefix,
+ *  preserving any existing scope/`!` and the rest of the subject. */
+export function applyCcType(summary: string, type: string): string {
+  const { rest, scope, bang } = parseCcPrefix(summary)
+  return type ? `${type}${scope}${bang}: ${rest}` : rest
+}

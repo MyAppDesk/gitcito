@@ -40,6 +40,8 @@ export interface RepoData {
   path: string
   name: string
   commits: GraphCommit[]
+  /** Hashes that arrived in the last fetch/pull this session (graph "new" mark). */
+  newCommits: string[]
   branches: BranchesPayload
   status: RepoStatus | null
   stashes: StashInfo[]
@@ -72,6 +74,7 @@ const emptyRepo = (path: string): RepoData => ({
   path,
   name: path.split('/').pop() ?? path,
   commits: [],
+  newCommits: [],
   branches: { current: '', locals: [], remotes: [], tags: [] },
   status: null,
   stashes: [],
@@ -556,8 +559,13 @@ export const repoActions = {
     }),
 
   fetchAll: async (path: string) => {
+    const before = new Set((useRepoStore.getState().repos[path]?.commits ?? []).map((c) => c.hash))
     const ok = await useRepoStore.getState().run(path, 'Fetched all remotes', () => gitApi.fetchAll(path))
-    if (ok) useRepoStore.getState().patch(path, { lastFetchAt: Date.now() })
+    if (ok) {
+      const after = useRepoStore.getState().repos[path]?.commits ?? []
+      const newCommits = before.size ? after.filter((c) => !before.has(c.hash)).map((c) => c.hash) : []
+      useRepoStore.getState().patch(path, { lastFetchAt: Date.now(), newCommits })
+    }
     return ok
   },
 
@@ -590,12 +598,17 @@ export const repoActions = {
   },
 
   pull: async (path: string, mode: 'default' | 'ff-only' | 'rebase') => {
+    const before = new Set((useRepoStore.getState().repos[path]?.commits ?? []).map((c) => c.hash))
     const ok = await useRepoStore.getState().run(path, `Pulled (${mode})`, () => gitApi.pull(path, mode), {
       label: `pull ${mode}`,
       undo: () => gitApi.reset(path, 'ORIG_HEAD', 'hard'),
       redo: () => gitApi.pull(path, mode)
     })
-    if (ok) useRepoStore.getState().patch(path, { lastFetchAt: Date.now() })
+    if (ok) {
+      const after = useRepoStore.getState().repos[path]?.commits ?? []
+      const newCommits = before.size ? after.filter((c) => !before.has(c.hash)).map((c) => c.hash) : []
+      useRepoStore.getState().patch(path, { lastFetchAt: Date.now(), newCommits })
+    }
     return ok
   },
 

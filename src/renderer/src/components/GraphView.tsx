@@ -413,6 +413,7 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
     return { added, modified, deleted, total: byPath.size }
   }, [repo.status])
 
+  const newSet = useMemo(() => new Set(repo.newCommits ?? []), [repo.newCommits])
   const stashBySha = useMemo(() => new Map(repo.stashes.map((s) => [s.sha, s])), [repo.stashes])
   const remoteNames = useMemo(() => new Set(repo.remotes.map((r) => r.name)), [repo.remotes])
 
@@ -1369,7 +1370,7 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
           return (
             <div
               key={c.hash}
-              className={`graph-row ${selected ? 'selected' : ''} ${multi.has(c.hash) ? 'multi-selected' : ''} ${dimmed ? 'dimmed' : ''} ${matches ? 'matched' : ''} ${ghosted ? 'ghosted' : ''}`}
+              className={`graph-row ${selected ? 'selected' : ''} ${multi.has(c.hash) ? 'multi-selected' : ''} ${newSet.has(c.hash) ? 'row-new' : ''} ${dimmed ? 'dimmed' : ''} ${matches ? 'matched' : ''} ${ghosted ? 'ghosted' : ''}`}
               style={{ top: row * ROW_H, height: ROW_H, paddingLeft: branchCol + graphCol }}
               onMouseEnter={() => setHoverRow(c.hash)}
               onMouseLeave={() => setHoverRow((h) => (h === c.hash ? null : h))}
@@ -1490,6 +1491,7 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
                       </span>
                     ) : (
                       <span key="message" className="row-subject" title={c.subject}>
+                        {newSet.has(c.hash) && <span className="row-new-badge">new</span>}
                         {c.subject}
                       </span>
                     )

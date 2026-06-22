@@ -1520,6 +1520,21 @@ textarea:focus {
   box-shadow: inset 2px 0 0 var(--accent), inset 0 0 0 1px var(--accent);
 }
 
+.row-new-badge {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 0 5px;
+  border-radius: 6px;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  vertical-align: 1px;
+  color: #10121a;
+  background: #00b894;
+}
+.graph-row.row-new:not(.selected) { box-shadow: inset 2px 0 0 #00b894; }
+
 /* Branch preview: commits outside the hovered branch's history fade back. */
 .graph-row.ghosted {
   opacity: 0.32;

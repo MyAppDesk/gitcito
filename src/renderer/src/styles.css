@@ -8983,8 +8983,8 @@ button.insights-row:hover { background: var(--bg-2); }
 .vault-unavailable svg { color: #e0a020; flex-shrink: 0; margin-top: 1px; }
 
 /* ─── Split (side-by-side) diff ────────────────────────────────────────── */
-.diff-toggles { position: sticky; top: 4px; float: right; z-index: 3; display: flex; gap: 6px; margin: 2px 6px 0 0; }
-.diff-toggles .diff-word-toggle { position: static; float: none; margin: 0; }
+.diff-toggles { position: sticky; top: 4px; left: 0; z-index: 3; display: inline-flex; flex-wrap: wrap; justify-content: flex-start; gap: 6px; width: fit-content; margin: 2px 0 6px 6px; pointer-events: none; }
+.diff-toggles .diff-word-toggle { position: static; float: none; margin: 0; pointer-events: auto; }
 .diff-viewer:focus, .diff-viewer:focus-visible { outline: none; }
 
 /* In-diff find bar */

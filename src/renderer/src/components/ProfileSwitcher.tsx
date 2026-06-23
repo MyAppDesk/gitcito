@@ -27,6 +27,16 @@ export function ProfileSwitcher(): React.JSX.Element {
 
   const active = settings.profiles.find((p) => p.id === settings.activeProfileId) ?? settings.profiles[0]
 
+  // Per-repo binding state. "Auto" = a repo is active but has no bound profile,
+  // so it just follows whichever profile is globally active. With no active repo
+  // (e.g. a page tab) there's nothing to bind, so Auto doesn't apply.
+  const repo = activeRepo()
+  const bound = repo ? settings.repoProfiles[repo.path] : undefined
+  const isAuto = !!repo && !bound
+  // Which profile row shows the check: the bound one when a repo is bound,
+  // otherwise the globally active one.
+  const checkedId = repo ? bound ?? null : active?.id ?? null
+
   useEffect(() => {
     if (!open) return
     const onDown = (e: MouseEvent): void => {
@@ -80,6 +90,7 @@ export function ProfileSwitcher(): React.JSX.Element {
       >
         <Avatar email={active.gitEmail} name={active.name} size={20} />
         <span className="profile-switcher-name">{active.name}</span>
+        {isAuto && <span className="profile-switcher-auto">Auto</span>}
         <ChevronDown size={13} className="profile-switcher-chevron" />
       </button>
       {open &&
@@ -90,20 +101,41 @@ export function ProfileSwitcher(): React.JSX.Element {
             className="profile-switcher-menu"
             style={{ right: pos.right, top: pos.top }}
           >
+            {repo && (
+              <>
+                <button
+                  className={`profile-switcher-item ${isAuto ? 'selected' : ''}`}
+                  onClick={() => {
+                    // Clear the binding — this repo follows the global active profile.
+                    setRepoProfile(repo.path, null)
+                    setOpen(false)
+                  }}
+                >
+                  <span className="profile-switcher-check">{isAuto ? '✓' : ''}</span>
+                  <span className="profile-switcher-auto-dot">A</span>
+                  <span className="profile-switcher-label">Auto</span>
+                </button>
+                <div className="profile-switcher-hint">
+                  {isAuto
+                    ? `Following the active profile — ${active.name}`
+                    : `${repo.name} is pinned to a profile`}
+                </div>
+                <div className="profile-switcher-sep" />
+              </>
+            )}
             {settings.profiles.map((p) => (
               <button
                 key={p.id}
-                className={`profile-switcher-item ${p.id === active.id ? 'selected' : ''}`}
+                className={`profile-switcher-item ${p.id === checkedId ? 'selected' : ''}`}
                 onClick={() => {
                   setActiveProfile(p.id)
                   // Remember this choice for the active repo so revisiting its
                   // tab auto-restores the profile.
-                  const repo = activeRepo()
                   if (repo) setRepoProfile(repo.path, p.id)
                   setOpen(false)
                 }}
               >
-                <span className="profile-switcher-check">{p.id === active.id ? '✓' : ''}</span>
+                <span className="profile-switcher-check">{p.id === checkedId ? '✓' : ''}</span>
                 <Avatar email={p.gitEmail} name={p.name} size={20} />
                 <span className="profile-switcher-label">{p.name}</span>
               </button>

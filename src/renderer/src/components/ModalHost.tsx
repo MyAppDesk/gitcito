@@ -864,6 +864,7 @@ function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): 
   const activeProfileId = useSettingsStore((s) => s.settings.activeProfileId)
   const lastClonePath = useSettingsStore((s) => s.settings.lastClonePath)
   const updateSettings = useSettingsStore((s) => s.update)
+  const setRepoProfile = useSettingsStore((s) => s.setRepoProfile)
   const [provider, setProvider] = useState<RemoteProviderId>('url')
   const [profileId, setProfileId] = useState(activeProfileId)
   const [url, setUrl] = useState('')
@@ -916,6 +917,9 @@ function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): 
         partial ? 'blob:none' : undefined
       )
       updateSettings((s) => ({ ...s, lastClonePath: dir.trim() }))
+      // Pin the new repo to the chosen profile so its identity/tokens apply
+      // automatically whenever its tab is active.
+      setRepoProfile(path, profileId)
       closeModal()
       spec.onClone({ path, name: name.trim() })
       toast('success', `Cloned ${name.trim()}`)
@@ -964,6 +968,18 @@ function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): 
               if (e.key === 'Escape') closeModal()
             }}
           />
+          {profiles.length > 1 && (
+            <label className="repo-profile">
+              <span>Profile</span>
+              <select value={profileId} onChange={(e) => setProfileId(e.target.value)}>
+                {profiles.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
         </>
       ) : (
         <RepoPicker host={provider} onPick={pickRepo} selectedUrl={url} profileId={profileId} onProfile={setProfileId} />

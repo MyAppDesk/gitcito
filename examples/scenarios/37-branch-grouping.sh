@@ -42,7 +42,22 @@ for b in bugfix/crash-on-start bugfix/memory-leak bugfix/off-by-one; do
   git -C "$R" branch "$b"
 done
 
+# Tags with "/" namespaces (folder) + a flat one + a single-prefix one.
+git -C "$R" tag v1.0.0                 # flat, no prefix
+git -C "$R" tag release/1.0            # release/ has 2 ⇒ folder
+git -C "$R" tag release/2.0
+git -C "$R" tag nightly/2026-06-01     # nightly/ has 2 ⇒ folder
+git -C "$R" tag nightly/2026-06-02
+git -C "$R" tag stable/1.0             # stable/ has 1 ⇒ stays flat as "stable/1.0"
+
+# Push branches + tags to a bare origin so Remotes/Tags fold the same way.
+ORIGIN_BARE="$ROOT/branch-grouping-origin.git"
+git init -q --bare "$ORIGIN_BARE"
+git -C "$R" remote add origin "$ORIGIN_BARE"
+git -C "$R" push -q origin --all
+git -C "$R" push -q origin --tags
+
 # Land on a grouped leaf so the folder containing the current branch is visible.
 git -C "$R" checkout -q feature/login
 
-summary "branch-grouping" "10 local branches across feature/*, bugfix/*, feature/payments/* + flat main/develop/release"
+summary "branch-grouping" "10 branches (feature/*, bugfix/*, feature/payments/*) + namespaced tags (release/*, nightly/*) local + pushed to origin"

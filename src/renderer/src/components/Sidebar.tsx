@@ -62,17 +62,36 @@ interface SectionProps {
   depth?: number
 }
 
-/** A node in the local-branch folder tree. `branch` is set when this node is
- *  itself a branch (a leaf, or a folder name that's also a branch). */
-interface BranchNode {
+/** A node in a branch folder tree (local or per-remote). `item` is set when
+ *  this node is itself a branch (a leaf, or a folder name that's also a ref). */
+interface TreeNode<T> {
   seg: string
-  branch?: BranchInfo
-  children: Map<string, BranchNode>
+  item?: T
+  children: Map<string, TreeNode<T>>
+}
+
+/** Fold a flat list of refs into a folder tree keyed by their "/" prefix. */
+function buildPrefixTree<T>(items: T[], nameOf: (t: T) => string): TreeNode<T> {
+  const root: TreeNode<T> = { seg: '', children: new Map() }
+  for (const it of items) {
+    let node = root
+    const parts = nameOf(it).split('/')
+    parts.forEach((seg, i) => {
+      let child = node.children.get(seg)
+      if (!child) {
+        child = { seg, children: new Map() }
+        node.children.set(seg, child)
+      }
+      node = child
+      if (i === parts.length - 1) node.item = it
+    })
+  }
+  return root
 }
 
 /** Number of actual branches under a node, used for the folder's count badge. */
-function leafCount(node: BranchNode): number {
-  let n = node.branch ? 1 : 0
+function leafCount<T>(node: TreeNode<T>): number {
+  let n = node.item ? 1 : 0
   for (const c of node.children.values()) n += leafCount(c)
   return n
 }
@@ -332,23 +351,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     [repo.branches.remotes, f]
   )
   // Local branches arranged into a folder tree by their "/"-separated prefix.
-  const branchTree = useMemo(() => {
-    const root: BranchNode = { seg: '', children: new Map() }
-    for (const b of locals) {
-      let node = root
-      const parts = b.name.split('/')
-      parts.forEach((seg, i) => {
-        let child = node.children.get(seg)
-        if (!child) {
-          child = { seg, children: new Map() }
-          node.children.set(seg, child)
-        }
-        node = child
-        if (i === parts.length - 1) node.branch = b
-      })
-    }
-    return root
-  }, [locals])
+  const branchTree = useMemo(() => buildPrefixTree(locals, (b) => b.name), [locals])
   const tags = useMemo(
     () => repo.branches.tags.filter((t) => !f || t.name.toLowerCase().includes(f)),
     [repo.branches.tags, f]
@@ -376,6 +379,16 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     }
     return map
   }, [remotes])
+
+  // Per-remote prefix trees, so each remote's branches fold the same way locals do.
+  const remoteTrees = useMemo(() => {
+    const m = new Map<string, TreeNode<RemoteBranchInfo>>()
+    for (const [name, brs] of remoteGroups) m.set(name, buildPrefixTree(brs, (b) => b.name))
+    return m
+  }, [remoteGroups])
+
+  // Tags folded by "/" namespace (release/*, nightly/*, monorepo pkg/v1.0…).
+  const tagTree = useMemo(() => buildPrefixTree(tags, (tg) => tg.name), [tags])
 
   // Which remotes hold a branch with a given name → drives the presence icons.
   const branchPresence = useMemo(() => {
@@ -945,14 +958,14 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   // Recursively render a branch folder node: flatten single-child folders into
   // one "a/b" row, leaves become items, folders with ≥2 entries become a
   // collapsible nested Section. `prefix` carries the flattened path so far.
-  const renderBranchNode = (node: BranchNode, prefix: string, depth: number): React.JSX.Element => {
+  const renderBranchNode = (node: TreeNode<BranchInfo>, prefix: string, depth: number): React.JSX.Element => {
     const display = prefix ? `${prefix}/${node.seg}` : node.seg
     // Single-child folder folds into one row — same visual depth, no extra level.
-    if (!node.branch && node.children.size === 1) {
+    if (!node.item && node.children.size === 1) {
       return renderBranchNode([...node.children.values()][0], display, depth)
     }
-    if (node.children.size === 0 && node.branch) {
-      return branchItem(node.branch, display)
+    if (node.children.size === 0 && node.item) {
+      return branchItem(node.item, display)
     }
     return (
       <Section
@@ -963,8 +976,118 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         icon={<GitBranch size={13} />}
         count={leafCount(node)}
       >
-        {node.branch && branchItem(node.branch, node.seg)}
+        {node.item && branchItem(node.item, node.seg)}
         {[...node.children.values()].map((c) => renderBranchNode(c, '', depth + 1))}
+      </Section>
+    )
+  }
+
+  // One row in a remote's branch list. `label` mirrors branchItem's contract.
+  const remoteItem = (b: RemoteBranchInfo, label: string): React.JSX.Element => (
+    <div
+      key={b.fullName}
+      className={`sb-item ${isSel('remote', b.fullName) ? 'multi-sel' : ''}`}
+      onClick={(e) => void onSelectClick('remote', b.fullName, remoteIds, e)}
+      onDoubleClick={() => void repoActions.checkoutRemote(path, b.fullName, b.name)}
+      onContextMenu={(e) => ctxMenu(e, 'remote', b.fullName, () => remoteMenu(b), remoteBulkMenu)}
+      title={b.fullName}
+    >
+      <span className="sb-name">{label}</span>
+    </div>
+  )
+
+  const renderRemoteNode = (node: TreeNode<RemoteBranchInfo>, prefix: string, depth: number): React.JSX.Element => {
+    const display = prefix ? `${prefix}/${node.seg}` : node.seg
+    if (!node.item && node.children.size === 1) {
+      return renderRemoteNode([...node.children.values()][0], display, depth)
+    }
+    if (node.children.size === 0 && node.item) {
+      return remoteItem(node.item, display)
+    }
+    return (
+      <Section
+        key={`rgrp:${display}`}
+        nested
+        depth={depth}
+        title={display}
+        icon={<GitBranch size={13} />}
+        count={leafCount(node)}
+      >
+        {node.item && remoteItem(node.item, node.seg)}
+        {[...node.children.values()].map((c) => renderRemoteNode(c, '', depth + 1))}
+      </Section>
+    )
+  }
+
+  // One tag row. `label` follows the same last-segment-when-nested contract.
+  const tagItem = (tag: TagInfo, label: string): React.JSX.Element => {
+    const isPushed = repo.remoteTagNames.includes(tag.name)
+    const release = releaseByTag.get(tag.name)
+    const tagLink = repo.remotes.length ? tagWebLink(tag.name) : null
+    return (
+      <div
+        key={tag.name}
+        className={`sb-item ${isSel('tag', tag.name) ? 'multi-sel' : ''}`}
+        onClick={(e) => {
+          if (!onSelectClick('tag', tag.name, tagIds, e)) goToBranch(tag.sha)
+        }}
+        onContextMenu={(e) => ctxMenu(e, 'tag', tag.name, () => tagMenu(tag), tagBulkMenu)}
+        title={`${tag.name}${release ? ' · release' : ''}${repo.remotes.length ? (isPushed ? ' · pushed' : ' · local only') : ''}`}
+      >
+        <Tag size={11} className="sb-tag-icon" />
+        <span className="sb-name">{label}</span>
+        {release && (
+          <span
+            className="sb-tag-action"
+            title={`Go to release ${release.name || release.tag || tag.name}`}
+            onClick={(e) => {
+              e.stopPropagation()
+              openPageTab({ type: 'release', release, repoPath: path })
+            }}
+          >
+            <Rocket size={10} className="sb-release-badge icon-base" />
+            <ArrowUpRight size={11} className="icon-hover" />
+          </span>
+        )}
+        {repo.remotes.length > 0 &&
+          (tagLink && isPushed ? (
+            <span
+              className="sb-tag-action sb-tag-cloud pushed"
+              title={`Open ${tag.name} on remote`}
+              onClick={(e) => {
+                e.stopPropagation()
+                void shellApi.openExternal(tagLink)
+              }}
+            >
+              <Cloud size={10} className="icon-base" />
+              <ArrowUpRight size={11} className="icon-hover" />
+            </span>
+          ) : (
+            <Cloud size={10} className={`sb-tag-cloud ${isPushed ? 'pushed' : 'unpushed'}`} />
+          ))}
+      </div>
+    )
+  }
+
+  const renderTagNode = (node: TreeNode<TagInfo>, prefix: string, depth: number): React.JSX.Element => {
+    const display = prefix ? `${prefix}/${node.seg}` : node.seg
+    if (!node.item && node.children.size === 1) {
+      return renderTagNode([...node.children.values()][0], display, depth)
+    }
+    if (node.children.size === 0 && node.item) {
+      return tagItem(node.item, display)
+    }
+    return (
+      <Section
+        key={`tgrp:${display}`}
+        nested
+        depth={depth}
+        title={display}
+        icon={<Tag size={13} />}
+        count={leafCount(node)}
+      >
+        {node.item && tagItem(node.item, node.seg)}
+        {[...node.children.values()].map((c) => renderTagNode(c, '', depth + 1))}
       </Section>
     )
   }
@@ -1020,6 +1143,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
             <Section
               key={remote.name}
               nested
+              depth={1}
               title={remote.name.toUpperCase()}
               icon={<RemoteIcon url={remote.url} />}
               count={branches.length}
@@ -1042,18 +1166,11 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
               ) : undefined}
             >
               {branches.length === 0 && <div className="sb-empty">{t('sidebar.noBranches')}</div>}
-              {branches.map((b) => (
-                <div
-                  key={b.fullName}
-                  className={`sb-item ${isSel('remote', b.fullName) ? 'multi-sel' : ''}`}
-                  onClick={(e) => void onSelectClick('remote', b.fullName, remoteIds, e)}
-                  onDoubleClick={() => void repoActions.checkoutRemote(path, b.fullName, b.name)}
-                  onContextMenu={(e) => ctxMenu(e, 'remote', b.fullName, () => remoteMenu(b), remoteBulkMenu)}
-                  title={b.fullName}
-                >
-                  <span className="sb-name">{b.name}</span>
-                </div>
-              ))}
+              {groupBranches
+                ? [...(remoteTrees.get(remote.name)?.children.values() ?? [])].map((c) =>
+                    renderRemoteNode(c, '', 2)
+                  )
+                : branches.map((b) => remoteItem(b, b.name))}
             </Section>
           )
         })}
@@ -1285,54 +1402,9 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         }
       >
         {tags.length === 0 && <div className="sb-empty">{t('sidebar.noTags')}</div>}
-        {tags.map((tag) => {
-          const isPushed = repo.remoteTagNames.includes(tag.name)
-          const release = releaseByTag.get(tag.name)
-          const tagLink = repo.remotes.length ? tagWebLink(tag.name) : null
-          return (
-            <div
-              key={tag.name}
-              className={`sb-item ${isSel('tag', tag.name) ? 'multi-sel' : ''}`}
-              onClick={(e) => {
-                if (!onSelectClick('tag', tag.name, tagIds, e)) goToBranch(tag.sha)
-              }}
-              onContextMenu={(e) => ctxMenu(e, 'tag', tag.name, () => tagMenu(tag), tagBulkMenu)}
-              title={`${tag.name}${release ? ' · release' : ''}${repo.remotes.length ? (isPushed ? ' · pushed' : ' · local only') : ''}`}
-            >
-              <Tag size={11} className="sb-tag-icon" />
-              <span className="sb-name">{tag.name}</span>
-              {release && (
-                <span
-                  className="sb-tag-action"
-                  title={`Go to release ${release.name || release.tag || tag.name}`}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    openPageTab({ type: 'release', release, repoPath: path })
-                  }}
-                >
-                  <Rocket size={10} className="sb-release-badge icon-base" />
-                  <ArrowUpRight size={11} className="icon-hover" />
-                </span>
-              )}
-              {repo.remotes.length > 0 &&
-                (tagLink && isPushed ? (
-                  <span
-                    className="sb-tag-action sb-tag-cloud pushed"
-                    title={`Open ${tag.name} on remote`}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      void shellApi.openExternal(tagLink)
-                    }}
-                  >
-                    <Cloud size={10} className="icon-base" />
-                    <ArrowUpRight size={11} className="icon-hover" />
-                  </span>
-                ) : (
-                  <Cloud size={10} className={`sb-tag-cloud ${isPushed ? 'pushed' : 'unpushed'}`} />
-                ))}
-            </div>
-          )
-        })}
+        {groupBranches
+          ? [...tagTree.children.values()].map((c) => renderTagNode(c, '', 1))
+          : tags.map((tag) => tagItem(tag, tag.name))}
       </Section>
     ),
     releases: (() => {

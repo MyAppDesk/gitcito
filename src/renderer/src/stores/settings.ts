@@ -67,6 +67,9 @@ interface SettingsState {
   saveProfile(profile: Profile): void
   addProfile(name: string): void
   deleteProfile(id: string): void
+  /** Bind a repo path to a profile (or clear with null). Drives auto-switch
+   *  when that repo becomes active. */
+  setRepoProfile(path: string, profileId: string | null): void
 
   openRepoTab(repo: RepoRef): void
   /** Open (or focus the existing) non-repo page tab, e.g. the changelog. */
@@ -144,6 +147,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     settings.maskSecrets = settings.maskSecrets ?? sd.maskSecrets
     settings.shortcuts = settings.shortcuts ?? sd.shortcuts
     settings.largeFileKb = settings.largeFileKb ?? sd.largeFileKb
+    settings.repoProfiles = settings.repoProfiles ?? sd.repoProfiles
     set({ settings, loaded: true })
   },
 
@@ -176,11 +180,25 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     get().update((s) => {
       const profiles = s.profiles.filter((p) => p.id !== id)
       if (!profiles.length) profiles.push(defaultProfile())
+      // Drop repo bindings that pointed at the deleted profile so they don't
+      // resolve to a stale id on the next auto-switch.
+      const repoProfiles = Object.fromEntries(
+        Object.entries(s.repoProfiles).filter(([, pid]) => pid !== id)
+      )
       return {
         ...s,
         profiles,
+        repoProfiles,
         activeProfileId: s.activeProfileId === id ? profiles[0].id : s.activeProfileId
       }
+    }),
+
+  setRepoProfile: (path, profileId) =>
+    get().update((s) => {
+      const repoProfiles = { ...s.repoProfiles }
+      if (profileId === null) delete repoProfiles[path]
+      else repoProfiles[path] = profileId
+      return { ...s, repoProfiles }
     }),
 
   openRepoTab: (repo) =>

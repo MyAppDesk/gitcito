@@ -14,6 +14,8 @@ import { Avatar } from './Avatar'
 export function ProfileSwitcher(): React.JSX.Element {
   const settings = useSettingsStore((s) => s.settings)
   const setActiveProfile = useSettingsStore((s) => s.setActiveProfile)
+  const setRepoProfile = useSettingsStore((s) => s.setRepoProfile)
+  const activeRepo = useSettingsStore((s) => s.activeRepo)
   const addProfile = useSettingsStore((s) => s.addProfile)
   const openModal = useUIStore((s) => s.openModal)
   const t = useT()
@@ -94,6 +96,10 @@ export function ProfileSwitcher(): React.JSX.Element {
                 className={`profile-switcher-item ${p.id === active.id ? 'selected' : ''}`}
                 onClick={() => {
                   setActiveProfile(p.id)
+                  // Remember this choice for the active repo so revisiting its
+                  // tab auto-restores the profile.
+                  const repo = activeRepo()
+                  if (repo) setRepoProfile(repo.path, p.id)
                   setOpen(false)
                 }}
               >

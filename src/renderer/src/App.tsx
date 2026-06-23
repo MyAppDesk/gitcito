@@ -338,6 +338,17 @@ export default function App(): React.JSX.Element {
     else void ensure(activeRepoPath)
   }, [activeRepoPath, ensure])
 
+  // Auto-switch the active profile to the one bound to the active repo. Keeps
+  // tokens / git identity / AI config in sync as you move between repo tabs.
+  useEffect(() => {
+    if (!activeRepoPath) return
+    const { settings: s, setActiveProfile } = useSettingsStore.getState()
+    const bound = s.repoProfiles[activeRepoPath]
+    if (bound && bound !== s.activeProfileId && s.profiles.some((p) => p.id === bound)) {
+      setActiveProfile(bound)
+    }
+  }, [activeRepoPath])
+
   // Ensure all repos across all tabs have at least a light status load so
   // group tab status dots are populated even for non-active repos.
   useEffect(() => {

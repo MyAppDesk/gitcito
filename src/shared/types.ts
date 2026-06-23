@@ -941,6 +941,10 @@ export function tabActiveRepoPath(tab: TabState): string | null {
 export interface AppSettings {
   profiles: Profile[]
   activeProfileId: string
+  /** Per-repository profile binding, keyed by repo path. When a repo with a
+   *  binding becomes the active repo, its profile is auto-activated. Path-keyed
+   *  (not stored on RepoRef) so the same repo across tabs/groups can't diverge. */
+  repoProfiles: Record<string, string>
   tabs: TabState[]
   activeTabId: string | null
   recentRepos: RepoRef[]
@@ -1118,6 +1122,7 @@ export function defaultSettings(): AppSettings {
   return {
     profiles: [defaultProfile()],
     activeProfileId: 'default',
+    repoProfiles: {},
     tabs: [],
     activeTabId: null,
     recentRepos: [],

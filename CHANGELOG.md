@@ -1,5 +1,12 @@
 
 
+## [1.11.0](https://github.com/MyAppDesk/gitcito/compare/v1.10.0...v1.11.0) (2026-06-23)
+
+
+### Features
+
+* add branch grouping by prefix setting and functionality ([2be8ad1](https://github.com/MyAppDesk/gitcito/commit/2be8ad15a2e300233e1ded0ff5e31d4e1170bf6d))
+
 ## [1.10.0](https://github.com/MyAppDesk/gitcito/compare/v1.9.0...v1.10.0) (2026-06-23)
 
 

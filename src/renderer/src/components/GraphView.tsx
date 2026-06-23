@@ -1265,20 +1265,37 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
                 const isWip = c.hash === WIP_HASH
                 const isStash = stashBySha.has(c.hash)
                 if (isStash) {
+                  // Layered "stack of cards" glyph — reads as saved/stashed work
+                  // with a bit of depth. Both cards fill with bg so the connector
+                  // line behind never peeks through.
+                  const sc = colorFor(n.color)
                   return (
-                    <g key={c.hash}>
+                    <g key={c.hash} className="graph-node stash-node">
+                      {/* back card, offset up-right and faded for depth */}
                       <rect
-                        x={cx - 5.5}
-                        y={cy - 5.5}
+                        x={cx - 3.75}
+                        y={cy - 7.25}
                         width={11}
                         height={11}
                         rx={3}
                         fill="var(--bg-1)"
-                        stroke={colorFor(n.color)}
-                        strokeWidth={2}
-                        className="graph-node"
+                        stroke={sc}
+                        strokeWidth={1.5}
+                        opacity={0.55}
                       />
-                      <rect x={cx - 2.5} y={cy - 1} width={5} height={1.6} rx={0.8} fill={colorFor(n.color)} />
+                      {/* front card */}
+                      <rect
+                        x={cx - 7.25}
+                        y={cy - 3.75}
+                        width={11}
+                        height={11}
+                        rx={3}
+                        fill="var(--bg-1)"
+                        stroke={sc}
+                        strokeWidth={2}
+                      />
+                      {/* tiny dot = the stashed change sitting on the card */}
+                      <circle cx={cx - 1.75} cy={cy + 1.75} r={1.4} fill={sc} />
                     </g>
                   )
                 }

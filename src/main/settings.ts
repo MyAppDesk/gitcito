@@ -1,7 +1,7 @@
 import { app, ipcMain, dialog } from 'electron'
 import { join } from 'path'
 import { readFile, writeFile, mkdir } from 'fs/promises'
-import { defaultSettings, type AppSettings } from '../shared/types'
+import { defaultSettings, type AppSettings, type RepoHost } from '../shared/types'
 
 const settingsPath = (): string => join(app.getPath('userData'), 'gitcito-settings.json')
 
@@ -14,6 +14,26 @@ async function readSettings(): Promise<AppSettings> {
   } catch {
     return defaultSettings()
   }
+}
+
+const TOKEN_FIELD: Record<RepoHost, 'githubToken' | 'gitlabToken' | 'bitbucketToken' | 'azureToken'> = {
+  github: 'githubToken',
+  gitlab: 'gitlabToken',
+  bitbucket: 'bitbucketToken',
+  azure: 'azureToken'
+}
+
+/**
+ * The active profile's personal access token for a given host, or undefined when
+ * none is configured. Used by network git operations (push/pull/fetch) to
+ * authenticate non-interactively, mirroring how clone resolves its token.
+ */
+export async function activeProfileToken(host: RepoHost): Promise<string | undefined> {
+  const settings = await readSettings()
+  const profile =
+    settings.profiles.find((p) => p.id === settings.activeProfileId) ?? settings.profiles[0]
+  const token = profile?.[TOKEN_FIELD[host]]
+  return token && token.trim() ? token.trim() : undefined
 }
 
 async function writeSettings(settings: AppSettings): Promise<void> {

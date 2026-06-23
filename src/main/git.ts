@@ -53,10 +53,12 @@ import type {
   ChurnPoint,
   ChangelogResult,
   SnapshotInfo,
-  CloneProgress
+  CloneProgress,
+  RepoHost
 } from '../shared/types'
 import { recordEvent } from './analytics'
 import { recordLog } from './log'
+import { activeProfileToken } from './settings'
 
 const SEP = '\x1f'
 const REC = '\x1e'
@@ -236,6 +238,90 @@ function authedCloneUrl(url: string, host?: string, token?: string): string {
   }
 }
 
+/** Map a remote URL's hostname to the provider whose PAT can authenticate it. */
+function hostFromUrl(url: string): RepoHost | undefined {
+  try {
+    const h = new URL(url).hostname.toLowerCase()
+    if (h.includes('github')) return 'github'
+    if (h.includes('gitlab')) return 'gitlab'
+    if (h.includes('bitbucket')) return 'bitbucket'
+    if (h.includes('azure') || h.endsWith('visualstudio.com')) return 'azure'
+  } catch {
+    /* not a parseable URL (e.g. scp-style ssh) → no host */
+  }
+  return undefined
+}
+
+// Disable git's interactive credential prompt for network ops run from the app.
+// Electron has no controlling TTY, so a prompt fails with the opaque macOS error
+// "could not read Password … Device not configured". With this set, a missing
+// credential surfaces immediately as a clear "could not read Username/Password"
+// (terminal prompts disabled) error instead of hanging on /dev/tty.
+const noPromptEnv = (): NodeJS.ProcessEnv => ({ ...process.env, GIT_TERMINAL_PROMPT: '0' })
+
+/** Run a git command non-interactively, surfacing stderr as the thrown message. */
+async function runGit(repoPath: string, args: string[]): Promise<string> {
+  try {
+    const { stdout } = await pexecFile('git', ['-C', repoPath, ...args], { env: noPromptEnv() })
+    return stdout
+  } catch (err) {
+    const e = err as { stderr?: string; message?: string }
+    throw new Error((e.stderr || e.message || 'git command failed').trim())
+  }
+}
+
+async function getRemoteUrl(repoPath: string, remote: string): Promise<string> {
+  try {
+    const { stdout } = await pexecFile('git', ['-C', repoPath, 'remote', 'get-url', remote])
+    return stdout.trim()
+  } catch {
+    return ''
+  }
+}
+
+/** The remote a plain `git pull` would use (the current branch's upstream), or 'origin'. */
+async function upstreamRemote(repoPath: string): Promise<string> {
+  try {
+    const { stdout } = await pexecFile('git', [
+      '-C',
+      repoPath,
+      'rev-parse',
+      '--abbrev-ref',
+      '--symbolic-full-name',
+      '@{u}'
+    ])
+    const slash = stdout.trim().indexOf('/')
+    if (slash > 0) return stdout.trim().slice(0, slash)
+  } catch {
+    /* no upstream configured → fall back to origin */
+  }
+  return 'origin'
+}
+
+/**
+ * Run a network git operation (push/pull/fetch) against `remote`, injecting the
+ * active profile's PAT for the duration of the call. The token is matched to the
+ * remote's host and written into the remote URL only transiently — reset in
+ * `finally` — so it is never persisted to `.git/config`, mirroring `clone()`.
+ * When no token applies (ssh remote, unknown host, or none configured) the op
+ * runs as-is and relies on `GIT_TERMINAL_PROMPT=0` to fail fast.
+ */
+async function withRemoteAuth<T>(repoPath: string, remote: string, op: () => Promise<T>): Promise<T> {
+  const url = await getRemoteUrl(repoPath, remote)
+  const host = url ? hostFromUrl(url) : undefined
+  const token = host ? await activeProfileToken(host) : undefined
+  const authed = token ? authedCloneUrl(url, host, token) : url
+  if (!authed || authed === url) return op()
+  await pexecFile('git', ['-C', repoPath, 'remote', 'set-url', remote, authed])
+  try {
+    return await op()
+  } finally {
+    // Restore the token-free URL so the PAT does not linger on disk.
+    await pexecFile('git', ['-C', repoPath, 'remote', 'set-url', remote, url]).catch(() => undefined)
+  }
+}
+
+
 function parseTrack(track: string): { ahead: number; behind: number } {
   const ahead = /ahead (\d+)/.exec(track)
   const behind = /behind (\d+)/.exec(track)
@@ -396,24 +482,34 @@ export const gitService = {
   },
 
   async log(repoPath: string, maxCount = 400): Promise<GraphCommit[]> {
-    const git = gitFor(repoPath)
+    const args = [
+      '-C',
+      repoPath,
+      'log',
+      // Real refs only — excludes `refs/original/*` filter-branch backups and
+      // other internal refs that `--all` would surface as ghost lanes.
+      '--branches',
+      '--tags',
+      '--remotes',
+      'HEAD',
+      '--date-order',
+      `--max-count=${maxCount}`,
+      `--pretty=format:%H${SEP}%P${SEP}%an${SEP}%ae${SEP}%at${SEP}%D${SEP}%s${SEP}%(trailers:key=Co-authored-by,valueonly,separator=%x1d)${SEP}%G?${SEP}%GS${REC}`
+    ]
     let raw = ''
     try {
-      raw = await git.raw([
-        'log',
-        // Real refs only — excludes `refs/original/*` filter-branch backups and
-        // other internal refs that `--all` would surface as ghost lanes.
-        '--branches',
-        '--tags',
-        '--remotes',
-        'HEAD',
-        '--date-order',
-        `--max-count=${maxCount}`,
-        `--pretty=format:%H${SEP}%P${SEP}%an${SEP}%ae${SEP}%at${SEP}%D${SEP}%s${SEP}%(trailers:key=Co-authored-by,valueonly,separator=%x1d)${SEP}%G?${SEP}%GS${REC}`
-      ])
-    } catch {
-      return [] // empty repository
+      const { stdout } = await pexecFile('git', args, { maxBuffer: 64 * 1024 * 1024 })
+      raw = stdout
+    } catch (err) {
+      // The `%G?`/`%GS` signature placeholders force git to load the gpg config to
+      // verify each commit. A malformed value (e.g. an invalid `gpg.format` in the
+      // user's global gitconfig) makes `git log` exit non-zero *after* it has
+      // already written the commit records to stdout. Salvage that stdout so the
+      // whole graph isn't blanked to "No commits yet" over a signing-config quirk;
+      // a genuinely empty repository simply yields no output here.
+      raw = (err as { stdout?: string }).stdout ?? ''
     }
+    if (!raw.trim()) return [] // empty repository
     return raw
       .split(REC)
       .map((r) => r.trim())
@@ -674,7 +770,7 @@ export const gitService = {
   },
 
   async fetchRemote(repoPath: string, name: string): Promise<void> {
-    await gitFor(repoPath).fetch([name, '--prune'])
+    await withRemoteAuth(repoPath, name, () => runGit(repoPath, ['fetch', name, '--prune']))
   },
 
   // ─── Branch / nav operations ───────────────────────────────────────────────
@@ -716,7 +812,7 @@ export const gitService = {
   },
 
   async deleteRemoteBranch(repoPath: string, remote: string, name: string): Promise<void> {
-    await gitFor(repoPath).push([remote, '--delete', name])
+    await withRemoteAuth(repoPath, remote, () => runGit(repoPath, ['push', remote, '--delete', name]))
   },
 
   // ─── Stacked branches ──────────────────────────────────────────────────
@@ -840,10 +936,11 @@ export const gitService = {
    * delete is best-effort (e.g. a protected branch may refuse).
    */
   async renameBranchRemote(repoPath: string, oldName: string, newName: string, remote: string): Promise<void> {
-    const git = gitFor(repoPath)
-    await git.branch(['-m', oldName, newName])
-    await git.push([remote, '--delete', oldName]).catch(() => undefined)
-    await git.push(['-u', remote, newName])
+    await gitFor(repoPath).branch(['-m', oldName, newName])
+    await withRemoteAuth(repoPath, remote, async () => {
+      await runGit(repoPath, ['push', remote, '--delete', oldName]).catch(() => undefined)
+      await runGit(repoPath, ['push', '-u', remote, newName])
+    })
   },
 
   async merge(repoPath: string, ref: string, noFf = false): Promise<void> {
@@ -910,22 +1007,27 @@ export const gitService = {
   // ─── Sync operations ───────────────────────────────────────────────────────
 
   async fetchAll(repoPath: string): Promise<void> {
-    await gitFor(repoPath).fetch(['--all', '--prune'])
+    // `--all` spans every remote; authenticate the common case (origin). Other
+    // private https remotes without a matching PAT fail fast rather than hang.
+    await withRemoteAuth(repoPath, 'origin', () => runGit(repoPath, ['fetch', '--all', '--prune']))
   },
 
   async pull(repoPath: string, mode: 'default' | 'ff-only' | 'rebase' = 'default'): Promise<void> {
-    const git = gitFor(repoPath)
-    const args: string[] = []
+    const remote = await upstreamRemote(repoPath)
+    const args = ['pull']
     if (mode === 'ff-only') args.push('--ff-only')
     if (mode === 'rebase') args.push('--rebase')
-    await withAutoStash(repoPath, 'pull', () => git.pull(args))
+    await withAutoStash(repoPath, 'pull', () =>
+      withRemoteAuth(repoPath, remote, () => runGit(repoPath, args))
+    )
   },
 
   async push(repoPath: string, branch: string, opts: { force?: boolean; remote?: string } = {}): Promise<void> {
-    const git = gitFor(repoPath)
-    const args = ['--set-upstream', opts.remote ?? 'origin', branch]
-    if (opts.force) args.unshift('--force-with-lease')
-    await git.push(args)
+    const remote = opts.remote ?? 'origin'
+    const args = ['push']
+    if (opts.force) args.push('--force-with-lease')
+    args.push('--set-upstream', remote, branch)
+    await withRemoteAuth(repoPath, remote, () => runGit(repoPath, args))
   },
 
   // ─── Stash operations ──────────────────────────────────────────────────────

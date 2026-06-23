@@ -1,5 +1,20 @@
 
 
+## [1.9.0](https://github.com/MyAppDesk/gitcito/compare/v1.8.0...v1.9.0) (2026-06-23)
+
+
+### Features
+
+* add diverged checkout handling with user dialog ([6876088](https://github.com/MyAppDesk/gitcito/commit/68760885986dfae7ca0f730e5c72eebfa2122694))
+* add loading indicators for toolbar operations ([f18d97f](https://github.com/MyAppDesk/gitcito/commit/f18d97fa4d5532fea242c4f5cfeb918d5ff6c5c7))
+* add profile selection for cloned repositories ([64e7328](https://github.com/MyAppDesk/gitcito/commit/64e732854fcc87b648cfbb0360152b3956a61bea))
+* auto-switch active profile based on active repo ([5fa03e1](https://github.com/MyAppDesk/gitcito/commit/5fa03e13400d289f098c9145ac2d30914041981a))
+
+
+### Bug Fixes
+
+* profile switching error ([9c05b57](https://github.com/MyAppDesk/gitcito/commit/9c05b57f4464dc27f01405d8ef46c5920846e479))
+
 ## [1.8.0](https://github.com/MyAppDesk/gitcito/compare/v1.7.0...v1.8.0) (2026-06-22)
 
 

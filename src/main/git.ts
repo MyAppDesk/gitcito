@@ -328,6 +328,29 @@ function parseTrack(track: string): { ahead: number; behind: number } {
   return { ahead: ahead ? +ahead[1] : 0, behind: behind ? +behind[1] : 0 }
 }
 
+/**
+ * Commits each side has that the other lacks, computed without checking out
+ * either ref. `ahead` = commits on `local` not on `remote`; `behind` = the
+ * reverse. Both > 0 means the branches have diverged and can't be
+ * fast-forwarded.
+ */
+async function divergence(
+  git: SimpleGit,
+  local: string,
+  remote: string
+): Promise<{ ahead: number; behind: number }> {
+  const out = await git.raw(['rev-list', '--left-right', '--count', `${local}...${remote}`])
+  const [ahead, behind] = out.trim().split(/\s+/).map((n) => Number(n) || 0)
+  return { ahead: ahead ?? 0, behind: behind ?? 0 }
+}
+
+/** Filesystem-safe timestamp (no colons) for naming backup branches. */
+function backupStamp(): string {
+  const d = new Date()
+  const p = (n: number): string => String(n).padStart(2, '0')
+  return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`
+}
+
 function mapStatusCode(code: string): FileChangeKind {
   switch (code) {
     case 'A':
@@ -779,26 +802,69 @@ export const gitService = {
     await gitFor(repoPath).checkout(ref)
   },
 
-  async checkoutRemote(repoPath: string, fullName: string, localName: string): Promise<void> {
+  async checkoutRemote(
+    repoPath: string,
+    fullName: string,
+    localName: string
+  ): Promise<{ diverged: boolean; ahead: number; behind: number }> {
     const git = gitFor(repoPath)
     // If a local branch with that name already exists, just switch to it
     // instead of trying to recreate a tracking branch (which would fail with
     // "a branch named '<x>' already exists").
     const branches = await git.branchLocal()
     if (branches.all.includes(localName)) {
+      // Compare the existing local branch with the remote tip before touching
+      // anything. If they've diverged (both have unique commits) a fast-forward
+      // is impossible — report it so the renderer can ask the user how to
+      // reconcile instead of dumping git's raw "Not possible to fast-forward".
+      const { ahead, behind } = await divergence(git, localName, fullName)
+      if (ahead > 0 && behind > 0) {
+        return { diverged: true, ahead, behind }
+      }
       // Fast-forward the existing local branch to the remote tip so the
-      // checkout actually brings in the remote changes. --ff-only is safe:
-      // if the branches have diverged it errors instead of merging silently.
-      // withAutoStash shelves a dirty working tree under a named stash before
-      // the FF and restores it after, so local edits don't
-      // abort the update.
+      // checkout actually brings in the remote changes. withAutoStash shelves a
+      // dirty working tree under a named stash before the FF and restores it
+      // after, so local edits don't abort the update.
       await withAutoStash(repoPath, `checkout ${localName}`, async () => {
         await git.checkout(localName)
-        await git.merge(['--ff-only', fullName])
+        if (behind > 0) await git.merge(['--ff-only', fullName])
       })
+      return { diverged: false, ahead, behind }
     } else {
       await git.checkout(['-b', localName, '--track', fullName])
+      return { diverged: false, ahead: 0, behind: 0 }
     }
+  },
+
+  /**
+   * Reconcile a diverged local branch with its remote after the user picks a
+   * strategy in the divergence dialog. When `backup` is set, a
+   * `backup/<localName>-<timestamp>` branch is created at the current local tip
+   * first, so even a `reset` can be undone by checking that branch out.
+   *   - rebase: replay local commits on top of the remote tip (linear history)
+   *   - merge:  --no-ff merge, keeping both histories
+   *   - reset:  hard-reset local to the remote tip, discarding local commits
+   */
+  async resolveDivergedCheckout(
+    repoPath: string,
+    fullName: string,
+    localName: string,
+    strategy: 'rebase' | 'merge' | 'reset',
+    backup: boolean
+  ): Promise<{ backupRef?: string }> {
+    const git = gitFor(repoPath)
+    let backupRef: string | undefined
+    await withAutoStash(repoPath, `checkout ${localName}`, async () => {
+      await git.checkout(localName)
+      if (backup) {
+        backupRef = `backup/${localName}-${backupStamp()}`
+        await git.branch([backupRef])
+      }
+      if (strategy === 'rebase') await git.rebase([fullName])
+      else if (strategy === 'merge') await git.merge(['--no-ff', fullName])
+      else await git.reset(['--hard', fullName])
+    })
+    return { backupRef }
   },
 
   async createBranch(repoPath: string, name: string, at?: string, checkout = true): Promise<void> {

@@ -61,6 +61,14 @@ export type ModalSpec =
       url: string
       pushUrl?: string
     }
+  | {
+      kind: 'diverged-checkout'
+      localName: string
+      fullName: string
+      ahead: number
+      behind: number
+      onResolve: (strategy: 'rebase' | 'merge' | 'reset', backup: boolean) => void
+    }
   | { kind: 'clone'; onClone: (repo: { path: string; name: string }) => void }
   | { kind: 'create-branch'; path: string; currentBranch?: string; description?: string }
   | { kind: 'settings'; page?: 'profile' | 'integrations' | 'ai' | 'themes' | 'general' | 'security' | 'shortcuts' | 'data' }

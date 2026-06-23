@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { X, Globe, Github, Gitlab, Cloud, Server, Loader2, Search, Lock, ExternalLink, Plug, FolderGit2, Folder, Plus, Check, ChevronDown, Sparkles } from 'lucide-react'
+import { X, Globe, Github, Gitlab, Cloud, Server, Loader2, Search, Lock, ExternalLink, Plug, FolderGit2, Folder, Plus, Check, ChevronDown, Sparkles, GitMerge } from 'lucide-react'
 import { useUIStore, type ModalSpec } from '../stores/ui'
 import { useSettingsStore, GROUP_COLORS } from '../stores/settings'
 import { hostingApi, gitApi, shellApi, aiApi } from '../infrastructure/api'
@@ -1091,6 +1091,54 @@ function ConfirmModal({ spec }: { spec: Extract<ModalSpec, { kind: 'confirm' }> 
   )
 }
 
+function DivergedCheckoutModal({
+  spec
+}: {
+  spec: Extract<ModalSpec, { kind: 'diverged-checkout' }>
+}): React.JSX.Element {
+  const closeModal = useUIStore((s) => s.closeModal)
+  const [backup, setBackup] = useState(true)
+  const aheadN = `${spec.ahead} commit${spec.ahead === 1 ? '' : 's'}`
+  const behindN = `${spec.behind} commit${spec.behind === 1 ? '' : 's'}`
+  const choose = (strategy: 'rebase' | 'merge' | 'reset'): void => {
+    closeModal()
+    spec.onResolve(strategy, backup)
+  }
+  return (
+    <>
+      <h3 className="modal-title-row">
+        <GitMerge size={17} /> Branches have diverged
+      </h3>
+      <p className="modal-message">
+        Your local <strong>{spec.localName}</strong> has {aheadN} that the remote doesn&apos;t have, and{' '}
+        <strong>{spec.fullName}</strong> has {behindN} you don&apos;t have locally. A fast-forward isn&apos;t
+        possible — choose how to combine them.
+      </p>
+      <label
+        className="modal-label"
+        style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', marginTop: 12 }}
+      >
+        <input type="checkbox" checked={backup} onChange={(e) => setBackup(e.target.checked)} />
+        Create a backup branch first — recover your commits anytime
+      </label>
+      <div className="modal-actions" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 8 }}>
+        <button className="btn primary" onClick={() => choose('rebase')}>
+          Rebase — replay your {aheadN} on top of the remote (recommended)
+        </button>
+        <button className="btn ghost" onClick={() => choose('merge')}>
+          Merge — keep both histories
+        </button>
+        <button className="btn danger" onClick={() => choose('reset')}>
+          Reset to remote — discard your {aheadN}
+        </button>
+        <button className="btn ghost" onClick={closeModal} style={{ marginTop: 4 }}>
+          Cancel
+        </button>
+      </div>
+    </>
+  )
+}
+
 function CreateRepoModal({ spec }: { spec: Extract<ModalSpec, { kind: 'create-repo' }> }): React.JSX.Element {
   const closeModal = useUIStore((s) => s.closeModal)
   const toast = useUIStore((s) => s.toast)
@@ -1319,6 +1367,7 @@ export function ModalHost(): React.JSX.Element {
             {modal.kind === 'input' && <InputModal spec={modal} />}
             {modal.kind === 'create-branch' && <CreateBranchModal spec={modal} />}
             {modal.kind === 'confirm' && <ConfirmModal spec={modal} />}
+            {modal.kind === 'diverged-checkout' && <DivergedCheckoutModal spec={modal} />}
             {modal.kind === 'addRemote' && <AddRemoteModal spec={modal} />}
             {modal.kind === 'editRemote' && <EditRemoteModal spec={modal} />}
             {modal.kind === 'clone' && <CloneModal spec={modal} />}

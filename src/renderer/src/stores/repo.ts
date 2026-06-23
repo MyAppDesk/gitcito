@@ -412,6 +412,61 @@ async function runPush(path: string, branch: string, force: boolean): Promise<bo
   }
 }
 
+// Check out a remote branch as a local one. When the local branch already
+// exists and has diverged from the remote, a fast-forward is impossible, so we
+// surface a dialog letting the user rebase / merge / reset instead of failing.
+async function runCheckoutRemote(path: string, fullName: string, localName: string): Promise<boolean> {
+  const ui = useUIStore.getState()
+  ui.setBusy(`Checking out ${localName}`)
+  try {
+    const res = await gitApi.checkoutRemote(path, fullName, localName)
+    if (res.diverged) {
+      ui.openModal({
+        kind: 'diverged-checkout',
+        localName,
+        fullName,
+        ahead: res.ahead,
+        behind: res.behind,
+        onResolve: (strategy, backup) =>
+          void runResolveDivergedCheckout(path, fullName, localName, strategy, backup)
+      })
+      return false
+    }
+    toast('success', `Checked out ${localName}`)
+    return true
+  } catch (err) {
+    toast('error', err instanceof Error ? err.message : String(err))
+    return false
+  } finally {
+    ui.setBusy(null)
+    await useRepoStore.getState().refresh(path)
+  }
+}
+
+async function runResolveDivergedCheckout(
+  path: string,
+  fullName: string,
+  localName: string,
+  strategy: 'rebase' | 'merge' | 'reset',
+  backup: boolean
+): Promise<boolean> {
+  const ui = useUIStore.getState()
+  const verb = strategy === 'rebase' ? 'Rebasing' : strategy === 'merge' ? 'Merging' : 'Resetting'
+  ui.setBusy(`${verb} ${localName}`)
+  try {
+    const { backupRef } = await gitApi.resolveDivergedCheckout(path, fullName, localName, strategy, backup)
+    const done = strategy === 'rebase' ? 'Rebased' : strategy === 'merge' ? 'Merged' : 'Reset'
+    toast('success', backupRef ? `${done} ${localName} — backup saved as ${backupRef}` : `${done} ${localName}`)
+    return true
+  } catch (err) {
+    toast('error', err instanceof Error ? err.message : String(err))
+    return false
+  } finally {
+    ui.setBusy(null)
+    await useRepoStore.getState().refresh(path)
+  }
+}
+
 export const repoActions = {
   checkout: (path: string, ref: string) => {
     const prev = useRepoStore.getState().repos[path]?.branches.current
@@ -423,9 +478,7 @@ export const repoActions = {
   },
 
   checkoutRemote: (path: string, fullName: string, localName: string) =>
-    useRepoStore
-      .getState()
-      .run(path, `Checked out ${localName}`, () => gitApi.checkoutRemote(path, fullName, localName)),
+    runCheckoutRemote(path, fullName, localName),
 
   createBranch: (path: string, name: string, at?: string) => {
     const prev = useRepoStore.getState().repos[path]?.branches.current

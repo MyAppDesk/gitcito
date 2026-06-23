@@ -80,7 +80,14 @@ export const gitApi = {
 
   checkout: (path: string, ref: string) => call<void>('checkout', path, ref),
   checkoutRemote: (path: string, fullName: string, localName: string) =>
-    call<void>('checkoutRemote', path, fullName, localName),
+    call<{ diverged: boolean; ahead: number; behind: number }>('checkoutRemote', path, fullName, localName),
+  resolveDivergedCheckout: (
+    path: string,
+    fullName: string,
+    localName: string,
+    strategy: 'rebase' | 'merge' | 'reset',
+    backup: boolean
+  ) => call<{ backupRef?: string }>('resolveDivergedCheckout', path, fullName, localName, strategy, backup),
   createBranch: (path: string, name: string, at?: string, checkout?: boolean) =>
     call<void>('createBranch', path, name, at, checkout),
   deleteBranch: (path: string, name: string, force?: boolean) => call<void>('deleteBranch', path, name, force),

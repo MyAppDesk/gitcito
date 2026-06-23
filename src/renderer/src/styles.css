@@ -5711,6 +5711,89 @@ textarea:focus {
   color: #fff;
 }
 
+/* ── Theme / Graph sub-tabs ───────────────────────────────────────────────── */
+.theme-tabs {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.theme-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 14px;
+  border: none;
+  background: transparent;
+  color: var(--text-2);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.15s, border-color 0.15s;
+}
+.theme-tab:hover {
+  color: var(--text-0);
+}
+.theme-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* ── Graph style tab ──────────────────────────────────────────────────────── */
+.graph-style-layout {
+  display: flex;
+  gap: 22px;
+  align-items: flex-start;
+}
+.graph-style-controls {
+  flex: 1;
+  min-width: 0;
+}
+.graph-style-controls h4 {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0 0 2px;
+}
+.graph-style-preview {
+  position: sticky;
+  top: 0;
+  flex-shrink: 0;
+  width: 160px;
+}
+.graph-mini-stage {
+  display: flex;
+  justify-content: center;
+  padding: 14px;
+  border-radius: 12px;
+  background: var(--bg-2);
+  border: 1px solid var(--border-soft);
+}
+.graph-mini-svg {
+  display: block;
+}
+
+.palette-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+.palette-swatch {
+  display: flex;
+  gap: 3px;
+  height: 36px;
+  padding: 5px;
+  border-radius: 8px;
+  background: var(--bg-2);
+}
+.palette-swatch-bar {
+  flex: 1;
+  border-radius: 3px;
+}
+
 .settings-section-title {
   margin-bottom: 0;
 }

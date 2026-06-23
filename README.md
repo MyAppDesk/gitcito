@@ -47,6 +47,7 @@
 - **Commit graph** with branches, merges and octopus merges drawn properly — in light or dark. Windowed rendering keeps it smooth on huge histories, **↑/↓ or `j`/`k`** walk the selection between commits, a **linear (first-parent) view** toggle hides merged-in side branches, and commits that arrived in your **last fetch/pull are flagged "new"**.
 - **Multi-select commits** — `⌘`/`Ctrl`-click to toggle, `⇧`-click for a range, then right-click to **cherry-pick** the lot onto the current branch, **squash** a contiguous run into one, **export a combined patch**, or copy their SHAs.
 - **Customisable graph columns**: show/hide, resize and reorder branch, message, author, date, SHA and deployment columns.
+- **Customisable graph style** (Settings → Themes → **Graph**): pick a **lane palette** (8 built-ins + custom + **AI-generated**), **line corners** (rounded / sharp / curved / straight), **row density** and **line thickness** — all with a live mini-graph preview.
 - **Inline CI status** _(GitHub only)_. GitHub Actions check-runs (pass/fail/pending) shown right on the commit row.
 - **Branches, remotes, tags, stashes, worktrees & submodules**, all in one reorderable, searchable sidebar.
 - **Commit details**: changed-files tree/flat view, author, SHA, co-authors, copy & open externally. `#123` issue/PR refs and `@mentions` (in commit subjects, PR & issue bodies/comments) are **autolinked** to the host.
@@ -167,6 +168,11 @@ Bundle related repositories into a group, then open, clone or create. Recents al
 | | |
 |---|---|
 | ![Commit graph, light theme](docs/screenshots/graph-light.png) | ![Commit graph, dark theme](docs/screenshots/graph-dark.png) |
+
+### Graph style
+Pick a lane palette (built-in, custom or AI-generated), line corners, row density and thickness — with a live preview.
+
+![Graph style settings: lane palette, line corners, density and thickness with live preview](docs/screenshots/settings-graph.png)
 
 ### Signed commits
 Verified / unverified / unsigned badges in a dedicated, reorderable signature column.

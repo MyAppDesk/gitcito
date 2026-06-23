@@ -34,14 +34,17 @@ import {
   Activity,
   BarChart3,
   GitCommit,
-  ScrollText
+  ScrollText,
+  GitBranch,
+  Spline
 } from 'lucide-react'
 import hljs from 'highlight.js'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
 import { useUpdatesStore, hasPendingUpdate } from '../stores/updates'
 import { gitApi, aiApi, settingsApi, analyticsApi, logApi, infoApi, vaultApi } from '../infrastructure/api'
-import { AI_PROVIDERS, emptyAnalytics, type AIProvider, type Analytics, type AIUsageStat, type ActivityEvent, type RepoStats, type AppSettings, type BranchNamingStyle, type CommitStyle, type ConflictStyle, type ExplainStyle, type Profile, type SigningConfig, type SettingsBundle } from '../../../shared/types'
+import { AI_PROVIDERS, emptyAnalytics, defaultGraphStyle, type AIProvider, type Analytics, type AIUsageStat, type ActivityEvent, type RepoStats, type AppSettings, type BranchNamingStyle, type CommitStyle, type ConflictStyle, type ExplainStyle, type Profile, type SigningConfig, type SettingsBundle, type GraphStyle, type GraphPalette, type GraphEdgeStyle, type GraphDensity, type GraphLineWidth } from '../../../shared/types'
+import { allGraphPalettes, findGraphPalette, colorForPalette, edgePath, DENSITY_ROW_H, LINE_WIDTH_PX, GRAPH_PALETTES } from '../graph/style'
 import type {
   AppTheme,
   AppThemeColors,
@@ -725,6 +728,351 @@ function CodePreview({ colors }: { colors: CodeThemeColors }): React.JSX.Element
   )
 }
 
+// ─── Graph style tab ─────────────────────────────────────────────────────────
+
+const EDGE_STYLES: { id: GraphEdgeStyle; label: string }[] = [
+  { id: 'rounded', label: 'Rounded' },
+  { id: 'sharp', label: 'Sharp' },
+  { id: 'curved', label: 'Curved' },
+  { id: 'straight', label: 'Straight' }
+]
+const DENSITIES: { id: GraphDensity; label: string }[] = [
+  { id: 'compact', label: 'Compact' },
+  { id: 'comfortable', label: 'Comfortable' },
+  { id: 'spacious', label: 'Spacious' }
+]
+const LINE_WIDTHS: { id: GraphLineWidth; label: string }[] = [
+  { id: 'thin', label: 'Thin' },
+  { id: 'normal', label: 'Normal' },
+  { id: 'thick', label: 'Thick' }
+]
+
+const PALETTE_SLOTS = 8
+
+/** Pad/truncate a colour list to exactly PALETTE_SLOTS for the editor grid. */
+function toSlots(colors: string[]): string[] {
+  const out = colors.slice(0, PALETTE_SLOTS)
+  while (out.length < PALETTE_SLOTS) out.push(GRAPH_PALETTES[0].colors[out.length % GRAPH_PALETTES[0].colors.length])
+  return out
+}
+
+// A small illustrative graph: trunk + a branch that diverges and merges back,
+// plus a stash spur. Rows increase downward; an edge goes child → parent.
+const PREVIEW_NODES: { row: number; lane: number; color: number; kind: 'commit' | 'merge' | 'stash' }[] = [
+  { row: 0, lane: 0, color: 0, kind: 'commit' },
+  { row: 1, lane: 1, color: 1, kind: 'commit' },
+  { row: 2, lane: 2, color: 2, kind: 'stash' },
+  { row: 3, lane: 1, color: 1, kind: 'commit' },
+  { row: 4, lane: 0, color: 0, kind: 'merge' },
+  { row: 5, lane: 0, color: 0, kind: 'commit' }
+]
+const PREVIEW_EDGES: { fromRow: number; fromLane: number; toRow: number; toLane: number; color: number; dashed?: boolean }[] = [
+  { fromRow: 0, fromLane: 0, toRow: 4, toLane: 0, color: 0 }, // trunk
+  { fromRow: 4, fromLane: 0, toRow: 5, toLane: 0, color: 0 }, // trunk continues
+  { fromRow: 0, fromLane: 0, toRow: 1, toLane: 1, color: 1 }, // branch out
+  { fromRow: 1, fromLane: 1, toRow: 3, toLane: 1, color: 1 }, // feature line
+  { fromRow: 3, fromLane: 1, toRow: 4, toLane: 0, color: 1 }, // merge in
+  { fromRow: 2, fromLane: 2, toRow: 3, toLane: 0, color: 2, dashed: true } // stash spur
+]
+
+function GraphMiniPreview({
+  colors,
+  edgeStyle,
+  rowH,
+  lineW
+}: {
+  colors: string[]
+  edgeStyle: GraphEdgeStyle
+  rowH: number
+  lineW: number
+}): React.JSX.Element {
+  const laneW = 22
+  const leftPad = 16
+  const cf = colorForPalette(colors)
+  const x = (lane: number): number => leftPad + lane * laneW
+  const y = (row: number): number => row * rowH + rowH / 2
+  const height = PREVIEW_NODES.length * rowH
+  const width = leftPad + 2 * laneW + 18
+  return (
+    <svg className="graph-mini-svg" width={width} height={height}>
+      {PREVIEW_EDGES.map((e, i) => (
+        <path
+          key={i}
+          d={edgePath(x(e.fromLane), y(e.fromRow), x(e.toLane), y(e.toRow), edgeStyle)}
+          stroke={cf(e.color)}
+          strokeWidth={lineW}
+          strokeLinecap="round"
+          strokeDasharray={e.dashed ? '3 3' : undefined}
+          fill="none"
+          opacity={0.9}
+        />
+      ))}
+      {PREVIEW_NODES.map((n, i) => {
+        const cx = x(n.lane)
+        const cy = y(n.row)
+        const col = cf(n.color)
+        if (n.kind === 'stash') {
+          return (
+            <g key={i}>
+              <rect x={cx - 3.75} y={cy - 7.25} width={11} height={11} rx={3} fill="var(--bg-2)" stroke={col} strokeWidth={Math.max(1, lineW - 0.5)} opacity={0.55} />
+              <rect x={cx - 7.25} y={cy - 3.75} width={11} height={11} rx={3} fill="var(--bg-2)" stroke={col} strokeWidth={lineW} />
+              <circle cx={cx - 1.75} cy={cy + 1.75} r={1.4} fill={col} />
+            </g>
+          )
+        }
+        const r = n.kind === 'merge' ? 4 : 4.5
+        return <circle key={i} cx={cx} cy={cy} r={r} fill={col} stroke="var(--bg-2)" strokeWidth={1.5} />
+      })}
+    </svg>
+  )
+}
+
+function PaletteSwatch({ colors }: { colors: string[] }): React.JSX.Element {
+  return (
+    <div className="palette-swatch">
+      {colors.slice(0, 8).map((c, i) => (
+        <span key={i} className="palette-swatch-bar" style={{ background: c }} />
+      ))}
+    </div>
+  )
+}
+
+function GraphStyleTab(): React.JSX.Element {
+  const settings = useSettingsStore((s) => s.settings)
+  const activeProfile = useSettingsStore((s) => s.activeProfile())
+  const update = useSettingsStore((s) => s.update)
+  const toast = useUIStore((s) => s.toast)
+  const t = useT()
+
+  const style = settings.graphStyle ?? defaultGraphStyle()
+  const customPalettes = settings.customGraphPalettes ?? []
+  const palettes = allGraphPalettes(customPalettes)
+  const current = findGraphPalette(style.paletteId, customPalettes)
+  const aiEnabled = activeProfile.ai.enabled
+
+  const [showEditor, setShowEditor] = useState(false)
+  const [draft, setDraft] = useState<string[]>(() => toSlots(current.colors))
+  const [name, setName] = useState('My palette')
+  const [showAIPrompt, setShowAIPrompt] = useState(false)
+  const [aiPrompt, setAiPrompt] = useState('')
+  const [generating, setGenerating] = useState(false)
+
+  const setStyle = (patch: Partial<GraphStyle>): void =>
+    update((s) => ({ ...s, graphStyle: { ...(s.graphStyle ?? defaultGraphStyle()), ...patch } }))
+
+  const selectPalette = (id: string): void => setStyle({ paletteId: id })
+
+  const openCreate = (): void => {
+    setDraft(toSlots(current.colors))
+    setName('My palette')
+    setShowAIPrompt(false)
+    setShowEditor((v) => !v)
+  }
+
+  const savePalette = (): void => {
+    const pal: GraphPalette = { id: `custom-graph-${uid()}`, name: name || 'Custom', colors: draft }
+    update((s) => ({
+      ...s,
+      customGraphPalettes: [...(s.customGraphPalettes ?? []), pal],
+      graphStyle: { ...(s.graphStyle ?? defaultGraphStyle()), paletteId: pal.id }
+    }))
+    setShowEditor(false)
+    toast('success', `${t('settings.savedPalette')} “${pal.name}”`)
+  }
+
+  const deletePalette = (id: string): void =>
+    update((s) => ({
+      ...s,
+      customGraphPalettes: (s.customGraphPalettes ?? []).filter((p) => p.id !== id),
+      graphStyle:
+        (s.graphStyle ?? defaultGraphStyle()).paletteId === id
+          ? { ...(s.graphStyle ?? defaultGraphStyle()), paletteId: GRAPH_PALETTES[0].id }
+          : (s.graphStyle ?? defaultGraphStyle())
+    }))
+
+  const generatePaletteAI = async (): Promise<void> => {
+    if (!aiPrompt.trim()) return
+    setGenerating(true)
+    try {
+      const result = await aiApi.generateGraphPalette(aiPrompt.trim(), activeProfile.ai)
+      setDraft(toSlots(result.colors))
+      setName(result.name)
+      setShowAIPrompt(false)
+      setAiPrompt('')
+      setShowEditor(true)
+    } catch (err) {
+      toast('error', err instanceof Error ? err.message : 'AI palette generation failed.')
+    } finally {
+      setGenerating(false)
+    }
+  }
+
+  const rowH = DENSITY_ROW_H[style.density]
+  const lineW = LINE_WIDTH_PX[style.lineWidth]
+
+  return (
+    <>
+      <div className="graph-style-layout">
+        <div className="graph-style-controls">
+          <div className="theme-section-header">
+            <h4><GitBranch size={14} /> {t('settings.graphPalette')}</h4>
+            <div className="theme-section-actions">
+              <button className="theme-icon-btn" title={t('settings.createPalette')} onClick={openCreate}>
+                <Plus size={14} />
+              </button>
+              {aiEnabled && (
+                <button
+                  className="theme-icon-btn"
+                  title={t('settings.generateWithAI')}
+                  onClick={() => { setShowAIPrompt((v) => !v); setShowEditor(false) }}
+                >
+                  <Sparkles size={14} />
+                </button>
+              )}
+            </div>
+          </div>
+          <div className="palette-grid">
+            {palettes.map((p) => (
+              <div
+                key={p.id}
+                role="button"
+                tabIndex={0}
+                className={`theme-card ${p.id === style.paletteId ? 'selected' : ''}`}
+                onClick={() => selectPalette(p.id)}
+                onKeyDown={(e) => e.key === 'Enter' && selectPalette(p.id)}
+              >
+                <PaletteSwatch colors={p.colors} />
+                <div className="theme-card-label">
+                  <span>{p.name}</span>
+                  {p.id === style.paletteId && <Check size={13} className="theme-check" />}
+                </div>
+                {!p.builtin && (
+                  <button
+                    className="theme-card-delete"
+                    title="Delete palette"
+                    onClick={(e) => { e.stopPropagation(); deletePalette(p.id) }}
+                  >
+                    <Trash2 size={11} />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <h4 style={{ marginTop: 20 }}><Spline size={14} /> {t('settings.graphCorners')}</h4>
+          <div className="theme-mode-switch">
+            {EDGE_STYLES.map((e) => (
+              <button
+                key={e.id}
+                type="button"
+                className={`theme-mode-btn ${style.edgeStyle === e.id ? 'active' : ''}`}
+                onClick={() => setStyle({ edgeStyle: e.id })}
+              >
+                <span>{e.label}</span>
+              </button>
+            ))}
+          </div>
+
+          <h4 style={{ marginTop: 18 }}>{t('settings.graphDensity')}</h4>
+          <div className="theme-mode-switch">
+            {DENSITIES.map((d) => (
+              <button
+                key={d.id}
+                type="button"
+                className={`theme-mode-btn ${style.density === d.id ? 'active' : ''}`}
+                onClick={() => setStyle({ density: d.id })}
+              >
+                <span>{d.label}</span>
+              </button>
+            ))}
+          </div>
+
+          <h4 style={{ marginTop: 18 }}>{t('settings.graphLineWidth')}</h4>
+          <div className="theme-mode-switch">
+            {LINE_WIDTHS.map((w) => (
+              <button
+                key={w.id}
+                type="button"
+                className={`theme-mode-btn ${style.lineWidth === w.id ? 'active' : ''}`}
+                onClick={() => setStyle({ lineWidth: w.id })}
+              >
+                <span>{w.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="graph-style-preview">
+          <div className="code-preview-head">{t('settings.graphPreview')}</div>
+          <div className="graph-mini-stage">
+            <GraphMiniPreview colors={current.colors} edgeStyle={style.edgeStyle} rowH={rowH} lineW={lineW} />
+          </div>
+        </div>
+      </div>
+
+      {showAIPrompt && (
+        <ThemeDialog
+          title={<><Sparkles size={15} /> {t('settings.generateWithAI')}</>}
+          onClose={() => { setShowAIPrompt(false); setAiPrompt('') }}
+        >
+          <div className="theme-ai-prompt">
+            <input
+              autoFocus
+              value={aiPrompt}
+              onChange={(e) => setAiPrompt(e.target.value)}
+              placeholder={t('settings.aiThemePromptPlaceholder')}
+              onKeyDown={(e) => e.key === 'Enter' && !generating && generatePaletteAI()}
+            />
+            <button className="btn primary small" onClick={generatePaletteAI} disabled={generating || !aiPrompt.trim()}>
+              {generating ? <><Loader2 size={13} className="spin" /> {t('settings.generating')}</> : <><Sparkles size={13} /> Generate</>}
+            </button>
+            <button className="btn ghost small" onClick={() => { setShowAIPrompt(false); setAiPrompt('') }}>
+              {t('common.cancel')}
+            </button>
+          </div>
+        </ThemeDialog>
+      )}
+
+      {showEditor && (
+        <ThemeDialog
+          title={<><GitBranch size={15} /> {t('settings.createPalette')}</>}
+          onClose={() => setShowEditor(false)}
+        >
+          <div className="theme-custom-editor">
+            <label>
+              {t('settings.paletteName')}
+              <input value={name} onChange={(e) => setName(e.target.value)} />
+            </label>
+            <div className="theme-color-grid">
+              {draft.map((c, i) => (
+                <label key={i} className="theme-color-field">
+                  <input
+                    type="color"
+                    value={c}
+                    onChange={(e) => setDraft((d) => d.map((x, j) => (j === i ? e.target.value : x)))}
+                  />
+                  <span>Lane {i + 1}</span>
+                </label>
+              ))}
+            </div>
+            <div className="graph-mini-stage" style={{ marginTop: 12 }}>
+              <GraphMiniPreview colors={draft} edgeStyle={style.edgeStyle} rowH={rowH} lineW={lineW} />
+            </div>
+            <div className="theme-editor-actions">
+              <button className="btn primary small" onClick={savePalette}>
+                {t('settings.savePalette')}
+              </button>
+              <button className="btn ghost small" onClick={() => setShowEditor(false)}>
+                {t('common.cancel')}
+              </button>
+            </div>
+          </div>
+        </ThemeDialog>
+      )}
+    </>
+  )
+}
+
 function ThemesPage(): React.JSX.Element {
   const settings = useSettingsStore((s) => s.settings)
   const activeProfile = useSettingsStore((s) => s.activeProfile())
@@ -757,6 +1105,7 @@ function ThemesPage(): React.JSX.Element {
   const [showCodeAIPrompt, setShowCodeAIPrompt] = useState(false)
   const [codeAIPrompt, setCodeAIPrompt] = useState('')
   const [generatingCode, setGeneratingCode] = useState(false)
+  const [tab, setTab] = useState<'theme' | 'graph'>('theme')
 
   const generateAppThemeAI = async (): Promise<void> => {
     if (!appAIPrompt.trim()) return
@@ -852,6 +1201,27 @@ function ThemesPage(): React.JSX.Element {
 
   return (
     <>
+      <div className="theme-tabs">
+        <button
+          type="button"
+          className={`theme-tab ${tab === 'theme' ? 'active' : ''}`}
+          onClick={() => setTab('theme')}
+        >
+          <Palette size={13} /> {t('settings.tabTheme')}
+        </button>
+        <button
+          type="button"
+          className={`theme-tab ${tab === 'graph' ? 'active' : ''}`}
+          onClick={() => setTab('graph')}
+        >
+          <GitBranch size={13} /> {t('settings.tabGraph')}
+        </button>
+      </div>
+
+      {tab === 'graph' ? (
+        <GraphStyleTab />
+      ) : (
+      <>
       <h4>
         <Palette size={14} /> {t('settings.appearance')}
       </h4>
@@ -1089,6 +1459,8 @@ function ThemesPage(): React.JSX.Element {
             </div>
           </div>
         </ThemeDialog>
+      )}
+      </>
       )}
     </>
   )

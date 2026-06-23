@@ -42,6 +42,7 @@ interface PreloadApi {
     smartStage(files: unknown[], cfg: unknown): Promise<unknown>
     generateAppTheme(prompt: string, cfg: unknown): Promise<unknown>
     generateCodeTheme(prompt: string, cfg: unknown): Promise<unknown>
+    generateGraphPalette(prompt: string, cfg: unknown): Promise<unknown>
     generateBranchName(description: string, cfg: unknown, ctx: unknown): Promise<unknown>
     reviewPR(diff: string, cfg: unknown): Promise<unknown>
     prDescription(commits: string, diff: string, cfg: unknown): Promise<unknown>

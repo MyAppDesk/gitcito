@@ -531,6 +531,40 @@ Shared rules:
   }
 }
 
+async function generateGraphPalette(
+  prompt: string,
+  cfg: AIConfig
+): Promise<{ name: string; colors: string[] }> {
+  const system = `You are a data-visualization color expert. Generate a palette of branch-lane colors for a git commit graph.
+
+Reply ONLY with valid JSON (no markdown fences):
+{
+  "name": "Palette Name",
+  "colors": ["#hex","#hex","#hex","#hex","#hex","#hex","#hex","#hex"]
+}
+
+Rules:
+- Exactly 8 colors, all valid 6-digit hex.
+- These are LANE colors drawn as thin lines/dots over BOTH light and dark app backgrounds, so pick mid-to-vivid tones that stay legible on either — avoid near-white, near-black, and very pale pastels unless the prompt explicitly asks for them.
+- Adjacent colors in the array must be clearly distinguishable from each other (different hue or strong lightness gap) — they often sit side by side.
+- Keep the set harmonious and on-theme for the prompt.`
+
+  const response = await chatComplete(cfg, [
+    { role: 'system', content: system },
+    { role: 'user', content: `Palette description: ${prompt}` }
+  ], 'generateGraphPalette', 0.7)
+
+  try {
+    const cleaned = response.replace(/^```(json)?/m, '').replace(/```$/m, '').trim()
+    const parsed = JSON.parse(cleaned) as { name?: string; colors?: string[] }
+    const colors = (parsed.colors ?? []).filter((c) => /^#[0-9a-fA-F]{6}$/.test(c))
+    if (!parsed.name || colors.length < 4) throw new Error('incomplete response')
+    return { name: parsed.name, colors }
+  } catch {
+    throw new Error('AI returned an invalid palette. Try again with a different description.')
+  }
+}
+
 function branchStyleGuidance(style: BranchNamingStyle | undefined, username?: string): string {
   const name = username?.split(' ')[0]?.toLowerCase().replace(/[^a-z0-9]/g, '') || 'dev'
   switch (style) {
@@ -716,6 +750,7 @@ export function registerAiHandlers(): void {
   ipcMain.handle('ai:smartStage', (_e, files: SmartStageFile[], cfg: AIConfig) => smartStageFiles(files, cfg))
   ipcMain.handle('ai:generateAppTheme', (_e, prompt: string, cfg: AIConfig) => generateAppTheme(prompt, cfg))
   ipcMain.handle('ai:generateCodeTheme', (_e, prompt: string, cfg: AIConfig) => generateCodeTheme(prompt, cfg))
+  ipcMain.handle('ai:generateGraphPalette', (_e, prompt: string, cfg: AIConfig) => generateGraphPalette(prompt, cfg))
   ipcMain.handle('ai:generateBranchName', (_e, description: string, cfg: AIConfig, ctx: { username?: string }) =>
     generateBranchName(description, cfg, ctx)
   )

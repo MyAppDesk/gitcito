@@ -135,6 +135,19 @@ export const shots = [
       await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'themes' }))
     }
   },
+  {
+    // Settings → Themes → Graph tab: lane palette, line corners, density,
+    // thickness, with the live mini-graph preview.
+    out: 'settings-graph',
+    repos: ['octopus-merge'],
+    themes: ['dark'],
+    drive: async (page) => {
+      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'themes' }))
+      await page.waitForTimeout(300)
+      await page.click('.theme-tabs .theme-tab:nth-child(2)').catch(() => {})
+      await page.waitForTimeout(400)
+    }
+  },
 
   {
     // Settings → Shortcuts tab (rebindable shortcut editor).

@@ -324,6 +324,8 @@ export const aiApi = {
     window.api.ai.generateAppTheme(prompt, cfg) as Promise<{ name: string; light: AppThemeColors; dark: AppThemeColors }>,
   generateCodeTheme: (prompt: string, cfg: AIConfig) =>
     window.api.ai.generateCodeTheme(prompt, cfg) as Promise<{ name: string; light: CodeThemeColors; dark: CodeThemeColors }>,
+  generateGraphPalette: (prompt: string, cfg: AIConfig) =>
+    window.api.ai.generateGraphPalette(prompt, cfg) as Promise<{ name: string; colors: string[] }>,
   generateBranchName: (description: string, cfg: AIConfig, ctx: { username?: string }) =>
     window.api.ai.generateBranchName(description, cfg, ctx) as Promise<string>,
   reviewPR: (diff: string, cfg: AIConfig) =>

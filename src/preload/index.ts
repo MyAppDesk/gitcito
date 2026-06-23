@@ -55,6 +55,8 @@ const api = {
       ipcRenderer.invoke('ai:generateAppTheme', prompt, cfg),
     generateCodeTheme: (prompt: string, cfg: unknown): Promise<unknown> =>
       ipcRenderer.invoke('ai:generateCodeTheme', prompt, cfg),
+    generateGraphPalette: (prompt: string, cfg: unknown): Promise<unknown> =>
+      ipcRenderer.invoke('ai:generateGraphPalette', prompt, cfg),
     generateBranchName: (description: string, cfg: unknown, ctx: unknown): Promise<unknown> =>
       ipcRenderer.invoke('ai:generateBranchName', description, cfg, ctx),
     reviewPR: (diff: string, cfg: unknown): Promise<unknown> =>

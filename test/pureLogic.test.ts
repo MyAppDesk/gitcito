@@ -207,3 +207,69 @@ describe('frecency score', () => {
     expect(frecencyScore({ n: 999, t: now }, now)).toBe(frecencyScore({ n: 10, t: now }, now))
   })
 })
+
+import {
+  GRAPH_PALETTES,
+  allGraphPalettes,
+  findGraphPalette,
+  colorForPalette,
+  edgePath,
+  DENSITY_ROW_H,
+  LINE_WIDTH_PX
+} from '../src/renderer/src/graph/style'
+import { defaultGraphStyle } from '../src/shared/types'
+
+describe('graph style', () => {
+  it('default style references the classic palette', () => {
+    const s = defaultGraphStyle()
+    expect(s.paletteId).toBe('classic')
+    expect(findGraphPalette(s.paletteId, []).id).toBe('classic')
+  })
+
+  it('findGraphPalette falls back to the first built-in for unknown ids', () => {
+    expect(findGraphPalette('does-not-exist', []).id).toBe(GRAPH_PALETTES[0].id)
+  })
+
+  it('findGraphPalette resolves custom palettes', () => {
+    const custom = [{ id: 'mine', name: 'Mine', colors: ['#111111', '#222222'] }]
+    expect(findGraphPalette('mine', custom).name).toBe('Mine')
+    expect(allGraphPalettes(custom).length).toBe(GRAPH_PALETTES.length + 1)
+  })
+
+  it('colorForPalette wraps round-robin and handles negative indices', () => {
+    const cf = colorForPalette(['#a', '#b', '#c'])
+    expect(cf(0)).toBe('#a')
+    expect(cf(3)).toBe('#a')
+    expect(cf(4)).toBe('#b')
+    expect(cf(-1)).toBe('#c')
+  })
+
+  it('colorForPalette tolerates an empty palette', () => {
+    expect(typeof colorForPalette([])(0)).toBe('string')
+  })
+
+  it('edgePath honours each corner style', () => {
+    const straight = edgePath(0, 0, 10, 20, 'straight')
+    expect(straight).toBe('M 0 0 L 10 20')
+
+    const curved = edgePath(0, 0, 10, 20, 'curved')
+    expect(curved).toContain('C')
+
+    const sharp = edgePath(0, 0, 10, 20, 'sharp')
+    expect(sharp).not.toContain('Q')
+    expect(sharp).toContain('L')
+
+    const rounded = edgePath(0, 0, 10, 20, 'rounded')
+    expect(rounded).toContain('Q')
+  })
+
+  it('edgePath draws a plain vertical when lanes match', () => {
+    expect(edgePath(5, 0, 5, 30, 'curved')).toBe('M 5 0 L 5 30')
+  })
+
+  it('geometry maps cover every option', () => {
+    expect(DENSITY_ROW_H.compact).toBeLessThan(DENSITY_ROW_H.comfortable)
+    expect(DENSITY_ROW_H.comfortable).toBeLessThan(DENSITY_ROW_H.spacious)
+    expect(LINE_WIDTH_PX.thin).toBeLessThan(LINE_WIDTH_PX.thick)
+  })
+})

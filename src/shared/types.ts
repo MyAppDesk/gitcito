@@ -963,6 +963,10 @@ export interface AppSettings {
   fileListView: 'path' | 'tree'
   graphColumns: GraphColumns
   graphColumnOrder: GraphFlowColumnId[]
+  /** Visual style of the commit graph (palette, line corners, density, width). */
+  graphStyle: GraphStyle
+  /** User-defined graph palettes, shown alongside the built-in ones. */
+  customGraphPalettes: GraphPalette[]
   autoFetchMinutes: number
   /** Raise an OS notification for new review-requested / CI inbox items. */
   desktopNotifications?: boolean
@@ -1026,6 +1030,35 @@ export function defaultGraphColumns(): GraphColumns {
     sha: { width: 74, visible: true },
     signature: { width: 96, visible: true }
   }
+}
+
+/**
+ * Visual style of the commit graph (palette + how the rails are drawn). Lives
+ * in AppSettings so it persists per-machine and applies to every repo.
+ */
+export type GraphEdgeStyle = 'rounded' | 'sharp' | 'curved' | 'straight'
+export type GraphDensity = 'compact' | 'comfortable' | 'spacious'
+export type GraphLineWidth = 'thin' | 'normal' | 'thick'
+
+/** A named set of lane colours for the graph rails. */
+export interface GraphPalette {
+  id: string
+  name: string
+  builtin?: boolean
+  /** Lane colours, used round-robin. At least 6; more is better for wide graphs. */
+  colors: string[]
+}
+
+export interface GraphStyle {
+  /** Id into the built-in + custom palette list. */
+  paletteId: string
+  edgeStyle: GraphEdgeStyle
+  density: GraphDensity
+  lineWidth: GraphLineWidth
+}
+
+export function defaultGraphStyle(): GraphStyle {
+  return { paletteId: 'classic', edgeStyle: 'rounded', density: 'comfortable', lineWidth: 'normal' }
 }
 
 /**
@@ -1141,6 +1174,8 @@ export function defaultSettings(): AppSettings {
     fileListView: 'path',
     graphColumns: defaultGraphColumns(),
     graphColumnOrder: defaultGraphColumnOrder(),
+    graphStyle: defaultGraphStyle(),
+    customGraphPalettes: [],
     autoFetchMinutes: 5,
     desktopNotifications: false,
     confirmForcePush: true,

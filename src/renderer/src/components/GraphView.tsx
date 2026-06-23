@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Archive, GitCommitHorizontal, Tag, Laptop, Cloud, Check, Settings2, Pencil, Plus, Minus, CheckCircle2, XCircle, Clock, MinusCircle } from 'lucide-react'
 import type { CiState, CiStatus, GraphCommit, StashInfo, GraphColumnId, GraphFlowColumnId, GraphColumns, FileEntry } from '../../../shared/types'
-import { defaultGraphColumns, defaultGraphColumnOrder } from '../../../shared/types'
+import { defaultGraphColumns, defaultGraphColumnOrder, defaultGraphStyle } from '../../../shared/types'
 import { GraphHeaderFilter, type FilterOption } from './GraphHeaderFilter'
-import { layoutGraph, colorFor } from '../graph/layout'
+import { layoutGraph } from '../graph/layout'
+import { edgePath, colorForPalette, findGraphPalette, DENSITY_ROW_H, LINE_WIDTH_PX } from '../graph/style'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
 import { useUIStore, type MenuItem } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
@@ -13,7 +14,6 @@ import { RemoteIcon } from './RemoteIcon'
 import { SignatureBadge } from './SignatureBadge'
 import { gitApi } from '../infrastructure/api'
 
-const ROW_H = 28
 const LANE_W = 18
 const LEFT_PAD = 16
 const NODE_R = 4.5
@@ -145,18 +145,6 @@ function timeAgo(unixSeconds: number): string {
   if (diff < 86400) return `${Math.floor(diff / 3600)}h`
   if (diff < 86400 * 30) return `${Math.floor(diff / 86400)}d`
   return new Date(unixSeconds * 1000).toLocaleDateString()
-}
-
-function edgePath(x1: number, y1: number, x2: number, y2: number): string {
-  if (x1 === x2) return `M ${x1} ${y1} L ${x2} ${y2}`
-  const r = Math.min(7, Math.abs(x2 - x1) * 0.45)
-  if (x2 > x1) {
-    // Merge edge: exit right at child row, sharp corner, straight down to parent
-    return `M ${x1} ${y1} L ${x2 - r} ${y1} Q ${x2} ${y1} ${x2} ${y1 + r} L ${x2} ${y2}`
-  } else {
-    // Branch edge: straight down in own lane, sharp corner, exit left to parent lane
-    return `M ${x1} ${y1} L ${x1} ${y2 - r} Q ${x1} ${y2} ${x1 - r} ${y2} L ${x2} ${y2}`
-  }
 }
 
 function CiBadge({ status, onClick }: { status: CiStatus; onClick: () => void }): React.JSX.Element {
@@ -333,8 +321,19 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
   const autoLoadOnScroll = useSettingsStore((s) => s.settings.autoLoadOnScroll ?? true)
   const columns = useSettingsStore((s) => s.settings.graphColumns ?? defaultGraphColumns())
   const columnOrder = useSettingsStore((s) => s.settings.graphColumnOrder ?? defaultGraphColumnOrder())
+  const graphStyle = useSettingsStore((s) => s.settings.graphStyle ?? defaultGraphStyle())
+  const customGraphPalettes = useSettingsStore((s) => s.settings.customGraphPalettes ?? [])
   const updateSettings = useSettingsStore((s) => s.update)
   const t = useT()
+
+  // Visual style of the rails — palette, row spacing, line corners, thickness.
+  const ROW_H = DENSITY_ROW_H[graphStyle.density] ?? DENSITY_ROW_H.comfortable
+  const lineW = LINE_WIDTH_PX[graphStyle.lineWidth] ?? LINE_WIDTH_PX.normal
+  const edgeStyle = graphStyle.edgeStyle
+  const colorFor = useMemo(
+    () => colorForPalette(findGraphPalette(graphStyle.paletteId, customGraphPalettes).colors),
+    [graphStyle.paletteId, customGraphPalettes]
+  )
   // First-parent-only view: hides merged side-branches. Persisted per machine.
   const [linearOnly, setLinearOnly] = useState(() => localStorage.getItem('gitcito-graph-linear') === 'on')
   useEffect(() => localStorage.setItem('gitcito-graph-linear', linearOnly ? 'on' : 'off'), [linearOnly])
@@ -1246,9 +1245,9 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
                   <path
                     key={i}
                     className="graph-edge"
-                    d={edgePath(x1, y1, x2, y2)}
+                    d={edgePath(x1, y1, x2, y2, edgeStyle)}
                     stroke={colorFor(e.color)}
-                    strokeWidth={2}
+                    strokeWidth={lineW}
                     strokeLinecap="round"
                     strokeDasharray={dashed ? '3 3' : undefined}
                     fill="none"
@@ -1292,7 +1291,7 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
                         rx={3}
                         fill="var(--bg-1)"
                         stroke={sc}
-                        strokeWidth={2}
+                        strokeWidth={lineW}
                       />
                       {/* tiny dot = the stashed change sitting on the card */}
                       <circle cx={cx - 1.75} cy={cy + 1.75} r={1.4} fill={sc} />
@@ -1310,7 +1309,7 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
                       r={NODE_R + 3}
                       fill="var(--bg-1)"
                       stroke={colorFor(n.color)}
-                      strokeWidth={2}
+                      strokeWidth={lineW}
                       strokeDasharray="2.5 2.5"
                       className="graph-node"
                     />

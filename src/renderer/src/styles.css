@@ -954,13 +954,30 @@ textarea:focus {
   box-shadow: inset 0 2px 0 var(--accent);
 }
 
+/* --sb-indent (set inline per Section depth) compounds the indent so deep
+ * folders read as children. Fallback 1 keeps single-level nesting unchanged. */
 .sb-section.nested > .sb-header {
-  padding-left: 24px;
+  padding-left: calc(10px + var(--sb-indent, 1) * 14px);
   font-size: 10px;
   letter-spacing: 0.5px;
 }
 .sb-section.nested .sb-item {
-  padding-left: 40px;
+  padding-left: calc(26px + var(--sb-indent, 1) * 14px);
+}
+/* Vertical rail down a folder's contents, aligned under its chevron, so nested
+ * branches read as children of the folder above them. */
+.sb-section.nested > .sb-body {
+  position: relative;
+}
+.sb-section.nested > .sb-body::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(4px + var(--sb-indent, 1) * 14px);
+  width: 1px;
+  background: var(--border-soft, var(--border));
+  pointer-events: none;
 }
 .sb-section.nested .sb-current-mark {
   margin-left: -16px;
@@ -1779,6 +1796,13 @@ textarea:focus {
   max-width: 100%;
   flex: 0 1 auto;
   position: relative;
+}
+/* Clamp the ref label(s) to ~the branch/tag column so long names truncate
+ * there instead of bleeding across the graph; the node-connector (flex:1)
+ * then fills the gap to the commit dot, keeping the line visible. */
+.graph-refs > .ref-badge,
+.graph-refs > .ref-collapsed {
+  max-width: var(--branch-cap, 100%);
 }
 .ref-more-chip {
   flex-shrink: 0;

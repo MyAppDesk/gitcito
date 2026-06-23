@@ -961,6 +961,9 @@ export interface AppSettings {
   relativeDates: boolean
   commitAvatars: boolean
   fileListView: 'path' | 'tree'
+  /** Group local branches into collapsible folders by their `/`-separated
+   *  prefix (feature/*, release/*, …). A prefix with a single branch stays flat. */
+  groupBranches: boolean
   graphColumns: GraphColumns
   graphColumnOrder: GraphFlowColumnId[]
   /** Visual style of the commit graph (palette, line corners, density, width). */
@@ -1172,6 +1175,7 @@ export function defaultSettings(): AppSettings {
     relativeDates: true,
     commitAvatars: true,
     fileListView: 'path',
+    groupBranches: true,
     graphColumns: defaultGraphColumns(),
     graphColumnOrder: defaultGraphColumnOrder(),
     graphStyle: defaultGraphStyle(),

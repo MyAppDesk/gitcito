@@ -127,6 +127,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     settings.relativeDates = settings.relativeDates ?? sd.relativeDates
     settings.commitAvatars = settings.commitAvatars ?? sd.commitAvatars
     settings.fileListView = settings.fileListView ?? sd.fileListView
+    settings.groupBranches = settings.groupBranches ?? sd.groupBranches
     settings.graphColumns = { ...sd.graphColumns, ...(settings.graphColumns ?? {}) }
     // Keep the order list complete: drop unknown ids, append any newly-added
     // columns (e.g. `deployment`) that an older saved order is missing.

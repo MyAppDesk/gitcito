@@ -1749,6 +1749,21 @@ function GeneralPage(): React.JSX.Element {
             <span className="settings-hint">{t('settings.commitAvatarsHint')}</span>
           </span>
         </label>
+
+        <label className="settings-toggle-card">
+          <input
+            type="checkbox"
+            checked={settings.groupBranches}
+            onChange={(e) => update((s) => ({ ...s, groupBranches: e.target.checked }))}
+          />
+          <span className="settings-toggle-control" aria-hidden="true">
+            <span className="settings-toggle-thumb" />
+          </span>
+          <span className="settings-toggle-copy">
+            <strong>{t('settings.groupBranches')}</strong>
+            <span className="settings-hint">{t('settings.groupBranchesHint')}</span>
+          </span>
+        </label>
       </div>
 
       <h4 className="settings-section-title">{t('settings.behaviour')}</h4>

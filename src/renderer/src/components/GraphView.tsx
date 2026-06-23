@@ -1457,7 +1457,10 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
                   : branchCol
                 const refsWidth = graphCol > 0 ? Math.max(branchCol, ballX - ballR) : branchCol
                 return (
-                  <div className="graph-refs" style={{ width: refsWidth }}>
+                  <div
+                    className="graph-refs"
+                    style={{ width: refsWidth, '--branch-cap': `${Math.max(40, branchCol - 16)}px` } as React.CSSProperties}
+                  >
                     {groups.length <= 1 ? (
                       groups.map((g) => renderGroup(g, c, laneColor))
                     ) : (

@@ -57,6 +57,24 @@ interface SectionProps {
   onReorderEnd?: () => void
   onHeaderContextMenu?: (e: React.MouseEvent) => void
   nested?: boolean
+  /** Nesting level (0 = top). Drives compounding left-indent so deep folders
+   *  (feature/payments/…) read as children, not siblings. */
+  depth?: number
+}
+
+/** A node in the local-branch folder tree. `branch` is set when this node is
+ *  itself a branch (a leaf, or a folder name that's also a branch). */
+interface BranchNode {
+  seg: string
+  branch?: BranchInfo
+  children: Map<string, BranchNode>
+}
+
+/** Number of actual branches under a node, used for the folder's count badge. */
+function leafCount(node: BranchNode): number {
+  let n = node.branch ? 1 : 0
+  for (const c of node.children.values()) n += leafCount(c)
+  return n
 }
 
 function Section({
@@ -75,13 +93,15 @@ function Section({
   onReorderDrop,
   onReorderEnd,
   onHeaderContextMenu,
-  nested
+  nested,
+  depth = 0
 }: SectionProps): React.JSX.Element {
   const [open, setOpen] = useState(defaultOpen)
   const draggable = !!sectionId
   return (
     <div
       className={`sb-section ${nested ? 'nested' : ''} ${dragging ? 'dragging' : ''} ${dragOver ? 'drag-over' : ''}`}
+      style={depth > 0 ? ({ '--sb-indent': depth } as React.CSSProperties) : undefined}
       onDragOver={draggable ? onReorderOver : undefined}
       onDrop={
         draggable
@@ -138,6 +158,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   const requestScrollTo = useUIStore((s) => s.requestScrollTo)
   const sidebarOrder = useSettingsStore((s) => s.settings.sidebarOrder)
   const sidebarHidden = useSettingsStore((s) => s.settings.sidebarHidden)
+  const groupBranches = useSettingsStore((s) => s.settings.groupBranches)
   const updateSettings = useSettingsStore((s) => s.update)
   const openPageTab = useSettingsStore((s) => s.openPageTab)
   const openRepoTab = useSettingsStore((s) => s.openRepoTab)
@@ -310,6 +331,24 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     () => repo.branches.remotes.filter((b) => !f || b.fullName.toLowerCase().includes(f)),
     [repo.branches.remotes, f]
   )
+  // Local branches arranged into a folder tree by their "/"-separated prefix.
+  const branchTree = useMemo(() => {
+    const root: BranchNode = { seg: '', children: new Map() }
+    for (const b of locals) {
+      let node = root
+      const parts = b.name.split('/')
+      parts.forEach((seg, i) => {
+        let child = node.children.get(seg)
+        if (!child) {
+          child = { seg, children: new Map() }
+          node.children.set(seg, child)
+        }
+        node = child
+        if (i === parts.length - 1) node.branch = b
+      })
+    }
+    return root
+  }, [locals])
   const tags = useMemo(
     () => repo.branches.tags.filter((t) => !f || t.name.toLowerCase().includes(f)),
     [repo.branches.tags, f]
@@ -857,6 +896,79 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   const tagIds = tags.map((t) => t.name)
   const stashIds = repo.stashes.map((s) => String(s.index))
 
+  // One row in the local-branches list. `label` is the displayed text (the last
+  // path segment when nested inside a folder, the full name when flat).
+  const branchItem = (b: BranchInfo, label: string): React.JSX.Element => (
+    <div
+      key={b.name}
+      className={`sb-item ${b.isCurrent ? 'current' : ''} ${isSel('local', b.name) ? 'multi-sel' : ''} ${dropBranch === b.name ? 'branch-drop-over' : ''}`}
+      draggable
+      onDragStart={(e) => {
+        setDragBranch(b.name)
+        e.dataTransfer.effectAllowed = 'link'
+        e.dataTransfer.setData('text/plain', b.name)
+      }}
+      onDragEnd={() => {
+        setDragBranch(null)
+        setDropBranch(null)
+      }}
+      onDragOver={(e) => {
+        if (dragBranch && dragBranch !== b.name) {
+          e.preventDefault()
+          e.dataTransfer.dropEffect = 'link'
+          if (dropBranch !== b.name) setDropBranch(b.name)
+        }
+      }}
+      onDragLeave={() => dropBranch === b.name && setDropBranch(null)}
+      onDrop={(e) => {
+        e.preventDefault()
+        const source = dragBranch
+        setDragBranch(null)
+        setDropBranch(null)
+        if (source && source !== b.name) branchDropMenu(source, b.name, e.clientX, e.clientY)
+      }}
+      onClick={(e) => {
+        if (!onSelectClick('local', b.name, localIds, e)) goToBranch(b.sha)
+      }}
+      onDoubleClick={() => !b.isCurrent && void repoActions.checkout(path, b.name)}
+      onContextMenu={(e) => ctxMenu(e, 'local', b.name, () => localMenu(b), localBulkMenu)}
+      title={`${b.name}${b.upstream ? ` → ${b.upstream}` : ''}`}
+    >
+      {b.isCurrent && <Check size={12} className="sb-current-mark" />}
+      <span className="sb-name">{label}</span>
+      {b.ahead > 0 && <span className="badge ahead">↑{b.ahead}</span>}
+      {b.behind > 0 && <span className="badge behind">↓{b.behind}</span>}
+      <Presence remoteNames={branchPresence.get(b.name) ?? []} />
+    </div>
+  )
+
+  // Recursively render a branch folder node: flatten single-child folders into
+  // one "a/b" row, leaves become items, folders with ≥2 entries become a
+  // collapsible nested Section. `prefix` carries the flattened path so far.
+  const renderBranchNode = (node: BranchNode, prefix: string, depth: number): React.JSX.Element => {
+    const display = prefix ? `${prefix}/${node.seg}` : node.seg
+    // Single-child folder folds into one row — same visual depth, no extra level.
+    if (!node.branch && node.children.size === 1) {
+      return renderBranchNode([...node.children.values()][0], display, depth)
+    }
+    if (node.children.size === 0 && node.branch) {
+      return branchItem(node.branch, display)
+    }
+    return (
+      <Section
+        key={`grp:${display}`}
+        nested
+        depth={depth}
+        title={display}
+        icon={<GitBranch size={13} />}
+        count={leafCount(node)}
+      >
+        {node.branch && branchItem(node.branch, node.seg)}
+        {[...node.children.values()].map((c) => renderBranchNode(c, '', depth + 1))}
+      </Section>
+    )
+  }
+
   const sections: Record<string, React.JSX.Element> = {
     local: (
       <Section
@@ -877,49 +989,9 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
           </span>
         }
       >
-        {locals.map((b) => (
-          <div
-            key={b.name}
-            className={`sb-item ${b.isCurrent ? 'current' : ''} ${isSel('local', b.name) ? 'multi-sel' : ''} ${dropBranch === b.name ? 'branch-drop-over' : ''}`}
-            draggable
-            onDragStart={(e) => {
-              setDragBranch(b.name)
-              e.dataTransfer.effectAllowed = 'link'
-              e.dataTransfer.setData('text/plain', b.name)
-            }}
-            onDragEnd={() => {
-              setDragBranch(null)
-              setDropBranch(null)
-            }}
-            onDragOver={(e) => {
-              if (dragBranch && dragBranch !== b.name) {
-                e.preventDefault()
-                e.dataTransfer.dropEffect = 'link'
-                if (dropBranch !== b.name) setDropBranch(b.name)
-              }
-            }}
-            onDragLeave={() => dropBranch === b.name && setDropBranch(null)}
-            onDrop={(e) => {
-              e.preventDefault()
-              const source = dragBranch
-              setDragBranch(null)
-              setDropBranch(null)
-              if (source && source !== b.name) branchDropMenu(source, b.name, e.clientX, e.clientY)
-            }}
-            onClick={(e) => {
-              if (!onSelectClick('local', b.name, localIds, e)) goToBranch(b.sha)
-            }}
-            onDoubleClick={() => !b.isCurrent && void repoActions.checkout(path, b.name)}
-            onContextMenu={(e) => ctxMenu(e, 'local', b.name, () => localMenu(b), localBulkMenu)}
-            title={`${b.name}${b.upstream ? ` → ${b.upstream}` : ''}`}
-          >
-            {b.isCurrent && <Check size={12} className="sb-current-mark" />}
-            <span className="sb-name">{b.name}</span>
-            {b.ahead > 0 && <span className="badge ahead">↑{b.ahead}</span>}
-            {b.behind > 0 && <span className="badge behind">↓{b.behind}</span>}
-            <Presence remoteNames={branchPresence.get(b.name) ?? []} />
-          </div>
-        ))}
+        {groupBranches
+          ? [...branchTree.children.values()].map((c) => renderBranchNode(c, '', 1))
+          : locals.map((b) => branchItem(b, b.name))}
       </Section>
     ),
     remotes: (

@@ -1,5 +1,12 @@
 
 
+## [1.11.1](https://github.com/MyAppDesk/gitcito/compare/v1.11.0...v1.11.1) (2026-06-23)
+
+
+### Features
+
+* enhance branch grouping with tags and remote support ([c2d9d2d](https://github.com/MyAppDesk/gitcito/commit/c2d9d2d619be2f8aa2e5596743b4929eee048f12))
+
 ## [1.11.0](https://github.com/MyAppDesk/gitcito/compare/v1.10.0...v1.11.0) (2026-06-23)
 
 

@@ -176,6 +176,9 @@ interface UIState {
   /** Dim commits that didn't touch this path (file/folder). null = off. */
   pathFilter: string | null
   busy: string | null
+  /** Which toolbar operation is in flight, so the spinner can render on the
+   *  relevant tool button instead of a layout-shifting label on the right. */
+  busyOp: 'push' | 'pull' | 'fetch' | null
   fileView: FileViewState | null
   conflictView: ConflictViewState | null
   fileSearch: FileSearchState | null
@@ -199,7 +202,7 @@ interface UIState {
   setCiFilter(filter: CiFilter): void
   setAuthorFilter(author: string | null): void
   setPathFilter(path: string | null): void
-  setBusy(label: string | null): void
+  setBusy(label: string | null, op?: 'push' | 'pull' | 'fetch' | null): void
   setFileView(view: FileViewState | null): void
   setEditorDirty(dirty: boolean): void
   setConflictView(view: ConflictViewState | null): void
@@ -222,6 +225,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   authorFilter: null,
   pathFilter: null,
   busy: null,
+  busyOp: null,
   fileView: null,
   conflictView: null,
   fileSearch: null,
@@ -249,7 +253,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   setCiFilter: (ciFilter) => set({ ciFilter }),
   setAuthorFilter: (authorFilter) => set({ authorFilter }),
   setPathFilter: (pathFilter) => set({ pathFilter }),
-  setBusy: (busy) => set({ busy }),
+  setBusy: (busy, op = null) => set({ busy, busyOp: op }),
   setFileView: (fileView) => set({ fileView }),
   setEditorDirty: (editorDirty) => set({ editorDirty }),
   setConflictView: (conflictView) => set({ conflictView }),

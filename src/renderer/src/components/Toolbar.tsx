@@ -51,6 +51,7 @@ function timeSince(at: number | null): string {
 export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
   const { undo, redo } = useRepoStore()
   const { openContextMenu, openModal, toggleTerminal, terminalOpen, graphFilter, setGraphFilter, busy } = useUIStore()
+  const busyOp = useUIStore((s) => s.busyOp)
   const githubUnread = useUIStore((s) => s.githubUnread)
   const confirmForcePush = useSettingsStore((s) => s.settings.confirmForcePush)
   const hasGithubToken = useSettingsStore((s) => !!s.activeProfile().githubToken)
@@ -234,7 +235,11 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
 
       <div className="toolbar-group">
         <button className="tool-btn split" onClick={() => void repoActions.pull(path, 'default')} title="Pull">
-          <ArrowDownToLine size={17} />
+          {busyOp === 'pull' || busyOp === 'fetch' ? (
+            <Loader2 size={17} className="spin" />
+          ) : (
+            <ArrowDownToLine size={17} />
+          )}
           <span>
             Pull
             {current && current.behind > 0 && <em className="count-pill">{current.behind}</em>}
@@ -244,7 +249,11 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
           </span>
         </button>
         <button className="tool-btn split" onClick={() => void repoActions.push(path)} title="Push">
-          <ArrowUpFromLine size={17} />
+          {busyOp === 'push' ? (
+            <Loader2 size={17} className="spin" />
+          ) : (
+            <ArrowUpFromLine size={17} />
+          )}
           <span>
             Push
             {current && current.ahead > 0 && <em className="count-pill">{current.ahead}</em>}
@@ -353,7 +362,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
       </div>
 
       <div className="toolbar-group right">
-        {busy && (
+        {busy && !busyOp && (
           <span className="busy-indicator" title={`Fetched ${timeSince(repo.lastFetchAt)}`}>
             <Loader2 size={13} className="spin" /> {busy}
           </span>

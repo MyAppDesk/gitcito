@@ -118,7 +118,7 @@ interface RepoStoreState {
   refreshRemoteTags(path: string): Promise<void>
   refreshCiStatuses(path: string): Promise<void>
 
-  run(path: string, label: string, fn: () => Promise<void>, undoEntry?: UndoEntry): Promise<boolean>
+  run(path: string, label: string, fn: () => Promise<void>, undoEntry?: UndoEntry, op?: 'push' | 'pull' | 'fetch' | null): Promise<boolean>
   undo(path: string): Promise<void>
   redo(path: string): Promise<void>
 }
@@ -299,9 +299,9 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
     }
   },
 
-  run: async (path, label, fn, undoEntry) => {
+  run: async (path, label, fn, undoEntry, op = null) => {
     const ui = useUIStore.getState()
-    ui.setBusy(label)
+    ui.setBusy(label, op)
     try {
       await fn()
       toast('success', label)
@@ -380,7 +380,7 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
 async function runPush(path: string, branch: string, force: boolean): Promise<boolean> {
   const ui = useUIStore.getState()
   const label = force ? `Force pushed ${branch}` : `Pushed ${branch}`
-  ui.setBusy(force ? `Force pushing ${branch}` : `Pushing ${branch}`)
+  ui.setBusy(force ? `Force pushing ${branch}` : `Pushing ${branch}`, 'push')
   try {
     await gitApi.push(path, branch, { force })
     toast('success', label)
@@ -560,7 +560,7 @@ export const repoActions = {
 
   fetchAll: async (path: string) => {
     const before = new Set((useRepoStore.getState().repos[path]?.commits ?? []).map((c) => c.hash))
-    const ok = await useRepoStore.getState().run(path, 'Fetched all remotes', () => gitApi.fetchAll(path))
+    const ok = await useRepoStore.getState().run(path, 'Fetched all remotes', () => gitApi.fetchAll(path), undefined, 'fetch')
     if (ok) {
       const after = useRepoStore.getState().repos[path]?.commits ?? []
       const newCommits = before.size ? after.filter((c) => !before.has(c.hash)).map((c) => c.hash) : []
@@ -579,7 +579,7 @@ export const repoActions = {
     let done = 0
     let failed = 0
     for (const path of paths) {
-      ui.setBusy(`${verb} ${path.split('/').pop()} (${done + failed + 1}/${paths.length})`)
+      ui.setBusy(`${verb} ${path.split('/').pop()} (${done + failed + 1}/${paths.length})`, op === 'fetch' ? 'fetch' : 'pull')
       try {
         if (op === 'fetch') await gitApi.fetchAll(path)
         else await gitApi.pull(path, mode)
@@ -603,7 +603,7 @@ export const repoActions = {
       label: `pull ${mode}`,
       undo: () => gitApi.reset(path, 'ORIG_HEAD', 'hard'),
       redo: () => gitApi.pull(path, mode)
-    })
+    }, 'pull')
     if (ok) {
       const after = useRepoStore.getState().repos[path]?.commits ?? []
       const newCommits = before.size ? after.filter((c) => !before.has(c.hash)).map((c) => c.hash) : []

@@ -1,5 +1,13 @@
 
 
+## [1.10.0](https://github.com/MyAppDesk/gitcito/compare/v1.9.0...v1.10.0) (2026-06-23)
+
+
+### Features
+
+* add customizable graph style settings with live preview ([29df173](https://github.com/MyAppDesk/gitcito/commit/29df17322b90cc0c287bc7bef157dbae7e32ef4d))
+* enhance stash node visualization in GraphView ([13ec500](https://github.com/MyAppDesk/gitcito/commit/13ec500217cd1e1e5586f622555b538729cffad1))
+
 ## [1.9.0](https://github.com/MyAppDesk/gitcito/compare/v1.8.0...v1.9.0) (2026-06-23)
 
 

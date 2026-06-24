@@ -8,6 +8,7 @@ export interface TermHandle {
   container: HTMLDivElement
   ptyId: number | null
   fitSafely(): void
+  pasteText(text: string): void
   dispose(): void
 }
 
@@ -58,6 +59,10 @@ export function getOrCreateTerm(panelId: string, cwd: string): TermHandle {
       } catch {
         /* element not visible / zero-size */
       }
+    },
+    pasteText(text) {
+      if (handle.ptyId == null || !text) return
+      window.api.term.input(handle.ptyId, text)
     },
     dispose() {
       cleanups.forEach((c) => c())

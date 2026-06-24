@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer, webFrame } from 'electron'
+import { contextBridge, ipcRenderer, webFrame, webUtils } from 'electron'
 
 const api = {
   platform: process.platform,
@@ -14,6 +14,9 @@ const api = {
     ipcRenderer.on('clone:progress', listener)
     return () => ipcRenderer.removeListener('clone:progress', listener)
   },
+
+  // Resolve a dropped File to its absolute path (File.path was removed in Electron 32).
+  getPathForFile: (file: File): string => webUtils.getPathForFile(file),
 
   selectDirectory: (title?: string): Promise<string | null> => ipcRenderer.invoke('dialog:selectDirectory', title),
   savePatch: (defaultName: string, content: string): Promise<string | null> =>

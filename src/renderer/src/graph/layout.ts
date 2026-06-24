@@ -28,8 +28,7 @@ export interface GraphLayout {
  *
  * `spurs` are hashes (e.g. stashes) that must NOT disturb the trunk: they are
  * laid out in a second pass on a dedicated lane to the right of the real
- * commits they span, with a single edge back to their parent — exactly like
- * GitKraken floats a stash off to the side. Without this, a spur inserted high
+ * commits they span, with a single edge back to their parent. Without this, a spur inserted high
  * in the list would reserve the trunk lane down to its parent and push the real
  * commits onto another (differently-coloured) lane.
  */

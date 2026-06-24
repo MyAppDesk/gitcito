@@ -1,5 +1,12 @@
 
 
+## [1.11.2](https://github.com/MyAppDesk/gitcito/compare/v1.11.1...v1.11.2) (2026-06-24)
+
+
+### Features
+
+* add file path handling for drag-and-drop in terminal ([645d64e](https://github.com/MyAppDesk/gitcito/commit/645d64e6fc72d124e0cd8a133db1a35647bc293f))
+
 ## [1.11.1](https://github.com/MyAppDesk/gitcito/compare/v1.11.0...v1.11.1) (2026-06-23)
 
 

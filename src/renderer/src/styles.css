@@ -9430,6 +9430,8 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
   color: #fff; background: var(--red, #e5484d);
   border-radius: 8px; box-shadow: 0 0 0 1.5px var(--bg-1);
 }
+/* In the title bar the bell sits on --bg-0, so match the badge ring. */
+.titlebar-action.notif-bell .notif-badge { box-shadow: 0 0 0 1.5px var(--bg-0); }
 
 /* ─── Graph path filter bar ────────────────────────────────────────────── */
 .path-filter-bar {

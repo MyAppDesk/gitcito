@@ -23,7 +23,6 @@ import {
   ChevronRight,
   FolderGit2,
   GitBranch,
-  Bell,
   Layers,
   FileText,
   Camera,
@@ -54,9 +53,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
   const { undo, redo } = useRepoStore()
   const { openContextMenu, openModal, toggleTerminal, terminalOpen, graphFilter, setGraphFilter, busy } = useUIStore()
   const busyOp = useUIStore((s) => s.busyOp)
-  const githubUnread = useUIStore((s) => s.githubUnread)
   const confirmForcePush = useSettingsStore((s) => s.settings.confirmForcePush)
-  const hasGithubToken = useSettingsStore((s) => !!s.activeProfile().githubToken)
   const aiEnabled = useSettingsStore((s) => s.activeProfile().ai.enabled !== false)
   const path = repo.path
   const current = repo.branches.locals.find((b) => b.isCurrent)
@@ -375,16 +372,6 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
             onChange={(e) => setGraphFilter(e.target.value)}
           />
         </div>
-        {hasGithubToken && (
-          <button
-            className="tool-btn icon-only notif-bell"
-            title={t('toolbar.notifTitle')}
-            onClick={() => useSettingsStore.getState().openPageTab({ type: 'notifications' })}
-          >
-            <Bell size={16} />
-            {githubUnread > 0 && <span className="notif-badge">{githubUnread > 99 ? '99+' : githubUnread}</span>}
-          </button>
-        )}
         <button
           className="tool-btn icon-only"
           title={interp(t('toolbar.refreshTitle'), { time: timeSince(repo.lastRefreshAt) })}

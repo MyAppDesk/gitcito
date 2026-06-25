@@ -13,6 +13,7 @@ import { Avatar } from './Avatar'
 import { RemoteIcon } from './RemoteIcon'
 import { SignatureBadge } from './SignatureBadge'
 import { gitApi } from '../infrastructure/api'
+import { repoIsGitHub } from '../lib/hosting'
 
 const LANE_W = 18
 const LEFT_PAD = 16
@@ -321,7 +322,13 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
   const relativeDates = useSettingsStore((s) => s.settings.relativeDates ?? true)
   const autoLoadOnScroll = useSettingsStore((s) => s.settings.autoLoadOnScroll ?? true)
   const columns = useSettingsStore((s) => s.settings.graphColumns ?? defaultGraphColumns())
-  const columnOrder = useSettingsStore((s) => s.settings.graphColumnOrder ?? defaultGraphColumnOrder())
+  const columnOrderRaw = useSettingsStore((s) => s.settings.graphColumnOrder ?? defaultGraphColumnOrder())
+  // The deployment column shows GitHub CI/deploy status; drop it for other hosts.
+  const isGitHub = repoIsGitHub(repo.remotes)
+  const columnOrder = useMemo(
+    () => (isGitHub ? columnOrderRaw : columnOrderRaw.filter((id) => id !== 'deployment')),
+    [columnOrderRaw, isGitHub]
+  )
   const graphStyle = useSettingsStore((s) => s.settings.graphStyle ?? defaultGraphStyle())
   const customGraphPalettes = useSettingsStore((s) => s.settings.customGraphPalettes ?? [])
   const updateSettings = useSettingsStore((s) => s.update)

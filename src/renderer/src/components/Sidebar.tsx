@@ -35,6 +35,7 @@ import { useUIStore, type MenuItem } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { shellApi } from '../infrastructure/api'
 import { useT, interp } from '../i18n'
+import { repoIsGitHub } from '../lib/hosting'
 import { defaultSettings } from '../../../shared/types'
 import type { BranchInfo, ReleaseInfo, RemoteBranchInfo, StashInfo, TagInfo, WorktreeInfo, SubmoduleInfo } from '../../../shared/types'
 
@@ -1616,6 +1617,13 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         })}
       </Section>
     )
+  }
+
+  // Issues, Milestones & Releases are GitHub-only features; hide them for other hosts.
+  if (!repoIsGitHub(repo.remotes)) {
+    delete sections.issues
+    delete sections.milestones
+    delete sections.releases
   }
 
   const order = sidebarOrder.filter((id) => sections[id])

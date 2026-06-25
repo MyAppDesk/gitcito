@@ -51,6 +51,8 @@ export function TitleBar(): React.JSX.Element {
     moveRepoBetweenGroups, reorderReposInGroup
   } = useSettingsStore()
   const { openContextMenu, openModal } = useUIStore()
+  const githubUnread = useUIStore((s) => s.githubUnread)
+  const hasGithubToken = useSettingsStore((s) => !!s.activeProfile().githubToken)
   const repos = useRepoStore((s) => s.repos)
   const isMac = window.api.platform === 'darwin'
 
@@ -555,6 +557,16 @@ export function TitleBar(): React.JSX.Element {
         </button>
       </div>
       <ProfileSwitcher />
+      {hasGithubToken && (
+        <button
+          className="titlebar-action notif-bell"
+          title="Notifications"
+          onClick={() => useSettingsStore.getState().openPageTab({ type: 'notifications' })}
+        >
+          <Bell size={16} />
+          {githubUnread > 0 && <span className="notif-badge">{githubUnread > 99 ? '99+' : githubUnread}</span>}
+        </button>
+      )}
       <button
         className="titlebar-action"
         title="Settings"

@@ -69,6 +69,10 @@ async function checkViaGitHub(): Promise<void> {
   }
 }
 
+// When true, a check was initiated internally to prime the updater before a
+// download; suppress the 'checking' UI flip so the banner doesn't flicker/hide.
+let silentRecheck = false
+
 let wired = false
 function wireAutoUpdater(): void {
   if (wired) return
@@ -76,7 +80,10 @@ function wireAutoUpdater(): void {
   autoUpdater.autoDownload = false
   autoUpdater.autoInstallOnAppQuit = true
 
-  autoUpdater.on('checking-for-update', () => setState({ status: 'checking', error: null }))
+  autoUpdater.on('checking-for-update', () => {
+    if (silentRecheck) return
+    setState({ status: 'checking', error: null })
+  })
   autoUpdater.on('update-available', (info) =>
     setState({
       status: 'available',
@@ -142,6 +149,19 @@ export function registerUpdaterHandlers(): void {
     }
     wireAutoUpdater()
     try {
+      // electron-updater's downloadUpdate() depends on internal state populated
+      // by a successful checkForUpdates(). That state can be missing or stale if
+      // the launch check raced with / lost to the renderer's check, which makes
+      // the first Download click silently no-op (a reload re-checks and fixes
+      // it). Re-prime with a silent check first so the button always works.
+      if (state.status !== 'downloading' && state.status !== 'downloaded') {
+        silentRecheck = true
+        try {
+          await autoUpdater.checkForUpdates()
+        } finally {
+          silentRecheck = false
+        }
+      }
       await autoUpdater.downloadUpdate()
     } catch (err) {
       setState({ status: 'error', error: (err as Error)?.message ?? 'Download failed.' })

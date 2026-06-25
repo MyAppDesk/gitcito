@@ -1,5 +1,13 @@
 
 
+## [1.12.0](https://github.com/MyAppDesk/gitcito/compare/v1.11.2...v1.12.0) (2026-06-25)
+
+
+### Features
+
+* add merge, rebase, and reset options in GraphView ([58fffd0](https://github.com/MyAppDesk/gitcito/commit/58fffd03a2d99b8a6b0f03785b8dcbafdac7de86))
+* add missing i18n ([773b709](https://github.com/MyAppDesk/gitcito/commit/773b709a02e67353b32ffdc3f4a58f1cd49178bd))
+
 ## [1.11.2](https://github.com/MyAppDesk/gitcito/compare/v1.11.1...v1.11.2) (2026-06-24)
 
 

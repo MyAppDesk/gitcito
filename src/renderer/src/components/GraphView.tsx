@@ -1054,6 +1054,9 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
     }
 
     const isCurrent = repo.branches.current.trim() === g.label
+    const currentBranch = repo.branches.current.trim()
+    // The ref to operate on: local branch by name, else its tracking remote ref.
+    const ref = g.isLocal ? g.label : g.remotes.length ? `${g.remotes[0]}/${g.label}` : g.label
     const items: MenuItem[] = []
     if (g.isLocal) {
       items.push({ label: `Checkout ${g.label}`, disabled: isCurrent, onClick: () => void repoActions.checkout(repo.path, g.label) })
@@ -1061,11 +1064,74 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
       const full = `${g.remotes[0]}/${g.label}`
       items.push({ label: `Checkout ${g.label} as local branch`, onClick: () => void repoActions.checkoutRemote(repo.path, full, g.label) })
     }
-    items.push({ label: 'Copy branch name', onClick: () => void navigator.clipboard.writeText(g.label) })
+    items.push({ label: 'Checkout this commit (detached)', onClick: () => void repoActions.checkout(repo.path, c.hash) })
+    items.push({ separator: true })
+    items.push({
+      label: `Merge ${ref} into ${currentBranch}`,
+      disabled: isCurrent || !currentBranch,
+      onClick: () => void repoActions.merge(repo.path, ref)
+    })
+    items.push({
+      label: `Rebase ${currentBranch} onto ${ref}`,
+      disabled: isCurrent || !currentBranch,
+      onClick: () => void repoActions.rebase(repo.path, ref)
+    })
+    items.push({
+      label: `Compare with ${currentBranch}…`,
+      disabled: isCurrent || !currentBranch,
+      onClick: () => openModal({ kind: 'branch-compare', repoPath: repo.path, branchA: ref, branchB: currentBranch || 'HEAD' })
+    })
+    items.push({ separator: true })
+    items.push({
+      label: 'Create branch here…',
+      onClick: () =>
+        openModal({
+          kind: 'input',
+          title: 'Create branch',
+          label: `Branch from ${g.label}`,
+          placeholder: 'feature/my-branch',
+          submitLabel: 'Create',
+          onSubmit: (name) => void repoActions.createBranch(repo.path, name, c.hash)
+        })
+    })
     items.push({
       label: 'Create tag here…',
       onClick: () => openModal({ kind: 'create-tag', repoPath: repo.path, hash: c.hash, at: c.hash.slice(0, 7) })
     })
+    if (g.isLocal) {
+      items.push({
+        label: 'Create pull request…',
+        onClick: () => openModal({ kind: 'create-pr', repoPath: repo.path, source: g.label })
+      })
+    }
+    items.push({ separator: true })
+    items.push({
+      label: `Reset ${currentBranch} to here — soft`,
+      disabled: !currentBranch,
+      onClick: () => void repoActions.reset(repo.path, ref, 'soft')
+    })
+    items.push({
+      label: `Reset ${currentBranch} to here — mixed`,
+      disabled: !currentBranch,
+      onClick: () => void repoActions.reset(repo.path, ref, 'mixed')
+    })
+    items.push({
+      label: `Reset ${currentBranch} to here — hard`,
+      danger: true,
+      disabled: !currentBranch,
+      onClick: () =>
+        openModal({
+          kind: 'confirm',
+          title: 'Hard reset',
+          message: `Hard reset to ${ref}? All uncommitted work will be lost.`,
+          danger: true,
+          confirmLabel: 'Hard reset',
+          onConfirm: () => void repoActions.reset(repo.path, ref, 'hard')
+        })
+    })
+    items.push({ separator: true })
+    items.push({ label: 'Copy branch name', onClick: () => void navigator.clipboard.writeText(g.label) })
+    items.push({ label: 'Copy SHA', onClick: () => void navigator.clipboard.writeText(c.hash) })
     if (g.isLocal && isCurrent) items.push({ label: 'Push branch', onClick: () => void repoActions.push(repo.path) })
 
     const deletions: MenuItem[] = []

@@ -36,6 +36,7 @@ import { useSettingsStore } from '../stores/settings'
 import { gitApi } from '../infrastructure/api'
 import { tabActiveRepoPath } from '../../../shared/types'
 import { getFrecency, frecencyScore, bumpFrecency } from '../lib/frecency'
+import { repoIsGitHub } from '../lib/hosting'
 import { useT, type TranslationKey } from '../i18n'
 
 // Display label for a group id (groups stay English internally for sorting).
@@ -137,7 +138,7 @@ export function CommandPalette(): React.JSX.Element {
       { id: 'create-pr', title: t('cmd.createPr'), group: 'Actions', keywords: 'pr github merge request', icon: <GitPullRequest size={15} />, run: act(() => ui.openModal({ kind: 'create-pr', repoPath: path, source: repo.branches.current })) },
       ...((): Command[] => {
         const origin = repo.remotes.find((r) => r.name === 'origin') ?? repo.remotes[0]
-        return origin
+        return origin && repoIsGitHub(repo.remotes)
           ? [{ id: 'create-issue', title: t('cmd.createIssue'), group: 'Actions', keywords: 'github issue new bug report', icon: <CircleDot size={15} />, run: act(() => ui.openModal({ kind: 'create-issue', repoPath: path, remoteUrl: origin.url })) } as Command]
           : []
       })(),

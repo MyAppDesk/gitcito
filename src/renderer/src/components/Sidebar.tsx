@@ -1216,6 +1216,11 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
             key={pr.id}
             className="sb-item pr"
             onClick={() => {
+              // Rich PR detail is GitHub-only; for other hosts open in browser.
+              if (!repoIsGitHub(repo.remotes)) {
+                void window.api.openExternal(pr.url)
+                return
+              }
               const origin = repo.remotes.find((r) => r.name === 'origin') ?? repo.remotes[0]
               if (origin) openModal({ kind: 'pr-detail', repoPath: path, remoteUrl: origin.url, number: pr.id })
             }}

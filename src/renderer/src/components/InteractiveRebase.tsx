@@ -4,17 +4,9 @@ import type { RebaseStep } from '../../../shared/types'
 import { gitApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
 import { useRepoStore } from '../stores/repo'
+import { useT } from '../i18n'
 
 type ActionKind = RebaseStep['action']
-
-const ACTION_LABELS: Record<ActionKind, string> = {
-  pick: 'Pick',
-  squash: 'Squash',
-  fixup: 'Fixup',
-  drop: 'Drop',
-  reword: 'Reword',
-  edit: 'Edit'
-}
 
 interface StepRow extends RebaseStep {
   id: string
@@ -32,6 +24,7 @@ export function InteractiveRebase({
   const closeModal = useUIStore((s) => s.closeModal)
   const toast = useUIStore((s) => s.toast)
   const refresh = useRepoStore((s) => s.refresh)
+  const t = useT()
 
   const [steps, setSteps] = useState<StepRow[]>([])
   const [loading, setLoading] = useState(true)
@@ -82,7 +75,7 @@ export function InteractiveRebase({
       // An `edit` step pauses the rebase for amending — say so instead of
       // claiming completion.
       const paused = steps.some((s) => s.action === 'edit')
-      toast('success', paused ? 'Rebase paused — amend, then Continue' : 'Interactive rebase completed')
+      toast('success', paused ? t('rebase.paused') : t('rebase.completed'))
       closeModal()
       await refresh(repoPath)
     } catch (err) {
@@ -96,7 +89,7 @@ export function InteractiveRebase({
     return (
       <div className="ir-loading">
         <Loader2 size={20} className="spin" />
-        <span>Loading commits…</span>
+        <span>{t('rebase.loading')}</span>
       </div>
     )
   }
@@ -104,10 +97,10 @@ export function InteractiveRebase({
   if (error) {
     return (
       <>
-        <h3>Interactive rebase</h3>
+        <h3>{t('rebase.title')}</h3>
         <div className="ir-error">{error}</div>
         <div className="modal-actions">
-          <button className="btn ghost" onClick={closeModal}>Close</button>
+          <button className="btn ghost" onClick={closeModal}>{t('rebase.cancel')}</button>
         </div>
       </>
     )
@@ -116,10 +109,10 @@ export function InteractiveRebase({
   if (steps.length === 0) {
     return (
       <>
-        <h3>Interactive rebase</h3>
-        <div className="ir-empty">No commits to rebase — the selected commit is already the base.</div>
+        <h3>{t('rebase.title')}</h3>
+        <div className="ir-empty">{t('rebase.empty')}</div>
         <div className="modal-actions">
-          <button className="btn ghost" onClick={closeModal}>Close</button>
+          <button className="btn ghost" onClick={closeModal}>{t('rebase.cancel')}</button>
         </div>
       </>
     )
@@ -127,8 +120,8 @@ export function InteractiveRebase({
 
   return (
     <>
-      <h3>Interactive rebase</h3>
-      <p className="ir-base-label">Base: <code>{base.slice(0, 7)}</code> {baseSubject}</p>
+      <h3>{t('rebase.title')}</h3>
+      <p className="ir-base-label">{t('rebase.base')}<code>{base.slice(0, 7)}</code> {baseSubject}</p>
       <div className="ir-list">
         {steps.map((s, idx) => (
           <div
@@ -145,8 +138,8 @@ export function InteractiveRebase({
               value={s.action}
               onChange={(e) => setAction(s.id, e.target.value as ActionKind)}
             >
-              {(Object.keys(ACTION_LABELS) as ActionKind[]).map((a) => (
-                <option key={a} value={a}>{ACTION_LABELS[a]}</option>
+              {(['pick', 'squash', 'fixup', 'drop', 'reword', 'edit'] as ActionKind[]).map((a) => (
+                <option key={a} value={a}>{t(`rebase.${a}` as Parameters<typeof t>[0])}</option>
               ))}
             </select>
             <code className="ir-hash">{s.hash.slice(0, 7)}</code>
@@ -155,7 +148,7 @@ export function InteractiveRebase({
                 className="ir-subject-input"
                 value={s.newMessage ?? s.subject}
                 onChange={(e) => setNewMessage(s.id, e.target.value)}
-                placeholder="New commit message…"
+                placeholder={t('rebase.rewordPlaceholder')}
               />
             ) : (
               <span className="ir-subject" title={s.subject}>{s.subject}</span>
@@ -163,11 +156,11 @@ export function InteractiveRebase({
           </div>
         ))}
       </div>
-      <p className="ir-hint">Drag rows to reorder · Pick = keep · Squash = merge into previous · Fixup = merge (discard message) · Drop = delete</p>
+      <p className="ir-hint">{t('rebase.hint')}</p>
       <div className="modal-actions">
-        <button className="btn ghost" onClick={closeModal} disabled={busy}>Cancel</button>
+        <button className="btn ghost" onClick={closeModal} disabled={busy}>{t('rebase.cancel')}</button>
         <button className="btn danger" onClick={confirm} disabled={busy}>
-          {busy ? <Loader2 size={13} className="spin" /> : null} Rebase
+          {busy ? <Loader2 size={13} className="spin" /> : null} {t('rebase.rebase')}
         </button>
       </div>
     </>

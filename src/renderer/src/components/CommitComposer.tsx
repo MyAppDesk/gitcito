@@ -18,6 +18,7 @@ import {
   buildQueryRegExp,
   type FileFilter
 } from './FileSearchBar'
+import { useT, interp } from '../i18n'
 
 type ListName = 'staged' | 'unstaged'
 
@@ -29,6 +30,7 @@ function fmtBytes(n: number): string {
 }
 
 export function ViewToggle(): React.JSX.Element {
+  const t = useT()
   const fileListView = useSettingsStore((s) => s.settings.fileListView ?? 'path')
   const update = useSettingsStore((s) => s.update)
   const setFileListView = (v: 'path' | 'tree'): void => update((s) => ({ ...s, fileListView: v }))
@@ -37,22 +39,23 @@ export function ViewToggle(): React.JSX.Element {
       <button
         className={fileListView === 'path' ? 'active' : ''}
         onClick={() => setFileListView('path')}
-        title="Flat path list"
+        title={t('composer.pathViewTitle')}
       >
-        <AlignLeft size={12} /> Path
+        <AlignLeft size={12} /> {t('composer.pathView')}
       </button>
       <button
         className={fileListView === 'tree' ? 'active' : ''}
         onClick={() => setFileListView('tree')}
-        title="Tree view"
+        title={t('composer.treeViewTitle')}
       >
-        <FolderTree size={12} /> Tree
+        <FolderTree size={12} /> {t('composer.treeView')}
       </button>
     </div>
   )
 }
 
 export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element {
+  const t = useT()
   const summary = useRepoStore((s) => s.drafts[repo.path] ?? '')
   const setSummary = useRepoStore((s) => s.setDraft).bind(null, repo.path)
   const [description, setDescription] = useState('')
@@ -115,7 +118,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
             icon: <Avatar email={c.email} name={c.name} size={16} />,
             onClick: () => addCoAuthor(c)
           }))
-        : [{ label: 'No other contributors found', disabled: true, onClick: () => {} }]
+        : [{ label: t('composer.noCoAuthors'), disabled: true, onClick: () => {} }]
     )
   }
 
@@ -357,9 +360,9 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
     const ignoreTarget = isFolder ? folderPath! : entries[0].path
     const items: MenuItem[] = [
       { separator: true },
-      { label: 'Add to .gitignore', onClick: () => void repoActions.addToGitignore(path, patterns, displayLabel) },
+      { label: t('composer.addToGitignore'), onClick: () => void repoActions.addToGitignore(path, patterns, displayLabel) },
       {
-        label: 'Ignore… (choose pattern & location)',
+        label: t('composer.ignoreChoose'),
         onClick: () =>
           useUIStore.getState().openModal({ kind: 'ignore', repoPath: path, targetPath: ignoreTarget, isFolder })
       }
@@ -370,9 +373,9 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
         onClick: () =>
           useUIStore.getState().openModal({
             kind: 'confirm',
-            title: 'Ignore & stop tracking',
+            title: t('composer.ignoreAndUntrackTitle'),
             message: `Add ${displayLabel} to .gitignore and stop tracking it in Git. The file(s) stay on disk.`,
-            confirmLabel: 'Ignore & untrack',
+            confirmLabel: t('composer.ignoreAndUntrackConfirm'),
             onConfirm: () => void repoActions.ignoreAndUntrack(path, trackTargets, patterns, displayLabel)
           })
       })
@@ -382,22 +385,22 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
         onClick: () =>
           useUIStore.getState().openModal({
             kind: 'confirm',
-            title: 'Stop tracking',
+            title: t('composer.stopTrackingTitle'),
             message: `Stop tracking ${displayLabel} in Git? The file(s) stay on disk but will be removed from the repository on the next commit.`,
-            confirmLabel: 'Stop tracking',
+            confirmLabel: t('composer.stopTrackingConfirm'),
             onConfirm: () => void repoActions.untrack(path, trackTargets, false, displayLabel)
           })
       })
       items.push({
-        label: 'Delete from Git and disk',
+        label: t('composer.deleteFromDiskTitle'),
         danger: true,
         onClick: () =>
           useUIStore.getState().openModal({
             kind: 'confirm',
-            title: 'Delete from Git and disk',
+            title: t('composer.deleteFromDiskTitle'),
             message: `Remove ${displayLabel} from version control and permanently delete from disk? This cannot be undone.`,
             danger: true,
-            confirmLabel: 'Delete',
+            confirmLabel: t('composer.deleteFromDiskConfirm'),
             onConfirm: () => void repoActions.untrack(path, trackTargets, true, displayLabel)
           })
       })
@@ -412,22 +415,22 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
     const label = targets.length > 1 ? `${targets.length} files` : `"${file.path}"`
     useUIStore.getState().openContextMenu(e.clientX, e.clientY, [
       list === 'staged'
-        ? { label: `Unstage ${targets.length > 1 ? `${targets.length} files` : 'file'}`, onClick: () => void repoActions.unstage(path, targets) }
-        : { label: `Stage ${targets.length > 1 ? `${targets.length} files` : 'file'}`, onClick: () => void repoActions.stage(path, targets) },
+        ? { label: targets.length > 1 ? interp(t('composer.unstageFiles'), { n: targets.length }) : t('composer.unstageFile'), onClick: () => void repoActions.unstage(path, targets) }
+        : { label: targets.length > 1 ? interp(t('composer.stageFiles'), { n: targets.length }) : t('composer.stageFile'), onClick: () => void repoActions.stage(path, targets) },
       { separator: true },
       { label: shellApi.revealLabel, onClick: () => void shellApi.revealInFolder(`${path}/${file.path}`) },
-      { label: 'Open with default app', onClick: () => void shellApi.openPath(`${path}/${file.path}`) },
+      { label: t('composer.openDefaultApp'), onClick: () => void shellApi.openPath(`${path}/${file.path}`) },
       { separator: true },
       {
-        label: 'Discard changes',
+        label: t('composer.discardChanges'),
         danger: true,
         onClick: () =>
           useUIStore.getState().openModal({
             kind: 'confirm',
-            title: 'Discard changes',
-            message: `Discard changes in ${label}? This cannot be undone.`,
+            title: t('composer.discardChanges'),
+            message: interp(t('composer.discardMsg'), { file: label }),
             danger: true,
-            confirmLabel: 'Discard',
+            confirmLabel: t('composer.discardConfirm'),
             onConfirm: async () => {
               const untracked = targetFiles.filter((f) => f.untracked).map((f) => f.path)
               const tracked = targetFiles.filter((f) => !f.untracked).map((f) => f.path)
@@ -448,8 +451,8 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
     const label = `"${folderPath}/" (${targets.length} file${targets.length === 1 ? '' : 's'})`
     useUIStore.getState().openContextMenu(e.clientX, e.clientY, [
       list === 'staged'
-        ? { label: `Unstage folder (${targets.length})`, onClick: () => void repoActions.unstage(path, targets) }
-        : { label: `Stage folder (${targets.length})`, onClick: () => void repoActions.stage(path, targets) },
+        ? { label: interp(t('composer.unstageFolderN'), { n: targets.length }), onClick: () => void repoActions.unstage(path, targets) }
+        : { label: interp(t('composer.stageFolderN'), { n: targets.length }), onClick: () => void repoActions.stage(path, targets) },
       { separator: true },
       { label: shellApi.revealLabel, onClick: () => void shellApi.revealInFolder(`${path}/${folderPath}`) },
       { separator: true },
@@ -459,10 +462,10 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
         onClick: () =>
           useUIStore.getState().openModal({
             kind: 'confirm',
-            title: 'Discard changes',
-            message: `Discard changes in ${label}? This cannot be undone.`,
+            title: t('composer.discardChanges'),
+            message: interp(t('composer.discardMsg'), { file: label }),
             danger: true,
-            confirmLabel: 'Discard',
+            confirmLabel: t('composer.discardConfirm'),
             onConfirm: async () => {
               const untracked = inFolder.filter((f) => f.untracked).map((f) => f.path)
               const tracked = inFolder.filter((f) => !f.untracked).map((f) => f.path)
@@ -486,7 +489,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
         setSelection({ list, paths: new Set() })
       }}
     >
-      {list === 'staged' ? 'Unstage' : 'Stage'}
+      {list === 'staged' ? t('composer.unstageFile') : t('composer.stageFile')}
     </button>
   )
 
@@ -494,7 +497,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
 
   const generateWithAI = async (): Promise<void> => {
     if (staged.length === 0) {
-      toast('info', 'Stage some changes first')
+      toast('info', t('composer.stageFirst'))
       return
     }
     setAiBusy(true)
@@ -503,7 +506,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
       const msg = await aiApi.commitMessage(stagedDiff, activeProfile().ai, { branch: repo.branches.current })
       setSummary(msg.summary)
       setDescription(msg.description)
-      toast('success', 'AI commit message generated')
+      toast('success', t('composer.aiGenerated'))
     } catch (err) {
       toast('error', err instanceof Error ? err.message : String(err))
     } finally {
@@ -518,14 +521,14 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
       const files = unstaged.map((f) => ({ path: f.path, status: f.status }))
       const result = await aiApi.smartStage(files, activeProfile().ai)
       if (result.toStage.length === 0) {
-        toast('info', 'AI found nothing worth staging')
+        toast('info', t('composer.smartStageNothing'))
         return
       }
       await repoActions.stage(path, result.toStage)
       const skipped = files.length - result.toStage.length
       const msg = skipped > 0
-        ? `Staged ${result.toStage.length} file${result.toStage.length === 1 ? '' : 's'}, skipped ${skipped} (${result.reason})`
-        : `Staged ${result.toStage.length} file${result.toStage.length === 1 ? '' : 's'} (${result.reason})`
+        ? interp(t('composer.smartStageFound'), { n: result.toStage.length, skipped, reason: result.reason })
+        : interp(t('composer.smartStageFoundSimple'), { n: result.toStage.length, reason: result.reason })
       toast('success', msg)
     } catch (err) {
       toast('error', err instanceof Error ? err.message : String(err))
@@ -578,12 +581,12 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
       useUIStore.getState().openModal({
         kind: 'confirm',
         danger: true,
-        title: onProtected && flagged.length === 0 ? 'Commit to a protected branch?' : 'Commit anyway?',
-        message: `Heads up before this commit:\n\n${parts.join('\n')}\n\nSecrets land in history hard to erase; large blobs bloat the repo forever.`,
-        confirmLabel: 'Commit anyway',
+        title: onProtected && flagged.length === 0 ? t('composer.commitProtectedTitle') : t('composer.commitAnywayTitle'),
+        message: interp(t('composer.commitProtectedMsg'), { warnings: `${parts.join('\n')}\n\nSecrets land in history hard to erase; large blobs bloat the repo forever.` }),
+        confirmLabel: t('composer.commitAnywayConfirm'),
         onConfirm: () => void runCommit(message),
         // Offer untrack only when files were flagged.
-        secondaryLabel: all.length > 0 ? 'Ignore & untrack' : undefined,
+        secondaryLabel: all.length > 0 ? t('composer.ignoreUntrackSecondary') : undefined,
         onSecondary: all.length > 0 ? () => void repoActions.ignoreAndUntrack(path, all, all) : undefined
       })
       return
@@ -606,7 +609,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
     <div className="composer">
       <div className="panel-toolbar">
         <span className="panel-title">
-          {staged.length + unstaged.length} file change{staged.length + unstaged.length === 1 ? '' : 's'} on{' '}
+          {interp(t('composer.fileChanges'), { n: staged.length + unstaged.length, s: staged.length + unstaged.length === 1 ? '' : 's' })}
           <em>{repo.branches.current}</em>
         </span>
         <ViewToggle />
@@ -620,13 +623,13 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
             <div className="stage-header conflict-header">
               <button
                 className="stage-collapse"
-                title={layout.composerConflictedCollapsed ? 'Expand' : 'Collapse'}
+                title={layout.composerConflictedCollapsed ? t('composer.expand') : t('composer.collapse')}
                 onClick={() => setLayout({ composerConflictedCollapsed: !layout.composerConflictedCollapsed })}
               >
                 <ChevronDown size={13} className={`chevron${layout.composerConflictedCollapsed ? ' collapsed' : ''}`} />
               </button>
               <GitMerge size={13} />
-              <span>Conflicted files</span>
+              <span>{t('composer.conflictedFiles')}</span>
               <span className="sb-count">{active ? `${fConflicted.length}/${conflicted.length}` : conflicted.length}</span>
             </div>
             <AnimatePresence initial={false}>
@@ -646,19 +649,19 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
                   e.preventDefault()
                   useUIStore.getState().openContextMenu(e.clientX, e.clientY, [
                     {
-                      label: 'Resolve conflicts…',
+                      label: t('composer.resolveConflicts'),
                       onClick: () => useUIStore.getState().setConflictView({ repoPath: path, file: f.path })
                     },
-                    { label: 'Keep ours', onClick: () => void repoActions.conflictTakeSide(path, f.path, 'ours') },
-                    { label: 'Keep theirs', onClick: () => void repoActions.conflictTakeSide(path, f.path, 'theirs') },
-                    { label: 'Delete file', danger: true, onClick: () => void repoActions.conflictTakeSide(path, f.path, 'delete') },
+                    { label: t('composer.keepOurs'), onClick: () => void repoActions.conflictTakeSide(path, f.path, 'ours') },
+                    { label: t('composer.keepTheirs'), onClick: () => void repoActions.conflictTakeSide(path, f.path, 'theirs') },
+                    { label: t('composer.deleteFile'), danger: true, onClick: () => void repoActions.conflictTakeSide(path, f.path, 'delete') },
                     {
-                      label: 'Mark as resolved (stage as-is)',
+                      label: t('composer.markResolved'),
                       onClick: () => void repoActions.stage(path, [f.path])
                     },
                     { separator: true },
                     { label: shellApi.revealLabel, onClick: () => void shellApi.revealInFolder(`${path}/${f.path}`) },
-                    { label: 'Open with default app', onClick: () => void shellApi.openPath(`${path}/${f.path}`) }
+                    { label: t('composer.openDefaultApp'), onClick: () => void shellApi.openPath(`${path}/${f.path}`) }
                   ])
                 }}
                 action={(f) => (
@@ -669,11 +672,11 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
                       useUIStore.getState().setConflictView({ repoPath: path, file: f.path })
                     }}
                   >
-                    Resolve
+                    {t('composer.resolve')}
                   </button>
                 )}
               />
-              {active && fConflicted.length === 0 && <div className="sb-empty">No conflicts match</div>}
+              {active && fConflicted.length === 0 && <div className="sb-empty">{t('composer.noConflictsMatch')}</div>}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -688,18 +691,18 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
           <div className="stage-header">
             <button
               className="stage-collapse"
-              title={layout.composerUnstagedCollapsed ? 'Expand' : 'Collapse'}
+              title={layout.composerUnstagedCollapsed ? t('composer.expand') : t('composer.collapse')}
               onClick={() => setLayout({ composerUnstagedCollapsed: !layout.composerUnstagedCollapsed })}
             >
               <ChevronDown size={13} className={`chevron${layout.composerUnstagedCollapsed ? ' collapsed' : ''}`} />
             </button>
-            <span>Unstaged files</span>
+            <span>{t('composer.unstagedFiles')}</span>
             <span className="sb-count">{active ? `${fUnstaged.length}/${unstaged.length}` : unstaged.length}</span>
             <div className="stage-header-actions">
               {aiEnabled && (
                 <motion.button
                   className="btn ai-stage-btn"
-                  title="Auto-select files to stage with AI"
+                  title={t('composer.aiStageTitle')}
                   disabled={aiStageBusy || unstaged.length === 0}
                   onClick={() => void autoStageWithAI()}
                   whileTap={{ scale: 0.92 }}
@@ -717,7 +720,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
                   } else void repoActions.stageAll(path)
                 }}
               >
-                {selectedCount('unstaged') > 1 ? `Stage selected (${selectedCount('unstaged')})` : 'Stage all'}
+                {selectedCount('unstaged') > 1 ? interp(t('composer.stageSelected'), { n: selectedCount('unstaged') }) : t('composer.stageAll')}
               </button>
             </div>
           </div>
@@ -739,9 +742,9 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
                   onFolderContext={handleFolderContext('unstaged', fUnstaged)}
                   action={stageAction('unstaged')}
                 />
-                {unstaged.length === 0 && <div className="sb-empty">Working tree clean</div>}
+                {unstaged.length === 0 && <div className="sb-empty">{t('composer.workingTreeClean')}</div>}
                 {unstaged.length > 0 && fUnstaged.length === 0 && (
-                  <div className="sb-empty">No files match</div>
+                  <div className="sb-empty">{t('composer.noFilesMatch')}</div>
                 )}
               </motion.div>
             )}
@@ -765,12 +768,12 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
           <div className="stage-header">
             <button
               className="stage-collapse"
-              title={layout.composerStagedCollapsed ? 'Expand' : 'Collapse'}
+              title={layout.composerStagedCollapsed ? t('composer.expand') : t('composer.collapse')}
               onClick={() => setLayout({ composerStagedCollapsed: !layout.composerStagedCollapsed })}
             >
               <ChevronDown size={13} className={`chevron${layout.composerStagedCollapsed ? ' collapsed' : ''}`} />
             </button>
-            <span>Staged files</span>
+            <span>{t('composer.stagedFiles')}</span>
             <span className="sb-count">{active ? `${fStaged.length}/${staged.length}` : staged.length}</span>
             <button
               className="btn ghost tiny"
@@ -782,7 +785,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
                 } else void repoActions.unstageAll(path)
               }}
             >
-              {selectedCount('staged') > 1 ? `Unstage selected (${selectedCount('staged')})` : 'Unstage all'}
+              {selectedCount('staged') > 1 ? interp(t('composer.unstageSelected'), { n: selectedCount('staged') }) : t('composer.unstageAll')}
             </button>
           </div>
           <AnimatePresence initial={false}>
@@ -805,7 +808,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
                 />
                 {staged.length === 0 && <div className="sb-empty">Nothing staged</div>}
                 {staged.length > 0 && fStaged.length === 0 && (
-                  <div className="sb-empty">No files match</div>
+                  <div className="sb-empty">{t('composer.noFilesMatch')}</div>
                 )}
               </motion.div>
             )}

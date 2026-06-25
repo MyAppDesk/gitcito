@@ -6,6 +6,7 @@ import { useUIStore } from '../stores/ui'
 import { useRepoStore } from '../stores/repo'
 import { useSettingsStore } from '../stores/settings'
 import { DiffViewer } from './DiffViewer'
+import { useT, interp } from '../i18n'
 
 function timeAgo(unix: number): string {
   const d = Date.now() / 1000 - unix
@@ -28,6 +29,7 @@ export function BranchComparison({
   const toast = useUIStore((s) => s.toast)
   const repo = useRepoStore((s) => s.repos[repoPath])
   const profile = useSettingsStore((s) => s.activeProfile())
+  const t = useT()
 
   // Both refs are editable so this works as a general "compare any two refs"
   // tool, not just branch-vs-current. A is the compare ref, B is the base.
@@ -66,7 +68,7 @@ export function BranchComparison({
   const openPR = (): void => {
     const origin = repo?.remotes.find((r) => r.name === 'origin') ?? repo?.remotes[0]
     if (!origin) {
-      toast('error', 'No remote found')
+      toast('error', t('compare.noRemote'))
       return
     }
     const ahead = result?.aheadCommits ?? []
@@ -90,14 +92,14 @@ export function BranchComparison({
     <div className="bc-root">
       <div className="bc-header">
         <div className="bc-header-top">
-          <h3>Compare branches</h3>
+          <h3>{t('compare.title')}</h3>
           <div className="bc-header-actions">
             {hasToken && (
               <button className="btn primary small" onClick={openPR}>
-                Create PR…
+                {t('compare.createPr')}
               </button>
             )}
-            <button className="btn ghost small" onClick={closeModal}>Close</button>
+            <button className="btn ghost small" onClick={closeModal}>{t('bisect.cancel')}</button>
           </div>
         </div>
         <span className="bc-labels">
@@ -106,10 +108,10 @@ export function BranchComparison({
             list="bc-refs"
             value={a}
             spellCheck={false}
-            placeholder="ref / sha"
+            placeholder={t('compare.refPlaceholder')}
             onChange={(e) => setA(e.target.value)}
           />
-          <button className="btn ghost icon-only bc-swap" title="Swap" onClick={swap}>
+          <button className="btn ghost icon-only bc-swap" title={t('compare.swapTitle')} onClick={swap}>
             <ArrowLeftRight size={13} />
           </button>
           <input
@@ -117,7 +119,7 @@ export function BranchComparison({
             list="bc-refs"
             value={b}
             spellCheck={false}
-            placeholder="ref / sha"
+            placeholder={t('compare.refPlaceholder')}
             onChange={(e) => setB(e.target.value)}
           />
           <datalist id="bc-refs">
@@ -136,11 +138,11 @@ export function BranchComparison({
             <div className="bc-commits-col">
               <div className="bc-col-title">
                 <span className="bc-badge ahead">{result.aheadCommits.length}</span>
-                commits in <strong>{a}</strong> not in {b}
+                {t('compare.commitsIn')} <strong>{a}</strong> {t('compare.notIn')} {b}
               </div>
               <div className="bc-commits-list">
                 {result.aheadCommits.length === 0 ? (
-                  <div className="bc-empty">No unique commits</div>
+                  <div className="bc-empty">{t('compare.noUnique')}</div>
                 ) : (
                   result.aheadCommits.map((c) => (
                     <div key={c.hash} className="bc-commit">
@@ -155,11 +157,11 @@ export function BranchComparison({
             <div className="bc-commits-col">
               <div className="bc-col-title">
                 <span className="bc-badge behind">{result.behindCommits.length}</span>
-                commits in <strong>{b}</strong> not in {a}
+                {t('compare.commitsIn')} <strong>{b}</strong> {t('compare.notIn')} {a}
               </div>
               <div className="bc-commits-list">
                 {result.behindCommits.length === 0 ? (
-                  <div className="bc-empty">No unique commits</div>
+                  <div className="bc-empty">{t('compare.noUnique')}</div>
                 ) : (
                   result.behindCommits.map((c) => (
                     <div key={c.hash} className="bc-commit">
@@ -174,13 +176,13 @@ export function BranchComparison({
           </div>
 
           <div className="bc-diff-section">
-            <div className="bc-diff-title">Combined diff ({b}…{a})</div>
+            <div className="bc-diff-title">{interp(t('compare.combinedDiff'), { b, a })}</div>
             {result.diff.trim() ? (
               <div className="bc-diff-scroll">
                 <DiffViewer diff={result.diff} />
               </div>
             ) : (
-              <div className="bc-empty">No differences</div>
+              <div className="bc-empty">{t('compare.noDiff')}</div>
             )}
           </div>
         </div>

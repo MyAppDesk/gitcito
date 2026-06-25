@@ -3,6 +3,7 @@ import { SplitSquareHorizontal, Columns2, Pilcrow, Search, ChevronUp, ChevronDow
 import { highlightHtml, buildQueryRegExp, type HighlightLayer } from './FileSearchBar'
 import { highlightLine } from '../lib/highlight'
 import { maskSecretLine } from '../lib/secrets'
+import { useT, interp } from '../i18n'
 import {
   parseDiff,
   wordRangesByLine,
@@ -143,6 +144,7 @@ export function DiffViewer({
   onToggleIgnoreWs?: () => void
   onStageHunk?: (patch: string) => void
 }): React.JSX.Element {
+  const t = useT()
   const lines = useMemo(() => parseDiff(diff), [diff])
   const hunkData = useMemo(() => (onStageHunk ? extractHunks(diff) : null), [diff, onStageHunk])
 
@@ -249,7 +251,7 @@ export function DiffViewer({
     }
   }
 
-  if (!diff.trim()) return <div className="diff-empty">No changes to display</div>
+  if (!diff.trim()) return <div className="diff-empty">{t('diff.noChanges')}</div>
 
   const hasWordDiffs = wordRanges.size > 0
 
@@ -264,30 +266,30 @@ export function DiffViewer({
         {onToggleIgnoreWs && (
           <button
             className={`diff-word-toggle ${ignoreWs ? 'on' : ''}`}
-            title="Ignore whitespace changes"
+            title={t('diff.whitespaceTitle')}
             onClick={onToggleIgnoreWs}
           >
-            <Pilcrow size={12} /> Whitespace
+            <Pilcrow size={12} /> {t('diff.whitespace')}
           </button>
         )}
         <button
           className={`diff-word-toggle ${splitView ? 'on' : ''}`}
-          title="Side-by-side (split) view"
+          title={t('diff.splitTitle')}
           onClick={() => setSplitView((v) => !v)}
         >
-          <Columns2 size={12} /> Split
+          <Columns2 size={12} /> {t('diff.split')}
         </button>
         {hasWordDiffs && (
           <button
             className={`diff-word-toggle ${wordDiffOn ? 'on' : ''}`}
-            title="Highlight changed words within edited lines"
+            title={t('diff.wordDiffTitle')}
             onClick={() => setWordDiffOn((v) => !v)}
           >
-            <SplitSquareHorizontal size={12} /> Word diff
+            <SplitSquareHorizontal size={12} /> {t('diff.wordDiff')}
           </button>
         )}
-        <button className={`diff-word-toggle ${findOpen ? 'on' : ''}`} title="Find in diff (⌘F)" onClick={openFind}>
-          <Search size={12} /> Find
+        <button className={`diff-word-toggle ${findOpen ? 'on' : ''}`} title={t('diff.findTitle')} onClick={openFind}>
+          <Search size={12} /> {t('diff.find')}
         </button>
       </div>
       {findOpen && (
@@ -296,7 +298,7 @@ export function DiffViewer({
           <input
             ref={findInputRef}
             className="diff-find-input"
-            placeholder="Find in diff…"
+            placeholder={t('diff.findPlaceholder')}
             value={findQuery}
             onChange={(e) => setFindQuery(e.target.value)}
             onKeyDown={(e) => {
@@ -310,13 +312,13 @@ export function DiffViewer({
             }}
           />
           <span className="diff-find-count">{matchCount ? `${matchIdx + 1}/${matchCount}` : findQuery ? '0/0' : ''}</span>
-          <button className="diff-find-btn" title="Previous (⇧↵)" disabled={matchCount === 0} onClick={() => stepMatch(-1)}>
+          <button className="diff-find-btn" title={t('diff.prevMatch')} disabled={matchCount === 0} onClick={() => stepMatch(-1)}>
             <ChevronUp size={14} />
           </button>
-          <button className="diff-find-btn" title="Next (↵)" disabled={matchCount === 0} onClick={() => stepMatch(1)}>
+          <button className="diff-find-btn" title={t('diff.nextMatch')} disabled={matchCount === 0} onClick={() => stepMatch(1)}>
             <ChevronDown size={14} />
           </button>
-          <button className="diff-find-btn" title="Close (Esc)" onClick={closeFind}>
+          <button className="diff-find-btn" title={t('diff.closeFind')} onClick={closeFind}>
             <X size={14} />
           </button>
         </div>
@@ -332,7 +334,7 @@ export function DiffViewer({
                     className="btn ghost tiny diff-stage-hunk"
                     onClick={() => onStageHunk(`${hunkData.header}\n${hunkData.hunks[r.hunkIdx as number] ?? ''}\n`)}
                   >
-                    Stage hunk
+                    {t('diff.stageHunk')}
                   </button>
                 )}
               </div>
@@ -362,12 +364,12 @@ export function DiffViewer({
         <>
       {onStageHunk && selected.size > 0 && (
         <div className="diff-select-bar">
-          <span>{selected.size} line{selected.size === 1 ? '' : 's'} selected</span>
+          <span>{interp(t('diff.linesSelected'), { n: selected.size, s: selected.size === 1 ? '' : 's' })}</span>
           <button className="btn ghost tiny" onClick={() => setSelected(new Set())}>
-            Clear
+            {t('diff.clearSelection')}
           </button>
           <button className="btn primary tiny" onClick={stageSelected}>
-            Stage {selected.size} line{selected.size === 1 ? '' : 's'}
+            {interp(t('diff.stageLines'), { n: selected.size, s: selected.size === 1 ? '' : 's' })}
           </button>
         </div>
       )}
@@ -387,7 +389,7 @@ export function DiffViewer({
                     onStageHunk(patch)
                   }}
                 >
-                  Stage hunk
+                  {t('diff.stageHunk')}
                 </button>
               )}
             </div>
@@ -399,7 +401,7 @@ export function DiffViewer({
             key={i}
             className={`diff-line ${l.kind} ${selectable ? 'selectable' : ''} ${selected.has(i) ? 'line-selected' : ''}`}
             onClick={selectable ? () => toggleLine(i) : undefined}
-            title={selectable ? 'Click to select this line for staging' : undefined}
+            title={selectable ? t('diff.stageLinesTitle') : undefined}
           >
             <span className="diff-gutter">{l.oldNo ?? ''}</span>
             <span className="diff-gutter">{l.newNo ?? ''}</span>

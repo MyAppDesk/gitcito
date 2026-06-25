@@ -30,8 +30,10 @@ import { ErrorBoundary } from './ErrorBoundary'
 import { CheatsheetModal } from './CheatsheetModal'
 import { CreateIssueModal } from './CreateIssueModal'
 import { RepoSettingsModal } from './RepoSettingsModal'
+import { useT, interp } from '../i18n'
 
 function GroupColorModal({ spec }: { spec: Extract<ModalSpec, { kind: 'group-color' }> }): React.JSX.Element {
+  const t = useT()
   const closeModal = useUIStore((s) => s.closeModal)
   const [custom, setCustom] = useState(spec.current ?? '')
 
@@ -42,7 +44,7 @@ function GroupColorModal({ spec }: { spec: Extract<ModalSpec, { kind: 'group-col
 
   return (
     <>
-      <h3>Group color</h3>
+      <h3>{t('modal.groupColor')}</h3>
       <div className="group-color-swatches">
         {GROUP_COLORS.map((c) => (
           <button
@@ -55,7 +57,7 @@ function GroupColorModal({ spec }: { spec: Extract<ModalSpec, { kind: 'group-col
           </button>
         ))}
       </div>
-      <label className="modal-label">Custom color</label>
+      <label className="modal-label">{t('modal.customColor')}</label>
       <div className="group-color-custom">
         <input
           type="color"
@@ -66,20 +68,21 @@ function GroupColorModal({ spec }: { spec: Extract<ModalSpec, { kind: 'group-col
         <input
           className="modal-input"
           value={custom}
-          placeholder="#rrggbb"
+          placeholder={t('modal.colorPlaceholder')}
           onChange={(e) => setCustom(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter' && custom) select(custom) }}
         />
       </div>
       <div className="modal-actions">
-        <button className="btn ghost" onClick={closeModal}>Cancel</button>
-        <button className="btn primary" disabled={!custom} onClick={() => select(custom)}>Apply</button>
+        <button className="btn ghost" onClick={closeModal}>{t('common.cancel')}</button>
+        <button className="btn primary" disabled={!custom} onClick={() => select(custom)}>{t('modal.apply')}</button>
       </div>
     </>
   )
 }
 
 function InputModal({ spec }: { spec: Extract<ModalSpec, { kind: 'input' }> }): React.JSX.Element {
+  const t = useT()
   const closeModal = useUIStore((s) => s.closeModal)
   const [value, setValue] = useState(spec.initial ?? '')
   const canSubmit = spec.allowEmpty || !!value.trim()
@@ -107,7 +110,7 @@ function InputModal({ spec }: { spec: Extract<ModalSpec, { kind: 'input' }> }): 
       />
       <div className="modal-actions">
         <button className="btn ghost" onClick={closeModal}>
-          Cancel
+          {t('common.cancel')}
         </button>
         <button className="btn primary" disabled={!canSubmit} onClick={submit}>
           {spec.submitLabel ?? 'OK'}
@@ -118,6 +121,7 @@ function InputModal({ spec }: { spec: Extract<ModalSpec, { kind: 'input' }> }): 
 }
 
 function CreateBranchModal({ spec }: { spec: Extract<ModalSpec, { kind: 'create-branch' }> }): React.JSX.Element {
+  const t = useT()
   const closeModal = useUIStore((s) => s.closeModal)
   const toast = useUIStore((s) => s.toast)
   const profile = useSettingsStore((s) => s.activeProfile())
@@ -150,16 +154,16 @@ function CreateBranchModal({ spec }: { spec: Extract<ModalSpec, { kind: 'create-
 
   return (
     <>
-      <h3>Create branch</h3>
+      <h3>{t('modal.createBranch')}</h3>
 
       {aiEnabled && (
         <div className="cb-ai">
-          <label className="modal-label">Describe the task (optional) — let AI name the branch</label>
+          <label className="modal-label">{t('modal.branchTaskLabel')}</label>
           <div className="cb-ai-row">
             <input
               className="modal-input"
               value={description}
-              placeholder="e.g. fix login redirect loop on Safari"
+              placeholder={t('modal.branchTaskPlaceholder')}
               onChange={(e) => setDescription(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') void generate()
@@ -167,20 +171,20 @@ function CreateBranchModal({ spec }: { spec: Extract<ModalSpec, { kind: 'create-
               }}
             />
             <button className="btn ghost" onClick={() => void generate()} disabled={aiBusy || !description.trim()}>
-              {aiBusy ? <Loader2 size={13} className="spin" /> : <Sparkles size={13} />} Generate
+              {aiBusy ? <Loader2 size={13} className="spin" /> : <Sparkles size={13} />} {t('modal.generate')}
             </button>
           </div>
         </div>
       )}
 
       <label className="modal-label">
-        {spec.currentBranch ? `Branch from ${spec.currentBranch}` : 'Branch name'}
+        {spec.currentBranch ? interp(t('modal.branchFrom'), { branch: spec.currentBranch }) : t('modal.branchNameLabel')}
       </label>
       <input
         autoFocus
         className="modal-input"
         value={name}
-        placeholder="feature/my-branch"
+        placeholder={t('modal.branchNamePlaceholder')}
         onChange={(e) => setName(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === 'Enter') submit()
@@ -188,8 +192,8 @@ function CreateBranchModal({ spec }: { spec: Extract<ModalSpec, { kind: 'create-
         }}
       />
       <div className="modal-actions">
-        <button className="btn ghost" onClick={closeModal}>Cancel</button>
-        <button className="btn primary" disabled={!name.trim()} onClick={submit}>Create & checkout</button>
+        <button className="btn ghost" onClick={closeModal}>{t('common.cancel')}</button>
+        <button className="btn primary" disabled={!name.trim()} onClick={submit}>{t('modal.createCheckout')}</button>
       </div>
     </>
   )
@@ -270,6 +274,7 @@ function RepoPicker({
   onProfile: (id: string) => void
   matchName?: string
 }): React.JSX.Element {
+  const t = useT()
   const openModal = useUIStore((s) => s.openModal)
   const closeModal = useUIStore((s) => s.closeModal)
   const profiles = useSettingsStore((s) => s.settings.profiles)
@@ -354,10 +359,10 @@ function RepoPicker({
               openModal({ kind: 'settings', page: 'integrations' })
             }}
           >
-            Connect {meta.label}
+            {interp(t('modal.connect'), { service: meta.label })}
           </button>
           <button className="link-btn" type="button" onClick={() => void window.api.openExternal(meta.tokenUrl)}>
-            <ExternalLink size={12} /> Get a token
+            <ExternalLink size={12} /> {t('modal.getToken')}
           </button>
           <span className="remote-connect-hint">{meta.tokenHint}</span>
         </div>
@@ -373,12 +378,12 @@ function RepoPicker({
           <input
             className="modal-input"
             value={org}
-            placeholder="Azure DevOps organization"
+            placeholder={t('modal.orgPlaceholder')}
             onChange={(e) => setOrg(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && org.trim() && void load()}
           />
           <button className="btn ghost" type="button" disabled={!org.trim() || loading} onClick={() => void load()}>
-            Load
+            {t('modal.load')}
           </button>
         </div>
       )}
@@ -386,26 +391,26 @@ function RepoPicker({
       {repos && repos.length > 0 && (
         <div className="repo-search">
           <Search size={13} />
-          <input value={search} placeholder="Filter repositories…" onChange={(e) => setSearch(e.target.value)} />
+          <input value={search} placeholder={t('modal.repoFilterPlaceholder')} onChange={(e) => setSearch(e.target.value)} />
         </div>
       )}
 
       <div className="repo-list">
         {loading && (
           <div className="repo-list-state">
-            <Loader2 size={16} className="spin" /> Loading repositories…
+            <Loader2 size={16} className="spin" /> {t('modal.loadingRepos')}
           </div>
         )}
         {!loading && error && (
           <div className="repo-list-state danger">
             {error}
             <button className="link-btn" type="button" onClick={() => void load()}>
-              Retry
+              {t('modal.retry')}
             </button>
           </div>
         )}
         {!loading && !error && repos && filtered.length === 0 && (
-          <div className="repo-list-state">No repositories found.</div>
+          <div className="repo-list-state">{t('modal.noRepos')}</div>
         )}
         {!loading &&
           !error &&
@@ -446,6 +451,7 @@ function OwnerSelect({
   value: RemoteOwner | null
   onChange: (owner: RemoteOwner | null) => void
 }): React.JSX.Element {
+  const t = useT()
   const [owners, setOwners] = useState<RemoteOwner[] | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -487,12 +493,12 @@ function OwnerSelect({
   if (loading) {
     return (
       <div className="repo-list-state">
-        <Loader2 size={14} className="spin" /> Loading accounts…
+        <Loader2 size={14} className="spin" /> {t('modal.loadingAccounts')}
       </div>
     )
   }
   if (error) return <div className="modal-hint danger">{error}</div>
-  if (!owners?.length) return <div className="modal-hint">No accounts available.</div>
+  if (!owners?.length) return <div className="modal-hint">{t('modal.noAccounts')}</div>
 
   const HostIcon = PROVIDER_ICONS[host]
   const avatar = (o: RemoteOwner | null): React.JSX.Element =>
@@ -560,6 +566,7 @@ function ProviderCreateForm({
   profileId: string
   onProfile: (id: string) => void
 }): React.JSX.Element {
+  const t = useT()
   const closeModal = useUIStore((s) => s.closeModal)
   const toast = useUIStore((s) => s.toast)
   const profiles = useSettingsStore((s) => s.settings.profiles)
@@ -684,7 +691,7 @@ function ProviderCreateForm({
 
           <div className="modal-actions">
             <button className="btn ghost" onClick={closeModal} type="button">
-              Cancel
+              {t('common.cancel')}
             </button>
             <button className="btn primary" disabled={!canCreate} onClick={() => void create()} type="button">
               {busy ? <Loader2 size={14} className="spin" /> : 'Create remote and push local refs'}
@@ -705,7 +712,7 @@ function ProviderCreateForm({
           {existingUrl && <div className="modal-hint">{existingUrl}</div>}
           <div className="modal-actions">
             <button className="btn ghost" onClick={closeModal} type="button">
-              Cancel
+              {t('common.cancel')}
             </button>
             <button className="btn primary" disabled={!canAttach} onClick={attach} type="button">
               Add Remote
@@ -718,6 +725,7 @@ function ProviderCreateForm({
 }
 
 function AddRemoteModal({ spec }: { spec: Extract<ModalSpec, { kind: 'addRemote' }> }): React.JSX.Element {
+  const t = useT()
   const closeModal = useUIStore((s) => s.closeModal)
   const activeProfileId = useSettingsStore((s) => s.settings.activeProfileId)
   const [provider, setProvider] = useState<RemoteProviderId>('url')
@@ -798,7 +806,7 @@ function AddRemoteModal({ spec }: { spec: Extract<ModalSpec, { kind: 'addRemote'
           />
           <div className="modal-actions">
             <button className="btn ghost" onClick={closeModal} type="button">
-              Cancel
+              {t('common.cancel')}
             </button>
             <button className="btn primary" disabled={!urlValid} onClick={submitUrl} type="button">
               Add Remote
@@ -813,6 +821,7 @@ function AddRemoteModal({ spec }: { spec: Extract<ModalSpec, { kind: 'addRemote'
 }
 
 function EditRemoteModal({ spec }: { spec: Extract<ModalSpec, { kind: 'editRemote' }> }): React.JSX.Element {
+  const t = useT()
   const closeModal = useUIStore((s) => s.closeModal)
   const [name, setName] = useState(spec.name)
   const [url, setUrl] = useState(spec.url)
@@ -847,10 +856,10 @@ function EditRemoteModal({ spec }: { spec: Extract<ModalSpec, { kind: 'editRemot
       />
       <div className="modal-actions">
         <button className="btn ghost" onClick={closeModal} type="button">
-          Cancel
+          {t('common.cancel')}
         </button>
         <button className="btn primary" disabled={!valid} onClick={submit} type="button">
-          <Check size={14} /> Save
+          <Check size={14} /> {t('common.save')}
         </button>
       </div>
     </>
@@ -858,6 +867,7 @@ function EditRemoteModal({ spec }: { spec: Extract<ModalSpec, { kind: 'editRemot
 }
 
 function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): React.JSX.Element {
+  const t = useT()
   const closeModal = useUIStore((s) => s.closeModal)
   const toast = useUIStore((s) => s.toast)
   const profiles = useSettingsStore((s) => s.settings.profiles)
@@ -1040,7 +1050,7 @@ function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): 
 
       <div className="modal-actions">
         <button className="btn ghost" onClick={closeModal} type="button" disabled={cloning}>
-          Cancel
+          {t('common.cancel')}
         </button>
         <button className="btn primary" disabled={!valid} onClick={() => void submit()} type="button">
           {cloning ? (
@@ -1057,6 +1067,7 @@ function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): 
 }
 
 function ConfirmModal({ spec }: { spec: Extract<ModalSpec, { kind: 'confirm' }> }): React.JSX.Element {
+  const t = useT()
   const closeModal = useUIStore((s) => s.closeModal)
   return (
     <>
@@ -1064,7 +1075,7 @@ function ConfirmModal({ spec }: { spec: Extract<ModalSpec, { kind: 'confirm' }> 
       <p className="modal-message">{spec.message}</p>
       <div className="modal-actions">
         <button className="btn ghost" onClick={closeModal}>
-          Cancel
+          {t('common.cancel')}
         </button>
         {spec.secondaryLabel && spec.onSecondary && (
           <button
@@ -1096,6 +1107,7 @@ function DivergedCheckoutModal({
 }: {
   spec: Extract<ModalSpec, { kind: 'diverged-checkout' }>
 }): React.JSX.Element {
+  const t = useT()
   const closeModal = useUIStore((s) => s.closeModal)
   const [backup, setBackup] = useState(true)
   const aheadN = `${spec.ahead} commit${spec.ahead === 1 ? '' : 's'}`
@@ -1132,7 +1144,7 @@ function DivergedCheckoutModal({
           Reset to remote — discard your {aheadN}
         </button>
         <button className="btn ghost" onClick={closeModal} style={{ marginTop: 4 }}>
-          Cancel
+          {t('common.cancel')}
         </button>
       </div>
     </>
@@ -1140,6 +1152,7 @@ function DivergedCheckoutModal({
 }
 
 function CreateRepoModal({ spec }: { spec: Extract<ModalSpec, { kind: 'create-repo' }> }): React.JSX.Element {
+  const t = useT()
   const closeModal = useUIStore((s) => s.closeModal)
   const toast = useUIStore((s) => s.toast)
   const [name, setName] = useState('')
@@ -1199,7 +1212,7 @@ function CreateRepoModal({ spec }: { spec: Extract<ModalSpec, { kind: 'create-re
       {dir && name && <div className="modal-hint">{`${dir.replace(/\/+$/, '')}/${name.trim()}`}</div>}
       <div className="modal-actions">
         <button className="btn ghost" onClick={closeModal} type="button" disabled={creating}>
-          Cancel
+          {t('common.cancel')}
         </button>
         <button className="btn primary" disabled={!valid} onClick={() => void submit()} type="button">
           {creating ? <><Loader2 size={14} className="spin" /> Creating…</> : 'Create'}

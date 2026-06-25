@@ -4,6 +4,7 @@ import type { ReflogEntry } from '../../../shared/types'
 import { gitApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
 import { useRepoStore, repoActions } from '../stores/repo'
+import { useT, interp } from '../i18n'
 
 /** Short "time since" label — mirrors the Toolbar helper. */
 function timeSince(at: number): string {
@@ -28,6 +29,7 @@ export function ReflogModal({ repoPath }: { repoPath: string }): React.JSX.Eleme
   const openContextMenu = useUIStore((s) => s.openContextMenu)
   const toast = useUIStore((s) => s.toast)
   const repo = useRepoStore((s) => s.repos[repoPath])
+  const t = useT()
 
   const [ref, setRef] = useState('HEAD')
   const [entries, setEntries] = useState<ReflogEntry[]>([])
@@ -62,46 +64,46 @@ export function ReflogModal({ repoPath }: { repoPath: string }): React.JSX.Eleme
     const short = entry.sha.slice(0, 7)
     openContextMenu(rect.right, rect.bottom + 4, [
       {
-        label: 'Checkout (detached)',
+        label: t('reflog.checkoutDetached'),
         onClick: () => {
           closeModal()
           void repoActions.checkout(repoPath, entry.sha)
         }
       },
       {
-        label: 'Create branch here…',
+        label: t('reflog.createBranch'),
         onClick: () => {
           openModal({
             kind: 'input',
-            title: 'Create branch',
-            label: `Branch from ${short}`,
-            placeholder: 'recovery/lost-work',
-            submitLabel: 'Create & checkout',
+            title: t('reflog.createBranchTitle'),
+            label: interp(t('reflog.createBranchFrom'), { sha: short }),
+            placeholder: t('reflog.createBranchPlaceholder'),
+            submitLabel: t('reflog.createBranchSubmit'),
             onSubmit: (name) => void repoActions.createBranch(repoPath, name, entry.sha)
           })
         }
       },
       { separator: true },
       {
-        label: `Reset ${repo?.branches.current ?? 'branch'} here (hard)`,
+        label: interp(t('reflog.resetHard'), { ref: repo?.branches.current ?? 'branch' }),
         danger: true,
         onClick: () => {
           openModal({
             kind: 'confirm',
-            title: 'Reset --hard',
-            message: `Move ${repo?.branches.current ?? 'the current branch'} to ${short} and discard all working-tree changes? Anything not committed is lost.`,
+            title: t('reflog.resetHardTitle'),
+            message: interp(t('reflog.resetHardMsg'), { branch: repo?.branches.current ?? 'the current branch', sha: short }),
             danger: true,
-            confirmLabel: 'Reset --hard',
+            confirmLabel: t('reflog.resetHardConfirm'),
             onConfirm: () => void repoActions.reset(repoPath, entry.sha, 'hard')
           })
         }
       },
       { separator: true },
       {
-        label: 'Copy SHA',
+        label: t('reflog.copySha'),
         onClick: () => {
           void navigator.clipboard.writeText(entry.sha)
-          toast('success', 'SHA copied')
+          toast('success', t('reflog.shaCopied'))
         }
       }
     ])
@@ -111,15 +113,15 @@ export function ReflogModal({ repoPath }: { repoPath: string }): React.JSX.Eleme
     <>
       <h3>
         <History size={16} style={{ verticalAlign: '-3px', marginRight: 6 }} />
-        Reflog
+        {t('reflog.title')}
       </h3>
       <p className="reflog-sub">
-        Every move of a ref is recorded here — the net for recovering commits lost to reset, rebase, or amend.
+        {t('reflog.intro')}
       </p>
 
       <div className="reflog-refbar">
         <label className="modal-label" style={{ margin: 0 }}>
-          Ref
+          {t('reflog.refLabel')}
         </label>
         <select className="ir-action" value={ref} onChange={(e) => setRef(e.target.value)}>
           <option value="HEAD">HEAD</option>
@@ -133,12 +135,12 @@ export function ReflogModal({ repoPath }: { repoPath: string }): React.JSX.Eleme
 
       {loading ? (
         <div className="reflog-empty">
-          <Loader2 size={15} className="spin" /> Loading reflog…
+          <Loader2 size={15} className="spin" /> {t('reflog.loading')}
         </div>
       ) : error ? (
         <div className="ir-error">{error}</div>
       ) : entries.length === 0 ? (
-        <div className="reflog-empty">No reflog entries for {ref}.</div>
+        <div className="reflog-empty">{interp(t('reflog.empty'), { ref })}</div>
       ) : (
         <div className="reflog-list">
           {entries.map((entry) => {
@@ -152,7 +154,7 @@ export function ReflogModal({ repoPath }: { repoPath: string }): React.JSX.Eleme
                   {rest}
                 </span>
                 <span className="reflog-date">{timeSince(entry.date)}</span>
-                <button className="reflog-actions-btn" title="Actions" onClick={(e) => rowMenu(entry, e)}>
+                <button className="reflog-actions-btn" title={t('reflog.title')} onClick={(e) => rowMenu(entry, e)}>
                   <MoreVertical size={14} />
                 </button>
               </div>
@@ -163,7 +165,7 @@ export function ReflogModal({ repoPath }: { repoPath: string }): React.JSX.Eleme
 
       <div className="modal-actions">
         <button className="btn ghost" onClick={closeModal}>
-          Close
+          {t('rebase.cancel')}
         </button>
       </div>
     </>

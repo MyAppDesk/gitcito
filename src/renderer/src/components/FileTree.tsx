@@ -12,6 +12,7 @@ import {
   matchesGlobList,
   type FileFilter
 } from './FileSearchBar'
+import { useT, interp } from '../i18n'
 
 const abs = (repoRoot: string, rel: string): string => `${repoRoot.replace(/\/+$/, '')}/${rel}`
 const parentOf = (rel: string): string => (rel.includes('/') ? rel.slice(0, rel.lastIndexOf('/') + 1) : '')
@@ -29,6 +30,7 @@ export function FileTree({
   const fileView = useUIStore((s) => s.fileView)
   const treeStatus = repo.treeStatus
   const filterActive = isFilterActive(filter)
+  const t = useT()
 
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [children, setChildren] = useState<Record<string, TreeEntry[]>>({})
@@ -138,10 +140,10 @@ export function FileTree({
     if (useUIStore.getState().editorDirty) {
       openModal({
         kind: 'confirm',
-        title: 'Discard changes',
-        message: 'Discard unsaved changes in the open file?',
+        title: t('fileTree.discardTitle'),
+        message: t('fileTree.discardMsg'),
         danger: true,
-        confirmLabel: 'Discard',
+        confirmLabel: t('fileTree.discardConfirm'),
         onConfirm: () => {
           useUIStore.getState().setEditorDirty(false)
           doOpen()
@@ -153,10 +155,10 @@ export function FileTree({
   const promptCreate = (dir: string, isDir: boolean): void =>
     openModal({
       kind: 'input',
-      title: isDir ? 'New folder' : 'New file',
-      label: dir ? `In ${dir}/` : 'At repository root',
-      placeholder: isDir ? 'components' : 'index.ts',
-      submitLabel: 'Create',
+      title: isDir ? t('fileTree.newFolderTitle') : t('fileTree.newFileTitle'),
+      label: dir ? interp(t('fileTree.inDir'), { dir }) : t('fileTree.atRoot'),
+      placeholder: isDir ? t('fileTree.folderPlaceholder') : t('fileTree.filePlaceholder'),
+      submitLabel: t('fileTree.createSubmit'),
       onSubmit: (name) => {
         const clean = name.trim().replace(/^\/+|\/+$/g, '')
         if (!clean) return
@@ -170,10 +172,10 @@ export function FileTree({
   const promptRename = (node: TreeEntry): void =>
     openModal({
       kind: 'input',
-      title: `Rename ${node.dir ? 'folder' : 'file'}`,
-      label: `New name for ${baseOf(node.path)}`,
+      title: node.dir ? t('fileTree.renameFolderTitle') : t('fileTree.renameFileTitle'),
+      label: interp(t('fileTree.renameLabel'), { name: baseOf(node.path) }),
       initial: baseOf(node.path),
-      submitLabel: 'Rename',
+      submitLabel: t('fileTree.renameSubmit'),
       onSubmit: (name) => {
         const clean = name.trim().replace(/^\/+|\/+$/g, '')
         if (!clean || clean === baseOf(node.path)) return
@@ -184,10 +186,10 @@ export function FileTree({
   const confirmDelete = (node: TreeEntry): void =>
     openModal({
       kind: 'confirm',
-      title: 'Move to trash',
-      message: `Move "${node.path}" to the trash? You can restore it from your system trash.`,
+      title: t('fileTree.moveToTrashTitle'),
+      message: interp(t('fileTree.moveToTrashMsg'), { path: node.path }),
       danger: true,
-      confirmLabel: 'Move to trash',
+      confirmLabel: t('fileTree.moveToTrashConfirm'),
       onConfirm: () => void repoActions.fsDelete(path, [node.path], baseOf(node.path))
     })
 
@@ -200,49 +202,49 @@ export function FileTree({
     const tracked = status !== 'untracked' && status !== 'ignored'
     const items: MenuItem[] = [
       {
-        label: 'Add to .gitignore',
+        label: t('fileTree.addToGitignore'),
         disabled: status === 'ignored',
         onClick: () => void repoActions.addToGitignore(path, patterns, node.path)
       },
       {
-        label: 'Ignore… (choose pattern & location)',
+        label: t('fileTree.ignoreChoose'),
         onClick: () => openModal({ kind: 'ignore', repoPath: path, targetPath: node.path, isFolder: node.dir })
       }
     ]
     if (tracked) {
       items.push({
-        label: 'Add to .gitignore & stop tracking',
+        label: t('fileTree.ignoreAndUntrackTitle'),
         onClick: () =>
           openModal({
             kind: 'confirm',
-            title: 'Ignore & stop tracking',
+            title: t('fileTree.ignoreAndUntrackTitle'),
             message: `Add ${node.path} to .gitignore and stop tracking it in Git. The file(s) stay on disk.`,
-            confirmLabel: 'Ignore & untrack',
+            confirmLabel: t('fileTree.ignoreAndUntrackConfirm'),
             onConfirm: () => void repoActions.ignoreAndUntrack(path, [node.path], patterns, node.path)
           })
       })
       items.push({ separator: true })
       items.push({
-        label: 'Stop tracking (keep on disk)',
+        label: t('fileTree.stopTrackingTitle'),
         onClick: () =>
           openModal({
             kind: 'confirm',
-            title: 'Stop tracking',
+            title: t('fileTree.stopTrackingTitle'),
             message: `Stop tracking ${node.path} in Git? It stays on disk but is removed from the repository on the next commit.`,
-            confirmLabel: 'Stop tracking',
+            confirmLabel: t('fileTree.stopTrackingConfirm'),
             onConfirm: () => void repoActions.untrack(path, [node.path], false, node.path)
           })
       })
       items.push({
-        label: 'Delete from Git and disk',
+        label: t('fileTree.deleteFromDiskTitle'),
         danger: true,
         onClick: () =>
           openModal({
             kind: 'confirm',
-            title: 'Delete from Git and disk',
+            title: t('fileTree.deleteFromDiskTitle'),
             message: `Remove ${node.path} from version control and permanently delete from disk? This cannot be undone.`,
             danger: true,
-            confirmLabel: 'Delete',
+            confirmLabel: t('fileTree.deleteFromDiskConfirm'),
             onConfirm: () => void repoActions.untrack(path, [node.path], true, node.path)
           })
       })
@@ -253,26 +255,26 @@ export function FileTree({
   const menuFor = (node: TreeEntry): MenuItem[] => [
     ...(node.dir
       ? [
-          { label: 'New File…', onClick: () => promptCreate(node.path, false) } as MenuItem,
-          { label: 'New Folder…', onClick: () => promptCreate(node.path, true) } as MenuItem,
+          { label: t('fileTree.newFileMenu'), onClick: () => promptCreate(node.path, false) } as MenuItem,
+          { label: t('fileTree.newFolderMenu'), onClick: () => promptCreate(node.path, true) } as MenuItem,
           { separator: true } as MenuItem
         ]
-      : [{ label: 'Open', onClick: () => openFile(node.path) } as MenuItem, { separator: true } as MenuItem]),
-    { label: 'Rename…', onClick: () => promptRename(node) },
-    { label: 'Move to Trash', danger: true, onClick: () => confirmDelete(node) },
+      : [{ label: t('fileTree.open'), onClick: () => openFile(node.path) } as MenuItem, { separator: true } as MenuItem]),
+    { label: t('fileTree.rename'), onClick: () => promptRename(node) },
+    { label: t('fileTree.moveToTrashMenu'), danger: true, onClick: () => confirmDelete(node) },
     { separator: true },
     ...ignoreMenu(node),
     { separator: true },
-    { label: 'Filter graph by this path', onClick: () => useUIStore.getState().setPathFilter(node.path) },
+    { label: t('fileTree.filterGraph'), onClick: () => useUIStore.getState().setPathFilter(node.path) },
     { separator: true },
     { label: shellApi.revealLabel, onClick: () => void shellApi.revealInFolder(abs(path, node.path)) },
-    { label: 'Open in default app', onClick: () => void shellApi.openPath(abs(path, node.path)) },
-    { label: 'Copy path', onClick: () => void navigator.clipboard.writeText(node.path) }
+    { label: t('fileTree.openDefaultApp'), onClick: () => void shellApi.openPath(abs(path, node.path)) },
+    { label: t('fileTree.copyPath'), onClick: () => void navigator.clipboard.writeText(node.path) }
   ]
 
   const rootMenu = (): MenuItem[] => [
-    { label: 'New File…', onClick: () => promptCreate('', false) },
-    { label: 'New Folder…', onClick: () => promptCreate('', true) }
+    { label: t('fileTree.newFileMenu'), onClick: () => promptCreate('', false) },
+    { label: t('fileTree.newFolderMenu'), onClick: () => promptCreate('', true) }
   ]
 
   const renderLevel = (dir: string, depth: number): React.JSX.Element[] => {
@@ -324,16 +326,16 @@ export function FileTree({
     if (!results) {
       return (
         <div className="tree-loading">
-          <Loader2 size={14} className="spin" /> {searching ? 'Searching…' : 'Loading…'}
+          <Loader2 size={14} className="spin" /> {searching ? t('diff.find') : t('lfs.loading')}
         </div>
       )
     }
-    if (results.length === 0) return <div className="sb-empty">No matching files</div>
+    if (results.length === 0) return <div className="sb-empty">{t('sidebar.noRepos')}</div>
     return (
       <>
         {searching && (
           <div className="tree-loading">
-            <Loader2 size={14} className="spin" /> Searching…
+            <Loader2 size={14} className="spin" /> {t('diff.find')}
           </div>
         )}
         {results.map((rel) => {
@@ -384,10 +386,10 @@ export function FileTree({
         <>
           {!rootEnts && loading.has('') && (
             <div className="tree-loading">
-              <Loader2 size={14} className="spin" /> Loading…
+              <Loader2 size={14} className="spin" /> {t('lfs.loading')}
             </div>
           )}
-          {rootEnts && rootEnts.length === 0 && <div className="sb-empty">Empty repository</div>}
+          {rootEnts && rootEnts.length === 0 && <div className="sb-empty">{t('sidebar.emptyRepo')}</div>}
           {renderLevel('', 0)}
         </>
       )}

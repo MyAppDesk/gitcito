@@ -12,6 +12,7 @@ import { ViewToggle } from './CommitComposer'
 import { Avatar } from './Avatar'
 import { SignatureBadge } from './SignatureBadge'
 import type { RepoData } from '../stores/repo'
+import { useT, interp } from '../i18n'
 
 function profileUrl(name: string, email: string, remotes: RemoteInfo[]): string | undefined {
   const origin = remotes.find((r) => r.name === 'origin')?.url ?? remotes[0]?.url
@@ -40,6 +41,7 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
   const activeProfile = useSettingsStore((s) => s.activeProfile)
   const aiEnabled = useSettingsStore((s) => s.activeProfile().ai.enabled !== false)
   const commit: GraphCommit | undefined = repo.commits.find((c) => c.hash === hash)
+  const t = useT()
 
   useEffect(() => {
     setFiles([])
@@ -64,7 +66,7 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
     inputRef.current?.select()
   }, [editingSubject])
 
-  if (!commit) return <div className="panel-empty">Commit not found</div>
+  if (!commit) return <div className="panel-empty">{t('commitPanel.notFound')}</div>
 
   const canAmendMessage = commit.refs.some((ref) => ref === 'HEAD' || ref.startsWith('HEAD ->'))
 
@@ -96,13 +98,13 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
     try {
       const diff = await gitApi.commitDiff(repo.path, hash)
       if (!diff.trim()) {
-        toast('info', 'Nothing to summarize')
+        toast('info', t('commitPanel.nothingToSummarize'))
         return
       }
       const msg = await aiApi.commitMessage(diff, activeProfile().ai, { branch: repo.branches.current })
       setDraftSubject(msg.summary)
       setEditingSubject(true)
-      toast('success', 'AI commit message generated')
+      toast('success', t('commitPanel.aiGenerated'))
     } catch (err) {
       toast('error', err instanceof Error ? err.message : String(err))
     } finally {
@@ -127,7 +129,7 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
                 <a
                   className="commit-profile-link"
                   href="#"
-                  title={`Open ${commit.author}'s profile`}
+                  title={interp(t('commitPanel.openProfileTitle'), { author: commit.author })}
                   onClick={(e) => { e.preventDefault(); void shellApi.openExternal(profileUrl(commit.author, commit.email, repo.remotes)!) }}
                 >
                   <ExternalLink size={11} />
@@ -150,7 +152,7 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
                     setDraftSubject(commit.subject)
                     setEditingSubject(true)
                   }}
-                  title="Edit the last commit message"
+                  title={t('commitPanel.editMsgTitle')}
                   disabled={amendBusy || aiBusy}
                 >
                   <SquarePen size={13} />
@@ -161,7 +163,7 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
                   className="icon-btn commit-edit-btn"
                   type="button"
                   onClick={() => void generateWithAI()}
-                  title="Generate commit message with AI"
+                  title={t('commitPanel.generateWithAiTitle')}
                   disabled={amendBusy || aiBusy}
                   whileTap={{ scale: 0.92 }}
                 >
@@ -183,7 +185,7 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
                     <a
                       className="commit-profile-link"
                       href="#"
-                      title={`Open ${a.name}'s profile`}
+                      title={interp(t('commitPanel.openProfileTitle'), { author: a.name })}
                       onClick={(e) => { e.preventDefault(); void shellApi.openExternal(url) }}
                     >
                       <ExternalLink size={10} />
@@ -222,7 +224,7 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
 
         <div className="panel-toolbar">
           <span className="panel-title">
-            {files.length} changed file{files.length === 1 ? '' : 's'}
+            {interp(files.length === 1 ? t('commitPanel.changedFile') : t('commitPanel.changedFiles'), { n: files.length })}
           </span>
           <ViewToggle />
         </div>
@@ -241,7 +243,7 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
             e.preventDefault()
             useUIStore.getState().openContextMenu(e.clientX, e.clientY, [
               { label: shellApi.revealLabel, onClick: () => void shellApi.revealInFolder(`${repo.path}/${f.path}`) },
-              { label: 'Open with default app', onClick: () => void shellApi.openPath(`${repo.path}/${f.path}`) }
+              { label: t('commitPanel.openDefaultApp'), onClick: () => void shellApi.openPath(`${repo.path}/${f.path}`) }
             ])
           }}
         />

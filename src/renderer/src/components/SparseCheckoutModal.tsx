@@ -4,10 +4,12 @@ import type { SparseCheckoutInfo } from '../../../shared/types'
 import { gitApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
 import { useRepoStore } from '../stores/repo'
+import { useT, interp } from '../i18n'
 
 export function SparseCheckoutModal({ repoPath }: { repoPath: string }): React.JSX.Element {
   const closeModal = useUIStore((s) => s.closeModal)
   const toast = useUIStore((s) => s.toast)
+  const t = useT()
 
   const [info, setInfo] = useState<SparseCheckoutInfo | null>(null)
   const [selected, setSelected] = useState<Set<string>>(new Set())
@@ -39,7 +41,7 @@ export function SparseCheckoutModal({ repoPath }: { repoPath: string }): React.J
     try {
       await gitApi.sparseCheckoutSet(repoPath, [...selected])
       await useRepoStore.getState().refresh(repoPath)
-      toast('success', `Working tree limited to ${selected.size} folder${selected.size === 1 ? '' : 's'}`)
+      toast('success', interp(t('sparse.enabledMsg'), { n: selected.size, s: selected.size === 1 ? '' : 's' }))
       closeModal()
     } catch (err) {
       toast('error', err instanceof Error ? err.message : String(err))
@@ -52,7 +54,7 @@ export function SparseCheckoutModal({ repoPath }: { repoPath: string }): React.J
     try {
       await gitApi.sparseCheckoutDisable(repoPath)
       await useRepoStore.getState().refresh(repoPath)
-      toast('success', 'Sparse-checkout disabled — full working tree restored')
+      toast('success', t('sparse.disabledMsg'))
       closeModal()
     } catch (err) {
       toast('error', err instanceof Error ? err.message : String(err))
@@ -64,30 +66,28 @@ export function SparseCheckoutModal({ repoPath }: { repoPath: string }): React.J
     <>
       <h3>
         <FolderTree size={16} style={{ verticalAlign: '-3px', marginRight: 6 }} />
-        Sparse-checkout
+        {t('sparse.title')}
       </h3>
       <p className="sparse-sub">
-        Limit the working tree to the top-level folders you pick. Unchecked folders are removed from disk (still kept
-        in git) — handy for huge monorepos.
+        {t('sparse.description')}
       </p>
 
       {loading ? (
         <div className="sparse-empty">
-          <Loader2 size={15} className="spin" /> Loading…
+          <Loader2 size={15} className="spin" /> {t('sparse.loading')}
         </div>
       ) : !info ? (
-        <div className="sparse-empty">Could not read sparse-checkout state.</div>
+        <div className="sparse-empty">{t('sparse.error')}</div>
       ) : info.topLevelDirs.length === 0 ? (
-        <div className="sparse-empty">This repository has no top-level folders to limit.</div>
+        <div className="sparse-empty">{t('sparse.noFolders')}</div>
       ) : (
         <>
           {info.enabled ? (
             <div className="sparse-status on">
-              Sparse-checkout is <strong>on</strong>
-              {info.cone ? ' (cone mode)' : ''}.
+              {interp(t('sparse.statusOn'), { mode: info.cone ? t('sparse.coneMode') : '' })}
             </div>
           ) : (
-            <div className="sparse-status">Sparse-checkout is off — the full tree is checked out.</div>
+            <div className="sparse-status">{t('sparse.statusOff')}</div>
           )}
 
           <div className="sparse-list">
@@ -101,21 +101,21 @@ export function SparseCheckoutModal({ repoPath }: { repoPath: string }): React.J
 
           {selected.size === 0 && (
             <p className="sparse-warn">
-              <AlertTriangle size={13} /> Nothing selected — only top-level files will remain.
+              <AlertTriangle size={13} /> {t('sparse.nothingSelected')}
             </p>
           )}
 
           <div className="modal-actions">
             <button className="btn ghost" onClick={closeModal} disabled={busy}>
-              Cancel
+              {t('bisect.cancel')}
             </button>
             {info.enabled && (
               <button className="btn ghost danger" onClick={() => void disable()} disabled={busy}>
-                Disable
+                {t('sparse.disable')}
               </button>
             )}
             <button className="btn primary" onClick={() => void apply()} disabled={busy}>
-              {busy ? <Loader2 size={13} className="spin" /> : null} Apply
+              {busy ? <Loader2 size={13} className="spin" /> : null} {t('sparse.apply')}
             </button>
           </div>
         </>

@@ -3,6 +3,7 @@ import { Webhook, Loader2, Pencil, Trash2, Power, PowerOff, ChevronLeft, Info } 
 import type { HookInfo, HooksInfo } from '../../../shared/types'
 import { gitApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
+import { useT, interp } from '../i18n'
 
 type HookState = 'active' | 'disabled' | 'sample' | 'none'
 
@@ -11,17 +12,11 @@ function hookState(h: HookInfo): HookState {
   return h.sample ? 'sample' : 'none'
 }
 
-const STATE_LABEL: Record<HookState, string> = {
-  active: 'Active',
-  disabled: 'Disabled',
-  sample: 'Sample',
-  none: '—'
-}
-
 export function HooksModal({ repoPath }: { repoPath: string }): React.JSX.Element {
   const closeModal = useUIStore((s) => s.closeModal)
   const openModal = useUIStore((s) => s.openModal)
   const toast = useUIStore((s) => s.toast)
+  const t = useT()
 
   const [info, setInfo] = useState<HooksInfo | null>(null)
   const [loading, setLoading] = useState(true)
@@ -57,7 +52,7 @@ export function HooksModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
     try {
       await gitApi.writeHook(repoPath, editing, draft)
       await load()
-      toast('success', `Saved ${editing} hook`)
+      toast('success', interp(t('hooks.savedHook'), { name: editing }))
       setEditing(null)
     } catch (err) {
       toast('error', err instanceof Error ? err.message : String(err))
@@ -81,15 +76,15 @@ export function HooksModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
   const remove = (h: HookInfo): void => {
     openModal({
       kind: 'confirm',
-      title: 'Delete hook',
-      message: `Delete the ${h.name} hook? The shipped .sample template (if any) is kept.`,
+      title: t('hooks.deleteTitle'),
+      message: interp(t('hooks.deleteMsg'), { name: h.name }),
       danger: true,
-      confirmLabel: 'Delete',
+      confirmLabel: t('hooks.deleteConfirm'),
       onConfirm: () => {
         void gitApi
           .deleteHook(repoPath, h.name)
           .then(() => load())
-          .then(() => toast('success', `Deleted ${h.name}`))
+          .then(() => toast('success', interp(t('hooks.deletedHook'), { name: h.name })))
           .catch((err) => toast('error', err instanceof Error ? err.message : String(err)))
       }
     })
@@ -99,10 +94,10 @@ export function HooksModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
     return (
       <>
         <h3>
-          <button className="hooks-back" onClick={() => setEditing(null)} title="Back to list">
+          <button className="hooks-back" onClick={() => setEditing(null)} title={t('hooks.backTitle')}>
             <ChevronLeft size={16} />
           </button>
-          Edit hook · <code>{editing}</code>
+          {t('hooks.editHeading').replace('{name}', editing)}
         </h3>
         <textarea
           className="hooks-editor"
@@ -111,40 +106,47 @@ export function HooksModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
           spellCheck={false}
           autoFocus
         />
-        <p className="hooks-hint">Saving makes the hook executable so git runs it.</p>
+        <p className="hooks-hint">{t('hooks.saveHint')}</p>
         <div className="modal-actions">
           <button className="btn ghost" onClick={() => setEditing(null)} disabled={busy}>
-            Cancel
+            {t('rebase.cancel')}
           </button>
           <button className="btn primary" onClick={() => void save()} disabled={busy}>
-            {busy ? <Loader2 size={13} className="spin" /> : null} Save hook
+            {busy ? <Loader2 size={13} className="spin" /> : null} {t('hooks.saveHook')}
           </button>
         </div>
       </>
     )
   }
 
+  const STATE_LABEL: Record<HookState, string> = {
+    active: t('hooks.stateActive'),
+    disabled: t('hooks.stateDisabled'),
+    sample: t('hooks.stateSample'),
+    none: t('hooks.stateNone')
+  }
+
   return (
     <>
       <h3>
         <Webhook size={16} style={{ verticalAlign: '-3px', marginRight: 6 }} />
-        Git hooks
+        {t('hooks.title')}
       </h3>
 
       {loading ? (
         <div className="hooks-empty">
-          <Loader2 size={15} className="spin" /> Loading hooks…
+          <Loader2 size={15} className="spin" /> {t('hooks.loading')}
         </div>
       ) : !info ? (
-        <div className="hooks-empty">Could not read hooks.</div>
+        <div className="hooks-empty">{t('hooks.error')}</div>
       ) : (
         <>
           {(info.customHooksPath || info.preCommitFramework) && (
             <div className="hooks-banner">
               <Info size={14} />
               <span>
-                {info.preCommitFramework && 'A pre-commit framework config (.pre-commit-config.yaml) is present. '}
-                {info.customHooksPath && 'core.hooksPath points hooks elsewhere — editing here targets that directory. '}
+                {info.preCommitFramework && t('hooks.preCommitFramework')}
+                {info.customHooksPath && t('hooks.customHooksPath')}
               </span>
             </div>
           )}
@@ -162,7 +164,7 @@ export function HooksModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
                     {h.exists && (
                       <button
                         className="icon-btn"
-                        title={h.executable ? 'Disable (remove exec bit)' : 'Enable (make executable)'}
+                        title={h.executable ? t('hooks.enableTitle') : t('hooks.disableTitle')}
                         onClick={() => void toggle(h)}
                         disabled={busy}
                       >
@@ -171,14 +173,14 @@ export function HooksModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
                     )}
                     <button
                       className="icon-btn"
-                      title={h.exists ? 'Edit' : 'Create from template'}
+                      title={h.exists ? t('hooks.editBtnTitle') : t('hooks.createBtnTitle')}
                       onClick={() => void openEditor(h.name)}
                       disabled={busy}
                     >
                       <Pencil size={14} />
                     </button>
                     {h.exists && (
-                      <button className="icon-btn danger" title="Delete" onClick={() => remove(h)} disabled={busy}>
+                      <button className="icon-btn danger" title={t('hooks.deleteConfirm')} onClick={() => remove(h)} disabled={busy}>
                         <Trash2 size={14} />
                       </button>
                     )}
@@ -192,7 +194,7 @@ export function HooksModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
 
       <div className="modal-actions">
         <button className="btn ghost" onClick={closeModal}>
-          Close
+          {t('rebase.cancel')}
         </button>
       </div>
     </>

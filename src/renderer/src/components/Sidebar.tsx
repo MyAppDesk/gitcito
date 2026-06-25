@@ -34,7 +34,7 @@ import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
 import { useUIStore, type MenuItem } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { shellApi } from '../infrastructure/api'
-import { useT } from '../i18n'
+import { useT, interp } from '../i18n'
 import { defaultSettings } from '../../../shared/types'
 import type { BranchInfo, ReleaseInfo, RemoteBranchInfo, StashInfo, TagInfo, WorktreeInfo, SubmoduleInfo } from '../../../shared/types'
 
@@ -248,16 +248,16 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     const deletable = names.filter((n) => n !== repo.branches.current.trim())
     return [
       {
-        label: `Delete ${deletable.length} branches`,
+        label: interp(t('sidebar.deleteNBranches'), { n: deletable.length }),
         danger: true,
         disabled: deletable.length === 0,
         onClick: () =>
           openModal({
             kind: 'confirm',
-            title: 'Delete branches',
-            message: `Delete ${deletable.length} local branches? This cannot be undone.\n\n${deletable.join('\n')}`,
+            title: t('sidebar.deleteBranchesTitle'),
+            message: `${interp(t('sidebar.deleteBranchesMsg'), { n: deletable.length })}\n\n${deletable.join('\n')}`,
             danger: true,
-            confirmLabel: `Delete ${deletable.length}`,
+            confirmLabel: t('sidebar.deleteBranchesConfirm'),
             onConfirm: () => {
               void repoActions.deleteBranches(path, deletable)
               clearSel()
@@ -274,16 +274,16 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       .map((r) => ({ remote: r.remote, name: r.name }))
     return [
       {
-        label: `Delete ${items.length} remote branches`,
+        label: interp(t('sidebar.deleteNRemoteBranches'), { n: items.length }),
         danger: true,
         disabled: items.length === 0,
         onClick: () =>
           openModal({
             kind: 'confirm',
-            title: 'Delete remote branches',
-            message: `Delete ${items.length} branches from their remotes? This affects everyone using the remote and cannot be undone.\n\n${fullNames.join('\n')}`,
+            title: t('sidebar.deleteRemoteBranchesTitle'),
+            message: `${interp(t('sidebar.deleteRemoteBranchesMsg'), { n: items.length })}\n\n${fullNames.join('\n')}`,
             danger: true,
-            confirmLabel: `Delete ${items.length}`,
+            confirmLabel: t('sidebar.deleteRemoteBranchesConfirm'),
             onConfirm: () => {
               void repoActions.deleteRemoteBranches(path, items)
               clearSel()
@@ -297,15 +297,15 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     const indices = ids.map(Number)
     return [
       {
-        label: `Drop ${indices.length} stashes`,
+        label: interp(t('sidebar.dropNStashes'), { n: indices.length }),
         danger: true,
         onClick: () =>
           openModal({
             kind: 'confirm',
-            title: 'Drop stashes',
-            message: `Drop ${indices.length} stashes? This cannot be undone.`,
+            title: t('sidebar.dropStashesTitle'),
+            message: interp(t('sidebar.dropStashesMsg'), { n: indices.length }),
             danger: true,
-            confirmLabel: `Drop ${indices.length}`,
+            confirmLabel: t('sidebar.dropStashesConfirm'),
             onConfirm: () => {
               void repoActions.stashDropMany(path, indices)
               clearSel()
@@ -317,15 +317,15 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
 
   const tagBulkMenu = (names: string[]): MenuItem[] => [
     {
-      label: `Delete ${names.length} tags`,
+      label: interp(t('sidebar.deleteNTags'), { n: names.length }),
       danger: true,
       onClick: () =>
         openModal({
           kind: 'confirm',
-          title: 'Delete tags',
-          message: `Delete ${names.length} tags locally? This cannot be undone.\n\n${names.join('\n')}`,
+          title: t('sidebar.deleteTagsTitle'),
+          message: `${interp(t('sidebar.deleteTagsMsg'), { n: names.length })}\n\n${names.join('\n')}`,
           danger: true,
-          confirmLabel: `Delete ${names.length}`,
+          confirmLabel: t('sidebar.deleteTagsConfirm'),
           onConfirm: () => {
             void repoActions.deleteTags(path, names)
             clearSel()
@@ -422,7 +422,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     const extra = remoteNames.length - shown.length
     const title = remoteNames.length
       ? `${local ? 'This computer, ' : ''}${remoteNames.join(', ')}`
-      : 'Local only'
+      : t('sidebar.localOnly')
     return (
       <span className="sb-presence" title={title}>
         {local && <Laptop size={11} className="presence-local" />}
@@ -448,81 +448,81 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       ...(release
         ? [
             {
-              label: `Go to release ${release.name || release.tag || tag.name}`,
+              label: interp(t('sidebar.goToRelease'), { name: release.name || release.tag || tag.name }),
               onClick: () => openPageTab({ type: 'release', release, repoPath: path })
             } satisfies MenuItem,
             { separator: true } satisfies MenuItem
           ]
         : []),
-      { label: `Checkout ${tag.name}`, onClick: () => void repoActions.checkout(path, tag.name) },
+      { label: interp(t('sidebar.checkoutTag'), { tag: tag.name }), onClick: () => void repoActions.checkout(path, tag.name) },
       { separator: true },
       {
-        label: `Rebase ${currentBranch} onto ${tag.name}`,
+        label: interp(t('sidebar.rebaseOnTag'), { branch: currentBranch, tag: tag.name }),
         disabled: !currentBranch,
         onClick: () => void repoActions.rebase(path, tag.name)
       },
       {
-        label: `Reset ${currentBranch} to here — soft`,
+        label: interp(t('sidebar.resetToTagSoft'), { branch: currentBranch }),
         disabled: !currentBranch,
         onClick: () => void repoActions.reset(path, tag.name, 'soft')
       },
       {
-        label: `Reset ${currentBranch} to here — mixed`,
+        label: interp(t('sidebar.resetToTagMixed'), { branch: currentBranch }),
         disabled: !currentBranch,
         onClick: () => void repoActions.reset(path, tag.name, 'mixed')
       },
       {
-        label: `Reset ${currentBranch} to here — hard`,
+        label: interp(t('sidebar.resetToTagHard'), { branch: currentBranch }),
         danger: true,
         disabled: !currentBranch,
         onClick: () =>
           openModal({
             kind: 'confirm',
-            title: 'Hard reset',
-            message: `Hard reset to ${tag.name}? All uncommitted work will be lost.`,
+            title: t('sidebar.hardResetTitle'),
+            message: interp(t('sidebar.hardResetMsg'), { ref: tag.name }),
             danger: true,
-            confirmLabel: 'Hard reset',
+            confirmLabel: t('sidebar.hardResetConfirm'),
             onConfirm: () => void repoActions.reset(path, tag.name, 'hard')
           })
       },
       { separator: true },
-      { label: 'Copy tag name', onClick: () => void navigator.clipboard.writeText(tag.name) },
+      { label: t('sidebar.copyTagName'), onClick: () => void navigator.clipboard.writeText(tag.name) },
       ...(webUrl
         ? [
-            { label: `Open ${tag.name} on ${remoteName}`, onClick: () => void shellApi.openExternal(webUrl) } satisfies MenuItem,
-            { label: `Copy link to ${tag.name} on ${remoteName}`, onClick: () => void navigator.clipboard.writeText(webUrl) } satisfies MenuItem
+            { label: interp(t('sidebar.openTagOnWeb'), { tag: tag.name, remote: remoteName }), onClick: () => void shellApi.openExternal(webUrl) } satisfies MenuItem,
+            { label: interp(t('sidebar.copyTagLink'), { tag: tag.name, remote: remoteName }), onClick: () => void navigator.clipboard.writeText(webUrl) } satisfies MenuItem
           ]
         : []),
-      { label: 'Create tag here…', onClick: createTagAtHead },
+      { label: t('sidebar.createTagHere'), onClick: createTagAtHead },
       { separator: true },
       ...(repo.remotes.length && !isPushed
-        ? [{ label: `Push ${tag.name} to ${remoteName}`, onClick: () => void repoActions.pushTag(path, tag.name, remoteName) } satisfies MenuItem]
+        ? [{ label: interp(t('sidebar.pushTag'), { tag: tag.name, remote: remoteName }), onClick: () => void repoActions.pushTag(path, tag.name, remoteName) } satisfies MenuItem]
         : []),
       ...(repo.remotes.length && isPushed
         ? [{
-            label: `Delete ${tag.name} from ${remoteName}`,
+            label: t('sidebar.deleteRemoteTag'),
             danger: true,
             onClick: () =>
               openModal({
                 kind: 'confirm',
-                title: 'Delete remote tag',
-                message: `Delete tag "${tag.name}" from ${remoteName}?`,
+                title: t('sidebar.deleteRemoteTag'),
+                message: interp(t('sidebar.deleteRemoteTagMsg'), { tag: tag.name, remote: remoteName }),
                 danger: true,
-                confirmLabel: 'Delete',
+                confirmLabel: t('sidebar.deleteRemoteTagConfirm'),
                 onConfirm: () => void repoActions.deleteRemoteTag(path, tag.name, remoteName)
               })
           } satisfies MenuItem]
         : []),
       {
-        label: `Delete ${tag.name} locally`,
+        label: t('sidebar.deleteTagLocal'),
         danger: true,
         onClick: () =>
           openModal({
             kind: 'confirm',
-            title: 'Delete tag',
-            message: `Delete tag "${tag.name}"?`,
+            title: t('sidebar.deleteTagLocal'),
+            message: interp(t('sidebar.deleteTagLocalMsg'), { tag: tag.name }),
             danger: true,
-            confirmLabel: 'Delete',
+            confirmLabel: t('sidebar.deleteTagLocalConfirm'),
             onConfirm: () => void repoActions.deleteTag(path, tag.name)
           })
       }
@@ -532,8 +532,8 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   // Dropped branch `source` onto `target`: offer merge / rebase.
   const branchDropMenu = (source: string, target: string, x: number, y: number): void => {
     openContextMenu(x, y, [
-      { label: `Merge ${source} → ${target}`, onClick: () => void repoActions.mergeInto(path, source, target) },
-      { label: `Rebase ${source} onto ${target}`, onClick: () => void repoActions.rebaseOnto(path, source, target) }
+      { label: interp(t('sidebar.dropBranchMerge'), { source, target }), onClick: () => void repoActions.mergeInto(path, source, target) },
+      { label: interp(t('sidebar.dropBranchRebase'), { source, target }), onClick: () => void repoActions.rebaseOnto(path, source, target) }
     ])
   }
 
@@ -548,47 +548,47 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   }
 
   const localMenu = (b: BranchInfo): MenuItem[] => [
-    { label: `Checkout ${b.name}`, disabled: b.isCurrent, onClick: () => void repoActions.checkout(path, b.name) },
-    { label: `Open ${b.name} in a worktree`, onClick: () => void openInWorktree(b.name) },
+    { label: interp(t('sidebar.checkoutBranch'), { branch: b.name }), disabled: b.isCurrent, onClick: () => void repoActions.checkout(path, b.name) },
+    { label: interp(t('sidebar.openInWorktree'), { branch: b.name }), onClick: () => void openInWorktree(b.name) },
     {
-      label: `Merge ${b.name} into ${repo.branches.current}`,
+      label: interp(t('sidebar.mergeBranchInto'), { branch: b.name, current: repo.branches.current }),
       disabled: b.isCurrent,
       onClick: () => void repoActions.merge(path, b.name)
     },
     {
-      label: `Rebase ${repo.branches.current} onto ${b.name}`,
+      label: interp(t('sidebar.rebaseBranchOnto'), { current: repo.branches.current, branch: b.name }),
       disabled: b.isCurrent,
       onClick: () => void repoActions.rebase(path, b.name)
     },
     {
-      label: `Compare with ${repo.branches.current}…`,
+      label: interp(t('sidebar.compareBranchWith'), { current: repo.branches.current }),
       disabled: b.isCurrent,
       onClick: () => openModal({ kind: 'branch-compare', repoPath: path, branchA: b.name, branchB: repo.branches.current ?? 'HEAD' })
     },
     { separator: true },
     {
-      label: 'Rename…',
+      label: t('sidebar.renameBranch'),
       onClick: () =>
         openModal({
           kind: 'input',
-          title: 'Rename branch',
-          label: `New name for ${b.name}`,
+          title: t('sidebar.renameBranchTitle'),
+          label: t('sidebar.renameBranchLabel'),
           initial: b.name,
-          submitLabel: 'Rename',
+          submitLabel: t('sidebar.renameBranchSubmit'),
           onSubmit: (name) => void repoActions.renameBranch(path, b.name, name)
         })
     },
     ...(b.upstream
       ? [
           {
-            label: 'Rename (incl. remote)…',
+            label: t('sidebar.renameWithRemote'),
             onClick: (): void =>
               openModal({
                 kind: 'input',
-                title: 'Rename branch (incl. remote)',
-                label: `New name for ${b.name} — also renames ${b.upstream}`,
+                title: t('sidebar.renameWithRemoteTitle'),
+                label: t('sidebar.renameBranchLabel'),
                 initial: b.name,
-                submitLabel: 'Rename',
+                submitLabel: t('sidebar.renameBranchSubmit'),
                 onSubmit: (name) => {
                   const remote = (b.upstream ?? '').split('/')[0]
                   if (name.trim() && remote) void repoActions.renameBranchRemote(path, b.name, name.trim(), remote)
@@ -597,24 +597,24 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
           }
         ]
       : []),
-    { label: 'Push branch', onClick: () => void repoActions.push(path) },
+    { label: t('sidebar.pushBranch'), onClick: () => void repoActions.push(path) },
     {
-      label: 'Create pull request…',
+      label: t('sidebar.createPRFromBranch'),
       onClick: () => openModal({ kind: 'create-pr', repoPath: path, source: b.name })
     },
     { separator: true },
-    { label: 'Copy branch name', onClick: () => void navigator.clipboard.writeText(b.name) },
+    { label: t('sidebar.copyBranchName'), onClick: () => void navigator.clipboard.writeText(b.name) },
     {
-      label: 'Delete branch',
+      label: t('sidebar.deleteBranch'),
       danger: true,
       disabled: b.isCurrent,
       onClick: () =>
         openModal({
           kind: 'confirm',
-          title: 'Delete branch',
-          message: `Delete local branch "${b.name}"?`,
+          title: t('sidebar.deleteBranchTitle'),
+          message: interp(t('sidebar.deleteBranchMsg'), { name: b.name }),
           danger: true,
-          confirmLabel: 'Delete',
+          confirmLabel: t('sidebar.deleteBranchConfirm'),
           onConfirm: () => void repoActions.deleteBranch(path, b.name, b.sha)
         })
     }
@@ -622,26 +622,26 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
 
   const remoteMenu = (b: RemoteBranchInfo): MenuItem[] => [
     {
-      label: `Checkout as local branch`,
+      label: t('sidebar.checkoutAsLocal'),
       onClick: () => void repoActions.checkoutRemote(path, b.fullName, b.name)
     },
-    { label: `Merge ${b.fullName} into ${repo.branches.current}`, onClick: () => void repoActions.merge(path, b.fullName) },
+    { label: interp(t('sidebar.mergeBranchInto'), { branch: b.fullName, current: repo.branches.current }), onClick: () => void repoActions.merge(path, b.fullName) },
     {
-      label: `Compare with ${repo.branches.current}…`,
+      label: interp(t('sidebar.compareBranchWith'), { current: repo.branches.current }),
       onClick: () => openModal({ kind: 'branch-compare', repoPath: path, branchA: b.fullName, branchB: repo.branches.current ?? 'HEAD' })
     },
     { separator: true },
-    { label: 'Copy branch name', onClick: () => void navigator.clipboard.writeText(b.fullName) },
+    { label: t('sidebar.copyBranchName'), onClick: () => void navigator.clipboard.writeText(b.fullName) },
     {
-      label: 'Delete from remote',
+      label: t('sidebar.deleteRemoteBranch'),
       danger: true,
       onClick: () =>
         openModal({
           kind: 'confirm',
-          title: 'Delete remote branch',
-          message: `Delete "${b.name}" from remote "${b.remote}"? This affects everyone using the remote.`,
+          title: t('sidebar.deleteRemoteBranchTitle'),
+          message: interp(t('sidebar.deleteRemoteBranchMsg'), { branch: b.name, remote: b.remote }),
           danger: true,
-          confirmLabel: 'Delete remote branch',
+          confirmLabel: t('sidebar.deleteRemoteBranchConfirm'),
           onConfirm: () => void repoActions.deleteRemoteBranch(path, b.remote, b.name)
         })
     }
@@ -653,7 +653,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       title: 'Rename stash',
       label: 'New stash message',
       initial: s.message,
-      submitLabel: 'Rename',
+      submitLabel: t('common.rename'),
       onSubmit: (message) => {
         const m = message.trim()
         if (m && m !== s.message) void repoActions.renameStash(path, s.index, m)
@@ -661,22 +661,22 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     })
 
   const stashMenu = (s: StashInfo): MenuItem[] => [
-    { label: 'Pop stash', onClick: () => void repoActions.stashPop(path, s.index) },
-    { label: 'Apply stash (keep)', onClick: () => void repoActions.stashApply(path, s.index) },
+    { label: t('sidebar.popStash'), onClick: () => void repoActions.stashPop(path, s.index) },
+    { label: t('sidebar.applyStash'), onClick: () => void repoActions.stashApply(path, s.index) },
     { separator: true },
-    { label: 'Rename…', onClick: () => renameStash(s) },
-    { label: 'Copy stash message', onClick: () => void navigator.clipboard.writeText(s.message) },
+    { label: t('sidebar.renameStash'), onClick: () => renameStash(s) },
+    { label: t('sidebar.copyStashMsg'), onClick: () => void navigator.clipboard.writeText(s.message) },
     { separator: true },
     {
-      label: 'Drop stash',
+      label: t('sidebar.dropStash'),
       danger: true,
       onClick: () =>
         openModal({
           kind: 'confirm',
-          title: 'Drop stash',
-          message: `Drop "${s.message}"? This cannot be undone.`,
+          title: t('sidebar.dropStashTitle'),
+          message: interp(t('sidebar.dropStashMsg'), { message: s.message }),
           danger: true,
-          confirmLabel: 'Drop',
+          confirmLabel: t('sidebar.dropStashConfirm'),
           onConfirm: () => void repoActions.stashDrop(path, s.index)
         })
     }
@@ -706,8 +706,8 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     openModal({
       kind: 'input',
       title: t('sidebar.addWorktree'),
-      label: 'Path · branch (e.g. ../feature  feature-x)',
-      placeholder: '../my-worktree  branch-name',
+      label: t('sidebar.addWorktreeLabel'),
+      placeholder: t('sidebar.addWorktreePlaceholder'),
       submitLabel: t('common.add'),
       onSubmit: (value) => {
         const parts = value.trim().split(/\s+/)
@@ -739,9 +739,9 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     const web = webUrl(url)
     return [
       { label: t('sidebar.addRemote'), onClick: () => addRemote() },
-      { label: `Fetch ${remoteName}`, onClick: () => void repoActions.fetchRemote(path, remoteName) },
+      { label: interp(t('sidebar.fetchRemote'), { remote: remoteName }), onClick: () => void repoActions.fetchRemote(path, remoteName) },
       {
-        label: `Edit ${remoteName}`,
+        label: interp(t('sidebar.editRemote'), { remote: remoteName }),
         onClick: () =>
           openModal({
             kind: 'editRemote',
@@ -751,7 +751,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
           })
       },
       { separator: true },
-      ...(web ? [{ label: 'Open on web', onClick: (): void => void shellApi.openExternal(web) }] : []),
+      ...(web ? [{ label: t('sidebar.openOnWeb'), onClick: (): void => void shellApi.openExternal(web) }] : []),
       ...(url ? [{ label: 'Copy remote URL', onClick: (): void => void navigator.clipboard.writeText(url) }] : []),
       { separator: true },
       {
@@ -812,7 +812,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       kind: 'input',
       title: `${t('sidebar.editSubmodule')} · ${sm.path}`,
       label: t('sidebar.submoduleUrlLabel'),
-      placeholder: 'https://github.com/org/repo.git',
+      placeholder: t('sidebar.editSubmodulePlaceholder'),
       initial: sm.url,
       submitLabel: t('common.save'),
       onSubmit: (value) => {
@@ -826,8 +826,8 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     openModal({
       kind: 'input',
       title: t('sidebar.addSubmodule'),
-      label: 'URL · path (e.g. https://… vendor/lib)',
-      placeholder: 'https://github.com/org/repo.git  vendor/lib',
+      label: t('sidebar.addSubmoduleLabel'),
+      placeholder: t('sidebar.addSubmodulePlaceholder'),
       submitLabel: t('common.add'),
       onSubmit: (value) => {
         const parts = value.trim().split(/\s+/)
@@ -845,10 +845,11 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       title: isDir ? 'New folder' : 'New file',
       label: 'At repository root',
       placeholder: isDir ? 'components' : 'index.ts',
-      submitLabel: 'Create',
+      submitLabel: t('common.create'),
       onSubmit: (name) => {
         const clean = name.trim().replace(/^\/+|\/+$/g, '')
-        if (clean) void repoActions.fsCreate(path, clean, isDir)
+        if (!clean) return
+        void repoActions.fsCreate(path, clean, isDir)
       }
     })
 
@@ -1187,7 +1188,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
           <>
             <span
               className="icon-btn"
-              title="Create pull request"
+              title={t('sidebar.createPRFromBranch')}
               onClick={(e) => {
                 e.stopPropagation()
                 openModal({ kind: 'create-pr', repoPath: path })
@@ -1457,11 +1458,11 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
               >
                 <Rocket size={11} className="sb-release-icon" />
                 <span className="sb-name">{label}</span>
-                {rel.draft && <span className="badge release-draft">draft</span>}
-                {rel.prerelease && <span className="badge release-pre">pre</span>}
+                {rel.draft && <span className="badge release-draft">{t('sidebar.draftBadge')}</span>}
+                {rel.prerelease && <span className="badge release-pre">{t('sidebar.preBadge')}</span>}
                 <span
                   className="icon-btn"
-                  title="Open on web"
+                  title={t('sidebar.openOnWeb')}
                   onClick={(e) => {
                     e.stopPropagation()
                     void shellApi.openExternal(rel.url)
@@ -1686,10 +1687,10 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
           <div className="sb-files-toolbar">
             <span className="sb-files-label" title={repo.path}>{repo.name}</span>
             <span className="sb-files-actions">
-              <span className="icon-btn" title="New file at root" onClick={() => promptCreateRoot(false)}>
+              <span className="icon-btn" title={t('sidebar.newFilesRoot')} onClick={() => promptCreateRoot(false)}>
                 <FilePlus size={13} />
               </span>
-              <span className="icon-btn" title="New folder at root" onClick={() => promptCreateRoot(true)}>
+              <span className="icon-btn" title={t('sidebar.newFolderRoot')} onClick={() => promptCreateRoot(true)}>
                 <FolderPlus size={13} />
               </span>
             </span>

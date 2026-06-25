@@ -6,6 +6,7 @@ import { useUIStore } from '../stores/ui'
 import { FileListView } from './FileListView'
 import { ViewToggle } from './CommitComposer'
 import { repoActions, type RepoData } from '../stores/repo'
+import { useT, interp } from '../i18n'
 
 export function StashDetails({ repo, sha }: { repo: RepoData; sha: string }): React.JSX.Element {
   const [files, setFiles] = useState<FileEntry[]>([])
@@ -15,6 +16,7 @@ export function StashDetails({ repo, sha }: { repo: RepoData; sha: string }): Re
   const setFileView = useUIStore((s) => s.setFileView)
   const openModal = useUIStore((s) => s.openModal)
   const stash: StashInfo | undefined = repo.stashes.find((s) => s.sha === sha)
+  const t = useT()
 
   useEffect(() => {
     setFiles([])
@@ -31,7 +33,7 @@ export function StashDetails({ repo, sha }: { repo: RepoData; sha: string }): Re
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [repo.path, sha])
 
-  if (!stash) return <div className="panel-empty">Stash no longer exists</div>
+  if (!stash) return <div className="panel-empty">{t('stashPanel.noLongerExists')}</div>
 
   const currentFile =
     fileView && fileView.repoPath === repo.path && fileView.source.type === 'stash' && fileView.source.sha === sha
@@ -88,14 +90,14 @@ export function StashDetails({ repo, sha }: { repo: RepoData; sha: string }): Re
               {stash.message}
               <span
                 className="icon-btn stash-rename-btn"
-                title="Rename stash"
+                title={t('stashPanel.renameTitle')}
                 onClick={() =>
                   openModal({
                     kind: 'input',
-                    title: 'Rename stash',
-                    label: 'New stash message',
+                    title: t('stashPanel.renameTitle'),
+                    label: t('stashPanel.renameLabel'),
                     initial: stash.message,
-                    submitLabel: 'Rename',
+                    submitLabel: t('stashPanel.renameSubmit'),
                     onSubmit: (message) => {
                       const m = message.trim()
                       if (m && m !== stash.message) void repoActions.renameStash(repo.path, stash.index, m)
@@ -114,39 +116,39 @@ export function StashDetails({ repo, sha }: { repo: RepoData; sha: string }): Re
 
         <div className="stash-actions">
           <button className="btn" onClick={() => void repoActions.stashApply(repo.path, stash.index)}>
-            Apply
+            {t('stashPanel.apply')}
           </button>
           <button className="btn" onClick={() => void repoActions.stashPop(repo.path, stash.index)}>
-            Pop
+            {t('stashPanel.pop')}
           </button>
           <button
             className="btn danger"
             onClick={() =>
               openModal({
                 kind: 'confirm',
-                title: 'Drop stash',
-                message: `Drop "${stash.message}"? This cannot be undone.`,
+                title: t('stashPanel.dropTitle'),
+                message: interp(t('stashPanel.dropMsg'), { message: stash.message }),
                 danger: true,
-                confirmLabel: 'Drop',
+                confirmLabel: t('stashPanel.dropConfirm'),
                 onConfirm: () => void repoActions.stashDrop(repo.path, stash.index)
               })
             }
           >
-            Drop
+            {t('stashPanel.drop')}
           </button>
         </div>
 
         <div className="panel-toolbar">
           <span className="panel-title">
-            {files.length} changed file{files.length === 1 ? '' : 's'}
+            {interp(files.length === 1 ? t('stashPanel.changedFile') : t('stashPanel.changedFiles'), { n: files.length })}
           </span>
           {selected.size > 0 && (
             <button
               className="btn ghost tiny"
-              title="Restore only the selected files into the working tree (stash is kept)"
+              title={t('stashPanel.applySelectedTitle')}
               onClick={() => restoreFiles(files.filter((f) => selected.has(f.path)))}
             >
-              Apply selected ({selected.size})
+              {interp(t('stashPanel.applySelected'), { n: selected.size })}
             </button>
           )}
           <ViewToggle />
@@ -161,12 +163,12 @@ export function StashDetails({ repo, sha }: { repo: RepoData; sha: string }): Re
             const targets = targetsFor(f)
             useUIStore.getState().openContextMenu(e.clientX, e.clientY, [
               {
-                label: `Apply ${targets.length > 1 ? `${targets.length} files` : 'this file'} to working tree`,
+                label: interp(t('stashPanel.applyFile'), { files: targets.length > 1 ? `${targets.length} files` : 'this file' }),
                 onClick: () => restoreFiles(targets)
               },
               { separator: true },
               { label: shellApi.revealLabel, onClick: () => void shellApi.revealInFolder(`${repo.path}/${f.path}`) },
-              { label: 'Open with default app', onClick: () => void shellApi.openPath(`${repo.path}/${f.path}`) }
+              { label: t('stashPanel.openDefaultApp'), onClick: () => void shellApi.openPath(`${repo.path}/${f.path}`) }
             ])
           }}
         />

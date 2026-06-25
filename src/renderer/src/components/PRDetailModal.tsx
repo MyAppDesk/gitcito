@@ -14,6 +14,7 @@ import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { useRepoStore } from '../stores/repo'
 import { autolink, remoteWebUrl } from '../lib/autolink'
+import { useT, interp } from '../i18n'
 
 export function PRDetailModal({
   repoPath,
@@ -24,6 +25,7 @@ export function PRDetailModal({
   remoteUrl: string
   number: number
 }): React.JSX.Element {
+  const t = useT()
   const closeModal = useUIStore((s) => s.closeModal)
   const toast = useUIStore((s) => s.toast)
   const profile = useSettingsStore((s) => s.activeProfile())
@@ -91,11 +93,11 @@ export function PRDetailModal({
 
   const submitComment = (): void => {
     if (!comment.trim()) return
-    void act(() => hostingApi.prComment(remoteUrl, tokens, number, comment.trim()).then(() => setComment('')), 'Comment posted')
+    void act(() => hostingApi.prComment(remoteUrl, tokens, number, comment.trim()).then(() => setComment('')), t('prDetail.commentPosted'))
   }
   const review = (event: PrReviewEvent): void =>
-    void act(() => hostingApi.prReview(remoteUrl, tokens, number, event, comment.trim()).then(() => setComment('')), `Review submitted`)
-  const merge = (): void => void act(() => hostingApi.prMerge(remoteUrl, tokens, number, mergeMethod), 'Pull request merged')
+    void act(() => hostingApi.prReview(remoteUrl, tokens, number, event, comment.trim()).then(() => setComment('')), t('prDetail.reviewSubmitted'))
+  const merge = (): void => void act(() => hostingApi.prMerge(remoteUrl, tokens, number, mergeMethod), t('prDetail.prMerged'))
 
   const replyToThread = (rootId: number): void => {
     const body = (replies[rootId] ?? '').trim()
@@ -105,7 +107,7 @@ export function PRDetailModal({
         hostingApi
           .prReplyReviewComment(remoteUrl, tokens, number, rootId, body)
           .then(() => setReplies((r) => ({ ...r, [rootId]: '' }))),
-      'Reply posted'
+      t('prDetail.replyPosted')
     )
   }
 
@@ -117,12 +119,12 @@ export function PRDetailModal({
     <>
       <h3>
         <GitPullRequest size={16} style={{ verticalAlign: '-3px', marginRight: 6 }} />
-        {loading ? `Pull request #${number}` : `#${number} ${pr?.title ?? ''}`}
+        {loading ? interp(t('prDetail.heading'), { n: number }) : `#${number} ${pr?.title ?? ''}`}
       </h3>
 
       {loading ? (
         <div className="prd-empty">
-          <Loader2 size={15} className="spin" /> Loading…
+          <Loader2 size={15} className="spin" /> {t('prDetail.loading')}
         </div>
       ) : error ? (
         <div className="prd-error">{error}</div>
@@ -130,7 +132,7 @@ export function PRDetailModal({
         <>
           <div className="prd-meta">
             <span className={`prd-state prd-${pr.merged ? 'merged' : pr.state}`}>
-              {pr.merged ? 'Merged' : pr.draft ? 'Draft' : pr.state}
+              {pr.merged ? t('prDetail.merged') : pr.draft ? t('prDetail.draft') : pr.state}
             </span>
             <span className="prd-branches">
               <code>{pr.source}</code> → <code>{pr.target}</code>
@@ -145,12 +147,12 @@ export function PRDetailModal({
             <div className="prd-review-summary">
               {approvals > 0 && (
                 <span className="prd-approved">
-                  <Check size={12} /> {approvals} approval{approvals === 1 ? '' : 's'}
+                  <Check size={12} /> {approvals === 1 ? interp(t('prDetail.approvals'), { n: approvals }) : interp(t('prDetail.approvalsPlural'), { n: approvals })}
                 </span>
               )}
               {changesReq > 0 && (
                 <span className="prd-changes">
-                  <X size={12} /> {changesReq} change request{changesReq === 1 ? '' : 's'}
+                  <X size={12} /> {changesReq === 1 ? interp(t('prDetail.changeRequests'), { n: changesReq }) : interp(t('prDetail.changeRequestsPlural'), { n: changesReq })}
                 </span>
               )}
             </div>
@@ -159,7 +161,7 @@ export function PRDetailModal({
           {checks.length > 0 && (
             <>
               <div className="prd-section-title">
-                Checks <span className="prd-count">{checks.length}</span>
+                {t('prDetail.checks')} <span className="prd-count">{checks.length}</span>
               </div>
               <div className="prd-checks">
                 {checks.map((c, i) => {
@@ -186,7 +188,7 @@ export function PRDetailModal({
           {files.length > 0 && (
             <>
               <div className="prd-section-title">
-                Files <span className="prd-count">{viewed.size}/{files.length} viewed</span>
+                {interp(t('prDetail.filesViewed'), { n: `${viewed.size}/${files.length}` })}
               </div>
               <div className="prd-files">
                 {files.map((f) => (
@@ -206,10 +208,10 @@ export function PRDetailModal({
           )}
 
           <div className="prd-section-title">
-            Conversation {pr.comments.length > 0 && <span className="prd-count">{pr.comments.length}</span>}
+            {t('prDetail.conversation')} {pr.comments.length > 0 && <span className="prd-count">{pr.comments.length}</span>}
           </div>
           <div className="prd-comments">
-            {pr.comments.length === 0 && <div className="prd-no-comments">No comments yet.</div>}
+            {pr.comments.length === 0 && <div className="prd-no-comments">{t('prDetail.noComments')}</div>}
             {pr.comments.map((c, i) => (
               <div key={i} className="prd-comment">
                 <div className="prd-comment-head">
@@ -224,7 +226,7 @@ export function PRDetailModal({
           {(pr.reviewThreads?.length ?? 0) > 0 && (
             <>
               <div className="prd-section-title">
-                Review threads <span className="prd-count">{pr.reviewThreads.length}</span>
+                {t('prDetail.reviewThreads')} <span className="prd-count">{pr.reviewThreads.length}</span>
               </div>
               <div className="prd-threads">
                 {pr.reviewThreads.map((th) => (
@@ -250,7 +252,7 @@ export function PRDetailModal({
                     <div className="prd-thread-reply">
                       <input
                         className="prd-reply-input"
-                        placeholder="Reply…"
+                        placeholder={t('prDetail.replyPlaceholder')}
                         value={replies[th.rootId] ?? ''}
                         onChange={(e) => setReplies((r) => ({ ...r, [th.rootId]: e.target.value }))}
                         onKeyDown={(e) => {
@@ -262,7 +264,7 @@ export function PRDetailModal({
                         onClick={() => replyToThread(th.rootId)}
                         disabled={busy || !(replies[th.rootId] ?? '').trim()}
                       >
-                        Reply
+                        {t('prDetail.reply')}
                       </button>
                     </div>
                   </div>
@@ -273,39 +275,39 @@ export function PRDetailModal({
 
           <textarea
             className="prd-input"
-            placeholder="Leave a comment…"
+            placeholder={t('prDetail.commentPlaceholder')}
             value={comment}
             onChange={(e) => setComment(e.target.value)}
           />
 
           <div className="modal-actions prd-actions">
             <button className="btn ghost small" onClick={submitComment} disabled={busy || !comment.trim()}>
-              <MessageSquare size={13} /> Comment
+              <MessageSquare size={13} /> {t('prDetail.comment')}
             </button>
             <button className="btn ghost small prd-approve" onClick={() => review('APPROVE')} disabled={busy}>
-              <Check size={13} /> Approve
+              <Check size={13} /> {t('prDetail.approve')}
             </button>
             <button className="btn ghost small prd-reject" onClick={() => review('REQUEST_CHANGES')} disabled={busy}>
-              <X size={13} /> Request changes
+              <X size={13} /> {t('prDetail.requestChanges')}
             </button>
             <span className="pr-actions-spacer" />
             {canMerge && (
               <span className="prd-merge">
                 <select value={mergeMethod} onChange={(e) => setMergeMethod(e.target.value as PrMergeMethod)}>
-                  <option value="merge">Merge commit</option>
-                  <option value="squash">Squash</option>
-                  <option value="rebase">Rebase</option>
+                  <option value="merge">{t('prDetail.mergeCommit')}</option>
+                  <option value="squash">{t('prDetail.squash')}</option>
+                  <option value="rebase">{t('prDetail.rebase')}</option>
                 </select>
                 <button className="btn primary small" onClick={merge} disabled={busy || pr.mergeable === false}>
-                  {busy ? <Loader2 size={13} className="spin" /> : <GitMerge size={13} />} Merge
+                  {busy ? <Loader2 size={13} className="spin" /> : <GitMerge size={13} />} {t('prDetail.merge')}
                 </button>
               </span>
             )}
             <button className="btn ghost" onClick={closeModal} disabled={busy}>
-              Close
+              {t('common.close')}
             </button>
           </div>
-          {canMerge && pr.mergeable === false && <p className="prd-warn">GitHub reports this PR is not mergeable (conflicts).</p>}
+          {canMerge && pr.mergeable === false && <p className="prd-warn">{t('prDetail.notMergeable')}</p>}
         </>
       ) : null}
     </>

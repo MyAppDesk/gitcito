@@ -4,6 +4,7 @@ import { gitApi, hostingApi, aiApi } from '../infrastructure/api'
 import { useUIStore, type ModalSpec } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { useRepoStore } from '../stores/repo'
+import { useT, interp } from '../i18n'
 
 /** Best guess at the base branch when none is supplied — never the source itself. */
 function guessTarget(branches: string[], source: string): string {
@@ -36,6 +37,7 @@ export function CreatePRModal({ spec }: { spec: Extract<ModalSpec, { kind: 'crea
   const [labels, setLabels] = useState('')
   const [assignees, setAssignees] = useState('')
   const aiEnabled = profile.ai?.enabled !== false
+  const t = useT()
 
   // Draft the PR title + body from the branch's commits + diff via AI.
   const aiDraft = async (): Promise<void> => {
@@ -110,7 +112,7 @@ export function CreatePRModal({ spec }: { spec: Extract<ModalSpec, { kind: 'crea
           .catch(() => {})
       }
       closeModal()
-      toast('success', `Created PR #${res.number}`)
+      toast('success', interp(t('createPR.created'), { n: res.number }))
       void window.api.openExternal(res.url)
     } catch (err) {
       toast('error', err instanceof Error ? err.message : String(err))
@@ -127,12 +129,12 @@ export function CreatePRModal({ spec }: { spec: Extract<ModalSpec, { kind: 'crea
     <>
       <h3>
         <GitPullRequest size={16} style={{ verticalAlign: '-3px', marginRight: 6 }} />
-        Create pull request
+        {t('createPR.title')}
       </h3>
 
       <div className="pr-branch-pick">
         <label className="pr-branch-field">
-          <span>From</span>
+          <span>{t('createPR.from')}</span>
           <select value={source} onChange={(e) => setSource(e.target.value)}>
             {locals.map((b) => (
               <option key={b} value={b}>
@@ -143,7 +145,7 @@ export function CreatePRModal({ spec }: { spec: Extract<ModalSpec, { kind: 'crea
         </label>
         <ArrowRight size={14} className="pr-branch-arrow" />
         <label className="pr-branch-field">
-          <span>Into</span>
+          <span>{t('createPR.into')}</span>
           <select value={target} onChange={(e) => setTarget(e.target.value)}>
             {locals.map((b) => (
               <option key={b} value={b}>
@@ -153,10 +155,10 @@ export function CreatePRModal({ spec }: { spec: Extract<ModalSpec, { kind: 'crea
           </select>
         </label>
       </div>
-      {source === target && <p className="pr-warn">Pick two different branches.</p>}
-      {!remoteUrl && <p className="pr-warn">No remote configured — add an origin to create a PR.</p>}
+      {source === target && <p className="pr-warn">{t('createPR.differentBranches')}</p>}
+      {!remoteUrl && <p className="pr-warn">{t('createPR.noRemote')}</p>}
 
-      <label className="modal-label">Title</label>
+      <label className="modal-label">{t('createPR.titleLabel')}</label>
       <input
         autoFocus
         className="modal-input"
@@ -165,19 +167,19 @@ export function CreatePRModal({ spec }: { spec: Extract<ModalSpec, { kind: 'crea
           titleTouched.current = true
           setTitle(e.target.value)
         }}
-        placeholder="Pull request title"
+        placeholder={t('createPR.titlePlaceholder')}
       />
 
       <div className="pr-desc-label">
-        <label className="modal-label">Description</label>
+        <label className="modal-label">{t('createPR.descriptionLabel')}</label>
         {aiEnabled && (
           <button
             className="btn ghost small"
             onClick={() => void aiDraft()}
             disabled={aiBusy || !remoteUrl || source === target}
-            title="Draft title & description from the branch's commits with AI"
+            title={t('createPR.aiDraftTitle')}
           >
-            {aiBusy ? <Loader2 size={13} className="spin" /> : <Sparkles size={13} />} AI draft
+            {aiBusy ? <Loader2 size={13} className="spin" /> : <Sparkles size={13} />} {t('createPR.aiDraft')}
           </button>
         )}
       </div>
@@ -188,22 +190,22 @@ export function CreatePRModal({ spec }: { spec: Extract<ModalSpec, { kind: 'crea
           bodyTouched.current = true
           setBody(e.target.value)
         }}
-        placeholder="Describe the change…"
+        placeholder={t('createPR.descriptionPlaceholder')}
         spellCheck
       />
 
       {isGitHub && (
         <div className="pr-meta">
-          <label className="modal-label">Reviewers</label>
-          <input className="modal-input" value={reviewers} onChange={(e) => setReviewers(e.target.value)} placeholder="octocat, hubot (comma-separated logins)" />
+          <label className="modal-label">{t('createPR.reviewersLabel')}</label>
+          <input className="modal-input" value={reviewers} onChange={(e) => setReviewers(e.target.value)} placeholder={t('createPR.reviewersPlaceholder')} />
           <div className="form-row two">
             <label>
-              Labels
-              <input className="modal-input" value={labels} onChange={(e) => setLabels(e.target.value)} placeholder="bug, enhancement" />
+              {t('createPR.labelsLabel')}
+              <input className="modal-input" value={labels} onChange={(e) => setLabels(e.target.value)} placeholder={t('createPR.labelsPlaceholder')} />
             </label>
             <label>
-              Assignees
-              <input className="modal-input" value={assignees} onChange={(e) => setAssignees(e.target.value)} placeholder="octocat" />
+              {t('createPR.assigneesLabel')}
+              <input className="modal-input" value={assignees} onChange={(e) => setAssignees(e.target.value)} placeholder={t('createPR.assigneesPlaceholder')} />
             </label>
           </div>
         </div>
@@ -211,7 +213,7 @@ export function CreatePRModal({ spec }: { spec: Extract<ModalSpec, { kind: 'crea
 
       <label className="pr-draft">
         <input type="checkbox" checked={draft} onChange={(e) => setDraft(e.target.checked)} />
-        <span>Create as draft</span>
+        <span>{t('createPR.createDraft')}</span>
       </label>
 
       <div className="modal-actions pr-actions">
@@ -219,16 +221,16 @@ export function CreatePRModal({ spec }: { spec: Extract<ModalSpec, { kind: 'crea
           className="btn ghost small"
           onClick={openInBrowser}
           disabled={busy || !remoteUrl || source === target}
-          title="Open the host's compare page instead"
+          title={t('createPR.openBrowserTitle')}
         >
-          <ExternalLink size={13} /> Open in browser
+          <ExternalLink size={13} /> {t('createPR.openBrowser')}
         </button>
         <span className="pr-actions-spacer" />
         <button className="btn ghost" onClick={closeModal} disabled={busy}>
-          Cancel
+          {t('bisect.cancel')}
         </button>
         <button className="btn primary" onClick={() => void submit()} disabled={!valid}>
-          {busy ? <Loader2 size={13} className="spin" /> : null} Create PR
+          {busy ? <Loader2 size={13} className="spin" /> : null} {t('createPR.createButton')}
         </button>
       </div>
     </>

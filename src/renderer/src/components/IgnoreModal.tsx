@@ -2,10 +2,12 @@ import { useState } from 'react'
 import { EyeOff } from 'lucide-react'
 import { useUIStore, type ModalSpec } from '../stores/ui'
 import { repoActions } from '../stores/repo'
+import { useT, interp } from '../i18n'
 
 export function IgnoreModal({ spec }: { spec: Extract<ModalSpec, { kind: 'ignore' }> }): React.JSX.Element {
   const closeModal = useUIStore((s) => s.closeModal)
   const { repoPath, targetPath, isFolder } = spec
+  const t = useT()
 
   const slash = targetPath.lastIndexOf('/')
   const parent = slash >= 0 ? targetPath.slice(0, slash) : ''
@@ -17,13 +19,13 @@ export function IgnoreModal({ spec }: { spec: Extract<ModalSpec, { kind: 'ignore
   type TypeOpt = { v: string; label: string }
   const typeOptions: TypeOpt[] = isFolder
     ? [
-        { v: 'folder', label: 'This folder' },
-        { v: 'name', label: `Any folder named “${base}”` }
+        { v: 'folder', label: t('ignore.thisFolder') },
+        { v: 'name', label: interp(t('ignore.anyFolderNamed'), { name: base }) }
       ]
     : [
-        { v: 'exact', label: 'This exact file' },
-        ...(ext ? [{ v: 'ext', label: `All *.${ext} files` }] : []),
-        { v: 'name', label: `Any file named “${base}”` }
+        { v: 'exact', label: t('ignore.thisFile') },
+        ...(ext ? [{ v: 'ext', label: interp(t('ignore.allExt'), { ext }) }] : []),
+        { v: 'name', label: interp(t('ignore.anyFileNamed'), { name: base }) }
       ]
 
   const [type, setType] = useState(typeOptions[0].v)
@@ -55,21 +57,21 @@ export function IgnoreModal({ spec }: { spec: Extract<ModalSpec, { kind: 'ignore
 
   const applyLabel = stopTracking
     ? deleteDisk
-      ? 'Ignore & delete'
-      : 'Ignore & stop tracking'
-    : 'Add to .gitignore'
+      ? t('ignore.ignoreAndDelete')
+      : t('ignore.ignoreAndUntrack')
+    : t('ignore.addToGitignore')
 
   return (
     <>
       <h3>
         <EyeOff size={16} style={{ verticalAlign: '-3px', marginRight: 6 }} />
-        Ignore {isFolder ? 'folder' : 'file'}
+        {isFolder ? t('ignore.ignoreFolder') : t('ignore.ignoreFile')}
       </h3>
       <p className="ig-target" title={targetPath}>
         {targetPath}
       </p>
 
-      <div className="ig-group-label">What to ignore</div>
+      <div className="ig-group-label">{t('ignore.whatToIgnore')}</div>
       <div className="ig-options">
         {typeOptions.map((o) => (
           <label key={o.v} className="ig-radio">
@@ -81,7 +83,7 @@ export function IgnoreModal({ spec }: { spec: Extract<ModalSpec, { kind: 'ignore
 
       {canLocation && (
         <>
-          <div className="ig-group-label">Which .gitignore</div>
+          <div className="ig-group-label">{t('ignore.whichGitignore')}</div>
           <div className="ig-options">
             <label className="ig-radio">
               <input
@@ -91,23 +93,23 @@ export function IgnoreModal({ spec }: { spec: Extract<ModalSpec, { kind: 'ignore
                 onChange={() => setLocation('closest')}
               />
               <span>
-                Closest folder <code>{parent}/.gitignore</code>
+                {interp(t('ignore.closestFolder'), { path: parent })}
               </span>
             </label>
             <label className="ig-radio">
               <input type="radio" name="ig-loc" checked={location === 'root'} onChange={() => setLocation('root')} />
-              <span>Repo root</span>
+              <span>{t('ignore.repoRoot')}</span>
             </label>
           </div>
         </>
       )}
 
       <div className="ig-preview">
-        <span className="ig-preview-label">Adds to {targetLabel}:</span>
+        <span className="ig-preview-label">{interp(t('ignore.addsTo'), { target: targetLabel })}</span>
         <code>{line}</code>
       </div>
 
-      <div className="ig-group-label">Also</div>
+      <div className="ig-group-label">{t('ignore.also')}</div>
       <div className="ig-options">
         <label className="ig-check">
           <input
@@ -118,7 +120,7 @@ export function IgnoreModal({ spec }: { spec: Extract<ModalSpec, { kind: 'ignore
               if (!e.target.checked) setDeleteDisk(false)
             }}
           />
-          <span>Stop tracking in Git (removes from the repo on next commit)</span>
+          <span>{t('ignore.stopTracking')}</span>
         </label>
         <label className={`ig-check${stopTracking ? '' : ' disabled'}`}>
           <input
@@ -127,13 +129,13 @@ export function IgnoreModal({ spec }: { spec: Extract<ModalSpec, { kind: 'ignore
             checked={deleteDisk}
             onChange={(e) => setDeleteDisk(e.target.checked)}
           />
-          <span>Also delete from disk</span>
+          <span>{t('ignore.deleteFromDisk')}</span>
         </label>
       </div>
 
       <div className="modal-actions">
         <button className="btn ghost" onClick={closeModal}>
-          Cancel
+          {t('bisect.cancel')}
         </button>
         <button className={`btn ${deleteDisk ? 'danger' : 'primary'}`} onClick={apply}>
           {applyLabel}

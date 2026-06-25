@@ -36,6 +36,7 @@ import type { MenuItem } from '../stores/ui'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
+import { useT, interp } from '../i18n'
 
 /** Short human-readable "time since" label, e.g. "now", "3m ago", "2h ago". */
 function timeSince(at: number | null): string {
@@ -49,6 +50,7 @@ function timeSince(at: number | null): string {
 }
 
 export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
+  const t = useT()
   const { undo, redo } = useRepoStore()
   const { openContextMenu, openModal, toggleTerminal, terminalOpen, graphFilter, setGraphFilter, busy } = useUIStore()
   const busyOp = useUIStore((s) => s.busyOp)
@@ -70,11 +72,11 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
     e.stopPropagation()
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
     openContextMenu(rect.left, rect.bottom + 6, [
-      { label: 'Pull (default)', onClick: () => void repoActions.pull(path, 'default') },
-      { label: 'Pull — fast-forward only', onClick: () => void repoActions.pull(path, 'ff-only') },
-      { label: 'Pull — rebase', onClick: () => void repoActions.pull(path, 'rebase') },
+      { label: t('pull.default'), onClick: () => void repoActions.pull(path, 'default') },
+      { label: t('pull.ffOnly'), onClick: () => void repoActions.pull(path, 'ff-only') },
+      { label: t('pull.rebase'), onClick: () => void repoActions.pull(path, 'rebase') },
       { separator: true },
-      { label: 'Fetch all & prune', onClick: () => void repoActions.fetchAll(path) }
+      { label: t('pull.fetchPrune'), onClick: () => void repoActions.fetchAll(path) }
     ])
   }
 
@@ -82,9 +84,9 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
     e.stopPropagation()
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
     openContextMenu(rect.left, rect.bottom + 6, [
-      { label: 'Push', onClick: () => void repoActions.push(path) },
+      { label: t('toolbar.push'), onClick: () => void repoActions.push(path) },
       {
-        label: 'Force push (with lease)',
+        label: t('push.force'),
         danger: true,
         onClick: () => {
           if (!confirmForcePush) {
@@ -93,10 +95,10 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
           }
           openModal({
             kind: 'confirm',
-            title: 'Force push',
-            message: `Force push ${repo.branches.current} to its remote? This rewrites remote history.`,
+            title: t('push.forceTitle'),
+            message: interp(t('push.forceMsg'), { branch: repo.branches.current }),
             danger: true,
-            confirmLabel: 'Force push',
+            confirmLabel: t('push.forceConfirm'),
             onConfirm: () => void repoActions.push(path, true)
           })
         }
@@ -113,13 +115,13 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
       })
     }
     openContextMenu(rect.left, rect.bottom + 6, [
-      { label: 'Reflog — recover lost commits', icon: <History size={15} />, onClick: () => openModal({ kind: 'reflog', repoPath: path }) },
-      { label: 'WIP snapshots — safety net', icon: <Camera size={15} />, onClick: () => openModal({ kind: 'snapshots', repoPath: path }) },
-      { label: 'Vault — global encrypted secrets', icon: <KeyRound size={15} />, onClick: () => useSettingsStore.getState().openPageTab({ type: 'vault' }) },
-      { label: 'Bisect — find a bad commit', icon: <Bug size={15} />, onClick: () => openModal({ kind: 'bisect', repoPath: path }) },
+      { label: t('tools.reflog'), icon: <History size={15} />, onClick: () => openModal({ kind: 'reflog', repoPath: path }) },
+      { label: t('tools.snapshots'), icon: <Camera size={15} />, onClick: () => openModal({ kind: 'snapshots', repoPath: path }) },
+      { label: t('tools.vault'), icon: <KeyRound size={15} />, onClick: () => useSettingsStore.getState().openPageTab({ type: 'vault' }) },
+      { label: t('tools.bisect'), icon: <Bug size={15} />, onClick: () => openModal({ kind: 'bisect', repoPath: path }) },
       { separator: true },
       {
-        label: 'Compare refs…',
+        label: t('tools.compareRefs'),
         icon: <ArrowLeftRight size={15} />,
         onClick: () => {
           const cur = repo.branches.current || 'HEAD'
@@ -130,14 +132,14 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
           openModal({ kind: 'branch-compare', repoPath: path, branchA: cur, branchB: base })
         }
       },
-      { label: 'Branch stack…', icon: <Layers size={15} />, onClick: () => openModal({ kind: 'stack', repoPath: path }) },
-      { label: 'Git hooks…', icon: <Webhook size={15} />, onClick: () => openModal({ kind: 'hooks', repoPath: path }) },
-      { label: 'Git LFS…', icon: <Boxes size={15} />, onClick: () => openModal({ kind: 'lfs', repoPath: path }) },
-      { label: 'Sparse-checkout…', icon: <FolderTree size={15} />, onClick: () => openModal({ kind: 'sparse', repoPath: path }) },
+      { label: t('tools.stack'), icon: <Layers size={15} />, onClick: () => openModal({ kind: 'stack', repoPath: path }) },
+      { label: t('tools.hooks'), icon: <Webhook size={15} />, onClick: () => openModal({ kind: 'hooks', repoPath: path }) },
+      { label: t('tools.lfs'), icon: <Boxes size={15} />, onClick: () => openModal({ kind: 'lfs', repoPath: path }) },
+      { label: t('tools.sparse'), icon: <FolderTree size={15} />, onClick: () => openModal({ kind: 'sparse', repoPath: path }) },
       { separator: true },
-      { label: 'Generate changelog…', icon: <FileText size={15} />, onClick: () => openModal({ kind: 'changelog-gen', repoPath: path }) },
-      { label: 'Apply patch to working tree…', icon: <FileDiff size={15} />, onClick: () => applyPatchFile(false) },
-      { label: 'Apply patch & commit (git am)…', icon: <GitCommit size={15} />, onClick: () => applyPatchFile(true) }
+      { label: t('tools.changelog'), icon: <FileText size={15} />, onClick: () => openModal({ kind: 'changelog-gen', repoPath: path }) },
+      { label: t('tools.applyPatch'), icon: <FileDiff size={15} />, onClick: () => applyPatchFile(false) },
+      { label: t('tools.applyPatchAm'), icon: <GitCommit size={15} />, onClick: () => applyPatchFile(true) }
     ])
   }
 
@@ -161,7 +163,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
     }
     items.push(
       { separator: true },
-      { label: 'Open repository…', icon: <FolderGit2 size={15} />, onClick: () => openModal({ kind: 'launcher' }) }
+      { label: t('tools.openRepo'), icon: <FolderGit2 size={15} />, onClick: () => openModal({ kind: 'launcher' }) }
     )
     openContextMenu(rect.left, rect.bottom + 6, items)
   }
@@ -179,7 +181,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
     items.push(
       { separator: true },
       {
-        label: 'New branch…',
+        label: t('tools.newBranch'),
         icon: <GitBranchPlus size={15} />,
         onClick: () => openModal({ kind: 'create-branch', path, currentBranch: repo.branches.current })
       }
@@ -190,19 +192,19 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
   return (
     <div className="toolbar">
       <div className="toolbar-left">
-        <button className="repo-pill" onClick={repoMenu} title="Switch repository">
+        <button className="repo-pill" onClick={repoMenu} title={t('toolbar.switchRepo')}>
           <span className="repo-pill-stack">
-            <span className="repo-pill-label">repository</span>
+            <span className="repo-pill-label">{t('toolbar.repository')}</span>
             <strong>{repo.name}</strong>
           </span>
           <ChevronDown size={13} />
         </button>
         <ChevronRight size={14} className="repo-pill-arrow" />
-        <button className="repo-pill" onClick={branchMenu} title="Switch branch">
+        <button className="repo-pill" onClick={branchMenu} title={t('toolbar.switchBranch')}>
           <span className="repo-pill-stack">
             <span className="repo-pill-label">branch</span>
             <strong>
-              <GitBranch size={12} /> {repo.branches.current || 'no branch'}
+              <GitBranch size={12} /> {repo.branches.current || t('toolbar.noBranch')}
             </strong>
           </span>
           <ChevronDown size={13} />
@@ -213,12 +215,12 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
       <div className="toolbar-group">
         <button
           className="tool-btn"
-          title="Undo last operation"
+          title={t('toolbar.undoTitle')}
           disabled={repo.undoStack.length === 0}
           onClick={() => void undo(path)}
         >
           <Undo2 size={17} />
-          <span>Undo</span>
+          <span>{t('toolbar.undo')}</span>
         </button>
         <button
           className="tool-btn"
@@ -227,35 +229,35 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
           onClick={() => void redo(path)}
         >
           <Redo2 size={17} />
-          <span>Redo</span>
+          <span>{t('toolbar.redo')}</span>
         </button>
       </div>
 
       <div className="toolbar-sep" />
 
       <div className="toolbar-group">
-        <button className="tool-btn split" onClick={() => void repoActions.pull(path, 'default')} title="Pull">
+        <button className="tool-btn split" onClick={() => void repoActions.pull(path, 'default')} title={t('toolbar.pull')}>
           {busyOp === 'pull' || busyOp === 'fetch' ? (
             <Loader2 size={17} className="spin" />
           ) : (
             <ArrowDownToLine size={17} />
           )}
           <span>
-            Pull
+            {t('toolbar.pull')}
             {current && current.behind > 0 && <em className="count-pill">{current.behind}</em>}
           </span>
           <span className="split-arrow" onClick={pullMenu}>
             <ChevronDown size={13} />
           </span>
         </button>
-        <button className="tool-btn split" onClick={() => void repoActions.push(path)} title="Push">
+        <button className="tool-btn split" onClick={() => void repoActions.push(path)} title={t('toolbar.push')}>
           {busyOp === 'push' ? (
             <Loader2 size={17} className="spin" />
           ) : (
             <ArrowUpFromLine size={17} />
           )}
           <span>
-            Push
+            {t('toolbar.push')}
             {current && current.ahead > 0 && <em className="count-pill">{current.ahead}</em>}
           </span>
           <span className="split-arrow" onClick={pushMenu}>
@@ -264,11 +266,11 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
         </button>
         <button
           className="tool-btn"
-          title="Create branch at HEAD"
+          title={t('toolbar.branchTitle')}
           onClick={() => openModal({ kind: 'create-branch', path, currentBranch: repo.branches.current })}
         >
           <GitBranchPlus size={17} />
-          <span>Branch</span>
+          <span>{t('toolbar.branch')}</span>
         </button>
         <button
           className="tool-btn split"
@@ -276,39 +278,37 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
           onClick={() =>
             openModal({
               kind: 'input',
-              title: 'Stash changes',
-              label: 'Stash message (optional)',
-              placeholder: 'WIP on login form',
+              title: t('stash.title'),
+              label: t('stash.msgLabel'),
+              placeholder: t('stash.msgPlaceholder'),
               allowEmpty: true,
-              submitLabel: 'Stash',
+              submitLabel: t('stash.submit'),
               onSubmit: (msg) => void repoActions.stash(path, msg.trim() || undefined)
             })
           }
         >
           <Archive size={17} />
           <span>Stash</span>
-          <span
-            className="split-arrow"
-            onClick={(e) => {
+          <span className="split-arrow" onClick={(e) => {
               e.stopPropagation()
               const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
               openContextMenu(rect.left, rect.bottom + 6, [
                 {
-                  label: 'Stash all changes…',
+                  label: t('stash.allChanges'),
                   icon: <Archive size={15} />,
                   onClick: () =>
                     openModal({
                       kind: 'input',
-                      title: 'Stash changes',
-                      label: 'Stash message (optional)',
-                      placeholder: 'WIP on login form',
+                      title: t('stash.title'),
+                      label: t('stash.msgLabel'),
+                      placeholder: t('stash.msgPlaceholder'),
                       allowEmpty: true,
-                      submitLabel: 'Stash',
+                      submitLabel: t('stash.submit'),
                       onSubmit: (msg) => void repoActions.stash(path, msg.trim() || undefined)
                     })
                 },
                 {
-                  label: 'Stash selected files…',
+                  label: t('stash.selectedFiles'),
                   icon: <Archive size={15} />,
                   onClick: () => openModal({ kind: 'stash-partial', repoPath: path })
                 }
@@ -320,26 +320,26 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
         </button>
         <button
           className="tool-btn"
-          title="Pop latest stash"
+          title={t('toolbar.popTitle')}
           disabled={repo.stashes.length === 0}
           onClick={() => void repoActions.stashPop(path, 0)}
         >
           <ArchiveRestore size={17} />
-          <span>Pop</span>
+          <span>{t('stashPanel.pop')}</span>
         </button>
         {aiEnabled && (
           <button
             className="tool-btn"
-            title="Ask the AI to act on this repo"
+            title={t('toolbar.runTitle')}
             onClick={() => openModal({ kind: 'ai-config-wizard', repoPath: path, repoName: repo.name, initialTab: 'ask' })}
           >
             <Sparkles size={16} />
-            <span>Run</span>
+            <span>{t('toolbar.run')}</span>
           </button>
         )}
-        <button className="tool-btn split" title="Reflog, bisect, branch stack, hooks, LFS, patches" onClick={toolsMenu}>
+        <button className="tool-btn split" title={t('toolbar.toolsTitle')} onClick={toolsMenu}>
           <Wrench size={16} />
-          <span>Tools</span>
+          <span>{t('toolbar.tools')}</span>
           <span className="split-arrow">
             <ChevronDown size={13} />
           </span>
@@ -351,11 +351,11 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
       <div className="toolbar-group">
         <button
           className="tool-btn"
-          title="Repository settings"
+          title={t('toolbar.settingsTitle')}
           onClick={() => openModal({ kind: 'repo-settings', repoPath: path })}
         >
           <Settings size={16} />
-          <span>Settings</span>
+          <span>{t('toolbar.settings')}</span>
         </button>
       </div>
 
@@ -370,7 +370,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
         <div className="graph-search">
           <Search size={13} />
           <input
-            placeholder="Search commits, authors, SHAs…"
+            placeholder={t('toolbar.searchPlaceholder')}
             value={graphFilter}
             onChange={(e) => setGraphFilter(e.target.value)}
           />
@@ -378,7 +378,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
         {hasGithubToken && (
           <button
             className="tool-btn icon-only notif-bell"
-            title="GitHub notifications"
+            title={t('toolbar.notifTitle')}
             onClick={() => useSettingsStore.getState().openPageTab({ type: 'notifications' })}
           >
             <Bell size={16} />
@@ -387,14 +387,14 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
         )}
         <button
           className="tool-btn icon-only"
-          title={`Refresh (last refreshed ${timeSince(repo.lastRefreshAt)})`}
+          title={interp(t('toolbar.refreshTitle'), { time: timeSince(repo.lastRefreshAt) })}
           onClick={() => void useRepoStore.getState().refresh(path)}
         >
           <RefreshCw size={16} />
         </button>
         <button
           className={`tool-btn icon-only ${terminalOpen ? 'toggled' : ''}`}
-          title="Toggle terminal"
+          title={t('toolbar.terminalTitle')}
           onClick={toggleTerminal}
         >
           <TerminalSquare size={16} />

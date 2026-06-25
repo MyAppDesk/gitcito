@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Tag, ShieldCheck } from 'lucide-react'
 import { repoActions } from '../stores/repo'
 import { useUIStore } from '../stores/ui'
+import { useT, interp } from '../i18n'
 
 /** Create a lightweight, annotated, or signed tag at a commit (or HEAD). */
 export function CreateTagModal({
@@ -14,6 +15,7 @@ export function CreateTagModal({
   at?: string
 }): React.JSX.Element {
   const closeModal = useUIStore((s) => s.closeModal)
+  const t = useT()
   const [name, setName] = useState('')
   const [message, setMessage] = useState('')
   const [sign, setSign] = useState(false)
@@ -32,16 +34,16 @@ export function CreateTagModal({
     <div className="create-tag">
       <h3>
         <Tag size={17} style={{ verticalAlign: '-3px', marginRight: 6 }} />
-        Create tag
+        {t('createTag.title')}
       </h3>
-      {at && <p className="settings-hint">Tagging {at}</p>}
+      {at && <p className="settings-hint">{interp(t('createTag.tagging'), { at })}</p>}
 
       <label className="settings-field">
-        <span className="settings-field-label">Tag name</span>
+        <span className="settings-field-label">{t('createTag.nameLabel')}</span>
         <input
           className="modal-input"
           autoFocus
-          placeholder="v1.0.0"
+          placeholder={t('createTag.namePlaceholder')}
           value={name}
           spellCheck={false}
           onChange={(e) => setName(e.target.value)}
@@ -51,11 +53,11 @@ export function CreateTagModal({
 
       <label className="settings-field">
         <span className="settings-field-label">
-          Message <span className="settings-hint">(optional — makes it an annotated tag)</span>
+          {t('createTag.messageLabel')} <span className="settings-hint">{t('createTag.messageHint')}</span>
         </span>
         <textarea
           className="modal-input create-tag-msg"
-          placeholder="Release notes / annotation…"
+          placeholder={t('createTag.messagePlaceholder')}
           value={message}
           onChange={(e) => setMessage(e.target.value)}
         />
@@ -63,13 +65,13 @@ export function CreateTagModal({
 
       <label className="create-tag-sign">
         <input type="checkbox" checked={sign} onChange={(e) => setSign(e.target.checked)} />
-        <ShieldCheck size={13} /> Sign this tag (GPG/SSH)
+        <ShieldCheck size={13} /> {t('createTag.sign')}
       </label>
 
       <div className="modal-actions">
-        <button className="btn ghost" onClick={closeModal}>Cancel</button>
+        <button className="btn ghost" onClick={closeModal}>{t('bisect.cancel')}</button>
         <button className="btn primary" onClick={submit} disabled={!name.trim()}>
-          <Tag size={14} /> Create tag
+          <Tag size={14} /> {t('createTag.createButton')}
         </button>
       </div>
     </div>

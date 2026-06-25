@@ -1,5 +1,12 @@
 
 
+## [1.12.1](https://github.com/MyAppDesk/gitcito/compare/v1.12.0...v1.12.1) (2026-06-25)
+
+
+### Features
+
+* add silent recheck for updater to prevent UI flicker ([6d54017](https://github.com/MyAppDesk/gitcito/commit/6d54017f780d82d698abd18bcafcb30356503adc))
+
 ## [1.12.0](https://github.com/MyAppDesk/gitcito/compare/v1.11.2...v1.12.0) (2026-06-25)
 
 

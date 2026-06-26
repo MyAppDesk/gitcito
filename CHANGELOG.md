@@ -1,5 +1,19 @@
 
 
+## [1.13.0](https://github.com/MyAppDesk/gitcito/compare/v1.12.1...v1.13.0) (2026-06-26)
+
+
+### Features
+
+* add advanced commit style options in composer ([fab5497](https://github.com/MyAppDesk/gitcito/commit/fab5497f3f5a6efc37f727d6587dad5480f09d3d))
+* add GitHub check for PR detail and issue creation ([a09d36e](https://github.com/MyAppDesk/gitcito/commit/a09d36e64ffd5b6953391973070ff33e77b00528))
+* add GitHub-specific features to GraphView and Sidebar ([e25fc23](https://github.com/MyAppDesk/gitcito/commit/e25fc232cae2d531cacfe851b71b62185e5b6622))
+
+
+### Bug Fixes
+
+* resolve 'No changes to display' bug in commitFileDiff ([ab2ab2f](https://github.com/MyAppDesk/gitcito/commit/ab2ab2ff4eafcee4bf69c62589172a589470bd0f))
+
 ## [1.12.1](https://github.com/MyAppDesk/gitcito/compare/v1.12.0...v1.12.1) (2026-06-25)
 
 

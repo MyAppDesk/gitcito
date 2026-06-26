@@ -1,5 +1,12 @@
 
 
+## [1.14.0](https://github.com/MyAppDesk/gitcito/compare/v1.13.0...v1.14.0) (2026-06-26)
+
+
+### Features
+
+* add LAUNCH picker for .vscode/launch.json configurations ([915ba0e](https://github.com/MyAppDesk/gitcito/commit/915ba0e55de16aabe3b69663d4d94866d29393b7))
+
 ## [1.13.0](https://github.com/MyAppDesk/gitcito/compare/v1.12.1...v1.13.0) (2026-06-26)
 
 

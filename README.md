@@ -124,6 +124,7 @@
 ### Preview anything
 - **File preview pane**: Markdown, Word (`.docx`), Excel (`.xlsx`), PDF, video, audio, images and syntax-highlighted code.
 - **Integrated terminal**, a real PTY powered by xterm + node-pty, with multiple tabs per repo.
+- **Run & debug** (`launch.json`). A **LAUNCH** button reads your `.vscode/launch.json` (root + nested, grouped with dividers, VS Code variables resolved), runs the picked config — with its `preLaunchTask` — in the integrated terminal, and gives you a floating toolbar to **pause / resume, restart, stop** and switch between running sessions. Toggle it in **Settings → Security**.
 
 ### Make it yours
 - **9 built-in themes** (Gitcito, Nord, Dracula, Solarized, GitHub, Monokai, Midnight, Contrast, Daltonic), each with light & dark — plus custom and **AI-generated** themes, and adjustable code font size.
@@ -201,6 +202,11 @@ Browse the working tree in the **Files** tab with a live preview, and drop into 
 | Files tab + preview | Integrated terminal |
 |---|---|
 | ![Working-tree file browser with code preview](docs/screenshots/file-tree.png) | ![Integrated terminal under the commit graph](docs/screenshots/terminal.png) |
+
+### Run & debug (`launch.json`)
+A **LAUNCH** button next to the Git / Files tabs reads your `.vscode/launch.json` (and any nested ones, grouped with dividers) and runs a config straight in the integrated terminal. A floating VS Code-style toolbar lets you pause / resume, restart and stop, and switch between running sessions. Toggle it in **Settings → Security → Enable launch.json**.
+
+![LAUNCH picker running a launch.json config with the floating debug toolbar](docs/screenshots/launch-configs.png)
 
 ### Interactive rebase
 Drag to reorder, squash, fixup, reword or drop — in a visual editor.

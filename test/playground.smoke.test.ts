@@ -40,7 +40,11 @@ const EXPECTED = [
   'changelog',
   'word-diff',
   'snapshots',
-  'secrets'
+  'secrets',
+  'terminal-naming',
+  'diverged-checkout',
+  'branch-grouping',
+  'launch-configs'
 ]
 
 describe('playground fixtures', () => {

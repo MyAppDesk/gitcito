@@ -8,6 +8,9 @@ export interface TermPanel {
   flex: number
   /** Manual alias for this panel. Overrides the auto-detected process name. */
   title?: string
+  /** When set, this panel renders a launch (Run/Debug) session bound to this
+   *  main-process pty id instead of spawning an interactive shell. */
+  launchId?: number
 }
 
 export interface TermGroup {
@@ -50,6 +53,9 @@ interface TerminalsState {
 
   ensureRepo(repoPath: string, cwd: string): void
   addGroup(repoPath: string, cwd: string): void
+  /** Add a Run/Debug launch session as its own group, backed by an existing
+   *  main-process pty. Returns the new group + panel ids. */
+  addLaunchGroup(repoPath: string, cwd: string, launchId: number, title: string): { groupId: string; panelId: string }
   removeGroup(repoPath: string, groupId: string): void
   setActiveGroup(repoPath: string, groupId: string): void
   splitGroup(repoPath: string, groupId: string, cwd: string): void
@@ -83,6 +89,21 @@ export const useTerminalsStore = create<TerminalsState>((set, get) => ({
         }
       }
     })
+  },
+
+  addLaunchGroup: (repoPath, cwd, launchId, title) => {
+    const panel: TermPanel = { id: uid('panel'), cwd, flex: 1, launchId }
+    const group: TermGroup = { id: uid('group'), num: 0, title, panels: [panel], activePanelId: panel.id }
+    set((s) => {
+      const repo = s.byRepo[repoPath] ?? emptyRepo()
+      return {
+        byRepo: {
+          ...s.byRepo,
+          [repoPath]: { groups: [...repo.groups, group], activeGroupId: group.id }
+        }
+      }
+    })
+    return { groupId: group.id, panelId: panel.id }
   },
 
   removeGroup: (repoPath, groupId) => {

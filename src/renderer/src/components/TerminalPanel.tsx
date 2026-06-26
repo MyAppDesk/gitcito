@@ -11,18 +11,20 @@ function shellQuote(p: string): string {
 export function TerminalPanel({
   panelId,
   cwd,
-  active
+  active,
+  launchId
 }: {
   panelId: string
   cwd: string
   active: boolean
+  launchId?: number
 }): React.JSX.Element {
   const hostRef = useRef<HTMLDivElement>(null)
 
   useLayoutEffect(() => {
     const host = hostRef.current
     if (!host) return
-    const handle = getOrCreateTerm(panelId, cwd)
+    const handle = getOrCreateTerm(panelId, cwd, launchId)
     host.appendChild(handle.container)
     handle.fitSafely()
 
@@ -34,15 +36,15 @@ export function TerminalPanel({
       // Detach (keep instance alive); container re-attaches on next mount.
       if (handle.container.parentElement === host) host.removeChild(handle.container)
     }
-  }, [panelId, cwd])
+  }, [panelId, cwd, launchId])
 
   // Refit + focus when this panel becomes the visible one.
   useEffect(() => {
     if (!active) return
-    const handle = getOrCreateTerm(panelId, cwd)
+    const handle = getOrCreateTerm(panelId, cwd, launchId)
     handle.fitSafely()
     handle.term.focus()
-  }, [active, panelId, cwd])
+  }, [active, panelId, cwd, launchId])
 
   const onDrop = (e: React.DragEvent): void => {
     const files = Array.from(e.dataTransfer?.files ?? [])
@@ -54,7 +56,7 @@ export function TerminalPanel({
       .filter(Boolean)
       .map(shellQuote)
     if (paths.length === 0) return
-    const handle = getOrCreateTerm(panelId, cwd)
+    const handle = getOrCreateTerm(panelId, cwd, launchId)
     handle.pasteText(paths.join(' '))
     handle.term.focus()
   }
@@ -63,7 +65,7 @@ export function TerminalPanel({
     <div
       className="terminal-host"
       ref={hostRef}
-      onClick={() => getOrCreateTerm(panelId, cwd).term.focus()}
+      onClick={() => getOrCreateTerm(panelId, cwd, launchId).term.focus()}
       onDragOver={(e) => {
         if (e.dataTransfer?.types?.includes('Files')) {
           e.preventDefault()

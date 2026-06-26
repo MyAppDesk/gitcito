@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useRef, useState } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   ChevronRight,
@@ -26,13 +26,16 @@ import {
   ArrowUpRight,
   FolderTree,
   FilePlus,
-  FolderPlus
+  FolderPlus,
+  Play,
+  ChevronDown
 } from 'lucide-react'
 import { FileTree } from './FileTree'
 import { FileSearchBar, EMPTY_FILTER, type FileFilter } from './FileSearchBar'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
 import { useUIStore, type MenuItem } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
+import { useLaunchStore } from '../stores/launch'
 import { shellApi } from '../infrastructure/api'
 import { useT, interp } from '../i18n'
 import { repoIsGitHub } from '../lib/hosting'
@@ -187,6 +190,36 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   const t = useT()
   const [filter, setFilter] = useState('')
   const [tab, setTab] = useState<'git' | 'files'>('git')
+
+  // ─── Launch configs (.vscode/launch.json) ───
+  const enableLaunchJson = useSettingsStore((s) => s.settings.enableLaunchJson)
+  const launchGroups = useLaunchStore((s) => s.groupsByRepo[repo.path] ?? [])
+  const discoverLaunch = useLaunchStore((s) => s.discover)
+  const runLaunch = useLaunchStore((s) => s.run)
+  useEffect(() => {
+    if (enableLaunchJson) void discoverLaunch(repo.path)
+  }, [repo.path, enableLaunchJson, discoverLaunch])
+  const hasLaunch = enableLaunchJson && launchGroups.some((g) => g.configs.length > 0)
+
+  // Build the Run/Debug picker: root group first, deeper folders after a
+  // divider; a lone deeper folder shows with no divider.
+  const openLaunchMenu = (x: number, y: number): void => {
+    const groups = launchGroups.filter((g) => g.configs.length > 0)
+    const showLabels = groups.length > 1
+    const items: MenuItem[] = []
+    groups.forEach((g, gi) => {
+      if (gi > 0) items.push({ separator: true })
+      if (showLabels) items.push({ label: g.label, disabled: true })
+      for (const cfg of g.configs) {
+        items.push({
+          label: cfg.name,
+          icon: <Play size={13} />,
+          onClick: () => void runLaunch(repo.path, g, cfg)
+        })
+      }
+    })
+    openContextMenu(x, y, items)
+  }
   const [fileFilter, setFileFilter] = useState<FileFilter>(EMPTY_FILTER)
   const [dragId, setDragId] = useState<string | null>(null)
   const [overId, setOverId] = useState<string | null>(null)
@@ -1668,6 +1701,18 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         >
           <FolderTree size={13} /> {t('sidebar.files')}
         </button>
+        {hasLaunch && (
+          <button
+            className="sb-tab sb-tab-launch"
+            title={t('sidebar.launchTitle')}
+            onClick={(e) => {
+              const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
+              openLaunchMenu(r.left, r.bottom)
+            }}
+          >
+            <Play size={13} /> {t('sidebar.launch')} <ChevronDown size={12} className="sb-tab-launch-caret" />
+          </button>
+        )}
       </div>
 
       {tab === 'git' ? (

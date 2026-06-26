@@ -10,6 +10,7 @@ import { registerAnalyticsHandlers } from './analytics'
 import { registerLogHandlers } from './log'
 import { registerHostingHandlers } from './hosting'
 import { registerTerminalHandlers } from './terminal'
+import { registerLaunchHandlers } from './launch'
 import { registerWatcherHandlers } from './watcher'
 import { registerVaultHandlers } from './vault'
 import { registerInfoHandlers } from './info'
@@ -165,6 +166,7 @@ app.whenReady().then(() => {
   registerLogHandlers()
   registerHostingHandlers()
   registerTerminalHandlers()
+  registerLaunchHandlers()
   registerWatcherHandlers()
   registerVaultHandlers()
   registerInfoHandlers()

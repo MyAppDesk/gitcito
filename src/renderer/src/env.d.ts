@@ -10,6 +10,23 @@ interface TermApi {
   onExit(id: number, cb: () => void): () => void
 }
 
+interface LaunchApi {
+  discover(repoPath: string): Promise<import('../../shared/types').LaunchGroup[]>
+  run(payload: {
+    dir: string
+    config: import('../../shared/types').LaunchConfig
+    tasks: import('../../shared/types').LaunchTask[]
+    cols: number
+    rows: number
+  }): Promise<{ id: number } | { error: string }>
+  input(id: number, data: string): void
+  resize(id: number, cols: number, rows: number): void
+  signal(id: number, action: 'pause' | 'resume'): void
+  stop(id: number): void
+  onData(id: number, cb: (data: string) => void): () => void
+  onExit(id: number, cb: (code: number) => void): () => void
+}
+
 interface PreloadApi {
   platform: string
   shotMode: boolean
@@ -101,6 +118,7 @@ interface PreloadApi {
     milestoneIssues(remoteUrl: string, tokens: unknown, number: number): Promise<unknown>
   }
   term: TermApi
+  launch: LaunchApi
   window: {
     minimize(): void
     maximize(): void

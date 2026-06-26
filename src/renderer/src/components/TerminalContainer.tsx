@@ -78,6 +78,7 @@ function TerminalGroupView({
               panelId={panel.id}
               cwd={panel.cwd}
               active={active && panel.id === group.activePanelId}
+              launchId={panel.launchId}
             />
           </div>
           {i < group.panels.length - 1 && (

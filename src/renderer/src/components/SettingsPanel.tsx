@@ -1882,6 +1882,21 @@ function SecurityPage(): React.JSX.Element {
         </span>
       </label>
 
+      <label className="settings-toggle-card" style={{ marginTop: 12 }}>
+        <input
+          type="checkbox"
+          checked={settings.enableLaunchJson}
+          onChange={(e) => update((s) => ({ ...s, enableLaunchJson: e.target.checked }))}
+        />
+        <span className="settings-toggle-control" aria-hidden="true">
+          <span className="settings-toggle-thumb" />
+        </span>
+        <span className="settings-toggle-copy">
+          <strong>{t('settings.launchEnabled')}</strong>
+          <span className="settings-hint">{t('settings.launchEnabledHint')}</span>
+        </span>
+      </label>
+
       <label style={{ marginTop: 12 }}>
         {t('settings.largeFileWarn')}
         <input

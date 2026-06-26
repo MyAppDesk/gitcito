@@ -1319,6 +1319,7 @@ textarea:focus {
   display: flex;
   flex-direction: column;
   background: var(--bg-1);
+  position: relative;
 }
 
 .graph-wrap {
@@ -8540,6 +8541,93 @@ mark.find-hit.active {
 }
 .sb-tab:hover { color: var(--text-1); background: var(--bg-2); }
 .sb-tab.active { background: var(--accent-soft); color: var(--accent); }
+
+/* LAUNCH picker — a dropdown trigger, not a selectable tab. */
+.sb-tab-launch {
+  color: var(--green, #00e6a8);
+}
+.sb-tab-launch:hover {
+  color: var(--green, #00e6a8);
+  background: color-mix(in srgb, var(--green, #00e6a8) 16%, transparent);
+}
+.sb-tab-launch-caret { opacity: 0.7; margin-left: -2px; }
+
+/* VS Code-style floating debug toolbar over the graph pane. */
+.debug-toolbar {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border-radius: 10px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.32);
+}
+.debug-switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 26px;
+  padding: 0 8px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-1);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  max-width: 240px;
+}
+.debug-switcher:hover { background: var(--bg-3); }
+.debug-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.debug-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green, #00e6a8);
+  flex-shrink: 0;
+}
+.debug-dot.running { background: var(--green, #00e6a8); box-shadow: 0 0 6px var(--green, #00e6a8); }
+.debug-dot.paused { background: var(--yellow, #ff7a1a); }
+.debug-dot.exited { background: var(--text-2); }
+.debug-sep {
+  width: 1px;
+  height: 18px;
+  background: var(--border);
+  margin: 0 2px;
+}
+.debug-btn {
+  width: 28px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.debug-btn.danger:hover { color: var(--red, #ff5c7a); }
+.debug-status-pill {
+  margin-left: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--green, #00e6a8);
+  background: color-mix(in srgb, var(--green, #00e6a8) 16%, transparent);
+}
+.debug-status-pill.paused {
+  color: var(--yellow, #ff7a1a);
+  background: color-mix(in srgb, var(--yellow, #ff7a1a) 16%, transparent);
+}
+.debug-status-pill.exited {
+  color: var(--text-2);
+  background: var(--bg-3);
+}
 
 .sb-files-toolbar {
   display: flex;

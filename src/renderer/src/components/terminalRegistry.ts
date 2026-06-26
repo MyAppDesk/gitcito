@@ -1,5 +1,6 @@
 import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
+import { WebLinksAddon } from '@xterm/addon-web-links'
 import { useTermTitlesStore } from '../stores/termTitles'
 
 export interface TermHandle {
@@ -30,7 +31,7 @@ const THEME = {
   cyan: '#00d4ff'
 }
 
-export function getOrCreateTerm(panelId: string, cwd: string): TermHandle {
+export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number): TermHandle {
   const existing = registry.get(panelId)
   if (existing) return existing
 
@@ -45,8 +46,16 @@ export function getOrCreateTerm(panelId: string, cwd: string): TermHandle {
   })
   const fit = new FitAddon()
   term.loadAddon(fit)
+  // Make http(s) URLs in the output clickable — open in the default browser.
+  term.loadAddon(
+    new WebLinksAddon((event, uri) => {
+      event.preventDefault()
+      void window.api.openExternal(uri)
+    })
+  )
   term.open(container)
 
+  const isLaunch = launchId != null
   const cleanups: (() => void)[] = []
   const handle: TermHandle = {
     term,
@@ -62,11 +71,15 @@ export function getOrCreateTerm(panelId: string, cwd: string): TermHandle {
     },
     pasteText(text) {
       if (handle.ptyId == null || !text) return
-      window.api.term.input(handle.ptyId, text)
+      const send = isLaunch ? window.api.launch.input : window.api.term.input
+      send(handle.ptyId, text)
     },
     dispose() {
       cleanups.forEach((c) => c())
-      if (handle.ptyId != null) window.api.term.kill(handle.ptyId)
+      if (handle.ptyId != null) {
+        if (isLaunch) window.api.launch.stop(handle.ptyId)
+        else window.api.term.kill(handle.ptyId)
+      }
       useTermTitlesStore.getState().clear(panelId)
       term.dispose()
       container.remove()
@@ -74,6 +87,20 @@ export function getOrCreateTerm(panelId: string, cwd: string): TermHandle {
     }
   }
   registry.set(panelId, handle)
+
+  if (isLaunch) {
+    // Bind to the already-spawned launch pty (created in main by launch:run).
+    handle.ptyId = launchId!
+    cleanups.push(window.api.launch.onData(launchId!, (data) => term.write(data)))
+    cleanups.push(
+      window.api.launch.onExit(launchId!, (code) =>
+        term.write(`\r\n\x1b[90m[process exited with code ${code}]\x1b[0m\r\n`)
+      )
+    )
+    term.onData((data) => window.api.launch.input(launchId!, data))
+    term.onResize(({ cols, rows }) => window.api.launch.resize(launchId!, cols, rows))
+    return handle
+  }
 
   // Defer fit until the container is attached & sized.
   void window.api.term.create(cwd, term.cols || 80, term.rows || 24).then((id) => {

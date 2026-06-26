@@ -173,6 +173,27 @@ const api = {
     }
   },
 
+  launch: {
+    discover: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('launch:discover', repoPath),
+    run: (payload: unknown): Promise<{ id: number } | { error: string }> =>
+      ipcRenderer.invoke('launch:run', payload),
+    input: (id: number, data: string): void => ipcRenderer.send('launch:input', id, data),
+    resize: (id: number, cols: number, rows: number): void =>
+      ipcRenderer.send('launch:resize', id, cols, rows),
+    signal: (id: number, action: 'pause' | 'resume'): void => ipcRenderer.send('launch:signal', id, action),
+    stop: (id: number): void => ipcRenderer.send('launch:stop', id),
+    onData: (id: number, cb: (data: string) => void): (() => void) => {
+      const listener = (_e: unknown, data: string): void => cb(data)
+      ipcRenderer.on(`launch:data:${id}`, listener)
+      return () => ipcRenderer.removeListener(`launch:data:${id}`, listener)
+    },
+    onExit: (id: number, cb: (code: number) => void): (() => void) => {
+      const listener = (_e: unknown, code: number): void => cb(code)
+      ipcRenderer.on(`launch:exit:${id}`, listener)
+      return () => ipcRenderer.removeListener(`launch:exit:${id}`, listener)
+    }
+  },
+
   window: {
     minimize: (): void => ipcRenderer.send('window:minimize'),
     maximize: (): void => ipcRenderer.send('window:maximize'),

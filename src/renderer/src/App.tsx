@@ -16,6 +16,7 @@ import { CommitDetails } from './components/CommitDetails'
 import { StashDetails } from './components/StashDetails'
 import { CommitComposer } from './components/CommitComposer'
 import { TerminalContainer } from './components/TerminalContainer'
+import { DebugToolbar } from './components/DebugToolbar'
 import { ContextMenu } from './components/ContextMenu'
 import { ModalHost } from './components/ModalHost'
 import { CommandPalette } from './components/CommandPalette'
@@ -522,6 +523,7 @@ export default function App(): React.JSX.Element {
             />
             <main className="graph-pane">
               <ConflictBanner repo={repo} />
+              <DebugToolbar repoPath={repo.path} />
               {conflictView && conflictView.repoPath === repo.path ? (
                 <ConflictResolver key={conflictView.file} view={conflictView} />
               ) : fileView && fileView.repoPath === repo.path ? (

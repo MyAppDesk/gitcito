@@ -588,6 +588,50 @@ export type AskAction =
   | { type: 'checkout'; ref: string; description: string }
   | { type: 'tag'; name: string; message?: string; description: string }
 
+// ─── Launch configurations (VS Code-style .vscode/launch.json) ──────────────
+
+/** One entry from a `.vscode/launch.json` `configurations` array. Only the
+ *  fields Gitcito actually runs are typed; the rest is preserved opaquely. */
+export interface LaunchConfig {
+  name: string
+  type?: string
+  request?: string
+  program?: string
+  cwd?: string
+  args?: string[]
+  env?: Record<string, string>
+  runtimeExecutable?: string
+  runtimeArgs?: string[]
+  /** Label of a task in the sibling tasks.json to run before launching. */
+  preLaunchTask?: string
+  [key: string]: unknown
+}
+
+/** One entry from a `.vscode/tasks.json` `tasks` array (subset Gitcito runs). */
+export interface LaunchTask {
+  label: string
+  type?: string
+  command?: string
+  args?: string[]
+  options?: { cwd?: string; env?: Record<string, string> }
+}
+
+/** All launch configs discovered under one `.vscode/` folder. The root folder's
+ *  group renders first; deeper folders follow after a divider. */
+export interface LaunchGroup {
+  /** Stable id — the absolute workspace-folder path (parent of `.vscode`). */
+  id: string
+  /** Absolute workspace folder (the directory that contains `.vscode/`). */
+  dir: string
+  /** Display label: "Workspace" for the repo root, else the relative path. */
+  label: string
+  isRoot: boolean
+  configs: LaunchConfig[]
+  tasks: LaunchTask[]
+}
+
+export type LaunchStatus = 'running' | 'paused' | 'exited'
+
 /** A full app backup: settings plus the separate info & vault stores. Written
  *  by Settings → Data → Export. `vault` and the profile API tokens are only
  *  present when the user opts into "include secrets"; `info` is always included
@@ -986,6 +1030,9 @@ export interface AppSettings {
   wipSnapshotMinutes: number
   /** Mask secret values (KEY=••••) in .env/key files in the diff & file viewer. */
   maskSecrets: boolean
+  /** Surface a Run/Launch picker in the sidebar when a `.vscode/launch.json`
+   *  exists. Off → the launch UI is hidden entirely. */
+  enableLaunchJson: boolean
   /** Custom keyboard-shortcut overrides: shortcut id → combo (e.g. "mod+k"). */
   shortcuts: Record<string, string>
   /** Warn before committing files larger than this many KB (0 = off). */
@@ -1190,6 +1237,7 @@ export function defaultSettings(): AppSettings {
     autoOpenChangelog: true,
     wipSnapshotMinutes: 0,
     maskSecrets: true,
+    enableLaunchJson: true,
     shortcuts: {},
     largeFileKb: 5120
   }

@@ -94,6 +94,7 @@
   "dependencies": {
     "@fontsource/nunito": "^5.2.7",
     "@xterm/addon-fit": "^0.10.0",
+    "@xterm/addon-web-links": "^0.11.0",
     "@xterm/xterm": "^5.5.0",
     "dompurify": "^3.4.10",
     "electron-updater": "^6.8.9",

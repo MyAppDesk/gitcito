@@ -7,6 +7,17 @@ const en = {
   // Sidebar sections
   'sidebar.files': 'Files',
   'sidebar.tabGit': 'Git',
+  'sidebar.launch': 'Launch',
+  'sidebar.launchTitle': 'Run a launch configuration',
+  'launch.switchSession': 'Switch session',
+  'launch.pause': 'Pause',
+  'launch.resume': 'Resume',
+  'launch.restart': 'Restart',
+  'launch.stop': 'Stop',
+  'launch.close': 'Remove session',
+  'launch.running': 'Running',
+  'launch.paused': 'Paused',
+  'launch.exited': 'Exited',
   'sidebar.local': 'LOCAL',
   'sidebar.remotes': 'REMOTES',
   'sidebar.pullRequests': 'PULL REQUESTS',
@@ -446,6 +457,9 @@ const en = {
   'settings.maskSecrets': 'Mask secret values',
   'settings.maskSecretsHint':
     'Hide values in .env / key / credential files (KEY=••••••) in the diff, file and blame views. Display-only — use the eye toggle to reveal. Never changes the file or what you stage.',
+  'settings.launchEnabled': 'Enable launch.json',
+  'settings.launchEnabledHint':
+    'Show a Run/Launch picker in the sidebar when a repo has a .vscode/launch.json. Runs configs (with their preLaunchTask) in the integrated terminal. Off → the launch UI is hidden entirely.',
   'settings.openVault': 'Open vault',
   'settings.openVaultHint':
     'A local, OS-keychain-encrypted store for secrets — per-repo and global. Never synced, never committed. Also reachable with ⌘⇧V.',
@@ -1194,6 +1208,17 @@ const es: Dict = {
   'sidebar.local': 'LOCALES',
   'sidebar.files': 'Archivos',
   'sidebar.tabGit': 'Git',
+  'sidebar.launch': 'Ejecutar',
+  'sidebar.launchTitle': 'Ejecutar una configuración de lanzamiento',
+  'launch.switchSession': 'Cambiar de sesión',
+  'launch.pause': 'Pausar',
+  'launch.resume': 'Reanudar',
+  'launch.restart': 'Reiniciar',
+  'launch.stop': 'Detener',
+  'launch.close': 'Quitar sesión',
+  'launch.running': 'En ejecución',
+  'launch.paused': 'En pausa',
+  'launch.exited': 'Finalizado',
   'sidebar.remotes': 'REMOTOS',
   'sidebar.pullRequests': 'PULL REQUESTS',
   'sidebar.issues': 'INCIDENCIAS',
@@ -1622,6 +1647,9 @@ const es: Dict = {
   'settings.maskSecrets': 'Ocultar valores secretos',
   'settings.maskSecretsHint':
     'Oculta los valores en archivos .env / clave / credenciales (KEY=••••••) en el diff, el visor y el blame. Solo visual — usa el ojo para revelar. Nunca cambia el archivo ni lo que preparas.',
+  'settings.launchEnabled': 'Habilitar launch.json',
+  'settings.launchEnabledHint':
+    'Muestra un selector de ejecución en la barra lateral cuando el repo tiene un .vscode/launch.json. Ejecuta configuraciones (con su preLaunchTask) en la terminal integrada. Desactivado → la interfaz de ejecución se oculta por completo.',
   'settings.openVault': 'Abrir baúl',
   'settings.openVaultHint':
     'Un almacén local de secretos cifrado con el llavero del sistema — por repo y global. Nunca se sincroniza ni se commitea. También con ⌘⇧V.',

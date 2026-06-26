@@ -9,12 +9,14 @@ import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
 import { useRepoStore, repoActions } from '../stores/repo'
 import { useUpdatesStore } from '../stores/updates'
+import { useLaunchStore } from '../stores/launch'
 
 export interface ShotBridge {
   settings: typeof useSettingsStore
   ui: typeof useUIStore
   repo: typeof useRepoStore
   updates: typeof useUpdatesStore
+  launch: typeof useLaunchStore
   repoActions: typeof repoActions
   /** True once the bridge has attached; the driver polls for this. */
   ready: true
@@ -41,5 +43,5 @@ export function installShotBridge(): void {
       tick()
     })
 
-  window.__shot = { settings: useSettingsStore, ui: useUIStore, repo: useRepoStore, updates: useUpdatesStore, repoActions, ready: true, waitForRepo }
+  window.__shot = { settings: useSettingsStore, ui: useUIStore, repo: useRepoStore, updates: useUpdatesStore, launch: useLaunchStore, repoActions, ready: true, waitForRepo }
 }

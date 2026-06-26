@@ -491,6 +491,32 @@ export const shots = [
       await page.evaluate((p) => window.__shot.settings.getState().openPageTab({ type: 'insights', repoPath: p }), repo)
       await page.waitForTimeout(1800)
     }
+  },
+  {
+    // LAUNCH picker — runs a .vscode/launch.json config in the integrated
+    // terminal, with the floating debug toolbar (pause / restart / stop).
+    out: 'launch-configs',
+    repos: ['launch-configs'],
+    themes: ['dark'],
+    appTheme: 'midnight',
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['launch-configs']
+      await page.evaluate(async (p) => {
+        const s = window.__shot
+        s.repo.getState().select(p, { type: 'wip' })
+        const launch = s.launch.getState()
+        await launch.discover(p)
+        const groups = s.launch.getState().groupsByRepo[p] ?? []
+        const root = groups.find((g) => g.isRoot) ?? groups[0]
+        const watch = root?.configs.find((c) => /watch/i.test(c.name)) ?? root?.configs[0]
+        if (root && watch) await launch.run(p, root, watch)
+      }, repo)
+      // Let the watcher stream a few ticks into the terminal.
+      await page.waitForTimeout(2600)
+      // Surface the launch picker so both the dropdown and a live run are shown.
+      await page.click('.sb-tab-launch').catch(() => {})
+      await page.waitForTimeout(500)
+    }
   }
 ]
 

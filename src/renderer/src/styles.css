@@ -2339,6 +2339,44 @@ textarea:focus {
   align-items: stretch;
 }
 
+.commit-style-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+  overflow: hidden;
+}
+
+.commit-advanced-toggle {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-1);
+  color: var(--text-2);
+  cursor: pointer;
+  transition: color 0.12s, transform 0.16s;
+}
+.commit-advanced-toggle:hover { color: var(--text-1); }
+.commit-advanced-toggle.open { color: var(--text-0); }
+.commit-advanced-toggle.open svg { transform: rotate(180deg); }
+.commit-advanced-toggle svg { transition: transform 0.16s; }
+
+.commit-style-select {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-1);
+  color: var(--text-2);
+  font-size: 12px;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+.commit-style-select:hover { color: var(--text-1); }
+
 .commit-summary {
   flex: 1;
 }
@@ -2391,8 +2429,15 @@ textarea:focus {
 
 .commit-actions {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: 10px;
+}
+
+.commit-actions .discard-btn {
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .amend-check {
@@ -2926,6 +2971,8 @@ textarea:focus {
   position: fixed;
   z-index: 1000;
   min-width: 220px;
+  max-height: calc(100vh - 16px);
+  overflow-y: auto;
   background: var(--bg-3);
   border: 1px solid var(--border);
   border-radius: 9px;

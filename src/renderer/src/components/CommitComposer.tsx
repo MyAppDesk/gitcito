@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Sparkles, Loader2, Trash2, AlignLeft, FolderTree, GitMerge, ChevronDown, Users } from 'lucide-react'
-import { MYAPPDESK_COAUTHOR, type FileEntry } from '../../../shared/types'
+import { MYAPPDESK_COAUTHOR, type FileEntry, type CommitStyle } from '../../../shared/types'
 import { gitApi, aiApi, shellApi } from '../infrastructure/api'
 import { repoActions, useRepoStore, type RepoData } from '../stores/repo'
 import { useUIStore, type MenuItem } from '../stores/ui'
@@ -18,9 +18,24 @@ import {
   buildQueryRegExp,
   type FileFilter
 } from './FileSearchBar'
-import { useT, interp } from '../i18n'
+import { useT, interp, type TranslationKey } from '../i18n'
 
 type ListName = 'staged' | 'unstaged'
+
+/**
+ * Commit-style options exposed in the composer dropdown. Styles flagged `ai`
+ * only make sense when AI is enabled, so they're hidden otherwise — leaving the
+ * manual styles (plain / conventional / gitmoji / ticket) when AI is off.
+ */
+const COMMIT_STYLE_OPTIONS: { id: CommitStyle; key: TranslationKey; ai?: boolean }[] = [
+  { id: 'plain', key: 'commitStyle.plain' },
+  { id: 'conventional', key: 'commitStyle.conventional' },
+  { id: 'gitmoji', key: 'commitStyle.gitmoji' },
+  { id: 'ticket', key: 'commitStyle.ticket' },
+  { id: 'auto', key: 'commitStyle.auto', ai: true },
+  { id: 'caveman', key: 'commitStyle.caveman', ai: true },
+  { id: 'haiku', key: 'commitStyle.haiku', ai: true }
+]
 
 /** Human-readable byte size, e.g. 7.3 MB. */
 function fmtBytes(n: number): string {
@@ -133,6 +148,9 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
     setSummary(/^[A-Z][A-Z0-9]+-\d+$/.test(key) ? `${key}: ${rest}` : rest)
   }
   const [amend, setAmend] = useState(false)
+  // Collapsed by default — the commit-style row is "advanced" and toggled by the
+  // chevron on the summary row.
+  const [showAdvanced, setShowAdvanced] = useState(false)
   const [aiBusy, setAiBusy] = useState(false)
   const [aiStageBusy, setAiStageBusy] = useState(false)
   const [selection, setSelection] = useState<{ list: ListName; paths: Set<string> }>({
@@ -150,6 +168,16 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
   // The Conventional-Commit type dropdown shows only when the profile's commit
   // style is Conventional (Settings → Profile → Preferences).
   const commitStyle = useSettingsStore((s) => s.activeProfile().ai.commitStyle)
+  // Switch the active commit style straight from the composer. AI-only styles
+  // (auto / caveman / haiku) are filtered out when AI is disabled.
+  const styleOptions = useMemo(
+    () => (aiEnabled ? COMMIT_STYLE_OPTIONS : COMMIT_STYLE_OPTIONS.filter((o) => !o.ai)),
+    [aiEnabled]
+  )
+  const setCommitStyle = (v: CommitStyle): void => {
+    const p = activeProfile()
+    useSettingsStore.getState().saveProfile({ ...p, ai: { ...p.ai, commitStyle: v } })
+  }
 
   const layout = useUIStore((s) => s.layout)
   const setLayout = useUIStore((s) => s.setLayout)
@@ -818,36 +846,14 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
 
       <div className="commit-box">
         <div className="commit-summary-row">
-          {commitStyle === 'conventional' && (
-            <select
-              className="commit-type"
-              title="Conventional-Commit type"
-              value={currentCcType}
-              onChange={(e) => applyCcTypeToDraft(e.target.value)}
-            >
-              <option value="">type</option>
-              {CC_TYPES.map((ty) => (
-                <option key={ty} value={ty}>
-                  {ty}
-                </option>
-              ))}
-            </select>
-          )}
-          {commitStyle === 'gitmoji' && (
-            <button type="button" className="commit-type commit-gitmoji" title="Gitmoji" onClick={openGitmojiMenu}>
-              {currentGitmoji || '🙂'}
-            </button>
-          )}
-          {commitStyle === 'ticket' && (
-            <input
-              className="commit-type commit-ticket"
-              title="Ticket key — prefixes the subject as KEY-123:"
-              placeholder={ticketFromBranch(repo.branches.current) || 'ABC-123'}
-              value={ticketField}
-              spellCheck={false}
-              onChange={(e) => onTicketChange(e.target.value)}
-            />
-          )}
+          <button
+            type="button"
+            className={`commit-advanced-toggle ${showAdvanced ? 'open' : ''}`}
+            title={showAdvanced ? 'Hide commit style options' : 'Show commit style options'}
+            onClick={() => setShowAdvanced((v) => !v)}
+          >
+            <ChevronDown size={14} />
+          </button>
           <input
             className="commit-summary"
             placeholder="Commit summary"
@@ -892,6 +898,60 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
             </motion.button>
           )}
         </div>
+        <AnimatePresence initial={false}>
+          {showAdvanced && (
+            <motion.div
+              className="commit-style-row"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.16 }}
+            >
+              {commitStyle === 'conventional' && (
+                <select
+                  className="commit-type"
+                  title="Conventional-Commit type"
+                  value={currentCcType}
+                  onChange={(e) => applyCcTypeToDraft(e.target.value)}
+                >
+                  <option value="">type</option>
+                  {CC_TYPES.map((ty) => (
+                    <option key={ty} value={ty}>
+                      {ty}
+                    </option>
+                  ))}
+                </select>
+              )}
+              {commitStyle === 'gitmoji' && (
+                <button type="button" className="commit-type commit-gitmoji" title="Gitmoji" onClick={openGitmojiMenu}>
+                  {currentGitmoji || '🙂'}
+                </button>
+              )}
+              {commitStyle === 'ticket' && (
+                <input
+                  className="commit-type commit-ticket"
+                  title="Ticket key — prefixes the subject as KEY-123:"
+                  placeholder={ticketFromBranch(repo.branches.current) || 'ABC-123'}
+                  value={ticketField}
+                  spellCheck={false}
+                  onChange={(e) => onTicketChange(e.target.value)}
+                />
+              )}
+              <select
+                className="commit-style-select"
+                title="Commit style"
+                value={commitStyle}
+                onChange={(e) => setCommitStyle(e.target.value as CommitStyle)}
+              >
+                {styleOptions.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {t(s.key)}
+                  </option>
+                ))}
+              </select>
+            </motion.div>
+          )}
+        </AnimatePresence>
         <textarea
           className="commit-description"
           placeholder="Description (optional)"
@@ -930,6 +990,14 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
             />
             Amend
           </label>
+          <motion.button
+            className="btn primary commit-btn"
+            disabled={(!summary.trim() && !amend) || (staged.length === 0 && !amend)}
+            onClick={() => void doCommit()}
+            whileTap={{ scale: 0.97 }}
+          >
+            {amend ? 'Amend last commit' : `Commit ${staged.length ? `${staged.length} file${staged.length === 1 ? '' : 's'}` : ''}`}
+          </motion.button>
           <button
             className="btn ghost small discard-btn"
             title="Discard everything"
@@ -954,14 +1022,6 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
           >
             <Trash2 size={13} />
           </button>
-          <motion.button
-            className="btn primary commit-btn"
-            disabled={(!summary.trim() && !amend) || (staged.length === 0 && !amend)}
-            onClick={() => void doCommit()}
-            whileTap={{ scale: 0.97 }}
-          >
-            {amend ? 'Amend last commit' : `Commit ${staged.length ? `${staged.length} file${staged.length === 1 ? '' : 's'}` : ''}`}
-          </motion.button>
         </div>
       </div>
     </div>

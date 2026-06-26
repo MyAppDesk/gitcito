@@ -25,7 +25,9 @@ export function ContextMenu(): React.JSX.Element {
 
   const clampedPos = (): { left: number; top: number } => {
     if (!contextMenu) return { left: 0, top: 0 }
-    const menuH = contextMenu.items.length * 30 + 12
+    // Cap the estimated height to the viewport — long menus (e.g. gitmoji) scroll
+    // instead of being pushed off the bottom of the window.
+    const menuH = Math.min(contextMenu.items.length * 30 + 12, window.innerHeight - 16)
     const left = Math.min(contextMenu.x, window.innerWidth - 240)
     const top = Math.min(contextMenu.y, window.innerHeight - menuH)
     return { left, top: Math.max(8, top) }

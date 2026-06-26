@@ -15,6 +15,7 @@ interface LaunchApi {
   run(payload: {
     dir: string
     config: import('../../shared/types').LaunchConfig
+    configs?: import('../../shared/types').LaunchConfig[]
     tasks: import('../../shared/types').LaunchTask[]
     cols: number
     rows: number

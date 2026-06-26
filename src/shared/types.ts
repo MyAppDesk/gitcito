@@ -604,6 +604,9 @@ export interface LaunchConfig {
   runtimeArgs?: string[]
   /** Label of a task in the sibling tasks.json to run before launching. */
   preLaunchTask?: string
+  /** Synthetic field (set during discovery) for a `compounds` entry: the member
+   *  configuration names to run, in order. */
+  compound?: string[]
   [key: string]: unknown
 }
 
@@ -613,7 +616,13 @@ export interface LaunchTask {
   type?: string
   command?: string
   args?: string[]
+  /** npm-task script name (`"type": "npm"`, `"script": "build"`). */
+  script?: string
   options?: { cwd?: string; env?: Record<string, string> }
+  /** Other task label(s) to run first. */
+  dependsOn?: string | string[]
+  /** "sequence" runs dependsOn one-by-one; otherwise they're independent. */
+  dependsOrder?: 'sequence' | 'parallel'
 }
 
 /** All launch configs discovered under one `.vscode/` folder. The root folder's

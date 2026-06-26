@@ -114,11 +114,21 @@ async function findVscodeDirs(root: string, dir: string, depth: number, acc: str
 async function readGroup(repoRoot: string, dir: string): Promise<LaunchGroup | null> {
   const launchRaw = await readFile(join(dir, '.vscode', 'launch.json'), 'utf-8').catch(() => null)
   if (launchRaw == null) return null
-  const launch = parseJsonc<{ configurations?: LaunchConfig[] }>(launchRaw)
+  const launch = parseJsonc<{ configurations?: LaunchConfig[]; compounds?: { name?: string; configurations?: string[] }[] }>(
+    launchRaw
+  )
   const configs = Array.isArray(launch?.configurations)
     ? launch!.configurations.filter((c): c is LaunchConfig => !!c && typeof c.name === 'string')
     : []
-  if (configs.length === 0) return null
+  // Compounds run several configs together — surface them as synthetic configs
+  // tagged with their member names so the picker lists them like VS Code does.
+  const compounds: LaunchConfig[] = Array.isArray(launch?.compounds)
+    ? launch!.compounds
+        .filter((c) => c && typeof c.name === 'string' && Array.isArray(c.configurations))
+        .map((c) => ({ name: c.name as string, type: 'compound', compound: c.configurations as string[] }))
+    : []
+  const allConfigs = [...configs, ...compounds]
+  if (allConfigs.length === 0) return null
 
   const tasksRaw = await readFile(join(dir, '.vscode', 'tasks.json'), 'utf-8').catch(() => null)
   const tasks = tasksRaw
@@ -134,7 +144,7 @@ async function readGroup(repoRoot: string, dir: string): Promise<LaunchGroup | n
     dir,
     label: isRoot ? 'Workspace' : rel.split(sep).join('/'),
     isRoot,
-    configs,
+    configs: allConfigs,
     tasks
   }
 }
@@ -175,12 +185,86 @@ function shQuote(s: string): string {
   return `'${s.replace(/'/g, `'\\''`)}'`
 }
 
-/** Build the shell command line for a task (run before launch). */
-function taskCommand(task: LaunchTask, folder: string): string {
-  const cmd = subAll(task.command, folder)
-  const args = (task.args ?? []).map((a) => shQuote(subAll(a, folder)))
-  return [shQuote(cmd), ...args].join(' ')
+/** Build the shell command line for a single task's own command (no deps). */
+function taskCommandSelf(task: LaunchTask, folder: string): string {
+  const type = (task.type ?? '').toLowerCase()
+  let line: string
+  if (type === 'npm' && task.script) {
+    // `{ "type": "npm", "script": "build" }` → `npm run build`.
+    const extra = (task.args ?? []).map((a) => shQuote(subAll(a, folder)))
+    line = ['npm', 'run', shQuote(subAll(task.script, folder)), ...extra].join(' ')
+  } else if (task.command) {
+    // `shell` / `process` (and unknown types) — command + args, run as-is.
+    const args = (task.args ?? []).map((a) => shQuote(subAll(a, folder)))
+    line = [shQuote(subAll(task.command, folder)), ...args].join(' ')
+  } else {
+    return '' // dependsOn-only task: nothing of its own to run.
+  }
+  // Respect the task's working directory by wrapping in a subshell.
+  const cwd = task.options?.cwd ? subAll(task.options.cwd, folder) : ''
+  return cwd ? `( cd ${shQuote(cwd)} && ${line} )` : line
 }
+
+/**
+ * Resolve a task into the ordered list of shell commands to run, expanding any
+ * `dependsOn` chain first (depth-first, deduped, cycle-safe). VS Code runs
+ * `dependsOn` before the task itself; we serialise everything into one terminal.
+ */
+function resolveTaskCommands(
+  label: string,
+  tasks: LaunchTask[],
+  folder: string,
+  seen: Set<string> = new Set()
+): string[] {
+  if (seen.has(label)) return []
+  seen.add(label)
+  const task = tasks.find((t) => t.label === label)
+  if (!task) return []
+  const out: string[] = []
+  const deps = task.dependsOn ? (Array.isArray(task.dependsOn) ? task.dependsOn : [task.dependsOn]) : []
+  for (const dep of deps) out.push(...resolveTaskCommands(dep, tasks, folder, seen))
+  const self = taskCommandSelf(task, folder)
+  if (self) out.push(self)
+  return out
+}
+
+/**
+ * Turn a launch config into the ordered shell command segments to run:
+ * its preLaunchTask chain (dependsOn expanded) followed by its program. A
+ * `compounds` entry expands into all its member configs, in order. Collects
+ * each config's `env` into `env`.
+ */
+function configSegments(
+  config: LaunchConfig,
+  configs: LaunchConfig[],
+  tasks: LaunchTask[],
+  dir: string,
+  env: Record<string, string>,
+  seen: Set<string> = new Set()
+): string[] {
+  if (Array.isArray(config.compound)) {
+    if (seen.has(config.name)) return []
+    seen.add(config.name)
+    const out: string[] = []
+    for (const name of config.compound) {
+      const member = configs.find((c) => c.name === name)
+      if (member) out.push(...configSegments(member, configs, tasks, dir, env, seen))
+    }
+    return out
+  }
+  for (const [k, v] of Object.entries(config.env ?? {})) env[k] = subAll(v, dir)
+  const out: string[] = []
+  if (config.preLaunchTask) out.push(...resolveTaskCommands(config.preLaunchTask, tasks, dir))
+  const program = launchCommand(config, dir)
+  if (program) {
+    // Honour a per-config cwd for compound members (the top-level config's cwd
+    // is applied to the pty directly, so it needs no wrapping).
+    const cwd = config.cwd ? subAll(config.cwd, dir) : ''
+    out.push(cwd && seen.size > 0 ? `( cd ${shQuote(cwd)} && ${program} )` : program)
+  }
+  return out
+}
+
 
 /** Build the shell command line that launches a config's program. */
 function launchCommand(config: LaunchConfig, folder: string): string {
@@ -384,38 +468,38 @@ export function registerLaunchHandlers(): void {
     'launch:run',
     (
       e,
-      payload: { dir: string; config: LaunchConfig; tasks: LaunchTask[]; cols: number; rows: number }
+      payload: {
+        dir: string
+        config: LaunchConfig
+        configs?: LaunchConfig[]
+        tasks: LaunchTask[]
+        cols: number
+        rows: number
+      }
     ): { id: number } | { error: string } => {
       const { dir, config, tasks, cols, rows } = payload
+      const siblings = payload.configs ?? [config]
       const folder = config.cwd ? subAll(config.cwd, dir) : dir
-      const program = launchCommand(config, dir)
 
-      const taskCmds: string[] = []
-      if (config.preLaunchTask) {
-        const task = tasks.find((t) => t.label === config.preLaunchTask)
-        if (task && (task.command || (task.args && task.args.length))) {
-          taskCmds.push(taskCommand(task, dir))
-        }
-      }
+      const env: Record<string, string> = {}
+      const parts = configSegments(config, siblings, tasks, dir, env)
 
-      if (!program && taskCmds.length === 0) {
+      if (parts.length === 0) {
         return {
           error: `"${config.name}" isn't directly runnable from Gitcito (type "${config.type ?? '?'}"). It likely needs a debugger we can't launch.`
         }
       }
 
-      // Run any preLaunchTask(s) first, then the program. The *last* segment is
-      // `exec`'d (on unix) so the pty's pid becomes the program itself and
-      // pause/resume/stop signals hit it directly. NB: `exec a && b` would only
-      // exec `a`, so the exec must wrap the final command, not the whole line.
-      const parts = [...taskCmds]
-      if (program) parts.push(program)
+      // Run preLaunchTask(s) (and their dependsOn chain) first, then the program.
+      // The *last* segment is `exec`'d (on unix) so the pty's pid becomes the
+      // program itself and pause/resume/stop signals hit it directly. We skip
+      // exec when the final segment is a subshell `( … )`, since `exec` only
+      // takes a simple command.
       const display = parts.join(' && ')
-      if (process.platform !== 'win32') parts[parts.length - 1] = `exec ${parts[parts.length - 1]}`
+      if (process.platform !== 'win32' && !parts[parts.length - 1].startsWith('(')) {
+        parts[parts.length - 1] = `exec ${parts[parts.length - 1]}`
+      }
       const commandLine = parts.join(' && ')
-
-      const env: Record<string, string> = {}
-      for (const [k, v] of Object.entries(config.env ?? {})) env[k] = subAll(v, dir)
 
       const id = nextId++
       const session = spawnSession(e.sender, id, folder, commandLine, display, env, cols || 80, rows || 24)

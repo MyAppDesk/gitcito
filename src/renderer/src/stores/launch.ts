@@ -51,7 +51,14 @@ export const useLaunchStore = create<LaunchState>((set, get) => ({
   },
 
   run: async (repoPath, group, config) => {
-    const res = await window.api.launch.run({ dir: group.dir, config, tasks: group.tasks, cols: 120, rows: 30 })
+    const res = await window.api.launch.run({
+      dir: group.dir,
+      config,
+      configs: group.configs,
+      tasks: group.tasks,
+      cols: 120,
+      rows: 30
+    })
     if ('error' in res) {
       useUIStore.getState().toast('error', res.error)
       return

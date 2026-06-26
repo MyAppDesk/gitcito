@@ -1763,7 +1763,11 @@ export const gitService = {
   },
 
   async commitFileDiff(repoPath: string, hash: string, file: string, ignoreWs = false): Promise<string> {
-    return gitFor(repoPath).raw(['show', '--format=', ...(ignoreWs ? ['-w'] : []), hash, '--', file])
+    // `--first-parent` so merge commits diff against their first parent (matching
+    // `commitFiles`). Without it, `git show` falls back to a combined diff (--cc)
+    // that's empty for files which only changed on the merged-in branch — the
+    // "No changes to display" bug.
+    return gitFor(repoPath).raw(['show', '--format=', '--first-parent', ...(ignoreWs ? ['-w'] : []), hash, '--', file])
   },
 
   async stashFiles(repoPath: string, sha: string, untrackedSha?: string | null): Promise<FileEntry[]> {

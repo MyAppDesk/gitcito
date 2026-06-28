@@ -1,5 +1,18 @@
 
 
+## [1.15.0](https://github.com/MyAppDesk/gitcito/compare/v1.14.0...v1.15.0) (2026-06-28)
+
+
+### Features
+
+* enhance launch.json with interactive input prompts and background tasks ([b31a0bf](https://github.com/MyAppDesk/gitcito/commit/b31a0bfa4b2cb55412c34b8b19b95b5232d6f1bb))
+* support compound launch configurations in VS Code ([b271fca](https://github.com/MyAppDesk/gitcito/commit/b271fca050f2c844b729bfa77a5d74a37f4622d5))
+
+
+### Bug Fixes
+
+* update README for launch.json settings navigation ([c386c3b](https://github.com/MyAppDesk/gitcito/commit/c386c3b859e2424d814addb7e229b458a7af55be))
+
 ## [1.14.0](https://github.com/MyAppDesk/gitcito/compare/v1.13.0...v1.14.0) (2026-06-26)
 
 

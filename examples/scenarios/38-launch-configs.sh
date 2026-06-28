@@ -4,8 +4,10 @@
 # Gitcito surfaces a Run/Launch dropdown in the sidebar (next to GIT / FILES)
 # whenever a repo has a .vscode/launch.json (and the setting is on). This repo
 # seeds TWO launch.json files so you can see the divider behaviour:
-#   • root .vscode/launch.json   → group "Workspace" (3 configs, one with a
-#                                   preLaunchTask wired to tasks.json)
+#   • root .vscode/launch.json   → group "Workspace" (5 configs: a preLaunchTask
+#                                   wired to tasks.json, a config that prompts
+#                                   for ${input:} values, and one whose
+#                                   preLaunchTask is an isBackground dev server)
 #   • services/api/.vscode/...   → a deeper group, listed after a divider
 # Every config runs a tiny, dependency-free Node script so you can actually hit
 # Run and watch it stream in the integrated terminal, then pause / restart /
@@ -36,6 +38,13 @@ console.log('🔧  building… (preLaunchTask)')
 console.log('✓  build complete')
 EOF
 
+cat > "$R/scripts/serve.js" <<'EOF'
+// A never-exiting dev server — used as an isBackground preLaunchTask so the
+// launch doesn't block waiting for it to finish (Gitcito runs it detached).
+console.log('🌐  dev server listening — left running in the background')
+setInterval(() => {}, 1000)
+EOF
+
 # ── Root launch.json — three configs, JSONC with comments + a preLaunchTask ──
 cat > "$R/.vscode/launch.json" <<'EOF'
 {
@@ -62,6 +71,36 @@ cat > "$R/.vscode/launch.json" <<'EOF'
       "request": "launch",
       "program": "${workspaceFolder}/scripts/hello.js",
       "preLaunchTask": "build"
+    },
+    {
+      "name": "Run hello (ask for a greeting)",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/scripts/hello.js",
+      "args": ["--from", "${input:who}"],
+      "env": { "GREETING": "${input:greeting}" }
+    },
+    {
+      "name": "Run hello (after dev server)",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/scripts/hello.js",
+      "preLaunchTask": "serve"
+    }
+  ],
+  "inputs": [
+    {
+      "id": "who",
+      "type": "promptString",
+      "description": "Who is saying hello?",
+      "default": "gitcito"
+    },
+    {
+      "id": "greeting",
+      "type": "pickString",
+      "description": "Pick a greeting",
+      "default": "hola",
+      "options": ["hola", "hello", "bonjour", "ciao"]
     }
   ]
 }
@@ -76,6 +115,13 @@ cat > "$R/.vscode/tasks.json" <<'EOF'
       "type": "shell",
       "command": "node",
       "args": ["${workspaceFolder}/scripts/build.js"]
+    },
+    {
+      "label": "serve",
+      "type": "shell",
+      "command": "node",
+      "args": ["${workspaceFolder}/scripts/serve.js"],
+      "isBackground": true
     }
   ]
 }
@@ -113,4 +159,4 @@ EOF
 
 git -C "$R" add -A && git -C "$R" commit -qm "chore: seed launch + tasks configs"
 
-summary "launch-configs" "LAUNCH picker: root .vscode/launch.json (Workspace, 3 configs incl. preLaunchTask) + nested services/api after a divider — Run streams in terminal, debug bar pauses/restarts/stops"
+summary "launch-configs" "LAUNCH picker: root .vscode/launch.json (Workspace, 5 configs incl. preLaunchTask, \${input:} prompts and an isBackground task) + nested services/api after a divider — Run streams in terminal, debug bar pauses/restarts/stops"

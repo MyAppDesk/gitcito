@@ -17,6 +17,7 @@ interface LaunchApi {
     config: import('../../shared/types').LaunchConfig
     configs?: import('../../shared/types').LaunchConfig[]
     tasks: import('../../shared/types').LaunchTask[]
+    inputValues?: Record<string, string>
     cols: number
     rows: number
   }): Promise<{ id: number } | { error: string }>

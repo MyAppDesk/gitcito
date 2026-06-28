@@ -3,7 +3,7 @@ import { spawn, ChildProcess } from 'child_process'
 import { readFile, readdir } from 'fs/promises'
 import { homedir } from 'os'
 import { join, relative, sep } from 'path'
-import type { LaunchConfig, LaunchGroup, LaunchTask } from '../shared/types'
+import type { LaunchConfig, LaunchGroup, LaunchInput, LaunchTask } from '../shared/types'
 
 // ─── JSONC parsing ──────────────────────────────────────────────────────────
 // launch.json / tasks.json are JSON-with-comments and allow trailing commas.
@@ -122,6 +122,7 @@ async function readGroup(repoRoot: string, dir: string): Promise<LaunchGroup | n
       configurations?: string[]
       presentation?: { hidden?: boolean; group?: string; order?: number }
     }[]
+    inputs?: LaunchInput[]
   }>(launchRaw)
   const configs = Array.isArray(launch?.configurations)
     ? launch!.configurations.filter((c): c is LaunchConfig => !!c && typeof c.name === 'string')
@@ -150,13 +151,17 @@ async function readGroup(repoRoot: string, dir: string): Promise<LaunchGroup | n
 
   const isRoot = dir === repoRoot
   const rel = relative(repoRoot, dir) || '.'
+  const inputs = Array.isArray(launch?.inputs)
+    ? launch!.inputs.filter((i): i is LaunchInput => !!i && typeof i.id === 'string')
+    : []
   return {
     id: dir,
     dir,
     label: isRoot ? 'Workspace' : rel.split(sep).join('/'),
     isRoot,
     configs: allConfigs,
-    tasks
+    tasks,
+    inputs
   }
 }
 
@@ -204,6 +209,28 @@ function applyPlatform<T extends { [key: string]: unknown }>(obj: T): T {
   const override = obj[PLATFORM_KEY]
   if (!override || typeof override !== 'object') return obj
   return { ...obj, ...(override as Record<string, unknown>) }
+}
+
+// ─── ${input:id} resolution ──────────────────────────────────────────────────
+// The renderer prompts the user for each `${input:id}` and sends the answers;
+// here we deep-replace those tokens in every string of the config / tasks
+// *before* doing the usual variable substitution.
+
+function resolveInputTokens<T>(value: T, values: Record<string, string>): T {
+  if (typeof value === 'string') {
+    return value.replace(/\$\{input:([^}]+)\}/g, (m, id: string) =>
+      id in values ? values[id] : m
+    ) as unknown as T
+  }
+  if (Array.isArray(value)) {
+    return value.map((v) => resolveInputTokens(v, values)) as unknown as T
+  }
+  if (value && typeof value === 'object') {
+    const out: Record<string, unknown> = {}
+    for (const [k, v] of Object.entries(value)) out[k] = resolveInputTokens(v, values)
+    return out as T
+  }
+  return value
 }
 
 /**
@@ -305,8 +332,19 @@ function resolveTaskCommands(
   const deps = task.dependsOn ? (Array.isArray(task.dependsOn) ? task.dependsOn : [task.dependsOn]) : []
   for (const dep of deps) out.push(...resolveTaskCommands(dep, tasks, folder, seen))
   const self = taskCommandSelf(task, folder)
-  if (self) out.push(self)
+  if (self) {
+    // A background/watch task (`isBackground: true`, e.g. `tsc -w`, `vite`)
+    // never exits — chaining it with `&&` would hang the launch forever. Run it
+    // detached so the next segment can start. We can't do VS Code's
+    // problem-matcher "ready" detection, so this is a best-effort head start.
+    out.push(task.isBackground ? backgrounded(self) : self)
+  }
   return out
+}
+
+/** Wrap a command so it runs detached and the launch chain can proceed. */
+function backgrounded(cmd: string): string {
+  return process.platform === 'win32' ? `start /b ${cmd}` : `( ${cmd} ) &`
 }
 
 /**
@@ -595,13 +633,17 @@ export function registerLaunchHandlers(): void {
         config: LaunchConfig
         configs?: LaunchConfig[]
         tasks: LaunchTask[]
+        inputValues?: Record<string, string>
         cols: number
         rows: number
       }
     ): Promise<{ id: number } | { error: string }> => {
-      const { dir, tasks, cols, rows } = payload
-      const config = applyPlatform(payload.config)
-      const siblings = payload.configs ?? [config]
+      const { dir, cols, rows } = payload
+      const inputValues = payload.inputValues ?? {}
+      // Substitute the user's `${input:id}` answers, then apply platform overrides.
+      const config = applyPlatform(resolveInputTokens(payload.config, inputValues))
+      const tasks = resolveInputTokens(payload.tasks, inputValues)
+      const siblings = resolveInputTokens(payload.configs ?? [config], inputValues)
       const folder = config.cwd ? subAll(config.cwd, dir) : dir
 
       // Bail clearly on configs that reference editor-only variables we can't

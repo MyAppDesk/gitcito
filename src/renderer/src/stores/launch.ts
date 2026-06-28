@@ -17,6 +17,83 @@ export interface LaunchSession {
   panelId: string
   status: LaunchStatus
   exitCode?: number
+  /** `${input:id}` answers, reused on restart so we don't re-prompt. */
+  inputValues: Record<string, string>
+}
+
+/** Collect, in first-seen order, the `${input:id}` ids referenced by the config
+ *  we're about to run (compound members included) and the tasks it triggers,
+ *  limited to ids that actually have a definition in the group's `inputs`. */
+function collectInputRefs(group: LaunchGroup, config: LaunchConfig): string[] {
+  const ids: string[] = []
+  const seen = new Set<string>()
+  const scan = (v: unknown): void => {
+    if (typeof v === 'string') {
+      for (const m of v.matchAll(/\$\{input:([^}]+)\}/g)) {
+        const id = m[1]
+        if (!seen.has(id) && group.inputs.some((i) => i.id === id)) {
+          seen.add(id)
+          ids.push(id)
+        }
+      }
+    } else if (Array.isArray(v)) {
+      v.forEach(scan)
+    } else if (v && typeof v === 'object') {
+      Object.values(v).forEach(scan)
+    }
+  }
+  const configsToScan = Array.isArray(config.compound)
+    ? config.compound.map((n) => group.configs.find((c) => c.name === n)).filter(Boolean)
+    : [config]
+  configsToScan.forEach(scan)
+  // Tasks reachable via preLaunchTask / postDebugTask (and their dependsOn).
+  const taskLabels = new Set<string>()
+  const addTask = (label?: string): void => {
+    if (!label || taskLabels.has(label)) return
+    taskLabels.add(label)
+    const task = group.tasks.find((t) => t.label === label)
+    const deps = task?.dependsOn ? (Array.isArray(task.dependsOn) ? task.dependsOn : [task.dependsOn]) : []
+    deps.forEach(addTask)
+  }
+  configsToScan.forEach((c) => {
+    addTask(c?.preLaunchTask)
+    addTask(c?.postDebugTask)
+  })
+  group.tasks.filter((t) => taskLabels.has(t.label)).forEach(scan)
+  return ids
+}
+
+/** Prompt the user (one modal per input, in order) for the referenced inputs.
+ *  Calls `done(values)` when all are answered, or never (launch aborted) if the
+ *  user cancels a prompt. */
+function promptForInputs(
+  group: LaunchGroup,
+  refs: string[],
+  done: (values: Record<string, string>) => void
+): void {
+  const values: Record<string, string> = {}
+  const step = (i: number): void => {
+    if (i >= refs.length) {
+      done(values)
+      return
+    }
+    const def = group.inputs.find((d) => d.id === refs[i])!
+    const opts = (def.options ?? []).map((o) => (typeof o === 'string' ? o : o.value))
+    useUIStore.getState().openModal({
+      kind: 'input',
+      title: def.description || `Input: ${def.id}`,
+      label: opts.length ? `${def.description ?? def.id} — options: ${opts.join(', ')}` : def.description ?? def.id,
+      placeholder: opts[0] ?? '',
+      initial: def.default ?? '',
+      allowEmpty: true,
+      submitLabel: 'OK',
+      onSubmit: (v) => {
+        values[def.id] = v
+        step(i + 1)
+      }
+    })
+  }
+  step(0)
 }
 
 interface LaunchState {
@@ -27,6 +104,8 @@ interface LaunchState {
 
   discover(repoPath: string): Promise<void>
   run(repoPath: string, group: LaunchGroup, config: LaunchConfig): Promise<void>
+  /** Internal: spawn with already-resolved `${input:id}` answers. */
+  _launch(repoPath: string, group: LaunchGroup, config: LaunchConfig, inputValues: Record<string, string>): Promise<void>
   stop(launchId: number): void
   restart(launchId: number): Promise<void>
   togglePause(launchId: number): void
@@ -51,11 +130,25 @@ export const useLaunchStore = create<LaunchState>((set, get) => ({
   },
 
   run: async (repoPath, group, config) => {
+    // If the config (or its tasks) reference `${input:id}`, prompt the user for
+    // each before launching; cancelling any prompt aborts the launch.
+    const refs = collectInputRefs(group, config)
+    if (refs.length > 0) {
+      promptForInputs(group, refs, (values) => {
+        void get()._launch(repoPath, group, config, values)
+      })
+      return
+    }
+    await get()._launch(repoPath, group, config, {})
+  },
+
+  _launch: async (repoPath, group, config, inputValues) => {
     const res = await window.api.launch.run({
       dir: group.dir,
       config,
       configs: group.configs,
       tasks: group.tasks,
+      inputValues,
       cols: 120,
       rows: 30
     })
@@ -79,7 +172,8 @@ export const useLaunchStore = create<LaunchState>((set, get) => ({
       config,
       groupId,
       panelId,
-      status: 'running'
+      status: 'running',
+      inputValues
     }
     set((s) => ({ sessions: [...s.sessions, session], activeId: launchId }))
 
@@ -109,7 +203,8 @@ export const useLaunchStore = create<LaunchState>((set, get) => ({
     disposeTerm(session.panelId)
     useTerminalsStore.getState().removeGroup(session.repoPath, session.groupId)
     set((s) => ({ sessions: s.sessions.filter((x) => x.launchId !== launchId) }))
-    await get().run(session.repoPath, group, session.config)
+    // Reuse the original `${input:id}` answers so restart doesn't re-prompt.
+    await get()._launch(session.repoPath, group, session.config, session.inputValues)
   },
 
   togglePause: (launchId) => {

@@ -629,7 +629,22 @@ export interface LaunchTask {
   dependsOn?: string | string[]
   /** "sequence" runs dependsOn one-by-one; otherwise they're independent. */
   dependsOrder?: 'sequence' | 'parallel'
+  /** A watch/server task that never exits — Gitcito won't block the launch on it. */
+  isBackground?: boolean
   [key: string]: unknown
+}
+
+/** One `${input:id}` definition from the `inputs` array of a launch.json. We
+ *  support the editor-free kinds: a free-text `promptString` and a static
+ *  `pickString`. (`command`-backed inputs need the VS Code command palette.) */
+export interface LaunchInput {
+  id: string
+  type: 'promptString' | 'pickString' | string
+  description?: string
+  default?: string
+  /** Options for a `pickString`. Each is either a raw value or {label,value}. */
+  options?: (string | { label?: string; value: string })[]
+  password?: boolean
 }
 
 /** All launch configs discovered under one `.vscode/` folder. The root folder's
@@ -644,6 +659,8 @@ export interface LaunchGroup {
   isRoot: boolean
   configs: LaunchConfig[]
   tasks: LaunchTask[]
+  /** `inputs` definitions, used to prompt for `${input:id}` before launching. */
+  inputs: LaunchInput[]
 }
 
 export type LaunchStatus = 'running' | 'paused' | 'exited'

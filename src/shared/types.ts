@@ -600,10 +600,16 @@ export interface LaunchConfig {
   cwd?: string
   args?: string[]
   env?: Record<string, string>
+  /** Path to a dotenv file whose KEY=VALUE pairs are added to the environment. */
+  envFile?: string
   runtimeExecutable?: string
   runtimeArgs?: string[]
   /** Label of a task in the sibling tasks.json to run before launching. */
   preLaunchTask?: string
+  /** Label of a task to run after the program exits. */
+  postDebugTask?: string
+  /** Controls visibility / ordering of the entry in the picker. */
+  presentation?: { hidden?: boolean; group?: string; order?: number }
   /** Synthetic field (set during discovery) for a `compounds` entry: the member
    *  configuration names to run, in order. */
   compound?: string[]
@@ -623,6 +629,7 @@ export interface LaunchTask {
   dependsOn?: string | string[]
   /** "sequence" runs dependsOn one-by-one; otherwise they're independent. */
   dependsOrder?: 'sequence' | 'parallel'
+  [key: string]: unknown
 }
 
 /** All launch configs discovered under one `.vscode/` folder. The root folder's

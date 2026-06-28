@@ -1,6 +1,7 @@
 import { ipcMain, WebContents } from 'electron'
 import { spawn, ChildProcess } from 'child_process'
 import { readFile, readdir } from 'fs/promises'
+import { homedir } from 'os'
 import { join, relative, sep } from 'path'
 import type { LaunchConfig, LaunchGroup, LaunchTask } from '../shared/types'
 
@@ -114,9 +115,14 @@ async function findVscodeDirs(root: string, dir: string, depth: number, acc: str
 async function readGroup(repoRoot: string, dir: string): Promise<LaunchGroup | null> {
   const launchRaw = await readFile(join(dir, '.vscode', 'launch.json'), 'utf-8').catch(() => null)
   if (launchRaw == null) return null
-  const launch = parseJsonc<{ configurations?: LaunchConfig[]; compounds?: { name?: string; configurations?: string[] }[] }>(
-    launchRaw
-  )
+  const launch = parseJsonc<{
+    configurations?: LaunchConfig[]
+    compounds?: {
+      name?: string
+      configurations?: string[]
+      presentation?: { hidden?: boolean; group?: string; order?: number }
+    }[]
+  }>(launchRaw)
   const configs = Array.isArray(launch?.configurations)
     ? launch!.configurations.filter((c): c is LaunchConfig => !!c && typeof c.name === 'string')
     : []
@@ -125,7 +131,12 @@ async function readGroup(repoRoot: string, dir: string): Promise<LaunchGroup | n
   const compounds: LaunchConfig[] = Array.isArray(launch?.compounds)
     ? launch!.compounds
         .filter((c) => c && typeof c.name === 'string' && Array.isArray(c.configurations))
-        .map((c) => ({ name: c.name as string, type: 'compound', compound: c.configurations as string[] }))
+        .map((c) => ({
+          name: c.name as string,
+          type: 'compound',
+          compound: c.configurations as string[],
+          ...(c.presentation ? { presentation: c.presentation } : {})
+        }))
     : []
   const allConfigs = [...configs, ...compounds]
   if (allConfigs.length === 0) return null
@@ -169,13 +180,72 @@ function substitute(value: string, folder: string): string {
   return value
     .replace(/\$\{workspaceFolderBasename\}/g, folder.split(sep).pop() ?? folder)
     .replace(/\$\{workspaceFolder\}/g, folder)
+    .replace(/\$\{workspaceRoot\}/g, folder) // legacy alias
     .replace(/\$\{cwd\}/g, folder)
+    .replace(/\$\{userHome\}/g, homedir())
     .replace(/\$\{pathSeparator\}/g, sep)
+    .replace(/\$\{\/\}/g, sep) // shorthand for ${pathSeparator}
     .replace(/\$\{env:([^}]+)\}/g, (_m, name: string) => process.env[name] ?? '')
+    .replace(/\$\{config:[^}]+\}/g, '') // editor settings — not available headless
 }
 
 function subAll(value: string | undefined, folder: string): string {
   return value ? substitute(value, folder) : ''
+}
+
+// ─── Per-platform overrides ──────────────────────────────────────────────────
+// VS Code lets a launch config or task carry `windows` / `osx` / `linux` blocks
+// that override the top-level keys on that OS. We merge the matching block in
+// before doing anything else.
+
+const PLATFORM_KEY = process.platform === 'win32' ? 'windows' : process.platform === 'darwin' ? 'osx' : 'linux'
+
+function applyPlatform<T extends { [key: string]: unknown }>(obj: T): T {
+  const override = obj[PLATFORM_KEY]
+  if (!override || typeof override !== 'object') return obj
+  return { ...obj, ...(override as Record<string, unknown>) }
+}
+
+/**
+ * Detect launch variables we can't resolve outside the editor
+ * (`${input:…}`, `${command:…}`, `${file…}`, `${selectedText}` …). Used to warn
+ * instead of silently running a half-substituted command line.
+ */
+const UNRESOLVABLE_VAR = /\$\{(input:|command:|file|relativeFile|lineNumber|selectedText|fileBasename|fileDirname|fileExtname|defaultBuildTask)/
+
+function hasUnresolvableVars(...values: (string | undefined)[]): boolean {
+  return values.some((v) => typeof v === 'string' && UNRESOLVABLE_VAR.test(v))
+}
+
+// ─── env files ───────────────────────────────────────────────────────────────
+
+/** Parse a dotenv-style file into KEY=VALUE pairs (best-effort, like VS Code). */
+function parseDotenv(text: string): Record<string, string> {
+  const out: Record<string, string> = {}
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trim()
+    if (!line || line.startsWith('#')) continue
+    const eq = line.indexOf('=')
+    if (eq <= 0) continue
+    const key = line.slice(0, eq).trim().replace(/^export\s+/, '')
+    let val = line.slice(eq + 1).trim()
+    // Strip matching surrounding quotes.
+    if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+      val = val.slice(1, -1)
+    }
+    out[key] = val
+  }
+  return out
+}
+
+/** Read & merge a config's `envFile` into `env` (config `env` still wins). */
+async function applyEnvFile(config: LaunchConfig, folder: string, env: Record<string, string>): Promise<void> {
+  if (!config.envFile) return
+  const path = subAll(config.envFile, folder)
+  const text = await readFile(path, 'utf-8').catch(() => null)
+  if (text == null) return
+  const fileEnv = parseDotenv(text)
+  for (const [k, v] of Object.entries(fileEnv)) if (!(k in env)) env[k] = v
 }
 
 // ─── Shell-quoting ──────────────────────────────────────────────────────────
@@ -200,6 +270,16 @@ function taskCommandSelf(task: LaunchTask, folder: string): string {
   } else {
     return '' // dependsOn-only task: nothing of its own to run.
   }
+  // Inline any per-task env (`options.env`) ahead of the command (posix only;
+  // on Windows the launch env already carries config env and we keep it simple).
+  const envPairs = task.options?.env ?? {}
+  const envPrefix =
+    process.platform !== 'win32'
+      ? Object.entries(envPairs)
+          .map(([k, v]) => `${k}=${shQuote(subAll(v, folder))}`)
+          .join(' ')
+      : ''
+  if (envPrefix) line = `${envPrefix} ${line}`
   // Respect the task's working directory by wrapping in a subshell.
   const cwd = task.options?.cwd ? subAll(task.options.cwd, folder) : ''
   return cwd ? `( cd ${shQuote(cwd)} && ${line} )` : line
@@ -218,8 +298,9 @@ function resolveTaskCommands(
 ): string[] {
   if (seen.has(label)) return []
   seen.add(label)
-  const task = tasks.find((t) => t.label === label)
-  if (!task) return []
+  const found = tasks.find((t) => t.label === label)
+  if (!found) return []
+  const task = applyPlatform(found)
   const out: string[] = []
   const deps = task.dependsOn ? (Array.isArray(task.dependsOn) ? task.dependsOn : [task.dependsOn]) : []
   for (const dep of deps) out.push(...resolveTaskCommands(dep, tasks, folder, seen))
@@ -232,27 +313,30 @@ function resolveTaskCommands(
  * Turn a launch config into the ordered shell command segments to run:
  * its preLaunchTask chain (dependsOn expanded) followed by its program. A
  * `compounds` entry expands into all its member configs, in order. Collects
- * each config's `env` into `env`.
+ * each config's `env` (and `envFile`) into `env`.
  */
-function configSegments(
+async function configSegments(
   config: LaunchConfig,
   configs: LaunchConfig[],
   tasks: LaunchTask[],
   dir: string,
   env: Record<string, string>,
   seen: Set<string> = new Set()
-): string[] {
+): Promise<string[]> {
+  config = applyPlatform(config)
   if (Array.isArray(config.compound)) {
     if (seen.has(config.name)) return []
     seen.add(config.name)
     const out: string[] = []
     for (const name of config.compound) {
       const member = configs.find((c) => c.name === name)
-      if (member) out.push(...configSegments(member, configs, tasks, dir, env, seen))
+      if (member) out.push(...(await configSegments(member, configs, tasks, dir, env, seen)))
     }
     return out
   }
+  // Config `env` wins over `envFile`; both are merged into the pty environment.
   for (const [k, v] of Object.entries(config.env ?? {})) env[k] = subAll(v, dir)
+  await applyEnvFile(config, dir, env)
   const out: string[] = []
   if (config.preLaunchTask) out.push(...resolveTaskCommands(config.preLaunchTask, tasks, dir))
   const program = launchCommand(config, dir)
@@ -261,6 +345,10 @@ function configSegments(
     // is applied to the pty directly, so it needs no wrapping).
     const cwd = config.cwd ? subAll(config.cwd, dir) : ''
     out.push(cwd && seen.size > 0 ? `( cd ${shQuote(cwd)} && ${program} )` : program)
+  }
+  // A `postDebugTask` runs once the program exits (we chain it after).
+  if (typeof config.postDebugTask === 'string' && config.postDebugTask) {
+    out.push(...resolveTaskCommands(config.postDebugTask, tasks, dir))
   }
   return out
 }
@@ -281,16 +369,47 @@ function launchCommand(config: LaunchConfig, folder: string): string {
   //    nothing else for us to spawn directly.
   if (request === 'attach' && !config.runtimeExecutable && typeof config.url !== 'string') return ''
 
-  // 3. Browser debug configs — we can't drive a debugger, so just open the URL.
+  // 3. The VS Code Extension Host can't be launched outside VS Code itself.
+  if (/extensionhost/.test(type)) return ''
+
+  // 4. Browser debug configs — we can't drive a debugger, so just open the URL.
   if (/^(pwa-)?(chrome|msedge|edge)$/.test(type)) {
     const url = typeof config.url === 'string' ? subAll(config.url, folder) : ''
     return url ? `${openCmd()} ${shQuote(url)}` : ''
   }
 
-  // 4. Dart / Flutter — run through the flutter (or dart) CLI.
+  // 5. Dart / Flutter — run through the flutter (or dart) CLI.
   if (type === 'dart' || type === 'flutter') return dartCommand(config, folder)
 
   const program = config.program ? subAll(config.program, folder) : ''
+  const args = (config.args ?? []).map((a) => shQuote(subAll(a, folder)))
+
+  // 6. Go (`dlv`-based delve adapter) — `go run` the package/file.
+  if (type === 'go') {
+    const target = program || (typeof config.cwd === 'string' ? subAll(config.cwd, folder) : '.')
+    return ['go', 'run', shQuote(target), ...args].join(' ')
+  }
+
+  // 7. .NET (coreclr / clr) — the `program` is a built .dll, run via `dotnet`.
+  if (type === 'coreclr' || type === 'clr' || type === 'dotnet') {
+    if (!program) return ''
+    return program.toLowerCase().endsWith('.dll')
+      ? ['dotnet', shQuote(program), ...args].join(' ')
+      : [shQuote(program), ...args].join(' ')
+  }
+
+  // 8. PHP (XDebug `php` adapter) — run the script through the php CLI.
+  if (type === 'php') {
+    if (!program) return ''
+    return ['php', shQuote(program), ...args].join(' ')
+  }
+
+  // 9. Python launching a *module* (`"module": "uvicorn"` → `python -m uvicorn`).
+  if ((type === 'python' || type === 'debugpy') && typeof config.module === 'string' && config.module) {
+    const py = process.platform === 'win32' ? 'python' : 'python3'
+    return [py, '-m', shQuote(subAll(config.module, folder)), ...args].join(' ')
+  }
+
   // Pick the executable: an explicit runtimeExecutable wins; otherwise infer an
   // interpreter from the debug `type` / file extension so a bare `program`
   // (e.g. a .js or .py file) is run *through* its runtime instead of exec'd
@@ -301,7 +420,6 @@ function launchCommand(config: LaunchConfig, folder: string): string {
   // When the executable is a runtime (runtimeExecutable or an inferred
   // interpreter), `program` becomes its first argument.
   const programArg = program && exe !== program ? [shQuote(program)] : []
-  const args = (config.args ?? []).map((a) => shQuote(subAll(a, folder)))
   return [shQuote(exe), ...runtimeArgs, ...programArg, ...args].join(' ')
 }
 
@@ -333,11 +451,15 @@ function interpreterFor(config: LaunchConfig, program: string): string {
   const type = (config.type ?? '').toLowerCase()
   if (type === 'node' || type === 'node2' || type === 'pwa-node') return 'node'
   if (type === 'python' || type === 'debugpy') return process.platform === 'win32' ? 'python' : 'python3'
+  if (type === 'ruby' || type === 'rdbg') return 'ruby'
   const ext = program.slice(program.lastIndexOf('.')).toLowerCase()
   if (ext === '.js' || ext === '.mjs' || ext === '.cjs') return 'node'
+  if (ext === '.ts' || ext === '.mts' || ext === '.cts') return 'tsx'
   if (ext === '.py') return process.platform === 'win32' ? 'python' : 'python3'
   if (ext === '.rb') return 'ruby'
   if (ext === '.sh') return 'bash'
+  if (ext === '.php') return 'php'
+  if (ext === '.pl') return 'perl'
   return ''
 }
 
@@ -466,7 +588,7 @@ export function registerLaunchHandlers(): void {
 
   ipcMain.handle(
     'launch:run',
-    (
+    async (
       e,
       payload: {
         dir: string
@@ -476,13 +598,23 @@ export function registerLaunchHandlers(): void {
         cols: number
         rows: number
       }
-    ): { id: number } | { error: string } => {
-      const { dir, config, tasks, cols, rows } = payload
+    ): Promise<{ id: number } | { error: string }> => {
+      const { dir, tasks, cols, rows } = payload
+      const config = applyPlatform(payload.config)
       const siblings = payload.configs ?? [config]
       const folder = config.cwd ? subAll(config.cwd, dir) : dir
 
+      // Bail clearly on configs that reference editor-only variables we can't
+      // resolve headlessly (interactive ${input:…}, ${command:…}, ${file…}…),
+      // rather than running a half-substituted command line.
+      if (hasUnresolvableVars(config.program, config.cwd, typeof config.command === 'string' ? config.command : undefined, ...(config.args ?? []), ...(config.runtimeArgs ?? []))) {
+        return {
+          error: `"${config.name}" uses a VS Code variable Gitcito can't resolve outside the editor (e.g. \${input:…}, \${command:…} or \${file}). Run it from VS Code instead.`
+        }
+      }
+
       const env: Record<string, string> = {}
-      const parts = configSegments(config, siblings, tasks, dir, env)
+      const parts = await configSegments(config, siblings, tasks, dir, env)
 
       if (parts.length === 0) {
         return {

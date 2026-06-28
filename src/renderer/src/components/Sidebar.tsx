@@ -40,7 +40,7 @@ import { shellApi } from '../infrastructure/api'
 import { useT, interp } from '../i18n'
 import { repoIsGitHub } from '../lib/hosting'
 import { defaultSettings } from '../../../shared/types'
-import type { BranchInfo, ReleaseInfo, RemoteBranchInfo, StashInfo, TagInfo, WorktreeInfo, SubmoduleInfo } from '../../../shared/types'
+import type { BranchInfo, ReleaseInfo, RemoteBranchInfo, StashInfo, TagInfo, WorktreeInfo, SubmoduleInfo, LaunchGroup, LaunchConfig } from '../../../shared/types'
 
 import { RemoteIcon } from './RemoteIcon'
 
@@ -202,21 +202,44 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   const hasLaunch = enableLaunchJson && launchGroups.some((g) => g.configs.length > 0)
 
   // Build the Run/Debug picker: root group first, deeper folders after a
-  // divider; a lone deeper folder shows with no divider.
+  // divider; a lone deeper folder shows with no divider. Within a folder we
+  // honour `presentation` — hidden configs are skipped and the rest are sorted
+  // by `group` then `order` (then their original order), matching VS Code.
+  const visibleConfigs = (g: LaunchGroup): LaunchConfig[] =>
+    g.configs
+      .filter((c) => !c.presentation?.hidden)
+      .map((c, i) => ({ c, i }))
+      .sort((a, b) => {
+        const ga = a.c.presentation?.group ?? ''
+        const gb = b.c.presentation?.group ?? ''
+        if (ga !== gb) return ga < gb ? -1 : 1
+        const oa = a.c.presentation?.order ?? Number.MAX_SAFE_INTEGER
+        const ob = b.c.presentation?.order ?? Number.MAX_SAFE_INTEGER
+        return oa - ob || a.i - b.i
+      })
+      .map(({ c }) => c)
+
   const openLaunchMenu = (x: number, y: number): void => {
-    const groups = launchGroups.filter((g) => g.configs.length > 0)
+    const groups = launchGroups
+      .map((g) => ({ g, configs: visibleConfigs(g) }))
+      .filter(({ configs }) => configs.length > 0)
     const showLabels = groups.length > 1
     const items: MenuItem[] = []
-    groups.forEach((g, gi) => {
+    groups.forEach(({ g, configs }, gi) => {
       if (gi > 0) items.push({ separator: true })
       if (showLabels) items.push({ label: g.label, disabled: true })
-      for (const cfg of g.configs) {
+      let prevGroup: string | undefined
+      configs.forEach((cfg, ci) => {
+        // Draw a divider when the presentation group changes within a folder.
+        const grp = cfg.presentation?.group
+        if (ci > 0 && grp !== prevGroup) items.push({ separator: true })
+        prevGroup = grp
         items.push({
           label: cfg.name,
           icon: <Play size={13} />,
           onClick: () => void runLaunch(repo.path, g, cfg)
         })
-      }
+      })
     })
     openContextMenu(x, y, items)
   }

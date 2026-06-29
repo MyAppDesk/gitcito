@@ -425,7 +425,7 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
   const remoteNames = useMemo(() => new Set(repo.remotes.map((r) => r.name)), [repo.remotes])
 
   const displayCommits = useMemo<GraphCommit[]>(() => {
-    if (repo.commits.length === 0) return repo.commits
+    if (repo.commits.length === 0 && !hasWip) return repo.commits
     const head = repo.commits.find((c) => c.refs.some((r) => r.startsWith('HEAD')))
     // Linear view: keep only HEAD's first-parent chain (hides merged-in branches).
     let commits = repo.commits

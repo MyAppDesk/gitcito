@@ -1,5 +1,12 @@
 
 
+## [1.15.1](https://github.com/MyAppDesk/gitcito/compare/v1.15.0...v1.15.1) (2026-06-29)
+
+
+### Features
+
+* add empty-repo scenario with staged files for WIP demo ([a1a81de](https://github.com/MyAppDesk/gitcito/commit/a1a81de3c7aa326a1fcdc556d84334dfaffbceaf))
+
 ## [1.15.0](https://github.com/MyAppDesk/gitcito/compare/v1.14.0...v1.15.0) (2026-06-28)
 
 

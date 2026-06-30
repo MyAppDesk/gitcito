@@ -1122,6 +1122,9 @@ export function defaultGraphColumns(): GraphColumns {
 export type GraphEdgeStyle = 'rounded' | 'sharp' | 'curved' | 'straight'
 export type GraphDensity = 'compact' | 'comfortable' | 'spacious'
 export type GraphLineWidth = 'thin' | 'normal' | 'thick'
+/** How commit nodes are drawn: `normal` shows author avatars; `compact`
+ *  replaces them with small dots (and stashes with a small cube). */
+export type GraphNodeStyle = 'normal' | 'compact'
 
 /** A named set of lane colours for the graph rails. */
 export interface GraphPalette {
@@ -1138,10 +1141,12 @@ export interface GraphStyle {
   edgeStyle: GraphEdgeStyle
   density: GraphDensity
   lineWidth: GraphLineWidth
+  /** Commit node rendering — avatars (`normal`) or dots (`compact`). */
+  nodeStyle: GraphNodeStyle
 }
 
 export function defaultGraphStyle(): GraphStyle {
-  return { paletteId: 'classic', edgeStyle: 'rounded', density: 'comfortable', lineWidth: 'normal' }
+  return { paletteId: 'classic', edgeStyle: 'rounded', density: 'comfortable', lineWidth: 'normal', nodeStyle: 'normal' }
 }
 
 /**

@@ -338,6 +338,8 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
   const ROW_H = DENSITY_ROW_H[graphStyle.density] ?? DENSITY_ROW_H.comfortable
   const lineW = LINE_WIDTH_PX[graphStyle.lineWidth] ?? LINE_WIDTH_PX.normal
   const edgeStyle = graphStyle.edgeStyle
+  // Compact mode draws commits as dots instead of author avatars.
+  const compact = (graphStyle.nodeStyle ?? 'normal') === 'compact'
   const colorFor = useMemo(
     () => colorForPalette(findGraphPalette(graphStyle.paletteId, customGraphPalettes).colors),
     [graphStyle.paletteId, customGraphPalettes]
@@ -365,10 +367,18 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
 
   const openColumnsMenu = (x: number, y: number): void => {
     const ids: GraphColumnId[] = ['branch', 'graph', ...columnOrder]
-    const items: MenuItem[] = ids.map((id) => ({
-      label: `${columns[id].visible ? '✓ ' : '   '}${t(COL_LABEL_KEY[id] as Parameters<typeof t>[0])}`,
-      onClick: () => setColumn(id, { visible: !columns[id].visible })
-    }))
+    const items: MenuItem[] = [
+      {
+        label: t('graph.themeSettings'),
+        icon: <Settings2 size={14} />,
+        onClick: () => openModal({ kind: 'settings', page: 'themes', themeTab: 'graph' })
+      },
+      { separator: true },
+      ...ids.map((id) => ({
+        label: `${columns[id].visible ? '✓ ' : '   '}${t(COL_LABEL_KEY[id] as Parameters<typeof t>[0])}`,
+        onClick: () => setColumn(id, { visible: !columns[id].visible })
+      }))
+    ]
     items.push(
       { separator: true },
       {
@@ -1338,10 +1348,33 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
                 const isWip = c.hash === WIP_HASH
                 const isStash = stashBySha.has(c.hash)
                 if (isStash) {
+                  const sc = colorFor(n.color)
+                  // Compact: a dashed, hatched box. Normal: a stacked-cards glyph.
+                  if (compact) {
+                    const size = 13
+                    const bx = cx - size / 2
+                    const by = cy - size / 2
+                    const clipId = `stash-hatch-${c.hash}`
+                    return (
+                      <g key={c.hash} className="graph-node stash-node">
+                        <defs>
+                          <clipPath id={clipId}>
+                            <rect x={bx} y={by} width={size} height={size} rx={2.5} />
+                          </clipPath>
+                        </defs>
+                        <rect x={bx} y={by} width={size} height={size} rx={2.5} fill="var(--bg-1)" />
+                        <g clipPath={`url(#${clipId})`}>
+                          {[-size, -size / 2, 0, size / 2, size].map((off, k) => (
+                            <line key={k} x1={bx + off} y1={by + size} x2={bx + off + size} y2={by} stroke={sc} strokeWidth={1.5} opacity={0.7} />
+                          ))}
+                        </g>
+                        <rect x={bx} y={by} width={size} height={size} rx={2.5} fill="none" stroke={sc} strokeWidth={lineW} strokeDasharray="2.5 2" />
+                      </g>
+                    )
+                  }
                   // Layered "stack of cards" glyph — reads as saved/stashed work
                   // with a bit of depth. Both cards fill with bg so the connector
                   // line behind never peeks through.
-                  const sc = colorFor(n.color)
                   return (
                     <g key={c.hash} className="graph-node stash-node">
                       {/* back card, offset up-right and faded for depth */}
@@ -1403,6 +1436,21 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
                     />
                   )
                 }
+                // Compact: commits are dots too, a touch larger than merge dots.
+                if (compact) {
+                  return (
+                    <circle
+                      key={c.hash}
+                      cx={cx}
+                      cy={cy}
+                      r={6.5}
+                      fill={colorFor(n.color)}
+                      stroke="var(--bg-1)"
+                      strokeWidth={1.5}
+                      className="graph-node"
+                    />
+                  )
+                }
                 // Normal commits drawn as avatar nodes in the HTML overlay below.
                 return null
               })}
@@ -1413,7 +1461,9 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
         {/* Avatar nodes overlay — the gravatar/generated avatar sits on the
             commit "ball", with a connector line from any branch labels. The
             overlay is clipped to the branch+graph region so avatars never spill
-            over the commit messages when columns are resized too narrow. */}
+            over the commit messages when columns are resized too narrow.
+            Skipped entirely in compact mode, where commits are SVG dots. */}
+        {!compact && (
         <div className="graph-nodes" style={{ width: branchCol + graphCol }}>
           {visibleRows.map((row) => {
             const c = displayCommits[row]
@@ -1443,6 +1493,7 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
             )
           })}
         </div>
+        )}
         </>
         )}
 

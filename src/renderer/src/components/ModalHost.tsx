@@ -1384,7 +1384,7 @@ export function ModalHost(): React.JSX.Element {
             {modal.kind === 'addRemote' && <AddRemoteModal spec={modal} />}
             {modal.kind === 'editRemote' && <EditRemoteModal spec={modal} />}
             {modal.kind === 'clone' && <CloneModal spec={modal} />}
-            {modal.kind === 'settings' && <SettingsPanel initialPage={modal.page} />}
+            {modal.kind === 'settings' && <SettingsPanel initialPage={modal.page} initialThemeTab={modal.themeTab} />}
             {modal.kind === 'launcher' && <LauncherModal spec={modal} />}
             {modal.kind === 'create-repo' && <CreateRepoModal spec={modal} />}
             {modal.kind === 'ai-config-wizard' && <AIConfigWizard spec={modal} />}

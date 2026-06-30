@@ -71,7 +71,7 @@ export type ModalSpec =
     }
   | { kind: 'clone'; onClone: (repo: { path: string; name: string }) => void }
   | { kind: 'create-branch'; path: string; currentBranch?: string; description?: string }
-  | { kind: 'settings'; page?: 'profile' | 'integrations' | 'ai' | 'themes' | 'general' | 'security' | 'shortcuts' | 'data' }
+  | { kind: 'settings'; page?: 'profile' | 'integrations' | 'ai' | 'themes' | 'general' | 'security' | 'shortcuts' | 'data'; themeTab?: 'theme' | 'graph' }
   | { kind: 'launcher'; groupId?: string }
   | { kind: 'create-repo'; onCreate: (repo: { path: string; name: string }) => void }
   | { kind: 'ai-config-wizard'; repoPath: string; repoName: string; initialTab?: 'ask' | 'config' }

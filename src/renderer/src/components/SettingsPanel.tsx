@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useId, useMemo, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import {
   Plus,
@@ -41,9 +41,10 @@ import {
 import hljs from 'highlight.js'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
+import { Avatar } from './Avatar'
 import { useUpdatesStore, hasPendingUpdate } from '../stores/updates'
 import { gitApi, aiApi, settingsApi, analyticsApi, logApi, infoApi, vaultApi } from '../infrastructure/api'
-import { AI_PROVIDERS, emptyAnalytics, defaultGraphStyle, type AIProvider, type Analytics, type AIUsageStat, type ActivityEvent, type RepoStats, type AppSettings, type BranchNamingStyle, type CommitStyle, type ConflictStyle, type ExplainStyle, type Profile, type SigningConfig, type SettingsBundle, type GraphStyle, type GraphPalette, type GraphEdgeStyle, type GraphDensity, type GraphLineWidth } from '../../../shared/types'
+import { AI_PROVIDERS, emptyAnalytics, defaultGraphStyle, type AIProvider, type Analytics, type AIUsageStat, type ActivityEvent, type RepoStats, type AppSettings, type BranchNamingStyle, type CommitStyle, type ConflictStyle, type ExplainStyle, type Profile, type SigningConfig, type SettingsBundle, type GraphStyle, type GraphPalette, type GraphEdgeStyle, type GraphDensity, type GraphLineWidth, type GraphNodeStyle } from '../../../shared/types'
 import { allGraphPalettes, findGraphPalette, colorForPalette, edgePath, DENSITY_ROW_H, LINE_WIDTH_PX, GRAPH_PALETTES } from '../graph/style'
 import type {
   AppTheme,
@@ -746,6 +747,10 @@ const LINE_WIDTHS: { id: GraphLineWidth; label: string }[] = [
   { id: 'normal', label: 'Normal' },
   { id: 'thick', label: 'Thick' }
 ]
+const NODE_STYLES: { id: GraphNodeStyle; key: TranslationKey }[] = [
+  { id: 'normal', key: 'graphNodeStyle.normal' },
+  { id: 'compact', key: 'graphNodeStyle.compact' }
+]
 
 const PALETTE_SLOTS = 8
 
@@ -775,55 +780,125 @@ const PREVIEW_EDGES: { fromRow: number; fromLane: number; toRow: number; toLane:
   { fromRow: 2, fromLane: 2, toRow: 3, toLane: 0, color: 2, dashed: true } // stash spur
 ]
 
+// Sample identities for the live preview's avatar nodes, so it mirrors the
+// real graph (Gravatar when available, generated avatar otherwise).
+const PREVIEW_EMAILS = ['team@myappdesk.dev', 'alex@myappdesk.dev', 'sam@myappdesk.dev', 'jordan@myappdesk.dev']
+
+/** Dashed, diagonally-hatched box used for stash nodes in compact mode. */
+function StashHatchBox({ cx, cy, color, idSuffix }: { cx: number; cy: number; color: string; idSuffix: string }): React.JSX.Element {
+  const size = 13
+  const bx = cx - size / 2
+  const by = cy - size / 2
+  const clipId = `stash-hatch-${idSuffix}`
+  return (
+    <g>
+      <defs>
+        <clipPath id={clipId}>
+          <rect x={bx} y={by} width={size} height={size} rx={2.5} />
+        </clipPath>
+      </defs>
+      <rect x={bx} y={by} width={size} height={size} rx={2.5} fill="var(--bg-2)" />
+      <g clipPath={`url(#${clipId})`}>
+        {[-size, -size / 2, 0, size / 2, size].map((off, k) => (
+          <line
+            key={k}
+            x1={bx + off}
+            y1={by + size}
+            x2={bx + off + size}
+            y2={by}
+            stroke={color}
+            strokeWidth={1.5}
+            opacity={0.7}
+          />
+        ))}
+      </g>
+      <rect x={bx} y={by} width={size} height={size} rx={2.5} fill="none" stroke={color} strokeWidth={1.5} strokeDasharray="2.5 2" />
+    </g>
+  )
+}
+
 function GraphMiniPreview({
   colors,
   edgeStyle,
   rowH,
-  lineW
+  lineW,
+  nodeStyle
 }: {
   colors: string[]
   edgeStyle: GraphEdgeStyle
   rowH: number
   lineW: number
+  nodeStyle: GraphNodeStyle
 }): React.JSX.Element {
   const laneW = 22
   const leftPad = 16
+  const compact = nodeStyle === 'compact'
+  const uid = useId().replace(/:/g, '')
   const cf = colorForPalette(colors)
   const x = (lane: number): number => leftPad + lane * laneW
   const y = (row: number): number => row * rowH + rowH / 2
   const height = PREVIEW_NODES.length * rowH
   const width = leftPad + 2 * laneW + 18
+  const avaSize = 17
+  let avaIdx = 0
   return (
-    <svg className="graph-mini-svg" width={width} height={height}>
-      {PREVIEW_EDGES.map((e, i) => (
-        <path
-          key={i}
-          d={edgePath(x(e.fromLane), y(e.fromRow), x(e.toLane), y(e.toRow), edgeStyle)}
-          stroke={cf(e.color)}
-          strokeWidth={lineW}
-          strokeLinecap="round"
-          strokeDasharray={e.dashed ? '3 3' : undefined}
-          fill="none"
-          opacity={0.9}
-        />
-      ))}
-      {PREVIEW_NODES.map((n, i) => {
-        const cx = x(n.lane)
-        const cy = y(n.row)
-        const col = cf(n.color)
-        if (n.kind === 'stash') {
+    <div className="graph-mini-wrap" style={{ position: 'relative', width, height }}>
+      <svg className="graph-mini-svg" width={width} height={height}>
+        {PREVIEW_EDGES.map((e, i) => (
+          <path
+            key={i}
+            d={edgePath(x(e.fromLane), y(e.fromRow), x(e.toLane), y(e.toRow), edgeStyle)}
+            stroke={cf(e.color)}
+            strokeWidth={lineW}
+            strokeLinecap="round"
+            strokeDasharray={e.dashed ? '3 3' : undefined}
+            fill="none"
+            opacity={0.9}
+          />
+        ))}
+        {PREVIEW_NODES.map((n, i) => {
+          const cx = x(n.lane)
+          const cy = y(n.row)
+          const col = cf(n.color)
+          if (n.kind === 'stash') {
+            // Compact: a dashed, hatched box. Normal: a stacked-cards glyph.
+            if (compact) return <StashHatchBox key={i} cx={cx} cy={cy} color={col} idSuffix={`${uid}-${i}`} />
+            return (
+              <g key={i}>
+                <rect x={cx - 3.75} y={cy - 7.25} width={11} height={11} rx={3} fill="var(--bg-2)" stroke={col} strokeWidth={Math.max(1, lineW - 0.5)} opacity={0.55} />
+                <rect x={cx - 7.25} y={cy - 3.75} width={11} height={11} rx={3} fill="var(--bg-2)" stroke={col} strokeWidth={lineW} />
+                <circle cx={cx - 1.75} cy={cy + 1.75} r={1.4} fill={col} />
+              </g>
+            )
+          }
+          if (n.kind === 'merge') {
+            return <circle key={i} cx={cx} cy={cy} r={4} fill={col} stroke="var(--bg-2)" strokeWidth={1.5} />
+          }
+          // Compact commits are dots a touch larger than merge dots. Normal
+          // commits are drawn as HTML avatar nodes overlaid below.
+          if (compact) {
+            return <circle key={i} cx={cx} cy={cy} r={5} fill={col} stroke="var(--bg-2)" strokeWidth={1.5} />
+          }
+          return null
+        })}
+      </svg>
+      {!compact &&
+        PREVIEW_NODES.filter((n) => n.kind === 'commit').map((n, i) => {
+          const cx = x(n.lane)
+          const cy = y(n.row)
+          const col = cf(n.color)
+          const email = PREVIEW_EMAILS[avaIdx++ % PREVIEW_EMAILS.length]
           return (
-            <g key={i}>
-              <rect x={cx - 3.75} y={cy - 7.25} width={11} height={11} rx={3} fill="var(--bg-2)" stroke={col} strokeWidth={Math.max(1, lineW - 0.5)} opacity={0.55} />
-              <rect x={cx - 7.25} y={cy - 3.75} width={11} height={11} rx={3} fill="var(--bg-2)" stroke={col} strokeWidth={lineW} />
-              <circle cx={cx - 1.75} cy={cy + 1.75} r={1.4} fill={col} />
-            </g>
+            <div
+              key={i}
+              className="node-ava"
+              style={{ left: cx, top: cy, boxShadow: `0 0 0 2px ${col}` }}
+            >
+              <Avatar email={email} size={avaSize} />
+            </div>
           )
-        }
-        const r = n.kind === 'merge' ? 4 : 4.5
-        return <circle key={i} cx={cx} cy={cy} r={r} fill={col} stroke="var(--bg-2)" strokeWidth={1.5} />
-      })}
-    </svg>
+        })}
+    </div>
   )
 }
 
@@ -987,6 +1062,20 @@ function GraphStyleTab(): React.JSX.Element {
             ))}
           </div>
 
+          <h4 style={{ marginTop: 18 }}>{t('settings.graphNodeStyle')}</h4>
+          <div className="theme-mode-switch">
+            {NODE_STYLES.map((nstyle) => (
+              <button
+                key={nstyle.id}
+                type="button"
+                className={`theme-mode-btn ${style.nodeStyle === nstyle.id ? 'active' : ''}`}
+                onClick={() => setStyle({ nodeStyle: nstyle.id })}
+              >
+                <span>{t(nstyle.key)}</span>
+              </button>
+            ))}
+          </div>
+
           <h4 style={{ marginTop: 18 }}>{t('settings.graphLineWidth')}</h4>
           <div className="theme-mode-switch">
             {LINE_WIDTHS.map((w) => (
@@ -1005,7 +1094,7 @@ function GraphStyleTab(): React.JSX.Element {
         <div className="graph-style-preview">
           <div className="code-preview-head">{t('settings.graphPreview')}</div>
           <div className="graph-mini-stage">
-            <GraphMiniPreview colors={current.colors} edgeStyle={style.edgeStyle} rowH={rowH} lineW={lineW} />
+            <GraphMiniPreview colors={current.colors} edgeStyle={style.edgeStyle} rowH={rowH} lineW={lineW} nodeStyle={style.nodeStyle} />
           </div>
         </div>
       </div>
@@ -1056,7 +1145,7 @@ function GraphStyleTab(): React.JSX.Element {
               ))}
             </div>
             <div className="graph-mini-stage" style={{ marginTop: 12 }}>
-              <GraphMiniPreview colors={draft} edgeStyle={style.edgeStyle} rowH={rowH} lineW={lineW} />
+              <GraphMiniPreview colors={draft} edgeStyle={style.edgeStyle} rowH={rowH} lineW={lineW} nodeStyle={style.nodeStyle} />
             </div>
             <div className="theme-editor-actions">
               <button className="btn primary small" onClick={savePalette}>
@@ -1073,7 +1162,7 @@ function GraphStyleTab(): React.JSX.Element {
   )
 }
 
-function ThemesPage(): React.JSX.Element {
+function ThemesPage({ initialTab }: { initialTab?: 'theme' | 'graph' } = {}): React.JSX.Element {
   const settings = useSettingsStore((s) => s.settings)
   const activeProfile = useSettingsStore((s) => s.activeProfile())
   const update = useSettingsStore((s) => s.update)
@@ -1105,7 +1194,7 @@ function ThemesPage(): React.JSX.Element {
   const [showCodeAIPrompt, setShowCodeAIPrompt] = useState(false)
   const [codeAIPrompt, setCodeAIPrompt] = useState('')
   const [generatingCode, setGeneratingCode] = useState(false)
-  const [tab, setTab] = useState<'theme' | 'graph'>('theme')
+  const [tab, setTab] = useState<'theme' | 'graph'>(initialTab ?? 'theme')
 
   const generateAppThemeAI = async (): Promise<void> => {
     if (!appAIPrompt.trim()) return
@@ -2357,7 +2446,7 @@ function readLastPage(): SettingsPage {
   return stored && (PAGE_IDS as string[]).includes(stored) ? (stored as SettingsPage) : 'general'
 }
 
-export function SettingsPanel({ initialPage }: { initialPage?: SettingsPage } = {}): React.JSX.Element {
+export function SettingsPanel({ initialPage, initialThemeTab }: { initialPage?: SettingsPage; initialThemeTab?: 'theme' | 'graph' } = {}): React.JSX.Element {
   const { settings, addProfile, deleteProfile } = useSettingsStore()
   const openModal = useUIStore((s) => s.openModal)
   const closeModal = useUIStore((s) => s.closeModal)
@@ -2507,7 +2596,7 @@ export function SettingsPanel({ initialPage }: { initialPage?: SettingsPage } = 
           {page === 'profile' && <ProfilePage profile={profile} edit={edit} />}
           {page === 'integrations' && <IntegrationsPage profile={profile} edit={edit} />}
           {page === 'ai' && <AIPage profile={profile} edit={edit} />}
-          {page === 'themes' && <ThemesPage />}
+          {page === 'themes' && <ThemesPage initialTab={initialThemeTab} />}
           {page === 'general' && <GeneralPage />}
           {page === 'security' && <SecurityPage />}
           {page === 'shortcuts' && <ShortcutsPage />}

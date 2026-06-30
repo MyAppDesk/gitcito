@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import {
   defaultProfile,
   defaultSettings,
+  defaultGraphStyle,
   type AppSettings,
   type PageContent,
   type Profile,
@@ -129,6 +130,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     settings.fileListView = settings.fileListView ?? sd.fileListView
     settings.groupBranches = settings.groupBranches ?? sd.groupBranches
     settings.graphColumns = { ...sd.graphColumns, ...(settings.graphColumns ?? {}) }
+    settings.graphStyle = { ...defaultGraphStyle(), ...(settings.graphStyle ?? {}) }
     // Keep the order list complete: drop unknown ids, append any newly-added
     // columns (e.g. `deployment`) that an older saved order is missing.
     {

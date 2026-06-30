@@ -237,18 +237,53 @@ export function TitleBar(): React.JSX.Element {
   const plusMenu = (): void => openModal({ kind: 'launcher' })
 
   const confirmCloseGroup = (tab: TabState): void => {
-    if (tab.kind === 'group' && tab.repos.length > 1) {
-      openModal({
-        kind: 'confirm',
-        title: 'Close group',
-        message: `"${tab.name}" has ${tab.repos.length} repositories. Close it?`,
-        danger: true,
-        confirmLabel: 'Close',
-        onConfirm: () => closeTab(tab.id)
-      })
+    if (tab.kind === 'page') { closeTab(tab.id); return }
+    const warn = settings.warnOnClose ?? 'always'
+    const status = tabStatus(tab)
+    const shouldWarn = warn === 'always' || (warn === 'wip' && status !== null)
+    if (!shouldWarn) { closeTab(tab.id); return }
+    const isGroup = tab.kind === 'group'
+    const repoCount = isGroup ? tab.repos.length : 1
+    let message: string
+    if (isGroup && repoCount > 1) {
+      message = status
+        ? `"${tab.name}" has ${repoCount} repositories with ${status === 'conflict' ? 'merge conflicts' : 'uncommitted changes'}. Close it?`
+        : `"${tab.name}" has ${repoCount} repositories. Close it?`
     } else {
-      closeTab(tab.id)
+      message = status === 'conflict'
+        ? 'This repository has merge conflicts in progress. Close it?'
+        : status === 'wip'
+          ? 'This repository has uncommitted changes. Close it?'
+          : 'Close this tab?'
     }
+    openModal({
+      kind: 'confirm',
+      title: isGroup ? 'Close group' : 'Close tab',
+      message,
+      danger: true,
+      confirmLabel: 'Close',
+      onConfirm: () => closeTab(tab.id)
+    })
+  }
+
+  const confirmRemoveRepo = (groupTabId: string, repoPath: string): void => {
+    const warn = settings.warnOnClose ?? 'always'
+    const status = repoStatus(repoPath)
+    const shouldWarn = warn === 'always' || (warn === 'wip' && status !== null)
+    if (!shouldWarn) { removeRepoFromGroup(groupTabId, repoPath); return }
+    const message = status === 'conflict'
+      ? 'This repository has merge conflicts in progress. Remove it from the group?'
+      : status === 'wip'
+        ? 'This repository has uncommitted changes. Remove it from the group?'
+        : 'Remove this repository from the group?'
+    openModal({
+      kind: 'confirm',
+      title: 'Remove repository',
+      message,
+      danger: true,
+      confirmLabel: 'Remove',
+      onConfirm: () => removeRepoFromGroup(groupTabId, repoPath)
+    })
   }
 
   const tabMenu = (tab: TabState): MenuItem[] => {
@@ -336,7 +371,7 @@ export function TitleBar(): React.JSX.Element {
     {
       label: 'Remove from group',
       danger: true,
-      onClick: () => removeRepoFromGroup(groupTab.id, repoPath)
+      onClick: () => confirmRemoveRepo(groupTab.id, repoPath)
     }
   ]
 
@@ -506,7 +541,7 @@ export function TitleBar(): React.JSX.Element {
                       onDragEnd={onDragEnd as any}
                       onDragOver={onDragOverRepo(tab.id, repo.path)}
                       onDrop={onDropRepo(tab.id, repo.path)}
-                      {...middleClose(() => removeRepoFromGroup(tab.id, repo.path))}
+                      {...middleClose(() => confirmRemoveRepo(tab.id, repo.path))}
                       onClick={() => {
                         setActiveTab(tab.id)
                         setGroupActiveRepo(tab.id, repo.path)
@@ -533,7 +568,7 @@ export function TitleBar(): React.JSX.Element {
                         className="tab-close"
                         onClick={(e) => {
                           e.stopPropagation()
-                          removeRepoFromGroup(tab.id, repo.path)
+                          confirmRemoveRepo(tab.id, repo.path)
                         }}
                       >
                         <X size={12} />

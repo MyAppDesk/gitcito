@@ -154,6 +154,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     settings.maskSecrets = settings.maskSecrets ?? sd.maskSecrets
     settings.shortcuts = settings.shortcuts ?? sd.shortcuts
     settings.largeFileKb = settings.largeFileKb ?? sd.largeFileKb
+    settings.warnOnClose = settings.warnOnClose ?? sd.warnOnClose
     settings.repoProfiles = settings.repoProfiles ?? sd.repoProfiles
     settings.repoLayouts = settings.repoLayouts ?? {}
     set({ settings, loaded: true })

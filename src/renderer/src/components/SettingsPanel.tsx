@@ -1871,6 +1871,19 @@ function GeneralPage(): React.JSX.Element {
           />
           <span className="settings-hint">{t('settings.autoFetchHint')}</span>
         </label>
+
+        <label className="settings-field">
+          <span className="settings-field-label">{t('settings.warnOnClose')}</span>
+          <select
+            value={settings.warnOnClose ?? 'always'}
+            onChange={(e) => update((s) => ({ ...s, warnOnClose: e.target.value as AppSettings['warnOnClose'] }))}
+          >
+            <option value="always">{t('settings.warnOnClose.always')}</option>
+            <option value="wip">{t('settings.warnOnClose.wip')}</option>
+            <option value="never">{t('settings.warnOnClose.never')}</option>
+          </select>
+          <span className="settings-hint">{t('settings.warnOnCloseHint')}</span>
+        </label>
       </div>
 
       <label className="settings-toggle-card">

@@ -373,6 +373,11 @@ const en = {
   'settings.autoFetchHint': '0 disables automatic background fetching.',
   'settings.confirmForcePush': 'Confirm before force push',
   'settings.confirmForcePushHint': 'Ask for confirmation before any force push.',
+  'settings.warnOnClose': 'Warn when closing',
+  'settings.warnOnCloseHint': 'Controls when a confirmation dialog appears before closing a repository tab, group, or repo within a group.',
+  'settings.warnOnClose.always': 'Always',
+  'settings.warnOnClose.wip': 'When changes',
+  'settings.warnOnClose.never': 'Never',
   'settings.desktopNotifications': 'Desktop notifications',
   'settings.desktopNotificationsHint':
     'Raise an OS notification when a review is requested or CI runs on your GitHub inbox.',
@@ -1572,6 +1577,11 @@ const es: Dict = {
   'settings.autoFetchHint': '0 desactiva el fetch automático en segundo plano.',
   'settings.confirmForcePush': 'Confirmar antes de force push',
   'settings.confirmForcePushHint': 'Pedir confirmación antes de cualquier force push.',
+  'settings.warnOnClose': 'Avisar al cerrar',
+  'settings.warnOnCloseHint': 'Controla cuándo aparece un diálogo de confirmación antes de cerrar una pestaña de repositorio, un grupo o un repo dentro de un grupo.',
+  'settings.warnOnClose.always': 'Siempre',
+  'settings.warnOnClose.wip': 'Con cambios',
+  'settings.warnOnClose.never': 'Nunca',
   'settings.desktopNotifications': 'Notificaciones de escritorio',
   'settings.desktopNotificationsHint':
     'Mostrar una notificación del sistema cuando te piden revisión o hay actividad de CI en tu bandeja de GitHub.',

@@ -1073,6 +1073,10 @@ export interface AppSettings {
   shortcuts: Record<string, string>
   /** Warn before committing files larger than this many KB (0 = off). */
   largeFileKb: number
+  /** When to show a confirmation dialog before closing a repo tab, group, or
+   *  repo-within-group. 'always' = every close; 'wip' = only when there are
+   *  uncommitted changes or merge conflicts; 'never' = close silently. */
+  warnOnClose: 'always' | 'wip' | 'never'
   /** Parent folder of the last clone, used to pre-fill the clone dialog. */
   lastClonePath?: string
   /** Last app version the user has seen the changelog for. Undefined until the
@@ -1293,6 +1297,7 @@ export function defaultSettings(): AppSettings {
     maskSecrets: true,
     enableLaunchJson: true,
     shortcuts: {},
-    largeFileKb: 5120
+    largeFileKb: 5120,
+    warnOnClose: 'always'
   }
 }

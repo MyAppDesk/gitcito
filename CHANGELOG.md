@@ -1,5 +1,14 @@
 
 
+## [1.16.0](https://github.com/MyAppDesk/gitcito/compare/v1.15.1...v1.16.0) (2026-06-30)
+
+
+### Features
+
+* add compact mode for graph view with dot representation ([459122e](https://github.com/MyAppDesk/gitcito/commit/459122ea31e902b3899381a764825692fa51be8a))
+* add per-repository layout overrides for graph and sidebar ([a3b1389](https://github.com/MyAppDesk/gitcito/commit/a3b1389a473af15690577974969bbedb15e7ce25))
+* add warn on close setting for repository tabs ([b461ece](https://github.com/MyAppDesk/gitcito/commit/b461eceb9d719e6783a5221304d7dd638670be94))
+
 ## [1.15.1](https://github.com/MyAppDesk/gitcito/compare/v1.15.0...v1.15.1) (2026-06-29)
 
 

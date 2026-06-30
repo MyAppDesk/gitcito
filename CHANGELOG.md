@@ -1,5 +1,12 @@
 
 
+## [1.16.1](https://github.com/MyAppDesk/gitcito/compare/v1.16.0...v1.16.1) (2026-06-30)
+
+
+### Bug Fixes
+
+* improve styling for GraphView component and popup ([afc63f4](https://github.com/MyAppDesk/gitcito/commit/afc63f4d0100d14dc7a3ea94119e6865d51b8ff9))
+
 ## [1.16.0](https://github.com/MyAppDesk/gitcito/compare/v1.15.1...v1.16.0) (2026-06-30)
 
 

@@ -1242,10 +1242,11 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
       : `${g.label}${g.isLocal ? ' · local' : ''}${g.remotes.length ? ` · ${g.remotes.join(', ')}` : ''}`
     // Active branch (HEAD) gets a solid lane-colored pill so it stands out as
     // the checked-out branch; others keep the soft lane tint.
-    const laneStyle: React.CSSProperties | undefined = laneColor
-      ? g.isHead
-        ? { borderColor: laneColor, background: laneColor, color: contrastText(laneColor) }
-        : { borderColor: laneColor + '90', background: laneColor + '20' }
+    const solidStyle = laneColor
+      ? { borderColor: laneColor, background: laneColor, color: contrastText(laneColor) }
+      : undefined
+    const laneStyle: React.CSSProperties | undefined = solidStyle
+      ? g.isTag ? { ...solidStyle, opacity: 0.72 } : solidStyle
       : undefined
     return (
       <span

@@ -878,7 +878,20 @@ export const gitService = {
   },
 
   async deleteRemoteBranch(repoPath: string, remote: string, name: string): Promise<void> {
-    await withRemoteAuth(repoPath, remote, () => runGit(repoPath, ['push', remote, '--delete', name]))
+    try {
+      await withRemoteAuth(repoPath, remote, () => runGit(repoPath, ['push', remote, '--delete', name]))
+    } catch (err) {
+      // The branch may already be gone on the remote (e.g. Dependabot deleted it
+      // after merging its PR) while our local remote-tracking ref lingers because
+      // no pruning fetch has run. Git reports this as "remote ref does not exist".
+      // In that case there is nothing to push — just prune the stale tracking ref
+      // so it disappears from the branch list, which is what the user expects.
+      const msg = err instanceof Error ? err.message : String(err)
+      if (!/remote ref does not exist/i.test(msg)) throw err
+    }
+    // Whether the push succeeded or the ref was already gone, drop the local
+    // remote-tracking copy so the UI no longer shows the deleted branch.
+    await runGit(repoPath, ['update-ref', '-d', `refs/remotes/${remote}/${name}`]).catch(() => undefined)
   },
 
   // ─── Stacked branches ──────────────────────────────────────────────────

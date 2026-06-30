@@ -1,6 +1,7 @@
 import { describe, it, expect, afterAll } from 'vitest'
-import { writeFileSync, existsSync } from 'node:fs'
+import { writeFileSync, existsSync, mkdtempSync, rmSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
+import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { gitService } from '../src/main/git'
 import { repoPath } from './helpers'
@@ -226,5 +227,54 @@ describe('stashPush (partial stash)', () => {
 
     expect(existsSync(join(R, 'keep.txt'))).toBe(true) // --keep-index leaves it staged
     expect((await gitService.stashes(R)).length).toBe(1)
+  })
+})
+
+describe('deleteRemoteBranch (stale tracking ref)', () => {
+  // Build a working repo wired to a bare "remote", push a branch, then delete it
+  // straight from the bare repo — simulating e.g. Dependabot removing its branch
+  // on GitHub after merging. The local remote-tracking ref survives until a
+  // pruning fetch, so the branch still shows up in the UI. Deleting it from
+  // gitcito must NOT fail with "remote ref does not exist"; it should just prune
+  // the stale tracking ref so the branch disappears.
+  const git = (cwd: string, ...args: string[]): string =>
+    execFileSync('git', ['-C', cwd, ...args], { stdio: ['ignore', 'pipe', 'ignore'] })
+      .toString()
+      .trim()
+
+  it('prunes the stale tracking ref instead of erroring when the remote ref is gone', async () => {
+    const remote = mkdtempSync(join(tmpdir(), 'gitcito-remote-'))
+    const work = mkdtempSync(join(tmpdir(), 'gitcito-work-'))
+    try {
+      execFileSync('git', ['init', '--bare', remote], { stdio: 'ignore' })
+      execFileSync('git', ['init', work], { stdio: 'ignore' })
+      git(work, 'config', 'user.email', 'test@example.com')
+      git(work, 'config', 'user.name', 'Test')
+      git(work, 'remote', 'add', 'origin', remote)
+      writeFileSync(join(work, 'a.txt'), 'a\n')
+      git(work, 'add', '-A')
+      git(work, 'commit', '-m', 'init')
+      git(work, 'branch', 'gone-branch')
+      git(work, 'push', '-u', 'origin', 'main', 'gone-branch')
+
+      // Branch is now a remote-tracking ref…
+      const before = await gitService.branches(work)
+      expect(before.remotes.some((r) => r.fullName === 'origin/gone-branch')).toBe(true)
+
+      // …delete it directly on the remote, leaving our tracking ref stale.
+      // (`--git-dir` keeps this working under safe.bareRepository=explicit.)
+      execFileSync('git', ['--git-dir', remote, 'update-ref', '-d', 'refs/heads/gone-branch'], {
+        stdio: 'ignore'
+      })
+
+      // Deleting from gitcito must succeed and drop the stale tracking ref.
+      await expect(gitService.deleteRemoteBranch(work, 'origin', 'gone-branch')).resolves.toBeUndefined()
+
+      const after = await gitService.branches(work)
+      expect(after.remotes.some((r) => r.fullName === 'origin/gone-branch')).toBe(false)
+    } finally {
+      rmSync(remote, { recursive: true, force: true })
+      rmSync(work, { recursive: true, force: true })
+    }
   })
 })

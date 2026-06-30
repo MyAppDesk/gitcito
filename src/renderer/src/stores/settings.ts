@@ -6,6 +6,7 @@ import {
   type AppSettings,
   type PageContent,
   type Profile,
+  type RepoLayout,
   type RepoRef,
   type TabState
 } from '../../../shared/types'
@@ -71,6 +72,9 @@ interface SettingsState {
   /** Bind a repo path to a profile (or clear with null). Drives auto-switch
    *  when that repo becomes active. */
   setRepoProfile(path: string, profileId: string | null): void
+  /** Patch a repo's per-repo layout override (graph columns + sidebar sections),
+   *  keyed by repo path. */
+  updateRepoLayout(path: string, mut: (layout: RepoLayout) => RepoLayout): void
 
   openRepoTab(repo: RepoRef): void
   /** Open (or focus the existing) non-repo page tab, e.g. the changelog. */
@@ -151,6 +155,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     settings.shortcuts = settings.shortcuts ?? sd.shortcuts
     settings.largeFileKb = settings.largeFileKb ?? sd.largeFileKb
     settings.repoProfiles = settings.repoProfiles ?? sd.repoProfiles
+    settings.repoLayouts = settings.repoLayouts ?? {}
     set({ settings, loaded: true })
   },
 
@@ -203,6 +208,12 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       else repoProfiles[path] = profileId
       return { ...s, repoProfiles }
     }),
+
+  updateRepoLayout: (path, mut) =>
+    get().update((s) => ({
+      ...s,
+      repoLayouts: { ...(s.repoLayouts ?? {}), [path]: mut(s.repoLayouts?.[path] ?? {}) }
+    })),
 
   openRepoTab: (repo) =>
     get().update((s) => {

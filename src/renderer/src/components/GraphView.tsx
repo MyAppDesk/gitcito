@@ -321,8 +321,16 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
   const requestScrollTo = useUIStore((s) => s.requestScrollTo)
   const relativeDates = useSettingsStore((s) => s.settings.relativeDates ?? true)
   const autoLoadOnScroll = useSettingsStore((s) => s.settings.autoLoadOnScroll ?? true)
-  const columns = useSettingsStore((s) => s.settings.graphColumns ?? defaultGraphColumns())
-  const columnOrderRaw = useSettingsStore((s) => s.settings.graphColumnOrder ?? defaultGraphColumnOrder())
+  const baseColumns = useSettingsStore((s) => s.settings.graphColumns ?? defaultGraphColumns())
+  const baseColumnOrder = useSettingsStore((s) => s.settings.graphColumnOrder ?? defaultGraphColumnOrder())
+  const repoLayout = useSettingsStore((s) => s.settings.repoLayouts?.[repo.path])
+  // Graph columns are per-repository: a repo's own override wins, otherwise the
+  // global defaults apply.
+  const columns = useMemo(() => repoLayout?.graphColumns ?? baseColumns, [repoLayout, baseColumns])
+  const columnOrderRaw = useMemo(
+    () => repoLayout?.graphColumnOrder ?? baseColumnOrder,
+    [repoLayout, baseColumnOrder]
+  )
   // The deployment column shows GitHub CI/deploy status; drop it for other hosts.
   const isGitHub = repoIsGitHub(repo.remotes)
   const columnOrder = useMemo(
@@ -331,7 +339,7 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
   )
   const graphStyle = useSettingsStore((s) => s.settings.graphStyle ?? defaultGraphStyle())
   const customGraphPalettes = useSettingsStore((s) => s.settings.customGraphPalettes ?? [])
-  const updateSettings = useSettingsStore((s) => s.update)
+  const updateRepoLayout = useSettingsStore((s) => s.updateRepoLayout)
   const t = useT()
 
   // Visual style of the rails — palette, row spacing, line corners, thickness.
@@ -349,20 +357,20 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
   useEffect(() => localStorage.setItem('gitcito-graph-linear', linearOnly ? 'on' : 'off'), [linearOnly])
 
   const setColumn = (id: GraphColumnId, patch: Partial<{ width: number; visible: boolean }>): void =>
-    updateSettings((s) => {
-      const cols = s.graphColumns ?? defaultGraphColumns()
-      return { ...s, graphColumns: { ...cols, [id]: { ...cols[id], ...patch } } }
+    updateRepoLayout(repo.path, (l) => {
+      const cols = l.graphColumns ?? baseColumns
+      return { ...l, graphColumns: { ...cols, [id]: { ...cols[id], ...patch } } }
     })
 
   const reorderColumns = (from: GraphFlowColumnId, to: GraphFlowColumnId): void =>
-    updateSettings((s) => {
-      const order = [...(s.graphColumnOrder ?? defaultGraphColumnOrder())]
+    updateRepoLayout(repo.path, (l) => {
+      const order = [...(l.graphColumnOrder ?? baseColumnOrder)]
       const fi = order.indexOf(from)
       const ti = order.indexOf(to)
-      if (fi < 0 || ti < 0 || fi === ti) return s
+      if (fi < 0 || ti < 0 || fi === ti) return l
       order.splice(fi, 1)
       order.splice(fi < ti ? order.indexOf(to) + 1 : order.indexOf(to), 0, from)
-      return { ...s, graphColumnOrder: order }
+      return { ...l, graphColumnOrder: order }
     })
 
   const openColumnsMenu = (x: number, y: number): void => {
@@ -388,7 +396,7 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
       {
         label: t('graph.resetColumns'),
         onClick: () =>
-          updateSettings((s) => ({ ...s, graphColumns: defaultGraphColumns(), graphColumnOrder: defaultGraphColumnOrder() }))
+          updateRepoLayout(repo.path, (l) => ({ ...l, graphColumns: defaultGraphColumns(), graphColumnOrder: defaultGraphColumnOrder() }))
       }
     )
     openContextMenu(x, y, items)

@@ -1047,6 +1047,9 @@ export interface AppSettings {
   graphStyle: GraphStyle
   /** User-defined graph palettes, shown alongside the built-in ones. */
   customGraphPalettes: GraphPalette[]
+  /** Per-repository layout overrides (graph columns + sidebar sections), keyed
+   *  by repo path. A repo with no entry inherits the global defaults. */
+  repoLayouts: Record<string, RepoLayout>
   autoFetchMinutes: number
   /** Raise an OS notification for new review-requested / CI inbox items. */
   desktopNotifications?: boolean
@@ -1160,6 +1163,18 @@ export function defaultGraphColumnOrder(): GraphFlowColumnId[] {
   return ['message', 'author', 'date', 'sha', 'signature', 'deployment']
 }
 
+/**
+ * Per-repository overrides for layout that is otherwise global. Stored in
+ * AppSettings.repoLayouts keyed by repo path; any absent field falls back to
+ * the corresponding global default, so a repo only stores what it customises.
+ */
+export interface RepoLayout {
+  graphColumns?: GraphColumns
+  graphColumnOrder?: GraphFlowColumnId[]
+  sidebarOrder?: string[]
+  sidebarHidden?: string[]
+}
+
 export interface AppThemeColors {
   bg0: string
   bg1: string
@@ -1265,6 +1280,7 @@ export function defaultSettings(): AppSettings {
     graphColumnOrder: defaultGraphColumnOrder(),
     graphStyle: defaultGraphStyle(),
     customGraphPalettes: [],
+    repoLayouts: {},
     autoFetchMinutes: 5,
     desktopNotifications: false,
     confirmForcePush: true,

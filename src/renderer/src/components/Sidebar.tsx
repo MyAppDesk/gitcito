@@ -179,10 +179,15 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   const refreshReleases = useRepoStore((s) => s.refreshReleases)
   const select = useRepoStore((s) => s.select)
   const requestScrollTo = useUIStore((s) => s.requestScrollTo)
-  const sidebarOrder = useSettingsStore((s) => s.settings.sidebarOrder)
-  const sidebarHidden = useSettingsStore((s) => s.settings.sidebarHidden)
+  const baseSidebarOrder = useSettingsStore((s) => s.settings.sidebarOrder)
+  const baseSidebarHidden = useSettingsStore((s) => s.settings.sidebarHidden)
+  const repoLayout = useSettingsStore((s) => s.settings.repoLayouts?.[repo.path])
+  // Sidebar section order/visibility is per-repository: a repo's own override
+  // wins, otherwise the global defaults apply.
+  const sidebarOrder = useMemo(() => repoLayout?.sidebarOrder ?? baseSidebarOrder, [repoLayout, baseSidebarOrder])
+  const sidebarHidden = useMemo(() => repoLayout?.sidebarHidden ?? baseSidebarHidden, [repoLayout, baseSidebarHidden])
   const groupBranches = useSettingsStore((s) => s.settings.groupBranches)
-  const updateSettings = useSettingsStore((s) => s.update)
+  const updateRepoLayout = useSettingsStore((s) => s.updateRepoLayout)
   const openPageTab = useSettingsStore((s) => s.openPageTab)
   const openRepoTab = useSettingsStore((s) => s.openRepoTab)
   const activeProfile = useSettingsStore((s) => s.activeProfile)
@@ -924,20 +929,21 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   }
 
   const toggleSection = (id: string): void =>
-    updateSettings((s) => ({
-      ...s,
-      sidebarHidden: s.sidebarHidden.includes(id)
-        ? s.sidebarHidden.filter((x) => x !== id)
-        : [...s.sidebarHidden, id]
-    }))
+    updateRepoLayout(repo.path, (l) => {
+      const hidden = l.sidebarHidden ?? baseSidebarHidden
+      return {
+        ...l,
+        sidebarHidden: hidden.includes(id) ? hidden.filter((x) => x !== id) : [...hidden, id]
+      }
+    })
 
   const reorder = (from: string, to: string): void => {
     if (from === to) return
-    updateSettings((s) => {
-      const next = s.sidebarOrder.filter((id) => id !== from)
+    updateRepoLayout(repo.path, (l) => {
+      const next = (l.sidebarOrder ?? baseSidebarOrder).filter((id) => id !== from)
       const idx = next.indexOf(to)
       next.splice(idx < 0 ? next.length : idx, 0, from)
-      return { ...s, sidebarOrder: next }
+      return { ...l, sidebarOrder: next }
     })
   }
 
@@ -1697,13 +1703,13 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       onClick: () => toggleSection(id)
     }))
     if (sidebarHidden.length) {
-      items.push({ separator: true }, { label: t('sidebar.showAllSections'), onClick: () => updateSettings((s) => ({ ...s, sidebarHidden: [] })) })
+      items.push({ separator: true }, { label: t('sidebar.showAllSections'), onClick: () => updateRepoLayout(repo.path, (l) => ({ ...l, sidebarHidden: [] })) })
     }
     items.push({ separator: true }, {
       label: t('sidebar.resetPanel'),
       onClick: () => {
         const sd = defaultSettings()
-        updateSettings((s) => ({ ...s, sidebarOrder: sd.sidebarOrder, sidebarHidden: sd.sidebarHidden }))
+        updateRepoLayout(repo.path, (l) => ({ ...l, sidebarOrder: sd.sidebarOrder, sidebarHidden: sd.sidebarHidden }))
       }
     })
     openContextMenu(x, y, items)

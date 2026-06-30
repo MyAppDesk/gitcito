@@ -1,5 +1,12 @@
 
 
+## [1.16.2](https://github.com/MyAppDesk/gitcito/compare/v1.16.1...v1.16.2) (2026-06-30)
+
+
+### Bug Fixes
+
+* handle deletion of stale remote tracking branches ([a45efcd](https://github.com/MyAppDesk/gitcito/commit/a45efcd240a33d1f3aa8ac6a95a335101478279b))
+
 ## [1.16.1](https://github.com/MyAppDesk/gitcito/compare/v1.16.0...v1.16.1) (2026-06-30)
 
 

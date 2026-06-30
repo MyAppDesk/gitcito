@@ -1828,22 +1828,21 @@ textarea:focus {
   left: 0;
   top: calc(100% + 2px);
   padding: 5px;
-  background: color-mix(in srgb, var(--lane, var(--bg-2)) 30%, var(--bg-1));
-  border: 1px solid color-mix(in srgb, var(--lane, var(--border)) 65%, var(--border));
+  background: var(--lane, var(--bg-3));
+  border: none;
   border-radius: 4px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
   z-index: 30;
 }
-/* Items inside the popup are plain rows — no individual borders or backgrounds */
+/* Items inside the popup render with their own lane styles, always fully opaque */
 .graph-refs-pop .ref-badge {
-  border-color: transparent !important;
-  background: transparent !important;
   padding: 1px 4px;
   width: 100%;
   border-radius: 3px;
+  opacity: 1 !important;
 }
 .graph-refs-pop .ref-badge:hover {
-  background: color-mix(in srgb, var(--lane, var(--bg-3)) 25%, var(--bg-3)) !important;
+  filter: brightness(1.1);
 }
 
 /* Invisible bridge spanning the gap between the chip and the popup so the

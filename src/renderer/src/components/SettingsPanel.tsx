@@ -43,7 +43,7 @@ import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
 import { Avatar } from './Avatar'
 import { useUpdatesStore, hasPendingUpdate } from '../stores/updates'
-import { gitApi, aiApi, settingsApi, analyticsApi, logApi, infoApi, vaultApi } from '../infrastructure/api'
+import { gitApi, aiApi, settingsApi, analyticsApi, logApi, infoApi, vaultApi, shellApi } from '../infrastructure/api'
 import { AI_PROVIDERS, emptyAnalytics, defaultGraphStyle, type AIProvider, type Analytics, type AIUsageStat, type ActivityEvent, type RepoStats, type AppSettings, type BranchNamingStyle, type CommitStyle, type ConflictStyle, type ExplainStyle, type Profile, type SigningConfig, type SettingsBundle, type GraphStyle, type GraphPalette, type GraphEdgeStyle, type GraphDensity, type GraphLineWidth, type GraphNodeStyle } from '../../../shared/types'
 import { allGraphPalettes, findGraphPalette, colorForPalette, edgePath, DENSITY_ROW_H, LINE_WIDTH_PX, GRAPH_PALETTES } from '../graph/style'
 import type {
@@ -1960,6 +1960,35 @@ function GeneralPage(): React.JSX.Element {
           <span className="settings-hint">{t('settings.launchEnabledHint')}</span>
         </span>
       </label>
+
+      <h4 className="settings-section-title">{t('settings.defaultOpenApp')}</h4>
+      <p className="settings-hint">{t('settings.defaultOpenAppHint')}</p>
+      <div className="settings-app-picker">
+        <span className="settings-app-picker-name">
+          <ExternalLink size={13} />
+          {settings.defaultOpenApp?.name ?? t('settings.noAppSet')}
+        </span>
+        <button
+          type="button"
+          className="btn ghost small"
+          onClick={async () => {
+            const app = await shellApi.pickApplication()
+            if (app) update((s) => ({ ...s, defaultOpenApp: app }))
+          }}
+        >
+          {t('settings.chooseApp')}
+        </button>
+        {settings.defaultOpenApp && (
+          <button
+            type="button"
+            className="icon-btn"
+            title={t('settings.clearApp')}
+            onClick={() => update((s) => ({ ...s, defaultOpenApp: undefined }))}
+          >
+            <X size={13} />
+          </button>
+        )}
+      </div>
     </div>
   )
 }

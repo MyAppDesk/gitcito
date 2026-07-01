@@ -378,6 +378,11 @@ const en = {
   'settings.warnOnClose.always': 'Always',
   'settings.warnOnClose.wip': 'When changes',
   'settings.warnOnClose.never': 'Never',
+  'settings.defaultOpenApp': 'Default "Open with" app',
+  'settings.defaultOpenAppHint': 'Pick an app (e.g. VS Code) used by every "Open with <App>" action — on files, folders and repositories — like running that app directly on the path.',
+  'settings.chooseApp': 'Choose App…',
+  'settings.clearApp': 'Clear',
+  'settings.noAppSet': 'No app selected',
   'settings.desktopNotifications': 'Desktop notifications',
   'settings.desktopNotificationsHint':
     'Raise an OS notification when a review is requested or CI runs on your GitHub inbox.',
@@ -1062,6 +1067,9 @@ const en = {
   'fileTree.newFolderMenu': 'New Folder…',
   'fileTree.filterGraph': 'Filter graph by this path',
   'fileTree.openDefaultApp': 'Open in default app',
+  'fileTree.openWith': 'Open With…',
+  'fileTree.openWithApp': 'Open with {name}',
+  'fileTree.openWithIconTitle': 'Open with…',
   'fileTree.copyPath': 'Copy path',
   'fileTree.moveToTrashMenu': 'Move to Trash',
   'fileTree.ignoreAndUntrackTitle': 'Ignore & stop tracking',
@@ -1206,6 +1214,9 @@ const en = {
   'sidebar.preBadge': 'pre',
   'sidebar.newFilesRoot': 'New file at root',
   'sidebar.newFolderRoot': 'New folder at root',
+  'sidebar.openFolder': 'Open Folder',
+  'sidebar.openFolderWith': 'Open Folder With…',
+  'sidebar.openWithApp': 'Open with {name}',
   'sidebar.dropBranchMerge': 'Merge {source} → {target}',
   'sidebar.dropBranchRebase': 'Rebase {source} onto {target}'
 }
@@ -1582,6 +1593,11 @@ const es: Dict = {
   'settings.warnOnClose.always': 'Siempre',
   'settings.warnOnClose.wip': 'Con cambios',
   'settings.warnOnClose.never': 'Nunca',
+  'settings.defaultOpenApp': 'App por defecto para "Abrir con"',
+  'settings.defaultOpenAppHint': 'Elige una app (p. ej. VS Code) usada por cada acción "Abrir con <App>" — en archivos, carpetas y repositorios — como si ejecutaras esa app directamente sobre la ruta.',
+  'settings.chooseApp': 'Elegir app…',
+  'settings.clearApp': 'Quitar',
+  'settings.noAppSet': 'Ninguna app seleccionada',
   'settings.desktopNotifications': 'Notificaciones de escritorio',
   'settings.desktopNotificationsHint':
     'Mostrar una notificación del sistema cuando te piden revisión o hay actividad de CI en tu bandeja de GitHub.',
@@ -2259,6 +2275,9 @@ const es: Dict = {
   'fileTree.newFolderMenu': 'Nueva carpeta…',
   'fileTree.filterGraph': 'Filtrar grafo por esta ruta',
   'fileTree.openDefaultApp': 'Abrir con la app por defecto',
+  'fileTree.openWith': 'Abrir con…',
+  'fileTree.openWithApp': 'Abrir con {name}',
+  'fileTree.openWithIconTitle': 'Abrir con…',
   'fileTree.copyPath': 'Copiar ruta',
   'fileTree.moveToTrashMenu': 'Mover a la papelera',
   'fileTree.ignoreAndUntrackTitle': 'Ignorar y dejar de rastrear',
@@ -2403,6 +2422,9 @@ const es: Dict = {
   'sidebar.preBadge': 'pre',
   'sidebar.newFilesRoot': 'Nuevo archivo en la raíz',
   'sidebar.newFolderRoot': 'Nueva carpeta en la raíz',
+  'sidebar.openFolder': 'Abrir carpeta',
+  'sidebar.openFolderWith': 'Abrir carpeta con…',
+  'sidebar.openWithApp': 'Abrir con {name}',
   'sidebar.dropBranchMerge': 'Merge {source} → {target}',
   'sidebar.dropBranchRebase': 'Rebase {source} en {target}'
 }

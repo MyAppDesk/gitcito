@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   User, Bot, Palette, Plug, Check, ChevronRight, ChevronLeft, ShieldCheck,
-  Upload, AlertTriangle, Sun, Moon, Monitor, Loader2
+  Upload, AlertTriangle, Sun, Moon, Monitor, Loader2, ExternalLink
 } from 'lucide-react'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
@@ -14,7 +14,7 @@ import {
   type ThemeMode
 } from '../../../shared/types'
 import { APP_THEMES, applyAppTheme, findAppTheme } from '../theme/themes'
-import { settingsApi } from '../infrastructure/api'
+import { settingsApi, shellApi } from '../infrastructure/api'
 import { AIPage, IntegrationsPage } from './SettingsPanel'
 import gitcitoLaunch from '../assets/gitcito-launch.png'
 
@@ -53,6 +53,7 @@ interface WizardData {
   gitlabToken: string
   azureToken: string
   bitbucketToken: string
+  defaultOpenApp?: { name: string; path: string }
   importData: AppSettings | null
   importHasSecrets: boolean
   importIncludeSecrets: boolean
@@ -325,6 +326,26 @@ function IntegrationsStep({
           push them — toggle in Settings → General.
         </span>
       </div>
+      <div className="settings-app-picker onboarding-app-picker">
+        <span className="settings-app-picker-name">
+          <ExternalLink size={13} />
+          {data.defaultOpenApp?.name ?? 'No app selected'}
+        </span>
+        <button
+          type="button"
+          className="btn ghost small"
+          onClick={async () => {
+            const app = await shellApi.pickApplication()
+            if (app) patch({ defaultOpenApp: app })
+          }}
+        >
+          Choose App…
+        </button>
+      </div>
+      <div className="settings-hint onboarding-app-picker-hint">
+        Pick an app (e.g. VS Code) for the "Open with…" action on files, folders and repositories. Optional —
+        configurable anytime in Settings → General.
+      </div>
     </>
   )
 }
@@ -352,6 +373,7 @@ export function OnboardingWizard(): React.JSX.Element {
     gitlabToken: profile.gitlabToken,
     azureToken: profile.azureToken,
     bitbucketToken: profile.bitbucketToken,
+    defaultOpenApp: settings.defaultOpenApp,
     importData: null,
     importHasSecrets: false,
     importIncludeSecrets: false
@@ -403,6 +425,7 @@ export function OnboardingWizard(): React.JSX.Element {
       appThemeId: data.themeId,
       themeMode: data.themeMode,
       onboardingCompleted: true,
+      defaultOpenApp: data.defaultOpenApp,
       profiles: s.profiles.map((p) =>
         p.id === s.activeProfileId
           ? {

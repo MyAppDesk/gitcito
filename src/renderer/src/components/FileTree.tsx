@@ -1,10 +1,12 @@
 import { Fragment, useCallback, useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { ChevronRight, File, Folder, FolderOpen, Loader2 } from 'lucide-react'
+import { ChevronRight, File, Folder, FolderOpen, Loader2, ExternalLink } from 'lucide-react'
 import type { TreeEntry } from '../../../shared/types'
 import { gitApi, shellApi } from '../infrastructure/api'
 import { useUIStore, type MenuItem } from '../stores/ui'
 import { repoActions, type RepoData } from '../stores/repo'
+import { useSettingsStore } from '../stores/settings'
+import { openWithMenuItems } from '../lib/openWith'
 import {
   EMPTY_FILTER,
   isFilterActive,
@@ -28,9 +30,22 @@ export function FileTree({
   const path = repo.path
   const { openContextMenu, openModal, setFileView, toast } = useUIStore()
   const fileView = useUIStore((s) => s.fileView)
+  const defaultOpenApp = useSettingsStore((s) => s.settings.defaultOpenApp)
   const treeStatus = repo.treeStatus
   const filterActive = isFilterActive(filter)
   const t = useT()
+
+  // Row-end icon: opens the file with the user's configured default app (e.g.
+  // VS Code), or falls back to the native "Open With" picker when none is set.
+  const openWithSmart = (rel: string): void => {
+    const target = abs(path, rel)
+    const action = defaultOpenApp?.path
+      ? shellApi.openWithApp(target, defaultOpenApp.path)
+      : shellApi.openWithPicker(target)
+    void action.then((err: string) => {
+      if (err) toast('error', err)
+    })
+  }
 
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [children, setChildren] = useState<Record<string, TreeEntry[]>>({})
@@ -269,6 +284,10 @@ export function FileTree({
     { separator: true },
     { label: shellApi.revealLabel, onClick: () => void shellApi.revealInFolder(abs(path, node.path)) },
     { label: t('fileTree.openDefaultApp'), onClick: () => void shellApi.openPath(abs(path, node.path)) },
+    ...openWithMenuItems(abs(path, node.path), defaultOpenApp, {
+      openWithDefault: (name) => interp(t('fileTree.openWithApp'), { name }),
+      openWith: t('fileTree.openWith')
+    }),
     { label: t('fileTree.copyPath'), onClick: () => void navigator.clipboard.writeText(node.path) }
   ]
 
@@ -314,6 +333,18 @@ export function FileTree({
             </span>
             <span className="tree-name">{node.name}</span>
             {status && status !== 'ignored' && <span className="tree-dot" />}
+            {!node.dir && (
+              <span
+                className="icon-btn tree-open-with"
+                title={t('fileTree.openWithIconTitle')}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  openWithSmart(node.path)
+                }}
+              >
+                <ExternalLink size={12} />
+              </span>
+            )}
           </div>
           {open && renderLevel(node.path, depth + 1)}
         </Fragment>
@@ -361,6 +392,16 @@ export function FileTree({
                 {rel.includes('/') && <span className="tree-result-dir">{parentOf(rel).replace(/\/$/, '')}</span>}
               </span>
               {status && status !== 'ignored' && <span className="tree-dot" />}
+              <span
+                className="icon-btn tree-open-with"
+                title={t('fileTree.openWithIconTitle')}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  openWithSmart(rel)
+                }}
+              >
+                <ExternalLink size={12} />
+              </span>
             </div>
           )
         })}

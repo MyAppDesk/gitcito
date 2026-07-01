@@ -29,6 +29,11 @@ const api = {
   shell: {
     showItemInFolder: (fullPath: string): Promise<void> => ipcRenderer.invoke('shell:showItemInFolder', fullPath),
     openPath: (fullPath: string): Promise<string> => ipcRenderer.invoke('shell:openPath', fullPath),
+    openWithPicker: (fullPath: string): Promise<string> => ipcRenderer.invoke('shell:openWithPicker', fullPath),
+    pickApplication: (): Promise<{ name: string; path: string } | null> =>
+      ipcRenderer.invoke('shell:pickApplication'),
+    openWithApp: (targetPath: string, appPath: string): Promise<string> =>
+      ipcRenderer.invoke('shell:openWithApp', targetPath, appPath),
     writeFiles: (repoPath: string, files: unknown): Promise<void> =>
       ipcRenderer.invoke('shell:writeFiles', repoPath, files)
   },

@@ -1,6 +1,7 @@
 import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join, dirname } from 'path'
 import { writeFile, readFile, mkdir, chmod } from 'fs/promises'
+import { execFile, spawn } from 'child_process'
 import icon from '../../resources/icon.png?asset'
 import type { AppRelease } from '../shared/types'
 import { registerGitHandlers } from './git'
@@ -137,6 +138,68 @@ app.whenReady().then(() => {
   })
 
   ipcMain.handle('shell:openPath', (_e, fullPath: string) => shell.openPath(fullPath))
+
+  // Shows the OS-native "Open With…" app picker for a file or folder. macOS and
+  // Windows have first-class support; other platforms fall back to the default
+  // opener since there's no universal picker across Linux desktop environments.
+  ipcMain.handle('shell:openWithPicker', (_e, fullPath: string): Promise<string> => {
+    if (process.platform === 'darwin') {
+      return new Promise((resolve) => {
+        const script = `tell application "Finder" to open (POSIX file ${JSON.stringify(fullPath)}) using (choose application)`
+        execFile('osascript', ['-e', script], (err, _stdout, stderr) => {
+          // -128 is AppleScript's "user canceled" — not a real failure.
+          if (err && !/-128/.test(String(stderr))) resolve(err.message)
+          else resolve('')
+        })
+      })
+    }
+    if (process.platform === 'win32') {
+      return new Promise((resolve) => {
+        execFile('rundll32.exe', ['shell32.dll,OpenAs_RunDLL', fullPath], (err) => resolve(err ? err.message : ''))
+      })
+    }
+    return shell.openPath(fullPath)
+  })
+
+  // Lets the user browse to and pick a specific application (e.g. VS Code), to be
+  // remembered as the default "Open with <App>" target. Returns null if cancelled.
+  ipcMain.handle(
+    'shell:pickApplication',
+    async (): Promise<{ name: string; path: string } | null> => {
+      const isMac = process.platform === 'darwin'
+      const isWin = process.platform === 'win32'
+      const { canceled, filePaths } = await dialog.showOpenDialog({
+        title: 'Choose application',
+        defaultPath: isMac ? '/Applications' : undefined,
+        properties: ['openFile'],
+        filters: isMac
+          ? [{ name: 'Applications', extensions: ['app'] }]
+          : isWin
+            ? [{ name: 'Programs', extensions: ['exe'] }]
+            : [{ name: 'All files', extensions: ['*'] }]
+      })
+      if (canceled || !filePaths[0]) return null
+      const appPath = filePaths[0]
+      const base = appPath.split(/[\\/]/).pop() ?? appPath
+      const name = base.replace(/\.(app|exe)$/i, '')
+      return { name, path: appPath }
+    }
+  )
+
+  // Launches a specific application with a file/folder path, e.g. the equivalent
+  // of running `code <path>` for VS Code, without relying on a shell/PATH lookup.
+  ipcMain.handle('shell:openWithApp', (_e, targetPath: string, appPath: string): Promise<string> => {
+    return new Promise((resolve) => {
+      if (process.platform === 'darwin') {
+        execFile('open', ['-a', appPath, targetPath], (err) => resolve(err ? err.message : ''))
+      } else {
+        const child = spawn(appPath, [targetPath], { detached: true, stdio: 'ignore' })
+        child.once('error', (err) => resolve(err.message))
+        child.unref()
+        resolve('')
+      }
+    })
+  })
 
   ipcMain.handle(
     'shell:writeFiles',

@@ -6,6 +6,7 @@ import { useUIStore, type MenuItem } from '../stores/ui'
 import { useRepoStore, repoActions } from '../stores/repo'
 import type { GroupTab, TabState } from '../../../shared/types'
 import { ProfileSwitcher } from './ProfileSwitcher'
+import { folderOpenMenuItems } from '../lib/openWith'
 import gitcitoMark from '../assets/gitcito-mark.png'
 
 type TabStatus = 'conflict' | 'wip' | null
@@ -286,11 +287,24 @@ export function TitleBar(): React.JSX.Element {
     })
   }
 
+  // Opens the repo's root folder, or an app the user has picked as their default
+  // "Open with" target (e.g. VS Code, like running `code <path>`), or shows the
+  // native "Open With…" picker to choose one-off.
+  const openRepoMenuItems = (repoPath: string): MenuItem[] =>
+    folderOpenMenuItems(repoPath, settings.defaultOpenApp, {
+      openFolder: 'Open Folder',
+      openWithDefault: (name) => `Open with ${name}`,
+      openWith: 'Open With…'
+    })
+
   const tabMenu = (tab: TabState): MenuItem[] => {
     if (tab.kind === 'page') {
       return [{ label: 'Close tab', onClick: () => closeTab(tab.id) }]
     }
     const items: MenuItem[] = []
+    if (tab.kind === 'repo' && tab.repos[0]) {
+      items.push(...openRepoMenuItems(tab.repos[0].path), { separator: true })
+    }
     if (tab.kind === 'group') {
       if (tab.repos.length > 0) {
         const paths = tab.repos.map((r) => r.path)
@@ -348,6 +362,8 @@ export function TitleBar(): React.JSX.Element {
   }
 
   const repoInGroupMenu = (groupTab: GroupTab, repoPath: string): MenuItem[] => [
+    ...openRepoMenuItems(repoPath),
+    { separator: true },
     {
       label: 'Rename…',
       onClick: () => {

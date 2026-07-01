@@ -37,6 +37,7 @@ import { ResizeHandle } from './components/ResizeHandle'
 import { ZoomControl } from './components/ZoomControl'
 import gitcitoLaunch from './assets/gitcito-launch.png'
 import { matchShortcut, effectiveBindings } from './lib/shortcuts'
+import { folderOpenMenuItems } from './lib/openWith'
 import { hostingApi } from './infrastructure/api'
 
 function GroupView({ tab }: { tab: GroupTab }): React.JSX.Element {
@@ -592,8 +593,16 @@ export default function App(): React.JSX.Element {
           <footer className="statusbar">
             <button
               className="status-path status-path-btn"
-              title="Show in Finder"
-              onClick={() => window.api.shell.showItemInFolder(repo.path)}
+              title="Open Folder"
+              onClick={(e) => {
+                const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
+                const items = folderOpenMenuItems(repo.path, settings.defaultOpenApp, {
+                  openFolder: 'Open Folder',
+                  openWithDefault: (name) => `Open with ${name}`,
+                  openWith: 'Open With…'
+                })
+                useUIStore.getState().openContextMenu(r.left, r.top - 6 - items.length * 28, items)
+              }}
             >
               <FolderOpen size={11} className="status-path-icon" />
               {repo.path}

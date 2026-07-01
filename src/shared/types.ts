@@ -1088,6 +1088,10 @@ export interface AppSettings {
   warnOnClose: 'always' | 'wip' | 'never'
   /** Parent folder of the last clone, used to pre-fill the clone dialog. */
   lastClonePath?: string
+  /** User-chosen external application (e.g. VS Code) used by the "Open with <App>"
+   *  action on files, folders and repositories — analogous to running `code <path>`.
+   *  Undefined until the user picks one via Settings → General or onboarding. */
+  defaultOpenApp?: { name: string; path: string }
   /** Last app version the user has seen the changelog for. Undefined until the
    *  first run that records it; used to detect upgrades. */
   lastSeenVersion?: string

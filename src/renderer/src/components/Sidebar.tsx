@@ -39,6 +39,7 @@ import { useLaunchStore } from '../stores/launch'
 import { shellApi } from '../infrastructure/api'
 import { useT, interp } from '../i18n'
 import { repoIsGitHub } from '../lib/hosting'
+import { folderOpenMenuItems } from '../lib/openWith'
 import { defaultSettings } from '../../../shared/types'
 import type { BranchInfo, ReleaseInfo, RemoteBranchInfo, StashInfo, TagInfo, WorktreeInfo, SubmoduleInfo, LaunchGroup, LaunchConfig } from '../../../shared/types'
 
@@ -192,6 +193,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   const openRepoTab = useSettingsStore((s) => s.openRepoTab)
   const activeProfile = useSettingsStore((s) => s.activeProfile)
   const aiEnabled = activeProfile().ai.enabled !== false
+  const defaultOpenApp = useSettingsStore((s) => s.settings.defaultOpenApp)
   const t = useT()
   const [filter, setFilter] = useState('')
   const [tab, setTab] = useState<'git' | 'files'>('git')
@@ -913,6 +915,15 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         if (!clean) return
         void repoActions.fsCreate(path, clean, isDir)
       }
+    })
+
+  // Open Folder | Open with <App> (if configured) | Open With… — same three
+  // options offered on repo tabs and the bottom status bar path.
+  const repoOpenMenu = (): MenuItem[] =>
+    folderOpenMenuItems(repo.path, defaultOpenApp, {
+      openFolder: t('sidebar.openFolder'),
+      openWithDefault: (name) => interp(t('sidebar.openWithApp'), { name }),
+      openWith: t('sidebar.openFolderWith')
     })
 
   const sectionLabels: Record<string, string> = {
@@ -1772,13 +1783,36 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       ) : (
         <>
           <div className="sb-files-toolbar">
-            <span className="sb-files-label" title={repo.path}>{repo.name}</span>
+            <span
+              className="sb-files-label"
+              title={repo.path}
+              onContextMenu={(e) => {
+                e.preventDefault()
+                openContextMenu(e.clientX, e.clientY, repoOpenMenu())
+              }}
+            >
+              {repo.name}
+            </span>
             <span className="sb-files-actions">
               <span className="icon-btn" title={t('sidebar.newFilesRoot')} onClick={() => promptCreateRoot(false)}>
                 <FilePlus size={13} />
               </span>
               <span className="icon-btn" title={t('sidebar.newFolderRoot')} onClick={() => promptCreateRoot(true)}>
                 <FolderPlus size={13} />
+              </span>
+              <span
+                className="icon-btn"
+                title={t('sidebar.openFolder')}
+                onClick={(e) => {
+                  const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
+                  openContextMenu(r.right, r.bottom, repoOpenMenu())
+                }}
+                onContextMenu={(e) => {
+                  e.preventDefault()
+                  openContextMenu(e.clientX, e.clientY, repoOpenMenu())
+                }}
+              >
+                <ExternalLink size={13} />
               </span>
             </span>
           </div>

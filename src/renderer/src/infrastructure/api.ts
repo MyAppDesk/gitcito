@@ -375,6 +375,11 @@ export const infoApi = {
 export const shellApi = {
   revealInFolder: (fullPath: string) => window.api.shell.showItemInFolder(fullPath),
   openPath: (fullPath: string) => window.api.shell.openPath(fullPath),
+  openWithPicker: (fullPath: string) => window.api.shell.openWithPicker(fullPath),
+  pickApplication: () => window.api.shell.pickApplication(),
+  /** Launches a specific app (e.g. VS Code) with the given file/folder path —
+   *  the equivalent of running `code <path>` from a terminal. */
+  openWithApp: (targetPath: string, appPath: string) => window.api.shell.openWithApp(targetPath, appPath),
   openExternal: (url: string) => window.api.openExternal(url),
   writeFiles: (repoPath: string, files: GeneratedFile[]) =>
     window.api.shell.writeFiles(repoPath, files) as Promise<void>,

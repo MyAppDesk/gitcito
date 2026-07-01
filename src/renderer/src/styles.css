@@ -4410,6 +4410,30 @@ textarea:focus {
   gap: 10px;
 }
 
+.settings-app-picker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+.settings-app-picker-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  padding: 6px 10px;
+  font-size: 12.5px;
+  color: var(--text-1);
+  background: var(--bg-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 7px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.settings-app-picker-name svg { flex-shrink: 0; color: var(--text-2); }
+
 .settings-form label.settings-toggle-card {
   position: relative;
   display: flex;
@@ -8491,6 +8515,17 @@ mark.find-hit.active {
   background: currentColor;
   opacity: 0.9;
 }
+.tree-open-with {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  opacity: 0;
+  margin-left: 2px;
+}
+.tree-row:hover .tree-open-with,
+.tree-row.tree-result:hover .tree-open-with {
+  opacity: 1;
+}
 /* Status colors mirror VSCode's git decorations. */
 .tree-row.st-untracked .tree-name,
 .tree-row.st-untracked .tree-icon { color: var(--green); }
@@ -9305,6 +9340,12 @@ button.insights-row:hover { background: var(--bg-2); }
 }
 .onboarding-secret-note svg { color: var(--accent); flex-shrink: 0; margin-top: 1px; }
 .onboarding-secret-note code { font-size: 11px; }
+.onboarding-app-picker {
+  margin-top: 12px;
+}
+.onboarding-app-picker-hint {
+  margin-top: 6px;
+}
 
 /* ─── Vault page ───────────────────────────────────────────────────────── */
 .vault-explainer {

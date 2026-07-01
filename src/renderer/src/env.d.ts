@@ -44,6 +44,9 @@ interface PreloadApi {
   shell: {
     showItemInFolder(fullPath: string): Promise<void>
     openPath(fullPath: string): Promise<string>
+    openWithPicker(fullPath: string): Promise<string>
+    pickApplication(): Promise<{ name: string; path: string } | null>
+    openWithApp(targetPath: string, appPath: string): Promise<string>
     writeFiles(repoPath: string, files: unknown[]): Promise<void>
   }
   settings: {

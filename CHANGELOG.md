@@ -1,5 +1,13 @@
 
 
+## [1.19.0](https://github.com/MyAppDesk/gitcito/compare/v1.18.0...v1.19.0) (2026-07-01)
+
+
+### Features
+
+* add copy SHA functionality to commit details and graph view ([3074d2c](https://github.com/MyAppDesk/gitcito/commit/3074d2c8cfab46258b2983837d057c88b1b77631))
+* enhance commit details with co-authors and refs display ([607ec95](https://github.com/MyAppDesk/gitcito/commit/607ec95fd7da5c23c2c9f1a2900247b414b7f00f))
+
 ## [1.18.0](https://github.com/MyAppDesk/gitcito/compare/v1.17.0...v1.18.0) (2026-07-01)
 
 

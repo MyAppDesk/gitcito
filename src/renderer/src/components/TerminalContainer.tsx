@@ -8,7 +8,8 @@ import {
   PanelRightOpen,
   ChevronRight,
   ChevronDown,
-  Pencil
+  Pencil,
+  Ungroup
 } from 'lucide-react'
 import { TerminalPanel } from './TerminalPanel'
 import { ResizeHandle } from './ResizeHandle'
@@ -100,6 +101,8 @@ export function TerminalContainer({ cwd }: { cwd: string }): React.JSX.Element {
   const removeGroup = useTerminalsStore((s) => s.removeGroup)
   const setActiveGroup = useTerminalsStore((s) => s.setActiveGroup)
   const splitGroup = useTerminalsStore((s) => s.splitGroup)
+  const mergeGroups = useTerminalsStore((s) => s.mergeGroups)
+  const unsplitGroup = useTerminalsStore((s) => s.unsplitGroup)
   const removePanel = useTerminalsStore((s) => s.removePanel)
   const setActivePanel = useTerminalsStore((s) => s.setActivePanel)
   const setGroupTitle = useTerminalsStore((s) => s.setGroupTitle)
@@ -116,6 +119,39 @@ export function TerminalContainer({ cwd }: { cwd: string }): React.JSX.Element {
   // Inline rename target: panelId null = renaming the group itself.
   const [editing, setEditing] = useState<{ groupId: string; panelId: string | null } | null>(null)
   const [draft, setDraft] = useState('')
+
+  // Drag-to-merge: dragging one group's row onto another splits them
+  // together into a single group with side-by-side panels.
+  const dragGroupId = useRef<string | null>(null)
+  const [draggingGroupId, setDraggingGroupId] = useState<string | null>(null)
+  const [mergeTargetId, setMergeTargetId] = useState<string | null>(null)
+
+  const onGroupDragStart = (groupId: string) => (e: React.DragEvent): void => {
+    dragGroupId.current = groupId
+    setDraggingGroupId(groupId)
+    e.dataTransfer.effectAllowed = 'move'
+    e.stopPropagation()
+  }
+  const onGroupDragEnd = (): void => {
+    dragGroupId.current = null
+    setDraggingGroupId(null)
+    setMergeTargetId(null)
+  }
+  const onGroupDragOver = (groupId: string) => (e: React.DragEvent): void => {
+    if (!dragGroupId.current || dragGroupId.current === groupId) return
+    e.preventDefault()
+    e.stopPropagation()
+    setMergeTargetId(groupId)
+  }
+  const onGroupDragLeave = (groupId: string) => (): void => {
+    setMergeTargetId((cur) => (cur === groupId ? null : cur))
+  }
+  const onGroupDrop = (groupId: string) => (e: React.DragEvent): void => {
+    e.preventDefault()
+    const sourceId = dragGroupId.current
+    if (sourceId && sourceId !== groupId) mergeGroups(cwd, sourceId, groupId)
+    onGroupDragEnd()
+  }
 
   // Manual alias wins; otherwise show the auto-detected foreground process name.
   const nameFor = (alias: string | undefined, panelId: string): string =>
@@ -238,6 +274,15 @@ export function TerminalContainer({ cwd }: { cwd: string }): React.JSX.Element {
                       icon: <SquareSplitHorizontal size={13} />,
                       onClick: () => splitGroup(cwd, group.id, cwd)
                     },
+                    ...(split
+                      ? [
+                          {
+                            label: 'Unsplit terminal',
+                            icon: <Ungroup size={13} />,
+                            onClick: () => unsplitGroup(cwd, group.id)
+                          }
+                        ]
+                      : []),
                     { separator: true },
                     {
                       label: 'Kill terminal',
@@ -250,7 +295,15 @@ export function TerminalContainer({ cwd }: { cwd: string }): React.JSX.Element {
                 return (
                   <div key={group.id} className="terminal-list-group">
                     <div
-                      className={`terminal-list-row${group.id === activeGroupId ? ' active' : ''}`}
+                      className={`terminal-list-row${group.id === activeGroupId ? ' active' : ''}${
+                        draggingGroupId === group.id ? ' dragging' : ''
+                      }${mergeTargetId === group.id ? ' drop-into-group' : ''}`}
+                      draggable
+                      onDragStart={onGroupDragStart(group.id)}
+                      onDragEnd={onGroupDragEnd}
+                      onDragOver={onGroupDragOver(group.id)}
+                      onDragLeave={onGroupDragLeave(group.id)}
+                      onDrop={onGroupDrop(group.id)}
                       onClick={() => setActiveGroup(cwd, group.id)}
                       onContextMenu={openGroupMenu}
                     >

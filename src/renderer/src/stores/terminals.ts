@@ -59,6 +59,11 @@ interface TerminalsState {
   removeGroup(repoPath: string, groupId: string): void
   setActiveGroup(repoPath: string, groupId: string): void
   splitGroup(repoPath: string, groupId: string, cwd: string): void
+  /** Merge one group's panels into another, side by side, then drop the
+   *  now-empty source group. No-op if source and target are the same. */
+  mergeGroups(repoPath: string, sourceGroupId: string, targetGroupId: string): void
+  /** Break a split group's panels apart into their own standalone groups. */
+  unsplitGroup(repoPath: string, groupId: string): void
   removePanel(repoPath: string, groupId: string, panelId: string): void
   setActivePanel(repoPath: string, groupId: string, panelId: string): void
   setGroupTitle(repoPath: string, groupId: string, title: string): void
@@ -135,6 +140,62 @@ export const useTerminalsStore = create<TerminalsState>((set, get) => ({
           ? { ...g, panels: [...g.panels, panel], activePanelId: panel.id }
           : g
       )
+      return { byRepo: { ...s.byRepo, [repoPath]: { ...repo, groups } } }
+    })
+  },
+
+  mergeGroups: (repoPath, sourceGroupId, targetGroupId) => {
+    if (sourceGroupId === targetGroupId) return
+    set((s) => {
+      const repo = s.byRepo[repoPath]
+      if (!repo) return s
+      const source = repo.groups.find((g) => g.id === sourceGroupId)
+      const target = repo.groups.find((g) => g.id === targetGroupId)
+      if (!source || !target) return s
+      const movedPanels = source.panels.map((p) => ({ ...p, flex: 1 }))
+      const groups = repo.groups
+        .filter((g) => g.id !== sourceGroupId)
+        .map((g) =>
+          g.id === targetGroupId
+            ? {
+                ...g,
+                panels: [...g.panels.map((p) => ({ ...p, flex: 1 })), ...movedPanels],
+                activePanelId: movedPanels[movedPanels.length - 1].id
+              }
+            : g
+        )
+      const activeGroupId = repo.activeGroupId === sourceGroupId ? targetGroupId : repo.activeGroupId
+      return { byRepo: { ...s.byRepo, [repoPath]: { ...repo, groups, activeGroupId } } }
+    })
+  },
+
+  unsplitGroup: (repoPath, groupId) => {
+    set((s) => {
+      const repo = s.byRepo[repoPath]
+      if (!repo) return s
+      const group = repo.groups.find((g) => g.id === groupId)
+      if (!group || group.panels.length <= 1) return s
+      const [first, ...rest] = group.panels
+      const firstGroup: TermGroup = {
+        ...group,
+        panels: [{ ...first, flex: 1 }],
+        activePanelId: first.id
+      }
+      let num = nextNum(repo.groups)
+      const newGroups: TermGroup[] = rest.map((panel) => {
+        const g: TermGroup = {
+          id: uid('group'),
+          num,
+          title: '',
+          panels: [{ ...panel, flex: 1 }],
+          activePanelId: panel.id
+        }
+        num += 1
+        return g
+      })
+      const idx = repo.groups.findIndex((g) => g.id === groupId)
+      const groups = [...repo.groups]
+      groups.splice(idx, 1, firstGroup, ...newGroups)
       return { byRepo: { ...s.byRepo, [repoPath]: { ...repo, groups } } }
     })
   },

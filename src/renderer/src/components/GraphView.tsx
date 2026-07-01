@@ -1729,15 +1729,28 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
                         {!isWip && !stash && <SignatureBadge signature={c.signature} signer={c.signer} />}
                       </span>
                     )
-                  return (
-                    <span
-                      key="sha"
-                      className="row-sha"
-                      style={{ flex: `0 0 ${columns.sha.width}px`, width: columns.sha.width }}
-                    >
-                      {isWip ? '' : stash ? stash.sha.slice(0, 7) : c.hash.slice(0, 7)}
-                    </span>
-                  )
+                  {
+                    const fullSha = isWip ? '' : stash ? stash.sha : c.hash
+                    return (
+                      <span
+                        key="sha"
+                        className="row-sha"
+                        style={{ flex: `0 0 ${columns.sha.width}px`, width: columns.sha.width }}
+                        title={fullSha ? t('commit.copySha') : undefined}
+                        onClick={
+                          fullSha
+                            ? (e) => {
+                                e.stopPropagation()
+                                void navigator.clipboard.writeText(fullSha)
+                                toast('success', t('reflog.shaCopied'))
+                              }
+                            : undefined
+                        }
+                      >
+                        {fullSha.slice(0, 7)}
+                      </span>
+                    )
+                  }
                 })}
             </div>
           )

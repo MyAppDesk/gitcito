@@ -958,6 +958,7 @@ const en = {
   'commitPanel.changedFile': '{n} changed file',
   'commitPanel.changedFiles': '{n} changed files',
   'commitPanel.openDefaultApp': 'Open with default app',
+  'commitPanel.messageLabel': 'Message',
 
   // Create PR modal
   'createPR.title': 'Create pull request',
@@ -2166,6 +2167,7 @@ const es: Dict = {
   'commitPanel.changedFile': '{n} archivo cambiado',
   'commitPanel.changedFiles': '{n} archivos cambiados',
   'commitPanel.openDefaultApp': 'Abrir con la app por defecto',
+  'commitPanel.messageLabel': 'Mensaje',
 
   // Create PR modal
   'createPR.title': 'Crear pull request',

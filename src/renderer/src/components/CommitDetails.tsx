@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { SquarePen, ExternalLink, Sparkles, Loader2, Laptop, Tag, Cloud } from 'lucide-react'
+import { SquarePen, ExternalLink, Sparkles, Loader2, Laptop, Tag, Cloud, Copy } from 'lucide-react'
 import type { CommitBranchInfo, FileEntry, GraphCommit, RemoteInfo } from '../../../shared/types'
 import { autolink, remoteWebUrl } from '../lib/autolink'
 import { gitApi, aiApi, shellApi } from '../infrastructure/api'
@@ -169,32 +169,17 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
             )}
             <div className="commit-meta-row">
               <code>{commit.hash.slice(0, 10)}</code>
-              {canAmendMessage && (
-                <button
-                  className="icon-btn commit-edit-btn"
-                  type="button"
-                  onClick={() => {
-                    setDraftSubject(commit.subject)
-                    setEditingSubject(true)
-                  }}
-                  title={t('commitPanel.editMsgTitle')}
-                  disabled={amendBusy || aiBusy}
-                >
-                  <SquarePen size={13} />
-                </button>
-              )}
-              {canAmendMessage && aiEnabled && (
-                <motion.button
-                  className="icon-btn commit-edit-btn"
-                  type="button"
-                  onClick={() => void generateWithAI()}
-                  title={t('commitPanel.generateWithAiTitle')}
-                  disabled={amendBusy || aiBusy}
-                  whileTap={{ scale: 0.92 }}
-                >
-                  {aiBusy ? <Loader2 size={13} className="spin" /> : <Sparkles size={13} />}
-                </motion.button>
-              )}
+              <button
+                className="icon-btn commit-edit-btn"
+                type="button"
+                onClick={() => {
+                  void navigator.clipboard.writeText(commit.hash)
+                  toast('success', t('reflog.shaCopied'))
+                }}
+                title={t('commit.copySha')}
+              >
+                <Copy size={12} />
+              </button>
             </div>
             {(branches.length > 0 || tags.length > 0) && (
               <div className="commit-refs-row">
@@ -254,6 +239,35 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
             })}
           </div>
         )}
+        <div className="commit-message-toolbar">
+          <span className="commit-message-label">{t('commitPanel.messageLabel')}</span>
+          {canAmendMessage && (
+            <button
+              className="icon-btn commit-edit-btn"
+              type="button"
+              onClick={() => {
+                setDraftSubject(commit.subject)
+                setEditingSubject(true)
+              }}
+              title={t('commitPanel.editMsgTitle')}
+              disabled={amendBusy || aiBusy}
+            >
+              <SquarePen size={13} />
+            </button>
+          )}
+          {canAmendMessage && aiEnabled && (
+            <motion.button
+              className="icon-btn commit-edit-btn"
+              type="button"
+              onClick={() => void generateWithAI()}
+              title={t('commitPanel.generateWithAiTitle')}
+              disabled={amendBusy || aiBusy}
+              whileTap={{ scale: 0.92 }}
+            >
+              {aiBusy ? <Loader2 size={13} className="spin" /> : <Sparkles size={13} />}
+            </motion.button>
+          )}
+        </div>
         {editingSubject ? (
           <input
             ref={inputRef}

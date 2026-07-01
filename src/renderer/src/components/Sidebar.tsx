@@ -1208,7 +1208,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
               key={remote.name}
               nested
               depth={1}
-              title={remote.name.toUpperCase()}
+              title={remote.name}
               icon={<RemoteIcon url={remote.url} />}
               count={branches.length}
               defaultOpen={remote.name === 'origin'}

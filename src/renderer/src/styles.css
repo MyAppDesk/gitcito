@@ -955,14 +955,21 @@ textarea:focus {
 }
 
 /* --sb-indent (set inline per Section depth) compounds the indent so deep
- * folders read as children. Fallback 1 keeps single-level nesting unchanged. */
+ * folders read as children. Fallback 1 keeps single-level nesting unchanged.
+ * Nested headers (a remote, or a branch-folder like feature/) are styled like
+ * plain tree rows — not shouting section titles — so depth alone (indent +
+ * guide rail) reads as the parent/child relationship, matching how VS Code's
+ * file tree nests folders under folders. */
 .sb-section.nested > .sb-header {
-  padding-left: calc(10px + var(--sb-indent, 1) * 14px);
-  font-size: 10px;
-  letter-spacing: 0.5px;
+  padding-left: calc(12px + var(--sb-indent, 1) * 16px);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: normal;
+  color: var(--text-1);
+  text-transform: none;
 }
 .sb-section.nested .sb-item {
-  padding-left: calc(26px + var(--sb-indent, 1) * 14px);
+  padding-left: calc(28px + var(--sb-indent, 1) * 16px);
 }
 /* Vertical rail down a folder's contents, aligned under its chevron, so nested
  * branches read as children of the folder above them. */
@@ -974,7 +981,9 @@ textarea:focus {
   position: absolute;
   top: 0;
   bottom: 0;
-  left: calc(4px + var(--sb-indent, 1) * 14px);
+  /* Aligned under the parent chevron's center (header padding-left + half the
+   * 13px ChevronRight icon), so the rail visually drops straight down from it. */
+  left: calc(12px + var(--sb-indent, 1) * 16px + 6.5px);
   width: 1px;
   background: var(--border-soft, var(--border));
   pointer-events: none;
@@ -983,7 +992,7 @@ textarea:focus {
   margin-left: -16px;
 }
 .sb-section.nested .sb-empty {
-  padding-left: 40px;
+  padding-left: 44px;
 }
 
 .sb-body {

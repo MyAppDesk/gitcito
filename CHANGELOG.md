@@ -1,5 +1,20 @@
 
 
+## [1.17.0](https://github.com/MyAppDesk/gitcito/compare/v1.16.2...v1.17.0) (2026-07-01)
+
+
+### Features
+
+* add bug report button and functionality ([7d70150](https://github.com/MyAppDesk/gitcito/commit/7d701501e0c53bbb11738e4a254bc674f9672941))
+* add commitBranches method to retrieve branches for a commit ([2931e2b](https://github.com/MyAppDesk/gitcito/commit/2931e2b7bae1f7326f235c10f7c7bbd50324f034))
+* add remote parameter to checkoutRemote functionality ([4627dc6](https://github.com/MyAppDesk/gitcito/commit/4627dc6907e29c2e09a5ad2ef023af197935bd9e))
+* enhance commit branches and tags display in UI ([88e9536](https://github.com/MyAppDesk/gitcito/commit/88e953627b9ce2fcba5f523157324bbb7aac4530))
+
+
+### Bug Fixes
+
+* update sidebar remote title to use original name ([67d8256](https://github.com/MyAppDesk/gitcito/commit/67d8256eb1ec25e30f6f01515536f133b35ebb58))
+
 ## [1.16.2](https://github.com/MyAppDesk/gitcito/compare/v1.16.1...v1.16.2) (2026-06-30)
 
 

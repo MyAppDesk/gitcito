@@ -806,9 +806,20 @@ export const gitService = {
   async checkoutRemote(
     repoPath: string,
     fullName: string,
-    localName: string
+    localName: string,
+    remote?: string
   ): Promise<{ diverged: boolean; ahead: number; behind: number }> {
     const git = gitFor(repoPath)
+    if (remote) {
+      // Refresh the remote-tracking ref first, so "checkout as local" always
+      // picks up the actual remote tip instead of whatever was last fetched.
+      // Uses the shared `gitFor` instance (not a raw exec) so it's queued
+      // alongside every other git op on this repo — a bare exec here would run
+      // truly concurrently with in-flight status/checkout/stash calls and can
+      // collide on `.git/index.lock`. Best-effort: offline/auth hiccups
+      // shouldn't block checking out the locally-known ref.
+      await withRemoteAuth(repoPath, remote, () => git.fetch(remote, localName)).catch(() => {})
+    }
     // If a local branch with that name already exists, just switch to it
     // instead of trying to recreate a tracking branch (which would fail with
     // "a branch named '<x>' already exists").
@@ -2750,6 +2761,29 @@ export const gitService = {
   }
 }
 
+/** True for git's "Unable to create '.../index.lock': File exists" — thrown when
+ *  another process (this app's own queue is already serialized, but an IDE's
+ *  git integration, a terminal, or another Git GUI open on the same repo) held
+ *  the lock for the instant this command tried to start. The lock is almost
+ *  always released within milliseconds, so a short retry clears it without
+ *  bothering the user — only a genuinely stuck/crashed lock survives all retries. */
+function isIndexLockError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err)
+  return /index\.lock['"]?:\s*File exists/i.test(msg)
+}
+
+async function withLockRetry<T>(op: () => Promise<T>): Promise<T> {
+  const maxAttempts = 5
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await op()
+    } catch (err) {
+      if (attempt >= maxAttempts || !isIndexLockError(err)) throw err
+      await new Promise((r) => setTimeout(r, 150 * attempt))
+    }
+  }
+}
+
 export function registerGitHandlers(): void {
   ipcMain.handle('git', async (_e, method: string, ...args: unknown[]) => {
     const fn = (gitService as Record<string, unknown>)[method]
@@ -2770,7 +2804,7 @@ export function registerGitHandlers(): void {
     const repoPath =
       event && typeof args[0] === 'string' && method !== 'clone' && method !== 'init' ? (args[0] as string) : ''
     try {
-      const result = await (fn as (...a: unknown[]) => Promise<unknown>)(...args)
+      const result = await withLockRetry(() => (fn as (...a: unknown[]) => Promise<unknown>)(...args))
       if (event) {
         void recordEvent(event)
         void recordLog({ event, repoPath, ok: true })

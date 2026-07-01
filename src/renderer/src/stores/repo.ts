@@ -415,11 +415,11 @@ async function runPush(path: string, branch: string, force: boolean): Promise<bo
 // Check out a remote branch as a local one. When the local branch already
 // exists and has diverged from the remote, a fast-forward is impossible, so we
 // surface a dialog letting the user rebase / merge / reset instead of failing.
-async function runCheckoutRemote(path: string, fullName: string, localName: string): Promise<boolean> {
+async function runCheckoutRemote(path: string, fullName: string, localName: string, remote?: string): Promise<boolean> {
   const ui = useUIStore.getState()
   ui.setBusy(`Checking out ${localName}`)
   try {
-    const res = await gitApi.checkoutRemote(path, fullName, localName)
+    const res = await gitApi.checkoutRemote(path, fullName, localName, remote)
     if (res.diverged) {
       ui.openModal({
         kind: 'diverged-checkout',
@@ -477,8 +477,8 @@ export const repoActions = {
     })
   },
 
-  checkoutRemote: (path: string, fullName: string, localName: string) =>
-    runCheckoutRemote(path, fullName, localName),
+  checkoutRemote: (path: string, fullName: string, localName: string, remote?: string) =>
+    runCheckoutRemote(path, fullName, localName, remote),
 
   createBranch: (path: string, name: string, at?: string) => {
     const prev = useRepoStore.getState().repos[path]?.branches.current

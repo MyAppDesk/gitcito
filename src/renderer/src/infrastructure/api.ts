@@ -80,8 +80,8 @@ export const gitApi = {
   fetchRemote: (path: string, name: string) => call<void>('fetchRemote', path, name),
 
   checkout: (path: string, ref: string) => call<void>('checkout', path, ref),
-  checkoutRemote: (path: string, fullName: string, localName: string) =>
-    call<{ diverged: boolean; ahead: number; behind: number }>('checkoutRemote', path, fullName, localName),
+  checkoutRemote: (path: string, fullName: string, localName: string, remote?: string) =>
+    call<{ diverged: boolean; ahead: number; behind: number }>('checkoutRemote', path, fullName, localName, remote),
   resolveDivergedCheckout: (
     path: string,
     fullName: string,

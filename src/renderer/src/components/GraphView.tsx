@@ -1088,7 +1088,7 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
       items.push({ label: interp(t('tag.checkout'), { tag: g.label }), disabled: isCurrent, onClick: () => void repoActions.checkout(repo.path, g.label) })
     } else if (g.remotes.length) {
       const full = `${g.remotes[0]}/${g.label}`
-      items.push({ label: interp(t('branch.checkoutAsLocal'), { branch: g.label }), onClick: () => void repoActions.checkoutRemote(repo.path, full, g.label) })
+      items.push({ label: interp(t('branch.checkoutAsLocal'), { branch: g.label }), onClick: () => void repoActions.checkoutRemote(repo.path, full, g.label, g.remotes[0]) })
     }
     items.push({ label: t('commit.checkoutDetached'), onClick: () => void repoActions.checkout(repo.path, c.hash) })
     items.push({ separator: true })
@@ -1232,7 +1232,7 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
       if (repo.branches.current.trim() === g.label) return
       void repoActions.checkout(repo.path, g.label)
     } else if (g.remotes.length) {
-      void repoActions.checkoutRemote(repo.path, `${g.remotes[0]}/${g.label}`, g.label)
+      void repoActions.checkoutRemote(repo.path, `${g.remotes[0]}/${g.label}`, g.label, g.remotes[0])
     }
   }
 

@@ -685,7 +685,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   const remoteMenu = (b: RemoteBranchInfo): MenuItem[] => [
     {
       label: t('sidebar.checkoutAsLocal'),
-      onClick: () => void repoActions.checkoutRemote(path, b.fullName, b.name)
+      onClick: () => void repoActions.checkoutRemote(path, b.fullName, b.name, b.remote)
     },
     { label: interp(t('sidebar.mergeBranchInto'), { branch: b.fullName, current: repo.branches.current }), onClick: () => void repoActions.merge(path, b.fullName) },
     {
@@ -1052,7 +1052,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       key={b.fullName}
       className={`sb-item ${isSel('remote', b.fullName) ? 'multi-sel' : ''}`}
       onClick={(e) => void onSelectClick('remote', b.fullName, remoteIds, e)}
-      onDoubleClick={() => void repoActions.checkoutRemote(path, b.fullName, b.name)}
+      onDoubleClick={() => void repoActions.checkoutRemote(path, b.fullName, b.name, b.remote)}
       onContextMenu={(e) => ctxMenu(e, 'remote', b.fullName, () => remoteMenu(b), remoteBulkMenu)}
       title={b.fullName}
     >

@@ -191,6 +191,7 @@ export const gitApi = {
   applyPatch: (path: string, content: string, am?: boolean) => call<void>('applyPatch', path, content, am),
   stagedDiff: (path: string) => call<string>('stagedDiff', path),
   commitDiff: (path: string, hash: string) => call<string>('commitDiff', path, hash),
+  commitBranches: (path: string, hash: string) => call<string[]>('commitBranches', path, hash),
 
   fileContent: (path: string, file: string, ref?: string) => call<string>('fileContent', path, file, ref),
   searchFileContents: (

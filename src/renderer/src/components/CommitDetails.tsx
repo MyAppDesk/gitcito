@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { SquarePen, ExternalLink, Sparkles, Loader2 } from 'lucide-react'
+import { SquarePen, ExternalLink, Sparkles, Loader2, GitBranch } from 'lucide-react'
 import type { FileEntry, GraphCommit, RemoteInfo } from '../../../shared/types'
 import { autolink, remoteWebUrl } from '../lib/autolink'
 import { gitApi, aiApi, shellApi } from '../infrastructure/api'
@@ -30,6 +30,7 @@ function profileUrl(name: string, email: string, remotes: RemoteInfo[]): string 
 
 export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }): React.JSX.Element {
   const [files, setFiles] = useState<FileEntry[]>([])
+  const [branches, setBranches] = useState<string[]>([])
   const [amendBusy, setAmendBusy] = useState(false)
   const [aiBusy, setAiBusy] = useState(false)
   const [editingSubject, setEditingSubject] = useState(false)
@@ -48,6 +49,17 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
     let cancelled = false
     void gitApi.commitFiles(repo.path, hash).then((f) => {
       if (!cancelled) setFiles(f)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [repo.path, hash])
+
+  useEffect(() => {
+    setBranches([])
+    let cancelled = false
+    void gitApi.commitBranches(repo.path, hash).then((b) => {
+      if (!cancelled) setBranches(b)
     })
     return () => {
       cancelled = true
@@ -171,6 +183,16 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
                 </motion.button>
               )}
             </div>
+            {branches.length > 0 && (
+              <div className="commit-branches-row" title={branches.length > 1 ? t('commitPanel.branches') : t('commitPanel.branch')}>
+                <GitBranch size={11} />
+                {branches.map((b) => (
+                  <span key={b} className="commit-branch-badge">
+                    {b}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
         {commit.coAuthors && commit.coAuthors.length > 0 && (

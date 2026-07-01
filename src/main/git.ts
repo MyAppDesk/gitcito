@@ -1823,6 +1823,17 @@ export const gitService = {
     return gitFor(repoPath).raw(['show', '--format=', '--first-parent', hash])
   },
 
+  /** Local branches whose history contains this commit (closest-first isn't guaranteed by git). */
+  async commitBranches(repoPath: string, hash: string): Promise<string[]> {
+    const out = await gitFor(repoPath)
+      .raw(['branch', '--contains', hash, '--format=%(refname:short)'])
+      .catch(() => '')
+    return out
+      .split('\n')
+      .map((l) => l.trim())
+      .filter(Boolean)
+  },
+
   // ─── File inspection (file view / blame / history) ──────────────────────
 
   async fileContent(repoPath: string, file: string, ref?: string): Promise<string> {

@@ -4,6 +4,7 @@ import type {
   BranchCompareResult,
   BranchesPayload,
   CiStatus,
+  CommitBranchInfo,
   ConflictOpKind,
   ConflictSide,
   ConflictVersions,
@@ -191,7 +192,8 @@ export const gitApi = {
   applyPatch: (path: string, content: string, am?: boolean) => call<void>('applyPatch', path, content, am),
   stagedDiff: (path: string) => call<string>('stagedDiff', path),
   commitDiff: (path: string, hash: string) => call<string>('commitDiff', path, hash),
-  commitBranches: (path: string, hash: string) => call<string[]>('commitBranches', path, hash),
+  commitBranches: (path: string, hash: string) => call<CommitBranchInfo[]>('commitBranches', path, hash),
+  commitTags: (path: string, hash: string) => call<string[]>('commitTags', path, hash),
 
   fileContent: (path: string, file: string, ref?: string) => call<string>('fileContent', path, file, ref),
   searchFileContents: (

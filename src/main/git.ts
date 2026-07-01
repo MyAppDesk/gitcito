@@ -14,6 +14,7 @@ import type {
   ConflictSide,
   BranchesPayload,
   BranchInfo,
+  CommitBranchInfo,
   ConflictOpKind,
   ConflictVersions,
   FileChangeKind,
@@ -1823,11 +1824,45 @@ export const gitService = {
     return gitFor(repoPath).raw(['show', '--format=', '--first-parent', hash])
   },
 
-  /** Local branches whose history contains this commit (closest-first isn't guaranteed by git). */
-  async commitBranches(repoPath: string, hash: string): Promise<string[]> {
-    const out = await gitFor(repoPath)
-      .raw(['branch', '--contains', hash, '--format=%(refname:short)'])
-      .catch(() => '')
+  /** Branches whose history contains this commit, grouped like the graph's ref
+   *  badges: a local branch and its remote-tracking counterpart collapse into
+   *  one entry so `main` + `origin/main` render as a single badge. */
+  async commitBranches(repoPath: string, hash: string): Promise<CommitBranchInfo[]> {
+    const git = gitFor(repoPath)
+    const remoteNames = new Set((await git.getRemotes()).map((r) => r.name))
+    // Full refname (not :short) so a remote's symbolic HEAD — refs/remotes/origin/HEAD,
+    // which :short collapses to the bare string "origin" — can be told apart from an
+    // actual local branch literally named "origin".
+    const out = await git.raw(['branch', '-a', '--contains', hash, '--format=%(refname)']).catch(() => '')
+    const map = new Map<string, CommitBranchInfo>()
+    const entry = (name: string): CommitBranchInfo => {
+      let g = map.get(name)
+      if (!g) {
+        g = { name, isLocal: false, remotes: [] }
+        map.set(name, g)
+      }
+      return g
+    }
+    for (const line of out.split('\n').map((l) => l.trim()).filter(Boolean)) {
+      if (line.startsWith('refs/heads/')) {
+        entry(line.slice('refs/heads/'.length)).isLocal = true
+      } else if (line.startsWith('refs/remotes/')) {
+        const rest = line.slice('refs/remotes/'.length)
+        const slash = rest.indexOf('/')
+        if (slash <= 0) continue
+        const remote = rest.slice(0, slash)
+        const name = rest.slice(slash + 1)
+        if (name === 'HEAD' || !remoteNames.has(remote)) continue // origin's symbolic default-branch pointer, not a real branch
+        const g = entry(name)
+        if (!g.remotes.includes(remote)) g.remotes.push(remote)
+      }
+    }
+    return [...map.values()].sort((a, b) => Number(b.isLocal) - Number(a.isLocal) || a.name.localeCompare(b.name))
+  },
+
+  /** Tags that point exactly at this commit. */
+  async commitTags(repoPath: string, hash: string): Promise<string[]> {
+    const out = await gitFor(repoPath).raw(['tag', '--points-at', hash]).catch(() => '')
     return out
       .split('\n')
       .map((l) => l.trim())

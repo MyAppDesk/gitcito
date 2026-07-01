@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { SquarePen, ExternalLink, Sparkles, Loader2, GitBranch } from 'lucide-react'
-import type { FileEntry, GraphCommit, RemoteInfo } from '../../../shared/types'
+import { SquarePen, ExternalLink, Sparkles, Loader2, Laptop, Tag, Cloud } from 'lucide-react'
+import type { CommitBranchInfo, FileEntry, GraphCommit, RemoteInfo } from '../../../shared/types'
 import { autolink, remoteWebUrl } from '../lib/autolink'
 import { gitApi, aiApi, shellApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
@@ -10,6 +10,7 @@ import { repoActions } from '../stores/repo'
 import { FileListView } from './FileListView'
 import { ViewToggle } from './CommitComposer'
 import { Avatar } from './Avatar'
+import { RemoteIcon } from './RemoteIcon'
 import { SignatureBadge } from './SignatureBadge'
 import type { RepoData } from '../stores/repo'
 import { useT, interp } from '../i18n'
@@ -30,7 +31,8 @@ function profileUrl(name: string, email: string, remotes: RemoteInfo[]): string 
 
 export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }): React.JSX.Element {
   const [files, setFiles] = useState<FileEntry[]>([])
-  const [branches, setBranches] = useState<string[]>([])
+  const [branches, setBranches] = useState<CommitBranchInfo[]>([])
+  const [tags, setTags] = useState<string[]>([])
   const [amendBusy, setAmendBusy] = useState(false)
   const [aiBusy, setAiBusy] = useState(false)
   const [editingSubject, setEditingSubject] = useState(false)
@@ -60,6 +62,17 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
     let cancelled = false
     void gitApi.commitBranches(repo.path, hash).then((b) => {
       if (!cancelled) setBranches(b)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [repo.path, hash])
+
+  useEffect(() => {
+    setTags([])
+    let cancelled = false
+    void gitApi.commitTags(repo.path, hash).then((tg) => {
+      if (!cancelled) setTags(tg)
     })
     return () => {
       cancelled = true
@@ -183,14 +196,37 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
                 </motion.button>
               )}
             </div>
-            {branches.length > 0 && (
-              <div className="commit-branches-row" title={branches.length > 1 ? t('commitPanel.branches') : t('commitPanel.branch')}>
-                <GitBranch size={11} />
+            {(branches.length > 0 || tags.length > 0) && (
+              <div className="commit-refs-row">
                 {branches.map((b) => (
-                  <span key={b} className="commit-branch-badge">
-                    {b}
+                  <span
+                    key={b.name}
+                    className={`ref-badge ${b.isLocal ? 'ref-local' : 'ref-remote'}`}
+                    title={`${b.name}${b.isLocal ? ' · local' : ''}${b.remotes.length ? ` · ${b.remotes.join(', ')}` : ''}`}
+                  >
+                    {b.isLocal && <Laptop size={10} className="ref-ic" />}
+                    {b.remotes.map((remote) => (
+                      <span key={remote} className="ref-ic">
+                        <RemoteIcon url={repo.remotes.find((r) => r.name === remote)?.url} size={10} />
+                      </span>
+                    ))}
+                    <span className="ref-text">{b.name}</span>
                   </span>
                 ))}
+                {tags.map((tg) => {
+                  const isPushed = repo.remoteTagNames.includes(tg)
+                  return (
+                    <span
+                      key={tg}
+                      className="ref-badge ref-tag"
+                      title={`${tg}${isPushed ? ' · pushed' : ' · local only'}`}
+                    >
+                      <Tag size={10} className="ref-ic" />
+                      {isPushed && <Cloud size={10} className="ref-ic" />}
+                      <span className="ref-text">{tg}</span>
+                    </span>
+                  )
+                })}
               </div>
             )}
           </div>

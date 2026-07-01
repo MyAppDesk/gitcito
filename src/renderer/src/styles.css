@@ -2098,22 +2098,12 @@ textarea:focus {
   color: var(--accent);
 }
 
-.commit-branches-row {
+.commit-refs-row {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 4px;
-  color: var(--text-2);
-  margin-top: 2px;
-}
-.commit-branch-badge {
-  font-size: 10.5px;
-  line-height: 1.4;
-  padding: 1px 6px;
-  border-radius: 10px;
-  background: var(--bg-3);
-  color: var(--text-2);
-  white-space: nowrap;
+  margin-top: 4px;
 }
 
 .commit-edit-btn {

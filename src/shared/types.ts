@@ -25,6 +25,15 @@ export interface GraphCommit {
   signer?: string // signing identity (%GS), when known
 }
 
+/** A branch that contains a given commit, grouped like the graph's ref
+ *  badges: a local branch and its remote-tracking counterpart (e.g. `main` +
+ *  `origin/main`) collapse into one entry instead of two separate rows. */
+export interface CommitBranchInfo {
+  name: string
+  isLocal: boolean
+  remotes: string[]
+}
+
 /** One working-tree match from a `git grep` content search. */
 export interface CodeSearchHit {
   file: string

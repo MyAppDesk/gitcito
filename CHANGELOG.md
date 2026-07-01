@@ -1,5 +1,13 @@
 
 
+## [1.18.0](https://github.com/MyAppDesk/gitcito/compare/v1.17.0...v1.18.0) (2026-07-01)
+
+
+### Features
+
+* add 'Open With' functionality for files and folders ([4e0ac7f](https://github.com/MyAppDesk/gitcito/commit/4e0ac7f2c334f0a755836f180119cd4b1f2a5a8d))
+* add drag-and-drop functionality for merging terminal groups ([3026fa0](https://github.com/MyAppDesk/gitcito/commit/3026fa0a25b2856dd88c88c6aec0cb014f79850f))
+
 ## [1.17.0](https://github.com/MyAppDesk/gitcito/compare/v1.16.2...v1.17.0) (2026-07-01)
 
 

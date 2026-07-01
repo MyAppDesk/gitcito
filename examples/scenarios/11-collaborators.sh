@@ -110,4 +110,29 @@ GIT_AUTHOR_NAME="Alice Liddell" GIT_AUTHOR_EMAIL="alice-liddell@users.noreply.gi
 GIT_COMMITTER_NAME="Alice Liddell" GIT_COMMITTER_EMAIL="alice-liddell@users.noreply.github.com" \
   git -C "$R" tag -a v1.0.0 -m "Release v1.0.0 — team effort"
 
-summary "collaborators" "4 authors, 2 feature branches, merge commits, v1.0.0 tag"
+# Stress-test commit: 6 co-authors on one commit, plus a pile of branches/tags
+# pointing at it. Good for exercising "cluttered" UI states (co-author overflow,
+# ref-badge overflow) in the commit details panel.
+cat >> "$R/README.md" <<'EOF'
+
+## Contributors
+Huge team effort on the v1.1 milestone — see co-authors on this commit.
+EOF
+git -C "$R" add -A
+collab_commit "$R" "Alice Liddell" "alice-liddell@users.noreply.github.com" "docs: credit the whole squad for v1.1" \
+  "Co-authored-by: Bob Marley <bob-marley@users.noreply.github.com>
+Co-authored-by: Carol Danvers <carol-danvers@users.noreply.github.com>
+Co-authored-by: Dave Grohl <dave-grohl@users.noreply.github.com>
+Co-authored-by: Erin Reyes <erin-reyes@users.noreply.github.com>
+Co-authored-by: Frank Castillo <frank-castillo@users.noreply.github.com>
+Co-authored-by: Grace Okafor <grace-okafor@users.noreply.github.com>"
+
+git -C "$R" branch release/1.1
+git -C "$R" branch hotfix/1.1.1
+git -C "$R" branch chore/cleanup
+git -C "$R" branch experiment/perf
+git -C "$R" tag v1.1.0
+git -C "$R" tag v1.1.0-rc1
+git -C "$R" tag -a checkpoint-2026 -m "Checkpoint"
+
+summary "collaborators" "4 authors, 2 feature branches, merge commits, v1.0.0 tag, plus a 6-co-author/7-ref stress commit"

@@ -142,6 +142,72 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
       ? fileView.file
       : null
 
+  const REFS_VISIBLE = 3
+  const refItems: { key: string; node: React.JSX.Element }[] = [
+    ...branches.map((b) => {
+      const key = `b:${b.name}`
+      return {
+        key,
+        node: (
+          <span
+            key={key}
+            className={`ref-badge ${b.isLocal ? 'ref-local' : 'ref-remote'}`}
+            title={`${b.name}${b.isLocal ? ' · local' : ''}${b.remotes.length ? ` · ${b.remotes.join(', ')}` : ''}`}
+          >
+            {b.isLocal && <Laptop size={10} className="ref-ic" />}
+            {b.remotes.map((remote) => (
+              <span key={remote} className="ref-ic">
+                <RemoteIcon url={repo.remotes.find((r) => r.name === remote)?.url} size={10} />
+              </span>
+            ))}
+            <span className="ref-text">{b.name}</span>
+          </span>
+        )
+      }
+    }),
+    ...tags.map((tg) => {
+      const key = `t:${tg}`
+      const isPushed = repo.remoteTagNames.includes(tg)
+      return {
+        key,
+        node: (
+          <span key={key} className="ref-badge ref-tag" title={`${tg}${isPushed ? ' · pushed' : ' · local only'}`}>
+            <Tag size={10} className="ref-ic" />
+            {isPushed && <Cloud size={10} className="ref-ic" />}
+            <span className="ref-text">{tg}</span>
+          </span>
+        )
+      }
+    })
+  ]
+  const visibleRefs = refItems.slice(0, REFS_VISIBLE)
+  const hiddenRefs = refItems.slice(REFS_VISIBLE)
+
+  const COAUTHORS_VISIBLE = 4
+  const coAuthors = commit.coAuthors ?? []
+  const visibleCoAuthors = coAuthors.slice(0, COAUTHORS_VISIBLE)
+  const hiddenCoAuthors = coAuthors.slice(COAUTHORS_VISIBLE)
+
+  const renderCoauthorRow = (a: (typeof coAuthors)[number]): React.JSX.Element => {
+    const url = profileUrl(a.name, a.email, repo.remotes)
+    return (
+      <div key={a.email} className="commit-coauthor-row">
+        <Avatar email={a.email} name={a.name} size={16} />
+        <span>{a.name}</span>
+        {url && (
+          <a
+            className="commit-profile-link"
+            href="#"
+            title={interp(t('commitPanel.openProfileTitle'), { author: a.name })}
+            onClick={(e) => { e.preventDefault(); void shellApi.openExternal(url) }}
+          >
+            <ExternalLink size={10} />
+          </a>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div className="details">
       <div className="details-info">
@@ -181,62 +247,39 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
                 <Copy size={12} />
               </button>
             </div>
-            {(branches.length > 0 || tags.length > 0) && (
-              <div className="commit-refs-row">
-                {branches.map((b) => (
-                  <span
-                    key={b.name}
-                    className={`ref-badge ${b.isLocal ? 'ref-local' : 'ref-remote'}`}
-                    title={`${b.name}${b.isLocal ? ' · local' : ''}${b.remotes.length ? ` · ${b.remotes.join(', ')}` : ''}`}
-                  >
-                    {b.isLocal && <Laptop size={10} className="ref-ic" />}
-                    {b.remotes.map((remote) => (
-                      <span key={remote} className="ref-ic">
-                        <RemoteIcon url={repo.remotes.find((r) => r.name === remote)?.url} size={10} />
-                      </span>
-                    ))}
-                    <span className="ref-text">{b.name}</span>
-                  </span>
-                ))}
-                {tags.map((tg) => {
-                  const isPushed = repo.remoteTagNames.includes(tg)
-                  return (
-                    <span
-                      key={tg}
-                      className="ref-badge ref-tag"
-                      title={`${tg}${isPushed ? ' · pushed' : ' · local only'}`}
-                    >
-                      <Tag size={10} className="ref-ic" />
-                      {isPushed && <Cloud size={10} className="ref-ic" />}
-                      <span className="ref-text">{tg}</span>
-                    </span>
-                  )
-                })}
-              </div>
-            )}
           </div>
         </div>
-        {commit.coAuthors && commit.coAuthors.length > 0 && (
-          <div className="commit-coauthors">
-            {commit.coAuthors.map((a) => {
-              const url = profileUrl(a.name, a.email, repo.remotes)
-              return (
-                <div key={a.email} className="commit-coauthor-row">
-                  <Avatar email={a.email} name={a.name} size={16} />
-                  <span>{a.name}</span>
-                  {url && (
-                    <a
-                      className="commit-profile-link"
-                      href="#"
-                      title={interp(t('commitPanel.openProfileTitle'), { author: a.name })}
-                      onClick={(e) => { e.preventDefault(); void shellApi.openExternal(url) }}
-                    >
-                      <ExternalLink size={10} />
-                    </a>
-                  )}
-                </div>
-              )
-            })}
+        {refItems.length > 0 && (
+          <div className="commit-section commit-refs-section">
+            <span className="commit-section-label">{t('commitPanel.refsLabel')}</span>
+            <div className="commit-refs-row">
+              {visibleRefs.map((r) => r.node)}
+              {hiddenRefs.length > 0 && (
+                <span className="ref-collapsed">
+                  <span className="ref-more-chip">+{hiddenRefs.length}</span>
+                  <div className="commit-refs-pop">{hiddenRefs.map((r) => r.node)}</div>
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+        {coAuthors.length > 0 && (
+          <div className="commit-section commit-coauthors-section">
+            <span className="commit-section-label">{t('commitPanel.coauthorsLabel')}</span>
+            <div className="commit-coauthor-avatars">
+              {visibleCoAuthors.map((a) => (
+                <span key={a.email} className="coauthor-avatar-wrap">
+                  <Avatar email={a.email} name={a.name} size={20} />
+                  <div className="commit-coauthor-pop">{renderCoauthorRow(a)}</div>
+                </span>
+              ))}
+              {hiddenCoAuthors.length > 0 && (
+                <span className="coauthor-collapsed">
+                  <span className="ref-more-chip coauthor-more-chip">+{hiddenCoAuthors.length}</span>
+                  <div className="commit-coauthor-pop">{hiddenCoAuthors.map(renderCoauthorRow)}</div>
+                </span>
+              )}
+            </div>
           </div>
         )}
         <div className="commit-message-toolbar">

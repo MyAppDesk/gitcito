@@ -2018,22 +2018,6 @@ textarea:focus {
   opacity: 1;
 }
 
-.commit-coauthors {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 0 16px 10px 64px;
-}
-
-.commit-coauthor-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  color: var(--text-2);
-  opacity: 0.85;
-}
-
 /* Person avatar: generated background, optional Gravatar <img> on top. */
 .ava {
   position: relative;
@@ -2109,7 +2093,6 @@ textarea:focus {
   align-items: center;
   flex-wrap: wrap;
   gap: 4px;
-  margin-top: 4px;
 }
 
 .commit-edit-btn {
@@ -2121,11 +2104,134 @@ textarea:focus {
   cursor: default;
 }
 
+.commit-section {
+  padding: 6px 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.commit-section-label {
+  flex: 0 0 auto;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-3, var(--text-2));
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.commit-coauthor-avatars {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.coauthor-avatar-wrap {
+  position: relative;
+  display: inline-flex;
+  border-radius: 50%;
+  border: 1.5px solid var(--bg-1);
+}
+
+.coauthor-collapsed {
+  position: relative;
+  display: inline-flex;
+  margin-left: 2px;
+}
+
+.coauthor-more-chip {
+  border-radius: 999px;
+}
+
+.commit-coauthor-pop {
+  display: none;
+}
+
+.coauthor-avatar-wrap:hover .commit-coauthor-pop,
+.coauthor-collapsed:hover .commit-coauthor-pop {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  position: absolute;
+  top: calc(100% + 4px);
+  padding: 6px 8px;
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  z-index: 30;
+  min-width: 160px;
+  white-space: nowrap;
+}
+
+/* Individual avatars sit near the left edge of the row, so their popover
+   grows rightward from the avatar's left edge to avoid clipping. */
+.coauthor-avatar-wrap:hover .commit-coauthor-pop {
+  left: 0;
+}
+
+/* The "+N" overflow chip sits at the end of the row (near the right edge),
+   so its popover grows leftward instead. */
+.coauthor-collapsed:hover .commit-coauthor-pop {
+  right: 0;
+}
+
+.coauthor-avatar-wrap:hover .commit-coauthor-pop::before,
+.coauthor-collapsed:hover .commit-coauthor-pop::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -4px;
+  height: 4px;
+}
+
+.commit-coauthor-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-2);
+  opacity: 0.85;
+}
+
+.commit-refs-pop {
+  display: none;
+}
+
+.commit-refs-section .ref-collapsed:hover .commit-refs-pop {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  padding: 6px;
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  z-index: 30;
+}
+
+.commit-refs-section .ref-collapsed:hover .commit-refs-pop::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -4px;
+  height: 4px;
+}
+
 .commit-message-toolbar {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 16px 0;
+  padding: 10px 16px 0;
 }
 
 .commit-message-label {

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { GitMerge, FolderOpen, Download, ArrowDownToLine } from 'lucide-react'
+import { GitMerge, FolderOpen, Download, ArrowDownToLine, Bug } from 'lucide-react'
 import { useSettingsStore } from './stores/settings'
 import { useRepoStore, repoActions, type RepoData } from './stores/repo'
 import { useUIStore } from './stores/ui'
@@ -619,6 +619,15 @@ export default function App(): React.JSX.Element {
               </button>
               {appVersion && (
                 <>
+                  <span className="status-sep" />
+                  <button
+                    className="status-issue-btn"
+                    title="Report an issue on GitHub"
+                    onClick={() => void window.api.openExternal('https://github.com/MyAppDesk/gitcito/issues/new')}
+                  >
+                    <Bug size={12} />
+                    <span>Report issue</span>
+                  </button>
                   <span className="status-sep" />
                   <button
                     className="status-version status-version-btn"

@@ -1,12 +1,21 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { CheckCircle2, AlertCircle, Info, X, Copy, Check } from 'lucide-react'
+import { CheckCircle2, AlertCircle, Info, X, Copy, Check, Bug } from 'lucide-react'
 import { useUIStore, type Toast } from '../stores/ui'
 
 const icons = {
   success: <CheckCircle2 size={16} />,
   error: <AlertCircle size={16} />,
   info: <Info size={16} />
+}
+
+/** Pre-fills a GitHub issue with the failing error message, so a bug report
+ *  takes one click instead of the user retyping what they just saw. */
+function reportIssueUrl(message: string): string {
+  const title = message.split('\n')[0].slice(0, 120)
+  const body = `**Error**\n\n\`\`\`\n${message}\n\`\`\`\n`
+  const params = new URLSearchParams({ title, body })
+  return `https://github.com/MyAppDesk/gitcito/issues/new?${params.toString()}`
 }
 
 function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }): React.JSX.Element {
@@ -55,6 +64,17 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }
         )}
       </div>
       <div className="toast-actions">
+        {toast.kind === 'error' && (
+          <button
+            title="Report this issue on GitHub"
+            onClick={(e) => {
+              e.stopPropagation()
+              void window.api.openExternal(reportIssueUrl(toast.message))
+            }}
+          >
+            <Bug size={13} />
+          </button>
+        )}
         <button title="Copy message" onClick={copy}>
           {copied ? <Check size={13} /> : <Copy size={13} />}
         </button>

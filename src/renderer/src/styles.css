@@ -2883,6 +2883,23 @@ textarea:focus {
   color: var(--text-0);
 }
 
+.status-issue-btn {
+  all: unset;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 3px;
+  padding: 1px 6px;
+  opacity: 0.6;
+  transition: background 0.08s, opacity 0.08s, color 0.08s;
+}
+.status-issue-btn:hover {
+  background: var(--bg-2);
+  color: var(--text-0);
+  opacity: 1;
+}
+
 /* ─── Zoom control ──────────────────────────────────────────────────────── */
 
 .zoom-control {

@@ -1,5 +1,18 @@
 
 
+## [1.19.1](https://github.com/MyAppDesk/gitcito/compare/v1.19.0...v1.19.1) (2026-07-02)
+
+
+### Features
+
+* adds copy folder path option ([d4c2876](https://github.com/MyAppDesk/gitcito/commit/d4c2876c9c334e31cb06a86b9fb1a31b36baf773))
+* copy branch name, folder, and file options ([9af1a24](https://github.com/MyAppDesk/gitcito/commit/9af1a245f771b72c67a1a7f76eb07e901e0a0400))
+
+
+### Bug Fixes
+
+* stashes with local changed warning ([c60bc56](https://github.com/MyAppDesk/gitcito/commit/c60bc5649b0642e4f23336c74ff6454d6ef4d009))
+
 ## [1.19.0](https://github.com/MyAppDesk/gitcito/compare/v1.18.0...v1.19.0) (2026-07-01)
 
 

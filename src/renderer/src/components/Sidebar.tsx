@@ -923,7 +923,8 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     folderOpenMenuItems(repo.path, defaultOpenApp, {
       openFolder: t('sidebar.openFolder'),
       openWithDefault: (name) => interp(t('sidebar.openWithApp'), { name }),
-      openWith: t('sidebar.openFolderWith')
+      openWith: t('sidebar.openFolderWith'),
+      copyPath: t('sidebar.copyFolderPath')
     })
 
   const sectionLabels: Record<string, string> = {

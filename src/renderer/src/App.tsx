@@ -599,7 +599,8 @@ export default function App(): React.JSX.Element {
                 const items = folderOpenMenuItems(repo.path, settings.defaultOpenApp, {
                   openFolder: 'Open Folder',
                   openWithDefault: (name) => `Open with ${name}`,
-                  openWith: 'Open With…'
+                  openWith: 'Open With…',
+                  copyPath: 'Copy folder path'
                 })
                 useUIStore.getState().openContextMenu(r.left, r.top - 6 - items.length * 28, items)
               }}

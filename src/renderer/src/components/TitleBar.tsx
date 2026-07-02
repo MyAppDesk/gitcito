@@ -294,7 +294,8 @@ export function TitleBar(): React.JSX.Element {
     folderOpenMenuItems(repoPath, settings.defaultOpenApp, {
       openFolder: 'Open Folder',
       openWithDefault: (name) => `Open with ${name}`,
-      openWith: 'Open With…'
+      openWith: 'Open With…',
+      copyPath: 'Copy folder path'
     })
 
   const tabMenu = (tab: TabState): MenuItem[] => {

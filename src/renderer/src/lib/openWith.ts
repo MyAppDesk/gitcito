@@ -23,15 +23,23 @@ export function openWithMenuItems(
   return items
 }
 
-/** Full folder-scope menu: Open Folder, Open with <App> (if set), Open With…
- *  Used by repo tabs, the group-repo menu, the Files header and the status bar. */
+/** Full folder-scope menu: Open Folder, Open with <App> (if set), Open With…,
+ *  Copy folder path. Used by repo tabs, the group-repo menu, the Files header
+ *  and the status bar. */
 export function folderOpenMenuItems(
   path: string,
   defaultApp: DefaultOpenApp,
-  labels: { openFolder: string; openWithDefault: (name: string) => string; openWith: string }
+  labels: {
+    openFolder: string
+    openWithDefault: (name: string) => string
+    openWith: string
+    copyPath: string
+  }
 ): MenuItem[] {
   return [
     { label: labels.openFolder, onClick: () => void shellApi.openPath(path) },
-    ...openWithMenuItems(path, defaultApp, labels)
+    ...openWithMenuItems(path, defaultApp, labels),
+    { separator: true },
+    { label: labels.copyPath, onClick: () => void navigator.clipboard.writeText(path) }
   ]
 }

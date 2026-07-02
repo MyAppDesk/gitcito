@@ -1219,6 +1219,7 @@ const en = {
   'sidebar.newFolderRoot': 'New folder at root',
   'sidebar.openFolder': 'Open Folder',
   'sidebar.openFolderWith': 'Open Folder With…',
+  'sidebar.copyFolderPath': 'Copy folder path',
   'sidebar.openWithApp': 'Open with {name}',
   'sidebar.dropBranchMerge': 'Merge {source} → {target}',
   'sidebar.dropBranchRebase': 'Rebase {source} onto {target}'
@@ -2430,6 +2431,7 @@ const es: Dict = {
   'sidebar.newFolderRoot': 'Nueva carpeta en la raíz',
   'sidebar.openFolder': 'Abrir carpeta',
   'sidebar.openFolderWith': 'Abrir carpeta con…',
+  'sidebar.copyFolderPath': 'Copiar ruta de la carpeta',
   'sidebar.openWithApp': 'Abrir con {name}',
   'sidebar.dropBranchMerge': 'Merge {source} → {target}',
   'sidebar.dropBranchRebase': 'Rebase {source} en {target}'

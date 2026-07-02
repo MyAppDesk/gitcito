@@ -1,5 +1,12 @@
 
 
+## [1.19.3](https://github.com/MyAppDesk/gitcito/compare/v1.19.2...v1.19.3) (2026-07-02)
+
+
+### Features
+
+* add initHere method for initializing existing repos ([0be95a9](https://github.com/MyAppDesk/gitcito/commit/0be95a954a7c33d8b6531bd9b1b5bc47dee91565))
+
 ## [1.19.2](https://github.com/MyAppDesk/gitcito/compare/v1.19.1...v1.19.2) (2026-07-02)
 
 ## [1.19.1](https://github.com/MyAppDesk/gitcito/compare/v1.19.0...v1.19.1) (2026-07-02)

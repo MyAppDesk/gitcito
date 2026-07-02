@@ -1585,19 +1585,34 @@ textarea:focus {
 }
 
 .row-new-badge {
-  display: inline-block;
-  margin-right: 6px;
-  padding: 0 5px;
-  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-right: 7px;
+  padding: 1.5px 6px 1.5px 5px;
+  border-radius: 999px;
   font-size: 9px;
-  font-weight: 700;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   vertical-align: 1px;
-  color: #10121a;
-  background: #00b894;
+  color: #0a0e1a;
+  background: linear-gradient(135deg, var(--gitcito-mint), var(--gitcito-cyan));
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.25) inset, 0 1px 4px rgba(0, 230, 168, 0.35);
 }
-.graph-row.row-new:not(.selected) { box-shadow: inset 2px 0 0 #00b894; }
+
+.row-new-badge::before {
+  content: '';
+  width: 3.5px;
+  height: 3.5px;
+  border-radius: 50%;
+  background: #0a0e1a;
+  opacity: 0.55;
+}
+
+.graph-row.row-new:not(.selected) {
+  box-shadow: inset 2px 0 0 var(--gitcito-mint);
+}
 
 /* Branch preview: commits outside the hovered branch's history fade back. */
 .graph-row.ghosted {

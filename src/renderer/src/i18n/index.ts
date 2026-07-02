@@ -84,6 +84,8 @@ const en = {
   'common.close': 'Close',
   'common.rename': 'Rename',
   'common.add': 'Add',
+  'common.copyFilePath': 'Copy file path',
+  'common.copyFolderPath': 'Copy folder path',
 
   // Conflict resolver
   'conflict.resolved': 'resolved',
@@ -1307,6 +1309,8 @@ const es: Dict = {
   'common.close': 'Cerrar',
   'common.rename': 'Renombrar',
   'common.add': 'Añadir',
+  'common.copyFilePath': 'Copiar ruta del archivo',
+  'common.copyFolderPath': 'Copiar ruta de la carpeta',
 
   'conflict.resolved': 'resueltos',
   'conflict.allOurs': 'Todo nuestro',

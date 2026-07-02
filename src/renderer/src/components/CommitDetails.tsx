@@ -358,7 +358,16 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
             e.preventDefault()
             useUIStore.getState().openContextMenu(e.clientX, e.clientY, [
               { label: shellApi.revealLabel, onClick: () => void shellApi.revealInFolder(`${repo.path}/${f.path}`) },
-              { label: t('commitPanel.openDefaultApp'), onClick: () => void shellApi.openPath(`${repo.path}/${f.path}`) }
+              { label: t('commitPanel.openDefaultApp'), onClick: () => void shellApi.openPath(`${repo.path}/${f.path}`) },
+              { label: t('common.copyFilePath'), onClick: () => void navigator.clipboard.writeText(`${repo.path}/${f.path}`) }
+            ])
+          }}
+          onFolderContext={(folderPath, e) => {
+            e.preventDefault()
+            useUIStore.getState().openContextMenu(e.clientX, e.clientY, [
+              { label: shellApi.revealLabel, onClick: () => void shellApi.revealInFolder(`${repo.path}/${folderPath}`) },
+              { label: t('commitPanel.openDefaultApp'), onClick: () => void shellApi.openPath(`${repo.path}/${folderPath}`) },
+              { label: t('common.copyFolderPath'), onClick: () => void navigator.clipboard.writeText(`${repo.path}/${folderPath}`) }
             ])
           }}
         />

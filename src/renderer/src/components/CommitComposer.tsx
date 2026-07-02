@@ -448,6 +448,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
       { separator: true },
       { label: shellApi.revealLabel, onClick: () => void shellApi.revealInFolder(`${path}/${file.path}`) },
       { label: t('composer.openDefaultApp'), onClick: () => void shellApi.openPath(`${path}/${file.path}`) },
+      { label: t('common.copyFilePath'), onClick: () => void navigator.clipboard.writeText(`${path}/${file.path}`) },
       { separator: true },
       {
         label: t('composer.discardChanges'),
@@ -483,6 +484,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
         : { label: interp(t('composer.stageFolderN'), { n: targets.length }), onClick: () => void repoActions.stage(path, targets) },
       { separator: true },
       { label: shellApi.revealLabel, onClick: () => void shellApi.revealInFolder(`${path}/${folderPath}`) },
+      { label: t('common.copyFolderPath'), onClick: () => void navigator.clipboard.writeText(`${path}/${folderPath}`) },
       { separator: true },
       {
         label: 'Discard changes in folder',
@@ -689,7 +691,8 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
                     },
                     { separator: true },
                     { label: shellApi.revealLabel, onClick: () => void shellApi.revealInFolder(`${path}/${f.path}`) },
-                    { label: t('composer.openDefaultApp'), onClick: () => void shellApi.openPath(`${path}/${f.path}`) }
+                    { label: t('composer.openDefaultApp'), onClick: () => void shellApi.openPath(`${path}/${f.path}`) },
+                    { label: t('common.copyFilePath'), onClick: () => void navigator.clipboard.writeText(`${path}/${f.path}`) }
                   ])
                 }}
                 action={(f) => (

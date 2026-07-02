@@ -833,6 +833,8 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
 
   const commitMenu = (c: GraphCommit): MenuItem[] => {
     const currentBranch = repo.branches.current.trim()
+    const branchNames = buildRefGroups(c.refs, remoteNames).filter((g) => !g.isTag).map((g) => g.label)
+    const copyBranch = branchNames.length ? branchNames.join('\n') : currentBranch
     const mergeItems = mergeableRefs(c.refs).map<MenuItem>((ref) => ({
       label: interp(t('commit.mergeInto'), { ref, branch: currentBranch }),
       disabled: !currentBranch || ref === currentBranch,
@@ -896,6 +898,9 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
     { label: t('commit.exportPatch'), onClick: () => void exportPatch(c) },
     { label: t('commit.copySha'), onClick: () => void navigator.clipboard.writeText(c.hash) },
     { label: t('commit.copyMessage'), onClick: () => void navigator.clipboard.writeText(c.subject) },
+    ...(copyBranch
+      ? [{ label: t('branch.copyBranchName'), onClick: () => void navigator.clipboard.writeText(copyBranch) } satisfies MenuItem]
+      : []),
     { separator: true },
     {
       label: t('commit.interactiveRebase'),

@@ -118,7 +118,7 @@ interface RepoStoreState {
   refreshRemoteTags(path: string): Promise<void>
   refreshCiStatuses(path: string): Promise<void>
 
-  run(path: string, label: string, fn: () => Promise<void>, undoEntry?: UndoEntry, op?: 'push' | 'pull' | 'fetch' | null): Promise<boolean>
+  run(path: string, label: string, fn: () => Promise<void>, undoEntry?: UndoEntry, op?: 'push' | 'pull' | 'fetch' | null, onError?: (message: string) => boolean): Promise<boolean>
   undo(path: string): Promise<void>
   redo(path: string): Promise<void>
 }
@@ -131,6 +131,30 @@ function isConflictErrorMessage(msg: string): boolean {
 
 function isNonFastForwardError(msg: string): boolean {
   return /\[rejected\]|non-fast-forward|fetch first|tip of your current branch is behind|Updates were rejected/i.test(msg)
+}
+
+function isUntrackedStashCollision(msg: string): boolean {
+  return /could not restore untracked files from stash/i.test(msg)
+}
+
+/**
+ * When a stash apply/pop aborts because its untracked files already exist,
+ * offer to overwrite them and retry. Returns true if the error was handled
+ * (so the caller suppresses the default error toast).
+ */
+function promptStashOverwrite(message: string, path: string, index: number, pop: boolean): boolean {
+  if (!isUntrackedStashCollision(message)) return false
+  useUIStore.getState().openModal({
+    kind: 'confirm',
+    danger: true,
+    title: 'Overwrite untracked files?',
+    message:
+      'This stash includes untracked files that already exist in your working tree, so git stopped instead of overwriting them.\n\n' +
+      'Overwrite those files with the versions from the stash and continue?',
+    confirmLabel: 'Overwrite & apply',
+    onConfirm: () => void repoActions.stashApplyOverwrite(path, index, pop)
+  })
+  return true
 }
 
 function conflictHint(msg: string): string {
@@ -299,7 +323,7 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
     }
   },
 
-  run: async (path, label, fn, undoEntry, op = null) => {
+  run: async (path, label, fn, undoEntry, op = null, onError) => {
     const ui = useUIStore.getState()
     ui.setBusy(label, op)
     try {
@@ -317,6 +341,7 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
       return true
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
+      if (onError?.(message)) return false
       if (isConflictErrorMessage(message)) toast('info', conflictHint(message))
       else toast('error', message)
       return false
@@ -742,17 +767,37 @@ export const repoActions = {
     ),
 
   stashPop: (path: string, index = 0) =>
-    useRepoStore.getState().run(path, 'Popped stash', () => gitApi.stashPop(path, index), {
-      label: 'stash pop',
-      undo: () => gitApi.stash(path),
-      redo: () => gitApi.stashPop(path, 0)
-    }),
+    useRepoStore.getState().run(
+      path,
+      'Popped stash',
+      () => gitApi.stashPop(path, index),
+      {
+        label: 'stash pop',
+        undo: () => gitApi.stash(path),
+        redo: () => gitApi.stashPop(path, 0)
+      },
+      null,
+      (msg) => promptStashOverwrite(msg, path, index, true)
+    ),
 
   stashToBranch: (path: string, branch: string, index = 0) =>
     useRepoStore.getState().run(path, `Created branch ${branch} from stash`, () => gitApi.stashToBranch(path, branch, index)),
 
   stashApply: (path: string, index = 0) =>
-    useRepoStore.getState().run(path, 'Applied stash', () => gitApi.stashApply(path, index)),
+    useRepoStore
+      .getState()
+      .run(path, 'Applied stash', () => gitApi.stashApply(path, index), undefined, null, (msg) =>
+        promptStashOverwrite(msg, path, index, false)
+      ),
+
+  stashApplyOverwrite: (path: string, index = 0, pop = false) =>
+    useRepoStore
+      .getState()
+      .run(
+        path,
+        pop ? 'Popped stash (overwrote untracked files)' : 'Applied stash (overwrote untracked files)',
+        () => gitApi.stashApplyOverwrite(path, index, pop)
+      ),
 
   stashApplyFiles: (path: string, sha: string, tracked: string[], untracked: string[]) =>
     useRepoStore

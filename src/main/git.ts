@@ -1205,6 +1205,26 @@ export const gitService = {
     if (untracked.length) await git.raw(['restore', '--source', `${sha}^3`, '--worktree', '--', ...untracked])
   },
 
+  /**
+   * Force-apply (or pop) a stash whose untracked files collide with files that
+   * already exist in the working tree. Plain `git stash apply` aborts with
+   * "could not restore untracked files from stash" rather than clobber them, so
+   * we delete the colliding untracked paths — they're about to be replaced by the
+   * stash's own copies — then retry the apply/pop.
+   */
+  async stashApplyOverwrite(repoPath: string, index = 0, pop = false): Promise<void> {
+    const git = gitFor(repoPath)
+    const ref = `stash@{${index}}`
+    const sha = (await git.raw(['rev-parse', ref])).trim()
+    // The untracked tree (`^3`) exists only when the stash was made with -u.
+    const listed = await git.raw(['ls-tree', '-r', '-z', '--name-only', `${sha}^3`]).catch(() => '')
+    for (const rel of listed.split('\0').filter(Boolean)) {
+      const abs = join(repoPath, rel)
+      if (existsSync(abs)) await unlink(abs).catch(() => {})
+    }
+    await gitFor(repoPath).stash([pop ? 'pop' : 'apply', ref])
+  },
+
   // ─── Working directory / commits ───────────────────────────────────────────
 
   async stage(repoPath: string, files: string[]): Promise<void> {

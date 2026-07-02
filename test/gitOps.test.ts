@@ -93,6 +93,36 @@ describe('partial stash apply', () => {
   })
 })
 
+describe('stash apply with colliding untracked files', () => {
+  it('plain apply aborts, overwrite variant clobbers the collider and applies', async () => {
+    // A pre-existing untracked file blocks a plain apply of an -u stash.
+    const collide = cloneFixture('stash-picking')
+    writeFileSync(join(collide, 'delta-untracked.txt'), 'local, in the way\n')
+    await expect(gitService.stashApply(collide)).rejects.toThrow(/could not restore untracked files/i)
+
+    // On a fresh copy, the overwrite variant deletes the collider and applies.
+    const R = cloneFixture('stash-picking')
+    writeFileSync(join(R, 'delta-untracked.txt'), 'local, in the way\n')
+    await gitService.stashApplyOverwrite(R, 0, false)
+
+    // Tracked change landed and the untracked file now holds the stashed copy.
+    expect(readFileSync(join(R, 'alpha.txt'), 'utf8')).toContain('alpha v2')
+    expect(readFileSync(join(R, 'delta-untracked.txt'), 'utf8')).toContain('untracked file captured by the stash')
+    // apply (keep) leaves the stash in place.
+    expect((await gitService.stashes(R)).length).toBe(1)
+  })
+
+  it('overwrite with pop drops the stash after applying', async () => {
+    const R = cloneFixture('stash-picking')
+    writeFileSync(join(R, 'delta-untracked.txt'), 'local, in the way\n')
+    await gitService.stashApplyOverwrite(R, 0, true)
+
+    expect(existsSync(join(R, 'delta-untracked.txt'))).toBe(true)
+    // pop removes the stash once it applies cleanly.
+    expect((await gitService.stashes(R)).length).toBe(0)
+  })
+})
+
 describe('interactive rebase (squash messy history)', () => {
   it('fixups all messy-feature commits into one', async () => {
     const R = cloneFixture('interactive-rebase') // on messy-feature, 6 commits over main

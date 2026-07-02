@@ -38,7 +38,34 @@ import { ZoomControl } from './components/ZoomControl'
 import gitcitoLaunch from './assets/gitcito-launch.png'
 import { matchShortcut, effectiveBindings } from './lib/shortcuts'
 import { folderOpenMenuItems } from './lib/openWith'
-import { hostingApi } from './infrastructure/api'
+import { hostingApi, gitApi } from './infrastructure/api'
+
+function InitRepo({ path }: { path: string }): React.JSX.Element {
+  const [busy, setBusy] = useState(false)
+  const init = async (): Promise<void> => {
+    setBusy(true)
+    try {
+      await gitApi.initHere(path)
+      await useRepoStore.getState().refresh(path)
+    } catch (err) {
+      useUIStore.getState().toast('error', err instanceof Error ? err.message : String(err))
+      setBusy(false)
+    }
+  }
+  return (
+    <div className="welcome">
+      <div className="welcome-card">
+        <h1>Not a Git repository</h1>
+        <p>
+          <code>{path}</code> isn’t tracked by Git yet.
+        </p>
+        <button className="btn primary" disabled={busy} onClick={() => void init()}>
+          {busy ? 'Initializing…' : 'Initialize repository'}
+        </button>
+      </div>
+    </div>
+  )
+}
 
 function GroupView({ tab }: { tab: GroupTab }): React.JSX.Element {
   const { settings, addRepoToGroup, removeRepoFromGroup, renameRepoInGroup, reorderReposInGroup, setGroupActiveRepo } = useSettingsStore()
@@ -509,7 +536,9 @@ export default function App(): React.JSX.Element {
       {activeTab && activeTab.kind === 'group' && !repo && <GroupView tab={activeTab} />}
       {activeTab && activeTab.kind === 'page' && <PageView tab={activeTab} />}
 
-      {activeTab && repo && (
+      {activeTab && repo && repo.notGit && <InitRepo path={repo.path} />}
+
+      {activeTab && repo && !repo.notGit && (
         <>
           <Toolbar repo={repo} />
           <div className="workspace" style={{ ['--sidebar-w' as string]: `${layout.sidebarWidth}px` }}>

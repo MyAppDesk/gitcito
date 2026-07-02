@@ -68,6 +68,8 @@ export interface RepoData {
   ciStatuses: Record<string, CiStatus>
   /** Repo-relative path → working-tree status, for the project tree colors. */
   treeStatus: Record<string, TreeStatusKind>
+  /** The opened folder is not a git repo yet — show the "initialize" prompt. */
+  notGit: boolean
 }
 
 const emptyRepo = (path: string): RepoData => ({
@@ -97,7 +99,8 @@ const emptyRepo = (path: string): RepoData => ({
   lastRefreshAt: null,
   lastFetchAt: null,
   ciStatuses: {},
-  treeStatus: {}
+  treeStatus: {},
+  notGit: false
 })
 
 interface RepoStoreState {
@@ -216,11 +219,18 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
         submodules,
         treeStatus,
         loading: false,
+        notGit: false,
         lastRefreshAt: Date.now()
       })
     } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      // Opened a plain folder, not a repo — offer to `git init` instead of a toast.
+      if (/not a git repository/i.test(message)) {
+        patch(path, { loading: false, notGit: true })
+        return
+      }
       patch(path, { loading: false })
-      toast('error', err instanceof Error ? err.message : String(err))
+      toast('error', message)
     }
   },
 

@@ -90,7 +90,8 @@ const EVENT_FOR_METHOD: Record<string, ActivityEvent> = {
   revertCommit: 'revert',
   open: 'repoOpen',
   clone: 'clone',
-  init: 'init'
+  init: 'init',
+  initHere: 'init'
 }
 
 function eventForCall(method: string, args: unknown[]): ActivityEvent | null {
@@ -2323,6 +2324,11 @@ export const gitService = {
     await mkdir(target, { recursive: true })
     await simpleGit(target).init()
     return target
+  },
+
+  /** `git init` in an existing folder the user already opened. */
+  async initHere(repoPath: string): Promise<void> {
+    await simpleGit(repoPath).init()
   },
 
   // ─── Interactive rebase ────────────────────────────────────────────────────

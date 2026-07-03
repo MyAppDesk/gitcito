@@ -1,5 +1,13 @@
 
 
+## [1.22.0](https://github.com/MyAppDesk/gitcito/compare/v1.21.1...v1.22.0) (2026-07-03)
+
+
+### Features
+
+* add stash layout option (full / simple / minimal) ([23da515](https://github.com/MyAppDesk/gitcito/commit/23da515766ed0cea7cbcb4796806a675e575e407))
+* redesign stash provenance and rails ([3e6e449](https://github.com/MyAppDesk/gitcito/commit/3e6e44977f575fdaae86647088b3b5029982f934))
+
 ## [1.21.1](https://github.com/MyAppDesk/gitcito/compare/v1.21.0...v1.21.1) (2026-07-03)
 
 

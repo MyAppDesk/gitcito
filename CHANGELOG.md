@@ -1,5 +1,12 @@
 
 
+## [1.20.0](https://github.com/MyAppDesk/gitcito/compare/v1.19.4...v1.20.0) (2026-07-03)
+
+
+### Features
+
+* enhance gitcito CLI with name and group options ([e43c16d](https://github.com/MyAppDesk/gitcito/commit/e43c16d914bdeb9553b567b8a0f52a534e9af18f))
+
 ## [1.19.4](https://github.com/MyAppDesk/gitcito/compare/v1.19.3...v1.19.4) (2026-07-03)
 
 

@@ -2754,7 +2754,6 @@ textarea:focus {
 
 .terminal-host {
   height: 100%;
-  padding: 6px 8px 4px;
   overflow: hidden;
 }
 

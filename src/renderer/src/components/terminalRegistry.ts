@@ -37,6 +37,9 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
 
   const container = document.createElement('div')
   container.className = 'terminal-host-inner'
+  // Paint the container with the terminal bg so xterm's row-rounding leftover
+  // never shows the app background — stays correct if THEME changes.
+  container.style.background = THEME.background
 
   const term = new Terminal({
     fontFamily: 'SF Mono, JetBrains Mono, Menlo, monospace',

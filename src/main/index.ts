@@ -18,25 +18,22 @@ import { registerInfoHandlers } from './info'
 import { registerUpdaterHandlers, checkForUpdatesOnLaunch } from './updater'
 import { fixPath } from './fix-path'
 import { registerCliHandlers } from './cli'
+import { parseCliOpenArgs, type CliOpenPayload } from '../shared/cli'
 
 // GUI launches inherit a minimal PATH; restore the login-shell PATH so spawned
 // git (and its hooks, e.g. husky → npm) find node/npm. Runs before any spawn.
 fixPath()
 
-// Extracts the folder path passed by the `gitcito` CLI shim, e.g.
-// `open -a Gitcito --args --open /some/repo` → argv contains `--open <path>`.
-function parseOpenPath(argv: string[]): string | null {
-  const idx = argv.indexOf('--open')
-  return idx >= 0 && argv[idx + 1] ? argv[idx + 1] : null
-}
-
-// Sends the CLI-requested path to a window once its page has actually loaded
-// (cold launch races the renderer's IPC listener registration otherwise).
-function sendOpenPath(win: BrowserWindow, path: string): void {
+// Sends a CLI-requested path to a window once its page has actually loaded.
+// Applies to both cold launch and second-instance hand-off (see whenReady()
+// and 'second-instance' below) — the renderer itself queues this until its
+// settings store has finished loading from disk, since settings load()
+// resolves asynchronously and would otherwise clobber a tab added too early.
+function sendOpenPath(win: BrowserWindow, payload: CliOpenPayload): void {
   if (win.webContents.isLoadingMainFrame()) {
-    win.webContents.once('did-finish-load', () => win.webContents.send('cli:open-path', path))
+    win.webContents.once('did-finish-load', () => win.webContents.send('cli:open-path', payload))
   } else {
-    win.webContents.send('cli:open-path', path)
+    win.webContents.send('cli:open-path', payload)
   }
 }
 
@@ -52,8 +49,8 @@ if (!gotSingleInstanceLock) {
     if (!win) return
     if (win.isMinimized()) win.restore()
     win.focus()
-    const path = parseOpenPath(argv)
-    if (path) sendOpenPath(win, path)
+    const payload = parseCliOpenArgs(argv)
+    if (payload) sendOpenPath(win, payload)
   })
 }
 
@@ -274,11 +271,13 @@ app.whenReady().then(() => {
   createWindow()
   checkForUpdatesOnLaunch()
 
-  // Cold launch via `gitcito <dir>` (open -a Gitcito --args --open <path>).
-  const openPath = parseOpenPath(process.argv)
-  if (openPath) {
+  // Cold launch via `gitcito <dir>` (open -a Gitcito --args --open <path> ...).
+  // process.argv here is the *main* process's own argv — not visible to the
+  // preload/renderer processes, which only see whatever we forward explicitly.
+  const openPayload = parseCliOpenArgs(process.argv)
+  if (openPayload) {
     const [win] = BrowserWindow.getAllWindows()
-    if (win) sendOpenPath(win, openPath)
+    if (win) sendOpenPath(win, openPayload)
   }
 
   app.on('activate', () => {

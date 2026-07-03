@@ -5,14 +5,56 @@
 # "Install 'gitcito' command in PATH". Mirrors `code .` / `subl .`: opens the
 # given folder (default: cwd) as a repo tab in the Gitcito app.
 #
+# Usage: gitcito [dir] [-n|--name <name>] [-g|--group <group>]
+#   -n  Name to give the repo tab (defaults to the folder name)
+#   -g  Group tab to open/create the repo in (defaults to a standalone tab)
+#
 # This script is bundled as a packaged app resource — see build.extraResources
 # in package.json — and symlinked into PATH by src/main/cli.ts. It is NOT run
 # from inside the app itself.
 
-target=$(cd "${1:-.}" 2>/dev/null && pwd)
+dir=""
+name=""
+group=""
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -n|--name)
+      name=$2
+      shift 2
+      ;;
+    -g|--group)
+      group=$2
+      shift 2
+      ;;
+    *)
+      dir=$1
+      shift
+      ;;
+  esac
+done
+
+target=$(cd "${dir:-.}" 2>/dev/null && pwd)
 if [ -z "$target" ]; then
-  echo "gitcito: no such directory: ${1:-.}" >&2
+  echo "gitcito: no such directory: ${dir:-.}" >&2
   exit 1
 fi
 
-open -a "Gitcito" --args --open "$target"
+# Build argv with `set --` (not string concatenation) so names/groups with
+# spaces or quotes pass through safely without an eval. Each flag/value pair
+# is passed as a single `--flag=value` token (not two separate argv entries)
+# because Electron/Chromium's command-line parser reorders switches ahead of
+# bare positional args before handing them to the `second-instance` event —
+# `--open` and `/path` (as two tokens) can end up non-adjacent. `--open=/path`
+# survives that reordering intact since it's a single token.
+set -- "--open=$target"
+[ -n "$name" ] && set -- "$@" "--name=$name"
+[ -n "$group" ] && set -- "$@" "--group=$group"
+
+# `-n` forces `open` to launch a new process even when Gitcito is already
+# running. Without it, macOS just re-activates the running app and silently
+# drops --args entirely (no new process ever starts, so main.ts never sees
+# --open/--name/--group) — Electron's single-instance lock then takes over,
+# quitting this new process immediately after handing its argv off to the
+# already-running window via the `second-instance` event.
+open -n -a "Gitcito" --args "$@"

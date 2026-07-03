@@ -247,12 +247,30 @@ export default function App(): React.JSX.Element {
     useUpdatesStore.getState().init()
   }, [])
 
-  // `gitcito <dir>` (installed CLI shim) asks this window to open a folder —
-  // on cold launch or when a second `gitcito` invocation hands off to us.
+  // `gitcito <dir> [-n name] [-g group]` (installed CLI shim) asks this window
+  // to open a folder — on cold launch or when a second `gitcito` invocation
+  // hands off to this already-running instance (both routed through the same
+  // main-process IPC event, see src/main/index.ts). The event can arrive
+  // before settings finish loading from disk (load() resolves asynchronously
+  // and its `set(...)` would otherwise clobber a tab added too early), so any
+  // payload received pre-load is queued and flushed once settingsLoaded flips.
   useEffect(() => {
-    return cliApi.onOpenPath((path) => {
-      useSettingsStore.getState().openRepoTab({ path, name: path.split('/').pop() ?? path })
+    const pending: { path: string; name?: string; group?: string }[] = []
+    const flush = (): void => {
+      if (!useSettingsStore.getState().loaded) return
+      while (pending.length) useSettingsStore.getState().openFromCli(pending.shift()!)
+    }
+    const off = cliApi.onOpenPath((payload) => {
+      pending.push(payload)
+      flush()
     })
+    const unsub = useSettingsStore.subscribe((s) => {
+      if (s.loaded) flush()
+    })
+    return () => {
+      off()
+      unsub()
+    }
   }, [])
 
   // Global keyboard shortcuts, dispatched from the central registry so bindings

@@ -460,5 +460,6 @@ export const cliApi = {
   isInstalled: () => window.api.cli.isInstalled(),
   install: () => window.api.cli.install(),
   uninstall: () => window.api.cli.uninstall(),
-  onOpenPath: (cb: (path: string) => void) => window.api.cli.onOpenPath(cb)
+  onOpenPath: (cb: (payload: { path: string; name?: string; group?: string }) => void) =>
+    window.api.cli.onOpenPath(cb)
 }

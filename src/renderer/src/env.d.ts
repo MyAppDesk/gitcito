@@ -148,7 +148,7 @@ interface PreloadApi {
     isInstalled(): Promise<boolean>
     install(): Promise<{ ok: boolean; error?: string }>
     uninstall(): Promise<{ ok: boolean; error?: string }>
-    onOpenPath(cb: (path: string) => void): () => void
+    onOpenPath(cb: (payload: import('../../shared/cli').CliOpenPayload) => void): () => void
   }
 }
 

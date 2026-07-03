@@ -77,6 +77,11 @@ interface SettingsState {
   updateRepoLayout(path: string, mut: (layout: RepoLayout) => RepoLayout): void
 
   openRepoTab(repo: RepoRef): void
+  /** Open (or focus) a repo requested by the `gitcito` CLI shim. Unlike
+   *  openRepoTab, this can target/create a named group and inserts brand-new
+   *  standalone tabs at the front (leftmost) since a CLI-opened repo is the
+   *  thing the user just asked for. */
+  openFromCli(payload: { path: string; name?: string; group?: string }): void
   /** Open (or focus the existing) non-repo page tab, e.g. the changelog. */
   openPageTab(page: PageContent): void
   /** Replace an existing page tab's content in place (e.g. prev/next release). */
@@ -223,6 +228,54 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       const tab: TabState = { id: uid(), kind: 'repo', name: repo.name, repos: [repo], activeRepoPath: repo.path }
       const recentRepos = [repo, ...s.recentRepos.filter((r) => r.path !== repo.path)].slice(0, 8)
       return { ...s, tabs: [...s.tabs, tab], activeTabId: tab.id, recentRepos }
+    }),
+
+  openFromCli: (payload) =>
+    get().update((s) => {
+      const path = payload.path
+      const displayName = payload.name?.trim() || path.split('/').pop() || path
+      const groupName = payload.group?.trim()
+
+      // Already open somewhere (standalone or inside a group) — just focus it,
+      // matching by path since a repo can be renamed/moved independently.
+      const existing = s.tabs.find((t) => t.kind !== 'page' && t.repos.some((r) => r.path === path))
+      if (existing) {
+        const tabs =
+          existing.kind === 'group'
+            ? s.tabs.map((t) => (t.id === existing.id ? { ...t, activeRepoPath: path } : t))
+            : s.tabs
+        return { ...s, tabs, activeTabId: existing.id }
+      }
+
+      const repo: RepoRef = { path, name: displayName }
+      const recentRepos = [repo, ...s.recentRepos.filter((r) => r.path !== path)].slice(0, 8)
+
+      if (groupName) {
+        // Same-named group already open → drop the repo into it. Otherwise
+        // spin up a fresh group tab (a new project name doesn't reuse another
+        // path's tab, same as the no-group case below).
+        const existingGroup = s.tabs.find(
+          (t): t is Extract<TabState, { kind: 'group' }> =>
+            t.kind === 'group' && t.name.toLowerCase() === groupName.toLowerCase()
+        )
+        if (existingGroup) {
+          const tabs = s.tabs.map((t) =>
+            t.id === existingGroup.id && t.kind === 'group'
+              ? { ...t, repos: [...t.repos, repo], activeRepoPath: path }
+              : t
+          )
+          return { ...s, tabs, activeTabId: existingGroup.id, recentRepos }
+        }
+        const groupCount = s.tabs.filter((t) => t.kind === 'group').length
+        const color = GROUP_COLORS[groupCount % GROUP_COLORS.length]
+        const tab: TabState = { id: uid(), kind: 'group', name: groupName, repos: [repo], activeRepoPath: path, color }
+        return { ...s, tabs: [tab, ...s.tabs], activeTabId: tab.id, recentRepos }
+      }
+
+      // New standalone tab — inserted at the front so the repo the user just
+      // asked to open is immediately visible, not buried after existing tabs.
+      const tab: TabState = { id: uid(), kind: 'repo', name: displayName, repos: [repo], activeRepoPath: path }
+      return { ...s, tabs: [tab, ...s.tabs], activeTabId: tab.id, recentRepos }
     }),
 
   openPageTab: (page) =>

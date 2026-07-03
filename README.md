@@ -133,6 +133,22 @@
 - **Keyboard shortcuts** with a `?` cheatsheet — core navigation shortcuts (palette, code search, vault) are **rebindable** with conflict handling and per-shortcut reset, and **⌘⇧T reopens the last closed tab**.
 - **Undo / redo**, a first-run onboarding wizard, and **i18n** (English & Spanish) out of the box.
 
+### Command line (`gitcito .`)
+Open any folder straight from your terminal — like `code .` for VS Code.
+
+- **Install**: open the Command Palette (`⌘K`) and run **"Install 'gitcito' command in PATH"** (macOS only). This symlinks a small shim into `/usr/local/bin` or `/opt/homebrew/bin` (prompting for admin rights only if neither is user-writable). Run the palette command again anytime to **uninstall**.
+- **Basic usage**: `cd` into a repo (or any folder) and run:
+  ```sh
+  gitcito .
+  ```
+  Opens that folder as a repo tab. If the path is already open in a tab (or inside a group), Gitcito just **focuses it** instead of opening a duplicate — if not, it's added as a **new tab at the front**. Folders that aren't a Git repo yet still open, dropping you into the existing **"initialize repo here"** flow. You can also pass an explicit path: `gitcito ~/code/my-project`.
+- **Naming & grouping**: add `-n`/`--name` to set the tab's display name, and `-g`/`--group` to place it inside a group tab:
+  ```sh
+  gitcito . -n "My API" -g "Work"
+  ```
+  If a group named "Work" already exists, the repo is added to it; otherwise a new group tab is created at the front. Matching (for both the standalone-tab and group lookups) is by path/name, so re-running the same command just re-focuses what's already there instead of creating duplicates.
+- Gitcito uses a **single-instance** model — running `gitcito` while the app is already open hands the request off to that existing window rather than launching a second copy.
+
 ## 🖼️ Screenshots
 
 ### Command palette & code search

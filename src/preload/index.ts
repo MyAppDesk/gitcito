@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer, webFrame, webUtils } from 'electron'
+import type { CliOpenPayload } from '../shared/cli'
 
 const api = {
   platform: process.platform,
@@ -235,10 +236,11 @@ const api = {
     isInstalled: (): Promise<boolean> => ipcRenderer.invoke('cli:isInstalled'),
     install: (): Promise<{ ok: boolean; error?: string }> => ipcRenderer.invoke('cli:install'),
     uninstall: (): Promise<{ ok: boolean; error?: string }> => ipcRenderer.invoke('cli:uninstall'),
-    // Fired when `gitcito <dir>` (cold launch or a second instance) asks this
-    // window to open a folder as a repo tab.
-    onOpenPath: (cb: (path: string) => void): (() => void) => {
-      const listener = (_e: unknown, path: string): void => cb(path)
+    // Fired when `gitcito <dir>` asks this window to open a folder — on cold
+    // launch (main sends it once the page finishes loading) or when a second
+    // `gitcito` invocation hands off to this already-running instance.
+    onOpenPath: (cb: (payload: CliOpenPayload) => void): (() => void) => {
+      const listener = (_e: unknown, payload: CliOpenPayload): void => cb(payload)
       ipcRenderer.on('cli:open-path', listener)
       return () => ipcRenderer.removeListener('cli:open-path', listener)
     }

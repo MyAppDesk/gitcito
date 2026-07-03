@@ -338,6 +338,8 @@ export function IntegrationsPage({
   const ActiveIcon = active.icon
   const token = profile[active.field]
   const connected = !!token.trim()
+  const azureOrg = profile.azureOrg ?? ''
+  const whoAmIOrg = active.id === 'azure' ? azureOrg.trim() : undefined
 
   const [account, setAccount] = useState<ConnectedAccount | null>(null)
   const [accountError, setAccountError] = useState<string | null>(null)
@@ -350,7 +352,7 @@ export function IntegrationsPage({
     let alive = true
     setLoadingAccount(true)
     void hostingApi
-      .whoAmI(active.id, token)
+      .whoAmI(active.id, token, whoAmIOrg)
       .then((info) => {
         if (alive) setAccount(info)
       })
@@ -364,7 +366,7 @@ export function IntegrationsPage({
       alive = false
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active.id, token, connected])
+  }, [active.id, token, connected, whoAmIOrg])
 
   return (
     <>
@@ -476,6 +478,18 @@ export function IntegrationsPage({
           onChange={(e) => edit({ [active.field]: e.target.value } as Partial<Profile>)}
         />
       </label>
+      {active.id === 'azure' && (
+        <label>
+          {t('settings.azureOrg')}
+          <input
+            type="text"
+            value={azureOrg}
+            placeholder="e.g. contoso"
+            onChange={(e) => edit({ azureOrg: e.target.value })}
+          />
+          <span className="settings-hint">{t('settings.azureOrgHint')}</span>
+        </label>
+      )}
       <button className="link-btn" type="button" onClick={() => void window.api.openExternal(active.tokenUrl)}>
         <ExternalLink size={12} /> {t('settings.createToken')}
       </button>

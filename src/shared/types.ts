@@ -927,6 +927,8 @@ export interface Profile {
   gitEmail: string
   githubToken: string
   azureToken: string
+  /** Azure DevOps organization, used to validate the PAT and scope repo/PR lookups. */
+  azureOrg?: string
   gitlabToken: string
   bitbucketToken: string
   ai: AIConfig
@@ -1268,6 +1270,7 @@ export function defaultProfile(): Profile {
     gitEmail: '',
     githubToken: '',
     azureToken: '',
+    azureOrg: '',
     gitlabToken: '',
     bitbucketToken: '',
     ai: {

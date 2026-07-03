@@ -417,6 +417,9 @@ const en = {
   'settings.pat': 'Personal access token',
   'settings.appPassword': 'App password',
   'settings.createToken': 'Create a token',
+  'settings.azureOrg': 'Organization',
+  'settings.azureOrgHint':
+    'Required to validate the token. It is the name in dev.azure.com/<organization>.',
   'settings.connected': 'Connected',
   'settings.notConnected': 'Not connected',
   'settings.integrationsForProfile': 'Connections for {name}',
@@ -1643,6 +1646,9 @@ const es: Dict = {
   'settings.pat': 'Token de acceso personal',
   'settings.appPassword': 'Contraseña de aplicación',
   'settings.createToken': 'Crear un token',
+  'settings.azureOrg': 'Organización',
+  'settings.azureOrgHint':
+    'Necesaria para validar el token. Es el nombre en dev.azure.com/<organización>.',
   'settings.connected': 'Conectado',
   'settings.notConnected': 'Sin conectar',
   'settings.integrationsForProfile': 'Conexiones de {name}',

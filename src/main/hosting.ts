@@ -1029,6 +1029,19 @@ async function listOwners(provider: RepoHost, token: string, org?: string): Prom
   return data.value.map((p) => ({ id: p.id, login: p.name, type: 'org' as const }))
 }
 
+/** Build a human-readable message for Azure DevOps auth failures, which are otherwise opaque. */
+function azureAuthError(status: number, org?: string): string {
+  if (status === 401 || status === 403) {
+    return org
+      ? `Azure DevOps rejected the token (${status}). Check that the PAT is valid and not expired, that it has access to the "${org}" organization, and that the organization name is spelled correctly.`
+      : `Azure DevOps rejected the token (${status}). Enter your organization name below and make sure the PAT is valid, not expired, and has at least User Profile (read) or Code (read) scope.`
+  }
+  if (status === 404 && org) {
+    return `Azure DevOps organization "${org}" was not found (404). Double-check the organization name.`
+  }
+  return `Azure DevOps API error (${status})`
+}
+
 /** Resolve the authenticated user behind a stored token, for display in Settings → Integrations. */
 async function fetchConnectedAccount(provider: RepoHost, token: string, org?: string): Promise<ConnectedAccount> {
   if (!token.trim()) throw new Error(`Not connected. Add a ${provider} token in Settings → Integrations.`)
@@ -1106,20 +1119,43 @@ async function fetchConnectedAccount(provider: RepoHost, token: string, org?: st
     }
   }
 
-  // Azure DevOps — the profile API doesn't require an organization, but there is no
-  // avatar without one; orgs must be entered by the user since PATs can't list them.
-  const auth = Buffer.from(`:${token}`).toString('base64')
+  // Azure DevOps — prefer an organization-scoped check. The global profile service
+  // (app.vssps.visualstudio.com) returns 401 for Entra/guest accounts even with a valid
+  // org-scoped PAT, so when we know the organization we validate against connectionData,
+  // which works with a plain Code-scoped PAT and reflects the token's real access.
+  const auth = `Basic ${Buffer.from(`:${token}`).toString('base64')}`
+  const orgName = org?.trim()
+  if (orgName) {
+    const res = await fetch(
+      `https://dev.azure.com/${encodeURIComponent(orgName)}/_apis/connectionData?api-version=7.1-preview`,
+      { headers: { Authorization: auth } }
+    )
+    if (!res.ok) throw new Error(azureAuthError(res.status, orgName))
+    const data = (await res.json()) as {
+      authenticatedUser?: {
+        providerDisplayName?: string
+        properties?: { Account?: { $value?: string } }
+      }
+    }
+    const user = data.authenticatedUser
+    const email = user?.properties?.Account?.$value
+    const displayName = user?.providerDisplayName
+    return {
+      login: email ?? displayName ?? orgName,
+      name: displayName,
+      orgs: [{ login: orgName, url: `https://dev.azure.com/${encodeURIComponent(orgName)}` }]
+    }
+  }
+
+  // No organization provided — fall back to the global profile service (best effort).
   const res = await fetch('https://app.vssps.visualstudio.com/_apis/profile/profiles/me?api-version=7.1', {
-    headers: { Authorization: `Basic ${auth}` }
+    headers: { Authorization: auth }
   })
-  if (!res.ok) throw new Error(`Azure DevOps API error (${res.status})`)
+  if (!res.ok) throw new Error(azureAuthError(res.status))
   const profile = (await res.json()) as { displayName: string; emailAddress?: string; id: string }
   return {
     login: profile.emailAddress ?? profile.displayName,
-    name: profile.displayName,
-    orgs: org?.trim()
-      ? [{ login: org.trim(), url: `https://dev.azure.com/${encodeURIComponent(org.trim())}` }]
-      : undefined
+    name: profile.displayName
   }
 }
 

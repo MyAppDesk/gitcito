@@ -1,5 +1,12 @@
 
 
+## [1.19.4](https://github.com/MyAppDesk/gitcito/compare/v1.19.3...v1.19.4) (2026-07-03)
+
+
+### Features
+
+* add CLI support for gitcito with installation and handling ([f5e7694](https://github.com/MyAppDesk/gitcito/commit/f5e769482695664cac407637442c5566373a49a2))
+
 ## [1.19.3](https://github.com/MyAppDesk/gitcito/compare/v1.19.2...v1.19.3) (2026-07-02)
 
 

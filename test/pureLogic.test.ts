@@ -329,4 +329,38 @@ describe('graph layout', () => {
     // The spur sits on its own lane, clear of the trunk.
     expect(graph.nodes.get('stash')!.lane).toBeGreaterThan(graph.nodes.get('base')!.lane)
   })
+
+  // Two stashes whose dashed connectors span overlapping rows: `full` must keep
+  // them on distinct lanes, `simple` may collapse them onto one, and `minimal`
+  // pins each onto its parent's own lane.
+  const overlappingStashes = () => [
+    c('tip', ['root']),
+    c('s1', ['root']), // long connector: row 1 → root (row 5)
+    c('s2', ['mid']), //  connector: row 2 → mid (row 3), overlaps s1's rows
+    c('mid', ['root']),
+    c('base', ['root']),
+    c('root', [])
+  ]
+  const spurs = new Set(['s1', 's2'])
+
+  it('full topology keeps overlapping stash connectors on distinct lanes', () => {
+    const g = layoutGraph(overlappingStashes(), spurs, 'full')
+    expect(g.nodes.get('s1')!.lane).not.toBe(g.nodes.get('s2')!.lane)
+  })
+
+  it('simple topology lets overlapping stash connectors share a lane', () => {
+    const g = layoutGraph(overlappingStashes(), spurs, 'simple')
+    expect(g.nodes.get('s1')!.lane).toBe(g.nodes.get('s2')!.lane)
+  })
+
+  it('minimal topology places each stash inline on its parent lane', () => {
+    const g = layoutGraph(overlappingStashes(), spurs, 'minimal')
+    expect(g.nodes.get('s1')!.lane).toBe(g.nodes.get('root')!.lane)
+    expect(g.nodes.get('s2')!.lane).toBe(g.nodes.get('mid')!.lane)
+  })
+
+  it('defaults to full topology when none is given', () => {
+    const g = layoutGraph(overlappingStashes(), spurs)
+    expect(g.nodes.get('s1')!.lane).not.toBe(g.nodes.get('s2')!.lane)
+  })
 })

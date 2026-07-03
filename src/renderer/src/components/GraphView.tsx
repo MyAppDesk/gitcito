@@ -493,9 +493,10 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
   }, [repo.commits, repo.stashes, hasWip, repo.status, linearOnly])
 
   // Stashes are laid out as right-side spurs so they never displace the trunk.
+  const topology = graphStyle.topology ?? 'full'
   const layout = useMemo(
-    () => layoutGraph(displayCommits, new Set(stashBySha.keys())),
-    [displayCommits, stashBySha]
+    () => layoutGraph(displayCommits, new Set(stashBySha.keys()), topology),
+    [displayCommits, stashBySha, topology]
   )
 
   // Branch preview: hovering a branch/tag label ghosts every commit that isn't

@@ -1163,6 +1163,13 @@ export type GraphLineWidth = 'thin' | 'normal' | 'thick'
 /** How commit nodes are drawn: `normal` shows author avatars; `compact`
  *  replaces them with small dots (and stashes with a small cube). */
 export type GraphNodeStyle = 'normal' | 'compact'
+/**
+ * How much rail topology the graph draws, chiefly how stashes are laid out:
+ *   full    — each stash gets its own lane; nothing ever overlaps (richest).
+ *   simple  — the previous behaviour; stashes may share lanes (more compact).
+ *   minimal — stashes sit inline on their parent's lane; no extra lanes.
+ */
+export type GraphTopology = 'full' | 'simple' | 'minimal'
 
 /** A named set of lane colours for the graph rails. */
 export interface GraphPalette {
@@ -1181,10 +1188,12 @@ export interface GraphStyle {
   lineWidth: GraphLineWidth
   /** Commit node rendering — avatars (`normal`) or dots (`compact`). */
   nodeStyle: GraphNodeStyle
+  /** How much rail topology to draw (mainly stash lane strategy). */
+  topology: GraphTopology
 }
 
 export function defaultGraphStyle(): GraphStyle {
-  return { paletteId: 'classic', edgeStyle: 'rounded', density: 'comfortable', lineWidth: 'normal', nodeStyle: 'normal' }
+  return { paletteId: 'classic', edgeStyle: 'rounded', density: 'comfortable', lineWidth: 'normal', nodeStyle: 'normal', topology: 'full' }
 }
 
 /**

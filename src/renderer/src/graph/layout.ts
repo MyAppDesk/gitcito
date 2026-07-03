@@ -1,4 +1,5 @@
 import type { GraphCommit } from '../../../shared/types'
+import type { GraphTopology } from '../../../shared/types'
 
 export interface GraphNode {
   hash: string
@@ -46,8 +47,18 @@ export interface GraphLayout {
  * commits they span, with a single edge back to their parent. Without this, a spur inserted high
  * in the list would reserve the trunk lane down to its parent and push the real
  * commits onto another (differently-coloured) lane.
+ *
+ * `topology` tunes how spurs (stashes) are placed:
+ *   full    — each spur gets its own lane; connectors never overlap (default).
+ *   simple  — spurs sit just right of their span, and may share a lane (the
+ *             earlier behaviour — more compact, connectors can run together).
+ *   minimal — spurs sit inline on their parent's lane; no extra lanes at all.
  */
-export function layoutGraph(commits: GraphCommit[], spurs: Set<string> = new Set()): GraphLayout {
+export function layoutGraph(
+  commits: GraphCommit[],
+  spurs: Set<string> = new Set(),
+  topology: GraphTopology = 'full'
+): GraphLayout {
   const nodes = new Map<string, GraphNode>()
   const edges: GraphEdgeSpec[] = []
 
@@ -108,11 +119,12 @@ export function layoutGraph(commits: GraphCommit[], spurs: Set<string> = new Set
     }
   }
 
-  // ── Pass 2: spurs (stashes) on their own lane to the right of their span. ──
-  // Each spur's dashed connector runs the full [spurRow, parentRow] range, so we
-  // must reserve that whole span on its lane — otherwise two stashes whose
-  // connectors overlap vertically collapse onto the same lane and read as a
-  // single dashed line (GitKraken keeps each stash on a distinct lane).
+  // ── Pass 2: spurs (stashes). How they are laid out depends on `topology`. ──
+  // • minimal — inline on the parent's own lane (no extra lanes).
+  // • simple  — just right of the busiest lane over the connector's rows; two
+  //             stashes may land on the same lane (the earlier, compact look).
+  // • full    — same, but stepped further right until no other stash's span
+  //             overlaps, so each stash keeps a distinct, unobstructed lane.
   const spurSpans: { lane: number; lo: number; hi: number }[] = []
   for (let row = 0; row < commits.length; row++) {
     const c = commits[row]
@@ -120,19 +132,29 @@ export function layoutGraph(commits: GraphCommit[], spurs: Set<string> = new Set
     const parent = c.parents[0] ? nodes.get(c.parents[0]) : undefined
     const lo = row
     const hi = parent ? parent.row : row
-    // Busiest real-commit lane across the rows this spur's connector spans.
-    let maxLane = 0
-    for (const n of nodes.values()) {
-      if (spurs.has(n.hash)) continue
-      if (n.row >= lo && n.row <= hi) maxLane = Math.max(maxLane, n.lane)
+
+    let lane: number
+    if (topology === 'minimal') {
+      // Sit on the parent's lane; the dashed tether runs straight down it.
+      lane = parent ? parent.lane : 0
+    } else {
+      // Busiest lane across the rows this spur's connector spans. `simple`
+      // counts already-placed spurs (so they can stack up), `full` ignores
+      // them and instead resolves overlaps explicitly below.
+      let maxLane = 0
+      for (const n of nodes.values()) {
+        if (topology === 'full' && spurs.has(n.hash)) continue
+        if (n.row >= lo && n.row <= hi) maxLane = Math.max(maxLane, n.lane)
+      }
+      lane = maxLane + 1
+      if (topology === 'full') {
+        const clashes = (l: number): boolean =>
+          spurSpans.some((s) => s.lane === l && s.lo <= hi && lo <= s.hi)
+        while (clashes(lane)) lane++
+        spurSpans.push({ lane, lo, hi })
+      }
     }
-    // Sit just right of the real branches, then step further right until no
-    // previously-placed spur's span overlaps this one's rows.
-    let lane = maxLane + 1
-    const clashes = (l: number): boolean =>
-      spurSpans.some((s) => s.lane === l && s.lo <= hi && lo <= s.hi)
-    while (clashes(lane)) lane++
-    spurSpans.push({ lane, lo, hi })
+
     nodes.set(c.hash, { hash: c.hash, row, lane, color: colorCounter++ })
     laneCount = Math.max(laneCount, lane + 1)
   }

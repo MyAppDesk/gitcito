@@ -44,8 +44,9 @@ import { useUIStore } from '../stores/ui'
 import { Avatar } from './Avatar'
 import { useUpdatesStore, hasPendingUpdate } from '../stores/updates'
 import { gitApi, aiApi, settingsApi, analyticsApi, logApi, infoApi, vaultApi, shellApi, hostingApi } from '../infrastructure/api'
-import { AI_PROVIDERS, emptyAnalytics, defaultGraphStyle, type AIProvider, type Analytics, type AIUsageStat, type ActivityEvent, type RepoStats, type AppSettings, type BranchNamingStyle, type CommitStyle, type ConflictStyle, type ExplainStyle, type Profile, type SigningConfig, type SettingsBundle, type GraphStyle, type GraphPalette, type GraphEdgeStyle, type GraphDensity, type GraphLineWidth, type GraphNodeStyle, type ConnectedAccount } from '../../../shared/types'
-import { allGraphPalettes, findGraphPalette, colorForPalette, edgePath, DENSITY_ROW_H, LINE_WIDTH_PX, GRAPH_PALETTES } from '../graph/style'
+import { AI_PROVIDERS, emptyAnalytics, defaultGraphStyle, type AIProvider, type Analytics, type AIUsageStat, type ActivityEvent, type RepoStats, type AppSettings, type BranchNamingStyle, type CommitStyle, type ConflictStyle, type ExplainStyle, type Profile, type SigningConfig, type SettingsBundle, type GraphStyle, type GraphPalette, type GraphEdgeStyle, type GraphDensity, type GraphLineWidth, type GraphNodeStyle, type GraphTopology, type GraphCommit, type ConnectedAccount } from '../../../shared/types'
+import { allGraphPalettes, findGraphPalette, colorForPalette, edgePath, spurPath, DENSITY_ROW_H, LINE_WIDTH_PX, GRAPH_PALETTES } from '../graph/style'
+import { layoutGraph } from '../graph/layout'
 import type {
   AppTheme,
   AppThemeColors,
@@ -851,6 +852,11 @@ const NODE_STYLES: { id: GraphNodeStyle; key: TranslationKey }[] = [
   { id: 'normal', key: 'graphNodeStyle.normal' },
   { id: 'compact', key: 'graphNodeStyle.compact' }
 ]
+const TOPOLOGIES: { id: GraphTopology; key: TranslationKey }[] = [
+  { id: 'full', key: 'graphTopology.full' },
+  { id: 'simple', key: 'graphTopology.simple' },
+  { id: 'minimal', key: 'graphTopology.minimal' }
+]
 
 const PALETTE_SLOTS = 8
 
@@ -861,24 +867,33 @@ function toSlots(colors: string[]): string[] {
   return out
 }
 
-// A small illustrative graph: trunk + a branch that diverges and merges back,
-// plus a stash spur. Rows increase downward; an edge goes child → parent.
-const PREVIEW_NODES: { row: number; lane: number; color: number; kind: 'commit' | 'merge' | 'stash' }[] = [
-  { row: 0, lane: 0, color: 0, kind: 'commit' },
-  { row: 1, lane: 1, color: 1, kind: 'commit' },
-  { row: 2, lane: 2, color: 2, kind: 'stash' },
-  { row: 3, lane: 1, color: 1, kind: 'commit' },
-  { row: 4, lane: 0, color: 0, kind: 'merge' },
-  { row: 5, lane: 0, color: 0, kind: 'commit' }
+// A realistic little repo used to preview the graph style: a trunk with a
+// merge that brings a feature branch back in, plus three stashes saved at
+// different points. Rows increase downward (newest first); every edge runs
+// child → parent. Running it through the real `layoutGraph` means the preview
+// mirrors the actual renderer — including how each topology lays out stashes.
+const mk = (hash: string, parents: string[], subject: string): GraphCommit => ({
+  hash,
+  parents,
+  author: '',
+  email: '',
+  date: 0,
+  refs: [],
+  subject
+})
+const PREVIEW_COMMITS: GraphCommit[] = [
+  mk('a', ['b'], 'Polish release notes'),
+  mk('s1', ['e'], 'WIP: experiment'),
+  mk('s2', ['f1'], 'On feature: tweaks'),
+  mk('b', ['c', 'f2'], "Merge branch 'feature'"),
+  mk('c', ['d'], 'Wire up settings'),
+  mk('f2', ['f1'], 'Feature polish'),
+  mk('f1', ['d'], 'Start feature'),
+  mk('s3', ['d'], 'On master: quick save'),
+  mk('d', ['e'], 'Add graph module'),
+  mk('e', [], 'Initial commit')
 ]
-const PREVIEW_EDGES: { fromRow: number; fromLane: number; toRow: number; toLane: number; color: number; dashed?: boolean }[] = [
-  { fromRow: 0, fromLane: 0, toRow: 4, toLane: 0, color: 0 }, // trunk
-  { fromRow: 4, fromLane: 0, toRow: 5, toLane: 0, color: 0 }, // trunk continues
-  { fromRow: 0, fromLane: 0, toRow: 1, toLane: 1, color: 1 }, // branch out
-  { fromRow: 1, fromLane: 1, toRow: 3, toLane: 1, color: 1 }, // feature line
-  { fromRow: 3, fromLane: 1, toRow: 4, toLane: 0, color: 1 }, // merge in
-  { fromRow: 2, fromLane: 2, toRow: 3, toLane: 0, color: 2, dashed: true } // stash spur
-]
+const PREVIEW_SPURS = new Set(['s1', 's2', 's3'])
 
 // Sample identities for the live preview's avatar nodes, so it mirrors the
 // real graph (Gravatar when available, generated avatar otherwise).
@@ -922,45 +937,62 @@ function GraphMiniPreview({
   edgeStyle,
   rowH,
   lineW,
-  nodeStyle
+  nodeStyle,
+  topology
 }: {
   colors: string[]
   edgeStyle: GraphEdgeStyle
   rowH: number
   lineW: number
   nodeStyle: GraphNodeStyle
+  topology: GraphTopology
 }): React.JSX.Element {
   const laneW = 22
   const leftPad = 16
   const compact = nodeStyle === 'compact'
   const uid = useId().replace(/:/g, '')
   const cf = colorForPalette(colors)
+  const layout = useMemo(() => layoutGraph(PREVIEW_COMMITS, PREVIEW_SPURS, topology), [topology])
+  const rowOf = useMemo(() => new Map(PREVIEW_COMMITS.map((c, i) => [c.hash, i])), [])
   const x = (lane: number): number => leftPad + lane * laneW
   const y = (row: number): number => row * rowH + rowH / 2
-  const height = PREVIEW_NODES.length * rowH
-  const width = leftPad + 2 * laneW + 18
+  const height = PREVIEW_COMMITS.length * rowH
+  const width = leftPad + (layout.laneCount + 0.5) * laneW + 18
   const avaSize = 17
+  // Deeper rails first so the trunk sits on top of the branches it spawns.
+  const edges = [...layout.edges].sort(
+    (a, b) => Math.max(b.fromLane, b.toLane) - Math.max(a.fromLane, a.toLane)
+  )
   let avaIdx = 0
   return (
     <div className="graph-mini-wrap" style={{ position: 'relative', width, height }}>
       <svg className="graph-mini-svg" width={width} height={height}>
-        {PREVIEW_EDGES.map((e, i) => (
-          <path
-            key={i}
-            d={edgePath(x(e.fromLane), y(e.fromRow), x(e.toLane), y(e.toRow), edgeStyle)}
-            stroke={cf(e.color)}
-            strokeWidth={lineW}
-            strokeLinecap="round"
-            strokeDasharray={e.dashed ? '3 3' : undefined}
-            fill="none"
-            opacity={0.9}
-          />
-        ))}
-        {PREVIEW_NODES.map((n, i) => {
+        {edges.map((e, i) => {
+          const isSpur = e.kind === 'spur'
+          const d = isSpur
+            ? spurPath(x(e.fromLane), y(e.fromRow), x(e.toLane), y(e.toRow))
+            : edgePath(x(e.fromLane), y(e.fromRow), x(e.toLane), y(e.toRow), edgeStyle)
+          return (
+            <path
+              key={i}
+              d={d}
+              stroke={cf(e.color)}
+              strokeWidth={lineW}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeDasharray={isSpur ? '5 3' : undefined}
+              fill="none"
+              opacity={isSpur ? 0.85 : 0.95}
+            />
+          )
+        })}
+        {PREVIEW_COMMITS.map((c, i) => {
+          const n = layout.nodes.get(c.hash)
+          if (!n) return null
           const cx = x(n.lane)
           const cy = y(n.row)
           const col = cf(n.color)
-          if (n.kind === 'stash') {
+          if (PREVIEW_SPURS.has(c.hash)) {
             // Compact: a dashed, hatched box. Normal: a stacked-cards glyph.
             if (compact) return <StashHatchBox key={i} cx={cx} cy={cy} color={col} idSuffix={`${uid}-${i}`} />
             return (
@@ -971,7 +1003,7 @@ function GraphMiniPreview({
               </g>
             )
           }
-          if (n.kind === 'merge') {
+          if (c.parents.length >= 2) {
             return <circle key={i} cx={cx} cy={cy} r={4} fill={col} stroke="var(--bg-2)" strokeWidth={1.5} />
           }
           // Compact commits are dots a touch larger than merge dots. Normal
@@ -983,7 +1015,9 @@ function GraphMiniPreview({
         })}
       </svg>
       {!compact &&
-        PREVIEW_NODES.filter((n) => n.kind === 'commit').map((n, i) => {
+        PREVIEW_COMMITS.filter((c) => !PREVIEW_SPURS.has(c.hash) && c.parents.length < 2).map((c, i) => {
+          const n = layout.nodes.get(c.hash)
+          if (!n) return null
           const cx = x(n.lane)
           const cy = y(n.row)
           const col = cf(n.color)
@@ -1176,6 +1210,21 @@ function GraphStyleTab(): React.JSX.Element {
             ))}
           </div>
 
+          <h4 style={{ marginTop: 18 }}><GitBranch size={14} /> {t('settings.graphTopology')}</h4>
+          <div className="theme-mode-switch">
+            {TOPOLOGIES.map((topo) => (
+              <button
+                key={topo.id}
+                type="button"
+                className={`theme-mode-btn ${(style.topology ?? 'full') === topo.id ? 'active' : ''}`}
+                onClick={() => setStyle({ topology: topo.id })}
+              >
+                <span>{t(topo.key)}</span>
+              </button>
+            ))}
+          </div>
+          <p className="settings-hint">{t(`graphTopology.${style.topology ?? 'full'}.desc` as TranslationKey)}</p>
+
           <h4 style={{ marginTop: 18 }}>{t('settings.graphLineWidth')}</h4>
           <div className="theme-mode-switch">
             {LINE_WIDTHS.map((w) => (
@@ -1194,7 +1243,7 @@ function GraphStyleTab(): React.JSX.Element {
         <div className="graph-style-preview">
           <div className="code-preview-head">{t('settings.graphPreview')}</div>
           <div className="graph-mini-stage">
-            <GraphMiniPreview colors={current.colors} edgeStyle={style.edgeStyle} rowH={rowH} lineW={lineW} nodeStyle={style.nodeStyle} />
+            <GraphMiniPreview colors={current.colors} edgeStyle={style.edgeStyle} rowH={rowH} lineW={lineW} nodeStyle={style.nodeStyle} topology={style.topology ?? 'full'} />
           </div>
         </div>
       </div>
@@ -1245,7 +1294,7 @@ function GraphStyleTab(): React.JSX.Element {
               ))}
             </div>
             <div className="graph-mini-stage" style={{ marginTop: 12 }}>
-              <GraphMiniPreview colors={draft} edgeStyle={style.edgeStyle} rowH={rowH} lineW={lineW} nodeStyle={style.nodeStyle} />
+              <GraphMiniPreview colors={draft} edgeStyle={style.edgeStyle} rowH={rowH} lineW={lineW} nodeStyle={style.nodeStyle} topology={style.topology ?? 'full'} />
             </div>
             <div className="theme-editor-actions">
               <button className="btn primary small" onClick={savePalette}>

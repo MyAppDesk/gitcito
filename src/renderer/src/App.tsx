@@ -38,7 +38,7 @@ import { ZoomControl } from './components/ZoomControl'
 import gitcitoLaunch from './assets/gitcito-launch.png'
 import { matchShortcut, effectiveBindings } from './lib/shortcuts'
 import { folderOpenMenuItems } from './lib/openWith'
-import { hostingApi, gitApi } from './infrastructure/api'
+import { hostingApi, gitApi, cliApi } from './infrastructure/api'
 
 function InitRepo({ path }: { path: string }): React.JSX.Element {
   const [busy, setBusy] = useState(false)
@@ -245,6 +245,14 @@ export default function App(): React.JSX.Element {
   // Subscribe to update events and kick the first check.
   useEffect(() => {
     useUpdatesStore.getState().init()
+  }, [])
+
+  // `gitcito <dir>` (installed CLI shim) asks this window to open a folder —
+  // on cold launch or when a second `gitcito` invocation hands off to us.
+  useEffect(() => {
+    return cliApi.onOpenPath((path) => {
+      useSettingsStore.getState().openRepoTab({ path, name: path.split('/').pop() ?? path })
+    })
   }, [])
 
   // Global keyboard shortcuts, dispatched from the central registry so bindings

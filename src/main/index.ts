@@ -17,10 +17,45 @@ import { registerVaultHandlers } from './vault'
 import { registerInfoHandlers } from './info'
 import { registerUpdaterHandlers, checkForUpdatesOnLaunch } from './updater'
 import { fixPath } from './fix-path'
+import { registerCliHandlers } from './cli'
 
 // GUI launches inherit a minimal PATH; restore the login-shell PATH so spawned
 // git (and its hooks, e.g. husky → npm) find node/npm. Runs before any spawn.
 fixPath()
+
+// Extracts the folder path passed by the `gitcito` CLI shim, e.g.
+// `open -a Gitcito --args --open /some/repo` → argv contains `--open <path>`.
+function parseOpenPath(argv: string[]): string | null {
+  const idx = argv.indexOf('--open')
+  return idx >= 0 && argv[idx + 1] ? argv[idx + 1] : null
+}
+
+// Sends the CLI-requested path to a window once its page has actually loaded
+// (cold launch races the renderer's IPC listener registration otherwise).
+function sendOpenPath(win: BrowserWindow, path: string): void {
+  if (win.webContents.isLoadingMainFrame()) {
+    win.webContents.once('did-finish-load', () => win.webContents.send('cli:open-path', path))
+  } else {
+    win.webContents.send('cli:open-path', path)
+  }
+}
+
+// Only one Gitcito instance should run — `gitcito <dir>` from a second
+// terminal should hand its path to the existing window rather than spawn a
+// new app instance.
+const gotSingleInstanceLock = app.requestSingleInstanceLock()
+if (!gotSingleInstanceLock) {
+  app.quit()
+} else {
+  app.on('second-instance', (_e, argv) => {
+    const [win] = BrowserWindow.getAllWindows()
+    if (!win) return
+    if (win.isMinimized()) win.restore()
+    win.focus()
+    const path = parseOpenPath(argv)
+    if (path) sendOpenPath(win, path)
+  })
+}
 
 function createWindow(): void {
   const win = new BrowserWindow({
@@ -234,9 +269,18 @@ app.whenReady().then(() => {
   registerVaultHandlers()
   registerInfoHandlers()
   registerUpdaterHandlers()
+  registerCliHandlers()
 
   createWindow()
   checkForUpdatesOnLaunch()
+
+  // Cold launch via `gitcito <dir>` (open -a Gitcito --args --open <path>).
+  const openPath = parseOpenPath(process.argv)
+  if (openPath) {
+    const [win] = BrowserWindow.getAllWindows()
+    if (win) sendOpenPath(win, openPath)
+  }
+
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })

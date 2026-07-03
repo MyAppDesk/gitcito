@@ -38,6 +38,12 @@
       "buildResources": "build",
       "output": "dist"
     },
+    "extraResources": [
+      {
+        "from": "resources/cli",
+        "to": "cli"
+      }
+    ],
     "publish": {
       "provider": "github",
       "owner": "MyAppDesk",

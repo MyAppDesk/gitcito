@@ -453,3 +453,12 @@ export const hostingApi = {
   milestoneIssues: (remoteUrl: string, tokens: { github?: string }, number: number) =>
     window.api.hosting.milestoneIssues(remoteUrl, tokens, number) as Promise<IssueInfo[]>
 }
+
+// Installs/checks the `gitcito` shell command (macOS only), the equivalent of
+// VS Code's "Shell Command: Install 'code' in PATH".
+export const cliApi = {
+  isInstalled: () => window.api.cli.isInstalled(),
+  install: () => window.api.cli.install(),
+  uninstall: () => window.api.cli.uninstall(),
+  onOpenPath: (cb: (path: string) => void) => window.api.cli.onOpenPath(cb)
+}

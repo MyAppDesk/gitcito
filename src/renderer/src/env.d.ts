@@ -144,6 +144,12 @@ interface PreloadApi {
     install(): void
     onEvent(cb: (state: import('../../shared/types').UpdateState) => void): () => void
   }
+  cli: {
+    isInstalled(): Promise<boolean>
+    install(): Promise<{ ok: boolean; error?: string }>
+    uninstall(): Promise<{ ok: boolean; error?: string }>
+    onOpenPath(cb: (path: string) => void): () => void
+  }
 }
 
 declare global {

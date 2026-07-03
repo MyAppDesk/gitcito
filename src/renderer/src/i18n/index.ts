@@ -343,6 +343,11 @@ const en = {
   'cmd.settingsAi': 'Settings: AI',
   'cmd.settingsThemes': 'Settings: Themes',
   'cmd.cheatsheet': 'Keyboard shortcuts',
+  'cmd.cliInstall': "Install 'gitcito' command in PATH",
+  'cmd.cliUninstall': "Uninstall 'gitcito' command from PATH",
+  'cmd.cliInstalled': "'gitcito' command installed",
+  'cmd.cliUninstalled': "'gitcito' command removed",
+  'cmd.cliFailed': "Couldn't update the 'gitcito' command",
 
   // Settings
   'settings.title': 'Settings',
@@ -1565,6 +1570,11 @@ const es: Dict = {
   'cmd.settingsAi': 'Ajustes: IA',
   'cmd.settingsThemes': 'Ajustes: Temas',
   'cmd.cheatsheet': 'Atajos de teclado',
+  'cmd.cliInstall': "Instalar comando 'gitcito' en el PATH",
+  'cmd.cliUninstall': "Desinstalar comando 'gitcito' del PATH",
+  'cmd.cliInstalled': "Comando 'gitcito' instalado",
+  'cmd.cliUninstalled': "Comando 'gitcito' eliminado",
+  'cmd.cliFailed': "No se pudo actualizar el comando 'gitcito'",
 
   'settings.title': 'Ajustes',
   'settings.profile': 'Perfil',

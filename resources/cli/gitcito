@@ -1,0 +1,18 @@
+#!/bin/sh
+# Gitcito CLI launcher.
+#
+# Installed to /usr/local/bin/gitcito (or similar) via Command Palette →
+# "Install 'gitcito' command in PATH". Mirrors `code .` / `subl .`: opens the
+# given folder (default: cwd) as a repo tab in the Gitcito app.
+#
+# This script is bundled as a packaged app resource — see build.extraResources
+# in package.json — and symlinked into PATH by src/main/cli.ts. It is NOT run
+# from inside the app itself.
+
+target=$(cd "${1:-.}" 2>/dev/null && pwd)
+if [ -z "$target" ]; then
+  echo "gitcito: no such directory: ${1:-.}" >&2
+  exit 1
+fi
+
+open -a "Gitcito" --args --open "$target"

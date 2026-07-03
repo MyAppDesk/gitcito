@@ -229,6 +229,19 @@ const api = {
       ipcRenderer.on('update:event', listener)
       return () => ipcRenderer.removeListener('update:event', listener)
     }
+  },
+
+  cli: {
+    isInstalled: (): Promise<boolean> => ipcRenderer.invoke('cli:isInstalled'),
+    install: (): Promise<{ ok: boolean; error?: string }> => ipcRenderer.invoke('cli:install'),
+    uninstall: (): Promise<{ ok: boolean; error?: string }> => ipcRenderer.invoke('cli:uninstall'),
+    // Fired when `gitcito <dir>` (cold launch or a second instance) asks this
+    // window to open a folder as a repo tab.
+    onOpenPath: (cb: (path: string) => void): (() => void) => {
+      const listener = (_e: unknown, path: string): void => cb(path)
+      ipcRenderer.on('cli:open-path', listener)
+      return () => ipcRenderer.removeListener('cli:open-path', listener)
+    }
   }
 }
 

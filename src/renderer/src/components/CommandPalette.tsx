@@ -33,7 +33,7 @@ import {
 import { useUIStore } from '../stores/ui'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
 import { useSettingsStore } from '../stores/settings'
-import { gitApi } from '../infrastructure/api'
+import { gitApi, cliApi } from '../infrastructure/api'
 import { tabActiveRepoPath } from '../../../shared/types'
 import { getFrecency, frecencyScore, bumpFrecency } from '../lib/frecency'
 import { repoIsGitHub } from '../lib/hosting'
@@ -100,6 +100,7 @@ export function CommandPalette(): React.JSX.Element {
   const [query, setQuery] = useState('')
   const [active, setActive] = useState(0)
   const [files, setFiles] = useState<string[]>([])
+  const [cliInstalled, setCliInstalled] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
 
@@ -112,12 +113,11 @@ export function CommandPalette(): React.JSX.Element {
     const id = requestAnimationFrame(() => inputRef.current?.focus())
     if (repo) gitApi.listFiles(repo.path).then(setFiles).catch(() => setFiles([]))
     else setFiles([])
+    if (window.api.platform === 'darwin') cliApi.isInstalled().then(setCliInstalled).catch(() => setCliInstalled(false))
     return () => cancelAnimationFrame(id)
   }, [open, repo?.path])
 
   const commands = useMemo<Command[]>(() => {
-    if (!repo) return []
-    const path = repo.path
     const close = (): void => setOpen(false)
     const act = (fn: () => void): (() => void) => () => {
       close()
@@ -125,6 +125,46 @@ export function CommandPalette(): React.JSX.Element {
     }
     const ui = useUIStore.getState()
     const list: Command[] = []
+
+    // ── Global (available with no repo open) ──
+    if (window.api.platform === 'darwin') {
+      list.push(
+        cliInstalled
+          ? {
+              id: 'cli-uninstall',
+              title: t('cmd.cliUninstall'),
+              group: 'Actions',
+              keywords: 'terminal shell path command line',
+              icon: <TerminalSquare size={15} />,
+              run: act(() => {
+                void cliApi.uninstall().then((res) => {
+                  if (res.ok) {
+                    setCliInstalled(false)
+                    ui.toast('success', t('cmd.cliUninstalled'))
+                  } else ui.toast('error', res.error ?? t('cmd.cliFailed'))
+                })
+              })
+            }
+          : {
+              id: 'cli-install',
+              title: t('cmd.cliInstall'),
+              group: 'Actions',
+              keywords: 'terminal shell path command line open gitcito',
+              icon: <TerminalSquare size={15} />,
+              run: act(() => {
+                void cliApi.install().then((res) => {
+                  if (res.ok) {
+                    setCliInstalled(true)
+                    ui.toast('success', t('cmd.cliInstalled'))
+                  } else ui.toast('error', res.error ?? t('cmd.cliFailed'))
+                })
+              })
+            }
+      )
+    }
+
+    if (!repo) return list
+    const path = repo.path
 
     // ── Actions ──
     list.push(
@@ -218,7 +258,7 @@ export function CommandPalette(): React.JSX.Element {
     }
 
     return list
-  }, [repo, files, setOpen, aiEnabled, t])
+  }, [repo, files, setOpen, aiEnabled, t, cliInstalled])
 
   // Usage stats, refreshed each time the palette opens.
   const frec = useMemo(() => (open ? getFrecency() : {}), [open])
@@ -346,7 +386,7 @@ export function CommandPalette(): React.JSX.Element {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={onKeyDown}
-                disabled={!repo}
+                disabled={!repo && commands.length === 0}
               />
               <kbd className="cmdp-kbd">esc</kbd>
             </div>
@@ -356,7 +396,7 @@ export function CommandPalette(): React.JSX.Element {
               ) : (
                 <div className="cmdp-empty">
                   <Zap size={18} />
-                  <span>{repo ? t('cmdp.noMatches') : t('cmdp.noRepo')}</span>
+                  <span>{repo || commands.length > 0 ? t('cmdp.noMatches') : t('cmdp.noRepo')}</span>
                 </div>
               )}
             </div>

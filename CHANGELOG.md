@@ -1,5 +1,12 @@
 
 
+## [1.21.0](https://github.com/MyAppDesk/gitcito/compare/v1.20.0...v1.21.0) (2026-07-03)
+
+
+### Features
+
+* add fetchConnectedAccount function for user info retrieval ([d822599](https://github.com/MyAppDesk/gitcito/commit/d822599e4165988077ac7ab247a5975775c8959c))
+
 ## [1.20.0](https://github.com/MyAppDesk/gitcito/compare/v1.19.4...v1.20.0) (2026-07-03)
 
 

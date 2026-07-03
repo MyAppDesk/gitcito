@@ -1,5 +1,12 @@
 
 
+## [1.21.1](https://github.com/MyAppDesk/gitcito/compare/v1.21.0...v1.21.1) (2026-07-03)
+
+
+### Bug Fixes
+
+* adds org to ADO Integration ([4478db6](https://github.com/MyAppDesk/gitcito/commit/4478db6ce7290a98ff3cb9b9c4090734cdba2738))
+
 ## [1.21.0](https://github.com/MyAppDesk/gitcito/compare/v1.20.0...v1.21.0) (2026-07-03)
 
 

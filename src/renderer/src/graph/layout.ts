@@ -7,12 +7,27 @@ export interface GraphNode {
   color: number
 }
 
+/**
+ * What a rail segment represents, so the renderer can style it and place
+ * junction dots without re-deriving topology:
+ *   normal — a straight run down a single lane (child and parent share a lane)
+ *   branch — a first-parent link that changes lane (a tip converging left)
+ *   merge  — a second-or-later parent flowing in (the classic merge fork)
+ *   spur   — a stash hanging off its parent commit (drawn dashed)
+ */
+export type GraphEdgeKind = 'normal' | 'branch' | 'merge' | 'spur'
+
 export interface GraphEdgeSpec {
   fromRow: number
   fromLane: number
   toRow: number
   toLane: number
   color: number
+  kind: GraphEdgeKind
+  /** Hash of the child (upper) node — the segment's start. */
+  fromHash: string
+  /** Hash of the parent (lower) node — the segment's end. */
+  toHash: string
 }
 
 export interface GraphLayout {
@@ -94,19 +109,30 @@ export function layoutGraph(commits: GraphCommit[], spurs: Set<string> = new Set
   }
 
   // ── Pass 2: spurs (stashes) on their own lane to the right of their span. ──
+  // Each spur's dashed connector runs the full [spurRow, parentRow] range, so we
+  // must reserve that whole span on its lane — otherwise two stashes whose
+  // connectors overlap vertically collapse onto the same lane and read as a
+  // single dashed line (GitKraken keeps each stash on a distinct lane).
+  const spurSpans: { lane: number; lo: number; hi: number }[] = []
   for (let row = 0; row < commits.length; row++) {
     const c = commits[row]
     if (!spurs.has(c.hash)) continue
     const parent = c.parents[0] ? nodes.get(c.parents[0]) : undefined
     const lo = row
     const hi = parent ? parent.row : row
-    // Sit just right of the busiest real (or already-placed spur) lane in the
-    // rows this spur spans, so it never collides with a real branch.
+    // Busiest real-commit lane across the rows this spur's connector spans.
     let maxLane = 0
     for (const n of nodes.values()) {
+      if (spurs.has(n.hash)) continue
       if (n.row >= lo && n.row <= hi) maxLane = Math.max(maxLane, n.lane)
     }
-    const lane = maxLane + 1
+    // Sit just right of the real branches, then step further right until no
+    // previously-placed spur's span overlaps this one's rows.
+    let lane = maxLane + 1
+    const clashes = (l: number): boolean =>
+      spurSpans.some((s) => s.lane === l && s.lo <= hi && lo <= s.hi)
+    while (clashes(lane)) lane++
+    spurSpans.push({ lane, lo, hi })
     nodes.set(c.hash, { hash: c.hash, row, lane, color: colorCounter++ })
     laneCount = Math.max(laneCount, lane + 1)
   }
@@ -115,9 +141,18 @@ export function layoutGraph(commits: GraphCommit[], spurs: Set<string> = new Set
   for (const c of commits) {
     const child = nodes.get(c.hash)
     if (!child) continue
-    for (const p of c.parents) {
+    const isSpur = spurs.has(c.hash)
+    for (let pi = 0; pi < c.parents.length; pi++) {
+      const p = c.parents[pi]
       const parent = nodes.get(p)
       if (!parent) continue // parent beyond the loaded window
+      const kind: GraphEdgeKind = isSpur
+        ? 'spur'
+        : pi > 0
+          ? 'merge'
+          : child.lane === parent.lane
+            ? 'normal'
+            : 'branch'
       edges.push({
         fromRow: child.row,
         fromLane: child.lane,
@@ -127,7 +162,10 @@ export function layoutGraph(commits: GraphCommit[], spurs: Set<string> = new Set
         // i.e. the "new" thing: a diverging branch tip (or a stash spur) takes
         // the child's colour, a merged-in branch takes the incoming parent's.
         // Same-lane segments keep the shared lane colour.
-        color: child.lane >= parent.lane ? child.color : parent.color
+        color: child.lane >= parent.lane ? child.color : parent.color,
+        kind,
+        fromHash: c.hash,
+        toHash: p
       })
     }
   }

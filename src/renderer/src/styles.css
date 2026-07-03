@@ -1623,6 +1623,11 @@ textarea:focus {
   transition: opacity 0.15s;
 }
 
+/* A stash's dashed tether to the commit it was saved on top of. */
+.graph-edge-spur {
+  transition: opacity 0.15s;
+}
+
 .graph-nodes > div {
   transition: opacity 0.15s;
 }

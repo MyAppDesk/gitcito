@@ -506,7 +506,33 @@ export const gitService = {
     return { path: repoPath, name: basename(repoPath), current }
   },
 
+  /**
+   * First-parent SHAs of every stash entry — the commits each stash was saved
+   * on top of. Used to seed `log()` so unreachable stash bases still appear in
+   * the graph and their stashes have something to connect to. Best-effort: a
+   * repo with no stashes (or a failure listing them) simply yields none.
+   */
+  async stashBaseShas(repoPath: string): Promise<string[]> {
+    try {
+      const out = await gitFor(repoPath).raw(['stash', 'list', '--pretty=format:%P'])
+      const bases = new Set<string>()
+      for (const line of out.split('\n')) {
+        const first = line.trim().split(' ')[0]
+        if (first) bases.add(first)
+      }
+      return [...bases]
+    } catch {
+      return []
+    }
+  },
+
   async log(repoPath: string, maxCount = 400): Promise<GraphCommit[]> {
+    // Stash base commits are frequently unreachable from any branch (a stash is
+    // the only thing pointing at them). Feed those bases in as explicit revs so
+    // the graph can show where each stash was taken from, instead of leaving the
+    // stash floating with no parent. `--ignore-missing` keeps a stale/pruned
+    // base from failing the whole log.
+    const stashBases = await gitService.stashBaseShas(repoPath)
     const args = [
       '-C',
       repoPath,
@@ -517,6 +543,8 @@ export const gitService = {
       '--tags',
       '--remotes',
       'HEAD',
+      ...stashBases,
+      '--ignore-missing',
       '--date-order',
       `--max-count=${maxCount}`,
       `--pretty=format:%H${SEP}%P${SEP}%an${SEP}%ae${SEP}%at${SEP}%D${SEP}%s${SEP}%(trailers:key=Co-authored-by,valueonly,separator=%x1d)${SEP}%G?${SEP}%GS${REC}`

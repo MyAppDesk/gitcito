@@ -4,7 +4,7 @@ import type { CiState, CiStatus, GraphCommit, StashInfo, GraphColumnId, GraphFlo
 import { defaultGraphColumns, defaultGraphColumnOrder, defaultGraphStyle } from '../../../shared/types'
 import { GraphHeaderFilter, type FilterOption } from './GraphHeaderFilter'
 import { layoutGraph } from '../graph/layout'
-import { edgePath, colorForPalette, findGraphPalette, DENSITY_ROW_H, LINE_WIDTH_PX } from '../graph/style'
+import { edgePath, spurPath, colorForPalette, findGraphPalette, DENSITY_ROW_H, LINE_WIDTH_PX } from '../graph/style'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
 import { useUIStore, type MenuItem } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
@@ -15,7 +15,7 @@ import { SignatureBadge } from './SignatureBadge'
 import { gitApi } from '../infrastructure/api'
 import { repoIsGitHub } from '../lib/hosting'
 
-const LANE_W = 18
+const LANE_W = 24
 const LEFT_PAD = 16
 const NODE_R = 4.5
 const AVA = 20 // avatar node diameter
@@ -1326,30 +1326,38 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
         <>
         {(() => {
           const clampX = (x: number) => Math.min(x, graphCol - NODE_R - 1)
+          const visEdges = layout.edges.filter(
+            (e) => Math.max(e.fromRow, e.toRow) >= firstRow && Math.min(e.fromRow, e.toRow) <= lastRow
+          )
+          // Paint shallower rails last so trunk lines sit above the deeper
+          // side-branches they spawn — keeps the busy areas legible.
+          const ordered = [...visEdges].sort(
+            (a, b) => Math.max(b.fromLane, b.toLane) - Math.max(a.fromLane, a.toLane)
+          )
           return (
             <svg className="graph-svg" width={graphCol} height={totalHeight} style={{ left: branchCol }}>
-              {[...layout.edges]
-                .filter((e) => Math.max(e.fromRow, e.toRow) >= firstRow && Math.min(e.fromRow, e.toRow) <= lastRow)
-                .sort((a, b) => Math.max(a.fromLane, a.toLane) - Math.max(b.fromLane, b.toLane)).map((e, i) => {
+              {ordered.map((e, i) => {
                 const x1 = clampX(LEFT_PAD + e.fromLane * LANE_W)
                 const y1 = e.fromRow * ROW_H + ROW_H / 2
                 const x2 = clampX(LEFT_PAD + e.toLane * LANE_W)
                 const y2 = e.toRow * ROW_H + ROW_H / 2
                 const ghost = preview != null && !preview.rows.has(e.fromRow)
                 // Edges leaving a WIP / stash node are dashed (uncommitted work).
-                const fromHash = displayCommits[e.fromRow]?.hash
-                const dashed = fromHash != null && (fromHash === WIP_HASH || stashBySha.has(fromHash))
+                const isSpur = e.kind === 'spur'
+                const dashed = isSpur || e.fromHash === WIP_HASH
+                const d = isSpur ? spurPath(x1, y1, x2, y2) : edgePath(x1, y1, x2, y2, edgeStyle)
                 return (
                   <path
                     key={i}
-                    className="graph-edge"
-                    d={edgePath(x1, y1, x2, y2, edgeStyle)}
+                    className={`graph-edge${isSpur ? ' graph-edge-spur' : ''}`}
+                    d={d}
                     stroke={colorFor(e.color)}
                     strokeWidth={lineW}
                     strokeLinecap="round"
-                    strokeDasharray={dashed ? '3 3' : undefined}
+                    strokeLinejoin="round"
+                    strokeDasharray={dashed ? (isSpur ? '5 3' : '3 3') : undefined}
                     fill="none"
-                    opacity={ghost ? 0.1 : 0.85}
+                    opacity={ghost ? 0.1 : isSpur ? 0.85 : 0.95}
                   />
                 )
               })}
@@ -1442,10 +1450,10 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
                       key={c.hash}
                       cx={cx}
                       cy={cy}
-                      r={5}
+                      r={6}
                       fill={colorFor(n.color)}
                       stroke="var(--bg-1)"
-                      strokeWidth={1.5}
+                      strokeWidth={2}
                       className="graph-node"
                     />
                   )
@@ -1497,7 +1505,7 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
                 {!isMerge && (
                   <div
                     className="node-ava"
-                    style={{ left: x, top: y, boxShadow: `0 0 0 2px ${color}` }}
+                    style={{ left: x, top: y, boxShadow: `0 0 0 2.5px ${color}` }}
                     title={[c.author, ...(c.coAuthors?.map((a) => `+ ${a.name}`) ?? [])].join('\n')}
                   >
                     <Avatar email={c.email} name={c.author} size={AVA} />

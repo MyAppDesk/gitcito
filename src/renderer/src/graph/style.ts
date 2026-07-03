@@ -85,6 +85,11 @@ export const LINE_WIDTH_PX: Record<GraphLineWidth, number> = {
   thick: 3
 }
 
+// Corner radius for the rounded L-shape. Scales with the horizontal span so a
+// one-lane hop stays crisp while wider jumps sweep more gently — the softer,
+// "flowing rails" feel without abandoning the established L-shape look.
+const cornerRadius = (dx: number): number => Math.min(9, Math.abs(dx) * 0.5)
+
 /**
  * SVG path for a child→parent rail segment, drawn per the chosen edge style.
  *   rounded  — vertical run, rounded 90° corner, horizontal exit (the default)
@@ -110,7 +115,7 @@ export function edgePath(
     return `M ${x1} ${y1} C ${x1} ${my} ${x2} ${my} ${x2} ${y2}`
   }
 
-  const r = style === 'sharp' ? 0 : Math.min(7, Math.abs(x2 - x1) * 0.45)
+  const r = style === 'sharp' ? 0 : cornerRadius(x2 - x1)
   if (r === 0) {
     if (x2 > x1) return `M ${x1} ${y1} L ${x2} ${y1} L ${x2} ${y2}`
     return `M ${x1} ${y1} L ${x1} ${y2} L ${x2} ${y2}`
@@ -121,4 +126,41 @@ export function edgePath(
   }
   // Branch edge: straight down in own lane, rounded corner, exit left to parent lane
   return `M ${x1} ${y1} L ${x1} ${y2 - r} Q ${x1} ${y2} ${x1 - r} ${y2} L ${x2} ${y2}`
+}
+
+/**
+ * The turning point of a rounded/sharp L-shaped rail — where the segment hands
+ * off between the two lanes. Renderers drop a small junction dot here so merges
+ * and branch-offs read as connected rails, rather than lines
+ * that merely cross. Diagonal styles (curved/straight) have no discrete corner.
+ */
+export function edgeCorner(
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+  style: GraphEdgeStyle = 'rounded'
+): { x: number; y: number } | null {
+  if (x1 === x2) return null
+  if (style === 'curved' || style === 'straight') return null
+  // Merge turns down into the parent lane at the child's row; a branch turns out
+  // of its own lane at the parent's row.
+  return x2 > x1 ? { x: x2, y: y1 } : { x: x1, y: y2 }
+}
+
+/**
+ * A stash's dashed tether to the commit it was saved on top of. It drops from
+ * the stash glyph down its own lane, then hooks into the parent node so the
+ * provenance ("this stash came from here") is unmistakable. Uses a slightly
+ * softer hook than a normal branch edge to echo the "floating" nature of a
+ * stash while staying within the existing rail vocabulary.
+ */
+export function spurPath(x1: number, y1: number, x2: number, y2: number): string {
+  if (x1 === x2) return `M ${x1} ${y1} L ${x2} ${y2}`
+  const r = Math.min(11, Math.abs(x2 - x1) * 0.6, Math.abs(y2 - y1) * 0.5)
+  if (x2 < x1) {
+    // Stash sits to the right of its parent (the common case): down, hook left.
+    return `M ${x1} ${y1} L ${x1} ${y2 - r} Q ${x1} ${y2} ${x1 - r} ${y2} L ${x2} ${y2}`
+  }
+  return `M ${x1} ${y1} L ${x1} ${y2 - r} Q ${x1} ${y2} ${x1 + r} ${y2} L ${x2} ${y2}`
 }

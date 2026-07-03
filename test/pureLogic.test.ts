@@ -214,9 +214,12 @@ import {
   findGraphPalette,
   colorForPalette,
   edgePath,
+  edgeCorner,
+  spurPath,
   DENSITY_ROW_H,
   LINE_WIDTH_PX
 } from '../src/renderer/src/graph/style'
+import { layoutGraph } from '../src/renderer/src/graph/layout'
 import { defaultGraphStyle } from '../src/shared/types'
 
 describe('graph style', () => {
@@ -271,5 +274,59 @@ describe('graph style', () => {
     expect(DENSITY_ROW_H.compact).toBeLessThan(DENSITY_ROW_H.comfortable)
     expect(DENSITY_ROW_H.comfortable).toBeLessThan(DENSITY_ROW_H.spacious)
     expect(LINE_WIDTH_PX.thin).toBeLessThan(LINE_WIDTH_PX.thick)
+  })
+
+  it('edgeCorner marks the L-shape hand-off point, and nothing for diagonals', () => {
+    // Merge (parent lane to the right) turns down at the child's row.
+    expect(edgeCorner(0, 0, 10, 20, 'rounded')).toEqual({ x: 10, y: 0 })
+    // Branch (parent lane to the left) turns out at the parent's row.
+    expect(edgeCorner(10, 0, 0, 20, 'sharp')).toEqual({ x: 10, y: 20 })
+    // Same lane / diagonal styles have no discrete corner.
+    expect(edgeCorner(5, 0, 5, 20, 'rounded')).toBeNull()
+    expect(edgeCorner(0, 0, 10, 20, 'curved')).toBeNull()
+    expect(edgeCorner(0, 0, 10, 20, 'straight')).toBeNull()
+  })
+
+  it('spurPath hooks a stash into its parent and stays vertical when aligned', () => {
+    expect(spurPath(20, 0, 0, 40)).toContain('Q')
+    expect(spurPath(5, 0, 5, 40)).toBe('M 5 0 L 5 40')
+  })
+})
+
+describe('graph layout', () => {
+  const c = (hash: string, parents: string[] = []) => ({
+    hash,
+    parents,
+    author: '',
+    email: '',
+    date: 0,
+    refs: [] as string[],
+    subject: hash
+  })
+
+  it('tags each edge with its topological kind', () => {
+    // a → b (trunk), x is a side-branch tip whose first parent is b (branch),
+    // and m merges x into the trunk (merge).
+    const graph = layoutGraph([
+      c('m', ['a', 'x']),
+      c('a', ['b']),
+      c('x', ['b']),
+      c('b', [])
+    ])
+    const kinds = Object.fromEntries(graph.edges.map((e) => [`${e.fromHash}->${e.toHash}`, e.kind]))
+    expect(kinds['a->b']).toBe('normal')
+    expect(kinds['m->a']).toBe('normal')
+    expect(kinds['m->x']).toBe('merge')
+    expect(kinds['x->b']).toBe('branch')
+  })
+
+  it('routes stashes as spurs with a spur-kind edge to their parent', () => {
+    const commits = [c('base', []), c('stash', ['base'])]
+    const graph = layoutGraph(commits, new Set(['stash']))
+    const spur = graph.edges.find((e) => e.fromHash === 'stash')
+    expect(spur?.kind).toBe('spur')
+    expect(spur?.toHash).toBe('base')
+    // The spur sits on its own lane, clear of the trunk.
+    expect(graph.nodes.get('stash')!.lane).toBeGreaterThan(graph.nodes.get('base')!.lane)
   })
 })

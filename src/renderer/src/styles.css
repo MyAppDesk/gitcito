@@ -3741,6 +3741,122 @@ textarea:focus {
   }
 }
 
+.connected-account {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 9px 11px;
+  margin-bottom: 12px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.connected-account-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.connected-account-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.connected-account-avatar-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-3);
+  color: var(--text-2);
+}
+.connected-account-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+.connected-account-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.connected-account-login {
+  font-size: 11px;
+  color: var(--text-2);
+}
+.connected-account-link {
+  margin: 0;
+  flex-shrink: 0;
+}
+.connected-account-orgs-details {
+  font-size: 11px;
+}
+.connected-account-orgs-details summary {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  color: var(--text-2);
+  font-weight: 600;
+  list-style: none;
+  user-select: none;
+  width: fit-content;
+}
+.connected-account-orgs-details summary::-webkit-details-marker {
+  display: none;
+}
+.connected-account-orgs-details summary svg {
+  transition: transform 0.15s;
+}
+.connected-account-orgs-details:not([open]) summary svg {
+  transform: rotate(-90deg);
+}
+.connected-org-circles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.connected-org-circle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  padding: 0;
+  cursor: pointer;
+  background: var(--bg-3);
+  flex-shrink: 0;
+  transition: transform 0.1s;
+}
+.connected-org-circle:hover {
+  transform: scale(1.08);
+  border-color: var(--accent);
+}
+.connected-org-circle img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.connected-org-circle-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-2);
+}
+.connected-account-error {
+  font-size: 11.5px;
+  color: var(--red, #e5484d);
+}
+
 .modal-actions {
   display: flex;
   justify-content: flex-end;

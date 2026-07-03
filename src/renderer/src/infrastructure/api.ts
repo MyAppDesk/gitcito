@@ -30,6 +30,7 @@ import type {
   RepoHost,
   RemoteRepo,
   RemoteOwner,
+  ConnectedAccount,
   CreateRepoOpts,
   CreatePrOpts,
   CreatePrResult,
@@ -399,6 +400,8 @@ export const hostingApi = {
     window.api.hosting.listRepos(provider, token, org) as Promise<RemoteRepo[]>,
   listOwners: (provider: RepoHost, token: string, org?: string) =>
     window.api.hosting.listOwners(provider, token, org) as Promise<RemoteOwner[]>,
+  whoAmI: (provider: RepoHost, token: string, org?: string) =>
+    window.api.hosting.whoAmI(provider, token, org) as Promise<ConnectedAccount>,
   createRepo: (provider: RepoHost, token: string, opts: CreateRepoOpts, org?: string) =>
     window.api.hosting.createRepo(provider, token, opts, org) as Promise<RemoteRepo>,
   listPRs: (remoteUrl: string, tokens: { github?: string; azure?: string; gitlab?: string; bitbucket?: string }) =>

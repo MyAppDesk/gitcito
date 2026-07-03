@@ -422,6 +422,9 @@ const en = {
   'settings.integrationsForProfile': 'Connections for {name}',
   'settings.integrationsHint':
     'GitHub and Azure DevOps power pull-request listing today; GitLab and Bitbucket tokens are stored for upcoming integrations.',
+  'settings.loadingAccount': 'Loading account…',
+  'settings.viewProfile': 'View profile',
+  'settings.organizations': 'Organizations ({count})',
 
   // Settings — AI page
   'settings.provider': 'Provider',
@@ -1645,6 +1648,9 @@ const es: Dict = {
   'settings.integrationsForProfile': 'Conexiones de {name}',
   'settings.integrationsHint':
     'GitHub y Azure DevOps ya permiten listar pull requests; los tokens de GitLab y Bitbucket se guardan para próximas integraciones.',
+  'settings.loadingAccount': 'Cargando cuenta…',
+  'settings.viewProfile': 'Ver perfil',
+  'settings.organizations': 'Organizaciones ({count})',
 
   'settings.provider': 'Proveedor',
   'settings.apiKey': 'Clave de API',

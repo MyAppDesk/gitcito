@@ -43,8 +43,8 @@ import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
 import { Avatar } from './Avatar'
 import { useUpdatesStore, hasPendingUpdate } from '../stores/updates'
-import { gitApi, aiApi, settingsApi, analyticsApi, logApi, infoApi, vaultApi, shellApi } from '../infrastructure/api'
-import { AI_PROVIDERS, emptyAnalytics, defaultGraphStyle, type AIProvider, type Analytics, type AIUsageStat, type ActivityEvent, type RepoStats, type AppSettings, type BranchNamingStyle, type CommitStyle, type ConflictStyle, type ExplainStyle, type Profile, type SigningConfig, type SettingsBundle, type GraphStyle, type GraphPalette, type GraphEdgeStyle, type GraphDensity, type GraphLineWidth, type GraphNodeStyle } from '../../../shared/types'
+import { gitApi, aiApi, settingsApi, analyticsApi, logApi, infoApi, vaultApi, shellApi, hostingApi } from '../infrastructure/api'
+import { AI_PROVIDERS, emptyAnalytics, defaultGraphStyle, type AIProvider, type Analytics, type AIUsageStat, type ActivityEvent, type RepoStats, type AppSettings, type BranchNamingStyle, type CommitStyle, type ConflictStyle, type ExplainStyle, type Profile, type SigningConfig, type SettingsBundle, type GraphStyle, type GraphPalette, type GraphEdgeStyle, type GraphDensity, type GraphLineWidth, type GraphNodeStyle, type ConnectedAccount } from '../../../shared/types'
 import { allGraphPalettes, findGraphPalette, colorForPalette, edgePath, DENSITY_ROW_H, LINE_WIDTH_PX, GRAPH_PALETTES } from '../graph/style'
 import type {
   AppTheme,
@@ -339,6 +339,33 @@ export function IntegrationsPage({
   const token = profile[active.field]
   const connected = !!token.trim()
 
+  const [account, setAccount] = useState<ConnectedAccount | null>(null)
+  const [accountError, setAccountError] = useState<string | null>(null)
+  const [loadingAccount, setLoadingAccount] = useState(false)
+
+  useEffect(() => {
+    setAccount(null)
+    setAccountError(null)
+    if (!connected) return
+    let alive = true
+    setLoadingAccount(true)
+    void hostingApi
+      .whoAmI(active.id, token)
+      .then((info) => {
+        if (alive) setAccount(info)
+      })
+      .catch((err: Error) => {
+        if (alive) setAccountError(err.message)
+      })
+      .finally(() => {
+        if (alive) setLoadingAccount(false)
+      })
+    return () => {
+      alive = false
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active.id, token, connected])
+
   return (
     <>
       <div className="integration-profile-banner">
@@ -380,6 +407,65 @@ export function IntegrationsPage({
           <span className="conn-status">{t('settings.notConnected')}</span>
         )}
       </div>
+
+      {connected && (
+        <div className="connected-account">
+          {loadingAccount && <span className="settings-hint">{t('settings.loadingAccount')}</span>}
+          {!loadingAccount && accountError && <span className="connected-account-error">{accountError}</span>}
+          {!loadingAccount && account && (
+            <>
+              <div className="connected-account-row">
+                {account.avatarUrl ? (
+                  <img className="connected-account-avatar" src={account.avatarUrl} alt="" />
+                ) : (
+                  <span className="connected-account-avatar connected-account-avatar-fallback">
+                    <UserCircle2 size={20} />
+                  </span>
+                )}
+                <div className="connected-account-info">
+                  <span className="connected-account-name">{account.name || account.login}</span>
+                  {account.name && account.name !== account.login && (
+                    <span className="connected-account-login">@{account.login}</span>
+                  )}
+                </div>
+                {account.profileUrl && (
+                  <button
+                    className="link-btn connected-account-link"
+                    type="button"
+                    onClick={() => void window.api.openExternal(account.profileUrl!)}
+                  >
+                    <ExternalLink size={12} /> {t('settings.viewProfile')}
+                  </button>
+                )}
+              </div>
+              {!!account.orgs?.length && (
+                <details className="connected-account-orgs-details">
+                  <summary>
+                    <ChevronDown size={13} /> {t('settings.organizations').replace('{count}', String(account.orgs.length))}
+                  </summary>
+                  <div className="connected-org-circles">
+                    {account.orgs.map((o) => (
+                      <button
+                        key={o.login}
+                        type="button"
+                        className="connected-org-circle"
+                        title={o.login}
+                        onClick={() => o.url && void window.api.openExternal(o.url)}
+                      >
+                        {o.avatarUrl ? (
+                          <img src={o.avatarUrl} alt={o.login} />
+                        ) : (
+                          <span className="connected-org-circle-fallback">{o.login.slice(0, 2).toUpperCase()}</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </details>
+              )}
+            </>
+          )}
+        </div>
+      )}
 
       <label>
         {active.kind === 'app' ? t('settings.appPassword') : t('settings.pat')}

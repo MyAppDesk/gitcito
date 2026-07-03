@@ -384,6 +384,22 @@ export interface RemoteOwner {
   type: 'user' | 'org'
 }
 
+/** The authenticated identity behind a connected integration token. */
+/** An organization/group/workspace the connected account belongs to. */
+export interface ConnectedOrg {
+  login: string
+  avatarUrl?: string
+  url?: string
+}
+
+export interface ConnectedAccount {
+  login: string // username/handle
+  name?: string // display name, if different from login
+  avatarUrl?: string
+  profileUrl?: string // link to the provider's profile page
+  orgs?: ConnectedOrg[] // organizations/workspaces/groups the account belongs to
+}
+
 export interface CreateRepoOpts {
   owner: string // user login / org / workspace slug
   ownerType: 'user' | 'org'

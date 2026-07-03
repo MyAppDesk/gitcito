@@ -3,6 +3,7 @@ import type {
   CiJob,
   CiState,
   CiStatus,
+  ConnectedAccount,
   CreateRepoOpts,
   CreatePrOpts,
   CreatePrResult,
@@ -1028,6 +1029,100 @@ async function listOwners(provider: RepoHost, token: string, org?: string): Prom
   return data.value.map((p) => ({ id: p.id, login: p.name, type: 'org' as const }))
 }
 
+/** Resolve the authenticated user behind a stored token, for display in Settings → Integrations. */
+async function fetchConnectedAccount(provider: RepoHost, token: string, org?: string): Promise<ConnectedAccount> {
+  if (!token.trim()) throw new Error(`Not connected. Add a ${provider} token in Settings → Integrations.`)
+
+  if (provider === 'github') {
+    const user = await ghJson<{ login: string; name: string | null; avatar_url: string; html_url: string }>(
+      'https://api.github.com/user',
+      token
+    )
+    const orgs = await ghJson<Array<{ login: string; avatar_url: string }>>(
+      'https://api.github.com/user/orgs?per_page=100',
+      token
+    ).catch(() => [])
+    return {
+      login: user.login,
+      name: user.name ?? undefined,
+      avatarUrl: user.avatar_url,
+      profileUrl: user.html_url,
+      orgs: orgs.map((o) => ({ login: o.login, avatarUrl: o.avatar_url, url: `https://github.com/${o.login}` }))
+    }
+  }
+
+  if (provider === 'gitlab') {
+    const headers = { 'PRIVATE-TOKEN': token }
+    const userRes = await fetch('https://gitlab.com/api/v4/user', { headers })
+    if (!userRes.ok) throw new Error(`GitLab API error (${userRes.status})`)
+    const user = (await userRes.json()) as {
+      username: string
+      name: string | null
+      avatar_url: string | null
+      web_url: string
+    }
+    const groupsRes = await fetch('https://gitlab.com/api/v4/groups?min_access_level=10&per_page=100', { headers })
+    const groups = groupsRes.ok
+      ? ((await groupsRes.json()) as Array<{ full_path: string; avatar_url: string | null; web_url: string }>)
+      : []
+    return {
+      login: user.username,
+      name: user.name ?? undefined,
+      avatarUrl: user.avatar_url ?? undefined,
+      profileUrl: user.web_url,
+      orgs: groups.map((g) => ({ login: g.full_path, avatarUrl: g.avatar_url ?? undefined, url: g.web_url }))
+    }
+  }
+
+  if (provider === 'bitbucket') {
+    const auth = token.includes(':') ? `Basic ${Buffer.from(token).toString('base64')}` : `Bearer ${token}`
+    const userRes = await fetch('https://api.bitbucket.org/2.0/user', { headers: { Authorization: auth } })
+    if (!userRes.ok) throw new Error(`Bitbucket API error (${userRes.status})`)
+    const user = (await userRes.json()) as {
+      username: string
+      display_name: string | null
+      links?: { avatar?: { href: string }; html?: { href: string } }
+    }
+    const wsRes = await fetch('https://api.bitbucket.org/2.0/workspaces?pagelen=100', {
+      headers: { Authorization: auth }
+    })
+    const workspaces = wsRes.ok
+      ? (
+          (await wsRes.json()) as {
+            values: Array<{ slug: string; name: string; links?: { avatar?: { href: string }; html?: { href: string } } }>
+          }
+        ).values
+      : []
+    return {
+      login: user.username,
+      name: user.display_name ?? undefined,
+      avatarUrl: user.links?.avatar?.href,
+      profileUrl: user.links?.html?.href,
+      orgs: workspaces.map((w) => ({
+        login: w.slug,
+        avatarUrl: w.links?.avatar?.href,
+        url: w.links?.html?.href ?? `https://bitbucket.org/${w.slug}`
+      }))
+    }
+  }
+
+  // Azure DevOps — the profile API doesn't require an organization, but there is no
+  // avatar without one; orgs must be entered by the user since PATs can't list them.
+  const auth = Buffer.from(`:${token}`).toString('base64')
+  const res = await fetch('https://app.vssps.visualstudio.com/_apis/profile/profiles/me?api-version=7.1', {
+    headers: { Authorization: `Basic ${auth}` }
+  })
+  if (!res.ok) throw new Error(`Azure DevOps API error (${res.status})`)
+  const profile = (await res.json()) as { displayName: string; emailAddress?: string; id: string }
+  return {
+    login: profile.emailAddress ?? profile.displayName,
+    name: profile.displayName,
+    orgs: org?.trim()
+      ? [{ login: org.trim(), url: `https://dev.azure.com/${encodeURIComponent(org.trim())}` }]
+      : undefined
+  }
+}
+
 /** Create a new repository on the host and return its clone URL. */
 async function createRepository(
   provider: RepoHost,
@@ -1236,6 +1331,9 @@ export function registerHostingHandlers(): void {
   )
   ipcMain.handle('hosting:listOwners', (_e, provider: RepoHost, token: string, org?: string) =>
     listOwners(provider, token, org)
+  )
+  ipcMain.handle('hosting:whoAmI', (_e, provider: RepoHost, token: string, org?: string) =>
+    fetchConnectedAccount(provider, token, org)
   )
   ipcMain.handle('hosting:createRepo', (_e, provider: RepoHost, token: string, opts: CreateRepoOpts, org?: string) =>
     createRepository(provider, token, opts, org)

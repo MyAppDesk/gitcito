@@ -1,5 +1,12 @@
 
 
+## [1.23.0](https://github.com/MyAppDesk/gitcito/compare/v1.22.0...v1.23.0) (2026-07-03)
+
+
+### Bug Fixes
+
+* set terminal container background to match theme ([018822a](https://github.com/MyAppDesk/gitcito/commit/018822ae1e86ae62731f566b74e95186fb8a916a))
+
 ## [1.22.0](https://github.com/MyAppDesk/gitcito/compare/v1.21.1...v1.22.0) (2026-07-03)
 
 

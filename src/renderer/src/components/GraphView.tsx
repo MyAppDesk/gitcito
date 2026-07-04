@@ -99,7 +99,13 @@ function buildRefGroups(refs: string[], remoteNames: Set<string>): RefGroup[] {
     return remoteNames.has(remote) ? { remote, name: r.slice(slash + 1) } : null
   }
   for (const r of refs) {
-    if (r === 'HEAD') continue
+    if (r === 'HEAD') {
+      // Detached HEAD: git emits a bare `HEAD` with no `-> branch`. Surface it
+      // as a badge so a tag/commit checkout is actually visible in the graph.
+      const g = branch('HEAD')
+      g.isHead = true
+      continue
+    }
     if (r.startsWith('HEAD ->')) {
       const g = branch(r.replace('HEAD ->', '').trim())
       g.isHead = true

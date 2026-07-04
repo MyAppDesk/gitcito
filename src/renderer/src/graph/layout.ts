@@ -70,8 +70,12 @@ export function layoutGraph(
   let laneCount = 0
 
   // Reserve lane 0 for the checked-out branch: seed it as "waiting for" HEAD's
-  // tip so that chain claims the leftmost rail regardless of row order.
-  if (headHash && commits.some((c) => c.hash === headHash)) {
+  // tip so that chain claims the leftmost rail regardless of row order. Only do
+  // this when HEAD is the newest displayed commit — if HEAD is behind (e.g.
+  // detached at an old tag), reserving lane 0 for a mid-history commit shoves
+  // every newer commit onto lane 1, forking the trunk for no reason.
+  const firstReal = commits.find((c) => !spurs.has(c.hash))
+  if (headHash && firstReal?.hash === headHash) {
     lanes.push(headHash)
     laneColor.push(colorCounter++)
   }

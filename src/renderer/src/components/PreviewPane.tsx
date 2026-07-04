@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { gitApi } from '../infrastructure/api'
 import { useT } from '../i18n'
 import { renderMarkdown, sanitizeHtml } from '../preview/markdown'
@@ -11,12 +11,13 @@ async function resolveMarkdownImages(
   filePath: string,
   ref?: string
 ): Promise<string> {
-  const imgRegex = /!\[[^\]]*\]\(([^)"\s]+)/g
+  // Markdown ![](src) and inline HTML <img src="..."> (READMEs often use the latter).
+  const imgRegex = /!\[[^\]]*\]\(([^)"\s]+)|<img[^>]+src=["']([^"']+)["']/g
   const srcs = new Set<string>()
   let m: RegExpExecArray | null
   while ((m = imgRegex.exec(text)) !== null) {
-    const src = m[1]
-    if (!src.startsWith('http') && !src.startsWith('data:') && !src.startsWith('//')) {
+    const src = m[1] ?? m[2]
+    if (src && !src.startsWith('http') && !src.startsWith('data:') && !src.startsWith('//')) {
       srcs.add(src)
     }
   }
@@ -64,6 +65,8 @@ export function PreviewPane({ repoPath, file, gitRef, kind }: Props): React.JSX.
   const [text, setText] = useState<string | null>(null)
   const [html, setHtml] = useState<string | null>(null)
   const [sheets, setSheets] = useState<{ name: string; html: string }[] | null>(null)
+  const [slidesBuf, setSlidesBuf] = useState<ArrayBuffer | null>(null)
+  const slidesRef = useRef<HTMLDivElement>(null)
   const [sheetIdx, setSheetIdx] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
@@ -83,10 +86,12 @@ export function PreviewPane({ repoPath, file, gitRef, kind }: Props): React.JSX.
 
   useEffect(() => {
     let cancelled = false
+    let objUrl: string | null = null
     setDataUrl(null)
     setText(null)
     setHtml(null)
     setSheets(null)
+    setSlidesBuf(null)
     setSheetIdx(0)
     setError(null)
 
@@ -101,7 +106,15 @@ export function PreviewPane({ repoPath, file, gitRef, kind }: Props): React.JSX.
         // Everything else is binary: pull a data URL once, then decode per kind.
         const url = await gitApi.fileDataUrl(repoPath, file, gitRef)
         if (cancelled) return
-        if (kind === 'image' || kind === 'pdf' || kind === 'video' || kind === 'audio') {
+        if (kind === 'video' || kind === 'audio') {
+          // Chromium won't reliably play large base64 data: URLs in <video>/<audio>
+          // (no seeking, often stuck loading). A blob URL streams fine.
+          const mime = url.slice(5, url.indexOf(';'))
+          const blob = new Blob([dataUrlToArrayBuffer(url)], { type: mime })
+          objUrl = URL.createObjectURL(blob)
+          if (cancelled) URL.revokeObjectURL(objUrl)
+          else setDataUrl(objUrl)
+        } else if (kind === 'image' || kind === 'pdf') {
           setDataUrl(url)
         } else if (kind === 'sheet') {
           // Heavy parser — loaded on demand so it stays out of the initial bundle.
@@ -116,6 +129,8 @@ export function PreviewPane({ repoPath, file, gitRef, kind }: Props): React.JSX.
           const mammoth = (await import('mammoth')).default
           const result = await mammoth.convertToHtml({ arrayBuffer: dataUrlToArrayBuffer(url) })
           if (!cancelled) setHtml(sanitizeHtml(result.value))
+        } else if (kind === 'slides') {
+          if (!cancelled) setSlidesBuf(dataUrlToArrayBuffer(url))
         }
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : String(err))
@@ -124,10 +139,38 @@ export function PreviewPane({ repoPath, file, gitRef, kind }: Props): React.JSX.
     void load()
     return () => {
       cancelled = true
+      if (objUrl) URL.revokeObjectURL(objUrl)
     }
   }, [repoPath, file, gitRef, kind, refreshKey])
 
   const mdHtml = useMemo(() => (text !== null ? renderMarkdown(text) : null), [text])
+
+  // Render the .pptx visually once its bytes are loaded and the container is mounted.
+  useEffect(() => {
+    if (kind !== 'slides' || slidesBuf === null) return
+    let disposed = false
+    void (async () => {
+      const { init } = await import('pptx-preview')
+      const el = slidesRef.current
+      if (disposed || !el) return
+      el.innerHTML = ''
+      const width = el.clientWidth || 960
+      const previewer = init(el, { width, height: Math.round((width * 9) / 16) })
+      try {
+        await previewer.preview(slidesBuf)
+        // Hide broken-image icons for formats pptx-preview can't decode (EMF/WMF).
+        el.querySelectorAll('img').forEach((img) => {
+          if (!img.complete || img.naturalWidth === 0) img.style.visibility = 'hidden'
+          img.addEventListener('error', () => (img.style.visibility = 'hidden'))
+        })
+      } catch (err) {
+        if (!disposed) setError(err instanceof Error ? err.message : String(err))
+      }
+    })()
+    return () => {
+      disposed = true
+    }
+  }, [kind, slidesBuf])
 
   if (error) return <div className="fv-error">{error}</div>
 
@@ -135,7 +178,8 @@ export function PreviewPane({ repoPath, file, gitRef, kind }: Props): React.JSX.
     (kind === 'markdown' && text === null) ||
     ((kind === 'image' || kind === 'pdf' || kind === 'video' || kind === 'audio') && dataUrl === null) ||
     (kind === 'sheet' && sheets === null) ||
-    (kind === 'word' && html === null)
+    (kind === 'word' && html === null) ||
+    (kind === 'slides' && slidesBuf === null)
 
   if (loading) {
     return (
@@ -195,6 +239,13 @@ export function PreviewPane({ repoPath, file, gitRef, kind }: Props): React.JSX.
   }
   if (kind === 'word' && html !== null) {
     return <div className="md-preview" dangerouslySetInnerHTML={{ __html: html }} />
+  }
+  if (kind === 'slides' && slidesBuf) {
+    return (
+      <div className="slides-preview">
+        <div className="slides-scroll" ref={slidesRef} />
+      </div>
+    )
   }
 
   // Reachable only for a kind with no render branch yet — keeps adding types safe.

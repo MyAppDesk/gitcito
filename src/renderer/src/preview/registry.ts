@@ -6,7 +6,7 @@
  *  src/main/git.ts → fileMime(). Everything else (the Preview button, mode
  *  switching) keys off this map automatically. */
 
-export type PreviewKind = 'markdown' | 'image' | 'pdf' | 'video' | 'audio' | 'sheet' | 'word'
+export type PreviewKind = 'markdown' | 'image' | 'pdf' | 'video' | 'audio' | 'sheet' | 'word' | 'slides'
 
 const PREVIEW_KINDS: Record<string, PreviewKind> = {
   // markdown
@@ -23,7 +23,9 @@ const PREVIEW_KINDS: Record<string, PreviewKind> = {
   // spreadsheets
   xlsx: 'sheet', xls: 'sheet', csv: 'sheet', tsv: 'sheet',
   // word documents
-  docx: 'word'
+  docx: 'word',
+  // presentations
+  pptx: 'slides'
 }
 
 function ext(file: string): string {

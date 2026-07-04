@@ -1,5 +1,12 @@
 
 
+## [1.24.0](https://github.com/MyAppDesk/gitcito/compare/v1.23.2...v1.24.0) (2026-07-04)
+
+
+### Features
+
+* add support for pptx file previews in the renderer ([5401e34](https://github.com/MyAppDesk/gitcito/commit/5401e34232ea3e796afae874017e466135dfbdd3))
+
 ## [1.23.2](https://github.com/MyAppDesk/gitcito/compare/v1.23.1...v1.23.2) (2026-07-04)
 
 

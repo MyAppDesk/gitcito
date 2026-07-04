@@ -1,5 +1,12 @@
 
 
+## [1.23.2](https://github.com/MyAppDesk/gitcito/compare/v1.23.1...v1.23.2) (2026-07-04)
+
+
+### Bug Fixes
+
+* handle detached HEAD in graph visualization ([7fa0b69](https://github.com/MyAppDesk/gitcito/commit/7fa0b6916ecabf55d4db6ed15afbb9a19c1f6f84))
+
 ## [1.23.1](https://github.com/MyAppDesk/gitcito/compare/v1.23.0...v1.23.1) (2026-07-04)
 
 

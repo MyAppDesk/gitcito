@@ -1,5 +1,12 @@
 
 
+## [1.23.1](https://github.com/MyAppDesk/gitcito/compare/v1.23.0...v1.23.1) (2026-07-04)
+
+
+### Features
+
+* add headTipHash to layoutGraph for better branch display ([78ddbeb](https://github.com/MyAppDesk/gitcito/commit/78ddbebfedc9c46e3b1c2fc4c4626e03a680c22d))
+
 ## [1.23.0](https://github.com/MyAppDesk/gitcito/compare/v1.22.0...v1.23.0) (2026-07-03)
 
 

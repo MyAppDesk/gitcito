@@ -494,9 +494,14 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
 
   // Stashes are laid out as right-side spurs so they never displace the trunk.
   const topology = graphStyle.topology ?? 'full'
+  // Lane 0 belongs to the checked-out branch; the WIP row extends that chain.
+  const headTipHash = useMemo(() => {
+    if (hasWip) return WIP_HASH
+    return repo.commits.find((c) => c.refs.some((r) => r.startsWith('HEAD')))?.hash
+  }, [repo.commits, hasWip])
   const layout = useMemo(
-    () => layoutGraph(displayCommits, new Set(stashBySha.keys()), topology),
-    [displayCommits, stashBySha, topology]
+    () => layoutGraph(displayCommits, new Set(stashBySha.keys()), topology, headTipHash),
+    [displayCommits, stashBySha, topology, headTipHash]
   )
 
   // Branch preview: hovering a branch/tag label ghosts every commit that isn't

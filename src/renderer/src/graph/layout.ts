@@ -57,7 +57,8 @@ export interface GraphLayout {
 export function layoutGraph(
   commits: GraphCommit[],
   spurs: Set<string> = new Set(),
-  topology: GraphTopology = 'full'
+  topology: GraphTopology = 'full',
+  headHash?: string
 ): GraphLayout {
   const nodes = new Map<string, GraphNode>()
   const edges: GraphEdgeSpec[] = []
@@ -67,6 +68,13 @@ export function layoutGraph(
   const laneColor: number[] = []
   let colorCounter = 0
   let laneCount = 0
+
+  // Reserve lane 0 for the checked-out branch: seed it as "waiting for" HEAD's
+  // tip so that chain claims the leftmost rail regardless of row order.
+  if (headHash && commits.some((c) => c.hash === headHash)) {
+    lanes.push(headHash)
+    laneColor.push(colorCounter++)
+  }
 
   const firstFree = (): number => {
     const idx = lanes.indexOf(null)

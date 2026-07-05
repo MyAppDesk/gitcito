@@ -1357,7 +1357,7 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
                 // Edges leaving a WIP / stash node are dashed (uncommitted work).
                 const isSpur = e.kind === 'spur'
                 const dashed = isSpur || e.fromHash === WIP_HASH
-                const d = isSpur ? spurPath(x1, y1, x2, y2) : edgePath(x1, y1, x2, y2, edgeStyle)
+                const d = isSpur ? spurPath(x1, y1, x2, y2, edgeStyle) : edgePath(x1, y1, x2, y2, edgeStyle)
                 return (
                   <path
                     key={i}

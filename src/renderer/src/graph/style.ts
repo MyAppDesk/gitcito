@@ -155,8 +155,17 @@ export function edgeCorner(
  * softer hook than a normal branch edge to echo the "floating" nature of a
  * stash while staying within the existing rail vocabulary.
  */
-export function spurPath(x1: number, y1: number, x2: number, y2: number): string {
+export function spurPath(
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+  style: GraphEdgeStyle = 'rounded'
+): string {
   if (x1 === x2) return `M ${x1} ${y1} L ${x2} ${y2}`
+  // The softer hook only applies to the rounded look; every other corner
+  // style renders the spur exactly like a normal rail so the setting wins.
+  if (style !== 'rounded') return edgePath(x1, y1, x2, y2, style)
   const r = Math.min(11, Math.abs(x2 - x1) * 0.6, Math.abs(y2 - y1) * 0.5)
   if (x2 < x1) {
     // Stash sits to the right of its parent (the common case): down, hook left.

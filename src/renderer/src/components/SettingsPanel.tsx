@@ -970,7 +970,7 @@ function GraphMiniPreview({
         {edges.map((e, i) => {
           const isSpur = e.kind === 'spur'
           const d = isSpur
-            ? spurPath(x(e.fromLane), y(e.fromRow), x(e.toLane), y(e.toRow))
+            ? spurPath(x(e.fromLane), y(e.fromRow), x(e.toLane), y(e.toRow), edgeStyle)
             : edgePath(x(e.fromLane), y(e.fromRow), x(e.toLane), y(e.toRow), edgeStyle)
           return (
             <path

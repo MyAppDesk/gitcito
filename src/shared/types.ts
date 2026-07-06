@@ -836,6 +836,24 @@ export interface RepoInsights {
   churn: ChurnPoint[]
 }
 
+/** One file touched by a commit, with numstat line counts ("-" for binary counted as 0). */
+export interface CosmosFileTouch {
+  path: string
+  added: number
+  removed: number
+}
+
+/** Per-commit record for the 3D repo-history visualization ("RepoCosmos" easter egg). */
+export interface CosmosCommit {
+  hash: string
+  parents: string[]
+  authorName: string
+  authorEmail: string
+  timestamp: number // unix seconds
+  subject: string
+  files: CosmosFileTouch[] // empty for merge commits
+}
+
 /** Output of the conventional-commit changelog generator. */
 export interface ChangelogResult {
   markdown: string

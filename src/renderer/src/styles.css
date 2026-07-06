@@ -10116,3 +10116,137 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
   border-top: 1px solid var(--border-soft);
   font-size: 13px;
 }
+
+/* RepoCosmos — 3D repo-history easter egg */
+.cosmos-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 5000;
+  background: var(--bg-0);
+  display: flex;
+  flex-direction: column;
+}
+.cosmos-chrome {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-soft);
+  flex: 0 0 auto;
+  -webkit-app-region: drag;
+}
+.cosmos-chrome.mac {
+  padding-left: 78px;
+}
+.cosmos-tabs {
+  display: flex;
+  gap: 6px;
+  -webkit-app-region: no-drag;
+}
+.cosmos-close {
+  flex: 0 0 auto;
+  -webkit-app-region: no-drag;
+}
+.cosmos-canvas-wrap {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.cosmos-canvas {
+  position: absolute;
+  inset: 0;
+}
+.cosmos-canvas canvas {
+  display: block;
+}
+.cosmos-caption {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  color: var(--text-2);
+  font-size: 12px;
+  background: var(--bg-1);
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  padding: 4px 8px;
+  pointer-events: none;
+}
+.cosmos-tooltip {
+  position: fixed;
+  z-index: 5001;
+  max-width: 360px;
+  background: var(--bg-1);
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  padding: 5px 9px;
+  font-size: 12px;
+  color: var(--text-0);
+  pointer-events: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+.cosmos-selected {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  max-width: 42%;
+  background: var(--bg-1);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  color: var(--text-0);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cosmos-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--text-2);
+  font-size: 13px;
+  pointer-events: none;
+}
+.cosmos-error {
+  color: var(--red);
+  max-width: 60%;
+  margin: 0 auto;
+  text-align: center;
+}
+.cosmos-loading {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--text-1);
+  font-size: 14px;
+}
+.cosmos-playback {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-1);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 6px 10px;
+}
+.cosmos-playback input[type='range'] {
+  width: 260px;
+}
+.cosmos-date {
+  color: var(--text-2);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}

@@ -52,6 +52,7 @@ import type {
   AuthorStat,
   FileHotspot,
   ChurnPoint,
+  CosmosCommit,
   ChangelogResult,
   SnapshotInfo,
   CloneProgress,
@@ -2659,6 +2660,52 @@ export const gitService = {
     const hotspots = [...fileMap.values()].sort((a, b) => b.commits - a.commits).slice(0, 30)
     const churn = [...churnMap.values()].sort((a, b) => a.week.localeCompare(b.week))
     return { totalCommits, first, last, filesTouched: fileMap.size, authors, hotspots, churn }
+  },
+
+  /**
+   * Per-commit history with touched files, for the "RepoCosmos" 3D visualization
+   * easter egg. Same single `git log --numstat` pass as `repoInsights`, but
+   * returns per-commit records instead of aggregating — capped to the most
+   * recent `limit` commits for render performance.
+   */
+  async cosmosData(repoPath: string, limit = 2000): Promise<CosmosCommit[]> {
+    const git = gitFor(repoPath)
+    const args = ['log', '-M', `-${limit}`, `--pretty=format:\x01%H${SEP}%P${SEP}%an${SEP}%ae${SEP}%at${SEP}%s`, '--numstat']
+    const out = await git.raw(args).catch(() => '')
+
+    const commits: CosmosCommit[] = []
+    let cur: CosmosCommit | null = null
+
+    for (const line of out.split('\n')) {
+      if (line.startsWith('\x01')) {
+        const [hash, parents, authorName, authorEmail, at, subject] = line.slice(1).split(SEP)
+        cur = {
+          hash,
+          parents: parents ? parents.split(' ').filter(Boolean) : [],
+          authorName: (authorName ?? '').trim() || 'Unknown',
+          authorEmail: (authorEmail ?? '').trim(),
+          timestamp: +at || 0,
+          subject: subject ?? '',
+          files: []
+        }
+        commits.push(cur)
+        continue
+      }
+      if (!cur || !line.trim()) continue
+      // numstat row: "<added>\t<removed>\t<path>" ("-" for binary).
+      const parts = line.split('\t')
+      if (parts.length < 3) continue
+      const added = parts[0] === '-' ? 0 : Number(parts[0]) || 0
+      const removed = parts[1] === '-' ? 0 : Number(parts[1]) || 0
+      // For renames numstat shows "old => new" (or "{a => b}/c"); keep the new path.
+      let path = parts.slice(2).join('\t')
+      if (path.includes('=>')) {
+        path = path.replace(/\{[^}]*=>\s*([^}]*)\}/g, '$1').replace(/.*=>\s*/, '').trim()
+      }
+      cur.files.push({ path, added, removed })
+    }
+
+    return commits
   },
 
   /**

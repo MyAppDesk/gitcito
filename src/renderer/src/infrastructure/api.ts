@@ -54,6 +54,7 @@ import type {
   GitHubNotification,
   StackInfo,
   RepoInsights,
+  CosmosCommit,
   ChangelogResult,
   SnapshotInfo,
   VaultEntry,
@@ -281,6 +282,7 @@ export const gitApi = {
     call<BranchCompareResult>('compareBranches', path, a, b),
   repoStats: (path: string, sinceDays?: number) => call<RepoStats>('repoStats', path, sinceDays),
   repoInsights: (path: string, sinceDays?: number) => call<RepoInsights>('repoInsights', path, sinceDays),
+  cosmosData: (path: string, limit?: number) => call<CosmosCommit[]>('cosmosData', path, limit),
   generateChangelog: (path: string, opts?: { from?: string; to?: string; version?: string }) =>
     call<ChangelogResult>('generateChangelog', path, opts),
   writeChangelogFile: (path: string, markdown: string) => call<void>('writeChangelogFile', path, markdown),

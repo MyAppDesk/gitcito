@@ -22,6 +22,7 @@ import { ModalHost } from './components/ModalHost'
 import { CommandPalette } from './components/CommandPalette'
 import { Toasts } from './components/Toasts'
 import { UpdateBanner } from './components/UpdateBanner'
+import { RepoCosmos } from './components/cosmos/RepoCosmos'
 import { useUpdatesStore, hasPendingUpdate } from './stores/updates'
 import { Welcome, LauncherPanel, type LauncherItem } from './components/Welcome'
 import { OnboardingWizard } from './components/OnboardingWizard'
@@ -723,6 +724,7 @@ export default function App(): React.JSX.Element {
       <CommandPalette />
       <Toasts />
       <UpdateBanner />
+      <RepoCosmos />
     </div>
   )
 }

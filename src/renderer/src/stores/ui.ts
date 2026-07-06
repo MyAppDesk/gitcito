@@ -195,6 +195,10 @@ interface UIState {
   /** True while the in-app file editor holds unsaved changes — drives the
    *  discard guard before navigating away. */
   editorDirty: boolean
+  /** RepoCosmos 3D visualization easter egg — a fullscreen overlay mounted
+   *  as a sibling to the modal stack, since it must cover the modal that
+   *  triggered it. null = closed. */
+  cosmos: { repoPath: string } | null
 
   openContextMenu(x: number, y: number, items: MenuItem[]): void
   closeContextMenu(): void
@@ -217,6 +221,8 @@ interface UIState {
   setFileSearch(search: FileSearchState | null): void
   requestScrollTo(hash: string | null): void
   setLayout(partial: Partial<PanelLayout>): void
+  openCosmos(repoPath: string): void
+  closeCosmos(): void
 }
 
 let toastId = 0
@@ -240,6 +246,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   scrollToHash: null,
   layout: loadLayout(),
   editorDirty: false,
+  cosmos: null,
 
   openContextMenu: (x, y, items) => set({ contextMenu: { x, y, items } }),
   closeContextMenu: () => set({ contextMenu: null }),
@@ -275,5 +282,7 @@ export const useUIStore = create<UIState>((set, get) => ({
     } catch {
       /* ignore quota errors */
     }
-  }
+  },
+  openCosmos: (repoPath) => set({ cosmos: { repoPath } }),
+  closeCosmos: () => set({ cosmos: null })
 }))

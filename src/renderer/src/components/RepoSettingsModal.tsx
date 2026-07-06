@@ -208,6 +208,18 @@ export function RepoSettingsModal({ repoPath, initialTab }: { repoPath: string; 
   const aiEnabled = useSettingsStore((s) => s.activeProfile().ai.enabled !== false)
   const t = useT()
   const [tab, setTab] = useState<Tab>(initialTab ?? 'general')
+  const titleClicks = useRef<number[]>([])
+
+  const onTitleClick = (): void => {
+    const now = Date.now()
+    const clicks = titleClicks.current.filter((ts) => now - ts < 1500)
+    clicks.push(now)
+    titleClicks.current = clicks
+    if (clicks.length >= 5) {
+      titleClicks.current = []
+      useUIStore.getState().openCosmos(repoPath)
+    }
+  }
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: 'general', label: t('repoSettings.general'), icon: <Settings size={13} /> },
@@ -221,7 +233,7 @@ export function RepoSettingsModal({ repoPath, initialTab }: { repoPath: string; 
 
   return (
     <div className="repo-settings">
-      <h3>
+      <h3 onClick={onTitleClick} style={{ cursor: 'default', userSelect: 'none' }}>
         <Settings size={16} style={{ verticalAlign: '-3px', marginRight: 6 }} />
         {t('repoSettings.title')} — {repo?.name}
       </h3>

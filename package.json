@@ -114,6 +114,7 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "simple-git": "^3.27.0",
+    "three": "^0.185.1",
     "xlsx": "^0.18.5",
     "zustand": "^4.5.5"
   },
@@ -128,6 +129,7 @@
     "@types/node": "^20.16.11",
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.1",
+    "@types/three": "^0.185.0",
     "@vitejs/plugin-react": "^4.3.2",
     "electron": "^31.7.0",
     "electron-builder": "^24.13.3",

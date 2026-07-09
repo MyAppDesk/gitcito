@@ -51,7 +51,8 @@ function timeSince(at: number | null): string {
 export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
   const t = useT()
   const { undo, redo } = useRepoStore()
-  const { openContextMenu, openModal, toggleTerminal, terminalOpen, graphFilter, setGraphFilter, busy } = useUIStore()
+  const { openContextMenu, openModal, toggleTerminal, graphFilter, setGraphFilter, busy } = useUIStore()
+  const terminalOpen = useUIStore((s) => !!s.terminalOpenByRepo[repo.path])
   const busyOp = useUIStore((s) => s.busyOp)
   // Any mutating git op queued/running gates the action buttons — the user
   // can't fire a second action until the first has fully settled.
@@ -386,7 +387,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
         <button
           className={`tool-btn icon-only ${terminalOpen ? 'toggled' : ''}`}
           title={t('toolbar.terminalTitle')}
-          onClick={toggleTerminal}
+          onClick={() => toggleTerminal(repo.path)}
         >
           <TerminalSquare size={16} />
         </button>

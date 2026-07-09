@@ -44,7 +44,9 @@ const EXPECTED = [
   'terminal-naming',
   'diverged-checkout',
   'branch-grouping',
-  'launch-configs'
+  'launch-configs',
+  'empty-repo',
+  'terminal-per-tab'
 ]
 
 describe('playground fixtures', () => {

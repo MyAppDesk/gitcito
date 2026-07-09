@@ -159,7 +159,7 @@ export const useLaunchStore = create<LaunchState>((set, get) => ({
     const launchId = res.id
 
     // Surface the output in the bottom panel, like VS Code's debug terminal.
-    if (!useUIStore.getState().terminalOpen) useUIStore.getState().toggleTerminal()
+    useUIStore.getState().setTerminalOpen(repoPath, true)
     const { groupId, panelId } = useTerminalsStore
       .getState()
       .addLaunchGroup(repoPath, group.dir, launchId, config.name)

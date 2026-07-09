@@ -108,7 +108,7 @@ export function TerminalContainer({ cwd }: { cwd: string }): React.JSX.Element {
   const setGroupTitle = useTerminalsStore((s) => s.setGroupTitle)
   const setPanelTitle = useTerminalsStore((s) => s.setPanelTitle)
   const autoTitles = useTermTitlesStore((s) => s.byPanel)
-  const toggleTerminal = useUIStore((s) => s.toggleTerminal)
+  const setTerminalOpen = useUIStore((s) => s.setTerminalOpen)
   const openContextMenu = useUIStore((s) => s.openContextMenu)
   const layout = useUIStore((s) => s.layout)
   const setLayout = useUIStore((s) => s.setLayout)
@@ -200,8 +200,8 @@ export function TerminalContainer({ cwd }: { cwd: string }): React.JSX.Element {
 
   // Closing the last terminal closes the whole bottom pane.
   useEffect(() => {
-    if (repo && groups.length === 0) toggleTerminal()
-  }, [repo, groups.length, toggleTerminal])
+    if (repo && groups.length === 0) setTerminalOpen(cwd, false)
+  }, [repo, groups.length, cwd, setTerminalOpen])
 
   return (
     <div className="terminal-container">

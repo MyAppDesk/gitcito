@@ -219,7 +219,7 @@ export default function App(): React.JSX.Element {
   const settingsLoaded = useSettingsStore((s) => s.loaded)
   const settings = useSettingsStore((s) => s.settings)
   const ensure = useRepoStore((s) => s.ensure)
-  const terminalOpen = useUIStore((s) => s.terminalOpen)
+  const terminalOpenByRepo = useUIStore((s) => s.terminalOpenByRepo)
   const fileView = useUIStore((s) => s.fileView)
   const conflictView = useUIStore((s) => s.conflictView)
   const layout = useUIStore((s) => s.layout)
@@ -628,7 +628,7 @@ export default function App(): React.JSX.Element {
             </AnimatePresence>
           </div>
           <AnimatePresence>
-            {terminalOpen && (
+            {terminalOpenByRepo[repo.path] && (
               <motion.div
                 className="terminal-pane"
                 initial={{ height: 0, opacity: 0 }}

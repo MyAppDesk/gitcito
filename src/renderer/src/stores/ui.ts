@@ -179,7 +179,10 @@ interface UIState {
   commandPaletteOpen: boolean
   /** Unread GitHub notification count for the toolbar bell badge. */
   githubUnread: number
-  terminalOpen: boolean
+  /** Terminal-pane visibility, per repo path. Switching to a tab that never
+   *  opened its terminal keeps the pane closed; reopening the tab restores it.
+   *  In-memory only — resets to all-closed on cold start. */
+  terminalOpenByRepo: Record<string, boolean>
   graphFilter: string
   ciFilter: CiFilter
   authorFilter: string | null
@@ -215,7 +218,8 @@ interface UIState {
   setGithubUnread(n: number): void
   toast(kind: Toast['kind'], message: string): void
   dismissToast(id: number): void
-  toggleTerminal(): void
+  toggleTerminal(repoPath: string): void
+  setTerminalOpen(repoPath: string, open: boolean): void
   setGraphFilter(filter: string): void
   setCiFilter(filter: CiFilter): void
   setAuthorFilter(author: string | null): void
@@ -241,7 +245,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   toasts: [],
   commandPaletteOpen: false,
   githubUnread: 0,
-  terminalOpen: false,
+  terminalOpenByRepo: {},
   graphFilter: '',
   ciFilter: 'all',
   authorFilter: null,
@@ -272,7 +276,10 @@ export const useUIStore = create<UIState>((set, get) => ({
   },
   dismissToast: (id) => set({ toasts: get().toasts.filter((t) => t.id !== id) }),
 
-  toggleTerminal: () => set({ terminalOpen: !get().terminalOpen }),
+  toggleTerminal: (repoPath) =>
+    set((s) => ({ terminalOpenByRepo: { ...s.terminalOpenByRepo, [repoPath]: !s.terminalOpenByRepo[repoPath] } })),
+  setTerminalOpen: (repoPath, open) =>
+    set((s) => ({ terminalOpenByRepo: { ...s.terminalOpenByRepo, [repoPath]: open } })),
   setGraphFilter: (graphFilter) => set({ graphFilter }),
   setCiFilter: (ciFilter) => set({ ciFilter }),
   setAuthorFilter: (authorFilter) => set({ authorFilter }),

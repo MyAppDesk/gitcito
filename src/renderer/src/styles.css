@@ -558,6 +558,109 @@ textarea:focus {
   color: var(--text-2);
 }
 
+/* Settings → General workspace manager */
+.settings-workspace-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+.settings-workspace-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px 4px 3px 6px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--bg-2);
+}
+.settings-workspace-row.active {
+  border-color: var(--accent);
+}
+.settings-workspace-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 4px 4px;
+  border-radius: 5px;
+  color: var(--text-0);
+  font-size: 12.5px;
+}
+.settings-workspace-check {
+  flex: 0 0 13px;
+  display: flex;
+  align-items: center;
+  color: var(--accent);
+}
+.settings-workspace-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.settings-workspace-count {
+  margin-left: auto;
+  flex: 0 0 auto;
+  font-size: 11px;
+  color: var(--text-2);
+}
+
+/* Workspace selector — same shell as the profile switcher, reuses its menu. */
+.workspace-switcher {
+  -webkit-app-region: no-drag;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-end;
+  height: 32px;
+  max-width: 180px;
+  padding: 0 8px;
+  border-radius: 7px;
+  color: var(--text-1);
+  transition: background 0.15s, color 0.15s;
+}
+.workspace-switcher:hover,
+.workspace-switcher.open {
+  background: var(--bg-3);
+  color: var(--text-0);
+}
+
+/* Menu row: switch button fills the row; rename/delete reveal on hover. */
+.workspace-switcher-row {
+  display: flex;
+  align-items: center;
+}
+.workspace-switcher-row .profile-switcher-item {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.workspace-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  opacity: 0;
+  transition: opacity 0.1s;
+}
+.workspace-switcher-row:hover .workspace-row-actions {
+  opacity: 1;
+}
+.workspace-row-btn {
+  display: flex;
+  padding: 4px;
+  border-radius: 5px;
+  color: var(--text-2);
+  transition: background 0.1s, color 0.1s;
+}
+.workspace-row-btn:hover {
+  background: var(--bg-4);
+  color: var(--text-0);
+}
+.workspace-row-btn.danger:hover {
+  background: rgba(229, 72, 77, 0.16);
+  color: #e5484d;
+}
+
 .profile-switcher-menu {
   position: fixed;
   z-index: 1000;

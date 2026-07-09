@@ -6,6 +6,7 @@ import { useUIStore, type MenuItem } from '../stores/ui'
 import { useRepoStore, repoActions } from '../stores/repo'
 import type { GroupTab, TabState } from '../../../shared/types'
 import { ProfileSwitcher } from './ProfileSwitcher'
+import { WorkspaceSwitcher } from './WorkspaceSwitcher'
 import { folderOpenMenuItems } from '../lib/openWith'
 import gitcitoMark from '../assets/gitcito-mark.png'
 
@@ -650,6 +651,7 @@ export function TitleBar(): React.JSX.Element {
           <Plus size={15} />
         </button>
       </div>
+      <WorkspaceSwitcher />
       <ProfileSwitcher />
       {hasGithubToken && (
         <button

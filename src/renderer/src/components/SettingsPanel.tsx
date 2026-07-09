@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom'
 import {
   Plus,
   Trash2,
+  Pencil,
+  LayoutGrid,
   X,
   UserCircle2,
   Bot,
@@ -1885,7 +1887,41 @@ function DataManagementSection(): React.JSX.Element {
 function GeneralPage(): React.JSX.Element {
   const settings = useSettingsStore((s) => s.settings)
   const update = useSettingsStore((s) => s.update)
+  const createWorkspace = useSettingsStore((s) => s.createWorkspace)
+  const renameWorkspace = useSettingsStore((s) => s.renameWorkspace)
+  const deleteWorkspace = useSettingsStore((s) => s.deleteWorkspace)
+  const switchWorkspace = useSettingsStore((s) => s.switchWorkspace)
+  const openModal = useUIStore((s) => s.openModal)
   const t = useT()
+
+  const workspaces = settings.workspaces ?? []
+  const newWorkspace = (): void =>
+    openModal({
+      kind: 'input',
+      title: 'New workspace',
+      label: 'Name',
+      placeholder: `Workspace ${workspaces.length + 1}`,
+      submitLabel: 'Create',
+      onSubmit: (name) => createWorkspace(name.trim() || `Workspace ${workspaces.length + 1}`)
+    })
+  const editWorkspace = (id: string, current: string): void =>
+    openModal({
+      kind: 'input',
+      title: 'Rename workspace',
+      label: 'Name',
+      initial: current,
+      submitLabel: 'Rename',
+      onSubmit: (name) => renameWorkspace(id, name.trim() || current)
+    })
+  const removeWorkspace = (id: string, name: string): void =>
+    openModal({
+      kind: 'confirm',
+      title: 'Delete workspace',
+      message: `Delete "${name}"? Its tab layout will be discarded (the repositories themselves are untouched).`,
+      danger: true,
+      confirmLabel: 'Delete',
+      onConfirm: () => deleteWorkspace(id)
+    })
 
   return (
     <div className="settings-general">
@@ -2138,6 +2174,57 @@ function GeneralPage(): React.JSX.Element {
           </button>
         )}
       </div>
+
+      <h4 className="settings-section-title">
+        <LayoutGrid size={14} /> Workspaces
+      </h4>
+      <p className="settings-hint">
+        A workspace is a saved tab layout. Switch to swap the whole tab strip at once — handy for
+        keeping separate sets (e.g. work vs personal). A quick selector appears in the title bar once
+        you have more than one.
+      </p>
+      <div className="settings-workspace-list">
+        {workspaces.map((w) => {
+          const isActive = w.id === settings.activeWorkspaceId
+          return (
+            <div key={w.id} className={`settings-workspace-row ${isActive ? 'active' : ''}`}>
+              <button
+                type="button"
+                className="settings-workspace-name"
+                onClick={() => switchWorkspace(w.id)}
+                title={isActive ? 'Active workspace' : 'Switch to this workspace'}
+              >
+                <span className="settings-workspace-check">{isActive ? <Check size={13} /> : null}</span>
+                <span className="settings-workspace-label">{w.name}</span>
+                <span className="settings-workspace-count">
+                  {w.tabs.length} {w.tabs.length === 1 ? 'tab' : 'tabs'}
+                </span>
+              </button>
+              <button
+                type="button"
+                className="icon-btn"
+                title="Rename workspace"
+                onClick={() => editWorkspace(w.id, w.name)}
+              >
+                <Pencil size={13} />
+              </button>
+              {workspaces.length > 1 && (
+                <button
+                  type="button"
+                  className="icon-btn"
+                  title="Delete workspace"
+                  onClick={() => removeWorkspace(w.id, w.name)}
+                >
+                  <Trash2 size={13} />
+                </button>
+              )}
+            </div>
+          )
+        })}
+      </div>
+      <button type="button" className="btn ghost small" onClick={newWorkspace}>
+        <Plus size={13} /> New workspace
+      </button>
     </div>
   )
 }

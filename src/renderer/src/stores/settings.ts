@@ -8,7 +8,8 @@ import {
   type Profile,
   type RepoLayout,
   type RepoRef,
-  type TabState
+  type TabState,
+  type Workspace
 } from '../../../shared/types'
 import { settingsApi } from '../infrastructure/api'
 
@@ -57,6 +58,20 @@ function persist(settings: AppSettings): void {
   saveTimer = setTimeout(() => void settingsApi.set(settings), 250)
 }
 
+/** Mirror the live `tabs`/`activeTabId` into the active workspace record so a
+ *  workspace switch (or the next app launch) restores the exact tab strip.
+ *  Runs on every settings mutation — cheap, and keeps the two in lockstep
+ *  without every tab action needing to know about workspaces. */
+function syncActiveWorkspace(s: AppSettings): AppSettings {
+  if (!s.workspaces?.length) return s
+  return {
+    ...s,
+    workspaces: s.workspaces.map((w) =>
+      w.id === s.activeWorkspaceId ? { ...w, tabs: s.tabs, activeTabId: s.activeTabId } : w
+    )
+  }
+}
+
 interface SettingsState {
   settings: AppSettings
   loaded: boolean
@@ -102,6 +117,15 @@ interface SettingsState {
   ejectRepoFromGroup(tabId: string, repoPath: string, insertBeforeTabId: string | null): void
   moveRepoBetweenGroups(fromTabId: string, repoPath: string, toTabId: string, insertBeforeRepoPath: string | null): void
   toggleTabCollapsed(tabId: string): void
+
+  /** Create a fresh, empty workspace and switch to it. */
+  createWorkspace(name: string): void
+  renameWorkspace(id: string, name: string): void
+  /** Delete a workspace; no-op on the last one. If it was active, falls back
+   *  to a neighbour and loads its tabs. */
+  deleteWorkspace(id: string): void
+  /** Swap the whole tab strip to another saved workspace. */
+  switchWorkspace(id: string): void
 
   activeTab(): TabState | null
   activeRepo(): RepoRef | null
@@ -162,11 +186,25 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     settings.warnOnClose = settings.warnOnClose ?? sd.warnOnClose
     settings.repoProfiles = settings.repoProfiles ?? sd.repoProfiles
     settings.repoLayouts = settings.repoLayouts ?? {}
+    // Workspaces: wrap a pre-workspaces install's existing tabs into a default
+    // workspace, then load the active workspace's tabs into the live view.
+    if (!settings.workspaces?.length) {
+      settings.workspaces = [{ id: 'default', name: 'Default', tabs: settings.tabs, activeTabId: settings.activeTabId }]
+    }
+    settings.activeWorkspaceId =
+      settings.activeWorkspaceId && settings.workspaces.some((w) => w.id === settings.activeWorkspaceId)
+        ? settings.activeWorkspaceId
+        : settings.workspaces[0].id
+    {
+      const aw = settings.workspaces.find((w) => w.id === settings.activeWorkspaceId)!
+      settings.tabs = aw.tabs
+      settings.activeTabId = aw.activeTabId
+    }
     set({ settings, loaded: true })
   },
 
   update: (mut) => {
-    const settings = mut(get().settings)
+    const settings = syncActiveWorkspace(mut(get().settings))
     set({ settings })
     persist(settings)
   },
@@ -480,6 +518,40 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         })
         .filter(Boolean) as TabState[]
       return { ...s, tabs }
+    }),
+
+  createWorkspace: (name) =>
+    get().update((s) => {
+      // Outgoing workspace is already mirrored (syncActiveWorkspace runs on
+      // every update), so we only need to add the new one and clear the live
+      // tab strip for a clean slate.
+      const ws: Workspace = { id: uid(), name, tabs: [], activeTabId: null }
+      return { ...s, workspaces: [...s.workspaces, ws], activeWorkspaceId: ws.id, tabs: [], activeTabId: null }
+    }),
+
+  renameWorkspace: (id, name) =>
+    get().update((s) => ({
+      ...s,
+      workspaces: s.workspaces.map((w) => (w.id === id ? { ...w, name } : w))
+    })),
+
+  deleteWorkspace: (id) =>
+    get().update((s) => {
+      if (s.workspaces.length <= 1) return s
+      const idx = s.workspaces.findIndex((w) => w.id === id)
+      if (idx < 0) return s
+      const workspaces = s.workspaces.filter((w) => w.id !== id)
+      if (id !== s.activeWorkspaceId) return { ...s, workspaces }
+      const next = workspaces[Math.min(idx, workspaces.length - 1)]
+      return { ...s, workspaces, activeWorkspaceId: next.id, tabs: next.tabs, activeTabId: next.activeTabId }
+    }),
+
+  switchWorkspace: (id) =>
+    get().update((s) => {
+      if (id === s.activeWorkspaceId) return s
+      const target = s.workspaces.find((w) => w.id === id)
+      if (!target) return s
+      return { ...s, activeWorkspaceId: id, tabs: target.tabs, activeTabId: target.activeTabId }
     }),
 
   activeTab: () => {

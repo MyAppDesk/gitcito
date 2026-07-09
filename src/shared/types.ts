@@ -1060,6 +1060,17 @@ export function tabActiveRepoPath(tab: TabState): string | null {
   return tab.kind === 'page' ? null : tab.activeRepoPath
 }
 
+/** A named saved tab layout. The active workspace mirrors the live
+ *  `tabs`/`activeTabId`; switching swaps the whole tab strip in one move so
+ *  users can keep separate sets (e.g. "work" vs "personal") without juggling
+ *  every tab by hand. */
+export interface Workspace {
+  id: string
+  name: string
+  tabs: TabState[]
+  activeTabId: string | null
+}
+
 export interface AppSettings {
   profiles: Profile[]
   activeProfileId: string
@@ -1069,6 +1080,10 @@ export interface AppSettings {
   repoProfiles: Record<string, string>
   tabs: TabState[]
   activeTabId: string | null
+  /** Saved tab layouts. Always has at least one ("Default"); the active one's
+   *  tabs are kept in sync with the live `tabs`/`activeTabId` above. */
+  workspaces: Workspace[]
+  activeWorkspaceId: string
   recentRepos: RepoRef[]
   appThemeId: string
   codeThemeId: string
@@ -1324,6 +1339,8 @@ export function defaultSettings(): AppSettings {
     repoProfiles: {},
     tabs: [],
     activeTabId: null,
+    workspaces: [{ id: 'default', name: 'Default', tabs: [], activeTabId: null }],
+    activeWorkspaceId: 'default',
     recentRepos: [],
     appThemeId: 'gitcito',
     codeThemeId: 'gitcito',

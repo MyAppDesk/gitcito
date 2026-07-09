@@ -61,12 +61,14 @@ export function TitleBar(): React.JSX.Element {
   const dragItem = useRef<DragItem | null>(null)
   const [dropTarget, setDropTarget] = useState<DropTarget | null>(null)
   const [draggingRepo, setDraggingRepo] = useState(false)
+  const [draggingTab, setDraggingTab] = useState(false)
 
   const clearDrop = (): void => setDropTarget(null)
 
   const onDragStart = (item: DragItem) => (e: React.DragEvent) => {
     dragItem.current = item
     if (item.kind === 'repo') setDraggingRepo(true)
+    else setDraggingTab(true)
     e.dataTransfer.effectAllowed = 'move'
     e.stopPropagation()
   }
@@ -74,6 +76,7 @@ export function TitleBar(): React.JSX.Element {
   const onDragEnd = (): void => {
     dragItem.current = null
     setDraggingRepo(false)
+    setDraggingTab(false)
     clearDrop()
   }
 
@@ -96,6 +99,16 @@ export function TitleBar(): React.JSX.Element {
     return e.clientX < rect.left + rect.width / 2 ? 'before' : 'after'
   }
 
+  // For a repo dropped onto a group: edge quarters place it beside the group,
+  // the middle adds it into the group. Lets a standalone repo escape to first/last.
+  const edgeZone = (e: React.DragEvent): 'before' | 'into' | 'after' => {
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    const x = e.clientX - rect.left
+    if (x < rect.width * 0.25) return 'before'
+    if (x > rect.width * 0.75) return 'after'
+    return 'into'
+  }
+
   const onDragOverTab = (tabId: string) => (e: React.DragEvent): void => {
     e.preventDefault()
     e.stopPropagation()
@@ -103,17 +116,17 @@ export function TitleBar(): React.JSX.Element {
     if (!d) return
     if (d.kind === 'tab' && d.tabId === tabId) return clearDrop()
     const tab = settings.tabs.find((t) => t.id === tabId)
-    // Dragging repo onto a different group → add to group
-    if (d.kind === 'repo' && tab?.kind === 'group' && d.tabId !== tabId) {
-      setDropTarget({ kind: 'into-group', tabId })
+    // A repo — either ejected from a group or a standalone repo tab — dropped on
+    // a group: edge quarters place it before/after the group, middle adds it in.
+    const fromTab = d.kind === 'tab' ? settings.tabs.find((t) => t.id === d.tabId) : null
+    const repoOntoGroup =
+      tab?.kind === 'group' &&
+      ((d.kind === 'repo' && d.tabId !== tabId) || (d.kind === 'tab' && fromTab?.kind === 'repo'))
+    if (repoOntoGroup) {
+      const z = edgeZone(e)
+      if (z === 'into') setDropTarget({ kind: 'into-group', tabId })
+      else setDropTarget({ kind: z === 'before' ? 'before-tab' : 'after-tab', tabId })
       return
-    }
-    if (d.kind === 'tab' && tab?.kind === 'group') {
-      const fromTab = settings.tabs.find((t) => t.id === d.tabId)
-      if (fromTab?.kind === 'repo') {
-        setDropTarget({ kind: 'into-group', tabId })
-        return
-      }
     }
     const side = sideOf(e)
     setDropTarget({ kind: side === 'before' ? 'before-tab' : 'after-tab', tabId })
@@ -133,15 +146,24 @@ export function TitleBar(): React.JSX.Element {
   const onDragOverZone = (insertBeforeTabId: string | null) => (e: React.DragEvent): void => {
     e.preventDefault()
     e.stopPropagation()
-    if (!dragItem.current || dragItem.current.kind !== 'repo') return
+    if (!dragItem.current) return
     setDropTarget({ kind: 'eject-at', insertBeforeTabId })
   }
 
   const onDropZone = (insertBeforeTabId: string | null) => (e: React.DragEvent): void => {
     e.preventDefault()
     const d = dragItem.current
-    if (!d || d.kind !== 'repo') return clearDrop()
-    ejectRepoFromGroup(d.tabId, d.repoPath, insertBeforeTabId)
+    if (!d) return clearDrop()
+    if (d.kind === 'repo') {
+      ejectRepoFromGroup(d.tabId, d.repoPath, insertBeforeTabId)
+    } else {
+      // Reorder a top-level tab into this gap. null → trailing gap (after last).
+      if (insertBeforeTabId) reorderTabs(d.tabId, insertBeforeTabId, true)
+      else {
+        const last = settings.tabs[settings.tabs.length - 1]
+        if (last) reorderTabs(d.tabId, last.id, false)
+      }
+    }
     clearDrop()
   }
 
@@ -436,7 +458,7 @@ export function TitleBar(): React.JSX.Element {
           const zone = (
             <div
               key={`zone-${tab.id}`}
-              className={`tab-drop-zone ${draggingRepo ? 'visible' : ''} ${isZoneActive(tab.id) ? 'active' : ''}`}
+              className={`tab-drop-zone ${(draggingRepo || draggingTab) ? 'visible' : ''} ${isZoneActive(tab.id) ? 'active' : ''}`}
               onDragOver={onDragOverZone(tab.id)}
               onDrop={onDropZone(tab.id)}
               onDragLeave={clearDrop}
@@ -656,7 +678,7 @@ export function TitleBar(): React.JSX.Element {
         })}
         {/* trailing zone — drop here to eject to end of tab bar */}
         <div
-          className={`tab-drop-zone ${draggingRepo ? 'visible' : ''} ${isZoneActive(null) ? 'active' : ''}`}
+          className={`tab-drop-zone ${(draggingRepo || draggingTab) ? 'visible' : ''} ${isZoneActive(null) ? 'active' : ''}`}
           onDragOver={onDragOverZone(null)}
           onDrop={onDropZone(null)}
           onDragLeave={clearDrop}

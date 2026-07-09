@@ -1137,6 +1137,16 @@ export interface AppSettings {
    *  repo-within-group. 'always' = every close; 'wip' = only when there are
    *  uncommitted changes or merge conflicts; 'never' = close silently. */
   warnOnClose: 'always' | 'wip' | 'never'
+  /** Where the integrated terminal pane docks: full-width along the bottom
+   *  (default), under the center graph column only (sidebars stay full height),
+   *  or as its own right-hand column. */
+  terminalPlacement: 'bottom' | 'center' | 'right'
+  /** Which side the branches/files sidebar docks on. */
+  sidebarSide: 'left' | 'right'
+  /** Let the right details panel span the full window height instead of
+   *  stopping above a full-width bottom terminal. Only affects 'bottom'
+   *  terminal placement. */
+  rightPanelFullHeight: boolean
   /** Parent folder of the last clone, used to pre-fill the clone dialog. */
   lastClonePath?: string
   /** User-chosen external application (e.g. VS Code) used by the "Open with <App>"
@@ -1374,6 +1384,9 @@ export function defaultSettings(): AppSettings {
     enableLaunchJson: true,
     shortcuts: {},
     largeFileKb: 5120,
-    warnOnClose: 'always'
+    warnOnClose: 'always',
+    terminalPlacement: 'bottom',
+    sidebarSide: 'left',
+    rightPanelFullHeight: false
   }
 }

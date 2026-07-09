@@ -2861,6 +2861,190 @@ textarea:focus {
   flex-direction: column;
 }
 
+/* ─── Configurable panel layout (terminal placement / sidebar side) ─────── */
+
+/* Center column stacks the graph pane and, in 'center' placement, the
+   terminal beneath it — so the sidebar and right panel stay full-height. */
+.center-col {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.center-col > .graph-pane {
+  min-height: 0;
+}
+
+/* bottom + right-panel-full-height: sidebar+center stack in a column, the
+   terminal sits under just that column, the right panel runs full height. */
+.main-col {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.main-row {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+}
+
+/* Terminal docked as its own right-hand column: border on the left, and its
+   resize handle runs down the left edge instead of across the top. */
+.terminal-pane--right {
+  border-top: none;
+  border-left: 1px solid var(--border);
+}
+.terminal-pane--right > .rh-x {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  margin: 0;
+}
+
+/* ─── Settings → Layout page ────────────────────────────────────────────── */
+
+.layout-preview-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+/* Mini schematic of the workspace. Its structure mirrors the real DOM so the
+   preview stays honest for every placement / sidebar-side / full-height combo. */
+.layout-preview {
+  height: 132px;
+  padding: 7px;
+  gap: 6px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--bg-0);
+  display: flex;
+  flex-direction: column;
+}
+.layout-preview.rpfull {
+  flex-direction: row;
+}
+.layout-preview .lp-row {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 6px;
+}
+.layout-preview .lp-maincol {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.layout-preview .lp-mainrow {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 6px;
+}
+.layout-preview .lp-center {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.layout-preview .lp {
+  border-radius: 4px;
+}
+.layout-preview .lp-sidebar {
+  flex: 0 0 20%;
+  background: var(--bg-2);
+  box-shadow: inset 0 0 0 1px var(--border-soft);
+}
+.layout-preview .lp-right {
+  flex: 0 0 26%;
+  background: var(--bg-2);
+  box-shadow: inset 0 0 0 1px var(--border-soft);
+}
+.layout-preview .lp-graph {
+  flex: 1;
+  min-height: 0;
+  background: var(--bg-1);
+  box-shadow: inset 0 0 0 1px var(--border-soft);
+}
+/* Terminal region — accent-tinted so it reads at a glance. */
+.layout-preview .lp-term {
+  background: color-mix(in srgb, var(--accent) 26%, var(--bg-1));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+/* Column-stacked terminal (bottom / center) is a short strip. */
+.layout-preview .lp-center > .lp-term,
+.layout-preview .lp-maincol > .lp-term,
+.layout-preview > .lp-term {
+  flex: 0 0 26%;
+}
+/* Right-docked terminal is a full-height column. */
+.layout-preview.placement-right .lp-row > .lp-term {
+  flex: 0 0 26%;
+}
+
+/* Segmented placement / side picker. */
+.layout-segmented {
+  display: grid;
+  gap: 8px;
+  margin-top: 6px;
+}
+.layout-segmented.three {
+  grid-template-columns: repeat(3, 1fr);
+}
+.layout-segmented.two {
+  grid-template-columns: repeat(2, 1fr);
+}
+.layout-seg-btn {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-1);
+  color: var(--text-1);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+.layout-seg-btn:hover {
+  border-color: var(--accent);
+}
+.layout-seg-btn.active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, var(--bg-1));
+}
+.layout-seg-btn strong {
+  font-size: 12px;
+  color: var(--text-0);
+}
+.layout-seg-btn span {
+  font-size: 10.5px;
+  color: var(--text-2);
+  line-height: 1.3;
+}
+.settings-toggle-card.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+.layout-reset-btn {
+  align-self: flex-start;
+  margin-top: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .terminal-container {
   display: flex;
   flex: 1;

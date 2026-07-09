@@ -46,7 +46,8 @@ const EXPECTED = [
   'branch-grouping',
   'launch-configs',
   'empty-repo',
-  'terminal-per-tab'
+  'terminal-per-tab',
+  'panel-layout'
 ]
 
 describe('playground fixtures', () => {

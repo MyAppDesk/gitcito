@@ -543,55 +543,94 @@ export default function App(): React.JSX.Element {
   const repo = useRepoStore((s) => (activeRepoPath ? s.repos[activeRepoPath] ?? null : null))
   const forceConflictPanel = !!repo?.mergeState && (repo.status?.conflicted.length ?? 0) > 0
 
-  if (!settingsLoaded) {
-    return (
-      <div className="app booting">
-        <div className="spinner" />
-      </div>
-    )
-  }
-
-  return (
-    <div className="app">
-      <TitleBar />
-
-      {/*
-      Normal:
-      {!settings.onboardingCompleted && <OnboardingWizard />}
-      Always
-      <OnboardingWizard />
-      */}
-
-      {!activeTab && <Welcome />}
-      {activeTab && activeTab.kind === 'group' && !repo && <GroupView tab={activeTab} />}
-      {activeTab && activeTab.kind === 'page' && <PageView tab={activeTab} />}
-
-      {activeTab && repo && repo.notGit && <InitRepo path={repo.path} />}
-
-      {activeTab && repo && !repo.notGit && (
-        <>
-          <Toolbar repo={repo} />
-          <div className="workspace" style={{ ['--sidebar-w' as string]: `${layout.sidebarWidth}px` }}>
-            <Sidebar repo={repo} />
-            <ResizeHandle
-              axis="x"
-              value={layout.sidebarWidth}
-              min={180}
-              max={460}
-              onChange={(v) => setLayout({ sidebarWidth: v })}
-              onDragging={setResizing}
-            />
-            <main className="graph-pane">
-              <ConflictBanner repo={repo} />
-              <DebugToolbar repoPath={repo.path} />
-              {conflictView && conflictView.repoPath === repo.path ? (
-                <ConflictResolver key={conflictView.file} view={conflictView} />
-              ) : fileView && fileView.repoPath === repo.path ? (
-                <FileViewer key={`${fileView.file}`} view={fileView} />
-              ) : (
-                <GraphView repo={repo} />
+  // The center-workspace + terminal region, arranged per the layout settings:
+  //   • terminalPlacement — bottom (full width) | center (under graph only) | right (own column)
+  //   • sidebarSide       — dock the sidebar left or right
+  //   • rightPanelFullHeight — in bottom mode, keep the terminal out from under
+  //     the right panel so that panel spans the full height.
+  // Toolbar (above) and the status bar (below) stay put in the main return.
+  const placement = settings.terminalPlacement
+  const sbSide = settings.sidebarSide
+  const rpFull = settings.rightPanelFullHeight
+  const workspaceBody =
+    repo && !repo.notGit
+      ? ((): React.JSX.Element => {
+          const termOpen = !!terminalOpenByRepo[repo.path]
+          const termIsSide = placement === 'right'
+          const terminalNode = (
+            <AnimatePresence>
+              {termOpen && (
+                <motion.div
+                  className={`terminal-pane terminal-pane--${placement}`}
+                  initial={termIsSide ? { width: 0, opacity: 0 } : { height: 0, opacity: 0 }}
+                  animate={
+                    termIsSide
+                      ? { width: layout.terminalWidth, opacity: 1 }
+                      : { height: layout.terminalHeight, opacity: 1 }
+                  }
+                  exit={termIsSide ? { width: 0, opacity: 0 } : { height: 0, opacity: 0 }}
+                  transition={resizing ? { duration: 0 } : { type: 'spring', stiffness: 320, damping: 34 }}
+                >
+                  <ResizeHandle
+                    axis={termIsSide ? 'x' : 'y'}
+                    value={termIsSide ? layout.terminalWidth : layout.terminalHeight}
+                    min={termIsSide ? 280 : 120}
+                    max={termIsSide ? 900 : 600}
+                    invert
+                    onChange={(v) => setLayout(termIsSide ? { terminalWidth: v } : { terminalHeight: v })}
+                    onDragging={setResizing}
+                  />
+                  <TerminalContainer cwd={repo.path} />
+                </motion.div>
               )}
-            </main>
+            </AnimatePresence>
+          )
+
+          const sidebarBlock = (
+            <>
+              {sbSide === 'right' && (
+                <ResizeHandle
+                  axis="x"
+                  value={layout.sidebarWidth}
+                  min={180}
+                  max={460}
+                  invert
+                  onChange={(v) => setLayout({ sidebarWidth: v })}
+                  onDragging={setResizing}
+                />
+              )}
+              <Sidebar repo={repo} />
+              {sbSide === 'left' && (
+                <ResizeHandle
+                  axis="x"
+                  value={layout.sidebarWidth}
+                  min={180}
+                  max={460}
+                  onChange={(v) => setLayout({ sidebarWidth: v })}
+                  onDragging={setResizing}
+                />
+              )}
+            </>
+          )
+
+          const centerCol = (
+            <div className="center-col">
+              <main className="graph-pane">
+                <ConflictBanner repo={repo} />
+                <DebugToolbar repoPath={repo.path} />
+                {conflictView && conflictView.repoPath === repo.path ? (
+                  <ConflictResolver key={conflictView.file} view={conflictView} />
+                ) : fileView && fileView.repoPath === repo.path ? (
+                  <FileViewer key={`${fileView.file}`} view={fileView} />
+                ) : (
+                  <GraphView repo={repo} />
+                )}
+              </main>
+              {placement === 'center' && terminalNode}
+            </div>
+          )
+
+          const rightPanelNode = (
             <AnimatePresence>
               {(repo.selected || forceConflictPanel) && (
                 <motion.section
@@ -626,29 +665,73 @@ export default function App(): React.JSX.Element {
                 </motion.section>
               )}
             </AnimatePresence>
-          </div>
-          <AnimatePresence>
-            {terminalOpenByRepo[repo.path] && (
-              <motion.div
-                className="terminal-pane"
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: layout.terminalHeight, opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={resizing ? { duration: 0 } : { type: 'spring', stiffness: 320, damping: 34 }}
-              >
-                <ResizeHandle
-                  axis="y"
-                  value={layout.terminalHeight}
-                  min={120}
-                  max={600}
-                  invert
-                  onChange={(v) => setLayout({ terminalHeight: v })}
-                  onDragging={setResizing}
-                />
-                <TerminalContainer cwd={repo.path} />
-              </motion.div>
-            )}
-          </AnimatePresence>
+          )
+
+          const wsClass = `workspace placement-${placement} sidebar-${sbSide}${rpFull ? ' rp-full' : ''}`
+          const wsStyle = { ['--sidebar-w' as string]: `${layout.sidebarWidth}px` }
+
+          // bottom + right-panel-full-height: the terminal sits below only the
+          // sidebar+center stack, letting the right panel run the full height.
+          if (placement === 'bottom' && rpFull) {
+            return (
+              <div className={wsClass} style={wsStyle}>
+                <div className="main-col">
+                  <div className="main-row">
+                    {sbSide === 'left' && sidebarBlock}
+                    {centerCol}
+                    {sbSide === 'right' && sidebarBlock}
+                  </div>
+                  {terminalNode}
+                </div>
+                {rightPanelNode}
+              </div>
+            )
+          }
+
+          return (
+            <>
+              <div className={wsClass} style={wsStyle}>
+                {sbSide === 'left' && sidebarBlock}
+                {centerCol}
+                {rightPanelNode}
+                {placement === 'right' && terminalNode}
+                {sbSide === 'right' && sidebarBlock}
+              </div>
+              {placement === 'bottom' && terminalNode}
+            </>
+          )
+        })()
+      : null
+
+  if (!settingsLoaded) {
+    return (
+      <div className="app booting">
+        <div className="spinner" />
+      </div>
+    )
+  }
+
+  return (
+    <div className="app">
+      <TitleBar />
+
+      {/*
+      Normal:
+      {!settings.onboardingCompleted && <OnboardingWizard />}
+      Always
+      <OnboardingWizard />
+      */}
+
+      {!activeTab && <Welcome />}
+      {activeTab && activeTab.kind === 'group' && !repo && <GroupView tab={activeTab} />}
+      {activeTab && activeTab.kind === 'page' && <PageView tab={activeTab} />}
+
+      {activeTab && repo && repo.notGit && <InitRepo path={repo.path} />}
+
+      {activeTab && repo && !repo.notGit && (
+        <>
+          <Toolbar repo={repo} />
+          {workspaceBody}
           <footer className="statusbar">
             <button
               className="status-path status-path-btn"

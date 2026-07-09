@@ -73,7 +73,7 @@ export type ModalSpec =
     }
   | { kind: 'clone'; onClone: (repo: { path: string; name: string }) => void }
   | { kind: 'create-branch'; path: string; currentBranch?: string; description?: string }
-  | { kind: 'settings'; page?: 'profile' | 'integrations' | 'ai' | 'themes' | 'general' | 'security' | 'shortcuts' | 'data'; themeTab?: 'theme' | 'graph' }
+  | { kind: 'settings'; page?: 'profile' | 'layout' | 'integrations' | 'ai' | 'themes' | 'general' | 'security' | 'shortcuts' | 'data'; themeTab?: 'theme' | 'graph' }
   | { kind: 'launcher'; groupId?: string }
   | { kind: 'create-repo'; onCreate: (repo: { path: string; name: string }) => void }
   | { kind: 'ai-config-wizard'; repoPath: string; repoName: string; initialTab?: 'ask' | 'config' }
@@ -142,6 +142,8 @@ export interface PanelLayout {
   sidebarWidth: number
   panelWidth: number
   terminalHeight: number
+  /** Width of the terminal pane when docked as a right-hand column. */
+  terminalWidth: number
   terminalListWidth: number
   terminalListCollapsed: boolean
   composerUnstagedRatio: number
@@ -155,6 +157,7 @@ const DEFAULT_LAYOUT: PanelLayout = {
   sidebarWidth: 248,
   panelWidth: 420,
   terminalHeight: 260,
+  terminalWidth: 480,
   terminalListWidth: 220,
   terminalListCollapsed: false,
   composerUnstagedRatio: 0.5,
@@ -233,6 +236,8 @@ interface UIState {
   setFileSearch(search: FileSearchState | null): void
   requestScrollTo(hash: string | null): void
   setLayout(partial: Partial<PanelLayout>): void
+  /** Reset all persisted panel sizes (widths/heights/collapse) to defaults. */
+  resetLayout(): void
   openCosmos(repoPath: string): void
   closeCosmos(): void
 }
@@ -297,6 +302,14 @@ export const useUIStore = create<UIState>((set, get) => ({
     set({ layout })
     try {
       localStorage.setItem(LAYOUT_KEY, JSON.stringify(layout))
+    } catch {
+      /* ignore quota errors */
+    }
+  },
+  resetLayout: () => {
+    set({ layout: DEFAULT_LAYOUT })
+    try {
+      localStorage.setItem(LAYOUT_KEY, JSON.stringify(DEFAULT_LAYOUT))
     } catch {
       /* ignore quota errors */
     }

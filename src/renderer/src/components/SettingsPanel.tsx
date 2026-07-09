@@ -38,7 +38,9 @@ import {
   GitCommit,
   ScrollText,
   GitBranch,
-  Spline
+  Spline,
+  PanelBottom,
+  RotateCcw
 } from 'lucide-react'
 import hljs from 'highlight.js'
 import { useSettingsStore } from '../stores/settings'
@@ -72,6 +74,7 @@ import madLogo from '../assets/mad-high.png'
 
 type SettingsPage =
   | 'profile'
+  | 'layout'
   | 'workspaces'
   | 'integrations'
   | 'ai'
@@ -83,6 +86,7 @@ type SettingsPage =
 
 const PAGES: { id: SettingsPage; key: TranslationKey; icon: React.ReactNode }[] = [
   { id: 'general', key: 'settings.general', icon: <Settings2 size={13} /> },
+  { id: 'layout', key: 'settings.layout', icon: <PanelBottom size={13} /> },
   { id: 'profile', key: 'settings.profile', icon: <UserCircle2 size={13} /> },
   { id: 'workspaces', key: 'settings.workspaces', icon: <LayoutGrid size={13} /> },
   { id: 'integrations', key: 'settings.integrations', icon: <Plug size={13} /> },
@@ -1988,6 +1992,156 @@ function WorkspacesPage(): React.JSX.Element {
   )
 }
 
+/** Miniature schematic of the workspace that mirrors the real layout for the
+ *  currently-selected placement / sidebar side / full-height options. */
+function LayoutPreview({
+  placement,
+  sbSide,
+  rpFull
+}: {
+  placement: 'bottom' | 'center' | 'right'
+  sbSide: 'left' | 'right'
+  rpFull: boolean
+}): React.JSX.Element {
+  const sidebar = <span className="lp lp-sidebar" />
+  const right = <span className="lp lp-right" />
+  const term = <span className="lp lp-term" />
+  const center = (
+    <span className="lp-center">
+      <span className="lp lp-graph" />
+      {placement === 'center' && term}
+    </span>
+  )
+
+  if (placement === 'bottom' && rpFull) {
+    return (
+      <div className={`layout-preview rpfull sidebar-${sbSide}`}>
+        <span className="lp-maincol">
+          <span className="lp-mainrow">
+            {sbSide === 'left' && sidebar}
+            {center}
+            {sbSide === 'right' && sidebar}
+          </span>
+          {term}
+        </span>
+        {right}
+      </div>
+    )
+  }
+
+  return (
+    <div className={`layout-preview placement-${placement} sidebar-${sbSide}`}>
+      <span className="lp-row">
+        {sbSide === 'left' && sidebar}
+        {center}
+        {right}
+        {placement === 'right' && term}
+        {sbSide === 'right' && sidebar}
+      </span>
+      {placement === 'bottom' && term}
+    </div>
+  )
+}
+
+function LayoutPage(): React.JSX.Element {
+  const settings = useSettingsStore((s) => s.settings)
+  const update = useSettingsStore((s) => s.update)
+  const t = useT()
+  const placement = settings.terminalPlacement
+  const sbSide = settings.sidebarSide
+  const rpFull = settings.rightPanelFullHeight
+
+  const placements: { id: 'bottom' | 'center' | 'right'; label: TranslationKey; hint: TranslationKey }[] = [
+    { id: 'bottom', label: 'settings.termPlaceBottom', hint: 'settings.termPlaceBottomHint' },
+    { id: 'center', label: 'settings.termPlaceCenter', hint: 'settings.termPlaceCenterHint' },
+    { id: 'right', label: 'settings.termPlaceRight', hint: 'settings.termPlaceRightHint' }
+  ]
+
+  return (
+    <div className="settings-general">
+      <div className="settings-general-header">
+        <h4>
+          <PanelBottom size={14} /> {t('settings.layout')}
+        </h4>
+        <p className="settings-hint">{t('settings.layoutIntro')}</p>
+      </div>
+
+      <div className="layout-preview-wrap">
+        <span className="settings-field-label">{t('settings.livePreview')}</span>
+        <LayoutPreview placement={placement} sbSide={sbSide} rpFull={rpFull} />
+      </div>
+
+      <label className="settings-field">
+        <span className="settings-field-label">{t('settings.terminalPlacement')}</span>
+        <span className="settings-hint">{t('settings.terminalPlacementHint')}</span>
+        <div className="layout-segmented three">
+          {placements.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              className={`layout-seg-btn ${placement === p.id ? 'active' : ''}`}
+              onClick={() => update((s) => ({ ...s, terminalPlacement: p.id }))}
+            >
+              <strong>{t(p.label)}</strong>
+              <span>{t(p.hint)}</span>
+            </button>
+          ))}
+        </div>
+      </label>
+
+      <label className="settings-field">
+        <span className="settings-field-label">{t('settings.sidebarSide')}</span>
+        <span className="settings-hint">{t('settings.sidebarSideHint')}</span>
+        <div className="layout-segmented two">
+          {(['left', 'right'] as const).map((side) => (
+            <button
+              key={side}
+              type="button"
+              className={`layout-seg-btn ${sbSide === side ? 'active' : ''}`}
+              onClick={() => update((s) => ({ ...s, sidebarSide: side }))}
+            >
+              <strong>{t(side === 'left' ? 'settings.sidebarLeft' : 'settings.sidebarRight')}</strong>
+            </button>
+          ))}
+        </div>
+      </label>
+
+      <div className="settings-toggle-list">
+        <label className={`settings-toggle-card ${placement !== 'bottom' ? 'disabled' : ''}`}>
+          <input
+            type="checkbox"
+            checked={rpFull}
+            disabled={placement !== 'bottom'}
+            onChange={(e) => update((s) => ({ ...s, rightPanelFullHeight: e.target.checked }))}
+          />
+          <span className="settings-toggle-control" aria-hidden="true">
+            <span className="settings-toggle-thumb" />
+          </span>
+          <span className="settings-toggle-copy">
+            <strong>{t('settings.rightPanelFullHeight')}</strong>
+            <span className="settings-hint">{t('settings.rightPanelFullHeightHint')}</span>
+          </span>
+        </label>
+      </div>
+
+      <div className="settings-field">
+        <span className="settings-field-label">{t('settings.resetPanelSizes')}</span>
+        <span className="settings-hint">{t('settings.resetPanelSizesHint')}</span>
+        <button
+          type="button"
+          className="btn small layout-reset-btn"
+          onClick={() => {
+            useUIStore.getState().resetLayout()
+            useUIStore.getState().toast('success', t('settings.resetPanelSizesDone'))
+          }}
+        >
+          <RotateCcw size={13} /> {t('settings.resetPanelSizes')}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function GeneralPage(): React.JSX.Element {
   const settings = useSettingsStore((s) => s.settings)
   const update = useSettingsStore((s) => s.update)
@@ -2897,6 +3051,7 @@ export function SettingsPanel({ initialPage, initialThemeTab }: { initialPage?: 
           {page === 'ai' && <AIPage profile={profile} edit={edit} />}
           {page === 'themes' && <ThemesPage initialTab={initialThemeTab} />}
           {page === 'general' && <GeneralPage />}
+          {page === 'layout' && <LayoutPage />}
           {page === 'security' && <SecurityPage />}
           {page === 'shortcuts' && <ShortcutsPage />}
           {page === 'data' && <DataPage />}

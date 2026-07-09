@@ -294,11 +294,11 @@ export const shots = [
       const repo = repoPaths['deep-history-monorepo']
       await page.evaluate((p) => window.__shot.repo.getState().select(p, { type: 'wip' }), repo)
       await page.waitForTimeout(300)
-      // Open the terminal pane (the flag only toggles, so guard it).
-      await page.evaluate(() => {
+      // Open the terminal pane for this repo (per-repo flag; toggles, so guard).
+      await page.evaluate((p) => {
         const ui = window.__shot.ui.getState()
-        if (!ui.terminalOpen) ui.toggleTerminal()
-      })
+        if (!ui.terminalOpenByRepo[p]) ui.toggleTerminal(p)
+      }, repo)
       await page.waitForTimeout(1200)
       // Type a command so the shot shows real output, not a bare prompt.
       await page.click('.xterm').catch(() => {})

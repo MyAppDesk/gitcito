@@ -186,6 +186,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     settings.shortcuts = settings.shortcuts ?? sd.shortcuts
     settings.largeFileKb = settings.largeFileKb ?? sd.largeFileKb
     settings.warnOnClose = settings.warnOnClose ?? sd.warnOnClose
+    settings.terminalPlacement = settings.terminalPlacement ?? sd.terminalPlacement
+    settings.sidebarSide = settings.sidebarSide ?? sd.sidebarSide
+    settings.rightPanelFullHeight = settings.rightPanelFullHeight ?? sd.rightPanelFullHeight
     settings.repoProfiles = settings.repoProfiles ?? sd.repoProfiles
     settings.repoLayouts = settings.repoLayouts ?? {}
     // Workspaces: wrap a pre-workspaces install's existing tabs into a default

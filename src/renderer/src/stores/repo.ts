@@ -891,11 +891,12 @@ export const repoActions = {
         return false
       }
     }
-    // Secret guard: if the repo tracks credential-looking files, warn once per
-    // session before publishing them to a remote.
+    // Secret guard: if this push would publish credential-looking files, warn
+    // once per session. Only the files in the commits actually being pushed
+    // count — secrets already tracked and pushed long ago shouldn't nag.
     if (!secretPushWarned.has(path)) {
-      const tracked = await gitApi.listTrackedFiles(path).catch(() => [] as string[])
-      const secrets = tracked.filter(isSecretFile)
+      const pushing = await gitApi.filesToPush(path, branch).catch(() => [] as string[])
+      const secrets = pushing.filter(isSecretFile)
       if (secrets.length > 0) {
         secretPushWarned.add(path)
         useUIStore.getState().openModal({

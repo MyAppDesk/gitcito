@@ -1444,6 +1444,26 @@ export const gitService = {
     return raw.split('\0').filter(Boolean)
   },
 
+  /**
+   * Files that this push would actually publish: the ones changed in the
+   * commits ahead of the upstream. Used by the secret-push guard so it only
+   * warns about credentials introduced by the unpushed commits, not every
+   * secret already tracked (and long since pushed) in the repo.
+   *
+   * With no upstream (branch never pushed), the whole history publishes, so
+   * fall back to every tracked file.
+   */
+  async filesToPush(repoPath: string, branch: string): Promise<string[]> {
+    const git = gitFor(repoPath)
+    const upstream = await git
+      .raw(['rev-parse', '--abbrev-ref', '--symbolic-full-name', `${branch}@{upstream}`])
+      .then((s) => s.trim())
+      .catch(() => '')
+    if (!upstream) return this.listTrackedFiles(repoPath)
+    const raw = await git.raw(['diff', '--name-only', '-z', `${upstream}..${branch}`]).catch(() => '')
+    return raw.split('\0').filter(Boolean)
+  },
+
   /** Commit hashes that touched `path` (file or folder) — for the graph path filter. */
   async commitsTouchingPath(repoPath: string, path: string, max = 1000): Promise<string[]> {
     const raw = await gitFor(repoPath)
@@ -3003,6 +3023,7 @@ const READ_METHODS = new Set<string>([
   'listDir',
   'listFiles',
   'listTrackedFiles',
+  'filesToPush',
   'commitsTouchingPath',
   'protectedBranches',
   'fileSizes',

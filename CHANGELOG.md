@@ -1,5 +1,13 @@
 
 
+## [2.1.0](https://github.com/MyAppDesk/gitcito/compare/v2.0.1...v2.1.0) (2026-07-09)
+
+
+### Features
+
+* add configurable workspace layout with terminal and sidebar ([ecb1ecc](https://github.com/MyAppDesk/gitcito/commit/ecb1ecc94dd456ef1621d9d719967b5607b399e6))
+* remember terminal pane visibility per repo/tab ([3c040d4](https://github.com/MyAppDesk/gitcito/commit/3c040d435771b92a65a7d953f4b00933466b9076))
+
 ## [2.0.1](https://github.com/MyAppDesk/gitcito/compare/v2.0.0...v2.0.1) (2026-07-09)
 
 

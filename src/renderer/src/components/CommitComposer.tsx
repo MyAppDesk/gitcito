@@ -19,6 +19,7 @@ import {
   type FileFilter
 } from './FileSearchBar'
 import { useT, interp, type TranslationKey } from '../i18n'
+import { openWithMenuItems } from '../lib/openWith'
 
 type ListName = 'staged' | 'unstaged'
 
@@ -167,6 +168,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
   const setFileView = useUIStore((s) => s.setFileView)
   const activeProfile = useSettingsStore((s) => s.activeProfile)
   const largeFileKb = useSettingsStore((s) => s.settings.largeFileKb)
+  const defaultOpenApp = useSettingsStore((s) => s.settings.defaultOpenApp)
   const aiEnabled = useSettingsStore((s) => s.activeProfile().ai.enabled !== false)
   // The Conventional-Commit type dropdown shows only when the profile's commit
   // style is Conventional (Settings → Profile → Preferences).
@@ -451,6 +453,10 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
       { separator: true },
       { label: shellApi.revealLabel, onClick: () => void shellApi.revealInFolder(`${path}/${file.path}`) },
       { label: t('composer.openDefaultApp'), onClick: () => void shellApi.openPath(`${path}/${file.path}`) },
+      ...openWithMenuItems(`${path}/${file.path}`, defaultOpenApp, {
+        openWithDefault: (name) => interp(t('fileTree.openWithApp'), { name }),
+        openWith: t('fileTree.openWith')
+      }),
       { label: t('common.copyFilePath'), onClick: () => void navigator.clipboard.writeText(`${path}/${file.path}`) },
       { separator: true },
       {
@@ -695,6 +701,10 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
                     { separator: true },
                     { label: shellApi.revealLabel, onClick: () => void shellApi.revealInFolder(`${path}/${f.path}`) },
                     { label: t('composer.openDefaultApp'), onClick: () => void shellApi.openPath(`${path}/${f.path}`) },
+                    ...openWithMenuItems(`${path}/${f.path}`, defaultOpenApp, {
+                      openWithDefault: (name) => interp(t('fileTree.openWithApp'), { name }),
+                      openWith: t('fileTree.openWith')
+                    }),
                     { label: t('common.copyFilePath'), onClick: () => void navigator.clipboard.writeText(`${path}/${f.path}`) }
                   ])
                 }}

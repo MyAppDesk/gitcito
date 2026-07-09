@@ -14,6 +14,7 @@ import { RemoteIcon } from './RemoteIcon'
 import { SignatureBadge } from './SignatureBadge'
 import type { RepoData } from '../stores/repo'
 import { useT, interp } from '../i18n'
+import { openWithMenuItems } from '../lib/openWith'
 
 function profileUrl(name: string, email: string, remotes: RemoteInfo[]): string | undefined {
   const origin = remotes.find((r) => r.name === 'origin')?.url ?? remotes[0]?.url
@@ -43,6 +44,7 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
   const toast = useUIStore((s) => s.toast)
   const activeProfile = useSettingsStore((s) => s.activeProfile)
   const aiEnabled = useSettingsStore((s) => s.activeProfile().ai.enabled !== false)
+  const defaultOpenApp = useSettingsStore((s) => s.settings.defaultOpenApp)
   const commit: GraphCommit | undefined = repo.commits.find((c) => c.hash === hash)
   const t = useT()
 
@@ -359,6 +361,10 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
             useUIStore.getState().openContextMenu(e.clientX, e.clientY, [
               { label: shellApi.revealLabel, onClick: () => void shellApi.revealInFolder(`${repo.path}/${f.path}`) },
               { label: t('commitPanel.openDefaultApp'), onClick: () => void shellApi.openPath(`${repo.path}/${f.path}`) },
+              ...openWithMenuItems(`${repo.path}/${f.path}`, defaultOpenApp, {
+                openWithDefault: (name) => interp(t('fileTree.openWithApp'), { name }),
+                openWith: t('fileTree.openWith')
+              }),
               { label: t('common.copyFilePath'), onClick: () => void navigator.clipboard.writeText(`${repo.path}/${f.path}`) }
             ])
           }}
@@ -367,6 +373,10 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
             useUIStore.getState().openContextMenu(e.clientX, e.clientY, [
               { label: shellApi.revealLabel, onClick: () => void shellApi.revealInFolder(`${repo.path}/${folderPath}`) },
               { label: t('commitPanel.openDefaultApp'), onClick: () => void shellApi.openPath(`${repo.path}/${folderPath}`) },
+              ...openWithMenuItems(`${repo.path}/${folderPath}`, defaultOpenApp, {
+                openWithDefault: (name) => interp(t('fileTree.openWithApp'), { name }),
+                openWith: t('fileTree.openWith')
+              }),
               { label: t('common.copyFolderPath'), onClick: () => void navigator.clipboard.writeText(`${repo.path}/${folderPath}`) }
             ])
           }}

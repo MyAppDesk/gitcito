@@ -198,20 +198,47 @@ async function settle(page, ms = 800) {
   await page.waitForTimeout(ms)
 }
 
+// Some shots drive a live subprocess (e.g. launch-configs spawns a real PTY via
+// a .vscode/launch.json config); the Electron renderer can occasionally crash
+// mid-drive ("Target page has been closed"). Retry so one flaky native crash
+// doesn't lose the shot — and, crucially, doesn't abort the whole run.
+const SHOT_ATTEMPTS = 3
+
+async function withRetry(label, fn) {
+  let lastErr
+  for (let attempt = 1; attempt <= SHOT_ATTEMPTS; attempt++) {
+    try {
+      return await fn()
+    } catch (e) {
+      lastErr = e
+      const msg = String(e?.message ?? e).split('\n')[0]
+      if (attempt < SHOT_ATTEMPTS) console.warn(`  ↻ ${label}: ${msg} — retry ${attempt + 1}/${SHOT_ATTEMPTS}`)
+    }
+  }
+  throw lastErr
+}
+
+async function capturePngTheme(shot, theme) {
+  const { app, page, userDataDir } = await launch(shot, theme)
+  try {
+    if (shot.drive) await shot.drive(page, repoPathsFor(shot))
+    await settle(page)
+    const suffix = (shot.themes ?? ['dark']).length > 1 ? `-${theme}` : ''
+    const file = join(OUT_DIR, `${shot.out}${suffix}.png`)
+    await page.screenshot({ path: file, animations: 'disabled' })
+    console.log(`  ✓ ${file.replace(ROOT + '/', '')}`)
+  } finally {
+    // A crashed app makes close()/rm() throw too — never let cleanup mask the
+    // real error or bubble past the retry boundary.
+    await app.close().catch(() => {})
+    await rm(userDataDir, { recursive: true, force: true }).catch(() => {})
+  }
+}
+
 async function capturePng(shot) {
   for (const theme of shot.themes ?? ['dark']) {
-    const { app, page, userDataDir } = await launch(shot, theme)
-    try {
-      if (shot.drive) await shot.drive(page, repoPathsFor(shot))
-      await settle(page)
-      const suffix = (shot.themes ?? ['dark']).length > 1 ? `-${theme}` : ''
-      const file = join(OUT_DIR, `${shot.out}${suffix}.png`)
-      await page.screenshot({ path: file, animations: 'disabled' })
-      console.log(`  ✓ ${file.replace(ROOT + '/', '')}`)
-    } finally {
-      await app.close()
-      await rm(userDataDir, { recursive: true, force: true })
-    }
+    const suffix = (shot.themes ?? ['dark']).length > 1 ? ` (${theme})` : ''
+    await withRetry(`${shot.out}${suffix}`, () => capturePngTheme(shot, theme))
   }
 }
 
@@ -220,6 +247,10 @@ async function captureGif(shot) {
     console.warn(`  ⚠ skipping ${shot.out}: ffmpeg not found (brew install ffmpeg)`)
     return
   }
+  await withRetry(shot.out, () => captureGifOnce(shot))
+}
+
+async function captureGifOnce(shot) {
   const theme = (shot.themes ?? ['dark'])[0]
   const { app, page, userDataDir } = await launch(shot, theme)
   const framesDir = await mkdtemp(join(tmpdir(), 'gitcito-frames-'))
@@ -282,9 +313,9 @@ async function captureGif(shot) {
     ])
     console.log(`  ✓ ${out.replace(ROOT + '/', '')} (${frames.length} frames)`)
   } finally {
-    await app.close()
-    await rm(userDataDir, { recursive: true, force: true })
-    await rm(framesDir, { recursive: true, force: true })
+    await app.close().catch(() => {})
+    await rm(userDataDir, { recursive: true, force: true }).catch(() => {})
+    await rm(framesDir, { recursive: true, force: true }).catch(() => {})
   }
 }
 
@@ -292,22 +323,34 @@ async function main() {
   await ensurePrereqs()
   const match = (s) => filters.length === 0 || filters.some((f) => s.out.includes(f))
 
+  // Never let one shot's failure abort the whole regeneration — capture what we
+  // can, report the rest at the end.
+  const failures = []
+  const run = async (shot, fn) => {
+    console.log(`▶ ${shot.out}`)
+    try {
+      await fn(shot)
+    } catch (e) {
+      failures.push(shot.out)
+      console.error(`  ✗ ${shot.out}: ${String(e?.message ?? e).split('\n')[0]}`)
+    }
+  }
+
   if (!gifOnly) {
     const todo = shots.filter(match)
     console.log(`\n📸 ${todo.length} PNG shot(s)`)
-    for (const shot of todo) {
-      console.log(`▶ ${shot.out}`)
-      await capturePng(shot)
-    }
+    for (const shot of todo) await run(shot, capturePng)
   }
 
   if (wantGif) {
     const todo = clips.filter(match)
     console.log(`\n🎬 ${todo.length} GIF clip(s)`)
-    for (const shot of todo) {
-      console.log(`▶ ${shot.out}`)
-      await captureGif(shot)
-    }
+    for (const shot of todo) await run(shot, captureGif)
+  }
+
+  if (failures.length) {
+    console.error(`\n⚠ ${failures.length} shot(s) failed after ${SHOT_ATTEMPTS} attempts: ${failures.join(', ')}`)
+    process.exit(1)
   }
   console.log('\n✅ done')
 }

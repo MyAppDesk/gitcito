@@ -188,7 +188,16 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     settings.repoLayouts = settings.repoLayouts ?? {}
     // Workspaces: wrap a pre-workspaces install's existing tabs into a default
     // workspace, then load the active workspace's tabs into the live view.
-    if (!settings.workspaces?.length) {
+    // `defaultSettings()` (merged in by the main process on read) seeds an empty
+    // `default` workspace, so a genuinely un-migrated file — one with live `tabs`
+    // but no real workspace — shows up here as that pristine empty default. Treat
+    // it the same as a missing `workspaces` and wrap the live tabs, or they'd be
+    // discarded at the `settings.tabs = aw.tabs` step below.
+    const pristineDefaultWs =
+      settings.workspaces?.length === 1 &&
+      settings.workspaces[0].id === 'default' &&
+      !settings.workspaces[0].tabs?.length
+    if (!settings.workspaces?.length || (pristineDefaultWs && settings.tabs?.length)) {
       settings.workspaces = [{ id: 'default', name: 'Gitcito', tabs: settings.tabs, activeTabId: settings.activeTabId }]
     } else if (
       settings.workspaces.length === 1 &&

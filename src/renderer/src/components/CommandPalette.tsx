@@ -28,7 +28,8 @@ import {
   Keyboard,
   CircleDot,
   Sparkles,
-  ArrowLeftRight
+  ArrowLeftRight,
+  FolderGit2
 } from 'lucide-react'
 import { useUIStore } from '../stores/ui'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
@@ -42,6 +43,7 @@ import { useT, type TranslationKey } from '../i18n'
 // Display label for a group id (groups stay English internally for sorting).
 const GROUP_KEYS: Record<string, TranslationKey> = {
   Recent: 'cmdp.group.recent',
+  Repos: 'cmdp.group.repos',
   Actions: 'cmdp.group.actions',
   Branches: 'cmdp.group.branches',
   Commits: 'cmdp.group.commits',
@@ -82,7 +84,7 @@ function fuzzyScore(query: string, text: string): number | null {
   return score
 }
 
-const GROUP_ORDER = ['Recent', 'Actions', 'Branches', 'Commits', 'Files']
+const GROUP_ORDER = ['Recent', 'Repos', 'Actions', 'Branches', 'Commits', 'Files']
 
 export function CommandPalette(): React.JSX.Element {
   const t = useT()
@@ -161,6 +163,27 @@ export function CommandPalette(): React.JSX.Element {
               })
             }
       )
+    }
+
+    // ── Repos ── (jump to any open repo across every tab/group)
+    const settings = useSettingsStore.getState()
+    for (const tab of tabs) {
+      if (tab.kind === 'page') continue
+      for (const r of tab.repos) {
+        if (r.path === repoPath) continue // already the active repo
+        list.push({
+          id: `jump:${tab.id}:${r.path}`,
+          title: r.name,
+          subtitle: tab.kind === 'group' ? tab.name : r.path,
+          group: 'Repos',
+          keywords: r.path,
+          icon: <FolderGit2 size={15} />,
+          run: act(() => {
+            settings.setActiveTab(tab.id)
+            if (tab.kind === 'group') settings.setGroupActiveRepo(tab.id, r.path)
+          })
+        })
+      }
     }
 
     if (!repo) return list
@@ -258,7 +281,7 @@ export function CommandPalette(): React.JSX.Element {
     }
 
     return list
-  }, [repo, files, setOpen, aiEnabled, t, cliInstalled])
+  }, [repo, repoPath, tabs, files, setOpen, aiEnabled, t, cliInstalled])
 
   // Usage stats, refreshed each time the palette opens.
   const frec = useMemo(() => (open ? getFrecency() : {}), [open])
@@ -275,7 +298,7 @@ export function CommandPalette(): React.JSX.Element {
         .map((x) => ({ ...x.c, group: 'Recent' }))
       const recentIds = new Set(recents.map((r) => r.id))
       const base = commands.filter(
-        (c) => (c.group === 'Actions' || c.group === 'Branches') && !recentIds.has(c.id)
+        (c) => (c.group === 'Repos' || c.group === 'Actions' || c.group === 'Branches') && !recentIds.has(c.id)
       )
       return [...recents, ...base].slice(0, 60)
     }

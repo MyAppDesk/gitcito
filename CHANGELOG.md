@@ -1,5 +1,12 @@
 
 
+## [1.25.0](https://github.com/MyAppDesk/gitcito/compare/v1.24.2...v1.25.0) (2026-07-09)
+
+
+### Performance Improvements
+
+* implement LRU caching and read/write locks for git operations ([ecdc2ae](https://github.com/MyAppDesk/gitcito/commit/ecdc2aefdc6bf6939da96e778bd12d5b95b91795))
+
 ## [1.24.2](https://github.com/MyAppDesk/gitcito/compare/v1.24.1...v1.24.2) (2026-07-06)
 
 ## [1.24.1](https://github.com/MyAppDesk/gitcito/compare/v1.24.0...v1.24.1) (2026-07-05)

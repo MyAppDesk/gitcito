@@ -159,6 +159,9 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
   })
   const lastClicked = useRef<string | null>(null)
   const toast = useUIStore((s) => s.toast)
+  // A mutating git op is queued/running — gate commit/discard so a second
+  // action can't be fired before the first settles.
+  const inflight = useUIStore((s) => s.inflight > 0)
   const openContextMenu = useUIStore((s) => s.openContextMenu)
   const fileView = useUIStore((s) => s.fileView)
   const setFileView = useUIStore((s) => s.setFileView)
@@ -995,7 +998,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
           </label>
           <motion.button
             className="btn primary commit-btn"
-            disabled={(!summary.trim() && !amend) || (staged.length === 0 && !amend)}
+            disabled={inflight || (!summary.trim() && !amend) || (staged.length === 0 && !amend)}
             onClick={() => void doCommit()}
             whileTap={{ scale: 0.97 }}
           >

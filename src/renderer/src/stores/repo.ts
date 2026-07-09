@@ -109,7 +109,7 @@ interface RepoStoreState {
   drafts: Record<string, string>
 
   ensure(path: string): Promise<void>
-  refresh(path: string, opts?: { light?: boolean }): Promise<void>
+  refresh(path: string, opts?: { light?: boolean; only?: RefreshSlice[] }): Promise<void>
   patch(path: string, partial: Partial<RepoData>): void
   select(path: string, sel: Selection | null): void
   setDraft(path: string, value: string): void
@@ -121,7 +121,7 @@ interface RepoStoreState {
   refreshRemoteTags(path: string): Promise<void>
   refreshCiStatuses(path: string): Promise<void>
 
-  run(path: string, label: string, fn: () => Promise<void>, undoEntry?: UndoEntry, op?: 'push' | 'pull' | 'fetch' | null, onError?: (message: string) => boolean): Promise<boolean>
+  run(path: string, label: string, fn: () => Promise<void>, undoEntry?: UndoEntry, op?: 'push' | 'pull' | 'fetch' | null, onError?: (message: string) => boolean, refetch?: RefreshSlice[]): Promise<boolean>
   undo(path: string): Promise<void>
   redo(path: string): Promise<void>
 }
@@ -167,6 +167,142 @@ function conflictHint(msg: string): string {
   return 'Merge has conflicts. Resolve files in the Conflicted files panel, then Continue.'
 }
 
+// ─── Command queue + refresh coalescing (perf/reliability) ─────────────────
+//
+// Which slices of repo state a refresh should re-read. Omitting a slice leaves
+// its previous value (and, crucially, its array *identity*) untouched — so a
+// stage/stash refresh that excludes 'log' does not hand the graph a fresh
+// `commits` array, and the layout memo never invalidates.
+export type RefreshSlice =
+  | 'log'
+  | 'branches'
+  | 'status'
+  | 'stashes'
+  | 'remotes'
+  | 'mergeState'
+  | 'worktrees'
+  | 'submodules'
+  | 'treeStatus'
+
+const ALL_SLICES: RefreshSlice[] = [
+  'log',
+  'branches',
+  'status',
+  'stashes',
+  'remotes',
+  'mergeState',
+  'worktrees',
+  'submodules',
+  'treeStatus'
+]
+
+/** How long the FS watcher ignores its own repo after a local git write, so the
+ *  app's own mutation doesn't trigger a second, redundant full refresh. */
+const WATCH_MUTE_MS = 2000
+
+function muteWatcher(path: string): void {
+  // Optional-chained: window.api is absent under unit tests / headless stubs.
+  try {
+    ;(window as unknown as { api?: { watch?: { mute?: (p: string, ms: number) => void } } }).api?.watch?.mute?.(
+      path,
+      WATCH_MUTE_MS
+    )
+  } catch {
+    /* ignore — muting is a best-effort optimisation */
+  }
+}
+
+// Serialize every mutating op per repo. `next` chains onto the tail so the user
+// cannot start action B until action A — *including its post-action refresh* —
+// has fully settled. This is the core "can't act until the last action is good"
+// guarantee; the simple-git instance already serializes at the process level,
+// but this makes the whole app-level unit (op + refresh) atomic and ordered.
+const cmdChains = new Map<string, Promise<unknown>>()
+function enqueue<T>(path: string, task: () => Promise<T>): Promise<T> {
+  const prev = cmdChains.get(path) ?? Promise.resolve()
+  const next = prev.catch(() => {}).then(task)
+  cmdChains.set(path, next)
+  void next.catch(() => {}).finally(() => {
+    if (cmdChains.get(path) === next) cmdChains.delete(path)
+  })
+  return next
+}
+
+// Coalesce concurrent refreshes for a path into one run, merging the requested
+// slices. A burst of (post-action refresh + watcher + poll + focus) collapses
+// to a single execution; requests that arrive mid-flight are folded into a
+// trailing run rather than each re-shelling 9 git processes.
+type PendingRefresh = Set<RefreshSlice> | 'full'
+const refreshRunning = new Map<string, Promise<void>>()
+const refreshPending = new Map<string, PendingRefresh>()
+
+function mergePending(path: string, req: PendingRefresh): void {
+  const cur = refreshPending.get(path)
+  if (cur === 'full' || req === 'full') {
+    refreshPending.set(path, 'full')
+    return
+  }
+  if (!cur) {
+    refreshPending.set(path, new Set(req))
+    return
+  }
+  for (const s of req) cur.add(s)
+}
+
+// Re-read only the requested slices of repo state. Slices left out keep their
+// previous value AND array identity, so excluding 'log'/'stashes' means the
+// graph's `commits`/`stashes` memos never invalidate → no relayout.
+async function doRefresh(path: string, slices: RefreshSlice[]): Promise<void> {
+  const store = useRepoStore.getState()
+  const repo = store.repos[path]
+  const maxCount = repo?.maxCount ?? 400
+  const want = new Set(slices)
+  const keep = <T>(cur: T | undefined, want: boolean, fetch: () => Promise<T>, fallback: T): Promise<T> =>
+    want ? fetch() : Promise.resolve(cur ?? fallback)
+  try {
+    const [commits, branches, status, stashes, remotes, mergeState, worktrees, submodules, treeStatus] =
+      await Promise.all([
+        keep(repo?.commits, want.has('log'), () => gitApi.log(path, maxCount), []),
+        keep(repo?.branches, want.has('branches'), () => gitApi.branches(path), {
+          current: '',
+          locals: [],
+          remotes: [],
+          tags: []
+        }),
+        keep(repo?.status, want.has('status'), () => gitApi.status(path), null),
+        keep(repo?.stashes, want.has('stashes'), () => gitApi.stashes(path), []),
+        keep(repo?.remotes, want.has('remotes'), () => gitApi.remotes(path), []),
+        keep(repo?.mergeState, want.has('mergeState'), () => gitApi.mergeState(path), null),
+        keep(repo?.worktrees, want.has('worktrees'), () => gitApi.worktrees(path).catch(() => []), []),
+        keep(repo?.submodules, want.has('submodules'), () => gitApi.submodules(path).catch(() => []), []),
+        keep(repo?.treeStatus, want.has('treeStatus'), () => gitApi.treeStatus(path).catch(() => ({})), {})
+      ])
+    store.patch(path, {
+      commits,
+      branches,
+      status,
+      stashes,
+      remotes,
+      mergeState,
+      worktrees,
+      submodules,
+      treeStatus,
+      loading: false,
+      notGit: false,
+      lastRefreshAt: Date.now()
+    })
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    // Opened a plain folder, not a repo — offer to `git init` instead of a toast.
+    if (/not a git repository/i.test(message)) {
+      store.patch(path, { loading: false, notGit: true })
+      return
+    }
+    store.patch(path, { loading: false })
+    toast('error', message)
+  }
+}
+
 export const useRepoStore = create<RepoStoreState>((set, get) => ({
   repos: {},
   drafts: {},
@@ -189,49 +325,37 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
     void get().refreshReleases(path, { silent: true })
   },
 
-  refresh: async (path, opts) => {
-    const { patch } = get()
-    const maxCount = get().repos[path]?.maxCount ?? 400
-    // A "light" refresh skips the (potentially large) commit-log query and only
-    // re-reads cheap local state. Used by the periodic poll and on window focus.
-    const light = opts?.light ?? false
-    try {
-      const [commits, branches, status, stashes, remotes, mergeState, worktrees, submodules, treeStatus] =
-        await Promise.all([
-          light ? Promise.resolve(get().repos[path]?.commits ?? []) : gitApi.log(path, maxCount),
-          gitApi.branches(path),
-          gitApi.status(path),
-          gitApi.stashes(path),
-          gitApi.remotes(path),
-          gitApi.mergeState(path),
-          gitApi.worktrees(path).catch(() => []),
-          gitApi.submodules(path).catch(() => []),
-          gitApi.treeStatus(path).catch(() => ({}))
-        ])
-      patch(path, {
-        commits,
-        branches,
-        status,
-        stashes,
-        remotes,
-        mergeState,
-        worktrees,
-        submodules,
-        treeStatus,
-        loading: false,
-        notGit: false,
-        lastRefreshAt: Date.now()
-      })
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err)
-      // Opened a plain folder, not a repo — offer to `git init` instead of a toast.
-      if (/not a git repository/i.test(message)) {
-        patch(path, { loading: false, notGit: true })
-        return
+  // Public refresh: coalesces concurrent calls per path and merges their
+  // requested slices, then runs `doRefresh` once (repeating only if new
+  // requests arrived while it was in flight). `only` re-reads just those slices
+  // (leaving other array identities stable so the graph won't relayout); `light`
+  // is the preset "everything except the commit log".
+  refresh: (path, opts) => {
+    const req: PendingRefresh = opts?.only
+      ? new Set(opts.only)
+      : opts?.light
+        ? new Set(ALL_SLICES.filter((s) => s !== 'log'))
+        : 'full'
+    mergePending(path, req)
+    const running = refreshRunning.get(path)
+    if (running) return running
+    const p = (async () => {
+      try {
+        // No `await` between the `!pend` check and the finally that clears
+        // `refreshRunning`, so a concurrent refresh() cannot lose its request:
+        // it either merges into `pend` during an await, or starts a fresh run.
+        while (true) {
+          const pend = refreshPending.get(path)
+          if (!pend) break
+          refreshPending.delete(path)
+          await doRefresh(path, pend === 'full' ? ALL_SLICES : [...pend])
+        }
+      } finally {
+        refreshRunning.delete(path)
       }
-      patch(path, { loading: false })
-      toast('error', message)
-    }
+    })()
+    refreshRunning.set(path, p)
+    return p
   },
 
   select: (path, selected) => get().patch(path, { selected }),
@@ -333,78 +457,99 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
     }
   },
 
-  run: async (path, label, fn, undoEntry, op = null, onError) => {
-    const ui = useUIStore.getState()
-    ui.setBusy(label, op)
-    try {
-      await fn()
-      toast('success', label)
-      if (undoEntry) {
-        const repo = get().repos[path]
-        if (repo) {
-          get().patch(path, {
-            undoStack: [...repo.undoStack, undoEntry].slice(-30),
-            redoStack: []
-          })
+  run: (path, label, fn, undoEntry, op = null, onError, refetch) =>
+    enqueue(path, async () => {
+      const ui = useUIStore.getState()
+      ui.beginInflight()
+      ui.setBusy(label, op)
+      // Ignore the FS-watch event our own write is about to produce; the
+      // targeted refresh below already reflects it.
+      muteWatcher(path)
+      try {
+        await fn()
+        toast('success', label)
+        if (undoEntry) {
+          const repo = get().repos[path]
+          if (repo) {
+            get().patch(path, {
+              undoStack: [...repo.undoStack, undoEntry].slice(-30),
+              redoStack: []
+            })
+          }
         }
+        return true
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err)
+        if (onError?.(message)) return false
+        if (isConflictErrorMessage(message)) toast('info', conflictHint(message))
+        else toast('error', message)
+        return false
+      } finally {
+        const uiEnd = useUIStore.getState()
+        uiEnd.setBusy(null)
+        // The action is only "settled" once its refresh has completed — this
+        // await is what makes the next queued action wait for a good state.
+        await get().refresh(path, refetch ? { only: refetch } : undefined)
+        uiEnd.endInflight()
       }
-      return true
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err)
-      if (onError?.(message)) return false
-      if (isConflictErrorMessage(message)) toast('info', conflictHint(message))
-      else toast('error', message)
-      return false
-    } finally {
-      useUIStore.getState().setBusy(null)
-      await get().refresh(path)
-    }
-  },
+    }),
 
-  undo: async (path) => {
+  undo: (path) => {
     const repo = get().repos[path]
     const entry = repo?.undoStack[repo.undoStack.length - 1]
     if (!repo || !entry) {
       toast('info', 'Nothing to undo')
-      return
+      return Promise.resolve()
     }
-    useUIStore.getState().setBusy(`Undo: ${entry.label}`)
-    try {
-      await entry.undo()
-      get().patch(path, {
-        undoStack: repo.undoStack.slice(0, -1),
-        redoStack: [...repo.redoStack, entry]
-      })
-      toast('success', `Undone: ${entry.label}`)
-    } catch (err) {
-      toast('error', err instanceof Error ? err.message : String(err))
-    } finally {
-      useUIStore.getState().setBusy(null)
-      await get().refresh(path)
-    }
+    return enqueue(path, async () => {
+      const ui = useUIStore.getState()
+      ui.beginInflight()
+      ui.setBusy(`Undo: ${entry.label}`)
+      muteWatcher(path)
+      try {
+        await entry.undo()
+        get().patch(path, {
+          undoStack: repo.undoStack.slice(0, -1),
+          redoStack: [...repo.redoStack, entry]
+        })
+        toast('success', `Undone: ${entry.label}`)
+      } catch (err) {
+        toast('error', err instanceof Error ? err.message : String(err))
+      } finally {
+        useUIStore.getState().setBusy(null)
+        await get().refresh(path)
+        useUIStore.getState().endInflight()
+      }
+    })
   },
 
-  redo: async (path) => {
+  redo: (path) => {
     const repo = get().repos[path]
     const entry = repo?.redoStack[repo.redoStack.length - 1]
     if (!repo || !entry) {
       toast('info', 'Nothing to redo')
-      return
+      return Promise.resolve()
     }
-    useUIStore.getState().setBusy(`Redo: ${entry.label}`)
-    try {
-      await entry.redo()
-      get().patch(path, {
-        redoStack: repo.redoStack.slice(0, -1),
-        undoStack: [...repo.undoStack, entry]
-      })
-      toast('success', `Redone: ${entry.label}`)
-    } catch (err) {
-      toast('error', err instanceof Error ? err.message : String(err))
-    } finally {
-      useUIStore.getState().setBusy(null)
-      await get().refresh(path)
-    }
+    return enqueue(path, async () => {
+      const ui = useUIStore.getState()
+      ui.beginInflight()
+      ui.setBusy(`Redo: ${entry.label}`)
+      muteWatcher(path)
+      try {
+        await entry.redo()
+        get().patch(path, {
+          redoStack: repo.redoStack.slice(0, -1),
+          undoStack: [...repo.undoStack, entry]
+        })
+        toast('success', `Redone: ${entry.label}`)
+      } catch (err) {
+        toast('error', err instanceof Error ? err.message : String(err))
+      } finally {
+        useUIStore.getState().setBusy(null)
+        await get().refresh(path)
+        useUIStore.getState().endInflight()
+      }
+    })
   }
 }))
 
@@ -412,10 +557,16 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
 
 // Push the branch, surfacing a helpful recovery dialog when the remote rejects
 // a non-force push because it has commits we don't have locally.
-async function runPush(path: string, branch: string, force: boolean): Promise<boolean> {
+function runPush(path: string, branch: string, force: boolean): Promise<boolean> {
+  return enqueue(path, () => runPushInner(path, branch, force))
+}
+
+async function runPushInner(path: string, branch: string, force: boolean): Promise<boolean> {
   const ui = useUIStore.getState()
+  ui.beginInflight()
   const label = force ? `Force pushed ${branch}` : `Pushed ${branch}`
   ui.setBusy(force ? `Force pushing ${branch}` : `Pushing ${branch}`, 'push')
+  muteWatcher(path)
   try {
     await gitApi.push(path, branch, { force })
     toast('success', label)
@@ -442,17 +593,30 @@ async function runPush(path: string, branch: string, force: boolean): Promise<bo
     toast('error', message)
     return false
   } finally {
-    useUIStore.getState().setBusy(null)
+    const ui2 = useUIStore.getState()
+    ui2.setBusy(null)
     await useRepoStore.getState().refresh(path)
+    ui2.endInflight()
   }
 }
 
 // Check out a remote branch as a local one. When the local branch already
 // exists and has diverged from the remote, a fast-forward is impossible, so we
 // surface a dialog letting the user rebase / merge / reset instead of failing.
-async function runCheckoutRemote(path: string, fullName: string, localName: string, remote?: string): Promise<boolean> {
+function runCheckoutRemote(path: string, fullName: string, localName: string, remote?: string): Promise<boolean> {
+  return enqueue(path, () => runCheckoutRemoteInner(path, fullName, localName, remote))
+}
+
+async function runCheckoutRemoteInner(
+  path: string,
+  fullName: string,
+  localName: string,
+  remote?: string
+): Promise<boolean> {
   const ui = useUIStore.getState()
+  ui.beginInflight()
   ui.setBusy(`Checking out ${localName}`)
+  muteWatcher(path)
   try {
     const res = await gitApi.checkoutRemote(path, fullName, localName, remote)
     if (res.diverged) {
@@ -473,33 +637,41 @@ async function runCheckoutRemote(path: string, fullName: string, localName: stri
     toast('error', err instanceof Error ? err.message : String(err))
     return false
   } finally {
-    ui.setBusy(null)
+    const ui2 = useUIStore.getState()
+    ui2.setBusy(null)
     await useRepoStore.getState().refresh(path)
+    ui2.endInflight()
   }
 }
 
-async function runResolveDivergedCheckout(
+function runResolveDivergedCheckout(
   path: string,
   fullName: string,
   localName: string,
   strategy: 'rebase' | 'merge' | 'reset',
   backup: boolean
 ): Promise<boolean> {
-  const ui = useUIStore.getState()
-  const verb = strategy === 'rebase' ? 'Rebasing' : strategy === 'merge' ? 'Merging' : 'Resetting'
-  ui.setBusy(`${verb} ${localName}`)
-  try {
-    const { backupRef } = await gitApi.resolveDivergedCheckout(path, fullName, localName, strategy, backup)
-    const done = strategy === 'rebase' ? 'Rebased' : strategy === 'merge' ? 'Merged' : 'Reset'
-    toast('success', backupRef ? `${done} ${localName} — backup saved as ${backupRef}` : `${done} ${localName}`)
-    return true
-  } catch (err) {
-    toast('error', err instanceof Error ? err.message : String(err))
-    return false
-  } finally {
-    ui.setBusy(null)
-    await useRepoStore.getState().refresh(path)
-  }
+  return enqueue(path, async () => {
+    const ui = useUIStore.getState()
+    ui.beginInflight()
+    const verb = strategy === 'rebase' ? 'Rebasing' : strategy === 'merge' ? 'Merging' : 'Resetting'
+    ui.setBusy(`${verb} ${localName}`)
+    muteWatcher(path)
+    try {
+      const { backupRef } = await gitApi.resolveDivergedCheckout(path, fullName, localName, strategy, backup)
+      const done = strategy === 'rebase' ? 'Rebased' : strategy === 'merge' ? 'Merged' : 'Reset'
+      toast('success', backupRef ? `${done} ${localName} — backup saved as ${backupRef}` : `${done} ${localName}`)
+      return true
+    } catch (err) {
+      toast('error', err instanceof Error ? err.message : String(err))
+      return false
+    } finally {
+      const ui2 = useUIStore.getState()
+      ui2.setBusy(null)
+      await useRepoStore.getState().refresh(path)
+      ui2.endInflight()
+    }
+  })
 }
 
 export const repoActions = {
@@ -509,7 +681,7 @@ export const repoActions = {
       label: `checkout ${ref}`,
       undo: () => gitApi.checkout(path, prev ?? '-'),
       redo: () => gitApi.checkout(path, ref)
-    })
+    }, null, undefined, ['branches', 'status'])
   },
 
   checkoutRemote: (path: string, fullName: string, localName: string, remote?: string) =>
@@ -762,7 +934,7 @@ export const repoActions = {
       label: 'stash',
       undo: () => gitApi.stashPop(path, 0),
       redo: () => gitApi.stash(path, message)
-    }),
+    }, null, undefined, ['status', 'stashes']),
 
   stashPush: (path: string, message: string | undefined, paths: string[], keepIndex: boolean) =>
     useRepoStore.getState().run(
@@ -773,7 +945,10 @@ export const repoActions = {
         label: 'stash',
         undo: () => gitApi.stashPop(path, 0),
         redo: () => gitApi.stashPush(path, message, paths, keepIndex)
-      }
+      },
+      null,
+      undefined,
+      ['status', 'stashes']
     ),
 
   stashPop: (path: string, index = 0) =>
@@ -787,18 +962,19 @@ export const repoActions = {
         redo: () => gitApi.stashPop(path, 0)
       },
       null,
-      (msg) => promptStashOverwrite(msg, path, index, true)
+      (msg) => promptStashOverwrite(msg, path, index, true),
+      ['status', 'stashes']
     ),
 
   stashToBranch: (path: string, branch: string, index = 0) =>
-    useRepoStore.getState().run(path, `Created branch ${branch} from stash`, () => gitApi.stashToBranch(path, branch, index)),
+    useRepoStore.getState().run(path, `Created branch ${branch} from stash`, () => gitApi.stashToBranch(path, branch, index), undefined, null, undefined, ['status', 'stashes', 'branches']),
 
   stashApply: (path: string, index = 0) =>
     useRepoStore
       .getState()
       .run(path, 'Applied stash', () => gitApi.stashApply(path, index), undefined, null, (msg) =>
         promptStashOverwrite(msg, path, index, false)
-      ),
+      , ['status', 'stashes']),
 
   stashApplyOverwrite: (path: string, index = 0, pop = false) =>
     useRepoStore
@@ -806,7 +982,11 @@ export const repoActions = {
       .run(
         path,
         pop ? 'Popped stash (overwrote untracked files)' : 'Applied stash (overwrote untracked files)',
-        () => gitApi.stashApplyOverwrite(path, index, pop)
+        () => gitApi.stashApplyOverwrite(path, index, pop),
+        undefined,
+        null,
+        undefined,
+        ['status', 'stashes']
       ),
 
   stashApplyFiles: (path: string, sha: string, tracked: string[], untracked: string[]) =>
@@ -814,20 +994,20 @@ export const repoActions = {
       .getState()
       .run(path, `Restored ${tracked.length + untracked.length} file(s) from stash`, () =>
         gitApi.stashApplyFiles(path, sha, tracked, untracked)
-      ),
+      , undefined, null, undefined, ['status', 'stashes']),
 
   stashDrop: (path: string, index = 0) =>
-    useRepoStore.getState().run(path, 'Dropped stash', () => gitApi.stashDrop(path, index)),
+    useRepoStore.getState().run(path, 'Dropped stash', () => gitApi.stashDrop(path, index), undefined, null, undefined, ['stashes']),
 
   renameStash: (path: string, index: number, message: string) =>
-    useRepoStore.getState().run(path, 'Renamed stash', () => gitApi.renameStash(path, index, message)),
+    useRepoStore.getState().run(path, 'Renamed stash', () => gitApi.renameStash(path, index, message), undefined, null, undefined, ['stashes']),
 
   commit: (path: string, message: string, amend = false) =>
     useRepoStore.getState().run(path, amend ? 'Amended commit' : 'Committed', () => gitApi.commit(path, message, amend), {
       label: 'commit',
       undo: () => gitApi.reset(path, 'HEAD~1', 'soft'),
       redo: () => gitApi.commit(path, message)
-    }),
+    }, null, undefined, ['log', 'status', 'branches']),
 
   amendCommitMessage: (path: string, message: string, previousMessage?: string) =>
     useRepoStore
@@ -915,13 +1095,13 @@ export const repoActions = {
   refreshCiStatuses: (path: string) => useRepoStore.getState().refreshCiStatuses(path),
 
   stage: (path: string, files: string[]) =>
-    useRepoStore.getState().run(path, `Staged ${files.length} file(s)`, () => gitApi.stage(path, files)),
-  stageAll: (path: string) => useRepoStore.getState().run(path, 'Staged all', () => gitApi.stageAll(path)),
+    useRepoStore.getState().run(path, `Staged ${files.length} file(s)`, () => gitApi.stage(path, files), undefined, null, undefined, ['status', 'treeStatus']),
+  stageAll: (path: string) => useRepoStore.getState().run(path, 'Staged all', () => gitApi.stageAll(path), undefined, null, undefined, ['status', 'treeStatus']),
   unstage: (path: string, files: string[]) =>
-    useRepoStore.getState().run(path, `Unstaged ${files.length} file(s)`, () => gitApi.unstage(path, files)),
-  unstageAll: (path: string) => useRepoStore.getState().run(path, 'Unstaged all', () => gitApi.unstageAll(path)),
+    useRepoStore.getState().run(path, `Unstaged ${files.length} file(s)`, () => gitApi.unstage(path, files), undefined, null, undefined, ['status', 'treeStatus']),
+  unstageAll: (path: string) => useRepoStore.getState().run(path, 'Unstaged all', () => gitApi.unstageAll(path), undefined, null, undefined, ['status', 'treeStatus']),
   discard: (path: string, files: string[], untracked: boolean) =>
-    useRepoStore.getState().run(path, `Discarded ${files.length} file(s)`, () => gitApi.discard(path, files, untracked)),
+    useRepoStore.getState().run(path, `Discarded ${files.length} file(s)`, () => gitApi.discard(path, files, untracked), undefined, null, undefined, ['status', 'treeStatus']),
 
   addToGitignore: (path: string, patterns: string[], label?: string) =>
     useRepoStore.getState().run(path, `Added ${label ?? `${patterns.length} entr${patterns.length === 1 ? 'y' : 'ies'}`} to .gitignore`, async () => {

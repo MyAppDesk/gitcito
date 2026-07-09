@@ -218,7 +218,6 @@ function ConflictBanner({ repo }: { repo: RepoData }): React.JSX.Element | null 
 export default function App(): React.JSX.Element {
   const settingsLoaded = useSettingsStore((s) => s.loaded)
   const settings = useSettingsStore((s) => s.settings)
-  const repos = useRepoStore((s) => s.repos)
   const ensure = useRepoStore((s) => s.ensure)
   const terminalOpen = useUIStore((s) => s.terminalOpen)
   const fileView = useUIStore((s) => s.fileView)
@@ -537,7 +536,11 @@ export default function App(): React.JSX.Element {
     return () => clearInterval(interval)
   }, [activeRepoPath, settings.wipSnapshotMinutes])
 
-  const repo = activeRepoPath ? repos[activeRepoPath] : null
+  // Subscribe to ONLY the active repo, not the whole `repos` record — a patch to
+  // a background repo (or a cheap field on any repo) no longer re-renders the
+  // active view (Toolbar/Sidebar/GraphView…). TitleBar owns its own repos
+  // subscription for the per-tab status dots.
+  const repo = useRepoStore((s) => (activeRepoPath ? s.repos[activeRepoPath] ?? null : null))
   const forceConflictPanel = !!repo?.mergeState && (repo.status?.conflicted.length ?? 0) > 0
 
   if (!settingsLoaded) {

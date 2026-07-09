@@ -8,6 +8,10 @@ interface RepoWatch {
   timer: NodeJS.Timeout | null
   /** Whether a `.git` metadata change occurred during the current debounce window. */
   gitChanged: boolean
+  /** Epoch ms until which change events are ignored. Set by `watch:mute` right
+   *  before the app performs its own git write, so the app's own mutation does
+   *  not trigger a second, redundant refresh on top of its post-action one. */
+  muteUntil: number
 }
 
 // One active watch per renderer (keyed by webContents id). The app uses a
@@ -67,9 +71,11 @@ function setWatch(sender: WebContents, repoPath: string): void {
     })
   }
 
-  const state: RepoWatch = { path: repoPath, watchers: [], timer: null, gitChanged: false }
+  const state: RepoWatch = { path: repoPath, watchers: [], timer: null, gitChanged: false, muteUntil: 0 }
 
   const onChange = (rel: string | null): void => {
+    // Ignore events during a self-mute window (the app's own git write).
+    if (Date.now() < state.muteUntil) return
     if (rel && isNoise(rel)) return
     if (rel && isGitMeta(rel)) state.gitChanged = true
     if (state.timer) clearTimeout(state.timer)
@@ -110,5 +116,11 @@ function setWatch(sender: WebContents, repoPath: string): void {
 export function registerWatcherHandlers(): void {
   ipcMain.handle('watch:repo', (e, repoPath: string | null) => {
     setWatch(e.sender, repoPath ?? '')
+  })
+  // Mute this renderer's active watch for `ms` — used right before the app's own
+  // git write so the resulting FS churn doesn't fire a redundant refresh.
+  ipcMain.handle('watch:mute', (e, repoPath: string, ms: number) => {
+    const w = active.get(e.sender.id)
+    if (w && w.path === repoPath) w.muteUntil = Date.now() + Math.max(0, ms)
   })
 }

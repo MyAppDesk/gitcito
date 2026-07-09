@@ -496,7 +496,11 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
       })
     }
     return out
-  }, [repo.commits, repo.stashes, hasWip, repo.status, linearOnly])
+    // Depends on the `hasWip` boolean, NOT the whole `repo.status` object: the
+    // layout only cares whether a WIP row exists, so staging/unstaging while
+    // already dirty (status object replaced, hasWip unchanged) no longer forces
+    // a full graph relayout. Only a clean↔dirty toggle rebuilds.
+  }, [repo.commits, repo.stashes, hasWip, linearOnly])
 
   // Stashes are laid out as right-side spurs so they never displace the trunk.
   const topology = graphStyle.topology ?? 'full'
@@ -539,9 +543,14 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
     ro.observe(el)
     return () => ro.disconnect()
   }, [])
+  // Shared hash→commit index, rebuilt only when the commit set changes — not on
+  // every hover. Reused by the branch preview and branch-ownership walks below.
+  const commitByHash = useMemo(
+    () => new Map(displayCommits.map((c) => [c.hash, c])),
+    [displayCommits]
+  )
   const preview = useMemo(() => {
     if (!previewHash) return null
-    const byHash = new Map(displayCommits.map((c) => [c.hash, c]))
     const hashes = new Set<string>()
     const rows = new Set<number>()
     const stack = [previewHash]
@@ -551,17 +560,17 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
       hashes.add(h)
       const node = layout.nodes.get(h)
       if (node) rows.add(node.row)
-      for (const p of byHash.get(h)?.parents ?? []) stack.push(p)
+      for (const p of commitByHash.get(h)?.parents ?? []) stack.push(p)
     }
     return { hashes, rows }
-  }, [previewHash, displayCommits, layout])
+  }, [previewHash, commitByHash, layout])
 
   // Owning branch per commit: walk each branch tip's ancestry and tag every
   // commit with the *nearest* tip (fewest steps away). Feature commits end up
   // owned by their feature branch rather than mainline. Used to label a hovered
   // commit that carries no ref of its own.
   const branchOf = useMemo(() => {
-    const byHash = new Map(displayCommits.map((c) => [c.hash, c]))
+    const byHash = commitByHash
     const owner = new Map<string, string>()
     const bestDepth = new Map<string, number>()
     const tips: { hash: string; label: string; rank: number }[] = []
@@ -597,6 +606,16 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
   const lastRow = Math.min(displayCommits.length - 1, Math.ceil((scrollTop + effViewport) / ROW_H) + OVERSCAN)
   const visibleRows: number[] = []
   for (let i = firstRow; i <= lastRow; i++) visibleRows.push(i)
+  // Edges intersecting the visible window, painted shallow-last so trunk rails
+  // sit above the side-branches they spawn. Memoized on [layout, firstRow,
+  // lastRow] so this O(E) filter+sort runs once per row-crossing instead of on
+  // every scroll pixel (scrollTop updates are rAF-throttled below).
+  const orderedEdges = useMemo(() => {
+    const vis = layout.edges.filter(
+      (e) => Math.max(e.fromRow, e.toRow) >= firstRow && Math.min(e.fromRow, e.toRow) <= lastRow
+    )
+    return vis.sort((a, b) => Math.max(b.fromLane, b.toLane) - Math.max(a.fromLane, a.toLane))
+  }, [layout, firstRow, lastRow])
   const filter = graphFilter.trim().toLowerCase()
   const branchCol = columns.branch.visible ? columns.branch.width : 0
   const graphCol = columns.graph.visible ? (columns.graph.width > 0 ? columns.graph.width : graphAuto) : 0
@@ -674,11 +693,23 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
     return () => clearInterval(id)
   }, [repo.path, repo.commits.length])
 
-  // Auto-load more commits when scrolling near the bottom.
+  // Auto-load more commits when scrolling near the bottom. scrollTop state is
+  // coalesced to one update per animation frame so a fast scroll doesn't fire a
+  // setState (and full re-render) per pixel.
+  const scrollRaf = useRef<number | null>(null)
+  useEffect(() => () => {
+    if (scrollRaf.current != null) cancelAnimationFrame(scrollRaf.current)
+  }, [])
   const onScroll = (): void => {
     const el = scrollRef.current
     if (!el) return
-    setScrollTop(el.scrollTop)
+    if (scrollRaf.current == null) {
+      scrollRaf.current = requestAnimationFrame(() => {
+        scrollRaf.current = null
+        const e2 = scrollRef.current
+        if (e2) setScrollTop(e2.scrollTop)
+      })
+    }
     if (!autoLoadOnScroll) return
     if (el.scrollTop + el.clientHeight >= el.scrollHeight - ROW_H * 4 && repo.commits.length >= repo.maxCount) {
       loadMore(repo.path)
@@ -1338,14 +1369,7 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
         <>
         {(() => {
           const clampX = (x: number) => Math.min(x, graphCol - NODE_R - 1)
-          const visEdges = layout.edges.filter(
-            (e) => Math.max(e.fromRow, e.toRow) >= firstRow && Math.min(e.fromRow, e.toRow) <= lastRow
-          )
-          // Paint shallower rails last so trunk lines sit above the deeper
-          // side-branches they spawn — keeps the busy areas legible.
-          const ordered = [...visEdges].sort(
-            (a, b) => Math.max(b.fromLane, b.toLane) - Math.max(a.fromLane, a.toLane)
-          )
+          const ordered = orderedEdges
           return (
             <svg className="graph-svg" width={graphCol} height={totalHeight} style={{ left: branchCol }}>
               {ordered.map((e, i) => {

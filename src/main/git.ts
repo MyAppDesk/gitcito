@@ -178,6 +178,40 @@ const gitFor = (repoPath: string): SimpleGit => {
   return git
 }
 
+// Bounded LRU for immutable, content-addressed reads. A commit's file list and
+// diff never change for a given sha, so re-opening the same commit (or paging
+// its files) can be served from memory instead of re-shelling git. Rewritten
+// shas (amend/rebase) simply orphan their old entries, which age out.
+class LruCache<V> {
+  private map = new Map<string, V>()
+  constructor(private readonly max: number) {}
+  get(key: string): V | undefined {
+    const v = this.map.get(key)
+    if (v !== undefined) {
+      this.map.delete(key)
+      this.map.set(key, v) // mark most-recently-used
+    }
+    return v
+  }
+  set(key: string, value: V): void {
+    if (this.map.has(key)) this.map.delete(key)
+    this.map.set(key, value)
+    if (this.map.size > this.max) {
+      const oldest = this.map.keys().next().value
+      if (oldest !== undefined) this.map.delete(oldest)
+    }
+  }
+}
+const commitDiffCache = new LruCache<string>(500)
+const commitFilesCache = new LruCache<FileEntry[]>(500)
+async function memo<V>(cache: LruCache<V>, key: string, fetch: () => Promise<V>): Promise<V> {
+  const hit = cache.get(key)
+  if (hit !== undefined) return hit
+  const val = await fetch()
+  cache.set(key, val)
+  return val
+}
+
 /**
  * Auto-stash. If the working tree is dirty, shelve it under a
  * NAMED stash (visible in the stash list), run the operation, then restore it.
@@ -1823,18 +1857,20 @@ export const gitService = {
   },
 
   async commitFiles(repoPath: string, hash: string): Promise<FileEntry[]> {
-    const git = gitFor(repoPath)
-    const out = await git.raw(['diff-tree', '--no-commit-id', '--name-status', '-r', '--root', '-m', '--first-parent', hash])
-    const seen = new Set<string>()
-    const files: FileEntry[] = []
-    for (const line of out.split('\n').filter(Boolean)) {
-      const [code, ...rest] = line.split('\t')
-      const path = rest[rest.length - 1]
-      if (!path || seen.has(path)) continue
-      seen.add(path)
-      files.push({ path, status: mapStatusCode(code[0]) })
-    }
-    return files
+    return memo(commitFilesCache, `${repoPath}\0${hash}`, async () => {
+      const git = gitFor(repoPath)
+      const out = await git.raw(['diff-tree', '--no-commit-id', '--name-status', '-r', '--root', '-m', '--first-parent', hash])
+      const seen = new Set<string>()
+      const files: FileEntry[] = []
+      for (const line of out.split('\n').filter(Boolean)) {
+        const [code, ...rest] = line.split('\t')
+        const path = rest[rest.length - 1]
+        if (!path || seen.has(path)) continue
+        seen.add(path)
+        files.push({ path, status: mapStatusCode(code[0]) })
+      }
+      return files
+    })
   },
 
   async commitFileDiff(repoPath: string, hash: string, file: string, ignoreWs = false): Promise<string> {
@@ -1842,7 +1878,9 @@ export const gitService = {
     // `commitFiles`). Without it, `git show` falls back to a combined diff (--cc)
     // that's empty for files which only changed on the merged-in branch — the
     // "No changes to display" bug.
-    return gitFor(repoPath).raw(['show', '--format=', '--first-parent', ...(ignoreWs ? ['-w'] : []), hash, '--', file])
+    return memo(commitDiffCache, `f\0${repoPath}\0${hash}\0${ignoreWs ? 1 : 0}\0${file}`, () =>
+      gitFor(repoPath).raw(['show', '--format=', '--first-parent', ...(ignoreWs ? ['-w'] : []), hash, '--', file])
+    )
   },
 
   async stashFiles(repoPath: string, sha: string, untrackedSha?: string | null): Promise<FileEntry[]> {
@@ -1882,7 +1920,9 @@ export const gitService = {
 
   /** Full patch of a single commit (vs its first parent; root commit shows full tree). */
   async commitDiff(repoPath: string, hash: string): Promise<string> {
-    return gitFor(repoPath).raw(['show', '--format=', '--first-parent', hash])
+    return memo(commitDiffCache, `d\0${repoPath}\0${hash}`, () =>
+      gitFor(repoPath).raw(['show', '--format=', '--first-parent', hash])
+    )
   },
 
   /** Branches whose history contains this commit, grouped like the graph's ref
@@ -2885,6 +2925,133 @@ async function withLockRetry<T>(op: () => Promise<T>): Promise<T> {
   }
 }
 
+// ─── Per-repo read/write lock ──────────────────────────────────────────────
+//
+// Writes on a repo run exclusively; reads run concurrently with other reads but
+// wait for any in-progress or queued write. This closes the race where a raw
+// `git log`/diff read (which bypasses simple-git's per-instance task queue)
+// observes the repo mid-checkout/mid-commit and returns an inconsistent commit
+// set — the root cause of the graph "bugging itself" after an action.
+//
+// Grants are FIFO: a run of consecutive readers starts together, but a queued
+// writer blocks the readers behind it, so a steady stream of status polls can't
+// starve a checkout.
+class RwLock {
+  private readers = 0
+  private writer = false
+  private waiters: Array<{ write: boolean; resolve: () => void }> = []
+
+  private canRun(write: boolean): boolean {
+    return write ? this.readers === 0 && !this.writer : !this.writer
+  }
+
+  private enter(write: boolean): void {
+    if (write) this.writer = true
+    else this.readers++
+  }
+
+  async acquire(write: boolean): Promise<() => void> {
+    if (this.waiters.length === 0 && this.canRun(write)) {
+      this.enter(write)
+    } else {
+      await new Promise<void>((resolve) => this.waiters.push({ write, resolve }))
+    }
+    let released = false
+    return () => {
+      if (released) return
+      released = true
+      if (write) this.writer = false
+      else this.readers--
+      this.pump()
+    }
+  }
+
+  private pump(): void {
+    while (this.waiters.length) {
+      const head = this.waiters[0]
+      if (!this.canRun(head.write)) break
+      this.waiters.shift()
+      this.enter(head.write)
+      head.resolve()
+      if (head.write) break // exclusive writer — stop granting
+    }
+  }
+}
+
+const repoLocks = new Map<string, RwLock>()
+function lockFor(repoPath: string): RwLock {
+  let l = repoLocks.get(repoPath)
+  if (!l) {
+    l = new RwLock()
+    repoLocks.set(repoPath, l)
+  }
+  return l
+}
+
+// Pure reads — safe to run concurrently with each other. Anything NOT listed is
+// treated as a write (exclusive), so an unmapped/new method serializes rather
+// than risking a concurrent mutation. Only add a method here if it never
+// touches the index, working tree, refs, config, or hook files.
+const READ_METHODS = new Set<string>([
+  'open',
+  'log',
+  'branches',
+  'status',
+  'stashes',
+  'remotes',
+  'stackInfo',
+  'listDir',
+  'listFiles',
+  'listTrackedFiles',
+  'commitsTouchingPath',
+  'protectedBranches',
+  'fileSizes',
+  'treeStatus',
+  'getCommitMessage',
+  'commitTemplate',
+  'reflog',
+  'bisectStatus',
+  'getRemoteTags',
+  'diffFile',
+  'commitFiles',
+  'stashFiles',
+  'stashFileDiff',
+  'commitFileDiff',
+  'formatPatch',
+  'stagedDiff',
+  'commitDiff',
+  'commitBranches',
+  'commitTags',
+  'fileContent',
+  'searchFileContents',
+  'grepWorkingTree',
+  'searchHistory',
+  'fileDataUrl',
+  'imageDiff',
+  'blameFile',
+  'fileHistory',
+  'worktrees',
+  'submodules',
+  'signingConfig',
+  'hooksInfo',
+  'readHook',
+  'lfsInfo',
+  'sparseCheckoutInfo',
+  'getUser',
+  'mergeState',
+  'mergeMessage',
+  'conflictVersions',
+  'interactiveRebaseSteps',
+  'compareBranches',
+  'repoStats',
+  'repoInsights',
+  'cosmosData',
+  'generateChangelog',
+  'listSnapshots',
+  'contributors',
+  'version'
+])
+
 export function registerGitHandlers(): void {
   ipcMain.handle('git', async (_e, method: string, ...args: unknown[]) => {
     const fn = (gitService as Record<string, unknown>)[method]
@@ -2904,6 +3071,15 @@ export function registerGitHandlers(): void {
     // operate before a repo exists locally, so they are recorded as app-level.
     const repoPath =
       event && typeof args[0] === 'string' && method !== 'clone' && method !== 'init' ? (args[0] as string) : ''
+
+    // Serialize this call under the repo's read/write lock. The lock key is the
+    // repo path for every repo-scoped method (not just logged ones); clone/init
+    // run before a repo exists, so they take no lock.
+    const lockKey =
+      typeof args[0] === 'string' && method !== 'clone' && method !== 'init' ? (args[0] as string) : null
+    const isWrite = !READ_METHODS.has(method)
+    const release = lockKey ? await lockFor(lockKey).acquire(isWrite) : null
+
     try {
       const result = await withLockRetry(() => (fn as (...a: unknown[]) => Promise<unknown>)(...args))
       if (event) {
@@ -2916,6 +3092,8 @@ export function registerGitHandlers(): void {
         void recordLog({ event, repoPath, ok: false, error: err instanceof Error ? err.message : String(err) })
       }
       throw err
+    } finally {
+      release?.()
     }
   })
 }

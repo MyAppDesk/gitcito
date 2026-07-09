@@ -215,6 +215,7 @@ const api = {
 
   watch: {
     repo: (path: string | null): Promise<void> => ipcRenderer.invoke('watch:repo', path),
+    mute: (path: string, ms: number): Promise<void> => ipcRenderer.invoke('watch:mute', path, ms),
     onChange: (cb: (payload: { path: string; light: boolean }) => void): (() => void) => {
       const listener = (_e: unknown, payload: { path: string; light: boolean }): void => cb(payload)
       ipcRenderer.on('repo:changed', listener)

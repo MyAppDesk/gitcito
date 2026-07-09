@@ -53,6 +53,9 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
   const { undo, redo } = useRepoStore()
   const { openContextMenu, openModal, toggleTerminal, terminalOpen, graphFilter, setGraphFilter, busy } = useUIStore()
   const busyOp = useUIStore((s) => s.busyOp)
+  // Any mutating git op queued/running gates the action buttons — the user
+  // can't fire a second action until the first has fully settled.
+  const inflight = useUIStore((s) => s.inflight > 0)
   const confirmForcePush = useSettingsStore((s) => s.settings.confirmForcePush)
   const aiEnabled = useSettingsStore((s) => s.activeProfile().ai.enabled !== false)
   const path = repo.path
@@ -213,7 +216,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
         <button
           className="tool-btn"
           title={t('toolbar.undoTitle')}
-          disabled={repo.undoStack.length === 0}
+          disabled={repo.undoStack.length === 0 || inflight}
           onClick={() => void undo(path)}
         >
           <Undo2 size={17} />
@@ -222,7 +225,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
         <button
           className="tool-btn"
           title="Redo"
-          disabled={repo.redoStack.length === 0}
+          disabled={repo.redoStack.length === 0 || inflight}
           onClick={() => void redo(path)}
         >
           <Redo2 size={17} />
@@ -233,7 +236,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
       <div className="toolbar-sep" />
 
       <div className="toolbar-group">
-        <button className="tool-btn split" onClick={() => void repoActions.pull(path, 'default')} title={t('toolbar.pull')}>
+        <button className="tool-btn split" disabled={inflight} onClick={() => void repoActions.pull(path, 'default')} title={t('toolbar.pull')}>
           {busyOp === 'pull' || busyOp === 'fetch' ? (
             <Loader2 size={17} className="spin" />
           ) : (
@@ -247,7 +250,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
             <ChevronDown size={13} />
           </span>
         </button>
-        <button className="tool-btn split" onClick={() => void repoActions.push(path)} title={t('toolbar.push')}>
+        <button className="tool-btn split" disabled={inflight} onClick={() => void repoActions.push(path)} title={t('toolbar.push')}>
           {busyOp === 'push' ? (
             <Loader2 size={17} className="spin" />
           ) : (
@@ -272,6 +275,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
         <button
           className="tool-btn split"
           title="Stash work in progress"
+          disabled={inflight}
           onClick={() =>
             openModal({
               kind: 'input',
@@ -318,7 +322,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
         <button
           className="tool-btn"
           title={t('toolbar.popTitle')}
-          disabled={repo.stashes.length === 0}
+          disabled={repo.stashes.length === 0 || inflight}
           onClick={() => void repoActions.stashPop(path, 0)}
         >
           <ArchiveRestore size={17} />

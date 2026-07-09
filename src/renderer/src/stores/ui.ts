@@ -187,6 +187,10 @@ interface UIState {
   /** Which toolbar operation is in flight, so the spinner can render on the
    *  relevant tool button instead of a layout-shifting label on the right. */
   busyOp: 'push' | 'pull' | 'fetch' | null
+  /** Count of mutating git ops queued or running. > 0 gates the UI: action
+   *  buttons and mutating keyboard shortcuts are disabled until it drops to 0,
+   *  so the user can't fire a second action before the first has settled. */
+  inflight: number
   fileView: FileViewState | null
   conflictView: ConflictViewState | null
   fileSearch: FileSearchState | null
@@ -215,6 +219,8 @@ interface UIState {
   setAuthorFilter(author: string | null): void
   setPathFilter(path: string | null): void
   setBusy(label: string | null, op?: 'push' | 'pull' | 'fetch' | null): void
+  beginInflight(): void
+  endInflight(): void
   setFileView(view: FileViewState | null): void
   setEditorDirty(dirty: boolean): void
   setConflictView(view: ConflictViewState | null): void
@@ -240,6 +246,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   pathFilter: null,
   busy: null,
   busyOp: null,
+  inflight: 0,
   fileView: null,
   conflictView: null,
   fileSearch: null,
@@ -269,6 +276,8 @@ export const useUIStore = create<UIState>((set, get) => ({
   setAuthorFilter: (authorFilter) => set({ authorFilter }),
   setPathFilter: (pathFilter) => set({ pathFilter }),
   setBusy: (busy, op = null) => set({ busy, busyOp: op }),
+  beginInflight: () => set((s) => ({ inflight: s.inflight + 1 })),
+  endInflight: () => set((s) => ({ inflight: Math.max(0, s.inflight - 1) })),
   setFileView: (fileView) => set({ fileView }),
   setEditorDirty: (editorDirty) => set({ editorDirty }),
   setConflictView: (conflictView) => set({ conflictView }),

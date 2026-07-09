@@ -1,5 +1,13 @@
 
 
+## [2.0.1](https://github.com/MyAppDesk/gitcito/compare/v2.0.0...v2.0.1) (2026-07-09)
+
+
+### Features
+
+* add submenu support to context menu for better navigation ([0832b5e](https://github.com/MyAppDesk/gitcito/commit/0832b5ef6c53e103873c6fe5565d3c3c433fb4b8))
+* enhance drag-and-drop functionality for tabs and repos ([c426a30](https://github.com/MyAppDesk/gitcito/commit/c426a30a0e71a0095d270f77da4e38712db73719))
+
 ## [2.0.0](https://github.com/MyAppDesk/gitcito/compare/v1.25.0...v2.0.0) (2026-07-09)
 
 

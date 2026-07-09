@@ -1,15 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { ChevronDown, Plus, LayoutGrid, Pencil, Trash2 } from 'lucide-react'
+import { ChevronDown, Plus, Pencil, Trash2 } from 'lucide-react'
+import gitcitoMark from '../assets/gitcito-mark.png'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
 import { useT, interp } from '../i18n'
 
 /**
- * Title-bar workspace selector. A workspace is a saved tab layout; switching
- * swaps the whole tab strip. Rendered only when more than one workspace exists
- * — with just the single "Default" workspace there is nothing to choose, so the
- * control stays hidden (new workspaces are created from Settings → General).
+ * Title-bar brand + workspace selector. A workspace is a saved tab layout;
+ * switching swaps the whole tab strip. This control lives where the app logo
+ * sits: the gitcito mark plus the active workspace name (the lone default
+ * workspace is named "Gitcito", so with one workspace it just reads as the
+ * brand). Clicking opens the switcher to create/rename/delete/switch.
  */
 export function WorkspaceSwitcher(): React.JSX.Element {
   const settings = useSettingsStore((s) => s.settings)
@@ -21,7 +23,7 @@ export function WorkspaceSwitcher(): React.JSX.Element {
   const t = useT()
 
   const [open, setOpen] = useState(false)
-  const [pos, setPos] = useState<{ right: number; top: number } | null>(null)
+  const [pos, setPos] = useState<{ left: number; top: number } | null>(null)
   const btnRef = useRef<HTMLButtonElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
 
@@ -46,8 +48,7 @@ export function WorkspaceSwitcher(): React.JSX.Element {
     }
   }, [open])
 
-  // Only one workspace → nothing to switch between; keep the title bar clean.
-  if (workspaces.length <= 1 || !active) return <></>
+  if (!active) return <></>
 
   const toggle = (e: React.MouseEvent): void => {
     e.stopPropagation()
@@ -56,7 +57,7 @@ export function WorkspaceSwitcher(): React.JSX.Element {
       return
     }
     const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
-    setPos({ right: window.innerWidth - r.right, top: r.bottom + 4 })
+    setPos({ left: r.left, top: r.bottom + 4 })
     setOpen(true)
   }
 
@@ -102,18 +103,18 @@ export function WorkspaceSwitcher(): React.JSX.Element {
     <>
       <button
         ref={btnRef}
-        className={`workspace-switcher ${open ? 'open' : ''}`}
+        className={`titlebar-logo workspace-switcher ${open ? 'open' : ''}`}
         title={interp(t('ws.switcherTitle'), { name: active.name })}
         onClick={toggle}
       >
-        <LayoutGrid size={15} />
-        <span className="profile-switcher-name">{active.name}</span>
+        <img className="logo-mark" src={gitcitoMark} alt="" draggable={false} />
+        <span className="workspace-switcher-name">{active.name}</span>
         <ChevronDown size={13} className="profile-switcher-chevron" />
       </button>
       {open &&
         pos &&
         createPortal(
-          <div ref={panelRef} className="profile-switcher-menu" style={{ right: pos.right, top: pos.top }}>
+          <div ref={panelRef} className="profile-switcher-menu" style={{ left: pos.left, top: pos.top }}>
             {workspaces.map((w) => (
               <div key={w.id} className="workspace-switcher-row">
                 <button

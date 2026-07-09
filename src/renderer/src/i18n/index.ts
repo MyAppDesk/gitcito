@@ -353,6 +353,7 @@ const en = {
   // Settings
   'settings.title': 'Settings',
   'settings.profile': 'Profile',
+  'settings.workspaces': 'Workspaces',
   'settings.integrations': 'Integrations',
   'settings.ai': 'AI',
   'settings.aiEnabled': 'Enable AI features',
@@ -1613,6 +1614,7 @@ const es: Dict = {
 
   'settings.title': 'Ajustes',
   'settings.profile': 'Perfil',
+  'settings.workspaces': 'Espacios',
   'settings.integrations': 'Integraciones',
   'settings.ai': 'IA',
   'settings.aiEnabled': 'Activar funciones de IA',

@@ -8,7 +8,6 @@ import type { GroupTab, TabState } from '../../../shared/types'
 import { ProfileSwitcher } from './ProfileSwitcher'
 import { WorkspaceSwitcher } from './WorkspaceSwitcher'
 import { folderOpenMenuItems } from '../lib/openWith'
-import gitcitoMark from '../assets/gitcito-mark.png'
 
 type TabStatus = 'conflict' | 'wip' | null
 
@@ -413,9 +412,7 @@ export function TitleBar(): React.JSX.Element {
   // ── render ───────────────────────────────────────────────────────────────
   return (
     <div className={`titlebar ${isMac ? 'mac' : ''}`}>
-      <div className="titlebar-logo">
-        <img className="logo-mark" src={gitcitoMark} alt="" draggable={false} /> Gitcito
-      </div>
+      <WorkspaceSwitcher />
       <div className="tabs" onDragOver={(e) => e.preventDefault()} onDrop={clearDrop}>
         {settings.tabs.flatMap((tab) => {
           // Drop zone placed BEFORE each top-level tab — only active while dragging a repo
@@ -651,7 +648,6 @@ export function TitleBar(): React.JSX.Element {
           <Plus size={15} />
         </button>
       </div>
-      <WorkspaceSwitcher />
       <ProfileSwitcher />
       {hasGithubToken && (
         <button

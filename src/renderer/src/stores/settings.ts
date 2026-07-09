@@ -189,7 +189,15 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     // Workspaces: wrap a pre-workspaces install's existing tabs into a default
     // workspace, then load the active workspace's tabs into the live view.
     if (!settings.workspaces?.length) {
-      settings.workspaces = [{ id: 'default', name: 'Default', tabs: settings.tabs, activeTabId: settings.activeTabId }]
+      settings.workspaces = [{ id: 'default', name: 'Gitcito', tabs: settings.tabs, activeTabId: settings.activeTabId }]
+    } else if (
+      settings.workspaces.length === 1 &&
+      settings.workspaces[0].id === 'default' &&
+      settings.workspaces[0].name === 'Default'
+    ) {
+      // Legacy auto-created workspace was named "Default". The logo now doubles
+      // as the workspace switcher, so rebrand the lone default to the app name.
+      settings.workspaces[0].name = 'Gitcito'
     }
     settings.activeWorkspaceId =
       settings.activeWorkspaceId && settings.workspaces.some((w) => w.id === settings.activeWorkspaceId)

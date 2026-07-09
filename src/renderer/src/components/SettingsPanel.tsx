@@ -70,11 +70,21 @@ import { LANGUAGES, useT, interp, type TranslationKey } from '../i18n'
 import { ShortcutEditor } from './CheatsheetModal'
 import madLogo from '../assets/mad-high.png'
 
-type SettingsPage = 'profile' | 'integrations' | 'ai' | 'themes' | 'general' | 'security' | 'shortcuts' | 'data'
+type SettingsPage =
+  | 'profile'
+  | 'workspaces'
+  | 'integrations'
+  | 'ai'
+  | 'themes'
+  | 'general'
+  | 'security'
+  | 'shortcuts'
+  | 'data'
 
 const PAGES: { id: SettingsPage; key: TranslationKey; icon: React.ReactNode }[] = [
   { id: 'general', key: 'settings.general', icon: <Settings2 size={13} /> },
   { id: 'profile', key: 'settings.profile', icon: <UserCircle2 size={13} /> },
+  { id: 'workspaces', key: 'settings.workspaces', icon: <LayoutGrid size={13} /> },
   { id: 'integrations', key: 'settings.integrations', icon: <Plug size={13} /> },
   { id: 'ai', key: 'settings.ai', icon: <Bot size={13} /> },
   { id: 'themes', key: 'settings.themes', icon: <Palette size={13} /> },
@@ -1884,9 +1894,8 @@ function DataManagementSection(): React.JSX.Element {
   )
 }
 
-function GeneralPage(): React.JSX.Element {
+function WorkspacesPage(): React.JSX.Element {
   const settings = useSettingsStore((s) => s.settings)
-  const update = useSettingsStore((s) => s.update)
   const createWorkspace = useSettingsStore((s) => s.createWorkspace)
   const renameWorkspace = useSettingsStore((s) => s.renameWorkspace)
   const deleteWorkspace = useSettingsStore((s) => s.deleteWorkspace)
@@ -1923,6 +1932,66 @@ function GeneralPage(): React.JSX.Element {
       confirmLabel: t('ws.deleteAction'),
       onConfirm: () => deleteWorkspace(id)
     })
+
+  return (
+    <div className="settings-general">
+      <div className="settings-general-header">
+        <h4>
+          <LayoutGrid size={14} /> {t('ws.title')}
+        </h4>
+        <p className="settings-hint">{t('ws.settingsHint')}</p>
+      </div>
+
+      <div className="settings-workspace-list">
+        {workspaces.map((w) => {
+          const isActive = w.id === settings.activeWorkspaceId
+          return (
+            <div key={w.id} className={`settings-workspace-row ${isActive ? 'active' : ''}`}>
+              <button
+                type="button"
+                className="settings-workspace-name"
+                onClick={() => switchWorkspace(w.id)}
+                title={isActive ? t('ws.activeTitle') : t('ws.switchTitle')}
+              >
+                <span className="settings-workspace-check">{isActive ? <Check size={13} /> : null}</span>
+                <span className="settings-workspace-label">{w.name}</span>
+                <span className="settings-workspace-count">
+                  {interp(t(w.tabs.length === 1 ? 'ws.tabCountOne' : 'ws.tabCountMany'), { n: w.tabs.length })}
+                </span>
+              </button>
+              <button
+                type="button"
+                className="icon-btn"
+                title={t('ws.rename')}
+                onClick={() => editWorkspace(w.id, w.name)}
+              >
+                <Pencil size={13} />
+              </button>
+              {workspaces.length > 1 && (
+                <button
+                  type="button"
+                  className="icon-btn"
+                  title={t('ws.delete')}
+                  onClick={() => removeWorkspace(w.id, w.name)}
+                >
+                  <Trash2 size={13} />
+                </button>
+              )}
+            </div>
+          )
+        })}
+      </div>
+      <button type="button" className="btn ghost small" onClick={newWorkspace}>
+        <Plus size={13} /> {t('ws.new')}
+      </button>
+    </div>
+  )
+}
+
+function GeneralPage(): React.JSX.Element {
+  const settings = useSettingsStore((s) => s.settings)
+  const update = useSettingsStore((s) => s.update)
+  const t = useT()
 
   return (
     <div className="settings-general">
@@ -2176,52 +2245,6 @@ function GeneralPage(): React.JSX.Element {
         )}
       </div>
 
-      <h4 className="settings-section-title">
-        <LayoutGrid size={14} /> {t('ws.title')}
-      </h4>
-      <p className="settings-hint">{t('ws.settingsHint')}</p>
-      <div className="settings-workspace-list">
-        {workspaces.map((w) => {
-          const isActive = w.id === settings.activeWorkspaceId
-          return (
-            <div key={w.id} className={`settings-workspace-row ${isActive ? 'active' : ''}`}>
-              <button
-                type="button"
-                className="settings-workspace-name"
-                onClick={() => switchWorkspace(w.id)}
-                title={isActive ? t('ws.activeTitle') : t('ws.switchTitle')}
-              >
-                <span className="settings-workspace-check">{isActive ? <Check size={13} /> : null}</span>
-                <span className="settings-workspace-label">{w.name}</span>
-                <span className="settings-workspace-count">
-                  {interp(t(w.tabs.length === 1 ? 'ws.tabCountOne' : 'ws.tabCountMany'), { n: w.tabs.length })}
-                </span>
-              </button>
-              <button
-                type="button"
-                className="icon-btn"
-                title={t('ws.rename')}
-                onClick={() => editWorkspace(w.id, w.name)}
-              >
-                <Pencil size={13} />
-              </button>
-              {workspaces.length > 1 && (
-                <button
-                  type="button"
-                  className="icon-btn"
-                  title={t('ws.delete')}
-                  onClick={() => removeWorkspace(w.id, w.name)}
-                >
-                  <Trash2 size={13} />
-                </button>
-              )}
-            </div>
-          )
-        })}
-      </div>
-      <button type="button" className="btn ghost small" onClick={newWorkspace}>
-        <Plus size={13} /> {t('ws.new')}
-      </button>
     </div>
   )
 }
@@ -2714,7 +2737,7 @@ function DataPage(): React.JSX.Element {
 }
 
 const LAST_PAGE_KEY = 'gitcito.settings.lastPage'
-const PAGE_IDS: SettingsPage[] = ['profile', 'integrations', 'ai', 'themes', 'general', 'data']
+const PAGE_IDS: SettingsPage[] = ['profile', 'workspaces', 'integrations', 'ai', 'themes', 'general', 'data']
 
 function readLastPage(): SettingsPage {
   const stored = localStorage.getItem(LAST_PAGE_KEY)
@@ -2869,6 +2892,7 @@ export function SettingsPanel({ initialPage, initialThemeTab }: { initialPage?: 
 
         <div className="settings-form">
           {page === 'profile' && <ProfilePage profile={profile} edit={edit} />}
+          {page === 'workspaces' && <WorkspacesPage />}
           {page === 'integrations' && <IntegrationsPage profile={profile} edit={edit} />}
           {page === 'ai' && <AIPage profile={profile} edit={edit} />}
           {page === 'themes' && <ThemesPage initialTab={initialThemeTab} />}

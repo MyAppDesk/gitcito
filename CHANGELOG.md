@@ -1,5 +1,23 @@
 
 
+## [2.0.0](https://github.com/MyAppDesk/gitcito/compare/v1.25.0...v2.0.0) (2026-07-09)
+
+
+### Features
+
+* add filesToPush method to identify files for publishing ([63acfb8](https://github.com/MyAppDesk/gitcito/commit/63acfb87e45767d8ec852a5d2a51ce7b39153c85))
+* add open with menu items to commit and stash details ([87bf251](https://github.com/MyAppDesk/gitcito/commit/87bf2512c09c12e68f383c8df0fdd450c958fc25))
+* add workspaces feature to settings panel ([359653e](https://github.com/MyAppDesk/gitcito/commit/359653e37a69c859a98bab77a74263f56b234377))
+* group aggregate ahead/behind badge and quick fetch-all button ([b3299b6](https://github.com/MyAppDesk/gitcito/commit/b3299b6e0ddb2ace19a051d704a9850203c15349))
+* jump to any open repo from the command palette ([7dde77f](https://github.com/MyAppDesk/gitcito/commit/7dde77f615146391db510c6b04acb2f30e30ae30))
+* translate workspace UI strings (en/es) ([613c36a](https://github.com/MyAppDesk/gitcito/commit/613c36a61078c62ddd2daf477efd6f987e78bcec))
+* workspaces, saveable tab layouts you can switch between ([bedd516](https://github.com/MyAppDesk/gitcito/commit/bedd516a3479b80e9f4c4acb2cf0e5b7ba463cff))
+
+
+### Bug Fixes
+
+* improve screenshot capture reliability with retries ([4146d00](https://github.com/MyAppDesk/gitcito/commit/4146d00d1d4cf3fc8f973bbfb8342ef3667bde86))
+
 ## [1.25.0](https://github.com/MyAppDesk/gitcito/compare/v1.24.2...v1.25.0) (2026-07-09)
 
 

@@ -126,6 +126,8 @@ interface SettingsState {
   deleteWorkspace(id: string): void
   /** Swap the whole tab strip to another saved workspace. */
   switchWorkspace(id: string): void
+  /** Move a tab/group out of the live strip and into another workspace's tabs. */
+  moveTabToWorkspace(tabId: string, workspaceId: string): void
 
   activeTab(): TabState | null
   activeRepo(): RepoRef | null
@@ -569,6 +571,33 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       const target = s.workspaces.find((w) => w.id === id)
       if (!target) return s
       return { ...s, activeWorkspaceId: id, tabs: target.tabs, activeTabId: target.activeTabId }
+    }),
+
+  moveTabToWorkspace: (tabId, workspaceId) =>
+    get().update((s) => {
+      if (workspaceId === s.activeWorkspaceId) return s
+      const target = s.workspaces.find((w) => w.id === workspaceId)
+      const tab = s.tabs.find((t) => t.id === tabId)
+      if (!target || !tab) return s
+      const wasActive = s.activeTabId === tabId
+      const srcTabs = s.tabs.filter((t) => t.id !== tabId)
+      const targetTabs = [...target.tabs, tab]
+      // Mirror BOTH workspaces explicitly. syncActiveWorkspace only mirrors the
+      // active workspace, and when we follow the moved tab we flip which one that
+      // is — so the outgoing workspace's tab strip must be persisted here.
+      const workspaces = s.workspaces.map((w) => {
+        if (w.id === s.activeWorkspaceId)
+          return { ...w, tabs: srcTabs, activeTabId: wasActive ? (srcTabs[0]?.id ?? null) : s.activeTabId }
+        if (w.id === workspaceId)
+          return { ...w, tabs: targetTabs, activeTabId: wasActive ? tabId : w.activeTabId }
+        return w
+      })
+      // If the moved tab was selected, follow it into the target workspace and
+      // land on it. Otherwise stay put in the current workspace.
+      if (wasActive) {
+        return { ...s, workspaces, activeWorkspaceId: workspaceId, tabs: targetTabs, activeTabId: tabId }
+      }
+      return { ...s, workspaces, tabs: srcTabs }
     }),
 
   activeTab: () => {

@@ -373,6 +373,10 @@ textarea:focus {
   color: var(--text-2);
   opacity: 0;
   border-radius: 0 6px 0 0;
+  /* Continue the group's underline across the fetch-all button so it reads as
+     part of the group, matching the 3px underline on the in-group repo tabs. */
+  border-bottom: 3px solid var(--group-color, #6366f1);
+  box-sizing: border-box;
   transition: width 0.14s, opacity 0.14s, background 0.12s, color 0.12s;
 }
 
@@ -3370,6 +3374,24 @@ textarea:focus {
   height: 1px;
   background: var(--border);
   margin: 5px 8px;
+}
+
+/* ── submenus (flyout on hover) ─────────────────────────────────────────── */
+.menu-item-label {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.menu-item-chevron {
+  flex-shrink: 0;
+  color: var(--text-2);
+  margin-right: -4px;
+}
+.menu-item:hover:not(:disabled) .menu-item-chevron {
+  color: inherit;
+}
+/* Submenu flyout is portalled to <body> and positioned inline (see ContextMenu). */
+.context-menu.submenu {
+  z-index: 1001;
 }
 
 /* ─── Modals ────────────────────────────────────────────────────────────── */

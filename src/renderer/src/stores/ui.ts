@@ -17,6 +17,8 @@ export interface MenuItem {
   separator?: boolean
   disabled?: boolean
   onClick?: () => void
+  /** Nested items — renders a flyout submenu on hover instead of a click action. */
+  submenu?: MenuItem[]
 }
 
 export interface ContextMenuState {

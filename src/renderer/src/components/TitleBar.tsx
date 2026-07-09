@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Plus, FolderGit2, X, Minus, Square, Settings, Sparkles, Bell, BarChart3, ScrollText, CircleDot, Flag, Tag, Download, ArrowDownToLine, KeyRound } from 'lucide-react'
+import { Plus, FolderGit2, X, Minus, Square, Settings, Sparkles, Bell, BarChart3, ScrollText, CircleDot, Flag, Tag, Download, ArrowDownToLine, KeyRound, LayoutGrid } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore, type MenuItem } from '../stores/ui'
@@ -49,7 +49,7 @@ export function TitleBar(): React.JSX.Element {
     settings, setGroupActiveRepo, closeTab, setActiveTab, renameTab,
     setTabColor, toggleTabCollapsed, removeRepoFromGroup, renameRepoInGroup,
     reorderTabs, moveTabIntoGroup, ejectRepoFromGroup,
-    moveRepoBetweenGroups, reorderReposInGroup
+    moveRepoBetweenGroups, reorderReposInGroup, moveTabToWorkspace
   } = useSettingsStore()
   const { openContextMenu, openModal } = useUIStore()
   const githubUnread = useUIStore((s) => s.githubUnread)
@@ -315,9 +315,27 @@ export function TitleBar(): React.JSX.Element {
       copyPath: 'Copy folder path'
     })
 
+  // "Move to workspace →" submenu — only offered when another workspace exists.
+  const moveToWorkspaceItem = (tab: TabState): MenuItem | null => {
+    const others = settings.workspaces.filter((w) => w.id !== settings.activeWorkspaceId)
+    if (others.length === 0) return null
+    return {
+      label: 'Move to workspace',
+      icon: <LayoutGrid size={15} />,
+      submenu: others.map((w) => ({
+        label: w.name,
+        onClick: () => moveTabToWorkspace(tab.id, w.id)
+      }))
+    }
+  }
+
   const tabMenu = (tab: TabState): MenuItem[] => {
     if (tab.kind === 'page') {
-      return [{ label: 'Close tab', onClick: () => closeTab(tab.id) }]
+      const move = moveToWorkspaceItem(tab)
+      return [
+        ...(move ? [move, { separator: true } as MenuItem] : []),
+        { label: 'Close tab', onClick: () => closeTab(tab.id) }
+      ]
     }
     const items: MenuItem[] = []
     if (tab.kind === 'repo' && tab.repos[0]) {
@@ -360,22 +378,21 @@ export function TitleBar(): React.JSX.Element {
       }
       items.push({ separator: true })
     }
-    items.push(
-      {
-        label: 'Rename…',
-        onClick: () =>
-          openModal({
-            kind: 'input',
-            title: 'Rename tab',
-            label: 'Name',
-            initial: tab.name,
-            submitLabel: 'Rename',
-            onSubmit: (name) => renameTab(tab.id, name)
-          })
-      },
-      { separator: true },
-      { label: 'Close tab', onClick: () => confirmCloseGroup(tab) }
-    )
+    items.push({
+      label: 'Rename…',
+      onClick: () =>
+        openModal({
+          kind: 'input',
+          title: 'Rename tab',
+          label: 'Name',
+          initial: tab.name,
+          submitLabel: 'Rename',
+          onSubmit: (name) => renameTab(tab.id, name)
+        })
+    })
+    const move = moveToWorkspaceItem(tab)
+    if (move) items.push(move)
+    items.push({ separator: true }, { label: 'Close tab', onClick: () => confirmCloseGroup(tab) })
     return items
   }
 

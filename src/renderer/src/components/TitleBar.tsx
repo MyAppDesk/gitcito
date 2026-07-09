@@ -234,6 +234,23 @@ export function TitleBar(): React.JSX.Element {
     return null
   }
 
+  // Aggregate ahead/behind + dirty repo count across a whole group, for the
+  // chip badge + tooltip so the group's sync state is visible without opening
+  // each repo.
+  const groupAgg = (tab: GroupTab): { ahead: number; behind: number; dirty: number } => {
+    let ahead = 0
+    let behind = 0
+    let dirty = 0
+    for (const ref of tab.repos) {
+      const st = repos[ref.path]?.status
+      if (!st) continue
+      ahead += st.ahead
+      behind += st.behind
+      if (st.staged.length + st.unstaged.length > 0) dirty++
+    }
+    return { ahead, behind, dirty }
+  }
+
   // ── menus ───────────────────────────────────────────────────────────────
   const plusMenu = (): void => openModal({ kind: 'launcher' })
 
@@ -498,6 +515,13 @@ export function TitleBar(): React.JSX.Element {
           const groupColor = tab.color ?? '#6366f1'
           const isActiveGroup = tab.id === settings.activeTabId
           const groupStatus = tabStatus(tab)
+          const agg = groupAgg(tab)
+          const aggTip = [
+            `${tab.repos.length} ${tab.repos.length === 1 ? 'repository' : 'repositories'}`,
+            agg.ahead ? `↑${agg.ahead} to push` : '',
+            agg.behind ? `↓${agg.behind} to pull` : '',
+            agg.dirty ? `${agg.dirty} with changes` : ''
+          ].filter(Boolean).join(' · ')
 
           const handleGroupContext = (e: React.MouseEvent): void => {
             e.preventDefault()
@@ -524,7 +548,7 @@ export function TitleBar(): React.JSX.Element {
             >
               <button
                 className={`tab-group-chip ${chipDc}`}
-                title={tab.collapsed ? 'Expand group' : 'Collapse group'}
+                title={`${tab.collapsed ? 'Expand' : 'Collapse'} group — ${aggTip}`}
                 draggable
                 onDragStart={onDragStart({ kind: 'tab', tabId: tab.id })}
                 onDragEnd={onDragEnd}
@@ -533,6 +557,12 @@ export function TitleBar(): React.JSX.Element {
                 onContextMenu={handleGroupContext}
               >
                 {tab.name}
+                {(agg.ahead > 0 || agg.behind > 0) && (
+                  <span className="tab-group-badge">
+                    {agg.ahead > 0 && <span>↑{agg.ahead}</span>}
+                    {agg.behind > 0 && <span>↓{agg.behind}</span>}
+                  </span>
+                )}
                 {groupStatus && (
                   <span
                     className={`tab-status tab-status-${groupStatus}`}
@@ -540,6 +570,18 @@ export function TitleBar(): React.JSX.Element {
                   />
                 )}
               </button>
+              {tab.repos.length > 0 && (
+                <button
+                  className="tab-group-sync"
+                  title={`Fetch all ${tab.repos.length} ${tab.repos.length === 1 ? 'repository' : 'repositories'}`}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    void repoActions.batch(tab.repos.map((r) => r.path), 'fetch')
+                  }}
+                >
+                  <Download size={12} />
+                </button>
+              )}
 
               <AnimatePresence initial={false}>
                 {visibleRepos.map((repo) => {

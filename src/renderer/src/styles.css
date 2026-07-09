@@ -344,6 +344,48 @@ textarea:focus {
   50%       { box-shadow: 0 0 0 3px rgba(255, 255, 255, 0); }
 }
 
+/* Aggregate ahead/behind badge inside the group chip */
+.tab-group-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 5px;
+  padding: 1px 5px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.22);
+  font-size: 9.5px;
+  font-weight: 700;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Hover-reveal "fetch all" button next to a group chip */
+.tab-group-sync {
+  -webkit-app-region: no-drag;
+  align-self: flex-end;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 26px;
+  width: 0;
+  padding: 0;
+  overflow: hidden;
+  color: var(--text-2);
+  opacity: 0;
+  border-radius: 0 6px 0 0;
+  transition: width 0.14s, opacity 0.14s, background 0.12s, color 0.12s;
+}
+
+.tab-group-wrap:hover .tab-group-sync {
+  width: 22px;
+  opacity: 1;
+}
+
+.tab-group-sync:hover {
+  background: var(--bg-4);
+  color: var(--text-0);
+}
+
 /* ── drag-and-drop drop indicators ──────────────────────────────────────── */
 .drop-before-tab,
 .drop-before-repo {

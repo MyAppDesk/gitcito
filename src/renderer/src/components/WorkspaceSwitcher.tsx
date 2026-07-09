@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { ChevronDown, Plus, LayoutGrid, Pencil, Trash2 } from 'lucide-react'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
+import { useT, interp } from '../i18n'
 
 /**
  * Title-bar workspace selector. A workspace is a saved tab layout; switching
@@ -17,6 +18,7 @@ export function WorkspaceSwitcher(): React.JSX.Element {
   const renameWorkspace = useSettingsStore((s) => s.renameWorkspace)
   const deleteWorkspace = useSettingsStore((s) => s.deleteWorkspace)
   const openModal = useUIStore((s) => s.openModal)
+  const t = useT()
 
   const [open, setOpen] = useState(false)
   const [pos, setPos] = useState<{ right: number; top: number } | null>(null)
@@ -58,15 +60,17 @@ export function WorkspaceSwitcher(): React.JSX.Element {
     setOpen(true)
   }
 
+  const fallbackName = (): string => interp(t('ws.placeholder'), { n: workspaces.length + 1 })
+
   const create = (): void => {
     setOpen(false)
     openModal({
       kind: 'input',
-      title: 'New workspace',
-      label: 'Name',
-      placeholder: `Workspace ${workspaces.length + 1}`,
-      submitLabel: 'Create',
-      onSubmit: (name) => createWorkspace(name.trim() || `Workspace ${workspaces.length + 1}`)
+      title: t('ws.new'),
+      label: t('ws.name'),
+      placeholder: fallbackName(),
+      submitLabel: t('ws.create'),
+      onSubmit: (name) => createWorkspace(name.trim() || fallbackName())
     })
   }
 
@@ -74,10 +78,10 @@ export function WorkspaceSwitcher(): React.JSX.Element {
     setOpen(false)
     openModal({
       kind: 'input',
-      title: 'Rename workspace',
-      label: 'Name',
+      title: t('ws.rename'),
+      label: t('ws.name'),
       initial: current,
-      submitLabel: 'Rename',
+      submitLabel: t('ws.renameAction'),
       onSubmit: (name) => renameWorkspace(id, name.trim() || current)
     })
   }
@@ -86,10 +90,10 @@ export function WorkspaceSwitcher(): React.JSX.Element {
     setOpen(false)
     openModal({
       kind: 'confirm',
-      title: 'Delete workspace',
-      message: `Delete "${name}"? Its tab layout will be discarded (the repositories themselves are untouched).`,
+      title: t('ws.delete'),
+      message: interp(t('ws.deleteConfirm'), { name }),
       danger: true,
-      confirmLabel: 'Delete',
+      confirmLabel: t('ws.deleteAction'),
       onConfirm: () => deleteWorkspace(id)
     })
   }
@@ -99,7 +103,7 @@ export function WorkspaceSwitcher(): React.JSX.Element {
       <button
         ref={btnRef}
         className={`workspace-switcher ${open ? 'open' : ''}`}
-        title={`Workspace: ${active.name}`}
+        title={interp(t('ws.switcherTitle'), { name: active.name })}
         onClick={toggle}
       >
         <LayoutGrid size={15} />
@@ -123,11 +127,11 @@ export function WorkspaceSwitcher(): React.JSX.Element {
                   <span className="profile-switcher-label">{w.name}</span>
                 </button>
                 <span className="workspace-row-actions">
-                  <button className="workspace-row-btn" title="Rename" onClick={() => rename(w.id, w.name)}>
+                  <button className="workspace-row-btn" title={t('ws.renameAction')} onClick={() => rename(w.id, w.name)}>
                     <Pencil size={13} />
                   </button>
                   {workspaces.length > 1 && (
-                    <button className="workspace-row-btn danger" title="Delete" onClick={() => remove(w.id, w.name)}>
+                    <button className="workspace-row-btn danger" title={t('ws.deleteAction')} onClick={() => remove(w.id, w.name)}>
                       <Trash2 size={13} />
                     </button>
                   )}
@@ -140,7 +144,7 @@ export function WorkspaceSwitcher(): React.JSX.Element {
               <span className="profile-switcher-plus">
                 <Plus size={14} />
               </span>
-              <span className="profile-switcher-label">New workspace</span>
+              <span className="profile-switcher-label">{t('ws.new')}</span>
             </button>
           </div>,
           document.body

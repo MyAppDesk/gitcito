@@ -403,6 +403,26 @@ const en = {
   'settings.sectionsHeader': 'SECTIONS',
   'settings.newProfile': 'New profile',
 
+  // Workspaces (saved tab layouts)
+  'ws.title': 'Workspaces',
+  'ws.settingsHint':
+    'A workspace is a saved tab layout. Switch to swap the whole tab strip at once — handy for keeping separate sets (e.g. work vs personal). A quick selector appears in the title bar once you have more than one.',
+  'ws.new': 'New workspace',
+  'ws.rename': 'Rename workspace',
+  'ws.delete': 'Delete workspace',
+  'ws.name': 'Name',
+  'ws.create': 'Create',
+  'ws.renameAction': 'Rename',
+  'ws.deleteAction': 'Delete',
+  'ws.placeholder': 'Workspace {n}',
+  'ws.deleteConfirm':
+    'Delete “{name}”? Its tab layout will be discarded (the repositories themselves are untouched).',
+  'ws.switchTitle': 'Switch to this workspace',
+  'ws.activeTitle': 'Active workspace',
+  'ws.switcherTitle': 'Workspace: {name}',
+  'ws.tabCountOne': '{n} tab',
+  'ws.tabCountMany': '{n} tabs',
+
   // Settings — profile page
   'settings.profileName': 'Profile name',
   'settings.makeActive': 'Make active',
@@ -1641,6 +1661,26 @@ const es: Dict = {
   'settings.profilesHeader': 'PERFILES',
   'settings.sectionsHeader': 'SECCIONES',
   'settings.newProfile': 'Nuevo perfil',
+
+  // Workspaces (diseños de pestañas guardados)
+  'ws.title': 'Espacios de trabajo',
+  'ws.settingsHint':
+    'Un espacio de trabajo es un diseño de pestañas guardado. Cambia de espacio para intercambiar todas las pestañas de una vez — útil para mantener conjuntos separados (p. ej. trabajo y personal). Aparece un selector rápido en la barra de título cuando tienes más de uno.',
+  'ws.new': 'Nuevo espacio de trabajo',
+  'ws.rename': 'Renombrar espacio de trabajo',
+  'ws.delete': 'Eliminar espacio de trabajo',
+  'ws.name': 'Nombre',
+  'ws.create': 'Crear',
+  'ws.renameAction': 'Renombrar',
+  'ws.deleteAction': 'Eliminar',
+  'ws.placeholder': 'Espacio {n}',
+  'ws.deleteConfirm':
+    '¿Eliminar “{name}”? Se descartará su diseño de pestañas (los repositorios en sí no se tocan).',
+  'ws.switchTitle': 'Cambiar a este espacio de trabajo',
+  'ws.activeTitle': 'Espacio de trabajo activo',
+  'ws.switcherTitle': 'Espacio de trabajo: {name}',
+  'ws.tabCountOne': '{n} pestaña',
+  'ws.tabCountMany': '{n} pestañas',
 
   'settings.profileName': 'Nombre del perfil',
   'settings.makeActive': 'Activar',

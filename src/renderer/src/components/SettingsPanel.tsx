@@ -66,7 +66,7 @@ import {
   resolveAppColors,
   resolveCodeColors
 } from '../theme/themes'
-import { LANGUAGES, useT, type TranslationKey } from '../i18n'
+import { LANGUAGES, useT, interp, type TranslationKey } from '../i18n'
 import { ShortcutEditor } from './CheatsheetModal'
 import madLogo from '../assets/mad-high.png'
 
@@ -1895,31 +1895,32 @@ function GeneralPage(): React.JSX.Element {
   const t = useT()
 
   const workspaces = settings.workspaces ?? []
+  const wsFallback = (): string => interp(t('ws.placeholder'), { n: workspaces.length + 1 })
   const newWorkspace = (): void =>
     openModal({
       kind: 'input',
-      title: 'New workspace',
-      label: 'Name',
-      placeholder: `Workspace ${workspaces.length + 1}`,
-      submitLabel: 'Create',
-      onSubmit: (name) => createWorkspace(name.trim() || `Workspace ${workspaces.length + 1}`)
+      title: t('ws.new'),
+      label: t('ws.name'),
+      placeholder: wsFallback(),
+      submitLabel: t('ws.create'),
+      onSubmit: (name) => createWorkspace(name.trim() || wsFallback())
     })
   const editWorkspace = (id: string, current: string): void =>
     openModal({
       kind: 'input',
-      title: 'Rename workspace',
-      label: 'Name',
+      title: t('ws.rename'),
+      label: t('ws.name'),
       initial: current,
-      submitLabel: 'Rename',
+      submitLabel: t('ws.renameAction'),
       onSubmit: (name) => renameWorkspace(id, name.trim() || current)
     })
   const removeWorkspace = (id: string, name: string): void =>
     openModal({
       kind: 'confirm',
-      title: 'Delete workspace',
-      message: `Delete "${name}"? Its tab layout will be discarded (the repositories themselves are untouched).`,
+      title: t('ws.delete'),
+      message: interp(t('ws.deleteConfirm'), { name }),
       danger: true,
-      confirmLabel: 'Delete',
+      confirmLabel: t('ws.deleteAction'),
       onConfirm: () => deleteWorkspace(id)
     })
 
@@ -2176,13 +2177,9 @@ function GeneralPage(): React.JSX.Element {
       </div>
 
       <h4 className="settings-section-title">
-        <LayoutGrid size={14} /> Workspaces
+        <LayoutGrid size={14} /> {t('ws.title')}
       </h4>
-      <p className="settings-hint">
-        A workspace is a saved tab layout. Switch to swap the whole tab strip at once — handy for
-        keeping separate sets (e.g. work vs personal). A quick selector appears in the title bar once
-        you have more than one.
-      </p>
+      <p className="settings-hint">{t('ws.settingsHint')}</p>
       <div className="settings-workspace-list">
         {workspaces.map((w) => {
           const isActive = w.id === settings.activeWorkspaceId
@@ -2192,18 +2189,18 @@ function GeneralPage(): React.JSX.Element {
                 type="button"
                 className="settings-workspace-name"
                 onClick={() => switchWorkspace(w.id)}
-                title={isActive ? 'Active workspace' : 'Switch to this workspace'}
+                title={isActive ? t('ws.activeTitle') : t('ws.switchTitle')}
               >
                 <span className="settings-workspace-check">{isActive ? <Check size={13} /> : null}</span>
                 <span className="settings-workspace-label">{w.name}</span>
                 <span className="settings-workspace-count">
-                  {w.tabs.length} {w.tabs.length === 1 ? 'tab' : 'tabs'}
+                  {interp(t(w.tabs.length === 1 ? 'ws.tabCountOne' : 'ws.tabCountMany'), { n: w.tabs.length })}
                 </span>
               </button>
               <button
                 type="button"
                 className="icon-btn"
-                title="Rename workspace"
+                title={t('ws.rename')}
                 onClick={() => editWorkspace(w.id, w.name)}
               >
                 <Pencil size={13} />
@@ -2212,7 +2209,7 @@ function GeneralPage(): React.JSX.Element {
                 <button
                   type="button"
                   className="icon-btn"
-                  title="Delete workspace"
+                  title={t('ws.delete')}
                   onClick={() => removeWorkspace(w.id, w.name)}
                 >
                   <Trash2 size={13} />
@@ -2223,7 +2220,7 @@ function GeneralPage(): React.JSX.Element {
         })}
       </div>
       <button type="button" className="btn ghost small" onClick={newWorkspace}>
-        <Plus size={13} /> New workspace
+        <Plus size={13} /> {t('ws.new')}
       </button>
     </div>
   )

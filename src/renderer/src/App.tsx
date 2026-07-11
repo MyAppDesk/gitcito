@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { GitMerge, FolderOpen, Download, ArrowDownToLine, Bug } from 'lucide-react'
+import { GitMerge, FolderOpen, Download, ArrowDownToLine, Bug, X } from 'lucide-react'
 import { useSettingsStore } from './stores/settings'
 import { useRepoStore, repoActions, type RepoData } from './stores/repo'
 import { useUIStore } from './stores/ui'
@@ -224,6 +224,7 @@ export default function App(): React.JSX.Element {
   const conflictView = useUIStore((s) => s.conflictView)
   const layout = useUIStore((s) => s.layout)
   const setLayout = useUIStore((s) => s.setLayout)
+  const sidebarCollapsed = useUIStore((s) => s.sidebarCollapsed)
   const [resizing, setResizing] = useState(false)
   const [appVersion, setAppVersion] = useState('')
   const updateStatus = useUpdatesStore((s) => s.status)
@@ -586,30 +587,39 @@ export default function App(): React.JSX.Element {
             </AnimatePresence>
           )
 
+          // The sidebar collapses to zero width with the same spring the right
+          // panel uses. Only the sidebar body animates (overflow-clipped); the
+          // drag handle is gated on the open state so it doesn't linger at the
+          // edge mid-collapse.
+          const sidebarHandle = (
+            <ResizeHandle
+              axis="x"
+              value={layout.sidebarWidth}
+              min={180}
+              max={460}
+              invert={sbSide === 'right'}
+              onChange={(v) => setLayout({ sidebarWidth: v })}
+              onDragging={setResizing}
+            />
+          )
           const sidebarBlock = (
             <>
-              {sbSide === 'right' && (
-                <ResizeHandle
-                  axis="x"
-                  value={layout.sidebarWidth}
-                  min={180}
-                  max={460}
-                  invert
-                  onChange={(v) => setLayout({ sidebarWidth: v })}
-                  onDragging={setResizing}
-                />
-              )}
-              <Sidebar repo={repo} />
-              {sbSide === 'left' && (
-                <ResizeHandle
-                  axis="x"
-                  value={layout.sidebarWidth}
-                  min={180}
-                  max={460}
-                  onChange={(v) => setLayout({ sidebarWidth: v })}
-                  onDragging={setResizing}
-                />
-              )}
+              {!sidebarCollapsed && sbSide === 'right' && sidebarHandle}
+              <AnimatePresence initial={false}>
+                {!sidebarCollapsed && (
+                  <motion.div
+                    key="sidebar"
+                    className="sidebar-anim"
+                    initial={{ width: 0, opacity: 0 }}
+                    animate={{ width: layout.sidebarWidth, opacity: 1 }}
+                    exit={{ width: 0, opacity: 0 }}
+                    transition={resizing ? { duration: 0 } : { type: 'spring', stiffness: 300, damping: 32 }}
+                  >
+                    <Sidebar repo={repo} />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              {!sidebarCollapsed && sbSide === 'left' && sidebarHandle}
             </>
           )
 
@@ -649,6 +659,15 @@ export default function App(): React.JSX.Element {
                     onChange={(v) => setLayout({ panelWidth: v })}
                     onDragging={setResizing}
                   />
+                  {!forceConflictPanel && (
+                    <button
+                      className="right-panel-close"
+                      title="Close panel"
+                      onClick={() => useRepoStore.getState().select(repo.path, null)}
+                    >
+                      <X size={15} />
+                    </button>
+                  )}
                   <div className="right-panel-inner" style={{ width: layout.panelWidth }}>
                     {forceConflictPanel ? (
                       <CommitComposer key={repo.path} repo={repo} />

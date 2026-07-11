@@ -651,6 +651,7 @@ const en = {
   'toolbar.notifTitle': 'GitHub notifications',
   'toolbar.refreshTitle': 'Refresh (last refreshed {time})',
   'toolbar.terminalTitle': 'Toggle terminal',
+  'toolbar.sidebarTitle': 'Toggle sidebar',
   'toolbar.searchPlaceholder': 'Search commits, authors, SHAs…',
 
   // Pull / push menus
@@ -1926,6 +1927,7 @@ const es: Dict = {
   'toolbar.notifTitle': 'Notificaciones de GitHub',
   'toolbar.refreshTitle': 'Actualizar (última actualización {time})',
   'toolbar.terminalTitle': 'Alternar terminal',
+  'toolbar.sidebarTitle': 'Alternar barra lateral',
   'toolbar.searchPlaceholder': 'Buscar commits, autores, SHAs…',
 
   // Pull / push menus

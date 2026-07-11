@@ -153,6 +153,7 @@ export interface PanelLayout {
 }
 
 const LAYOUT_KEY = 'gitcito-layout'
+const SIDEBAR_KEY = 'gitcito-sidebar-collapsed'
 const DEFAULT_LAYOUT: PanelLayout = {
   sidebarWidth: 248,
   panelWidth: 420,
@@ -186,6 +187,9 @@ interface UIState {
    *  opened its terminal keeps the pane closed; reopening the tab restores it.
    *  In-memory only — resets to all-closed on cold start. */
   terminalOpenByRepo: Record<string, boolean>
+  /** Left sidebar (branches/files) collapsed. Global workspace preference —
+   *  hides the sidebar column so the graph gets the full width. */
+  sidebarCollapsed: boolean
   graphFilter: string
   ciFilter: CiFilter
   authorFilter: string | null
@@ -223,6 +227,8 @@ interface UIState {
   dismissToast(id: number): void
   toggleTerminal(repoPath: string): void
   setTerminalOpen(repoPath: string, open: boolean): void
+  toggleSidebar(): void
+  setSidebarCollapsed(collapsed: boolean): void
   setGraphFilter(filter: string): void
   setCiFilter(filter: CiFilter): void
   setAuthorFilter(author: string | null): void
@@ -251,6 +257,13 @@ export const useUIStore = create<UIState>((set, get) => ({
   commandPaletteOpen: false,
   githubUnread: 0,
   terminalOpenByRepo: {},
+  sidebarCollapsed: (() => {
+    try {
+      return localStorage.getItem(SIDEBAR_KEY) === '1'
+    } catch {
+      return false
+    }
+  })(),
   graphFilter: '',
   ciFilter: 'all',
   authorFilter: null,
@@ -285,6 +298,15 @@ export const useUIStore = create<UIState>((set, get) => ({
     set((s) => ({ terminalOpenByRepo: { ...s.terminalOpenByRepo, [repoPath]: !s.terminalOpenByRepo[repoPath] } })),
   setTerminalOpen: (repoPath, open) =>
     set((s) => ({ terminalOpenByRepo: { ...s.terminalOpenByRepo, [repoPath]: open } })),
+  toggleSidebar: () => get().setSidebarCollapsed(!get().sidebarCollapsed),
+  setSidebarCollapsed: (sidebarCollapsed) => {
+    set({ sidebarCollapsed })
+    try {
+      localStorage.setItem(SIDEBAR_KEY, sidebarCollapsed ? '1' : '0')
+    } catch {
+      /* ignore quota errors */
+    }
+  },
   setGraphFilter: (graphFilter) => set({ graphFilter }),
   setCiFilter: (ciFilter) => set({ ciFilter }),
   setAuthorFilter: (authorFilter) => set({ authorFilter }),

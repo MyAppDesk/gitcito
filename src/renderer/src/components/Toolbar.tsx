@@ -29,7 +29,8 @@ import {
   KeyRound,
   Settings,
   Sparkles,
-  ArrowLeftRight
+  ArrowLeftRight,
+  PanelLeft
 } from 'lucide-react'
 import type { MenuItem } from '../stores/ui'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
@@ -51,8 +52,9 @@ function timeSince(at: number | null): string {
 export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
   const t = useT()
   const { undo, redo } = useRepoStore()
-  const { openContextMenu, openModal, toggleTerminal, graphFilter, setGraphFilter, busy } = useUIStore()
+  const { openContextMenu, openModal, toggleTerminal, toggleSidebar, graphFilter, setGraphFilter, busy } = useUIStore()
   const terminalOpen = useUIStore((s) => !!s.terminalOpenByRepo[repo.path])
+  const sidebarCollapsed = useUIStore((s) => s.sidebarCollapsed)
   const busyOp = useUIStore((s) => s.busyOp)
   // Any mutating git op queued/running gates the action buttons — the user
   // can't fire a second action until the first has fully settled.
@@ -193,6 +195,13 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
   return (
     <div className="toolbar">
       <div className="toolbar-left">
+        <button
+          className={`tool-btn icon-only ${!sidebarCollapsed ? 'toggled' : ''}`}
+          title={t('toolbar.sidebarTitle')}
+          onClick={toggleSidebar}
+        >
+          <PanelLeft size={16} />
+        </button>
         <button className="repo-pill" onClick={repoMenu} title={t('toolbar.switchRepo')}>
           <span className="repo-pill-stack">
             <span className="repo-pill-label">{t('toolbar.repository')}</span>

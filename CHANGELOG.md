@@ -1,5 +1,12 @@
 
 
+## [2.2.0](https://github.com/MyAppDesk/gitcito/compare/v2.1.0...v2.2.0) (2026-07-11)
+
+
+### Features
+
+* add sidebar toggle functionality and animations ([838ee9d](https://github.com/MyAppDesk/gitcito/commit/838ee9dc305168ffaba7ffbf42c0fe4b168dfc74))
+
 ## [2.1.0](https://github.com/MyAppDesk/gitcito/compare/v2.0.1...v2.1.0) (2026-07-09)
 
 

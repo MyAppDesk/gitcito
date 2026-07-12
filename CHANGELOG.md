@@ -1,5 +1,12 @@
 
 
+## [2.3.0](https://github.com/MyAppDesk/gitcito/compare/v2.2.0...v2.3.0) (2026-07-12)
+
+
+### Features
+
+* implement secure-share for encrypted .gitcito bundles ([d2007a8](https://github.com/MyAppDesk/gitcito/commit/d2007a853973ccb7a1a0db92bb3f1eb6f4263efc))
+
 ## [2.2.0](https://github.com/MyAppDesk/gitcito/compare/v2.1.0...v2.2.0) (2026-07-11)
 
 

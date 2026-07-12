@@ -61,7 +61,11 @@ import type {
   VaultListResult,
   VaultExport,
   InfoEntry,
-  InfoExport
+  InfoExport,
+  SecureShareCandidate,
+  SecureBundleHeader,
+  SecureSharePreviewEntry,
+  SecureShareError
 } from '../../../shared/types'
 
 // Typed adapter over the IPC bridge — the only place that talks to window.api.
@@ -365,6 +369,27 @@ export const vaultApi = {
     window.api.vault.remove(scope, repoPath, id) as Promise<VaultListResult>,
   exportAll: () => window.api.vault.exportAll() as Promise<VaultExport>,
   importAll: (data: VaultExport) => window.api.vault.importAll(data) as Promise<void>
+}
+
+export const secureShareApi = {
+  candidates: (repoPath: string) =>
+    window.api.secureShare.candidates(repoPath) as Promise<SecureShareCandidate[]>,
+  export: (repoPath: string, project: string, paths: string[], password: string) =>
+    window.api.secureShare.export(repoPath, project, paths, password) as Promise<
+      { path: string } | { canceled: true } | { error: SecureShareError }
+    >,
+  pick: () =>
+    window.api.secureShare.pick() as Promise<
+      { path: string; header: SecureBundleHeader } | { error: SecureShareError } | null
+    >,
+  preview: (bundlePath: string, password: string, repoPath: string) =>
+    window.api.secureShare.preview(bundlePath, password, repoPath) as Promise<
+      { files: SecureSharePreviewEntry[] } | { error: SecureShareError }
+    >,
+  apply: (bundlePath: string, password: string, repoPath: string, selected: string[]) =>
+    window.api.secureShare.apply(bundlePath, password, repoPath, selected) as Promise<
+      { written: string[] } | { error: SecureShareError }
+    >
 }
 
 export const infoApi = {

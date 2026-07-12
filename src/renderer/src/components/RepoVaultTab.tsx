@@ -10,7 +10,8 @@ import {
   Globe,
   ClipboardCopy,
   ClipboardPaste,
-  Loader2
+  Loader2,
+  Lock
 } from 'lucide-react'
 import { vaultApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
@@ -134,6 +135,13 @@ export function RepoVaultTab({ repoPath }: { repoPath: string }): React.JSX.Elem
     <>
       <div className="repo-info-head">
         <span className="settings-hint">{t('vault.repoTabHint')}</span>
+        <button
+          className="btn ghost small"
+          title={t('share.title')}
+          onClick={() => useUIStore.getState().openModal({ kind: 'secure-share', repoPath })}
+        >
+          <Lock size={13} /> {t('share.title')}
+        </button>
         <button className="btn ghost small" onClick={openGlobal}>
           <Globe size={13} /> {t('vault.openGlobal')}
         </button>

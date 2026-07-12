@@ -47,7 +47,8 @@ const EXPECTED = [
   'launch-configs',
   'empty-repo',
   'terminal-per-tab',
-  'panel-layout'
+  'panel-layout',
+  'secure-share'
 ]
 
 describe('playground fixtures', () => {

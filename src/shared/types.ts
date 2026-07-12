@@ -887,6 +887,37 @@ export interface InfoExport {
   repos: Record<string, InfoEntry[]>
 }
 
+// ─── Secure share (.gitcito bundles) ─────────────────────────────────────────
+
+/** A repo file offered in the secure-share export picker. */
+export interface SecureShareCandidate {
+  path: string // relative to the repo root, forward slashes
+  size: number
+  secret: boolean // matches the secret-file heuristics — preselected in the UI
+}
+
+/** Plaintext envelope of a .gitcito bundle, readable without the password. */
+export interface SecureBundleHeader {
+  project: string
+  createdAt: number
+  fileCount: number
+}
+
+/** One decrypted bundle entry, previewed before writing into the repo. */
+export interface SecureSharePreviewEntry {
+  path: string
+  size: number
+  exists: boolean // a file already sits at this path in the target repo
+  safe: boolean // path cannot escape the repo (unsafe entries are never written)
+}
+
+export type SecureShareError =
+  | 'invalid' // not a .gitcito bundle / malformed
+  | 'bad-password' // wrong password or tampered payload (GCM auth failed)
+  | 'unsupported-version' // bundle written by a newer gitcito
+  | 'read-failed'
+  | 'write-failed'
+
 /** A non-private, per-repo info field (App ID, website, social links…). Stored
  *  in plaintext — unlike the vault, this is reference metadata, not secrets. */
 export interface InfoEntry {

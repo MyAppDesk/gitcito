@@ -6,4 +6,11 @@ export const ipcMain = {
   handle(): void {}
 }
 
-export default { ipcMain }
+// secureShare.ts imports dialog at the top level; its testable functions
+// (candidate walk, bundle apply) never open a dialog.
+export const dialog = {
+  showOpenDialog: (): Promise<never> => Promise.reject(new Error('dialog stubbed')),
+  showSaveDialog: (): Promise<never> => Promise.reject(new Error('dialog stubbed'))
+}
+
+export default { ipcMain, dialog }

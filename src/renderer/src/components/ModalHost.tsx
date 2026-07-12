@@ -24,6 +24,7 @@ import { CodeSearchModal } from './CodeSearchModal'
 import { StackModal } from './StackModal'
 import { ChangelogGenModal } from './ChangelogGenModal'
 import { SnapshotsModal } from './SnapshotsModal'
+import { SecureShareModal } from './SecureShareModal'
 import { StashPartialModal } from './StashPartialModal'
 import { CreateTagModal } from './CreateTagModal'
 import { ErrorBoundary } from './ErrorBoundary'
@@ -1364,7 +1365,8 @@ export function ModalHost(): React.JSX.Element {
                     modal.kind === 'pr-detail' ||
                     modal.kind === 'code-search' ||
                     modal.kind === 'changelog-gen' ||
-                    modal.kind === 'repo-settings'
+                    modal.kind === 'repo-settings' ||
+                    modal.kind === 'secure-share'
                   ? 'modal-tall'
                   : ''
             }`}
@@ -1403,6 +1405,9 @@ export function ModalHost(): React.JSX.Element {
             {modal.kind === 'stack' && <StackModal repoPath={modal.repoPath} />}
             {modal.kind === 'changelog-gen' && <ChangelogGenModal repoPath={modal.repoPath} />}
             {modal.kind === 'snapshots' && <SnapshotsModal repoPath={modal.repoPath} />}
+            {modal.kind === 'secure-share' && (
+              <SecureShareModal repoPath={modal.repoPath} initialMode={modal.initialMode} />
+            )}
             {modal.kind === 'stash-partial' && <StashPartialModal repoPath={modal.repoPath} />}
             {modal.kind === 'create-tag' && <CreateTagModal repoPath={modal.repoPath} hash={modal.hash} at={modal.at} />}
             {modal.kind === 'cheatsheet' && <CheatsheetModal />}

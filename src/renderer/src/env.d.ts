@@ -83,6 +83,13 @@ interface PreloadApi {
     exportAll(): Promise<unknown>
     importAll(data: unknown): Promise<unknown>
   }
+  secureShare: {
+    candidates(repoPath: string): Promise<unknown>
+    export(repoPath: string, project: string, paths: string[], password: string): Promise<unknown>
+    pick(): Promise<unknown>
+    preview(bundlePath: string, password: string, repoPath: string): Promise<unknown>
+    apply(bundlePath: string, password: string, repoPath: string, selected: string[]): Promise<unknown>
+  }
   info: {
     list(repoPath: string): Promise<unknown>
     upsert(repoPath: string, entry: unknown): Promise<unknown>

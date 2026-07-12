@@ -90,6 +90,16 @@ const api = {
     exportAll: (): Promise<unknown> => ipcRenderer.invoke('vault:exportAll'),
     importAll: (data: unknown): Promise<unknown> => ipcRenderer.invoke('vault:importAll', data)
   },
+  secureShare: {
+    candidates: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('secure:candidates', repoPath),
+    export: (repoPath: string, project: string, paths: string[], password: string): Promise<unknown> =>
+      ipcRenderer.invoke('secure:export', repoPath, project, paths, password),
+    pick: (): Promise<unknown> => ipcRenderer.invoke('secure:pick'),
+    preview: (bundlePath: string, password: string, repoPath: string): Promise<unknown> =>
+      ipcRenderer.invoke('secure:preview', bundlePath, password, repoPath),
+    apply: (bundlePath: string, password: string, repoPath: string, selected: string[]): Promise<unknown> =>
+      ipcRenderer.invoke('secure:apply', bundlePath, password, repoPath, selected)
+  },
   info: {
     list: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('info:list', repoPath),
     upsert: (repoPath: string, entry: unknown): Promise<unknown> =>

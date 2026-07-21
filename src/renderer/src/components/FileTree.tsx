@@ -1,7 +1,7 @@
-import { Fragment, useCallback, useEffect, useState } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { ChevronRight, File, Folder, FolderOpen, Loader2, ExternalLink } from 'lucide-react'
-import type { TreeEntry } from '../../../shared/types'
+import { ChevronRight, File, Folder, FolderOpen, Loader2, ExternalLink, Pencil } from 'lucide-react'
+import type { TreeEntry, TreeStatusKind } from '../../../shared/types'
 import { gitApi, shellApi } from '../infrastructure/api'
 import { useUIStore, type MenuItem } from '../stores/ui'
 import { repoActions, type RepoData } from '../stores/repo'
@@ -46,6 +46,40 @@ export function FileTree({
       if (err) toast('error', err)
     })
   }
+
+  // Per-folder change counts shown as badges on collapsed folders. treeStatus
+  // holds both files and (aggregated) directories — a key is a directory when
+  // some other key nests under it, so only leaf entries are counted.
+  const folderCounts = useMemo(() => {
+    const dirs = new Set<string>()
+    for (const p of Object.keys(treeStatus)) {
+      let slash = p.lastIndexOf('/')
+      while (slash > 0) {
+        dirs.add(p.slice(0, slash))
+        slash = p.lastIndexOf('/', slash - 1)
+      }
+    }
+    const bucketOf = (kind: TreeStatusKind): 'added' | 'modified' | 'deleted' | 'renamed' | 'conflicted' | null =>
+      kind === 'added' || kind === 'untracked' ? 'added'
+        : kind === 'modified' ? 'modified'
+        : kind === 'renamed' ? 'renamed'
+        : kind === 'deleted' ? 'deleted'
+        : kind === 'conflicted' ? 'conflicted'
+        : null
+    const counts: Record<string, { added: number; modified: number; deleted: number; renamed: number; conflicted: number }> = {}
+    for (const [p, kind] of Object.entries(treeStatus)) {
+      if (dirs.has(p)) continue
+      const bucket = bucketOf(kind)
+      if (!bucket) continue
+      let slash = p.lastIndexOf('/')
+      while (slash > 0) {
+        const dir = p.slice(0, slash)
+        ;(counts[dir] ??= { added: 0, modified: 0, deleted: 0, renamed: 0, conflicted: 0 })[bucket]++
+        slash = p.lastIndexOf('/', slash - 1)
+      }
+    }
+    return counts
+  }, [treeStatus])
 
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [children, setChildren] = useState<Record<string, TreeEntry[]>>({})
@@ -303,6 +337,8 @@ export function FileTree({
       const open = node.dir && expanded.has(node.path)
       const status = treeStatus[node.path]
       const selected = !node.dir && fileView?.repoPath === path && fileView.file === node.path
+      // Collapsed folders show aggregate change counts instead of the plain dot.
+      const counts = node.dir && !open ? folderCounts[node.path] : undefined
       return (
         <Fragment key={node.path}>
           <div
@@ -332,7 +368,33 @@ export function FileTree({
               )}
             </span>
             <span className="tree-name">{node.name}</span>
-            {status && status !== 'ignored' && <span className="tree-dot" />}
+            {counts ? (
+              <span className="tree-badges">
+                {counts.added > 0 && (
+                  <span className="tree-badge tb-added">+{counts.added}</span>
+                )}
+                {counts.modified > 0 && (
+                  <span className="tree-badge tb-modified">
+                    <Pencil size={9} />
+                    {counts.modified}
+                  </span>
+                )}
+                {counts.deleted > 0 && (
+                  <span className="tree-badge tb-deleted">−{counts.deleted}</span>
+                )}
+                {counts.renamed > 0 && (
+                  <span className="tree-badge tb-renamed">
+                    <ChevronRight size={9} strokeWidth={3.5} />
+                    {counts.renamed}
+                  </span>
+                )}
+                {counts.conflicted > 0 && (
+                  <span className="tree-badge tb-conflicted">!{counts.conflicted}</span>
+                )}
+              </span>
+            ) : (
+              status && status !== 'ignored' && <span className="tree-dot" />
+            )}
             {!node.dir && (
               <span
                 className="icon-btn tree-open-with"

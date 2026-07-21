@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { ChevronDown, ChevronRight, FileText, FolderOpen, Folder } from 'lucide-react'
+import { ChevronDown, ChevronRight, FolderOpen, Folder, Pencil } from 'lucide-react'
 import type { FileEntry } from '../../../shared/types'
 import { useSettingsStore } from '../stores/settings'
 
@@ -29,7 +29,7 @@ export function statusLabel(s: string): string {
     case 'D':
       return '-'
     case 'R':
-      return 'R'
+      return '→'
     case 'U':
       return '!'
     default:
@@ -86,6 +86,56 @@ function buildTree(files: FileEntry[]): TreeNode[] {
   return sortNodes(root.children.map(compress))
 }
 
+// Aggregate descendant-file counts for a folder, bucketed like statusClass —
+// shown as badges when the folder is collapsed.
+interface FolderCounts {
+  add: number
+  mod: number
+  del: number
+  ren: number
+  conflict: number
+}
+
+function countsOf(node: TreeNode): FolderCounts {
+  const c: FolderCounts = { add: 0, mod: 0, del: 0, ren: 0, conflict: 0 }
+  const walk = (n: TreeNode): void => {
+    if (n.file) {
+      const cls = statusClass(n.file.status)
+      if (cls === 'st-add') c.add++
+      else if (cls === 'st-del') c.del++
+      else if (cls === 'st-ren') c.ren++
+      else if (cls === 'st-conflict') c.conflict++
+      else c.mod++
+    }
+    for (const child of n.children) walk(child)
+  }
+  walk(node)
+  return c
+}
+
+function FolderBadges({ node }: { node: TreeNode }): React.JSX.Element {
+  const c = countsOf(node)
+  return (
+    <span className="tree-badges">
+      {c.add > 0 && <span className="tree-badge tb-added">+{c.add}</span>}
+      {c.mod > 0 && (
+        <span className="tree-badge tb-modified">
+          <Pencil size={9} />
+          {c.mod}
+        </span>
+      )}
+      {c.del > 0 && <span className="tree-badge tb-deleted">−{c.del}</span>}
+      {c.ren > 0 && (
+        <span className="tree-badge tb-renamed">
+          <ChevronRight size={9} strokeWidth={3.5} />
+          {c.ren}
+        </span>
+      )}
+      {c.conflict > 0 && <span className="tree-badge tb-conflicted">!{c.conflict}</span>}
+    </span>
+  )
+}
+
 function FileRowInner({
   file,
   label,
@@ -107,9 +157,10 @@ function FileRowInner({
       onContextMenu={(e) => props.onFileContext?.(file, e)}
       title={file.path}
     >
-      <FileText size={13} />
+      <span className={`file-status ${statusClass(file.status)}`}>
+        {file.status === 'R' ? <ChevronRight size={12} strokeWidth={3} /> : statusLabel(file.status)}
+      </span>
       <span className="file-path">{label}</span>
-      <span className={`file-status ${statusClass(file.status)}`}>{statusLabel(file.status)}</span>
       {props.action?.(file)}
     </div>
   )
@@ -144,7 +195,8 @@ function TreeLevel({
             >
               {collapsed.has(n.path) ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
               {collapsed.has(n.path) ? <Folder size={13} /> : <FolderOpen size={13} />}
-              <span>{n.name}</span>
+              <span className="tree-folder-name">{n.name}</span>
+              {collapsed.has(n.path) && <FolderBadges node={n} />}
             </button>
             {!collapsed.has(n.path) && (
               <TreeLevel nodes={n.children} depth={depth + 1} collapsed={collapsed} toggle={toggle} props={props} />

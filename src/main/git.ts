@@ -1879,7 +1879,9 @@ export const gitService = {
   async commitFiles(repoPath: string, hash: string): Promise<FileEntry[]> {
     return memo(commitFilesCache, `${repoPath}\0${hash}`, async () => {
       const git = gitFor(repoPath)
-      const out = await git.raw(['diff-tree', '--no-commit-id', '--name-status', '-r', '--root', '-m', '--first-parent', hash])
+      // -M: detect renames so moved files report R (with old→new paths) instead
+      // of an unrelated A/D pair. diff-tree is plumbing and ignores diff.renames.
+      const out = await git.raw(['diff-tree', '--no-commit-id', '--name-status', '-M', '-r', '--root', '-m', '--first-parent', hash])
       const seen = new Set<string>()
       const files: FileEntry[] = []
       for (const line of out.split('\n').filter(Boolean)) {
@@ -1905,7 +1907,7 @@ export const gitService = {
 
   async stashFiles(repoPath: string, sha: string, untrackedSha?: string | null): Promise<FileEntry[]> {
     const git = gitFor(repoPath)
-    const out = await git.raw(['diff', '--name-status', `${sha}^1`, sha])
+    const out = await git.raw(['diff', '--name-status', '-M', `${sha}^1`, sha])
     const files: FileEntry[] = []
     for (const line of out.split('\n').filter(Boolean)) {
       const [code, ...rest] = line.split('\t')

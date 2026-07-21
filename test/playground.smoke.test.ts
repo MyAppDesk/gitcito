@@ -48,7 +48,8 @@ const EXPECTED = [
   'empty-repo',
   'terminal-per-tab',
   'panel-layout',
-  'secure-share'
+  'secure-share',
+  'tree-badges'
 ]
 
 describe('playground fixtures', () => {

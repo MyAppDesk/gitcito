@@ -2575,6 +2575,7 @@ textarea:focus {
   align-items: center;
   justify-content: center;
   border-radius: 4px;
+  flex-shrink: 0;
 }
 .st-add {
   background: rgba(63, 208, 164, 0.15);
@@ -2589,8 +2590,8 @@ textarea:focus {
   color: var(--yellow);
 }
 .st-ren {
-  background: rgba(181, 133, 247, 0.13);
-  color: var(--purple);
+  background: rgba(77, 163, 255, 0.16);
+  color: var(--blue, #4da3ff);
 }
 .st-conflict {
   background: rgba(231, 89, 108, 0.3);
@@ -5309,11 +5310,20 @@ textarea:focus {
   text-align: left;
 }
 .tree-folder:hover {
-  background: var(--bg-2);
+  background: var(--bg-3);
 }
 .tree-folder svg {
   color: var(--text-2);
   flex-shrink: 0;
+}
+.tree-folder-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Badge icons keep their status color despite the generic folder-svg rule. */
+.tree-folder .tree-badge svg {
+  color: currentColor;
 }
 
 .file-item.current {
@@ -9172,7 +9182,7 @@ mark.find-hit.active {
   overflow: hidden;
 }
 .tree-row:hover {
-  background: var(--bg-2);
+  background: var(--bg-3);
 }
 .tree-row.selected {
   background: var(--accent-soft);
@@ -9205,6 +9215,27 @@ mark.find-hit.active {
   background: currentColor;
   opacity: 0.9;
 }
+/* Aggregate change counts on collapsed folders (e.g. "+3 ✎1 −2"). */
+.tree-badges {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex-shrink: 0;
+  font-size: 10.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.tree-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.tree-badge.tb-added { color: var(--green); }
+.tree-badge.tb-modified { color: var(--yellow); }
+.tree-badge.tb-deleted { color: var(--red); }
+.tree-badge.tb-renamed { color: var(--blue, #4da3ff); }
+.tree-badge.tb-conflicted { color: var(--red); }
 .tree-open-with {
   flex-shrink: 0;
   width: 18px;
@@ -9224,7 +9255,7 @@ mark.find-hit.active {
 .tree-row.st-modified .tree-name,
 .tree-row.st-modified .tree-icon { color: var(--yellow); }
 .tree-row.st-renamed .tree-name,
-.tree-row.st-renamed .tree-icon { color: var(--yellow); }
+.tree-row.st-renamed .tree-icon { color: var(--blue, #4da3ff); }
 .tree-row.st-deleted .tree-name { color: var(--red); text-decoration: line-through; }
 .tree-row.st-deleted .tree-icon { color: var(--red); }
 .tree-row.st-conflicted .tree-name,

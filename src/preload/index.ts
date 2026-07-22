@@ -98,7 +98,20 @@ const api = {
     preview: (bundlePath: string, password: string, repoPath: string): Promise<unknown> =>
       ipcRenderer.invoke('secure:preview', bundlePath, password, repoPath),
     apply: (bundlePath: string, password: string, repoPath: string, selected: string[]): Promise<unknown> =>
-      ipcRenderer.invoke('secure:apply', bundlePath, password, repoPath, selected)
+      ipcRenderer.invoke('secure:apply', bundlePath, password, repoPath, selected),
+    exportV2: (specs: unknown, project: string, password: string): Promise<unknown> =>
+      ipcRenderer.invoke('secure:exportV2', specs, project, password),
+    openV2: (bundlePath: string, password: string): Promise<unknown> =>
+      ipcRenderer.invoke('secure:openV2', bundlePath, password),
+    previewRepoV2: (
+      bundlePath: string,
+      password: string,
+      sectionIndex: number,
+      repoPath: string
+    ): Promise<unknown> =>
+      ipcRenderer.invoke('secure:previewRepoV2', bundlePath, password, sectionIndex, repoPath),
+    applyV2: (bundlePath: string, password: string, plan: unknown): Promise<unknown> =>
+      ipcRenderer.invoke('secure:applyV2', bundlePath, password, plan)
   },
   info: {
     list: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('info:list', repoPath),

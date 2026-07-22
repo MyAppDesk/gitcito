@@ -3,6 +3,7 @@ import { join } from 'path'
 import { readFile, writeFile, mkdir } from 'fs/promises'
 import { randomUUID } from 'node:crypto'
 import type { VaultEntry, VaultListResult, VaultExport } from '../shared/types'
+import type { BundleVaultEntry } from './secureBundle'
 
 // A small local secrets store, encrypted at rest with the OS keychain via
 // Electron safeStorage. Two scopes: per-repo entries (keyed by repo path) and a
@@ -94,6 +95,34 @@ async function importAll(incoming: VaultExport): Promise<void> {
     data.repos[path] = mergeEntries(data.repos[path] ?? [], entries)
   }
   await save(data)
+}
+
+/** Global vault secrets as portable bundle entries (no id/updatedAt). Empty when
+ *  OS encryption is unavailable. Used by secure-share to pack a vault section. */
+export async function exportGlobalEntries(): Promise<BundleVaultEntry[]> {
+  if (!safeStorage.isEncryptionAvailable()) return []
+  const data = await load()
+  return data.global.map((e) => ({ key: e.key, value: e.value, ...(e.note ? { note: e.note } : {}) }))
+}
+
+/** Merge bundle vault entries into the global vault, matching by key (incoming
+ *  value/note win). Returns how many were written; 0 if encryption unavailable. */
+export async function importGlobalEntries(entries: BundleVaultEntry[]): Promise<number> {
+  if (!safeStorage.isEncryptionAvailable() || entries.length === 0) return 0
+  const data = await load()
+  const now = Date.now()
+  for (const inc of entries) {
+    const existing = data.global.find((e) => e.key === inc.key)
+    if (existing) {
+      existing.value = inc.value
+      existing.note = inc.note ?? existing.note
+      existing.updatedAt = now
+    } else {
+      data.global.push({ id: randomUUID(), key: inc.key, value: inc.value, note: inc.note, updatedAt: now })
+    }
+  }
+  await save(data)
+  return entries.length
 }
 
 export function registerVaultHandlers(): void {

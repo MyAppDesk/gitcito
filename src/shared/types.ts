@@ -896,11 +896,55 @@ export interface SecureShareCandidate {
   secret: boolean // matches the secret-file heuristics — preselected in the UI
 }
 
-/** Plaintext envelope of a .gitcito bundle, readable without the password. */
+/** Plaintext envelope of a .gitcito bundle, readable without the password. A v1
+ *  bundle carries a single repo's files (project/fileCount only); a v2 bundle
+ *  carries N sections (repos + the global vault) summarised in `sections`. */
 export interface SecureBundleHeader {
   project: string
   createdAt: number
-  fileCount: number
+  fileCount: number // total repo files across all sections (0 for a vault-only bundle)
+  version?: number // 1 = legacy single-repo, 2 = multi-section
+  sections?: SecureBundleSectionSummary[] // present on v2 — one entry per tab
+}
+
+/** Per-section summary in a v2 envelope, readable before the password is entered
+ *  (so the import UI can show tabs and match repos). No secret values here. */
+export type SecureBundleSectionSummary =
+  | { kind: 'repo'; project: string; folder: string; remote?: string; fileCount: number }
+  | { kind: 'vault'; entryCount: number }
+
+/** A decrypted v2 bundle, sanitised for the renderer: file lists and vault keys,
+ *  but never file contents or secret values (those stay in the main process). */
+export interface SecureBundleOpened {
+  version: number
+  sections: SecureOpenedSection[]
+}
+
+export type SecureOpenedSection =
+  | {
+      kind: 'repo'
+      project: string
+      folder: string
+      remote?: string
+      files: { path: string; size: number; executable?: boolean }[]
+    }
+  | { kind: 'vault'; entries: { key: string; note?: string }[] }
+
+/** What the export UI asks the main process to pack. Repo file contents and
+ *  vault values are read in main — the renderer only names what to include. */
+export type SecureExportSpec =
+  | { kind: 'repo'; repoPath: string; project: string; folder: string; remote?: string; paths: string[] }
+  | { kind: 'vault' }
+
+/** How the import UI wants each section applied. Repo sections target a chosen
+ *  local repo; the vault section merges into the global vault. */
+export type SecureApplyPlan =
+  | { kind: 'repo'; sectionIndex: number; targetRepoPath: string; paths: string[] }
+  | { kind: 'vault'; sectionIndex: number; keys: string[] }
+
+export interface SecureApplyResult {
+  filesWritten: number
+  secretsWritten: number
 }
 
 /** One decrypted bundle entry, previewed before writing into the repo. */

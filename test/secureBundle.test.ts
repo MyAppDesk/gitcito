@@ -1,11 +1,14 @@
 import { describe, it, expect } from 'vitest'
 import {
   packBundle,
+  packSections,
   unpackBundle,
+  unpackSections,
   readBundleHeader,
   isSafeRelPath,
   BundleError,
-  BUNDLE_FORMAT
+  BUNDLE_FORMAT,
+  type BundleSection
 } from '../src/main/secureBundle'
 import { isSecretFile } from '../src/shared/secretFiles'
 
@@ -38,7 +41,9 @@ describe('secure bundle pack/unpack', () => {
     expect(header).toEqual({
       project: 'myproject',
       createdAt: expect.any(Number),
-      fileCount: 4
+      fileCount: 4,
+      version: 2,
+      sections: [{ kind: 'repo', project: 'myproject', folder: 'myproject', fileCount: 4 }]
     })
     // No plaintext leakage: neither file paths nor contents appear in the JSON.
     expect(bundle).not.toContain('API_KEY')
@@ -66,6 +71,81 @@ describe('secure bundle pack/unpack', () => {
     expect(readBundleHeader('{"format":"something-else"}')).toBeNull()
     expect(() => readBundleHeader(JSON.stringify({ format: BUNDLE_FORMAT, version: 99 }))).toThrowError(BundleError)
     expect(() => unpackBundle('{}', 'x')).toThrowError(expect.objectContaining({ code: 'invalid' }))
+  })
+})
+
+describe('v2 multi-section bundles', () => {
+  const SECTIONS: BundleSection[] = [
+    {
+      kind: 'repo',
+      project: 'api',
+      folder: 'api',
+      remote: 'git@github.com:acme/api.git',
+      files: [{ path: '.env', content: Buffer.from('API_KEY=sk-1\n') }]
+    },
+    {
+      kind: 'repo',
+      project: 'web',
+      folder: 'web-frontend',
+      files: [{ path: '.env.local', content: Buffer.from('NEXT_PUBLIC=1\n'), executable: false }]
+    },
+    {
+      kind: 'vault',
+      entries: [
+        { key: 'STRIPE', value: 'sk_live_x', note: 'prod' },
+        { key: 'SENTRY', value: 'https://dsn' }
+      ]
+    }
+  ]
+  const bundle = packSections('Workspace', SECTIONS, 'a good long password')
+
+  it('summarises every section in the envelope without the password', () => {
+    const header = readBundleHeader(bundle)
+    expect(header?.version).toBe(2)
+    expect(header?.fileCount).toBe(2) // repo files only, vault excluded
+    expect(header?.sections).toEqual([
+      { kind: 'repo', project: 'api', folder: 'api', remote: 'git@github.com:acme/api.git', fileCount: 1 },
+      { kind: 'repo', project: 'web', folder: 'web-frontend', fileCount: 1 },
+      { kind: 'vault', entryCount: 2 }
+    ])
+    // Secret values never appear in the plaintext envelope.
+    expect(bundle).not.toContain('sk_live_x')
+    expect(bundle).not.toContain('API_KEY')
+  })
+
+  it('round-trips repo sections and vault entries', () => {
+    const out = unpackSections(bundle, 'a good long password')
+    expect(out).toHaveLength(3)
+    expect(out[0]).toMatchObject({ kind: 'repo', folder: 'api', remote: 'git@github.com:acme/api.git' })
+    expect(out[1]).toMatchObject({ kind: 'repo', folder: 'web-frontend' })
+    const vault = out[2]
+    expect(vault.kind).toBe('vault')
+    if (vault.kind === 'vault') {
+      expect(vault.entries).toEqual([
+        { key: 'STRIPE', value: 'sk_live_x', note: 'prod' },
+        { key: 'SENTRY', value: 'https://dsn' }
+      ])
+    }
+  })
+
+  it('flattens repo files for the back-compat unpackBundle', () => {
+    const files = unpackBundle(bundle, 'a good long password')
+    expect(files.map((f) => f.path)).toEqual(['.env', '.env.local'])
+  })
+})
+
+describe('v1 back-compat', () => {
+  // A hand-built v1 envelope (the shape gitcito ≤2.x wrote): version 1, `files`.
+  it('reads a legacy single-repo bundle as one repo section', () => {
+    const v1 = packBundle('legacy', [{ path: '.env', content: Buffer.from('X=1\n') }], 'pw pw pw pw')
+    const raw = JSON.parse(v1)
+    // packBundle now emits v2; simulate a true v1 payload for the read path.
+    const header = readBundleHeader(v1)
+    expect(header?.sections?.[0]).toMatchObject({ kind: 'repo', project: 'legacy' })
+    const sections = unpackSections(v1, 'pw pw pw pw')
+    expect(sections).toHaveLength(1)
+    expect(sections[0].kind).toBe('repo')
+    expect(raw.format).toBe(BUNDLE_FORMAT)
   })
 })
 

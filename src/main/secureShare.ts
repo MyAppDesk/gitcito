@@ -4,17 +4,25 @@ import { readFile, writeFile, readdir, stat, mkdir, chmod } from 'fs/promises'
 import { isSecretFile } from '../shared/secretFiles'
 import {
   packBundle,
+  packSections,
   unpackBundle,
+  unpackSections,
   readBundleHeader,
   isSafeRelPath,
   BundleError,
-  type BundleFile
+  type BundleFile,
+  type BundleSection
 } from './secureBundle'
+import { exportGlobalEntries, importGlobalEntries } from './vault'
 import type {
   SecureShareCandidate,
   SecureBundleHeader,
   SecureSharePreviewEntry,
-  SecureShareError
+  SecureShareError,
+  SecureExportSpec,
+  SecureBundleOpened,
+  SecureApplyPlan,
+  SecureApplyResult
 } from '../shared/types'
 
 // IPC surface for sharing files as encrypted .gitcito bundles. All filesystem
@@ -209,8 +217,190 @@ export async function applyBundle(
   return { written }
 }
 
+// ─── v2 multi-section export/import ──────────────────────────────────────────
+
+/** Build a v2 bundle from export specs and write it. Repo files are read here;
+ *  the vault section pulls the global vault directly (values never touch the
+ *  renderer). Empty vault sections are dropped; an all-empty request errors. */
+async function exportSectionsV2(
+  specs: SecureExportSpec[],
+  project: string,
+  password: string
+): Promise<{ path: string } | { canceled: true } | { error: SecureShareError }> {
+  const sections: BundleSection[] = []
+  for (const spec of specs) {
+    if (spec.kind === 'vault') {
+      const entries = await exportGlobalEntries()
+      if (entries.length > 0) sections.push({ kind: 'vault', entries })
+      continue
+    }
+    const files: BundleFile[] = []
+    for (const rel of spec.paths) {
+      const full = resolveInside(spec.repoPath, rel)
+      if (!full) return { error: 'invalid' }
+      try {
+        const content = await readFile(full)
+        const s = await stat(full)
+        files.push({
+          path: rel.replace(/\\/g, '/'),
+          content,
+          ...(s.mode & 0o111 ? { executable: true } : {})
+        })
+      } catch {
+        return { error: 'read-failed' }
+      }
+    }
+    if (files.length > 0) {
+      sections.push({
+        kind: 'repo',
+        project: spec.project,
+        folder: spec.folder,
+        ...(spec.remote ? { remote: spec.remote } : {}),
+        files
+      })
+    }
+  }
+  if (sections.length === 0) return { error: 'read-failed' }
+  const safeName = (project || 'workspace').replace(/[^\w.-]+/g, '-')
+  const { canceled, filePath } = await dialog.showSaveDialog({
+    title: 'Export secure bundle',
+    defaultPath: `${safeName}.gitcito`,
+    filters: [{ name: 'Gitcito bundle', extensions: ['gitcito'] }]
+  })
+  if (canceled || !filePath) return { canceled: true }
+  try {
+    await writeFile(filePath, packSections(project, sections, password), { mode: 0o600 })
+    return { path: filePath }
+  } catch {
+    return { error: 'write-failed' }
+  }
+}
+
+/** Decrypt a bundle to a renderer-safe shape: repo file lists (path/size) and
+ *  vault keys — never file contents or secret values. */
+async function openBundleV2(
+  bundlePath: string,
+  password: string
+): Promise<SecureBundleOpened | { error: SecureShareError }> {
+  try {
+    const sections = unpackSections(await readFile(bundlePath, 'utf-8'), password)
+    return {
+      version: 2,
+      sections: sections.map((s) =>
+        s.kind === 'vault'
+          ? { kind: 'vault' as const, entries: s.entries.map((e) => ({ key: e.key, ...(e.note ? { note: e.note } : {}) })) }
+          : {
+              kind: 'repo' as const,
+              project: s.project,
+              folder: s.folder,
+              ...(s.remote ? { remote: s.remote } : {}),
+              files: s.files.map((f) => ({
+                path: f.path,
+                size: f.content.length,
+                ...(f.executable ? { executable: true } : {})
+              }))
+            }
+      )
+    }
+  } catch (e) {
+    return { error: errCode(e) }
+  }
+}
+
+/** Per-file exists/safe check for one repo section against a chosen target repo. */
+async function previewRepoSectionV2(
+  bundlePath: string,
+  password: string,
+  sectionIndex: number,
+  repoPath: string
+): Promise<{ files: SecureSharePreviewEntry[] } | { error: SecureShareError }> {
+  try {
+    const sections = unpackSections(await readFile(bundlePath, 'utf-8'), password)
+    const section = sections[sectionIndex]
+    if (!section || section.kind !== 'repo') return { error: 'invalid' }
+    const entries: SecureSharePreviewEntry[] = []
+    for (const f of section.files) {
+      const full = resolveInside(repoPath, f.path)
+      let exists = false
+      if (full) {
+        try {
+          await stat(full)
+          exists = true
+        } catch {
+          exists = false
+        }
+      }
+      entries.push({ path: f.path, size: f.content.length, exists, safe: full !== null })
+    }
+    return { files: entries }
+  } catch (e) {
+    return { error: errCode(e) }
+  }
+}
+
+/** Apply a decrypted bundle per the plan: repo sections write files into their
+ *  chosen target repos; a vault section merges into the global vault. */
+async function applyV2(
+  bundlePath: string,
+  password: string,
+  plan: SecureApplyPlan[]
+): Promise<SecureApplyResult | { error: SecureShareError }> {
+  let sections: BundleSection[]
+  try {
+    sections = unpackSections(await readFile(bundlePath, 'utf-8'), password)
+  } catch (e) {
+    return { error: errCode(e) }
+  }
+  let filesWritten = 0
+  let secretsWritten = 0
+  for (const step of plan) {
+    const section = sections[step.sectionIndex]
+    if (!section) return { error: 'invalid' }
+    if (step.kind === 'vault') {
+      if (section.kind !== 'vault') return { error: 'invalid' }
+      const wanted = new Set(step.keys)
+      const picked = section.entries.filter((e) => wanted.has(e.key))
+      secretsWritten += await importGlobalEntries(picked)
+    } else {
+      if (section.kind !== 'repo') return { error: 'invalid' }
+      const wanted = new Set(step.paths)
+      for (const f of section.files) {
+        if (!wanted.has(f.path)) continue
+        const full = resolveInside(step.targetRepoPath, f.path)
+        if (!full) continue // unsafe path — silently dropped, preview flagged it
+        try {
+          await mkdir(dirname(full), { recursive: true })
+          const mode = f.executable ? 0o755 : isSecretFile(f.path) ? 0o600 : 0o644
+          await writeFile(full, f.content, { mode })
+          await chmod(full, mode) // writeFile mode is ignored when the file exists
+          filesWritten++
+        } catch {
+          return { error: 'write-failed' }
+        }
+      }
+    }
+  }
+  return { filesWritten, secretsWritten }
+}
+
 export function registerSecureShareHandlers(): void {
   ipcMain.handle('secure:candidates', (_e, repoPath: string) => listCandidates(repoPath))
+  ipcMain.handle(
+    'secure:exportV2',
+    (_e, specs: SecureExportSpec[], project: string, password: string) =>
+      exportSectionsV2(specs, project, password)
+  )
+  ipcMain.handle('secure:openV2', (_e, bundlePath: string, password: string) =>
+    openBundleV2(bundlePath, password)
+  )
+  ipcMain.handle(
+    'secure:previewRepoV2',
+    (_e, bundlePath: string, password: string, sectionIndex: number, repoPath: string) =>
+      previewRepoSectionV2(bundlePath, password, sectionIndex, repoPath)
+  )
+  ipcMain.handle('secure:applyV2', (_e, bundlePath: string, password: string, plan: SecureApplyPlan[]) =>
+    applyV2(bundlePath, password, plan)
+  )
   ipcMain.handle(
     'secure:export',
     (_e, repoPath: string, project: string, paths: string[], password: string) =>

@@ -13,6 +13,7 @@ import {
   Info,
   ClipboardCopy,
   ClipboardPaste,
+  Lock,
   Loader2
 } from 'lucide-react'
 import { vaultApi } from '../infrastructure/api'
@@ -72,6 +73,7 @@ function EntryRow({
 export function VaultPage(): React.JSX.Element {
   const t = useT()
   const toast = useUIStore((s) => s.toast)
+  const openModal = useUIStore((s) => s.openModal)
   const [data, setData] = useState<VaultListResult | null>(null)
   const [draft, setDraft] = useState<{ key: string; value: string; note: string } | null>(null)
   const [pasteText, setPasteText] = useState<string | null>(null)
@@ -174,6 +176,13 @@ export function VaultPage(): React.JSX.Element {
                 )}
                 <button className="btn ghost small" title={t('vault.pasteEnvTitle')} onClick={() => setPasteText('')}>
                   <ClipboardPaste size={13} /> {t('vault.pasteEnv')}
+                </button>
+                <button
+                  className="btn ghost small"
+                  title={t('wshare.subtitle')}
+                  onClick={() => openModal({ kind: 'secure-workspace' })}
+                >
+                  <Lock size={13} /> {t('wshare.title')}
                 </button>
                 <button className="btn primary small" onClick={() => setDraft({ key: '', value: '', note: '' })}>
                   <Plus size={13} /> {t('vault.add')}

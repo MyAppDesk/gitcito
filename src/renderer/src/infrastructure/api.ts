@@ -65,7 +65,11 @@ import type {
   SecureShareCandidate,
   SecureBundleHeader,
   SecureSharePreviewEntry,
-  SecureShareError
+  SecureShareError,
+  SecureExportSpec,
+  SecureBundleOpened,
+  SecureApplyPlan,
+  SecureApplyResult
 } from '../../../shared/types'
 
 // Typed adapter over the IPC bridge — the only place that talks to window.api.
@@ -389,6 +393,22 @@ export const secureShareApi = {
   apply: (bundlePath: string, password: string, repoPath: string, selected: string[]) =>
     window.api.secureShare.apply(bundlePath, password, repoPath, selected) as Promise<
       { written: string[] } | { error: SecureShareError }
+    >,
+  exportV2: (specs: SecureExportSpec[], project: string, password: string) =>
+    window.api.secureShare.exportV2(specs, project, password) as Promise<
+      { path: string } | { canceled: true } | { error: SecureShareError }
+    >,
+  openV2: (bundlePath: string, password: string) =>
+    window.api.secureShare.openV2(bundlePath, password) as Promise<
+      SecureBundleOpened | { error: SecureShareError }
+    >,
+  previewRepoV2: (bundlePath: string, password: string, sectionIndex: number, repoPath: string) =>
+    window.api.secureShare.previewRepoV2(bundlePath, password, sectionIndex, repoPath) as Promise<
+      { files: SecureSharePreviewEntry[] } | { error: SecureShareError }
+    >,
+  applyV2: (bundlePath: string, password: string, plan: SecureApplyPlan[]) =>
+    window.api.secureShare.applyV2(bundlePath, password, plan) as Promise<
+      SecureApplyResult | { error: SecureShareError }
     >
 }
 

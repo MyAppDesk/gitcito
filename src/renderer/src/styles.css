@@ -10193,6 +10193,42 @@ button.insights-row:hover { background: var(--bg-2); }
 .share-bundle-info { font-size: 12px; color: var(--text-1); }
 .share-modal .modal-actions { margin-top: 14px; }
 
+/* ── Workspace secure share (multi-section) ───────────────────────────── */
+.wshare-group-label {
+  padding: 8px 12px 4px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.04em;
+  text-transform: uppercase; color: var(--text-2); border-top: 1px solid var(--border-soft);
+}
+.wshare-group-label:first-child { border-top: none; }
+.wshare-group-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.wshare-group-row .btn { text-transform: none; letter-spacing: normal; }
+.wshare-repo { border-top: 1px solid var(--border-soft); }
+.wshare-repo:first-child { border-top: none; }
+.wshare-repo-head { justify-content: space-between; }
+.wshare-check, .wshare-expand {
+  display: inline-flex; align-items: center; gap: 9px; min-width: 0;
+  background: transparent; border: none; color: var(--text-0); cursor: pointer; font-size: 12px;
+  padding: 0;
+}
+.wshare-check { flex: 1; }
+.wshare-expand { flex-shrink: 0; gap: 5px; color: var(--text-2); }
+.wshare-files {
+  padding: 2px 0 6px 22px; margin: 0 8px 4px;
+  border-left: 2px solid var(--border-soft);
+}
+.wshare-files .share-row { padding-left: 8px; }
+.wshare-section {
+  margin-top: 12px; padding: 10px 12px;
+  background: var(--bg-2); border: 1px solid var(--border-soft); border-radius: 10px;
+}
+.wshare-section-head {
+  display: flex; align-items: center; gap: 8px; font-size: 13px; margin-bottom: 8px;
+}
+.wshare-section-head .share-size { margin-left: auto; }
+.wshare-section .share-list { margin-top: 6px; }
+.wshare-target { display: flex; align-items: center; gap: 10px; margin: 4px 0; }
+.wshare-target .settings-hint { margin: 0; flex-shrink: 0; }
+.wshare-target .modal-input { flex: 1; }
+
 /* ── Repo Settings → Info tab ─────────────────────────────────────────── */
 .repo-info-head {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;

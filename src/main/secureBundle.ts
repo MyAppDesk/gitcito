@@ -1,18 +1,23 @@
 import { randomBytes, scryptSync, createCipheriv, createDecipheriv } from 'node:crypto'
-import type { SecureBundleHeader } from '../shared/types'
+import type { SecureBundleHeader, SecureBundleSectionSummary } from '../shared/types'
 
-// Pure pack/unpack logic for .gitcito secure bundles — a password-encrypted
-// set of repo files (typically .env and friends) shared out-of-band and
-// re-materialized at the same relative paths in another checkout. No Electron
-// imports so it stays unit-testable; dialogs and IPC live in secureShare.ts.
+// Pure pack/unpack logic for .gitcito secure bundles — a password-encrypted set
+// of sections shared out-of-band. A section is either a repo's files (typically
+// .env and friends, re-materialised at the same relative paths in another
+// checkout) or the global vault's key/value secrets. No Electron imports so it
+// stays unit-testable; dialogs, fs and IPC live in secureShare.ts.
 //
-// Envelope (plaintext JSON): format marker, project name, KDF + cipher params.
-// Payload: JSON `{ files: [{ path, content(b64), executable? }] }`, encrypted
-// with AES-256-GCM under a scrypt-derived key. GCM authenticates, so a wrong
-// password and a tampered file are indistinguishable — both fail the auth tag.
+// Envelope (plaintext JSON): format marker, version, project label, a per-section
+// summary (repo folder/remote for import-time matching, or vault entry count) —
+// everything the import UI needs before the password. Payload: JSON
+// `{ sections: [...] }`, encrypted with AES-256-GCM under a scrypt-derived key.
+// GCM authenticates, so a wrong password and a tampered file both fail the tag.
+//
+// v1 (legacy single-repo) bundles carried `{ files: [...] }` and no sections; we
+// still read them, upgrading to a single repo section on unpack.
 
 export const BUNDLE_FORMAT = 'gitcito-secure-bundle'
-export const BUNDLE_VERSION = 1
+export const BUNDLE_VERSION = 2
 
 const SCRYPT = { N: 32768, r: 8, p: 1 }
 const SCRYPT_MAXMEM = 64 * 1024 * 1024
@@ -22,6 +27,18 @@ export interface BundleFile {
   content: Buffer
   executable?: boolean
 }
+
+export interface BundleVaultEntry {
+  key: string
+  value: string
+  note?: string
+}
+
+/** A section of a bundle, in memory (Buffers, secret values). Repo files land at
+ *  relative paths in a target repo; vault entries merge into the global vault. */
+export type BundleSection =
+  | { kind: 'repo'; project: string; folder: string; remote?: string; files: BundleFile[] }
+  | { kind: 'vault'; entries: BundleVaultEntry[] }
 
 export class BundleError extends Error {
   constructor(public code: 'invalid' | 'bad-password' | 'unsupported-version') {
@@ -42,33 +59,65 @@ function deriveKey(password: string, salt: Buffer): Buffer {
   return scryptSync(password, salt, 32, { ...SCRYPT, maxmem: SCRYPT_MAXMEM })
 }
 
-export function packBundle(project: string, files: BundleFile[], password: string): string {
+function summarise(section: BundleSection): SecureBundleSectionSummary {
+  if (section.kind === 'vault') return { kind: 'vault', entryCount: section.entries.length }
+  return {
+    kind: 'repo',
+    project: section.project,
+    folder: section.folder,
+    ...(section.remote ? { remote: section.remote } : {}),
+    fileCount: section.files.length
+  }
+}
+
+function encodeSection(section: BundleSection): unknown {
+  if (section.kind === 'vault') {
+    return {
+      kind: 'vault',
+      entries: section.entries.map((e) => ({ key: e.key, value: e.value, ...(e.note ? { note: e.note } : {}) }))
+    }
+  }
+  return {
+    kind: 'repo',
+    project: section.project,
+    folder: section.folder,
+    ...(section.remote ? { remote: section.remote } : {}),
+    files: section.files.map((f) => ({
+      path: f.path.replace(/\\/g, '/'),
+      content: f.content.toString('base64'),
+      ...(f.executable ? { executable: true } : {})
+    }))
+  }
+}
+
+/** Pack sections into a v2 `.gitcito` bundle string. `project` is the envelope
+ *  label shown before unlock (a repo name, or e.g. "Workspace" for a multi-repo
+ *  bundle). */
+export function packSections(project: string, sections: BundleSection[], password: string): string {
   const salt = randomBytes(16)
   const iv = randomBytes(12)
   const key = deriveKey(password, salt)
-  const plain = Buffer.from(
-    JSON.stringify({
-      files: files.map((f) => ({
-        path: f.path.replace(/\\/g, '/'),
-        content: f.content.toString('base64'),
-        ...(f.executable ? { executable: true } : {})
-      }))
-    }),
-    'utf-8'
-  )
+  const plain = Buffer.from(JSON.stringify({ sections: sections.map(encodeSection) }), 'utf-8')
   const cipher = createCipheriv('aes-256-gcm', key, iv)
   const enc = Buffer.concat([cipher.update(plain), cipher.final()])
+  const fileCount = sections.reduce((n, s) => n + (s.kind === 'repo' ? s.files.length : 0), 0)
   const bundle = {
     format: BUNDLE_FORMAT,
     version: BUNDLE_VERSION,
     project,
     createdAt: Date.now(),
-    fileCount: files.length,
+    fileCount,
+    sections: sections.map(summarise),
     kdf: { algo: 'scrypt', ...SCRYPT, salt: salt.toString('base64') },
     cipher: { algo: 'aes-256-gcm', iv: iv.toString('base64'), tag: cipher.getAuthTag().toString('base64') },
     payload: enc.toString('base64')
   }
   return JSON.stringify(bundle, null, 2)
+}
+
+/** Back-compat convenience: pack a single repo's files as a v2 bundle. */
+export function packBundle(project: string, files: BundleFile[], password: string): string {
+  return packSections(project, [{ kind: 'repo', project, folder: project, files }], password)
 }
 
 /** Parse the plaintext envelope without decrypting. Returns null when the text
@@ -84,16 +133,24 @@ export function readBundleHeader(text: string): SecureBundleHeader | null {
   if (typeof raw.version !== 'number' || raw.version > BUNDLE_VERSION) {
     throw new BundleError('unsupported-version')
   }
-  return {
-    project: typeof raw.project === 'string' ? raw.project : 'unknown',
-    createdAt: typeof raw.createdAt === 'number' ? raw.createdAt : 0,
-    fileCount: typeof raw.fileCount === 'number' ? raw.fileCount : 0
+  const project = typeof raw.project === 'string' ? raw.project : 'unknown'
+  const createdAt = typeof raw.createdAt === 'number' ? raw.createdAt : 0
+  const fileCount = typeof raw.fileCount === 'number' ? raw.fileCount : 0
+  const header: SecureBundleHeader = { project, createdAt, fileCount, version: raw.version }
+  if (raw.version >= 2 && Array.isArray(raw.sections)) {
+    header.sections = raw.sections as SecureBundleSectionSummary[]
+  } else {
+    // Synthesise a single repo tab so the import UI is uniform across versions.
+    header.sections = [{ kind: 'repo', project, folder: project, fileCount }]
   }
+  return header
 }
 
-export function unpackBundle(text: string, password: string): BundleFile[] {
-  if (readBundleHeader(text) === null) throw new BundleError('invalid')
+function decrypt(text: string, password: string): { version: number; obj: Record<string, unknown> } {
+  const head = readBundleHeader(text)
+  if (head === null) throw new BundleError('invalid')
   const raw = JSON.parse(text) as {
+    version?: number
     kdf?: { salt?: string }
     cipher?: { iv?: string; tag?: string }
     payload?: string
@@ -110,18 +167,62 @@ export function unpackBundle(text: string, password: string): BundleFile[] {
   } catch {
     throw new BundleError('bad-password')
   }
-  let parsed: { files?: Array<{ path?: string; content?: string; executable?: boolean }> }
   try {
-    parsed = JSON.parse(plain.toString('utf-8'))
+    return { version: raw.version ?? 1, obj: JSON.parse(plain.toString('utf-8')) }
   } catch {
     throw new BundleError('invalid')
   }
-  if (!Array.isArray(parsed.files)) throw new BundleError('invalid')
-  return parsed.files
-    .filter((f) => typeof f.path === 'string' && typeof f.content === 'string')
+}
+
+function decodeFiles(files: unknown): BundleFile[] {
+  if (!Array.isArray(files)) throw new BundleError('invalid')
+  return files
+    .filter((f) => f && typeof f.path === 'string' && typeof f.content === 'string')
     .map((f) => ({
       path: f.path as string,
       content: Buffer.from(f.content as string, 'base64'),
       ...(f.executable ? { executable: true } : {})
     }))
+}
+
+/** Decrypt a bundle to its sections. A v1 bundle (`{ files }`) upgrades to a
+ *  single repo section keyed by the envelope project name. */
+export function unpackSections(text: string, password: string): BundleSection[] {
+  const { version, obj } = decrypt(text, password)
+  if (version >= 2) {
+    const rawSections = obj.sections
+    if (!Array.isArray(rawSections)) throw new BundleError('invalid')
+    return rawSections.map((s: Record<string, unknown>): BundleSection => {
+      if (s.kind === 'vault') {
+        const entries = Array.isArray(s.entries) ? s.entries : []
+        return {
+          kind: 'vault',
+          entries: entries
+            .filter((e) => e && typeof e.key === 'string' && typeof e.value === 'string')
+            .map((e) => ({
+              key: e.key as string,
+              value: e.value as string,
+              ...(typeof e.note === 'string' ? { note: e.note } : {})
+            }))
+        }
+      }
+      const project = typeof s.project === 'string' ? s.project : 'unknown'
+      return {
+        kind: 'repo',
+        project,
+        folder: typeof s.folder === 'string' ? s.folder : project,
+        ...(typeof s.remote === 'string' ? { remote: s.remote } : {}),
+        files: decodeFiles(s.files)
+      }
+    })
+  }
+  // v1: single repo of files.
+  const header = readBundleHeader(text)
+  const project = header?.project ?? 'unknown'
+  return [{ kind: 'repo', project, folder: project, files: decodeFiles(obj.files) }]
+}
+
+/** Back-compat: decrypt a bundle to a flat file list (repo sections only). */
+export function unpackBundle(text: string, password: string): BundleFile[] {
+  return unpackSections(text, password).flatMap((s) => (s.kind === 'repo' ? s.files : []))
 }

@@ -92,6 +92,7 @@ export type ModalSpec =
   | { kind: 'create-issue'; repoPath: string; remoteUrl: string }
   | { kind: 'repo-settings'; repoPath: string; tab?: 'general' | 'info' | 'vault' | 'analytics' | 'insights' | 'history' | 'logs' }
   | { kind: 'secure-share'; repoPath: string; initialMode?: 'export' | 'import' }
+  | { kind: 'secure-workspace'; initialMode?: 'export' | 'import' }
   | { kind: 'bisect'; repoPath: string }
   | { kind: 'hooks'; repoPath: string }
   | { kind: 'lfs'; repoPath: string }

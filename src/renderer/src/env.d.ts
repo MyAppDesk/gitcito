@@ -89,6 +89,15 @@ interface PreloadApi {
     pick(): Promise<unknown>
     preview(bundlePath: string, password: string, repoPath: string): Promise<unknown>
     apply(bundlePath: string, password: string, repoPath: string, selected: string[]): Promise<unknown>
+    exportV2(specs: unknown, project: string, password: string): Promise<unknown>
+    openV2(bundlePath: string, password: string): Promise<unknown>
+    previewRepoV2(
+      bundlePath: string,
+      password: string,
+      sectionIndex: number,
+      repoPath: string
+    ): Promise<unknown>
+    applyV2(bundlePath: string, password: string, plan: unknown): Promise<unknown>
   }
   info: {
     list(repoPath: string): Promise<unknown>

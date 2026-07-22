@@ -1,5 +1,13 @@
 
 
+## [2.4.0](https://github.com/MyAppDesk/gitcito/compare/v2.3.0...v2.4.0) (2026-07-22)
+
+
+### Features
+
+* add tree-badges for collapsed folders in Files tab ([443d81e](https://github.com/MyAppDesk/gitcito/commit/443d81e902452dd9b38aae3d2d414824fa50a718))
+* add workspace-share scenario for multi-section .gitcito ([d34786f](https://github.com/MyAppDesk/gitcito/commit/d34786f667334f3ec5443fed14f26297bce63ff3))
+
 ## [2.3.0](https://github.com/MyAppDesk/gitcito/compare/v2.2.0...v2.3.0) (2026-07-12)
 
 

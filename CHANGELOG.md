@@ -1,5 +1,12 @@
 
 
+## [2.5.0](https://github.com/MyAppDesk/gitcito/compare/v2.4.0...v2.5.0) (2026-07-28)
+
+
+### Features
+
+* implement drag & drop functionality for files and folders ([d6c24a7](https://github.com/MyAppDesk/gitcito/commit/d6c24a79044b1e53e7d05d2d4330b1e45f032af6))
+
 ## [2.4.0](https://github.com/MyAppDesk/gitcito/compare/v2.3.0...v2.4.0) (2026-07-22)
 
 

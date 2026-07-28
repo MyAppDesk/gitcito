@@ -1,7 +1,7 @@
-import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { ChevronRight, File, Folder, FolderOpen, Loader2, ExternalLink, Pencil } from 'lucide-react'
-import type { TreeEntry, TreeStatusKind } from '../../../shared/types'
+import type { FsDropMode, TreeEntry, TreeStatusKind } from '../../../shared/types'
 import { gitApi, shellApi } from '../infrastructure/api'
 import { useUIStore, type MenuItem } from '../stores/ui'
 import { repoActions, type RepoData } from '../stores/repo'
@@ -19,6 +19,13 @@ import { useT, interp } from '../i18n'
 const abs = (repoRoot: string, rel: string): string => `${repoRoot.replace(/\/+$/, '')}/${rel}`
 const parentOf = (rel: string): string => (rel.includes('/') ? rel.slice(0, rel.lastIndexOf('/') + 1) : '')
 const baseOf = (rel: string): string => rel.split('/').pop() ?? rel
+
+// Drag & drop. Internal drags carry the repo-relative path on a private MIME type
+// so foreign drags (Finder, other apps) are never mistaken for tree moves.
+const DRAG_MIME = 'application/x-gitcito-path'
+const isExternalDrag = (e: React.DragEvent): boolean => e.dataTransfer.types.includes('Files')
+// How long a drag has to hover a collapsed folder before it springs open.
+const SPRING_MS = 700
 
 export function FileTree({
   repo,
@@ -182,6 +189,135 @@ export function FileTree({
       return n
     })
 
+  // ─── Drag & drop ───
+  // `dragSrc` is the row being dragged inside the tree (null for OS drags);
+  // `dropDir` is the folder a drop would land in ('' = repository root).
+  const [dragSrc, setDragSrc] = useState<string | null>(null)
+  const [dropDir, setDropDir] = useState<string | null>(null)
+  const spring = useRef<{ dir: string; timer: ReturnType<typeof setTimeout> } | null>(null)
+
+  const cancelSpring = useCallback((): void => {
+    if (spring.current) clearTimeout(spring.current.timer)
+    spring.current = null
+  }, [])
+
+  // Hovering a collapsed folder mid-drag opens it, so nested targets are reachable
+  // without dropping first.
+  const springLoad = (dir: string): void => {
+    if (!dir || expanded.has(dir) || spring.current?.dir === dir) return
+    cancelSpring()
+    spring.current = {
+      dir,
+      timer: setTimeout(() => {
+        spring.current = null
+        setExpanded((s) => {
+          if (s.has(dir)) return s
+          if (!children[dir]) void load(dir)
+          return new Set(s).add(dir)
+        })
+      }, SPRING_MS)
+    }
+  }
+
+  const endDrag = useCallback((): void => {
+    cancelSpring()
+    setDragSrc(null)
+    setDropDir(null)
+  }, [cancelSpring])
+
+  useEffect(() => cancelSpring, [cancelSpring])
+
+  // A move is refused when it would be a no-op (same parent) or would put a folder
+  // inside itself. OS drops are always allowed — they copy in from outside.
+  const canDrop = (dir: string, external: boolean): boolean => {
+    if (external) return true
+    if (dragSrc === null) return false
+    if (dir === dragSrc || dir.startsWith(`${dragSrc}/`)) return false
+    return dir !== parentOf(dragSrc).replace(/\/$/, '')
+  }
+
+  const onZoneOver = (dir: string) => (e: React.DragEvent): void => {
+    const external = isExternalDrag(e)
+    if (!canDrop(dir, external)) return
+    e.preventDefault()
+    e.stopPropagation()
+    e.dataTransfer.dropEffect = external ? 'copy' : 'move'
+    setDropDir(dir)
+    springLoad(dir)
+  }
+
+  const onZoneLeave = (dir: string) => (e: React.DragEvent): void => {
+    if (e.currentTarget.contains(e.relatedTarget as Node | null)) return
+    if (spring.current?.dir === dir) cancelSpring()
+    setDropDir((d) => (d === dir ? null : d))
+  }
+
+  // Runs the drop, asking first when the destination already holds one of the
+  // dropped names: replace it (the old entry goes to the trash) or keep both.
+  const runDrop = async (
+    dir: string,
+    sources: string[],
+    external: boolean
+  ): Promise<void> => {
+    const apply = (mode?: FsDropMode): void => {
+      const done = (): void => {
+        if (dir) setExpanded((s) => new Set(s).add(dir))
+      }
+      const action = external
+        ? repoActions.fsImport(path, sources, dir, mode)
+        : repoActions.fsMove(path, sources, dir, mode)
+      void action.then(done)
+    }
+    const clashes = await gitApi
+      .fsExisting(path, dir, sources.map(baseOf))
+      .catch(() => [] as string[])
+    if (clashes.length === 0) {
+      apply()
+      return
+    }
+    const where = dir || t('fileTree.dropRootLabel')
+    openModal({
+      kind: 'confirm',
+      title: t('fileTree.dropConflictTitle'),
+      message:
+        clashes.length === 1
+          ? interp(t('fileTree.dropConflictMsg'), { name: clashes[0], dir: where })
+          : interp(t('fileTree.dropConflictMsgMany'), { count: String(clashes.length), dir: where }),
+      danger: true,
+      confirmLabel: t('fileTree.dropReplace'),
+      onConfirm: () => apply('replace'),
+      secondaryLabel: t('fileTree.dropKeepBoth'),
+      onSecondary: () => apply('keepBoth')
+    })
+  }
+
+  const onZoneDrop = (dir: string) => (e: React.DragEvent): void => {
+    const external = isExternalDrag(e)
+    if (!canDrop(dir, external)) return
+    e.preventDefault()
+    e.stopPropagation()
+    const src = external ? null : e.dataTransfer.getData(DRAG_MIME) || dragSrc
+    const paths = external
+      ? Array.from(e.dataTransfer.files)
+          .map((f) => window.api.getPathForFile(f))
+          .filter(Boolean)
+      : src
+        ? [src]
+        : []
+    endDrag()
+    if (paths.length > 0) void runDrop(dir, paths, external)
+  }
+
+  const dragProps = (node: TreeEntry): React.HTMLAttributes<HTMLDivElement> & { draggable: true } => ({
+    draggable: true,
+    onDragStart: (e) => {
+      e.dataTransfer.setData(DRAG_MIME, node.path)
+      e.dataTransfer.effectAllowed = 'move'
+      setDragSrc(node.path)
+    },
+    onDragEnd: endDrag
+  })
+
   // Open a file in the center viewer, guarding unsaved edits in the editor.
   const openFile = (rel: string): void => {
     const doOpen = (): void =>
@@ -339,12 +475,21 @@ export function FileTree({
       const selected = !node.dir && fileView?.repoPath === path && fileView.file === node.path
       // Collapsed folders show aggregate change counts instead of the plain dot.
       const counts = node.dir && !open ? folderCounts[node.path] : undefined
+      // Where a drop on this row lands: into the folder itself, or — for a file —
+      // into the folder that holds it, which is the row that lights up.
+      const zone = node.dir ? node.path : parentOf(node.path).replace(/\/$/, '')
       return (
         <Fragment key={node.path}>
           <div
-            className={`tree-row${selected ? ' selected' : ''}${status ? ` st-${status}` : ''}`}
+            className={`tree-row${selected ? ' selected' : ''}${status ? ` st-${status}` : ''}${
+              dragSrc === node.path ? ' dragging' : ''
+            }${node.dir && dropDir === node.path ? ' drop-into' : ''}`}
             style={{ paddingLeft: 6 + depth * 13 }}
             title={node.path}
+            {...dragProps(node)}
+            onDragOver={onZoneOver(zone)}
+            onDragLeave={onZoneLeave(zone)}
+            onDrop={onZoneDrop(zone)}
             onClick={() => (node.dir ? toggle(node.path) : openFile(node.path))}
             onContextMenu={(e) => {
               e.preventDefault()
@@ -474,7 +619,11 @@ export function FileTree({
   const rootEnts = children['']
   return (
     <div
-      className="file-tree"
+      className={`file-tree${dropDir === '' ? ' drop-root' : ''}`}
+      // Anything not dropped on a folder row lands at the repository root.
+      onDragOver={onZoneOver('')}
+      onDragLeave={onZoneLeave('')}
+      onDrop={onZoneDrop('')}
       onContextMenu={(e) => {
         // Right-click on empty area → root-level create menu.
         if (e.target === e.currentTarget) {

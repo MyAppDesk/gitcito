@@ -1,7 +1,7 @@
 import { ipcMain, shell } from 'electron'
 import { simpleGit, SimpleGit } from 'simple-git'
 import { basename, join } from 'path'
-import { readFile, writeFile, unlink, stat, chmod, mkdir, readdir, rename } from 'fs/promises'
+import { readFile, writeFile, unlink, stat, chmod, mkdir, readdir, rename, cp } from 'fs/promises'
 import { tmpdir, homedir } from 'os'
 import { existsSync } from 'fs'
 import { spawn, execFile } from 'child_process'
@@ -20,6 +20,7 @@ import type {
   FileChangeKind,
   FileEntry,
   FileHistoryEntry,
+  FsDropMode,
   GraphCommit,
   RemoteBranchInfo,
   RemoteInfo,
@@ -525,6 +526,28 @@ async function buildBisectStatus(repoPath: string, lastOut = ''): Promise<Bisect
     firstBadSha,
     firstBadSubject
   }
+}
+
+/** Decide the base name a dropped item lands under in `dir`, honouring the
+ *  caller's conflict choice. 'replace' trashes the existing entry first (so the
+ *  drop is recoverable); 'keepBoth' picks the next free "name 2" style suffix. */
+async function resolveDrop(repoPath: string, dir: string, name: string, mode: FsDropMode): Promise<string> {
+  const dirAbs = join(repoPath, dir)
+  const target = join(dirAbs, name)
+  if (!existsSync(target)) return name
+  if (mode === 'error') throw new Error(`Already exists: ${dir ? `${dir}/${name}` : name}`)
+  if (mode === 'replace') {
+    await shell.trashItem(target)
+    return name
+  }
+  const dot = name.lastIndexOf('.')
+  const stem = dot > 0 ? name.slice(0, dot) : name
+  const ext = dot > 0 ? name.slice(dot) : ''
+  for (let i = 2; i < 1000; i++) {
+    const candidate = `${stem} ${i}${ext}`
+    if (!existsSync(join(dirAbs, candidate))) return candidate
+  }
+  throw new Error(`No free name left for ${name}`)
 }
 
 export const gitService = {
@@ -1578,6 +1601,51 @@ export const gitService = {
       const abs = join(repoPath, rel)
       if (!abs.startsWith(repoPath)) throw new Error(`Refusing to delete outside repo: ${rel}`)
       await shell.trashItem(abs)
+    }
+  },
+
+  /** Base names of `names` that already exist in `destDir` — the renderer asks
+   *  this before a drop so it can offer "Replace" / "Keep both". */
+  async fsExisting(repoPath: string, destDir: string, names: string[]): Promise<string[]> {
+    const destAbs = join(repoPath, destDir.replace(/^\/+|\/+$/g, ''))
+    return names.filter((n) => existsSync(join(destAbs, basename(n))))
+  },
+
+  /** Move repo-relative paths into `destDir` ('' = repo root), keeping their base
+   *  names. Refuses to move a folder into itself or one of its descendants.
+   *  `mode` decides what an existing name at the destination means: fail (default),
+   *  trash it first, or land next to it under a free name. */
+  async fsMove(repoPath: string, froms: string[], destDir: string, mode: FsDropMode = 'error'): Promise<void> {
+    const dir = destDir.replace(/^\/+|\/+$/g, '')
+    for (const from of froms) {
+      const src = from.replace(/^\/+|\/+$/g, '')
+      if (dir === src || dir.startsWith(`${src}/`)) throw new Error(`Cannot move ${src} into itself`)
+      const name = await resolveDrop(repoPath, dir, basename(src), mode)
+      await gitService.fsRename(repoPath, src, dir ? `${dir}/${name}` : name)
+    }
+  },
+
+  /** Copy absolute paths dropped from the OS into `destDir` ('' = repo root).
+   *  Sources that already live inside this repo are moved instead of duplicated. */
+  async fsImport(
+    repoPath: string,
+    srcPaths: string[],
+    destDir: string,
+    mode: FsDropMode = 'error'
+  ): Promise<void> {
+    const dir = destDir.replace(/^\/+|\/+$/g, '')
+    const destAbs = join(repoPath, dir)
+    if (!destAbs.startsWith(repoPath)) throw new Error(`Refusing to write outside repo: ${destDir}`)
+    await mkdir(destAbs, { recursive: true })
+    for (const src of srcPaths) {
+      if (src === join(destAbs, basename(src))) continue
+      if (src.startsWith(`${repoPath}/`)) {
+        // Dropped from inside this repo (e.g. Finder) — a move keeps git history.
+        await gitService.fsMove(repoPath, [src.slice(repoPath.length + 1)], dir, mode)
+      } else {
+        const name = await resolveDrop(repoPath, dir, basename(src), mode)
+        await cp(src, join(destAbs, name), { recursive: true })
+      }
     }
   },
 

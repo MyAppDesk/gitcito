@@ -202,3 +202,112 @@ describe('gitignore + untrack', () => {
   })
 })
 
+
+// Drag & drop in the Files tab lands here: fsMove for in-repo drags, fsImport
+// for paths dropped from the OS file manager.
+describe('project tree drag & drop', () => {
+  it('moves a tracked file into a folder as a git rename', async () => {
+    const R = cloneFixture('tree-dnd')
+
+    await gitService.fsMove(R, ['src/app.ts'], 'lib')
+
+    expect(existsSync(join(R, 'src/app.ts'))).toBe(false)
+    expect(existsSync(join(R, 'lib/app.ts'))).toBe(true)
+    // `git mv` stages the rename, so history follows the file.
+    const staged = (await gitService.status(R)).staged
+    expect(staged.some((f) => f.path === 'lib/app.ts')).toBe(true)
+  })
+
+  it('moves an untracked file to the repository root', async () => {
+    const R = cloneFixture('tree-dnd')
+
+    await gitService.fsMove(R, ['loose.txt'], 'docs')
+    expect(existsSync(join(R, 'docs/loose.txt'))).toBe(true)
+
+    await gitService.fsMove(R, ['docs/loose.txt'], '')
+    expect(existsSync(join(R, 'loose.txt'))).toBe(true)
+    expect(existsSync(join(R, 'docs/loose.txt'))).toBe(false)
+  })
+
+  it('refuses to move a folder into its own descendant', async () => {
+    const R = cloneFixture('tree-dnd')
+    await expect(gitService.fsMove(R, ['src'], 'src/deep')).rejects.toThrow(/into itself/)
+    expect(existsSync(join(R, 'src/deep/nested/keep.ts'))).toBe(true)
+  })
+
+  it('refuses to overwrite an existing name', async () => {
+    const R = cloneFixture('tree-dnd')
+    writeFileSync(join(R, 'helpers.ts'), 'root copy')
+    await expect(gitService.fsMove(R, ['helpers.ts'], 'lib')).rejects.toThrow(/Already exists/)
+  })
+
+  it('imports an outside path by copying, and an inside path by moving', async () => {
+    const R = cloneFixture('tree-dnd')
+    const outside = cloneFixture('empty-repo')
+    writeFileSync(join(outside, 'dropped.txt'), 'from Finder')
+
+    await gitService.fsImport(R, [join(outside, 'dropped.txt')], 'docs')
+    expect(readFileSync(join(R, 'docs/dropped.txt'), 'utf8')).toBe('from Finder')
+    expect(existsSync(join(outside, 'dropped.txt'))).toBe(true) // copied, not moved
+
+    // A path already inside the repo is a move — no duplicate left behind.
+    await gitService.fsImport(R, [join(R, 'draft.md')], 'lib')
+    expect(existsSync(join(R, 'lib/draft.md'))).toBe(true)
+    expect(existsSync(join(R, 'draft.md'))).toBe(false)
+  })
+
+  it('copies a dropped folder recursively', async () => {
+    const R = cloneFixture('tree-dnd')
+    const outside = cloneFixture('empty-repo')
+
+    await gitService.fsImport(R, [join(outside, '.git')], 'vendor')
+    expect(existsSync(join(R, 'vendor/.git/HEAD'))).toBe(true)
+  })
+})
+
+// Conflict handling behind the drop dialog: the renderer asks fsExisting first,
+// then re-runs the drop with the user's choice.
+describe('project tree drop conflicts', () => {
+  it('reports which dropped names already exist at the destination', async () => {
+    const R = cloneFixture('tree-dnd')
+    expect(await gitService.fsExisting(R, 'docs', ['readme.md', 'loose.txt'])).toEqual(['readme.md'])
+    expect(await gitService.fsExisting(R, '', ['loose.txt'])).toEqual(['loose.txt'])
+  })
+
+  it('replace trashes the existing entry and takes its name', async () => {
+    const R = cloneFixture('tree-dnd')
+    writeFileSync(join(R, 'readme.md'), 'incoming')
+
+    await gitService.fsMove(R, ['readme.md'], 'docs', 'replace')
+
+    expect(readFileSync(join(R, 'docs/readme.md'), 'utf8')).toBe('incoming')
+    expect(existsSync(join(R, 'readme.md'))).toBe(false)
+  })
+
+  it('keepBoth lands next to the existing entry under a free name', async () => {
+    const R = cloneFixture('tree-dnd')
+    writeFileSync(join(R, 'readme.md'), 'incoming')
+
+    await gitService.fsMove(R, ['readme.md'], 'docs', 'keepBoth')
+
+    expect(readFileSync(join(R, 'docs/readme.md'), 'utf8')).toBe('# Docs\n')
+    expect(readFileSync(join(R, 'docs/readme 2.md'), 'utf8')).toBe('incoming')
+
+    // A third copy keeps counting up rather than clobbering "readme 2.md".
+    writeFileSync(join(R, 'readme.md'), 'third')
+    await gitService.fsMove(R, ['readme.md'], 'docs', 'keepBoth')
+    expect(readFileSync(join(R, 'docs/readme 3.md'), 'utf8')).toBe('third')
+  })
+
+  it('applies the chosen mode to OS imports too', async () => {
+    const R = cloneFixture('tree-dnd')
+    const outside = cloneFixture('empty-repo')
+    writeFileSync(join(outside, 'readme.md'), 'from Finder')
+
+    await gitService.fsImport(R, [join(outside, 'readme.md')], 'docs', 'keepBoth')
+    expect(readFileSync(join(R, 'docs/readme 2.md'), 'utf8')).toBe('from Finder')
+
+    await gitService.fsImport(R, [join(outside, 'readme.md')], 'docs', 'replace')
+    expect(readFileSync(join(R, 'docs/readme.md'), 'utf8')).toBe('from Finder')
+  })
+})

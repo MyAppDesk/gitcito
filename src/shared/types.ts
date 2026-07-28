@@ -175,6 +175,10 @@ export interface RepoStatus {
  *  Directories report the most "interesting" status of their descendants. */
 export type TreeStatusKind = 'modified' | 'added' | 'untracked' | 'ignored' | 'deleted' | 'renamed' | 'conflicted'
 
+/** What a drag & drop in the project tree does when the destination already has
+ *  an entry with the same name: fail, trash the old one, or keep both. */
+export type FsDropMode = 'error' | 'replace' | 'keepBoth'
+
 /** One immediate child of a directory in the project tree. */
 export interface TreeEntry {
   /** Base name (no path). */

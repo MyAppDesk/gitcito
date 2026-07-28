@@ -15,7 +15,8 @@ import type {
   HostingProvider,
   WorktreeInfo,
   SubmoduleInfo,
-  TreeStatusKind
+  TreeStatusKind,
+  FsDropMode
 } from '../../../shared/types'
 import { gitApi, hostingApi } from '../infrastructure/api'
 import { useUIStore } from './ui'
@@ -1211,5 +1212,22 @@ export const repoActions = {
   fsDelete: (path: string, relPaths: string[], label?: string) =>
     useRepoStore
       .getState()
-      .run(path, `Moved ${label ?? `${relPaths.length} item(s)`} to trash`, () => gitApi.fsDelete(path, relPaths))
+      .run(path, `Moved ${label ?? `${relPaths.length} item(s)`} to trash`, () => gitApi.fsDelete(path, relPaths)),
+
+  // Drag & drop in the project tree: moves within the repo, imports from the OS.
+  fsMove: (path: string, froms: string[], destDir: string, mode?: FsDropMode) =>
+    useRepoStore
+      .getState()
+      .run(path, `Moved ${froms.length === 1 ? froms[0] : `${froms.length} items`} → ${destDir || '/'}`, () =>
+        gitApi.fsMove(path, froms, destDir, mode)
+      ),
+
+  fsImport: (path: string, srcPaths: string[], destDir: string, mode?: FsDropMode) =>
+    useRepoStore
+      .getState()
+      .run(
+        path,
+        `Added ${srcPaths.length === 1 ? srcPaths[0].split('/').pop() : `${srcPaths.length} items`} → ${destDir || '/'}`,
+        () => gitApi.fsImport(path, srcPaths, destDir, mode)
+      )
 }

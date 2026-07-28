@@ -9159,6 +9159,24 @@ mark.find-hit.active {
   flex-direction: column;
   padding: 2px 0 4px;
   user-select: none;
+  /* Fill the scroll area so the empty space below the last row is still a
+     drop zone for the repository root. */
+  min-height: 100%;
+  border: 1px dashed transparent;
+  border-radius: 8px;
+}
+/* Drop zones: dashed outline for the root, filled row for a folder target. */
+.file-tree.drop-root {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.tree-row.drop-into {
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1px var(--accent);
+  color: var(--text-0);
+}
+.tree-row.dragging {
+  opacity: 0.45;
 }
 .tree-loading {
   display: flex;

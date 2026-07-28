@@ -10,6 +10,7 @@ import type {
   ConflictVersions,
   FileEntry,
   FileHistoryEntry,
+  FsDropMode,
   GraphCommit,
   RebaseStep,
   RemoteInfo,
@@ -171,6 +172,12 @@ export const gitApi = {
   fsCreate: (path: string, relPath: string, isDir: boolean) => call<void>('fsCreate', path, relPath, isDir),
   fsRename: (path: string, from: string, to: string) => call<void>('fsRename', path, from, to),
   fsDelete: (path: string, relPaths: string[]) => call<void>('fsDelete', path, relPaths),
+  fsExisting: (path: string, destDir: string, names: string[]) =>
+    call<string[]>('fsExisting', path, destDir, names),
+  fsMove: (path: string, froms: string[], destDir: string, mode?: FsDropMode) =>
+    call<void>('fsMove', path, froms, destDir, mode),
+  fsImport: (path: string, srcPaths: string[], destDir: string, mode?: FsDropMode) =>
+    call<void>('fsImport', path, srcPaths, destDir, mode),
   commit: (path: string, message: string, amend?: boolean) => call<void>('commit', path, message, amend),
   getCommitMessage: (path: string, hash: string) => call<string>('getCommitMessage', path, hash),
   commitTemplate: (path: string) => call<string>('commitTemplate', path),

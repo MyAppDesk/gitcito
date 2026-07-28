@@ -50,7 +50,8 @@ const EXPECTED = [
   'panel-layout',
   'secure-share',
   'tree-badges',
-  'workspace-share'
+  'workspace-share',
+  'tree-dnd'
 ]
 
 describe('playground fixtures', () => {

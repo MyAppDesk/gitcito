@@ -1198,6 +1198,14 @@ const en = {
   'fileTree.stopTrackingConfirm': 'Stop tracking',
   'fileTree.deleteFromDiskTitle': 'Delete from Git and disk',
   'fileTree.deleteFromDiskConfirm': 'Delete',
+  'fileTree.dropConflictTitle': 'Name already used',
+  'fileTree.dropConflictMsg':
+    '"{name}" already exists in {dir}.\n\nReplace it (the current one moves to the trash), or keep both copies?',
+  'fileTree.dropConflictMsgMany':
+    '{count} of the dropped items already exist in {dir}.\n\nReplace them (the current ones move to the trash), or keep both copies?',
+  'fileTree.dropReplace': 'Replace',
+  'fileTree.dropKeepBoth': 'Keep both',
+  'fileTree.dropRootLabel': 'the repository root',
 
   // PR detail modal
   'prDetail.heading': 'Pull request #{n}',
@@ -2527,6 +2535,14 @@ const es: Dict = {
   'fileTree.stopTrackingConfirm': 'Dejar de rastrear',
   'fileTree.deleteFromDiskTitle': 'Eliminar de Git y del disco',
   'fileTree.deleteFromDiskConfirm': 'Eliminar',
+  'fileTree.dropConflictTitle': 'El nombre ya existe',
+  'fileTree.dropConflictMsg':
+    '"{name}" ya existe en {dir}.\n\n¿Reemplazarlo (el actual se mueve a la papelera) o conservar ambas copias?',
+  'fileTree.dropConflictMsgMany':
+    '{count} de los elementos soltados ya existen en {dir}.\n\n¿Reemplazarlos (los actuales se mueven a la papelera) o conservar ambas copias?',
+  'fileTree.dropReplace': 'Reemplazar',
+  'fileTree.dropKeepBoth': 'Conservar ambos',
+  'fileTree.dropRootLabel': 'la raíz del repositorio',
 
   // PR detail modal
   'prDetail.heading': 'Pull request #{n}',

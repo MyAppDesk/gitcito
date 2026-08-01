@@ -30,7 +30,8 @@ import {
   Settings,
   Sparkles,
   ArrowLeftRight,
-  PanelLeft
+  PanelLeft,
+  PanelRight
 } from 'lucide-react'
 import type { MenuItem } from '../stores/ui'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
@@ -60,6 +61,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
   // can't fire a second action until the first has fully settled.
   const inflight = useUIStore((s) => s.inflight > 0)
   const confirmForcePush = useSettingsStore((s) => s.settings.confirmForcePush)
+  const sidebarSide = useSettingsStore((s) => s.settings.sidebarSide)
   const aiEnabled = useSettingsStore((s) => s.activeProfile().ai.enabled !== false)
   const path = repo.path
   const current = repo.branches.locals.find((b) => b.isCurrent)
@@ -192,16 +194,22 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
     openContextMenu(rect.left, rect.bottom + 6, items)
   }
 
+  // The sidebar toggle lives on the same edge as the sidebar itself: leftmost
+  // when docked left, and after the terminal button when docked right.
+  const sidebarToggle = (
+    <button
+      className={`tool-btn icon-only ${!sidebarCollapsed ? 'toggled' : ''}`}
+      title={t('toolbar.sidebarTitle')}
+      onClick={toggleSidebar}
+    >
+      {sidebarSide === 'right' ? <PanelRight size={16} /> : <PanelLeft size={16} />}
+    </button>
+  )
+
   return (
     <div className="toolbar">
       <div className="toolbar-left">
-        <button
-          className={`tool-btn icon-only ${!sidebarCollapsed ? 'toggled' : ''}`}
-          title={t('toolbar.sidebarTitle')}
-          onClick={toggleSidebar}
-        >
-          <PanelLeft size={16} />
-        </button>
+        {sidebarSide === 'left' && sidebarToggle}
         <button className="repo-pill" onClick={repoMenu} title={t('toolbar.switchRepo')}>
           <span className="repo-pill-stack">
             <span className="repo-pill-label">{t('toolbar.repository')}</span>
@@ -400,6 +408,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
         >
           <TerminalSquare size={16} />
         </button>
+        {sidebarSide === 'right' && sidebarToggle}
       </div>
     </div>
   )

@@ -2175,9 +2175,16 @@ textarea:focus {
   padding: 0;
   border: none;
   border-radius: 6px;
-  color: var(--text-2);
+  color: var(--text-1);
   background: transparent;
   cursor: pointer;
+}
+
+/* The close button floats over the panel's first row. When that row is a
+   toolbar (the composer's file-changes header) its right-aligned controls
+   would sit under the X — reserve the space instead. */
+.right-panel-inner > * > .panel-toolbar:first-child {
+  padding-right: 40px;
 }
 
 .right-panel-close:hover {

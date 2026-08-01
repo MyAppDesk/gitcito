@@ -1,5 +1,12 @@
 
 
+## [2.6.0](https://github.com/MyAppDesk/gitcito/compare/v2.5.0...v2.6.0) (2026-08-01)
+
+
+### Features
+
+* add sidebar toggle for left and right docked positions ([5fcc56a](https://github.com/MyAppDesk/gitcito/commit/5fcc56a409f9bf2d8447d1148d9d09140672be7a))
+
 ## [2.5.0](https://github.com/MyAppDesk/gitcito/compare/v2.4.0...v2.5.0) (2026-07-28)
 
 

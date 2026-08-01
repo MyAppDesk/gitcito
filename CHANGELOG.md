@@ -1,5 +1,12 @@
 
 
+## [2.7.0](https://github.com/MyAppDesk/gitcito/compare/v2.6.0...v2.7.0) (2026-08-01)
+
+
+### Features
+
+* add drag and drop functionality to reorder workspaces ([356383f](https://github.com/MyAppDesk/gitcito/commit/356383f33f16f510d301356927d82cee832208e3))
+
 ## [2.6.0](https://github.com/MyAppDesk/gitcito/compare/v2.5.0...v2.6.0) (2026-08-01)
 
 

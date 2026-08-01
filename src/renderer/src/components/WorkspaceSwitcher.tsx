@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { ChevronDown, Plus, Pencil, Trash2 } from 'lucide-react'
+import { ChevronDown, Plus, Pencil, Trash2, GripVertical } from 'lucide-react'
 import gitcitoMark from '../assets/gitcito-mark.png'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
@@ -19,6 +19,7 @@ export function WorkspaceSwitcher(): React.JSX.Element {
   const createWorkspace = useSettingsStore((s) => s.createWorkspace)
   const renameWorkspace = useSettingsStore((s) => s.renameWorkspace)
   const deleteWorkspace = useSettingsStore((s) => s.deleteWorkspace)
+  const reorderWorkspaces = useSettingsStore((s) => s.reorderWorkspaces)
   const openModal = useUIStore((s) => s.openModal)
   const t = useT()
 
@@ -26,6 +27,12 @@ export function WorkspaceSwitcher(): React.JSX.Element {
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null)
   const btnRef = useRef<HTMLButtonElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
+
+  // Drag & drop reorder of the workspace rows. `dragId` is a ref (the drag
+  // payload survives re-renders); `drop` drives the insertion line.
+  const dragId = useRef<string | null>(null)
+  const [dragging, setDragging] = useState<string | null>(null)
+  const [drop, setDrop] = useState<{ id: string; before: boolean } | null>(null)
 
   const workspaces = settings.workspaces ?? []
   const active = workspaces.find((w) => w.id === settings.activeWorkspaceId) ?? workspaces[0]
@@ -99,6 +106,37 @@ export function WorkspaceSwitcher(): React.JSX.Element {
     })
   }
 
+  const endDrag = (): void => {
+    dragId.current = null
+    setDragging(null)
+    setDrop(null)
+  }
+
+  const onDragStart = (id: string) => (e: React.DragEvent): void => {
+    dragId.current = id
+    setDragging(id)
+    e.dataTransfer.effectAllowed = 'move'
+    // Needed for the drag to actually start in some Chromium builds.
+    e.dataTransfer.setData('text/plain', id)
+  }
+
+  const onDragOver = (id: string) => (e: React.DragEvent): void => {
+    if (!dragId.current) return
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    if (dragId.current === id) return setDrop(null)
+    const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    setDrop({ id, before: e.clientY < r.top + r.height / 2 })
+  }
+
+  const onDrop = (id: string) => (e: React.DragEvent): void => {
+    e.preventDefault()
+    const from = dragId.current
+    const before = drop?.id === id ? drop.before : true
+    endDrag()
+    if (from && from !== id) reorderWorkspaces(from, id, before)
+  }
+
   return (
     <>
       <button
@@ -116,7 +154,22 @@ export function WorkspaceSwitcher(): React.JSX.Element {
         createPortal(
           <div ref={panelRef} className="profile-switcher-menu" style={{ left: pos.left, top: pos.top }}>
             {workspaces.map((w) => (
-              <div key={w.id} className="workspace-switcher-row">
+              <div
+                key={w.id}
+                className={`workspace-switcher-row${dragging === w.id ? ' dragging' : ''}${
+                  drop?.id === w.id ? (drop.before ? ' drop-before' : ' drop-after') : ''
+                }`}
+                draggable={workspaces.length > 1}
+                onDragStart={onDragStart(w.id)}
+                onDragOver={onDragOver(w.id)}
+                onDrop={onDrop(w.id)}
+                onDragEnd={endDrag}
+              >
+                {workspaces.length > 1 && (
+                  <span className="workspace-row-grip" title={t('ws.reorderHint')}>
+                    <GripVertical size={13} />
+                  </span>
+                )}
                 <button
                   className={`profile-switcher-item ${w.id === active.id ? 'selected' : ''}`}
                   onClick={() => {

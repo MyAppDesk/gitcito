@@ -497,6 +497,7 @@ const en = {
   'ws.switcherTitle': 'Workspace: {name}',
   'ws.tabCountOne': '{n} tab',
   'ws.tabCountMany': '{n} tabs',
+  'ws.reorderHint': 'Drag to reorder',
 
   // Settings — profile page
   'settings.profileName': 'Profile name',
@@ -1840,6 +1841,7 @@ const es: Dict = {
   'ws.switcherTitle': 'Espacio de trabajo: {name}',
   'ws.tabCountOne': '{n} pestaña',
   'ws.tabCountMany': '{n} pestañas',
+  'ws.reorderHint': 'Arrastra para reordenar',
 
   'settings.profileName': 'Nombre del perfil',
   'settings.makeActive': 'Activar',

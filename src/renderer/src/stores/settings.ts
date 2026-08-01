@@ -121,6 +121,8 @@ interface SettingsState {
   /** Create a fresh, empty workspace and switch to it. */
   createWorkspace(name: string): void
   renameWorkspace(id: string, name: string): void
+  /** Reorder the workspace list (drag & drop in the switcher menu). */
+  reorderWorkspaces(fromId: string, toId: string, before: boolean): void
   /** Delete a workspace; no-op on the last one. If it was active, falls back
    *  to a neighbour and loads its tabs. */
   deleteWorkspace(id: string): void
@@ -556,6 +558,18 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       ...s,
       workspaces: s.workspaces.map((w) => (w.id === id ? { ...w, name } : w))
     })),
+
+  reorderWorkspaces: (fromId, toId, before) =>
+    get().update((s) => {
+      if (fromId === toId) return s
+      const from = s.workspaces.find((w) => w.id === fromId)
+      if (!from) return s
+      const workspaces = s.workspaces.filter((w) => w.id !== fromId)
+      const toIdx = workspaces.findIndex((w) => w.id === toId)
+      if (toIdx < 0) return s
+      workspaces.splice(before ? toIdx : toIdx + 1, 0, from)
+      return { ...s, workspaces }
+    }),
 
   deleteWorkspace: (id) =>
     get().update((s) => {

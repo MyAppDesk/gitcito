@@ -1,5 +1,13 @@
 
 
+## [2.8.0](https://github.com/MyAppDesk/gitcito/compare/v2.7.0...v2.8.0) (2026-08-06)
+
+
+### Features
+
+* add dev environment seeding and launch configurations ([aef20e2](https://github.com/MyAppDesk/gitcito/commit/aef20e22754b3b9af99751f41805bf9d3788256d))
+* add scenario for newer branch merge behavior ([36ce504](https://github.com/MyAppDesk/gitcito/commit/36ce50401ab92c260fad8af47d40d00e4e6b2725))
+
 ## [2.7.0](https://github.com/MyAppDesk/gitcito/compare/v2.6.0...v2.7.0) (2026-08-01)
 
 

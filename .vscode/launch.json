@@ -5,12 +5,24 @@
       "name": "Launch App",
       "type": "node",
       "request": "launch",
+      "preLaunchTask": "Seed dev env from prod",
       "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron-vite",
       "runtimeArgs": ["dev"],
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
       "skipFiles": ["<node_internals>/**"],
       "presentation": { "group": "1_app", "order": 1 }
+    },
+    {
+      "name": "Launch App (keep dev state)",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron-vite",
+      "runtimeArgs": ["dev"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"],
+      "presentation": { "group": "1_app", "order": 2 }
     },
     {
       "name": "Screenshots: regenerate",

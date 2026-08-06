@@ -1,5 +1,6 @@
 import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join, dirname } from 'path'
+import { existsSync, mkdirSync, readdirSync, copyFileSync } from 'fs'
 import { writeFile, readFile, mkdir, chmod } from 'fs/promises'
 import { execFile, spawn } from 'child_process'
 import icon from '../../resources/icon.png?asset'
@@ -35,6 +36,30 @@ function sendOpenPath(win: BrowserWindow, payload: CliOpenPayload): void {
     win.webContents.once('did-finish-load', () => win.webContents.send('cli:open-path', payload))
   } else {
     win.webContents.send('cli:open-path', payload)
+  }
+}
+
+// Dev builds get their own userData dir. The single-instance lock below lives
+// in userData, and dev's app name ("gitcito", from package.json) resolves to
+// the same dir as the packaged app ("Gitcito") on case-insensitive filesystems
+// — so `electron-vite dev` would silently quit whenever the installed app is
+// running. A separate dir gives dev its own lock and keeps dev runs from
+// mutating real settings/vault data.
+if (!app.isPackaged) {
+  const devDir = join(app.getPath('appData'), 'gitcito-dev')
+  app.setPath('userData', devDir)
+  // First dev run: seed from the installed app's data so dev mirrors the real
+  // setup (workspaces, settings, repo info). Only when dev has no settings yet
+  // — re-copying every launch would clobber state saved during dev sessions,
+  // which is often the thing under test. Re-seed by deleting the dev dir.
+  // The vault copy is best-effort: if dev's keychain entry differs from prod's,
+  // vault load() just falls back to an empty vault.
+  const prodDir = join(app.getPath('appData'), 'Gitcito')
+  if (!existsSync(join(devDir, 'gitcito-settings.json')) && existsSync(prodDir)) {
+    mkdirSync(devDir, { recursive: true })
+    for (const f of readdirSync(prodDir)) {
+      if (/^gitcito-.+\.(json|enc)$/.test(f)) copyFileSync(join(prodDir, f), join(devDir, f))
+    }
   }
 }
 
@@ -92,7 +117,7 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
-  app.setName('Gitcito')
+  app.setName(app.isPackaged ? 'Gitcito' : 'Gitcito Dev')
 
   if (process.platform === 'darwin') app.dock?.setIcon(icon)
 

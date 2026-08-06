@@ -1,0 +1,20 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      // Mirrors the installed app's data into the dev sandbox so every dev
+      // launch starts from the real setup (workspaces, settings, vault).
+      // Dev-session changes are discarded on the next seeded launch — use the
+      // "keep dev state" launch config to skip this and test persistence.
+      "label": "Seed dev env from prod",
+      "type": "shell",
+      "command": "mkdir -p \"$HOME/Library/Application Support/gitcito-dev\" && rm -f \"$HOME/Library/Application Support/gitcito-dev/\"gitcito-* && cp \"$HOME/Library/Application Support/Gitcito/\"gitcito-* \"$HOME/Library/Application Support/gitcito-dev/\" 2>/dev/null; exit 0",
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared",
+        "close": true
+      },
+      "problemMatcher": []
+    }
+  ]
+}

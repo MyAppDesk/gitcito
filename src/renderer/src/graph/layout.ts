@@ -111,10 +111,17 @@ export function layoutGraph(
     const [p0, ...rest] = c.parents
 
     if (p0) {
-      if (lanes.includes(p0)) {
-        // First parent already expected elsewhere → this lane terminates here.
+      const existing = lanes.indexOf(p0)
+      if (existing === -1) {
+        lanes[lane] = p0
+      } else if (existing < lane) {
+        // First parent already expected further left → this lane terminates here.
         lanes[lane] = null
       } else {
+        // First parent expected on a lane to the right (e.g. a merged branch whose
+        // commits are newer than this side of the trunk). Pull the expectation onto
+        // this more-left lane so the trunk stays straight and the branch bends in.
+        lanes[existing] = null
         lanes[lane] = p0
       }
     } else {

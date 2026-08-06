@@ -320,6 +320,26 @@ describe('graph layout', () => {
     expect(kinds['x->b']).toBe('branch')
   })
 
+  it('keeps the trunk on lane 0 when the merged branch is newer than the trunk side', () => {
+    // Date-order can place the merged branch's commits above the trunk's own
+    // first-parent side: m merges x (newer) into a (older), both meeting at b.
+    // The trunk (m → a → b) must stay on lane 0; x bends in from lane 1.
+    const graph = layoutGraph([
+      c('m', ['a', 'x']),
+      c('x', ['b']),
+      c('a', ['b']),
+      c('b', ['r']),
+      c('r', [])
+    ])
+    expect(graph.nodes.get('m')!.lane).toBe(0)
+    expect(graph.nodes.get('a')!.lane).toBe(0)
+    expect(graph.nodes.get('b')!.lane).toBe(0)
+    expect(graph.nodes.get('r')!.lane).toBe(0)
+    expect(graph.nodes.get('x')!.lane).toBe(1)
+    const xb = graph.edges.find((e) => e.fromHash === 'x' && e.toHash === 'b')
+    expect(xb?.kind).toBe('branch')
+  })
+
   it('routes stashes as spurs with a spur-kind edge to their parent', () => {
     const commits = [c('base', []), c('stash', ['base'])]
     const graph = layoutGraph(commits, new Set(['stash']))

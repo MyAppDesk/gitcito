@@ -51,7 +51,8 @@ const EXPECTED = [
   'secure-share',
   'tree-badges',
   'workspace-share',
-  'tree-dnd'
+  'tree-dnd',
+  'newer-branch-merge'
 ]
 
 describe('playground fixtures', () => {

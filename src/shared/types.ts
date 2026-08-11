@@ -1339,6 +1339,8 @@ export interface RepoLayout {
   graphColumnOrder?: GraphFlowColumnId[]
   sidebarOrder?: string[]
   sidebarHidden?: string[]
+  /** Local branch names starred by the user, in the order they were pinned. */
+  pinnedBranches?: string[]
 }
 
 export interface AppThemeColors {

@@ -1182,6 +1182,10 @@ textarea:focus {
  * branches read as children of the folder above them. */
 .sb-section.nested > .sb-body {
   position: relative;
+  /* Own stacking context so the rail's z-index: -1 stays inside the body:
+   * behind row content and backgrounds (hover, current), never behind the
+   * sidebar itself. Keeps the rail from drawing over the current-branch ✓. */
+  isolation: isolate;
 }
 .sb-section.nested > .sb-body::before {
   content: '';
@@ -1194,6 +1198,7 @@ textarea:focus {
   width: 1px;
   background: var(--border-soft, var(--border));
   pointer-events: none;
+  z-index: -1;
 }
 .sb-section.nested .sb-current-mark {
   margin-left: -16px;
@@ -1222,7 +1227,9 @@ textarea:focus {
 .sb-item.current {
   color: var(--text-0);
   border-left-color: var(--green);
-  background: rgba(63, 208, 164, 0.07);
+  /* Tint layered over the sidebar bg so the row is opaque — it must fully
+   * cover the nested-folder rail, or the line shows through the current ✓. */
+  background: linear-gradient(rgba(63, 208, 164, 0.07), rgba(63, 208, 164, 0.07)), var(--bg-2);
 }
 .sb-item.multi-sel {
   background: var(--accent-soft);
@@ -1394,6 +1401,29 @@ textarea:focus {
 }
 .sb-tag-action.sb-tag-cloud {
   margin-left: 0;
+}
+
+/* Pin star on branch rows: hidden until the row is hovered, always shown
+ * (filled, accent) once the branch is pinned. */
+.sb-pin-action {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  color: var(--text-2);
+  opacity: 0;
+  transition: opacity 0.16s ease, color 0.16s ease;
+}
+.sb-item:hover .sb-pin-action {
+  opacity: 0.7;
+}
+.sb-pin-action:hover {
+  opacity: 1;
+  color: var(--accent);
+}
+.sb-pin-action.pinned {
+  opacity: 1;
+  color: var(--accent);
 }
 
 .pr-open {

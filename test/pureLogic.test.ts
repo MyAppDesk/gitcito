@@ -5,6 +5,7 @@ import { isSecretFile, maskSecretLine } from '../src/renderer/src/lib/secrets'
 import { comboFromEvent, formatCombo, effectiveBindings, matchShortcut } from '../src/renderer/src/lib/shortcuts'
 import { autolink, remoteWebUrl, filePermalink } from '../src/renderer/src/lib/autolink'
 import { frecencyScore } from '../src/renderer/src/lib/frecency'
+import { togglePin, selectPinned } from '../src/renderer/src/lib/pinnedBranches'
 
 // Minimal KeyboardEvent stand-in for the pure shortcut helpers.
 const ev = (key: string, mods: { meta?: boolean; ctrl?: boolean; shift?: boolean; alt?: boolean } = {}): KeyboardEvent =>
@@ -382,5 +383,32 @@ describe('graph layout', () => {
   it('defaults to full topology when none is given', () => {
     const g = layoutGraph(overlappingStashes(), spurs)
     expect(g.nodes.get('s1')!.lane).not.toBe(g.nodes.get('s2')!.lane)
+  })
+})
+
+describe('pinnedBranches', () => {
+  const branch = (name: string): { name: string } => ({ name })
+
+  it('togglePin adds a missing name at the end', () => {
+    expect(togglePin([], 'main')).toEqual(['main'])
+    expect(togglePin(['main'], 'develop')).toEqual(['main', 'develop'])
+  })
+
+  it('togglePin removes an existing name keeping the rest in order', () => {
+    expect(togglePin(['main', 'develop', 'release/1.x'], 'develop')).toEqual(['main', 'release/1.x'])
+  })
+
+  it('selectPinned returns branches in pin order, not list order', () => {
+    const locals = [branch('develop'), branch('main'), branch('feature/x')]
+    expect(selectPinned(locals, ['main', 'develop'], (b) => b.name).map((b) => b.name)).toEqual(['main', 'develop'])
+  })
+
+  it('selectPinned drops pins whose branch no longer exists', () => {
+    const locals = [branch('main')]
+    expect(selectPinned(locals, ['gone', 'main'], (b) => b.name).map((b) => b.name)).toEqual(['main'])
+  })
+
+  it('selectPinned is empty when nothing is pinned', () => {
+    expect(selectPinned([branch('main')], [], (b) => b.name)).toEqual([])
   })
 })

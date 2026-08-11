@@ -28,7 +28,8 @@ import {
   FilePlus,
   FolderPlus,
   Play,
-  ChevronDown
+  ChevronDown,
+  Star
 } from 'lucide-react'
 import { FileTree } from './FileTree'
 import { FileSearchBar, EMPTY_FILTER, type FileFilter } from './FileSearchBar'
@@ -40,6 +41,7 @@ import { shellApi } from '../infrastructure/api'
 import { useT, interp } from '../i18n'
 import { repoIsGitHub } from '../lib/hosting'
 import { folderOpenMenuItems } from '../lib/openWith'
+import { togglePin, selectPinned } from '../lib/pinnedBranches'
 import { defaultSettings } from '../../../shared/types'
 import type { BranchInfo, ReleaseInfo, RemoteBranchInfo, StashInfo, TagInfo, WorktreeInfo, SubmoduleInfo, LaunchGroup, LaunchConfig } from '../../../shared/types'
 
@@ -410,6 +412,13 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     () => repo.branches.locals.filter((b) => !f || b.name.toLowerCase().includes(f)),
     [repo.branches.locals, f]
   )
+  // Starred branches surface in a dedicated group at the top of Local; the pin
+  // list is per-repo (RepoLayout) and rows also stay in their normal spot below.
+  const pinnedNames = useMemo(() => repoLayout?.pinnedBranches ?? [], [repoLayout])
+  const pinnedLocals = useMemo(() => selectPinned(locals, pinnedNames, (b) => b.name), [locals, pinnedNames])
+  const isPinned = (name: string): boolean => pinnedNames.includes(name)
+  const togglePinBranch = (name: string): void =>
+    updateRepoLayout(path, (l) => ({ ...l, pinnedBranches: togglePin(l.pinnedBranches ?? [], name) }))
   const remotes = useMemo(
     () => repo.branches.remotes.filter((b) => !f || b.fullName.toLowerCase().includes(f)),
     [repo.branches.remotes, f]
@@ -667,6 +676,10 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       onClick: () => openModal({ kind: 'create-pr', repoPath: path, source: b.name })
     },
     { separator: true },
+    {
+      label: isPinned(b.name) ? t('sidebar.unpinBranch') : t('sidebar.pinBranch'),
+      onClick: () => togglePinBranch(b.name)
+    },
     { label: t('sidebar.copyBranchName'), onClick: () => void navigator.clipboard.writeText(b.name) },
     {
       label: t('sidebar.deleteBranch'),
@@ -1028,6 +1041,16 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       {b.ahead > 0 && <span className="badge ahead">↑{b.ahead}</span>}
       {b.behind > 0 && <span className="badge behind">↓{b.behind}</span>}
       <Presence remoteNames={branchPresence.get(b.name) ?? []} />
+      <span
+        className={`sb-pin-action ${isPinned(b.name) ? 'pinned' : ''}`}
+        title={isPinned(b.name) ? t('sidebar.unpinBranch') : t('sidebar.pinBranch')}
+        onClick={(e) => {
+          e.stopPropagation()
+          togglePinBranch(b.name)
+        }}
+      >
+        <Star size={11} fill={isPinned(b.name) ? 'currentColor' : 'none'} />
+      </span>
     </div>
   )
 
@@ -1188,6 +1211,11 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
           </span>
         }
       >
+        {pinnedLocals.length > 0 && (
+          <Section nested depth={1} title={t('sidebar.pinned')} icon={<Star size={13} />} count={pinnedLocals.length}>
+            {pinnedLocals.map((b) => branchItem(b, b.name))}
+          </Section>
+        )}
         {groupBranches
           ? [...branchTree.children.values()].map((c) => renderBranchNode(c, '', 1))
           : locals.map((b) => branchItem(b, b.name))}

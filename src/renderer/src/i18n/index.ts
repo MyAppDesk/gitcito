@@ -75,6 +75,9 @@ const en = {
   'sidebar.openWorktree': 'Open in new window',
   'sidebar.revealWorktree': 'Reveal in folder',
   'sidebar.copyPath': 'Copy path',
+  'sidebar.pinned': 'Pinned',
+  'sidebar.pinBranch': 'Pin branch',
+  'sidebar.unpinBranch': 'Unpin branch',
 
   // Common
   'common.save': 'Save',
@@ -1425,6 +1428,9 @@ const es: Dict = {
   'sidebar.openWorktree': 'Abrir en ventana nueva',
   'sidebar.revealWorktree': 'Mostrar en carpeta',
   'sidebar.copyPath': 'Copiar ruta',
+  'sidebar.pinned': 'Fijadas',
+  'sidebar.pinBranch': 'Fijar rama',
+  'sidebar.unpinBranch': 'Desfijar rama',
 
   'common.save': 'Guardar',
   'common.cancel': 'Cancelar',

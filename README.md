@@ -50,6 +50,7 @@
 - **Customisable graph style** (Settings → Themes → **Graph**): pick a **lane palette** (8 built-ins + custom + **AI-generated**), **line corners** (rounded / sharp / curved / straight), **row density** and **line thickness** — all with a live mini-graph preview.
 - **Inline CI status** _(GitHub only)_. GitHub Actions check-runs (pass/fail/pending) shown right on the commit row.
 - **Branches, remotes, tags, stashes, worktrees & submodules**, all in one reorderable, searchable sidebar.
+- **Pinned branches** — star the branches you jump to most (hover ★ on a branch row, or right-click → "Pin branch") and they surface in a **Pinned** group at the top of the Local section, remembered per repo.
 - **Commit details**: changed-files tree/flat view, author, SHA, co-authors, copy & open externally. `#123` issue/PR refs and `@mentions` (in commit subjects, PR & issue bodies/comments) are **autolinked** to the host.
 - **Per-file blame & history**, with a follow-the-line jump from blame straight into the diff — and a right-click **"reblame before this commit"** to walk a line's history backwards.
 - **Search & filter** commits by message, author, SHA or deployment status — or **filter by path** (right-click a file/folder → "Filter graph by this path", or ⌘K) to spotlight only the commits that touched it.

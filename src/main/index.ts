@@ -45,7 +45,10 @@ function sendOpenPath(win: BrowserWindow, payload: CliOpenPayload): void {
 // — so `electron-vite dev` would silently quit whenever the installed app is
 // running. A separate dir gives dev its own lock and keeps dev runs from
 // mutating real settings/vault data.
-if (!app.isPackaged) {
+// An explicit --user-data-dir (screenshot harness, scripted runs) must win:
+// Electron has already applied it, and redirecting to the dev dir here would
+// replace the caller's seeded throwaway settings with a copy of prod data.
+if (!app.isPackaged && !app.commandLine.hasSwitch('user-data-dir')) {
   const devDir = join(app.getPath('appData'), 'gitcito-dev')
   app.setPath('userData', devDir)
   // First dev run: seed from the installed app's data so dev mirrors the real

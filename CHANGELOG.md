@@ -1,5 +1,17 @@
 
 
+## [2.9.0](https://github.com/MyAppDesk/gitcito/compare/v2.8.0...v2.9.0) (2026-08-11)
+
+
+### Features
+
+* add pinned branches to sidebar ([#6](https://github.com/MyAppDesk/gitcito/issues/6)) ([265d1e8](https://github.com/MyAppDesk/gitcito/commit/265d1e847e4c539f4b5589e9f5a71a8c4ea8d5c8))
+
+
+### Bug Fixes
+
+* prevent overwriting user data in development mode ([1689321](https://github.com/MyAppDesk/gitcito/commit/1689321ffa67f7e32ec790d2e1c3f3a70fa89a39))
+
 ## [2.8.0](https://github.com/MyAppDesk/gitcito/compare/v2.7.0...v2.8.0) (2026-08-06)
 
 

@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { BarChart3, RefreshCw, GitCommit, Users, Flame, FileText } from 'lucide-react'
 import { gitApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
+import { useSettingsStore } from '../stores/settings'
 import { useRepoStore } from '../stores/repo'
 import type { RepoInsights } from '../../../shared/types'
 import { useT } from '../i18n'
@@ -24,6 +25,8 @@ export function InsightsPage({ repoPath }: { repoPath: string }): React.JSX.Elem
   const t = useT()
   const toast = useUIStore((s) => s.toast)
   const setFileView = useUIStore((s) => s.setFileView)
+  const closeModal = useUIStore((s) => s.closeModal)
+  const openRepoTab = useSettingsStore((s) => s.openRepoTab)
   const repoName = useRepoStore((s) => s.repos[repoPath]?.name ?? repoPath.split('/').pop())
   const [days, setDays] = useState(90)
   const [data, setData] = useState<RepoInsights | null>(null)
@@ -41,6 +44,15 @@ export function InsightsPage({ repoPath }: { repoPath: string }): React.JSX.Elem
       cancelled = true
     }
   }, [repoPath, days, toast])
+
+  // Insights renders both as its own page tab and inside the repo-settings
+  // dialog. The file viewer only exists in a repo tab, so opening a hotspot has
+  // to focus that repo (and drop the dialog, when there is one) to be visible.
+  const openHotspot = (path: string): void => {
+    openRepoTab({ path: repoPath, name: repoName ?? repoPath })
+    closeModal()
+    setFileView({ repoPath, file: path, source: { type: 'tree' }, mode: 'history' })
+  }
 
   const maxAuthorCommits = useMemo(() => Math.max(1, ...(data?.authors ?? []).map((a) => a.commits)), [data])
   const maxHotspot = useMemo(() => Math.max(1, ...(data?.hotspots ?? []).map((h) => h.commits)), [data])
@@ -170,7 +182,7 @@ export function InsightsPage({ repoPath }: { repoPath: string }): React.JSX.Elem
                       key={h.path}
                       className="insights-row hotspot"
                       title={`${h.path}\n${h.commits} commits · +${fmt(h.added)} −${fmt(h.removed)}`}
-                      onClick={() => setFileView({ repoPath, file: h.path, source: { type: 'tree' }, mode: 'history' })}
+                      onClick={() => openHotspot(h.path)}
                     >
                       <span className="insights-row-name mono">{h.path}</span>
                       <div className="insights-bar-track">

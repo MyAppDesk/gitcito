@@ -71,7 +71,9 @@ import type {
   SecureBundleOpened,
   SecureApplyPlan,
   SecureApplyResult,
-  PRReviewResult
+  PRReviewResult,
+  HoverExplainRequest,
+  HoverExplainResult
 } from '../../../shared/types'
 
 // Typed adapter over the IPC bridge — the only place that talks to window.api.
@@ -338,6 +340,8 @@ export const aiApi = {
   listModels: (cfg: AIConfig) => window.api.ai.listModels(cfg) as Promise<string[]>,
   explainCode: (code: string, lang: string, cfg: AIConfig) =>
     window.api.ai.explainCode(code, lang, cfg) as Promise<string>,
+  hoverExplain: (req: HoverExplainRequest, cfg: AIConfig) =>
+    window.api.ai.hoverExplain(req, cfg) as Promise<HoverExplainResult>,
   resolveConflict: (file: string, content: string, cfg: AIConfig) =>
     window.api.ai.resolveConflict(file, content, cfg) as Promise<string>,
   generateConfig: (repoName: string, artifacts: ArtifactRequest[], context: string, cfg: AIConfig) =>

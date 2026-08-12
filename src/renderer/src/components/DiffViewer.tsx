@@ -4,6 +4,9 @@ import { highlightHtml, buildQueryRegExp, type HighlightLayer } from './FileSear
 import { highlightLine } from '../lib/highlight'
 import { maskSecretLine } from '../lib/secrets'
 import { useT, interp } from '../i18n'
+import { useSettingsStore } from '../stores/settings'
+import { useHoverExplain } from './HoverExplain'
+import type { NumberedLine } from '../../../shared/types'
 import {
   parseDiff,
   wordRangesByLine,
@@ -126,6 +129,7 @@ function buildLinePatch(lines: DiffLine[], header: string, selected: Set<number>
 
 export function DiffViewer({
   diff,
+  file = '',
   lang = '',
   highlightLayers = [],
   maskValues = false,
@@ -134,6 +138,8 @@ export function DiffViewer({
   onStageHunk
 }: {
   diff: string
+  /** Path of the file being diffed — labels the hover-explain card. */
+  file?: string
   lang?: string
   highlightLayers?: HighlightLayer[]
   /** Mask secret values (KEY=••••) in displayed lines — secret files only. */
@@ -146,6 +152,36 @@ export function DiffViewer({
 }): React.JSX.Element {
   const t = useT()
   const lines = useMemo(() => parseDiff(diff), [diff])
+
+  // ─── Hover-to-explain over the diff's own lines ───
+  const aiEnabled = useSettingsStore((s) => s.activeProfile().ai.enabled !== false)
+  const hoverOn = useSettingsStore((s) => s.activeProfile().ai.hoverExplain !== false)
+  const hoverKey = useSettingsStore((s) => s.activeProfile().ai.hoverExplainKey ?? 'shift')
+  // The diff only shows hunks, so the window has gaps. Numbers come from the new
+  // side where there is one, and from the old side for removed lines.
+  const hoverLines = useMemo<NumberedLine[]>(
+    () =>
+      lines
+        .filter((l) => l.kind === 'add' || l.kind === 'del' || l.kind === 'ctx')
+        .map((l) => ({ no: l.newNo ?? l.oldNo ?? 0, text: l.text }))
+        .filter((l) => l.no > 0),
+    [lines]
+  )
+  const { hoverProps, armed: hoverArmed, card: hoverCard } = useHoverExplain({
+    enabled: aiEnabled && hoverOn && !maskValues,
+    file,
+    lang,
+    modifier: hoverKey,
+    getLines: () => hoverLines,
+    lineOf: (el) => {
+      const row = el.closest('.diff-line, .diff-split-cell')
+      if (!row) return null
+      const gutters = [...row.querySelectorAll('.diff-gutter')].map((g) => Number(g.textContent?.trim()))
+      // Unified rows carry old and new; the new number is the one to cite.
+      const no = gutters.reverse().find((n) => Number.isInteger(n) && n > 0)
+      return no ?? null
+    }
+  })
   const hunkData = useMemo(() => (onStageHunk ? extractHunks(diff) : null), [diff, onStageHunk])
 
   const [wordDiffOn, setWordDiffOn] = useState(() => localStorage.getItem('gitcito-word-diff') !== 'off')
@@ -257,11 +293,13 @@ export function DiffViewer({
 
   return (
     <div
-      className={`diff-viewer hljs ${splitView ? 'is-split' : ''}`}
+      className={`diff-viewer hljs ${splitView ? 'is-split' : ''} ${hoverArmed ? 'hover-armed' : ''}`}
       ref={viewerRef}
       tabIndex={0}
       onKeyDown={onViewerKeyDown}
+      {...hoverProps}
     >
+      {hoverCard}
       <div className="diff-toggles">
         {onToggleIgnoreWs && (
           <button

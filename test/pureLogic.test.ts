@@ -14,8 +14,12 @@ import {
   renderFindings,
   validateReview,
   validateAskPlan,
-  parseLooseJson
+  parseLooseJson,
+  buildLineWindow,
+  buildWindowFromLines,
+  validateHoverExplain
 } from '../src/main/grounding'
+import { identifierAt, isExplainableToken } from '../src/renderer/src/lib/hoverToken'
 import {
   hasSettingsSecrets,
   stripSettingsSecrets,
@@ -677,5 +681,170 @@ describe('profile secrets — keeping credentials out of settings.json', () => {
     const merged = pruneSecrets({ ...older, ...extractSecrets(loaded) }, ['p1', 'p2'])
     expect(merged.p1.githubToken).toBe('ghp_secret')
     expect(merged.p2.gitlabToken).toBe('glpat_secret')
+  })
+})
+
+describe('hover explain — context window', () => {
+  const file = Array.from({ length: 200 }, (_, i) => `line ${i + 1} content`).join('\n')
+
+  it('centres the window on the hovered line', () => {
+    const w = buildLineWindow(file, 100, { radius: 5 })
+    expect(w.startLine).toBe(95)
+    expect(w.endLine).toBe(105)
+    expect(w.text.split('\n')).toHaveLength(11)
+  })
+
+  it('numbers every line so the model can cite one', () => {
+    expect(buildLineWindow(file, 3, { radius: 1 }).text).toBe(
+      '2 | line 2 content\n3 | line 3 content\n4 | line 4 content'
+    )
+  })
+
+  it('clamps at the start and end of the file', () => {
+    expect(buildLineWindow(file, 1, { radius: 10 }).startLine).toBe(1)
+    expect(buildLineWindow(file, 200, { radius: 10 }).endLine).toBe(200)
+    expect(buildLineWindow(file, 999, { radius: 2 }).endLine).toBe(200)
+  })
+
+  it('shrinks to the byte budget but always keeps the hovered line', () => {
+    const w = buildLineWindow(file, 100, { radius: 50, maxBytes: 120 })
+    expect(w.text.length).toBeLessThanOrEqual(120)
+    expect(w.startLine).toBeLessThanOrEqual(100)
+    expect(w.endLine).toBeGreaterThanOrEqual(100)
+    expect(w.text).toContain('100 | line 100 content')
+  })
+
+  it('handles a single-line file', () => {
+    expect(buildLineWindow('only line', 1)).toEqual({
+      startLine: 1,
+      endLine: 1,
+      numbers: [1],
+      text: '1 | only line'
+    })
+  })
+})
+
+describe('hover explain — output validation', () => {
+  const window = buildLineWindow(Array.from({ length: 30 }, (_, i) => `line ${i + 1}`).join('\n'), 15, {
+    radius: 5
+  })
+
+  it('accepts a brief explanation citing lines from the window', () => {
+    expect(validateHoverExplain({ summary: 'A helper.', bullets: ['Used twice.'], lines: [10, 20] }, window)).toEqual([])
+  })
+
+  it('rejects a citation outside the window', () => {
+    const errors = validateHoverExplain({ summary: 'A helper.', lines: [42] }, window)
+    expect(errors).toHaveLength(1)
+    expect(errors[0]).toContain('between 10 and 20')
+  })
+
+  it('rejects an empty summary and an over-long bullet list', () => {
+    expect(validateHoverExplain({ summary: '   ' }, window)[0]).toContain('summary')
+    expect(validateHoverExplain({ summary: 'x', bullets: ['a', 'b', 'c', 'd'] }, window)[0]).toContain('at most 3')
+  })
+
+  it('treats bullets and lines as optional', () => {
+    expect(validateHoverExplain({ summary: 'Defined elsewhere.' }, window)).toEqual([])
+  })
+})
+
+describe('hover explain — which tokens are worth asking about', () => {
+  it('accepts identifiers, functions and types', () => {
+    expect(isExplainableToken('buildReport', 'hljs-title function_')).toBe(true)
+    expect(isExplainableToken('Promise', 'hljs-built_in')).toBe(true)
+    expect(isExplainableToken('profile', 'hljs-property')).toBe(true)
+  })
+
+  it('skips literals, strings, numbers and comments', () => {
+    expect(isExplainableToken('hello', 'hljs-string')).toBe(false)
+    expect(isExplainableToken('42', 'hljs-number')).toBe(false)
+    expect(isExplainableToken('wire', 'hljs-comment')).toBe(false)
+    expect(isExplainableToken('const', 'hljs-keyword')).toBe(false)
+  })
+
+  it('allows unhighlighted words — most identifiers get no span at all', () => {
+    expect(isExplainableToken('properties')).toBe(true)
+    expect(isExplainableToken('_defaultAnalyticsTracker')).toBe(true)
+  })
+
+  it('skips bare keywords even when nothing highlighted them', () => {
+    expect(isExplainableToken('required')).toBe(false)
+    expect(isExplainableToken('final')).toBe(false)
+    expect(isExplainableToken('return')).toBe(false)
+  })
+
+  it('skips punctuation and tokens too short or too long to be worth a request', () => {
+    expect(isExplainableToken('=>', 'hljs-title')).toBe(false)
+    expect(isExplainableToken('x', 'hljs-variable')).toBe(false)
+    expect(isExplainableToken('a'.repeat(61), 'hljs-variable')).toBe(false)
+  })
+})
+
+describe('hover explain — the word under the caret', () => {
+  // highlight.js leaves most identifiers unwrapped, so the token comes from the
+  // character offset, not the markup.
+  const line = '  final Map<String, dynamic>? properties,'
+
+  it('finds the identifier straddling the offset', () => {
+    expect(identifierAt(line, line.indexOf('properties') + 3)?.text).toBe('properties')
+    expect(identifierAt(line, line.indexOf('dynamic'))?.text).toBe('dynamic')
+  })
+
+  it('reports the token range so the card can be placed on it', () => {
+    const span = identifierAt(line, line.indexOf('properties'))
+    expect(line.slice(span!.start, span!.end)).toBe('properties')
+  })
+
+  it('claims the word when the caret sits just past its last character', () => {
+    expect(identifierAt('foo bar', 3)?.text).toBe('foo')
+    expect(identifierAt('foo', 3)?.text).toBe('foo')
+  })
+
+  it('handles the first and last character of a line', () => {
+    expect(identifierAt('name = 1', 0)?.text).toBe('name')
+    expect(identifierAt('x = value', 8)?.text).toBe('value')
+  })
+
+  it('returns null when the caret is not on a word', () => {
+    expect(identifierAt('a + b', 2)).toBeNull()
+    expect(identifierAt('', 0)).toBeNull()
+    expect(identifierAt('abc', 99)).toBeNull()
+  })
+
+  it('treats $ and _ as part of an identifier', () => {
+    expect(identifierAt('const _private$ = 1', 8)?.text).toBe('_private$')
+  })
+})
+
+describe('hover explain — windows over a sparse diff', () => {
+  // A diff view only has the hunks, so the numbering has gaps.
+  const hunkLines = [
+    { no: 10, text: 'function a() {' },
+    { no: 11, text: '  return 1' },
+    { no: 12, text: '}' },
+    { no: 80, text: 'function b() {' },
+    { no: 81, text: '  return 2' }
+  ]
+
+  it('keeps the real line numbers, gaps and all', () => {
+    const w = buildWindowFromLines(hunkLines, 11, { radius: 1 })
+    expect(w.numbers).toEqual([10, 11, 12])
+    expect(w.text).toBe('10 | function a() {\n11 |   return 1\n12 | }')
+  })
+
+  it('snaps to the nearest line it actually has', () => {
+    expect(buildWindowFromLines(hunkLines, 30, { radius: 0 }).numbers).toEqual([12])
+    expect(buildWindowFromLines(hunkLines, 70, { radius: 0 }).numbers).toEqual([80])
+  })
+
+  it('rejects a citation of a line inside a gap', () => {
+    const w = buildWindowFromLines(hunkLines, 11, { radius: 1 })
+    expect(validateHoverExplain({ summary: 'x', lines: [12] }, w)).toEqual([])
+    expect(validateHoverExplain({ summary: 'x', lines: [40] }, w)[0]).toContain('not a line you were shown')
+  })
+
+  it('returns an empty window when there are no lines at all', () => {
+    expect(buildWindowFromLines([], 5).text).toBe('')
   })
 })

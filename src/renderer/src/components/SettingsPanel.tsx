@@ -50,6 +50,7 @@ import { useUpdatesStore, hasPendingUpdate } from '../stores/updates'
 import { gitApi, aiApi, settingsApi, analyticsApi, logApi, infoApi, vaultApi, shellApi, hostingApi } from '../infrastructure/api'
 import { AI_PROVIDERS, emptyAnalytics, defaultGraphStyle, type AIProvider, type Analytics, type AIUsageStat, type ActivityEvent, type RepoStats, type AppSettings, type BranchNamingStyle, type CommitStyle, type ConflictStyle, type ExplainStyle, type Profile, type SigningConfig, type SettingsBundle, type GraphStyle, type GraphPalette, type GraphEdgeStyle, type GraphDensity, type GraphLineWidth, type GraphNodeStyle, type GraphTopology, type GraphCommit, type ConnectedAccount } from '../../../shared/types'
 import { hasSettingsSecrets, stripSettingsSecrets } from '../../../shared/secrets'
+import type { HoverModifier } from '../../../shared/types'
 import { allGraphPalettes, findGraphPalette, colorForPalette, edgePath, spurPath, DENSITY_ROW_H, LINE_WIDTH_PX, GRAPH_PALETTES } from '../graph/style'
 import { layoutGraph } from '../graph/layout'
 import type {
@@ -116,6 +117,14 @@ const EXPLAIN_STYLES: { id: ExplainStyle; key: TranslationKey }[] = [
   { id: 'caveman', key: 'explainStyle.caveman' },
   { id: 'pirate', key: 'explainStyle.pirate' },
   { id: 'formal', key: 'explainStyle.formal' }
+]
+
+const HOVER_MODIFIERS: { id: HoverModifier; key: TranslationKey }[] = [
+  { id: 'shift', key: 'hoverKey.shift' },
+  { id: 'alt', key: 'hoverKey.alt' },
+  { id: 'ctrl', key: 'hoverKey.ctrl' },
+  { id: 'meta', key: 'hoverKey.meta' },
+  { id: 'none', key: 'hoverKey.none' }
 ]
 
 const CONFLICT_STYLES: { id: ConflictStyle; key: TranslationKey }[] = [
@@ -655,6 +664,40 @@ export function AIPage({ profile, edit }: { profile: Profile; edit: (p: Partial<
         </select>
       </label>
       <span className="settings-hint">{t('settings.explainStyleHint')}</span>
+
+      <label className="settings-toggle-card" style={{ marginTop: 12 }}>
+        <input
+          type="checkbox"
+          checked={ai.hoverExplain !== false}
+          onChange={(e) => edit({ ai: { ...ai, hoverExplain: e.target.checked } })}
+        />
+        <span className="settings-toggle-control" aria-hidden="true">
+          <span className="settings-toggle-thumb" />
+        </span>
+        <span className="settings-toggle-copy">
+          <strong>{t('settings.hoverExplain')}</strong>
+          <span className="settings-hint">{t('settings.hoverExplainHint')}</span>
+        </span>
+      </label>
+
+      {ai.hoverExplain !== false && (
+        <>
+          <h4>{t('settings.hoverExplainKey')}</h4>
+          <label>
+            <select
+              value={ai.hoverExplainKey ?? 'shift'}
+              onChange={(e) => edit({ ai: { ...ai, hoverExplainKey: e.target.value as HoverModifier } })}
+            >
+              {HOVER_MODIFIERS.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {t(m.key)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <span className="settings-hint">{t('settings.hoverExplainKeyHint')}</span>
+        </>
+      )}
 
       <h4>{t('settings.conflictStyle')}</h4>
       <label>

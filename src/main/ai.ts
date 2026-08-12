@@ -1,15 +1,19 @@
 import { ipcMain } from 'electron'
 import type { AIConfig, AppThemeColors, AskAction, AskPlan, BranchNamingStyle, CodeThemeColors, ConflictStyle, ExplainStyle, PRReviewResult, RepoStatus } from '../shared/types'
 import { recordAIUsage, type TokenUsage } from './analytics'
+import { createHash } from 'node:crypto'
 import {
   buildDiffEvidence,
+  buildWindowFromLines,
   evidenceIndex,
   groundFindings,
   parseLooseJson,
   renderFindings,
   serializeEvidence,
   validateAskPlan,
+  validateHoverExplain,
   validateReview,
+  type NumberedLine,
   type RawFinding
 } from './grounding'
 
@@ -353,6 +357,106 @@ Tone: ${tone}`
     { role: 'system', content: system },
     { role: 'user', content: clip(code) }
   ], 'explainCode')).trim()
+}
+
+export interface HoverExplainRequest {
+  path: string
+  lang: string
+  token: string
+  line: number
+  /** The lines the viewer has — a whole file, or the hunks of a diff. */
+  lines: NumberedLine[]
+}
+
+export interface HoverExplainResult {
+  summary: string
+  bullets: string[]
+  /** Lines the explanation drew on, resolved to `path:line` by the caller. */
+  lines: number[]
+  startLine: number
+  endLine: number
+}
+
+const HOVER_SCHEMA: Record<string, unknown> = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['summary', 'bullets', 'lines'],
+  properties: {
+    summary: { type: 'string' },
+    bullets: { type: 'array', items: { type: 'string' } },
+    lines: { type: 'array', items: { type: 'integer' } }
+  }
+}
+
+// Hovering is cheap to trigger and expensive to answer, so identical asks are
+// served from memory. The key covers the window text, so editing the file (or
+// switching model) misses and re-asks. Bounded; oldest entry goes first.
+const HOVER_CACHE_LIMIT = 200
+const hoverCache = new Map<string, HoverExplainResult>()
+
+function rememberHover(key: string, value: HoverExplainResult): void {
+  hoverCache.set(key, value)
+  if (hoverCache.size > HOVER_CACHE_LIMIT) {
+    const oldest = hoverCache.keys().next().value
+    if (oldest !== undefined) hoverCache.delete(oldest)
+  }
+}
+
+/**
+ * Explains one token, using only a numbered window of the file around it. The
+ * model cites line numbers from that window and never sees — or writes — a file
+ * path, so a citation that isn't in front of it is a validation error.
+ */
+async function hoverExplain(req: HoverExplainRequest, cfg: AIConfig): Promise<HoverExplainResult> {
+  const window = buildWindowFromLines(req.lines, req.line)
+  if (!window.text) throw new InvalidAIResponse('There is no code around that token to read.')
+  const key = createHash('sha256')
+    .update(
+      JSON.stringify([
+        'hover.v1',
+        cfg.model,
+        cfg.explainStyle ?? 'normal',
+        req.path,
+        req.token,
+        req.line,
+        window.text
+      ])
+    )
+    .digest('hex')
+  const hit = hoverCache.get(key)
+  if (hit) return hit
+
+  const system = `You explain a single token of source code to a developer reading the file.
+
+You are given a numbered window of a ${req.lang || 'source'} file. Rules:
+- Answer only from the window. If it does not show what the token is (it is imported or defined elsewhere), say exactly that in the summary instead of guessing.
+- The numbering may skip lines — a diff view shows only the changed hunks. Never assume anything about the gaps.
+- Never write file paths. Cite line numbers only from the window, in "lines" — the app turns them into links.
+- Be brief: one sentence in "summary", at most 2 short bullets in "bullets". Plain text, no markdown, no code fences.
+Tone: ${explainStyleGuidance(cfg.explainStyle)}
+
+Reply ONLY with valid JSON: {"summary":"...","bullets":["..."],"lines":[${window.startLine}]}`
+
+  const parsed = await chatCompleteJson<{ summary: string; bullets?: string[]; lines?: number[] }>(
+    cfg,
+    [
+      { role: 'system', content: system },
+      { role: 'user', content: `Token: ${req.token}\nOn line: ${req.line}\n\nFile window:\n${window.text}` }
+    ],
+    'hoverExplain',
+    { name: 'hover_explain', schema: HOVER_SCHEMA, validate: (v) => validateHoverExplain(v, window) },
+    0.2
+  )
+
+  const result: HoverExplainResult = {
+    summary: parsed.summary.trim(),
+    bullets: (parsed.bullets ?? []).map((b) => String(b).trim()).filter(Boolean).slice(0, 3),
+    lines: (parsed.lines ?? []).filter((n) => Number.isInteger(n)),
+    startLine: window.startLine,
+    endLine: window.endLine
+  }
+  rememberHover(key, result)
+  return result
 }
 
 /** Propose a merged file from raw content containing git conflict markers. */
@@ -908,6 +1012,7 @@ export function registerAiHandlers(): void {
   )
   ipcMain.handle('ai:listModels', (_e, cfg: AIConfig) => listModels(cfg))
   ipcMain.handle('ai:explainCode', (_e, code: string, lang: string, cfg: AIConfig) => explainCode(code, lang, cfg))
+  ipcMain.handle('ai:hoverExplain', (_e, req: HoverExplainRequest, cfg: AIConfig) => hoverExplain(req, cfg))
   ipcMain.handle('ai:resolveConflict', (_e, file: string, content: string, cfg: AIConfig) =>
     resolveConflictAI(file, content, cfg)
   )

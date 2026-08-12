@@ -52,6 +52,8 @@ const api = {
     listModels: (cfg: unknown): Promise<unknown> => ipcRenderer.invoke('ai:listModels', cfg),
     explainCode: (code: string, lang: string, cfg: unknown): Promise<unknown> =>
       ipcRenderer.invoke('ai:explainCode', code, lang, cfg),
+    hoverExplain: (req: unknown, cfg: unknown): Promise<unknown> =>
+      ipcRenderer.invoke('ai:hoverExplain', req, cfg),
     resolveConflict: (file: string, content: string, cfg: unknown): Promise<unknown> =>
       ipcRenderer.invoke('ai:resolveConflict', file, content, cfg),
     generateConfig: (repoName: string, artifacts: unknown, context: string, cfg: unknown): Promise<unknown> =>

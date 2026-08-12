@@ -85,9 +85,20 @@ To try the grounded AI PR review:
 2. Compare `feat/user-report` vs `main` → **AI PR Review**.
 3. Every finding shows a `path:line` the app resolved from the diff itself — open
    the file at that line and the cited code should really be there.
+
+To try hover-to-explain (Settings → AI → "Explain code on hover", key: Shift):
+1. Check out `feat/user-report` and open `src/report.js` in the File view.
+2. Hold Shift and point at `buildReport`, `rows`, `teams` or `findUser`. Plain
+   unhighlighted identifiers work too; keywords, strings and numbers are ignored.
+3. `findUser` is imported, not defined here — the card should say so rather than
+   invent a definition. The line chips scroll the file; "See more" opens the
+   fuller explanation in the side panel.
+4. Repeat in the **Diff** view of the same file, and in **Blame**. In a diff the
+   card can only see the hunks on screen, and its cited lines come from the new
+   side of the diff.
 EOF
 git -C "$R" add -A && git -C "$R" commit -qm "docs: readme"
 
 git -C "$R" checkout -q main
 
-summary "ai-review" "branch with planted bugs — grounded AI PR review targets"
+summary "ai-review" "branch with planted bugs — targets for grounded AI PR review and hover-to-explain"

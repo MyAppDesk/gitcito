@@ -115,6 +115,9 @@ const en = {
   'explain.title': 'Explain this file with AI',
   'explain.heading': 'AI explanation',
   'explain.empty': 'The AI returned no explanation.',
+  'hover.loading': 'Reading the code…',
+  'hover.line': 'line',
+  'hover.seeMore': 'See more',
   'preview.empty': 'Nothing to preview.',
   'preview.unsupported': 'No preview available for this file type.',
 
@@ -569,6 +572,17 @@ const en = {
   'settings.coAuthor': 'Add MyAppDesk as co-author',
   'settings.coAuthorHint':
     'Append a Co-authored-by trailer (team@myappdesk.dev) to commits made from gitcito.',
+  'settings.hoverExplain': 'Explain code on hover',
+  'settings.hoverExplainHint':
+    'Hold a key and point at an identifier — in the file, diff or blame view — to get a one-line explanation, drawn only from the surrounding lines. Answers are cached; turn this off to avoid the extra requests.',
+  'settings.hoverExplainKey': 'Hover key',
+  'settings.hoverExplainKeyHint':
+    'Which key to hold while pointing. Without one, every identifier you rest on is explained.',
+  'hoverKey.shift': 'Shift',
+  'hoverKey.alt': 'Alt / Option',
+  'hoverKey.ctrl': 'Control',
+  'hoverKey.meta': 'Command / Win',
+  'hoverKey.none': 'No key — hover alone',
   'settings.madeBy': 'with ♥ from MyAppDesk',
   'settings.autoOpenChangelog': 'Open changelog after updates',
   'settings.autoOpenChangelogHint':
@@ -1468,6 +1482,9 @@ const es: Dict = {
   'explain.title': 'Explicar este archivo con IA',
   'explain.heading': 'Explicación de la IA',
   'explain.empty': 'La IA no devolvió ninguna explicación.',
+  'hover.loading': 'Leyendo el código…',
+  'hover.line': 'línea',
+  'hover.seeMore': 'Ver más',
   'preview.empty': 'Nada que previsualizar.',
   'preview.unsupported': 'No hay vista previa para este tipo de archivo.',
 
@@ -1915,6 +1932,17 @@ const es: Dict = {
   'settings.coAuthor': 'Añadir MyAppDesk como coautor',
   'settings.coAuthorHint':
     'Añade un trailer Co-authored-by (team@myappdesk.dev) a los commits hechos desde gitcito.',
+  'settings.hoverExplain': 'Explicar código al pasar el cursor',
+  'settings.hoverExplainHint':
+    'Mantén una tecla y apunta a un identificador —en la vista de archivo, diff o blame— para obtener una explicación de una línea, basada solo en las líneas de alrededor. Las respuestas se cachean; desactívalo para evitar peticiones extra.',
+  'settings.hoverExplainKey': 'Tecla del cursor',
+  'settings.hoverExplainKeyHint':
+    'Qué tecla mantener mientras apuntas. Sin tecla, se explica cada identificador sobre el que te detengas.',
+  'hoverKey.shift': 'Mayús',
+  'hoverKey.alt': 'Alt / Opción',
+  'hoverKey.ctrl': 'Control',
+  'hoverKey.meta': 'Comando / Win',
+  'hoverKey.none': 'Sin tecla — solo el cursor',
   'settings.madeBy': 'con ♥ de MyAppDesk',
   'settings.autoOpenChangelog': 'Abrir novedades tras actualizar',
   'settings.autoOpenChangelogHint':

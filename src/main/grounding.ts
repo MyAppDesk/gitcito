@@ -221,6 +221,110 @@ export function renderFindings(findings: GroundedFinding[], kind: 'risk' | 'sugg
     .join('\n')
 }
 
+/** One line of source as the viewer has it, with its real file line number. */
+export interface NumberedLine {
+  no: number
+  text: string
+}
+
+/** A numbered slice of a file, the only thing a hover explanation may draw on. */
+export interface LineWindow {
+  startLine: number
+  endLine: number
+  /** The line numbers actually in the window — a diff view has gaps. */
+  numbers: number[]
+  /** Lines prefixed with their number, ready to paste into a prompt. */
+  text: string
+}
+
+/**
+ * Builds the context window around a line: `radius` lines either side of the
+ * hovered one, numbered so the model can cite locations without being told any
+ * file paths. Takes the lines the viewer actually has — a whole file, or just
+ * the hunks of a diff — and trims from the far end first if it overruns the
+ * byte budget, always keeping the hovered line.
+ */
+export function buildWindowFromLines(
+  lines: NumberedLine[],
+  line: number,
+  opts: { radius?: number; maxBytes?: number } = {}
+): LineWindow {
+  const radius = opts.radius ?? 30
+  const maxBytes = opts.maxBytes ?? 6000
+  if (lines.length === 0) return { startLine: line, endLine: line, numbers: [], text: '' }
+
+  // Nearest entry to the hovered line — in a diff the exact number may be on
+  // the other side of the hunk.
+  let targetIdx = 0
+  for (let i = 1; i < lines.length; i++) {
+    if (Math.abs(lines[i].no - line) < Math.abs(lines[targetIdx].no - line)) targetIdx = i
+  }
+
+  let from = Math.max(0, targetIdx - radius)
+  let to = Math.min(lines.length - 1, targetIdx + radius)
+  const render = (a: number, b: number): string =>
+    lines
+      .slice(a, b + 1)
+      .map((l) => `${l.no} | ${l.text}`)
+      .join('\n')
+
+  let text = render(from, to)
+  while (text.length > maxBytes && (from < targetIdx || to > targetIdx)) {
+    if (to - targetIdx >= targetIdx - from && to > targetIdx) to--
+    else if (from < targetIdx) from++
+    else break
+    text = render(from, to)
+  }
+
+  const slice = lines.slice(from, to + 1)
+  return {
+    startLine: slice[0].no,
+    endLine: slice[slice.length - 1].no,
+    numbers: slice.map((l) => l.no),
+    text
+  }
+}
+
+/** Window around a line of a whole file. */
+export function buildLineWindow(
+  content: string,
+  line: number,
+  opts: { radius?: number; maxBytes?: number } = {}
+): LineWindow {
+  const lines = content.split('\n').map((text, i) => ({ no: i + 1, text }))
+  return buildWindowFromLines(lines, Math.min(Math.max(line, 1), lines.length), opts)
+}
+
+/**
+ * Checks a hover explanation: it must be brief and may only cite lines that
+ * were actually in the window.
+ */
+export function validateHoverExplain(value: unknown, window: LineWindow): string[] {
+  const errors: string[] = []
+  const root = value as { summary?: unknown; bullets?: unknown; lines?: unknown } | null
+  if (!root || typeof root !== 'object') return ['The response must be a JSON object.']
+  if (typeof root.summary !== 'string' || !root.summary.trim()) errors.push('"summary" must be a single sentence.')
+  if (root.bullets !== undefined) {
+    if (!Array.isArray(root.bullets)) errors.push('"bullets" must be an array of short strings.')
+    else if (root.bullets.length > 3) errors.push('"bullets" must have at most 3 entries.')
+  }
+  if (root.lines !== undefined) {
+    if (!Array.isArray(root.lines)) {
+      errors.push('"lines" must be an array of line numbers from the window.')
+    } else {
+      const allowed = new Set(window.numbers)
+      for (const n of root.lines) {
+        if (typeof n !== 'number' || !allowed.has(n)) {
+          errors.push(
+            `"lines" contains ${JSON.stringify(n)}, which is not a line you were shown. Cite only lines between ${window.startLine} and ${window.endLine} that appear in the window.`
+          )
+        }
+      }
+    }
+  }
+  return errors
+}
+
 const ASK_ACTION_TYPES = new Set([
   'gitignore',
   'stage',

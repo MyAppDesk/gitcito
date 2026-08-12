@@ -600,10 +600,41 @@ export interface AIConfig {
   customInstructions: string
   generateDescription: boolean
   coAuthor: boolean
+  /** Explain the token under the cursor in the file viewer. Defaults to on. */
+  hoverExplain?: boolean
+  /** Key held while pointing to trigger it. Defaults to Shift. */
+  hoverExplainKey?: HoverModifier
 }
 
 /** Co-author trailer appended when AIConfig.coAuthor is enabled (default on). */
 export const MYAPPDESK_COAUTHOR = 'MyAppDesk <team@myappdesk.dev>'
+
+/** Key that must be held for hover-to-explain to fire. */
+export type HoverModifier = 'shift' | 'alt' | 'ctrl' | 'meta' | 'none'
+
+/** One line of source as the viewer shows it, with its real file line number. */
+export interface NumberedLine {
+  no: number
+  text: string
+}
+
+/** What the hover explainer needs to answer about one token. */
+export interface HoverExplainRequest {
+  path: string
+  lang: string
+  token: string
+  line: number
+  lines: NumberedLine[]
+}
+
+/** A short explanation of a hovered token, citing lines from the window it saw. */
+export interface HoverExplainResult {
+  summary: string
+  bullets: string[]
+  lines: number[]
+  startLine: number
+  endLine: number
+}
 
 /** One AI PR-review finding, anchored to a real hunk of the reviewed diff. */
 export interface PRReviewFinding {
@@ -1436,7 +1467,9 @@ export function defaultProfile(): Profile {
       branchNamingStyle: 'prefix/description',
       customInstructions: '',
       generateDescription: true,
-      coAuthor: true
+      coAuthor: true,
+      hoverExplain: true,
+      hoverExplainKey: 'shift'
     }
   }
 }

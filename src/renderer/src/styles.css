@@ -390,6 +390,142 @@ textarea:focus {
   color: var(--text-0);
 }
 
+/* ── folders inside a group (nest to any depth) ─────────────────────────── */
+.tab-folder {
+  display: flex;
+  align-items: flex-end;
+  gap: 0;
+  -webkit-app-region: no-drag;
+  --folder-tint: color-mix(in srgb, var(--folder-color, #6366f1) 14%, transparent);
+  /* Ancestry rail. A folder underlines everything it contains — its chip, its
+     repos AND its subfolders — so a nested folder physically sits on top of
+     its parent's line. Depth reads as a stack of coloured rails, one per
+     level, without indenting a strip that only runs sideways. */
+  border-bottom: 2px solid var(--folder-color, #6366f1);
+  border-radius: 6px 6px 0 0;
+}
+
+.tab-folder-chip {
+  -webkit-app-region: no-drag;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  align-self: flex-end;
+  height: 26px;
+  padding: 0 8px;
+  margin-left: 3px;
+  border-radius: 6px 6px 0 0;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--folder-color, #6366f1);
+  background: var(--folder-tint);
+  /* No rail of its own — the wrapper draws this level's line, under the whole
+     subtree rather than under the chip alone. */
+  border: 1px solid var(--folder-color, #6366f1);
+  border-bottom: none;
+  box-sizing: border-box;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background 0.12s, filter 0.12s;
+}
+
+.tab-folder-chip:hover {
+  background: color-mix(in srgb, var(--folder-color, #6366f1) 26%, transparent);
+}
+
+.tab-folder-name {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tab-folder-count {
+  padding: 0 4px;
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--folder-color, #6366f1) 30%, transparent);
+  font-size: 9.5px;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+}
+
+/* A collapsed folder is a lone chip — flatten its trailing edge so it reads as
+   a closed container rather than the start of a run of repos. */
+.tab-folder.collapsed > .tab-folder-chip {
+  border-radius: 6px 6px 0 0;
+  opacity: 0.9;
+}
+
+.tab-folder .tab-folder-chip .tab-status {
+  margin-left: 1px;
+}
+
+.tab-folder-chip[draggable] {
+  cursor: grab;
+  user-select: none;
+}
+
+.tab-folder-chip[draggable]:active {
+  cursor: grabbing;
+  opacity: 0.6;
+}
+
+/* Reorder indicators — a folder released here lands beside the target, at the
+   target's own level. */
+.tab-folder.drop-before-folder {
+  box-shadow: inset 3px 0 0 0 var(--accent);
+}
+
+.tab-folder.drop-after-folder {
+  box-shadow: inset -3px 0 0 0 var(--accent);
+}
+
+.tab-folder-chip[draggable]:active {
+  cursor: grabbing;
+  opacity: 0.6;
+}
+
+/* Repos inside a folder follow the folder's colour, not the group's — and
+   drop their own underline, since the folder's rail already runs beneath them. */
+.tab-folder > .tab.in-group {
+  border-bottom: none !important;
+}
+
+.tab-folder > .tab.in-group.active {
+  border-top-color: var(--folder-color, #6366f1);
+  border-left-color: var(--folder-color, #6366f1);
+  border-right-color: var(--folder-color, #6366f1);
+}
+
+/* A folder nested in another gets a little breathing room from its parent's
+   chip, so the stacked rails read as levels rather than one thick line. */
+.tab-folder .tab-folder {
+  margin-left: 2px;
+}
+
+/* A top-level folder's "parent" is the group itself, so the group's colour runs
+   under it too — drawn as a shadow below the box, which keeps the rest of the
+   tab strip on the same baseline. */
+.tab-group-wrap > .tab-folder {
+  margin-bottom: 3px;
+  box-shadow: 0 3px 0 0 var(--group-color, #6366f1);
+}
+
+/* Top-level folders keep the group rail in every highlighted state — it is a
+   second shadow layer, not a replacement. */
+.tab-group-wrap > .tab-folder.drop-into-folder {
+  box-shadow: inset 0 0 0 2px var(--accent), 0 3px 0 0 var(--group-color, #6366f1);
+}
+
+.tab-group-wrap > .tab-folder.drop-before-folder {
+  box-shadow: inset 3px 0 0 0 var(--accent), 0 3px 0 0 var(--group-color, #6366f1);
+}
+
+.tab-group-wrap > .tab-folder.drop-after-folder {
+  box-shadow: inset -3px 0 0 0 var(--accent), 0 3px 0 0 var(--group-color, #6366f1);
+}
+
 /* ── drag-and-drop drop indicators ──────────────────────────────────────── */
 .drop-before-tab,
 .drop-before-repo {
@@ -401,9 +537,18 @@ textarea:focus {
   box-shadow: 3px 0 0 0 var(--accent);
 }
 
-.drop-into-group {
+.drop-into-group,
+.drop-into-folder {
   box-shadow: 0 0 0 2px var(--accent);
   filter: brightness(1.25);
+}
+
+/* On the folder wrapper the ring outlines the whole drop region — brightening
+   it would wash out every repo chip inside. */
+.tab-folder.drop-into-folder {
+  box-shadow: inset 0 0 0 2px var(--accent);
+  border-radius: 6px 6px 0 0;
+  filter: none;
 }
 
 /* ── eject drop zones ────────────────────────────────────────────────────── */

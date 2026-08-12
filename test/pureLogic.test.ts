@@ -7,6 +7,26 @@ import { autolink, remoteWebUrl, filePermalink } from '../src/renderer/src/lib/a
 import { frecencyScore } from '../src/renderer/src/lib/frecency'
 import { togglePin, selectPinned } from '../src/renderer/src/lib/pinnedBranches'
 import {
+  deleteFolder,
+  detachPath,
+  findFolder,
+  flattenFolders,
+  folderCount,
+  folderPaths,
+  folderRepos,
+  folderTrail,
+  insertFolder,
+  isSelfOrDescendant,
+  moveFolder,
+  movePathToFolder,
+  pruneFolders,
+  reorderInFolder,
+  rootRepos,
+  subtreePaths,
+  updateFolder
+} from '../src/renderer/src/lib/repoFolders'
+import type { RepoFolder, RepoRef } from '../src/shared/types'
+import {
   buildDiffEvidence,
   serializeEvidence,
   evidenceIndex,
@@ -1961,5 +1981,134 @@ describe('conflict side selection', () => {
     expect(sideFullyPicked(hunks, 'ours', new Set())).toBe(false)
     expect(sidePartlyPicked(hunks, 'ours', new Set())).toBe(false)
     expect(sideFullyPicked([], 'ours', new Set())).toBe(false)
+  })
+})
+
+describe('group folders — nesting repositories inside a group tab', () => {
+  const repos: RepoRef[] = [
+    { path: '/r/api', name: 'api' },
+    { path: '/r/web', name: 'web' },
+    { path: '/r/docs', name: 'docs' },
+    { path: '/r/infra', name: 'infra' }
+  ]
+  // backend ─ deep ─ deeper, plus a sibling docs folder.
+  const tree = (): RepoFolder[] => [
+    {
+      id: 'backend',
+      name: 'Backend',
+      paths: ['/r/api'],
+      folders: [
+        { id: 'deep', name: 'Deep', paths: ['/r/infra'], folders: [{ id: 'deeper', name: 'Deeper', paths: [], folders: [] }] }
+      ]
+    },
+    { id: 'docs', name: 'Docs', paths: ['/r/docs'], folders: [] }
+  ]
+
+  it('walks the tree depth-first with parent and depth', () => {
+    expect(flattenFolders(tree()).map((x) => [x.folder.id, x.parentId, x.depth])).toEqual([
+      ['backend', null, 0],
+      ['deep', 'backend', 1],
+      ['deeper', 'deep', 2],
+      ['docs', null, 0]
+    ])
+  })
+
+  it('nests without a depth limit', () => {
+    let folders = tree()
+    for (let i = 0; i < 20; i++) {
+      folders = insertFolder(folders, i === 0 ? 'deeper' : `n${i - 1}`, {
+        id: `n${i}`,
+        name: `n${i}`,
+        paths: [],
+        folders: []
+      })
+    }
+    const flat = flattenFolders(folders)
+    expect(flat.find((x) => x.folder.id === 'n19')?.depth).toBe(22)
+    expect(findFolder(folders, 'n19')?.name).toBe('n19')
+  })
+
+  it('shows unfiled repos at the group root and filed ones only in their folder', () => {
+    expect(rootRepos(repos, tree()).map((r) => r.name)).toEqual(['web'])
+    expect(folderPaths(tree()).sort()).toEqual(['/r/api', '/r/docs', '/r/infra'])
+    expect(folderRepos(findFolder(tree(), 'deep')!, repos).map((r) => r.name)).toEqual(['infra'])
+  })
+
+  it('counts a folder including everything nested under it', () => {
+    expect(folderCount(findFolder(tree(), 'backend')!)).toBe(2)
+    expect(subtreePaths(findFolder(tree(), 'backend')!).sort()).toEqual(['/r/api', '/r/infra'])
+  })
+
+  it('files a repo into a folder, removing it from wherever it was', () => {
+    const moved = movePathToFolder(tree(), '/r/api', 'docs')
+    expect(findFolder(moved, 'backend')!.paths).toEqual([])
+    expect(findFolder(moved, 'docs')!.paths).toEqual(['/r/docs', '/r/api'])
+    expect(rootRepos(repos, moved).map((r) => r.name)).toEqual(['web'])
+  })
+
+  it('honours the insert position inside a folder and never files a repo twice', () => {
+    const filed = movePathToFolder(movePathToFolder(tree(), '/r/web', 'docs'), '/r/api', 'docs', '/r/docs')
+    expect(findFolder(filed, 'docs')!.paths).toEqual(['/r/api', '/r/docs', '/r/web'])
+    const again = movePathToFolder(filed, '/r/web', 'docs', '/r/api')
+    expect(findFolder(again, 'docs')!.paths).toEqual(['/r/web', '/r/api', '/r/docs'])
+  })
+
+  it('sends a repo back to the group root', () => {
+    const out = movePathToFolder(tree(), '/r/api', null)
+    expect(folderPaths(out)).not.toContain('/r/api')
+    expect(rootRepos(repos, out).map((r) => r.name)).toEqual(['api', 'web'])
+  })
+
+  it('reorders a repo inside the folder that holds it', () => {
+    const filled = movePathToFolder(tree(), '/r/web', 'backend')
+    expect(findFolder(filled, 'backend')!.paths).toEqual(['/r/api', '/r/web'])
+    expect(findFolder(reorderInFolder(filled, '/r/web', '/r/api'), 'backend')!.paths).toEqual(['/r/web', '/r/api'])
+    expect(findFolder(reorderInFolder(filled, '/r/api', null), 'backend')!.paths).toEqual(['/r/web', '/r/api'])
+  })
+
+  it('re-parents a folder with its whole subtree', () => {
+    const moved = moveFolder(tree(), 'backend', 'docs')
+    expect(flattenFolders(moved).map((x) => x.folder.id)).toEqual(['docs', 'backend', 'deep', 'deeper'])
+    expect(findFolder(moved, 'deep')!.paths).toEqual(['/r/infra'])
+  })
+
+  it('refuses to move a folder into itself or its own subtree', () => {
+    expect(isSelfOrDescendant(tree(), 'backend', 'deeper')).toBe(true)
+    expect(isSelfOrDescendant(tree(), 'docs', 'deep')).toBe(false)
+    expect(moveFolder(tree(), 'backend', 'deeper')).toEqual(tree())
+    expect(moveFolder(tree(), 'backend', 'backend')).toEqual(tree())
+  })
+
+  it('deleting a folder lifts its repos and subfolders to the parent', () => {
+    const gone = deleteFolder(tree(), 'deep')
+    expect(findFolder(gone, 'deep')).toBeNull()
+    expect(findFolder(gone, 'backend')!.paths).toEqual(['/r/api', '/r/infra'])
+    expect(findFolder(gone, 'deeper')).not.toBeNull()
+  })
+
+  it('deleting a top-level folder returns its repos to the group root', () => {
+    const gone = deleteFolder(tree(), 'backend')
+    expect(rootRepos(repos, gone).map((r) => r.name).sort()).toEqual(['api', 'web'])
+    expect(findFolder(gone, 'deep')).not.toBeNull()
+  })
+
+  it('prunes repos that left the group, and duplicate filings', () => {
+    const stale = pruneFolders(tree(), [{ path: '/r/api', name: 'api' }])
+    expect(folderPaths(stale)).toEqual(['/r/api'])
+    const dupe: RepoFolder[] = [
+      { id: 'a', name: 'A', paths: ['/r/api'], folders: [] },
+      { id: 'b', name: 'B', paths: ['/r/api'], folders: [] }
+    ]
+    expect(folderPaths(pruneFolders(dupe, repos))).toEqual(['/r/api'])
+  })
+
+  it('labels a folder with its full trail', () => {
+    expect(folderTrail(tree(), 'deeper')).toBe('Backend / Deep / Deeper')
+    expect(folderTrail(tree(), 'docs')).toBe('Docs')
+  })
+
+  it('detaching a path that is not filed anywhere leaves the tree alone', () => {
+    expect(detachPath(tree(), '/r/web')).toEqual(tree())
+    expect(updateFolder(tree(), 'nope', (f) => ({ ...f, name: 'x' }))).toEqual(tree())
   })
 })

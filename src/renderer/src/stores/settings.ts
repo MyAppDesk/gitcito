@@ -4,13 +4,25 @@ import {
   defaultSettings,
   defaultGraphStyle,
   type AppSettings,
+  type GroupTab,
   type PageContent,
   type Profile,
+  type RepoFolder,
   type RepoLayout,
   type RepoRef,
   type TabState,
   type Workspace
 } from '../../../shared/types'
+import {
+  deleteFolder,
+  detachPath,
+  flattenFolders,
+  insertFolder,
+  movePathToFolder,
+  moveFolder,
+  pruneFolders,
+  updateFolder
+} from '../lib/repoFolders'
 import { settingsApi } from '../infrastructure/api'
 
 const uid = (): string => Math.random().toString(36).slice(2, 10)
@@ -51,6 +63,22 @@ const LEGACY_CODE_THEME_IDS: Record<string, string> = {
   'github-code': 'github',
   'monokai-code': 'monokai',
   'nord-code': 'nord'
+}
+
+/** Edit one group tab's folder tree, then prune it against that group's repo
+ *  list so a folder can never claim a repo the group no longer holds. */
+function withGroupFolders(
+  s: AppSettings,
+  tabId: string,
+  fn: (folders: RepoFolder[], tab: GroupTab) => RepoFolder[]
+): AppSettings {
+  return {
+    ...s,
+    tabs: s.tabs.map((t) => {
+      if (t.id !== tabId || t.kind !== 'group') return t
+      return { ...t, folders: pruneFolders(fn(t.folders ?? [], t), t.repos) }
+    })
+  }
 }
 
 let saveTimer: ReturnType<typeof setTimeout> | null = null
@@ -118,6 +146,21 @@ interface SettingsState {
   ejectRepoFromGroup(tabId: string, repoPath: string, insertBeforeTabId: string | null): void
   moveRepoBetweenGroups(fromTabId: string, repoPath: string, toTabId: string, insertBeforeRepoPath: string | null): void
   toggleTabCollapsed(tabId: string): void
+
+  /** Create a folder inside a group. `parentFolderId` null puts it at the
+   *  group root; any folder id nests it, to any depth. */
+  createFolder(tabId: string, name: string, parentFolderId: string | null): void
+  renameFolder(tabId: string, folderId: string, name: string): void
+  setFolderColor(tabId: string, folderId: string, color: string): void
+  /** Delete a folder — its repos and subfolders move up to its parent, so no
+   *  repository leaves the group. */
+  removeFolder(tabId: string, folderId: string): void
+  toggleFolderCollapsed(tabId: string, folderId: string): void
+  /** File a repo into a folder (null = group root), optionally before another
+   *  repo already in that folder. */
+  moveRepoToFolder(tabId: string, repoPath: string, folderId: string | null, beforePath?: string | null): void
+  /** Re-parent a folder. Moving into its own subtree is a no-op. */
+  moveFolderToFolder(tabId: string, folderId: string, parentFolderId: string | null, beforeFolderId?: string | null): void
 
   /** Create a fresh, empty workspace and switch to it. */
   createWorkspace(name: string): void
@@ -225,6 +268,15 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       settings.tabs = aw.tabs
       settings.activeTabId = aw.activeTabId
     }
+    // Group folders are organisation-only, so reconcile every tree with its
+    // group's repo list on load: a repo removed by another build (or a
+    // hand-edited settings file) must not leave a dangling folder entry.
+    const normalizeTabs = (tabs: TabState[]): TabState[] =>
+      tabs.map((t) =>
+        t.kind === 'group' && t.folders?.length ? { ...t, folders: pruneFolders(t.folders, t.repos) } : t
+      )
+    settings.workspaces = settings.workspaces.map((w) => ({ ...w, tabs: normalizeTabs(w.tabs ?? []) }))
+    settings.tabs = normalizeTabs(settings.tabs)
     set({ settings, loaded: true })
   },
 
@@ -394,7 +446,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         if (t.id !== tabId || t.kind === 'page') return t
         const repos = t.repos.filter((r) => r.path !== path)
         const activeRepoPath = t.activeRepoPath === path ? (repos[0]?.path ?? null) : t.activeRepoPath
-        return { ...t, repos, activeRepoPath }
+        if (t.kind !== 'group') return { ...t, repos, activeRepoPath }
+        return { ...t, repos, activeRepoPath, folders: detachPath(t.folders ?? [], path) }
       })
       const found = mapped.find((t) => t.id === tabId)
       const isEmpty = found != null && found.kind !== 'page' && found.repos.length === 0
@@ -514,7 +567,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       if (!repo) return s
       const repos = group.repos.filter((r) => r.path !== repoPath)
       const activeRepoPath = group.activeRepoPath === repoPath ? (repos[0]?.path ?? null) : group.activeRepoPath
-      const updatedGroup = repos.length > 0 ? { ...group, repos, activeRepoPath } : null
+      const updatedGroup =
+        repos.length > 0 ? { ...group, repos, activeRepoPath, folders: detachPath(group.folders ?? [], repoPath) } : null
       const newTab: TabState = { id: uid(), kind: 'repo', name: repo.name, repos: [repo], activeRepoPath: repo.path }
       let tabs = s.tabs.map((t) => (t.id === tabId ? updatedGroup : t)).filter(Boolean) as TabState[]
       const insertIdx = insertBeforeTabId ? tabs.findIndex((t) => t.id === insertBeforeTabId) : -1
@@ -533,7 +587,15 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       const fromActiveRepoPath = fromGroup.activeRepoPath === repoPath ? (fromRepos[0]?.path ?? null) : fromGroup.activeRepoPath
       const tabs = s.tabs
         .map((t) => {
-          if (t.id === fromTabId) return fromRepos.length > 0 ? { ...t, repos: fromRepos, activeRepoPath: fromActiveRepoPath } : null
+          if (t.id === fromTabId)
+            return fromRepos.length > 0
+              ? {
+                  ...t,
+                  repos: fromRepos,
+                  activeRepoPath: fromActiveRepoPath,
+                  ...(t.kind === 'group' ? { folders: detachPath(t.folders ?? [], repoPath) } : {})
+                }
+              : null
           if (t.id === toTabId && t.kind === 'group') {
             const toRepos = [...t.repos]
             const insertIdx = insertBeforeRepoPath ? toRepos.findIndex((r) => r.path === insertBeforeRepoPath) : -1
@@ -546,6 +608,38 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         .filter(Boolean) as TabState[]
       return { ...s, tabs }
     }),
+
+  createFolder: (tabId, name, parentFolderId) =>
+    get().update((s) =>
+      withGroupFolders(s, tabId, (folders) => {
+        // Give each folder its own colour up front — inheriting the group's
+        // would make every level look the same in the tab strip.
+        const used = flattenFolders(folders).length
+        const color = GROUP_COLORS[(used + 1) % GROUP_COLORS.length]
+        const folder: RepoFolder = { id: uid(), name, color, paths: [], folders: [] }
+        return insertFolder(folders, parentFolderId, folder)
+      })
+    ),
+
+  renameFolder: (tabId, folderId, name) =>
+    get().update((s) => withGroupFolders(s, tabId, (f) => updateFolder(f, folderId, (x) => ({ ...x, name })))),
+
+  setFolderColor: (tabId, folderId, color) =>
+    get().update((s) => withGroupFolders(s, tabId, (f) => updateFolder(f, folderId, (x) => ({ ...x, color })))),
+
+  removeFolder: (tabId, folderId) =>
+    get().update((s) => withGroupFolders(s, tabId, (f) => deleteFolder(f, folderId))),
+
+  toggleFolderCollapsed: (tabId, folderId) =>
+    get().update((s) =>
+      withGroupFolders(s, tabId, (f) => updateFolder(f, folderId, (x) => ({ ...x, collapsed: !x.collapsed })))
+    ),
+
+  moveRepoToFolder: (tabId, repoPath, folderId, beforePath = null) =>
+    get().update((s) => withGroupFolders(s, tabId, (f) => movePathToFolder(f, repoPath, folderId, beforePath))),
+
+  moveFolderToFolder: (tabId, folderId, parentFolderId, beforeFolderId = null) =>
+    get().update((s) => withGroupFolders(s, tabId, (f) => moveFolder(f, folderId, parentFolderId, beforeFolderId))),
 
   createWorkspace: (name) =>
     get().update((s) => {

@@ -1252,10 +1252,28 @@ export interface RepoTab extends TabBase {
   activeRepoPath: string | null
 }
 
-/** A collection of repositories shown under one collapsible chip. */
+/** A folder inside a group tab. Holds repositories (by path, referencing the
+ *  group's flat `repos` list) and further folders, nested to any depth.
+ *  Purely an organisation layer: membership, status and batch actions all keep
+ *  reading the group's flat `repos`, so a repo filed into a folder is still an
+ *  ordinary member of the group. */
+export interface RepoFolder {
+  id: string
+  name: string
+  color?: string
+  collapsed?: boolean
+  /** Repos held directly by this folder, in display order. */
+  paths: string[]
+  /** Nested folders, in display order. */
+  folders: RepoFolder[]
+}
+
+/** A collection of repositories shown under one collapsible chip. Repos not
+ *  claimed by any folder in `folders` render at the group root. */
 export interface GroupTab extends TabBase {
   kind: 'group'
   repos: RepoRef[]
+  folders?: RepoFolder[]
   activeRepoPath: string | null
   collapsed?: boolean
 }

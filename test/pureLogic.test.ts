@@ -6,6 +6,16 @@ import { comboFromEvent, formatCombo, effectiveBindings, matchShortcut } from '.
 import { autolink, remoteWebUrl, filePermalink } from '../src/renderer/src/lib/autolink'
 import { frecencyScore } from '../src/renderer/src/lib/frecency'
 import { togglePin, selectPinned } from '../src/renderer/src/lib/pinnedBranches'
+import {
+  buildDiffEvidence,
+  serializeEvidence,
+  evidenceIndex,
+  groundFindings,
+  renderFindings,
+  validateReview,
+  validateAskPlan,
+  parseLooseJson
+} from '../src/main/grounding'
 
 // Minimal KeyboardEvent stand-in for the pure shortcut helpers.
 const ev = (key: string, mods: { meta?: boolean; ctrl?: boolean; shift?: boolean; alt?: boolean } = {}): KeyboardEvent =>
@@ -410,5 +420,184 @@ describe('pinnedBranches', () => {
 
   it('selectPinned is empty when nothing is pinned', () => {
     expect(selectPinned([branch('main')], [], (b) => b.name)).toEqual([])
+  })
+})
+
+describe('AI grounding — diff evidence', () => {
+  const diff = `diff --git a/src/app.ts b/src/app.ts
+index 1111111..2222222 100644
+--- a/src/app.ts
++++ b/src/app.ts
+@@ -10,3 +10,4 @@ function main() {
+   const a = 1
+-  return a
++  const b = 2
++  return a + b
+ }
+diff --git a/README.md b/README.md
+index 3333333..4444444 100644
+--- a/README.md
++++ b/README.md
+@@ -1,2 +1,2 @@
+-# Old
++# New
+ body
+`
+
+  it('splits a diff into one evidence item per hunk with sequential ids', () => {
+    const set = buildDiffEvidence(diff)
+    expect(set.items.map((e) => e.id)).toEqual(['E1', 'E2'])
+    expect(set.items.map((e) => e.path)).toEqual(['src/app.ts', 'README.md'])
+    expect(set.omitted).toBe(0)
+  })
+
+  it('anchors each hunk to its new-file line range', () => {
+    const [first, second] = buildDiffEvidence(diff).items
+    expect(first.startLine).toBe(10)
+    expect(first.endLine).toBeGreaterThanOrEqual(12)
+    expect(second.startLine).toBe(1)
+  })
+
+  it('keeps the hunk body so the model can read the change', () => {
+    const [first] = buildDiffEvidence(diff).items
+    expect(first.text).toContain('const b = 2')
+    expect(first.text.startsWith('@@')).toBe(true)
+  })
+
+  it('drops trailing hunks that do not fit the byte budget and reports them', () => {
+    const set = buildDiffEvidence(diff, { maxBytes: 60 })
+    expect(set.items.length).toBe(1)
+    expect(set.omitted).toBe(1)
+    expect(serializeEvidence(set)).toContain('1 further hunk(s) omitted')
+  })
+
+  it('labels every hunk with its id and location in the prompt block', () => {
+    expect(serializeEvidence(buildDiffEvidence(diff))).toContain('[E1] src/app.ts:10-')
+  })
+
+  it('returns nothing for a diff with no hunks', () => {
+    expect(buildDiffEvidence('diff --git a/x.png b/x.png\nBinary files differ\n').items).toEqual([])
+  })
+})
+
+describe('AI grounding — review validation', () => {
+  const allowed = new Set(['E1', 'E2'])
+  const finding = (over: Record<string, unknown> = {}): Record<string, unknown> => ({
+    kind: 'risk',
+    severity: 'high',
+    evidenceId: 'E1',
+    claim: 'Null is dereferenced.',
+    suggestion: 'Guard it.',
+    ...over
+  })
+
+  it('accepts a well-formed grounded review', () => {
+    expect(validateReview({ summary: 'Adds a helper.', findings: [finding()] }, allowed)).toEqual([])
+  })
+
+  it('rejects a finding citing evidence that was never sent', () => {
+    const errors = validateReview({ summary: 'x', findings: [finding({ evidenceId: 'E9' })] }, allowed)
+    expect(errors).toHaveLength(1)
+    expect(errors[0]).toContain('E9')
+    expect(errors[0]).toContain('E1, E2')
+  })
+
+  it('rejects unknown kinds, severities and empty claims', () => {
+    const errors = validateReview(
+      { summary: 'x', findings: [finding({ kind: 'nit', severity: 'critical', claim: '  ' })] },
+      allowed
+    )
+    expect(errors).toHaveLength(3)
+  })
+
+  it('requires a summary and an actions-style array', () => {
+    expect(validateReview({ findings: [] }, allowed)[0]).toContain('summary')
+    expect(validateReview({ summary: 'x' }, allowed)[0]).toContain('findings')
+  })
+
+  it('treats an empty findings list as valid', () => {
+    expect(validateReview({ summary: 'Looks fine.', findings: [] }, allowed)).toEqual([])
+  })
+})
+
+describe('AI grounding — resolving findings to real locations', () => {
+  const set = buildDiffEvidence(`diff --git a/src/app.ts b/src/app.ts
+--- a/src/app.ts
++++ b/src/app.ts
+@@ -10,2 +10,3 @@
+   const a = 1
++  const b = 2
+`)
+  const index = evidenceIndex(set)
+
+  it('replaces the evidence id with the path and line from the diff', () => {
+    const [f] = groundFindings([{ kind: 'risk', severity: 'high', evidenceId: 'E1', claim: 'c', suggestion: 's' }], index)
+    expect(f.path).toBe('src/app.ts')
+    expect(f.line).toBe(10)
+  })
+
+  it('drops a finding whose evidence id cannot be resolved', () => {
+    expect(groundFindings([{ kind: 'risk', evidenceId: 'E7', claim: 'c' }], index)).toEqual([])
+  })
+
+  it('falls back to medium severity when the model omits it', () => {
+    const [f] = groundFindings([{ kind: 'risk', evidenceId: 'E1', claim: 'c' }], index)
+    expect(f.severity).toBe('medium')
+    expect(f.suggestion).toBe('')
+  })
+
+  it('renders only the requested kind, with app-written locations', () => {
+    const findings = groundFindings(
+      [
+        { kind: 'risk', severity: 'high', evidenceId: 'E1', claim: 'Leaks a handle.', suggestion: 'Close it.' },
+        { kind: 'suggestion', severity: 'low', evidenceId: 'E1', claim: 'Naming.', suggestion: 'Rename b.' }
+      ],
+      index
+    )
+    expect(renderFindings(findings, 'risk')).toBe('- `src/app.ts:10` Leaks a handle. — Close it.')
+    expect(renderFindings(findings, 'suggestion')).toBe('- `src/app.ts:10` Rename b.')
+  })
+})
+
+describe('AI grounding — ask plan validation', () => {
+  const known = new Set(['a.ts', 'docs/b.md'])
+
+  it('accepts actions that only touch listed files', () => {
+    const plan = { summary: 'Stage a.ts', actions: [{ type: 'stage', files: ['a.ts'], description: 'Stage a.ts' }] }
+    expect(validateAskPlan(plan, known)).toEqual([])
+  })
+
+  it('rejects an invented file path', () => {
+    const plan = { summary: 'x', actions: [{ type: 'stage', files: ['ghost.ts'], description: 'Stage ghost' }] }
+    expect(validateAskPlan(plan, known)[0]).toContain('ghost.ts')
+  })
+
+  it('rejects action types the app cannot execute', () => {
+    const plan = { summary: 'x', actions: [{ type: 'push', description: 'Push it' }] }
+    expect(validateAskPlan(plan, known)[0]).toContain('push')
+  })
+
+  it('lets gitignore patterns through — they are globs, not existing paths', () => {
+    const plan = { summary: 'x', actions: [{ type: 'gitignore', patterns: ['*.tsx'], description: 'Ignore tsx' }] }
+    expect(validateAskPlan(plan, known)).toEqual([])
+  })
+
+  it('requires a message on commit and a name on branch', () => {
+    expect(validateAskPlan({ summary: 'x', actions: [{ type: 'commit', description: 'Commit' }] }, known)[0]).toContain('message')
+    expect(validateAskPlan({ summary: 'x', actions: [{ type: 'branch', description: 'Branch' }] }, known)[0]).toContain('name')
+  })
+
+  it('accepts an empty plan', () => {
+    expect(validateAskPlan({ summary: '', actions: [], note: 'Nothing to do.' }, known)).toEqual([])
+  })
+})
+
+describe('AI grounding — loose JSON parsing', () => {
+  it('parses a fenced JSON reply', () => {
+    expect(parseLooseJson<{ a: number }>('```json\n{"a":1}\n```')).toEqual({ a: 1 })
+  })
+
+  it('returns null instead of throwing on prose', () => {
+    expect(parseLooseJson('Sure! Here is the answer.')).toBeNull()
   })
 })

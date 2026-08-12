@@ -117,7 +117,8 @@
 - **Commit messages** — summary (and optional body) generated from your staged diff, in your chosen style.
 - **Explain this file** in plain language (Normal, Concise, ELI5, … even Pirate) in a side panel.
 - **AI conflict resolution** proposes a merge into the editable output; never auto-applies.
-- **AI PR review** summarises a diff and flags risks; **AI branch naming** from a description; **AI PR description** drafts a title + Markdown body from the branch's commits and diff, right in the Create-PR form.
+- **AI PR review** summarises a diff and flags risks, each one anchored to a real `path:line`; **AI branch naming** from a description; **AI PR description** drafts a title + Markdown body from the branch's commits and diff, right in the Create-PR form.
+- **Grounded answers** — the review sees the diff as labelled hunks and may only cite those labels; Gitcito resolves each one to the actual file and line. A model that invents a location is rejected and asked again, so findings point at code that really exists.
 - **AI assistant** — a **Run** button in the toolbar (shown only when AI is enabled) opens the assistant: **ask** the AI to act on the repo (resolve globs/intents into staged changes), or run the **project-config wizard** that scaffolds `.gitignore`, CI workflows, agent rules and more. Also reachable from the command palette.
 - **Generate themes** from a prompt, and **smart-stage** suggestions for what to commit.
 - Presets for **OpenAI, Anthropic, OpenRouter, Groq, Mistral and Ollama** (local), or any OpenAI-compatible endpoint; live model fetching and custom instructions.

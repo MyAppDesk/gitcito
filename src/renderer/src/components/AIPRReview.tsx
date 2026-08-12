@@ -4,6 +4,27 @@ import { gitApi, aiApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { renderMarkdown } from '../preview/markdown'
+import type { PRReviewFinding } from '../../../shared/types'
+
+/** Findings carry an app-resolved path:line, so they render as a located list. */
+function FindingList({ findings }: { findings: PRReviewFinding[] }): React.JSX.Element {
+  return (
+    <ul className="ai-pr-findings">
+      {findings.map((f, i) => (
+        <li key={i} className="ai-pr-finding">
+          <span className={`ai-pr-sev ${f.severity}`}>{f.severity}</span>
+          <div className="ai-pr-finding-body">
+            <code className="ai-pr-loc">
+              {f.path}:{f.line}
+            </code>
+            <div>{f.kind === 'suggestion' ? f.suggestion || f.claim : f.claim}</div>
+            {f.kind === 'risk' && f.suggestion && <div className="ai-pr-fix">{f.suggestion}</div>}
+          </div>
+        </li>
+      ))}
+    </ul>
+  )
+}
 
 export function AIPRReview({
   repoPath,
@@ -24,6 +45,7 @@ export function AIPRReview({
   const [summary, setSummary] = useState('')
   const [risks, setRisks] = useState('')
   const [suggestions, setSuggestions] = useState('')
+  const [findings, setFindings] = useState<PRReviewFinding[]>([])
 
   useEffect(() => {
     const run = async (): Promise<void> => {
@@ -39,6 +61,7 @@ export function AIPRReview({
         setSummary(result.summary)
         setRisks(result.risks)
         setSuggestions(result.suggestions)
+        setFindings(result.findings ?? [])
       } catch (err) {
         toast('error', err instanceof Error ? err.message : String(err))
       } finally {
@@ -47,6 +70,9 @@ export function AIPRReview({
     }
     void run()
   }, [repoPath, sourceBranch, targetBranch])
+
+  const riskFindings = findings.filter((f) => f.kind === 'risk')
+  const suggestionFindings = findings.filter((f) => f.kind === 'suggestion')
 
   return (
     <>
@@ -75,19 +101,27 @@ export function AIPRReview({
           {risks && (
             <section className="ai-pr-section">
               <div className="ai-pr-section-title ai-pr-risk"><AlertTriangle size={13} /> Risks</div>
-              <div
-                className="ai-pr-text md-preview"
-                dangerouslySetInnerHTML={{ __html: renderMarkdown(risks) }}
-              />
+              {riskFindings.length > 0 ? (
+                <FindingList findings={riskFindings} />
+              ) : (
+                <div
+                  className="ai-pr-text md-preview"
+                  dangerouslySetInnerHTML={{ __html: renderMarkdown(risks) }}
+                />
+              )}
             </section>
           )}
           {suggestions && (
             <section className="ai-pr-section">
               <div className="ai-pr-section-title ai-pr-suggest"><Lightbulb size={13} /> Suggestions</div>
-              <div
-                className="ai-pr-text md-preview"
-                dangerouslySetInnerHTML={{ __html: renderMarkdown(suggestions) }}
-              />
+              {suggestionFindings.length > 0 ? (
+                <FindingList findings={suggestionFindings} />
+              ) : (
+                <div
+                  className="ai-pr-text md-preview"
+                  dangerouslySetInnerHTML={{ __html: renderMarkdown(suggestions) }}
+                />
+              )}
             </section>
           )}
           {!summary && !risks && !suggestions && (

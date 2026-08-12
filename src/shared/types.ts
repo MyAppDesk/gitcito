@@ -605,6 +605,24 @@ export interface AIConfig {
 /** Co-author trailer appended when AIConfig.coAuthor is enabled (default on). */
 export const MYAPPDESK_COAUTHOR = 'MyAppDesk <team@myappdesk.dev>'
 
+/** One AI PR-review finding, anchored to a real hunk of the reviewed diff. */
+export interface PRReviewFinding {
+  kind: 'risk' | 'suggestion'
+  severity: 'high' | 'medium' | 'low'
+  path: string
+  line: number
+  claim: string
+  suggestion: string
+}
+
+export interface PRReviewResult {
+  summary: string
+  /** Findings rendered as markdown, kept for plain-text consumers. */
+  risks: string
+  suggestions: string
+  findings: PRReviewFinding[]
+}
+
 /** A single repo mutation produced by the AI "Ask" feature, ready to execute. */
 export type AskAction =
   | { type: 'gitignore'; patterns: string[]; description: string }

@@ -1,6 +1,17 @@
 import { ipcMain } from 'electron'
-import type { AIConfig, AppThemeColors, AskPlan, BranchNamingStyle, CodeThemeColors, ConflictStyle, ExplainStyle, RepoStatus } from '../shared/types'
+import type { AIConfig, AppThemeColors, AskAction, AskPlan, BranchNamingStyle, CodeThemeColors, ConflictStyle, ExplainStyle, PRReviewResult, RepoStatus } from '../shared/types'
 import { recordAIUsage, type TokenUsage } from './analytics'
+import {
+  buildDiffEvidence,
+  evidenceIndex,
+  groundFindings,
+  parseLooseJson,
+  renderFindings,
+  serializeEvidence,
+  validateAskPlan,
+  validateReview,
+  type RawFinding
+} from './grounding'
 
 /** Token-usage block as returned by OpenAI-compatible (and native Anthropic) APIs. */
 interface ApiUsage {
@@ -213,12 +224,15 @@ async function generateCommitMessage(diff: string, cfg: AIConfig, ctx: AICommitC
   }
 }
 
+type ChatMessage = { role: 'system' | 'user' | 'assistant'; content: string }
+
 /** Single OpenAI-compatible chat completion returning the raw message text. */
 async function chatComplete(
   cfg: AIConfig,
-  messages: { role: 'system' | 'user'; content: string }[],
+  messages: ChatMessage[],
   feature: string,
-  temperature = 0.2
+  temperature = 0.2,
+  extra?: Record<string, unknown>
 ): Promise<string> {
   const base = baseUrl(cfg.endpoint)
   if (!cfg.apiKey && !isLocal(base)) throw new Error('No AI API key configured. Add one in Settings → AI.')
@@ -228,7 +242,7 @@ async function chatComplete(
     res = await fetch(`${base}/chat/completions`, {
       method: 'POST',
       headers: authHeaders(cfg),
-      body: JSON.stringify({ model: cfg.model || 'gpt-4o-mini', temperature, messages })
+      body: JSON.stringify({ model: cfg.model || 'gpt-4o-mini', temperature, messages, ...extra })
     })
   } catch (err) {
     const reason = fetchFailureReason(err)
@@ -241,6 +255,85 @@ async function chatComplete(
   const json = (await res.json()) as { choices?: { message?: { content?: string } }[]; usage?: ApiUsage }
   void recordAIUsage(feature, cfg.model || 'gpt-4o-mini', parseUsage(json.usage))
   return json.choices?.[0]?.message?.content ?? ''
+}
+
+/** A JSON contract the model must satisfy before its output is accepted. */
+interface JsonSpec {
+  /** Schema name, for providers with native structured output. */
+  name: string
+  schema: Record<string, unknown>
+  /** Returns one correction line per problem; empty means the value is usable. */
+  validate: (value: unknown) => string[]
+  /** Off for schemas with optional or union-shaped fields. Default on. */
+  strict?: boolean
+}
+
+/** Thrown when the model's JSON is still unusable after the correction retry. */
+class InvalidAIResponse extends Error {}
+
+/** True when a provider rejected the request because it can't do json_schema. */
+function rejectsJsonSchema(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err)
+  return /failed \(4\d\d\)/.test(msg) && /response_format|json[_ ]schema|structured/i.test(msg)
+}
+
+function correctionMessage(errors: string[]): string {
+  return `Your previous reply was rejected for these reasons:
+${errors.map((e) => `- ${e}`).join('\n')}
+
+Reply again with the corrected JSON object only — no explanation, no markdown fences.`
+}
+
+/**
+ * Asks for JSON, validates it against `spec`, and re-prompts once with the
+ * validation errors before giving up. Providers that don't support native
+ * structured output silently fall back to prompt-only JSON.
+ */
+async function chatCompleteJson<T>(
+  cfg: AIConfig,
+  messages: ChatMessage[],
+  feature: string,
+  spec: JsonSpec,
+  temperature = 0.2
+): Promise<T> {
+  const format = {
+    response_format: {
+      type: 'json_schema',
+      json_schema: { name: spec.name, strict: spec.strict !== false, schema: spec.schema }
+    }
+  }
+
+  let extra: Record<string, unknown> | undefined = format
+  let raw: string
+  try {
+    raw = await chatComplete(cfg, messages, feature, temperature, extra)
+  } catch (err) {
+    if (!rejectsJsonSchema(err)) throw err
+    extra = undefined
+    raw = await chatComplete(cfg, messages, feature, temperature)
+  }
+
+  const check = (text: string): { value: T | null; errors: string[] } => {
+    const value = parseLooseJson<T>(text)
+    if (value === null) {
+      return { value: null, errors: ['The reply was not valid JSON. Return a single JSON object and nothing else.'] }
+    }
+    return { value, errors: spec.validate(value) }
+  }
+
+  let result = check(raw)
+  if (result.errors.length === 0 && result.value !== null) return result.value
+
+  const retryMessages: ChatMessage[] = [
+    ...messages,
+    { role: 'assistant', content: raw },
+    { role: 'user', content: correctionMessage(result.errors) }
+  ]
+  raw = await chatComplete(cfg, retryMessages, feature, temperature, extra)
+  result = check(raw)
+  if (result.errors.length === 0 && result.value !== null) return result.value
+
+  throw new InvalidAIResponse(`The AI returned an invalid response: ${result.errors[0]}`)
 }
 
 function clip(text: string, max = 16000): string {
@@ -600,29 +693,75 @@ Rules:
   return result.trim().replace(/^['"`]|['"`]$/g, '').split('\n')[0].trim()
 }
 
-export interface PRReviewResult {
-  summary: string
-  risks: string
-  suggestions: string
+const REVIEW_SCHEMA: Record<string, unknown> = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['summary', 'findings'],
+  properties: {
+    summary: { type: 'string' },
+    findings: {
+      type: 'array',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['kind', 'severity', 'evidenceId', 'claim', 'suggestion'],
+        properties: {
+          kind: { type: 'string', enum: ['risk', 'suggestion'] },
+          severity: { type: 'string', enum: ['high', 'medium', 'low'] },
+          evidenceId: { type: 'string' },
+          claim: { type: 'string' },
+          suggestion: { type: 'string' }
+        }
+      }
+    }
+  }
 }
 
+/**
+ * Reviews a diff hunk by hunk. The model only ever cites EvidenceIDs; the real
+ * paths and line numbers are resolved here, so it cannot invent a location.
+ */
 async function reviewPR(diff: string, cfg: AIConfig): Promise<PRReviewResult> {
-  const system = `You are an expert software engineer performing a pull request review.
-Analyze the provided git diff and return a structured JSON object with these exact keys:
-- "summary": 2-4 sentences describing what this PR does and its overall quality.
-- "risks": bullet points of potential bugs, security issues, performance concerns, or breaking changes. Use "-" for each bullet. Empty string if none.
-- "suggestions": bullet points of concrete improvement suggestions. Use "-" for each bullet. Empty string if none.
-Reply ONLY with valid JSON: {"summary": "...", "risks": "...", "suggestions": "..."}. No markdown fences.`
-  const out = await chatComplete(cfg, [
-    { role: 'system', content: system },
-    { role: 'user', content: clip(diff, 24000) }
-  ], 'reviewPR', 0.2)
-  try {
-    const cleaned = out.replace(/^```(json)?/m, '').replace(/```$/m, '').trim()
-    const parsed = JSON.parse(cleaned) as Partial<PRReviewResult>
-    return { summary: parsed.summary ?? '', risks: parsed.risks ?? '', suggestions: parsed.suggestions ?? '' }
-  } catch {
-    return { summary: out.trim(), risks: '', suggestions: '' }
+  const evidence = buildDiffEvidence(diff)
+  if (evidence.items.length === 0) {
+    return { summary: 'No reviewable code changes found in this diff.', risks: '', suggestions: '', findings: [] }
+  }
+  const index = evidenceIndex(evidence)
+  const allowed = new Set(index.keys())
+
+  const system = `You are an expert software engineer reviewing a pull request.
+
+You are given the changed hunks of a git diff. Each hunk is labelled with an EvidenceID like [E3].
+
+Rules:
+- Ground every finding in exactly one hunk and cite it with "evidenceId".
+- Only cite EvidenceIDs from the list. Never invent one.
+- Never write file paths, line numbers or code excerpts — the app resolves those from the EvidenceID you cite.
+- If a hunk does not actually show the problem, omit the finding rather than guess.
+- At most 8 findings, most important first. Return an empty array when the change looks fine.
+
+Reply ONLY with valid JSON (no markdown fences):
+{"summary":"2-4 sentences on what this PR does and its overall quality","findings":[{"kind":"risk","severity":"high","evidenceId":"E1","claim":"one sentence describing the problem","suggestion":"one sentence with the fix, or an empty string"}]}
+- "kind": "risk" for bugs, security, performance or breaking changes; "suggestion" for improvements.
+- "severity": "high", "medium" or "low".`
+
+  const parsed = await chatCompleteJson<{ summary: string; findings: RawFinding[] }>(
+    cfg,
+    [
+      { role: 'system', content: system },
+      { role: 'user', content: `Changed hunks:\n\n${serializeEvidence(evidence)}` }
+    ],
+    'reviewPR',
+    { name: 'pr_review', schema: REVIEW_SCHEMA, validate: (v) => validateReview(v, allowed) },
+    0.2
+  )
+
+  const findings = groundFindings(parsed.findings, index)
+  return {
+    summary: parsed.summary.trim(),
+    risks: renderFindings(findings, 'risk'),
+    suggestions: renderFindings(findings, 'suggestion'),
+    findings
   }
 }
 
@@ -665,6 +804,36 @@ Reply ONLY with valid JSON: {"title": "...", "body": "..."}. No markdown fences.
  * concrete, executable plan. The model resolves globs/intents to literal paths and
  * patterns using the file lists below — the renderer just applies the actions.
  */
+const ASK_PLAN_SCHEMA: Record<string, unknown> = {
+  type: 'object',
+  required: ['summary', 'actions'],
+  properties: {
+    summary: { type: 'string' },
+    note: { type: 'string' },
+    actions: {
+      type: 'array',
+      items: {
+        type: 'object',
+        required: ['type', 'description'],
+        properties: {
+          type: {
+            type: 'string',
+            enum: ['gitignore', 'stage', 'unstage', 'commit', 'stash', 'discard', 'branch', 'checkout', 'tag']
+          },
+          description: { type: 'string' },
+          files: { type: 'array', items: { type: 'string' } },
+          patterns: { type: 'array', items: { type: 'string' } },
+          message: { type: 'string' },
+          name: { type: 'string' },
+          at: { type: 'string' },
+          ref: { type: 'string' },
+          checkout: { type: 'boolean' }
+        }
+      }
+    }
+  }
+}
+
 async function planRepoActions(prompt: string, status: RepoStatus, cfg: AIConfig): Promise<AskPlan> {
   const list = (files: { path: string }[]): string => files.map((f) => f.path).join('\n') || '(none)'
   const stateBlock = `Current branch: ${status.current}
@@ -707,21 +876,26 @@ Rules:
 - If nothing matches (e.g. the user asks to commit .md files but none exist), return actions: [] and explain in "note".
 - Keep the plan minimal — only the actions needed to satisfy the instruction.`
 
-  const out = await chatComplete(cfg, [
-    { role: 'system', content: system },
-    { role: 'user', content: `${stateBlock}\n\nInstruction: ${clip(prompt, 4000)}` }
-  ], 'planActions', 0.1)
+  const known = new Set(
+    [...status.staged, ...status.unstaged, ...status.conflicted].map((f) => f.path)
+  )
 
   try {
-    const cleaned = out.replace(/^```(json)?/m, '').replace(/```$/m, '').trim()
-    const parsed = JSON.parse(cleaned) as Partial<AskPlan>
-    return {
-      summary: parsed.summary ?? '',
-      actions: Array.isArray(parsed.actions) ? parsed.actions : [],
-      note: parsed.note
-    }
-  } catch {
-    return { summary: '', actions: [], note: out.trim() || 'The AI returned an unreadable response.' }
+    const parsed = await chatCompleteJson<{ summary: string; actions: AskAction[]; note?: string }>(
+      cfg,
+      [
+        { role: 'system', content: system },
+        { role: 'user', content: `${stateBlock}\n\nInstruction: ${clip(prompt, 4000)}` }
+      ],
+      'planActions',
+      { name: 'ask_plan', schema: ASK_PLAN_SCHEMA, validate: (v) => validateAskPlan(v, known), strict: false },
+      0.1
+    )
+    return { summary: parsed.summary, actions: parsed.actions, note: parsed.note }
+  } catch (err) {
+    // A malformed plan is reported in the panel; transport errors still throw.
+    if (!(err instanceof InvalidAIResponse)) throw err
+    return { summary: '', actions: [], note: err.message }
   }
 }
 

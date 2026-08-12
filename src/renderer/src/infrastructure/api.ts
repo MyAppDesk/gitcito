@@ -70,7 +70,8 @@ import type {
   SecureExportSpec,
   SecureBundleOpened,
   SecureApplyPlan,
-  SecureApplyResult
+  SecureApplyResult,
+  PRReviewResult
 } from '../../../shared/types'
 
 // Typed adapter over the IPC bridge — the only place that talks to window.api.
@@ -354,7 +355,7 @@ export const aiApi = {
   generateBranchName: (description: string, cfg: AIConfig, ctx: { username?: string }) =>
     window.api.ai.generateBranchName(description, cfg, ctx) as Promise<string>,
   reviewPR: (diff: string, cfg: AIConfig) =>
-    window.api.ai.reviewPR(diff, cfg) as Promise<{ summary: string; risks: string; suggestions: string }>,
+    window.api.ai.reviewPR(diff, cfg) as Promise<PRReviewResult>,
   prDescription: (commits: string, diff: string, cfg: AIConfig) =>
     window.api.ai.prDescription(commits, diff, cfg) as Promise<{ title: string; body: string }>,
   planActions: (prompt: string, status: RepoStatus, cfg: AIConfig) =>

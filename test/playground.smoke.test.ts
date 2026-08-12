@@ -53,7 +53,8 @@ const EXPECTED = [
   'workspace-share',
   'tree-dnd',
   'newer-branch-merge',
-  'pinned-branches'
+  'pinned-branches',
+  'ai-review'
 ]
 
 describe('playground fixtures', () => {

@@ -1,5 +1,5 @@
 import { app, ipcMain, type WebContents } from 'electron'
-import { join } from 'path'
+import { dirname, join } from 'path'
 import { readFile, writeFile, mkdir } from 'fs/promises'
 import type {
   AIConfig,
@@ -13,6 +13,7 @@ import type {
   WikiProgress
 } from '../shared/types'
 import { isSecretFile } from '../shared/secretFiles'
+import { isSafeRepoPath } from './aiSchemas'
 import { gitService } from './git'
 import { chatCompleteJson, InvalidAIResponse } from './ai'
 import {
@@ -28,6 +29,7 @@ import {
   validateTechStack,
   validateWikiPage,
   validateWikiPlan,
+  wikiExportFiles,
   wikiFreshness,
   type WikiFreshness
 } from './wikiSchemas'
@@ -383,6 +385,28 @@ async function get(repoPath: string, model: string): Promise<StoredWiki> {
   return { wiki, freshness: wikiFreshness(wiki, { headSha: head, model }), headSha: head }
 }
 
+/**
+ * Writes the stored wiki into the repo as Markdown, so it can be committed and
+ * read on the host. Returns the paths written, relative to the repo.
+ */
+async function exportToRepo(repoPath: string): Promise<string[]> {
+  const data = await load()
+  const wiki = data.repos[repoPath]
+  if (!wiki) throw new Error('There is no wiki for this repository yet.')
+
+  const repoName = repoPath.split('/').pop() || repoPath
+  const files = wikiExportFiles(wiki, repoName)
+  for (const file of files) {
+    // Slugs are validated kebab-case, but this writes into the user's repo —
+    // check anyway rather than trust the shape of stored data.
+    if (!isSafeRepoPath(file.path)) throw new Error(`Refusing to write ${file.path}`)
+    const full = join(repoPath, file.path)
+    await mkdir(dirname(full), { recursive: true })
+    await writeFile(full, file.content, 'utf-8')
+  }
+  return files.map((f) => f.path)
+}
+
 async function clear(repoPath: string): Promise<void> {
   const data = await load()
   delete data.repos[repoPath]
@@ -394,5 +418,6 @@ export function registerWikiHandlers(): void {
   ipcMain.handle('wiki:facts', async (_e, repoPath: string) => repoFacts(repoPath, await candidateFiles(repoPath)))
   ipcMain.handle('wiki:get', (_e, repoPath: string, model: string) => get(repoPath, model))
   ipcMain.handle('wiki:generate', (e, repoPath: string, cfg: AIConfig) => generate(repoPath, cfg, e.sender))
+  ipcMain.handle('wiki:export', (_e, repoPath: string) => exportToRepo(repoPath))
   ipcMain.handle('wiki:clear', (_e, repoPath: string) => clear(repoPath))
 }

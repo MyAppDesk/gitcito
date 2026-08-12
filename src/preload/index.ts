@@ -85,6 +85,7 @@ const api = {
     get: (repoPath: string, model: string): Promise<unknown> => ipcRenderer.invoke('wiki:get', repoPath, model),
     generate: (repoPath: string, cfg: unknown): Promise<unknown> =>
       ipcRenderer.invoke('wiki:generate', repoPath, cfg),
+    export: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('wiki:export', repoPath),
     clear: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('wiki:clear', repoPath),
     onProgress: (cb: (payload: unknown) => void): (() => void) => {
       const listener = (_e: unknown, payload: unknown): void => cb(payload)

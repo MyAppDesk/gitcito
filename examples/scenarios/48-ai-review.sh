@@ -108,7 +108,10 @@ To try the generated wiki (tools menu → "Repository wiki", or ⌘K → wiki):
    a module dependency graph read from the imports. Hover a folder to isolate
    what it touches; arrow thickness is how many imports cross that way. Try it
    on a big repo (gitcito itself) to see it earn its keep.
-4. Commit something, come back, and the page warns it was written at an older
+4. Press **Export to docs/**: the wiki lands in `docs/wiki/` as Markdown with
+   an index, ready to commit. Check the diff — the pages are the same text the
+   app showed, and every page links back to the index.
+5. Commit something, come back, and the page warns it was written at an older
    commit until you regenerate.
 EOF
 git -C "$R" add -A && git -C "$R" commit -qm "docs: readme"

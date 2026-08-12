@@ -382,6 +382,7 @@ export const wikiApi = {
       headSha: string
     }>,
   generate: (repoPath: string, cfg: AIConfig) => window.api.wiki.generate(repoPath, cfg) as Promise<RepoWiki>,
+  export: (repoPath: string) => window.api.wiki.export(repoPath) as Promise<string[]>,
   clear: (repoPath: string) => window.api.wiki.clear(repoPath) as Promise<void>,
   onProgress: (cb: (payload: { repoPath: string; progress: WikiProgress }) => void) =>
     window.api.wiki.onProgress(cb as (payload: unknown) => void)

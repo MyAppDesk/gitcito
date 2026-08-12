@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { BookOpen, Boxes, Loader2, RefreshCw, Sparkles, FileText, Trash2, Workflow } from 'lucide-react'
+import { BookOpen, Boxes, Loader2, RefreshCw, Sparkles, FileText, FolderDown, Trash2, Workflow } from 'lucide-react'
 import { wikiApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { useRepoStore } from '../stores/repo'
 import { renderMarkdown } from '../preview/markdown'
-import { useT } from '../i18n'
+import { interp, useT } from '../i18n'
 import { ImportMap, LanguageBar, PageMap, StackList } from './WikiOverview'
 import { topLanguages } from '../../../shared/repoFacts'
 import type { ImportGraph, RepoFacts, RepoWiki, WikiArchetype, WikiProgress } from '../../../shared/types'
@@ -43,6 +43,7 @@ export function WikiPageView({ repoPath }: { repoPath: string }): React.JSX.Elem
   const [progress, setProgress] = useState<WikiProgress | null>(null)
   const [slug, setSlug] = useState<string | null>(null)
   const [facts, setFacts] = useState<RepoFacts | null>(null)
+  const [exporting, setExporting] = useState(false)
   const [imports, setImports] = useState<ImportGraph | null>(null)
 
   useEffect(() => {
@@ -103,6 +104,20 @@ export function WikiPageView({ repoPath }: { repoPath: string }): React.JSX.Elem
     setFileView({ repoPath, file: path, source: { type: 'tree' }, mode: 'file' })
   }
 
+  // Writing the wiki into the repo turns it into something reviewable in a PR
+  // instead of something that only exists on this machine.
+  const exportToRepo = async (): Promise<void> => {
+    setExporting(true)
+    try {
+      const written = await wikiApi.export(repoPath)
+      toast('success', interp(t('wiki.exported'), { n: written.length }))
+    } catch (err) {
+      toast('error', err instanceof Error ? err.message : String(err))
+    } finally {
+      setExporting(false)
+    }
+  }
+
   const remove = async (): Promise<void> => {
     await wikiApi.clear(repoPath)
     setWiki(null)
@@ -141,7 +156,12 @@ export function WikiPageView({ repoPath }: { repoPath: string }): React.JSX.Elem
           </div>
           <div className="wiki-actions">
             {wiki && (
-              <button className="btn ghost small" onClick={() => void remove()} disabled={generating}>
+              <button className="btn ghost small" onClick={() => void exportToRepo()} disabled={generating || exporting}>
+                {exporting ? <Loader2 size={13} className="spin" /> : <FolderDown size={13} />} {t('wiki.export')}
+              </button>
+            )}
+            {wiki && (
+              <button className="btn ghost small" onClick={() => void remove()} disabled={generating || exporting}>
                 <Trash2 size={13} /> {t('wiki.clear')}
               </button>
             )}

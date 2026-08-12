@@ -1,5 +1,5 @@
 import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
-import { join, dirname } from 'path'
+import { join, dirname, resolve, sep } from 'path'
 import { existsSync, mkdirSync, readdirSync, copyFileSync } from 'fs'
 import { writeFile, readFile, mkdir, chmod } from 'fs/promises'
 import { execFile, spawn } from 'child_process'
@@ -8,6 +8,7 @@ import type { AppRelease } from '../shared/types'
 import { registerGitHandlers } from './git'
 import { registerSettingsHandlers } from './settings'
 import { registerAiHandlers } from './ai'
+import { isSafeRepoPath } from './aiSchemas'
 import { registerAnalyticsHandlers } from './analytics'
 import { registerLogHandlers } from './log'
 import { registerHostingHandlers } from './hosting'
@@ -265,6 +266,17 @@ app.whenReady().then(() => {
   ipcMain.handle(
     'shell:writeFiles',
     async (_e, repoPath: string, files: { path: string; content: string }[]) => {
+      // These paths can come from an LLM (the project-config wizard), so a
+      // "../.." would otherwise write anywhere on disk. Refuse rather than
+      // clamp — a path that needed rewriting was not the one that was asked for
+      // — and check the whole batch first so a bad entry writes nothing at all.
+      const root = resolve(repoPath)
+      for (const file of files) {
+        const full = resolve(join(repoPath, file.path))
+        if (!isSafeRepoPath(file.path) || (full !== root && !full.startsWith(root + sep))) {
+          throw new Error(`Refusing to write outside the repository: ${file.path}`)
+        }
+      }
       for (const file of files) {
         const fullPath = join(repoPath, file.path)
         await mkdir(dirname(fullPath), { recursive: true })

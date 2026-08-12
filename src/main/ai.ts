@@ -3,6 +3,28 @@ import type { AIConfig, AppThemeColors, AskAction, AskPlan, BranchNamingStyle, C
 import { recordAIUsage, type TokenUsage } from './analytics'
 import { createHash } from 'node:crypto'
 import {
+  APP_THEME_KEYS,
+  APP_THEME_SCHEMA,
+  ARTIFACT_SUGGESTIONS_SCHEMA,
+  BRANCH_NAME_SCHEMA,
+  CODE_THEME_KEYS,
+  CODE_THEME_SCHEMA,
+  COMMIT_SCHEMA,
+  CONFIG_FILES_SCHEMA,
+  GRAPH_PALETTE_SCHEMA,
+  PR_DESCRIPTION_SCHEMA,
+  SMART_STAGE_SCHEMA,
+  validateArtifactSuggestions,
+  validateBranchName,
+  validateCommitMessage,
+  validateGeneratedFiles,
+  validateGraphPalette,
+  validatePRDescription,
+  validateResolvedFile,
+  validateSmartStage,
+  validateTheme
+} from './aiSchemas'
+import {
   buildDiffEvidence,
   buildWindowFromLines,
   evidenceIndex,
@@ -191,39 +213,24 @@ No markdown fences, no extra text.`
 }
 
 async function generateCommitMessage(diff: string, cfg: AIConfig, ctx: AICommitContext): Promise<AICommitMessage> {
-  const base = baseUrl(cfg.endpoint)
-  if (!cfg.apiKey && !isLocal(base)) throw new Error('No AI API key configured. Add one in Settings → AI.')
-  const truncated = diff.length > 16000 ? diff.slice(0, 16000) + '\n…(truncated)' : diff
-
-  const res = await fetch(`${base}/chat/completions`, {
-    method: 'POST',
-    headers: authHeaders(cfg),
-    body: JSON.stringify({
-      model: cfg.model || 'gpt-4o-mini',
-      temperature: 0.2,
-      messages: [
-        { role: 'system', content: buildSystemPrompt(cfg, ctx) },
-        { role: 'user', content: `Branch: ${ctx.branch}\n\nStaged diff:\n\n${truncated}` }
-      ]
-    })
-  })
-
-  if (!res.ok) {
-    const body = await res.text().catch(() => '')
-    throw new Error(`AI request failed (${res.status}): ${body.slice(0, 200)}`)
-  }
-
-  const json = (await res.json()) as { choices?: { message?: { content?: string } }[]; usage?: ApiUsage }
-  void recordAIUsage('commitMessage', cfg.model || 'gpt-4o-mini', parseUsage(json.usage))
-  const content = json.choices?.[0]?.message?.content ?? ''
   // Honour the toggle even if the model ignores the instruction and returns a body anyway.
   const omitDesc = cfg.generateDescription === false
+  const messages: ChatMessage[] = [
+    { role: 'system', content: buildSystemPrompt(cfg, ctx) },
+    { role: 'user', content: `Branch: ${ctx.branch}\n\nStaged diff:\n\n${clip(diff)}` }
+  ]
   try {
-    const cleaned = content.replace(/^```(json)?/m, '').replace(/```$/m, '').trim()
-    const parsed = JSON.parse(cleaned) as Partial<AICommitMessage>
-    return { summary: parsed.summary ?? '', description: omitDesc ? '' : (parsed.description ?? '') }
-  } catch {
-    const [first, ...rest] = content.split('\n')
+    const parsed = await chatCompleteJson<AICommitMessage>(cfg, messages, 'commitMessage', {
+      name: 'commit_message',
+      schema: COMMIT_SCHEMA,
+      validate: validateCommitMessage
+    })
+    return { summary: parsed.summary.trim(), description: omitDesc ? '' : (parsed.description ?? '').trim() }
+  } catch (err) {
+    if (!(err instanceof InvalidAIResponse) || !err.lastReply.trim()) throw err
+    // Rather than fail the commit outright, fall back to reading the reply as
+    // plain text — the first line is the subject, the rest the body.
+    const [first, ...rest] = err.lastReply.trim().split('\n')
     return { summary: first.trim(), description: omitDesc ? '' : rest.join('\n').trim() }
   }
 }
@@ -273,7 +280,15 @@ interface JsonSpec {
 }
 
 /** Thrown when the model's JSON is still unusable after the correction retry. */
-class InvalidAIResponse extends Error {}
+class InvalidAIResponse extends Error {
+  /** The rejected reply, for callers that can still salvage something from it. */
+  readonly lastReply: string
+
+  constructor(message: string, lastReply = '') {
+    super(message)
+    this.lastReply = lastReply
+  }
+}
 
 /** True when a provider rejected the request because it can't do json_schema. */
 function rejectsJsonSchema(err: unknown): boolean {
@@ -337,7 +352,37 @@ async function chatCompleteJson<T>(
   result = check(raw)
   if (result.errors.length === 0 && result.value !== null) return result.value
 
-  throw new InvalidAIResponse(`The AI returned an invalid response: ${result.errors[0]}`)
+  throw new InvalidAIResponse(`The AI returned an invalid response: ${result.errors[0]}`, raw)
+}
+
+/**
+ * Same contract for replies that are not JSON: ask, check, and re-prompt once
+ * with the problem before giving up.
+ */
+async function chatCompleteChecked(
+  cfg: AIConfig,
+  messages: ChatMessage[],
+  feature: string,
+  validate: (text: string) => string[],
+  temperature = 0.2
+): Promise<string> {
+  let raw = await chatComplete(cfg, messages, feature, temperature)
+  let errors = validate(raw)
+  if (errors.length === 0) return raw
+
+  raw = await chatComplete(
+    cfg,
+    [
+      ...messages,
+      { role: 'assistant', content: raw },
+      { role: 'user', content: `Your previous reply was rejected: ${errors.join(' ')}\n\nReply again with the corrected result only.` }
+    ],
+    feature,
+    temperature
+  )
+  errors = validate(raw)
+  if (errors.length === 0) return raw
+  throw new InvalidAIResponse(`The AI returned an invalid response: ${errors[0]}`, raw)
 }
 
 function clip(text: string, max = 16000): string {
@@ -469,17 +514,23 @@ BOTH sides where compatible. Keep all non-conflicting content unchanged.
 ${styleRule}
 Reply with ONLY the full resolved file content. No conflict markers, no markdown fences,
 no commentary, no explanations.`
-  const out = await chatComplete(
+  // Strip a stray ```lang fence if the model added one despite instructions.
+  const unfence = (text: string): string =>
+    text.replace(/^```[^\n]*\n?/, '').replace(/\n?```\s*$/, '').replace(/\s+$/, '')
+
+  const out = await chatCompleteChecked(
     cfg,
     [
       { role: 'system', content: system },
       { role: 'user', content: clip(content, 24000) }
     ],
     'resolveConflict',
+    // A "resolution" that still has conflict markers would be pasted straight
+    // into the editor, so it is worth one more try.
+    (text) => validateResolvedFile(unfence(text)),
     0.1
   )
-  // Strip a stray ```lang fence if the model added one despite instructions.
-  return out.replace(/^```[^\n]*\n?/, '').replace(/\n?```\s*$/, '').replace(/\s+$/, '')
+  return unfence(out)
 }
 
 export interface ArtifactRequest {
@@ -518,23 +569,22 @@ Rules:
 Generate these configuration files:
 ${fileList}`
 
-  const response = await chatComplete(
+  const requested = artifacts.map((a) => a.path.trim())
+  const parsed = await chatCompleteJson<{ files: GeneratedFile[] }>(
     cfg,
     [
       { role: 'system', content: system },
       { role: 'user', content: user }
     ],
     'generateConfig',
+    {
+      name: 'project_config',
+      schema: CONFIG_FILES_SCHEMA,
+      validate: (v) => validateGeneratedFiles(v, requested)
+    },
     0.3
   )
-
-  try {
-    const cleaned = response.replace(/^```(json)?/m, '').replace(/```$/m, '').trim()
-    const parsed = JSON.parse(cleaned) as { files?: GeneratedFile[] }
-    return { files: Array.isArray(parsed.files) ? parsed.files : [] }
-  } catch {
-    throw new Error('AI returned invalid JSON. Try again or reduce the number of selected artifacts.')
-  }
+  return { files: parsed.files }
 }
 
 export interface SmartStageFile {
@@ -568,23 +618,23 @@ Reply ONLY with valid JSON (no markdown fences):
 {"toStage": ["path/to/file.ts", ...], "reason": "one sentence explaining what you staged and what you excluded"}`
 
   const fileList = files.map((f) => `${f.status}: ${f.path}`).join('\n')
-  const response = await chatComplete(cfg, [
-    { role: 'system', content: system },
-    { role: 'user', content: `Changed files:\n${fileList}` }
-  ], 'smartStage')
-
+  const known = new Set(files.map((f) => f.path))
   try {
-    const cleaned = response.replace(/^```(json)?/m, '').replace(/```$/m, '').trim()
-    const parsed = JSON.parse(cleaned) as { toStage?: unknown; reason?: unknown }
-    const toStage = Array.isArray(parsed.toStage) ? (parsed.toStage as unknown[]).filter((p) => typeof p === 'string') as string[] : []
-    // Validate returned paths actually exist in the input
-    const validPaths = new Set(files.map((f) => f.path))
-    return {
-      toStage: toStage.filter((p) => validPaths.has(p)),
-      reason: typeof parsed.reason === 'string' ? parsed.reason : ''
-    }
-  } catch {
-    return { toStage: files.map((f) => f.path), reason: 'Could not parse AI response — staged all files.' }
+    const parsed = await chatCompleteJson<{ toStage: string[]; reason: string }>(
+      cfg,
+      [
+        { role: 'system', content: system },
+        { role: 'user', content: `Changed files:\n${fileList}` }
+      ],
+      'smartStage',
+      { name: 'smart_stage', schema: SMART_STAGE_SCHEMA, validate: (v) => validateSmartStage(v, known) }
+    )
+    return { toStage: parsed.toStage, reason: parsed.reason ?? '' }
+  } catch (err) {
+    if (!(err instanceof InvalidAIResponse)) throw err
+    // Staging nothing is the safe failure: the old fallback staged everything,
+    // which is exactly what the user asked the AI to avoid.
+    return { toStage: [], reason: 'The AI response could not be used, so nothing was selected. Stage manually.' }
   }
 }
 
@@ -615,21 +665,26 @@ ${alreadyList || '(none)'}
 
 Suggest additional configuration files that would be valuable for this project.`
 
-  const response = await chatComplete(
-    cfg,
-    [
-      { role: 'system', content: system },
-      { role: 'user', content: user }
-    ],
-    'suggestArtifacts',
-    0.4
-  )
-
   try {
-    const cleaned = response.replace(/^```(json)?/m, '').replace(/```$/m, '').trim()
-    const parsed = JSON.parse(cleaned) as { suggestions?: ArtifactSuggestion[] }
-    return { suggestions: Array.isArray(parsed.suggestions) ? parsed.suggestions : [] }
-  } catch {
+    const parsed = await chatCompleteJson<{ suggestions: ArtifactSuggestion[] }>(
+      cfg,
+      [
+        { role: 'system', content: system },
+        { role: 'user', content: user }
+      ],
+      'suggestArtifacts',
+      {
+        name: 'artifact_suggestions',
+        schema: ARTIFACT_SUGGESTIONS_SCHEMA,
+        validate: (v) => validateArtifactSuggestions(v, alreadySelected.map((a) => a.path.trim()))
+      },
+      0.4
+    )
+    return { suggestions: parsed.suggestions }
+  } catch (err) {
+    // Suggestions are a bonus on top of the wizard; an unusable reply just means
+    // none to show.
+    if (!(err instanceof InvalidAIResponse)) throw err
     return { suggestions: [] }
   }
 }
@@ -667,19 +722,16 @@ Shared rules:
 - bg0 in light and bg0 in dark must look COMPLETELY DIFFERENT — one clearly light, one clearly dark
 - All values must be valid 6-digit hex colors`
 
-  const response = await chatComplete(cfg, [
-    { role: 'system', content: system },
-    { role: 'user', content: `Theme description: ${prompt}` }
-  ], 'generateAppTheme', 0.7)
-
-  try {
-    const cleaned = response.replace(/^```(json)?/m, '').replace(/```$/m, '').trim()
-    const parsed = JSON.parse(cleaned) as { name?: string; light?: AppThemeColors; dark?: AppThemeColors }
-    if (!parsed.name || !parsed.light || !parsed.dark) throw new Error('incomplete response')
-    return { name: parsed.name, light: parsed.light, dark: parsed.dark }
-  } catch {
-    throw new Error('AI returned an invalid theme. Try again with a different description.')
-  }
+  return chatCompleteJson<{ name: string; light: AppThemeColors; dark: AppThemeColors }>(
+    cfg,
+    [
+      { role: 'system', content: system },
+      { role: 'user', content: `Theme description: ${prompt}` }
+    ],
+    'generateAppTheme',
+    { name: 'app_theme', schema: APP_THEME_SCHEMA, validate: (v) => validateTheme(v, APP_THEME_KEYS) },
+    0.7
+  )
 }
 
 async function generateCodeTheme(
@@ -713,19 +765,16 @@ Shared rules:
 - Keep keyword/string/function hues thematically consistent with the prompt's color palette
 - All values must be valid 6-digit hex colors`
 
-  const response = await chatComplete(cfg, [
-    { role: 'system', content: system },
-    { role: 'user', content: `Theme description: ${prompt}` }
-  ], 'generateCodeTheme', 0.7)
-
-  try {
-    const cleaned = response.replace(/^```(json)?/m, '').replace(/```$/m, '').trim()
-    const parsed = JSON.parse(cleaned) as { name?: string; light?: CodeThemeColors; dark?: CodeThemeColors }
-    if (!parsed.name || !parsed.light || !parsed.dark) throw new Error('incomplete response')
-    return { name: parsed.name, light: parsed.light, dark: parsed.dark }
-  } catch {
-    throw new Error('AI returned an invalid theme. Try again with a different description.')
-  }
+  return chatCompleteJson<{ name: string; light: CodeThemeColors; dark: CodeThemeColors }>(
+    cfg,
+    [
+      { role: 'system', content: system },
+      { role: 'user', content: `Theme description: ${prompt}` }
+    ],
+    'generateCodeTheme',
+    { name: 'code_theme', schema: CODE_THEME_SCHEMA, validate: (v) => validateTheme(v, CODE_THEME_KEYS) },
+    0.7
+  )
 }
 
 async function generateGraphPalette(
@@ -746,20 +795,16 @@ Rules:
 - Adjacent colors in the array must be clearly distinguishable from each other (different hue or strong lightness gap) — they often sit side by side.
 - Keep the set harmonious and on-theme for the prompt.`
 
-  const response = await chatComplete(cfg, [
-    { role: 'system', content: system },
-    { role: 'user', content: `Palette description: ${prompt}` }
-  ], 'generateGraphPalette', 0.7)
-
-  try {
-    const cleaned = response.replace(/^```(json)?/m, '').replace(/```$/m, '').trim()
-    const parsed = JSON.parse(cleaned) as { name?: string; colors?: string[] }
-    const colors = (parsed.colors ?? []).filter((c) => /^#[0-9a-fA-F]{6}$/.test(c))
-    if (!parsed.name || colors.length < 4) throw new Error('incomplete response')
-    return { name: parsed.name, colors }
-  } catch {
-    throw new Error('AI returned an invalid palette. Try again with a different description.')
-  }
+  return chatCompleteJson<{ name: string; colors: string[] }>(
+    cfg,
+    [
+      { role: 'system', content: system },
+      { role: 'user', content: `Palette description: ${prompt}` }
+    ],
+    'generateGraphPalette',
+    { name: 'graph_palette', schema: GRAPH_PALETTE_SCHEMA, validate: validateGraphPalette },
+    0.7
+  )
 }
 
 function branchStyleGuidance(style: BranchNamingStyle | undefined, username?: string): string {
@@ -789,12 +834,19 @@ Convention: ${styleGuide}
 Rules:
 - Lowercase only, hyphens instead of spaces or special chars
 - Keep slug concise (3–6 words max after the prefix)
-- Reply with ONLY the branch name. No quotes, no explanation, no newlines.`
-  const result = await chatComplete(cfg, [
-    { role: 'system', content: system },
-    { role: 'user', content: description }
-  ], 'generateBranchName', 0.3)
-  return result.trim().replace(/^['"`]|['"`]$/g, '').split('\n')[0].trim()
+- The name must be a valid git ref: no spaces, no "..", no trailing "/" or ".lock".
+Reply ONLY with valid JSON: {"name": "..."}. No markdown fences.`
+  const parsed = await chatCompleteJson<{ name: string }>(
+    cfg,
+    [
+      { role: 'system', content: system },
+      { role: 'user', content: description }
+    ],
+    'generateBranchName',
+    { name: 'branch_name', schema: BRANCH_NAME_SCHEMA, validate: validateBranchName },
+    0.3
+  )
+  return parsed.name.trim()
 }
 
 const REVIEW_SCHEMA: Record<string, unknown> = {
@@ -882,22 +934,22 @@ Given a branch's commit subjects and its diff, return a JSON object:
 - "body": GitHub-flavored Markdown — a short summary paragraph, then a "## Changes" bullet list of the notable changes, and a "## Notes" section only if useful.
 Reply ONLY with valid JSON: {"title": "...", "body": "..."}. No markdown fences.`
   const user = `Commit subjects:\n${clip(commits, 4000)}\n\nDiff:\n${clip(diff, 20000)}`
-  const out = await chatComplete(
-    cfg,
-    [
-      { role: 'system', content: system },
-      { role: 'user', content: user }
-    ],
-    'prDescription',
-    0.3
-  )
   try {
-    const cleaned = out.replace(/^```(json)?/m, '').replace(/```$/m, '').trim()
-    const parsed = JSON.parse(cleaned) as Partial<PRDescriptionResult>
-    return { title: (parsed.title ?? '').trim(), body: (parsed.body ?? '').trim() }
-  } catch {
+    const parsed = await chatCompleteJson<PRDescriptionResult>(
+      cfg,
+      [
+        { role: 'system', content: system },
+        { role: 'user', content: user }
+      ],
+      'prDescription',
+      { name: 'pr_description', schema: PR_DESCRIPTION_SCHEMA, validate: validatePRDescription },
+      0.3
+    )
+    return { title: parsed.title.trim(), body: parsed.body.trim() }
+  } catch (err) {
+    if (!(err instanceof InvalidAIResponse) || !err.lastReply.trim()) throw err
     // Fall back to the first line as title, rest as body.
-    const [first, ...rest] = out.trim().split('\n')
+    const [first, ...rest] = err.lastReply.trim().split('\n')
     return { title: first.trim(), body: rest.join('\n').trim() }
   }
 }

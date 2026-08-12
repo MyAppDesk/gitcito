@@ -21,6 +21,19 @@ import {
 } from '../src/main/grounding'
 import { identifierAt, isExplainableToken } from '../src/renderer/src/lib/hoverToken'
 import {
+  APP_THEME_KEYS,
+  isSafeRepoPath,
+  validateArtifactSuggestions,
+  validateBranchName,
+  validateCommitMessage,
+  validateGeneratedFiles,
+  validateGraphPalette,
+  validatePRDescription,
+  validateResolvedFile,
+  validateSmartStage,
+  validateTheme
+} from '../src/main/aiSchemas'
+import {
   hasSettingsSecrets,
   stripSettingsSecrets,
   extractSecrets,
@@ -846,5 +859,152 @@ describe('hover explain — windows over a sparse diff', () => {
 
   it('returns an empty window when there are no lines at all', () => {
     expect(buildWindowFromLines([], 5).text).toBe('')
+  })
+})
+
+describe('AI contracts — commit messages', () => {
+  it('accepts a one-line subject with or without a body', () => {
+    expect(validateCommitMessage({ summary: 'feat: add login', description: '' })).toEqual([])
+    expect(validateCommitMessage({ summary: 'fix: guard null', description: '- checks the token' })).toEqual([])
+  })
+
+  it('rejects an empty or multi-line subject', () => {
+    expect(validateCommitMessage({ summary: '  ', description: '' })[0]).toContain('summary')
+    expect(validateCommitMessage({ summary: 'one\ntwo', description: '' })[0]).toContain('single line')
+  })
+
+  it('rejects prose instead of an object', () => {
+    expect(validateCommitMessage('Sure! Here is your commit')[0]).toContain('JSON object')
+  })
+})
+
+describe('AI contracts — generated config files', () => {
+  const requested = ['CLAUDE.md', '.cursor/rules/project.mdc']
+
+  it('accepts the files that were asked for', () => {
+    const value = { files: [{ path: 'CLAUDE.md', content: '# Project' }] }
+    expect(validateGeneratedFiles(value, requested)).toEqual([])
+  })
+
+  it('refuses paths that escape the repo', () => {
+    for (const path of ['../../etc/passwd', '/etc/passwd', 'C:\\Windows\\system.ini', 'a/../../b']) {
+      const errors = validateGeneratedFiles({ files: [{ path, content: 'x' }] }, requested)
+      expect(errors[0], path).toContain('inside the repo')
+    }
+  })
+
+  it('accepts ordinary nested paths', () => {
+    expect(isSafeRepoPath('.cursor/rules/project.mdc')).toBe(true)
+    expect(isSafeRepoPath('.git/hooks/pre-commit')).toBe(true)
+    expect(isSafeRepoPath('a/..b/c')).toBe(true)
+  })
+
+  it('refuses files nobody asked for, and empty content', () => {
+    expect(validateGeneratedFiles({ files: [{ path: 'sneaky.sh', content: 'x' }] }, requested)[0]).toContain('was not requested')
+    expect(validateGeneratedFiles({ files: [{ path: 'CLAUDE.md', content: '' }] }, requested)[0]).toContain('content')
+  })
+
+  it('rejects an empty file list', () => {
+    expect(validateGeneratedFiles({ files: [] }, requested)[0]).toContain('empty')
+  })
+})
+
+describe('AI contracts — smart staging', () => {
+  const known = new Set(['src/app.ts', 'package-lock.json'])
+
+  it('accepts a subset of the files it was shown', () => {
+    expect(validateSmartStage({ toStage: ['src/app.ts'], reason: 'source only' }, known)).toEqual([])
+    expect(validateSmartStage({ toStage: [], reason: 'nothing worth staging' }, known)).toEqual([])
+  })
+
+  it('rejects a path that was never offered', () => {
+    expect(validateSmartStage({ toStage: ['src/ghost.ts'], reason: '' }, known)[0]).toContain('ghost')
+  })
+})
+
+describe('AI contracts — themes and palettes', () => {
+  const colors = (hex: string): Record<string, string> =>
+    Object.fromEntries(APP_THEME_KEYS.map((k) => [k, hex]))
+
+  it('accepts a theme with every colour present and hex', () => {
+    expect(validateTheme({ name: 'Dusk', light: colors('#ffffff'), dark: colors('#101010') }, APP_THEME_KEYS)).toEqual([])
+  })
+
+  it('names the missing keys and the malformed colours', () => {
+    const partial = { ...colors('#ffffff') }
+    delete partial.accent
+    expect(validateTheme({ name: 'X', light: partial, dark: colors('#101010') }, APP_THEME_KEYS)[0]).toContain('accent')
+
+    const bad = { ...colors('#ffffff'), red: 'crimson' }
+    expect(validateTheme({ name: 'X', light: bad, dark: colors('#101010') }, APP_THEME_KEYS)[0]).toContain('red')
+  })
+
+  it('requires exactly 8 hex lane colours in a graph palette', () => {
+    const eight = Array.from({ length: 8 }, () => '#123456')
+    expect(validateGraphPalette({ name: 'Neon', colors: eight })).toEqual([])
+    expect(validateGraphPalette({ name: 'Neon', colors: eight.slice(0, 6) })[0]).toContain('exactly 8')
+    expect(validateGraphPalette({ name: 'Neon', colors: [...eight.slice(1), 'red'] })[0]).toContain('hex')
+  })
+})
+
+describe('AI contracts — branch names and PR descriptions', () => {
+  it('accepts a conventional branch name', () => {
+    expect(validateBranchName({ name: 'feature/CMS-12-add-login' })).toEqual([])
+  })
+
+  it('rejects names git would refuse', () => {
+    expect(validateBranchName({ name: 'my branch' })[0]).toContain('spaces')
+    expect(validateBranchName({ name: 'feature//x' })[0]).toContain('/')
+    expect(validateBranchName({ name: 'feature/x.lock' })[0]).toContain('.lock')
+    expect(validateBranchName({ name: 'a..b' })[0]).toContain('..')
+    expect(validateBranchName({ name: 'feature/¡hola!' })[0]).toContain('may only use')
+  })
+
+  it('requires a single-line title and a body for a PR description', () => {
+    expect(validatePRDescription({ title: 'Add login', body: '## Changes\n- x' })).toEqual([])
+    expect(validatePRDescription({ title: 'a\nb', body: 'x' })[0]).toContain('single line')
+    expect(validatePRDescription({ title: 'Add login', body: '' })[0]).toContain('body')
+  })
+})
+
+describe('AI contracts — resolved merge conflicts', () => {
+  it('accepts a clean merged file', () => {
+    expect(validateResolvedFile('const a = 1\nconst b = 2\n')).toEqual([])
+  })
+
+  it('rejects a result that still has conflict markers', () => {
+    const unresolved = 'a\n<<<<<<< HEAD\nb\n=======\nc\n>>>>>>> theirs\n'
+    expect(validateResolvedFile(unresolved)[0]).toContain('conflict markers')
+  })
+
+  it('rejects an empty result', () => {
+    expect(validateResolvedFile('   ')[0]).toContain('empty')
+  })
+})
+
+describe('AI contracts — suggested artifacts', () => {
+  const already = ['CLAUDE.md']
+
+  it('accepts well-formed suggestions', () => {
+    const value = {
+      suggestions: [{ path: '.editorconfig', description: 'Editor defaults', reason: 'Mixed indentation in the repo' }]
+    }
+    expect(validateArtifactSuggestions(value, already)).toEqual([])
+  })
+
+  it('rejects re-suggesting something already selected', () => {
+    const value = { suggestions: [{ path: 'CLAUDE.md', description: 'd', reason: 'r' }] }
+    expect(validateArtifactSuggestions(value, already)[0]).toContain('already selected')
+  })
+
+  it('rejects escaping paths and missing prose', () => {
+    expect(validateArtifactSuggestions({ suggestions: [{ path: '../x', description: 'd', reason: 'r' }] }, already)[0])
+      .toContain('inside the repo')
+    expect(validateArtifactSuggestions({ suggestions: [{ path: 'a.md', description: '', reason: '' }] }, already))
+      .toHaveLength(2)
+  })
+
+  it('treats no suggestions as valid', () => {
+    expect(validateArtifactSuggestions({ suggestions: [] }, already)).toEqual([])
   })
 })

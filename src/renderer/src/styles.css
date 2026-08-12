@@ -6055,6 +6055,32 @@ textarea:focus {
 .conflict-banner strong {
   color: var(--red);
 }
+/* "Merging <source> into <target>" — refs as chips so the two names read apart. */
+.conflict-merging {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 600;
+}
+.conflict-ref {
+  padding: 1px 7px;
+  border-radius: 5px;
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 11.5px;
+  font-weight: 700;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.conflict-ref.src {
+  background: rgba(88, 166, 255, 0.2);
+  color: var(--accent);
+}
+.conflict-ref.tgt {
+  background: rgba(63, 208, 164, 0.2);
+  color: var(--green);
+}
 .conflict-banner-actions {
   margin-left: auto;
   display: flex;
@@ -6072,6 +6098,11 @@ textarea:focus {
 }
 .conflict-header > svg {
   flex-shrink: 0;
+}
+.conflict-mark-all {
+  margin-left: auto;
+  flex-shrink: 0;
+  gap: 4px;
 }
 
 .fv-chip.conflict {
@@ -6219,21 +6250,57 @@ textarea:focus {
   min-height: 0;
 }
 
-/* Top: two files side by side */
+/* Conflict navigator (prev / "Conflict 2/3" / next), in the output header */
+.conflict-nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  padding: 1px 3px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-1);
+}
+.conflict-nav .icon-btn.tiny {
+  width: 20px;
+  height: 18px;
+  padding: 0;
+}
+.conflict-nav-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text-1);
+  white-space: nowrap;
+  padding: 0 2px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* Line count sits at the far right, just before Reset. */
+.conflict-output-count {
+  margin-left: auto;
+  white-space: nowrap;
+}
+/* The header label is uppercased; its controls should not be. */
+.conflict-output-header .btn {
+  text-transform: none;
+  letter-spacing: 0;
+  flex-shrink: 0;
+}
+
+/* Top: two files side by side, split by a draggable handle */
 .conflict-files {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  flex: 1 1 55%;
+  display: flex;
+  flex-direction: row;
   min-height: 0;
-  gap: 1px;
   background: var(--border);
-  border-bottom: 2px solid var(--border);
 }
 
 .conflict-file {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  min-width: 0;
   background: var(--bg-0);
   overflow: hidden;
 }
@@ -6241,10 +6308,64 @@ textarea:focus {
 .conflict-file-head {
   display: flex;
   align-items: center;
-  padding: 7px 12px;
+  gap: 7px;
+  padding: 6px 10px;
   border-bottom: 1px solid var(--border);
   background: var(--bg-1);
   flex-shrink: 0;
+  min-width: 0;
+}
+
+/* Pane checkbox = take this whole side. Both sides may be on at once. */
+.conflict-side-check {
+  margin: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.conflict-file.ours .conflict-side-check {
+  accent-color: var(--green);
+}
+.conflict-file.theirs .conflict-side-check {
+  accent-color: var(--accent);
+}
+
+.conflict-side-letter {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  border-radius: 4px;
+  font-size: 10.5px;
+  font-weight: 800;
+}
+.conflict-side-letter.ours {
+  background: rgba(63, 208, 164, 0.2);
+  color: var(--green);
+}
+.conflict-side-letter.theirs {
+  background: rgba(88, 166, 255, 0.2);
+  color: var(--accent);
+}
+
+.conflict-side-name {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-0);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.conflict-side-commit {
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 10.5px;
+  color: var(--text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-left: auto;
+  padding-left: 8px;
 }
 
 .conflict-file.ours .conflict-file-head {
@@ -6323,32 +6444,48 @@ textarea:focus {
   width: 18px;
 }
 
-/* Per-chunk header with checkbox */
+/* Per-chunk picker: a bare checkbox on a slim strip above the chunk. */
 .conflict-chunk-head {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 2px 6px 2px 6px;
+  padding: 1px 4px;
   margin-top: 2px;
-  font-size: 9.5px;
-  font-weight: 700;
-  letter-spacing: 0.4px;
-  text-transform: uppercase;
-  color: var(--text-2);
-  cursor: pointer;
-  user-select: none;
-  white-space: nowrap;
 }
 .conflict-chunk-head input {
-  accent-color: var(--accent);
   cursor: pointer;
   margin: 0;
+  width: 12px;
+  height: 12px;
 }
 .conflict-file.ours .conflict-chunk-head {
   background: rgba(63, 208, 164, 0.07);
 }
 .conflict-file.theirs .conflict-chunk-head {
   background: rgba(88, 166, 255, 0.07);
+}
+.conflict-file.ours .conflict-chunk-head input {
+  accent-color: var(--green);
+}
+.conflict-file.theirs .conflict-chunk-head input {
+  accent-color: var(--accent);
+}
+
+/* Chunk the navigator is parked on */
+.conflict-chunk.active .conflict-chunk-head {
+  box-shadow: inset 2px 0 0 var(--text-1);
+}
+.conflict-file.ours .conflict-chunk.active .conflict-chunk-head {
+  background: rgba(63, 208, 164, 0.2);
+}
+.conflict-file.theirs .conflict-chunk.active .conflict-chunk-head {
+  background: rgba(88, 166, 255, 0.2);
+}
+/* Picked lines keep their stronger tint (declared later, so it wins). */
+.conflict-file.ours .conflict-chunk.active .conflict-code-line.conflict {
+  background: rgba(63, 208, 164, 0.15);
+}
+.conflict-file.theirs .conflict-chunk.active .conflict-code-line.conflict {
+  background: rgba(88, 166, 255, 0.15);
 }
 
 .conflict-code-line.conflict {
@@ -6403,8 +6540,7 @@ textarea:focus {
 .conflict-output-pane {
   display: flex;
   flex-direction: column;
-  flex: 1 1 45%;
-  min-height: 120px;
+  min-height: 0;
   background: var(--bg-0);
   overflow: hidden;
 }
@@ -6412,8 +6548,8 @@ textarea:focus {
 .conflict-output-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 8px 12px;
+  gap: 10px;
+  padding: 5px 8px 5px 12px;
   border-bottom: 1px solid var(--border);
   background: var(--bg-1);
   font-size: 11px;
@@ -6463,17 +6599,137 @@ textarea:focus {
   font-family: var(--mono, ui-monospace, monospace) !important;
   font-size: var(--code-font-size, 12px) !important;
   line-height: 1.55 !important;
-  padding: 10px !important;
+  padding: 10px 10px 10px 58px !important;
   border: 0 !important;
   white-space: pre !important;
   tab-size: 2;
   overflow: auto;
 }
 
-.conflict-output-code .conflict-output-highlight {
+/* One row per output line, tinted with the side the line came from. Sits behind
+   the highlighted code, which is why the highlight layer must stay transparent. */
+.conflict-output-rows {
+  position: absolute;
+  inset: 0;
   z-index: 0;
+  padding: 10px 0;
+  overflow: hidden;
   pointer-events: none;
+}
+.conflict-output-rows .cor {
+  height: calc(var(--code-font-size, 12px) * 1.55);
+}
+.conflict-output-rows .cor.ours {
+  background: rgba(63, 208, 164, 0.12);
+}
+.conflict-output-rows .cor.theirs {
+  background: rgba(88, 166, 255, 0.12);
+}
+/* Hand-typed lines: neither side owns them, so give them their own subtle tint. */
+.conflict-output-rows .cor.edited {
+  background: color-mix(in srgb, var(--yellow) 13%, transparent);
+}
+
+/* Output gutter: side letter (A/B) + line number, scrolled with the textarea. */
+.conflict-output-gutter {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 50px;
+  z-index: 3;
+  padding: 10px 0;
+  overflow: hidden;
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 10px;
+  line-height: 1.55;
   background: var(--bg-0);
+  pointer-events: none;
+  user-select: none;
+}
+.conflict-output-gutter .cog {
+  display: flex;
+  align-items: center;
+  height: calc(var(--code-font-size, 12px) * 1.55);
+  border-right: 1px solid var(--border);
+}
+.conflict-output-gutter .cog-side {
+  width: 16px;
+  height: 100%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 10px;
+  font-family: inherit;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+}
+
+/* Attributed lines can be dropped straight from the output: the A/B letter
+   turns into a remove button on hover. */
+.conflict-output-gutter .cog-drop {
+  pointer-events: auto;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: background 0.1s, color 0.1s;
+}
+.conflict-output-gutter .cog-drop .cog-x {
+  display: none;
+}
+.conflict-output-gutter .cog-drop:hover {
+  background: rgba(231, 89, 108, 0.22);
+  color: var(--red);
+}
+.conflict-output-gutter .cog-drop:hover .cog-letter {
+  display: none;
+}
+.conflict-output-gutter .cog-drop:hover .cog-x {
+  display: block;
+}
+.conflict-output-gutter .cog-no {
+  flex: 1;
+  text-align: right;
+  padding-right: 7px;
+  color: var(--text-2);
+  opacity: 0.55;
+}
+/* Colored bar + letter marking which side owns the line. */
+.conflict-output-gutter .cog.ours {
+  border-right: 3px solid var(--green);
+  background: rgba(63, 208, 164, 0.12);
+}
+.conflict-output-gutter .cog.theirs {
+  border-right: 3px solid var(--accent);
+  background: rgba(88, 166, 255, 0.12);
+}
+.conflict-output-gutter .cog.edited {
+  border-right: 3px solid var(--yellow);
+  background: color-mix(in srgb, var(--yellow) 13%, transparent);
+}
+.conflict-output-gutter .cog.edited .cog-side {
+  color: var(--yellow);
+}
+.conflict-output-gutter .cog.ours .cog-side {
+  color: var(--green);
+}
+.conflict-output-gutter .cog.theirs .cog-side {
+  color: var(--accent);
+}
+.conflict-output-gutter .cog.ours .cog-no,
+.conflict-output-gutter .cog.theirs .cog-no,
+.conflict-output-gutter .cog.edited .cog-no {
+  opacity: 0.8;
+}
+
+.conflict-output-code .conflict-output-highlight {
+  z-index: 1;
+  pointer-events: none;
+  /* Transparent so the per-line side tints behind it show through. */
+  background: transparent;
   color: var(--text-0);
 }
 
@@ -6483,7 +6739,7 @@ textarea:focus {
 }
 
 .conflict-output-code .conflict-output-editor {
-  z-index: 1;
+  z-index: 2;
   background: transparent !important;
   color: transparent !important;
   caret-color: var(--text-0);

@@ -5,6 +5,7 @@ import type {
   BranchesPayload,
   CiStatus,
   CommitBranchInfo,
+  ConflictContext,
   ConflictOpKind,
   ConflictSide,
   ConflictVersions,
@@ -290,6 +291,7 @@ export const gitApi = {
 
   mergeState: (path: string) => call<ConflictOpKind | null>('mergeState', path),
   mergeMessage: (path: string) => call<string>('mergeMessage', path),
+  conflictContext: (path: string) => call<ConflictContext | null>('conflictContext', path),
   conflictVersions: (path: string, file: string) => call<ConflictVersions>('conflictVersions', path, file),
   resolveConflict: (path: string, file: string, content: string) => call<void>('resolveConflict', path, file, content),
   conflictTakeSide: (path: string, file: string, side: ConflictSide) => call<void>('conflictTakeSide', path, file, side),

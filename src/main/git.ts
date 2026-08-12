@@ -15,7 +15,9 @@ import type {
   BranchesPayload,
   BranchInfo,
   CommitBranchInfo,
+  ConflictContext,
   ConflictOpKind,
+  ConflictRefInfo,
   ConflictVersions,
   FileChangeKind,
   FileEntry,
@@ -763,6 +765,89 @@ export const gitService = {
       .filter((line) => !line.startsWith('#'))
       .join('\n')
       .trim()
+  },
+
+  // Who is being merged into whom. Drives the "Merging X into Y" header and the
+  // "commit abc123 on branch" labels above each side of the conflict editor.
+  // Returns null when no merge/rebase/cherry-pick/revert is in progress.
+  async conflictContext(repoPath: string): Promise<ConflictContext | null> {
+    const kind = await gitService.mergeState(repoPath)
+    if (!kind) return null
+    const git = gitFor(repoPath)
+    const gitPath = async (name: string): Promise<string> => (await git.raw(['rev-parse', '--git-path', name])).trim()
+    const abs = (p: string): string => (p.startsWith('/') ? p : join(repoPath, p))
+    const readIfPresent = async (name: string): Promise<string> => {
+      const p = abs(await gitPath(name))
+      if (!existsSync(p)) return ''
+      try {
+        return (await readFile(p, 'utf-8')).trim()
+      } catch {
+        return ''
+      }
+    }
+
+    // `main~2` / `feature^0` still identify a branch for display purposes.
+    const branchOf = async (ref: string): Promise<string> => {
+      try {
+        const out = (await git.raw(['name-rev', '--name-only', '--refs=refs/heads/*', ref])).trim()
+        if (!out || out === 'undefined') return ''
+        return out.replace(/[~^].*$/, '')
+      } catch {
+        return ''
+      }
+    }
+    const info = async (ref: string): Promise<ConflictRefInfo | null> => {
+      try {
+        const out = await git.raw(['log', '-1', `--format=%h${SEP}%s${SEP}%an${SEP}%aI`, ref])
+        const [sha, subject, author, date] = out.trim().split(SEP)
+        if (!sha) return null
+        return { sha, subject: subject ?? '', branch: await branchOf(ref), author: author ?? '', date: date ?? '' }
+      } catch {
+        return null
+      }
+    }
+
+    const currentBranch = async (): Promise<string> => {
+      try {
+        return (await git.raw(['symbolic-ref', '--quiet', '--short', 'HEAD'])).trim()
+      } catch {
+        return ''
+      }
+    }
+
+    const theirsRef =
+      kind === 'merge'
+        ? 'MERGE_HEAD'
+        : kind === 'cherry-pick'
+          ? 'CHERRY_PICK_HEAD'
+          : kind === 'revert'
+            ? 'REVERT_HEAD'
+            : 'REBASE_HEAD'
+    const [ours, theirs] = await Promise.all([info('HEAD'), info(theirsRef)])
+
+    let source = ''
+    let target = ''
+    if (kind === 'rebase') {
+      // During a rebase HEAD sits on the upstream side, so `ours` is the target
+      // branch and the replayed commits (`theirs`) belong to the rebased branch.
+      const headName = (await readIfPresent('rebase-merge/head-name')) || (await readIfPresent('rebase-apply/head-name'))
+      const onto = (await readIfPresent('rebase-merge/onto')) || (await readIfPresent('rebase-apply/onto'))
+      source = headName.replace(/^refs\/heads\//, '')
+      target = onto ? await branchOf(onto) : ''
+      if (!target) target = ours?.branch || (onto ? onto.slice(0, 7) : '')
+    } else {
+      target = (await currentBranch()) || ours?.branch || ours?.sha || ''
+      if (kind === 'merge') {
+        // MERGE_MSG carries the ref the user actually typed ("Merge branch 'x'");
+        // name-rev only knows where the sha happens to live.
+        const msg = await readIfPresent('MERGE_MSG')
+        const m = /^Merge (?:remote-tracking )?branch(?:es)? '([^']+)'/m.exec(msg) ?? /^Merge tag '([^']+)'/m.exec(msg)
+        source = m?.[1] ?? ''
+      }
+      if (!source) source = theirs?.branch || theirs?.sha || ''
+    }
+
+    return { kind, source, target, ours, theirs }
   },
 
   async conflictVersions(repoPath: string, file: string): Promise<ConflictVersions> {
@@ -3131,6 +3216,7 @@ const READ_METHODS = new Set<string>([
   'getUser',
   'mergeState',
   'mergeMessage',
+  'conflictContext',
   'conflictVersions',
   'interactiveRebaseSteps',
   'compareBranches',

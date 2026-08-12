@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import type {
   BranchesPayload,
   CiStatus,
+  ConflictContext,
   ConflictOpKind,
   ConflictSide,
   GraphCommit,
@@ -56,6 +57,8 @@ export interface RepoData {
   releases: ReleaseInfo[]
   releaseProvider: HostingProvider
   mergeState: ConflictOpKind | null
+  /** Source/target branches + per-side commits of the in-progress conflict op. */
+  conflictContext: ConflictContext | null
   selected: Selection | null
   loading: boolean
   maxCount: number
@@ -91,6 +94,7 @@ const emptyRepo = (path: string): RepoData => ({
   releases: [],
   releaseProvider: null,
   mergeState: null,
+  conflictContext: null,
   selected: null,
   loading: true,
   maxCount: useSettingsStore.getState().settings.initialCommitCount ?? 400,
@@ -261,7 +265,7 @@ async function doRefresh(path: string, slices: RefreshSlice[]): Promise<void> {
   const keep = <T>(cur: T | undefined, want: boolean, fetch: () => Promise<T>, fallback: T): Promise<T> =>
     want ? fetch() : Promise.resolve(cur ?? fallback)
   try {
-    const [commits, branches, status, stashes, remotes, mergeState, worktrees, submodules, treeStatus] =
+    const [commits, branches, status, stashes, remotes, conflictContext, worktrees, submodules, treeStatus] =
       await Promise.all([
         keep(repo?.commits, want.has('log'), () => gitApi.log(path, maxCount), []),
         keep(repo?.branches, want.has('branches'), () => gitApi.branches(path), {
@@ -273,7 +277,8 @@ async function doRefresh(path: string, slices: RefreshSlice[]): Promise<void> {
         keep(repo?.status, want.has('status'), () => gitApi.status(path), null),
         keep(repo?.stashes, want.has('stashes'), () => gitApi.stashes(path), []),
         keep(repo?.remotes, want.has('remotes'), () => gitApi.remotes(path), []),
-        keep(repo?.mergeState, want.has('mergeState'), () => gitApi.mergeState(path), null),
+        // One call covers both: `mergeState` is just this payload's `kind`.
+        keep(repo?.conflictContext, want.has('mergeState'), () => gitApi.conflictContext(path), null),
         keep(repo?.worktrees, want.has('worktrees'), () => gitApi.worktrees(path).catch(() => []), []),
         keep(repo?.submodules, want.has('submodules'), () => gitApi.submodules(path).catch(() => []), []),
         keep(repo?.treeStatus, want.has('treeStatus'), () => gitApi.treeStatus(path).catch(() => ({})), {})
@@ -284,7 +289,8 @@ async function doRefresh(path: string, slices: RefreshSlice[]): Promise<void> {
       status,
       stashes,
       remotes,
-      mergeState,
+      conflictContext,
+      mergeState: conflictContext?.kind ?? null,
       worktrees,
       submodules,
       treeStatus,

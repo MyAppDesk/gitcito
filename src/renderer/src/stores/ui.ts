@@ -149,6 +149,10 @@ export interface PanelLayout {
   terminalListWidth: number
   terminalListCollapsed: boolean
   composerUnstagedRatio: number
+  /** Conflict editor: share of the width taken by the left (ours) side. */
+  conflictSideRatio: number
+  /** Conflict editor: share of the height taken by the two side panes. */
+  conflictFilesRatio: number
   composerConflictedCollapsed: boolean
   composerUnstagedCollapsed: boolean
   composerStagedCollapsed: boolean
@@ -164,6 +168,8 @@ const DEFAULT_LAYOUT: PanelLayout = {
   terminalListWidth: 220,
   terminalListCollapsed: false,
   composerUnstagedRatio: 0.5,
+  conflictSideRatio: 0.5,
+  conflictFilesRatio: 0.55,
   composerConflictedCollapsed: false,
   composerUnstagedCollapsed: false,
   composerStagedCollapsed: false

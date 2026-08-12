@@ -4,7 +4,8 @@ import { GitMerge, FolderOpen, Download, ArrowDownToLine, Bug, X } from 'lucide-
 import { useSettingsStore } from './stores/settings'
 import { useRepoStore, repoActions, type RepoData } from './stores/repo'
 import { useUIStore } from './stores/ui'
-import { tabActiveRepoPath, tabRepos, type GroupTab, type PageTab } from '../../shared/types'
+import { tabActiveRepoPath, tabRepos, type ConflictOpKind, type GroupTab, type PageTab } from '../../shared/types'
+import { useT } from './i18n'
 import { applyAppTheme, applyCodeTheme, findAppTheme, findCodeTheme } from './theme/themes'
 import { TitleBar } from './components/TitleBar'
 import { Toolbar } from './components/Toolbar'
@@ -169,6 +170,9 @@ function PageView({ tab }: { tab: PageTab }): React.JSX.Element {
 }
 
 function ConflictBanner({ repo }: { repo: RepoData }): React.JSX.Element | null {
+  const t = useT()
+  const setConflictView = useUIStore((s) => s.setConflictView)
+  const select = useRepoStore((s) => s.select)
   if (!repo.mergeState) return null
   const conflicted = repo.status?.conflicted ?? []
   const labels: Record<string, string> = {
@@ -177,13 +181,26 @@ function ConflictBanner({ repo }: { repo: RepoData }): React.JSX.Element | null 
     rebase: 'Rebase',
     revert: 'Revert'
   }
-  const setConflictView = useUIStore((s) => s.setConflictView)
-  const select = useRepoStore((s) => s.select)
+  const verbs: Record<ConflictOpKind, string> = {
+    merge: t('conflict.opMerge'),
+    'cherry-pick': t('conflict.opCherryPick'),
+    rebase: t('conflict.opRebase'),
+    revert: t('conflict.opRevert')
+  }
+  const ctx = repo.conflictContext
   return (
     <div className="conflict-banner">
       <GitMerge size={15} />
       <span>
-        <strong>{labels[repo.mergeState]} in progress</strong>
+        {ctx?.source && ctx?.target ? (
+          <strong className="conflict-merging">
+            {verbs[ctx.kind]} <span className="conflict-ref src">{ctx.source}</span>{' '}
+            {ctx.kind === 'rebase' ? t('conflict.onto') : t('conflict.into')}{' '}
+            <span className="conflict-ref tgt">{ctx.target}</span>
+          </strong>
+        ) : (
+          <strong>{labels[repo.mergeState]} in progress</strong>
+        )}
         {conflicted.length > 0
           ? ` — ${conflicted.length} conflicted file${conflicted.length === 1 ? '' : 's'} to resolve`
           : ' — all conflicts resolved'}

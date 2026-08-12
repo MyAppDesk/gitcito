@@ -199,6 +199,32 @@ export interface ConflictVersions {
   base: string | null
 }
 
+/** Identity of the commit behind one side of an in-progress conflict. */
+export interface ConflictRefInfo {
+  /** Short sha the side points at. */
+  sha: string
+  /** Branch the commit belongs to, '' when it resolves to no name. */
+  branch: string
+  subject: string
+  author: string
+  /** ISO timestamp. */
+  date: string
+}
+
+/** Who is being merged into whom, for the "merging X into Y" header and the
+ *  per-side commit labels in the conflict editor. */
+export interface ConflictContext {
+  kind: ConflictOpKind
+  /** Incoming side — the branch/commit being merged, rebased or picked. */
+  source: string
+  /** Receiving side — the branch the operation lands on. */
+  target: string
+  /** Stage 2 (`--ours`) commit: HEAD, i.e. the branch you are on. */
+  ours: ConflictRefInfo | null
+  /** Stage 3 (`--theirs`) commit: MERGE_HEAD / REBASE_HEAD / CHERRY_PICK_HEAD. */
+  theirs: ConflictRefInfo | null
+}
+
 export interface StashInfo {
   index: number
   sha: string

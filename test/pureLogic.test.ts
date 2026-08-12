@@ -1676,3 +1676,290 @@ describe('repo facts — signal over scaffolding', () => {
     expect(detectFrameworks(deps('react', 'react')).map((h) => h.label)).toEqual(['React'])
   })
 })
+
+// ─── Merge conflict picking (src/renderer/src/lib/conflict.ts) ───────────────
+
+import {
+  assemble,
+  lineKey,
+  mergePicks,
+  parseHunks,
+  reconcileOutput,
+  sideFullyPicked,
+  sidePartlyPicked,
+  toggleSideEverywhere,
+  toggleSideInHunk
+} from '../src/renderer/src/lib/conflict'
+
+const CONFLICTED = [
+  'top context',
+  '<<<<<<< HEAD',
+  'ours one',
+  'ours two',
+  '=======',
+  'theirs one',
+  '>>>>>>> feature',
+  'middle',
+  '<<<<<<< HEAD',
+  'ours three',
+  '=======',
+  'theirs two',
+  '>>>>>>> feature',
+  'bottom context'
+].join('\n')
+
+describe('conflict marker parsing', () => {
+  it('splits every hunk and reconstructs both whole files', () => {
+    const { hunks, oursContent, theirsContent } = parseHunks(CONFLICTED)
+    expect(hunks.length).toBe(2)
+    expect(hunks[0].ours).toEqual(['ours one', 'ours two'])
+    expect(hunks[0].theirs).toEqual(['theirs one'])
+    expect(hunks[0].oursLabel).toBe('HEAD')
+    expect(hunks[0].theirsLabel).toBe('feature')
+    expect(oursContent.split('\n')).toEqual([
+      'top context',
+      'ours one',
+      'ours two',
+      'middle',
+      'ours three',
+      'bottom context'
+    ])
+    expect(theirsContent.split('\n')).toEqual([
+      'top context',
+      'theirs one',
+      'middle',
+      'theirs two',
+      'bottom context'
+    ])
+    // Side line indices must point at the reconstructed files.
+    expect(hunks[1].oursStart).toBe(4)
+    expect(hunks[1].theirsStart).toBe(3)
+  })
+
+  it('skips the diff3 base section', () => {
+    const { hunks } = parseHunks(
+      ['<<<<<<< HEAD', 'mine', '||||||| base', 'original', '=======', 'yours', '>>>>>>> other'].join('\n')
+    )
+    expect(hunks[0].ours).toEqual(['mine'])
+    expect(hunks[0].theirs).toEqual(['yours'])
+  })
+
+  it('finds no hunks in a clean file', () => {
+    expect(parseHunks('just\nsome\nlines').hunks).toEqual([])
+  })
+})
+
+describe('conflict output assembly', () => {
+  const { hunks, oursContent } = parseHunks(CONFLICTED)
+
+  it('drops every conflict body when nothing is picked, keeping context', () => {
+    const { text } = assemble(hunks, oursContent, new Set())
+    expect(text.split('\n')).toEqual(['top context', 'middle', 'bottom context'])
+  })
+
+  it('emits ours before theirs when both sides of a chunk are taken', () => {
+    const both = new Set([
+      lineKey(0, 'ours', 0),
+      lineKey(0, 'ours', 1),
+      lineKey(0, 'theirs', 0)
+    ])
+    const { text } = assemble(hunks, oursContent, both)
+    expect(text.split('\n')).toEqual([
+      'top context',
+      'ours one',
+      'ours two',
+      'theirs one',
+      'middle',
+      'bottom context'
+    ])
+  })
+
+  it('tags each output line with the side it came from', () => {
+    const both = new Set([lineKey(0, 'ours', 0), lineKey(0, 'ours', 1), lineKey(0, 'theirs', 0)])
+    const { text, origins } = assemble(hunks, oursContent, both)
+    expect(origins.length).toBe(text.split('\n').length)
+    expect(origins.map((o) => (o ? `${o.side}${o.hunk}` : '.'))).toEqual([
+      '.',
+      'ours0',
+      'ours0',
+      'theirs0',
+      '.',
+      '.'
+    ])
+    // The per-side line index is what "remove this line from the output" unpicks.
+    expect(origins[2]).toEqual({ side: 'ours', hunk: 0, line: 1 })
+    expect(lineKey(origins[2]!.hunk, origins[2]!.side, origins[2]!.line)).toBe(lineKey(0, 'ours', 1))
+  })
+
+  it('reports the output line each hunk landed on', () => {
+    const all = toggleSideEverywhere(hunks, 'ours', new Set(), true)
+    const { text, starts } = assemble(hunks, oursContent, all)
+    const lines = text.split('\n')
+    expect(lines[starts[0]]).toBe('ours one')
+    expect(lines[starts[1]]).toBe('ours three')
+  })
+})
+
+describe('conflict output reconciliation', () => {
+  const { hunks, oursContent } = parseHunks(CONFLICTED)
+  const picked = toggleSideEverywhere(hunks, 'ours', new Set(), true)
+  const base = assemble(hunks, oursContent, picked)
+  const mark = (m: ReturnType<typeof reconcileOutput>[number]): string =>
+    m === 'edited' ? 'E' : m ? (m.side === 'ours' ? 'A' : 'B') : '.'
+
+  it('keeps every attribution while the text is untouched', () => {
+    expect(reconcileOutput(base.text, base.origins, base.text).map(mark)).toEqual(['.', 'A', 'A', '.', 'A', '.'])
+  })
+
+  it('flags an inserted line and keeps the rest attributed', () => {
+    const lines = base.text.split('\n')
+    lines.splice(2, 0, 'typed by hand')
+    expect(reconcileOutput(base.text, base.origins, lines.join('\n')).map(mark)).toEqual([
+      '.',
+      'A',
+      'E',
+      'A',
+      '.',
+      'A',
+      '.'
+    ])
+  })
+
+  it('flags a rewritten line without disturbing its neighbours', () => {
+    const lines = base.text.split('\n')
+    lines[1] = 'ours one, but edited'
+    expect(reconcileOutput(base.text, base.origins, lines.join('\n')).map(mark)).toEqual([
+      '.',
+      'E',
+      'A',
+      '.',
+      'A',
+      '.'
+    ])
+  })
+
+  it('survives edits at both ends and in the middle', () => {
+    const lines = base.text.split('\n')
+    lines[0] = 'new top'
+    lines[3] = 'new middle'
+    lines[lines.length - 1] = 'new bottom'
+    expect(reconcileOutput(base.text, base.origins, lines.join('\n')).map(mark)).toEqual([
+      'E',
+      'A',
+      'A',
+      'E',
+      'A',
+      'E'
+    ])
+  })
+
+  it('treats a wholesale replacement (e.g. an AI proposal) as all edited', () => {
+    expect(reconcileOutput(base.text, base.origins, 'one\ntwo').map(mark)).toEqual(['E', 'E'])
+  })
+
+  it('returns one mark per current line, whatever the edit', () => {
+    for (const text of ['', 'x', base.text + '\n\n\n', base.text.split('\n').slice(0, 2).join('\n')]) {
+      expect(reconcileOutput(base.text, base.origins, text).length).toBe(text.split('\n').length)
+    }
+  })
+})
+
+describe('conflict pick changes keep hand edits', () => {
+  const { hunks, oursContent } = parseHunks(CONFLICTED)
+  const pick = (...keys: string[]): Set<string> => new Set(keys)
+  const A0 = [lineKey(0, 'ours', 0), lineKey(0, 'ours', 1)]
+  const B0 = [lineKey(0, 'theirs', 0)]
+  const A1 = [lineKey(1, 'ours', 0)]
+
+  it('passes the fresh output straight through when nothing was typed', () => {
+    const prev = assemble(hunks, oursContent, pick())
+    const next = assemble(hunks, oursContent, pick(...A0))
+    expect(mergePicks(prev, prev.text, next)).toBe(next.text)
+  })
+
+  it('keeps a typed line when another chunk is picked afterwards', () => {
+    const prev = assemble(hunks, oursContent, pick(...A0))
+    const typed = prev.text.replace('middle', 'middle\ntyped by hand')
+    const next = assemble(hunks, oursContent, pick(...A0, ...A1))
+    expect(mergePicks(prev, typed, next).split('\n')).toEqual([
+      'top context',
+      'ours one',
+      'ours two',
+      'middle',
+      'typed by hand',
+      'ours three', // newly picked, lands in its own slot
+      'bottom context'
+    ])
+  })
+
+  it('keeps typed lines when a side is unpicked', () => {
+    const prev = assemble(hunks, oursContent, pick(...A0))
+    const typed = prev.text.replace('ours two', 'ours two\ntyped by hand')
+    const next = assemble(hunks, oursContent, pick())
+    expect(mergePicks(prev, typed, next).split('\n')).toEqual([
+      'top context',
+      'typed by hand',
+      'middle',
+      'bottom context'
+    ])
+  })
+
+  it('keeps a line typed at the very top', () => {
+    const prev = assemble(hunks, oursContent, pick())
+    const typed = `header\n${prev.text}`
+    const next = assemble(hunks, oursContent, pick(...B0))
+    expect(mergePicks(prev, typed, next).split('\n')).toEqual([
+      'header',
+      'top context',
+      'theirs one',
+      'middle',
+      'bottom context'
+    ])
+  })
+
+  it('does not resurrect a line the user deleted or rewrote', () => {
+    const prev = assemble(hunks, oursContent, pick(...A0))
+    const rewritten = prev.text.replace('ours one', 'ours one, my way')
+    // Picking the other side of the same chunk must not bring 'ours one' back.
+    const next = assemble(hunks, oursContent, pick(...A0, ...B0))
+    const out = mergePicks(prev, rewritten, next).split('\n')
+    expect(out).toContain('ours one, my way')
+    expect(out).not.toContain('ours one')
+    expect(out).toContain('theirs one')
+  })
+})
+
+describe('conflict side selection', () => {
+  const { hunks } = parseHunks(CONFLICTED)
+
+  it('takes a whole side across every chunk, and can drop it again', () => {
+    const ours = toggleSideEverywhere(hunks, 'ours', new Set(), true)
+    expect(sideFullyPicked(hunks, 'ours', ours)).toBe(true)
+    expect(sidePartlyPicked(hunks, 'theirs', ours)).toBe(false)
+    expect(sideFullyPicked(hunks, 'ours', toggleSideEverywhere(hunks, 'ours', ours, false))).toBe(false)
+  })
+
+  it('keeps both sides selectable at once', () => {
+    const both = toggleSideEverywhere(hunks, 'theirs', toggleSideEverywhere(hunks, 'ours', new Set(), true), true)
+    expect(sideFullyPicked(hunks, 'ours', both)).toBe(true)
+    expect(sideFullyPicked(hunks, 'theirs', both)).toBe(true)
+  })
+
+  it('toggles one chunk without touching the other side or the other chunk', () => {
+    const one = toggleSideInHunk(hunks[0], 'ours', new Set())
+    expect(one.has(lineKey(0, 'ours', 0))).toBe(true)
+    expect(one.has(lineKey(0, 'ours', 1))).toBe(true)
+    expect(one.has(lineKey(1, 'ours', 0))).toBe(false)
+    expect(one.has(lineKey(0, 'theirs', 0))).toBe(false)
+    expect(sidePartlyPicked(hunks, 'ours', one)).toBe(true)
+    expect(sideFullyPicked(hunks, 'ours', one)).toBe(false)
+    // Toggling the same chunk again clears it.
+    expect(toggleSideInHunk(hunks[0], 'ours', one).size).toBe(0)
+  })
+
+  it('treats an empty selection as nothing picked', () => {
+    expect(sideFullyPicked(hunks, 'ours', new Set())).toBe(false)
+    expect(sidePartlyPicked(hunks, 'ours', new Set())).toBe(false)
+    expect(sideFullyPicked([], 'ours', new Set())).toBe(false)
+  })
+})

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Sparkles, Loader2, Trash2, AlignLeft, FolderTree, GitMerge, ChevronDown, Users } from 'lucide-react'
+import { Sparkles, Loader2, Trash2, AlignLeft, FolderTree, GitMerge, ChevronDown, CheckCheck, Users } from 'lucide-react'
 import { MYAPPDESK_COAUTHOR, type FileEntry, type CommitStyle } from '../../../shared/types'
 import { gitApi, aiApi, shellApi } from '../infrastructure/api'
 import { repoActions, useRepoStore, type RepoData } from '../stores/repo'
@@ -690,6 +690,18 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
               <GitMerge size={13} />
               <span>{t('composer.conflictedFiles')}</span>
               <span className="sb-count">{active ? `${fConflicted.length}/${conflicted.length}` : conflicted.length}</span>
+              <button
+                className="btn ghost tiny conflict-mark-all"
+                title={t('composer.markAllResolvedHint')}
+                disabled={fConflicted.length === 0}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  // Staging a conflicted file is exactly git's "mark resolved".
+                  void repoActions.stage(path, fConflicted.map((f) => f.path))
+                }}
+              >
+                <CheckCheck size={12} /> {t('composer.markAllResolved')}
+              </button>
             </div>
             <AnimatePresence initial={false}>
               {!layout.composerConflictedCollapsed && (

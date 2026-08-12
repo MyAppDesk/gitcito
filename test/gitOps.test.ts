@@ -25,6 +25,17 @@ describe('merge → conflict → abort', () => {
     expect(versions.ours).not.toBeNull()
     expect(versions.theirs).not.toBeNull()
 
+    // "Merging feature into main" + a commit behind each side of the editor.
+    const ctx = await gitService.conflictContext(R)
+    expect(ctx).not.toBeNull()
+    expect(ctx!.kind).toBe('merge')
+    expect(ctx!.source).toBe('feature')
+    expect(ctx!.target).toBe('main')
+    expect(ctx!.ours?.branch).toBe('main')
+    expect(ctx!.ours?.sha).toMatch(/^[0-9a-f]{7,}$/)
+    expect(ctx!.theirs?.branch).toBe('feature')
+    expect(ctx!.theirs?.subject).toContain('feature')
+
     await gitService.conflictOpAbort(R, 'merge')
     expect(await gitService.mergeState(R)).toBeNull()
     const after = await gitService.status(R)
@@ -68,6 +79,13 @@ describe('rebase → conflict → abort', () => {
 
     await expect(gitService.rebase(R, 'main')).rejects.toThrow()
     expect(await gitService.mergeState(R)).toBe('rebase')
+
+    // During a rebase HEAD sits on the target, so ours=main / theirs=replayed commit.
+    const ctx = await gitService.conflictContext(R)
+    expect(ctx!.kind).toBe('rebase')
+    expect(ctx!.source).toBe('feature')
+    expect(ctx!.target).toBe('main')
+    expect(ctx!.theirs?.sha).toMatch(/^[0-9a-f]{7,}$/)
 
     await gitService.rebaseAbort(R)
     expect(await gitService.mergeState(R)).toBeNull()

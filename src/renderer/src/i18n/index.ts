@@ -131,6 +131,8 @@ const en = {
   'hover.loading': 'Reading the code…',
   'hover.line': 'line',
   'hover.seeMore': 'See more',
+  'hover.pin': 'Keep this open',
+  'hover.unpin': 'Unpin',
   'preview.empty': 'Nothing to preview.',
   'preview.unsupported': 'No preview available for this file type.',
 
@@ -1537,6 +1539,8 @@ const es: Dict = {
   'hover.loading': 'Leyendo el código…',
   'hover.line': 'línea',
   'hover.seeMore': 'Ver más',
+  'hover.pin': 'Mantener abierto',
+  'hover.unpin': 'Soltar',
   'preview.empty': 'Nada que previsualizar.',
   'preview.unsupported': 'No hay vista previa para este tipo de archivo.',
 

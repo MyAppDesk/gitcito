@@ -8627,8 +8627,13 @@ input[type='range']:focus-visible {
 .hover-armed .code-text, .hover-armed .diff-text { cursor: help; }
 
 /* Hover-to-explain card, positioned under the hovered token */
-.hover-explain { position: fixed; z-index: 60; width: 340px; max-height: 300px; overflow-y: auto; background: var(--bg-2); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35); padding: 9px 11px; font-size: 12.5px; line-height: 1.5; color: var(--text-0); }
+.hover-explain { position: fixed; z-index: 60; width: 340px; max-height: 300px; overflow-y: auto; user-select: text; background: var(--bg-2); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35); padding: 9px 11px; font-size: 12.5px; line-height: 1.5; color: var(--text-0); }
+.hover-explain.pinned { max-height: 460px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45); border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); }
 .hover-explain-head { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; color: var(--accent); }
+.hover-explain-head .icon-btn.tiny { padding: 2px; line-height: 0; color: var(--text-2); }
+.hover-explain-head .icon-btn.tiny:hover { color: var(--text-0); }
+.hover-explain-detail { margin-top: 8px; border-top: 1px solid var(--border-soft, var(--border)); padding-top: 8px; font-size: 12px; line-height: 1.55; }
+.hover-explain-detail .md-preview { font-size: 12px; }
 .hover-explain-head code { font-size: 12px; color: var(--text-0); }
 .hover-explain-loc { margin-left: auto; font-size: 10.5px; color: var(--text-2); }
 .hover-explain-loading { display: flex; align-items: center; gap: 6px; color: var(--text-1); }

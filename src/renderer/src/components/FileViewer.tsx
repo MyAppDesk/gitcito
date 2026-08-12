@@ -251,30 +251,6 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
     }
   }
 
-  // Explain a hovered token in a fuller form, in the side panel: a wider slice
-  // of the file than the hover card's window, centred on the token's line.
-  const explainAround = async (token: string, line: number): Promise<void> => {
-    if (!content) return
-    const lines = content.split('\n')
-    const from = Math.max(0, line - 1 - 120)
-    const snippet = lines.slice(from, line + 120).join('\n')
-    setExplaining(true)
-    setExplain(null)
-    try {
-      const text = await aiApi.explainCode(
-        `Focus on "${token}" (line ${line}).\n\n${snippet}`,
-        lang,
-        useSettingsStore.getState().activeProfile().ai
-      )
-      setExplain(text || t('explain.empty'))
-    } catch (err) {
-      setExplain(null)
-      toast('error', err instanceof Error ? err.message : String(err))
-    } finally {
-      setExplaining(false)
-    }
-  }
-
   const runExplain = async (): Promise<void> => {
     if (!content) return
     // Prefer a highlighted selection; fall back to the whole file/diff.
@@ -310,8 +286,7 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
       const no = el.closest('.code-line, .blame-line')?.querySelector('.code-no')?.textContent
       const n = Number(no)
       return Number.isInteger(n) && n > 0 ? n : null
-    },
-    onSeeMore: (token, line) => void explainAround(token, line)
+    }
   })
 
   // Drop a stale explanation when the file/source/mode changes.

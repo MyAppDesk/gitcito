@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Loader2, Sparkles } from 'lucide-react'
+import { Loader2, Pin, PinOff, Sparkles, X } from 'lucide-react'
 import { aiApi } from '../infrastructure/api'
 import { useSettingsStore } from '../stores/settings'
 import { identifierAt, isExplainableToken } from '../lib/hoverToken'
 import { useT } from '../i18n'
+import { renderMarkdown } from '../preview/markdown'
 import type { HoverExplainResult, HoverModifier, NumberedLine } from '../../../shared/types'
 
 // Hold the modifier, point at an identifier, get one sentence about it. The
@@ -27,6 +28,16 @@ interface CardState {
   result: HoverExplainResult | null
   error: string
 }
+
+/** The long-form explanation, once "See more" has been asked for. */
+interface DetailState {
+  loading: boolean
+  markdown: string
+  error: string
+}
+
+/** Lines either side of the token sent when the long form is requested. */
+const DETAIL_RADIUS = 120
 
 interface Modifiers {
   shiftKey: boolean
@@ -95,8 +106,6 @@ export function useHoverExplain(opts: {
   getLines: () => NumberedLine[]
   /** The file line number for the row an element sits in. */
   lineOf: (el: HTMLElement) => number | null
-  /** Opens the long-form explanation. Omit where there is nowhere to show it. */
-  onSeeMore?: (token: string, line: number) => void
 }): {
   hoverProps: { onMouseMove: (e: React.MouseEvent) => void; onMouseLeave: () => void }
   /** True while the modifier is down — for a cursor affordance on the rows. */
@@ -106,6 +115,8 @@ export function useHoverExplain(opts: {
   const t = useT()
   const [card, setCard] = useState<CardState | null>(null)
   const [armed, setArmed] = useState(opts.modifier === 'none')
+  const [pinned, setPinned] = useState(false)
+  const [detail, setDetail] = useState<DetailState | null>(null)
   const dwellTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const lastPoint = useRef<{ x: number; y: number } | null>(null)
@@ -115,6 +126,8 @@ export function useHoverExplain(opts: {
   // Only the newest request may write to the card; hovering fast leaves earlier
   // answers in flight, and they are for a token nobody is pointing at.
   const requestSeq = useRef(0)
+  // Readable from the pointer handlers without making them depend on state.
+  const pinnedRef = useRef(false)
   // Read inside listeners without re-subscribing them on every render.
   const state = useRef(opts)
   state.current = opts
@@ -130,7 +143,20 @@ export function useHoverExplain(opts: {
     clearTimers()
     requestSeq.current++
     shown.current = null
+    pinnedRef.current = false
+    setPinned(false)
+    setDetail(null)
     setCard(null)
+  }, [])
+
+  /** A pinned card stays put: it is being read, or copied from. */
+  const closeUnlessPinned = useCallback((): void => {
+    if (!pinnedRef.current) close()
+  }, [close])
+
+  const setPinnedState = useCallback((value: boolean): void => {
+    pinnedRef.current = value
+    setPinned(value)
   }, [])
 
   const ask = useCallback(async (target: Target): Promise<void> => {
@@ -138,6 +164,7 @@ export function useHoverExplain(opts: {
     if (lines.length === 0) return
     const seq = ++requestSeq.current
     shown.current = target
+    setDetail(null)
     setCard({ target, status: 'loading', result: null, error: '' })
     try {
       const result = await aiApi.hoverExplain(
@@ -151,6 +178,29 @@ export function useHoverExplain(opts: {
       setCard({ target, status: 'error', result: null, error: err instanceof Error ? err.message : String(err) })
     }
   }, [])
+
+  /**
+   * The long form, shown inside the card. Every view that can hover gets it —
+   * the diff has no side panel to spill into.
+   */
+  const seeMore = useCallback(async (target: Target): Promise<void> => {
+    const lines = state.current.getLines()
+    if (lines.length === 0) return
+    setPinnedState(true)
+    setDetail({ loading: true, markdown: '', error: '' })
+    const nearby = lines.filter((l) => Math.abs(l.no - target.line) <= DETAIL_RADIUS)
+    const snippet = nearby.map((l) => l.text).join('\n')
+    try {
+      const text = await aiApi.explainCode(
+        `Focus on "${target.token}" (line ${target.line}).\n\n${snippet}`,
+        state.current.lang,
+        useSettingsStore.getState().activeProfile().ai
+      )
+      setDetail({ loading: false, markdown: text, error: '' })
+    } catch (err) {
+      setDetail({ loading: false, markdown: '', error: err instanceof Error ? err.message : String(err) })
+    }
+  }, [setPinnedState])
 
   /** Resolves the identifier under a point, or null if there isn't one. */
   const probe = useCallback((x: number, y: number): Target | null => {
@@ -178,7 +228,7 @@ export function useHoverExplain(opts: {
 
   const consider = useCallback(
     (x: number, y: number, held: boolean): void => {
-      if (!state.current.enabled) return
+      if (!state.current.enabled || pinnedRef.current) return
       if (!held) {
         clearTimers()
         return
@@ -217,7 +267,7 @@ export function useHoverExplain(opts: {
     if (dwellTimer.current) clearTimeout(dwellTimer.current)
     dwellTimer.current = null
     // Grace period so the pointer can travel into the card itself.
-    closeTimer.current = setTimeout(close, CLOSE_MS)
+    closeTimer.current = setTimeout(closeUnlessPinned, CLOSE_MS)
   }
 
   // Pressing the modifier without moving the mouse should still work.
@@ -232,7 +282,7 @@ export function useHoverExplain(opts: {
     const onUp = (e: KeyboardEvent): void => {
       if (e.key !== name) return
       setArmed(false)
-      close()
+      closeUnlessPinned()
     }
     window.addEventListener('keydown', onDown)
     window.addEventListener('keyup', onUp)
@@ -240,7 +290,7 @@ export function useHoverExplain(opts: {
       window.removeEventListener('keydown', onDown)
       window.removeEventListener('keyup', onUp)
     }
-  }, [opts.modifier, consider, close])
+  }, [opts.modifier, consider, closeUnlessPinned])
 
   // A new file (or turning the feature off) invalidates whatever is showing.
   useEffect(() => close(), [opts.file, opts.enabled, close])
@@ -258,7 +308,7 @@ export function useHoverExplain(opts: {
     card &&
     createPortal(
       <div
-        className="hover-explain"
+        className={`hover-explain ${pinned ? 'pinned' : ''}`}
         style={{
           left: Math.max(8, Math.min(card.target.x, window.innerWidth - CARD_WIDTH - 8)),
           top: Math.min(card.target.y + 6, window.innerHeight - 80)
@@ -266,7 +316,7 @@ export function useHoverExplain(opts: {
         onMouseEnter={() => {
           if (closeTimer.current) clearTimeout(closeTimer.current)
         }}
-        onMouseLeave={close}
+        onMouseLeave={closeUnlessPinned}
       >
         <div className="hover-explain-head">
           <Sparkles size={12} />
@@ -274,6 +324,16 @@ export function useHoverExplain(opts: {
           <span className="hover-explain-loc">
             {opts.file ? `${opts.file.split('/').pop()}:${card.target.line}` : `${t('hover.line')} ${card.target.line}`}
           </span>
+          <button
+            className="icon-btn tiny"
+            title={pinned ? t('hover.unpin') : t('hover.pin')}
+            onClick={() => setPinnedState(!pinned)}
+          >
+            {pinned ? <PinOff size={12} /> : <Pin size={12} />}
+          </button>
+          <button className="icon-btn tiny" title={t('common.close')} onClick={close}>
+            <X size={12} />
+          </button>
         </div>
 
         {card.status === 'loading' && (
@@ -303,15 +363,21 @@ export function useHoverExplain(opts: {
                 ))}
               </div>
             )}
-            {opts.onSeeMore && (
+            {detail ? (
+              <div className="hover-explain-detail">
+                {detail.loading && (
+                  <div className="hover-explain-loading">
+                    <Loader2 size={13} className="spin" /> {t('hover.loading')}
+                  </div>
+                )}
+                {detail.error && <div className="hover-explain-error">{detail.error}</div>}
+                {detail.markdown && (
+                  <div className="md-preview" dangerouslySetInnerHTML={{ __html: renderMarkdown(detail.markdown) }} />
+                )}
+              </div>
+            ) : (
               <div className="hover-explain-actions">
-                <button
-                  className="btn ghost tiny"
-                  onClick={() => {
-                    opts.onSeeMore?.(card.target.token, card.target.line)
-                    close()
-                  }}
-                >
+                <button className="btn ghost tiny" onClick={() => void seeMore(card.target)}>
                   {t('hover.seeMore')}
                 </button>
               </div>

@@ -16,6 +16,14 @@ import {
   validateAskPlan,
   parseLooseJson
 } from '../src/main/grounding'
+import {
+  hasSettingsSecrets,
+  stripSettingsSecrets,
+  extractSecrets,
+  applySecrets,
+  pruneSecrets
+} from '../src/shared/secrets'
+import { defaultSettings, type AppSettings, type Profile } from '../src/shared/types'
 
 // Minimal KeyboardEvent stand-in for the pure shortcut helpers.
 const ev = (key: string, mods: { meta?: boolean; ctrl?: boolean; shift?: boolean; alt?: boolean } = {}): KeyboardEvent =>
@@ -599,5 +607,75 @@ describe('AI grounding — loose JSON parsing', () => {
 
   it('returns null instead of throwing on prose', () => {
     expect(parseLooseJson('Sure! Here is the answer.')).toBeNull()
+  })
+})
+
+describe('profile secrets — keeping credentials out of settings.json', () => {
+  const profile = (id: string, over: Record<string, unknown> = {}): Profile => ({
+    id,
+    name: id,
+    gitName: 'Dev',
+    gitEmail: 'dev@example.com',
+    githubToken: '',
+    azureToken: '',
+    gitlabToken: '',
+    bitbucketToken: '',
+    ai: { ...defaultSettings().profiles[0].ai },
+    ...over
+  })
+  const withProfiles = (...profiles: Profile[]): AppSettings => ({ ...defaultSettings(), profiles })
+
+  const loaded = withProfiles(
+    profile('p1', { githubToken: 'ghp_secret', ai: { ...defaultSettings().profiles[0].ai, apiKey: 'sk-secret' } }),
+    profile('p2', { gitlabToken: 'glpat_secret' })
+  )
+
+  it('detects credentials sitting in a settings object', () => {
+    expect(hasSettingsSecrets(loaded)).toBe(true)
+    expect(hasSettingsSecrets(stripSettingsSecrets(loaded))).toBe(false)
+    expect(hasSettingsSecrets(defaultSettings())).toBe(false)
+  })
+
+  it('strips every credential while leaving the rest of the profile intact', () => {
+    const stripped = stripSettingsSecrets(loaded)
+    expect(stripped.profiles[0].githubToken).toBe('')
+    expect(stripped.profiles[0].ai.apiKey).toBe('')
+    expect(stripped.profiles[1].gitlabToken).toBe('')
+    expect(stripped.profiles[0].gitEmail).toBe('dev@example.com')
+    expect(stripped.profiles[0].ai.provider).toBe(loaded.profiles[0].ai.provider)
+  })
+
+  it('extracts only non-empty credentials, keyed by profile', () => {
+    expect(extractSecrets(loaded)).toEqual({
+      p1: { githubToken: 'ghp_secret', aiApiKey: 'sk-secret' },
+      p2: { gitlabToken: 'glpat_secret' }
+    })
+    expect(extractSecrets(stripSettingsSecrets(loaded))).toEqual({})
+  })
+
+  it('round-trips: strip to disk, re-apply from the store, nothing lost', () => {
+    const onDisk = stripSettingsSecrets(loaded)
+    const restored = applySecrets(onDisk, extractSecrets(loaded))
+    expect(restored).toEqual(loaded)
+  })
+
+  it('leaves a profile alone when the store has nothing for it', () => {
+    const restored = applySecrets(stripSettingsSecrets(loaded), { p1: { githubToken: 'ghp_secret' } })
+    expect(restored.profiles[0].githubToken).toBe('ghp_secret')
+    expect(restored.profiles[0].ai.apiKey).toBe('')
+    expect(restored.profiles[1].gitlabToken).toBe('')
+  })
+
+  it('drops stored secrets for profiles that no longer exist', () => {
+    const store = extractSecrets(loaded)
+    expect(pruneSecrets(store, ['p1'])).toEqual({ p1: { githubToken: 'ghp_secret', aiApiKey: 'sk-secret' } })
+    expect(pruneSecrets(store, [])).toEqual({})
+  })
+
+  it('migration keeps plaintext values as the winner over an older store', () => {
+    const older = { p1: { githubToken: 'ghp_stale' } }
+    const merged = pruneSecrets({ ...older, ...extractSecrets(loaded) }, ['p1', 'p2'])
+    expect(merged.p1.githubToken).toBe('ghp_secret')
+    expect(merged.p2.gitlabToken).toBe('glpat_secret')
   })
 })

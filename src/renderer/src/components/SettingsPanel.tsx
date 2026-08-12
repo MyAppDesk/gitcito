@@ -49,6 +49,7 @@ import { Avatar } from './Avatar'
 import { useUpdatesStore, hasPendingUpdate } from '../stores/updates'
 import { gitApi, aiApi, settingsApi, analyticsApi, logApi, infoApi, vaultApi, shellApi, hostingApi } from '../infrastructure/api'
 import { AI_PROVIDERS, emptyAnalytics, defaultGraphStyle, type AIProvider, type Analytics, type AIUsageStat, type ActivityEvent, type RepoStats, type AppSettings, type BranchNamingStyle, type CommitStyle, type ConflictStyle, type ExplainStyle, type Profile, type SigningConfig, type SettingsBundle, type GraphStyle, type GraphPalette, type GraphEdgeStyle, type GraphDensity, type GraphLineWidth, type GraphNodeStyle, type GraphTopology, type GraphCommit, type ConnectedAccount } from '../../../shared/types'
+import { hasSettingsSecrets, stripSettingsSecrets } from '../../../shared/secrets'
 import { allGraphPalettes, findGraphPalette, colorForPalette, edgePath, spurPath, DENSITY_ROW_H, LINE_WIDTH_PX, GRAPH_PALETTES } from '../graph/style'
 import { layoutGraph } from '../graph/layout'
 import type {
@@ -1759,26 +1760,6 @@ function ThemeDialog({
   )
 }
 
-function detectSettingsSecrets(s: AppSettings): boolean {
-  return (s.profiles ?? []).some(
-    (p) => !!p.githubToken || !!p.azureToken || !!p.gitlabToken || !!p.bitbucketToken || !!p.ai?.apiKey
-  )
-}
-
-function stripSettingsSecrets(s: AppSettings): AppSettings {
-  return {
-    ...s,
-    profiles: s.profiles.map((p) => ({
-      ...p,
-      githubToken: '',
-      azureToken: '',
-      gitlabToken: '',
-      bitbucketToken: '',
-      ai: p.ai ? { ...p.ai, apiKey: '' } : p.ai
-    }))
-  }
-}
-
 function DataManagementSection(): React.JSX.Element {
   const settings = useSettingsStore((s) => s.settings)
   const update = useSettingsStore((s) => s.update)
@@ -1820,7 +1801,7 @@ function DataManagementSection(): React.JSX.Element {
       const bundle = isBundle ? (result as SettingsBundle) : null
       const incomingSettings = bundle ? bundle.settings : (result as AppSettings)
 
-      if (detectSettingsSecrets(incomingSettings)) {
+      if (hasSettingsSecrets(incomingSettings)) {
         toast('info', 'Imported file contains tokens — they have been kept. Review in Integrations.')
       }
       if (incomingSettings) update((s) => ({ ...s, ...incomingSettings }))

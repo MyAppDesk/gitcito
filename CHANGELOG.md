@@ -1,5 +1,12 @@
 
 
+## [2.10.0](https://github.com/MyAppDesk/gitcito/compare/v2.9.0...v2.10.0) (2026-08-12)
+
+
+### Features
+
+* add folder staging and unstaging functionality ([c831f93](https://github.com/MyAppDesk/gitcito/commit/c831f936bc034bf6e0d2c608d2569007b08b1800))
+
 ## [2.9.0](https://github.com/MyAppDesk/gitcito/compare/v2.8.0...v2.9.0) (2026-08-11)
 
 

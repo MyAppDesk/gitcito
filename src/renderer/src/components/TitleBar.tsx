@@ -21,9 +21,9 @@ import { folderOpenMenuItems } from '../lib/openWith'
 
 type TabStatus = 'conflict' | 'wip' | null
 
-// Temporary tracing for the folder drag & drop. Flip to false (or delete) once
-// the behaviour is confirmed on every machine.
-const DND_DEBUG = true
+// Tracing for the folder drag & drop, off by default: it logs on every dragover,
+// which is unusable noise outside of debugging that specific behaviour.
+const DND_DEBUG = false
 const dnd = (...args: unknown[]): void => {
   if (DND_DEBUG) console.log('[dnd]', ...args)
 }

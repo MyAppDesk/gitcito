@@ -78,6 +78,21 @@ const api = {
       ipcRenderer.invoke('ai:planActions', prompt, status, cfg)
   },
 
+  wiki: {
+    facts: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('wiki:facts', repoPath),
+    imports: (repoPath: string, depth: number): Promise<unknown> =>
+      ipcRenderer.invoke('wiki:imports', repoPath, depth),
+    get: (repoPath: string, model: string): Promise<unknown> => ipcRenderer.invoke('wiki:get', repoPath, model),
+    generate: (repoPath: string, cfg: unknown): Promise<unknown> =>
+      ipcRenderer.invoke('wiki:generate', repoPath, cfg),
+    clear: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('wiki:clear', repoPath),
+    onProgress: (cb: (payload: unknown) => void): (() => void) => {
+      const listener = (_e: unknown, payload: unknown): void => cb(payload)
+      ipcRenderer.on('wiki:progress', listener)
+      return () => ipcRenderer.removeListener('wiki:progress', listener)
+    }
+  },
+
   analytics: {
     get: (): Promise<unknown> => ipcRenderer.invoke('analytics:get'),
     clear: (): Promise<unknown> => ipcRenderer.invoke('analytics:clear'),

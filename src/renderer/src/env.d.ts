@@ -72,6 +72,14 @@ interface PreloadApi {
     prDescription(commits: string, diff: string, cfg: unknown): Promise<unknown>
     planActions(prompt: string, status: unknown, cfg: unknown): Promise<unknown>
   }
+  wiki: {
+    facts(repoPath: string): Promise<unknown>
+    imports(repoPath: string, depth: number): Promise<unknown>
+    get(repoPath: string, model: string): Promise<unknown>
+    generate(repoPath: string, cfg: unknown): Promise<unknown>
+    clear(repoPath: string): Promise<unknown>
+    onProgress(cb: (payload: unknown) => void): () => void
+  }
   analytics: {
     get(): Promise<unknown>
     clear(): Promise<unknown>

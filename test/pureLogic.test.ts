@@ -34,6 +34,40 @@ import {
   validateTheme
 } from '../src/main/aiSchemas'
 import {
+  validateWikiPlan,
+  validateWikiPage,
+  renderWikiPage,
+  pageSources,
+  wikiFreshness,
+  orderPlan,
+  cleanPageTitle,
+  validateTechStack,
+  WIKI_PROMPT_VERSION
+} from '../src/main/wikiSchemas'
+import { isReadableSource, rankPlanFiles, buildPagePack, serializePack } from '../src/main/wikiPack'
+import {
+  languageOf,
+  languageBreakdown,
+  topLanguages,
+  findManifests,
+  parseManifest,
+  isNoiseDependency,
+  meaningfulDependencies,
+  detectFrameworks
+} from '../src/shared/repoFacts'
+import { layoutPageGraph, layoutArcGraph, layoutLayeredGraph } from '../src/renderer/src/lib/wikiGraph'
+import {
+  extractImports,
+  resolveImport,
+  buildImportGraph,
+  entryPoints,
+  foundations,
+  pickDepth,
+  commonPrefix,
+  shortLabel,
+  layerNodes
+} from '../src/shared/importGraph'
+import {
   hasSettingsSecrets,
   stripSettingsSecrets,
   extractSecrets,
@@ -1006,5 +1040,639 @@ describe('AI contracts — suggested artifacts', () => {
 
   it('treats no suggestions as valid', () => {
     expect(validateArtifactSuggestions({ suggestions: [] }, already)).toEqual([])
+  })
+})
+
+describe('repo wiki — the plan', () => {
+  const known = new Set(['README.md', 'src/app.ts', 'src/db.ts', 'src/ui/panel.tsx'])
+  const page = (over: Record<string, unknown> = {}): Record<string, unknown> => ({
+    slug: 'data-layer',
+    title: 'Data layer',
+    archetype: 'module',
+    scopePaths: ['src/db.ts'],
+    ...over
+  })
+  const overview = page({ slug: 'overview', title: 'Overview', archetype: 'overview', scopePaths: ['README.md'] })
+
+  it('accepts a plan whose pages all cover real files', () => {
+    expect(validateWikiPlan({ pages: [overview, page()] }, known)).toEqual([])
+  })
+
+  it('rejects a page scoped to a file that is not in the repo', () => {
+    const errors = validateWikiPlan({ pages: [overview, page({ scopePaths: ['src/ghost.ts'] })] }, known)
+    expect(errors[0]).toContain('src/ghost.ts')
+  })
+
+  it('requires exactly one overview page', () => {
+    expect(validateWikiPlan({ pages: [page()] }, known)[0]).toContain('overview')
+    expect(validateWikiPlan({ pages: [overview, page({ slug: 'o2', archetype: 'overview' })] }, known)[0]).toContain('found 2')
+  })
+
+  it('rejects duplicate or non-kebab slugs', () => {
+    expect(validateWikiPlan({ pages: [overview, page(), page()] }, known).join(' ')).toContain('used twice')
+    expect(validateWikiPlan({ pages: [overview, page({ slug: 'Data Layer' })] }, known)[0]).toContain('kebab-case')
+  })
+
+  it('requires non-overview pages to name at least one file', () => {
+    expect(validateWikiPlan({ pages: [overview, page({ scopePaths: [] })] }, known)[0]).toContain('at least one file')
+  })
+
+  it('caps the number of pages', () => {
+    const many = Array.from({ length: 20 }, (_, i) => page({ slug: `page-${i}` }))
+    expect(validateWikiPlan({ pages: [overview, ...many] }, known)[0]).toContain('at most 12')
+  })
+
+  it('puts the overview first regardless of the order the model used', () => {
+    const plan = [
+      { slug: 'ui', title: 'UI', archetype: 'module' as const, scopePaths: [] },
+      { slug: 'overview', title: 'Overview', archetype: 'overview' as const, scopePaths: [] },
+      { slug: 'data', title: 'Data', archetype: 'module' as const, scopePaths: [] }
+    ]
+    expect(orderPlan(plan).map((p) => p.slug)).toEqual(['overview', 'data', 'ui'])
+  })
+})
+
+describe('repo wiki — one page', () => {
+  const allowed = { paths: new Set(['src/db.ts', 'README.md']), slugs: new Set(['overview', 'ui']) }
+  const good = {
+    summary: 'How data is read.',
+    sections: [{ heading: 'Queries', claims: [{ text: 'Queries go through a pool.', sourcePaths: ['src/db.ts'] }] }],
+    related: ['overview']
+  }
+
+  it('accepts a page citing only the files it was given', () => {
+    expect(validateWikiPage(good, allowed)).toEqual([])
+  })
+
+  it('rejects a citation of a file that was not in the pack', () => {
+    const bad = { ...good, sections: [{ heading: 'x', claims: [{ text: 'y', sourcePaths: ['src/secret.ts'] }] }] }
+    expect(validateWikiPage(bad, allowed)[0]).toContain('src/secret.ts')
+  })
+
+  it('rejects an uncited claim rather than letting it through', () => {
+    const bad = { ...good, sections: [{ heading: 'x', claims: [{ text: 'trust me', sourcePaths: [] }] }] }
+    expect(validateWikiPage(bad, allowed)[0]).toContain('at least one file')
+  })
+
+  it('rejects links to pages that do not exist', () => {
+    expect(validateWikiPage({ ...good, related: ['ghost'] }, allowed)[0]).toContain('ghost')
+  })
+
+  it('caps sections and claims', () => {
+    const sections = Array.from({ length: 9 }, () => ({ heading: 'h', claims: [] }))
+    expect(validateWikiPage({ ...good, sections }, allowed)[0]).toContain('at most 6')
+  })
+})
+
+describe('repo wiki — rendering and freshness', () => {
+  const page = {
+    slug: 'data',
+    title: 'Data layer',
+    archetype: 'module' as const,
+    summary: 'How data is read.',
+    sections: [
+      {
+        heading: 'Queries',
+        claims: [
+          { text: 'Queries go through a pool.', sourcePaths: ['src/db.ts'] },
+          { text: 'Search is separate.', sourcePaths: ['src/db.ts', 'src/search.ts'] }
+        ]
+      }
+    ],
+    related: [],
+    markdown: ''
+  }
+
+  it('writes the markdown itself, citing the paths the model named', () => {
+    const md = renderWikiPage(page)
+    expect(md).toContain('# Data layer')
+    expect(md).toContain('## Queries')
+    expect(md).toContain('- Queries go through a pool. — `src/db.ts`')
+    expect(md).toContain('`src/db.ts`, `src/search.ts`')
+  })
+
+  it('lists every cited file once, sorted', () => {
+    expect(pageSources(page)).toEqual(['src/db.ts', 'src/search.ts'])
+  })
+
+  it('is current only at the commit it was generated from', () => {
+    const stored = { headSha: 'abc', promptVersion: WIKI_PROMPT_VERSION, model: 'gpt-4o-mini' }
+    expect(wikiFreshness(stored, { headSha: 'abc', model: 'gpt-4o-mini' })).toBe('current')
+    expect(wikiFreshness(stored, { headSha: 'def', model: 'gpt-4o-mini' })).toBe('behind')
+  })
+
+  it('is outdated when the prompt version or the model changed', () => {
+    expect(wikiFreshness({ headSha: 'abc', promptVersion: 'wiki.v0', model: 'm' }, { headSha: 'abc', model: 'm' })).toBe('outdated')
+    expect(wikiFreshness({ headSha: 'abc', promptVersion: WIKI_PROMPT_VERSION, model: 'old' }, { headSha: 'abc', model: 'new' })).toBe('outdated')
+    expect(wikiFreshness(null, { headSha: 'abc', model: 'm' })).toBe('outdated')
+  })
+})
+
+describe('repo wiki — choosing what to read', () => {
+  it('skips build output, binaries and lock files', () => {
+    for (const path of [
+      'node_modules/react/index.js', 'dist/bundle.js', 'src/assets/logo.png',
+      'package-lock.json', 'target/debug/app', 'a/vendor/lib.rb', 'app.min.js'
+    ]) {
+      expect(isReadableSource(path), path).toBe(false)
+    }
+  })
+
+  it('keeps ordinary source and docs', () => {
+    for (const path of ['src/app.ts', 'README.md', 'lib/db/pool.rb', 'Dockerfile']) {
+      expect(isReadableSource(path), path).toBe(true)
+    }
+  })
+
+  it('puts root docs and manifests first, then churn hotspots', () => {
+    const paths = ['src/z.ts', 'package.json', 'src/hot.ts', 'README.md', 'src/a/b/c/deep.ts']
+    expect(rankPlanFiles(paths, ['src/hot.ts'])).toEqual([
+      'README.md',
+      'package.json',
+      'src/hot.ts',
+      'src/z.ts',
+      'src/a/b/c/deep.ts'
+    ])
+  })
+
+  it('drops unreadable files and honours the limit', () => {
+    const paths = ['README.md', 'dist/x.js', 'src/a.ts', 'src/b.ts']
+    expect(rankPlanFiles(paths, [], 2)).toEqual(['README.md', 'src/a.ts'])
+  })
+})
+
+describe('repo wiki — packing a page', () => {
+  const file = (path: string, size: number): { path: string; content: string } => ({
+    path,
+    content: 'x'.repeat(size)
+  })
+
+  it('clips a long file rather than dropping it', () => {
+    const pack = buildPagePack([file('a.ts', 500)], { maxFileBytes: 100 })
+    expect(pack.files[0].content).toContain('…(truncated)')
+    expect(pack.files[0].content.length).toBeLessThan(200)
+  })
+
+  it('drops whole files once the budget is spent, and counts them', () => {
+    const pack = buildPagePack([file('a.ts', 80), file('b.ts', 80), file('c.ts', 80)], { maxBytes: 170 })
+    expect(pack.files.map((f) => f.path)).toEqual(['a.ts', 'b.ts'])
+    expect(pack.dropped).toBe(1)
+  })
+
+  it('always keeps the first file even when it alone busts the budget', () => {
+    const pack = buildPagePack([file('big.ts', 500)], { maxBytes: 10, maxFileBytes: 500 })
+    expect(pack.files).toHaveLength(1)
+  })
+
+  it('skips empty files — an unreadable file is not evidence', () => {
+    const pack = buildPagePack([{ path: 'a.ts', content: '   ' }, file('b.ts', 10)])
+    expect(pack.files.map((f) => f.path)).toEqual(['b.ts'])
+    expect(pack.dropped).toBe(1)
+  })
+
+  it('labels each file so the model can cite it, and admits what was left out', () => {
+    const text = serializePack(buildPagePack([file('a.ts', 10), file('b.ts', 10)], { maxBytes: 15 }))
+    expect(text).toContain('--- FILE: a.ts ---')
+    expect(text).toContain('1 further file(s) were not included')
+  })
+})
+
+describe('repo wiki — page titles', () => {
+  it('drops the archetype word the icon already shows', () => {
+    expect(cleanPageTitle('Database Module')).toBe('Database')
+    expect(cleanPageTitle('Release process')).toBe('Release process')
+    expect(cleanPageTitle('Commit graph  ')).toBe('Commit graph')
+  })
+
+  it('keeps a title that is only the archetype word', () => {
+    expect(cleanPageTitle('Overview')).toBe('Overview')
+    expect(cleanPageTitle('Reference')).toBe('Reference')
+  })
+})
+
+describe('repo facts — languages', () => {
+  it('maps files to languages by extension and by name', () => {
+    expect(languageOf('src/app.tsx')).toBe('TypeScript')
+    expect(languageOf('lib/thing.rb')).toBe('Ruby')
+    expect(languageOf('Dockerfile')).toBe('Docker')
+    expect(languageOf('deploy/Makefile')).toBe('Make')
+    expect(languageOf('LICENSE')).toBeNull()
+  })
+
+  it('weighs languages by bytes, biggest first', () => {
+    const stats = languageBreakdown([
+      { path: 'a.ts', size: 700 },
+      { path: 'b.ts', size: 300 },
+      { path: 'c.py', size: 250 }
+    ])
+    expect(stats.map((s) => s.language)).toEqual(['TypeScript', 'Python'])
+    expect(stats[0]).toMatchObject({ bytes: 1000, files: 2 })
+    expect(stats[0].share).toBeCloseTo(0.8)
+    expect(stats[1].share).toBeCloseTo(0.2)
+  })
+
+  it('leaves config and docs out so fixtures do not read as the language', () => {
+    const files = [{ path: 'a.ts', size: 100 }, { path: 'data.json', size: 9000 }, { path: 'README.md', size: 500 }]
+    expect(languageBreakdown(files).map((s) => s.language)).toEqual(['TypeScript'])
+    expect(languageBreakdown(files, { includeSupporting: true }).map((s) => s.language)).toEqual([
+      'JSON',
+      'Markdown',
+      'TypeScript'
+    ])
+  })
+
+  it('rolls the tail into one Other slice', () => {
+    const stats = languageBreakdown(
+      ['ts', 'py', 'rb', 'go', 'rs', 'java', 'php', 'lua', 'zig', 'dart'].map((ext, i) => ({
+        path: `f.${ext}`,
+        size: 100 - i
+      }))
+    )
+    const top = topLanguages(stats, 3)
+    expect(top).toHaveLength(4)
+    expect(top[3].language).toBe('Other')
+    expect(top[3].files).toBe(7)
+  })
+
+  it('handles a repo with nothing countable', () => {
+    expect(languageBreakdown([])).toEqual([])
+    expect(topLanguages([], 5)).toEqual([])
+  })
+})
+
+describe('repo facts — manifests', () => {
+  it('finds manifests shallowest first', () => {
+    expect(findManifests(['src/app.ts', 'web/package.json', 'package.json', 'Cargo.toml'])).toEqual([
+      'Cargo.toml',
+      'package.json',
+      'web/package.json'
+    ])
+  })
+
+  it('reads npm dependencies, marking dev ones', () => {
+    const deps = parseManifest(
+      'package.json',
+      JSON.stringify({ dependencies: { react: '^18.0.0' }, devDependencies: { vitest: '^2.0.0' } })
+    )
+    expect(deps).toEqual([
+      { name: 'react', version: '^18.0.0', dev: false },
+      { name: 'vitest', version: '^2.0.0', dev: true }
+    ])
+  })
+
+  it('survives a malformed manifest instead of throwing', () => {
+    expect(parseManifest('package.json', '{ not json')).toEqual([])
+  })
+
+  it('reads Cargo, go.mod, pyproject, requirements, pubspec and Gemfile', () => {
+    expect(parseManifest('Cargo.toml', '[dependencies]\nserde = "1.0"\ntokio = { version = "1.35" }\n')).toEqual([
+      { name: 'serde', version: '1.0', dev: false },
+      { name: 'tokio', version: '1.35', dev: false }
+    ])
+    expect(parseManifest('go.mod', 'module x\n\nrequire (\n\tgithub.com/foo/bar v1.2.3\n)\n')[0]).toMatchObject({
+      name: 'github.com/foo/bar',
+      version: 'v1.2.3'
+    })
+    expect(parseManifest('pyproject.toml', 'dependencies = ["requests>=2.0", "flask"]')).toHaveLength(2)
+    expect(parseManifest('requirements.txt', '# comment\nrequests==2.0\n-e .\n')).toEqual([
+      { name: 'requests', version: '==2.0', dev: false }
+    ])
+    expect(parseManifest('pubspec.yaml', 'dependencies:\n  http: ^1.0.0\n  sdk: flutter\n')).toEqual([
+      { name: 'http', version: '^1.0.0', dev: false }
+    ])
+    expect(parseManifest('Gemfile', "source 'x'\ngem 'rails', '7.0'\n")).toEqual([
+      { name: 'rails', version: '7.0', dev: false }
+    ])
+  })
+})
+
+describe('repo facts — the model groups, the manifest names', () => {
+  const declared = new Set(['react', 'vitest', 'electron'])
+  const good = {
+    summary: 'A desktop app.',
+    groups: [{ name: 'UI', items: [{ dep: 'react', role: 'renders the interface' }] }]
+  }
+
+  it('accepts a grouping of declared dependencies', () => {
+    expect(validateTechStack(good, declared)).toEqual([])
+  })
+
+  it('rejects a package the project does not declare', () => {
+    const bad = { ...good, groups: [{ name: 'UI', items: [{ dep: 'vue', role: 'x' }] }] }
+    expect(validateTechStack(bad, declared)[0]).toContain('vue')
+  })
+
+  it('rejects listing the same dependency twice', () => {
+    const twice = {
+      ...good,
+      groups: [
+        { name: 'UI', items: [{ dep: 'react', role: 'a' }] },
+        { name: 'Other', items: [{ dep: 'react', role: 'b' }] }
+      ]
+    }
+    expect(validateTechStack(twice, declared)[0]).toContain('appears twice')
+  })
+
+  it('requires a role for each entry and caps the groups', () => {
+    expect(validateTechStack({ ...good, groups: [{ name: 'UI', items: [{ dep: 'react', role: '' }] }] }, declared)[0])
+      .toContain('role')
+    const many = Array.from({ length: 9 }, (_, i) => ({ name: `g${i}`, items: [] }))
+    expect(validateTechStack({ ...good, groups: many }, declared)[0]).toContain('at most 6')
+  })
+})
+
+describe('wiki page map layout', () => {
+  const pages = [
+    { slug: 'overview', title: 'Overview', archetype: 'overview', related: ['data'] },
+    { slug: 'data', title: 'Data', archetype: 'module', related: [] },
+    { slug: 'ui', title: 'UI', archetype: 'module', related: [] }
+  ]
+
+  it('puts the overview in the middle and the rest on a ring', () => {
+    const { nodes, width, height } = layoutPageGraph(pages, { width: 400, radius: 100 })
+    const centre = nodes.find((n) => n.slug === 'overview')!
+    expect(centre.x).toBe(width / 2)
+    expect(centre.y).toBe(height / 2)
+    for (const slug of ['data', 'ui']) {
+      const node = nodes.find((n) => n.slug === slug)!
+      const dist = Math.hypot(node.x - centre.x, node.y - centre.y)
+      expect(Math.round(dist)).toBe(100)
+    }
+  })
+
+  it('draws each link once, however both pages phrase it', () => {
+    const mutual = [
+      { slug: 'a', title: 'A', archetype: 'overview', related: ['b'] },
+      { slug: 'b', title: 'B', archetype: 'module', related: ['a'] }
+    ]
+    expect(layoutPageGraph(mutual).edges).toHaveLength(1)
+  })
+
+  it('drops links to pages that are not in the wiki', () => {
+    const dangling = [
+      { slug: 'a', title: 'A', archetype: 'overview', related: ['ghost'] },
+      { slug: 'b', title: 'B', archetype: 'module', related: [] }
+    ]
+    const { edges } = layoutPageGraph(dangling)
+    expect(edges.every((e) => e.to !== 'ghost' && e.from !== 'ghost')).toBe(true)
+  })
+
+  it('still connects a page nobody linked to', () => {
+    const { edges } = layoutPageGraph(pages)
+    expect(edges.some((e) => e.from === 'ui' || e.to === 'ui')).toBe(true)
+  })
+})
+
+describe('import graph — reading imports out of source', () => {
+  it('reads every JS/TS import form', () => {
+    const src = `
+import { a } from './a'
+import b from "../b"
+import './side-effect'
+export { c } from './c'
+const d = require('./d')
+const e = await import('./e')
+`
+    expect(extractImports('src/x.ts', src).sort()).toEqual(
+      ['../b', './a', './c', './d', './e', './side-effect'].sort()
+    )
+  })
+
+  it('ignores imports inside comments', () => {
+    const src = "// import { x } from './commented'\n/* import './block' */\nimport { y } from './real'"
+    expect(extractImports('src/x.ts', src)).toEqual(['./real'])
+  })
+
+  it('reads Python, Go, Rust, Dart and Ruby', () => {
+    expect(extractImports('app.py', 'from .models import User\nimport os')).toEqual(['.models', 'os'])
+    expect(extractImports('main.go', 'import "example.com/x/y"')).toContain('example.com/x/y')
+    expect(extractImports('lib.rs', 'use crate::db::pool;\nmod helpers;')).toEqual(['crate::db::pool', 'helpers'])
+    expect(extractImports('main.dart', "import 'package:http/http.dart';")).toEqual(['package:http/http.dart'])
+    expect(extractImports('app.rb', "require_relative 'thing'")).toEqual(['thing'])
+  })
+
+  it('returns nothing for a language it does not parse', () => {
+    expect(extractImports('README.md', 'import this')).toEqual([])
+  })
+})
+
+describe('import graph — resolving to real files', () => {
+  const files = new Set([
+    'src/app.ts',
+    'src/db/pool.ts',
+    'src/db/index.ts',
+    'src/ui/panel.tsx',
+    'app/models/user.py',
+    'app/__init__.py'
+  ])
+
+  it('resolves relative paths, adding the extension', () => {
+    expect(resolveImport('src/app.ts', './db/pool', files)).toBe('src/db/pool.ts')
+    expect(resolveImport('src/ui/panel.tsx', '../db/pool', files)).toBe('src/db/pool.ts')
+  })
+
+  it('resolves a folder to its index file', () => {
+    expect(resolveImport('src/app.ts', './db', files)).toBe('src/db/index.ts')
+  })
+
+  it('resolves root aliases', () => {
+    expect(resolveImport('src/ui/panel.tsx', '@/db/pool', files)).toBe('src/db/pool.ts')
+  })
+
+  it('resolves dotted Python modules', () => {
+    expect(resolveImport('app/main.py', 'app.models.user', files)).toBe('app/models/user.py')
+  })
+
+  it('returns null for packages outside the repo', () => {
+    expect(resolveImport('src/app.ts', 'react', files)).toBeNull()
+    expect(resolveImport('main.go', 'fmt', files)).toBeNull()
+    expect(resolveImport('src/app.ts', './nope', files)).toBeNull()
+  })
+})
+
+describe('import graph — folders, not files', () => {
+  const repo = [
+    { path: 'src/ui/panel.tsx', content: "import { query } from '../db/pool'\nimport './styles'" },
+    { path: 'src/ui/styles.ts', content: '' },
+    { path: 'src/db/pool.ts', content: "import { log } from '../util/log'" },
+    { path: 'src/util/log.ts', content: '' },
+    { path: 'src/app.ts', content: "import { Panel } from './ui/panel'\nimport react from 'react'" }
+  ]
+
+  it('aggregates file imports into folder edges, with direction', () => {
+    const graph = buildImportGraph(repo, { depth: 2 })
+    const edge = (from: string, to: string): number =>
+      graph.edges.find((e) => e.from === from && e.to === to)?.count ?? 0
+    expect(edge('src/ui', 'src/db')).toBe(1)
+    expect(edge('src/db', 'src/util')).toBe(1)
+    expect(edge('src', 'src/ui')).toBe(1)
+    expect(edge('src/db', 'src/ui')).toBe(0)
+  })
+
+  it('drops imports within the same folder', () => {
+    const graph = buildImportGraph(repo, { depth: 2 })
+    expect(graph.edges.some((e) => e.from === e.to)).toBe(false)
+  })
+
+  it('counts what pointed outside the repo separately', () => {
+    const graph = buildImportGraph(repo, { depth: 2 })
+    expect(graph.resolved).toBe(4)
+    expect(graph.external).toBe(1)
+  })
+
+  it('rolls folders up as depth shrinks', () => {
+    const graph = buildImportGraph(repo, { depth: 1 })
+    expect(graph.nodes.every((n) => !n.id.includes('/'))).toBe(true)
+  })
+
+  it('keeps the busiest edges and reports the rest', () => {
+    const graph = buildImportGraph(repo, { depth: 2, maxEdges: 1 })
+    expect(graph.edges).toHaveLength(1)
+    expect(graph.omittedEdges).toBe(2)
+  })
+
+  it('names entry points and the folders everything leans on', () => {
+    const graph = buildImportGraph(repo, { depth: 2 })
+    expect(entryPoints(graph)).toContain('src')
+    expect(foundations(graph, 1)).toHaveLength(1)
+  })
+})
+
+describe('import graph — arc layout', () => {
+  const nodes = [{ id: 'a', weight: 3 }, { id: 'b', weight: 2 }, { id: 'c', weight: 1 }]
+  const edges = [{ from: 'a', to: 'b', count: 2 }]
+
+  it('places every node on the circle', () => {
+    const layout = layoutArcGraph(nodes, edges, { size: 400 })
+    for (const node of layout.nodes) {
+      const dist = Math.hypot(node.x - 200, node.y - 200)
+      expect(Math.round(dist)).toBe(Math.round(layout.radius))
+    }
+  })
+
+  it('draws a curve between the two ends of each edge', () => {
+    const layout = layoutArcGraph(nodes, edges)
+    expect(layout.edges).toHaveLength(1)
+    expect(layout.edges[0].path).toMatch(/^M [\d.]+ [\d.]+ Q [\d.]+ [\d.]+ [\d.]+ [\d.]+$/)
+  })
+
+  it('skips edges whose ends are missing or identical', () => {
+    expect(layoutArcGraph(nodes, [{ from: 'a', to: 'ghost', count: 1 }]).edges).toHaveLength(0)
+    expect(layoutArcGraph(nodes, [{ from: 'a', to: 'a', count: 1 }]).edges).toHaveLength(0)
+  })
+})
+
+describe('import graph — choosing the folder depth', () => {
+  const links = [
+    { from: 'src/renderer/src/components/A.tsx', to: 'src/renderer/src/stores/ui.ts' },
+    { from: 'src/renderer/src/components/B.tsx', to: 'src/shared/types.ts' },
+    { from: 'src/main/git.ts', to: 'src/shared/types.ts' }
+  ]
+
+  it('cuts deep enough to separate sibling folders', () => {
+    // depth 1 collapses everything into "src"; depth 4 keeps components apart.
+    expect(pickDepth(links, 14)).toBe(4)
+  })
+
+  it('backs off when a deep cut would make too many nodes', () => {
+    expect(pickDepth(links, 3)).toBeLessThan(4)
+  })
+
+  it('survives a repo with no internal links at all', () => {
+    expect(pickDepth([], 14)).toBe(1)
+  })
+})
+
+describe('import graph — readable labels', () => {
+  it('drops the prefix every folder shares', () => {
+    const ids = ['desktop/app/src/ui', 'desktop/app/src/lib', 'desktop/app/test/e2e']
+    expect(commonPrefix(ids)).toBe('desktop/app/')
+    expect(shortLabel('desktop/app/src/ui', 'desktop/app/')).toBe('src/ui')
+  })
+
+  it('keeps the whole id when folders share nothing', () => {
+    expect(commonPrefix(['src/main', 'test'])).toBe('')
+    expect(commonPrefix(['src/main'])).toBe('')
+  })
+
+  it('never eats the last segment, even if all paths are identical up to it', () => {
+    expect(commonPrefix(['src/a', 'src/b'])).toBe('src/')
+    expect(shortLabel('src/a', 'src/')).toBe('a')
+  })
+
+  it('truncates from the front so the distinguishing tail survives', () => {
+    const label = shortLabel('a/very/deeply/nested/components/panel', '', 20)
+    expect(label.length).toBeLessThanOrEqual(22)
+    expect(label.endsWith('panel')).toBe(true)
+    expect(label.startsWith('…/')).toBe(true)
+  })
+})
+
+describe('import graph — layering', () => {
+  const nodes = [
+    { id: 'ui', files: 3, in: 0, out: 2 },
+    { id: 'db', files: 2, in: 1, out: 1 },
+    { id: 'util', files: 1, in: 2, out: 0 }
+  ]
+  const edges = [
+    { from: 'ui', to: 'db', count: 2 },
+    { from: 'ui', to: 'util', count: 1 },
+    { from: 'db', to: 'util', count: 1 }
+  ]
+
+  it('puts foundations at layer 0 and dependents above', () => {
+    const layers = layerNodes(nodes, edges)
+    expect(layers.get('util')).toBe(0)
+    expect(layers.get('db')).toBe(1)
+    expect(layers.get('ui')).toBe(2)
+  })
+
+  it('terminates on a circular dependency', () => {
+    const cyclic = [{ id: 'a', files: 1, in: 1, out: 1 }, { id: 'b', files: 1, in: 1, out: 1 }]
+    const loop = [{ from: 'a', to: 'b', count: 1 }, { from: 'b', to: 'a', count: 1 }]
+    const layers = layerNodes(cyclic, loop)
+    expect(layers.size).toBe(2)
+  })
+
+  it('lays layers out top to bottom, foundations last', () => {
+    const layers = layerNodes(nodes, edges)
+    const layout = layoutLayeredGraph(
+      nodes.map((n) => ({ ...n, label: n.id, layer: layers.get(n.id) ?? 0 })),
+      edges
+    )
+    const y = (id: string): number => layout.nodes.find((n) => n.id === id)!.y
+    expect(y('ui')).toBeLessThan(y('db'))
+    expect(y('db')).toBeLessThan(y('util'))
+    expect(layout.edges).toHaveLength(3)
+  })
+})
+
+describe('repo facts — signal over scaffolding', () => {
+  const deps = (...names: string[]): { name: string; version: string; dev: boolean }[] =>
+    names.map((name) => ({ name, version: '1.0.0', dev: false }))
+
+  it('drops type stubs, loaders and lint plugins', () => {
+    for (const name of ['@types/node', 'ts-loader', 'eslint-plugin-react', 'prettier', '@babel/core', 'tslib']) {
+      expect(isNoiseDependency(name), name).toBe(true)
+    }
+    for (const name of ['react', 'electron', 'tailwindcss', 'go-sqlite3']) {
+      expect(isNoiseDependency(name), name).toBe(false)
+    }
+  })
+
+  it('folds away sub-packages implied by their framework', () => {
+    const kept = meaningfulDependencies(deps('react', 'react-dom', 'vue-router')).map((d) => d.name)
+    expect(kept).toEqual(['react', 'vue-router']) // vue isn't here, so its router stands alone
+  })
+
+  it('recognises frameworks and gives each a badge', () => {
+    const hits = detectFrameworks(deps('next', 'react', 'tailwindcss', 'left-pad'))
+    expect(hits.map((h) => h.label)).toEqual(['Next.js', 'React', 'Tailwind'])
+    expect(hits[0].badge).toBeTruthy()
+    expect(hits[0].kind).toBe('framework')
+  })
+
+  it('reports a framework once, whichever package revealed it', () => {
+    expect(detectFrameworks(deps('react', 'react')).map((h) => h.label)).toEqual(['React'])
   })
 })

@@ -269,7 +269,7 @@ async function chatComplete(
 }
 
 /** A JSON contract the model must satisfy before its output is accepted. */
-interface JsonSpec {
+export interface JsonSpec {
   /** Schema name, for providers with native structured output. */
   name: string
   schema: Record<string, unknown>
@@ -280,7 +280,7 @@ interface JsonSpec {
 }
 
 /** Thrown when the model's JSON is still unusable after the correction retry. */
-class InvalidAIResponse extends Error {
+export class InvalidAIResponse extends Error {
   /** The rejected reply, for callers that can still salvage something from it. */
   readonly lastReply: string
 
@@ -308,7 +308,7 @@ Reply again with the corrected JSON object only — no explanation, no markdown 
  * validation errors before giving up. Providers that don't support native
  * structured output silently fall back to prompt-only JSON.
  */
-async function chatCompleteJson<T>(
+export async function chatCompleteJson<T>(
   cfg: AIConfig,
   messages: ChatMessage[],
   feature: string,

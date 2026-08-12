@@ -73,7 +73,11 @@ import type {
   SecureApplyResult,
   PRReviewResult,
   HoverExplainRequest,
-  HoverExplainResult
+  HoverExplainResult,
+  ImportGraph,
+  RepoFacts,
+  RepoWiki,
+  WikiProgress
 } from '../../../shared/types'
 
 // Typed adapter over the IPC bridge — the only place that talks to window.api.
@@ -364,6 +368,21 @@ export const aiApi = {
     window.api.ai.prDescription(commits, diff, cfg) as Promise<{ title: string; body: string }>,
   planActions: (prompt: string, status: RepoStatus, cfg: AIConfig) =>
     window.api.ai.planActions(prompt, status, cfg) as Promise<AskPlan>
+}
+
+export const wikiApi = {
+  facts: (repoPath: string) => window.api.wiki.facts(repoPath) as Promise<RepoFacts>,
+  imports: (repoPath: string, depth: number) => window.api.wiki.imports(repoPath, depth) as Promise<ImportGraph>,
+  get: (repoPath: string, model: string) =>
+    window.api.wiki.get(repoPath, model) as Promise<{
+      wiki: RepoWiki | null
+      freshness: 'current' | 'behind' | 'outdated'
+      headSha: string
+    }>,
+  generate: (repoPath: string, cfg: AIConfig) => window.api.wiki.generate(repoPath, cfg) as Promise<RepoWiki>,
+  clear: (repoPath: string) => window.api.wiki.clear(repoPath) as Promise<void>,
+  onProgress: (cb: (payload: { repoPath: string; progress: WikiProgress }) => void) =>
+    window.api.wiki.onProgress(cb as (payload: unknown) => void)
 }
 
 export const analyticsApi = {

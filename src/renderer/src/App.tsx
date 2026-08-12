@@ -30,6 +30,7 @@ import { ChangelogPage } from './components/ChangelogPage'
 import { LogsPage } from './components/LogsPage'
 import { NotificationsPage } from './components/NotificationsPage'
 import { InsightsPage } from './components/InsightsPage'
+import { WikiPageView } from './components/WikiPageView'
 import { VaultPage } from './components/VaultPage'
 import { ReleasePage } from './components/ReleasePage'
 import { IssueDetailPage } from './components/IssueDetailPage'
@@ -152,6 +153,8 @@ function PageView({ tab }: { tab: PageTab }): React.JSX.Element {
       return <NotificationsPage />
     case 'insights':
       return <InsightsPage repoPath={tab.page.repoPath} />
+    case 'wiki':
+      return <WikiPageView repoPath={tab.page.repoPath} />
     case 'vault':
       return <VaultPage />
     case 'release':

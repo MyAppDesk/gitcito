@@ -96,6 +96,20 @@ To try hover-to-explain (Settings → AI → "Explain code on hover", key: Shift
 4. Repeat in the **Diff** view of the same file, and in **Blame**. In a diff the
    card can only see the hunks on screen, and its cited lines come from the new
    side of the diff.
+
+To try the generated wiki (tools menu → "Repository wiki", or ⌘K → wiki):
+1. Press **Generate wiki**. It plans the pages first, then writes them — the
+   progress line names each page as it lands.
+2. Every bullet ends with the file it came from, and the **Sources** list at the
+   bottom opens those files. Open one and check the claim is really there.
+3. The overview page opens with a repo card: a language bar (counted from the
+   files, so it shows even before you generate anything), the stack grouped from
+   package.json, a map of the pages — click a bubble to jump to that page — and
+   a module dependency graph read from the imports. Hover a folder to isolate
+   what it touches; arrow thickness is how many imports cross that way. Try it
+   on a big repo (gitcito itself) to see it earn its keep.
+4. Commit something, come back, and the page warns it was written at an older
+   commit until you regenerate.
 EOF
 git -C "$R" add -A && git -C "$R" commit -qm "docs: readme"
 

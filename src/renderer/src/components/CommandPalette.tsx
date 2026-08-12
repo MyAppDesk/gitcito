@@ -30,7 +30,8 @@ import {
   CircleDot,
   Sparkles,
   ArrowLeftRight,
-  FolderGit2
+  FolderGit2,
+  BookOpen
 } from 'lucide-react'
 import { useUIStore } from '../stores/ui'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
@@ -214,6 +215,7 @@ export function CommandPalette(): React.JSX.Element {
         ui.openModal({ kind: 'branch-compare', repoPath: path, branchA: cur, branchB: base })
       }) },
       { id: 'insights', title: t('cmd.insights'), group: 'Actions', keywords: 'stats churn hotspots authors contributors graph analytics repo settings', icon: <BarChart3 size={15} />, run: act(() => ui.openModal({ kind: 'repo-settings', repoPath: path, tab: 'insights' })) },
+      { id: 'wiki', title: t('cmd.wiki'), group: 'Actions', keywords: 'wiki docs documentation deepwiki overview architecture ai generated', icon: <BookOpen size={15} />, run: act(() => useSettingsStore.getState().openPageTab({ type: 'wiki', repoPath: path })) },
       { id: 'changelog-gen', title: t('cmd.changelogGen'), group: 'Actions', keywords: 'conventional commits release notes changelog', icon: <FileText size={15} />, run: act(() => ui.openModal({ kind: 'changelog-gen', repoPath: path })) },
       { id: 'vault', title: t('cmd.vault'), group: 'Actions', keywords: 'secrets vault credentials keychain env password store', icon: <KeyRound size={15} />, run: act(() => useSettingsStore.getState().openPageTab({ type: 'vault' })) },
       { id: 'secure-export', title: t('cmd.secureExport'), group: 'Actions', keywords: 'share export env secrets encrypted bundle gitcito file send', icon: <Lock size={15} />, run: act(() => ui.openModal({ kind: 'secure-share', repoPath: path, initialMode: 'export' })) },

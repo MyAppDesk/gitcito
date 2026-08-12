@@ -21,6 +21,7 @@ function pageTabName(page: PageContent): string {
   if (page.type === 'logs') return 'Operation log'
   if (page.type === 'notifications') return 'Notifications'
   if (page.type === 'insights') return 'Insights'
+  if (page.type === 'wiki') return `Wiki — ${page.repoPath.split('/').pop() || page.repoPath}`
   if (page.type === 'vault') return 'Vault'
   if (page.type === 'issue') return `#${page.issue.number} ${page.issue.title}`
   if (page.type === 'milestone') return `🏁 ${page.milestone.title}`
@@ -351,7 +352,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
           (page.type !== 'release' || (t.page.type === 'release' && t.page.release.id === page.release.id)) &&
           (page.type !== 'issue' || (t.page.type === 'issue' && t.page.issue.number === page.issue.number)) &&
           (page.type !== 'milestone' ||
-            (t.page.type === 'milestone' && t.page.milestone.number === page.milestone.number))
+            (t.page.type === 'milestone' && t.page.milestone.number === page.milestone.number)) &&
+          // A wiki belongs to one repo, so each repo gets its own tab.
+          (page.type !== 'wiki' || (t.page.type === 'wiki' && t.page.repoPath === page.repoPath))
       )
       if (existing) return { ...s, activeTabId: existing.id }
       const tab: TabState = { id: uid(), kind: 'page', name: pageTabName(page), page }

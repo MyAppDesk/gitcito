@@ -609,6 +609,133 @@ export interface AIConfig {
 /** Co-author trailer appended when AIConfig.coAuthor is enabled (default on). */
 export const MYAPPDESK_COAUTHOR = 'MyAppDesk <team@myappdesk.dev>'
 
+// ─── Generated repo wiki ────────────────────────────────────────────────────
+
+/** Share of the codebase written in one language, counted by bytes. */
+export interface LanguageStat {
+  language: string
+  bytes: number
+  files: number
+  /** 0–1, of the code counted (config and docs excluded). */
+  share: number
+}
+
+/** A dependency exactly as a manifest declares it. */
+export interface DependencyRef {
+  name: string
+  version: string
+  dev: boolean
+}
+
+/** Counted facts about a repo — no model involved. */
+export interface RepoFacts {
+  languages: LanguageStat[]
+  totalBytes: number
+  manifests: string[]
+  dependencies: DependencyRef[]
+}
+
+/** One folder in the import graph. */
+export interface ImportNode {
+  id: string
+  files: number
+  /** Imports this folder makes into other folders. */
+  out: number
+  /** Imports other folders make into this one. */
+  in: number
+}
+
+export interface ImportEdge {
+  from: string
+  to: string
+  count: number
+}
+
+/** Folder-level import graph, read from the source with no model involved. */
+export interface ImportGraph {
+  nodes: ImportNode[]
+  edges: ImportEdge[]
+  depth: number
+  /** Imports that pointed at a file in this repo. */
+  resolved: number
+  /** Imports that pointed outside it (packages, stdlib). */
+  external: number
+  omittedEdges: number
+}
+
+/** One dependency, placed and explained by the model. */
+export interface TechItem {
+  dep: string
+  role: string
+}
+
+export interface TechGroup {
+  name: string
+  items: TechItem[]
+}
+
+/** The model's reading of the declared dependencies. */
+export interface TechStack {
+  summary: string
+  groups: TechGroup[]
+}
+
+export type WikiArchetype = 'overview' | 'module' | 'workflow' | 'reference'
+
+/** One planned page: what it covers, before anything has been written. */
+export interface WikiPagePlan {
+  slug: string
+  title: string
+  archetype: WikiArchetype
+  /** Repo-relative files this page is about. */
+  scopePaths: string[]
+}
+
+export interface WikiPlan {
+  pages: WikiPagePlan[]
+}
+
+/** One statement, with the files that back it up. */
+export interface WikiClaim {
+  text: string
+  sourcePaths: string[]
+}
+
+export interface WikiSection {
+  heading: string
+  claims: WikiClaim[]
+}
+
+export interface WikiPage {
+  slug: string
+  title: string
+  archetype: WikiArchetype
+  summary: string
+  sections: WikiSection[]
+  /** Slugs of other pages in the same wiki. */
+  related: string[]
+  /** Rendered by the app from the sections above. */
+  markdown: string
+}
+
+/** A generated wiki for one repository, as stored on disk. */
+export interface RepoWiki {
+  headSha: string
+  generatedAt: number
+  model: string
+  promptVersion: string
+  pages: WikiPage[]
+  /** The model's grouping of the dependencies the manifests declare. */
+  stack: TechStack | null
+}
+
+/** Progress pushed while a wiki is being generated. */
+export type WikiProgress =
+  | { phase: 'planning' }
+  | { phase: 'page'; slug: string; title: string; done: number; total: number }
+  | { phase: 'done' }
+  | { phase: 'error'; message: string }
+
 /** Key that must be held for hover-to-explain to fire. */
 export type HoverModifier = 'shift' | 'alt' | 'ctrl' | 'meta' | 'none'
 
@@ -1120,6 +1247,7 @@ export type PageContent =
   | { type: 'logs' }
   | { type: 'notifications' }
   | { type: 'insights'; repoPath: string }
+  | { type: 'wiki'; repoPath: string }
   | { type: 'vault' }
   | { type: 'release'; release: ReleaseInfo; repoPath: string }
   | { type: 'issue'; issue: IssueInfo; repoPath: string; remoteUrl: string }

@@ -532,6 +532,26 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
     </button>
   )
 
+  const folderStageAction = (list: ListName, files: FileEntry[]) => (folderPath: string) => {
+    const targets = files
+      .filter((f) => f.path === folderPath || f.path.startsWith(`${folderPath}/`))
+      .map((f) => f.path)
+    if (targets.length === 0) return null
+    return (
+      <button
+        className="btn ghost tiny file-stage-btn"
+        onClick={(e) => {
+          e.stopPropagation()
+          if (list === 'staged') void repoActions.unstage(path, targets)
+          else void repoActions.stage(path, targets)
+          setSelection({ list, paths: new Set() })
+        }}
+      >
+        {list === 'staged' ? t('composer.unstageFolder') : t('composer.stageFolder')}
+      </button>
+    )
+  }
+
   const selectedCount = (list: ListName): number => (selection.list === list ? selection.paths.size : 0)
 
   const generateWithAI = async (): Promise<void> => {
@@ -785,6 +805,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
                   onFileContext={handleContext('unstaged', fUnstaged)}
                   onFolderContext={handleFolderContext('unstaged', fUnstaged)}
                   action={stageAction('unstaged')}
+                  folderAction={folderStageAction('unstaged', fUnstaged)}
                 />
                 {unstaged.length === 0 && <div className="sb-empty">{t('composer.workingTreeClean')}</div>}
                 {unstaged.length > 0 && fUnstaged.length === 0 && (
@@ -849,6 +870,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
                   onFileContext={handleContext('staged', fStaged)}
                   onFolderContext={handleFolderContext('staged', fStaged)}
                   action={stageAction('staged')}
+                  folderAction={folderStageAction('staged', fStaged)}
                 />
                 {staged.length === 0 && <div className="sb-empty">Nothing staged</div>}
                 {staged.length > 0 && fStaged.length === 0 && (

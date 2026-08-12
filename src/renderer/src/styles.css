@@ -5397,6 +5397,10 @@ textarea:focus {
 .tree-folder .tree-badge svg {
   color: currentColor;
 }
+.tree-folder .file-stage-btn {
+  margin-left: auto;
+  flex-shrink: 0;
+}
 
 .file-item.current {
   background: color-mix(in srgb, var(--accent) 16%, transparent);

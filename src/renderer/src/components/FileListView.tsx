@@ -45,6 +45,7 @@ interface FileListProps {
   onFileContext?: (file: FileEntry, e: React.MouseEvent) => void
   onFolderContext?: (folderPath: string, e: React.MouseEvent) => void
   action?: (file: FileEntry) => React.ReactNode
+  folderAction?: (folderPath: string) => React.ReactNode
 }
 
 interface TreeNode {
@@ -186,8 +187,9 @@ function TreeLevel({
           <FileRowInner key={`f-${n.path}`} file={n.file} label={n.name} depth={depth} props={props} />
         ) : (
           <div key={`d-${n.path}`}>
-            <button
+            <div
               className="tree-folder"
+              role="button"
               style={{ paddingLeft: 14 + depth * 14 }}
               onClick={() => toggle(n.path)}
               onContextMenu={(e) => props.onFolderContext?.(n.path, e)}
@@ -197,7 +199,8 @@ function TreeLevel({
               {collapsed.has(n.path) ? <Folder size={13} /> : <FolderOpen size={13} />}
               <span className="tree-folder-name">{n.name}</span>
               {collapsed.has(n.path) && <FolderBadges node={n} />}
-            </button>
+              {props.folderAction?.(n.path)}
+            </div>
             {!collapsed.has(n.path) && (
               <TreeLevel nodes={n.children} depth={depth + 1} collapsed={collapsed} toggle={toggle} props={props} />
             )}

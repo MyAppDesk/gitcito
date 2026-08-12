@@ -1066,6 +1066,8 @@ const en = {
   'composer.unstageFiles': 'Unstage {n} files',
   'composer.stageFolderN': 'Stage folder ({n})',
   'composer.unstageFolderN': 'Unstage folder ({n})',
+  'composer.stageFolder': 'Stage folder',
+  'composer.unstageFolder': 'Unstage folder',
   'composer.discardFolderMsg': 'Discard all changes in {folder}?\n\nThis cannot be undone.',
   'composer.fileChanges': '{n} file change{s} on ',
 
@@ -2407,6 +2409,8 @@ const es: Dict = {
   'composer.unstageFiles': 'Quitar {n} archivos',
   'composer.stageFolderN': 'Preparar carpeta ({n})',
   'composer.unstageFolderN': 'Quitar carpeta ({n})',
+  'composer.stageFolder': 'Preparar carpeta',
+  'composer.unstageFolder': 'Quitar carpeta',
   'composer.discardFolderMsg': '¿Descartar todos los cambios en {folder}?\n\nEsta acción no se puede deshacer.',
   'composer.fileChanges': '{n} cambio{s} de archivo en ',
 

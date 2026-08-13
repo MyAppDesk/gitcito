@@ -1,5 +1,12 @@
 
 
+## [3.1.1](https://github.com/MyAppDesk/gitcito/compare/v3.1.0...v3.1.1) (2026-08-13)
+
+
+### Bug Fixes
+
+* reset lastPoint on mouse leave to avoid stale coordinates ([fb3c6e1](https://github.com/MyAppDesk/gitcito/commit/fb3c6e1b516d143eac9789fdab81676aff4f8430))
+
 ## [3.1.0](https://github.com/MyAppDesk/gitcito/compare/v3.0.2...v3.1.0) (2026-08-13)
 
 

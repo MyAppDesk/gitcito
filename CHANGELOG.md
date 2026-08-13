@@ -1,5 +1,13 @@
 
 
+## [3.2.0](https://github.com/MyAppDesk/gitcito/compare/v3.1.1...v3.2.0) (2026-08-13)
+
+
+### Features
+
+* add PR preview functionality with resolve and preview methods ([2482170](https://github.com/MyAppDesk/gitcito/commit/24821706ff477489fdbe764842297ecb7d0dc6f6))
+* add repository and tab-switching keyboard shortcuts ([#7](https://github.com/MyAppDesk/gitcito/issues/7)) ([5c03dfc](https://github.com/MyAppDesk/gitcito/commit/5c03dfc41dfdc39451cb4ca9661aa09b82900060))
+
 ## [3.1.1](https://github.com/MyAppDesk/gitcito/compare/v3.1.0...v3.1.1) (2026-08-13)
 
 

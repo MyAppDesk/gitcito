@@ -213,14 +213,6 @@ export function WorkspaceSwitcher(): React.JSX.Element {
               </div>
             ))}
             <div className="profile-switcher-sep" />
-            <button className="profile-switcher-item" onClick={toggleMission}>
-              <span className="profile-switcher-check" />
-              <span className="profile-switcher-plus">
-                <Gauge size={14} />
-              </span>
-              <span className="profile-switcher-label">{t('mission.open')}</span>
-            </button>
-            <div className="profile-switcher-sep" />
             <button className="profile-switcher-item" onClick={create}>
               <span className="profile-switcher-check" />
               <span className="profile-switcher-plus">

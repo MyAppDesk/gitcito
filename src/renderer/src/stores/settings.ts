@@ -24,8 +24,14 @@ import {
   updateFolder
 } from '../lib/repoFolders'
 import { settingsApi } from '../infrastructure/api'
+import { useUIStore } from './ui'
 
 const uid = (): string => Math.random().toString(36).slice(2, 10)
+
+// Mission control is a full-body overlay, not a tab: anything that focuses a
+// tab has to dismiss it, including re-focusing the tab that is already active
+// (an unchanged `activeTabId` renders no effect, so the click looks dead).
+const leaveMission = (): void => useUIStore.getState().setMissionOpen(false)
 
 export const GROUP_COLORS = [
   '#6366f1', '#ec4899', '#f59e0b', '#10b981',
@@ -323,17 +329,20 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       repoLayouts: { ...(s.repoLayouts ?? {}), [path]: mut(s.repoLayouts?.[path] ?? {}) }
     })),
 
-  openRepoTab: (repo) =>
-    get().update((s) => {
+  openRepoTab: (repo) => {
+    leaveMission()
+    return get().update((s) => {
       const existing = s.tabs.find((t) => t.kind === 'repo' && t.activeRepoPath === repo.path)
       if (existing) return { ...s, activeTabId: existing.id }
       const tab: TabState = { id: uid(), kind: 'repo', name: repo.name, repos: [repo], activeRepoPath: repo.path }
       const recentRepos = [repo, ...s.recentRepos.filter((r) => r.path !== repo.path)].slice(0, 8)
       return { ...s, tabs: [...s.tabs, tab], activeTabId: tab.id, recentRepos }
-    }),
+    })
+  },
 
-  openFromCli: (payload) =>
-    get().update((s) => {
+  openFromCli: (payload) => {
+    leaveMission()
+    return get().update((s) => {
       const path = payload.path
       const displayName = payload.name?.trim() || path.split('/').pop() || path
       const groupName = payload.group?.trim()
@@ -378,10 +387,12 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       // asked to open is immediately visible, not buried after existing tabs.
       const tab: TabState = { id: uid(), kind: 'repo', name: displayName, repos: [repo], activeRepoPath: path }
       return { ...s, tabs: [tab, ...s.tabs], activeTabId: tab.id, recentRepos }
-    }),
+    })
+  },
 
-  openPageTab: (page) =>
-    get().update((s) => {
+  openPageTab: (page) => {
+    leaveMission()
+    return get().update((s) => {
       // One tab per page identity — focus it if already open. Changelog is a
       // singleton; releases are keyed by release id so each opens its own tab.
       const existing = s.tabs.find(
@@ -400,7 +411,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       // language the user is reading right now (see `pageTabLabel`).
       const tab: TabState = { id: uid(), kind: 'page', name: '', page }
       return { ...s, tabs: [...s.tabs, tab], activeTabId: tab.id }
-    }),
+    })
+  },
 
   navigatePageTab: (tabId, page) =>
     get().update((s) => ({
@@ -410,13 +422,15 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       )
     })),
 
-  createGroupTab: (name) =>
-    get().update((s) => {
+  createGroupTab: (name) => {
+    leaveMission()
+    return get().update((s) => {
       const groupCount = s.tabs.filter((t) => t.kind === 'group').length
       const color = GROUP_COLORS[groupCount % GROUP_COLORS.length]
       const tab: TabState = { id: uid(), kind: 'group', name, repos: [], activeRepoPath: null, color }
       return { ...s, tabs: [...s.tabs, tab], activeTabId: tab.id }
-    }),
+    })
+  },
 
   addRepoToGroup: (tabId, repo) =>
     get().update((s) => ({
@@ -507,7 +521,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     })
   },
 
-  setActiveTab: (tabId) => get().update((s) => ({ ...s, activeTabId: tabId })),
+  setActiveTab: (tabId) => {
+    leaveMission()
+    get().update((s) => ({ ...s, activeTabId: tabId }))
+  },
 
   renameTab: (tabId, name) =>
     get().update((s) => ({

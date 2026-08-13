@@ -1,5 +1,25 @@
 
 
+## [2.11.0](https://github.com/MyAppDesk/gitcito/compare/v2.10.0...v2.11.0) (2026-08-13)
+
+
+### Features
+
+* add AI review feature with grounded findings ([2fd4c7b](https://github.com/MyAppDesk/gitcito/commit/2fd4c7bc8d17ae85b86303cc71d0444013bd2fce))
+* add hover-to-explain feature for code identifiers ([8ea6b1a](https://github.com/MyAppDesk/gitcito/commit/8ea6b1a633e4c767b0ca063edc9a2738688a7c2d))
+* add nested folders support for group tabs with repos ([742d6e2](https://github.com/MyAppDesk/gitcito/commit/742d6e24dde2eeefdcbf36cbc830cea24be9e4be))
+* add wiki generation functionality and related handlers ([8470268](https://github.com/MyAppDesk/gitcito/commit/8470268e67b045e36d36e6171d6327903eb3df97))
+* enhance conflict resolver with detailed navigation features ([ef190e0](https://github.com/MyAppDesk/gitcito/commit/ef190e0677ee05a86adfe70bbaaf20eda4812cdb))
+* expand hover explanations in place, and let the card be pinned ([d76be10](https://github.com/MyAppDesk/gitcito/commit/d76be10f3dae746635f3de7eac78707bbe0ee19f))
+* export the generated wiki into the repo as Markdown ([79adce8](https://github.com/MyAppDesk/gitcito/commit/79adce85d1d5df6889af1d0c840681c449499236))
+* implement encrypted storage for profile credentials ([7504c7e](https://github.com/MyAppDesk/gitcito/commit/7504c7e27cf5a6c1c79769b23cc9c0bb4f21baae))
+
+
+### Bug Fixes
+
+* make Insights hotspots open the file they name ([cd7d38b](https://github.com/MyAppDesk/gitcito/commit/cd7d38ba341ff0ad94fa3104c85ee4490db16df0))
+* silence drag & drop tracing by default ([78cdce0](https://github.com/MyAppDesk/gitcito/commit/78cdce0106352b3a40a7d3a2f0b4715a936d280a))
+
 ## [2.10.0](https://github.com/MyAppDesk/gitcito/compare/v2.9.0...v2.10.0) (2026-08-12)
 
 

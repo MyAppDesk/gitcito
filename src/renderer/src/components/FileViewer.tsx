@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { X, GitCommitHorizontal, Sparkles, Loader2, Search, ChevronUp, ChevronDown, Pencil, Save, Link2 } from 'lucide-react'
-import type { BlameLine, FileHistoryEntry, NumberedLine } from '../../../shared/types'
+import type { BlameLine, BlobSpec, FileHistoryEntry, NumberedLine } from '../../../shared/types'
 import { gitApi, aiApi, shellApi } from '../infrastructure/api'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore, type FileViewMode, type FileViewState } from '../stores/ui'
@@ -10,6 +10,7 @@ import { revealLineWhenReady } from '../lib/reveal'
 import { useT } from '../i18n'
 import { useHoverExplain } from './HoverExplain'
 import { DiffViewer } from './DiffViewer'
+import { SemanticSummary } from './SemanticSummary'
 import { buildQueryRegExp, highlightHtml, type HighlightLayer } from './FileSearchBar'
 import { fileExt, guessLanguage, highlightLine } from '../lib/highlight'
 import { isSecretFile, maskSecretLine } from '../lib/secrets'
@@ -45,6 +46,28 @@ function sourceRef(view: FileViewState): string | undefined {
   if (view.source.type === 'stash') return view.source.untracked ? `${view.source.sha}^3` : view.source.sha
   if (view.source.type === 'tree') return undefined
   return view.source.staged ? ':0' : undefined
+}
+
+/**
+ * The two versions the current diff compares, for the semantic summary.
+ * Mirrors what the diff itself shows: a commit against its first parent, the
+ * index against HEAD when staged, the working tree against the index when not.
+ */
+function diffSides(view: FileViewState): { oldSide: BlobSpec; newSide: BlobSpec } | null {
+  const s = view.source
+  if (s.type === 'commit') {
+    return { oldSide: { kind: 'ref', ref: `${s.hash}^1` }, newSide: { kind: 'ref', ref: s.hash } }
+  }
+  if (s.type === 'stash') {
+    if (s.untracked) return { oldSide: { kind: 'empty' }, newSide: { kind: 'ref', ref: `${s.sha}^3` } }
+    return { oldSide: { kind: 'ref', ref: `${s.sha}^1` }, newSide: { kind: 'ref', ref: s.sha } }
+  }
+  if (s.type === 'wip') {
+    if (s.untracked) return { oldSide: { kind: 'empty' }, newSide: { kind: 'worktree' } }
+    if (s.staged) return { oldSide: { kind: 'ref', ref: 'HEAD' }, newSide: { kind: 'index' } }
+    return { oldSide: { kind: 'index' }, newSide: { kind: 'worktree' } }
+  }
+  return null // the project tree has no diff mode
 }
 
 function blameRef(view: FileViewState): string | undefined {
@@ -178,6 +201,9 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
   const repoData = useRepoStore((s) => s.repos[repoPath])
   const originUrl = repoData?.remotes.find((r) => r.name === 'origin')?.url ?? repoData?.remotes[0]?.url
   const permalink = source.type === 'commit' ? filePermalink(originUrl, source.hash, file) : undefined
+  // Which two blobs the semantic summary should compare (null for the project
+  // tree, which has no diff mode).
+  const semanticSides = useMemo(() => diffSides(view), [view])
 
   // A real on-disk working-tree file (project tree, or any WIP entry). These can
   // be edited; the editor always reads/writes the working copy even when the
@@ -608,6 +634,15 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
 
         {!error && imgDiff !== null && mode === 'diff' && (
           <ImageDiff before={imgDiff.before} after={imgDiff.after} />
+        )}
+
+        {!error && content !== null && imgDiff === null && mode === 'diff' && semanticSides && (
+          <SemanticSummary
+            repoPath={repoPath}
+            file={file}
+            oldSide={semanticSides.oldSide}
+            newSide={semanticSides.newSide}
+          />
         )}
 
         {!error && content !== null && imgDiff === null && mode === 'diff' && (

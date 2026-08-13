@@ -35,6 +35,16 @@ interface PreloadApi {
   git(method: string, ...args: unknown[]): Promise<unknown>
   onCloneProgress(cb: (p: import('../../shared/types').CloneProgress) => void): () => void
   getPathForFile(file: File): string
+  keychain: {
+    onAsk(cb: (payload: { reason: string; adopted: boolean }) => void): () => void
+    answer(granted: boolean): Promise<void>
+    status(): Promise<{
+      consent: import('../../shared/types').KeychainConsent
+      explained: boolean
+      available: boolean | null
+    }>
+    set(granted: boolean): Promise<boolean>
+  }
   selectDirectory(title?: string): Promise<string | null>
   savePatch(defaultName: string, content: string): Promise<string | null>
   openPatch(): Promise<{ path: string; content: string } | null>
@@ -51,6 +61,7 @@ interface PreloadApi {
   }
   settings: {
     get(): Promise<unknown>
+    unlock(): Promise<unknown>
     set(settings: unknown): Promise<void>
     importFile(): Promise<unknown>
     exportFile(settings: unknown): Promise<boolean>

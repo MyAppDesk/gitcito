@@ -17,6 +17,7 @@ import { registerTerminalHandlers } from './terminal'
 import { registerLaunchHandlers } from './launch'
 import { registerWatcherHandlers } from './watcher'
 import { registerVaultHandlers } from './vault'
+import { registerKeychainHandlers } from './keychain'
 import { registerSecureShareHandlers } from './secureShare'
 import { registerInfoHandlers } from './info'
 import { registerUpdaterHandlers, checkForUpdatesOnLaunch } from './updater'
@@ -307,6 +308,7 @@ app.whenReady().then(() => {
   registerLaunchHandlers()
   registerWatcherHandlers()
   registerVaultHandlers()
+  registerKeychainHandlers()
   registerSecureShareHandlers()
   registerInfoHandlers()
   registerUpdaterHandlers()

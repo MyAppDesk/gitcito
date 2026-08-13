@@ -8541,6 +8541,122 @@ input[type='range']:focus-visible {
 .bc-diff-title { font-size: 11.5px; color: var(--text-2); margin-bottom: 4px; }
 .bc-diff-scroll { flex: 1; overflow: auto; background: var(--bg-2); border-radius: 6px; }
 
+/* ── OS keychain consent ── */
+.kc-root { display: flex; flex-direction: column; gap: 12px; }
+.kc-head { display: flex; align-items: flex-start; gap: 11px; }
+.kc-head h3 { margin: 0 0 2px; font-size: 15px; }
+.kc-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--accent);
+}
+.kc-sub { font-size: 12px; color: var(--text-2); }
+.kc-points { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.kc-points li { display: flex; align-items: flex-start; gap: 8px; font-size: 12.5px; line-height: 1.45; color: var(--text-1); }
+.kc-point-icon { flex: 0 0 auto; margin-top: 2px; }
+.kc-point-icon.ok { color: var(--green); }
+.kc-point-icon.no { color: var(--text-3); }
+.kc-next {
+  margin: 0;
+  padding: 9px 11px;
+  border-radius: 8px;
+  background: var(--bg-3);
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-2);
+}
+.kc-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.kc-status { display: flex; align-items: center; gap: 9px; margin-top: 4px; }
+.kc-status-text { flex: 1; }
+.kc-dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; background: var(--text-3); }
+.kc-dot.granted { background: var(--green); }
+.kc-dot.declined { background: var(--danger, #f85149); }
+.kc-dot.unset { background: var(--warn, #d29922); }
+
+/* ── Semantic diff summary ── */
+.sem-root {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-2);
+  margin: 0 0 8px;
+  overflow: hidden;
+  flex: 0 0 auto;
+}
+.sem-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 9px;
+  font-size: 11.5px;
+  color: var(--text-2);
+  cursor: pointer;
+  user-select: none;
+}
+.sem-head:hover { background: var(--bg-3); }
+.sem-head-icon { color: var(--accent); }
+.sem-title { font-weight: 600; color: var(--text-1); }
+.sem-count {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--accent);
+}
+.sem-lang { margin-left: auto; font-size: 10.5px; color: var(--text-3); font-family: var(--mono, monospace); }
+.sem-list { max-height: 190px; overflow-y: auto; padding: 2px 4px 5px; }
+.sem-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 3px 6px;
+  border-radius: 5px;
+  font-size: 11.5px;
+  cursor: pointer;
+  min-width: 0;
+}
+.sem-row:hover { background: var(--bg-3); }
+.sem-icon.renamed, .sem-kind.renamed { color: var(--accent); }
+.sem-icon.signature, .sem-kind.signature { color: var(--warn, #d29922); }
+.sem-icon.added, .sem-kind.added { color: var(--green); }
+.sem-icon.removed, .sem-kind.removed { color: var(--danger, #f85149); }
+.sem-icon.changed, .sem-kind.changed, .sem-icon.moved, .sem-kind.moved { color: var(--text-3); }
+.sem-kind {
+  flex: 0 0 auto;
+  min-width: 62px;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.sem-body { display: flex; align-items: center; gap: 5px; min-width: 0; overflow: hidden; }
+.sem-body code {
+  font-family: var(--mono, monospace);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sem-old { color: var(--text-3); text-decoration: line-through; }
+.sem-new { color: var(--text-1); font-weight: 600; }
+.sem-sig { color: var(--text-2); }
+.sem-arrow { flex: 0 0 auto; color: var(--text-3); }
+.sem-symkind { margin-left: auto; font-size: 10.5px; color: var(--text-3); flex: 0 0 auto; }
+.sem-note {
+  font-size: 10px;
+  color: var(--text-3);
+  background: var(--bg-4);
+  border-radius: 8px;
+  padding: 1px 6px;
+  flex: 0 0 auto;
+}
+
 /* ── Ref picker (themed replacement for <datalist>) ── */
 .refpick { position: relative; display: flex; align-items: center; min-width: 0; }
 .refpick-input { width: 100%; padding-right: 26px; }

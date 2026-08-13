@@ -19,6 +19,19 @@ const api = {
   // Resolve a dropped File to its absolute path (File.path was removed in Electron 32).
   getPathForFile: (file: File): string => webUtils.getPathForFile(file),
 
+  // OS keychain consent. `onAsk` fires when the main process is about to use
+  // safeStorage for the first time and wants the user to see why.
+  keychain: {
+    onAsk: (cb: (payload: { reason: string; adopted: boolean }) => void): (() => void) => {
+      const listener = (_e: unknown, payload: { reason: string; adopted: boolean }): void => cb(payload)
+      ipcRenderer.on('keychain:ask', listener)
+      return () => ipcRenderer.removeListener('keychain:ask', listener)
+    },
+    answer: (granted: boolean): Promise<void> => ipcRenderer.invoke('keychain:answer', granted),
+    status: (): Promise<unknown> => ipcRenderer.invoke('keychain:status'),
+    set: (granted: boolean): Promise<boolean> => ipcRenderer.invoke('keychain:set', granted)
+  },
+
   selectDirectory: (title?: string): Promise<string | null> => ipcRenderer.invoke('dialog:selectDirectory', title),
   savePatch: (defaultName: string, content: string): Promise<string | null> =>
     ipcRenderer.invoke('dialog:savePatch', defaultName, content),
@@ -41,6 +54,7 @@ const api = {
 
   settings: {
     get: (): Promise<unknown> => ipcRenderer.invoke('settings:get'),
+    unlock: (): Promise<unknown> => ipcRenderer.invoke('settings:unlock'),
     set: (settings: unknown): Promise<void> => ipcRenderer.invoke('settings:set', settings),
     importFile: (): Promise<unknown> => ipcRenderer.invoke('settings:importFile'),
     exportFile: (settings: unknown): Promise<boolean> => ipcRenderer.invoke('settings:exportFile', settings)

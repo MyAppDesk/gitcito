@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { ReactNode } from 'react'
-import type { CiState } from '../../../shared/types'
+import type { CiState, KeychainReason } from '../../../shared/types'
 
 export type CiFilter = 'all' | CiState
 
@@ -80,6 +80,7 @@ export type ModalSpec =
   | { kind: 'interactive-rebase'; repoPath: string; base: string; baseSubject: string }
   | { kind: 'branch-compare'; repoPath: string; branchA: string; branchB: string }
   | { kind: 'conflict-radar'; repoPath: string; base?: string }
+  | { kind: 'keychain-consent'; reason: KeychainReason; adopted?: boolean }
   | { kind: 'ai-pr-review'; repoPath: string; prTitle: string; sourceBranch: string; targetBranch: string }
   | { kind: 'group-color'; tabId: string; current?: string; onSelect: (color: string) => void }
   | { kind: 'reflog'; repoPath: string }

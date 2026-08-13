@@ -12,6 +12,7 @@ import { AIConfigWizard } from './AIConfigWizard'
 import { InteractiveRebase } from './InteractiveRebase'
 import { BranchComparison } from './BranchComparison'
 import { ConflictRadar } from './ConflictRadar'
+import { KeychainConsentModal } from './KeychainConsentModal'
 import { AIPRReview } from './AIPRReview'
 import { ReflogModal } from './ReflogModal'
 import { BisectModal } from './BisectModal'
@@ -1401,6 +1402,9 @@ export function ModalHost(): React.JSX.Element {
             )}
             {modal.kind === 'branch-compare' && (
               <BranchComparison repoPath={modal.repoPath} branchA={modal.branchA} branchB={modal.branchB} />
+            )}
+            {modal.kind === 'keychain-consent' && (
+              <KeychainConsentModal reason={modal.reason} adopted={modal.adopted} />
             )}
             {modal.kind === 'conflict-radar' && (
               <ConflictRadar repoPath={modal.repoPath} initialBase={modal.base} />

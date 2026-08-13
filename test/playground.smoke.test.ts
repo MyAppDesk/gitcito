@@ -58,7 +58,8 @@ const EXPECTED = [
   'nested-folders',
   'file-nav',
   'host-remotes',
-  'conflict-radar'
+  'conflict-radar',
+  'semantic-diff'
 ]
 
 describe('playground fixtures', () => {

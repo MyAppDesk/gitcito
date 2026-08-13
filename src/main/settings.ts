@@ -10,6 +10,7 @@ import {
   stripSettingsSecrets,
   type SecretStore
 } from '../shared/secrets'
+import { adoptExistingConsent, canUseKeychain, ensureKeychain } from './keychain'
 
 const settingsPath = (): string => join(app.getPath('userData'), 'gitcito-settings.json')
 const secretsPath = (): string => join(app.getPath('userData'), 'gitcito-secrets.enc')
@@ -21,12 +22,27 @@ const secretsPath = (): string => join(app.getPath('userData'), 'gitcito-secrets
 // Where the OS offers no encryption (a Linux box with no keyring), settings
 // keep working exactly as before rather than losing the user's credentials.
 
-function canEncrypt(): boolean {
-  try {
-    return safeStorage.isEncryptionAvailable()
-  } catch {
-    return false
-  }
+/**
+ * Tokens the user typed while the keychain was unavailable or refused. They
+ * stay in this process only: the app keeps working for the session, and the
+ * settings file on disk never gains a plaintext token behind the user's back.
+ */
+let sessionSecrets: SecretStore = {}
+
+/**
+ * Decrypted secrets for this run, or null while they are still on disk.
+ *
+ * Nothing hydrates them at start-up: reading the encrypted file means calling
+ * safeStorage, and on macOS that pops the system keychain dialog before the
+ * window has even painted — exactly the unexplained prompt this whole gate
+ * exists to prevent. They are decrypted on the first operation that genuinely
+ * needs a token (a push, a PR listing, opening Settings) instead.
+ */
+let secretCache: SecretStore | null = null
+
+async function canEncrypt(): Promise<boolean> {
+  // Never triggers an OS prompt: it only reports a consent already given.
+  return canUseKeychain()
 }
 
 async function loadSecrets(): Promise<SecretStore> {
@@ -44,6 +60,7 @@ async function saveSecrets(store: SecretStore): Promise<void> {
   await writeFile(secretsPath(), enc.toString('base64'), 'utf-8')
 }
 
+/** The settings JSON, with whatever secrets are already in memory applied. */
 async function readSettings(): Promise<AppSettings> {
   let settings: AppSettings
   try {
@@ -54,8 +71,23 @@ async function readSettings(): Promise<AppSettings> {
   } catch {
     return defaultSettings()
   }
+  return applySecrets(settings, { ...(secretCache ?? {}), ...sessionSecrets })
+}
 
-  if (!canEncrypt()) return settings
+/**
+ * Same, but decrypts the stored secrets first — asking for keychain access if
+ * that has not been settled yet. Only call this from something the user just
+ * did (opening Settings, a network git operation), never from start-up.
+ */
+async function readSettingsWithSecrets(reason: 'tokens' | 'settings' = 'tokens'): Promise<AppSettings> {
+  const settings = await readSettings()
+  if (secretCache) return settings
+
+  // An install that already has an encrypted secrets file predates the consent
+  // gate — its owner answered the OS prompt long ago, so they are not asked to
+  // decide again, only shown the explanation once.
+  await adoptExistingConsent([secretsPath()])
+  if (!(await ensureKeychain(reason))) return settings
 
   const stored = await loadSecrets()
   if (hasSettingsSecrets(settings)) {
@@ -65,9 +97,11 @@ async function readSettings(): Promise<AppSettings> {
     const merged = pruneSecrets({ ...stored, ...extractSecrets(settings) }, ids)
     await saveSecrets(merged)
     await writeFile(settingsPath(), JSON.stringify(stripSettingsSecrets(settings), null, 2), 'utf-8')
+    secretCache = merged
     return applySecrets(settings, merged)
   }
-  return applySecrets(settings, stored)
+  secretCache = stored
+  return applySecrets(settings, { ...stored, ...sessionSecrets })
 }
 
 const TOKEN_FIELD: Record<RepoHost, 'githubToken' | 'gitlabToken' | 'bitbucketToken' | 'azureToken'> = {
@@ -87,7 +121,7 @@ const TOKEN_FIELD: Record<RepoHost, 'githubToken' | 'gitlabToken' | 'bitbucketTo
  * would authenticate as whichever repo the user happens to be looking at.
  */
 export async function activeProfileToken(host: RepoHost, repoPath?: string): Promise<string | undefined> {
-  const settings = await readSettings()
+  const settings = await readSettingsWithSecrets('tokens')
   const boundId = repoPath ? settings.repoProfiles?.[repoPath] : undefined
   const profile =
     (boundId ? settings.profiles.find((p) => p.id === boundId) : undefined) ??
@@ -99,20 +133,42 @@ export async function activeProfileToken(host: RepoHost, repoPath?: string): Pro
 
 async function writeSettings(settings: AppSettings): Promise<void> {
   await mkdir(app.getPath('userData'), { recursive: true })
-  if (!canEncrypt()) {
-    await writeFile(settingsPath(), JSON.stringify(settings, null, 2), 'utf-8')
+  const secrets = extractSecrets(settings)
+  const hasSecrets = Object.keys(secrets).length > 0
+
+  // Saving anything else while the secrets are still encrypted on disk must not
+  // wipe them: the caller simply never had them to send back.
+  if (!hasSecrets && !secretCache) {
+    await writeFile(settingsPath(), JSON.stringify(stripSettingsSecrets(settings), null, 2), 'utf-8')
+    return
+  }
+
+  // Saving a token is the moment worth asking about — and only then. A settings
+  // write with nothing sensitive in it never goes near the keychain.
+  const allowed = hasSecrets ? await ensureKeychain('tokens') : await canEncrypt()
+
+  if (!allowed) {
+    // Refused (or no keyring): hold the secrets in memory for this session and
+    // keep them out of the file, rather than writing them in the clear.
+    if (hasSecrets) sessionSecrets = secrets
+    await writeFile(settingsPath(), JSON.stringify(stripSettingsSecrets(settings), null, 2), 'utf-8')
     return
   }
   // Secrets first: if the keychain write fails, the JSON on disk still holds the
   // previous values instead of being stripped with nowhere to read them from.
   // Clearing a token in the UI removes it here too; so does deleting a profile.
-  await saveSecrets(extractSecrets(settings))
+  await saveSecrets(secrets)
+  secretCache = secrets
+  sessionSecrets = {}
   await writeFile(settingsPath(), JSON.stringify(stripSettingsSecrets(settings), null, 2), 'utf-8')
 }
 
 export function registerSettingsHandlers(): void {
   ipcMain.handle('settings:get', () => readSettings())
   ipcMain.handle('settings:set', (_e, settings: AppSettings) => writeSettings(settings))
+  // Called when the user opens Settings: that is an explicit "show me my
+  // credentials", so it is a fair moment to decrypt (and to ask, if needed).
+  ipcMain.handle('settings:unlock', () => readSettingsWithSecrets('settings'))
 
   ipcMain.handle('settings:importFile', async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({

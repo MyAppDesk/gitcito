@@ -62,9 +62,12 @@ import type {
   RepoHost,
   MergePreviewEntry,
   MergePreviewResult,
-  MergeRiskKind
+  MergeRiskKind,
+  BlobSpec,
+  SemanticDiff
 } from '../shared/types'
 import { parseMergeTreeSingle, parseMergeTreeStdin, type MergeTreeRecord } from '../shared/mergeTree'
+import { semanticCompare } from './semantic'
 import { recordEvent } from './analytics'
 import { recordLog } from './log'
 import { activeProfileToken } from './settings'
@@ -2134,6 +2137,27 @@ export const gitService = {
     )
   },
 
+  /**
+   * Semantic diff of one file between two versions — renames, signature
+   * changes, moves and per-symbol edits instead of raw +/- lines. Read-only:
+   * both sides come out of the object database (or the working tree copy).
+   */
+  async semanticDiff(repoPath: string, file: string, oldSide: BlobSpec, newSide: BlobSpec): Promise<SemanticDiff> {
+    const read = async (spec: BlobSpec): Promise<string> => {
+      if (spec.kind === 'empty') return ''
+      if (spec.kind === 'worktree') return readFile(join(repoPath, file), 'utf-8').catch(() => '')
+      // `:file` is the staged copy; `<ref>:file` any committed one. A path that
+      // doesn't exist on that side (added/deleted file) reads as empty.
+      const rev = spec.kind === 'index' ? `:${file}` : `${spec.ref}:${file}`
+      return gitFor(repoPath)
+        .raw(['show', rev])
+        .catch(() => '')
+    }
+    const [oldText, newText] = await Promise.all([read(oldSide), read(newSide)])
+    if (!oldText && !newText) return { language: null, changes: [] }
+    return semanticCompare(file, oldText, newText)
+  },
+
   async stashFiles(repoPath: string, sha: string, untrackedSha?: string | null): Promise<FileEntry[]> {
     const git = gitFor(repoPath)
     const out = await git.raw(['diff', '--name-status', '-M', `${sha}^1`, sha])
@@ -3400,6 +3424,7 @@ const READ_METHODS = new Set<string>([
   'interactiveRebaseSteps',
   'compareBranches',
   'mergePreview',
+  'semanticDiff',
   'repoStats',
   'repoInsights',
   'cosmosData',

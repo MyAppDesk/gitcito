@@ -7,3 +7,6 @@ examples/playground/
 
 # TypeScript incremental build cache
 *.tsbuildinfo
+
+# tree-sitter grammars, copied from node_modules by scripts/sync-grammars.mjs
+resources/tree-sitter/

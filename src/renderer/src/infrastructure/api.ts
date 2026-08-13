@@ -3,7 +3,9 @@ import type {
   BlameLine,
   BranchCompareResult,
   BranchesPayload,
+  BlobSpec,
   MergePreviewResult,
+  SemanticDiff,
   CiStatus,
   CommitBranchInfo,
   ConflictContext,
@@ -77,6 +79,8 @@ import type {
   HoverExplainRequest,
   HoverExplainResult,
   ImportGraph,
+  KeychainConsent,
+  KeychainReason,
   RepoFacts,
   RepoWiki,
   WikiProgress
@@ -333,6 +337,8 @@ export const gitApi = {
     call<BranchCompareResult>('compareBranches', path, a, b),
   mergePreview: (path: string, base: string, refs: string[]) =>
     call<MergePreviewResult>('mergePreview', path, base, refs),
+  semanticDiff: (path: string, file: string, oldSide: BlobSpec, newSide: BlobSpec) =>
+    call<SemanticDiff>('semanticDiff', path, file, oldSide, newSide),
   repoStats: (path: string, sinceDays?: number) => call<RepoStats>('repoStats', path, sinceDays),
   repoInsights: (path: string, sinceDays?: number) => call<RepoInsights>('repoInsights', path, sinceDays),
   cosmosData: (path: string, limit?: number) => call<CosmosCommit[]>('cosmosData', path, limit),
@@ -347,6 +353,10 @@ export const gitApi = {
 
 export const settingsApi = {
   get: () => window.api.settings.get() as Promise<AppSettings>,
+  // Decrypts the stored tokens (asking for keychain access if needed) and
+  // returns the settings with them filled in. Only call it from an explicit
+  // user action — never on start-up.
+  unlock: () => window.api.settings.unlock() as Promise<AppSettings>,
   set: (s: AppSettings) => window.api.settings.set(s),
   importFile: () => window.api.settings.importFile() as Promise<unknown>,
   exportFile: (data: unknown) => window.api.settings.exportFile(data)
@@ -565,6 +575,21 @@ export const hostingApi = {
     }>,
   milestoneIssues: (remoteUrl: string, tokens: { github?: string }, number: number) =>
     window.api.hosting.milestoneIssues(remoteUrl, tokens, number) as Promise<IssueInfo[]>
+}
+
+// OS keychain consent. Nothing in the app touches safeStorage until the user
+// has answered the explainer this drives.
+export const keychainApi = {
+  onAsk: (cb: (payload: { reason: KeychainReason; adopted: boolean }) => void) =>
+    window.api.keychain.onAsk((p) => cb({ reason: p.reason as KeychainReason, adopted: p.adopted })),
+  answer: (granted: boolean) => window.api.keychain.answer(granted),
+  status: () =>
+    window.api.keychain.status() as Promise<{
+      consent: KeychainConsent
+      explained: boolean
+      available: boolean | null
+    }>,
+  set: (granted: boolean) => window.api.keychain.set(granted)
 }
 
 // Installs/checks the `gitcito` shell command (macOS only), the equivalent of

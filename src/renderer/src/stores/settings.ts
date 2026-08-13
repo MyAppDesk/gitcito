@@ -105,7 +105,7 @@ interface SettingsState {
   settings: AppSettings
   loaded: boolean
 
-  load(): Promise<void>
+  load(opts?: { unlock?: boolean }): Promise<void>
   update(mut: (s: AppSettings) => AppSettings): void
 
   activeProfile(): Profile
@@ -186,8 +186,11 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   settings: defaultSettings(),
   loaded: false,
 
-  load: async () => {
-    const settings = await settingsApi.get()
+  load: async (opts) => {
+    // `unlock` decrypts the stored tokens on the way — used when the user opens
+    // Settings, never on start-up (that would pop the OS keychain dialog before
+    // the window has even painted).
+    const settings = opts?.unlock ? await settingsApi.unlock() : await settingsApi.get()
     if (!settings.profiles.length) settings.profiles = [defaultProfile()]
     // Backwards compatibility: merge in newly added fields.
     const defaults = defaultProfile()

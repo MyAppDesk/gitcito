@@ -41,7 +41,7 @@ import { ZoomControl } from './components/ZoomControl'
 import gitcitoLaunch from './assets/gitcito-launch.png'
 import { matchShortcut, effectiveBindings } from './lib/shortcuts'
 import { folderOpenMenuItems } from './lib/openWith'
-import { hostingApi, gitApi, cliApi } from './infrastructure/api'
+import { hostingApi, gitApi, cliApi, keychainApi } from './infrastructure/api'
 
 function InitRepo({ path }: { path: string }): React.JSX.Element {
   const [busy, setBusy] = useState(false)
@@ -292,6 +292,14 @@ export default function App(): React.JSX.Element {
       off()
       unsub()
     }
+  }, [])
+
+  // The main process never touches the OS keychain without asking first: it
+  // fires this, we explain why, and only the user's answer unblocks it.
+  useEffect(() => {
+    return keychainApi.onAsk(({ reason, adopted }) => {
+      useUIStore.getState().openModal({ kind: 'keychain-consent', reason, adopted })
+    })
   }, [])
 
   // Global keyboard shortcuts, dispatched from the central registry so bindings

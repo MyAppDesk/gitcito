@@ -4,6 +4,7 @@ import { readFile, writeFile, mkdir } from 'fs/promises'
 import { randomUUID } from 'node:crypto'
 import type { VaultEntry, VaultListResult, VaultExport } from '../shared/types'
 import type { BundleVaultEntry } from './secureBundle'
+import { adoptExistingConsent, canUseKeychain, ensureKeychain } from './keychain'
 
 // A small local secrets store, encrypted at rest with the OS keychain via
 // Electron safeStorage. Two scopes: per-repo entries (keyed by repo path) and a
@@ -41,13 +42,19 @@ function bucket(data: VaultData, scope: Scope, repoPath: string): VaultEntry[] {
 }
 
 async function list(repoPath: string): Promise<VaultListResult> {
-  const available = safeStorage.isEncryptionAvailable()
+  // A vault file from before the consent gate means the OS prompt was already
+  // answered once; don't make its owner do it again.
+  await adoptExistingConsent([filePath()])
+  // Opening the vault is an explicit ask for the thing the keychain protects,
+  // so this is the right moment to explain and request access.
+  const available = await ensureKeychain('vault')
   if (!available) return { available: false, repo: [], global: [] }
   const data = await load()
   return { available: true, repo: data.repos[repoPath] ?? [], global: data.global }
 }
 
 async function upsert(scope: Scope, repoPath: string, entry: VaultEntry): Promise<VaultListResult> {
+  if (!(await ensureKeychain('vault'))) return { available: false, repo: [], global: [] }
   const data = await load()
   const arr = bucket(data, scope, repoPath)
   const now = Date.now()
@@ -63,6 +70,7 @@ async function upsert(scope: Scope, repoPath: string, entry: VaultEntry): Promis
 }
 
 async function remove(scope: Scope, repoPath: string, id: string): Promise<VaultListResult> {
+  if (!(await ensureKeychain('vault'))) return { available: false, repo: [], global: [] }
   const data = await load()
   const arr = bucket(data, scope, repoPath)
   const i = arr.findIndex((e) => e.id === id)
@@ -80,7 +88,7 @@ function mergeEntries(base: VaultEntry[], incoming: VaultEntry[]): VaultEntry[] 
 
 /** Whole vault, for backup/transfer. Empty when OS encryption is unavailable. */
 async function exportAll(): Promise<VaultExport> {
-  if (!safeStorage.isEncryptionAvailable()) return { repos: {}, global: [] }
+  if (!(await ensureKeychain('vault'))) return { repos: {}, global: [] }
   const data = await load()
   return { repos: data.repos, global: data.global }
 }
@@ -88,7 +96,7 @@ async function exportAll(): Promise<VaultExport> {
 /** Merge an imported vault into the local one (incoming wins per id). No-op if
  *  OS encryption is unavailable (we can't safely persist secrets). */
 async function importAll(incoming: VaultExport): Promise<void> {
-  if (!safeStorage.isEncryptionAvailable() || !incoming) return
+  if (!incoming || !(await ensureKeychain('vault'))) return
   const data = await load()
   data.global = mergeEntries(data.global, incoming.global ?? [])
   for (const [path, entries] of Object.entries(incoming.repos ?? {})) {
@@ -100,7 +108,7 @@ async function importAll(incoming: VaultExport): Promise<void> {
 /** Global vault secrets as portable bundle entries (no id/updatedAt). Empty when
  *  OS encryption is unavailable. Used by secure-share to pack a vault section. */
 export async function exportGlobalEntries(): Promise<BundleVaultEntry[]> {
-  if (!safeStorage.isEncryptionAvailable()) return []
+  if (!(await canUseKeychain())) return []
   const data = await load()
   return data.global.map((e) => ({ key: e.key, value: e.value, ...(e.note ? { note: e.note } : {}) }))
 }
@@ -108,7 +116,7 @@ export async function exportGlobalEntries(): Promise<BundleVaultEntry[]> {
 /** Merge bundle vault entries into the global vault, matching by key (incoming
  *  value/note win). Returns how many were written; 0 if encryption unavailable. */
 export async function importGlobalEntries(entries: BundleVaultEntry[]): Promise<number> {
-  if (!safeStorage.isEncryptionAvailable() || entries.length === 0) return 0
+  if (entries.length === 0 || !(await ensureKeychain('vault'))) return 0
   const data = await load()
   const now = Date.now()
   for (const inc of entries) {

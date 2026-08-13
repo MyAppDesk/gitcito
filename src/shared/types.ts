@@ -177,6 +177,53 @@ export interface MergePreviewResult {
   scannedAt: number
 }
 
+/** Whether the user has let Gitcito use the OS keychain (safeStorage). */
+export type KeychainConsent = 'granted' | 'declined' | 'unset'
+
+/** What Gitcito is about to encrypt, so the explainer can say why it asks. */
+export type KeychainReason = 'tokens' | 'vault' | 'settings'
+
+/** What a declaration is, for the semantic-diff labels. */
+export type SemanticSymbolKind =
+  | 'function'
+  | 'method'
+  | 'class'
+  | 'interface'
+  | 'struct'
+  | 'enum'
+  | 'type'
+  | 'module'
+  | 'property'
+
+/** One structural difference between two versions of a file. */
+export interface SemanticChange {
+  kind: 'added' | 'removed' | 'renamed' | 'signature' | 'moved' | 'changed'
+  /** Qualified name in the new file (`Class.method`). */
+  symbol: string
+  /** Previous qualified name, for renames. */
+  oldName?: string
+  symbolKind: SemanticSymbolKind
+  /** 1-based line in the new file (the old file, for removals). */
+  line?: number
+  /** Rename: how many times the identifier appears. Move: line delta. */
+  detail?: string
+  oldSignature?: string
+  newSignature?: string
+  /** A rename or signature change that also rewrote the body. */
+  bodyChanged?: boolean
+}
+
+export interface SemanticDiff {
+  /** Grammar used, or null when the file's language has none (UI stays on lines). */
+  language: string | null
+  changes: SemanticChange[]
+  /** File too big to parse twice — no changes were computed. */
+  truncated?: boolean
+}
+
+/** Which version of a file to read: a git ref, the index, or the working tree. */
+export type BlobSpec = { kind: 'ref'; ref: string } | { kind: 'index' } | { kind: 'worktree' } | { kind: 'empty' }
+
 export type FileChangeKind = 'A' | 'M' | 'D' | 'R' | 'C' | 'U' | '?'
 
 export interface FileEntry {

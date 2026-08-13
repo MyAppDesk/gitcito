@@ -47,10 +47,10 @@ import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
 import { Avatar } from './Avatar'
 import { useUpdatesStore, hasPendingUpdate } from '../stores/updates'
-import { gitApi, aiApi, settingsApi, analyticsApi, logApi, infoApi, vaultApi, shellApi, hostingApi } from '../infrastructure/api'
+import { gitApi, aiApi, settingsApi, analyticsApi, logApi, infoApi, vaultApi, shellApi, hostingApi, keychainApi } from '../infrastructure/api'
 import { AI_PROVIDERS, emptyAnalytics, defaultGraphStyle, type AIProvider, type Analytics, type AIUsageStat, type ActivityEvent, type RepoStats, type AppSettings, type BranchNamingStyle, type CommitStyle, type ConflictStyle, type ExplainStyle, type Profile, type SigningConfig, type SettingsBundle, type GraphStyle, type GraphPalette, type GraphEdgeStyle, type GraphDensity, type GraphLineWidth, type GraphNodeStyle, type GraphTopology, type GraphCommit, type ConnectedAccount } from '../../../shared/types'
 import { hasSettingsSecrets, stripSettingsSecrets } from '../../../shared/secrets'
-import type { HoverModifier } from '../../../shared/types'
+import type { HoverModifier, KeychainConsent } from '../../../shared/types'
 import { allGraphPalettes, findGraphPalette, colorForPalette, edgePath, spurPath, DENSITY_ROW_H, LINE_WIDTH_PX, GRAPH_PALETTES } from '../graph/style'
 import { layoutGraph } from '../graph/layout'
 import type {
@@ -2450,6 +2450,56 @@ function GeneralPage(): React.JSX.Element {
   )
 }
 
+function KeychainCard(): React.JSX.Element {
+  const [status, setStatus] = useState<{ consent: KeychainConsent; available: boolean | null } | null>(null)
+  const load = useSettingsStore((s) => s.load)
+  const t = useT()
+
+  const refresh = (): void => {
+    void keychainApi.status().then(setStatus)
+  }
+  useEffect(refresh, [])
+
+  const set = async (granted: boolean): Promise<void> => {
+    await keychainApi.set(granted)
+    // Enabling also unlocks whatever is already stored, so the token fields
+    // stop looking empty; disabling just re-reads what is left in memory.
+    await load(granted ? { unlock: true } : undefined)
+    refresh()
+  }
+
+  const consent = status?.consent ?? 'unset'
+  const message =
+    consent === 'granted'
+      ? status?.available === false
+        ? t('keychain.statusUnavailable')
+        : t('keychain.statusGranted')
+      : consent === 'declined'
+        ? t('keychain.statusDeclined')
+        : t('keychain.statusUnset')
+
+  return (
+    <>
+      <h4 style={{ marginTop: 18 }}>
+        <KeyRound size={14} /> {t('keychain.settingsTitle')}
+      </h4>
+      <div className="kc-status">
+        <span className={`kc-dot ${consent}`} />
+        <span className="settings-hint kc-status-text">{message}</span>
+        {consent === 'granted' ? (
+          <button className="btn ghost small" onClick={() => void set(false)}>
+            {t('keychain.disable')}
+          </button>
+        ) : (
+          <button className="btn ghost small" onClick={() => void set(true)}>
+            {t('keychain.enable')}
+          </button>
+        )}
+      </div>
+    </>
+  )
+}
+
 function SecurityPage(): React.JSX.Element {
   const settings = useSettingsStore((s) => s.settings)
   const update = useSettingsStore((s) => s.update)
@@ -2499,6 +2549,8 @@ function SecurityPage(): React.JSX.Element {
       <span className="settings-hint">{t('settings.largeFileWarnHint')}</span>
 
       <span className="settings-hint" style={{ display: 'block', marginTop: 12 }}>{t('settings.protectedBranchesMoved')}</span>
+
+      <KeychainCard />
 
       <h4 style={{ marginTop: 18 }}>
         <KeyRound size={14} /> {t('settings.vault')}
@@ -2964,6 +3016,16 @@ export function SettingsPanel({ initialPage, initialThemeTab }: { initialPage?: 
   useEffect(() => {
     localStorage.setItem(LAST_PAGE_KEY, page)
   }, [page])
+
+  // Tokens are left encrypted at start-up, so this dialog is where they get
+  // decrypted — but only when access was already granted and explained. If it
+  // wasn't, the fields stay empty and Security offers to turn it on, rather
+  // than replacing this dialog with the consent one the moment it opens.
+  useEffect(() => {
+    void keychainApi.status().then((st) => {
+      if (st.consent === 'granted' && st.explained) void useSettingsStore.getState().load({ unlock: true })
+    })
+  }, [])
 
   useEffect(() => {
     void window.api.appVersion().then(setVersion)

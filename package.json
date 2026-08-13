@@ -8,7 +8,7 @@
   "author": "MyAppDesk <team@myappdesk.dev>",
   "scripts": {
     "dev": "electron-vite dev",
-    "build": "electron-vite build",
+    "build": "node scripts/sync-grammars.mjs && electron-vite build",
     "dist:mac": "electron-builder --mac",
     "dist:win": "electron-builder --win",
     "dist:linux": "electron-builder --linux",
@@ -23,7 +23,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
-    "postinstall": "electron-rebuild -f -w node-pty || true",
+    "postinstall": "electron-rebuild -f -w node-pty || true && node scripts/sync-grammars.mjs",
     "prepare": "husky"
   },
   "build": {
@@ -42,6 +42,10 @@
       {
         "from": "resources/cli",
         "to": "cli"
+      },
+      {
+        "from": "resources/tree-sitter",
+        "to": "tree-sitter"
       }
     ],
     "publish": {
@@ -115,6 +119,7 @@
     "react-dom": "^18.3.1",
     "simple-git": "^3.27.0",
     "three": "^0.185.1",
+    "web-tree-sitter": "^0.24.7",
     "xlsx": "^0.18.5",
     "zustand": "^4.5.5"
   },
@@ -137,6 +142,7 @@
     "husky": "^9.1.7",
     "playwright": "^1.61.0",
     "release-it": "^17.1.1",
+    "tree-sitter-wasms": "^0.1.13",
     "typescript": "^5.6.3",
     "vite": "^5.4.9",
     "vitest": "^2.1.9"

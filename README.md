@@ -99,6 +99,7 @@
 ### Sync, stashes, tags & worktrees
 - **Pull** (default, fast-forward-only or rebase) and **push** with safe `--force-with-lease` + optional confirmation.
 - **Fetch all & prune**, plus background **auto-fetch** on a configurable interval and a "fetched X ago" badge.
+- **Mission control** — every open repository on one screen, ordered by what actually needs you: a repo stuck mid-rebase or with conflicts first, then work to pull or push, then dirty trees, then the quiet ones. Each row shows the branch and its upstream, ↑ahead / ↓behind, uncommitted and untracked counts, stashes, open PRs (when already loaded) and how long since the last commit, with per-row **fetch / pull / open** and a **Fetch all**. Reading it is purely local — one `git status` per repo, no network, no tokens — so opening the dashboard never authenticates anywhere. From the tools menu or `⌘K`.
 - **Multi-repo batch** — **Fetch all** / **Pull all** every repository in a group at once (from the group home or the group tab's right-click menu), with a single summary of what succeeded.
 - **Stashes** with untracked files, messages, per-file apply, and a details/diff view — plus **partial stash** (tick just the files you want, optionally `--keep-index`) and **stash → branch** (`git stash branch`) when a stash won't apply cleanly.
 - **Tags**: create lightweight, **annotated (with a message) or GPG/SSH-signed** tags, delete locally, push or delete on the remote, browse remote tags.

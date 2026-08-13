@@ -28,6 +28,7 @@ import { useUpdatesStore, hasPendingUpdate } from './stores/updates'
 import { Welcome, LauncherPanel, type LauncherItem } from './components/Welcome'
 import { OnboardingWizard } from './components/OnboardingWizard'
 import { ChangelogPage } from './components/ChangelogPage'
+import { MissionControlPage } from './components/MissionControlPage'
 import { LogsPage } from './components/LogsPage'
 import { NotificationsPage } from './components/NotificationsPage'
 import { InsightsPage } from './components/InsightsPage'
@@ -410,8 +411,17 @@ export default function App(): React.JSX.Element {
     settings.customCodeThemes
   ])
 
+  const missionOpen = useUIStore((s) => s.missionOpen)
+  const setMissionOpen = useUIStore((s) => s.setMissionOpen)
   const activeTab = settings.tabs.find((t) => t.id === settings.activeTabId) ?? null
   const activeRepoPath = activeTab ? tabActiveRepoPath(activeTab) : null
+
+  // Clicking any tab (or switching workspace) leaves mission control — the
+  // dashboard is a detour, not somewhere the tab strip can point at.
+  useEffect(() => {
+    if (missionOpen) setMissionOpen(false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settings.activeTabId, settings.activeWorkspaceId])
 
   useEffect(() => {
     if (!activeRepoPath) return
@@ -769,13 +779,17 @@ export default function App(): React.JSX.Element {
       <OnboardingWizard />
       */}
 
-      {!activeTab && <Welcome />}
-      {activeTab && activeTab.kind === 'group' && !repo && <GroupView tab={activeTab} />}
-      {activeTab && activeTab.kind === 'page' && <PageView tab={activeTab} />}
+      {/* Mission control takes over the whole body while it is on — the
+          title-bar button is its "tab", so the strip stays untouched. */}
+      {missionOpen && <MissionControlPage />}
 
-      {activeTab && repo && repo.notGit && <InitRepo path={repo.path} />}
+      {!missionOpen && !activeTab && <Welcome />}
+      {!missionOpen && activeTab && activeTab.kind === 'group' && !repo && <GroupView tab={activeTab} />}
+      {!missionOpen && activeTab && activeTab.kind === 'page' && <PageView tab={activeTab} />}
 
-      {activeTab && repo && !repo.notGit && (
+      {!missionOpen && activeTab && repo && repo.notGit && <InitRepo path={repo.path} />}
+
+      {!missionOpen && activeTab && repo && !repo.notGit && (
         <>
           <Toolbar repo={repo} />
           {workspaceBody}

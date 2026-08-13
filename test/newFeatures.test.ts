@@ -717,3 +717,88 @@ describe('timelapseData (time-machine playground)', () => {
     expect(await gitService.timelapseData(R, 3)).toHaveLength(3)
   })
 })
+
+describe('repoPulse — mission control (playground)', () => {
+  it('reads branch, upstream and ahead/behind in one pass', async () => {
+    const p = await gitService.repoPulse(repoPath('absorb'))
+    expect(p.name).toBe('absorb')
+    expect(p.branch).toBe('main')
+    expect(p.upstream).toBe('origin/main')
+    // Three unpushed commits is exactly what makes that fixture absorbable.
+    expect(p.ahead).toBe(3)
+    expect(p.behind).toBe(0)
+    expect(p.lastCommitAt).toBeGreaterThan(0)
+    expect(p.error).toBeNull()
+  })
+
+  it('counts staged, unstaged and untracked separately', async () => {
+    const R = cloneFixture('absorb')
+    let p = await gitService.repoPulse(R)
+    // The fixture leaves two edits and one new file in the working tree.
+    expect(p.unstaged).toBe(2)
+    expect(p.untracked).toBe(1)
+    expect(p.staged).toBe(0)
+
+    await gitService.stageAll(R)
+    p = await gitService.repoPulse(R)
+    expect(p.staged).toBe(3)
+    expect(p.unstaged).toBe(0)
+    expect(p.untracked).toBe(0)
+  })
+
+  it('flags a conflicted merge left in progress', async () => {
+    const R = cloneFixture('merge-conflict')
+    await gitService.merge(R, 'feature').catch(() => undefined) // conflicts on purpose
+    const p = await gitService.repoPulse(R)
+    expect(p.operation).toBe('merge')
+    expect(p.conflicted).toBeGreaterThan(0)
+  })
+
+  it('counts stashes', async () => {
+    const R = cloneFixture('stash-picking')
+    const before = await gitService.repoPulse(R)
+    expect(before.stashes).toBeGreaterThan(0)
+  })
+
+  it('reports an unreadable path instead of throwing', async () => {
+    const p = await gitService.repoPulse('/definitely/not/a/repo')
+    expect(p.error).toBeTruthy()
+    expect(p.branch).toBe('')
+  })
+})
+
+describe('repoPulse activity + repoDetail (mission control)', () => {
+  it('buckets recent commits per day for the sparkline', async () => {
+    const R = cloneFixture('absorb')
+    const p = await gitService.repoPulse(R)
+    expect(p.activity).toHaveLength(14)
+    // The fixture's commits were made just now, so they land in the last bucket.
+    expect(p.activity[13]).toBeGreaterThan(0)
+    expect(p.activity.slice(0, 13).every((n) => n === 0)).toBe(true)
+  })
+
+  it('lists what is dirty and what is waiting to be pushed', async () => {
+    const R = cloneFixture('absorb')
+    const detail = await gitService.repoDetail(R)
+    // Three unpushed commits, newest first.
+    expect(detail.commits.map((c) => c.subject)).toEqual([
+      'feat: add logger',
+      'feat: add parser',
+      'feat: add auth'
+    ])
+    expect(detail.commits.every((c) => /^[0-9a-f]{7,}$/.test(c.hash))).toBe(true)
+    // Two edits plus the untracked file the fixture leaves behind — the row
+    // shows everything that is in flight, however it got there.
+    expect(detail.files.map((f) => `${f.status} ${f.path}`).sort()).toEqual([
+      '? src/cache.ts',
+      'M src/auth.ts',
+      'M src/parser.ts'
+    ])
+  })
+
+  it('caps how much detail it reads', async () => {
+    const detail = await gitService.repoDetail(repoPath('deep-history-monorepo'), 3)
+    expect(detail.commits.length).toBeLessThanOrEqual(3)
+    expect(detail.files.length).toBeLessThanOrEqual(3)
+  })
+})

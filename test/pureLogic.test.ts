@@ -20,7 +20,16 @@ import {
   stateAt,
   topFolder
 } from '../src/renderer/src/lib/timelapse'
-import type { TimelapseCommit } from '../src/shared/types'
+import type { RepoPulse, TimelapseCommit } from '../src/shared/types'
+import {
+  activityTotal,
+  bulkTargets,
+  orderPulses,
+  pulseTotals,
+  pulseVerdict,
+  sortPulses,
+  sparklinePoints
+} from '../src/renderer/src/lib/missionControl'
 import {
   deleteFolder,
   detachPath,
@@ -2542,5 +2551,138 @@ describe('timelapse simulation', () => {
     expect(nodeAlpha(dead, 2, 10)).toBe(1)
     expect(nodeAlpha(dead, 7, 10)).toBeCloseTo(0.5)
     expect(nodeAlpha(dead, 12, 10)).toBe(0)
+  })
+})
+
+describe('mission control ranking', () => {
+  const pulse = (over: Partial<RepoPulse> = {}): RepoPulse => ({
+    path: `/r/${over.name ?? 'repo'}`,
+    name: 'repo',
+    branch: 'main',
+    upstream: 'origin/main',
+    ahead: 0,
+    behind: 0,
+    staged: 0,
+    unstaged: 0,
+    untracked: 0,
+    conflicted: 0,
+    stashes: 0,
+    lastCommitAt: 1000,
+    operation: null,
+    error: null,
+    ...over
+  })
+
+  it('calls a clean repo clean and says nothing about it', () => {
+    const v = pulseVerdict(pulse())
+    expect(v.level).toBe('clean')
+    expect(v.reasons).toEqual([])
+  })
+
+  it('treats an interrupted operation or conflicts as blocking', () => {
+    expect(pulseVerdict(pulse({ operation: 'rebase' })).level).toBe('blocked')
+    expect(pulseVerdict(pulse({ conflicted: 2 })).level).toBe('blocked')
+    expect(pulseVerdict(pulse({ error: 'not a repo' }))).toMatchObject({ level: 'blocked', reasons: ['unreadable'] })
+  })
+
+  it('ranks sync work above uncommitted work, and both above quiet repos', () => {
+    const blocked = pulseVerdict(pulse({ conflicted: 1 })).score
+    const behind = pulseVerdict(pulse({ behind: 3 })).score
+    const ahead = pulseVerdict(pulse({ ahead: 3 })).score
+    const dirty = pulseVerdict(pulse({ unstaged: 3 })).score
+    const clean = pulseVerdict(pulse()).score
+    expect(blocked).toBeGreaterThan(behind)
+    expect(behind).toBeGreaterThan(ahead)
+    expect(ahead).toBeGreaterThan(dirty)
+    expect(dirty).toBeGreaterThan(clean)
+  })
+
+  it('explains each row in words', () => {
+    const v = pulseVerdict(pulse({ ahead: 2, unstaged: 1, untracked: 4, stashes: 1 }))
+    expect(v.reasons).toEqual(['2 to push', '1 uncommitted', '4 untracked', '1 stashed'])
+    expect(v.level).toBe('action')
+  })
+
+  it('nudges a branch with no upstream, quietly', () => {
+    const v = pulseVerdict(pulse({ upstream: null }))
+    expect(v.reasons).toEqual(['no upstream'])
+    // Not enough to promote it out of "clean" on its own.
+    expect(v.level).toBe('clean')
+  })
+
+  it('sorts the list by urgency, then by most recently active', () => {
+    const list = [
+      pulse({ name: 'quiet', path: '/r/quiet', lastCommitAt: 10 }),
+      pulse({ name: 'stuck', path: '/r/stuck', conflicted: 1 }),
+      pulse({ name: 'behind', path: '/r/behind', behind: 5 }),
+      pulse({ name: 'fresh', path: '/r/fresh', lastCommitAt: 99 })
+    ]
+    expect(sortPulses(list).map((p) => p.path)).toEqual(['/r/stuck', '/r/behind', '/r/fresh', '/r/quiet'])
+  })
+
+  it('counts how many repos sit at each level', () => {
+    const totals = pulseTotals([pulse({ conflicted: 1 }), pulse({ ahead: 1 }), pulse({ unstaged: 1 }), pulse()])
+    expect(totals).toEqual({ blocked: 1, action: 1, pending: 1, clean: 1 })
+  })
+})
+
+describe('mission control ordering, bulk and sparkline', () => {
+  const mk = (over: Partial<RepoPulse> = {}): RepoPulse => ({
+    path: `/r/${over.name ?? 'repo'}`,
+    name: over.name ?? 'repo',
+    branch: 'main',
+    upstream: 'origin/main',
+    ahead: 0,
+    behind: 0,
+    staged: 0,
+    unstaged: 0,
+    untracked: 0,
+    conflicted: 0,
+    stashes: 0,
+    lastCommitAt: 1000,
+    operation: null,
+    activity: [],
+    error: null,
+    ...over
+  })
+
+  it('offers name and activity orderings alongside urgency', () => {
+    const list = [
+      mk({ name: 'zeta', activity: [1, 1] }),
+      mk({ name: 'alpha', activity: [9] }),
+      mk({ name: 'mid', conflicted: 1, activity: [] })
+    ]
+    expect(orderPulses(list, 'name').map((p) => p.name)).toEqual(['alpha', 'mid', 'zeta'])
+    expect(orderPulses(list, 'activity').map((p) => p.name)).toEqual(['alpha', 'zeta', 'mid'])
+    // Urgency still puts the blocked repo first, whatever its activity.
+    expect(orderPulses(list, 'urgency')[0].name).toBe('mid')
+  })
+
+  it('sums recent activity for the sparkline and the ordering', () => {
+    expect(activityTotal(mk({ activity: [1, 0, 3] }))).toBe(4)
+    expect(activityTotal(mk())).toBe(0)
+  })
+
+  it('only offers to pull the repos that are actually behind', () => {
+    const targets = bulkTargets([
+      mk({ name: 'behind', behind: 2 }),
+      mk({ name: 'ahead', ahead: 2 }),
+      mk({ name: 'noUpstream', upstream: null, behind: 3 }),
+      mk({ name: 'broken', error: 'gone' })
+    ])
+    expect(targets.pullable).toEqual(['/r/behind'])
+    // Everything readable can be fetched, including the one with no upstream.
+    expect(targets.fetchable).toEqual(['/r/behind', '/r/ahead', '/r/noUpstream'])
+  })
+
+  it('scales the sparkline into its box, flat lines included', () => {
+    expect(sparklinePoints([], 10, 10)).toBe('')
+    // A single value sits at the top of the box.
+    expect(sparklinePoints([5], 10, 10)).toBe('0.0,0.0')
+    // All-zero history draws along the bottom rather than dividing by zero.
+    expect(sparklinePoints([0, 0, 0], 10, 10)).toBe('0.0,10.0 5.0,10.0 10.0,10.0')
+    const points = sparklinePoints([0, 2, 1], 10, 10).split(' ')
+    expect(points).toHaveLength(3)
+    expect(points[1]).toBe('5.0,0.0') // the peak touches the top
   })
 })

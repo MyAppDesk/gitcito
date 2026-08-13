@@ -199,6 +199,12 @@ interface UIState {
   toasts: Toast[]
   /** Cmd/Ctrl+K command palette — fuzzy jump to branches, commits, files, actions. */
   commandPaletteOpen: boolean
+  /**
+   * Mission control is showing. It is a view, not a tab: the title-bar button
+   * swaps the whole workspace body for the dashboard and swaps it back, so no
+   * extra tab is ever created for it.
+   */
+  missionOpen: boolean
   /** Unread GitHub notification count for the toolbar bell badge. */
   githubUnread: number
   /** Terminal-pane visibility, per repo path. Switching to a tab that never
@@ -239,6 +245,7 @@ interface UIState {
   openModal(modal: ModalSpec): void
   closeModal(): void
   setCommandPalette(open: boolean): void
+  setMissionOpen(open: boolean): void
   toggleCommandPalette(): void
   setGithubUnread(n: number): void
   toast(kind: Toast['kind'], message: string): void
@@ -274,6 +281,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   modal: null,
   toasts: [],
   commandPaletteOpen: false,
+  missionOpen: false,
   githubUnread: 0,
   terminalOpenByRepo: {},
   sidebarCollapsed: (() => {
@@ -303,6 +311,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   openModal: (modal) => set({ modal }),
   closeModal: () => set({ modal: null }),
   setCommandPalette: (commandPaletteOpen) => set({ commandPaletteOpen }),
+  setMissionOpen: (missionOpen) => set({ missionOpen }),
   toggleCommandPalette: () => set({ commandPaletteOpen: !get().commandPaletteOpen }),
   setGithubUnread: (githubUnread) => set({ githubUnread }),
 

@@ -8541,6 +8541,169 @@ input[type='range']:focus-visible {
 .bc-diff-title { font-size: 11.5px; color: var(--text-2); margin-bottom: 4px; }
 .bc-diff-scroll { flex: 1; overflow: auto; background: var(--bg-2); border-radius: 6px; }
 
+/* Mission control shortcut, always sitting next to the workspace name. */
+.workspace-switcher-wrap { display: flex; align-items: center; }
+.workspace-mission {
+  -webkit-app-region: no-drag;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-end;
+  height: 32px;
+  width: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.workspace-mission:hover { background: var(--bg-4); color: var(--accent); }
+.workspace-mission.active { background: var(--bg-4); color: var(--accent); }
+
+
+/* ── Mission control (every repo on one screen) ── */
+.mc-root { display: flex; flex-direction: column; height: 100%; min-height: 0; padding: 18px 22px; gap: 12px; }
+.mc-header { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.mc-header h2 { margin: 0; font-size: 16px; }
+.mc-title-icon { color: var(--accent); }
+.mc-workspace {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 9px;
+  background: var(--bg-4);
+  color: var(--text-2);
+}
+.mc-repos { font-size: 11px; color: var(--text-3); }
+.mc-summary { display: flex; align-items: center; gap: 5px; }
+.mc-pill {
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+.mc-pill.on { border-color: currentColor; }
+.mc-pill.blocked { background: color-mix(in srgb, var(--danger, #f85149) 18%, transparent); color: var(--danger, #f85149); }
+.mc-pill.action { background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--accent); }
+.mc-pill.pending { background: color-mix(in srgb, var(--warn, #d29922) 18%, transparent); color: var(--warn, #d29922); }
+.mc-pill.clean { background: var(--bg-3); color: var(--text-3); }
+.mc-filter { margin-left: auto; max-width: 200px; font-size: 12px; padding: 4px 9px; }
+.mc-sorts { display: flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+.mc-sort {
+  background: transparent;
+  border: 0;
+  color: var(--text-2);
+  font-size: 11px;
+  padding: 4px 9px;
+  cursor: pointer;
+}
+.mc-sort.active { background: var(--bg-4); color: var(--text-1); }
+
+/* Workspace-wide totals, under the header. */
+.mc-stats { display: flex; align-items: center; gap: 14px; font-size: 11px; color: var(--text-3); }
+.mc-stat { display: inline-flex; align-items: center; gap: 4px; }
+.mc-stat-right { margin-left: auto; }
+
+/* Bulk bar, only present while rows are ticked. */
+.mc-bulk {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  font-size: 11.5px;
+}
+.mc-bulk-count { font-weight: 600; color: var(--text-1); }
+.mc-loading { display: flex; justify-content: center; padding: 60px; }
+.mc-empty { padding: 40px; text-align: center; color: var(--text-3); font-size: 12.5px; }
+.mc-list { flex: 1; overflow-y: auto; min-height: 0; display: flex; flex-direction: column; gap: 1px; }
+.mc-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 7px;
+  min-width: 0;
+}
+.mc-row:hover { background: var(--bg-4); }
+/* Keyboard cursor: a soft ring around the whole row rather than a bar stuck to
+   its left edge, which read as a stray tab. */
+.mc-row-wrap.cursor .mc-row {
+  background: var(--bg-4);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+.mc-check { flex: 0 0 auto; accent-color: var(--accent); cursor: pointer; }
+.mc-expand {
+  display: flex;
+  flex: 0 0 auto;
+  padding: 2px;
+  border: 0;
+  background: transparent;
+  color: var(--text-3);
+  cursor: pointer;
+}
+.mc-expand:hover { color: var(--text-1); }
+.mc-sparkwrap { flex: 0 0 auto; display: flex; align-items: center; color: var(--text-3); }
+.mc-sparkwrap.blocked { color: var(--danger, #f85149); }
+.mc-sparkwrap.action { color: var(--accent); }
+.mc-sparkwrap.pending { color: var(--warn, #d29922); }
+.mc-spark { display: block; opacity: 0.8; }
+
+/* Expanded row: what is waiting to be pushed and what is dirty. */
+.mc-detail {
+  display: flex;
+  gap: 26px;
+  padding: 4px 10px 10px 54px;
+  font-size: 11px;
+}
+.mc-detail-col { display: flex; flex-direction: column; gap: 2px; min-width: 0; max-width: 46%; }
+.mc-detail-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-3); }
+.mc-detail-item { display: flex; align-items: center; gap: 7px; min-width: 0; color: var(--text-2); }
+.mc-detail-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mc-detail-item code { font-family: var(--mono, monospace); font-size: 10.5px; color: var(--text-3); flex: 0 0 auto; }
+.mc-detail-empty { color: var(--text-3); }
+.mc-status.M { color: var(--warn, #d29922); }
+.mc-status.A { color: var(--green); }
+.mc-status.D { color: var(--danger, #f85149); }
+.mc-status.U { color: var(--danger, #f85149); }
+.mc-level { display: flex; flex: 0 0 auto; }
+.mc-level.blocked { color: var(--danger, #f85149); }
+.mc-level.action { color: var(--accent); }
+.mc-level.pending { color: var(--warn, #d29922); }
+.mc-level.clean { color: var(--text-3); }
+.mc-ident { display: flex; flex-direction: column; gap: 1px; min-width: 0; width: 240px; flex: 0 0 auto; }
+.mc-name { font-size: 12.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mc-where { display: flex; align-items: center; gap: 6px; font-size: 10.5px; color: var(--text-3); min-width: 0; }
+.mc-group { padding: 0 5px; border-radius: 7px; background: var(--bg-4); }
+.mc-branch { color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mc-upstream { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mc-badges { display: flex; align-items: center; gap: 5px; flex: 1; flex-wrap: wrap; min-width: 0; }
+.mc-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 9px;
+  background: var(--bg-4);
+  color: var(--text-2);
+}
+.mc-badge.blocked { background: color-mix(in srgb, var(--danger, #f85149) 18%, transparent); color: var(--danger, #f85149); }
+.mc-badge.behind { background: color-mix(in srgb, var(--warn, #d29922) 16%, transparent); color: var(--warn, #d29922); }
+.mc-badge.ahead { background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); }
+.mc-badge.dirty { color: var(--text-1); }
+.mc-badge.pr { background: color-mix(in srgb, var(--green) 15%, transparent); color: var(--green); }
+.mc-error { flex: 1; font-size: 11px; color: var(--danger, #f85149); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mc-age { font-size: 10.5px; color: var(--text-3); width: 34px; text-align: right; flex: 0 0 auto; }
+.mc-actions { display: flex; gap: 4px; flex: 0 0 auto; opacity: 0; }
+.mc-row:hover .mc-actions { opacity: 1; }
+
 /* ── Timelapse (animated history) ── */
 .tl-root { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
 .tl-header { display: flex; align-items: center; gap: 8px; }

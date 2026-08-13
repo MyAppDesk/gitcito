@@ -71,7 +71,9 @@ import type {
   AbsorbPlan,
   AbsorbTarget,
   AbsorbHunk,
-  TimelapseCommit
+  TimelapseCommit,
+  RepoPulse,
+  RepoDetail
 } from '../shared/types'
 import { parseMergeTreeSingle, parseMergeTreeStdin, type MergeTreeRecord } from '../shared/mergeTree'
 import { parseRangeDiff } from '../shared/rangeDiff'
@@ -92,6 +94,9 @@ const SEP = '\x1f'
  * right there to judge it by.
  */
 const CREATION_FACTOR = '--creation-factor=75'
+
+/** Days of commit activity summarised in a Mission Control sparkline. */
+const ACTIVITY_DAYS = 14
 const REC = '\x1e'
 
 /**
@@ -1005,6 +1010,114 @@ export const gitService = {
     // Consecutive entries pointing at the same commit (a checkout, a no-op
     // fetch) would offer the user a comparison against itself.
     return tips.filter((t, i) => i === 0 || t.sha !== tips[i - 1].sha)
+  },
+
+  /**
+   * A cheap, purely local health check for one repository — the row Mission
+   * Control shows for it.
+   *
+   * `status --porcelain=v2 --branch` answers branch, upstream, ahead/behind and
+   * every dirty path in a single process, so a dashboard over twenty repos
+   * costs twenty git calls rather than a hundred. Nothing here touches the
+   * network: no fetch, no host API.
+   */
+  async repoPulse(repoPath: string): Promise<RepoPulse> {
+    const pulse: RepoPulse = {
+      path: repoPath,
+      name: basename(repoPath),
+      branch: '',
+      upstream: null,
+      ahead: 0,
+      behind: 0,
+      staged: 0,
+      unstaged: 0,
+      untracked: 0,
+      conflicted: 0,
+      stashes: 0,
+      lastCommitAt: 0,
+      operation: null,
+      activity: [],
+      error: null
+    }
+
+    try {
+      const out = await runGit(repoPath, ['status', '--porcelain=v2', '--branch', '-z'])
+      for (const line of out.split('\0')) {
+        if (!line) continue
+        if (line.startsWith('# branch.head ')) {
+          const head = line.slice('# branch.head '.length).trim()
+          pulse.branch = head === '(detached)' ? '' : head
+        } else if (line.startsWith('# branch.upstream ')) {
+          pulse.upstream = line.slice('# branch.upstream '.length).trim()
+        } else if (line.startsWith('# branch.ab ')) {
+          const m = /\+(\d+) -(\d+)/.exec(line)
+          if (m) {
+            pulse.ahead = Number(m[1])
+            pulse.behind = Number(m[2])
+          }
+        } else if (line.startsWith('u ')) {
+          pulse.conflicted++
+        } else if (line.startsWith('? ')) {
+          pulse.untracked++
+        } else if (line.startsWith('1 ') || line.startsWith('2 ')) {
+          // `<XY>` staged/worktree status pair, e.g. "1 .M N... ".
+          const xy = line.slice(2, 4)
+          if (xy[0] !== '.') pulse.staged++
+          if (xy[1] !== '.') pulse.unstaged++
+        }
+      }
+    } catch (err) {
+      pulse.error = err instanceof Error ? err.message : String(err)
+      return pulse
+    }
+
+    const [stashes, lastCommit, operation] = await Promise.all([
+      runGit(repoPath, ['stash', 'list']).catch(() => ''),
+      runGit(repoPath, ['log', '-1', '--format=%ct']).catch(() => ''),
+      gitService.mergeState(repoPath).catch(() => null)
+    ])
+    pulse.stashes = stashes.split('\n').filter(Boolean).length
+    pulse.lastCommitAt = Number(lastCommit.trim()) || 0
+    pulse.operation = operation
+
+    // Commits per day for the last fortnight, oldest bucket first — the row's
+    // sparkline. One extra cheap `log`, and only timestamps come back.
+    const since = Math.floor(Date.now() / 1000) - ACTIVITY_DAYS * 86400
+    const stamps = await runGit(repoPath, ['log', `--since=@${since}`, '--format=%ct']).catch(() => '')
+    const buckets = new Array<number>(ACTIVITY_DAYS).fill(0)
+    for (const line of stamps.split('\n')) {
+      const at = Number(line)
+      if (!at) continue
+      const day = Math.floor((Date.now() / 1000 - at) / 86400)
+      if (day >= 0 && day < ACTIVITY_DAYS) buckets[ACTIVITY_DAYS - 1 - day]++
+    }
+    pulse.activity = buckets
+    return pulse
+  },
+
+  /**
+   * The extra detail one row expands to show: what is dirty and what is waiting
+   * to be pushed. Only fetched for the row the user actually opens, so a
+   * dashboard of twenty repos doesn't pay for twenty of these.
+   */
+  async repoDetail(repoPath: string, max = 8): Promise<RepoDetail> {
+    const [status, unpushed] = await Promise.all([
+      gitService.status(repoPath).catch(() => null),
+      // No shell involved, so the revspec goes through verbatim; a branch with
+      // no upstream simply yields nothing.
+      runGit(repoPath, ['log', '--format=%h%x1f%s', `--max-count=${max}`, '@{upstream}..HEAD']).catch(() => '')
+    ])
+    const files = [...(status?.conflicted ?? []), ...(status?.staged ?? []), ...(status?.unstaged ?? [])]
+      .slice(0, max)
+      .map((f) => ({ path: f.path, status: f.status }))
+    const commits = unpushed
+      .split('\n')
+      .filter(Boolean)
+      .map((line) => {
+        const [hash, subject] = line.split(SEP)
+        return { hash, subject: subject ?? '' }
+      })
+    return { files, commits }
   },
 
   async status(repoPath: string): Promise<RepoStatus> {
@@ -3788,6 +3901,8 @@ const READ_METHODS = new Set<string>([
   'listDir',
   'listDirAt',
   'timelapseData',
+  'repoPulse',
+  'repoDetail',
   'listFiles',
   'listTrackedFiles',
   'filesToPush',

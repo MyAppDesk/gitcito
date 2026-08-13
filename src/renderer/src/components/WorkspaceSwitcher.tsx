@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { ChevronDown, Plus, Pencil, Trash2, GripVertical } from 'lucide-react'
+import { ChevronDown, Plus, Pencil, Trash2, GripVertical, Gauge } from 'lucide-react'
 import gitcitoMark from '../assets/gitcito-mark.png'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
@@ -21,6 +21,8 @@ export function WorkspaceSwitcher(): React.JSX.Element {
   const deleteWorkspace = useSettingsStore((s) => s.deleteWorkspace)
   const reorderWorkspaces = useSettingsStore((s) => s.reorderWorkspaces)
   const openModal = useUIStore((s) => s.openModal)
+  const missionOpen = useUIStore((s) => s.missionOpen)
+  const setMissionOpen = useUIStore((s) => s.setMissionOpen)
   const t = useT()
 
   const [open, setOpen] = useState(false)
@@ -137,18 +139,36 @@ export function WorkspaceSwitcher(): React.JSX.Element {
     if (from && from !== id) reorderWorkspaces(from, id, before)
   }
 
+  const toggleMission = (): void => {
+    setOpen(false)
+    setMissionOpen(!missionOpen)
+  }
+
   return (
     <>
-      <button
-        ref={btnRef}
-        className={`titlebar-logo workspace-switcher ${open ? 'open' : ''}`}
-        title={interp(t('ws.switcherTitle'), { name: active.name })}
-        onClick={toggle}
-      >
-        <img className="logo-mark" src={gitcitoMark} alt="" draggable={false} />
-        <span className="workspace-switcher-name">{active.name}</span>
-        <ChevronDown size={13} className="profile-switcher-chevron" />
-      </button>
+      {/* The mission-control shortcut is a sibling, not a child: a button inside
+          a button is invalid HTML and would swallow the click. */}
+      <div className="workspace-switcher-wrap">
+        <button
+          ref={btnRef}
+          className={`titlebar-logo workspace-switcher ${open ? 'open' : ''}`}
+          title={interp(t('ws.switcherTitle'), { name: active.name })}
+          onClick={toggle}
+        >
+          <img className="logo-mark" src={gitcitoMark} alt="" draggable={false} />
+          <span className="workspace-switcher-name">{active.name}</span>
+          <ChevronDown size={13} className="profile-switcher-chevron" />
+        </button>
+        <button
+          className={`workspace-mission ${missionOpen ? 'active' : ''}`}
+          title={t('mission.open')}
+          aria-label={t('mission.open')}
+          aria-pressed={missionOpen}
+          onClick={toggleMission}
+        >
+          <Gauge size={14} />
+        </button>
+      </div>
       {open &&
         pos &&
         createPortal(
@@ -192,6 +212,14 @@ export function WorkspaceSwitcher(): React.JSX.Element {
                 </span>
               </div>
             ))}
+            <div className="profile-switcher-sep" />
+            <button className="profile-switcher-item" onClick={toggleMission}>
+              <span className="profile-switcher-check" />
+              <span className="profile-switcher-plus">
+                <Gauge size={14} />
+              </span>
+              <span className="profile-switcher-label">{t('mission.open')}</span>
+            </button>
             <div className="profile-switcher-sep" />
             <button className="profile-switcher-item" onClick={create}>
               <span className="profile-switcher-check" />

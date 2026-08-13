@@ -222,6 +222,36 @@ export interface AbsorbPlan {
   reason?: 'no-staged' | 'no-commits' | 'in-progress'
 }
 
+/** One repository's local health, as shown in Mission Control. */
+export interface RepoPulse {
+  path: string
+  name: string
+  /** Empty when HEAD is detached. */
+  branch: string
+  upstream: string | null
+  ahead: number
+  behind: number
+  staged: number
+  unstaged: number
+  untracked: number
+  conflicted: number
+  stashes: number
+  /** Unix seconds of the last commit, 0 for an empty repo. */
+  lastCommitAt: number
+  /** A merge/rebase/cherry-pick left in progress, if any. */
+  operation: ConflictOpKind | null
+  /** Commits per day over the last fortnight, oldest first (row sparkline). */
+  activity: number[]
+  /** Set when the repo could not be read at all (moved, deleted, not a repo). */
+  error: string | null
+}
+
+/** What an expanded Mission Control row shows: the work in flight. */
+export interface RepoDetail {
+  files: { path: string; status: FileChangeKind }[]
+  commits: { hash: string; subject: string }[]
+}
+
 /** One commit in the timelapse stream: who, when, and what it touched. */
 export interface TimelapseCommit {
   hash: string

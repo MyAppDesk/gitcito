@@ -1,5 +1,12 @@
 
 
+## [3.1.0](https://github.com/MyAppDesk/gitcito/compare/v3.0.2...v3.1.0) (2026-08-13)
+
+
+### Bug Fixes
+
+* allow file media in markdown rendering for packaged app ([5502f3d](https://github.com/MyAppDesk/gitcito/commit/5502f3de1c83e3d0c8cf201a46f8b28511a192e3))
+
 ## [3.0.2](https://github.com/MyAppDesk/gitcito/compare/v3.0.1...v3.0.2) (2026-08-13)
 
 

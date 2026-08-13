@@ -161,8 +161,8 @@ describe('commit lint', () => {
 
   it('flags trailing period and non-imperative mood', () => {
     const h = lintCommit('Fixed the bug.', '')
-    expect(h.some((x) => /period/i.test(x.text))).toBe(true)
-    expect(h.some((x) => /imperative/i.test(x.text))).toBe(true)
+    expect(h.some((x) => x.key === 'commitLint.trailingPeriod')).toBe(true)
+    expect(h.some((x) => x.key === 'commitLint.imperative')).toBe(true)
   })
 
   it('flags an over-long subject as an error', () => {
@@ -172,11 +172,11 @@ describe('commit lint', () => {
   })
 
   it('nudges to capitalize a lowercase non-conventional subject', () => {
-    expect(lintCommit('add stuff', '').some((x) => /capitalize/i.test(x.text))).toBe(true)
+    expect(lintCommit('add stuff', '').some((x) => x.key === 'commitLint.capitalize')).toBe(true)
   })
 
   it('flags over-wide body lines', () => {
-    expect(lintCommit('Add caching', 'x'.repeat(90)).some((x) => /wrap/i.test(x.text))).toBe(true)
+    expect(lintCommit('Add caching', 'x'.repeat(90)).some((x) => x.key === 'commitLint.wrapBody')).toBe(true)
   })
 
   it('subject counter level bands', () => {
@@ -189,7 +189,7 @@ describe('commit lint', () => {
 describe('commit hook failure hint', () => {
   it('explains how to fix a missing Conventional Commit type', () => {
     expect(commitHookFailureHint('subject may not be empty [subject-empty]\ntype may not be empty [type-empty]'))
-      .toContain('chore: tmp')
+      .toBe('commitLint.hookNeedsType')
   })
 
   it('ignores unrelated git failures', () => {

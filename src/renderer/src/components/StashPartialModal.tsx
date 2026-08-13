@@ -2,10 +2,12 @@ import { useMemo, useState } from 'react'
 import { Archive, Plus, Pencil, Minus } from 'lucide-react'
 import { repoActions, useRepoStore } from '../stores/repo'
 import { useUIStore } from '../stores/ui'
+import { useT, interp } from '../i18n'
 import type { FileEntry } from '../../../shared/types'
 
 /** Pick a subset of working-tree changes to stash (partial stash). */
 export function StashPartialModal({ repoPath }: { repoPath: string }): React.JSX.Element {
+  const t = useT()
   const closeModal = useUIStore((s) => s.closeModal)
   const toast = useUIStore((s) => s.toast)
   const repo = useRepoStore((s) => s.repos[repoPath])
@@ -46,7 +48,13 @@ export function StashPartialModal({ repoPath }: { repoPath: string }): React.JSX
   const submit = (): void => {
     if (picked.size === 0) return
     repoActions.stashPush(repoPath, message.trim() || undefined, [...picked], keepIndex)
-    toast('success', `Stashing ${picked.size} file${picked.size === 1 ? '' : 's'}`)
+    toast(
+      'success',
+      interp(t('stashPartial.stashing'), {
+        count: picked.size,
+        fileWord: picked.size === 1 ? t('stashPartial.file') : t('stashPartial.files')
+      })
+    )
     closeModal()
   }
 
@@ -54,20 +62,18 @@ export function StashPartialModal({ repoPath }: { repoPath: string }): React.JSX
     <div className="stash-partial">
       <h3>
         <Archive size={17} style={{ verticalAlign: '-3px', marginRight: 6 }} />
-        Stash selected changes
+        {t('stashPartial.title')}
       </h3>
-      <p className="settings-hint">
-        Stash only the files you tick. Unticked changes stay in your working tree.
-      </p>
+      <p className="settings-hint">{t('stashPartial.hint')}</p>
 
       {files.length === 0 ? (
-        <p className="settings-hint">Working tree is clean — nothing to stash.</p>
+        <p className="settings-hint">{t('stashPartial.clean')}</p>
       ) : (
         <>
           <div className="stash-partial-toolbar">
             <label className="stash-partial-all">
               <input type="checkbox" checked={allOn} onChange={toggleAll} />
-              {allOn ? 'None' : 'All'} ({picked.size}/{files.length})
+              {allOn ? t('common.none') : t('common.all')} ({picked.size}/{files.length})
             </label>
           </div>
           <div className="stash-partial-list">
@@ -81,22 +87,24 @@ export function StashPartialModal({ repoPath }: { repoPath: string }): React.JSX
           </div>
           <input
             className="modal-input"
-            placeholder="Stash message (optional)"
+            placeholder={t('stashPartial.messagePlaceholder')}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && submit()}
           />
           <label className="stash-partial-keep">
             <input type="checkbox" checked={keepIndex} onChange={(e) => setKeepIndex(e.target.checked)} />
-            Keep staged changes in the working tree (<code>--keep-index</code>)
+            {t('stashPartial.keepIndex')} (<code>--keep-index</code>)
           </label>
         </>
       )}
 
       <div className="modal-actions">
-        <button className="btn ghost" onClick={closeModal}>Cancel</button>
+        <button className="btn ghost" onClick={closeModal}>
+          {t('common.cancel')}
+        </button>
         <button className="btn primary" onClick={submit} disabled={picked.size === 0}>
-          <Archive size={14} /> Stash {picked.size > 0 ? `(${picked.size})` : ''}
+          <Archive size={14} /> {t('stashPartial.stash')} {picked.size > 0 ? `(${picked.size})` : ''}
         </button>
       </div>
     </div>

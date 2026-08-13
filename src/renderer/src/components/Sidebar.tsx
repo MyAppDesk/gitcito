@@ -757,8 +757,8 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   const renameStash = (s: StashInfo): void =>
     openModal({
       kind: 'input',
-      title: 'Rename stash',
-      label: 'New stash message',
+      title: t('sidebar.renameStash'),
+      label: t('sidebar.newStashMessage'),
       initial: s.message,
       submitLabel: t('common.rename'),
       onSubmit: (message) => {
@@ -859,7 +859,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       },
       { separator: true },
       ...(web ? [{ label: t('sidebar.openOnWeb'), onClick: (): void => void shellApi.openExternal(web) }] : []),
-      ...(url ? [{ label: 'Copy remote URL', onClick: (): void => void navigator.clipboard.writeText(url) }] : []),
+      ...(url ? [{ label: t('sidebar.copyRemoteUrl'), onClick: (): void => void navigator.clipboard.writeText(url) }] : []),
       { separator: true },
       {
         label: t('sidebar.removeRemote'),
@@ -949,8 +949,8 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   const promptCreateRoot = (isDir: boolean): void =>
     openModal({
       kind: 'input',
-      title: isDir ? 'New folder' : 'New file',
-      label: 'At repository root',
+      title: isDir ? t('sidebar.newFolderRoot') : t('sidebar.newFilesRoot'),
+      label: t('sidebar.atRepoRoot'),
       placeholder: isDir ? 'components' : 'index.ts',
       submitLabel: t('common.create'),
       onSubmit: (name) => {
@@ -1180,14 +1180,14 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
           if (!onSelectClick('tag', tag.name, tagIds, e)) goToBranch(tag.sha)
         }}
         onContextMenu={(e) => ctxMenu(e, 'tag', tag.name, () => tagMenu(tag), tagBulkMenu)}
-        title={`${tag.name}${release ? ' · release' : ''}${repo.remotes.length ? (isPushed ? ' · pushed' : ' · local only') : ''}`}
+        title={`${tag.name}${release ? ` · ${t('sidebar.releaseSuffix')}` : ''}${repo.remotes.length ? (isPushed ? ` · ${t('ref.pushed')}` : ` · ${t('ref.localOnly')}`) : ''}`}
       >
         <Tag size={11} className="sb-tag-icon" />
         <span className="sb-name">{label}</span>
         {release && (
           <span
             className="sb-tag-action"
-            title={`Go to release ${release.name || release.tag || tag.name}`}
+            title={interp(t('sidebar.goToRelease'), { name: release.name || release.tag || tag.name })}
             onClick={(e) => {
               e.stopPropagation()
               openPageTab({ type: 'release', release, repoPath: path })
@@ -1201,7 +1201,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
           (tagLink && isPushed ? (
             <span
               className="sb-tag-action sb-tag-cloud pushed"
-              title={`Open ${tag.name} on remote`}
+              title={interp(t('sidebar.openTagOnRemote'), { name: tag.name })}
               onClick={(e) => {
                 e.stopPropagation()
                 void shellApi.openExternal(tagLink)
@@ -1308,7 +1308,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
               actions={webUrl(remote.url) ? (
                 <span
                   className="icon-btn"
-                  title={`Open ${remote.name} on web`}
+                  title={interp(t('sidebar.openRemoteOnWeb'), { name: remote.name })}
                   onClick={(e) => {
                     e.stopPropagation()
                     void shellApi.openExternal(webUrl(remote.url)!)
@@ -1384,7 +1384,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
             {aiEnabled && pr.sourceBranch && pr.targetBranch && (
               <span
                 className="icon-btn sb-ai-review"
-                title="AI PR review"
+                title={t('sidebar.aiPrReview')}
                 onClick={(e) => {
                   e.stopPropagation()
                   openModal({
@@ -1401,7 +1401,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
             )}
             <span
               className="icon-btn sb-pr-open"
-              title="Open in browser"
+              title={t('common.openInBrowser')}
               onClick={(e) => {
                 e.stopPropagation()
                 void window.api.openExternal(pr.url)
@@ -1427,7 +1427,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
               return origin ? (
                 <span
                   className="icon-btn"
-                  title="New issue"
+                  title={t('sidebar.newIssue')}
                   onClick={(e) => {
                     e.stopPropagation()
                     openModal({ kind: 'create-issue', repoPath: path, remoteUrl: origin.url })
@@ -1468,7 +1468,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
             </span>
             <span
               className="icon-btn sb-pr-open"
-              title="Open in browser"
+              title={t('common.openInBrowser')}
               onClick={(e) => {
                 e.stopPropagation()
                 void window.api.openExternal(issue.url)
@@ -1526,7 +1526,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
               <span className="sb-milestone-pct">{pct}%</span>
               <span
                 className="icon-btn sb-pr-open"
-                title="Open in browser"
+                title={t('common.openInBrowser')}
                 onClick={(e) => {
                   e.stopPropagation()
                   void window.api.openExternal(m.url)

@@ -12,27 +12,6 @@ import {
 } from '../lib/shortcuts'
 import { useT, type TranslationKey } from '../i18n'
 
-// Map the English shortcut labels/categories (data layer) to translation keys.
-const LABEL_KEYS: Record<string, TranslationKey> = {
-  'Command palette': 'sc.commandPalette',
-  'Search code': 'sc.searchCode',
-  'Open vault': 'sc.openVault',
-  'Keyboard shortcuts': 'sc.keyboardShortcuts',
-  'Navigate commits': 'sc.navigateCommits',
-  'Reopen closed tab': 'sc.reopenTab',
-  'Save file': 'sc.saveFile',
-  Undo: 'sc.undo',
-  Redo: 'sc.redo',
-  'Find in file': 'sc.findInFile',
-  'Close dialog / panel': 'sc.closeDialog'
-}
-const CAT_KEYS: Record<string, TranslationKey> = {
-  Navigation: 'sc.cat.navigation',
-  Help: 'sc.cat.help',
-  Editing: 'sc.cat.editing',
-  General: 'sc.cat.general'
-}
-
 export function CheatsheetModal(): React.JSX.Element {
   const t = useT()
   return (
@@ -54,9 +33,6 @@ export function ShortcutEditor(): React.JSX.Element {
   const update = useSettingsStore((s) => s.update)
   const toast = useUIStore((s) => s.toast)
   const [capturing, setCapturing] = useState<string | null>(null)
-
-  const tLabel = (label: string): string => (LABEL_KEYS[label] ? t(LABEL_KEYS[label]) : label)
-  const tCat = (cat: string): string => (CAT_KEYS[cat] ? t(CAT_KEYS[cat]) : cat)
 
   const bindings = useMemo(() => effectiveBindings(custom), [custom])
 
@@ -84,8 +60,8 @@ export function ShortcutEditor(): React.JSX.Element {
         return { ...s, shortcuts: next }
       })
       if (clash) {
-        const clashLabel = SHORTCUTS.find((x) => x.id === clash[0])?.label ?? ''
-        toast('info', `${tLabel(clashLabel)} — ${t('cheat.resetMsg')}`)
+        const clashKey = SHORTCUTS.find((x) => x.id === clash[0])?.labelKey
+        toast('info', `${clashKey ? t(clashKey) : ''} — ${t('cheat.resetMsg')}`)
       }
       setCapturing(null)
     }
@@ -104,7 +80,7 @@ export function ShortcutEditor(): React.JSX.Element {
 
   const row = (def: ShortcutDef): React.JSX.Element => (
     <div className="cheat-row" key={def.id}>
-      <span className="cheat-label">{tLabel(def.label)}</span>
+      <span className="cheat-label">{t(def.labelKey)}</span>
       {capturing === def.id ? (
         <span className="cheat-capturing">{t('cheat.pressKeys')}</span>
       ) : (
@@ -123,9 +99,9 @@ export function ShortcutEditor(): React.JSX.Element {
     </div>
   )
 
-  // Group the fixed (reference) shortcuts by category.
+  // Group the fixed (reference) shortcuts by category key.
   const fixedByCat = FIXED_SHORTCUTS.reduce<Record<string, typeof FIXED_SHORTCUTS>>((acc, s) => {
-    ;(acc[s.category] ??= []).push(s)
+    ;(acc[s.categoryKey] ??= []).push(s)
     return acc
   }, {})
 
@@ -140,10 +116,10 @@ export function ShortcutEditor(): React.JSX.Element {
 
       {Object.entries(fixedByCat).map(([cat, items]) => (
         <div className="cheat-section" key={cat}>
-          <h4>{tCat(cat)}</h4>
+          <h4>{t(cat as TranslationKey)}</h4>
           {items.map((s) => (
-            <div className="cheat-row" key={s.label}>
-              <span className="cheat-label">{tLabel(s.label)}</span>
+            <div className="cheat-row" key={s.labelKey}>
+              <span className="cheat-label">{t(s.labelKey)}</span>
               <kbd className="cheat-key fixed">{formatCombo(s.combo)}</kbd>
               <span className="cheat-reset" />
             </div>

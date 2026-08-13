@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, ChevronRight } from 'lucide-react'
+import { useT } from '../i18n'
 
 export type SearchMode = 'content' | 'name'
 
@@ -168,6 +169,7 @@ export function FileSearchBar({
   value: FileFilter
   onChange: (next: FileFilter) => void
 }): React.JSX.Element {
+  const t = useT()
   const [expanded, setExpanded] = useState(false)
   const set = (patch: Partial<FileFilter>): void => onChange({ ...value, ...patch })
   const hasGlobs = value.include.trim() !== '' || value.exclude.trim() !== ''
@@ -177,7 +179,7 @@ export function FileSearchBar({
       <div className="fs-row">
         <button
           className={`fs-expand${hasGlobs ? ' has-globs' : ''}`}
-          title={expanded ? 'Hide file filters' : 'Toggle file filters'}
+          title={expanded ? t('fileSearch.hideFilters') : t('fileSearch.toggleFilters')}
           onClick={() => setExpanded((v) => !v)}
         >
           <ChevronRight size={13} className={`chevron${expanded ? ' open' : ''}`} />
@@ -186,7 +188,7 @@ export function FileSearchBar({
           <Search size={13} className="fs-search-icon" />
           <input
             className="fs-input"
-            placeholder="Search"
+            placeholder={t('fileSearch.searchPlaceholder')}
             value={value.query}
             spellCheck={false}
             onChange={(e) => set({ query: e.target.value })}
@@ -194,21 +196,21 @@ export function FileSearchBar({
           <div className="fs-toggles">
             <button
               className={`fs-toggle${value.caseSensitive ? ' active' : ''}`}
-              title="Match Case"
+              title={t('fileSearch.matchCase')}
               onClick={() => set({ caseSensitive: !value.caseSensitive })}
             >
               Aa
             </button>
             <button
               className={`fs-toggle${value.wholeWord ? ' active' : ''}`}
-              title="Match Whole Word"
+              title={t('fileSearch.matchWholeWord')}
               onClick={() => set({ wholeWord: !value.wholeWord })}
             >
               ab
             </button>
             <button
               className={`fs-toggle${value.regex ? ' active' : ''}`}
-              title="Use Regular Expression"
+              title={t('fileSearch.useRegex')}
               onClick={() => set({ regex: !value.regex })}
             >
               .*
@@ -225,14 +227,14 @@ export function FileSearchBar({
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.16, ease: 'easeOut' }}
           >
-            <div className="fs-mode-switch" role="radiogroup" aria-label="Search target">
+            <div className="fs-mode-switch" role="radiogroup" aria-label={t('fileSearch.searchTarget')}>
               <button
                 className={value.mode === 'content' ? 'active' : ''}
                 role="radio"
                 aria-checked={value.mode === 'content'}
                 onClick={() => set({ mode: 'content' })}
               >
-                Content
+                {t('fileSearch.content')}
               </button>
               <button
                 className={value.mode === 'name' ? 'active' : ''}
@@ -240,24 +242,24 @@ export function FileSearchBar({
                 aria-checked={value.mode === 'name'}
                 onClick={() => set({ mode: 'name' })}
               >
-                File name
+                {t('fileSearch.fileName')}
               </button>
             </div>
             <label className="fs-field">
-              <span className="fs-field-label">files to include</span>
+              <span className="fs-field-label">{t('fileSearch.include')}</span>
               <input
                 className="fs-glob-input"
-                placeholder="e.g. *.ts, src/**/include"
+                placeholder={t('fileSearch.globPlaceholder')}
                 value={value.include}
                 spellCheck={false}
                 onChange={(e) => set({ include: e.target.value })}
               />
             </label>
             <label className="fs-field">
-              <span className="fs-field-label">files to exclude</span>
+              <span className="fs-field-label">{t('fileSearch.exclude')}</span>
               <input
                 className="fs-glob-input"
-                placeholder="e.g. *.ts, src/**/exclude"
+                placeholder={t('fileSearch.globPlaceholder')}
                 value={value.exclude}
                 spellCheck={false}
                 onChange={(e) => set({ exclude: e.target.value })}

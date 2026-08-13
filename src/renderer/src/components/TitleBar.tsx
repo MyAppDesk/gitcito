@@ -18,6 +18,7 @@ import {
 import { ProfileSwitcher } from './ProfileSwitcher'
 import { WorkspaceSwitcher } from './WorkspaceSwitcher'
 import { folderOpenMenuItems } from '../lib/openWith'
+import { useT, interp } from '../i18n'
 
 type TabStatus = 'conflict' | 'wip' | null
 
@@ -69,6 +70,7 @@ type DropTarget =
   | { kind: 'eject-at'; insertBeforeTabId: string | null }
 
 export function TitleBar(): React.JSX.Element {
+  const t = useT()
   const {
     settings, setGroupActiveRepo, closeTab, setActiveTab, renameTab,
     setTabColor, toggleTabCollapsed, removeRepoFromGroup, renameRepoInGroup,
@@ -565,21 +567,26 @@ export function TitleBar(): React.JSX.Element {
     let message: string
     if (isGroup && repoCount > 1) {
       message = status
-        ? `"${tab.name}" has ${repoCount} repositories with ${status === 'conflict' ? 'merge conflicts' : 'uncommitted changes'}. Close it?`
-        : `"${tab.name}" has ${repoCount} repositories. Close it?`
+        ? interp(t('titlebar.closeGroupDirty'), {
+            name: tab.name,
+            count: repoCount,
+            reason: status === 'conflict' ? t('titlebar.mergeConflicts') : t('titlebar.uncommittedChanges')
+          })
+        : interp(t('titlebar.closeGroup'), { name: tab.name, count: repoCount })
     } else {
-      message = status === 'conflict'
-        ? 'This repository has merge conflicts in progress. Close it?'
-        : status === 'wip'
-          ? 'This repository has uncommitted changes. Close it?'
-          : 'Close this tab?'
+      message =
+        status === 'conflict'
+          ? t('titlebar.closeRepoConflicts')
+          : status === 'wip'
+            ? t('titlebar.closeRepoWip')
+            : t('titlebar.closeTabConfirm')
     }
     openModal({
       kind: 'confirm',
-      title: isGroup ? 'Close group' : 'Close tab',
+      title: isGroup ? t('titlebar.closeGroupTitle') : t('titlebar.closeTab'),
       message,
       danger: true,
-      confirmLabel: 'Close',
+      confirmLabel: t('common.close'),
       onConfirm: () => closeTab(tab.id)
     })
   }
@@ -589,17 +596,18 @@ export function TitleBar(): React.JSX.Element {
     const status = repoStatus(repoPath)
     const shouldWarn = warn === 'always' || (warn === 'wip' && status !== null)
     if (!shouldWarn) { removeRepoFromGroup(groupTabId, repoPath); return }
-    const message = status === 'conflict'
-      ? 'This repository has merge conflicts in progress. Remove it from the group?'
-      : status === 'wip'
-        ? 'This repository has uncommitted changes. Remove it from the group?'
-        : 'Remove this repository from the group?'
+    const message =
+      status === 'conflict'
+        ? t('titlebar.removeRepoConflicts')
+        : status === 'wip'
+          ? t('titlebar.removeRepoWip')
+          : t('titlebar.removeRepoConfirm')
     openModal({
       kind: 'confirm',
-      title: 'Remove repository',
+      title: t('titlebar.removeRepoTitle'),
       message,
       danger: true,
-      confirmLabel: 'Remove',
+      confirmLabel: t('common.remove'),
       onConfirm: () => removeRepoFromGroup(groupTabId, repoPath)
     })
   }
@@ -620,7 +628,7 @@ export function TitleBar(): React.JSX.Element {
     const others = settings.workspaces.filter((w) => w.id !== settings.activeWorkspaceId)
     if (others.length === 0) return null
     return {
-      label: 'Move to workspace',
+      label: t('titlebar.moveToWorkspace'),
       icon: <LayoutGrid size={15} />,
       submenu: others.map((w) => ({
         label: w.name,
@@ -634,7 +642,7 @@ export function TitleBar(): React.JSX.Element {
       const move = moveToWorkspaceItem(tab)
       return [
         ...(move ? [move, { separator: true } as MenuItem] : []),
-        { label: 'Close tab', onClick: () => closeTab(tab.id) }
+        { label: t('titlebar.closeTab'), onClick: () => closeTab(tab.id) }
       ]
     }
     const items: MenuItem[] = []
@@ -645,28 +653,28 @@ export function TitleBar(): React.JSX.Element {
       if (tab.repos.length > 0) {
         const paths = tab.repos.map((r) => r.path)
         items.push({
-          label: `Fetch all (${paths.length})`,
+          label: interp(t('titlebar.fetchAll'), { count: paths.length }),
           icon: <Download size={15} />,
           onClick: () => void repoActions.batch(paths, 'fetch')
         })
         items.push({
-          label: `Pull all (${paths.length})`,
+          label: interp(t('titlebar.pullAll'), { count: paths.length }),
           icon: <ArrowDownToLine size={15} />,
           onClick: () => void repoActions.batch(paths, 'pull')
         })
         items.push({ separator: true })
       }
       items.push({
-        label: 'Manage repositories…',
+        label: t('titlebar.manageRepos'),
         onClick: () => openModal({ kind: 'launcher', groupId: tab.id })
       })
       items.push({
-        label: 'New folder…',
+        label: t('titlebar.newFolderMenu'),
         icon: <FolderPlus size={15} />,
         onClick: () => promptNewFolder(tab.id, null)
       })
       items.push({
-        label: 'Change color…',
+        label: t('titlebar.changeColor'),
         onClick: () =>
           openModal({
             kind: 'group-color',
@@ -677,19 +685,19 @@ export function TitleBar(): React.JSX.Element {
       })
       if (tab.activeRepoPath) {
         items.push({
-          label: 'View group home',
+          label: t('titlebar.viewGroupHome'),
           onClick: () => setGroupActiveRepo(tab.id, null)
         })
       }
       items.push({ separator: true })
     }
     items.push({
-      label: 'Rename…',
+      label: t('titlebar.rename'),
       onClick: () =>
         openModal({
           kind: 'input',
-          title: 'Rename tab',
-          label: 'Name',
+          title: t('titlebar.renameTab'),
+          label: t('modal.name'),
           initial: tab.name,
           submitLabel: 'Rename',
           onSubmit: (name) => renameTab(tab.id, name)
@@ -697,7 +705,7 @@ export function TitleBar(): React.JSX.Element {
     })
     const move = moveToWorkspaceItem(tab)
     if (move) items.push(move)
-    items.push({ separator: true }, { label: 'Close tab', onClick: () => confirmCloseGroup(tab) })
+    items.push({ separator: true }, { label: t('titlebar.closeTab'), onClick: () => confirmCloseGroup(tab) })
     return items
   }
 
@@ -705,10 +713,10 @@ export function TitleBar(): React.JSX.Element {
   const promptNewFolder = (tabId: string, parentFolderId: string | null): void =>
     openModal({
       kind: 'input',
-      title: parentFolderId ? 'New subfolder' : 'New folder',
-      label: 'Folder name',
+      title: parentFolderId ? t('titlebar.newSubfolder') : t('titlebar.newFolder'),
+      label: t('titlebar.folderName'),
       initial: '',
-      submitLabel: 'Create',
+      submitLabel: t('common.create'),
       onSubmit: (name) => {
         const trimmed = name.trim()
         if (trimmed) createFolder(tabId, trimmed, parentFolderId)
@@ -722,10 +730,10 @@ export function TitleBar(): React.JSX.Element {
     if (!all.length) return null
     const current = all.find((x) => x.folder.paths.includes(repoPath))?.folder.id ?? null
     return {
-      label: 'Move to folder',
+      label: t('titlebar.moveToFolder'),
       icon: <Folder size={15} />,
       submenu: [
-        { label: 'Group root', disabled: current === null, onClick: () => moveRepoToFolder(tab.id, repoPath, null) },
+        { label: t('titlebar.groupRoot'), disabled: current === null, onClick: () => moveRepoToFolder(tab.id, repoPath, null) },
         ...all.map(({ folder }) => ({
           label: folderTrail(tab.folders ?? [], folder.id),
           disabled: folder.id === current,
@@ -743,10 +751,10 @@ export function TitleBar(): React.JSX.Element {
     const atRoot = tree.some((f) => f.id === folder.id)
     if (!targets.length && atRoot) return null
     return {
-      label: 'Move folder to',
+      label: t('titlebar.moveFolderTo'),
       icon: <FolderTree size={15} />,
       submenu: [
-        { label: 'Group root', disabled: atRoot, onClick: () => moveFolderToFolder(tab.id, folder.id, null) },
+        { label: t('titlebar.groupRoot'), disabled: atRoot, onClick: () => moveFolderToFolder(tab.id, folder.id, null) },
         ...targets.map((x) => ({
           label: folderTrail(tree, x.folder.id),
           onClick: () => moveFolderToFolder(tab.id, folder.id, x.folder.id)
@@ -760,31 +768,31 @@ export function TitleBar(): React.JSX.Element {
     const items: MenuItem[] = []
     if (paths.length > 0) {
       items.push({
-        label: `Fetch all (${paths.length})`,
+        label: interp(t('titlebar.fetchAll'), { count: paths.length }),
         icon: <Download size={15} />,
         onClick: () => void repoActions.batch(paths, 'fetch')
       })
       items.push({
-        label: `Pull all (${paths.length})`,
+        label: interp(t('titlebar.pullAll'), { count: paths.length }),
         icon: <ArrowDownToLine size={15} />,
         onClick: () => void repoActions.batch(paths, 'pull')
       })
       items.push({ separator: true })
     }
     items.push({
-      label: 'New subfolder…',
+      label: t('titlebar.newSubfolderMenu'),
       icon: <FolderPlus size={15} />,
       onClick: () => promptNewFolder(tab.id, folder.id)
     })
     items.push({
-      label: 'Rename…',
+      label: t('titlebar.rename'),
       onClick: () =>
         openModal({
           kind: 'input',
-          title: 'Rename folder',
-          label: 'Folder name',
+          title: t('titlebar.renameFolder'),
+          label: t('titlebar.folderName'),
           initial: folder.name,
-          submitLabel: 'Rename',
+          submitLabel: t('common.rename'),
           onSubmit: (name) => {
             const trimmed = name.trim()
             if (trimmed) renameFolder(tab.id, folder.id, trimmed)
@@ -792,7 +800,7 @@ export function TitleBar(): React.JSX.Element {
         })
     })
     items.push({
-      label: 'Change color…',
+      label: t('titlebar.changeColor'),
       onClick: () =>
         openModal({
           kind: 'group-color',
@@ -806,7 +814,7 @@ export function TitleBar(): React.JSX.Element {
     items.push(
       { separator: true },
       {
-        label: 'Delete folder',
+        label: t('titlebar.deleteFolder'),
         icon: <Trash2 size={15} />,
         danger: true,
         // Deleting only unpacks the folder: its repos and subfolders move up to
@@ -821,7 +829,7 @@ export function TitleBar(): React.JSX.Element {
     // With folders in play, offer to file the repo; with none yet, offer to
     // make the first one.
     const filing: MenuItem = moveRepoToFolderItem(groupTab, repoPath) ?? {
-      label: 'New folder…',
+      label: t('titlebar.newFolderMenu'),
       icon: <FolderPlus size={15} />,
       onClick: () => promptNewFolder(groupTab.id, null)
     }
@@ -831,27 +839,27 @@ export function TitleBar(): React.JSX.Element {
       filing,
       { separator: true },
       {
-        label: 'Rename…',
+        label: t('titlebar.rename'),
         onClick: () => {
           const currentName = groupTab.repos.find((r) => r.path === repoPath)?.name ?? ''
           openModal({
             kind: 'input',
-            title: 'Rename repository',
-            label: 'Name',
+            title: t('titlebar.renameRepo'),
+            label: t('modal.name'),
             initial: currentName,
-            submitLabel: 'Rename',
+            submitLabel: t('common.rename'),
             onSubmit: (name) => renameRepoInGroup(groupTab.id, repoPath, name)
           })
         }
       },
       { separator: true },
       {
-        label: 'Eject to standalone tab',
+        label: t('titlebar.eject'),
         onClick: () => ejectRepoFromGroup(groupTab.id, repoPath, null)
       },
       { separator: true },
       {
-        label: 'Remove from group',
+        label: t('titlebar.removeFromGroup'),
         danger: true,
         onClick: () => confirmRemoveRepo(groupTab.id, repoPath)
       }
@@ -908,7 +916,7 @@ export function TitleBar(): React.JSX.Element {
         {rs && (
           <span
             className={`tab-status tab-status-${rs}`}
-            title={rs === 'conflict' ? 'Conflicts in progress' : 'Uncommitted changes'}
+            title={rs === 'conflict' ? t('titlebar.conflictsInProgress') : t('titlebar.uncommittedChangesShort')}
           />
         )}
         <button
@@ -962,7 +970,7 @@ export function TitleBar(): React.JSX.Element {
           role="button"
           tabIndex={0}
           className="tab-folder-chip"
-          title={`${folder.name} — ${count} ${count === 1 ? 'repository' : 'repositories'}${
+          title={`${folder.name} — ${count} ${count === 1 ? t('batch.repository') : t('batch.repositories')}${
             folder.collapsed ? ' (collapsed)' : ''
           } · drag to nest, reorder or lift out`}
           draggable
@@ -984,7 +992,7 @@ export function TitleBar(): React.JSX.Element {
           {st && (
             <span
               className={`tab-status tab-status-${st}`}
-              title={st === 'conflict' ? 'Conflicts in progress' : 'Uncommitted changes'}
+              title={st === 'conflict' ? t('titlebar.conflictsInProgress') : t('titlebar.uncommittedChangesShort')}
             />
           )}
         </div>
@@ -1052,7 +1060,7 @@ export function TitleBar(): React.JSX.Element {
                 {status && (
                   <span
                     className={`tab-status tab-status-${status}`}
-                    title={status === 'conflict' ? 'Conflicts in progress' : 'Uncommitted changes'}
+                    title={status === 'conflict' ? t('titlebar.conflictsInProgress') : t('titlebar.uncommittedChangesShort')}
                   />
                 )}
                 <button
@@ -1146,7 +1154,7 @@ export function TitleBar(): React.JSX.Element {
             >
               <button
                 className={`tab-group-chip ${chipDc}`}
-                title={`${tab.collapsed ? 'Expand' : 'Collapse'} group — ${aggTip}`}
+                title={`${tab.collapsed ? t('common.expand') : t('common.collapse')} — ${aggTip}`}
                 draggable
                 onDragStart={onDragStart({ kind: 'tab', tabId: tab.id })}
                 onDragEnd={onDragEnd}
@@ -1164,14 +1172,18 @@ export function TitleBar(): React.JSX.Element {
                 {groupStatus && (
                   <span
                     className={`tab-status tab-status-${groupStatus}`}
-                    title={groupStatus === 'conflict' ? 'Conflicts in progress' : 'Uncommitted changes'}
+                    title={groupStatus === 'conflict' ? t('titlebar.conflictsInProgress') : t('titlebar.uncommittedChangesShort')}
                   />
                 )}
               </button>
               {tab.repos.length > 0 && (
                 <button
                   className="tab-group-sync"
-                  title={`Fetch all ${tab.repos.length} ${tab.repos.length === 1 ? 'repository' : 'repositories'}`}
+                  title={interp(t('titlebar.fetchAllTitle'), {
+                    count: tab.repos.length,
+                    repoWord:
+                      tab.repos.length === 1 ? t('batch.repository') : t('batch.repositories')
+                  })}
                   onClick={(e) => {
                     e.stopPropagation()
                     void repoActions.batch(tab.repos.map((r) => r.path), 'fetch')
@@ -1195,7 +1207,7 @@ export function TitleBar(): React.JSX.Element {
           onDrop={onDropZone(null)}
           onDragLeave={clearDrop}
         />
-        <button className="tab-add" title="Open repository or group" onClick={() => plusMenu()}>
+        <button className="tab-add" title={t('titlebar.openRepoOrGroup')} onClick={() => plusMenu()}>
           <Plus size={15} />
         </button>
       </div>
@@ -1203,7 +1215,7 @@ export function TitleBar(): React.JSX.Element {
       {hasGithubToken && (
         <button
           className="titlebar-action notif-bell"
-          title="Notifications"
+          title={t('titlebar.notifications')}
           onClick={() => useSettingsStore.getState().openPageTab({ type: 'notifications' })}
         >
           <Bell size={16} />
@@ -1212,7 +1224,7 @@ export function TitleBar(): React.JSX.Element {
       )}
       <button
         className="titlebar-action"
-        title="Settings"
+        title={t('titlebar.settings')}
         onClick={() => openModal({ kind: 'settings' })}
       >
         <Settings size={16} />

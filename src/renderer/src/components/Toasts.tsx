@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { CheckCircle2, AlertCircle, Info, X, Copy, Check, Bug } from 'lucide-react'
 import { useUIStore, type Toast } from '../stores/ui'
+import { useT } from '../i18n'
 
 const icons = {
   success: <CheckCircle2 size={16} />,
@@ -19,6 +20,7 @@ function reportIssueUrl(message: string): string {
 }
 
 function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }): React.JSX.Element {
+  const t = useT()
   const [expanded, setExpanded] = useState(false)
   const [overflowing, setOverflowing] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -59,14 +61,14 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }
         </span>
         {overflowing && (
           <button className="toast-more" onClick={() => setExpanded((v) => !v)}>
-            {expanded ? 'Show less' : 'Show more'}
+            {expanded ? t('toast.showLess') : t('toast.showMore')}
           </button>
         )}
       </div>
       <div className="toast-actions">
         {toast.kind === 'error' && (
           <button
-            title="Report this issue on GitHub"
+            title={t('toast.reportIssue')}
             onClick={(e) => {
               e.stopPropagation()
               void window.api.openExternal(reportIssueUrl(toast.message))
@@ -75,10 +77,10 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }
             <Bug size={13} />
           </button>
         )}
-        <button title="Copy message" onClick={copy}>
+        <button title={t('toast.copyMessage')} onClick={copy}>
           {copied ? <Check size={13} /> : <Copy size={13} />}
         </button>
-        <button title="Dismiss" onClick={onDismiss}>
+        <button title={t('toast.dismiss')} onClick={onDismiss}>
           <X size={13} />
         </button>
       </div>

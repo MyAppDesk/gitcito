@@ -66,7 +66,7 @@ export function modifierHeld(e: Modifiers, modifier: HoverModifier): boolean {
 /** The key name that arms the feature, for keydown/keyup matching. */
 const KEY_NAME: Record<HoverModifier, string> = {
   shift: 'Shift',
-  alt: 'Alt',
+  alt: 'Alt', // i18n-ignore KeyboardEvent.key value, not UI copy
   ctrl: 'Control',
   meta: 'Meta',
   none: ''

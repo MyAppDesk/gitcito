@@ -8,20 +8,21 @@ import { AnalyticsSection, RepoHistorySection } from './SettingsPanel'
 import { InsightsPage } from './InsightsPage'
 import { RepoInfoTab } from './RepoInfoTab'
 import { RepoVaultTab } from './RepoVaultTab'
-import { useT } from '../i18n'
+import { useT, t as tr, interp } from '../i18n'
 import type { LogEntry } from '../../../shared/types'
 
 function relTime(ms: number): string {
   const m = Math.round((Date.now() - ms) / 60000)
-  if (m < 1) return 'just now'
-  if (m < 60) return `${m}m ago`
+  if (m < 1) return tr('time.justNow')
+  if (m < 60) return interp(tr('time.minutesAgo'), { n: m })
   const h = Math.round(m / 60)
-  if (h < 24) return `${h}h ago`
+  if (h < 24) return interp(tr('time.hoursAgo'), { n: h })
   return new Date(ms).toLocaleString()
 }
 
 /** This repo's recent operation log, inline; the full filterable log opens as a page. */
 function RepoLogsTab({ repoPath }: { repoPath: string }): React.JSX.Element {
+  const t = useT()
   const closeModal = useUIStore((s) => s.closeModal)
   const [entries, setEntries] = useState<LogEntry[]>([])
   const [loading, setLoading] = useState(true)
@@ -41,9 +42,9 @@ function RepoLogsTab({ repoPath }: { repoPath: string }): React.JSX.Element {
   return (
     <>
       <div className="repo-logs-head">
-        <span className="settings-hint">Git operations gitcito ran on this repo, newest first.</span>
+        <span className="settings-hint">{t('repoLogs.hint')}</span>
         <button className="btn ghost small" onClick={openAll}>
-          <ScrollText size={13} /> Open full operation log
+          <ScrollText size={13} /> {t('repoLogs.openFull')}
         </button>
       </div>
       {loading ? (
@@ -51,7 +52,9 @@ function RepoLogsTab({ repoPath }: { repoPath: string }): React.JSX.Element {
           <Loader2 size={15} className="spin" />
         </div>
       ) : entries.length === 0 ? (
-        <p className="settings-hint" style={{ marginTop: 10 }}>No operations recorded for this repo yet.</p>
+        <p className="settings-hint" style={{ marginTop: 10 }}>
+          {t('repoLogs.empty')}
+        </p>
       ) : (
         <div className="repo-logs-list">
           {entries.map((e, i) => (
@@ -75,13 +78,14 @@ function BranchMultiSelect({
   options,
   value,
   onChange,
-  placeholder = 'Add a branch…'
+  placeholder
 }: {
   options: string[]
   value: string[]
   onChange: (next: string[]) => void
   placeholder?: string
 }): React.JSX.Element {
+  const t = useT()
   const [text, setText] = useState('')
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -120,7 +124,7 @@ function BranchMultiSelect({
         <input
           className="bms-input"
           value={text}
-          placeholder={value.length ? '' : placeholder}
+          placeholder={value.length ? '' : (placeholder ?? t('repoSettings.addBranch'))}
           onFocus={() => setOpen(true)}
           onChange={(e) => { setText(e.target.value); setOpen(true) }}
           onKeyDown={(e) => {
@@ -138,7 +142,7 @@ function BranchMultiSelect({
           ))}
           {canAddTyped && (
             <button className="bms-opt add" onClick={() => add(text)}>
-              Add “{text.trim()}”
+              {interp(t('common.addQuoted'), { value: text.trim() })}
             </button>
           )}
         </div>

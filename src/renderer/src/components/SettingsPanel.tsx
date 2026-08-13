@@ -146,6 +146,7 @@ const BRANCH_NAMING_STYLES: { id: BranchNamingStyle; key: TranslationKey }[] = [
  * currently active repo. Lives under the profile page next to the git identity.
  */
 function SigningSection(): React.JSX.Element {
+  const t = useT()
   const { activeRepo } = useSettingsStore()
   const toast = useUIStore((s) => s.toast)
   const repo = activeRepo()
@@ -170,7 +171,7 @@ function SigningSection(): React.JSX.Element {
     setBusy(true)
     try {
       await gitApi.setSigningConfig(repo.path, { sign: cfg.sign, format: cfg.format, key: cfg.key })
-      toast('success', `Signing settings saved for ${repo.name}`)
+      toast('success', interp(t('signing.saved'), { repo: repo.name }))
     } catch (err) {
       toast('error', err instanceof Error ? err.message : String(err))
     } finally {
@@ -181,10 +182,11 @@ function SigningSection(): React.JSX.Element {
   return (
     <>
       <h4>
-        <BadgeCheck size={14} /> Commit signing{repo ? ` · ${repo.name}` : ''}
+        <BadgeCheck size={14} /> {t('signing.title')}
+        {repo ? ` · ${repo.name}` : ''}
       </h4>
       {!repo ? (
-        <p className="settings-hint">Open a repository to configure commit signing.</p>
+        <p className="settings-hint">{t('signing.openRepo')}</p>
       ) : !cfg ? (
         <p className="settings-hint">
           <Loader2 size={13} className="spin" /> Loading…
@@ -201,30 +203,30 @@ function SigningSection(): React.JSX.Element {
               <span className="settings-toggle-thumb" />
             </span>
             <span className="settings-toggle-copy">
-              <strong>Sign all commits in this repository</strong>
-              <span className="settings-hint">Sets commit.gpgsign so new commits are signed automatically.</span>
+              <strong>{t('signing.signAll')}</strong>
+              <span className="settings-hint">{t('signing.signAllHint')}</span>
             </span>
           </label>
           <div className="form-row two">
             <label>
-              Format
+              {t('signing.format')}
               <select value={cfg.format} onChange={(e) => setCfg({ ...cfg, format: e.target.value })}>
-                <option value="openpgp">OpenPGP (GPG)</option>
+                <option value="openpgp">{t('signing.openpgp')}</option>
                 <option value="ssh">SSH</option>
                 <option value="x509">X.509 (S/MIME)</option>
               </select>
             </label>
             <label>
-              Signing key
+              {t('signing.signingKey')}
               <input
                 value={cfg.key}
-                placeholder={cfg.format === 'ssh' ? '~/.ssh/id_ed25519.pub' : 'GPG key id'}
+                placeholder={cfg.format === 'ssh' ? '~/.ssh/id_ed25519.pub' : t('signing.gpgKeyId')}
                 onChange={(e) => setCfg({ ...cfg, key: e.target.value })}
               />
             </label>
           </div>
           <button className="btn ghost small" onClick={() => void save()} disabled={busy}>
-            {busy ? <Loader2 size={13} className="spin" /> : null} Save signing settings
+            {busy ? <Loader2 size={13} className="spin" /> : null} {t('signing.save')}
           </button>
         </>
       )}
@@ -240,15 +242,15 @@ function ProfilePage({ profile, edit }: { profile: Profile; edit: (p: Partial<Pr
   const applyToRepo = async (): Promise<void> => {
     const repo = activeRepo()
     if (!repo) {
-      toast('info', 'Open a repository first')
+      toast('info', t('settings.openRepoFirst'))
       return
     }
     if (!profile.gitName || !profile.gitEmail) {
-      toast('error', 'Set name and email first')
+      toast('error', t('settings.setNameEmailFirst'))
       return
     }
     await gitApi.setUser(repo.path, profile.gitName, profile.gitEmail)
-    toast('success', `Applied ${profile.name} identity to ${repo.name}`)
+    toast('success', interp(t('settings.identityApplied'), { profile: profile.name, repo: repo.name }))
   }
 
   return (
@@ -328,7 +330,7 @@ const INTEGRATIONS = [
     icon: Server,
     field: 'azureToken',
     kind: 'pat',
-    placeholder: 'PAT with Code (read) scope',
+    placeholderKey: 'integrations.azurePatPlaceholder',
     tokenUrl:
       'https://learn.microsoft.com/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate#create-a-pat'
   },
@@ -522,7 +524,7 @@ export function IntegrationsPage({
         <input
           type="password"
           value={token}
-          placeholder={active.placeholder}
+          placeholder={'placeholderKey' in active ? t(active.placeholderKey) : active.placeholder}
           onChange={(e) => edit({ [active.field]: e.target.value } as Partial<Profile>)}
         />
       </label>
@@ -532,7 +534,7 @@ export function IntegrationsPage({
           <input
             type="text"
             value={azureOrg}
-            placeholder="e.g. contoso"
+            placeholder={t('settings.azureOrgPlaceholder')}
             required
             aria-required="true"
             onChange={(e) => edit({ azureOrg: e.target.value })}
@@ -575,7 +577,7 @@ export function AIPage({ profile, edit }: { profile: Profile; edit: (p: Partial<
     try {
       const list = await aiApi.listModels(ai)
       setModels(list)
-      if (list.length === 0) toast('info', 'Provider returned no models')
+      if (list.length === 0) toast('info', t('settings.noModels'))
     } catch (err) {
       setModels([])
       toast('info', `${err instanceof Error ? err.message : String(err)} Using the built-in model list.`)
@@ -794,39 +796,39 @@ export function AIPage({ profile, edit }: { profile: Profile; edit: (p: Partial<
     </>
   )
 }
-const APP_COLOR_FIELDS: { key: keyof AppThemeColors; label: string }[] = [
-  { key: 'bg0', label: 'Background 0' },
-  { key: 'bg1', label: 'Background 1' },
-  { key: 'bg2', label: 'Background 2' },
-  { key: 'bg3', label: 'Background 3' },
-  { key: 'bg4', label: 'Background 4' },
-  { key: 'border', label: 'Border' },
-  { key: 'borderSoft', label: 'Border soft' },
-  { key: 'text0', label: 'Text primary' },
-  { key: 'text1', label: 'Text secondary' },
-  { key: 'text2', label: 'Text muted' },
-  { key: 'accent', label: 'Accent' },
-  { key: 'green', label: 'Green' },
-  { key: 'red', label: 'Red' },
-  { key: 'yellow', label: 'Yellow' },
-  { key: 'purple', label: 'Purple' }
+const APP_COLOR_FIELDS: { key: keyof AppThemeColors; labelKey: TranslationKey }[] = [
+  { key: 'bg0', labelKey: 'themeColor.bg0' },
+  { key: 'bg1', labelKey: 'themeColor.bg1' },
+  { key: 'bg2', labelKey: 'themeColor.bg2' },
+  { key: 'bg3', labelKey: 'themeColor.bg3' },
+  { key: 'bg4', labelKey: 'themeColor.bg4' },
+  { key: 'border', labelKey: 'themeColor.border' },
+  { key: 'borderSoft', labelKey: 'themeColor.borderSoft' },
+  { key: 'text0', labelKey: 'themeColor.text0' },
+  { key: 'text1', labelKey: 'themeColor.text1' },
+  { key: 'text2', labelKey: 'themeColor.text2' },
+  { key: 'accent', labelKey: 'themeColor.accent' },
+  { key: 'green', labelKey: 'themeColor.green' },
+  { key: 'red', labelKey: 'themeColor.red' },
+  { key: 'yellow', labelKey: 'themeColor.yellow' },
+  { key: 'purple', labelKey: 'themeColor.purple' }
 ]
 
-const CODE_COLOR_FIELDS: { key: keyof CodeThemeColors; label: string }[] = [
-  { key: 'text', label: 'Text' },
-  { key: 'comment', label: 'Comment' },
-  { key: 'keyword', label: 'Keyword' },
-  { key: 'string', label: 'String' },
-  { key: 'number', label: 'Number' },
-  { key: 'function', label: 'Function' },
-  { key: 'title', label: 'Title/Class' },
-  { key: 'variable', label: 'Variable' },
-  { key: 'type', label: 'Type' },
-  { key: 'builtin', label: 'Built-in' },
-  { key: 'attr', label: 'Attribute' },
-  { key: 'tag', label: 'Tag' },
-  { key: 'operator', label: 'Operator' },
-  { key: 'meta', label: 'Meta' }
+const CODE_COLOR_FIELDS: { key: keyof CodeThemeColors; labelKey: TranslationKey }[] = [
+  { key: 'text', labelKey: 'codeColor.text' },
+  { key: 'comment', labelKey: 'codeColor.comment' },
+  { key: 'keyword', labelKey: 'codeColor.keyword' },
+  { key: 'string', labelKey: 'codeColor.string' },
+  { key: 'number', labelKey: 'codeColor.number' },
+  { key: 'function', labelKey: 'codeColor.function' },
+  { key: 'title', labelKey: 'codeColor.title' },
+  { key: 'variable', labelKey: 'codeColor.variable' },
+  { key: 'type', labelKey: 'codeColor.type' },
+  { key: 'builtin', labelKey: 'codeColor.builtin' },
+  { key: 'attr', labelKey: 'codeColor.attr' },
+  { key: 'tag', labelKey: 'codeColor.tag' },
+  { key: 'operator', labelKey: 'codeColor.operator' },
+  { key: 'meta', labelKey: 'codeColor.meta' }
 ]
 
 const PREVIEW_CODE = `function greet(name) {
@@ -874,14 +876,18 @@ function CodeThemeSwatch({ colors }: { colors: CodeThemeColors }): React.JSX.Ele
   const bg = isLightText(c.text) ? '#14161f' : '#f4f5fb'
   return (
     <div className="theme-swatch" style={{ background: bg, padding: '6px 8px', fontFamily: 'var(--mono)', fontSize: 9 }}>
+      {/* i18n-ignore code sample */}
       <div style={{ color: c.keyword }}>const <span style={{ color: c.function }}>fn</span> = () =&gt; {'{'}</div>
+      {/* i18n-ignore code sample */}
       <div style={{ color: c.comment }}>&nbsp;&nbsp;// note</div>
+      {/* i18n-ignore code sample */}
       <div>&nbsp;&nbsp;<span style={{ color: c.keyword }}>return</span> <span style={{ color: c.string }}>"hi"</span></div>
     </div>
   )
 }
 
 function CodePreview({ colors }: { colors: CodeThemeColors }): React.JSX.Element {
+  const t = useT()
   let html: string
   try {
     html = hljs.highlight(PREVIEW_CODE, { language: 'javascript' }).value
@@ -907,7 +913,7 @@ function CodePreview({ colors }: { colors: CodeThemeColors }): React.JSX.Element
   } as React.CSSProperties
   return (
     <div className="code-preview">
-      <div className="code-preview-head">Live preview</div>
+      <div className="code-preview-head">{t('theme.livePreview')}</div>
       <pre className="hljs" style={style} dangerouslySetInnerHTML={{ __html: html }} />
     </div>
   )
@@ -915,21 +921,21 @@ function CodePreview({ colors }: { colors: CodeThemeColors }): React.JSX.Element
 
 // ─── Graph style tab ─────────────────────────────────────────────────────────
 
-const EDGE_STYLES: { id: GraphEdgeStyle; label: string }[] = [
-  { id: 'rounded', label: 'Rounded' },
-  { id: 'sharp', label: 'Sharp' },
-  { id: 'curved', label: 'Curved' },
-  { id: 'straight', label: 'Straight' }
+const EDGE_STYLES: { id: GraphEdgeStyle; labelKey: TranslationKey }[] = [
+  { id: 'rounded', labelKey: 'graphEdge.rounded' },
+  { id: 'sharp', labelKey: 'graphEdge.sharp' },
+  { id: 'curved', labelKey: 'graphEdge.curved' },
+  { id: 'straight', labelKey: 'graphEdge.straight' }
 ]
-const DENSITIES: { id: GraphDensity; label: string }[] = [
-  { id: 'compact', label: 'Compact' },
-  { id: 'comfortable', label: 'Comfortable' },
-  { id: 'spacious', label: 'Spacious' }
+const DENSITIES: { id: GraphDensity; labelKey: TranslationKey }[] = [
+  { id: 'compact', labelKey: 'graphDensity.compact' },
+  { id: 'comfortable', labelKey: 'graphDensity.comfortable' },
+  { id: 'spacious', labelKey: 'graphDensity.spacious' }
 ]
-const LINE_WIDTHS: { id: GraphLineWidth; label: string }[] = [
-  { id: 'thin', label: 'Thin' },
-  { id: 'normal', label: 'Normal' },
-  { id: 'thick', label: 'Thick' }
+const LINE_WIDTHS: { id: GraphLineWidth; labelKey: TranslationKey }[] = [
+  { id: 'thin', labelKey: 'graphWidth.thin' },
+  { id: 'normal', labelKey: 'graphWidth.normal' },
+  { id: 'thick', labelKey: 'graphWidth.thick' }
 ]
 const NODE_STYLES: { id: GraphNodeStyle; key: TranslationKey }[] = [
   { id: 'normal', key: 'graphNodeStyle.normal' },
@@ -1241,7 +1247,7 @@ function GraphStyleTab(): React.JSX.Element {
                 {!p.builtin && (
                   <button
                     className="theme-card-delete"
-                    title="Delete palette"
+                    title={t('settings.deletePalette')}
                     onClick={(e) => { e.stopPropagation(); deletePalette(p.id) }}
                   >
                     <Trash2 size={11} />
@@ -1260,7 +1266,7 @@ function GraphStyleTab(): React.JSX.Element {
                 className={`theme-mode-btn ${style.edgeStyle === e.id ? 'active' : ''}`}
                 onClick={() => setStyle({ edgeStyle: e.id })}
               >
-                <span>{e.label}</span>
+                <span>{t(e.labelKey)}</span>
               </button>
             ))}
           </div>
@@ -1274,7 +1280,7 @@ function GraphStyleTab(): React.JSX.Element {
                 className={`theme-mode-btn ${style.density === d.id ? 'active' : ''}`}
                 onClick={() => setStyle({ density: d.id })}
               >
-                <span>{d.label}</span>
+                <span>{t(d.labelKey)}</span>
               </button>
             ))}
           </div>
@@ -1317,7 +1323,7 @@ function GraphStyleTab(): React.JSX.Element {
                 className={`theme-mode-btn ${style.lineWidth === w.id ? 'active' : ''}`}
                 onClick={() => setStyle({ lineWidth: w.id })}
               >
-                <span>{w.label}</span>
+                <span>{t(w.labelKey)}</span>
               </button>
             ))}
           </div>
@@ -1345,7 +1351,7 @@ function GraphStyleTab(): React.JSX.Element {
               onKeyDown={(e) => e.key === 'Enter' && !generating && generatePaletteAI()}
             />
             <button className="btn primary small" onClick={generatePaletteAI} disabled={generating || !aiPrompt.trim()}>
-              {generating ? <><Loader2 size={13} className="spin" /> {t('settings.generating')}</> : <><Sparkles size={13} /> Generate</>}
+              {generating ? <><Loader2 size={13} className="spin" /> {t('settings.generating')}</> : <><Sparkles size={13} /> {t('settings.generate')}</>}
             </button>
             <button className="btn ghost small" onClick={() => { setShowAIPrompt(false); setAiPrompt('') }}>
               {t('common.cancel')}
@@ -1600,7 +1606,7 @@ function ThemesPage({ initialTab }: { initialTab?: 'theme' | 'graph' } = {}): Re
             {!th.builtin && (
               <button
                 className="theme-card-delete"
-                title="Delete theme"
+                title={t('settings.deleteTheme')}
                 onClick={(e) => { e.stopPropagation(); deleteAppTheme(th.id) }}
               >
                 <Trash2 size={11} />
@@ -1623,7 +1629,7 @@ function ThemesPage({ initialTab }: { initialTab?: 'theme' | 'graph' } = {}): Re
               onKeyDown={(e) => e.key === 'Enter' && !generatingApp && generateAppThemeAI()}
             />
             <button className="btn primary small" onClick={generateAppThemeAI} disabled={generatingApp || !appAIPrompt.trim()}>
-              {generatingApp ? <><Loader2 size={13} className="spin" /> {t('settings.generating')}</> : <><Sparkles size={13} /> Generate</>}
+              {generatingApp ? <><Loader2 size={13} className="spin" /> {t('settings.generating')}</> : <><Sparkles size={13} /> {t('settings.generate')}</>}
             </button>
             <button className="btn ghost small" onClick={() => { setShowAppAIPrompt(false); setAppAIPrompt('') }}>
               {t('common.cancel')}
@@ -1649,7 +1655,7 @@ function ThemesPage({ initialTab }: { initialTab?: 'theme' | 'graph' } = {}): Re
                     value={appDraft[f.key]}
                     onChange={(e) => setAppDraft((d) => ({ ...d, [f.key]: e.target.value }))}
                   />
-                  <span>{f.label}</span>
+                  <span>{t(f.labelKey)}</span>
                 </label>
               ))}
             </div>
@@ -1714,7 +1720,7 @@ function ThemesPage({ initialTab }: { initialTab?: 'theme' | 'graph' } = {}): Re
             {!th.builtin && (
               <button
                 className="theme-card-delete"
-                title="Delete theme"
+                title={t('settings.deleteTheme')}
                 onClick={(e) => { e.stopPropagation(); deleteCodeTheme(th.id) }}
               >
                 <Trash2 size={11} />
@@ -1739,7 +1745,7 @@ function ThemesPage({ initialTab }: { initialTab?: 'theme' | 'graph' } = {}): Re
               onKeyDown={(e) => e.key === 'Enter' && !generatingCode && generateCodeThemeAI()}
             />
             <button className="btn primary small" onClick={generateCodeThemeAI} disabled={generatingCode || !codeAIPrompt.trim()}>
-              {generatingCode ? <><Loader2 size={13} className="spin" /> {t('settings.generating')}</> : <><Sparkles size={13} /> Generate</>}
+              {generatingCode ? <><Loader2 size={13} className="spin" /> {t('settings.generating')}</> : <><Sparkles size={13} /> {t('settings.generate')}</>}
             </button>
             <button className="btn ghost small" onClick={() => { setShowCodeAIPrompt(false); setCodeAIPrompt('') }}>
               {t('common.cancel')}
@@ -1765,7 +1771,7 @@ function ThemesPage({ initialTab }: { initialTab?: 'theme' | 'graph' } = {}): Re
                     value={codeDraft[f.key]}
                     onChange={(e) => setCodeDraft((d) => ({ ...d, [f.key]: e.target.value }))}
                   />
-                  <span>{f.label}</span>
+                  <span>{t(f.labelKey)}</span>
                 </label>
               ))}
             </div>
@@ -1827,6 +1833,7 @@ function ThemeDialog({
 }
 
 function DataManagementSection(): React.JSX.Element {
+  const t = useT()
   const settings = useSettingsStore((s) => s.settings)
   const update = useSettingsStore((s) => s.update)
   const toast = useUIStore((s) => s.toast)
@@ -1849,9 +1856,9 @@ function DataManagementSection(): React.JSX.Element {
       }
       if (exportIncludeSecrets) bundle.vault = await vaultApi.exportAll()
       const ok = await settingsApi.exportFile(bundle)
-      if (ok) toast('success', 'Settings exported')
+      if (ok) toast('success', t('settings.exported'))
     } catch {
-      toast('error', 'Export failed')
+      toast('error', t('settings.exportFailed'))
     } finally {
       setExporting(false)
     }
@@ -1868,14 +1875,14 @@ function DataManagementSection(): React.JSX.Element {
       const incomingSettings = bundle ? bundle.settings : (result as AppSettings)
 
       if (hasSettingsSecrets(incomingSettings)) {
-        toast('info', 'Imported file contains tokens — they have been kept. Review in Integrations.')
+        toast('info', t('settings.importKeptTokens'))
       }
       if (incomingSettings) update((s) => ({ ...s, ...incomingSettings }))
       if (bundle?.info) await infoApi.importAll(bundle.info)
       if (bundle?.vault) await vaultApi.importAll(bundle.vault)
-      toast('success', 'Settings imported')
+      toast('success', t('settings.imported'))
     } catch {
-      toast('error', 'Import failed')
+      toast('error', t('settings.importFailed'))
     } finally {
       setImporting(false)
     }
@@ -1883,15 +1890,12 @@ function DataManagementSection(): React.JSX.Element {
 
   return (
     <div>
-      <h4 className="settings-section-title">Import / Export</h4>
-      <p className="settings-hint">
-        Back up or move everything between machines — settings, profiles, themes and per-repo Info.
-        Usage analytics stay local. API keys, tokens and the secrets Vault are stripped unless you opt in below.
-      </p>
+      <h4 className="settings-section-title">{t('settings.importExport')}</h4>
+      <p className="settings-hint">{t('settings.importExportHint')}</p>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
         <button className="btn ghost small" onClick={() => void doImport()} disabled={importing}>
           {importing ? <Loader2 size={13} className="spin" /> : <Upload size={13} />}
-          Import settings
+          {t('settings.importSettings')}
         </button>
         <button
           className="btn ghost small"
@@ -1902,7 +1906,7 @@ function DataManagementSection(): React.JSX.Element {
           disabled={exporting}
         >
           {exporting ? <Loader2 size={13} className="spin" /> : <Download size={13} />}
-          Export settings
+          {t('settings.exportSettings')}
         </button>
       </div>
       <label className="settings-toggle-card" style={{ marginTop: 12 }}>
@@ -1918,8 +1922,8 @@ function DataManagementSection(): React.JSX.Element {
           <span className="settings-toggle-thumb" />
         </span>
         <span className="settings-toggle-copy">
-          <strong>Include API keys, tokens & Vault secrets</strong>
-          <span className="settings-hint">Keep the exported file secure — anyone with it can access your services and secrets.</span>
+          <strong>{t('settings.includeSecrets')}</strong>
+          <span className="settings-hint">{t('settings.includeSecretsHint')}</span>
         </span>
       </label>
       {showExportWarn && (
@@ -1931,12 +1935,12 @@ function DataManagementSection(): React.JSX.Element {
         }}>
           <AlertTriangle size={14} style={{ flexShrink: 0, marginTop: 1 }} color="var(--yellow)" />
           <div>
-            <strong>This will include API keys, tokens and your Vault secrets in the exported file.</strong>
+            <strong>{t('settings.exportWarnTitle')}</strong>
             <br />
-            Keep the file secure — anyone with it can access your services.
+            {t('settings.exportWarnBody')}
             <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-              <button className="btn danger small" onClick={() => { setShowExportWarn(false); void doExport() }}>Export anyway</button>
-              <button className="btn ghost small" onClick={() => { setShowExportWarn(false); setExportIncludeSecrets(false) }}>Cancel</button>
+              <button className="btn danger small" onClick={() => { setShowExportWarn(false); void doExport() }}>{t('settings.exportAnyway')}</button>
+              <button className="btn ghost small" onClick={() => { setShowExportWarn(false); setExportIncludeSecrets(false) }}>{t('common.cancel')}</button>
             </div>
           </div>
         </div>
@@ -2574,6 +2578,7 @@ function ShortcutsPage(): React.JSX.Element {
 }
 
 function RepoDataSection(): React.JSX.Element {
+  const t = useT()
   const settings = useSettingsStore((s) => s.settings)
   const update = useSettingsStore((s) => s.update)
   const toast = useUIStore((s) => s.toast)
@@ -2581,7 +2586,7 @@ function RepoDataSection(): React.JSX.Element {
 
   const clear = (): void => {
     update((s) => ({ ...s, recentRepos: [] }))
-    toast('success', 'Recent repositories cleared')
+    toast('success', t('settings.recentCleared'))
   }
 
   return (
@@ -2598,52 +2603,52 @@ function RepoDataSection(): React.JSX.Element {
           <Trash2 size={13} />
           Clear recent repositories
         </button>
-        <span className="settings-hint">{count === 0 ? 'No cached repositories' : `${count} cached`}</span>
+        <span className="settings-hint">{count === 0 ? t('settings.noCachedRepos') : interp(t('settings.nCached'), { n: count })}</span>
       </div>
     </div>
   )
 }
 
-const USAGE_FEATURE_LABELS: Record<string, string> = {
-  commitMessage: 'Commit messages',
-  explainCode: 'Explain code',
-  resolveConflict: 'Conflict resolution',
-  generateConfig: 'Config generation',
-  suggestArtifacts: 'Artifact suggestions',
-  smartStage: 'Smart staging',
-  generateAppTheme: 'App themes',
-  generateCodeTheme: 'Code themes',
-  generateBranchName: 'Branch names',
-  reviewPR: 'PR review'
+const USAGE_FEATURE_KEYS: Record<string, TranslationKey> = {
+  commitMessage: 'aiFeature.commitMessage',
+  explainCode: 'aiFeature.explainCode',
+  resolveConflict: 'aiFeature.resolveConflict',
+  generateConfig: 'aiFeature.generateConfig',
+  suggestArtifacts: 'aiFeature.suggestArtifacts',
+  smartStage: 'aiFeature.smartStage',
+  generateAppTheme: 'aiFeature.generateAppTheme',
+  generateCodeTheme: 'aiFeature.generateCodeTheme',
+  generateBranchName: 'aiFeature.generateBranchName',
+  reviewPR: 'aiFeature.reviewPR'
 }
 
-const EVENT_LABELS: Record<ActivityEvent, string> = {
-  commit: 'Commits',
-  amend: 'Amends',
-  push: 'Pushes',
-  pull: 'Pulls',
-  fetch: 'Fetches',
-  branchCreate: 'Branches created',
-  branchDelete: 'Branches deleted',
-  merge: 'Merges',
-  rebase: 'Rebases',
-  stash: 'Stashes',
-  stashPop: 'Stash pops',
-  conflictResolved: 'Conflicts resolved',
-  tagCreate: 'Tags created',
-  cherryPick: 'Cherry-picks',
-  revert: 'Reverts',
-  repoOpen: 'Repos opened',
-  clone: 'Clones',
-  init: 'Repos initialized'
+const EVENT_KEYS: Record<ActivityEvent, TranslationKey> = {
+  commit: 'activityEvent.commit',
+  amend: 'activityEvent.amend',
+  push: 'activityEvent.push',
+  pull: 'activityEvent.pull',
+  fetch: 'activityEvent.fetch',
+  branchCreate: 'activityEvent.branchCreate',
+  branchDelete: 'activityEvent.branchDelete',
+  merge: 'activityEvent.merge',
+  rebase: 'activityEvent.rebase',
+  stash: 'activityEvent.stash',
+  stashPop: 'activityEvent.stashPop',
+  conflictResolved: 'activityEvent.conflictResolved',
+  tagCreate: 'activityEvent.tagCreate',
+  cherryPick: 'activityEvent.cherryPick',
+  revert: 'activityEvent.revert',
+  repoOpen: 'activityEvent.repoOpen',
+  clone: 'activityEvent.clone',
+  init: 'activityEvent.init'
 }
 
-const RETENTION_OPTIONS: { label: string; value: number }[] = [
-  { label: 'Keep forever', value: 0 },
-  { label: '1 year', value: 365 },
-  { label: '180 days', value: 180 },
-  { label: '90 days', value: 90 },
-  { label: '30 days', value: 30 }
+const RETENTION_OPTIONS: { labelKey: TranslationKey; value: number }[] = [
+  { labelKey: 'retention.forever', value: 0 },
+  { labelKey: 'retention.year', value: 365 },
+  { labelKey: 'retention.d180', value: 180 },
+  { labelKey: 'retention.d90', value: 90 },
+  { labelKey: 'retention.d30', value: 30 }
 ]
 
 function fmtTokens(n: number): string {
@@ -2689,6 +2694,7 @@ function MiniBars({ data, color }: { data: { label: string; value: number }[]; c
 }
 
 export function AnalyticsSection({ aiEnabled }: { aiEnabled: boolean }): React.JSX.Element {
+  const t = useT()
   const toast = useUIStore((s) => s.toast)
   const [data, setData] = useState<Analytics>(emptyAnalytics())
 
@@ -2698,7 +2704,7 @@ export function AnalyticsSection({ aiEnabled }: { aiEnabled: boolean }): React.J
 
   const clear = async (): Promise<void> => {
     setData(await analyticsApi.clear())
-    toast('success', 'Analytics cleared')
+    toast('success', t('settings.analyticsCleared'))
   }
 
   const setRetention = async (days: number): Promise<void> => {
@@ -2713,7 +2719,7 @@ export function AnalyticsSection({ aiEnabled }: { aiEnabled: boolean }): React.J
     }
   }
   const events = (Object.entries(eventTotals) as [ActivityEvent, number][])
-    .map(([key, count]) => ({ label: EVENT_LABELS[key] ?? key, count }))
+    .map(([key, count]) => ({ label: EVENT_KEYS[key] ? t(EVENT_KEYS[key]) : key, count }))
     .sort((a, b) => b.count - a.count)
 
   // Per-day activity bars: last 90 recorded days, summing all event types.
@@ -2723,7 +2729,7 @@ export function AnalyticsSection({ aiEnabled }: { aiEnabled: boolean }): React.J
   const totalActions = events.reduce((s, e) => s + e.count, 0)
 
   const aiFeatures = Object.entries(data.aiByFeature)
-    .map(([key, stat]) => ({ label: USAGE_FEATURE_LABELS[key] ?? key, stat }))
+    .map(([key, stat]) => ({ label: USAGE_FEATURE_KEYS[key] ? t(USAGE_FEATURE_KEYS[key]) : key, stat }))
     .sort((a, b) => b.stat.totalTokens - a.stat.totalTokens)
   const aiHasData = data.aiTotal.requests > 0
   const knownCost = Object.values(data.aiByModel).some((s: AIUsageStat) => s.cost > 0)
@@ -2732,31 +2738,42 @@ export function AnalyticsSection({ aiEnabled }: { aiEnabled: boolean }): React.J
     <div style={{ marginTop: 28 }}>
       <h4 className="settings-section-title">
         <Activity size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />
-        Activity analytics
+        {t('analytics.title')}
       </h4>
       <p className="settings-hint">
-        What you do in gitcito over time{data.since ? `, since ${new Date(data.since).toLocaleDateString()}` : ''}. Stored locally on this machine.
+        {interp(t('analytics.subtitle'), {
+          since: data.since
+            ? interp(t('analytics.since'), { date: new Date(data.since).toLocaleDateString() })
+            : ''
+        })}
       </p>
 
       <label className="settings-field" style={{ maxWidth: 220, marginTop: 12 }}>
-        <span className="settings-field-label">History retention</span>
+        <span className="settings-field-label">{t('analytics.retention')}</span>
         <select value={data.retentionDays} onChange={(e) => void setRetention(Number(e.target.value))}>
           {RETENTION_OPTIONS.map((o) => (
             <option key={o.value} value={o.value}>
-              {o.label}
+              {t(o.labelKey)}
             </option>
           ))}
         </select>
-        <span className="settings-hint">Older daily buckets are pruned automatically.</span>
+        <span className="settings-hint">{t('analytics.retentionHint')}</span>
       </label>
 
       {totalActions === 0 ? (
-        <p className="settings-hint" style={{ marginTop: 12 }}>No activity recorded yet.</p>
+        <p className="settings-hint" style={{ marginTop: 12 }}>
+          {t('analytics.noActivity')}
+        </p>
       ) : (
         <>
           {daily.length > 1 && (
             <div style={{ marginTop: 16 }}>
-              <div style={{ fontSize: 11, color: 'var(--text-2)' }}>Daily activity ({daily.length} day{daily.length === 1 ? '' : 's'})</div>
+              <div style={{ fontSize: 11, color: 'var(--text-2)' }}>
+                {interp(t('analytics.dailyActivity'), {
+                  n: daily.length,
+                  dayWord: daily.length === 1 ? t('analytics.day') : t('analytics.days')
+                })}
+              </div>
               <MiniBars data={daily} color="var(--accent)" />
             </div>
           )}
@@ -2770,27 +2787,27 @@ export function AnalyticsSection({ aiEnabled }: { aiEnabled: boolean }): React.J
 
       {aiEnabled && (
         <div style={{ marginTop: 24 }}>
-          <h5 style={{ margin: '0 0 4px', fontSize: 13, color: 'var(--text-0)' }}>AI usage</h5>
-          <p className="settings-hint">
-            Tokens consumed by AI features. Costs are rough estimates from public list prices and may not match your bill.
-          </p>
+          <h5 style={{ margin: '0 0 4px', fontSize: 13, color: 'var(--text-0)' }}>{t('analytics.aiUsage')}</h5>
+          <p className="settings-hint">{t('analytics.aiUsageHint')}</p>
           {!aiHasData ? (
-            <p className="settings-hint" style={{ marginTop: 10 }}>No AI usage recorded yet.</p>
+            <p className="settings-hint" style={{ marginTop: 10 }}>
+              {t('analytics.noAiUsage')}
+            </p>
           ) : (
             <>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 10, marginTop: 12 }}>
-                <StatCard label="Requests" value={String(data.aiTotal.requests)} />
-                <StatCard label="Total tokens" value={fmtTokens(data.aiTotal.totalTokens)} />
-                <StatCard label="Prompt / Completion" value={`${fmtTokens(data.aiTotal.promptTokens)} / ${fmtTokens(data.aiTotal.completionTokens)}`} />
-                <StatCard label="Est. cost" value={fmtCost(data.aiTotal.cost)} />
+                <StatCard label={t('analytics.requests')} value={String(data.aiTotal.requests)} />
+                <StatCard label={t('analytics.totalTokens')} value={fmtTokens(data.aiTotal.totalTokens)} />
+                <StatCard label={t('analytics.promptCompletion')} value={`${fmtTokens(data.aiTotal.promptTokens)} / ${fmtTokens(data.aiTotal.completionTokens)}`} />
+                <StatCard label={t('analytics.estCost')} value={fmtCost(data.aiTotal.cost)} />
               </div>
               <table style={{ width: '100%', marginTop: 16, borderCollapse: 'collapse', fontSize: 12 }}>
                 <thead>
                   <tr style={{ color: 'var(--text-2)', textAlign: 'left' }}>
-                    <th style={{ padding: '4px 6px', fontWeight: 500 }}>Feature</th>
-                    <th style={{ padding: '4px 6px', fontWeight: 500, textAlign: 'right' }}>Requests</th>
-                    <th style={{ padding: '4px 6px', fontWeight: 500, textAlign: 'right' }}>Tokens</th>
-                    <th style={{ padding: '4px 6px', fontWeight: 500, textAlign: 'right' }}>Est. cost</th>
+                    <th style={{ padding: '4px 6px', fontWeight: 500 }}>{t('analytics.feature')}</th>
+                    <th style={{ padding: '4px 6px', fontWeight: 500, textAlign: 'right' }}>{t('analytics.requests')}</th>
+                    <th style={{ padding: '4px 6px', fontWeight: 500, textAlign: 'right' }}>{t('analytics.tokens')}</th>
+                    <th style={{ padding: '4px 6px', fontWeight: 500, textAlign: 'right' }}>{t('analytics.estCost')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -2825,6 +2842,7 @@ export function AnalyticsSection({ aiEnabled }: { aiEnabled: boolean }): React.J
 }
 
 export function RepoHistorySection(): React.JSX.Element {
+  const t = useT()
   const activeRepo = useSettingsStore((s) => s.activeRepo())
   const recentRepos = useSettingsStore((s) => s.settings.recentRepos)
 
@@ -2874,18 +2892,18 @@ export function RepoHistorySection(): React.JSX.Element {
     <div style={{ marginTop: 28 }}>
       <h4 className="settings-section-title">
         <BarChart3 size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />
-        Repository history
+        {t('repoHistory.title')}
       </h4>
-      <p className="settings-hint">
-        Commit statistics read from the repository's git history.
-      </p>
+      <p className="settings-hint">{t('repoHistory.subtitle')}</p>
 
       {allRepos.length === 0 ? (
-        <p className="settings-hint" style={{ marginTop: 12 }}>Open a repository to see its history.</p>
+        <p className="settings-hint" style={{ marginTop: 12 }}>
+          {t('repoHistory.openRepo')}
+        </p>
       ) : (
         <>
           <label className="settings-field" style={{ maxWidth: 320, marginTop: 12 }}>
-            <span className="settings-field-label">Repository</span>
+            <span className="settings-field-label">{t('logs.repository')}</span>
             <select value={selectedPath} onChange={(e) => setSelectedPath(e.target.value)}>
               {allRepos.map((r) => (
                 <option key={r.path} value={r.path}>{r.name}</option>
@@ -2896,28 +2914,34 @@ export function RepoHistorySection(): React.JSX.Element {
           {loading ? (
             <p className="settings-hint" style={{ marginTop: 12 }}>
               <Loader2 size={13} className="spin" style={{ verticalAlign: '-2px', marginRight: 6 }} />
-              Reading history…
+              {t('repoHistory.reading')}
             </p>
           ) : !stats || stats.totalCommits === 0 ? (
-            <p className="settings-hint" style={{ marginTop: 12 }}>No commits found.</p>
+            <p className="settings-hint" style={{ marginTop: 12 }}>
+              {t('repoHistory.noCommits')}
+            </p>
           ) : (
             <>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10, marginTop: 12 }}>
-                <StatCard label="Total commits" value={String(stats.totalCommits)} />
-                <StatCard label="Authors" value={String(stats.authors.length)} />
-                <StatCard label="First commit" value={stats.first ? new Date(stats.first * 1000).toLocaleDateString() : '—'} />
-                <StatCard label="Latest commit" value={stats.last ? new Date(stats.last * 1000).toLocaleDateString() : '—'} />
+                <StatCard label={t('repoHistory.totalCommits')} value={String(stats.totalCommits)} />
+                <StatCard label={t('repoHistory.authors')} value={String(stats.authors.length)} />
+                <StatCard label={t('repoHistory.firstCommit')} value={stats.first ? new Date(stats.first * 1000).toLocaleDateString() : '—'} />
+                <StatCard label={t('repoHistory.latestCommit')} value={stats.last ? new Date(stats.last * 1000).toLocaleDateString() : '—'} />
               </div>
 
               {perDay.length > 1 && (
                 <div style={{ marginTop: 16 }}>
-                  <div style={{ fontSize: 11, color: 'var(--text-2)' }}>Commits per day (last {perDay.length})</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-2)' }}>
+                    {interp(t('repoHistory.commitsPerDay'), { n: perDay.length })}
+                  </div>
                   <MiniBars data={perDay} color="var(--green)" />
                 </div>
               )}
 
               <div style={{ marginTop: 16 }}>
-                <div style={{ fontSize: 11, color: 'var(--text-2)', marginBottom: 6 }}>Top authors</div>
+                <div style={{ fontSize: 11, color: 'var(--text-2)', marginBottom: 6 }}>
+                  {t('repoHistory.topAuthors')}
+                </div>
                 {topAuthors.map((a) => (
                   <div key={a.name} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '4px 0', borderTop: '1px solid var(--border-soft)' }}>
                     <span style={{ color: 'var(--text-1)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>

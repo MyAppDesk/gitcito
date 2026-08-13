@@ -4,6 +4,7 @@ import { gitApi, aiApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { renderMarkdown } from '../preview/markdown'
+import { useT } from '../i18n'
 import type { PRReviewFinding } from '../../../shared/types'
 
 /** Findings carry an app-resolved path:line, so they render as a located list. */
@@ -37,6 +38,7 @@ export function AIPRReview({
   sourceBranch: string
   targetBranch: string
 }): React.JSX.Element {
+  const t = useT()
   const closeModal = useUIStore((s) => s.closeModal)
   const toast = useUIStore((s) => s.toast)
   const activeProfile = useSettingsStore((s) => s.activeProfile)
@@ -78,7 +80,7 @@ export function AIPRReview({
     <>
       <div className="ai-pr-header">
         <Sparkles size={16} />
-        <h3>AI PR Review</h3>
+        <h3>{t('aiPrReview.title')}</h3>
         <span className="ai-pr-title">{prTitle}</span>
       </div>
       <p className="ai-pr-branches">
@@ -88,19 +90,23 @@ export function AIPRReview({
       {loading ? (
         <div className="ai-pr-loading">
           <Loader2 size={20} className="spin" />
-          <span>Analysing diff…</span>
+          <span>{t('aiPrReview.analysing')}</span>
         </div>
       ) : (
         <div className="ai-pr-body">
           {summary && (
             <section className="ai-pr-section">
-              <div className="ai-pr-section-title"><Sparkles size={13} /> Summary</div>
+              <div className="ai-pr-section-title">
+                <Sparkles size={13} /> {t('aiPrReview.summary')}
+              </div>
               <div className="ai-pr-text">{summary}</div>
             </section>
           )}
           {risks && (
             <section className="ai-pr-section">
-              <div className="ai-pr-section-title ai-pr-risk"><AlertTriangle size={13} /> Risks</div>
+              <div className="ai-pr-section-title ai-pr-risk">
+                <AlertTriangle size={13} /> {t('aiPrReview.risks')}
+              </div>
               {riskFindings.length > 0 ? (
                 <FindingList findings={riskFindings} />
               ) : (
@@ -113,7 +119,9 @@ export function AIPRReview({
           )}
           {suggestions && (
             <section className="ai-pr-section">
-              <div className="ai-pr-section-title ai-pr-suggest"><Lightbulb size={13} /> Suggestions</div>
+              <div className="ai-pr-section-title ai-pr-suggest">
+                <Lightbulb size={13} /> {t('aiPrReview.suggestions')}
+              </div>
               {suggestionFindings.length > 0 ? (
                 <FindingList findings={suggestionFindings} />
               ) : (
@@ -125,13 +133,15 @@ export function AIPRReview({
             </section>
           )}
           {!summary && !risks && !suggestions && (
-            <div className="ai-pr-empty">No review content returned.</div>
+            <div className="ai-pr-empty">{t('aiPrReview.empty')}</div>
           )}
         </div>
       )}
 
       <div className="modal-actions">
-        <button className="btn ghost" onClick={closeModal}>Close</button>
+        <button className="btn ghost" onClick={closeModal}>
+          {t('common.close')}
+        </button>
       </div>
     </>
   )

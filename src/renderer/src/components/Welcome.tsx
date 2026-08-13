@@ -35,6 +35,7 @@ function ItemList({
   onCancelRename: () => void
   onReorder?: (fromPath: string, toPath: string) => void
 }): React.JSX.Element {
+  const t = useT()
   const [dragPath, setDragPath] = useState<string | null>(null)
   const [overPath, setOverPath] = useState<string | null>(null)
 
@@ -87,7 +88,7 @@ function ItemList({
             {!renaming && item.onRename && (
               <button
                 className="icon-btn"
-                title="Rename"
+                title={t('common.rename')}
                 onClick={(e) => { e.stopPropagation(); onStartRename(item) }}
               >
                 <Pencil size={11} />
@@ -96,7 +97,7 @@ function ItemList({
             {!renaming && item.onRemove && (
               <button
                 className="icon-btn"
-                title="Remove"
+                title={t('common.remove')}
                 onClick={(e) => { e.stopPropagation(); item.onRemove!() }}
               >
                 <X size={12} />
@@ -210,10 +211,10 @@ export function Welcome(): React.JSX.Element {
   const createGroup = (): void => {
     openModal({
       kind: 'input',
-      title: 'New group',
-      label: 'Group name',
-      placeholder: 'My projects',
-      submitLabel: 'Create',
+      title: t('welcome.newGroup'),
+      label: t('welcome.groupName'),
+      placeholder: t('welcome.groupNamePlaceholder'),
+      submitLabel: t('common.create'),
       onSubmit: (name) => createGroupTab(name)
     })
   }

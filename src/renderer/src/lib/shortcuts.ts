@@ -3,30 +3,52 @@
 // the user's custom map (settings.shortcuts). Combos are stored normalized like
 // "mod+shift+f" where `mod` = ⌘ on macOS / Ctrl elsewhere.
 
+import type { TranslationKey } from '../i18n'
+
 export interface ShortcutDef {
   id: string
-  label: string
-  category: string
+  /** Dictionary key — the UI resolves it with `t()`; never a raw string. */
+  labelKey: TranslationKey
+  categoryKey: TranslationKey
   defaultCombo: string
 }
 
 /** Rebindable global shortcuts. */
 export const SHORTCUTS: ShortcutDef[] = [
-  { id: 'command-palette', label: 'Command palette', category: 'Navigation', defaultCombo: 'mod+k' },
-  { id: 'code-search', label: 'Search code', category: 'Navigation', defaultCombo: 'mod+shift+f' },
-  { id: 'vault', label: 'Open vault', category: 'Navigation', defaultCombo: 'mod+shift+v' }
+  {
+    id: 'command-palette',
+    labelKey: 'sc.commandPalette',
+    categoryKey: 'sc.cat.navigation',
+    defaultCombo: 'mod+k'
+  },
+  {
+    id: 'code-search',
+    labelKey: 'sc.searchCode',
+    categoryKey: 'sc.cat.navigation',
+    defaultCombo: 'mod+shift+f'
+  },
+  {
+    id: 'vault',
+    labelKey: 'sc.openVault',
+    categoryKey: 'sc.cat.navigation',
+    defaultCombo: 'mod+shift+v'
+  }
 ]
 
 /** Fixed (non-rebindable) shortcuts, shown in the cheatsheet for reference. */
-export const FIXED_SHORTCUTS: { label: string; combo: string; category: string }[] = [
-  { label: 'Keyboard shortcuts', combo: '?', category: 'Help' },
-  { label: 'Navigate commits', combo: '↑ ↓ / j k', category: 'Navigation' },
-  { label: 'Reopen closed tab', combo: 'mod+shift+t', category: 'Navigation' },
-  { label: 'Save file', combo: 'mod+s', category: 'Editing' },
-  { label: 'Undo', combo: 'mod+z', category: 'Editing' },
-  { label: 'Redo', combo: 'mod+shift+z', category: 'Editing' },
-  { label: 'Find in file', combo: 'mod+f', category: 'Editing' },
-  { label: 'Close dialog / panel', combo: 'Escape', category: 'General' }
+export const FIXED_SHORTCUTS: {
+  labelKey: TranslationKey
+  combo: string
+  categoryKey: TranslationKey
+}[] = [
+  { labelKey: 'sc.keyboardShortcuts', combo: '?', categoryKey: 'sc.cat.help' },
+  { labelKey: 'sc.navigateCommits', combo: '↑ ↓ / j k', categoryKey: 'sc.cat.navigation' },
+  { labelKey: 'sc.reopenTab', combo: 'mod+shift+t', categoryKey: 'sc.cat.navigation' },
+  { labelKey: 'sc.saveFile', combo: 'mod+s', categoryKey: 'sc.cat.editing' },
+  { labelKey: 'sc.undo', combo: 'mod+z', categoryKey: 'sc.cat.editing' },
+  { labelKey: 'sc.redo', combo: 'mod+shift+z', categoryKey: 'sc.cat.editing' },
+  { labelKey: 'sc.findInFile', combo: 'mod+f', categoryKey: 'sc.cat.editing' },
+  { labelKey: 'sc.closeDialog', combo: 'Escape', categoryKey: 'sc.cat.general' }
 ]
 
 const isMac = (): boolean => typeof navigator !== 'undefined' && /mac/i.test(navigator.platform)

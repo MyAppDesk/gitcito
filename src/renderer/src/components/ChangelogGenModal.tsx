@@ -71,7 +71,7 @@ export function ChangelogGenModal({ repoPath }: { repoPath: string }): React.JSX
           <select value={from} onChange={(e) => setFrom(e.target.value)}>
             <option value="">{t('changelogGen.autoTag')}</option>
             {tags.length > 0 && (
-              <optgroup label="Tags">
+              <optgroup label={t('changelogGen.tagsGroup')}>
                 {tags.map((tag) => (
                   <option key={`t:${tag}`} value={tag}>
                     {tag}
@@ -79,7 +79,7 @@ export function ChangelogGenModal({ repoPath }: { repoPath: string }): React.JSX
                 ))}
               </optgroup>
             )}
-            <optgroup label="Branches">
+            <optgroup label={t('changelogGen.branchesGroup')}>
               {branches.map((b) => (
                 <option key={`b:${b}`} value={b}>
                   {b}
@@ -93,7 +93,7 @@ export function ChangelogGenModal({ repoPath }: { repoPath: string }): React.JSX
           <select value={to} onChange={(e) => setTo(e.target.value)}>
             <option value="HEAD">HEAD</option>
             {tags.length > 0 && (
-              <optgroup label="Tags">
+              <optgroup label={t('changelogGen.tagsGroup')}>
                 {tags.map((tag) => (
                   <option key={`t2:${tag}`} value={tag}>
                     {tag}
@@ -101,7 +101,7 @@ export function ChangelogGenModal({ repoPath }: { repoPath: string }): React.JSX
                 ))}
               </optgroup>
             )}
-            <optgroup label="Branches">
+            <optgroup label={t('changelogGen.branchesGroup')}>
               {branches.map((b) => (
                 <option key={`b2:${b}`} value={b}>
                   {b}

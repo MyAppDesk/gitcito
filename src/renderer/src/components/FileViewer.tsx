@@ -7,7 +7,7 @@ import { useUIStore, type FileViewMode, type FileViewState } from '../stores/ui'
 import { useRepoStore } from '../stores/repo'
 import { filePermalink } from '../lib/autolink'
 import { revealLineWhenReady } from '../lib/reveal'
-import { useT } from '../i18n'
+import { useT, interp, type TranslationKey } from '../i18n'
 import { useHoverExplain } from './HoverExplain'
 import { DiffViewer } from './DiffViewer'
 import { SemanticSummary } from './SemanticSummary'
@@ -21,12 +21,12 @@ import { renderMarkdown } from '../preview/markdown'
 import { previewKind, isBinaryKind } from '../preview/registry'
 import { GRAPH_COLORS } from '../graph/layout'
 
-const MODES: { id: FileViewMode; label: string }[] = [
-  { id: 'preview', label: 'Preview' },
-  { id: 'file', label: 'File View' },
-  { id: 'diff', label: 'Diff View' },
-  { id: 'blame', label: 'Blame' },
-  { id: 'history', label: 'History' }
+const MODES: { id: FileViewMode; labelKey: TranslationKey }[] = [
+  { id: 'preview', labelKey: 'fileViewer.modePreview' },
+  { id: 'file', labelKey: 'fileViewer.modeFile' },
+  { id: 'diff', labelKey: 'fileViewer.modeDiff' },
+  { id: 'blame', labelKey: 'fileViewer.modeBlame' },
+  { id: 'history', labelKey: 'fileViewer.modeHistory' }
 ]
 
 const IMAGE_EXTS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'ico', 'svg', 'avif'])
@@ -264,10 +264,10 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
     if (dirty) {
       openModal({
         kind: 'confirm',
-        title: 'Discard changes',
-        message: `Discard unsaved changes to ${file.split('/').pop()}?`,
+        title: t('fileViewer.discardTitle'),
+        message: interp(t('fileViewer.discardMessage'), { file: file.split('/').pop() ?? '' }),
         danger: true,
-        confirmLabel: 'Discard',
+        confirmLabel: t('fileViewer.discard'),
         onConfirm: () => {
           setEditorDirty(false)
           setFileView(null)
@@ -488,11 +488,11 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
     source.type === 'commit' ? (
       <span className="fv-chip commit">{source.hash.slice(0, 7)}</span>
     ) : source.type === 'stash' ? (
-      <span className="fv-chip stash">Stash</span>
+      <span className="fv-chip stash">{t('fileViewer.chipStash')}</span>
     ) : source.type === 'tree' ? (
-      <span className={`fv-chip working${dirty ? ' dirty' : ''}`}>{dirty ? 'Unsaved' : 'Working tree'}</span>
+      <span className={`fv-chip working${dirty ? ' dirty' : ''}`}>{dirty ? t('fileViewer.chipUnsaved') : t('fileViewer.chipWorkingTree')}</span>
     ) : (
-      <span className={`fv-chip ${source.staged ? 'staged' : 'unstaged'}`}>{source.staged ? 'Staged' : 'Unstaged'}</span>
+      <span className={`fv-chip ${source.staged ? 'staged' : 'unstaged'}`}>{source.staged ? t('fileViewer.chipStaged') : t('fileViewer.chipUnstaged')}</span>
     )
 
   return (
@@ -510,17 +510,17 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
               className={`fv-mode ${mode === m.id ? 'active' : ''}`}
               onClick={() => setFileView({ ...view, mode: m.id })}
             >
-              {m.label}
+              {t(m.labelKey)}
             </button>
           ))}
         </div>
         {fileIsSecret && maskSecretsSetting && (
           <button
             className="btn ghost small"
-            title={revealSecrets ? 'Hide secret values' : 'Secret values are masked — click to reveal'}
+            title={revealSecrets ? t('fileViewer.hideSecrets') : t('fileViewer.revealSecrets')}
             onClick={() => setRevealSecrets((v) => !v)}
           >
-            {revealSecrets ? <EyeOff size={13} /> : <Eye size={13} />} {revealSecrets ? 'Hide' : 'Reveal'}
+            {revealSecrets ? <EyeOff size={13} /> : <Eye size={13} />} {revealSecrets ? t('fileViewer.hide') : t('fileViewer.reveal')}
           </button>
         )}
         {canExplain && aiEnabled && (
@@ -536,31 +536,31 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
         {permalink && (
           <button
             className="btn ghost small"
-            title="Copy a host link to this file at this commit"
+            title={t('fileViewer.permalinkTitle')}
             onClick={() => {
               void navigator.clipboard.writeText(permalink)
-              toast('success', 'Permalink copied')
+              toast('success', t('fileViewer.permalinkCopied'))
             }}
           >
-            <Link2 size={13} /> Link
+            <Link2 size={13} /> {t('fileViewer.link')}
           </button>
         )}
         {editableFile && !(editable && editing) && (
-          <button className="btn ghost small" title="Edit file" onClick={startEditing}>
-            <Pencil size={13} /> Edit
+          <button className="btn ghost small" title={t('fileViewer.editFile')} onClick={startEditing}>
+            <Pencil size={13} /> {t('fileViewer.edit')}
           </button>
         )}
         {editable && editing && (
           <button
             className="btn small fv-save-btn"
             disabled={!dirty || saving}
-            title="Save (⌘S)"
+            title={t('fileViewer.save')}
             onClick={() => void saveDraft()}
           >
-            {saving ? <Loader2 size={13} className="spin" /> : <Save size={13} />} Save
+            {saving ? <Loader2 size={13} className="spin" /> : <Save size={13} />} {t('common.save')}
           </button>
         )}
-        <button className="icon-btn" title="Close (Esc)" onClick={requestClose}>
+        <button className="icon-btn" title={t('fileViewer.close')} onClick={requestClose}>
           <X size={15} />
         </button>
       </div>
@@ -572,7 +572,7 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
             <input
               ref={findInputRef}
               className="fv-find-input"
-              placeholder="Find in file"
+              placeholder={t('fileViewer.findPlaceholder')}
               value={find.query}
               spellCheck={false}
               onChange={(e) => setFind((f) => ({ ...f, query: e.target.value }))}
@@ -589,34 +589,34 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
             <div className="fv-find-toggles">
               <button
                 className={`fs-toggle${find.caseSensitive ? ' active' : ''}`}
-                title="Match Case"
+                title={t('fileSearch.matchCase')}
                 onClick={() => setFind((f) => ({ ...f, caseSensitive: !f.caseSensitive }))}
               >
                 Aa
               </button>
               <button
                 className={`fs-toggle${find.wholeWord ? ' active' : ''}`}
-                title="Match Whole Word"
+                title={t('fileSearch.matchWholeWord')}
                 onClick={() => setFind((f) => ({ ...f, wholeWord: !f.wholeWord }))}
               >
                 ab
               </button>
               <button
                 className={`fs-toggle${find.regex ? ' active' : ''}`}
-                title="Use Regular Expression"
+                title={t('fileSearch.useRegex')}
                 onClick={() => setFind((f) => ({ ...f, regex: !f.regex }))}
               >
                 .*
               </button>
             </div>
             <span className="fv-find-count">{hitCount ? `${activeHit + 1}/${hitCount}` : '0/0'}</span>
-            <button className="icon-btn" title="Previous (Shift+Enter)" disabled={!hitCount} onClick={() => goHit(-1)}>
+            <button className="icon-btn" title={t('fileViewer.findPrev')} disabled={!hitCount} onClick={() => goHit(-1)}>
               <ChevronUp size={14} />
             </button>
-            <button className="icon-btn" title="Next (Enter)" disabled={!hitCount} onClick={() => goHit(1)}>
+            <button className="icon-btn" title={t('fileViewer.findNext')} disabled={!hitCount} onClick={() => goHit(1)}>
               <ChevronDown size={14} />
             </button>
-            <button className="icon-btn" title="Close (Esc)" onClick={closeFind}>
+            <button className="icon-btn" title={t('fileViewer.close')} onClick={closeFind}>
               <X size={14} />
             </button>
           </div>
@@ -740,9 +740,9 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
                   onContextMenu={(e) => {
                     e.preventDefault()
                     openContextMenu(e.clientX, e.clientY, [
-                      { label: `Open ${b.sha.slice(0, 7)} diff`, onClick: () => setFileView({ ...view, source: { type: 'commit', hash: b.sha }, mode: 'diff' }) },
-                      { label: 'Reblame before this commit', onClick: () => setBlameOverrideRef(`${b.sha}^`) },
-                      { label: 'Copy SHA', onClick: () => void navigator.clipboard.writeText(b.sha) }
+                      { label: interp(t('fileViewer.openShaDiff'), { sha: b.sha.slice(0, 7) }), onClick: () => setFileView({ ...view, source: { type: 'commit', hash: b.sha }, mode: 'diff' }) },
+                      { label: t('fileViewer.reblame'), onClick: () => setBlameOverrideRef(`${b.sha}^`) },
+                      { label: t('fileViewer.copySha'), onClick: () => void navigator.clipboard.writeText(b.sha) }
                     ])
                   }}
                 >
@@ -774,7 +774,7 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
                 <span className="history-date">{new Date(h.date * 1000).toLocaleDateString()}</span>
               </button>
             ))}
-            {history.length === 0 && <div className="fv-error">No history for this file</div>}
+            {history.length === 0 && <div className="fv-error">{t('fileViewer.noHistory')}</div>}
           </div>
         )}
 

@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { Columns2, MoveHorizontal } from 'lucide-react'
+import { useT } from '../i18n'
 
 interface ImageDiffProps {
   before: string | null
@@ -7,19 +8,22 @@ interface ImageDiffProps {
 }
 
 export function ImageDiff({ before, after }: ImageDiffProps): React.JSX.Element {
+  const t = useT()
   const [view, setView] = useState<'side' | 'slider'>('side')
   const [pos, setPos] = useState(50)
   const wrapRef = useRef<HTMLDivElement>(null)
   const dragging = useRef(false)
 
-  if (!before && !after) return <div className="diff-empty">Image unavailable</div>
+  if (!before && !after) return <div className="diff-empty">{t('imageDiff.unavailable')}</div>
 
   // Only one side present → file was added or removed.
   if (!before || !after) {
     const single = (after ?? before) as string
     return (
       <div className="image-diff">
-        <div className={`imgd-badge ${after ? 'added' : 'removed'}`}>{after ? 'Added' : 'Removed'}</div>
+        <div className={`imgd-badge ${after ? 'added' : 'removed'}`}>
+          {after ? t('imageDiff.added') : t('imageDiff.removed')}
+        </div>
         <div className="image-preview checker">
           <img src={single} alt="" draggable={false} />
         </div>
@@ -38,23 +42,23 @@ export function ImageDiff({ before, after }: ImageDiffProps): React.JSX.Element 
     <div className="image-diff">
       <div className="imgd-toolbar">
         <button className={`imgd-tab ${view === 'side' ? 'active' : ''}`} onClick={() => setView('side')}>
-          <Columns2 size={14} /> Side by side
+          <Columns2 size={14} /> {t('imageDiff.sideBySide')}
         </button>
         <button className={`imgd-tab ${view === 'slider' ? 'active' : ''}`} onClick={() => setView('slider')}>
-          <MoveHorizontal size={14} /> Slider
+          <MoveHorizontal size={14} /> {t('imageDiff.slider')}
         </button>
       </div>
 
       {view === 'side' ? (
         <div className="imgd-side">
           <figure>
-            <figcaption className="removed">Before</figcaption>
+            <figcaption className="removed">{t('imageDiff.before')}</figcaption>
             <div className="image-preview checker">
               <img src={before} alt="before" draggable={false} />
             </div>
           </figure>
           <figure>
-            <figcaption className="added">After</figcaption>
+            <figcaption className="added">{t('imageDiff.after')}</figcaption>
             <div className="image-preview checker">
               <img src={after} alt="after" draggable={false} />
             </div>

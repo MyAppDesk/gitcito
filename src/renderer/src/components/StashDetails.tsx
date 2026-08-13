@@ -85,6 +85,7 @@ export function StashDetails({ repo, sha }: { repo: RepoData; sha: string }): Re
     <div className="details">
       <div className="details-info">
         <div className="commit-header">
+          {/* i18n-ignore git ref syntax */}
           <div className="avatar stash-avatar" title={`stash@{${stash.index}}`}>
             <Archive size={15} />
           </div>

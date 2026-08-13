@@ -339,7 +339,7 @@ function RepoPicker({
 
   const profileSelector = profiles.length > 1 && (
     <label className="repo-profile">
-      <span>Account</span>
+      <span>{t('modal.account')}</span>
       <select value={profileId} onChange={(e) => onProfile(e.target.value)}>
         {profiles.map((p) => (
           <option key={p.id} value={p.id}>
@@ -628,7 +628,7 @@ function ProviderCreateForm({
 
   const remoteNameField = (
     <>
-      <label className="modal-label">Remote Name</label>
+      <label className="modal-label">{t('modal.remoteName')}</label>
       <input
         className="modal-input"
         value={remoteName}
@@ -662,7 +662,7 @@ function ProviderCreateForm({
         <>
           {host === 'azure' && (
             <>
-              <label className="modal-label">Organization</label>
+              <label className="modal-label">{t('modal.organization')}</label>
               <input
                 className="modal-input"
                 value={azureOrg}
@@ -671,10 +671,10 @@ function ProviderCreateForm({
               />
             </>
           )}
-          <label className="modal-label">{host === 'azure' ? 'Project' : 'Account'}</label>
+          <label className="modal-label">{host === 'azure' ? t('modal.project') : t('modal.account')}</label>
           <OwnerSelect host={host} token={token} org={azureOrg} value={owner} onChange={setOwner} />
 
-          <label className="modal-label">Repository Name</label>
+          <label className="modal-label">{t('modal.repositoryName')}</label>
           <input
             autoFocus
             className="modal-input"
@@ -685,18 +685,18 @@ function ProviderCreateForm({
 
           {remoteNameField}
 
-          <label className="modal-label">Description</label>
+          <label className="modal-label">{t('modal.description')}</label>
           <input
             className="modal-input"
             value={description}
-            placeholder="Optional"
+            placeholder={t('modal.optional')}
             onChange={(e) => setDescription(e.target.value)}
           />
 
-          <label className="modal-label">Access</label>
+          <label className="modal-label">{t('modal.access')}</label>
           <select className="modal-input" value={isPrivate ? 'private' : 'public'} onChange={(e) => setIsPrivate(e.target.value === 'private')}>
-            <option value="public">Public</option>
-            <option value="private">Private</option>
+            <option value="public">{t('modal.public')}</option>
+            <option value="private">{t('modal.private')}</option>
           </select>
 
           <div className="modal-actions">
@@ -779,7 +779,7 @@ function AddRemoteModal({ spec }: { spec: Extract<ModalSpec, { kind: 'addRemote'
 
       {provider === 'url' ? (
         <>
-          <label className="modal-label">Name</label>
+          <label className="modal-label">{t('modal.name')}</label>
           <input
             autoFocus
             className="modal-input"
@@ -791,8 +791,12 @@ function AddRemoteModal({ spec }: { spec: Extract<ModalSpec, { kind: 'addRemote'
               if (e.key === 'Escape') closeModal()
             }}
           />
-          {duplicate && <div className="modal-hint danger">A remote named “{name.trim()}” already exists.</div>}
-          <label className="modal-label">Pull URL</label>
+          {duplicate && (
+            <div className="modal-hint danger">
+              {interp(t('modal.remoteExists'), { name: name.trim() })}
+            </div>
+          )}
+          <label className="modal-label">{t('modal.pullUrl')}</label>
           <input
             className="modal-input"
             value={pullUrl}
@@ -803,11 +807,11 @@ function AddRemoteModal({ spec }: { spec: Extract<ModalSpec, { kind: 'addRemote'
               if (e.key === 'Escape') closeModal()
             }}
           />
-          <label className="modal-label">Push URL</label>
+          <label className="modal-label">{t('modal.pushUrl')}</label>
           <input
             className="modal-input"
             value={pushUrl}
-            placeholder="Leave blank to match the pull URL"
+            placeholder={t('modal.pushUrlPlaceholder')}
             onChange={(e) => setPushUrl(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter') submitUrl()
@@ -847,17 +851,17 @@ function EditRemoteModal({ spec }: { spec: Extract<ModalSpec, { kind: 'editRemot
   return (
     <>
       <h3 className="modal-title-row">
-        <Cloud size={17} /> Edit Remote
+        <Cloud size={17} /> {t('modal.editRemote')}
       </h3>
-      <label className="modal-label">Name</label>
+      <label className="modal-label">{t('modal.name')}</label>
       <input autoFocus className="modal-input" value={name} onChange={(e) => setName(e.target.value)} />
-      <label className="modal-label">Pull URL</label>
+      <label className="modal-label">{t('modal.pullUrl')}</label>
       <input className="modal-input" value={url} onChange={(e) => setUrl(e.target.value)} />
-      <label className="modal-label">Push URL</label>
+      <label className="modal-label">{t('modal.pushUrl')}</label>
       <input
         className="modal-input"
         value={pushUrl}
-        placeholder="Leave blank to match the pull URL"
+        placeholder={t('modal.pushUrlPlaceholder')}
         onChange={(e) => setPushUrl(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === 'Enter') submit()
@@ -974,7 +978,7 @@ function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): 
 
       {provider === 'url' ? (
         <>
-          <label className="modal-label">Repository URL</label>
+          <label className="modal-label">{t('modal.repositoryUrl')}</label>
           <input
             autoFocus
             className="modal-input"
@@ -990,7 +994,7 @@ function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): 
           />
           {profiles.length > 1 && (
             <label className="repo-profile">
-              <span>Profile</span>
+              <span>{t('modal.profile')}</span>
               <select value={profileId} onChange={(e) => setProfileId(e.target.value)}>
                 {profiles.map((p) => (
                   <option key={p.id} value={p.id}>
@@ -1005,20 +1009,20 @@ function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): 
         <RepoPicker host={provider} onPick={pickRepo} selectedUrl={url} profileId={profileId} onProfile={setProfileId} />
       )}
 
-      <label className="modal-label">Clone into</label>
+      <label className="modal-label">{t('modal.cloneInto')}</label>
       <div className="repo-org-row">
         <input
           className="modal-input"
           value={dir}
-          placeholder="Parent folder for the new repository"
+          placeholder={t('modal.parentFolderPlaceholder')}
           onChange={(e) => setDir(e.target.value)}
         />
         <button className="btn ghost" type="button" onClick={() => void browse()}>
-          <Folder size={14} /> Browse
+          <Folder size={14} /> {t('modal.browse')}
         </button>
       </div>
 
-      <label className="modal-label">Folder name</label>
+      <label className="modal-label">{t('modal.folderName')}</label>
       <input
         className="modal-input"
         value={name}
@@ -1193,21 +1197,21 @@ function CreateRepoModal({ spec }: { spec: Extract<ModalSpec, { kind: 'create-re
   return (
     <>
       <h3 className="modal-title-row">
-        <FolderGit2 size={17} /> Create repository
+        <FolderGit2 size={17} /> {t('modal.createRepository')}
       </h3>
-      <label className="modal-label">Create in</label>
+      <label className="modal-label">{t('modal.createIn')}</label>
       <div className="repo-org-row">
         <input
           className="modal-input"
           value={dir}
-          placeholder="Parent folder for the new repository"
+          placeholder={t('modal.parentFolderPlaceholder')}
           onChange={(e) => setDir(e.target.value)}
         />
         <button className="btn ghost" type="button" onClick={() => void browse()}>
-          <Folder size={14} /> Browse
+          <Folder size={14} /> {t('modal.browse')}
         </button>
       </div>
-      <label className="modal-label">Repository name</label>
+      <label className="modal-label">{t('modal.repositoryName')}</label>
       <input
         autoFocus
         className="modal-input"
@@ -1225,7 +1229,13 @@ function CreateRepoModal({ spec }: { spec: Extract<ModalSpec, { kind: 'create-re
           {t('common.cancel')}
         </button>
         <button className="btn primary" disabled={!valid} onClick={() => void submit()} type="button">
-          {creating ? <><Loader2 size={14} className="spin" /> Creating…</> : 'Create'}
+          {creating ? (
+            <>
+              <Loader2 size={14} className="spin" /> {t('modal.creating')}
+            </>
+          ) : (
+            t('common.create')
+          )}
         </button>
       </div>
     </>
@@ -1233,6 +1243,7 @@ function CreateRepoModal({ spec }: { spec: Extract<ModalSpec, { kind: 'create-re
 }
 
 function LauncherModal({ spec }: { spec: Extract<ModalSpec, { kind: 'launcher' }> }): React.JSX.Element {
+  const t = useT()
   const { closeModal, openModal } = useUIStore()
   const { settings, openRepoTab, createGroupTab, addRepoToGroup, removeRepoFromGroup, renameRepoInGroup, reorderReposInGroup } = useSettingsStore()
 
@@ -1278,10 +1289,10 @@ function LauncherModal({ spec }: { spec: Extract<ModalSpec, { kind: 'launcher' }
     closeModal()
     openModal({
       kind: 'input',
-      title: 'New group',
-      label: 'Group name',
-      placeholder: 'My projects',
-      submitLabel: 'Create',
+      title: t('welcome.newGroup'),
+      label: t('welcome.groupName'),
+      placeholder: t('welcome.groupNamePlaceholder'),
+      submitLabel: t('common.create'),
       onSubmit: (name) => createGroupTab(name)
     })
   }
@@ -1337,6 +1348,7 @@ function LauncherModal({ spec }: { spec: Extract<ModalSpec, { kind: 'launcher' }
 }
 
 export function ModalHost(): React.JSX.Element {
+  const t = useT()
   const { modal, closeModal } = useUIStore()
 
   useEffect(() => {
@@ -1392,7 +1404,7 @@ export function ModalHost(): React.JSX.Element {
             <button className="modal-close" onClick={closeModal}>
               <X size={15} />
             </button>
-            <ErrorBoundary key={modal.kind} label="This dialog hit an error" onReset={closeModal}>
+            <ErrorBoundary key={modal.kind} label={t('modal.dialogError')} onReset={closeModal}>
             {modal.kind === 'input' && <InputModal spec={modal} />}
             {modal.kind === 'create-branch' && <CreateBranchModal spec={modal} />}
             {modal.kind === 'confirm' && <ConfirmModal spec={modal} />}

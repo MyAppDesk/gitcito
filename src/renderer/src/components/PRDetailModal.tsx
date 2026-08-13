@@ -138,7 +138,7 @@ export function PRDetailModal({
               <code>{pr.source}</code> → <code>{pr.target}</code>
             </span>
             <span className="prd-author">by {pr.author}</span>
-            <button className="icon-btn" title="Open in browser" onClick={() => void window.api.openExternal(pr.url)}>
+            <button className="icon-btn" title={t('common.openInBrowser')} onClick={() => void window.api.openExternal(pr.url)}>
               <ExternalLink size={13} />
             </button>
           </div>
@@ -172,7 +172,7 @@ export function PRDetailModal({
                       <span className="prd-check-name">{c.name}</span>
                       <span className="prd-check-state">{c.status === 'completed' ? c.conclusion : c.status}</span>
                       {c.url && (
-                        <button className="prd-check-logs" title="View logs" onClick={() => void window.api.openExternal(c.url)}>
+                        <button className="prd-check-logs" title={t('prDetail.viewLogs')} onClick={() => void window.api.openExternal(c.url)}>
                           <ExternalLink size={12} />
                         </button>
                       )}

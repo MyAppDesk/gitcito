@@ -250,7 +250,7 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
       return {
         key,
         node: (
-          <span key={key} className="ref-badge ref-tag" title={`${tg}${isPushed ? ' · pushed' : ' · local only'}`}>
+          <span key={key} className="ref-badge ref-tag" title={`${tg}${isPushed ? ` · ${t('ref.pushed')}` : ` · ${t('ref.localOnly')}`}`}>
             <Tag size={10} className="ref-ic" />
             {isPushed && <Cloud size={10} className="ref-ic" />}
             <span className="ref-text">{tg}</span>

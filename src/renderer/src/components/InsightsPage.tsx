@@ -6,13 +6,13 @@ import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { useRepoStore } from '../stores/repo'
 import type { RepoInsights } from '../../../shared/types'
-import { useT } from '../i18n'
+import { useT, interp, type TranslationKey } from '../i18n'
 
-const RANGES: { label: string; days: number }[] = [
+const RANGES: { label: string; labelKey?: TranslationKey; days: number }[] = [
   { label: '30d', days: 30 },
   { label: '90d', days: 90 },
   { label: '1y', days: 365 },
-  { label: 'All', days: 0 }
+  { label: '', labelKey: 'common.all', days: 0 }
 ]
 
 const AUTHOR_COLORS = ['#6c5ce7', '#00b894', '#0984e3', '#e17055', '#fdcb6e', '#e84393', '#00cec9', '#a29bfe']
@@ -89,7 +89,7 @@ export function InsightsPage({ repoPath }: { repoPath: string }): React.JSX.Elem
           <div className="codesearch-tabs" style={{ margin: 0 }}>
             {RANGES.map((r) => (
               <button key={r.days} className={`codesearch-tab ${days === r.days ? 'active' : ''}`} onClick={() => setDays(r.days)}>
-                {r.label}
+                {r.labelKey ? t(r.labelKey) : r.label}
               </button>
             ))}
           </div>
@@ -139,7 +139,13 @@ export function InsightsPage({ repoPath }: { repoPath: string }): React.JSX.Elem
                     <div
                       key={c.week}
                       className="churn-bar"
-                      title={`Week of ${c.week}\n+${fmt(c.added)} −${fmt(c.removed)} · ${c.commits} commit${c.commits === 1 ? '' : 's'}`}
+                      title={interp(t('insights.churnTooltip'), {
+                        week: c.week,
+                        added: fmt(c.added),
+                        removed: fmt(c.removed),
+                        commits: c.commits,
+                        commitWord: c.commits === 1 ? t('insights.commit') : t('insights.commits')
+                      })}
                     >
                       <span className="churn-add" style={{ height: `${h * addRatio}%` }} />
                       <span className="churn-del" style={{ height: `${h * (1 - addRatio)}%` }} />

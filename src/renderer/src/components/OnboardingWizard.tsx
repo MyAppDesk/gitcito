@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
+import { useT } from '../i18n'
 import {
   defaultProfile,
   type AIConfig,
@@ -98,58 +99,59 @@ function WelcomeStep({
   onApplyImport: () => void
   importing: boolean
 }): React.JSX.Element {
+  const t = useT()
   return (
     <div className="onboarding-welcome">
       <div className="onboarding-logo">
         <img src={gitcitoLaunch} alt="" draggable={false} className="onboarding-art" />
       </div>
-      <div className="onboarding-title">Welcome to gitcito</div>
-      <div className="onboarding-subtitle">Let's get you set up in a few steps.</div>
+      <div className="onboarding-title">{t('onboarding.welcomeTitle')}</div>
+      <div className="onboarding-subtitle">{t('onboarding.welcomeSubtitle')}</div>
 
       <div className="onboarding-import-box">
         {data.importData ? (
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
               <Check size={16} color="var(--green)" />
-              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-0)' }}>Settings file loaded</span>
+              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-0)' }}>{t('onboarding.settingsLoaded')}</span>
             </div>
             {data.importHasSecrets && (
               <div className="onboarding-warning">
                 <AlertTriangle size={14} style={{ flexShrink: 0, marginTop: 1 }} />
                 <div>
-                  <strong>This file contains API keys and tokens.</strong>
+                  <strong>{t('onboarding.secretsWarning')}</strong>
                   <br />
-                  By default they will be stripped. Check the box to keep them.
+                  {t('onboarding.secretsStripped')}
                   <label className="onboarding-secret-check">
                     <input
                       type="checkbox"
                       checked={data.importIncludeSecrets}
                       onChange={(e) => patch({ importIncludeSecrets: e.target.checked })}
                     />
-                    Include API keys and tokens
+                    {t('onboarding.includeSecrets')}
                   </label>
                 </div>
               </div>
             )}
             <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
               <button className="btn primary" onClick={onApplyImport}>
-                <Check size={14} /> Apply &amp; continue
+                <Check size={14} /> {t('onboarding.applyContinue')}
               </button>
               <button
                 className="btn ghost"
                 onClick={() => patch({ importData: null, importHasSecrets: false, importIncludeSecrets: false })}
               >
-                Cancel
+                {t('common.cancel')}
               </button>
             </div>
           </div>
         ) : (
           <div className="onboarding-import-empty">
             <Upload size={22} color="var(--text-2)" />
-            <p>Already have a gitcito settings file?</p>
+            <p>{t('onboarding.haveSettingsFile')}</p>
             <button className="btn ghost" onClick={onImport} disabled={importing}>
               {importing ? <Loader2 size={14} className="spin" /> : <Upload size={14} />}
-              Import settings
+              {t('onboarding.importSettings')}
             </button>
           </div>
         )}
@@ -165,26 +167,27 @@ function ProfileStep({
   data: WizardData
   patch: (p: Partial<WizardData>) => void
 }): React.JSX.Element {
+  const t = useT()
   return (
     <div>
       <div className="onboarding-step-header">
         <User size={20} color="var(--accent)" />
-        <div className="onboarding-title">Your profile</div>
-        <div className="onboarding-subtitle">How you appear in commits and the app.</div>
+        <div className="onboarding-title">{t('onboarding.profileTitle')}</div>
+        <div className="onboarding-subtitle">{t('onboarding.profileSubtitle')}</div>
       </div>
 
-      <div className="onboarding-section">DISPLAY NAME</div>
+      <div className="onboarding-section">{t('onboarding.displayName')}</div>
       <input
         className="modal-input"
-        placeholder="e.g. Work Profile"
+        placeholder={t('onboarding.displayNamePlaceholder')}
         value={data.profileName}
         onChange={(e) => patch({ profileName: e.target.value })}
       />
 
-      <div className="onboarding-section">GIT IDENTITY</div>
+      <div className="onboarding-section">{t('onboarding.gitIdentity')}</div>
       <input
         className="modal-input"
-        placeholder="Your name"
+        placeholder={t('onboarding.gitNamePlaceholder')}
         value={data.gitName}
         onChange={(e) => patch({ gitName: e.target.value })}
       />
@@ -195,7 +198,7 @@ function ProfileStep({
         onChange={(e) => patch({ gitEmail: e.target.value })}
         style={{ marginTop: 8 }}
       />
-      <p className="onboarding-hint">Used for git commits. Must match your git config to get credit on GitHub.</p>
+      <p className="onboarding-hint">{t('onboarding.gitIdentityHint')}</p>
     </div>
   )
 }
@@ -207,12 +210,13 @@ function AIStep({
   data: WizardData
   patch: (p: Partial<WizardData>) => void
 }): React.JSX.Element {
+  const t = useT()
   return (
     <>
       <div className="onboarding-step-header">
         <Bot size={20} color="var(--accent)" />
-        <div className="onboarding-title">AI features</div>
-        <div className="onboarding-subtitle">Commit messages, branch names, conflict resolution.</div>
+        <div className="onboarding-title">{t('onboarding.aiTitle')}</div>
+        <div className="onboarding-subtitle">{t('onboarding.aiSubtitle')}</div>
       </div>
       <div className="settings-form">
         <AIPage
@@ -233,6 +237,7 @@ function ThemeStep({
   data: WizardData
   patch: (p: Partial<WizardData>) => void
 }): React.JSX.Element {
+  const t = useT()
   const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches
   const effectiveMode = data.themeMode === 'auto' ? (systemDark ? 'dark' : 'light') : data.themeMode
 
@@ -240,8 +245,8 @@ function ThemeStep({
     <div>
       <div className="onboarding-step-header">
         <Palette size={20} color="var(--accent)" />
-        <div className="onboarding-title">Choose your theme</div>
-        <div className="onboarding-subtitle">You can always change this in Settings.</div>
+        <div className="onboarding-title">{t('onboarding.themeTitle')}</div>
+        <div className="onboarding-subtitle">{t('onboarding.themeSubtitle')}</div>
       </div>
 
       <div className="onboarding-theme-grid">
@@ -297,12 +302,13 @@ function IntegrationsStep({
   data: WizardData
   patch: (p: Partial<WizardData>) => void
 }): React.JSX.Element {
+  const t = useT()
   return (
     <>
       <div className="onboarding-step-header">
         <Plug size={20} color="var(--accent)" />
-        <div className="onboarding-title">Connect your services</div>
-        <div className="onboarding-subtitle">All optional — configure anytime in Settings.</div>
+        <div className="onboarding-title">{t('onboarding.integrationsTitle')}</div>
+        <div className="onboarding-subtitle">{t('onboarding.integrationsSubtitle')}</div>
       </div>
       <div className="settings-form">
         <IntegrationsPage
@@ -321,15 +327,13 @@ function IntegrationsStep({
       <div className="onboarding-secret-note">
         <ShieldCheck size={15} />
         <span>
-          Tokens are stored locally. Gitcito also <strong>masks secret values</strong> (
-          <code>KEY=••••••</code> in <code>.env</code> / key files) and <strong>warns</strong> before you commit or
-          push them — toggle in Settings → General.
+          {t('onboarding.tokensNote')}
         </span>
       </div>
       <div className="settings-app-picker onboarding-app-picker">
         <span className="settings-app-picker-name">
           <ExternalLink size={13} />
-          {data.defaultOpenApp?.name ?? 'No app selected'}
+          {data.defaultOpenApp?.name ?? t('onboarding.noAppSelected')}
         </span>
         <button
           type="button"
@@ -339,12 +343,11 @@ function IntegrationsStep({
             if (app) patch({ defaultOpenApp: app })
           }}
         >
-          Choose App…
+          {t('onboarding.chooseApp')}
         </button>
       </div>
       <div className="settings-hint onboarding-app-picker-hint">
-        Pick an app (e.g. VS Code) for the "Open with…" action on files, folders and repositories. Optional —
-        configurable anytime in Settings → General.
+        {t('onboarding.appPickerHint')}
       </div>
     </>
   )
@@ -353,6 +356,7 @@ function IntegrationsStep({
 // ── Main wizard ───────────────────────────────────────────────────────────────
 
 export function OnboardingWizard(): React.JSX.Element {
+  const t = useT()
   const profile = useSettingsStore((s) => s.activeProfile())
   const settings = useSettingsStore((s) => s.settings)
   const update = useSettingsStore((s) => s.update)
@@ -406,7 +410,7 @@ export function OnboardingWizard(): React.JSX.Element {
       const hasSecrets = detectSecrets(result as AppSettings)
       patch({ importData: result as AppSettings, importHasSecrets: hasSecrets })
     } catch {
-      toast('error', 'Could not read settings file')
+      toast('error', t('onboarding.importFailed'))
     } finally {
       setImporting(false)
     }
@@ -416,7 +420,7 @@ export function OnboardingWizard(): React.JSX.Element {
     const raw = data.importData!
     const toApply = data.importIncludeSecrets ? raw : stripSecrets(raw)
     update((s) => ({ ...s, ...toApply, onboardingCompleted: true }))
-    toast('success', 'Settings imported')
+    toast('success', t('onboarding.imported'))
   }
 
   const finish = (): void => {
@@ -494,26 +498,26 @@ export function OnboardingWizard(): React.JSX.Element {
         <div className="onboarding-footer">
           {step === 0 ? (
             <button className="btn primary onboarding-start-btn" onClick={next}>
-              Get started <ChevronRight size={15} />
+              {t('onboarding.getStarted')} <ChevronRight size={15} />
             </button>
           ) : (
             <>
               <button className="btn ghost" onClick={back}>
-                <ChevronLeft size={14} /> Back
+                <ChevronLeft size={14} /> {t('onboarding.back')}
               </button>
               <div className="onboarding-footer-right">
                 {step < TOTAL_STEPS && (
                   <button className="onboarding-skip" onClick={finish}>
-                    Skip for now
+                    {t('onboarding.skip')}
                   </button>
                 )}
                 {step < TOTAL_STEPS ? (
                   <button className="btn primary" onClick={next}>
-                    Next <ChevronRight size={14} />
+                    {t('onboarding.next')} <ChevronRight size={14} />
                   </button>
                 ) : (
                   <button className="btn primary" onClick={finish}>
-                    <Check size={14} /> Let's go!
+                    <Check size={14} /> {t('onboarding.finish')}
                   </button>
                 )}
               </div>

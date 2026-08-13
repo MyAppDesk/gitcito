@@ -1,18 +1,19 @@
+import type { TranslationKey } from '../i18n'
+
 export type LintLevel = 'warn' | 'error'
 
 export interface LintHint {
   level: LintLevel
-  text: string
+  /** Dictionary key; render with `interp(t(key), vars)`. */
+  key: TranslationKey
+  vars?: Record<string, string | number>
 }
 
-/** Turn commitlint's noisy hook output into an actionable composer error. */
-export function commitHookFailureHint(message: string): string | null {
-  if (/subject-empty|type-empty/i.test(message)) {
-    return 'Commit hook rejected the subject. This repository requires Conventional Commits — choose a type so, for example, `tmp` becomes `chore: tmp`.'
-  }
-  if (/commitlint|commit-msg script failed/i.test(message)) {
-    return 'Commit hook rejected the message. Review the repository’s commit-message rules and try again.'
-  }
+/** Turn commitlint's noisy hook output into an actionable composer error.
+ *  Returns a dictionary key so the caller renders it in the user's language. */
+export function commitHookFailureHint(message: string): TranslationKey | null {
+  if (/subject-empty|type-empty/i.test(message)) return 'commitLint.hookNeedsType'
+  if (/commitlint|commit-msg script failed/i.test(message)) return 'commitLint.hookRejected'
   return null
 }
 
@@ -30,26 +31,28 @@ export function lintCommit(summary: string, body: string): LintHint[] {
   const s = summary.trim()
   if (!s) return hints
 
-  if (s.length > SUBJECT_MAX) hints.push({ level: 'error', text: `Subject is ${s.length} chars — keep it under ${SUBJECT_MAX}.` })
-  else if (s.length > SUBJECT_IDEAL) hints.push({ level: 'warn', text: `Subject is ${s.length} chars — aim for ≤ ${SUBJECT_IDEAL}.` })
+  if (s.length > SUBJECT_MAX)
+    hints.push({ level: 'error', key: 'commitLint.subjectTooLong', vars: { len: s.length, max: SUBJECT_MAX } })
+  else if (s.length > SUBJECT_IDEAL)
+    hints.push({ level: 'warn', key: 'commitLint.subjectLong', vars: { len: s.length, ideal: SUBJECT_IDEAL } })
 
-  if (/[.]$/.test(s)) hints.push({ level: 'warn', text: 'Drop the trailing period in the subject.' })
+  if (/[.]$/.test(s)) hints.push({ level: 'warn', key: 'commitLint.trailingPeriod' })
 
   const isConventional = CONVENTIONAL.test(s)
   // For non-conventional subjects, nudge toward an imperative, capitalized verb.
   if (!isConventional) {
     const first = s[0]
     if (first && first === first.toLowerCase() && first !== first.toUpperCase()) {
-      hints.push({ level: 'warn', text: 'Capitalize the subject (or use a Conventional type like `feat:`).' })
+      hints.push({ level: 'warn', key: 'commitLint.capitalize' })
     }
     if (/^(added|fixed|changed|updated|removed|created)\b/i.test(s)) {
-      hints.push({ level: 'warn', text: 'Use the imperative mood — e.g. “Add” not “Added”.' })
+      hints.push({ level: 'warn', key: 'commitLint.imperative' })
     }
   }
 
   // Body: blank line after subject is enforced on join, so only wrap-width here.
   const longLine = body.split('\n').find((l) => l.length > BODY_WRAP)
-  if (longLine) hints.push({ level: 'warn', text: `Wrap body lines at ${BODY_WRAP} chars.` })
+  if (longLine) hints.push({ level: 'warn', key: 'commitLint.wrapBody', vars: { width: BODY_WRAP } })
 
   return hints
 }
@@ -84,24 +87,25 @@ export function applyCcType(summary: string, type: string): string {
   return type ? `${type}${scope}${bang}: ${rest}` : rest
 }
 
-/** Common gitmoji, each with a short intent label (shown in the picker). */
-export const GITMOJIS: { emoji: string; label: string }[] = [
-  { emoji: '✨', label: 'feature' },
-  { emoji: '🐛', label: 'fix' },
-  { emoji: '📝', label: 'docs' },
-  { emoji: '💄', label: 'ui / style' },
-  { emoji: '♻️', label: 'refactor' },
-  { emoji: '⚡️', label: 'performance' },
-  { emoji: '✅', label: 'tests' },
-  { emoji: '👷', label: 'ci' },
-  { emoji: '🔧', label: 'config / chore' },
-  { emoji: '⏪️', label: 'revert' },
-  { emoji: '🎉', label: 'init' },
-  { emoji: '🔥', label: 'remove' },
-  { emoji: '🚧', label: 'wip' },
-  { emoji: '🔒️', label: 'security' },
-  { emoji: '⬆️', label: 'upgrade deps' },
-  { emoji: '🚀', label: 'deploy' }
+/** Common gitmoji, each with a short intent label (shown in the picker).
+ *  Labels are dictionary keys — resolve them with `t()` at render time. */
+export const GITMOJIS: { emoji: string; labelKey: TranslationKey }[] = [
+  { emoji: '✨', labelKey: 'gitmoji.feature' },
+  { emoji: '🐛', labelKey: 'gitmoji.fix' },
+  { emoji: '📝', labelKey: 'gitmoji.docs' },
+  { emoji: '💄', labelKey: 'gitmoji.style' },
+  { emoji: '♻️', labelKey: 'gitmoji.refactor' },
+  { emoji: '⚡️', labelKey: 'gitmoji.performance' },
+  { emoji: '✅', labelKey: 'gitmoji.tests' },
+  { emoji: '👷', labelKey: 'gitmoji.ci' },
+  { emoji: '🔧', labelKey: 'gitmoji.chore' },
+  { emoji: '⏪️', labelKey: 'gitmoji.revert' },
+  { emoji: '🎉', labelKey: 'gitmoji.init' },
+  { emoji: '🔥', labelKey: 'gitmoji.remove' },
+  { emoji: '🚧', labelKey: 'gitmoji.wip' },
+  { emoji: '🔒️', labelKey: 'gitmoji.security' },
+  { emoji: '⬆️', labelKey: 'gitmoji.upgradeDeps' },
+  { emoji: '🚀', labelKey: 'gitmoji.deploy' }
 ]
 
 /** Find a leading gitmoji on the summary (empty emoji if none). */

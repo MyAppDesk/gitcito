@@ -24,14 +24,15 @@ import {
   Tag,
   Link as LinkIcon
 } from 'lucide-react'
+import type { TranslationKey } from '../i18n'
 
 export type FieldKind = 'text' | 'url' | 'email' | 'phone'
 
 export interface FieldPreset {
   /** Stable key persisted on the entry (`InfoEntry.field`). */
   id: string
-  /** Default label shown when the user picks this preset. */
-  label: string
+  /** Dictionary key for the default label; resolve with `t()` at render time. */
+  labelKey: TranslationKey
   Icon: typeof Hash
   kind: FieldKind
   /** Prefix turned into a clickable link when the value is a bare handle/path. */
@@ -42,31 +43,31 @@ export interface FieldPreset {
 /** Curated catalog of common, non-secret repo metadata fields. Order matters —
  *  it's the order shown in the picker. Add to the end so existing keys stay put. */
 export const FIELD_PRESETS: FieldPreset[] = [
-  { id: 'appId', label: 'App ID', Icon: Hash, kind: 'text', placeholder: '1234567890' },
-  { id: 'bundleId', label: 'Bundle ID', Icon: Package, kind: 'text', placeholder: 'com.acme.app' },
-  { id: 'packageName', label: 'Package name', Icon: Package, kind: 'text', placeholder: 'com.acme.app' },
-  { id: 'website', label: 'Website', Icon: Globe, kind: 'url', placeholder: 'https://…' },
-  { id: 'docs', label: 'Documentation', Icon: BookOpen, kind: 'url', placeholder: 'https://…' },
-  { id: 'repo', label: 'Repository', Icon: Github, kind: 'url', placeholder: 'https://github.com/…' },
-  { id: 'appStore', label: 'App Store', Icon: Apple, kind: 'url', placeholder: 'https://apps.apple.com/…' },
-  { id: 'playStore', label: 'Play Store', Icon: Play, kind: 'url', placeholder: 'https://play.google.com/…' },
-  { id: 'instagram', label: 'Instagram', Icon: Instagram, kind: 'url', hrefPrefix: 'https://instagram.com/', placeholder: '@handle' },
-  { id: 'twitter', label: 'X / Twitter', Icon: Twitter, kind: 'url', hrefPrefix: 'https://x.com/', placeholder: '@handle' },
-  { id: 'linkedin', label: 'LinkedIn', Icon: Linkedin, kind: 'url', placeholder: 'https://linkedin.com/…' },
-  { id: 'facebook', label: 'Facebook', Icon: Facebook, kind: 'url', placeholder: 'https://facebook.com/…' },
-  { id: 'youtube', label: 'YouTube', Icon: Youtube, kind: 'url', placeholder: 'https://youtube.com/…' },
-  { id: 'discord', label: 'Discord', Icon: MessageCircle, kind: 'url', placeholder: 'https://discord.gg/…' },
-  { id: 'slack', label: 'Slack', Icon: Slack, kind: 'url', placeholder: 'https://…slack.com' },
-  { id: 'figma', label: 'Figma', Icon: Figma, kind: 'url', placeholder: 'https://figma.com/…' },
-  { id: 'notion', label: 'Notion', Icon: FileText, kind: 'url', placeholder: 'https://notion.so/…' },
-  { id: 'email', label: 'Email', Icon: Mail, kind: 'email', placeholder: 'team@acme.com' },
-  { id: 'phone', label: 'Phone', Icon: Phone, kind: 'phone', placeholder: '+1…' },
-  { id: 'environment', label: 'Environment', Icon: Server, kind: 'text', placeholder: 'production' },
-  { id: 'license', label: 'License', Icon: Scale, kind: 'text', placeholder: 'MIT' },
-  { id: 'billing', label: 'Billing / Plan', Icon: CreditCard, kind: 'text' },
-  { id: 'marketing', label: 'Marketing', Icon: Megaphone, kind: 'url' },
-  { id: 'link', label: 'Link', Icon: LinkIcon, kind: 'url', placeholder: 'https://…' },
-  { id: 'custom', label: 'Custom', Icon: Tag, kind: 'text' }
+  { id: 'appId', labelKey: 'infoField.appId', Icon: Hash, kind: 'text', placeholder: '1234567890' },
+  { id: 'bundleId', labelKey: 'infoField.bundleId', Icon: Package, kind: 'text', placeholder: 'com.acme.app' },
+  { id: 'packageName', labelKey: 'infoField.packageName', Icon: Package, kind: 'text', placeholder: 'com.acme.app' },
+  { id: 'website', labelKey: 'infoField.website', Icon: Globe, kind: 'url', placeholder: 'https://…' },
+  { id: 'docs', labelKey: 'infoField.docs', Icon: BookOpen, kind: 'url', placeholder: 'https://…' },
+  { id: 'repo', labelKey: 'infoField.repo', Icon: Github, kind: 'url', placeholder: 'https://github.com/…' },
+  { id: 'appStore', labelKey: 'infoField.appStore', Icon: Apple, kind: 'url', placeholder: 'https://apps.apple.com/…' },
+  { id: 'playStore', labelKey: 'infoField.playStore', Icon: Play, kind: 'url', placeholder: 'https://play.google.com/…' },
+  { id: 'instagram', labelKey: 'infoField.instagram', Icon: Instagram, kind: 'url', hrefPrefix: 'https://instagram.com/', placeholder: '@handle' },
+  { id: 'twitter', labelKey: 'infoField.twitter', Icon: Twitter, kind: 'url', hrefPrefix: 'https://x.com/', placeholder: '@handle' },
+  { id: 'linkedin', labelKey: 'infoField.linkedin', Icon: Linkedin, kind: 'url', placeholder: 'https://linkedin.com/…' },
+  { id: 'facebook', labelKey: 'infoField.facebook', Icon: Facebook, kind: 'url', placeholder: 'https://facebook.com/…' },
+  { id: 'youtube', labelKey: 'infoField.youtube', Icon: Youtube, kind: 'url', placeholder: 'https://youtube.com/…' },
+  { id: 'discord', labelKey: 'infoField.discord', Icon: MessageCircle, kind: 'url', placeholder: 'https://discord.gg/…' },
+  { id: 'slack', labelKey: 'infoField.slack', Icon: Slack, kind: 'url', placeholder: 'https://…slack.com' },
+  { id: 'figma', labelKey: 'infoField.figma', Icon: Figma, kind: 'url', placeholder: 'https://figma.com/…' },
+  { id: 'notion', labelKey: 'infoField.notion', Icon: FileText, kind: 'url', placeholder: 'https://notion.so/…' },
+  { id: 'email', labelKey: 'infoField.email', Icon: Mail, kind: 'email', placeholder: 'team@acme.com' },
+  { id: 'phone', labelKey: 'infoField.phone', Icon: Phone, kind: 'phone', placeholder: '+1…' },
+  { id: 'environment', labelKey: 'infoField.environment', Icon: Server, kind: 'text', placeholder: 'production' },
+  { id: 'license', labelKey: 'infoField.license', Icon: Scale, kind: 'text', placeholder: 'MIT' },
+  { id: 'billing', labelKey: 'infoField.billing', Icon: CreditCard, kind: 'text' },
+  { id: 'marketing', labelKey: 'infoField.marketing', Icon: Megaphone, kind: 'url' },
+  { id: 'link', labelKey: 'infoField.link', Icon: LinkIcon, kind: 'url', placeholder: 'https://…' },
+  { id: 'custom', labelKey: 'infoField.custom', Icon: Tag, kind: 'text' }
 ]
 
 const BY_ID = new Map(FIELD_PRESETS.map((p) => [p.id, p]))

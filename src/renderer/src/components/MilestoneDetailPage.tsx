@@ -3,10 +3,12 @@ import { Milestone, Loader2, ExternalLink, CircleDot, CheckCircle2, CalendarCloc
 import type { IssueInfo, PageContent } from '../../../shared/types'
 import { hostingApi } from '../infrastructure/api'
 import { useSettingsStore } from '../stores/settings'
+import { useT, interp } from '../i18n'
 
 type MilestonePage = Extract<PageContent, { type: 'milestone' }>
 
 export function MilestoneDetailPage({ page }: { page: MilestonePage }): React.JSX.Element {
+  const t = useT()
   const { repoPath, remoteUrl, milestone } = page
   const profile = useSettingsStore((s) => s.activeProfile())
   const openPageTab = useSettingsStore((s) => s.openPageTab)
@@ -37,10 +39,10 @@ export function MilestoneDetailPage({ page }: { page: MilestonePage }): React.JS
       <div className="ms-head">
         <span className={`issue-state issue-${milestone.state}`}>
           <Milestone size={14} />
-          {milestone.state === 'closed' ? 'Closed' : 'Open'}
+          {milestone.state === 'closed' ? t('issue.closed') : t('issue.open')}
         </span>
         <h2>{milestone.title}</h2>
-        <button className="icon-btn" title="Open in browser" onClick={() => void window.api.openExternal(milestone.url)}>
+        <button className="icon-btn" title={t('common.openInBrowser')} onClick={() => void window.api.openExternal(milestone.url)}>
           <ExternalLink size={15} />
         </button>
       </div>
@@ -48,30 +50,31 @@ export function MilestoneDetailPage({ page }: { page: MilestonePage }): React.JS
       <div className="ms-meta">
         {milestone.dueOn && (
           <span className="ms-due">
-            <CalendarClock size={13} /> Due {new Date(milestone.dueOn).toLocaleDateString()}
+            <CalendarClock size={13} />{' '}
+            {interp(t('milestone.due'), { date: new Date(milestone.dueOn).toLocaleDateString() })}
           </span>
         )}
         <span className="ms-counts">
-          {milestone.openIssues} open · {milestone.closedIssues} closed
+          {interp(t('milestone.counts'), { open: milestone.openIssues, closed: milestone.closedIssues })}
         </span>
       </div>
 
       <div className="ms-progress">
         <div className="ms-progress-bar" style={{ width: `${pct}%` }} />
       </div>
-      <div className="ms-progress-label">{pct}% complete</div>
+      <div className="ms-progress-label">{interp(t('milestone.percentComplete'), { pct })}</div>
 
       {milestone.description.trim() && <div className="issue-body">{milestone.description}</div>}
 
-      <div className="issue-section-title">Issues</div>
+      <div className="issue-section-title">{t('milestone.issues')}</div>
       {loading ? (
         <div className="issue-loading">
-          <Loader2 size={16} className="spin" /> Loading…
+          <Loader2 size={16} className="spin" /> {t('common.loading')}
         </div>
       ) : error ? (
         <div className="issue-error">{error}</div>
       ) : issues.length === 0 ? (
-        <div className="ms-empty">No issues in this milestone.</div>
+        <div className="ms-empty">{t('milestone.noIssues')}</div>
       ) : (
         <div className="ms-issues">
           {issues.map((i) => (

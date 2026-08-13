@@ -7,12 +7,13 @@ import type { CosmosCommit } from '../../../../shared/types'
 import { createEngine, pickNodeAt, type CosmosEngine } from './engine'
 import { buildCommitGalaxy } from './modes/commitGalaxy'
 import { buildGourceTree, GOURCE_MAX_FILES, type GourceController } from './modes/gourceTree'
+import { useT, type TranslationKey } from '../../i18n'
 
 type Mode = 'galaxy' | 'gource'
 
-const MODES: { id: Mode; label: string; icon: React.ReactNode }[] = [
-  { id: 'galaxy', label: 'Commit Galaxy', icon: <Orbit size={13} /> },
-  { id: 'gource', label: 'File Tree', icon: <GitCommitVertical size={13} /> }
+const MODES: { id: Mode; labelKey: TranslationKey; icon: React.ReactNode }[] = [
+  { id: 'galaxy', labelKey: 'cosmos.modeGalaxy', icon: <Orbit size={13} /> },
+  { id: 'gource', labelKey: 'cosmos.modeTree', icon: <GitCommitVertical size={13} /> }
 ]
 
 function Scene({ commits, mode }: { commits: CosmosCommit[]; mode: Mode }): React.JSX.Element {
@@ -165,6 +166,7 @@ function GourcePlayback({ controller }: { controller: GourceController }): React
 }
 
 export function RepoCosmos(): React.JSX.Element | null {
+  const t = useT()
   const cosmos = useUIStore((s) => s.cosmos)
   const closeCosmos = useUIStore((s) => s.closeCosmos)
   const [commits, setCommits] = useState<CosmosCommit[] | null>(null)
@@ -203,7 +205,7 @@ export function RepoCosmos(): React.JSX.Element | null {
           <div className="cosmos-tabs">
             {MODES.map((m) => (
               <button key={m.id} className={`codesearch-tab ${mode === m.id ? 'active' : ''}`} onClick={() => setMode(m.id)}>
-                {m.icon} {m.label}
+                {m.icon} {t(m.labelKey)}
               </button>
             ))}
           </div>

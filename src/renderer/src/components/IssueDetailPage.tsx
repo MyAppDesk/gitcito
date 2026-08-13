@@ -12,6 +12,7 @@ import {
   MessageSquare,
   ClipboardList
 } from 'lucide-react'
+import { useT, interp } from '../i18n'
 import type { IssueDetail, PageContent } from '../../../shared/types'
 import { hostingApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
@@ -24,6 +25,7 @@ type IssuePage = Extract<PageContent, { type: 'issue' }>
 export function IssueDetailPage({ page }: { page: IssuePage }): React.JSX.Element {
   const { repoPath, remoteUrl, issue } = page
   const toast = useUIStore((s) => s.toast)
+  const t = useT()
   const openModal = useUIStore((s) => s.openModal)
   const profile = useSettingsStore((s) => s.activeProfile())
   const openPageTab = useSettingsStore((s) => s.openPageTab)
@@ -66,11 +68,11 @@ export function IssueDetailPage({ page }: { page: IssuePage }): React.JSX.Elemen
 
   const postComment = (): void => {
     if (!comment.trim()) return
-    void act(() => hostingApi.prComment(remoteUrl, tokens, issue.number, comment.trim()).then(() => setComment('')), 'Comment posted')
+    void act(() => hostingApi.prComment(remoteUrl, tokens, issue.number, comment.trim()).then(() => setComment('')), t('issue.commentPosted'))
   }
   const toggleState = (): void => {
     const next = detail?.state === 'open' ? 'closed' : 'open'
-    void act(() => hostingApi.setIssueState(remoteUrl, tokens, issue.number, next), next === 'closed' ? 'Issue closed' : 'Issue reopened')
+    void act(() => hostingApi.setIssueState(remoteUrl, tokens, issue.number, next), next === 'closed' ? t('issue.closedToast') : t('issue.reopenedToast'))
   }
   const createBranch = (): void => {
     openModal({
@@ -99,35 +101,38 @@ export function IssueDetailPage({ page }: { page: IssuePage }): React.JSX.Elemen
         <div className="issue-head">
           <span className={`issue-state issue-${detail?.state ?? issue.state}`}>
             {(detail?.state ?? issue.state) === 'closed' ? <CheckCircle2 size={14} /> : <CircleDot size={14} />}
-            {(detail?.state ?? issue.state) === 'closed' ? 'Closed' : 'Open'}
+            {(detail?.state ?? issue.state) === 'closed' ? t('issue.closed') : t('issue.open')}
           </span>
           <h2>
             {detail?.title ?? issue.title} <span className="issue-num">#{issue.number}</span>
           </h2>
-          <button className="icon-btn" title="Open in browser" onClick={() => void window.api.openExternal(issue.url)}>
+          <button className="icon-btn" title={t('common.openInBrowser')} onClick={() => void window.api.openExternal(issue.url)}>
             <ExternalLink size={15} />
           </button>
         </div>
 
         {loading ? (
           <div className="issue-loading">
-            <Loader2 size={16} className="spin" /> Loading…
+            <Loader2 size={16} className="spin" /> {t('common.loading')}
           </div>
         ) : error ? (
           <div className="issue-error">{error}</div>
         ) : detail ? (
           <>
             <div className="issue-by">
-              {detail.author} opened this · {new Date(detail.createdAt).toLocaleString()}
+              {interp(t('issue.openedBy'), {
+                author: detail.author,
+                date: new Date(detail.createdAt).toLocaleString()
+              })}
             </div>
             {detail.body.trim() ? (
               <div className="issue-body">{autolink(detail.body, remoteWebUrl(remoteUrl))}</div>
             ) : (
-              <div className="issue-body issue-body-empty">No description provided.</div>
+              <div className="issue-body issue-body-empty">{t('issue.noDescription')}</div>
             )}
 
             <div className="issue-section-title">
-              <MessageSquare size={13} /> Conversation
+              <MessageSquare size={13} /> {t('issue.conversation')}
               {detail.comments.length > 0 && <span className="issue-count">{detail.comments.length}</span>}
             </div>
             {detail.comments.map((c, i) => (
@@ -142,16 +147,16 @@ export function IssueDetailPage({ page }: { page: IssuePage }): React.JSX.Elemen
 
             <textarea
               className="issue-input"
-              placeholder="Leave a comment…"
+              placeholder={t('issue.commentPlaceholder')}
               value={comment}
               onChange={(e) => setComment(e.target.value)}
             />
             <div className="issue-actions">
               <button className="btn ghost small" onClick={postComment} disabled={busy || !comment.trim()}>
-                <MessageSquare size={13} /> Comment
+                <MessageSquare size={13} /> {t('issue.comment')}
               </button>
               <button className="btn ghost small" onClick={toggleState} disabled={busy}>
-                {detail.state === 'open' ? 'Close issue' : 'Reopen issue'}
+                {detail.state === 'open' ? t('issue.closeIssue') : t('issue.reopenIssue')}
               </button>
             </div>
           </>
@@ -160,23 +165,23 @@ export function IssueDetailPage({ page }: { page: IssuePage }): React.JSX.Elemen
 
       <aside className="issue-side">
         <button className="btn primary small issue-branch-btn" onClick={createBranch}>
-          <GitBranchPlus size={13} /> Create branch for issue
+          <GitBranchPlus size={13} /> {t('issue.createBranch')}
         </button>
         <button className="btn ghost small issue-branch-btn" onClick={createPr}>
-          <GitPullRequest size={13} /> Create PR (closes #{issue.number})
+          <GitPullRequest size={13} /> {interp(t('issue.createPr'), { number: issue.number })}
         </button>
 
         <div className="issue-field">
           <div className="issue-field-label">
-            <User size={12} /> Assignees
+            <User size={12} /> {t('issue.assignees')}
           </div>
           <div className="issue-field-val">
-            {detail?.assignees.length ? detail.assignees.join(', ') : <span className="issue-none">None</span>}
+            {detail?.assignees.length ? detail.assignees.join(', ') : <span className="issue-none">{t('common.none')}</span>}
           </div>
         </div>
         <div className="issue-field">
           <div className="issue-field-label">
-            <Tag size={12} /> Labels
+            <Tag size={12} /> {t('issue.labels')}
           </div>
           <div className="issue-field-val">
             {detail?.labels.length ? (
@@ -188,17 +193,17 @@ export function IssueDetailPage({ page }: { page: IssuePage }): React.JSX.Elemen
                 ))}
               </span>
             ) : (
-              <span className="issue-none">None</span>
+              <span className="issue-none">{t('common.none')}</span>
             )}
           </div>
         </div>
         <div className="issue-field">
           <div className="issue-field-label">
-            <Milestone size={12} /> Milestone
+            <Milestone size={12} /> {t('issue.milestone')}
           </div>
           <div className="issue-field-val">
             {(() => {
-              if (!detail?.milestone) return <span className="issue-none">None</span>
+              if (!detail?.milestone) return <span className="issue-none">{t('common.none')}</span>
               const m = milestones.find((x) => x.title === detail.milestone)
               if (!m) return detail.milestone
               return (
@@ -239,7 +244,7 @@ export function IssueDetailPage({ page }: { page: IssuePage }): React.JSX.Elemen
                 </a>
               ))
             ) : (
-              <span className="issue-none">None</span>
+              <span className="issue-none">{t('common.none')}</span>
             )}
           </div>
         </div>

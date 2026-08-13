@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Minus, Plus } from 'lucide-react'
+import { useT } from '../i18n'
 
 /** Discrete zoom steps, mirroring the feel of browser zoom. 1 = 100%. */
 const LEVELS = [0.5, 0.67, 0.75, 0.8, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2]
@@ -24,6 +25,7 @@ export function ZoomControl({
   raised?: boolean
   compact?: boolean
 }): React.JSX.Element {
+  const t = useT()
   const [factor, setFactor] = useState(loadZoom)
 
   const apply = useCallback((next: number): void => {
@@ -78,18 +80,18 @@ export function ZoomControl({
     >
       <button
         className="zoom-btn"
-        title="Zoom out"
+        title={t('zoom.out')}
         onClick={zoomOut}
         disabled={factor <= MIN + 0.001}
       >
         <Minus size={13} />
       </button>
-      <button className="zoom-level" title="Reset zoom" onClick={reset}>
+      <button className="zoom-level" title={t('zoom.reset')} onClick={reset}>
         {Math.round(factor * 100)}%
       </button>
       <button
         className="zoom-btn"
-        title="Zoom in"
+        title={t('zoom.in')}
         onClick={zoomIn}
         disabled={factor >= MAX - 0.001}
       >

@@ -108,8 +108,8 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
   const openGitmojiMenu = (e: React.MouseEvent): void => {
     const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
     openContextMenu(r.left, r.bottom + 4, [
-      { label: '🙂  none', onClick: () => applyGitmojiToDraft('') },
-      ...GITMOJIS.map((g) => ({ label: `${g.emoji}  ${g.label}`, onClick: () => applyGitmojiToDraft(g.emoji) }))
+      { label: `🙂  ${t('gitmoji.none')}`, onClick: () => applyGitmojiToDraft('') },
+      ...GITMOJIS.map((g) => ({ label: `${g.emoji}  ${t(g.labelKey)}`, onClick: () => applyGitmojiToDraft(g.emoji) }))
     ])
   }
   // Co-author picker: append `Co-authored-by:` trailers from the repo's
@@ -427,24 +427,24 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
     ]
     if (hasTracked) {
       items.push({
-        label: 'Add to .gitignore & stop tracking',
+        label: t('composer.ignoreAndUntrackTitle'),
         onClick: () =>
           useUIStore.getState().openModal({
             kind: 'confirm',
             title: t('composer.ignoreAndUntrackTitle'),
-            message: `Add ${displayLabel} to .gitignore and stop tracking it in Git. The file(s) stay on disk.`,
+            message: interp(t('composer.ignoreAndUntrackMsg'), { what: displayLabel }),
             confirmLabel: t('composer.ignoreAndUntrackConfirm'),
             onConfirm: () => void repoActions.ignoreAndUntrack(path, trackTargets, patterns, displayLabel)
           })
       })
       items.push({ separator: true })
       items.push({
-        label: 'Stop tracking (keep on disk)',
+        label: t('composer.stopTrackingLabel'),
         onClick: () =>
           useUIStore.getState().openModal({
             kind: 'confirm',
             title: t('composer.stopTrackingTitle'),
-            message: `Stop tracking ${displayLabel} in Git? The file(s) stay on disk but will be removed from the repository on the next commit.`,
+            message: interp(t('composer.stopTrackingMsg'), { what: displayLabel }),
             confirmLabel: t('composer.stopTrackingConfirm'),
             onConfirm: () => void repoActions.untrack(path, trackTargets, false, displayLabel)
           })
@@ -456,7 +456,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
           useUIStore.getState().openModal({
             kind: 'confirm',
             title: t('composer.deleteFromDiskTitle'),
-            message: `Remove ${displayLabel} from version control and permanently delete from disk? This cannot be undone.`,
+            message: interp(t('composer.deleteFromDiskMsg'), { what: displayLabel }),
             danger: true,
             confirmLabel: t('composer.deleteFromDiskConfirm'),
             onConfirm: () => void repoActions.untrack(path, trackTargets, true, displayLabel)
@@ -521,7 +521,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
       { label: t('common.copyFolderPath'), onClick: () => void navigator.clipboard.writeText(`${path}/${folderPath}`) },
       { separator: true },
       {
-        label: 'Discard changes in folder',
+        label: t('composer.discardFolder'),
         danger: true,
         onClick: () =>
           useUIStore.getState().openModal({
@@ -920,7 +920,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
                   activeLine={fileView?.line ?? null}
                   onMatchClick={openMatch('staged', fStaged)}
                 />
-                {staged.length === 0 && <div className="sb-empty">Nothing staged</div>}
+                {staged.length === 0 && <div className="sb-empty">{t('composer.nothingStaged')}</div>}
                 {staged.length > 0 && fStaged.length === 0 && (
                   <div className="sb-empty">{t('composer.noFilesMatch')}</div>
                 )}
@@ -935,15 +935,15 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
           <button
             type="button"
             className={`commit-advanced-toggle ${showAdvanced ? 'open' : ''}`}
-            title={showAdvanced ? 'Hide commit style options' : 'Show commit style options'}
+            title={showAdvanced ? t('composer.hideStyleOptions') : t('composer.showStyleOptions')}
             onClick={() => setShowAdvanced((v) => !v)}
           >
             <ChevronDown size={14} />
           </button>
           <input
             className="commit-summary"
-            placeholder="Commit summary"
-            title="↑ / ↓ recall recent commit messages"
+            placeholder={t('composer.summaryPlaceholder')}
+            title={t('composer.summaryTitle')}
             value={summary}
             maxLength={100}
             onChange={(e) => {
@@ -965,17 +965,17 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
             }}
           />
           {summary.trim().length > 0 && (
-            <span className={`commit-counter ${subjLevel}`} title={`Subject length (aim for ≤ ${SUBJECT_IDEAL_LEN})`}>
+            <span className={`commit-counter ${subjLevel}`} title={interp(t('composer.subjectLength'), { ideal: SUBJECT_IDEAL_LEN })}>
               {summary.trim().length}
             </span>
           )}
-          <button className="commit-type commit-coauthor" title="Add a co-author" onClick={(e) => void openCoAuthorMenu(e)}>
+          <button className="commit-type commit-coauthor" title={t('composer.addCoAuthor')} onClick={(e) => void openCoAuthorMenu(e)}>
             <Users size={14} />
           </button>
           {aiEnabled && (
             <motion.button
               className="ai-btn"
-              title="Generate commit message with AI"
+              title={t('composer.generateWithAi')}
               disabled={aiBusy || staged.length === 0}
               onClick={() => void generateWithAI()}
               whileTap={{ scale: 0.92 }}
@@ -996,11 +996,11 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
               {commitStyle === 'conventional' && (
                 <select
                   className="commit-type"
-                  title="Conventional-Commit type"
+                  title={t('composer.ccType')}
                   value={currentCcType}
                   onChange={(e) => applyCcTypeToDraft(e.target.value)}
                 >
-                  <option value="">type</option>
+                  <option value="">{t('composer.ccTypePlaceholder')}</option>
                   {CC_TYPES.map((ty) => (
                     <option key={ty} value={ty}>
                       {ty}
@@ -1009,14 +1009,14 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
                 </select>
               )}
               {commitStyle === 'gitmoji' && (
-                <button type="button" className="commit-type commit-gitmoji" title="Gitmoji" onClick={openGitmojiMenu}>
+                <button type="button" className="commit-type commit-gitmoji" title={t('composer.gitmoji')} onClick={openGitmojiMenu}>
                   {currentGitmoji || '🙂'}
                 </button>
               )}
               {commitStyle === 'ticket' && (
                 <input
                   className="commit-type commit-ticket"
-                  title="Ticket key — prefixes the subject as KEY-123:"
+                  title={t('composer.ticketKey')}
                   placeholder={ticketFromBranch(repo.branches.current) || 'ABC-123'}
                   value={ticketField}
                   spellCheck={false}
@@ -1025,7 +1025,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
               )}
               <select
                 className="commit-style-select"
-                title="Commit style"
+                title={t('composer.commitStyle')}
                 value={commitStyle}
                 onChange={(e) => setCommitStyle(e.target.value as CommitStyle)}
               >
@@ -1040,7 +1040,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
         </AnimatePresence>
         <textarea
           className="commit-description"
-          placeholder="Description (optional)"
+          placeholder={t('composer.descriptionPlaceholder')}
           value={description}
           rows={3}
           onChange={(e) => setDescription(e.target.value)}
@@ -1049,7 +1049,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
           <ul className="commit-lint">
             {lintHints.map((h, i) => (
               <li key={i} className={`commit-lint-item ${h.level}`}>
-                {h.text}
+                {h.vars ? interp(t(h.key), h.vars) : t(h.key)}
               </li>
             ))}
           </ul>
@@ -1082,19 +1082,25 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
             onClick={() => void doCommit()}
             whileTap={{ scale: 0.97 }}
           >
-            {amend ? 'Amend last commit' : `Commit ${staged.length ? `${staged.length} file${staged.length === 1 ? '' : 's'}` : ''}`}
+            {amend
+              ? t('composer.amendLast')
+              : interp(t('composer.commitN'), {
+                  files: staged.length
+                    ? interp(t('composer.nFiles'), { n: staged.length })
+                    : ''
+                }).trim()}
           </motion.button>
           <button
             className="btn ghost small discard-btn"
-            title="Discard everything"
+            title={t('composer.discardEverything')}
             disabled={staged.length + unstaged.length === 0}
             onClick={() =>
               useUIStore.getState().openModal({
                 kind: 'confirm',
-                title: 'Discard all changes',
-                message: 'Discard ALL staged and unstaged changes? This cannot be undone.',
+                title: t('composer.discardAllTitle'),
+                message: t('composer.discardAllMsg'),
                 danger: true,
-                confirmLabel: 'Discard all',
+                confirmLabel: t('composer.discardAllConfirm'),
                 onConfirm: async () => {
                   await gitApi.unstageAll(path).catch(() => undefined)
                   const all = [...staged, ...unstaged]

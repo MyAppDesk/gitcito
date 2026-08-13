@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { ChevronDown, Plus } from 'lucide-react'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
-import { useT } from '../i18n'
+import { useT, interp } from '../i18n'
 import { Avatar } from './Avatar'
 
 /**
@@ -72,9 +72,12 @@ export function ProfileSwitcher(): React.JSX.Element {
       kind: 'input',
       title: t('settings.newProfile'),
       label: t('settings.profileName'),
-      placeholder: `Profile ${settings.profiles.length + 1}`,
+      placeholder: interp(t('settings.profileNameDefault'), { n: settings.profiles.length + 1 }),
       submitLabel: t('settings.newProfile'),
-      onSubmit: (name) => addProfile(name.trim() || `Profile ${settings.profiles.length + 1}`)
+      onSubmit: (name) =>
+        addProfile(
+          name.trim() || interp(t('settings.profileNameDefault'), { n: settings.profiles.length + 1 })
+        )
     })
   }
 
@@ -90,7 +93,7 @@ export function ProfileSwitcher(): React.JSX.Element {
       >
         <Avatar email={active.gitEmail} name={active.name} size={20} />
         <span className="profile-switcher-name">{active.name}</span>
-        {isAuto && <span className="profile-switcher-auto">Auto</span>}
+        {isAuto && <span className="profile-switcher-auto">{t('profile.auto')}</span>}
         <ChevronDown size={13} className="profile-switcher-chevron" />
       </button>
       {open &&
@@ -113,12 +116,12 @@ export function ProfileSwitcher(): React.JSX.Element {
                 >
                   <span className="profile-switcher-check">{isAuto ? '✓' : ''}</span>
                   <span className="profile-switcher-auto-dot">A</span>
-                  <span className="profile-switcher-label">Auto</span>
+                  <span className="profile-switcher-label">{t('profile.auto')}</span>
                 </button>
                 <div className="profile-switcher-hint">
                   {isAuto
-                    ? `Following the active profile — ${active.name}`
-                    : `${repo.name} is pinned to a profile`}
+                    ? interp(t('profile.followingActive'), { name: active.name })
+                    : interp(t('profile.pinned'), { repo: repo.name })}
                 </div>
                 <div className="profile-switcher-sep" />
               </>

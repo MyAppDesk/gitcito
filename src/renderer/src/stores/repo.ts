@@ -26,6 +26,7 @@ import { useUIStore } from './ui'
 import { useSettingsStore } from './settings'
 import { isSecretFile } from '../lib/secrets'
 import { commitHookFailureHint } from '../lib/commitLint'
+import { t, interp } from '../i18n'
 
 /** Repos already warned this session about pushing tracked secrets (don't nag). */
 const secretPushWarned = new Set<string>()
@@ -166,21 +167,19 @@ function promptStashOverwrite(message: string, path: string, index: number, pop:
   useUIStore.getState().openModal({
     kind: 'confirm',
     danger: true,
-    title: 'Overwrite untracked files?',
-    message:
-      'This stash includes untracked files that already exist in your working tree, so git stopped instead of overwriting them.\n\n' +
-      'Overwrite those files with the versions from the stash and continue?',
-    confirmLabel: 'Overwrite & apply',
+    title: t('confirm.overwriteUntracked.title'),
+    message: t('confirm.overwriteUntracked.message'),
+    confirmLabel: t('confirm.overwriteUntracked.ok'),
     onConfirm: () => void repoActions.stashApplyOverwrite(path, index, pop)
   })
   return true
 }
 
 function conflictHint(msg: string): string {
-  if (/CHERRY_PICK_HEAD/i.test(msg)) return 'Cherry-pick paused due to conflicts. Resolve files in the Conflicted files panel, then Continue.'
-  if (/rebase/i.test(msg)) return 'Rebase paused due to conflicts. Resolve files in the Conflicted files panel, then Continue.'
-  if (/revert/i.test(msg)) return 'Revert paused due to conflicts. Resolve files in the Conflicted files panel, then Continue.'
-  return 'Merge has conflicts. Resolve files in the Conflicted files panel, then Continue.'
+  if (/CHERRY_PICK_HEAD/i.test(msg)) return t('conflictHint.cherryPick')
+  if (/rebase/i.test(msg)) return t('conflictHint.rebase')
+  if (/revert/i.test(msg)) return t('conflictHint.revert')
+  return t('conflictHint.merge')
 }
 
 // ─── Command queue + refresh coalescing (perf/reliability) ─────────────────
@@ -516,13 +515,13 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
     const repo = get().repos[path]
     const entry = repo?.undoStack[repo.undoStack.length - 1]
     if (!repo || !entry) {
-      toast('info', 'Nothing to undo')
+      toast('info', t('undo.nothingToUndo'))
       return Promise.resolve()
     }
     return enqueue(path, async () => {
       const ui = useUIStore.getState()
       ui.beginInflight()
-      ui.setBusy(`Undo: ${entry.label}`)
+      ui.setBusy(interp(t('undo.busy'), { label: entry.label }))
       muteWatcher(path)
       try {
         await entry.undo()
@@ -530,7 +529,7 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
           undoStack: repo.undoStack.slice(0, -1),
           redoStack: [...repo.redoStack, entry]
         })
-        toast('success', `Undone: ${entry.label}`)
+        toast('success', interp(t('undo.done'), { label: entry.label }))
       } catch (err) {
         toast('error', err instanceof Error ? err.message : String(err))
       } finally {
@@ -545,13 +544,13 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
     const repo = get().repos[path]
     const entry = repo?.redoStack[repo.redoStack.length - 1]
     if (!repo || !entry) {
-      toast('info', 'Nothing to redo')
+      toast('info', t('undo.nothingToRedo'))
       return Promise.resolve()
     }
     return enqueue(path, async () => {
       const ui = useUIStore.getState()
       ui.beginInflight()
-      ui.setBusy(`Redo: ${entry.label}`)
+      ui.setBusy(interp(t('redo.busy'), { label: entry.label }))
       muteWatcher(path)
       try {
         await entry.redo()
@@ -559,7 +558,7 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
           redoStack: repo.redoStack.slice(0, -1),
           undoStack: [...repo.undoStack, entry]
         })
-        toast('success', `Redone: ${entry.label}`)
+        toast('success', interp(t('redo.done'), { label: entry.label }))
       } catch (err) {
         toast('error', err instanceof Error ? err.message : String(err))
       } finally {
@@ -582,8 +581,11 @@ function runPush(path: string, branch: string, force: boolean): Promise<boolean>
 async function runPushInner(path: string, branch: string, force: boolean): Promise<boolean> {
   const ui = useUIStore.getState()
   ui.beginInflight()
-  const label = force ? `Force pushed ${branch}` : `Pushed ${branch}`
-  ui.setBusy(force ? `Force pushing ${branch}` : `Pushing ${branch}`, 'push')
+  const label = interp(force ? t('act.forcePushed') : t('act.pushed'), { branch })
+  ui.setBusy(
+    interp(force ? t('busy.forcePushing') : t('busy.pushing'), { branch }),
+    'push'
+  )
   muteWatcher(path)
   try {
     await gitApi.push(path, branch, { force })
@@ -594,15 +596,15 @@ async function runPushInner(path: string, branch: string, force: boolean): Promi
     if (!force && isNonFastForwardError(message)) {
       useUIStore.getState().openModal({
         kind: 'confirm',
-        title: 'Push rejected',
-        message: `The remote "${branch}" has commits that you don't have locally, so the push was rejected.\n\nPull the remote changes first (recommended) — this keeps both sets of commits. Force pushing instead overwrites the remote with your local history and can discard others' work.`,
-        confirmLabel: 'Pull (rebase) & push',
+        title: t('confirm.pushRejected.title'),
+        message: interp(t('confirm.pushRejected.message'), { branch }),
+        confirmLabel: t('confirm.pushRejected.ok'),
         onConfirm: () => {
           void repoActions.pull(path, 'rebase').then((ok) => {
             if (ok) void runPush(path, branch, false)
           })
         },
-        secondaryLabel: 'Force push',
+        secondaryLabel: t('confirm.forcePush.ok'),
         secondaryDanger: true,
         onSecondary: () => void runPush(path, branch, true)
       })
@@ -633,7 +635,7 @@ async function runCheckoutRemoteInner(
 ): Promise<boolean> {
   const ui = useUIStore.getState()
   ui.beginInflight()
-  ui.setBusy(`Checking out ${localName}`)
+  ui.setBusy(interp(t('busy.checkingOut'), { name: localName }))
   muteWatcher(path)
   try {
     const res = await gitApi.checkoutRemote(path, fullName, localName, remote)
@@ -649,7 +651,7 @@ async function runCheckoutRemoteInner(
       })
       return false
     }
-    toast('success', `Checked out ${localName}`)
+    toast('success', interp(t('act.checkedOut'), { ref: localName }))
     return true
   } catch (err) {
     toast('error', err instanceof Error ? err.message : String(err))
@@ -672,7 +674,12 @@ function runResolveDivergedCheckout(
   return enqueue(path, async () => {
     const ui = useUIStore.getState()
     ui.beginInflight()
-    const verb = strategy === 'rebase' ? 'Rebasing' : strategy === 'merge' ? 'Merging' : 'Resetting'
+    const verb =
+      strategy === 'rebase'
+        ? t('busy.rebasing')
+        : strategy === 'merge'
+          ? t('busy.merging')
+          : t('busy.resetting')
     ui.setBusy(`${verb} ${localName}`)
     muteWatcher(path)
     try {
@@ -700,8 +707,8 @@ export const repoActions = {
   // something else triggered a full refresh — e.g. switching repo tabs.
   checkout: (path: string, ref: string) => {
     const prev = useRepoStore.getState().repos[path]?.branches.current
-    return useRepoStore.getState().run(path, `Checked out ${ref}`, () => gitApi.checkout(path, ref), {
-      label: `checkout ${ref}`,
+    return useRepoStore.getState().run(path, interp(t('act.checkedOut'), { ref }), () => gitApi.checkout(path, ref), {
+      label: interp(t('undoLabel.checkout'), { ref }),
       undo: () => gitApi.checkout(path, prev ?? '-'),
       redo: () => gitApi.checkout(path, ref)
     })
@@ -712,8 +719,8 @@ export const repoActions = {
 
   createBranch: (path: string, name: string, at?: string) => {
     const prev = useRepoStore.getState().repos[path]?.branches.current
-    return useRepoStore.getState().run(path, `Created branch ${name}`, () => gitApi.createBranch(path, name, at), {
-      label: `create branch ${name}`,
+    return useRepoStore.getState().run(path, interp(t('act.createdBranch'), { name }), () => gitApi.createBranch(path, name, at), {
+      label: interp(t('undoLabel.createBranch'), { name }),
       undo: async () => {
         await gitApi.checkout(path, prev ?? '-')
         await gitApi.deleteBranch(path, name, true)
@@ -723,8 +730,8 @@ export const repoActions = {
   },
 
   deleteBranch: (path: string, name: string, sha: string) =>
-    useRepoStore.getState().run(path, `Deleted branch ${name}`, () => gitApi.deleteBranch(path, name, true), {
-      label: `delete branch ${name}`,
+    useRepoStore.getState().run(path, interp(t('act.deletedBranch'), { name }), () => gitApi.deleteBranch(path, name, true), {
+      label: interp(t('undoLabel.deleteBranch'), { name }),
       undo: () => gitApi.createBranch(path, name, sha, false),
       redo: () => gitApi.deleteBranch(path, name, true)
     }),
@@ -732,49 +739,49 @@ export const repoActions = {
   deleteRemoteBranch: (path: string, remote: string, name: string) =>
     useRepoStore
       .getState()
-      .run(path, `Deleted ${remote}/${name}`, () => gitApi.deleteRemoteBranch(path, remote, name)),
+      .run(path, interp(t('act.deletedRemoteBranch'), { remote, name }), () => gitApi.deleteRemoteBranch(path, remote, name)),
 
   // ─── Stacked branches ───
   // Create a new branch on top of the current one and record the dependency.
   createStackedBranch: (path: string, name: string) => {
     const parent = useRepoStore.getState().repos[path]?.branches.current
-    return useRepoStore.getState().run(path, `Created stacked branch ${name}`, async () => {
+    return useRepoStore.getState().run(path, interp(t('act.createdStackedBranch'), { name }), async () => {
       await gitApi.createBranch(path, name)
       if (parent) await gitApi.stackSetParent(path, name, parent)
     })
   },
 
   stackSetParent: (path: string, branch: string, parent: string) =>
-    useRepoStore.getState().run(path, `Stacked ${branch} on ${parent}`, () => gitApi.stackSetParent(path, branch, parent)),
+    useRepoStore.getState().run(path, interp(t('act.stacked'), { branch, parent }), () => gitApi.stackSetParent(path, branch, parent)),
 
   stackClearParent: (path: string, branch: string) =>
-    useRepoStore.getState().run(path, `Removed ${branch} from its stack`, () => gitApi.stackClearParent(path, branch)),
+    useRepoStore.getState().run(path, interp(t('act.unstacked'), { branch }), () => gitApi.stackClearParent(path, branch)),
 
   stackRestack: (path: string, leaf: string) =>
-    useRepoStore.getState().run(path, `Restacked ${leaf}`, () => gitApi.stackRestack(path, leaf)),
+    useRepoStore.getState().run(path, interp(t('act.restacked'), { leaf }), () => gitApi.stackRestack(path, leaf)),
 
   addRemote: (path: string, name: string, url: string, pushUrl?: string) =>
-    useRepoStore.getState().run(path, `Added remote ${name}`, async () => {
+    useRepoStore.getState().run(path, interp(t('act.addedRemote'), { name }), async () => {
       await gitApi.addRemote(path, name, url, pushUrl)
       await gitApi.fetchAll(path)
     }),
 
   removeRemote: (path: string, name: string) =>
-    useRepoStore.getState().run(path, `Removed remote ${name}`, () => gitApi.removeRemote(path, name)),
+    useRepoStore.getState().run(path, interp(t('act.removedRemote'), { name }), () => gitApi.removeRemote(path, name)),
 
   editRemote: (path: string, oldName: string, newName: string, url: string, pushUrl?: string) =>
     useRepoStore
       .getState()
-      .run(path, `Updated remote ${newName || oldName}`, () =>
+      .run(path, interp(t('act.updatedRemote'), { name: newName || oldName }), () =>
         gitApi.editRemote(path, oldName, newName, url, pushUrl)
       ),
 
   fetchRemote: (path: string, name: string) =>
-    useRepoStore.getState().run(path, `Fetched ${name}`, () => gitApi.fetchRemote(path, name)),
+    useRepoStore.getState().run(path, interp(t('act.fetchedRemote'), { name }), () => gitApi.fetchRemote(path, name)),
 
   // Add a remote, then push the current branch to it (used by the "create remote & push" flow).
   addRemoteAndPush: (path: string, name: string, url: string, pushUrl?: string) =>
-    useRepoStore.getState().run(path, `Pushed to ${name}`, async () => {
+    useRepoStore.getState().run(path, interp(t('act.pushedTo'), { name }), async () => {
       await gitApi.addRemote(path, name, url, pushUrl)
       const branch = useRepoStore.getState().repos[path]?.branches.current
       if (branch) await gitApi.push(path, branch, { remote: name })
@@ -782,8 +789,8 @@ export const repoActions = {
     }),
 
   renameBranch: (path: string, oldName: string, newName: string) =>
-    useRepoStore.getState().run(path, `Renamed ${oldName} → ${newName}`, () => gitApi.renameBranch(path, oldName, newName), {
-      label: `rename branch`,
+    useRepoStore.getState().run(path, interp(t('act.renamedBranch'), { oldName, newName }), () => gitApi.renameBranch(path, oldName, newName), {
+      label: t('undoLabel.renameBranch'),
       undo: () => gitApi.renameBranch(path, newName, oldName),
       redo: () => gitApi.renameBranch(path, oldName, newName)
     }),
@@ -791,12 +798,12 @@ export const repoActions = {
   renameBranchRemote: (path: string, oldName: string, newName: string, remote: string) =>
     useRepoStore
       .getState()
-      .run(path, `Renamed ${oldName} → ${newName} (incl. ${remote})`, () => gitApi.renameBranchRemote(path, oldName, newName, remote)),
+      .run(path, interp(t('act.renamedBranchWithRemote'), { oldName, newName, remote }), () => gitApi.renameBranchRemote(path, oldName, newName, remote)),
 
   merge: (path: string, ref: string) => {
     const noFf = useSettingsStore.getState().settings.mergeCommit
-    return useRepoStore.getState().run(path, `Merged ${ref}`, () => gitApi.merge(path, ref, noFf), {
-      label: `merge ${ref}`,
+    return useRepoStore.getState().run(path, interp(t('act.merged'), { ref }), () => gitApi.merge(path, ref, noFf), {
+      label: interp(t('undoLabel.merge'), { ref }),
       undo: () => gitApi.reset(path, 'ORIG_HEAD', 'hard'),
       redo: () => gitApi.merge(path, ref, noFf)
     })
@@ -806,37 +813,37 @@ export const repoActions = {
     const noFf = useSettingsStore.getState().settings.mergeCommit
     return useRepoStore
       .getState()
-      .run(path, `Merged ${source} into ${target}`, () => gitApi.mergeInto(path, source, target, noFf), {
-        label: `merge ${source} into ${target}`,
+      .run(path, interp(t('act.mergedInto'), { source, target }), () => gitApi.mergeInto(path, source, target, noFf), {
+        label: interp(t('undoLabel.mergeInto'), { source, target }),
         undo: () => gitApi.reset(path, 'ORIG_HEAD', 'hard'),
         redo: () => gitApi.mergeInto(path, source, target, noFf)
       })
   },
 
   rebase: (path: string, onto: string) =>
-    useRepoStore.getState().run(path, `Rebased onto ${onto}`, () => gitApi.rebase(path, onto), {
-      label: `rebase onto ${onto}`,
+    useRepoStore.getState().run(path, interp(t('act.rebased'), { onto }), () => gitApi.rebase(path, onto), {
+      label: interp(t('undoLabel.rebase'), { onto }),
       undo: () => gitApi.reset(path, 'ORIG_HEAD', 'hard'),
       redo: () => gitApi.rebase(path, onto)
     }),
 
   rebaseOnto: (path: string, branch: string, onto: string) =>
-    useRepoStore.getState().run(path, `Rebased ${branch} onto ${onto}`, () => gitApi.rebaseOnto(path, branch, onto), {
-      label: `rebase ${branch} onto ${onto}`,
+    useRepoStore.getState().run(path, interp(t('act.rebasedOnto'), { branch, onto }), () => gitApi.rebaseOnto(path, branch, onto), {
+      label: interp(t('undoLabel.rebaseOnto'), { branch, onto }),
       undo: () => gitApi.reset(path, 'ORIG_HEAD', 'hard'),
       redo: () => gitApi.rebaseOnto(path, branch, onto)
     }),
 
   commitFixup: (path: string, targetSha: string) =>
-    useRepoStore.getState().run(path, `Created fixup! for ${targetSha.slice(0, 7)}`, () => gitApi.commitFixup(path, targetSha), {
-      label: 'fixup commit',
+    useRepoStore.getState().run(path, interp(t('act.createdFixup'), { sha: targetSha.slice(0, 7) }), () => gitApi.commitFixup(path, targetSha), {
+      label: t('undoLabel.fixup'),
       undo: () => gitApi.reset(path, 'HEAD~1', 'soft'),
       redo: () => gitApi.commitFixup(path, targetSha)
     }),
 
   autosquash: (path: string, base: string) =>
-    useRepoStore.getState().run(path, 'Autosquashed fixups', () => gitApi.autosquash(path, base), {
-      label: 'autosquash',
+    useRepoStore.getState().run(path, t('act.autosquashed'), () => gitApi.autosquash(path, base), {
+      label: t('undoLabel.autosquash'),
       undo: () => gitApi.reset(path, 'ORIG_HEAD', 'hard'),
       redo: () => gitApi.autosquash(path, base)
     }),
@@ -883,7 +890,10 @@ export const repoActions = {
     let done = 0
     let failed = 0
     for (const path of paths) {
-      ui.setBusy(`${verb} ${path.split('/').pop()} (${done + failed + 1}/${paths.length})`, op === 'fetch' ? 'fetch' : 'pull')
+      ui.setBusy(
+        `${verb} ${path.split('/').pop()} (${done + failed + 1}/${paths.length})`,
+        op === 'fetch' ? 'fetch' : 'pull'
+      )
       try {
         if (op === 'fetch') await gitApi.fetchAll(path)
         else await gitApi.pull(path, mode)
@@ -896,15 +906,27 @@ export const repoActions = {
       if (useRepoStore.getState().repos[path]) await useRepoStore.getState().refresh(path)
     }
     ui.setBusy(null)
-    const label = op === 'fetch' ? 'Fetched' : 'Pulled'
-    if (failed === 0) toast('success', `${label} ${done} repositor${done === 1 ? 'y' : 'ies'}`)
-    else toast(done ? 'info' : 'error', `${label} ${done}/${paths.length} — ${failed} failed`)
+    const label = op === 'fetch' ? t('act.fetchedWord') : t('act.pulledWord')
+    if (failed === 0)
+      toast(
+        'success',
+        interp(t('batch.done'), {
+          label,
+          done,
+          repoWord: done === 1 ? t('batch.repository') : t('batch.repositories')
+        })
+      )
+    else
+      toast(
+        done ? 'info' : 'error',
+        interp(t('batch.partial'), { label, done, total: paths.length, failed })
+      )
   },
 
   pull: async (path: string, mode: 'default' | 'ff-only' | 'rebase') => {
     const before = new Set((useRepoStore.getState().repos[path]?.commits ?? []).map((c) => c.hash))
-    const ok = await useRepoStore.getState().run(path, `Pulled (${mode})`, () => gitApi.pull(path, mode), {
-      label: `pull ${mode}`,
+    const ok = await useRepoStore.getState().run(path, interp(t('act.pulledMode'), { mode }), () => gitApi.pull(path, mode), {
+      label: interp(t('undoLabel.pull'), { mode }),
       undo: () => gitApi.reset(path, 'ORIG_HEAD', 'hard'),
       redo: () => gitApi.pull(path, mode)
     }, 'pull')
@@ -927,9 +949,9 @@ export const repoActions = {
         useUIStore.getState().openModal({
           kind: 'confirm',
           danger: true,
-          title: 'Force-push a protected branch?',
-          message: `"${branch}" is a protected branch. Force-pushing rewrites history others may have pulled. Continue?`,
-          confirmLabel: 'Force push',
+          title: t('confirm.protectedForcePush.title'),
+          message: interp(t('confirm.protectedForcePush.message'), { branch }),
+          confirmLabel: t('confirm.forcePush.ok'),
           onConfirm: () => void repoActions.push(path, true, true)
         })
         return false
@@ -946,9 +968,12 @@ export const repoActions = {
         useUIStore.getState().openModal({
           kind: 'confirm',
           danger: true,
-          title: 'Push tracked secret files?',
-          message: `This repo tracks files that usually hold credentials:\n\n${secrets.slice(0, 10).join('\n')}${secrets.length > 10 ? `\n…and ${secrets.length - 10} more` : ''}\n\nPushing publishes them to the remote. Push anyway?`,
-          confirmLabel: 'Push anyway',
+          title: t('confirm.pushSecrets.title'),
+          message: interp(t('confirm.pushSecrets.message'), {
+            files: secrets.slice(0, 10).join('\n'),
+            more: secrets.length > 10 ? interp(t('confirm.pushSecrets.more'), { n: secrets.length - 10 }) : ''
+          }),
+          confirmLabel: t('confirm.pushSecrets.ok'),
           onConfirm: () => void repoActions.push(path, force)
         })
         return false
@@ -957,9 +982,9 @@ export const repoActions = {
     if (!repo?.remotes.length) {
       useUIStore.getState().openModal({
         kind: 'confirm',
-        title: 'No remote',
-        message: 'There are no remotes to push to, would you like to add one?',
-        confirmLabel: 'Yes',
+        title: t('confirm.noRemote.title'),
+        message: t('confirm.noRemote.message'),
+        confirmLabel: t('common.yes'),
         onConfirm: () =>
           useUIStore.getState().openModal({
             kind: 'addRemote',
@@ -975,8 +1000,8 @@ export const repoActions = {
   },
 
   stash: (path: string, message?: string) =>
-    useRepoStore.getState().run(path, 'Stashed changes', () => gitApi.stash(path, message), {
-      label: 'stash',
+    useRepoStore.getState().run(path, t('act.stashed'), () => gitApi.stash(path, message), {
+      label: t('undoLabel.stash'),
       undo: () => gitApi.stashPop(path, 0),
       redo: () => gitApi.stash(path, message)
     }, null, undefined, ['status', 'stashes']),
@@ -987,7 +1012,7 @@ export const repoActions = {
       `Stashed ${paths.length} file${paths.length === 1 ? '' : 's'}`,
       () => gitApi.stashPush(path, message, paths, keepIndex),
       {
-        label: 'stash',
+        label: t('undoLabel.stash'),
         undo: () => gitApi.stashPop(path, 0),
         redo: () => gitApi.stashPush(path, message, paths, keepIndex)
       },
@@ -1002,7 +1027,7 @@ export const repoActions = {
       'Popped stash',
       () => gitApi.stashPop(path, index),
       {
-        label: 'stash pop',
+        label: t('undoLabel.stashPop'),
         undo: () => gitApi.stash(path),
         redo: () => gitApi.stashPop(path, 0)
       },
@@ -1012,12 +1037,12 @@ export const repoActions = {
     ),
 
   stashToBranch: (path: string, branch: string, index = 0) =>
-    useRepoStore.getState().run(path, `Created branch ${branch} from stash`, () => gitApi.stashToBranch(path, branch, index), undefined, null, undefined, ['log', 'status', 'stashes', 'branches', 'treeStatus']),
+    useRepoStore.getState().run(path, interp(t('act.branchFromStash'), { branch }), () => gitApi.stashToBranch(path, branch, index), undefined, null, undefined, ['log', 'status', 'stashes', 'branches', 'treeStatus']),
 
   stashApply: (path: string, index = 0) =>
     useRepoStore
       .getState()
-      .run(path, 'Applied stash', () => gitApi.stashApply(path, index), undefined, null, (msg) =>
+      .run(path, t('act.appliedStash'), () => gitApi.stashApply(path, index), undefined, null, (msg) =>
         promptStashOverwrite(msg, path, index, false)
       , ['status', 'stashes']),
 
@@ -1037,15 +1062,15 @@ export const repoActions = {
   stashApplyFiles: (path: string, sha: string, tracked: string[], untracked: string[]) =>
     useRepoStore
       .getState()
-      .run(path, `Restored ${tracked.length + untracked.length} file(s) from stash`, () =>
+      .run(path, interp(t('act.restoredFromStash'), { n: tracked.length + untracked.length }), () =>
         gitApi.stashApplyFiles(path, sha, tracked, untracked)
       , undefined, null, undefined, ['status', 'stashes']),
 
   stashDrop: (path: string, index = 0) =>
-    useRepoStore.getState().run(path, 'Dropped stash', () => gitApi.stashDrop(path, index), undefined, null, undefined, ['stashes']),
+    useRepoStore.getState().run(path, t('act.droppedStash'), () => gitApi.stashDrop(path, index), undefined, null, undefined, ['stashes']),
 
   renameStash: (path: string, index: number, message: string) =>
-    useRepoStore.getState().run(path, 'Renamed stash', () => gitApi.renameStash(path, index, message), undefined, null, undefined, ['stashes']),
+    useRepoStore.getState().run(path, t('act.renamedStash'), () => gitApi.renameStash(path, index, message), undefined, null, undefined, ['stashes']),
 
   commit: (path: string, message: string, amend = false) =>
     useRepoStore.getState().run(
@@ -1053,7 +1078,7 @@ export const repoActions = {
       amend ? 'Amended commit' : 'Committed',
       () => gitApi.commit(path, message, amend),
       {
-        label: 'commit',
+        label: t('undoLabel.commit'),
         undo: () => gitApi.reset(path, 'HEAD~1', 'soft'),
         redo: () => gitApi.commit(path, message)
       },
@@ -1061,7 +1086,7 @@ export const repoActions = {
       (error) => {
         const hint = commitHookFailureHint(error)
         if (!hint) return false
-        toast('error', hint)
+        toast('error', t(hint))
         return true
       },
       ['log', 'status', 'branches']
@@ -1070,9 +1095,9 @@ export const repoActions = {
   amendCommitMessage: (path: string, message: string, previousMessage?: string) =>
     useRepoStore
       .getState()
-      .run(path, 'Updated last commit message', () => gitApi.amendCommitMessage(path, message), previousMessage
+      .run(path, t('act.amendedMessage'), () => gitApi.amendCommitMessage(path, message), previousMessage
         ? {
-            label: 'amend commit message',
+            label: t('undoLabel.amendMessage'),
             undo: () => gitApi.amendCommitMessage(path, previousMessage),
             redo: () => gitApi.amendCommitMessage(path, message)
           }
@@ -1082,17 +1107,17 @@ export const repoActions = {
     noCommit
       ? useRepoStore
           .getState()
-          .run(path, `Applied changes from ${hash.slice(0, 7)} (no commit)`, () => gitApi.cherryPick(path, hash, true))
-      : useRepoStore.getState().run(path, `Cherry-picked ${hash.slice(0, 7)}`, () => gitApi.cherryPick(path, hash), {
-          label: 'cherry-pick',
+          .run(path, interp(t('act.appliedNoCommit'), { sha: hash.slice(0, 7) }), () => gitApi.cherryPick(path, hash, true))
+      : useRepoStore.getState().run(path, interp(t('act.cherryPicked'), { sha: hash.slice(0, 7) }), () => gitApi.cherryPick(path, hash), {
+          label: t('undoLabel.cherryPick'),
           undo: () => gitApi.reset(path, 'HEAD~1', 'hard'),
           redo: () => gitApi.cherryPick(path, hash)
         }),
 
   // Squash a contiguous run of the newest commits into one.
   squashCommits: (path: string, oldestSha: string, message: string, count: number) =>
-    useRepoStore.getState().run(path, `Squashed ${count} commits`, () => gitApi.squashCommits(path, oldestSha, message), {
-      label: 'squash',
+    useRepoStore.getState().run(path, interp(t('act.squashed'), { count }), () => gitApi.squashCommits(path, oldestSha, message), {
+      label: t('undoLabel.squash'),
       undo: () => gitApi.reset(path, 'ORIG_HEAD', 'hard'),
       redo: () => gitApi.squashCommits(path, oldestSha, message)
     }),
@@ -1100,33 +1125,38 @@ export const repoActions = {
   // Cherry-pick several commits (passed newest-first; applied oldest-first).
   cherryPickMany: (path: string, hashes: string[]) => {
     const ordered = [...hashes].reverse()
-    return useRepoStore.getState().run(path, `Cherry-picked ${hashes.length} commits`, () => gitApi.cherryPickMany(path, ordered), {
-      label: 'cherry-pick',
+    return useRepoStore.getState().run(path, interp(t('act.cherryPickedMany'), { count: hashes.length }), () => gitApi.cherryPickMany(path, ordered), {
+      label: t('undoLabel.cherryPick'),
       undo: () => gitApi.reset(path, `HEAD~${hashes.length}`, 'hard'),
       redo: () => gitApi.cherryPickMany(path, ordered)
     })
   },
 
   conflictContinue: (path: string, kind: ConflictOpKind) =>
-    useRepoStore.getState().run(path, `Continued ${kind}`, () => gitApi.conflictOpContinue(path, kind)),
+    useRepoStore.getState().run(path, interp(t('act.continued'), { kind }), () => gitApi.conflictOpContinue(path, kind)),
 
   conflictAbort: (path: string, kind: ConflictOpKind) =>
-    useRepoStore.getState().run(path, `Aborted ${kind}`, () => gitApi.conflictOpAbort(path, kind)),
+    useRepoStore.getState().run(path, interp(t('act.aborted'), { kind }), () => gitApi.conflictOpAbort(path, kind)),
 
   conflictTakeSide: (path: string, file: string, side: ConflictSide) => {
-    const verb = side === 'delete' ? 'Deleted' : side === 'ours' ? 'Kept ours for' : 'Kept theirs for'
+    const verb =
+      side === 'delete'
+        ? t('act.conflictDeleted')
+        : side === 'ours'
+          ? t('act.conflictKeptOurs')
+          : t('act.conflictKeptTheirs')
     return useRepoStore.getState().run(path, `${verb} ${file}`, () => gitApi.conflictTakeSide(path, file, side))
   },
 
   revertCommit: (path: string, hash: string) =>
-    useRepoStore.getState().run(path, `Reverted ${hash.slice(0, 7)}`, () => gitApi.revertCommit(path, hash), {
-      label: 'revert',
+    useRepoStore.getState().run(path, interp(t('act.reverted'), { sha: hash.slice(0, 7) }), () => gitApi.revertCommit(path, hash), {
+      label: t('undoLabel.revert'),
       undo: () => gitApi.reset(path, 'HEAD~1', 'hard'),
       redo: () => gitApi.revertCommit(path, hash)
     }),
 
   reset: (path: string, ref: string, mode: 'soft' | 'mixed' | 'hard') =>
-    useRepoStore.getState().run(path, `Reset (${mode}) to ${ref.slice(0, 7)}`, () => gitApi.reset(path, ref, mode)),
+    useRepoStore.getState().run(path, interp(t('act.reset'), { mode, sha: ref.slice(0, 7) }), () => gitApi.reset(path, ref, mode)),
 
   applyPatch: (path: string, content: string, am: boolean) =>
     useRepoStore
@@ -1134,56 +1164,56 @@ export const repoActions = {
       .run(path, am ? 'Applied patch (git am)' : 'Applied patch', () => gitApi.applyPatch(path, content, am)),
 
   createTag: (path: string, name: string, hash?: string, opts?: { message?: string; sign?: boolean }) =>
-    useRepoStore.getState().run(path, `Created tag ${name}`, () => gitApi.createTag(path, name, hash, opts), {
-      label: `tag ${name}`,
+    useRepoStore.getState().run(path, interp(t('act.createdTag'), { name }), () => gitApi.createTag(path, name, hash, opts), {
+      label: interp(t('undoLabel.tag'), { name }),
       undo: () => gitApi.deleteTag(path, name),
       redo: () => gitApi.createTag(path, name, hash, opts)
     }),
 
   deleteTag: (path: string, name: string) =>
-    useRepoStore.getState().run(path, `Deleted tag ${name}`, () => gitApi.deleteTag(path, name)),
+    useRepoStore.getState().run(path, interp(t('act.deletedTag'), { name }), () => gitApi.deleteTag(path, name)),
 
   pushTag: (path: string, name: string, remote = 'origin') =>
-    useRepoStore.getState().run(path, `Pushed tag ${name} to ${remote}`, () => gitApi.pushTag(path, name, remote)),
+    useRepoStore.getState().run(path, interp(t('act.pushedTag'), { name, remote }), () => gitApi.pushTag(path, name, remote)),
 
   deleteRemoteTag: (path: string, name: string, remote = 'origin') =>
-    useRepoStore.getState().run(path, `Deleted tag ${name} from ${remote}`, () => gitApi.deleteRemoteTag(path, name, remote)),
+    useRepoStore.getState().run(path, interp(t('act.deletedRemoteTag'), { name, remote }), () => gitApi.deleteRemoteTag(path, name, remote)),
 
   refreshRemoteTags: (path: string) => useRepoStore.getState().refreshRemoteTags(path),
   refreshCiStatuses: (path: string) => useRepoStore.getState().refreshCiStatuses(path),
 
   stage: (path: string, files: string[]) =>
-    useRepoStore.getState().run(path, `Staged ${files.length} file(s)`, () => gitApi.stage(path, files), undefined, null, undefined, ['status', 'treeStatus']),
-  stageAll: (path: string) => useRepoStore.getState().run(path, 'Staged all', () => gitApi.stageAll(path), undefined, null, undefined, ['status', 'treeStatus']),
+    useRepoStore.getState().run(path, interp(t('act.staged'), { n: files.length }), () => gitApi.stage(path, files), undefined, null, undefined, ['status', 'treeStatus']),
+  stageAll: (path: string) => useRepoStore.getState().run(path, t('act.stagedAll'), () => gitApi.stageAll(path), undefined, null, undefined, ['status', 'treeStatus']),
   unstage: (path: string, files: string[]) =>
-    useRepoStore.getState().run(path, `Unstaged ${files.length} file(s)`, () => gitApi.unstage(path, files), undefined, null, undefined, ['status', 'treeStatus']),
-  unstageAll: (path: string) => useRepoStore.getState().run(path, 'Unstaged all', () => gitApi.unstageAll(path), undefined, null, undefined, ['status', 'treeStatus']),
+    useRepoStore.getState().run(path, interp(t('act.unstaged'), { n: files.length }), () => gitApi.unstage(path, files), undefined, null, undefined, ['status', 'treeStatus']),
+  unstageAll: (path: string) => useRepoStore.getState().run(path, t('act.unstagedAll'), () => gitApi.unstageAll(path), undefined, null, undefined, ['status', 'treeStatus']),
   discard: (path: string, files: string[], untracked: boolean) =>
-    useRepoStore.getState().run(path, `Discarded ${files.length} file(s)`, () => gitApi.discard(path, files, untracked), undefined, null, undefined, ['status', 'treeStatus']),
+    useRepoStore.getState().run(path, interp(t('act.discarded'), { n: files.length }), () => gitApi.discard(path, files, untracked), undefined, null, undefined, ['status', 'treeStatus']),
 
   addToGitignore: (path: string, patterns: string[], label?: string) =>
-    useRepoStore.getState().run(path, `Added ${label ?? `${patterns.length} entr${patterns.length === 1 ? 'y' : 'ies'}`} to .gitignore`, async () => {
+    useRepoStore.getState().run(path, interp(t('act.addedToGitignore'), { what: label ?? interp(t('act.nEntries'), { n: patterns.length }) }), async () => {
       const added = await gitApi.addToGitignore(path, patterns)
-      if (added.length === 0) useUIStore.getState().toast('info', 'Already in .gitignore')
+      if (added.length === 0) useUIStore.getState().toast('info', t('act.alreadyIgnored'))
     }),
 
   addToGitignoreAt: (path: string, dir: string, patterns: string[], label?: string) =>
-    useRepoStore.getState().run(path, `Added ${label ?? patterns.join(', ')} to .gitignore`, async () => {
+    useRepoStore.getState().run(path, interp(t('act.addedToGitignore'), { what: label ?? patterns.join(', ') }), async () => {
       const added = await gitApi.addToGitignoreAt(path, dir, patterns)
-      if (added.length === 0) useUIStore.getState().toast('info', 'Already in .gitignore')
+      if (added.length === 0) useUIStore.getState().toast('info', t('act.alreadyIgnored'))
     }),
 
   untrack: (path: string, files: string[], deleteFromDisk: boolean, label?: string) =>
     useRepoStore.getState().run(
       path,
       deleteFromDisk
-        ? `Removed ${label ?? `${files.length} file(s)`} from Git and disk`
-        : `Untracked ${label ?? `${files.length} file(s)`}`,
+        ? interp(t('act.untrackedAndDeleted'), { what: label ?? interp(t('act.nFiles'), { n: files.length }) })
+        : interp(t('act.untracked'), { what: label ?? interp(t('act.nFiles'), { n: files.length }) }),
       () => gitApi.untrack(path, files, deleteFromDisk)
     ),
 
   ignoreAndUntrack: (path: string, files: string[], patterns: string[], label?: string) =>
-    useRepoStore.getState().run(path, `Ignored ${label ?? `${files.length} file(s)`}`, async () => {
+    useRepoStore.getState().run(path, interp(t('act.ignored'), { what: label ?? interp(t('act.nFiles'), { n: files.length }) }), async () => {
       await gitApi.untrack(path, files, false)
       await gitApi.addToGitignore(path, patterns)
     }),
@@ -1210,13 +1240,13 @@ export const repoActions = {
     ),
 
   worktreeAdd: (path: string, dir: string, branch: string, newBranch: boolean) =>
-    useRepoStore.getState().run(path, `Added worktree ${dir}`, () => gitApi.worktreeAdd(path, dir, branch, newBranch)),
+    useRepoStore.getState().run(path, interp(t('act.addedWorktree'), { dir }), () => gitApi.worktreeAdd(path, dir, branch, newBranch)),
 
   worktreeRemove: (path: string, dir: string, force = false) =>
-    useRepoStore.getState().run(path, `Removed worktree ${dir}`, () => gitApi.worktreeRemove(path, dir, force)),
+    useRepoStore.getState().run(path, interp(t('act.removedWorktree'), { dir }), () => gitApi.worktreeRemove(path, dir, force)),
 
   submoduleAdd: (path: string, url: string, dir: string, branch?: string) =>
-    useRepoStore.getState().run(path, `Added submodule ${dir}`, () => gitApi.submoduleAdd(path, url, dir, branch)),
+    useRepoStore.getState().run(path, interp(t('act.addedSubmodule'), { dir }), () => gitApi.submoduleAdd(path, url, dir, branch)),
 
   submoduleUpdate: (path: string, dir?: string) =>
     useRepoStore
@@ -1229,30 +1259,30 @@ export const repoActions = {
       .run(path, dir ? `Synced submodule ${dir}` : 'Synced submodules', () => gitApi.submoduleSync(path, dir)),
 
   submoduleSetUrl: (path: string, name: string, url: string) =>
-    useRepoStore.getState().run(path, `Updated URL for ${name}`, () => gitApi.submoduleSetUrl(path, name, url)),
+    useRepoStore.getState().run(path, interp(t('act.updatedUrl'), { name }), () => gitApi.submoduleSetUrl(path, name, url)),
 
   submoduleRemove: (path: string, dir: string) =>
-    useRepoStore.getState().run(path, `Removed submodule ${dir}`, () => gitApi.submoduleRemove(path, dir)),
+    useRepoStore.getState().run(path, interp(t('act.removedSubmodule'), { dir }), () => gitApi.submoduleRemove(path, dir)),
 
   // ─── Bulk operations (multi-select in the sidebar) ───
   deleteBranches: (path: string, names: string[]) =>
-    useRepoStore.getState().run(path, `Deleted ${names.length} branches`, async () => {
+    useRepoStore.getState().run(path, interp(t('act.deletedBranches'), { n: names.length }), async () => {
       for (const n of names) await gitApi.deleteBranch(path, n, true)
     }),
 
   deleteRemoteBranches: (path: string, items: { remote: string; name: string }[]) =>
-    useRepoStore.getState().run(path, `Deleted ${items.length} remote branches`, async () => {
+    useRepoStore.getState().run(path, interp(t('act.deletedRemoteBranches'), { n: items.length }), async () => {
       for (const it of items) await gitApi.deleteRemoteBranch(path, it.remote, it.name)
     }),
 
   stashDropMany: (path: string, indices: number[]) =>
-    useRepoStore.getState().run(path, `Dropped ${indices.length} stashes`, async () => {
+    useRepoStore.getState().run(path, interp(t('act.droppedStashes'), { n: indices.length }), async () => {
       // Drop highest-index first — each drop renumbers the lower entries.
       for (const i of [...indices].sort((a, b) => b - a)) await gitApi.stashDrop(path, i)
     }),
 
   deleteTags: (path: string, names: string[]) =>
-    useRepoStore.getState().run(path, `Deleted ${names.length} tags`, async () => {
+    useRepoStore.getState().run(path, interp(t('act.deletedTags'), { n: names.length }), async () => {
       for (const n of names) await gitApi.deleteTag(path, n)
     }),
 
@@ -1260,21 +1290,21 @@ export const repoActions = {
   fsCreate: (path: string, relPath: string, isDir: boolean) =>
     useRepoStore
       .getState()
-      .run(path, `Created ${isDir ? 'folder' : 'file'} ${relPath}`, () => gitApi.fsCreate(path, relPath, isDir)),
+      .run(path, interp(isDir ? t('act.createdFolder') : t('act.createdFile'), { path: relPath }), () => gitApi.fsCreate(path, relPath, isDir)),
 
   fsRename: (path: string, from: string, to: string) =>
-    useRepoStore.getState().run(path, `Renamed ${from} → ${to}`, () => gitApi.fsRename(path, from, to)),
+    useRepoStore.getState().run(path, interp(t('act.renamedPath'), { from, to }), () => gitApi.fsRename(path, from, to)),
 
   fsDelete: (path: string, relPaths: string[], label?: string) =>
     useRepoStore
       .getState()
-      .run(path, `Moved ${label ?? `${relPaths.length} item(s)`} to trash`, () => gitApi.fsDelete(path, relPaths)),
+      .run(path, interp(t('act.movedToTrash'), { what: label ?? interp(t('act.nItems'), { n: relPaths.length }) }), () => gitApi.fsDelete(path, relPaths)),
 
   // Drag & drop in the project tree: moves within the repo, imports from the OS.
   fsMove: (path: string, froms: string[], destDir: string, mode?: FsDropMode) =>
     useRepoStore
       .getState()
-      .run(path, `Moved ${froms.length === 1 ? froms[0] : `${froms.length} items`} → ${destDir || '/'}`, () =>
+      .run(path, interp(t('act.moved'), { what: froms.length === 1 ? froms[0] : interp(t('act.nItems'), { n: froms.length }), dest: destDir || '/' }), () =>
         gitApi.fsMove(path, froms, destDir, mode)
       ),
 

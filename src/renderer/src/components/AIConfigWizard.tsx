@@ -11,6 +11,7 @@ import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { useRepoStore } from '../stores/repo'
 import { aiApi, gitApi, shellApi, type GeneratedFile, type ArtifactRequest, type ArtifactSuggestion } from '../infrastructure/api'
+import { useT, translate, interp, type TranslationKey } from '../i18n'
 import type { AIConfig, AskAction, AskPlan } from '../../../shared/types'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -20,8 +21,8 @@ type BuiltinFrameworkId = 'claude-code' | 'copilot' | 'cursor' | 'windsurf' | 'a
 
 interface Category {
   id: CategoryId
-  label: string
-  description: string
+  labelKey: TranslationKey
+  descriptionKey: TranslationKey
   Icon: typeof Bot
 }
 
@@ -36,7 +37,7 @@ interface Artifact {
   id: string
   path: string
   label: string
-  description: string
+  descriptionKey: TranslationKey
   categories: CategoryId[]
   /** Framework IDs this artifact belongs to. '*' means any/all frameworks (e.g. git hooks). */
   frameworks: (BuiltinFrameworkId | '*')[]
@@ -46,14 +47,14 @@ interface Artifact {
 // ── Catalog ───────────────────────────────────────────────────────────────────
 
 const CATEGORIES: Category[] = [
-  { id: 'instructions', label: 'Persistent Instructions', description: 'Project-wide rules fed to the AI every session', Icon: FileText },
-  { id: 'agents', label: 'Custom Agents', description: 'Specialized subagents for review, security, testing…', Icon: Bot },
-  { id: 'skills', label: 'Skills / Commands', description: 'Reusable slash commands and invokable actions', Icon: Wand2 },
-  { id: 'mcps', label: 'MCPs', description: 'Model Context Protocol server configuration', Icon: Server },
-  { id: 'prompts', label: 'Reusable Prompts', description: 'Shareable prompt files for common tasks', Icon: MessageSquare },
-  { id: 'per-file', label: 'Per-file Instructions', description: 'Rules scoped to specific file types or directories', Icon: SlidersHorizontal },
-  { id: 'hooks', label: 'AI Tool Hooks', description: 'Lifecycle hooks for your AI coding tool', Icon: Zap },
-  { id: 'git-hooks', label: 'Git Hooks', description: 'Shell scripts triggered by git lifecycle events', Icon: GitCommit },
+  { id: 'instructions', labelKey: 'aiCat.instructions', descriptionKey: 'aiCat.instructions.desc', Icon: FileText },
+  { id: 'agents', labelKey: 'aiCat.agents', descriptionKey: 'aiCat.agents.desc', Icon: Bot },
+  { id: 'skills', labelKey: 'aiCat.skills', descriptionKey: 'aiCat.skills.desc', Icon: Wand2 },
+  { id: 'mcps', labelKey: 'aiCat.mcps', descriptionKey: 'aiCat.mcps.desc', Icon: Server },
+  { id: 'prompts', labelKey: 'aiCat.prompts', descriptionKey: 'aiCat.prompts.desc', Icon: MessageSquare },
+  { id: 'per-file', labelKey: 'aiCat.perfile', descriptionKey: 'aiCat.perfile.desc', Icon: SlidersHorizontal },
+  { id: 'hooks', labelKey: 'aiCat.hooks', descriptionKey: 'aiCat.hooks.desc', Icon: Zap },
+  { id: 'git-hooks', labelKey: 'aiCat.githooks', descriptionKey: 'aiCat.githooks.desc', Icon: GitCommit },
 ]
 
 const BUILTIN_FRAMEWORKS: Framework[] = [
@@ -68,53 +69,53 @@ const BUILTIN_FRAMEWORKS: Framework[] = [
 
 const CATALOG: Artifact[] = [
   // ── Instructions
-  { id: 'claude-md', path: 'CLAUDE.md', label: 'CLAUDE.md', description: 'Project instructions for Claude Code', categories: ['instructions'], frameworks: ['claude-code'] },
-  { id: 'claude-local-md', path: 'CLAUDE.local.md', label: 'CLAUDE.local.md', description: 'Local overrides (gitignored, machine-specific)', categories: ['instructions'], frameworks: ['claude-code'] },
-  { id: 'copilot-instructions', path: '.github/copilot-instructions.md', label: 'copilot-instructions.md', description: 'Repo-wide instructions for GitHub Copilot', categories: ['instructions'], frameworks: ['copilot'] },
-  { id: 'cursor-project-rules', path: '.cursor/rules/project.mdc', label: 'Project rules', description: 'Project-wide Cursor AI rules', categories: ['instructions'], frameworks: ['cursor'] },
-  { id: 'cursorrules', path: '.cursorrules', label: '.cursorrules (legacy)', description: 'Legacy Cursor rules file for older versions', categories: ['instructions'], frameworks: ['cursor'] },
-  { id: 'windsurfrules', path: '.windsurfrules', label: '.windsurfrules', description: 'Windsurf rules and project conventions', categories: ['instructions'], frameworks: ['windsurf'] },
-  { id: 'windsurfignore', path: '.windsurfignore', label: '.windsurfignore', description: 'Files Windsurf should ignore', categories: ['instructions'], frameworks: ['windsurf'] },
-  { id: 'aider-conf', path: '.aider.conf.yml', label: '.aider.conf.yml', description: 'Aider model, auto-commits, lint commands', categories: ['instructions'], frameworks: ['aider'] },
-  { id: 'aider-conventions', path: 'CONVENTIONS.md', label: 'CONVENTIONS.md', description: 'Coding conventions referenced by Aider', categories: ['instructions'], frameworks: ['aider'] },
-  { id: 'aiderignore', path: '.aiderignore', label: '.aiderignore', description: 'Files Aider should not read or modify', categories: ['instructions'], frameworks: ['aider'] },
-  { id: 'opencode-json', path: 'opencode.json', label: 'opencode.json', description: 'OpenCode configuration with system prompt', categories: ['instructions'], frameworks: ['opencode'] },
-  { id: 'agents-md', path: 'AGENTS.md', label: 'AGENTS.md', description: 'Project instructions for Codex agents', categories: ['instructions'], frameworks: ['codex'] },
+  { id: 'claude-md', path: 'CLAUDE.md', label: 'CLAUDE.md', descriptionKey: 'aiArtifact.claude-md', categories: ['instructions'], frameworks: ['claude-code'] },
+  { id: 'claude-local-md', path: 'CLAUDE.local.md', label: 'CLAUDE.local.md', descriptionKey: 'aiArtifact.claude-local-md', categories: ['instructions'], frameworks: ['claude-code'] },
+  { id: 'copilot-instructions', path: '.github/copilot-instructions.md', label: 'copilot-instructions.md', descriptionKey: 'aiArtifact.copilot-instructions', categories: ['instructions'], frameworks: ['copilot'] },
+  { id: 'cursor-project-rules', path: '.cursor/rules/project.mdc', label: 'project.mdc', descriptionKey: 'aiArtifact.cursor-project-rules', categories: ['instructions'], frameworks: ['cursor'] },
+  { id: 'cursorrules', path: '.cursorrules', label: '.cursorrules (legacy)', descriptionKey: 'aiArtifact.cursorrules', categories: ['instructions'], frameworks: ['cursor'] },
+  { id: 'windsurfrules', path: '.windsurfrules', label: '.windsurfrules', descriptionKey: 'aiArtifact.windsurfrules', categories: ['instructions'], frameworks: ['windsurf'] },
+  { id: 'windsurfignore', path: '.windsurfignore', label: '.windsurfignore', descriptionKey: 'aiArtifact.windsurfignore', categories: ['instructions'], frameworks: ['windsurf'] },
+  { id: 'aider-conf', path: '.aider.conf.yml', label: '.aider.conf.yml', descriptionKey: 'aiArtifact.aider-conf', categories: ['instructions'], frameworks: ['aider'] },
+  { id: 'aider-conventions', path: 'CONVENTIONS.md', label: 'CONVENTIONS.md', descriptionKey: 'aiArtifact.aider-conventions', categories: ['instructions'], frameworks: ['aider'] },
+  { id: 'aiderignore', path: '.aiderignore', label: '.aiderignore', descriptionKey: 'aiArtifact.aiderignore', categories: ['instructions'], frameworks: ['aider'] },
+  { id: 'opencode-json', path: 'opencode.json', label: 'opencode.json', descriptionKey: 'aiArtifact.opencode-json', categories: ['instructions'], frameworks: ['opencode'] },
+  { id: 'agents-md', path: 'AGENTS.md', label: 'AGENTS.md', descriptionKey: 'aiArtifact.agents-md', categories: ['instructions'], frameworks: ['codex'] },
 
   // ── Agents
-  { id: 'claude-agent-reviewer', path: '.claude/agents/code-reviewer.md', label: 'code-reviewer', description: 'Subagent for automated code review (correctness, security)', categories: ['agents'], frameworks: ['claude-code'], isFolder: true },
-  { id: 'claude-agent-security', path: '.claude/agents/security-auditor.md', label: 'security-auditor', description: 'Subagent for security auditing — OWASP, secrets, injection', categories: ['agents'], frameworks: ['claude-code'], isFolder: true },
-  { id: 'claude-agent-tester', path: '.claude/agents/test-writer.md', label: 'test-writer', description: 'Subagent for generating and running tests', categories: ['agents'], frameworks: ['claude-code'], isFolder: true },
-  { id: 'copilot-agent', path: '.github/agents/default.yml', label: 'default agent', description: 'GitHub Copilot agent configuration', categories: ['agents'], frameworks: ['copilot'], isFolder: true },
+  { id: 'claude-agent-reviewer', path: '.claude/agents/code-reviewer.md', label: 'code-reviewer', descriptionKey: 'aiArtifact.claude-agent-reviewer', categories: ['agents'], frameworks: ['claude-code'], isFolder: true },
+  { id: 'claude-agent-security', path: '.claude/agents/security-auditor.md', label: 'security-auditor', descriptionKey: 'aiArtifact.claude-agent-security', categories: ['agents'], frameworks: ['claude-code'], isFolder: true },
+  { id: 'claude-agent-tester', path: '.claude/agents/test-writer.md', label: 'test-writer', descriptionKey: 'aiArtifact.claude-agent-tester', categories: ['agents'], frameworks: ['claude-code'], isFolder: true },
+  { id: 'copilot-agent', path: '.github/agents/default.yml', label: 'default.yml', descriptionKey: 'aiArtifact.copilot-agent', categories: ['agents'], frameworks: ['copilot'], isFolder: true },
 
   // ── Skills / Commands
-  { id: 'claude-cmd-review', path: '.claude/commands/review.md', label: '/review', description: 'Code review slash command for Claude Code', categories: ['skills'], frameworks: ['claude-code'], isFolder: true },
-  { id: 'claude-cmd-test', path: '.claude/commands/test.md', label: '/test', description: 'Test runner slash command', categories: ['skills'], frameworks: ['claude-code'], isFolder: true },
-  { id: 'claude-cmd-deploy', path: '.claude/commands/deploy.md', label: '/deploy', description: 'Deployment checklist slash command', categories: ['skills'], frameworks: ['claude-code'], isFolder: true },
-  { id: 'copilot-prompt-review', path: '.github/prompts/code-review.prompt.md', label: '/code-review', description: 'Reusable Copilot code review prompt', categories: ['skills', 'prompts'], frameworks: ['copilot'], isFolder: true },
-  { id: 'copilot-prompt-explain', path: '.github/prompts/explain.prompt.md', label: '/explain', description: 'Reusable Copilot explain prompt', categories: ['skills', 'prompts'], frameworks: ['copilot'], isFolder: true },
-  { id: 'copilot-prompt-test', path: '.github/prompts/test-generation.prompt.md', label: '/test-generation', description: 'Copilot prompt for generating tests', categories: ['skills', 'prompts'], frameworks: ['copilot'], isFolder: true },
+  { id: 'claude-cmd-review', path: '.claude/commands/review.md', label: '/review', descriptionKey: 'aiArtifact.claude-cmd-review', categories: ['skills'], frameworks: ['claude-code'], isFolder: true },
+  { id: 'claude-cmd-test', path: '.claude/commands/test.md', label: '/test', descriptionKey: 'aiArtifact.claude-cmd-test', categories: ['skills'], frameworks: ['claude-code'], isFolder: true },
+  { id: 'claude-cmd-deploy', path: '.claude/commands/deploy.md', label: '/deploy', descriptionKey: 'aiArtifact.claude-cmd-deploy', categories: ['skills'], frameworks: ['claude-code'], isFolder: true },
+  { id: 'copilot-prompt-review', path: '.github/prompts/code-review.prompt.md', label: '/code-review', descriptionKey: 'aiArtifact.copilot-prompt-review', categories: ['skills', 'prompts'], frameworks: ['copilot'], isFolder: true },
+  { id: 'copilot-prompt-explain', path: '.github/prompts/explain.prompt.md', label: '/explain', descriptionKey: 'aiArtifact.copilot-prompt-explain', categories: ['skills', 'prompts'], frameworks: ['copilot'], isFolder: true },
+  { id: 'copilot-prompt-test', path: '.github/prompts/test-generation.prompt.md', label: '/test-generation', descriptionKey: 'aiArtifact.copilot-prompt-test', categories: ['skills', 'prompts'], frameworks: ['copilot'], isFolder: true },
 
   // ── MCPs
-  { id: 'claude-mcp', path: '.mcp.json', label: '.mcp.json', description: 'MCP server configuration for Claude Code', categories: ['mcps'], frameworks: ['claude-code'] },
+  { id: 'claude-mcp', path: '.mcp.json', label: '.mcp.json', descriptionKey: 'aiArtifact.claude-mcp', categories: ['mcps'], frameworks: ['claude-code'] },
 
   // ── Hooks (AI tool)
-  { id: 'claude-settings', path: '.claude/settings.json', label: 'settings.json', description: 'Claude Code settings, permissions, and lifecycle hooks', categories: ['hooks', 'mcps'], frameworks: ['claude-code'] },
+  { id: 'claude-settings', path: '.claude/settings.json', label: 'settings.json', descriptionKey: 'aiArtifact.claude-settings', categories: ['hooks', 'mcps'], frameworks: ['claude-code'] },
 
   // ── Per-file Instructions
-  { id: 'copilot-ts-instructions', path: '.github/instructions/typescript.instructions.md', label: 'TypeScript instructions', description: 'Copilot instructions scoped to TS/TSX files', categories: ['per-file'], frameworks: ['copilot'], isFolder: true },
-  { id: 'copilot-test-instructions', path: '.github/instructions/testing.instructions.md', label: 'Testing instructions', description: 'Copilot instructions scoped to test files', categories: ['per-file'], frameworks: ['copilot'], isFolder: true },
-  { id: 'copilot-api-instructions', path: '.github/instructions/api.instructions.md', label: 'API instructions', description: 'Copilot instructions scoped to API/backend files', categories: ['per-file'], frameworks: ['copilot'], isFolder: true },
-  { id: 'cursor-ts-rules', path: '.cursor/rules/typescript.mdc', label: 'TypeScript rules', description: 'Cursor rules scoped to TypeScript files', categories: ['per-file'], frameworks: ['cursor'], isFolder: true },
-  { id: 'cursor-testing-rules', path: '.cursor/rules/testing.mdc', label: 'Testing rules', description: 'Cursor rules scoped to test files', categories: ['per-file'], frameworks: ['cursor'], isFolder: true },
+  { id: 'copilot-ts-instructions', path: '.github/instructions/typescript.instructions.md', label: 'typescript.instructions.md', descriptionKey: 'aiArtifact.copilot-ts-instructions', categories: ['per-file'], frameworks: ['copilot'], isFolder: true },
+  { id: 'copilot-test-instructions', path: '.github/instructions/testing.instructions.md', label: 'testing.instructions.md', descriptionKey: 'aiArtifact.copilot-test-instructions', categories: ['per-file'], frameworks: ['copilot'], isFolder: true },
+  { id: 'copilot-api-instructions', path: '.github/instructions/api.instructions.md', label: 'api.instructions.md', descriptionKey: 'aiArtifact.copilot-api-instructions', categories: ['per-file'], frameworks: ['copilot'], isFolder: true },
+  { id: 'cursor-ts-rules', path: '.cursor/rules/typescript.mdc', label: 'typescript.mdc', descriptionKey: 'aiArtifact.cursor-ts-rules', categories: ['per-file'], frameworks: ['cursor'], isFolder: true },
+  { id: 'cursor-testing-rules', path: '.cursor/rules/testing.mdc', label: 'testing.mdc', descriptionKey: 'aiArtifact.cursor-testing-rules', categories: ['per-file'], frameworks: ['cursor'], isFolder: true },
 
   // ── Git Hooks (framework-agnostic)
-  { id: 'hook-pre-commit', path: '.git/hooks/pre-commit', label: 'pre-commit', description: 'Run lint and format checks before each commit', categories: ['git-hooks'], frameworks: ['*'] },
-  { id: 'hook-commit-msg', path: '.git/hooks/commit-msg', label: 'commit-msg', description: 'Validate commit message format', categories: ['git-hooks'], frameworks: ['*'] },
-  { id: 'hook-pre-push', path: '.git/hooks/pre-push', label: 'pre-push', description: 'Run tests before pushing to remote', categories: ['git-hooks'], frameworks: ['*'] },
-  { id: 'hook-post-commit', path: '.git/hooks/post-commit', label: 'post-commit', description: 'Notifications or CI triggers after commit', categories: ['git-hooks'], frameworks: ['*'] },
-  { id: 'hook-prepare-commit-msg', path: '.git/hooks/prepare-commit-msg', label: 'prepare-commit-msg', description: 'Pre-populate commit message from branch/ticket', categories: ['git-hooks'], frameworks: ['*'] },
-  { id: 'hook-post-merge', path: '.git/hooks/post-merge', label: 'post-merge', description: 'Install deps or run migrations after merge', categories: ['git-hooks'], frameworks: ['*'] },
+  { id: 'hook-pre-commit', path: '.git/hooks/pre-commit', label: 'pre-commit', descriptionKey: 'aiArtifact.hook-pre-commit', categories: ['git-hooks'], frameworks: ['*'] },
+  { id: 'hook-commit-msg', path: '.git/hooks/commit-msg', label: 'commit-msg', descriptionKey: 'aiArtifact.hook-commit-msg', categories: ['git-hooks'], frameworks: ['*'] },
+  { id: 'hook-pre-push', path: '.git/hooks/pre-push', label: 'pre-push', descriptionKey: 'aiArtifact.hook-pre-push', categories: ['git-hooks'], frameworks: ['*'] },
+  { id: 'hook-post-commit', path: '.git/hooks/post-commit', label: 'post-commit', descriptionKey: 'aiArtifact.hook-post-commit', categories: ['git-hooks'], frameworks: ['*'] },
+  { id: 'hook-prepare-commit-msg', path: '.git/hooks/prepare-commit-msg', label: 'prepare-commit-msg', descriptionKey: 'aiArtifact.hook-prepare-commit-msg', categories: ['git-hooks'], frameworks: ['*'] },
+  { id: 'hook-post-merge', path: '.git/hooks/post-merge', label: 'post-merge', descriptionKey: 'aiArtifact.hook-post-merge', categories: ['git-hooks'], frameworks: ['*'] },
 ]
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -135,6 +136,7 @@ export function AIConfigWizard({
 }: {
   spec: { repoPath: string; repoName: string; initialTab?: 'ask' | 'config' }
 }): React.JSX.Element {
+  const t = useT()
   const closeModal = useUIStore((s) => s.closeModal)
   const toast = useUIStore((s) => s.toast)
   const activeProfileId = useSettingsStore((s) => s.settings.activeProfileId)
@@ -203,7 +205,8 @@ export function AIConfigWizard({
     for (const a of derivedArtifacts) {
       if (selectedArtifacts.has(a.id) && !paths.has(a.path)) {
         paths.add(a.path)
-        result.push({ path: a.path, description: a.description })
+        // The description is prompt input for the model — always send the English copy.
+        result.push({ path: a.path, description: translate('en', a.descriptionKey) })
       }
     }
     for (const s of suggestions) {
@@ -355,7 +358,10 @@ export function AIConfigWizard({
     try {
       await shellApi.writeFiles(spec.repoPath, generatedFiles)
       closeModal()
-      toast('success', `Wrote ${generatedFiles.length} file${generatedFiles.length !== 1 ? 's' : ''} to ${spec.repoName}`)
+      toast(
+        'success',
+        interp(t('aiWizard.wroteFiles'), { n: generatedFiles.length, repo: spec.repoName })
+      )
     } catch (e) {
       toast('error', e instanceof Error ? e.message : String(e))
       setWriting(false)
@@ -424,10 +430,14 @@ export function AIConfigWizard({
       if (skipped.length) {
         toast(
           'error',
-          `Applied ${applied} of ${plan.actions.length} — skipped unsupported: ${skipped.join(', ')}`
+          interp(t('aiWizard.appliedPartial'), {
+            applied,
+            total: plan.actions.length,
+            skipped: skipped.join(', ')
+          })
         )
       } else {
-        toast('success', `Applied ${applied} action${applied !== 1 ? 's' : ''} to ${spec.repoName}`)
+        toast('success', interp(t('aiWizard.appliedActions'), { n: applied, repo: spec.repoName }))
       }
     } catch (e) {
       toast('error', e instanceof Error ? e.message : String(e))
@@ -444,14 +454,14 @@ export function AIConfigWizard({
         className={`remote-tab ${tab === 'ask' ? 'active' : ''}`}
         onClick={() => setTab('ask')}
       >
-        <MessageSquare size={16} /> <span>Ask</span>
+        <MessageSquare size={16} /> <span>{t('aiWizard.tabAsk')}</span>
       </button>
       <button
         type="button"
         className={`remote-tab ${tab === 'config' ? 'active' : ''}`}
         onClick={() => setTab('config')}
       >
-        <Wand2 size={16} /> <span>Config</span>
+        <Wand2 size={16} /> <span>{t('aiWizard.tabConfig')}</span>
       </button>
     </div>
   )
@@ -459,28 +469,30 @@ export function AIConfigWizard({
   // ── Ask tab render ─────────────────────────────────────────────────────────
 
   if (tab === 'ask') {
-    const ACTION_META: Record<AskAction['type'], { Icon: typeof Bot; label: string }> = {
-      gitignore: { Icon: EyeOff, label: 'Ignore' },
-      stage: { Icon: FilePlus, label: 'Stage' },
-      unstage: { Icon: FileMinus, label: 'Unstage' },
-      commit: { Icon: GitCommit, label: 'Commit' },
-      stash: { Icon: Archive, label: 'Stash' },
-      discard: { Icon: Trash2, label: 'Discard' },
-      branch: { Icon: GitBranch, label: 'Branch' },
-      checkout: { Icon: GitBranchPlus, label: 'Switch' },
-      tag: { Icon: Tag, label: 'Tag' }
+    const ACTION_META: Record<AskAction['type'], { Icon: typeof Bot; labelKey: TranslationKey }> = {
+      gitignore: { Icon: EyeOff, labelKey: 'askAction.gitignore' },
+      stage: { Icon: FilePlus, labelKey: 'askAction.stage' },
+      unstage: { Icon: FileMinus, labelKey: 'askAction.unstage' },
+      commit: { Icon: GitCommit, labelKey: 'askAction.commit' },
+      stash: { Icon: Archive, labelKey: 'askAction.stash' },
+      discard: { Icon: Trash2, labelKey: 'askAction.discard' },
+      branch: { Icon: GitBranch, labelKey: 'askAction.branch' },
+      checkout: { Icon: GitBranchPlus, labelKey: 'askAction.checkout' },
+      tag: { Icon: Tag, labelKey: 'askAction.tag' }
     }
-    const FALLBACK_META = { Icon: Wrench, label: 'Action' }
+    const FALLBACK_META = { Icon: Wrench, labelKey: 'askAction.fallback' as TranslationKey }
     return (
       <>
-        <h3 className="modal-title-row"><Bot size={17} /> AI Assistant</h3>
+        <h3 className="modal-title-row">
+          <Bot size={17} /> {t('aiWizard.assistantTitle')}
+        </h3>
         <Tabs />
         <p className="modal-message" style={{ marginBottom: 10 }}>
-          Describe what you want to do in plain language — the AI turns it into git actions you can review before applying.
+          {t('aiWizard.askHint')}
         </p>
         <textarea
           className="modal-input wizard-context-area"
-          placeholder={`e.g. "ignore all *.tsx files" or "create a commit with the unstaged .md files"`}
+          placeholder={t('aiWizard.askPlaceholder')}
           value={askPrompt}
           onChange={(e) => setAskPrompt(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) void askPlan() }}
@@ -488,7 +500,7 @@ export function AIConfigWizard({
           autoFocus
         />
         <div className="ai-ask-examples">
-          {['Ignore all *.log files', 'Commit the unstaged .md files', 'Stash the .ts changes'].map((ex) => (
+          {[t('aiWizard.example1'), t('aiWizard.example2'), t('aiWizard.example3')].map((ex) => (
             <button key={ex} type="button" className="ai-ask-chip" onClick={() => setAskPrompt(ex)}>
               {ex}
             </button>
@@ -507,7 +519,7 @@ export function AIConfigWizard({
                 const detail =
                   a.type === 'gitignore' ? a.patterns.join(', ')
                     : a.type === 'commit' ? `“${a.message}”${a.files?.length ? ` · ${a.files.join(', ')}` : ''}`
-                      : a.type === 'stash' ? (a.files?.length ? a.files.join(', ') : 'all changes')
+                      : a.type === 'stash' ? (a.files?.length ? a.files.join(', ') : t('aiWizard.allChanges'))
                         : a.type === 'branch' ? `${a.name}${a.at ? ` (from ${a.at})` : ''}`
                           : a.type === 'checkout' ? a.ref
                             : a.type === 'tag' ? `${a.name}${a.message ? ` · “${a.message}”` : ''}`
@@ -516,35 +528,59 @@ export function AIConfigWizard({
                                 : ''
                 return (
                   <div key={i} className="ai-ask-action">
-                    <span className="ai-ask-action-badge"><Icon size={12} /> {meta.label}</span>
+                    <span className="ai-ask-action-badge">
+                      <Icon size={12} /> {t(meta.labelKey)}
+                    </span>
                     <span className="ai-ask-action-desc" title={detail}>{a.description || detail}</span>
                   </div>
                 )
               })
             ) : (
               <div className="ai-ask-note">
-                <AlertTriangle size={13} /> {plan.note || 'Nothing to do for that instruction.'}
+                <AlertTriangle size={13} /> {plan.note || t('aiWizard.nothingToDo')}
               </div>
             )}
           </div>
         )}
 
         <div className="modal-actions" style={{ marginTop: 14 }}>
-          <button className="btn ghost" onClick={closeModal} type="button" disabled={applying}>Cancel</button>
+          <button className="btn ghost" onClick={closeModal} type="button" disabled={applying}>
+            {t('common.cancel')}
+          </button>
           {plan && plan.actions.length > 0 ? (
             <>
               <button className="btn ghost" type="button" disabled={applying} onClick={() => void askPlan()}>
-                {planning ? <><Loader2 size={13} className="spin" /> Re-planning…</> : <>Re-plan</>}
+                {planning ? (
+                  <>
+                    <Loader2 size={13} className="spin" /> {t('aiWizard.replanning')}
+                  </>
+                ) : (
+                  <>{t('aiWizard.replan')}</>
+                )}
               </button>
               <button className="btn primary" type="button" disabled={applying} onClick={() => void applyPlan()}>
-                {applying
-                  ? <><Loader2 size={14} className="spin" /> Applying…</>
-                  : <><Play size={14} /> Apply {plan.actions.length} action{plan.actions.length !== 1 ? 's' : ''}</>}
+                {applying ? (
+                  <>
+                    <Loader2 size={14} className="spin" /> {t('aiWizard.applying')}
+                  </>
+                ) : (
+                  <>
+                    <Play size={14} /> {interp(t('aiWizard.applyN'), { n: plan.actions.length })}
+                  </>
+                )}
               </button>
             </>
           ) : (
             <button className="btn primary" type="button" disabled={planning || !askPrompt.trim()} onClick={() => void askPlan()}>
-              {planning ? <><Loader2 size={14} className="spin" /> Thinking…</> : <><Send size={14} /> Plan actions</>}
+              {planning ? (
+                <>
+                  <Loader2 size={14} className="spin" /> {t('aiWizard.thinking')}
+                </>
+              ) : (
+                <>
+                  <Send size={14} /> {t('aiWizard.planActions')}
+                </>
+              )}
             </button>
           )}
         </div>
@@ -554,7 +590,12 @@ export function AIConfigWizard({
 
   // ── Step indicator ─────────────────────────────────────────────────────────
 
-  const STEP_LABELS = ['What', 'Tools', 'Files', 'Preview']
+  const STEP_LABELS: TranslationKey[] = [
+    'aiWizard.stepWhat',
+    'aiWizard.stepTools',
+    'aiWizard.stepFiles',
+    'aiWizard.stepPreview'
+  ]
 
   const StepBar = (): React.JSX.Element => (
     <div className="wizard-step-bar">
@@ -565,7 +606,7 @@ export function AIConfigWizard({
         return (
           <div key={n} className={`wizard-step-pip ${active ? 'active' : ''} ${done ? 'done' : ''}`}>
             <span className="wizard-step-num">{done ? <Check size={10} /> : n}</span>
-            <span className="wizard-step-label">{label}</span>
+            <span className="wizard-step-label">{t(label)}</span>
             {i < STEP_LABELS.length - 1 && <span className="wizard-step-line" />}
           </div>
         )
@@ -578,11 +619,13 @@ export function AIConfigWizard({
   if (step === 1) {
     return (
       <>
-        <h3 className="modal-title-row"><Wand2 size={17} /> Generate AI Config</h3>
+        <h3 className="modal-title-row">
+          <Wand2 size={17} /> {t('aiWizard.configTitle')}
+        </h3>
         <Tabs />
         <StepBar />
         <p className="modal-message" style={{ marginBottom: 14 }}>
-          What do you want to configure?
+          {t('aiWizard.whatConfigure')}
         </p>
         <div className="wizard-tool-grid wizard-category-grid">
           {CATEGORIES.map((cat) => {
@@ -596,22 +639,24 @@ export function AIConfigWizard({
                 onClick={() => toggleCategory(cat.id)}
               >
                 <div className="wizard-tool-card-icon"><Icon size={18} /></div>
-                <span className="wizard-tool-card-label">{cat.label}</span>
-                <span className="wizard-category-card-desc">{cat.description}</span>
+                <span className="wizard-tool-card-label">{t(cat.labelKey)}</span>
+                <span className="wizard-category-card-desc">{t(cat.descriptionKey)}</span>
                 {active && <span className="wizard-tool-card-check"><Check size={10} /></span>}
               </button>
             )
           })}
         </div>
         <div className="modal-actions">
-          <button className="btn ghost" onClick={closeModal} type="button">Cancel</button>
+          <button className="btn ghost" onClick={closeModal} type="button">
+            {t('common.cancel')}
+          </button>
           <button
             className="btn primary"
             disabled={selectedCategories.size === 0}
             onClick={() => setStep(2)}
             type="button"
           >
-            Next <ChevronRight size={14} />
+            {t('onboarding.next')} <ChevronRight size={14} />
           </button>
         </div>
       </>
@@ -623,11 +668,13 @@ export function AIConfigWizard({
   if (step === 2) {
     return (
       <>
-        <h3 className="modal-title-row"><Wand2 size={17} /> Generate AI Config</h3>
+        <h3 className="modal-title-row">
+          <Wand2 size={17} /> {t('aiWizard.configTitle')}
+        </h3>
         <Tabs />
         <StepBar />
         <p className="modal-message" style={{ marginBottom: 14 }}>
-          Which AI tools do you use?
+          {t('aiWizard.whichTools')}
         </p>
         <div className="wizard-tool-grid">
           {BUILTIN_FRAMEWORKS.map((fw) => {
@@ -668,7 +715,7 @@ export function AIConfigWizard({
         <div className="wizard-custom-fw-row">
           <input
             className="modal-input wizard-custom-fw-input"
-            placeholder="Using something else? Type its name…"
+            placeholder={t('aiWizard.customToolPlaceholder')}
             value={customFrameworkInput}
             onChange={(e) => setCustomFrameworkInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') addCustomFramework() }}
@@ -679,13 +726,13 @@ export function AIConfigWizard({
             disabled={!customFrameworkInput.trim()}
             onClick={addCustomFramework}
           >
-            <Plus size={13} /> Add
+            <Plus size={13} /> {t('common.add')}
           </button>
         </div>
 
         <div className="modal-actions">
           <button className="btn ghost" onClick={() => setStep(1)} type="button">
-            <ChevronLeft size={14} /> Back
+            <ChevronLeft size={14} /> {t('onboarding.back')}
           </button>
           <button
             className="btn primary"
@@ -693,7 +740,7 @@ export function AIConfigWizard({
             onClick={goToStep3}
             type="button"
           >
-            Next <ChevronRight size={14} />
+            {t('onboarding.next')} <ChevronRight size={14} />
           </button>
         </div>
       </>
@@ -705,7 +752,9 @@ export function AIConfigWizard({
   if (step === 3) {
     return (
       <>
-        <h3 className="modal-title-row"><Wand2 size={17} /> Generate AI Config</h3>
+        <h3 className="modal-title-row">
+          <Wand2 size={17} /> {t('aiWizard.configTitle')}
+        </h3>
         <Tabs />
         <StepBar />
 
@@ -716,7 +765,7 @@ export function AIConfigWizard({
               <div key={category.id} className="wizard-artifact-group">
                 <div className="wizard-artifact-group-header">
                   <Icon size={12} />
-                  <span>{category.label}</span>
+                  <span>{t(category.labelKey)}</span>
                 </div>
                 {artifacts.map((a) => {
                   const checked = selectedArtifacts.has(a.id)
@@ -725,7 +774,7 @@ export function AIConfigWizard({
                       <input type="checkbox" checked={checked} onChange={() => toggleArtifact(a.id)} />
                       {a.isFolder && <FolderOpen size={11} className="wizard-artifact-folder-icon" />}
                       <span className="wizard-artifact-path">{a.path}</span>
-                      <span className="wizard-artifact-desc">{a.description}</span>
+                      <span className="wizard-artifact-desc">{t(a.descriptionKey)}</span>
                     </label>
                   )
                 })}
@@ -737,7 +786,7 @@ export function AIConfigWizard({
             <div className="wizard-artifact-group">
               <div className="wizard-artifact-group-header">
                 <Sparkles size={12} />
-                <span>AI Suggested</span>
+                <span>{t('aiWizard.aiSuggested')}</span>
               </div>
               {suggestions.map((s) => (
                 <label key={s.path} className="wizard-artifact-row">
@@ -753,7 +802,7 @@ export function AIConfigWizard({
             <div className="wizard-artifact-group">
               <div className="wizard-artifact-group-header">
                 <Plus size={12} />
-                <span>Custom</span>
+                <span>{t('aiWizard.custom')}</span>
               </div>
               {customArtifacts.map((a) => (
                 <div key={a.path} className="wizard-artifact-row wizard-artifact-custom">
@@ -769,11 +818,11 @@ export function AIConfigWizard({
         </div>
 
         <label className="modal-label" style={{ marginTop: 12 }}>
-          Project context — describe your stack, conventions, team preferences
+          {t('aiWizard.projectContext')}
         </label>
         <textarea
           className="modal-input wizard-context-area"
-          placeholder={`e.g. "TypeScript monorepo with React frontend and Node API. Conventional commits, Jest + ESLint in CI."`}
+          placeholder={t('aiWizard.contextPlaceholder')}
           value={context}
           onChange={(e) => setContext(e.target.value)}
           rows={3}
@@ -783,27 +832,35 @@ export function AIConfigWizard({
 
         <div className="wizard-action-row">
           <button type="button" className="btn ghost wizard-suggest-btn" disabled={suggesting} onClick={() => void suggest()}>
-            {suggesting ? <><Loader2 size={13} className="spin" /> Thinking…</> : <><Sparkles size={13} /> AI suggest more</>}
+            {suggesting ? (
+              <>
+                <Loader2 size={13} className="spin" /> {t('aiWizard.thinking')}
+              </>
+            ) : (
+              <>
+                <Sparkles size={13} /> {t('aiWizard.suggestMore')}
+              </>
+            )}
           </button>
           <button type="button" className="btn ghost" onClick={() => setShowCustomForm((v) => !v)}>
-            <Plus size={13} /> Add custom file
+            <Plus size={13} /> {t('aiWizard.addCustomFile')}
           </button>
         </div>
 
         {showCustomForm && (
           <div className="wizard-custom-form">
-            <input className="modal-input" placeholder="File path (e.g. .vscode/settings.json)" value={customPath} onChange={(e) => setCustomPath(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') addCustom() }} />
-            <input className="modal-input" placeholder="Description (optional)" value={customDesc} onChange={(e) => setCustomDesc(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') addCustom() }} style={{ marginTop: 6 }} />
+            <input className="modal-input" placeholder={t('aiWizard.filePathPlaceholder')} value={customPath} onChange={(e) => setCustomPath(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') addCustom() }} />
+            <input className="modal-input" placeholder={t('composer.descriptionPlaceholder')} value={customDesc} onChange={(e) => setCustomDesc(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') addCustom() }} style={{ marginTop: 6 }} />
             <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
-              <button type="button" className="btn primary" onClick={addCustom} disabled={!customPath.trim()}>Add</button>
-              <button type="button" className="btn ghost" onClick={() => setShowCustomForm(false)}>Cancel</button>
+              <button type="button" className="btn primary" onClick={addCustom} disabled={!customPath.trim()}>{t('common.add')}</button>
+              <button type="button" className="btn ghost" onClick={() => setShowCustomForm(false)}>{t('common.cancel')}</button>
             </div>
           </div>
         )}
 
         <div className="modal-actions" style={{ marginTop: 14 }}>
           <button className="btn ghost" onClick={() => setStep(2)} type="button">
-            <ChevronLeft size={14} /> Back
+            <ChevronLeft size={14} /> {t('onboarding.back')}
           </button>
           <span className="wizard-count-label">{flatArtifacts.length} file{flatArtifacts.length !== 1 ? 's' : ''} selected</span>
           <button
@@ -825,20 +882,22 @@ export function AIConfigWizard({
 
   return (
     <>
-      <h3 className="modal-title-row"><Wand2 size={17} /> Generate AI Config</h3>
+      <h3 className="modal-title-row">
+          <Wand2 size={17} /> {t('aiWizard.configTitle')}
+        </h3>
       <StepBar />
 
       {generating && (
         <div className="wizard-generating">
           <Loader2 size={22} className="spin" />
-          <span>Generating {flatArtifacts.length} file{flatArtifacts.length !== 1 ? 's' : ''}…</span>
+          <span>{interp(t('aiWizard.generatingN'), { n: flatArtifacts.length })}</span>
         </div>
       )}
 
       {error && (
         <div className="modal-hint danger" style={{ marginBottom: 12 }}>
           {error}
-          <button className="link-btn" type="button" style={{ marginLeft: 8 }} onClick={() => void generate()}>Retry</button>
+          <button className="link-btn" type="button" style={{ marginLeft: 8 }} onClick={() => void generate()}>{t('aiWizard.retry')}</button>
         </div>
       )}
 
@@ -864,12 +923,12 @@ export function AIConfigWizard({
                   type="button"
                   className={`wizard-preview-mode-btn ${previewMode === 'rendered' ? 'active' : ''}`}
                   onClick={() => setPreviewMode('rendered')}
-                >Preview</button>
+                >{t('fileViewer.modePreview')}</button>
                 <button
                   type="button"
                   className={`wizard-preview-mode-btn ${previewMode === 'raw' ? 'active' : ''}`}
                   onClick={() => setPreviewMode('raw')}
-                >Raw</button>
+                >{t('aiWizard.raw')}</button>
               </div>
             )}
             {isMarkdown && previewMode === 'rendered' ? (
@@ -891,7 +950,7 @@ export function AIConfigWizard({
           type="button"
           disabled={writing}
         >
-          <ChevronLeft size={14} /> Back
+          <ChevronLeft size={14} /> {t('onboarding.back')}
         </button>
         <button
           className="btn primary"
@@ -899,10 +958,15 @@ export function AIConfigWizard({
           onClick={() => void writeFiles()}
           type="button"
         >
-          {writing
-            ? <><Loader2 size={14} className="spin" /> Writing…</>
-            : <><Check size={14} /> Write {generatedFiles?.length ?? 0} file{(generatedFiles?.length ?? 0) !== 1 ? 's' : ''}</>
-          }
+          {writing ? (
+            <>
+              <Loader2 size={14} className="spin" /> {t('aiWizard.writing')}
+            </>
+          ) : (
+            <>
+              <Check size={14} /> {interp(t('aiWizard.writeN'), { n: generatedFiles?.length ?? 0 })}
+            </>
+          )}
         </button>
       </div>
     </>

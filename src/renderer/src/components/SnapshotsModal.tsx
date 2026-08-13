@@ -5,22 +5,22 @@ import { useUIStore } from '../stores/ui'
 import { useRepoStore } from '../stores/repo'
 import { useSettingsStore } from '../stores/settings'
 import type { SnapshotInfo } from '../../../shared/types'
-import { useT } from '../i18n'
+import { useT, t as tr, interp, type TranslationKey } from '../i18n'
 
-const INTERVALS = [
-  { label: 'Off', min: 0 },
-  { label: '5 min', min: 5 },
-  { label: '15 min', min: 15 },
-  { label: '30 min', min: 30 }
+const INTERVALS: { labelKey: TranslationKey; min: number }[] = [
+  { labelKey: 'snapshots.intervalOff', min: 0 },
+  { labelKey: 'snapshots.interval5', min: 5 },
+  { labelKey: 'snapshots.interval15', min: 15 },
+  { labelKey: 'snapshots.interval30', min: 30 }
 ]
 
 function timeLabel(sec: number): string {
   const diff = Date.now() - sec * 1000
   const m = Math.round(diff / 60000)
-  if (m < 1) return 'just now'
-  if (m < 60) return `${m}m ago`
+  if (m < 1) return tr('time.justNow')
+  if (m < 60) return interp(tr('time.minutesAgo'), { n: m })
   const h = Math.round(m / 60)
-  if (h < 24) return `${h}h ago`
+  if (h < 24) return interp(tr('time.hoursAgo'), { n: h })
   return new Date(sec * 1000).toLocaleString()
 }
 
@@ -58,9 +58,13 @@ export function SnapshotsModal({ repoPath }: { repoPath: string }): React.JSX.El
   const restore = (s: SnapshotInfo): void => {
     openModal({
       kind: 'confirm',
-      title: 'Restore snapshot',
-      message: `Apply this snapshot (${s.files} file${s.files === 1 ? '' : 's'}, ${timeLabel(s.time)}) back into the working tree? Current uncommitted changes are kept; conflicting files may need resolving.`,
-      confirmLabel: 'Restore',
+      title: t('snapshots.restoreTitle'),
+      message: interp(t('snapshots.restoreConfirm'), {
+        files: s.files,
+        fileWord: s.files === 1 ? t('snapshots.file') : t('snapshots.files'),
+        when: timeLabel(s.time)
+      }),
+      confirmLabel: t('snapshots.restore'),
       onConfirm: () => {
         void gitApi
           .restoreSnapshot(repoPath, s.sha)
@@ -99,7 +103,7 @@ export function SnapshotsModal({ repoPath }: { repoPath: string }): React.JSX.El
                 className={`codesearch-tab ${minutes === iv.min ? 'active' : ''}`}
                 onClick={() => update((s) => ({ ...s, wipSnapshotMinutes: iv.min }))}
               >
-                {iv.min === 0 ? t('snapshots.off') : iv.label}
+                {iv.min === 0 ? t('snapshots.off') : t(iv.labelKey)}
               </button>
             ))}
           </div>

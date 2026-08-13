@@ -1,7 +1,9 @@
 // Gitcito mascot — a friendly, curious axolotl that guides users through
 // repository history. Used in welcome, empty, loading and error states.
+import { useT } from '../i18n'
 
 export function Axolotl({ size = 96 }: { size?: number }): React.JSX.Element {
+  const t = useT()
   return (
     <svg
       width={size}
@@ -10,7 +12,7 @@ export function Axolotl({ size = 96 }: { size?: number }): React.JSX.Element {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       role="img"
-      aria-label="Gitcito axolotl mascot"
+      aria-label={t('axolotl.alt')}
     >
       {/* External gills — playful brand-colored fronds */}
       <g stroke="#ff8fb1" strokeWidth="5" strokeLinecap="round">

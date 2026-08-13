@@ -4,7 +4,7 @@ import { gitApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
 import { useRepoStore, repoActions } from '../stores/repo'
 import type { StackInfo } from '../../../shared/types'
-import { useT } from '../i18n'
+import { useT, interp } from '../i18n'
 
 export function StackModal({ repoPath }: { repoPath: string }): React.JSX.Element {
   const t = useT()
@@ -37,9 +37,9 @@ export function StackModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
     openModal({
       kind: 'input',
       title: t('stack.newStacked'),
-      label: `Create a branch on top of "${repo?.branches.current ?? 'current'}"`,
+      label: interp(t('stack.onTopOf'), { branch: repo?.branches.current ?? t('stack.currentBranch') }),
       placeholder: 'feature/part-2',
-      submitLabel: 'Create',
+      submitLabel: t('common.create'),
       onSubmit: (name) => void repoActions.createStackedBranch(repoPath, name)
     })
   }
@@ -77,7 +77,7 @@ export function StackModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
           className="btn primary small"
           onClick={() => void after(repoActions.stackRestack(repoPath, leaf))}
           disabled={!anyRestack || !leaf}
-          title={anyRestack ? 'Cascade-rebase the stack onto current parents' : 'Nothing to restack'}
+          title={anyRestack ? t('stack.restackHint') : t('stack.nothingToRestack')}
         >
           <RefreshCw size={13} /> {t('stack.restack')}
         </button>

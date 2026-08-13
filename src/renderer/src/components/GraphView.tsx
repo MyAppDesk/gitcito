@@ -1286,8 +1286,8 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
 
   const renderGroup = (g: RefGroup, c: GraphCommit, laneColor?: string): React.JSX.Element => {
     const title = g.isTag
-      ? `${g.label}${repo.remoteTagNames.includes(g.label) ? ' · pushed' : ' · local only'}`
-      : `${g.label}${g.isLocal ? ' · local' : ''}${g.remotes.length ? ` · ${g.remotes.join(', ')}` : ''}`
+      ? `${g.label}${repo.remoteTagNames.includes(g.label) ? ` · ${t('ref.pushed')}` : ` · ${t('ref.localOnly')}`}`
+      : `${g.label}${g.isLocal ? ` · ${t('ref.local')}` : ''}${g.remotes.length ? ` · ${g.remotes.join(', ')}` : ''}`
     // Active branch (HEAD) gets a solid lane-colored pill so it stands out as
     // the checked-out branch; others keep the soft lane tint.
     const solidStyle = laneColor
@@ -1690,7 +1690,7 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
                       <span key="message" className="row-subject wip-subject">
                         <input
                           className="wip-input"
-                          placeholder="Work in progress"
+                          placeholder={t('graph.wipPlaceholder')}
                           value={draft}
                           maxLength={100}
                           onChange={(e) => setDraft(repo.path, e.target.value)}

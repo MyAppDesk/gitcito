@@ -1,0 +1,26 @@
+{
+  "_comment": "Strings that are intentionally identical in every language: proper nouns, product names, filenames, git/CLI tokens. Anything a user reads that is NOT in this list must go through the i18n dictionary. Keep it sorted and keep it small.",
+  "allow": [
+    ".cursorrules (legacy)",
+    "Aider",
+    "Azure DevOps",
+    "Bitbucket",
+    "Claude Code",
+    "Codex (OpenAI)",
+    "Cursor",
+    "Git Hooks",
+    "Git LFS",
+    "GitHub",
+    "GitHub Copilot",
+    "GitLab",
+    "Gitcito",
+    "MCPs",
+    "OpenCode",
+    "URL",
+    "Windsurf",
+    "ghp_…",
+    "gitcito",
+    "glpat-…",
+    "username:app_password"
+  ]
+}

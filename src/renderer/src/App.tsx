@@ -5,7 +5,7 @@ import { useSettingsStore } from './stores/settings'
 import { useRepoStore, repoActions, type RepoData } from './stores/repo'
 import { useUIStore } from './stores/ui'
 import { tabActiveRepoPath, tabRepos, type ConflictOpKind, type GroupTab, type PageTab } from '../../shared/types'
-import { useT } from './i18n'
+import { useT, t as tr, interp } from './i18n'
 import { applyAppTheme, applyCodeTheme, findAppTheme, findCodeTheme } from './theme/themes'
 import { TitleBar } from './components/TitleBar'
 import { Toolbar } from './components/Toolbar'
@@ -45,6 +45,7 @@ import { folderOpenMenuItems } from './lib/openWith'
 import { hostingApi, gitApi, cliApi, keychainApi } from './infrastructure/api'
 
 function InitRepo({ path }: { path: string }): React.JSX.Element {
+  const t = useT()
   const [busy, setBusy] = useState(false)
   const init = async (): Promise<void> => {
     setBusy(true)
@@ -59,12 +60,12 @@ function InitRepo({ path }: { path: string }): React.JSX.Element {
   return (
     <div className="welcome">
       <div className="welcome-card">
-        <h1>Not a Git repository</h1>
+        <h1>{t('initRepo.title')}</h1>
         <p>
-          <code>{path}</code> isn’t tracked by Git yet.
+          {interp(t('initRepo.body'), { path })}
         </p>
         <button className="btn primary" disabled={busy} onClick={() => void init()}>
-          {busy ? 'Initializing…' : 'Initialize repository'}
+          {busy ? t('initRepo.initializing') : t('initRepo.initialize')}
         </button>
       </div>
     </div>
@@ -72,6 +73,7 @@ function InitRepo({ path }: { path: string }): React.JSX.Element {
 }
 
 function GroupView({ tab }: { tab: GroupTab }): React.JSX.Element {
+  const t = useT()
   const { settings, addRepoToGroup, removeRepoFromGroup, renameRepoInGroup, reorderReposInGroup, setGroupActiveRepo } = useSettingsStore()
   const openModal = useUIStore((s) => s.openModal)
 
@@ -117,7 +119,7 @@ function GroupView({ tab }: { tab: GroupTab }): React.JSX.Element {
           <img className="welcome-art" src={gitcitoLaunch} alt="" draggable={false} />
         </div>
         <h1>{tab.name}</h1>
-        <p>Manage repositories in this group.</p>
+        <p>{t('group.manageHint')}</p>
         {tab.repos.length > 0 && (
           <div className="group-batch-row">
             <button className="btn ghost small" onClick={() => void repoActions.batch(tab.repos.map((r) => r.path), 'fetch')}>
@@ -237,6 +239,7 @@ function ConflictBanner({ repo }: { repo: RepoData }): React.JSX.Element | null 
 }
 
 export default function App(): React.JSX.Element {
+  const t = useT()
   const settingsLoaded = useSettingsStore((s) => s.loaded)
   const settings = useSettingsStore((s) => s.settings)
   const ensure = useRepoStore((s) => s.ensure)
@@ -546,7 +549,8 @@ export default function App(): React.JSX.Element {
             // Don't fire on the first poll (would dump the existing backlog).
             if (!notifPrimed.current || !notify) continue
             if (n.reason !== 'review_requested' && n.reason !== 'ci_activity') continue
-            const heading = n.reason === 'review_requested' ? 'Review requested' : 'CI activity'
+            const heading =
+              n.reason === 'review_requested' ? tr('notif.reviewRequested') : tr('notif.ciActivity')
             try {
               const note = new Notification(`${heading} · ${n.repoFullName}`, { body: n.title })
               note.onclick = () => void window.api.openExternal(n.url)
@@ -700,7 +704,7 @@ export default function App(): React.JSX.Element {
                   {!forceConflictPanel && (
                     <button
                       className="right-panel-close"
-                      title="Close panel"
+                      title={t('app.closePanel')}
                       onClick={() => useRepoStore.getState().select(repo.path, null)}
                     >
                       <X size={15} />
@@ -716,7 +720,7 @@ export default function App(): React.JSX.Element {
                     ) : repo.selected?.type === 'commit' ? (
                       <CommitDetails repo={repo} hash={repo.selected.hash} />
                     ) : (
-                      <div className="panel-empty">Select a row to inspect details</div>
+                      <div className="panel-empty">{t('app.selectRow')}</div>
                     )}
                   </div>
                 </motion.section>
@@ -796,14 +800,14 @@ export default function App(): React.JSX.Element {
           <footer className="statusbar">
             <button
               className="status-path status-path-btn"
-              title="Open Folder"
+              title={t('sidebar.openFolder')}
               onClick={(e) => {
                 const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
                 const items = folderOpenMenuItems(repo.path, settings.defaultOpenApp, {
-                  openFolder: 'Open Folder',
-                  openWithDefault: (name) => `Open with ${name}`,
-                  openWith: 'Open With…',
-                  copyPath: 'Copy folder path'
+                  openFolder: t('sidebar.openFolder'),
+                  openWithDefault: (name) => interp(t('sidebar.openWithApp'), { name }),
+                  openWith: t('sidebar.openFolderWith'),
+                  copyPath: t('common.copyFolderPath')
                 })
                 useUIStore.getState().openContextMenu(r.left, r.top - 6 - items.length * 28, items)
               }}
@@ -816,7 +820,7 @@ export default function App(): React.JSX.Element {
               <span className="status-sep" />
               <button
                 className="status-branch-profile status-branch-btn"
-                title="Switch branch"
+                title={t('app.switchBranch')}
                 onClick={(e) => {
                   const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
                   const items = repo.branches.locals.map((b) => ({
@@ -835,16 +839,16 @@ export default function App(): React.JSX.Element {
                   <span className="status-sep" />
                   <button
                     className="status-issue-btn"
-                    title="Report an issue on GitHub"
+                    title={t('app.reportIssueTitle')}
                     onClick={() => void window.api.openExternal('https://github.com/MyAppDesk/gitcito/issues/new')}
                   >
                     <Bug size={12} />
-                    <span>Report issue</span>
+                    <span>{t('app.reportIssue')}</span>
                   </button>
                   <span className="status-sep" />
                   <button
                     className="status-version status-version-btn"
-                    title="View changelog"
+                    title={t('app.viewChangelog')}
                     onClick={() => useSettingsStore.getState().openPageTab({ type: 'changelog' })}
                   >
                     v{appVersion}
@@ -852,7 +856,7 @@ export default function App(): React.JSX.Element {
                   {pendingUpdate && updateInfo && (
                     <button
                       className="status-update-badge"
-                      title={`v${updateInfo.version} available`}
+                      title={interp(t('app.updateAvailable'), { version: updateInfo.version })}
                       onClick={revealUpdate}
                     >
                       <Download size={12} />

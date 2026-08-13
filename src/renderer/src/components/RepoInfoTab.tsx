@@ -28,8 +28,10 @@ export function RepoInfoTab({ repoPath }: { repoPath: string }): React.JSX.Eleme
     void infoApi.list(repoPath).then(setEntries)
   }, [repoPath])
 
-  const startAdd = (): void =>
-    setDraft({ field: 'website', label: fieldPreset('website').label, value: '' })
+  /** Default (translated) label for a preset. */
+  const presetLabel = (id: string): string => t(fieldPreset(id).labelKey)
+
+  const startAdd = (): void => setDraft({ field: 'website', label: presetLabel('website'), value: '' })
   const startEdit = (e: InfoEntry): void =>
     setDraft({ id: e.id, field: e.field, label: e.label, value: e.value })
 
@@ -40,7 +42,7 @@ export function RepoInfoTab({ repoPath }: { repoPath: string }): React.JSX.Eleme
         ? {
             ...d,
             field: id,
-            label: !d.label.trim() || d.label === fieldPreset(d.field).label ? fieldPreset(id).label : d.label
+            label: !d.label.trim() || d.label === presetLabel(d.field) ? presetLabel(id) : d.label
           }
         : d
     )
@@ -52,7 +54,7 @@ export function RepoInfoTab({ repoPath }: { repoPath: string }): React.JSX.Eleme
       const next = await infoApi.upsert(repoPath, {
         id: draft.id,
         field: draft.field,
-        label: draft.label.trim() || fieldPreset(draft.field).label,
+        label: draft.label.trim() || presetLabel(draft.field),
         value: draft.value.trim()
       })
       setEntries(next)
@@ -106,7 +108,7 @@ export function RepoInfoTab({ repoPath }: { repoPath: string }): React.JSX.Eleme
                 <select value={draft.field} onChange={(e) => pickField(e.target.value)}>
                   {FIELD_PRESETS.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.label}
+                      {t(p.labelKey)}
                     </option>
                   ))}
                 </select>

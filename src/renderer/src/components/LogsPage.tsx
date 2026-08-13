@@ -3,46 +3,48 @@ import { motion } from 'framer-motion'
 import { ScrollText, CheckCircle2, XCircle, Trash2, RefreshCw } from 'lucide-react'
 import { logApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
+import { useT, t as tr, interp, type TranslationKey } from '../i18n'
 import type { ActivityEvent, LogEntry } from '../../../shared/types'
 
 /** Singular, verb-style labels for an operation log row. */
-const EVENT_LOG_LABELS: Record<ActivityEvent, string> = {
-  commit: 'Committed',
-  amend: 'Amended commit',
-  push: 'Pushed',
-  pull: 'Pulled',
-  fetch: 'Fetched',
-  branchCreate: 'Created branch',
-  branchDelete: 'Deleted branch',
-  merge: 'Merged',
-  rebase: 'Rebased',
-  stash: 'Stashed',
-  stashPop: 'Popped stash',
-  conflictResolved: 'Resolved conflict',
-  tagCreate: 'Created tag',
-  cherryPick: 'Cherry-picked',
-  revert: 'Reverted',
-  repoOpen: 'Opened repo',
-  clone: 'Cloned',
-  init: 'Initialized repo'
+const EVENT_LOG_LABELS: Record<ActivityEvent, TranslationKey> = {
+  commit: 'logEvent.commit',
+  amend: 'logEvent.amend',
+  push: 'logEvent.push',
+  pull: 'logEvent.pull',
+  fetch: 'logEvent.fetch',
+  branchCreate: 'logEvent.branchCreate',
+  branchDelete: 'logEvent.branchDelete',
+  merge: 'logEvent.merge',
+  rebase: 'logEvent.rebase',
+  stash: 'logEvent.stash',
+  stashPop: 'logEvent.stashPop',
+  conflictResolved: 'logEvent.conflictResolved',
+  tagCreate: 'logEvent.tagCreate',
+  cherryPick: 'logEvent.cherryPick',
+  revert: 'logEvent.revert',
+  repoOpen: 'logEvent.repoOpen',
+  clone: 'logEvent.clone',
+  init: 'logEvent.init'
 }
 
 function logTimeLabel(ms: number): string {
   const diff = Date.now() - ms
   const sec = Math.round(diff / 1000)
-  if (sec < 60) return 'just now'
+  if (sec < 60) return tr('time.justNow')
   const min = Math.round(sec / 60)
-  if (min < 60) return `${min}m ago`
+  if (min < 60) return interp(tr('time.minutesAgo'), { n: min })
   const hr = Math.round(min / 60)
-  if (hr < 24) return `${hr}h ago`
+  if (hr < 24) return interp(tr('time.hoursAgo'), { n: hr })
   const day = Math.round(hr / 24)
-  if (day < 7) return `${day}d ago`
+  if (day < 7) return interp(tr('time.daysAgo'), { n: day })
   return new Date(ms).toLocaleDateString()
 }
 
 /** Full-page operation log: a chronological, append-only record of git
  *  operations gitcito ran, filterable by repository. Opened as a page tab. */
 export function LogsPage(): React.JSX.Element {
+  const t = useT()
   const toast = useUIStore((s) => s.toast)
   const [entries, setEntries] = useState<LogEntry[]>([])
   const [repoFilter, setRepoFilter] = useState<string>('all')
@@ -64,7 +66,7 @@ export function LogsPage(): React.JSX.Element {
   const clear = async (): Promise<void> => {
     setEntries(await logApi.clear())
     setRepoFilter('all')
-    toast('success', 'Log cleared')
+    toast('success', t('logs.cleared'))
   }
 
   // Distinct repos seen in the log, for the filter dropdown.
@@ -99,19 +101,17 @@ export function LogsPage(): React.JSX.Element {
           <div className="changelog-title">
             <ScrollText size={20} />
             <div>
-              <h1>Operation log</h1>
-              <span className="settings-hint">
-                Git operations gitcito ran, newest first. Stored locally on this machine.
-              </span>
+              <h1>{t('logs.title')}</h1>
+              <span className="settings-hint">{t('logs.subtitle')}</span>
             </div>
           </div>
         </header>
 
         <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: 14 }}>
           <label className="settings-field" style={{ maxWidth: 280 }}>
-            <span className="settings-field-label">Repository</span>
+            <span className="settings-field-label">{t('logs.repository')}</span>
             <select value={repoFilter} onChange={(e) => setRepoFilter(e.target.value)}>
-              <option value="all">All repositories</option>
+              <option value="all">{t('logs.allRepositories')}</option>
               {repos.map(([path, name]) => (
                 <option key={path} value={path}>
                   {name}
@@ -121,7 +121,7 @@ export function LogsPage(): React.JSX.Element {
           </label>
           <button className="btn ghost small" onClick={() => void refresh()} disabled={loading}>
             <RefreshCw size={13} className={loading ? 'spin' : undefined} />
-            Refresh
+            {t('logs.refresh')}
           </button>
           <button
             className="btn ghost small"
@@ -130,13 +130,13 @@ export function LogsPage(): React.JSX.Element {
             style={{ marginLeft: 'auto' }}
           >
             <Trash2 size={13} />
-            Clear log
+            {t('logs.clear')}
           </button>
         </div>
 
         {filtered.length === 0 ? (
           <p className="settings-hint">
-            {loading ? 'Loading…' : 'No operations recorded yet.'}
+            {loading ? t('common.loading') : t('logs.empty')}
           </p>
         ) : (
           <div
@@ -164,7 +164,7 @@ export function LogsPage(): React.JSX.Element {
                   <XCircle size={14} color="var(--red)" style={{ flexShrink: 0 }} />
                 )}
                 <span style={{ color: 'var(--text-1)', flexShrink: 0, minWidth: 130 }}>
-                  {EVENT_LOG_LABELS[e.event] ?? e.event}
+                  {EVENT_LOG_LABELS[e.event] ? t(EVENT_LOG_LABELS[e.event]) : e.event}
                 </span>
                 <span
                   style={{

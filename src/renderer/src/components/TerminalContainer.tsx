@@ -16,6 +16,7 @@ import { ResizeHandle } from './ResizeHandle'
 import { useTerminalsStore, type TermGroup } from '../stores/terminals'
 import { useTermTitlesStore } from '../stores/termTitles'
 import { useUIStore } from '../stores/ui'
+import { useT } from '../i18n'
 
 const MIN_PANEL_PX = 80
 
@@ -95,6 +96,7 @@ function TerminalGroupView({
 }
 
 export function TerminalContainer({ cwd }: { cwd: string }): React.JSX.Element {
+  const t = useT()
   const repo = useTerminalsStore((s) => s.byRepo[cwd])
   const ensureRepo = useTerminalsStore((s) => s.ensureRepo)
   const addGroup = useTerminalsStore((s) => s.addGroup)
@@ -221,7 +223,7 @@ export function TerminalContainer({ cwd }: { cwd: string }): React.JSX.Element {
         <div className="terminal-list-collapsed">
           <button
             className="icon-btn"
-            title="Show terminals"
+            title={t('terminal.showList')}
             onClick={() => setLayout({ terminalListCollapsed: false })}
           >
             <PanelRightOpen size={15} />
@@ -239,14 +241,14 @@ export function TerminalContainer({ cwd }: { cwd: string }): React.JSX.Element {
           />
           <div className="terminal-list" style={{ width: listWidth }}>
             <div className="terminal-list-head">
-              <span>Terminals</span>
+              <span>{t('terminal.listTitle')}</span>
               <span className="terminal-list-head-actions">
-                <button className="icon-btn" onClick={() => addGroup(cwd, cwd)} title="New terminal">
+                <button className="icon-btn" onClick={() => addGroup(cwd, cwd)} title={t('terminal.new')}>
                   <Plus size={14} />
                 </button>
                 <button
                   className="icon-btn"
-                  title="Hide list"
+                  title={t('terminal.hideList')}
                   onClick={() => setLayout({ terminalListCollapsed: true })}
                 >
                   <PanelRightClose size={14} />
@@ -265,19 +267,19 @@ export function TerminalContainer({ cwd }: { cwd: string }): React.JSX.Element {
                   e.preventDefault()
                   openContextMenu(e.clientX, e.clientY, [
                     {
-                      label: 'Rename…',
+                      label: t('terminal.rename'),
                       icon: <Pencil size={13} />,
                       onClick: () => startRename(group.id, null, groupName)
                     },
                     {
-                      label: 'Split terminal',
+                      label: t('terminal.split'),
                       icon: <SquareSplitHorizontal size={13} />,
                       onClick: () => splitGroup(cwd, group.id, cwd)
                     },
                     ...(split
                       ? [
                           {
-                            label: 'Unsplit terminal',
+                            label: t('terminal.unsplit'),
                             icon: <Ungroup size={13} />,
                             onClick: () => unsplitGroup(cwd, group.id)
                           }
@@ -285,7 +287,7 @@ export function TerminalContainer({ cwd }: { cwd: string }): React.JSX.Element {
                       : []),
                     { separator: true },
                     {
-                      label: 'Kill terminal',
+                      label: t('terminal.kill'),
                       icon: <Trash2 size={13} />,
                       danger: true,
                       onClick: () => removeGroup(cwd, group.id)
@@ -310,7 +312,7 @@ export function TerminalContainer({ cwd }: { cwd: string }): React.JSX.Element {
                       {split ? (
                         <button
                           className="icon-btn row-collapse-btn"
-                          title={groupCollapsed ? 'Expand' : 'Collapse'}
+                          title={groupCollapsed ? t('common.expand') : t('common.collapse')}
                           onClick={(e) => {
                             e.stopPropagation()
                             toggleGroupCollapse(group.id)
@@ -326,7 +328,7 @@ export function TerminalContainer({ cwd }: { cwd: string }): React.JSX.Element {
                       ) : (
                         <span
                           className="row-label"
-                          title="Double-click to rename"
+                          title={t('terminal.doubleClickRename')}
                           onDoubleClick={(e) => {
                             e.stopPropagation()
                             startRename(group.id, null, groupName)
@@ -338,7 +340,7 @@ export function TerminalContainer({ cwd }: { cwd: string }): React.JSX.Element {
                       <span className="row-actions">
                         <button
                           className="icon-btn"
-                          title="Rename terminal"
+                          title={t('terminal.renameTerminal')}
                           onClick={(e) => {
                             e.stopPropagation()
                             startRename(group.id, null, groupName)
@@ -348,7 +350,7 @@ export function TerminalContainer({ cwd }: { cwd: string }): React.JSX.Element {
                         </button>
                         <button
                           className="icon-btn"
-                          title="Split terminal"
+                          title={t('terminal.split')}
                           onClick={(e) => {
                             e.stopPropagation()
                             splitGroup(cwd, group.id, cwd)
@@ -358,7 +360,7 @@ export function TerminalContainer({ cwd }: { cwd: string }): React.JSX.Element {
                         </button>
                         <button
                           className="icon-btn"
-                          title="Kill terminal"
+                          title={t('terminal.kill')}
                           onClick={(e) => {
                             e.stopPropagation()
                             removeGroup(cwd, group.id)
@@ -379,13 +381,13 @@ export function TerminalContainer({ cwd }: { cwd: string }): React.JSX.Element {
                             e.stopPropagation()
                             openContextMenu(e.clientX, e.clientY, [
                               {
-                                label: 'Rename…',
+                                label: t('terminal.rename'),
                                 icon: <Pencil size={13} />,
                                 onClick: () => startRename(group.id, panel.id, panelName)
                               },
                               { separator: true },
                               {
-                                label: 'Kill panel',
+                                label: t('terminal.killPanel'),
                                 icon: <Trash2 size={13} />,
                                 danger: true,
                                 onClick: () => removePanel(cwd, group.id, panel.id)
@@ -415,7 +417,7 @@ export function TerminalContainer({ cwd }: { cwd: string }): React.JSX.Element {
                               ) : (
                                 <span
                                   className="row-label"
-                                  title="Double-click to rename"
+                                  title={t('terminal.doubleClickRename')}
                                   onDoubleClick={(e) => {
                                     e.stopPropagation()
                                     startRename(group.id, panel.id, panelName)
@@ -427,7 +429,7 @@ export function TerminalContainer({ cwd }: { cwd: string }): React.JSX.Element {
                               <span className="row-actions">
                                 <button
                                   className="icon-btn"
-                                  title="Rename panel"
+                                  title={t('terminal.renamePanel')}
                                   onClick={(e) => {
                                     e.stopPropagation()
                                     startRename(group.id, panel.id, panelName)
@@ -437,7 +439,7 @@ export function TerminalContainer({ cwd }: { cwd: string }): React.JSX.Element {
                                 </button>
                                 <button
                                   className="icon-btn"
-                                  title="Kill panel"
+                                  title={t('terminal.killPanel')}
                                   onClick={(e) => {
                                     e.stopPropagation()
                                     removePanel(cwd, group.id, panel.id)

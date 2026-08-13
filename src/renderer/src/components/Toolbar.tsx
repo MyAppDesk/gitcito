@@ -260,7 +260,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
         </button>
         <button
           className="tool-btn"
-          title="Redo"
+          title={t('toolbar.redo')}
           disabled={repo.redoStack.length === 0 || inflight}
           onClick={() => void redo(path)}
         >
@@ -310,7 +310,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
         </button>
         <button
           className="tool-btn split"
-          title="Stash work in progress"
+          title={t('toolbar.stashWip')}
           disabled={inflight}
           onClick={() =>
             openModal({
@@ -325,7 +325,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
           }
         >
           <Archive size={17} />
-          <span>Stash</span>
+          <span>{t('toolbar.stash')}</span>
           <span className="split-arrow" onClick={(e) => {
               e.stopPropagation()
               const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
@@ -400,7 +400,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
 
       <div className="toolbar-group right">
         {busy && !busyOp && (
-          <span className="busy-indicator" title={`Fetched ${timeSince(repo.lastFetchAt)}`}>
+          <span className="busy-indicator" title={interp(t('toolbar.fetchedAgo'), { when: timeSince(repo.lastFetchAt) })}>
             <Loader2 size={13} className="spin" /> {busy}
           </span>
         )}

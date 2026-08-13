@@ -37,11 +37,27 @@ test: Add unit tests for git service
 
 Breaking changes: append `!` after the type — `feat!: Drop Node 18 support`
 
+## Translations
+
+Gitcito ships in English and Spanish. Every string a user can read must come
+from the dictionaries in `src/renderer/src/i18n/` — one file per locale
+(`en.ts`, `es.ts`), with `index.ts` exposing the API. Add the key to every
+locale file and render it with `t('your.key')` (see `CLAUDE.md` for the
+patterns, including interpolation and module-level constants).
+
+```bash
+npm run lint:i18n   # fails on any hardcoded user-facing string
+```
+
+This runs on pre-commit and in the test suite. Strings that must not be
+translated (product names, filenames, git tokens) belong in
+`scripts/i18n-allowlist.json` or carry an inline `// i18n-ignore <reason>`.
+
 ## Pull requests
 
 - PR title must follow the same `type: Subject` format (enforced by CI)
 - One concern per PR
-- `npm run typecheck` must pass
+- `npm run typecheck` and `npm run lint:i18n` must pass
 
 ## Releasing
 

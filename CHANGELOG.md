@@ -1,5 +1,25 @@
 
 
+## [3.0.0](https://github.com/MyAppDesk/gitcito/compare/v2.12.0...v3.0.0) (2026-08-13)
+
+
+### Features
+
+* add Conflict Radar to visualize merge conflicts ([21d3bea](https://github.com/MyAppDesk/gitcito/commit/21d3bea42c3fb0de3bfcfddaf115f308a7a75155))
+* add GitHub Pages workflow and site generation script ([8708c74](https://github.com/MyAppDesk/gitcito/commit/8708c748a1cf1e0eda2f366b3e901944a3d33a25))
+* add i18n commands and hooks for locale management ([cf5cb40](https://github.com/MyAppDesk/gitcito/commit/cf5cb40833d2ea9228565e94454f405c3e4362ef))
+* add Mission Control panel and integrate with Command Palette ([ec8c2a0](https://github.com/MyAppDesk/gitcito/commit/ec8c2a0f4afcbf07caae916c27e1f0a659d4031c))
+* add range-diff feature to compare commit changes ([9fc519f](https://github.com/MyAppDesk/gitcito/commit/9fc519f6a5c78f0e42f4b7c80c7cc6975649c21e))
+* add semantic-diff script and update .gitignore ([339a240](https://github.com/MyAppDesk/gitcito/commit/339a2409a06f83b01ae53ab9143b82d501a059d2))
+* add Time Machine feature for browsing commit history ([9b9b625](https://github.com/MyAppDesk/gitcito/commit/9b9b625457d945b09baf429f69f01406fde04048))
+* add timelapseData for visualizing commit history ([bdd6b81](https://github.com/MyAppDesk/gitcito/commit/bdd6b814f2fa24ee05c5f9d3d360a11ae6b6a6d9))
+* implement absorb feature for staged review fixes ([e7dac6d](https://github.com/MyAppDesk/gitcito/commit/e7dac6d0d315a13308e6828877b1ccacb2056a7e))
+
+
+### Bug Fixes
+
+* update documentation for linting and verification process ([f77d6ac](https://github.com/MyAppDesk/gitcito/commit/f77d6accb19ff50df883a9a1864cfed13fe01a84))
+
 ## [2.12.0](https://github.com/MyAppDesk/gitcito/compare/v2.11.0...v2.12.0) (2026-08-13)
 
 

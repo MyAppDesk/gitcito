@@ -1,5 +1,12 @@
 
 
+## [3.0.1](https://github.com/MyAppDesk/gitcito/compare/v3.0.0...v3.0.1) (2026-08-13)
+
+
+### Bug Fixes
+
+* dismiss mission control on tab actions ([75abb71](https://github.com/MyAppDesk/gitcito/commit/75abb719af6acbf01002001170fd7c6fe5900e99))
+
 ## [3.0.0](https://github.com/MyAppDesk/gitcito/compare/v2.12.0...v3.0.0) (2026-08-13)
 
 

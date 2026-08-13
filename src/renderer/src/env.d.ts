@@ -124,7 +124,7 @@ interface PreloadApi {
   hosting: {
     listRepos(provider: string, token: string, org?: string): Promise<unknown>
     listOwners(provider: string, token: string, org?: string): Promise<unknown>
-    whoAmI(provider: string, token: string, org?: string): Promise<unknown>
+    whoAmI(provider: string, token: string, org?: string, interactive?: boolean): Promise<unknown>
     createRepo(provider: string, token: string, opts: unknown, org?: string): Promise<unknown>
     listPRs(remoteUrl: string, tokens: unknown): Promise<unknown>
     listReleases(remoteUrl: string, tokens: unknown): Promise<unknown>

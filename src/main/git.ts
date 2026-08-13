@@ -349,7 +349,7 @@ async function upstreamRemote(repoPath: string): Promise<string> {
 async function withRemoteAuth<T>(repoPath: string, remote: string, op: () => Promise<T>): Promise<T> {
   const url = await getRemoteUrl(repoPath, remote)
   const host = url ? hostFromUrl(url) : undefined
-  const token = host ? await activeProfileToken(host) : undefined
+  const token = host ? await activeProfileToken(host, repoPath) : undefined
   const authed = token ? authedCloneUrl(url, host, token) : url
   if (!authed || authed === url) return op()
   await pexecFile('git', ['-C', repoPath, 'remote', 'set-url', remote, authed])

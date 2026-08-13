@@ -23,6 +23,7 @@ import { gitApi, hostingApi } from '../infrastructure/api'
 import { useUIStore } from './ui'
 import { useSettingsStore } from './settings'
 import { isSecretFile } from '../lib/secrets'
+import { commitHookFailureHint } from '../lib/commitLint'
 
 /** Repos already warned this session about pushing tracked secrets (don't nag). */
 const secretPushWarned = new Set<string>()
@@ -1016,11 +1017,24 @@ export const repoActions = {
     useRepoStore.getState().run(path, 'Renamed stash', () => gitApi.renameStash(path, index, message), undefined, null, undefined, ['stashes']),
 
   commit: (path: string, message: string, amend = false) =>
-    useRepoStore.getState().run(path, amend ? 'Amended commit' : 'Committed', () => gitApi.commit(path, message, amend), {
-      label: 'commit',
-      undo: () => gitApi.reset(path, 'HEAD~1', 'soft'),
-      redo: () => gitApi.commit(path, message)
-    }, null, undefined, ['log', 'status', 'branches']),
+    useRepoStore.getState().run(
+      path,
+      amend ? 'Amended commit' : 'Committed',
+      () => gitApi.commit(path, message, amend),
+      {
+        label: 'commit',
+        undo: () => gitApi.reset(path, 'HEAD~1', 'soft'),
+        redo: () => gitApi.commit(path, message)
+      },
+      null,
+      (error) => {
+        const hint = commitHookFailureHint(error)
+        if (!hint) return false
+        toast('error', hint)
+        return true
+      },
+      ['log', 'status', 'branches']
+    ),
 
   amendCommitMessage: (path: string, message: string, previousMessage?: string) =>
     useRepoStore

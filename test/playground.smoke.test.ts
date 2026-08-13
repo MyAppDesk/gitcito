@@ -56,7 +56,8 @@ const EXPECTED = [
   'pinned-branches',
   'ai-review',
   'nested-folders',
-  'file-nav'
+  'file-nav',
+  'host-remotes'
 ]
 
 describe('playground fixtures', () => {

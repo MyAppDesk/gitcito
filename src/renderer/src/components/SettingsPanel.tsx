@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useId, useMemo, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import {
   Plus,
@@ -364,36 +364,52 @@ export function IntegrationsPage({
   const active = INTEGRATIONS.find((i) => i.id === tab) ?? INTEGRATIONS[0]
   const ActiveIcon = active.icon
   const token = profile[active.field]
-  const connected = !!token.trim()
   const azureOrg = profile.azureOrg ?? ''
   const whoAmIOrg = active.id === 'azure' ? azureOrg.trim() : undefined
+  const azureOrgRequired = t('settings.azureOrgRequired')
 
   const [account, setAccount] = useState<ConnectedAccount | null>(null)
   const [accountError, setAccountError] = useState<string | null>(null)
   const [loadingAccount, setLoadingAccount] = useState(false)
 
-  useEffect(() => {
-    setAccount(null)
-    setAccountError(null)
-    if (!connected) return
-    let alive = true
-    setLoadingAccount(true)
-    void hostingApi
-      .whoAmI(active.id, token, whoAmIOrg)
-      .then((info) => {
-        if (alive) setAccount(info)
-      })
-      .catch((err: Error) => {
-        if (alive) setAccountError(err.message)
-      })
-      .finally(() => {
-        if (alive) setLoadingAccount(false)
-      })
-    return () => {
-      alive = false
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active.id, token, connected, whoAmIOrg])
+  // A token is no longer the only way to be connected: git's own credential
+  // helper may already hold one for this host. So the connected state is
+  // "an account resolved", not "a token was typed".
+  const connected = !!account
+
+  const check = useCallback(
+    (interactive: boolean): (() => void) => {
+      let alive = true
+      setAccount(null)
+      setAccountError(null)
+      if (active.id === 'azure' && !whoAmIOrg) {
+        setLoadingAccount(false)
+        setAccountError(azureOrgRequired)
+        return () => {
+          alive = false
+        }
+      }
+      setLoadingAccount(true)
+      void hostingApi
+        .whoAmI(active.id, token, whoAmIOrg, interactive)
+        .then((info) => {
+          if (alive) setAccount(info)
+        })
+        .catch((err: Error) => {
+          if (alive) setAccountError(err.message)
+        })
+        .finally(() => {
+          if (alive) setLoadingAccount(false)
+        })
+      return () => {
+        alive = false
+      }
+    },
+    [active.id, token, whoAmIOrg, azureOrgRequired]
+  )
+
+  // Silent on mount — opening Settings must never pop four sign-in windows.
+  useEffect(() => check(false), [check])
 
   return (
     <>
@@ -405,7 +421,9 @@ export function IntegrationsPage({
       <div className="remote-tabs">
         {INTEGRATIONS.map((i) => {
           const Icon = i.icon
-          const isConnected = !!profile[i.field].trim()
+          // For the tab being viewed the resolved state is known; the others can
+          // only report whether a token is configured, without probing them all.
+          const isConnected = i.id === tab ? connected : !!profile[i.field].trim()
           return (
             <button
               key={i.id}
@@ -437,64 +455,67 @@ export function IntegrationsPage({
         )}
       </div>
 
-      {connected && (
-        <div className="connected-account">
-          {loadingAccount && <span className="settings-hint">{t('settings.loadingAccount')}</span>}
-          {!loadingAccount && accountError && <span className="connected-account-error">{accountError}</span>}
-          {!loadingAccount && account && (
-            <>
-              <div className="connected-account-row">
-                {account.avatarUrl ? (
-                  <img className="connected-account-avatar" src={account.avatarUrl} alt="" />
-                ) : (
-                  <span className="connected-account-avatar connected-account-avatar-fallback">
-                    <UserCircle2 size={20} />
-                  </span>
-                )}
-                <div className="connected-account-info">
-                  <span className="connected-account-name">{account.name || account.login}</span>
-                  {account.name && account.name !== account.login && (
-                    <span className="connected-account-login">@{account.login}</span>
-                  )}
-                </div>
-                {account.profileUrl && (
-                  <button
-                    className="link-btn connected-account-link"
-                    type="button"
-                    onClick={() => void window.api.openExternal(account.profileUrl!)}
-                  >
-                    <ExternalLink size={12} /> {t('settings.viewProfile')}
-                  </button>
+      <div className="connected-account">
+        {loadingAccount && <span className="settings-hint">{t('settings.loadingAccount')}</span>}
+        {!loadingAccount && accountError && <span className="connected-account-error">{accountError}</span>}
+        {!loadingAccount && !account && !(active.id === 'azure' && !whoAmIOrg) && (
+          <button className="btn ghost small" type="button" onClick={() => check(true)}>
+            {t('settings.signInWithGit')}
+          </button>
+        )}
+        {!loadingAccount && account && (
+          <>
+            <div className="connected-account-row">
+              {account.avatarUrl ? (
+                <img className="connected-account-avatar" src={account.avatarUrl} alt="" />
+              ) : (
+                <span className="connected-account-avatar connected-account-avatar-fallback">
+                  <UserCircle2 size={20} />
+                </span>
+              )}
+              <div className="connected-account-info">
+                <span className="connected-account-name">{account.name || account.login}</span>
+                {account.name && account.name !== account.login && (
+                  <span className="connected-account-login">@{account.login}</span>
                 )}
               </div>
-              {!!account.orgs?.length && (
-                <details className="connected-account-orgs-details">
-                  <summary>
-                    <ChevronDown size={13} /> {t('settings.organizations').replace('{count}', String(account.orgs.length))}
-                  </summary>
-                  <div className="connected-org-circles">
-                    {account.orgs.map((o) => (
-                      <button
-                        key={o.login}
-                        type="button"
-                        className="connected-org-circle"
-                        title={o.login}
-                        onClick={() => o.url && void window.api.openExternal(o.url)}
-                      >
-                        {o.avatarUrl ? (
-                          <img src={o.avatarUrl} alt={o.login} />
-                        ) : (
-                          <span className="connected-org-circle-fallback">{o.login.slice(0, 2).toUpperCase()}</span>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                </details>
+              {account.profileUrl && (
+                <button
+                  className="link-btn connected-account-link"
+                  type="button"
+                  onClick={() => void window.api.openExternal(account.profileUrl!)}
+                >
+                  <ExternalLink size={12} /> {t('settings.viewProfile')}
+                </button>
               )}
-            </>
-          )}
-        </div>
-      )}
+            </div>
+            {!!account.orgs?.length && (
+              <details className="connected-account-orgs-details">
+                <summary>
+                  <ChevronDown size={13} /> {t('settings.organizations').replace('{count}', String(account.orgs.length))}
+                </summary>
+                <div className="connected-org-circles">
+                  {account.orgs.map((o) => (
+                    <button
+                      key={o.login}
+                      type="button"
+                      className="connected-org-circle"
+                      title={o.login}
+                      onClick={() => o.url && void window.api.openExternal(o.url)}
+                    >
+                      {o.avatarUrl ? (
+                        <img src={o.avatarUrl} alt={o.login} />
+                      ) : (
+                        <span className="connected-org-circle-fallback">{o.login.slice(0, 2).toUpperCase()}</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </details>
+            )}
+          </>
+        )}
+      </div>
 
       <label>
         {active.kind === 'app' ? t('settings.appPassword') : t('settings.pat')}
@@ -507,11 +528,13 @@ export function IntegrationsPage({
       </label>
       {active.id === 'azure' && (
         <label>
-          {t('settings.azureOrg')}
+          {t('settings.azureOrg')} *
           <input
             type="text"
             value={azureOrg}
             placeholder="e.g. contoso"
+            required
+            aria-required="true"
             onChange={(e) => edit({ azureOrg: e.target.value })}
           />
           <span className="settings-hint">{t('settings.azureOrgHint')}</span>

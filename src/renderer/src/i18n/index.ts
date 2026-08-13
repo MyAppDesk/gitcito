@@ -562,14 +562,16 @@ const en = {
   'settings.appPassword': 'App password',
   'settings.createToken': 'Create a token',
   'settings.azureOrg': 'Organization',
+  'settings.azureOrgRequired': 'Enter the Azure DevOps organization before signing in.',
   'settings.azureOrgHint':
-    'Required to validate the token. It is the name in dev.azure.com/<organization>.',
+    'Required for Entra/guest accounts. Use the first part after dev.azure.com/ — the organization, not the project (for example, contoso in dev.azure.com/contoso/my-project).',
   'settings.connected': 'Connected',
   'settings.notConnected': 'Not connected',
   'settings.integrationsForProfile': 'Connections for {name}',
   'settings.integrationsHint':
-    'GitHub and Azure DevOps power pull-request listing today; GitLab and Bitbucket tokens are stored for upcoming integrations.',
+    'Optional. Without a token, Gitcito uses the credential your git already has for the remote — the same one `git clone` uses — so each Azure DevOps organization signs in on its own.',
   'settings.loadingAccount': 'Loading account…',
+  'settings.signInWithGit': 'Sign in with git',
   'settings.viewProfile': 'View profile',
   'settings.organizations': 'Organizations ({count})',
 
@@ -1968,14 +1970,16 @@ const es: Dict = {
   'settings.appPassword': 'Contraseña de aplicación',
   'settings.createToken': 'Crear un token',
   'settings.azureOrg': 'Organización',
+  'settings.azureOrgRequired': 'Introduce la organización de Azure DevOps antes de iniciar sesión.',
   'settings.azureOrgHint':
-    'Necesaria para validar el token. Es el nombre en dev.azure.com/<organización>.',
+    'Obligatoria para cuentas Entra/invitadas. Usa la primera parte tras dev.azure.com/: la organización, no el proyecto (por ejemplo, contoso en dev.azure.com/contoso/mi-proyecto).',
   'settings.connected': 'Conectado',
   'settings.notConnected': 'Sin conectar',
   'settings.integrationsForProfile': 'Conexiones de {name}',
   'settings.integrationsHint':
-    'GitHub y Azure DevOps ya permiten listar pull requests; los tokens de GitLab y Bitbucket se guardan para próximas integraciones.',
+    'Opcional. Sin token, Gitcito usa la credencial que tu git ya tiene para el remoto — la misma que usa `git clone` — así cada organización de Azure DevOps inicia sesión por su cuenta.',
   'settings.loadingAccount': 'Cargando cuenta…',
+  'settings.signInWithGit': 'Iniciar sesión con git',
   'settings.viewProfile': 'Ver perfil',
   'settings.organizations': 'Organizaciones ({count})',
 

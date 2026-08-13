@@ -5,6 +5,17 @@ export interface LintHint {
   text: string
 }
 
+/** Turn commitlint's noisy hook output into an actionable composer error. */
+export function commitHookFailureHint(message: string): string | null {
+  if (/subject-empty|type-empty/i.test(message)) {
+    return 'Commit hook rejected the subject. This repository requires Conventional Commits — choose a type so, for example, `tmp` becomes `chore: tmp`.'
+  }
+  if (/commitlint|commit-msg script failed/i.test(message)) {
+    return 'Commit hook rejected the message. Review the repository’s commit-message rules and try again.'
+  }
+  return null
+}
+
 const SUBJECT_IDEAL = 50
 const SUBJECT_MAX = 72
 const BODY_WRAP = 72

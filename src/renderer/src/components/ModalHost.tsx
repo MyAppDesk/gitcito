@@ -577,7 +577,9 @@ function ProviderCreateForm({
 
   const [mode, setMode] = useState<'create' | 'existing'>('create')
   const [owner, setOwner] = useState<RemoteOwner | null>(null)
-  const [azureOrg, setAzureOrg] = useState('')
+  // Seeded from the profile so the organization already configured in Settings
+  // does not have to be typed a second time here.
+  const [azureOrg, setAzureOrg] = useState(profile.azureOrg ?? '')
   const [repoName, setRepoName] = useState(spec.matchName ?? '')
   const [remoteName, setRemoteName] = useState(spec.defaultName || 'origin')
   const [description, setDescription] = useState('')

@@ -1,4 +1,5 @@
 import { ipcMain, shell } from 'electron'
+import { apiToken, forgetCredential, isJwt, type GitCredential } from './credentials'
 import type {
   CiJob,
   CiState,
@@ -29,7 +30,7 @@ import type {
 } from '../shared/types'
 
 interface ParsedRemote {
-  provider: HostingProvider
+  provider: Exclude<HostingProvider, null>
   owner: string // github owner / azure organization
   project: string // azure project ('' for github)
   repo: string
@@ -69,20 +70,188 @@ function bitbucketAuth(token: string): string {
   return token.includes(':') ? `Basic ${Buffer.from(token).toString('base64')}` : `Bearer ${token}`
 }
 
+/**
+ * GitLab auth. A token typed into Settings keeps using the `PRIVATE-TOKEN`
+ * header it has always used; a credential borrowed from git is an OAuth access
+ * token, which GitLab only accepts as a bearer token.
+ */
+function gitlabAuth(auth: { token: string; cred?: GitCredential }): Record<string, string> {
+  return auth.cred ? { Authorization: `Bearer ${auth.token}` } : { 'PRIVATE-TOKEN': auth.token }
+}
+
+/**
+ * Bitbucket auth from either source. A borrowed credential arrives already split
+ * into username and password, which is exactly the Basic pair Bitbucket wants.
+ */
+function bitbucketAuthFor(auth: { token: string; cred?: GitCredential }): string {
+  if (auth.cred?.username) {
+    return `Basic ${Buffer.from(`${auth.cred.username}:${auth.cred.password}`).toString('base64')}`
+  }
+  return bitbucketAuth(auth.token)
+}
+
+/**
+ * Azure DevOps auth. A PAT goes in as Basic with an empty username — the scheme
+ * the docs describe. An Entra ID access token (what Git Credential Manager hands
+ * out, and what PATs are being replaced by) is a JWT and must be sent as Bearer.
+ */
+export function azureAuth(token: string): string {
+  return isJwt(token) ? `Bearer ${token}` : `Basic ${Buffer.from(`:${token}`).toString('base64')}`
+}
+
+/**
+ * Call the Azure DevOps REST API.
+ *
+ * Azure DevOps does not answer an unauthenticated API request with 401. It
+ * replies **203 Non-Authoritative Information** carrying an HTML sign-in page,
+ * which `res.ok` accepts, so a bad or expired PAT used to surface as
+ * `Unexpected token '<'` from JSON.parse rather than as an auth error. Anything
+ * that is not JSON is therefore treated as a rejected credential here.
+ */
+export async function adoJson<T>(url: string, token: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(url, {
+    ...init,
+    headers: {
+      Authorization: azureAuth(token),
+      Accept: 'application/json',
+      ...(init?.body ? { 'Content-Type': 'application/json' } : {}),
+      ...(init?.headers as Record<string, string>)
+    }
+  })
+
+  const body = await res.text()
+  if (!res.ok) {
+    // The API returns {message} on real errors; fall back to the status.
+    let message = ''
+    try {
+      message = (JSON.parse(body) as { message?: string }).message ?? ''
+    } catch {
+      /* not JSON — keep the status-only message */
+    }
+    throw new AzureAuthError(res.status, message)
+  }
+  // A sign-in page (203 + HTML), or an empty body from a 204.
+  const trimmed = body.trim()
+  if (!trimmed) return undefined as T
+  if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) throw new AzureAuthError(401, '')
+  try {
+    return JSON.parse(trimmed) as T
+  } catch {
+    throw new AzureAuthError(res.status, '')
+  }
+}
+
+/** An Azure DevOps failure carrying the status, so callers can retry or re-auth. */
+class AzureAuthError extends Error {
+  status: number
+  constructor(status: number, message: string) {
+    super(message ? `Azure DevOps: ${message}` : azureAuthError(status))
+    this.status = status
+  }
+}
+
+/** Whether a failure means "this credential is no good" rather than "this request was". */
+function isAuthFailure(err: unknown): boolean {
+  return err instanceof AzureAuthError && (err.status === 401 || err.status === 403)
+}
+
+/** The four provider token slots the renderer passes down. */
+export type HostTokens = { github?: string; azure?: string; gitlab?: string; bitbucket?: string }
+
+/**
+ * The token to use for a remote: the one configured in Settings, else whatever
+ * git's credential helper already holds for that URL. Returns the borrowed
+ * credential alongside it so an auth failure can evict it.
+ */
+async function tokenForRemote(
+  remoteUrl: string,
+  provider: Exclude<HostingProvider, null>,
+  tokens: HostTokens
+): Promise<{ token: string; cred?: GitCredential } | null> {
+  return apiToken(remoteUrl, tokens[provider])
+}
+
+/**
+ * Run an Azure DevOps request, and if a *borrowed* credential is rejected, drop
+ * it from the helper and try once more with a freshly minted one. A credential
+ * the user typed in themselves is never retried — it is simply wrong, and
+ * silently re-asking would hide that.
+ */
+async function withAzureRetry<T>(
+  remoteUrl: string,
+  auth: { token: string; cred?: GitCredential },
+  run: (token: string) => Promise<T>
+): Promise<T> {
+  try {
+    return await run(auth.token)
+  } catch (err) {
+    if (!auth.cred || !isAuthFailure(err)) throw err
+    await forgetCredential(remoteUrl, auth.cred)
+    const fresh = await apiToken(remoteUrl, undefined)
+    if (!fresh) throw err
+    return run(fresh.token)
+  }
+}
+
+/**
+ * The URL a provider's credential is filed under when there is no repository in
+ * hand (Settings, the clone browser). Azure DevOps keys per organization, since
+ * each one needs its own token.
+ */
+export function providerBaseUrl(provider: RepoHost, org?: string): string {
+  switch (provider) {
+    case 'github':
+      return 'https://github.com'
+    case 'gitlab':
+      return 'https://gitlab.com'
+    case 'bitbucket':
+      return 'https://bitbucket.org'
+    case 'azure':
+      return `https://dev.azure.com/${encodeURIComponent(org?.trim() ?? '')}`
+  }
+}
+
+/**
+ * The credential for a provider outside any repository. Same precedence as
+ * `tokenForRemote`: what the user configured, else what git already holds.
+ */
+async function tokenForProvider(
+  provider: RepoHost,
+  token: string,
+  org?: string
+): Promise<{ token: string; cred?: GitCredential } | null> {
+  return apiToken(providerBaseUrl(provider, org), token)
+}
+
+/** A uniform "no credential at all" message naming both ways to supply one. */
+function noCredential(provider: string, remoteUrl?: string): Error {
+  const host = (() => {
+    try {
+      return remoteUrl ? new URL(remoteUrl).host : ''
+    } catch {
+      return ''
+    }
+  })()
+  return new Error(
+    `No ${provider} credential${host ? ` for ${host}` : ''}. Either sign in with git (any credential helper — the same one \`git clone\` uses) or add a token in Settings → Integrations.`
+  )
+}
+
 async function listPullRequests(
   remoteUrl: string,
-  tokens: { github?: string; azure?: string; gitlab?: string; bitbucket?: string }
+  tokens: HostTokens
 ): Promise<{ provider: HostingProvider; prs: PullRequest[] }> {
   const parsed = parseRemoteUrl(remoteUrl)
   if (!parsed) return { provider: null, prs: [] }
+  const auth = await tokenForRemote(remoteUrl, parsed.provider, tokens)
 
   // GitLab merge requests
   if (parsed.provider === 'gitlab') {
-    if (!tokens.gitlab) return { provider: 'gitlab', prs: [] }
+    if (!auth) return { provider: 'gitlab', prs: [] }
     const pid = encodeURIComponent(`${parsed.owner}/${parsed.repo}`)
     const res = await fetch(
       `https://gitlab.com/api/v4/projects/${pid}/merge_requests?state=opened&per_page=30`,
-      { headers: { 'PRIVATE-TOKEN': tokens.gitlab } }
+      { headers: gitlabAuth(auth) }
     )
     if (!res.ok) throw new Error(`GitLab API error (${res.status})`)
     const data = (await res.json()) as Array<{
@@ -111,10 +280,10 @@ async function listPullRequests(
 
   // Bitbucket pull requests
   if (parsed.provider === 'bitbucket') {
-    if (!tokens.bitbucket) return { provider: 'bitbucket', prs: [] }
+    if (!auth) return { provider: 'bitbucket', prs: [] }
     const res = await fetch(
       `https://api.bitbucket.org/2.0/repositories/${parsed.owner}/${parsed.repo}/pullrequests?state=OPEN&pagelen=30`,
-      { headers: { Authorization: bitbucketAuth(tokens.bitbucket) } }
+      { headers: { Authorization: bitbucketAuthFor(auth) } }
     )
     if (!res.ok) throw new Error(`Bitbucket API error (${res.status})`)
     const data = (await res.json()) as {
@@ -143,7 +312,7 @@ async function listPullRequests(
 
   if (parsed.provider === 'github') {
     const headers: Record<string, string> = { Accept: 'application/vnd.github+json' }
-    if (tokens.github) headers['Authorization'] = `Bearer ${tokens.github}`
+    if (auth) headers['Authorization'] = `Bearer ${auth.token}`
     const res = await fetch(`https://api.github.com/repos/${parsed.owner}/${parsed.repo}/pulls?state=open&per_page=30`, {
       headers
     })
@@ -172,24 +341,23 @@ async function listPullRequests(
   }
 
   // Azure DevOps
-  if (!tokens.azure) throw new Error('Azure DevOps requires a PAT. Add one in Settings → Profiles.')
-  const auth = Buffer.from(`:${tokens.azure}`).toString('base64')
+  if (!auth) throw noCredential('Azure DevOps', remoteUrl)
   const base = `https://dev.azure.com/${parsed.owner}/${encodeURIComponent(parsed.project)}`
-  const res = await fetch(
-    `${base}/_apis/git/repositories/${encodeURIComponent(parsed.repo)}/pullrequests?searchCriteria.status=active&api-version=7.1`,
-    { headers: { Authorization: `Basic ${auth}` } }
+  const data = await withAzureRetry(remoteUrl, auth, (token) =>
+    adoJson<{
+      value: Array<{
+        pullRequestId: number
+        title: string
+        isDraft: boolean
+        createdBy: { displayName: string }
+        sourceRefName: string
+        targetRefName: string
+      }>
+    }>(
+      `${base}/_apis/git/repositories/${encodeURIComponent(parsed.repo)}/pullrequests?searchCriteria.status=active&api-version=7.1`,
+      token
+    )
   )
-  if (!res.ok) throw new Error(`Azure DevOps API error (${res.status})`)
-  const data = (await res.json()) as {
-    value: Array<{
-      pullRequestId: number
-      title: string
-      isDraft: boolean
-      createdBy: { displayName: string }
-      sourceRefName: string
-      targetRefName: string
-    }>
-  }
   return {
     provider: 'azure',
     prs: data.value.map((p) => ({
@@ -213,7 +381,8 @@ async function listReleases(
   if (!parsed || parsed.provider !== 'github') return { provider: parsed?.provider ?? null, releases: [] }
 
   const headers: Record<string, string> = { Accept: 'application/vnd.github+json' }
-  if (tokens.github) headers['Authorization'] = `Bearer ${tokens.github}`
+  const auth = await apiToken(remoteUrl, tokens.github)
+  if (auth) headers['Authorization'] = `Bearer ${auth.token}`
   const res = await fetch(`https://api.github.com/repos/${parsed.owner}/${parsed.repo}/releases?per_page=50`, {
     headers
   })
@@ -267,19 +436,20 @@ function createPullRequestUrl(remoteUrl: string, source: string, target: string)
  */
 async function createPullRequest(
   remoteUrl: string,
-  tokens: { github?: string; azure?: string; gitlab?: string; bitbucket?: string },
+  tokens: HostTokens,
   opts: CreatePrOpts
 ): Promise<CreatePrResult> {
   const parsed = parseRemoteUrl(remoteUrl)
   if (!parsed) throw new Error('Unrecognized remote — PR creation supports GitHub, GitLab, Bitbucket and Azure DevOps.')
+  const auth = await tokenForRemote(remoteUrl, parsed.provider, tokens)
 
   // GitLab merge request
   if (parsed.provider === 'gitlab') {
-    if (!tokens.gitlab) throw new Error('Add a GitLab token in Settings → Integrations.')
+    if (!auth) throw noCredential('GitLab', remoteUrl)
     const pid = encodeURIComponent(`${parsed.owner}/${parsed.repo}`)
     const res = await fetch(`https://gitlab.com/api/v4/projects/${pid}/merge_requests`, {
       method: 'POST',
-      headers: { 'PRIVATE-TOKEN': tokens.gitlab, 'Content-Type': 'application/json' },
+      headers: { ...gitlabAuth(auth), 'Content-Type': 'application/json' },
       body: JSON.stringify({
         source_branch: opts.source,
         target_branch: opts.target,
@@ -297,12 +467,12 @@ async function createPullRequest(
 
   // Bitbucket pull request
   if (parsed.provider === 'bitbucket') {
-    if (!tokens.bitbucket) throw new Error('Add a Bitbucket token in Settings → Integrations.')
+    if (!auth) throw noCredential('Bitbucket', remoteUrl)
     const res = await fetch(
       `https://api.bitbucket.org/2.0/repositories/${parsed.owner}/${parsed.repo}/pullrequests`,
       {
         method: 'POST',
-        headers: { Authorization: bitbucketAuth(tokens.bitbucket), 'Content-Type': 'application/json' },
+        headers: { Authorization: bitbucketAuthFor(auth), 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: opts.title,
           description: opts.body,
@@ -320,12 +490,12 @@ async function createPullRequest(
   }
 
   if (parsed.provider === 'github') {
-    if (!tokens.github) throw new Error('Add a GitHub token in Settings → Integrations.')
+    if (!auth) throw noCredential('GitHub', remoteUrl)
     const res = await fetch(`https://api.github.com/repos/${parsed.owner}/${parsed.repo}/pulls`, {
       method: 'POST',
       headers: {
         Accept: 'application/vnd.github+json',
-        Authorization: `Bearer ${tokens.github}`,
+        Authorization: `Bearer ${auth.token}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
@@ -346,25 +516,24 @@ async function createPullRequest(
   }
 
   // Azure DevOps
-  if (!tokens.azure) throw new Error('Azure DevOps requires a PAT. Add one in Settings → Integrations.')
-  const auth = Buffer.from(`:${tokens.azure}`).toString('base64')
+  if (!auth) throw noCredential('Azure DevOps', remoteUrl)
   const base = `https://dev.azure.com/${parsed.owner}/${encodeURIComponent(parsed.project)}`
-  const res = await fetch(
-    `${base}/_apis/git/repositories/${encodeURIComponent(parsed.repo)}/pullrequests?api-version=7.1`,
-    {
-      method: 'POST',
-      headers: { Authorization: `Basic ${auth}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        sourceRefName: `refs/heads/${opts.source}`,
-        targetRefName: `refs/heads/${opts.target}`,
-        title: opts.title,
-        description: opts.body,
-        isDraft: opts.draft
-      })
-    }
+  const d = await withAzureRetry(remoteUrl, auth, (token) =>
+    adoJson<{ pullRequestId: number }>(
+      `${base}/_apis/git/repositories/${encodeURIComponent(parsed.repo)}/pullrequests?api-version=7.1`,
+      token,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          sourceRefName: `refs/heads/${opts.source}`,
+          targetRefName: `refs/heads/${opts.target}`,
+          title: opts.title,
+          description: opts.body,
+          isDraft: opts.draft
+        })
+      }
+    )
   )
-  if (!res.ok) throw new Error(`Azure DevOps API error (${res.status})`)
-  const d = (await res.json()) as { pullRequestId: number }
   return {
     url: `${base}/_git/${encodeURIComponent(parsed.repo)}/pullrequest/${d.pullRequestId}`,
     number: d.pullRequestId
@@ -372,13 +541,17 @@ async function createPullRequest(
 }
 
 /** Resolve a GitHub remote to {owner, repo} or throw (these B2 ops are GitHub-only for now). */
-function ghRepoOf(remoteUrl: string, token?: string): { owner: string; repo: string; token: string } {
+async function ghRepoOf(
+  remoteUrl: string,
+  token?: string
+): Promise<{ owner: string; repo: string; token: string }> {
   const parsed = parseRemoteUrl(remoteUrl)
   if (!parsed || parsed.provider !== 'github') {
     throw new Error('This action currently supports GitHub repositories only.')
   }
-  if (!token) throw new Error('Add a GitHub token in Settings → Integrations.')
-  return { owner: parsed.owner, repo: parsed.repo, token }
+  const auth = await apiToken(remoteUrl, token)
+  if (!auth) throw noCredential('GitHub', remoteUrl)
+  return { owner: parsed.owner, repo: parsed.repo, token: auth.token }
 }
 
 async function pullRequestDetail(
@@ -386,7 +559,7 @@ async function pullRequestDetail(
   tokens: { github?: string },
   number: number
 ): Promise<PrDetail> {
-  const { owner, repo, token } = ghRepoOf(remoteUrl, tokens.github)
+  const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
   const api = `https://api.github.com/repos/${owner}/${repo}`
   const [pr, comments, reviews, reviewComments] = await Promise.all([
     ghJson<{
@@ -470,7 +643,7 @@ async function pullRequestChecks(
   tokens: { github?: string },
   number: number
 ): Promise<PrCheck[]> {
-  const { owner, repo, token } = ghRepoOf(remoteUrl, tokens.github)
+  const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
   const api = `https://api.github.com/repos/${owner}/${repo}`
   const pr = await ghJson<{ head: { sha: string } }>(`${api}/pulls/${number}`, token)
   const data = await ghJson<{
@@ -490,7 +663,7 @@ async function pullRequestFiles(
   tokens: { github?: string },
   number: number
 ): Promise<PrFile[]> {
-  const { owner, repo, token } = ghRepoOf(remoteUrl, tokens.github)
+  const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
   const data = await ghJson<Array<{ filename: string; status: string; additions: number; deletions: number }>>(
     `https://api.github.com/repos/${owner}/${repo}/pulls/${number}/files?per_page=300`,
     token
@@ -506,7 +679,7 @@ async function replyReviewComment(
   inReplyTo: number,
   body: string
 ): Promise<void> {
-  const { owner, repo, token } = ghRepoOf(remoteUrl, tokens.github)
+  const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
   await ghJson(`https://api.github.com/repos/${owner}/${repo}/pulls/${number}/comments`, token, {
     method: 'POST',
     body: JSON.stringify({ body, in_reply_to: inReplyTo })
@@ -519,7 +692,7 @@ async function commentOnPr(
   number: number,
   body: string
 ): Promise<void> {
-  const { owner, repo, token } = ghRepoOf(remoteUrl, tokens.github)
+  const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
   await ghJson(`https://api.github.com/repos/${owner}/${repo}/issues/${number}/comments`, token, {
     method: 'POST',
     body: JSON.stringify({ body })
@@ -533,7 +706,7 @@ async function reviewPr(
   event: PrReviewEvent,
   body: string
 ): Promise<void> {
-  const { owner, repo, token } = ghRepoOf(remoteUrl, tokens.github)
+  const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
   await ghJson(`https://api.github.com/repos/${owner}/${repo}/pulls/${number}/reviews`, token, {
     method: 'POST',
     body: JSON.stringify({ event, body: body || undefined })
@@ -546,7 +719,7 @@ async function mergePr(
   number: number,
   method: PrMergeMethod
 ): Promise<void> {
-  const { owner, repo, token } = ghRepoOf(remoteUrl, tokens.github)
+  const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
   await ghJson(`https://api.github.com/repos/${owner}/${repo}/pulls/${number}/merge`, token, {
     method: 'PUT',
     body: JSON.stringify({ merge_method: method })
@@ -558,9 +731,9 @@ async function listIssues(
   tokens: { github?: string }
 ): Promise<{ provider: HostingProvider; issues: IssueInfo[] }> {
   const parsed = parseRemoteUrl(remoteUrl)
-  if (!parsed || parsed.provider !== 'github' || !tokens.github) {
-    return { provider: parsed?.provider ?? null, issues: [] }
-  }
+  if (!parsed || parsed.provider !== 'github') return { provider: parsed?.provider ?? null, issues: [] }
+  const auth = await apiToken(remoteUrl, tokens.github)
+  if (!auth) return { provider: 'github', issues: [] }
   const data = await ghJson<
     Array<{
       number: number
@@ -571,7 +744,7 @@ async function listIssues(
       comments: number
       pull_request?: unknown
     }>
-  >(`https://api.github.com/repos/${parsed.owner}/${parsed.repo}/issues?state=open&per_page=50`, tokens.github)
+  >(`https://api.github.com/repos/${parsed.owner}/${parsed.repo}/issues?state=open&per_page=50`, auth.token)
   return {
     provider: 'github',
     // The issues endpoint also returns PRs — filter them out.
@@ -593,9 +766,9 @@ async function listMilestones(
   tokens: { github?: string }
 ): Promise<{ provider: HostingProvider; milestones: MilestoneInfo[] }> {
   const parsed = parseRemoteUrl(remoteUrl)
-  if (!parsed || parsed.provider !== 'github' || !tokens.github) {
-    return { provider: parsed?.provider ?? null, milestones: [] }
-  }
+  if (!parsed || parsed.provider !== 'github') return { provider: parsed?.provider ?? null, milestones: [] }
+  const auth = await apiToken(remoteUrl, tokens.github)
+  if (!auth) return { provider: 'github', milestones: [] }
   const data = await ghJson<
     Array<{
       number: number
@@ -607,7 +780,7 @@ async function listMilestones(
       closed_issues: number
       html_url: string
     }>
-  >(`https://api.github.com/repos/${parsed.owner}/${parsed.repo}/milestones?state=all&per_page=50`, tokens.github)
+  >(`https://api.github.com/repos/${parsed.owner}/${parsed.repo}/milestones?state=all&per_page=50`, auth.token)
   return {
     provider: 'github',
     milestones: data.map((m) => ({
@@ -702,7 +875,7 @@ async function issueDetail(
   tokens: { github?: string },
   number: number
 ): Promise<IssueDetail> {
-  const { owner, repo, token } = ghRepoOf(remoteUrl, tokens.github)
+  const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
   const api = `https://api.github.com/repos/${owner}/${repo}`
   const [issue, comments, timeline, projectFields] = await Promise.all([
     ghJson<{
@@ -761,7 +934,7 @@ async function milestoneIssues(
   tokens: { github?: string },
   number: number
 ): Promise<IssueInfo[]> {
-  const { owner, repo, token } = ghRepoOf(remoteUrl, tokens.github)
+  const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
   const data = await ghJson<
     Array<{
       number: number
@@ -791,7 +964,7 @@ async function setIssueState(
   number: number,
   state: 'open' | 'closed'
 ): Promise<void> {
-  const { owner, repo, token } = ghRepoOf(remoteUrl, tokens.github)
+  const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
   await ghJson(`https://api.github.com/repos/${owner}/${repo}/issues/${number}`, token, {
     method: 'PATCH',
     body: JSON.stringify({ state })
@@ -804,7 +977,7 @@ async function createIssue(
   tokens: { github?: string },
   opts: { title: string; body?: string }
 ): Promise<{ number: number; url: string }> {
-  const { owner, repo, token } = ghRepoOf(remoteUrl, tokens.github)
+  const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
   const d = await ghJson<{ number: number; html_url: string }>(
     `https://api.github.com/repos/${owner}/${repo}/issues`,
     token,
@@ -823,7 +996,7 @@ async function applyPrMeta(
   number: number,
   meta: { reviewers?: string[]; labels?: string[]; assignees?: string[] }
 ): Promise<void> {
-  const { owner, repo, token } = ghRepoOf(remoteUrl, tokens.github)
+  const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
   const api = `https://api.github.com/repos/${owner}/${repo}`
   const tasks: Promise<unknown>[] = []
   if (meta.reviewers?.length)
@@ -851,11 +1024,13 @@ async function applyPrMeta(
 }
 
 async function listRepositories(provider: RepoHost, token: string, org?: string): Promise<RemoteRepo[]> {
+  const auth = await tokenForProvider(provider, token, org)
+  if (!auth) throw noCredential(provider, providerBaseUrl(provider, org))
+
   if (provider === 'github') {
-    if (!token.trim()) throw new Error('Not connected. Add a GitHub token in Settings → Integrations.')
     const res = await fetch(
       'https://api.github.com/user/repos?per_page=100&sort=updated&affiliation=owner,collaborator,organization_member',
-      { headers: { Accept: 'application/vnd.github+json', Authorization: `Bearer ${token}` } }
+      { headers: { Accept: 'application/vnd.github+json', Authorization: `Bearer ${auth.token}` } }
     )
     if (!res.ok) throw new Error(`GitHub API error (${res.status})`)
     const data = (await res.json()) as Array<{
@@ -875,10 +1050,9 @@ async function listRepositories(provider: RepoHost, token: string, org?: string)
   }
 
   if (provider === 'gitlab') {
-    if (!token.trim()) throw new Error('Not connected. Add a GitLab token in Settings → Integrations.')
     const res = await fetch(
       'https://gitlab.com/api/v4/projects?membership=true&per_page=100&order_by=last_activity_at&simple=true',
-      { headers: { 'PRIVATE-TOKEN': token } }
+      { headers: gitlabAuth(auth) }
     )
     if (!res.ok) throw new Error(`GitLab API error (${res.status})`)
     const data = (await res.json()) as Array<{
@@ -899,10 +1073,8 @@ async function listRepositories(provider: RepoHost, token: string, org?: string)
   }
 
   if (provider === 'bitbucket') {
-    if (!token.trim()) throw new Error('Not connected. Add a Bitbucket token in Settings → Integrations.')
-    const auth = token.includes(':') ? `Basic ${Buffer.from(token).toString('base64')}` : `Bearer ${token}`
     const res = await fetch('https://api.bitbucket.org/2.0/repositories?role=member&pagelen=100&sort=-updated_on', {
-      headers: { Authorization: auth }
+      headers: { Authorization: bitbucketAuthFor(auth) }
     })
     if (!res.ok) throw new Error(`Bitbucket API error (${res.status})`)
     const data = (await res.json()) as {
@@ -924,16 +1096,13 @@ async function listRepositories(provider: RepoHost, token: string, org?: string)
 
   // Azure DevOps — lists every repo across all projects in the organization.
   if (!org?.trim()) throw new Error('Enter your Azure DevOps organization.')
-  if (!token.trim()) throw new Error('Not connected. Add an Azure DevOps PAT in Settings → Integrations.')
-  const auth = Buffer.from(`:${token}`).toString('base64')
-  const res = await fetch(
-    `https://dev.azure.com/${encodeURIComponent(org.trim())}/_apis/git/repositories?api-version=7.1`,
-    { headers: { Authorization: `Basic ${auth}` } }
+  const base = providerBaseUrl('azure', org)
+  const data = await withAzureRetry(base, auth, (t) =>
+    adoJson<{ value: Array<{ name: string; remoteUrl: string; project: { name: string } }> }>(
+      `${base}/_apis/git/repositories?api-version=7.1`,
+      t
+    )
   )
-  if (!res.ok) throw new Error(`Azure DevOps API error (${res.status})`)
-  const data = (await res.json()) as {
-    value: Array<{ name: string; remoteUrl: string; project: { name: string } }>
-  }
   return data.value.map((r) => ({ name: `${r.project.name}/${r.name}`, url: r.remoteUrl }))
 }
 
@@ -965,13 +1134,14 @@ async function ghJson<T>(url: string, token: string, init?: RequestInit): Promis
 
 /** Accounts a new repo can be created under: the authenticated user plus their orgs/groups. */
 async function listOwners(provider: RepoHost, token: string, org?: string): Promise<RemoteOwner[]> {
-  if (!token.trim()) throw new Error(`Not connected. Add a ${provider} token in Settings → Integrations.`)
+  const auth = await tokenForProvider(provider, token, org)
+  if (!auth) throw noCredential(provider, providerBaseUrl(provider, org))
 
   if (provider === 'github') {
-    const user = await ghJson<{ login: string; avatar_url: string }>('https://api.github.com/user', token)
+    const user = await ghJson<{ login: string; avatar_url: string }>('https://api.github.com/user', auth.token)
     const orgs = await ghJson<Array<{ login: string; avatar_url: string }>>(
       'https://api.github.com/user/orgs?per_page=100',
-      token
+      auth.token
     )
     return [
       { id: user.login, login: user.login, avatarUrl: user.avatar_url, type: 'user' },
@@ -980,7 +1150,7 @@ async function listOwners(provider: RepoHost, token: string, org?: string): Prom
   }
 
   if (provider === 'gitlab') {
-    const headers = { 'PRIVATE-TOKEN': token }
+    const headers = gitlabAuth(auth)
     const user = (await (await fetch('https://gitlab.com/api/v4/user', { headers })).json()) as {
       id: number
       username: string
@@ -1001,9 +1171,8 @@ async function listOwners(provider: RepoHost, token: string, org?: string): Prom
   }
 
   if (provider === 'bitbucket') {
-    const auth = token.includes(':') ? `Basic ${Buffer.from(token).toString('base64')}` : `Bearer ${token}`
     const wsRes = await fetch('https://api.bitbucket.org/2.0/workspaces?pagelen=100', {
-      headers: { Authorization: auth }
+      headers: { Authorization: bitbucketAuthFor(auth) }
     })
     if (!wsRes.ok) throw new Error(`Bitbucket API error (${wsRes.status})`)
     const data = (await wsRes.json()) as {
@@ -1019,13 +1188,10 @@ async function listOwners(provider: RepoHost, token: string, org?: string): Prom
 
   // Azure DevOps — projects under the given organization act as "owners" for new repos.
   if (!org?.trim()) throw new Error('Enter your Azure DevOps organization.')
-  const auth = Buffer.from(`:${token}`).toString('base64')
-  const res = await fetch(
-    `https://dev.azure.com/${encodeURIComponent(org.trim())}/_apis/projects?api-version=7.1`,
-    { headers: { Authorization: `Basic ${auth}` } }
+  const base = providerBaseUrl('azure', org)
+  const data = await withAzureRetry(base, auth, (t) =>
+    adoJson<{ value: Array<{ id: string; name: string }> }>(`${base}/_apis/projects?api-version=7.1`, t)
   )
-  if (!res.ok) throw new Error(`Azure DevOps API error (${res.status})`)
-  const data = (await res.json()) as { value: Array<{ id: string; name: string }> }
   return data.value.map((p) => ({ id: p.id, login: p.name, type: 'org' as const }))
 }
 
@@ -1033,8 +1199,8 @@ async function listOwners(provider: RepoHost, token: string, org?: string): Prom
 function azureAuthError(status: number, org?: string): string {
   if (status === 401 || status === 403) {
     return org
-      ? `Azure DevOps rejected the token (${status}). Check that the PAT is valid and not expired, that it has access to the "${org}" organization, and that the organization name is spelled correctly.`
-      : `Azure DevOps rejected the token (${status}). Enter your organization name below and make sure the PAT is valid, not expired, and has at least User Profile (read) or Code (read) scope.`
+      ? `Azure DevOps rejected the credential (${status}). Check that it is valid and not expired, that it has access to the "${org}" organization, and that the organization name is spelled correctly.`
+      : `Azure DevOps rejected the credential (${status}). Check that it is valid, not expired, and has at least User Profile (read) or Code (read) scope — or set an organization so it can be checked against that org directly.`
   }
   if (status === 404 && org) {
     return `Azure DevOps organization "${org}" was not found (404). Double-check the organization name.`
@@ -1043,17 +1209,25 @@ function azureAuthError(status: number, org?: string): string {
 }
 
 /** Resolve the authenticated user behind a stored token, for display in Settings → Integrations. */
-async function fetchConnectedAccount(provider: RepoHost, token: string, org?: string): Promise<ConnectedAccount> {
-  if (!token.trim()) throw new Error(`Not connected. Add a ${provider} token in Settings → Integrations.`)
+async function fetchConnectedAccount(
+  provider: RepoHost,
+  token: string,
+  org?: string,
+  interactive = false
+): Promise<ConnectedAccount> {
+  // Only an explicit "sign in" may open the helper's login window. Merely opening
+  // the Settings page must not prompt for four providers at once.
+  const auth = await apiToken(providerBaseUrl(provider, org), token, { interactive })
+  if (!auth) throw noCredential(provider, providerBaseUrl(provider, org))
 
   if (provider === 'github') {
     const user = await ghJson<{ login: string; name: string | null; avatar_url: string; html_url: string }>(
       'https://api.github.com/user',
-      token
+      auth.token
     )
     const orgs = await ghJson<Array<{ login: string; avatar_url: string }>>(
       'https://api.github.com/user/orgs?per_page=100',
-      token
+      auth.token
     ).catch(() => [])
     return {
       login: user.login,
@@ -1065,7 +1239,7 @@ async function fetchConnectedAccount(provider: RepoHost, token: string, org?: st
   }
 
   if (provider === 'gitlab') {
-    const headers = { 'PRIVATE-TOKEN': token }
+    const headers = gitlabAuth(auth)
     const userRes = await fetch('https://gitlab.com/api/v4/user', { headers })
     if (!userRes.ok) throw new Error(`GitLab API error (${userRes.status})`)
     const user = (await userRes.json()) as {
@@ -1088,8 +1262,8 @@ async function fetchConnectedAccount(provider: RepoHost, token: string, org?: st
   }
 
   if (provider === 'bitbucket') {
-    const auth = token.includes(':') ? `Basic ${Buffer.from(token).toString('base64')}` : `Bearer ${token}`
-    const userRes = await fetch('https://api.bitbucket.org/2.0/user', { headers: { Authorization: auth } })
+    const bbAuth = bitbucketAuthFor(auth)
+    const userRes = await fetch('https://api.bitbucket.org/2.0/user', { headers: { Authorization: bbAuth } })
     if (!userRes.ok) throw new Error(`Bitbucket API error (${userRes.status})`)
     const user = (await userRes.json()) as {
       username: string
@@ -1097,7 +1271,7 @@ async function fetchConnectedAccount(provider: RepoHost, token: string, org?: st
       links?: { avatar?: { href: string }; html?: { href: string } }
     }
     const wsRes = await fetch('https://api.bitbucket.org/2.0/workspaces?pagelen=100', {
-      headers: { Authorization: auth }
+      headers: { Authorization: bbAuth }
     })
     const workspaces = wsRes.ok
       ? (
@@ -1123,20 +1297,19 @@ async function fetchConnectedAccount(provider: RepoHost, token: string, org?: st
   // (app.vssps.visualstudio.com) returns 401 for Entra/guest accounts even with a valid
   // org-scoped PAT, so when we know the organization we validate against connectionData,
   // which works with a plain Code-scoped PAT and reflects the token's real access.
-  const auth = `Basic ${Buffer.from(`:${token}`).toString('base64')}`
   const orgName = org?.trim()
   if (orgName) {
-    const res = await fetch(
-      `https://dev.azure.com/${encodeURIComponent(orgName)}/_apis/connectionData?api-version=7.1-preview`,
-      { headers: { Authorization: auth } }
-    )
-    if (!res.ok) throw new Error(azureAuthError(res.status, orgName))
-    const data = (await res.json()) as {
-      authenticatedUser?: {
-        providerDisplayName?: string
-        properties?: { Account?: { $value?: string } }
-      }
-    }
+    const base = providerBaseUrl('azure', orgName)
+    const data = await withAzureRetry(base, auth, (t) =>
+      adoJson<{
+        authenticatedUser?: {
+          providerDisplayName?: string
+          properties?: { Account?: { $value?: string } }
+        }
+      }>(`${base}/_apis/connectionData?api-version=7.1-preview`, t)
+    ).catch((err) => {
+      throw err instanceof AzureAuthError ? new Error(azureAuthError(err.status, orgName)) : err
+    })
     const user = data.authenticatedUser
     const email = user?.properties?.Account?.$value
     const displayName = user?.providerDisplayName
@@ -1148,11 +1321,12 @@ async function fetchConnectedAccount(provider: RepoHost, token: string, org?: st
   }
 
   // No organization provided — fall back to the global profile service (best effort).
-  const res = await fetch('https://app.vssps.visualstudio.com/_apis/profile/profiles/me?api-version=7.1', {
-    headers: { Authorization: auth }
+  const profile = await adoJson<{ displayName: string; emailAddress?: string; id: string }>(
+    'https://app.vssps.visualstudio.com/_apis/profile/profiles/me?api-version=7.1',
+    auth.token
+  ).catch((err) => {
+    throw err instanceof AzureAuthError ? new Error(azureAuthError(err.status)) : err
   })
-  if (!res.ok) throw new Error(azureAuthError(res.status))
-  const profile = (await res.json()) as { displayName: string; emailAddress?: string; id: string }
   return {
     login: profile.emailAddress ?? profile.displayName,
     name: profile.displayName
@@ -1166,15 +1340,16 @@ async function createRepository(
   opts: CreateRepoOpts,
   org?: string
 ): Promise<RemoteRepo> {
-  if (!token.trim()) throw new Error(`Not connected. Add a ${provider} token in Settings → Integrations.`)
   if (!opts.name.trim()) throw new Error('Repository name is required.')
+  const auth = await tokenForProvider(provider, token, org)
+  if (!auth) throw noCredential(provider, providerBaseUrl(provider, org))
 
   if (provider === 'github') {
     const url =
       opts.ownerType === 'org'
         ? `https://api.github.com/orgs/${encodeURIComponent(opts.owner)}/repos`
         : 'https://api.github.com/user/repos'
-    const repo = await ghJson<{ full_name: string; clone_url: string; private: boolean }>(url, token, {
+    const repo = await ghJson<{ full_name: string; clone_url: string; private: boolean }>(url, auth.token, {
       method: 'POST',
       body: JSON.stringify({ name: opts.name, description: opts.description || undefined, private: opts.private })
     })
@@ -1184,7 +1359,7 @@ async function createRepository(
   if (provider === 'gitlab') {
     const res = await fetch('https://gitlab.com/api/v4/projects', {
       method: 'POST',
-      headers: { 'PRIVATE-TOKEN': token, 'Content-Type': 'application/json' },
+      headers: { ...gitlabAuth(auth), 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: opts.name,
         description: opts.description || undefined,
@@ -1201,11 +1376,10 @@ async function createRepository(
   }
 
   if (provider === 'bitbucket') {
-    const auth = token.includes(':') ? `Basic ${Buffer.from(token).toString('base64')}` : `Bearer ${token}`
     const slug = opts.name.trim().toLowerCase().replace(/\s+/g, '-')
     const res = await fetch(`https://api.bitbucket.org/2.0/repositories/${opts.owner}/${slug}`, {
       method: 'POST',
-      headers: { Authorization: auth, 'Content-Type': 'application/json' },
+      headers: { Authorization: bitbucketAuthFor(auth), 'Content-Type': 'application/json' },
       body: JSON.stringify({ scm: 'git', is_private: opts.private, description: opts.description || undefined })
     })
     if (!res.ok) throw new Error(`Bitbucket API error (${res.status})`)
@@ -1224,17 +1398,14 @@ async function createRepository(
   // Azure DevOps — create a repo inside a project of the organization.
   if (!org?.trim()) throw new Error('Enter your Azure DevOps organization.')
   if (!opts.project?.trim()) throw new Error('Select an Azure DevOps project.')
-  const auth = Buffer.from(`:${token}`).toString('base64')
-  const res = await fetch(
-    `https://dev.azure.com/${encodeURIComponent(org.trim())}/${encodeURIComponent(opts.project)}/_apis/git/repositories?api-version=7.1`,
-    {
-      method: 'POST',
-      headers: { Authorization: `Basic ${auth}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: opts.name, project: { id: opts.owner } })
-    }
+  const base = providerBaseUrl('azure', org)
+  const repo = await withAzureRetry(base, auth, (t) =>
+    adoJson<{ name: string; remoteUrl: string; project: { name: string } }>(
+      `${base}/${encodeURIComponent(opts.project!)}/_apis/git/repositories?api-version=7.1`,
+      t,
+      { method: 'POST', body: JSON.stringify({ name: opts.name, project: { id: opts.owner } }) }
+    )
   )
-  if (!res.ok) throw new Error(`Azure DevOps API error (${res.status})`)
-  const repo = (await res.json()) as { name: string; remoteUrl: string; project: { name: string } }
   return { name: `${repo.project.name}/${repo.name}`, url: repo.remoteUrl }
 }
 
@@ -1251,12 +1422,14 @@ async function fetchCiStatuses(
   token: string
 ): Promise<Record<string, CiStatus>> {
   const parsed = parseRemoteUrl(remoteUrl)
-  if (!parsed || parsed.provider !== 'github' || !token) return {}
+  if (!parsed || parsed.provider !== 'github') return {}
+  const auth = await apiToken(remoteUrl, token)
+  if (!auth) return {}
 
   const result: Record<string, CiStatus> = {}
   const headers: Record<string, string> = {
     Accept: 'application/vnd.github+json',
-    Authorization: `Bearer ${token}`
+    Authorization: `Bearer ${auth.token}`
   }
 
   await Promise.all(
@@ -1368,8 +1541,8 @@ export function registerHostingHandlers(): void {
   ipcMain.handle('hosting:listOwners', (_e, provider: RepoHost, token: string, org?: string) =>
     listOwners(provider, token, org)
   )
-  ipcMain.handle('hosting:whoAmI', (_e, provider: RepoHost, token: string, org?: string) =>
-    fetchConnectedAccount(provider, token, org)
+  ipcMain.handle('hosting:whoAmI', (_e, provider: RepoHost, token: string, org?: string, interactive?: boolean) =>
+    fetchConnectedAccount(provider, token, org, interactive)
   )
   ipcMain.handle('hosting:createRepo', (_e, provider: RepoHost, token: string, opts: CreateRepoOpts, org?: string) =>
     createRepository(provider, token, opts, org)

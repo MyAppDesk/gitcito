@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { parseRemoteUrl } from '../src/main/hosting'
-import { lintCommit, subjectCounterLevel, parseCcPrefix, applyCcType, parseGitmojiPrefix, applyGitmoji, parseTicketPrefix, applyTicket, ticketFromBranch } from '../src/renderer/src/lib/commitLint'
+import { commitHookFailureHint, lintCommit, subjectCounterLevel, parseCcPrefix, applyCcType, parseGitmojiPrefix, applyGitmoji, parseTicketPrefix, applyTicket, ticketFromBranch } from '../src/renderer/src/lib/commitLint'
 import { isSecretFile, maskSecretLine } from '../src/renderer/src/lib/secrets'
 import { comboFromEvent, formatCombo, effectiveBindings, matchShortcut } from '../src/renderer/src/lib/shortcuts'
 import { autolink, remoteWebUrl, filePermalink } from '../src/renderer/src/lib/autolink'
@@ -159,6 +159,17 @@ describe('commit lint', () => {
     expect(subjectCounterLevel(10)).toBe('')
     expect(subjectCounterLevel(60)).toBe('warn')
     expect(subjectCounterLevel(80)).toBe('error')
+  })
+})
+
+describe('commit hook failure hint', () => {
+  it('explains how to fix a missing Conventional Commit type', () => {
+    expect(commitHookFailureHint('subject may not be empty [subject-empty]\ntype may not be empty [type-empty]'))
+      .toContain('chore: tmp')
+  })
+
+  it('ignores unrelated git failures', () => {
+    expect(commitHookFailureHint('fatal: unable to write new index file')).toBeNull()
   })
 })
 

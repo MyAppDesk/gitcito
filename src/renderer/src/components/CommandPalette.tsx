@@ -32,7 +32,8 @@ import {
   ArrowLeftRight,
   FolderGit2,
   BookOpen,
-  Radar
+  Radar,
+  Magnet
 } from 'lucide-react'
 import { useUIStore } from '../stores/ui'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
@@ -209,6 +210,7 @@ export function CommandPalette(): React.JSX.Element {
           : []
       })(),
       { id: 'stack', title: t('cmd.stack'), group: 'Actions', keywords: 'stacked branches graphite restack dependent', icon: <Layers size={15} />, run: act(() => ui.openModal({ kind: 'stack', repoPath: path })) },
+      { id: 'absorb', title: t('absorb.open'), group: 'Actions', keywords: 'absorb fixup autosquash amend staged hunks blame route', icon: <Magnet size={15} />, run: act(() => ui.openModal({ kind: 'absorb', repoPath: path })) },
       { id: 'range-diff', title: t('rangeDiff.open'), group: 'Actions', keywords: 'range diff force push rebase rewritten review interdiff reflog', icon: <History size={15} />, run: act(() => ui.openModal({ kind: 'range-diff', repoPath: path, branch: repo.branches.current || 'HEAD' })) },
       { id: 'conflict-radar', title: t('radar.open'), group: 'Actions', keywords: 'conflict radar merge preview predict clash risk branches', icon: <Radar size={15} />, run: act(() => ui.openModal({ kind: 'conflict-radar', repoPath: path, base: repo.branches.current || 'HEAD' })) },
       { id: 'compare-refs', title: t('cmd.compareRefs'), group: 'Actions', keywords: 'compare diff branches refs tags ahead behind range', icon: <ArrowLeftRight size={15} />, run: act(() => {

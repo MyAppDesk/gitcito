@@ -8541,6 +8541,49 @@ input[type='range']:focus-visible {
 .bc-diff-title { font-size: 11.5px; color: var(--text-2); margin-bottom: 4px; }
 .bc-diff-scroll { flex: 1; overflow: auto; background: var(--bg-2); border-radius: 6px; }
 
+/* ── Absorb (staged hunks → fixup! commits) ── */
+.ab-root { display: flex; flex-direction: column; gap: 12px; min-height: 0; }
+.ab-loading { display: flex; justify-content: center; padding: 40px; }
+.ab-head { display: flex; align-items: flex-start; gap: 11px; }
+.ab-head h3 { margin: 0 0 2px; font-size: 15px; }
+.ab-head-text { min-width: 0; }
+.ab-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--accent);
+}
+.ab-sub { font-size: 11.5px; color: var(--text-2); }
+.ab-body { display: flex; flex-direction: column; gap: 10px; max-height: 46vh; overflow-y: auto; }
+.ab-empty { padding: 14px; font-size: 12.5px; color: var(--text-2); background: var(--bg-3); border-radius: 8px; }
+.ab-target { border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; }
+.ab-target.unmatched { border-style: dashed; }
+.ab-target-head { display: flex; align-items: center; gap: 7px; font-size: 12px; min-width: 0; }
+.ab-target-icon { flex: 0 0 auto; color: var(--accent); }
+.ab-target.unmatched .ab-target-icon { color: var(--text-3); }
+.ab-sha { font-family: var(--mono, monospace); font-size: 11px; color: var(--text-2); }
+.ab-subject { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.ab-count { font-size: 10.5px; color: var(--text-3); white-space: nowrap; }
+.ab-hunk { display: flex; align-items: center; gap: 8px; padding: 3px 0 0 20px; font-size: 11.5px; min-width: 0; }
+.ab-file {
+  font-family: var(--mono, monospace);
+  color: var(--text-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ab-header { font-family: var(--mono, monospace); font-size: 10.5px; color: var(--text-3); }
+.ab-add { color: var(--green); font-size: 10.5px; margin-left: auto; }
+.ab-del { color: var(--danger, #f85149); font-size: 10.5px; }
+.ab-add + .ab-del { margin-left: 0; }
+.ab-note { display: block; padding: 6px 0 0 20px; font-size: 11px; color: var(--text-3); }
+.ab-actions { display: flex; justify-content: flex-end; gap: 8px; }
+
 /* ── Range-diff (what changed since a rewrite) ── */
 .rd-root { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
 .rd-header {

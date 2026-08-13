@@ -194,6 +194,34 @@ export interface RangeDiffEntry {
   body: string
 }
 
+/** One staged hunk in an absorb plan. */
+export interface AbsorbHunk {
+  file: string
+  /** The `@@ …` header, shown so the user can tell two hunks apart. */
+  header: string
+  added: number
+  removed: number
+}
+
+/** A commit that some of the staged hunks belong to. */
+export interface AbsorbTarget {
+  sha: string
+  subject: string
+  hunks: AbsorbHunk[]
+}
+
+export interface AbsorbPlan {
+  /** The commit the fixups will be squashed onto (parent of the oldest candidate). */
+  base: string
+  /** How the candidate range was decided, for the UI to explain itself. */
+  rangeLabel: string
+  targets: AbsorbTarget[]
+  /** Hunks blame could not pin on an absorbable commit — left staged as they are. */
+  unmatched: AbsorbHunk[]
+  /** Why there is nothing to do, when there is nothing to do. */
+  reason?: 'no-staged' | 'no-commits' | 'in-progress'
+}
+
 /** A remote-tracking ref that was rewritten under us (history was force-pushed). */
 export interface ForcedRefUpdate {
   /** Short form, e.g. `origin/feature`. */

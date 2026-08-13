@@ -33,7 +33,8 @@ import {
   PanelLeft,
   PanelRight,
   BookOpen,
-  Radar
+  Radar,
+  Magnet
 } from 'lucide-react'
 import type { MenuItem } from '../stores/ui'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
@@ -140,6 +141,11 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
         }
       },
       { label: t('tools.stack'), icon: <Layers size={15} />, onClick: () => openModal({ kind: 'stack', repoPath: path }) },
+      {
+        label: t('absorb.open'),
+        icon: <Magnet size={15} />,
+        onClick: () => openModal({ kind: 'absorb', repoPath: path })
+      },
       {
         label: t('radar.open'),
         icon: <Radar size={15} />,

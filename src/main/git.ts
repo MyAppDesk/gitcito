@@ -67,11 +67,15 @@ import type {
   SemanticDiff,
   RangeDiffEntry,
   RefTip,
-  ForcedRefUpdate
+  ForcedRefUpdate,
+  AbsorbPlan,
+  AbsorbTarget,
+  AbsorbHunk
 } from '../shared/types'
 import { parseMergeTreeSingle, parseMergeTreeStdin, type MergeTreeRecord } from '../shared/mergeTree'
 import { parseRangeDiff } from '../shared/rangeDiff'
 import { parseForcedUpdates } from '../shared/fetchPorcelain'
+import { buildPatch, parsePatch, touchedOldLines } from '../shared/patchHunks'
 import { semanticCompare } from './semantic'
 import { recordEvent } from './analytics'
 import { recordLog } from './log'
@@ -359,6 +363,144 @@ async function singleMergeTree(repoPath: string, base: string, ref: string): Pro
     const code = typeof e.code === 'number' ? e.code : 2
     return parseMergeTreeSingle(e.stdout ?? '', code, e.stderr || e.message || '')
   }
+}
+
+/** How far back absorb may reach: your unpublished commits, and no further. */
+async function absorbCandidates(
+  repoPath: string
+): Promise<{ commits: { sha: string; subject: string }[]; base: string; label: string }> {
+  interface Range {
+    commits: { sha: string; subject: string }[]
+    base: string
+    label: string
+  }
+  const none: Range = { commits: [], base: '', label: '' }
+  const read = async (range: string, label: string, base: string): Promise<Range | null> => {
+    const out = await runGit(repoPath, ['log', `--format=%H${SEP}%s`, range]).catch(() => '')
+    const commits = out
+      .split('\n')
+      .filter(Boolean)
+      .map((line) => {
+        const [sha, subject] = line.split(SEP)
+        return { sha, subject: subject ?? '' }
+      })
+    return commits.length ? { commits, base, label } : null
+  }
+
+  // Preferred: everything the upstream branch doesn't have yet.
+  const upstream = await runGit(repoPath, ['rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{upstream}'])
+    .then((o) => o.trim())
+    .catch(() => '')
+  if (upstream) {
+    const found = await read(`${upstream}..HEAD`, `unpushed (${upstream}..HEAD)`, upstream)
+    if (found) return found
+  }
+
+  // No upstream: fall back to the commits this branch added on top of the trunk.
+  for (const trunk of ['origin/main', 'origin/master', 'main', 'master']) {
+    const base = await runGit(repoPath, ['merge-base', 'HEAD', trunk])
+      .then((o) => o.trim())
+      .catch(() => '')
+    if (!base) continue
+    const found = await read(`${base}..HEAD`, `since ${trunk}`, base)
+    if (found) return found
+  }
+
+  // Brand-new repo with no trunk to compare against: offer the recent commits.
+  const found = await read('-25 HEAD', 'last 25 commits', 'HEAD~25')
+  return found ?? none
+}
+
+/**
+ * Blame the old side of each hunk and hand it to the newest candidate commit
+ * that owns any of its lines. Deleted lines are the strong signal; a hunk that
+ * only adds falls back to the context around it, which is where the new code
+ * is going.
+ */
+async function attributeHunks(
+  repoPath: string,
+  diff: string,
+  candidates: { sha: string; subject: string }[]
+): Promise<{ targets: AbsorbTarget[]; unmatched: AbsorbHunk[] }> {
+  // Candidates come newest-first; the index doubles as "how recent".
+  const rank = new Map(candidates.map((c, i) => [c.sha, i]))
+  const byTarget = new Map<string, AbsorbHunk[]>()
+  const unmatched: AbsorbHunk[] = []
+
+  for (const file of parsePatch(diff)) {
+    for (const hunk of file.hunks) {
+      const entry: AbsorbHunk = {
+        file: file.newPath,
+        header: hunk.header,
+        added: hunk.lines.filter((l) => l.startsWith('+')).length,
+        removed: hunk.lines.filter((l) => l.startsWith('-')).length
+      }
+      // A new or binary file has no history to attribute to.
+      if (file.binary || !hunk.oldCount) {
+        unmatched.push(entry)
+        continue
+      }
+
+      const { deleted, context } = touchedOldLines(hunk)
+      const lines = deleted.length ? deleted : context
+      const owners = await blameOwners(repoPath, file.oldPath, lines)
+      let best: string | null = null
+      for (const sha of owners) {
+        const r = rank.get(sha)
+        if (r === undefined) continue
+        if (best === null || r < rank.get(best)!) best = sha
+      }
+      if (!best) {
+        unmatched.push(entry)
+        continue
+      }
+      const list = byTarget.get(best)
+      if (list) list.push(entry)
+      else byTarget.set(best, [entry])
+    }
+  }
+
+  // Keep the targets in history order (newest first), like the graph shows them.
+  const targets: AbsorbTarget[] = candidates
+    .filter((c) => byTarget.has(c.sha))
+    .map((c) => ({ sha: c.sha, subject: c.subject, hunks: byTarget.get(c.sha)! }))
+  return { targets, unmatched }
+}
+
+/** Commits that last touched the given lines of a file in HEAD. */
+async function blameOwners(repoPath: string, file: string, lines: number[]): Promise<Set<string>> {
+  const owners = new Set<string>()
+  if (!lines.length) return owners
+  // One blame per contiguous run keeps the number of processes down on a hunk
+  // that spans many lines.
+  for (const [start, end] of contiguousRuns(lines)) {
+    const out = await runGit(repoPath, [
+      'blame',
+      '-w',
+      '--porcelain',
+      '-L',
+      `${start},${end}`,
+      'HEAD',
+      '--',
+      file
+    ]).catch(() => '')
+    for (const line of out.split('\n')) {
+      const m = /^([0-9a-f]{40}) \d+ \d+/.exec(line)
+      if (m) owners.add(m[1])
+    }
+  }
+  return owners
+}
+
+function contiguousRuns(lines: number[]): [number, number][] {
+  const sorted = [...new Set(lines)].sort((a, b) => a - b)
+  const runs: [number, number][] = []
+  for (const n of sorted) {
+    const last = runs[runs.length - 1]
+    if (last && n === last[1] + 1) last[1] = n
+    else runs.push([n, n])
+  }
+  return runs
 }
 
 async function getRemoteUrl(repoPath: string, remote: string): Promise<string> {
@@ -1401,12 +1543,17 @@ export const gitService = {
    * Rebase onto `base`, auto-ordering and folding any fixup!/squash! commits.
    * Runs non-interactively (the auto-generated todo is accepted as-is).
    */
-  async autosquash(repoPath: string, base: string): Promise<void> {
+  async autosquash(repoPath: string, base: string, autostash = false): Promise<void> {
     // Run via execFile, not simple-git: simple-git refuses both a PAGER env
     // (allowUnsafePager) and `-c core.editor` (allowUnsafeEditor). Real git with
     // these *_EDITOR vars set to true accepts the auto-generated todo without
     // opening an editor.
-    await pexecFile('git', ['-C', repoPath, 'rebase', '-i', '--autosquash', base], {
+    // `--autostash` lets the rebase run with a dirty tree (absorb leaves the
+    // unattributed changes in place), restoring them afterwards.
+    const args = ['-C', repoPath, 'rebase', '-i', '--autosquash']
+    if (autostash) args.push('--autostash')
+    args.push(base)
+    await pexecFile('git', args, {
       env: { ...process.env, GIT_SEQUENCE_EDITOR: 'true', GIT_EDITOR: 'true' }
     })
   },
@@ -2921,6 +3068,98 @@ export const gitService = {
 
   // ─── Patch staging ─────────────────────────────────────────────────────────
 
+  // ─── Absorb (staged hunks → fixup! commits) ───────────────────────────────
+
+  /**
+   * Work out which of your own recent commits each staged hunk belongs to.
+   *
+   * This is `git absorb`: instead of one lumpy "review fixes" commit, blame
+   * tells you the commit that introduced the lines you just touched, and each
+   * hunk becomes a `fixup!` for it. Only unpublished commits are candidates —
+   * rewriting anything already pushed is not ours to offer.
+   */
+  async absorbPlan(repoPath: string): Promise<AbsorbPlan> {
+    const empty = (reason: AbsorbPlan['reason']): AbsorbPlan => ({
+      base: '',
+      rangeLabel: '',
+      targets: [],
+      unmatched: [],
+      reason
+    })
+
+    // A rebase/merge/cherry-pick in flight owns the index; stay out of it.
+    if (await gitService.mergeState(repoPath)) return empty('in-progress')
+
+    const diff = await runGit(repoPath, ['diff', '--cached'])
+    if (!diff.trim()) return empty('no-staged')
+
+    const range = await absorbCandidates(repoPath)
+    if (!range.commits.length) return empty('no-commits')
+
+    const { targets, unmatched } = await attributeHunks(repoPath, diff, range.commits)
+    return { base: range.base, rangeLabel: range.label, targets, unmatched }
+  },
+
+  /**
+   * Turn the plan into real `fixup!` commits, optionally folding them in with
+   * an autosquash rebase.
+   *
+   * The working tree is never touched: only the index and the commits this
+   * creates. If any step fails, HEAD and the index are put back exactly as they
+   * were, so a half-absorbed state cannot survive.
+   */
+  async absorbApply(repoPath: string, opts: { rebase?: boolean } = {}): Promise<{ created: number; rebased: boolean }> {
+    const plan = await gitService.absorbPlan(repoPath)
+    if (!plan.targets.length) return { created: 0, rebased: false }
+
+    const originalHead = (await runGit(repoPath, ['rev-parse', 'HEAD'])).trim()
+    const originalDiff = await runGit(repoPath, ['diff', '--cached'])
+    const files = parsePatch(originalDiff)
+
+    // Oldest target first: each fixup shifts the lines below it, and applying in
+    // history order keeps every later patch's context where git expects it.
+    const order = [...plan.targets].reverse()
+
+    try {
+      // Clear the index (working tree untouched) so each fixup can be staged on
+      // its own.
+      await runGit(repoPath, ['reset', '-q'])
+
+      for (const target of order) {
+        const wanted = new Set(target.hunks.map((h) => `${h.file} ${h.header}`))
+        for (const file of files) {
+          const hunks = file.hunks.filter((h) => wanted.has(`${file.newPath} ${h.header}`))
+          if (!hunks.length) continue
+          await gitService.stagePatch(repoPath, buildPatch(file, hunks))
+        }
+        await pexecFile('git', ['-C', repoPath, 'commit', `--fixup=${target.sha}`], { env: noPromptEnv() })
+      }
+
+    } catch (err) {
+      // Undo our commits and put the original staged set back. `reset --mixed`
+      // never touches the working tree, so the user's edits are safe throughout.
+      await runGit(repoPath, ['reset', '-q', '--mixed', originalHead]).catch(() => undefined)
+      if (originalDiff.trim()) await gitService.stagePatch(repoPath, originalDiff).catch(() => undefined)
+      throw err
+    }
+
+    // The rebase runs with a clean index (git refuses otherwise), so whatever
+    // blame could not place is re-staged only once the fixups are folded in.
+    if (opts.rebase) await gitService.autosquash(repoPath, plan.base, true)
+
+    for (const file of files) {
+      const claimed = new Set(
+        plan.targets.flatMap((t) => t.hunks.filter((h) => h.file === file.newPath).map((h) => h.header))
+      )
+      const rest = file.hunks.filter((h) => !claimed.has(h.header))
+      // Best effort: the change itself is still in the working tree, so a patch
+      // that no longer applies costs the user nothing but a re-stage.
+      if (rest.length) await gitService.stagePatch(repoPath, buildPatch(file, rest)).catch(() => undefined)
+    }
+
+    return { created: plan.targets.length, rebased: !!opts.rebase }
+  },
+
   async stagePatch(repoPath: string, patch: string): Promise<void> {
     const tmpPatch = join(tmpdir(), `gitcito-patch-${Date.now()}.patch`)
     await writeFile(tmpPatch, patch, 'utf-8')
@@ -3521,6 +3760,7 @@ const READ_METHODS = new Set<string>([
   'semanticDiff',
   'rangeDiff',
   'refTips',
+  'absorbPlan',
   'repoStats',
   'repoInsights',
   'cosmosData',

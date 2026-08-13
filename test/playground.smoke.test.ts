@@ -60,7 +60,8 @@ const EXPECTED = [
   'host-remotes',
   'conflict-radar',
   'semantic-diff',
-  'force-push'
+  'force-push',
+  'absorb'
 ]
 
 describe('playground fixtures', () => {

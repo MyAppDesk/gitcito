@@ -1269,6 +1269,22 @@ const en = {
   'rangeDiff.open': 'What changed since…',
   'rangeDiff.forcedTitle': 'History was rewritten on the remote — see what changed',
 
+  // Absorb (staged hunks → fixup! commits)
+  'absorb.title': 'Absorb staged changes',
+  'absorb.open': 'Absorb staged changes…',
+  'absorb.subtitle': 'Route each staged hunk into the commit that introduced it',
+  'absorb.hunkCount': '{n} hunks',
+  'absorb.unmatched': 'Belongs to nothing yet',
+  'absorb.unmatchedHint': 'These stay staged for you to commit normally.',
+  'absorb.createFixups': 'Create fixups',
+  'absorb.createAndRebase': 'Create fixups & rebase',
+  'absorb.done': 'Created {n} fixup commits',
+  'absorb.doneRebased': 'Absorbed {n} fixups into their commits',
+  'absorb.emptyNoStaged': 'Nothing is staged. Stage the fixes you want absorbed first.',
+  'absorb.emptyNoCommits': 'No unpushed commits to absorb into — everything here is already published.',
+  'absorb.emptyInProgress': 'A merge or rebase is in progress. Finish it first.',
+  'absorb.emptyNoMatch': 'None of the staged hunks belong to an unpushed commit.',
+
   // Sparse checkout modal
   'sparse.title': 'Sparse-checkout',
   'sparse.description': 'Limit the working tree to the top-level folders you pick. Unselected folders are removed from the working tree but preserved in git history.',
@@ -2748,6 +2764,22 @@ const es: Dict = {
   'rangeDiff.empty': 'Las dos versiones son idénticas.',
   'rangeDiff.open': 'Qué ha cambiado desde…',
   'rangeDiff.forcedTitle': 'El remoto reescribió el historial — ver qué cambió',
+
+  // Absorb (hunks staged → commits fixup!)
+  'absorb.title': 'Absorber cambios staged',
+  'absorb.open': 'Absorber cambios staged…',
+  'absorb.subtitle': 'Envía cada hunk staged al commit que lo introdujo',
+  'absorb.hunkCount': '{n} hunks',
+  'absorb.unmatched': 'Aún no pertenece a nada',
+  'absorb.unmatchedHint': 'Estos se quedan staged para que los commitees normal.',
+  'absorb.createFixups': 'Crear fixups',
+  'absorb.createAndRebase': 'Crear fixups y rebasar',
+  'absorb.done': 'Creados {n} commits fixup',
+  'absorb.doneRebased': 'Absorbidos {n} fixups en sus commits',
+  'absorb.emptyNoStaged': 'No hay nada staged. Prepara primero los arreglos que quieras absorber.',
+  'absorb.emptyNoCommits': 'No hay commits sin publicar donde absorber — todo esto ya está publicado.',
+  'absorb.emptyInProgress': 'Hay un merge o rebase en curso. Termínalo primero.',
+  'absorb.emptyNoMatch': 'Ningún hunk staged pertenece a un commit sin publicar.',
 
   // Sparse checkout modal
   'sparse.title': 'Sparse-checkout',

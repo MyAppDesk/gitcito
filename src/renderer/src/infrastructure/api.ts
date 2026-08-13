@@ -9,6 +9,7 @@ import type {
   RangeDiffEntry,
   RefTip,
   ForcedRefUpdate,
+  AbsorbPlan,
   CiStatus,
   CommitBranchInfo,
   ConflictContext,
@@ -345,6 +346,9 @@ export const gitApi = {
   rangeDiff: (path: string, oldRev: string, newRev: string, base?: string) =>
     call<RangeDiffEntry[]>('rangeDiff', path, oldRev, newRev, base),
   refTips: (path: string, ref: string, max?: number) => call<RefTip[]>('refTips', path, ref, max),
+  absorbPlan: (path: string) => call<AbsorbPlan>('absorbPlan', path),
+  absorbApply: (path: string, opts?: { rebase?: boolean }) =>
+    call<{ created: number; rebased: boolean }>('absorbApply', path, opts),
   repoStats: (path: string, sinceDays?: number) => call<RepoStats>('repoStats', path, sinceDays),
   repoInsights: (path: string, sinceDays?: number) => call<RepoInsights>('repoInsights', path, sinceDays),
   cosmosData: (path: string, limit?: number) => call<CosmosCommit[]>('cosmosData', path, limit),

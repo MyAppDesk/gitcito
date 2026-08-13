@@ -9,6 +9,7 @@ import { togglePin, selectPinned } from '../src/renderer/src/lib/pinnedBranches'
 import { parseMergeTreeSingle, parseMergeTreeStdin } from '../src/shared/mergeTree'
 import { parseRangeDiff } from '../src/shared/rangeDiff'
 import { parseForcedUpdates } from '../src/shared/fetchPorcelain'
+import { buildPatch, parsePatch, touchedOldLines } from '../src/shared/patchHunks'
 import {
   deleteFolder,
   detachPath,
@@ -2370,5 +2371,73 @@ describe('fetch --porcelain forced updates', () => {
   it('ignores a brand-new ref even if git flagged it', () => {
     const line = '+ 0000000000000000000000000000000000000000 777 refs/remotes/origin/fresh'
     expect(parseForcedUpdates(line)).toEqual([])
+  })
+})
+
+describe('patch hunk splitting (absorb)', () => {
+  const DIFF = [
+    'diff --git a/src/auth.ts b/src/auth.ts',
+    'index 1111111..2222222 100644',
+    '--- a/src/auth.ts',
+    '+++ b/src/auth.ts',
+    '@@ -1,4 +1,5 @@',
+    ' export function login(user, password) {',
+    '   if (!user) return null',
+    '+  if (!password) return null',
+    '   return { user }',
+    ' }',
+    '@@ -20,3 +21,3 @@',
+    ' const x = 1',
+    '-const y = 2',
+    '+const y = 3',
+    ' const z = 4',
+    'diff --git a/logo.png b/logo.png',
+    'index 3333333..4444444 100644',
+    'Binary files a/logo.png and b/logo.png differ',
+    ''
+  ].join('\n')
+
+  it('splits a diff into files and their hunks', () => {
+    const files = parsePatch(DIFF)
+    expect(files.map((f) => f.newPath)).toEqual(['src/auth.ts', 'logo.png'])
+    expect(files[0].hunks).toHaveLength(2)
+    expect(files[0].hunks[0]).toMatchObject({ oldStart: 1, oldCount: 4 })
+    expect(files[1].binary).toBe(true)
+    expect(files[1].hunks).toEqual([])
+  })
+
+  it('rebuilds an applicable patch from a subset of hunks', () => {
+    const [file] = parsePatch(DIFF)
+    const patch = buildPatch(file, [file.hunks[1]])
+    expect(patch).toContain('diff --git a/src/auth.ts b/src/auth.ts')
+    expect(patch).toContain('@@ -20,3 +21,3 @@')
+    // The other hunk is left out entirely — that's what makes one fixup per
+    // target commit possible.
+    expect(patch).not.toContain('if (!password)')
+    expect(patch.endsWith('\n')).toBe(true)
+  })
+
+  it('reports the old-side lines a hunk touches, deletions apart from context', () => {
+    const [file] = parsePatch(DIFF)
+    // Pure addition: nothing deleted, so only context can be blamed.
+    expect(touchedOldLines(file.hunks[0])).toEqual({ deleted: [], context: [1, 2, 3, 4] })
+    // A replacement: the deleted line is the strong signal.
+    expect(touchedOldLines(file.hunks[1])).toEqual({ deleted: [21], context: [20, 22] })
+  })
+
+  it('handles a file with no trailing newline marker', () => {
+    const diff = [
+      'diff --git a/a.txt b/a.txt',
+      '--- a/a.txt',
+      '+++ b/a.txt',
+      '@@ -1 +1 @@',
+      '-old',
+      '+new',
+      '\\ No newline at end of file',
+      ''
+    ].join('\n')
+    const [file] = parsePatch(diff)
+    expect(file.hunks[0].lines).toContain('\\ No newline at end of file')
+    expect(touchedOldLines(file.hunks[0])).toEqual({ deleted: [1], context: [] })
   })
 })

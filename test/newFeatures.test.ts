@@ -567,3 +567,76 @@ describe('rangeDiff + refTips (force-push playground)', () => {
     expect(await gitService.refTips(R, 'refs/heads/does-not-exist')).toEqual([])
   })
 })
+
+describe('absorb (absorb playground)', () => {
+  it('routes each staged hunk to the commit that introduced its lines', async () => {
+    const R = cloneFixture('absorb')
+    await gitService.stageAll(R)
+    const plan = await gitService.absorbPlan(R)
+
+    expect(plan.targets.map((t) => t.subject)).toEqual(['feat: add parser', 'feat: add auth'])
+    expect(plan.targets[0].hunks.map((h) => h.file)).toEqual(['src/parser.ts'])
+    expect(plan.targets[1].hunks.map((h) => h.file)).toEqual(['src/auth.ts'])
+    // The untouched commit is not dragged in.
+    expect(plan.targets.some((t) => t.subject.includes('logger'))).toBe(false)
+    // A brand-new file has no history to be absorbed into.
+    expect(plan.unmatched.map((h) => h.file)).toEqual(['src/cache.ts'])
+    expect(plan.base).toBe('origin/main')
+  })
+
+  it('never offers to rewrite a commit that is already pushed', async () => {
+    const R = cloneFixture('absorb')
+    // Publish everything: now there is nothing left that may be rewritten.
+    // Push to a throwaway bare repo — the fixture's own origin is shared with
+    // the playground, and writing to it would corrupt the next test run.
+    const bare = mkdtempSync(join(tmpdir(), 'gitcito-absorb-origin-'))
+    execFileSync('git', ['init', '-q', '--bare', bare])
+    execFileSync('git', ['-C', R, 'remote', 'set-url', 'origin', bare])
+    execFileSync('git', ['-C', R, 'push', '-q', 'origin', 'HEAD:main'])
+    execFileSync('git', ['-C', R, 'fetch', '-q', 'origin'])
+    await gitService.stageAll(R)
+    const plan = await gitService.absorbPlan(R)
+    expect(plan.targets).toEqual([])
+  })
+
+  it('creates one fixup per target and leaves the rest staged', async () => {
+    const R = cloneFixture('absorb')
+    await gitService.stageAll(R)
+    const res = await gitService.absorbApply(R)
+
+    expect(res).toEqual({ created: 2, rebased: false })
+    const log = await gitService.log(R, 10)
+    expect(log.slice(0, 2).map((c) => c.subject)).toEqual(['fixup! feat: add parser', 'fixup! feat: add auth'])
+    // The unattributed file is still staged, ready to be committed normally.
+    const status = await gitService.status(R)
+    expect(status.staged.map((f) => f.path)).toEqual(['src/cache.ts'])
+    expect(status.unstaged).toEqual([])
+  })
+
+  it('folds the fixups into their commits when asked to rebase', async () => {
+    const R = cloneFixture('absorb')
+    await gitService.stageAll(R)
+    const res = await gitService.absorbApply(R, { rebase: true })
+
+    expect(res).toEqual({ created: 2, rebased: true })
+    const log = await gitService.log(R, 10)
+    // Back to the original three commits — no fixup left behind.
+    expect(log.map((c) => c.subject)).toEqual([
+      'feat: add logger',
+      'feat: add parser',
+      'feat: add auth',
+      'init: readme'
+    ])
+    // The fix really landed inside the commit that needed it.
+    const auth = await gitService.fileContent(R, 'src/auth.ts', log[2].hash)
+    expect(auth).toContain('if (!password) return null')
+    // …and the unrelated change survived the rebase, still staged.
+    expect((await gitService.status(R)).staged.map((f) => f.path)).toEqual(['src/cache.ts'])
+  })
+
+  it('says why there is nothing to do instead of failing', async () => {
+    const R = cloneFixture('absorb')
+    expect((await gitService.absorbPlan(R)).reason).toBe('no-staged')
+    expect(await gitService.absorbApply(R)).toEqual({ created: 0, rebased: false })
+  })
+})

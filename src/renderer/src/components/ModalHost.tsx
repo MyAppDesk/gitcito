@@ -14,6 +14,7 @@ import { BranchComparison } from './BranchComparison'
 import { ConflictRadar } from './ConflictRadar'
 import { KeychainConsentModal } from './KeychainConsentModal'
 import { RangeDiffModal } from './RangeDiffModal'
+import { AbsorbModal } from './AbsorbModal'
 import { AIPRReview } from './AIPRReview'
 import { ReflogModal } from './ReflogModal'
 import { BisectModal } from './BisectModal'
@@ -1408,6 +1409,7 @@ export function ModalHost(): React.JSX.Element {
             {modal.kind === 'keychain-consent' && (
               <KeychainConsentModal reason={modal.reason} adopted={modal.adopted} />
             )}
+            {modal.kind === 'absorb' && <AbsorbModal repoPath={modal.repoPath} />}
             {modal.kind === 'range-diff' && (
               <RangeDiffModal repoPath={modal.repoPath} branch={modal.branch} initialOld={modal.initialOld} />
             )}

@@ -82,6 +82,7 @@ export type ModalSpec =
   | { kind: 'conflict-radar'; repoPath: string; base?: string }
   | { kind: 'keychain-consent'; reason: KeychainReason; adopted?: boolean }
   | { kind: 'range-diff'; repoPath: string; branch: string; initialOld?: string }
+  | { kind: 'absorb'; repoPath: string }
   | { kind: 'ai-pr-review'; repoPath: string; prTitle: string; sourceBranch: string; targetBranch: string }
   | { kind: 'group-color'; tabId: string; current?: string; onSelect: (color: string) => void }
   | { kind: 'reflog'; repoPath: string }

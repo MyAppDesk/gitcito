@@ -43,7 +43,7 @@ export function SemanticSummary({
   newSide: BlobSpec
 }): React.JSX.Element | null {
   const [result, setResult] = useState<SemanticDiff | null>(null)
-  const [open, setOpen] = useState(true)
+  const [open, setOpen] = useState(false)
   const t = useT()
 
   const oldKey = JSON.stringify(oldSide)

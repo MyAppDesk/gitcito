@@ -177,6 +177,42 @@ export interface MergePreviewResult {
   scannedAt: number
 }
 
+/** How one commit fared between two versions of a branch (`git range-diff`). */
+export type RangeDiffKind = 'unchanged' | 'modified' | 'removed' | 'added'
+
+/** One commit pair from a range-diff. */
+export interface RangeDiffEntry {
+  kind: RangeDiffKind
+  /** Position in the old range, null when the commit is new. */
+  oldIndex: number | null
+  oldSha: string | null
+  /** Position in the new range, null when the commit was dropped. */
+  newIndex: number | null
+  newSha: string | null
+  subject: string
+  /** Interdiff — how the commit itself was rewritten. Only for `modified`. */
+  body: string
+}
+
+/** A remote-tracking ref that was rewritten under us (history was force-pushed). */
+export interface ForcedRefUpdate {
+  /** Short form, e.g. `origin/feature`. */
+  ref: string
+  oldSha: string
+  newSha: string
+}
+
+/** One past position of a ref, read from its reflog. */
+export interface RefTip {
+  sha: string
+  /** Reflog selector, e.g. `origin/feature@{2}`. */
+  selector: string
+  /** What moved it: 'fetch: forced-update', 'rebase (finish)', 'commit'… */
+  reason: string
+  date: number // unix seconds
+  subject: string
+}
+
 /** Whether the user has let Gitcito use the OS keychain (safeStorage). */
 export type KeychainConsent = 'granted' | 'declined' | 'unset'
 

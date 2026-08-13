@@ -18,7 +18,8 @@ import type {
   SubmoduleInfo,
   TreeStatusKind,
   FsDropMode,
-  MergePreviewResult
+  MergePreviewResult,
+  ForcedRefUpdate
 } from '../../../shared/types'
 import { gitApi, hostingApi } from '../infrastructure/api'
 import { useUIStore } from './ui'
@@ -78,6 +79,10 @@ export interface RepoData {
   notGit: boolean
   /** Last Conflict Radar scan, kept so branch rows can wear their risk dot. */
   mergeRisk: MergePreviewResult | null
+  /** Remote refs rewritten by the last fetch, keyed by short name
+   *  (`origin/feature`). Feeds the "history was rewritten" marker and gives the
+   *  range-diff the exact commit the branch used to point at. */
+  forcedUpdates: Record<string, ForcedRefUpdate>
 }
 
 const emptyRepo = (path: string): RepoData => ({
@@ -110,7 +115,8 @@ const emptyRepo = (path: string): RepoData => ({
   ciStatuses: {},
   treeStatus: {},
   notGit: false,
-  mergeRisk: null
+  mergeRisk: null,
+  forcedUpdates: {}
 })
 
 interface RepoStoreState {
@@ -837,11 +843,32 @@ export const repoActions = {
 
   fetchAll: async (path: string) => {
     const before = new Set((useRepoStore.getState().repos[path]?.commits ?? []).map((c) => c.hash))
-    const ok = await useRepoStore.getState().run(path, 'Fetched all remotes', () => gitApi.fetchAll(path), undefined, 'fetch')
+    let forced: ForcedRefUpdate[] = []
+    const ok = await useRepoStore.getState().run(
+      path,
+      'Fetched all remotes',
+      async () => {
+        forced = await gitApi.fetchAll(path)
+      },
+      undefined,
+      'fetch'
+    )
     if (ok) {
       const after = useRepoStore.getState().repos[path]?.commits ?? []
       const newCommits = before.size ? after.filter((c) => !before.has(c.hash)).map((c) => c.hash) : []
-      useRepoStore.getState().patch(path, { lastFetchAt: Date.now(), newCommits })
+      // Keep earlier rewrites around: a branch you haven't looked at yet should
+      // still be flagged after an unrelated fetch.
+      const seen = { ...(useRepoStore.getState().repos[path]?.forcedUpdates ?? {}) }
+      for (const f of forced) seen[f.ref] = f
+      useRepoStore.getState().patch(path, { lastFetchAt: Date.now(), newCommits, forcedUpdates: seen })
+      if (forced.length) {
+        toast(
+          'info',
+          forced.length === 1
+            ? `${forced[0].ref} was force-pushed — right-click it to see what changed`
+            : `${forced.length} branches were force-pushed — right-click one to see what changed`
+        )
+      }
     }
     return ok
   },

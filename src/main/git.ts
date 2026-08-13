@@ -64,15 +64,29 @@ import type {
   MergePreviewResult,
   MergeRiskKind,
   BlobSpec,
-  SemanticDiff
+  SemanticDiff,
+  RangeDiffEntry,
+  RefTip,
+  ForcedRefUpdate
 } from '../shared/types'
 import { parseMergeTreeSingle, parseMergeTreeStdin, type MergeTreeRecord } from '../shared/mergeTree'
+import { parseRangeDiff } from '../shared/rangeDiff'
+import { parseForcedUpdates } from '../shared/fetchPorcelain'
 import { semanticCompare } from './semantic'
 import { recordEvent } from './analytics'
 import { recordLog } from './log'
 import { activeProfileToken } from './settings'
 
 const SEP = '\x1f'
+
+/**
+ * How eagerly `git range-diff` pairs a commit with its rewritten self. git's
+ * default (60) leaves small commits unpaired — they show up as a delete plus an
+ * add, which is exactly the "everything changed" noise this feature exists to
+ * remove. Pairing slightly too eagerly is the better failure: the interdiff is
+ * right there to judge it by.
+ */
+const CREATION_FACTOR = '--creation-factor=75'
 const REC = '\x1e'
 
 /**
@@ -786,6 +800,70 @@ export const gitService = {
     return { base, baseSha, entries, scannedAt: Date.now() }
   },
 
+  /**
+   * `git range-diff` — pair up the commits of two versions of a branch and show
+   * how each one was rewritten. This is the answer to "someone force-pushed,
+   * what actually changed since I reviewed it?", which a plain diff cannot give
+   * because every commit after a rebase looks brand new.
+   *
+   * With `base`, both ranges are taken from it (`base..old` vs `base..new`);
+   * without it the symmetric `old...new` form lets git work the bases out —
+   * which is what you want when the branch was rebased onto something else.
+   */
+  async rangeDiff(repoPath: string, oldRev: string, newRev: string, base?: string): Promise<RangeDiffEntry[]> {
+    // Resolve first: git rejects reflog selectors inside the `old...new` form
+    // ("need two commit ranges"), and `origin/feature@{1}` is exactly what the
+    // reflog picker hands us.
+    const [oldSha, newSha] = await Promise.all([
+      runGit(repoPath, ['rev-parse', oldRev]).then((o) => o.trim()),
+      runGit(repoPath, ['rev-parse', newRev]).then((o) => o.trim())
+    ])
+    // Without an explicit base, take the two versions' common ancestor: it
+    // keeps the comparison to the commits that actually differ, and (unlike the
+    // `old...new` form) still lists identical commits as unchanged when the
+    // branch was rebased onto something newer.
+    let effectiveBase = base?.trim()
+    if (!effectiveBase) {
+      effectiveBase = await runGit(repoPath, ['merge-base', oldSha, newSha])
+        .then((o) => o.trim())
+        .catch(() => '')
+    }
+    const args = effectiveBase
+      ? ['range-diff', CREATION_FACTOR, effectiveBase, oldSha, newSha]
+      : ['range-diff', CREATION_FACTOR, `${oldSha}...${newSha}`]
+    const out = await runGit(repoPath, args)
+    return parseRangeDiff(out)
+  },
+
+  /**
+   * Where a ref has been, newest first, from its reflog — the free record of
+   * every rebase, reset and forced fetch. Entry 0 is the current tip, so the
+   * "what changed since…" picker starts at index 1.
+   */
+  async refTips(repoPath: string, ref: string, max = 20): Promise<RefTip[]> {
+    let out = ''
+    try {
+      out = await runGit(repoPath, [
+        'reflog',
+        'show',
+        `--max-count=${max}`,
+        `--format=%H${SEP}%gd${SEP}%gs${SEP}%ct${SEP}%s`,
+        ref
+      ])
+    } catch {
+      return [] // no reflog for this ref (a fresh clone's remote refs, say)
+    }
+    const tips: RefTip[] = []
+    for (const line of out.split('\n').filter(Boolean)) {
+      const [sha, selector, reason, date, subject] = line.split(SEP)
+      if (!sha) continue
+      tips.push({ sha, selector, reason: reason ?? '', date: Number(date) || 0, subject: subject ?? '' })
+    }
+    // Consecutive entries pointing at the same commit (a checkout, a no-op
+    // fetch) would offer the user a comparison against itself.
+    return tips.filter((t, i) => i === 0 || t.sha !== tips[i - 1].sha)
+  },
+
   async status(repoPath: string): Promise<RepoStatus> {
     const git = gitFor(repoPath)
     const st = await git.status()
@@ -1348,10 +1426,26 @@ export const gitService = {
 
   // ─── Sync operations ───────────────────────────────────────────────────────
 
-  async fetchAll(repoPath: string): Promise<void> {
+  /**
+   * Returns the refs that were **force-updated** by this fetch — history the
+   * remote rewrote under us. `--porcelain` is what makes that knowable without
+   * diffing every ref by hand; on a git too old to support it we simply fetch
+   * and report nothing.
+   */
+  async fetchAll(repoPath: string): Promise<ForcedRefUpdate[]> {
     // `--all` spans every remote; authenticate the common case (origin). Other
     // private https remotes without a matching PAT fail fast rather than hang.
-    await withRemoteAuth(repoPath, 'origin', () => runGit(repoPath, ['fetch', '--all', '--prune']))
+    try {
+      const out = await withRemoteAuth(repoPath, 'origin', () =>
+        runGit(repoPath, ['fetch', '--all', '--prune', '--porcelain'])
+      )
+      return parseForcedUpdates(out)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      if (!/unknown option|porcelain/i.test(message)) throw err
+      await withRemoteAuth(repoPath, 'origin', () => runGit(repoPath, ['fetch', '--all', '--prune']))
+      return []
+    }
   },
 
   async pull(repoPath: string, mode: 'default' | 'ff-only' | 'rebase' = 'default'): Promise<void> {
@@ -3425,6 +3519,8 @@ const READ_METHODS = new Set<string>([
   'compareBranches',
   'mergePreview',
   'semanticDiff',
+  'rangeDiff',
+  'refTips',
   'repoStats',
   'repoInsights',
   'cosmosData',

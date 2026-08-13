@@ -59,7 +59,8 @@ const EXPECTED = [
   'file-nav',
   'host-remotes',
   'conflict-radar',
-  'semantic-diff'
+  'semantic-diff',
+  'force-push'
 ]
 
 describe('playground fixtures', () => {

@@ -7,6 +7,8 @@ import { autolink, remoteWebUrl, filePermalink } from '../src/renderer/src/lib/a
 import { frecencyScore } from '../src/renderer/src/lib/frecency'
 import { togglePin, selectPinned } from '../src/renderer/src/lib/pinnedBranches'
 import { parseMergeTreeSingle, parseMergeTreeStdin } from '../src/shared/mergeTree'
+import { parseRangeDiff } from '../src/shared/rangeDiff'
+import { parseForcedUpdates } from '../src/shared/fetchPorcelain'
 import {
   deleteFolder,
   detachPath,
@@ -2302,5 +2304,71 @@ describe('merge-tree output parsing (conflict radar)', () => {
     const rec = parseMergeTreeSingle('', 128, 'fatal: refusing to merge unrelated histories')
     expect(rec.status).toBe('error')
     expect(rec.message).toContain('unrelated histories')
+  })
+})
+
+describe('range-diff output parsing', () => {
+  const OUT = [
+    '1:  890dbf2 = 1:  890dbf2 add x',
+    '-:  ------- > 2:  eb6c239 add w',
+    '2:  eb1d14d ! 3:  0da280d add y',
+    '    @@ Metadata',
+    '     Author: Someone <a@b.c>',
+    '     ',
+    '      ## Commit message ##',
+    '    -    add y',
+    '    +    add y (tweaked)',
+    '3:  ea2e850 < -:  ------- add z'
+  ].join('\n')
+
+  it('reads each commit pair and its verdict', () => {
+    const entries = parseRangeDiff(OUT)
+    expect(entries.map((e) => e.kind)).toEqual(['unchanged', 'added', 'modified', 'removed'])
+    expect(entries.map((e) => e.subject)).toEqual(['add x', 'add w', 'add y', 'add z'])
+  })
+
+  it('keeps both sides of a pair, with a null side for added/dropped commits', () => {
+    const [unchanged, added, modified, removed] = parseRangeDiff(OUT)
+    expect(unchanged).toMatchObject({ oldIndex: 1, oldSha: '890dbf2', newIndex: 1, newSha: '890dbf2' })
+    expect(added).toMatchObject({ oldIndex: null, oldSha: null, newIndex: 2, newSha: 'eb6c239' })
+    expect(modified).toMatchObject({ oldSha: 'eb1d14d', newSha: '0da280d' })
+    expect(removed).toMatchObject({ newIndex: null, newSha: null, oldSha: 'ea2e850' })
+  })
+
+  it('attaches the interdiff to the rewritten commit, unindented', () => {
+    const modified = parseRangeDiff(OUT).find((e) => e.kind === 'modified')!
+    expect(modified.body).toContain('@@ Metadata')
+    expect(modified.body).toContain('-    add y')
+    expect(modified.body).toContain('+    add y (tweaked)')
+    // The body belongs to that entry alone — the next header ends it.
+    expect(modified.body).not.toContain('add z')
+  })
+
+  it('returns nothing for identical ranges', () => {
+    expect(parseRangeDiff('')).toEqual([])
+  })
+})
+
+describe('fetch --porcelain forced updates', () => {
+  const OUT = [
+    '  1111111111111111111111111111111111111111 2222222222222222222222222222222222222222 refs/remotes/origin/main',
+    '+ 3333333333333333333333333333333333333333 4444444444444444444444444444444444444444 refs/remotes/origin/feature',
+    '* 0000000000000000000000000000000000000000 5555555555555555555555555555555555555555 refs/remotes/origin/brand-new',
+    '- 6666666666666666666666666666666666666666 0000000000000000000000000000000000000000 refs/remotes/origin/gone'
+  ].join('\n')
+
+  it('reports only the rewritten refs, in short form', () => {
+    expect(parseForcedUpdates(OUT)).toEqual([
+      {
+        ref: 'origin/feature',
+        oldSha: '3333333333333333333333333333333333333333',
+        newSha: '4444444444444444444444444444444444444444'
+      }
+    ])
+  })
+
+  it('ignores a brand-new ref even if git flagged it', () => {
+    const line = '+ 0000000000000000000000000000000000000000 777 refs/remotes/origin/fresh'
+    expect(parseForcedUpdates(line)).toEqual([])
   })
 })

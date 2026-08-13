@@ -1250,6 +1250,25 @@ const en = {
   'keychain.enable': 'Enable',
   'keychain.disable': 'Turn off',
 
+  // Range-diff (what changed since a force-push / rebase)
+  'rangeDiff.title': 'What changed since',
+  'rangeDiff.compare': 'Compare',
+  'rangeDiff.before': 'Before',
+  'rangeDiff.after': 'After',
+  'rangeDiff.fromReflog': 'Previous positions:',
+  'rangeDiff.countModified': '{n} rewritten',
+  'rangeDiff.countAdded': '{n} new',
+  'rangeDiff.countRemoved': '{n} dropped',
+  'rangeDiff.countUnchanged': '{n} unchanged',
+  'rangeDiff.kind.modified': 'rewritten',
+  'rangeDiff.kind.added': 'new',
+  'rangeDiff.kind.removed': 'dropped',
+  'rangeDiff.kind.unchanged': 'unchanged',
+  'rangeDiff.basePlaceholder': 'base ref (optional)',
+  'rangeDiff.empty': 'Both versions are identical.',
+  'rangeDiff.open': 'What changed since…',
+  'rangeDiff.forcedTitle': 'History was rewritten on the remote — see what changed',
+
   // Sparse checkout modal
   'sparse.title': 'Sparse-checkout',
   'sparse.description': 'Limit the working tree to the top-level folders you pick. Unselected folders are removed from the working tree but preserved in git history.',
@@ -2710,6 +2729,25 @@ const es: Dict = {
   'keychain.statusUnavailable': 'Tu sistema no ofrece llavero, así que los secretos no se pueden cifrar en disco.',
   'keychain.enable': 'Activar',
   'keychain.disable': 'Desactivar',
+
+  // Range-diff (qué cambió tras un force-push / rebase)
+  'rangeDiff.title': 'Qué ha cambiado desde',
+  'rangeDiff.compare': 'Comparar',
+  'rangeDiff.before': 'Antes',
+  'rangeDiff.after': 'Después',
+  'rangeDiff.fromReflog': 'Posiciones anteriores:',
+  'rangeDiff.countModified': '{n} reescritos',
+  'rangeDiff.countAdded': '{n} nuevos',
+  'rangeDiff.countRemoved': '{n} eliminados',
+  'rangeDiff.countUnchanged': '{n} sin cambios',
+  'rangeDiff.kind.modified': 'reescrito',
+  'rangeDiff.kind.added': 'nuevo',
+  'rangeDiff.kind.removed': 'eliminado',
+  'rangeDiff.kind.unchanged': 'sin cambios',
+  'rangeDiff.basePlaceholder': 'ref base (opcional)',
+  'rangeDiff.empty': 'Las dos versiones son idénticas.',
+  'rangeDiff.open': 'Qué ha cambiado desde…',
+  'rangeDiff.forcedTitle': 'El remoto reescribió el historial — ver qué cambió',
 
   // Sparse checkout modal
   'sparse.title': 'Sparse-checkout',

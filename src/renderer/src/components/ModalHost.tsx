@@ -13,6 +13,7 @@ import { InteractiveRebase } from './InteractiveRebase'
 import { BranchComparison } from './BranchComparison'
 import { ConflictRadar } from './ConflictRadar'
 import { KeychainConsentModal } from './KeychainConsentModal'
+import { RangeDiffModal } from './RangeDiffModal'
 import { AIPRReview } from './AIPRReview'
 import { ReflogModal } from './ReflogModal'
 import { BisectModal } from './BisectModal'
@@ -1363,6 +1364,7 @@ export function ModalHost(): React.JSX.Element {
                 : modal.kind === 'interactive-rebase' ||
                     modal.kind === 'branch-compare' ||
                     modal.kind === 'conflict-radar' ||
+                    modal.kind === 'range-diff' ||
                     modal.kind === 'ai-pr-review' ||
                     modal.kind === 'reflog' ||
                     modal.kind === 'hooks' ||
@@ -1405,6 +1407,9 @@ export function ModalHost(): React.JSX.Element {
             )}
             {modal.kind === 'keychain-consent' && (
               <KeychainConsentModal reason={modal.reason} adopted={modal.adopted} />
+            )}
+            {modal.kind === 'range-diff' && (
+              <RangeDiffModal repoPath={modal.repoPath} branch={modal.branch} initialOld={modal.initialOld} />
             )}
             {modal.kind === 'conflict-radar' && (
               <ConflictRadar repoPath={modal.repoPath} initialBase={modal.base} />

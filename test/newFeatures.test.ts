@@ -1,4 +1,4 @@
-import { describe, it, expect, afterAll } from 'vitest'
+import { describe, it, expect, afterAll, beforeAll } from 'vitest'
 import { writeFileSync, existsSync, mkdtempSync, rmSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import { tmpdir } from 'node:os'
@@ -504,5 +504,66 @@ describe('semanticDiff over git blobs (conflict-radar playground)', () => {
   it('returns nothing for a path missing on both sides', async () => {
     const r = await gitService.semanticDiff(R, 'nope.ts', { kind: 'ref', ref: 'main' }, { kind: 'ref', ref: 'main' })
     expect(r).toEqual({ language: null, changes: [] })
+  })
+})
+
+describe('rangeDiff + refTips (force-push playground)', () => {
+  // The fixture is deliberately left un-fetched so the app can demo the
+  // discovery; the copy fetches for real (its origin is the same bare repo).
+  let R = ''
+  let forced: Awaited<ReturnType<typeof gitService.fetchAll>> = []
+
+  beforeAll(async () => {
+    R = cloneFixture('force-push')
+    forced = await gitService.fetchAll(R)
+  })
+
+  it('reports the force-pushed ref, with the commit it used to point at', () => {
+    expect(forced).toHaveLength(1)
+    expect(forced[0].ref).toBe('origin/feature/login')
+    expect(forced[0].oldSha).not.toBe(forced[0].newSha)
+  })
+
+  it('reads the previous positions of a tracking ref from its reflog', async () => {
+    const tips = await gitService.refTips(R, 'origin/feature/login')
+    expect(tips.length).toBeGreaterThanOrEqual(2)
+    expect(tips[0].selector).toBe('origin/feature/login@{0}')
+    // The rewrite is recorded as a forced update, which is what makes it
+    // findable without any bookkeeping of our own.
+    expect(tips.some((t) => /forced-update/.test(t.reason))).toBe(true)
+    expect(tips[0].sha).not.toBe(tips[1].sha)
+    // The tip we now hold is the one the fetch reported.
+    expect(tips[0].sha).toBe(forced[0].newSha)
+  })
+
+  it('pairs the rewritten commit and separates the dropped and new ones', async () => {
+    const entries = await gitService.rangeDiff(R, forced[0].oldSha, 'origin/feature/login')
+    const byKind = (k: string): string[] => entries.filter((e) => e.kind === k).map((e) => e.subject)
+    expect(byKind('modified')).toEqual(['validate password'])
+    expect(byKind('removed')).toEqual(['add debug logging'])
+    expect(byKind('added')).toEqual(['add rate limiting'])
+  })
+
+  it('accepts a reflog selector, which the plain old...new form rejects', async () => {
+    const entries = await gitService.rangeDiff(R, 'origin/feature/login@{1}', 'origin/feature/login')
+    expect(entries.some((e) => e.kind === 'modified')).toBe(true)
+  })
+
+  it('carries the interdiff of the rewritten commit, not its whole content', async () => {
+    const entries = await gitService.rangeDiff(R, 'origin/feature/login@{1}', 'origin/feature/login')
+    const rewritten = entries.find((e) => e.kind === 'modified')!
+    expect(rewritten.body).toContain('validate password (min length)')
+    expect(rewritten.body).toContain('pw.length < 12')
+    expect(rewritten.oldSha).toBeTruthy()
+    expect(rewritten.newSha).toBeTruthy()
+    expect(rewritten.oldSha).not.toBe(rewritten.newSha)
+  })
+
+  it('reports nothing when a ref is compared with itself', async () => {
+    expect(await gitService.rangeDiff(R, 'main', 'main')).toEqual([])
+  })
+
+  it('returns no tips for a ref that has no reflog', async () => {
+    expect(await gitService.refTips(R, 'refs/heads/does-not-exist')).toEqual([])
   })
 })

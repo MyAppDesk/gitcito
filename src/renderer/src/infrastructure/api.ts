@@ -6,6 +6,9 @@ import type {
   BlobSpec,
   MergePreviewResult,
   SemanticDiff,
+  RangeDiffEntry,
+  RefTip,
+  ForcedRefUpdate,
   CiStatus,
   CommitBranchInfo,
   ConflictContext,
@@ -134,7 +137,7 @@ export const gitApi = {
   commitFixup: (path: string, targetSha: string) => call<void>('commitFixup', path, targetSha),
   autosquash: (path: string, base: string) => call<void>('autosquash', path, base),
 
-  fetchAll: (path: string) => call<void>('fetchAll', path),
+  fetchAll: (path: string) => call<ForcedRefUpdate[]>('fetchAll', path),
   pull: (path: string, mode: 'default' | 'ff-only' | 'rebase') => call<void>('pull', path, mode),
   push: (path: string, branch: string, opts?: { force?: boolean; remote?: string }) =>
     call<void>('push', path, branch, opts),
@@ -339,6 +342,9 @@ export const gitApi = {
     call<MergePreviewResult>('mergePreview', path, base, refs),
   semanticDiff: (path: string, file: string, oldSide: BlobSpec, newSide: BlobSpec) =>
     call<SemanticDiff>('semanticDiff', path, file, oldSide, newSide),
+  rangeDiff: (path: string, oldRev: string, newRev: string, base?: string) =>
+    call<RangeDiffEntry[]>('rangeDiff', path, oldRev, newRev, base),
+  refTips: (path: string, ref: string, max?: number) => call<RefTip[]>('refTips', path, ref, max),
   repoStats: (path: string, sinceDays?: number) => call<RepoStats>('repoStats', path, sinceDays),
   repoInsights: (path: string, sinceDays?: number) => call<RepoInsights>('repoInsights', path, sinceDays),
   cosmosData: (path: string, limit?: number) => call<CosmosCommit[]>('cosmosData', path, limit),

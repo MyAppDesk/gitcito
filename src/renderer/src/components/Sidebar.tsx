@@ -29,7 +29,8 @@ import {
   FolderPlus,
   Play,
   ChevronDown,
-  Star
+  Star,
+  History
 } from 'lucide-react'
 import { FileTree } from './FileTree'
 import { FileSearchBar, EMPTY_FILTER, type FileFilter } from './FileSearchBar'
@@ -656,6 +657,11 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       label: t('radar.open'),
       onClick: () => openModal({ kind: 'conflict-radar', repoPath: path, base: b.name })
     },
+    {
+      // Rebased or amended? The reflog still knows where this branch was.
+      label: t('rangeDiff.open'),
+      onClick: () => openModal({ kind: 'range-diff', repoPath: path, branch: b.name })
+    },
     { separator: true },
     {
       label: t('sidebar.renameBranch'),
@@ -724,6 +730,12 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     {
       label: interp(t('sidebar.compareBranchWith'), { current: repo.branches.current }),
       onClick: () => openModal({ kind: 'branch-compare', repoPath: path, branchA: b.fullName, branchB: repo.branches.current ?? 'HEAD' })
+    },
+    {
+      // The tracking ref's reflog records every forced fetch, so this answers
+      // "what did they change when they force-pushed?".
+      label: t('rangeDiff.open'),
+      onClick: () => openModal({ kind: 'range-diff', repoPath: path, branch: b.fullName })
     },
     { separator: true },
     { label: t('sidebar.copyBranchName'), onClick: () => void navigator.clipboard.writeText(b.fullName) },
@@ -1111,6 +1123,23 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       title={b.fullName}
     >
       <span className="sb-name">{label}</span>
+      {repo.forcedUpdates[b.fullName] && (
+        <span
+          className="sb-forced"
+          title={t('rangeDiff.forcedTitle')}
+          onClick={(e) => {
+            e.stopPropagation()
+            openModal({
+              kind: 'range-diff',
+              repoPath: path,
+              branch: b.fullName,
+              initialOld: repo.forcedUpdates[b.fullName].oldSha
+            })
+          }}
+        >
+          <History size={11} />
+        </span>
+      )}
       {riskDot(b.fullName)}
     </div>
   )

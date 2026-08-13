@@ -39,25 +39,56 @@ Breaking changes: append `!` after the type — `feat!: Drop Node 18 support`
 
 ## Translations
 
-Gitcito ships in English and Spanish. Every string a user can read must come
-from the dictionaries in `src/renderer/src/i18n/` — one file per locale
-(`en.ts`, `es.ts`), with `index.ts` exposing the API. Add the key to every
-locale file and render it with `t('your.key')` (see `CLAUDE.md` for the
-patterns, including interpolation and module-level constants).
+**Every string a user can read must be translated.** UI copy lives in
+`src/renderer/src/i18n/`, one dictionary file per locale:
+
+| File | Role |
+|------|------|
+| `en.ts` | The reference locale. Exports `en`, and derives `Dict = typeof en`. |
+| `<code>.ts` | One per additional locale, typed `Dict` — so it must cover exactly the reference keys. |
+| `index.ts` | The API: `t`, `useT`, `translate`, `interp`, `LANGUAGES`. |
+
+Add your key to **every** locale file and render it with `t('your.key')`
+(`useT()` in components, `t()` elsewhere). Build sentences with
+`interp(t(key), vars)` rather than string concatenation — word order differs
+between languages. Store keys, not translated strings, in module-level
+constants. `CLAUDE.md` has the full patterns.
 
 ```bash
 npm run lint:i18n   # fails on any hardcoded user-facing string
 ```
 
-This runs on pre-commit and in the test suite. Strings that must not be
-translated (product names, filenames, git tokens) belong in
-`scripts/i18n-allowlist.json` or carry an inline `// i18n-ignore <reason>`.
+This runs on pre-commit and in the test suite, which also checks key parity,
+duplicates, and placeholder consistency across every locale file it finds.
+Strings that must read identically in every language (product names, filenames,
+git tokens) belong in `scripts/i18n-allowlist.json` or carry an inline
+`// i18n-ignore <reason>`.
+
+### Adding a locale
+
+New translations are welcome. Copy `en.ts` to `<code>.ts`, export it as
+`Dict`, translate every value, then wire it into `dictionaries` and `LANGUAGES`
+in `index.ts` and add the code to `Language` in `src/shared/types.ts`. The
+tests pick the new file up automatically — no test changes needed.
+
+## Testing
+
+Tests run real git against generated fixture repos
+(`examples/setup-playground.sh`, invoked automatically on first run). Anything
+that mutates a repo must work on a copy via `cloneFixture()` — mutating a shared
+playground repo breaks every later test in the run.
+
+```bash
+npm test                          # full suite
+npx vitest run test/gitOps.test.ts # one file
+npm run playground:rebuild         # force-regenerate fixtures
+```
 
 ## Pull requests
 
 - PR title must follow the same `type: Subject` format (enforced by CI)
 - One concern per PR
-- `npm run typecheck` and `npm run lint:i18n` must pass
+- `npm run typecheck`, `npm run lint:i18n` and `npm test` must pass
 
 ## Releasing
 

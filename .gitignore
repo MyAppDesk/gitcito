@@ -10,3 +10,7 @@ examples/playground/
 
 # tree-sitter grammars, copied from node_modules by scripts/sync-grammars.mjs
 resources/tree-sitter/
+
+# Per-developer Claude Code overrides. The shared config (.claude/settings.json,
+# hooks, skills, commands) is checked in.
+.claude/settings.local.json

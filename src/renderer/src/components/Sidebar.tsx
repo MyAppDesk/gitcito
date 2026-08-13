@@ -43,7 +43,7 @@ import { repoIsGitHub } from '../lib/hosting'
 import { folderOpenMenuItems } from '../lib/openWith'
 import { togglePin, selectPinned } from '../lib/pinnedBranches'
 import { defaultSettings } from '../../../shared/types'
-import type { BranchInfo, ReleaseInfo, RemoteBranchInfo, StashInfo, TagInfo, WorktreeInfo, SubmoduleInfo, LaunchGroup, LaunchConfig } from '../../../shared/types'
+import type { BranchInfo, MergeRiskKind, ReleaseInfo, RemoteBranchInfo, StashInfo, TagInfo, WorktreeInfo, SubmoduleInfo, LaunchGroup, LaunchConfig } from '../../../shared/types'
 
 import { RemoteIcon } from './RemoteIcon'
 
@@ -423,6 +423,18 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     () => repo.branches.remotes.filter((b) => !f || b.fullName.toLowerCase().includes(f)),
     [repo.branches.remotes, f]
   )
+  // Verdict from the last Conflict Radar scan, if any. `merged` branches get no
+  // dot — a row of grey dots on everything already in main is just noise.
+  const riskByRef = useMemo(() => {
+    const m = new Map<string, MergeRiskKind>()
+    for (const e of repo.mergeRisk?.entries ?? []) m.set(e.ref, e.status)
+    return m
+  }, [repo.mergeRisk])
+  const riskDot = (ref: string): React.JSX.Element | null => {
+    const status = riskByRef.get(ref)
+    if (!status || status === 'merged') return null
+    return <span className={`branch-risk ${status}`} title={t(`radar.status.${status}` as 'radar.status.clean')} />
+  }
   // Local branches arranged into a folder tree by their "/"-separated prefix.
   const branchTree = useMemo(() => buildPrefixTree(locals, (b) => b.name), [locals])
   const tags = useMemo(
@@ -637,6 +649,12 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       label: interp(t('sidebar.compareBranchWith'), { current: repo.branches.current }),
       disabled: b.isCurrent,
       onClick: () => openModal({ kind: 'branch-compare', repoPath: path, branchA: b.name, branchB: repo.branches.current ?? 'HEAD' })
+    },
+    {
+      // Scan every branch against *this* one, i.e. "what would break if I land
+      // things on top of it".
+      label: t('radar.open'),
+      onClick: () => openModal({ kind: 'conflict-radar', repoPath: path, base: b.name })
     },
     { separator: true },
     {
@@ -1040,6 +1058,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       <span className="sb-name">{label}</span>
       {b.ahead > 0 && <span className="badge ahead">↑{b.ahead}</span>}
       {b.behind > 0 && <span className="badge behind">↓{b.behind}</span>}
+      {riskDot(b.name)}
       <Presence remoteNames={branchPresence.get(b.name) ?? []} />
       <span
         className={`sb-pin-action ${isPinned(b.name) ? 'pinned' : ''}`}
@@ -1092,6 +1111,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       title={b.fullName}
     >
       <span className="sb-name">{label}</span>
+      {riskDot(b.fullName)}
     </div>
   )
 

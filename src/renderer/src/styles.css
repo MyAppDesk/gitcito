@@ -8492,9 +8492,12 @@ input[type='range']:focus-visible {
   flex: 1 1 0;
   min-width: 0;
   max-width: 42%;
+}
+/* The class sits on the picker wrapper; the text styling belongs to its input. */
+.bc-ref-input .refpick-input {
   font-size: 12px;
   font-weight: 500;
-  padding: 3px 8px;
+  padding: 3px 26px 3px 8px;
 }
 .bc-swap { flex: 0 0 auto; padding: 4px; color: var(--text-2); }
 .bc-swap:hover { color: var(--accent); }
@@ -8516,7 +8519,8 @@ input[type='range']:focus-visible {
 
 .create-tag-msg { min-height: 64px; resize: vertical; font-family: inherit; }
 .create-tag-sign { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-2); margin: 10px 0; cursor: pointer; }
-.bc-header-actions { display: flex; gap: 6px; align-items: center; margin-left: auto; }
+/* The modal's ✕ is absolutely positioned in the same corner — keep clear of it. */
+.bc-header-actions { display: flex; gap: 6px; align-items: center; margin-left: auto; padding-right: 26px; }
 .bc-loading { display: flex; justify-content: center; padding: 40px; }
 .bc-body { display: flex; flex-direction: column; flex: 1; overflow: hidden; gap: 10px; }
 .bc-commits-row { display: flex; gap: 10px; min-height: 0; }
@@ -8536,6 +8540,153 @@ input[type='range']:focus-visible {
 .bc-diff-section { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 .bc-diff-title { font-size: 11.5px; color: var(--text-2); margin-bottom: 4px; }
 .bc-diff-scroll { flex: 1; overflow: auto; background: var(--bg-2); border-radius: 6px; }
+
+/* ── Ref picker (themed replacement for <datalist>) ── */
+.refpick { position: relative; display: flex; align-items: center; min-width: 0; }
+.refpick-input { width: 100%; padding-right: 26px; }
+.refpick-toggle {
+  position: absolute;
+  right: 4px;
+  display: flex;
+  align-items: center;
+  padding: 3px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-3);
+  cursor: pointer;
+}
+.refpick-toggle:hover { color: var(--text-1); background: var(--bg-4); }
+.refpick-pop {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 30;
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 4px;
+  background: var(--bg-3, var(--bg-2));
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+.refpick-opt {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 8px;
+  border-radius: 5px;
+  font-size: 12px;
+  cursor: pointer;
+  min-width: 0;
+}
+.refpick-opt.active { background: var(--bg-4); }
+.refpick-opt.current { color: var(--accent); font-weight: 600; }
+.refpick-icon { flex: 0 0 auto; color: var(--text-3); }
+.refpick-icon.remote { color: var(--text-2); }
+.refpick-icon.tag { color: var(--warn, #d29922); }
+.refpick-value { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── Conflict radar ── */
+.radar-root { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+.radar-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 10px;
+}
+.radar-header-top { display: flex; align-items: center; gap: 8px; }
+.radar-header-top h3 { margin: 0; font-size: 14px; flex: 1; }
+.radar-title-icon { color: var(--accent); }
+.radar-header-actions { display: flex; gap: 6px; align-items: center; margin-left: auto; padding-right: 26px; }
+.radar-controls { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.radar-label { font-size: 11.5px; color: var(--text-2); white-space: nowrap; }
+.radar-ref-input { flex: 1; min-width: 0; }
+.radar-scope { display: flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+.radar-scope-btn {
+  background: transparent;
+  border: 0;
+  color: var(--text-2);
+  font-size: 11.5px;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+.radar-scope-btn.active { background: var(--bg-2); color: var(--text-1); }
+.radar-summary { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.radar-pill { font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 10px; }
+.radar-pill.conflict { background: color-mix(in srgb, var(--danger, #f85149) 18%, transparent); color: var(--danger, #f85149); }
+.radar-pill.clean { background: color-mix(in srgb, var(--green) 15%, transparent); color: var(--green); }
+.radar-pill.merged { background: var(--bg-2); color: var(--text-3); }
+.radar-pill.error { background: color-mix(in srgb, var(--warn, #d29922) 18%, transparent); color: var(--warn, #d29922); }
+.radar-toggle { margin-left: auto; display: flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--text-2); cursor: pointer; }
+.radar-loading { display: flex; justify-content: center; padding: 40px; }
+.radar-body { display: flex; flex-direction: column; flex: 1; min-height: 0; gap: 10px; }
+.radar-list { flex: 1; overflow: auto; min-height: 0; }
+.radar-empty { padding: 12px; font-size: 12px; color: var(--text-3); text-align: center; }
+.radar-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 8px;
+  border-radius: 5px;
+  font-size: 12px;
+  cursor: default;
+}
+.radar-row-wrap.conflict .radar-row, .radar-row-wrap.error .radar-row { cursor: pointer; }
+.radar-row:hover { background: var(--bg-2); }
+.radar-chevron { width: 12px; display: flex; color: var(--text-3); }
+.radar-dot { display: flex; }
+.radar-dot.conflict { color: var(--danger, #f85149); }
+.radar-dot.clean { color: var(--green); }
+.radar-dot.merged { color: var(--text-3); }
+.radar-dot.error { color: var(--warn, #d29922); }
+.radar-ref { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.radar-status { font-size: 11px; color: var(--text-3); white-space: nowrap; }
+.radar-status.conflict { color: var(--danger, #f85149); font-weight: 600; }
+.radar-compare { opacity: 0; }
+.radar-row:hover .radar-compare { opacity: 1; }
+.radar-detail { padding: 2px 0 8px 34px; display: flex; flex-direction: column; gap: 2px; }
+.radar-file {
+  font-family: var(--mono, monospace);
+  font-size: 11px;
+  color: var(--text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.radar-message { font-size: 11px; color: var(--warn, #d29922); white-space: pre-wrap; }
+.radar-hotspots {
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+  max-height: 34%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.radar-hotspots-title { font-size: 11.5px; color: var(--text-2); margin-bottom: 4px; }
+.radar-hotspots-list { overflow: auto; min-height: 0; }
+.radar-hotspot { display: flex; align-items: center; gap: 8px; padding: 3px 6px; font-size: 11.5px; }
+.radar-hotspot-count {
+  font-size: 10.5px;
+  font-weight: 700;
+  min-width: 18px;
+  text-align: center;
+  border-radius: 9px;
+  padding: 1px 5px;
+  background: color-mix(in srgb, var(--danger, #f85149) 18%, transparent);
+  color: var(--danger, #f85149);
+}
+.radar-hotspot-path { font-family: var(--mono, monospace); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.radar-hotspot-refs { margin-left: auto; color: var(--text-3); font-size: 10.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 45%; }
+
+/* Risk dot worn by sidebar branch rows after a radar scan. */
+.branch-risk { width: 6px; height: 6px; border-radius: 50%; flex: 0 0 auto; }
+.branch-risk.conflict { background: var(--danger, #f85149); }
+.branch-risk.clean { background: var(--green); }
+.branch-risk.error { background: var(--warn, #d29922); }
 
 /* ── AI PR review (feature 13) ── */
 .ai-pr-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }

@@ -6,6 +6,7 @@ import { comboFromEvent, formatCombo, effectiveBindings, matchShortcut } from '.
 import { autolink, remoteWebUrl, filePermalink } from '../src/renderer/src/lib/autolink'
 import { frecencyScore } from '../src/renderer/src/lib/frecency'
 import { togglePin, selectPinned } from '../src/renderer/src/lib/pinnedBranches'
+import { parseMergeTreeSingle, parseMergeTreeStdin } from '../src/shared/mergeTree'
 import {
   deleteFolder,
   detachPath,
@@ -2242,5 +2243,64 @@ describe('file list keyboard navigation', () => {
 
   it('does nothing on an empty list', () => {
     expect(stepPath([], null, 1)).toBeNull()
+  })
+})
+
+describe('merge-tree output parsing (conflict radar)', () => {
+  const NUL = '\0'
+
+  it('reads a clean merge from batch output', () => {
+    const out = ['1', 'aaa111', ''].join(NUL) + NUL
+    expect(parseMergeTreeStdin(out)).toEqual([{ status: 'clean', tree: 'aaa111', files: [], message: '' }])
+  })
+
+  it('reads conflicting paths and messages from batch output', () => {
+    const out =
+      ['0', 'bbb222', 'f.txt', '', '1', 'f.txt', 'CONFLICT (content)', 'CONFLICT (content): Merge conflict in f.txt\n', ''].join(NUL) +
+      NUL
+    expect(parseMergeTreeStdin(out)).toEqual([
+      {
+        status: 'conflict',
+        tree: 'bbb222',
+        files: ['f.txt'],
+        message: 'CONFLICT (content): Merge conflict in f.txt'
+      }
+    ])
+  })
+
+  it('keeps records in input order so they align with the refs asked for', () => {
+    const clean = ['1', 'aaa', ''].join(NUL) + NUL
+    const conflict = ['0', 'bbb', 'x.txt', 'y.txt', '', ''].join(NUL) + NUL
+    const recs = parseMergeTreeStdin(clean + conflict + clean)
+    expect(recs.map((r) => r.status)).toEqual(['clean', 'conflict', 'clean'])
+    expect(recs[1].files).toEqual(['x.txt', 'y.txt'])
+  })
+
+  it('stops cleanly when git aborts the batch mid-stream', () => {
+    // Only the first merge made it out before a fatal error killed the run —
+    // the caller retries the rest one at a time.
+    const recs = parseMergeTreeStdin(['1', 'aaa', ''].join(NUL) + NUL)
+    expect(recs).toHaveLength(1)
+  })
+
+  it('reads a single-merge run from its exit code', () => {
+    expect(parseMergeTreeSingle('treeoid\n\nAuto-merging f.txt\n', 0)).toEqual({
+      status: 'clean',
+      tree: 'treeoid',
+      files: [],
+      message: 'Auto-merging f.txt'
+    })
+    expect(parseMergeTreeSingle('treeoid\nf.txt\n\nCONFLICT (content)\n', 1)).toEqual({
+      status: 'conflict',
+      tree: 'treeoid',
+      files: ['f.txt'],
+      message: 'CONFLICT (content)'
+    })
+  })
+
+  it('reports git refusing the merge as an error, not a clean result', () => {
+    const rec = parseMergeTreeSingle('', 128, 'fatal: refusing to merge unrelated histories')
+    expect(rec.status).toBe('error')
+    expect(rec.message).toContain('unrelated histories')
   })
 })

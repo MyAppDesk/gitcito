@@ -319,3 +319,61 @@ describe('deleteRemoteBranch (stale tracking ref)', () => {
     }
   })
 })
+
+describe('mergePreview — conflict radar (conflict-radar playground)', () => {
+  const R = repoPath('conflict-radar')
+  const refs = [
+    'chore/merged',
+    'feature/big-refactor',
+    'feature/config-bump',
+    'feature/docs',
+    'feature/rename-api',
+    'legacy/import'
+  ]
+
+  it('reports one verdict per branch, in the order asked for', async () => {
+    const res = await gitService.mergePreview(R, 'main', refs)
+    expect(res.entries.map((e) => e.ref)).toEqual(refs)
+    expect(res.baseSha).toMatch(/^[0-9a-f]{40}$/)
+  })
+
+  it('flags the branches that would conflict, with their files', async () => {
+    const { entries } = await gitService.mergePreview(R, 'main', refs)
+    const byRef = new Map(entries.map((e) => [e.ref, e]))
+    expect(byRef.get('feature/big-refactor')!.status).toBe('conflict')
+    expect(byRef.get('feature/big-refactor')!.files.sort()).toEqual([
+      'README.md',
+      'src/app.js',
+      'src/config.js'
+    ])
+    expect(byRef.get('feature/rename-api')!.files).toEqual(['src/app.js'])
+    expect(byRef.get('feature/config-bump')!.files).toEqual(['src/config.js'])
+  })
+
+  it('separates a clean merge from one that is already in the base', async () => {
+    const { entries } = await gitService.mergePreview(R, 'main', refs)
+    const byRef = new Map(entries.map((e) => [e.ref, e]))
+    expect(byRef.get('feature/docs')!.status).toBe('clean')
+    expect(byRef.get('feature/docs')!.files).toEqual([])
+    expect(byRef.get('chore/merged')!.status).toBe('merged')
+  })
+
+  it('keeps scanning after git refuses a merge outright', async () => {
+    // The orphan branch aborts the batched run mid-stream; the remaining refs
+    // are retried one at a time, so no verdict goes missing.
+    const { entries } = await gitService.mergePreview(R, 'main', refs)
+    const legacy = entries.find((e) => e.ref === 'legacy/import')!
+    expect(legacy.status).toBe('error')
+    expect(legacy.message).toMatch(/unrelated histories/)
+    expect(entries.filter((e) => e.status === 'conflict')).toHaveLength(3)
+  })
+
+  it('never touches the working tree, the index or HEAD', async () => {
+    const before = await gitService.status(R)
+    const head = (await gitService.branches(R)).current
+    await gitService.mergePreview(R, 'main', refs)
+    const after = await gitService.status(R)
+    expect(after).toEqual(before)
+    expect((await gitService.branches(R)).current).toBe(head)
+  })
+})

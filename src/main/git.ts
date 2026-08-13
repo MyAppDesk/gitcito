@@ -59,8 +59,12 @@ import type {
   ChangelogResult,
   SnapshotInfo,
   CloneProgress,
-  RepoHost
+  RepoHost,
+  MergePreviewEntry,
+  MergePreviewResult,
+  MergeRiskKind
 } from '../shared/types'
+import { parseMergeTreeSingle, parseMergeTreeStdin, type MergeTreeRecord } from '../shared/mergeTree'
 import { recordEvent } from './analytics'
 import { recordLog } from './log'
 import { activeProfileToken } from './settings'
@@ -307,6 +311,36 @@ async function runGit(repoPath: string, args: string[]): Promise<string> {
   } catch (err) {
     const e = err as { stderr?: string; message?: string }
     throw new Error((e.stderr || e.message || 'git command failed').trim())
+  }
+}
+
+/**
+ * Run git with `input` on stdin and hand back whatever it wrote to stdout.
+ * A non-zero exit is not an error here: `merge-tree --stdin` aborts the batch
+ * on the first fatal merge, and the records it already emitted are still good.
+ */
+function gitWithStdin(repoPath: string, args: string[], input: string): Promise<string> {
+  return new Promise((resolve) => {
+    const child = spawn('git', ['-C', repoPath, ...args], { env: noPromptEnv() })
+    let out = ''
+    child.stdout.on('data', (d: Buffer) => (out += d.toString()))
+    child.on('error', () => resolve(out))
+    child.on('close', () => resolve(out))
+    child.stdin.on('error', () => undefined)
+    child.stdin.end(input)
+  })
+}
+
+/** One in-memory merge of `ref` into `base`, used to fill gaps left by a batch abort. */
+async function singleMergeTree(repoPath: string, base: string, ref: string): Promise<MergeTreeRecord> {
+  const args = ['-C', repoPath, 'merge-tree', '--write-tree', '--name-only', '--messages', base, ref]
+  try {
+    const { stdout } = await pexecFile('git', args, { env: noPromptEnv(), maxBuffer: 16 * 1024 * 1024 })
+    return parseMergeTreeSingle(stdout, 0)
+  } catch (err) {
+    const e = err as { code?: number; stdout?: string; stderr?: string; message?: string }
+    const code = typeof e.code === 'number' ? e.code : 2
+    return parseMergeTreeSingle(e.stdout ?? '', code, e.stderr || e.message || '')
   }
 }
 
@@ -705,6 +739,48 @@ export const gitService = {
     }
 
     return { current, locals, remotes, tags }
+  },
+
+  /**
+   * Conflict Radar — merge every ref into `base` inside the object database and
+   * report which ones would conflict. `git merge-tree --write-tree` writes only
+   * loose objects: no index, no working tree, no refs, no checkout, so this is
+   * safe to run over every branch while the user keeps working.
+   */
+  async mergePreview(repoPath: string, base: string, refs: string[]): Promise<MergePreviewResult> {
+    const baseSha = (await runGit(repoPath, ['rev-parse', base])).trim()
+    const baseTree = (await runGit(repoPath, ['rev-parse', `${base}^{tree}`])).trim()
+    // Refs never contain whitespace; anything that does would corrupt the
+    // one-merge-per-line stdin protocol.
+    const wanted = [...new Set(refs.filter((r) => r && !/\s/.test(r)))]
+
+    // One process for the whole batch. git aborts the stream on the first fatal
+    // merge (unknown ref, unrelated histories), so short results are re-run one
+    // ref at a time below rather than being reported as failures.
+    let records: MergeTreeRecord[] = []
+    if (wanted.length) {
+      const stdin = wanted.map((r) => `${baseSha} ${r}`).join('\n') + '\n'
+      const out = await gitWithStdin(repoPath, ['merge-tree', '--stdin', '--name-only'], stdin)
+      records = parseMergeTreeStdin(out)
+    }
+
+    const entries: MergePreviewEntry[] = []
+    for (let i = 0; i < wanted.length; i++) {
+      const ref = wanted[i]
+      const rec = records[i] ?? (await singleMergeTree(repoPath, baseSha, ref))
+      // A merge whose result is the base tree changes nothing — the ref is
+      // already contained in the base.
+      const status: MergeRiskKind =
+        rec.status === 'clean' && rec.tree === baseTree ? 'merged' : rec.status
+      entries.push({
+        ref,
+        status,
+        files: rec.files,
+        message: rec.status === 'error' ? rec.message || 'merge-tree failed' : undefined
+      })
+    }
+
+    return { base, baseSha, entries, scannedAt: Date.now() }
   },
 
   async status(repoPath: string): Promise<RepoStatus> {
@@ -3323,6 +3399,7 @@ const READ_METHODS = new Set<string>([
   'conflictVersions',
   'interactiveRebaseSteps',
   'compareBranches',
+  'mergePreview',
   'repoStats',
   'repoInsights',
   'cosmosData',

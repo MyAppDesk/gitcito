@@ -17,7 +17,8 @@ import type {
   WorktreeInfo,
   SubmoduleInfo,
   TreeStatusKind,
-  FsDropMode
+  FsDropMode,
+  MergePreviewResult
 } from '../../../shared/types'
 import { gitApi, hostingApi } from '../infrastructure/api'
 import { useUIStore } from './ui'
@@ -75,6 +76,8 @@ export interface RepoData {
   treeStatus: Record<string, TreeStatusKind>
   /** The opened folder is not a git repo yet — show the "initialize" prompt. */
   notGit: boolean
+  /** Last Conflict Radar scan, kept so branch rows can wear their risk dot. */
+  mergeRisk: MergePreviewResult | null
 }
 
 const emptyRepo = (path: string): RepoData => ({
@@ -106,7 +109,8 @@ const emptyRepo = (path: string): RepoData => ({
   lastFetchAt: null,
   ciStatuses: {},
   treeStatus: {},
-  notGit: false
+  notGit: false,
+  mergeRisk: null
 })
 
 interface RepoStoreState {

@@ -3,6 +3,7 @@ import type {
   BlameLine,
   BranchCompareResult,
   BranchesPayload,
+  MergePreviewResult,
   CiStatus,
   CommitBranchInfo,
   ConflictContext,
@@ -330,6 +331,8 @@ export const gitApi = {
   stagePatch: (path: string, patch: string) => call<void>('stagePatch', path, patch),
   compareBranches: (path: string, a: string, b: string) =>
     call<BranchCompareResult>('compareBranches', path, a, b),
+  mergePreview: (path: string, base: string, refs: string[]) =>
+    call<MergePreviewResult>('mergePreview', path, base, refs),
   repoStats: (path: string, sinceDays?: number) => call<RepoStats>('repoStats', path, sinceDays),
   repoInsights: (path: string, sinceDays?: number) => call<RepoInsights>('repoInsights', path, sinceDays),
   cosmosData: (path: string, limit?: number) => call<CosmosCommit[]>('cosmosData', path, limit),

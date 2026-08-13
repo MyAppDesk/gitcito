@@ -6,6 +6,7 @@ import { useUIStore } from '../stores/ui'
 import { useRepoStore } from '../stores/repo'
 import { useSettingsStore } from '../stores/settings'
 import { DiffViewer } from './DiffViewer'
+import { RefPicker, type RefOption } from './RefPicker'
 import { useT, interp } from '../i18n'
 
 function timeAgo(unix: number): string {
@@ -38,14 +39,14 @@ export function BranchComparison({
   const [result, setResult] = useState<BranchCompareResult | null>(null)
   const [loading, setLoading] = useState(true)
 
-  // Every ref the user can pick from, for the datalist (free-typing a raw SHA
-  // also works, since compareBranches just passes the strings to git).
-  const refOptions = useMemo<string[]>(() => {
-    const out: string[] = []
-    for (const l of repo?.branches.locals ?? []) out.push(l.name)
-    for (const r of repo?.branches.remotes ?? []) out.push(r.fullName)
-    for (const tg of repo?.branches.tags ?? []) out.push(tg.name)
-    return [...new Set(out)]
+  // Every ref the user can pick from (free-typing a raw SHA also works, since
+  // compareBranches just passes the strings to git).
+  const refOptions = useMemo<RefOption[]>(() => {
+    const out: RefOption[] = []
+    for (const l of repo?.branches.locals ?? []) out.push({ value: l.name, kind: 'local' })
+    for (const r of repo?.branches.remotes ?? []) out.push({ value: r.fullName, kind: 'remote' })
+    for (const tg of repo?.branches.tags ?? []) out.push({ value: tg.name, kind: 'tag' })
+    return out
   }, [repo?.branches])
 
   useEffect(() => {
@@ -103,30 +104,23 @@ export function BranchComparison({
           </div>
         </div>
         <span className="bc-labels">
-          <input
-            className="modal-input bc-ref-input"
-            list="bc-refs"
+          <RefPicker
+            className="bc-ref-input"
             value={a}
-            spellCheck={false}
+            options={refOptions}
             placeholder={t('compare.refPlaceholder')}
-            onChange={(e) => setA(e.target.value)}
+            onChange={setA}
           />
           <button className="btn ghost icon-only bc-swap" title={t('compare.swapTitle')} onClick={swap}>
             <ArrowLeftRight size={13} />
           </button>
-          <input
-            className="modal-input bc-ref-input"
-            list="bc-refs"
+          <RefPicker
+            className="bc-ref-input"
             value={b}
-            spellCheck={false}
+            options={refOptions}
             placeholder={t('compare.refPlaceholder')}
-            onChange={(e) => setB(e.target.value)}
+            onChange={setB}
           />
-          <datalist id="bc-refs">
-            {refOptions.map((r) => (
-              <option key={r} value={r} />
-            ))}
-          </datalist>
         </span>
       </div>
 

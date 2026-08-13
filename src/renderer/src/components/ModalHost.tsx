@@ -11,6 +11,7 @@ import { LauncherPanel, type LauncherItem } from './Welcome'
 import { AIConfigWizard } from './AIConfigWizard'
 import { InteractiveRebase } from './InteractiveRebase'
 import { BranchComparison } from './BranchComparison'
+import { ConflictRadar } from './ConflictRadar'
 import { AIPRReview } from './AIPRReview'
 import { ReflogModal } from './ReflogModal'
 import { BisectModal } from './BisectModal'
@@ -1360,6 +1361,7 @@ export function ModalHost(): React.JSX.Element {
                 ? 'modal-wide'
                 : modal.kind === 'interactive-rebase' ||
                     modal.kind === 'branch-compare' ||
+                    modal.kind === 'conflict-radar' ||
                     modal.kind === 'ai-pr-review' ||
                     modal.kind === 'reflog' ||
                     modal.kind === 'hooks' ||
@@ -1399,6 +1401,9 @@ export function ModalHost(): React.JSX.Element {
             )}
             {modal.kind === 'branch-compare' && (
               <BranchComparison repoPath={modal.repoPath} branchA={modal.branchA} branchB={modal.branchB} />
+            )}
+            {modal.kind === 'conflict-radar' && (
+              <ConflictRadar repoPath={modal.repoPath} initialBase={modal.base} />
             )}
             {modal.kind === 'ai-pr-review' && (
               <AIPRReview repoPath={modal.repoPath} prTitle={modal.prTitle} sourceBranch={modal.sourceBranch} targetBranch={modal.targetBranch} />

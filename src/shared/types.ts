@@ -153,6 +153,30 @@ export interface BranchesPayload {
   tags: TagInfo[]
 }
 
+/**
+ * How a ref would land if it were merged into the base right now.
+ * `merged` means the merge would be a no-op (the ref is already contained).
+ */
+export type MergeRiskKind = 'merged' | 'clean' | 'conflict' | 'error'
+
+/** One branch's forecast in the Conflict Radar. */
+export interface MergePreviewEntry {
+  ref: string
+  status: MergeRiskKind
+  /** Paths that would conflict (only for `conflict`). */
+  files: string[]
+  /** Error text from git, when `status` is `error`. */
+  message?: string
+}
+
+export interface MergePreviewResult {
+  base: string
+  baseSha: string
+  entries: MergePreviewEntry[]
+  /** Unix ms of the scan, so the UI can show "scanned 2m ago". */
+  scannedAt: number
+}
+
 export type FileChangeKind = 'A' | 'M' | 'D' | 'R' | 'C' | 'U' | '?'
 
 export interface FileEntry {

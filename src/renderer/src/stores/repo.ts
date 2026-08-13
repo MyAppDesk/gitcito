@@ -682,13 +682,18 @@ function runResolveDivergedCheckout(
 }
 
 export const repoActions = {
+  // Refreshes every slice on purpose: moving HEAD rewrites the `HEAD -> …`
+  // decoration the graph reads off each commit, plus the per-directory tree
+  // status and each worktree's HEAD. Refetching only branches/status left the
+  // graph's head badge (and the file-tree markers) on the previous branch until
+  // something else triggered a full refresh — e.g. switching repo tabs.
   checkout: (path: string, ref: string) => {
     const prev = useRepoStore.getState().repos[path]?.branches.current
     return useRepoStore.getState().run(path, `Checked out ${ref}`, () => gitApi.checkout(path, ref), {
       label: `checkout ${ref}`,
       undo: () => gitApi.checkout(path, prev ?? '-'),
       redo: () => gitApi.checkout(path, ref)
-    }, null, undefined, ['branches', 'status'])
+    })
   },
 
   checkoutRemote: (path: string, fullName: string, localName: string, remote?: string) =>
@@ -975,7 +980,7 @@ export const repoActions = {
     ),
 
   stashToBranch: (path: string, branch: string, index = 0) =>
-    useRepoStore.getState().run(path, `Created branch ${branch} from stash`, () => gitApi.stashToBranch(path, branch, index), undefined, null, undefined, ['status', 'stashes', 'branches']),
+    useRepoStore.getState().run(path, `Created branch ${branch} from stash`, () => gitApi.stashToBranch(path, branch, index), undefined, null, undefined, ['log', 'status', 'stashes', 'branches', 'treeStatus']),
 
   stashApply: (path: string, index = 0) =>
     useRepoStore

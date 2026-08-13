@@ -1,5 +1,12 @@
 
 
+## [3.0.2](https://github.com/MyAppDesk/gitcito/compare/v3.0.1...v3.0.2) (2026-08-13)
+
+
+### Bug Fixes
+
+* set initial state of open to false in SemanticSummary ([7470537](https://github.com/MyAppDesk/gitcito/commit/747053780157215036339e4f55b2bb598a91fcc0))
+
 ## [3.0.1](https://github.com/MyAppDesk/gitcito/compare/v3.0.0...v3.0.1) (2026-08-13)
 
 

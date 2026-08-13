@@ -41,7 +41,7 @@ import { MilestoneDetailPage } from './components/MilestoneDetailPage'
 import { ResizeHandle } from './components/ResizeHandle'
 import { ZoomControl } from './components/ZoomControl'
 import gitcitoLaunch from './assets/gitcito-launch.png'
-import { matchShortcut, effectiveBindings } from './lib/shortcuts'
+import { matchShortcut, effectiveBindings, tabIndexFromEvent } from './lib/shortcuts'
 import { folderOpenMenuItems } from './lib/openWith'
 import { hostingApi, gitApi, cliApi, keychainApi } from './infrastructure/api'
 
@@ -336,6 +336,15 @@ export default function App(): React.JSX.Element {
         return
       }
 
+      // Switch to a tab by its visible position (Cmd/Ctrl+1…9).
+      const tabIndex = tabIndexFromEvent(e)
+      if (tabIndex !== null) {
+        e.preventDefault()
+        const tab = st.settings.tabs[tabIndex]
+        if (tab) st.setActiveTab(tab.id)
+        return
+      }
+
       const id = matchShortcut(e, effectiveBindings(st.settings.shortcuts))
       if (!id) return
       if (id === 'command-palette') {
@@ -350,6 +359,13 @@ export default function App(): React.JSX.Element {
       } else if (id === 'vault') {
         e.preventDefault()
         st.openPageTab({ type: 'vault' })
+      } else if (id === 'open-repository') {
+        e.preventDefault()
+        void window.api.selectDirectory().then((path) => {
+          if (!path) return
+          const name = path.split(/[\\/]/).filter(Boolean).pop() ?? path
+          useSettingsStore.getState().openRepoTab({ path, name })
+        })
       }
     }
     window.addEventListener('keydown', onKey)

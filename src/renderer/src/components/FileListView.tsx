@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { ChevronDown, ChevronRight, FolderOpen, Folder, Pencil } from 'lucide-react'
 import type { CodeSearchHit, FileEntry } from '../../../shared/types'
 import { useSettingsStore } from '../stores/settings'
+import { stepPath, visiblePaths } from '../lib/fileNav'
 import { MatchRows } from './SearchMatches'
 
 export function statusClass(s: string): string {
@@ -166,6 +167,7 @@ function FileRowInner({
     <>
       <div
         className={`file-item wip ${isCurrent ? 'current' : ''} ${isSelected ? 'multi-selected' : ''}`}
+        data-file-path={file.path}
         style={{ paddingLeft: 14 + depth * 14 }}
         onClick={(e) => props.onFileClick(file, e)}
         onContextMenu={(e) => props.onFileContext?.(file, e)}
@@ -249,10 +251,25 @@ function TreeLevel({
   )
 }
 
+// Keyboard selection reuses the click handler; consumers read modifier keys off
+// the event for range/toggle selection, and arrows always mean a plain select.
+const PLAIN_CLICK = {
+  shiftKey: false,
+  metaKey: false,
+  ctrlKey: false,
+  altKey: false,
+  preventDefault: () => {},
+  stopPropagation: () => {}
+} as unknown as React.MouseEvent
+
 export function FileListView(props: FileListProps): React.JSX.Element {
   const view = useSettingsStore((s) => s.settings.fileListView ?? 'path')
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
   const tree = useMemo(() => (view === 'tree' ? buildTree(props.files) : []), [view, props.files])
+  const listRef = useRef<HTMLDivElement>(null)
+  // Fallback cursor for lists whose selection lives elsewhere (the conflicted
+  // list opens the resolver, so `current` never points into it).
+  const cursor = useRef<string | null>(null)
 
   const toggle = (path: string): void =>
     setCollapsed((prev) => {
@@ -262,19 +279,49 @@ export function FileListView(props: FileListProps): React.JSX.Element {
       return next
     })
 
-  if (view === 'tree') {
-    return (
-      <div className="file-list">
-        <TreeLevel nodes={tree} depth={0} collapsed={collapsed} toggle={toggle} props={props} />
-      </div>
-    )
+  // Up/Down (and j/k) walk the list like the commit graph does.
+  const step = (dir: 1 | -1): void => {
+    const order = view === 'tree' ? visiblePaths(tree, collapsed) : props.files.map((f) => f.path)
+    const anchor = order.includes(props.current ?? '') ? props.current : cursor.current
+    const next = stepPath(order, anchor, dir)
+    const file = next ? props.files.find((f) => f.path === next) : null
+    if (!file) return
+    cursor.current = file.path
+    props.onFileClick(file, PLAIN_CLICK)
+    listRef.current
+      ?.querySelector(`[data-file-path="${CSS.escape(file.path)}"]`)
+      ?.scrollIntoView({ block: 'nearest' })
+  }
+
+  const onKeyDown = (e: React.KeyboardEvent): void => {
+    const tag = (e.target as HTMLElement).tagName
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || e.metaKey || e.ctrlKey || e.altKey) return
+    if (e.key === 'ArrowDown' || e.key === 'j') {
+      e.preventDefault()
+      step(1)
+    } else if (e.key === 'ArrowUp' || e.key === 'k') {
+      e.preventDefault()
+      step(-1)
+    }
+  }
+
+  // Clicks move the keyboard cursor too, so arrows continue from the last row
+  // the user touched.
+  const rowProps: FileListProps = {
+    ...props,
+    onFileClick: (file, e) => {
+      cursor.current = file.path
+      props.onFileClick(file, e)
+    }
   }
 
   return (
-    <div className="file-list">
-      {props.files.map((f) => (
-        <FileRowInner key={f.path} file={f} label={f.path} depth={0} props={props} />
-      ))}
+    <div className="file-list" ref={listRef} tabIndex={0} onKeyDown={onKeyDown}>
+      {view === 'tree' ? (
+        <TreeLevel nodes={tree} depth={0} collapsed={collapsed} toggle={toggle} props={rowProps} />
+      ) : (
+        props.files.map((f) => <FileRowInner key={f.path} file={f} label={f.path} depth={0} props={rowProps} />)
+      )}
     </div>
   )
 }

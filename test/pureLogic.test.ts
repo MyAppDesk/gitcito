@@ -40,6 +40,7 @@ import {
   validateHoverExplain
 } from '../src/main/grounding'
 import { identifierAt, isExplainableToken } from '../src/renderer/src/lib/hoverToken'
+import { stepPath, visiblePaths, type NavNode } from '../src/renderer/src/lib/fileNav'
 import {
   APP_THEME_KEYS,
   isSafeRepoPath,
@@ -2181,5 +2182,54 @@ describe('repo wiki — exporting to the repo', () => {
     for (const file of wikiExportFiles(wiki, 'gitcito')) {
       expect(isSafeRepoPath(file.path)).toBe(true)
     }
+  })
+})
+
+describe('file list keyboard navigation', () => {
+  const tree: NavNode[] = [
+    {
+      path: 'src',
+      children: [
+        { path: 'src/a.ts', children: [], file: {} },
+        {
+          path: 'src/lib',
+          children: [{ path: 'src/lib/b.ts', children: [], file: {} }]
+        }
+      ]
+    },
+    { path: 'README.md', children: [], file: {} }
+  ]
+
+  it('lists visible files depth-first', () => {
+    expect(visiblePaths(tree, new Set())).toEqual(['src/a.ts', 'src/lib/b.ts', 'README.md'])
+  })
+
+  it('skips the subtree of a collapsed folder', () => {
+    expect(visiblePaths(tree, new Set(['src/lib']))).toEqual(['src/a.ts', 'README.md'])
+    expect(visiblePaths(tree, new Set(['src']))).toEqual(['README.md'])
+  })
+
+  it('steps down and up one row', () => {
+    const order = ['a', 'b', 'c']
+    expect(stepPath(order, 'a', 1)).toBe('b')
+    expect(stepPath(order, 'c', -1)).toBe('b')
+  })
+
+  it('enters at the top going down, at the bottom going up', () => {
+    const order = ['a', 'b', 'c']
+    expect(stepPath(order, null, 1)).toBe('a')
+    expect(stepPath(order, null, -1)).toBe('c')
+    // A file selected in some other list is not an anchor here either.
+    expect(stepPath(order, 'zz', 1)).toBe('a')
+  })
+
+  it('stops at both ends instead of wrapping', () => {
+    const order = ['a', 'b', 'c']
+    expect(stepPath(order, 'c', 1)).toBeNull()
+    expect(stepPath(order, 'a', -1)).toBeNull()
+  })
+
+  it('does nothing on an empty list', () => {
+    expect(stepPath([], null, 1)).toBeNull()
   })
 })

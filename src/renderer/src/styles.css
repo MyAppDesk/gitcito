@@ -2751,6 +2751,13 @@ textarea:focus {
   flex-direction: column;
 }
 
+/* The list is focusable so Up/Down can walk it; the selected row is the
+   visible cue, so no ring on the container itself. */
+.file-list:focus,
+.file-list:focus-visible {
+  outline: none;
+}
+
 .file-item {
   display: flex;
   align-items: center;

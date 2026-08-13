@@ -55,7 +55,8 @@ const EXPECTED = [
   'newer-branch-merge',
   'pinned-branches',
   'ai-review',
-  'nested-folders'
+  'nested-folders',
+  'file-nav'
 ]
 
 describe('playground fixtures', () => {

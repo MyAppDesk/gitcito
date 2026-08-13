@@ -11,6 +11,17 @@ import { parseRangeDiff } from '../src/shared/rangeDiff'
 import { parseForcedUpdates } from '../src/shared/fetchPorcelain'
 import { buildPatch, parsePatch, touchedOldLines } from '../src/shared/patchHunks'
 import {
+  applyCommit,
+  emptyState,
+  folderOrder,
+  nodeAlpha,
+  nodeGlow,
+  placeFile,
+  stateAt,
+  topFolder
+} from '../src/renderer/src/lib/timelapse'
+import type { TimelapseCommit } from '../src/shared/types'
+import {
   deleteFolder,
   detachPath,
   findFolder,
@@ -2439,5 +2450,97 @@ describe('patch hunk splitting (absorb)', () => {
     const [file] = parsePatch(diff)
     expect(file.hunks[0].lines).toContain('\\ No newline at end of file')
     expect(touchedOldLines(file.hunks[0])).toEqual({ deleted: [1], context: [] })
+  })
+})
+
+describe('timelapse simulation', () => {
+  const PALETTE = ['#1', '#2', '#3']
+  const commit = (
+    hash: string,
+    files: [string, 'A' | 'M' | 'D'][],
+    author = 'Ana'
+  ): TimelapseCommit => ({
+    hash,
+    author,
+    date: 0,
+    subject: hash,
+    files: files.map(([path, status]) => ({ path, status }))
+  })
+
+  const HISTORY: TimelapseCommit[] = [
+    commit('c1', [['src/a.ts', 'A'], ['README.md', 'A']]),
+    commit('c2', [['src/a.ts', 'M'], ['src/b.ts', 'A']], 'Bruno'),
+    commit('c3', [['README.md', 'D']])
+  ]
+  const FOLDERS = folderOrder(HISTORY)
+
+  it('groups files by their top-level folder, busiest first', () => {
+    expect(topFolder('src/deep/x.ts')).toBe('src')
+    expect(topFolder('README.md')).toBe('/')
+    // src holds two files, the root only one.
+    expect(FOLDERS).toEqual(['src', '/'])
+  })
+
+  it('places a file in the same spot every time, inside its cluster', () => {
+    const first = placeFile('src/a.ts', FOLDERS, PALETTE)
+    const again = placeFile('src/a.ts', FOLDERS, PALETTE)
+    expect(again).toEqual(first)
+    expect(first.color).toBe(PALETTE[0])
+    // Files of a different folder get a different colour and cluster.
+    const root = placeFile('README.md', FOLDERS, PALETTE)
+    expect(root.color).toBe(PALETTE[1])
+    expect(root.x === first.x && root.y === first.y).toBe(false)
+    // Everything stays inside the canvas.
+    for (const p of [first, root]) {
+      expect(p.x).toBeGreaterThan(0)
+      expect(p.x).toBeLessThan(1)
+      expect(p.y).toBeGreaterThan(0)
+      expect(p.y).toBeLessThan(1)
+    }
+  })
+
+  it('births, grows and kills files as the history plays', () => {
+    const s = stateAt(HISTORY, 0, FOLDERS, PALETTE)
+    expect(s.alive).toBe(2)
+    expect(s.nodes.get('src/a.ts')!.weight).toBe(1)
+
+    applyCommit(s, HISTORY[1], 1, FOLDERS, PALETTE)
+    expect(s.alive).toBe(3)
+    // Touched again ⇒ heavier, which is what makes hot files big on screen.
+    expect(s.nodes.get('src/a.ts')!.weight).toBe(2)
+    expect(s.authors.size).toBe(2)
+
+    applyCommit(s, HISTORY[2], 2, FOLDERS, PALETTE)
+    expect(s.alive).toBe(2)
+    expect(s.nodes.get('README.md')!.alive).toBe(false)
+  })
+
+  it('brings a deleted file back if a later commit re-adds it', () => {
+    const history = [...HISTORY, commit('c4', [['README.md', 'A']])]
+    const s = stateAt(history, 3, folderOrder(history), PALETTE)
+    expect(s.nodes.get('README.md')!.alive).toBe(true)
+    expect(s.alive).toBe(3)
+  })
+
+  it('replaying to an index gives the same world as stepping there', () => {
+    const stepped = emptyState()
+    HISTORY.forEach((c, i) => applyCommit(stepped, c, i, FOLDERS, PALETTE))
+    const replayed = stateAt(HISTORY, HISTORY.length - 1, FOLDERS, PALETTE)
+    expect(replayed.alive).toBe(stepped.alive)
+    expect([...replayed.nodes.keys()].sort()).toEqual([...stepped.nodes.keys()].sort())
+  })
+
+  it('fades the highlight of a commit as it recedes, and dead files with it', () => {
+    const s = stateAt(HISTORY, 1, FOLDERS, PALETTE)
+    const node = s.nodes.get('src/b.ts')!
+    expect(nodeGlow(node, 1, 10)).toBe(1)
+    expect(nodeGlow(node, 6, 10)).toBeCloseTo(0.5)
+    expect(nodeGlow(node, 20, 10)).toBe(0)
+
+    applyCommit(s, HISTORY[2], 2, FOLDERS, PALETTE)
+    const dead = s.nodes.get('README.md')!
+    expect(nodeAlpha(dead, 2, 10)).toBe(1)
+    expect(nodeAlpha(dead, 7, 10)).toBeCloseTo(0.5)
+    expect(nodeAlpha(dead, 12, 10)).toBe(0)
   })
 })

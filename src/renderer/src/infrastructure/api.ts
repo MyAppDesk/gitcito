@@ -10,6 +10,7 @@ import type {
   RefTip,
   ForcedRefUpdate,
   AbsorbPlan,
+  TimelapseCommit,
   CiStatus,
   CommitBranchInfo,
   ConflictContext,
@@ -176,6 +177,7 @@ export const gitApi = {
 
   listDir: (path: string, relDir?: string) => call<TreeEntry[]>('listDir', path, relDir),
   listDirAt: (path: string, ref: string, relDir?: string) => call<TreeEntry[]>('listDirAt', path, ref, relDir),
+  timelapseData: (path: string, max?: number) => call<TimelapseCommit[]>('timelapseData', path, max),
   listFiles: (path: string) => call<string[]>('listFiles', path),
   listTrackedFiles: (path: string) => call<string[]>('listTrackedFiles', path),
   filesToPush: (path: string, branch: string) => call<string[]>('filesToPush', path, branch),

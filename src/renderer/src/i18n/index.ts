@@ -1299,6 +1299,18 @@ const en = {
   'timeMachine.older': 'Older commit (←, ⇧← for ten)',
   'timeMachine.newer': 'Newer commit (→, ⇧→ for ten)',
 
+  // Timelapse (animated history, exportable as video)
+  'timelapse.title': 'Repository timelapse',
+  'timelapse.open': 'Timelapse…',
+  'timelapse.commits': '{n} commits',
+  'timelapse.export': 'Export video',
+  'timelapse.recording': 'Recording…',
+  'timelapse.rec': 'REC',
+  'timelapse.restart': 'Start over',
+  'timelapse.saved': 'Saved to {path}',
+  'timelapse.empty': 'No history to replay yet.',
+  'timelapse.noRecorder': 'Video recording is not available in this build.',
+
   // Sparse checkout modal
   'sparse.title': 'Sparse-checkout',
   'sparse.description': 'Limit the working tree to the top-level folders you pick. Unselected folders are removed from the working tree but preserved in git history.',
@@ -2808,6 +2820,18 @@ const es: Dict = {
   'timeMachine.noHistory': 'Todavía no hay historia por la que viajar.',
   'timeMachine.older': 'Commit anterior (←, ⇧← para diez)',
   'timeMachine.newer': 'Commit siguiente (→, ⇧→ para diez)',
+
+  // Timelapse (historia animada, exportable como vídeo)
+  'timelapse.title': 'Timelapse del repositorio',
+  'timelapse.open': 'Timelapse…',
+  'timelapse.commits': '{n} commits',
+  'timelapse.export': 'Exportar vídeo',
+  'timelapse.recording': 'Grabando…',
+  'timelapse.rec': 'REC',
+  'timelapse.restart': 'Empezar de nuevo',
+  'timelapse.saved': 'Guardado en {path}',
+  'timelapse.empty': 'Todavía no hay historia que reproducir.',
+  'timelapse.noRecorder': 'La grabación de vídeo no está disponible en esta build.',
 
   // Sparse checkout modal
   'sparse.title': 'Sparse-checkout',

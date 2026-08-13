@@ -36,6 +36,11 @@ const api = {
   savePatch: (defaultName: string, content: string): Promise<string | null> =>
     ipcRenderer.invoke('dialog:savePatch', defaultName, content),
   openPatch: (): Promise<{ path: string; content: string } | null> => ipcRenderer.invoke('dialog:openPatch'),
+  saveBinary: (
+    defaultName: string,
+    data: Uint8Array,
+    filters?: { name: string; extensions: string[] }[]
+  ): Promise<string | null> => ipcRenderer.invoke('dialog:saveBinary', defaultName, data, filters),
   openExternal: (url: string): Promise<void> => ipcRenderer.invoke('shell:openExternal', url),
   appVersion: (): Promise<string> => ipcRenderer.invoke('app:version'),
   appReleases: (): Promise<unknown> => ipcRenderer.invoke('app:releases'),

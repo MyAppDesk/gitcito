@@ -2,6 +2,19 @@
 # 15. deep-history-monorepo — a multi-package monorepo with ~220 commits across several
 # languages, 5 rotating authors, a feature branch + merge every 25 commits, and a release
 # tag every 50. Stresses graph rendering, log virtualisation, author grouping and perf.
+#
+# Also the reference repo for the **timelapse** (Tools → "Timelapse…"), which needs
+# a history with real shape to be worth watching. Verify there:
+#   • It opens playing from the first commit; dots appear per file, coloured by
+#     top-level folder (packages/, services/, infra/, docs/), and pulse when a
+#     commit touches them.
+#   • Busy files grow; deleted files fade out and stay gone.
+#   • Play/pause, 4×–32× speed, restart, and the slider (which seeks by
+#     replaying, so scrubbing back is exact, not approximate).
+#   • The overlay tracks date, author, subject and running commit/file/author
+#     counts, with a progress bar along the bottom.
+#   • "Export video" records the canvas end to end and asks where to save a
+#     .webm — nothing is written until you pick a path.
 R="$ROOT/deep-history-monorepo"
 new_repo "$R"
 

@@ -48,6 +48,11 @@ interface PreloadApi {
   selectDirectory(title?: string): Promise<string | null>
   savePatch(defaultName: string, content: string): Promise<string | null>
   openPatch(): Promise<{ path: string; content: string } | null>
+  saveBinary(
+    defaultName: string,
+    data: Uint8Array,
+    filters?: { name: string; extensions: string[] }[]
+  ): Promise<string | null>
   openExternal(url: string): Promise<void>
   appVersion(): Promise<string>
   appReleases(): Promise<import('../../shared/types').AppRelease[]>

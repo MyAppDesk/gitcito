@@ -163,9 +163,15 @@ describe('cherryPickMany (multi-select graph)', () => {
     await gitService.checkout(R, base)
     await gitService.cherryPickMany(R, [...selection].reverse()) // oldest-first
 
-    const after = await gitService.log(R)
-    expect(after[0].subject).toBe('add cpm-two') // newest pick ends on top
-    expect(after[1].subject).toBe('add cpm-one')
+    // Assert the parent chain, not the log's date order: both picks land in the
+    // same second on a loaded machine, and `git log` sorts equal dates
+    // arbitrarily — the topology is what "in order" actually means here.
+    const chain = execFileSync('git', ['-C', R, 'log', '--topo-order', '--format=%s', '-2'], {
+      encoding: 'utf-8'
+    })
+      .trim()
+      .split('\n')
+    expect(chain).toEqual(['add cpm-two', 'add cpm-one']) // newest pick ends on top
     expect(existsSync(join(R, 'cpm-one.txt'))).toBe(true)
   })
 })
@@ -674,5 +680,40 @@ describe('listDirAt — time machine tree (semantic-diff playground)', () => {
   it('treats a folder that does not exist at that commit as empty', async () => {
     expect(await gitService.listDirAt(R, 'HEAD', 'nope')).toEqual([])
     expect(await gitService.listDirAt(R, 'deadbeef', '')).toEqual([])
+  })
+})
+
+describe('timelapseData (time-machine playground)', () => {
+  const R = repoPath('time-machine')
+
+  it('streams the whole history oldest-first, with the files each commit touched', async () => {
+    const data = await gitService.timelapseData(R)
+    expect(data).toHaveLength(12)
+    expect(data[0].subject).toBe('init: one-file app')
+    expect(data[data.length - 1].subject).toBe('chore: release 1.2.0')
+    expect(data[0].files).toEqual([{ path: 'index.js', status: 'A' }])
+    expect(data.every((c) => c.author === 'Playground' && c.date > 0)).toBe(true)
+  })
+
+  it('reports adds, edits and deletions so the animation can play them', async () => {
+    const data = await gitService.timelapseData(R)
+    const bySubject = new Map(data.map((c) => [c.subject, c]))
+
+    const extract = bySubject.get('refactor: extract lib/util.js')!
+    expect(extract.files).toEqual([
+      { path: 'index.js', status: 'M' },
+      { path: 'lib/util.js', status: 'A' }
+    ])
+
+    const dropped = bySubject.get('chore: drop unused formatter')!
+    expect(dropped.files).toEqual([{ path: 'src/utils/format.js', status: 'D' }])
+
+    // A rename is reported as one entry, not an unrelated add + delete.
+    const moved = bySubject.get('chore: move entry point into src/')!
+    expect(moved.files).toEqual([{ path: 'src/index.js', status: 'R' }])
+  })
+
+  it('honours the commit cap', async () => {
+    expect(await gitService.timelapseData(R, 3)).toHaveLength(3)
   })
 })

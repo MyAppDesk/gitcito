@@ -35,7 +35,8 @@ import {
   BookOpen,
   Radar,
   Magnet,
-  Clock
+  Clock,
+  Film
 } from 'lucide-react'
 import type { MenuItem } from '../stores/ui'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
@@ -127,6 +128,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
       { label: t('tools.reflog'), icon: <History size={15} />, onClick: () => openModal({ kind: 'reflog', repoPath: path }) },
       { label: t('tools.snapshots'), icon: <Camera size={15} />, onClick: () => openModal({ kind: 'snapshots', repoPath: path }) },
       { label: t('timeMachine.open'), icon: <Clock size={15} />, onClick: () => openModal({ kind: 'time-machine', repoPath: path }) },
+      { label: t('timelapse.open'), icon: <Film size={15} />, onClick: () => openModal({ kind: 'timelapse', repoPath: path }) },
       { label: t('tools.vault'), icon: <KeyRound size={15} />, onClick: () => useSettingsStore.getState().openPageTab({ type: 'vault' }) },
       { label: t('tools.bisect'), icon: <Bug size={15} />, onClick: () => openModal({ kind: 'bisect', repoPath: path }) },
       { separator: true },

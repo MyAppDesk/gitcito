@@ -70,7 +70,8 @@ import type {
   ForcedRefUpdate,
   AbsorbPlan,
   AbsorbTarget,
-  AbsorbHunk
+  AbsorbHunk,
+  TimelapseCommit
 } from '../shared/types'
 import { parseMergeTreeSingle, parseMergeTreeStdin, type MergeTreeRecord } from '../shared/mergeTree'
 import { parseRangeDiff } from '../shared/rangeDiff'
@@ -2436,6 +2437,44 @@ export const gitService = {
     return semanticCompare(file, oldText, newText)
   },
 
+  /**
+   * The whole history as one flat stream of "commit + the files it touched",
+   * oldest first — the input for the timelapse animation.
+   *
+   * One `git log` does the lot: asking per commit would be hundreds of
+   * processes for a repo worth watching.
+   */
+  async timelapseData(repoPath: string, max = 2000): Promise<TimelapseCommit[]> {
+    const out = await runGit(repoPath, [
+      'log',
+      '--reverse',
+      '--first-parent',
+      `--max-count=${max}`,
+      '--name-status',
+      '-M',
+      '--date=unix',
+      `--format=${REC}%H${SEP}%an${SEP}%ct${SEP}%s`
+    ]).catch(() => '')
+
+    const commits: TimelapseCommit[] = []
+    for (const chunk of out.split(REC)) {
+      if (!chunk.trim()) continue
+      const [head, ...rest] = chunk.split('\n')
+      const [hash, author, date, subject] = head.split(SEP)
+      if (!hash) continue
+      const files: { path: string; status: FileChangeKind }[] = []
+      for (const line of rest) {
+        if (!line.trim()) continue
+        const parts = line.split('\t')
+        const path = parts[parts.length - 1]
+        if (!path) continue
+        files.push({ path, status: mapStatusCode(parts[0][0]) })
+      }
+      commits.push({ hash, author: author ?? '', date: Number(date) || 0, subject: subject ?? '', files })
+    }
+    return commits
+  },
+
   async stashFiles(repoPath: string, sha: string, untrackedSha?: string | null): Promise<FileEntry[]> {
     const git = gitFor(repoPath)
     const out = await git.raw(['diff', '--name-status', '-M', `${sha}^1`, sha])
@@ -3748,6 +3787,7 @@ const READ_METHODS = new Set<string>([
   'stackInfo',
   'listDir',
   'listDirAt',
+  'timelapseData',
   'listFiles',
   'listTrackedFiles',
   'filesToPush',

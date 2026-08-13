@@ -151,6 +151,23 @@ app.whenReady().then(() => {
     return filePath
   })
 
+  // Save binary content (the timelapse video) to a user-chosen file. The
+  // renderer records in-page and hands the bytes over; nothing is written
+  // anywhere until the user picks a destination. Returns the path, or null.
+  ipcMain.handle(
+    'dialog:saveBinary',
+    async (_e, defaultName: string, data: Uint8Array, filters?: { name: string; extensions: string[] }[]) => {
+      const { canceled, filePath } = await dialog.showSaveDialog({
+        title: 'Save file',
+        defaultPath: defaultName,
+        filters: filters?.length ? filters : [{ name: 'All files', extensions: ['*'] }]
+      })
+      if (canceled || !filePath) return null
+      await writeFile(filePath, Buffer.from(data))
+      return filePath
+    }
+  )
+
   // Open a patch/diff file. Returns { path, content } or null if cancelled.
   ipcMain.handle('dialog:openPatch', async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({

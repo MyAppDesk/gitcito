@@ -8541,6 +8541,57 @@ input[type='range']:focus-visible {
 .bc-diff-title { font-size: 11.5px; color: var(--text-2); margin-bottom: 4px; }
 .bc-diff-scroll { flex: 1; overflow: auto; background: var(--bg-2); border-radius: 6px; }
 
+/* ── Timelapse (animated history) ── */
+.tl-root { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+.tl-header { display: flex; align-items: center; gap: 8px; }
+.tl-header h3 { margin: 0; font-size: 14px; }
+.tl-title-icon { color: var(--accent); }
+.tl-count { font-size: 11px; color: var(--text-3); }
+.tl-header-actions { display: flex; gap: 6px; margin-left: auto; padding-right: 26px; }
+.tl-stage { position: relative; border-radius: 10px; overflow: hidden; background: #0b0e1a; }
+.tl-canvas { display: block; width: 100%; height: auto; }
+.tl-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-2);
+  font-size: 12.5px;
+}
+.tl-rec {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.45);
+  color: var(--danger, #f85149);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+.tl-controls { display: flex; align-items: center; gap: 8px; }
+.tl-slider { flex: 1; min-width: 0; accent-color: var(--accent); }
+.tl-speeds { display: flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; flex: 0 0 auto; }
+.tl-speed {
+  background: transparent;
+  border: 0;
+  color: var(--text-2);
+  font-size: 11px;
+  padding: 3px 8px;
+  cursor: pointer;
+}
+.tl-speed.active { background: var(--bg-2); color: var(--text-1); }
+.tl-speed:disabled { opacity: 0.4; cursor: default; }
+.tl-now { display: flex; align-items: center; gap: 8px; font-size: 11.5px; min-width: 0; }
+.tl-sha { font-family: var(--mono, monospace); font-size: 11px; color: var(--accent); }
+.tl-subject { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tl-meta { color: var(--text-3); white-space: nowrap; }
+
 /* ── Time machine (scrub the repo through its history) ── */
 .tm-root { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
 .tm-empty { padding: 30px; text-align: center; font-size: 12.5px; color: var(--text-3); }

@@ -222,6 +222,15 @@ export interface AbsorbPlan {
   reason?: 'no-staged' | 'no-commits' | 'in-progress'
 }
 
+/** One commit in the timelapse stream: who, when, and what it touched. */
+export interface TimelapseCommit {
+  hash: string
+  author: string
+  date: number // unix seconds
+  subject: string
+  files: { path: string; status: FileChangeKind }[]
+}
+
 /** A remote-tracking ref that was rewritten under us (history was force-pushed). */
 export interface ForcedRefUpdate {
   /** Short form, e.g. `origin/feature`. */

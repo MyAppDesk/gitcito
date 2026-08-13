@@ -19,7 +19,9 @@ Press <kbd>?</kbd> anywhere for the cheatsheet.
 | <kbd>⌘K</kbd> | [Command palette](search.md) — branches, commits, files, actions |
 | <kbd>⌘⇧F</kbd> | [Code search](search.md) across the working tree |
 | <kbd>⌘⇧V</kbd> | [Vault](vault.md) |
+| <kbd>⌘O</kbd> / <kbd>Ctrl+O</kbd> | Open a repository |
 | <kbd>⌘F</kbd> | Find inside the file or diff you are reading |
+| <kbd>⌘1</kbd>–<kbd>⌘9</kbd> / <kbd>Ctrl+1</kbd>–<kbd>Ctrl+9</kbd> | Switch to a tab by its position |
 | <kbd>⌘⇧T</kbd> | Reopen the last closed tab |
 | <kbd>?</kbd> | This cheatsheet |
 
@@ -36,7 +38,7 @@ Press <kbd>?</kbd> anywhere for the cheatsheet.
 ## Rebinding
 
 **Settings → Shortcuts**. The core navigation shortcuts (palette, code search,
-vault) are rebindable, with conflict detection and a per-shortcut reset.
+vault, open repository) are rebindable, with conflict detection and a per-shortcut reset.
 
 ![Rebindable shortcuts in settings](../screenshots/settings-shortcuts.png)
 

@@ -32,6 +32,12 @@ export const SHORTCUTS: ShortcutDef[] = [
     labelKey: 'sc.openVault',
     categoryKey: 'sc.cat.navigation',
     defaultCombo: 'mod+shift+v'
+  },
+  {
+    id: 'open-repository',
+    labelKey: 'sc.openRepository',
+    categoryKey: 'sc.cat.navigation',
+    defaultCombo: 'mod+o'
   }
 ]
 
@@ -43,6 +49,7 @@ export const FIXED_SHORTCUTS: {
 }[] = [
   { labelKey: 'sc.keyboardShortcuts', combo: '?', categoryKey: 'sc.cat.help' },
   { labelKey: 'sc.navigateCommits', combo: '↑ ↓ / j k', categoryKey: 'sc.cat.navigation' },
+  { labelKey: 'sc.selectTab', combo: 'mod+1…9', categoryKey: 'sc.cat.navigation' },
   { labelKey: 'sc.reopenTab', combo: 'mod+shift+t', categoryKey: 'sc.cat.navigation' },
   { labelKey: 'sc.saveFile', combo: 'mod+s', categoryKey: 'sc.cat.editing' },
   { labelKey: 'sc.undo', combo: 'mod+z', categoryKey: 'sc.cat.editing' },
@@ -63,6 +70,12 @@ export function comboFromEvent(e: KeyboardEvent): string | null {
   if (e.altKey) parts.push('alt')
   parts.push(k.length === 1 ? k.toLowerCase() : k)
   return parts.join('+')
+}
+
+/** Zero-based tab position selected by Cmd/Ctrl+1…9, or null for any other key. */
+export function tabIndexFromEvent(e: KeyboardEvent): number | null {
+  if (!(e.metaKey || e.ctrlKey) || e.shiftKey || e.altKey || !/^[1-9]$/.test(e.key)) return null
+  return Number(e.key) - 1
 }
 
 /** Pretty-print a combo for display, e.g. "mod+shift+f" → "⌘⇧F" (mac) / "Ctrl+Shift+F". */

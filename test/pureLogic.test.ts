@@ -7,7 +7,7 @@ import { parseRemoteUrl } from '../src/main/hosting'
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 import { commitHookFailureHint, lintCommit, subjectCounterLevel, parseCcPrefix, applyCcType, parseGitmojiPrefix, applyGitmoji, parseTicketPrefix, applyTicket, ticketFromBranch } from '../src/renderer/src/lib/commitLint'
 import { isSecretFile, maskSecretLine } from '../src/renderer/src/lib/secrets'
-import { comboFromEvent, formatCombo, effectiveBindings, matchShortcut } from '../src/renderer/src/lib/shortcuts'
+import { comboFromEvent, formatCombo, effectiveBindings, matchShortcut, tabIndexFromEvent } from '../src/renderer/src/lib/shortcuts'
 import { autolink, remoteWebUrl, filePermalink } from '../src/renderer/src/lib/autolink'
 import { frecencyScore } from '../src/renderer/src/lib/frecency'
 import { togglePin, selectPinned } from '../src/renderer/src/lib/pinnedBranches'
@@ -295,6 +295,7 @@ describe('keyboard shortcuts', () => {
     const b = effectiveBindings({ 'command-palette': 'mod+p' })
     expect(b['command-palette']).toBe('mod+p')
     expect(b['code-search']).toBe('mod+shift+f') // untouched default
+    expect(b['open-repository']).toBe('mod+o')
   })
 
   it('matchShortcut resolves the bound id', () => {
@@ -302,6 +303,14 @@ describe('keyboard shortcuts', () => {
     expect(matchShortcut(ev('k', { meta: true }), b)).toBe('command-palette')
     expect(matchShortcut(ev('v', { ctrl: true, shift: true }), b)).toBe('vault')
     expect(matchShortcut(ev('x', { meta: true }), b)).toBeNull()
+  })
+
+  it('maps Cmd/Ctrl+1…9 to zero-based tab positions', () => {
+    expect(tabIndexFromEvent(ev('1', { ctrl: true }))).toBe(0)
+    expect(tabIndexFromEvent(ev('9', { meta: true }))).toBe(8)
+    expect(tabIndexFromEvent(ev('0', { ctrl: true }))).toBeNull()
+    expect(tabIndexFromEvent(ev('2', { ctrl: true, shift: true }))).toBeNull()
+    expect(tabIndexFromEvent(ev('2'))).toBeNull()
   })
 })
 

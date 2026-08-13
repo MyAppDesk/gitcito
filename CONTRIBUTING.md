@@ -142,6 +142,29 @@ node examples/screenshots/capture.mjs conflict-radar   # just one
 npm run screenshots:gif                                # PNGs + clips (needs ffmpeg)
 ```
 
+### The website
+
+`docs/help/` is also the source of <https://myappdesk.github.io/gitcito/>.
+`scripts/build-site.mjs` renders the landing page and one HTML page per
+handbook entry — no framework, no bundler, `marked` and nothing else.
+
+```bash
+npm run site         # → dist-site/
+npm run site:serve   # …and serve it locally
+```
+
+CI redeploys it on every published release and on any push to `main` that
+touches `docs/`, so a documentation fix is live without anyone remembering to
+publish it. The deploy runs `docs-check` first: if the docs do not line up, the
+site is not published.
+
+**The one thing that does not update itself.** The handbook pages come from
+Markdown, but the landing page's headline features are a hand-written
+`FEATURES` array in `scripts/build-site.mjs`. It is the only place the site's
+copy is not derived from `docs/`, and therefore the only place that can quietly
+go stale. If a change deserves a spot on the front page, add it there too — and
+point it at its handbook page, which the link test then verifies.
+
 ## Testing
 
 Tests run real git against generated fixture repos

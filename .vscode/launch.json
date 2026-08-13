@@ -25,6 +25,37 @@
       "presentation": { "group": "1_app", "order": 2 }
     },
     {
+      // Builds the Pages site from docs/ and serves it, so the landing page and
+      // the handbook can be read exactly as they will be published.
+      "name": "Site: build & preview",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "site:serve"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "serverReadyAction": {
+        "pattern": "(https?://localhost:[0-9]+)",
+        "uriFormat": "%s",
+        "action": "openExternally"
+      },
+      "skipFiles": ["<node_internals>/**"],
+      "presentation": { "group": "2_media", "order": 1 }
+    },
+    {
+      // Regenerate only — useful when checking the generator's output in
+      // dist-site/ without starting a server.
+      "name": "Site: build only",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "site"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"],
+      "presentation": { "group": "2_media", "order": 3 }
+    },
+    {
       "name": "Screenshots: regenerate",
       "type": "node",
       "request": "launch",

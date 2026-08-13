@@ -1,0 +1,68 @@
+name: Pages
+
+# The site is generated from the same Markdown the app ships, so it is rebuilt
+# whenever a release goes out (new version number and download links) or the
+# docs change on main. Manual runs are allowed for when only the generator moved.
+on:
+  release:
+    types: [published]
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - 'scripts/build-site.mjs'
+      - 'package.json'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never let two deploys race; let a newer one wait rather than cancel, so a
+# release deploy is not dropped by a docs push landing at the same moment.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # The generator needs `marked` and nothing else. Skipping devDependencies
+      # and install scripts keeps Electron, Playwright and the tree-sitter
+      # grammars out of a job that only renders HTML.
+      - name: Install
+        run: npm ci --omit=dev --ignore-scripts
+
+      - name: Check the docs still line up
+        run: node scripts/docs-check.mjs
+
+      - name: Build the site
+        run: node scripts/build-site.mjs
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist-site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4

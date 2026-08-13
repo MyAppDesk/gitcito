@@ -26,4 +26,5 @@
 - [ ] `docs/help/` page written or updated
 - [ ] `scripts/docs-map.json` maps the new modal / page tab / command
 - [ ] `README.md` mentions it in one line, linked to its page
+- [ ] Front-page feature? Add it to `FEATURES` in `scripts/build-site.mjs`
 - [ ] Destructive actions confirm first; reversible ones offer an undo

@@ -283,6 +283,21 @@ fails when a modal, page tab or command-palette entry has no page behind it.
    link it to its page. The README is a tour, not a manual: one line per
    feature, the depth lives in the handbook.
 
+### The website
+
+The same Markdown is also <https://myappdesk.github.io/gitcito/>.
+`scripts/build-site.mjs` renders a landing page plus one HTML page per handbook
+entry — no framework, no bundler, `marked` and nothing else. Keep it that way:
+a marketing page that needs a toolchain to fix a typo is a page nobody fixes.
+
+CI redeploys on every published release and on any docs push to `main`, so
+there is nothing to publish by hand. `npm run site:serve` previews it.
+
+**The trap:** the landing page's headline features are a hand-written `FEATURES`
+array inside that script — the only copy on the site not derived from `docs/`,
+and so the only part that can silently go stale. A feature big enough for the
+front page has to be added there as well.
+
 ### How to write a page
 
 - Say **what problem it solves** before saying which buttons to press. A page
@@ -310,6 +325,8 @@ fails when a modal, page tab or command-palette entry has no page behind it.
 - [ ] `docs/help/` updated, and `scripts/docs-map.json` maps the new surface
 - [ ] `README.md` updated (one line, linked to the page) if the change adds or
       alters a user-visible feature
+- [ ] `FEATURES` in `scripts/build-site.mjs` updated, if it belongs on the
+      website's front page
 - [ ] You did not launch the app
 
 ## Project tooling
@@ -325,3 +342,5 @@ fails when a modal, page tab or command-palette entry has no page behind it.
 | `docs/help/` | The in-app handbook — one Markdown file per page |
 | `scripts/docs-check.mjs` | The docs guard (`npm run lint:docs`) |
 | `scripts/docs-map.json` | Which page documents which modal / page tab / command |
+| `scripts/build-site.mjs` | The GitHub Pages site (`npm run site`) |
+| `.github/workflows/pages.yml` | Deploys that site on release and on docs pushes |

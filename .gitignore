@@ -14,3 +14,6 @@ resources/tree-sitter/
 # Per-developer Claude Code overrides. The shared config (.claude/settings.json,
 # hooks, skills, commands) is checked in.
 .claude/settings.local.json
+
+# Generated GitHub Pages site (npm run site)
+dist-site/

@@ -50,6 +50,7 @@ versioned with the code.
 ## Install
 
 Grab the latest build for your platform from
+**[gitcito's site](https://myappdesk.github.io/gitcito/)** or straight from
 **[Releases](https://github.com/MyAppDesk/gitcito/releases)** — the macOS build
 is signed and notarised.
 
@@ -167,6 +168,7 @@ npm run lint:i18n    # no hardcoded user-facing strings
 
 npm test             # vitest suite (real git against generated fixtures)
 npm run playground   # (re)generate the example repos under examples/
+npm run site:serve   # build the docs site and preview it locally
 npm run dist:mac     # package a macOS app
 ```
 

@@ -1835,6 +1835,43 @@ export const gitService = {
   },
 
   /**
+   * The same listing, but for a repo as it was at `ref` — read straight from the
+   * object database (`git ls-tree`), so the Time Machine can walk any past
+   * commit's tree without checking anything out or touching the working copy.
+   */
+  async listDirAt(repoPath: string, ref: string, relDir = ''): Promise<TreeEntry[]> {
+    // The trailing slash keeps ls-tree listing *inside* the directory rather
+    // than returning the directory entry itself.
+    const spec = relDir ? `${ref}:${relDir}` : `${ref}:`
+    const raw = await gitFor(repoPath)
+      .raw(['ls-tree', '-z', '--full-name', spec])
+      .catch((err: unknown) => {
+        // A path (or ref) that simply isn't in that tree is an ordinary answer:
+        // the folder didn't exist yet at this point in history. Anything else
+        // is a real failure and must reach the caller instead of quietly
+        // rendering as an empty directory.
+        const message = err instanceof Error ? err.message : String(err)
+        if (/not a valid object name|does not exist|exists on disk, but not in/i.test(message)) return ''
+        throw err
+      })
+    const out: TreeEntry[] = []
+    for (const record of raw.split('\0').filter(Boolean)) {
+      // `<mode> <type> <oid>\t<path>`
+      const tab = record.indexOf('\t')
+      if (tab < 0) continue
+      const type = record.slice(0, tab).split(/\s+/)[1]
+      // ls-tree names are relative to the rev's prefix (`HEAD:src`), so the
+      // repo-relative path has to be rebuilt from the directory we asked for.
+      const name = record.slice(tab + 1)
+      const path = relDir ? `${relDir}/${name}` : name
+      // Submodules (`commit` entries) have no tree to descend into here.
+      out.push({ name, path, dir: type === 'tree' })
+    }
+    out.sort((a, b) => (a.dir === b.dir ? a.name.localeCompare(b.name) : a.dir ? -1 : 1))
+    return out
+  },
+
+  /**
    * Flat list of every searchable file path (repo-relative POSIX): tracked plus
    * untracked-but-not-ignored, the same scope VSCode searches by default. Fast —
    * `ls-files` skips node_modules/etc via the ignore rules, no fs walk.
@@ -3710,6 +3747,7 @@ const READ_METHODS = new Set<string>([
   'remotes',
   'stackInfo',
   'listDir',
+  'listDirAt',
   'listFiles',
   'listTrackedFiles',
   'filesToPush',

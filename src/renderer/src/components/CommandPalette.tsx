@@ -33,7 +33,8 @@ import {
   FolderGit2,
   BookOpen,
   Radar,
-  Magnet
+  Magnet,
+  Clock
 } from 'lucide-react'
 import { useUIStore } from '../stores/ui'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
@@ -210,6 +211,7 @@ export function CommandPalette(): React.JSX.Element {
           : []
       })(),
       { id: 'stack', title: t('cmd.stack'), group: 'Actions', keywords: 'stacked branches graphite restack dependent', icon: <Layers size={15} />, run: act(() => ui.openModal({ kind: 'stack', repoPath: path })) },
+      { id: 'time-machine', title: t('timeMachine.open'), group: 'Actions', keywords: 'time machine scrub history slider past tree browse rewind', icon: <Clock size={15} />, run: act(() => ui.openModal({ kind: 'time-machine', repoPath: path })) },
       { id: 'absorb', title: t('absorb.open'), group: 'Actions', keywords: 'absorb fixup autosquash amend staged hunks blame route', icon: <Magnet size={15} />, run: act(() => ui.openModal({ kind: 'absorb', repoPath: path })) },
       { id: 'range-diff', title: t('rangeDiff.open'), group: 'Actions', keywords: 'range diff force push rebase rewritten review interdiff reflog', icon: <History size={15} />, run: act(() => ui.openModal({ kind: 'range-diff', repoPath: path, branch: repo.branches.current || 'HEAD' })) },
       { id: 'conflict-radar', title: t('radar.open'), group: 'Actions', keywords: 'conflict radar merge preview predict clash risk branches', icon: <Radar size={15} />, run: act(() => ui.openModal({ kind: 'conflict-radar', repoPath: path, base: repo.branches.current || 'HEAD' })) },

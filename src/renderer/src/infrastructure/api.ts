@@ -175,6 +175,7 @@ export const gitApi = {
     call<void>('untrack', path, files, deleteFromDisk),
 
   listDir: (path: string, relDir?: string) => call<TreeEntry[]>('listDir', path, relDir),
+  listDirAt: (path: string, ref: string, relDir?: string) => call<TreeEntry[]>('listDirAt', path, ref, relDir),
   listFiles: (path: string) => call<string[]>('listFiles', path),
   listTrackedFiles: (path: string) => call<string[]>('listTrackedFiles', path),
   filesToPush: (path: string, branch: string) => call<string[]>('filesToPush', path, branch),

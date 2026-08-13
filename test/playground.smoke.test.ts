@@ -61,7 +61,8 @@ const EXPECTED = [
   'conflict-radar',
   'semantic-diff',
   'force-push',
-  'absorb'
+  'absorb',
+  'time-machine'
 ]
 
 describe('playground fixtures', () => {

@@ -640,3 +640,39 @@ describe('absorb (absorb playground)', () => {
     expect(await gitService.absorbApply(R)).toEqual({ created: 0, rebased: false })
   })
 })
+
+describe('listDirAt — time machine tree (semantic-diff playground)', () => {
+  const R = repoPath('semantic-diff')
+
+  it('lists a past commit tree without touching the working copy', async () => {
+    const root = await gitService.listDirAt(R, 'HEAD')
+    // Directories first, then files, each alphabetically — same order the
+    // working-tree listing uses.
+    expect(root.map((e) => e.name)).toEqual(['src', 'notes.txt', 'README.md'])
+    expect(root.find((e) => e.name === 'src')?.dir).toBe(true)
+    // Reading history must not disturb the checkout.
+    const status = await gitService.status(R)
+    expect(status.staged).toEqual([])
+  })
+
+  it('returns repo-relative paths for a subdirectory', async () => {
+    const src = await gitService.listDirAt(R, 'HEAD', 'src')
+    expect(src.map((e) => e.path)).toEqual(['src/api.py', 'src/app.ts', 'src/server.go'])
+    expect(src.every((e) => !e.dir)).toBe(true)
+  })
+
+  it('reflects the tree as it was, not as it is', async () => {
+    // The refactor commit is the tip; its parent still has the old file set.
+    const now = await gitService.listDirAt(R, 'HEAD', 'src')
+    const before = await gitService.listDirAt(R, 'HEAD~1', 'src')
+    expect(now.map((e) => e.name)).toEqual(before.map((e) => e.name))
+    const oldApp = await gitService.fileContent(R, 'src/app.ts', 'HEAD~1')
+    expect(oldApp).toContain('startServer')
+    expect(oldApp).not.toContain('bootServer')
+  })
+
+  it('treats a folder that does not exist at that commit as empty', async () => {
+    expect(await gitService.listDirAt(R, 'HEAD', 'nope')).toEqual([])
+    expect(await gitService.listDirAt(R, 'deadbeef', '')).toEqual([])
+  })
+})

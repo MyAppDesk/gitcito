@@ -8541,6 +8541,105 @@ input[type='range']:focus-visible {
 .bc-diff-title { font-size: 11.5px; color: var(--text-2); margin-bottom: 4px; }
 .bc-diff-scroll { flex: 1; overflow: auto; background: var(--bg-2); border-radius: 6px; }
 
+/* ── Time machine (scrub the repo through its history) ── */
+.tm-root { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+.tm-empty { padding: 30px; text-align: center; font-size: 12.5px; color: var(--text-3); }
+.tm-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 10px;
+}
+.tm-header-top { display: flex; align-items: center; gap: 8px; }
+.tm-header-top h3 { margin: 0; font-size: 14px; }
+.tm-title-icon { color: var(--accent); }
+.tm-position { font-size: 11px; color: var(--text-3); }
+.tm-header-actions { display: flex; gap: 6px; align-items: center; margin-left: auto; padding-right: 26px; }
+.tm-scrub { display: flex; align-items: center; gap: 6px; }
+.tm-step { flex: 0 0 auto; padding: 3px; color: var(--text-2); }
+.tm-step:disabled { opacity: 0.35; cursor: default; }
+.tm-slider { flex: 1; min-width: 0; accent-color: var(--accent); cursor: grab; }
+.tm-slider:active { cursor: grabbing; }
+.tm-commit { display: flex; align-items: center; gap: 8px; font-size: 12px; min-width: 0; }
+.tm-sha { font-family: var(--mono, monospace); font-size: 11px; color: var(--accent); }
+.tm-subject { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tm-author, .tm-date { font-size: 11px; color: var(--text-3); white-space: nowrap; }
+.tm-touched {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--accent);
+  white-space: nowrap;
+}
+.tm-body { display: flex; flex: 1; min-height: 0; gap: 10px; }
+.tm-tree {
+  width: 260px;
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.tm-crumbs {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+}
+.tm-crumb-wrap { display: inline-flex; align-items: center; }
+.tm-crumb { background: none; border: 0; padding: 0 2px; color: var(--text-2); cursor: pointer; font-size: 11px; }
+.tm-crumb:hover { color: var(--accent); }
+.tm-crumb-sep { color: var(--text-3); }
+.tm-entries { flex: 1; overflow-y: auto; padding: 4px; min-height: 0; }
+.tm-entry {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 6px;
+  border-radius: 5px;
+  font-size: 12px;
+  cursor: pointer;
+  min-width: 0;
+}
+.tm-entry:hover { background: var(--bg-2); }
+.tm-entry.active { background: var(--bg-4); }
+.tm-entry.touched .tm-entry-name { color: var(--accent); font-weight: 600; }
+.tm-entry-icon { flex: 0 0 auto; color: var(--text-3); }
+.tm-entry-icon.dir { color: var(--text-2); }
+.tm-entry-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tm-preview {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-2);
+}
+.tm-hint { padding: 20px; font-size: 12px; color: var(--text-3); text-align: center; }
+.tm-loading { display: flex; justify-content: center; padding: 24px; }
+.tm-empty-dir { padding: 12px; font-size: 11.5px; color: var(--text-3); text-align: center; }
+.tm-error { padding: 12px; font-size: 11.5px; color: var(--danger, #f85149); white-space: pre-wrap; }
+.tm-code { margin: 0; padding: 8px 0; font-family: var(--mono, monospace); font-size: 11.5px; line-height: 1.55; }
+.tm-line { display: flex; gap: 10px; padding: 0 10px; white-space: pre; }
+.tm-line-no {
+  flex: 0 0 auto;
+  min-width: 34px;
+  text-align: right;
+  color: var(--text-3);
+  user-select: none;
+}
+.tm-line-text { flex: 1; min-width: 0; }
+
 /* ── Absorb (staged hunks → fixup! commits) ── */
 .ab-root { display: flex; flex-direction: column; gap: 12px; min-height: 0; }
 .ab-loading { display: flex; justify-content: center; padding: 40px; }

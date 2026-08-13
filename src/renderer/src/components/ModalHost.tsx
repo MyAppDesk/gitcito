@@ -15,6 +15,7 @@ import { ConflictRadar } from './ConflictRadar'
 import { KeychainConsentModal } from './KeychainConsentModal'
 import { RangeDiffModal } from './RangeDiffModal'
 import { AbsorbModal } from './AbsorbModal'
+import { TimeMachineModal } from './TimeMachineModal'
 import { AIPRReview } from './AIPRReview'
 import { ReflogModal } from './ReflogModal'
 import { BisectModal } from './BisectModal'
@@ -1366,6 +1367,7 @@ export function ModalHost(): React.JSX.Element {
                     modal.kind === 'branch-compare' ||
                     modal.kind === 'conflict-radar' ||
                     modal.kind === 'range-diff' ||
+                    modal.kind === 'time-machine' ||
                     modal.kind === 'ai-pr-review' ||
                     modal.kind === 'reflog' ||
                     modal.kind === 'hooks' ||
@@ -1410,6 +1412,7 @@ export function ModalHost(): React.JSX.Element {
               <KeychainConsentModal reason={modal.reason} adopted={modal.adopted} />
             )}
             {modal.kind === 'absorb' && <AbsorbModal repoPath={modal.repoPath} />}
+            {modal.kind === 'time-machine' && <TimeMachineModal repoPath={modal.repoPath} />}
             {modal.kind === 'range-diff' && (
               <RangeDiffModal repoPath={modal.repoPath} branch={modal.branch} initialOld={modal.initialOld} />
             )}

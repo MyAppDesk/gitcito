@@ -1285,6 +1285,20 @@ const en = {
   'absorb.emptyInProgress': 'A merge or rebase is in progress. Finish it first.',
   'absorb.emptyNoMatch': 'None of the staged hunks belong to an unpushed commit.',
 
+  // Time machine (scrub the repo through its history)
+  'timeMachine.title': 'Time machine',
+  'timeMachine.open': 'Time machine…',
+  'timeMachine.position': 'commit {n} of {total}',
+  'timeMachine.changed': '{n} files changed here',
+  'timeMachine.copySha': 'Copy SHA',
+  'timeMachine.openHere': 'Open this version',
+  'timeMachine.pickFile': 'Pick a file to see it as it was at this commit.',
+  'timeMachine.notYet': '{file} does not exist at this commit — scrub forward.',
+  'timeMachine.emptyDir': 'This folder is empty here.',
+  'timeMachine.noHistory': 'No history to travel through yet.',
+  'timeMachine.older': 'Older commit (←, ⇧← for ten)',
+  'timeMachine.newer': 'Newer commit (→, ⇧→ for ten)',
+
   // Sparse checkout modal
   'sparse.title': 'Sparse-checkout',
   'sparse.description': 'Limit the working tree to the top-level folders you pick. Unselected folders are removed from the working tree but preserved in git history.',
@@ -2780,6 +2794,20 @@ const es: Dict = {
   'absorb.emptyNoCommits': 'No hay commits sin publicar donde absorber — todo esto ya está publicado.',
   'absorb.emptyInProgress': 'Hay un merge o rebase en curso. Termínalo primero.',
   'absorb.emptyNoMatch': 'Ningún hunk staged pertenece a un commit sin publicar.',
+
+  // Time machine (recorrer el repo por su historia)
+  'timeMachine.title': 'Máquina del tiempo',
+  'timeMachine.open': 'Máquina del tiempo…',
+  'timeMachine.position': 'commit {n} de {total}',
+  'timeMachine.changed': '{n} archivos cambian aquí',
+  'timeMachine.copySha': 'Copiar SHA',
+  'timeMachine.openHere': 'Abrir esta versión',
+  'timeMachine.pickFile': 'Elige un archivo para verlo tal y como estaba en este commit.',
+  'timeMachine.notYet': '{file} no existe en este commit — avanza en el tiempo.',
+  'timeMachine.emptyDir': 'Esta carpeta está vacía aquí.',
+  'timeMachine.noHistory': 'Todavía no hay historia por la que viajar.',
+  'timeMachine.older': 'Commit anterior (←, ⇧← para diez)',
+  'timeMachine.newer': 'Commit siguiente (→, ⇧→ para diez)',
 
   // Sparse checkout modal
   'sparse.title': 'Sparse-checkout',

@@ -7,9 +7,13 @@ import { dirname, join } from 'node:path'
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const I18N_DIR = join(ROOT, 'src/renderer/src/i18n')
 
-/** One dictionary file per locale; `en.ts` is the reference the rest match. */
+/**
+ * One dictionary file per locale; `en.ts` is the reference the rest match.
+ * The directory also holds plumbing (`index.ts`, `interp.ts`) — a locale is a
+ * two-letter code, which keeps helpers from being mistaken for a language.
+ */
 const LOCALES = readdirSync(I18N_DIR)
-  .filter((f) => f.endsWith('.ts') && f !== 'index.ts')
+  .filter((f) => /^[a-z]{2}(-[A-Za-z]{2,4})?\.ts$/.test(f))
   .map((f) => f.replace(/\.ts$/, ''))
 
 const source = (locale: string): string => readFileSync(join(I18N_DIR, `${locale}.ts`), 'utf8')

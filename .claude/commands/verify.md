@@ -1,5 +1,5 @@
 ---
-description: Run Gitcito's full gate — typecheck, i18n guard, tests, build — and report what failed.
+description: Run Gitcito's full gate — typecheck, i18n guard, docs guard, tests, build — and report what failed.
 allowed-tools: Bash(npm run *), Bash(node scripts/*), Bash(npx vitest *)
 ---
 
@@ -8,8 +8,9 @@ the later steps meaningless:
 
 1. `npm run typecheck`
 2. `npm run lint:i18n`
-3. `npm test`
-4. `npm run build`
+3. `npm run lint:docs`
+4. `npm test`
+5. `npm run build`
 
 Report the result as a short list — one line per step, pass or fail. For any
 failure, quote the actual error output and fix it; do not summarize a failure

@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest'
+import { readdirSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+import { dirname, join } from 'node:path'
 import { parseRemoteUrl } from '../src/main/hosting'
+
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 import { commitHookFailureHint, lintCommit, subjectCounterLevel, parseCcPrefix, applyCcType, parseGitmojiPrefix, applyGitmoji, parseTicketPrefix, applyTicket, ticketFromBranch } from '../src/renderer/src/lib/commitLint'
 import { isSecretFile, maskSecretLine } from '../src/renderer/src/lib/secrets'
 import { comboFromEvent, formatCombo, effectiveBindings, matchShortcut } from '../src/renderer/src/lib/shortcuts'
@@ -21,6 +26,8 @@ import {
   topFolder
 } from '../src/renderer/src/lib/timelapse'
 import type { RepoPulse, TimelapseCommit } from '../src/shared/types'
+import { HELP_PAGES, helpSections, searchHelp } from '../src/renderer/src/help/pages'
+import { pageTabLabel, tabLabel } from '../src/renderer/src/lib/tabLabel'
 import {
   activityTotal,
   bulkTargets,
@@ -2684,5 +2691,99 @@ describe('mission control ordering, bulk and sparkline', () => {
     const points = sparklinePoints([0, 2, 1], 10, 10).split(' ')
     expect(points).toHaveLength(3)
     expect(points[1]).toBe('5.0,0.0') // the peak touches the top
+  })
+})
+
+describe('help handbook loading', () => {
+  it('loads every page in docs/help with its front matter parsed', () => {
+    expect(HELP_PAGES.length).toBeGreaterThanOrEqual(8)
+    for (const page of HELP_PAGES) {
+      expect(page.id, `${page.id} has an id`).toMatch(/^[a-z0-9-]+$/)
+      expect(page.title.length, `${page.id} has a title`).toBeGreaterThan(0)
+      expect(page.summary.length, `${page.id} has a summary`).toBeGreaterThan(0)
+      expect(page.category.length, `${page.id} has a category`).toBeGreaterThan(0)
+      // Front matter must not leak into the rendered body.
+      expect(page.body.startsWith('---'), `${page.id} body is clean`).toBe(false)
+      expect(page.body.length).toBeGreaterThan(200)
+    }
+  })
+
+  it('groups pages into sidebar sections, ordered', () => {
+    const sections = helpSections()
+    expect(sections.length).toBeGreaterThan(1)
+    expect(sections[0].category).toBe('Start here')
+    for (const section of sections) {
+      const orders = section.pages.map((p) => p.order)
+      expect([...orders].sort((a, b) => a - b)).toEqual(orders)
+    }
+  })
+
+  it('finds pages by title, keyword and body, best match first', () => {
+    expect(searchHelp('conflict radar')[0].id).toBe('conflict-radar')
+    // A keyword that never appears in the title still finds the page.
+    expect(searchHelp('gource').map((p) => p.id)).toContain('timelapse')
+    expect(searchHelp('')).toEqual([])
+    expect(searchHelp('zzzzznothing')).toEqual([])
+  })
+
+  it('never links to a page that does not exist', () => {
+    const ids = new Set(HELP_PAGES.map((p) => p.id))
+    const broken: string[] = []
+    for (const page of HELP_PAGES) {
+      for (const [, target] of page.body.matchAll(/\]\(([\w-]+)\.md\)/g)) {
+        if (!ids.has(target)) broken.push(`${page.id} → ${target}`)
+      }
+    }
+    expect(broken).toEqual([])
+  })
+
+  it('points every image at a file that exists', () => {
+    const shots = new Set(readdirSync(join(ROOT, 'docs/screenshots')))
+    const missing: string[] = []
+    for (const page of HELP_PAGES) {
+      for (const [, file] of page.body.matchAll(/\]\(\.\.\/screenshots\/([\w.-]+)\)/g)) {
+        if (!shots.has(file)) missing.push(`${page.id} → ${file}`)
+      }
+    }
+    expect(missing).toEqual([])
+  })
+})
+
+describe('page tab labels', () => {
+  // A tiny stand-in for the real dictionary: enough to prove the label goes
+  // through translation rather than a baked-in string.
+  const t = ((key: string) =>
+    ({
+      'tab.vault': 'Cofre',
+      'tab.help': 'Ayuda',
+      'tab.logs': 'Registro',
+      'tab.notifications': 'Notificaciones',
+      'tab.insights': 'Estadísticas',
+      'tab.changelog': 'Novedades',
+      'tab.wiki': 'Wiki — {repo}'
+    })[key] ?? key) as (key: never) => string
+
+  it('translates the fixed labels', () => {
+    expect(pageTabLabel({ type: 'vault' }, t)).toBe('Cofre')
+    expect(pageTabLabel({ type: 'help' }, t)).toBe('Ayuda')
+    expect(pageTabLabel({ type: 'changelog' }, t)).toBe('Novedades')
+  })
+
+  it('interpolates data into the label instead of concatenating', () => {
+    expect(pageTabLabel({ type: 'wiki', repoPath: '/code/gitcito' }, t)).toBe('Wiki — gitcito')
+  })
+
+  it('leaves data alone — an issue title is not copy', () => {
+    const issue = { number: 42, title: 'Crash on empty repo' } as never
+    expect(pageTabLabel({ type: 'issue', issue, repoPath: '/r', remoteUrl: '' }, t)).toBe('#42 Crash on empty repo')
+  })
+
+  it('prefers a name the user chose over the derived one', () => {
+    const tab = { id: '1', kind: 'page', name: 'My notes', renamed: true, page: { type: 'vault' } } as never
+    expect(tabLabel(tab, t)).toBe('My notes')
+    // Without the flag, a stale stored name is ignored: the label follows the
+    // current language.
+    const stale = { id: '1', kind: 'page', name: 'Vault', page: { type: 'vault' } } as never
+    expect(tabLabel(stale, t)).toBe('Cofre')
   })
 })

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { GitMerge, FolderOpen, Download, ArrowDownToLine, Bug, X } from 'lucide-react'
+import { GitMerge, FolderOpen, Download, ArrowDownToLine, Bug, LifeBuoy, X } from 'lucide-react'
 import { useSettingsStore } from './stores/settings'
 import { useRepoStore, repoActions, type RepoData } from './stores/repo'
 import { useUIStore } from './stores/ui'
@@ -29,6 +29,7 @@ import { Welcome, LauncherPanel, type LauncherItem } from './components/Welcome'
 import { OnboardingWizard } from './components/OnboardingWizard'
 import { ChangelogPage } from './components/ChangelogPage'
 import { MissionControlPage } from './components/MissionControlPage'
+import { HelpPage } from './components/HelpPage'
 import { LogsPage } from './components/LogsPage'
 import { NotificationsPage } from './components/NotificationsPage'
 import { InsightsPage } from './components/InsightsPage'
@@ -161,6 +162,8 @@ function PageView({ tab }: { tab: PageTab }): React.JSX.Element {
       return <WikiPageView repoPath={tab.page.repoPath} />
     case 'vault':
       return <VaultPage />
+    case 'help':
+      return <HelpPage initialPage={tab.page.page} />
     case 'release':
       return <ReleasePage tab={tab} />
     case 'issue':
@@ -836,6 +839,15 @@ export default function App(): React.JSX.Element {
               </button>
               {appVersion && (
                 <>
+                  <span className="status-sep" />
+                  <button
+                    className="status-issue-btn"
+                    title={t('help.title')}
+                    onClick={() => useSettingsStore.getState().openPageTab({ type: 'help' })}
+                  >
+                    <LifeBuoy size={12} />
+                    <span>{t('help.open')}</span>
+                  </button>
                   <span className="status-sep" />
                   <button
                     className="status-issue-btn"

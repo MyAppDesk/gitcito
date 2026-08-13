@@ -1458,6 +1458,12 @@ export interface GroupTab extends TabBase {
 export interface PageTab extends TabBase {
   kind: 'page'
   page: PageContent
+  /**
+   * The user renamed this tab, so `name` wins over the derived label.
+   * Without it the label is translated at render time — otherwise a tab opened
+   * in English would keep reading "Vault" after switching to Spanish.
+   */
+  renamed?: boolean
 }
 
 export type PageContent =
@@ -1467,6 +1473,7 @@ export type PageContent =
   | { type: 'insights'; repoPath: string }
   | { type: 'wiki'; repoPath: string }
   | { type: 'vault' }
+  | { type: 'help'; page?: string }
   | { type: 'release'; release: ReleaseInfo; repoPath: string }
   | { type: 'issue'; issue: IssueInfo; repoPath: string; remoteUrl: string }
   | { type: 'milestone'; milestone: MilestoneInfo; repoPath: string; remoteUrl: string }

@@ -1,0 +1,123 @@
+{
+  "_readme": [
+    "Which handbook page documents each user-facing surface, checked by scripts/docs-check.mjs.",
+    "Add a feature to the app → add it here. `covered` points at a page id in docs/help/;",
+    "`exempt` records, with a reason, the surfaces that are not features of their own."
+  ],
+
+  "modals": {
+    "covered": {
+      "absorb": "absorb",
+      "ai-config-wizard": "ai",
+      "ai-pr-review": "ai",
+      "addRemote": "branching",
+      "editRemote": "branching",
+      "bisect": "recovery",
+      "branch-compare": "merging",
+      "changelog-gen": "changelog",
+      "cheatsheet": "keyboard",
+      "clone": "getting-started",
+      "code-search": "search",
+      "conflict-radar": "conflict-radar",
+      "create-branch": "branching",
+      "create-issue": "hosting",
+      "create-pr": "hosting",
+      "create-repo": "getting-started",
+      "create-tag": "tags",
+      "diverged-checkout": "branching",
+      "hooks": "hooks",
+      "ignore": "hooks",
+      "interactive-rebase": "rebase",
+      "keychain-consent": "security",
+      "launcher": "getting-started",
+      "lfs": "lfs-sparse",
+      "pr-detail": "hosting",
+      "range-diff": "range-diff",
+      "reflog": "recovery",
+      "repo-settings": "repo-settings",
+      "secure-share": "secure-share",
+      "secure-workspace": "secure-share",
+      "settings": "themes",
+      "snapshots": "recovery",
+      "sparse": "lfs-sparse",
+      "stack": "stacks",
+      "stash-partial": "stashes",
+      "time-machine": "time-machine",
+      "timelapse": "timelapse"
+    },
+    "exempt": {
+      "input": "Generic single-field prompt reused everywhere; not a feature.",
+      "confirm": "Generic confirmation dialog.",
+      "group-color": "Colour picker inside the group tab UI, documented as part of workspaces."
+    }
+  },
+
+  "pages": {
+    "covered": {
+      "insights": "insights",
+      "vault": "vault",
+      "wiki": "repo-wiki",
+      "issue": "hosting",
+      "milestone": "hosting",
+      "release": "hosting",
+      "notifications": "hosting",
+      "logs": "repo-settings"
+    },
+    "exempt": {
+      "help": "This handbook itself.",
+      "changelog": "The app's own 'What's new' release notes, not a Git feature."
+    }
+  },
+
+  "commands": {
+    "covered": {
+      "absorb": "absorb",
+      "ai-assistant": "ai",
+      "bisect": "recovery",
+      "changelog": "changelog",
+      "changelog-gen": "changelog",
+      "cheatsheet": "keyboard",
+      "code-search": "search",
+      "commit": "committing",
+      "compare-refs": "merging",
+      "conflict-radar": "conflict-radar",
+      "create-branch": "branching",
+      "create-issue": "hosting",
+      "create-pr": "hosting",
+      "fetch": "syncing",
+      "filter-path": "graph",
+      "hooks": "hooks",
+      "insights": "insights",
+      "lfs": "lfs-sparse",
+      "mission-control": "mission-control",
+      "notifications": "hosting",
+      "pull": "syncing",
+      "push": "syncing",
+      "range-diff": "range-diff",
+      "reflog": "recovery",
+      "secure-export": "secure-share",
+      "secure-import": "secure-share",
+      "settings": "themes",
+      "settings-ai": "ai",
+      "settings-security": "security",
+      "settings-shortcuts": "keyboard",
+      "settings-themes": "themes",
+      "snapshots": "recovery",
+      "sparse": "lfs-sparse",
+      "stack": "stacks",
+      "stash": "stashes",
+      "stash-partial": "stashes",
+      "terminal": "terminal",
+      "theme": "themes",
+      "time-machine": "time-machine",
+      "timelapse": "timelapse",
+      "vault": "vault",
+      "wiki": "repo-wiki",
+      "ws-secure-export": "secure-share",
+      "ws-secure-import": "secure-share"
+    },
+    "exempt": {
+      "help": "Opens this handbook."
+    }
+  }
+}

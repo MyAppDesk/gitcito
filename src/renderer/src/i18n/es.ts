@@ -1300,6 +1300,24 @@ export const es: Dict = {
   'timelapse.noRecorder': 'La grabación de vídeo no está disponible en esta build.',
 
   // Mission control (todos los repos en una pantalla)
+  // Etiquetas de las pestañas de página (derivadas al pintar, nunca guardadas)
+  'tab.logs': 'Registro de operaciones',
+  'tab.notifications': 'Notificaciones',
+  'tab.insights': 'Estadísticas',
+  'tab.vault': 'Vault',
+  'tab.help': 'Ayuda',
+  'tab.changelog': 'Novedades',
+  'tab.wiki': 'Wiki — {repo}',
+
+  // Manual integrado
+  'help.open': 'Ayuda',
+  'help.title': 'Manual de Gitcito — todas las funciones explicadas',
+  'help.search': 'Buscar en el manual…',
+  'help.noResults': 'No hay nada que coincida.',
+  'help.back': 'Atrás',
+  'help.empty': 'El manual está vacío.',
+  'help.reportIssue': 'Reportar un problema',
+
   'mission.title': 'Centro de control',
   'mission.open': 'Centro de control',
   'mission.blocked': '{n} bloqueados',

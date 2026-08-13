@@ -18,9 +18,8 @@ export function translate(lang: Language, key: TranslationKey): string {
 }
 
 /** Simple string interpolation — replaces {key} tokens with values. */
-export function interp(str: string, vars: Record<string, string | number>): string {
-  return str.replace(/\{(\w+)\}/g, (_, k) => String(vars[k] ?? ''))
-}
+// Re-exported so the hundreds of `import { interp } from '../i18n'` keep working.
+export { interp } from './interp'
 
 /** Non-reactive translator (for use outside React render). */
 export function t(key: TranslationKey): string {

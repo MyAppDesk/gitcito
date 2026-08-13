@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Stop hook — the project's definition of "done".
 #
-# Runs the two fast, always-required checks (typecheck + i18n guard) when the
-# working tree has staged or unstaged source changes. Exit 2 hands the failure
+# Runs the three fast, always-required checks (typecheck + i18n guard + docs
+# guard) when the working tree has staged or unstaged source or docs changes. Exit 2 hands the failure
 # back to the model rather than ending the turn on a broken tree.
 #
 # `stop_hook_active` guards against a loop: if the model already got this
@@ -17,8 +17,8 @@ if [ "$(printf '%s' "$payload" | jq -r '.stop_hook_active // false' 2>/dev/null)
   exit 0
 fi
 
-# Nothing touched under src/ or test/ → nothing to verify.
-changed=$(git status --porcelain -- src test 2>/dev/null)
+# Nothing touched under src/, test/ or docs/ → nothing to verify.
+changed=$(git status --porcelain -- src test docs scripts 2>/dev/null)
 [ -n "$changed" ] || exit 0
 
 fail=""
@@ -30,6 +30,11 @@ fi
 if ! out=$(node scripts/check-i18n.mjs 2>&1); then
   fail="$fail
 ── i18n guard ──
+$out"
+fi
+if ! out=$(node scripts/docs-check.mjs 2>&1); then
+  fail="$fail
+── docs guard ──
 $out"
 fi
 

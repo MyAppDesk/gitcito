@@ -27,22 +27,6 @@ import { settingsApi } from '../infrastructure/api'
 
 const uid = (): string => Math.random().toString(36).slice(2, 10)
 
-/** Tab title for a page tab. Release tabs read "repo - version" so several
- *  releases from different repos stay distinguishable in the tab strip. */
-function pageTabName(page: PageContent): string {
-  if (page.type === 'logs') return 'Operation log'
-  if (page.type === 'notifications') return 'Notifications'
-  if (page.type === 'insights') return 'Insights'
-  if (page.type === 'wiki') return `Wiki — ${page.repoPath.split('/').pop() || page.repoPath}`
-  if (page.type === 'vault') return 'Vault'
-  if (page.type === 'issue') return `#${page.issue.number} ${page.issue.title}`
-  if (page.type === 'milestone') return `🏁 ${page.milestone.title}`
-  if (page.type !== 'release') return "What's new"
-  const repo = page.repoPath.split('/').pop() || page.repoPath
-  const version = page.release.tag || page.release.name || `#${page.release.id}`
-  return `${repo} - ${version}`
-}
-
 export const GROUP_COLORS = [
   '#6366f1', '#ec4899', '#f59e0b', '#10b981',
   '#3b82f6', '#8b5cf6', '#ef4444', '#14b8a6',
@@ -412,7 +396,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
           (page.type !== 'wiki' || (t.page.type === 'wiki' && t.page.repoPath === page.repoPath))
       )
       if (existing) return { ...s, activeTabId: existing.id }
-      const tab: TabState = { id: uid(), kind: 'page', name: pageTabName(page), page }
+      // No name is stored: page tabs label themselves at render time, in the
+      // language the user is reading right now (see `pageTabLabel`).
+      const tab: TabState = { id: uid(), kind: 'page', name: '', page }
       return { ...s, tabs: [...s.tabs, tab], activeTabId: tab.id }
     }),
 
@@ -420,7 +406,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     get().update((s) => ({
       ...s,
       tabs: s.tabs.map((t) =>
-        t.id === tabId && t.kind === 'page' ? { ...t, page, name: pageTabName(page) } : t
+        t.id === tabId && t.kind === 'page' ? { ...t, page } : t
       )
     })),
 
@@ -524,7 +510,12 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   setActiveTab: (tabId) => get().update((s) => ({ ...s, activeTabId: tabId })),
 
   renameTab: (tabId, name) =>
-    get().update((s) => ({ ...s, tabs: s.tabs.map((t) => (t.id === tabId ? { ...t, name } : t)) })),
+    get().update((s) => ({
+      ...s,
+      // Renaming a page tab pins the name: from then on it is the user's, not a
+      // label we derive.
+      tabs: s.tabs.map((t) => (t.id === tabId ? { ...t, name, ...(t.kind === 'page' ? { renamed: true } : {}) } : t))
+    })),
 
   setTabColor: (tabId, color) =>
     get().update((s) => ({ ...s, tabs: s.tabs.map((t) => (t.id === tabId ? { ...t, color } : t)) })),

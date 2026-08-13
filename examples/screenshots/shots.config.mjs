@@ -517,9 +517,135 @@ export const shots = [
       await page.click('.sb-tab-launch').catch(() => {})
       await page.waitForTimeout(500)
     }
+  },
+  {
+    out: 'conflict-radar',
+    repos: ['conflict-radar'],
+    themes: ['dark'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['conflict-radar']
+      await page.evaluate((p) => window.__shot.ui.getState().openModal({ kind: 'conflict-radar', repoPath: p, base: 'main' }), repo)
+      // The radar scans on open: one merge-tree per branch, plus a single-ref
+      // retry for the orphan branch git refuses. Wait for verdicts, not layout.
+      await page.waitForSelector('.radar-row', { timeout: 15000 }).catch(() => {})
+      await page.waitForTimeout(1200)
+    }
+  },
+  {
+    out: 'semantic-diff',
+    repos: ['semantic-diff'],
+    themes: ['dark'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['semantic-diff']
+      await page.evaluate((p) => {
+        const s = window.__shot
+        // The refactor commit is the tip: rename + signature change + move.
+        const commit = s.repo.getState().repos[p].commits[0]
+        s.repo.getState().select(p, { type: 'commit', hash: commit.hash })
+        s.ui.getState().setFileView({
+          repoPath: p,
+          file: 'src/app.ts',
+          source: { type: 'commit', hash: commit.hash },
+          mode: 'diff'
+        })
+      }, repo)
+      // tree-sitter parses both sides before the strip appears.
+      await page.waitForSelector('.sem-row', { timeout: 15000 }).catch(() => {})
+      await page.waitForTimeout(600)
+    }
+  },
+  {
+    out: 'range-diff',
+    repos: ['force-push'],
+    themes: ['dark'],
+    // The fixture is deliberately left un-fetched so the app can demo the
+    // discovery; fetching here is what puts the rewrite in the tracking ref's
+    // reflog, which is where the comparison reads its "before" from.
+    prepare: async ({ repoPaths, run }) => {
+      await run('git', ['-C', repoPaths['force-push'], 'fetch', '--all', '--prune'], { allowFail: true })
+    },
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['force-push']
+      await page.evaluate(
+        (p) => window.__shot.ui.getState().openModal({ kind: 'range-diff', repoPath: p, branch: 'origin/feature/login' }),
+        repo
+      )
+      await page.waitForSelector('.rd-row', { timeout: 15000 }).catch(() => {})
+      // Expand the rewritten commit so the interdiff — the point of the whole
+      // feature — is what the screenshot shows.
+      await page.click('.rd-row-wrap.modified .rd-row').catch(() => {})
+      await page.waitForTimeout(500)
+    }
+  },
+  {
+    out: 'absorb',
+    repos: ['absorb'],
+    themes: ['dark'],
+    // Absorb works on the index, so the review fixes have to be staged first.
+    prepare: async ({ repoPaths, run }) => {
+      await run('git', ['-C', repoPaths['absorb'], 'add', '-A'], { allowFail: true })
+    },
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['absorb']
+      await page.evaluate((p) => window.__shot.ui.getState().openModal({ kind: 'absorb', repoPath: p }), repo)
+      await page.waitForSelector('.ab-target', { timeout: 15000 }).catch(() => {})
+      await page.waitForTimeout(600)
+    }
+  },
+  {
+    out: 'time-machine',
+    repos: ['time-machine'],
+    themes: ['dark'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['time-machine']
+      await page.evaluate((p) => window.__shot.ui.getState().openModal({ kind: 'time-machine', repoPath: p }), repo)
+      await page.waitForSelector('.tm-entry', { timeout: 15000 }).catch(() => {})
+      // Scrub back to when the entry point still lived at the repo root, then
+      // open a file so the shot shows both panes doing their job.
+      for (let i = 0; i < 5; i++) {
+        await page.keyboard.press('ArrowLeft')
+        await page.waitForTimeout(180)
+      }
+      await page.click('.tm-entry:not(.dir)').catch(() => {})
+      await page.waitForTimeout(700)
+    }
+  },
+  {
+    out: 'timelapse',
+    repos: ['deep-history-monorepo'],
+    themes: ['dark'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['deep-history-monorepo']
+      await page.evaluate((p) => window.__shot.ui.getState().openModal({ kind: 'timelapse', repoPath: p }), repo)
+      // Let it play far enough in that the canvas has a world on it rather
+      // than three lonely dots.
+      await page.waitForTimeout(4500)
+    }
+  },
+  {
+    out: 'mission-control',
+    kind: 'group',
+    repos: ['absorb', 'merge-conflict', 'time-machine', 'force-push', 'deep-history-monorepo'],
+    themes: ['dark'],
+    // One repo mid-merge and one with staged work, so the dashboard shows the
+    // ordering it exists for instead of five identical clean rows.
+    prepare: async ({ repoPaths, run }) => {
+      const conflict = repoPaths['merge-conflict']
+      await run('git', ['-C', conflict, 'merge', '--abort'], { allowFail: true })
+      await run('git', ['-C', conflict, 'checkout', '-f', 'main'], { allowFail: true })
+      await run('git', ['-C', conflict, 'merge', 'feature'], { allowFail: true })
+      await run('git', ['-C', repoPaths['absorb'], 'add', '-A'], { allowFail: true })
+    },
+    drive: async (page) => {
+      await page.evaluate(() => window.__shot.ui.getState().setMissionOpen(true))
+      await page.waitForSelector('.mc-row', { timeout: 15000 }).catch(() => {})
+      // Expand the busiest row: the pending commits and dirty files are the
+      // part a screenshot can actually teach.
+      await page.click('.mc-row-wrap:first-child .mc-expand').catch(() => {})
+      await page.waitForTimeout(900)
+    }
   }
 ]
-
 // ── Animated clips (GIF) ──────────────────────────────────────────────────────
 // Captured by sampling screenshots at a steady fps, so GIF playback stays
 // proportional to real time. Each clip loads a repo then runs `drive(page)`;
@@ -570,6 +696,67 @@ export const clips = [
           )
           await page.waitForTimeout(1300)
         }
+      }
+    }
+  },
+  {
+    out: 'clip-time-machine',
+    repos: ['time-machine'],
+    themes: ['dark'],
+    gif: {
+      durationMs: 6000,
+      // The whole point is motion: the file tree rebuilding itself commit by
+      // commit as the slider walks backwards, then forwards again.
+      drive: async (page, repoPaths) => {
+        const repo = repoPaths['time-machine']
+        await page.evaluate((p) => window.__shot.ui.getState().openModal({ kind: 'time-machine', repoPath: p }), repo)
+        await page.waitForSelector('.tm-entry', { timeout: 15000 }).catch(() => {})
+        await page.waitForTimeout(500)
+        for (let i = 0; i < 9; i++) {
+          await page.keyboard.press('ArrowLeft')
+          await page.waitForTimeout(320)
+        }
+        await page.waitForTimeout(400)
+        for (let i = 0; i < 5; i++) {
+          await page.keyboard.press('ArrowRight')
+          await page.waitForTimeout(320)
+        }
+      }
+    }
+  },
+  {
+    out: 'clip-timelapse',
+    repos: ['deep-history-monorepo'],
+    themes: ['dark'],
+    gif: {
+      durationMs: 7000,
+      // Opens playing at the default speed; the clip is simply the animation.
+      drive: async (page, repoPaths) => {
+        const repo = repoPaths['deep-history-monorepo']
+        await page.evaluate((p) => window.__shot.ui.getState().openModal({ kind: 'timelapse', repoPath: p }), repo)
+        await page.waitForTimeout(6500)
+      }
+    }
+  },
+  {
+    out: 'clip-conflict-radar',
+    repos: ['conflict-radar'],
+    themes: ['dark'],
+    gif: {
+      durationMs: 5500,
+      // Shows the scan landing verdict by verdict, then the contested files.
+      drive: async (page, repoPaths) => {
+        const repo = repoPaths['conflict-radar']
+        await page.waitForTimeout(600)
+        await page.evaluate(
+          (p) => window.__shot.ui.getState().openModal({ kind: 'conflict-radar', repoPath: p, base: 'main' }),
+          repo
+        )
+        await page.waitForSelector('.radar-row', { timeout: 15000 }).catch(() => {})
+        await page.waitForTimeout(1500)
+        // Open the worst offender to reveal its conflicting paths.
+        await page.click('.radar-row-wrap.conflict .radar-row').catch(() => {})
+        await page.waitForTimeout(1800)
       }
     }
   }

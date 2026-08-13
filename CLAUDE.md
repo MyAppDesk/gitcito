@@ -251,15 +251,65 @@ One concern per PR. Commit only when asked; if you are on `main`, branch first.
 
 ---
 
-## 8. Before you say you are done
+## 8. Documentation — the second rule that has teeth
+
+Gitcito ships its own handbook: **`docs/help/*.md`**, rendered inside the app
+(Help, in the status bar) and readable straight from the repository on GitHub.
+One source, two readers.
+
+**A user-facing change is not finished until the handbook says so.** Docs rot
+because nothing breaks when they lag; here something does — `npm run lint:docs`
+fails when a modal, page tab or command-palette entry has no page behind it.
+
+### When you add or change a feature
+
+1. **Write or update the page** in `docs/help/`. Front matter is required:
+
+   ```md
+   ---
+   title: Conflict radar
+   category: Branching & surgery
+   order: 44
+   summary: One line — shown under the title and in search results.
+   keywords: extra words search should match, including old names
+   ---
+   ```
+
+2. **Map the surface** in `scripts/docs-map.json`: point the modal kind, page
+   type or command id at a page id — or add it to `exempt` **with a reason**.
+   "It is obvious" is not a reason; "generic confirmation dialog" is.
+
+3. **Add a line to `README.md`** if the feature is worth mentioning at all, and
+   link it to its page. The README is a tour, not a manual: one line per
+   feature, the depth lives in the handbook.
+
+### How to write a page
+
+- Say **what problem it solves** before saying which buttons to press. A page
+  that opens with "click the gear" teaches nothing.
+- **State the limits.** What it refuses to do, what it cannot detect, what it
+  costs. A doc that only lists strengths is marketing, and readers can tell.
+- Links between pages are plain relative Markdown — `[absorb](absorb.md)` — so
+  they work on GitHub and in the app alike.
+- Images live in `docs/screenshots/` and are referenced as
+  `![alt](../screenshots/name.png)`. Every screenshot must be used by some page;
+  an orphan is either a missing page or dead weight.
+- Tables for "what each option does". Prose for why you would want it.
+
+---
+
+## 9. Before you say you are done
 
 - [ ] `npm run typecheck` passes
 - [ ] `npm run lint:i18n` passes — every new string is in **every** locale file
+- [ ] `npm run lint:docs` passes — every new surface has a handbook page
 - [ ] `npm test` passes
 - [ ] `npm run build` succeeds
 - [ ] New user-facing actions have a confirm if destructive, and an undo entry
       if reversible
-- [ ] `README.md` updated if the change adds or alters a user-visible feature
+- [ ] `docs/help/` updated, and `scripts/docs-map.json` maps the new surface
+- [ ] `README.md` updated (one line, linked to the page) if the change adds or
+      alters a user-visible feature
 - [ ] You did not launch the app
 
 ## Project tooling
@@ -272,3 +322,6 @@ One concern per PR. Commit only when asked; if you are on `main`, branch first.
 | `.claude/commands/verify.md` | `/verify` — the full gate |
 | `.claude/commands/add-locale.md` | `/add-locale <code>` — scaffold a new locale |
 | `.claude/hooks/` | The i18n guard (per edit) and the verify gate (per turn) |
+| `docs/help/` | The in-app handbook — one Markdown file per page |
+| `scripts/docs-check.mjs` | The docs guard (`npm run lint:docs`) |
+| `scripts/docs-map.json` | Which page documents which modal / page tab / command |

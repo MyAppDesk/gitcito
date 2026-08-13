@@ -21,6 +21,7 @@
     "playground:rebuild": "PLAYGROUND_FORCE=1 bash examples/setup-playground.sh",
     "screenshots:gif": "node examples/screenshots/capture.mjs --gif",
     "lint:i18n": "node scripts/check-i18n.mjs",
+    "lint:docs": "node scripts/docs-check.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",

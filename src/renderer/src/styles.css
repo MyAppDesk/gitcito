@@ -8563,6 +8563,122 @@ input[type='range']:focus-visible {
 .workspace-mission.active { background: var(--bg-4); color: var(--accent); }
 
 
+/* ── In-app handbook ── */
+.help-root { display: flex; height: 100%; min-height: 0; }
+.help-nav {
+  width: 240px;
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 10px;
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+}
+.help-search { position: relative; display: flex; align-items: center; margin-bottom: 10px; }
+.help-search-icon { position: absolute; left: 8px; color: var(--text-3); }
+.help-search-input { width: 100%; padding: 5px 24px 5px 26px; font-size: 12px; }
+.help-search-clear {
+  position: absolute;
+  right: 5px;
+  display: flex;
+  border: 0;
+  background: transparent;
+  color: var(--text-3);
+  cursor: pointer;
+}
+.help-section { display: flex; flex-direction: column; gap: 1px; margin-bottom: 12px; }
+.help-section-title {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-3);
+  padding: 4px 8px;
+}
+.help-link {
+  text-align: left;
+  border: 0;
+  background: transparent;
+  color: var(--text-2);
+  font-size: 12.5px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.help-link:hover { background: var(--bg-2); color: var(--text-1); }
+.help-link.active { background: var(--bg-4); color: var(--text-0, var(--text-1)); font-weight: 600; }
+.help-results { display: flex; flex-direction: column; gap: 2px; }
+.help-result {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.help-result:hover { background: var(--bg-2); }
+.help-result-title { font-size: 12.5px; color: var(--text-1); font-weight: 600; }
+.help-result-excerpt { font-size: 11px; color: var(--text-3); line-height: 1.4; }
+.help-no-results { padding: 10px 8px; font-size: 12px; color: var(--text-3); }
+.help-nav-foot { margin-top: auto; padding-top: 10px; }
+.help-foot-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  background: transparent;
+  color: var(--text-3);
+  font-size: 11.5px;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+.help-foot-btn:hover { color: var(--accent); }
+.help-body { flex: 1; min-width: 0; overflow-y: auto; padding: 22px 34px 60px; }
+.help-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.help-head-icon { color: var(--accent); }
+.help-breadcrumb { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-3); }
+.help-back { margin-right: 4px; }
+.help-empty { padding: 40px; text-align: center; color: var(--text-3); }
+.help-article { max-width: 760px; }
+.help-article h1 { font-size: 22px; margin: 0 0 6px; }
+.help-article h2 { font-size: 15px; margin: 22px 0 8px; padding-bottom: 5px; border-bottom: 1px solid var(--border); }
+.help-article h3 { font-size: 13px; margin: 16px 0 6px; }
+.help-article p, .help-article li { font-size: 13px; line-height: 1.65; color: var(--text-1); }
+.help-article a { color: var(--accent); text-decoration: none; }
+.help-article a:hover { text-decoration: underline; }
+.help-article code { font-family: var(--mono, monospace); font-size: 12px; background: var(--bg-2); padding: 1px 5px; border-radius: 4px; }
+.help-article pre { background: var(--bg-2); padding: 12px 14px; border-radius: 8px; overflow-x: auto; }
+.help-article pre code { background: none; padding: 0; font-size: 11.5px; line-height: 1.6; }
+.help-article table { border-collapse: collapse; width: 100%; margin: 10px 0; }
+.help-article th, .help-article td {
+  border: 1px solid var(--border);
+  padding: 6px 10px;
+  font-size: 12.5px;
+  text-align: left;
+}
+.help-article th { background: var(--bg-2); font-weight: 600; }
+.help-article img { max-width: 100%; border-radius: 8px; border: 1px solid var(--border); margin: 8px 0; }
+.help-article blockquote {
+  margin: 10px 0;
+  padding: 8px 14px;
+  border-left: 3px solid var(--accent);
+  background: var(--bg-2);
+  border-radius: 0 6px 6px 0;
+  color: var(--text-2);
+}
+.help-article kbd {
+  font-family: var(--mono, monospace);
+  font-size: 11px;
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  padding: 1px 5px;
+  background: var(--bg-2);
+}
+
 /* ── Mission control (every repo on one screen) ── */
 .mc-root { display: flex; flex-direction: column; height: 100%; min-height: 0; padding: 18px 22px; gap: 12px; }
 .mc-header { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }

@@ -32,6 +32,7 @@ import {
   ArrowLeftRight,
   FolderGit2,
   BookOpen,
+  LifeBuoy,
   Radar,
   Magnet,
   Clock,
@@ -213,6 +214,7 @@ export function CommandPalette(): React.JSX.Element {
           : []
       })(),
       { id: 'stack', title: t('cmd.stack'), group: 'Actions', keywords: 'stacked branches graphite restack dependent', icon: <Layers size={15} />, run: act(() => ui.openModal({ kind: 'stack', repoPath: path })) },
+      { id: 'help', title: t('help.open'), group: 'Actions', keywords: 'help handbook docs manual guide wiki how to learn', icon: <LifeBuoy size={15} />, run: act(() => useSettingsStore.getState().openPageTab({ type: 'help' })) },
       { id: 'mission-control', title: t('mission.open'), group: 'Actions', keywords: 'mission control dashboard all repos overview status dirty unpushed behind', icon: <Gauge size={15} />, run: act(() => ui.setMissionOpen(true)) },
       { id: 'timelapse', title: t('timelapse.open'), group: 'Actions', keywords: 'timelapse video animation history replay gource export webm movie', icon: <Film size={15} />, run: act(() => ui.openModal({ kind: 'timelapse', repoPath: path })) },
       { id: 'time-machine', title: t('timeMachine.open'), group: 'Actions', keywords: 'time machine scrub history slider past tree browse rewind', icon: <Clock size={15} />, run: act(() => ui.openModal({ kind: 'time-machine', repoPath: path })) },

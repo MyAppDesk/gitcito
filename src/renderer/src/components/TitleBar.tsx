@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Plus, FolderGit2, X, Minus, Square, Settings, Sparkles, Bell, BarChart3, BookOpen, ScrollText, CircleDot, Flag, Tag, Download, ArrowDownToLine, KeyRound, LayoutGrid, Folder, FolderOpen, FolderPlus, FolderTree, Trash2 } from 'lucide-react'
+import { Plus, FolderGit2, X, Minus, Square, Settings, Sparkles, LifeBuoy, FileText, Bell, BarChart3, BookOpen, ScrollText, CircleDot, Flag, Tag, Download, ArrowDownToLine, KeyRound, LayoutGrid, Folder, FolderOpen, FolderPlus, FolderTree, Trash2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore, type MenuItem } from '../stores/ui'
@@ -18,6 +18,7 @@ import {
 import { ProfileSwitcher } from './ProfileSwitcher'
 import { WorkspaceSwitcher } from './WorkspaceSwitcher'
 import { folderOpenMenuItems } from '../lib/openWith'
+import { tabLabel } from '../lib/tabLabel'
 import { useT, interp } from '../i18n'
 
 type TabStatus = 'conflict' | 'wip' | null
@@ -48,8 +49,14 @@ function pageTabIcon(type: string): React.JSX.Element {
       return <Flag size={13} />
     case 'release':
       return <Tag size={13} />
-    default:
+    case 'help':
+      return <LifeBuoy size={13} />
+    // Explicit, so a new page type never inherits the release-notes sparkle by
+    // falling through to the default.
+    case 'changelog':
       return <Sparkles size={13} />
+    default:
+      return <FileText size={13} />
   }
 }
 
@@ -1100,7 +1107,7 @@ export function TitleBar(): React.JSX.Element {
                 transition={{ duration: 0.15 }}
               >
                 {pageTabIcon(tab.page.type)}
-                <span className="tab-name">{tab.name}</span>
+                <span className="tab-name">{tabLabel(tab, t)}</span>
                 <button
                   className="tab-close"
                   onClick={(e) => {

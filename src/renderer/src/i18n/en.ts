@@ -1314,6 +1314,24 @@ export const en = {
   'timelapse.noRecorder': 'Video recording is not available in this build.',
 
   // Mission control (every repo on one screen)
+  // Page-tab labels (derived at render time, never persisted)
+  'tab.logs': 'Operation log',
+  'tab.notifications': 'Notifications',
+  'tab.insights': 'Insights',
+  'tab.vault': 'Vault',
+  'tab.help': 'Help',
+  'tab.changelog': "What's new",
+  'tab.wiki': 'Wiki — {repo}',
+
+  // In-app handbook
+  'help.open': 'Help',
+  'help.title': 'Gitcito handbook — every feature explained',
+  'help.search': 'Search the handbook…',
+  'help.noResults': 'Nothing matches that.',
+  'help.back': 'Back',
+  'help.empty': 'The handbook is empty.',
+  'help.reportIssue': 'Report an issue',
+
   'mission.title': 'Mission control',
   'mission.open': 'Mission control',
   'mission.blocked': '{n} blocked',

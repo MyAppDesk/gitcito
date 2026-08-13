@@ -1814,6 +1814,7 @@ export const en = {
   'terminal.kill': 'Kill terminal',
   'terminal.killPanel': 'Kill panel',
   'terminal.doubleClickRename': 'Double-click to rename',
+  'terminal.groupSplitTooltip': '{name} ({count} panels)',
   'onboarding.welcomeTitle': 'Welcome to gitcito',
   'onboarding.welcomeSubtitle': 'Let\'s get you set up in a few steps.',
   'onboarding.settingsLoaded': 'Settings file loaded',

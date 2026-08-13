@@ -1800,6 +1800,7 @@ export const es: Dict = {
   'terminal.kill': 'Cerrar terminal',
   'terminal.killPanel': 'Cerrar panel',
   'terminal.doubleClickRename': 'Doble clic para renombrar',
+  'terminal.groupSplitTooltip': '{name} ({count} paneles)',
   'onboarding.welcomeTitle': 'Bienvenido a gitcito',
   'onboarding.welcomeSubtitle': 'Vamos a configurarlo en unos pocos pasos.',
   'onboarding.settingsLoaded': 'Archivo de ajustes cargado',

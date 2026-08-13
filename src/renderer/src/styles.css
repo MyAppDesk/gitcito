@@ -3376,15 +3376,81 @@ textarea:focus {
   overflow: hidden;
 }
 
-/* Collapsed strip — just a reopen button. */
+/* Collapsed rail — reopen/new buttons plus one icon per terminal group. */
 .terminal-list-collapsed {
   flex-shrink: 0;
-  width: 28px;
+  width: 34px;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
   padding-top: 6px;
   border-left: 1px solid var(--border);
   background: var(--bg-0);
+  overflow: hidden;
+}
+
+.terminal-rail-sep {
+  flex-shrink: 0;
+  width: 18px;
+  height: 1px;
+  margin: 4px 0;
+  background: var(--border-soft);
+}
+
+.terminal-rail-body {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding-bottom: 6px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.terminal-rail-item {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--text-2);
+  cursor: pointer;
+}
+
+.terminal-rail-item:hover {
+  background: var(--bg-1);
+  color: var(--text-1);
+}
+
+.terminal-rail-item.active {
+  background: var(--bg-2, var(--bg-1));
+  color: var(--text-0);
+}
+
+/* Mini split map: one cell per panel inside the group. */
+.rail-split {
+  display: flex;
+  gap: 2px;
+}
+
+.rail-split-cell {
+  width: 4px;
+  height: 13px;
+  border-radius: 1.5px;
+  background: currentColor;
+  opacity: 0.4;
+}
+
+.rail-split-cell.on {
+  opacity: 1;
 }
 
 .terminal-list-head-actions {

@@ -19,6 +19,9 @@ your aliases.
 - Terminal visibility is per repository: switching to a tab that never opened one
   keeps it closed.
 - Tabs name themselves after what is running in them.
+- Collapsing the terminal list shrinks it to a **rail**: one icon per terminal
+  (split terminals show a mini panel map), click to switch, right-click for the
+  usual rename/split/kill menu.
 
 Anything you run here is invisible to Gitcito's own locking, so a long
 `git rebase` typed by hand and a click in the UI can still collide — the app

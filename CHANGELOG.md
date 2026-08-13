@@ -1,5 +1,14 @@
 
 
+## [2.12.0](https://github.com/MyAppDesk/gitcito/compare/v2.11.0...v2.12.0) (2026-08-13)
+
+
+### Features
+
+* add file navigation with keyboard support for file lists ([cae0de2](https://github.com/MyAppDesk/gitcito/commit/cae0de26564c8cc0b8b85c2baf9ce78747063a9a))
+* add host-remotes scenario for credential resolution ([efb5abb](https://github.com/MyAppDesk/gitcito/commit/efb5abb8d76cfeece6e52121ef49803b49746bfd))
+* add line-level search for file and commit contents ([ae9a2a7](https://github.com/MyAppDesk/gitcito/commit/ae9a2a733865e596b618d218affe1f8060485844))
+
 ## [2.11.0](https://github.com/MyAppDesk/gitcito/compare/v2.10.0...v2.11.0) (2026-08-13)
 
 

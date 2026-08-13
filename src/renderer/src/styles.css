@@ -8583,6 +8583,16 @@ input[type='range']:focus-visible {
 .stash-partial-path { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--mono, monospace); }
 .stash-partial-keep { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-2); margin-top: 8px; cursor: pointer; }
 
+.pr-preview-tabs { display: flex; gap: 6px; margin: 10px 0 4px; }
+.pr-preview-tabs .btn.active { background: var(--bg-3); color: var(--text-1); }
+.pr-preview-probe { display: flex; gap: 6px; align-items: center; }
+.pr-preview-probe .modal-input { flex: 1; min-width: 0; }
+.pr-preview-found { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--green); font-family: var(--mono, monospace); margin: 2px 0 0; }
+.pr-preview-error { display: flex; align-items: flex-start; gap: 6px; font-size: 11.5px; color: var(--red); margin: 2px 0 0; }
+.pr-preview-mode { display: flex; align-items: flex-start; gap: 8px; padding: 6px 4px; font-size: 12px; cursor: pointer; }
+.pr-preview-mode span { display: flex; flex-direction: column; gap: 2px; }
+.pr-preview-mode em { font-style: normal; font-size: 11px; color: var(--text-2); }
+
 .create-tag-msg { min-height: 64px; resize: vertical; font-family: inherit; }
 .create-tag-sign { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-2); margin: 10px 0; cursor: pointer; }
 /* The modal's ✕ is absolutely positioned in the same corner — keep clear of it. */
@@ -9561,6 +9571,8 @@ input[type='range']:focus-visible {
 .ai-pr-sev.medium { background: color-mix(in srgb, var(--yellow, #f59e0b) 20%, transparent); color: var(--yellow, #f59e0b); }
 
 /* Sidebar AI review button on PR rows */
+.sb-pr-preview { margin-left: auto; opacity: 0.6; }
+.sb-item.pr:hover .sb-pr-preview { opacity: 1; }
 .sb-ai-review { margin-left: auto; opacity: 0.6; }
 .sb-item.pr:hover .sb-ai-review { opacity: 1; }
 .sb-ai-review svg { color: var(--accent); }

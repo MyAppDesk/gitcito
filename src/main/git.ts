@@ -73,8 +73,12 @@ import type {
   AbsorbHunk,
   TimelapseCommit,
   RepoPulse,
-  RepoDetail
+  RepoDetail,
+  PrPreviewMode,
+  PrPreviewResult,
+  PrRefProbe
 } from '../shared/types'
+import { prRefCandidates } from '../shared/prRefs'
 import { parseMergeTreeSingle, parseMergeTreeStdin, type MergeTreeRecord } from '../shared/mergeTree'
 import { parseRangeDiff } from '../shared/rangeDiff'
 import { parseForcedUpdates } from '../shared/fetchPorcelain'
@@ -131,6 +135,8 @@ const EVENT_FOR_METHOD: Record<string, ActivityEvent> = {
 
 function eventForCall(method: string, args: unknown[]): ActivityEvent | null {
   if (method === 'commit') return args[2] === true ? 'amend' : 'commit'
+  // A preview either merges into HEAD or just parks a fetched ref on a branch.
+  if (method === 'previewRef') return args[3] === 'merge' ? 'merge' : 'fetch'
   return EVENT_FOR_METHOD[method] ?? null
 }
 
@@ -330,6 +336,18 @@ function hostFromUrl(url: string): RepoHost | undefined {
 // (terminal prompts disabled) error instead of hanging on /dev/tty.
 const noPromptEnv = (): NodeJS.ProcessEnv => ({ ...process.env, GIT_TERMINAL_PROMPT: '0' })
 
+/**
+ * Strip `user:secret@` out of every URL in a message.
+ *
+ * Git echoes the remote URL back in its errors, and `withRemoteAuth` puts the
+ * active PAT into that URL for the duration of a network call — so without this
+ * an unlucky failure prints the token into the UI, the operation log, and any
+ * screenshot of either.
+ */
+export function redactCredentials(msg: string): string {
+  return msg.replace(/(:\/\/)[^/\s@]+(?::[^/\s@]*)?@/g, '$1***@')
+}
+
 /** Run a git command non-interactively, surfacing stderr as the thrown message. */
 async function runGit(repoPath: string, args: string[]): Promise<string> {
   try {
@@ -337,7 +355,7 @@ async function runGit(repoPath: string, args: string[]): Promise<string> {
     return stdout
   } catch (err) {
     const e = err as { stderr?: string; message?: string }
-    throw new Error((e.stderr || e.message || 'git command failed').trim())
+    throw new Error(redactCredentials((e.stderr || e.message || 'git command failed').trim()))
   }
 }
 
@@ -1380,6 +1398,88 @@ export const gitService = {
 
   async fetchRemote(repoPath: string, name: string): Promise<void> {
     await withRemoteAuth(repoPath, name, () => runGit(repoPath, ['fetch', name, '--prune']))
+  },
+
+  // ─── Previewing someone else's work ────────────────────────────────────────
+
+  /**
+   * Find the ref a pull request's head lives under on `remote`.
+   *
+   * Every candidate convention goes into one `ls-remote`, so an unknown or
+   * self-hosted forge costs the same single round trip as GitHub. No API token
+   * and no fork remote are involved — which is the whole point: a PR from a
+   * fork is previewable even when its source repository is unreachable.
+   *
+   * Returns null when the remote publishes no such ref (the host does not
+   * mirror PR heads, or the number does not exist).
+   *
+   * Deliberately **not** a READ_METHOD despite reading nothing: `withRemoteAuth`
+   * rewrites `.git/config` to inject the PAT, so two of these under the shared
+   * read lock race for `.git/config.lock` and one loses.
+   */
+  async resolvePrRef(repoPath: string, remote: string, number: number): Promise<PrRefProbe | null> {
+    const candidates = prRefCandidates(number, await getRemoteUrl(repoPath, remote))
+    const out = await withRemoteAuth(repoPath, remote, () =>
+      runGit(repoPath, ['ls-remote', remote, ...candidates.map((c) => c.ref)])
+    )
+    const found = new Map<string, string>()
+    for (const line of out.split('\n')) {
+      const [sha, ref] = line.split('\t')
+      if (sha && ref) found.set(ref.trim(), sha.trim())
+    }
+    // Candidate order is priority order, so the first hit is the best guess.
+    for (const c of candidates) {
+      const sha = found.get(c.ref)
+      if (sha) return { ...c, sha }
+    }
+    return null
+  },
+
+  /**
+   * Bring `ref` down from `remote` and apply it locally without writing a
+   * commit, so the work can be run and then dropped without a trace:
+   *
+   * - `checkout` fetches it onto `localBranch` (reset with `-B`, so previewing
+   *   the same PR twice reuses the branch) and switches to it.
+   * - `merge` merges it into the current branch with `--no-commit --no-ff`,
+   *   leaving the merged tree staged. Conflicts are reported rather than
+   *   thrown, because a conflicted preview is a useful answer.
+   *
+   * The fetch is deliberately `--no-tags`: a preview should not drag the
+   * remote's tag namespace into the local repository.
+   */
+  async previewRef(
+    repoPath: string,
+    remote: string,
+    ref: string,
+    mode: PrPreviewMode,
+    localBranch?: string
+  ): Promise<PrPreviewResult> {
+    await withRemoteAuth(repoPath, remote, () => runGit(repoPath, ['fetch', '--no-tags', remote, ref]))
+    const sha = (await runGit(repoPath, ['rev-parse', 'FETCH_HEAD'])).trim()
+
+    if (mode === 'checkout') {
+      if (!localBranch) throw new Error('A local branch name is required to check out a preview')
+      await runGit(repoPath, ['checkout', '-B', localBranch, sha])
+      return { ref, sha, mode, localBranch, conflicts: [] }
+    }
+
+    // Run the merge through `runGit`, not simple-git: simple-git's `raw`
+    // *resolves* on a conflicted merge, which would report a clean preview over
+    // a conflicted tree. A non-zero exit here is expected — the conflicted tree
+    // it leaves behind is exactly what the user asked to see, so read the
+    // conflicts back instead of surfacing git's error.
+    try {
+      await runGit(repoPath, ['merge', '--no-commit', '--no-ff', sha])
+    } catch (err) {
+      const conflicts = (await runGit(repoPath, ['diff', '--name-only', '--diff-filter=U']))
+        .split('\n')
+        .map((s) => s.trim())
+        .filter(Boolean)
+      if (conflicts.length === 0) throw err
+      return { ref, sha, mode, conflicts }
+    }
+    return { ref, sha, mode, conflicts: [] }
   },
 
   // ─── Branch / nav operations ───────────────────────────────────────────────
@@ -3999,10 +4099,12 @@ export function registerGitHandlers(): void {
       }
       return result
     } catch (err) {
-      if (event) {
-        void recordLog({ event, repoPath, ok: false, error: err instanceof Error ? err.message : String(err) })
-      }
-      throw err
+      // Redact at the boundary as well as in `runGit`: simple-git and any other
+      // path can surface a URL we transiently injected a token into, and this is
+      // the last point before the message reaches the log and the renderer.
+      const message = redactCredentials(err instanceof Error ? err.message : String(err))
+      if (event) void recordLog({ event, repoPath, ok: false, error: message })
+      throw err instanceof Error ? Object.assign(err, { message }) : new Error(message)
     } finally {
       release?.()
     }

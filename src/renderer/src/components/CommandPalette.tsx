@@ -17,6 +17,7 @@ import {
   Boxes,
   FolderTree,
   GitPullRequest,
+  GitPullRequestArrow,
   SunMoon,
   Plus,
   Search,
@@ -220,6 +221,7 @@ export function CommandPalette(): React.JSX.Element {
       { id: 'time-machine', title: t('timeMachine.open'), group: 'Actions', keywords: 'time machine scrub history slider past tree browse rewind', icon: <Clock size={15} />, run: act(() => ui.openModal({ kind: 'time-machine', repoPath: path })) },
       { id: 'absorb', title: t('absorb.open'), group: 'Actions', keywords: 'absorb fixup autosquash amend staged hunks blame route', icon: <Magnet size={15} />, run: act(() => ui.openModal({ kind: 'absorb', repoPath: path })) },
       { id: 'range-diff', title: t('rangeDiff.open'), group: 'Actions', keywords: 'range diff force push rebase rewritten review interdiff reflog', icon: <History size={15} />, run: act(() => ui.openModal({ kind: 'range-diff', repoPath: path, branch: repo.branches.current || 'HEAD' })) },
+      { id: 'pr-preview', title: t('prPreview.open'), group: 'Actions', keywords: 'preview pull request merge request pr mr fork check out locally test try refs/pull', icon: <GitPullRequestArrow size={15} />, run: act(() => ui.openModal({ kind: 'pr-preview', repoPath: path })) },
       { id: 'conflict-radar', title: t('radar.open'), group: 'Actions', keywords: 'conflict radar merge preview predict clash risk branches', icon: <Radar size={15} />, run: act(() => ui.openModal({ kind: 'conflict-radar', repoPath: path, base: repo.branches.current || 'HEAD' })) },
       { id: 'compare-refs', title: t('cmd.compareRefs'), group: 'Actions', keywords: 'compare diff branches refs tags ahead behind range', icon: <ArrowLeftRight size={15} />, run: act(() => {
         const cur = repo.branches.current || 'HEAD'

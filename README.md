@@ -125,6 +125,7 @@ hands the folder to the window you already have open.
 | **[Mission control](docs/help/mission-control.md)** | Every repository of the workspace, worst first, with bulk fetch/pull. |
 | **[Repo groups & workspaces](docs/help/workspaces.md)** | Group tabs with folders nested to any depth, colour-coded, fetch-all per subtree. |
 | **[Pull requests](docs/help/hosting.md)** | Create on GitHub, GitLab, Bitbucket and Azure DevOps. Review, comment, approve and merge on GitHub, with a checks panel and inline threads. |
+| **[Preview a pull request](docs/help/pr-preview.md)** | Run someone else's PR — forks included — without committing anything. Any host, no API token: the PR head is fetched from the ref the forge publishes. |
 | **[Issues, milestones, releases, notifications](docs/help/hosting.md)** | GitHub, in-app, with an unread badge in the toolbar. |
 | **[Stashes](docs/help/stashes.md), [tags](docs/help/tags.md), [worktrees](docs/help/worktrees.md), [LFS & sparse-checkout](docs/help/lfs-sparse.md), patches, [hooks](docs/help/hooks.md)** | The whole plumbing drawer, with a UI. |
 

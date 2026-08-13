@@ -432,6 +432,37 @@ export interface PullRequest {
 
 export type HostingProvider = 'github' | 'azure' | 'gitlab' | 'bitbucket' | null
 
+/** The ref-naming convention a forge uses to publish pull request heads. */
+export type PrRefFlavor = 'github' | 'gitlab' | 'bitbucket' | 'azure'
+
+/** One ref a pull request's head might live under on a given remote. */
+export interface PrRefCandidate {
+  flavor: PrRefFlavor
+  ref: string
+}
+
+/** A pull request ref that actually exists on the remote, found by `ls-remote`. */
+export interface PrRefProbe extends PrRefCandidate {
+  sha: string
+}
+
+/**
+ * How a previewed ref is applied locally. Neither mode writes a commit:
+ * `checkout` parks the ref on a local branch, `merge` leaves the merged tree
+ * staged but uncommitted so it can be tested and then thrown away.
+ */
+export type PrPreviewMode = 'checkout' | 'merge'
+
+export interface PrPreviewResult {
+  ref: string
+  sha: string
+  mode: PrPreviewMode
+  /** Set for `checkout` — the local branch the ref was fetched into. */
+  localBranch?: string
+  /** Paths left conflicted by a `merge` preview; empty when it applied cleanly. */
+  conflicts: string[]
+}
+
 /** A comment on a pull request's conversation. */
 export interface PrComment {
   author: string

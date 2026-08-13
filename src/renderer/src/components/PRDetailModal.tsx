@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
   GitPullRequest,
+  GitPullRequestArrow,
   Loader2,
   ExternalLink,
   Check,
@@ -111,6 +112,15 @@ export function PRDetailModal({
     )
   }
 
+  // Hand the preview modal the remote this PR's repository is actually behind —
+  // matching on URL, since a repo may have several remotes configured.
+  const previewLocally = (): void => {
+    const remotes = useRepoStore.getState().repos[repoPath]?.remotes ?? []
+    const stripped = (u: string): string => u.replace(/\.git$/, '').replace(/\/+$/, '')
+    const remote = remotes.find((r) => stripped(r.url) === stripped(remoteUrl))?.name
+    useUIStore.getState().openModal({ kind: 'pr-preview', repoPath, number, remote })
+  }
+
   const approvals = pr?.reviews.filter((r) => r.state === 'APPROVED').length ?? 0
   const changesReq = pr?.reviews.filter((r) => r.state === 'CHANGES_REQUESTED').length ?? 0
   const canMerge = pr && pr.state === 'open' && !pr.merged
@@ -138,6 +148,9 @@ export function PRDetailModal({
               <code>{pr.source}</code> → <code>{pr.target}</code>
             </span>
             <span className="prd-author">by {pr.author}</span>
+            <button className="icon-btn" title={t('prPreview.open')} onClick={previewLocally}>
+              <GitPullRequestArrow size={13} />
+            </button>
             <button className="icon-btn" title={t('common.openInBrowser')} onClick={() => void window.api.openExternal(pr.url)}>
               <ExternalLink size={13} />
             </button>

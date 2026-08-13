@@ -30,6 +30,9 @@ import type {
   StashInfo,
   AIConfig,
   AppSettings,
+  PrPreviewMode,
+  PrPreviewResult,
+  PrRefProbe,
   PullRequest,
   PrDetail,
   PrReviewEvent,
@@ -109,6 +112,10 @@ export const gitApi = {
   editRemote: (path: string, oldName: string, newName: string, url: string, pushUrl?: string) =>
     call<void>('editRemote', path, oldName, newName, url, pushUrl),
   fetchRemote: (path: string, name: string) => call<void>('fetchRemote', path, name),
+  resolvePrRef: (path: string, remote: string, number: number) =>
+    call<PrRefProbe | null>('resolvePrRef', path, remote, number),
+  previewRef: (path: string, remote: string, ref: string, mode: PrPreviewMode, localBranch?: string) =>
+    call<PrPreviewResult>('previewRef', path, remote, ref, mode, localBranch),
 
   checkout: (path: string, ref: string) => call<void>('checkout', path, ref),
   checkoutRemote: (path: string, fullName: string, localName: string, remote?: string) =>

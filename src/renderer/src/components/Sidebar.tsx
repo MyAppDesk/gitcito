@@ -7,6 +7,7 @@ import {
   Tag,
   Archive,
   GitPullRequest,
+  GitPullRequestArrow,
   CircleDot,
   Milestone,
   Search,
@@ -1380,6 +1381,25 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
             <GitPullRequest size={12} className={pr.isDraft ? 'pr-draft' : 'pr-open'} />
             <span className="sb-name">
               #{pr.id} {pr.title}
+            </span>
+            {/* Unlike the detail view, previewing works on every host — the PR
+                head is a plain ref, so there is no provider check here. */}
+            <span
+              className="icon-btn sb-pr-preview"
+              title={t('prPreview.open')}
+              onClick={(e) => {
+                e.stopPropagation()
+                const origin = repo.remotes.find((r) => r.name === 'origin') ?? repo.remotes[0]
+                openModal({
+                  kind: 'pr-preview',
+                  repoPath: path,
+                  number: pr.id,
+                  remote: origin?.name,
+                  branch: pr.sourceBranch
+                })
+              }}
+            >
+              <GitPullRequestArrow size={11} />
             </span>
             {aiEnabled && pr.sourceBranch && pr.targetBranch && (
               <span

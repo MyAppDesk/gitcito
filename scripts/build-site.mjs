@@ -163,6 +163,12 @@ const FEATURES = [
     body: "Replay the repository's whole life as an animation — and export it as a video, recorded in the page with no encoder to install."
   },
   {
+    icon: '🧪',
+    title: 'Preview a pull request',
+    id: 'pr-preview',
+    body: "Run someone else's PR — forks included — without committing anything. No API token, no second remote: the head is fetched from the ref the forge already publishes, on GitHub, GitLab, Bitbucket, Azure DevOps or Gitea."
+  },
+  {
     icon: '🎛️',
     title: 'Mission control',
     id: 'mission-control',

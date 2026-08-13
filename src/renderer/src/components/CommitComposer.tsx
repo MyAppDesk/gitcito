@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Sparkles, Loader2, Trash2, AlignLeft, FolderTree, GitMerge, ChevronDown, CheckCheck, Users } from 'lucide-react'
-import { MYAPPDESK_COAUTHOR, type FileEntry, type CommitStyle } from '../../../shared/types'
+import { MYAPPDESK_COAUTHOR, type CodeSearchHit, type FileEntry, type CommitStyle } from '../../../shared/types'
 import { gitApi, aiApi, shellApi } from '../infrastructure/api'
 import { repoActions, useRepoStore, type RepoData } from '../stores/repo'
 import { useUIStore, type MenuItem } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { FileListView } from './FileListView'
+import { MatchSummary, matchesByFile } from './SearchMatches'
 import { Avatar } from './Avatar'
 import { lintCommit, subjectCounterLevel, SUBJECT_IDEAL_LEN, CC_TYPES, parseCcPrefix, applyCcType, GITMOJIS, parseGitmojiPrefix, applyGitmoji, parseTicketPrefix, ticketFromBranch } from '../lib/commitLint'
 import { isSecretFile } from '../lib/secrets'
@@ -198,32 +199,32 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
 
   // ─── File search / filter (path globs + content search) ───────────────────
   const [filter, setFilter] = useState<FileFilter>(EMPTY_FILTER)
-  // Paths whose working-tree content matches the search query; null = no active
-  // content query (so the content dimension is ignored by the filter).
-  const [contentMatches, setContentMatches] = useState<Set<string> | null>(null)
+  // Line-level content-search hits; null = no active content query (so the
+  // content dimension is ignored by the filter).
+  const [contentHits, setContentHits] = useState<CodeSearchHit[] | null>(null)
   const query = filter.query.trim()
   const setFileSearch = useUIStore((s) => s.setFileSearch)
 
   // Content search: ask the backend which changed files contain the query.
   useEffect(() => {
     if (!query || filter.mode !== 'content') {
-      setContentMatches(null)
+      setContentHits(null)
       return
     }
     const allPaths = [...new Set([...unstaged, ...staged, ...conflicted].map((f) => f.path))]
     let cancelled = false
     const t = setTimeout(() => {
       void gitApi
-        .searchFileContents(path, allPaths, query, {
+        .searchFileMatches(path, allPaths, query, {
           caseSensitive: filter.caseSensitive,
           wholeWord: filter.wholeWord,
           regex: filter.regex
         })
-        .then((paths) => {
-          if (!cancelled) setContentMatches(new Set(paths))
+        .then((hits) => {
+          if (!cancelled) setContentHits(hits)
         })
         .catch(() => {
-          if (!cancelled) setContentMatches(new Set())
+          if (!cancelled) setContentHits([])
         })
     }, 200)
     return () => {
@@ -247,6 +248,15 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
     }
   }, [query, filter.mode, filter.caseSensitive, filter.wholeWord, filter.regex, setFileSearch])
   useEffect(() => () => useUIStore.getState().setFileSearch(null), [])
+
+  // Hits grouped per file for the expandable match rows, plus the flat set of
+  // matching paths the filter below works with.
+  const hitsByFile = useMemo(() => (contentHits ? matchesByFile(contentHits) : null), [contentHits])
+  const contentMatches = useMemo(() => (hitsByFile ? new Set(hitsByFile.keys()) : null), [hitsByFile])
+  const contentRe = useMemo(
+    () => (filter.mode === 'content' && query ? buildQueryRegExp(filter, true) : null),
+    [filter.mode, filter.query, filter.caseSensitive, filter.wholeWord, filter.regex, query]
+  )
 
   // For file-name search, match the path with the same query/toggles.
   const nameRe = useMemo(
@@ -376,6 +386,21 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
       mode: contentSearch || useUIStore.getState().fileView?.mode === 'file' ? 'file' : 'diff'
     })
   }
+
+  // Clicking a search match opens the working-tree File view at that line — the
+  // diff would hide matches that sit outside the changed hunks.
+  const openMatch =
+    (list: ListName, files: FileEntry[]) =>
+    (filePath: string, line: number): void => {
+      const entry = files.find((f) => f.path === filePath)
+      setFileView({
+        repoPath: path,
+        file: filePath,
+        source: { type: 'wip', staged: list === 'staged', untracked: !!entry?.untracked },
+        mode: 'file',
+        line
+      })
+    }
 
   const pathsFor = (list: ListName, file: FileEntry): string[] =>
     selection.list === list && selection.paths.has(file.path) && selection.paths.size > 1
@@ -675,6 +700,9 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
       </div>
 
       <FileSearchBar value={filter} onChange={setFilter} />
+      {contentHits && (
+        <MatchSummary hits={contentHits} label={(n, files) => interp(t('search.summary'), { n, files })} />
+      )}
 
       <div className={`composer-lists${splitDragging ? ' dragging' : ''}`}>
         {conflicted.length > 0 && (
@@ -818,6 +846,10 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
                   onFolderContext={handleFolderContext('unstaged', fUnstaged)}
                   action={stageAction('unstaged')}
                   folderAction={folderStageAction('unstaged', fUnstaged)}
+                  matches={hitsByFile ?? undefined}
+                  matchRe={contentRe}
+                  activeLine={fileView?.line ?? null}
+                  onMatchClick={openMatch('unstaged', fUnstaged)}
                 />
                 {unstaged.length === 0 && <div className="sb-empty">{t('composer.workingTreeClean')}</div>}
                 {unstaged.length > 0 && fUnstaged.length === 0 && (
@@ -883,6 +915,10 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
                   onFolderContext={handleFolderContext('staged', fStaged)}
                   action={stageAction('staged')}
                   folderAction={folderStageAction('staged', fStaged)}
+                  matches={hitsByFile ?? undefined}
+                  matchRe={contentRe}
+                  activeLine={fileView?.line ?? null}
+                  onMatchClick={openMatch('staged', fStaged)}
                 />
                 {staged.length === 0 && <div className="sb-empty">Nothing staged</div>}
                 {staged.length > 0 && fStaged.length === 0 && (

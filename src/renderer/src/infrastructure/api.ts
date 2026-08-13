@@ -230,6 +230,31 @@ export const gitApi = {
     query: string,
     opts?: { caseSensitive?: boolean; wholeWord?: boolean; regex?: boolean }
   ) => call<string[]>('searchFileContents', path, files, query, opts),
+  searchFileMatches: (
+    path: string,
+    files: string[],
+    query: string,
+    opts?: {
+      caseSensitive?: boolean
+      wholeWord?: boolean
+      regex?: boolean
+      max?: number
+      maxPerFile?: number
+    }
+  ) => call<CodeSearchHit[]>('searchFileMatches', path, files, query, opts),
+  searchCommitMatches: (
+    path: string,
+    rev: string,
+    query: string,
+    opts?: {
+      paths?: string[]
+      caseSensitive?: boolean
+      wholeWord?: boolean
+      regex?: boolean
+      max?: number
+      maxPerFile?: number
+    }
+  ) => call<CodeSearchHit[]>('searchCommitMatches', path, rev, query, opts),
   grepWorkingTree: (
     path: string,
     query: string,

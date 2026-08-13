@@ -51,6 +51,47 @@ describe('code search (code-search playground)', () => {
     expect(hits[0]).toHaveProperty('line')
   })
 
+  it('searchFileMatches returns every matching line of the given files', async () => {
+    const hits = await gitService.searchFileMatches(R, ['src/util/log.js', 'src/util/mail.js'], 'TODO')
+    // log.js has 3 TODO lines, mail.js 2 — grouped by file, with line numbers.
+    expect(hits.filter((h) => h.file === 'src/util/log.js').length).toBe(3)
+    expect(hits.filter((h) => h.file === 'src/util/mail.js').length).toBe(2)
+    expect(hits.every((h) => h.line > 0 && h.text.includes('TODO'))).toBe(true)
+    // Files outside the given list are never searched.
+    expect(hits.some((h) => h.file === 'README.md')).toBe(false)
+  })
+
+  it('searchFileMatches honours the case/whole-word/regex toggles', async () => {
+    expect(await gitService.searchFileMatches(R, ['README.md'], 'todo', { caseSensitive: true })).toEqual([])
+    expect((await gitService.searchFileMatches(R, ['README.md'], 'todo')).length).toBe(1)
+    const emails = await gitService.searchFileMatches(R, ['src/util/mail.js'], '\\w+@corp\\.dev', { regex: true })
+    expect(emails.length).toBe(1)
+    expect(await gitService.searchFileMatches(R, ['src/util/log.js'], 'TOD', { wholeWord: true })).toEqual([])
+  })
+
+  it('searchFileMatches caps the hits per file', async () => {
+    const hits = await gitService.searchFileMatches(R, ['src/util/log.js'], 'TODO', { maxPerFile: 2 })
+    expect(hits.length).toBe(2)
+  })
+
+  it('searchCommitMatches greps the tree of a commit, not the working copy', async () => {
+    // validateToken exists at the commit that added it and is gone from HEAD.
+    const added = execFileSync('git', ['-C', R, 'log', '--format=%H', '--grep=add validateToken'], {
+      encoding: 'utf-8'
+    }).trim()
+    const hits = await gitService.searchCommitMatches(R, added, 'validateToken')
+    expect(hits.length).toBeGreaterThanOrEqual(1)
+    expect(hits[0].file).toBe('src/auth/token.js')
+    expect(hits[0].line).toBe(1)
+    expect(await gitService.searchCommitMatches(R, 'HEAD', 'validateToken')).toEqual([])
+  })
+
+  it('searchCommitMatches limits the search to the given paths', async () => {
+    const hits = await gitService.searchCommitMatches(R, 'HEAD', 'TODO', { paths: ['README.md'] })
+    expect(hits.length).toBe(1)
+    expect(hits[0].file).toBe('README.md')
+  })
+
   it('history pickaxe finds add + remove of a symbol', async () => {
     const commits = await gitService.searchHistory(R, 'validateToken')
     expect(commits.length).toBe(3) // add, use, drop

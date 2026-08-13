@@ -61,7 +61,7 @@ export function CodeSearchModal({ repoPath }: { repoPath: string }): React.JSX.E
 
   const openFileHit = (hit: CodeSearchHit): void => {
     setFileSearch({ query: query.trim(), caseSensitive, wholeWord, regex })
-    setFileView({ repoPath, file: hit.file, source: { type: 'tree' }, mode: 'file' })
+    setFileView({ repoPath, file: hit.file, source: { type: 'tree' }, mode: 'file', line: hit.line })
     closeModal()
   }
 

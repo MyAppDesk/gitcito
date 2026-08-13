@@ -64,4 +64,26 @@ cat > "$R/scratch.js" <<'EOF'
 const debug = true
 EOF
 
-summary "code-search" "⌘⇧F code search: git grep working tree + history pickaxe (validateToken added→removed)"
+# ── Uncommitted work, so the WIP panel search has something to expand ────
+# Both files carry SEVERAL matches of the same term, which is what the
+# expandable per-file match rows are for (one row per matching line).
+cat > "$R/src/util/log.js" <<'EOF'
+// TODO: switch to structured logging
+export function log(msg) {
+  console.log(msg) // TODO: add a level
+}
+export function warn(msg) {
+  console.warn(msg) // TODO: add a level
+}
+EOF
+git -C "$R" add "src/util/log.js" # staged, with 3 matches
+
+cat > "$R/src/util/mail.js" <<'EOF'
+// contacts — handy for a regex search: \w+@\w+\.\w+
+export const team = ['alice@corp.dev', 'bob@corp.dev', 'carol@corp.dev']
+// TODO: move contacts to config
+// TODO: validate addresses
+EOF
+# left unstaged, with 2 matches
+
+summary "code-search" "⌘⇧F code search: git grep working tree + history pickaxe (validateToken added→removed) + WIP/commit search with multi-line matches"

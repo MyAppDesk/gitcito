@@ -4,6 +4,7 @@ import { Loader2, Pin, PinOff, Sparkles, X } from 'lucide-react'
 import { aiApi } from '../infrastructure/api'
 import { useSettingsStore } from '../stores/settings'
 import { identifierAt, isExplainableToken } from '../lib/hoverToken'
+import { revealLine } from '../lib/reveal'
 import { useT } from '../i18n'
 import { renderMarkdown } from '../preview/markdown'
 import type { HoverExplainResult, HoverModifier, NumberedLine } from '../../../shared/types'
@@ -85,16 +86,6 @@ function caretAt(x: number, y: number): { node: Text; offset: number } | null {
     return { node: range.startContainer as Text, offset: range.startOffset }
   }
   return null
-}
-
-/** Scrolls the viewer to a cited line, if it is still rendered. */
-function revealLine(line: number): void {
-  const row =
-    document.querySelector(`.file-content .code-line:nth-child(${line})`) ??
-    [...document.querySelectorAll('.diff-line .diff-gutter, .blame-line .code-no')].find(
-      (g) => g.textContent?.trim() === String(line)
-    )?.parentElement
-  row?.scrollIntoView({ block: 'center', behavior: 'smooth' })
 }
 
 export function useHoverExplain(opts: {

@@ -10062,6 +10062,102 @@ mark.find-hit.active {
   white-space: nowrap;
 }
 
+/* ── VSCode-style search results: file rows that expand into their matches ── */
+.sm-summary {
+  padding: 4px 10px 6px;
+  font-size: 11px;
+  color: var(--text-2);
+  flex-shrink: 0;
+}
+.sm-file {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 26px;
+  padding: 0 8px;
+  cursor: pointer;
+  user-select: none;
+  overflow: hidden;
+}
+.sm-file:hover { background: var(--bg-3); }
+.sm-file.selected { background: var(--accent-soft); }
+.sm-caret,
+.sm-icon,
+.file-caret {
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-2);
+  flex-shrink: 0;
+}
+.file-caret { cursor: pointer; margin-left: -4px; }
+.file-caret:hover { color: var(--text-1); }
+.sm-name {
+  flex: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  overflow: hidden;
+}
+.sm-base { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sm-dir {
+  font-size: 11px;
+  color: var(--text-2);
+  opacity: 0.8;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sm-count {
+  flex-shrink: 0;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--bg-4);
+  color: var(--text-2);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.sm-match {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 22px;
+  padding-right: 8px;
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--text-2);
+  overflow: hidden;
+}
+.sm-match:hover { background: var(--bg-3); }
+.sm-match.active { background: var(--accent-soft); color: var(--text-1); }
+.sm-match:focus-visible { outline: 1px solid var(--accent); outline-offset: -1px; }
+.sm-line {
+  flex-shrink: 0;
+  min-width: 30px;
+  text-align: right;
+  opacity: 0.55;
+  font-variant-numeric: tabular-nums;
+}
+.sm-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.search-results { display: flex; flex-direction: column; }
+
+/* The line a search result (or an AI citation) jumped to */
+.line-target {
+  background: var(--accent-soft) !important;
+  box-shadow: inset 2px 0 0 var(--accent);
+  transition: background 0.4s ease;
+}
+
 /* Stash title with inline rename pen */
 .stash-title-row { display: inline-flex; align-items: center; gap: 6px; }
 .stash-rename-btn { opacity: 0; flex-shrink: 0; }

@@ -1,13 +1,22 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { SquarePen, ExternalLink, Sparkles, Loader2, Laptop, Tag, Cloud, Copy } from 'lucide-react'
-import type { CommitBranchInfo, FileEntry, GraphCommit, RemoteInfo } from '../../../shared/types'
+import type { CodeSearchHit, CommitBranchInfo, FileEntry, GraphCommit, RemoteInfo } from '../../../shared/types'
 import { autolink, remoteWebUrl } from '../lib/autolink'
 import { gitApi, aiApi, shellApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { repoActions } from '../stores/repo'
 import { FileListView } from './FileListView'
+import {
+  FileSearchBar,
+  EMPTY_FILTER,
+  isFilterActive,
+  buildQueryRegExp,
+  matchesGlobList,
+  type FileFilter
+} from './FileSearchBar'
+import { MatchSummary, matchesByFile } from './SearchMatches'
 import { ViewToggle } from './CommitComposer'
 import { Avatar } from './Avatar'
 import { RemoteIcon } from './RemoteIcon'
@@ -38,6 +47,8 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
   const [aiBusy, setAiBusy] = useState(false)
   const [editingSubject, setEditingSubject] = useState(false)
   const [draftSubject, setDraftSubject] = useState('')
+  const [filter, setFilter] = useState<FileFilter>(EMPTY_FILTER)
+  const [hits, setHits] = useState<CodeSearchHit[] | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const fileView = useUIStore((s) => s.fileView)
   const setFileView = useUIStore((s) => s.setFileView)
@@ -86,6 +97,72 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
     setEditingSubject(false)
     setDraftSubject(commit.subject)
   }, [commit])
+
+  // ─── File search / filter inside this commit ──────────────────────────────
+  // Content search greps the commit's own tree, so hits are the file as it
+  // looked at this commit — not the working-tree copy.
+  const query = filter.query.trim()
+  useEffect(() => {
+    if (!query || filter.mode !== 'content' || files.length === 0) {
+      setHits(null)
+      return
+    }
+    let cancelled = false
+    const timer = setTimeout(() => {
+      void gitApi
+        .searchCommitMatches(repo.path, hash, query, {
+          paths: files.map((f) => f.path),
+          caseSensitive: filter.caseSensitive,
+          wholeWord: filter.wholeWord,
+          regex: filter.regex
+        })
+        .then((found) => {
+          if (!cancelled) setHits(found)
+        })
+        .catch(() => {
+          if (!cancelled) setHits([])
+        })
+    }, 200)
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
+  }, [query, filter.mode, filter.caseSensitive, filter.wholeWord, filter.regex, repo.path, hash, files])
+
+  // Mirror the query into the UI store so the center file/diff view highlights
+  // the same term, and drop it when the panel goes away.
+  useEffect(() => {
+    const setFileSearch = useUIStore.getState().setFileSearch
+    if (query && filter.mode === 'content') {
+      setFileSearch({
+        query,
+        caseSensitive: filter.caseSensitive,
+        wholeWord: filter.wholeWord,
+        regex: filter.regex
+      })
+    } else setFileSearch(null)
+  }, [query, filter.mode, filter.caseSensitive, filter.wholeWord, filter.regex])
+  useEffect(() => () => useUIStore.getState().setFileSearch(null), [])
+
+  const hitsByFile = useMemo(() => (hits ? matchesByFile(hits) : null), [hits])
+  const contentRe = useMemo(
+    () => (filter.mode === 'content' && query ? buildQueryRegExp(filter, true) : null),
+    [filter.mode, filter.query, filter.caseSensitive, filter.wholeWord, filter.regex, query]
+  )
+  const nameRe = useMemo(
+    () => (filter.mode === 'name' ? buildQueryRegExp(filter) : null),
+    [filter.mode, filter.query, filter.caseSensitive, filter.wholeWord, filter.regex]
+  )
+  const filteredFiles = useMemo(() => {
+    if (!isFilterActive(filter)) return files
+    return files.filter((f) => {
+      if (filter.include.trim() && !matchesGlobList(f.path, filter.include)) return false
+      if (filter.exclude.trim() && matchesGlobList(f.path, filter.exclude)) return false
+      if (!query) return true
+      if (filter.mode === 'name') return !nameRe || nameRe.test(f.path)
+      return !hitsByFile || hitsByFile.has(f.path)
+    })
+  }, [files, filter, query, nameRe, hitsByFile])
 
   useEffect(() => {
     if (!editingSubject) return
@@ -345,9 +422,19 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
           </span>
           <ViewToggle />
         </div>
+        <FileSearchBar value={filter} onChange={setFilter} />
+        {hits && <MatchSummary hits={hits} label={(n, f) => interp(t('search.summary'), { n, files: f })} />}
         <FileListView
-          files={files}
+          files={filteredFiles}
           current={currentFile}
+          matches={hitsByFile ?? undefined}
+          matchRe={contentRe}
+          activeLine={fileView?.line ?? null}
+          // Line numbers come from the commit's own blob, so open the File view
+          // at that revision — a diff would hide matches outside the hunks.
+          onMatchClick={(file, line) =>
+            setFileView({ repoPath: repo.path, file, source: { type: 'commit', hash }, mode: 'file', line })
+          }
           onFileClick={(f) =>
             setFileView({
               repoPath: repo.path,
@@ -381,6 +468,9 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
             ])
           }}
         />
+        {files.length > 0 && filteredFiles.length === 0 && (
+          <div className="sb-empty">{t('composer.noFilesMatch')}</div>
+        )}
       </div>
     </div>
   )

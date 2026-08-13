@@ -6,6 +6,7 @@ import { useSettingsStore } from '../stores/settings'
 import { useUIStore, type FileViewMode, type FileViewState } from '../stores/ui'
 import { useRepoStore } from '../stores/repo'
 import { filePermalink } from '../lib/autolink'
+import { revealLineWhenReady } from '../lib/reveal'
 import { useT } from '../i18n'
 import { useHoverExplain } from './HoverExplain'
 import { DiffViewer } from './DiffViewer'
@@ -440,10 +441,17 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
     marks[activeHit]?.scrollIntoView({ block: 'center' })
   }, [activeHit, hitCount, findRe])
 
+  // Opened from a search result: scroll to (and flash) the exact matching line
+  // once the file/diff has rendered. Wins over the "first match" scroll below.
+  useEffect(() => {
+    if (view.line == null) return
+    return revealLineWhenReady(view.line)
+  }, [view.line, view.revealSeq, view.file, content, mode])
+
   // When only the right-panel filter is active (no find open), scroll to its
   // first match so the user sees why the file matched.
   useEffect(() => {
-    if (findOpen || !searchRe || content === null) return
+    if (findOpen || !searchRe || content === null || view.line != null) return
     const id = requestAnimationFrame(() => {
       bodyRef.current?.querySelector('mark.search-hit')?.scrollIntoView({ block: 'center' })
     })

@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
 import { ChevronDown, ChevronRight, FolderOpen, Folder, Pencil } from 'lucide-react'
-import type { FileEntry } from '../../../shared/types'
+import type { CodeSearchHit, FileEntry } from '../../../shared/types'
 import { useSettingsStore } from '../stores/settings'
+import { MatchRows } from './SearchMatches'
 
 export function statusClass(s: string): string {
   switch (s) {
@@ -46,6 +47,14 @@ interface FileListProps {
   onFolderContext?: (folderPath: string, e: React.MouseEvent) => void
   action?: (file: FileEntry) => React.ReactNode
   folderAction?: (folderPath: string) => React.ReactNode
+  /** Content-search hits per file — rows gain a count badge and expand into
+   *  their matching lines, VSCode style. */
+  matches?: Map<string, CodeSearchHit[]>
+  /** Query regex used to <mark> the term inside each matching line. */
+  matchRe?: RegExp | null
+  onMatchClick?: (file: string, line: number) => void
+  /** Line currently open in the viewer, highlighted in the match list. */
+  activeLine?: number | null
 }
 
 interface TreeNode {
@@ -150,20 +159,49 @@ function FileRowInner({
 }): React.JSX.Element {
   const isCurrent = props.current === file.path
   const isSelected = props.selected?.has(file.path) ?? false
+  const hits = props.matches?.get(file.path)
+  // Matches start expanded, as in VSCode; the caret collapses one file.
+  const [open, setOpen] = useState(true)
   return (
-    <div
-      className={`file-item wip ${isCurrent ? 'current' : ''} ${isSelected ? 'multi-selected' : ''}`}
-      style={{ paddingLeft: 14 + depth * 14 }}
-      onClick={(e) => props.onFileClick(file, e)}
-      onContextMenu={(e) => props.onFileContext?.(file, e)}
-      title={file.path}
-    >
-      <span className={`file-status ${statusClass(file.status)}`}>
-        {file.status === 'R' ? <ChevronRight size={12} strokeWidth={3} /> : statusLabel(file.status)}
-      </span>
-      <span className="file-path">{label}</span>
-      {props.action?.(file)}
-    </div>
+    <>
+      <div
+        className={`file-item wip ${isCurrent ? 'current' : ''} ${isSelected ? 'multi-selected' : ''}`}
+        style={{ paddingLeft: 14 + depth * 14 }}
+        onClick={(e) => props.onFileClick(file, e)}
+        onContextMenu={(e) => props.onFileContext?.(file, e)}
+        title={file.path}
+      >
+        {hits && hits.length > 0 && (
+          <span
+            className="file-caret"
+            role="button"
+            title={file.path}
+            onClick={(e) => {
+              e.stopPropagation()
+              setOpen((v) => !v)
+            }}
+          >
+            {open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+          </span>
+        )}
+        <span className={`file-status ${statusClass(file.status)}`}>
+          {file.status === 'R' ? <ChevronRight size={12} strokeWidth={3} /> : statusLabel(file.status)}
+        </span>
+        <span className="file-path">{label}</span>
+        {hits && hits.length > 0 && <span className="sm-count">{hits.length}</span>}
+        {props.action?.(file)}
+      </div>
+      {hits && hits.length > 0 && open && props.onMatchClick && (
+        <MatchRows
+          hits={hits}
+          re={props.matchRe ?? null}
+          activeFile={props.current ?? null}
+          activeLine={props.activeLine ?? null}
+          indent={28 + depth * 14}
+          onOpen={props.onMatchClick}
+        />
+      )}
+    </>
   )
 }
 

@@ -124,6 +124,10 @@ export interface FileViewState {
   file: string
   source: FileViewSource
   mode: FileViewMode
+  /** Line to scroll to and flash once the file is rendered (search results). */
+  line?: number
+  /** Bumped by `setFileView` per request, so re-opening the same line re-scrolls. */
+  revealSeq?: number
 }
 
 export interface ConflictViewState {
@@ -257,6 +261,7 @@ interface UIState {
 }
 
 let toastId = 0
+let revealSeq = 0
 
 export const useUIStore = create<UIState>((set, get) => ({
   contextMenu: null,
@@ -322,7 +327,12 @@ export const useUIStore = create<UIState>((set, get) => ({
   setBusy: (busy, op = null) => set({ busy, busyOp: op }),
   beginInflight: () => set((s) => ({ inflight: s.inflight + 1 })),
   endInflight: () => set((s) => ({ inflight: Math.max(0, s.inflight - 1) })),
-  setFileView: (fileView) => set({ fileView }),
+  setFileView: (fileView) =>
+    set({
+      // Stamp each line-targeted open so clicking the same search hit twice
+      // scrolls again instead of being deduped away by identical state.
+      fileView: fileView?.line != null ? { ...fileView, revealSeq: ++revealSeq } : fileView
+    }),
   setEditorDirty: (editorDirty) => set({ editorDirty }),
   setConflictView: (conflictView) => set({ conflictView }),
   setFileSearch: (fileSearch) => set({ fileSearch }),

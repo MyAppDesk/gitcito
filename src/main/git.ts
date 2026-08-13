@@ -2199,6 +2199,107 @@ export const gitService = {
   },
 
   /**
+   * Like `searchFileContents`, but returns every matching LINE (file/line/text)
+   * instead of only the file paths — the data a VSCode-style expandable results
+   * tree needs. Reads the working-tree copy of each candidate, so it covers
+   * tracked, staged and untracked files alike.
+   *
+   * Capped twice: `maxPerFile` keeps one huge file from burying the rest, `max`
+   * bounds the whole payload crossing IPC.
+   */
+  async searchFileMatches(
+    repoPath: string,
+    files: string[],
+    query: string,
+    opts?: {
+      caseSensitive?: boolean
+      wholeWord?: boolean
+      regex?: boolean
+      max?: number
+      maxPerFile?: number
+    }
+  ): Promise<CodeSearchHit[]> {
+    if (!query.trim()) return []
+    const max = opts?.max ?? 2000
+    const maxPerFile = opts?.maxPerFile ?? 100
+    let pattern: RegExp
+    try {
+      const src = opts?.regex ? query : query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      const body = opts?.wholeWord ? `\\b${src}\\b` : src
+      pattern = new RegExp(body, opts?.caseSensitive ? '' : 'i')
+    } catch {
+      return []
+    }
+    const perFile = await Promise.all(
+      files.map(async (f) => {
+        let content: string
+        try {
+          content = await readFile(join(repoPath, f), 'utf-8')
+        } catch {
+          return [] // binary, deleted, or unreadable
+        }
+        if (content.includes('\0')) return [] // binary
+        const hits: CodeSearchHit[] = []
+        const lines = content.split('\n')
+        for (let i = 0; i < lines.length && hits.length < maxPerFile; i++) {
+          if (pattern.test(lines[i])) hits.push({ file: f, line: i + 1, text: lines[i].slice(0, 400) })
+        }
+        return hits
+      })
+    )
+    return perFile.flat().slice(0, max)
+  },
+
+  /**
+   * Same line-level search, but against the tree of a commit/stash (`rev`)
+   * instead of the working tree — `git grep <pattern> <rev> -- <paths>`.
+   * Output rows are `rev:path:line:text`, so the rev prefix is stripped off.
+   */
+  async searchCommitMatches(
+    repoPath: string,
+    rev: string,
+    query: string,
+    opts?: {
+      paths?: string[]
+      caseSensitive?: boolean
+      wholeWord?: boolean
+      regex?: boolean
+      max?: number
+      maxPerFile?: number
+    }
+  ): Promise<CodeSearchHit[]> {
+    if (!query.trim()) return []
+    const max = opts?.max ?? 2000
+    const maxPerFile = opts?.maxPerFile ?? 100
+    const args = ['grep', '-n', '-I', '--no-color', '--full-name']
+    if (!opts?.caseSensitive) args.push('-i')
+    if (opts?.wholeWord) args.push('-w')
+    args.push(opts?.regex ? '-E' : '-F')
+    args.push('-e', query, rev, '--', ...(opts?.paths ?? []))
+    let raw = ''
+    try {
+      raw = await gitFor(repoPath).raw(args)
+    } catch {
+      return [] // no matches (exit 1) or invalid pattern
+    }
+    const hits: CodeSearchHit[] = []
+    const perFile = new Map<string, number>()
+    const prefix = `${rev}:`
+    for (const line of raw.split('\n')) {
+      if (!line || hits.length >= max) break
+      const body = line.startsWith(prefix) ? line.slice(prefix.length) : line
+      const m = /^(.*?):(\d+):(.*)$/.exec(body)
+      if (!m) continue
+      const file = m[1]
+      const seen = perFile.get(file) ?? 0
+      if (seen >= maxPerFile) continue
+      perFile.set(file, seen + 1)
+      hits.push({ file, line: Number(m[2]), text: m[3].slice(0, 400) })
+    }
+    return hits
+  },
+
+  /**
    * Working-tree code search via `git grep -n` (tracked + untracked, honouring
    * .gitignore). Returns up to `max` file:line:text hits. git grep exits 1 when
    * nothing matches, which simple-git throws on — that's a clean empty result.
@@ -3200,6 +3301,8 @@ const READ_METHODS = new Set<string>([
   'commitTags',
   'fileContent',
   'searchFileContents',
+  'searchFileMatches',
+  'searchCommitMatches',
   'grepWorkingTree',
   'searchHistory',
   'fileDataUrl',

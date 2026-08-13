@@ -1,7 +1,7 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { ChevronRight, File, Folder, FolderOpen, Loader2, ExternalLink, Pencil } from 'lucide-react'
-import type { FsDropMode, TreeEntry, TreeStatusKind } from '../../../shared/types'
+import type { CodeSearchHit, FsDropMode, TreeEntry, TreeStatusKind } from '../../../shared/types'
 import { gitApi, shellApi } from '../infrastructure/api'
 import { useUIStore, type MenuItem } from '../stores/ui'
 import { repoActions, type RepoData } from '../stores/repo'
@@ -14,6 +14,7 @@ import {
   matchesGlobList,
   type FileFilter
 } from './FileSearchBar'
+import { MatchSummary, SearchResultsTree } from './SearchMatches'
 import { useT, interp } from '../i18n'
 
 const abs = (repoRoot: string, rel: string): string => `${repoRoot.replace(/\/+$/, '')}/${rel}`
@@ -122,6 +123,9 @@ export function FileTree({
   // ─── Search/filter (flat results) ───
   const [allFiles, setAllFiles] = useState<string[] | null>(null)
   const [results, setResults] = useState<string[] | null>(null)
+  // Line-level matches for a content search; null for name/glob-only filtering,
+  // where there is nothing to expand under a file.
+  const [hits, setHits] = useState<CodeSearchHit[] | null>(null)
   const [searching, setSearching] = useState(false)
 
   // Load the (cheap) candidate file list when filtering starts; refresh it when
@@ -138,6 +142,7 @@ export function FileTree({
   useEffect(() => {
     if (!filterActive || !allFiles) {
       setResults(null)
+      setHits(null)
       return
     }
     const inc = filter.include.trim()
@@ -148,24 +153,29 @@ export function FileTree({
     const q = filter.query.trim()
     if (!q) {
       setResults(scoped.sort())
+      setHits(null)
       return
     }
     if (filter.mode === 'name') {
       const re = buildQueryRegExp(filter)
       setResults(scoped.filter((p) => !re || re.test(p)).sort())
+      setHits(null)
       return
     }
-    // Content search runs in the main process over the scoped candidate set.
+    // Content search runs in the main process over the scoped candidate set and
+    // comes back as file:line:text matches for the expandable results tree.
     let cancelled = false
     setSearching(true)
     gitApi
-      .searchFileContents(path, scoped, q, {
+      .searchFileMatches(path, [...scoped].sort(), q, {
         caseSensitive: filter.caseSensitive,
         wholeWord: filter.wholeWord,
         regex: filter.regex
       })
-      .then((hits) => {
-        if (!cancelled) setResults(hits.sort())
+      .then((found) => {
+        if (cancelled) return
+        setHits(found)
+        setResults([...new Set(found.map((h) => h.file))])
       })
       .catch((err) => {
         if (!cancelled) toast('error', err instanceof Error ? err.message : String(err))
@@ -319,9 +329,10 @@ export function FileTree({
   })
 
   // Open a file in the center viewer, guarding unsaved edits in the editor.
-  const openFile = (rel: string): void => {
+  // `line` (from a search hit) scrolls the viewer straight to that line.
+  const openFile = (rel: string, line?: number): void => {
     const doOpen = (): void =>
-      setFileView({ repoPath: path, file: rel, source: { type: 'tree' }, mode: 'file' })
+      setFileView({ repoPath: path, file: rel, source: { type: 'tree' }, mode: 'file', line })
     if (useUIStore.getState().editorDirty) {
       openModal({
         kind: 'confirm',
@@ -559,7 +570,9 @@ export function FileTree({
     })
   }
 
-  // Flat search-results list — one row per matching file, dir prefix dimmed.
+  // Search results. A content search renders the VSCode-style tree (file rows
+  // that expand into their matching lines); a name/glob filter has no lines to
+  // show, so it stays a flat one-row-per-file list.
   const renderResults = (): React.JSX.Element => {
     if (!results) {
       return (
@@ -568,7 +581,47 @@ export function FileTree({
         </div>
       )
     }
-    if (results.length === 0) return <div className="sb-empty">{t('sidebar.noRepos')}</div>
+    if (results.length === 0) return <div className="sb-empty">{t('search.noResults')}</div>
+    const openWithBtn = (rel: string): React.ReactNode => (
+      <span
+        className="icon-btn tree-open-with"
+        title={t('fileTree.openWithIconTitle')}
+        onClick={(e) => {
+          e.stopPropagation()
+          openWithSmart(rel)
+        }}
+      >
+        <ExternalLink size={12} />
+      </span>
+    )
+    if (hits) {
+      return (
+        <div className="search-results">
+          {searching && (
+            <div className="tree-loading">
+              <Loader2 size={14} className="spin" /> {t('diff.find')}
+            </div>
+          )}
+          <MatchSummary
+            hits={hits}
+            label={(n, files) => interp(t('search.summary'), { n, files })}
+          />
+          <SearchResultsTree
+            hits={hits}
+            filter={filter}
+            activeFile={fileView?.repoPath === path ? fileView.file : null}
+            activeLine={fileView?.line ?? null}
+            onOpen={(rel, line) => openFile(rel, line)}
+            fileRowClass={(rel) => (treeStatus[rel] ? `st-${treeStatus[rel]}` : '')}
+            fileRowExtras={openWithBtn}
+            onFileContext={(rel, e) => {
+              e.preventDefault()
+              openContextMenu(e.clientX, e.clientY, menuFor({ name: baseOf(rel), path: rel, dir: false }))
+            }}
+          />
+        </div>
+      )
+    }
     return (
       <>
         {searching && (

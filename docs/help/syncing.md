@@ -20,6 +20,8 @@ Force pushes always use `--force-with-lease` — the safe variant that refuses i
 the remote moved since you last looked. Pushing a **protected branch** with force
 asks for confirmation (list in the repo-settings gear).
 
+![The confirmation a protected branch demands before a force-push](../screenshots/force-push-guard.webp)
+
 ## Fetch
 
 **Fetch all & prune** across every remote, plus background **auto-fetch** on an

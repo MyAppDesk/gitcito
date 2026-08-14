@@ -11,6 +11,8 @@ keywords: intro first steps open clone tabs graph commit
 Gitcito opens a folder and shows you its history. Nothing is written to your
 repository until you ask for it.
 
+![A freshly opened repository with no commits yet](../screenshots/empty-repo.webp)
+
 ## Open a repository
 
 - **Drag a folder** onto the window, or use **Open repository** on the welcome

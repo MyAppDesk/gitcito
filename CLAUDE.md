@@ -307,7 +307,7 @@ front page has to be added there as well.
 - Links between pages are plain relative Markdown — `[absorb](absorb.md)` — so
   they work on GitHub and in the app alike.
 - Images live in `docs/screenshots/` and are referenced as
-  `![alt](../screenshots/name.png)`. Every screenshot must be used by some page;
+  `![alt](../screenshots/name.webp)`. Every screenshot must be used by some page;
   an orphan is either a missing page or dead weight.
 - Tables for "what each option does". Prose for why you would want it.
 

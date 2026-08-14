@@ -11,7 +11,7 @@ keywords: terminal shell pty xterm console tabs docked
 A real PTY (xterm + node-pty), not a command runner. Your shell, your prompt,
 your aliases.
 
-![The integrated terminal](../screenshots/terminal.png)
+![The integrated terminal](../screenshots/terminal.webp)
 
 - **Multiple tabs per repository**, each starting in that repository's folder.
 - Dock it **under** the graph or as a **right-hand column**; the pane remembers
@@ -22,6 +22,8 @@ your aliases.
 - Collapsing the terminal list shrinks it to a **rail**: one icon per terminal
   (split terminals show a mini panel map), click to switch, right-click for the
   usual rename/split/kill menu.
+
+![Two panels split side by side in one terminal group](../screenshots/terminal-split.webp)
 
 Anything you run here is invisible to Gitcito's own locking, so a long
 `git rebase` typed by hand and a click in the UI can still collide — the app

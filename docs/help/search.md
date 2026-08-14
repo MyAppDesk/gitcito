@@ -17,7 +17,7 @@ terminal, reflog, settings, and every feature in this handbook.
 It learns: what you used recently comes first, and what you use often outranks
 what you don't.
 
-![The command palette](../screenshots/command-palette.png)
+![The command palette](../screenshots/command-palette.webp)
 
 ## Code search — <kbd>⌘⇧F</kbd>
 
@@ -32,7 +32,7 @@ Hits come back syntax-highlighted with the match marked, grouped by file and
 expandable to the exact lines. Click one to open the file at that line, or the
 commit that introduced it.
 
-![Code search results](../screenshots/code-search.png)
+![Code search results](../screenshots/code-search.webp)
 
 ## Filtering the graph
 

@@ -15,6 +15,8 @@ correctly and API calls use the right account.
 Useful when the same machine does work and personal repositories, or when you
 have two GitHub accounts.
 
+![A profile: git identity on one side, its integration tokens on the other](../screenshots/settings-profiles.webp)
+
 ## Per-repository binding
 
 A repository can be **bound to a profile**, so a background fetch on it always

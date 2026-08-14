@@ -11,7 +11,7 @@ keywords: theme themes dark light appearance colors font size graph palette
 Nine built-in themes — Gitcito, Nord, Dracula, Solarized, GitHub, Monokai,
 Midnight, Contrast and Daltonic — each with a light and a dark variant.
 
-![Switching from light to dark](../screenshots/clip-themes.gif)
+![Switching from light to dark](../screenshots/clip-themes.webp)
 
 - **Light, dark, or follow the OS**, switched live.
 - **Custom themes**, and **AI-generated** ones from a prompt.
@@ -19,7 +19,7 @@ Midnight, Contrast and Daltonic — each with a light and a dark variant.
 - A separate **graph style**: lane palette, corner style, row density and line
   thickness, with a live mini-graph preview.
 
-![Theme settings](../screenshots/settings-themes.png)
+![Theme settings](../screenshots/settings-themes.webp)
 
 ## Layout
 

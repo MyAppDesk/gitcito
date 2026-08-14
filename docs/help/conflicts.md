@@ -12,7 +12,7 @@ When a merge, rebase, cherry-pick or revert stops, a banner tells you **what**
 stopped and **between what** — "merging `feature/x` into `main`", not just
 "conflict".
 
-![The conflict resolver](../screenshots/conflict-resolver.png)
+![The conflict resolver](../screenshots/conflict-resolver.webp)
 
 ## The three panes
 

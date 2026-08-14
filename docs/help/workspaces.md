@@ -22,12 +22,14 @@ Bundle related repositories into a named, colour-coded **group tab**. Inside a
 group you get a second row with one chip per repository, and the group itself
 can **Fetch all** or **Pull all** in one go.
 
-![A group tab with several repositories](../screenshots/repo-groups.png)
+![A group tab with several repositories](../screenshots/repo-groups.webp)
 
 Groups can hold **folders, nested to any depth**: right-click the group → *New
 folder…*, then drag repositories onto a folder chip. Each folder takes a colour,
 collapses to a counted chip, aggregates the status dots of everything inside it,
 and can fetch or pull its whole subtree.
+
+![Folders in the group's tab strip, each a counted chip — Internal nested inside Services](../screenshots/nested-folders.webp)
 
 > Folders only organise. Deleting one lifts its repositories to the parent — it
 > never closes a repository.

@@ -14,7 +14,7 @@ with a hundred.
 
 | | |
 |---|---|
-| ![Commit graph, light](../screenshots/graph-light.png) | ![Commit graph, dark](../screenshots/graph-dark.png) |
+| ![Commit graph, light](../screenshots/graph-light.webp) | ![Commit graph, dark](../screenshots/graph-dark.webp) |
 
 ## Moving around
 
@@ -31,7 +31,7 @@ with a hundred.
 - **Filter by path**: right-click a file or folder → *Filter graph by this
   path*, and only the commits that touched it stay lit.
 
-![Graph filtered down to one path](../screenshots/graph-path-filter.png)
+![Graph filtered down to one path](../screenshots/graph-path-filter.webp)
 
 - **Columns**: show, hide, resize and reorder branch, message, author, date,
   SHA, signature and deployment columns.
@@ -39,7 +39,7 @@ with a hundred.
   or AI-generated), corner style, row density and line thickness, with a live
   mini-graph preview.
 
-![Graph style settings with live preview](../screenshots/settings-graph.png)
+![Graph style settings with live preview](../screenshots/settings-graph.webp)
 
 ## Commit details
 
@@ -47,6 +47,6 @@ Selecting a commit shows its changed files (tree or flat), author, SHA,
 co-authors, and its signature. `#123` references and `@mentions` are autolinked
 to your host.
 
-![Walking through commit details](../screenshots/clip-commit-details.gif)
+![Walking through commit details](../screenshots/clip-commit-details.webp)
 
 **See also:** [Blame & file history](blame.md) · [Search](search.md) · [Time machine](time-machine.md)

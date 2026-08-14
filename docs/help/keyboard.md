@@ -10,7 +10,7 @@ keywords: shortcuts keyboard keys cheatsheet rebind hotkeys palette
 
 Press <kbd>?</kbd> anywhere for the cheatsheet.
 
-![The shortcut cheatsheet](../screenshots/cheatsheet.png)
+![The shortcut cheatsheet](../screenshots/cheatsheet.webp)
 
 ## The ones worth learning
 
@@ -40,6 +40,6 @@ Press <kbd>?</kbd> anywhere for the cheatsheet.
 **Settings → Shortcuts**. The core navigation shortcuts (palette, code search,
 vault, open repository) are rebindable, with conflict detection and a per-shortcut reset.
 
-![Rebindable shortcuts in settings](../screenshots/settings-shortcuts.png)
+![Rebindable shortcuts in settings](../screenshots/settings-shortcuts.webp)
 
 **See also:** [Command palette & search](search.md)

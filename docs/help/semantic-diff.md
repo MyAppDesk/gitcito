@@ -15,6 +15,8 @@ Above every file diff, Gitcito shows a **What changed** strip: both versions of
 the file are parsed with **tree-sitter** — real syntax trees, not regular
 expressions — and their declarations are matched up.
 
+![The what-changed strip: renames and signature changes, symbol by symbol](../screenshots/semantic-diff.webp)
+
 | Verdict | Example |
 |---|---|
 | **Renamed** | `startServer` → `bootServer` |

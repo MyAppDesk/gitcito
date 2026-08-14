@@ -20,7 +20,7 @@ Pick one in Settings; the composer adapts to it.
 | **Plain** · **Auto** | Whatever you type; Auto lets the AI decide the shape |
 | **Caveman** · **Haiku** | Exactly what they sound like |
 
-![Composer prefilled from a commit template](../screenshots/commit-template.png)
+![Composer prefilled from a commit template](../screenshots/commit-template.webp)
 
 ## Things the composer does for you
 

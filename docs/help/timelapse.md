@@ -15,6 +15,10 @@ pulsing when a commit touches it, swelling as it gets edited again and again,
 fading out when it is deleted. The date, author, subject and running
 commit/file/author counts sit on top, with a progress bar along the bottom.
 
+![The timelapse mid-playback](../screenshots/timelapse.webp)
+
+![A repository's whole life, replayed](../screenshots/clip-timelapse.webp)
+
 ## Controls
 
 - **Play / pause**, speeds from **4× to 32×**, and restart.

@@ -11,7 +11,7 @@ keywords: stack stacked branches graphite restack dependent chain parent PR per 
 A stack is a chain of branches where each one builds on the one below:
 `main → api → ui`. Reviewing three small PRs beats reviewing one enormous one.
 
-![A branch stack](../screenshots/branch-stack.png)
+![A branch stack](../screenshots/branch-stack.webp)
 
 Gitcito shows the stack bottom → top with the commit count at each level, and
 lets you **open a PR per level**, each targeting its parent rather than `main`.

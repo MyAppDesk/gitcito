@@ -212,6 +212,9 @@ export function RepoSettingsModal({ repoPath, initialTab }: { repoPath: string; 
   const aiEnabled = useSettingsStore((s) => s.activeProfile().ai.enabled !== false)
   const t = useT()
   const [tab, setTab] = useState<Tab>(initialTab ?? 'general')
+  // Easter egg: five title clicks inside 1.5s open the cosmos view. Deliberately
+  // undocumented — finding it is the point, so it stays out of docs/help and the
+  // screenshot manifest.
   const titleClicks = useRef<number[]>([])
 
   const onTitleClick = (): void => {

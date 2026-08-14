@@ -18,6 +18,8 @@ publish the head of every pull request as an ordinary git ref **on the target
 repository**. The fork does not have to be reachable, you do not need an API
 token, and no second remote is added. One fetch, and the code is on your disk.
 
+![Preview locally: pick the remote, the pull request, and how to apply it](../screenshots/pr-preview.webp)
+
 | Host | Where the PR head lives |
 |------|-------------------------|
 | GitHub, GitHub Enterprise, Gitea, Forgejo, Gogs | `refs/pull/<n>/head` |

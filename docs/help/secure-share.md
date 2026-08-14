@@ -11,6 +11,10 @@ keywords: secure share export import bundle encrypted settings workspace transfe
 Getting a new machine set up usually means re-entering everything. Secure share
 packs it into one encrypted bundle instead.
 
+![Exporting one repository's settings as an encrypted bundle](../screenshots/secure-share.webp)
+
+![The same export for a whole workspace](../screenshots/secure-workspace.webp)
+
 ## What can go in
 
 | Section | Contents |

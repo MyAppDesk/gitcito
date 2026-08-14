@@ -19,6 +19,10 @@ Everything is read from the object database (`git ls-tree`, `git show`). **No
 checkout, HEAD never moves, your uncommitted work is untouched** — you can scrub
 through a year of history in the middle of a change.
 
+![The tree as it stood at an earlier commit, with a file open beside it](../screenshots/time-machine.webp)
+
+![Scrubbing the slider: the tree rebuilds itself commit by commit](../screenshots/clip-time-machine.webp)
+
 ## Controls
 
 | Key | Action |

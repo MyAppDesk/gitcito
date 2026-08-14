@@ -5,16 +5,36 @@
 // start a merge so there are live conflicts), and a `drive` step that puts the
 // running UI into the exact state to capture via the `__shot` store bridge.
 //
-// `themes` controls output: a single theme writes `<out>.png`; multiple themes
-// write `<out>-<theme>.png` (matching the README's graph-light / graph-dark).
+// `themes` controls output: a single theme writes `<out>.webp`; multiple themes
+// write `<out>-<theme>.webp` (matching the README's graph-light / graph-dark).
 //
 // Add a feature → add an entry here. `npm run screenshots <name>` regenerates
 // just that one; `npm run screenshots` regenerates all.
 
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { writeFile } from 'node:fs/promises'
 
 const ASSETS = join(dirname(fileURLToPath(import.meta.url)), 'assets')
+
+/**
+ * Expand sidebar sections by their title (as rendered: 'WORKTREES').
+ *
+ * Every section renders the same `.sb-section` / `.sb-header` markup and keeps
+ * `open` in local component state, so there is nothing to set through the store
+ * and no per-section selector to aim at — the visible title is the only thing
+ * that tells them apart. A single click is right because each shot launches
+ * with a fresh userData dir, so these sections are always at their collapsed
+ * default.
+ */
+async function openSections(page, titles) {
+  await page.evaluate((wanted) => {
+    for (const header of document.querySelectorAll('.sb-header')) {
+      const title = header.querySelector('.sb-title')?.textContent?.trim()
+      if (title && wanted.includes(title)) header.click()
+    }
+  }, titles)
+}
 
 /**
  * @typedef {Object} Shot
@@ -23,6 +43,9 @@ const ASSETS = join(dirname(fileURLToPath(import.meta.url)), 'assets')
  * @property {'repo'|'group'} [kind]  Tab kind (default 'repo').
  * @property {boolean}  [groupLanding]  Show the group landing page (no active repo).
  * @property {('light'|'dark')[]} [themes]  Themes to emit (default ['dark']).
+ * @property {boolean} [keychain]  Grant keychain consent for this shot. Only for
+ *   shots that need a readable vault — granting makes macOS raise its own
+ *   dialog, which Playwright cannot dismiss. Everything else runs declined.
  * @property {(ctx: {repoPaths: Record<string,string>, run: Function}) => Promise<void>} [prepare]
  * @property {(page: import('playwright').Page, repoPaths: Record<string,string>) => Promise<void>} [drive]
  * @property {{name: string, durationMs: number, drive: Function}} [gif]  Optional motion clip.
@@ -469,6 +492,8 @@ export const shots = [
     out: 'vault',
     repos: ['secrets'],
     themes: ['light'],
+    // Writes and reads real vault entries, so this one needs the keychain.
+    keychain: true,
     drive: async (page, repoPaths) => {
       const repo = repoPaths['secrets']
       await page.evaluate(async (r) => {
@@ -643,6 +668,360 @@ export const shots = [
       // part a screenshot can actually teach.
       await page.click('.mc-row-wrap:first-child .mc-expand').catch(() => {})
       await page.waitForTimeout(900)
+    }
+  },
+  {
+    // Blame — the collaborators repo has several authors, so the gutter shows
+    // real name/date variety instead of one block of the same commit.
+    out: 'blame',
+    repos: ['collaborators'],
+    themes: ['light'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['collaborators']
+      await page.evaluate((p) => {
+        window.__shot.ui.getState().setFileView({ repoPath: p, file: 'auth.js', source: { type: 'tree' }, mode: 'blame' })
+      }, repo)
+      await page.waitForTimeout(1200)
+    }
+  },
+  {
+    // File history — the same file's commits over time, the other half of the
+    // blame page.
+    out: 'file-history',
+    repos: ['collaborators'],
+    themes: ['dark'],
+    appTheme: 'nord',
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['collaborators']
+      await page.evaluate((p) => {
+        window.__shot.ui.getState().setFileView({ repoPath: p, file: 'api.js', source: { type: 'tree' }, mode: 'history' })
+      }, repo)
+      await page.waitForTimeout(1200)
+    }
+  },
+  {
+    // Line staging — an unstaged diff with the per-line gutter controls visible.
+    out: 'line-staging',
+    repos: ['line-staging'],
+    themes: ['light'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['line-staging']
+      await page.evaluate((p) => {
+        const s = window.__shot
+        s.repo.getState().select(p, { type: 'wip' })
+        s.ui.getState().setFileView({
+          repoPath: p,
+          file: 'config.js',
+          source: { type: 'wip', staged: false, untracked: false },
+          mode: 'diff'
+        })
+      }, repo)
+      await page.waitForTimeout(800)
+      // Hover a changed line so its stage-this-line affordance is in the frame.
+      await page.hover('.diff-line.add').catch(() => {})
+      await page.waitForTimeout(400)
+    }
+  },
+  {
+    // Partial stash — pick which files go into the stash.
+    out: 'stash-partial',
+    repos: ['stash-picking'],
+    themes: ['light'],
+    // The scenario ends by stashing everything, so the tree it leaves behind is
+    // clean and the modal would render "nothing to stash". Dirty it again, with
+    // a mix of edits and a new file, so there is something to pick from.
+    prepare: async ({ repoPaths }) => {
+      const repo = repoPaths['stash-picking']
+      await writeFile(join(repo, 'alpha.txt'), 'alpha v3 — a fix worth keeping out of the stash\n')
+      await writeFile(join(repo, 'beta.txt'), 'beta v3 — half-finished, stash this one\n')
+      await writeFile(join(repo, 'src/gamma.txt'), 'gamma v3 — experiment, stash it\n')
+      await writeFile(join(repo, 'epsilon-untracked.txt'), 'a brand new file the stash can capture\n')
+    },
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['stash-picking']
+      await page.evaluate((p) => window.__shot.ui.getState().openModal({ kind: 'stash-partial', repoPath: p }), repo)
+      await page.waitForTimeout(800)
+    }
+  },
+  {
+    // Tag creation — lightweight / annotated / signed, and whether to push.
+    out: 'create-tag',
+    repos: ['tags-and-releases'],
+    themes: ['dark'],
+    appTheme: 'dracula',
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['tags-and-releases']
+      await page.evaluate((p) => window.__shot.ui.getState().openModal({ kind: 'create-tag', repoPath: p }), repo)
+      await page.waitForTimeout(700)
+    }
+  },
+  {
+    // Branch comparison — ahead/behind plus the commits on each side. Branch
+    // names come from the loaded repo so the shot survives scenario edits.
+    out: 'branch-compare',
+    repos: ['octopus-merge'],
+    themes: ['light'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['octopus-merge']
+      await page.evaluate((p) => {
+        const s = window.__shot
+        // branches is a BranchesPayload ({ current, locals, remotes, tags }),
+        // not an array — the locals carry the names.
+        const names = (s.repo.getState().repos[p]?.branches?.locals ?? []).map((b) => b.name)
+        // The combined diff is computed as branchB...branchA, so the branch that
+        // is ahead has to go first — with main first the panel reads "No
+        // differences" and the shot teaches nothing.
+        const branchB = names.find((n) => n === 'main') ?? names[0]
+        const branchA = names.find((n) => n !== branchB) ?? names[1]
+        if (branchA && branchB) s.ui.getState().openModal({ kind: 'branch-compare', repoPath: p, branchA, branchB })
+      }, repo)
+      await page.waitForTimeout(1200)
+    }
+  },
+  {
+    // Preview a pull request locally — the modal that resolves a PR ref on any
+    // host, forks included.
+    out: 'pr-preview',
+    repos: ['pr-ready-branch'],
+    themes: ['dark'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['pr-ready-branch']
+      await page.evaluate((p) => window.__shot.ui.getState().openModal({ kind: 'pr-preview', repoPath: p }), repo)
+      await page.waitForTimeout(900)
+    }
+  },
+  {
+    // The diverged-branch guard: the dialog that appears instead of silently
+    // picking a strategy when local and remote have both moved.
+    out: 'diverged-checkout',
+    repos: ['diverged-checkout'],
+    themes: ['light'],
+    drive: async (page) => {
+      await page.evaluate(() => {
+        window.__shot.ui.getState().openModal({
+          kind: 'diverged-checkout',
+          localName: 'feature/pricing',
+          fullName: 'origin/feature/pricing',
+          ahead: 3,
+          behind: 5,
+          onResolve: () => {}
+        })
+      })
+      await page.waitForTimeout(600)
+    }
+  },
+  {
+    // Profiles — separate identity and tokens for work vs everything else.
+    out: 'settings-profiles',
+    repos: ['octopus-merge'],
+    themes: ['light'],
+    drive: async (page) => {
+      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'profile' }))
+      await page.waitForTimeout(600)
+    }
+  },
+  {
+    // Secure share — an encrypted bundle of settings/vault entries for another
+    // machine.
+    out: 'secure-share',
+    repos: ['secure-share'],
+    themes: ['dark'],
+    appTheme: 'midnight',
+    // The export lists the vault section it can pack, which needs the keychain.
+    keychain: true,
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['secure-share']
+      await page.evaluate(
+        (p) => window.__shot.ui.getState().openModal({ kind: 'secure-share', repoPath: p, initialMode: 'export' }),
+        repo
+      )
+      await page.waitForTimeout(700)
+    }
+  },
+  {
+    // The whole-workspace variant of the same bundle.
+    out: 'secure-workspace',
+    repos: ['workspace-share'],
+    themes: ['light'],
+    keychain: true,
+    drive: async (page) => {
+      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'secure-workspace', initialMode: 'export' }))
+      await page.waitForTimeout(700)
+    }
+  },
+  {
+    // Pinned branches — the sidebar with favourites held at the top.
+    out: 'pinned-branches',
+    repos: ['pinned-branches'],
+    themes: ['light'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['pinned-branches']
+      await page.evaluate((p) => window.__shot.repo.getState().select(p, { type: 'wip' }), repo)
+      await page.waitForTimeout(700)
+    }
+  },
+  {
+    // An empty repository — what Getting started actually opens on.
+    out: 'empty-repo',
+    repos: ['empty-repo'],
+    themes: ['light'],
+    drive: async (page) => {
+      await page.waitForTimeout(800)
+    }
+  },
+  {
+    // Split terminals — two panels side by side in one group, which is the part
+    // a single-pane terminal shot cannot show.
+    out: 'terminal-split',
+    repos: ['deep-history-monorepo'],
+    themes: ['dark'],
+    appTheme: 'midnight',
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['deep-history-monorepo']
+      await page.evaluate((p) => {
+        const ui = window.__shot.ui.getState()
+        if (!ui.terminalOpenByRepo[p]) ui.toggleTerminal(p)
+      }, repo)
+      await page.waitForTimeout(1400)
+      await page.evaluate((p) => {
+        const t = window.__shot.terminals.getState()
+        const active = t.byRepo[p]?.activeGroupId
+        if (active) t.splitGroup(p, active, p)
+      }, repo)
+      await page.waitForTimeout(1600)
+      await page.click('.xterm').catch(() => {})
+      await page.keyboard.type('git status -sb')
+      await page.keyboard.press('Enter')
+      await page.waitForTimeout(900)
+    }
+  },
+  {
+    // Secret masking — a .env previewed with its values hidden, which is the
+    // security page's central claim.
+    out: 'secret-masking',
+    repos: ['secrets'],
+    themes: ['light'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['secrets']
+      await page.evaluate((p) => {
+        window.__shot.ui.getState().setFileView({ repoPath: p, file: '.env', source: { type: 'tree' }, mode: 'file' })
+      }, repo)
+      await page.waitForTimeout(900)
+    }
+  },
+  {
+    // Worktrees and submodules — the two sidebar sections that only have
+    // something in them in a repo set up for it.
+    out: 'worktrees',
+    repos: ['submodules-worktrees'],
+    themes: ['light'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['submodules-worktrees']
+      await page.evaluate((p) => window.__shot.repo.getState().select(p, { type: 'wip' }), repo)
+      // Both sections are defaultOpen={false} and their open state is local
+      // component state, so it has to be clicked open. Sections share one class
+      // — the title is what tells them apart.
+      await openSections(page, ['WORKTREES', 'SUBMODULES'])
+      await page.waitForTimeout(900)
+    }
+  },
+  {
+    // Submodule states — behind, modified, uninitialised, each with its badge.
+    out: 'submodule-states',
+    repos: ['submodule-states'],
+    themes: ['dark'],
+    appTheme: 'nord',
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['submodule-states']
+      await page.evaluate((p) => window.__shot.repo.getState().select(p, { type: 'wip' }), repo)
+      await openSections(page, ['SUBMODULES'])
+      await page.waitForTimeout(900)
+    }
+  },
+  {
+    // Subfolders inside a group tab: repositories filed into nested folders
+    // rather than one flat list.
+    out: 'nested-folders',
+    kind: 'group',
+    repos: ['nested-folders', 'octopus-merge', 'merge-conflict', 'code-search', 'insights'],
+    groupLanding: true,
+    themes: ['light'],
+    drive: async (page, repoPaths) => {
+      await page.evaluate((paths) => {
+        const store = window.__shot.settings
+        // The zustand state wraps the settings object — tabs live under
+        // `.settings`, not at the top level.
+        const tabs = () => store.getState().settings.tabs ?? []
+        const foldersOf = (id) => tabs().find((t) => t.id === id)?.folders ?? []
+        const tab = tabs().find((t) => t.kind === 'group')
+        if (!tab) return
+
+        // Build a small tree, then file the repos into it — the point of the
+        // shot is the nesting, which empty folders cannot show. `update` sets
+        // state synchronously, so each folder is readable straight after.
+        store.getState().createFolder(tab.id, 'Services', null)
+        store.getState().createFolder(tab.id, 'Frontend', null)
+        const services = foldersOf(tab.id).find((f) => f.name === 'Services')
+        const frontend = foldersOf(tab.id).find((f) => f.name === 'Frontend')
+        if (services) {
+          store.getState().createFolder(tab.id, 'Internal', services.id)
+          store.getState().moveRepoToFolder(tab.id, paths['octopus-merge'], services.id)
+          store.getState().moveRepoToFolder(tab.id, paths['merge-conflict'], services.id)
+        }
+        if (frontend) store.getState().moveRepoToFolder(tab.id, paths['code-search'], frontend.id)
+      }, repoPaths)
+      await page.waitForTimeout(1000)
+    }
+  },
+  {
+    // Branch grouping — slash-separated prefixes folded into a tree.
+    out: 'branch-grouping',
+    repos: ['branch-grouping'],
+    themes: ['light'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['branch-grouping']
+      await page.evaluate((p) => window.__shot.repo.getState().select(p, { type: 'wip' }), repo)
+      await page.waitForTimeout(900)
+    }
+  },
+  {
+    // Status badges on the project tree: which files are modified, added or
+    // ignored, without leaving the file browser.
+    out: 'tree-badges',
+    repos: ['tree-badges'],
+    themes: ['light'],
+    drive: async (page) => {
+      // Files tab — the tree lives beside the preview pane.
+      await page.click('.sb-tabs .sb-tab:nth-child(2)').catch(() => {})
+      await page.waitForTimeout(900)
+    }
+  },
+  {
+    // A force-push that would rewrite what the remote has: the guard fires
+    // before anything leaves the machine.
+    out: 'force-push-guard',
+    repos: ['force-push'],
+    themes: ['dark'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['force-push']
+      await page.evaluate((p) => window.__shot.repo.getState().select(p, { type: 'wip' }), repo)
+      await page.waitForTimeout(600)
+      // The copy here is the reference locale's real guard text
+      // (`confirm.protectedForcePush.*` / `confirm.forcePush.ok`) with {branch}
+      // filled in. Inventing wording would put a dialog in the handbook that
+      // nobody can find in the app.
+      await page.evaluate(() => {
+        window.__shot.ui.getState().openModal({
+          kind: 'confirm',
+          title: 'Force-push a protected branch?',
+          message:
+            '"main" is a protected branch. Force-pushing rewrites history others may have pulled. Continue?',
+          confirmLabel: 'Force push',
+          danger: true,
+          onConfirm: () => {}
+        })
+      })
+      await page.waitForTimeout(600)
     }
   }
 ]

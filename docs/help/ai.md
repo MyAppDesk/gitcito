@@ -11,7 +11,7 @@ keywords: ai openai anthropic ollama local llm commit message explain review wik
 Every AI feature is **optional** and off until you configure a provider.
 Nothing is sent anywhere until you ask for something specific.
 
-![AI settings](../screenshots/settings-ai.png)
+![AI settings](../screenshots/settings-ai.webp)
 
 ## Providers
 

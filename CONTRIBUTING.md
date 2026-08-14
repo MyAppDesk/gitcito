@@ -121,9 +121,10 @@ instead of quietly producing a broken page.
 - Link pages with plain relative Markdown — `[absorb](absorb.md)` — so links
   work in the app and on GitHub.
 - Images go in `docs/screenshots/` and are used as
-  `![alt](../screenshots/name.png)`. Regenerate them with
-  `npm run screenshots:gif`, which drives the app against the playground repos.
-  Every screenshot must be used by some page.
+  `![alt](../screenshots/name.webp)`. Regenerate them with
+  `npm run screenshots` (add `:clips` for the animated ones), which drives the
+  app against the playground repos — then `npm run playground:rebuild`, because
+  capturing mutates them. Every screenshot must be used by some page.
 
 ### Screenshots
 
@@ -132,14 +133,15 @@ playground repo to load, an optional `prepare` that puts the repo into the right
 state on disk, and a `drive` that puts the running UI into the exact state to
 capture. **Add a feature → add a shot there.**
 
-Prefer a PNG when the value is the information on screen, and a GIF (the `clips`
-export) only when the value is the movement itself — a scrubber, an animation, a
-scan landing verdict by verdict.
+Prefer a still when the value is the information on screen, and a motion clip
+(the `clips` export) only when the value is the movement itself — a scrubber, an
+animation, a scan landing verdict by verdict.
 
 ```bash
-npm run screenshots                                    # every PNG
+npm run screenshots                                    # every still (WebP)
 node examples/screenshots/capture.mjs conflict-radar   # just one
-npm run screenshots:gif                                # PNGs + clips (needs ffmpeg)
+npm run screenshots:clips                              # stills + motion clips
+npm run playground:rebuild                             # capturing dirties the repos
 ```
 
 ### The website

@@ -14,6 +14,8 @@ commit called "review fixes".
 
 Absorb does the honest thing for you.
 
+![Absorb routing each staged hunk to the commit that introduced it](../screenshots/absorb.webp)
+
 ## How it works
 
 1. Stage the fixes.

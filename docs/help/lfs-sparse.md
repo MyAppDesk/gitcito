@@ -10,7 +10,7 @@ keywords: lfs large file storage sparse checkout cone partial clone patch am app
 
 ## Git LFS
 
-![The LFS manager](../screenshots/lfs.png)
+![The LFS manager](../screenshots/lfs.webp)
 
 Detects whether `git-lfs` is installed, whether this repository uses it, and
 which patterns are tracked. The file list shows what is **downloaded** versus
@@ -18,7 +18,7 @@ what is still a **pointer**, and you can pull or prune from there.
 
 ## Sparse-checkout
 
-![Cone-mode sparse-checkout](../screenshots/sparse-checkout.png)
+![Cone-mode sparse-checkout](../screenshots/sparse-checkout.webp)
 
 Cone mode: tick the top-level folders you actually work in, and the rest leave
 your working tree while staying in history. Useful on a monorepo where you only

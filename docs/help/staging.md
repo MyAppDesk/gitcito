@@ -11,6 +11,8 @@ keywords: staging stage unstage discard hunk lines index partial
 The commit panel has three lists: **Conflicted**, **Unstaged** and **Staged**.
 Each collapses, and each remembers whether you left it open.
 
+![An unstaged diff, with the hunk and file controls beside it](../screenshots/line-staging.webp)
+
 ## Three levels of precision
 
 | Level | How |

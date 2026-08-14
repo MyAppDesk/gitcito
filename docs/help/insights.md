@@ -11,7 +11,7 @@ keywords: insights stats statistics churn contributors hotspots dashboard analyt
 A dashboard built from your Git history — no service, no account, just `git log`
 read locally. Open it from the repo-settings gear next to the toolbar tools.
 
-![The insights dashboard](../screenshots/insights.png)
+![The insights dashboard](../screenshots/insights.webp)
 
 | Panel | What it tells you |
 |---|---|

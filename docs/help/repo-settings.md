@@ -11,7 +11,7 @@ keywords: repo settings protected branches analytics operation log history info 
 The gear next to the toolbar tools opens settings that belong to **this**
 repository, not the app.
 
-![Per-repository settings](../screenshots/repo-settings.png)
+![Per-repository settings](../screenshots/repo-settings.webp)
 
 | Tab | What it holds |
 |---|---|

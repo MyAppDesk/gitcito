@@ -16,6 +16,8 @@ Create a tag from any commit:
 | **Annotated** | Carries a message, an author and a date — what a release should be |
 | **Signed** | Annotated, plus a GPG/SSH signature |
 
+![Creating a tag: name, optional message, and whether to sign it](../screenshots/create-tag.webp)
+
 Delete tags locally, push them, or delete them on the remote. Remote tags are
 browsable without fetching them all first.
 

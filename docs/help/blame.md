@@ -11,6 +11,8 @@ keywords: blame history file line author annotate reblame follow
 Open any file and switch the view mode: **Preview · File · Diff · Blame ·
 History**.
 
+![Blame, with the commit behind each line in the gutter](../screenshots/blame.webp)
+
 ## Blame
 
 Every line carries its commit, author and date, colour-coded by commit so blocks
@@ -26,6 +28,8 @@ of shared history are obvious at a glance.
 
 Every commit that touched this file, newest first. Selecting one shows that
 commit's version of the file, so you can page through how it grew.
+
+![Every commit that touched one file, newest first](../screenshots/file-history.webp)
 
 For the whole repository rather than one file, use the
 [time machine](time-machine.md).

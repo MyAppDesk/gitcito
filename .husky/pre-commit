@@ -1,13 +1,15 @@
 set -e
 
 # GUI Git clients do not load shell init files, so mise-managed npm may be absent.
+# `mise exec --` resolves Node from mise's own config rather than a version pinned
+# here, which would rot the moment the project moves.
 if command -v npm >/dev/null 2>&1; then
   npm run typecheck
   npm run lint:i18n
 elif command -v mise >/dev/null 2>&1; then
-  mise exec node@24.19.0 -- npm run typecheck
-  mise exec node@24.19.0 -- npm run lint:i18n
+  mise exec -- npm run typecheck
+  mise exec -- npm run lint:i18n
 else
-  echo 'Node.js tooling not found. Install npm or mise with Node 24.19.0.' >&2
+  echo 'Node.js tooling not found. Install npm, or mise with a Node version configured.' >&2
   exit 127
 fi

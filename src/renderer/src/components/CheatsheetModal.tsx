@@ -8,9 +8,10 @@ import {
   effectiveBindings,
   formatCombo,
   comboFromEvent,
+  isReservedCombo,
   type ShortcutDef
 } from '../lib/shortcuts'
-import { useT, type TranslationKey } from '../i18n'
+import { useT, interp, type TranslationKey } from '../i18n'
 
 export function CheatsheetModal(): React.JSX.Element {
   const t = useT()
@@ -51,6 +52,12 @@ export function ShortcutEditor(): React.JSX.Element {
       // Require at least one modifier so a bare letter can't shadow typing.
       if (!/(^|\+)(mod|alt)(\+|$)/.test(combo)) {
         toast('info', t('cheat.needModifier'))
+        return
+      }
+      // Fixed shortcuts win before the registry is consulted, so accepting one
+      // here would leave a binding that looks set but never fires.
+      if (isReservedCombo(combo)) {
+        toast('info', interp(t('cheat.reservedCombo'), { combo: formatCombo(combo) }))
         return
       }
       const clash = Object.entries(bindings).find(([id, c]) => c === combo && id !== capturing)

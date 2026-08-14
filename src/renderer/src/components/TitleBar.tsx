@@ -19,68 +19,35 @@ import { ProfileSwitcher } from './ProfileSwitcher'
 import { WorkspaceSwitcher } from './WorkspaceSwitcher'
 import { folderOpenMenuItems } from '../lib/openWith'
 import { tabLabel } from '../lib/tabLabel'
+import { closeTabPrompt, repoCloseStatus, tabCloseStatus, type TabStatus } from '../lib/tabClose'
 import { useT, t as translate, interp } from '../i18n'
-
-type TabStatus = 'conflict' | 'wip' | null
 
 /** Close a tab through the same configured confirmation path used by its X button. */
 export function requestCloseTab(tabId: string): void {
   const settingsStore = useSettingsStore.getState()
   const tab = settingsStore.settings.tabs.find((candidate) => candidate.id === tabId)
   if (!tab) return
-  if (tab.kind === 'page') {
+
+  const status =
+    tab.kind === 'page' ? null : tabCloseStatus(tab.repos, useRepoStore.getState().repos)
+  const prompt = closeTabPrompt(tab, status, settingsStore.settings.warnOnClose)
+  if (!prompt) {
     settingsStore.closeTab(tab.id)
     return
-  }
-
-  const repos = useRepoStore.getState().repos
-  let status: TabStatus = null
-  for (const ref of tab.repos) {
-    const data = repos[ref.path]
-    if (!data) continue
-    if (data.mergeState || (data.status?.conflicted.length ?? 0) > 0) {
-      status = 'conflict'
-      break
-    }
-    if ((data.status?.staged.length ?? 0) + (data.status?.unstaged.length ?? 0) > 0) status = 'wip'
-  }
-
-  const warn = settingsStore.settings.warnOnClose ?? 'always'
-  if (warn === 'never' || (warn === 'wip' && status === null)) {
-    settingsStore.closeTab(tab.id)
-    return
-  }
-
-  const isGroup = tab.kind === 'group'
-  const repoCount = isGroup ? tab.repos.length : 1
-  let message: string
-  if (isGroup && repoCount > 1) {
-    message = status
-      ? interp(translate('titlebar.closeGroupDirty'), {
-          name: tab.name,
-          count: repoCount,
-          reason:
-            status === 'conflict'
-              ? translate('titlebar.mergeConflicts')
-              : translate('titlebar.uncommittedChanges')
-        })
-      : interp(translate('titlebar.closeGroup'), { name: tab.name, count: repoCount })
-  } else {
-    message =
-      status === 'conflict'
-        ? translate('titlebar.closeRepoConflicts')
-        : status === 'wip'
-          ? translate('titlebar.closeRepoWip')
-          : translate('titlebar.closeTabConfirm')
   }
 
   useUIStore.getState().openModal({
     kind: 'confirm',
-    title: isGroup ? translate('titlebar.closeGroupTitle') : translate('titlebar.closeTab'),
-    message,
+    title: translate(prompt.titleKey),
+    message: prompt.vars
+      ? interp(translate(prompt.messageKey), {
+          ...prompt.vars,
+          ...(prompt.reasonKey ? { reason: translate(prompt.reasonKey) } : {})
+        })
+      : translate(prompt.messageKey),
     danger: true,
     confirmLabel: translate('common.close'),
-    autoFocusConfirm: true,
+    autoFocusConfirm: prompt.autoFocusConfirm,
     onConfirm: () => settingsStore.closeTab(tab.id)
   })
 }
@@ -585,25 +552,10 @@ export function TitleBar(): React.JSX.Element {
   }
 
   // ── status helpers ──────────────────────────────────────────────────────
-  const tabStatus = (tab: TabState): TabStatus => {
-    if (tab.kind === 'page') return null
-    let wip = false
-    for (const ref of tab.repos) {
-      const data = repos[ref.path]
-      if (!data) continue
-      if (data.mergeState || (data.status?.conflicted.length ?? 0) > 0) return 'conflict'
-      if ((data.status?.staged.length ?? 0) + (data.status?.unstaged.length ?? 0) > 0) wip = true
-    }
-    return wip ? 'wip' : null
-  }
+  const tabStatus = (tab: TabState): TabStatus =>
+    tab.kind === 'page' ? null : tabCloseStatus(tab.repos, repos)
 
-  const repoStatus = (path: string): TabStatus => {
-    const data = repos[path]
-    if (!data) return null
-    if (data.mergeState || (data.status?.conflicted.length ?? 0) > 0) return 'conflict'
-    if ((data.status?.staged.length ?? 0) + (data.status?.unstaged.length ?? 0) > 0) return 'wip'
-    return null
-  }
+  const repoStatus = (path: string): TabStatus => repoCloseStatus(repos[path])
 
   // Aggregate ahead/behind + dirty repo count across a whole group, for the
   // chip badge + tooltip so the group's sync state is visible without opening

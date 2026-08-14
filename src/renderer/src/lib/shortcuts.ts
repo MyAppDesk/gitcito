@@ -66,6 +66,27 @@ export const FIXED_SHORTCUTS: {
   { labelKey: 'sc.closeDialog', combo: 'Escape', categoryKey: 'sc.cat.general' }
 ]
 
+/**
+ * Combos the app answers before it consults the rebindable registry — the tab
+ * shortcuts in App.tsx, and the ones the editor and the browser claim. Binding an
+ * action to one of these would look accepted and then silently never fire, so the
+ * editor refuses them instead.
+ */
+export const RESERVED_COMBOS: string[] = [
+  'mod+t',
+  'mod+w',
+  'mod+shift+t',
+  'mod+s',
+  'mod+z',
+  'mod+shift+z',
+  'mod+f',
+  ...Array.from({ length: 9 }, (_, i) => `mod+${i + 1}`)
+]
+
+export function isReservedCombo(combo: string): boolean {
+  return RESERVED_COMBOS.includes(combo)
+}
+
 const isMac = (): boolean => typeof navigator !== 'undefined' && /mac/i.test(navigator.platform)
 
 /** Normalize a keydown event to a combo string, or null for a modifier-only press. */

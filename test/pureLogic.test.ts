@@ -7,7 +7,9 @@ import { parseRemoteUrl } from '../src/main/hosting'
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 import { commitHookFailureHint, lintCommit, subjectCounterLevel, parseCcPrefix, applyCcType, parseGitmojiPrefix, applyGitmoji, parseTicketPrefix, applyTicket, ticketFromBranch } from '../src/renderer/src/lib/commitLint'
 import { isSecretFile, maskSecretLine } from '../src/renderer/src/lib/secrets'
-import { comboFromEvent, formatCombo, effectiveBindings, matchShortcut, tabActionFromEvent, tabIndexFromEvent } from '../src/renderer/src/lib/shortcuts'
+import { comboFromEvent, formatCombo, effectiveBindings, isReservedCombo, matchShortcut, tabActionFromEvent, tabIndexFromEvent } from '../src/renderer/src/lib/shortcuts'
+import { closeTabPrompt, repoCloseStatus, tabCloseStatus } from '../src/renderer/src/lib/tabClose'
+import type { TabState } from '../src/shared/types'
 import { autolink, remoteWebUrl, filePermalink } from '../src/renderer/src/lib/autolink'
 import { frecencyScore } from '../src/renderer/src/lib/frecency'
 import { togglePin, selectPinned } from '../src/renderer/src/lib/pinnedBranches'
@@ -321,6 +323,91 @@ describe('keyboard shortcuts', () => {
     expect(tabActionFromEvent(ev('t', { ctrl: true, shift: true }))).toBeNull()
     expect(tabActionFromEvent(ev('w', { meta: true, alt: true }))).toBeNull()
     expect(tabActionFromEvent(ev('t'))).toBeNull()
+  })
+
+  it('reserves the combos handled before the rebindable registry', () => {
+    expect(isReservedCombo('mod+t')).toBe(true)
+    expect(isReservedCombo('mod+w')).toBe(true)
+    expect(isReservedCombo('mod+3')).toBe(true)
+    expect(isReservedCombo('mod+shift+z')).toBe(true)
+    expect(isReservedCombo('mod+shift+w')).toBe(false)
+    expect(isReservedCombo('mod+p')).toBe(false)
+  })
+
+  // Every default binding must survive the editor's own reserved-combo check,
+  // or the app ships a shortcut its settings screen would refuse to re-enter.
+  it('no default binding sits on a reserved combo', () => {
+    const defaults = effectiveBindings(undefined)
+    for (const [id, combo] of Object.entries(defaults)) {
+      expect(`${id}:${isReservedCombo(combo)}`).toBe(`${id}:false`)
+    }
+  })
+})
+
+describe('closing a tab', () => {
+  const clean = { mergeState: null, status: { conflicted: [], staged: [], unstaged: [] } }
+  const dirty = { mergeState: null, status: { conflicted: [], staged: ['a'], unstaged: [] } }
+  const conflicted = { mergeState: null, status: { conflicted: ['a'], staged: [], unstaged: [] } }
+  const merging = { mergeState: 'merge', status: { conflicted: [], staged: [], unstaged: [] } }
+
+  const repoTab = { id: 't1', kind: 'repo' as const, repos: [{ path: '/a' }], activeRepo: '/a' }
+  const groupTab = (paths: string[]): TabState =>
+    ({ id: 'g1', kind: 'group', name: 'Group', repos: paths.map((path) => ({ path })) }) as TabState
+
+  it('ranks a conflict above uncommitted work, and an in-progress merge as a conflict', () => {
+    expect(repoCloseStatus(clean)).toBeNull()
+    expect(repoCloseStatus(dirty)).toBe('wip')
+    expect(repoCloseStatus(conflicted)).toBe('conflict')
+    expect(repoCloseStatus(merging)).toBe('conflict')
+    expect(repoCloseStatus(undefined)).toBeNull()
+  })
+
+  it('reports the worst status across a group, whatever the order', () => {
+    const byPath = { '/a': clean, '/b': dirty, '/c': conflicted }
+    expect(tabCloseStatus([{ path: '/a' }], byPath)).toBeNull()
+    expect(tabCloseStatus([{ path: '/a' }, { path: '/b' }], byPath)).toBe('wip')
+    expect(tabCloseStatus([{ path: '/b' }, { path: '/c' }], byPath)).toBe('conflict')
+    // A clean repo after a dirty one must not clear the verdict.
+    expect(tabCloseStatus([{ path: '/b' }, { path: '/a' }], byPath)).toBe('wip')
+  })
+
+  it('honours warnOnClose', () => {
+    expect(closeTabPrompt(repoTab as TabState, 'conflict', 'never')).toBeNull()
+    expect(closeTabPrompt(repoTab as TabState, null, 'wip')).toBeNull()
+    expect(closeTabPrompt(repoTab as TabState, 'wip', 'wip')).not.toBeNull()
+    expect(closeTabPrompt(repoTab as TabState, null, 'always')).not.toBeNull()
+    // Unset falls back to 'always'.
+    expect(closeTabPrompt(repoTab as TabState, null, undefined)).not.toBeNull()
+  })
+
+  it('never warns for a page tab, which holds no repository state', () => {
+    const page = { id: 'p1', kind: 'page', page: { type: 'vault' } } as unknown as TabState
+    expect(closeTabPrompt(page, 'conflict', 'always')).toBeNull()
+  })
+
+  it('focuses the confirm button only when nothing is at stake', () => {
+    expect(closeTabPrompt(repoTab as TabState, null, 'always')?.autoFocusConfirm).toBe(true)
+    expect(closeTabPrompt(repoTab as TabState, 'wip', 'always')?.autoFocusConfirm).toBe(false)
+    expect(closeTabPrompt(repoTab as TabState, 'conflict', 'always')?.autoFocusConfirm).toBe(false)
+  })
+
+  it('picks the group message only for a group holding more than one repo', () => {
+    const one = closeTabPrompt(groupTab(['/a']), null, 'always')
+    expect(one?.messageKey).toBe('titlebar.closeTabConfirm')
+    expect(one?.vars).toBeUndefined()
+
+    const many = closeTabPrompt(groupTab(['/a', '/b']), null, 'always')
+    expect(many?.messageKey).toBe('titlebar.closeGroup')
+    expect(many?.vars).toEqual({ name: 'Group', count: 2 })
+  })
+
+  it('names what is at risk in a dirty group message', () => {
+    const wip = closeTabPrompt(groupTab(['/a', '/b']), 'wip', 'always')
+    expect(wip?.messageKey).toBe('titlebar.closeGroupDirty')
+    expect(wip?.reasonKey).toBe('titlebar.uncommittedChanges')
+
+    const conflict = closeTabPrompt(groupTab(['/a', '/b']), 'conflict', 'always')
+    expect(conflict?.reasonKey).toBe('titlebar.mergeConflicts')
   })
 })
 

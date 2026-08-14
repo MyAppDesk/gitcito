@@ -336,12 +336,17 @@ export default function App(): React.JSX.Element {
         return
       }
 
-      // Open the new-tab launcher or close the active tab (Cmd/Ctrl+T/W).
+      // Open the new-tab launcher or close the active tab (Cmd/Ctrl+T/W). Held back
+      // while a modal owns the screen or the caret sits in an editor or terminal —
+      // there ⌘W would close a tab the user is not even looking at.
       const tabAction = tabActionFromEvent(e)
-      if (tabAction) {
+      if (tabAction && !typing && !ui.modal) {
         e.preventDefault()
         if (tabAction === 'new') ui.openModal({ kind: 'launcher' })
         else if (st.settings.activeTabId) requestCloseTab(st.settings.activeTabId)
+        // Nothing left to close: fall through to closing the window, which is what
+        // the native accelerator the main process suppresses would have done.
+        else if (st.settings.tabs.length === 0) window.api.window.close()
         return
       }
 

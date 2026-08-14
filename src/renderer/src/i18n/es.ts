@@ -371,6 +371,7 @@ export const es: Dict = {
   'cheat.clickRebind': 'Clic para reasignar',
   'cheat.resetDefault': 'Restablecer al valor por defecto',
   'cheat.needModifier': 'Usa un modificador (⌘/Ctrl o ⌥) en el atajo.',
+  'cheat.reservedCombo': '{combo} está reservado por la aplicación y no se puede reasignar.',
   'cheat.resetMsg': 'restablecido al valor por defecto.',
   'sc.commandPalette': 'Paleta de comandos',
   'sc.searchCode': 'Buscar código',

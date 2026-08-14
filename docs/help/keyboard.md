@@ -23,7 +23,7 @@ Press <kbd>?</kbd> anywhere for the cheatsheet.
 | <kbd>⌘,</kbd> / <kbd>Ctrl+,</kbd> | Open Settings |
 | <kbd>⌘F</kbd> | Find inside the file or diff you are reading |
 | <kbd>⌘T</kbd> / <kbd>Ctrl+T</kbd> | Open the new-tab repository or group picker |
-| <kbd>⌘W</kbd> / <kbd>Ctrl+W</kbd> | Close the active tab |
+| <kbd>⌘W</kbd> / <kbd>Ctrl+W</kbd> | Close the active tab — or the window, once no tab is left |
 | <kbd>⌘1</kbd>–<kbd>⌘9</kbd> / <kbd>Ctrl+1</kbd>–<kbd>Ctrl+9</kbd> | Switch to a tab by its position |
 | <kbd>⌘⇧T</kbd> | Reopen the last closed tab |
 | <kbd>?</kbd> | This cheatsheet |
@@ -42,6 +42,13 @@ Press <kbd>?</kbd> anywhere for the cheatsheet.
 
 **Settings → Shortcuts**. The core navigation shortcuts (palette, code search,
 vault, open repository, settings) are rebindable, with conflict detection and a per-shortcut reset.
+
+The fixed shortcuts above are not rebindable, and they are also refused as a
+_target_: the app answers <kbd>⌘T</kbd>, <kbd>⌘W</kbd>, <kbd>⌘1</kbd>–<kbd>⌘9</kbd>,
+<kbd>⌘⇧T</kbd>, <kbd>⌘S</kbd>, <kbd>⌘Z</kbd>, <kbd>⌘⇧Z</kbd> and <kbd>⌘F</kbd>
+before it consults your bindings, so a shortcut assigned to one of them would
+look set and never fire. Pick one of those and the editor says so instead of
+accepting it.
 
 ![Rebindable shortcuts in settings](../screenshots/settings-shortcuts.webp)
 

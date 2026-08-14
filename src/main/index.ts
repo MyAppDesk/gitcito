@@ -114,13 +114,20 @@ function createWindow(): void {
     shell.openExternal(details.url)
     return { action: 'deny' }
   })
-  // The default application menu may own Cmd/Ctrl+T, W or comma before the renderer
-  // sees them. Ignore menu accelerators only for these app-level shortcuts.
+  // The default application menu owns Cmd/Ctrl+W ("Close Window") and would swallow
+  // it before the renderer can close the active tab, so suppress the accelerator for
+  // that one combo. The renderer falls back to closing the window when no tab is left.
+  // This fires on every keystroke, so only cross into the browser process on a real
+  // change — and only on key-down, since the flag has to be set before the accelerator
+  // for the same event is resolved.
+  let ignoringMenuShortcuts = false
   win.webContents.on('before-input-event', (_event, input) => {
-    const key = input.key.toLowerCase()
-    const isAppShortcut =
-      (input.meta || input.control) && !input.shift && !input.alt && (key === 't' || key === 'w' || key === ',')
-    win.webContents.setIgnoreMenuShortcuts(isAppShortcut)
+    if (input.type !== 'keyDown') return
+    const isCloseTab =
+      (input.meta || input.control) && !input.shift && !input.alt && input.key.toLowerCase() === 'w'
+    if (isCloseTab === ignoringMenuShortcuts) return
+    ignoringMenuShortcuts = isCloseTab
+    win.webContents.setIgnoreMenuShortcuts(isCloseTab)
   })
 
   if (process.env['ELECTRON_RENDERER_URL']) {

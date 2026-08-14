@@ -377,6 +377,7 @@ export const en = {
   'cheat.clickRebind': 'Click to rebind',
   'cheat.resetDefault': 'Reset to default',
   'cheat.needModifier': 'Use a modifier (⌘/Ctrl or ⌥) in the shortcut.',
+  'cheat.reservedCombo': '{combo} is reserved by the app and cannot be rebound.',
   'cheat.resetMsg': 'reset to default.',
   'sc.commandPalette': 'Command palette',
   'sc.searchCode': 'Search code',

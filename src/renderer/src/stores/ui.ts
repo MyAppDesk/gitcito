@@ -44,6 +44,7 @@ export type ModalSpec =
       message: string
       danger?: boolean
       confirmLabel?: string
+      autoFocusConfirm?: boolean
       onConfirm: () => void
       secondaryLabel?: string
       secondaryDanger?: boolean

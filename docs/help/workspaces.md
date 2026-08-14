@@ -12,8 +12,11 @@ Three levels, from loosest to tightest.
 
 ## Tabs
 
-One repository, one tab. Drag to reorder, middle-click to close,
-<kbd>⌘⇧T</kbd> to reopen the last one you closed. A dot on the tab means
+One repository, one tab. Use <kbd>⌘T</kbd> / <kbd>Ctrl+T</kbd> to open the
+new-tab picker and <kbd>⌘W</kbd> / <kbd>Ctrl+W</kbd> to close the active tab.
+You can also drag to reorder, middle-click to close, or press <kbd>⌘⇧T</kbd>
+to reopen the last one you closed. If a close warning appears, press
+<kbd>Enter</kbd> to choose **Close** or <kbd>Escape</kbd> to cancel. A dot on the tab means
 uncommitted work; a different one means conflicts.
 
 ## Groups

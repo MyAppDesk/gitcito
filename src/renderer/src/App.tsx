@@ -7,7 +7,7 @@ import { useUIStore } from './stores/ui'
 import { tabActiveRepoPath, tabRepos, type ConflictOpKind, type GroupTab, type PageTab } from '../../shared/types'
 import { useT, t as tr, interp } from './i18n'
 import { applyAppTheme, applyCodeTheme, findAppTheme, findCodeTheme } from './theme/themes'
-import { TitleBar } from './components/TitleBar'
+import { TitleBar, requestCloseTab } from './components/TitleBar'
 import { Toolbar } from './components/Toolbar'
 import { Sidebar } from './components/Sidebar'
 import { GraphView } from './components/GraphView'
@@ -41,7 +41,7 @@ import { MilestoneDetailPage } from './components/MilestoneDetailPage'
 import { ResizeHandle } from './components/ResizeHandle'
 import { ZoomControl } from './components/ZoomControl'
 import gitcitoLaunch from './assets/gitcito-launch.png'
-import { matchShortcut, effectiveBindings, tabIndexFromEvent } from './lib/shortcuts'
+import { matchShortcut, effectiveBindings, tabActionFromEvent, tabIndexFromEvent } from './lib/shortcuts'
 import { folderOpenMenuItems } from './lib/openWith'
 import { hostingApi, gitApi, cliApi, keychainApi } from './infrastructure/api'
 
@@ -336,6 +336,15 @@ export default function App(): React.JSX.Element {
         return
       }
 
+      // Open the new-tab launcher or close the active tab (Cmd/Ctrl+T/W).
+      const tabAction = tabActionFromEvent(e)
+      if (tabAction) {
+        e.preventDefault()
+        if (tabAction === 'new') ui.openModal({ kind: 'launcher' })
+        else if (st.settings.activeTabId) requestCloseTab(st.settings.activeTabId)
+        return
+      }
+
       // Switch to a tab by its visible position (Cmd/Ctrl+1…9).
       const tabIndex = tabIndexFromEvent(e)
       if (tabIndex !== null) {
@@ -359,6 +368,9 @@ export default function App(): React.JSX.Element {
       } else if (id === 'vault') {
         e.preventDefault()
         st.openPageTab({ type: 'vault' })
+      } else if (id === 'settings') {
+        e.preventDefault()
+        ui.openModal({ kind: 'settings' })
       } else if (id === 'open-repository') {
         e.preventDefault()
         void window.api.selectDirectory().then((path) => {

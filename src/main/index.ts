@@ -114,6 +114,14 @@ function createWindow(): void {
     shell.openExternal(details.url)
     return { action: 'deny' }
   })
+  // The default application menu may own Cmd/Ctrl+T, W or comma before the renderer
+  // sees them. Ignore menu accelerators only for these app-level shortcuts.
+  win.webContents.on('before-input-event', (_event, input) => {
+    const key = input.key.toLowerCase()
+    const isAppShortcut =
+      (input.meta || input.control) && !input.shift && !input.alt && (key === 't' || key === 'w' || key === ',')
+    win.webContents.setIgnoreMenuShortcuts(isAppShortcut)
+  })
 
   if (process.env['ELECTRON_RENDERER_URL']) {
     win.loadURL(process.env['ELECTRON_RENDERER_URL'])

@@ -38,6 +38,12 @@ export const SHORTCUTS: ShortcutDef[] = [
     labelKey: 'sc.openRepository',
     categoryKey: 'sc.cat.navigation',
     defaultCombo: 'mod+o'
+  },
+  {
+    id: 'settings',
+    labelKey: 'sc.openSettings',
+    categoryKey: 'sc.cat.navigation',
+    defaultCombo: 'mod+,'
   }
 ]
 
@@ -50,6 +56,8 @@ export const FIXED_SHORTCUTS: {
   { labelKey: 'sc.keyboardShortcuts', combo: '?', categoryKey: 'sc.cat.help' },
   { labelKey: 'sc.navigateCommits', combo: '↑ ↓ / j k', categoryKey: 'sc.cat.navigation' },
   { labelKey: 'sc.selectTab', combo: 'mod+1…9', categoryKey: 'sc.cat.navigation' },
+  { labelKey: 'sc.newTab', combo: 'mod+t', categoryKey: 'sc.cat.navigation' },
+  { labelKey: 'sc.closeTab', combo: 'mod+w', categoryKey: 'sc.cat.navigation' },
   { labelKey: 'sc.reopenTab', combo: 'mod+shift+t', categoryKey: 'sc.cat.navigation' },
   { labelKey: 'sc.saveFile', combo: 'mod+s', categoryKey: 'sc.cat.editing' },
   { labelKey: 'sc.undo', combo: 'mod+z', categoryKey: 'sc.cat.editing' },
@@ -76,6 +84,15 @@ export function comboFromEvent(e: KeyboardEvent): string | null {
 export function tabIndexFromEvent(e: KeyboardEvent): number | null {
   if (!(e.metaKey || e.ctrlKey) || e.shiftKey || e.altKey || !/^[1-9]$/.test(e.key)) return null
   return Number(e.key) - 1
+}
+
+/** Fixed tab action selected by Cmd/Ctrl+T or Cmd/Ctrl+W. */
+export function tabActionFromEvent(e: KeyboardEvent): 'new' | 'close' | null {
+  if (!(e.metaKey || e.ctrlKey) || e.shiftKey || e.altKey) return null
+  const key = e.key.toLowerCase()
+  if (key === 't') return 'new'
+  if (key === 'w') return 'close'
+  return null
 }
 
 /** Pretty-print a combo for display, e.g. "mod+shift+f" → "⌘⇧F" (mac) / "Ctrl+Shift+F". */

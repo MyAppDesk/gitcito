@@ -19,9 +19,71 @@ import { ProfileSwitcher } from './ProfileSwitcher'
 import { WorkspaceSwitcher } from './WorkspaceSwitcher'
 import { folderOpenMenuItems } from '../lib/openWith'
 import { tabLabel } from '../lib/tabLabel'
-import { useT, interp } from '../i18n'
+import { useT, t as translate, interp } from '../i18n'
 
 type TabStatus = 'conflict' | 'wip' | null
+
+/** Close a tab through the same configured confirmation path used by its X button. */
+export function requestCloseTab(tabId: string): void {
+  const settingsStore = useSettingsStore.getState()
+  const tab = settingsStore.settings.tabs.find((candidate) => candidate.id === tabId)
+  if (!tab) return
+  if (tab.kind === 'page') {
+    settingsStore.closeTab(tab.id)
+    return
+  }
+
+  const repos = useRepoStore.getState().repos
+  let status: TabStatus = null
+  for (const ref of tab.repos) {
+    const data = repos[ref.path]
+    if (!data) continue
+    if (data.mergeState || (data.status?.conflicted.length ?? 0) > 0) {
+      status = 'conflict'
+      break
+    }
+    if ((data.status?.staged.length ?? 0) + (data.status?.unstaged.length ?? 0) > 0) status = 'wip'
+  }
+
+  const warn = settingsStore.settings.warnOnClose ?? 'always'
+  if (warn === 'never' || (warn === 'wip' && status === null)) {
+    settingsStore.closeTab(tab.id)
+    return
+  }
+
+  const isGroup = tab.kind === 'group'
+  const repoCount = isGroup ? tab.repos.length : 1
+  let message: string
+  if (isGroup && repoCount > 1) {
+    message = status
+      ? interp(translate('titlebar.closeGroupDirty'), {
+          name: tab.name,
+          count: repoCount,
+          reason:
+            status === 'conflict'
+              ? translate('titlebar.mergeConflicts')
+              : translate('titlebar.uncommittedChanges')
+        })
+      : interp(translate('titlebar.closeGroup'), { name: tab.name, count: repoCount })
+  } else {
+    message =
+      status === 'conflict'
+        ? translate('titlebar.closeRepoConflicts')
+        : status === 'wip'
+          ? translate('titlebar.closeRepoWip')
+          : translate('titlebar.closeTabConfirm')
+  }
+
+  useUIStore.getState().openModal({
+    kind: 'confirm',
+    title: isGroup ? translate('titlebar.closeGroupTitle') : translate('titlebar.closeTab'),
+    message,
+    danger: true,
+    confirmLabel: translate('common.close'),
+    autoFocusConfirm: true,
+    onConfirm: () => settingsStore.closeTab(tab.id)
+  })
+}
 
 // Tracing for the folder drag & drop, off by default: it logs on every dragover,
 // which is unusable noise outside of debugging that specific behaviour.
@@ -563,41 +625,6 @@ export function TitleBar(): React.JSX.Element {
   // ── menus ───────────────────────────────────────────────────────────────
   const plusMenu = (): void => openModal({ kind: 'launcher' })
 
-  const confirmCloseGroup = (tab: TabState): void => {
-    if (tab.kind === 'page') { closeTab(tab.id); return }
-    const warn = settings.warnOnClose ?? 'always'
-    const status = tabStatus(tab)
-    const shouldWarn = warn === 'always' || (warn === 'wip' && status !== null)
-    if (!shouldWarn) { closeTab(tab.id); return }
-    const isGroup = tab.kind === 'group'
-    const repoCount = isGroup ? tab.repos.length : 1
-    let message: string
-    if (isGroup && repoCount > 1) {
-      message = status
-        ? interp(t('titlebar.closeGroupDirty'), {
-            name: tab.name,
-            count: repoCount,
-            reason: status === 'conflict' ? t('titlebar.mergeConflicts') : t('titlebar.uncommittedChanges')
-          })
-        : interp(t('titlebar.closeGroup'), { name: tab.name, count: repoCount })
-    } else {
-      message =
-        status === 'conflict'
-          ? t('titlebar.closeRepoConflicts')
-          : status === 'wip'
-            ? t('titlebar.closeRepoWip')
-            : t('titlebar.closeTabConfirm')
-    }
-    openModal({
-      kind: 'confirm',
-      title: isGroup ? t('titlebar.closeGroupTitle') : t('titlebar.closeTab'),
-      message,
-      danger: true,
-      confirmLabel: t('common.close'),
-      onConfirm: () => closeTab(tab.id)
-    })
-  }
-
   const confirmRemoveRepo = (groupTabId: string, repoPath: string): void => {
     const warn = settings.warnOnClose ?? 'always'
     const status = repoStatus(repoPath)
@@ -712,7 +739,7 @@ export function TitleBar(): React.JSX.Element {
     })
     const move = moveToWorkspaceItem(tab)
     if (move) items.push(move)
-    items.push({ separator: true }, { label: t('titlebar.closeTab'), onClick: () => confirmCloseGroup(tab) })
+    items.push({ separator: true }, { label: t('titlebar.closeTab'), onClick: () => requestCloseTab(tab.id) })
     return items
   }
 
@@ -1052,7 +1079,7 @@ export function TitleBar(): React.JSX.Element {
                 onDragEnd={onDragEnd as any}
                 onDragOver={onDragOverTab(tab.id)}
                 onDrop={onDropTab(tab.id)}
-                {...middleClose(() => confirmCloseGroup(tab))}
+                {...middleClose(() => requestCloseTab(tab.id))}
                 onClick={() => setActiveTab(tab.id)}
                 onContextMenu={(e) => {
                   e.preventDefault()
@@ -1074,7 +1101,7 @@ export function TitleBar(): React.JSX.Element {
                   className="tab-close"
                   onClick={(e) => {
                     e.stopPropagation()
-                    confirmCloseGroup(tab)
+                    requestCloseTab(tab.id)
                   }}
                 >
                   <X size={12} />
@@ -1165,7 +1192,7 @@ export function TitleBar(): React.JSX.Element {
                 draggable
                 onDragStart={onDragStart({ kind: 'tab', tabId: tab.id })}
                 onDragEnd={onDragEnd}
-                {...middleClose(() => confirmCloseGroup(tab))}
+                {...middleClose(() => requestCloseTab(tab.id))}
                 onClick={() => toggleTabCollapsed(tab.id)}
                 onContextMenu={handleGroupContext}
               >

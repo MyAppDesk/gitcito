@@ -1,2 +1,13 @@
-npm run typecheck
-npm run lint:i18n
+set -e
+
+# GUI Git clients do not load shell init files, so mise-managed npm may be absent.
+if command -v npm >/dev/null 2>&1; then
+  npm run typecheck
+  npm run lint:i18n
+elif command -v mise >/dev/null 2>&1; then
+  mise exec node@24.19.0 -- npm run typecheck
+  mise exec node@24.19.0 -- npm run lint:i18n
+else
+  echo 'Node.js tooling not found. Install npm or mise with Node 24.19.0.' >&2
+  exit 127
+fi

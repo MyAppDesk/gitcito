@@ -1104,6 +1104,7 @@ function ConfirmModal({ spec }: { spec: Extract<ModalSpec, { kind: 'confirm' }> 
           </button>
         )}
         <button
+          autoFocus={spec.autoFocusConfirm}
           className={`btn ${spec.danger ? 'danger' : 'primary'}`}
           onClick={() => {
             closeModal()

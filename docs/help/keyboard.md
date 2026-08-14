@@ -20,7 +20,10 @@ Press <kbd>?</kbd> anywhere for the cheatsheet.
 | <kbd>⌘⇧F</kbd> | [Code search](search.md) across the working tree |
 | <kbd>⌘⇧V</kbd> | [Vault](vault.md) |
 | <kbd>⌘O</kbd> / <kbd>Ctrl+O</kbd> | Open a repository |
+| <kbd>⌘,</kbd> / <kbd>Ctrl+,</kbd> | Open Settings |
 | <kbd>⌘F</kbd> | Find inside the file or diff you are reading |
+| <kbd>⌘T</kbd> / <kbd>Ctrl+T</kbd> | Open the new-tab repository or group picker |
+| <kbd>⌘W</kbd> / <kbd>Ctrl+W</kbd> | Close the active tab |
 | <kbd>⌘1</kbd>–<kbd>⌘9</kbd> / <kbd>Ctrl+1</kbd>–<kbd>Ctrl+9</kbd> | Switch to a tab by its position |
 | <kbd>⌘⇧T</kbd> | Reopen the last closed tab |
 | <kbd>?</kbd> | This cheatsheet |
@@ -38,7 +41,7 @@ Press <kbd>?</kbd> anywhere for the cheatsheet.
 ## Rebinding
 
 **Settings → Shortcuts**. The core navigation shortcuts (palette, code search,
-vault, open repository) are rebindable, with conflict detection and a per-shortcut reset.
+vault, open repository, settings) are rebindable, with conflict detection and a per-shortcut reset.
 
 ![Rebindable shortcuts in settings](../screenshots/settings-shortcuts.webp)
 

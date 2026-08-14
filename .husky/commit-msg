@@ -1,1 +1,11 @@
-npx --no -- commitlint --edit $1
+set -e
+
+# GUI Git clients do not load shell init files, so mise-managed npx may be absent.
+if command -v npx >/dev/null 2>&1; then
+  npx --no -- commitlint --edit "$1"
+elif command -v mise >/dev/null 2>&1; then
+  mise exec node@24.19.0 -- npx --no -- commitlint --edit "$1"
+else
+  echo 'Node.js tooling not found. Install npm or mise with Node 24.19.0.' >&2
+  exit 127
+fi

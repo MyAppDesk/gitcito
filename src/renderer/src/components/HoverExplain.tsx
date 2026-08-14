@@ -255,6 +255,9 @@ export function useHoverExplain(opts: {
   }
 
   const onMouseLeave = (): void => {
+    // Forget the point once the pointer leaves — otherwise pressing the
+    // modifier anywhere in the app re-probes these stale coordinates.
+    lastPoint.current = null
     if (dwellTimer.current) clearTimeout(dwellTimer.current)
     dwellTimer.current = null
     // Grace period so the pointer can travel into the card itself.

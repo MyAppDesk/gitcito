@@ -6,6 +6,7 @@ import type {
   ConflictOpKind,
   ConflictSide,
   GraphCommit,
+  PrPreviewMode,
   PullRequest,
   IssueInfo,
   MilestoneInfo,
@@ -778,6 +779,47 @@ export const repoActions = {
 
   fetchRemote: (path: string, name: string) =>
     useRepoStore.getState().run(path, interp(t('act.fetchedRemote'), { name }), () => gitApi.fetchRemote(path, name)),
+
+  /**
+   * Fetch a pull request head — or any ref on a remote — and apply it locally
+   * without writing a commit. Undo is what makes this safe to try on a whim: a
+   * checked-out preview is unwound by going back to the previous branch and
+   * dropping the branch we created, a merge preview by aborting the merge that
+   * is still in progress.
+   */
+  previewRef: (
+    path: string,
+    remote: string,
+    ref: string,
+    mode: PrPreviewMode,
+    localBranch: string | undefined,
+    label: string
+  ) => {
+    const repo = useRepoStore.getState().repos[path]
+    const prev = repo?.branches.current
+    // Only delete the branch on undo if the preview is what created it.
+    const preexisting = !!localBranch && !!repo?.branches.locals.some((b) => b.name === localBranch)
+    const apply = async (): Promise<void> => {
+      const res = await gitApi.previewRef(path, remote, ref, mode, localBranch)
+      if (res.conflicts.length > 0) toast('info', interp(t('prPreview.conflicted'), { n: String(res.conflicts.length) }))
+    }
+    const undoEntry: UndoEntry =
+      mode === 'merge'
+        ? {
+            label: t('undoLabel.previewMerge'),
+            undo: () => gitApi.conflictOpAbort(path, 'merge'),
+            redo: apply
+          }
+        : {
+            label: interp(t('undoLabel.previewCheckout'), { name: localBranch ?? '' }),
+            undo: async () => {
+              await gitApi.checkout(path, prev ?? '-')
+              if (localBranch && !preexisting) await gitApi.deleteBranch(path, localBranch, true)
+            },
+            redo: apply
+          }
+    return useRepoStore.getState().run(path, label, apply, undoEntry)
+  },
 
   // Add a remote, then push the current branch to it (used by the "create remote & push" flow).
   addRemoteAndPush: (path: string, name: string, url: string, pushUrl?: string) =>

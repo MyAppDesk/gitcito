@@ -25,6 +25,8 @@ Pick a base and a compare ref — branch, tag or raw SHA, with a swap button —
 you get ahead/behind counts, the commits unique to each side, the full combined
 diff, and a one-click hand-off to **open a PR**.
 
+![Comparing two branches: what is unique to each side, and the combined diff](../screenshots/branch-compare.webp)
+
 Reachable from the sidebar (compare with the current branch), the Tools menu, or
 <kbd>⌘K</kbd>.
 

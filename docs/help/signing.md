@@ -14,7 +14,7 @@ with the key you choose. Gitcito writes `commit.gpgsign`, `gpg.format` and
 
 | | |
 |---|---|
-| ![Signature column, light](../screenshots/signed-commits-light.png) | ![Signature column, dark](../screenshots/signed-commits-dark.png) |
+| ![Signature column, light](../screenshots/signed-commits-light.webp) | ![Signature column, dark](../screenshots/signed-commits-dark.webp) |
 
 The graph gains a dedicated, reorderable **signature column**:
 

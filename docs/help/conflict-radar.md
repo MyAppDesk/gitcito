@@ -16,6 +16,10 @@ database** (`git merge-tree --write-tree`). No checkout, no index change, no
 working-tree change, nothing to clean up afterwards. Your uncommitted work can
 stay exactly where it is while the scan runs.
 
+![The radar, one verdict per branch](../screenshots/conflict-radar.webp)
+
+![Scanning branch by branch, then opening the contested files](../screenshots/clip-conflict-radar.webp)
+
 ## Using it
 
 Open it from the tools menu, <kbd>⌘K</kbd> → *Conflict radar*, or right-click a

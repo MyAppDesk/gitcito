@@ -11,7 +11,7 @@ keywords: security secrets masking keychain safeStorage tokens protected branch 
 Gitcito has **no backend**. The only network calls are to your Git host and, if
 you turn it on, your AI provider.
 
-![Security settings](../screenshots/settings-security.png)
+![Security settings](../screenshots/settings-security.webp)
 
 ## Secret masking
 
@@ -22,6 +22,8 @@ screenshot cannot leak them.
 It is **display-only**: it never changes the file and never changes what you
 stage. An eye toggle reveals them per view. `.env.example`, `.sample` and
 `.template` are treated as templates, not secrets.
+
+![A .env rendered with every value masked, and the reveal toggle](../screenshots/secret-masking.webp)
 
 ## Guards before you do damage
 

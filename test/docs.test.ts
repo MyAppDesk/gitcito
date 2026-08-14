@@ -38,7 +38,7 @@ describe('docs', () => {
     const sources = [readFileSync(join(ROOT, 'README.md'), 'utf8')]
     for (const file of readdirSync(HELP_DIR)) sources.push(readFileSync(join(HELP_DIR, file), 'utf8'))
     for (const src of sources) {
-      for (const [, name] of src.matchAll(/([\w.-]+\.(?:png|gif))/g)) used.add(name)
+      for (const [, name] of src.matchAll(/([\w.-]+\.(?:png|gif|webp))/g)) used.add(name)
     }
     const orphans = readdirSync(join(ROOT, 'docs/screenshots')).filter((f) => !used.has(f))
     expect(orphans).toEqual([])
@@ -62,7 +62,7 @@ describe('site', () => {
     expect(absorb).not.toMatch(/href="[\w-]+\.md"/)
     // Images move from ../screenshots to the copied assets folder.
     const timelapse = readFileSync(join(SITE, 'help/graph.html'), 'utf8')
-    expect(timelapse).toContain('../assets/graph-dark.png')
+    expect(timelapse).toContain('../assets/graph-dark.webp')
   })
 
   it('leaves no broken local link anywhere in the output', () => {

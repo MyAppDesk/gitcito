@@ -11,7 +11,7 @@ keywords: vault secrets env keychain encrypted local per-repo global copy
 The `.env` values a project needs have to live somewhere. The vault is that
 somewhere, without them ending up in the repository.
 
-![The vault](../screenshots/vault.png)
+![The vault](../screenshots/vault.webp)
 
 - **Encrypted at rest** with your OS keychain.
 - **Two scopes**: entries attached to a repository, and a **global** set you can

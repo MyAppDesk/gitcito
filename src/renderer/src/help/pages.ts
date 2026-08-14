@@ -68,7 +68,7 @@ function parseFrontMatter(source: string): { meta: Partial<HelpMeta>; body: stri
 
 /**
  * Point image links at the bundled asset. Pages use repo-relative paths
- * (`../screenshots/foo.png`) so they render on GitHub too; only the basename is
+ * (`../screenshots/foo.webp`) so they render on GitHub too; only the basename is
  * matched here, which keeps the two in step without a build step of its own.
  */
 export function resolveMedia(markdown: string): string {

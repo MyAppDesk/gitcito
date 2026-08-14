@@ -11,7 +11,7 @@ keywords: launch.json run debug vscode configs tasks preLaunchTask input backgro
 Gitcito reads your `.vscode/launch.json` — the root one and any nested ones,
 grouped with dividers — and runs the config you pick in the integrated terminal.
 
-![The launch picker and floating toolbar](../screenshots/launch-configs.png)
+![The launch picker and floating toolbar](../screenshots/launch-configs.webp)
 
 - VS Code **variables are resolved** (`${workspaceFolder}` and friends).
 - A config's **`preLaunchTask`** runs first.

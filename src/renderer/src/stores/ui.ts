@@ -105,6 +105,7 @@ export type ModalSpec =
   | { kind: 'sparse'; repoPath: string }
   | { kind: 'ignore'; repoPath: string; targetPath: string; isFolder: boolean }
   | { kind: 'pr-detail'; repoPath: string; remoteUrl: string; number: number }
+  | { kind: 'pr-preview'; repoPath: string; number?: number; remote?: string; branch?: string }
   | {
       kind: 'create-pr'
       repoPath: string

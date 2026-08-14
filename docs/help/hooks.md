@@ -13,7 +13,7 @@ keywords: hooks pre-commit husky core.hooksPath gitignore ignore untrack
 List every hook in the repository, see which are real and which are still
 `.sample`, and enable, disable, edit or create them.
 
-![The hooks manager](../screenshots/hooks.png)
+![The hooks manager](../screenshots/hooks.webp)
 
 Gitcito detects a custom **`core.hooksPath`** (husky and friends) and a
 **pre-commit framework** config, and tells you when hooks live somewhere other
@@ -32,7 +32,7 @@ Right-click a file → **Ignore**, and choose:
 | All `*.ext` | `*.log` |
 | The whole folder | `path/to/folder/` |
 
-![The .gitignore chooser](../screenshots/gitignore-chooser.png)
+![The .gitignore chooser](../screenshots/gitignore-chooser.webp)
 
 The rule goes into the **closest folder's** `.gitignore`, or the repository
 root, with a live preview of the line before you commit to it. Already-tracked

@@ -15,6 +15,8 @@ worthless: every commit after a rebase is a new commit, so everything looks new.
 old positions straight out of the **reflog** — so nothing had to be recorded in
 advance for this to work.
 
+![Rewritten, new and dropped commits after a force-push](../screenshots/range-diff.webp)
+
 | Verdict | Meaning |
 |---|---|
 | **Rewritten** | Same commit, changed. Expand it for the interdiff — the message tweak and the extra check, not the whole file. |

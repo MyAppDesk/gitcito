@@ -1,17 +1,17 @@
 #!/usr/bin/env node
-// Screenshot + GIF capture harness for Gitcito.
+// Screenshot + motion-clip capture harness for Gitcito.
 //
-//   node examples/screenshots/capture.mjs            # all PNG shots
+//   node examples/screenshots/capture.mjs            # all stills (WebP)
 //   node examples/screenshots/capture.mjs graph      # only shots matching "graph"
-//   node examples/screenshots/capture.mjs --gif      # also render animated clips
-//   node examples/screenshots/capture.mjs --gif-only conflict
+//   node examples/screenshots/capture.mjs --clips    # also render animated WebP clips
+//   node examples/screenshots/capture.mjs --clips-only conflict
 //
 // How it works: builds the app if needed, ensures the deterministic playground
 // repos exist, then for each shot launches the built Electron app with `--shot`
 // (which enables the in-app `__shot` store bridge), seeds a throwaway settings
 // file pointing at the right repos, drives the UI into the target state and
-// screenshots it. GIF clips are recorded via a Chromium screencast and stitched
-// with ffmpeg.
+// screenshots it. Motion clips are recorded via a Chromium screencast and
+// stitched into animated WebP with ffmpeg.
 import { _electron as electron } from 'playwright'
 import { spawn, spawnSync } from 'node:child_process'
 import { mkdtemp, mkdir, writeFile, rm, readdir, symlink } from 'node:fs/promises'
@@ -39,8 +39,11 @@ const HEIGHT = 900
 const args = process.argv.slice(2)
 const flags = new Set(args.filter((a) => a.startsWith('--')))
 const filters = args.filter((a) => !a.startsWith('--'))
-const wantGif = flags.has('--gif') || flags.has('--gif-only')
-const gifOnly = flags.has('--gif-only')
+// `--gif`/`--gif-only` stay as aliases: the output is WebP now, but the flags
+// predate that and are baked into muscle memory and older docs.
+const clipsOnly = flags.has('--clips-only') || flags.has('--gif-only')
+const wantGif = clipsOnly || flags.has('--clips') || flags.has('--gif')
+const gifOnly = clipsOnly
 
 function sh(cmd, cmdArgs, opts = {}) {
   return new Promise((resolve, reject) => {
@@ -55,6 +58,12 @@ function hasFfmpeg() {
 }
 
 async function ensurePrereqs() {
+  // Stills are transcoded to WebP, so ffmpeg is required for every run now —
+  // not just the ones rendering clips.
+  if (!hasFfmpeg()) {
+    console.error('✖ ffmpeg not found — required to encode shots as WebP (brew install ffmpeg)')
+    process.exit(1)
+  }
   // Always rebuild so screenshots/GIFs reflect the latest source, not a stale
   // out/ from a previous run. Pass --no-build to reuse the existing bundle.
   if (flags.has('--no-build')) {
@@ -162,6 +171,20 @@ async function launch(shot, theme) {
 
   await writeFile(join(userDataDir, 'gitcito-settings.json'), JSON.stringify(seedSettings(shot, theme), null, 2))
 
+  // Answer the keychain question before it is asked. The seeded profile carries
+  // a demo AI key, so every launch would otherwise raise the consent explainer
+  // and photograph it instead of the feature (each shot gets a fresh userData
+  // dir, so it asks every single time).
+  //
+  // 'declined' is the default on purpose: refusing keeps tokens in memory and
+  // the app fully working, while granting makes macOS raise its own "Gitcito
+  // Safe Storage" dialog — an OS window Playwright cannot dismiss, which would
+  // stall the run. Only shots that actually need a readable vault opt in.
+  await writeFile(
+    join(userDataDir, 'gitcito-keychain.json'),
+    JSON.stringify({ consent: shot.keychain ? 'granted' : 'declined', explained: true }, null, 2)
+  )
+
   const app = await electron.launch({
     // --disable-gpu forces software (CPU) rasterization so pixel output is
     // identical across runs, eliminating GPU/subpixel-antialiasing drift.
@@ -183,6 +206,16 @@ async function launch(shot, theme) {
   if (activePath) {
     await page.evaluate((p) => window.__shot.waitForRepo(p), activePath).catch(() => {})
   }
+  // Second line of defence behind the seeded consent file: if anything still
+  // manages to raise the keychain explainer, drop it before the shot is driven.
+  // Only that one kind — every other modal is something a shot asked for.
+  await page
+    .evaluate(() => {
+      const ui = window.__shot.ui.getState()
+      if (ui.modal?.kind === 'keychain-consent') ui.closeModal()
+    })
+    .catch(() => {})
+
   // Freeze caret, scrollbars, animations and transitions for clean, deterministic frames.
   await page.addStyleTag({
     content:
@@ -224,8 +257,14 @@ async function capturePngTheme(shot, theme) {
     if (shot.drive) await shot.drive(page, repoPathsFor(shot))
     await settle(page)
     const suffix = (shot.themes ?? ['dark']).length > 1 ? `-${theme}` : ''
-    const file = join(OUT_DIR, `${shot.out}${suffix}.png`)
-    await page.screenshot({ path: file, animations: 'disabled' })
+    const file = join(OUT_DIR, `${shot.out}${suffix}.webp`)
+    // Shoot PNG (Playwright's only lossless option) then transcode. WebP q90 is
+    // ~a quarter of the PNG's bytes with no visible difference on UI text at 2x
+    // zoom, and these ship in the repo, in the app bundle and on the website.
+    const raw = await page.screenshot({ animations: 'disabled' })
+    const tmpPng = join(userDataDir, 'shot.png')
+    await writeFile(tmpPng, raw)
+    await sh('ffmpeg', ['-y', '-loglevel', 'error', '-i', tmpPng, '-c:v', 'libwebp', '-q:v', '90', file])
     console.log(`  ✓ ${file.replace(ROOT + '/', '')}`)
   } finally {
     // A crashed app makes close()/rm() throw too — never let cleanup mask the
@@ -294,7 +333,7 @@ async function captureGifOnce(shot) {
 
     // Write captured frames. page.screenshot rarely sustains a full `fps`, so
     // feed ffmpeg the *actual* capture rate as the input framerate — that sets
-    // each frame's real duration so the GIF runs at true speed — then resample
+    // each frame's real duration so the clip runs at true speed — then resample
     // to a steady `fps` for smooth playback without changing total length.
     let i = 0
     for (const buf of frames) await writeFile(join(framesDir, `f${String(i++).padStart(4, '0')}.png`), buf)
@@ -303,13 +342,15 @@ async function captureGifOnce(shot) {
       return
     }
     const inputFps = elapsedSec > 0 ? frames.length / elapsedSec : fps
-    const out = join(OUT_DIR, `${shot.out}.gif`)
-    const palette = join(framesDir, 'palette.png')
+    // Animated WebP, not GIF: a UI clip is full-colour, and GIF's 256-entry
+    // palette both dithers the gradients and costs ~8x the bytes. Every target
+    // renders it — GitHub markdown, the site, and the in-app Chromium.
+    const out = join(OUT_DIR, `${shot.out}.webp`)
     const vf = `fps=${fps},scale=900:-1:flags=lanczos`
-    await sh('ffmpeg', ['-y', '-framerate', String(inputFps), '-i', join(framesDir, 'f%04d.png'), '-vf', `${vf},palettegen`, palette])
     await sh('ffmpeg', [
-      '-y', '-framerate', String(inputFps), '-i', join(framesDir, 'f%04d.png'), '-i', palette,
-      '-lavfi', `${vf} [x]; [x][1:v] paletteuse`, out
+      '-y', '-framerate', String(inputFps), '-i', join(framesDir, 'f%04d.png'),
+      '-vf', vf, '-c:v', 'libwebp_anim', '-lossless', '0', '-q:v', '70',
+      '-compression_level', '5', '-loop', '0', '-an', out
     ])
     console.log(`  ✓ ${out.replace(ROOT + '/', '')} (${frames.length} frames)`)
   } finally {
@@ -338,7 +379,7 @@ async function main() {
 
   if (!gifOnly) {
     const todo = shots.filter(match)
-    console.log(`\n📸 ${todo.length} PNG shot(s)`)
+    console.log(`\n📸 ${todo.length} still(s)`)
     for (const shot of todo) await run(shot, capturePng)
   }
 

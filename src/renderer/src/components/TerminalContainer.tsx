@@ -16,7 +16,7 @@ import { ResizeHandle } from './ResizeHandle'
 import { useTerminalsStore, type TermGroup } from '../stores/terminals'
 import { useTermTitlesStore } from '../stores/termTitles'
 import { useUIStore } from '../stores/ui'
-import { useT } from '../i18n'
+import { useT, interp } from '../i18n'
 
 const MIN_PANEL_PX = 80
 
@@ -183,6 +183,45 @@ export function TerminalContainer({ cwd }: { cwd: string }): React.JSX.Element {
     }
   }
 
+  // Groups keep a stable numbered name; only panels auto-name to their
+  // running process. Manual alias still wins.
+  const groupDisplayName = (group: TermGroup): string => group.title.trim() || `zsh ${group.num}`
+
+  const openGroupMenuAt = (e: React.MouseEvent, group: TermGroup): void => {
+    e.preventDefault()
+    e.stopPropagation()
+    const split = group.panels.length > 1
+    const groupName = groupDisplayName(group)
+    openContextMenu(e.clientX, e.clientY, [
+      {
+        label: t('terminal.rename'),
+        icon: <Pencil size={13} />,
+        onClick: () => startRename(group.id, null, groupName)
+      },
+      {
+        label: t('terminal.split'),
+        icon: <SquareSplitHorizontal size={13} />,
+        onClick: () => splitGroup(cwd, group.id, cwd)
+      },
+      ...(split
+        ? [
+            {
+              label: t('terminal.unsplit'),
+              icon: <Ungroup size={13} />,
+              onClick: () => unsplitGroup(cwd, group.id)
+            }
+          ]
+        : []),
+      { separator: true },
+      {
+        label: t('terminal.kill'),
+        icon: <Trash2 size={13} />,
+        danger: true,
+        onClick: () => removeGroup(cwd, group.id)
+      }
+    ])
+  }
+
   const toggleGroupCollapse = (groupId: string): void => {
     setCollapsedGroups((prev) => {
       const next = new Set(prev)
@@ -228,6 +267,45 @@ export function TerminalContainer({ cwd }: { cwd: string }): React.JSX.Element {
           >
             <PanelRightOpen size={15} />
           </button>
+          <button className="icon-btn" title={t('terminal.new')} onClick={() => addGroup(cwd, cwd)}>
+            <Plus size={14} />
+          </button>
+          <div className="terminal-rail-sep" />
+          <div className="terminal-rail-body">
+            {groups.map((group) => {
+              const split = group.panels.length > 1
+              const groupName = groupDisplayName(group)
+              const tooltip = split
+                ? interp(t('terminal.groupSplitTooltip'), {
+                    name: groupName,
+                    count: String(group.panels.length)
+                  })
+                : groupName
+              return (
+                <button
+                  key={group.id}
+                  className={`terminal-rail-item${group.id === activeGroupId ? ' active' : ''}`}
+                  title={tooltip}
+                  onClick={() => setActiveGroup(cwd, group.id)}
+                  onContextMenu={(e) => openGroupMenuAt(e, group)}
+                >
+                  {split ? (
+                    // Mini split map: one cell per panel, active panel brighter.
+                    <span className="rail-split" aria-hidden>
+                      {group.panels.map((panel) => (
+                        <span
+                          key={panel.id}
+                          className={`rail-split-cell${panel.id === group.activePanelId ? ' on' : ''}`}
+                        />
+                      ))}
+                    </span>
+                  ) : (
+                    <SquareTerminal size={15} />
+                  )}
+                </button>
+              )
+            })}
+          </div>
         </div>
       ) : (
         <>
@@ -259,41 +337,8 @@ export function TerminalContainer({ cwd }: { cwd: string }): React.JSX.Element {
               {groups.map((group) => {
                 const split = group.panels.length > 1
                 const groupCollapsed = collapsedGroups.has(group.id)
-                // Groups keep a stable numbered name; only panels auto-name to
-                // their running process. Manual alias still wins.
-                const groupName = group.title.trim() || `zsh ${group.num}`
+                const groupName = groupDisplayName(group)
                 const editingGroup = editing?.groupId === group.id && editing.panelId === null
-                const openGroupMenu = (e: React.MouseEvent): void => {
-                  e.preventDefault()
-                  openContextMenu(e.clientX, e.clientY, [
-                    {
-                      label: t('terminal.rename'),
-                      icon: <Pencil size={13} />,
-                      onClick: () => startRename(group.id, null, groupName)
-                    },
-                    {
-                      label: t('terminal.split'),
-                      icon: <SquareSplitHorizontal size={13} />,
-                      onClick: () => splitGroup(cwd, group.id, cwd)
-                    },
-                    ...(split
-                      ? [
-                          {
-                            label: t('terminal.unsplit'),
-                            icon: <Ungroup size={13} />,
-                            onClick: () => unsplitGroup(cwd, group.id)
-                          }
-                        ]
-                      : []),
-                    { separator: true },
-                    {
-                      label: t('terminal.kill'),
-                      icon: <Trash2 size={13} />,
-                      danger: true,
-                      onClick: () => removeGroup(cwd, group.id)
-                    }
-                  ])
-                }
                 return (
                   <div key={group.id} className="terminal-list-group">
                     <div
@@ -307,7 +352,7 @@ export function TerminalContainer({ cwd }: { cwd: string }): React.JSX.Element {
                       onDragLeave={onGroupDragLeave(group.id)}
                       onDrop={onGroupDrop(group.id)}
                       onClick={() => setActiveGroup(cwd, group.id)}
-                      onContextMenu={openGroupMenu}
+                      onContextMenu={(e) => openGroupMenuAt(e, group)}
                     >
                       {split ? (
                         <button

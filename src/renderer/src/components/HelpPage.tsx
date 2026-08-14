@@ -25,7 +25,8 @@ export function HelpPage({ initialPage }: { initialPage?: string }): React.JSX.E
   const sections = useMemo(() => helpSections(), [])
   const results = useMemo(() => searchHelp(query), [query])
   const page = useMemo(() => HELP_PAGES.find((p) => p.id === current) ?? HELP_PAGES[0], [current])
-  const html = useMemo(() => (page ? renderMarkdown(resolveMedia(page.body)) : ''), [page])
+  // allowFileMedia: bundled screenshots resolve to file:// URLs in the packaged app.
+  const html = useMemo(() => (page ? renderMarkdown(resolveMedia(page.body), { allowFileMedia: true }) : ''), [page])
 
   const go = (id: string): void => {
     if (!HELP_PAGES.some((p) => p.id === id)) return

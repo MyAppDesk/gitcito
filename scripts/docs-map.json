@@ -32,6 +32,7 @@
       "launcher": "getting-started",
       "lfs": "lfs-sparse",
       "pr-detail": "hosting",
+      "pr-preview": "pr-preview",
       "range-diff": "range-diff",
       "reflog": "recovery",
       "repo-settings": "repo-settings",
@@ -48,7 +49,8 @@
     "exempt": {
       "input": "Generic single-field prompt reused everywhere; not a feature.",
       "confirm": "Generic confirmation dialog.",
-      "group-color": "Colour picker inside the group tab UI, documented as part of workspaces."
+      "group-color": "Colour picker inside the group tab UI, documented as part of workspaces.",
+      "cosmos": "DO NOT DOCUMENT — easter egg (five clicks on the repo-settings title). Documenting it would spoil it."
     }
   },
 
@@ -91,6 +93,7 @@
       "lfs": "lfs-sparse",
       "mission-control": "mission-control",
       "notifications": "hosting",
+      "pr-preview": "pr-preview",
       "pull": "syncing",
       "push": "syncing",
       "range-diff": "range-diff",

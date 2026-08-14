@@ -19,6 +19,8 @@ screen, ordered by what actually needs you:
 3. **In progress** — uncommitted work, untracked files.
 4. **Clean** — the quiet ones, at the bottom, where they belong.
 
+![Every repository on one screen, worst first](../screenshots/mission-control.webp)
+
 ## What a row tells you
 
 Branch and its upstream · ↑ahead / ↓behind · uncommitted and untracked counts ·

@@ -1,5 +1,43 @@
 
 
+## [3.2.2](https://github.com/MyAppDesk/gitcito/compare/v3.2.1...v3.2.2) (2026-08-14)
+
+
+### Bug Fixes
+
+* retrieve active profile AI API key ([54a7135](https://github.com/MyAppDesk/gitcito/commit/54a7135212c8734d0d6c958a1dcdd5af196f406d))
+
+## [3.2.1](https://github.com/MyAppDesk/gitcito/compare/v3.2.0...v3.2.1) (2026-08-14)
+
+## [3.2.0](https://github.com/MyAppDesk/gitcito/compare/v3.1.1...v3.2.0) (2026-08-13)
+
+
+### Features
+
+* add PR preview functionality with resolve and preview methods ([2482170](https://github.com/MyAppDesk/gitcito/commit/24821706ff477489fdbe764842297ecb7d0dc6f6))
+* add repository and tab-switching keyboard shortcuts ([#7](https://github.com/MyAppDesk/gitcito/issues/7)) ([5c03dfc](https://github.com/MyAppDesk/gitcito/commit/5c03dfc41dfdc39451cb4ca9661aa09b82900060))
+
+## [3.1.1](https://github.com/MyAppDesk/gitcito/compare/v3.1.0...v3.1.1) (2026-08-13)
+
+
+### Bug Fixes
+
+* reset lastPoint on mouse leave to avoid stale coordinates ([fb3c6e1](https://github.com/MyAppDesk/gitcito/commit/fb3c6e1b516d143eac9789fdab81676aff4f8430))
+
+## [3.1.0](https://github.com/MyAppDesk/gitcito/compare/v3.0.2...v3.1.0) (2026-08-13)
+
+
+### Bug Fixes
+
+* allow file media in markdown rendering for packaged app ([5502f3d](https://github.com/MyAppDesk/gitcito/commit/5502f3de1c83e3d0c8cf201a46f8b28511a192e3))
+
+## [3.0.2](https://github.com/MyAppDesk/gitcito/compare/v3.0.1...v3.0.2) (2026-08-13)
+
+
+### Bug Fixes
+
+* set initial state of open to false in SemanticSummary ([7470537](https://github.com/MyAppDesk/gitcito/commit/747053780157215036339e4f55b2bb598a91fcc0))
+
 ## [3.0.1](https://github.com/MyAppDesk/gitcito/compare/v3.0.0...v3.0.1) (2026-08-13)
 
 

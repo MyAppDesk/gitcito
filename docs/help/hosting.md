@@ -14,7 +14,7 @@ Create a pull (or merge) request without leaving the app: branch dropdowns,
 title and body prefilled from the branch's commits, a draft toggle, and — on
 GitHub — reviewers, labels and assignees applied on create.
 
-![Creating a pull request](../screenshots/create-pr.png)
+![Creating a pull request](../screenshots/create-pr.webp)
 
 Works on **GitHub, GitLab, Bitbucket and Azure DevOps**. Open PRs/MRs for all
 four are listed in the sidebar.

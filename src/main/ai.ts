@@ -1,6 +1,7 @@
 import { ipcMain } from 'electron'
 import type { AIConfig, AppThemeColors, AskAction, AskPlan, BranchNamingStyle, CodeThemeColors, ConflictStyle, ExplainStyle, PRReviewResult, RepoStatus } from '../shared/types'
 import { recordAIUsage, type TokenUsage } from './analytics'
+import { activeProfileAiKey } from './settings'
 import { createHash } from 'node:crypto'
 import {
   APP_THEME_KEYS,
@@ -98,7 +99,22 @@ function fetchFailureReason(err: unknown): string | null {
   return cause?.message ?? (err instanceof Error ? err.message : null)
 }
 
-async function listModels(cfg: AIConfig): Promise<string[]> {
+/**
+ * Fills in the API key the renderer does not have.
+ *
+ * Stored keys are decrypted lazily — only opening Settings hydrates them into
+ * the renderer — so a config arriving from any other surface (commit message,
+ * hover explain, conflict resolve, …) is keyless on a fresh launch. Resolve it
+ * from the encrypted store at the point of use rather than failing.
+ */
+async function withStoredKey(cfg: AIConfig): Promise<AIConfig> {
+  if (cfg.apiKey && cfg.apiKey.trim()) return cfg
+  const key = await activeProfileAiKey()
+  return key ? { ...cfg, apiKey: key } : cfg
+}
+
+async function listModels(input: AIConfig): Promise<string[]> {
+  const cfg = await withStoredKey(input)
   const base = baseUrl(cfg.endpoint)
   let res: Response
   try {
@@ -239,12 +255,13 @@ type ChatMessage = { role: 'system' | 'user' | 'assistant'; content: string }
 
 /** Single OpenAI-compatible chat completion returning the raw message text. */
 async function chatComplete(
-  cfg: AIConfig,
+  input: AIConfig,
   messages: ChatMessage[],
   feature: string,
   temperature = 0.2,
   extra?: Record<string, unknown>
 ): Promise<string> {
+  const cfg = await withStoredKey(input)
   const base = baseUrl(cfg.endpoint)
   if (!cfg.apiKey && !isLocal(base)) throw new Error('No AI API key configured. Add one in Settings → AI.')
 

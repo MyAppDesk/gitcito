@@ -16,7 +16,7 @@ Every move of `HEAD` — and of each branch — with what caused it: checkout,
 reset, rebase, amend, a forced fetch. From any past entry you can **check it
 out**, **branch from it**, or **hard-reset to it**.
 
-![The reflog viewer](../screenshots/reflog.png)
+![The reflog viewer](../screenshots/reflog.webp)
 
 This is the "I just reset the wrong branch" button.
 
@@ -26,7 +26,7 @@ Uncommitted work is the one thing the reflog cannot save, so Gitcito snapshots
 it: your tracked changes plus the staged index, captured as a `git stash create`
 commit pinned under `refs/gitcito/wip`.
 
-![WIP snapshots](../screenshots/snapshots.png)
+![WIP snapshots](../screenshots/snapshots.webp)
 
 - It **never touches your working tree** and **never appears in your stash
   list** — it is a hidden ref, not a stash.
@@ -39,7 +39,7 @@ Mark commits good and bad, watch the range narrow, land on the first bad commit.
 Gitcito tracks how many steps are left, so you know whether you are two
 questions from the answer or ten.
 
-![Guided bisect](../screenshots/bisect.png)
+![Guided bisect](../screenshots/bisect.webp)
 
 ## Undo / redo
 

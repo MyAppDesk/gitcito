@@ -10,7 +10,7 @@ keywords: interactive rebase squash fixup reword drop edit autosquash todo
 
 The `git rebase -i` todo list, as a list you can drag.
 
-![The interactive rebase editor](../screenshots/interactive-rebase.png)
+![The interactive rebase editor](../screenshots/interactive-rebase.webp)
 
 | Action | Means |
 |---|---|

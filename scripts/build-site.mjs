@@ -26,6 +26,7 @@ const OUT = join(ROOT, 'dist-site')
 const REPO = 'MyAppDesk/gitcito'
 const RELEASES = `https://github.com/${REPO}/releases`
 const LATEST = `${RELEASES}/latest`
+const SPONSOR = 'https://github.com/sponsors/cgutierr-zgz'
 const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'))
 
 marked.setOptions({ gfm: true, breaks: false })
@@ -93,7 +94,7 @@ const head = (title, description, depth) => {
 <meta property="og:title" content="${esc(title)}" />
 <meta property="og:description" content="${esc(description)}" />
 <meta property="og:type" content="website" />
-<meta property="og:image" content="https://myappdesk.github.io/gitcito/assets/graph-dark.png" />
+<meta property="og:image" content="https://myappdesk.github.io/gitcito/assets/og-image.jpg" />
 <meta name="theme-color" content="#0b0e1a" />
 <link rel="icon" href="${base}assets/gitcito-mark.png" />
 <link rel="stylesheet" href="${base}styles.css" />
@@ -111,6 +112,7 @@ const nav = (depth) => {
   <nav>
     <a href="${base}help/getting-started.html">Handbook</a>
     <a href="https://github.com/${REPO}">GitHub</a>
+    <a href="${SPONSOR}">Sponsor</a>
     <a class="btn small" href="${LATEST}">Download</a>
   </nav>
 </header>`
@@ -118,7 +120,7 @@ const nav = (depth) => {
 
 const footer = `<footer class="foot">
   <span>MIT licensed · Made by <a href="https://myappdesk.dev">MyAppDesk</a> with 💜</span>
-  <span><a href="https://github.com/${REPO}">Source</a> · <a href="https://github.com/${REPO}/issues/new">Report an issue</a></span>
+  <span><a href="https://github.com/${REPO}">Source</a> · <a href="https://github.com/${REPO}/issues/new">Report an issue</a> · <a href="${SPONSOR}">Sponsor</a></span>
 </footer>
 </body>
 </html>`
@@ -163,6 +165,12 @@ const FEATURES = [
     body: "Replay the repository's whole life as an animation — and export it as a video, recorded in the page with no encoder to install."
   },
   {
+    icon: '🧪',
+    title: 'Preview a pull request',
+    id: 'pr-preview',
+    body: "Run someone else's PR — forks included — without committing anything. No API token, no second remote: the head is fetched from the ref the forge already publishes, on GitHub, GitLab, Bitbucket, Azure DevOps or Gitea."
+  },
+  {
     icon: '🎛️',
     title: 'Mission control',
     id: 'mission-control',
@@ -182,14 +190,28 @@ const DOWNLOADS = [
   { os: 'Linux', note: 'AppImage · deb', match: 'linux' }
 ]
 
+// A feature card shows the handbook page's own screenshot. The file is named
+// after the page id, bar the one case where the page covers more than its shot.
+const CARD_SHOT = { security: 'secret-masking' }
+
+/** The card's screenshot, or null when there is none to show. */
+function cardShot(id) {
+  const name = `${CARD_SHOT[id] ?? id}.webp`
+  return existsSync(join(SHOTS_DIR, name)) ? name : null
+}
+
 function landing() {
-  const cards = FEATURES.map(
-    (f) => `    <article class="card">
+  const cards = FEATURES.map((f) => {
+    const shot = cardShot(f.id)
+    const figure = shot
+      ? `\n      <a class="card-shot" href="help/${f.id}.html"><img src="assets/${shot}" alt="${esc(f.title)}" loading="lazy" /></a>`
+      : ''
+    return `    <article class="card">${figure}
       <span class="card-icon" aria-hidden="true">${f.icon}</span>
       <h3><a href="help/${f.id}.html">${f.title}</a></h3>
       <p>${f.body}</p>
     </article>`
-  ).join('\n')
+  }).join('\n')
 
   const downloads = DOWNLOADS.map(
     (d) => `      <a class="dl" href="${LATEST}" data-os="${d.match}">
@@ -219,7 +241,7 @@ ${nav(0)}
       <a class="btn ghost" href="https://github.com/${REPO}">View source</a>
     </div>
     <p class="version">Free · MIT · v${pkg.version}</p>
-    <img class="shot" src="assets/graph-dark.png" alt="The Gitcito commit graph" loading="lazy" />
+    <img class="shot" src="assets/graph-dark.webp" alt="The Gitcito commit graph" loading="lazy" />
   </section>
 
   <section class="section">
@@ -250,7 +272,7 @@ ${cards}
         <li>English &amp; Spanish</li>
       </ul>
     </div>
-    <img class="shot" src="assets/conflict-resolver.png" alt="The conflict resolver" loading="lazy" />
+    <img class="shot" src="assets/conflict-resolver.webp" alt="The conflict resolver" loading="lazy" />
   </section>
 
   <section class="section">
@@ -268,6 +290,14 @@ ${downloads}
     <div class="handbook">
 ${handbook}
     </div>
+  </section>
+
+  <section class="section">
+    <h2>Sponsor Gitcito</h2>
+    <p class="sub">Free, MIT, no backend, no telemetry, nothing to upsell — so there is nothing to buy.
+    Sponsorship pays for the Apple Developer certificate the signed macOS builds need, the handbook and
+    the translations. Bug reports are worth just as much.</p>
+    <p><a class="btn primary" href="${SPONSOR}">Sponsor on GitHub</a></p>
   </section>
 </main>
 ${footer}
@@ -443,6 +473,13 @@ img { max-width: 100%; }
 }
 .section.alt .card { background: var(--bg-3); }
 .card:hover { border-color: var(--accent); transform: translateY(-2px); }
+/* The screenshot sits above the card's text, cropped to a consistent band so
+   cards keep a common rhythm whatever shape the shot is. */
+.card-shot {
+  display: block; margin: -22px -22px 16px; border-bottom: 1px solid var(--line);
+  border-radius: var(--radius) var(--radius) 0 0; overflow: hidden;
+}
+.card-shot img { display: block; width: 100%; height: 148px; object-fit: cover; object-position: top left; }
 .card-icon { font-size: 22px; }
 .card h3 { margin: 10px 0 8px; font-size: 17px; }
 .card h3 a { color: var(--text); }
@@ -547,6 +584,10 @@ for (const page of pages) writeFileSync(join(OUT, 'help', `${page.id}.html`), he
 // Every screenshot the handbook and the landing can reference, plus the mark.
 for (const file of readdirSync(SHOTS_DIR)) copyFileSync(join(SHOTS_DIR, file), join(OUT, 'assets', file))
 copyFileSync(join(ROOT, 'docs/gitcito-mark.png'), join(OUT, 'assets/gitcito-mark.png'))
+// The share card is a 1200x630 JPEG: the screenshots are WebP now, and LinkedIn
+// and Facebook are unreliable with it. JPEG is the format every scraper agrees
+// on, and a quarter of the PNG's bytes for a photo-like screenshot.
+copyFileSync(join(ROOT, 'docs/og-image.jpg'), join(OUT, 'assets/og-image.jpg'))
 
 // Pages would otherwise run the output through Jekyll, which drops _-prefixed
 // files and can mangle raw HTML.

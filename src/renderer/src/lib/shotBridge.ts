@@ -10,6 +10,7 @@ import { useUIStore } from '../stores/ui'
 import { useRepoStore, repoActions } from '../stores/repo'
 import { useUpdatesStore } from '../stores/updates'
 import { useLaunchStore } from '../stores/launch'
+import { useTerminalsStore } from '../stores/terminals'
 
 export interface ShotBridge {
   settings: typeof useSettingsStore
@@ -17,6 +18,8 @@ export interface ShotBridge {
   repo: typeof useRepoStore
   updates: typeof useUpdatesStore
   launch: typeof useLaunchStore
+  /** Terminal groups and panels — needed to drive split/group shots. */
+  terminals: typeof useTerminalsStore
   repoActions: typeof repoActions
   /** True once the bridge has attached; the driver polls for this. */
   ready: true
@@ -43,5 +46,5 @@ export function installShotBridge(): void {
       tick()
     })
 
-  window.__shot = { settings: useSettingsStore, ui: useUIStore, repo: useRepoStore, updates: useUpdatesStore, launch: useLaunchStore, repoActions, ready: true, waitForRepo }
+  window.__shot = { settings: useSettingsStore, ui: useUIStore, repo: useRepoStore, updates: useUpdatesStore, launch: useLaunchStore, terminals: useTerminalsStore, repoActions, ready: true, waitForRepo }
 }

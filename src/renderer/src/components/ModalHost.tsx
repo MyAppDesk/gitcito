@@ -26,6 +26,7 @@ import { SparseCheckoutModal } from './SparseCheckoutModal'
 import { CreatePRModal } from './CreatePRModal'
 import { IgnoreModal } from './IgnoreModal'
 import { PRDetailModal } from './PRDetailModal'
+import { PrPreviewModal } from './PrPreviewModal'
 import { CodeSearchModal } from './CodeSearchModal'
 import { StackModal } from './StackModal'
 import { ChangelogGenModal } from './ChangelogGenModal'
@@ -1430,6 +1431,14 @@ export function ModalHost(): React.JSX.Element {
             {modal.kind === 'timelapse' && <TimelapseModal repoPath={modal.repoPath} />}
             {modal.kind === 'range-diff' && (
               <RangeDiffModal repoPath={modal.repoPath} branch={modal.branch} initialOld={modal.initialOld} />
+            )}
+            {modal.kind === 'pr-preview' && (
+              <PrPreviewModal
+                repoPath={modal.repoPath}
+                initialNumber={modal.number}
+                initialRemote={modal.remote}
+                initialBranch={modal.branch}
+              />
             )}
             {modal.kind === 'conflict-radar' && (
               <ConflictRadar repoPath={modal.repoPath} initialBase={modal.base} />

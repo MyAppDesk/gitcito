@@ -19,6 +19,8 @@ Stashing in Gitcito is not all-or-nothing.
 
 Selecting a stash shows its files and diffs, exactly like a commit.
 
+![A partial stash: tick only the files that should go in](../screenshots/stash-partial.webp)
+
 ## When a stash will not apply
 
 If applying a stash would clobber untracked files, git stops. Gitcito offers to

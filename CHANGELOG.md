@@ -1,5 +1,17 @@
 
 
+## [3.3.0](https://github.com/MyAppDesk/gitcito/compare/v3.2.2...v3.3.0) (2026-08-14)
+
+
+### Features
+
+* add tab and settings keyboard shortcuts ([#8](https://github.com/MyAppDesk/gitcito/issues/8)) ([1eb7d27](https://github.com/MyAppDesk/gitcito/commit/1eb7d271599fd015470e3a246818441a427a5359))
+
+
+### Bug Fixes
+
+* improve tab closing behavior with shortcuts ([c5536b1](https://github.com/MyAppDesk/gitcito/commit/c5536b15e7628b95aed7a5bca0c6b03f934366a0))
+
 ## [3.2.2](https://github.com/MyAppDesk/gitcito/compare/v3.2.1...v3.2.2) (2026-08-14)
 
 

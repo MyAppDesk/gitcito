@@ -1,5 +1,6 @@
 import { app, ipcMain, dialog, safeStorage } from 'electron'
 import { join } from 'path'
+import { existsSync } from 'fs'
 import { readFile, writeFile, mkdir } from 'fs/promises'
 import { defaultSettings, type AppSettings, type RepoHost } from '../shared/types'
 import {
@@ -129,6 +130,26 @@ export async function activeProfileToken(host: RepoHost, repoPath?: string): Pro
     settings.profiles[0]
   const token = profile?.[TOKEN_FIELD[host]]
   return token && token.trim() ? token.trim() : undefined
+}
+
+/**
+ * The active profile's AI API key, or undefined when none is configured.
+ *
+ * The renderer only ever sees this key after the user opens Settings (that is
+ * the one call that unlocks). Every other AI action starts from a store that
+ * was hydrated with `settings:get`, whose key is still encrypted on disk — so
+ * the main process resolves it here instead, exactly like `activeProfileToken`
+ * does for git. Without this, AI features fail on every fresh launch until
+ * Settings has been opened once.
+ */
+export async function activeProfileAiKey(): Promise<string | undefined> {
+  // Nothing stored means nothing to decrypt: never ask for keychain access to
+  // discover that the user has no key.
+  if (!secretCache && !existsSync(secretsPath())) return undefined
+  const settings = await readSettingsWithSecrets('tokens')
+  const profile = settings.profiles.find((p) => p.id === settings.activeProfileId) ?? settings.profiles[0]
+  const key = profile?.ai?.apiKey
+  return key && key.trim() ? key.trim() : undefined
 }
 
 async function writeSettings(settings: AppSettings): Promise<void> {

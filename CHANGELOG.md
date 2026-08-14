@@ -1,5 +1,12 @@
 
 
+## [3.2.2](https://github.com/MyAppDesk/gitcito/compare/v3.2.1...v3.2.2) (2026-08-14)
+
+
+### Bug Fixes
+
+* retrieve active profile AI API key ([54a7135](https://github.com/MyAppDesk/gitcito/commit/54a7135212c8734d0d6c958a1dcdd5af196f406d))
+
 ## [3.2.1](https://github.com/MyAppDesk/gitcito/compare/v3.2.0...v3.2.1) (2026-08-14)
 
 ## [3.2.0](https://github.com/MyAppDesk/gitcito/compare/v3.1.1...v3.2.0) (2026-08-13)

@@ -177,6 +177,18 @@ Contributions welcome — start with **[CONTRIBUTING.md](CONTRIBUTING.md)** for 
 working agreement: commit format, the translation rule, how tests use the
 playground fixtures, and when a change has to update the handbook.
 
+## Sponsor this project
+
+Gitcito is free, MIT-licensed and has no backend, no telemetry and nothing to
+upsell — so there is nothing to buy. If it saves you an afternoon of `git
+reflog`, you can pay for the next one instead:
+
+**[Sponsor on GitHub](https://github.com/sponsors/cgutierr-zgz)**
+
+Sponsorship funds the Apple Developer certificate the signed macOS builds need,
+the time that goes into the handbook, and the translations. Not sponsoring costs
+you nothing — bug reports, issues and pull requests are worth as much.
+
 ## License
 
 MIT.

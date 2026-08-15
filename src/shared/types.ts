@@ -1543,6 +1543,38 @@ export interface SubtreeInfo {
   lastSplit: string
 }
 
+/**
+ * One removable path in a `git clean` preview — a file or a wholly untracked
+ * directory, exactly as `git ls-files --others --directory` collapses it.
+ */
+export interface CleanEntry {
+  /** Repo-relative path; a directory keeps git's trailing slash. */
+  path: string
+  kind: 'file' | 'dir'
+  /** Matched by .gitignore. Never selected by default: usually build output,
+   *  sometimes the only copy of a local .env. */
+  ignored: boolean
+  /** Bytes on disk — a directory is the sum of what it holds. */
+  bytes: number
+  /** A directory with its own .git. `git clean` refuses these; the trash does not. */
+  nested: boolean
+}
+
+/** What removing untracked files would take away, before agreeing to it. */
+export interface CleanPreview {
+  entries: CleanEntry[]
+  /** True when the scan hit its entry cap and the list is partial. */
+  truncated: boolean
+}
+
+/** What a clean actually removed. */
+export interface CleanResult {
+  removed: number
+  bytes: number
+  /** True when the paths went to the OS trash rather than being deleted. */
+  trashed: boolean
+}
+
 /** Whether git is memorising conflict resolutions, and how many it holds. */
 export interface RerereStatus {
   /** `rerere.enabled` — resolutions are recorded and replayed. */

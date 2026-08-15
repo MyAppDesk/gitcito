@@ -11515,6 +11515,50 @@ mark.find-hit.active {
 }
 .subtree-add { margin-top: 12px; }
 
+.clean-modal { display: flex; flex-direction: column; min-height: 0; }
+.clean-list {
+  display: flex;
+  flex-direction: column;
+  margin-top: 12px;
+  overflow-y: auto;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  background: var(--bg-2);
+}
+.clean-section {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 8px 12px 5px;
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+.clean-section-hint { text-transform: none; letter-spacing: 0; font-size: 11px; }
+.clean-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.clean-row:hover { background: var(--bg-3, var(--bg-1)); }
+.clean-icon { flex-shrink: 0; color: var(--text-2); }
+/* The path is the identifying half, so it takes the slack and the size stays put. */
+.clean-path { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.clean-size { flex-shrink: 0; font-family: var(--mono); font-size: 11px; color: var(--text-2); }
+.clean-tag {
+  flex-shrink: 0;
+  padding: 0 6px;
+  font-size: 10.5px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+}
+.clean-tag.warn { color: var(--warn, #d97706); }
+.clean-total { flex: 1; }
+
 .purge-modal { display: flex; flex-direction: column; min-height: 0; }
 .purge-preview {
   margin-top: 12px;

@@ -930,3 +930,71 @@ describe('rerere (merge-conflict playground)', () => {
     expect(existsSync(join(R, file))).toBe(true)
   })
 })
+
+describe('remove untracked files (git clean)', () => {
+  const find = (entries: { path: string }[], path: string): { path: string } | undefined =>
+    entries.find((e) => e.path === path)
+
+  it('previews untracked and ignored paths apart, collapsing whole directories', async () => {
+    const R = cloneFixture('untracked-mess')
+    const { entries, truncated } = await gitService.cleanPreview(R)
+    expect(truncated).toBe(false)
+
+    const untracked = entries.filter((e) => !e.ignored).map((e) => e.path)
+    const ignored = entries.filter((e) => e.ignored).map((e) => e.path)
+    expect(untracked).toContain('notes.md')
+    // A wholly untracked directory is one entry, not one per file inside it.
+    expect(untracked).toContain('tmp/')
+    expect(untracked).not.toContain('tmp/scratch.txt')
+    expect(ignored).toContain('.env')
+    expect(ignored).toContain('dist/')
+    // Ignored paths never leak into the untracked list — they are the ones the
+    // UI leaves unselected.
+    expect(untracked).not.toContain('.env')
+
+    // A directory is sized by what it holds, and the nested repo is flagged.
+    expect(find(entries, 'tmp/')!.bytes).toBeGreaterThan(0)
+    expect(entries.find((e) => e.path === 'experiment/')!.nested).toBe(true)
+    expect(entries.find((e) => e.path === 'notes.md')!.kind).toBe('file')
+  })
+
+  it('removes only the chosen paths and leaves ignored ones alone', async () => {
+    const R = cloneFixture('untracked-mess')
+    const result = await gitService.clean(R, ['notes.md', 'tmp/'], false)
+    expect(result.removed).toBe(2)
+    expect(result.bytes).toBeGreaterThan(0)
+    expect(result.trashed).toBe(false)
+
+    expect(existsSync(join(R, 'notes.md'))).toBe(false)
+    expect(existsSync(join(R, 'tmp'))).toBe(false)
+    expect(existsSync(join(R, '.env'))).toBe(true)
+    expect(existsSync(join(R, 'dist'))).toBe(true)
+    // Tracked files are untouched, and the repo is otherwise as it was.
+    expect(existsSync(join(R, 'src/app.js'))).toBe(true)
+  })
+
+  it('removes an ignored path when it is explicitly chosen', async () => {
+    const R = cloneFixture('untracked-mess')
+    await gitService.clean(R, ['dist/'], false)
+    expect(existsSync(join(R, 'dist'))).toBe(false)
+    expect(existsSync(join(R, 'node_modules'))).toBe(true)
+  })
+
+  it('refuses a tracked path and anything outside the repository', async () => {
+    const R = cloneFixture('untracked-mess')
+    await expect(gitService.clean(R, ['src/app.js'], true)).rejects.toThrow(/untracked/i)
+    await expect(gitService.clean(R, ['../escape.txt'], true)).rejects.toThrow(/untracked/i)
+    expect(existsSync(join(R, 'src/app.js'))).toBe(true)
+  })
+
+  it('reports the nested repository git skips, and takes it via the trash', async () => {
+    const R = cloneFixture('untracked-mess')
+    await expect(gitService.clean(R, ['experiment/'], false)).rejects.toThrow(/nested repository/i)
+    expect(existsSync(join(R, 'experiment'))).toBe(true)
+
+    // The trash route does not go through git, so it has no such limit.
+    const result = await gitService.clean(R, ['experiment/'], true)
+    expect(result.trashed).toBe(true)
+    expect(existsSync(join(R, 'experiment'))).toBe(false)
+  })
+})

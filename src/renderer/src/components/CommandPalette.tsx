@@ -42,7 +42,8 @@ import {
   SquarePen,
   GitMerge,
   Eraser,
-  FolderInput
+  FolderInput,
+  Trash2
 } from 'lucide-react'
 import { useUIStore } from '../stores/ui'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
@@ -221,6 +222,7 @@ export function CommandPalette(): React.JSX.Element {
           : []
       })(),
       { id: 'subtree', title: t('cmd.subtree'), group: 'Actions', keywords: 'subtree vendor library embed prefix split monorepo submodule alternative', icon: <FolderInput size={15} />, run: act(() => ui.openModal({ kind: 'subtree', repoPath: path })) },
+      { id: 'clean', title: t('cmd.clean'), group: 'Actions', keywords: 'clean untracked remove delete build output junk ignored dry run trash tidy', icon: <Trash2 size={15} />, run: act(() => ui.openModal({ kind: 'clean', repoPath: path })) },
       { id: 'history-purge', title: t('cmd.historyPurge'), group: 'Actions', keywords: 'remove file history secret leak purge filter-branch rewrite big file bfg scrub', icon: <Eraser size={15} />, run: act(() => ui.openModal({ kind: 'history-purge', repoPath: path })) },
       { id: 'gitflow', title: t('cmd.gitflow'), group: 'Actions', keywords: 'git flow feature release hotfix develop branch prefix start finish', icon: <GitMerge size={15} />, run: act(() => ui.openModal({ kind: 'gitflow', repoPath: path })) },
       { id: 'stack', title: t('cmd.stack'), group: 'Actions', keywords: 'stacked branches graphite restack dependent', icon: <Layers size={15} />, run: act(() => ui.openModal({ kind: 'stack', repoPath: path })) },

@@ -25,6 +25,8 @@ reverted, which release it shipped in.
 Select a commit. Under the message there is a **Note** section: *Add a note*,
 type, **Save note**. Multi-line is fine.
 
+![Writing a note under a pushed commit's message, then saving it](../screenshots/clip-commit-note.webp)
+
 Saving a note is an ordinary Gitcito action — it toasts, and **Undo** puts the
 previous text back, including restoring a note you removed.
 

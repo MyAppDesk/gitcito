@@ -1,6 +1,6 @@
 import { ipcMain, shell } from 'electron'
 import { simpleGit, SimpleGit } from 'simple-git'
-import { basename, join, resolve as resolvePath } from 'path'
+import { basename, join, resolve as resolvePath, sep } from 'path'
 import { pathToFileURL } from 'url'
 import { readFile, writeFile, unlink, stat, chmod, mkdir, readdir, rename, cp } from 'fs/promises'
 import { tmpdir, homedir } from 'os'
@@ -68,6 +68,9 @@ import type {
   PushRemoteResult,
   RerereStatus,
   SubtreeInfo,
+  CleanEntry,
+  CleanPreview,
+  CleanResult,
   HistoryPathEntry,
   HistoryPurgePreview,
   HistoryPurgeBackup,
@@ -398,6 +401,57 @@ async function blobBytesForPaths(repoPath: string, paths: string[]): Promise<num
     bytes += Number(size.trim()) || 0
   }
   return bytes
+}
+
+/** How many removable paths a clean preview will size and show. */
+const CLEAN_ENTRY_CAP = 400
+
+/** How many files a directory walk will stat before giving up on an exact size. */
+const CLEAN_WALK_CAP = 20000
+
+/**
+ * Bytes under a directory. Capped: an untracked `node_modules` holds hundreds of
+ * thousands of files, and a preview that stats all of them is a preview nobody
+ * waits for. Hitting the cap under-reports rather than stalls.
+ */
+async function dirBytes(dir: string, budget: { files: number }): Promise<number> {
+  let total = 0
+  const stack = [dir]
+  while (stack.length && budget.files > 0) {
+    const current = stack.pop() as string
+    const entries = await readdir(current, { withFileTypes: true }).catch(() => [])
+    for (const entry of entries) {
+      if (budget.files-- <= 0) break
+      const full = join(current, entry.name)
+      // Symlinks are never followed: their target may sit outside the repo.
+      if (entry.isDirectory()) stack.push(full)
+      else if (entry.isFile()) total += await stat(full).then((s) => s.size).catch(() => 0)
+    }
+  }
+  return total
+}
+
+/**
+ * Everything `git clean` could remove, as git itself sees it.
+ *
+ * `--directory` collapses a wholly untracked folder into one entry (`dist/`)
+ * instead of listing every file inside it — the same grouping `git clean -d`
+ * removes by, and the only listing short enough to read.
+ */
+async function cleanCandidates(repoPath: string): Promise<{ untracked: string[]; ignored: string[] }> {
+  const list = async (extra: string[]): Promise<string[]> => {
+    const out = await runGit(repoPath, [
+      'ls-files',
+      '-z',
+      '--others',
+      '--exclude-standard',
+      '--directory',
+      '--no-empty-directory',
+      ...extra
+    ]).catch(() => '')
+    return out.split('\0').filter(Boolean)
+  }
+  return { untracked: await list([]), ignored: await list(['--ignored']) }
 }
 
 /** The configured branch prefix for a git-flow kind. */
@@ -2126,6 +2180,87 @@ export const gitService = {
 
   async unstageAll(repoPath: string): Promise<void> {
     await gitFor(repoPath).raw(['reset', 'HEAD', '--', '.'])
+  },
+
+  // ─── Untracked files (`git clean`) ─────────────────────────────────────────
+  // Removing untracked files is the one destructive git operation with no
+  // recovery: the content was never in an object, so no reflog, no stash, no
+  // undo. Hence a preview that says exactly what would go and how big it is,
+  // and a trash option that takes the finality out of it.
+
+  /** What `git clean` would remove, sized, with ignored paths kept apart. */
+  async cleanPreview(repoPath: string): Promise<CleanPreview> {
+    const { untracked, ignored } = await cleanCandidates(repoPath)
+    const all = [
+      ...untracked.map((path) => ({ path, ignored: false })),
+      ...ignored.map((path) => ({ path, ignored: true }))
+    ]
+    const kept = all.slice(0, CLEAN_ENTRY_CAP)
+    const budget = { files: CLEAN_WALK_CAP }
+
+    const entries: CleanEntry[] = []
+    for (const { path, ignored: isIgnored } of kept) {
+      const isDir = path.endsWith('/')
+      const full = resolvePath(repoPath, path)
+      entries.push({
+        path,
+        kind: isDir ? 'dir' : 'file',
+        ignored: isIgnored,
+        bytes: isDir
+          ? await dirBytes(full, budget)
+          : await stat(full).then((s) => s.size).catch(() => 0),
+        nested: isDir && existsSync(join(full, '.git'))
+      })
+    }
+    return { entries, truncated: all.length > kept.length }
+  },
+
+  /**
+   * Remove untracked paths, either to the OS trash or for good.
+   *
+   * Every path is checked against git's own candidate list first: the trash
+   * route does not go through git, so without that check a tracked file could
+   * be deleted by passing its name.
+   */
+  async clean(repoPath: string, paths: string[], trash: boolean): Promise<CleanResult> {
+    const targets = paths.filter(Boolean)
+    if (!targets.length) throw new Error('Nothing selected to remove.')
+
+    const { untracked, ignored } = await cleanCandidates(repoPath)
+    const removable = new Set([...untracked, ...ignored])
+    const root = resolvePath(repoPath)
+    for (const path of targets) {
+      if (!removable.has(path)) throw new Error(`Not an untracked path in this repository: ${path}`)
+      const full = resolvePath(repoPath, path)
+      if (full !== root && !full.startsWith(root + sep)) {
+        throw new Error(`Refusing to remove outside the repository: ${path}`)
+      }
+    }
+
+    const budget = { files: CLEAN_WALK_CAP }
+    const failed: string[] = []
+    let removed = 0
+    let bytes = 0
+    for (const path of targets) {
+      const full = resolvePath(repoPath, path)
+      const size = path.endsWith('/')
+        ? await dirBytes(full, budget)
+        : await stat(full).then((s) => s.size).catch(() => 0)
+      try {
+        if (trash) await shell.trashItem(full)
+        // `-x` so an explicitly chosen ignored path goes too; the pathspec keeps
+        // that from meaning "and everything else ignored".
+        else await runGit(repoPath, ['clean', '-f', '-d', '-x', '--', path])
+        // git skips a directory that is its own repository and still exits 0.
+        if (existsSync(full)) throw new Error('git skipped it — a nested repository can only go to the trash')
+        removed++
+        bytes += size
+      } catch (err) {
+        failed.push(`${path} — ${err instanceof Error ? err.message : String(err)}`)
+      }
+    }
+    if (failed.length) throw new Error(`Could not remove ${failed.length} of ${targets.length}:\n${failed.join('\n')}`)
+    return { removed, bytes, trashed: trash }
   },
 
   async discard(repoPath: string, files: string[], untracked: boolean): Promise<void> {
@@ -4882,6 +5017,7 @@ const READ_METHODS = new Set<string>([
   'gitflowStatus',
   'rerereStatus',
   'subtrees',
+  'cleanPreview',
   'note',
   'notedCommits',
   'historyPaths',

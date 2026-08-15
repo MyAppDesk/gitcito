@@ -1058,6 +1058,18 @@ export const shots = [
     }
   },
   {
+    // Removing untracked files: the dry run, with ignored paths kept apart.
+    out: 'clean',
+    repos: ['untracked-mess'],
+    themes: ['light'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['untracked-mess']
+      await page.evaluate((r) => window.__shot.ui.getState().openModal({ kind: 'clean', repoPath: r }), repo)
+      // The dialog scans and sizes on open; wait for the list rather than the sizes.
+      await page.waitForTimeout(1200)
+    }
+  },
+  {
     // Removing a file from history, measured: the damage before agreeing to it.
     out: 'history-purge',
     repos: ['leaked-secret'],

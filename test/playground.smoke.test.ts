@@ -65,7 +65,8 @@ const EXPECTED = [
   'time-machine',
   'gitflow',
   'leaked-secret',
-  'subtree'
+  'subtree',
+  'untracked-mess'
 ]
 
 describe('playground fixtures', () => {

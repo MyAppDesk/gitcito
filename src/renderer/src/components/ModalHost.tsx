@@ -32,6 +32,7 @@ import { StackModal } from './StackModal'
 import { GitflowModal } from './GitflowModal'
 import { HistoryPurgeModal } from './HistoryPurgeModal'
 import { SubtreeModal } from './SubtreeModal'
+import { CleanModal } from './CleanModal'
 import { ChangelogGenModal } from './ChangelogGenModal'
 import { SnapshotsModal } from './SnapshotsModal'
 import { SecureShareModal } from './SecureShareModal'
@@ -1513,6 +1514,7 @@ export function ModalHost(): React.JSX.Element {
                     modal.kind === 'sparse' ||
                     modal.kind === 'pr-detail' ||
                     modal.kind === 'code-search' ||
+                    modal.kind === 'clean' ||
                     modal.kind === 'changelog-gen' ||
                     modal.kind === 'repo-settings' ||
                     modal.kind === 'secure-share' ||
@@ -1575,6 +1577,7 @@ export function ModalHost(): React.JSX.Element {
             {modal.kind === 'stack' && <StackModal repoPath={modal.repoPath} />}
             {modal.kind === 'gitflow' && <GitflowModal repoPath={modal.repoPath} />}
             {modal.kind === 'subtree' && <SubtreeModal repoPath={modal.repoPath} />}
+            {modal.kind === 'clean' && <CleanModal repoPath={modal.repoPath} />}
             {modal.kind === 'history-purge' && (
               <HistoryPurgeModal repoPath={modal.repoPath} initialPath={modal.initialPath} />
             )}

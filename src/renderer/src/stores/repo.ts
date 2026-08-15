@@ -1179,6 +1179,23 @@ export const repoActions = {
       .getState()
       .run(path, interp(t('act.subtreeSplit'), { branch }), () => gitApi.subtreeSplit(path, prefix, branch).then(() => undefined)),
 
+  // ─── Untracked files ───
+  // No undo entry: content that was never committed cannot be brought back by a
+  // git command. The trash option is the only recovery, and it is the caller's
+  // choice, so the label says which of the two happened.
+  clean: (path: string, paths: string[], trash: boolean) =>
+    useRepoStore
+      .getState()
+      .run(
+        path,
+        interp(trash ? t('act.cleanedToTrash') : t('act.cleaned'), { n: String(paths.length) }),
+        () => gitApi.clean(path, paths, trash).then(() => undefined),
+        undefined,
+        null,
+        undefined,
+        ['status', 'treeStatus']
+      ),
+
   // ─── Notes ───
   setNote: (path: string, sha: string, text: string, previous: string) =>
     useRepoStore.getState().run(

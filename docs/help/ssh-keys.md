@@ -30,6 +30,8 @@ the host is a self-managed GitLab.
 When that goes wrong, ssh says `Permission denied (publickey)` and nothing else.
 Technically true, useless as advice.
 
+![Each key in ~/.ssh with its type, fingerprint and whether the agent is holding it](../screenshots/ssh-keys.webp)
+
 ## What the section tells you
 
 Each key found in `~/.ssh` shows its type, size, fingerprint and comment, plus

@@ -63,6 +63,8 @@ import type {
   WorktreeInfo,
   SubmoduleInfo,
   SubtreeInfo,
+  CleanPreview,
+  CleanResult,
   AppThemeColors,
   CodeThemeColors,
   Analytics,
@@ -235,6 +237,10 @@ export const gitApi = {
   subtreeSplit: (path: string, prefix: string, branch: string) =>
     call<string>('subtreeSplit', path, prefix, branch),
   subtreeForget: (path: string, prefix: string) => call<void>('subtreeForget', path, prefix),
+
+  /** Untracked and ignored paths `git clean` would remove, with their sizes. */
+  cleanPreview: (path: string) => call<CleanPreview>('cleanPreview', path),
+  clean: (path: string, paths: string[], trash: boolean) => call<CleanResult>('clean', path, paths, trash),
 
   note: (path: string, sha: string) => call<string>('note', path, sha),
   /** Shas carrying a note — one cheap call, so the graph can mark them. */

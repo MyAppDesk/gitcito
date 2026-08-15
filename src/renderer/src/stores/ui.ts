@@ -101,6 +101,7 @@ export type ModalSpec =
   | { kind: 'objects'; repoPath: string; rev?: string }
   | { kind: 'attributes'; repoPath: string }
   | { kind: 'credentials'; repoPath: string }
+  | { kind: 'replace'; repoPath: string; commit?: string }
   | { kind: 'changelog-gen'; repoPath: string }
   | { kind: 'snapshots'; repoPath: string }
   | { kind: 'stash-partial'; repoPath: string }

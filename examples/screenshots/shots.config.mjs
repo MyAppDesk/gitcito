@@ -1062,6 +1062,23 @@ export const shots = [
     }
   },
   {
+    // Replace & graft: an existing graft, and the form that made it.
+    out: 'replace',
+    repos: ['deep-history-monorepo'],
+    themes: ['light'],
+    prepare: async ({ repoPaths, run }) => {
+      const repo = repoPaths['deep-history-monorepo']
+      // Idempotent: re-runs would otherwise stack replacements.
+      await run('bash', ['-c', `cd "${repo}" && git replace -l | xargs -r git replace -d`], { allowFail: true })
+      await run('bash', ['-c', `cd "${repo}" && git replace --graft HEAD~5`], { allowFail: true })
+    },
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['deep-history-monorepo']
+      await page.evaluate((r) => window.__shot.ui.getState().openModal({ kind: 'replace', repoPath: r }), repo)
+      await page.waitForTimeout(1200)
+    }
+  },
+  {
     // Credential helpers. Points git at a throwaway HOME: the real one holds
     // this machine's global config and, possibly, a live ~/.git-credentials —
     // neither belongs in a screenshot.

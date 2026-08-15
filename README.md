@@ -88,6 +88,7 @@ Install the shim from the command palette: `⌘K` → **Install 'gitcito' comman
 | **[Recovery](docs/help/recovery.md)** | Reflog, WIP snapshots under `refs/gitcito/wip`, guided bisect — or hand the search to `git bisect run`. |
 | **[Remove a file from history](docs/help/history-purge.md)** | A leaked key or a 400 MB blob out of every commit — measured first, backed up, undoable. |
 | **[File attributes](docs/help/attributes.md)** | `.gitattributes` with a UI: line endings, `merge=union`, `export-ignore`, and readable diffs for Word and PDF. |
+| **[Replace & graft](docs/help/replace.md)** | Shorten a clone's history without rewriting a byte — reversible, and honest about what it hides. |
 | **[Object explorer](docs/help/objects.md)** | Walk blobs, trees, commits and refs — the layer beneath the graph, read-only. |
 | **[Repository maintenance](docs/help/maintenance.md)** | Where the disk went — packed, loose, unreachable — and what gc, repack, prune or fsck would do about it. |
 | **[Remove untracked files](docs/help/clean.md)** | `git clean` as a dry run: every path sized, ignored files apart and unselected, Trash by default. |

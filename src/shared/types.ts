@@ -1543,6 +1543,23 @@ export interface SubtreeInfo {
   lastSplit: string
 }
 
+/** One `refs/replace/*` entry: git shows the replacement wherever the original is asked for. */
+export interface ReplaceRef {
+  original: string
+  originalSubject: string
+  replacement: string
+  replacementSubject: string
+  /** Parents of the replacement commit — a graft's whole point is changing these. */
+  replacementParents: string[]
+}
+
+/** The state of object replacement in a repository. */
+export interface ReplaceStatus {
+  refs: ReplaceRef[]
+  /** `core.useReplaceRefs` — false means git ignores every replacement here. */
+  enabled: boolean
+}
+
 /** One configured `credential.helper`, and whether it can actually run. */
 export interface CredentialHelperInfo {
   /** The value as git stores it: `osxkeychain`, `store`, `!gh auth git-credential`… */

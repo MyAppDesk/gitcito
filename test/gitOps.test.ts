@@ -1600,3 +1600,94 @@ describe('credential helpers', () => {
     await expect(gitService.forgetCredential(R, '  ')).rejects.toThrow(/host/i)
   })
 })
+
+describe('object replacement (git replace)', () => {
+  const count = async (repo: string): Promise<number> =>
+    Number((await raw(repo, ['rev-list', '--count', 'HEAD'])).trim())
+
+  it('grafts a commit to the start of history without rewriting anything', async () => {
+    const R = cloneFixture('deep-history-monorepo')
+    const full = await count(R)
+    const head = await shaOf(R, 'HEAD')
+    const cut = (await raw(R, ['rev-parse', 'HEAD~5'])).trim()
+
+    await gitService.replaceGraft(R, cut, [])
+    // The log is shorter, and HEAD is still the very same commit — nothing was
+    // rewritten, which is the whole difference from a filter-branch.
+    expect(await count(R)).toBe(6)
+    expect(await shaOf(R, 'HEAD')).toBe(head)
+    // The real history is still there, one flag away.
+    expect(Number((await raw(R, ['--no-replace-objects', 'rev-list', '--count', 'HEAD'])).trim())).toBe(full)
+
+    const status = await gitService.replacements(R)
+    expect(status.refs).toHaveLength(1)
+    expect(status.refs[0].original).toBe(cut)
+    expect(status.refs[0].replacementParents).toEqual([])
+    expect(status.enabled).toBe(true)
+  })
+
+  it('puts the history back when the replacement is deleted', async () => {
+    const R = cloneFixture('deep-history-monorepo')
+    const full = await count(R)
+    const cut = (await raw(R, ['rev-parse', 'HEAD~4'])).trim()
+
+    await gitService.replaceGraft(R, cut, [])
+    expect(await count(R)).toBeLessThan(full)
+
+    await gitService.replaceDelete(R, cut)
+    expect(await count(R)).toBe(full)
+    expect((await gitService.replacements(R)).refs).toEqual([])
+  })
+
+  it('grafts onto chosen parents, which is how an archive is reattached', async () => {
+    const R = cloneFixture('deep-history-monorepo')
+    const cut = (await raw(R, ['rev-parse', 'HEAD~5'])).trim()
+    const elsewhere = (await raw(R, ['rev-parse', 'HEAD~8'])).trim()
+
+    const full = await count(R)
+    await gitService.replaceGraft(R, cut, [elsewhere])
+    const [ref] = (await gitService.replacements(R)).refs
+    expect(ref.replacementParents).toEqual([elsewhere])
+    // Only the two commits between the graft and its new parent leave the walk —
+    // everything older than `elsewhere` is still reachable through it.
+    expect(await count(R)).toBe(full - 2)
+  })
+
+  it('reports and honours core.useReplaceRefs', async () => {
+    const R = cloneFixture('deep-history-monorepo')
+    const full = await count(R)
+    await gitService.replaceGraft(R, (await raw(R, ['rev-parse', 'HEAD~5'])).trim(), [])
+    expect(await count(R)).toBe(6)
+
+    await gitService.setUseReplaceRefs(R, false)
+    expect((await gitService.replacements(R)).enabled).toBe(false)
+    // git now reads straight through the replacement.
+    expect(await count(R)).toBe(full)
+
+    await gitService.setUseReplaceRefs(R, true)
+    expect((await gitService.replacements(R)).enabled).toBe(true)
+    expect(await count(R)).toBe(6)
+  })
+
+  it('replaces one object with another outright', async () => {
+    const R = cloneFixture('deep-history-monorepo')
+    const original = (await raw(R, ['rev-parse', 'HEAD~2'])).trim()
+    const other = (await raw(R, ['rev-parse', 'HEAD~7'])).trim()
+
+    await gitService.replaceObject(R, original, other)
+    const [ref] = (await gitService.replacements(R)).refs
+    expect(ref.original).toBe(original)
+    expect(ref.replacement).toBe(other)
+    // Both subjects are readable: the original is fetched with replacements off,
+    // so the two sides do not collapse into the same line.
+    expect(ref.originalSubject).toBeTruthy()
+    expect(ref.replacementSubject).toBeTruthy()
+    expect(ref.originalSubject).not.toBe(ref.replacementSubject)
+  })
+
+  it('refuses an empty graft or delete', async () => {
+    const R = cloneFixture('deep-history-monorepo')
+    await expect(gitService.replaceGraft(R, '  ', [])).rejects.toThrow()
+    await expect(gitService.replaceDelete(R, '')).rejects.toThrow()
+  })
+})

@@ -39,6 +39,7 @@ import { MergeOptionsModal } from './MergeOptionsModal'
 import { ObjectExplorer } from './ObjectExplorer'
 import { AttributesModal } from './AttributesModal'
 import { CredentialsModal } from './CredentialsModal'
+import { ReplaceModal } from './ReplaceModal'
 import { ChangelogGenModal } from './ChangelogGenModal'
 import { SnapshotsModal } from './SnapshotsModal'
 import { SecureShareModal } from './SecureShareModal'
@@ -1525,6 +1526,7 @@ export function ModalHost(): React.JSX.Element {
                     modal.kind === 'objects' ||
                     modal.kind === 'attributes' ||
                     modal.kind === 'credentials' ||
+                    modal.kind === 'replace' ||
                     modal.kind === 'changelog-gen' ||
                     modal.kind === 'repo-settings' ||
                     modal.kind === 'secure-share' ||
@@ -1596,6 +1598,7 @@ export function ModalHost(): React.JSX.Element {
             {modal.kind === 'objects' && <ObjectExplorer repoPath={modal.repoPath} rev={modal.rev} />}
             {modal.kind === 'attributes' && <AttributesModal repoPath={modal.repoPath} />}
             {modal.kind === 'credentials' && <CredentialsModal repoPath={modal.repoPath} />}
+            {modal.kind === 'replace' && <ReplaceModal repoPath={modal.repoPath} commit={modal.commit} />}
             {modal.kind === 'history-purge' && (
               <HistoryPurgeModal repoPath={modal.repoPath} initialPath={modal.initialPath} />
             )}

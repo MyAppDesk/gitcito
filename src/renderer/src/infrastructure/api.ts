@@ -69,6 +69,7 @@ import type {
   ArchiveResult,
   AttributeCheck,
   CredentialStatus,
+  ReplaceStatus,
   AttributeFile,
   DiffDriverInfo,
   DiffDriverSuggestion,
@@ -257,6 +258,15 @@ export const gitApi = {
   subtreeSplit: (path: string, prefix: string, branch: string) =>
     call<string>('subtreeSplit', path, prefix, branch),
   subtreeForget: (path: string, prefix: string) => call<void>('subtreeForget', path, prefix),
+
+  /** Replacement refs, and whether git is honouring them here. */
+  replacements: (path: string) => call<ReplaceStatus>('replacements', path),
+  replaceGraft: (path: string, commit: string, parents: string[]) =>
+    call<string>('replaceGraft', path, commit, parents),
+  replaceObject: (path: string, original: string, replacement: string) =>
+    call<void>('replaceObject', path, original, replacement),
+  replaceDelete: (path: string, original: string) => call<void>('replaceDelete', path, original),
+  setUseReplaceRefs: (path: string, enabled: boolean) => call<void>('setUseReplaceRefs', path, enabled),
 
   /** How git will answer the next password prompt. Reads config only — never a secret. */
   credentialStatus: (path: string) => call<CredentialStatus>('credentialStatus', path),

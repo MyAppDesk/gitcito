@@ -76,6 +76,8 @@ import type {
   AttributeCheck,
   CredentialCandidate,
   CredentialStatus,
+  ReplaceRef,
+  ReplaceStatus,
   CredentialHelperInfo,
   CredentialUrlRule,
   AttributeFile,
@@ -2324,6 +2326,84 @@ export const gitService = {
 
   async unstageAll(repoPath: string): Promise<void> {
     await gitFor(repoPath).raw(['reset', 'HEAD', '--', '.'])
+  },
+
+  // ─── Object replacement (`git replace`) ────────────────────────────────────
+  // A replacement is a ref that says "wherever you were going to read object A,
+  // read B instead". Nothing is rewritten and no sha changes — which makes it
+  // the honest way to shorten a clone's history without the violence of a
+  // filter-branch, and a genuinely dangerous thing to leave lying around
+  // unexplained, since the history everyone sees is no longer the history that
+  // is stored.
+
+  /** Every replacement, with enough of each side to tell them apart. */
+  async replacements(repoPath: string): Promise<ReplaceStatus> {
+    const listed = await runGit(repoPath, ['replace', '-l', '--format=long']).catch(() => '')
+    const refs: ReplaceRef[] = []
+    for (const line of listed.split('\n')) {
+      // "<original> (<type>) -> <replacement> (<type>)"
+      const match = /^([0-9a-f]{40,64})\s+\([^)]*\)\s+->\s+([0-9a-f]{40,64})/.exec(line.trim())
+      if (!match) continue
+      const [, original, replacement] = match
+      // The original is behind the replacement now, so ask for it with
+      // replacements switched off — otherwise both sides read the same.
+      const subject = async (sha: string, raw: boolean): Promise<string> =>
+        (
+          await runGit(repoPath, [...(raw ? ['--no-replace-objects'] : []), 'log', '-1', '--format=%s', sha]).catch(
+            () => ''
+          )
+        ).trim()
+      const parents = (
+        await runGit(repoPath, ['--no-replace-objects', 'log', '-1', '--format=%P', replacement]).catch(() => '')
+      )
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean)
+      refs.push({
+        original,
+        originalSubject: await subject(original, true),
+        replacement,
+        replacementSubject: await subject(replacement, false),
+        replacementParents: parents
+      })
+    }
+    const useReplace = (await runGit(repoPath, ['config', '--get', 'core.useReplaceRefs']).catch(() => '')).trim()
+    return { refs, enabled: useReplace !== 'false' }
+  },
+
+  /**
+   * Graft a commit onto different parents — or onto none at all.
+   *
+   * `git replace --graft <commit>` with no parents makes that commit look like
+   * the beginning of history: everything before it becomes unreachable through
+   * normal walks, without a single object being rewritten. Point it at a commit
+   * in an archive repository instead, and the truncated clone gets its full
+   * history back.
+   */
+  async replaceGraft(repoPath: string, commit: string, parents: string[]): Promise<string> {
+    const target = commit.trim()
+    if (!target) throw new Error('Choose a commit to graft.')
+    const args = ['replace', '--graft', target, ...parents.map((p) => p.trim()).filter(Boolean)]
+    await runGit(repoPath, args)
+    return (await runGit(repoPath, ['rev-parse', target])).trim()
+  },
+
+  /** Replace one object with another outright. */
+  async replaceObject(repoPath: string, original: string, replacement: string): Promise<void> {
+    if (!original.trim() || !replacement.trim()) throw new Error('Both objects are needed.')
+    await runGit(repoPath, ['replace', '-f', original.trim(), replacement.trim()])
+  },
+
+  /** Drop a replacement. The original was never touched, so this restores it. */
+  async replaceDelete(repoPath: string, original: string): Promise<void> {
+    if (!original.trim()) throw new Error('Nothing to delete.')
+    await runGit(repoPath, ['replace', '-d', original.trim()])
+  },
+
+  /** Turn replacements on or off for this repository (`core.useReplaceRefs`). */
+  async setUseReplaceRefs(repoPath: string, enabled: boolean): Promise<void> {
+    if (enabled) await runGit(repoPath, ['config', '--local', '--unset', 'core.useReplaceRefs']).catch(() => undefined)
+    else await runGit(repoPath, ['config', '--local', 'core.useReplaceRefs', 'false'])
   },
 
   // ─── Credential helpers ────────────────────────────────────────────────────
@@ -5776,6 +5856,7 @@ const READ_METHODS = new Set<string>([
   'attributeFiles',
   'checkAttributes',
   'credentialStatus',
+  'replacements',
   'diffDrivers',
   'diffDriverSuggestions',
   'conflictCommits',

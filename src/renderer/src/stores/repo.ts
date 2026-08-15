@@ -1184,6 +1184,50 @@ export const repoActions = {
       .getState()
       .run(path, interp(t('act.subtreeSplit'), { branch }), () => gitApi.subtreeSplit(path, prefix, branch).then(() => undefined)),
 
+  // ─── Object replacement ───
+  // Grafting changes what every walk sees without rewriting a byte, so the undo
+  // is simply dropping the ref again — the original was never touched.
+  replaceGraft: (path: string, commit: string, parents: string[]) =>
+    useRepoStore.getState().run(
+      path,
+      interp(parents.length ? t('act.grafted') : t('act.graftedRoot'), { sha: commit.slice(0, 7) }),
+      () => gitApi.replaceGraft(path, commit, parents).then(() => undefined),
+      {
+        label: interp(t('undoLabel.graft'), { sha: commit.slice(0, 7) }),
+        undo: () => gitApi.replaceDelete(path, commit),
+        redo: () => gitApi.replaceGraft(path, commit, parents).then(() => undefined)
+      },
+      null,
+      undefined,
+      ['log', 'branches']
+    ),
+
+  replaceDelete: (path: string, original: string) =>
+    useRepoStore
+      .getState()
+      .run(
+        path,
+        interp(t('act.replaceDeleted'), { sha: original.slice(0, 7) }),
+        () => gitApi.replaceDelete(path, original),
+        undefined,
+        null,
+        undefined,
+        ['log', 'branches']
+      ),
+
+  setUseReplaceRefs: (path: string, enabled: boolean) =>
+    useRepoStore
+      .getState()
+      .run(
+        path,
+        t(enabled ? 'act.replaceEnabled' : 'act.replaceDisabled'),
+        () => gitApi.setUseReplaceRefs(path, enabled),
+        undefined,
+        null,
+        undefined,
+        ['log', 'branches']
+      ),
+
   // ─── Credentials ───
   // Config only: no secret ever passes through these, and the undo entry is the
   // previous helper value rather than anything stored.

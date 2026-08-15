@@ -46,7 +46,8 @@ import {
   Trash2,
   Package,
   HardDrive,
-  FileCog
+  FileCog,
+  GitGraph
 } from 'lucide-react'
 import { useUIStore } from '../stores/ui'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
@@ -225,6 +226,7 @@ export function CommandPalette(): React.JSX.Element {
           : []
       })(),
       { id: 'subtree', title: t('cmd.subtree'), group: 'Actions', keywords: 'subtree vendor library embed prefix split monorepo submodule alternative', icon: <FolderInput size={15} />, run: act(() => ui.openModal({ kind: 'subtree', repoPath: path })) },
+      { id: 'replace', title: t('cmd.replace'), group: 'Actions', keywords: 'replace graft shallow truncate history archive refs/replace parents rewrite alternative smaller clone', icon: <GitGraph size={15} />, run: act(() => ui.openModal({ kind: 'replace', repoPath: path })) },
       { id: 'credentials', title: t('cmd.credentials'), group: 'Actions', keywords: 'credential helper password https asks again osxkeychain manager libsecret store cache git-credentials forget', icon: <KeyRound size={15} />, run: act(() => ui.openModal({ kind: 'credentials', repoPath: path })) },
       { id: 'attributes', title: t('cmd.attributes'), group: 'Actions', keywords: 'gitattributes attributes diff driver textconv merge union binary export-ignore eol line endings crlf lf filter clean smudge linguist', icon: <FileCog size={15} />, run: act(() => ui.openModal({ kind: 'attributes', repoPath: path })) },
       { id: 'objects', title: t('cmd.objects'), group: 'Actions', keywords: 'objects explorer blob tree commit tag refs plumbing cat-file ls-tree sha internals low level database', icon: <Boxes size={15} />, run: act(() => ui.openModal({ kind: 'objects', repoPath: path })) },

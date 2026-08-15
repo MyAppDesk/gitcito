@@ -2,17 +2,41 @@
 title: Merging & rebasing
 category: Branching & surgery
 order: 41
-summary: Merge, rebase, compare refs, and drag one branch onto another.
-keywords: merge rebase fast-forward compare refs drag branch onto revert reset cherry-pick
+summary: Merge, rebase, compare refs, and drag one ref onto another in the sidebar or the graph.
+keywords: merge rebase fast-forward compare refs drag drop branch onto graph ref badge tag remote revert reset cherry-pick
 ---
 
 # Merging & rebasing
 
 ## From the sidebar
 
-Right-click a branch for **Merge into current** or **Rebase onto**. Or just
-**drag one branch onto another** — Gitcito asks which of the two you meant. It
-is the quickest gesture in the app for the two most common branch operations.
+Right-click a branch for **Merge into current** or **Rebase onto**.
+
+## Drag one ref onto another
+
+The quickest gesture in the app: pick up a branch and drop it on another one.
+Gitcito opens a small menu of what that drop could mean, and does nothing until
+you choose.
+
+It works in **both** places refs are shown — the sidebar's branch, remote and
+tag rows, and the coloured **ref badges in the graph** itself. Drag between them
+in any combination; the drop target highlights while you hover it.
+
+| Drop | Means |
+|------|-------|
+| **Merge {source} → {target}** | Checks the target out and merges the source into it |
+| **Rebase {source} onto {target}** | Replays the source's commits on top of the target |
+| **Compare** | Opens the [comparison](#compare-any-two-refs) — changes nothing |
+
+**The menu only offers what git can do.** Merging commits onto the target, so
+the target must be a local branch — you cannot merge into a tag or a
+remote-tracking ref. Rebasing rewrites the source, so the source must be a local
+branch. Drop a tag on a remote branch and all you are offered is *Compare*,
+because that is genuinely all there is.
+
+Rebase asks for confirmation first: it gives every replayed commit a new hash,
+which means a force push if the branch is already published. Merge does not ask
+— it only adds. Either way, one **Undo** puts you back.
 
 ## Merge
 

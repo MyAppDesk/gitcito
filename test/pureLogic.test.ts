@@ -16,6 +16,7 @@ import { togglePin, selectPinned } from '../src/renderer/src/lib/pinnedBranches'
 import { parseMergeTreeSingle, parseMergeTreeStdin } from '../src/shared/mergeTree'
 import { parseRangeDiff } from '../src/shared/rangeDiff'
 import { editorArgs, editorLaunch, supportsLine } from '../src/shared/editors'
+import { branchDropActions, encodeDropRef, decodeDropRef, type DropRef } from '../src/renderer/src/lib/branchDrop'
 import type { EditorSetting } from '../src/shared/editors'
 import { parseForcedUpdates } from '../src/shared/fetchPorcelain'
 import { buildPatch, parsePatch, touchedOldLines } from '../src/shared/patchHunks'
@@ -2957,5 +2958,54 @@ describe('external editor argv', () => {
 
   it('reports no plan at all when nothing is configured', () => {
     expect(editorLaunch({ id: 'custom', name: '', command: '', source: 'cli' }, { path: '/r/a.ts' })).toBeNull()
+  })
+})
+
+describe('branch drop rules', () => {
+  const local = (name: string): DropRef => ({ name, kind: 'local' })
+  const remote = (name: string): DropRef => ({ name, kind: 'remote' })
+  const tag = (name: string): DropRef => ({ name, kind: 'tag' })
+  const ids = (a: DropRef, b: DropRef): string[] => branchDropActions(a, b).map((x) => x.id)
+
+  it('offers merge, rebase and compare between two local branches', () => {
+    expect(ids(local('feature'), local('main'))).toEqual(['merge', 'rebase', 'compare'])
+  })
+
+  it('offers nothing for a ref dropped on itself', () => {
+    expect(ids(local('main'), local('main'))).toEqual([])
+  })
+
+  it('will not rebase a remote-tracking ref or a tag — git cannot rewrite them', () => {
+    expect(ids(remote('origin/main'), local('main'))).toEqual(['merge', 'compare'])
+    expect(ids(tag('v1.0.0'), local('main'))).toEqual(['merge', 'compare'])
+  })
+
+  it('will not merge into anything but a local branch — the target gets committed on', () => {
+    expect(ids(local('feature'), remote('origin/main'))).toEqual(['rebase', 'compare'])
+    expect(ids(local('feature'), tag('v1.0.0'))).toEqual(['rebase', 'compare'])
+  })
+
+  it('leaves only compare when neither side can be written to', () => {
+    expect(ids(tag('v1.0.0'), remote('origin/main'))).toEqual(['compare'])
+  })
+
+  it('marks the rebase as the one that rewrites history', () => {
+    const actions = branchDropActions(local('feature'), local('main'))
+    expect(actions.find((a) => a.id === 'rebase')?.danger).toBe(true)
+    expect(actions.filter((a) => a.danger).map((a) => a.id)).toEqual(['rebase'])
+  })
+
+  it('names both sides in every label, so the menu reads unambiguously', () => {
+    for (const action of branchDropActions(local('feature'), local('main'))) {
+      expect(action.vars).toEqual({ source: 'feature', target: 'main' })
+    }
+  })
+
+  it('round-trips a drag payload and rejects anything else', () => {
+    expect(decodeDropRef(encodeDropRef(remote('origin/x')))).toEqual(remote('origin/x'))
+    expect(decodeDropRef('not json')).toBeNull()
+    expect(decodeDropRef(JSON.stringify({ name: 'x', kind: 'bogus' }))).toBeNull()
+    expect(decodeDropRef(JSON.stringify({ kind: 'local' }))).toBeNull()
+    expect(decodeDropRef(null)).toBeNull()
   })
 })

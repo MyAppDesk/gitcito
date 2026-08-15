@@ -11683,6 +11683,19 @@ button.insights-row:hover { background: var(--bg-2); }
   border-radius: 6px;
 }
 
+/* Same affordance on a graph ref badge, which is already a pill — the outline
+   sits outside it so the badge's own colour still reads. */
+.ref-badge.ref-drop-over {
+  outline: 2px dashed var(--accent);
+  outline-offset: 2px;
+}
+.ref-badge[draggable='true'] {
+  cursor: grab;
+}
+.ref-badge[draggable='true']:active {
+  cursor: grabbing;
+}
+
 /* ─── PR inline review threads ─────────────────────────────────────────── */
 .prd-threads { display: flex; flex-direction: column; gap: 12px; margin-bottom: 12px; }
 .prd-thread {

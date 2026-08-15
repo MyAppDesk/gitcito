@@ -44,6 +44,8 @@ import { useT, interp } from '../i18n'
 import { repoIsGitHub } from '../lib/hosting'
 import { folderOpenMenuItems } from '../lib/openWith'
 import { togglePin, selectPinned } from '../lib/pinnedBranches'
+import { branchDropActions, encodeDropRef, BRANCH_DND_TYPE, type DropRef } from '../lib/branchDrop'
+import { openBranchDropMenu } from '../lib/branchDropMenu'
 import { defaultSettings } from '../../../shared/types'
 import type { BranchInfo, MergeRiskKind, ReleaseInfo, RemoteBranchInfo, StashInfo, TagInfo, WorktreeInfo, SubmoduleInfo, LaunchGroup, LaunchConfig } from '../../../shared/types'
 
@@ -259,7 +261,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   const [dragId, setDragId] = useState<string | null>(null)
   const [overId, setOverId] = useState<string | null>(null)
   // Drag-a-branch-onto-another (merge / rebase gesture).
-  const [dragBranch, setDragBranch] = useState<string | null>(null)
+  const [dragRef, setDragRef] = useState<DropRef | null>(null)
   const [dropBranch, setDropBranch] = useState<string | null>(null)
   const path = repo.path
   const f = filter.trim().toLowerCase()
@@ -618,12 +620,39 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   }
 
   // Dropped branch `source` onto `target`: offer merge / rebase.
-  const branchDropMenu = (source: string, target: string, x: number, y: number): void => {
-    openContextMenu(x, y, [
-      { label: interp(t('sidebar.dropBranchMerge'), { source, target }), onClick: () => void repoActions.mergeInto(path, source, target) },
-      { label: interp(t('sidebar.dropBranchRebase'), { source, target }), onClick: () => void repoActions.rebaseOnto(path, source, target) }
-    ])
-  }
+  /** Drag props shared by every ref row: branches, remote branches and tags can
+   *  all be dragged, and a local branch row can also be dropped on. */
+  const refDrag = (ref: DropRef): React.HTMLAttributes<HTMLDivElement> & { draggable: true } => ({
+    draggable: true,
+    onDragStart: (e) => {
+      setDragRef(ref)
+      e.dataTransfer.effectAllowed = 'link'
+      e.dataTransfer.setData(BRANCH_DND_TYPE, encodeDropRef(ref))
+      e.dataTransfer.setData('text/plain', ref.name)
+    },
+    onDragEnd: () => {
+      setDragRef(null)
+      setDropBranch(null)
+    }
+  })
+
+  /** Drop props for a local branch row — the only kind git can merge into. */
+  const refDrop = (target: DropRef): React.HTMLAttributes<HTMLDivElement> => ({
+    onDragOver: (e) => {
+      if (!dragRef || !branchDropActions(dragRef, target).length) return
+      e.preventDefault()
+      e.dataTransfer.dropEffect = 'link'
+      if (dropBranch !== target.name) setDropBranch(target.name)
+    },
+    onDragLeave: () => dropBranch === target.name && setDropBranch(null),
+    onDrop: (e) => {
+      e.preventDefault()
+      const source = dragRef
+      setDragRef(null)
+      setDropBranch(null)
+      if (source) openBranchDropMenu(path, source, target, e.clientX, e.clientY)
+    }
+  })
 
   // Create a worktree for `branch` in a sibling folder and open it as a tab.
   const openInWorktree = async (branch: string): Promise<void> => {
@@ -1041,31 +1070,8 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     <div
       key={b.name}
       className={`sb-item ${b.isCurrent ? 'current' : ''} ${isSel('local', b.name) ? 'multi-sel' : ''} ${dropBranch === b.name ? 'branch-drop-over' : ''}`}
-      draggable
-      onDragStart={(e) => {
-        setDragBranch(b.name)
-        e.dataTransfer.effectAllowed = 'link'
-        e.dataTransfer.setData('text/plain', b.name)
-      }}
-      onDragEnd={() => {
-        setDragBranch(null)
-        setDropBranch(null)
-      }}
-      onDragOver={(e) => {
-        if (dragBranch && dragBranch !== b.name) {
-          e.preventDefault()
-          e.dataTransfer.dropEffect = 'link'
-          if (dropBranch !== b.name) setDropBranch(b.name)
-        }
-      }}
-      onDragLeave={() => dropBranch === b.name && setDropBranch(null)}
-      onDrop={(e) => {
-        e.preventDefault()
-        const source = dragBranch
-        setDragBranch(null)
-        setDropBranch(null)
-        if (source && source !== b.name) branchDropMenu(source, b.name, e.clientX, e.clientY)
-      }}
+      {...refDrag({ name: b.name, kind: 'local' })}
+      {...refDrop({ name: b.name, kind: 'local' })}
       onClick={(e) => {
         if (!onSelectClick('local', b.name, localIds, e)) goToBranch(b.sha)
       }}
@@ -1124,6 +1130,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     <div
       key={b.fullName}
       className={`sb-item ${isSel('remote', b.fullName) ? 'multi-sel' : ''}`}
+      {...refDrag({ name: b.fullName, kind: 'remote' })}
       onClick={(e) => void onSelectClick('remote', b.fullName, remoteIds, e)}
       onDoubleClick={() => void repoActions.checkoutRemote(path, b.fullName, b.name, b.remote)}
       onContextMenu={(e) => ctxMenu(e, 'remote', b.fullName, () => remoteMenu(b), remoteBulkMenu)}
@@ -1183,6 +1190,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       <div
         key={tag.name}
         className={`sb-item ${isSel('tag', tag.name) ? 'multi-sel' : ''}`}
+        {...refDrag({ name: tag.name, kind: 'tag' })}
         onClick={(e) => {
           if (!onSelectClick('tag', tag.name, tagIds, e)) goToBranch(tag.sha)
         }}

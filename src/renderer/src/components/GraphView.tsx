@@ -14,6 +14,8 @@ import { RemoteIcon } from './RemoteIcon'
 import { SignatureBadge } from './SignatureBadge'
 import { gitApi } from '../infrastructure/api'
 import { repoIsGitHub } from '../lib/hosting'
+import { branchDropActions, encodeDropRef, BRANCH_DND_TYPE, type DropRef } from '../lib/branchDrop'
+import { openBranchDropMenu } from '../lib/branchDropMenu'
 
 const LANE_W = 24
 const LEFT_PAD = 16
@@ -517,6 +519,10 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
   // Branch preview: hovering a branch/tag label ghosts every commit that isn't
   // an ancestor of that ref's tip, so the branch's own history stands out.
   const [previewHash, setPreviewHash] = useState<string | null>(null)
+  // Dragging one ref badge onto another is the graph's version of the sidebar's
+  // branch-onto-branch drop: same rules, same menu.
+  const [dragRef, setDragRef] = useState<DropRef | null>(null)
+  const [dropRefKey, setDropRefKey] = useState<string | null>(null)
   // Row hovered with no ref of its own — show which branch contains it.
   const [hoverRow, setHoverRow] = useState<string | null>(null)
 
@@ -1296,12 +1302,48 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
     const laneStyle: React.CSSProperties | undefined = solidStyle
       ? g.isTag ? { ...solidStyle, opacity: 0.72 } : solidStyle
       : undefined
+    // A group is one ref for drag purposes: a local branch by name, otherwise
+    // the first remote that carries it, or the tag itself.
+    const ref: DropRef = g.isTag
+      ? { name: g.label, kind: 'tag' }
+      : g.isLocal
+        ? { name: g.label, kind: 'local' }
+        : { name: `${g.remotes[0] ?? 'origin'}/${g.label}`, kind: 'remote' }
+
     return (
       <span
         key={g.key}
-        className={`ref-badge ref-${g.kind}`}
+        className={`ref-badge ref-${g.kind} ${dropRefKey === g.key ? 'ref-drop-over' : ''}`}
         style={laneStyle}
         title={title}
+        draggable
+        onDragStart={(e) => {
+          e.stopPropagation()
+          setDragRef(ref)
+          e.dataTransfer.effectAllowed = 'link'
+          e.dataTransfer.setData(BRANCH_DND_TYPE, encodeDropRef(ref))
+          e.dataTransfer.setData('text/plain', ref.name)
+        }}
+        onDragEnd={() => {
+          setDragRef(null)
+          setDropRefKey(null)
+        }}
+        onDragOver={(e) => {
+          if (!dragRef || !branchDropActions(dragRef, ref).length) return
+          e.preventDefault()
+          e.stopPropagation()
+          e.dataTransfer.dropEffect = 'link'
+          if (dropRefKey !== g.key) setDropRefKey(g.key)
+        }}
+        onDragLeave={() => setDropRefKey((k) => (k === g.key ? null : k))}
+        onDrop={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          const source = dragRef
+          setDragRef(null)
+          setDropRefKey(null)
+          if (source) openBranchDropMenu(repo.path, source, ref, e.clientX, e.clientY)
+        }}
         onMouseEnter={() => setPreviewHash(c.hash)}
         onMouseLeave={() => setPreviewHash((h) => (h === c.hash ? null : h))}
         onClick={(e) => e.stopPropagation()}

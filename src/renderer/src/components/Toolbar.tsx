@@ -24,6 +24,7 @@ import {
   FolderGit2,
   GitBranch,
   Layers,
+  StickyNote,
   FileText,
   Camera,
   KeyRound,
@@ -140,6 +141,22 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
     ])
   }
 
+  /** Notes ride on refs/notes, which normal fetch/push ignore entirely. */
+  const notesMenu = (): MenuItem[] => {
+    const remotes = repo.remotes.map((r) => r.name)
+    if (!remotes.length) return []
+    return [
+      {
+        label: t('notes.fetch'),
+        submenu: remotes.map((r) => ({ label: r, onClick: () => void repoActions.fetchNotes(path, r) }))
+      },
+      {
+        label: t('notes.push'),
+        submenu: remotes.map((r) => ({ label: r, onClick: () => void repoActions.pushNotes(path, r) }))
+      }
+    ]
+  }
+
   const toolsMenu = (e: React.MouseEvent): void => {
     e.stopPropagation()
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
@@ -169,6 +186,9 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
         }
       },
       { label: t('tools.stack'), icon: <Layers size={15} />, onClick: () => openModal({ kind: 'stack', repoPath: path }) },
+      ...(notesMenu().length
+        ? [{ label: t('notes.title'), icon: <StickyNote size={15} />, submenu: notesMenu() }]
+        : []),
       {
         label: t('absorb.open'),
         icon: <Magnet size={15} />,

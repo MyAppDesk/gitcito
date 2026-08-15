@@ -2220,6 +2220,63 @@ export const gitService = {
     await gitFor(repoPath).raw(['config', 'gitcito.protectedbranches', value])
   },
 
+  // ─── Notes ───────────────────────────────────────────────────────────────
+  // `git notes` attaches text to a commit without touching the commit itself —
+  // the only way to annotate history that is already published. Gitcito uses the
+  // default `refs/notes/commits` ref, which is what `git log` and every other
+  // tool reads by default.
+
+  /** The note attached to a commit, or '' when it has none. */
+  async note(repoPath: string, sha: string): Promise<string> {
+    // `notes show` exits 1 for "no note", which is an answer, not a failure.
+    return (await runGit(repoPath, ['notes', 'show', sha]).catch(() => '')).replace(/\n+$/, '')
+  },
+
+  /** Commits that carry a note. One cheap call, so the graph can mark them. */
+  async notedCommits(repoPath: string): Promise<string[]> {
+    const raw = await runGit(repoPath, ['notes', 'list']).catch(() => '')
+    return raw
+      .split('\n')
+      .map((line) => line.trim().split(' ')[1])
+      .filter((sha): sha is string => !!sha)
+  },
+
+  /** Write (or overwrite) a commit's note. An empty text removes it instead. */
+  async setNote(repoPath: string, sha: string, text: string): Promise<void> {
+    if (!text.trim()) return gitService.removeNote(repoPath, sha)
+    // `-F -` would need stdin; a temp file keeps multi-line notes intact without
+    // fighting the shell over quoting.
+    const { writeFile, rm, mkdtemp } = await import('fs/promises')
+    const { tmpdir } = await import('os')
+    const dir = await mkdtemp(join(tmpdir(), 'gitcito-note-'))
+    const file = join(dir, 'note.txt')
+    try {
+      await writeFile(file, text, 'utf-8')
+      await runGit(repoPath, ['notes', 'add', '--force', '-F', file, sha])
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  },
+
+  async removeNote(repoPath: string, sha: string): Promise<void> {
+    await runGit(repoPath, ['notes', 'remove', '--ignore-missing', sha])
+  },
+
+  /**
+   * Notes live under `refs/notes/*`, which a normal fetch or push ignores
+   * entirely — the single most common reason someone's notes "disappear" on
+   * another machine. These two move them explicitly.
+   */
+  async fetchNotes(repoPath: string, remote = 'origin'): Promise<void> {
+    await withRemoteAuth(repoPath, remote, () =>
+      runGit(repoPath, ['fetch', remote, '+refs/notes/*:refs/notes/*'])
+    )
+  },
+
+  async pushNotes(repoPath: string, remote = 'origin'): Promise<void> {
+    await withRemoteAuth(repoPath, remote, () => runGit(repoPath, ['push', remote, 'refs/notes/*']))
+  },
+
   // ─── Removing a path from history ────────────────────────────────────────
   // The last resort after the secret guard has already failed: a token, or a
   // 400 MB file, that is committed and cannot be un-committed by reverting.
@@ -4566,6 +4623,8 @@ const READ_METHODS = new Set<string>([
   'getRemoteTags',
   'remoteBranches',
   'gitflowStatus',
+  'note',
+  'notedCommits',
   'historyPaths',
   'historyPurgePreview',
   'historyPurgeBackups',

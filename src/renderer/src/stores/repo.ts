@@ -80,6 +80,9 @@ export interface RepoData {
   ciStatuses: Record<string, CiStatus>
   /** Repo-relative path → working-tree status, for the project tree colors. */
   treeStatus: Record<string, TreeStatusKind>
+  /** Shas carrying a git note. Notes are invisible in a normal log, so the
+   *  graph marks them — otherwise nobody discovers they exist. */
+  notedShas: string[]
   /** The opened folder is not a git repo yet — show the "initialize" prompt. */
   notGit: boolean
   /** Last Conflict Radar scan, kept so branch rows can wear their risk dot. */
@@ -119,6 +122,7 @@ const emptyRepo = (path: string): RepoData => ({
   lastFetchAt: null,
   ciStatuses: {},
   treeStatus: {},
+  notedShas: [],
   notGit: false,
   mergeRisk: null,
   forcedUpdates: {}
@@ -279,7 +283,7 @@ async function doRefresh(path: string, slices: RefreshSlice[]): Promise<void> {
   const keep = <T>(cur: T | undefined, want: boolean, fetch: () => Promise<T>, fallback: T): Promise<T> =>
     want ? fetch() : Promise.resolve(cur ?? fallback)
   try {
-    const [commits, branches, status, stashes, remotes, conflictContext, worktrees, submodules, treeStatus] =
+    const [commits, branches, status, stashes, remotes, conflictContext, worktrees, submodules, treeStatus, notedShas] =
       await Promise.all([
         keep(repo?.commits, want.has('log'), () => gitApi.log(path, maxCount), []),
         keep(repo?.branches, want.has('branches'), () => gitApi.branches(path), {
@@ -295,7 +299,8 @@ async function doRefresh(path: string, slices: RefreshSlice[]): Promise<void> {
         keep(repo?.conflictContext, want.has('mergeState'), () => gitApi.conflictContext(path), null),
         keep(repo?.worktrees, want.has('worktrees'), () => gitApi.worktrees(path).catch(() => []), []),
         keep(repo?.submodules, want.has('submodules'), () => gitApi.submodules(path).catch(() => []), []),
-        keep(repo?.treeStatus, want.has('treeStatus'), () => gitApi.treeStatus(path).catch(() => ({})), {})
+        keep(repo?.treeStatus, want.has('treeStatus'), () => gitApi.treeStatus(path).catch(() => ({})), {}),
+        keep(repo?.notedShas, want.has('log'), () => gitApi.notedCommits(path).catch(() => []), [])
       ])
     store.patch(path, {
       commits,
@@ -308,6 +313,7 @@ async function doRefresh(path: string, slices: RefreshSlice[]): Promise<void> {
       worktrees,
       submodules,
       treeStatus,
+      notedShas,
       loading: false,
       notGit: false,
       lastRefreshAt: Date.now()
@@ -1122,6 +1128,34 @@ export const repoActions = {
       void useRepoStore.getState().refresh(path, { only: ['branches', 'log'] })
     }
   },
+
+  // ─── Notes ───
+  setNote: (path: string, sha: string, text: string, previous: string) =>
+    useRepoStore.getState().run(
+      path,
+      text.trim() ? interp(t('act.noteSaved'), { sha: sha.slice(0, 7) }) : interp(t('act.noteRemoved'), { sha: sha.slice(0, 7) }),
+      () => gitApi.setNote(path, sha, text),
+      {
+        label: interp(t('undoLabel.note'), { sha: sha.slice(0, 7) }),
+        undo: () => gitApi.setNote(path, sha, previous),
+        redo: () => gitApi.setNote(path, sha, text)
+      },
+      null,
+      undefined,
+      // A note changes nothing about the commits themselves, so only the noted
+      // set needs re-reading — but that rides along with the log slice.
+      ['log']
+    ),
+
+  fetchNotes: (path: string, remote = 'origin') =>
+    useRepoStore
+      .getState()
+      .run(path, interp(t('act.notesFetched'), { remote }), () => gitApi.fetchNotes(path, remote), undefined, 'fetch', undefined, ['log']),
+
+  pushNotes: (path: string, remote = 'origin') =>
+    useRepoStore
+      .getState()
+      .run(path, interp(t('act.notesPushed'), { remote }), () => gitApi.pushNotes(path, remote), undefined, 'push'),
 
   pushAllTags: (path: string, remote = 'origin') =>
     useRepoStore

@@ -215,6 +215,14 @@ export const gitApi = {
     call<void>('setProtectedBranches', path, branches),
 
   /** Every path ever committed, heaviest first — the purge dialog's picker. */
+  note: (path: string, sha: string) => call<string>('note', path, sha),
+  /** Shas carrying a note — one cheap call, so the graph can mark them. */
+  notedCommits: (path: string) => call<string[]>('notedCommits', path),
+  setNote: (path: string, sha: string, text: string) => call<void>('setNote', path, sha, text),
+  removeNote: (path: string, sha: string) => call<void>('removeNote', path, sha),
+  fetchNotes: (path: string, remote?: string) => call<void>('fetchNotes', path, remote),
+  pushNotes: (path: string, remote?: string) => call<void>('pushNotes', path, remote),
+
   historyPaths: (path: string, max?: number) => call<HistoryPathEntry[]>('historyPaths', path, max),
   historyPurgePreview: (path: string, paths: string[]) =>
     call<HistoryPurgePreview>('historyPurgePreview', path, paths),

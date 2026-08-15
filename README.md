@@ -70,6 +70,7 @@ Install the shim from the command palette: `⌘K` → **Install 'gitcito' comman
 | **[Commit graph](docs/help/graph.md)** | Octopus merges drawn properly, windowed for huge histories, linear first-parent toggle, "new since last fetch" marks. |
 | **[Code search](docs/help/search.md)** (`⌘⇧F`) | `git grep` across the tree, or a history pickaxe. |
 | **[Blame & history](docs/help/blame.md)** | Per-file, with follow-the-line and "reblame before this commit". |
+| **[Commit notes](docs/help/notes.md)** | Annotate a commit that is already pushed, without rewriting it. |
 | **[Insights](docs/help/insights.md)** | Commits/day, contributors, weekly churn, file hotspots. |
 
 ### Changing code
@@ -128,7 +129,7 @@ turn it on, your AI provider. Details in [Security & secrets](docs/help/security
 
 ## The handbook
 
-**50 pages**, built into the app — the **Help** button in the status bar, or `⌘K`
+**51 pages**, built into the app — the **Help** button in the status bar, or `⌘K`
 → *Help*. It is the same Markdown you can
 [read right here in the repository](docs/help/getting-started.md), offline and
 versioned with the code.

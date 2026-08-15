@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Archive, GitCommitHorizontal, Tag, Laptop, Cloud, Check, Settings2, Pencil, Plus, Minus, CheckCircle2, XCircle, Clock, MinusCircle } from 'lucide-react'
+import { Archive, GitCommitHorizontal, Tag, Laptop, Cloud, Check, Settings2, Pencil, Plus, Minus, CheckCircle2, XCircle, Clock, MinusCircle, StickyNote } from 'lucide-react'
 import type { CiState, CiStatus, GraphCommit, StashInfo, GraphColumnId, GraphFlowColumnId, GraphColumns, FileEntry } from '../../../shared/types'
 import { defaultGraphColumns, defaultGraphColumnOrder, defaultGraphStyle } from '../../../shared/types'
 import { GraphHeaderFilter, type FilterOption } from './GraphHeaderFilter'
@@ -518,6 +518,7 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
 
   // Branch preview: hovering a branch/tag label ghosts every commit that isn't
   // an ancestor of that ref's tip, so the branch's own history stands out.
+  const notedSet = useMemo(() => new Set(repo.notedShas), [repo.notedShas])
   const [previewHash, setPreviewHash] = useState<string | null>(null)
   // Dragging one ref badge onto another is the graph's version of the sidebar's
   // branch-onto-branch drop: same rules, same menu.
@@ -1769,6 +1770,11 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
                     ) : (
                       <span key="message" className="row-subject" title={c.subject}>
                         {newSet.has(c.hash) && <span className="row-new-badge">new</span>}
+                        {/* A note is invisible in a plain log, so the row is the
+                            only place anyone would find out it exists. */}
+                        {notedSet.has(c.hash) && (
+                          <StickyNote size={11} className="row-note-mark" aria-label={t('notes.marker')} />
+                        )}
                         {c.subject}
                       </span>
                     )

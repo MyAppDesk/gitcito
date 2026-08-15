@@ -11426,6 +11426,68 @@ mark.find-hit.active {
   word-break: break-word;
 }
 
+/* The note is a section of the commit panel, not a card floating inside it:
+   same full-bleed padding and hairline as the subject above it. The accent rail
+   is what says "attached to this commit, but not part of it". */
+.commit-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 9px 16px 10px;
+  border-bottom: 1px solid var(--border-soft);
+  border-left: 2px solid var(--accent);
+}
+.commit-note-icon { flex-shrink: 0; margin-top: 2px; color: var(--text-2); }
+.commit-note-body {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+  user-select: text;
+}
+/* Tools stay out of the way until the note is hovered — the text is the point. */
+.commit-note-tools { display: flex; gap: 2px; opacity: 0; transition: opacity 0.12s; }
+.commit-note:hover .commit-note-tools,
+.commit-note:focus-within .commit-note-tools { opacity: 1; }
+
+/* No note: one muted line, no box, no empty state to read past. */
+.commit-note-add {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  padding: 7px 16px 8px;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--border-soft);
+  font-size: 11px;
+  color: var(--text-2);
+  cursor: pointer;
+}
+.commit-note-add:hover { color: var(--accent); }
+.commit-note .icon-btn.tiny { padding: 2px; line-height: 0; color: var(--text-2); }
+.commit-note .icon-btn.tiny:hover { color: var(--text-0); }
+
+.commit-note.editing { display: block; padding: 9px 16px 11px; }
+.commit-note-input {
+  width: 100%;
+  padding: 7px 9px;
+  font: inherit;
+  font-size: 12.5px;
+  line-height: 1.45;
+  resize: vertical;
+  color: var(--text-0);
+  background: var(--bg-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+}
+.commit-note-input:focus { outline: none; border-color: var(--accent); }
+.commit-note-actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin-top: 7px; }
+.row-note-mark { flex-shrink: 0; margin-right: 4px; color: var(--text-2); vertical-align: -2px; }
+
 .purge-modal { display: flex; flex-direction: column; min-height: 0; }
 .purge-preview {
   margin-top: 12px;

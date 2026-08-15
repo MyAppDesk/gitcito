@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { SquarePen, ExternalLink, Sparkles, Loader2, Laptop, Tag, Cloud, Copy } from 'lucide-react'
+import { SquarePen, ExternalLink, Sparkles, Loader2, Laptop, Tag, Cloud, Copy, StickyNote, Pencil, Trash2 } from 'lucide-react'
 import type { CodeSearchHit, CommitBranchInfo, FileEntry, GraphCommit, RemoteInfo } from '../../../shared/types'
 import { autolink, remoteWebUrl } from '../lib/autolink'
 import { gitApi, aiApi, shellApi } from '../infrastructure/api'
@@ -47,6 +47,9 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
   const [aiBusy, setAiBusy] = useState(false)
   const [editingSubject, setEditingSubject] = useState(false)
   const [draftSubject, setDraftSubject] = useState('')
+  const [note, setNote] = useState('')
+  const [noteDraft, setNoteDraft] = useState('')
+  const [editingNote, setEditingNote] = useState(false)
   const [filter, setFilter] = useState<FileFilter>(EMPTY_FILTER)
   const [hits, setHits] = useState<CodeSearchHit[] | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -71,6 +74,21 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
       cancelled = true
     }
   }, [repo.path, hash])
+
+  // Notes are attached beside the commit, so they are read separately — and
+  // re-read whenever the noted set changes (saving one, or fetching them).
+  useEffect(() => {
+    setEditingNote(false)
+    let cancelled = false
+    void gitApi.note(repo.path, hash).then((text) => {
+      if (cancelled) return
+      setNote(text)
+      setNoteDraft(text)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [repo.path, hash, repo.notedShas])
 
   useEffect(() => {
     setBranches([])
@@ -416,6 +434,70 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
           />
         ) : (
           <p className="commit-subject">{autolink(commit.subject, remoteWebUrl(repo.remotes.find((r) => r.name === 'origin')?.url ?? repo.remotes[0]?.url))}</p>
+        )}
+
+        {/* Full-bleed like the subject above it, and absent entirely when there
+            is nothing to show — an empty box on every commit is noise. */}
+        {editingNote ? (
+          <div className="commit-note editing">
+            <textarea
+              className="commit-note-input"
+              autoFocus
+              rows={3}
+              value={noteDraft}
+              placeholder={t('notes.placeholder')}
+              onChange={(e) => setNoteDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') {
+                  e.preventDefault()
+                  setNoteDraft(note)
+                  setEditingNote(false)
+                }
+              }}
+            />
+            <div className="commit-note-actions">
+              <button
+                className="link-btn"
+                onClick={() => {
+                  setNoteDraft(note)
+                  setEditingNote(false)
+                }}
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                className="btn primary tiny"
+                disabled={noteDraft === note}
+                onClick={() => {
+                  setEditingNote(false)
+                  void repoActions.setNote(repo.path, hash, noteDraft, note)
+                }}
+              >
+                {t('notes.save')}
+              </button>
+            </div>
+          </div>
+        ) : note ? (
+          <div className="commit-note">
+            <StickyNote size={12} className="commit-note-icon" />
+            <p className="commit-note-body">{note}</p>
+            <div className="commit-note-tools">
+              <button className="icon-btn tiny" title={t('notes.edit')} onClick={() => setEditingNote(true)}>
+                <Pencil size={12} />
+              </button>
+              <button
+                className="icon-btn tiny"
+                title={t('notes.remove')}
+                onClick={() => void repoActions.setNote(repo.path, hash, '', note)}
+              >
+                <Trash2 size={12} />
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button className="commit-note-add" title={t('notes.hint')} onClick={() => setEditingNote(true)}>
+            <StickyNote size={11} /> {t('notes.add')}
+          </button>
         )}
 
         <div className="panel-toolbar">

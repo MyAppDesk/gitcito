@@ -706,3 +706,63 @@ describe('pushing to several remotes (multi-remote playground)', () => {
     expect(tags).toContain('v9.9.9-light')
   })
 })
+
+describe('commit notes (cherry-pick playground)', () => {
+  const headSha = async (repo: string): Promise<string> => shaOf(repo, 'HEAD')
+
+  it('reports no note for a commit that has none', async () => {
+    const R = cloneFixture('cherry-pick')
+    expect(await gitService.note(R, await headSha(R))).toBe('')
+    expect(await gitService.notedCommits(R)).toEqual([])
+  })
+
+  it('writes a note and reads it back verbatim, newlines and all', async () => {
+    const R = cloneFixture('cherry-pick')
+    const sha = await headSha(R)
+    const text = 'Reviewed by Ana.\n\nShipped in build 412 — see the incident doc.'
+    await gitService.setNote(R, sha, text)
+    expect(await gitService.note(R, sha)).toBe(text)
+    // git's own reader agrees, so the note is a real note and not our invention.
+    expect(await raw(R, ['log', '-1', '--format=%N', sha])).toContain('build 412')
+  })
+
+  it('overwrites rather than appending when a note already exists', async () => {
+    const R = cloneFixture('cherry-pick')
+    const sha = await headSha(R)
+    await gitService.setNote(R, sha, 'first')
+    await gitService.setNote(R, sha, 'second')
+    expect(await gitService.note(R, sha)).toBe('second')
+  })
+
+  it('lists exactly the commits that carry a note', async () => {
+    const R = cloneFixture('cherry-pick')
+    const sha = await headSha(R)
+    await gitService.setNote(R, sha, 'noted')
+    expect(await gitService.notedCommits(R)).toEqual([sha])
+  })
+
+  it('treats an empty note as a removal, not as an empty note', async () => {
+    const R = cloneFixture('cherry-pick')
+    const sha = await headSha(R)
+    await gitService.setNote(R, sha, 'temporary')
+    await gitService.setNote(R, sha, '   ')
+    expect(await gitService.note(R, sha)).toBe('')
+    expect(await gitService.notedCommits(R)).toEqual([])
+  })
+
+  it('removes a note, and removing a missing one is not an error', async () => {
+    const R = cloneFixture('cherry-pick')
+    const sha = await headSha(R)
+    await gitService.setNote(R, sha, 'gone soon')
+    await gitService.removeNote(R, sha)
+    expect(await gitService.note(R, sha)).toBe('')
+    await expect(gitService.removeNote(R, sha)).resolves.toBeUndefined()
+  })
+
+  it('leaves the commit itself untouched — that is the point of a note', async () => {
+    const R = cloneFixture('cherry-pick')
+    const sha = await headSha(R)
+    await gitService.setNote(R, sha, 'annotation')
+    expect(await headSha(R)).toBe(sha)
+  })
+})

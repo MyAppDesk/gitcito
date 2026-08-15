@@ -93,6 +93,7 @@
       "lfs": "lfs-sparse",
       "mission-control": "mission-control",
       "notifications": "hosting",
+      "open-in-editor": "editor",
       "pr-preview": "pr-preview",
       "pull": "syncing",
       "push": "syncing",

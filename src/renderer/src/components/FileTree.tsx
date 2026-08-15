@@ -2,7 +2,7 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { motion } from 'framer-motion'
 import { ChevronRight, File, Folder, FolderOpen, Loader2, ExternalLink, Pencil } from 'lucide-react'
 import type { CodeSearchHit, FsDropMode, TreeEntry, TreeStatusKind } from '../../../shared/types'
-import { gitApi, shellApi } from '../infrastructure/api'
+import { editorApi, gitApi, shellApi } from '../infrastructure/api'
 import { useUIStore, type MenuItem } from '../stores/ui'
 import { repoActions, type RepoData } from '../stores/repo'
 import { useSettingsStore } from '../stores/settings'
@@ -39,17 +39,20 @@ export function FileTree({
   const { openContextMenu, openModal, setFileView, toast } = useUIStore()
   const fileView = useUIStore((s) => s.fileView)
   const defaultOpenApp = useSettingsStore((s) => s.settings.defaultOpenApp)
+  const editor = useSettingsStore((s) => s.settings.editor)
   const treeStatus = repo.treeStatus
   const filterActive = isFilterActive(filter)
   const t = useT()
 
-  // Row-end icon: opens the file with the user's configured default app (e.g.
-  // VS Code), or falls back to the native "Open With" picker when none is set.
+  // Row-end icon: the configured editor first — it is the more specific choice
+  // of the two — then the default "open with" app, then the native picker.
   const openWithSmart = (rel: string): void => {
     const target = abs(path, rel)
-    const action = defaultOpenApp?.path
-      ? shellApi.openWithApp(target, defaultOpenApp.path)
-      : shellApi.openWithPicker(target)
+    const action = editor?.command
+      ? editorApi.open(editor, { path: target })
+      : defaultOpenApp?.path
+        ? shellApi.openWithApp(target, defaultOpenApp.path)
+        : shellApi.openWithPicker(target)
     void action.then((err: string) => {
       if (err) toast('error', err)
     })
@@ -465,10 +468,16 @@ export function FileTree({
     { separator: true },
     { label: shellApi.revealLabel, onClick: () => void shellApi.revealInFolder(abs(path, node.path)) },
     { label: t('fileTree.openDefaultApp'), onClick: () => void shellApi.openPath(abs(path, node.path)) },
-    ...openWithMenuItems(abs(path, node.path), defaultOpenApp, {
-      openWithDefault: (name) => interp(t('fileTree.openWithApp'), { name }),
-      openWith: t('fileTree.openWith')
-    }),
+    ...openWithMenuItems(
+      abs(path, node.path),
+      defaultOpenApp,
+      {
+        openWithDefault: (name) => interp(t('fileTree.openWithApp'), { name }),
+        openWith: t('fileTree.openWith')
+      },
+      editor,
+      { isDir: node.dir }
+    ),
     { label: t('fileTree.copyPath'), onClick: () => void navigator.clipboard.writeText(node.path) }
   ]
 

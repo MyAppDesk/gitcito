@@ -19,6 +19,7 @@ export function StashDetails({ repo, sha }: { repo: RepoData; sha: string }): Re
   const openModal = useUIStore((s) => s.openModal)
   const stash: StashInfo | undefined = repo.stashes.find((s) => s.sha === sha)
   const defaultOpenApp = useSettingsStore((s) => s.settings.defaultOpenApp)
+  const editor = useSettingsStore((s) => s.settings.editor)
   const t = useT()
 
   useEffect(() => {
@@ -173,10 +174,15 @@ export function StashDetails({ repo, sha }: { repo: RepoData; sha: string }): Re
               { separator: true },
               { label: shellApi.revealLabel, onClick: () => void shellApi.revealInFolder(`${repo.path}/${f.path}`) },
               { label: t('stashPanel.openDefaultApp'), onClick: () => void shellApi.openPath(`${repo.path}/${f.path}`) },
-              ...openWithMenuItems(`${repo.path}/${f.path}`, defaultOpenApp, {
-                openWithDefault: (name) => interp(t('fileTree.openWithApp'), { name }),
-                openWith: t('fileTree.openWith')
-              }),
+              ...openWithMenuItems(
+                `${repo.path}/${f.path}`,
+                defaultOpenApp,
+                {
+                  openWithDefault: (name) => interp(t('fileTree.openWithApp'), { name }),
+                  openWith: t('fileTree.openWith')
+                },
+                editor
+              ),
               { label: t('common.copyFilePath'), onClick: () => void navigator.clipboard.writeText(`${repo.path}/${f.path}`) }
             ])
           }}
@@ -185,10 +191,16 @@ export function StashDetails({ repo, sha }: { repo: RepoData; sha: string }): Re
             useUIStore.getState().openContextMenu(e.clientX, e.clientY, [
               { label: shellApi.revealLabel, onClick: () => void shellApi.revealInFolder(`${repo.path}/${folderPath}`) },
               { label: t('stashPanel.openDefaultApp'), onClick: () => void shellApi.openPath(`${repo.path}/${folderPath}`) },
-              ...openWithMenuItems(`${repo.path}/${folderPath}`, defaultOpenApp, {
-                openWithDefault: (name) => interp(t('fileTree.openWithApp'), { name }),
-                openWith: t('fileTree.openWith')
-              }),
+              ...openWithMenuItems(
+                `${repo.path}/${folderPath}`,
+                defaultOpenApp,
+                {
+                  openWithDefault: (name) => interp(t('fileTree.openWithApp'), { name }),
+                  openWith: t('fileTree.openWith')
+                },
+                editor,
+                { isDir: true }
+              ),
               { label: t('common.copyFolderPath'), onClick: () => void navigator.clipboard.writeText(`${repo.path}/${folderPath}`) }
             ])
           }}

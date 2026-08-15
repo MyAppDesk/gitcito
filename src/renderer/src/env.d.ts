@@ -64,6 +64,13 @@ interface PreloadApi {
     openWithApp(targetPath: string, appPath: string): Promise<string>
     writeFiles(repoPath: string, files: unknown[]): Promise<void>
   }
+  editor: {
+    detect(): Promise<import('../../shared/editors').DetectedEditor[]>
+    open(
+      setting: import('../../shared/editors').EditorSetting,
+      target: { path: string; line?: number; col?: number; isDir?: boolean; repo?: string }
+    ): Promise<string>
+  }
   settings: {
     get(): Promise<unknown>
     unlock(): Promise<unknown>

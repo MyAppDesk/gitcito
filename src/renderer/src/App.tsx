@@ -839,12 +839,17 @@ export default function App(): React.JSX.Element {
               title={t('sidebar.openFolder')}
               onClick={(e) => {
                 const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
-                const items = folderOpenMenuItems(repo.path, settings.defaultOpenApp, {
-                  openFolder: t('sidebar.openFolder'),
-                  openWithDefault: (name) => interp(t('sidebar.openWithApp'), { name }),
-                  openWith: t('sidebar.openFolderWith'),
-                  copyPath: t('common.copyFolderPath')
-                })
+                const items = folderOpenMenuItems(
+                  repo.path,
+                  settings.defaultOpenApp,
+                  {
+                    openFolder: t('sidebar.openFolder'),
+                    openWithDefault: (name) => interp(t('sidebar.openWithApp'), { name }),
+                    openWith: t('sidebar.openFolderWith'),
+                    copyPath: t('common.copyFolderPath')
+                  },
+                  settings.editor
+                )
                 useUIStore.getState().openContextMenu(r.left, r.top - 6 - items.length * 28, items)
               }}
             >

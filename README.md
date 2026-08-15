@@ -109,6 +109,8 @@ OpenAI, Anthropic, OpenRouter, Groq, Mistral, Ollama, or any compatible endpoint
 [rebindable shortcuts](docs/help/keyboard.md) · [profiles](docs/help/profiles.md)
 for separate identities · English & Spanish ·
 [integrated terminal](docs/help/terminal.md) with splits ·
+[**Open in your editor**](docs/help/editor.md) — repo, file, or the exact line
+you right-clicked ·
 [**Run & debug**](docs/help/launch.md) from your `.vscode/launch.json` ·
 [previews](docs/help/diffs.md) for Markdown, Word, Excel, PDF, video and images.
 

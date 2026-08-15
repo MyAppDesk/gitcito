@@ -38,7 +38,8 @@ import {
   Magnet,
   Clock,
   Film,
-  Gauge
+  Gauge,
+  SquarePen
 } from 'lucide-react'
 import { useUIStore } from '../stores/ui'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
@@ -47,7 +48,8 @@ import { gitApi, cliApi } from '../infrastructure/api'
 import { tabActiveRepoPath } from '../../../shared/types'
 import { getFrecency, frecencyScore, bumpFrecency } from '../lib/frecency'
 import { repoIsGitHub } from '../lib/hosting'
-import { useT, type TranslationKey } from '../i18n'
+import { openInEditor } from '../lib/editorOpen'
+import { useT, interp, type TranslationKey } from '../i18n'
 
 // Display label for a group id (groups stay English internally for sorting).
 const GROUP_KEYS: Record<string, TranslationKey> = {
@@ -103,6 +105,7 @@ export function CommandPalette(): React.JSX.Element {
   const tabs = useSettingsStore((s) => s.settings.tabs)
   const activeTabId = useSettingsStore((s) => s.settings.activeTabId)
   const aiEnabled = useSettingsStore((s) => s.activeProfile().ai.enabled !== false)
+  const editor = useSettingsStore((s) => s.settings.editor)
 
   const activeTab = tabs.find((t) => t.id === activeTabId) ?? null
   const repoPath = activeTab ? tabActiveRepoPath(activeTab) : null
@@ -241,6 +244,7 @@ export function CommandPalette(): React.JSX.Element {
       { id: 'filter-path', title: t('cmd.filterPath'), group: 'Actions', keywords: 'path file folder history touched commits filter', icon: <FolderTree size={15} />, run: act(() => ui.openModal({ kind: 'input', title: t('cmdp.filterTitle'), label: t('cmdp.filterLabel'), placeholder: 'src/main', submitLabel: t('cmdp.filterSubmit'), onSubmit: (v) => ui.setPathFilter(v.trim() || null) })) },
       ...(aiEnabled ? [{ id: 'ai-assistant', title: t('cmd.aiAssistant'), group: 'Actions', keywords: 'ai config wizard ask actions generate', icon: <Sparkles size={15} />, run: act(() => ui.openModal({ kind: 'ai-config-wizard', repoPath: path, repoName: repo.name })) } as Command] : []),
       { id: 'terminal', title: t('cmd.terminal'), group: 'Actions', keywords: 'shell console pty', icon: <TerminalSquare size={15} />, run: act(() => { if (repoPath) ui.toggleTerminal(repoPath) }) },
+      ...(editor?.command ? [{ id: 'open-in-editor', title: interp(t('cmd.openInEditor'), { app: editor.name }), group: 'Actions', keywords: 'editor vscode code cursor zed sublime jetbrains open folder workspace', icon: <SquarePen size={15} />, run: act(() => void openInEditor(editor, { path, isDir: true, repo: path })) } as Command] : []),
       { id: 'reflog', title: t('cmd.reflog'), group: 'Actions', keywords: 'recovery undo history head', icon: <History size={15} />, run: act(() => ui.openModal({ kind: 'reflog', repoPath: path })) },
       { id: 'snapshots', title: t('cmd.snapshots'), group: 'Actions', keywords: 'safety net stash backup auto save recover', icon: <Camera size={15} />, run: act(() => ui.openModal({ kind: 'snapshots', repoPath: path })) },
       { id: 'bisect', title: t('cmd.bisect'), group: 'Actions', keywords: 'debug find bug', icon: <Bug size={15} />, run: act(() => ui.openModal({ kind: 'bisect', repoPath: path })) },

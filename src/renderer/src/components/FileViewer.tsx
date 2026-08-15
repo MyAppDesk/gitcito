@@ -7,6 +7,7 @@ import { useUIStore, type FileViewMode, type FileViewState } from '../stores/ui'
 import { useRepoStore } from '../stores/repo'
 import { filePermalink } from '../lib/autolink'
 import { revealLineWhenReady } from '../lib/reveal'
+import { editorLineMenuItems } from '../lib/editorOpen'
 import { useT, interp, type TranslationKey } from '../i18n'
 import { useHoverExplain } from './HoverExplain'
 import { DiffViewer } from './DiffViewer'
@@ -167,6 +168,21 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
 
   // Clear any blame "rewind" when switching files/repos.
   useEffect(() => setBlameOverrideRef(null), [file, repoPath])
+
+  // ─── Open a line in the external editor ───
+  // Only for content that still matches what is on disk: a file shown at some
+  // commit would send the editor to a line that has since moved.
+  const editorSetting = useSettingsStore((s) => s.settings.editor)
+  const editorTracksDisk = source.type === 'tree' || source.type === 'wip'
+  const lineMenu = (line: number) => (e: React.MouseEvent): void => {
+    // A rewound blame ("blaming at <sha>^") lists lines as they were then, and
+    // the row's own menu (the sha actions) wins where it has already answered.
+    if (!editorTracksDisk || blameOverrideRef || e.defaultPrevented) return
+    const items = editorLineMenuItems(editorSetting, { path: `${repoPath}/${file}`, line, repo: repoPath })
+    if (!items.length) return
+    e.preventDefault()
+    openContextMenu(e.clientX, e.clientY, items)
+  }
 
   // Secret masking: KEY=•••• in .env/key files, on by default, per-view reveal.
   const maskSecretsSetting = useSettingsStore((s) => s.settings.maskSecrets)
@@ -709,7 +725,7 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
         {!error && content !== null && imageUrl === null && mode === 'file' && !editing && (
           <div className={`file-content hljs ${hoverArmed ? 'hover-armed' : ''}`} {...hoverProps}>
             {content.split('\n').map((l, i) => (
-              <div className="code-line" key={i}>
+              <div className="code-line" key={i} onContextMenu={lineMenu(i + 1)}>
                 <span className="code-no">{i + 1}</span>
                 <span
                   className="code-text"
@@ -731,7 +747,7 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
               </div>
             )}
             {blame.map((b) => (
-              <div className="blame-line" key={b.lineNo}>
+              <div className="blame-line" key={b.lineNo} onContextMenu={lineMenu(b.lineNo)}>
                 <button
                   className="blame-meta"
                   style={{ borderLeftColor: shaColor(b.sha) }}

@@ -1,5 +1,7 @@
 // ─── Shared domain types (used by main, preload and renderer) ───────────────
 
+import type { EditorSetting } from './editors'
+
 export interface CommitAuthor {
   name: string
   email: string
@@ -1665,6 +1667,10 @@ export interface AppSettings {
    *  action on files, folders and repositories — analogous to running `code <path>`.
    *  Undefined until the user picks one via Settings → General or onboarding. */
   defaultOpenApp?: { name: string; path: string }
+  /** External editor for the "Open in <editor>" actions on repositories, files
+   *  and single lines. Undefined until the user picks one in Settings → General;
+   *  the menu entries stay hidden until then. */
+  editor?: EditorSetting
   /** Last app version the user has seen the changelog for. Undefined until the
    *  first run that records it; used to detect upgrades. */
   lastSeenVersion?: string

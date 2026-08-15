@@ -95,6 +95,7 @@ import type {
   RepoWiki,
   WikiProgress
 } from '../../../shared/types'
+import type { EditorSetting, EditorTarget } from '../../../shared/editors'
 
 // Typed adapter over the IPC bridge — the only place that talks to window.api.
 const call = <T>(method: string, ...args: unknown[]): Promise<T> => window.api.git(method, ...args) as Promise<T>
@@ -537,6 +538,16 @@ export const shellApi = {
       : window.api.platform === 'win32'
         ? 'Reveal in File Explorer'
         : 'Reveal in file manager'
+}
+
+export const editorApi = {
+  /** Editors installed on this machine, CLI installs first (only those can jump
+   *  to a line). Re-probed on demand — an editor installed after launch shows up
+   *  without restarting Gitcito. */
+  detect: () => window.api.editor.detect(),
+  /** Opens `target` in the configured editor. Resolves to '' on success, or to
+   *  the failure message. */
+  open: (setting: EditorSetting, target: EditorTarget) => window.api.editor.open(setting, target)
 }
 
 export const hostingApi = {

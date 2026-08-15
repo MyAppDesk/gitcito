@@ -15,6 +15,8 @@ import { frecencyScore } from '../src/renderer/src/lib/frecency'
 import { togglePin, selectPinned } from '../src/renderer/src/lib/pinnedBranches'
 import { parseMergeTreeSingle, parseMergeTreeStdin } from '../src/shared/mergeTree'
 import { parseRangeDiff } from '../src/shared/rangeDiff'
+import { editorArgs, editorLaunch, supportsLine } from '../src/shared/editors'
+import type { EditorSetting } from '../src/shared/editors'
 import { parseForcedUpdates } from '../src/shared/fetchPorcelain'
 import { buildPatch, parsePatch, touchedOldLines } from '../src/shared/patchHunks'
 import {
@@ -2891,5 +2893,69 @@ describe('page tab labels', () => {
     // current language.
     const stale = { id: '1', kind: 'page', name: 'Vault', page: { type: 'vault' } } as never
     expect(tabLabel(stale, t)).toBe('Cofre')
+  })
+})
+
+describe('external editor argv', () => {
+  const vscode: EditorSetting = { id: 'vscode', name: 'Visual Studio Code', command: '/usr/local/bin/code', source: 'cli' }
+
+  it('substitutes path, line and column', () => {
+    expect(editorArgs('-g {path}:{line}:{col}', { path: '/r/a.ts', line: 12, col: 3 })).toEqual([
+      '-g',
+      '/r/a.ts:12:3'
+    ])
+  })
+
+  it('defaults the column to 1 when a line is given without one', () => {
+    expect(editorArgs('{path}:{line}:{col}', { path: '/r/a.ts', line: 9 })).toEqual(['/r/a.ts:9:1'])
+  })
+
+  it('drops the line suffix entirely when there is no line', () => {
+    expect(editorArgs('{path}:{line}:{col}', { path: '/r/a.ts' })).toEqual(['/r/a.ts'])
+  })
+
+  it('drops a flag whose placeholder resolved to nothing', () => {
+    // `--line` left behind would swallow the path as its value.
+    expect(editorArgs('--line {line} --column {col} {path}', { path: '/r/a.ts' })).toEqual(['/r/a.ts'])
+    expect(editorArgs('--line {line} --column {col} {path}', { path: '/r/a.ts', line: 4 })).toEqual([
+      '--line',
+      '4',
+      '--column',
+      '1',
+      '/r/a.ts'
+    ])
+  })
+
+  it('keeps a quoted path as a single argument', () => {
+    expect(editorArgs('"{path}"', { path: '/r/my dir/a.ts' })).toEqual(['/r/my dir/a.ts'])
+    expect(editorArgs('{path}', { path: '/r/my dir/a.ts' })).toEqual(['/r/my dir/a.ts'])
+  })
+
+  it('builds a launch plan from the preset for the chosen editor', () => {
+    expect(editorLaunch(vscode, { path: '/r/a.ts', line: 7 })).toEqual({
+      command: '/usr/local/bin/code',
+      args: ['-g', '/r/a.ts:7:1'],
+      source: 'cli'
+    })
+  })
+
+  it('uses the folder template for a directory', () => {
+    expect(editorLaunch(vscode, { path: '/r', isDir: true })?.args).toEqual(['/r'])
+  })
+
+  it('ignores the line for an editor found as a macOS bundle', () => {
+    const bundle: EditorSetting = { ...vscode, command: '/Applications/Visual Studio Code.app', source: 'app' }
+    expect(supportsLine(bundle)).toBe(false)
+    expect(editorLaunch(bundle, { path: '/r/a.ts', line: 7 })?.args).toEqual(['-g', '/r/a.ts'])
+  })
+
+  it('falls back to {path} when a custom command carries no template', () => {
+    const custom: EditorSetting = { id: 'custom', name: 'nano', command: '/usr/bin/nano', source: 'cli' }
+    expect(supportsLine(custom)).toBe(false)
+    expect(editorLaunch(custom, { path: '/r/a.ts', line: 7 })?.args).toEqual(['/r/a.ts'])
+  })
+
+  it('reports no plan at all when nothing is configured', () => {
+    expect(editorLaunch({ id: 'custom', name: '', command: '', source: 'cli' }, { path: '/r/a.ts' })).toBeNull()
   })
 })

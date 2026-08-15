@@ -57,6 +57,12 @@ const api = {
       ipcRenderer.invoke('shell:writeFiles', repoPath, files)
   },
 
+  editor: {
+    detect: (): Promise<unknown> => ipcRenderer.invoke('editor:detect'),
+    open: (setting: unknown, target: unknown): Promise<string> =>
+      ipcRenderer.invoke('editor:open', setting, target)
+  },
+
   settings: {
     get: (): Promise<unknown> => ipcRenderer.invoke('settings:get'),
     unlock: (): Promise<unknown> => ipcRenderer.invoke('settings:unlock'),

@@ -602,12 +602,17 @@ export function TitleBar(): React.JSX.Element {
   // "Open with" target (e.g. VS Code, like running `code <path>`), or shows the
   // native "Open With…" picker to choose one-off.
   const openRepoMenuItems = (repoPath: string): MenuItem[] =>
-    folderOpenMenuItems(repoPath, settings.defaultOpenApp, {
-      openFolder: 'Open Folder',
-      openWithDefault: (name) => `Open with ${name}`,
-      openWith: 'Open With…',
-      copyPath: 'Copy folder path'
-    })
+    folderOpenMenuItems(
+      repoPath,
+      settings.defaultOpenApp,
+      {
+        openFolder: t('sidebar.openFolder'),
+        openWithDefault: (name) => interp(t('sidebar.openWithApp'), { name }),
+        openWith: t('sidebar.openFolderWith'),
+        copyPath: t('common.copyFolderPath')
+      },
+      settings.editor
+    )
 
   // "Move to workspace →" submenu — only offered when another workspace exists.
   const moveToWorkspaceItem = (tab: TabState): MenuItem | null => {

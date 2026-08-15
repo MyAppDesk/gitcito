@@ -198,6 +198,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   const activeProfile = useSettingsStore((s) => s.activeProfile)
   const aiEnabled = activeProfile().ai.enabled !== false
   const defaultOpenApp = useSettingsStore((s) => s.settings.defaultOpenApp)
+  const editor = useSettingsStore((s) => s.settings.editor)
   const t = useT()
   const [filter, setFilter] = useState('')
   const [tab, setTab] = useState<'git' | 'files'>('git')
@@ -964,12 +965,17 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   // Open Folder | Open with <App> (if configured) | Open With… — same three
   // options offered on repo tabs and the bottom status bar path.
   const repoOpenMenu = (): MenuItem[] =>
-    folderOpenMenuItems(repo.path, defaultOpenApp, {
-      openFolder: t('sidebar.openFolder'),
-      openWithDefault: (name) => interp(t('sidebar.openWithApp'), { name }),
-      openWith: t('sidebar.openFolderWith'),
-      copyPath: t('sidebar.copyFolderPath')
-    })
+    folderOpenMenuItems(
+      repo.path,
+      defaultOpenApp,
+      {
+        openFolder: t('sidebar.openFolder'),
+        openWithDefault: (name) => interp(t('sidebar.openWithApp'), { name }),
+        openWith: t('sidebar.openFolderWith'),
+        copyPath: t('sidebar.copyFolderPath')
+      },
+      editor
+    )
 
   const sectionLabels: Record<string, string> = {
     local: t('sidebar.local'),

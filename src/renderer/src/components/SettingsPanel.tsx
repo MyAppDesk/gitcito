@@ -47,7 +47,8 @@ import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
 import { Avatar } from './Avatar'
 import { useUpdatesStore, hasPendingUpdate } from '../stores/updates'
-import { gitApi, aiApi, settingsApi, analyticsApi, logApi, infoApi, vaultApi, shellApi, hostingApi, keychainApi } from '../infrastructure/api'
+import { gitApi, aiApi, settingsApi, analyticsApi, logApi, infoApi, vaultApi, shellApi, hostingApi, keychainApi, editorApi } from '../infrastructure/api'
+import type { DetectedEditor, EditorSetting } from '../../../shared/editors'
 import { AI_PROVIDERS, emptyAnalytics, defaultGraphStyle, type AIProvider, type Analytics, type AIUsageStat, type ActivityEvent, type RepoStats, type AppSettings, type BranchNamingStyle, type CommitStyle, type ConflictStyle, type ExplainStyle, type Profile, type SigningConfig, type SettingsBundle, type GraphStyle, type GraphPalette, type GraphEdgeStyle, type GraphDensity, type GraphLineWidth, type GraphNodeStyle, type GraphTopology, type GraphCommit, type ConnectedAccount } from '../../../shared/types'
 import { hasSettingsSecrets, stripSettingsSecrets } from '../../../shared/secrets'
 import type { HoverModifier, KeychainConsent } from '../../../shared/types'
@@ -2421,6 +2422,10 @@ function GeneralPage(): React.JSX.Element {
         </span>
       </label>
 
+      <h4 className="settings-section-title">{t('settings.editor')}</h4>
+      <p className="settings-hint">{t('settings.editorHint')}</p>
+      <EditorCard />
+
       <h4 className="settings-section-title">{t('settings.defaultOpenApp')}</h4>
       <p className="settings-hint">{t('settings.defaultOpenAppHint')}</p>
       <div className="settings-app-picker">
@@ -2451,6 +2456,89 @@ function GeneralPage(): React.JSX.Element {
       </div>
 
     </div>
+  )
+}
+
+/**
+ * Picks the external editor used by every "Open in <editor>" action. Detection
+ * runs each time the card mounts rather than being cached: installing an editor
+ * while Gitcito is open should be one settings visit away, not a restart.
+ */
+function EditorCard(): React.JSX.Element {
+  const editor = useSettingsStore((s) => s.settings.editor)
+  const update = useSettingsStore((s) => s.update)
+  const t = useT()
+  const [found, setFound] = useState<DetectedEditor[]>([])
+
+  useEffect(() => {
+    void editorApi.detect().then(setFound)
+  }, [])
+
+  const custom = editor?.id === 'custom'
+  const setEditor = (next: EditorSetting | undefined): void => update((s) => ({ ...s, editor: next }))
+
+  const pick = (value: string): void => {
+    if (value === 'none') return setEditor(undefined)
+    if (value === 'custom') {
+      return setEditor({ id: 'custom', name: t('settings.editorCustom'), command: '', source: 'cli', fileArgs: '{path}', folderArgs: '{path}' })
+    }
+    const hit = found.find((f) => f.id === value)
+    if (hit) setEditor({ id: hit.id, name: hit.name, command: hit.command, source: hit.source })
+  }
+
+  return (
+    <>
+      <label className="settings-field">
+        <span className="settings-field-label">{t('settings.editorChoice')}</span>
+        <select value={editor?.id ?? 'none'} onChange={(e) => pick(e.target.value)}>
+          <option value="none">{t('settings.editorNone')}</option>
+          {found.map((f) => (
+            <option key={f.id} value={f.id}>
+              {f.name}
+            </option>
+          ))}
+          <option value="custom">{t('settings.editorCustom')}</option>
+        </select>
+      </label>
+
+      {editor && !custom && editor.source === 'app' && (
+        <p className="settings-hint">{interp(t('settings.editorNoCli'), { app: editor.name })}</p>
+      )}
+
+      {custom && editor && (
+        <div className="form-row two">
+          <label>
+            {t('settings.editorCommand')}
+            <input
+              value={editor.command}
+              placeholder="/usr/local/bin/code"
+              onChange={(e) => setEditor({ ...editor, command: e.target.value })}
+            />
+          </label>
+          <label>
+            {t('settings.editorName')}
+            <input value={editor.name} onChange={(e) => setEditor({ ...editor, name: e.target.value })} />
+          </label>
+          <label>
+            {t('settings.editorFileArgs')}
+            <input
+              value={editor.fileArgs ?? ''}
+              placeholder={/* i18n-ignore CLI argv template */ '-g {path}:{line}:{col}'}
+              onChange={(e) => setEditor({ ...editor, fileArgs: e.target.value })}
+            />
+          </label>
+          <label>
+            {t('settings.editorFolderArgs')}
+            <input
+              value={editor.folderArgs ?? ''}
+              placeholder={/* i18n-ignore CLI argv template */ '{path}'}
+              onChange={(e) => setEditor({ ...editor, folderArgs: e.target.value })}
+            />
+          </label>
+        </div>
+      )}
+      {custom && <p className="settings-hint">{t('settings.editorArgsHint')}</p>}
+    </>
   )
 }
 

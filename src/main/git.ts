@@ -71,6 +71,12 @@ import type {
   CleanEntry,
   CleanPreview,
   CleanResult,
+  ArchiveFormat,
+  ArchiveResult,
+  BundleInfo,
+  BundleRef,
+  BundleResult,
+  BundleScope,
   HistoryPathEntry,
   HistoryPurgePreview,
   HistoryPurgeBackup,
@@ -2180,6 +2186,115 @@ export const gitService = {
 
   async unstageAll(repoPath: string): Promise<void> {
     await gitFor(repoPath).raw(['reset', 'HEAD', '--', '.'])
+  },
+
+  // ─── Bundles and archives ──────────────────────────────────────────────────
+  // Two ways to put a repository into a single file. A bundle is git history —
+  // it clones and fetches like a remote, and is how work crosses an air gap. An
+  // archive is just the files at one commit, with no history at all.
+
+  /** Write a bundle of `scope` to `file`, and report what it ended up holding. */
+  async bundleCreate(repoPath: string, file: string, scope: BundleScope): Promise<BundleResult> {
+    const args = ['bundle', 'create', file]
+    if (scope.kind === 'all') args.push('--all')
+    else if (scope.kind === 'ref') args.push(scope.ref)
+    // A range bundle records the far end as a prerequisite: it is a patch of
+    // history, useless to anyone who does not already have `from`.
+    else args.push(`${scope.from}..${scope.to}`)
+    await runGit(repoPath, args)
+
+    const heads = await runGit(repoPath, ['bundle', 'list-heads', file]).catch(() => '')
+    return {
+      path: file,
+      bytes: await stat(file).then((s) => s.size).catch(() => 0),
+      refs: heads.split('\n').filter((l) => l.trim()).length
+    }
+  },
+
+  /** What a bundle holds, and whether this repository has what it needs to use it. */
+  async bundleInspect(repoPath: string, file: string): Promise<BundleInfo> {
+    const heads = await runGit(repoPath, ['bundle', 'list-heads', file]).catch(() => '')
+    const refs: BundleRef[] = []
+    for (const line of heads.split('\n')) {
+      const [sha, ...rest] = line.trim().split(/\s+/)
+      if (/^[0-9a-f]{7,}$/.test(sha) && rest.length) refs.push({ sha, name: rest.join(' ') })
+    }
+
+    // `git bundle verify` says everything useful on stderr and exits non-zero
+    // when a prerequisite is missing — which is a fact to report, not a failure.
+    let ok = true
+    let output = ''
+    try {
+      const { stdout, stderr } = await pexecFile('git', ['-C', repoPath, 'bundle', 'verify', file], {
+        env: noPromptEnv()
+      })
+      output = `${stdout}${stderr}`
+    } catch (err) {
+      const e = err as { stdout?: string; stderr?: string; message?: string }
+      ok = false
+      output = `${e.stdout ?? ''}${e.stderr || e.message || ''}`
+    }
+    // verify prints shas twice over — the refs the bundle *contains*, and the
+    // ones it *requires* — so the prerequisites are only the shas under the
+    // requires heading (or, when git could not read them, its `error:` lines).
+    const prerequisites: string[] = []
+    let inRequires = false
+    for (const raw of output.split('\n')) {
+      const line = raw.trim().replace(/^error:\s*/, '')
+      if (/requires (this|these).*ref|lacks these prerequisite/i.test(line)) {
+        inRequires = true
+        continue
+      }
+      const m = /^([0-9a-f]{40,64})\b/.exec(line)
+      if (m) {
+        if (inRequires) prerequisites.push(m[1])
+      } else if (line) {
+        inRequires = false
+      }
+    }
+    return { refs, prerequisites, usable: ok, message: output.trim() }
+  },
+
+  /**
+   * Fetch refs out of a bundle into `refs/remotes/bundle/*`.
+   *
+   * Deliberately not onto the local branches: a bundle is someone else's work
+   * arriving, and landing it on `main` behind the user's back is how you lose
+   * commits. Under a remote-shaped namespace it shows up in the branch list and
+   * merges (or does not) on their terms.
+   */
+  async bundleFetch(repoPath: string, file: string, refs: string[]): Promise<string[]> {
+    const wanted = refs.filter(Boolean)
+    if (!wanted.length) throw new Error('Choose at least one ref to import.')
+    const specs = wanted.map((ref) => {
+      const short = ref.replace(/^refs\/heads\//, '').replace(/^refs\//, '')
+      return `+${ref}:refs/remotes/bundle/${short}`
+    })
+    await runGit(repoPath, ['fetch', file, ...specs])
+    return wanted.map((ref) => `bundle/${ref.replace(/^refs\/heads\//, '').replace(/^refs\//, '')}`)
+  },
+
+  /**
+   * Export one tree as a zip or tarball. `git archive` honours `export-ignore`
+   * in .gitattributes, so a repository can keep its own CI config and fixtures
+   * out of the file it hands to someone else.
+   */
+  async archiveCreate(
+    repoPath: string,
+    file: string,
+    ref: string,
+    format: ArchiveFormat,
+    prefix: string,
+    subdir: string
+  ): Promise<ArchiveResult> {
+    const args = ['archive', `--format=${format}`, '-o', file]
+    // Without a prefix every path lands at the root of the archive, which turns
+    // an unzip in the wrong directory into a mess of loose files.
+    if (prefix.trim()) args.push(`--prefix=${prefix.trim().replace(/\/*$/, '/')}`)
+    args.push(ref.trim() || 'HEAD')
+    if (subdir.trim()) args.push('--', subdir.trim())
+    await runGit(repoPath, args)
+    return { path: file, bytes: await stat(file).then((s) => s.size).catch(() => 0) }
   },
 
   // ─── Untracked files (`git clean`) ─────────────────────────────────────────
@@ -5018,6 +5133,11 @@ const READ_METHODS = new Set<string>([
   'rerereStatus',
   'subtrees',
   'cleanPreview',
+  // Writing a bundle or an archive reads the object database and touches
+  // nothing in the repository — the file it produces lives outside it.
+  'bundleCreate',
+  'bundleInspect',
+  'archiveCreate',
   'note',
   'notedCommits',
   'historyPaths',

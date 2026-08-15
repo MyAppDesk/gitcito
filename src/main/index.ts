@@ -186,6 +186,34 @@ app.whenReady().then(() => {
     }
   )
 
+  // Pick a destination path without writing anything: git writes the file
+  // itself (bundle, archive), so the renderer only needs somewhere to point it.
+  ipcMain.handle(
+    'dialog:choosePath',
+    async (_e, title: string, defaultName: string, filters?: { name: string; extensions: string[] }[]) => {
+      const { canceled, filePath } = await dialog.showSaveDialog({
+        title,
+        defaultPath: defaultName,
+        filters: filters?.length ? filters : [{ name: 'All files', extensions: ['*'] }]
+      })
+      return canceled || !filePath ? null : filePath
+    }
+  )
+
+  // Pick an existing file, by path only — for binary formats the renderer never
+  // reads itself (a bundle is handed straight to git).
+  ipcMain.handle(
+    'dialog:openFilePath',
+    async (_e, title: string, filters?: { name: string; extensions: string[] }[]) => {
+      const { canceled, filePaths } = await dialog.showOpenDialog({
+        title,
+        filters: filters?.length ? filters : [{ name: 'All files', extensions: ['*'] }],
+        properties: ['openFile']
+      })
+      return canceled || !filePaths[0] ? null : filePaths[0]
+    }
+  )
+
   // Open a patch/diff file. Returns { path, content } or null if cancelled.
   ipcMain.handle('dialog:openPatch', async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({

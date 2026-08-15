@@ -1543,6 +1543,47 @@ export interface SubtreeInfo {
   lastSplit: string
 }
 
+/** What a bundle should hold: everything, one ref, or the commits in a range. */
+export type BundleScope =
+  | { kind: 'all' }
+  | { kind: 'ref'; ref: string }
+  | { kind: 'range'; from: string; to: string }
+
+/** A written bundle file. */
+export interface BundleResult {
+  path: string
+  bytes: number
+  /** Refs the bundle carries — 0 would mean git wrote an empty one. */
+  refs: number
+}
+
+/** One ref inside a bundle, as `git bundle list-heads` prints it. */
+export interface BundleRef {
+  /** Full ref name, e.g. `refs/heads/main`. */
+  name: string
+  sha: string
+}
+
+/** What a bundle file holds, and whether this repository can unbundle it. */
+export interface BundleInfo {
+  refs: BundleRef[]
+  /** Commits the bundle expects the receiving repository to already have. A
+   *  range bundle is worthless without them; a full one lists none. */
+  prerequisites: string[]
+  /** True when every prerequisite is present here. */
+  usable: boolean
+  /** git's own verify output — the explanation when `usable` is false. */
+  message: string
+}
+
+export type ArchiveFormat = 'zip' | 'tar.gz' | 'tar'
+
+/** A written archive file. */
+export interface ArchiveResult {
+  path: string
+  bytes: number
+}
+
 /**
  * One removable path in a `git clean` preview — a file or a wholly untracked
  * directory, exactly as `git ls-files --others --directory` collapses it.

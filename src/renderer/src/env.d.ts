@@ -53,6 +53,14 @@ interface PreloadApi {
     data: Uint8Array,
     filters?: { name: string; extensions: string[] }[]
   ): Promise<string | null>
+  /** Pick a destination path; writes nothing (git produces the file). */
+  choosePath(
+    title: string,
+    defaultName: string,
+    filters?: { name: string; extensions: string[] }[]
+  ): Promise<string | null>
+  /** Pick an existing file, by path only. */
+  openFilePath(title: string, filters?: { name: string; extensions: string[] }[]): Promise<string | null>
   openExternal(url: string): Promise<void>
   appVersion(): Promise<string>
   appReleases(): Promise<import('../../shared/types').AppRelease[]>

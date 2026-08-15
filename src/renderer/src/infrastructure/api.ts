@@ -65,6 +65,11 @@ import type {
   SubtreeInfo,
   CleanPreview,
   CleanResult,
+  ArchiveFormat,
+  ArchiveResult,
+  BundleInfo,
+  BundleResult,
+  BundleScope,
   AppThemeColors,
   CodeThemeColors,
   Analytics,
@@ -237,6 +242,21 @@ export const gitApi = {
   subtreeSplit: (path: string, prefix: string, branch: string) =>
     call<string>('subtreeSplit', path, prefix, branch),
   subtreeForget: (path: string, prefix: string) => call<void>('subtreeForget', path, prefix),
+
+  /** A repository, a branch or a range of commits as one file. */
+  bundleCreate: (path: string, file: string, scope: BundleScope) =>
+    call<BundleResult>('bundleCreate', path, file, scope),
+  bundleInspect: (path: string, file: string) => call<BundleInfo>('bundleInspect', path, file),
+  bundleFetch: (path: string, file: string, refs: string[]) => call<string[]>('bundleFetch', path, file, refs),
+  /** One tree as a zip or tarball, honouring export-ignore. */
+  archiveCreate: (
+    path: string,
+    file: string,
+    ref: string,
+    format: ArchiveFormat,
+    prefix: string,
+    subdir: string
+  ) => call<ArchiveResult>('archiveCreate', path, file, ref, format, prefix, subdir),
 
   /** Untracked and ignored paths `git clean` would remove, with their sizes. */
   cleanPreview: (path: string) => call<CleanPreview>('cleanPreview', path),

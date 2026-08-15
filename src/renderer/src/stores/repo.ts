@@ -1179,6 +1179,22 @@ export const repoActions = {
       .getState()
       .run(path, interp(t('act.subtreeSplit'), { branch }), () => gitApi.subtreeSplit(path, prefix, branch).then(() => undefined)),
 
+  // ─── Bundles ───
+  // Importing is the only half that touches refs. It lands under
+  // refs/remotes/bundle/, so there is nothing to undo — nothing local moved.
+  bundleFetch: (path: string, file: string, refs: string[]) =>
+    useRepoStore
+      .getState()
+      .run(
+        path,
+        interp(t('act.bundleImported'), { n: String(refs.length) }),
+        () => gitApi.bundleFetch(path, file, refs).then(() => undefined),
+        undefined,
+        'fetch',
+        undefined,
+        ['branches', 'log']
+      ),
+
   // ─── Untracked files ───
   // No undo entry: content that was never committed cannot be brought back by a
   // git command. The trash option is the only recovery, and it is the caller's

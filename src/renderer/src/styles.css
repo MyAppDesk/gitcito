@@ -11515,6 +11515,38 @@ mark.find-hit.active {
 }
 .subtree-add { margin-top: 12px; }
 
+.export-modal { display: flex; flex-direction: column; min-height: 0; overflow-y: auto; }
+.export-scope { display: flex; gap: 14px; margin: 10px 0 4px; }
+.export-radio { display: flex; align-items: center; gap: 6px; font-size: 12.5px; cursor: pointer; }
+.export-field { margin-top: 10px; }
+.export-field .modal-hint { display: block; margin-top: 4px; }
+.export-incoming {
+  margin-top: 14px;
+  padding: 10px 12px;
+  background: var(--bg-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+}
+.export-incoming-head { display: flex; align-items: center; gap: 7px; font-size: 12.5px; margin-bottom: 6px; }
+.export-warn { font-size: 12px; color: var(--warn, #d97706); margin: 0 0 8px; }
+.export-ref-row { display: flex; align-items: center; gap: 8px; padding: 3px 0; font-size: 12.5px; cursor: pointer; }
+.export-ref-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.export-ref-row code { font-family: var(--mono); font-size: 10.5px; color: var(--text-2); }
+/* Where the file landed, kept after the toast has gone. */
+.export-result {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 8px 10px;
+  background: var(--bg-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  font-size: 12px;
+}
+.export-result-path { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--mono); }
+.export-result-size { flex-shrink: 0; color: var(--text-2); }
+
 .clean-modal { display: flex; flex-direction: column; min-height: 0; }
 .clean-list {
   display: flex;

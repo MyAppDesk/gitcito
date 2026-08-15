@@ -18,6 +18,7 @@
       "cheatsheet": "keyboard",
       "clean": "clean",
       "clone": "cloning",
+      "export": "export",
       "gitflow": "gitflow",
       "history-purge": "history-purge",
       "code-search": "search",
@@ -79,7 +80,9 @@
     "covered": {
       "absorb": "absorb",
       "ai-assistant": "ai",
+      "archive": "export",
       "bisect": "recovery",
+      "bundle": "export",
       "changelog": "changelog",
       "changelog-gen": "changelog",
       "clean": "clean",

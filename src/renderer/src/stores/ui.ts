@@ -95,6 +95,7 @@ export type ModalSpec =
   | { kind: 'history-purge'; repoPath: string; initialPath?: string }
   | { kind: 'subtree'; repoPath: string }
   | { kind: 'clean'; repoPath: string }
+  | { kind: 'export'; repoPath: string; tab?: 'bundle' | 'archive' }
   | { kind: 'changelog-gen'; repoPath: string }
   | { kind: 'snapshots'; repoPath: string }
   | { kind: 'stash-partial'; repoPath: string }

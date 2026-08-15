@@ -1058,6 +1058,32 @@ export const shots = [
     }
   },
   {
+    // Bundling a repository into one file — shown on the range scope, which is
+    // the option that needs explaining.
+    out: 'export',
+    repos: ['tags-and-releases'],
+    themes: ['light'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['tags-and-releases']
+      await page.evaluate(
+        (r) => window.__shot.ui.getState().openModal({ kind: 'export', repoPath: r, tab: 'bundle' }),
+        repo
+      )
+      await page.waitForTimeout(500)
+      // Pick "A range of commits" — the third radio — so both ref fields show.
+      await page.evaluate(() => {
+        const radios = document.querySelectorAll('.export-scope input[type=radio]')
+        radios[2]?.click()
+      })
+      await page.waitForTimeout(300)
+      // Fill the starting ref, so the shot shows a bundle ready to write rather
+      // than a disabled button over an empty field.
+      await page.locator('.export-field .refpick-input').first().fill('v1.0.0')
+      await page.locator('.export-modal h3').click()
+      await page.waitForTimeout(600)
+    }
+  },
+  {
     // Removing untracked files: the dry run, with ignored paths kept apart.
     out: 'clean',
     repos: ['untracked-mess'],

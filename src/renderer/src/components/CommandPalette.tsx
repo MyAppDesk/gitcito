@@ -43,7 +43,8 @@ import {
   GitMerge,
   Eraser,
   FolderInput,
-  Trash2
+  Trash2,
+  Package
 } from 'lucide-react'
 import { useUIStore } from '../stores/ui'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
@@ -222,6 +223,8 @@ export function CommandPalette(): React.JSX.Element {
           : []
       })(),
       { id: 'subtree', title: t('cmd.subtree'), group: 'Actions', keywords: 'subtree vendor library embed prefix split monorepo submodule alternative', icon: <FolderInput size={15} />, run: act(() => ui.openModal({ kind: 'subtree', repoPath: path })) },
+      { id: 'bundle', title: t('cmd.bundle'), group: 'Actions', keywords: 'bundle git bundle export offline air gap usb email transfer clone from file import', icon: <Package size={15} />, run: act(() => ui.openModal({ kind: 'export', repoPath: path, tab: 'bundle' })) },
+      { id: 'archive', title: t('cmd.archive'), group: 'Actions', keywords: 'archive zip tarball tar gz export snapshot release source export-ignore', icon: <Archive size={15} />, run: act(() => ui.openModal({ kind: 'export', repoPath: path, tab: 'archive' })) },
       { id: 'clean', title: t('cmd.clean'), group: 'Actions', keywords: 'clean untracked remove delete build output junk ignored dry run trash tidy', icon: <Trash2 size={15} />, run: act(() => ui.openModal({ kind: 'clean', repoPath: path })) },
       { id: 'history-purge', title: t('cmd.historyPurge'), group: 'Actions', keywords: 'remove file history secret leak purge filter-branch rewrite big file bfg scrub', icon: <Eraser size={15} />, run: act(() => ui.openModal({ kind: 'history-purge', repoPath: path })) },
       { id: 'gitflow', title: t('cmd.gitflow'), group: 'Actions', keywords: 'git flow feature release hotfix develop branch prefix start finish', icon: <GitMerge size={15} />, run: act(() => ui.openModal({ kind: 'gitflow', repoPath: path })) },

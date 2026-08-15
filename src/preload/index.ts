@@ -36,6 +36,13 @@ const api = {
   savePatch: (defaultName: string, content: string): Promise<string | null> =>
     ipcRenderer.invoke('dialog:savePatch', defaultName, content),
   openPatch: (): Promise<{ path: string; content: string } | null> => ipcRenderer.invoke('dialog:openPatch'),
+  choosePath: (
+    title: string,
+    defaultName: string,
+    filters?: { name: string; extensions: string[] }[]
+  ): Promise<string | null> => ipcRenderer.invoke('dialog:choosePath', title, defaultName, filters),
+  openFilePath: (title: string, filters?: { name: string; extensions: string[] }[]): Promise<string | null> =>
+    ipcRenderer.invoke('dialog:openFilePath', title, filters),
   saveBinary: (
     defaultName: string,
     data: Uint8Array,

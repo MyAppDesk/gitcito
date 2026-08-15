@@ -998,3 +998,87 @@ describe('remove untracked files (git clean)', () => {
     expect(existsSync(join(R, 'experiment'))).toBe(false)
   })
 })
+
+describe('bundles and archives', () => {
+  /** Paths inside a tarball — enough to assert what an archive did and did not take. */
+  const tarEntries = async (file: string): Promise<string[]> => {
+    const { execFile } = await import('node:child_process')
+    const { promisify } = await import('node:util')
+    const { stdout } = await promisify(execFile)('tar', ['-tf', file])
+    return stdout.split('\n').map((l) => l.trim()).filter(Boolean)
+  }
+
+  it('bundles the whole repository, and another repo can fetch from the file', async () => {
+    const R = cloneFixture('tags-and-releases')
+    const out = join(mkdtempSync(join(tmpdir(), 'gitcito-bundle-')), 'all.bundle')
+    const result = await gitService.bundleCreate(R, out, { kind: 'all' })
+    expect(existsSync(out)).toBe(true)
+    expect(result.bytes).toBeGreaterThan(0)
+    // main, a hotfix branch and five tags all travel in one file.
+    expect(result.refs).toBeGreaterThan(5)
+
+    const info = await gitService.bundleInspect(R, out)
+    expect(info.usable).toBe(true)
+    expect(info.prerequisites).toEqual([])
+    expect(info.refs.map((r) => r.name)).toContain('refs/heads/main')
+
+    // The receiving side: refs land under bundle/, local branches untouched.
+    const target = cloneFixture('tags-and-releases')
+    await raw(target, ['reset', '--hard', 'HEAD~2'])
+    const before = await shaOf(target, 'main')
+    const created = await gitService.bundleFetch(target, out, ['refs/heads/main'])
+    expect(created).toEqual(['bundle/main'])
+    expect(await shaOf(target, 'refs/remotes/bundle/main')).toBe(await shaOf(R, 'main'))
+    expect(await shaOf(target, 'main')).toBe(before)
+  })
+
+  it('bundles a range, and says so when the other side lacks its starting point', async () => {
+    const R = cloneFixture('tags-and-releases')
+    const out = join(mkdtempSync(join(tmpdir(), 'gitcito-bundle-')), 'range.bundle')
+    await gitService.bundleCreate(R, out, { kind: 'range', from: 'HEAD~2', to: 'main' })
+
+    // In the repository it came from, everything it builds on is present.
+    expect((await gitService.bundleInspect(R, out)).usable).toBe(true)
+
+    // In an unrelated repository it is unusable, and says which commits are missing.
+    const stranger = cloneFixture('bisect-bug')
+    const info = await gitService.bundleInspect(stranger, out)
+    expect(info.usable).toBe(false)
+    expect(info.prerequisites.length).toBeGreaterThan(0)
+    expect(info.message).toMatch(/prerequisite/i)
+  })
+
+  it('refuses to create an empty bundle rather than writing a useless file', async () => {
+    const R = cloneFixture('tags-and-releases')
+    const out = join(mkdtempSync(join(tmpdir(), 'gitcito-bundle-')), 'empty.bundle')
+    await expect(gitService.bundleCreate(R, out, { kind: 'range', from: 'main', to: 'main' })).rejects.toThrow()
+  })
+
+  it('archives one tree, wrapped in a prefix, honouring export-ignore', async () => {
+    const R = cloneFixture('tags-and-releases')
+    writeFileSync(join(R, '.gitattributes'), 'plugins.py export-ignore\n')
+    await raw(R, ['add', '-A'])
+    await raw(R, ['-c', 'user.email=t@e', '-c', 'user.name=T', 'commit', '-m', 'add export-ignore'])
+
+    const out = join(mkdtempSync(join(tmpdir(), 'gitcito-archive-')), 'src.tar')
+    const result = await gitService.archiveCreate(R, out, 'main', 'tar', 'demo-1.0', '')
+    expect(result.bytes).toBeGreaterThan(0)
+
+    const entries = await tarEntries(out)
+    expect(entries).toContain('demo-1.0/app.py')
+    // export-ignore is the whole point: the path is in the commit, not in the file.
+    expect(entries.some((e) => e.endsWith('plugins.py'))).toBe(false)
+  })
+
+  it('archives a single subdirectory when asked for one', async () => {
+    const R = cloneFixture('deep-history-monorepo')
+    const dirs = (await raw(R, ['ls-tree', '--name-only', '-d', 'HEAD'])).split('\n').filter(Boolean)
+    const dir = dirs[0]
+    const out = join(mkdtempSync(join(tmpdir(), 'gitcito-archive-')), 'part.tar')
+    await gitService.archiveCreate(R, out, 'HEAD', 'tar', '', dir)
+
+    const entries = await tarEntries(out)
+    expect(entries.length).toBeGreaterThan(0)
+    expect(entries.every((e) => e.startsWith(dir))).toBe(true)
+  })
+})

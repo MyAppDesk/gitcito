@@ -33,6 +33,7 @@ import { GitflowModal } from './GitflowModal'
 import { HistoryPurgeModal } from './HistoryPurgeModal'
 import { SubtreeModal } from './SubtreeModal'
 import { CleanModal } from './CleanModal'
+import { ExportModal } from './ExportModal'
 import { ChangelogGenModal } from './ChangelogGenModal'
 import { SnapshotsModal } from './SnapshotsModal'
 import { SecureShareModal } from './SecureShareModal'
@@ -1578,6 +1579,7 @@ export function ModalHost(): React.JSX.Element {
             {modal.kind === 'gitflow' && <GitflowModal repoPath={modal.repoPath} />}
             {modal.kind === 'subtree' && <SubtreeModal repoPath={modal.repoPath} />}
             {modal.kind === 'clean' && <CleanModal repoPath={modal.repoPath} />}
+            {modal.kind === 'export' && <ExportModal repoPath={modal.repoPath} initialTab={modal.tab} />}
             {modal.kind === 'history-purge' && (
               <HistoryPurgeModal repoPath={modal.repoPath} initialPath={modal.initialPath} />
             )}

@@ -65,6 +65,7 @@ import type {
   GitflowKind,
   GitflowStatus,
   GitflowSnapshot,
+  PushRemoteResult,
   HistoryPathEntry,
   HistoryPurgePreview,
   HistoryPurgeBackup,
@@ -119,6 +120,8 @@ const REC = '\x1e'
  */
 const EVENT_FOR_METHOD: Record<string, ActivityEvent> = {
   push: 'push',
+  pushToRemotes: 'push',
+  pushAllTags: 'push',
   pull: 'pull',
   fetchAll: 'fetch',
   fetchRemote: 'fetch',
@@ -1885,6 +1888,46 @@ export const gitService = {
     if (opts.force) args.push('--force-with-lease')
     args.push('--set-upstream', remote, branch)
     await withRemoteAuth(repoPath, remote, () => runGit(repoPath, args))
+  },
+
+  /**
+   * Push one branch to several remotes in turn.
+   *
+   * A failure against one remote does not cancel the others: pushing a fork and
+   * its upstream is the whole point, and "upstream rejected it" is no reason to
+   * leave the fork behind. Each result is reported separately.
+   */
+  async pushToRemotes(
+    repoPath: string,
+    branch: string,
+    remotes: string[],
+    opts: { force?: boolean; tags?: boolean } = {}
+  ): Promise<PushRemoteResult[]> {
+    const targets = remotes.map((r) => r.trim()).filter(Boolean)
+    if (!targets.length) throw new Error('Choose at least one remote.')
+
+    const results: PushRemoteResult[] = []
+    for (const remote of targets) {
+      const args = ['push']
+      if (opts.force) args.push('--force-with-lease')
+      // Only the first remote's push sets the upstream — a branch has one, and
+      // the last remote pushed to is not automatically the one to track.
+      if (remote === targets[0]) args.push('--set-upstream')
+      if (opts.tags) args.push('--follow-tags')
+      args.push(remote, branch)
+      try {
+        await withRemoteAuth(repoPath, remote, () => runGit(repoPath, args))
+        results.push({ remote, ok: true, error: '' })
+      } catch (err) {
+        results.push({ remote, ok: false, error: err instanceof Error ? err.message : String(err) })
+      }
+    }
+    return results
+  },
+
+  /** Publish every local tag to a remote. Annotated and lightweight alike. */
+  async pushAllTags(repoPath: string, remote = 'origin'): Promise<void> {
+    await withRemoteAuth(repoPath, remote, () => runGit(repoPath, ['push', remote, '--tags']))
   },
 
   // ─── Stash operations ──────────────────────────────────────────────────────

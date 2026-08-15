@@ -878,6 +878,16 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     return [
       { label: t('sidebar.addRemote'), onClick: () => addRemote() },
       { label: interp(t('sidebar.fetchRemote'), { remote: remoteName }), onClick: () => void repoActions.fetchRemote(path, remoteName) },
+      // The remote's own row is the obvious place to ask "send this branch
+      // there" — the toolbar's push only ever means the upstream.
+      {
+        label: interp(t('sidebar.pushToRemote'), { remote: remoteName }),
+        onClick: () => void repoActions.pushToRemotes(path, [remoteName])
+      },
+      {
+        label: interp(t('sidebar.pushTagsToRemote'), { remote: remoteName }),
+        onClick: () => void repoActions.pushAllTags(path, remoteName)
+      },
       {
         label: interp(t('sidebar.editRemote'), { remote: remoteName }),
         onClick: () =>

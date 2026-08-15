@@ -1516,6 +1516,14 @@ export interface HistoryPurgeResult {
   rewritten: number
 }
 
+/** Outcome of pushing to one remote, when several were asked for at once. */
+export interface PushRemoteResult {
+  remote: string
+  ok: boolean
+  /** git's message when `ok` is false. */
+  error: string
+}
+
 /** One entry from `git reflog` — the recovery net for lost/rewound commits. */
 export interface ReflogEntry {
   sha: string

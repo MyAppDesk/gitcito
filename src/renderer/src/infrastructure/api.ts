@@ -34,6 +34,7 @@ import type {
   GraphCommit,
   RebaseStep,
   RemoteInfo,
+  PushRemoteResult,
   RepoStatus,
   RepoSummary,
   StashInfo,
@@ -162,6 +163,11 @@ export const gitApi = {
   pull: (path: string, mode: 'default' | 'ff-only' | 'rebase') => call<void>('pull', path, mode),
   push: (path: string, branch: string, opts?: { force?: boolean; remote?: string }) =>
     call<void>('push', path, branch, opts),
+  /** One push per remote, reported separately — one rejection does not cancel
+   *  the rest. */
+  pushToRemotes: (path: string, branch: string, remotes: string[], opts?: { force?: boolean; tags?: boolean }) =>
+    call<PushRemoteResult[]>('pushToRemotes', path, branch, remotes, opts),
+  pushAllTags: (path: string, remote?: string) => call<void>('pushAllTags', path, remote),
 
   cherryPickMany: (path: string, hashes: string[], noCommit?: boolean) =>
     call<void>('cherryPickMany', path, hashes, noCommit),

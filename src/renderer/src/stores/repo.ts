@@ -578,6 +578,58 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
 
 // Push the branch, surfacing a helpful recovery dialog when the remote rejects
 // a non-force push because it has commits we don't have locally.
+/**
+ * The checks that run before any push: force-pushing a protected branch, and
+ * publishing credential-looking files. Returns false when one of them opened a
+ * confirmation — `retry` is what that confirmation runs on approval.
+ */
+async function pushGuards(
+  path: string,
+  branch: string,
+  force: boolean,
+  retry: () => void,
+  protectedConfirmed = false
+): Promise<boolean> {
+  // Force-pushing a protected branch rewrites shared history — confirm first.
+  if (force && !protectedConfirmed) {
+    const protectedBranches = await gitApi.protectedBranches(path).catch(() => [] as string[])
+    if (protectedBranches.includes(branch)) {
+      useUIStore.getState().openModal({
+        kind: 'confirm',
+        danger: true,
+        title: t('confirm.protectedForcePush.title'),
+        message: interp(t('confirm.protectedForcePush.message'), { branch }),
+        confirmLabel: t('confirm.forcePush.ok'),
+        onConfirm: retry
+      })
+      return false
+    }
+  }
+  // Secret guard: if this push would publish credential-looking files, warn
+  // once per session. Only the files in the commits actually being pushed
+  // count — secrets already tracked and pushed long ago shouldn't nag.
+  if (!secretPushWarned.has(path)) {
+    const pushing = await gitApi.filesToPush(path, branch).catch(() => [] as string[])
+    const secrets = pushing.filter(isSecretFile)
+    if (secrets.length > 0) {
+      secretPushWarned.add(path)
+      useUIStore.getState().openModal({
+        kind: 'confirm',
+        danger: true,
+        title: t('confirm.pushSecrets.title'),
+        message: interp(t('confirm.pushSecrets.message'), {
+          files: secrets.slice(0, 10).join('\n'),
+          more: secrets.length > 10 ? interp(t('confirm.pushSecrets.more'), { n: secrets.length - 10 }) : ''
+        }),
+        confirmLabel: t('confirm.pushSecrets.ok'),
+        onConfirm: retry
+      })
+      return false
+    }
+  }
+  return true
+}
+
 function runPush(path: string, branch: string, force: boolean): Promise<boolean> {
   return enqueue(path, () => runPushInner(path, branch, force))
 }
@@ -1033,47 +1085,61 @@ export const repoActions = {
     return ok
   },
 
+  /**
+   * Push the current branch to several remotes at once. Runs the same protected
+   * branch and secret checks as a normal push — publishing to two remotes is
+   * twice the exposure, not half the caution.
+   */
+  pushToRemotes: async (path: string, remotes: string[], opts: { force?: boolean; tags?: boolean } = {}) => {
+    const repo = useRepoStore.getState().repos[path]
+    const branch = repo?.branches.current
+    if (!branch || !remotes.length) return false
+    if (!(await pushGuards(path, branch, !!opts.force, () => void repoActions.pushToRemotes(path, remotes, opts)))) {
+      return false
+    }
+
+    const ui = useUIStore.getState()
+    ui.beginInflight()
+    ui.setBusy(interp(t('busy.pushingRemotes'), { n: String(remotes.length) }), 'push')
+    muteWatcher(path)
+    try {
+      const results = await gitApi.pushToRemotes(path, branch, remotes, opts)
+      const failed = results.filter((r) => !r.ok)
+      const ok = results.filter((r) => r.ok).map((r) => r.remote)
+      if (ok.length) toast('success', interp(t('act.pushedRemotes'), { branch, remotes: ok.join(', ') }))
+      // Each failure names its own remote: "it did not work" is useless when
+      // half of them did.
+      for (const failure of failed) {
+        toast('error', interp(t('act.pushRemoteFailed'), { remote: failure.remote, error: failure.error }))
+      }
+      return failed.length === 0
+    } catch (err) {
+      toast('error', err instanceof Error ? err.message : String(err))
+      return false
+    } finally {
+      ui.endInflight()
+      ui.setBusy(null)
+      void useRepoStore.getState().refresh(path, { only: ['branches', 'log'] })
+    }
+  },
+
+  pushAllTags: (path: string, remote = 'origin') =>
+    useRepoStore
+      .getState()
+      .run(path, interp(t('act.pushedTags'), { remote }), () => gitApi.pushAllTags(path, remote), undefined, 'push'),
+
   push: async (path: string, force = false, protectedConfirmed = false): Promise<boolean> => {
     const repo = useRepoStore.getState().repos[path]
     const branch = repo?.branches.current
     if (!branch) return false
-    // Force-pushing a protected branch rewrites shared history — confirm first.
-    if (force && !protectedConfirmed) {
-      const protectedBranches = await gitApi.protectedBranches(path).catch(() => [] as string[])
-      if (protectedBranches.includes(branch)) {
-        useUIStore.getState().openModal({
-          kind: 'confirm',
-          danger: true,
-          title: t('confirm.protectedForcePush.title'),
-          message: interp(t('confirm.protectedForcePush.message'), { branch }),
-          confirmLabel: t('confirm.forcePush.ok'),
-          onConfirm: () => void repoActions.push(path, true, true)
-        })
-        return false
-      }
-    }
-    // Secret guard: if this push would publish credential-looking files, warn
-    // once per session. Only the files in the commits actually being pushed
-    // count — secrets already tracked and pushed long ago shouldn't nag.
-    if (!secretPushWarned.has(path)) {
-      const pushing = await gitApi.filesToPush(path, branch).catch(() => [] as string[])
-      const secrets = pushing.filter(isSecretFile)
-      if (secrets.length > 0) {
-        secretPushWarned.add(path)
-        useUIStore.getState().openModal({
-          kind: 'confirm',
-          danger: true,
-          title: t('confirm.pushSecrets.title'),
-          message: interp(t('confirm.pushSecrets.message'), {
-            files: secrets.slice(0, 10).join('\n'),
-            more: secrets.length > 10 ? interp(t('confirm.pushSecrets.more'), { n: secrets.length - 10 }) : ''
-          }),
-          confirmLabel: t('confirm.pushSecrets.ok'),
-          onConfirm: () => void repoActions.push(path, force)
-        })
-        return false
-      }
-    }
+    const cleared = await pushGuards(
+      path,
+      branch,
+      force,
+      () => void repoActions.push(path, force, true),
+      protectedConfirmed
+    )
+    if (!cleared) return false
     if (!repo?.remotes.length) {
       useUIStore.getState().openModal({
         kind: 'confirm',

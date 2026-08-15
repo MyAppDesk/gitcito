@@ -95,6 +95,30 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
     openContextMenu(rect.left, rect.bottom + 6, [
       { label: t('toolbar.push'), onClick: () => void repoActions.push(path) },
+      // Per-remote entries only earn their place once there is more than one.
+      ...(repo.remotes.length > 1
+        ? [
+            {
+              label: t('push.toRemote'),
+              submenu: repo.remotes.map((r) => ({
+                label: r.name,
+                onClick: () => void repoActions.pushToRemotes(path, [r.name])
+              }))
+            },
+            {
+              label: interp(t('push.allRemotes'), { n: String(repo.remotes.length) }),
+              onClick: () => void repoActions.pushToRemotes(path, repo.remotes.map((r) => r.name))
+            }
+          ]
+        : []),
+      {
+        label: t('push.tags'),
+        submenu: repo.remotes.map((r) => ({
+          label: r.name,
+          onClick: () => void repoActions.pushAllTags(path, r.name)
+        }))
+      },
+      { separator: true },
       {
         label: t('push.force'),
         danger: true,

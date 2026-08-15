@@ -3,7 +3,7 @@ title: Fetching, pulling & pushing
 category: Sync & many repos
 order: 50
 summary: Staying in step, with guards on the operations that bite.
-keywords: fetch pull push force auto-fetch prune remotes upstream protected branch
+keywords: fetch pull push force auto-fetch prune remotes upstream protected branch multiple remotes fork mirror push tags all
 ---
 
 # Fetching, pulling & pushing
@@ -21,6 +21,33 @@ the remote moved since you last looked. Pushing a **protected branch** with forc
 asks for confirmation (list in the repo-settings gear).
 
 ![The confirmation a protected branch demands before a force-push](../screenshots/force-push-guard.webp)
+
+### More than one remote
+
+The **Push** button targets the branch's upstream. The arrow next to it also
+offers, once a repository has more than one remote:
+
+| | |
+|---|---|
+| **Push to one remote** | Pick a single remote — a fork, a mirror, a deploy target |
+| **Push to all N remotes** | One push per remote, in order |
+| **Push all tags to** | `git push <remote> --tags`, every local tag at once |
+
+The same two actions sit on each remote's own row in the sidebar, which is
+usually where you are when the question comes up.
+
+**A rejection does not cancel the rest.** Pushing a fork and its upstream is
+exactly the case where one side refuses and the other should still go through,
+so each remote reports separately: successes are named in one toast, and each
+failure gets its own with git's reason.
+
+Only the **first** remote in the list sets the branch's upstream. A branch has
+one upstream, and the last remote pushed to is not automatically the one you
+want it tracking.
+
+Both paths run the same checks as an ordinary push — the protected-branch
+confirmation and the [secret guard](security.md). Publishing to two remotes is
+twice the exposure, not half the caution.
 
 ## Fetch
 

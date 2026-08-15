@@ -632,3 +632,77 @@ describe('history path picker (leaked-secret playground)', () => {
     expect((await gitService.historyPaths(R, 2)).length).toBe(2)
   })
 })
+
+describe('pushing to several remotes (multi-remote playground)', () => {
+  /** The fixture's remotes point at shared bare repos; a push test has to own
+   *  its own copies of those too, or it rewrites the playground for everyone. */
+  const isolatedClone = async (): Promise<{ repo: string; origin: string; upstream: string }> => {
+    const repo = cloneFixture('multi-remote')
+    const origin = cloneFixture('multi-remote-origin.git')
+    const upstream = cloneFixture('multi-remote-upstream.git')
+    await raw(repo, ['remote', 'set-url', 'origin', origin])
+    await raw(repo, ['remote', 'set-url', 'upstream', upstream])
+    return { repo, origin, upstream }
+  }
+
+  const headOf = async (bare: string, branch: string): Promise<string> =>
+    (await raw(bare, ['rev-parse', branch])).trim()
+
+  /** A branch neither remote has yet — the fixture's `upstream` is deliberately
+   *  ahead of `main`, so pushing that would be a real non-fast-forward. */
+  const newBranch = async (repo: string): Promise<string> => {
+    await raw(repo, ['checkout', '-b', 'feature/push-test'])
+    return 'feature/push-test'
+  }
+
+  it('pushes one branch to every remote asked for', async () => {
+    const { repo, origin, upstream } = await isolatedClone()
+    const branch = await newBranch(repo)
+    const local = await shaOf(repo, branch)
+
+    const results = await gitService.pushToRemotes(repo, branch, ['origin', 'upstream'])
+    expect(results.map((r) => r.remote)).toEqual(['origin', 'upstream'])
+    expect(results.every((r) => r.ok)).toBe(true)
+    expect(await headOf(origin, branch)).toBe(local)
+    expect(await headOf(upstream, branch)).toBe(local)
+  })
+
+  it('keeps going when one remote rejects, and says which', async () => {
+    const { repo, origin } = await isolatedClone()
+    await raw(repo, ['remote', 'set-url', 'upstream', '/nowhere/at/all.git'])
+    const branch = await newBranch(repo)
+    const local = await shaOf(repo, branch)
+
+    const results = await gitService.pushToRemotes(repo, branch, ['origin', 'upstream'])
+    expect(results.find((r) => r.remote === 'origin')?.ok).toBe(true)
+    const failed = results.find((r) => r.remote === 'upstream')
+    expect(failed?.ok).toBe(false)
+    expect(failed?.error).not.toBe('')
+    // The working remote still got the branch — that is the whole point.
+    expect(await headOf(origin, branch)).toBe(local)
+  })
+
+  it('sets the upstream from the first remote only', async () => {
+    const { repo } = await isolatedClone()
+    const branch = await newBranch(repo)
+    await gitService.pushToRemotes(repo, branch, ['upstream', 'origin'])
+    expect((await raw(repo, ['rev-parse', '--abbrev-ref', `${branch}@{upstream}`])).trim()).toBe(`upstream/${branch}`)
+  })
+
+  it('refuses an empty remote list rather than guessing', async () => {
+    const { repo } = await isolatedClone()
+    await expect(gitService.pushToRemotes(repo, 'main', [])).rejects.toThrow(/at least one remote/i)
+    await expect(gitService.pushToRemotes(repo, 'main', ['  '])).rejects.toThrow(/at least one remote/i)
+  })
+
+  it('publishes every local tag, annotated and lightweight alike', async () => {
+    const { repo, origin } = await isolatedClone()
+    await raw(repo, ['tag', 'v9.9.9-light'])
+    await raw(repo, ['tag', '-a', 'v9.9.9', '-m', 'Release'])
+
+    await gitService.pushAllTags(repo, 'origin')
+    const tags = await raw(origin, ['tag', '--list'])
+    expect(tags).toContain('v9.9.9')
+    expect(tags).toContain('v9.9.9-light')
+  })
+})

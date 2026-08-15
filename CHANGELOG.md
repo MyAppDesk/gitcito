@@ -1,5 +1,21 @@
 
 
+## [3.5.0](https://github.com/MyAppDesk/gitcito/compare/v3.4.0...v3.5.0) (2026-08-15)
+
+
+### Features
+
+* add attributes management UI and related functionality ([6ecb7a7](https://github.com/MyAppDesk/gitcito/commit/6ecb7a7d66c9c0799eead9fdfd146ecfa86d8edc))
+* add clean preview and clean functionality for untracked files ([efb204c](https://github.com/MyAppDesk/gitcito/commit/efb204c3ac93fc3da34e351fcc7bb1b09df87965))
+* add credential management for git helpers ([3d2670e](https://github.com/MyAppDesk/gitcito/commit/3d2670e9920d91eba8d5edf80191cefc92617142))
+* add git replace functionality with UI support ([95e4fac](https://github.com/MyAppDesk/gitcito/commit/95e4fac2dc2c595d2dddec4f3f679dce920611e3))
+* add merge options modal and conflict commit history ([18524ac](https://github.com/MyAppDesk/gitcito/commit/18524acb6a3295c260ef251d97f5f3e47953dafe))
+* add object explorer for git objects and refs ([a4fbdf8](https://github.com/MyAppDesk/gitcito/commit/a4fbdf86825b47a31e68996b55aa5b23f34c4b8c))
+* add repository maintenance features and UI ([f3cde30](https://github.com/MyAppDesk/gitcito/commit/f3cde303e298fd6f47ea757a44c0d810843aefbb))
+* add support for git bisect run with output streaming ([f7ba3c1](https://github.com/MyAppDesk/gitcito/commit/f7ba3c10a0df4a225bdbab00fa7253a2ef7c2013))
+* enhance toolbar with grouped tools and new icons ([ebaeaeb](https://github.com/MyAppDesk/gitcito/commit/ebaeaeb9dc57d93cbde1b79a0ff054eb8b95fb5f))
+* implement bundle and archive functionalities in git service ([5ad01f4](https://github.com/MyAppDesk/gitcito/commit/5ad01f46d9c346e98f0c9e0d6661982ec487ea01))
+
 ## [3.4.0](https://github.com/MyAppDesk/gitcito/compare/v3.3.0...v3.4.0) (2026-08-15)
 
 

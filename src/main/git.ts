@@ -440,6 +440,9 @@ function mergeArgs(options: MergeOptions | boolean): string[] {
   return args
 }
 
+/** In-flight `git bisect run` children, so one can be stopped by repo path. */
+const bisectRuns = new Map<string, import('child_process').ChildProcess>()
+
 /** How much of a blob the object explorer shows before saying "truncated". */
 const OBJECT_BLOB_PREVIEW = 200_000
 
@@ -4910,6 +4913,65 @@ export const gitService = {
     return buildBisectStatus(repoPath, out)
   },
 
+  /**
+   * Hand the whole search to a command: `git bisect run`.
+   *
+   * git checks out each candidate, runs the command, and reads its **exit
+   * code**: 0 means good, 125 means "cannot test this one, skip it", anything
+   * else (bar 128+) means bad. That contract is the entire feature — a test
+   * suite already speaks it, which is why `git bisect run npm test` finds a
+   * regression while you make coffee.
+   *
+   * Output is streamed to `onOutput` as it arrives, because a bisect that takes
+   * ten minutes with a silent window is indistinguishable from a hung one.
+   */
+  async bisectRunScript(
+    repoPath: string,
+    command: string,
+    onOutput?: (chunk: string) => void
+  ): Promise<BisectStatus> {
+    const script = command.trim()
+    if (!script) throw new Error('Give a command to run at each step.')
+    const status = await buildBisectStatus(repoPath)
+    if (!status.inProgress) throw new Error('Start a bisect and mark a good and a bad commit first.')
+
+    const shell = process.platform === 'win32' ? 'cmd' : 'sh'
+    const shellArgs = process.platform === 'win32' ? ['/c', script] : ['-c', script]
+    const child = spawn('git', ['-C', repoPath, 'bisect', 'run', shell, ...shellArgs], { env: noPromptEnv() })
+    bisectRuns.set(repoPath, child)
+
+    let out = ''
+    const collect = (buf: Buffer): void => {
+      const chunk = buf.toString()
+      out += chunk
+      onOutput?.(chunk)
+    }
+    child.stdout.on('data', collect)
+    child.stderr.on('data', collect)
+
+    try {
+      await new Promise<void>((resolve) => {
+        child.on('error', () => resolve())
+        // A non-zero exit is not a failure to report: `bisect run` exits non-zero
+        // when the script never returned a usable verdict, and the status built
+        // from the repository afterwards says so better than a thrown error.
+        child.on('close', () => resolve())
+      })
+    } finally {
+      bisectRuns.delete(repoPath)
+    }
+    return buildBisectStatus(repoPath, out)
+  },
+
+  /** Stop a running `bisect run`. The session itself stays open. */
+  async bisectCancel(repoPath: string): Promise<boolean> {
+    const child = bisectRuns.get(repoPath)
+    if (!child) return false
+    child.kill()
+    bisectRuns.delete(repoPath)
+    return true
+  },
+
   /** End the bisect session and return to the original branch/HEAD. */
   async bisectReset(repoPath: string): Promise<void> {
     await gitFor(repoPath).raw(['bisect', 'reset'])
@@ -5502,6 +5564,16 @@ export function registerGitHandlers(): void {
         ...args,
         (p: CloneProgress) => {
           if (!_e.sender.isDestroyed()) _e.sender.send('clone:progress', p)
+        }
+      ]
+    }
+    // Same shape for a scripted bisect: it runs for minutes and its output is
+    // the only sign it is alive.
+    if (method === 'bisectRunScript') {
+      args = [
+        ...args,
+        (chunk: string) => {
+          if (!_e.sender.isDestroyed()) _e.sender.send('bisect:output', chunk)
         }
       ]
     }

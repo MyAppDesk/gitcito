@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Bug, Check, X, SkipForward, Loader2, Crosshair } from 'lucide-react'
+import { Bug, Check, X, SkipForward, Loader2, Crosshair, Play, Square, Terminal } from 'lucide-react'
 import type { BisectStatus } from '../../../shared/types'
 import { gitApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
 import { useRepoStore } from '../stores/repo'
-import { useT } from '../i18n'
+import { useT, interp } from '../i18n'
 
 const EMPTY: BisectStatus = {
   inProgress: false,
@@ -27,6 +27,11 @@ export function BisectModal({ repoPath }: { repoPath: string }): React.JSX.Eleme
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [goodRev, setGoodRev] = useState('')
+  // `git bisect run`: one command, run at every step, judged by its exit code.
+  const [command, setCommand] = useState('')
+  const [running, setRunning] = useState(false)
+  const [output, setOutput] = useState('')
+  const [scripts, setScripts] = useState<string[]>([])
 
   const refreshRepo = useCallback(() => useRepoStore.getState().refresh(repoPath), [repoPath])
 
@@ -58,6 +63,34 @@ export function BisectModal({ repoPath }: { repoPath: string }): React.JSX.Eleme
       cancelled = true
     }
   }, [repoPath])
+
+  // The run streams; without this the window looks hung for the whole search.
+  useEffect(() => window.api.onBisectOutput((chunk) => setOutput((prev) => (prev + chunk).slice(-20000))), [])
+
+  // Offer this project's own test commands rather than guessing at one.
+  useEffect(() => {
+    void gitApi
+      .fileContent(repoPath, 'package.json')
+      .then((raw) => {
+        const parsed = JSON.parse(raw) as { scripts?: Record<string, string> }
+        setScripts(Object.keys(parsed.scripts ?? {}).filter((name) => /test|check|lint|build/.test(name)))
+      })
+      .catch(() => setScripts([]))
+  }, [repoPath])
+
+  const runScript = async (): Promise<void> => {
+    setRunning(true)
+    setOutput('')
+    try {
+      const next = await gitApi.bisectRunScript(repoPath, command)
+      setStatus(next)
+      await refreshRepo()
+    } catch (err) {
+      toast('error', err instanceof Error ? err.message : String(err))
+    } finally {
+      setRunning(false)
+    }
+  }
 
   const start = (): Promise<void> => run(() => gitApi.bisectStart(repoPath))
   const mark = (term: 'good' | 'bad' | 'skip', rev?: string): Promise<void> =>
@@ -180,8 +213,45 @@ export function BisectModal({ repoPath }: { repoPath: string }): React.JSX.Eleme
               <SkipForward size={14} /> {t('bisect.skip')}
             </button>
           </div>
+          <div className="bisect-auto">
+            <div className="bisect-auto-head">
+              <Terminal size={13} /> {t('bisect.autoTitle')}
+            </div>
+            <p className="settings-hint">{t('bisect.autoHint')}</p>
+            {scripts.length > 0 && (
+              <div className="bisect-scripts">
+                {scripts.slice(0, 6).map((name) => (
+                  <button key={name} className="btn ghost tiny" onClick={() => setCommand(`npm run ${name}`)}>
+                    {`npm run ${name}`}
+                  </button>
+                ))}
+              </div>
+            )}
+            <div className="bisect-auto-row">
+              <input
+                className="modal-input"
+                value={command}
+                spellCheck={false}
+                placeholder="npm test" // i18n-ignore an example shell command
+                onChange={(e) => setCommand(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && command.trim() && !running) void runScript()
+                }}
+              />
+              {running ? (
+                <button className="btn ghost" onClick={() => void gitApi.bisectCancel(repoPath)}>
+                  <Square size={13} /> {t('bisect.stop')}
+                </button>
+              ) : (
+                <button className="btn primary" disabled={!command.trim() || busy} onClick={() => void runScript()}>
+                  <Play size={13} /> {t('bisect.runIt')}
+                </button>
+              )}
+            </div>
+            {output && <pre className="bisect-output">{output}</pre>}
+          </div>
           <div className="modal-actions">
-            <button className="btn ghost danger" onClick={reset} disabled={busy}>
+            <button className="btn ghost danger" onClick={reset} disabled={busy || running}>
               {t('bisect.abort')}
             </button>
           </div>

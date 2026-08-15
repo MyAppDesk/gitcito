@@ -34,6 +34,8 @@ interface PreloadApi {
   shotMode: boolean
   git(method: string, ...args: unknown[]): Promise<unknown>
   onCloneProgress(cb: (p: import('../../shared/types').CloneProgress) => void): () => void
+  /** Live stdout/stderr of a running `git bisect run`. */
+  onBisectOutput(cb: (chunk: string) => void): () => void
   getPathForFile(file: File): string
   keychain: {
     onAsk(cb: (payload: { reason: string; adopted: boolean }) => void): () => void

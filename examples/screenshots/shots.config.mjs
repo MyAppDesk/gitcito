@@ -1058,6 +1058,31 @@ export const shots = [
     }
   },
   {
+    // Automated bisect: the command box mid-run, with git's output streaming.
+    out: 'bisect-run',
+    repos: ['bisect-bug'],
+    themes: ['light'],
+    prepare: async ({ repoPaths, run }) => {
+      const repo = repoPaths['bisect-bug']
+      await run('git', ['-C', repo, 'bisect', 'reset'], { allowFail: true })
+      // Seed the range so the dialog opens on the narrowing step, where the
+      // automation lives. The last-known-good commit is found by its subject,
+      // since fixture shas change every time the playground is regenerated.
+      await run('bash', [
+        '-c',
+        `cd "${repo}" && git bisect start && git bisect bad && ` +
+          `git bisect good "$(git log --format=%H -1 --grep='feat: discount function')"`
+      ])
+    },
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['bisect-bug']
+      await page.evaluate((r) => window.__shot.ui.getState().openModal({ kind: 'bisect', repoPath: r }), repo)
+      await page.waitForTimeout(900)
+      await page.locator('.bisect-auto-row .modal-input').fill('npm test')
+      await page.waitForTimeout(600)
+    }
+  },
+  {
     // Object explorer: a commit, its fields linked, beside the ref list.
     out: 'objects',
     repos: ['tags-and-releases'],

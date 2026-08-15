@@ -1355,3 +1355,57 @@ describe('object explorer', () => {
     await expect(gitService.gitObject(R, 'no-such-ref')).rejects.toThrow()
   })
 })
+
+describe('automated bisect (git bisect run)', () => {
+  /** Resolve a commit by its subject: fixture shas differ between generations. */
+  const shaOfSubject = async (repo: string, grep: string): Promise<string> =>
+    (await raw(repo, ['log', '--format=%H', '-1', `--grep=${grep}`])).trim()
+
+  const TEST_CMD = `node -e "const {discount}=require('./discount'); process.exit(discount(100,20)===80?0:1)"`
+
+  const seeded = async (): Promise<string> => {
+    const repo = cloneFixture('bisect-bug')
+    await gitService.bisectStart(repo)
+    await gitService.bisectMark(repo, 'bad')
+    await gitService.bisectMark(repo, 'good', await shaOfSubject(repo, 'feat: discount function'))
+    return repo
+  }
+
+  it('finds the first bad commit from a command exit code alone', async () => {
+    const R = await seeded()
+    const culprit = await shaOfSubject(R, 'refactor: simplify discount calculation')
+
+    // Exit 0 = good, non-zero = bad. That contract is the whole feature.
+    const status = await gitService.bisectRunScript(R, TEST_CMD)
+    expect(status.finished).toBe(true)
+    expect(status.firstBadSha).toBe(culprit)
+    expect(status.firstBadSubject).toContain('simplify discount')
+
+    await gitService.bisectReset(R)
+    expect((await gitService.bisectStatus(R)).inProgress).toBe(false)
+  })
+
+  it('streams the command output while it runs', async () => {
+    const R = await seeded()
+    const chunks: string[] = []
+    await gitService.bisectRunScript(R, TEST_CMD, (chunk) => chunks.push(chunk))
+    // git narrates each step; without that the UI cannot show progress.
+    expect(chunks.join('')).toMatch(/Bisecting|first bad commit/)
+    await gitService.bisectReset(R)
+  })
+
+  it('refuses to run without a seeded session, rather than starting one silently', async () => {
+    const R = cloneFixture('bisect-bug')
+    await expect(gitService.bisectRunScript(R, 'true')).rejects.toThrow(/bisect/i)
+  })
+
+  it('refuses an empty command', async () => {
+    const R = cloneFixture('bisect-bug')
+    await expect(gitService.bisectRunScript(R, '   ')).rejects.toThrow()
+  })
+
+  it('reports nothing to cancel when no run is in flight', async () => {
+    const R = cloneFixture('bisect-bug')
+    expect(await gitService.bisectCancel(R)).toBe(false)
+  })
+})

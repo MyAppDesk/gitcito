@@ -16,6 +16,12 @@ const api = {
     return () => ipcRenderer.removeListener('clone:progress', listener)
   },
 
+  onBisectOutput: (cb: (chunk: string) => void): (() => void) => {
+    const listener = (_e: unknown, chunk: string): void => cb(chunk)
+    ipcRenderer.on('bisect:output', listener)
+    return () => ipcRenderer.removeListener('bisect:output', listener)
+  },
+
   // Resolve a dropped File to its absolute path (File.path was removed in Electron 32).
   getPathForFile: (file: File): string => webUtils.getPathForFile(file),
 

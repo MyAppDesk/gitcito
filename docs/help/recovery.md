@@ -3,7 +3,7 @@ title: Recovery & the reflog
 category: Recovery & safety
 order: 60
 summary: The undo net: reflog, WIP snapshots and bisect.
-keywords: reflog recovery undo lost commits snapshots wip bisect restore hard reset
+keywords: reflog recovery undo lost commits snapshots wip bisect bisect run automated script exit code restore hard reset
 ---
 
 # Recovery & the reflog
@@ -40,6 +40,35 @@ Gitcito tracks how many steps are left, so you know whether you are two
 questions from the answer or ten.
 
 ![Guided bisect](../screenshots/bisect.webp)
+
+### Let a command decide
+
+Once the range is seeded, **Let a command decide** hands the whole search to
+`git bisect run`. Git checks out each candidate, runs your command, and reads
+its exit code:
+
+| Exit code | Means |
+|-----------|-------|
+| `0` | Good — the bug is not here |
+| `125` | Cannot test this one; skip it |
+| anything else | Bad |
+
+A test suite already speaks that language, which is why `npm test` is usually
+the whole answer. Gitcito offers this project's own scripts as one-click fills,
+streams the output while it runs, and lands on the first bad commit without you
+answering a single question.
+
+![The command box, ready to hand the search to a test suite](../screenshots/bisect-run.webp)
+
+**What to watch for.** The command runs on *every* commit git tests, so a
+command that deploys, publishes, or writes outside the repository will do that
+several times over. Keep it to something that only reads and reports. **Stop**
+kills the run and leaves the session open, so you can carry on marking by hand;
+**Abort** ends the bisect entirely.
+
+A command that fails for an unrelated reason — a missing dependency at that
+point in history, say — marks a good commit bad and sends the search to the
+wrong place. Exiting `125` from a wrapper script is git's way out of that.
 
 ## Undo / redo
 

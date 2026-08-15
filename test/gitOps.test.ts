@@ -766,3 +766,85 @@ describe('commit notes (cherry-pick playground)', () => {
     expect(await headSha(R)).toBe(sha)
   })
 })
+
+describe('subtrees (subtree playground)', () => {
+  const PREFIX = 'vendor/parser'
+
+  it('finds a subtree from the trailer git leaves in history', async () => {
+    const R = cloneFixture('subtree')
+    const found = await gitService.subtrees(R)
+    const parser = found.find((s) => s.prefix === PREFIX)
+    expect(parser).toBeDefined()
+    expect(parser!.present).toBe(true)
+    // The import commit records which upstream commit it came from.
+    expect(parser!.lastSplit).toMatch(/^[0-9a-f]{7,}$/)
+    // Nothing records the url — that is the gap Gitcito fills.
+    expect(parser!.url).toBe('')
+  })
+
+  it('remembers the source after an add, since git does not', async () => {
+    const R = cloneFixture('subtree')
+    const lib = cloneFixture('subtree-lib.git')
+    await gitService.subtreeAdd(R, 'vendor/second', lib, 'main')
+
+    const added = (await gitService.subtrees(R)).find((s) => s.prefix === 'vendor/second')
+    expect(added?.url).toBe(lib)
+    expect(added?.ref).toBe('main')
+    expect(existsSync(join(R, 'vendor/second/parser.js'))).toBe(true)
+  })
+
+  it('refuses to add onto a path that already exists', async () => {
+    const R = cloneFixture('subtree')
+    const lib = cloneFixture('subtree-lib.git')
+    await expect(gitService.subtreeAdd(R, PREFIX, lib, 'main')).rejects.toThrow(/already exists/i)
+  })
+
+  it('refuses an add missing any of prefix, repository or ref', async () => {
+    const R = cloneFixture('subtree')
+    await expect(gitService.subtreeAdd(R, '', 'x', 'main')).rejects.toThrow(/required/i)
+    await expect(gitService.subtreeAdd(R, 'vendor/x', '', 'main')).rejects.toThrow(/required/i)
+    await expect(gitService.subtreeAdd(R, 'vendor/x', 'x', '')).rejects.toThrow(/required/i)
+  })
+
+  it('pulls upstream changes into the vendored directory', async () => {
+    const R = cloneFixture('subtree')
+    const lib = cloneFixture('subtree-lib.git')
+    // Move the library on: a clone of the bare repo, a commit, a push back.
+    const work = mkdtempSync(join(tmpdir(), 'gitcito-lib-work-'))
+    await raw(work, ['clone', lib, 'w'])
+    const w = join(work, 'w')
+    writeFileSync(join(w, 'parser.js'), 'exports.parse = () => 42\n')
+    await raw(w, ['-c', 'user.email=t@e', '-c', 'user.name=T', 'commit', '-am', 'feat: upstream change'])
+    await raw(w, ['push', 'origin', 'main'])
+
+    await gitService.subtreePull(R, PREFIX, lib, 'main')
+    expect(readFileSync(join(R, PREFIX, 'parser.js'), 'utf-8')).toContain('42')
+    rmSync(work, { recursive: true, force: true })
+  })
+
+  it('splits the vendored directory back into a branch of its own', async () => {
+    const R = cloneFixture('subtree')
+    await gitService.subtreeSplit(R, PREFIX, 'parser-only')
+    // The split branch holds the library's files at its root, not under the prefix.
+    expect(await raw(R, ['ls-tree', '--name-only', 'parser-only'])).toContain('parser.js')
+    expect(await raw(R, ['ls-tree', '--name-only', 'parser-only'])).not.toContain('app.js')
+  })
+
+  it('refuses a pull or push with no repository to talk to', async () => {
+    const R = cloneFixture('subtree')
+    await expect(gitService.subtreePull(R, PREFIX, '', 'main')).rejects.toThrow(/no remembered repository/i)
+    await expect(gitService.subtreePush(R, PREFIX, '', 'main')).rejects.toThrow(/no remembered repository/i)
+  })
+
+  it('forgets the remembered source without touching the files', async () => {
+    const R = cloneFixture('subtree')
+    const lib = cloneFixture('subtree-lib.git')
+    await gitService.subtreeAdd(R, 'vendor/third', lib, 'main')
+    await gitService.subtreeForget(R, 'vendor/third')
+
+    const entry = (await gitService.subtrees(R)).find((s) => s.prefix === 'vendor/third')
+    // Still discovered from history, just no longer remembered.
+    expect(entry?.url).toBe('')
+    expect(existsSync(join(R, 'vendor/third/parser.js'))).toBe(true)
+  })
+})

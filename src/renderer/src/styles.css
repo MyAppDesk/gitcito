@@ -11488,6 +11488,33 @@ mark.find-hit.active {
 .commit-note-actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin-top: 7px; }
 .row-note-mark { flex-shrink: 0; margin-right: 4px; color: var(--text-2); vertical-align: -2px; }
 
+.subtree-modal { display: flex; flex-direction: column; min-height: 0; }
+.subtree-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; overflow-y: auto; }
+.subtree-row {
+  padding: 10px 12px;
+  background: var(--bg-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+}
+.subtree-row-head { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.subtree-row-head code { font-family: var(--mono); font-size: 10.5px; color: var(--text-2); }
+.subtree-row-head .icon-btn.tiny { margin-left: auto; padding: 2px; line-height: 0; color: var(--text-2); }
+.subtree-row-head .icon-btn.tiny:hover { color: var(--text-0); }
+/* The source is two fields, and the ref is always short — give the url the room. */
+.subtree-row-fields { display: flex; gap: 6px; margin-top: 7px; }
+.subtree-row-fields .modal-input { flex: 1; min-width: 0; }
+.subtree-ref { flex: 0 0 130px !important; }
+.subtree-row-actions { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
+.subtree-row-actions .settings-hint { flex: 1; }
+.subtree-tag {
+  padding: 0 6px;
+  font-size: 10.5px;
+  border-radius: 999px;
+  color: var(--warn, #d97706);
+  border: 1px solid currentColor;
+}
+.subtree-add { margin-top: 12px; }
+
 .purge-modal { display: flex; flex-direction: column; min-height: 0; }
 .purge-preview {
   margin-top: 12px;

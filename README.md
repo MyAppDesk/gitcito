@@ -94,6 +94,7 @@ Install the shim from the command palette: `⌘K` → **Install 'gitcito' comman
 | **[Groups & workspaces](docs/help/workspaces.md)** | Tabs with folders nested to any depth, colour-coded, fetch-all per subtree. |
 | **[Pull requests](docs/help/hosting.md)** | Create on GitHub, GitLab, Bitbucket and Azure DevOps. Review, comment, approve and merge on GitHub. |
 | **[Plumbing, with a UI](docs/help/lfs-sparse.md)** | Stashes, tags, worktrees, submodules, LFS, sparse-checkout, patches, hooks. |
+| **[Subtrees](docs/help/subtree.md)** | Vendor another repo into a directory — and remember where it came from, which git does not. |
 | **[SSH keys](docs/help/ssh-keys.md)** | See which key the agent is holding, generate one, test the host — the auth path tokens never covered. |
 
 ### AI, optional and grounded
@@ -129,7 +130,7 @@ turn it on, your AI provider. Details in [Security & secrets](docs/help/security
 
 ## The handbook
 
-**51 pages**, built into the app — the **Help** button in the status bar, or `⌘K`
+**52 pages**, built into the app — the **Help** button in the status bar, or `⌘K`
 → *Help*. It is the same Markdown you can
 [read right here in the repository](docs/help/getting-started.md), offline and
 versioned with the code.

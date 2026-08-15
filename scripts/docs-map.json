@@ -44,6 +44,7 @@
       "snapshots": "recovery",
       "sparse": "lfs-sparse",
       "stack": "stacks",
+      "subtree": "subtree",
       "stash-partial": "stashes",
       "time-machine": "time-machine",
       "timelapse": "timelapse"
@@ -109,6 +110,7 @@
       "settings-ai": "ai",
       "settings-security": "security",
       "ssh-keys": "ssh-keys",
+      "subtree": "subtree",
       "settings-shortcuts": "keyboard",
       "settings-themes": "themes",
       "snapshots": "recovery",

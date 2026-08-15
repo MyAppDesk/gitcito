@@ -1129,6 +1129,30 @@ export const repoActions = {
     }
   },
 
+  // ─── Subtrees ───
+  // Each of these is a merge or a push under the hood, so they run through the
+  // queue like any other mutation. None of them is reversible with a single
+  // command, so none carries an undo entry.
+  subtreeAdd: (path: string, prefix: string, url: string, ref: string, squash: boolean) =>
+    useRepoStore
+      .getState()
+      .run(path, interp(t('act.subtreeAdded'), { prefix }), () => gitApi.subtreeAdd(path, prefix, url, ref, squash)),
+
+  subtreePull: (path: string, prefix: string, url: string, ref: string, squash: boolean) =>
+    useRepoStore
+      .getState()
+      .run(path, interp(t('act.subtreePulled'), { prefix }), () => gitApi.subtreePull(path, prefix, url, ref, squash)),
+
+  subtreePush: (path: string, prefix: string, url: string, ref: string) =>
+    useRepoStore
+      .getState()
+      .run(path, interp(t('act.subtreePushed'), { prefix, ref }), () => gitApi.subtreePush(path, prefix, url, ref), undefined, 'push'),
+
+  subtreeSplit: (path: string, prefix: string, branch: string) =>
+    useRepoStore
+      .getState()
+      .run(path, interp(t('act.subtreeSplit'), { branch }), () => gitApi.subtreeSplit(path, prefix, branch).then(() => undefined)),
+
   // ─── Notes ───
   setNote: (path: string, sha: string, text: string, previous: string) =>
     useRepoStore.getState().run(

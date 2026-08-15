@@ -61,6 +61,7 @@ import type {
   CreatePrResult,
   WorktreeInfo,
   SubmoduleInfo,
+  SubtreeInfo,
   AppThemeColors,
   CodeThemeColors,
   Analytics,
@@ -215,6 +216,18 @@ export const gitApi = {
     call<void>('setProtectedBranches', path, branches),
 
   /** Every path ever committed, heaviest first — the purge dialog's picker. */
+  /** Directories vendored in with `git subtree`, discovered from history. */
+  subtrees: (path: string) => call<SubtreeInfo[]>('subtrees', path),
+  subtreeAdd: (path: string, prefix: string, url: string, ref: string, squash?: boolean) =>
+    call<void>('subtreeAdd', path, prefix, url, ref, squash),
+  subtreePull: (path: string, prefix: string, url: string, ref: string, squash?: boolean) =>
+    call<void>('subtreePull', path, prefix, url, ref, squash),
+  subtreePush: (path: string, prefix: string, url: string, ref: string) =>
+    call<void>('subtreePush', path, prefix, url, ref),
+  subtreeSplit: (path: string, prefix: string, branch: string) =>
+    call<string>('subtreeSplit', path, prefix, branch),
+  subtreeForget: (path: string, prefix: string) => call<void>('subtreeForget', path, prefix),
+
   note: (path: string, sha: string) => call<string>('note', path, sha),
   /** Shas carrying a note — one cheap call, so the graph can mark them. */
   notedCommits: (path: string) => call<string[]>('notedCommits', path),

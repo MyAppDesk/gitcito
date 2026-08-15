@@ -66,6 +66,7 @@ import type {
   GitflowStatus,
   GitflowSnapshot,
   PushRemoteResult,
+  SubtreeInfo,
   HistoryPathEntry,
   HistoryPurgePreview,
   HistoryPurgeBackup,
@@ -289,6 +290,48 @@ async function withAutoStash<T>(
   const result = await op() // if this throws, the named stash is left for recovery
   await git.stash(['pop']) // a pop conflict throws; git keeps the stash regardless
   return result
+}
+
+/**
+ * A git config key cannot hold a slash in its subsection when written this way,
+ * and a prefix is a path — so it is encoded, and decoded on the way back.
+ */
+function encodeSubtreeKey(prefix: string): string {
+  return prefix.replace(/\//g, '%2F')
+}
+
+function decodeSubtreeKey(key: string): string {
+  return key.replace(/%2F/g, '/')
+}
+
+/** Remember where a subtree came from — git itself keeps no such record. */
+async function rememberSubtree(repoPath: string, prefix: string, url: string, ref: string): Promise<void> {
+  const key = encodeSubtreeKey(prefix)
+  const git = gitFor(repoPath)
+  await git.raw(['config', `gitcito.subtree.${key}.url`, url])
+  await git.raw(['config', `gitcito.subtree.${key}.ref`, ref])
+}
+
+/**
+ * `git subtree` is a shell script shipped alongside git, not a builtin, so a
+ * stripped-down install can be missing it. Say that plainly instead of letting
+ * "'subtree' is not a git command" reach a toast.
+ */
+async function runSubtree(repoPath: string, args: string[]): Promise<string> {
+  // `git subtree` checks for local modifications with a plumbing command that
+  // trusts the index's stat cache. A repository whose files were touched without
+  // being changed — a checkout, a copy, a restored backup — then looks dirty and
+  // the command refuses. Porcelain refreshes first; so do we.
+  await runGit(repoPath, ['update-index', '-q', '--refresh']).catch(() => undefined)
+  try {
+    return await runGit(repoPath, ['subtree', ...args])
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    if (/is not a git command|subtree.*not found/i.test(message)) {
+      throw new Error("This git installation has no `git subtree` — it ships as a contrib script and is missing here.")
+    }
+    throw err
+  }
 }
 
 /** Config key holding the paths a purge removed. Git config keys must begin
@@ -2218,6 +2261,103 @@ export const gitService = {
   async setProtectedBranches(repoPath: string, branches: string[]): Promise<void> {
     const value = branches.map((b) => b.trim()).filter(Boolean).join(',')
     await gitFor(repoPath).raw(['config', 'gitcito.protectedbranches', value])
+  },
+
+  // ─── Subtrees ────────────────────────────────────────────────────────────
+  // `git subtree` vendors another repository into a subdirectory. The files are
+  // really in the tree — a plain clone gets them, with no submodule dance — but
+  // git keeps no manifest of where they came from, only a `git-subtree-dir:`
+  // trailer on the import commit. So this discovers prefixes from history and
+  // remembers the url/ref alongside, in the repo's own config.
+
+  async subtrees(repoPath: string): Promise<SubtreeInfo[]> {
+    const git = gitFor(repoPath)
+    // The trailers git subtree writes are the only trace in history.
+    const body = await git
+      .raw(['log', '--no-merges', '--grep=git-subtree-dir:', '--pretty=%b%x00'])
+      .catch(() => '')
+    const merged = await git.raw(['log', '--merges', '--grep=git-subtree-dir:', '--pretty=%b%x00']).catch(() => '')
+
+    const found = new Map<string, string>()
+    for (const record of `${body}${merged}`.split('\0')) {
+      const dir = /^\s*git-subtree-dir:\s*(.+)$/m.exec(record)?.[1]?.trim().replace(/\/+$/, '')
+      if (!dir) continue
+      const split = /^\s*git-subtree-split:\s*([0-9a-f]+)/m.exec(record)?.[1] ?? ''
+      // `log` is newest-first, so the first sighting is the latest import.
+      if (!found.has(dir)) found.set(dir, split)
+    }
+
+    // Anything the user told us about, including prefixes added by another tool.
+    const remembered = await git.raw(['config', '--get-regexp', '^gitcito\\.subtree\\.']).catch(() => '')
+    const meta = new Map<string, { url: string; ref: string }>()
+    for (const line of remembered.split('\n')) {
+      const match = /^gitcito\.subtree\.(.+)\.(url|ref)\s+(.*)$/.exec(line.trim())
+      if (!match) continue
+      const [, key, field, value] = match
+      const prefix = decodeSubtreeKey(key)
+      const entry = meta.get(prefix) ?? { url: '', ref: '' }
+      if (field === 'url') entry.url = value
+      else entry.ref = value
+      meta.set(prefix, entry)
+      if (!found.has(prefix)) found.set(prefix, '')
+    }
+
+    const out: SubtreeInfo[] = []
+    for (const [prefix, lastSplit] of found) {
+      out.push({
+        prefix,
+        url: meta.get(prefix)?.url ?? '',
+        ref: meta.get(prefix)?.ref ?? '',
+        present: existsSync(join(repoPath, prefix)),
+        lastSplit
+      })
+    }
+    return out.sort((a, b) => a.prefix.localeCompare(b.prefix))
+  },
+
+  /** Vendor a repository into `prefix`, and remember where it came from. */
+  async subtreeAdd(
+    repoPath: string,
+    prefix: string,
+    url: string,
+    ref: string,
+    squash = true
+  ): Promise<void> {
+    const dir = prefix.trim().replace(/^\/+|\/+$/g, '')
+    if (!dir || !url.trim() || !ref.trim()) throw new Error('A prefix, a repository and a ref are all required.')
+    if (existsSync(join(repoPath, dir))) throw new Error(`"${dir}" already exists — subtree add needs a free path.`)
+    await runSubtree(repoPath, ['add', `--prefix=${dir}`, ...(squash ? ['--squash'] : []), url.trim(), ref.trim()])
+    await rememberSubtree(repoPath, dir, url.trim(), ref.trim())
+  },
+
+  /** Pull upstream changes into an existing subtree. */
+  async subtreePull(repoPath: string, prefix: string, url: string, ref: string, squash = true): Promise<void> {
+    if (!url.trim() || !ref.trim()) throw new Error('This subtree has no remembered repository — enter one.')
+    await runSubtree(repoPath, ['pull', `--prefix=${prefix}`, ...(squash ? ['--squash'] : []), url.trim(), ref.trim()])
+    await rememberSubtree(repoPath, prefix, url.trim(), ref.trim())
+  },
+
+  /** Send local changes under `prefix` back to the source repository. */
+  async subtreePush(repoPath: string, prefix: string, url: string, ref: string): Promise<void> {
+    if (!url.trim() || !ref.trim()) throw new Error('This subtree has no remembered repository — enter one.')
+    await runSubtree(repoPath, ['push', `--prefix=${prefix}`, url.trim(), ref.trim()])
+  },
+
+  /** Extract the subtree's own history into a local branch. */
+  async subtreeSplit(repoPath: string, prefix: string, branch: string): Promise<string> {
+    const name = branch.trim()
+    if (!name) throw new Error('A branch name is required.')
+    const out = await runSubtree(repoPath, ['split', `--prefix=${prefix}`, '-b', name])
+    return out.trim()
+  },
+
+  /** Forget the remembered url/ref. Touches no files and no history. */
+  async subtreeForget(repoPath: string, prefix: string): Promise<void> {
+    const key = encodeSubtreeKey(prefix)
+    const git = gitFor(repoPath)
+    for (const field of ['url', 'ref']) {
+      await git.raw(['config', '--unset', `gitcito.subtree.${key}.${field}`]).catch(() => undefined)
+    }
   },
 
   // ─── Notes ───────────────────────────────────────────────────────────────
@@ -4623,6 +4763,7 @@ const READ_METHODS = new Set<string>([
   'getRemoteTags',
   'remoteBranches',
   'gitflowStatus',
+  'subtrees',
   'note',
   'notedCommits',
   'historyPaths',

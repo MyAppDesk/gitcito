@@ -1524,6 +1524,25 @@ export interface PushRemoteResult {
   error: string
 }
 
+/**
+ * A directory in this repository whose contents came from another repository via
+ * `git subtree`. Unlike a submodule there is no `.gitmodules` to read: git
+ * records only a `git-subtree-dir:` trailer on the commit that did the import,
+ * so the url and ref are remembered by Gitcito unless the user supplies them.
+ */
+export interface SubtreeInfo {
+  /** Directory inside this repo, e.g. `vendor/parser`. */
+  prefix: string
+  /** Source repository, when known. */
+  url: string
+  /** Branch or tag pulled from, when known. */
+  ref: string
+  /** True when the prefix still exists in the working tree. */
+  present: boolean
+  /** Sha of the upstream commit last imported, from the subtree trailer. */
+  lastSplit: string
+}
+
 /** One entry from `git reflog` — the recovery net for lost/rewound commits. */
 export interface ReflogEntry {
   sha: string

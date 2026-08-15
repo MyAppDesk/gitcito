@@ -478,7 +478,16 @@ export function FileTree({
       editor,
       { isDir: node.dir }
     ),
-    { label: t('fileTree.copyPath'), onClick: () => void navigator.clipboard.writeText(node.path) }
+    { label: t('fileTree.copyPath'), onClick: () => void navigator.clipboard.writeText(node.path) },
+    ...(node.dir
+      ? []
+      : [
+          {
+            label: t('cmd.historyPurge'),
+            danger: true,
+            onClick: () => openModal({ kind: 'history-purge', repoPath: path, initialPath: node.path })
+          }
+        ])
   ]
 
   const rootMenu = (): MenuItem[] => [

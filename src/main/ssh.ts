@@ -38,13 +38,12 @@ const TEST_HOSTS: Record<string, string> = {
   azure: 'git@ssh.dev.azure.com'
 }
 
-async function run(cmd: string, args: string[], input?: string): Promise<{ stdout: string; stderr: string }> {
+async function run(cmd: string, args: string[]): Promise<{ stdout: string; stderr: string }> {
   try {
     const { stdout, stderr } = await pexecFile(cmd, args, {
       // No tty here, so anything that would prompt must fail instead of hanging.
-      env: { ...process.env, DISPLAY: '', SSH_ASKPASS: '', GIT_TERMINAL_PROMPT: '0' },
-      input
-    } as never)
+      env: { ...process.env, DISPLAY: '', SSH_ASKPASS: '', GIT_TERMINAL_PROMPT: '0' }
+    })
     return { stdout: String(stdout), stderr: String(stderr) }
   } catch (err) {
     const e = err as { stdout?: string; stderr?: string; message?: string }

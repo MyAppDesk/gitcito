@@ -53,6 +53,7 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
   const fileView = useUIStore((s) => s.fileView)
   const setFileView = useUIStore((s) => s.setFileView)
   const toast = useUIStore((s) => s.toast)
+  const openModal = useUIStore((s) => s.openModal)
   const activeProfile = useSettingsStore((s) => s.activeProfile)
   const aiEnabled = useSettingsStore((s) => s.activeProfile().ai.enabled !== false)
   const defaultOpenApp = useSettingsStore((s) => s.settings.defaultOpenApp)
@@ -458,7 +459,15 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
                 },
                 editor
               ),
-              { label: t('common.copyFilePath'), onClick: () => void navigator.clipboard.writeText(`${repo.path}/${f.path}`) }
+              { label: t('common.copyFilePath'), onClick: () => void navigator.clipboard.writeText(`${repo.path}/${f.path}`) },
+              // The commit that deleted a file is exactly where someone realises
+              // it is still in history, so the way out belongs in this menu.
+              {
+                label: t('cmd.historyPurge'),
+                danger: true,
+                onClick: () =>
+                  openModal({ kind: 'history-purge', repoPath: repo.path, initialPath: f.path })
+              }
             ])
           }}
           onFolderContext={(folderPath, e) => {

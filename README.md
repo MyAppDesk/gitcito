@@ -84,6 +84,7 @@ Install the shim from the command palette: `⌘K` → **Install 'gitcito' comman
 | **[Stacked branches](docs/help/stacks.md)** | Graphite-style chains with cascade restack and a PR per level. |
 | **[Git flow](docs/help/gitflow.md)** | Start and finish features, releases and hotfixes — merges, tag and cleanup in one step, undoable. |
 | **[Recovery](docs/help/recovery.md)** | Reflog, WIP snapshots under `refs/gitcito/wip`, guided bisect. |
+| **[Remove a file from history](docs/help/history-purge.md)** | A leaked key or a 400 MB blob out of every commit — measured first, backed up, undoable. |
 
 ### Many repositories, and your hosts
 
@@ -127,7 +128,7 @@ turn it on, your AI provider. Details in [Security & secrets](docs/help/security
 
 ## The handbook
 
-**49 pages**, built into the app — the **Help** button in the status bar, or `⌘K`
+**50 pages**, built into the app — the **Help** button in the status bar, or `⌘K`
 → *Help*. It is the same Markdown you can
 [read right here in the repository](docs/help/getting-started.md), offline and
 versioned with the code.

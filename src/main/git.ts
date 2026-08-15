@@ -65,6 +65,10 @@ import type {
   GitflowKind,
   GitflowStatus,
   GitflowSnapshot,
+  HistoryPathEntry,
+  HistoryPurgePreview,
+  HistoryPurgeBackup,
+  HistoryPurgeResult,
   RepoHost,
   MergePreviewEntry,
   MergePreviewResult,
@@ -282,6 +286,41 @@ async function withAutoStash<T>(
   const result = await op() // if this throws, the named stash is left for recovery
   await git.stash(['pop']) // a pop conflict throws; git keeps the stash regardless
   return result
+}
+
+/** Config key holding the paths a purge removed. Git config keys must begin
+ *  with a letter, so the timestamp cannot stand alone. */
+function prePurgeKey(at: number): string {
+  return `gitcito.prepurge.at${at}`
+}
+
+/**
+ * Total size of every blob ever stored at `paths`. Walks all reachable objects
+ * once and keeps the ones whose recorded name matches — `rev-list --objects`
+ * prints `<sha> <path>` for anything that has a name.
+ */
+async function blobBytesForPaths(repoPath: string, paths: string[]): Promise<number> {
+  const wanted = new Set(paths)
+  const listed = await runGit(repoPath, ['rev-list', '--objects', '--branches', '--tags', '--', ...paths]).catch(
+    () => ''
+  )
+  const shas = new Set<string>()
+  for (const line of listed.split('\n')) {
+    const space = line.indexOf(' ')
+    if (space <= 0) continue
+    const name = line.slice(space + 1).trim()
+    if (wanted.has(name)) shas.add(line.slice(0, space))
+  }
+  if (!shas.size) return 0
+
+  // `cat-file --batch-check` would need a stdin pipe; a handful of blobs is
+  // cheaper to size one at a time than to wire that up.
+  let bytes = 0
+  for (const sha of shas) {
+    const size = await runGit(repoPath, ['cat-file', '-s', sha]).catch(() => '')
+    bytes += Number(size.trim()) || 0
+  }
+  return bytes
 }
 
 /** The configured branch prefix for a git-flow kind. */
@@ -2136,6 +2175,255 @@ export const gitService = {
   async setProtectedBranches(repoPath: string, branches: string[]): Promise<void> {
     const value = branches.map((b) => b.trim()).filter(Boolean).join(',')
     await gitFor(repoPath).raw(['config', 'gitcito.protectedbranches', value])
+  },
+
+  // ─── Removing a path from history ────────────────────────────────────────
+  // The last resort after the secret guard has already failed: a token, or a
+  // 400 MB file, that is committed and cannot be un-committed by reverting.
+  // Every commit from the first touch onwards is rewritten, so this is measured
+  // first, backed up second, and only then run.
+
+  /**
+   * Every path that has ever been committed, heaviest first.
+   *
+   * A file dialog cannot answer this question: the interesting paths are the
+   * ones already deleted from the working tree, which is exactly what a picker
+   * over the filesystem cannot see. Sorting by bytes also makes the other
+   * reason for a purge — "why is this clone two gigabytes" — self-answering.
+   */
+  async historyPaths(repoPath: string, max = 400): Promise<HistoryPathEntry[]> {
+    // One pass for sizes of every object in the database…
+    const sizes = new Map<string, number>()
+    const sized = await runGit(repoPath, [
+      'cat-file',
+      '--batch-all-objects',
+      '--batch-check=%(objectname) %(objecttype) %(objectsize)'
+    ]).catch(() => '')
+    for (const line of sized.split('\n')) {
+      const [sha, type, size] = line.split(' ')
+      if (type === 'blob') sizes.set(sha, Number(size) || 0)
+    }
+
+    // …and one for which of them were ever recorded under which name.
+    const named = await runGit(repoPath, ['rev-list', '--objects', '--all']).catch(() => '')
+    const byPath = new Map<string, { bytes: number; blobs: Set<string> }>()
+    for (const line of named.split('\n')) {
+      const space = line.indexOf(' ')
+      if (space <= 0) continue
+      const sha = line.slice(0, space)
+      const size = sizes.get(sha)
+      if (size === undefined) continue // a tree, not a blob
+      const path = line.slice(space + 1).trim()
+      if (!path) continue
+      const entry = byPath.get(path) ?? { bytes: 0, blobs: new Set<string>() }
+      // The same blob under the same path is one copy, not several.
+      if (!entry.blobs.has(sha)) {
+        entry.blobs.add(sha)
+        entry.bytes += size
+      }
+      byPath.set(path, entry)
+    }
+
+    const tracked = new Set(
+      (await runGit(repoPath, ['ls-files']).catch(() => '')).split('\n').map((p) => p.trim()).filter(Boolean)
+    )
+    return [...byPath.entries()]
+      .map(([path, entry]) => ({
+        path,
+        bytes: entry.bytes,
+        versions: entry.blobs.size,
+        deleted: !tracked.has(path)
+      }))
+      .sort((a, b) => b.bytes - a.bytes)
+      .slice(0, max)
+  },
+
+  async historyPurgePreview(repoPath: string, paths: string[]): Promise<HistoryPurgePreview> {
+    const git = gitFor(repoPath)
+    const clean = paths.map((p) => p.trim()).filter(Boolean)
+    const empty: HistoryPurgePreview = {
+      paths: clean,
+      commits: 0,
+      firstCommit: null,
+      branches: [],
+      tags: [],
+      bytes: 0,
+      blocked: ''
+    }
+    if (!clean.length) return { ...empty, blocked: 'Choose at least one path.' }
+
+    // A rewrite rewrites the checkout too, so anything uncommitted would be at
+    // risk — and a half-finished merge has no single history to rewrite.
+    const status = await git.status()
+    const state = await gitService.mergeState(repoPath)
+    const blocked = state
+      ? 'Finish or abort the operation in progress first.'
+      : status.files.length
+        ? 'Commit or stash your changes first.'
+        : ''
+
+    // `--branches --tags` mirrors exactly what the rewrite will touch. `--all`
+    // would also walk `refs/gitcito/pre-purge/*`, so a second purge in the same
+    // repository would count commits that only a previous backup still holds
+    // and promise work the rewrite is not going to do.
+    const log = await git
+      .raw(['log', '--branches', '--tags', '--format=%H%x00%s%x00%at', '--', ...clean])
+      .catch(() => '')
+    const entries = log
+      .split('\n')
+      .map((line) => line.split('\0'))
+      .filter((parts) => parts.length === 3)
+    const oldest = entries[entries.length - 1]
+
+    const refs = (await git.raw(['for-each-ref', '--format=%(refname)', 'refs/heads', 'refs/tags']).catch(() => ''))
+      .split('\n')
+      .map((r) => r.trim())
+      .filter(Boolean)
+
+    return {
+      paths: clean,
+      commits: entries.length,
+      firstCommit: oldest ? { sha: oldest[0], subject: oldest[1], date: Number(oldest[2]) } : null,
+      branches: refs.filter((r) => r.startsWith('refs/heads/')).map((r) => r.slice('refs/heads/'.length)),
+      tags: refs.filter((r) => r.startsWith('refs/tags/')).map((r) => r.slice('refs/tags/'.length)),
+      bytes: await blobBytesForPaths(repoPath, clean),
+      blocked
+    }
+  },
+
+  /**
+   * Rewrite every branch and tag without the given paths, after copying each ref
+   * to `refs/gitcito/pre-purge/<timestamp>/…`.
+   *
+   * The backup is deliberately outside `--all`'s reach, so the rewrite cannot
+   * eat its own safety net — and it keeps the old objects alive, which is why
+   * space is only reclaimed once the backup is dropped.
+   */
+  async historyPurge(repoPath: string, paths: string[]): Promise<HistoryPurgeResult> {
+    const git = gitFor(repoPath)
+    const clean = paths.map((p) => p.trim()).filter(Boolean)
+    if (!clean.length) throw new Error('Choose at least one path.')
+
+    const preview = await gitService.historyPurgePreview(repoPath, clean)
+    if (preview.blocked) throw new Error(preview.blocked)
+    if (!preview.commits) throw new Error('No commit touches that path — nothing to rewrite.')
+
+    const at = Math.floor(Date.now() / 1000)
+    const prefix = `refs/gitcito/pre-purge/${at}`
+    const refs = (await git.raw(['for-each-ref', '--format=%(refname) %(objectname)', 'refs/heads', 'refs/tags']))
+      .split('\n')
+      .map((line) => line.trim().split(' '))
+      .filter((parts) => parts.length === 2)
+    for (const [name, sha] of refs) {
+      await git.raw(['update-ref', `${prefix}/${name.replace(/^refs\//, '')}`, sha])
+    }
+    // Record what was purged, so the UI can label the backup later. A git
+    // config key has to start with a letter, hence the `at` prefix.
+    await git.raw(['config', prePurgeKey(at), clean.join('\n')])
+
+    // `--index-filter` rewrites the index directly — no checkout per commit,
+    // which is the difference between minutes and hours on a real history.
+    // `--branches --tags` rather than `--all`: `--all` would include the backup.
+    const rm = ['git', 'rm', '--cached', '--ignore-unmatch', '--'].concat(clean.map((p) => `'${p.replace(/'/g, "'\\''")}'`))
+    await pexecFile(
+      'git',
+      [
+        '-C',
+        repoPath,
+        'filter-branch',
+        '--force',
+        '--index-filter',
+        rm.join(' '),
+        '--prune-empty',
+        // Without this, tags keep pointing at the pre-rewrite commits.
+        '--tag-name-filter',
+        'cat',
+        '--',
+        '--branches',
+        '--tags'
+      ],
+      {
+        env: { ...process.env, FILTER_BRANCH_SQUELCH_WARNING: '1', GIT_TERMINAL_PROMPT: '0' },
+        maxBuffer: 64 * 1024 * 1024
+      }
+    )
+
+    // filter-branch leaves its own copies under refs/original; ours supersedes
+    // them, and leaving both means twice the confusion about which to restore.
+    const originals = (await git.raw(['for-each-ref', '--format=%(refname)', 'refs/original']).catch(() => ''))
+      .split('\n')
+      .map((r) => r.trim())
+      .filter(Boolean)
+    for (const ref of originals) await git.raw(['update-ref', '-d', ref]).catch(() => undefined)
+
+    return {
+      backup: { prefix, at, refs: refs.length, paths: clean },
+      rewritten: refs.length
+    }
+  },
+
+  /** Every purge backup still in the repository, newest first. */
+  async historyPurgeBackups(repoPath: string): Promise<HistoryPurgeBackup[]> {
+    const git = gitFor(repoPath)
+    const refs = (await git.raw(['for-each-ref', '--format=%(refname)', 'refs/gitcito/pre-purge']).catch(() => ''))
+      .split('\n')
+      .map((r) => r.trim())
+      .filter(Boolean)
+
+    const byStamp = new Map<number, number>()
+    for (const ref of refs) {
+      const at = Number(ref.split('/')[3])
+      if (Number.isFinite(at)) byStamp.set(at, (byStamp.get(at) ?? 0) + 1)
+    }
+    const out: HistoryPurgeBackup[] = []
+    for (const [at, count] of byStamp) {
+      const recorded = await git.raw(['config', '--get', prePurgeKey(at)]).catch(() => '')
+      out.push({
+        prefix: `refs/gitcito/pre-purge/${at}`,
+        at,
+        refs: count,
+        paths: recorded.trim() ? recorded.trim().split('\n') : []
+      })
+    }
+    return out.sort((a, b) => b.at - a.at)
+  },
+
+  /** Put every branch and tag back where the backup says it was. */
+  async historyPurgeRestore(repoPath: string, prefix: string): Promise<void> {
+    const git = gitFor(repoPath)
+    if (!prefix.startsWith('refs/gitcito/pre-purge/')) throw new Error('Not a purge backup.')
+    const saved = (await git.raw(['for-each-ref', '--format=%(refname) %(objectname)', prefix]))
+      .split('\n')
+      .map((line) => line.trim().split(' '))
+      .filter((parts) => parts.length === 2)
+    if (!saved.length) throw new Error('That backup is empty.')
+
+    // Detach first: the branch we are standing on is about to move under us.
+    await runGit(repoPath, ['checkout', '--detach']).catch(() => undefined)
+    for (const [ref, sha] of saved) {
+      const original = `refs/${ref.slice(`${prefix}/`.length)}`
+      await git.raw(['update-ref', original, sha])
+    }
+    const head = saved.find(([ref]) => ref.includes('/heads/'))
+    if (head) await runGit(repoPath, ['checkout', head[0].split('/heads/')[1]])
+  },
+
+  /**
+   * Delete a backup and garbage-collect. This is what actually reclaims the
+   * space — and what makes the purge irreversible.
+   */
+  async historyPurgeDropBackup(repoPath: string, prefix: string): Promise<void> {
+    const git = gitFor(repoPath)
+    if (!prefix.startsWith('refs/gitcito/pre-purge/')) throw new Error('Not a purge backup.')
+    const refs = (await git.raw(['for-each-ref', '--format=%(refname)', prefix]).catch(() => ''))
+      .split('\n')
+      .map((r) => r.trim())
+      .filter(Boolean)
+    for (const ref of refs) await git.raw(['update-ref', '-d', ref]).catch(() => undefined)
+    await git.raw(['config', '--unset', prePurgeKey(Number(prefix.split('/')[3]))]).catch(() => undefined)
+    // The old commits are only unreachable once the reflog forgets them too.
+    await git.raw(['reflog', 'expire', '--expire=now', '--all']).catch(() => undefined)
+    await git.raw(['gc', '--prune=now']).catch(() => undefined)
   },
 
   // ─── git-flow ────────────────────────────────────────────────────────────
@@ -4235,6 +4523,9 @@ const READ_METHODS = new Set<string>([
   'getRemoteTags',
   'remoteBranches',
   'gitflowStatus',
+  'historyPaths',
+  'historyPurgePreview',
+  'historyPurgeBackups',
   'diffFile',
   'commitFiles',
   'stashFiles',

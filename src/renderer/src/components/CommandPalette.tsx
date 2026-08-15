@@ -40,7 +40,8 @@ import {
   Film,
   Gauge,
   SquarePen,
-  GitMerge
+  GitMerge,
+  Eraser
 } from 'lucide-react'
 import { useUIStore } from '../stores/ui'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
@@ -218,6 +219,7 @@ export function CommandPalette(): React.JSX.Element {
           ? [{ id: 'create-issue', title: t('cmd.createIssue'), group: 'Actions', keywords: 'github issue new bug report', icon: <CircleDot size={15} />, run: act(() => ui.openModal({ kind: 'create-issue', repoPath: path, remoteUrl: origin.url })) } as Command]
           : []
       })(),
+      { id: 'history-purge', title: t('cmd.historyPurge'), group: 'Actions', keywords: 'remove file history secret leak purge filter-branch rewrite big file bfg scrub', icon: <Eraser size={15} />, run: act(() => ui.openModal({ kind: 'history-purge', repoPath: path })) },
       { id: 'gitflow', title: t('cmd.gitflow'), group: 'Actions', keywords: 'git flow feature release hotfix develop branch prefix start finish', icon: <GitMerge size={15} />, run: act(() => ui.openModal({ kind: 'gitflow', repoPath: path })) },
       { id: 'stack', title: t('cmd.stack'), group: 'Actions', keywords: 'stacked branches graphite restack dependent', icon: <Layers size={15} />, run: act(() => ui.openModal({ kind: 'stack', repoPath: path })) },
       { id: 'help', title: t('help.open'), group: 'Actions', keywords: 'help handbook docs manual guide wiki how to learn', icon: <LifeBuoy size={15} />, run: act(() => useSettingsStore.getState().openPageTab({ type: 'help' })) },

@@ -11426,6 +11426,91 @@ mark.find-hit.active {
   word-break: break-word;
 }
 
+.purge-modal { display: flex; flex-direction: column; min-height: 0; }
+.purge-preview {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: var(--bg-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+}
+/* The numbers are the point of the dialog, so they get their own row rather
+   than hiding inside a sentence. */
+.purge-stats { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: var(--text-2); }
+.purge-stats strong { color: var(--text-1); font-size: 14px; margin-right: 3px; }
+.purge-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin-top: 10px;
+  padding: 8px 10px;
+  font-size: 12px;
+  border-radius: 6px;
+  color: var(--warn, #d97706);
+  border: 1px solid currentColor;
+}
+.purge-warning svg { flex-shrink: 0; margin-top: 1px; }
+/* The picker is a scrolling list inside the dialog, so the dialog itself never
+   grows past the window on a repository with thousands of paths. */
+.purge-picker {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: var(--bg-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+}
+.purge-picker-search { display: flex; align-items: center; gap: 7px; }
+.purge-picker-search svg { flex-shrink: 0; color: var(--text-2); }
+.purge-picker-list { max-height: 240px; overflow-y: auto; margin-top: 8px; }
+.purge-picker-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 5px 7px;
+  background: none;
+  border: 0;
+  border-radius: 6px;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  color: var(--text-1);
+}
+.purge-picker-row:hover { background: var(--bg-3, var(--bg-1)); }
+.purge-picker-path { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.purge-picker-tag {
+  flex-shrink: 0;
+  padding: 0 6px;
+  font-size: 10.5px;
+  border-radius: 999px;
+  color: var(--text-2);
+  border: 1px solid var(--border-soft);
+}
+.purge-picker-versions { flex-shrink: 0; font-size: 11px; color: var(--text-2); }
+/* Size is the column people scan, so it is fixed-width and right-aligned. */
+.purge-picker-size {
+  flex-shrink: 0;
+  min-width: 68px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-2);
+}
+
+.purge-backups { margin-top: 16px; }
+.purge-backups h4 { margin: 0 0 4px; font-size: 13px; }
+.purge-backup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: var(--bg-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+}
+.purge-backup-head { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.purge-backup-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
 .gitflow-modal { display: flex; flex-direction: column; min-height: 0; }
 .gitflow-grid {
   display: grid;

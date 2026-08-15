@@ -92,6 +92,7 @@ export type ModalSpec =
   | { kind: 'code-search'; repoPath: string }
   | { kind: 'stack'; repoPath: string }
   | { kind: 'gitflow'; repoPath: string }
+  | { kind: 'history-purge'; repoPath: string; initialPath?: string }
   | { kind: 'changelog-gen'; repoPath: string }
   | { kind: 'snapshots'; repoPath: string }
   | { kind: 'stash-partial'; repoPath: string }

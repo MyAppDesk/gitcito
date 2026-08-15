@@ -1470,6 +1470,52 @@ export interface GitflowSnapshot {
   branch: { name: string; sha: string }
 }
 
+/** What removing a path from history would cost, measured before agreeing to it. */
+export interface HistoryPurgePreview {
+  /** Paths as given, echoed back. */
+  paths: string[]
+  /** Commits anywhere in the repository that touch them. */
+  commits: number
+  /** Oldest touching commit — everything after it gets a new hash. */
+  firstCommit: { sha: string; subject: string; date: number } | null
+  /** Branches and tags that would be rewritten. */
+  branches: string[]
+  tags: string[]
+  /** Bytes held by the blobs at those paths, across all history. */
+  bytes: number
+  /** Why the rewrite cannot start right now — empty when it can. */
+  blocked: string
+}
+
+/** A path that exists somewhere in history, with what it costs to keep it. */
+export interface HistoryPathEntry {
+  path: string
+  /** Bytes held by every version of it, across all history. */
+  bytes: number
+  /** How many distinct blobs — i.e. how often it changed. */
+  versions: number
+  /** True when the path is no longer in the working tree's index. */
+  deleted: boolean
+}
+
+/** A safety copy of every ref as it stood before a purge. */
+export interface HistoryPurgeBackup {
+  /** `refs/gitcito/pre-purge/<timestamp>`. */
+  prefix: string
+  /** Epoch seconds, the timestamp in the prefix. */
+  at: number
+  /** How many refs it holds. */
+  refs: number
+  /** The paths that were purged, recorded alongside for the UI. */
+  paths: string[]
+}
+
+export interface HistoryPurgeResult {
+  backup: HistoryPurgeBackup
+  /** Refs the rewrite actually changed. */
+  rewritten: number
+}
+
 /** One entry from `git reflog` — the recovery net for lost/rewound commits. */
 export interface ReflogEntry {
   sha: string

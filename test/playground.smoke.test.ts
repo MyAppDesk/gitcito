@@ -63,7 +63,8 @@ const EXPECTED = [
   'force-push',
   'absorb',
   'time-machine',
-  'gitflow'
+  'gitflow',
+  'leaked-secret'
 ]
 
 describe('playground fixtures', () => {

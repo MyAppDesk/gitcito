@@ -19,6 +19,10 @@ import type {
   GitflowKind,
   GitflowSnapshot,
   GitflowStatus,
+  HistoryPathEntry,
+  HistoryPurgePreview,
+  HistoryPurgeResult,
+  HistoryPurgeBackup,
   CommitBranchInfo,
   ConflictContext,
   ConflictOpKind,
@@ -203,6 +207,15 @@ export const gitApi = {
   protectedBranches: (path: string) => call<string[]>('protectedBranches', path),
   setProtectedBranches: (path: string, branches: string[]) =>
     call<void>('setProtectedBranches', path, branches),
+
+  /** Every path ever committed, heaviest first — the purge dialog's picker. */
+  historyPaths: (path: string, max?: number) => call<HistoryPathEntry[]>('historyPaths', path, max),
+  historyPurgePreview: (path: string, paths: string[]) =>
+    call<HistoryPurgePreview>('historyPurgePreview', path, paths),
+  historyPurge: (path: string, paths: string[]) => call<HistoryPurgeResult>('historyPurge', path, paths),
+  historyPurgeBackups: (path: string) => call<HistoryPurgeBackup[]>('historyPurgeBackups', path),
+  historyPurgeRestore: (path: string, prefix: string) => call<void>('historyPurgeRestore', path, prefix),
+  historyPurgeDropBackup: (path: string, prefix: string) => call<void>('historyPurgeDropBackup', path, prefix),
 
   gitflowStatus: (path: string) => call<GitflowStatus>('gitflowStatus', path),
   gitflowInit: (path: string, config: GitflowConfig) => call<void>('gitflowInit', path, config),

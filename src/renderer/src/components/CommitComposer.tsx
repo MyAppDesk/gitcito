@@ -510,6 +510,12 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
             }
           ]
         : []),
+      {
+        label: t('cmd.historyPurge'),
+        danger: true,
+        onClick: () =>
+          useUIStore.getState().openModal({ kind: 'history-purge', repoPath: path, initialPath: file.path })
+      },
       { separator: true },
       {
         label: t('composer.discardChanges'),

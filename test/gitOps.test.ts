@@ -497,3 +497,138 @@ describe('git-flow (gitflow playground)', () => {
     expect(await shaOf(R, 'develop')).toBe(before)
   })
 })
+
+describe('removing a path from history (leaked-secret playground)', () => {
+  const SECRET = 'config/credentials.env'
+
+  /** A clone that still holds the secret. Fails loudly if the shared fixture was
+   *  ever mutated, rather than letting later assertions fail confusingly. */
+  const freshClone = async (): Promise<string> => {
+    const R = cloneFixture('leaked-secret')
+    expect(await raw(R, ['log', '--branches', '--tags', '--oneline', '--', SECRET])).not.toBe('')
+    expect(await raw(R, ['for-each-ref', '--format=%(refname)', 'refs/gitcito/pre-purge'])).toBe('')
+    return R
+  }
+
+  it('measures the damage before anything is rewritten', async () => {
+    const R = await freshClone()
+    const preview = await gitService.historyPurgePreview(R, [SECRET])
+    // Added, rotated, deleted — three commits touch it.
+    expect(preview.commits).toBe(3)
+    expect(preview.firstCommit?.subject).toBe('chore: add service credentials')
+    expect(preview.branches).toEqual(expect.arrayContaining(['main', 'feature/reporting']))
+    expect(preview.tags).toContain('v1.0.0')
+    expect(preview.bytes).toBeGreaterThan(0)
+    expect(preview.blocked).toBe('')
+  })
+
+  it('refuses while the working tree is dirty, and says why', async () => {
+    const R = await freshClone()
+    writeFileSync(join(R, 'app.js'), 'dirty\n')
+    expect((await gitService.historyPurgePreview(R, [SECRET])).blocked).toMatch(/stash/i)
+    await expect(gitService.historyPurge(R, [SECRET])).rejects.toThrow(/stash/i)
+  })
+
+  it('refuses a path no commit ever touched, rather than rewriting for nothing', async () => {
+    const R = await freshClone()
+    await expect(gitService.historyPurge(R, ['does/not/exist.env'])).rejects.toThrow(/nothing to rewrite/i)
+  })
+
+  it('removes the blob from every commit, on every branch and tag', async () => {
+    const R = await freshClone()
+    const result = await gitService.historyPurge(R, [SECRET])
+    expect(result.rewritten).toBeGreaterThan(0)
+
+    // No branch or tag mentions the path any more. (`--all` would still find it
+    // through the backup refs, which is exactly what they are for.)
+    expect(await raw(R, ['log', '--branches', '--tags', '--oneline', '--', SECRET])).toBe('')
+    // And the content is unreachable from the rewritten refs.
+    for (const ref of ['main', 'feature/reporting', 'v1.0.0']) {
+      await expect(raw(R, ['cat-file', '-e', `${ref}:${SECRET}`])).rejects.toThrow()
+    }
+    // The rest of the history survived.
+    expect(await raw(R, ['log', '--oneline', 'main'])).toContain('feat: bump app')
+  })
+
+  it('keeps a backup of every ref, outside the range the rewrite touches', async () => {
+    const R = await freshClone()
+    const before = await shaOf(R, 'main')
+    const { backup } = await gitService.historyPurge(R, [SECRET])
+
+    expect(backup.paths).toEqual([SECRET])
+    expect(backup.refs).toBeGreaterThan(0)
+    // The backup still points at the original commits, secret and all.
+    expect(await shaOf(R, `${backup.prefix}/heads/main`)).toBe(before)
+    expect(await raw(R, ['log', '--oneline', `${backup.prefix}/heads/main`, '--', SECRET])).not.toBe('')
+
+    const backups = await gitService.historyPurgeBackups(R)
+    expect(backups.map((b) => b.prefix)).toContain(backup.prefix)
+    expect(backups[0].paths).toEqual([SECRET])
+  })
+
+  it('puts every branch and tag back when the purge is undone', async () => {
+    const R = await freshClone()
+    const before = {
+      main: await shaOf(R, 'main'),
+      feature: await shaOf(R, 'feature/reporting')
+    }
+    const { backup } = await gitService.historyPurge(R, [SECRET])
+    expect(await shaOf(R, 'main')).not.toBe(before.main)
+
+    await gitService.historyPurgeRestore(R, backup.prefix)
+    expect(await shaOf(R, 'main')).toBe(before.main)
+    expect(await shaOf(R, 'feature/reporting')).toBe(before.feature)
+    // The file is back in history, which is the whole point of a restore.
+    expect(await raw(R, ['log', '--all', '--oneline', '--', SECRET])).not.toBe('')
+  })
+
+  it('makes the purge permanent only when the backup is dropped', async () => {
+    const R = await freshClone()
+    const { backup } = await gitService.historyPurge(R, [SECRET])
+    // Until then the old history is still reachable — that is the trade the
+    // backup makes, and the reason space is not reclaimed yet.
+    expect(await raw(R, ['log', '--all', '--oneline', '--', SECRET])).not.toBe('')
+
+    await gitService.historyPurgeDropBackup(R, backup.prefix)
+    expect(await gitService.historyPurgeBackups(R)).toEqual([])
+    expect(await raw(R, ['for-each-ref', '--format=%(refname)', 'refs/gitcito/pre-purge'])).toBe('')
+    expect(await raw(R, ['log', '--all', '--oneline', '--', SECRET])).toBe('')
+  })
+
+  it('will not restore or drop something that is not a purge backup', async () => {
+    const R = await freshClone()
+    await expect(gitService.historyPurgeRestore(R, 'refs/heads/main')).rejects.toThrow(/not a purge backup/i)
+    await expect(gitService.historyPurgeDropBackup(R, 'refs/heads/main')).rejects.toThrow(/not a purge backup/i)
+  })
+})
+
+describe('history path picker (leaked-secret playground)', () => {
+  it('lists paths that no longer exist in the working tree', async () => {
+    const R = cloneFixture('leaked-secret')
+    const entries = await gitService.historyPaths(R)
+    const secret = entries.find((e) => e.path === 'config/credentials.env')
+    // The whole point: a file dialog could not offer this one.
+    expect(secret).toBeDefined()
+    expect(secret!.deleted).toBe(true)
+    // Added once, rotated once — two distinct blobs.
+    expect(secret!.versions).toBe(2)
+    expect(secret!.bytes).toBeGreaterThan(0)
+  })
+
+  it('marks files that are still tracked as not deleted', async () => {
+    const R = cloneFixture('leaked-secret')
+    const entries = await gitService.historyPaths(R)
+    expect(entries.find((e) => e.path === 'app.js')?.deleted).toBe(false)
+  })
+
+  it('orders by weight, so the reason a clone is huge is at the top', async () => {
+    const R = cloneFixture('leaked-secret')
+    const bytes = (await gitService.historyPaths(R)).map((e) => e.bytes)
+    expect(bytes).toEqual([...bytes].sort((a, b) => b - a))
+  })
+
+  it('honours the cap rather than returning a whole monorepo', async () => {
+    const R = cloneFixture('leaked-secret')
+    expect((await gitService.historyPaths(R, 2)).length).toBe(2)
+  })
+})

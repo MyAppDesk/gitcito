@@ -2134,7 +2134,23 @@ export interface AppSettings {
   skippedUpdateVersion?: string
 }
 
-export type Language = 'en' | 'es'
+export type Language =
+  | 'en'
+  | 'es'
+  | 'de'
+  | 'fr'
+  | 'pt-BR'
+  | 'it'
+  | 'nl'
+  | 'pl'
+  | 'tr'
+  | 'ru'
+  | 'uk'
+  | 'zh-CN'
+  | 'ja'
+  | 'ko'
+  | 'ar'
+  | 'he'
 
 /** App appearance: a fixed mode or follow the operating system. */
 export type ThemeMode = 'light' | 'dark' | 'auto'

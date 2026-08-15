@@ -28,10 +28,22 @@ export interface HelpPage extends HelpMeta {
 }
 
 // Raw Markdown for every handbook page, and every image they can reference.
+//
+// English is eager: it is the default, and it is the fallback for any page a
+// translation has not caught up with, so it has to be there synchronously.
 const RAW = import.meta.glob('../../../../docs/help/*.md', { eager: true, query: '?raw', import: 'default' }) as Record<
   string,
   string
 >
+
+// Translations live one directory down (`docs/help/es/absorb.md`) and load on
+// demand. Eager would inline all sixteen handbooks into the bundle — roughly
+// 4 MB of Markdown, most of which a given reader never opens.
+const RAW_LOCALIZED = import.meta.glob('../../../../docs/help/*/*.md', {
+  query: '?raw',
+  import: 'default'
+}) as Record<string, () => Promise<string>>
+
 const MEDIA = import.meta.glob('../../../../docs/screenshots/*', {
   eager: true,
   query: '?url',
@@ -78,21 +90,80 @@ export function resolveMedia(markdown: string): string {
   })
 }
 
-export const HELP_PAGES: HelpPage[] = Object.entries(RAW)
-  .map(([path, source]) => {
-    const id = (path.split('/').pop() ?? '').replace(/\.md$/, '')
-    const { meta, body } = parseFrontMatter(source)
-    return {
-      id,
-      title: meta.title ?? id,
-      category: meta.category ?? 'Guide',
-      order: meta.order ?? 999,
-      summary: meta.summary ?? '',
-      keywords: meta.keywords ?? '',
-      body
-    }
-  })
-  .sort((a, b) => a.order - b.order || a.title.localeCompare(b.title))
+function toPage(path: string, source: string): HelpPage {
+  const id = (path.split('/').pop() ?? '').replace(/\.md$/, '')
+  const { meta, body } = parseFrontMatter(source)
+  return {
+    id,
+    title: meta.title ?? id,
+    category: meta.category ?? 'Guide',
+    order: meta.order ?? 999,
+    summary: meta.summary ?? '',
+    keywords: meta.keywords ?? '',
+    body
+  }
+}
+
+const byOrder = (a: HelpPage, b: HelpPage): number =>
+  a.order - b.order || a.title.localeCompare(b.title)
+
+/** The English handbook — the reference set, and the fallback for every locale. */
+export const HELP_PAGES: HelpPage[] = Object.entries(RAW).map(([p, s]) => toPage(p, s)).sort(byOrder)
+
+/** Locale code → its page files, from `docs/help/<locale>/<id>.md`. */
+const LOCALIZED = new Map<string, Record<string, () => Promise<string>>>()
+for (const [path, load] of Object.entries(RAW_LOCALIZED)) {
+  const parts = path.split('/')
+  const locale = parts[parts.length - 2]
+  const id = (parts[parts.length - 1] ?? '').replace(/\.md$/, '')
+  const bucket = LOCALIZED.get(locale) ?? {}
+  bucket[id] = load
+  LOCALIZED.set(locale, bucket)
+}
+
+/** Locales that ship at least one translated page. */
+export function translatedHelpLocales(): string[] {
+  return [...LOCALIZED.keys()].sort()
+}
+
+const cache = new Map<string, HelpPage[]>()
+
+/**
+ * The handbook in `lang`, falling back page-by-page to English.
+ *
+ * Partial is deliberately allowed: a locale that has translated forty of the
+ * sixty-one pages should ship those forty rather than wait for the rest, and a
+ * reader gets English for the gap instead of a missing page. Ordering comes
+ * from the English `order`, so the sidebar keeps one shape in every language.
+ */
+export async function loadHelpPages(lang: string): Promise<HelpPage[]> {
+  const bucket = LOCALIZED.get(lang)
+  if (!bucket) return HELP_PAGES
+  const hit = cache.get(lang)
+  if (hit) return hit
+
+  const translated = new Map<string, HelpPage>()
+  await Promise.all(
+    Object.entries(bucket).map(async ([id, load]) => {
+      try {
+        translated.set(id, toPage(`${id}.md`, await load()))
+      } catch {
+        // A page that fails to load is one the reader sees in English, not an
+        // empty handbook.
+      }
+    })
+  )
+
+  const pages = HELP_PAGES.map((en) => {
+    const local = translated.get(en.id)
+    // `order` is structural, not copy: taking the English one keeps every
+    // locale's sidebar in the same sequence even if a translation drifts.
+    return local ? { ...local, id: en.id, order: en.order } : en
+  }).sort(byOrder)
+
+  cache.set(lang, pages)
+  return pages
+}
 
 /** Pages grouped into sidebar sections, categories in first-appearance order. */
 export function helpSections(pages: HelpPage[] = HELP_PAGES): { category: string; pages: HelpPage[] }[] {

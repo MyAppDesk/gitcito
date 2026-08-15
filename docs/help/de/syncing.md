@@ -1,0 +1,76 @@
+---
+title: Fetchen, Pullen & Pushen
+category: Sync & viele Repos
+order: 50
+summary: Im Gleichschritt bleiben, mit Schutzmechanismen für die Operationen, die beißen.
+keywords: fetch pull push force auto-fetch prune remote remotes upstream geschützter branch mehrere remotes fork mirror push tags all
+---
+
+# Fetchen, Pullen & Pushen
+
+## Pull
+
+Drei Modi, aus dem Dropdown gewählt: **Standard**, **nur Fast-Forward** oder
+**Rebase**. Lokale Änderungen werden rund um den Pull automatisch gestasht und
+wiederhergestellt, ein schmutziger Working Tree blockiert dich also nicht.
+
+## Push
+
+Force-Pushes verwenden immer `--force-with-lease` — die sichere Variante, die
+sich weigert, wenn sich der Remote bewegt hat, seit du zuletzt hingeschaut hast.
+Ein **geschützter Branch** mit Force gepusht verlangt eine Bestätigung (die Liste
+steckt im Zahnrad der Repository-Einstellungen).
+
+![Die Bestätigung, die ein geschützter Branch vor einem Force-Push verlangt](../../screenshots/force-push-guard.webp)
+
+### Mehr als ein Remote
+
+Der **Push**-Button zielt auf den Upstream des Branches. Der Pfeil daneben bietet
+außerdem an, sobald ein Repository mehr als einen Remote hat:
+
+| | |
+|---|---|
+| **Zu einem Remote pushen** | Wähle einen einzelnen Remote — einen Fork, einen Mirror, ein Deploy-Ziel |
+| **Zu allen N Remotes pushen** | Ein Push pro Remote, der Reihe nach |
+| **Alle Tags pushen zu** | `git push <remote> --tags`, alle lokalen Tags auf einmal |
+
+Dieselben zwei Aktionen sitzen in der Seitenleiste auch in der Zeile jedes
+einzelnen Remotes — und dort bist du meistens, wenn die Frage aufkommt.
+
+**Eine Ablehnung bricht den Rest nicht ab.** Einen Fork und dessen Upstream zu
+pushen ist genau der Fall, in dem die eine Seite sich weigert und die andere
+trotzdem durchgehen soll, deshalb meldet jeder Remote für sich: Erfolge werden in
+einem Toast namentlich genannt, und jeder Fehlschlag bekommt seinen eigenen mit
+der Begründung von git.
+
+Nur der **erste** Remote in der Liste setzt den Upstream des Branches. Ein Branch
+hat einen Upstream, und der zuletzt gepushte Remote ist nicht automatisch der, den
+er tracken soll.
+
+Beide Wege durchlaufen dieselben Prüfungen wie ein gewöhnlicher Push — die
+Bestätigung für geschützte Branches und den [Secret-Schutz](security.md). An zwei
+Remotes zu veröffentlichen ist die doppelte Exposition, nicht die halbe Vorsicht.
+
+## Fetch
+
+**Alles fetchen & prunen** über jeden Remote hinweg, dazu ein **Auto-Fetch** im
+Hintergrund in einem von dir gesetzten Intervall (Einstellungen → Allgemein) und
+ein "vor X gefetcht"-Badge in der Toolbar.
+
+Ein Fetch, der **umgeschriebene Historie** findet, sagt das: ein Toast nennt den
+Branch, und dessen Zeile bekommt einen Marker, der [was sich seither geändert
+hat](range-diff.md) genau bei dem Commit öffnet, auf den er früher zeigte.
+
+## Viele Repositorys auf einmal
+
+- Ein Gruppen-Tab kann seinen ganzen Teilbaum **fetchen / pullen**.
+- [Mission Control](mission-control.md) macht es über den gesamten Workspace und
+  kann *nur* die Repositorys pullen, die tatsächlich hinterherhinken.
+
+## Remotes
+
+Einzelne Remotes hinzufügen, bearbeiten, entfernen und fetchen — aus der
+Seitenleiste. Branch-Zeilen tragen Badges für die Präsenz pro Remote, du siehst
+also auf einen Blick, welche Remotes eine Kopie eines Branches haben.
+
+**Siehe auch:** [Mission Control](mission-control.md) · [Hosting & Pull Requests](hosting.md)

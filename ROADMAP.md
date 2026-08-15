@@ -27,11 +27,6 @@ An unsigned Windows build hits the SmartScreen wall on first run. The CI change
 is about fifteen lines; the blocker is a certificate, and the only option that
 buys immediate reputation for a project this size is Azure Trusted Signing.
 
-### More locales
-English and Spanish today. `/add-locale` scaffolds a new dictionary and the test
-suite enforces key parity and placeholder consistency, so the mechanics are
-solved — the work is translation quality, which needs a speaker, not a script.
-
 ### Clean/smudge filters, configured rather than hand-written
 The [attributes UI](docs/help/attributes.md) writes `filter=<name>` rules but
 will not configure the commands behind them. A filter runs on **every checkout

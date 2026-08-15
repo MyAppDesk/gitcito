@@ -52,5 +52,5 @@ only power users can find.
 2. Stage it — the whole file, a hunk, or [single lines](staging.md).
 3. Write a message and press **Commit**.
 
-Everything else in Gitcito is optional. The features that make it different are
-listed under [What makes Gitcito different](#gitcito-different).
+Everything else in Gitcito is optional.
+

@@ -2,13 +2,13 @@
 title: Themes & appearance
 category: Make it yours
 order: 100
-summary: Nine themes, light and dark, plus custom and AI-generated ones.
+summary: Built-in themes, light and dark, plus custom and AI-generated ones.
 keywords: theme themes dark light appearance colors font size graph palette
 ---
 
 # Themes & appearance
 
-Nine built-in themes — Gitcito, Nord, Dracula, Solarized, GitHub, Monokai,
+Built-in themes — Gitcito, Nord, Dracula, Solarized, GitHub, Monokai,
 Midnight, Contrast and Daltonic — each with a light and a dark variant.
 
 ![Switching from light to dark](../screenshots/clip-themes.webp)

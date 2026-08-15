@@ -77,7 +77,8 @@ import {
   resolveAppColors,
   resolveCodeColors
 } from '../theme/themes'
-import { LANGUAGES, useT, interp, type TranslationKey } from '../i18n'
+import { useT, interp, type TranslationKey } from '../i18n'
+import { LanguagePicker } from './LanguagePicker'
 import { ShortcutEditor } from './CheatsheetModal'
 import madLogo from '../assets/mad-high.png'
 
@@ -2229,16 +2230,10 @@ function GeneralPage(): React.JSX.Element {
 
       <label className="settings-field">
         <span className="settings-field-label">{t('settings.language')}</span>
-        <select
+        <LanguagePicker
           value={settings.language}
-          onChange={(e) => update((s) => ({ ...s, language: e.target.value as typeof s.language }))}
-        >
-          {LANGUAGES.map((l) => (
-            <option key={l.id} value={l.id}>
-              {l.label}
-            </option>
-          ))}
-        </select>
+          onChange={(language) => update((s) => ({ ...s, language }))}
+        />
       </label>
 
       <h4 className="settings-section-title">{t('settings.graph')}</h4>

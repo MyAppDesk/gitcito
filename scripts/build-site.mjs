@@ -17,6 +17,7 @@ import { readFileSync, readdirSync, mkdirSync, writeFileSync, copyFileSync, rmSy
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { marked } from 'marked'
+import { LOCALE_NAMES, RTL_LOCALES, SITE, coverage, strings } from './site-i18n/index.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const HELP_DIR = join(ROOT, 'docs/help')
@@ -24,12 +25,18 @@ const SHOTS_DIR = join(ROOT, 'docs/screenshots')
 const OUT = join(ROOT, 'dist-site')
 
 const REPO = 'MyAppDesk/gitcito'
+const SITE_URL = 'https://myappdesk.github.io/gitcito'
 const RELEASES = `https://github.com/${REPO}/releases`
 const LATEST = `${RELEASES}/latest`
 const SPONSOR = 'https://github.com/sponsors/cgutierr-zgz'
 const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'))
 
 marked.setOptions({ gfm: true, breaks: false })
+
+// The README and the roadmap stay English on purpose: they duplicate what the
+// handbook already says in sixteen languages, and translated copies of them
+// would rot silently — nothing in the gate reads them.
+const ROADMAP_URL = `https://github.com/${REPO}/blob/main/ROADMAP.md`
 
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 
@@ -38,7 +45,8 @@ const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, 
 /** Flat `key: value` front matter — the same shape the app parses. */
 function parsePage(file) {
   const src = readFileSync(join(HELP_DIR, file), 'utf8')
-  const id = file.replace(/\.md$/, '')
+  // `file` may be `absorb.md` or `es/absorb.md`; the id is the basename either way.
+  const id = (file.split('/').pop() ?? file).replace(/\.md$/, '')
   if (!src.startsWith('---')) return { id, title: id, category: 'Guide', order: 999, summary: '', body: src }
   const end = src.indexOf('\n---', 3)
   const meta = {}
@@ -73,19 +81,88 @@ for (const page of pages) {
   else sections.push({ category: page.category, pages: [page] })
 }
 
-/** Rewrite in-repo links so they resolve on the site instead of on GitHub. */
-function siteLinks(markdown) {
+/**
+ * Rewrite in-repo links so they resolve on the site instead of on GitHub.
+ *
+ * `depth` is how deep the page sits under the site root: 1 for the English
+ * handbook (`help/x.html`), 2 for a translation (`help/es/x.html`), which is
+ * also why the Markdown's own image path differs by one `../`.
+ */
+function siteLinks(markdown, depth = 1) {
+  const assets = `${'../'.repeat(depth)}assets/`
   return markdown
     .replace(/\]\(([\w-]+)\.md\)/g, '](./$1.html)')
-    .replace(/\]\(\.\.\/screenshots\/([\w.-]+)\)/g, '](../assets/$1)')
+    .replace(/\]\(\.\.\/(?:\.\.\/)?screenshots\/([\w.-]+)\)/g, `](${assets}$1)`)
+}
+
+// ── Translated handbooks ────────────────────────────────────────────────────
+
+/** locale → its pages, merged over English so a partial translation still works. */
+const localeSets = new Map()
+const localeCoverage = new Map()
+for (const entry of readdirSync(HELP_DIR, { withFileTypes: true })) {
+  if (!entry.isDirectory()) continue
+  const locale = entry.name
+  const translated = new Map()
+  for (const file of readdirSync(join(HELP_DIR, locale)).filter((f) => f.endsWith('.md'))) {
+    const page = parsePage(join(locale, file))
+    translated.set(page.id, page)
+  }
+  if (!translated.size) continue
+  // English order wins so every language's sidebar keeps one shape.
+  localeSets.set(
+    locale,
+    pages.map((en) => {
+      const local = translated.get(en.id)
+      return local ? { ...local, id: en.id, order: en.order } : en
+    })
+  )
+  // Tracked separately from the merged set: every locale renders all 61 pages
+  // because untranslated ones fall back, so the merged count would report a
+  // half-finished language as complete.
+  localeCoverage.set(locale, translated.size)
+}
+
+const siteLocales = ['en', ...[...localeSets.keys()].sort()]
+
+/** Sections for a given locale's page set. */
+function sectionsOf(pageList) {
+  const out = []
+  for (const page of pageList) {
+    const found = out.find((s) => s.category === page.category)
+    if (found) found.pages.push(page)
+    else out.push({ category: page.category, pages: [page] })
+  }
+  return out
+}
+
+/** `<link rel="alternate" hreflang>` for the landing page, in every language. */
+function alternatesForHome() {
+  if (siteLocales.length < 2) return ''
+  const url = (loc) => `${SITE_URL}/${loc === 'en' ? '' : `${loc}/`}`
+  return (
+    siteLocales.map((loc) => `<link rel="alternate" hreflang="${loc}" href="${url(loc)}" />`).join('\n') +
+    `\n<link rel="alternate" hreflang="x-default" href="${url('en')}" />\n`
+  )
+}
+
+/** `<link rel="alternate" hreflang>` for one page id, in every language. */
+function alternatesFor(id) {
+  if (siteLocales.length < 2) return ''
+  const url = (loc) => `${SITE_URL}/help/${loc === 'en' ? '' : `${loc}/`}${id}.html`
+  return (
+    siteLocales.map((loc) => `<link rel="alternate" hreflang="${loc}" href="${url(loc)}" />`).join('\n') +
+    `\n<link rel="alternate" hreflang="x-default" href="${url('en')}" />\n`
+  )
 }
 
 // ── Shared chrome ───────────────────────────────────────────────────────────
 
-const head = (title, description, depth) => {
-  const base = depth ? '../' : ''
+const head = (title, description, depth, opts = {}) => {
+  const base = '../'.repeat(depth)
+  const { lang = 'en', dir = 'ltr', alternates = '' } = opts
   return `<!doctype html>
-<html lang="en">
+<html lang="${lang}" dir="${dir}">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -98,33 +175,45 @@ const head = (title, description, depth) => {
 <meta name="theme-color" content="#0b0e1a" />
 <link rel="icon" href="${base}assets/gitcito-mark.png" />
 <link rel="stylesheet" href="${base}styles.css" />
-</head>
+${alternates}</head>
 <body>`
 }
 
-const nav = (depth) => {
-  const base = depth ? '../' : ''
+/**
+ * `depth` is how deep the page sits under the site root, `home` the locale's
+ * own root — an English reader clicking the logo should not land in Japanese,
+ * and a Japanese reader should not land in English.
+ */
+const nav = (depth, locale = 'en') => {
+  const base = '../'.repeat(depth)
+  const t = strings(locale)
+  const home = locale === 'en' ? `${base}index.html` : `${base}${locale}/index.html`
+  const handbook =
+    locale === 'en' ? `${base}help/getting-started.html` : `${base}help/${locale}/getting-started.html`
   return `<header class="nav">
-  <a class="brand" href="${base}index.html">
+  <a class="brand" href="${home}">
     <img src="${base}assets/gitcito-mark.png" alt="" width="26" height="26" />
     <span>Gitcito</span>
   </a>
   <nav>
-    <a href="${base}help/getting-started.html">Handbook</a>
-    <a href="https://github.com/${REPO}/blob/main/ROADMAP.md">Roadmap</a>
-    <a href="https://github.com/${REPO}">GitHub</a>
-    <a href="${SPONSOR}">Sponsor</a>
-    <a class="btn small" href="${LATEST}">Download</a>
+    <a href="${handbook}">${t('nav.handbook')}</a>
+    <a href="${ROADMAP_URL}">${t('nav.roadmap')}</a>
+    <a href="https://github.com/${REPO}">${t('nav.github')}</a>
+    <a href="${SPONSOR}">${t('nav.sponsor')}</a>
+    <a class="btn small" href="${LATEST}">${t('nav.download')}</a>
   </nav>
 </header>`
 }
 
-const footer = `<footer class="foot">
-  <span>MIT licensed · Made by <a href="https://myappdesk.dev">MyAppDesk</a> with 💜</span>
-  <span><a href="https://github.com/${REPO}">Source</a> · <a href="https://github.com/${REPO}/blob/main/ROADMAP.md">Roadmap</a> · <a href="https://github.com/${REPO}/issues/new">Report an issue</a> · <a href="${SPONSOR}">Sponsor</a></span>
+const footer = (locale = 'en') => {
+  const t = strings(locale)
+  return `<footer class="foot">
+  <span>${t('foot.license')}</span>
+  <span><a href="https://github.com/${REPO}">${t('foot.source')}</a> · <a href="${ROADMAP_URL}">${t('foot.roadmap')}</a> · <a href="https://github.com/${REPO}/issues/new">${t('foot.reportIssue')}</a> · <a href="${SPONSOR}">${t('foot.sponsor')}</a></span>
 </footer>
 </body>
 </html>`
+}
 
 // ── Landing ─────────────────────────────────────────────────────────────────
 
@@ -184,6 +273,12 @@ const FEATURES = [
     body: 'The most useful file in git that nobody writes. Line endings settled once for everyone, a changelog that stops conflicting, fixtures kept out of release tarballs — and readable diffs for Word and PDF, when the converter is installed.'
   },
   {
+    icon: '🌍',
+    title: 'Sixteen languages',
+    id: 'languages',
+    body: 'Not a stub translation of the buttons — the whole interface, explanations included. Arabic and Hebrew mirror the layout, while the graph, diffs, paths and the terminal stay left-to-right, because that is the direction code reads in.'
+  },
+  {
     icon: '🔐',
     title: 'Your secrets stay yours',
     id: 'security',
@@ -191,10 +286,11 @@ const FEATURES = [
   }
 ]
 
+// The OS names are proper nouns and stay; only the note beside each is copy.
 const DOWNLOADS = [
-  { os: 'macOS', note: 'Apple silicon & Intel · signed and notarised', match: 'mac' },
-  { os: 'Windows', note: 'Installer (x64)', match: 'win' },
-  { os: 'Linux', note: 'AppImage · deb', match: 'linux' }
+  { os: 'macOS', noteKey: 'download.macNote', match: 'mac' },
+  { os: 'Windows', noteKey: 'download.winNote', match: 'win' },
+  { os: 'Linux', noteKey: 'download.linuxNote', match: 'linux' }
 ]
 
 // A feature card shows the handbook page's own screenshot. The file is named
@@ -207,107 +303,123 @@ function cardShot(id) {
   return existsSync(join(SHOTS_DIR, name)) ? name : null
 }
 
-function landing() {
+function landing(locale = 'en') {
+  const t = strings(locale)
+  const forOs = t('download.forOs').split('{os}')
+  const depth = locale === 'en' ? 0 : 1
+  const base = '../'.repeat(depth)
+  // The handbook a card links to is the one in the reader's language.
+  const helpDir = locale === 'en' ? `${base}help/` : `${base}help/${locale}/`
+  const pageList = locale === 'en' ? pages : (localeSets.get(locale) ?? pages)
+
   const cards = FEATURES.map((f) => {
     const shot = cardShot(f.id)
+    const title = t(`feature.${f.id}.title`)
     const figure = shot
-      ? `\n      <a class="card-shot" href="help/${f.id}.html"><img src="assets/${shot}" alt="${esc(f.title)}" loading="lazy" /></a>`
+      ? `\n      <a class="card-shot" href="${helpDir}${f.id}.html"><img src="${base}assets/${shot}" alt="${esc(title)}" loading="lazy" /></a>`
       : ''
     return `    <article class="card">${figure}
       <span class="card-icon" aria-hidden="true">${f.icon}</span>
-      <h3><a href="help/${f.id}.html">${f.title}</a></h3>
-      <p>${f.body}</p>
+      <h3><a href="${helpDir}${f.id}.html">${title}</a></h3>
+      <p>${t(`feature.${f.id}.body`)}</p>
     </article>`
   }).join('\n')
 
   const downloads = DOWNLOADS.map(
     (d) => `      <a class="dl" href="${LATEST}" data-os="${d.match}">
         <strong>${d.os}</strong>
-        <span>${d.note}</span>
+        <span>${t(d.noteKey)}</span>
       </a>`
   ).join('\n')
 
-  const handbook = sections
+  const handbook = sectionsOf(pageList)
     .map(
       (s) => `      <div class="hb-col">
         <h4>${esc(s.category)}</h4>
-        ${s.pages.map((p) => `<a href="help/${p.id}.html">${esc(p.title)}</a>`).join('\n        ')}
+        ${s.pages.map((p) => `<a href="${helpDir}${p.id}.html">${esc(p.title)}</a>`).join('\n        ')}
       </div>`
     )
     .join('\n')
 
-  return `${head('Gitcito — a Git client that answers the questions you actually ask', 'A fully vibe-coded Git client. Free. Conflict radar, semantic diff, absorb, time machine and more.', 0)}
-${nav(0)}
+  const ordinary = (keys) =>
+    keys.map((k) => `        <li>${t(`ordinary.${k}`)}</li>`).join('\n')
+
+  const switcher = siteLocales
+    .map((loc) => {
+      const href = loc === 'en' ? `${base}index.html` : `${base}${loc}/index.html`
+      const current = loc === locale ? ' aria-current="true"' : ''
+      return `      <a${current} href="${href}" lang="${loc}">${esc(LOCALE_NAMES[loc] ?? loc)}</a>`
+    })
+    .join('\n')
+
+  return `${head(t('meta.title'), t('meta.description'), depth, {
+    lang: locale,
+    dir: RTL_LOCALES.has(locale) ? 'rtl' : 'ltr',
+    alternates: alternatesForHome()
+  })}
+${nav(depth, locale)}
 <main>
   <section class="hero">
-    <img class="hero-mark" src="assets/gitcito-mark.png" alt="" width="86" height="86" />
-    <h1>A Git client that answers<br /><em>the questions you actually ask</em></h1>
-    <p class="lede">Which branch will conflict? What changed since they force-pushed?<br />Which commit does this fix belong to?</p>
+    <img class="hero-mark" src="${base}assets/gitcito-mark.png" alt="" width="86" height="86" />
+    <h1>${t('hero.title')}</h1>
+    <p class="lede">${t('hero.lede')}</p>
     <div class="cta">
-      <a class="btn primary" href="${LATEST}" id="download">Download for your platform</a>
-      <a class="btn ghost" href="https://github.com/${REPO}">View source</a>
+      <a class="btn primary" href="${LATEST}" id="download">${t('hero.download')}</a>
+      <a class="btn ghost" href="https://github.com/${REPO}">${t('hero.source')}</a>
     </div>
-    <p class="version">Free · MIT · v${pkg.version}</p>
-    <img class="shot" src="assets/graph-dark.webp" alt="The Gitcito commit graph" loading="lazy" />
+    <p class="version">${t('hero.terms', { version: pkg.version })}</p>
+    <img class="shot" src="${base}assets/graph-dark.webp" alt="${esc(t('hero.graphAlt'))}" loading="lazy" />
+    <div class="lang-bar">
+${switcher}
+    </div>
   </section>
 
   <section class="section">
-    <h2>Not another wrapper around <code>git status</code></h2>
-    <p class="sub">Most Git clients are a nicer way to run the commands you already know. Gitcito tries to answer the question before you run them.</p>
+    <h2>${t('ordinary.title')}</h2>
+    <p class="sub">${t('ordinary.sub')}</p>
+    <div class="two">
+      <ul class="ticks">
+${ordinary(['graph', 'staging', 'conflicts', 'rebase', 'stacks', 'recovery'])}
+      </ul>
+      <ul class="ticks">
+${ordinary(['prs', 'terminal', 'launch', 'ai', 'themes', 'languages'])}
+      </ul>
+    </div>
+    <img class="shot" src="${base}assets/conflict-resolver.webp" alt="${esc(t('ordinary.conflictAlt'))}" loading="lazy" />
+  </section>
+
+  <section class="section alt">
+    <h2>${t('features.title')}</h2>
+    <p class="sub">${t('features.sub')}</p>
     <div class="grid">
 ${cards}
     </div>
   </section>
 
-  <section class="section alt">
-    <h2>And all the ordinary things, done properly</h2>
-    <div class="two">
-      <ul class="ticks">
-        <li>Commit graph with real lanes, windowed for huge histories</li>
-        <li>Staging down to individual lines</li>
-        <li>Three-pane conflict resolver that says which side is which</li>
-        <li>Interactive rebase by dragging</li>
-        <li>Stacked branches with a cascade restack</li>
-        <li>Reflog, WIP snapshots, guided bisect</li>
-      </ul>
-      <ul class="ticks">
-        <li>Pull requests on GitHub, GitLab, Bitbucket and Azure DevOps</li>
-        <li>Integrated terminal — a real PTY</li>
-        <li>Run &amp; debug straight from <code>.vscode/launch.json</code></li>
-        <li>Optional AI that cites the lines it read</li>
-        <li>9 themes, light and dark, plus AI-generated ones</li>
-        <li>English &amp; Spanish</li>
-      </ul>
-    </div>
-    <img class="shot" src="assets/conflict-resolver.webp" alt="The conflict resolver" loading="lazy" />
-  </section>
-
   <section class="section">
-    <h2>Download</h2>
-    <p class="sub">Latest release: <strong>v${pkg.version}</strong>. Every build is published from CI.</p>
+    <h2>${t('download.title')}</h2>
+    <p class="sub">${t('download.sub', { version: pkg.version })}</p>
     <div class="downloads">
 ${downloads}
     </div>
-    <p class="sub small">Or open a repository from your terminal with <code>gitcito .</code> — see <a href="help/cli.html">the command line</a>.</p>
+    <p class="sub small">${t('download.cli', { cli: `${helpDir}cli.html` })}</p>
   </section>
 
   <section class="section alt">
-    <h2>A ${pages.length}-page handbook, built into the app</h2>
-    <p class="sub">Every feature explained — offline in the app, and right here.</p>
+    <h2>${t('handbook.title', { pages: pages.length })}</h2>
+    <p class="sub">${t('handbook.sub')}</p>
     <div class="handbook">
 ${handbook}
     </div>
   </section>
 
   <section class="section">
-    <h2>Sponsor Gitcito</h2>
-    <p class="sub">Free, MIT, no backend, no telemetry, nothing to upsell — so there is nothing to buy.
-    Sponsorship pays for the Apple Developer certificate the signed macOS builds need, the handbook and
-    the translations. Bug reports are worth just as much.</p>
-    <p><a class="btn primary" href="${SPONSOR}">Sponsor on GitHub</a></p>
+    <h2>${t('sponsor.title')}</h2>
+    <p class="sub">${t('sponsor.body')}</p>
+    <p><a class="btn primary" href="${SPONSOR}">${t('sponsor.cta')}</a></p>
   </section>
 </main>
-${footer}
+${footer(locale)}
 <script>
   // Point the main button at the file for whoever is reading, and highlight
   // their platform in the download list. Everything still resolves to the
@@ -318,7 +430,9 @@ ${footer}
     if (!os) return
     var label = { mac: 'macOS', win: 'Windows', linux: 'Linux' }[os]
     var btn = document.getElementById('download')
-    if (btn) btn.textContent = 'Download for ' + label
+    // Split around {os} instead of interpolating, so a language that puts the
+    // platform first ("macOS 版をダウンロード") still reads correctly.
+    if (btn) btn.textContent = ${JSON.stringify(forOs[0])} + label + ${JSON.stringify(forOs[1] ?? '')}
     var card = document.querySelector('.dl[data-os="' + os + '"]')
     if (card) card.classList.add('yours')
   })()
@@ -328,8 +442,9 @@ ${footer}
 
 // ── Handbook pages ──────────────────────────────────────────────────────────
 
-function helpPage(page) {
-  const sidebar = sections
+function helpPage(page, locale = 'en', pageList = pages) {
+  const depth = locale === 'en' ? 1 : 2
+  const sidebar = sectionsOf(pageList)
     .map(
       (s) => `    <div class="side-group">
       <span class="side-title">${esc(s.category)}</span>
@@ -340,22 +455,44 @@ function helpPage(page) {
     )
     .join('\n')
 
-  return `${head(`${page.title} — Gitcito handbook`, page.summary, 1)}
-${nav(1)}
+  // The switcher stays on the page you are reading rather than dumping you at
+  // the handbook index — changing language is not the same as starting over.
+  const switcher = siteLocales
+    .map((loc) => {
+      const href =
+        loc === 'en'
+          ? `${'../'.repeat(depth - 1)}${page.id}.html`
+          : `${'../'.repeat(depth - 1)}${loc}/${page.id}.html`
+      const current = loc === locale ? ' aria-current="true"' : ''
+      return `      <a${current} href="${href}" lang="${loc}">${esc(LOCALE_NAMES[loc] ?? loc)}</a>`
+    })
+    .join('\n')
+
+  const t = strings(locale)
+  const source = locale === 'en' ? `${page.id}.md` : `${locale}/${page.id}.md`
+  const edit = locale === 'en' ? t('doc.edit') : t('doc.improve')
+
+  return `${head(`${page.title} — ${t('doc.titleSuffix')}`, page.summary, depth, {
+    lang: locale,
+    dir: RTL_LOCALES.has(locale) ? 'rtl' : 'ltr',
+    alternates: alternatesFor(page.id)
+  })}
+${nav(depth)}
 <div class="doc">
   <aside class="side">
-    <input class="side-search" type="search" placeholder="Filter pages…" aria-label="Filter pages" />
+    <input class="side-search" type="search" placeholder="${esc(t('doc.filter'))}" aria-label="${esc(t('doc.filterLabel'))}" />
+${siteLocales.length > 1 ? `    <details class="side-lang">\n      <summary>${esc(LOCALE_NAMES[locale] ?? locale)}</summary>\n${switcher}\n    </details>` : ''}
 ${sidebar}
   </aside>
   <main class="doc-body">
     <p class="crumb">${esc(page.category)}</p>
     <article class="prose">
-${marked.parse(siteLinks(page.body))}
+${marked.parse(siteLinks(page.body, depth))}
     </article>
-    <p class="edit"><a href="https://github.com/${REPO}/blob/main/docs/help/${page.id}.md">Edit this page on GitHub</a></p>
+    <p class="edit"><a href="https://github.com/${REPO}/blob/main/docs/help/${source}">${edit}</a></p>
   </main>
 </div>
-${footer}
+${footer(locale)}
 <script>
   // Filter the sidebar. Deliberately dumb: no index, no fetch, no dependency.
   var search = document.querySelector('.side-search')
@@ -564,6 +701,42 @@ img { max-width: 100%; }
 }
 .edit { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 13.5px; }
 
+/* language bar under the hero — sixteen endonyms, each in its own script */
+.lang-bar {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 14px;
+  max-width: 760px; margin: 34px auto 0; padding-top: 22px;
+  border-top: 1px solid var(--line);
+}
+.lang-bar a {
+  color: var(--text-3); text-decoration: none; font-size: 13.5px;
+  unicode-bidi: isolate;
+}
+.lang-bar a:hover { color: var(--text); }
+.lang-bar a[aria-current] { color: var(--accent-2); }
+
+/* language switcher */
+.side-lang { margin-bottom: 18px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg-2); }
+.side-lang summary {
+  cursor: pointer; padding: 7px 10px; font-size: 13px; color: var(--text-2);
+  list-style: none; display: flex; align-items: center; justify-content: space-between;
+}
+.side-lang summary::after { content: '▾'; color: var(--text-3); }
+.side-lang[open] summary::after { content: '▴'; }
+.side-lang summary::-webkit-details-marker { display: none; }
+.side-lang a { display: block; padding: 5px 10px; font-size: 13px; color: var(--text-2); text-decoration: none; }
+.side-lang a:hover { color: var(--text); background: var(--bg-3); }
+.side-lang a[aria-current] { color: var(--accent-2); }
+/* An endonym is written in its own script, so a right-to-left name sits in a
+   left-to-right list. Isolate each so it cannot reorder its neighbours. */
+.side-lang a { unicode-bidi: isolate; }
+
+/* A right-to-left handbook page mirrors its prose but not its code. */
+[dir='rtl'] .prose th, [dir='rtl'] .prose td { text-align: right; }
+[dir='rtl'] .prose pre, [dir='rtl'] .prose code { direction: ltr; unicode-bidi: isolate; text-align: left; }
+[dir='rtl'] .prose blockquote {
+  border-left: 0; border-right: 3px solid var(--accent); border-radius: 8px 0 0 8px;
+}
+
 /* footer */
 .foot {
   display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;
@@ -588,6 +761,22 @@ writeFileSync(join(OUT, 'styles.css'), STYLES)
 writeFileSync(join(OUT, 'index.html'), landing())
 for (const page of pages) writeFileSync(join(OUT, 'help', `${page.id}.html`), helpPage(page))
 
+// A landing page per language at /<locale>/. English keeps the root so no
+// existing link, bookmark or search result moves.
+for (const locale of siteLocales.filter((l) => l !== 'en')) {
+  mkdirSync(join(OUT, locale), { recursive: true })
+  writeFileSync(join(OUT, locale, 'index.html'), landing(locale))
+}
+
+// One handbook tree per translated locale, under help/<locale>/. English keeps
+// the bare help/ path so no existing link or search result breaks.
+for (const [locale, pageList] of localeSets) {
+  mkdirSync(join(OUT, 'help', locale), { recursive: true })
+  for (const page of pageList) {
+    writeFileSync(join(OUT, 'help', locale, `${page.id}.html`), helpPage(page, locale, pageList))
+  }
+}
+
 // Every screenshot the handbook and the landing can reference, plus the mark.
 for (const file of readdirSync(SHOTS_DIR)) copyFileSync(join(SHOTS_DIR, file), join(OUT, 'assets', file))
 copyFileSync(join(ROOT, 'docs/gitcito-mark.png'), join(OUT, 'assets/gitcito-mark.png'))
@@ -600,8 +789,21 @@ copyFileSync(join(ROOT, 'docs/og-image.jpg'), join(OUT, 'assets/og-image.jpg'))
 // files and can mangle raw HTML.
 writeFileSync(join(OUT, '.nojekyll'), '')
 
-const count = readdirSync(join(OUT, 'help')).length
+const count = readdirSync(join(OUT, 'help')).filter((f) => f.endsWith('.html')).length
 console.log(`✔ site: index + ${count} handbook pages → dist-site/`)
+for (const [locale, done] of [...localeCoverage].sort()) {
+  const site = coverage(locale)
+  const full = done === count && site.done === site.total
+  console.log(
+    `  ${full ? '✔' : '·'} ${locale.padEnd(6)} handbook ${String(done).padStart(3)}/${count}` +
+      `   site copy ${String(site.done).padStart(3)}/${site.total}`
+  )
+}
+
+// A locale with site copy but no handbook would render a landing page whose
+// every link leads back into English. Worth saying out loud.
+const orphanCopy = Object.keys(SITE).filter((l) => l !== 'en' && !localeSets.has(l))
+if (orphanCopy.length) console.log(`  ! site copy without a handbook: ${orphanCopy.join(', ')}`)
 if (process.argv.includes('--serve')) {
   console.log(`  preview: npx serve ${existsSync(OUT) ? 'dist-site' : ''}`)
 }

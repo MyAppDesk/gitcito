@@ -137,8 +137,14 @@ const SEP = '\x1f'
  * add, which is exactly the "everything changed" noise this feature exists to
  * remove. Pairing slightly too eagerly is the better failure: the interdiff is
  * right there to judge it by.
+ *
+ * 75 was not eager enough. A one-line change to a four-line file — the
+ * `force-push` playground's "validate password", and the shape of most review
+ * fixes — still scored as two unrelated commits; the pairing only holds from
+ * 80 up. 85 sits clear of that edge without pairing commits that merely touch
+ * the same file.
  */
-const CREATION_FACTOR = '--creation-factor=75'
+const CREATION_FACTOR = '--creation-factor=85'
 
 /** Days of commit activity summarised in a Mission Control sparkline. */
 const ACTIVITY_DAYS = 14

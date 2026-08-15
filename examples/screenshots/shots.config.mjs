@@ -184,6 +184,35 @@ export const shots = [
   },
 
   {
+    // Settings → General with the language dropdown open, so the shot shows the
+    // flags and the endonyms rather than one closed field.
+    out: 'languages',
+    repos: ['octopus-merge'],
+    themes: ['light'],
+    drive: async (page) => {
+      await page.evaluate(() =>
+        window.__shot.ui.getState().openModal({ kind: 'settings', page: 'general' })
+      )
+      await page.waitForTimeout(400)
+      await page.click('.langpick-btn').catch(() => {})
+      await page.waitForTimeout(400)
+    }
+  },
+  {
+    // The whole window in Arabic: sidebar on the right, toolbar reversed — and
+    // the graph, the shas and the paths still reading left-to-right, which is
+    // the part of RTL support that is easy to get wrong and hard to describe.
+    out: 'rtl',
+    repos: ['octopus-merge'],
+    themes: ['dark'],
+    drive: async (page) => {
+      await page.evaluate(() =>
+        window.__shot.settings.getState().update((s) => ({ ...s, language: 'ar' }))
+      )
+      await page.waitForTimeout(600)
+    }
+  },
+  {
     // Settings → Shortcuts tab (rebindable shortcut editor).
     out: 'settings-shortcuts',
     repos: ['octopus-merge'],

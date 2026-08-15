@@ -99,6 +99,52 @@ for (const file of files) {
   }
 }
 
+// 5 — translated handbooks, one directory per locale (`docs/help/es/…`).
+//
+// A translation is allowed to be partial: an untranslated page falls back to
+// English at runtime, which is better than blocking the other sixty. What is
+// not allowed is a page that does not exist in English (a stale id nobody will
+// ever see), a broken link, or an image path that forgot it is one level
+// deeper — `../screenshots/` resolves from `docs/help/`, not from `docs/help/es/`.
+const localeDirs = readdirSync(HELP_DIR, { withFileTypes: true })
+  .filter((e) => e.isDirectory())
+  .map((e) => e.name)
+
+let translatedCount = 0
+for (const locale of localeDirs) {
+  const dir = join(HELP_DIR, locale)
+  const localeFiles = readdirSync(dir).filter((f) => f.endsWith('.md'))
+  translatedCount += localeFiles.length
+
+  for (const file of localeFiles) {
+    const id = file.replace(/\.md$/, '')
+    const where = `${locale}/${file}`
+    if (!pageIds.has(id)) {
+      fail(`${where} has no English original`, `docs/help/${file} does not exist — rename or remove it`)
+      continue
+    }
+    const src = readFileSync(join(dir, file), 'utf8')
+    if (!src.startsWith('---')) {
+      fail(`${where} has no front matter`, 'Needs title, category, order, summary, keywords')
+      continue
+    }
+    const head = src.slice(3, src.indexOf('\n---', 3))
+    for (const field of ['title', 'category', 'order', 'summary', 'keywords']) {
+      if (!new RegExp(`^${field}:\\s*\\S`, 'm').test(head)) fail(`${where} is missing "${field}"`, 'front matter')
+    }
+    for (const [, target] of src.matchAll(/\]\(([\w-]+)\.md\)/g)) {
+      if (!pageIds.has(target)) fail(`${where} links to a missing page`, `${target}.md`)
+    }
+    // From a locale directory the repo-relative hop is one deeper.
+    for (const [, image] of src.matchAll(/\]\(\.\.\/\.\.\/screenshots\/([\w.-]+)\)/g)) {
+      if (!shots.has(image)) fail(`${where} shows a missing image`, `docs/screenshots/${image}`)
+    }
+    if (/\]\(\.\.\/screenshots\//.test(src)) {
+      fail(`${where} uses a top-level image path`, 'From docs/help/<locale>/ it must be ../../screenshots/')
+    }
+  }
+}
+
 if (problems.length) {
   console.error(`✖ docs: ${problems.length} problem${problems.length === 1 ? '' : 's'}\n`)
   for (const { what, detail } of problems) console.error(`  ${what}\n    ${detail}`)
@@ -106,6 +152,9 @@ if (problems.length) {
   process.exit(1)
 }
 
+const translated = localeDirs.length
+  ? ` ${translatedCount} translated pages across ${localeDirs.length} locales.`
+  : ''
 console.log(
-  `✔ docs: ${pageIds.size} handbook pages cover ${modals.length} modals, ${pages.length} page tabs and ${commands.length} commands.`
+  `✔ docs: ${pageIds.size} handbook pages cover ${modals.length} modals, ${pages.length} page tabs and ${commands.length} commands.${translated}`
 )

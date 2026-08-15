@@ -1,8 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowLeft, ExternalLink, LifeBuoy, Search, X } from 'lucide-react'
 import { renderMarkdown } from '../preview/markdown'
-import { HELP_PAGES, helpExcerpt, helpSections, resolveMedia, searchHelp } from '../help/pages'
+import {
+  HELP_PAGES,
+  helpExcerpt,
+  helpSections,
+  loadHelpPages,
+  resolveMedia,
+  searchHelp,
+  type HelpPage as HelpPageData
+} from '../help/pages'
 import { useT } from '../i18n'
+import { useSettingsStore } from '../stores/settings'
 
 const ISSUES_URL = 'https://github.com/MyAppDesk/gitcito/issues/new'
 
@@ -16,20 +25,35 @@ const ISSUES_URL = 'https://github.com/MyAppDesk/gitcito/issues/new'
  */
 export function HelpPage({ initialPage }: { initialPage?: string }): React.JSX.Element {
   const t = useT()
+  const lang = useSettingsStore((s) => s.settings.language ?? 'en')
   const [current, setCurrent] = useState(initialPage ?? HELP_PAGES[0]?.id ?? '')
   const [query, setQuery] = useState('')
   const [history, setHistory] = useState<string[]>([])
   const bodyRef = useRef<HTMLDivElement>(null)
   const searchRef = useRef<HTMLInputElement>(null)
 
-  const sections = useMemo(() => helpSections(), [])
-  const results = useMemo(() => searchHelp(query), [query])
-  const page = useMemo(() => HELP_PAGES.find((p) => p.id === current) ?? HELP_PAGES[0], [current])
+  // The translated handbook loads on demand, so the reader starts on English
+  // and is swapped over once their language arrives — a blank pane while a
+  // chunk downloads would be worse than a page they can already read.
+  const [pages, setPages] = useState<HelpPageData[]>(HELP_PAGES)
+  useEffect(() => {
+    let live = true
+    void loadHelpPages(lang).then((p) => {
+      if (live) setPages(p)
+    })
+    return () => {
+      live = false
+    }
+  }, [lang])
+
+  const sections = useMemo(() => helpSections(pages), [pages])
+  const results = useMemo(() => searchHelp(query, pages), [query, pages])
+  const page = useMemo(() => pages.find((p) => p.id === current) ?? pages[0], [current, pages])
   // allowFileMedia: bundled screenshots resolve to file:// URLs in the packaged app.
   const html = useMemo(() => (page ? renderMarkdown(resolveMedia(page.body), { allowFileMedia: true }) : ''), [page])
 
   const go = (id: string): void => {
-    if (!HELP_PAGES.some((p) => p.id === id)) return
+    if (!pages.some((p) => p.id === id)) return
     setHistory((h) => (page ? [...h, page.id] : h))
     setCurrent(id)
     setQuery('')

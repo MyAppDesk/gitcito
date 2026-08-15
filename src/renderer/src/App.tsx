@@ -6,6 +6,7 @@ import { useRepoStore, repoActions, type RepoData } from './stores/repo'
 import { useUIStore } from './stores/ui'
 import { tabActiveRepoPath, tabRepos, type ConflictOpKind, type GroupTab, type PageTab } from '../../shared/types'
 import { useT, t as tr, interp } from './i18n'
+import { applyDirection } from './i18n/direction'
 import { applyAppTheme, applyCodeTheme, findAppTheme, findCodeTheme } from './theme/themes'
 import { TitleBar, requestCloseTab } from './components/TitleBar'
 import { Toolbar } from './components/Toolbar'
@@ -418,6 +419,12 @@ export default function App(): React.JSX.Element {
       cancelled = true
     }
   }, [settingsLoaded])
+
+  // Writing direction follows the interface language, not the OS: a user on a
+  // Hebrew system who picked English wants an LTR app.
+  useEffect(() => {
+    applyDirection(settings.language ?? 'en')
+  }, [settings.language])
 
   // Apply selected app + code themes whenever they change. When the appearance
   // mode is "auto" we also react to live OS light/dark changes.

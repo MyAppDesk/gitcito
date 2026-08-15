@@ -100,6 +100,7 @@ export type ModalSpec =
   | { kind: 'merge-options'; repoPath: string; source?: string }
   | { kind: 'objects'; repoPath: string; rev?: string }
   | { kind: 'attributes'; repoPath: string }
+  | { kind: 'credentials'; repoPath: string }
   | { kind: 'changelog-gen'; repoPath: string }
   | { kind: 'snapshots'; repoPath: string }
   | { kind: 'stash-partial'; repoPath: string }

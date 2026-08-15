@@ -22,6 +22,10 @@ const ASSETS = join(dirname(fileURLToPath(import.meta.url)), 'assets')
  *  disposable or not, these are real private key files. */
 const DEMO_SSH = join(tmpdir(), 'gitcito-demo-ssh')
 
+/** A throwaway HOME for the credential-helper shot: the real one holds this
+ *  machine's global git config and possibly live passwords. */
+const DEMO_HOME = join(tmpdir(), 'gitcito-demo-home')
+
 /**
  * Expand sidebar sections by their title (as rendered: 'WORKTREES').
  *
@@ -1055,6 +1059,40 @@ export const shots = [
       const repo = repoPaths['subtree']
       await page.evaluate((r) => window.__shot.ui.getState().openModal({ kind: 'subtree', repoPath: r }), repo)
       await page.waitForTimeout(800)
+    }
+  },
+  {
+    // Credential helpers. Points git at a throwaway HOME: the real one holds
+    // this machine's global config and, possibly, a live ~/.git-credentials —
+    // neither belongs in a screenshot.
+    out: 'credentials',
+    repos: ['multi-remote'],
+    themes: ['light'],
+    env: { HOME: DEMO_HOME },
+    prepare: async ({ repoPaths, run }) => {
+      const repo = repoPaths['multi-remote']
+      await rm(DEMO_HOME, { recursive: true, force: true })
+      await mkdir(DEMO_HOME, { recursive: true })
+      await writeFile(
+        join(DEMO_HOME, '.gitconfig'),
+        ['[user]', '\tname = Octocat', '\temail = octocat@example.com', '[credential]', '\thelper = osxkeychain', ''].join('\n')
+      )
+      // Two fake entries, so the plaintext warning has something to count.
+      await writeFile(
+        join(DEMO_HOME, '.git-credentials'),
+        'https://octocat:not-a-real-token@example.com\nhttps://octocat:also-fake@git.example.org\n'
+      )
+      await run('git', ['-C', repo, 'remote', 'set-url', 'origin', 'https://github.com/example/demo.git'], {
+        allowFail: true
+      })
+      await run('git', ['-C', repo, 'config', '--local', 'credential.https://github.com.username', 'octocat'], {
+        allowFail: true
+      })
+    },
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['multi-remote']
+      await page.evaluate((r) => window.__shot.ui.getState().openModal({ kind: 'credentials', repoPath: r }), repo)
+      await page.waitForTimeout(1200)
     }
   },
   {

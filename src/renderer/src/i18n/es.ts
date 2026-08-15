@@ -625,6 +625,38 @@ export const es: Dict = {
   'subtree.lastSplit': 'Último commit de origen importado',
   'subtree.forget': 'Olvidar el origen recordado',
   'subtree.needsSource': 'Rellena el origen para traer o enviar.',
+  'cmd.credentials': 'Ayudante de credenciales',
+  'act.credentialHelperSet': 'Ayudante de credenciales fijado en {value}',
+  'act.credentialHelperCleared': 'Ayudante de credenciales eliminado',
+  'act.credentialForgotten': 'Se olvidaron las credenciales guardadas de {host}',
+  'undoLabel.credentialHelper': 'cambio del ayudante de credenciales',
+  'creds.title': 'Ayudante de credenciales',
+  'creds.intro':
+    'Gitcito guarda tus tokens en el llavero del sistema y puede gestionar tus claves SSH, pero un push por https se lo pregunta a git, y git se lo pregunta a lo que diga credential.helper. Este es ese tercer almacén, que no toca nada más de aquí.',
+  'creds.none':
+    'No hay ningún ayudante configurado. Git pedirá la contraseña en cada push y fetch por https, y no recordará nada.',
+  'creds.plaintext': 'contraseñas en un archivo sin cifrar',
+  'creds.missing': 'no instalado',
+  'creds.ok': 'listo',
+  'creds.perUrl': 'Reglas para hosts concretos',
+  'creds.perUrlHint':
+    'Una sección credential.<url> gana sobre el ajuste general para las URL que coincidan: suele ser el motivo de que un host se comporte distinto al resto.',
+  'creds.changeTitle': 'Usar un ayudante',
+  'creds.scopeGlobal': 'Para todos los repositorios (global)',
+  'creds.scopeRepo': 'Solo para este repositorio',
+  'creds.recommended': 'recomendado aquí',
+  'creds.storeWarning':
+    'Escribe las contraseñas sin cifrar en ~/.git-credentials, legible por cualquier cosa que ejecutes.',
+  'creds.clear': 'No usar ninguno',
+  'creds.plaintextFile':
+    '{path} existe y contiene {n} credenciales sin cifrar. Cualquier cosa que ejecutes puede leerlo.',
+  'creds.forgetHeading': 'Olvidar lo que git guardó',
+  'creds.forgetHint':
+    'Pide al ayudante configurado que borre su entrada para un host: el arreglo cuando un token revocado se sigue enviando. Gitcito nunca lee lo que hay guardado.',
+  'creds.forget': 'Olvidar',
+  'creds.forgetTitle': '¿Olvidar las credenciales guardadas?',
+  'creds.forgetMessage':
+    'git pedirá a su ayudante que borre lo que tenga para {host}. El siguiente push o fetch te volverá a preguntar.',
   'cmd.attributes': 'Atributos de archivo (.gitattributes)',
   'act.attributesSaved': 'Se guardó {file}',
   'undoLabel.attributes': 'edición de {file}',

@@ -74,6 +74,10 @@ import type {
   ArchiveFormat,
   ArchiveResult,
   AttributeCheck,
+  CredentialCandidate,
+  CredentialStatus,
+  CredentialHelperInfo,
+  CredentialUrlRule,
   AttributeFile,
   DiffDriverInfo,
   DiffDriverSuggestion,
@@ -449,6 +453,43 @@ const bisectRuns = new Map<string, import('child_process').ChildProcess>()
 
 /** How much of a blob the object explorer shows before saying "truncated". */
 const OBJECT_BLOB_PREVIEW = 200_000
+
+/**
+ * Does a configured credential helper actually exist?
+ *
+ * git resolves a bare name to `git-credential-<name>`, which lives beside git
+ * rather than on PATH — hence the exec-path probe. A `!`-prefixed value is a
+ * shell command git runs verbatim, so only its first word can be checked.
+ */
+function credentialHelperExists(value: string): boolean {
+  const raw = value.trim()
+  if (!raw) return false
+  if (raw.startsWith('!')) return hasBinary(raw.slice(1).trim().split(/\s+/)[0].replace(/^"|"$/g, ''))
+  const name = raw.split(/\s+/)[0]
+  // Absolute path, or a command of its own.
+  if (name.includes('/') || name.includes('\\')) return existsSync(name) || hasBinary(name)
+  if (name === 'cache' || name === 'store') return true // built into git itself
+  if (hasBinary(`git-credential-${name}`)) return true
+  const execPath = spawnSync('git', ['--exec-path'], { encoding: 'utf-8' }).stdout?.trim()
+  return !!execPath && existsSync(join(execPath, `git-credential-${name}`))
+}
+
+/** The helpers worth offering on this platform, and whether they are installed. */
+function credentialCandidates(): CredentialCandidate[] {
+  const platform = process.platform
+  const names =
+    platform === 'darwin'
+      ? ['osxkeychain', 'cache', 'store']
+      : platform === 'win32'
+        ? ['manager', 'wincred', 'cache', 'store']
+        : ['libsecret', 'cache', 'store']
+  const best = platform === 'darwin' ? 'osxkeychain' : platform === 'win32' ? 'manager' : 'libsecret'
+  return names.map((name) => ({
+    name,
+    available: credentialHelperExists(name),
+    recommended: name === best
+  }))
+}
 
 /** Is this command on PATH? Used to say which diff converters are real here. */
 function hasBinary(command: string): boolean {
@@ -2283,6 +2324,111 @@ export const gitService = {
 
   async unstageAll(repoPath: string): Promise<void> {
     await gitFor(repoPath).raw(['reset', 'HEAD', '--', '.'])
+  },
+
+  // ─── Credential helpers ────────────────────────────────────────────────────
+  // Git has its own credential store, and it is neither Gitcito's keychain nor
+  // your SSH agent. Misconfiguring it is the usual reason a push asks for a
+  // password every single time — or, worse, the reason a password is sitting in
+  // a plain file. Nothing here ever reads a secret: `git credential fill` would
+  // print one to stdout, so it is not used at all.
+
+  /** How git will answer the next password prompt, and what it would use. */
+  async credentialStatus(repoPath: string): Promise<CredentialStatus> {
+    const readScope = async (scope: 'system' | 'global' | 'repo'): Promise<string[]> => {
+      const flag = scope === 'repo' ? '--local' : `--${scope}`
+      const out = await runGit(repoPath, ['config', flag, '--get-all', 'credential.helper']).catch(() => '')
+      return out.split('\n').map((l) => l.trim()).filter(Boolean)
+    }
+
+    const helpers: CredentialHelperInfo[] = []
+    for (const scope of ['system', 'global', 'repo'] as const) {
+      for (const value of await readScope(scope)) {
+        helpers.push({
+          value,
+          scope,
+          available: credentialHelperExists(value),
+          plaintext: value === 'store' || value.startsWith('store ')
+        })
+      }
+    }
+
+    // Per-URL sections: `credential.https://github.com.helper`. These beat the
+    // plain setting for the URLs they match, which is exactly the kind of thing
+    // that is invisible until it bites.
+    const urlRules: CredentialUrlRule[] = []
+    for (const scope of ['system', 'global', 'repo'] as const) {
+      const flag = scope === 'repo' ? '--local' : `--${scope}`
+      const out = await runGit(repoPath, ['config', flag, '--get-regexp', '^credential\\..*\\.(helper|username)$']).catch(
+        () => ''
+      )
+      for (const line of out.split('\n')) {
+        const space = line.indexOf(' ')
+        if (space < 0) continue
+        const match = /^credential\.(.*)\.(helper|username)$/.exec(line.slice(0, space))
+        if (!match) continue
+        const [, url, key] = match
+        const value = line.slice(space + 1).trim()
+        const existing = urlRules.find((r) => r.url === url && r.scope === scope)
+        const rule = existing ?? { url, helper: '', username: '', scope }
+        if (key === 'helper') rule.helper = value
+        else rule.username = value
+        if (!existing) urlRules.push(rule)
+      }
+    }
+
+    const plaintextPath = join(homedir(), '.git-credentials')
+    const plaintext = await readFile(plaintextPath, 'utf-8').catch(() => null)
+
+    const remotes = await runGit(repoPath, ['remote', '-v']).catch(() => '')
+    const hosts = new Set<string>()
+    for (const line of remotes.split('\n')) {
+      const url = line.split(/\s+/)[1] ?? ''
+      const host = /^https?:\/\/(?:[^@/]*@)?([^/]+)/.exec(url)?.[1]
+      if (host) hosts.add(host)
+    }
+
+    return {
+      helpers,
+      urlRules,
+      candidates: credentialCandidates(),
+      plaintextFile: {
+        path: plaintextPath,
+        exists: plaintext !== null,
+        // Counted, never returned: every line of that file is a live password.
+        entries: plaintext ? plaintext.split('\n').filter((l) => l.trim()).length : 0
+      },
+      httpsHosts: [...hosts]
+    }
+  },
+
+  /** Set or clear `credential.helper`. An empty value removes the setting. */
+  async setCredentialHelper(repoPath: string, value: string, scope: 'global' | 'repo'): Promise<void> {
+    const flag = scope === 'repo' ? '--local' : '--global'
+    // `--unset-all`, not `--unset`: helpers stack, and leaving one behind is how
+    // "I turned it off and it still remembers" happens.
+    await runGit(repoPath, ['config', flag, '--unset-all', 'credential.helper']).catch(() => undefined)
+    if (value.trim()) await runGit(repoPath, ['config', flag, '--add', 'credential.helper', value.trim()])
+  },
+
+  /**
+   * Make git forget what it has stored for a host.
+   *
+   * `git credential reject` is the documented way in: it hands the request to
+   * whichever helper is configured and asks it to erase. Nothing is read back,
+   * so no secret passes through here.
+   */
+  async forgetCredential(repoPath: string, host: string, protocol = 'https'): Promise<void> {
+    const target = host.trim()
+    if (!target) throw new Error('Give a host to forget.')
+    await new Promise<void>((resolve, reject) => {
+      const child = spawn('git', ['-C', repoPath, 'credential', 'reject'], { env: noPromptEnv() })
+      let err = ''
+      child.stderr.on('data', (d: Buffer) => (err += d.toString()))
+      child.on('error', reject)
+      child.on('close', (code) => (code === 0 ? resolve() : reject(new Error(err.trim() || `git credential reject exited ${code}`))))
+      child.stdin.end(`protocol=${protocol}\nhost=${target}\n\n`)
+    })
   },
 
   // ─── Attributes ────────────────────────────────────────────────────────────
@@ -5629,6 +5775,7 @@ const READ_METHODS = new Set<string>([
   'gitObject',
   'attributeFiles',
   'checkAttributes',
+  'credentialStatus',
   'diffDrivers',
   'diffDriverSuggestions',
   'conflictCommits',

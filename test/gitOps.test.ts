@@ -1522,3 +1522,81 @@ describe('gitattributes', () => {
     }
   })
 })
+
+describe('credential helpers', () => {
+  // Only ever writes --local: a test that touched the developer's global config
+  // would change how their own pushes authenticate.
+  it('reports a repository-scoped helper, and flags the plaintext one', async () => {
+    const R = cloneFixture('bisect-bug')
+    await gitService.setCredentialHelper(R, 'store', 'repo')
+
+    const status = await gitService.credentialStatus(R)
+    const mine = status.helpers.filter((h) => h.scope === 'repo')
+    expect(mine.map((h) => h.value)).toEqual(['store'])
+    // `store` writes passwords to a plain file — the whole reason to say so.
+    expect(mine[0].plaintext).toBe(true)
+    expect(mine[0].available).toBe(true)
+  })
+
+  it('clears every stacked helper rather than leaving one behind', async () => {
+    const R = cloneFixture('bisect-bug')
+    await raw(R, ['config', '--local', '--add', 'credential.helper', 'cache'])
+    await raw(R, ['config', '--local', '--add', 'credential.helper', 'store'])
+    expect((await gitService.credentialStatus(R)).helpers.filter((h) => h.scope === 'repo')).toHaveLength(2)
+
+    await gitService.setCredentialHelper(R, '', 'repo')
+    expect((await gitService.credentialStatus(R)).helpers.filter((h) => h.scope === 'repo')).toEqual([])
+  })
+
+  it('marks a helper that is not installed', async () => {
+    const R = cloneFixture('bisect-bug')
+    await gitService.setCredentialHelper(R, 'definitely-not-a-helper', 'repo')
+    const helper = (await gitService.credentialStatus(R)).helpers.find((h) => h.scope === 'repo')!
+    expect(helper.available).toBe(false)
+  })
+
+  it('surfaces per-URL rules, which beat the plain setting', async () => {
+    const R = cloneFixture('bisect-bug')
+    await raw(R, ['config', '--local', 'credential.https://example.com.helper', 'cache'])
+    await raw(R, ['config', '--local', 'credential.https://example.com.username', 'octocat'])
+
+    const rule = (await gitService.credentialStatus(R)).urlRules.find((r) => r.url === 'https://example.com')!
+    expect(rule.helper).toBe('cache')
+    expect(rule.username).toBe('octocat')
+    expect(rule.scope).toBe('repo')
+  })
+
+  it('lists the https hosts this repository would ask about', async () => {
+    const R = cloneFixture('bisect-bug')
+    await raw(R, ['remote', 'add', 'origin', 'https://github.com/example/demo.git'])
+    await raw(R, ['remote', 'add', 'ssh', 'git@gitlab.com:example/demo.git'])
+
+    const status = await gitService.credentialStatus(R)
+    expect(status.httpsHosts).toEqual(['github.com'])
+    // An ssh remote never reaches a credential helper, so it is not listed.
+    expect(status.httpsHosts).not.toContain('gitlab.com')
+  })
+
+  it('offers exactly one recommended helper for this platform', async () => {
+    const R = cloneFixture('bisect-bug')
+    const { candidates } = await gitService.credentialStatus(R)
+    expect(candidates.length).toBeGreaterThan(1)
+    expect(candidates.filter((c) => c.recommended)).toHaveLength(1)
+    // git's own built-ins are always there.
+    expect(candidates.find((c) => c.name === 'cache')?.available).toBe(true)
+  })
+
+  it('counts the plaintext credentials file without reading it out', async () => {
+    const R = cloneFixture('bisect-bug')
+    const { plaintextFile } = await gitService.credentialStatus(R)
+    expect(plaintextFile.path.endsWith('.git-credentials')).toBe(true)
+    expect(typeof plaintextFile.exists).toBe('boolean')
+    // The shape carries a count and nothing else — no field can leak a secret.
+    expect(Object.keys(plaintextFile).sort()).toEqual(['entries', 'exists', 'path'])
+  })
+
+  it('refuses to forget nothing', async () => {
+    const R = cloneFixture('bisect-bug')
+    await expect(gitService.forgetCredential(R, '  ')).rejects.toThrow(/host/i)
+  })
+})

@@ -1184,6 +1184,37 @@ export const repoActions = {
       .getState()
       .run(path, interp(t('act.subtreeSplit'), { branch }), () => gitApi.subtreeSplit(path, prefix, branch).then(() => undefined)),
 
+  // ─── Credentials ───
+  // Config only: no secret ever passes through these, and the undo entry is the
+  // previous helper value rather than anything stored.
+  setCredentialHelper: (path: string, value: string, scope: 'global' | 'repo', previous: string) =>
+    useRepoStore.getState().run(
+      path,
+      value.trim() ? interp(t('act.credentialHelperSet'), { value: value.trim() }) : t('act.credentialHelperCleared'),
+      () => gitApi.setCredentialHelper(path, value, scope),
+      {
+        label: t('undoLabel.credentialHelper'),
+        undo: () => gitApi.setCredentialHelper(path, previous, scope),
+        redo: () => gitApi.setCredentialHelper(path, value, scope)
+      },
+      null,
+      undefined,
+      []
+    ),
+
+  forgetCredential: (path: string, host: string) =>
+    useRepoStore
+      .getState()
+      .run(
+        path,
+        interp(t('act.credentialForgotten'), { host }),
+        () => gitApi.forgetCredential(path, host),
+        undefined,
+        null,
+        undefined,
+        []
+      ),
+
   // ─── Attributes ───
   // The whole file is rewritten, so the undo entry is simply the text that was
   // there before — no git command involved, and nothing else in the file at risk.

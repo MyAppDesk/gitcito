@@ -11543,6 +11543,34 @@ mark.find-hit.active {
 }
 .subtree-add { margin-top: 12px; }
 
+.creds-modal { display: flex; flex-direction: column; min-height: 0; overflow-y: auto; }
+.creds-current { margin-top: 12px; }
+.creds-row { display: flex; align-items: center; gap: 9px; padding: 3px 0; font-size: 12.5px; }
+.creds-scope {
+  flex: 0 0 52px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--text-2);
+  text-transform: uppercase;
+}
+.creds-value { font-family: var(--mono); font-size: 11.5px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.creds-rule { font-family: var(--mono); font-size: 10.5px; color: var(--text-2); }
+.creds-flag { display: flex; align-items: center; gap: 4px; font-size: 10.5px; color: var(--warn, #d97706); flex-shrink: 0; }
+.creds-flag.ok { color: var(--ok, #16a34a); }
+.creds-flag.danger { color: var(--danger, #dc2626); }
+.creds-warn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: var(--warn, #d97706);
+}
+.creds-section { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border-soft); }
+.creds-section-head { font-size: 12.5px; margin-bottom: 4px; }
+.creds-scope-pick { display: flex; gap: 16px; margin: 8px 0; }
+.creds-candidates { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+
 .attrs-modal { display: flex; flex-direction: column; min-height: 0; overflow-y: auto; }
 .attrs-files { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
 .attrs-local { font-size: 11.5px; color: var(--warn, #d97706); margin: 8px 0 0; }

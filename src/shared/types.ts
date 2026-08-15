@@ -1543,6 +1543,44 @@ export interface SubtreeInfo {
   lastSplit: string
 }
 
+/** One configured `credential.helper`, and whether it can actually run. */
+export interface CredentialHelperInfo {
+  /** The value as git stores it: `osxkeychain`, `store`, `!gh auth git-credential`… */
+  value: string
+  scope: 'system' | 'global' | 'repo'
+  /** True when the helper program exists — a typo here is invisible until a push fails. */
+  available: boolean
+  /** The `store` helper: passwords in a plain file, readable by anything you run. */
+  plaintext: boolean
+}
+
+/** A `credential.<url>.*` section: rules that apply to one host or repository. */
+export interface CredentialUrlRule {
+  url: string
+  helper: string
+  username: string
+  scope: 'system' | 'global' | 'repo'
+}
+
+/** A helper this platform could use, and whether it is installed. */
+export interface CredentialCandidate {
+  name: string
+  available: boolean
+  /** True for the one that fits this OS best. */
+  recommended: boolean
+}
+
+/** Everything about how git will answer the next password prompt. */
+export interface CredentialStatus {
+  helpers: CredentialHelperInfo[]
+  urlRules: CredentialUrlRule[]
+  candidates: CredentialCandidate[]
+  /** `~/.git-credentials`, counted and never read out — it holds live passwords. */
+  plaintextFile: { path: string; exists: boolean; entries: number }
+  /** Hosts this repository would ask about: its `https://` remotes. */
+  httpsHosts: string[]
+}
+
 /** One `.gitattributes` file found in the repository, with its raw text. */
 export interface AttributeFile {
   /** Repo-relative path, or `.git/info/attributes` for the private one. */

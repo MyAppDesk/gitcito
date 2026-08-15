@@ -68,6 +68,7 @@ import type {
   ArchiveFormat,
   ArchiveResult,
   AttributeCheck,
+  CredentialStatus,
   AttributeFile,
   DiffDriverInfo,
   DiffDriverSuggestion,
@@ -256,6 +257,12 @@ export const gitApi = {
   subtreeSplit: (path: string, prefix: string, branch: string) =>
     call<string>('subtreeSplit', path, prefix, branch),
   subtreeForget: (path: string, prefix: string) => call<void>('subtreeForget', path, prefix),
+
+  /** How git will answer the next password prompt. Reads config only — never a secret. */
+  credentialStatus: (path: string) => call<CredentialStatus>('credentialStatus', path),
+  setCredentialHelper: (path: string, value: string, scope: 'global' | 'repo') =>
+    call<void>('setCredentialHelper', path, value, scope),
+  forgetCredential: (path: string, host: string) => call<void>('forgetCredential', path, host),
 
   /** Every .gitattributes in the repository, plus the private local one. */
   attributeFiles: (path: string) => call<AttributeFile[]>('attributeFiles', path),

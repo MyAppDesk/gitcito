@@ -1544,6 +1544,41 @@ export interface SubtreeInfo {
 }
 
 /**
+ * The switches that turn a painful merge into a routine one.
+ *
+ * Everything here maps to a documented `git merge` flag; nothing is invented.
+ * The defaults (all absent) are a plain merge, which is what every existing
+ * caller gets.
+ */
+export interface MergeOptions {
+  /** `--no-ff` — always record a merge commit, even when a fast-forward would do. */
+  noFf?: boolean
+  /** `--ff-only` — refuse anything that is not a fast-forward. */
+  ffOnly?: boolean
+  /** `--squash` — take the changes, leave the history and the commit to you. */
+  squash?: boolean
+  /** `--no-commit` — merge and stage, but stop before committing. */
+  noCommit?: boolean
+  /** `-s <strategy>` — `subtree` is the one people actually need. */
+  strategy?: 'ort' | 'resolve' | 'subtree' | 'octopus'
+  /** `-X ours` / `-X theirs` — resolve *conflicting hunks* one way automatically. */
+  favour?: 'ours' | 'theirs'
+  /** `-X ignore-space-change` and friends — whitespace-only clashes stop being clashes. */
+  ignoreSpace?: 'change' | 'all' | 'eol'
+}
+
+/** A commit from one side of the merge that touched the conflicted file. */
+export interface ConflictCommit {
+  sha: string
+  subject: string
+  author: string
+  /** ISO date. */
+  date: string
+  /** Which side of the merge it came from. */
+  side: 'ours' | 'theirs'
+}
+
+/**
  * What a repository is spending disk on, and what maintenance could reclaim.
  * Everything here comes from `git count-objects -v` plus a reachability walk;
  * nothing is estimated.

@@ -17,6 +17,7 @@ import { parseMergeTreeSingle, parseMergeTreeStdin } from '../src/shared/mergeTr
 import { parseRangeDiff } from '../src/shared/rangeDiff'
 import { editorArgs, editorLaunch, supportsLine } from '../src/shared/editors'
 import { branchDropActions, encodeDropRef, decodeDropRef, type DropRef } from '../src/renderer/src/lib/branchDrop'
+import { refIntegrationActions } from '../src/renderer/src/lib/refMenu'
 import { parseToolHelp, sortTools } from '../src/shared/diffTools'
 import {
   parseKeygenLine,
@@ -3112,5 +3113,35 @@ describe('external diff tool listing', () => {
   it('sorts installed tools first, then alphabetically', () => {
     const sorted = sortTools(parseToolHelp(HELP))
     expect(sorted.map((t) => t.id)).toEqual(['araxis', 'opendiff', 'vimdiff', 'bc', 'meld'])
+  })
+})
+
+describe('ref integration menu', () => {
+  const ids = (ref: string, current: string): string[] =>
+    refIntegrationActions(ref, current).map((a) => a.id)
+
+  it('offers the same four actions wherever a ref is right-clicked', () => {
+    // The sidebar and the graph render this one list; drift between them is
+    // exactly what this module exists to prevent.
+    expect(ids('feature', 'main')).toEqual(['merge', 'merge-options', 'rebase', 'compare'])
+  })
+
+  it('disables everything for the branch already checked out', () => {
+    const actions = refIntegrationActions('main', 'main')
+    expect(actions.every((a) => a.disabled)).toBe(true)
+    // Still listed, so the menu keeps teaching what is possible.
+    expect(actions).toHaveLength(4)
+  })
+
+  it('disables everything on a detached HEAD, where there is no branch to merge into', () => {
+    expect(refIntegrationActions('origin/main', '').every((a) => a.disabled)).toBe(true)
+  })
+
+  it('carries the ref and the current branch to every label', () => {
+    for (const action of refIntegrationActions('origin/main', 'main')) {
+      expect(action.vars.ref).toBe('origin/main')
+      expect(action.vars.current).toBe('main')
+      expect(action.disabled).toBe(false)
+    }
   })
 })

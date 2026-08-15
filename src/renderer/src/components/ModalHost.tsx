@@ -35,6 +35,7 @@ import { SubtreeModal } from './SubtreeModal'
 import { CleanModal } from './CleanModal'
 import { ExportModal } from './ExportModal'
 import { MaintenanceModal } from './MaintenanceModal'
+import { MergeOptionsModal } from './MergeOptionsModal'
 import { ChangelogGenModal } from './ChangelogGenModal'
 import { SnapshotsModal } from './SnapshotsModal'
 import { SecureShareModal } from './SecureShareModal'
@@ -1583,6 +1584,9 @@ export function ModalHost(): React.JSX.Element {
             {modal.kind === 'clean' && <CleanModal repoPath={modal.repoPath} />}
             {modal.kind === 'export' && <ExportModal repoPath={modal.repoPath} initialTab={modal.tab} />}
             {modal.kind === 'maintenance' && <MaintenanceModal repoPath={modal.repoPath} />}
+            {modal.kind === 'merge-options' && (
+              <MergeOptionsModal repoPath={modal.repoPath} source={modal.source} />
+            )}
             {modal.kind === 'history-purge' && (
               <HistoryPurgeModal repoPath={modal.repoPath} initialPath={modal.initialPath} />
             )}

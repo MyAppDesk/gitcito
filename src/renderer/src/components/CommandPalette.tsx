@@ -224,6 +224,7 @@ export function CommandPalette(): React.JSX.Element {
           : []
       })(),
       { id: 'subtree', title: t('cmd.subtree'), group: 'Actions', keywords: 'subtree vendor library embed prefix split monorepo submodule alternative', icon: <FolderInput size={15} />, run: act(() => ui.openModal({ kind: 'subtree', repoPath: path })) },
+      { id: 'merge-options', title: t('cmd.mergeOptions'), group: 'Actions', keywords: 'merge options strategy ours theirs whitespace ignore space squash no-ff ff-only subtree advanced', icon: <GitMerge size={15} />, run: act(() => ui.openModal({ kind: 'merge-options', repoPath: path })) },
       { id: 'maintenance', title: t('cmd.maintenance'), group: 'Actions', keywords: 'maintenance gc garbage collect repack prune fsck size disk space objects loose pack optimise optimize count-objects', icon: <HardDrive size={15} />, run: act(() => ui.openModal({ kind: 'maintenance', repoPath: path })) },
       { id: 'bundle', title: t('cmd.bundle'), group: 'Actions', keywords: 'bundle git bundle export offline air gap usb email transfer clone from file import', icon: <Package size={15} />, run: act(() => ui.openModal({ kind: 'export', repoPath: path, tab: 'bundle' })) },
       { id: 'archive', title: t('cmd.archive'), group: 'Actions', keywords: 'archive zip tarball tar gz export snapshot release source export-ignore', icon: <Archive size={15} />, run: act(() => ui.openModal({ kind: 'export', repoPath: path, tab: 'archive' })) },

@@ -24,7 +24,8 @@ import type {
   GitflowConfig,
   GitflowKind,
   GitflowSnapshot,
-  MaintenanceTask
+  MaintenanceTask,
+  MergeOptions
 } from '../../../shared/types'
 import { gitApi, hostingApi } from '../infrastructure/api'
 import { useUIStore } from './ui'
@@ -980,12 +981,15 @@ export const repoActions = {
       .getState()
       .run(path, interp(t('act.renamedBranchWithRemote'), { oldName, newName, remote }), () => gitApi.renameBranchRemote(path, oldName, newName, remote)),
 
-  merge: (path: string, ref: string) => {
-    const noFf = useSettingsStore.getState().settings.mergeCommit
-    return useRepoStore.getState().run(path, interp(t('act.merged'), { ref }), () => gitApi.merge(path, ref, noFf), {
+  /** `options` overrides the settings default; the plain menu entry passes none. */
+  merge: (path: string, ref: string, options?: MergeOptions) => {
+    const opts: MergeOptions = options ?? { noFf: useSettingsStore.getState().settings.mergeCommit }
+    return useRepoStore.getState().run(path, interp(t('act.merged'), { ref }), () => gitApi.merge(path, ref, opts), {
       label: interp(t('undoLabel.merge'), { ref }),
+      // A squash or --no-commit merge leaves the work staged rather than
+      // committed, so ORIG_HEAD is still the right place to land.
       undo: () => gitApi.reset(path, 'ORIG_HEAD', 'hard'),
-      redo: () => gitApi.merge(path, ref, noFf)
+      redo: () => gitApi.merge(path, ref, opts)
     })
   },
 

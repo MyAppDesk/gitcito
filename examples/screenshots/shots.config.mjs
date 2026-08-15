@@ -1058,6 +1058,58 @@ export const shots = [
     }
   },
   {
+    // Merge options: the switches, with the git command they build underneath.
+    out: 'merge-options',
+    repos: ['merge-conflict'],
+    themes: ['light'],
+    prepare: async ({ repoPaths, run }) => {
+      const repo = repoPaths['merge-conflict']
+      await run('git', ['-C', repo, 'merge', '--abort'], { allowFail: true })
+      await run('git', ['-C', repo, 'checkout', '-f', 'main'], { allowFail: true })
+    },
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['merge-conflict']
+      await page.evaluate(
+        (r) => window.__shot.ui.getState().openModal({ kind: 'merge-options', repoPath: r, source: 'feature' }),
+        repo
+      )
+      await page.waitForTimeout(500)
+      // Set the two options the page is really about, so the command line below
+      // shows something worth reading.
+      await page.selectOption('.mergeopt-modal select >> nth=1', 'ours')
+      await page.selectOption('.mergeopt-modal select >> nth=2', 'change')
+      await page.waitForTimeout(600)
+    }
+  },
+  {
+    // The commits behind a conflict — `git log --merge`, per side.
+    out: 'conflict-why',
+    repos: ['merge-conflict'],
+    themes: ['light'],
+    prepare: async ({ repoPaths, run }) => {
+      const repo = repoPaths['merge-conflict']
+      await run('git', ['-C', repo, 'merge', '--abort'], { allowFail: true })
+      await run('git', ['-C', repo, 'checkout', '-f', 'main'], { allowFail: true })
+      await run('git', ['-C', repo, 'merge', 'feature'], { allowFail: true })
+    },
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['merge-conflict']
+      await page.evaluate((repoPath) => {
+        const s = window.__shot
+        const file = s.repo.getState().repos[repoPath]?.status?.conflicted?.[0]?.path
+        s.repo.getState().select(repoPath, { type: 'wip' })
+        if (file) s.ui.getState().setConflictView({ repoPath, file })
+      }, repo)
+      // A background refresh remounts the resolver and closes the strip again,
+      // so keep asking until it stays open rather than guessing at a delay.
+      await page.waitForTimeout(1500)
+      await page.locator('.conflict-global-actions .btn.tiny').first().click()
+      await page.waitForSelector('.conflict-why', { timeout: 5000 }).catch(() => {})
+      await page.waitForTimeout(1600)
+
+    }
+  },
+  {
     // Maintenance: the size readout only says something with all three kinds of
     // object present, so the prepare step abandons a commit and expires the
     // reflog to make some genuinely unreachable.

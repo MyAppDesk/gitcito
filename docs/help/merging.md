@@ -10,7 +10,9 @@ keywords: merge rebase fast-forward compare refs drag drop branch onto graph ref
 
 ## From the sidebar
 
-Right-click a branch for **Merge into current** or **Rebase onto**.
+Right-click a branch for **Merge into current** or **Rebase onto** — or
+**Merge with options…** when the plain merge is the one that keeps going wrong;
+see [merge options](merge-options.md).
 
 ## Drag one ref onto another
 

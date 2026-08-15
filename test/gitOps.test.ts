@@ -1150,3 +1150,135 @@ describe('repository maintenance', () => {
     expect(await shaOf(R, 'HEAD')).toBe(head)
   })
 })
+
+describe('advanced merge options', () => {
+  /** A repo with one file conflicting on content alone — what -X can decide. */
+  const contentConflict = async (): Promise<{ repo: string; file: string }> => {
+    const repo = cloneFixture('bisect-bug')
+    const file = 'shared.txt'
+    writeFileSync(join(repo, file), 'alpha\nbeta\ngamma\n')
+    await raw(repo, ['add', '-A'])
+    await raw(repo, ['-c', 'user.email=t@e', '-c', 'user.name=T', 'commit', '-m', 'base'])
+    const base = await shaOf(repo, 'HEAD')
+
+    await raw(repo, ['checkout', '-b', 'incoming'])
+    writeFileSync(join(repo, file), 'alpha\ntheir beta\ngamma\n')
+    await raw(repo, ['add', '-A'])
+    await raw(repo, ['-c', 'user.email=t@e', '-c', 'user.name=T', 'commit', '-m', 'their edit'])
+
+    await raw(repo, ['checkout', '-b', 'mine', base])
+    writeFileSync(join(repo, file), 'alpha\nour beta\ngamma\n')
+    await raw(repo, ['add', '-A'])
+    await raw(repo, ['-c', 'user.email=t@e', '-c', 'user.name=T', 'commit', '-m', 'our edit'])
+    return { repo, file }
+  }
+
+  /** A branch that merges cleanly, for the options that are not about conflicts. */
+  const cleanBranch = async (): Promise<string> => {
+    const repo = cloneFixture('bisect-bug')
+    await raw(repo, ['checkout', '-b', 'addition'])
+    writeFileSync(join(repo, 'added.txt'), 'a file nothing else touches\n')
+    await raw(repo, ['add', '-A'])
+    await raw(repo, ['-c', 'user.email=t@e', '-c', 'user.name=T', 'commit', '-m', 'add a file'])
+    await raw(repo, ['checkout', '-'])
+    // Move this side on too, so the merge is a real merge rather than a
+    // fast-forward — which no amount of --no-commit would stop.
+    writeFileSync(join(repo, 'here.txt'), 'moved on over here\n')
+    await raw(repo, ['add', '-A'])
+    await raw(repo, ['-c', 'user.email=t@e', '-c', 'user.name=T', 'commit', '-m', 'move on'])
+    return repo
+  }
+
+  it('-X ours resolves the clashing hunks in favour of the current branch', async () => {
+    const { repo, file } = await contentConflict()
+    // Without it, the same merge stops on the clash.
+    await expect(gitService.merge(repo, 'incoming')).rejects.toThrow()
+    await raw(repo, ['merge', '--abort'])
+
+    await gitService.merge(repo, 'incoming', { favour: 'ours' })
+    expect((await gitService.status(repo)).conflicted).toEqual([])
+    expect(readFileSync(join(repo, file), 'utf-8')).toContain('our beta')
+  })
+
+  it('-X theirs takes the incoming side instead', async () => {
+    const { repo, file } = await contentConflict()
+    await gitService.merge(repo, 'incoming', { favour: 'theirs' })
+    expect((await gitService.status(repo)).conflicted).toEqual([])
+    expect(readFileSync(join(repo, file), 'utf-8')).toContain('their beta')
+  })
+
+  it('-X cannot decide a modify/delete clash, which is not a content hunk', async () => {
+    const R = cloneFixture('merge-conflict')
+    // The fixture deletes a file on one side and edits it on the other; -X only
+    // ever decides between two versions of a line.
+    await expect(gitService.merge(R, 'feature', { favour: 'ours' })).rejects.toThrow(/modify\/delete|CONFLICT/i)
+  })
+
+  it('--ff-only refuses a merge that would need a commit', async () => {
+    const R = cloneFixture('merge-conflict')
+    const head = await shaOf(R, 'HEAD')
+    await expect(gitService.merge(R, 'feature', { ffOnly: true })).rejects.toThrow()
+    expect(await shaOf(R, 'HEAD')).toBe(head)
+  })
+
+  it('--squash stages the result without committing or recording a merge', async () => {
+    const R = await cleanBranch()
+    const head = await shaOf(R, 'HEAD')
+    await gitService.merge(R, 'addition', { squash: true })
+    // HEAD has not moved, and there is no second parent waiting either.
+    expect(await shaOf(R, 'HEAD')).toBe(head)
+    expect(existsSync(join(R, '.git/MERGE_HEAD'))).toBe(false)
+    expect((await gitService.status(R)).staged.length).toBeGreaterThan(0)
+  })
+
+  it('--no-commit merges but leaves the commit to you', async () => {
+    const R = await cleanBranch()
+    const head = await shaOf(R, 'HEAD')
+    await gitService.merge(R, 'addition', { noCommit: true })
+    expect(await shaOf(R, 'HEAD')).toBe(head)
+    // Unlike squash, the merge is still in progress — the parent is remembered.
+    expect(existsSync(join(R, '.git/MERGE_HEAD'))).toBe(true)
+  })
+
+  it('ignore-space-change merges a reindent against a real edit', async () => {
+    const R = cloneFixture('bisect-bug')
+    const file = 'spaced.txt'
+    writeFileSync(join(R, file), 'first line\n  indented line\nlast line\n')
+    await raw(R, ['add', '-A'])
+    await raw(R, ['-c', 'user.email=t@e', '-c', 'user.name=T', 'commit', '-m', 'base'])
+    const base = await shaOf(R, 'HEAD')
+
+    // One side re-indents the line; the other rewrites its text.
+    await raw(R, ['checkout', '-b', 'reindent'])
+    writeFileSync(join(R, file), 'first line\n\tindented line\nlast line\n')
+    await raw(R, ['add', '-A'])
+    await raw(R, ['-c', 'user.email=t@e', '-c', 'user.name=T', 'commit', '-m', 'reindent'])
+
+    await raw(R, ['checkout', '-b', 'edit', base])
+    writeFileSync(join(R, file), 'first line\n  indented line, reworded\nlast line\n')
+    await raw(R, ['add', '-A'])
+    await raw(R, ['-c', 'user.email=t@e', '-c', 'user.name=T', 'commit', '-m', 'reword'])
+
+    // Plain merge: git sees two edits to one line and stops.
+    await expect(gitService.merge(R, 'reindent')).rejects.toThrow()
+    await raw(R, ['merge', '--abort'])
+
+    await gitService.merge(R, 'reindent', { ignoreSpace: 'change' })
+    expect((await gitService.status(R)).conflicted).toEqual([])
+    expect(readFileSync(join(R, file), 'utf-8')).toContain('reworded')
+  })
+
+  it('names the commits from each side behind a conflict', async () => {
+    const R = cloneFixture('merge-conflict')
+    await expect(gitService.merge(R, 'feature')).rejects.toThrow()
+    const file = (await gitService.status(R)).conflicted[0].path
+
+    const commits = await gitService.conflictCommits(R, file)
+    expect(commits.length).toBeGreaterThan(0)
+    // Both sides are represented, and each entry carries something to read.
+    expect(commits.some((c) => c.side === 'ours')).toBe(true)
+    expect(commits.some((c) => c.side === 'theirs')).toBe(true)
+    expect(commits[0].subject).toBeTruthy()
+    expect(commits[0].author).toBeTruthy()
+  })
+})

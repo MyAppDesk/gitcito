@@ -97,6 +97,7 @@ export type ModalSpec =
   | { kind: 'clean'; repoPath: string }
   | { kind: 'export'; repoPath: string; tab?: 'bundle' | 'archive' }
   | { kind: 'maintenance'; repoPath: string }
+  | { kind: 'merge-options'; repoPath: string; source?: string }
   | { kind: 'changelog-gen'; repoPath: string }
   | { kind: 'snapshots'; repoPath: string }
   | { kind: 'stash-partial'; repoPath: string }
@@ -237,6 +238,9 @@ interface UIState {
   inflight: number
   fileView: FileViewState | null
   conflictView: ConflictViewState | null
+  /** File whose "why this conflicts" strip is open. Lives here rather than in
+   *  the resolver so a background refresh, which remounts it, does not close it. */
+  conflictWhy: string | null
   fileSearch: FileSearchState | null
   scrollToHash: string | null
   layout: PanelLayout
@@ -272,6 +276,7 @@ interface UIState {
   setFileView(view: FileViewState | null): void
   setEditorDirty(dirty: boolean): void
   setConflictView(view: ConflictViewState | null): void
+  setConflictWhy(file: string | null): void
   setFileSearch(search: FileSearchState | null): void
   requestScrollTo(hash: string | null): void
   setLayout(partial: Partial<PanelLayout>): void
@@ -308,6 +313,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   inflight: 0,
   fileView: null,
   conflictView: null,
+  conflictWhy: null,
   fileSearch: null,
   scrollToHash: null,
   layout: loadLayout(),
@@ -358,6 +364,7 @@ export const useUIStore = create<UIState>((set, get) => ({
     }),
   setEditorDirty: (editorDirty) => set({ editorDirty }),
   setConflictView: (conflictView) => set({ conflictView }),
+  setConflictWhy: (conflictWhy) => set({ conflictWhy }),
   setFileSearch: (fileSearch) => set({ fileSearch }),
   requestScrollTo: (scrollToHash) => set({ scrollToHash }),
   setLayout: (partial) => {

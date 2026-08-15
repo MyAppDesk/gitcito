@@ -37,6 +37,7 @@ import { FileTree } from './FileTree'
 import { FileSearchBar, EMPTY_FILTER, type FileFilter } from './FileSearchBar'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
 import { useUIStore, type MenuItem } from '../stores/ui'
+import { refIntegrationItems } from '../lib/refMenuItems'
 import { useSettingsStore } from '../stores/settings'
 import { useLaunchStore } from '../stores/launch'
 import { shellApi } from '../infrastructure/api'
@@ -667,21 +668,9 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   const localMenu = (b: BranchInfo): MenuItem[] => [
     { label: interp(t('sidebar.checkoutBranch'), { branch: b.name }), disabled: b.isCurrent, onClick: () => void repoActions.checkout(path, b.name) },
     { label: interp(t('sidebar.openInWorktree'), { branch: b.name }), onClick: () => void openInWorktree(b.name) },
-    {
-      label: interp(t('sidebar.mergeBranchInto'), { branch: b.name, current: repo.branches.current }),
-      disabled: b.isCurrent,
-      onClick: () => void repoActions.merge(path, b.name)
-    },
-    {
-      label: interp(t('sidebar.rebaseBranchOnto'), { current: repo.branches.current, branch: b.name }),
-      disabled: b.isCurrent,
-      onClick: () => void repoActions.rebase(path, b.name)
-    },
-    {
-      label: interp(t('sidebar.compareBranchWith'), { current: repo.branches.current }),
-      disabled: b.isCurrent,
-      onClick: () => openModal({ kind: 'branch-compare', repoPath: path, branchA: b.name, branchB: repo.branches.current ?? 'HEAD' })
-    },
+    // Merge / merge with options / rebase / compare — the same block the graph's
+    // ref badges render, from one place so the two cannot drift apart.
+    ...refIntegrationItems(path, b.name, repo.branches.current),
     {
       // Scan every branch against *this* one, i.e. "what would break if I land
       // things on top of it".
@@ -757,11 +746,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       label: t('sidebar.checkoutAsLocal'),
       onClick: () => void repoActions.checkoutRemote(path, b.fullName, b.name, b.remote)
     },
-    { label: interp(t('sidebar.mergeBranchInto'), { branch: b.fullName, current: repo.branches.current }), onClick: () => void repoActions.merge(path, b.fullName) },
-    {
-      label: interp(t('sidebar.compareBranchWith'), { current: repo.branches.current }),
-      onClick: () => openModal({ kind: 'branch-compare', repoPath: path, branchA: b.fullName, branchB: repo.branches.current ?? 'HEAD' })
-    },
+    ...refIntegrationItems(path, b.fullName, repo.branches.current),
     {
       // The tracking ref's reflog records every forced fetch, so this answers
       // "what did they change when they force-pushed?".

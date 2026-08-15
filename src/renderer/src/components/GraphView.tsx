@@ -16,6 +16,7 @@ import { gitApi } from '../infrastructure/api'
 import { repoIsGitHub } from '../lib/hosting'
 import { branchDropActions, encodeDropRef, BRANCH_DND_TYPE, type DropRef } from '../lib/branchDrop'
 import { openBranchDropMenu } from '../lib/branchDropMenu'
+import { refIntegrationItems } from '../lib/refMenuItems'
 
 const LANE_W = 24
 const LEFT_PAD = 16
@@ -1147,21 +1148,8 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
     }
     items.push({ label: t('commit.checkoutDetached'), onClick: () => void repoActions.checkout(repo.path, c.hash) })
     items.push({ separator: true })
-    items.push({
-      label: interp(t('branch.mergeInto'), { ref, branch: currentBranch }),
-      disabled: isCurrent || !currentBranch,
-      onClick: () => void repoActions.merge(repo.path, ref)
-    })
-    items.push({
-      label: interp(t('branch.rebaseOnto'), { current: currentBranch, ref }),
-      disabled: isCurrent || !currentBranch,
-      onClick: () => void repoActions.rebase(repo.path, ref)
-    })
-    items.push({
-      label: interp(t('branch.compareWith'), { branch: currentBranch }),
-      disabled: isCurrent || !currentBranch,
-      onClick: () => openModal({ kind: 'branch-compare', repoPath: repo.path, branchA: ref, branchB: currentBranch || 'HEAD' })
-    })
+    // Shared with the sidebar's branch rows — see lib/refMenu.ts.
+    items.push(...refIntegrationItems(repo.path, ref, currentBranch))
     items.push({ separator: true })
     items.push({
       label: t('commit.createBranchHere'),

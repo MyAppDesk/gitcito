@@ -73,6 +73,8 @@ import type {
   CleanResult,
   ArchiveFormat,
   ArchiveResult,
+  ConflictCommit,
+  MergeOptions,
   FsckReport,
   MaintenanceResult,
   MaintenanceStats,
@@ -411,6 +413,28 @@ async function blobBytesForPaths(repoPath: string, paths: string[]): Promise<num
     bytes += Number(size.trim()) || 0
   }
   return bytes
+}
+
+/**
+ * Turn {@link MergeOptions} into git flags.
+ *
+ * Accepts a bare boolean as well: every caller before merge options existed
+ * passed `noFf` positionally, and a merge is not the place to break a signature.
+ */
+function mergeArgs(options: MergeOptions | boolean): string[] {
+  const o: MergeOptions = typeof options === 'boolean' ? { noFf: options } : (options ?? {})
+  const args: string[] = []
+  if (o.ffOnly) args.push('--ff-only')
+  else if (o.noFf) args.push('--no-ff')
+  if (o.squash) args.push('--squash')
+  if (o.noCommit) args.push('--no-commit')
+  if (o.strategy && o.strategy !== 'ort') args.push('-s', o.strategy)
+  // -X ours/theirs resolves only the hunks that actually clash. It is not
+  // `-s ours`, which throws the other side away wholesale — a difference worth
+  // keeping straight, since one is routine and the other loses work.
+  if (o.favour) args.push('-X', o.favour)
+  if (o.ignoreSpace) args.push('-X', `ignore-space-${o.ignoreSpace === 'eol' ? 'at-eol' : o.ignoreSpace}`)
+  return args
 }
 
 /** How many removable paths a clean preview will size and show. */
@@ -1932,20 +1956,54 @@ export const gitService = {
     })
   },
 
-  async merge(repoPath: string, ref: string, noFf = false): Promise<void> {
+  async merge(repoPath: string, ref: string, options: MergeOptions | boolean = {}): Promise<void> {
+    const args = mergeArgs(options)
     await withRerereCapture(repoPath, () =>
-      withAutoStash(repoPath, `merge ${ref}`, () => gitFor(repoPath).merge([...(noFf ? ['--no-ff'] : []), ref]))
+      withAutoStash(repoPath, `merge ${ref}`, () => gitFor(repoPath).merge([...args, ref]))
     )
   },
 
-  async mergeInto(repoPath: string, source: string, target: string, noFf = false): Promise<void> {
+  async mergeInto(
+    repoPath: string,
+    source: string,
+    target: string,
+    options: MergeOptions | boolean = {}
+  ): Promise<void> {
     const git = gitFor(repoPath)
+    const args = mergeArgs(options)
     await withRerereCapture(repoPath, () =>
       withAutoStash(repoPath, `merge ${source} into ${target}`, async () => {
         await git.checkout(target)
-        await git.merge([...(noFf ? ['--no-ff'] : []), source])
+        await git.merge([...args, source])
       })
     )
+  },
+
+  /**
+   * The commits behind a conflict: what each side did to this file since they
+   * parted.
+   *
+   * This is `git log --merge`, which git has shipped forever and nobody finds.
+   * A conflict marker says *what* clashes; this says *who changed it and why*,
+   * which is usually the question that actually decides the resolution.
+   */
+  async conflictCommits(repoPath: string, file: string): Promise<ConflictCommit[]> {
+    const out = await runGit(repoPath, [
+      'log',
+      '--merge',
+      '--left-right',
+      `--format=%m${SEP}%H${SEP}%s${SEP}%an${SEP}%aI`,
+      '--',
+      file
+    ]).catch(() => '')
+    const commits: ConflictCommit[] = []
+    for (const line of out.split('\n')) {
+      const [mark, sha, subject, author, date] = line.split(SEP)
+      if (!sha) continue
+      // `<` is the side already checked out, `>` the one being merged in.
+      commits.push({ sha, subject, author, date, side: mark === '<' ? 'ours' : 'theirs' })
+    }
+    return commits
   },
 
   async rebase(repoPath: string, onto: string): Promise<void> {
@@ -5269,6 +5327,7 @@ const READ_METHODS = new Set<string>([
   'archiveCreate',
   'maintenanceStats',
   'fsck',
+  'conflictCommits',
   'note',
   'notedCommits',
   'historyPaths',

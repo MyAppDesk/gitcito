@@ -11515,6 +11515,63 @@ mark.find-hit.active {
 }
 .subtree-add { margin-top: 12px; }
 
+.mergeopt-modal { display: flex; flex-direction: column; min-height: 0; overflow-y: auto; }
+/* A native select ignores the app's theme entirely, so give it the same shell
+   the modal's inputs wear. */
+.mergeopt-modal select,
+.export-modal select {
+  width: 100%;
+  padding: 7px 9px;
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-0);
+  font-size: 12.5px;
+}
+/* The command, spelled out — someone has to be able to check it against the manual. */
+.mergeopt-preview {
+  margin: 14px 0 0;
+  padding: 8px 10px;
+  background: var(--bg-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--text-1);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* "Why this conflicts": the commits from each side, above the three panes. */
+.conflict-why {
+  display: flex;
+  /* Never let the panes below squeeze it to nothing. */
+  flex: 0 0 auto;
+  gap: 18px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-soft);
+  /* Tinted, so the strip reads as an annotation rather than as another pane
+     header — the two sit directly above one another. */
+  background: color-mix(in srgb, var(--accent) 7%, var(--bg-2));
+  max-height: 190px;
+  overflow-y: auto;
+}
+.conflict-why-side { flex: 1; min-width: 0; }
+.conflict-why-head {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+.conflict-why-row { display: flex; align-items: baseline; gap: 8px; font-size: 12px; padding: 1px 0; }
+.conflict-why-row code { font-family: var(--mono); font-size: 10.5px; color: var(--text-2); flex-shrink: 0; }
+.conflict-why-subject { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.conflict-why-author { flex-shrink: 0; font-size: 11px; color: var(--text-2); }
+
 .maint-modal { display: flex; flex-direction: column; min-height: 0; overflow-y: auto; }
 .maint-total { display: flex; align-items: baseline; gap: 8px; margin-top: 12px; }
 .maint-total strong { font-size: 22px; }

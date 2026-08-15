@@ -14,6 +14,18 @@ stopped and **between what** — "merging `feature/x` into `main`", not just
 
 ![The conflict resolver](../screenshots/conflict-resolver.webp)
 
+## Why this conflicts
+
+**Why this conflicts** in the header lists, per side, the commits that touched
+this file since the branches parted — `git log --merge`, which git has shipped
+forever and nobody finds.
+
+![The commits from each side that touched the conflicted file](../screenshots/conflict-why.webp)
+
+Markers say what clashes. This says who changed it and why, which is usually
+what actually decides the resolution. Nothing there means neither side committed
+a change to this exact path — the clash came from a rename or a move.
+
 ## The three panes
 
 | Pane | Is |

@@ -67,6 +67,8 @@ import type {
   CleanResult,
   ArchiveFormat,
   ArchiveResult,
+  ConflictCommit,
+  MergeOptions,
   FsckReport,
   MaintenanceResult,
   MaintenanceStats,
@@ -164,7 +166,9 @@ export const gitApi = {
   renameBranch: (path: string, oldName: string, newName: string) => call<void>('renameBranch', path, oldName, newName),
   renameBranchRemote: (path: string, oldName: string, newName: string, remote: string) =>
     call<void>('renameBranchRemote', path, oldName, newName, remote),
-  merge: (path: string, ref: string, noFf?: boolean) => call<void>('merge', path, ref, noFf),
+  merge: (path: string, ref: string, options?: MergeOptions) => call<void>('merge', path, ref, options),
+  /** The commits from each side that touched a conflicted file (`git log --merge`). */
+  conflictCommits: (path: string, file: string) => call<ConflictCommit[]>('conflictCommits', path, file),
   mergeInto: (path: string, source: string, target: string, noFf?: boolean) =>
     call<void>('mergeInto', path, source, target, noFf),
   rebase: (path: string, onto: string) => call<void>('rebase', path, onto),

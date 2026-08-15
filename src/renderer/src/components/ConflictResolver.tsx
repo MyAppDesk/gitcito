@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Check, ChevronDown, ChevronUp, ExternalLink, GitMerge, Minus, Pencil, Plus, RotateCcw, Sparkles, Loader2, X } from 'lucide-react'
+import { Check, ChevronDown, ChevronUp, ExternalLink, GitMerge, History, Minus, Pencil, Plus, RotateCcw, Sparkles, Loader2, X } from 'lucide-react'
 import hljs from 'highlight.js'
 import { gitApi, aiApi, diffToolApi } from '../infrastructure/api'
 import { useSettingsStore } from '../stores/settings'
@@ -24,7 +24,7 @@ import {
   type OutputMark,
   type ConflictLineSide as Side,
 } from '../lib/conflict'
-import type { ConflictRefInfo, ConflictVersions } from '../../../shared/types'
+import type { ConflictCommit, ConflictRefInfo, ConflictVersions } from '../../../shared/types'
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -87,6 +87,13 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
   const [activeHunk, setActiveHunk] = useState(0)
   const [saving, setSaving] = useState(false)
   const [aiResolving, setAiResolving] = useState(false)
+  // What each side did to this file since they parted — `git log --merge`.
+  // Loaded on demand: it answers "why", which not every resolution needs.
+  const [history, setHistory] = useState<ConflictCommit[] | null>(null)
+  // Which file's strip is open lives in the store, not here: a background
+  // refresh remounts this component, and local state would close it again.
+  const whyFile = useUIStore((s) => s.conflictWhy)
+  const setWhyFile = useUIStore((s) => s.setConflictWhy)
   const editRef = useRef<HTMLTextAreaElement>(null)
   const highlightRef = useRef<HTMLPreElement>(null)
   const gutterRef = useRef<HTMLDivElement>(null)
@@ -99,6 +106,7 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
   const filesBox = useBoxSize(filesRef)
 
   const { repoPath, file } = view
+  const showHistory = whyFile === file
   const lang = guessLanguage(file)
   const sideRatio = clampRatio(layout.conflictSideRatio)
   const filesRatio = clampRatio(layout.conflictFilesRatio)
@@ -163,6 +171,7 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
   useEffect(() => {
     let cancelled = false
     setContent(null)
+    setHistory(null)
     setVersions(null)
     setError(null)
     setHunks([])
@@ -433,6 +442,16 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
           {resolvedCount}/{hunks.length} {t('conflict.resolved')}
         </span>
         <div className="conflict-global-actions">
+          <button
+            className="btn ghost tiny"
+            title={t('conflict.whyHint')}
+            onClick={() => {
+              setWhyFile(showHistory ? null : file)
+              if (history === null) void gitApi.conflictCommits(repoPath, file).then(setHistory).catch(() => setHistory([]))
+            }}
+          >
+            <History size={12} /> {t('conflict.why')}
+          </button>
           {mergeTool && (
             <button
               className="btn ghost tiny"
@@ -462,6 +481,35 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
           <X size={15} />
         </button>
       </div>
+
+      {showHistory && (
+        <div className="conflict-why">
+          {history === null ? (
+            <span className="settings-hint">{t('common.loading')}</span>
+          ) : history.length === 0 ? (
+            <span className="settings-hint">{t('conflict.whyNone')}</span>
+          ) : (
+            (['ours', 'theirs'] as const).map((side) => (
+              <div key={side} className="conflict-why-side">
+                <div className="conflict-why-head">
+                  {side === 'ours' ? oursName : theirsName}
+                  <span>{history.filter((c) => c.side === side).length}</span>
+                </div>
+                {history
+                  .filter((c) => c.side === side)
+                  .slice(0, 12)
+                  .map((c) => (
+                    <div key={c.sha} className="conflict-why-row" title={`${c.author} · ${c.date.slice(0, 10)}`}>
+                      <code>{c.sha.slice(0, 7)}</code>
+                      <span className="conflict-why-subject">{c.subject}</span>
+                      <span className="conflict-why-author">{c.author}</span>
+                    </div>
+                  ))}
+              </div>
+            ))
+          )}
+        </div>
+      )}
 
       <div className="conflict-split" ref={splitRef}>
         <div className="conflict-files" ref={filesRef} style={{ flex: `${filesRatio} 1 0` }}>

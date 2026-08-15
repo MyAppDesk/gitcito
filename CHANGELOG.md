@@ -1,5 +1,22 @@
 
 
+## [3.4.0](https://github.com/MyAppDesk/gitcito/compare/v3.3.0...v3.4.0) (2026-08-15)
+
+
+### Features
+
+* add advanced options for git clone including branches ([7869b95](https://github.com/MyAppDesk/gitcito/commit/7869b95cceb8c711c5406593448a1713cda0974c))
+* add commit notes feature to annotate pushed commits ([5a7de0b](https://github.com/MyAppDesk/gitcito/commit/5a7de0b0f6946e0cc0ed80fa09544234c76bd21f))
+* add external diff and merge tool integration ([00a95fe](https://github.com/MyAppDesk/gitcito/commit/00a95fe3c09584caaf8e3971822d8e74c263f0bd))
+* add external editor integration for improved workflow ([6ec4cfa](https://github.com/MyAppDesk/gitcito/commit/6ec4cfa7ca973497334baff2270dfb681cd4bc71))
+* add gitflow support with modal and commands ([8d3a8cb](https://github.com/MyAppDesk/gitcito/commit/8d3a8cba354ff580dab564d73229a17c0903a2c7))
+* add history purge functionality for sensitive data ([77993d3](https://github.com/MyAppDesk/gitcito/commit/77993d301d21aaa3762eed07d2f06a1d987e2828))
+* add SSH key management functionality ([0f1bcfe](https://github.com/MyAppDesk/gitcito/commit/0f1bcfe21ff2e500fb268412291ca96d41794d1c))
+* add subtree management functionality ([e1475ed](https://github.com/MyAppDesk/gitcito/commit/e1475edb8020292ce8e0aa1f9e21f98e461344d3))
+* add support for git rerere to manage conflict resolutions ([1dbcc00](https://github.com/MyAppDesk/gitcito/commit/1dbcc00c0deda1c18a41e32ca58d72e99451cadb))
+* add support for pushing to multiple remotes ([14119b6](https://github.com/MyAppDesk/gitcito/commit/14119b6796a7e4c1926b6260c4a4d3002739c761))
+* implement drag-and-drop for branch management ([a788c5e](https://github.com/MyAppDesk/gitcito/commit/a788c5e6b11ba8b65cde6d52125badde5df05dda))
+
 ## [3.3.0](https://github.com/MyAppDesk/gitcito/compare/v3.2.2...v3.3.0) (2026-08-14)
 
 

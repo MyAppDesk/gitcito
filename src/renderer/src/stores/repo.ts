@@ -23,7 +23,8 @@ import type {
   ForcedRefUpdate,
   GitflowConfig,
   GitflowKind,
-  GitflowSnapshot
+  GitflowSnapshot,
+  MaintenanceTask
 } from '../../../shared/types'
 import { gitApi, hostingApi } from '../infrastructure/api'
 import { useUIStore } from './ui'
@@ -1178,6 +1179,44 @@ export const repoActions = {
     useRepoStore
       .getState()
       .run(path, interp(t('act.subtreeSplit'), { branch }), () => gitApi.subtreeSplit(path, prefix, branch).then(() => undefined)),
+
+  // ─── Maintenance ───
+  // Repacking rewrites the object database, so it takes the write lock like any
+  // mutation — but nothing the UI shows changes, hence the empty refresh list.
+  // No undo: gc is not an operation with an opposite.
+  maintenance: (path: string, task: MaintenanceTask) =>
+    useRepoStore
+      .getState()
+      .run(
+        path,
+        t(
+          task === 'gc'
+            ? 'act.maintGc'
+            : task === 'aggressive'
+              ? 'act.maintAggressive'
+              : task === 'commitGraph'
+                ? 'act.maintCommitGraph'
+                : 'act.maintPrune'
+        ),
+        () => gitApi.maintenanceRun(path, task).then(() => undefined),
+        undefined,
+        null,
+        undefined,
+        []
+      ),
+
+  maintenanceSchedule: (path: string, on: boolean) =>
+    useRepoStore
+      .getState()
+      .run(
+        path,
+        t(on ? 'act.maintScheduled' : 'act.maintUnscheduled'),
+        () => gitApi.maintenanceSchedule(path, on).then(() => undefined),
+        undefined,
+        null,
+        undefined,
+        []
+      ),
 
   // ─── Bundles ───
   // Importing is the only half that touches refs. It lands under

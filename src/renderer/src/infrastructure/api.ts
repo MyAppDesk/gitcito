@@ -67,6 +67,10 @@ import type {
   CleanResult,
   ArchiveFormat,
   ArchiveResult,
+  FsckReport,
+  MaintenanceResult,
+  MaintenanceStats,
+  MaintenanceTask,
   BundleInfo,
   BundleResult,
   BundleScope,
@@ -242,6 +246,13 @@ export const gitApi = {
   subtreeSplit: (path: string, prefix: string, branch: string) =>
     call<string>('subtreeSplit', path, prefix, branch),
   subtreeForget: (path: string, prefix: string) => call<void>('subtreeForget', path, prefix),
+
+  /** Disk usage and what maintenance could reclaim. Walks reachability — slow. */
+  maintenanceStats: (path: string) => call<MaintenanceStats>('maintenanceStats', path),
+  maintenanceRun: (path: string, task: MaintenanceTask) =>
+    call<MaintenanceResult>('maintenanceRun', path, task),
+  maintenanceSchedule: (path: string, on: boolean) => call<boolean>('maintenanceSchedule', path, on),
+  fsck: (path: string) => call<FsckReport>('fsck', path),
 
   /** A repository, a branch or a range of commits as one file. */
   bundleCreate: (path: string, file: string, scope: BundleScope) =>

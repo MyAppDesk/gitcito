@@ -11515,6 +11515,53 @@ mark.find-hit.active {
 }
 .subtree-add { margin-top: 12px; }
 
+.maint-modal { display: flex; flex-direction: column; min-height: 0; overflow-y: auto; }
+.maint-total { display: flex; align-items: baseline; gap: 8px; margin-top: 12px; }
+.maint-total strong { font-size: 22px; }
+/* One bar for the whole story: packed vs loose vs reclaimable. */
+.maint-bar {
+  display: flex;
+  height: 10px;
+  margin: 8px 0 12px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--bg-3, var(--bg-2));
+}
+.maint-seg.packed { background: var(--accent); }
+.maint-seg.loose { background: var(--info, #38bdf8); }
+.maint-seg.waste { background: var(--warn, #d97706); }
+.maint-rows { display: flex; flex-direction: column; gap: 5px; }
+.maint-row { display: flex; align-items: center; gap: 8px; font-size: 12.5px; }
+.maint-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.maint-dot.packed { background: var(--accent); }
+.maint-dot.loose { background: var(--info, #38bdf8); }
+.maint-dot.waste { background: var(--warn, #d97706); }
+.maint-label { min-width: 92px; }
+.maint-count { flex: 1; color: var(--text-2); font-size: 11.5px; }
+.maint-size { font-family: var(--mono); font-size: 11.5px; }
+.maint-warn { font-size: 12px; color: var(--warn, #d97706); margin: 8px 0 0; }
+.maint-reclaimed { font-size: 12.5px; color: var(--ok, #16a34a); margin: 8px 0 0; }
+.maint-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+.maint-fsck {
+  margin-top: 12px;
+  padding: 9px 11px;
+  background: var(--bg-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  font-size: 12px;
+}
+.maint-fsck.bad { border-color: var(--warn, #d97706); }
+.maint-fsck pre {
+  margin: 6px 0 0;
+  max-height: 140px;
+  overflow: auto;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--text-2);
+  white-space: pre-wrap;
+}
+.maint-schedule { margin-top: 14px; }
+
 .export-modal { display: flex; flex-direction: column; min-height: 0; overflow-y: auto; }
 .export-scope { display: flex; gap: 14px; margin: 10px 0 4px; }
 .export-radio { display: flex; align-items: center; gap: 6px; font-size: 12.5px; cursor: pointer; }

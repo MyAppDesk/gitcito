@@ -73,6 +73,10 @@ import type {
   CleanResult,
   ArchiveFormat,
   ArchiveResult,
+  FsckReport,
+  MaintenanceResult,
+  MaintenanceStats,
+  MaintenanceTask,
   BundleInfo,
   BundleRef,
   BundleResult,
@@ -415,10 +419,22 @@ const CLEAN_ENTRY_CAP = 400
 /** How many files a directory walk will stat before giving up on an exact size. */
 const CLEAN_WALK_CAP = 20000
 
+/** Space a file actually occupies, not the length of its contents.
+ *
+ *  The difference is not academic here: a loose git object is a few hundred
+ *  bytes in a 4 KB block, so a repository with a thousand of them costs 4 MB of
+ *  disk and reports 250 KB of content. `git count-objects` answers in blocks,
+ *  and a panel that mixes the two makes the parts add up to more than the whole.
+ *  `blocks` is absent on some Windows filesystems — fall back to the length. */
+function diskBytes(s: { size: number; blocks?: number }): number {
+  return s.blocks && s.blocks > 0 ? s.blocks * 512 : s.size
+}
+
 /**
- * Bytes under a directory. Capped: an untracked `node_modules` holds hundreds of
- * thousands of files, and a preview that stats all of them is a preview nobody
- * waits for. Hitting the cap under-reports rather than stalls.
+ * Bytes under a directory, as the disk gives them up. Capped: an untracked
+ * `node_modules` holds hundreds of thousands of files, and a preview that stats
+ * all of them is a preview nobody waits for. Hitting the cap under-reports
+ * rather than stalls.
  */
 async function dirBytes(dir: string, budget: { files: number }): Promise<number> {
   let total = 0
@@ -431,7 +447,7 @@ async function dirBytes(dir: string, budget: { files: number }): Promise<number>
       const full = join(current, entry.name)
       // Symlinks are never followed: their target may sit outside the repo.
       if (entry.isDirectory()) stack.push(full)
-      else if (entry.isFile()) total += await stat(full).then((s) => s.size).catch(() => 0)
+      else if (entry.isFile()) total += await stat(full).then(diskBytes).catch(() => 0)
     }
   }
   return total
@@ -2186,6 +2202,119 @@ export const gitService = {
 
   async unstageAll(repoPath: string): Promise<void> {
     await gitFor(repoPath).raw(['reset', 'HEAD', '--', '.'])
+  },
+
+  // ─── Repository maintenance ────────────────────────────────────────────────
+  // git keeps working whatever state its object database is in, which is why
+  // nobody ever runs gc until a clone takes ten minutes. These read the numbers
+  // that would otherwise stay invisible, and run the jobs that act on them.
+
+  /** Where the disk went, and how much of it maintenance could get back. */
+  async maintenanceStats(repoPath: string): Promise<MaintenanceStats> {
+    const counts = await runGit(repoPath, ['count-objects', '-v']).catch(() => '')
+    const num = (key: string): number => Number(new RegExp(`^${key}: (\\d+)$`, 'm').exec(counts)?.[1] ?? 0)
+
+    const gitDir = resolvePath(repoPath, (await runGit(repoPath, ['rev-parse', '--git-dir']).catch(() => '.git')).trim())
+
+    // `prune -n` is a full reachability walk: the honest number, and the slow
+    // one. It is also the only way to say what "unreachable" costs here. Only
+    // loose objects are listed, which is exactly what prune removes — so each
+    // one is a file to stat rather than an object to ask git about.
+    const prunable = await runGit(repoPath, ['prune', '-n', '--expire=now']).catch(() => '')
+    const shas = prunable
+      .split('\n')
+      .map((line) => /^([0-9a-f]{40,64})\b/.exec(line.trim())?.[1])
+      .filter((sha): sha is string => !!sha)
+    let prunableBytes = 0
+    for (const sha of shas) {
+      prunableBytes += await stat(join(gitDir, 'objects', sha.slice(0, 2), sha.slice(2)))
+        .then(diskBytes)
+        .catch(() => 0)
+    }
+    const gitBytes = await dirBytes(gitDir, { files: 200_000 })
+
+    // The newest packfile's mtime is when gc last did something worth doing.
+    let lastPack: string | null = null
+    const packDir = join(gitDir, 'objects', 'pack')
+    for (const name of await readdir(packDir).catch(() => [] as string[])) {
+      if (!name.endsWith('.pack')) continue
+      const when = await stat(join(packDir, name)).then((s) => s.mtime.toISOString()).catch(() => null)
+      if (when && (!lastPack || when > lastPack)) lastPack = when
+    }
+
+    const registered = await runGit(repoPath, ['config', '--global', '--get-all', 'maintenance.repo']).catch(() => '')
+    const real = resolvePath(repoPath)
+
+    return {
+      looseObjects: num('count'),
+      looseBytes: num('size') * 1024,
+      packedObjects: num('in-pack'),
+      packs: num('packs'),
+      packBytes: num('size-pack') * 1024,
+      prunePackable: num('prune-packable'),
+      garbageFiles: num('garbage'),
+      garbageBytes: num('size-garbage') * 1024,
+      prunable: shas.length,
+      prunableBytes,
+      gitBytes,
+      lastPack,
+      scheduled: registered.split('\n').some((line) => resolvePath(line.trim() || '.') === real),
+      gcLog: await readFile(join(gitDir, 'gc.log'), 'utf-8').catch(() => '')
+    }
+  },
+
+  /**
+   * Run one maintenance job, reporting the size on either side of it.
+   *
+   * `prune` is the only one that destroys anything: gc keeps unreachable objects
+   * for two weeks precisely so a bad reset stays recoverable, and pruning now
+   * throws that safety net away.
+   */
+  async maintenanceRun(repoPath: string, task: MaintenanceTask): Promise<MaintenanceResult> {
+    const gitDir = resolvePath(repoPath, (await runGit(repoPath, ['rev-parse', '--git-dir']).catch(() => '.git')).trim())
+    const before = await dirBytes(gitDir, { files: 200_000 })
+    const args: Record<MaintenanceTask, string[]> = {
+      gc: ['gc'],
+      aggressive: ['gc', '--aggressive'],
+      commitGraph: ['commit-graph', 'write', '--reachable'],
+      prune: ['gc', '--prune=now']
+    }
+    const output = await runGit(repoPath, args[task])
+    return { before, after: await dirBytes(gitDir, { files: 200_000 }), output: output.trim() }
+  },
+
+  /** Register or unregister this repository with `git maintenance`. */
+  async maintenanceSchedule(repoPath: string, on: boolean): Promise<boolean> {
+    // `start` writes the OS schedule (launchd / systemd / Task Scheduler) as
+    // well as registering; `unregister` leaves the schedule alone for the other
+    // repositories still in it.
+    await runGit(repoPath, ['maintenance', on ? 'start' : 'unregister'])
+    return on
+  },
+
+  /** Check the object database. Dangling is normal; missing is damage. */
+  async fsck(repoPath: string): Promise<FsckReport> {
+    let output = ''
+    let ok = true
+    try {
+      const { stdout, stderr } = await pexecFile(
+        'git',
+        ['-C', repoPath, 'fsck', '--no-progress', '--dangling'],
+        { env: noPromptEnv(), maxBuffer: 16 * 1024 * 1024 }
+      )
+      output = `${stdout}${stderr}`
+    } catch (err) {
+      const e = err as { stdout?: string; stderr?: string; message?: string }
+      ok = false
+      output = `${e.stdout ?? ''}${e.stderr || e.message || ''}`
+    }
+    const lines = output.split('\n')
+    return {
+      ok,
+      dangling: lines.filter((l) => l.startsWith('dangling ')).length,
+      missing: lines.filter((l) => /^missing |^broken link/.test(l)).length,
+      output: output.trim().slice(0, 20_000)
+    }
   },
 
   // ─── Bundles and archives ──────────────────────────────────────────────────
@@ -5138,6 +5267,8 @@ const READ_METHODS = new Set<string>([
   'bundleCreate',
   'bundleInspect',
   'archiveCreate',
+  'maintenanceStats',
+  'fsck',
   'note',
   'notedCommits',
   'historyPaths',

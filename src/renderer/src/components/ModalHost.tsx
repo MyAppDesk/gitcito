@@ -34,6 +34,7 @@ import { HistoryPurgeModal } from './HistoryPurgeModal'
 import { SubtreeModal } from './SubtreeModal'
 import { CleanModal } from './CleanModal'
 import { ExportModal } from './ExportModal'
+import { MaintenanceModal } from './MaintenanceModal'
 import { ChangelogGenModal } from './ChangelogGenModal'
 import { SnapshotsModal } from './SnapshotsModal'
 import { SecureShareModal } from './SecureShareModal'
@@ -1516,6 +1517,7 @@ export function ModalHost(): React.JSX.Element {
                     modal.kind === 'pr-detail' ||
                     modal.kind === 'code-search' ||
                     modal.kind === 'clean' ||
+                    modal.kind === 'maintenance' ||
                     modal.kind === 'changelog-gen' ||
                     modal.kind === 'repo-settings' ||
                     modal.kind === 'secure-share' ||
@@ -1580,6 +1582,7 @@ export function ModalHost(): React.JSX.Element {
             {modal.kind === 'subtree' && <SubtreeModal repoPath={modal.repoPath} />}
             {modal.kind === 'clean' && <CleanModal repoPath={modal.repoPath} />}
             {modal.kind === 'export' && <ExportModal repoPath={modal.repoPath} initialTab={modal.tab} />}
+            {modal.kind === 'maintenance' && <MaintenanceModal repoPath={modal.repoPath} />}
             {modal.kind === 'history-purge' && (
               <HistoryPurgeModal repoPath={modal.repoPath} initialPath={modal.initialPath} />
             )}

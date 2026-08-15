@@ -1082,3 +1082,71 @@ describe('bundles and archives', () => {
     expect(entries.every((e) => e.startsWith(dir))).toBe(true)
   })
 })
+
+describe('repository maintenance', () => {
+  it('reports where the disk went, and packs the loose objects away', async () => {
+    const R = cloneFixture('deep-history-monorepo')
+    // A fresh loose object, so there is something for gc to pack.
+    writeFileSync(join(R, 'loose.txt'), 'written after the clone\n')
+    await raw(R, ['add', '-A'])
+    await raw(R, ['-c', 'user.email=t@e', '-c', 'user.name=T', 'commit', '-m', 'loose object'])
+
+    const before = await gitService.maintenanceStats(R)
+    expect(before.gitBytes).toBeGreaterThan(0)
+    expect(before.looseObjects).toBeGreaterThan(0)
+    expect(before.scheduled).toBe(false)
+
+    const result = await gitService.maintenanceRun(R, 'gc')
+    expect(result.before).toBeGreaterThan(0)
+
+    const after = await gitService.maintenanceStats(R)
+    expect(after.looseObjects).toBeLessThan(before.looseObjects)
+    expect(after.packedObjects).toBeGreaterThan(0)
+    expect(after.lastPack).toBeTruthy()
+  })
+
+  it('counts unreachable objects, and prune is what actually drops them', async () => {
+    const R = cloneFixture('bisect-bug')
+    writeFileSync(join(R, 'doomed.txt'), 'this commit is about to be abandoned\n')
+    await raw(R, ['add', '-A'])
+    await raw(R, ['-c', 'user.email=t@e', '-c', 'user.name=T', 'commit', '-m', 'doomed'])
+    const doomed = await shaOf(R, 'HEAD')
+    await raw(R, ['reset', '--hard', 'HEAD~1'])
+
+    // The reflog still points at it, so it is not unreachable yet — which is
+    // exactly the two-week safety net gc keeps.
+    expect((await gitService.maintenanceStats(R)).prunable).toBe(0)
+
+    await raw(R, ['reflog', 'expire', '--expire=now', '--all'])
+    const stats = await gitService.maintenanceStats(R)
+    expect(stats.prunable).toBeGreaterThan(0)
+    expect(stats.prunableBytes).toBeGreaterThan(0)
+
+    await gitService.maintenanceRun(R, 'prune')
+    // The object is gone for good; a plain gc would have kept it two weeks.
+    await expect(raw(R, ['cat-file', '-e', doomed])).rejects.toThrow()
+    expect((await gitService.maintenanceStats(R)).prunable).toBe(0)
+  })
+
+  it('fsck passes on a healthy repository and counts dangling objects as normal', async () => {
+    const R = cloneFixture('bisect-bug')
+    writeFileSync(join(R, 'orphan.txt'), 'dropped\n')
+    await raw(R, ['add', '-A'])
+    await raw(R, ['-c', 'user.email=t@e', '-c', 'user.name=T', 'commit', '-m', 'orphan'])
+    await raw(R, ['reset', '--hard', 'HEAD~1'])
+    await raw(R, ['reflog', 'expire', '--expire=now', '--all'])
+
+    const report = await gitService.fsck(R)
+    expect(report.ok).toBe(true)
+    expect(report.missing).toBe(0)
+    expect(report.dangling).toBeGreaterThan(0)
+  })
+
+  it('rebuilds the commit graph without changing what git reports', async () => {
+    const R = cloneFixture('deep-history-monorepo')
+    const head = await shaOf(R, 'HEAD')
+    await gitService.maintenanceRun(R, 'commitGraph')
+    expect(existsSync(join(R, '.git/objects/info/commit-graph'))).toBe(true)
+    expect(await shaOf(R, 'HEAD')).toBe(head)
+  })
+})

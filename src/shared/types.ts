@@ -1543,6 +1543,58 @@ export interface SubtreeInfo {
   lastSplit: string
 }
 
+/**
+ * What a repository is spending disk on, and what maintenance could reclaim.
+ * Everything here comes from `git count-objects -v` plus a reachability walk;
+ * nothing is estimated.
+ */
+export interface MaintenanceStats {
+  /** Objects sitting on their own, one file each — how git writes them first. */
+  looseObjects: number
+  looseBytes: number
+  /** Objects inside packfiles, where they are compressed and deltified. */
+  packedObjects: number
+  packs: number
+  packBytes: number
+  /** Loose objects already inside a pack: pure duplication until gc runs. */
+  prunePackable: number
+  /** Files git does not recognise under .git/objects — leftovers from a crash. */
+  garbageFiles: number
+  garbageBytes: number
+  /** Unreachable loose objects `git prune` would drop. */
+  prunable: number
+  prunableBytes: number
+  /** Everything under .git, which is the number people actually notice. */
+  gitBytes: number
+  /** When the newest packfile was written — the last time gc did real work. */
+  lastPack: string | null
+  /** True when `git maintenance` has this repository registered. */
+  scheduled: boolean
+  /** Whatever git left in .git/gc.log — an automatic gc that gave up. */
+  gcLog: string
+}
+
+/** The maintenance jobs Gitcito will run, in the order they cost. */
+export type MaintenanceTask = 'gc' | 'aggressive' | 'commitGraph' | 'prune'
+
+/** Size on disk before and after a maintenance run. */
+export interface MaintenanceResult {
+  before: number
+  after: number
+  /** git's own output, so a refusal is readable rather than silent. */
+  output: string
+}
+
+/** `git fsck` — is the object database internally consistent? */
+export interface FsckReport {
+  ok: boolean
+  /** Objects nothing points at. Normal after a rebase; not damage. */
+  dangling: number
+  /** Objects something points at and git cannot find. This is damage. */
+  missing: number
+  output: string
+}
+
 /** What a bundle should hold: everything, one ref, or the commits in a range. */
 export type BundleScope =
   | { kind: 'all' }

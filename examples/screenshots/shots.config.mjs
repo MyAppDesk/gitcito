@@ -1058,6 +1058,29 @@ export const shots = [
     }
   },
   {
+    // Maintenance: the size readout only says something with all three kinds of
+    // object present, so the prepare step abandons a commit and expires the
+    // reflog to make some genuinely unreachable.
+    out: 'maintenance',
+    repos: ['deep-history-monorepo'],
+    themes: ['light'],
+    prepare: async ({ repoPaths, run }) => {
+      const repo = repoPaths['deep-history-monorepo']
+      await run('git', ['-C', repo, 'reset', '--hard'], { allowFail: true })
+      await run('bash', ['-c', `echo "abandoned work" > "${repo}/abandoned.txt"`])
+      await run('git', ['-C', repo, 'add', '-A'])
+      await run('git', ['-C', repo, 'commit', '-m', 'work that gets abandoned'], { allowFail: true })
+      await run('git', ['-C', repo, 'reset', '--hard', 'HEAD~1'], { allowFail: true })
+      await run('git', ['-C', repo, 'reflog', 'expire', '--expire=now', '--all'], { allowFail: true })
+    },
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['deep-history-monorepo']
+      await page.evaluate((r) => window.__shot.ui.getState().openModal({ kind: 'maintenance', repoPath: r }), repo)
+      // Counting unreachable objects is a reachability walk; give it time.
+      await page.waitForTimeout(2000)
+    }
+  },
+  {
     // Bundling a repository into one file — shown on the range scope, which is
     // the option that needs explaining.
     out: 'export',

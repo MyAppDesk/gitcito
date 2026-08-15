@@ -13,9 +13,14 @@
 
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { writeFile } from 'node:fs/promises'
+import { writeFile, mkdir, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
 
 const ASSETS = join(dirname(fileURLToPath(import.meta.url)), 'assets')
+
+/** Throwaway SSH keys for the ssh-keys shot. Outside the repository on purpose:
+ *  disposable or not, these are real private key files. */
+const DEMO_SSH = join(tmpdir(), 'gitcito-demo-ssh')
 
 /**
  * Expand sidebar sections by their title (as rendered: 'WORKTREES').
@@ -46,6 +51,8 @@ async function openSections(page, titles) {
  * @property {boolean} [keychain]  Grant keychain consent for this shot. Only for
  *   shots that need a readable vault — granting makes macOS raise its own
  *   dialog, which Playwright cannot dismiss. Everything else runs declined.
+ * @property {Record<string,string>} [env]  Extra env for the launched app. For
+ *   redirecting something machine-specific (e.g. GITCITO_SSH_DIR) at a fake.
  * @property {(ctx: {repoPaths: Record<string,string>, run: Function}) => Promise<void>} [prepare]
  * @property {(page: import('playwright').Page, repoPaths: Record<string,string>) => Promise<void>} [drive]
  * @property {{name: string, durationMs: number, drive: Function}} [gif]  Optional motion clip.
@@ -1023,7 +1030,116 @@ export const shots = [
       })
       await page.waitForTimeout(600)
     }
-  }
+  },
+  {
+    // Git flow: the layout, starting a branch, and finishing the release branch.
+    out: 'gitflow',
+    repos: ['gitflow'],
+    themes: ['light'],
+    prepare: async ({ repoPaths, run }) => {
+      // Sit on the release branch, so the dialog shows the finish half too.
+      await run('git', ['-C', repoPaths['gitflow'], 'checkout', '-q', 'release/1.1.0'])
+    },
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['gitflow']
+      await page.evaluate((r) => window.__shot.ui.getState().openModal({ kind: 'gitflow', repoPath: r }), repo)
+      await page.waitForTimeout(800)
+    }
+  },
+  {
+    // Subtrees: a vendored directory, discovered from history.
+    out: 'subtree',
+    repos: ['subtree'],
+    themes: ['light'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['subtree']
+      await page.evaluate((r) => window.__shot.ui.getState().openModal({ kind: 'subtree', repoPath: r }), repo)
+      await page.waitForTimeout(800)
+    }
+  },
+  {
+    // Removing a file from history, measured: the damage before agreeing to it.
+    out: 'history-purge',
+    repos: ['leaked-secret'],
+    themes: ['light'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['leaked-secret']
+      await page.evaluate(
+        (r) =>
+          window.__shot.ui
+            .getState()
+            .openModal({ kind: 'history-purge', repoPath: r, initialPath: 'config/credentials.env' }),
+        repo
+      )
+      // The dialog measures on open; give the preview time to land.
+      await page.waitForTimeout(1400)
+    }
+  },
+  {
+    // The path picker: every path ever committed, heaviest first, deleted ones
+    // marked — the thing a file dialog cannot show.
+    out: 'history-purge-browse',
+    repos: ['leaked-secret'],
+    themes: ['light'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['leaked-secret']
+      await page.evaluate(
+        (r) => window.__shot.ui.getState().openModal({ kind: 'history-purge', repoPath: r }),
+        repo
+      )
+      await page.waitForTimeout(500)
+      // Press "Browse history" by its label, since the list is loaded on demand.
+      await page.evaluate(() => {
+        const button = [...document.querySelectorAll('.purge-modal button')].find((b) =>
+          /browse|explorar/i.test(b.textContent ?? '')
+        )
+        button?.click()
+      })
+      await page.waitForTimeout(1500)
+    }
+  },
+  {
+    // SSH keys: the list, and whether the agent is holding each one.
+    //
+    // Generated into a throwaway directory rather than photographing the real
+    // ~/.ssh: a fingerprint and the email in a key comment are exactly the kind
+    // of thing that should not end up in documentation. GITCITO_SSH_DIR is only
+    // honoured under --shot.
+    out: 'ssh-keys',
+    repos: ['multi-remote'],
+    themes: ['light'],
+    env: { GITCITO_SSH_DIR: DEMO_SSH },
+    prepare: async ({ run }) => {
+      const dir = DEMO_SSH
+      await rm(dir, { recursive: true, force: true })
+      await mkdir(dir, { recursive: true, mode: 0o700 })
+      // -N '' → no passphrase, so generation never waits on a prompt.
+      await run('ssh-keygen', ['-q', '-t', 'ed25519', '-C', 'you@example.com', '-N', '', '-f', join(dir, 'id_ed25519')])
+      await run('ssh-keygen', ['-q', '-t', 'rsa', '-b', '4096', '-C', 'old-laptop', '-N', '', '-f', join(dir, 'id_rsa')])
+    },
+    drive: async (page) => {
+      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'security' }))
+      await page.waitForTimeout(1200)
+      await page.evaluate(() => {
+        document.querySelector('.ssh-list')?.scrollIntoView({ block: 'center' })
+      })
+      await page.waitForTimeout(400)
+    }
+  },
+  {
+    // Clone with the Advanced section open: shallow, partial, branch picker.
+    out: 'clone-advanced',
+    repos: ['merge-conflict'],
+    themes: ['light'],
+    drive: async (page) => {
+      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'clone', onClone: () => {} }))
+      await page.waitForTimeout(500)
+      await page.evaluate(() => {
+        document.querySelector('.clone-advanced-toggle')?.click()
+      })
+      await page.waitForTimeout(600)
+    }
+  },
 ]
 // ── Animated clips (GIF) ──────────────────────────────────────────────────────
 // Captured by sampling screenshots at a steady fps, so GIF playback stays
@@ -1031,6 +1147,77 @@ export const shots = [
 // `durationMs` is the total clip length (drive + hold on the final frame).
 /** @type {Shot[]} */
 export const clips = [
+  {
+    // Writing a commit note, start to finish: the affordance, the typing, and
+    // the note landing beside the commit. A still of this only ever catches one
+    // of the three, which is why the first attempt showed an empty panel.
+    out: 'clip-commit-note',
+    repos: ['cherry-pick'],
+    themes: ['light'],
+    gif: {
+      durationMs: 9000,
+      drive: async (page, repoPaths) => {
+        const repo = repoPaths['cherry-pick']
+        // Annotate whatever the graph is showing first — no repo mutation, so
+        // the note and the commit it lands on cannot drift apart.
+        const hash = await page.evaluate((r) => window.__shot.repo.getState().repos[r].commits[0].hash, repo)
+        await page.evaluate(
+          ({ r, hash }) => window.__shot.repo.getState().select(r, { type: 'commit', hash }),
+          { r: repo, hash }
+        )
+        await page.waitForTimeout(1200)
+
+        await page.click('.commit-note-add')
+        await page.waitForTimeout(600)
+        // Typed rather than set: the point of a clip is the act, not the result.
+        await page.type('.commit-note-input', 'Reviewed by Ana on the release call.', { delay: 45 })
+        await page.waitForTimeout(400)
+        await page.keyboard.press('Enter')
+        await page.type('.commit-note-input', 'Shipped in build 412 — see the incident doc.', { delay: 45 })
+        await page.waitForTimeout(700)
+
+        await page.click('.commit-note-actions .btn.primary')
+        // Hold on the saved note: that is the frame people will scrub back to.
+        await page.waitForTimeout(2200)
+      }
+    }
+  },
+  {
+    // Dragging one ref onto another: the gesture a still cannot show. Playwright
+    // drives real mouse events so the drop target's highlight is captured too.
+    out: 'clip-branch-drop',
+    repos: ['merge-conflict'],
+    themes: ['light'],
+    gif: {
+      durationMs: 5200,
+      drive: async (page) => {
+        const rowOf = async (name) =>
+          page.evaluate((wanted) => {
+            const row = [...document.querySelectorAll('.sb-item')].find(
+              (el) => el.querySelector('.sb-name')?.textContent?.trim() === wanted
+            )
+            if (!row) return null
+            const r = row.getBoundingClientRect()
+            return { x: r.left + r.width / 2, y: r.top + r.height / 2 }
+          }, name)
+
+        const from = await rowOf('feature')
+        const to = await rowOf('main')
+        if (!from || !to) return
+        await page.mouse.move(from.x, from.y)
+        await page.mouse.down()
+        // Move in steps: a single jump gives the drop target no time to light up.
+        for (let i = 1; i <= 12; i++) {
+          await page.mouse.move(from.x + ((to.x - from.x) * i) / 12, from.y + ((to.y - from.y) * i) / 12)
+          await page.waitForTimeout(60)
+        }
+        await page.waitForTimeout(700)
+        await page.mouse.up()
+        // The drop opens the menu of what it could mean — that is the payoff frame.
+        await page.waitForTimeout(1600)
+      }
+    }
+  },
   {
     out: 'clip-commit-details',
     repos: ['octopus-merge'],

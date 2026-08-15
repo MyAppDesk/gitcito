@@ -111,6 +111,7 @@ const nav = (depth) => {
   </a>
   <nav>
     <a href="${base}help/getting-started.html">Handbook</a>
+    <a href="https://github.com/${REPO}/blob/main/ROADMAP.md">Roadmap</a>
     <a href="https://github.com/${REPO}">GitHub</a>
     <a href="${SPONSOR}">Sponsor</a>
     <a class="btn small" href="${LATEST}">Download</a>
@@ -120,7 +121,7 @@ const nav = (depth) => {
 
 const footer = `<footer class="foot">
   <span>MIT licensed · Made by <a href="https://myappdesk.dev">MyAppDesk</a> with 💜</span>
-  <span><a href="https://github.com/${REPO}">Source</a> · <a href="https://github.com/${REPO}/issues/new">Report an issue</a> · <a href="${SPONSOR}">Sponsor</a></span>
+  <span><a href="https://github.com/${REPO}">Source</a> · <a href="https://github.com/${REPO}/blob/main/ROADMAP.md">Roadmap</a> · <a href="https://github.com/${REPO}/issues/new">Report an issue</a> · <a href="${SPONSOR}">Sponsor</a></span>
 </footer>
 </body>
 </html>`

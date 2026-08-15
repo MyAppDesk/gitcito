@@ -28,7 +28,20 @@ const pexecFile = promisify(execFile)
  * Only public halves and fingerprints leave this file.
  */
 
-const sshDir = (): string => join(homedir(), '.ssh')
+/**
+ * Where the keys live. Normally `~/.ssh`, and only ever that.
+ *
+ * The screenshot harness needs a deterministic, publishable set of keys instead
+ * of whoever ran it — a documentation shot must not carry a real fingerprint or
+ * the email in a key comment. It gets one by pointing this at a throwaway
+ * directory, and the override is honoured **only** in `--shot` mode, the same
+ * flag that enables the capture bridge. A normal run cannot be redirected by an
+ * environment variable.
+ */
+const sshDir = (): string => {
+  const override = process.argv.includes('--shot') ? process.env['GITCITO_SSH_DIR'] : undefined
+  return override || join(homedir(), '.ssh')
+}
 
 /** Hosts we know an SSH endpoint for, for the connection test. */
 const TEST_HOSTS: Record<string, string> = {

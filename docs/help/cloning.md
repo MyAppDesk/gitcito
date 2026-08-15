@@ -23,6 +23,8 @@ Everything under **Advanced** is off by default: leave it alone and you get an
 ordinary, complete clone. It earns its place on repositories where "complete"
 means twenty minutes and several gigabytes.
 
+![The clone dialog with Advanced open: partial, shallow, single-branch, submodules and a branch picker](../screenshots/clone-advanced.webp)
+
 | Option | What git does | What it costs |
 |--------|---------------|---------------|
 | **Partial clone** | `--filter=blob:none` | Full history, no file contents. Blobs arrive on demand, so opening an old file needs the network. |

@@ -37,6 +37,8 @@ The same list answers the other reason people come here — *why is this clone t
 gigabytes* — since it is sorted by the bytes each path's blobs actually occupy.
 Picking a row measures it straight away.
 
+![Every path ever committed, heaviest first, with deleted ones marked](../screenshots/history-purge-browse.webp)
+
 ## Measure before you agree
 
 Press **Measure** (or pick a row). Nothing is written yet. You get:
@@ -47,6 +49,8 @@ Press **Measure** (or pick a row). Nothing is written yet. You get:
 | **Branches / tags** | Refs that will move |
 | **Held by its blobs** | Bytes those versions actually occupy |
 | **First commit** | Where the rewrite starts — everything after it gets a new hash |
+
+![The measurement: commits rewritten, refs affected, bytes held, and the warning to rotate the secret anyway](../screenshots/history-purge.webp)
 
 If the count is zero, the path is wrong. That is usually a spelling or a
 directory prefix, not an absence.

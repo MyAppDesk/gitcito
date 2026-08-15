@@ -403,6 +403,10 @@ describe('clone options (merge-conflict playground as the remote)', () => {
 describe('git-flow (gitflow playground)', () => {
   it('reads the layout the git flow CLI wrote, and spots the current flow branch', async () => {
     const R = cloneFixture('gitflow')
+    // Pin the branch rather than trusting the fixture's: a screenshot run's
+    // `prepare` step checks this repo out elsewhere, and a test that depends on
+    // where it was left is a test that fails for unrelated reasons.
+    await gitService.checkout(R, 'develop')
     const status = await gitService.gitflowStatus(R)
     expect(status.initialized).toBe(true)
     expect(status.config.main).toBe('main')

@@ -15,6 +15,8 @@ forgetting `develop`, or tagging the wrong branch.
 
 `⌘K` → **Git flow** does the bookkeeping.
 
+![The git flow dialog on a release branch: start a branch above, finish it below](../screenshots/gitflow.webp)
+
 ## The layout
 
 | Branch | Holds |

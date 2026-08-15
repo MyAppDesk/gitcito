@@ -139,6 +139,14 @@ Contributions welcome — **[CONTRIBUTING.md](CONTRIBUTING.md)** has the working
 agreement: commit format, the translation rule, the test fixtures, and when a
 change has to update the handbook.
 
+## What's next
+
+**[ROADMAP.md](ROADMAP.md)** — what might come next, what it would cost, and what
+is deliberately out of scope. Half of it is gaps against other clients; the other
+half is [Pro Git](https://git-scm.com/book/en/v2) — things git already does that
+no client surfaces. Ideas welcome as
+[issues](https://github.com/MyAppDesk/gitcito/issues).
+
 ## Sponsor this project
 
 Gitcito is free, MIT-licensed and has no backend, no telemetry and nothing to

@@ -40,6 +40,33 @@ The bridge ships nothing in a normal build: it only attaches when the app is
 launched with `--shot` (the flag is forwarded into the renderer by the main
 process).
 
+## Keeping the machine out of the picture
+
+Shots run against the playground, so their content is deterministic — except
+where a feature reads something outside the repository. **The SSH key list is
+the one place that would otherwise photograph the person who ran the capture**:
+real fingerprints, and usually a real email in a key comment.
+
+So that entry generates a throwaway pair with `ssh-keygen` in a temp dir and
+points the app at it:
+
+```js
+env: { GITCITO_SSH_DIR: DEMO_SSH },
+prepare: async ({ run }) => { /* ssh-keygen into DEMO_SSH */ }
+```
+
+`GITCITO_SSH_DIR` is read by `src/main/ssh.ts` **only when the app was launched
+with `--shot`** — the same flag that enables the store bridge. A normal run
+always reads `~/.ssh` and cannot be redirected by an environment variable.
+
+The shot shows the real UI with fake data, which beats masking values: an
+interface full of `***` looks broken, and redaction logic in production code is
+a worse thing to own than a fixture.
+
+If you add a feature that reads outside the repository — a global config, a
+credential store, a home directory — give it the same treatment rather than
+capturing your own.
+
 ## Adding a feature shot
 
 Add one entry to [`shots.config.mjs`](./shots.config.mjs):

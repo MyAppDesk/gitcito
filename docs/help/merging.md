@@ -18,6 +18,8 @@ The quickest gesture in the app: pick up a branch and drop it on another one.
 Gitcito opens a small menu of what that drop could mean, and does nothing until
 you choose.
 
+![Dragging one branch onto another opens the menu of what the drop could mean](../screenshots/clip-branch-drop.webp)
+
 It works in **both** places refs are shown — the sidebar's branch, remote and
 tag rows, and the coloured **ref badges in the graph** itself. Drag between them
 in any combination; the drop target highlights while you hover it.

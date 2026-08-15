@@ -19,6 +19,8 @@ detached HEAD to keep straight.
 
 `⌘K` → **Subtrees**.
 
+![A vendored directory found in history, with the source Gitcito remembers for it](../screenshots/subtree.webp)
+
 ## The catch nobody mentions
 
 **Git records no manifest for subtrees.** A submodule has `.gitmodules`, listing

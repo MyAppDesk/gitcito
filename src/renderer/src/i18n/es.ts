@@ -1239,6 +1239,11 @@ export const es: Dict = {
   'push.forceConfirm': 'Force push',
 
   // Tools menu
+  'tools.groupInspect': 'Inspeccionar…',
+  'tools.groupHistory': 'Ramas e historial…',
+  'tools.groupFiles': 'Archivos y parches…',
+  'tools.groupRepo': 'Repositorio…',
+  'tools.groupSecurity': 'Secretos y compartir…',
   'tools.reflog': 'Reflog — recuperar commits perdidos',
   'tools.snapshots': 'Instantáneas WIP — red de seguridad',
   'tools.vault': 'Bóveda — secretos cifrados globales',

@@ -32,6 +32,20 @@ repository until you ask for it.
 | Middle | The commit graph, and whatever you select from it |
 | Right | The commit composer, or the details of the selected commit |
 
+## Finding everything else
+
+Two routes, and they lead to the same places:
+
+- **`⌘K`** (`Ctrl+K`) — the command palette. Type what you want; it also jumps to
+  branches, commits and files.
+- **Tools** in the toolbar — the same repository-scoped set as a menu, with the
+  long tail folded into groups so it stays readable.
+
+![The Tools menu: the frequent tools first, the rest grouped](../screenshots/tools-menu.webp)
+
+Anything reachable by one is reachable by the other, so there is nothing that
+only power users can find.
+
 ## Your first commit
 
 1. Edit a file. It appears under **Unstaged**.

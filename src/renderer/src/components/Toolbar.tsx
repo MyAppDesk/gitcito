@@ -37,7 +37,19 @@ import {
   Radar,
   Magnet,
   Clock,
-  Film
+  Film,
+  Boxes as ObjectsIcon,
+  Trash2,
+  Package,
+  HardDrive,
+  FileCog,
+  GitMerge,
+  Eraser,
+  FolderInput,
+  GitGraph,
+  BarChart3,
+  GitPullRequestArrow,
+  Lock
 } from 'lucide-react'
 import type { MenuItem } from '../stores/ui'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
@@ -165,14 +177,21 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
         if (res) void repoActions.applyPatch(path, res.content, am)
       })
     }
+    // The dropdown mirrors the command palette: everything reachable by ⌘K that
+    // belongs to a repository is here too, with the rarely-used two thirds
+    // folded into groups so the list stays readable.
     openContextMenu(rect.left, rect.bottom + 6, [
       { label: t('tools.reflog'), icon: <History size={15} />, onClick: () => openModal({ kind: 'reflog', repoPath: path }) },
       { label: t('tools.snapshots'), icon: <Camera size={15} />, onClick: () => openModal({ kind: 'snapshots', repoPath: path }) },
       { label: t('timeMachine.open'), icon: <Clock size={15} />, onClick: () => openModal({ kind: 'time-machine', repoPath: path }) },
-      { label: t('timelapse.open'), icon: <Film size={15} />, onClick: () => openModal({ kind: 'timelapse', repoPath: path }) },
-      { label: t('tools.vault'), icon: <KeyRound size={15} />, onClick: () => useSettingsStore.getState().openPageTab({ type: 'vault' }) },
       { label: t('tools.bisect'), icon: <Bug size={15} />, onClick: () => openModal({ kind: 'bisect', repoPath: path }) },
       { separator: true },
+      { label: t('absorb.open'), icon: <Magnet size={15} />, onClick: () => openModal({ kind: 'absorb', repoPath: path }) },
+      {
+        label: t('radar.open'),
+        icon: <Radar size={15} />,
+        onClick: () => openModal({ kind: 'conflict-radar', repoPath: path, base: repo.branches.current || 'HEAD' })
+      },
       {
         label: t('tools.compareRefs'),
         icon: <ArrowLeftRight size={15} />,
@@ -185,28 +204,74 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
           openModal({ kind: 'branch-compare', repoPath: path, branchA: cur, branchB: base })
         }
       },
-      { label: t('tools.stack'), icon: <Layers size={15} />, onClick: () => openModal({ kind: 'stack', repoPath: path }) },
+      {
+        label: t('rangeDiff.open'),
+        icon: <History size={15} />,
+        onClick: () =>
+          openModal({ kind: 'range-diff', repoPath: path, branch: repo.branches.current || 'HEAD' })
+      },
       ...(notesMenu().length
         ? [{ label: t('notes.title'), icon: <StickyNote size={15} />, submenu: notesMenu() }]
         : []),
-      {
-        label: t('absorb.open'),
-        icon: <Magnet size={15} />,
-        onClick: () => openModal({ kind: 'absorb', repoPath: path })
-      },
-      {
-        label: t('radar.open'),
-        icon: <Radar size={15} />,
-        onClick: () => openModal({ kind: 'conflict-radar', repoPath: path, base: repo.branches.current || 'HEAD' })
-      },
-      { label: t('tools.hooks'), icon: <Webhook size={15} />, onClick: () => openModal({ kind: 'hooks', repoPath: path }) },
-      { label: t('tools.lfs'), icon: <Boxes size={15} />, onClick: () => openModal({ kind: 'lfs', repoPath: path }) },
-      { label: t('tools.sparse'), icon: <FolderTree size={15} />, onClick: () => openModal({ kind: 'sparse', repoPath: path }) },
       { separator: true },
-      { label: t('tools.wiki'), icon: <BookOpen size={15} />, onClick: () => useSettingsStore.getState().openPageTab({ type: 'wiki', repoPath: path }) },
-      { label: t('tools.changelog'), icon: <FileText size={15} />, onClick: () => openModal({ kind: 'changelog-gen', repoPath: path }) },
-      { label: t('tools.applyPatch'), icon: <FileDiff size={15} />, onClick: () => applyPatchFile(false) },
-      { label: t('tools.applyPatchAm'), icon: <GitCommit size={15} />, onClick: () => applyPatchFile(true) }
+      {
+        label: t('tools.groupInspect'),
+        icon: <Search size={15} />,
+        submenu: [
+          { label: t('cmd.objects'), icon: <ObjectsIcon size={15} />, onClick: () => openModal({ kind: 'objects', repoPath: path }) },
+          { label: t('cmd.codeSearch'), icon: <Search size={15} />, onClick: () => openModal({ kind: 'code-search', repoPath: path }) },
+          { label: t('cmd.insights'), icon: <BarChart3 size={15} />, onClick: () => openModal({ kind: 'repo-settings', repoPath: path, tab: 'insights' }) },
+          { label: t('timelapse.open'), icon: <Film size={15} />, onClick: () => openModal({ kind: 'timelapse', repoPath: path }) },
+          { label: t('prPreview.open'), icon: <GitPullRequestArrow size={15} />, onClick: () => openModal({ kind: 'pr-preview', repoPath: path }) }
+        ]
+      },
+      {
+        label: t('tools.groupHistory'),
+        icon: <GitMerge size={15} />,
+        submenu: [
+          { label: t('cmd.mergeOptions'), icon: <GitMerge size={15} />, onClick: () => openModal({ kind: 'merge-options', repoPath: path }) },
+          { label: t('tools.stack'), icon: <Layers size={15} />, onClick: () => openModal({ kind: 'stack', repoPath: path }) },
+          { label: t('cmd.gitflow'), icon: <GitBranch size={15} />, onClick: () => openModal({ kind: 'gitflow', repoPath: path }) },
+          { label: t('cmd.subtree'), icon: <FolderInput size={15} />, onClick: () => openModal({ kind: 'subtree', repoPath: path }) },
+          { label: t('cmd.historyPurge'), icon: <Eraser size={15} />, onClick: () => openModal({ kind: 'history-purge', repoPath: path }) },
+          { label: t('cmd.replace'), icon: <GitGraph size={15} />, onClick: () => openModal({ kind: 'replace', repoPath: path }) }
+        ]
+      },
+      {
+        label: t('tools.groupFiles'),
+        icon: <FileCog size={15} />,
+        submenu: [
+          { label: t('cmd.attributes'), icon: <FileCog size={15} />, onClick: () => openModal({ kind: 'attributes', repoPath: path }) },
+          { label: t('tools.hooks'), icon: <Webhook size={15} />, onClick: () => openModal({ kind: 'hooks', repoPath: path }) },
+          { label: t('tools.lfs'), icon: <Boxes size={15} />, onClick: () => openModal({ kind: 'lfs', repoPath: path }) },
+          { label: t('tools.sparse'), icon: <FolderTree size={15} />, onClick: () => openModal({ kind: 'sparse', repoPath: path }) },
+          { label: t('cmd.clean'), icon: <Trash2 size={15} />, onClick: () => openModal({ kind: 'clean', repoPath: path }) },
+          { label: t('tools.applyPatch'), icon: <FileDiff size={15} />, onClick: () => applyPatchFile(false) },
+          { label: t('tools.applyPatchAm'), icon: <GitCommit size={15} />, onClick: () => applyPatchFile(true) }
+        ]
+      },
+      {
+        label: t('tools.groupRepo'),
+        icon: <HardDrive size={15} />,
+        submenu: [
+          { label: t('cmd.maintenance'), icon: <HardDrive size={15} />, onClick: () => openModal({ kind: 'maintenance', repoPath: path }) },
+          { label: t('cmd.bundle'), icon: <Package size={15} />, onClick: () => openModal({ kind: 'export', repoPath: path, tab: 'bundle' }) },
+          { label: t('cmd.archive'), icon: <Archive size={15} />, onClick: () => openModal({ kind: 'export', repoPath: path, tab: 'archive' }) },
+          { label: t('tools.changelog'), icon: <FileText size={15} />, onClick: () => openModal({ kind: 'changelog-gen', repoPath: path }) },
+          { label: t('tools.wiki'), icon: <BookOpen size={15} />, onClick: () => useSettingsStore.getState().openPageTab({ type: 'wiki', repoPath: path }) }
+        ]
+      },
+      {
+        label: t('tools.groupSecurity'),
+        icon: <KeyRound size={15} />,
+        submenu: [
+          { label: t('tools.vault'), icon: <KeyRound size={15} />, onClick: () => useSettingsStore.getState().openPageTab({ type: 'vault' }) },
+          { label: t('cmd.credentials'), icon: <KeyRound size={15} />, onClick: () => openModal({ kind: 'credentials', repoPath: path }) },
+          { label: t('cmd.sshKeys'), icon: <KeyRound size={15} />, onClick: () => openModal({ kind: 'settings', page: 'security' }) },
+          { label: t('cmd.secureExport'), icon: <Lock size={15} />, onClick: () => openModal({ kind: 'secure-share', repoPath: path, initialMode: 'export' }) },
+          { label: t('cmd.secureImport'), icon: <Lock size={15} />, onClick: () => openModal({ kind: 'secure-share', repoPath: path, initialMode: 'import' }) }
+        ]
+      }
     ])
   }
 

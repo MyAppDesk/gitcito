@@ -1246,6 +1246,11 @@ export const en = {
   'push.forceConfirm': 'Force push',
 
   // Tools menu
+  'tools.groupInspect': 'Inspect…',
+  'tools.groupHistory': 'Branches & history…',
+  'tools.groupFiles': 'Files & patches…',
+  'tools.groupRepo': 'Repository…',
+  'tools.groupSecurity': 'Secrets & sharing…',
   'tools.reflog': 'Reflog — recover lost commits',
   'tools.snapshots': 'WIP snapshots — safety net',
   'tools.vault': 'Vault — global encrypted secrets',

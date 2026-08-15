@@ -1062,6 +1062,19 @@ export const shots = [
     }
   },
   {
+    // The Tools menu, open: everything ⌘K reaches that belongs to a repository,
+    // with the long tail folded into groups.
+    out: 'tools-menu',
+    repos: ['deep-history-monorepo'],
+    themes: ['light'],
+    drive: async (page) => {
+      // The button is the one carrying the tools label; click it and let the
+      // context menu settle before the shot.
+      await page.locator('.tool-btn.split').last().click()
+      await page.waitForTimeout(700)
+    }
+  },
+  {
     // Replace & graft: an existing graft, and the form that made it.
     out: 'replace',
     repos: ['deep-history-monorepo'],

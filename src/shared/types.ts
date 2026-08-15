@@ -1405,6 +1405,29 @@ export interface CloneProgress {
   total: number
 }
 
+/**
+ * Everything the clone dialog can ask `git clone` for beyond the URL. All of it
+ * is optional: an empty object is a plain full clone of the remote's default
+ * branch.
+ */
+export interface CloneOptions {
+  /** Host the URL belongs to, for credential injection. */
+  host?: RepoHost
+  /** Token for that host — used for this clone only, never written to config. */
+  token?: string
+  /** Partial clone spec for `--filter`, e.g. `blob:none`. */
+  filter?: string
+  /** Shallow clone: keep only this many commits of history. */
+  depth?: number
+  /** Fetch only the checked-out branch. `false` alongside `depth` restores the
+   *  other branches that `--depth` would otherwise drop. */
+  singleBranch?: boolean
+  /** Branch or tag to check out instead of the remote's default HEAD. */
+  branch?: string
+  /** Also clone submodules, recursively. */
+  recurseSubmodules?: boolean
+}
+
 /** One entry from `git reflog` — the recovery net for lost/rewound commits. */
 export interface ReflogEntry {
   sha: string

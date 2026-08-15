@@ -14,6 +14,7 @@ import type {
   RepoPulse,
   RepoDetail,
   CiStatus,
+  CloneOptions,
   CommitBranchInfo,
   ConflictContext,
   ConflictOpKind,
@@ -333,8 +334,11 @@ export const gitApi = {
   getUser: (path: string) => call<{ name: string; email: string }>('getUser', path),
   setUser: (path: string, name: string, email: string) => call<void>('setUser', path, name, email),
 
-  clone: (parentDir: string, url: string, name: string, host?: RepoHost, token?: string, filter?: string) =>
-    call<string>('clone', parentDir, url, name, host, token, filter),
+  clone: (parentDir: string, url: string, name: string, opts?: CloneOptions) =>
+    call<string>('clone', parentDir, url, name, opts ?? {}),
+  /** Branch names a remote advertises — the clone dialog's branch picker. */
+  remoteBranches: (url: string, host?: RepoHost, token?: string) =>
+    call<string[]>('remoteBranches', url, host, token),
   init: (parentDir: string, name: string) => call<string>('init', parentDir, name),
   initHere: (path: string) => call<void>('initHere', path),
 

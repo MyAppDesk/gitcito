@@ -1,6 +1,7 @@
 import { describe, it, expect, afterAll } from 'vitest'
-import { readFileSync, writeFileSync, existsSync } from 'node:fs'
+import { readFileSync, writeFileSync, existsSync, mkdtempSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
+import { tmpdir } from 'node:os'
 import { gitService } from '../src/main/git'
 import { cloneFixture, cleanupFixtures } from './fixtures'
 
@@ -327,5 +328,65 @@ describe('project tree drop conflicts', () => {
 
     await gitService.fsImport(R, [join(outside, 'readme.md')], 'docs', 'replace')
     expect(readFileSync(join(R, 'docs/readme.md'), 'utf8')).toBe('from Finder')
+  })
+})
+
+describe('clone options (merge-conflict playground as the remote)', () => {
+  // A clone needs an empty parent directory to land in; the source is an
+  // isolated copy so nothing here can touch the shared playground.
+  const parents: string[] = []
+  const parentDir = (): string => {
+    const dir = mkdtempSync(join(tmpdir(), 'gitcito-clone-'))
+    parents.push(dir)
+    return dir
+  }
+  afterAll(() => {
+    for (const dir of parents.splice(0)) rmSync(dir, { recursive: true, force: true })
+  })
+
+  it('lists the branches a remote advertises', async () => {
+    const source = cloneFixture('merge-conflict')
+    const names = await gitService.remoteBranches(source)
+    expect(names).toContain('main')
+    expect(names).toContain('feature')
+    // Sorted, and stripped of the refs/heads/ prefix.
+    expect(names).toEqual([...names].sort())
+    expect(names.every((n) => !n.startsWith('refs/'))).toBe(true)
+  })
+
+  it('clones the whole history when no options are given', async () => {
+    const source = cloneFixture('merge-conflict')
+    const target = await gitService.clone(parentDir(), source, 'full')
+    expect((await gitService.log(target)).length).toBeGreaterThan(1)
+  })
+
+  it('keeps only the requested number of commits when shallow', async () => {
+    const source = cloneFixture('merge-conflict')
+    const target = await gitService.clone(parentDir(), source, 'shallow', { depth: 1 })
+    expect((await gitService.log(target)).length).toBe(1)
+    expect(existsSync(join(target, '.git', 'shallow'))).toBe(true)
+  })
+
+  it('checks out the branch it was asked for instead of the default', async () => {
+    const source = cloneFixture('merge-conflict')
+    const target = await gitService.clone(parentDir(), source, 'onbranch', { branch: 'feature' })
+    expect((await gitService.open(target)).current).toBe('feature')
+  })
+
+  it('fetches one branch only when asked, and every branch otherwise', async () => {
+    const source = cloneFixture('merge-conflict')
+    const one = await gitService.clone(parentDir(), source, 'single', { singleBranch: true })
+    const all = await gitService.clone(parentDir(), source, 'every', {})
+    const remoteCount = async (repo: string): Promise<number> => (await gitService.branches(repo)).remotes.length
+    expect(await remoteCount(one)).toBeLessThan(await remoteCount(all))
+    // The branch that was checked out is the one that came along.
+    expect((await gitService.branches(one)).remotes.some((r) => r.fullName.endsWith('main'))).toBe(true)
+  })
+
+  it('refuses to clone over an existing folder', async () => {
+    const source = cloneFixture('merge-conflict')
+    const parent = parentDir()
+    await gitService.clone(parent, source, 'taken')
+    await expect(gitService.clone(parent, source, 'taken')).rejects.toThrow(/already exists/)
   })
 })

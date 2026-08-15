@@ -17,6 +17,8 @@ repository until you ask for it.
 
 - **Drag a folder** onto the window, or use **Open repository** on the welcome
   screen.
+- **Clone** one from a URL or straight from your host — see [cloning](cloning.md)
+  for the options that make a huge repository quick to clone.
 - From a terminal, `gitcito .` opens the current folder in the running app —
   see [the command line](cli.md).
 - A folder that is not a Git repository yet still opens, offering to

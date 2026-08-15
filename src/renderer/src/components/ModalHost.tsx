@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { X, Globe, Github, Gitlab, Cloud, Server, Loader2, Search, Lock, ExternalLink, Plug, FolderGit2, Folder, Plus, Check, ChevronDown, Sparkles, GitMerge } from 'lucide-react'
+import { X, Globe, Github, Gitlab, Cloud, Server, Loader2, Search, Lock, ExternalLink, Plug, FolderGit2, Folder, Plus, Check, ChevronDown, ChevronRight, RefreshCw, Sparkles, GitMerge } from 'lucide-react'
 import { useUIStore, type ModalSpec } from '../stores/ui'
 import { useSettingsStore, GROUP_COLORS } from '../stores/settings'
 import { hostingApi, gitApi, shellApi, aiApi } from '../infrastructure/api'
@@ -900,6 +900,17 @@ function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): 
   const [partial, setPartial] = useState(false)
   const [progress, setProgress] = useState<CloneProgress | null>(null)
 
+  // ── Advanced: what `git clone` can narrow before it starts ──
+  const [advanced, setAdvanced] = useState(false)
+  const [shallow, setShallow] = useState(false)
+  const [depth, setDepth] = useState('1')
+  const [singleBranch, setSingleBranch] = useState(false)
+  const [submodules, setSubmodules] = useState(false)
+  const [branch, setBranch] = useState('')
+  const [branches, setBranches] = useState<string[] | null>(null)
+  const [branchesError, setBranchesError] = useState(false)
+  const [loadingBranches, setLoadingBranches] = useState(false)
+
   useEffect(() => window.api.onCloneProgress(setProgress), [])
 
   const profile = profiles.find((p) => p.id === profileId) ?? profiles[0]
@@ -910,6 +921,34 @@ function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): 
     setProvider(id)
     setUrl('')
     if (!nameTouched) setName('')
+    resetBranches()
+  }
+
+  // The branch list belongs to one URL; changing the URL invalidates it.
+  const resetBranches = (): void => {
+    setBranches(null)
+    setBranch('')
+    setBranchesError(false)
+  }
+
+  /** Ask the remote which branches it has. One network round trip, on demand —
+   *  typing a URL should not fire `ls-remote` on every keystroke. */
+  const loadBranches = async (): Promise<void> => {
+    if (!url.trim() || loadingBranches) return
+    setLoadingBranches(true)
+    setBranchesError(false)
+    try {
+      const token = host ? profile[HOST_META[host].tokenField] : undefined
+      setBranches(await gitApi.remoteBranches(url.trim(), host ?? undefined, token))
+    } catch {
+      // A private repo with no token, a typo'd URL, an offline machine — the
+      // clone itself will report it properly, so this stays a soft failure and
+      // the branch stays a free-text field.
+      setBranchesError(true)
+      setBranches(null)
+    } finally {
+      setLoadingBranches(false)
+    }
   }
 
   const deriveName = (u: string): string => {
@@ -920,6 +959,7 @@ function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): 
   const pickRepo = (repo: RemoteRepo): void => {
     setUrl(repo.url)
     if (!nameTouched) setName(repoToName(repo))
+    resetBranches()
   }
 
   const browse = async (): Promise<void> => {
@@ -933,21 +973,25 @@ function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): 
     setProgress(null)
     try {
       const token = host ? profile[HOST_META[host].tokenField] : undefined
-      const path = await gitApi.clone(
-        dir.trim(),
-        url.trim(),
-        name.trim(),
-        host ?? undefined,
+      const parsedDepth = Number.parseInt(depth, 10)
+      const path = await gitApi.clone(dir.trim(), url.trim(), name.trim(), {
+        host: host ?? undefined,
         token,
-        partial ? 'blob:none' : undefined
-      )
+        filter: partial ? 'blob:none' : undefined,
+        depth: shallow && parsedDepth > 0 ? parsedDepth : undefined,
+        // Only meaningful as an explicit choice: `--depth` already implies
+        // single-branch, so `false` is how the user asks for the others back.
+        singleBranch: shallow ? singleBranch : singleBranch || undefined,
+        branch: branch.trim() || undefined,
+        recurseSubmodules: submodules
+      })
       updateSettings((s) => ({ ...s, lastClonePath: dir.trim() }))
       // Pin the new repo to the chosen profile so its identity/tokens apply
       // automatically whenever its tab is active.
       setRepoProfile(path, profileId)
       closeModal()
       spec.onClone({ path, name: name.trim() })
-      toast('success', `Cloned ${name.trim()}`)
+      toast('success', interp(t('clone.done'), { name: name.trim() }))
     } catch (e) {
       toast('error', e instanceof Error ? e.message : String(e))
       setCloning(false)
@@ -957,7 +1001,7 @@ function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): 
   return (
     <>
       <h3 className="modal-title-row">
-        <FolderGit2 size={17} /> Clone repository
+        <FolderGit2 size={17} /> {t('clone.title')}
       </h3>
 
       <div className="remote-tabs">
@@ -988,6 +1032,7 @@ function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): 
             onChange={(e) => {
               setUrl(e.target.value)
               if (!nameTouched) setName(deriveName(e.target.value))
+              resetBranches()
             }}
             onKeyDown={(e) => {
               if (e.key === 'Escape') closeModal()
@@ -1039,17 +1084,91 @@ function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): 
       {provider !== 'url' && url && <div className="modal-hint">{url}</div>}
       {dir && name && <div className="modal-hint">{`${dir.replace(/\/+$/, '')}/${name.trim()}`}</div>}
 
-      <label className="clone-partial">
-        <input type="checkbox" checked={partial} onChange={(e) => setPartial(e.target.checked)} />
-        <span>
-          Partial clone <code>--filter=blob:none</code> — fetch file contents on demand (faster for huge repos)
-        </span>
-      </label>
+      <button className="clone-advanced-toggle" type="button" onClick={() => setAdvanced((v) => !v)}>
+        {advanced ? <ChevronDown size={13} /> : <ChevronRight size={13} />} {t('clone.advanced')}
+      </button>
+
+      {advanced && (
+        <div className="clone-advanced">
+          <label className="clone-partial">
+            <input type="checkbox" checked={partial} onChange={(e) => setPartial(e.target.checked)} />
+            <span>
+              {t('clone.partial')} <code>--filter=blob:none</code> {/* i18n-ignore git flag */}
+              <span className="modal-hint">{t('clone.partialHint')}</span>
+            </span>
+          </label>
+
+          <label className="clone-partial">
+            <input type="checkbox" checked={shallow} onChange={(e) => setShallow(e.target.checked)} />
+            <span>
+              {t('clone.shallow')}
+              <span className="modal-hint">{t('clone.shallowHint')}</span>
+            </span>
+          </label>
+          {shallow && (
+            <div className="clone-depth-row">
+              <label className="modal-label">{t('clone.depth')}</label>
+              <input
+                className="modal-input"
+                type="number"
+                min={1}
+                value={depth}
+                onChange={(e) => setDepth(e.target.value)}
+              />
+            </div>
+          )}
+
+          <label className="clone-partial">
+            <input
+              type="checkbox"
+              checked={singleBranch}
+              onChange={(e) => setSingleBranch(e.target.checked)}
+            />
+            <span>
+              {t('clone.singleBranch')}
+              <span className="modal-hint">{shallow ? t('clone.singleBranchShallowHint') : t('clone.singleBranchHint')}</span>
+            </span>
+          </label>
+
+          <label className="clone-partial">
+            <input type="checkbox" checked={submodules} onChange={(e) => setSubmodules(e.target.checked)} />
+            <span>
+              {t('clone.submodules')}
+              <span className="modal-hint">{t('clone.submodulesHint')}</span>
+            </span>
+          </label>
+
+          <label className="modal-label">{t('clone.branch')}</label>
+          <div className="repo-org-row">
+            {branches ? (
+              <select className="modal-input" value={branch} onChange={(e) => setBranch(e.target.value)}>
+                <option value="">{t('clone.branchDefault')}</option>
+                {branches.map((b) => (
+                  <option key={b} value={b}>
+                    {b}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                className="modal-input"
+                value={branch}
+                placeholder={t('clone.branchPlaceholder')}
+                onChange={(e) => setBranch(e.target.value)}
+              />
+            )}
+            <button className="btn ghost" type="button" disabled={!url.trim() || loadingBranches} onClick={() => void loadBranches()}>
+              {loadingBranches ? <Loader2 size={14} className="spin" /> : <RefreshCw size={14} />} {t('clone.listBranches')}
+            </button>
+          </div>
+          {branchesError && <div className="modal-hint">{t('clone.branchesFailed')}</div>}
+        </div>
+      )}
 
       {cloning && (
         <div className="clone-progress">
           <div className="clone-progress-head">
-            <span>{progress ? `${progress.stage}…` : 'Starting…'}</span>
+            <span>{progress ? `${progress.stage}…` : t('clone.starting')}</span>
             {progress && progress.total > 0 && (
               <span className="clone-progress-pct">{Math.round(progress.progress)}%</span>
             )}
@@ -1070,10 +1189,10 @@ function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): 
         <button className="btn primary" disabled={!valid} onClick={() => void submit()} type="button">
           {cloning ? (
             <>
-              <Loader2 size={14} className="spin" /> Cloning…
+              <Loader2 size={14} className="spin" /> {t('clone.running')}
             </>
           ) : (
-            'Clone'
+            t('clone.submit')
           )}
         </button>
       </div>

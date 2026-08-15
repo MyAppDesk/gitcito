@@ -1,6 +1,7 @@
 import { ipcMain, shell } from 'electron'
 import { simpleGit, SimpleGit } from 'simple-git'
-import { basename, join } from 'path'
+import { basename, join, resolve as resolvePath } from 'path'
+import { pathToFileURL } from 'url'
 import { readFile, writeFile, unlink, stat, chmod, mkdir, readdir, rename, cp } from 'fs/promises'
 import { tmpdir, homedir } from 'os'
 import { existsSync } from 'fs'
@@ -59,6 +60,7 @@ import type {
   ChangelogResult,
   SnapshotInfo,
   CloneProgress,
+  CloneOptions,
   RepoHost,
   MergePreviewEntry,
   MergePreviewResult,
@@ -3256,19 +3258,40 @@ export const gitService = {
     await git.addConfig('user.email', email)
   },
 
+  /** Branch names a remote advertises, for the clone dialog's branch picker.
+   *  Never touches disk — `ls-remote` is a network read with no local repo. */
+  async remoteBranches(url: string, host?: string, token?: string): Promise<string[]> {
+    const authed = authedCloneUrl(url, host, token)
+    try {
+      const { stdout } = await pexecFile('git', ['ls-remote', '--heads', authed], { env: noPromptEnv() })
+      return stdout
+        .split('\n')
+        .map((line) => line.split('\t')[1]?.replace(/^refs\/heads\//, '') ?? '')
+        .filter(Boolean)
+        .sort()
+    } catch (err) {
+      const e = err as { stderr?: string; message?: string }
+      throw new Error(redactCredentials((e.stderr || e.message || 'git ls-remote failed').trim()))
+    }
+  },
+
   async clone(
     parentDir: string,
     url: string,
     name: string,
-    host?: string,
-    token?: string,
-    filter?: string,
+    opts: CloneOptions = {},
     onProgress?: (p: CloneProgress) => void
   ): Promise<string> {
     const folder = name.trim() || basename(url).replace(/\.git$/, '') || 'repository'
     const target = join(parentDir, folder)
     if (existsSync(target)) throw new Error(`A folder named "${folder}" already exists here.`)
-    const cloneUrl = authedCloneUrl(url, host, token)
+    // `git clone --depth` is silently ignored for a local path — a local clone
+    // hardlinks the object store instead of fetching — so a shallow request on
+    // a local repository only takes effect through a file:// URL.
+    const localShallow = !!opts.depth && !/^[a-z][a-z0-9+.-]*:/i.test(url) && !url.includes('@') && existsSync(url)
+    const cloneUrl = localShallow
+      ? pathToFileURL(resolvePath(url)).href
+      : authedCloneUrl(url, opts.host, opts.token)
     // Streaming the underlying `git clone --progress` so the UI can show real progress;
     // simpleGit auto-appends --progress when a progress handler is configured.
     const git = simpleGit({
@@ -3277,9 +3300,18 @@ export const gitService = {
         ? ({ stage, progress, processed, total }) => onProgress({ stage, progress, processed, total })
         : undefined
     })
+    const args: string[] = []
     // A blob filter (e.g. "blob:none") makes this a partial clone — history without
     // file blobs, fetched on demand. Great for very large repos.
-    await git.clone(cloneUrl, folder, filter ? [`--filter=${filter}`] : undefined)
+    if (opts.filter) args.push(`--filter=${opts.filter}`)
+    // `--depth` implies --single-branch in git, so the flag pair below is not
+    // contradictory: asking for full branches back is the case worth spelling out.
+    if (opts.depth && opts.depth > 0) args.push(`--depth=${Math.floor(opts.depth)}`)
+    if (opts.singleBranch === true) args.push('--single-branch')
+    else if (opts.singleBranch === false && opts.depth) args.push('--no-single-branch')
+    if (opts.branch?.trim()) args.push('--branch', opts.branch.trim())
+    if (opts.recurseSubmodules) args.push('--recurse-submodules')
+    await git.clone(cloneUrl, folder, args.length ? args : undefined)
     // Reset the origin URL back to the token-free version so the PAT is not persisted on disk.
     if (cloneUrl !== url) {
       try {
@@ -3990,6 +4022,10 @@ function lockFor(repoPath: string): RwLock {
 // treated as a write (exclusive), so an unmapped/new method serializes rather
 // than risking a concurrent mutation. Only add a method here if it never
 // touches the index, working tree, refs, config, or hook files.
+/** Methods whose first argument is not a repository path: they run before a
+ *  repo exists locally, or against a remote URL. No lock, no repo-scoped log. */
+const APP_LEVEL_METHODS = new Set<string>(['clone', 'init', 'remoteBranches'])
+
 const READ_METHODS = new Set<string>([
   'open',
   'log',
@@ -4015,6 +4051,7 @@ const READ_METHODS = new Set<string>([
   'reflog',
   'bisectStatus',
   'getRemoteTags',
+  'remoteBranches',
   'diffFile',
   'commitFiles',
   'stashFiles',
@@ -4078,16 +4115,15 @@ export function registerGitHandlers(): void {
         }
       ]
     }
-    // First positional arg is the repo path for almost every method; clone/init
-    // operate before a repo exists locally, so they are recorded as app-level.
-    const repoPath =
-      event && typeof args[0] === 'string' && method !== 'clone' && method !== 'init' ? (args[0] as string) : ''
+    // First positional arg is the repo path for almost every method; the
+    // app-level ones take a URL or a parent folder instead.
+    const repoScoped = typeof args[0] === 'string' && !APP_LEVEL_METHODS.has(method)
+    const repoPath = event && repoScoped ? (args[0] as string) : ''
 
     // Serialize this call under the repo's read/write lock. The lock key is the
-    // repo path for every repo-scoped method (not just logged ones); clone/init
-    // run before a repo exists, so they take no lock.
-    const lockKey =
-      typeof args[0] === 'string' && method !== 'clone' && method !== 'init' ? (args[0] as string) : null
+    // repo path for every repo-scoped method (not just logged ones); the
+    // app-level ones run before (or without) a local repo, so they take no lock.
+    const lockKey = repoScoped ? (args[0] as string) : null
     const isWrite = !READ_METHODS.has(method)
     const release = lockKey ? await lockFor(lockKey).acquire(isWrite) : null
 

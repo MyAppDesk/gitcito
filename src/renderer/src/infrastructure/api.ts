@@ -560,6 +560,20 @@ export const shellApi = {
         : 'Reveal in file manager'
 }
 
+export const diffToolApi = {
+  /** Tools git knows about here, plus the currently configured choices. */
+  config: (repoPath: string) => window.api.difftool.config(repoPath),
+  set: (
+    repoPath: string,
+    values: { diffTool?: string; mergeTool?: string; keepBackup?: boolean },
+    scope: 'global' | 'repo' = 'global'
+  ) => window.api.difftool.set(repoPath, values, scope),
+  /** Resolves when the tool exits — '' on success, else git's complaint. */
+  diff: (repoPath: string, file: string, rev?: string, tool?: string) =>
+    window.api.difftool.diff(repoPath, file, rev, tool),
+  merge: (repoPath: string, file: string, tool?: string) => window.api.difftool.merge(repoPath, file, tool)
+}
+
 export const sshApi = {
   /** Keys in ~/.ssh, with whether the agent is holding each one. Public halves
    *  and fingerprints only — a private key never crosses this boundary. */

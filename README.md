@@ -79,6 +79,7 @@ Install the shim from the command palette: `⌘K` → **Install 'gitcito' comman
 | **[Commit composer](docs/help/committing.md)** | Conventional, Gitmoji, Ticket, Plain… even Caveman. Co-author picker, message recall, live linter. |
 | **[Staging](docs/help/staging.md)** | Whole files, hunks, or **individual lines**. |
 | **[Conflict resolver](docs/help/conflicts.md)** | Three panes, per-line picking, a conflict-by-conflict navigator, editable output. |
+| **[External diff & merge tools](docs/help/diff-tools.md)** | Hand a file to Kaleidoscope, Beyond Compare, Meld — read straight from git's own tool list. |
 | **[Interactive rebase](docs/help/rebase.md)** | Drag to reorder, squash, fixup, reword, edit or drop. |
 | **[Stacked branches](docs/help/stacks.md)** | Graphite-style chains with cascade restack and a PR per level. |
 | **[Git flow](docs/help/gitflow.md)** | Start and finish features, releases and hotfixes — merges, tag and cleanup in one step, undoable. |
@@ -126,7 +127,7 @@ turn it on, your AI provider. Details in [Security & secrets](docs/help/security
 
 ## The handbook
 
-**48 pages**, built into the app — the **Help** button in the status bar, or `⌘K`
+**49 pages**, built into the app — the **Help** button in the status bar, or `⌘K`
 → *Help*. It is the same Markdown you can
 [read right here in the repository](docs/help/getting-started.md), offline and
 versioned with the code.

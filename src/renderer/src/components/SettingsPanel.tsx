@@ -49,11 +49,13 @@ import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
 import { Avatar } from './Avatar'
 import { useUpdatesStore, hasPendingUpdate } from '../stores/updates'
-import { gitApi, aiApi, settingsApi, analyticsApi, logApi, infoApi, vaultApi, shellApi, hostingApi, keychainApi, editorApi, sshApi } from '../infrastructure/api'
+import { gitApi, aiApi, settingsApi, analyticsApi, logApi, infoApi, vaultApi, shellApi, hostingApi, keychainApi, editorApi, sshApi, diffToolApi } from '../infrastructure/api'
 import type { DetectedEditor, EditorSetting } from '../../../shared/editors'
 import type { SshKey, SshStatus, SshTest } from '../../../shared/sshKeys'
+import type { DiffToolConfig, DiffToolInfo } from '../../../shared/diffTools'
 import { AI_PROVIDERS, emptyAnalytics, defaultGraphStyle, type AIProvider, type Analytics, type AIUsageStat, type ActivityEvent, type RepoStats, type AppSettings, type BranchNamingStyle, type CommitStyle, type ConflictStyle, type ExplainStyle, type Profile, type SigningConfig, type SettingsBundle, type GraphStyle, type GraphPalette, type GraphEdgeStyle, type GraphDensity, type GraphLineWidth, type GraphNodeStyle, type GraphTopology, type GraphCommit, type ConnectedAccount } from '../../../shared/types'
 import { hasSettingsSecrets, stripSettingsSecrets } from '../../../shared/secrets'
+import { tabActiveRepoPath } from '../../../shared/types'
 import type { HoverModifier, KeychainConsent } from '../../../shared/types'
 import { allGraphPalettes, findGraphPalette, colorForPalette, edgePath, spurPath, DENSITY_ROW_H, LINE_WIDTH_PX, GRAPH_PALETTES } from '../graph/style'
 import { layoutGraph } from '../graph/layout'
@@ -2438,6 +2440,10 @@ function GeneralPage(): React.JSX.Element {
         </span>
       </label>
 
+      <h4 className="settings-section-title">{t('difftool.title')}</h4>
+      <p className="settings-hint">{t('difftool.intro')}</p>
+      <DiffToolCard />
+
       <h4 className="settings-section-title">{t('settings.editor')}</h4>
       <p className="settings-hint">{t('settings.editorHint')}</p>
       <EditorCard />
@@ -2472,6 +2478,85 @@ function GeneralPage(): React.JSX.Element {
       </div>
 
     </div>
+  )
+}
+
+/**
+ * Chooses `diff.tool` and `merge.tool`. The lists come from git itself, so a
+ * tool someone added by hand with `difftool.<name>.cmd` shows up here without
+ * Gitcito knowing anything about it.
+ *
+ * Needs a repository only because git config is read through one — the values
+ * are written globally, since a favourite comparison app is a property of the
+ * person, not of one checkout.
+ */
+function DiffToolCard(): React.JSX.Element {
+  const t = useT()
+  const toast = useUIStore((s) => s.toast)
+  const tabs = useSettingsStore((s) => s.settings.tabs)
+  const activeTabId = useSettingsStore((s) => s.settings.activeTabId)
+  const repoPath = useMemo(() => {
+    const tab = tabs.find((tb) => tb.id === activeTabId) ?? tabs.find((tb) => tb.kind !== 'page')
+    return tab ? tabActiveRepoPath(tab) : null
+  }, [tabs, activeTabId])
+  const [cfg, setCfg] = useState<DiffToolConfig | null>(null)
+
+  useEffect(() => {
+    if (!repoPath) return
+    void diffToolApi
+      .config(repoPath)
+      .then(setCfg)
+      .catch(() => setCfg(null))
+  }, [repoPath])
+
+  if (!repoPath) return <p className="settings-hint">{t('settings.needsRepo')}</p>
+  if (!cfg) return <p className="settings-hint">{t('common.loading')}</p>
+
+  const save = (values: { diffTool?: string; mergeTool?: string; keepBackup?: boolean }): void => {
+    setCfg({ ...cfg, ...values })
+    void diffToolApi.set(repoPath, values).catch((err) => toast('error', String(err)))
+  }
+
+  const picker = (
+    label: string,
+    value: string,
+    tools: DiffToolInfo[],
+    onPick: (id: string) => void
+  ): React.JSX.Element => (
+    <label className="settings-field">
+      <span className="settings-field-label">{label}</span>
+      <select value={value} onChange={(e) => onPick(e.target.value)}>
+        <option value="">{t('difftool.none')}</option>
+        {/* A configured tool git cannot find still has to appear, or selecting
+            the dropdown would silently change the user's config. */}
+        {value && !tools.some((tool) => tool.id === value) && <option value={value}>{value}</option>}
+        {tools.map((tool) => (
+          <option key={tool.id} value={tool.id}>
+            {tool.available ? tool.id : `${tool.id} — ${t('difftool.notInstalled')}`}
+          </option>
+        ))}
+      </select>
+    </label>
+  )
+
+  return (
+    <>
+      <div className="form-row two">
+        {picker(t('difftool.diffTool'), cfg.diffTool, cfg.diffTools, (diffTool) => save({ diffTool }))}
+        {picker(t('difftool.mergeTool'), cfg.mergeTool, cfg.mergeTools, (mergeTool) => save({ mergeTool }))}
+      </div>
+      <p className="settings-hint">{t('difftool.scopeHint')}</p>
+      <label className="settings-toggle-card">
+        <input type="checkbox" checked={cfg.keepBackup} onChange={(e) => save({ keepBackup: e.target.checked })} />
+        <span className="settings-toggle-control" aria-hidden="true">
+          <span className="settings-toggle-thumb" />
+        </span>
+        <span className="settings-toggle-copy">
+          <strong>{t('difftool.keepBackup')}</strong>
+          <span className="settings-hint">{t('difftool.keepBackupHint')}</span>
+        </span>
+      </label>
+    </>
   )
 }
 

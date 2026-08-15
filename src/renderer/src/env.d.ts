@@ -64,6 +64,16 @@ interface PreloadApi {
     openWithApp(targetPath: string, appPath: string): Promise<string>
     writeFiles(repoPath: string, files: unknown[]): Promise<void>
   }
+  difftool: {
+    config(repoPath: string): Promise<import('../../shared/diffTools').DiffToolConfig>
+    set(
+      repoPath: string,
+      values: { diffTool?: string; mergeTool?: string; keepBackup?: boolean },
+      scope: 'global' | 'repo'
+    ): Promise<void>
+    diff(repoPath: string, file: string, rev?: string, tool?: string): Promise<string>
+    merge(repoPath: string, file: string, tool?: string): Promise<string>
+  }
   ssh: {
     status(): Promise<import('../../shared/sshKeys').SshStatus>
     generate(name: string, comment: string, passphrase: string): Promise<string>

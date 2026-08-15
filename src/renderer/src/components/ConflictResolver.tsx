@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Check, ChevronDown, ChevronUp, GitMerge, Minus, Pencil, Plus, RotateCcw, Sparkles, Loader2, X } from 'lucide-react'
+import { Check, ChevronDown, ChevronUp, ExternalLink, GitMerge, Minus, Pencil, Plus, RotateCcw, Sparkles, Loader2, X } from 'lucide-react'
 import hljs from 'highlight.js'
-import { gitApi, aiApi } from '../infrastructure/api'
+import { gitApi, aiApi, diffToolApi } from '../infrastructure/api'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore, type ConflictViewState } from '../stores/ui'
 import { repoActions, useRepoStore } from '../stores/repo'
@@ -69,6 +69,8 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
   const ctx = useRepoStore((s) => s.repos[view.repoPath]?.conflictContext ?? null)
   const t = useT()
   const aiEnabled = useSettingsStore((s) => s.activeProfile().ai.enabled !== false)
+  const [mergeTool, setMergeTool] = useState('')
+  const [toolRunning, setToolRunning] = useState(false)
   const [content, setContent] = useState<string | null>(null)
   const [versions, setVersions] = useState<ConflictVersions | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -119,6 +121,33 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
     () => reconcileOutput(assembled.text, assembled.origins, editOutput),
     [editOutput, assembled]
   )
+
+  // Only offer the external tool when git has one configured — the button is
+  // meaningless otherwise, and `git mergetool` would just error.
+  useEffect(() => {
+    void diffToolApi
+      .config(repoPath)
+      .then((cfg) => setMergeTool(cfg.mergeTool))
+      .catch(() => setMergeTool(''))
+  }, [repoPath])
+
+  /** Hand the conflict to `git mergetool`. On a clean exit git stages the file
+   *  itself, so the resolver closes and the repo view refreshes. */
+  const runMergeTool = async (): Promise<void> => {
+    setToolRunning(true)
+    try {
+      const error = await diffToolApi.merge(repoPath, file)
+      if (error) {
+        toast('error', error)
+      } else {
+        toast('success', interp(t('difftool.merged'), { file }))
+        setConflictView(null)
+        await refresh(repoPath)
+      }
+    } finally {
+      setToolRunning(false)
+    }
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -378,6 +407,17 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
           {resolvedCount}/{hunks.length} {t('conflict.resolved')}
         </span>
         <div className="conflict-global-actions">
+          {mergeTool && (
+            <button
+              className="btn ghost tiny"
+              disabled={toolRunning || saving}
+              title={interp(t('difftool.mergeHint'), { tool: mergeTool })}
+              onClick={() => void runMergeTool()}
+            >
+              {toolRunning ? <Loader2 size={12} className="spin" /> : <ExternalLink size={12} />}{' '}
+              {interp(t('difftool.openMerge'), { tool: mergeTool })}
+            </button>
+          )}
           {aiEnabled && (
             <button
               className="btn ghost tiny"

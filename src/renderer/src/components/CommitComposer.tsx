@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Sparkles, Loader2, Trash2, AlignLeft, FolderTree, GitMerge, ChevronDown, CheckCheck, Users } from 'lucide-react'
 import { MYAPPDESK_COAUTHOR, type CodeSearchHit, type FileEntry, type CommitStyle } from '../../../shared/types'
-import { gitApi, aiApi, shellApi } from '../infrastructure/api'
+import { gitApi, aiApi, shellApi, diffToolApi } from '../infrastructure/api'
 import { repoActions, useRepoStore, type RepoData } from '../stores/repo'
 import { useUIStore, type MenuItem } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
@@ -197,6 +197,16 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
   const unstaged = status?.unstaged ?? []
   const conflicted = status?.conflicted ?? []
   const path = repo.path
+  // git's configured diff tool, for the per-file "Diff in <tool>" entry. Read
+  // once per repo: a context menu is built synchronously on click.
+  const [diffTool, setDiffTool] = useState('')
+  useEffect(() => {
+    void diffToolApi
+      .config(path)
+      .then((cfg) => setDiffTool(cfg.diffTool))
+      .catch(() => setDiffTool(''))
+  }, [path])
+
 
   // ─── File search / filter (path globs + content search) ───────────────────
   const [filter, setFilter] = useState<FileFilter>(EMPTY_FILTER)
@@ -489,6 +499,17 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
         editor
       ),
       { label: t('common.copyFilePath'), onClick: () => void navigator.clipboard.writeText(`${path}/${file.path}`) },
+      ...(diffTool
+        ? [
+            {
+              label: interp(t('difftool.openDiff'), { tool: diffTool }),
+              onClick: () =>
+                void diffToolApi.diff(path, file.path).then((err) => {
+                  if (err) useUIStore.getState().toast('error', err)
+                })
+            }
+          ]
+        : []),
       { separator: true },
       {
         label: t('composer.discardChanges'),

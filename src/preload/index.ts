@@ -57,6 +57,16 @@ const api = {
       ipcRenderer.invoke('shell:writeFiles', repoPath, files)
   },
 
+  difftool: {
+    config: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('difftool:config', repoPath),
+    set: (repoPath: string, values: unknown, scope: string): Promise<void> =>
+      ipcRenderer.invoke('difftool:set', repoPath, values, scope),
+    diff: (repoPath: string, file: string, rev?: string, tool?: string): Promise<string> =>
+      ipcRenderer.invoke('difftool:diff', repoPath, file, rev, tool),
+    merge: (repoPath: string, file: string, tool?: string): Promise<string> =>
+      ipcRenderer.invoke('difftool:merge', repoPath, file, tool)
+  },
+
   ssh: {
     status: (): Promise<unknown> => ipcRenderer.invoke('ssh:status'),
     generate: (name: string, comment: string, passphrase: string): Promise<string> =>

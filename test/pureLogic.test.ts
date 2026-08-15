@@ -17,6 +17,7 @@ import { parseMergeTreeSingle, parseMergeTreeStdin } from '../src/shared/mergeTr
 import { parseRangeDiff } from '../src/shared/rangeDiff'
 import { editorArgs, editorLaunch, supportsLine } from '../src/shared/editors'
 import { branchDropActions, encodeDropRef, decodeDropRef, type DropRef } from '../src/renderer/src/lib/branchDrop'
+import { parseToolHelp, sortTools } from '../src/shared/diffTools'
 import {
   parseKeygenLine,
   agentFingerprints,
@@ -3064,5 +3065,52 @@ describe('ssh key parsing', () => {
     expect(readSshTest('git@github.com: Permission denied (publickey).')).toBe('denied')
     expect(readSshTest('ssh: Could not resolve hostname github.com')).toBe('unreachable')
     expect(readSshTest('something else entirely')).toBe('unknown')
+  })
+})
+
+describe('external diff tool listing', () => {
+  // Trimmed from a real `git difftool --tool-help`.
+  const HELP = [
+    "'git difftool --tool=<tool>' may be set to one of the following:",
+    '\t\taraxis           Use Araxis Merge (requires a graphical session)',
+    '\t\topendiff         Use FileMerge (requires a graphical session)',
+    '\t\tvimdiff          Use Vim',
+    '',
+    'The following tools are valid, but not currently available:',
+    '\t\tbc               Use Beyond Compare (requires a graphical session)',
+    '\t\tmeld             Use Meld (requires a graphical session)',
+    '',
+    'Some of the tools listed above only work in a windowed',
+    'environment. If run in a terminal-only session, they will fail.'
+  ].join('\n')
+
+  it('splits the two lists git prints', () => {
+    const tools = parseToolHelp(HELP)
+    expect(tools.filter((t) => t.available).map((t) => t.id)).toEqual(['araxis', 'opendiff', 'vimdiff'])
+    expect(tools.filter((t) => !t.available).map((t) => t.id)).toEqual(['bc', 'meld'])
+  })
+
+  it('keeps git’s own description for each tool', () => {
+    expect(parseToolHelp(HELP).find((t) => t.id === 'meld')?.description).toBe(
+      'Use Meld (requires a graphical session)'
+    )
+    expect(parseToolHelp(HELP).find((t) => t.id === 'vimdiff')?.description).toBe('Use Vim')
+  })
+
+  it('ignores the headings and the closing prose', () => {
+    const ids = parseToolHelp(HELP).map((t) => t.id)
+    expect(ids).not.toContain('Some')
+    expect(ids).not.toContain('The')
+    expect(ids.every((id) => /^[\w.+-]+$/.test(id))).toBe(true)
+  })
+
+  it('survives empty or unexpected output instead of inventing tools', () => {
+    expect(parseToolHelp('')).toEqual([])
+    expect(parseToolHelp('fatal: not a git repository')).toEqual([])
+  })
+
+  it('sorts installed tools first, then alphabetically', () => {
+    const sorted = sortTools(parseToolHelp(HELP))
+    expect(sorted.map((t) => t.id)).toEqual(['araxis', 'opendiff', 'vimdiff', 'bc', 'meld'])
   })
 })

@@ -15,6 +15,10 @@ import type {
   RepoDetail,
   CiStatus,
   CloneOptions,
+  GitflowConfig,
+  GitflowKind,
+  GitflowSnapshot,
+  GitflowStatus,
   CommitBranchInfo,
   ConflictContext,
   ConflictOpKind,
@@ -199,6 +203,18 @@ export const gitApi = {
   protectedBranches: (path: string) => call<string[]>('protectedBranches', path),
   setProtectedBranches: (path: string, branches: string[]) =>
     call<void>('setProtectedBranches', path, branches),
+
+  gitflowStatus: (path: string) => call<GitflowStatus>('gitflowStatus', path),
+  gitflowInit: (path: string, config: GitflowConfig) => call<void>('gitflowInit', path, config),
+  gitflowStart: (path: string, kind: GitflowKind, name: string) =>
+    call<string>('gitflowStart', path, kind, name),
+  gitflowFinish: (
+    path: string,
+    kind: GitflowKind,
+    name: string,
+    opts?: { tag?: boolean; deleteBranch?: boolean; message?: string }
+  ) => call<GitflowSnapshot>('gitflowFinish', path, kind, name, opts),
+  gitflowUndo: (path: string, snapshot: GitflowSnapshot) => call<void>('gitflowUndo', path, snapshot),
   fileSizes: (path: string, files: string[]) =>
     call<Record<string, { size: number; binary: boolean }>>('fileSizes', path, files),
   treeStatus: (path: string) => call<Record<string, TreeStatusKind>>('treeStatus', path),

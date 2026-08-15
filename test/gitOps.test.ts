@@ -10,6 +10,15 @@ import { cloneFixture, cleanupFixtures } from './fixtures'
 // / commit). Each test works on an isolated copy of a playground repo.
 afterAll(cleanupFixtures)
 
+/** Raw git in a fixture, for assertions the service does not expose. */
+const raw = async (repo: string, args: string[]): Promise<string> => {
+  const { execFile } = await import('node:child_process')
+  const { promisify } = await import('node:util')
+  const { stdout } = await promisify(execFile)('git', ['-C', repo, ...args])
+  return stdout
+}
+const shaOf = async (repo: string, ref: string): Promise<string> => (await raw(repo, ['rev-parse', ref])).trim()
+
 describe('merge → conflict → abort', () => {
   it('detects conflicts on merge and aborts cleanly', async () => {
     const R = cloneFixture('merge-conflict')
@@ -388,5 +397,103 @@ describe('clone options (merge-conflict playground as the remote)', () => {
     const parent = parentDir()
     await gitService.clone(parent, source, 'taken')
     await expect(gitService.clone(parent, source, 'taken')).rejects.toThrow(/already exists/)
+  })
+})
+
+describe('git-flow (gitflow playground)', () => {
+  it('reads the layout the git flow CLI wrote, and spots the current flow branch', async () => {
+    const R = cloneFixture('gitflow')
+    const status = await gitService.gitflowStatus(R)
+    expect(status.initialized).toBe(true)
+    expect(status.config.main).toBe('main')
+    expect(status.config.develop).toBe('develop')
+    expect(status.config.featurePrefix).toBe('feature/')
+    expect(status.config.versionTagPrefix).toBe('v')
+    expect(status.hasMain && status.hasDevelop).toBe(true)
+    // Sitting on develop, which is not a flow branch.
+    expect(status.currentFlow).toBeNull()
+
+    await gitService.checkout(R, 'feature/search')
+    expect((await gitService.gitflowStatus(R)).currentFlow).toEqual({ kind: 'feature', name: 'search' })
+  })
+
+  it('proposes a layout, and creates develop, for a repo that has never used it', async () => {
+    const R = cloneFixture('merge-conflict')
+    const before = await gitService.gitflowStatus(R)
+    expect(before.initialized).toBe(false)
+    // The proposal matches what is already there rather than a fixed guess.
+    expect(before.config.main).toBe('main')
+    expect(before.hasDevelop).toBe(false)
+
+    await gitService.gitflowInit(R, before.config)
+    const after = await gitService.gitflowStatus(R)
+    expect(after.initialized).toBe(true)
+    expect(after.hasDevelop).toBe(true)
+  })
+
+  it('starts a feature off develop and a hotfix off main', async () => {
+    const R = cloneFixture('gitflow')
+    const feature = await gitService.gitflowStart(R, 'feature', 'login')
+    expect(feature).toBe('feature/login')
+    expect((await gitService.open(R)).current).toBe('feature/login')
+    // Branched off develop, so it starts exactly at develop's tip.
+    expect(await shaOf(R, 'feature/login')).toBe(await shaOf(R, 'develop'))
+
+    await gitService.checkout(R, 'main')
+    const hotfix = await gitService.gitflowStart(R, 'hotfix', '1.0.1')
+    expect(hotfix).toBe('hotfix/1.0.1')
+    expect(await shaOf(R, 'hotfix/1.0.1')).toBe(await shaOf(R, 'main'))
+  })
+
+  it('refuses a name that already exists, and an empty one', async () => {
+    const R = cloneFixture('gitflow')
+    await expect(gitService.gitflowStart(R, 'feature', 'search')).rejects.toThrow(/already exists/)
+    await expect(gitService.gitflowStart(R, 'feature', '  ')).rejects.toThrow()
+  })
+
+  it('finishes a feature into develop only, with a merge commit, and deletes the branch', async () => {
+    const R = cloneFixture('gitflow')
+    const mainBefore = await shaOf(R, 'main')
+    const snapshot = await gitService.gitflowFinish(R, 'feature', 'search')
+
+    expect((await gitService.open(R)).current).toBe('develop')
+    expect(await shaOf(R, 'main')).toBe(mainBefore) // main is untouched by a feature
+    expect(snapshot.tag).toBeNull()
+    // --no-ff, so the merge is visible: develop's tip has two parents.
+    const parents = (await raw(R, ['rev-list', '--parents', '-n', '1', 'develop'])).trim().split(' ')
+    expect(parents.length).toBe(3)
+    expect((await gitService.branches(R)).locals.map((b) => b.name)).not.toContain('feature/search')
+  })
+
+  it('finishes a release into main and develop, and tags it', async () => {
+    const R = cloneFixture('gitflow')
+    const snapshot = await gitService.gitflowFinish(R, 'release', '1.1.0')
+
+    expect(snapshot.tag).toBe('v1.1.0')
+    expect((await gitService.commitTags(R, await shaOf(R, 'main'))).map((t) => t.name ?? t)).toContain('v1.1.0')
+    // Both branches moved, and both contain the release commit.
+    for (const branch of ['main', 'develop']) {
+      expect(await raw(R, ['branch', '--contains', snapshot.branch.sha, branch])).toContain(branch)
+    }
+  })
+
+  it('puts every ref back when a finish is undone', async () => {
+    const R = cloneFixture('gitflow')
+    const before = { main: await shaOf(R, 'main'), develop: await shaOf(R, 'develop') }
+    const snapshot = await gitService.gitflowFinish(R, 'release', '1.1.0')
+
+    await gitService.gitflowUndo(R, snapshot)
+    expect(await shaOf(R, 'main')).toBe(before.main)
+    expect(await shaOf(R, 'develop')).toBe(before.develop)
+    expect((await gitService.branches(R)).locals.map((b) => b.name)).toContain('release/1.1.0')
+    expect((await gitService.branches(R)).tags.map((t) => t.name)).not.toContain('v1.1.0')
+  })
+
+  it('refuses to finish with a dirty working tree, changing nothing', async () => {
+    const R = cloneFixture('gitflow')
+    writeFileSync(join(R, 'app.js'), 'dirty\n')
+    const before = await shaOf(R, 'develop')
+    await expect(gitService.gitflowFinish(R, 'feature', 'search')).rejects.toThrow(/stash/)
+    expect(await shaOf(R, 'develop')).toBe(before)
   })
 })

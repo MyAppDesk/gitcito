@@ -11369,6 +11369,27 @@ mark.find-hit.active {
 .notif-action:hover { background: var(--bg-3); color: var(--text-0); }
 
 /* ─── Branch stack modal ───────────────────────────────────────────────── */
+.gitflow-modal { display: flex; flex-direction: column; min-height: 0; }
+.gitflow-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 12px;
+}
+.gitflow-field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--text-2); }
+.gitflow-field.grow { flex: 1; min-width: 0; }
+/* Section = one flow step (start / finish), boxed so the two never blur together. */
+.gitflow-section {
+  margin-top: 14px;
+  padding: 12px;
+  background: var(--bg-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+}
+.gitflow-section h4 { margin: 0 0 8px; font-size: 13px; }
+.gitflow-start-row { display: flex; align-items: flex-end; gap: 10px; }
+.gitflow-start-row .btn { flex-shrink: 0; }
+
 .stack-modal { display: flex; flex-direction: column; min-height: 0; }
 .stack-toolbar { display: flex; align-items: center; gap: 8px; margin: 12px 0; flex-wrap: wrap; }
 .stack-list { overflow-y: auto; min-height: 0; }

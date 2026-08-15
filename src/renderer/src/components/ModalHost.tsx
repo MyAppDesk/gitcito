@@ -29,6 +29,7 @@ import { PRDetailModal } from './PRDetailModal'
 import { PrPreviewModal } from './PrPreviewModal'
 import { CodeSearchModal } from './CodeSearchModal'
 import { StackModal } from './StackModal'
+import { GitflowModal } from './GitflowModal'
 import { ChangelogGenModal } from './ChangelogGenModal'
 import { SnapshotsModal } from './SnapshotsModal'
 import { SecureShareModal } from './SecureShareModal'
@@ -1570,6 +1571,7 @@ export function ModalHost(): React.JSX.Element {
             {modal.kind === 'reflog' && <ReflogModal repoPath={modal.repoPath} />}
             {modal.kind === 'code-search' && <CodeSearchModal repoPath={modal.repoPath} />}
             {modal.kind === 'stack' && <StackModal repoPath={modal.repoPath} />}
+            {modal.kind === 'gitflow' && <GitflowModal repoPath={modal.repoPath} />}
             {modal.kind === 'changelog-gen' && <ChangelogGenModal repoPath={modal.repoPath} />}
             {modal.kind === 'snapshots' && <SnapshotsModal repoPath={modal.repoPath} />}
             {modal.kind === 'secure-share' && (

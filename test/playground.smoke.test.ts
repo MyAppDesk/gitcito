@@ -62,7 +62,8 @@ const EXPECTED = [
   'semantic-diff',
   'force-push',
   'absorb',
-  'time-machine'
+  'time-machine',
+  'gitflow'
 ]
 
 describe('playground fixtures', () => {

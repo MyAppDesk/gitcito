@@ -1428,6 +1428,48 @@ export interface CloneOptions {
   recurseSubmodules?: boolean
 }
 
+/** The three git-flow branch kinds Gitcito automates. */
+export type GitflowKind = 'feature' | 'release' | 'hotfix'
+
+/**
+ * A repository's git-flow layout. Read from — and written to — the same
+ * `gitflow.*` git config keys the `git flow` CLI uses, so a repo initialised by
+ * either tool is understood by the other.
+ */
+export interface GitflowConfig {
+  /** The released branch: `gitflow.branch.master`. */
+  main: string
+  /** The integration branch: `gitflow.branch.develop`. */
+  develop: string
+  featurePrefix: string
+  releasePrefix: string
+  hotfixPrefix: string
+  /** Prepended to a release/hotfix name to form its tag, e.g. `v`. */
+  versionTagPrefix: string
+}
+
+/** What the dialog needs to know about the repository right now. */
+export interface GitflowStatus {
+  config: GitflowConfig
+  /** True when `gitflow.*` config exists — i.e. the layout is set up. */
+  initialized: boolean
+  /** Whether the configured branches actually exist locally. */
+  hasMain: boolean
+  hasDevelop: boolean
+  current: string
+  /** Set when the current branch is a flow branch: its kind and bare name. */
+  currentFlow: { kind: GitflowKind; name: string } | null
+}
+
+/** Refs as they stood before a finish, so the whole thing can be undone. */
+export interface GitflowSnapshot {
+  refs: { name: string; sha: string }[]
+  /** Tag created by the finish, if any. */
+  tag: string | null
+  /** The finished branch, recreated by an undo at this sha. */
+  branch: { name: string; sha: string }
+}
+
 /** One entry from `git reflog` — the recovery net for lost/rewound commits. */
 export interface ReflogEntry {
   sha: string

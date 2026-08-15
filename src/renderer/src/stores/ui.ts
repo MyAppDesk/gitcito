@@ -91,6 +91,7 @@ export type ModalSpec =
   | { kind: 'reflog'; repoPath: string }
   | { kind: 'code-search'; repoPath: string }
   | { kind: 'stack'; repoPath: string }
+  | { kind: 'gitflow'; repoPath: string }
   | { kind: 'changelog-gen'; repoPath: string }
   | { kind: 'snapshots'; repoPath: string }
   | { kind: 'stash-partial'; repoPath: string }

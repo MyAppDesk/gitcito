@@ -81,6 +81,7 @@ Install the shim from the command palette: `⌘K` → **Install 'gitcito' comman
 | **[Conflict resolver](docs/help/conflicts.md)** | Three panes, per-line picking, a conflict-by-conflict navigator, editable output. |
 | **[Interactive rebase](docs/help/rebase.md)** | Drag to reorder, squash, fixup, reword, edit or drop. |
 | **[Stacked branches](docs/help/stacks.md)** | Graphite-style chains with cascade restack and a PR per level. |
+| **[Git flow](docs/help/gitflow.md)** | Start and finish features, releases and hotfixes — merges, tag and cleanup in one step, undoable. |
 | **[Recovery](docs/help/recovery.md)** | Reflog, WIP snapshots under `refs/gitcito/wip`, guided bisect. |
 
 ### Many repositories, and your hosts
@@ -124,7 +125,7 @@ turn it on, your AI provider. Details in [Security & secrets](docs/help/security
 
 ## The handbook
 
-**44 pages**, built into the app — the **Help** button in the status bar, or `⌘K`
+**47 pages**, built into the app — the **Help** button in the status bar, or `⌘K`
 → *Help*. It is the same Markdown you can
 [read right here in the repository](docs/help/getting-started.md), offline and
 versioned with the code.

@@ -39,7 +39,8 @@ import {
   Clock,
   Film,
   Gauge,
-  SquarePen
+  SquarePen,
+  GitMerge
 } from 'lucide-react'
 import { useUIStore } from '../stores/ui'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
@@ -217,6 +218,7 @@ export function CommandPalette(): React.JSX.Element {
           ? [{ id: 'create-issue', title: t('cmd.createIssue'), group: 'Actions', keywords: 'github issue new bug report', icon: <CircleDot size={15} />, run: act(() => ui.openModal({ kind: 'create-issue', repoPath: path, remoteUrl: origin.url })) } as Command]
           : []
       })(),
+      { id: 'gitflow', title: t('cmd.gitflow'), group: 'Actions', keywords: 'git flow feature release hotfix develop branch prefix start finish', icon: <GitMerge size={15} />, run: act(() => ui.openModal({ kind: 'gitflow', repoPath: path })) },
       { id: 'stack', title: t('cmd.stack'), group: 'Actions', keywords: 'stacked branches graphite restack dependent', icon: <Layers size={15} />, run: act(() => ui.openModal({ kind: 'stack', repoPath: path })) },
       { id: 'help', title: t('help.open'), group: 'Actions', keywords: 'help handbook docs manual guide wiki how to learn', icon: <LifeBuoy size={15} />, run: act(() => useSettingsStore.getState().openPageTab({ type: 'help' })) },
       { id: 'mission-control', title: t('mission.open'), group: 'Actions', keywords: 'mission control dashboard all repos overview status dirty unpushed behind', icon: <Gauge size={15} />, run: act(() => ui.setMissionOpen(true)) },

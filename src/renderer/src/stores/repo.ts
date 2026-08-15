@@ -20,7 +20,10 @@ import type {
   TreeStatusKind,
   FsDropMode,
   MergePreviewResult,
-  ForcedRefUpdate
+  ForcedRefUpdate,
+  GitflowConfig,
+  GitflowKind,
+  GitflowSnapshot
 } from '../../../shared/types'
 import { gitApi, hostingApi } from '../infrastructure/api'
 import { useUIStore } from './ui'
@@ -741,6 +744,56 @@ export const repoActions = {
     useRepoStore
       .getState()
       .run(path, interp(t('act.deletedRemoteBranch'), { remote, name }), () => gitApi.deleteRemoteBranch(path, remote, name)),
+
+  // ─── git-flow ───
+  gitflowStart: (path: string, kind: GitflowKind, name: string) => {
+    const prev = useRepoStore.getState().repos[path]?.branches.current
+    let created = ''
+    return useRepoStore.getState().run(
+      path,
+      interp(t('act.gitflowStarted'), { kind, name }),
+      async () => {
+        created = await gitApi.gitflowStart(path, kind, name)
+      },
+      {
+        label: interp(t('undoLabel.gitflowStart'), { name }),
+        undo: async () => {
+          await gitApi.checkout(path, prev ?? '-')
+          await gitApi.deleteBranch(path, created, true)
+        },
+        redo: async () => {
+          created = await gitApi.gitflowStart(path, kind, name)
+        }
+      }
+    )
+  },
+
+  /** Finishing moves two branches and may create a tag, so the undo entry
+   *  replays the whole snapshot rather than reversing one command. */
+  gitflowFinish: (path: string, kind: GitflowKind, name: string, opts?: { tag?: boolean; message?: string }) => {
+    let snapshot: GitflowSnapshot | null = null
+    return useRepoStore.getState().run(
+      path,
+      interp(t('act.gitflowFinished'), { kind, name }),
+      async () => {
+        snapshot = await gitApi.gitflowFinish(path, kind, name, opts)
+      },
+      {
+        label: interp(t('undoLabel.gitflowFinish'), { name }),
+        undo: async () => {
+          if (snapshot) await gitApi.gitflowUndo(path, snapshot)
+        },
+        redo: async () => {
+          snapshot = await gitApi.gitflowFinish(path, kind, name, opts)
+        }
+      }
+    )
+  },
+
+  gitflowInit: (path: string, config: GitflowConfig) =>
+    useRepoStore
+      .getState()
+      .run(path, t('act.gitflowInitialized'), () => gitApi.gitflowInit(path, config)),
 
   // ─── Stacked branches ───
   // Create a new branch on top of the current one and record the dependency.

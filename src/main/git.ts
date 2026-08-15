@@ -61,6 +61,10 @@ import type {
   SnapshotInfo,
   CloneProgress,
   CloneOptions,
+  GitflowConfig,
+  GitflowKind,
+  GitflowStatus,
+  GitflowSnapshot,
   RepoHost,
   MergePreviewEntry,
   MergePreviewResult,
@@ -116,6 +120,8 @@ const EVENT_FOR_METHOD: Record<string, ActivityEvent> = {
   fetchRemote: 'fetch',
   amendCommitMessage: 'amend',
   createBranch: 'branchCreate',
+  gitflowStart: 'branchCreate',
+  gitflowFinish: 'merge',
   deleteBranch: 'branchDelete',
   deleteRemoteBranch: 'branchDelete',
   merge: 'merge',
@@ -276,6 +282,19 @@ async function withAutoStash<T>(
   const result = await op() // if this throws, the named stash is left for recovery
   await git.stash(['pop']) // a pop conflict throws; git keeps the stash regardless
   return result
+}
+
+/** The configured branch prefix for a git-flow kind. */
+function prefixFor(config: GitflowConfig, kind: GitflowKind): string {
+  return kind === 'feature' ? config.featurePrefix : kind === 'release' ? config.releasePrefix : config.hotfixPrefix
+}
+
+/** Local branch names, short form. */
+async function localBranches(repoPath: string): Promise<string[]> {
+  const raw = await gitFor(repoPath)
+    .raw(['for-each-ref', '--format=%(refname:short)', 'refs/heads'])
+    .catch(() => '')
+  return raw.split('\n').map((l) => l.trim()).filter(Boolean)
 }
 
 /** Inject credentials into an https clone URL so private integration repos can be cloned non-interactively. */
@@ -2117,6 +2136,169 @@ export const gitService = {
   async setProtectedBranches(repoPath: string, branches: string[]): Promise<void> {
     const value = branches.map((b) => b.trim()).filter(Boolean).join(',')
     await gitFor(repoPath).raw(['config', 'gitcito.protectedbranches', value])
+  },
+
+  // ─── git-flow ────────────────────────────────────────────────────────────
+  // Stored under the same `gitflow.*` keys the `git flow` CLI writes, so a repo
+  // set up by either tool reads correctly in the other. Gitcito runs plain git
+  // commands throughout — the CLI is never required to be installed.
+
+  async gitflowStatus(repoPath: string): Promise<GitflowStatus> {
+    const git = gitFor(repoPath)
+    const read = async (key: string): Promise<string | null> =>
+      (await git.raw(['config', '--get', key]).catch(() => null))?.trim() || null
+
+    const [master, develop, feature, release, hotfix, versionTag] = await Promise.all([
+      read('gitflow.branch.master'),
+      read('gitflow.branch.develop'),
+      read('gitflow.prefix.feature'),
+      read('gitflow.prefix.release'),
+      read('gitflow.prefix.hotfix'),
+      read('gitflow.prefix.versiontag')
+    ])
+
+    const locals = (await git.raw(['for-each-ref', '--format=%(refname:short)', 'refs/heads']).catch(() => ''))
+      .split('\n')
+      .map((l) => l.trim())
+      .filter(Boolean)
+
+    // Nothing configured yet: propose a layout that matches what is already
+    // there rather than one the user then has to correct.
+    const config: GitflowConfig = {
+      main: master ?? (locals.includes('main') ? 'main' : locals.includes('master') ? 'master' : 'main'),
+      develop: develop ?? 'develop',
+      featurePrefix: feature ?? 'feature/',
+      releasePrefix: release ?? 'release/',
+      hotfixPrefix: hotfix ?? 'hotfix/',
+      versionTagPrefix: versionTag ?? 'v'
+    }
+
+    const current = (await git.raw(['rev-parse', '--abbrev-ref', 'HEAD']).catch(() => '')).trim()
+    const match = (['feature', 'release', 'hotfix'] as GitflowKind[])
+      .map((kind) => ({ kind, prefix: prefixFor(config, kind) }))
+      .find(({ prefix }) => prefix && current.startsWith(prefix))
+
+    return {
+      config,
+      initialized: !!master && !!develop,
+      hasMain: locals.includes(config.main),
+      hasDevelop: locals.includes(config.develop),
+      current,
+      currentFlow: match ? { kind: match.kind, name: current.slice(match.prefix.length) } : null
+    }
+  },
+
+  /** Write the layout and create the develop branch if it does not exist yet. */
+  async gitflowInit(repoPath: string, config: GitflowConfig): Promise<void> {
+    const git = gitFor(repoPath)
+    const entries: [string, string][] = [
+      ['gitflow.branch.master', config.main],
+      ['gitflow.branch.develop', config.develop],
+      ['gitflow.prefix.feature', config.featurePrefix],
+      ['gitflow.prefix.release', config.releasePrefix],
+      ['gitflow.prefix.hotfix', config.hotfixPrefix],
+      ['gitflow.prefix.versiontag', config.versionTagPrefix]
+    ]
+    for (const [key, value] of entries) await git.raw(['config', key, value])
+
+    const locals = await localBranches(repoPath)
+    if (!locals.includes(config.main)) throw new Error(`Branch "${config.main}" does not exist.`)
+    // develop is the one branch this can reasonably create: it starts at main.
+    if (!locals.includes(config.develop)) await git.raw(['branch', config.develop, config.main])
+  },
+
+  /** Branch off the right base and check the new branch out. Returns its name. */
+  async gitflowStart(repoPath: string, kind: GitflowKind, name: string): Promise<string> {
+    const status = await gitService.gitflowStatus(repoPath)
+    const branch = prefixFor(status.config, kind) + name.trim()
+    if (!name.trim()) throw new Error('A name is required.')
+    // Features integrate through develop; releases and hotfixes ship from main.
+    const base = kind === 'hotfix' ? status.config.main : status.config.develop
+    const locals = await localBranches(repoPath)
+    if (locals.includes(branch)) throw new Error(`Branch "${branch}" already exists.`)
+    if (!locals.includes(base)) throw new Error(`Branch "${base}" does not exist.`)
+    await runGit(repoPath, ['checkout', '-b', branch, base])
+    return branch
+  },
+
+  /**
+   * Close a flow branch: merge it where it belongs, tag a release/hotfix, and
+   * delete the branch. Returns the refs as they were, so `gitflowUndo` can put
+   * everything back — a merge conflict aborts and leaves nothing behind.
+   */
+  async gitflowFinish(
+    repoPath: string,
+    kind: GitflowKind,
+    name: string,
+    opts: { tag?: boolean; deleteBranch?: boolean; message?: string } = {}
+  ): Promise<GitflowSnapshot> {
+    const git = gitFor(repoPath)
+    const status = await gitService.gitflowStatus(repoPath)
+    const branch = prefixFor(status.config, kind) + name.trim()
+    const { main, develop } = status.config
+
+    const dirty = (await git.status()).files.length > 0
+    if (dirty) throw new Error('Commit or stash your changes before finishing a branch.')
+
+    const locals = await localBranches(repoPath)
+    if (!locals.includes(branch)) throw new Error(`Branch "${branch}" does not exist.`)
+
+    // Features land on develop only; releases and hotfixes land on main first,
+    // are tagged there, and are then merged back so develop keeps the fixes.
+    const targets = kind === 'feature' ? [develop] : [main, develop]
+    for (const target of targets) {
+      if (!locals.includes(target)) throw new Error(`Branch "${target}" does not exist.`)
+    }
+
+    const shaOf = async (ref: string): Promise<string> => (await git.raw(['rev-parse', ref])).trim()
+    const snapshot: GitflowSnapshot = {
+      refs: await Promise.all(targets.map(async (name) => ({ name, sha: await shaOf(name) }))),
+      tag: null,
+      branch: { name: branch, sha: await shaOf(branch) }
+    }
+    const tagName = opts.tag !== false && kind !== 'feature' ? status.config.versionTagPrefix + name.trim() : null
+
+    try {
+      for (const target of targets) {
+        await runGit(repoPath, ['checkout', target])
+        // --no-ff keeps the branch visible in the graph, which is the whole
+        // point of the layout: you can see where a feature began and ended.
+        await runGit(repoPath, ['merge', '--no-ff', '-m', `Merge branch '${branch}' into ${target}`, branch])
+        if (tagName && target === main) {
+          await runGit(repoPath, ['tag', '-a', tagName, '-m', opts.message?.trim() || `Release ${name.trim()}`])
+          snapshot.tag = tagName
+        }
+      }
+      if (opts.deleteBranch !== false) await runGit(repoPath, ['branch', '-d', branch])
+    } catch (err) {
+      // A conflicted merge would strand the repo mid-flow. Roll every ref back
+      // to where it started and hand the error on untouched.
+      await gitService.gitflowUndo(repoPath, snapshot).catch(() => {
+        /* the original failure is the one worth reporting */
+      })
+      throw err
+    }
+
+    // End where the work continues: develop for a feature or release, main for
+    // a hotfix that has just shipped.
+    await runGit(repoPath, ['checkout', kind === 'hotfix' ? main : develop])
+    return snapshot
+  },
+
+  /** Put every ref a finish moved back where it was, drop the tag, restore the branch. */
+  async gitflowUndo(repoPath: string, snapshot: GitflowSnapshot): Promise<void> {
+    const git = gitFor(repoPath)
+    // Move off anything about to be rewound so the reset below cannot fail.
+    await runGit(repoPath, ['checkout', '--detach']).catch(() => undefined)
+    for (const ref of snapshot.refs) {
+      await git.raw(['update-ref', `refs/heads/${ref.name}`, ref.sha])
+    }
+    if (snapshot.tag) await git.raw(['tag', '-d', snapshot.tag]).catch(() => undefined)
+    const locals = await localBranches(repoPath)
+    if (!locals.includes(snapshot.branch.name)) {
+      await git.raw(['branch', snapshot.branch.name, snapshot.branch.sha])
+    }
+    await runGit(repoPath, ['checkout', snapshot.branch.name])
   },
 
   /** Tracked files only (in the index) — for the push-time secret guard. */
@@ -4052,6 +4234,7 @@ const READ_METHODS = new Set<string>([
   'bisectStatus',
   'getRemoteTags',
   'remoteBranches',
+  'gitflowStatus',
   'diffFile',
   'commitFiles',
   'stashFiles',

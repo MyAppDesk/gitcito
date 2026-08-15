@@ -66,6 +66,7 @@ import type {
   GitflowStatus,
   GitflowSnapshot,
   PushRemoteResult,
+  RerereStatus,
   SubtreeInfo,
   HistoryPathEntry,
   HistoryPurgePreview,
@@ -330,6 +331,36 @@ async function runSubtree(repoPath: string, args: string[]): Promise<string> {
     if (/is not a git command|subtree.*not found/i.test(message)) {
       throw new Error("This git installation has no `git subtree` — it ships as a contrib script and is missing here.")
     }
+    throw err
+  }
+}
+
+/**
+ * Files git resolved from a memorised resolution during the operation that is
+ * currently conflicted, per repository.
+ *
+ * Git only says so once — "Resolved 'x' using previous resolution." on the
+ * output of the merge/rebase that hit the conflict — and nothing in the
+ * repository records it afterwards. Deriving it from `rerere status`/`remaining`
+ * later does not work: after a replay the file is absent from both, and so is a
+ * conflict rerere never understood. So it is captured when it is said.
+ *
+ * Session state on purpose: if Gitcito restarts mid-conflict the hint is simply
+ * gone, which is better than showing a guess.
+ */
+const rerereReplayed = new Map<string, string[]>()
+
+const RESOLVED_LINE = /Resolved '(.+?)' using previous resolution/g
+
+/** Run an operation that may conflict, noting any rerere replays it announces. */
+async function withRerereCapture<T>(repoPath: string, op: () => Promise<T>): Promise<T> {
+  try {
+    return await op()
+  } catch (err) {
+    const output = err instanceof Error ? err.message : String(err)
+    const files: string[] = []
+    for (const match of output.matchAll(RESOLVED_LINE)) files.push(match[1])
+    if (files.length) rerereReplayed.set(repoPath, files)
     throw err
   }
 }
@@ -1826,28 +1857,30 @@ export const gitService = {
   },
 
   async merge(repoPath: string, ref: string, noFf = false): Promise<void> {
-    await withAutoStash(repoPath, `merge ${ref}`, () =>
-      gitFor(repoPath).merge([...(noFf ? ['--no-ff'] : []), ref])
+    await withRerereCapture(repoPath, () =>
+      withAutoStash(repoPath, `merge ${ref}`, () => gitFor(repoPath).merge([...(noFf ? ['--no-ff'] : []), ref]))
     )
   },
 
   async mergeInto(repoPath: string, source: string, target: string, noFf = false): Promise<void> {
     const git = gitFor(repoPath)
-    await withAutoStash(repoPath, `merge ${source} into ${target}`, async () => {
-      await git.checkout(target)
-      await git.merge([...(noFf ? ['--no-ff'] : []), source])
-    })
+    await withRerereCapture(repoPath, () =>
+      withAutoStash(repoPath, `merge ${source} into ${target}`, async () => {
+        await git.checkout(target)
+        await git.merge([...(noFf ? ['--no-ff'] : []), source])
+      })
+    )
   },
 
   async rebase(repoPath: string, onto: string): Promise<void> {
-    await gitFor(repoPath).rebase([onto])
+    await withRerereCapture(repoPath, () => gitFor(repoPath).rebase([onto]))
   },
 
   /** Check out `branch` then rebase it onto `onto` (for the drag-to-rebase gesture). */
   async rebaseOnto(repoPath: string, branch: string, onto: string): Promise<void> {
     const git = gitFor(repoPath)
     await git.checkout(branch)
-    await git.rebase([onto])
+    await withRerereCapture(repoPath, () => git.rebase([onto]))
   },
 
   async rebaseAbort(repoPath: string): Promise<void> {
@@ -1920,8 +1953,8 @@ export const gitService = {
     const args = ['pull']
     if (mode === 'ff-only') args.push('--ff-only')
     if (mode === 'rebase') args.push('--rebase')
-    await withAutoStash(repoPath, 'pull', () =>
-      withRemoteAuth(repoPath, remote, () => runGit(repoPath, args))
+    await withRerereCapture(repoPath, () =>
+      withAutoStash(repoPath, 'pull', () => withRemoteAuth(repoPath, remote, () => runGit(repoPath, args)))
     )
   },
 
@@ -2261,6 +2294,90 @@ export const gitService = {
   async setProtectedBranches(repoPath: string, branches: string[]): Promise<void> {
     const value = branches.map((b) => b.trim()).filter(Boolean).join(',')
     await gitFor(repoPath).raw(['config', 'gitcito.protectedbranches', value])
+  },
+
+  // ─── rerere ──────────────────────────────────────────────────────────────
+  // "reuse recorded resolution": git memorises how you resolved a conflict and
+  // replays it the next time the same one appears. The payoff is a long-lived
+  // branch rebased repeatedly through the same collision — you resolve it once.
+
+  async rerereStatus(repoPath: string): Promise<RerereStatus> {
+    const git = gitFor(repoPath)
+    const read = async (key: string, scope?: string[]): Promise<string> =>
+      (await git.raw(['config', ...(scope ?? []), '--get', key]).catch(() => '')).trim()
+
+    const enabled = await read('rerere.enabled')
+    const local = await read('rerere.enabled', ['--local'])
+
+    // `.git/rr-cache` holds one directory per memorised conflict.
+    const gitDir = (await git.raw(['rev-parse', '--git-dir']).catch(() => '.git')).trim()
+    const cache = resolvePath(repoPath, gitDir, 'rr-cache')
+    let recorded = 0
+    try {
+      const { readdirSync } = await import('fs')
+      recorded = readdirSync(cache).filter((name) => !name.startsWith('.')).length
+    } catch {
+      /* no cache yet — nothing memorised */
+    }
+
+    // Only what git itself announced during the operation still in progress. A
+    // file the *user* resolved without staging also has no markers and is also
+    // still unmerged, so content alone cannot tell the two apart.
+    const conflicted = new Set(
+      (await git.raw(['diff', '--name-only', '--diff-filter=U']).catch(() => ''))
+        .split('\n')
+        .map((l) => l.trim())
+        .filter(Boolean)
+    )
+    if (!conflicted.size) rerereReplayed.delete(repoPath)
+    const replayed = (rerereReplayed.get(repoPath) ?? []).filter((file) => conflicted.has(file))
+
+    return {
+      enabled: enabled === 'true',
+      autoUpdate: (await read('rerere.autoUpdate')) === 'true',
+      perRepo: !!local,
+      recorded,
+      replayed
+    }
+  },
+
+  /**
+   * Turn the memory on or off. Written globally by default — someone who wants
+   * git to remember their resolutions wants that everywhere, and it is the same
+   * `rerere.enabled` their command line reads.
+   */
+  async setRerere(
+    repoPath: string,
+    values: { enabled?: boolean; autoUpdate?: boolean },
+    scope: 'global' | 'repo' = 'global'
+  ): Promise<void> {
+    const where = scope === 'global' ? ['--global'] : ['--local']
+    const git = gitFor(repoPath)
+    if (values.enabled !== undefined) await git.raw(['config', ...where, 'rerere.enabled', String(values.enabled)])
+    if (values.autoUpdate !== undefined) {
+      await git.raw(['config', ...where, 'rerere.autoUpdate', String(values.autoUpdate)])
+    }
+  },
+
+  /**
+   * Drop the memorised resolution for one file and bring its conflict back.
+   *
+   * `git rerere forget` alone only stops the replay happening *next* time — it
+   * leaves the already-written file as it is, which is not what someone asking
+   * for the conflict back means. `checkout --merge` rebuilds the markers from
+   * the index stages, which are still there.
+   */
+  async rerereForget(repoPath: string, file: string): Promise<void> {
+    await runGit(repoPath, ['rerere', 'forget', '--', file])
+    await runGit(repoPath, ['checkout', '--merge', '--', file]).catch(() => undefined)
+  },
+
+  /** Empty the whole memory. Files and history are untouched. */
+  async rerereClear(repoPath: string): Promise<void> {
+    const git = gitFor(repoPath)
+    const gitDir = (await git.raw(['rev-parse', '--git-dir'])).trim()
+    const { rm } = await import('fs/promises')
+    await rm(resolvePath(repoPath, gitDir, 'rr-cache'), { recursive: true, force: true })
   },
 
   // ─── Subtrees ────────────────────────────────────────────────────────────
@@ -3226,7 +3343,7 @@ export const gitService = {
     const args = ['cherry-pick']
     if (noCommit) args.push('-n')
     args.push(hash)
-    await gitFor(repoPath).raw(args)
+    await withRerereCapture(repoPath, () => gitFor(repoPath).raw(args))
   },
 
   // Cherry-pick several commits in one go. Hashes are applied in the given
@@ -3236,7 +3353,7 @@ export const gitService = {
     const args = ['cherry-pick']
     if (noCommit) args.push('-n')
     args.push(...hashes)
-    await gitFor(repoPath).raw(args)
+    await withRerereCapture(repoPath, () => gitFor(repoPath).raw(args))
   },
 
   async revertCommit(repoPath: string, hash: string): Promise<void> {
@@ -4763,6 +4880,7 @@ const READ_METHODS = new Set<string>([
   'getRemoteTags',
   'remoteBranches',
   'gitflowStatus',
+  'rerereStatus',
   'subtrees',
   'note',
   'notedCommits',

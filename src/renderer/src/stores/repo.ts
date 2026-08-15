@@ -761,6 +761,32 @@ function runResolveDivergedCheckout(
   })
 }
 
+/** True when the repository really is mid-merge/rebase/cherry-pick right now. */
+async function stillInProgress(path: string): Promise<boolean> {
+  const state = await gitApi.conflictContext(path).catch(() => null)
+  if (state?.kind) return true
+  // Nothing in progress: the banner was stale. Clear it quietly.
+  toast('info', t('conflict.alreadyDone'))
+  await useRepoStore.getState().refresh(path)
+  return false
+}
+
+/**
+ * An error handler for the two banner actions: git complaining that there is
+ * nothing in progress means the operation finished between the check and the
+ * command, which is not worth a red toast.
+ */
+function isNoOpConflictError(path: string): (message: string) => boolean {
+  return (message: string) => {
+    if (!/no (merge|cherry-pick|revert|rebase) in progress|MERGE_HEAD missing|not currently on any branch/i.test(message)) {
+      return false
+    }
+    toast('info', t('conflict.alreadyDone'))
+    void useRepoStore.getState().refresh(path)
+    return true
+  }
+}
+
 export const repoActions = {
   // Refreshes every slice on purpose: moving HEAD rewrites the `HEAD -> …`
   // decoration the graph reads off each commit, plus the per-directory tree
@@ -1351,11 +1377,28 @@ export const repoActions = {
     })
   },
 
-  conflictContinue: (path: string, kind: ConflictOpKind) =>
-    useRepoStore.getState().run(path, interp(t('act.continued'), { kind }), () => gitApi.conflictOpContinue(path, kind)),
+  /**
+   * Finish or abandon the operation the banner is showing.
+   *
+   * The banner is drawn from state read at the last refresh, and the repository
+   * can move underneath it — the merge committed from the composer, or finished
+   * in a terminal. Git then answers "there is no merge in progress", which is
+   * true but reads as a failure. Both actions therefore re-check first, and
+   * treat "already over" as the banner being stale rather than as an error.
+   */
+  conflictContinue: async (path: string, kind: ConflictOpKind) => {
+    if (!(await stillInProgress(path))) return false
+    return useRepoStore
+      .getState()
+      .run(path, interp(t('act.continued'), { kind }), () => gitApi.conflictOpContinue(path, kind), undefined, null, isNoOpConflictError(path))
+  },
 
-  conflictAbort: (path: string, kind: ConflictOpKind) =>
-    useRepoStore.getState().run(path, interp(t('act.aborted'), { kind }), () => gitApi.conflictOpAbort(path, kind)),
+  conflictAbort: async (path: string, kind: ConflictOpKind) => {
+    if (!(await stillInProgress(path))) return false
+    return useRepoStore
+      .getState()
+      .run(path, interp(t('act.aborted'), { kind }), () => gitApi.conflictOpAbort(path, kind), undefined, null, isNoOpConflictError(path))
+  },
 
   conflictTakeSide: (path: string, file: string, side: ConflictSide) => {
     const verb =

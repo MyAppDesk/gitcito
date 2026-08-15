@@ -181,12 +181,6 @@ function ConflictBanner({ repo }: { repo: RepoData }): React.JSX.Element | null 
   const select = useRepoStore((s) => s.select)
   if (!repo.mergeState) return null
   const conflicted = repo.status?.conflicted ?? []
-  const labels: Record<string, string> = {
-    merge: 'Merge',
-    'cherry-pick': 'Cherry-pick',
-    rebase: 'Rebase',
-    revert: 'Revert'
-  }
   const verbs: Record<ConflictOpKind, string> = {
     merge: t('conflict.opMerge'),
     'cherry-pick': t('conflict.opCherryPick'),
@@ -205,11 +199,11 @@ function ConflictBanner({ repo }: { repo: RepoData }): React.JSX.Element | null 
             <span className="conflict-ref tgt">{ctx.target}</span>
           </strong>
         ) : (
-          <strong>{labels[repo.mergeState]} in progress</strong>
+          <strong>{interp(t('conflict.inProgress'), { kind: verbs[repo.mergeState] })}</strong>
         )}
         {conflicted.length > 0
-          ? ` — ${conflicted.length} conflicted file${conflicted.length === 1 ? '' : 's'} to resolve`
-          : ' — all conflicts resolved'}
+          ? ` — ${interp(t('conflict.toResolve'), { n: String(conflicted.length) })}`
+          : ` — ${interp(t('conflict.readyToContinue'), { kind: verbs[repo.mergeState] })}`}
       </span>
       <div className="conflict-banner-actions">
         <button
@@ -220,21 +214,21 @@ function ConflictBanner({ repo }: { repo: RepoData }): React.JSX.Element | null 
             if (conflicted[0]) setConflictView({ repoPath: repo.path, file: conflicted[0].path })
           }}
         >
-          Resolve files
+          {t('conflict.resolveFiles')}
         </button>
         <button
           className="btn primary small"
           disabled={conflicted.length > 0}
-          title={conflicted.length > 0 ? 'Resolve all conflicts first' : `Continue the ${repo.mergeState}`}
+          title={conflicted.length > 0 ? t('conflict.resolveFirst') : interp(t('conflict.continueTitle'), { kind: verbs[repo.mergeState] })}
           onClick={() => void repoActions.conflictContinue(repo.path, repo.mergeState!)}
         >
-          Continue
+          {t('conflict.continue')}
         </button>
         <button
           className="btn danger small"
           onClick={() => void repoActions.conflictAbort(repo.path, repo.mergeState!)}
         >
-          Abort
+          {t('conflict.abort')}
         </button>
       </div>
     </div>

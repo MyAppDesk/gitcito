@@ -16,6 +16,10 @@ new_repo() {
   # Deterministic so re-runs produce identical history (helps future e2e).
   git -C "$dir" config commit.gpgsign false
   git -C "$dir" config core.autocrlf false
+  # The machine's global config must not change what a scenario builds. rerere
+  # in particular rewrites conflicted files during a scenario's own merges, so a
+  # developer with it enabled would generate different fixtures from everyone else.
+  git -C "$dir" config rerere.enabled false
 }
 
 # Commit as a specific author. Usage:

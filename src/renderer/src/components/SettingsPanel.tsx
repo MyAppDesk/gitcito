@@ -53,6 +53,7 @@ import { gitApi, aiApi, settingsApi, analyticsApi, logApi, infoApi, vaultApi, sh
 import type { DetectedEditor, EditorSetting } from '../../../shared/editors'
 import type { SshKey, SshStatus, SshTest } from '../../../shared/sshKeys'
 import type { DiffToolConfig, DiffToolInfo } from '../../../shared/diffTools'
+import type { RerereStatus } from '../../../shared/types'
 import { AI_PROVIDERS, emptyAnalytics, defaultGraphStyle, type AIProvider, type Analytics, type AIUsageStat, type ActivityEvent, type RepoStats, type AppSettings, type BranchNamingStyle, type CommitStyle, type ConflictStyle, type ExplainStyle, type Profile, type SigningConfig, type SettingsBundle, type GraphStyle, type GraphPalette, type GraphEdgeStyle, type GraphDensity, type GraphLineWidth, type GraphNodeStyle, type GraphTopology, type GraphCommit, type ConnectedAccount } from '../../../shared/types'
 import { hasSettingsSecrets, stripSettingsSecrets } from '../../../shared/secrets'
 import { tabActiveRepoPath } from '../../../shared/types'
@@ -2440,6 +2441,10 @@ function GeneralPage(): React.JSX.Element {
         </span>
       </label>
 
+      <h4 className="settings-section-title">{t('rerere.title')}</h4>
+      <p className="settings-hint">{t('rerere.intro')}</p>
+      <RerereCard />
+
       <h4 className="settings-section-title">{t('difftool.title')}</h4>
       <p className="settings-hint">{t('difftool.intro')}</p>
       <DiffToolCard />
@@ -2478,6 +2483,90 @@ function GeneralPage(): React.JSX.Element {
       </div>
 
     </div>
+  )
+}
+
+/**
+ * The `rerere.*` switches. Like the diff tool, these are git's own config keys,
+ * written globally — someone who wants git to remember their resolutions wants
+ * that in the terminal too.
+ */
+function RerereCard(): React.JSX.Element {
+  const t = useT()
+  const toast = useUIStore((s) => s.toast)
+  const tabs = useSettingsStore((s) => s.settings.tabs)
+  const activeTabId = useSettingsStore((s) => s.settings.activeTabId)
+  const repoPath = useMemo(() => {
+    const tab = tabs.find((tb) => tb.id === activeTabId) ?? tabs.find((tb) => tb.kind !== 'page')
+    return tab ? tabActiveRepoPath(tab) : null
+  }, [tabs, activeTabId])
+  const [status, setStatus] = useState<RerereStatus | null>(null)
+
+  const reload = useCallback(async (): Promise<void> => {
+    if (!repoPath) return
+    setStatus(await gitApi.rerereStatus(repoPath).catch(() => null))
+  }, [repoPath])
+  useEffect(() => {
+    void reload()
+  }, [reload])
+
+  if (!repoPath) return <p className="settings-hint">{t('settings.needsRepo')}</p>
+  if (!status) return <p className="settings-hint">{t('common.loading')}</p>
+
+  const save = (values: { enabled?: boolean; autoUpdate?: boolean }): void => {
+    setStatus({ ...status, ...values })
+    void gitApi
+      .setRerere(repoPath, values)
+      .then(reload)
+      .catch((err) => toast('error', String(err)))
+  }
+
+  return (
+    <>
+      <label className="settings-toggle-card">
+        <input type="checkbox" checked={status.enabled} onChange={(e) => save({ enabled: e.target.checked })} />
+        <span className="settings-toggle-control" aria-hidden="true">
+          <span className="settings-toggle-thumb" />
+        </span>
+        <span className="settings-toggle-copy">
+          <strong>{t('rerere.enable')}</strong>
+          <span className="settings-hint">{t('rerere.enableHint')}</span>
+        </span>
+      </label>
+
+      {status.enabled && (
+        <label className="settings-toggle-card">
+          <input type="checkbox" checked={status.autoUpdate} onChange={(e) => save({ autoUpdate: e.target.checked })} />
+          <span className="settings-toggle-control" aria-hidden="true">
+            <span className="settings-toggle-thumb" />
+          </span>
+          <span className="settings-toggle-copy">
+            <strong>{t('rerere.autoUpdate')}</strong>
+            <span className="settings-hint">{t('rerere.autoUpdateHint')}</span>
+          </span>
+        </label>
+      )}
+
+      <div className="settings-app-picker">
+        <span className="settings-app-picker-name">
+          {interp(t('rerere.recorded'), { n: String(status.recorded) })}
+        </span>
+        <button
+          type="button"
+          className="btn ghost small"
+          disabled={!status.recorded}
+          onClick={() => {
+            void gitApi.rerereClear(repoPath).then(() => {
+              toast('success', t('rerere.cleared'))
+              void reload()
+            })
+          }}
+        >
+          {t('rerere.clear')}
+        </button>
+      </div>
+      {status.perRepo && <p className="settings-hint">{t('rerere.perRepo')}</p>}
+    </>
   )
 }
 

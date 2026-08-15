@@ -848,3 +848,81 @@ describe('subtrees (subtree playground)', () => {
     expect(existsSync(join(R, 'vendor/third/parser.js'))).toBe(true)
   })
 })
+
+describe('rerere (merge-conflict playground)', () => {
+  it('reports the memory off by default, with nothing recorded', async () => {
+    // cloneFixture already pins rerere off and clears any inherited cache.
+    const R = cloneFixture('merge-conflict')
+    const status = await gitService.rerereStatus(R)
+    expect(status.enabled).toBe(false)
+    expect(status.recorded).toBe(0)
+    expect(status.replayed).toEqual([])
+  })
+
+  it('turns on per repository without touching the global setting', async () => {
+    const R = cloneFixture('merge-conflict')
+    await gitService.setRerere(R, { enabled: true, autoUpdate: true }, 'repo')
+    const status = await gitService.rerereStatus(R)
+    expect(status.enabled).toBe(true)
+    expect(status.autoUpdate).toBe(true)
+    expect(status.perRepo).toBe(true)
+    expect((await raw(R, ['config', '--local', '--get', 'rerere.enabled'])).trim()).toBe('true')
+  })
+
+  it('replays a resolution the second time the same conflict appears', async () => {
+    const R = cloneFixture('merge-conflict')
+    await gitService.setRerere(R, { enabled: true }, 'repo')
+
+    // First encounter: conflict, resolve by hand, commit.
+    await expect(gitService.merge(R, 'feature')).rejects.toThrow()
+    const conflicted = (await gitService.status(R)).conflicted.map((f) => f.path)
+    expect(conflicted.length).toBeGreaterThan(0)
+    // Every conflicted file has to be settled, or the commit below refuses.
+    for (const file of conflicted) await gitService.resolveConflict(R, file, 'resolved by hand\n')
+    await raw(R, ['-c', 'user.email=t@e', '-c', 'user.name=T', 'commit', '--no-edit'])
+    expect((await gitService.rerereStatus(R)).recorded).toBeGreaterThan(0)
+
+    // Rewind and hit the very same conflict again.
+    await raw(R, ['reset', '--hard', 'HEAD~1'])
+    await expect(gitService.merge(R, 'feature')).rejects.toThrow()
+
+    // git replayed what it had memorised, and says so.
+    const replayed = (await gitService.rerereStatus(R)).replayed
+    expect(replayed.length).toBeGreaterThan(0)
+    expect(readFileSync(join(R, replayed[0]), 'utf-8')).toBe('resolved by hand\n')
+  })
+
+  it('forgets one file’s resolution, so the conflict comes back raw', async () => {
+    const R = cloneFixture('merge-conflict')
+    await gitService.setRerere(R, { enabled: true }, 'repo')
+    await expect(gitService.merge(R, 'feature')).rejects.toThrow()
+    const conflicted = (await gitService.status(R)).conflicted.map((f) => f.path)
+    // Only files rerere took a preimage of can be forgotten later.
+    const tracked = (await raw(R, ['rerere', 'status'])).split('\n').map((l) => l.trim()).filter(Boolean)
+    expect(tracked.length).toBeGreaterThan(0)
+    const file = tracked[0]
+    for (const each of conflicted) await gitService.resolveConflict(R, each, 'first answer\n')
+    await raw(R, ['-c', 'user.email=t@e', '-c', 'user.name=T', 'commit', '--no-edit'])
+
+    await raw(R, ['reset', '--hard', 'HEAD~1'])
+    await expect(gitService.merge(R, 'feature')).rejects.toThrow()
+    await gitService.rerereForget(R, file)
+    // Forgetting restores the conflict markers for that file.
+    expect(readFileSync(join(R, file), 'utf-8')).toContain('<<<<<<<')
+  })
+
+  it('clears the whole memory without touching the working tree', async () => {
+    const R = cloneFixture('merge-conflict')
+    await gitService.setRerere(R, { enabled: true }, 'repo')
+    await expect(gitService.merge(R, 'feature')).rejects.toThrow()
+    const conflicted = (await gitService.status(R)).conflicted.map((f) => f.path)
+    const file = conflicted[0]
+    for (const each of conflicted) await gitService.resolveConflict(R, each, 'answer\n')
+    await raw(R, ['-c', 'user.email=t@e', '-c', 'user.name=T', 'commit', '--no-edit'])
+    expect((await gitService.rerereStatus(R)).recorded).toBeGreaterThan(0)
+
+    await gitService.rerereClear(R)
+    expect((await gitService.rerereStatus(R)).recorded).toBe(0)
+    expect(existsSync(join(R, file))).toBe(true)
+  })
+})

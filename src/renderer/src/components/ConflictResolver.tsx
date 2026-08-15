@@ -69,6 +69,7 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
   const ctx = useRepoStore((s) => s.repos[view.repoPath]?.conflictContext ?? null)
   const t = useT()
   const aiEnabled = useSettingsStore((s) => s.activeProfile().ai.enabled !== false)
+  const [replayed, setReplayed] = useState(false)
   const [mergeTool, setMergeTool] = useState('')
   const [toolRunning, setToolRunning] = useState(false)
   const [content, setContent] = useState<string | null>(null)
@@ -124,6 +125,16 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
 
   // Only offer the external tool when git has one configured — the button is
   // meaningless otherwise, and `git mergetool` would just error.
+  // A file with no markers is usually "already resolved"; when rerere is on it
+  // may instead be git having answered for you, which is worth saying out loud
+  // before the resolution is staged unread.
+  useEffect(() => {
+    void gitApi
+      .rerereStatus(repoPath)
+      .then((status) => setReplayed(status.enabled && status.replayed.includes(file)))
+      .catch(() => setReplayed(false))
+  }, [repoPath, file, content])
+
   useEffect(() => {
     void diffToolApi
       .config(repoPath)
@@ -367,8 +378,23 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
         <div className="fv-body">
           <div className="graph-empty">
             <GitMerge size={36} strokeWidth={1.2} />
-            <span>{t('conflict.noMarkers')}</span>
+            <span>{replayed ? t('rerere.replayed') : t('conflict.noMarkers')}</span>
             <div className="conflict-empty-actions">
+              {replayed && (
+                <button
+                  className="btn ghost small"
+                  disabled={saving}
+                  onClick={() => {
+                    void gitApi.rerereForget(repoPath, file).then(async () => {
+                      toast('success', t('rerere.forgotten'))
+                      await refresh(repoPath)
+                      setConflictView({ repoPath, file })
+                    })
+                  }}
+                >
+                  {t('rerere.forget')}
+                </button>
+              )}
               <button className="btn ghost small" disabled={saving || !versions?.ours} onClick={() => void takeSide('ours')}>
                 {t('conflict.keepOurs')}
               </button>

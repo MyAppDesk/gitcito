@@ -36,6 +36,7 @@ import type {
   RemoteInfo,
   PushRemoteResult,
   RepoStatus,
+  RerereStatus,
   RepoSummary,
   StashInfo,
   AIConfig,
@@ -216,6 +217,13 @@ export const gitApi = {
     call<void>('setProtectedBranches', path, branches),
 
   /** Every path ever committed, heaviest first — the purge dialog's picker. */
+  /** Whether git is memorising conflict resolutions, and what it replayed here. */
+  rerereStatus: (path: string) => call<RerereStatus>('rerereStatus', path),
+  setRerere: (path: string, values: { enabled?: boolean; autoUpdate?: boolean }, scope?: 'global' | 'repo') =>
+    call<void>('setRerere', path, values, scope),
+  rerereForget: (path: string, file: string) => call<void>('rerereForget', path, file),
+  rerereClear: (path: string) => call<void>('rerereClear', path),
+
   /** Directories vendored in with `git subtree`, discovered from history. */
   subtrees: (path: string) => call<SubtreeInfo[]>('subtrees', path),
   subtreeAdd: (path: string, prefix: string, url: string, ref: string, squash?: boolean) =>

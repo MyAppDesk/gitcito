@@ -1543,6 +1543,20 @@ export interface SubtreeInfo {
   lastSplit: string
 }
 
+/** Whether git is memorising conflict resolutions, and how many it holds. */
+export interface RerereStatus {
+  /** `rerere.enabled` — resolutions are recorded and replayed. */
+  enabled: boolean
+  /** `rerere.autoUpdate` — a replayed resolution is staged, not just written. */
+  autoUpdate: boolean
+  /** True when the setting comes from this repository rather than global config. */
+  perRepo: boolean
+  /** Resolutions currently memorised, i.e. entries in `.git/rr-cache`. */
+  recorded: number
+  /** Files in the current conflict that git resolved from memory. */
+  replayed: string[]
+}
+
 /** One entry from `git reflog` — the recovery net for lost/rewound commits. */
 export interface ReflogEntry {
   sha: string

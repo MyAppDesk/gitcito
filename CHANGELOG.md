@@ -1,5 +1,12 @@
 
 
+## [3.6.0](https://github.com/MyAppDesk/gitcito/compare/v3.5.0...v3.6.0) (2026-08-15)
+
+
+### Features
+
+* add additional languages and RTL support ([3018710](https://github.com/MyAppDesk/gitcito/commit/3018710989849b3a2162582dff9660dd23f01b75))
+
 ## [3.5.0](https://github.com/MyAppDesk/gitcito/compare/v3.4.0...v3.5.0) (2026-08-15)
 
 

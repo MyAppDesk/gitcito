@@ -1058,6 +1058,17 @@ export const shots = [
     }
   },
   {
+    // .gitattributes: the rules a repository already carries, plus the presets.
+    out: 'attributes',
+    repos: ['attributes'],
+    themes: ['light'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['attributes']
+      await page.evaluate((r) => window.__shot.ui.getState().openModal({ kind: 'attributes', repoPath: r }), repo)
+      await page.waitForTimeout(1200)
+    }
+  },
+  {
     // Automated bisect: the command box mid-run, with git's output streaming.
     out: 'bisect-run',
     repos: ['bisect-bug'],

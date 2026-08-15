@@ -66,7 +66,8 @@ const EXPECTED = [
   'gitflow',
   'leaked-secret',
   'subtree',
-  'untracked-mess'
+  'untracked-mess',
+  'attributes'
 ]
 
 describe('playground fixtures', () => {

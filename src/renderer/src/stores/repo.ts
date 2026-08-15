@@ -1184,6 +1184,37 @@ export const repoActions = {
       .getState()
       .run(path, interp(t('act.subtreeSplit'), { branch }), () => gitApi.subtreeSplit(path, prefix, branch).then(() => undefined)),
 
+  // ─── Attributes ───
+  // The whole file is rewritten, so the undo entry is simply the text that was
+  // there before — no git command involved, and nothing else in the file at risk.
+  attributeWrite: (path: string, file: string, content: string, previous: string) =>
+    useRepoStore.getState().run(
+      path,
+      interp(t('act.attributesSaved'), { file }),
+      () => gitApi.attributeWrite(path, file, content),
+      {
+        label: interp(t('undoLabel.attributes'), { file }),
+        undo: () => gitApi.attributeWrite(path, file, previous),
+        redo: () => gitApi.attributeWrite(path, file, content)
+      },
+      null,
+      undefined,
+      ['status', 'treeStatus']
+    ),
+
+  setDiffDriver: (path: string, name: string, textconv: string, global: boolean) =>
+    useRepoStore
+      .getState()
+      .run(
+        path,
+        interp(textconv.trim() ? t('act.diffDriverSet') : t('act.diffDriverCleared'), { name }),
+        () => gitApi.setDiffDriver(path, name, textconv, global),
+        undefined,
+        null,
+        undefined,
+        []
+      ),
+
   // ─── Maintenance ───
   // Repacking rewrites the object database, so it takes the write lock like any
   // mutation — but nothing the UI shows changes, hence the empty refresh list.

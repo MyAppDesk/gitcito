@@ -1543,6 +1543,46 @@ export interface SubtreeInfo {
   lastSplit: string
 }
 
+/** One `.gitattributes` file found in the repository, with its raw text. */
+export interface AttributeFile {
+  /** Repo-relative path, or `.git/info/attributes` for the private one. */
+  path: string
+  content: string
+  /** True for `.git/info/attributes`: local-only, never committed, never shared. */
+  local: boolean
+}
+
+/** What git says actually applies to a path, after every file has had its say. */
+export interface AttributeCheck {
+  path: string
+  /** Attribute name → value: `set`, `unset`, `unspecified`, or a string. */
+  attrs: Record<string, string>
+}
+
+/** A configured `diff.<name>` driver, and whether its converter really exists. */
+export interface DiffDriverInfo {
+  name: string
+  /** The `textconv` command, which turns a binary into text git can diff. */
+  textconv: string
+  /** True when the first word of the command is on PATH. */
+  available: boolean
+  /** Where the setting lives, so the UI can say what it would change. */
+  scope: 'repo' | 'global'
+}
+
+/** A converter Gitcito knows how to wire up, if it is installed. */
+export interface DiffDriverSuggestion {
+  /** Driver name, used as `diff=<name>` in .gitattributes. */
+  name: string
+  /** File patterns it is for, e.g. `*.docx`. */
+  patterns: string[]
+  /** The textconv command line. */
+  textconv: string
+  /** The binary it needs. */
+  binary: string
+  available: boolean
+}
+
 /** The four kinds of thing git stores. Everything else is built from these. */
 export type GitObjectKind = 'commit' | 'tree' | 'blob' | 'tag'
 

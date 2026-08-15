@@ -18,6 +18,13 @@ import { parseRangeDiff } from '../src/shared/rangeDiff'
 import { editorArgs, editorLaunch, supportsLine } from '../src/shared/editors'
 import { branchDropActions, encodeDropRef, decodeDropRef, type DropRef } from '../src/renderer/src/lib/branchDrop'
 import { refIntegrationActions } from '../src/renderer/src/lib/refMenu'
+import {
+  ATTR_PRESETS,
+  formatRule,
+  parseAttributes,
+  removeRule,
+  upsertRule
+} from '../src/renderer/src/lib/gitattributes'
 import { parseToolHelp, sortTools } from '../src/shared/diffTools'
 import {
   parseKeygenLine,
@@ -3142,6 +3149,79 @@ describe('ref integration menu', () => {
       expect(action.vars.ref).toBe('origin/main')
       expect(action.vars.current).toBe('main')
       expect(action.disabled).toBe(false)
+    }
+  })
+})
+
+describe('.gitattributes editing', () => {
+  const FILE = ['# line endings, decided once', '* text=auto', '', '*.png binary', 'CHANGELOG.md merge=union', ''].join('\n')
+
+  it('parses patterns and every attribute form', () => {
+    const rules = parseAttributes(['*.md text', '*.bin -text', '*.gen !diff', 'x.o filter=lfs'].join('\n'))
+    expect(rules.map((r) => r.pattern)).toEqual(['*.md', '*.bin', '*.gen', 'x.o'])
+    expect(rules[0].attrs[0]).toEqual({ name: 'text', value: true })
+    expect(rules[1].attrs[0]).toEqual({ name: 'text', value: false })
+    expect(rules[2].attrs[0]).toEqual({ name: 'diff', value: null })
+    expect(rules[3].attrs[0]).toEqual({ name: 'filter', value: 'lfs' })
+  })
+
+  it('skips comments and blank lines but keeps their line numbers', () => {
+    const rules = parseAttributes(FILE)
+    expect(rules.map((r) => r.pattern)).toEqual(['*', '*.png', 'CHANGELOG.md'])
+    // Line 1, not line 0: the comment above it still occupies its own line.
+    expect(rules[0].line).toBe(1)
+    expect(rules[1].line).toBe(3)
+  })
+
+  it('replaces the rule for a pattern in place, leaving comments alone', () => {
+    const next = upsertRule(FILE, '*.png', [{ name: 'binary', value: true }, { name: 'diff', value: 'exif' }])
+    expect(next).toContain('# line endings, decided once')
+    expect(next).toContain('*.png binary diff=exif')
+    // Not appended a second time — a duplicate later line would silently win.
+    expect(next.match(/\*\.png/g)).toHaveLength(1)
+  })
+
+  it('appends a new rule with exactly one trailing newline', () => {
+    const next = upsertRule(FILE, '*.pdf', [{ name: 'diff', value: 'pdf' }])
+    expect(next.endsWith('*.pdf diff=pdf\n')).toBe(true)
+    expect(next.endsWith('\n\n')).toBe(false)
+    expect(parseAttributes(next)).toHaveLength(4)
+  })
+
+  it('creates the first rule in an empty file', () => {
+    expect(upsertRule('', '*', [{ name: 'text', value: 'auto' }])).toBe('* text=auto\n')
+  })
+
+  it('removes one rule and nothing else', () => {
+    const next = removeRule(FILE, '*.png')
+    expect(next).not.toContain('*.png')
+    expect(next).toContain('CHANGELOG.md merge=union')
+    expect(next).toContain('# line endings, decided once')
+  })
+
+  it('leaves the file untouched when the pattern is not there', () => {
+    expect(removeRule(FILE, '*.nope')).toBe(FILE)
+  })
+
+  it('round-trips every attribute form through format', () => {
+    const line = formatRule('*.psd', [
+      { name: 'filter', value: 'lfs' },
+      { name: 'text', value: false },
+      { name: 'diff', value: null }
+    ])
+    expect(line).toBe('*.psd filter=lfs -text !diff')
+    expect(parseAttributes(line)[0].attrs).toEqual([
+      { name: 'filter', value: 'lfs' },
+      { name: 'text', value: false },
+      { name: 'diff', value: null }
+    ])
+  })
+
+  it('offers presets that are all valid attribute lines', () => {
+    for (const preset of ATTR_PRESETS) {
+      const rules = parseAttributes(formatRule(preset.pattern, preset.attrs))
+      expect(rules).toHaveLength(1)
+      expect(rules[0].attrs.length).toBe(preset.attrs.length)
     }
   })
 })

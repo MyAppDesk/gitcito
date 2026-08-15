@@ -11543,6 +11543,42 @@ mark.find-hit.active {
 }
 .subtree-add { margin-top: 12px; }
 
+.attrs-modal { display: flex; flex-direction: column; min-height: 0; overflow-y: auto; }
+.attrs-files { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+.attrs-local { font-size: 11.5px; color: var(--warn, #d97706); margin: 8px 0 0; }
+.attrs-rules {
+  margin-top: 12px;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  background: var(--bg-2);
+  padding: 6px 4px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.attrs-rules > .settings-hint { padding: 4px 8px; }
+.attrs-row { display: flex; align-items: center; gap: 10px; padding: 3px 8px; font-size: 12.5px; }
+.attrs-row:hover { background: var(--bg-1); border-radius: 5px; }
+.attrs-pattern { font-family: var(--mono); font-size: 11.5px; flex: 0 0 160px; overflow: hidden; text-overflow: ellipsis; }
+.attrs-attrs { flex: 1; min-width: 0; font-family: var(--mono); font-size: 11.5px; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.attrs-presets { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+.attrs-add { display: flex; gap: 6px; margin-top: 8px; }
+.attrs-add .modal-input { flex: 1; font-family: var(--mono); font-size: 12px; }
+.attrs-pattern-input { flex: 0 0 170px !important; }
+.attrs-section { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border-soft); }
+.attrs-section-head { display: flex; align-items: center; gap: 6px; font-size: 12.5px; margin-bottom: 4px; }
+.attrs-check { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.attrs-check code {
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--bg-2);
+  font-family: var(--mono);
+  font-size: 11px;
+}
+.attrs-driver { display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 2px 0; }
+.attrs-driver code { font-family: var(--mono); font-size: 11px; flex-shrink: 0; }
+.attrs-driver-cmd { flex: 1; min-width: 0; font-family: var(--mono); font-size: 11px; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.attrs-missing { display: flex; align-items: center; gap: 4px; font-size: 10.5px; color: var(--warn, #d97706); }
+
 .obj-modal { display: flex; flex-direction: column; min-height: 0; }
 .obj-bar { display: flex; gap: 6px; align-items: center; margin: 12px 0 10px; }
 .obj-bar .modal-input { flex: 1; font-family: var(--mono); font-size: 12px; }

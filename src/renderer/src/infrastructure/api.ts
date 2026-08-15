@@ -67,6 +67,10 @@ import type {
   CleanResult,
   ArchiveFormat,
   ArchiveResult,
+  AttributeCheck,
+  AttributeFile,
+  DiffDriverInfo,
+  DiffDriverSuggestion,
   ConflictCommit,
   GitObject,
   RefObject,
@@ -252,6 +256,17 @@ export const gitApi = {
   subtreeSplit: (path: string, prefix: string, branch: string) =>
     call<string>('subtreeSplit', path, prefix, branch),
   subtreeForget: (path: string, prefix: string) => call<void>('subtreeForget', path, prefix),
+
+  /** Every .gitattributes in the repository, plus the private local one. */
+  attributeFiles: (path: string) => call<AttributeFile[]>('attributeFiles', path),
+  attributeWrite: (path: string, file: string, content: string) =>
+    call<void>('attributeWrite', path, file, content),
+  /** What git says applies to these paths, after every attributes file. */
+  checkAttributes: (path: string, paths: string[]) => call<AttributeCheck[]>('checkAttributes', path, paths),
+  diffDrivers: (path: string) => call<DiffDriverInfo[]>('diffDrivers', path),
+  diffDriverSuggestions: (path: string) => call<DiffDriverSuggestion[]>('diffDriverSuggestions', path),
+  setDiffDriver: (path: string, name: string, textconv: string, global?: boolean) =>
+    call<void>('setDiffDriver', path, name, textconv, global),
 
   /** Every ref, plus HEAD, with the object it names — the explorer's roots. */
   objectRefs: (path: string) => call<RefObject[]>('objectRefs', path),

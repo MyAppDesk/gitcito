@@ -8,6 +8,7 @@
   "modals": {
     "covered": {
       "absorb": "absorb",
+      "attributes": "attributes",
       "ai-config-wizard": "ai",
       "ai-pr-review": "ai",
       "addRemote": "branching",
@@ -83,6 +84,7 @@
     "covered": {
       "absorb": "absorb",
       "ai-assistant": "ai",
+      "attributes": "attributes",
       "archive": "export",
       "bisect": "recovery",
       "bundle": "export",

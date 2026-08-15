@@ -178,6 +178,12 @@ const FEATURES = [
     body: 'Every repository of the workspace on one screen, ordered by what needs you: blocked first, then to sync, then dirty, then quiet.'
   },
   {
+    icon: '🏷️',
+    title: 'File attributes, with a UI',
+    id: 'attributes',
+    body: 'The most useful file in git that nobody writes. Line endings settled once for everyone, a changelog that stops conflicting, fixtures kept out of release tarballs — and readable diffs for Word and PDF, when the converter is installed.'
+  },
+  {
     icon: '🔐',
     title: 'Your secrets stay yours',
     id: 'security',

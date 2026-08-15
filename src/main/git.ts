@@ -1,11 +1,11 @@
 import { ipcMain, shell } from 'electron'
 import { simpleGit, SimpleGit } from 'simple-git'
-import { basename, join, resolve as resolvePath, sep } from 'path'
+import { basename, dirname, join, resolve as resolvePath, sep } from 'path'
 import { pathToFileURL } from 'url'
 import { readFile, writeFile, unlink, stat, chmod, mkdir, readdir, rename, cp } from 'fs/promises'
 import { tmpdir, homedir } from 'os'
 import { existsSync } from 'fs'
-import { spawn, execFile } from 'child_process'
+import { spawn, spawnSync, execFile } from 'child_process'
 import { promisify } from 'util'
 
 const pexecFile = promisify(execFile)
@@ -73,6 +73,10 @@ import type {
   CleanResult,
   ArchiveFormat,
   ArchiveResult,
+  AttributeCheck,
+  AttributeFile,
+  DiffDriverInfo,
+  DiffDriverSuggestion,
   ConflictCommit,
   GitObject,
   GitObjectKind,
@@ -445,6 +449,16 @@ const bisectRuns = new Map<string, import('child_process').ChildProcess>()
 
 /** How much of a blob the object explorer shows before saying "truncated". */
 const OBJECT_BLOB_PREVIEW = 200_000
+
+/** Is this command on PATH? Used to say which diff converters are real here. */
+function hasBinary(command: string): boolean {
+  const probe = process.platform === 'win32' ? 'where' : 'which'
+  try {
+    return spawnSync(probe, [command], { stdio: 'ignore' }).status === 0
+  } catch {
+    return false
+  }
+}
 
 /** How many removable paths a clean preview will size and show. */
 const CLEAN_ENTRY_CAP = 400
@@ -2269,6 +2283,121 @@ export const gitService = {
 
   async unstageAll(repoPath: string): Promise<void> {
     await gitFor(repoPath).raw(['reset', 'HEAD', '--', '.'])
+  },
+
+  // ─── Attributes ────────────────────────────────────────────────────────────
+  // `.gitattributes` is how a repository teaches git about its own files —
+  // which are binary, which should concatenate on merge, which never leave the
+  // repo in an archive. It travels with the clone, so one person fixing it
+  // fixes it for everyone.
+
+  /** Every `.gitattributes` in the repository, plus the private local one. */
+  async attributeFiles(repoPath: string): Promise<AttributeFile[]> {
+    const tracked = await runGit(repoPath, ['ls-files', '-z', '--', '.gitattributes', '**/.gitattributes']).catch(
+      () => ''
+    )
+    const paths = new Set(tracked.split('\0').filter(Boolean))
+    // An untracked root file is the common case right after someone creates one.
+    if (existsSync(join(repoPath, '.gitattributes'))) paths.add('.gitattributes')
+
+    const files: AttributeFile[] = []
+    for (const path of [...paths].sort()) {
+      files.push({ path, content: await readFile(join(repoPath, path), 'utf-8').catch(() => ''), local: false })
+    }
+    const gitDir = resolvePath(repoPath, (await runGit(repoPath, ['rev-parse', '--git-dir']).catch(() => '.git')).trim())
+    const infoPath = join(gitDir, 'info', 'attributes')
+    if (existsSync(infoPath)) {
+      files.push({
+        path: '.git/info/attributes',
+        content: await readFile(infoPath, 'utf-8').catch(() => ''),
+        local: true
+      })
+    }
+    return files
+  },
+
+  /**
+   * Write one attributes file whole.
+   *
+   * The editing is done in the renderer against the file's text, so comments
+   * and ordering survive; this only has to refuse to write anywhere else.
+   */
+  async attributeWrite(repoPath: string, path: string, content: string): Promise<void> {
+    const gitDir = resolvePath(repoPath, (await runGit(repoPath, ['rev-parse', '--git-dir']).catch(() => '.git')).trim())
+    const target = path === '.git/info/attributes' ? join(gitDir, 'info', 'attributes') : resolvePath(repoPath, path)
+    const root = resolvePath(repoPath)
+    if (basename(target) !== '.gitattributes' && basename(target) !== 'attributes') {
+      throw new Error(`Not an attributes file: ${path}`)
+    }
+    if (!target.startsWith(root + sep) && !target.startsWith(gitDir + sep)) {
+      throw new Error(`Refusing to write outside the repository: ${path}`)
+    }
+    await mkdir(dirname(target), { recursive: true })
+    await writeFile(target, content, 'utf-8')
+  },
+
+  /** What git says applies to these paths — the answer no hand-reading gives. */
+  async checkAttributes(repoPath: string, paths: string[]): Promise<AttributeCheck[]> {
+    const wanted = paths.map((p) => p.trim()).filter(Boolean)
+    if (!wanted.length) return []
+    // `-a` asks for every attribute git knows about for the path, `-z` keeps
+    // paths with spaces intact: <path>\0<attr>\0<value>\0…
+    const out = await runGit(repoPath, ['check-attr', '-a', '-z', '--', ...wanted]).catch(() => '')
+    const fields = out.split('\0')
+    const byPath = new Map<string, Record<string, string>>(wanted.map((p) => [p, {}]))
+    for (let i = 0; i + 2 < fields.length; i += 3) {
+      const [path, attr, value] = [fields[i], fields[i + 1], fields[i + 2]]
+      if (!path) continue
+      const entry = byPath.get(path) ?? {}
+      entry[attr] = value
+      byPath.set(path, entry)
+    }
+    return wanted.map((path) => ({ path, attrs: byPath.get(path) ?? {} }))
+  },
+
+  /** Diff drivers configured here, and whether their converter is installed. */
+  async diffDrivers(repoPath: string): Promise<DiffDriverInfo[]> {
+    const read = async (scope: 'repo' | 'global'): Promise<DiffDriverInfo[]> => {
+      const args = ['config', ...(scope === 'global' ? ['--global'] : ['--local']), '--get-regexp', '^diff\\..*\\.textconv']
+      const out = await runGit(repoPath, args).catch(() => '')
+      return out
+        .split('\n')
+        .map((line) => {
+          const space = line.indexOf(' ')
+          if (space < 0) return null
+          const name = /^diff\.(.*)\.textconv$/.exec(line.slice(0, space))?.[1]
+          const textconv = line.slice(space + 1).trim()
+          if (!name || !textconv) return null
+          return { name, textconv, available: hasBinary(textconv.split(/\s+/)[0]), scope }
+        })
+        .filter((d): d is DiffDriverInfo => !!d)
+    }
+    return [...(await read('repo')), ...(await read('global'))]
+  },
+
+  /** Converters Gitcito can wire up for the formats it already previews. */
+  // Takes the repo path it will never use: every repo-scoped method does, and
+  // the dispatcher locks on it.
+  async diffDriverSuggestions(_repoPath: string): Promise<DiffDriverSuggestion[]> {
+    // Each of these is a real, widely packaged tool. Gitcito does not ship any
+    // of them, so the UI says plainly which are missing rather than writing a
+    // driver that fails at the first diff.
+    const candidates: Omit<DiffDriverSuggestion, 'available'>[] = [
+      { name: 'word', patterns: ['*.docx', '*.doc'], textconv: 'pandoc --to=plain', binary: 'pandoc' },
+      { name: 'pdf', patterns: ['*.pdf'], textconv: 'pdftotext -layout - -', binary: 'pdftotext' },
+      { name: 'excel', patterns: ['*.xlsx', '*.xls'], textconv: 'xlsx2csv', binary: 'xlsx2csv' },
+      { name: 'exif', patterns: ['*.jpg', '*.jpeg', '*.png'], textconv: 'exiftool', binary: 'exiftool' },
+      { name: 'json', patterns: ['*.json'], textconv: 'jq --sort-keys .', binary: 'jq' }
+    ]
+    return candidates.map((c) => ({ ...c, available: hasBinary(c.binary) }))
+  },
+
+  /** Set (or clear) `diff.<name>.textconv`. */
+  async setDiffDriver(repoPath: string, name: string, textconv: string, global = false): Promise<void> {
+    const scope = global ? ['--global'] : ['--local']
+    const key = `diff.${name}.textconv`
+    if (textconv.trim()) await runGit(repoPath, ['config', ...scope, key, textconv.trim()])
+    else await runGit(repoPath, ['config', ...scope, '--unset', key]).catch(() => undefined)
   },
 
   // ─── Object explorer ───────────────────────────────────────────────────────
@@ -5498,6 +5627,10 @@ const READ_METHODS = new Set<string>([
   'fsck',
   'objectRefs',
   'gitObject',
+  'attributeFiles',
+  'checkAttributes',
+  'diffDrivers',
+  'diffDriverSuggestions',
   'conflictCommits',
   'note',
   'notedCommits',

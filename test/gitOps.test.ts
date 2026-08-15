@@ -1,5 +1,5 @@
 import { describe, it, expect, afterAll } from 'vitest'
-import { readFileSync, writeFileSync, existsSync, mkdtempSync, rmSync } from 'node:fs'
+import { readFileSync, writeFileSync, existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { gitService } from '../src/main/git'
@@ -1407,5 +1407,118 @@ describe('automated bisect (git bisect run)', () => {
   it('reports nothing to cancel when no run is in flight', async () => {
     const R = cloneFixture('bisect-bug')
     expect(await gitService.bisectCancel(R)).toBe(false)
+  })
+})
+
+describe('gitattributes', () => {
+  it('finds every attributes file, including the private local one', async () => {
+    const R = cloneFixture('bisect-bug')
+    writeFileSync(join(R, '.gitattributes'), '* text=auto\n')
+    mkdirSync(join(R, 'docs'), { recursive: true })
+    writeFileSync(join(R, 'docs/.gitattributes'), '*.md merge=union\n')
+    await raw(R, ['add', '-A'])
+    await raw(R, ['-c', 'user.email=t@e', '-c', 'user.name=T', 'commit', '-m', 'attributes'])
+    mkdirSync(join(R, '.git/info'), { recursive: true })
+    writeFileSync(join(R, '.git/info/attributes'), '*.secret -diff\n')
+
+    const files = await gitService.attributeFiles(R)
+    expect(files.map((f) => f.path)).toEqual(['.gitattributes', 'docs/.gitattributes', '.git/info/attributes'])
+    expect(files[0].content).toBe('* text=auto\n')
+    // The local one is flagged: it never travels with the clone.
+    expect(files[2].local).toBe(true)
+    expect(files[0].local).toBe(false)
+  })
+
+  it('asks git what applies to a path, not the file', async () => {
+    const R = cloneFixture('bisect-bug')
+    writeFileSync(join(R, '.gitattributes'), '*.js text\nmath.js merge=union\n')
+
+    const [checked] = await gitService.checkAttributes(R, ['math.js'])
+    expect(checked.path).toBe('math.js')
+    expect(checked.attrs.text).toBe('set')
+    // The later, more specific rule adds to what the earlier one set.
+    expect(checked.attrs.merge).toBe('union')
+
+    const [other] = await gitService.checkAttributes(R, ['currency.js'])
+    expect(other.attrs.text).toBe('set')
+    expect(other.attrs.merge ?? 'unspecified').toBe('unspecified')
+  })
+
+  it('writes an attributes file and refuses anything that is not one', async () => {
+    const R = cloneFixture('bisect-bug')
+    await gitService.attributeWrite(R, '.gitattributes', '*.png binary\n')
+    expect(readFileSync(join(R, '.gitattributes'), 'utf-8')).toBe('*.png binary\n')
+
+    await gitService.attributeWrite(R, '.git/info/attributes', '*.key -diff\n')
+    expect(readFileSync(join(R, '.git/info/attributes'), 'utf-8')).toBe('*.key -diff\n')
+
+    await expect(gitService.attributeWrite(R, 'math.js', 'nope')).rejects.toThrow(/attributes file/i)
+    await expect(gitService.attributeWrite(R, '../escape/.gitattributes', 'nope')).rejects.toThrow()
+  })
+
+  it('makes merge=union stop a changelog conflicting', async () => {
+    const R = cloneFixture('bisect-bug')
+    const file = 'CHANGELOG.md'
+    writeFileSync(join(R, file), '# Changelog\n')
+    writeFileSync(join(R, '.gitattributes'), 'CHANGELOG.md merge=union\n')
+    await raw(R, ['add', '-A'])
+    await raw(R, ['-c', 'user.email=t@e', '-c', 'user.name=T', 'commit', '-m', 'changelog'])
+    const base = await shaOf(R, 'HEAD')
+
+    await raw(R, ['checkout', '-b', 'theirs'])
+    writeFileSync(join(R, file), '# Changelog\n- their entry\n')
+    await raw(R, ['add', '-A'])
+    await raw(R, ['-c', 'user.email=t@e', '-c', 'user.name=T', 'commit', '-m', 'their entry'])
+
+    await raw(R, ['checkout', '-b', 'ours', base])
+    writeFileSync(join(R, file), '# Changelog\n- our entry\n')
+    await raw(R, ['add', '-A'])
+    await raw(R, ['-c', 'user.email=t@e', '-c', 'user.name=T', 'commit', '-m', 'our entry'])
+
+    // Both sides appended to the same line region: a plain merge conflicts,
+    // union keeps both. That is the entire point of the attribute.
+    await gitService.merge(R, 'theirs')
+    expect((await gitService.status(R)).conflicted).toEqual([])
+    const merged = readFileSync(join(R, file), 'utf-8')
+    expect(merged).toContain('our entry')
+    expect(merged).toContain('their entry')
+  })
+
+  it('keeps export-ignore paths out of an archive', async () => {
+    const R = cloneFixture('bisect-bug')
+    writeFileSync(join(R, '.gitattributes'), 'currency.js export-ignore\n')
+    await raw(R, ['add', '-A'])
+    await raw(R, ['-c', 'user.email=t@e', '-c', 'user.name=T', 'commit', '-m', 'export-ignore'])
+
+    const out = join(mkdtempSync(join(tmpdir(), 'gitcito-attr-')), 'src.tar')
+    await gitService.archiveCreate(R, out, 'HEAD', 'tar', '', '')
+    const { execFile } = await import('node:child_process')
+    const { promisify } = await import('node:util')
+    const { stdout } = await promisify(execFile)('tar', ['-tf', out])
+    expect(stdout).toContain('math.js')
+    expect(stdout).not.toContain('currency.js')
+  })
+
+  it('lists configured diff drivers and says which converters are missing', async () => {
+    const R = cloneFixture('bisect-bug')
+    await gitService.setDiffDriver(R, 'nonesuch', 'definitely-not-installed --to-text')
+    const drivers = await gitService.diffDrivers(R)
+    const mine = drivers.find((d) => d.name === 'nonesuch')!
+    expect(mine.textconv).toBe('definitely-not-installed --to-text')
+    expect(mine.available).toBe(false)
+    expect(mine.scope).toBe('repo')
+
+    await gitService.setDiffDriver(R, 'nonesuch', '')
+    expect((await gitService.diffDrivers(R)).some((d) => d.name === 'nonesuch')).toBe(false)
+  })
+
+  it('offers converter suggestions with honest availability', async () => {
+    const R = cloneFixture('bisect-bug')
+    const suggestions = await gitService.diffDriverSuggestions(R)
+    expect(suggestions.map((s) => s.name)).toContain('pdf')
+    for (const suggestion of suggestions) {
+      expect(suggestion.patterns.length).toBeGreaterThan(0)
+      expect(typeof suggestion.available).toBe('boolean')
+    }
   })
 })

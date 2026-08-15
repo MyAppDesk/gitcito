@@ -36,6 +36,7 @@ import { CleanModal } from './CleanModal'
 import { ExportModal } from './ExportModal'
 import { MaintenanceModal } from './MaintenanceModal'
 import { MergeOptionsModal } from './MergeOptionsModal'
+import { ObjectExplorer } from './ObjectExplorer'
 import { ChangelogGenModal } from './ChangelogGenModal'
 import { SnapshotsModal } from './SnapshotsModal'
 import { SecureShareModal } from './SecureShareModal'
@@ -1519,6 +1520,7 @@ export function ModalHost(): React.JSX.Element {
                     modal.kind === 'code-search' ||
                     modal.kind === 'clean' ||
                     modal.kind === 'maintenance' ||
+                    modal.kind === 'objects' ||
                     modal.kind === 'changelog-gen' ||
                     modal.kind === 'repo-settings' ||
                     modal.kind === 'secure-share' ||
@@ -1587,6 +1589,7 @@ export function ModalHost(): React.JSX.Element {
             {modal.kind === 'merge-options' && (
               <MergeOptionsModal repoPath={modal.repoPath} source={modal.source} />
             )}
+            {modal.kind === 'objects' && <ObjectExplorer repoPath={modal.repoPath} rev={modal.rev} />}
             {modal.kind === 'history-purge' && (
               <HistoryPurgeModal repoPath={modal.repoPath} initialPath={modal.initialPath} />
             )}

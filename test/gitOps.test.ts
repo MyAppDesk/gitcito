@@ -1282,3 +1282,76 @@ describe('advanced merge options', () => {
     expect(commits[0].author).toBeTruthy()
   })
 })
+
+describe('object explorer', () => {
+  it('lists every ref plus HEAD, with what each points at', async () => {
+    const R = cloneFixture('tags-and-releases')
+    const refs = await gitService.objectRefs(R)
+
+    expect(refs[0].name).toBe('HEAD')
+    expect(refs.map((r) => r.name)).toContain('refs/heads/main')
+    expect(refs.some((r) => r.name.startsWith('refs/tags/'))).toBe(true)
+    for (const ref of refs) expect(ref.sha).toMatch(/^[0-9a-f]{40}$/)
+  })
+
+  it('walks a commit to its tree, and a tree entry to its blob', async () => {
+    const R = cloneFixture('tags-and-releases')
+    const commit = await gitService.gitObject(R, 'HEAD')
+    expect(commit.kind).toBe('commit')
+    expect(commit.commit?.tree).toMatch(/^[0-9a-f]{40}$/)
+    expect(commit.commit?.author).toContain('@')
+    expect(commit.commit?.message.trim()).toBeTruthy()
+
+    const tree = await gitService.gitObject(R, commit.commit!.tree)
+    expect(tree.kind).toBe('tree')
+    const entry = tree.tree!.find((c) => c.name === 'app.py')!
+    expect(entry.mode).toBe('100644')
+    expect(entry.kind).toBe('blob')
+    expect(entry.size).toBeGreaterThan(0)
+
+    const blob = await gitService.gitObject(R, entry.sha)
+    expect(blob.kind).toBe('blob')
+    expect(blob.blob?.text).toContain('def ')
+    expect(blob.blob?.truncated).toBe(false)
+  })
+
+  it('accepts the revision expressions git accepts', async () => {
+    const R = cloneFixture('tags-and-releases')
+    // A path-scoped rev resolves straight to the blob…
+    const viaPath = await gitService.gitObject(R, 'HEAD:app.py')
+    expect(viaPath.kind).toBe('blob')
+    // …and the peeling syntax to the tree, which is the same object the commit
+    // named.
+    const viaPeel = await gitService.gitObject(R, 'HEAD^{tree}')
+    const commit = await gitService.gitObject(R, 'HEAD')
+    expect(viaPeel.sha).toBe(commit.commit!.tree)
+  })
+
+  it('reads an annotated tag as its own object, pointing at the commit', async () => {
+    const R = cloneFixture('tags-and-releases')
+    const refs = await gitService.objectRefs(R)
+    const annotated = refs.find((r) => r.kind === 'tag')
+    if (!annotated) return // the fixture may carry only lightweight tags
+
+    const tag = await gitService.gitObject(R, annotated.name)
+    expect(tag.kind).toBe('tag')
+    expect(tag.tag?.type).toBe('commit')
+    expect(tag.tag?.object).toMatch(/^[0-9a-f]{40}$/)
+    expect((await gitService.gitObject(R, tag.tag!.object)).kind).toBe('commit')
+  })
+
+  it('says a blob is binary instead of spraying it at the pane', async () => {
+    const R = cloneFixture('binary-images-unicode')
+    const tree = await gitService.gitObject(R, 'HEAD^{tree}')
+    const png = tree.tree!.find((c) => c.name.endsWith('.png'))
+    if (!png) return
+    const blob = await gitService.gitObject(R, png.sha)
+    expect(blob.blob?.text).toBeNull()
+    expect(blob.size).toBeGreaterThan(0)
+  })
+
+  it('reports an unknown revision as an error rather than an empty object', async () => {
+    const R = cloneFixture('tags-and-releases')
+    await expect(gitService.gitObject(R, 'no-such-ref')).rejects.toThrow()
+  })
+})

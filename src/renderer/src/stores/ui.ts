@@ -98,6 +98,7 @@ export type ModalSpec =
   | { kind: 'export'; repoPath: string; tab?: 'bundle' | 'archive' }
   | { kind: 'maintenance'; repoPath: string }
   | { kind: 'merge-options'; repoPath: string; source?: string }
+  | { kind: 'objects'; repoPath: string; rev?: string }
   | { kind: 'changelog-gen'; repoPath: string }
   | { kind: 'snapshots'; repoPath: string }
   | { kind: 'stash-partial'; repoPath: string }

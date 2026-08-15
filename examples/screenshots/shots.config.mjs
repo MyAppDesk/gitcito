@@ -1058,6 +1058,17 @@ export const shots = [
     }
   },
   {
+    // Object explorer: a commit, its fields linked, beside the ref list.
+    out: 'objects',
+    repos: ['tags-and-releases'],
+    themes: ['light'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['tags-and-releases']
+      await page.evaluate((r) => window.__shot.ui.getState().openModal({ kind: 'objects', repoPath: r }), repo)
+      await page.waitForTimeout(1200)
+    }
+  },
+  {
     // Merge options: the switches, with the git command they build underneath.
     out: 'merge-options',
     repos: ['merge-conflict'],

@@ -11515,6 +11515,92 @@ mark.find-hit.active {
 }
 .subtree-add { margin-top: 12px; }
 
+.obj-modal { display: flex; flex-direction: column; min-height: 0; }
+.obj-bar { display: flex; gap: 6px; align-items: center; margin: 12px 0 10px; }
+.obj-bar .modal-input { flex: 1; font-family: var(--mono); font-size: 12px; }
+/* Refs on the left as starting points, the object itself on the right. */
+.obj-body { display: flex; gap: 12px; flex: 1; min-height: 0; }
+.obj-refs {
+  flex: 0 0 190px;
+  overflow-y: auto;
+  padding-right: 6px;
+  border-right: 1px solid var(--border-soft);
+}
+.obj-ref-group { margin-bottom: 10px; }
+.obj-ref-head {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-2);
+  margin-bottom: 3px;
+  font-family: var(--mono);
+}
+.obj-ref {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 2px 6px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-1);
+  font-size: 12px;
+  cursor: pointer;
+}
+.obj-ref:hover { background: var(--bg-2); }
+.obj-ref.active { background: var(--bg-2); color: var(--text-0); }
+.obj-pane { flex: 1; min-width: 0; overflow-y: auto; }
+.obj-head { display: flex; align-items: center; gap: 8px; font-size: 12.5px; margin-bottom: 10px; }
+.obj-kind {
+  padding: 0 7px;
+  border-radius: 999px;
+  background: var(--bg-2);
+  font-family: var(--mono);
+  font-size: 11px;
+}
+.obj-sha { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; font-family: var(--mono); font-size: 11px; color: var(--text-2); }
+.obj-size { flex-shrink: 0; font-family: var(--mono); font-size: 11px; color: var(--text-2); }
+.obj-fields { display: flex; flex-direction: column; gap: 3px; font-size: 12.5px; }
+.obj-field { display: flex; gap: 10px; align-items: baseline; }
+.obj-field > span:first-child {
+  flex: 0 0 74px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-2);
+}
+.obj-field em { font-style: normal; color: var(--text-1); }
+/* Every sha is a door: click it and you are looking at that object. */
+.obj-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 11.5px;
+  cursor: pointer;
+  text-align: left;
+}
+.obj-link:hover { text-decoration: underline; }
+.obj-message,
+.obj-blob pre {
+  margin: 10px 0 0;
+  padding: 8px 10px;
+  background: var(--bg-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.obj-tree { display: flex; flex-direction: column; gap: 2px; }
+.obj-tree-row { display: flex; align-items: baseline; gap: 10px; font-size: 12.5px; padding: 1px 0; }
+.obj-mode { font-family: var(--mono); font-size: 10.5px; color: var(--text-2); flex-shrink: 0; }
+.obj-child-kind { font-family: var(--mono); font-size: 10.5px; color: var(--text-2); flex: 0 0 42px; }
+.obj-tree-row .obj-link { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: inherit; font-size: 12.5px; }
+.obj-child-sha { font-family: var(--mono); font-size: 10.5px; color: var(--text-2); flex-shrink: 0; }
+.obj-error { font-size: 12.5px; color: var(--danger, #dc2626); font-family: var(--mono); }
+
 .mergeopt-modal { display: flex; flex-direction: column; min-height: 0; overflow-y: auto; }
 /* A native select ignores the app's theme entirely, so give it the same shell
    the modal's inputs wear. */

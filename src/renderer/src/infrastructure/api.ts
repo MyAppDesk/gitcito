@@ -68,6 +68,8 @@ import type {
   ArchiveFormat,
   ArchiveResult,
   ConflictCommit,
+  GitObject,
+  RefObject,
   MergeOptions,
   FsckReport,
   MaintenanceResult,
@@ -250,6 +252,11 @@ export const gitApi = {
   subtreeSplit: (path: string, prefix: string, branch: string) =>
     call<string>('subtreeSplit', path, prefix, branch),
   subtreeForget: (path: string, prefix: string) => call<void>('subtreeForget', path, prefix),
+
+  /** Every ref, plus HEAD, with the object it names — the explorer's roots. */
+  objectRefs: (path: string) => call<RefObject[]>('objectRefs', path),
+  /** Any revision expression, resolved and decoded. Pure inspection. */
+  gitObject: (path: string, rev: string) => call<GitObject>('gitObject', path, rev),
 
   /** Disk usage and what maintenance could reclaim. Walks reachability — slow. */
   maintenanceStats: (path: string) => call<MaintenanceStats>('maintenanceStats', path),

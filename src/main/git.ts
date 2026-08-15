@@ -74,6 +74,9 @@ import type {
   ArchiveFormat,
   ArchiveResult,
   ConflictCommit,
+  GitObject,
+  GitObjectKind,
+  RefObject,
   MergeOptions,
   FsckReport,
   MaintenanceResult,
@@ -436,6 +439,9 @@ function mergeArgs(options: MergeOptions | boolean): string[] {
   if (o.ignoreSpace) args.push('-X', `ignore-space-${o.ignoreSpace === 'eol' ? 'at-eol' : o.ignoreSpace}`)
   return args
 }
+
+/** How much of a blob the object explorer shows before saying "truncated". */
+const OBJECT_BLOB_PREVIEW = 200_000
 
 /** How many removable paths a clean preview will size and show. */
 const CLEAN_ENTRY_CAP = 400
@@ -2260,6 +2266,107 @@ export const gitService = {
 
   async unstageAll(repoPath: string): Promise<void> {
     await gitFor(repoPath).raw(['reset', 'HEAD', '--', '.'])
+  },
+
+  // ─── Object explorer ───────────────────────────────────────────────────────
+  // Everything git does is four object types and some refs pointing at them.
+  // These two reads expose that layer as it actually is — no porcelain, no
+  // interpretation, and nothing that can change a byte.
+
+  /** Every ref in the repository, plus HEAD, with what it points at. */
+  async objectRefs(repoPath: string): Promise<RefObject[]> {
+    const out = await runGit(repoPath, [
+      'for-each-ref',
+      `--format=%(refname)${SEP}%(objectname)${SEP}%(objecttype)`
+    ]).catch(() => '')
+    const refs: RefObject[] = []
+    for (const line of out.split('\n')) {
+      const [name, sha, kind] = line.split(SEP)
+      if (name && sha) refs.push({ name, sha, kind: (kind as GitObjectKind) ?? 'commit' })
+    }
+    // HEAD is a ref too, and the one people start from — for-each-ref omits it.
+    const head = (await runGit(repoPath, ['rev-parse', 'HEAD']).catch(() => '')).trim()
+    if (head) refs.unshift({ name: 'HEAD', sha: head, kind: 'commit' })
+    return refs
+  },
+
+  /**
+   * Resolve any revision expression to the object it names, decoded.
+   *
+   * `rev` is whatever `git rev-parse` accepts: a sha, `HEAD~3`, `main^{tree}`,
+   * `v1.0^{}`, or `HEAD:src/app.ts`. Being able to type those is half the point
+   * — the explorer is a way to learn the model, not just to browse it.
+   */
+  async gitObject(repoPath: string, rev: string): Promise<GitObject> {
+    const wanted = rev.trim() || 'HEAD'
+    const sha = (await runGit(repoPath, ['rev-parse', '--verify', `${wanted}`])).trim()
+    const kind = (await runGit(repoPath, ['cat-file', '-t', sha])).trim() as GitObjectKind
+    const size = Number((await runGit(repoPath, ['cat-file', '-s', sha]).catch(() => '0')).trim()) || 0
+    const object: GitObject = { sha, kind, size, rev: wanted }
+
+    if (kind === 'tree') {
+      const listing = await runGit(repoPath, ['ls-tree', '-l', '-z', sha]).catch(() => '')
+      object.tree = listing
+        .split('\0')
+        .filter(Boolean)
+        .map((entry) => {
+          // "<mode> <type> <sha> <size>\t<name>" — size is '-' for trees.
+          const [meta, name = ''] = entry.split('\t')
+          const [mode, type, childSha, rawSize] = meta.trim().split(/\s+/)
+          return {
+            mode,
+            kind: type as GitObjectKind,
+            sha: childSha,
+            name,
+            size: rawSize && rawSize !== '-' ? Number(rawSize) : null
+          }
+        })
+      return object
+    }
+
+    const body = await runGit(repoPath, ['cat-file', '-p', sha]).catch(() => '')
+
+    if (kind === 'commit') {
+      const header = body.split('\n\n')[0] ?? ''
+      const field = (key: string): string => new RegExp(`^${key} (.*)$`, 'm').exec(header)?.[1]?.trim() ?? ''
+      object.commit = {
+        tree: field('tree'),
+        parents: [...header.matchAll(/^parent (.*)$/gm)].map((m) => m[1].trim()),
+        author: field('author'),
+        committer: field('committer'),
+        message: body.slice(header.length).replace(/^\n+/, '')
+      }
+      return object
+    }
+
+    if (kind === 'tag') {
+      const header = body.split('\n\n')[0] ?? ''
+      const field = (key: string): string => new RegExp(`^${key} (.*)$`, 'm').exec(header)?.[1]?.trim() ?? ''
+      object.tag = {
+        object: field('object'),
+        type: field('type'),
+        name: field('tag'),
+        tagger: field('tagger'),
+        message: body.slice(header.length).replace(/^\n+/, '')
+      }
+      return object
+    }
+
+    // A blob: show the head of it, and say plainly when it is not text rather
+    // than spraying control characters into the pane.
+    const raw = await pexecFile('git', ['-C', repoPath, 'cat-file', '-p', sha], {
+      env: noPromptEnv(),
+      encoding: 'buffer',
+      maxBuffer: 16 * 1024 * 1024
+    }).catch(() => ({ stdout: Buffer.alloc(0) }))
+    const buffer = raw.stdout as Buffer
+    const head = buffer.subarray(0, OBJECT_BLOB_PREVIEW)
+    const binary = head.includes(0)
+    object.blob = {
+      text: binary ? null : head.toString('utf-8'),
+      truncated: buffer.length > head.length
+    }
+    return object
   },
 
   // ─── Repository maintenance ────────────────────────────────────────────────
@@ -5327,6 +5434,8 @@ const READ_METHODS = new Set<string>([
   'archiveCreate',
   'maintenanceStats',
   'fsck',
+  'objectRefs',
+  'gitObject',
   'conflictCommits',
   'note',
   'notedCommits',

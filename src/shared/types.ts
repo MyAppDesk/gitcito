@@ -1543,6 +1543,54 @@ export interface SubtreeInfo {
   lastSplit: string
 }
 
+/** The four kinds of thing git stores. Everything else is built from these. */
+export type GitObjectKind = 'commit' | 'tree' | 'blob' | 'tag'
+
+/** One entry of a tree object, as `git ls-tree -l` prints it. */
+export interface TreeChild {
+  /** Six-digit mode: 100644 file, 100755 executable, 040000 tree, 120000 symlink, 160000 gitlink. */
+  mode: string
+  kind: GitObjectKind
+  sha: string
+  name: string
+  /** Blob size in bytes; null for trees and submodule gitlinks. */
+  size: number | null
+}
+
+/** A raw object from the database, decoded enough to be walkable. */
+export interface GitObject {
+  sha: string
+  kind: GitObjectKind
+  /** Size of the object's content, as `git cat-file -s` reports it. */
+  size: number
+  /** What the caller asked for, e.g. `HEAD`, `main^{tree}`, a path. */
+  rev: string
+  commit?: {
+    tree: string
+    parents: string[]
+    author: string
+    committer: string
+    message: string
+  }
+  tag?: { object: string; type: string; name: string; tagger: string; message: string }
+  tree?: TreeChild[]
+  blob?: {
+    /** Decoded text, or null when the blob is binary. */
+    text: string | null
+    /** True when only the head of the blob is here. */
+    truncated: boolean
+  }
+}
+
+/** A ref and what it points at, for the object explorer's starting points. */
+export interface RefObject {
+  /** Full ref name, e.g. `refs/heads/main`, or `HEAD`. */
+  name: string
+  sha: string
+  /** The kind of object the ref names — annotated tags point at a `tag`. */
+  kind: GitObjectKind
+}
+
 /**
  * The switches that turn a painful merge into a routine one.
  *

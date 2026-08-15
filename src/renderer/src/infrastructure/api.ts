@@ -560,6 +560,18 @@ export const shellApi = {
         : 'Reveal in file manager'
 }
 
+export const sshApi = {
+  /** Keys in ~/.ssh, with whether the agent is holding each one. Public halves
+   *  and fingerprints only — a private key never crosses this boundary. */
+  status: () => window.api.ssh.status(),
+  generate: (name: string, comment: string, passphrase: string) =>
+    window.api.ssh.generate(name, comment, passphrase),
+  /** Resolves to '' on success, or to ssh-add's own complaint. */
+  addToAgent: (publicKeyPath: string, passphrase: string) =>
+    window.api.ssh.addToAgent(publicKeyPath, passphrase),
+  test: (host: string) => window.api.ssh.test(host)
+}
+
 export const editorApi = {
   /** Editors installed on this machine, CLI installs first (only those can jump
    *  to a line). Re-probed on demand — an editor installed after launch shows up
@@ -611,6 +623,9 @@ export const hostingApi = {
     window.api.hosting.markAllNotificationsRead(token) as Promise<void>,
   listIssues: (remoteUrl: string, tokens: { github?: string }) =>
     window.api.hosting.listIssues(remoteUrl, tokens) as Promise<{ provider: HostingProvider; issues: IssueInfo[] }>,
+  /** Register a public key on the user's GitHub account (GitHub only). */
+  uploadSshKey: (token: string, title: string, publicKey: string) =>
+    window.api.hosting.uploadSshKey(token, title, publicKey) as Promise<{ id: number }>,
   issueDetail: (remoteUrl: string, tokens: { github?: string }, number: number) =>
     window.api.hosting.issueDetail(remoteUrl, tokens, number) as Promise<IssueDetail>,
   setIssueState: (remoteUrl: string, tokens: { github?: string }, number: number, state: 'open' | 'closed') =>

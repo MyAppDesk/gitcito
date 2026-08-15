@@ -17,6 +17,13 @@ import { parseMergeTreeSingle, parseMergeTreeStdin } from '../src/shared/mergeTr
 import { parseRangeDiff } from '../src/shared/rangeDiff'
 import { editorArgs, editorLaunch, supportsLine } from '../src/shared/editors'
 import { branchDropActions, encodeDropRef, decodeDropRef, type DropRef } from '../src/renderer/src/lib/branchDrop'
+import {
+  parseKeygenLine,
+  agentFingerprints,
+  publicKeyFiles,
+  privateKeyName,
+  readSshTest
+} from '../src/shared/sshKeys'
 import type { EditorSetting } from '../src/shared/editors'
 import { parseForcedUpdates } from '../src/shared/fetchPorcelain'
 import { buildPatch, parsePatch, touchedOldLines } from '../src/shared/patchHunks'
@@ -3007,5 +3014,55 @@ describe('branch drop rules', () => {
     expect(decodeDropRef(JSON.stringify({ name: 'x', kind: 'bogus' }))).toBeNull()
     expect(decodeDropRef(JSON.stringify({ kind: 'local' }))).toBeNull()
     expect(decodeDropRef(null)).toBeNull()
+  })
+})
+
+describe('ssh key parsing', () => {
+  it('reads an ssh-keygen -l line, type and all', () => {
+    expect(parseKeygenLine('256 SHA256:abc123 you@example.com (ED25519)')).toEqual({
+      bits: 256,
+      fingerprint: 'SHA256:abc123',
+      comment: 'you@example.com',
+      type: 'ed25519'
+    })
+    expect(parseKeygenLine('4096 SHA256:xyz old laptop key (RSA)')?.comment).toBe('old laptop key')
+    expect(parseKeygenLine('256 SHA256:def no comment (ED25519)')?.comment).toBe('')
+  })
+
+  it('treats an unknown or missing algorithm as unknown rather than guessing', () => {
+    expect(parseKeygenLine('256 SHA256:abc you@example.com')?.type).toBe('unknown')
+    expect(parseKeygenLine('521 SHA256:abc key (ECDSA-SK)')?.type).toBe('ecdsa-sk')
+  })
+
+  it('rejects lines that are not key lines', () => {
+    // What ssh-add prints when there is nothing loaded, or no agent at all.
+    expect(parseKeygenLine('The agent has no identities.')).toBeNull()
+    expect(parseKeygenLine('Error connecting to agent: No such file or directory')).toBeNull()
+    expect(parseKeygenLine('')).toBeNull()
+  })
+
+  it('collects only real fingerprints out of ssh-add output', () => {
+    const out = '256 SHA256:aaa a@b (ED25519)\n4096 SHA256:bbb c@d (RSA)\nThe agent has no identities.'
+    expect([...agentFingerprints(out)]).toEqual(['SHA256:aaa', 'SHA256:bbb'])
+    expect(agentFingerprints('Could not open a connection to your authentication agent.').size).toBe(0)
+  })
+
+  it('picks key files out of a ~/.ssh listing and leaves the config alone', () => {
+    const entries = ['config', 'known_hosts', 'id_rsa', 'id_rsa.pub', 'id_ed25519', 'id_ed25519.pub', 'authorized_keys']
+    expect(publicKeyFiles(entries)).toEqual(['id_ed25519.pub', 'id_rsa.pub'])
+  })
+
+  it('maps a public key back to its private half', () => {
+    expect(privateKeyName('id_ed25519.pub')).toBe('id_ed25519')
+    expect(privateKeyName('/home/me/.ssh/id_rsa.pub')).toBe('/home/me/.ssh/id_rsa')
+  })
+
+  it('reads the verdict out of ssh -T, whose exit code lies', () => {
+    // GitHub authenticates you and then exits 1.
+    expect(readSshTest("Hi octocat! You've successfully authenticated, but GitHub does not provide shell access.")).toBe('ok')
+    expect(readSshTest('Welcome to GitLab, @octocat!')).toBe('ok')
+    expect(readSshTest('git@github.com: Permission denied (publickey).')).toBe('denied')
+    expect(readSshTest('ssh: Could not resolve hostname github.com')).toBe('unreachable')
+    expect(readSshTest('something else entirely')).toBe('unknown')
   })
 })

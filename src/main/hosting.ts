@@ -1534,6 +1534,18 @@ async function markAllNotificationsRead(token: string): Promise<void> {
   })
 }
 
+/**
+ * Register an SSH public key on the user's GitHub account. The only place the
+ * host token and the SSH world meet: the token is what authorises adding a key
+ * the transport will then use. Only the public half is ever sent.
+ */
+export async function uploadSshKey(token: string, title: string, publicKey: string): Promise<{ id: number }> {
+  return ghJson<{ id: number }>('https://api.github.com/user/keys', token, {
+    method: 'POST',
+    body: JSON.stringify({ title, key: publicKey.trim() })
+  })
+}
+
 export function registerHostingHandlers(): void {
   ipcMain.handle('hosting:listRepos', (_e, provider: RepoHost, token: string, org?: string) =>
     listRepositories(provider, token, org)
@@ -1610,6 +1622,9 @@ export function registerHostingHandlers(): void {
   )
   ipcMain.handle('hosting:milestoneIssues', (_e, remoteUrl: string, tokens: { github?: string }, number: number) =>
     milestoneIssues(remoteUrl, tokens, number)
+  )
+  ipcMain.handle('hosting:uploadSshKey', (_e, token: string, title: string, publicKey: string) =>
+    uploadSshKey(token, title, publicKey)
   )
   ipcMain.handle('hosting:issueDetail', (_e, remoteUrl: string, tokens: { github?: string }, number: number) =>
     issueDetail(remoteUrl, tokens, number)

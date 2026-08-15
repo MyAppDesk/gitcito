@@ -4200,6 +4200,23 @@ textarea:focus {
   text-decoration: underline;
 }
 
+/* A link inside a running sentence: inherits the paragraph's size so it does
+   not sit a pixel off the baseline, unlike the standalone .link-btn. */
+.link-inline {
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--accent);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.link-inline:hover {
+  text-decoration-thickness: 2px;
+}
+
 .remote-connect {
   display: flex;
   flex-direction: column;
@@ -11369,6 +11386,46 @@ mark.find-hit.active {
 .notif-action:hover { background: var(--bg-3); color: var(--text-0); }
 
 /* ─── Branch stack modal ───────────────────────────────────────────────── */
+.ssh-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.ssh-key {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  background: var(--bg-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+}
+.ssh-key-head { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.ssh-key-meta { font-size: 11.5px; color: var(--text-2); text-transform: uppercase; }
+.ssh-key-fp { font-size: 11.5px; color: var(--text-2); word-break: break-all; }
+.ssh-key-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+/* Agent state is the answer to "why did my push stop working", so it reads as a
+   status badge rather than another line of prose. */
+.ssh-badge {
+  margin-left: auto;
+  padding: 1px 7px;
+  font-size: 11px;
+  border-radius: 999px;
+  border: 1px solid var(--border-soft);
+}
+.ssh-badge.ok { color: var(--ok, #16a34a); border-color: currentColor; }
+.ssh-badge.warn { color: var(--warn, #d97706); border-color: currentColor; }
+.ssh-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.ssh-test { margin-top: 10px; font-size: 12px; }
+.ssh-test.ok strong { color: var(--ok, #16a34a); }
+.ssh-test.denied strong,
+.ssh-test.unreachable strong { color: var(--warn, #d97706); }
+.ssh-test pre {
+  margin: 6px 0 0;
+  padding: 8px 10px;
+  background: var(--bg-2);
+  border-radius: 6px;
+  font-size: 11.5px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 .gitflow-modal { display: flex; flex-direction: column; min-height: 0; }
 .gitflow-grid {
   display: grid;

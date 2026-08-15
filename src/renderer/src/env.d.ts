@@ -64,6 +64,12 @@ interface PreloadApi {
     openWithApp(targetPath: string, appPath: string): Promise<string>
     writeFiles(repoPath: string, files: unknown[]): Promise<void>
   }
+  ssh: {
+    status(): Promise<import('../../shared/sshKeys').SshStatus>
+    generate(name: string, comment: string, passphrase: string): Promise<string>
+    addToAgent(publicKeyPath: string, passphrase: string): Promise<string>
+    test(host: string): Promise<import('../../shared/sshKeys').SshTest>
+  }
   editor: {
     detect(): Promise<import('../../shared/editors').DetectedEditor[]>
     open(
@@ -146,6 +152,7 @@ interface PreloadApi {
   }
   hosting: {
     listRepos(provider: string, token: string, org?: string): Promise<unknown>
+    uploadSshKey(token: string, title: string, publicKey: string): Promise<unknown>
     listOwners(provider: string, token: string, org?: string): Promise<unknown>
     whoAmI(provider: string, token: string, org?: string, interactive?: boolean): Promise<unknown>
     createRepo(provider: string, token: string, opts: unknown, org?: string): Promise<unknown>

@@ -2,6 +2,8 @@ import { useCallback, useEffect, useId, useMemo, useState, type ReactNode } from
 import { createPortal } from 'react-dom'
 import {
   Plus,
+  Copy,
+  Terminal,
   Trash2,
   Pencil,
   LayoutGrid,
@@ -47,8 +49,9 @@ import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
 import { Avatar } from './Avatar'
 import { useUpdatesStore, hasPendingUpdate } from '../stores/updates'
-import { gitApi, aiApi, settingsApi, analyticsApi, logApi, infoApi, vaultApi, shellApi, hostingApi, keychainApi, editorApi } from '../infrastructure/api'
+import { gitApi, aiApi, settingsApi, analyticsApi, logApi, infoApi, vaultApi, shellApi, hostingApi, keychainApi, editorApi, sshApi } from '../infrastructure/api'
 import type { DetectedEditor, EditorSetting } from '../../../shared/editors'
+import type { SshKey, SshStatus, SshTest } from '../../../shared/sshKeys'
 import { AI_PROVIDERS, emptyAnalytics, defaultGraphStyle, type AIProvider, type Analytics, type AIUsageStat, type ActivityEvent, type RepoStats, type AppSettings, type BranchNamingStyle, type CommitStyle, type ConflictStyle, type ExplainStyle, type Profile, type SigningConfig, type SettingsBundle, type GraphStyle, type GraphPalette, type GraphEdgeStyle, type GraphDensity, type GraphLineWidth, type GraphNodeStyle, type GraphTopology, type GraphCommit, type ConnectedAccount } from '../../../shared/types'
 import { hasSettingsSecrets, stripSettingsSecrets } from '../../../shared/secrets'
 import type { HoverModifier, KeychainConsent } from '../../../shared/types'
@@ -357,10 +360,13 @@ const INTEGRATIONS = [
 
 export function IntegrationsPage({
   profile,
-  edit
+  edit,
+  onGoToSecurity
 }: {
   profile: Profile
   edit: (p: Partial<Profile>) => void
+  /** Jump to the Security page, where SSH keys live. */
+  onGoToSecurity?: () => void
 }): React.JSX.Element {
   const t = useT()
   const [tab, setTab] = useState<(typeof INTEGRATIONS)[number]['id']>('github')
@@ -370,6 +376,8 @@ export function IntegrationsPage({
   const azureOrg = profile.azureOrg ?? ''
   const whoAmIOrg = active.id === 'azure' ? azureOrg.trim() : undefined
   const azureOrgRequired = t('settings.azureOrgRequired')
+
+  const sshNotice = t('settings.sshFromIntegrations').split('{link}')
 
   const [account, setAccount] = useState<ConnectedAccount | null>(null)
   const [accountError, setAccountError] = useState<string | null>(null)
@@ -420,6 +428,14 @@ export function IntegrationsPage({
         <UserCircle2 size={15} />
         <span>{t('settings.integrationsForProfile').replace('{name}', profile.name)}</span>
       </div>
+
+      <p className="settings-hint">
+        {sshNotice[0]}
+        <button className="link-inline" type="button" onClick={onGoToSecurity}>
+          {t('settings.security')}
+        </button>
+        {sshNotice[1]}
+      </p>
 
       <div className="remote-tabs">
         {INTEGRATIONS.map((i) => {
@@ -2644,6 +2660,8 @@ function SecurityPage(): React.JSX.Element {
 
       <KeychainCard />
 
+      <SshKeysCard />
+
       <h4 style={{ marginTop: 18 }}>
         <KeyRound size={14} /> {t('settings.vault')}
       </h4>
@@ -2654,6 +2672,206 @@ function SecurityPage(): React.JSX.Element {
         <span className="settings-hint" style={{ display: 'block', marginTop: 6 }}>{t('settings.openVaultHint')}</span>
       </div>
     </div>
+  )
+}
+
+/** Hosts the connection test can reach, and where their key settings live. */
+const SSH_HOSTS: { id: string; label: string; url: string }[] = [
+  { id: 'github', label: 'GitHub', url: 'https://github.com/settings/keys' },
+  { id: 'gitlab', label: 'GitLab', url: 'https://gitlab.com/-/user_settings/ssh_keys' },
+  { id: 'bitbucket', label: 'Bitbucket', url: 'https://bitbucket.org/account/settings/ssh-keys/' },
+  { id: 'azure', label: 'Azure DevOps', url: 'https://dev.azure.com' }
+]
+
+/**
+ * SSH keys are machine state, not profile state — a `git@` remote authenticates
+ * through the system ssh whichever profile is active — so this lives in
+ * Security rather than under Integrations.
+ */
+function SshKeysCard(): React.JSX.Element {
+  const t = useT()
+  const toast = useUIStore((s) => s.toast)
+  const openModal = useUIStore((s) => s.openModal)
+  const profile = useSettingsStore((s) => s.activeProfile())
+  const [status, setStatus] = useState<SshStatus | null>(null)
+  const [busy, setBusy] = useState('')
+  const [host, setHost] = useState('github')
+  const [test, setTest] = useState<SshTest | null>(null)
+
+  const reload = useCallback(async (): Promise<void> => {
+    setStatus(await sshApi.status().catch(() => null))
+  }, [])
+  useEffect(() => {
+    void reload()
+  }, [reload])
+
+  const withBusy = async (id: string, fn: () => Promise<void>): Promise<void> => {
+    setBusy(id)
+    try {
+      await fn()
+    } finally {
+      setBusy('')
+    }
+  }
+
+  const generate = (): void => {
+    openModal({
+      kind: 'input',
+      title: t('ssh.generateTitle'),
+      label: t('ssh.generateLabel'),
+      placeholder: 'id_ed25519',
+      initial: 'id_ed25519',
+      submitLabel: t('ssh.generate'),
+      onSubmit: (name) => {
+        void withBusy('generate', async () => {
+          try {
+            // The comment is what identifies the key on the host's list later,
+            // so it defaults to the profile's git identity.
+            await sshApi.generate(name, profile.gitEmail || profile.gitName || 'gitcito', '')
+            toast('success', t('ssh.generated'))
+            await reload()
+          } catch (err) {
+            toast('error', err instanceof Error ? err.message : String(err))
+          }
+        })
+      }
+    })
+  }
+
+  const addToAgent = (key: SshKey): void => {
+    openModal({
+      kind: 'input',
+      title: t('ssh.addToAgent'),
+      label: t('ssh.passphraseLabel'),
+      placeholder: t('ssh.passphrasePlaceholder'),
+      allowEmpty: true,
+      submitLabel: t('ssh.addToAgent'),
+      onSubmit: (passphrase) => {
+        void withBusy(key.file, async () => {
+          const error = await sshApi.addToAgent(key.path, passphrase)
+          if (error) toast('error', error)
+          else toast('success', t('ssh.added'))
+          await reload()
+        })
+      }
+    })
+  }
+
+  const upload = (key: SshKey): void => {
+    const token = profile.githubToken?.trim()
+    if (!token) return toast('error', t('ssh.needsGithubToken'))
+    openModal({
+      kind: 'confirm',
+      title: t('confirm.uploadSshKey.title'),
+      message: interp(t('confirm.uploadSshKey.message'), { fingerprint: key.fingerprint }),
+      confirmLabel: t('confirm.uploadSshKey.ok'),
+      onConfirm: () => {
+        void withBusy(key.file, async () => {
+          try {
+            await hostingApi.uploadSshKey(token, key.comment || key.file, key.publicKey)
+            toast('success', t('ssh.uploaded'))
+          } catch (err) {
+            toast('error', err instanceof Error ? err.message : String(err))
+          }
+        })
+      }
+    })
+  }
+
+  const runTest = (): void =>
+    void withBusy('test', async () => {
+      setTest(await sshApi.test(host))
+    })
+
+  const keys = status?.keys ?? []
+
+  return (
+    <>
+      <h4 style={{ marginTop: 18 }}>
+        <Terminal size={14} /> {t('ssh.title')}
+      </h4>
+      <p className="settings-hint">{t('ssh.intro')}</p>
+
+      {keys.length === 0 ? (
+        <p className="settings-hint">{t('ssh.none')}</p>
+      ) : (
+        <div className="ssh-list">
+          {keys.map((key) => (
+            <div key={key.file} className="ssh-key">
+              <div className="ssh-key-head">
+                <strong>{key.file}</strong>
+                <span className="ssh-key-meta">
+                  {key.type} {key.bits}
+                </span>
+                <span className={`ssh-badge ${key.inAgent ? 'ok' : 'warn'}`}>
+                  {key.inAgent ? t('ssh.inAgent') : t('ssh.notInAgent')}
+                </span>
+              </div>
+              <code className="ssh-key-fp">{key.fingerprint}</code>
+              {key.comment && <span className="settings-hint">{key.comment}</span>}
+              <div className="ssh-key-actions">
+                <button
+                  className="btn ghost small"
+                  onClick={() => {
+                    void navigator.clipboard.writeText(key.publicKey)
+                    toast('success', t('ssh.copied'))
+                  }}
+                >
+                  <Copy size={12} /> {t('ssh.copyPublic')}
+                </button>
+                {key.hasPrivate && !key.inAgent && (
+                  <button className="btn ghost small" disabled={!!busy} onClick={() => addToAgent(key)}>
+                    <Plus size={12} /> {t('ssh.addToAgent')}
+                  </button>
+                )}
+                <button className="btn ghost small" disabled={!!busy} onClick={() => upload(key)}>
+                  <Upload size={12} /> {t('ssh.uploadGithub')}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="ssh-actions">
+        <button className="btn ghost small" disabled={busy === 'generate'} onClick={generate}>
+          <Plus size={13} /> {t('ssh.generate')}
+        </button>
+        <select value={host} onChange={(e) => setHost(e.target.value)}>
+          {SSH_HOSTS.map((h) => (
+            <option key={h.id} value={h.id}>
+              {h.label}
+            </option>
+          ))}
+        </select>
+        <button className="btn ghost small" disabled={busy === 'test'} onClick={runTest}>
+          {busy === 'test' ? <Loader2 size={13} className="spin" /> : <Plug size={13} />} {t('ssh.test')}
+        </button>
+        <button
+          className="link-btn"
+          onClick={() => void shellApi.openExternal(SSH_HOSTS.find((h) => h.id === host)?.url ?? '')}
+        >
+          <ExternalLink size={12} /> {t('ssh.hostKeySettings')}
+        </button>
+      </div>
+
+      {test && (
+        <div className={`ssh-test ${test.result}`}>
+          <strong>
+            {test.result === 'ok'
+              ? t('ssh.testOk')
+              : test.result === 'denied'
+                ? t('ssh.testDenied')
+                : test.result === 'unreachable'
+                  ? t('ssh.testUnreachable')
+                  : t('ssh.testUnknown')}
+          </strong>
+          {test.output && <pre>{test.output}</pre>}
+        </div>
+      )}
+
+      <p className="settings-hint">{t('ssh.privateNever')}</p>
+    </>
   )
 }
 
@@ -3268,7 +3486,9 @@ export function SettingsPanel({ initialPage, initialThemeTab }: { initialPage?: 
         <div className="settings-form">
           {page === 'profile' && <ProfilePage profile={profile} edit={edit} />}
           {page === 'workspaces' && <WorkspacesPage />}
-          {page === 'integrations' && <IntegrationsPage profile={profile} edit={edit} />}
+          {page === 'integrations' && (
+            <IntegrationsPage profile={profile} edit={edit} onGoToSecurity={() => setPage('security')} />
+          )}
           {page === 'ai' && <AIPage profile={profile} edit={edit} />}
           {page === 'themes' && <ThemesPage initialTab={initialThemeTab} />}
           {page === 'general' && <GeneralPage />}

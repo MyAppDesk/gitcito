@@ -57,6 +57,15 @@ const api = {
       ipcRenderer.invoke('shell:writeFiles', repoPath, files)
   },
 
+  ssh: {
+    status: (): Promise<unknown> => ipcRenderer.invoke('ssh:status'),
+    generate: (name: string, comment: string, passphrase: string): Promise<string> =>
+      ipcRenderer.invoke('ssh:generate', name, comment, passphrase),
+    addToAgent: (publicKeyPath: string, passphrase: string): Promise<string> =>
+      ipcRenderer.invoke('ssh:addToAgent', publicKeyPath, passphrase),
+    test: (host: string): Promise<unknown> => ipcRenderer.invoke('ssh:test', host)
+  },
+
   editor: {
     detect: (): Promise<unknown> => ipcRenderer.invoke('editor:detect'),
     open: (setting: unknown, target: unknown): Promise<string> =>
@@ -214,6 +223,8 @@ const api = {
       ipcRenderer.invoke('hosting:markAllNotificationsRead', token),
     listIssues: (remoteUrl: string, tokens: unknown): Promise<unknown> =>
       ipcRenderer.invoke('hosting:listIssues', remoteUrl, tokens),
+    uploadSshKey: (token: string, title: string, publicKey: string): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:uploadSshKey', token, title, publicKey),
     issueDetail: (remoteUrl: string, tokens: unknown, number: number): Promise<unknown> =>
       ipcRenderer.invoke('hosting:issueDetail', remoteUrl, tokens, number),
     setIssueState: (remoteUrl: string, tokens: unknown, number: number, state: string): Promise<unknown> =>

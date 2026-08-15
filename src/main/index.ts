@@ -24,6 +24,7 @@ import { registerUpdaterHandlers, checkForUpdatesOnLaunch } from './updater'
 import { fixPath } from './fix-path'
 import { registerCliHandlers } from './cli'
 import { registerEditorHandlers } from './editor'
+import { registerSshHandlers } from './ssh'
 import { parseCliOpenArgs, type CliOpenPayload } from '../shared/cli'
 
 // GUI launches inherit a minimal PATH; restore the login-shell PATH so spawned
@@ -347,6 +348,7 @@ app.whenReady().then(() => {
   registerUpdaterHandlers()
   registerCliHandlers()
   registerEditorHandlers()
+  registerSshHandlers()
 
   createWindow()
   checkForUpdatesOnLaunch()

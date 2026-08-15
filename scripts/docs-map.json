@@ -106,6 +106,7 @@
       "settings": "themes",
       "settings-ai": "ai",
       "settings-security": "security",
+      "ssh-keys": "ssh-keys",
       "settings-shortcuts": "keyboard",
       "settings-themes": "themes",
       "snapshots": "recovery",

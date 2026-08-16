@@ -15,6 +15,8 @@ sohbeti bunları açık depo üzerinden yanıtlar ve dayandığı satırları g�
 Sağ sütunu **Ayrıntılar** ile paylaşır: üstteki sekmeler ikisi arasında geçiş
 yapar, böylece bir şey sorduğunuzda grafik seçimini kaybetmez.
 
+![Sabitlenmiş bağlamla depo sohbeti](../../screenshots/repo-chat.webp)
+
 ## Ne okur
 
 Her yanıt iki geçişte kurulur. İlki, deponun kendi izlenen dosya listesinden
@@ -67,6 +69,8 @@ yanıtlayamayacağı bir şeyi öneren panel kalmaz.
 
 Sohbet modeli, panelin kendi başlığından da değiştirilebilir; sağlayıcı adının
 yanındadır — aynı ayar, Ayarlar’ı açmadan.
+
+![Depo sohbeti ayarları](../../screenshots/settings-repo-chat.webp)
 
 ## Neyi reddeder
 

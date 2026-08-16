@@ -16,6 +16,8 @@ aberto e mostra as linhas em que se baseou.
 Ele divide a coluna da direita com **Detalhes**: as abas no topo alternam entre
 os dois, então o grafo não perde a seleção quando você pergunta algo.
 
+![O chat do repositório com contexto fixado](../../screenshots/repo-chat.webp)
+
 ## O que ele lê
 
 Cada resposta é montada em duas passagens. A primeira escolhe um conjunto
@@ -70,6 +72,8 @@ resposta quando nada pode responder.
 
 O modelo do chat também pode ser trocado no cabeçalho do próprio painel, ao lado
 do nome do provedor — a mesma configuração, sem abrir as Configurações.
+
+![Configurações do chat do repositório](../../screenshots/settings-repo-chat.webp)
 
 ## O que ele recusa
 

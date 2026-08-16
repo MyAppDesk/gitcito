@@ -17,6 +17,8 @@ It shares the right-hand column with **Details**: the tab strip at the top
 switches between them, so the graph never loses its selection when you ask
 something.
 
+![Repository chat with pinned context](../screenshots/repo-chat.webp)
+
 ## What it reads
 
 Every answer is built in two passes. The first picks a small set of paths and
@@ -72,6 +74,8 @@ offering to answer once nothing can.
 
 The chat model is also switchable from the panel's own header, next to the
 provider name — same setting, without opening Settings.
+
+![Repository chat settings](../screenshots/settings-repo-chat.webp)
 
 ## What it refuses
 

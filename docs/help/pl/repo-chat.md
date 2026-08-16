@@ -16,6 +16,8 @@ wiersze, na których się oparł.
 Dzieli prawą kolumnę ze **Szczegółami**: karty u góry przełączają między nimi, więc
 graf nie traci zaznaczenia, gdy o coś pytasz.
 
+![Czat repozytorium z przypiętym kontekstem](../../screenshots/repo-chat.webp)
+
 ## Co czyta
 
 Każda odpowiedź powstaje w dwóch przebiegach. Pierwszy wybiera niewielki zestaw
@@ -69,6 +71,8 @@ proponuje odpowiedzi, której nic nie może udzielić.
 
 Model czatu można przełączyć także w nagłówku samego panelu, obok nazwy dostawcy
 — to to samo ustawienie, bez otwierania Ustawień.
+
+![Ustawienia czatu repozytorium](../../screenshots/settings-repo-chat.webp)
 
 ## Czego odmawia
 

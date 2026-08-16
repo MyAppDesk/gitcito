@@ -16,6 +16,8 @@ repository aperto e mostra le righe su cui si è basata.
 Condivide la colonna destra con **Dettagli**: le schede in alto passano dall’una
 all’altra, così il grafo non perde la sua selezione.
 
+![La chat del repository con contesto fissato](../../screenshots/repo-chat.webp)
+
 ## Che cosa legge
 
 Ogni risposta nasce in due passaggi. Il primo sceglie un piccolo insieme di
@@ -69,6 +71,8 @@ risposte che nessuno può dare.
 
 Il modello della chat si cambia anche dall’intestazione del pannello, accanto al
 nome del provider: è la stessa impostazione, senza aprire le Impostazioni.
+
+![Impostazioni della chat del repository](../../screenshots/settings-repo-chat.webp)
 
 ## Che cosa rifiuta
 

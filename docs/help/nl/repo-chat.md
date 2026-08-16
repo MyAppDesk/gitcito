@@ -16,6 +16,8 @@ de regels zien waarop het antwoord rust.
 Hij deelt de rechterkolom met **Details**: de tabbladen bovenaan wisselen ertussen,
 zodat de graaf zijn selectie niet kwijtraakt als je iets vraagt.
 
+![Repository-chat met vastgezette context](../../screenshots/repo-chat.webp)
+
 ## Wat hij leest
 
 Elk antwoord komt in twee rondes tot stand. De eerste kiest een kleine set paden
@@ -69,6 +71,8 @@ aanbiedt dat niemand kan geven.
 
 Het chatmodel is ook te wisselen in de koptekst van het paneel zelf, naast de
 naam van de provider — dezelfde instelling, zonder Instellingen te openen.
+
+![Instellingen van de repository-chat](../../screenshots/settings-repo-chat.webp)
 
 ## Wat hij weigert
 

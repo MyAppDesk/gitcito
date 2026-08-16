@@ -16,6 +16,8 @@ Repository und zeigt die Zeilen, auf die er sich stützt.
 Er teilt sich die rechte Spalte mit **Details**: die Reiter oben wechseln
 zwischen beiden, ohne dass der Graph seine Auswahl verliert.
 
+![Repository-Chat mit angeheftetem Kontext](../../screenshots/repo-chat.webp)
+
 ## Was er liest
 
 Jede Antwort entsteht in zwei Durchgängen. Der erste wählt wenige Pfade und
@@ -70,6 +72,8 @@ anbietet, was niemand beantworten kann.
 
 Das Chat-Modell lässt sich auch in der Kopfzeile des Panels umstellen, neben dem
 Anbieternamen — dieselbe Einstellung, ohne die Einstellungen zu öffnen.
+
+![Einstellungen des Repository-Chats](../../screenshots/settings-repo-chat.webp)
 
 ## Was er verweigert
 

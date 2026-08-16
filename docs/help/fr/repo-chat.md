@@ -16,6 +16,8 @@ ouvert et montre les lignes sur lesquelles elle s’est appuyée.
 Elle partage la colonne de droite avec **Détails** : les onglets du haut passent
 de l’un à l’autre, sans que le graphe perde sa sélection.
 
+![La discussion du dépôt avec du contexte épinglé](../../screenshots/repo-chat.webp)
+
 ## Ce qu’elle lit
 
 Chaque réponse se construit en deux passes. La première choisit un petit
@@ -70,6 +72,8 @@ panneau proposant une réponse que rien ne peut produire.
 
 Le modèle de la discussion se change aussi depuis l’en-tête du panneau, à côté
 du nom du fournisseur : même réglage, sans ouvrir les Réglages.
+
+![Réglages de la discussion du dépôt](../../screenshots/settings-repo-chat.webp)
 
 ## Ce qu’elle refuse
 

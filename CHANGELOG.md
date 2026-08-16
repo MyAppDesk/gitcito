@@ -1,5 +1,12 @@
 
 
+## [3.7.0](https://github.com/MyAppDesk/gitcito/compare/v3.6.0...v3.7.0) (2026-08-16)
+
+
+### Features
+
+* add grounded repository chat and workspace shortcuts ([#9](https://github.com/MyAppDesk/gitcito/issues/9)) ([be3ef11](https://github.com/MyAppDesk/gitcito/commit/be3ef1185bce132c05aea5cc173087b6df364e50))
+
 ## [3.6.0](https://github.com/MyAppDesk/gitcito/compare/v3.5.0...v3.6.0) (2026-08-15)
 
 

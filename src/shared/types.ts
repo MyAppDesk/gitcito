@@ -839,6 +839,30 @@ export interface AIConfig {
   hoverExplainKey?: HoverModifier
 }
 
+/** One source excerpt used to ground an answer in the repository. */
+export interface RepoChatSource {
+  /** Opaque identifier assigned by the main process (for example, E1). */
+  id: string
+  /** Repo-relative path selected from Git's tracked-file allow-list. */
+  path: string
+  startLine: number
+  endLine: number
+}
+
+/** A serializable chat turn. The renderer keeps UI-only ids outside this type. */
+export interface RepoChatMessage {
+  role: 'user' | 'assistant'
+  content: string
+  /** Present only on grounded assistant replies. */
+  sources?: RepoChatSource[]
+}
+
+/** Read-only answer returned by the repository-chat IPC handler. */
+export interface RepoChatReply {
+  content: string
+  sources: RepoChatSource[]
+}
+
 /** Co-author trailer appended when AIConfig.coAuthor is enabled (default on). */
 export const MYAPPDESK_COAUTHOR = 'MyAppDesk <team@myappdesk.dev>'
 

@@ -3861,6 +3861,24 @@ export const gitService = {
   },
 
   /**
+   * Tracked paths that are also matched by an ignore rule. Git normally keeps
+   * tracking these files, but AI context deliberately honours the rule as a
+   * privacy boundary. `--no-index` makes check-ignore consider tracked paths.
+   */
+  async ignoredTrackedFiles(repoPath: string, paths: string[]): Promise<string[]> {
+    const ignored: string[] = []
+    for (let i = 0; i < paths.length; i += 200) {
+      const chunk = paths.slice(i, i + 200)
+      if (!chunk.length) continue
+      const raw = await gitFor(repoPath)
+        .raw(['check-ignore', '--no-index', '--', ...chunk])
+        .catch(() => '')
+      ignored.push(...raw.split('\n').filter(Boolean))
+    }
+    return ignored
+  },
+
+  /**
    * Files that this push would actually publish: the ones changed in the
    * commits ahead of the upstream. Used by the secret-push guard so it only
    * warns about credentials introduced by the unpushed commits, not every
@@ -5835,6 +5853,7 @@ const READ_METHODS = new Set<string>([
   'repoDetail',
   'listFiles',
   'listTrackedFiles',
+  'ignoredTrackedFiles',
   'filesToPush',
   'commitsTouchingPath',
   'protectedBranches',

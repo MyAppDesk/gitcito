@@ -8,6 +8,7 @@ import type { AppRelease } from '../shared/types'
 import { registerGitHandlers } from './git'
 import { registerSettingsHandlers } from './settings'
 import { registerAiHandlers } from './ai'
+import { registerRepoChatHandlers } from './repoChat'
 import { registerWikiHandlers } from './wiki'
 import { isSafeRepoPath } from './aiSchemas'
 import { registerAnalyticsHandlers } from './analytics'
@@ -363,6 +364,7 @@ app.whenReady().then(() => {
   registerGitHandlers()
   registerSettingsHandlers()
   registerAiHandlers()
+  registerRepoChatHandlers()
   registerWikiHandlers()
   registerAnalyticsHandlers()
   registerLogHandlers()

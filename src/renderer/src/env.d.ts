@@ -120,6 +120,7 @@ interface PreloadApi {
     reviewPR(diff: string, cfg: unknown): Promise<unknown>
     prDescription(commits: string, diff: string, cfg: unknown): Promise<unknown>
     planActions(prompt: string, status: unknown, cfg: unknown): Promise<unknown>
+    repoChat(repoPath: string, messages: unknown, cfg: unknown): Promise<unknown>
   }
   wiki: {
     facts(repoPath: string): Promise<unknown>

@@ -125,6 +125,8 @@ import type {
   KeychainConsent,
   KeychainReason,
   RepoFacts,
+  RepoChatMessage,
+  RepoChatReply,
   RepoWiki,
   WikiProgress
 } from '../../../shared/types'
@@ -584,7 +586,9 @@ export const aiApi = {
   prDescription: (commits: string, diff: string, cfg: AIConfig) =>
     window.api.ai.prDescription(commits, diff, cfg) as Promise<{ title: string; body: string }>,
   planActions: (prompt: string, status: RepoStatus, cfg: AIConfig) =>
-    window.api.ai.planActions(prompt, status, cfg) as Promise<AskPlan>
+    window.api.ai.planActions(prompt, status, cfg) as Promise<AskPlan>,
+  repoChat: (repoPath: string, messages: RepoChatMessage[], cfg: AIConfig) =>
+    window.api.ai.repoChat(repoPath, messages, cfg) as Promise<RepoChatReply>
 }
 
 export const wikiApi = {

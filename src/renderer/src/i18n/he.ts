@@ -2309,6 +2309,8 @@ export const he: Dict = {
   'chat.tabChat': 'צ׳אט',
   'chat.toolbarTitle': 'הצגה או הסתרה של צ׳אט המאגר',
   'chat.title': 'עוזר המאגר',
+  'chat.modelLabel': 'המודל שמשמש את הצ׳אט הזה',
+  'chat.modelDefault': 'המודל של הפרופיל ({model})',
   'chat.clearTitle': 'ניקוי השיחה',
   'chat.emptyTitle': 'שאלו על {repo}',
   'chat.emptyHint': 'שאלו כיצד הקוד פועל, היכן נמצאת יכולת או מה עושים השינויים הנעקבים הנוכחיים.',

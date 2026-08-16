@@ -67,6 +67,9 @@ wykluczonej ścieżki wypadają z tego diffa, a nie cały commit.
 Gdy AI jest wyłączone w całości, czat znika razem z nim — żaden panel nie
 proponuje odpowiedzi, której nic nie może udzielić.
 
+Model czatu można przełączyć także w nagłówku samego panelu, obok nazwy dostawcy
+— to to samo ustawienie, bez otwierania Ustawień.
+
 ## Czego odmawia
 
 - **Pliki wyglądające na sekrety nigdy nie są czytane**, przypięte czy nie: chip

@@ -67,6 +67,9 @@ op een uitgesloten pad vallen uit die diff, niet de hele commit.
 Staat AI helemaal uit, dan verdwijnt de chat mee — geen paneel dat een antwoord
 aanbiedt dat niemand kan geven.
 
+Het chatmodel is ook te wisselen in de koptekst van het paneel zelf, naast de
+naam van de provider — dezelfde instelling, zonder Instellingen te openen.
+
 ## Wat hij weigert
 
 - **Bestanden die op geheimen lijken worden nooit gelezen**, vastgezet of niet:

@@ -23,6 +23,7 @@ import {
   attachmentKey,
   attachmentLabel,
   attachmentTitle,
+  chatModelOptions,
   parseChatDrop,
   suggestedAttachments
 } from '../lib/repoChatContext'
@@ -130,6 +131,7 @@ function AssistantMessage({ message, repoPath }: { message: RepoChatEntry; repoP
 export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoName: string }): React.JSX.Element {
   const t = useT()
   const profile = useSettingsStore((state) => state.activeProfile())
+  const saveProfile = useSettingsStore((state) => state.saveProfile)
   const thread = useRepoChatStore((state) => state.threads[repoPath])
   const send = useRepoChatStore((state) => state.send)
   const retry = useRepoChatStore((state) => state.retry)
@@ -226,7 +228,24 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
       <header className="repo-chat-header">
         <div>
           <strong>{t('chat.title')}</strong>
-          <span>{provider?.label ?? profile.ai.provider} · {profile.ai.model}</span>
+          <span className="repo-chat-model">
+            {provider?.label ?? profile.ai.provider} ·
+            <select
+              value={profile.ai.repoChatModel ?? ''}
+              aria-label={t('chat.modelLabel')}
+              title={t('chat.modelLabel')}
+              onChange={(event) =>
+                saveProfile({ ...profile, ai: { ...profile.ai, repoChatModel: event.target.value } })
+              }
+            >
+              <option value="">{interp(t('chat.modelDefault'), { model: profile.ai.model })}</option>
+              {chatModelOptions(profile.ai, provider?.models ?? []).map((model) => (
+                <option key={model} value={model}>
+                  {model}
+                </option>
+              ))}
+            </select>
+          </span>
         </div>
         <button
           type="button"

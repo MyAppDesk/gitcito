@@ -2309,6 +2309,8 @@ export const ar: Dict = {
   'chat.tabChat': 'الدردشة',
   'chat.toolbarTitle': 'إظهار دردشة المستودع أو إخفاؤها',
   'chat.title': 'مساعد المستودع',
+  'chat.modelLabel': 'النموذج المستخدم في هذه الدردشة',
+  'chat.modelDefault': 'نموذج الملف الشخصي ({model})',
   'chat.clearTitle': 'مسح المحادثة',
   'chat.emptyTitle': 'اسأل عن {repo}',
   'chat.emptyHint': 'اسأل كيف تعمل الشفرة أو أين توجد ميزة أو ماذا تفعل التغييرات المتعقبة الحالية.',

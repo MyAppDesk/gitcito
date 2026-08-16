@@ -2712,6 +2712,34 @@ textarea:focus {
   font-size: 10px;
 }
 
+/* The header's model switcher writes the same setting as Settings → AI →
+   Repository chat, so it has to read as a label, not as a form field. */
+.repo-chat-model {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.repo-chat-model select {
+  max-width: 190px;
+  padding: 1px 4px;
+  height: auto;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  font-size: inherit;
+  cursor: pointer;
+}
+
+.repo-chat-model select:hover,
+.repo-chat-model select:focus {
+  border-color: var(--border-soft);
+  background: var(--bg-1);
+}
+
 /* Pinned context: the chips above the composer, the "+" that adds one, and
    the drop target the whole panel becomes while a drag is in flight. */
 .repo-chat-context {

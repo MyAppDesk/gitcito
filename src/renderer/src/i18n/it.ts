@@ -2249,6 +2249,8 @@ export const it: Dict = {
   'chat.tabChat': 'Chat',
   'chat.toolbarTitle': 'Mostra o nascondi la chat del repository',
   'chat.title': 'Assistente del repository',
+  'chat.modelLabel': 'Modello usato per questa chat',
+  'chat.modelDefault': 'Modello del profilo ({model})',
   'chat.clearTitle': 'Cancella conversazione',
   'chat.emptyTitle': 'Chiedi informazioni su {repo}',
   'chat.emptyHint': 'Chiedi come funziona il codice, dove si trova una funzione o cosa fanno le modifiche tracciate correnti.',

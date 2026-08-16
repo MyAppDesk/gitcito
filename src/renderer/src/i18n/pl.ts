@@ -2309,6 +2309,8 @@ export const pl: Dict = {
   'chat.tabChat': 'Czat',
   'chat.toolbarTitle': 'Pokaż lub ukryj czat repozytorium',
   'chat.title': 'Asystent repozytorium',
+  'chat.modelLabel': 'Model używany w tym czacie',
+  'chat.modelDefault': 'Model profilu ({model})',
   'chat.clearTitle': 'Wyczyść rozmowę',
   'chat.emptyTitle': 'Zapytaj o {repo}',
   'chat.emptyHint': 'Zapytaj, jak działa kod, gdzie znajduje się funkcja lub co robią bieżące śledzone zmiany.',

@@ -2309,6 +2309,8 @@ export const ko: Dict = {
   'chat.tabChat': '채팅',
   'chat.toolbarTitle': '저장소 채팅 표시 또는 숨기기',
   'chat.title': '저장소 도우미',
+  'chat.modelLabel': '이 채팅에 사용하는 모델',
+  'chat.modelDefault': '프로필 모델 ({model})',
   'chat.clearTitle': '대화 지우기',
   'chat.emptyTitle': '{repo}에 대해 질문하기',
   'chat.emptyHint': '코드의 작동 방식, 기능의 위치 또는 현재 추적 중인 변경 사항을 질문하세요.',

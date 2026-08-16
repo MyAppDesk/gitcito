@@ -2249,6 +2249,8 @@ export const tr: Dict = {
   'chat.tabChat': 'Sohbet',
   'chat.toolbarTitle': 'Depo sohbetini göster veya gizle',
   'chat.title': 'Depo asistanı',
+  'chat.modelLabel': 'Bu sohbette kullanılan model',
+  'chat.modelDefault': 'Profilin modeli ({model})',
   'chat.clearTitle': 'Konuşmayı temizle',
   'chat.emptyTitle': '{repo} hakkında sor',
   'chat.emptyHint': 'Kodun nasıl çalıştığını, bir özelliğin nerede olduğunu veya izlenen güncel değişikliklerin ne yaptığını sor.',

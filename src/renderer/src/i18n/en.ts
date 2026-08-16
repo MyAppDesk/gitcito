@@ -2310,6 +2310,8 @@ export const en = {
   'chat.tabChat': 'Chat',
   'chat.toolbarTitle': 'Toggle repository chat',
   'chat.title': 'Repository assistant',
+  'chat.modelLabel': 'Model used for this chat',
+  'chat.modelDefault': 'Profile model ({model})',
   'chat.clearTitle': 'Clear conversation',
   'chat.emptyTitle': 'Ask about {repo}',
   'chat.emptyHint': 'Ask how the code works, where a feature lives, or what the current tracked changes do.',

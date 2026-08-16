@@ -68,6 +68,9 @@ touchant un chemin exclu sont retirés de ce diff, pas le commit entier.
 Avec l’IA entièrement désactivée, la discussion disparaît avec elle : plus de
 panneau proposant une réponse que rien ne peut produire.
 
+Le modèle de la discussion se change aussi depuis l’en-tête du panneau, à côté
+du nom du fournisseur : même réglage, sans ouvrir les Réglages.
+
 ## Ce qu’elle refuse
 
 - **Les fichiers qui ressemblent à des secrets ne sont jamais lus**, épinglés ou

@@ -76,6 +76,25 @@ export function parseChatDrop(data: ChatDropData): RepoChatAttachment[] {
     .map((file) => ({ kind: 'external' as const, path: file }))
 }
 
+/**
+ * Models offered by the panel's own switcher: what the provider preset knows,
+ * plus whatever is already selected. Settings can fetch a live list; this stays
+ * with what the renderer can name without a network call.
+ */
+export function chatModelOptions(
+  ai: { model: string; repoChatModel?: string },
+  presetModels: readonly string[]
+): string[] {
+  const seen = new Set<string>()
+  return [...presetModels, ai.model, ai.repoChatModel ?? '']
+    .map((model) => model.trim())
+    .filter((model) => {
+      if (!model || seen.has(model)) return false
+      seen.add(model)
+      return true
+    })
+}
+
 export interface ChatSuggestionInput {
   /** The graph row the user has selected, if it is a commit. */
   selectedCommit?: string | null

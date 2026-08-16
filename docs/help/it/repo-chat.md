@@ -67,6 +67,9 @@ blocchi su percorsi esclusi vengono tolti da quel diff, non l’intero commit.
 Con l’IA spenta del tutto la chat sparisce con lei: nessun pannello che offre
 risposte che nessuno può dare.
 
+Il modello della chat si cambia anche dall’intestazione del pannello, accanto al
+nome del provider: è la stessa impostazione, senza aprire le Impostazioni.
+
 ## Che cosa rifiuta
 
 - **I file che sembrano segreti non vengono mai letti**, fissati o no: il chip

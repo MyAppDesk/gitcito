@@ -65,6 +65,9 @@ tutulan bir yola dokunan parçalar o diff’ten düşer, commit’in tamamı de�
 Yapay zekâ tümüyle kapalıysa sohbet de onunla birlikte kaybolur — kimsenin
 yanıtlayamayacağı bir şeyi öneren panel kalmaz.
 
+Sohbet modeli, panelin kendi başlığından da değiştirilebilir; sağlayıcı adının
+yanındadır — aynı ayar, Ayarlar’ı açmadan.
+
 ## Neyi reddeder
 
 - **Sır gibi görünen dosyalar hiçbir zaman okunmaz**, sabitlenmiş olsa bile: çip

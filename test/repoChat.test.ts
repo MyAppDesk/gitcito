@@ -12,6 +12,7 @@ import { gitService } from '../src/main/git'
 import { createRepoChatStore } from '../src/renderer/src/lib/repoChatStore'
 import {
   addAttachments,
+  chatModelOptions,
   parseChatDrop,
   suggestedAttachments
 } from '../src/renderer/src/lib/repoChatContext'
@@ -234,6 +235,13 @@ describe('repository chat panel behavior', () => {
       mode: 'file',
       line: 42
     })
+  })
+
+  it('offers the preset models plus whatever is already chosen, without duplicates', () => {
+    expect(
+      chatModelOptions({ model: 'gpt-4o-mini', repoChatModel: 'local-thing' }, ['gpt-4o-mini', 'gpt-4o'])
+    ).toEqual(['gpt-4o-mini', 'gpt-4o', 'local-thing'])
+    expect(chatModelOptions({ model: 'gpt-4o-mini', repoChatModel: '' }, [])).toEqual(['gpt-4o-mini'])
   })
 
   it('hides chat entirely when AI or chat itself is switched off', () => {

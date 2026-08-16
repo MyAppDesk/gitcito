@@ -2309,6 +2309,8 @@ export const zhCN: Dict = {
   'chat.tabChat': '对话',
   'chat.toolbarTitle': '显示或隐藏仓库对话',
   'chat.title': '仓库助手',
+  'chat.modelLabel': '此聊天使用的模型',
+  'chat.modelDefault': '配置档模型（{model}）',
   'chat.clearTitle': '清除对话',
   'chat.emptyTitle': '询问有关 {repo} 的问题',
   'chat.emptyHint': '询问代码如何工作、某项功能位于何处，或当前已跟踪的更改有何作用。',

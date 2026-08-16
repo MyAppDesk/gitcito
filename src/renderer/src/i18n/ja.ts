@@ -2249,6 +2249,8 @@ export const ja: Dict = {
   'chat.tabChat': 'チャット',
   'chat.toolbarTitle': 'リポジトリチャットを表示または非表示',
   'chat.title': 'リポジトリアシスタント',
+  'chat.modelLabel': 'このチャットで使うモデル',
+  'chat.modelDefault': 'プロフィールのモデル（{model}）',
   'chat.clearTitle': '会話を消去',
   'chat.emptyTitle': '{repo} について質問',
   'chat.emptyHint': 'コードの仕組み、機能の場所、現在追跡されている変更の内容を質問できます。',

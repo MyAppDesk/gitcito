@@ -2309,6 +2309,8 @@ export const nl: Dict = {
   'chat.tabChat': 'Chat',
   'chat.toolbarTitle': 'Repositorychat tonen of verbergen',
   'chat.title': 'Repository-assistent',
+  'chat.modelLabel': 'Model voor deze chat',
+  'chat.modelDefault': 'Model van het profiel ({model})',
   'chat.clearTitle': 'Gesprek wissen',
   'chat.emptyTitle': 'Vraag iets over {repo}',
   'chat.emptyHint': 'Vraag hoe de code werkt, waar een functie staat of wat de huidige bijgehouden wijzigingen doen.',

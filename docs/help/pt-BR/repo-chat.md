@@ -68,6 +68,9 @@ tocam um caminho excluído saem daquele diff, não o commit inteiro.
 Com a IA desligada por completo, o chat some junto — nenhum painel oferecendo
 resposta quando nada pode responder.
 
+O modelo do chat também pode ser trocado no cabeçalho do próprio painel, ao lado
+do nome do provedor — a mesma configuração, sem abrir as Configurações.
+
 ## O que ele recusa
 
 - **Arquivos com cara de segredo nunca são lidos**, fixados ou não: o chip volta

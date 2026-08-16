@@ -2249,6 +2249,8 @@ export const fr: Dict = {
   'chat.tabChat': 'Discussion',
   'chat.toolbarTitle': 'Afficher ou masquer la discussion du dépôt',
   'chat.title': 'Assistant du dépôt',
+  'chat.modelLabel': 'Modèle utilisé pour cette discussion',
+  'chat.modelDefault': 'Modèle du profil ({model})',
   'chat.clearTitle': 'Effacer la conversation',
   'chat.emptyTitle': 'Interroger {repo}',
   'chat.emptyHint': 'Demandez comment fonctionne le code, où se trouve une fonctionnalité ou ce que font les modifications suivies.',

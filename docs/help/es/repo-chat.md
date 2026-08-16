@@ -68,6 +68,9 @@ entero.
 Con la IA desactivada por completo, el chat desaparece con ella: no queda un
 panel ofreciendo respuestas que nadie puede dar.
 
+El modelo del chat también se cambia desde la cabecera del propio panel, junto
+al nombre del proveedor: es el mismo ajuste, sin abrir los Ajustes.
+
 ## Qué se niega a hacer
 
 - **Los archivos que parecen secretos nunca se leen**, estén fijados o no: la

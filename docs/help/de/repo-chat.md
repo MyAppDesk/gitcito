@@ -68,6 +68,9 @@ Commit.
 Ist die KI ganz aus, verschwindet der Chat mit ihr — kein Panel, das etwas
 anbietet, was niemand beantworten kann.
 
+Das Chat-Modell lässt sich auch in der Kopfzeile des Panels umstellen, neben dem
+Anbieternamen — dieselbe Einstellung, ohne die Einstellungen zu öffnen.
+
 ## Was er verweigert
 
 - **Geheimnis-verdächtige Dateien werden nie gelesen**, angeheftet oder nicht:

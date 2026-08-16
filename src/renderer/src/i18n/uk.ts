@@ -2309,6 +2309,8 @@ export const uk: Dict = {
   'chat.tabChat': 'Чат',
   'chat.toolbarTitle': 'Показати або сховати чат репозиторію',
   'chat.title': 'Асистент репозиторію',
+  'chat.modelLabel': 'Модель для цього чату',
+  'chat.modelDefault': 'Модель профілю ({model})',
   'chat.clearTitle': 'Очистити розмову',
   'chat.emptyTitle': 'Запитайте про {repo}',
   'chat.emptyHint': 'Запитайте, як працює код, де міститься функція або що роблять поточні відстежувані зміни.',

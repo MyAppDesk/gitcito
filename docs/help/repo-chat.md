@@ -70,6 +70,9 @@ touch an excluded path are dropped from that diff, not the whole commit.
 With AI switched off entirely, chat disappears with it — there is no panel
 offering to answer once nothing can.
 
+The chat model is also switchable from the panel's own header, next to the
+provider name — same setting, without opening Settings.
+
 ## What it refuses
 
 - **Files that look like secrets are never read**, pinned or not — the chip is

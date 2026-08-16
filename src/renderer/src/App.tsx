@@ -43,6 +43,7 @@ import { ResizeHandle } from './components/ResizeHandle'
 import { ZoomControl } from './components/ZoomControl'
 import gitcitoLaunch from './assets/gitcito-launch.png'
 import { matchShortcut, effectiveBindings, tabActionFromEvent, tabIndexFromEvent } from './lib/shortcuts'
+import { terminalShortcutFromEvent } from './lib/terminalShortcuts'
 import { folderOpenMenuItems } from './lib/openWith'
 import { hostingApi, gitApi, cliApi, keychainApi } from './infrastructure/api'
 
@@ -315,6 +316,18 @@ export default function App(): React.JSX.Element {
       const activeRepoPath = (): string | null => {
         const tab = st.settings.tabs.find((t) => t.id === st.settings.activeTabId)
         return tab ? tabActiveRepoPath(tab) : null
+      }
+
+      // Physical Control+` toggles the integrated terminal on every platform.
+      // Terminal-focused events are caught earlier by TerminalContainer so
+      // xterm never sends this chord to the shell.
+      if (terminalShortcutFromEvent(e, false) === 'toggle' && !ui.modal) {
+        const path = activeRepoPath()
+        if (path) {
+          e.preventDefault()
+          ui.toggleTerminal(path)
+        }
+        return
       }
 
       // `?` opens the shortcut cheatsheet (when not typing).

@@ -59,6 +59,9 @@ export const FIXED_SHORTCUTS: {
   { labelKey: 'sc.newTab', combo: 'mod+t', categoryKey: 'sc.cat.navigation' },
   { labelKey: 'sc.closeTab', combo: 'mod+w', categoryKey: 'sc.cat.navigation' },
   { labelKey: 'sc.reopenTab', combo: 'mod+shift+t', categoryKey: 'sc.cat.navigation' },
+  { labelKey: 'toolbar.terminalTitle', combo: 'ctrl+`', categoryKey: 'sc.cat.general' },
+  { labelKey: 'terminal.new', combo: 'mod+t', categoryKey: 'sc.cat.general' },
+  { labelKey: 'terminal.kill', combo: 'mod+w', categoryKey: 'sc.cat.general' },
   { labelKey: 'sc.saveFile', combo: 'mod+s', categoryKey: 'sc.cat.editing' },
   { labelKey: 'sc.undo', combo: 'mod+z', categoryKey: 'sc.cat.editing' },
   { labelKey: 'sc.redo', combo: 'mod+shift+z', categoryKey: 'sc.cat.editing' },
@@ -75,6 +78,7 @@ export const FIXED_SHORTCUTS: {
 export const RESERVED_COMBOS: string[] = [
   'mod+t',
   'mod+w',
+  'mod+`',
   'mod+shift+t',
   'mod+s',
   'mod+z',
@@ -123,6 +127,7 @@ export function formatCombo(combo: string): string {
     .split('+')
     .map((p) => {
       if (p === 'mod') return mac ? '⌘' : 'Ctrl'
+      if (p === 'ctrl') return mac ? '⌃' : 'Ctrl'
       if (p === 'shift') return mac ? '⇧' : 'Shift'
       if (p === 'alt') return mac ? '⌥' : 'Alt'
       if (p.length === 1) return p.toUpperCase()

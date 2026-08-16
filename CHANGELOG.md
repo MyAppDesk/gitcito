@@ -1,5 +1,12 @@
 
 
+## [3.8.0](https://github.com/MyAppDesk/gitcito/compare/v3.7.0...v3.8.0) (2026-08-16)
+
+
+### Features
+
+* add multiple AI accounts with live model lists ([a9ba77f](https://github.com/MyAppDesk/gitcito/commit/a9ba77f7250690cbbd5359673a09bdb44294e173))
+
 ## [3.7.0](https://github.com/MyAppDesk/gitcito/compare/v3.6.0...v3.7.0) (2026-08-16)
 
 

@@ -58,6 +58,7 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
   const toast = useUIStore((s) => s.toast)
   const openModal = useUIStore((s) => s.openModal)
   const activeProfile = useSettingsStore((s) => s.activeProfile)
+  const aiFor = useSettingsStore((s) => s.aiFor)
   const aiEnabled = useSettingsStore((s) => s.activeProfile().ai.enabled !== false)
   const defaultOpenApp = useSettingsStore((s) => s.settings.defaultOpenApp)
   const editor = useSettingsStore((s) => s.settings.editor)
@@ -225,7 +226,7 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
         toast('info', t('commitPanel.nothingToSummarize'))
         return
       }
-      const msg = await aiApi.commitMessage(diff, activeProfile().ai, { branch: repo.branches.current })
+      const msg = await aiApi.commitMessage(diff, aiFor('commit'), { branch: repo.branches.current })
       setDraftSubject(msg.summary)
       setEditingSubject(true)
       toast('success', t('commitPanel.aiGenerated'))

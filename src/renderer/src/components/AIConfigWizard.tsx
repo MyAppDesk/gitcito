@@ -13,6 +13,7 @@ import { useRepoStore } from '../stores/repo'
 import { aiApi, gitApi, shellApi, type GeneratedFile, type ArtifactRequest, type ArtifactSuggestion } from '../infrastructure/api'
 import { useT, translate, interp, type TranslationKey } from '../i18n'
 import type { AIConfig, AskAction, AskPlan } from '../../../shared/types'
+import { resolveAI } from '../../../shared/aiAccounts'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -141,7 +142,7 @@ export function AIConfigWizard({
   const toast = useUIStore((s) => s.toast)
   const activeProfileId = useSettingsStore((s) => s.settings.activeProfileId)
   const profiles = useSettingsStore((s) => s.settings.profiles)
-  const aiCfg: AIConfig = (profiles.find((p) => p.id === activeProfileId) ?? profiles[0]).ai
+  const aiCfg: AIConfig = resolveAI((profiles.find((p) => p.id === activeProfileId) ?? profiles[0]).ai, 'chat')
 
   const [tab, setTab] = useState<'ask' | 'config'>(spec.initialTab ?? 'ask')
 

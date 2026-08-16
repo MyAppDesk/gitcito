@@ -3,7 +3,7 @@ title: Recursos de IA
 category: IA
 order: 80
 summary: Opcionais, agnósticos de provedor, e ancorados no seu código de verdade.
-keywords: ia ai openai anthropic ollama llm local mensagem de commit explicar revisão wiki ancorado grounded
+keywords: ia ai openai anthropic ollama llm local mensagem de commit explicar revisão wiki ancorado grounded contas conta chave api assinatura cli claude codex gemini modelos
 ---
 
 # Recursos de IA
@@ -13,14 +13,68 @@ Nada é enviado para lugar nenhum até você pedir algo específico.
 
 ![Configurações de IA](../../screenshots/settings-ai.webp)
 
-## Provedores
+## Contas
 
-Presets para **OpenAI, Anthropic, OpenRouter, Groq, Mistral e Ollama** (inteiramente
-local), ou qualquer endpoint compatível com a OpenAI. Os modelos são buscados ao
-vivo, e você pode adicionar instruções personalizadas.
+Uma **conta** é um jeito de alcançar um modelo: um provedor, onde encontrá-lo e
+como ele se autentica. Você pode configurar várias e elas convivem — uma chave
+do trabalho, uma pessoal, um modelo local, uma CLI em que você já entrou.
 
-> Só a OpenAI é bem testada na prática. Os outros usam um formato de chamada
-> compatível com o da OpenAI e deveriam funcionar — mas não estão verificados.
+As predefinições cobrem **OpenAI, Anthropic, Google Gemini, OpenRouter, Groq,
+Mistral** e **Ollama** (inteiramente local), além de qualquer endpoint
+compatível com OpenAI.
+
+A Anthropic usa a própria API `/v1/messages` em vez de uma chamada no formato
+OpenAI, então os modelos Claude funcionam de fato em vez de apenas parecer.
+O Gemini é alcançado pelo endpoint compatível com OpenAI do Google.
+
+### Usar uma assinatura em vez de uma chave de API
+
+Escolha o provedor **CLI local** para responder com uma CLI de agente já
+instalada e autenticada nesta máquina — `claude`, `gemini` ou `codex`. O Gitcito
+executa o binário com o seu prompt e lê a resposta; não há chave de API para
+colar nem token guardado.
+
+O Gitcito só executa um comando que você configurou como conta, e sempre com uma
+lista de argumentos em vez de um shell, de modo que nada em um diff ou em um nome
+de branch pode ser interpretado como comando.
+
+> **Isso não é mais privado que uma chave de API.** Seus prompts continuam
+> chegando ao mesmo fornecedor, na sua própria conta, exatamente como
+> chegariam com uma chave. O que muda é a cobrança e a configuração, não para
+> onde o texto vai.
+
+Se o comando não estiver no seu `PATH`, digite o caminho completo na conta.
+
+### Qual conta responde o quê
+
+Em **Qual conta responde o quê**, cada recurso — mensagens de commit, chat,
+explicar, revisão de PR, resolução de conflitos, wiki, temas — pode apontar para
+a própria conta e o próprio modelo. Deixe uma linha no padrão para seguir a
+conta padrão. Modelo barato para mensagens de commit e um forte para o chat é a
+divisão mais comum.
+
+### Aviso de atualização
+
+Ao atualizar de uma versão anterior às contas, isto aparece uma vez. O provedor e a chave que você tinha viram a primeira conta; nada precisa ser reconfigurado à mão.
+
+![Aviso de atualização](../../screenshots/ai-accounts-notice.webp)
+
+## Modelos
+
+As listas de modelos vêm do próprio provedor e ficam em cache por um dia;
+**Buscar modelos** atualiza uma na hora. Abaixo da lista o Gitcito diz de onde
+ela veio — ao vivo, do cache (com a data) ou da lista embutida de reserva, e por
+quê.
+
+A lista é filtrada para modelos capazes de responder a um pedido de chat, então
+embeddings, fala e imagem ficam de fora. Todo campo de modelo também aceita texto
+livre, de modo que um modelo em prévia, uma implantação privada ou uma tag do
+Ollama recém-baixada continua utilizável mesmo que o provedor não a liste.
+
+Um provedor a quem você ainda não deu uma chave, ou que esteja inacessível,
+recorre a uma pequena lista embutida em vez de a um menu vazio.
+
+Nenhum provedor publica uma lista ordenada ou curada, então o recorte é do Gitcito: instantâneos datados se dobram no modelo do qual são um instantâneo (`gpt-4o` cobre `gpt-4o-2024-08-06`), e o que sobra vem do mais novo para o mais antigo em vez de alfabético. **Mostrar todos os modelos**, no fim da lista, traz de volta tudo o que o provedor devolveu.
 
 ## O que ela consegue fazer
 
@@ -48,5 +102,19 @@ ele diz isso em vez de inventar. As respostas são cacheadas por versão de arqu
 
 **Arquivos de segredo mascarados nunca são enviados.** Nem os arquivos cobertos pelas
 regras de mascaramento de segredos.
+
+## Limites
+
+- As listas de reserva ficam desatualizadas entre versões. É para isso que serve
+  a busca ao vivo; a reserva só cobre o caso em que buscar não é possível.
+- Filtrar a lista de um provedor para modelos de chat é feito pelo nome, então um
+  modelo de chat com nome incomum pode ficar de fora. Digite-o você mesmo.
+- Uma conta de CLI não consegue informar o uso de tokens a menos que a CLI o
+  faça, então os números de uso e custo nas configurações vão subestimar essas
+  chamadas.
+- Respostas por CLI são mais lentas que uma chamada direta à API: o binário
+  inicia uma sessão inteira a cada pedido.
+- As chaves ficam guardadas por conta no chaveiro do seu sistema. Excluir uma
+  conta exclui a chave dela.
 
 **Veja também:** [Wiki do repo](repo-wiki.md) · [Segurança e segredos](security.md)

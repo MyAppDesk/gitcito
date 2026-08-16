@@ -523,9 +523,10 @@ export async function answerRepoChat(
   }
   if (!cfg || cfg.enabled === false) throw new Error('AI features are disabled in Settings.')
   if (cfg.repoChat === false) throw new Error('Repository chat is disabled in Settings.')
-  // Chat may run on its own model — a cheaper one for questions, say — while
-  // the rest of the AI features keep the profile's.
-  const chatCfg: AIConfig = { ...cfg, model: (cfg.repoChatModel ?? '').trim() || cfg.model }
+  // Chat may run on its own account and model — a cheaper one for questions,
+  // say — but that is resolved in the renderer (`resolveAI(ai, 'chat')`) before
+  // the config gets here, so what arrives is already the connection to use.
+  const chatCfg: AIConfig = cfg
   const committedOnly = cfg.repoChatCommittedOnly === true
   const repoPath = resolve(repoPathValue)
   const messages = normalizeRepoChatMessages(transcriptValue)

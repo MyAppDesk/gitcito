@@ -66,14 +66,19 @@ touch an excluded path are dropped from that diff, not the whole commit.
 | Setting | Does |
 |---|---|
 | **Ask questions about the repository** | Off removes the tab, the toolbar button and the shortcut target. The rest of the AI features keep working |
-| **Chat model** | A model for chat alone. Empty means the profile's model — questions are cheaper than reviews, so a smaller one is often enough |
 | **Committed content only** | Answers from the last commit instead of the working tree: uncommitted edits and diffs never leave the machine |
+
+Which account and model answers chat is set under **Which account answers what**
+on the same page — see [AI features](ai.md#which-account-answers-what).
+Questions are cheaper than reviews, so a smaller model is often enough.
 
 With AI switched off entirely, chat disappears with it — there is no panel
 offering to answer once nothing can.
 
-The chat model is also switchable from the panel's own header, next to the
-provider name — same setting, without opening Settings.
+The panel's own header switches account and model without opening Settings: the
+dropdown groups every model by the account that serves it, so moving a single
+question to a stronger model is one click and does not disturb the rest of the
+app.
 
 ![Repository chat settings](../screenshots/settings-repo-chat.webp)
 

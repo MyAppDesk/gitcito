@@ -13,7 +13,9 @@ import {
   Trash2,
   X
 } from 'lucide-react'
-import { AI_PROVIDERS, type RepoChatAttachment } from '../../../shared/types'
+import type { RepoChatAttachment } from '../../../shared/types'
+import { modelFor, resolveAI } from '../../../shared/aiAccounts'
+import { useModelCatalogs } from './useModelCatalogs'
 import { useT, interp, type TranslationKey } from '../i18n'
 import { renderMarkdown } from '../preview/markdown'
 import { canSubmitRepoChat, repoChatSourceView } from '../lib/repoChatUI'
@@ -23,7 +25,7 @@ import {
   attachmentKey,
   attachmentLabel,
   attachmentTitle,
-  chatModelOptions,
+  chatModelGroups,
   parseChatDrop,
   suggestedAttachments
 } from '../lib/repoChatContext'
@@ -149,7 +151,16 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
   const pending = thread?.pending ?? false
   const attachments = thread?.attachments ?? []
   const skipped = thread?.skipped ?? []
-  const provider = AI_PROVIDERS.find((item) => item.id === profile.ai.provider)
+  const { catalogs } = useModelCatalogs(profile.ai)
+  const modelGroups = useMemo(
+    () => chatModelGroups(profile.ai, Object.fromEntries(Object.entries(catalogs).map(([id, c]) => [id, c.models]))),
+    [profile.ai, catalogs]
+  )
+  // The header shows the account the chat is actually pointed at, so switching
+  // account elsewhere is visible here rather than silently changing the answer.
+  const chatAssignment = profile.ai.assignments?.chat
+  const chatSelection = chatAssignment ? `${chatAssignment.accountId}\u0000${chatAssignment.model}` : ''
+  const defaultChatModel = modelFor(profile.ai)
   const suggestions = useMemo(
     () =>
       suggestedAttachments({
@@ -168,7 +179,7 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
     const content = draft.trim()
     if (!canSubmitRepoChat(profile.ai.enabled !== false, pending, content)) return
     setDraft('')
-    void send(repoPath, content, profile.ai)
+    void send(repoPath, content, resolveAI(profile.ai, 'chat'))
   }
 
   const onDrop = (event: React.DragEvent): void => {
@@ -229,20 +240,27 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
         <div>
           <strong>{t('chat.title')}</strong>
           <span className="repo-chat-model">
-            {provider?.label ?? profile.ai.provider} ·
             <select
-              value={profile.ai.repoChatModel ?? ''}
+              value={chatSelection}
               aria-label={t('chat.modelLabel')}
               title={t('chat.modelLabel')}
-              onChange={(event) =>
-                saveProfile({ ...profile, ai: { ...profile.ai, repoChatModel: event.target.value } })
-              }
+              onChange={(event) => {
+                const [accountId, model] = event.target.value.split('\u0000')
+                const assignments = { ...(profile.ai.assignments ?? {}) }
+                if (!accountId) delete assignments.chat
+                else assignments.chat = { accountId, model }
+                saveProfile({ ...profile, ai: { ...profile.ai, assignments } })
+              }}
             >
-              <option value="">{interp(t('chat.modelDefault'), { model: profile.ai.model })}</option>
-              {chatModelOptions(profile.ai, provider?.models ?? []).map((model) => (
-                <option key={model} value={model}>
-                  {model}
-                </option>
+              <option value="">{interp(t('chat.modelDefault'), { model: defaultChatModel })}</option>
+              {modelGroups.map((group) => (
+                <optgroup key={group.accountId} label={group.label}>
+                  {group.models.map((model) => (
+                    <option key={`${group.accountId}-${model}`} value={`${group.accountId}\u0000${model}`}>
+                      {model}
+                    </option>
+                  ))}
+                </optgroup>
               ))}
             </select>
           </span>
@@ -329,7 +347,7 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
             {thread?.error && !pending && (
               <div className="repo-chat-error" role="alert">
                 <span>{thread.error}</span>
-                <button type="button" className="btn ghost small" onClick={() => void retry(repoPath, profile.ai)}>
+                <button type="button" className="btn ghost small" onClick={() => void retry(repoPath, resolveAI(profile.ai, 'chat'))}>
                   <RotateCcw size={12} /> {t('chat.retry')}
                 </button>
               </div>

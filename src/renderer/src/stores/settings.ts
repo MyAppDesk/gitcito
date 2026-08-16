@@ -1,8 +1,11 @@
 import { create } from 'zustand'
+import { migrateAIConfig, needsAccountsNotice, resolveAI } from '../../../shared/aiAccounts'
 import {
   defaultProfile,
   defaultSettings,
   defaultGraphStyle,
+  type AIConfig,
+  type AIFeature,
   type AppSettings,
   type GroupTab,
   type PageContent,
@@ -99,6 +102,13 @@ interface SettingsState {
   update(mut: (s: AppSettings) => AppSettings): void
 
   activeProfile(): Profile
+  /**
+   * The active profile's AI config with the connection for `feature` resolved
+   * onto it. Every AI call site uses this instead of `activeProfile().ai`, so
+   * pointing one feature at a different account is a settings change and not a
+   * code change.
+   */
+  aiFor(feature?: AIFeature): AIConfig
   setActiveProfile(id: string): void
   saveProfile(profile: Profile): void
   addProfile(name: string): void
@@ -169,6 +179,19 @@ interface SettingsState {
   activeRepo(): RepoRef | null
 }
 
+/**
+ * Set during `load` when a pre-accounts AI config was migrated and the user has
+ * not been told yet. App reads it once after loading and opens the notice —
+ * kept out of the store's state so it cannot re-trigger on an unrelated update.
+ */
+let pendingAccountsNotice = false
+
+export function takeAccountsNotice(): boolean {
+  const pending = pendingAccountsNotice
+  pendingAccountsNotice = false
+  return pending
+}
+
 /** Session-only stack of recently closed tabs, for reopen (⌘⇧T). */
 const closedTabStack: { tab: TabState; idx: number }[] = []
 
@@ -182,9 +205,19 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     // the window has even painted).
     const settings = opts?.unlock ? await settingsApi.unlock() : await settingsApi.get()
     if (!settings.profiles.length) settings.profiles = [defaultProfile()]
-    // Backwards compatibility: merge in newly added fields.
+    // Backwards compatibility: merge in newly added fields. `migrateAIConfig`
+    // also folds a pre-accounts provider/key into the first AI account, so a
+    // settings file written by an older build keeps working untouched.
     const defaults = defaultProfile()
-    settings.profiles = settings.profiles.map((p) => ({ ...defaults, ...p, ai: { ...defaults.ai, ...p.ai } }))
+    // Checked before migrating, since migration is what makes the old shape
+    // disappear — this is the only moment the upgrade is still visible.
+    const upgraded = settings.profiles.some((p) => needsAccountsNotice(p.ai))
+    settings.profiles = settings.profiles.map((p) => ({
+      ...defaults,
+      ...p,
+      ai: migrateAIConfig({ ...defaults.ai, ...p.ai, accounts: p.ai?.accounts })
+    }))
+    if (upgraded && !settings.aiAccountsNoticeSeen) pendingAccountsNotice = true
     const sd = defaultSettings()
     settings.appThemeId = settings.appThemeId ?? sd.appThemeId
     settings.codeThemeId = settings.codeThemeId ?? sd.codeThemeId
@@ -283,6 +316,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     const { settings } = get()
     return settings.profiles.find((p) => p.id === settings.activeProfileId) ?? settings.profiles[0] ?? defaultProfile()
   },
+
+  aiFor: (feature) => resolveAI(get().activeProfile().ai, feature),
 
   setActiveProfile: (id) => get().update((s) => ({ ...s, activeProfileId: id })),
 

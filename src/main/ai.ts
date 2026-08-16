@@ -1,7 +1,10 @@
 import { ipcMain } from 'electron'
 import type { AIConfig, AppThemeColors, AskAction, AskPlan, BranchNamingStyle, CodeThemeColors, ConflictStyle, ExplainStyle, PRReviewResult, RepoStatus } from '../shared/types'
-import { recordAIUsage, type TokenUsage } from './analytics'
+import { recordAIUsage } from './analytics'
 import { activeProfileAiKey } from './settings'
+import { callModel, missingCredential, type ChatMessage } from './aiTransport'
+import { listAccountModels } from './aiModels'
+import { detectCliBinaries } from './aiCli'
 import { createHash } from 'node:crypto'
 import {
   APP_THEME_KEYS,
@@ -40,21 +43,6 @@ import {
   type RawFinding
 } from './grounding'
 
-/** Token-usage block as returned by OpenAI-compatible (and native Anthropic) APIs. */
-interface ApiUsage {
-  prompt_tokens?: number
-  completion_tokens?: number
-  total_tokens?: number
-  input_tokens?: number
-  output_tokens?: number
-}
-
-function parseUsage(raw: ApiUsage | undefined): TokenUsage {
-  const prompt = raw?.prompt_tokens ?? raw?.input_tokens ?? 0
-  const completion = raw?.completion_tokens ?? raw?.output_tokens ?? 0
-  return { promptTokens: prompt, completionTokens: completion, totalTokens: raw?.total_tokens ?? prompt + completion }
-}
-
 export interface AICommitMessage {
   summary: string
   description: string
@@ -66,39 +54,6 @@ export interface AICommitContext {
 
 const TICKET_RE = /([A-Z][A-Z0-9]+-\d+)/
 
-/** Normalizes the configured endpoint to an OpenAI-compatible base URL. */
-function baseUrl(endpoint: string): string {
-  return (endpoint || 'https://api.openai.com/v1').replace(/\/+$/, '').replace(/\/chat\/completions$/, '')
-}
-
-function isLocal(url: string): boolean {
-  return /^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0)([:/]|$)/.test(url)
-}
-
-function authHeaders(cfg: AIConfig): Record<string, string> {
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-  if (cfg.apiKey) {
-    headers.Authorization = `Bearer ${cfg.apiKey}`
-    // Anthropic's API uses these instead of a Bearer token; harmless elsewhere.
-    headers['x-api-key'] = cfg.apiKey
-    headers['anthropic-version'] = '2023-06-01'
-  }
-  return headers
-}
-
-function fetchFailureReason(err: unknown): string | null {
-  const cause = err instanceof Error && 'cause' in err ? (err.cause as { code?: string; message?: string } | undefined) : null
-  if (cause?.code === 'SELF_SIGNED_CERT_IN_CHAIN') {
-    return 'A proxy or network certificate is self-signed, so Electron rejected the TLS connection.'
-  }
-  if (cause?.code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE') {
-    return 'Electron could not verify the provider certificate chain.'
-  }
-  if (cause?.code === 'ECONNREFUSED') return 'The endpoint refused the connection.'
-  if (cause?.code === 'ENOTFOUND') return 'The endpoint host could not be resolved.'
-  return cause?.message ?? (err instanceof Error ? err.message : null)
-}
-
 /**
  * Fills in the API key the renderer does not have.
  *
@@ -106,37 +61,14 @@ function fetchFailureReason(err: unknown): string | null {
  * the renderer — so a config arriving from any other surface (commit message,
  * hover explain, conflict resolve, …) is keyless on a fresh launch. Resolve it
  * from the encrypted store at the point of use rather than failing.
+ *
+ * `cfg.accountId` says which account the renderer resolved, so the key that
+ * comes back belongs to that account rather than to whichever one is default.
  */
-async function withStoredKey(cfg: AIConfig): Promise<AIConfig> {
+export async function withStoredKey(cfg: AIConfig): Promise<AIConfig> {
   if (cfg.apiKey && cfg.apiKey.trim()) return cfg
-  const key = await activeProfileAiKey()
+  const key = await activeProfileAiKey(cfg.accountId)
   return key ? { ...cfg, apiKey: key } : cfg
-}
-
-async function listModels(input: AIConfig): Promise<string[]> {
-  const cfg = await withStoredKey(input)
-  const base = baseUrl(cfg.endpoint)
-  let res: Response
-  try {
-    res = await fetch(`${base}/models`, { headers: authHeaders(cfg) })
-  } catch (err) {
-    const reason = fetchFailureReason(err)
-    const localHint = isLocal(base) ? ' Is the local provider running?' : ' Check your network, endpoint, or proxy/VPN.'
-    throw new Error(`Could not reach ${base}/models.${reason ? ` ${reason}` : ''}${localHint}`)
-  }
-  if (!res.ok) {
-    const body = await res.text().catch(() => '')
-    throw new Error(`Could not list models (${res.status}): ${body.slice(0, 160)}`)
-  }
-  const json = (await res.json()) as {
-    data?: { id?: string; name?: string }[]
-    models?: { id?: string; name?: string }[]
-  }
-  const items = json.data ?? json.models ?? []
-  return items
-    .map((m) => m.id ?? m.name ?? '')
-    .filter(Boolean)
-    .sort((a, b) => a.localeCompare(b))
 }
 
 function styleGuidance(cfg: AIConfig, branch: string): string {
@@ -251,9 +183,7 @@ async function generateCommitMessage(diff: string, cfg: AIConfig, ctx: AICommitC
   }
 }
 
-type ChatMessage = { role: 'system' | 'user' | 'assistant'; content: string }
-
-/** Single OpenAI-compatible chat completion returning the raw message text. */
+/** One chat completion against the account's provider, as raw message text. */
 async function chatComplete(
   input: AIConfig,
   messages: ChatMessage[],
@@ -262,27 +192,12 @@ async function chatComplete(
   extra?: Record<string, unknown>
 ): Promise<string> {
   const cfg = await withStoredKey(input)
-  const base = baseUrl(cfg.endpoint)
-  if (!cfg.apiKey && !isLocal(base)) throw new Error('No AI API key configured. Add one in Settings → AI.')
+  if (missingCredential(cfg)) throw new Error('No AI API key configured. Add one in Settings → AI.')
 
-  let res: Response
-  try {
-    res = await fetch(`${base}/chat/completions`, {
-      method: 'POST',
-      headers: authHeaders(cfg),
-      body: JSON.stringify({ model: cfg.model || 'gpt-4o-mini', temperature, messages, ...extra })
-    })
-  } catch (err) {
-    const reason = fetchFailureReason(err)
-    throw new Error(`Could not reach ${base}.${reason ? ` ${reason}` : ''}`)
-  }
-  if (!res.ok) {
-    const body = await res.text().catch(() => '')
-    throw new Error(`AI request failed (${res.status}): ${body.slice(0, 200)}`)
-  }
-  const json = (await res.json()) as { choices?: { message?: { content?: string } }[]; usage?: ApiUsage }
-  void recordAIUsage(feature, cfg.model || 'gpt-4o-mini', parseUsage(json.usage))
-  return json.choices?.[0]?.message?.content ?? ''
+  const model = cfg.model || 'gpt-4o-mini'
+  const reply = await callModel({ ...cfg, model }, messages, temperature, extra)
+  void recordAIUsage(feature, model, reply.usage)
+  return reply.text
 }
 
 /** A JSON contract the model must satisfy before its output is accepted. */
@@ -1079,7 +994,10 @@ export function registerAiHandlers(): void {
   ipcMain.handle('ai:commitMessage', (_e, diff: string, cfg: AIConfig, ctx: AICommitContext) =>
     generateCommitMessage(diff, cfg, ctx)
   )
-  ipcMain.handle('ai:listModels', (_e, cfg: AIConfig) => listModels(cfg))
+  ipcMain.handle('ai:listModels', async (_e, cfg: AIConfig, force?: boolean) =>
+    listAccountModels(await withStoredKey(cfg), force === true)
+  )
+  ipcMain.handle('ai:detectCli', () => detectCliBinaries())
   ipcMain.handle('ai:explainCode', (_e, code: string, lang: string, cfg: AIConfig) => explainCode(code, lang, cfg))
   ipcMain.handle('ai:hoverExplain', (_e, req: HoverExplainRequest, cfg: AIConfig) => hoverExplain(req, cfg))
   ipcMain.handle('ai:resolveConflict', (_e, file: string, content: string, cfg: AIConfig) =>

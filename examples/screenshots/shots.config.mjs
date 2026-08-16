@@ -211,6 +211,17 @@ export const shots = [
     }
   },
   {
+    // The one-time notice an upgraded install sees, explaining that the single
+    // provider and key it had is now the first AI account.
+    out: 'ai-accounts-notice',
+    repos: ['octopus-merge'],
+    themes: ['light'],
+    drive: async (page) => {
+      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'ai-accounts-notice' }))
+      await page.waitForTimeout(400)
+    }
+  },
+  {
     // Settings → AI, scrolled to the Repository chat block: the enable switch,
     // the chat-only model, and the committed-content-only guard.
     out: 'settings-repo-chat',

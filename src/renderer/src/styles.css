@@ -3235,7 +3235,10 @@ textarea:focus {
   text-overflow: ellipsis;
   white-space: nowrap;
   direction: rtl;
-  text-align: start;
+  /* `direction: rtl` is only the start-truncation trick — the box itself still
+     lives in an LTR row, so the alignment must stay physical. `start` would
+     resolve against the rtl direction and push the name to the far edge. */
+  text-align: left;
   font-size: 12px;
 }
 /* RTL direction truncates long paths at the start. Prepend an invisible
@@ -5304,7 +5307,7 @@ textarea:focus {
   text-overflow: ellipsis;
   white-space: nowrap;
   direction: rtl;
-  text-align: start;
+  text-align: left;
 }
 /* See .file-path::before — keep leading bidi-neutral chars in place. */
 .recent-item span::before {
@@ -6065,7 +6068,9 @@ textarea:focus {
   align-items: center;
   gap: 5px;
   width: 100%;
-  padding: 3px 10px;
+  /* Left padding is set inline per depth; the right one has to match
+     .file-item so the row actions of folders and files share a column. */
+  padding: 3px 14px;
   font-size: 12px;
   color: var(--text-1);
   background: transparent;
@@ -6093,6 +6098,45 @@ textarea:focus {
   margin-inline-start: auto;
   flex-shrink: 0;
 }
+/* The per-row stage toggle carries its verb in the tooltip, not on its face —
+   a "Stage file" label on every row of a tree costs more width than the
+   filenames it sits beside. The conflict row keeps a worded button, so this is
+   opt-in rather than a rule on .file-stage-btn. */
+.file-stage-btn.icon-only {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* The pill is tinted with the glyph's own hue rather than the generic ghost
+     grey — the direction of the move should read before the icon is parsed.
+     `currentColor` carries it, so the two directions need no separate rules. */
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  transition: background 0.12s, color 0.12s;
+}
+/* Softened at rest: a full-strength green down a long list reads as an alert. */
+.file-stage-btn.icon-only.act-stage { color: color-mix(in srgb, var(--green) 72%, var(--text-2)); }
+.file-stage-btn.icon-only.act-unstage { color: color-mix(in srgb, var(--red) 72%, var(--text-2)); }
+/* The generic folder-svg rule paints every icon in a folder row grey. */
+.tree-folder .file-stage-btn svg {
+  color: currentColor;
+}
+.file-item:hover .file-stage-btn.icon-only.act-stage,
+.tree-folder:hover .file-stage-btn.icon-only.act-stage {
+  color: var(--green);
+}
+.file-item:hover .file-stage-btn.icon-only.act-unstage,
+.tree-folder:hover .file-stage-btn.icon-only.act-unstage {
+  color: var(--red);
+}
+/* Beats .btn.ghost:hover:not(:disabled), which would otherwise repaint it. */
+.file-stage-btn.icon-only:hover:not(:disabled) {
+  background: color-mix(in srgb, currentColor 26%, transparent);
+}
+.file-stage-btn.icon-only.act-stage:hover:not(:disabled) { color: var(--green); }
+.file-stage-btn.icon-only.act-unstage:hover:not(:disabled) { color: var(--red); }
 
 .file-item.current {
   background: color-mix(in srgb, var(--accent) 16%, transparent);
@@ -6649,6 +6693,104 @@ textarea:focus {
 .model-row .btn {
   flex-shrink: 0;
   display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* AI accounts — one account edited at a time, chosen from the bar above. */
+.ai-accounts-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+}
+.ai-accounts-bar select {
+  flex: 1;
+  min-width: 0;
+}
+.ai-accounts-bar .btn {
+  flex-shrink: 0;
+}
+
+/* Free-text model entry, with the way back to the list beside it. */
+.model-custom {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  min-width: 0;
+}
+.model-custom input {
+  flex: 1;
+  min-width: 0;
+}
+.model-custom .btn {
+  flex-shrink: 0;
+}
+.ai-account {
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 10px 12px 12px;
+  background: var(--bg-2);
+}
+.ai-account-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.ai-account-name {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+}
+.ai-account-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  font-size: 11px;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+.ai-account .btn.danger:not(:disabled):hover {
+  color: var(--danger);
+}
+
+/* One row per AI feature: which account answers it, and with which model. */
+.ai-assignments {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+.ai-assignment {
+  display: grid;
+  /* The model column carries the longest text — the inherited default names a
+     model — so it gets the extra room rather than being clipped first. */
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1fr) minmax(0, 1.4fr);
+  gap: 8px;
+  align-items: center;
+}
+.ai-assignment-label {
+  font-size: 12px;
+  color: var(--text-1);
+}
+.ai-assignment select,
+.ai-assignment input {
+  min-width: 0;
+}
+@media (max-width: 720px) {
+  .ai-assignment {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+}
+
+.settings-hint.warn {
+  color: var(--warn, var(--danger));
+  display: inline-flex;
   align-items: center;
   gap: 5px;
 }
@@ -12645,7 +12787,7 @@ mark.find-hit.active {
 button.insights-row { cursor: pointer; border-radius: 6px; }
 button.insights-row:hover { background: var(--bg-2); }
 .insights-row-name { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.insights-row-name.mono { font-family: var(--code-font, monospace); font-size: 11.5px; direction: rtl; text-align: start; }
+.insights-row-name.mono { font-family: var(--code-font, monospace); font-size: 11.5px; direction: rtl; text-align: left; }
 .insights-bar-track { height: 8px; background: var(--bg-3); border-radius: 4px; overflow: hidden; }
 .insights-bar-fill { display: block; height: 100%; border-radius: 4px; }
 .insights-bar-fill.hot { background: linear-gradient(90deg, #fdcb6e, #e17055); }
@@ -12839,7 +12981,7 @@ button.insights-row:hover { background: var(--bg-2); }
   overflow: hidden;
   text-overflow: ellipsis;
   direction: rtl;
-  text-align: start;
+  text-align: left;
 }
 .prd-thread-hunk {
   font-family: var(--mono, monospace);
@@ -13620,8 +13762,14 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
   direction: ltr;
   unicode-bidi: isolate;
 }
-/* …but a mirrored row still wants its text hugging the correct edge. */
-:root[dir='rtl'] .status-path {
+/* …but a mirrored row still wants its text hugging the correct edge. Paths that
+   use the `direction: rtl` start-truncation trick pin a physical `left` for the
+   LTR layout, so the mirrored one has to be flipped back here. */
+:root[dir='rtl'] .status-path,
+:root[dir='rtl'] .file-path,
+:root[dir='rtl'] .recent-item span,
+:root[dir='rtl'] .insights-row-name.mono,
+:root[dir='rtl'] .prd-thread-loc {
   text-align: right;
 }
 

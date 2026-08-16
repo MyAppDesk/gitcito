@@ -11,6 +11,7 @@ import {
   stripSettingsSecrets,
   type SecretStore
 } from '../shared/secrets'
+import { accountFor, migrateAIConfig } from '../shared/aiAccounts'
 import { adoptExistingConsent, canUseKeychain, ensureKeychain } from './keychain'
 
 const settingsPath = (): string => join(app.getPath('userData'), 'gitcito-settings.json')
@@ -72,7 +73,21 @@ async function readSettings(): Promise<AppSettings> {
   } catch {
     return defaultSettings()
   }
-  return applySecrets(settings, { ...(secretCache ?? {}), ...sessionSecrets })
+  return withMigratedAI(applySecrets(settings, { ...(secretCache ?? {}), ...sessionSecrets }))
+}
+
+/**
+ * Brings every profile's AI config forward to the account model.
+ *
+ * Runs on read rather than as a one-shot upgrade step: the settings file is
+ * also written by imports and by older builds sharing the same user data
+ * directory, so "migrate whenever we read" is the only version that stays true.
+ */
+function withMigratedAI(settings: AppSettings): AppSettings {
+  return {
+    ...settings,
+    profiles: (settings.profiles ?? []).map((p) => ({ ...p, ai: migrateAIConfig(p.ai) }))
+  }
 }
 
 /**
@@ -99,10 +114,10 @@ async function readSettingsWithSecrets(reason: 'tokens' | 'settings' = 'tokens')
     await saveSecrets(merged)
     await writeFile(settingsPath(), JSON.stringify(stripSettingsSecrets(settings), null, 2), 'utf-8')
     secretCache = merged
-    return applySecrets(settings, merged)
+    return withMigratedAI(applySecrets(settings, merged))
   }
   secretCache = stored
-  return applySecrets(settings, { ...stored, ...sessionSecrets })
+  return withMigratedAI(applySecrets(settings, { ...stored, ...sessionSecrets }))
 }
 
 const TOKEN_FIELD: Record<RepoHost, 'githubToken' | 'gitlabToken' | 'bitbucketToken' | 'azureToken'> = {
@@ -133,22 +148,31 @@ export async function activeProfileToken(host: RepoHost, repoPath?: string): Pro
 }
 
 /**
- * The active profile's AI API key, or undefined when none is configured.
+ * The API key for one AI account of the active profile, or undefined when none
+ * is configured.
  *
- * The renderer only ever sees this key after the user opens Settings (that is
+ * The renderer only ever sees these keys after the user opens Settings (that is
  * the one call that unlocks). Every other AI action starts from a store that
- * was hydrated with `settings:get`, whose key is still encrypted on disk — so
- * the main process resolves it here instead, exactly like `activeProfileToken`
+ * was hydrated with `settings:get`, whose keys are still encrypted on disk — so
+ * the main process resolves them here instead, exactly like `activeProfileToken`
  * does for git. Without this, AI features fail on every fresh launch until
  * Settings has been opened once.
+ *
+ * `accountId` comes from the resolved config the renderer sent, so a feature
+ * pointed at a second account authenticates with *that* account's key rather
+ * than whichever one happens to be the default.
  */
-export async function activeProfileAiKey(): Promise<string | undefined> {
+export async function activeProfileAiKey(accountId?: string): Promise<string | undefined> {
   // Nothing stored means nothing to decrypt: never ask for keychain access to
   // discover that the user has no key.
   if (!secretCache && !existsSync(secretsPath())) return undefined
   const settings = await readSettingsWithSecrets('tokens')
   const profile = settings.profiles.find((p) => p.id === settings.activeProfileId) ?? settings.profiles[0]
-  const key = profile?.ai?.apiKey
+  if (!profile?.ai) return undefined
+  const account = accountId
+    ? profile.ai.accounts?.find((a) => a.id === accountId)
+    : accountFor(profile.ai)
+  const key = account?.apiKey ?? profile.ai.apiKey
   return key && key.trim() ? key.trim() : undefined
 }
 

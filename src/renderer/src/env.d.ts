@@ -106,7 +106,8 @@ interface PreloadApi {
   }
   ai: {
     commitMessage(diff: string, cfg: unknown, ctx: unknown): Promise<unknown>
-    listModels(cfg: unknown): Promise<unknown>
+    listModels(cfg: unknown, force?: boolean): Promise<unknown>
+    detectCli(): Promise<unknown>
     explainCode(code: string, lang: string, cfg: unknown): Promise<unknown>
     hoverExplain(req: unknown, cfg: unknown): Promise<unknown>
     resolveConflict(file: string, content: string, cfg: unknown): Promise<unknown>

@@ -78,6 +78,8 @@ import {
   resolveCodeColors
 } from '../theme/themes'
 import { useT, interp, type TranslationKey } from '../i18n'
+import { resolveAI } from '../../../shared/aiAccounts'
+import { AIAccountsEditor } from './AIAccounts'
 import { LanguagePicker } from './LanguagePicker'
 import { ShortcutEditor } from './CheatsheetModal'
 import madLogo from '../assets/mad-high.png'
@@ -572,40 +574,8 @@ export function IntegrationsPage({
 }
 
 export function AIPage({ profile, edit }: { profile: Profile; edit: (p: Partial<Profile>) => void }): React.JSX.Element {
-  const toast = useUIStore((s) => s.toast)
   const t = useT()
-  const [models, setModels] = useState<string[]>([])
-  const [loadingModels, setLoadingModels] = useState(false)
   const ai = profile.ai
-  const preset = AI_PROVIDERS.find((p) => p.id === ai.provider) ?? AI_PROVIDERS[0]
-  const visibleModels = models.length > 0 ? models : preset.models
-
-  const setProvider = (id: AIProvider): void => {
-    const next = AI_PROVIDERS.find((p) => p.id === id) ?? AI_PROVIDERS[0]
-    setModels([])
-    edit({
-      ai: {
-        ...ai,
-        provider: id,
-        endpoint: next.endpoint || ai.endpoint,
-        model: next.defaultModel || ai.model
-      }
-    })
-  }
-
-  const fetchModels = async (): Promise<void> => {
-    setLoadingModels(true)
-    try {
-      const list = await aiApi.listModels(ai)
-      setModels(list)
-      if (list.length === 0) toast('info', t('settings.noModels'))
-    } catch (err) {
-      setModels([])
-      toast('info', `${err instanceof Error ? err.message : String(err)} Using the built-in model list.`)
-    } finally {
-      setLoadingModels(false)
-    }
-  }
 
   return (
     <>
@@ -625,61 +595,7 @@ export function AIPage({ profile, edit }: { profile: Profile; edit: (p: Partial<
       </label>
 
       <div style={ai.enabled === false ? { opacity: 0.4, pointerEvents: 'none' } : undefined}>
-      <h4>
-        <Bot size={14} /> {t('settings.provider')}
-      </h4>
-      <div className="form-row two">
-        <label>
-          {t('settings.provider')}
-          <select value={ai.provider} onChange={(e) => setProvider(e.target.value as AIProvider)}>
-            {AI_PROVIDERS.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          {preset.needsKey ? t('settings.apiKey') : t('settings.apiKeyOptional')}
-          <input
-            type="password"
-            value={ai.apiKey}
-            placeholder={preset.needsKey ? 'sk-…' : t('settings.notRequired')}
-            onChange={(e) => edit({ ai: { ...ai, apiKey: e.target.value } })}
-          />
-        </label>
-      </div>
-
-      <label>
-        {t('settings.model')}
-        <div className="model-row">
-          {visibleModels.length > 0 ? (
-            <select value={ai.model} onChange={(e) => edit({ ai: { ...ai, model: e.target.value } })}>
-              {!visibleModels.includes(ai.model) && ai.model && <option value={ai.model}>{ai.model}</option>}
-              {visibleModels.map((m) => (
-                <option key={m} value={m}>
-                  {m}
-                </option>
-              ))}
-            </select>
-          ) : (
-            <input
-              value={ai.model}
-              placeholder={preset.defaultModel || 'model-name'}
-              onChange={(e) => edit({ ai: { ...ai, model: e.target.value } })}
-            />
-          )}
-          <button
-            className="btn ghost small"
-            disabled={loadingModels}
-            title={t('settings.fetchModelsTitle')}
-            onClick={() => void fetchModels()}
-          >
-            {loadingModels ? <Loader2 size={13} className="spin" /> : <RefreshCw size={13} />} {t('settings.fetchModels')}
-          </button>
-        </div>
-      </label>
-
+      <AIAccountsEditor ai={ai} onChange={(next) => edit({ ai: next })} />
 
       <label className="settings-toggle-card" style={{ marginTop: 12 }}>
         <input
@@ -763,33 +679,6 @@ export function AIPage({ profile, edit }: { profile: Profile; edit: (p: Partial<
 
       {ai.repoChat !== false && (
         <>
-          <label style={{ marginTop: 12 }}>
-            {t('settings.repoChatModel')}
-            {visibleModels.length > 0 ? (
-              <select
-                value={ai.repoChatModel ?? ''}
-                onChange={(e) => edit({ ai: { ...ai, repoChatModel: e.target.value } })}
-              >
-                <option value="">{interp(t('settings.repoChatSameModel'), { model: ai.model })}</option>
-                {!visibleModels.includes(ai.repoChatModel ?? '') && ai.repoChatModel && (
-                  <option value={ai.repoChatModel}>{ai.repoChatModel}</option>
-                )}
-                {visibleModels.map((m) => (
-                  <option key={m} value={m}>
-                    {m}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <input
-                value={ai.repoChatModel ?? ''}
-                placeholder={ai.model}
-                onChange={(e) => edit({ ai: { ...ai, repoChatModel: e.target.value } })}
-              />
-            )}
-          </label>
-          <span className="settings-hint">{t('settings.repoChatModelHint')}</span>
-
           <label className="settings-toggle-card" style={{ marginTop: 12 }}>
             <input
               type="checkbox"
@@ -841,15 +730,6 @@ export function AIPage({ profile, edit }: { profile: Profile; edit: (p: Partial<
         <summary>
           <ChevronDown size={13} /> {t('settings.advanced')}
         </summary>
-        <label>
-          {t('settings.endpoint')}
-          <input
-            value={ai.endpoint}
-            placeholder="https://api.openai.com/v1"
-            disabled={ai.provider !== 'custom' && !!preset.endpoint}
-            onChange={(e) => edit({ ai: { ...ai, endpoint: e.target.value } })}
-          />
-        </label>
         <label>
           {t('settings.customInstructions')}
           <textarea
@@ -1275,7 +1155,7 @@ function GraphStyleTab(): React.JSX.Element {
     if (!aiPrompt.trim()) return
     setGenerating(true)
     try {
-      const result = await aiApi.generateGraphPalette(aiPrompt.trim(), activeProfile.ai)
+      const result = await aiApi.generateGraphPalette(aiPrompt.trim(), resolveAI(activeProfile.ai, 'theme'))
       setDraft(toSlots(result.colors))
       setName(result.name)
       setShowAIPrompt(false)
@@ -1521,7 +1401,7 @@ function ThemesPage({ initialTab }: { initialTab?: 'theme' | 'graph' } = {}): Re
     if (!appAIPrompt.trim()) return
     setGeneratingApp(true)
     try {
-      const result = await aiApi.generateAppTheme(appAIPrompt.trim(), activeProfile.ai)
+      const result = await aiApi.generateAppTheme(appAIPrompt.trim(), resolveAI(activeProfile.ai, 'theme'))
       setAppDraft(mode === 'dark' ? result.dark : result.light)
       setAppOther(mode === 'dark' ? result.light : result.dark)
       setAppName(result.name)
@@ -1539,7 +1419,7 @@ function ThemesPage({ initialTab }: { initialTab?: 'theme' | 'graph' } = {}): Re
     if (!codeAIPrompt.trim()) return
     setGeneratingCode(true)
     try {
-      const result = await aiApi.generateCodeTheme(codeAIPrompt.trim(), activeProfile.ai)
+      const result = await aiApi.generateCodeTheme(codeAIPrompt.trim(), resolveAI(activeProfile.ai, 'theme'))
       setCodeDraft(mode === 'dark' ? result.dark : result.light)
       setCodeOther(mode === 'dark' ? result.light : result.dark)
       setCodeName(result.name)

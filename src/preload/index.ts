@@ -106,7 +106,8 @@ const api = {
   ai: {
     commitMessage: (diff: string, cfg: unknown, ctx: unknown): Promise<unknown> =>
       ipcRenderer.invoke('ai:commitMessage', diff, cfg, ctx),
-    listModels: (cfg: unknown): Promise<unknown> => ipcRenderer.invoke('ai:listModels', cfg),
+    listModels: (cfg: unknown, force?: boolean): Promise<unknown> => ipcRenderer.invoke('ai:listModels', cfg, force),
+    detectCli: (): Promise<unknown> => ipcRenderer.invoke('ai:detectCli'),
     explainCode: (code: string, lang: string, cfg: unknown): Promise<unknown> =>
       ipcRenderer.invoke('ai:explainCode', code, lang, cfg),
     hoverExplain: (req: unknown, cfg: unknown): Promise<unknown> =>

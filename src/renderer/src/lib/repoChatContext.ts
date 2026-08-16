@@ -1,4 +1,5 @@
-import type { RepoChatAttachment } from '../../../shared/types'
+import { aiProviderPreset, type AIConfig, type RepoChatAttachment } from '../../../shared/types'
+import { accountLabel } from '../../../shared/aiAccounts'
 
 /**
  * Pinned chat context — the chips above the composer.
@@ -76,23 +77,39 @@ export function parseChatDrop(data: ChatDropData): RepoChatAttachment[] {
     .map((file) => ({ kind: 'external' as const, path: file }))
 }
 
+/** One account's worth of options in the panel's model switcher. */
+export interface ChatModelGroup {
+  accountId: string
+  label: string
+  models: string[]
+}
+
 /**
- * Models offered by the panel's own switcher: what the provider preset knows,
- * plus whatever is already selected. Settings can fetch a live list; this stays
- * with what the renderer can name without a network call.
+ * What the panel's switcher offers: every configured account, each with the
+ * models it can serve.
+ *
+ * The list used to be one provider's hardcoded presets, so switching model
+ * meant switching the whole app's provider in Settings first. Now `catalogs`
+ * carries the live per-account lists (fetched and cached in the main process)
+ * and this only has to merge in whatever is already selected, so a model the
+ * provider stopped advertising never vanishes from under the user.
  */
-export function chatModelOptions(
-  ai: { model: string; repoChatModel?: string },
-  presetModels: readonly string[]
-): string[] {
-  const seen = new Set<string>()
-  return [...presetModels, ai.model, ai.repoChatModel ?? '']
-    .map((model) => model.trim())
-    .filter((model) => {
-      if (!model || seen.has(model)) return false
-      seen.add(model)
-      return true
-    })
+export function chatModelGroups(
+  ai: AIConfig,
+  catalogs: Record<string, readonly string[]>
+): ChatModelGroup[] {
+  return (ai.accounts ?? []).map((account) => {
+    const seen = new Set<string>()
+    const extras = [account.model, ai.assignments?.chat?.accountId === account.id ? ai.assignments.chat.model : '']
+    const models = [...(catalogs[account.id] ?? aiProviderPreset(account.provider).models), ...extras]
+      .map((model) => (model ?? '').trim())
+      .filter((model) => {
+        if (!model || seen.has(model)) return false
+        seen.add(model)
+        return true
+      })
+    return { accountId: account.id, label: accountLabel(account), models }
+  })
 }
 
 export interface ChatSuggestionInput {

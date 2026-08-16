@@ -24,8 +24,9 @@ _The whole of git — graph, staging by line, rebase, worktrees, submodules, LFS
 > PR review/merge, issues, milestones, notifications, inline CI and project
 > fields are GitHub-only. GitLab, Bitbucket and Azure DevOps can **list and
 > create** PRs/MRs, but their detail/review/merge screens are not built yet.
-> AI providers other than OpenAI use an OpenAI-compatible call shape and are
-> unverified. If it breaks: well, **it works on my machine**. PRs welcome. 💜
+> OpenAI and Anthropic each speak their own API; the remaining AI providers use
+> an OpenAI-compatible call shape and are unverified. If it breaks: well, **it
+> works on my machine**. PRs welcome. 💜
 
 ## Install
 
@@ -100,7 +101,11 @@ whose findings must anchor to a real `path:line` or get rejected ·
 a [repo wiki](docs/help/repo-wiki.md) where every claim cites its file ·
 [**repository chat**](docs/help/repo-chat.md) that answers from files and commits
 you pin as context, and links every answer back to the lines it read.
-OpenAI, Anthropic, OpenRouter, Groq, Mistral, Ollama, or any compatible endpoint.
+[**Several accounts at once**](docs/help/ai.md) — an OpenAI key for commit
+messages, Claude for chat, a local Ollama for the rest — with model lists fetched
+live from each provider. OpenAI, Anthropic, Google Gemini, OpenRouter, Groq,
+Mistral, Ollama, any compatible endpoint, or a [signed-in CLI](docs/help/ai.md)
+you already pay for instead of an API key.
 
 ### Make it yours
 

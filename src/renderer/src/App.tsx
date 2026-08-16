@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { GitMerge, FolderOpen, Download, ArrowDownToLine, Bug, LifeBuoy, MessageSquare, X } from 'lucide-react'
-import { useSettingsStore } from './stores/settings'
+import { takeAccountsNotice, useSettingsStore } from './stores/settings'
 import { useRepoStore, repoActions, type RepoData } from './stores/repo'
 import { useUIStore } from './stores/ui'
 import { tabActiveRepoPath, tabRepos, type ConflictOpKind, type GroupTab, type PageTab } from '../../shared/types'
@@ -268,7 +268,10 @@ export default function App(): React.JSX.Element {
   )
 
   useEffect(() => {
-    void useSettingsStore.getState().load()
+    void useSettingsStore.getState().load().then(() => {
+      // Only fires on the launch that migrated a pre-accounts AI config.
+      if (takeAccountsNotice()) useUIStore.getState().openModal({ kind: 'ai-accounts-notice' })
+    })
   }, [])
 
   useEffect(() => {

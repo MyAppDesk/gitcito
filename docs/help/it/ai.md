@@ -3,7 +3,7 @@ title: Funzioni AI
 category: AI
 order: 80
 summary: Opzionali, indipendenti dal provider e ancorate al tuo codice reale.
-keywords: ai ia openai anthropic ollama llm locale messaggio di commit spiega review wiki grounded
+keywords: ai ia openai anthropic ollama llm locale messaggio di commit spiega review wiki grounded account chiave api abbonamento cli claude codex gemini modelli
 ---
 
 # Funzioni AI
@@ -13,14 +13,69 @@ Niente viene inviato da nessuna parte finché non chiedi qualcosa di preciso.
 
 ![Impostazioni AI](../../screenshots/settings-ai.webp)
 
-## Provider
+## Account
 
-Preset per **OpenAI, Anthropic, OpenRouter, Groq, Mistral e Ollama**
-(interamente locale), oppure qualsiasi endpoint compatibile con OpenAI. I modelli
-vengono recuperati in tempo reale e puoi aggiungere istruzioni personalizzate.
+Un **account** è un modo di raggiungere un modello: un provider, dove
+contattarlo e come si autentica. Puoi configurarne diversi e convivono — una
+chiave di lavoro, una personale, un modello locale, una CLI con cui hai già
+fatto l'accesso.
 
-> Solo OpenAI è davvero collaudato. Gli altri usano la stessa forma di chiamata
-> compatibile con OpenAI e dovrebbero funzionare, ma non sono verificati.
+I preset coprono **OpenAI, Anthropic, Google Gemini, OpenRouter, Groq, Mistral**
+e **Ollama** (interamente locale), oltre a qualunque endpoint compatibile con
+OpenAI.
+
+Anthropic usa la propria API `/v1/messages` invece di una chiamata in forma
+OpenAI, quindi i modelli Claude funzionano davvero anziché sembrare
+funzionanti. Gemini viene raggiunto tramite l'endpoint compatibile con OpenAI di
+Google.
+
+### Usare un abbonamento al posto di una chiave API
+
+Scegli il provider **CLI locale** per rispondere con una CLI agente già
+installata e autenticata su questa macchina — `claude`, `gemini` o `codex`.
+Gitcito esegue il binario con il tuo prompt e ne legge la risposta; non c'è
+nessuna chiave API da incollare né alcun token da conservare.
+
+Gitcito esegue soltanto un comando che hai configurato come account, e sempre
+con un elenco di argomenti invece di una shell: nulla in un diff o nel nome di un
+ramo può essere interpretato come un comando.
+
+> **Questo non è più riservato di una chiave API.** I tuoi prompt raggiungono
+> comunque lo stesso fornitore, con il tuo account, esattamente come con una
+> chiave. Cambiano fatturazione e configurazione, non dove finisce il testo.
+
+Se il comando non è nel tuo `PATH`, scrivi il percorso completo nell'account.
+
+### Quale account risponde a cosa
+
+In **Quale account risponde a cosa**, ogni funzione — messaggi di commit, chat,
+spiegazione, revisione PR, risoluzione dei conflitti, wiki, temi — può puntare
+al proprio account e modello. Lascia una riga sul valore predefinito per seguire
+l'account predefinito. Modello economico per i messaggi di commit e uno potente
+per la chat è la divisione più comune.
+
+### Avviso di aggiornamento
+
+Aggiornando da una versione precedente agli account, questo compare una volta. Il provider e la chiave che avevi diventano il primo account; non c'è nulla da riconfigurare a mano.
+
+![Avviso di aggiornamento](../../screenshots/ai-accounts-notice.webp)
+
+## Modelli
+
+Gli elenchi dei modelli arrivano dal provider stesso e restano in cache per un
+giorno; **Recupera modelli** ne aggiorna uno all'istante. Sotto l'elenco Gitcito
+dice da dove viene — in diretta, dalla cache (con la data) o dall'elenco
+integrato di riserva, e perché.
+
+L'elenco è filtrato ai modelli in grado di rispondere a una richiesta di chat, così
+embedding, voce e immagini restano fuori. Ogni casella del modello accetta anche
+testo libero, quindi un modello in anteprima, un deployment privato o un tag
+Ollama appena scaricato è sempre utilizzabile anche se il provider non lo elenca.
+
+Un provider a cui non hai ancora dato una chiave, o irraggiungibile, ripiega su
+un piccolo elenco integrato invece che su un menu vuoto.
+
+Nessun provider pubblica un elenco ordinato o curato, quindi la selezione è di Gitcito: le istantanee datate vengono ripiegate sul modello di cui sono un'istantanea (`gpt-4o` copre `gpt-4o-2024-08-06`), e il resto è ordinato dal più recente anziché alfabeticamente. **Mostra tutti i modelli**, in fondo all'elenco, riporta tutto ciò che il provider ha restituito.
 
 ## Cosa sa fare
 
@@ -49,5 +104,20 @@ cache per versione del file.
 
 **I file mascherati perché contengono segreti non vengono mai inviati.** E
 nemmeno i file coperti dalle regole di mascheramento dei segreti.
+
+## Limiti
+
+- Gli elenchi di riserva invecchiano fra una versione e l'altra. È proprio a
+  questo che serve il recupero in diretta; la riserva copre solo il caso in cui
+  recuperare non sia possibile.
+- Filtrare l'elenco di un provider ai modelli da chat avviene per nome, quindi un
+  modello di chat dal nome insolito può restare fuori. Scrivilo a mano.
+- Un account CLI non può riportare il consumo di token se la CLI non lo fa: le
+  cifre di utilizzo e costo nelle impostazioni conteggeranno per difetto quelle
+  chiamate.
+- Le risposte via CLI sono più lente di una chiamata diretta all'API: il binario
+  avvia un'intera sessione a ogni richiesta.
+- Le chiavi sono conservate per account nel portachiavi del sistema. Eliminare
+  un account ne elimina la chiave.
 
 **Vedi anche:** [Wiki del repository](repo-wiki.md) · [Sicurezza e segreti](security.md)

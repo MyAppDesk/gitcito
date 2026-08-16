@@ -10,7 +10,10 @@ export interface ProfileSecrets {
   azureToken?: string
   gitlabToken?: string
   bitbucketToken?: string
+  /** Legacy single AI key, written before accounts existed. Still read. */
   aiApiKey?: string
+  /** One API key per AI account id. */
+  aiKeys?: Record<string, string>
 }
 
 /** Secrets for every profile that has any, keyed by profile id. */
@@ -21,7 +24,10 @@ export const TOKEN_FIELDS = ['githubToken', 'azureToken', 'gitlabToken', 'bitbuc
 
 export function hasSettingsSecrets(settings: AppSettings | null | undefined): boolean {
   return (settings?.profiles ?? []).some(
-    (p) => TOKEN_FIELDS.some((f) => !!p[f]) || !!p.ai?.apiKey
+    (p) =>
+      TOKEN_FIELDS.some((f) => !!p[f]) ||
+      !!p.ai?.apiKey ||
+      (p.ai?.accounts ?? []).some((a) => !!a.apiKey)
   )
 }
 
@@ -35,7 +41,13 @@ export function stripSettingsSecrets(settings: AppSettings): AppSettings {
       azureToken: '',
       gitlabToken: '',
       bitbucketToken: '',
-      ai: p.ai ? { ...p.ai, apiKey: '' } : p.ai
+      ai: p.ai
+        ? {
+            ...p.ai,
+            apiKey: '',
+            accounts: (p.ai.accounts ?? []).map((a) => ({ ...a, apiKey: '' }))
+          }
+        : p.ai
     }))
   }
 }
@@ -49,7 +61,14 @@ export function extractSecrets(settings: AppSettings): SecretStore {
       const value = p[field]
       if (value) secrets[field] = value
     }
-    if (p.ai?.apiKey) secrets.aiApiKey = p.ai.apiKey
+    const aiKeys: Record<string, string> = {}
+    for (const account of p.ai?.accounts ?? []) {
+      if (account.apiKey) aiKeys[account.id] = account.apiKey
+    }
+    if (Object.keys(aiKeys).length > 0) secrets.aiKeys = aiKeys
+    // Only written when the config predates accounts; migration folds it into
+    // `aiKeys` the first time the settings are saved afterwards.
+    else if (p.ai?.apiKey) secrets.aiApiKey = p.ai.apiKey
     if (Object.keys(secrets).length > 0) store[p.id] = secrets
   }
   return store
@@ -66,7 +85,29 @@ export function applySecrets(settings: AppSettings, store: SecretStore): AppSett
       for (const field of TOKEN_FIELDS) {
         if (secrets[field]) restored[field] = secrets[field] as string
       }
-      if (secrets.aiApiKey && restored.ai) restored.ai = { ...restored.ai, apiKey: secrets.aiApiKey }
+      if (!restored.ai) return restored
+
+      const accounts = restored.ai.accounts ?? []
+      if (accounts.length > 0) {
+        const keys = secrets.aiKeys ?? {}
+        // A pre-accounts key belongs to the account the migration built from it.
+        const legacyOwner = restored.ai.defaultAccountId || accounts[0].id
+        restored.ai = {
+          ...restored.ai,
+          accounts: accounts.map((a) => {
+            const key = keys[a.id] ?? (a.id === legacyOwner ? secrets.aiApiKey : undefined)
+            return key ? { ...a, apiKey: key } : a
+          })
+        }
+      }
+
+      // Keep the resolved field in step so a config used before migration still
+      // authenticates.
+      const resolvedKey =
+        secrets.aiKeys?.[restored.ai.accountId ?? restored.ai.defaultAccountId ?? ''] ??
+        secrets.aiKeys?.[accounts[0]?.id ?? ''] ??
+        secrets.aiApiKey
+      if (resolvedKey) restored.ai = { ...restored.ai, apiKey: resolvedKey }
       return restored
     })
   }

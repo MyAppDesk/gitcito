@@ -19,6 +19,7 @@ export function CreatePRModal({ spec }: { spec: Extract<ModalSpec, { kind: 'crea
   const closeModal = useUIStore((s) => s.closeModal)
   const toast = useUIStore((s) => s.toast)
   const profile = useSettingsStore((s) => s.activeProfile())
+  const aiFor = useSettingsStore((s) => s.aiFor)
   const repo = useRepoStore((s) => s.repos[spec.repoPath])
 
   const locals = repo?.branches.locals.map((b) => b.name) ?? []
@@ -46,7 +47,7 @@ export function CreatePRModal({ spec }: { spec: Extract<ModalSpec, { kind: 'crea
     try {
       const cmp = await gitApi.compareBranches(spec.repoPath, source, target)
       const commits = cmp.aheadCommits.map((c) => `- ${c.subject}`).join('\n')
-      const { title: t, body: b } = await aiApi.prDescription(commits, cmp.diff, profile.ai)
+      const { title: t, body: b } = await aiApi.prDescription(commits, cmp.diff, aiFor('review'))
       if (t) {
         titleTouched.current = true
         setTitle(t)

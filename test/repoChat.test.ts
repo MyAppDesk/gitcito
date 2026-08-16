@@ -12,10 +12,11 @@ import { gitService } from '../src/main/git'
 import { createRepoChatStore } from '../src/renderer/src/lib/repoChatStore'
 import {
   addAttachments,
-  chatModelOptions,
+  chatModelGroups,
   parseChatDrop,
   suggestedAttachments
 } from '../src/renderer/src/lib/repoChatContext'
+import { migrateAIConfig } from '../src/shared/aiAccounts'
 import { cloneFixture, cleanupFixtures } from './fixtures'
 import {
   canSubmitRepoChat,
@@ -237,11 +238,25 @@ describe('repository chat panel behavior', () => {
     })
   })
 
-  it('offers the preset models plus whatever is already chosen, without duplicates', () => {
-    expect(
-      chatModelOptions({ model: 'gpt-4o-mini', repoChatModel: 'local-thing' }, ['gpt-4o-mini', 'gpt-4o'])
-    ).toEqual(['gpt-4o-mini', 'gpt-4o', 'local-thing'])
-    expect(chatModelOptions({ model: 'gpt-4o-mini', repoChatModel: '' }, [])).toEqual(['gpt-4o-mini'])
+  it('groups the switcher by account, live models first, without duplicates', () => {
+    const ai = migrateAIConfig({
+      accounts: [
+        { id: 'work', label: 'Work', provider: 'openai', endpoint: '', apiKey: '', model: 'gpt-4o-mini' },
+        { id: 'home', label: '', provider: 'anthropic', endpoint: '', apiKey: '', model: 'claude-sonnet-5' }
+      ],
+      defaultAccountId: 'work',
+      assignments: { chat: { accountId: 'work', model: 'a-private-deployment' } }
+    })
+
+    const groups = chatModelGroups(ai, { work: ['gpt-4o-mini', 'gpt-4o'] })
+    expect(groups).toEqual([
+      // The account's own model and the pinned chat model survive even when the
+      // provider never listed them.
+      { accountId: 'work', label: 'Work', models: ['gpt-4o-mini', 'gpt-4o', 'a-private-deployment'] },
+      // No catalogue yet for this one, so it falls back to the preset list; an
+      // empty label falls back to the provider's.
+      { accountId: 'home', label: 'Anthropic', models: expect.arrayContaining(['claude-sonnet-5']) }
+    ])
   })
 
   it('hides chat entirely when AI or chat itself is switched off', () => {

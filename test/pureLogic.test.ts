@@ -27,6 +27,11 @@ import {
   upsertRule
 } from '../src/renderer/src/lib/gitattributes'
 import { parseToolHelp, sortTools } from '../src/shared/diffTools'
+import { migrateAIConfig, modelFor, newAccount, resolveAI } from '../src/shared/aiAccounts'
+import { authHeaders, baseUrl, missingCredential, transportOf } from '../src/main/aiTransport'
+import { flattenMessages } from '../src/main/aiCli'
+import { buildModelLists, normalizeModelIds } from '../src/shared/aiModelNames'
+import type { AIConfig } from '../src/shared/types'
 import {
   parseKeygenLine,
   agentFingerprints,
@@ -917,8 +922,14 @@ describe('profile secrets — keeping credentials out of settings.json', () => {
   })
   const withProfiles = (...profiles: Profile[]): AppSettings => ({ ...defaultSettings(), profiles })
 
+  const baseAI = defaultSettings().profiles[0].ai
+  const withKey = {
+    ...baseAI,
+    accounts: baseAI.accounts.map((a) => ({ ...a, apiKey: 'sk-secret' })),
+    apiKey: 'sk-secret'
+  }
   const loaded = withProfiles(
-    profile('p1', { githubToken: 'ghp_secret', ai: { ...defaultSettings().profiles[0].ai, apiKey: 'sk-secret' } }),
+    profile('p1', { githubToken: 'ghp_secret', ai: withKey }),
     profile('p2', { gitlabToken: 'glpat_secret' })
   )
 
@@ -939,7 +950,7 @@ describe('profile secrets — keeping credentials out of settings.json', () => {
 
   it('extracts only non-empty credentials, keyed by profile', () => {
     expect(extractSecrets(loaded)).toEqual({
-      p1: { githubToken: 'ghp_secret', aiApiKey: 'sk-secret' },
+      p1: { githubToken: 'ghp_secret', aiKeys: { default: 'sk-secret' } },
       p2: { gitlabToken: 'glpat_secret' }
     })
     expect(extractSecrets(stripSettingsSecrets(loaded))).toEqual({})
@@ -951,6 +962,34 @@ describe('profile secrets — keeping credentials out of settings.json', () => {
     expect(restored).toEqual(loaded)
   })
 
+  it('restores a pre-accounts key onto the account the migration built from it', () => {
+    // What an install upgraded from an older build looks like: the encrypted
+    // store still holds the single `aiApiKey`, while settings.json now has
+    // accounts whose keys were stripped out.
+    const onDisk = stripSettingsSecrets(loaded)
+    const restored = applySecrets(onDisk, { p1: { aiApiKey: 'sk-legacy' } })
+    expect(restored.profiles[0].ai.accounts[0].apiKey).toBe('sk-legacy')
+    expect(restored.profiles[0].ai.apiKey).toBe('sk-legacy')
+  })
+
+  it('gives each account its own key rather than sharing one', () => {
+    const twoAccounts = withProfiles(
+      profile('p1', {
+        ai: {
+          ...baseAI,
+          accounts: [
+            { ...baseAI.accounts[0], id: 'work', apiKey: 'sk-work' },
+            { ...baseAI.accounts[0], id: 'personal', provider: 'anthropic' as const, apiKey: 'sk-personal' }
+          ]
+        }
+      })
+    )
+    const secrets = extractSecrets(twoAccounts)
+    expect(secrets.p1.aiKeys).toEqual({ work: 'sk-work', personal: 'sk-personal' })
+    const restored = applySecrets(stripSettingsSecrets(twoAccounts), secrets)
+    expect(restored.profiles[0].ai.accounts.map((a) => a.apiKey)).toEqual(['sk-work', 'sk-personal'])
+  })
+
   it('leaves a profile alone when the store has nothing for it', () => {
     const restored = applySecrets(stripSettingsSecrets(loaded), { p1: { githubToken: 'ghp_secret' } })
     expect(restored.profiles[0].githubToken).toBe('ghp_secret')
@@ -960,7 +999,7 @@ describe('profile secrets — keeping credentials out of settings.json', () => {
 
   it('drops stored secrets for profiles that no longer exist', () => {
     const store = extractSecrets(loaded)
-    expect(pruneSecrets(store, ['p1'])).toEqual({ p1: { githubToken: 'ghp_secret', aiApiKey: 'sk-secret' } })
+    expect(pruneSecrets(store, ['p1'])).toEqual({ p1: { githubToken: 'ghp_secret', aiKeys: { default: 'sk-secret' } } })
     expect(pruneSecrets(store, [])).toEqual({})
   })
 
@@ -3275,5 +3314,242 @@ describe('.gitattributes editing', () => {
       expect(rules).toHaveLength(1)
       expect(rules[0].attrs.length).toBe(preset.attrs.length)
     }
+  })
+})
+
+describe('AI accounts — migration and resolution', () => {
+  /** What a settings file written before accounts existed looks like. */
+  const legacy = {
+    enabled: true,
+    provider: 'anthropic' as const,
+    endpoint: 'https://api.anthropic.com/v1',
+    apiKey: 'sk-ant-old',
+    model: 'claude-3-5-haiku-latest',
+    repoChatModel: 'claude-3-5-sonnet-latest',
+    commitStyle: 'auto' as const,
+    explainStyle: 'normal' as const,
+    conflictStyle: 'clean' as const,
+    branchNamingStyle: 'prefix/description' as const,
+    customInstructions: '',
+    generateDescription: true,
+    coAuthor: true
+  }
+
+  it('folds a single provider into one account without losing anything', () => {
+    const ai = migrateAIConfig(legacy)
+    expect(ai.accounts).toHaveLength(1)
+    expect(ai.accounts[0]).toMatchObject({
+      provider: 'anthropic',
+      apiKey: 'sk-ant-old',
+      model: 'claude-3-5-haiku-latest'
+    })
+    expect(ai.defaultAccountId).toBe(ai.accounts[0].id)
+  })
+
+  it('turns the old chat-only model into a chat assignment and clears the field', () => {
+    const ai = migrateAIConfig(legacy)
+    expect(ai.assignments.chat).toEqual({
+      accountId: ai.defaultAccountId,
+      model: 'claude-3-5-sonnet-latest'
+    })
+    // Left set, it would keep overriding whichever account the user picks next.
+    expect(ai.repoChatModel).toBe('')
+    expect(modelFor(ai, 'chat')).toBe('claude-3-5-sonnet-latest')
+    expect(modelFor(ai, 'commit')).toBe('claude-3-5-haiku-latest')
+  })
+
+  it('is idempotent, so it can run on every settings read', () => {
+    const once = migrateAIConfig(legacy)
+    expect(migrateAIConfig(once)).toEqual(once)
+  })
+
+  it('resolves the connection for a feature onto the config the main process reads', () => {
+    const ai = migrateAIConfig({
+      ...legacy,
+      accounts: [
+        { id: 'work', label: 'Work', provider: 'openai', endpoint: '', apiKey: 'sk-work', model: 'gpt-4o-mini' },
+        { id: 'home', label: 'Home', provider: 'anthropic', endpoint: '', apiKey: 'sk-home', model: 'claude-sonnet-5' }
+      ],
+      defaultAccountId: 'work',
+      assignments: { chat: { accountId: 'home', model: 'claude-opus-5' } }
+    })
+
+    const chat = resolveAI(ai, 'chat')
+    expect(chat).toMatchObject({
+      accountId: 'home',
+      provider: 'anthropic',
+      apiKey: 'sk-home',
+      model: 'claude-opus-5',
+      transport: 'anthropic',
+      // An account with no endpoint of its own falls back to the preset's.
+      endpoint: 'https://api.anthropic.com'
+    })
+
+    const commit = resolveAI(ai, 'commit')
+    expect(commit).toMatchObject({ accountId: 'work', apiKey: 'sk-work', model: 'gpt-4o-mini', transport: 'openai' })
+  })
+
+  it('drops assignments whose account has been deleted rather than stranding a model', () => {
+    const ai = migrateAIConfig({
+      ...legacy,
+      accounts: [{ id: 'work', label: 'Work', provider: 'openai', endpoint: '', apiKey: '', model: 'gpt-4o-mini' }],
+      defaultAccountId: 'work',
+      assignments: { chat: { accountId: 'deleted', model: 'ghost-model' } }
+    })
+    expect(ai.assignments.chat).toBeUndefined()
+    expect(modelFor(ai, 'chat')).toBe('gpt-4o-mini')
+  })
+
+  it('falls back to the first account when the default id no longer exists', () => {
+    const ai = migrateAIConfig({
+      ...legacy,
+      accounts: [{ id: 'only', label: 'Only', provider: 'openai', endpoint: '', apiKey: '', model: 'gpt-4o' }],
+      defaultAccountId: 'gone'
+    })
+    expect(ai.defaultAccountId).toBe('only')
+  })
+
+  it('gives a new account an id that does not collide', () => {
+    const existing = [{ id: 'openai', label: 'A', provider: 'openai' as const, endpoint: '', apiKey: '', model: '' }]
+    expect(newAccount(existing, 'openai').id).toBe('openai-2')
+  })
+})
+
+describe('AI transport — one wire layer per protocol', () => {
+  const account = (over: Partial<AIConfig>): AIConfig => migrateAIConfig({ ...over })
+
+  it('trims the legacy /v1 off an Anthropic endpoint instead of doubling it', () => {
+    // Installs made before native Anthropic support stored the OpenAI-shaped
+    // `.../v1`; left alone it would produce `/v1/v1/messages`.
+    const cfg = account({ provider: 'anthropic', endpoint: 'https://api.anthropic.com/v1' })
+    expect(baseUrl(cfg)).toBe('https://api.anthropic.com')
+    expect(transportOf(cfg)).toBe('anthropic')
+  })
+
+  it('strips a full chat-completions URL back to the API root', () => {
+    const cfg = account({ provider: 'custom', endpoint: 'https://gateway.internal/v1/chat/completions/' })
+    expect(baseUrl(cfg)).toBe('https://gateway.internal/v1')
+  })
+
+  it('routes Gemini through the OpenAI-compatible client', () => {
+    expect(transportOf(account({ provider: 'google' }))).toBe('openai')
+  })
+
+  it('authenticates each protocol the way that protocol expects', () => {
+    const anthropic = authHeaders(account({ provider: 'anthropic', apiKey: 'sk-ant' }))
+    expect(anthropic['x-api-key']).toBe('sk-ant')
+    expect(anthropic['anthropic-version']).toBe('2023-06-01')
+    // Sending a Bearer token as well is what made the old client look like it
+    // worked right up until Anthropic rejected the request body.
+    expect(anthropic.Authorization).toBeUndefined()
+
+    const openai = authHeaders(account({ provider: 'openai', apiKey: 'sk-oai' }))
+    expect(openai.Authorization).toBe('Bearer sk-oai')
+    expect(openai['x-api-key']).toBeUndefined()
+  })
+
+  it('only demands a credential when the provider actually needs one', () => {
+    expect(missingCredential(account({ provider: 'openai', apiKey: '' }))).toBe(true)
+    expect(missingCredential(account({ provider: 'openai', apiKey: 'sk-x' }))).toBe(false)
+    // A local model and a signed-in CLI both authenticate elsewhere.
+    expect(missingCredential(account({ provider: 'ollama', apiKey: '' }))).toBe(false)
+    expect(missingCredential(account({ provider: 'cli', apiKey: '' }))).toBe(false)
+  })
+
+  it('flattens a chat into one prompt for CLIs that take a single string', () => {
+    const prompt = flattenMessages([
+      { role: 'system', content: 'Be terse.' },
+      { role: 'user', content: 'Why?' },
+      { role: 'assistant', content: 'Because.' },
+      { role: 'user', content: 'Expand.' }
+    ])
+    expect(prompt).toBe('Instructions:\nBe terse.\n\nWhy?\n\nYour previous reply:\nBecause.\n\nExpand.')
+  })
+})
+
+describe('AI model names — what a picker should show', () => {
+  it('drops the models that cannot answer a chat request', () => {
+    expect(
+      normalizeModelIds([
+        'gpt-4o-mini',
+        'text-embedding-3-small',
+        'whisper-1',
+        'dall-e-3',
+        'omni-moderation-latest',
+        'gpt-4o'
+      ])
+    ).toEqual(['gpt-4o', 'gpt-4o-mini'])
+  })
+
+  it('unqualifies Gemini names and de-duplicates', () => {
+    expect(normalizeModelIds(['models/gemini-2.5-flash', 'gemini-2.5-flash', ' ', undefined])).toEqual([
+      'gemini-2.5-flash'
+    ])
+  })
+
+  it('drops completion-era models a chat request cannot use', () => {
+    // Still listed by OpenAI, and they reject a message list outright.
+    expect(
+      normalizeModelIds(['gpt-4o', 'babbage-002', 'davinci-002', 'gpt-3.5-turbo-instruct', 'gpt-3.5-turbo'])
+    ).toEqual(['gpt-3.5-turbo', 'gpt-4o'])
+  })
+
+  it('keeps a chat model whose name merely contains a filtered word', () => {
+    expect(normalizeModelIds(['gpt-4o', 'nova-adaptive'])).toEqual(['gpt-4o', 'nova-adaptive'])
+  })
+
+  it('collapses dated snapshots into the model they are a snapshot of', () => {
+    // The actual shape of OpenAI's list: one model, four entries.
+    const { models, allModels } = buildModelLists(
+      [
+        'gpt-4o',
+        'gpt-4o-2024-05-13',
+        'gpt-4o-2024-08-06',
+        'gpt-4o-2024-11-20',
+        'gpt-4o-mini',
+        'gpt-4o-mini-2024-07-18',
+        'gpt-3.5-turbo',
+        'gpt-3.5-turbo-0125'
+      ].map((id) => ({ id }))
+    )
+    expect(models).toEqual(['gpt-3.5-turbo', 'gpt-4o', 'gpt-4o-mini'])
+    // Nothing is actually lost — "show all" still reaches every snapshot.
+    expect(allModels).toHaveLength(8)
+  })
+
+  it('keeps the newest snapshot when no undated id exists', () => {
+    // Anthropic dates every id, so collapsing blindly would empty the list.
+    const { models } = buildModelLists([
+      { id: 'claude-haiku-4-5-20251001', created: 3 },
+      { id: 'claude-haiku-4-5-20250101', created: 1 },
+      { id: 'claude-opus-5-20260401', created: 4 }
+    ])
+    expect(models).toEqual(['claude-opus-5-20260401', 'claude-haiku-4-5-20251001'])
+  })
+
+  it('leaves a number that is not a release stamp alone', () => {
+    // `-32768` is a context size and `-16k` is not digits at all; treating
+    // either as a snapshot would merge two genuinely different models.
+    const { models } = buildModelLists(
+      ['mixtral-8x7b-32768', 'gpt-3.5-turbo-16k', 'llama-3.1-8b-instant'].map((id) => ({ id }))
+    )
+    expect(models).toEqual(['gpt-3.5-turbo-16k', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768'])
+  })
+
+  it('orders by release date, newest first, before falling back to name order', () => {
+    const { models } = buildModelLists([
+      { id: 'old-model', created: 1_600_000_000_000 },
+      { id: 'new-model', created: 1_700_000_000_000 },
+      { id: 'undated-b' },
+      { id: 'undated-a' }
+    ])
+    // Dated models lead — alphabetical is what buried gpt-4o under babbage.
+    expect(models).toEqual(['new-model', 'old-model', 'undated-a', 'undated-b'])
+  })
+
+  it('keeps everything rather than showing an empty picker', () => {
+    // The filter is a heuristic; a provider whose every name trips it should
+    // still get a usable list.
+    expect(normalizeModelIds(['my-embed-model'])).toEqual(['my-embed-model'])
   })
 })

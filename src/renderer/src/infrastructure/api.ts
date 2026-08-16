@@ -1,5 +1,7 @@
 import type {
   AskPlan,
+  DetectedCli,
+  ModelCatalog,
   BlameLine,
   BranchCompareResult,
   BranchesPayload,
@@ -561,7 +563,8 @@ export interface ArtifactSuggestion {
 export const aiApi = {
   commitMessage: (diff: string, cfg: AIConfig, ctx: { branch: string }) =>
     window.api.ai.commitMessage(diff, cfg, ctx) as Promise<{ summary: string; description: string }>,
-  listModels: (cfg: AIConfig) => window.api.ai.listModels(cfg) as Promise<string[]>,
+  listModels: (cfg: AIConfig, force = false) => window.api.ai.listModels(cfg, force) as Promise<ModelCatalog>,
+  detectCli: () => window.api.ai.detectCli() as Promise<DetectedCli[]>,
   explainCode: (code: string, lang: string, cfg: AIConfig) =>
     window.api.ai.explainCode(code, lang, cfg) as Promise<string>,
   hoverExplain: (req: HoverExplainRequest, cfg: AIConfig) =>

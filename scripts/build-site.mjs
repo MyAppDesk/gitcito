@@ -237,6 +237,12 @@ const FEATURES = [
     body: 'They force-pushed the branch you reviewed. See which commits were rewritten, dropped or added — the old positions come free from the reflog.'
   },
   {
+    icon: '🔑',
+    title: 'Bring your own models',
+    id: 'ai',
+    body: 'Several AI accounts at once — an OpenAI key for commit messages, Claude for chat, a local Ollama for the rest. Model lists come live from each provider, and a CLI you are already signed into works instead of an API key.'
+  },
+  {
     icon: '💬',
     title: 'Repository chat',
     id: 'repo-chat',

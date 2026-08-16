@@ -41,7 +41,7 @@ export function AIPRReview({
   const t = useT()
   const closeModal = useUIStore((s) => s.closeModal)
   const toast = useUIStore((s) => s.toast)
-  const activeProfile = useSettingsStore((s) => s.activeProfile)
+  const aiFor = useSettingsStore((s) => s.aiFor)
 
   const [loading, setLoading] = useState(true)
   const [summary, setSummary] = useState('')
@@ -59,7 +59,7 @@ export function AIPRReview({
           setLoading(false)
           return
         }
-        const result = await aiApi.reviewPR(diff.diff, activeProfile().ai)
+        const result = await aiApi.reviewPR(diff.diff, aiFor('review'))
         setSummary(result.summary)
         setRisks(result.risks)
         setSuggestions(result.suggestions)

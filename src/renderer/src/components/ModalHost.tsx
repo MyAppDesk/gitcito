@@ -51,6 +51,7 @@ import { CheatsheetModal } from './CheatsheetModal'
 import { CreateIssueModal } from './CreateIssueModal'
 import { RepoSettingsModal } from './RepoSettingsModal'
 import { useT, interp } from '../i18n'
+import { AIAccountsNotice } from './AIAccountsNotice'
 
 function GroupColorModal({ spec }: { spec: Extract<ModalSpec, { kind: 'group-color' }> }): React.JSX.Element {
   const t = useT()
@@ -145,6 +146,7 @@ function CreateBranchModal({ spec }: { spec: Extract<ModalSpec, { kind: 'create-
   const closeModal = useUIStore((s) => s.closeModal)
   const toast = useUIStore((s) => s.toast)
   const profile = useSettingsStore((s) => s.activeProfile())
+  const aiFor = useSettingsStore((s) => s.aiFor)
   const aiEnabled = profile.ai.enabled !== false
 
   const [name, setName] = useState('')
@@ -161,7 +163,7 @@ function CreateBranchModal({ spec }: { spec: Extract<ModalSpec, { kind: 'create-
     if (!description.trim() || aiBusy) return
     setAiBusy(true)
     try {
-      const suggested = await aiApi.generateBranchName(description.trim(), profile.ai, {
+      const suggested = await aiApi.generateBranchName(description.trim(), aiFor('commit'), {
         username: profile.gitName || undefined
       })
       if (suggested.trim()) setName(suggested.trim())
@@ -1611,6 +1613,7 @@ export function ModalHost(): React.JSX.Element {
             {modal.kind === 'stash-partial' && <StashPartialModal repoPath={modal.repoPath} />}
             {modal.kind === 'create-tag' && <CreateTagModal repoPath={modal.repoPath} hash={modal.hash} at={modal.at} />}
             {modal.kind === 'cheatsheet' && <CheatsheetModal />}
+            {modal.kind === 'ai-accounts-notice' && <AIAccountsNotice />}
             {modal.kind === 'create-issue' && <CreateIssueModal repoPath={modal.repoPath} remoteUrl={modal.remoteUrl} />}
             {modal.kind === 'repo-settings' && <RepoSettingsModal repoPath={modal.repoPath} initialTab={modal.tab} />}
             {modal.kind === 'bisect' && <BisectModal repoPath={modal.repoPath} />}

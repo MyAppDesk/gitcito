@@ -757,7 +757,28 @@ export type ConflictStyle = 'clean' | 'commented' | 'conservative'
 /** Branch naming convention used when generating branch names with AI. */
 export type BranchNamingStyle = 'prefix/description' | 'prefix/ticket-description' | 'username/prefix/description' | 'plain'
 
-export type AIProvider = 'openai' | 'anthropic' | 'openrouter' | 'groq' | 'mistral' | 'ollama' | 'custom'
+export type AIProvider =
+  | 'openai'
+  | 'anthropic'
+  | 'google'
+  | 'openrouter'
+  | 'groq'
+  | 'mistral'
+  | 'ollama'
+  | 'cli'
+  | 'custom'
+
+/**
+ * The wire protocol a provider speaks. Most vendors expose an OpenAI-compatible
+ * surface — Google's `/v1beta/openai` and Ollama's `/v1` included — so they all
+ * share one client. Anthropic does not: it serves `POST /v1/messages` with a
+ * separate system field and a required `max_tokens`, which is why pointing the
+ * OpenAI client at api.anthropic.com never worked.
+ */
+export type AITransport = 'openai' | 'anthropic' | 'cli'
+
+/** A locally installed agent CLI that answers using its own signed-in session. */
+export type AICliBinary = 'claude' | 'gemini' | 'codex'
 
 export interface AIProviderPreset {
   id: AIProvider
@@ -765,9 +786,18 @@ export interface AIProviderPreset {
   endpoint: string
   defaultModel: string
   needsKey: boolean
+  transport: AITransport
+  /** Offline fallback, used only until a live model list has been fetched. */
   models: string[]
+  /** Where this provider's key is issued, shown next to the key field. */
+  keyUrl?: string
 }
 
+/**
+ * Built-in providers. `models` here is a *fallback* only — the live catalogue
+ * (main/aiModels.ts) is what the pickers show once a list has been fetched, so
+ * a stale entry below never strands a user on an outdated model.
+ */
 export const AI_PROVIDERS: AIProviderPreset[] = [
   {
     id: 'openai',
@@ -775,15 +805,30 @@ export const AI_PROVIDERS: AIProviderPreset[] = [
     endpoint: 'https://api.openai.com/v1',
     defaultModel: 'gpt-4o-mini',
     needsKey: true,
+    transport: 'openai',
+    keyUrl: 'https://platform.openai.com/api-keys',
     models: ['gpt-4o-mini', 'gpt-4o', 'gpt-4.1-mini', 'gpt-4.1']
   },
   {
     id: 'anthropic',
     label: 'Anthropic',
-    endpoint: 'https://api.anthropic.com/v1',
-    defaultModel: 'claude-3-5-haiku-latest',
+    endpoint: 'https://api.anthropic.com',
+    defaultModel: 'claude-haiku-4-5-20251001',
     needsKey: true,
-    models: ['claude-3-5-haiku-latest', 'claude-3-5-sonnet-latest', 'claude-3-7-sonnet-latest']
+    transport: 'anthropic',
+    keyUrl: 'https://console.anthropic.com/settings/keys',
+    models: ['claude-haiku-4-5-20251001', 'claude-sonnet-5', 'claude-opus-5']
+  },
+  {
+    id: 'google',
+    label: 'Google Gemini',
+    // Google's OpenAI-compatible surface, so it shares the OpenAI client.
+    endpoint: 'https://generativelanguage.googleapis.com/v1beta/openai',
+    defaultModel: 'gemini-2.5-flash',
+    needsKey: true,
+    transport: 'openai',
+    keyUrl: 'https://aistudio.google.com/apikey',
+    models: ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash']
   },
   {
     id: 'openrouter',
@@ -791,6 +836,8 @@ export const AI_PROVIDERS: AIProviderPreset[] = [
     endpoint: 'https://openrouter.ai/api/v1',
     defaultModel: 'openai/gpt-4o-mini',
     needsKey: true,
+    transport: 'openai',
+    keyUrl: 'https://openrouter.ai/keys',
     models: ['openai/gpt-4o-mini', 'openai/gpt-4o', 'anthropic/claude-3.5-haiku', 'anthropic/claude-3.5-sonnet']
   },
   {
@@ -799,6 +846,8 @@ export const AI_PROVIDERS: AIProviderPreset[] = [
     endpoint: 'https://api.groq.com/openai/v1',
     defaultModel: 'llama-3.3-70b-versatile',
     needsKey: true,
+    transport: 'openai',
+    keyUrl: 'https://console.groq.com/keys',
     models: ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768']
   },
   {
@@ -807,6 +856,8 @@ export const AI_PROVIDERS: AIProviderPreset[] = [
     endpoint: 'https://api.mistral.ai/v1',
     defaultModel: 'mistral-small-latest',
     needsKey: true,
+    transport: 'openai',
+    keyUrl: 'https://console.mistral.ai/api-keys',
     models: ['mistral-small-latest', 'mistral-medium-latest', 'mistral-large-latest', 'codestral-latest']
   },
   {
@@ -815,17 +866,126 @@ export const AI_PROVIDERS: AIProviderPreset[] = [
     endpoint: 'http://localhost:11434/v1',
     defaultModel: 'llama3.2',
     needsKey: false,
+    transport: 'openai',
     models: ['llama3.2', 'llama3.1', 'qwen2.5-coder', 'codellama', 'mistral']
   },
-  { id: 'custom', label: 'Custom (OpenAI-compatible)', endpoint: '', defaultModel: '', needsKey: false, models: [] }
+  {
+    id: 'cli',
+    label: 'Local CLI (subscription)',
+    endpoint: '',
+    defaultModel: '',
+    needsKey: false,
+    transport: 'cli',
+    models: []
+  },
+  {
+    id: 'custom',
+    label: 'Custom (OpenAI-compatible)',
+    endpoint: '',
+    defaultModel: '',
+    needsKey: false,
+    transport: 'openai',
+    models: []
+  }
 ]
+
+export function aiProviderPreset(id: AIProvider): AIProviderPreset {
+  return AI_PROVIDERS.find((p) => p.id === id) ?? AI_PROVIDERS[AI_PROVIDERS.length - 1]
+}
+
+/**
+ * One configured way of reaching a model: a provider, where to reach it, and
+ * how it authenticates. Several can coexist — an OpenAI key for work, a
+ * personal Anthropic key, a local Ollama, a signed-in CLI — and each AI feature
+ * points at whichever one the user chose.
+ *
+ * `apiKey` is stripped from the settings JSON and stored encrypted, exactly as
+ * the single key used to be (shared/secrets.ts).
+ */
+export interface AIAccount {
+  id: string
+  /** User-chosen name. Falls back to the provider label when left empty. */
+  label: string
+  provider: AIProvider
+  /** Overrides the preset endpoint. Empty means "use the preset". */
+  endpoint: string
+  apiKey: string
+  /** `cli` accounts only: which installed binary answers. */
+  cli?: AICliBinary
+  /** `cli` accounts only: an explicit path, when the binary is not on PATH. */
+  cliPath?: string
+  /** Used by any feature that has no assignment of its own. */
+  model: string
+}
+
+/**
+ * The AI surfaces a user can point at a different account or model. Coarser
+ * than the internal call sites on purpose: nobody wants to configure sixteen
+ * dropdowns, but "cheap model for commit messages, strong one for chat" is a
+ * real need.
+ */
+export type AIFeature = 'commit' | 'chat' | 'explain' | 'review' | 'conflict' | 'wiki' | 'theme'
+
+export const AI_FEATURES: AIFeature[] = ['commit', 'chat', 'explain', 'review', 'conflict', 'wiki', 'theme']
+
+/** Which account and model serve one feature. An absent model means "the account's default". */
+export interface AIAssignment {
+  accountId: string
+  model: string
+}
+
+/**
+ * A model list as the app currently knows it. `source` is what lets the UI be
+ * honest: a fallback list is the bundled guess, not what the provider offers.
+ */
+export interface ModelCatalog {
+  /** What a picker shows: chat-capable, snapshots collapsed, newest first. */
+  models: string[]
+  /** Every id the provider listed, for the picker's "show all" escape. */
+  allModels?: string[]
+  source: 'live' | 'cache' | 'fallback'
+  /** Epoch ms of the fetch behind this list, or null when it never happened. */
+  fetchedAt: number | null
+  /** Why the list is not live. Present with `cache` and `fallback`. */
+  error?: string
+}
+
+/** One agent CLI found on the machine, offered when configuring a CLI account. */
+export interface DetectedCli {
+  binary: AICliBinary
+  label: string
+  path: string
+}
 
 export interface AIConfig {
   enabled: boolean
+  /**
+   * Every configured account. Populated by `migrateAIConfig` for installs that
+   * predate accounts, so it is never empty in practice.
+   */
+  accounts: AIAccount[]
+  /** The account used by any feature without its own assignment. */
+  defaultAccountId: string
+  /** Per-feature account + model overrides. */
+  assignments: Partial<Record<AIFeature, AIAssignment>>
+  /**
+   * The four fields below are the *resolved* connection for one call. They stay
+   * on `AIConfig` because every main-process feature function already reads
+   * them: the renderer picks an account with `resolveAI(ai, feature)` and hands
+   * the result over IPC, so nothing downstream had to learn about accounts.
+   * On a stored config they mirror the default account.
+   */
   provider: AIProvider
   endpoint: string
   apiKey: string
   model: string
+  /** Which account `provider`/`endpoint`/`apiKey`/`model` came from. */
+  accountId?: string
+  /** Resolved from the provider preset; lets main pick a client without a lookup. */
+  transport?: AITransport
+  /** `cli` transport only. */
+  cli?: AICliBinary
+  cliPath?: string
   commitStyle: CommitStyle
   explainStyle: ExplainStyle
   conflictStyle: ConflictStyle
@@ -2144,6 +2304,11 @@ export interface AppSettings {
   /** Sidebar section ids the user has hidden via the visibility toggle. */
   sidebarHidden: string[]
   onboardingCompleted: boolean
+  /**
+   * Whether the one-time "AI settings moved to accounts" notice has been shown.
+   * Set once the user dismisses it, so an upgrade explains itself exactly once.
+   */
+  aiAccountsNoticeSeen?: boolean
   /** Auto-open the changelog page tab after the app updates to a new version. */
   autoOpenChangelog: boolean
   /** Minutes between automatic WIP snapshots (0 = off). */
@@ -2360,6 +2525,46 @@ export interface CodeTheme {
   dark: CodeThemeColors
 }
 
+/** The account a fresh install starts with: OpenAI, no key yet. */
+export function defaultAIAccount(): AIAccount {
+  return {
+    id: 'default',
+    label: 'OpenAI',
+    provider: 'openai',
+    endpoint: 'https://api.openai.com/v1',
+    apiKey: '',
+    model: 'gpt-4o-mini'
+  }
+}
+
+export function defaultAIConfig(): AIConfig {
+  const account = defaultAIAccount()
+  return {
+    enabled: true,
+    accounts: [account],
+    defaultAccountId: account.id,
+    assignments: {},
+    provider: account.provider,
+    endpoint: account.endpoint,
+    apiKey: '',
+    model: account.model,
+    accountId: account.id,
+    transport: 'openai',
+    commitStyle: 'auto',
+    explainStyle: 'normal',
+    conflictStyle: 'clean',
+    branchNamingStyle: 'prefix/description',
+    customInstructions: '',
+    generateDescription: true,
+    coAuthor: true,
+    hoverExplain: true,
+    hoverExplainKey: 'shift',
+    repoChat: true,
+    repoChatModel: '',
+    repoChatCommittedOnly: false
+  }
+}
+
 export function defaultProfile(): Profile {
   return {
     id: 'default',
@@ -2371,25 +2576,7 @@ export function defaultProfile(): Profile {
     azureOrg: '',
     gitlabToken: '',
     bitbucketToken: '',
-    ai: {
-      enabled: true,
-      provider: 'openai',
-      endpoint: 'https://api.openai.com/v1',
-      apiKey: '',
-      model: 'gpt-4o-mini',
-      commitStyle: 'auto',
-      explainStyle: 'normal',
-      conflictStyle: 'clean',
-      branchNamingStyle: 'prefix/description',
-      customInstructions: '',
-      generateDescription: true,
-      coAuthor: true,
-      hoverExplain: true,
-      hoverExplainKey: 'shift',
-      repoChat: true,
-      repoChatModel: '',
-      repoChatCommittedOnly: false
-    }
+    ai: defaultAIConfig()
   }
 }
 
@@ -2429,6 +2616,7 @@ export function defaultSettings(): AppSettings {
     sidebarOrder: ['local', 'remotes', 'stashes', 'tags', 'prs', 'issues', 'milestones', 'releases', 'worktrees', 'submodules'],
     sidebarHidden: [],
     onboardingCompleted: false,
+    aiAccountsNoticeSeen: false,
     autoOpenChangelog: true,
     wipSnapshotMinutes: 0,
     maskSecrets: true,

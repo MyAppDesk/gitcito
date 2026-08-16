@@ -3,7 +3,7 @@ title: AI 功能
 category: AI
 order: 80
 summary: 可选、不绑定任何厂商，而且句句扎根在你真实的代码上。
-keywords: ai openai anthropic ollama local 本地 llm 大模型 commit message 提交消息 explain 解释 review 评审 wiki 有依据 grounded
+keywords: ai openai anthropic ollama local 本地 llm 大模型 commit message 提交消息 explain 解释 review 评审 wiki 有依据 grounded 账户 api 密钥 订阅 cli claude codex gemini 模型
 ---
 
 # AI 功能
@@ -13,13 +13,55 @@ keywords: ai openai anthropic ollama local 本地 llm 大模型 commit message �
 
 ![AI 设置](../../screenshots/settings-ai.webp)
 
-## 服务商
+## 账户
 
-内置了 **OpenAI、Anthropic、OpenRouter、Groq、Mistral 和 Ollama**（完全本地）的
-预设，也支持任何兼容 OpenAI 的接口。模型列表是实时拉取的，你还可以加自定义指令。
+**账户**是抵达某个模型的一条路径：哪个服务商、从哪里连接、如何鉴权。你可以配置
+多个账户，它们并存——工作密钥、个人密钥、本地模型，以及一个你已经登录的 CLI。
 
-> 只有 OpenAI 是经过充分实战检验的。其余几家用的是兼容 OpenAI 的调用格式，理论上
-> 应该能用——但没有验证过。
+预设覆盖 **OpenAI、Anthropic、Google Gemini、OpenRouter、Groq、Mistral** 和
+**Ollama**（完全本地），也支持任何兼容 OpenAI 的端点。
+
+Anthropic 使用自己的 `/v1/messages` 接口，而不是 OpenAI 形状的调用，所以 Claude
+模型是真的能用，而不只是看起来能用。Gemini 通过 Google 的 OpenAI 兼容端点调用。
+
+### 用订阅代替 API 密钥
+
+选择 **本地 CLI** 服务商，让本机上已安装并已登录的智能体 CLI 来作答——`claude`、
+`gemini` 或 `codex`。Gitcito 把提示词交给该可执行文件运行并读取回复；没有 API
+密钥要粘贴，也不会保存任何令牌。
+
+Gitcito 只会运行你自己配置为账户的命令，而且始终以参数数组而非 shell 传递，因此
+diff 或分支名里的任何内容都不可能被当成命令执行。
+
+> **这并不比 API 密钥更私密。** 你的提示词仍会以你自己的账户送达同一家厂商，
+> 和使用密钥时完全一样。变的是计费和配置方式，而不是文本的去向。
+
+如果该命令不在你的 `PATH` 中，就在账户里填写它的完整路径。
+
+### 哪个账户负责哪项功能
+
+在**哪个账户负责哪项功能**下，提交信息、聊天、解释代码、PR 审查、冲突解决、
+仓库 Wiki、主题生成等每一项都可以指向各自的账户和模型。保持默认即跟随默认账户。
+提交信息用便宜模型、聊天用强力模型，是最常见的分工。
+
+### 升级提示
+
+从账户功能之前的版本升级时，这条提示只出现一次。你原有的服务商和密钥会成为第一个账户，无需手动重新配置。
+
+![升级提示](../../screenshots/ai-accounts-notice.webp)
+
+## 模型
+
+模型列表来自服务商本身，并缓存一天；**获取模型**可立即刷新其中一份。列表下方
+Gitcito 会说明它的来源——实时、缓存（含获取时间），还是内置的兜底列表以及原因。
+
+列表会筛选为能够回答聊天请求的模型，因此嵌入、语音和图像模型不会出现。每个模型
+输入框同时接受自由文本，所以预览版模型、私有部署或刚拉取的 Ollama 标签始终可用，
+即便服务商并未列出。
+
+尚未填写密钥、或无法连接的服务商，会回退到一份小的内置列表，而不是空白下拉框。
+
+没有任何服务商发布排过序或精选过的列表，所以这份整理出自 Gitcito：带日期的快照会折叠回它所快照的模型（`gpt-4o` 涵盖 `gpt-4o-2024-08-06`），剩下的按发布时间从新到旧排列，而不是按字母。列表底部的**显示全部模型**会把服务商返回的一切都找回来。
 
 ## 它能做什么
 
@@ -44,5 +86,15 @@ keywords: ai openai anthropic ollama local 本地 llm 大模型 commit message �
 块——所以当某个定义在别处时，它会直说，而不是编一个出来。答案按文件版本缓存。
 
 **被遮蔽的密钥文件绝不会被发送。** 密钥遮蔽规则覆盖到的文件同样不会。
+
+## 限制
+
+- 内置兜底列表会在版本之间过时。实时获取正是为此存在；兜底只覆盖无法获取的情形。
+- 把服务商列表筛选为聊天模型是按名称进行的，因此名称不寻常的聊天模型可能被滤掉。
+  这时手动输入即可。
+- 除非 CLI 自己上报，CLI 账户无法报告 token 用量，所以设置里的用量与费用数字会
+  少算这些调用。
+- CLI 回答比直接调用 API 慢：每次请求都要完整启动一次会话。
+- 密钥按账户分别存放在系统钥匙串中。删除账户会一并删除它的密钥。
 
 **另请参阅：** [仓库百科](repo-wiki.md) · [安全与机密](security.md)

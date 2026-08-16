@@ -32,7 +32,7 @@ export function WikiPageView({ repoPath }: { repoPath: string }): React.JSX.Elem
   const t = useT()
   const toast = useUIStore((s) => s.toast)
   const setFileView = useUIStore((s) => s.setFileView)
-  const activeProfile = useSettingsStore((s) => s.activeProfile)
+  const aiFor = useSettingsStore((s) => s.aiFor)
   const openRepoTab = useSettingsStore((s) => s.openRepoTab)
   const repoName = useRepoStore((s) => s.repos[repoPath]?.name ?? repoPath.split('/').pop() ?? repoPath)
 
@@ -50,7 +50,7 @@ export function WikiPageView({ repoPath }: { repoPath: string }): React.JSX.Elem
     let cancelled = false
     setLoading(true)
     wikiApi
-      .get(repoPath, activeProfile().ai.model || '')
+      .get(repoPath, aiFor('wiki').model || '')
       .then((stored) => {
         if (cancelled) return
         setWiki(stored.wiki)
@@ -71,7 +71,7 @@ export function WikiPageView({ repoPath }: { repoPath: string }): React.JSX.Elem
     return () => {
       cancelled = true
     }
-  }, [repoPath, activeProfile, toast])
+  }, [repoPath, aiFor, toast])
 
   // Progress is pushed per page while generating; only this repo's is ours.
   useEffect(
@@ -83,7 +83,7 @@ export function WikiPageView({ repoPath }: { repoPath: string }): React.JSX.Elem
     setGenerating(true)
     setProgress({ phase: 'planning' })
     try {
-      const fresh = await wikiApi.generate(repoPath, activeProfile().ai)
+      const fresh = await wikiApi.generate(repoPath, aiFor('wiki'))
       setWiki(fresh)
       setFreshness('current')
       setSlug(fresh.pages[0]?.slug ?? null)

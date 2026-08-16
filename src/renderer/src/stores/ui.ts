@@ -107,6 +107,7 @@ export type ModalSpec =
   | { kind: 'stash-partial'; repoPath: string }
   | { kind: 'create-tag'; repoPath: string; hash?: string; at?: string }
   | { kind: 'cheatsheet' }
+  | { kind: 'ai-accounts-notice' }
   | { kind: 'create-issue'; repoPath: string; remoteUrl: string }
   | { kind: 'repo-settings'; repoPath: string; tab?: 'general' | 'info' | 'vault' | 'analytics' | 'insights' | 'history' | 'logs' }
   | { kind: 'secure-share'; repoPath: string; initialMode?: 'export' | 'import' }

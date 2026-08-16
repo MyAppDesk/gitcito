@@ -314,7 +314,7 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
     if (content === null) return
     setAiResolving(true)
     try {
-      const merged = await aiApi.resolveConflict(file, content, useSettingsStore.getState().activeProfile().ai)
+      const merged = await aiApi.resolveConflict(file, content, useSettingsStore.getState().aiFor('conflict'))
       setEditOutput(merged)
       setTouched(new Set(hunks.map((h) => h.index))) // enable Save; user still reviews
       toast('info', t('conflict.aiProposed'))

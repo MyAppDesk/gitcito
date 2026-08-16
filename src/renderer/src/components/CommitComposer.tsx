@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Sparkles, Loader2, Trash2, AlignLeft, FolderTree, GitMerge, ChevronDown, CheckCheck, Users } from 'lucide-react'
+import { Sparkles, Loader2, Trash2, AlignLeft, FolderTree, GitMerge, ChevronDown, CheckCheck, Users, Plus, Minus } from 'lucide-react'
 import { MYAPPDESK_COAUTHOR, type CodeSearchHit, type FileEntry, type CommitStyle } from '../../../shared/types'
 import { gitApi, aiApi, shellApi, diffToolApi } from '../infrastructure/api'
 import { repoActions, useRepoStore, type RepoData } from '../stores/repo'
@@ -168,6 +168,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
   const fileView = useUIStore((s) => s.fileView)
   const setFileView = useUIStore((s) => s.setFileView)
   const activeProfile = useSettingsStore((s) => s.activeProfile)
+  const aiFor = useSettingsStore((s) => s.aiFor)
   const largeFileKb = useSettingsStore((s) => s.settings.largeFileKb)
   const defaultOpenApp = useSettingsStore((s) => s.settings.defaultOpenApp)
   const editor = useSettingsStore((s) => s.settings.editor)
@@ -575,29 +576,40 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
     ])
   }
 
-  const stageAction = (list: ListName) => (file: FileEntry) => (
-    <button
-      className="btn ghost tiny file-stage-btn"
-      onClick={(e) => {
-        e.stopPropagation()
-        const targets = pathsFor(list, file)
-        if (list === 'staged') void repoActions.unstage(path, targets)
-        else void repoActions.stage(path, targets)
-        setSelection({ list, paths: new Set() })
-      }}
-    >
-      {list === 'staged' ? t('composer.unstageFile') : t('composer.stageFile')}
-    </button>
-  )
+  // The row action is an icon, not a label: a per-file "Stage file" button
+  // repeated down a tree crowds out the filenames it belongs to. The wording
+  // survives as the tooltip and the accessible name.
+  const stageAction = (list: ListName) => (file: FileEntry) => {
+    const label = list === 'staged' ? t('composer.unstageFile') : t('composer.stageFile')
+    return (
+      <button
+        className={`btn ghost tiny file-stage-btn icon-only ${list === 'staged' ? 'act-unstage' : 'act-stage'}`}
+        title={label}
+        aria-label={label}
+        onClick={(e) => {
+          e.stopPropagation()
+          const targets = pathsFor(list, file)
+          if (list === 'staged') void repoActions.unstage(path, targets)
+          else void repoActions.stage(path, targets)
+          setSelection({ list, paths: new Set() })
+        }}
+      >
+        {list === 'staged' ? <Minus size={13} /> : <Plus size={13} />}
+      </button>
+    )
+  }
 
   const folderStageAction = (list: ListName, files: FileEntry[]) => (folderPath: string) => {
     const targets = files
       .filter((f) => f.path === folderPath || f.path.startsWith(`${folderPath}/`))
       .map((f) => f.path)
     if (targets.length === 0) return null
+    const label = list === 'staged' ? t('composer.unstageFolder') : t('composer.stageFolder')
     return (
       <button
-        className="btn ghost tiny file-stage-btn"
+        className={`btn ghost tiny file-stage-btn icon-only ${list === 'staged' ? 'act-unstage' : 'act-stage'}`}
+        title={label}
+        aria-label={label}
         onClick={(e) => {
           e.stopPropagation()
           if (list === 'staged') void repoActions.unstage(path, targets)
@@ -605,7 +617,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
           setSelection({ list, paths: new Set() })
         }}
       >
-        {list === 'staged' ? t('composer.unstageFolder') : t('composer.stageFolder')}
+        {list === 'staged' ? <Minus size={13} /> : <Plus size={13} />}
       </button>
     )
   }
@@ -620,7 +632,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
     setAiBusy(true)
     try {
       const stagedDiff = await gitApi.stagedDiff(path)
-      const msg = await aiApi.commitMessage(stagedDiff, activeProfile().ai, { branch: repo.branches.current })
+      const msg = await aiApi.commitMessage(stagedDiff, aiFor('commit'), { branch: repo.branches.current })
       setSummary(msg.summary)
       setDescription(msg.description)
       toast('success', t('composer.aiGenerated'))
@@ -636,7 +648,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
     setAiStageBusy(true)
     try {
       const files = unstaged.map((f) => ({ path: f.path, status: f.status }))
-      const result = await aiApi.smartStage(files, activeProfile().ai)
+      const result = await aiApi.smartStage(files, aiFor('commit'))
       if (result.toStage.length === 0) {
         toast('info', t('composer.smartStageNothing'))
         return

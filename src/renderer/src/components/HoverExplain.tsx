@@ -160,7 +160,7 @@ export function useHoverExplain(opts: {
     try {
       const result = await aiApi.hoverExplain(
         { path: state.current.file, lang: state.current.lang, token: target.token, line: target.line, lines },
-        useSettingsStore.getState().activeProfile().ai
+        useSettingsStore.getState().aiFor('explain')
       )
       if (seq !== requestSeq.current) return
       setCard({ target, status: 'ready', result, error: '' })
@@ -185,7 +185,7 @@ export function useHoverExplain(opts: {
       const text = await aiApi.explainCode(
         `Focus on "${target.token}" (line ${target.line}).\n\n${snippet}`,
         state.current.lang,
-        useSettingsStore.getState().activeProfile().ai
+        useSettingsStore.getState().aiFor('explain')
       )
       setDetail({ loading: false, markdown: text, error: '' })
     } catch (err) {

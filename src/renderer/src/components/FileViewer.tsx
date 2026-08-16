@@ -302,7 +302,7 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
     setExplaining(true)
     setExplain(null)
     try {
-      const text = await aiApi.explainCode(snippet, lang, useSettingsStore.getState().activeProfile().ai)
+      const text = await aiApi.explainCode(snippet, lang, useSettingsStore.getState().aiFor('explain'))
       setExplain(text || t('explain.empty'))
     } catch (err) {
       setExplain(null)

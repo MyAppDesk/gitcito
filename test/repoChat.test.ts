@@ -8,7 +8,11 @@ import {
 } from '../src/main/repoChat'
 import { gitService } from '../src/main/git'
 import { createRepoChatStore } from '../src/renderer/src/lib/repoChatStore'
-import { canSubmitRepoChat, repoChatSourceView } from '../src/renderer/src/lib/repoChatUI'
+import {
+  canSubmitRepoChat,
+  repoChatSourceView,
+  rightPanelDetailsState
+} from '../src/renderer/src/lib/repoChatUI'
 import { useUIStore } from '../src/renderer/src/stores/ui'
 import { defaultProfile, type RepoChatReply } from '../src/shared/types'
 
@@ -161,6 +165,28 @@ describe('repository chat session store', () => {
 })
 
 describe('repository chat panel behavior', () => {
+  it('offers WIP Details before the graph row has been explicitly selected', () => {
+    const clean = { staged: [], unstaged: [], conflicted: [] }
+    const dirty = { staged: [], unstaged: [{ path: 'src/app.ts', status: 'M' as const }], conflicted: [] }
+
+    expect(rightPanelDetailsState(false, false, clean)).toEqual({
+      available: false,
+      selectWip: false
+    })
+    expect(rightPanelDetailsState(false, false, dirty)).toEqual({
+      available: true,
+      selectWip: true
+    })
+    expect(rightPanelDetailsState(true, false, dirty)).toEqual({
+      available: true,
+      selectWip: false
+    })
+    expect(rightPanelDetailsState(false, true, dirty)).toEqual({
+      available: true,
+      selectWip: false
+    })
+  })
+
   it('opens, switches to Details without losing Chat, and retracts back to Details', () => {
     useUIStore.setState({ chatPanelOpen: false, rightPanelTab: 'details' })
 

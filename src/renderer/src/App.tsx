@@ -45,6 +45,7 @@ import { RepoChatPanel } from './components/RepoChatPanel'
 import gitcitoLaunch from './assets/gitcito-launch.png'
 import { matchShortcut, effectiveBindings, tabActionFromEvent, tabIndexFromEvent } from './lib/shortcuts'
 import { terminalShortcutFromEvent } from './lib/terminalShortcuts'
+import { rightPanelDetailsState } from './lib/repoChatUI'
 import { folderOpenMenuItems } from './lib/openWith'
 import { hostingApi, gitApi, cliApi, keychainApi } from './infrastructure/api'
 
@@ -738,7 +739,9 @@ export default function App(): React.JSX.Element {
             </div>
           )
 
-          const detailsAvailable = !!repo.selected || forceConflictPanel
+          const selectedDetailsAvailable = !!repo.selected || forceConflictPanel
+          const detailsState = rightPanelDetailsState(!!repo.selected, forceConflictPanel, repo.status)
+          const detailsAvailable = detailsState.available
           const activeRightPanelTab =
             rightPanelTab === 'chat' && chatPanelOpen
               ? 'chat'
@@ -755,7 +758,7 @@ export default function App(): React.JSX.Element {
           }
           const rightPanelNode = (
             <AnimatePresence>
-              {(detailsAvailable || chatPanelOpen) && (
+              {(selectedDetailsAvailable || chatPanelOpen) && (
                 <motion.section
                   className="right-panel"
                   initial={{ width: 0, opacity: 0 }}
@@ -779,7 +782,10 @@ export default function App(): React.JSX.Element {
                       aria-selected={activeRightPanelTab === 'details'}
                       className={`right-panel-tab ${activeRightPanelTab === 'details' ? 'active' : ''}`}
                       disabled={!detailsAvailable}
-                      onClick={showDetailsPanel}
+                      onClick={() => {
+                        if (detailsState.selectWip) useRepoStore.getState().select(repo.path, { type: 'wip' })
+                        else showDetailsPanel()
+                      }}
                     >
                       {t('chat.tabDetails')}
                     </button>

@@ -97,7 +97,9 @@ git actually is.
 Commit messages, PR descriptions and branch names from the actual diff ·
 [hover to explain](docs/help/ai.md) an identifier · [PR review](docs/help/ai.md)
 whose findings must anchor to a real `path:line` or get rejected ·
-a [repo wiki](docs/help/repo-wiki.md) where every claim cites its file.
+a [repo wiki](docs/help/repo-wiki.md) where every claim cites its file ·
+[**repository chat**](docs/help/repo-chat.md) that answers from files and commits
+you pin as context, and links every answer back to the lines it read.
 OpenAI, Anthropic, OpenRouter, Groq, Mistral, Ollama, or any compatible endpoint.
 
 ### Make it yours

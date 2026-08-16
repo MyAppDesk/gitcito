@@ -82,6 +82,15 @@
     }
   },
 
+  "panels": {
+    "covered": {
+      "chat": "repo-chat"
+    },
+    "exempt": {
+      "details": "The commit/stash/WIP inspector documented by the view it belongs to (graph, staging, stashes)."
+    }
+  },
+
   "commands": {
     "covered": {
       "absorb": "absorb",

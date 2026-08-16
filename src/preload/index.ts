@@ -133,8 +133,8 @@ const api = {
       ipcRenderer.invoke('ai:prDescription', commits, diff, cfg),
     planActions: (prompt: string, status: unknown, cfg: unknown): Promise<unknown> =>
       ipcRenderer.invoke('ai:planActions', prompt, status, cfg),
-    repoChat: (repoPath: string, messages: unknown, cfg: unknown): Promise<unknown> =>
-      ipcRenderer.invoke('ai:repoChat', repoPath, messages, cfg)
+    repoChat: (repoPath: string, messages: unknown, cfg: unknown, attachments: unknown): Promise<unknown> =>
+      ipcRenderer.invoke('ai:repoChat', repoPath, messages, cfg, attachments)
   },
 
   wiki: {

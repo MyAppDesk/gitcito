@@ -82,6 +82,9 @@ export const de = {
   'feature.range-diff.title': 'Was sich geändert hat seit',
   'feature.range-diff.body':
     'Sie haben den Branch force-gepusht, den du reviewt hast. Sieh, welche Commits umgeschrieben, verworfen oder hinzugefügt wurden — die alten Positionen liefert das Reflog gratis mit.',
+  'feature.repo-chat.title': 'Repository-Chat',
+  'feature.repo-chat.body':
+    'Stelle diesem Repository eine Frage und erhalte eine Antwort, die die gelesenen Zeilen zitiert. Hefte die Dateien und Commits an, die sie ansehen soll — aus dem Graphen, dem Dateibaum oder von irgendwo auf der Platte.',
   'feature.absorb.title': 'Einarbeiten',
   'feature.absorb.body':
     'Stage deine Review-Korrekturen und lass blame jeden Hunk in den Commit leiten, der ihn eingeführt hat — als <code>fixup!</code>.',

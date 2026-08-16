@@ -24,7 +24,20 @@
 ### If this changes something a user can see
 
 - [ ] `docs/help/` page written or updated
-- [ ] `scripts/docs-map.json` maps the new modal / page tab / command
+- [ ] `scripts/docs-map.json` maps the new modal / page tab / right panel tab / command
 - [ ] `README.md` mentions it in one line, linked to its page
 - [ ] Front-page feature? Add it to `FEATURES` in `scripts/build-site.mjs`
 - [ ] Destructive actions confirm first; reversible ones offer an undo
+- [ ] Screenshot entry added to `examples/screenshots/shots.config.mjs`
+
+### Show it
+
+A reviewer cannot run every branch. If this PR adds a **panel, a modal, a
+settings section, or a new visible state**, paste a screenshot below. If it adds
+a **gesture** — a drag, a drop target, an animation, a keyboard flow — paste a
+short screen recording instead: a still cannot show a drag, and a description of
+one cannot be reviewed.
+
+<!-- Drop the image or video here. Say "n/a — nothing visible changes" if that is the case. -->
+
+n/a

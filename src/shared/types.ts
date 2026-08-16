@@ -837,6 +837,13 @@ export interface AIConfig {
   hoverExplain?: boolean
   /** Key held while pointing to trigger it. Defaults to Shift. */
   hoverExplainKey?: HoverModifier
+  /** Repository chat. Defaults to on — but the whole surface hides with `enabled`. */
+  repoChat?: boolean
+  /** Model for chat only. Empty falls back to `model`. */
+  repoChatModel?: string
+  /** Answer from committed content only — no working-tree edits leave the
+   *  machine, and uncommitted diffs are never sent. Defaults to off. */
+  repoChatCommittedOnly?: boolean
 }
 
 /** One source excerpt used to ground an answer in the repository. */
@@ -847,6 +854,9 @@ export interface RepoChatSource {
   path: string
   startLine: number
   endLine: number
+  /** A file pinned from outside the repository — `path` is absolute and the
+   *  repository file viewer cannot open it. */
+  external?: boolean
 }
 
 /** A serializable chat turn. The renderer keeps UI-only ids outside this type. */
@@ -857,10 +867,31 @@ export interface RepoChatMessage {
   sources?: RepoChatSource[]
 }
 
+/**
+ * A context item the user pinned to a chat turn — a file, a commit, or a file
+ * from outside the repository. Pinned context is read before the model gets to
+ * pick anything, so an explicit choice always survives the context budget.
+ */
+export type RepoChatAttachment =
+  | { kind: 'file'; path: string }
+  | { kind: 'commit'; hash: string }
+  | { kind: 'external'; path: string }
+
+/** Why a pinned item never reached the provider. Rendered from a key, not text. */
+export type RepoChatSkipReason = 'secret' | 'binary' | 'tooLarge' | 'unreadable'
+
+export interface RepoChatSkipped {
+  /** What the user pinned, as they saw it in the chip. */
+  label: string
+  reason: RepoChatSkipReason
+}
+
 /** Read-only answer returned by the repository-chat IPC handler. */
 export interface RepoChatReply {
   content: string
   sources: RepoChatSource[]
+  /** Pinned context that was refused, so the panel can say so instead of lying. */
+  skipped: RepoChatSkipped[]
 }
 
 /** Co-author trailer appended when AIConfig.coAuthor is enabled (default on). */
@@ -2354,7 +2385,10 @@ export function defaultProfile(): Profile {
       generateDescription: true,
       coAuthor: true,
       hoverExplain: true,
-      hoverExplainKey: 'shift'
+      hoverExplainKey: 'shift',
+      repoChat: true,
+      repoChatModel: '',
+      repoChatCommittedOnly: false
     }
   }
 }

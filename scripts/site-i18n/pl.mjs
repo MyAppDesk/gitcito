@@ -79,6 +79,9 @@ export const pl = {
   'feature.range-diff.title': 'Co się zmieniło od',
   'feature.range-diff.body':
     'Zrobili force push na gałęzi, którą zrecenzowałeś. Zobacz, które commity zostały przepisane, wyrzucone albo dodane — stare pozycje przychodzą za darmo z reflogu.',
+  'feature.repo-chat.title': 'Czat repozytorium',
+  'feature.repo-chat.body':
+    'Zadaj pytanie temu repozytorium i otrzymaj odpowiedź cytującą przeczytane wiersze. Przypnij pliki i commity, które ma obejrzeć — przeciągnij je z grafu, drzewa plików albo z dowolnego miejsca na dysku.',
   'feature.absorb.title': 'Absorb',
   'feature.absorb.body':
     'Dodaj swoje poprawki z recenzji do przechowalni, a blame skieruje każdy hunk do commita, który go wprowadził, jako <code>fixup!</code>.',

@@ -7,15 +7,25 @@ export interface RightPanelDetailsState {
 
 export type RightPanelToggleAction = 'open-chat' | 'close-all' | 'show-required-details'
 
+/**
+ * Chat is an AI feature: with AI off, or chat switched off on its own, the tab,
+ * the toolbar button and the shortcut target all disappear rather than offering
+ * something that cannot answer.
+ */
+export function repoChatAvailable(ai: { enabled?: boolean; repoChat?: boolean } | null): boolean {
+  return !!ai && ai.enabled !== false && ai.repoChat !== false
+}
+
 /** Decide the global right-column toggle without coupling it to Zustand. */
 export function rightPanelToggleAction(
   hasSelection: boolean,
   forceConflict: boolean,
-  chatPanelOpen: boolean
+  chatPanelOpen: boolean,
+  chatAvailable = true
 ): RightPanelToggleAction {
   if (forceConflict) return 'show-required-details'
   if (hasSelection || chatPanelOpen) return 'close-all'
-  return 'open-chat'
+  return chatAvailable ? 'open-chat' : 'close-all'
 }
 
 /**

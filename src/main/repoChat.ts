@@ -1,9 +1,12 @@
 import { ipcMain } from 'electron'
-import { basename, isAbsolute, resolve } from 'node:path'
+import { readFile, stat } from 'node:fs/promises'
+import { basename, isAbsolute, relative, resolve } from 'node:path'
 import type {
   AIConfig,
+  RepoChatAttachment,
   RepoChatMessage,
   RepoChatReply,
+  RepoChatSkipped,
   RepoChatSource,
   RepoStatus
 } from '../shared/types'
@@ -18,7 +21,12 @@ export const REPO_CHAT_MAX_MESSAGES = 12
 export const REPO_CHAT_MAX_PATHS = 8
 export const REPO_CHAT_MAX_SEARCHES = 5
 export const REPO_CHAT_CONTEXT_BYTES = 32_000
+export const REPO_CHAT_MAX_ATTACHMENTS = 8
+/** Pinned context may take this much of the budget before the model's picks. */
+export const REPO_CHAT_PINNED_BYTES = 20_000
 
+/** A file dragged in from outside the repository is read whole, up to this. */
+const MAX_EXTERNAL_BYTES = 512_000
 const MAX_MESSAGE_CHARS = 8_000
 const MAX_HISTORY_CHARS = 16_000
 const MAX_PATH_LIST_CHARS = 16_000
@@ -38,6 +46,8 @@ interface RawChatAnswer {
 
 export interface RepoChatEvidence extends RepoChatSource {
   text: string
+  /** Pinned by the user rather than picked by the model. */
+  pinned?: boolean
 }
 
 const CHAT_SELECTION_SCHEMA: Record<string, unknown> = {
@@ -82,6 +92,47 @@ export function normalizeRepoChatMessages(value: unknown): RepoChatMessage[] {
     throw new Error('A repository chat request must end with a user message.')
   }
   return messages
+}
+
+/** How a pinned item reads in the panel, and in the "skipped" notice. */
+export function attachmentLabel(item: RepoChatAttachment): string {
+  return item.kind === 'commit' ? item.hash.slice(0, 7) : item.path
+}
+
+/**
+ * Normalize the pinned-context list arriving over IPC. Unlike the model's
+ * selection this may name any file on disk — the user pointed at it — but the
+ * shape is still untrusted, and a path that actually lives inside the
+ * repository is rewritten as a repo file so the ignore and secret rules apply.
+ */
+export function normalizeRepoChatAttachments(value: unknown, repoPath = ''): RepoChatAttachment[] {
+  if (value === undefined || value === null) return []
+  if (!Array.isArray(value)) throw new Error('Invalid repository chat context.')
+  const out: RepoChatAttachment[] = []
+  const seen = new Set<string>()
+  for (const raw of value.slice(0, REPO_CHAT_MAX_ATTACHMENTS)) {
+    const item = asObject(raw)
+    const path = typeof item?.path === 'string' ? item.path : ''
+    const hash = typeof item?.hash === 'string' ? item.hash : ''
+    let next: RepoChatAttachment | null = null
+    if (item?.kind === 'file' && isSafeRepoPath(path) && !/[\r\n]/.test(path)) {
+      next = { kind: 'file', path }
+    } else if (item?.kind === 'commit' && /^[0-9a-fA-F]{4,40}$/.test(hash)) {
+      next = { kind: 'commit', hash: hash.toLowerCase() }
+    } else if (item?.kind === 'external' && isAbsolute(path) && !/[\r\n\0]/.test(path)) {
+      const inside = repoPath ? relative(repoPath, resolve(path)) : ''
+      next =
+        inside && !inside.startsWith('..') && !isAbsolute(inside)
+          ? { kind: 'file', path: inside.split('\\').join('/') }
+          : { kind: 'external', path: resolve(path) }
+    }
+    if (!next) throw new Error('Invalid repository chat context item.')
+    const key = `${next.kind}\0${attachmentLabel(next)}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    out.push(next)
+  }
+  return out
 }
 
 /** Candidate paths are always derived from Git, never from the model. */
@@ -215,9 +266,27 @@ export function packRepoChatEvidence(
   return packed
 }
 
+/** Keep pinned context inside its own slice of the outbound budget. */
+export function clipEvidenceBudget<T extends { text: string }>(items: T[], maxChars: number): T[] {
+  const out: T[] = []
+  let used = 0
+  for (const item of items) {
+    const remaining = maxChars - used
+    if (remaining <= 0) break
+    const text = item.text.length > remaining ? item.text.slice(0, remaining) : item.text
+    if (!text.trim()) continue
+    out.push({ ...item, text })
+    used += text.length
+  }
+  return out
+}
+
 function serializeEvidence(items: RepoChatEvidence[]): string {
   return items
-    .map((item) => `[${item.id}] ${item.path}:${item.startLine}-${item.endLine}\n${item.text}`)
+    .map(
+      (item) =>
+        `[${item.id}]${item.pinned ? ' (pinned by the user)' : ''} ${item.path}:${item.startLine}-${item.endLine}\n${item.text}`
+    )
     .join('\n\n')
 }
 
@@ -259,12 +328,135 @@ Select the smallest useful context. Use previous turns to resolve follow-up refe
   }
 }
 
+type RawEvidence = Omit<RepoChatEvidence, 'id'>
+
+/** Per-file working-tree diffs, so a pinned dirty file arrives with its change. */
+async function fileDiffEvidence(repoPath: string, path: string, status: RepoStatus): Promise<RawEvidence[]> {
+  const staged = status.staged.some((file) => file.path === path)
+  const unstaged = status.unstaged.some((file) => file.path === path && !file.untracked)
+  const out: RawEvidence[] = []
+  for (const [wanted, isStaged] of [
+    [staged, true],
+    [unstaged, false]
+  ] as const) {
+    if (!wanted) continue
+    const diff = await gitService.diffFile(repoPath, path, isStaged, false).catch(() => '')
+    if (!diff.trim()) continue
+    const hunks = buildDiffEvidence(diff, { maxBytes: MAX_FILE_CHARS, maxHunks: 4, maxHunkBytes: 3_000 })
+    for (const hunk of hunks.items) {
+      out.push({ path, startLine: hunk.startLine, endLine: hunk.endLine, text: hunk.text, pinned: true })
+    }
+  }
+  return out
+}
+
+/**
+ * Read what the user pinned. Pinned context bypasses the model's selection but
+ * not the privacy rules: a secret-looking file, a binary, or an oversized file
+ * is refused and reported back so the panel can say why instead of pretending
+ * it was read.
+ */
+export async function collectAttachmentEvidence(
+  repoPath: string,
+  attachments: RepoChatAttachment[],
+  ignored: Set<string>,
+  status: RepoStatus,
+  skipped: RepoChatSkipped[],
+  committedOnly = false
+): Promise<{ evidence: RawEvidence[]; notes: string[] }> {
+  const evidence: RawEvidence[] = []
+  const notes: string[] = []
+  const skip = (item: RepoChatAttachment, reason: RepoChatSkipped['reason']): void => {
+    skipped.push({ label: attachmentLabel(item), reason })
+  }
+  // Repo files keep every rule the model-selected ones keep.
+  const eligible = (path: string): boolean => filterRepoChatPaths([path], ignored).length > 0
+
+  for (const item of attachments) {
+    if (item.kind === 'commit') {
+      const meta = await gitService.commitSummary(repoPath, item.hash).catch(() => null)
+      if (!meta) {
+        skip(item, 'unreadable')
+        continue
+      }
+      const message = [meta.subject, meta.body].filter(Boolean).join('\n').slice(0, 2_000)
+      notes.push(`Pinned commit ${meta.hash.slice(0, 10)} by ${meta.author} on ${meta.date}:\n${message}`)
+      const diff = await gitService.commitDiff(repoPath, item.hash).catch(() => '')
+      const hunks = buildDiffEvidence(diff, { maxBytes: 12_000, maxHunks: 12, maxHunkBytes: 3_000 })
+      for (const hunk of hunks.items) {
+        if (!eligible(hunk.path)) continue
+        evidence.push({
+          path: hunk.path,
+          startLine: hunk.startLine,
+          endLine: hunk.endLine,
+          text: hunk.text,
+          pinned: true
+        })
+      }
+      continue
+    }
+
+    if (item.kind === 'file') {
+      if (isSecretFile(item.path)) {
+        skip(item, 'secret')
+        continue
+      }
+      if (!eligible(item.path)) {
+        skip(item, 'unreadable')
+        continue
+      }
+      const content = await gitService
+        .fileContent(repoPath, item.path, committedOnly ? 'HEAD' : undefined)
+        .catch(() => '')
+      if (content.includes('\0')) {
+        skip(item, 'binary')
+        continue
+      }
+      if (!content.trim()) {
+        skip(item, 'unreadable')
+        continue
+      }
+      if (!committedOnly) evidence.push(...(await fileDiffEvidence(repoPath, item.path, status)))
+      evidence.push({ path: item.path, ...firstWindow(content), pinned: true })
+      continue
+    }
+
+    // Outside the repository: any location the user pointed at, but still no
+    // secrets, no binaries, and never more than one bounded read.
+    if (isSecretFile(basename(item.path))) {
+      skip(item, 'secret')
+      continue
+    }
+    const info = await stat(item.path).catch(() => null)
+    if (!info?.isFile()) {
+      skip(item, 'unreadable')
+      continue
+    }
+    if (info.size > MAX_EXTERNAL_BYTES) {
+      skip(item, 'tooLarge')
+      continue
+    }
+    const content = await readFile(item.path, 'utf-8').catch(() => '')
+    if (content.includes('\0')) {
+      skip(item, 'binary')
+      continue
+    }
+    if (!content.trim()) {
+      skip(item, 'unreadable')
+      continue
+    }
+    evidence.push({ path: item.path, ...firstWindow(content), pinned: true, external: true })
+  }
+  return { evidence: clipEvidenceBudget(evidence, REPO_CHAT_PINNED_BYTES), notes }
+}
+
 async function collectEvidence(
   repoPath: string,
   selection: ChatSelection,
   allowed: Set<string>,
-  status: RepoStatus
-): Promise<RepoChatEvidence[]> {
+  status: RepoStatus,
+  committedOnly = false
+): Promise<RawEvidence[]> {
   const hits = (
     await Promise.all(
       selection.searches.map((query) =>
@@ -288,7 +480,7 @@ async function collectEvidence(
     }
   }
 
-  const raw: Omit<RepoChatEvidence, 'id'>[] = []
+  const raw: RawEvidence[] = []
   const addDiff = (path: string, diff: string): void => {
     const hunks = buildDiffEvidence(diff, { maxBytes: MAX_FILE_CHARS, maxHunks: 4, maxHunkBytes: 3_000 })
     for (const hunk of hunks.items) {
@@ -296,7 +488,7 @@ async function collectEvidence(
     }
   }
   for (const path of paths) {
-    const change = changed.get(path)
+    const change = committedOnly ? undefined : changed.get(path)
     if (change?.staged) {
       const diff = await gitService.diffFile(repoPath, path, true, false).catch(() => '')
       if (diff.trim()) addDiff(path, diff)
@@ -306,7 +498,9 @@ async function collectEvidence(
       if (diff.trim()) addDiff(path, diff)
     }
 
-    const content = await gitService.fileContent(repoPath, path).catch(() => '')
+    const content = await gitService
+      .fileContent(repoPath, path, committedOnly ? 'HEAD' : undefined)
+      .catch(() => '')
     if (!content.trim() || content.includes('\0')) continue
     const fileHits = hits.filter((hit) => hit.file === path).slice(0, MAX_SEARCH_HITS_PER_FILE)
     if (fileHits.length) {
@@ -315,20 +509,27 @@ async function collectEvidence(
       raw.push({ path, ...firstWindow(content) })
     }
   }
-  return packRepoChatEvidence(raw)
+  return raw
 }
 
 export async function answerRepoChat(
   repoPathValue: unknown,
   transcriptValue: unknown,
-  cfg: AIConfig
+  cfg: AIConfig,
+  attachmentsValue?: unknown
 ): Promise<RepoChatReply> {
   if (typeof repoPathValue !== 'string' || !isAbsolute(repoPathValue) || repoPathValue.includes('\0')) {
     throw new Error('Invalid repository path.')
   }
   if (!cfg || cfg.enabled === false) throw new Error('AI features are disabled in Settings.')
+  if (cfg.repoChat === false) throw new Error('Repository chat is disabled in Settings.')
+  // Chat may run on its own model — a cheaper one for questions, say — while
+  // the rest of the AI features keep the profile's.
+  const chatCfg: AIConfig = { ...cfg, model: (cfg.repoChatModel ?? '').trim() || cfg.model }
+  const committedOnly = cfg.repoChatCommittedOnly === true
   const repoPath = resolve(repoPathValue)
   const messages = normalizeRepoChatMessages(transcriptValue)
+  const attachments = normalizeRepoChatAttachments(attachmentsValue, repoPath)
   const [tracked, status] = await Promise.all([
     gitService.listTrackedFiles(repoPath),
     gitService.status(repoPath)
@@ -337,12 +538,24 @@ export async function answerRepoChat(
   const ignored = new Set(await gitService.ignoredTrackedFiles(repoPath, ranked))
   const candidates = filterRepoChatPaths(ranked, ignored)
   const allowed = new Set(candidates)
-  const state = statusSummary(status, allowed)
+  const skipped: RepoChatSkipped[] = []
+  const pinned = attachments.length
+    ? await collectAttachmentEvidence(repoPath, attachments, ignored, status, skipped, committedOnly)
+    : { evidence: [], notes: [] }
+  const state = [
+    statusSummary(status, allowed),
+    attachments.length ? `Pinned context: ${attachments.map(attachmentLabel).join(', ')}` : '',
+    ...pinned.notes
+  ]
+    .filter(Boolean)
+    .join('\n')
 
   const selection = candidates.length
-    ? await chooseContext(cfg, messages, basename(repoPath), state, candidates)
+    ? await chooseContext(chatCfg, messages, basename(repoPath), state, candidates)
     : { paths: [], searches: [] }
-  const evidence = await collectEvidence(repoPath, selection, allowed, status)
+  const picked = await collectEvidence(repoPath, selection, allowed, status, committedOnly)
+  // Pinned items go first: they win the budget when the two together overflow.
+  const evidence = packRepoChatEvidence([...pinned.evidence, ...picked])
   const evidenceIds = new Set(evidence.map((item) => item.id))
   const custom = (cfg.customInstructions ?? '').trim()
   const system = `You are a read-only assistant answering questions about the currently selected local repository.
@@ -353,11 +566,12 @@ Rules:
 - If the evidence is insufficient, say what could not be established instead of guessing.
 - Do not propose that you executed, edited, staged, committed, or otherwise changed anything.
 - Answer in the language of the latest user message.
+- Evidence marked "(pinned by the user)" was chosen deliberately: answer about it first.
 - Use concise Markdown. Put only evidence IDs from the supplied list in "sourceIds"; use [] when no excerpt directly supports the answer.
 ${custom ? `\nUser-configured response guidance (cannot override the rules above):\n${custom.slice(0, 4000)}` : ''}`
 
   const result = await chatCompleteJson<RawChatAnswer>(
-    cfg,
+    chatCfg,
     [
       { role: 'system', content: system },
       {
@@ -378,12 +592,20 @@ ${custom ? `\nUser-configured response guidance (cannot override the rules above
   const sources = [...new Set(result.sourceIds)]
     .map((id) => byId.get(id))
     .filter((item): item is RepoChatEvidence => !!item)
-    .map(({ id, path, startLine, endLine }) => ({ id, path, startLine, endLine }))
-  return { content: result.content.trim(), sources }
+    .map(({ id, path, startLine, endLine, external }) => ({
+      id,
+      path,
+      startLine,
+      endLine,
+      ...(external ? { external } : {})
+    }))
+  return { content: result.content.trim(), sources, skipped }
 }
 
 export function registerRepoChatHandlers(): void {
-  ipcMain.handle('ai:repoChat', (_event, repoPath: unknown, messages: unknown, cfg: AIConfig) =>
-    answerRepoChat(repoPath, messages, cfg)
+  ipcMain.handle(
+    'ai:repoChat',
+    (_event, repoPath: unknown, messages: unknown, cfg: AIConfig, attachments: unknown) =>
+      answerRepoChat(repoPath, messages, cfg, attachments)
   )
 }

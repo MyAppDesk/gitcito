@@ -3870,12 +3870,37 @@ export const gitService = {
     for (let i = 0; i < paths.length; i += 200) {
       const chunk = paths.slice(i, i + 200)
       if (!chunk.length) continue
-      const raw = await gitFor(repoPath)
-        .raw(['check-ignore', '--no-index', '--', ...chunk])
-        .catch(() => '')
-      ignored.push(...raw.split('\n').filter(Boolean))
+      // `check-ignore` exits 1 when nothing matched — success, not failure.
+      // Any other non-zero code has to propagate: swallowing it would report
+      // "nothing is ignored" and hand ignored files to the caller.
+      const stdout = await pexecFile(
+        'git',
+        ['-C', repoPath, 'check-ignore', '--no-index', '--', ...chunk],
+        { env: noPromptEnv(), maxBuffer: 16 * 1024 * 1024 }
+      )
+        .then((res) => res.stdout)
+        .catch((err: { code?: number | string; stdout?: string; message?: string }) => {
+          if (err.code === 1) return err.stdout ?? ''
+          throw new Error(`Could not determine ignored files: ${err.message}`)
+        })
+      ignored.push(...stdout.split('\n').map((line) => line.trim()).filter(Boolean))
     }
     return ignored
+  },
+
+  /** Author, date and message of one commit — for pinned chat context. */
+  async commitSummary(
+    repoPath: string,
+    hash: string
+  ): Promise<{ hash: string; author: string; date: string; subject: string; body: string }> {
+    const raw = await gitFor(repoPath).raw([
+      'show',
+      '-s',
+      '--format=%H%x00%an%x00%aI%x00%s%x00%b',
+      hash
+    ])
+    const [full = '', author = '', date = '', subject = '', body = ''] = raw.split('\0')
+    return { hash: full.trim(), author, date, subject, body: body.trim() }
   },
 
   /**
@@ -5854,6 +5879,7 @@ const READ_METHODS = new Set<string>([
   'listFiles',
   'listTrackedFiles',
   'ignoredTrackedFiles',
+  'commitSummary',
   'filesToPush',
   'commitsTouchingPath',
   'protectedBranches',

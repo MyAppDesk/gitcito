@@ -42,6 +42,11 @@ const pages = [...new Set([...pageBlock.matchAll(/\{ type: '([\w-]+)'/g)].map((m
 const palette = read('src/renderer/src/components/CommandPalette.tsx')
 const commands = [...new Set([...palette.matchAll(/id: '([\w-]+)', title:/g)].map((m) => m[1]))]
 
+// The right column is a surface too: a tab there is as findable as a modal, and
+// went undocumented once because nothing asked about it.
+const panelBlock = ui.split('rightPanelTab:')[1]?.split('\n')[0] ?? ''
+const panels = [...new Set([...panelBlock.matchAll(/'([\w-]+)'/g)].map((m) => m[1]))]
+
 // ── What the handbook holds ────────────────────────────────────────────────
 const files = readdirSync(HELP_DIR).filter((f) => f.endsWith('.md'))
 const pageIds = new Set(files.map((f) => f.replace(/\.md$/, '')))
@@ -50,12 +55,14 @@ const shots = new Set(existsSync(SHOTS_DIR) ? readdirSync(SHOTS_DIR) : [])
 if (pageIds.size === 0) fail('handbook', 'docs/help/ has no pages at all')
 
 // 1 + 2 — every surface is mapped, and every mapping resolves.
+const SECTIONS = { modal: 'modals', 'page tab': 'pages', command: 'commands', 'right panel tab': 'panels' }
 for (const [group, values] of [
   ['modal', modals],
   ['page tab', pages],
-  ['command', commands]
+  ['command', commands],
+  ['right panel tab', panels]
 ]) {
-  const section = MAP[group === 'modal' ? 'modals' : group === 'page tab' ? 'pages' : 'commands']
+  const section = MAP[SECTIONS[group]]
   for (const id of values) {
     const target = section.covered[id]
     if (target === undefined && section.exempt[id] === undefined) {
@@ -156,5 +163,5 @@ const translated = localeDirs.length
   ? ` ${translatedCount} translated pages across ${localeDirs.length} locales.`
   : ''
 console.log(
-  `✔ docs: ${pageIds.size} handbook pages cover ${modals.length} modals, ${pages.length} page tabs and ${commands.length} commands.${translated}`
+  `✔ docs: ${pageIds.size} handbook pages cover ${modals.length} modals, ${pages.length} page tabs, ${panels.length} right panel tabs and ${commands.length} commands.${translated}`
 )

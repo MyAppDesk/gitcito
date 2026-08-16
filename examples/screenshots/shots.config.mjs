@@ -154,11 +154,79 @@ export const shots = [
     }
   },
   {
+    // Repository chat with a finished exchange and pinned context. The reply is
+    // seeded through the store on purpose: a shot must never call a provider,
+    // and a screenshot of a real answer would change on every capture.
+    out: 'repo-chat',
+    repos: ['deep-history-monorepo'],
+    themes: ['dark'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['deep-history-monorepo']
+      await page.evaluate(async (path) => {
+        const shot = window.__shot
+        await shot.waitForRepo(path)
+        const head = shot.repo.getState().repos[path]?.commits?.[0]
+        shot.chat.setState({
+          threads: {
+            [path]: {
+              pending: false,
+              error: null,
+              skipped: [],
+              attachments: [
+                { kind: 'file', path: 'packages/api/src/index.ts' },
+                ...(head ? [{ kind: 'commit', hash: head.hash }] : [])
+              ],
+              messages: [
+                {
+                  id: 1,
+                  role: 'user',
+                  content: 'Where does the API service read its configuration, and what did the last commit change?',
+                  attachments: [{ kind: 'file', path: 'packages/api/src/index.ts' }]
+                },
+                {
+                  id: 2,
+                  role: 'assistant',
+                  content:
+                    'The API reads its configuration at start-up in `packages/api/src/index.ts`, before the server is bound — so a missing value fails fast rather than on the first request.\n\nThe last commit only touched `infra/docker-compose.yml`; it does not change how the value is read.',
+                  sources: [
+                    { id: 'E1', path: 'packages/api/src/index.ts', startLine: 1, endLine: 24 },
+                    { id: 'E2', path: 'infra/docker-compose.yml', startLine: 1, endLine: 18 }
+                  ]
+                }
+              ]
+            }
+          }
+        })
+        shot.ui.getState().openChatPanel()
+      }, repo)
+      await page.waitForTimeout(500)
+    }
+  },
+  {
     out: 'settings-ai',
     repos: ['octopus-merge'],
     themes: ['light'],
     drive: async (page) => {
       await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'ai' }))
+    }
+  },
+  {
+    // Settings → AI, scrolled to the Repository chat block: the enable switch,
+    // the chat-only model, and the committed-content-only guard.
+    out: 'settings-repo-chat',
+    repos: ['octopus-merge'],
+    themes: ['light'],
+    drive: async (page) => {
+      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'ai' }))
+      await page.waitForTimeout(400)
+      await page.evaluate(() => {
+        // The section has no id of its own — its heading is the only handle.
+        const heading = [...document.querySelectorAll('h4')].find((el) =>
+          /repository chat/i.test(el.textContent ?? '')
+        )
+        heading?.scrollIntoView({ block: 'center' })
+      })
+      await page.waitForTimeout(400)
     }
   },
   {

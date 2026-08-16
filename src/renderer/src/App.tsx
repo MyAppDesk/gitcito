@@ -45,7 +45,7 @@ import { RepoChatPanel } from './components/RepoChatPanel'
 import gitcitoLaunch from './assets/gitcito-launch.png'
 import { matchShortcut, effectiveBindings, tabActionFromEvent, tabIndexFromEvent } from './lib/shortcuts'
 import { terminalShortcutFromEvent } from './lib/terminalShortcuts'
-import { rightPanelDetailsState, rightPanelToggleAction } from './lib/repoChatUI'
+import { repoChatAvailable, rightPanelDetailsState, rightPanelToggleAction } from './lib/repoChatUI'
 import { folderOpenMenuItems } from './lib/openWith'
 import { hostingApi, gitApi, cliApi, keychainApi } from './infrastructure/api'
 
@@ -243,6 +243,8 @@ export default function App(): React.JSX.Element {
   const t = useT()
   const settingsLoaded = useSettingsStore((s) => s.loaded)
   const settings = useSettingsStore((s) => s.settings)
+  // Chat is only a surface while its provider is configured to answer.
+  const activeProfile = useSettingsStore((s) => s.activeProfile())
   const ensure = useRepoStore((s) => s.ensure)
   const terminalOpenByRepo = useUIStore((s) => s.terminalOpenByRepo)
   const fileView = useUIStore((s) => s.fileView)
@@ -403,7 +405,12 @@ export default function App(): React.JSX.Element {
         if (path && activeRepo && !activeRepo.notGit) {
           e.preventDefault()
           const forceConflict = !!activeRepo.mergeState && (activeRepo.status?.conflicted.length ?? 0) > 0
-          const action = rightPanelToggleAction(!!activeRepo.selected, forceConflict, ui.chatPanelOpen)
+          const action = rightPanelToggleAction(
+            !!activeRepo.selected,
+            forceConflict,
+            ui.chatPanelOpen,
+            repoChatAvailable(useSettingsStore.getState().activeProfile().ai)
+          )
           if (action === 'open-chat') {
             ui.openChatPanel()
           } else if (action === 'show-required-details') {
@@ -764,8 +771,10 @@ export default function App(): React.JSX.Element {
           const selectedDetailsAvailable = !!repo.selected || forceConflictPanel
           const detailsState = rightPanelDetailsState(!!repo.selected, forceConflictPanel, repo.status)
           const detailsAvailable = detailsState.available
+          const chatAvailable = repoChatAvailable(activeProfile.ai)
+          const chatOpen = chatPanelOpen && chatAvailable
           const activeRightPanelTab =
-            rightPanelTab === 'chat' && chatPanelOpen
+            rightPanelTab === 'chat' && chatOpen
               ? 'chat'
               : detailsAvailable
                 ? 'details'
@@ -776,11 +785,11 @@ export default function App(): React.JSX.Element {
               return
             }
             useRepoStore.getState().select(repo.path, null)
-            if (chatPanelOpen) openChatPanel()
+            if (chatOpen) openChatPanel()
           }
           const rightPanelNode = (
             <AnimatePresence>
-              {(selectedDetailsAvailable || chatPanelOpen) && (
+              {(selectedDetailsAvailable || chatOpen) && (
                 <motion.section
                   className="right-panel"
                   initial={{ width: 0, opacity: 0 }}
@@ -811,15 +820,17 @@ export default function App(): React.JSX.Element {
                     >
                       {t('chat.tabDetails')}
                     </button>
-                    <button
-                      type="button"
-                      role="tab"
-                      aria-selected={activeRightPanelTab === 'chat'}
-                      className={`right-panel-tab ${activeRightPanelTab === 'chat' ? 'active' : ''}`}
-                      onClick={openChatPanel}
-                    >
-                      <MessageSquare size={13} /> {t('chat.tabChat')}
-                    </button>
+                    {chatAvailable && (
+                      <button
+                        type="button"
+                        role="tab"
+                        aria-selected={activeRightPanelTab === 'chat'}
+                        className={`right-panel-tab ${activeRightPanelTab === 'chat' ? 'active' : ''}`}
+                        onClick={openChatPanel}
+                      >
+                        <MessageSquare size={13} /> {t('chat.tabChat')}
+                      </button>
+                    )}
                     {!(forceConflictPanel && activeRightPanelTab === 'details') && (
                       <button
                         type="button"
@@ -833,7 +844,7 @@ export default function App(): React.JSX.Element {
                     )}
                   </div>
                   <div className="right-panel-inner" style={{ width: layout.panelWidth }}>
-                    {activeRightPanelTab === 'chat' ? (
+                    {activeRightPanelTab === 'chat' && chatAvailable ? (
                       <RepoChatPanel key={repo.path} repoPath={repo.path} repoName={repo.name} />
                     ) : forceConflictPanel ? (
                       <CommitComposer key={repo.path} repo={repo} />

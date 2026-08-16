@@ -1,6 +1,8 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterAll, describe, expect, it, vi } from 'vitest'
 import {
+  collectAttachmentEvidence,
   filterRepoChatPaths,
+  normalizeRepoChatAttachments,
   normalizeRepoChatMessages,
   packRepoChatEvidence,
   validateChatAnswer,
@@ -9,13 +11,20 @@ import {
 import { gitService } from '../src/main/git'
 import { createRepoChatStore } from '../src/renderer/src/lib/repoChatStore'
 import {
+  addAttachments,
+  parseChatDrop,
+  suggestedAttachments
+} from '../src/renderer/src/lib/repoChatContext'
+import { cloneFixture, cleanupFixtures } from './fixtures'
+import {
   canSubmitRepoChat,
+  repoChatAvailable,
   repoChatSourceView,
   rightPanelDetailsState,
   rightPanelToggleAction
 } from '../src/renderer/src/lib/repoChatUI'
 import { useUIStore } from '../src/renderer/src/stores/ui'
-import { defaultProfile, type RepoChatReply } from '../src/shared/types'
+import { defaultProfile, type RepoChatReply, type RepoStatus } from '../src/shared/types'
 
 const cfg = defaultProfile().ai
 
@@ -97,7 +106,7 @@ describe('repository chat session store', () => {
           resolveA = resolve
         })
       }
-      return Promise.resolve({ content: 'answer B', sources: [] })
+      return Promise.resolve({ content: 'answer B', sources: [], skipped: [] })
     })
     const store = createRepoChatStore(request)
 
@@ -111,7 +120,7 @@ describe('repository chat session store', () => {
       'answer B'
     ])
 
-    resolveA?.({ content: 'answer A', sources: [] })
+    resolveA?.({ content: 'answer A', sources: [], skipped: [] })
     await pendingA
     expect(store.getState().threads['/repo/a'].messages.map((message) => message.content)).toEqual([
       'question A',
@@ -123,7 +132,7 @@ describe('repository chat session store', () => {
     const request = vi
       .fn()
       .mockRejectedValueOnce(new Error('provider unavailable'))
-      .mockResolvedValueOnce({ content: 'recovered', sources: [] })
+      .mockResolvedValueOnce({ content: 'recovered', sources: [], skipped: [] })
     const store = createRepoChatStore(request)
 
     await store.getState().send('/repo/a', 'where is auth?', cfg)
@@ -138,7 +147,8 @@ describe('repository chat session store', () => {
   it('stores forty messages but sends only the latest twelve turns', async () => {
     const request = vi.fn(async (_repoPath, messages) => ({
       content: `answer ${messages.at(-1)?.content}`,
-      sources: []
+      sources: [],
+      skipped: []
     }))
     const store = createRepoChatStore(request)
     for (let i = 0; i < 25; i++) await store.getState().send('/repo/a', `question ${i}`, cfg)
@@ -159,7 +169,7 @@ describe('repository chat session store', () => {
     )
     const pending = store.getState().send('/repo/a', 'question', cfg)
     store.getState().clear('/repo/a')
-    finish?.({ content: 'late answer', sources: [] })
+    finish?.({ content: 'late answer', sources: [], skipped: [] })
     await pending
     expect(store.getState().threads['/repo/a']).toBeUndefined()
   })
@@ -226,10 +236,154 @@ describe('repository chat panel behavior', () => {
     })
   })
 
+  it('hides chat entirely when AI or chat itself is switched off', () => {
+    expect(repoChatAvailable({ enabled: true, repoChat: true })).toBe(true)
+    expect(repoChatAvailable({ enabled: true })).toBe(true)
+    expect(repoChatAvailable({ enabled: false, repoChat: true })).toBe(false)
+    expect(repoChatAvailable({ enabled: true, repoChat: false })).toBe(false)
+    expect(repoChatAvailable(null)).toBe(false)
+    // With no chat to open, the panel toggle stops offering it.
+    expect(rightPanelToggleAction(false, false, false, false)).toBe('close-all')
+    expect(rightPanelToggleAction(false, false, false, true)).toBe('open-chat')
+  })
+
   it('blocks the composer while AI is disabled or a request is pending', () => {
     expect(canSubmitRepoChat(false, false, 'question')).toBe(false)
     expect(canSubmitRepoChat(true, true, 'question')).toBe(false)
     expect(canSubmitRepoChat(true, false, '   ')).toBe(false)
     expect(canSubmitRepoChat(true, false, 'question')).toBe(true)
+  })
+})
+
+const emptyStatus: RepoStatus = {
+  current: 'main',
+  tracking: null,
+  ahead: 0,
+  behind: 0,
+  staged: [],
+  unstaged: [],
+  conflicted: []
+}
+
+describe('repository chat pinned context', () => {
+  afterAll(() => cleanupFixtures())
+
+  it('accepts only well-formed items and folds an in-repo path back to a repo file', () => {
+    expect(
+      normalizeRepoChatAttachments(
+        [
+          { kind: 'file', path: 'src/main/git.ts' },
+          { kind: 'commit', hash: 'AbC1234' },
+          { kind: 'external', path: '/tmp/notes.md' },
+          { kind: 'external', path: '/repo/src/app.ts' },
+          { kind: 'file', path: 'src/main/git.ts' }
+        ],
+        '/repo'
+      )
+    ).toEqual([
+      { kind: 'file', path: 'src/main/git.ts' },
+      { kind: 'commit', hash: 'abc1234' },
+      { kind: 'external', path: '/tmp/notes.md' },
+      { kind: 'file', path: 'src/app.ts' }
+    ])
+    expect(normalizeRepoChatAttachments(undefined)).toEqual([])
+    expect(() => normalizeRepoChatAttachments([{ kind: 'file', path: '../escape.ts' }])).toThrow()
+    expect(() => normalizeRepoChatAttachments([{ kind: 'commit', hash: 'not-a-hash' }])).toThrow()
+    expect(() => normalizeRepoChatAttachments([{ kind: 'external', path: 'relative.md' }])).toThrow()
+  })
+
+  it('caps the pinned list and ignores duplicates', () => {
+    const many = Array.from({ length: 12 }, (_, i) => ({ kind: 'file' as const, path: `f${i}.ts` }))
+    expect(addAttachments([], many)).toHaveLength(8)
+    expect(addAttachments([{ kind: 'file', path: 'a.ts' }], [{ kind: 'file', path: 'a.ts' }])).toHaveLength(1)
+  })
+
+  it('prefers an in-app drag over the operating system file list', () => {
+    expect(parseChatDrop({ commit: 'DEADBEEF', path: 'src/a.ts', files: ['/tmp/x.md'] })).toEqual([
+      { kind: 'commit', hash: 'deadbeef' }
+    ])
+    expect(parseChatDrop({ path: 'src/a.ts', files: ['/tmp/x.md'] })).toEqual([
+      { kind: 'file', path: 'src/a.ts' }
+    ])
+    expect(parseChatDrop({ files: ['/tmp/x.md', '/tmp/y.md'] })).toEqual([
+      { kind: 'external', path: '/tmp/x.md' },
+      { kind: 'external', path: '/tmp/y.md' }
+    ])
+    expect(parseChatDrop({ commit: 'nope', files: [] })).toEqual([])
+  })
+
+  it('suggests what is on screen, minus what is already pinned', () => {
+    expect(
+      suggestedAttachments({
+        openFile: 'src/a.ts',
+        selectedCommit: 'abc1234',
+        attached: [{ kind: 'file', path: 'src/a.ts' }]
+      })
+    ).toEqual([{ kind: 'commit', hash: 'abc1234' }])
+    expect(suggestedAttachments({ openFile: null, selectedCommit: null, attached: [] })).toEqual([])
+  })
+
+  it('refuses a secret-looking pinned file and says why instead of reading it', async () => {
+    const skipped: { label: string; reason: string }[] = []
+    const result = await collectAttachmentEvidence(
+      process.cwd(),
+      [{ kind: 'file', path: '.env' }],
+      new Set(),
+      emptyStatus,
+      skipped
+    )
+    expect(result.evidence).toEqual([])
+    expect(skipped).toEqual([{ label: '.env', reason: 'secret' }])
+  })
+
+  it('refuses a pinned file outside the repository when it is a secret or missing', async () => {
+    const skipped: { label: string; reason: string }[] = []
+    await collectAttachmentEvidence(
+      process.cwd(),
+      [
+        { kind: 'external', path: '/definitely/not/here.md' },
+        { kind: 'external', path: '/tmp/id_rsa' }
+      ],
+      new Set(),
+      emptyStatus,
+      skipped
+    )
+    expect(skipped.map((item) => item.reason)).toEqual(['unreadable', 'secret'])
+  })
+
+  it('reads a pinned commit as diff hunks plus its message', async () => {
+    const dir = cloneFixture('cherry-pick')
+    const head = (await gitService.log(dir, 5))[0]
+    const skipped: { label: string; reason: string }[] = []
+    const { evidence, notes } = await collectAttachmentEvidence(
+      dir,
+      [{ kind: 'commit', hash: head.hash }],
+      new Set(),
+      emptyStatus,
+      skipped
+    )
+    expect(skipped).toEqual([])
+    expect(notes[0]).toContain(head.subject)
+    expect(evidence.length).toBeGreaterThan(0)
+    expect(evidence.every((item) => item.pinned)).toBe(true)
+  })
+
+  it('sends pinned context with the turn and keeps it for follow-ups', async () => {
+    const request = vi.fn(async () => ({ content: 'answer', sources: [], skipped: [] }))
+    const store = createRepoChatStore(request)
+    store.getState().attach('/repo/a', [{ kind: 'file', path: 'src/a.ts' }])
+    store.getState().attach('/repo/a', [{ kind: 'commit', hash: 'abc1234' }])
+    await store.getState().send('/repo/a', 'what changed?', cfg)
+
+    expect(request.mock.calls[0][3]).toEqual([
+      { kind: 'file', path: 'src/a.ts' },
+      { kind: 'commit', hash: 'abc1234' }
+    ])
+    expect(store.getState().threads['/repo/a'].messages[0].attachments).toHaveLength(2)
+    expect(store.getState().threads['/repo/a'].attachments).toHaveLength(2)
+
+    store.getState().detach('/repo/a', 'commit:abc1234')
+    await store.getState().send('/repo/a', 'and now?', cfg)
+    expect(request.mock.calls[1][3]).toEqual([{ kind: 'file', path: 'src/a.ts' }])
   })
 })

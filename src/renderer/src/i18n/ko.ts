@@ -392,6 +392,8 @@ export const ko: Dict = {
   'sc.openVault': '금고 열기',
   'sc.openRepository': '저장소 열기',
   'sc.openSettings': '설정 열기',
+  'sc.toggleLeftSidebar': '왼쪽 사이드바 토글',
+  'sc.toggleRightPanel': '오른쪽 패널 토글',
   'sc.keyboardShortcuts': '키보드 단축키',
   'sc.navigateCommits': '커밋 이동',
   'sc.selectTab': '위치로 탭 선택',

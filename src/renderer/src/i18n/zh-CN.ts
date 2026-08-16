@@ -392,6 +392,8 @@ export const zhCN: Dict = {
   'sc.openVault': '打开保险库',
   'sc.openRepository': '打开仓库',
   'sc.openSettings': '打开设置',
+  'sc.toggleLeftSidebar': '切换左侧边栏',
+  'sc.toggleRightPanel': '切换右侧面板',
   'sc.keyboardShortcuts': '键盘快捷键',
   'sc.navigateCommits': '在提交间导航',
   'sc.selectTab': '按位置选择标签页',

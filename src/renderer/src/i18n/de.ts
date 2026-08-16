@@ -392,6 +392,8 @@ export const de: Dict = {
   'sc.openVault': 'Tresor öffnen',
   'sc.openRepository': 'Repository öffnen',
   'sc.openSettings': 'Einstellungen öffnen',
+  'sc.toggleLeftSidebar': 'Linke Seitenleiste umschalten',
+  'sc.toggleRightPanel': 'Rechtes Panel umschalten',
   'sc.keyboardShortcuts': 'Tastenkürzel',
   'sc.navigateCommits': 'Durch Commits navigieren',
   'sc.selectTab': 'Tab nach Position wählen',

@@ -393,6 +393,8 @@ export const en = {
   'sc.openVault': 'Open vault',
   'sc.openRepository': 'Open repository',
   'sc.openSettings': 'Open settings',
+  'sc.toggleLeftSidebar': 'Toggle left sidebar',
+  'sc.toggleRightPanel': 'Toggle right panel',
   'sc.keyboardShortcuts': 'Keyboard shortcuts',
   'sc.navigateCommits': 'Navigate commits',
   'sc.selectTab': 'Select tab by position',

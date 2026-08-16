@@ -45,7 +45,7 @@ import { RepoChatPanel } from './components/RepoChatPanel'
 import gitcitoLaunch from './assets/gitcito-launch.png'
 import { matchShortcut, effectiveBindings, tabActionFromEvent, tabIndexFromEvent } from './lib/shortcuts'
 import { terminalShortcutFromEvent } from './lib/terminalShortcuts'
-import { rightPanelDetailsState } from './lib/repoChatUI'
+import { rightPanelDetailsState, rightPanelToggleAction } from './lib/repoChatUI'
 import { folderOpenMenuItems } from './lib/openWith'
 import { hostingApi, gitApi, cliApi, keychainApi } from './infrastructure/api'
 
@@ -391,6 +391,28 @@ export default function App(): React.JSX.Element {
       } else if (id === 'settings') {
         e.preventDefault()
         ui.openModal({ kind: 'settings' })
+      } else if (id === 'toggle-left-sidebar') {
+        const path = activeRepoPath()
+        if (path) {
+          e.preventDefault()
+          ui.toggleSidebar()
+        }
+      } else if (id === 'toggle-right-panel') {
+        const path = activeRepoPath()
+        const activeRepo = path ? useRepoStore.getState().repos[path] : null
+        if (path && activeRepo && !activeRepo.notGit) {
+          e.preventDefault()
+          const forceConflict = !!activeRepo.mergeState && (activeRepo.status?.conflicted.length ?? 0) > 0
+          const action = rightPanelToggleAction(!!activeRepo.selected, forceConflict, ui.chatPanelOpen)
+          if (action === 'open-chat') {
+            ui.openChatPanel()
+          } else if (action === 'show-required-details') {
+            ui.closeChatPanel()
+          } else {
+            if (activeRepo.selected) useRepoStore.getState().select(path, null)
+            ui.closeChatPanel()
+          }
+        }
       } else if (id === 'open-repository') {
         e.preventDefault()
         void window.api.selectDirectory().then((path) => {

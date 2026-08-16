@@ -154,7 +154,7 @@ import { defaultSettings, type AppSettings, type Profile } from '../src/shared/t
 // Minimal KeyboardEvent stand-in for the pure shortcut helpers.
 const ev = (
   key: string,
-  mods: { meta?: boolean; ctrl?: boolean; shift?: boolean; alt?: boolean; code?: string } = {}
+  mods: { meta?: boolean; ctrl?: boolean; shift?: boolean; alt?: boolean; altGraph?: boolean; code?: string } = {}
 ): KeyboardEvent =>
   ({
     key,
@@ -162,7 +162,8 @@ const ev = (
     metaKey: !!mods.meta,
     ctrlKey: !!mods.ctrl,
     shiftKey: !!mods.shift,
-    altKey: !!mods.alt
+    altKey: !!mods.alt,
+    getModifierState: (modifier: string) => modifier === 'AltGraph' && !!mods.altGraph
   }) as KeyboardEvent
 
 // Pure-function unit tests — no git, no DOM.
@@ -315,6 +316,8 @@ describe('keyboard shortcuts', () => {
   it('normalizes events to combos (mod for meta/ctrl), ignoring modifier-only', () => {
     expect(comboFromEvent(ev('k', { meta: true }))).toBe('mod+k')
     expect(comboFromEvent(ev('F', { ctrl: true, shift: true }))).toBe('mod+shift+f')
+    expect(comboFromEvent(ev('∫', { meta: true, alt: true, code: 'KeyB' }))).toBe('mod+alt+b')
+    expect(comboFromEvent(ev('b', { ctrl: true, alt: true, altGraph: true, code: 'KeyB' }))).toBeNull()
     expect(comboFromEvent(ev('Shift'))).toBeNull()
   })
 
@@ -330,6 +333,8 @@ describe('keyboard shortcuts', () => {
     expect(b['code-search']).toBe('mod+shift+f') // untouched default
     expect(b['open-repository']).toBe('mod+o')
     expect(b['settings']).toBe('mod+,')
+    expect(b['toggle-left-sidebar']).toBe('mod+shift+e')
+    expect(b['toggle-right-panel']).toBe('mod+alt+b')
   })
 
   it('matchShortcut resolves the bound id', () => {
@@ -337,6 +342,9 @@ describe('keyboard shortcuts', () => {
     expect(matchShortcut(ev('k', { meta: true }), b)).toBe('command-palette')
     expect(matchShortcut(ev('v', { ctrl: true, shift: true }), b)).toBe('vault')
     expect(matchShortcut(ev(',', { meta: true }), b)).toBe('settings')
+    expect(matchShortcut(ev('E', { meta: true, shift: true }), b)).toBe('toggle-left-sidebar')
+    expect(matchShortcut(ev('b', { ctrl: true, alt: true }), b)).toBe('toggle-right-panel')
+    expect(matchShortcut(ev('∫', { meta: true, alt: true, code: 'KeyB' }), b)).toBe('toggle-right-panel')
     expect(matchShortcut(ev('x', { meta: true }), b)).toBeNull()
   })
 

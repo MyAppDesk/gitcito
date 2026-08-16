@@ -379,6 +379,8 @@ export const it: Dict = {
   'sc.openVault': 'Apri la cassaforte',
   'sc.openRepository': 'Apri un repository',
   'sc.openSettings': 'Apri le impostazioni',
+  'sc.toggleLeftSidebar': 'Mostra o nascondi la barra laterale sinistra',
+  'sc.toggleRightPanel': 'Mostra o nascondi il pannello destro',
   'sc.keyboardShortcuts': 'Scorciatoie da tastiera',
   'sc.navigateCommits': 'Naviga fra i commit',
   'sc.selectTab': 'Seleziona una scheda per posizione',

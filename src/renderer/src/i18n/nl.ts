@@ -392,6 +392,8 @@ export const nl: Dict = {
   'sc.openVault': 'Kluis openen',
   'sc.openRepository': 'Repository openen',
   'sc.openSettings': 'Instellingen openen',
+  'sc.toggleLeftSidebar': 'Linkerzijbalk in-/uitschakelen',
+  'sc.toggleRightPanel': 'Rechterpaneel in-/uitschakelen',
   'sc.keyboardShortcuts': 'Sneltoetsen',
   'sc.navigateCommits': 'Door commits navigeren',
   'sc.selectTab': 'Tabblad op positie kiezen',

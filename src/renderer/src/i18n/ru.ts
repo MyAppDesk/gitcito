@@ -392,6 +392,8 @@ export const ru: Dict = {
   'sc.openVault': 'Открыть хранилище',
   'sc.openRepository': 'Открыть репозиторий',
   'sc.openSettings': 'Открыть настройки',
+  'sc.toggleLeftSidebar': 'Показать или скрыть левую боковую панель',
+  'sc.toggleRightPanel': 'Показать или скрыть правую панель',
   'sc.keyboardShortcuts': 'Горячие клавиши',
   'sc.navigateCommits': 'Переход по коммитам',
   'sc.selectTab': 'Выбрать вкладку по номеру',

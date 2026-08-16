@@ -11,7 +11,8 @@ import { createRepoChatStore } from '../src/renderer/src/lib/repoChatStore'
 import {
   canSubmitRepoChat,
   repoChatSourceView,
-  rightPanelDetailsState
+  rightPanelDetailsState,
+  rightPanelToggleAction
 } from '../src/renderer/src/lib/repoChatUI'
 import { useUIStore } from '../src/renderer/src/stores/ui'
 import { defaultProfile, type RepoChatReply } from '../src/shared/types'
@@ -165,6 +166,13 @@ describe('repository chat session store', () => {
 })
 
 describe('repository chat panel behavior', () => {
+  it('toggles the right column while preserving required conflict details', () => {
+    expect(rightPanelToggleAction(false, false, false)).toBe('open-chat')
+    expect(rightPanelToggleAction(false, false, true)).toBe('close-all')
+    expect(rightPanelToggleAction(true, false, false)).toBe('close-all')
+    expect(rightPanelToggleAction(true, true, true)).toBe('show-required-details')
+  })
+
   it('offers WIP Details before the graph row has been explicitly selected', () => {
     const clean = { staged: [], unstaged: [], conflicted: [] }
     const dirty = { staged: [], unstaged: [{ path: 'src/app.ts', status: 'M' as const }], conflicted: [] }

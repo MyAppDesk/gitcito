@@ -44,6 +44,18 @@ export const SHORTCUTS: ShortcutDef[] = [
     labelKey: 'sc.openSettings',
     categoryKey: 'sc.cat.navigation',
     defaultCombo: 'mod+,'
+  },
+  {
+    id: 'toggle-left-sidebar',
+    labelKey: 'sc.toggleLeftSidebar',
+    categoryKey: 'sc.cat.navigation',
+    defaultCombo: 'mod+shift+e'
+  },
+  {
+    id: 'toggle-right-panel',
+    labelKey: 'sc.toggleRightPanel',
+    categoryKey: 'sc.cat.navigation',
+    defaultCombo: 'mod+alt+b'
   }
 ]
 
@@ -97,11 +109,17 @@ const isMac = (): boolean => typeof navigator !== 'undefined' && /mac/i.test(nav
 export function comboFromEvent(e: KeyboardEvent): string | null {
   const k = e.key
   if (k === 'Shift' || k === 'Meta' || k === 'Control' || k === 'Alt') return null
+  // AltGr is exposed as Ctrl+Alt on Windows/Linux; never turn text entry on an
+  // international layout into an application shortcut.
+  if (e.getModifierState?.('AltGraph')) return null
   const parts: string[] = []
   if (e.metaKey || e.ctrlKey) parts.push('mod')
   if (e.shiftKey) parts.push('shift')
   if (e.altKey) parts.push('alt')
-  parts.push(k.length === 1 ? k.toLowerCase() : k)
+  // macOS Option transforms letters into symbols (`Option+B` yields `∫`). For
+  // Option/Alt chords, recover the intended letter from the physical key code.
+  const codeLetter = e.altKey ? /^Key([A-Z])$/.exec(e.code)?.[1]?.toLowerCase() : undefined
+  parts.push(codeLetter ?? (k.length === 1 ? k.toLowerCase() : k))
   return parts.join('+')
 }
 

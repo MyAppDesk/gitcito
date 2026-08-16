@@ -392,6 +392,8 @@ export const ar: Dict = {
   'sc.openVault': 'فتح الخزنة',
   'sc.openRepository': 'فتح مستودع',
   'sc.openSettings': 'فتح الإعدادات',
+  'sc.toggleLeftSidebar': 'إظهار أو إخفاء الشريط الجانبي الأيسر',
+  'sc.toggleRightPanel': 'إظهار أو إخفاء اللوحة اليمنى',
   'sc.keyboardShortcuts': 'اختصارات لوحة المفاتيح',
   'sc.navigateCommits': 'التنقل بين الالتزامات',
   'sc.selectTab': 'اختيار تبويب حسب موضعه',

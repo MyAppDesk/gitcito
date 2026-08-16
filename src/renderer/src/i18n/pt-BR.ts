@@ -392,6 +392,8 @@ export const ptBR: Dict = {
   'sc.openVault': 'Abrir o cofre',
   'sc.openRepository': 'Abrir repositório',
   'sc.openSettings': 'Abrir configurações',
+  'sc.toggleLeftSidebar': 'Alternar a barra lateral esquerda',
+  'sc.toggleRightPanel': 'Alternar o painel direito',
   'sc.keyboardShortcuts': 'Atalhos de teclado',
   'sc.navigateCommits': 'Navegar pelos commits',
   'sc.selectTab': 'Selecionar aba pela posição',

@@ -392,6 +392,8 @@ export const he: Dict = {
   'sc.openVault': 'פתיחת הכספת',
   'sc.openRepository': 'פתיחת מאגר',
   'sc.openSettings': 'פתיחת ההגדרות',
+  'sc.toggleLeftSidebar': 'הצגה או הסתרה של סרגל הצד השמאלי',
+  'sc.toggleRightPanel': 'הצגה או הסתרה של הלוח הימני',
   'sc.keyboardShortcuts': 'קיצורי מקלדת',
   'sc.navigateCommits': 'ניווט בין קומיטים',
   'sc.selectTab': 'בחירת לשונית לפי מיקום',

@@ -392,6 +392,8 @@ export const uk: Dict = {
   'sc.openVault': 'Відкрити сейф',
   'sc.openRepository': 'Відкрити репозиторій',
   'sc.openSettings': 'Відкрити налаштування',
+  'sc.toggleLeftSidebar': 'Показати або сховати ліву бічну панель',
+  'sc.toggleRightPanel': 'Показати або сховати праву панель',
   'sc.keyboardShortcuts': 'Клавіатурні скорочення',
   'sc.navigateCommits': 'Навігація комітами',
   'sc.selectTab': 'Вибрати вкладку за позицією',

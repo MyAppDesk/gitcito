@@ -379,6 +379,8 @@ export const ja: Dict = {
   'sc.openVault': '保管庫を開く',
   'sc.openRepository': 'リポジトリを開く',
   'sc.openSettings': '設定を開く',
+  'sc.toggleLeftSidebar': '左サイドバーの表示を切り替え',
+  'sc.toggleRightPanel': '右パネルの表示を切り替え',
   'sc.keyboardShortcuts': 'キーボードショートカット',
   'sc.navigateCommits': 'コミット間を移動',
   'sc.selectTab': '位置でタブを選ぶ',

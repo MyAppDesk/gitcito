@@ -379,6 +379,8 @@ export const fr: Dict = {
   'sc.openVault': 'Ouvrir le coffre-fort',
   'sc.openRepository': 'Ouvrir un dépôt',
   'sc.openSettings': 'Ouvrir les paramètres',
+  'sc.toggleLeftSidebar': 'Afficher ou masquer la barre latérale gauche',
+  'sc.toggleRightPanel': 'Afficher ou masquer le panneau droit',
   'sc.keyboardShortcuts': 'Raccourcis clavier',
   'sc.navigateCommits': 'Naviguer entre les commits',
   'sc.selectTab': 'Sélectionner un onglet par sa position',

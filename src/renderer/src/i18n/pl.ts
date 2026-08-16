@@ -392,6 +392,8 @@ export const pl: Dict = {
   'sc.openVault': 'Otwórz sejf',
   'sc.openRepository': 'Otwórz repozytorium',
   'sc.openSettings': 'Otwórz ustawienia',
+  'sc.toggleLeftSidebar': 'Przełącz lewy panel boczny',
+  'sc.toggleRightPanel': 'Przełącz prawy panel',
   'sc.keyboardShortcuts': 'Skróty klawiszowe',
   'sc.navigateCommits': 'Nawigacja po commitach',
   'sc.selectTab': 'Wybór karty po pozycji',

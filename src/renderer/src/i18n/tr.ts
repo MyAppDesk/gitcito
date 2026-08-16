@@ -379,6 +379,8 @@ export const tr: Dict = {
   'sc.openVault': 'Kasayı aç',
   'sc.openRepository': 'Depo aç',
   'sc.openSettings': 'Ayarları aç',
+  'sc.toggleLeftSidebar': 'Sol kenar çubuğunu aç/kapat',
+  'sc.toggleRightPanel': 'Sağ paneli aç/kapat',
   'sc.keyboardShortcuts': 'Klavye kısayolları',
   'sc.navigateCommits': 'Commit’ler arasında gezin',
   'sc.selectTab': 'Sekmeyi sırasına göre seç',

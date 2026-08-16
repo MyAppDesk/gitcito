@@ -387,6 +387,8 @@ export const es: Dict = {
   'sc.openVault': 'Abrir bóveda',
   'sc.openRepository': 'Abrir repositorio',
   'sc.openSettings': 'Abrir ajustes',
+  'sc.toggleLeftSidebar': 'Alternar barra lateral izquierda',
+  'sc.toggleRightPanel': 'Alternar panel derecho',
   'sc.keyboardShortcuts': 'Atajos de teclado',
   'sc.navigateCommits': 'Navegar commits',
   'sc.selectTab': 'Seleccionar pestaña por posición',

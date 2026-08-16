@@ -79,6 +79,9 @@ export const ja = {
   'feature.range-diff.title': '前回から何が変わったか',
   'feature.range-diff.body':
     'レビューしたブランチをフォースプッシュされた。どのコミットが書き換えられ、落とされ、追加されたのかが見えます — 古い位置は reflog からただで手に入ります。',
+  'feature.repo-chat.title': 'リポジトリチャット',
+  'feature.repo-chat.body':
+    'このリポジトリに質問すると、読んだ行を引用した回答が返ります。見てほしいファイルやコミットは、グラフ・ファイルツリー・ディスク上のどこからでもドラッグして固定できます。',
   'feature.absorb.title': 'アブソーブ',
   'feature.absorb.body':
     'レビュー指摘の修正をステージすれば、blame が各ハンクを、それを持ち込んだコミットへ <code>fixup!</code> として振り分けます。',

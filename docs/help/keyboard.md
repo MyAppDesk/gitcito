@@ -26,7 +26,15 @@ Press <kbd>?</kbd> anywhere for the cheatsheet.
 | <kbd>⌘W</kbd> / <kbd>Ctrl+W</kbd> | Close the active tab — or the window, once no tab is left |
 | <kbd>⌘1</kbd>–<kbd>⌘9</kbd> / <kbd>Ctrl+1</kbd>–<kbd>Ctrl+9</kbd> | Switch to a tab by its position |
 | <kbd>⌘⇧T</kbd> | Reopen the last closed tab |
+| <kbd>⌃`</kbd> | Show or hide the [integrated terminal](terminal.md) — the physical Control key on every platform |
+| <kbd>⌘⇧E</kbd> / <kbd>Ctrl+Shift+E</kbd> | Show or hide the left sidebar |
+| <kbd>⌘⌥B</kbd> / <kbd>Ctrl+Alt+B</kbd> | Show or hide the right panel — Details, or [Repository chat](repo-chat.md) |
 | <kbd>?</kbd> | This cheatsheet |
+
+While the terminal has focus, <kbd>⌘T</kbd> / <kbd>Ctrl+T</kbd> opens another
+terminal and <kbd>⌘W</kbd> / <kbd>Ctrl+W</kbd> closes the current one, hiding
+the panel when it was the last. Everywhere else those two keys still belong to
+[workspace tabs](workspaces.md).
 
 ## Moving without the mouse
 
@@ -41,14 +49,19 @@ Press <kbd>?</kbd> anywhere for the cheatsheet.
 ## Rebinding
 
 **Settings → Shortcuts**. The core navigation shortcuts (palette, code search,
-vault, open repository, settings) are rebindable, with conflict detection and a per-shortcut reset.
+vault, open repository, settings, and the two panel toggles) are rebindable,
+with conflict detection and a per-shortcut reset.
 
 The fixed shortcuts above are not rebindable, and they are also refused as a
 _target_: the app answers <kbd>⌘T</kbd>, <kbd>⌘W</kbd>, <kbd>⌘1</kbd>–<kbd>⌘9</kbd>,
-<kbd>⌘⇧T</kbd>, <kbd>⌘S</kbd>, <kbd>⌘Z</kbd>, <kbd>⌘⇧Z</kbd> and <kbd>⌘F</kbd>
-before it consults your bindings, so a shortcut assigned to one of them would
-look set and never fire. Pick one of those and the editor says so instead of
-accepting it.
+<kbd>⌘⇧T</kbd>, <kbd>⌘S</kbd>, <kbd>⌘Z</kbd>, <kbd>⌘⇧Z</kbd>, <kbd>⌘F</kbd> and
+<kbd>⌃`</kbd> before it consults your bindings, so a shortcut assigned to one of
+them would look set and never fire. Pick one of those and the editor says so
+instead of accepting it.
+
+On macOS, <kbd>⌥</kbd> chords are matched by physical key rather than by the
+character they produce, because <kbd>⌥B</kbd> types `∫`. On Windows and Linux,
+AltGr never triggers a shortcut, so international layouts keep typing.
 
 ![Rebindable shortcuts in settings](../screenshots/settings-shortcuts.webp)
 

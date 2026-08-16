@@ -49,12 +49,14 @@ import {
   GitGraph,
   BarChart3,
   GitPullRequestArrow,
-  Lock
+  Lock,
+  MessageSquare
 } from 'lucide-react'
 import type { MenuItem } from '../stores/ui'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
+import { repoChatAvailable } from '../lib/repoChatUI'
 import { useT, interp } from '../i18n'
 
 /** Short human-readable "time since" label, e.g. "now", "3m ago", "2h ago". */
@@ -75,6 +77,11 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
   const terminalOpen = useUIStore((s) => !!s.terminalOpenByRepo[repo.path])
   const sidebarCollapsed = useUIStore((s) => s.sidebarCollapsed)
   const busyOp = useUIStore((s) => s.busyOp)
+  const chatAvailable = useSettingsStore((s) => repoChatAvailable(s.activeProfile().ai))
+  const chatPanelOpen = useUIStore((s) => s.chatPanelOpen)
+  const rightPanelTab = useUIStore((s) => s.rightPanelTab)
+  const openChatPanel = useUIStore((s) => s.openChatPanel)
+  const closeChatPanel = useUIStore((s) => s.closeChatPanel)
   // Any mutating git op queued/running gates the action buttons — the user
   // can't fire a second action until the first has fully settled.
   const inflight = useUIStore((s) => s.inflight > 0)
@@ -535,6 +542,19 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
         >
           <TerminalSquare size={16} />
         </button>
+        {chatAvailable && (
+          <button
+            className={`tool-btn icon-only ${chatPanelOpen && rightPanelTab === 'chat' ? 'toggled' : ''}`}
+            title={t('chat.toolbarTitle')}
+            aria-label={t('chat.toolbarTitle')}
+            onClick={() => {
+              if (chatPanelOpen && rightPanelTab === 'chat') closeChatPanel()
+              else openChatPanel()
+            }}
+          >
+            <MessageSquare size={16} />
+          </button>
+        )}
         {sidebarSide === 'right' && sidebarToggle}
       </div>
     </div>

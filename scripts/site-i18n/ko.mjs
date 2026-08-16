@@ -77,6 +77,9 @@ export const ko = {
   'feature.range-diff.title': '그동안 바뀐 것',
   'feature.range-diff.body':
     '리뷰했던 브랜치를 누가 강제 푸시했어요. 어떤 커밋이 재작성되고, 사라지고, 새로 생겼는지 확인하세요 — 예전 위치는 reflog에서 공짜로 나와요.',
+  'feature.repo-chat.title': '저장소 채팅',
+  'feature.repo-chat.body':
+    '이 저장소에 질문하면 읽은 줄을 인용한 답을 받습니다. 살펴봐야 할 파일과 커밋은 그래프, 파일 트리, 디스크 어디에서든 끌어다 고정하세요.',
   'feature.absorb.title': 'Absorb',
   'feature.absorb.body':
     '리뷰 수정을 스테이징하면, blame이 각 헝크를 그 줄을 만든 커밋으로 <code>fixup!</code> 으로 보내 줘요.',

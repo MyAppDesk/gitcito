@@ -81,6 +81,9 @@ export const nl = {
   'feature.range-diff.title': 'Wat er veranderd is sinds',
   'feature.range-diff.body':
     'Ze hebben de branch die je reviewde force-gepusht. Zie welke commits herschreven, weggelaten of toegevoegd zijn — de oude posities krijg je gratis uit de reflog.',
+  'feature.repo-chat.title': 'Repository-chat',
+  'feature.repo-chat.body':
+    'Stel deze repository een vraag en krijg een antwoord dat de gelezen regels citeert. Zet de bestanden en commits vast die het moet bekijken — sleep ze uit de graaf, de bestandsboom of van waar dan ook op schijf.',
   'feature.absorb.title': 'Absorb',
   'feature.absorb.body':
     'Stage je reviewfixes en laat blame elke hunk sturen naar de commit die hem introduceerde, als een <code>fixup!</code>.',

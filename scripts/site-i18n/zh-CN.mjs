@@ -77,6 +77,9 @@ export const zhCN = {
   'feature.range-diff.title': '自那以后改了什么',
   'feature.range-diff.body':
     '他们对你审阅过的分支做了强制推送。看看哪些提交被重写、被丢弃或被新增——旧位置从 reflog 里白拿。',
+  'feature.repo-chat.title': '仓库聊天',
+  'feature.repo-chat.body':
+    '向这个仓库提问，答案会引用它读过的代码行。把它该看的文件和提交固定住——从提交图、文件树，或磁盘上的任何位置拖进来。',
   'feature.absorb.title': '吸收',
   'feature.absorb.body':
     '把你的评审修正暂存起来，让 blame 把每个变更块送回引入它的那个提交，作为一条 <code>fixup!</code>。',

@@ -99,6 +99,9 @@ export const en = {
   'feature.range-diff.title': 'What changed since',
   'feature.range-diff.body':
     'They force-pushed the branch you reviewed. See which commits were rewritten, dropped or added — the old positions come free from the reflog.',
+  'feature.repo-chat.title': 'Repository chat',
+  'feature.repo-chat.body':
+    'Ask this repository a question and get an answer that cites the lines it read. Pin the files and commits it must look at — drag them from the graph, the file tree, or anywhere on disk.',
   'feature.absorb.title': 'Absorb',
   'feature.absorb.body':
     'Stage your review fixes and let blame route each hunk into the commit that introduced it, as a <code>fixup!</code>.',

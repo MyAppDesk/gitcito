@@ -745,6 +745,68 @@ export function AIPage({ profile, edit }: { profile: Profile; edit: (p: Partial<
         </>
       )}
 
+      <h4>{t('settings.repoChat')}</h4>
+      <label className="settings-toggle-card">
+        <input
+          type="checkbox"
+          checked={ai.repoChat !== false}
+          onChange={(e) => edit({ ai: { ...ai, repoChat: e.target.checked } })}
+        />
+        <span className="settings-toggle-control" aria-hidden="true">
+          <span className="settings-toggle-thumb" />
+        </span>
+        <span className="settings-toggle-copy">
+          <strong>{t('settings.repoChatEnable')}</strong>
+          <span className="settings-hint">{t('settings.repoChatEnableHint')}</span>
+        </span>
+      </label>
+
+      {ai.repoChat !== false && (
+        <>
+          <label style={{ marginTop: 12 }}>
+            {t('settings.repoChatModel')}
+            {visibleModels.length > 0 ? (
+              <select
+                value={ai.repoChatModel ?? ''}
+                onChange={(e) => edit({ ai: { ...ai, repoChatModel: e.target.value } })}
+              >
+                <option value="">{interp(t('settings.repoChatSameModel'), { model: ai.model })}</option>
+                {!visibleModels.includes(ai.repoChatModel ?? '') && ai.repoChatModel && (
+                  <option value={ai.repoChatModel}>{ai.repoChatModel}</option>
+                )}
+                {visibleModels.map((m) => (
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                value={ai.repoChatModel ?? ''}
+                placeholder={ai.model}
+                onChange={(e) => edit({ ai: { ...ai, repoChatModel: e.target.value } })}
+              />
+            )}
+          </label>
+          <span className="settings-hint">{t('settings.repoChatModelHint')}</span>
+
+          <label className="settings-toggle-card" style={{ marginTop: 12 }}>
+            <input
+              type="checkbox"
+              checked={ai.repoChatCommittedOnly === true}
+              onChange={(e) => edit({ ai: { ...ai, repoChatCommittedOnly: e.target.checked } })}
+            />
+            <span className="settings-toggle-control" aria-hidden="true">
+              <span className="settings-toggle-thumb" />
+            </span>
+            <span className="settings-toggle-copy">
+              <strong>{t('settings.repoChatCommitted')}</strong>
+              <span className="settings-hint">{t('settings.repoChatCommittedHint')}</span>
+            </span>
+          </label>
+        </>
+      )}
+
       <h4>{t('settings.conflictStyle')}</h4>
       <label>
         <select

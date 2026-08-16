@@ -325,7 +325,9 @@ export function FileTree({
     draggable: true,
     onDragStart: (e) => {
       e.dataTransfer.setData(DRAG_MIME, node.path)
-      e.dataTransfer.effectAllowed = 'move'
+      // `copyMove`, not `move`: the same drag also pins a file to repository
+      // chat, which is a copy — a `move`-only drag is refused there.
+      e.dataTransfer.effectAllowed = 'copyMove'
       setDragSrc(node.path)
     },
     onDragEnd: endDrag

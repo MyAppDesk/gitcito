@@ -25,6 +25,17 @@ your aliases.
 
 ![Two panels split side by side in one terminal group](../screenshots/terminal-split.webp)
 
+## Keys
+
+| Keys | Does |
+|---|---|
+| <kbd>⌃`</kbd> | Show or hide the terminal — the physical Control key, on every platform |
+| <kbd>⌘T</kbd> / <kbd>Ctrl+T</kbd> | New terminal, while the terminal has focus |
+| <kbd>⌘W</kbd> / <kbd>Ctrl+W</kbd> | Close the focused terminal; closing the last one hides the panel |
+
+The last two are scoped to the terminal on purpose: away from it, they still
+open and close [workspace tabs](workspaces.md).
+
 Anything you run here is invisible to Gitcito's own locking, so a long
 `git rebase` typed by hand and a click in the UI can still collide — the app
 refreshes from disk when the terminal changes something.

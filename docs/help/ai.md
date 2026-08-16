@@ -34,6 +34,7 @@ and you can add custom instructions.
 | **PR description** · **branch names** | Drafted from the branch's commits and diff |
 | **Themes** · **graph palettes** | Generated from a prompt |
 | **Smart staging** | Suggestions for what belongs in this commit |
+| **[Repository chat](repo-chat.md)** | Questions about this repository, answered from files and commits you can pin as context |
 
 ## Grounded, not guessing
 
@@ -46,7 +47,13 @@ Hover-to-explain reads only a numbered window around the token — in a diff, on
 the hunks visible on screen — so when a definition lives elsewhere it says so
 instead of inventing it. Answers are cached per file version.
 
-**Masked secret files are never sent.** Neither are files the secret-masking
-rules cover.
+[Repository chat](repo-chat.md) works the same way: it may cite only the
+excerpts it was handed, and the two-pass request picks those from Git's own
+tracked-file list rather than from anything the model writes.
 
-**See also:** [Repo wiki](repo-wiki.md) · [Security & secrets](security.md)
+**Masked secret files are never sent.** Neither are files the secret-masking
+rules cover — including a file you pin to chat by hand, which is refused with a
+reason rather than read.
+
+**See also:** [Repository chat](repo-chat.md) · [Repo wiki](repo-wiki.md) ·
+[Security & secrets](security.md)

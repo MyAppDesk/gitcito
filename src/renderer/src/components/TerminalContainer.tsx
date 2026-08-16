@@ -17,6 +17,7 @@ import { useTerminalsStore, type TermGroup } from '../stores/terminals'
 import { useTermTitlesStore } from '../stores/termTitles'
 import { useUIStore } from '../stores/ui'
 import { useT, interp } from '../i18n'
+import { terminalCloseTarget, terminalShortcutFromEvent } from '../lib/terminalShortcuts'
 
 const MIN_PANEL_PX = 80
 
@@ -239,13 +240,34 @@ export function TerminalContainer({ cwd }: { cwd: string }): React.JSX.Element {
   const groups = repo?.groups ?? []
   const activeGroupId = repo?.activeGroupId ?? null
 
+  const onTerminalShortcut = (event: React.KeyboardEvent): void => {
+    const target = event.target as HTMLElement | null
+    const terminalFocused = !!target?.closest('.terminal-host')
+    const action = terminalShortcutFromEvent(event.nativeEvent, terminalFocused)
+    if (!action) return
+    event.preventDefault()
+    event.stopPropagation()
+
+    if (action === 'toggle') {
+      setTerminalOpen(cwd, false)
+    } else if (action === 'new') {
+      addGroup(cwd, cwd)
+    } else {
+      const current = useTerminalsStore.getState().byRepo[cwd]
+      const close = terminalCloseTarget(current?.groups ?? [], current?.activeGroupId ?? null)
+      if (!close) return
+      removePanel(cwd, close.groupId, close.panelId)
+      if (close.hidePanel) setTerminalOpen(cwd, false)
+    }
+  }
+
   // Closing the last terminal closes the whole bottom pane.
   useEffect(() => {
     if (repo && groups.length === 0) setTerminalOpen(cwd, false)
   }, [repo, groups.length, cwd, setTerminalOpen])
 
   return (
-    <div className="terminal-container">
+    <div className="terminal-container" onKeyDownCapture={onTerminalShortcut}>
       <div className="terminal-main">
         {groups.map((group) => (
           <TerminalGroupView

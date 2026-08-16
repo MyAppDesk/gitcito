@@ -387,7 +387,10 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
     return p
   },
 
-  select: (path, selected) => get().patch(path, { selected }),
+  select: (path, selected) => {
+    get().patch(path, { selected })
+    if (selected) useUIStore.getState().showDetailsPanel()
+  },
 
   loadMore: (path) => {
     const repo = get().repos[path]

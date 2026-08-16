@@ -84,6 +84,9 @@ export const fr = {
   'feature.range-diff.title': 'Ce qui a changé depuis',
   'feature.range-diff.body':
     'Ils ont poussé en force la branche que vous aviez relue. Voyez quels commits ont été réécrits, abandonnés ou ajoutés — les anciennes positions viennent gratuitement du reflog.',
+  'feature.repo-chat.title': 'Discussion du dépôt',
+  'feature.repo-chat.body':
+    'Posez une question à ce dépôt et obtenez une réponse qui cite les lignes lues. Épinglez les fichiers et les commits à consulter — glissez-les depuis le graphe, l’arborescence ou n’importe où sur le disque.',
   'feature.absorb.title': 'Absorption',
   'feature.absorb.body':
     'Indexez vos corrections de revue et laissez blame diriger chaque section vers le commit qui l’a introduite, sous forme de <code>fixup!</code>.',

@@ -16,6 +16,7 @@ import { gitApi } from '../infrastructure/api'
 import { repoIsGitHub } from '../lib/hosting'
 import { branchDropActions, encodeDropRef, BRANCH_DND_TYPE, type DropRef } from '../lib/branchDrop'
 import { openBranchDropMenu } from '../lib/branchDropMenu'
+import { CHAT_COMMIT_MIME } from '../lib/repoChatContext'
 import { refIntegrationItems } from '../lib/refMenuItems'
 
 const LANE_W = 24
@@ -1612,6 +1613,14 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
               key={c.hash}
               className={`graph-row ${selected ? 'selected' : ''} ${multi.has(c.hash) ? 'multi-selected' : ''} ${newSet.has(c.hash) ? 'row-new' : ''} ${dimmed ? 'dimmed' : ''} ${matches ? 'matched' : ''} ${ghosted ? 'ghosted' : ''}`}
               style={{ top: row * ROW_H, height: ROW_H, paddingLeft: branchCol + graphCol }}
+              // Real commits can be dragged onto repository chat as context.
+              // WIP and stash rows have no commit hash to pin.
+              draggable={!isWip && !stash}
+              onDragStart={(e) => {
+                if (isWip || stash) return
+                e.dataTransfer.setData(CHAT_COMMIT_MIME, c.hash)
+                e.dataTransfer.effectAllowed = 'copy'
+              }}
               onMouseEnter={() => setHoverRow(c.hash)}
               onMouseLeave={() => setHoverRow((h) => (h === c.hash ? null : h))}
               onClick={(e) => rowClick(e, row, c)}

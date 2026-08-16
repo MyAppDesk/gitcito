@@ -237,6 +237,12 @@ const FEATURES = [
     body: 'They force-pushed the branch you reviewed. See which commits were rewritten, dropped or added — the old positions come free from the reflog.'
   },
   {
+    icon: '💬',
+    title: 'Repository chat',
+    id: 'repo-chat',
+    body: 'Ask this repository a question and get an answer that cites the lines it read. Pin the files and commits it must look at.'
+  },
+  {
     icon: '🧲',
     title: 'Absorb',
     id: 'absorb',

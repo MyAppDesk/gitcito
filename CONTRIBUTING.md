@@ -187,6 +187,26 @@ npm run playground:rebuild         # force-regenerate fixtures
 - `npm run typecheck`, `npm run lint:i18n`, `npm run lint:docs` and `npm test`
   must pass
 
+### Show the thing
+
+Reviewers read diffs; they rarely build the branch. So a PR that changes what a
+user sees has to show it:
+
+| Your PR adds | Put in the description |
+|---|---|
+| A panel, a modal, a settings section, a new badge or banner | A **screenshot** |
+| A drag, a drop target, an animation, a keyboard flow | A **short screen recording** — a still cannot show a gesture |
+| Nothing visible | Say so: `n/a` |
+
+This is a review aid, not a substitute for the generated shots: the handbook's
+images still come from `npm run screenshots`, and a new surface still needs its
+entry in `examples/screenshots/shots.config.mjs`. Paste the quick capture in the
+PR, add the reproducible one to the manifest.
+
+The docs guard also asks where each **right panel tab** is documented, alongside
+modals, page tabs and palette commands — a tab in the right column is as
+findable as a modal, and just as easy to ship undocumented.
+
 ## Releasing
 
 Maintainers only. Requires a clean working tree.

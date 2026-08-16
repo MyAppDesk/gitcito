@@ -78,6 +78,9 @@ export const tr = {
   'feature.range-diff.title': 'O günden beri ne değişti',
   'feature.range-diff.body':
     'Gözden geçirdiğiniz dala force-push yaptılar. Hangi commit’lerin yeniden yazıldığını, düşürüldüğünü ya da eklendiğini görün — eski konumlar reflog sayesinde bedavaya gelir.',
+  'feature.repo-chat.title': 'Depo sohbeti',
+  'feature.repo-chat.body':
+    'Bu depoya soru sorun; yanıt, okuduğu satırları kaynak gösterir. Bakması gereken dosya ve commit’leri sabitleyin — grafikten, dosya ağacından ya da diskteki herhangi bir yerden sürükleyin.',
   'feature.absorb.title': 'Absorb',
   'feature.absorb.body':
     'Gözden geçirme düzeltmelerinizi hazırlayın; blame her hunk’ı onu getiren commit’e bir <code>fixup!</code> olarak yönlendirsin.',

@@ -78,6 +78,9 @@ export const es = {
   'feature.range-diff.title': 'Qué ha cambiado desde',
   'feature.range-diff.body':
     'Han hecho force-push a la rama que revisaste. Mira qué commits se reescribieron, se descartaron o se añadieron — las posiciones antiguas salen gratis del reflog.',
+  'feature.repo-chat.title': 'Chat del repositorio',
+  'feature.repo-chat.body':
+    'Pregunta a este repositorio y recibe una respuesta que cita las líneas que leyó. Fija los archivos y commits que debe mirar: arrástralos desde el grafo, el árbol de archivos o cualquier lugar del disco.',
   'feature.absorb.title': 'Absorber',
   'feature.absorb.body':
     'Prepara tus arreglos de revisión y deja que blame lleve cada hunk al commit que lo introdujo, como un <code>fixup!</code>.',

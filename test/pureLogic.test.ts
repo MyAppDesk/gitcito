@@ -8,6 +8,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 import { commitHookFailureHint, lintCommit, subjectCounterLevel, parseCcPrefix, applyCcType, parseGitmojiPrefix, applyGitmoji, parseTicketPrefix, applyTicket, ticketFromBranch } from '../src/renderer/src/lib/commitLint'
 import { isSecretFile, maskSecretLine } from '../src/renderer/src/lib/secrets'
 import { comboFromEvent, formatCombo, effectiveBindings, isReservedCombo, matchShortcut, tabActionFromEvent, tabIndexFromEvent } from '../src/renderer/src/lib/shortcuts'
+import { terminalCloseTarget, terminalShortcutFromEvent } from '../src/renderer/src/lib/terminalShortcuts'
 import { closeTabPrompt, repoCloseStatus, tabCloseStatus } from '../src/renderer/src/lib/tabClose'
 import type { TabState } from '../src/shared/types'
 import { autolink, remoteWebUrl, filePermalink } from '../src/renderer/src/lib/autolink'
@@ -151,8 +152,19 @@ import {
 import { defaultSettings, type AppSettings, type Profile } from '../src/shared/types'
 
 // Minimal KeyboardEvent stand-in for the pure shortcut helpers.
-const ev = (key: string, mods: { meta?: boolean; ctrl?: boolean; shift?: boolean; alt?: boolean } = {}): KeyboardEvent =>
-  ({ key, metaKey: !!mods.meta, ctrlKey: !!mods.ctrl, shiftKey: !!mods.shift, altKey: !!mods.alt }) as KeyboardEvent
+const ev = (
+  key: string,
+  mods: { meta?: boolean; ctrl?: boolean; shift?: boolean; alt?: boolean; altGraph?: boolean; code?: string } = {}
+): KeyboardEvent =>
+  ({
+    key,
+    code: mods.code ?? '',
+    metaKey: !!mods.meta,
+    ctrlKey: !!mods.ctrl,
+    shiftKey: !!mods.shift,
+    altKey: !!mods.alt,
+    getModifierState: (modifier: string) => modifier === 'AltGraph' && !!mods.altGraph
+  }) as KeyboardEvent
 
 // Pure-function unit tests — no git, no DOM.
 
@@ -304,12 +316,15 @@ describe('keyboard shortcuts', () => {
   it('normalizes events to combos (mod for meta/ctrl), ignoring modifier-only', () => {
     expect(comboFromEvent(ev('k', { meta: true }))).toBe('mod+k')
     expect(comboFromEvent(ev('F', { ctrl: true, shift: true }))).toBe('mod+shift+f')
+    expect(comboFromEvent(ev('∫', { meta: true, alt: true, code: 'KeyB' }))).toBe('mod+alt+b')
+    expect(comboFromEvent(ev('b', { ctrl: true, alt: true, altGraph: true, code: 'KeyB' }))).toBeNull()
     expect(comboFromEvent(ev('Shift'))).toBeNull()
   })
 
   it('formats combos for display (platform-aware)', () => {
     expect(formatCombo('mod+shift+f')).toMatch(/(⌘⇧F|Ctrl\+Shift\+F)/)
     expect(formatCombo('mod+k')).toMatch(/(⌘K|Ctrl\+K)/)
+    expect(formatCombo('ctrl+`')).toMatch(/(⌃`|Ctrl\+`)/)
   })
 
   it('effective bindings apply overrides over defaults', () => {
@@ -318,6 +333,8 @@ describe('keyboard shortcuts', () => {
     expect(b['code-search']).toBe('mod+shift+f') // untouched default
     expect(b['open-repository']).toBe('mod+o')
     expect(b['settings']).toBe('mod+,')
+    expect(b['toggle-left-sidebar']).toBe('mod+shift+e')
+    expect(b['toggle-right-panel']).toBe('mod+alt+b')
   })
 
   it('matchShortcut resolves the bound id', () => {
@@ -325,6 +342,9 @@ describe('keyboard shortcuts', () => {
     expect(matchShortcut(ev('k', { meta: true }), b)).toBe('command-palette')
     expect(matchShortcut(ev('v', { ctrl: true, shift: true }), b)).toBe('vault')
     expect(matchShortcut(ev(',', { meta: true }), b)).toBe('settings')
+    expect(matchShortcut(ev('E', { meta: true, shift: true }), b)).toBe('toggle-left-sidebar')
+    expect(matchShortcut(ev('b', { ctrl: true, alt: true }), b)).toBe('toggle-right-panel')
+    expect(matchShortcut(ev('∫', { meta: true, alt: true, code: 'KeyB' }), b)).toBe('toggle-right-panel')
     expect(matchShortcut(ev('x', { meta: true }), b)).toBeNull()
   })
 
@@ -344,9 +364,41 @@ describe('keyboard shortcuts', () => {
     expect(tabActionFromEvent(ev('t'))).toBeNull()
   })
 
+  it('routes terminal shortcuts only in their intended focus context', () => {
+    expect(terminalShortcutFromEvent(ev('`', { ctrl: true, code: 'Backquote' }), false)).toBe('toggle')
+    expect(terminalShortcutFromEvent(ev('Dead', { ctrl: true, code: 'Backquote' }), true)).toBe('toggle')
+    expect(terminalShortcutFromEvent(ev('`', { meta: true, code: 'Backquote' }), true)).toBeNull()
+    expect(terminalShortcutFromEvent(ev('t', { meta: true }), true)).toBe('new')
+    expect(terminalShortcutFromEvent(ev('W', { ctrl: true }), true)).toBe('close')
+    expect(terminalShortcutFromEvent(ev('t', { meta: true }), false)).toBeNull()
+    expect(terminalShortcutFromEvent(ev('w', { ctrl: true, shift: true }), true)).toBeNull()
+  })
+
+  it('closes the focused terminal and identifies the last remaining panel', () => {
+    const one = [{ id: 'group-1', activePanelId: 'panel-1', panels: [{ id: 'panel-1' }] }]
+    expect(terminalCloseTarget(one, 'group-1')).toEqual({
+      groupId: 'group-1',
+      panelId: 'panel-1',
+      hidePanel: true
+    })
+
+    const split = [{
+      id: 'group-1',
+      activePanelId: 'panel-2',
+      panels: [{ id: 'panel-1' }, { id: 'panel-2' }]
+    }]
+    expect(terminalCloseTarget(split, 'group-1')).toEqual({
+      groupId: 'group-1',
+      panelId: 'panel-2',
+      hidePanel: false
+    })
+    expect(terminalCloseTarget(split, 'missing')).toBeNull()
+  })
+
   it('reserves the combos handled before the rebindable registry', () => {
     expect(isReservedCombo('mod+t')).toBe(true)
     expect(isReservedCombo('mod+w')).toBe(true)
+    expect(isReservedCombo('mod+`')).toBe(true)
     expect(isReservedCombo('mod+3')).toBe(true)
     expect(isReservedCombo('mod+shift+z')).toBe(true)
     expect(isReservedCombo('mod+shift+w')).toBe(false)

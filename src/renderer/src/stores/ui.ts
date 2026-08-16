@@ -227,6 +227,9 @@ interface UIState {
   /** Left sidebar (branches/files) collapsed. Global workspace preference —
    *  hides the sidebar column so the graph gets the full width. */
   sidebarCollapsed: boolean
+  /** Chat shares the contextual right panel with commit/stash details. */
+  chatPanelOpen: boolean
+  rightPanelTab: 'details' | 'chat'
   graphFilter: string
   ciFilter: CiFilter
   authorFilter: string | null
@@ -270,6 +273,9 @@ interface UIState {
   setTerminalOpen(repoPath: string, open: boolean): void
   toggleSidebar(): void
   setSidebarCollapsed(collapsed: boolean): void
+  openChatPanel(): void
+  closeChatPanel(): void
+  showDetailsPanel(): void
   setGraphFilter(filter: string): void
   setCiFilter(filter: CiFilter): void
   setAuthorFilter(author: string | null): void
@@ -308,6 +314,8 @@ export const useUIStore = create<UIState>((set, get) => ({
       return false
     }
   })(),
+  chatPanelOpen: false,
+  rightPanelTab: 'details',
   graphFilter: '',
   ciFilter: 'all',
   authorFilter: null,
@@ -353,6 +361,9 @@ export const useUIStore = create<UIState>((set, get) => ({
       /* ignore quota errors */
     }
   },
+  openChatPanel: () => set({ chatPanelOpen: true, rightPanelTab: 'chat' }),
+  closeChatPanel: () => set({ chatPanelOpen: false, rightPanelTab: 'details' }),
+  showDetailsPanel: () => set({ rightPanelTab: 'details' }),
   setGraphFilter: (graphFilter) => set({ graphFilter }),
   setCiFilter: (ciFilter) => set({ ciFilter }),
   setAuthorFilter: (authorFilter) => set({ authorFilter }),

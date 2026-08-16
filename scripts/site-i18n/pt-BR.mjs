@@ -78,6 +78,9 @@ export const ptBR = {
   'feature.range-diff.title': 'O que mudou desde',
   'feature.range-diff.body':
     'Deram force-push na branch que você revisou. Veja quais commits foram reescritos, descartados ou adicionados — as posições antigas saem de graça do reflog.',
+  'feature.repo-chat.title': 'Chat do repositório',
+  'feature.repo-chat.body':
+    'Faça uma pergunta a este repositório e receba uma resposta que cita as linhas lidas. Fixe os arquivos e commits que ela deve olhar — arraste do grafo, da árvore de arquivos ou de qualquer lugar do disco.',
   'feature.absorb.title': 'Absorb',
   'feature.absorb.body':
     'Prepare suas correções de revisão e deixe o blame levar cada hunk para o commit que o introduziu, como um <code>fixup!</code>.',

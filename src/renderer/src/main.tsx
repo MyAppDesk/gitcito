@@ -6,6 +6,8 @@ import '@fontsource/nunito/600.css'
 import '@fontsource/nunito/700.css'
 import '@fontsource/nunito/800.css'
 import './styles.css'
+// Keyframes for the expressive title-bar avatar; honours prefers-reduced-motion.
+import 'blobatar/motion.css'
 import '@xterm/xterm/css/xterm.css'
 
 // Screenshot automation: only when launched with `--shot` (forwarded by the

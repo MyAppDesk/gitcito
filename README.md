@@ -116,6 +116,9 @@ you already pay for instead of an API key.
 [Themes](docs/help/themes.md) in light and dark, plus **AI-generated** ones ·
 [rebindable shortcuts](docs/help/keyboard.md) · [profiles](docs/help/profiles.md)
 for separate identities ·
+[author avatars](docs/help/avatars.md) — Gravatar where it exists, a generated
+blob drawn offline where it does not, and a title-bar face that pulls a face at
+conflicts and unpushed piles ·
 [integrated terminal](docs/help/terminal.md) with splits ·
 [**Open in your editor**](docs/help/editor.md) — repo, file, or the exact line
 you right-clicked ·

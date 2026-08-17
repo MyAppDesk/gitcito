@@ -2918,13 +2918,23 @@ textarea:focus {
   background-position: center;
   vertical-align: middle;
 }
-.ava img {
+.ava img,
+/* An expressive blob is inline SVG (motion needs reachable CSS), sized by the
+   span rather than by width/height attributes. */
+.ava > svg {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
   border-radius: inherit;
+}
+
+/* The blob sits inside its frame with a margin, which reads as "too small" next
+   to a Gravatar photo that fills the disc. Scaling past the clip closes the gap:
+   the backdrop is a flat circle, so the part that overflows is invisible. */
+.profile-switcher .ava > svg {
+  transform: scale(1.16);
 }
 
 .avatar {

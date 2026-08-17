@@ -49,4 +49,4 @@ to your host.
 
 ![Walking through commit details](../screenshots/clip-commit-details.webp)
 
-**See also:** [Blame & file history](blame.md) · [Search](search.md) · [Time machine](time-machine.md)
+**See also:** [Blame & file history](blame.md) · [Search](search.md) · [Time machine](time-machine.md) · [Author avatars](avatars.md)

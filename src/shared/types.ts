@@ -2281,6 +2281,9 @@ export interface AppSettings {
   autoLoadOnScroll: boolean
   relativeDates: boolean
   commitAvatars: boolean
+  /** Idle motion on the title-bar profile avatar. The pose it holds still
+   *  follows the working tree either way; this only stops it moving. */
+  avatarMotion: boolean
   fileListView: 'path' | 'tree'
   /** Group local branches into collapsible folders by their `/`-separated
    *  prefix (feature/*, release/*, …). A prefix with a single branch stays flat. */
@@ -2602,6 +2605,7 @@ export function defaultSettings(): AppSettings {
     autoLoadOnScroll: true,
     relativeDates: true,
     commitAvatars: true,
+    avatarMotion: true,
     fileListView: 'path',
     groupBranches: true,
     graphColumns: defaultGraphColumns(),

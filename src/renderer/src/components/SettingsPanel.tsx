@@ -2259,6 +2259,21 @@ function GeneralPage(): React.JSX.Element {
         <label className="settings-toggle-card">
           <input
             type="checkbox"
+            checked={settings.avatarMotion}
+            onChange={(e) => update((s) => ({ ...s, avatarMotion: e.target.checked }))}
+          />
+          <span className="settings-toggle-control" aria-hidden="true">
+            <span className="settings-toggle-thumb" />
+          </span>
+          <span className="settings-toggle-copy">
+            <strong>{t('settings.avatarMotion')}</strong>
+            <span className="settings-hint">{t('settings.avatarMotionHint')}</span>
+          </span>
+        </label>
+
+        <label className="settings-toggle-card">
+          <input
+            type="checkbox"
             checked={settings.groupBranches}
             onChange={(e) => update((s) => ({ ...s, groupBranches: e.target.checked }))}
           />

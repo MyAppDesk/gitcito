@@ -2,8 +2,10 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { ChevronDown, Plus } from 'lucide-react'
 import { useSettingsStore } from '../stores/settings'
+import { useRepoStore } from '../stores/repo'
 import { useUIStore } from '../stores/ui'
 import { useT, interp } from '../i18n'
+import { repoMood } from '../lib/repoMood'
 import { Avatar } from './Avatar'
 
 /**
@@ -31,6 +33,15 @@ export function ProfileSwitcher(): React.JSX.Element {
   // so it just follows whichever profile is globally active. With no active repo
   // (e.g. a page tab) there's nothing to bind, so Auto doesn't apply.
   const repo = activeRepo()
+
+  // The pose the title-bar avatar wears. This avatar is the only one that means
+  // "you, in this repository, right now", so it is the only one that reacts —
+  // see lib/repoMood.ts. Subscribed to the status slice alone so an unrelated
+  // refresh does not re-render the title bar.
+  const status = useRepoStore((s) => (repo ? s.repos[repo.path]?.status ?? null : null))
+  const hint = repoMood(status)
+  const moodText = hint.key ? interp(t(hint.key), hint.vars ?? {}) : null
+
   const bound = repo ? settings.repoProfiles[repo.path] : undefined
   const isAuto = !!repo && !bound
   // Which profile row shows the check: the bound one when a repo is bound,
@@ -88,10 +99,21 @@ export function ProfileSwitcher(): React.JSX.Element {
       <button
         ref={btnRef}
         className={`profile-switcher ${open ? 'open' : ''}`}
-        title={active.name}
+        // A face that changed for no stated reason is a puzzle, not a signal.
+        title={
+          moodText ? interp(t('profile.moodTitle'), { name: active.name, mood: moodText }) : active.name
+        }
         onClick={toggle}
       >
-        <Avatar email={active.gitEmail} name={active.name} size={20} />
+        <Avatar
+          email={active.gitEmail}
+          name={active.name}
+          // Bigger than the 20px it used to be: an expression needs room. A
+          // Gravatar photo reads fine at 20, a face does not.
+          size={26}
+          mood={hint.mood}
+          animate={settings.avatarMotion ?? true}
+        />
         <span className="profile-switcher-name">{active.name}</span>
         {isAuto && <span className="profile-switcher-auto">{t('profile.auto')}</span>}
         <ChevronDown size={13} className="profile-switcher-chevron" />

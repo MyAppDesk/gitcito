@@ -234,6 +234,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     settings.autoLoadOnScroll = settings.autoLoadOnScroll ?? sd.autoLoadOnScroll
     settings.relativeDates = settings.relativeDates ?? sd.relativeDates
     settings.commitAvatars = settings.commitAvatars ?? sd.commitAvatars
+    settings.avatarMotion = settings.avatarMotion ?? sd.avatarMotion
     settings.fileListView = settings.fileListView ?? sd.fileListView
     settings.groupBranches = settings.groupBranches ?? sd.groupBranches
     settings.graphColumns = { ...sd.graphColumns, ...(settings.graphColumns ?? {}) }

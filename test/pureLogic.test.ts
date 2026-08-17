@@ -31,6 +31,15 @@ import { migrateAIConfig, modelFor, newAccount, resolveAI } from '../src/shared/
 import { authHeaders, baseUrl, missingCredential, transportOf } from '../src/main/aiTransport'
 import { flattenMessages } from '../src/main/aiCli'
 import { buildModelLists, normalizeModelIds } from '../src/shared/aiModelNames'
+import { generatedAvatar } from '../src/renderer/src/lib/avatar'
+import { blobatarUri } from 'blobatar/uri'
+import {
+  repoMood,
+  BEHIND_SAD,
+  UNCOMMITTED_SAD,
+  UNPUSHED_SAD
+} from '../src/renderer/src/lib/repoMood'
+import type { RepoStatus } from '../src/shared/types'
 import type { AIConfig } from '../src/shared/types'
 import {
   parseKeygenLine,
@@ -3551,5 +3560,103 @@ describe('AI model names — what a picker should show', () => {
     // The filter is a heuristic; a provider whose every name trips it should
     // still get a usable list.
     expect(normalizeModelIds(['my-embed-model'])).toEqual(['my-embed-model'])
+  })
+})
+
+describe('generated avatar fallback', () => {
+  it('gives the same author the same avatar every time', () => {
+    // The graph shows one author across hundreds of rows; a seed that drifted
+    // would make the same person look like several.
+    expect(generatedAvatar('ada@example.com')).toBe(generatedAvatar('ada@example.com'))
+  })
+
+  it('gives different authors different avatars', () => {
+    expect(generatedAvatar('ada@example.com')).not.toBe(generatedAvatar('grace@example.com'))
+  })
+
+  it('returns an SVG data-URI usable as a CSS background', () => {
+    const uri = generatedAvatar('ada@example.com')
+    expect(uri.startsWith('data:image/svg+xml,')).toBe(true)
+    // Unescaped quotes would terminate the url("...") wrapper in Avatar.tsx.
+    expect(uri).not.toContain('"')
+  })
+
+  it('fills the disc rather than leaving the row visible around the figure', () => {
+    // `.ava` clips to a circle but paints no colour of its own, so the
+    // blobatar has to carry its own backdrop — blobatar's default is
+    // transparent, which would let the row show through around the figure.
+    const bare = blobatarUri('ada@example.com')
+    expect(generatedAvatar('ada@example.com')).not.toBe(bare)
+    expect(generatedAvatar('ada@example.com').length).toBeGreaterThan(bare.length)
+  })
+
+  it('never returns an empty string for an author with no email or name', () => {
+    expect(generatedAvatar('').length).toBeGreaterThan(0)
+  })
+})
+
+describe('repo mood (the face the title-bar avatar wears)', () => {
+  const entries = (n: number): RepoStatus['staged'] =>
+    Array.from({ length: n }, (_, i) => ({ path: `f${i}.ts`, status: 'modified' as const }))
+
+  const status = (over: Partial<RepoStatus> = {}): RepoStatus => ({
+    current: 'main',
+    tracking: 'origin/main',
+    ahead: 0,
+    behind: 0,
+    staged: [],
+    unstaged: [],
+    conflicted: [],
+    ...over
+  })
+
+  it('is neutral before the first status arrives', () => {
+    // Startup must not flash a verdict about a repo nobody has read yet.
+    expect(repoMood(null)).toEqual({ mood: 'idle' })
+  })
+
+  it('is happy only when there is nothing local and an upstream to be in sync with', () => {
+    expect(repoMood(status())).toEqual({ mood: 'happy', key: 'mood.clean' })
+  })
+
+  it('stays neutral on a branch that was never pushed', () => {
+    // No upstream means "in sync" is not a claim we can make — not a clean slate.
+    expect(repoMood(status({ tracking: null })).mood).toBe('idle')
+  })
+
+  it('is mad about conflicts, and says how many', () => {
+    const m = repoMood(status({ conflicted: entries(3) }))
+    expect(m).toEqual({ mood: 'mad', key: 'mood.conflicts', vars: { n: 3 } })
+  })
+
+  it('lets conflicts win over everything else', () => {
+    // One face, and the conflicts are the problem worth wearing.
+    const m = repoMood(status({ conflicted: entries(1), ahead: 500, unstaged: entries(99) }))
+    expect(m.mood).toBe('mad')
+  })
+
+  it('shrugs at a normal pile of work in progress', () => {
+    // A face that turns sad at one unpushed commit is sad permanently, and a
+    // permanent signal is not one.
+    expect(repoMood(status({ ahead: UNPUSHED_SAD - 1 })).mood).toBe('idle')
+    expect(repoMood(status({ behind: BEHIND_SAD - 1 })).mood).toBe('idle')
+    expect(repoMood(status({ unstaged: entries(UNCOMMITTED_SAD - 1) })).mood).toBe('idle')
+  })
+
+  it('turns sad once a pile crosses its threshold', () => {
+    expect(repoMood(status({ ahead: UNPUSHED_SAD }))).toEqual({
+      mood: 'sad',
+      key: 'mood.unpushed',
+      vars: { n: UNPUSHED_SAD }
+    })
+    expect(repoMood(status({ behind: BEHIND_SAD })).key).toBe('mood.behind')
+    expect(repoMood(status({ unstaged: entries(UNCOMMITTED_SAD) })).key).toBe('mood.uncommitted')
+  })
+
+  it('counts staged and unstaged together as one pile', () => {
+    const half = Math.ceil(UNCOMMITTED_SAD / 2)
+    const m = repoMood(status({ staged: entries(half), unstaged: entries(half) }))
+    expect(m.mood).toBe('sad')
+    expect(m.vars).toEqual({ n: half * 2 })
   })
 })

@@ -112,6 +112,7 @@
     "@xterm/addon-fit": "^0.10.0",
     "@xterm/addon-web-links": "^0.11.0",
     "@xterm/xterm": "^5.5.0",
+    "blobatar": "0.1.0",
     "dompurify": "^3.4.10",
     "electron-updater": "^6.8.9",
     "framer-motion": "^11.11.9",

@@ -255,6 +255,27 @@ async function withRetry(label, fn) {
   throw lastErr
 }
 
+/**
+ * The region to shoot, for a shot that only makes sense cropped.
+ *
+ * Aimed with a selector rather than pixel coordinates: hard-coded numbers go
+ * stale the first time anything above the target moves, and they go stale
+ * silently — the shot still renders, just of the wrong thing. Returns undefined
+ * for a normal full-window shot.
+ */
+async function clipFor(page, shot) {
+  if (!shot.clipTo) return undefined
+  const box = await page.locator(shot.clipTo).first().boundingBox()
+  if (!box) throw new Error(`${shot.out}: clipTo "${shot.clipTo}" matched nothing`)
+  const pad = shot.clipPad ?? 12
+  return {
+    x: Math.max(0, box.x - pad),
+    y: Math.max(0, box.y - pad),
+    width: box.width + pad * 2,
+    height: box.height + pad * 2
+  }
+}
+
 async function capturePngTheme(shot, theme) {
   const { app, page, userDataDir } = await launch(shot, theme)
   try {
@@ -265,7 +286,7 @@ async function capturePngTheme(shot, theme) {
     // Shoot PNG (Playwright's only lossless option) then transcode. WebP q90 is
     // ~a quarter of the PNG's bytes with no visible difference on UI text at 2x
     // zoom, and these ship in the repo, in the app bundle and on the website.
-    const raw = await page.screenshot({ animations: 'disabled' })
+    const raw = await page.screenshot({ animations: 'disabled', clip: await clipFor(page, shot) })
     const tmpPng = join(userDataDir, 'shot.png')
     await writeFile(tmpPng, raw)
     await sh('ffmpeg', ['-y', '-loglevel', 'error', '-i', tmpPng, '-c:v', 'libwebp', '-q:v', '90', file])

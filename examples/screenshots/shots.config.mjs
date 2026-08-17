@@ -57,6 +57,9 @@ async function openSections(page, titles) {
  *   dialog, which Playwright cannot dismiss. Everything else runs declined.
  * @property {Record<string,string>} [env]  Extra env for the launched app. For
  *   redirecting something machine-specific (e.g. GITCITO_SSH_DIR) at a fake.
+ * @property {string} [clipTo]  CSS selector to crop the shot to. For a detail too
+ *   small to read in a 1440px window (a title-bar control, a single badge).
+ * @property {number} [clipPad]  Padding around `clipTo`, in px (default 12).
  * @property {(ctx: {repoPaths: Record<string,string>, run: Function}) => Promise<void>} [prepare]
  * @property {(page: import('playwright').Page, repoPaths: Record<string,string>) => Promise<void>} [drive]
  * @property {{name: string, durationMs: number, drive: Function}} [gif]  Optional motion clip.
@@ -259,6 +262,45 @@ export const shots = [
       await page.waitForTimeout(300)
       await page.click('.theme-tabs .theme-tab:nth-child(2)').catch(() => {})
       await page.waitForTimeout(400)
+    }
+  },
+
+  {
+    // The title-bar profile avatar wearing its cross face. Cropped, because the
+    // whole point is a 26px control: in a full 1440px window it is a speck, and
+    // a shot nobody can read is worse than no shot.
+    out: 'avatar-mood',
+    repos: ['merge-conflict'],
+    themes: ['dark'],
+    clipTo: '.profile-switcher',
+    clipPad: 14,
+    // Same dance as the conflict resolver: the scenario leaves the repo on main,
+    // so start the merge to get live conflicts, and reset first so re-runs (which
+    // leave it mid-merge) stay idempotent.
+    prepare: async ({ repoPaths, run }) => {
+      const repo = repoPaths['merge-conflict']
+      await run('git', ['-C', repo, 'merge', '--abort'], { allowFail: true })
+      await run('git', ['-C', repo, 'checkout', '-f', 'main'], { allowFail: true })
+      await run('git', ['-C', repo, 'merge', 'feature'], { allowFail: true })
+    },
+    drive: async (page) => {
+      await page.evaluate(() => {
+        window.__shot.settings.getState().update((s) => ({
+          ...s,
+          // Never photograph the machine. The default profile carries this
+          // computer's git identity, and a Gravatar hit on it would bake a real
+          // person's face and address into a committed screenshot. Off means the
+          // generated blob, offline, every time — which is the subject anyway.
+          commitAvatars: false,
+          // Stills disable animations, but a static blob is also the cheaper DOM
+          // and one less thing to differ between runs.
+          avatarMotion: false,
+          profiles: s.profiles.map((p, i) =>
+            i === 0 ? { ...p, name: 'Ada Lovelace', gitEmail: 'ada@example.com' } : p
+          )
+        }))
+      })
+      await page.waitForTimeout(300)
     }
   },
 

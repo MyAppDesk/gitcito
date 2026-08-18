@@ -9,6 +9,7 @@ import { commitHookFailureHint, lintCommit, subjectCounterLevel, parseCcPrefix, 
 import { isSecretFile, maskSecretLine } from '../src/renderer/src/lib/secrets'
 import { comboFromEvent, formatCombo, effectiveBindings, isReservedCombo, matchShortcut, tabActionFromEvent, tabIndexFromEvent } from '../src/renderer/src/lib/shortcuts'
 import { terminalCloseTarget, terminalShortcutFromEvent } from '../src/renderer/src/lib/terminalShortcuts'
+import { taskChain, sharedTaskLabels, memberFullyCovered } from '../src/renderer/src/lib/launchTasks'
 import { closeTabPrompt, repoCloseStatus, tabCloseStatus } from '../src/renderer/src/lib/tabClose'
 import type { TabState } from '../src/shared/types'
 import { autolink, remoteWebUrl, filePermalink } from '../src/renderer/src/lib/autolink'
@@ -3658,5 +3659,49 @@ describe('repo mood (the face the title-bar avatar wears)', () => {
     const m = repoMood(status({ staged: entries(half), unstaged: entries(half) }))
     expect(m.mood).toBe('sad')
     expect(m.vars).toEqual({ n: half * 2 })
+  })
+})
+
+describe('launch shared tasks (compound run-once hoisting)', () => {
+  // Mirrors the real-world shape: two store builds, both depending on the
+  // same sync + version-bump tasks via dependsOn.
+  const tasks = [
+    { label: 'sync-config', type: 'shell', command: 'sync' },
+    { label: 'bump-version', type: 'shell', command: 'bump' },
+    { label: 'build-ios', type: 'shell', command: 'build-ios', dependsOn: ['sync-config', 'bump-version'] },
+    { label: 'build-android', type: 'shell', command: 'build-android', dependsOn: ['sync-config', 'bump-version'] }
+  ]
+  const ios = { name: 'iOS', type: 'dart', request: 'attach', preLaunchTask: 'build-ios' }
+  const android = { name: 'Android', type: 'dart', request: 'attach', preLaunchTask: 'build-android' }
+
+  it('expands a dependsOn chain depth-first, deps before dependents', () => {
+    expect(taskChain(ios, tasks)).toEqual(['sync-config', 'bump-version', 'build-ios'])
+  })
+
+  it('hoists only the tasks shared by two or more members, in run order', () => {
+    expect(sharedTaskLabels([ios, android], tasks)).toEqual(['sync-config', 'bump-version'])
+  })
+
+  it('hoists nothing for a single member or disjoint chains', () => {
+    expect(sharedTaskLabels([ios], tasks)).toEqual([])
+    const other = { name: 'X', type: 'node', preLaunchTask: 'sync-config' }
+    expect(sharedTaskLabels([{ name: 'Y', type: 'node', program: 'y.js' }, other], tasks)).toEqual([])
+  })
+
+  it('keeps members that still have their own work after hoisting', () => {
+    const shared = sharedTaskLabels([ios, android], tasks)
+    expect(memberFullyCovered(ios, tasks, shared)).toBe(false)
+    expect(memberFullyCovered(android, tasks, shared)).toBe(false)
+  })
+
+  it('drops an attach-only member whose entire chain was hoisted', () => {
+    const a = { name: 'A', request: 'attach', preLaunchTask: 'sync-config' }
+    const b = { name: 'B', request: 'attach', preLaunchTask: 'sync-config' }
+    const shared = sharedTaskLabels([a, b], tasks)
+    expect(shared).toEqual(['sync-config'])
+    expect(memberFullyCovered(a, tasks, shared)).toBe(true)
+    // A launch-request member always spawns, even with an empty chain.
+    const c = { name: 'C', request: 'launch', program: 'c.js', preLaunchTask: 'sync-config' }
+    expect(memberFullyCovered(c, tasks, shared)).toBe(false)
   })
 })

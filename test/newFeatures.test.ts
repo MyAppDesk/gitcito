@@ -802,3 +802,31 @@ describe('repoPulse activity + repoDetail (mission control)', () => {
     expect(detail.files.length).toBeLessThanOrEqual(3)
   })
 })
+
+describe('discoverLaunch — compounds & serverReadyAction (launch-configs playground)', () => {
+  it('surfaces a compound as a synthetic config carrying its members and stopAll', async () => {
+    const { discoverLaunch } = await import('../src/main/launch')
+    const groups = await discoverLaunch(repoPath('launch-configs'))
+    const root = groups.find((g) => g.isRoot)
+    expect(root).toBeDefined()
+    const compound = root!.configs.find((c) => c.name === 'Run both services')
+    expect(compound).toBeDefined()
+    expect(compound!.type).toBe('compound')
+    expect(compound!.compound).toEqual(['Service A', 'Service B'])
+    expect(compound!.compoundStopAll).toBe(true)
+    // Both members exist as plain configs, so the renderer can spawn one
+    // parallel session per member.
+    expect(root!.configs.some((c) => c.name === 'Service A')).toBe(true)
+    expect(root!.configs.some((c) => c.name === 'Service B')).toBe(true)
+  })
+
+  it('preserves serverReadyAction on the config it belongs to', async () => {
+    const { discoverLaunch } = await import('../src/main/launch')
+    const groups = await discoverLaunch(repoPath('launch-configs'))
+    const root = groups.find((g) => g.isRoot)!
+    const srv = root.configs.find((c) => c.name === 'Server (opens browser when ready)')
+    expect(srv).toBeDefined()
+    expect(srv!.serverReadyAction?.pattern).toContain('Local:')
+    expect(srv!.serverReadyAction?.action).toBe('openExternally')
+  })
+})

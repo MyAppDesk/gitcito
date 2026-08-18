@@ -4,10 +4,12 @@
 # Gitcito surfaces a Run/Launch dropdown in the sidebar (next to GIT / FILES)
 # whenever a repo has a .vscode/launch.json (and the setting is on). This repo
 # seeds TWO launch.json files so you can see the divider behaviour:
-#   • root .vscode/launch.json   → group "Workspace" (5 configs: a preLaunchTask
-#                                   wired to tasks.json, a config that prompts
-#                                   for ${input:} values, and one whose
-#                                   preLaunchTask is an isBackground dev server)
+#   • root .vscode/launch.json   → group "Workspace" (a preLaunchTask wired to
+#                                   tasks.json, a config that prompts for
+#                                   ${input:} values, an isBackground dev server,
+#                                   a stopAll compound that runs two services as
+#                                   parallel sessions, and a serverReadyAction
+#                                   server that opens the browser when ready)
 #   • services/api/.vscode/...   → a deeper group, listed after a divider
 # Every config runs a tiny, dependency-free Node script so you can actually hit
 # Run and watch it stream in the integrated terminal, then pause / restart /
@@ -43,6 +45,35 @@ cat > "$R/scripts/serve.js" <<'EOF'
 // launch doesn't block waiting for it to finish (Gitcito runs it detached).
 console.log('🌐  dev server listening — left running in the background')
 setInterval(() => {}, 1000)
+EOF
+
+# Two long-running "services" — launched together by the compound below, each
+# in its own parallel session (VS Code-style), stopped together via stopAll.
+cat > "$R/scripts/svc-a.js" <<'EOF'
+let n = 0
+console.log('🛰   service A up — one member of the "Run both services" compound')
+setInterval(() => console.log(`[A] beat ${++n}`), 1500)
+EOF
+
+cat > "$R/scripts/svc-b.js" <<'EOF'
+let n = 0
+console.log('🛰   service B up — one member of the "Run both services" compound')
+setInterval(() => console.log(`[B] beat ${++n}`), 1500)
+EOF
+
+# A task both services depend on — Gitcito runs it ONCE per compound launch
+# (its own pane, before the members), exactly like VS Code's shared tasks.
+cat > "$R/scripts/prep.js" <<'EOF'
+console.log('🔧  prep — runs once for the whole compound, not once per member')
+console.log('✓  prep complete')
+EOF
+
+cat > "$R/scripts/serve-ready.js" <<'EOF'
+// A real tiny HTTP server that announces its URL — exercises serverReadyAction:
+// Gitcito watches the output and opens the printed URL in your browser.
+const http = require('http')
+const srv = http.createServer((_q, res) => res.end('Hello from the launch demo!\n'))
+srv.listen(0, () => console.log(`- Local:   http://localhost:${srv.address().port}`))
 EOF
 
 # ── Root launch.json — three configs, JSONC with comments + a preLaunchTask ──
@@ -86,6 +117,39 @@ cat > "$R/.vscode/launch.json" <<'EOF'
       "request": "launch",
       "program": "${workspaceFolder}/scripts/hello.js",
       "preLaunchTask": "serve"
+    },
+    {
+      "name": "Service A",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/scripts/svc-a.js",
+      "preLaunchTask": "prep"
+    },
+    {
+      "name": "Service B",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/scripts/svc-b.js",
+      "preLaunchTask": "prep"
+    },
+    {
+      "name": "Server (opens browser when ready)",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/scripts/serve-ready.js",
+      "serverReadyAction": {
+        "pattern": "Local:\\s+(https?://localhost:\\d+)",
+        "uriFormat": "%s",
+        "action": "openExternally"
+      }
+    }
+  ],
+  // A compound runs its members as parallel sessions; stopAll stops them together.
+  "compounds": [
+    {
+      "name": "Run both services",
+      "configurations": ["Service A", "Service B"],
+      "stopAll": true
     }
   ],
   "inputs": [
@@ -122,6 +186,12 @@ cat > "$R/.vscode/tasks.json" <<'EOF'
       "command": "node",
       "args": ["${workspaceFolder}/scripts/serve.js"],
       "isBackground": true
+    },
+    {
+      "label": "prep",
+      "type": "shell",
+      "command": "node",
+      "args": ["${workspaceFolder}/scripts/prep.js"]
     }
   ]
 }
@@ -159,4 +229,4 @@ EOF
 
 git -C "$R" add -A && git -C "$R" commit -qm "chore: seed launch + tasks configs"
 
-summary "launch-configs" "LAUNCH picker: root .vscode/launch.json (Workspace, 5 configs incl. preLaunchTask, \${input:} prompts and an isBackground task) + nested services/api after a divider — Run streams in terminal, debug bar pauses/restarts/stops"
+summary "launch-configs" "LAUNCH picker: root .vscode/launch.json (Workspace: preLaunchTask, \${input:} prompts, isBackground task, a stopAll compound running two parallel services, and a serverReadyAction server) + nested services/api after a divider — Run streams in terminal, debug bar pauses/restarts/stops"

@@ -22,6 +22,9 @@ sizin komut satırınız, sizin takma adlarınız.
 - Terminal listesini katlamak onu bir **raya** indirger: terminal başına bir
   simge (bölünmüş terminaller küçük bir panel haritası gösterir), geçiş yapmak
   için tıklayın, olağan yeniden adlandır/böl/sonlandır menüsü için sağ tıklayın.
+- Listede **bir terminali diğerinin üzerine sürükleyin** — bölünmüş bir grupta
+  birleşirler. Her terminal adını bir bölme olarak korur; birleşen grup yeni
+  bir numaralı ad alır.
 
 ![Tek bir terminal grubunda yan yana bölünmüş iki panel](../../screenshots/terminal-split.webp)
 

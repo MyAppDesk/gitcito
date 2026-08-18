@@ -23,6 +23,9 @@ prompt, jouw aliassen.
 - De terminallijst inklappen krimpt hem tot een **rail**: één icoon per terminal
   (gesplitste terminals tonen een minipaneelkaart), klik om te wisselen,
   rechtsklik voor het gebruikelijke menu met hernoemen/splitsen/afsluiten.
+- **Sleep de ene terminal op de andere** in de lijst om ze samen te voegen tot
+  een gesplitste groep. Elke terminal houdt zijn naam als paneel; de groep
+  krijgt een verse genummerde naam.
 
 ![Twee panelen naast elkaar gesplitst in één terminalgroep](../../screenshots/terminal-split.webp)
 

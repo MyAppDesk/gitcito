@@ -23,6 +23,9 @@ twój znak zachęty, twoje aliasy.
 - Zwinięcie listy terminali kurczy ją do **szyny**: jedna ikona na terminal
   (terminale podzielone pokazują mini mapę paneli), kliknij, żeby przełączyć,
   kliknij prawym po zwyczajowe menu zmiany nazwy/podziału/ubicia.
+- **Przeciągnij jeden terminal na drugi** na liście, aby scalić je w podzieloną
+  grupę. Każdy terminal zachowuje swoją nazwę jako panel; scalona grupa dostaje
+  świeżą numerowaną nazwę.
 
 ![Dwa panele podzielone obok siebie w jednej grupie terminali](../../screenshots/terminal-split.webp)
 

@@ -22,6 +22,9 @@ invite, vos alias.
 - Replier la liste des terminaux la réduit à un **rail** : une icône par terminal
   (les terminaux divisés affichent une mini-carte des panneaux), clic pour
   changer, clic droit pour le menu habituel renommer/diviser/tuer.
+- **Glissez un terminal sur un autre** dans la liste pour les fusionner en un
+  groupe scindé. Chaque terminal garde son nom comme volet ; le groupe fusionné
+  reçoit un nouveau nom numéroté.
 
 ![Deux panneaux divisés côte à côte dans un même groupe de terminaux](../../screenshots/terminal-split.webp)
 

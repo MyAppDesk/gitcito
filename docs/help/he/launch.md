@@ -3,7 +3,7 @@ title: הרצה וניפוי באגים (launch.json)
 category: כלי סביבת העבודה
 order: 91
 summary: הריצו את תצורות ההפעלה של VS Code בלי לצאת מ־Gitcito.
-keywords: הפעלה הרצה ניפוי באגים תצורות משימות רקע launch.json run debug vscode configs tasks preLaunchTask input background
+keywords: הפעלה הרצה ניפוי באגים תצורות משימות רקע launch.json run debug vscode configs tasks preLaunchTask input background compound compounds stopAll serverReadyAction סשנים מקביליים
 ---
 
 # הרצה וניפוי באגים
@@ -19,11 +19,30 @@ Gitcito קורא את `.vscode/launch.json` שלכם — זה שבשורש וכ�
   ו־`pickString`).
 - משימות **`isBackground`** (צופים, שרתי פיתוח) רצות מנותקות, ולכן הן לעולם אינן
   חוסמות את ההפעלה.
+- **compounds** מריצים כל חבר **כסשן מקבילי משלו** — בטרמינל מפוצל אחד שנושא
+  את שם ה‑compound, חלונית לכל חבר, בדיוק כמו סשני הדיבוג של VS Code. עם
+  `stopAll: true`, עצירת חבר אחד עוצרת את כולם.
+  משימות שכמה חברים חולקים רצות **פעם אחת**, בחלונית משלהן, לפני שהחברים
+  מתחילים — בקשת העלאת גרסה שואלת פעם אחת, לא פעם לכל חבר.
+  החלונית הזו נסגרת מעצמה בהצלחה ונשארת פתוחה בכישלון.
+- **`serverReadyAction`** נתמך: כשפלט הסשן תואם לתבנית שהוגדרה, כתובת ה‑URL
+  שהוכרזה נפתחת בדפדפן (`openExternally`; גם `debugWithChrome` /
+  `debugWithEdge` רק פותחים את הדפדפן — Gitcito לא יכול לחבר אליו מנפה).
+
+![compound שמריץ שני סשנים מקביליים](../../screenshots/launch-compound.webp)
 
 סרגל כלים צף נותן לכם **השהיה / המשך, הפעלה מחדש, עצירה**, ומחליף בין סשנים
 רצים.
 
 הפעילו את זה ב**הגדרות ← כללי ← הפעלת launch.json**. כפתור **הפעלה** מופיע לצד
 הלשוניות Git / קבצים.
+
+חבר של compound מוצג כ‑*compound › חבר*, והפעלה מחדש מפעילה מחדש רק את אותו
+חבר.
+
+מה ש‑Gitcito בכוונה **לא** עושה: הוא מריץ את התוכניות שלך בטרמינלים אמיתיים,
+אבל הוא לא מנפה — בלי נקודות עצירה, בלי בדיקת משתנים, בלי Debug Adapter
+Protocol. תצורות attach בלבד עובדות כשהן נושאות `preLaunchTask` (המשימה היא
+העבודה); ל‑attach טהור אין מה להריץ.
 
 **ראו גם:** [טרמינל משולב](terminal.md)

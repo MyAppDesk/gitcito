@@ -3,7 +3,7 @@ title: Esecuzione e debug (launch.json)
 category: Strumenti dell'area di lavoro
 order: 91
 summary: Esegui le tue configurazioni di avvio di VS Code senza uscire da Gitcito.
-keywords: launch.json esegui run debug vscode configurazioni task preLaunchTask input background
+keywords: launch.json esegui run debug vscode configurazioni task preLaunchTask input background compound compounds stopAll serverReadyAction sessioni parallele
 ---
 
 # Esecuzione e debug
@@ -20,11 +20,34 @@ nel terminale integrato.
   dell'avvio (`promptString` e `pickString`).
 - I task **`isBackground`** (watcher, server di sviluppo) girano staccati, così
   non bloccano mai l'avvio.
+- I **compound** eseguono ogni membro come **sessione parallela a sé**, in un
+  terminale diviso col nome del compound — un riquadro per membro, esattamente
+  come le sessioni di debug di VS Code. Con `stopAll: true`, fermare un membro
+  li ferma tutti.
+  Le attività condivise da più membri girano **una sola volta**, in un riquadro
+  proprio, prima che i membri partano — un prompt di bump di versione chiede una
+  volta, non una per membro.
+  Quel riquadro si chiude da solo in caso di successo e resta aperto se fallisce.
+- **`serverReadyAction`** è rispettata: quando l’output della sessione
+  corrisponde al pattern configurato, l’URL annunciato si apre nel browser
+  (`openExternally`; `debugWithChrome` / `debugWithEdge` aprono anch’essi il
+  browser — Gitcito non può collegarvi un debugger).
+
+![Un compound che esegue due sessioni parallele](../../screenshots/launch-compound.webp)
 
 Una barra degli strumenti fluttuante ti dà **pausa / ripresa, riavvio, stop**, e
 permette di passare da una sessione in esecuzione all'altra.
 
 Attivalo in **Impostazioni → Generali → Abilita launch.json**. Il pulsante
 **LAUNCH** compare accanto alle schede Git / File.
+
+Un membro di un compound compare come *compound › membro*, e riavviarlo
+riavvia solo quel membro.
+
+Ciò che Gitcito deliberatamente **non** fa: esegue i tuoi programmi in
+terminali veri, ma non è un debugger — niente breakpoint, niente ispezione
+delle variabili, niente Debug Adapter Protocol. Le configurazioni solo attach
+funzionano quando portano un `preLaunchTask` (il task è il lavoro); un attach
+puro non ha nulla da eseguire.
 
 **Vedi anche:** [Terminale integrato](terminal.md)

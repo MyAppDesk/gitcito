@@ -22,6 +22,10 @@ export function DebugToolbar({ repoPath }: { repoPath: string }): React.JSX.Elem
   const repoSessions = sessions.filter((x) => x.repoPath === repoPath)
   if (repoSessions.length === 0) return null
 
+  // A compound member is labelled "Compound › member", mirroring VS Code.
+  const nameOf = (s: (typeof repoSessions)[number]): string =>
+    s.compound ? `${s.compound.compoundName} › ${s.configName}` : s.configName
+
   const active = repoSessions.find((x) => x.launchId === activeId) ?? repoSessions[repoSessions.length - 1]
   const running = active.status === 'running'
   const paused = active.status === 'paused'
@@ -36,7 +40,7 @@ export function DebugToolbar({ repoPath }: { repoPath: string }): React.JSX.Elem
         .slice()
         .reverse()
         .map((s) => ({
-          label: `${s.configName}${s.status === 'exited' ? '  ·  exited' : s.status === 'paused' ? '  ·  paused' : ''}`,
+          label: `${nameOf(s)}${s.status === 'exited' ? '  ·  exited' : s.status === 'paused' ? '  ·  paused' : ''}`,
           icon: <Play size={13} />,
           onClick: () => setActive(s.launchId)
         }))
@@ -47,7 +51,7 @@ export function DebugToolbar({ repoPath }: { repoPath: string }): React.JSX.Elem
     <div className="debug-toolbar">
       <button className="debug-switcher" onClick={openSwitcher} title={t('launch.switchSession')}>
         <span className={`debug-dot ${active.status}`} />
-        <span className="debug-name">{active.configName}</span>
+        <span className="debug-name">{nameOf(active)}</span>
         <ChevronDown size={13} />
       </button>
       <span className="debug-sep" />
@@ -67,7 +71,11 @@ export function DebugToolbar({ repoPath }: { repoPath: string }): React.JSX.Elem
           <X size={14} />
         </button>
       ) : (
-        <button className="icon-btn debug-btn danger" title={t('launch.stop')} onClick={() => stop(active.launchId)}>
+        <button
+          className="icon-btn debug-btn danger"
+          title={active.compound?.stopAll ? t('launch.stopAll') : t('launch.stop')}
+          onClick={() => stop(active.launchId)}
+        >
           <Square size={14} fill="currentColor" />
         </button>
       )}

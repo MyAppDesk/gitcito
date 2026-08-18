@@ -24,6 +24,9 @@ tuo prompt, i tuoi alias.
   un'icona per terminale (i terminali divisi mostrano una mini mappa dei
   pannelli), clic per passare da uno all'altro, clic destro per il solito menu
   rinomina/dividi/termina.
+- **Trascina un terminale su un altro** nell'elenco per fonderli in un gruppo
+  diviso. Ogni terminale conserva il suo nome come riquadro; il gruppo fuso
+  riceve un nuovo nome numerato.
 
 ![Due pannelli affiancati in un unico gruppo di terminali](../../screenshots/terminal-split.webp)
 

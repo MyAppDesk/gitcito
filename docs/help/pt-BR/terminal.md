@@ -22,6 +22,9 @@ prompt, seus aliases.
 - Colapsar a lista de terminais a encolhe num **trilho**: um ícone por terminal
   (terminais divididos mostram um mini mapa de painéis), clique para trocar, botão
   direito para o menu de sempre com renomear/dividir/matar.
+- **Arraste um terminal sobre outro** na lista para fundi-los em um grupo
+  dividido. Cada terminal mantém seu nome como painel; o grupo resultante
+  recebe um novo nome numerado.
 
 ![Dois painéis divididos lado a lado num mesmo grupo de terminal](../../screenshots/terminal-split.webp)
 

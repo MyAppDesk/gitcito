@@ -18,6 +18,15 @@ interface LaunchApi {
     configs?: import('../../shared/types').LaunchConfig[]
     tasks: import('../../shared/types').LaunchTask[]
     inputValues?: Record<string, string>
+    skipTasks?: string[]
+    cols: number
+    rows: number
+  }): Promise<{ id: number } | { error: string }>
+  runTasks(payload: {
+    dir: string
+    tasks: import('../../shared/types').LaunchTask[]
+    labels: string[]
+    inputValues?: Record<string, string>
     cols: number
     rows: number
   }): Promise<{ id: number } | { error: string }>

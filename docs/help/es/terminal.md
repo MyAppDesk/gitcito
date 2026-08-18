@@ -23,6 +23,9 @@ prompt, tus alias.
 - Plegar la lista de terminales la reduce a un **raíl**: un icono por terminal
   (los terminales divididos muestran un minimapa de paneles), pulsa para cambiar,
   clic derecho para el menú habitual de renombrar/dividir/matar.
+- **Arrastra un terminal sobre otro** en la lista para fusionarlos en un grupo
+  dividido. Cada terminal conserva su nombre como panel; el grupo fusionado
+  recibe un nombre numerado nuevo.
 
 ![Dos paneles divididos lado a lado en un mismo grupo de terminal](../../screenshots/terminal-split.webp)
 

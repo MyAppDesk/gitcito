@@ -22,6 +22,9 @@ deine Aliase.
 - Klappst du die Terminal-Liste ein, schrumpft sie zu einer **Leiste**: ein Icon
   pro Terminal (geteilte Terminals zeigen eine Mini-Karte der Panels), Klick zum
   Wechseln, Rechtsklick für das übliche Menü zum Umbenennen/Teilen/Beenden.
+- **Ziehe ein Terminal auf ein anderes** in der Liste, um sie zu einer
+  geteilten Gruppe zu verschmelzen. Jedes Terminal behält seinen Namen als
+  Bereich; die Gruppe bekommt einen frischen nummerierten Namen.
 
 ![Zwei Panels nebeneinander geteilt in einer Terminal-Gruppe](../../screenshots/terminal-split.webp)
 

@@ -54,8 +54,24 @@ interface TerminalsState {
   ensureRepo(repoPath: string, cwd: string): void
   addGroup(repoPath: string, cwd: string): void
   /** Add a Run/Debug launch session as its own group, backed by an existing
-   *  main-process pty. Returns the new group + panel ids. */
-  addLaunchGroup(repoPath: string, cwd: string, launchId: number, title: string): { groupId: string; panelId: string }
+   *  main-process pty. Returns the new group + panel ids. `panelTitle` names the
+   *  panel itself (used by compounds, whose group carries the compound name). */
+  addLaunchGroup(
+    repoPath: string,
+    cwd: string,
+    launchId: number,
+    title: string,
+    panelTitle?: string
+  ): { groupId: string; panelId: string }
+  /** Append a launch session as a split panel of an existing group (compound
+   *  members share one split terminal). Null if the group is gone. */
+  addLaunchPanel(
+    repoPath: string,
+    groupId: string,
+    cwd: string,
+    launchId: number,
+    title: string
+  ): { groupId: string; panelId: string } | null
   removeGroup(repoPath: string, groupId: string): void
   setActiveGroup(repoPath: string, groupId: string): void
   splitGroup(repoPath: string, groupId: string, cwd: string): void
@@ -96,8 +112,8 @@ export const useTerminalsStore = create<TerminalsState>((set, get) => ({
     })
   },
 
-  addLaunchGroup: (repoPath, cwd, launchId, title) => {
-    const panel: TermPanel = { id: uid('panel'), cwd, flex: 1, launchId }
+  addLaunchGroup: (repoPath, cwd, launchId, title, panelTitle) => {
+    const panel: TermPanel = { id: uid('panel'), cwd, flex: 1, launchId, ...(panelTitle ? { title: panelTitle } : {}) }
     const group: TermGroup = { id: uid('group'), num: 0, title, panels: [panel], activePanelId: panel.id }
     set((s) => {
       const repo = s.byRepo[repoPath] ?? emptyRepo()
@@ -109,6 +125,22 @@ export const useTerminalsStore = create<TerminalsState>((set, get) => ({
       }
     })
     return { groupId: group.id, panelId: panel.id }
+  },
+
+  addLaunchPanel: (repoPath, groupId, cwd, launchId, title) => {
+    const repo = get().byRepo[repoPath]
+    const group = repo?.groups.find((g) => g.id === groupId)
+    if (!group) return null
+    const panel: TermPanel = { id: uid('panel'), cwd, flex: 1, launchId, title }
+    set((s) => {
+      const r = s.byRepo[repoPath]
+      if (!r) return s
+      const groups = r.groups.map((g) =>
+        g.id === groupId ? { ...g, panels: [...g.panels, panel], activePanelId: panel.id } : g
+      )
+      return { byRepo: { ...s.byRepo, [repoPath]: { ...r, groups } } }
+    })
+    return { groupId, panelId: panel.id }
   },
 
   removeGroup: (repoPath, groupId) => {
@@ -152,14 +184,33 @@ export const useTerminalsStore = create<TerminalsState>((set, get) => ({
       const source = repo.groups.find((g) => g.id === sourceGroupId)
       const target = repo.groups.find((g) => g.id === targetGroupId)
       if (!source || !target) return s
-      const movedPanels = source.panels.map((p) => ({ ...p, flex: 1 }))
+      // A standalone terminal's identity lives on its *group* title; when it
+      // becomes a split panel that title would silently vanish. Push it down
+      // onto the panel so each sub-terminal keeps the name it had.
+      const demote = (g: TermGroup): TermPanel[] => {
+        const alias = g.title.trim()
+        return g.panels.map((p) => ({
+          ...p,
+          flex: 1,
+          ...(alias && g.panels.length === 1 && !(p.title ?? '').trim() ? { title: alias } : {})
+        }))
+      }
+      const movedPanels = demote(source)
+      // A single terminal that just became a split container should not keep
+      // wearing its old name as the group label — fall back to the numbered
+      // default. An already-split target keeps whatever it was called.
+      const targetWasSingle = target.panels.length === 1
       const groups = repo.groups
         .filter((g) => g.id !== sourceGroupId)
         .map((g) =>
           g.id === targetGroupId
             ? {
                 ...g,
-                panels: [...g.panels.map((p) => ({ ...p, flex: 1 })), ...movedPanels],
+                title: targetWasSingle ? '' : g.title,
+                // Launch groups carry num 0; give the merged group a real
+                // number so the default label reads "zsh N", not "zsh 0".
+                num: g.num || nextNum(repo.groups),
+                panels: [...demote(target), ...movedPanels],
                 activePanelId: movedPanels[movedPanels.length - 1].id
               }
             : g
@@ -175,9 +226,12 @@ export const useTerminalsStore = create<TerminalsState>((set, get) => ({
       if (!repo) return s
       const group = repo.groups.find((g) => g.id === groupId)
       if (!group || group.panels.length <= 1) return s
+      // The inverse of mergeGroups' demotion: a panel's alias becomes the
+      // title of the standalone group it turns into.
       const [first, ...rest] = group.panels
       const firstGroup: TermGroup = {
         ...group,
+        title: (first.title ?? '').trim() || group.title,
         panels: [{ ...first, flex: 1 }],
         activePanelId: first.id
       }
@@ -186,7 +240,7 @@ export const useTerminalsStore = create<TerminalsState>((set, get) => ({
         const g: TermGroup = {
           id: uid('group'),
           num,
-          title: '',
+          title: (panel.title ?? '').trim(),
           panels: [{ ...panel, flex: 1 }],
           activePanelId: panel.id
         }

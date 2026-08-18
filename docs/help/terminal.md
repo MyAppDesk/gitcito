@@ -22,6 +22,9 @@ your aliases.
 - Collapsing the terminal list shrinks it to a **rail**: one icon per terminal
   (split terminals show a mini panel map), click to switch, right-click for the
   usual rename/split/kill menu.
+- **Drag one terminal onto another** in the list to merge them into a split
+  group. Each terminal keeps its name as a pane; the merged group takes a
+  fresh numbered name.
 
 ![Two panels split side by side in one terminal group](../screenshots/terminal-split.webp)
 

@@ -720,6 +720,33 @@ export const shots = [
     }
   },
   {
+    // Compound launch — one click spawns both member configs as *parallel*
+    // sessions (VS Code parity), each with its own terminal; the debug toolbar
+    // shows "compound › member" and Stop takes all of them down (stopAll).
+    out: 'launch-compound',
+    repos: ['launch-configs'],
+    themes: ['dark'],
+    appTheme: 'midnight',
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['launch-configs']
+      await page.evaluate(async (p) => {
+        const s = window.__shot
+        s.repo.getState().select(p, { type: 'wip' })
+        const launch = s.launch.getState()
+        await launch.discover(p)
+        const groups = s.launch.getState().groupsByRepo[p] ?? []
+        const root = groups.find((g) => g.isRoot) ?? groups[0]
+        const compound = root?.configs.find((c) => Array.isArray(c.compound))
+        if (root && compound) await launch.run(p, root, compound)
+      }, repo)
+      // Both services stream a few heartbeats into their own terminals.
+      await page.waitForTimeout(3200)
+      // Open the session switcher so the two parallel sessions are visible.
+      await page.click('.debug-switcher').catch(() => {})
+      await page.waitForTimeout(400)
+    }
+  },
+  {
     out: 'conflict-radar',
     repos: ['conflict-radar'],
     themes: ['dark'],

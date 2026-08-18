@@ -122,7 +122,8 @@ conflicts and unpushed piles ·
 [integrated terminal](docs/help/terminal.md) with splits ·
 [**Open in your editor**](docs/help/editor.md) — repo, file, or the exact line
 you right-clicked ·
-[**Run & debug**](docs/help/launch.md) from your `.vscode/launch.json` ·
+[**Run & debug**](docs/help/launch.md) from your `.vscode/launch.json` —
+compounds as parallel sessions, `stopAll`, `serverReadyAction` ·
 [previews](docs/help/diffs.md) for Markdown, Word, Excel, PDF, video and images ·
 [open-source licenses](docs/help/licenses.md) for every package the build ships,
 readable in the app.

@@ -1285,6 +1285,11 @@ export interface LaunchConfig {
   /** Synthetic field (set during discovery) for a `compounds` entry: the member
    *  configuration names to run, in order. */
   compound?: string[]
+  /** Synthetic field (set during discovery): the compound's `stopAll` — stopping
+   *  one member session stops all of them, like VS Code. */
+  compoundStopAll?: boolean
+  /** Watch the session's output and open a URL once the server announces it. */
+  serverReadyAction?: { pattern?: string; uriFormat?: string; action?: string }
   [key: string]: unknown
 }
 

@@ -1,4 +1,4 @@
-import { ipcMain, WebContents } from 'electron'
+import { ipcMain, shell, WebContents } from 'electron'
 import { spawn, ChildProcess } from 'child_process'
 import { readFile, readdir } from 'fs/promises'
 import { homedir } from 'os'
@@ -120,6 +120,7 @@ async function readGroup(repoRoot: string, dir: string): Promise<LaunchGroup | n
     compounds?: {
       name?: string
       configurations?: string[]
+      stopAll?: boolean
       presentation?: { hidden?: boolean; group?: string; order?: number }
     }[]
     inputs?: LaunchInput[]
@@ -136,6 +137,7 @@ async function readGroup(repoRoot: string, dir: string): Promise<LaunchGroup | n
           name: c.name as string,
           type: 'compound',
           compound: c.configurations as string[],
+          ...(c.stopAll === true ? { compoundStopAll: true } : {}),
           ...(c.presentation ? { presentation: c.presentation } : {})
         }))
     : []
@@ -359,7 +361,8 @@ async function configSegments(
   tasks: LaunchTask[],
   dir: string,
   env: Record<string, string>,
-  seen: Set<string> = new Set()
+  seen: Set<string> = new Set(),
+  skipTasks: readonly string[] = []
 ): Promise<string[]> {
   config = applyPlatform(config)
   if (Array.isArray(config.compound)) {
@@ -368,7 +371,7 @@ async function configSegments(
     const out: string[] = []
     for (const name of config.compound) {
       const member = configs.find((c) => c.name === name)
-      if (member) out.push(...(await configSegments(member, configs, tasks, dir, env, seen)))
+      if (member) out.push(...(await configSegments(member, configs, tasks, dir, env, seen, skipTasks)))
     }
     return out
   }
@@ -376,7 +379,9 @@ async function configSegments(
   for (const [k, v] of Object.entries(config.env ?? {})) env[k] = subAll(v, dir)
   await applyEnvFile(config, dir, env)
   const out: string[] = []
-  if (config.preLaunchTask) out.push(...resolveTaskCommands(config.preLaunchTask, tasks, dir))
+  // Pre-seeding the dedupe set with `skipTasks` drops tasks (and their whole
+  // dependsOn subtree) that a compound launch already ran once up front.
+  if (config.preLaunchTask) out.push(...resolveTaskCommands(config.preLaunchTask, tasks, dir, new Set(skipTasks)))
   const program = launchCommand(config, dir)
   if (program) {
     // Honour a per-config cwd for compound members (the top-level config's cwd
@@ -386,7 +391,7 @@ async function configSegments(
   }
   // A `postDebugTask` runs once the program exits (we chain it after).
   if (typeof config.postDebugTask === 'string' && config.postDebugTask) {
-    out.push(...resolveTaskCommands(config.postDebugTask, tasks, dir))
+    out.push(...resolveTaskCommands(config.postDebugTask, tasks, dir, new Set(skipTasks)))
   }
   return out
 }
@@ -502,6 +507,40 @@ function interpreterFor(config: LaunchConfig, program: string): string {
 }
 
 
+// ─── serverReadyAction ───────────────────────────────────────────────────────
+// VS Code watches the debug terminal for a pattern and reacts once the server
+// announces itself. We support the browser-opening actions: `openExternally`,
+// and `debugWithChrome` / `debugWithEdge` degrade to opening the URL in the
+// default browser (we can't attach a debugger). `startDebugging` is skipped.
+
+function serverReadyTap(config: LaunchConfig, folder: string): ((chunk: string) => void) | undefined {
+  const sra = config.serverReadyAction
+  if (!sra || typeof sra.pattern !== 'string' || !sra.pattern) return undefined
+  const action = (sra.action ?? 'openExternally').toLowerCase()
+  if (!/^(openexternally|debugwithchrome|debugwithedge)$/.test(action)) return undefined
+  let re: RegExp
+  try {
+    re = new RegExp(sra.pattern)
+  } catch {
+    return undefined
+  }
+  const uriFormat = sra.uriFormat ? subAll(sra.uriFormat, folder) : '%s'
+  let buf = ''
+  let fired = false
+  return (chunk) => {
+    if (fired) return
+    // Strip ANSI escapes so the pattern matches what the user reads, not the
+    // color codes around it; keep a rolling tail so a match can span chunks.
+    // eslint-disable-next-line no-control-regex
+    buf = (buf + chunk.replace(/\x1b\[[0-9;?]*[ -/]*[@-~]/g, '')).slice(-8192)
+    const m = re.exec(buf)
+    if (!m) return
+    fired = true
+    const url = uriFormat.replace('%s', m[1] ?? m[0])
+    if (/^https?:\/\//i.test(url)) void shell.openExternal(url)
+  }
+}
+
 // ─── Session execution (pty-backed, like the integrated terminal) ────────────
 
 interface LaunchSession {
@@ -534,7 +573,8 @@ function spawnSession(
   display: string,
   env: Record<string, string>,
   cols: number,
-  rows: number
+  rows: number,
+  tap?: (chunk: string) => void
 ): LaunchSession {
   const banner = `\x1b[90m> ${display}\x1b[0m\r\n`
   try {
@@ -559,7 +599,10 @@ function spawnSession(
       env: { ...process.env, ...env } as Record<string, string>
     })
     if (!wc.isDestroyed()) wc.send(`launch:data:${id}`, banner)
-    p.onData((d) => !wc.isDestroyed() && wc.send(`launch:data:${id}`, d))
+    p.onData((d) => {
+      tap?.(d)
+      if (!wc.isDestroyed()) wc.send(`launch:data:${id}`, d)
+    })
     p.onExit(({ exitCode }) => {
       sessions.delete(id)
       if (!wc.isDestroyed()) wc.send(`launch:exit:${id}`, exitCode)
@@ -579,7 +622,7 @@ function spawnSession(
       }
     }
   } catch {
-    return spawnFallback(wc, id, cwd, commandLine, env, banner)
+    return spawnFallback(wc, id, cwd, commandLine, env, banner, tap)
   }
 }
 
@@ -590,7 +633,8 @@ function spawnFallback(
   cwd: string,
   commandLine: string,
   env: Record<string, string>,
-  banner: string
+  banner: string,
+  tap?: (chunk: string) => void
 ): LaunchSession {
   const args = process.platform === 'win32' ? ['-NoLogo', '-Command', commandLine] : ['-lic', commandLine]
   const child: ChildProcess = spawn(defaultShell(), args, { cwd, env: { ...process.env, ...env } })
@@ -598,7 +642,11 @@ function spawnFallback(
     if (!wc.isDestroyed()) wc.send(`launch:data:${id}`, text)
   }
   send(banner)
-  const chunk = (d: Buffer): void => send(d.toString().replace(/(?<!\r)\n/g, '\r\n'))
+  const chunk = (d: Buffer): void => {
+    const text = d.toString()
+    tap?.(text)
+    send(text.replace(/(?<!\r)\n/g, '\r\n'))
+  }
   child.stdout?.on('data', chunk)
   child.stderr?.on('data', chunk)
   child.on('exit', (code) => {
@@ -634,6 +682,8 @@ export function registerLaunchHandlers(): void {
         configs?: LaunchConfig[]
         tasks: LaunchTask[]
         inputValues?: Record<string, string>
+        /** Task labels a compound already ran once up front — skip them here. */
+        skipTasks?: string[]
         cols: number
         rows: number
       }
@@ -656,7 +706,7 @@ export function registerLaunchHandlers(): void {
       }
 
       const env: Record<string, string> = {}
-      const parts = await configSegments(config, siblings, tasks, dir, env)
+      const parts = await configSegments(config, siblings, tasks, dir, env, new Set(), payload.skipTasks ?? [])
 
       if (parts.length === 0) {
         return {
@@ -676,7 +726,40 @@ export function registerLaunchHandlers(): void {
       const commandLine = parts.join(' && ')
 
       const id = nextId++
-      const session = spawnSession(e.sender, id, folder, commandLine, display, env, cols || 80, rows || 24)
+      const tap = serverReadyTap(config, folder)
+      const session = spawnSession(e.sender, id, folder, commandLine, display, env, cols || 80, rows || 24, tap)
+      sessions.set(id, session)
+      return { id }
+    }
+  )
+
+  // Run a plain task chain (no program) in its own pty — the up-front, run-once
+  // pane a compound uses for tasks shared by several members. Exit code is the
+  // chain's own (`&&`), so the renderer can gate the member launches on 0.
+  ipcMain.handle(
+    'launch:runTasks',
+    (
+      e,
+      payload: {
+        dir: string
+        tasks: LaunchTask[]
+        labels: string[]
+        inputValues?: Record<string, string>
+        cols: number
+        rows: number
+      }
+    ): { id: number } | { error: string } => {
+      const { dir, cols, rows } = payload
+      const tasks = resolveInputTokens(payload.tasks, payload.inputValues ?? {})
+      const seen = new Set<string>()
+      const parts: string[] = []
+      for (const label of payload.labels) parts.push(...resolveTaskCommands(label, tasks, dir, seen))
+      if (parts.length === 0) {
+        return { error: `No runnable tasks among: ${payload.labels.join(', ')}` }
+      }
+      const commandLine = parts.join(' && ')
+      const id = nextId++
+      const session = spawnSession(e.sender, id, dir, commandLine, commandLine, {}, cols || 80, rows || 24)
       sessions.set(id, session)
       return { id }
     }

@@ -6120,15 +6120,23 @@ textarea:focus {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  /* A 12px glyph in a 20px box leaves a whole 4px on each side; an odd size
+     lands the stroke on a half pixel and the plus reads as nudged off-centre. */
+  line-height: 0;
   /* The pill is tinted with the glyph's own hue rather than the generic ghost
      grey — the direction of the move should read before the icon is parsed.
      `currentColor` carries it, so the two directions need no separate rules. */
   background: color-mix(in srgb, currentColor 13%, transparent);
   transition: background 0.12s, color 0.12s;
 }
-/* Softened at rest: a full-strength green down a long list reads as an alert. */
-.file-stage-btn.icon-only.act-stage { color: color-mix(in srgb, var(--green) 72%, var(--text-2)); }
-.file-stage-btn.icon-only.act-unstage { color: color-mix(in srgb, var(--red) 72%, var(--text-2)); }
+.file-stage-btn.icon-only svg {
+  display: block;
+}
+/* Neutral at rest: a coloured pill on every row of a long list reads as a
+   status, not a control. The hue arrives on row hover, when the direction of
+   the move is what you are about to act on. */
+.file-stage-btn.icon-only.act-stage,
+.file-stage-btn.icon-only.act-unstage { color: var(--text-2); }
 /* The generic folder-svg rule paints every icon in a folder row grey. */
 .tree-folder .file-stage-btn svg {
   color: currentColor;

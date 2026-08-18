@@ -594,7 +594,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
           setSelection({ list, paths: new Set() })
         }}
       >
-        {list === 'staged' ? <Minus size={13} /> : <Plus size={13} />}
+        {list === 'staged' ? <Minus size={12} /> : <Plus size={12} />}
       </button>
     )
   }
@@ -617,7 +617,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
           setSelection({ list, paths: new Set() })
         }}
       >
-        {list === 'staged' ? <Minus size={13} /> : <Plus size={13} />}
+        {list === 'staged' ? <Minus size={12} /> : <Plus size={12} />}
       </button>
     )
   }

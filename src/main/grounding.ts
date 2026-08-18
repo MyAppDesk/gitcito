@@ -350,9 +350,18 @@ export function validateAskPlan(value: unknown, knownPaths: Set<string>): string
   const root = value as { summary?: unknown; actions?: unknown; note?: unknown } | null
   if (!root || typeof root !== 'object') return ['The response must be a JSON object.']
   if (typeof root.summary !== 'string') errors.push('"summary" must be a string.')
-  if (!Array.isArray(root.actions)) return [...errors, '"actions" must be an array (use [] when nothing can be done).']
+  return [...errors, ...validateAskActions(root.actions, knownPaths)]
+}
 
-  root.actions.forEach((raw: Record<string, unknown>, i) => {
+/**
+ * The action-list half of the plan check, shared with repository chat: chat
+ * replies carry the same action union, grounded against the same working-tree
+ * path list.
+ */
+export function validateAskActions(value: unknown, knownPaths: Set<string>): string[] {
+  if (!Array.isArray(value)) return ['"actions" must be an array (use [] when nothing can be done).']
+  const errors: string[] = []
+  value.forEach((raw: Record<string, unknown>, i) => {
     const at = `actions[${i}]`
     if (!raw || typeof raw !== 'object') {
       errors.push(`${at} must be an object.`)

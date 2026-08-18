@@ -1,8 +1,10 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { CheckCircle2, AlertCircle, Info, X, Copy, Check, Bug } from 'lucide-react'
+import { CheckCircle2, AlertCircle, Info, X, Copy, Check, Bug, Sparkles } from 'lucide-react'
 import { useUIStore, type Toast } from '../stores/ui'
-import { useT } from '../i18n'
+import { useSettingsStore } from '../stores/settings'
+import { repoChatAvailable } from '../lib/repoChatUI'
+import { useT, interp } from '../i18n'
 
 const icons = {
   success: <CheckCircle2 size={16} />,
@@ -25,6 +27,8 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }
   const [overflowing, setOverflowing] = useState(false)
   const [copied, setCopied] = useState(false)
   const msgRef = useRef<HTMLSpanElement>(null)
+  const aiChat = useSettingsStore((state) => repoChatAvailable(state.activeProfile().ai))
+  const openChatPanelWith = useUIStore((state) => state.openChatPanelWith)
 
   // Measured while clamped (base CSS limits to 3 lines), so a taller scrollHeight
   // means the text is longer than the clamp and worth a "show more" toggle.
@@ -66,6 +70,21 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }
         )}
       </div>
       <div className="toast-actions">
+        {toast.kind === 'error' && toast.repoPath && aiChat && (
+          <button
+            title={t('toast.fixWithAI')}
+            onClick={(e) => {
+              e.stopPropagation()
+              openChatPanelWith(
+                toast.repoPath as string,
+                interp(t('chat.fixPromptDraft'), { message: toast.message })
+              )
+              onDismiss()
+            }}
+          >
+            <Sparkles size={13} />
+          </button>
+        )}
         {toast.kind === 'error' && (
           <button
             title={t('toast.reportIssue')}

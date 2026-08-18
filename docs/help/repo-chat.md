@@ -2,8 +2,8 @@
 title: Repository chat
 category: AI
 order: 82
-summary: Ask questions about this repository, with the files and commits you pin as context.
-keywords: chat ask question assistant context attach pin drag drop commit file evidence grounded ai panel
+summary: Ask questions about this repository, with the files and commits you pin as context — and let it propose git actions you approve before they run.
+keywords: chat ask question assistant context attach pin drag drop commit file evidence grounded ai panel actions run approve auto-approve allow fix error toast
 ---
 
 # Repository chat
@@ -38,6 +38,10 @@ Working-tree content means you can ask about edits you have not committed. It
 also means those edits leave your machine when you ask — the provider you
 configured in [AI features](ai.md) receives them.
 
+One nuance: with [action proposals](#running-actions-from-chat) enabled, the
+**names** of untracked files are included in the repository state — "stage the
+new file" needs them — but their contents are still never read.
+
 ## Pinning context
 
 The model decides what to read. Pinning is how you overrule it: anything pinned
@@ -67,6 +71,8 @@ touch an excluded path are dropped from that diff, not the whole commit.
 |---|---|
 | **Ask questions about the repository** | Off removes the tab, the toolbar button and the shortcut target. The rest of the AI features keep working |
 | **Committed content only** | Answers from the last commit instead of the working tree: uncommitted edits and diffs never leave the machine |
+| **Propose git actions in chat** | Off makes chat purely read-only again: no action cards, no approval dropdown |
+| **How proposed actions run** | The approval mode — see [Approval modes](#approval-modes). Destructive actions confirm regardless |
 
 Which account and model answers chat is set under **Which account answers what**
 on the same page — see [AI features](ai.md#which-account-answers-what).
@@ -99,6 +105,47 @@ not resolve to a readable image simply shows nothing.
 
 ![Image preview on hover](../screenshots/repo-chat-image-hover.webp)
 
+## Running actions from chat
+
+Ask for a change instead of a fact — *stage the markdown files, commit this as
+a fix, put the build output on the ignore list* — and the reply arrives with an
+**action card**: the concrete steps the assistant wants to take, one row per
+action, with **Run** and **Dismiss** buttons. Nothing in the card has happened
+yet; the model can only propose, and every proposal is checked against the
+working tree before you ever see it — an action naming a file that does not
+exist is rejected, not rendered.
+
+![Proposed actions in chat](../screenshots/repo-chat-actions.webp)
+
+The action set is the same one the toolbar's **Run** assistant uses: ignore
+patterns, stage, unstage, commit, stash, discard, branch, checkout, tag.
+Anything beyond it — push, pull, reset, rebase, force operations — is refused
+by design; chat will tell you to use the dedicated UI instead.
+
+### Approval modes
+
+The shield dropdown under the composer (also in **Settings → AI → Repository
+chat**) decides how a card runs:
+
+| Mode | Runs |
+|---|---|
+| **Always ask** | Nothing until you press **Run** on the card |
+| **Auto-run safe actions** | Proposals made only of reversible bookkeeping — stage, unstage, ignore, branch, tag — run on arrival; anything else waits for the button |
+| **Auto-run all actions** | Every proposal runs on arrival, except destructive ones |
+
+A proposal that would **discard uncommitted changes always asks first**, in
+every mode, and the confirmation names the files that would be lost. The card
+reports what actually happened — how many actions ran, or the error that
+stopped them — and the assistant is told the outcome, so a follow-up question
+knows whether its plan was executed or dismissed.
+
+### Fixing errors with the assistant
+
+When a git operation fails and AI chat is available, the error toast grows a
+sparkle button: it opens the chat with the failure pasted into the composer, so
+"why did this fail and what do I do" is one click. The draft is editable —
+nothing is sent until you press Send.
+
 ## What it refuses
 
 - **Files that look like secrets are never read**, pinned or not — the chip is
@@ -106,9 +153,10 @@ not resolve to a readable image simply shows nothing.
   [secret masking](security.md).
 - **Binaries and files over 512 KB** from outside the repository are skipped the
   same way. Inside the repository the usual readable-source rules apply.
-- **It never writes.** No staging, no commits, no branch changes — it has no
-  tools, only text. An answer that claims it did something is describing, not
-  reporting.
+- **It never writes on its own.** The model has no tools, only text: a change
+  arrives as a proposal card, runs only under [your approval rules](#approval-modes),
+  and a destructive step always confirms. With **Propose git actions in chat**
+  off, it does not even propose.
 - **Conversations live in memory only.** Switching repositories keeps each
   thread separate; quitting Gitcito discards them.
 

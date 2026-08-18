@@ -8,6 +8,8 @@ export interface Toast {
   id: number
   kind: 'success' | 'error' | 'info'
   message: string
+  /** Repository the message came from — lets an error toast offer "Fix with AI". */
+  repoPath?: string
 }
 
 export interface MenuItem {
@@ -251,6 +253,9 @@ interface UIState {
   /** Chat shares the contextual right panel with commit/stash details. */
   chatPanelOpen: boolean
   rightPanelTab: 'details' | 'chat'
+  /** A composer draft handed to the chat panel from elsewhere (an error
+   *  toast's "Fix with AI"). The panel consumes it once, for its own repo. */
+  chatPrompt: { repoPath: string; text: string } | null
   graphFilter: string
   ciFilter: CiFilter
   authorFilter: string | null
@@ -288,13 +293,16 @@ interface UIState {
   setMissionOpen(open: boolean): void
   toggleCommandPalette(): void
   setGithubUnread(n: number): void
-  toast(kind: Toast['kind'], message: string): void
+  toast(kind: Toast['kind'], message: string, opts?: { repoPath?: string }): void
   dismissToast(id: number): void
   toggleTerminal(repoPath: string): void
   setTerminalOpen(repoPath: string, open: boolean): void
   toggleSidebar(): void
   setSidebarCollapsed(collapsed: boolean): void
   openChatPanel(): void
+  /** Open the chat panel with a prefilled composer draft for one repository. */
+  openChatPanelWith(repoPath: string, text: string): void
+  consumeChatPrompt(): void
   closeChatPanel(): void
   showDetailsPanel(): void
   setGraphFilter(filter: string): void
@@ -337,6 +345,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   })(),
   chatPanelOpen: false,
   rightPanelTab: 'details',
+  chatPrompt: null,
   graphFilter: '',
   ciFilter: 'all',
   authorFilter: null,
@@ -362,9 +371,9 @@ export const useUIStore = create<UIState>((set, get) => ({
   toggleCommandPalette: () => set({ commandPaletteOpen: !get().commandPaletteOpen }),
   setGithubUnread: (githubUnread) => set({ githubUnread }),
 
-  toast: (kind, message) => {
+  toast: (kind, message, opts) => {
     const id = ++toastId
-    set({ toasts: [...get().toasts, { id, kind, message }] })
+    set({ toasts: [...get().toasts, { id, kind, message, ...(opts?.repoPath ? { repoPath: opts.repoPath } : {}) }] })
     setTimeout(() => get().dismissToast(id), kind === 'error' ? 7000 : 3500)
   },
   dismissToast: (id) => set({ toasts: get().toasts.filter((t) => t.id !== id) }),
@@ -383,6 +392,9 @@ export const useUIStore = create<UIState>((set, get) => ({
     }
   },
   openChatPanel: () => set({ chatPanelOpen: true, rightPanelTab: 'chat' }),
+  openChatPanelWith: (repoPath, text) =>
+    set({ chatPanelOpen: true, rightPanelTab: 'chat', chatPrompt: { repoPath, text } }),
+  consumeChatPrompt: () => set({ chatPrompt: null }),
   closeChatPanel: () => set({ chatPanelOpen: false, rightPanelTab: 'details' }),
   showDetailsPanel: () => set({ rightPanelTab: 'details' }),
   setGraphFilter: (graphFilter) => set({ graphFilter }),

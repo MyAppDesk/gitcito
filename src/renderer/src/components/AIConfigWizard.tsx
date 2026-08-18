@@ -3,8 +3,7 @@ import {
   Bot, Github, MousePointer2, Wind, Terminal, Code2, GitCommit,
   Loader2, ChevronRight, ChevronLeft, Check, FileText, Wand2,
   Sparkles, Plus, X, Server, MessageSquare, Zap, SlidersHorizontal,
-  HelpCircle, FolderOpen, Send, Play, AlertTriangle, EyeOff, FilePlus, FileMinus, Archive, Wrench,
-  Trash2, GitBranch, GitBranchPlus, Tag
+  HelpCircle, FolderOpen, Send, Play, AlertTriangle
 } from 'lucide-react'
 import { marked } from 'marked'
 import { useUIStore } from '../stores/ui'
@@ -12,8 +11,11 @@ import { useSettingsStore } from '../stores/settings'
 import { useRepoStore } from '../stores/repo'
 import { aiApi, gitApi, shellApi, type GeneratedFile, type ArtifactRequest, type ArtifactSuggestion } from '../infrastructure/api'
 import { useT, translate, interp, type TranslationKey } from '../i18n'
-import type { AIConfig, AskAction, AskPlan } from '../../../shared/types'
+import type { AIConfig, AskPlan } from '../../../shared/types'
 import { resolveAI } from '../../../shared/aiAccounts'
+import { askActionDetail } from '../lib/askActions'
+import { executeAskActions } from '../lib/askActionRun'
+import { ASK_ACTION_FALLBACK_META, ASK_ACTION_META } from '../lib/askActionMeta'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -392,40 +394,7 @@ export function AIConfigWizard({
     if (!plan || plan.actions.length === 0) return
     setApplying(true)
     try {
-      // untracked set, so "discard" routes to clean vs checkout correctly
-      const status = await gitApi.status(spec.repoPath)
-      const untracked = new Set(
-        [...status.unstaged, ...status.staged].filter((f) => f.untracked).map((f) => f.path)
-      )
-      let applied = 0
-      const skipped: string[] = []
-      for (const a of plan.actions) {
-        if (a.type === 'gitignore') await gitApi.addToGitignore(spec.repoPath, a.patterns)
-        else if (a.type === 'stage') await gitApi.stage(spec.repoPath, a.files)
-        else if (a.type === 'unstage') await gitApi.unstage(spec.repoPath, a.files)
-        else if (a.type === 'commit') {
-          if (a.files && a.files.length > 0) await gitApi.stage(spec.repoPath, a.files)
-          await gitApi.commit(spec.repoPath, a.message)
-        } else if (a.type === 'stash') {
-          await gitApi.stashPush(spec.repoPath, a.message, a.files)
-        } else if (a.type === 'discard') {
-          const tracked = a.files.filter((f) => !untracked.has(f))
-          const untrackedFiles = a.files.filter((f) => untracked.has(f))
-          if (tracked.length) await gitApi.discard(spec.repoPath, tracked, false)
-          if (untrackedFiles.length) await gitApi.discard(spec.repoPath, untrackedFiles, true)
-        } else if (a.type === 'branch') {
-          await gitApi.createBranch(spec.repoPath, a.name, a.at, a.checkout ?? true)
-        } else if (a.type === 'checkout') {
-          await gitApi.checkout(spec.repoPath, a.ref)
-        } else if (a.type === 'tag') {
-          await gitApi.createTag(spec.repoPath, a.name, undefined, a.message ? { message: a.message } : undefined)
-        } else {
-          // Model emitted a type we don't execute — never claim it was applied.
-          skipped.push((a as { type?: string }).type ?? 'unknown')
-          continue
-        }
-        applied++
-      }
+      const { applied, skipped } = await executeAskActions(spec.repoPath, plan.actions)
       await useRepoStore.getState().refresh(spec.repoPath)
       closeModal()
       if (skipped.length) {
@@ -470,18 +439,8 @@ export function AIConfigWizard({
   // ── Ask tab render ─────────────────────────────────────────────────────────
 
   if (tab === 'ask') {
-    const ACTION_META: Record<AskAction['type'], { Icon: typeof Bot; labelKey: TranslationKey }> = {
-      gitignore: { Icon: EyeOff, labelKey: 'askAction.gitignore' },
-      stage: { Icon: FilePlus, labelKey: 'askAction.stage' },
-      unstage: { Icon: FileMinus, labelKey: 'askAction.unstage' },
-      commit: { Icon: GitCommit, labelKey: 'askAction.commit' },
-      stash: { Icon: Archive, labelKey: 'askAction.stash' },
-      discard: { Icon: Trash2, labelKey: 'askAction.discard' },
-      branch: { Icon: GitBranch, labelKey: 'askAction.branch' },
-      checkout: { Icon: GitBranchPlus, labelKey: 'askAction.checkout' },
-      tag: { Icon: Tag, labelKey: 'askAction.tag' }
-    }
-    const FALLBACK_META = { Icon: Wrench, labelKey: 'askAction.fallback' as TranslationKey }
+    const ACTION_META = ASK_ACTION_META
+    const FALLBACK_META = ASK_ACTION_FALLBACK_META
     return (
       <>
         <h3 className="modal-title-row">
@@ -517,16 +476,7 @@ export function AIConfigWizard({
               plan.actions.map((a, i) => {
                 const meta = ACTION_META[a.type] ?? FALLBACK_META
                 const Icon = meta.Icon
-                const detail =
-                  a.type === 'gitignore' ? a.patterns.join(', ')
-                    : a.type === 'commit' ? `“${a.message}”${a.files?.length ? ` · ${a.files.join(', ')}` : ''}`
-                      : a.type === 'stash' ? (a.files?.length ? a.files.join(', ') : t('aiWizard.allChanges'))
-                        : a.type === 'branch' ? `${a.name}${a.at ? ` (from ${a.at})` : ''}`
-                          : a.type === 'checkout' ? a.ref
-                            : a.type === 'tag' ? `${a.name}${a.message ? ` · “${a.message}”` : ''}`
-                              : a.type === 'discard' || a.type === 'stage' || a.type === 'unstage'
-                                ? a.files.join(', ')
-                                : ''
+                const detail = askActionDetail(a, t('aiWizard.allChanges'))
                 return (
                   <div key={i} className="ai-ask-action">
                     <span className="ai-ask-action-badge">

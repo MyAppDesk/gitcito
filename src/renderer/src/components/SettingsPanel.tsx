@@ -693,6 +693,40 @@ export function AIPage({ profile, edit }: { profile: Profile; edit: (p: Partial<
               <span className="settings-hint">{t('settings.repoChatCommittedHint')}</span>
             </span>
           </label>
+
+          <label className="settings-toggle-card" style={{ marginTop: 12 }}>
+            <input
+              type="checkbox"
+              checked={ai.repoChatActions !== false}
+              onChange={(e) => edit({ ai: { ...ai, repoChatActions: e.target.checked } })}
+            />
+            <span className="settings-toggle-control" aria-hidden="true">
+              <span className="settings-toggle-thumb" />
+            </span>
+            <span className="settings-toggle-copy">
+              <strong>{t('settings.repoChatActions')}</strong>
+              <span className="settings-hint">{t('settings.repoChatActionsHint')}</span>
+            </span>
+          </label>
+
+          {ai.repoChatActions !== false && (
+            <>
+              <label style={{ marginTop: 12 }}>
+                {t('chat.approvalTitle')}
+                <select
+                  value={ai.repoChatApproval ?? 'ask'}
+                  onChange={(e) =>
+                    edit({ ai: { ...ai, repoChatApproval: e.target.value as typeof ai.repoChatApproval } })
+                  }
+                >
+                  <option value="ask">{t('chat.approvalAsk')}</option>
+                  <option value="auto-safe">{t('chat.approvalSafe')}</option>
+                  <option value="auto-all">{t('chat.approvalAll')}</option>
+                </select>
+              </label>
+              <span className="settings-hint">{t('settings.repoChatApprovalHint')}</span>
+            </>
+          )}
         </>
       )}
 

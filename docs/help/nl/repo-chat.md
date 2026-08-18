@@ -2,8 +2,8 @@
 title: Repository-chat
 category: AI
 order: 82
-summary: Stel vragen over deze repository, met de bestanden en commits die je als context vastzet.
-keywords: chat vraag vragen assistent context vastzetten bijlage slepen loslaten commit bestand bewijs onderbouwd ai paneel
+summary: Stel vragen over deze repository, met de bestanden en commits die je als context vastzet — en laat hem git-acties voorstellen die jij goedkeurt voordat ze lopen.
+keywords: chat vraag vragen assistent context vastzetten bijlage slepen loslaten commit bestand bewijs onderbouwd ai paneel acties uitvoeren goedkeuren automatisch toestaan fout herstellen toast
 ---
 
 # Repository-chat
@@ -36,6 +36,11 @@ Omdat hij de werkmap leest, kun je over niet-vastgelegde wijzigingen praten. Het
 betekent ook dat die wijzigingen je machine verlaten: de provider die je bij
 [AI-functies](ai.md) instelde, krijgt ze.
 
+Eén nuance: met [actievoorstellen](#acties-uitvoeren-vanuit-de-chat)
+ingeschakeld gaan de **namen** van niet-gevolgde bestanden mee in de
+repositorystatus — "stage het nieuwe bestand" heeft ze nodig — maar hun inhoud
+wordt nog steeds nooit gelezen.
+
 ## Context vastzetten
 
 Het model bepaalt wat het leest. Vastzetten overrulet dat: wat vastzit wordt
@@ -65,6 +70,8 @@ op een uitgesloten pad vallen uit die diff, niet de hele commit.
 | **Vragen stellen over de repository** | Uit verwijdert het tabblad, de knop en het doel van de sneltoets. De rest van de AI blijft werken |
 | **Chatmodel** | Een model alleen voor de chat. Leeg is dat van het profiel — vragen kost minder dan reviewen, een kleiner model volstaat vaak |
 | **Alleen vastgelegde inhoud** | Antwoordt vanuit de laatste commit in plaats van je werkmap: niet-vastgelegde bewerkingen verlaten de machine nooit |
+| **Git-acties voorstellen in de chat** | Uit maakt de chat weer puur alleen-lezen: geen actiekaarten, geen goedkeuringsmenu |
+| **Hoe voorgestelde acties worden uitgevoerd** | De goedkeuringsmodus — zie [Goedkeuringsmodi](#goedkeuringsmodi). Destructieve acties vragen hoe dan ook bevestiging |
 
 Staat AI helemaal uit, dan verdwijnt de chat mee — geen paneel dat een antwoord
 aanbiedt dat niemand kan geven.
@@ -93,6 +100,48 @@ leidt, toont gewoon niets.
 
 ![Afbeeldingsvoorbeeld bij zweven](../../screenshots/repo-chat-image-hover.webp)
 
+## Acties uitvoeren vanuit de chat
+
+Vraag om een verandering in plaats van een feit — *stage de
+markdown-bestanden, commit dit als fix, zet de buildoutput op de ignorelijst* —
+en het antwoord komt met een **actiekaart**: de concrete stappen die de
+assistent wil zetten, één rij per actie, met de knoppen **Uitvoeren** en
+**Afwijzen**. Niets op de kaart is al gebeurd; het model kan alleen
+voorstellen, en elk voorstel wordt tegen de werkmap gecontroleerd voordat jij
+het ziet — een actie die een niet-bestaand bestand noemt, wordt afgewezen, niet
+getoond.
+
+![Voorgestelde acties in de chat](../../screenshots/repo-chat-actions.webp)
+
+De set acties is dezelfde die de **Uitvoeren**-assistent in de werkbalk
+gebruikt: ignore-patronen, stage, unstage, commit, stash, discard, branch,
+checkout, tag. Alles daarbuiten — push, pull, reset, rebase, force-operaties —
+wordt bewust geweigerd; de chat verwijst je dan naar de gewone UI.
+
+### Goedkeuringsmodi
+
+Het schildmenu onder het invoerveld (ook in **Instellingen → AI →
+Repository-chat**) bepaalt hoe een kaart loopt:
+
+| Modus | Voert uit |
+|---|---|
+| **Altijd vragen** | Niets totdat je op de kaart op **Uitvoeren** drukt |
+| **Veilige acties automatisch uitvoeren** | Voorstellen die alleen uit omkeerbaar huishoudwerk bestaan — stage, unstage, ignore, branch, tag — lopen bij aankomst; al het andere wacht op de knop |
+| **Alle acties automatisch uitvoeren** | Elk voorstel loopt bij aankomst, behalve destructieve |
+
+Een voorstel dat **niet-vastgelegde wijzigingen zou weggooien, vraagt altijd
+eerst**, in elke modus, en de bevestiging noemt de bestanden die verloren
+zouden gaan. De kaart meldt wat er echt gebeurde — hoeveel acties liepen, of de
+fout die ze stopte — en de assistent hoort de uitkomst, zodat een vervolgvraag
+weet of zijn plan is uitgevoerd of afgewezen.
+
+### Fouten oplossen met de assistent
+
+Wanneer een git-operatie mislukt en AI-chat beschikbaar is, krijgt de fouttoast
+een sparkle-knop: die opent de chat met de fout in het invoerveld geplakt,
+zodat "waarom mislukte dit en wat nu" één klik is. Het concept is bewerkbaar —
+er wordt niets verstuurd tot je op Verzenden drukt.
+
 ## Wat hij weigert
 
 - **Bestanden die op geheimen lijken worden nooit gelezen**, vastgezet of niet:
@@ -100,9 +149,11 @@ leidt, toont gewoon niets.
   [maskeren van geheimen](security.md) niet.
 - **Binaries en bestanden groter dan 512 KB** van buiten de repository worden op
   dezelfde manier overgeslagen. Binnen gelden de gewone regels.
-- **Hij schrijft nooit.** Geen stage, geen commit, geen branchwissel — hij heeft
-  geen gereedschap, alleen tekst. Een antwoord dat beweert iets gedaan te hebben,
-  beschrijft; het rapporteert niet.
+- **Hij schrijft nooit uit zichzelf.** Het model heeft geen gereedschap, alleen
+  tekst: een verandering komt als voorstelkaart, loopt alleen onder
+  [jouw goedkeuringsregels](#goedkeuringsmodi), en een destructieve stap vraagt
+  altijd bevestiging. Met **Git-acties voorstellen in de chat** uit stelt hij
+  niet eens voor.
 - **Gesprekken leven alleen in het geheugen.** Elke repository houdt zijn eigen
   draad; Gitcito afsluiten gooit ze weg.
 

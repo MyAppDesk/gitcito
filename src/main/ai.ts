@@ -11,6 +11,7 @@ import {
   APP_THEME_SCHEMA,
   ARTIFACT_SUGGESTIONS_SCHEMA,
   BRANCH_NAME_SCHEMA,
+  ASK_ACTIONS_SCHEMA,
   CODE_THEME_KEYS,
   CODE_THEME_SCHEMA,
   COMMIT_SCHEMA,
@@ -898,27 +899,7 @@ const ASK_PLAN_SCHEMA: Record<string, unknown> = {
   properties: {
     summary: { type: 'string' },
     note: { type: 'string' },
-    actions: {
-      type: 'array',
-      items: {
-        type: 'object',
-        required: ['type', 'description'],
-        properties: {
-          type: {
-            type: 'string',
-            enum: ['gitignore', 'stage', 'unstage', 'commit', 'stash', 'discard', 'branch', 'checkout', 'tag']
-          },
-          description: { type: 'string' },
-          files: { type: 'array', items: { type: 'string' } },
-          patterns: { type: 'array', items: { type: 'string' } },
-          message: { type: 'string' },
-          name: { type: 'string' },
-          at: { type: 'string' },
-          ref: { type: 'string' },
-          checkout: { type: 'boolean' }
-        }
-      }
-    }
+    actions: ASK_ACTIONS_SCHEMA
   }
 }
 

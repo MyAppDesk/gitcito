@@ -206,6 +206,57 @@ export const shots = [
     }
   },
   {
+    // A chat reply proposing git actions, waiting for approval: the card with
+    // its Run/Dismiss footer. Seeded through the store — a shot never calls a
+    // provider, and the proposal must be byte-stable.
+    out: 'repo-chat-actions',
+    repos: ['deep-history-monorepo'],
+    themes: ['dark'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['deep-history-monorepo']
+      await page.evaluate(async (path) => {
+        const shot = window.__shot
+        await shot.waitForRepo(path)
+        shot.chat.setState({
+          threads: {
+            [path]: {
+              pending: false,
+              error: null,
+              skipped: [],
+              attachments: [],
+              messages: [
+                { id: 1, role: 'user', content: 'Stage the docs changes and commit them as a docs fix.' },
+                {
+                  id: 2,
+                  role: 'assistant',
+                  content:
+                    'Two steps: stage the changed documentation files, then commit them with a conventional message. Review and run below.',
+                  sources: [],
+                  actions: [
+                    {
+                      type: 'stage',
+                      files: ['docs/guide.md', 'docs/setup.md'],
+                      description: 'Stage the two changed documentation files'
+                    },
+                    {
+                      type: 'commit',
+                      message: 'docs: clarify setup guide',
+                      description: 'Commit the staged documentation changes'
+                    }
+                  ],
+                  actionsState: 'pending'
+                }
+              ]
+            }
+          }
+        })
+        shot.ui.getState().openChatPanel()
+      }, repo)
+      await page.waitForSelector('.repo-chat-actions')
+      await page.waitForTimeout(400)
+    }
+  },
+  {
     // The chat image hover preview: an answer that mentions a committed image
     // (mascot.png in the image-showcase repo), with the popup open over it.
     out: 'repo-chat-image-hover',

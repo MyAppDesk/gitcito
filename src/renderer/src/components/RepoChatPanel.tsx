@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import {
+  AlertTriangle,
   Bot,
+  Check,
   Copy,
   FileCode2,
   FolderOpen,
@@ -9,14 +11,16 @@ import {
   Link2,
   Loader2,
   Paperclip,
+  Play,
   Plus,
   RotateCcw,
   Send,
   Settings,
+  ShieldCheck,
   Trash2,
   X
 } from 'lucide-react'
-import type { RepoChatAttachment } from '../../../shared/types'
+import type { ChatActionApproval, RepoChatAttachment } from '../../../shared/types'
 import { modelFor, resolveAI } from '../../../shared/aiAccounts'
 import { useModelCatalogs } from './useModelCatalogs'
 import { useT, interp, type TranslationKey } from '../i18n'
@@ -33,6 +37,9 @@ import {
   suggestedAttachments
 } from '../lib/repoChatContext'
 import { annotateChatHtml, tokenizeChatText } from '../lib/chatText'
+import { askActionDetail, askActionsAutoRun, destructiveAskFiles } from '../lib/askActions'
+import { executeAskActions } from '../lib/askActionRun'
+import { ASK_ACTION_FALLBACK_META, ASK_ACTION_META } from '../lib/askActionMeta'
 import { gitApi } from '../infrastructure/api'
 import { useRepoChatStore, type RepoChatEntry } from '../stores/chat'
 import { useRepoStore } from '../stores/repo'
@@ -153,7 +160,93 @@ function UserText({ content }: { content: string }): React.JSX.Element {
   )
 }
 
-function AssistantMessage({ message, repoPath }: { message: RepoChatEntry; repoPath: string }): React.JSX.Element {
+/** The proposal widget under an assistant reply: what would run, and the
+ *  approve / dismiss controls for it. Execution stays in the panel — this
+ *  card only renders the entry's action state. */
+function ChatActionCard({
+  message,
+  onRun,
+  onDismiss
+}: {
+  message: RepoChatEntry
+  onRun: () => void
+  onDismiss: () => void
+}): React.JSX.Element {
+  const t = useT()
+  const actions = message.actions ?? []
+  const state = message.actionsState ?? 'pending'
+  return (
+    <div className={`repo-chat-actions ${state}`}>
+      <div className="repo-chat-actions-list">
+        {actions.map((action, i) => {
+          const meta = ASK_ACTION_META[action.type] ?? ASK_ACTION_FALLBACK_META
+          const Icon = meta.Icon
+          const detail = askActionDetail(action, t('aiWizard.allChanges'))
+          return (
+            <div key={i} className="repo-chat-action">
+              <span className="repo-chat-action-badge">
+                <Icon size={12} /> {t(meta.labelKey)}
+              </span>
+              <span className="repo-chat-action-desc" title={detail}>
+                {action.description || detail}
+              </span>
+            </div>
+          )
+        })}
+      </div>
+      <div className="repo-chat-actions-footer">
+        {state === 'pending' && (
+          <>
+            <button type="button" className="btn ghost small" onClick={onDismiss}>
+              {t('chat.actionsDismiss')}
+            </button>
+            <button type="button" className="btn primary small" onClick={onRun}>
+              <Play size={12} /> {interp(t('chat.actionsRunN'), { n: actions.length })}
+            </button>
+          </>
+        )}
+        {state === 'running' && (
+          <span className="repo-chat-actions-status">
+            <Loader2 size={12} className="spin" /> {t('chat.actionsRunning')}
+          </span>
+        )}
+        {state === 'done' && (
+          <span className="repo-chat-actions-status done">
+            <Check size={12} />{' '}
+            {interp(t(message.actionsAuto ? 'chat.actionsAutoRan' : 'chat.actionsRan'), {
+              n: message.actionsApplied ?? actions.length
+            })}
+          </span>
+        )}
+        {state === 'failed' && (
+          <>
+            <span className="repo-chat-actions-status failed" title={message.actionsError}>
+              <AlertTriangle size={12} /> {t('chat.actionsFailed')}
+            </span>
+            <button type="button" className="btn ghost small" onClick={onRun}>
+              <RotateCcw size={12} /> {t('chat.retry')}
+            </button>
+          </>
+        )}
+        {state === 'dismissed' && (
+          <span className="repo-chat-actions-status">{t('chat.actionsDismissed')}</span>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function AssistantMessage({
+  message,
+  repoPath,
+  onRunActions,
+  onDismissActions
+}: {
+  message: RepoChatEntry
+  repoPath: string
+  onRunActions: (message: RepoChatEntry) => void
+  onDismissActions: (message: RepoChatEntry) => void
+}): React.JSX.Element {
   const t = useT()
   const setFileView = useUIStore((state) => state.setFileView)
   const html = useMemo(() => annotateChatHtml(renderMarkdown(message.content)), [message.content])
@@ -167,6 +260,13 @@ function AssistantMessage({ message, repoPath }: { message: RepoChatEntry; repoP
       </div>
       <div className="repo-chat-bubble" onContextMenu={copyMenu}>
         <div className="repo-chat-markdown" dangerouslySetInnerHTML={{ __html: html }} />
+        {!!message.actions?.length && (
+          <ChatActionCard
+            message={message}
+            onRun={() => onRunActions(message)}
+            onDismiss={() => onDismissActions(message)}
+          />
+        )}
         {sources.length > 0 && (
           <div className="repo-chat-sources">
             <span>{t('chat.sources')}</span>
@@ -229,8 +329,11 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
   const clear = useRepoChatStore((state) => state.clear)
   const attach = useRepoChatStore((state) => state.attach)
   const detach = useRepoChatStore((state) => state.detach)
+  const setActions = useRepoChatStore((state) => state.setActions)
   const openModal = useUIStore((state) => state.openModal)
   const openContextMenu = useUIStore((state) => state.openContextMenu)
+  const chatPrompt = useUIStore((state) => state.chatPrompt)
+  const consumeChatPrompt = useUIStore((state) => state.consumeChatPrompt)
   const openFile = useUIStore((state) => (state.fileView?.repoPath === repoPath ? state.fileView.file : null))
   const selected = useRepoStore((state) => state.repos[repoPath]?.selected ?? null)
   const [draft, setDraft] = useState('')
@@ -242,6 +345,7 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
   // not resolve to an image is not retried on every hover.
   const imgCache = useRef(new Map<string, Promise<string | null>>())
   const endRef = useRef<HTMLDivElement>(null)
+  const draftRef = useRef<HTMLTextAreaElement>(null)
   const messages = thread?.messages ?? []
   const pending = thread?.pending ?? false
   const attachments = thread?.attachments ?? []
@@ -269,6 +373,89 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: 'end' })
   }, [messages.length, pending])
+
+  // A draft handed over from elsewhere (an error toast's "Fix with AI") —
+  // consumed only by the panel of the repo the error came from.
+  useEffect(() => {
+    if (!chatPrompt || chatPrompt.repoPath !== repoPath) return
+    setDraft(chatPrompt.text)
+    consumeChatPrompt()
+    draftRef.current?.focus()
+  }, [chatPrompt, repoPath, consumeChatPrompt])
+
+  const approval: ChatActionApproval = profile.ai.repoChatApproval ?? 'ask'
+  const actionsEnabled = profile.ai.repoChatActions !== false
+
+  const runActions = (message: RepoChatEntry, auto = false): void => {
+    const actions = message.actions
+    if (!actions?.length) return
+    const state = message.actionsState ?? 'pending'
+    if (state !== 'pending' && state !== 'failed') return
+    const execute = (): void => {
+      setActions(repoPath, message.id, { actionsState: 'running', actionsAuto: auto, actionsError: undefined })
+      let applied = actions.length
+      let failMessage = ''
+      void useRepoStore
+        .getState()
+        .run(
+          repoPath,
+          interp(t('chat.actionsRunLabel'), { n: actions.length }),
+          async () => {
+            const result = await executeAskActions(repoPath, actions)
+            applied = result.applied
+          },
+          undefined,
+          null,
+          // Keep the default error toast (it carries the "Fix with AI" button);
+          // just remember the message for the card.
+          (message_) => {
+            failMessage = message_
+            return false
+          }
+        )
+        .then((ok) => {
+          setActions(
+            repoPath,
+            message.id,
+            ok
+              ? { actionsState: 'done', actionsApplied: applied }
+              : { actionsState: 'failed', actionsError: failMessage }
+          )
+        })
+    }
+    // Destructive proposals always confirm, whatever the approval mode says —
+    // and the confirm names what would be lost.
+    const destructive = destructiveAskFiles(actions)
+    if (destructive.length) {
+      openModal({
+        kind: 'confirm',
+        danger: true,
+        title: t('chat.confirmDiscardTitle'),
+        message: interp(t('chat.confirmDiscardMessage'), { files: destructive.join(', ') }),
+        confirmLabel: t('chat.confirmDiscardOk'),
+        onConfirm: execute
+      })
+      return
+    }
+    execute()
+  }
+
+  const dismissActions = (message: RepoChatEntry): void => {
+    if ((message.actionsState ?? 'pending') !== 'pending') return
+    setActions(repoPath, message.id, { actionsState: 'dismissed' })
+  }
+
+  // Approval modes act on arrival: the newest pending proposal runs itself
+  // when the mode covers every action in it. Marking it 'running' inside
+  // runActions is synchronous, so a re-render cannot start it twice.
+  useEffect(() => {
+    const last = messages.at(-1)
+    if (!last || last.role !== 'assistant' || !last.actions?.length) return
+    if ((last.actionsState ?? 'pending') !== 'pending') return
+    if (!askActionsAutoRun(last.actions, approval)) return
+    runActions(last, true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once per new proposal
+  }, [messages])
 
   const submit = (): void => {
     const content = draft.trim()
@@ -434,7 +621,13 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
 
             {messages.map((message) =>
               message.role === 'assistant' ? (
-                <AssistantMessage key={message.id} message={message} repoPath={repoPath} />
+                <AssistantMessage
+                  key={message.id}
+                  message={message}
+                  repoPath={repoPath}
+                  onRunActions={(entry) => runActions(entry)}
+                  onDismissActions={dismissActions}
+                />
               ) : (
                 <UserMessage key={message.id} message={message} />
               )
@@ -505,6 +698,7 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
               )}
             </div>
             <textarea
+              ref={draftRef}
               value={draft}
               rows={3}
               maxLength={8000}
@@ -523,7 +717,27 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
               }}
             />
             <div className="repo-chat-composer-actions">
-              <span>{t('chat.sendHint')}</span>
+              {actionsEnabled ? (
+                <span className="repo-chat-approval" title={t('chat.approvalTitle')}>
+                  <ShieldCheck size={12} />
+                  <select
+                    value={approval}
+                    aria-label={t('chat.approvalTitle')}
+                    onChange={(event) =>
+                      saveProfile({
+                        ...profile,
+                        ai: { ...profile.ai, repoChatApproval: event.target.value as ChatActionApproval }
+                      })
+                    }
+                  >
+                    <option value="ask">{t('chat.approvalAsk')}</option>
+                    <option value="auto-safe">{t('chat.approvalSafe')}</option>
+                    <option value="auto-all">{t('chat.approvalAll')}</option>
+                  </select>
+                </span>
+              ) : (
+                <span>{t('chat.sendHint')}</span>
+              )}
               <button
                 type="button"
                 className="btn primary small"

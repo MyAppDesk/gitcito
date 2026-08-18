@@ -2,8 +2,8 @@
 title: Chat del repository
 category: AI
 order: 82
-summary: Fai domande su questo repository, con i file e i commit che fissi come contesto.
-keywords: chat domanda chiedere assistente contesto allegare fissare trascinare commit file prova ancorato ai pannello
+summary: Fai domande su questo repository, con i file e i commit che fissi come contesto — e lascia che proponga azioni git che approvi prima dell'esecuzione.
+keywords: chat domanda chiedere assistente contesto allegare fissare trascinare commit file prova ancorato ai pannello azioni eseguire approvare approvazione automatica consentire correggere errore notifica
 ---
 
 # Chat del repository
@@ -36,6 +36,11 @@ Leggere la copia di lavoro permette di parlare di modifiche non committate.
 Significa anche che quelle modifiche lasciano la macchina: le riceve il provider
 configurato in [Funzioni IA](ai.md).
 
+Una sfumatura: con le [proposte di azioni](#eseguire-azioni-dalla-chat)
+attivate, i **nomi** dei file non tracciati vengono inclusi nello stato del
+repository — «metti in stage il file nuovo» ne ha bisogno — ma il loro
+contenuto continua a non essere mai letto.
+
 ## Fissare il contesto
 
 Il modello decide cosa leggere. Fissare serve a scavalcarlo: ciò che è fissato
@@ -65,6 +70,8 @@ blocchi su percorsi esclusi vengono tolti da quel diff, non l’intero commit.
 | **Fai domande sul repository** | Disattivata toglie la scheda, il pulsante e il bersaglio della scorciatoia. Il resto dell’IA continua |
 | **Modello della chat** | Un modello solo per la chat. Vuoto significa quello del profilo: chiedere costa meno che revisionare, spesso basta uno più piccolo |
 | **Solo contenuti committati** | Risponde dall’ultimo commit invece che dal working tree: le modifiche non committate non lasciano mai la macchina |
+| **Proponi azioni git in chat** | Disattivata riporta la chat alla sola lettura: niente schede di azioni, niente menu di approvazione |
+| **Come vengono eseguite le azioni proposte** | La modalità di approvazione — vedi [Modalità di approvazione](#modalità-di-approvazione). Le azioni distruttive chiedono comunque conferma |
 
 Con l’IA spenta del tutto la chat sparisce con lei: nessun pannello che offre
 risposte che nessuno può dare.
@@ -93,6 +100,50 @@ un'immagine leggibile semplicemente non mostra nulla.
 
 ![Anteprima dell'immagine al passaggio del cursore](../../screenshots/repo-chat-image-hover.webp)
 
+## Eseguire azioni dalla chat
+
+Chiedi una modifica invece di un fatto — *metti in stage i file markdown,
+committa questo come fix, aggiungi l'output di build alla lista degli ignore* —
+e la risposta arriva con una **scheda di azioni**: i passi concreti che
+l'assistente vuole compiere, una riga per azione, con i pulsanti **Esegui** e
+**Ignora**. Nulla di ciò che c'è nella scheda è già accaduto; il modello può
+solo proporre, e ogni proposta viene verificata contro la copia di lavoro prima
+ancora che tu la veda — un'azione che nomina un file inesistente viene
+rifiutata, non mostrata.
+
+![Azioni proposte in chat](../../screenshots/repo-chat-actions.webp)
+
+L'insieme di azioni è lo stesso dell'assistente **Esegui** della barra
+strumenti: pattern di ignore, stage, unstage, commit, stash, scarto delle
+modifiche, branch, checkout, tag. Tutto ciò che va oltre — push, pull, reset,
+rebase, operazioni forzate — viene rifiutato per scelta; la chat ti dirà di
+usare l'interfaccia dedicata.
+
+### Modalità di approvazione
+
+Il menu con lo scudo sotto il campo di testo (anche in **Impostazioni → IA →
+Chat del repository**) decide come viene eseguita una scheda:
+
+| Modalità | Esegue |
+|---|---|
+| **Chiedi sempre** | Nulla finché non premi **Esegui** sulla scheda |
+| **Esegui in automatico le azioni sicure** | Le proposte fatte solo di operazioni reversibili — stage, unstage, ignore, branch, tag — partono all'arrivo; il resto aspetta il pulsante |
+| **Esegui in automatico tutte le azioni** | Ogni proposta parte all'arrivo, tranne quelle distruttive |
+
+Una proposta che **scarterebbe modifiche non committate chiede sempre prima**,
+in ogni modalità, e la conferma nomina i file che andrebbero persi. La scheda
+riporta che cosa è successo davvero — quante azioni sono state eseguite, o
+l'errore che le ha fermate — e l'assistente conosce l'esito, così una domanda
+successiva sa se il suo piano è stato eseguito o ignorato.
+
+### Correggere gli errori con l'assistente
+
+Quando un'operazione git fallisce e la chat IA è disponibile, la notifica di
+errore guadagna un pulsante a scintilla: apre la chat con il fallimento
+incollato nel campo di testo, così «perché è fallita e che cosa faccio» è un
+solo clic. La bozza è modificabile — nulla viene inviato finché non premi
+Invia.
+
 ## Che cosa rifiuta
 
 - **I file che sembrano segreti non vengono mai letti**, fissati o no: il chip
@@ -100,9 +151,11 @@ un'immagine leggibile semplicemente non mostra nulla.
   [mascheramento dei segreti](security.md).
 - **I binari e i file oltre 512 KB** presi da fuori del repository vengono
   saltati allo stesso modo. Dentro valgono le regole consuete.
-- **Non scrive mai.** Niente stage, niente commit, niente cambio di branch: non
-  ha strumenti, solo testo. Una risposta che dice di aver fatto qualcosa sta
-  descrivendo, non riferendo.
+- **Non scrive mai da sola.** Il modello non ha strumenti, solo testo: una
+  modifica arriva come scheda di proposta, viene eseguita solo secondo le
+  [tue regole di approvazione](#modalità-di-approvazione), e un passo
+  distruttivo chiede sempre conferma. Con **Proponi azioni git in chat**
+  disattivata, non propone nemmeno.
 - **Le conversazioni vivono solo in memoria.** Ogni repository tiene il suo filo;
   chiudendo Gitcito si perdono.
 

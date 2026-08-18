@@ -1,6 +1,7 @@
 import { create, type StoreApi, type UseBoundStore } from 'zustand'
 import type {
   AIConfig,
+  AskAction,
   RepoChatAttachment,
   RepoChatMessage,
   RepoChatReply,
@@ -13,6 +14,10 @@ export const REPO_CHAT_STORED_MESSAGES = 40
 export const REPO_CHAT_SENT_MESSAGES = 12
 const MAX_USER_CHARS = 8_000
 
+/** Lifecycle of one proposal card. 'pending' waits for the user (or the
+ *  approval mode); everything after is terminal except a retry from 'failed'. */
+export type ChatActionsState = 'pending' | 'running' | 'done' | 'failed' | 'dismissed'
+
 export interface RepoChatEntry {
   id: number
   role: 'user' | 'assistant'
@@ -20,6 +25,14 @@ export interface RepoChatEntry {
   sources?: RepoChatSource[]
   /** What was pinned when this turn was sent — shown under the bubble. */
   attachments?: RepoChatAttachment[]
+  /** Validated actions the assistant proposed with this reply. */
+  actions?: AskAction[]
+  actionsState?: ChatActionsState
+  /** Actions actually applied once state reaches 'done'. */
+  actionsApplied?: number
+  actionsError?: string
+  /** The approval mode ran the proposal without a click. */
+  actionsAuto?: boolean
 }
 
 export interface RepoChatThread {
@@ -47,6 +60,12 @@ export interface RepoChatState {
   clear(repoPath: string): void
   attach(repoPath: string, items: RepoChatAttachment[]): void
   detach(repoPath: string, key: string): void
+  /** Advance one proposal card's lifecycle (run/dismiss/finish/fail). */
+  setActions(
+    repoPath: string,
+    messageId: number,
+    patch: Partial<Pick<RepoChatEntry, 'actionsState' | 'actionsApplied' | 'actionsError' | 'actionsAuto'>>
+  ): void
 }
 
 const EMPTY: RepoChatThread = { messages: [], pending: false, error: null, attachments: [], skipped: [] }
@@ -55,10 +74,26 @@ function trimMessages(messages: RepoChatEntry[]): RepoChatEntry[] {
   return messages.slice(-REPO_CHAT_STORED_MESSAGES)
 }
 
+/** Model-facing outcome trailer, so a follow-up turn knows whether an earlier
+ *  proposal actually ran. English on purpose — this is model input, not UI. */
+export function actionOutcomeNote(entry: RepoChatEntry): string {
+  if (entry.role !== 'assistant' || !entry.actions?.length) return ''
+  const list = entry.actions.map((action) => action.type).join(', ')
+  const outcome =
+    entry.actionsState === 'done'
+      ? `the user approved and the app executed ${entry.actionsApplied ?? entry.actions.length} of them`
+      : entry.actionsState === 'failed'
+        ? `execution failed: ${entry.actionsError ?? 'unknown error'}`
+        : entry.actionsState === 'dismissed'
+          ? 'the user dismissed them without running anything'
+          : 'they have not been run'
+  return `\n\n[App note: this reply proposed actions (${list}); ${outcome}.]`
+}
+
 function wireMessages(messages: RepoChatEntry[]): RepoChatMessage[] {
   return messages
     .slice(-REPO_CHAT_SENT_MESSAGES)
-    .map(({ role, content }) => ({ role, content }))
+    .map((entry) => ({ role: entry.role, content: `${entry.content}${actionOutcomeNote(entry)}` }))
 }
 
 export function createRepoChatStore(request: RepoChatRequest): UseBoundStore<StoreApi<RepoChatState>> {
@@ -87,7 +122,8 @@ export function createRepoChatStore(request: RepoChatRequest): UseBoundStore<Sto
           id: ++nextMessageId,
           role: 'assistant',
           content: reply.content,
-          sources: reply.sources
+          sources: reply.sources,
+          ...(reply.actions?.length ? { actions: reply.actions, actionsState: 'pending' as const } : {})
         }
         patch(repoPath, {
           messages: trimMessages([...current.messages, assistant]),
@@ -141,6 +177,15 @@ export function createRepoChatStore(request: RepoChatRequest): UseBoundStore<Sto
       detach: (repoPath, key) => {
         const current = get().threads[repoPath] ?? EMPTY
         patch(repoPath, { attachments: removeAttachment(current.attachments, key) })
+      },
+      setActions: (repoPath, messageId, actionPatch) => {
+        const current = get().threads[repoPath]
+        if (!current) return
+        patch(repoPath, {
+          messages: current.messages.map((entry) =>
+            entry.id === messageId && entry.actions ? { ...entry, ...actionPatch } : entry
+          )
+        })
       }
     }
   })

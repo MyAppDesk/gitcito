@@ -2,8 +2,8 @@
 title: Depo sohbeti
 category: Yapay zekâ
 order: 82
-summary: Bu depo hakkında soru sorun; bağlam olarak sabitlediğiniz dosya ve commit’lerle.
-keywords: sohbet soru sor asistan bağlam sabitle ekle sürükle bırak commit dosya kanıt dayanaklı yapay zekâ panel
+summary: Bu depo hakkında soru sorun; bağlam olarak sabitlediğiniz dosya ve commit’lerle — ve çalışmadan önce onayladığınız git eylemleri önermesine izin verin.
+keywords: sohbet soru sor asistan bağlam sabitle ekle sürükle bırak commit dosya kanıt dayanaklı yapay zekâ panel eylem eylemler çalıştır onay onayla otomatik izin ver düzelt hata bildirim
 ---
 
 # Depo sohbeti
@@ -34,6 +34,10 @@ dosya ya da satır, makul görünen bir yanıt değil, bir doğrulama hatasıdı
 zamanda o düzenlemelerin soru sorarken makineden çıkması demektir:
 [Yapay zekâ özellikleri](ai.md) altında ayarladığınız sağlayıcı onları alır.
 
+Bir ince ayrıntı: [eylem önerileri](#sohbetten-eylem-çalıştırma) açıkken
+izlenmeyen dosyaların **adları** depo durumuna dahil edilir — "yeni dosyayı
+hazırla" bunlara ihtiyaç duyar — ama içerikleri yine de asla okunmaz.
+
 ## Bağlam sabitleme
 
 Neyin okunacağına model karar verir. Sabitleme, bunu geçersiz kılmanın yoludur:
@@ -63,6 +67,8 @@ tutulan bir yola dokunan parçalar o diff’ten düşer, commit’in tamamı de�
 | **Depo hakkında soru sorun** | Kapalıyken sekmeyi, araç çubuğu düğmesini ve kısayol hedefini kaldırır. Diğer yapay zekâ özellikleri çalışmaya devam eder |
 | **Sohbet modeli** | Yalnızca sohbete özel model. Boşsa profilinki kullanılır — soru sormak incelemeden ucuzdur, küçüğü çoğu zaman yeter |
 | **Yalnızca işlenmiş içerik** | Çalışma ağacı yerine son commit üzerinden yanıtlar: işlenmemiş düzenlemeler makineden hiç çıkmaz |
+| **Sohbette git eylemleri önerilsin** | Kapalıyken sohbet yeniden salt okunur olur: eylem kartı da onay menüsü de yok |
+| **Önerilen eylemler nasıl çalıştırılır** | Onay modu — bkz. [Onay modları](#onay-modları). Yıkıcı eylemler her durumda onay ister |
 
 Yapay zekâ tümüyle kapalıysa sohbet de onunla birlikte kaybolur — kimsenin
 yanıtlayamayacağı bir şeyi öneren panel kalmaz.
@@ -90,6 +96,47 @@ görsele karşılık gelmeyen bir söz hiçbir şey göstermez.
 
 ![Üzerine gelince görsel önizlemesi](../../screenshots/repo-chat-image-hover.webp)
 
+## Sohbetten eylem çalıştırma
+
+Bir olgu yerine bir değişiklik isteyin — *markdown dosyalarını hazırla, bunu
+düzeltme olarak commit’le, derleme çıktısını yoksayma listesine ekle* — ve
+yanıt bir **eylem kartıyla** gelir: asistanın atmak istediği somut adımlar, her
+eyleme bir satır, **Çalıştır** ve **Reddet** düğmeleriyle. Karttaki hiçbir şey
+henüz olmuş değildir; model yalnızca önerebilir ve her öneri siz görmeden önce
+çalışma ağacıyla karşılaştırılır — var olmayan bir dosyayı anan eylem
+reddedilir, gösterilmez.
+
+![Sohbette önerilen eylemler](../../screenshots/repo-chat-actions.webp)
+
+Eylem kümesi, araç çubuğundaki **Çalıştır** asistanının kullandığıyla aynıdır:
+yoksayma desenleri, stage, unstage, commit, stash, discard, dal, checkout,
+etiket. Bunun ötesindeki her şey — push, pull, reset, rebase, force işlemleri —
+tasarım gereği reddedilir; sohbet sizi bunun yerine ilgili arayüze yönlendirir.
+
+### Onay modları
+
+Yazma kutusunun altındaki kalkan menüsü (ayrıca **Ayarlar → Yapay zekâ → Depo
+sohbeti** içinde) bir kartın nasıl çalışacağına karar verir:
+
+| Mod | Çalıştırdığı |
+|---|---|
+| **Her zaman sor** | Kartta **Çalıştır**’a basana kadar hiçbir şey |
+| **Güvenli eylemleri otomatik çalıştır** | Yalnızca geri alınabilir düzen işlerinden — stage, unstage, yoksayma, dal, etiket — oluşan öneriler gelir gelmez çalışır; gerisi düğmeyi bekler |
+| **Tüm eylemleri otomatik çalıştır** | Her öneri gelir gelmez çalışır; yıkıcı olanlar hariç |
+
+**İşlenmemiş değişiklikleri atacak bir öneri her modda önce sorar** ve onay
+iletişim kutusu kaybolacak dosyaları adlarıyla sayar. Kart gerçekte olanı
+bildirir — kaç eylemin çalıştığını ya da onları durduran hatayı — ve sonuç
+asistana iletilir; böylece bir sonraki soru, planının çalıştırıldığını mı yoksa
+reddedildiğini mi bilir.
+
+### Hataları asistanla düzeltme
+
+Bir git işlemi başarısız olduğunda ve yapay zekâ sohbeti kullanılabilirken hata
+bildirimi bir parıltı düğmesi kazanır: sohbeti, hata metni yazma kutusuna
+yapıştırılmış hâlde açar; "bu neden başarısız oldu, ne yapmalıyım" tek tıktır.
+Taslak düzenlenebilir — Gönder’e basana kadar hiçbir şey gönderilmez.
+
 ## Neyi reddeder
 
 - **Sır gibi görünen dosyalar hiçbir zaman okunmaz**, sabitlenmiş olsa bile: çip
@@ -97,8 +144,11 @@ görsele karşılık gelmeyen bir söz hiçbir şey göstermez.
   [sır maskelemeyi](security.md) atlatmanın yolu değildir.
 - **İkili dosyalar ve 512 KB’ı aşanlar**, depo dışından geldiklerinde aynı
   şekilde atlanır. Depo içinde her zamanki kurallar geçerlidir.
-- **Asla yazmaz.** Hazırlama yok, commit yok, dal değişikliği yok — aracı yok,
-  yalnızca metni var. Bir şey yaptığını söyleyen yanıt anlatıyordur, bildirmiyor.
+- **Kendi başına asla yazmaz.** Modelin aracı yok, yalnızca metni var: bir
+  değişiklik öneri kartı olarak gelir, yalnızca
+  [sizin onay kurallarınıza](#onay-modları) göre çalışır ve yıkıcı bir adım her
+  zaman onay ister. **Sohbette git eylemleri önerilsin** kapalıyken önermez
+  bile.
 - **Konuşmalar yalnızca bellekte yaşar.** Her depo kendi başlığını tutar;
   Gitcito’dan çıkınca silinirler.
 

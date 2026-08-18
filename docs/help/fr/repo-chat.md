@@ -2,8 +2,8 @@
 title: Discussion du dépôt
 category: IA
 order: 82
-summary: Posez des questions sur ce dépôt, avec les fichiers et les commits que vous épinglez comme contexte.
-keywords: discussion chat question assistant contexte épingler joindre glisser déposer commit fichier preuve ancré ia panneau
+summary: Posez des questions sur ce dépôt, avec les fichiers et les commits que vous épinglez comme contexte — et laissez-la proposer des actions git que vous approuvez avant leur exécution.
+keywords: discussion chat question assistant contexte épingler joindre glisser déposer commit fichier preuve ancré ia panneau actions exécuter approuver approbation automatique autoriser corriger erreur notification
 ---
 
 # Discussion du dépôt
@@ -36,6 +36,11 @@ Lire la copie de travail permet de parler de modifications non validées. Cela
 signifie aussi qu’elles quittent votre machine : le fournisseur configuré dans
 [Fonctions d’IA](ai.md) les reçoit.
 
+Une nuance : avec les [propositions d’actions](#exécuter-des-actions-depuis-la-discussion)
+activées, les **noms** des fichiers non suivis sont inclus dans l’état du
+dépôt — « indexe le nouveau fichier » en a besoin — mais leur contenu n’est
+toujours jamais lu.
+
 ## Épingler du contexte
 
 Le modèle décide de ce qu’il lit. Épingler, c’est passer outre : ce qui est
@@ -66,6 +71,8 @@ touchant un chemin exclu sont retirés de ce diff, pas le commit entier.
 | **Poser des questions sur le dépôt** | Désactivé, l’onglet, le bouton et la cible du raccourci disparaissent. Le reste de l’IA continue |
 | **Modèle de la discussion** | Un modèle réservé à la discussion. Vide : celui du profil — poser une question coûte moins qu’une relecture, un modèle plus petit suffit souvent |
 | **Contenu validé uniquement** | Répond depuis le dernier commit plutôt que la copie de travail : les modifications non validées ne quittent jamais la machine |
+| **Proposer des actions git dans la discussion** | Désactivé, la discussion redevient purement en lecture seule : plus de cartes d’actions ni de menu d’approbation |
+| **Comment s’exécutent les actions proposées** | Le mode d’approbation — voir [Modes d’approbation](#modes-dapprobation). Les actions destructrices confirment quoi qu’il arrive |
 
 Avec l’IA entièrement désactivée, la discussion disparaît avec elle : plus de
 panneau proposant une réponse que rien ne peut produire.
@@ -95,6 +102,51 @@ n'affiche simplement rien.
 
 ![Aperçu d'image au survol](../../screenshots/repo-chat-image-hover.webp)
 
+## Exécuter des actions depuis la discussion
+
+Demandez un changement plutôt qu’un fait — *indexe les fichiers markdown,
+valide ceci comme un correctif, mets la sortie du build dans les exclusions* —
+et la réponse arrive avec une **carte d’actions** : les étapes concrètes que
+l’assistant veut effectuer, une ligne par action, avec les boutons **Exécuter**
+et **Ignorer**. Rien de ce que contient la carte n’a encore eu lieu ; le modèle
+ne peut que proposer, et chaque proposition est vérifiée contre la copie de
+travail avant même que vous la voyiez — une action nommant un fichier qui
+n’existe pas est rejetée, pas affichée.
+
+![Actions proposées dans la discussion](../../screenshots/repo-chat-actions.webp)
+
+L’ensemble d’actions est le même que celui de l’assistant **Exécuter** de la
+barre d’outils : motifs d’exclusion, indexer, désindexer, valider, remiser,
+abandonner, créer une branche, basculer de branche, étiqueter. Tout ce qui
+dépasse — push, pull, reset, rebase, opérations forcées — est refusé par
+conception ; la discussion vous dira d’utiliser l’interface dédiée à la place.
+
+### Modes d’approbation
+
+Le menu au bouclier sous le champ de saisie (aussi dans **Réglages → IA →
+Discussion du dépôt**) décide de la façon dont une carte s’exécute :
+
+| Mode | Exécute |
+|---|---|
+| **Toujours demander** | Rien tant que vous n’avez pas pressé **Exécuter** sur la carte |
+| **Exécuter automatiquement les actions sûres** | Les propositions faites uniquement d’opérations réversibles — indexer, désindexer, exclure, branche, étiquette — s’exécutent à l’arrivée ; le reste attend le bouton |
+| **Exécuter automatiquement toutes les actions** | Chaque proposition s’exécute à l’arrivée, sauf les destructrices |
+
+Une proposition qui **abandonnerait des modifications non validées demande
+toujours d’abord**, dans tous les modes, et la confirmation nomme les fichiers
+qui seraient perdus. La carte rapporte ce qui s’est réellement passé — combien
+d’actions ont été exécutées, ou l’erreur qui les a arrêtées — et l’assistant est
+informé du résultat : une question de suivi sait si son plan a été exécuté ou
+ignoré.
+
+### Corriger les erreurs avec l’assistant
+
+Quand une opération git échoue et que la discussion IA est disponible, la
+notification d’erreur gagne un bouton étincelle : il ouvre la discussion avec
+l’échec collé dans le champ de saisie — « pourquoi cela a-t-il échoué et que
+faire » tient en un clic. Le brouillon est modifiable ; rien n’est envoyé avant
+que vous pressiez Envoyer.
+
 ## Ce qu’elle refuse
 
 - **Les fichiers qui ressemblent à des secrets ne sont jamais lus**, épinglés ou
@@ -103,9 +155,11 @@ n'affiche simplement rien.
 - **Les binaires et les fichiers de plus de 512 Ko** venus de l’extérieur du
   dépôt sont ignorés de la même façon. À l’intérieur, les règles habituelles
   s’appliquent.
-- **Elle n’écrit jamais.** Ni index, ni commit, ni changement de branche : aucun
-  outil, seulement du texte. Une réponse qui prétend avoir agi décrit, elle ne
-  rapporte pas.
+- **Elle n’écrit jamais d’elle-même.** Le modèle n’a aucun outil, seulement du
+  texte : un changement arrive comme carte de proposition, ne s’exécute que
+  selon [vos règles d’approbation](#modes-dapprobation), et une étape
+  destructrice confirme toujours. Avec **Proposer des actions git dans la
+  discussion** désactivé, elle ne propose même pas.
 - **Les conversations ne vivent qu’en mémoire.** Chaque dépôt garde son fil ;
   quitter Gitcito les efface.
 

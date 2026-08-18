@@ -246,7 +246,7 @@ const FEATURES = [
     icon: '💬',
     title: 'Repository chat',
     id: 'repo-chat',
-    body: 'Ask this repository a question and get an answer that cites the lines it read. Pin the files and commits it must look at.'
+    body: 'Ask this repository a question and get an answer that cites the lines it read. Ask for a change and approve the proposed git actions before they run.'
   },
   {
     icon: '🧲',

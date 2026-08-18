@@ -154,7 +154,8 @@ interface RepoStoreState {
   redo(path: string): Promise<void>
 }
 
-const toast = (kind: 'success' | 'error' | 'info', msg: string): void => useUIStore.getState().toast(kind, msg)
+const toast = (kind: 'success' | 'error' | 'info', msg: string, opts?: { repoPath?: string }): void =>
+  useUIStore.getState().toast(kind, msg, opts)
 
 function isConflictErrorMessage(msg: string): boolean {
   return /\bCONFLICT(S)?\b|Automatic merge failed|after resolving the conflicts|CHERRY_PICK_HEAD/i.test(msg)
@@ -515,7 +516,7 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
         const message = err instanceof Error ? err.message : String(err)
         if (onError?.(message)) return false
         if (isConflictErrorMessage(message)) toast('info', conflictHint(message))
-        else toast('error', message)
+        else toast('error', message, { repoPath: path })
         return false
       } finally {
         const uiEnd = useUIStore.getState()

@@ -2,8 +2,8 @@
 title: Repository-Chat
 category: KI
 order: 82
-summary: Stelle Fragen zu diesem Repository — mit den Dateien und Commits, die du als Kontext anheftest.
-keywords: chat frage fragen assistent kontext anheften anhängen ziehen ablegen commit datei beleg belegt ki panel
+summary: Stelle Fragen zu diesem Repository — mit den Dateien und Commits, die du als Kontext anheftest — und lass ihn Git-Aktionen vorschlagen, die du vor dem Ausführen freigibst.
+keywords: chat frage fragen assistent kontext anheften anhängen ziehen ablegen commit datei beleg belegt ki panel aktionen ausführen freigeben freigabe automatisch erlauben beheben fehler toast
 ---
 
 # Repository-Chat
@@ -36,6 +36,11 @@ Weil er das Arbeitsverzeichnis liest, kannst du über noch nicht committete
 Änderungen sprechen. Es heißt auch: diese Änderungen verlassen beim Fragen
 deinen Rechner — der in [KI-Funktionen](ai.md) konfigurierte Anbieter bekommt sie.
 
+Eine Feinheit: mit aktivierten
+[Aktionsvorschlägen](#aktionen-aus-dem-chat-ausführen) stehen die **Namen**
+nicht versionierter Dateien im Repository-Zustand — „stage die neue Datei“
+braucht sie — ihr Inhalt wird aber weiterhin nie gelesen.
+
 ## Kontext anheften
 
 Das Modell entscheidet, was es liest. Anheften überstimmt das: Angeheftetes wird
@@ -66,6 +71,8 @@ Commit.
 | **Fragen zum Repository stellen** | Aus entfernt Reiter, Symbolleisten-Knopf und Kürzelziel. Der Rest der KI bleibt |
 | **Chat-Modell** | Ein Modell nur für den Chat. Leer heißt: das des Profils — Fragen kosten weniger als Reviews, ein kleineres reicht oft |
 | **Nur committete Inhalte** | Antwortet aus dem letzten Commit statt aus dem Arbeitsverzeichnis: nicht committete Änderungen verlassen den Rechner nie |
+| **Git-Aktionen im Chat vorschlagen** | Aus macht den Chat wieder rein lesend: keine Aktionskarten, kein Freigabe-Menü |
+| **Wie vorgeschlagene Aktionen ausgeführt werden** | Der Freigabemodus — siehe [Freigabemodi](#freigabemodi). Destruktive Aktionen bestätigen in jedem Fall |
 
 Ist die KI ganz aus, verschwindet der Chat mit ihr — kein Panel, das etwas
 anbietet, was niemand beantworten kann.
@@ -94,6 +101,50 @@ Erwähnung, die nicht zu einem lesbaren Bild führt, zeigt einfach nichts.
 
 ![Bildvorschau beim Überfahren](../../screenshots/repo-chat-image-hover.webp)
 
+## Aktionen aus dem Chat ausführen
+
+Bitte um eine Änderung statt um eine Auskunft — *stage die Markdown-Dateien,
+committe das als Fix, setz die Build-Ausgabe auf die Ignore-Liste* — und die
+Antwort kommt mit einer **Aktionskarte**: die konkreten Schritte, die der
+Assistent gehen will, eine Zeile pro Aktion, mit den Knöpfen **Ausführen** und
+**Ablehnen**. Nichts auf der Karte ist schon passiert; das Modell kann nur
+vorschlagen, und jeder Vorschlag wird gegen das Arbeitsverzeichnis geprüft,
+bevor du ihn überhaupt siehst — eine Aktion, die eine nicht existierende Datei
+nennt, wird abgewiesen, nicht angezeigt.
+
+![Vorgeschlagene Aktionen im Chat](../../screenshots/repo-chat-actions.webp)
+
+Der Aktionsumfang ist derselbe wie beim **Ausführen**-Assistenten der
+Symbolleiste: Ignore-Muster, stagen, unstagen, committen, stashen, verwerfen,
+Branch, Checkout, Tag. Alles darüber hinaus — Push, Pull, Reset, Rebase,
+erzwungene Operationen — wird absichtlich verweigert; der Chat verweist dich
+stattdessen auf die dafür gedachte Oberfläche.
+
+### Freigabemodi
+
+Das Schild-Menü unter dem Eingabefeld (auch in **Einstellungen → KI →
+Repository-Chat**) entscheidet, wie eine Karte läuft:
+
+| Modus | Führt aus |
+|---|---|
+| **Immer fragen** | Nichts, bis du **Ausführen** auf der Karte drückst |
+| **Sichere Aktionen automatisch ausführen** | Vorschläge, die nur aus umkehrbarer Routinearbeit bestehen — stagen, unstagen, ignorieren, Branch, Tag — laufen beim Eintreffen; alles andere wartet auf den Knopf |
+| **Alle Aktionen automatisch ausführen** | Jeder Vorschlag läuft beim Eintreffen, außer destruktiven |
+
+Ein Vorschlag, der **nicht committete Änderungen verwerfen würde, fragt immer
+zuerst**, in jedem Modus, und die Bestätigung nennt die Dateien, die verloren
+gingen. Die Karte berichtet, was tatsächlich passiert ist — wie viele Aktionen
+liefen, oder den Fehler, der sie stoppte — und der Assistent erfährt das
+Ergebnis, sodass eine Folgefrage weiß, ob ihr Plan ausgeführt oder abgelehnt
+wurde.
+
+### Fehler mit dem Assistenten beheben
+
+Schlägt eine Git-Operation fehl und der KI-Chat ist verfügbar, bekommt der
+Fehler-Toast einen Funkel-Knopf: er öffnet den Chat mit dem Fehlschlag im
+Eingabefeld — „warum ging das schief und was tue ich jetzt“ ist ein Klick. Der
+Entwurf bleibt bearbeitbar; nichts wird gesendet, bis du Senden drückst.
+
 ## Was er verweigert
 
 - **Geheimnis-verdächtige Dateien werden nie gelesen**, angeheftet oder nicht:
@@ -101,9 +152,11 @@ Erwähnung, die nicht zu einem lesbaren Bild führt, zeigt einfach nichts.
   [Geheimnis-Maskierung](security.md) nicht.
 - **Binärdateien und Dateien über 512 KB** von außerhalb des Repositorys werden
   genauso übersprungen. Innerhalb gelten die üblichen Regeln.
-- **Er schreibt nie.** Kein Staging, kein Commit, kein Branch-Wechsel — er hat
-  keine Werkzeuge, nur Text. Eine Antwort, die etwas getan haben will,
-  beschreibt, sie berichtet nicht.
+- **Er schreibt nie von allein.** Das Modell hat keine Werkzeuge, nur Text:
+  eine Änderung kommt als Vorschlagskarte, läuft nur nach
+  [deinen Freigaberegeln](#freigabemodi), und ein destruktiver Schritt
+  bestätigt immer. Mit **Git-Aktionen im Chat vorschlagen** aus schlägt er
+  nicht einmal vor.
 - **Unterhaltungen liegen nur im Speicher.** Jedes Repository hat seinen eigenen
   Verlauf; beim Beenden von Gitcito sind sie weg.
 

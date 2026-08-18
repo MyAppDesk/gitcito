@@ -1023,7 +1023,24 @@ export interface AIConfig {
   /** Answer from committed content only — no working-tree edits leave the
    *  machine, and uncommitted diffs are never sent. Defaults to off. */
   repoChatCommittedOnly?: boolean
+  /** Chat may propose repo actions (the "Ask" action set) for the user to run.
+   *  Defaults to on — proposals still never execute without the rules below. */
+  repoChatActions?: boolean
+  /** How chat-proposed actions run. Destructive actions always confirm,
+   *  whatever the mode says. Defaults to 'ask'. */
+  repoChatApproval?: ChatActionApproval
 }
+
+/**
+ * Approval policy for actions proposed in repository chat, mirroring the
+ * "always ask / pre-approved / allow all" ladder of editor AI assistants:
+ * - 'ask': every proposal waits for a click on the card.
+ * - 'auto-safe': proposals run on arrival when every action is reversible
+ *   bookkeeping (stage, unstage, gitignore, branch, tag); anything else asks.
+ * - 'auto-all': proposals run on arrival unless one is destructive — a
+ *   destructive action always falls back to an explicit confirm.
+ */
+export type ChatActionApproval = 'ask' | 'auto-safe' | 'auto-all'
 
 /** One source excerpt used to ground an answer in the repository. */
 export interface RepoChatSource {
@@ -1065,12 +1082,16 @@ export interface RepoChatSkipped {
   reason: RepoChatSkipReason
 }
 
-/** Read-only answer returned by the repository-chat IPC handler. */
+/** Answer returned by the repository-chat IPC handler. */
 export interface RepoChatReply {
   content: string
   sources: RepoChatSource[]
   /** Pinned context that was refused, so the panel can say so instead of lying. */
   skipped: RepoChatSkipped[]
+  /** Validated repo actions the model proposed. Never executed in main — the
+   *  renderer renders them as a card and runs them only under the approval
+   *  policy. Absent when the chat-actions setting is off. */
+  actions?: AskAction[]
 }
 
 /** Co-author trailer appended when AIConfig.coAuthor is enabled (default on). */
@@ -2599,7 +2620,9 @@ export function defaultAIConfig(): AIConfig {
     hoverExplainKey: 'shift',
     repoChat: true,
     repoChatModel: '',
-    repoChatCommittedOnly: false
+    repoChatCommittedOnly: false,
+    repoChatActions: true,
+    repoChatApproval: 'ask'
   }
 }
 

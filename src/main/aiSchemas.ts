@@ -106,6 +106,33 @@ export function validateGeneratedFiles(value: unknown, requested: string[]): str
   return errors
 }
 
+// ─── "Ask" actions ──────────────────────────────────────────────────────────
+
+/** One entry of the AskAction union, as loose JSON Schema. Shared between the
+ *  Ask planner and repository chat so both surfaces speak the same action set
+ *  and go through `validateAskActions` for the real checks. */
+export const ASK_ACTIONS_SCHEMA: Record<string, unknown> = {
+  type: 'array',
+  items: {
+    type: 'object',
+    required: ['type', 'description'],
+    properties: {
+      type: {
+        type: 'string',
+        enum: ['gitignore', 'stage', 'unstage', 'commit', 'stash', 'discard', 'branch', 'checkout', 'tag']
+      },
+      description: { type: 'string' },
+      files: { type: 'array', items: { type: 'string' } },
+      patterns: { type: 'array', items: { type: 'string' } },
+      message: { type: 'string' },
+      name: { type: 'string' },
+      at: { type: 'string' },
+      ref: { type: 'string' },
+      checkout: { type: 'boolean' }
+    }
+  }
+}
+
 // ─── Smart staging ──────────────────────────────────────────────────────────
 
 export const SMART_STAGE_SCHEMA: Record<string, unknown> = {

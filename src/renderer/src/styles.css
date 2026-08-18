@@ -2621,6 +2621,98 @@ textarea:focus {
   color: var(--text-2);
 }
 
+/* Proposed-actions card under an assistant reply — the chat twin of the Ask
+   tab's plan list, plus the approve/dismiss footer. */
+.repo-chat-actions {
+  margin-top: 9px;
+  padding: 8px;
+  border: 1px solid var(--border-soft);
+  border-radius: 7px;
+  background: var(--bg-1);
+}
+
+.repo-chat-actions.dismissed {
+  opacity: 0.65;
+}
+
+.repo-chat-actions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.repo-chat-action {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  min-width: 0;
+}
+
+.repo-chat-action-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: var(--bg-3);
+  color: var(--text-1);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.repo-chat-action-desc {
+  color: var(--text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.repo-chat-actions-footer {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.repo-chat-actions-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-2);
+  font-size: 11px;
+}
+
+.repo-chat-actions-status.done {
+  color: var(--green);
+}
+
+.repo-chat-actions-status.failed {
+  color: var(--red);
+}
+
+/* Approval-mode picker in the composer row — reads as a quiet label, like the
+   header's model switcher. */
+.repo-chat-approval {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-3);
+  min-width: 0;
+}
+
+.repo-chat-approval select {
+  max-width: 170px;
+  border: none;
+  background: transparent;
+  color: var(--text-2);
+  font: inherit;
+  font-size: 10px;
+  cursor: pointer;
+}
+
 .repo-chat-sources {
   margin-top: 9px;
   padding-top: 8px;

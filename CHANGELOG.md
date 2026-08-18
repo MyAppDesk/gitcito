@@ -1,5 +1,12 @@
 
 
+## [3.11.0](https://github.com/MyAppDesk/gitcito/compare/v3.10.0...v3.11.0) (2026-08-18)
+
+
+### Features
+
+* add support for running tasks and compound session management ([e8f5f30](https://github.com/MyAppDesk/gitcito/commit/e8f5f309676da2a0b69ebd08eae760d8f9f58aa8))
+
 ## [3.10.0](https://github.com/MyAppDesk/gitcito/compare/v3.9.0...v3.10.0) (2026-08-18)
 
 

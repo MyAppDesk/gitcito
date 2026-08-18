@@ -75,6 +75,25 @@ do nome do provedor — a mesma configuração, sem abrir as Configurações.
 
 ![Configurações do chat do repositório](../../screenshots/settings-repo-chat.webp)
 
+## Trabalhando com mensagens
+
+Mensagens são texto comum. Selecione qualquer parte e copie, ou clique com o
+botão direito em um balão: **Copiar** pega a seleção, **Copiar mensagem** a
+mensagem inteira — uma resposta é copiada como sua fonte Markdown — e, quando
+o clique caiu em um link, **Copiar link** pega o endereço.
+
+Links abrem no seu navegador padrão, nunca dentro do Gitcito — tanto links
+Markdown nas respostas quanto endereços `https://` nas suas próprias
+mensagens.
+
+Quando uma mensagem menciona uma imagem — um caminho do repositório como
+`docs/logo.png`, ou uma URL terminando em uma extensão de imagem — passar o
+mouse sobre a menção mostra uma pequena prévia. Caminhos do repositório são
+lidos da sua árvore de trabalho; uma menção que não corresponde a uma imagem
+legível simplesmente não mostra nada.
+
+![Prévia de imagem ao passar o mouse](../../screenshots/repo-chat-image-hover.webp)
+
 ## O que ele recusa
 
 - **Arquivos com cara de segredo nunca são lidos**, fixados ou não: o chip volta

@@ -16,6 +16,7 @@ import { closeTabPrompt, repoCloseStatus, tabCloseStatus } from '../src/renderer
 import type { TabState } from '../src/shared/types'
 import { autolink, remoteWebUrl, filePermalink } from '../src/renderer/src/lib/autolink'
 import { frecencyScore } from '../src/renderer/src/lib/frecency'
+import { tokenizeChatText, isImageRef } from '../src/renderer/src/lib/chatText'
 import { togglePin, selectPinned } from '../src/renderer/src/lib/pinnedBranches'
 import { parseMergeTreeSingle, parseMergeTreeStdin } from '../src/shared/mergeTree'
 import { parseRangeDiff } from '../src/shared/rangeDiff'
@@ -3774,5 +3775,54 @@ describe('launch ${input:…} prompts (launchInputs + resolveInputTokens)', () =
     expect(out.args).toEqual(['--from', 'carlos', 'carlos+hola'])
     expect(out.env).toEqual({ GREETING: 'hola', KEEP: '${input:unknown}' })
     expect(out.nested).toEqual({ deep: ['carlos'] })
+  })
+})
+
+describe('chat text tokenizer', () => {
+  it('splits plain text, links and image paths', () => {
+    const tokens = tokenizeChatText('See docs/logo.png and https://example.com/page for details.')
+    expect(tokens).toEqual([
+      { kind: 'text', value: 'See ' },
+      { kind: 'image', value: 'docs/logo.png' },
+      { kind: 'text', value: ' and ' },
+      { kind: 'link', value: 'https://example.com/page', image: false },
+      { kind: 'text', value: ' for details.' }
+    ])
+  })
+
+  it('marks image URLs as links with the image flag', () => {
+    const tokens = tokenizeChatText('https://example.com/shot.webp?v=2')
+    expect(tokens).toEqual([{ kind: 'link', value: 'https://example.com/shot.webp?v=2', image: true }])
+  })
+
+  it('trims sentence punctuation from a URL but keeps it as text', () => {
+    const tokens = tokenizeChatText('Read https://example.com/a).')
+    expect(tokens).toEqual([
+      { kind: 'text', value: 'Read ' },
+      { kind: 'link', value: 'https://example.com/a', image: false },
+      { kind: 'text', value: ').' }
+    ])
+  })
+
+  it('detects bare image filenames and nested paths', () => {
+    expect(tokenizeChatText('logo.svg')).toEqual([{ kind: 'image', value: 'logo.svg' }])
+    expect(tokenizeChatText('a/b/c/pic.JPEG rocks')).toEqual([
+      { kind: 'image', value: 'a/b/c/pic.JPEG' },
+      { kind: 'text', value: ' rocks' }
+    ])
+  })
+
+  it('leaves text without links or images as a single token', () => {
+    expect(tokenizeChatText('nothing to see here')).toEqual([{ kind: 'text', value: 'nothing to see here' }])
+    expect(tokenizeChatText('script.ts is not an image')).toEqual([
+      { kind: 'text', value: 'script.ts is not an image' }
+    ])
+  })
+
+  it('classifies image refs by extension, ignoring query strings', () => {
+    expect(isImageRef('shot.png')).toBe(true)
+    expect(isImageRef('https://x.test/a/b.gif#frag')).toBe(true)
+    expect(isImageRef('archive.tar.gz')).toBe(false)
+    expect(isImageRef('.png')).toBe(false)
   })
 })

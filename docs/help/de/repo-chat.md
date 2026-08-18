@@ -75,6 +75,25 @@ Anbieternamen — dieselbe Einstellung, ohne die Einstellungen zu öffnen.
 
 ![Einstellungen des Repository-Chats](../../screenshots/settings-repo-chat.webp)
 
+## Mit Nachrichten arbeiten
+
+Nachrichten sind gewöhnlicher Text. Markiere einen beliebigen Teil und kopiere
+ihn, oder rechtsklicke auf eine Blase: **Kopieren** nimmt die Auswahl,
+**Nachricht kopieren** die ganze Nachricht — eine Antwort wird als ihr
+Markdown-Quelltext kopiert — und wenn der Klick auf einem Link landete, nimmt
+**Link kopieren** dessen Adresse.
+
+Links öffnen sich in deinem Standardbrowser, nie in Gitcito — Markdown-Links
+in Antworten genauso wie einfache `https://`-Adressen in deinen eigenen
+Nachrichten.
+
+Erwähnt eine Nachricht ein Bild — einen Repository-Pfad wie `docs/logo.png`
+oder eine URL mit Bild-Endung — zeigt das Überfahren der Erwähnung eine kleine
+Vorschau. Repository-Pfade werden aus deinem Arbeitsbaum gelesen; eine
+Erwähnung, die nicht zu einem lesbaren Bild führt, zeigt einfach nichts.
+
+![Bildvorschau beim Überfahren](../../screenshots/repo-chat-image-hover.webp)
+
 ## Was er verweigert
 
 - **Geheimnis-verdächtige Dateien werden nie gelesen**, angeheftet oder nicht:

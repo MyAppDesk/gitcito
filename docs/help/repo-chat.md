@@ -82,6 +82,23 @@ app.
 
 ![Repository chat settings](../screenshots/settings-repo-chat.webp)
 
+## Working with messages
+
+Messages are ordinary text. Select any part of one and copy it, or right-click
+a bubble: **Copy** takes the selection, **Copy message** the whole message —
+an answer is copied as its Markdown source — and, when the click landed on a
+link, **Copy link** takes its address.
+
+Links open in your default browser, never inside Gitcito — Markdown links in
+answers and plain `https://` addresses in your own messages alike.
+
+When a message mentions an image — a repository path like `docs/logo.png`, or
+a URL ending in an image extension — hovering the mention shows a small
+preview. Repository paths are read from your working tree; a mention that does
+not resolve to a readable image simply shows nothing.
+
+![Image preview on hover](../screenshots/repo-chat-image-hover.webp)
+
 ## What it refuses
 
 - **Files that look like secrets are never read**, pinned or not — the chip is

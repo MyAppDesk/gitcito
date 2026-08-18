@@ -75,6 +75,26 @@ du nom du fournisseur : même réglage, sans ouvrir les Réglages.
 
 ![Réglages de la discussion du dépôt](../../screenshots/settings-repo-chat.webp)
 
+## Travailler avec les messages
+
+Les messages sont du texte ordinaire. Sélectionnez n'importe quelle partie et
+copiez-la, ou faites un clic droit sur une bulle : **Copier** prend la
+sélection, **Copier le message** le message entier — une réponse est copiée
+sous sa forme Markdown — et, si le clic a atterri sur un lien, **Copier le
+lien** prend son adresse.
+
+Les liens s'ouvrent dans votre navigateur par défaut, jamais dans Gitcito —
+qu'il s'agisse des liens Markdown des réponses ou des adresses `https://`
+écrites dans vos propres messages.
+
+Quand un message mentionne une image — un chemin du dépôt comme
+`docs/logo.png`, ou une URL se terminant par une extension d'image — survoler
+la mention affiche un petit aperçu. Les chemins du dépôt sont lus depuis votre
+arbre de travail ; une mention qui ne correspond pas à une image lisible
+n'affiche simplement rien.
+
+![Aperçu d'image au survol](../../screenshots/repo-chat-image-hover.webp)
+
 ## Ce qu’elle refuse
 
 - **Les fichiers qui ressemblent à des secrets ne sont jamais lus**, épinglés ou

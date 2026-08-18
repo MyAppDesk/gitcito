@@ -206,6 +206,44 @@ export const shots = [
     }
   },
   {
+    // The chat image hover preview: an answer that mentions a committed image
+    // (mascot.png in the image-showcase repo), with the popup open over it.
+    out: 'repo-chat-image-hover',
+    repos: ['image-showcase'],
+    themes: ['dark'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['image-showcase']
+      await page.evaluate(async (path) => {
+        const shot = window.__shot
+        await shot.waitForRepo(path)
+        shot.chat.setState({
+          threads: {
+            [path]: {
+              pending: false,
+              error: null,
+              skipped: [],
+              attachments: [],
+              messages: [
+                { id: 1, role: 'user', content: 'Which file holds the mascot illustration?' },
+                {
+                  id: 2,
+                  role: 'assistant',
+                  content:
+                    'The mascot lives in mascot.png at the repository root — the last commit replaced it with the summer-vibes redesign.',
+                  sources: []
+                }
+              ]
+            }
+          }
+        })
+        shot.ui.getState().openChatPanel()
+      }, repo)
+      await page.hover('.repo-chat-img-ref')
+      await page.waitForSelector('.repo-chat-img-pop img')
+      await page.waitForTimeout(400)
+    }
+  },
+  {
     out: 'settings-ai',
     repos: ['octopus-merge'],
     themes: ['light'],

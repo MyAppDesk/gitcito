@@ -74,6 +74,24 @@ Model czatu można przełączyć także w nagłówku samego panelu, obok nazwy d
 
 ![Ustawienia czatu repozytorium](../../screenshots/settings-repo-chat.webp)
 
+## Praca z wiadomościami
+
+Wiadomości to zwykły tekst. Zaznacz dowolny fragment i skopiuj go albo kliknij
+dymek prawym przyciskiem: **Kopiuj** bierze zaznaczenie, **Kopiuj wiadomość**
+całą wiadomość — odpowiedź jest kopiowana jako jej źródło Markdown — a gdy
+kliknięcie trafiło w link, **Kopiuj link** jego adres.
+
+Linki otwierają się w domyślnej przeglądarce, nigdy wewnątrz Gitcito — zarówno
+linki Markdown w odpowiedziach, jak i zwykłe adresy `https://` w twoich
+wiadomościach.
+
+Gdy wiadomość wspomina obraz — ścieżkę repozytorium taką jak `docs/logo.png`
+albo URL kończący się rozszerzeniem obrazu — najechanie na wzmiankę pokazuje
+mały podgląd. Ścieżki repozytorium są czytane z drzewa roboczego; wzmianka,
+która nie prowadzi do czytelnego obrazu, po prostu nic nie pokazuje.
+
+![Podgląd obrazu po najechaniu](../../screenshots/repo-chat-image-hover.webp)
+
 ## Czego odmawia
 
 - **Pliki wyglądające na sekrety nigdy nie są czytane**, przypięte czy nie: chip

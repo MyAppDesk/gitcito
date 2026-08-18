@@ -72,6 +72,24 @@ yanındadır — aynı ayar, Ayarlar’ı açmadan.
 
 ![Depo sohbeti ayarları](../../screenshots/settings-repo-chat.webp)
 
+## Mesajlarla çalışma
+
+Mesajlar sıradan metindir. Herhangi bir bölümünü seçip kopyalayın ya da bir
+baloncuğa sağ tıklayın: **Kopyala** seçimi, **Mesajı kopyala** mesajın
+tamamını alır — bir yanıt Markdown kaynağı olarak kopyalanır — ve tıklama bir
+bağlantıya denk geldiyse **Bağlantıyı kopyala** adresini alır.
+
+Bağlantılar her zaman varsayılan tarayıcınızda açılır, asla Gitcito içinde
+değil — yanıtlardaki Markdown bağlantıları da kendi mesajlarınızdaki düz
+`https://` adresleri de.
+
+Bir mesaj bir görselden söz ettiğinde — `docs/logo.png` gibi bir depo yolu ya
+da görsel uzantısıyla biten bir URL — imleci sözün üzerine getirmek küçük bir
+önizleme gösterir. Depo yolları çalışma ağacınızdan okunur; okunabilir bir
+görsele karşılık gelmeyen bir söz hiçbir şey göstermez.
+
+![Üzerine gelince görsel önizlemesi](../../screenshots/repo-chat-image-hover.webp)
+
 ## Neyi reddeder
 
 - **Sır gibi görünen dosyalar hiçbir zaman okunmaz**, sabitlenmiş olsa bile: çip

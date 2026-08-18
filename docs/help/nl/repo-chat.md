@@ -74,6 +74,25 @@ naam van de provider — dezelfde instelling, zonder Instellingen te openen.
 
 ![Instellingen van de repository-chat](../../screenshots/settings-repo-chat.webp)
 
+## Werken met berichten
+
+Berichten zijn gewone tekst. Selecteer een willekeurig deel en kopieer het, of
+klik met de rechtermuisknop op een ballon: **Kopiëren** neemt de selectie,
+**Bericht kopiëren** het hele bericht — een antwoord wordt gekopieerd als zijn
+Markdown-bron — en als de klik op een link viel, neemt **Link kopiëren** het
+adres.
+
+Links openen in je standaardbrowser, nooit binnen Gitcito — Markdown-links in
+antwoorden en gewone `https://`-adressen in je eigen berichten.
+
+Wanneer een bericht een afbeelding noemt — een repositorypad zoals
+`docs/logo.png`, of een URL die eindigt op een afbeeldingsextensie — toont
+zweven boven de vermelding een kleine voorvertoning. Repositorypaden worden uit
+je werkboom gelezen; een vermelding die niet naar een leesbare afbeelding
+leidt, toont gewoon niets.
+
+![Afbeeldingsvoorbeeld bij zweven](../../screenshots/repo-chat-image-hover.webp)
+
 ## Wat hij weigert
 
 - **Bestanden die op geheimen lijken worden nooit gelezen**, vastgezet of niet:

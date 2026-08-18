@@ -1,5 +1,21 @@
 
 
+## [3.9.0](https://github.com/MyAppDesk/gitcito/compare/v3.8.0...v3.9.0) (2026-08-18)
+
+
+### Features
+
+* add ahead checkout modal for local branches ([7008df5](https://github.com/MyAppDesk/gitcito/commit/7008df5fb383f99302e14ceba46770fb35737b97))
+* add open-source licenses page and generation script ([121047b](https://github.com/MyAppDesk/gitcito/commit/121047be56a8943059d9054ae37fb2676457ecb6))
+* crop a screenshot to a selector, and shoot the avatar mood ([b0cb14d](https://github.com/MyAppDesk/gitcito/commit/b0cb14dde4a72a11a530ef1e669070c0afa51675))
+* draw generated avatars as blobatars with repo-state expressions ([e0526bf](https://github.com/MyAppDesk/gitcito/commit/e0526bfd1cd5966101527dec2ee09866c851ed73))
+* fit the split diff to its pane, with wrap and linked-scroll toggles ([5911be2](https://github.com/MyAppDesk/gitcito/commit/5911be2f1607b69d21d9e973664b63cf35094495))
+
+
+### Bug Fixes
+
+* adjust button icon sizes for better alignment ([8e29088](https://github.com/MyAppDesk/gitcito/commit/8e29088fc8d6a2a2ecc0c3bee7dac6da2ff74b47))
+
 ## [3.8.0](https://github.com/MyAppDesk/gitcito/compare/v3.7.0...v3.8.0) (2026-08-16)
 
 

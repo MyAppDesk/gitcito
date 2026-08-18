@@ -68,11 +68,22 @@ function homepage(pkg) {
 
 /** Every production package directory, from npm's own resolution. */
 function productionDirs() {
-  const out = execFileSync('npm', ['ls', '--omit=dev', '--all', '--parseable'], {
-    cwd: ROOT,
-    encoding: 'utf8',
-    maxBuffer: 32 * 1024 * 1024
-  })
+  // On Windows npm is npm.cmd, which execFile cannot resolve bare and Node refuses
+  // to spawn without a shell (the CVE-2024-27980 fix). Arguments here are static.
+  const win = process.platform === 'win32'
+  let out
+  try {
+    out = execFileSync(win ? 'npm.cmd' : 'npm', ['ls', '--omit=dev', '--all', '--parseable'], {
+      cwd: ROOT,
+      encoding: 'utf8',
+      shell: win,
+      maxBuffer: 32 * 1024 * 1024
+    })
+  } catch (err) {
+    // `npm ls` exits nonzero on any tree warning (peer/extraneous) but still prints the tree.
+    if (!err.stdout) throw err
+    out = err.stdout.toString()
+  }
   return out
     .split('\n')
     .map((l) => l.trim())

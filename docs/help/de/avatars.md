@@ -51,6 +51,8 @@ des Repositorys reagiert. Er trägt eines von vier Gesichtern:
 | 🙂 Zufrieden | Nichts Lokales, nichts Wartendes, und ein Upstream, mit dem man synchron sein kann. |
 | 😐 Neutral | Normale Arbeit in Gang — und bevor der erste Status gelesen wurde. |
 
+![Der Avatar der Titelleiste mit seinem wütenden Gesicht](../../screenshots/avatar-mood.webp)
+
 Das Schlimmste gewinnt: ein Repository mit Konflikten *und* vierzig ungepushten
 Commits ist wütend, nicht bedrückt. Beim Überfahren des Avatars nennt der Tooltip
 die Zahl, die das Gesicht verursacht hat — ein Bild, das sich ohne genannten Grund

@@ -52,6 +52,8 @@ reacciona al estado del repositorio. Adopta una de cuatro caras:
 | 🙂 Contenta | Nada local, nada pendiente y un upstream con el que estar sincronizado. |
 | 😐 Neutra | Trabajo en curso normal — y antes de leer el primer estado. |
 
+![El avatar de la barra de título con su cara de enfado](../../screenshots/avatar-mood.webp)
+
 Gana lo peor: un repositorio con conflictos *y* cuarenta commits sin enviar está
 enfadado, no apagado. Pasa el ratón por el avatar y la ayuda emergente dice qué
 recuento causó la cara — una imagen que cambia sin motivo declarado es un

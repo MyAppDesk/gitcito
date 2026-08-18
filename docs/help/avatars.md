@@ -51,6 +51,8 @@ repository's state. It holds one of four faces:
 | 🙂 Content | Nothing local, nothing waiting, and an upstream to be in sync with. |
 | 😐 Neutral | Ordinary work in progress — and before the first status has been read. |
 
+![The title-bar avatar wearing its cross face](../screenshots/avatar-mood.webp)
+
 Worst wins: a repository with conflicts *and* forty unpushed commits is cross,
 not glum. Hover the avatar and the tooltip says which count caused the face —
 a picture that changes for an unstated reason is a puzzle, not a signal.

@@ -50,6 +50,8 @@ Hij draagt een van vier gezichten:
 | 🙂 Tevreden | Niets lokaal, niets wachtend, en een upstream om mee in sync te zijn. |
 | 😐 Neutraal | Gewoon werk onderweg — en voordat de eerste status is gelezen. |
 
+![De avatar in de titelbalk met zijn kwade gezicht](../../screenshots/avatar-mood.webp)
+
 Het ergste wint: een repository met conflicten *én* veertig ongepushte commits is
 kwaad, niet sip. Beweeg over de avatar en de tooltip zegt welk aantal het gezicht
 veroorzaakte — een plaatje dat zonder genoemde reden verandert is een raadsel, geen

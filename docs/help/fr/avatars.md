@@ -52,6 +52,8 @@ l’état du dépôt. Il prend l’un de quatre visages :
 | 🙂 Content | Rien en local, rien en attente, et un upstream avec lequel être synchronisé. |
 | 😐 Neutre | Travail en cours ordinaire — et avant la première lecture de l’état. |
 
+![L’avatar de la barre de titre avec son visage fâché](../../screenshots/avatar-mood.webp)
+
 Le pire l’emporte : un dépôt avec des conflits *et* quarante commits non poussés
 est fâché, pas morose. Survolez l’avatar et l’infobulle indique quel décompte a
 causé le visage — une image qui change sans raison énoncée est une énigme, pas un

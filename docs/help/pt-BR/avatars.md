@@ -51,6 +51,8 @@ repositório. Ele assume um de quatro rostos:
 | 🙂 Contente | Nada local, nada esperando, e um upstream com o qual estar sincronizado. |
 | 😐 Neutro | Trabalho em andamento normal — e antes de o primeiro status ser lido. |
 
+![O avatar da barra de título com seu rosto irritado](../../screenshots/avatar-mood.webp)
+
 O pior vence: um repositório com conflitos *e* quarenta commits sem push está
 irritado, não abatido. Passe o mouse sobre o avatar e a dica diz qual contagem
 causou o rosto — uma imagem que muda sem motivo declarado é um enigma, não um sinal.

@@ -48,6 +48,8 @@ repozytorium. Nosi jedną z czterech twarzy:
 | 🙂 Zadowolona | Nic lokalnego, nic w kolejce i gałąź nadrzędna, z którą można być zsynchronizowanym. |
 | 😐 Neutralna | Zwykła praca w toku — oraz przed odczytaniem pierwszego statusu. |
 
+![Awatar na pasku tytułu ze złą miną](../../screenshots/avatar-mood.webp)
+
 Wygrywa najgorsze: repozytorium z konfliktami *i* czterdziestoma niewypchniętymi
 commitami jest złe, nie przygaszone. Najedź na awatar, a podpowiedź powie, która
 liczba spowodowała tę twarz — obrazek, który zmienia się bez podanego powodu, jest

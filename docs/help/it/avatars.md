@@ -50,6 +50,8 @@ allo stato del repository. Assume una di quattro facce:
 | 🙂 Contenta | Niente in locale, niente in attesa, e un upstream con cui essere sincronizzati. |
 | 😐 Neutra | Normale lavoro in corso — e prima che sia stato letto il primo stato. |
 
+![L’avatar della barra del titolo con la sua faccia arrabbiata](../../screenshots/avatar-mood.webp)
+
 Vince il peggio: un repository con conflitti *e* quaranta commit non inviati è
 arrabbiato, non abbattuto. Passa il puntatore sull’avatar e il tooltip dice quale
 conteggio ha causato la faccia — un’immagine che cambia senza motivo dichiarato è

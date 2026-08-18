@@ -47,6 +47,8 @@ avatardır — dolayısıyla deponun durumuna tepki veren tek avatar. Dört yüz
 | 🙂 Hoşnut | Yerelde bir şey yok, bekleyen yok ve senkron olunacak bir upstream var. |
 | 😐 Nötr | Olağan, süren çalışma — ve ilk durum okunmadan önce. |
 
+![Başlık çubuğundaki avatar, kızgın yüzüyle](../../screenshots/avatar-mood.webp)
+
 En kötüsü kazanır: çakışmaları *ve* kırk gönderilmemiş commit'i olan bir depo kızgındır,
 suratı asık değil. Avatarın üzerine gelin; ipucu yüze hangi sayının yol açtığını söyler —
 belirtilmemiş bir nedenle değişen bir resim bilmecedir, sinyal değil.

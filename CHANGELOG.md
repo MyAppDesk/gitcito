@@ -1,5 +1,12 @@
 
 
+## [3.14.0](https://github.com/MyAppDesk/gitcito/compare/v3.13.0...v3.14.0) (2026-08-18)
+
+
+### Features
+
+* add repo chat action strings across all locales ([e8f5795](https://github.com/MyAppDesk/gitcito/commit/e8f5795b95fddab8e3314a384c8cc2386514252e))
+
 ## [3.13.0](https://github.com/MyAppDesk/gitcito/compare/v3.12.0...v3.13.0) (2026-08-18)
 
 

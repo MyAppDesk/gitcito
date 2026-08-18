@@ -1561,6 +1561,8 @@ export const ko: Dict = {
   'diff.splitTitle': '좌우 나란히 보기',
   'diff.wrap': '줄 바꿈',
   'diff.wrapTitle': '긴 줄을 가로 스크롤 대신 줄 바꿈으로 표시',
+  'diff.linkScroll': '연동',
+  'diff.linkScrollTitle': '양쪽이 함께 가로 스크롤됩니다. 끄면 각 열이 따로 움직입니다',
   'diff.wordDiff': '단어 diff',
   'diff.wordDiffTitle': '수정된 줄 안에서 바뀐 단어를 강조',
   'diff.find': '찾기',

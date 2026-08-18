@@ -71,6 +71,14 @@ export function wordDiff(a: string, b: string): { del: Range[]; add: Range[] } {
   return { del, add }
 }
 
+/**
+ * Git's extended header lines, which sit between `diff --git` and the first
+ * `@@` of a file. Content lines always carry a ' ', '+' or '-' prefix, so an
+ * unprefixed line matching one of these can only be a header.
+ */
+const EXT_HEADER =
+  /^(new file mode |deleted file mode |old mode |new mode |similarity index |dissimilarity index |rename (from|to) |copy (from|to) |Binary files |GIT binary patch)/
+
 /** Parse a unified diff into typed lines with old/new line numbers + hunk index. */
 export function parseDiff(diff: string): DiffLine[] {
   const out: DiffLine[] = []
@@ -86,7 +94,13 @@ export function parseDiff(diff: string): DiffLine[] {
       }
       hunkIdx++
       out.push({ kind: 'hunk', text: line, oldNo: null, newNo: null, hunkIdx })
-    } else if (line.startsWith('+++') || line.startsWith('---') || line.startsWith('diff ') || line.startsWith('index ')) {
+    } else if (
+      line.startsWith('+++') ||
+      line.startsWith('---') ||
+      line.startsWith('diff ') ||
+      line.startsWith('index ') ||
+      EXT_HEADER.test(line)
+    ) {
       out.push({ kind: 'meta', text: line, oldNo: null, newNo: null, hunkIdx })
     } else if (line.startsWith('+')) {
       out.push({ kind: 'add', text: line.slice(1), oldNo: null, newNo: newNo++, hunkIdx })

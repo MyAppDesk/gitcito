@@ -15,7 +15,22 @@ keywords: diff bölünmüş yan yana sözcük düzeyi boşluk görsel önizleme 
 | **Birleşik ↔ bölünmüş** | Karşılaştırmak istediğinizde yan yana, okumak istediğinizde alt alta |
 | **Sözcük düzeyi** | Düzenlenmiş bir satırın içinde yalnızca değişen belirteçleri vurgular — eskisinde kırmızı, yenisinde yeşil |
 | **Boşlukları yok say** | Yeniden girintilemeyi gizler, böylece gerçek değişiklik öne çıkar |
+| **Satır kaydırma** (yalnızca bölünmüş görünüm) | Uzun satırları kaydırmak yerine kendi sütununda alt satıra taşır |
+| **Bağlı** (bölünmüş, kaydırma kapalı) | İki yarıyı yatayda birlikte kaydırır — kapalıyken her sütun kendi başına kayar |
 | <kbd>⌘F</kbd> | Diff içinde arama, sonraki/önceki adımlamasıyla |
+
+Satır kaydırma varsayılan olarak kapalıdır: bir satır tek bir sırada kalır,
+böylece iki taraf sıra sıra karşılaştırılabilir olur ve her yarı kendi
+çubuğuyla yatay kayar. Uzun bir satırı kovalamak yerine okumak istediğinizde
+açın — karşılığında üç sıraya taşan bir satır artık karşılığının tam karşısında
+durmaz. Her düğme durumunu dosyalar ve oturumlar arasında hatırlar.
+
+Satır kaydırma kapalıyken iki yarı varsayılan olarak **bağlı** biçimde yatayda
+kayar; böylece soldaki 90. sütun sağdaki 90. sütunun üstünde durur. Taraflar
+birbirinden uzaklaştıysa — girintili bir blok girintisiz bir bloğun karşısında,
+her satırı kaydıran bir yeniden adlandırma — ve her yarıyı kendi içeriğinin
+olduğu yere bırakmak istiyorsanız bağı kaldırın. Dikey kaydırma her iki durumda
+da ortaktır; satırları karşı karşıya tutan şey odur.
 
 ![Sözcük düzeyinde vurgulamalı bölünmüş diff](../../screenshots/split-diff.webp)
 

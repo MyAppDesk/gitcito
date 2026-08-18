@@ -1561,6 +1561,8 @@ export const zhCN: Dict = {
   'diff.splitTitle': '并排（分栏）视图',
   'diff.wrap': '换行',
   'diff.wrapTitle': '长行自动换行，而不是横向滚动',
+  'diff.linkScroll': '联动',
+  'diff.linkScrollTitle': '两侧一起横向滚动；关闭后每栏各自滚动',
   'diff.wordDiff': '按词比较',
   'diff.wordDiffTitle': '在被编辑的行中高亮改动的词',
   'diff.find': '查找',

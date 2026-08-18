@@ -15,7 +15,23 @@ keywords: diff geteilt split side-by-side nebeneinander wortgenau word level whi
 | **Unified ↔ geteilt** | Nebeneinander, wenn du vergleichen willst; übereinander, wenn du lesen willst |
 | **Wortgenau** | Hebt nur die geänderten Tokens innerhalb einer bearbeiteten Zeile hervor — rot auf der alten, grün auf der neuen |
 | **Whitespace ignorieren** | Blendet Neu-Einrückungen aus, damit die eigentliche Änderung sichtbar wird |
+| **Umbruch** (nur geteilte Ansicht) | Bricht lange Zeilen in ihrer Spalte um, statt sie zu scrollen |
+| **Verknüpft** (geteilt, ohne Umbruch) | Scrollt beide Hälften seitlich gemeinsam — aus scrollt jede Spalte für sich |
 | <kbd>⌘F</kbd> | Suchen innerhalb des Diffs, mit Sprüngen zum nächsten/vorherigen Treffer |
+
+Der Umbruch ist standardmäßig aus: Eine Zeile bleibt eine Zeile, damit beide
+Seiten Zeile für Zeile vergleichbar bleiben, und jede Hälfte scrollt mit eigener
+Leiste zur Seite. Schalte ihn ein, wenn du eine lange Zeile lieber liest als
+verfolgst — dafür steht eine über drei Zeilen umgebrochene Zeile ihrem
+Gegenstück nicht mehr gegenüber. Jeder Schalter merkt sich seinen Zustand über
+Dateien und Sitzungen hinweg.
+
+Ohne Umbruch scrollen beide Hälften seitlich standardmäßig **verknüpft**, damit
+Spalte 90 links über Spalte 90 rechts steht. Löse die Verknüpfung, wenn die
+Seiten auseinandergelaufen sind — ein eingerückter Block gegen einen nicht
+eingerückten, eine Umbenennung, die jede Zeile verschoben hat — und du jede
+Hälfte dort abstellen willst, wo ihr Inhalt liegt. Der vertikale Scroll bleibt
+in beiden Fällen gemeinsam; er hält die Zeilen einander gegenüber.
 
 ![Geteilter Diff mit wortgenauer Hervorhebung](../../screenshots/split-diff.webp)
 

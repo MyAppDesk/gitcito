@@ -644,7 +644,9 @@ export const shots = [
         window.__shot.ui.getState().setFileView({ repoPath: p, file: 'config.ts', source: { type: 'wip', staged: false, untracked: false }, mode: 'diff' })
       }, repo)
       await page.waitForTimeout(500)
-      await page.click('.diff-toggles button:first-child').catch(() => {})
+      // By label, not by position: the first toggle is Whitespace, and this shot
+      // spent a while photographing a unified diff because of it.
+      await page.click('.diff-toggles button:has-text("Split")').catch(() => {})
       await page.waitForTimeout(500)
     }
   },

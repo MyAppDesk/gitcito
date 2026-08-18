@@ -1561,6 +1561,8 @@ export const nl: Dict = {
   'diff.splitTitle': 'Weergave naast elkaar (gesplitst)',
   'diff.wrap': 'Terugloop',
   'diff.wrapTitle': 'Lange regels laten teruglopen in plaats van scrollen',
+  'diff.linkScroll': 'Gekoppeld',
+  'diff.linkScrollTitle': 'Beide kanten scrollen zijwaarts samen; uit scrollt elke kolom apart',
   'diff.wordDiff': 'Woord-diff',
   'diff.wordDiffTitle': 'Gewijzigde woorden binnen bewerkte regels markeren',
   'diff.find': 'Zoeken',

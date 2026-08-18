@@ -17,6 +17,32 @@ describe('parseDiff', () => {
     expect(del.newNo).toBeNull()
     expect(add.newNo).toBe(2)
   })
+
+  // A new file's header carries `new file mode 100644`, which has no +/- prefix
+  // and used to parse as context — an unprefixed line, numbered 0, above the
+  // first hunk of every added file.
+  it('treats git extended headers as meta', () => {
+    const added = `diff --git a/new.md b/new.md
+new file mode 100644
+index 0000000..0111bd8
+--- /dev/null
++++ b/new.md
+@@ -0,0 +1,2 @@
++---
++title: hello`
+    const lines = parseDiff(added)
+    expect(lines.map((l) => l.kind)).toEqual(['meta', 'meta', 'meta', 'meta', 'meta', 'hunk', 'add', 'add'])
+    expect(lines.filter((l) => l.kind === 'add').map((l) => l.newNo)).toEqual([1, 2])
+  })
+
+  it('treats rename and binary headers as meta', () => {
+    const renamed = `diff --git a/a.txt b/b.txt
+similarity index 92%
+rename from a.txt
+rename to b.txt
+Binary files a/logo.png and b/logo.png differ`
+    expect(parseDiff(renamed).every((l) => l.kind === 'meta')).toBe(true)
+  })
 })
 
 describe('wordDiff', () => {

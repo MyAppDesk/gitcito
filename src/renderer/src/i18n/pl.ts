@@ -1561,6 +1561,8 @@ export const pl: Dict = {
   'diff.splitTitle': 'Widok obok siebie (podzielony)',
   'diff.wrap': 'Zawijaj',
   'diff.wrapTitle': 'Zawijaj długie wiersze zamiast je przewijać',
+  'diff.linkScroll': 'Powiązane',
+  'diff.linkScrollTitle': 'Obie strony przewijają się w poziomie razem; wyłączone — każda kolumna osobno',
   'diff.wordDiff': 'Diff słów',
   'diff.wordDiffTitle': 'Podświetl zmienione słowa w edytowanych liniach',
   'diff.find': 'Znajdź',

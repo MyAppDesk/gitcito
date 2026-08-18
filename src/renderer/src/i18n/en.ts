@@ -1565,6 +1565,8 @@ export const en = {
   'diff.splitTitle': 'Side-by-side (split) view',
   'diff.wrap': 'Wrap',
   'diff.wrapTitle': 'Wrap long lines instead of scrolling them',
+  'diff.linkScroll': 'Linked',
+  'diff.linkScrollTitle': 'Both sides scroll sideways together; off, each column scrolls on its own',
   'diff.wordDiff': 'Word diff',
   'diff.wordDiffTitle': 'Highlight changed words within edited lines',
   'diff.find': 'Find',

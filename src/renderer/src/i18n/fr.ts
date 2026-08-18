@@ -1524,6 +1524,8 @@ export const fr: Dict = {
   'diff.splitTitle': 'Vue côte à côte, en deux colonnes',
   'diff.wrap': 'Retour à la ligne',
   'diff.wrapTitle': 'Couper les lignes longues au lieu de les faire défiler',
+  'diff.linkScroll': 'Lié',
+  'diff.linkScrollTitle': 'Les deux côtés défilent latéralement ensemble ; désactivé, chaque colonne défile seule',
   'diff.wordDiff': 'Diff par mot',
   'diff.wordDiffTitle': 'Surligner les mots modifiés à l’intérieur des lignes éditées',
   'diff.find': 'Rechercher',

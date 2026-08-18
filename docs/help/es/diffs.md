@@ -15,7 +15,22 @@ keywords: diff partido split lado a lado side-by-side palabra word level espacio
 | **Unificado ↔ partido** | Lado a lado cuando quieres comparar, apilado cuando quieres leer |
 | **Por palabras** | Resalta solo los tokens que cambiaron dentro de una línea editada — rojo en la vieja, verde en la nueva |
 | **Ignorar espacios** | Oculta los reindentados para que salga a la superficie el cambio de verdad |
+| **Ajustar** (solo en vista partida) | Pliega las líneas largas dentro de su columna en vez de desplazarlas |
+| **Vinculado** (partido, sin ajuste) | Desplaza las dos mitades a la vez en horizontal — desactivado, cada columna va por su cuenta |
 | <kbd>⌘F</kbd> | Buscar dentro del diff, con salto al siguiente/anterior |
+
+El ajuste viene desactivado: cada línea ocupa una sola fila, así los dos lados
+siguen siendo comparables fila a fila, y cada mitad se desplaza en horizontal con
+su propia barra. Actívalo cuando prefieras leer una línea larga a perseguirla — a
+cambio, una línea plegada en tres filas deja de quedar enfrente de su
+contraparte. Cada interruptor recuerda su estado entre archivos y sesiones.
+
+Sin ajuste, las dos mitades se desplazan en horizontal **vinculadas** por
+defecto, así la columna 90 de la izquierda queda sobre la 90 de la derecha.
+Desvincúlalas cuando los lados se hayan separado — un bloque indentado frente a
+uno sin indentar, un renombrado que movió cada línea — y quieras dejar cada
+mitad donde está su contenido. El desplazamiento vertical sigue siendo
+compartido en ambos casos; es lo que mantiene las filas enfrentadas.
 
 ![Diff partido con resaltado por palabras](../../screenshots/split-diff.webp)
 

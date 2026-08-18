@@ -1561,6 +1561,8 @@ export const ptBR: Dict = {
   'diff.splitTitle': 'Visão lado a lado (split)',
   'diff.wrap': 'Quebrar linha',
   'diff.wrapTitle': 'Quebrar linhas longas em vez de rolá-las',
+  'diff.linkScroll': 'Vinculado',
+  'diff.linkScrollTitle': 'Os dois lados rolam na horizontal juntos; desligado, cada coluna rola sozinha',
   'diff.wordDiff': 'Diff por palavra',
   'diff.wordDiffTitle': 'Destacar as palavras alteradas dentro das linhas editadas',
   'diff.find': 'Localizar',

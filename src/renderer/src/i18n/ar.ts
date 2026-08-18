@@ -1561,6 +1561,8 @@ export const ar: Dict = {
   'diff.splitTitle': 'عرض جنبًا إلى جنب (مقسّم)',
   'diff.wrap': 'التفاف',
   'diff.wrapTitle': 'التفاف الأسطر الطويلة بدلاً من التمرير الأفقي',
+  'diff.linkScroll': 'مرتبط',
+  'diff.linkScrollTitle': 'يتمرّر الجانبان أفقيًا معًا؛ وعند الإيقاف يتمرّر كل عمود وحده',
   'diff.wordDiff': 'فروق الكلمات',
   'diff.wordDiffTitle': 'أبرز الكلمات المتغيّرة داخل الأسطر المحرَّرة',
   'diff.find': 'بحث',

@@ -1561,6 +1561,8 @@ export const he: Dict = {
   'diff.splitTitle': 'תצוגה זו לצד זו (מפוצלת)',
   'diff.wrap': 'גלישת שורות',
   'diff.wrapTitle': 'לגלוש שורות ארוכות במקום לגלול לרוחב',
+  'diff.linkScroll': 'מקושר',
+  'diff.linkScrollTitle': 'שני הצדדים נגללים לרוחב יחד; כשכבוי, כל עמודה נגללת בנפרד',
   'diff.wordDiff': 'הבדל ברמת מילה',
   'diff.wordDiffTitle': 'הדגשת המילים שהשתנו בתוך שורות שנערכו',
   'diff.find': 'חיפוש',

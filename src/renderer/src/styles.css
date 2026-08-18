@@ -13297,14 +13297,21 @@ button.insights-row:hover { background: var(--bg-2); }
 .diff-find-btn:disabled { opacity: 0.35; cursor: default; }
 mark.diff-find-hit { background: rgba(255, 213, 0, 0.32); color: inherit; border-radius: 2px; }
 mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
-.diff-split { display: flex; flex-direction: column; clear: both; }
+/* Unified rows are `white-space: pre` and need `width: max-content` to scroll
+   horizontally; split cells wrap instead, so max-content would blow the pane
+   out and give each 1fr column half of an off-screen width. */
+.diff-viewer.is-split { width: 100%; min-width: 0; }
+.diff-split { display: flex; flex-direction: column; clear: both; min-width: 0; }
 .diff-split-hunk {
   display: flex; align-items: center; gap: 8px;
+  /* `.diff-stage-hunk` is absolutely positioned; without this it anchors to the
+     scroll container and floats mid-diff instead of sitting on the hunk bar. */
+  position: relative;
   background: var(--bg-2); color: var(--code-comment, var(--text-2));
   padding: 1px 8px; border-top: 1px solid var(--border-soft); border-bottom: 1px solid var(--border-soft);
 }
 .diff-split-hunk .diff-text { flex: 1; }
-.diff-split-row { display: grid; grid-template-columns: 1fr 1fr; }
+.diff-split-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
 .diff-split-cell {
   display: flex; align-items: baseline; gap: 8px;
   padding: 0 8px; min-width: 0; overflow: hidden;
@@ -13315,6 +13322,47 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .diff-split-cell.add { background: var(--diff-add-bg, rgba(46, 160, 67, 0.16)); }
 .diff-split-cell.empty { background: var(--bg-1); }
 .diff-split-cell .diff-gutter { flex-shrink: 0; }
+
+/* Wrap off: each side is its own scroller (column-major markup), so a long line
+   scrolls without dragging the other half along. The columns take the pane's
+   height rather than the diff's — a column as tall as the whole diff would put
+   its horizontal scrollbar thousands of pixels below the viewport. */
+.diff-viewer.is-split.is-nowrap { display: flex; flex-direction: column; max-height: 100%; padding-bottom: 0; }
+.diff-split.is-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); flex: 1; min-height: 0; }
+.diff-split-col { min-width: 0; overflow: auto; }
+/* Block layout, not grid: rows are block children of an inner box sized to the
+   longest line, so each one fills the full scroll width by definition — their
+   background and their trailing border reach the end of the line. */
+.diff-split-inner { width: max-content; min-width: 100%; }
+/* Both columns scroll vertically in lockstep, so only one of them needs to say
+   so — two vertical bars, one of them mid-pane, would just be noise. */
+.diff-split-col:first-child::-webkit-scrollbar:vertical { display: none; }
+.is-nowrap .diff-split-cell { overflow: visible; }
+/* The columns scroll independently, so a row on one side has to be exactly as
+   tall as its counterpart on the other or the two sides drift apart over the
+   length of the diff. One line, fixed, including the hunk bar. */
+.is-nowrap .diff-split-cell,
+.is-nowrap .diff-split-hunk { height: 1.55em; line-height: 1.55; padding-block: 0; }
+.is-nowrap .diff-split-hunk { border-top: 0; border-bottom: 0; }
+/* The hunk bar now runs the length of the longest line, so an end-anchored
+   button would sit off-screen until you scrolled to it. Sticky keeps it against
+   the visible edge of its own column instead. */
+.is-nowrap .diff-stage-hunk {
+  position: sticky;
+  inset-inline-end: 6px;
+  top: auto;
+  transform: none;
+  margin-inline-start: auto;
+  align-self: center;
+  /* Has to fit inside a one-line row without stretching it. */
+  padding: 0 7px;
+  font-size: 10px;
+  line-height: 1.4;
+}
+.is-nowrap .diff-text { white-space: pre; word-break: normal; overflow-wrap: normal; }
+/* An empty side still owns a row — without a glyph its line box collapses and
+   the two columns stop lining up. */
+.is-nowrap .diff-text:empty::after { content: '\00a0'; }
 
 /* ─── Keyboard cheatsheet ──────────────────────────────────────────────── */
 .cheatsheet { display: flex; flex-direction: column; min-height: 0; }

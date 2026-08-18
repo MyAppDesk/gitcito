@@ -1555,6 +1555,8 @@ export const es: Dict = {
   'diff.splitTitle': 'Vista lado a lado (dividida)',
   'diff.wrap': 'Ajustar',
   'diff.wrapTitle': 'Ajustar las líneas largas en lugar de desplazarlas',
+  'diff.linkScroll': 'Vinculado',
+  'diff.linkScrollTitle': 'Los dos lados se desplazan a la vez; desactivado, cada columna va por su cuenta',
   'diff.wordDiff': 'Diff de palabras',
   'diff.wordDiffTitle': 'Resaltar palabras cambiadas en líneas editadas',
   'diff.find': 'Buscar',

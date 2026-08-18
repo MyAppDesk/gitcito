@@ -1561,6 +1561,8 @@ export const de: Dict = {
   'diff.splitTitle': 'Nebeneinander (geteilte Ansicht)',
   'diff.wrap': 'Umbruch',
   'diff.wrapTitle': 'Lange Zeilen umbrechen statt zu scrollen',
+  'diff.linkScroll': 'Verknüpft',
+  'diff.linkScrollTitle': 'Beide Seiten scrollen seitlich gemeinsam; aus scrollt jede Spalte für sich',
   'diff.wordDiff': 'Wort-Diff',
   'diff.wordDiffTitle': 'Geänderte Wörter innerhalb bearbeiteter Zeilen hervorheben',
   'diff.find': 'Suchen',

@@ -1524,6 +1524,8 @@ export const tr: Dict = {
   'diff.splitTitle': 'Yan yana (bölünmüş) görünüm',
   'diff.wrap': 'Satır kaydır',
   'diff.wrapTitle': 'Uzun satırları kaydırmak yerine alt satıra taşı',
+  'diff.linkScroll': 'Bağlı',
+  'diff.linkScrollTitle': 'İki taraf yatayda birlikte kayar; kapalıyken her sütun kendi başına kayar',
   'diff.wordDiff': 'Sözcük farkı',
   'diff.wordDiffTitle': 'Düzenlenen satırlarda değişen sözcükleri vurgula',
   'diff.find': 'Bul',

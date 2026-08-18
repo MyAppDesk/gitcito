@@ -1,5 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { SplitSquareHorizontal, Columns2, Pilcrow, Search, ChevronUp, ChevronDown, X } from 'lucide-react'
+import {
+  SplitSquareHorizontal,
+  Columns2,
+  Pilcrow,
+  Search,
+  ChevronUp,
+  ChevronDown,
+  WrapText,
+  Link2,
+  Unlink2,
+  X
+} from 'lucide-react'
 import { highlightHtml, buildQueryRegExp, type HighlightLayer } from './FileSearchBar'
 import { highlightLine } from '../lib/highlight'
 import { maskSecretLine } from '../lib/secrets'
@@ -12,7 +23,9 @@ import {
   wordRangesByLine,
   buildSplitRows,
   type DiffLine,
-  type Range
+  type Range,
+  type SplitCell,
+  type SplitRow
 } from '../lib/diff'
 
 /**
@@ -190,6 +203,18 @@ export function DiffViewer({
   const [splitView, setSplitView] = useState(() => localStorage.getItem('gitcito-split-diff') === 'on')
   useEffect(() => localStorage.setItem('gitcito-split-diff', splitView ? 'on' : 'off'), [splitView])
 
+  // Split-view line wrapping. Off by default: one line per row keeps the two
+  // sides row-for-row comparable, which is the point of split view. On, long
+  // lines fold inside their column instead of scrolling.
+  const [wrapOn, setWrapOn] = useState(() => localStorage.getItem('gitcito-diff-wrap') === 'on')
+  useEffect(() => localStorage.setItem('gitcito-diff-wrap', wrapOn ? 'on' : 'off'), [wrapOn])
+
+  // Sideways scrolling with wrap off: each column on its own, or the two locked
+  // together. Locked is the default — the sides are worth comparing at the same
+  // column, and one that drifts is the reason to look away from a split view.
+  const [linkScroll, setLinkScroll] = useState(() => localStorage.getItem('gitcito-diff-link-scroll') !== 'off')
+  useEffect(() => localStorage.setItem('gitcito-diff-link-scroll', linkScroll ? 'on' : 'off'), [linkScroll])
+
   // Per-line changed-character ranges (for word-level highlighting).
   const wordRanges = useMemo(() => wordRangesByLine(lines), [lines])
 
@@ -222,6 +247,53 @@ export function DiffViewer({
     if (wr) html = markRanges(html, wr, kind === 'add' ? 'word-add' : 'word-del')
     return html || '&nbsp;'
   }
+
+  // Column-major split view scrolls each side on its own, so the vertical
+  // position has to be mirrored by hand. The flag stops the mirrored write from
+  // bouncing back as a second scroll event.
+  const leftColRef = useRef<HTMLDivElement>(null)
+  const rightColRef = useRef<HTMLDivElement>(null)
+  const syncingScroll = useRef(false)
+  const syncScroll = (from: React.RefObject<HTMLDivElement>, to: React.RefObject<HTMLDivElement>): void => {
+    if (syncingScroll.current || !from.current || !to.current) return
+    const sameTop = to.current.scrollTop === from.current.scrollTop
+    const sameLeft = !linkScroll || to.current.scrollLeft === from.current.scrollLeft
+    if (sameTop && sameLeft) return
+    syncingScroll.current = true
+    to.current.scrollTop = from.current.scrollTop
+    if (linkScroll) to.current.scrollLeft = from.current.scrollLeft
+    requestAnimationFrame(() => (syncingScroll.current = false))
+  }
+
+  // One side of a split row. An absent side is an empty cell rather than a gap,
+  // so the two columns keep the same number of rows.
+  const splitCell = (c: SplitCell | undefined, key: string): React.JSX.Element => (
+    <div key={key} className={`diff-split-cell ${c ? c.kind : 'empty'}`}>
+      <span className="diff-gutter">{c?.no ?? ''}</span>
+      {c ? (
+        <span className="diff-text" dangerouslySetInnerHTML={{ __html: cellHtml(c.text, c.idx, c.kind) }} />
+      ) : (
+        <span className="diff-text" />
+      )}
+    </div>
+  )
+
+  // The @@ bar. Column-major mode draws it in both columns — the left carries
+  // the header text, the right the stage button, and together they read as one
+  // bar without either column losing a row.
+  const splitHunk = (r: SplitRow, key: number, side?: 'left' | 'right'): React.JSX.Element => (
+    <div key={key} className="diff-split-hunk">
+      <span className="diff-text">{side === 'right' ? '' : r.hunk}</span>
+      {side !== 'left' && onStageHunk && hunkData && r.hunkIdx !== undefined && (
+        <button
+          className="btn ghost tiny diff-stage-hunk"
+          onClick={() => onStageHunk(`${hunkData.header}\n${hunkData.hunks[r.hunkIdx as number] ?? ''}\n`)}
+        >
+          {t('diff.stageHunk')}
+        </button>
+      )}
+    </div>
+  )
 
   // Line-level staging selection (only when staging is enabled). Keyed by index
   // into `lines`; cleared whenever the diff changes.
@@ -293,7 +365,9 @@ export function DiffViewer({
 
   return (
     <div
-      className={`diff-viewer hljs ${splitView ? 'is-split' : ''} ${hoverArmed ? 'hover-armed' : ''}`}
+      className={`diff-viewer hljs ${splitView ? 'is-split' : ''} ${splitView && !wrapOn ? 'is-nowrap' : ''} ${
+        hoverArmed ? 'hover-armed' : ''
+      }`}
       ref={viewerRef}
       tabIndex={0}
       onKeyDown={onViewerKeyDown}
@@ -301,6 +375,27 @@ export function DiffViewer({
     >
       {hoverCard}
       <div className="diff-toggles">
+        {/* Only meaningful side-by-side: the unified view has the full width to
+            scroll a long line through, a 50% column does not. */}
+        {splitView && (
+          <button
+            className={`diff-word-toggle ${wrapOn ? 'on' : ''}`}
+            title={t('diff.wrapTitle')}
+            onClick={() => setWrapOn((v) => !v)}
+          >
+            <WrapText size={12} /> {t('diff.wrap')}
+          </button>
+        )}
+        {/* Only means anything when there is sideways scrolling to link. */}
+        {splitView && !wrapOn && (
+          <button
+            className={`diff-word-toggle ${linkScroll ? 'on' : ''}`}
+            title={t('diff.linkScrollTitle')}
+            onClick={() => setLinkScroll((v) => !v)}
+          >
+            {linkScroll ? <Link2 size={12} /> : <Unlink2 size={12} />} {t('diff.linkScroll')}
+          </button>
+        )}
         {onToggleIgnoreWs && (
           <button
             className={`diff-word-toggle ${ignoreWs ? 'on' : ''}`}
@@ -362,42 +457,41 @@ export function DiffViewer({
         </div>
       )}
       {splitView ? (
-        <div className="diff-split">
-          {splitRows.map((r, i) =>
-            r.hunk !== undefined ? (
-              <div key={i} className="diff-split-hunk">
-                <span className="diff-text">{r.hunk}</span>
-                {onStageHunk && hunkData && r.hunkIdx !== undefined && (
-                  <button
-                    className="btn ghost tiny diff-stage-hunk"
-                    onClick={() => onStageHunk(`${hunkData.header}\n${hunkData.hunks[r.hunkIdx as number] ?? ''}\n`)}
-                  >
-                    {t('diff.stageHunk')}
-                  </button>
-                )}
-              </div>
-            ) : (
-              <div key={i} className="diff-split-row">
-                <div className={`diff-split-cell ${r.left ? r.left.kind : 'empty'}`}>
-                  <span className="diff-gutter">{r.left?.no ?? ''}</span>
-                  {r.left ? (
-                    <span className="diff-text" dangerouslySetInnerHTML={{ __html: cellHtml(r.left.text, r.left.idx, r.left.kind) }} />
-                  ) : (
-                    <span className="diff-text" />
-                  )}
+        wrapOn ? (
+          <div className="diff-split">
+            {splitRows.map((r, i) =>
+              r.hunk !== undefined ? (
+                splitHunk(r, i)
+              ) : (
+                <div key={i} className="diff-split-row">
+                  {splitCell(r.left, `${i}l`)}
+                  {splitCell(r.right, `${i}r`)}
                 </div>
-                <div className={`diff-split-cell ${r.right ? r.right.kind : 'empty'}`}>
-                  <span className="diff-gutter">{r.right?.no ?? ''}</span>
-                  {r.right ? (
-                    <span className="diff-text" dangerouslySetInnerHTML={{ __html: cellHtml(r.right.text, r.right.idx, r.right.kind) }} />
-                  ) : (
-                    <span className="diff-text" />
-                  )}
-                </div>
+              )
+            )}
+          </div>
+        ) : (
+          // Wrap off: a scrollbar per side, which needs one scroller per side —
+          // hence column-major DOM. Each column scrolls both ways; the vertical
+          // scroll is mirrored so the sides stay row-for-row, and the horizontal
+          // one is not, which is the whole point. Rows line up because every
+          // cell is exactly one line tall and the hunk bar spans both columns.
+          <div className="diff-split is-cols">
+            <div className="diff-split-col" ref={leftColRef} onScroll={() => syncScroll(leftColRef, rightColRef)}>
+              {/* The inner block is as wide as the column's longest line, and every
+                  row fills it — a row sized to its own text would leave its
+                  background behind as soon as you scrolled past it. */}
+              <div className="diff-split-inner">
+                {splitRows.map((r, i) => (r.hunk !== undefined ? splitHunk(r, i, 'left') : splitCell(r.left, `${i}l`)))}
               </div>
-            )
-          )}
-        </div>
+            </div>
+            <div className="diff-split-col" ref={rightColRef} onScroll={() => syncScroll(rightColRef, leftColRef)}>
+              <div className="diff-split-inner">
+                {splitRows.map((r, i) => (r.hunk !== undefined ? splitHunk(r, i, 'right') : splitCell(r.right, `${i}r`)))}
+              </div>
+            </div>
+          </div>
+        )
       ) : (
         <>
       {onStageHunk && selected.size > 0 && (

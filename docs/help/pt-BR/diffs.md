@@ -15,7 +15,22 @@ keywords: diff split dividido lado a lado side-by-side palavra word level espaç
 | **Unificado ↔ dividido** | Lado a lado quando você quer comparar, empilhado quando você quer ler |
 | **Nível de palavra** | Destaca só os tokens alterados dentro de uma linha editada — vermelho no antigo, verde no novo |
 | **Ignorar espaços em branco** | Esconde reindentação para a mudança de verdade aparecer |
+| **Quebrar linha** (só na visão lado a lado) | Quebra linhas longas dentro da coluna em vez de rolá-las |
+| **Vinculado** (lado a lado, sem quebra) | Rola as duas metades na horizontal juntas — desligado, cada coluna rola sozinha |
 | <kbd>⌘F</kbd> | Buscar dentro do diff, com navegação para o próximo/anterior |
+
+A quebra vem desligada: uma linha ocupa uma única fileira, então os dois lados
+continuam comparáveis fileira a fileira, e cada metade rola na horizontal com a
+própria barra. Ligue quando preferir ler uma linha longa a persegui-la — em
+troca, uma linha dobrada em três fileiras deixa de ficar de frente para sua
+contraparte. Cada interruptor lembra o estado entre arquivos e sessões.
+
+Sem quebra, as duas metades rolam na horizontal **vinculadas** por padrão,
+então a coluna 90 da esquerda fica sobre a 90 da direita. Desvincule quando os
+lados tiverem se afastado — um bloco indentado contra um sem indentação, uma
+renomeação que deslocou cada linha — e você quiser deixar cada metade onde está
+o seu conteúdo. A rolagem vertical continua compartilhada nos dois casos; é ela
+que mantém as fileiras de frente uma para a outra.
 
 ![Diff dividido com destaque em nível de palavra](../../screenshots/split-diff.webp)
 

@@ -1524,6 +1524,8 @@ export const it: Dict = {
   'diff.splitTitle': 'Vista affiancata (split)',
   'diff.wrap': 'A capo',
   'diff.wrapTitle': 'Manda a capo le righe lunghe invece di scorrerle',
+  'diff.linkScroll': 'Collegato',
+  'diff.linkScrollTitle': 'I due lati scorrono lateralmente insieme; disattivato, ogni colonna scorre per conto suo',
   'diff.wordDiff': 'Diff per parole',
   'diff.wordDiffTitle': 'Evidenzia le parole cambiate dentro alle righe modificate',
   'diff.find': 'Cerca',

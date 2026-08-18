@@ -1524,6 +1524,8 @@ export const ja: Dict = {
   'diff.splitTitle': '左右に並べて表示',
   'diff.wrap': '折り返し',
   'diff.wrapTitle': '長い行を横スクロールせず折り返す',
+  'diff.linkScroll': '連動',
+  'diff.linkScrollTitle': '左右を一緒に横スクロール。オフでは列ごとに独立して動きます',
   'diff.wordDiff': '単語単位の差分',
   'diff.wordDiffTitle': '変更された行の中で、変わった単語を強調します',
   'diff.find': '検索',

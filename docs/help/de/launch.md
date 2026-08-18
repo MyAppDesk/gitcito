@@ -18,6 +18,8 @@ du auswählst, im integrierten Terminal.
 - Der **`preLaunchTask`** einer Konfiguration läuft zuerst.
 - **`${input:…}`**-Werte werden vor dem Start interaktiv abgefragt
   (`promptString` und `pickString`).
+  Ein `pickString` zeigt seine Optionen als echten Picker mit vorausgewähltem
+  Standardwert; ein als `password` markierter `promptString` wird maskiert.
 - **`isBackground`**-Tasks (Watcher, Dev-Server) laufen abgekoppelt und
   blockieren den Start daher nie.
 - **Compounds** starten jedes Mitglied als **eigene parallele Sitzung** — in
@@ -34,6 +36,8 @@ du auswählst, im integrierten Terminal.
   Browser — Gitcito kann keinen Debugger anhängen).
 
 ![Ein Compound mit zwei parallelen Sitzungen](../../screenshots/launch-compound.webp)
+
+![Der ${input}-Picker mit vorausgewähltem Standardwert](../../screenshots/launch-input.webp)
 
 Eine schwebende Werkzeugleiste gibt dir **Pause / Fortsetzen, Neustart, Stopp**
 und wechselt zwischen laufenden Sitzungen.

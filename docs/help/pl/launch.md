@@ -18,6 +18,8 @@ konfigurację we wbudowanym terminalu.
 - **`preLaunchTask`** danej konfiguracji uruchamia się jako pierwsze.
 - Wartości **`${input:…}`** są odpytywane interaktywnie przed uruchomieniem
   (`promptString` i `pickString`).
+  `pickString` pokazuje opcje jako prawdziwy wybierak z zaznaczoną wartością
+  domyślną; `promptString` oznaczony `password` jest maskowany.
 - Zadania **`isBackground`** (watchery, serwery deweloperskie) działają
   odczepione, więc nigdy nie blokują uruchomienia.
 - **Compoundy** uruchamiają każdego członka jako **osobną równoległą sesję**,
@@ -34,6 +36,8 @@ konfigurację we wbudowanym terminalu.
   przeglądarkę — Gitcito nie może podłączyć do niej debugera).
 
 ![Compound uruchamiający dwie równoległe sesje](../../screenshots/launch-compound.webp)
+
+![Wybierak ${input} z zaznaczoną wartością domyślną](../../screenshots/launch-input.webp)
 
 Pływający pasek narzędzi daje ci **pauzę / wznowienie, restart, zatrzymanie**
 i przełącza między działającymi sesjami.

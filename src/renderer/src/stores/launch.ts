@@ -5,6 +5,7 @@ import { useUIStore } from './ui'
 import { disposeTerm } from '../components/terminalRegistry'
 import { t, interp } from '../i18n'
 import { memberFullyCovered, sharedTaskLabels } from '../lib/launchTasks'
+import { collectInputRefs } from '../lib/launchInputs'
 
 /** Monotonic id source for compound runs (unique per app session is enough). */
 let compoundSeq = 0
@@ -62,49 +63,8 @@ export interface LaunchSession {
   taskLabels?: string[]
 }
 
-/** Collect, in first-seen order, the `${input:id}` ids referenced by the config
- *  we're about to run (compound members included) and the tasks it triggers,
- *  limited to ids that actually have a definition in the group's `inputs`. */
-function collectInputRefs(group: LaunchGroup, config: LaunchConfig): string[] {
-  const ids: string[] = []
-  const seen = new Set<string>()
-  const scan = (v: unknown): void => {
-    if (typeof v === 'string') {
-      for (const m of v.matchAll(/\$\{input:([^}]+)\}/g)) {
-        const id = m[1]
-        if (!seen.has(id) && group.inputs.some((i) => i.id === id)) {
-          seen.add(id)
-          ids.push(id)
-        }
-      }
-    } else if (Array.isArray(v)) {
-      v.forEach(scan)
-    } else if (v && typeof v === 'object') {
-      Object.values(v).forEach(scan)
-    }
-  }
-  const configsToScan = Array.isArray(config.compound)
-    ? config.compound.map((n) => group.configs.find((c) => c.name === n)).filter(Boolean)
-    : [config]
-  configsToScan.forEach(scan)
-  // Tasks reachable via preLaunchTask / postDebugTask (and their dependsOn).
-  const taskLabels = new Set<string>()
-  const addTask = (label?: string): void => {
-    if (!label || taskLabels.has(label)) return
-    taskLabels.add(label)
-    const task = group.tasks.find((t) => t.label === label)
-    const deps = task?.dependsOn ? (Array.isArray(task.dependsOn) ? task.dependsOn : [task.dependsOn]) : []
-    deps.forEach(addTask)
-  }
-  configsToScan.forEach((c) => {
-    addTask(c?.preLaunchTask)
-    addTask(c?.postDebugTask)
-  })
-  group.tasks.filter((t) => taskLabels.has(t.label)).forEach(scan)
-  return ids
-}
-
-/** Prompt the user (one modal per input, in order) for the referenced inputs.
+/** Prompt the user (one modal per input, in order) for the referenced inputs —
+ *  a real picker for `pickString`, a maskable text field for `promptString`.
  *  Calls `done(values)` when all are answered, or never (launch aborted) if the
  *  user cancels a prompt. */
 function promptForInputs(
@@ -119,15 +79,11 @@ function promptForInputs(
       return
     }
     const def = group.inputs.find((d) => d.id === refs[i])!
-    const opts = (def.options ?? []).map((o) => (typeof o === 'string' ? o : o.value))
     useUIStore.getState().openModal({
-      kind: 'input',
-      title: def.description || `Input: ${def.id}`,
-      label: opts.length ? `${def.description ?? def.id} — options: ${opts.join(', ')}` : def.description ?? def.id,
-      placeholder: opts[0] ?? '',
-      initial: def.default ?? '',
-      allowEmpty: true,
-      submitLabel: 'OK',
+      kind: 'launch-input',
+      input: def,
+      step: i + 1,
+      total: refs.length,
       onSubmit: (v) => {
         values[def.id] = v
         step(i + 1)

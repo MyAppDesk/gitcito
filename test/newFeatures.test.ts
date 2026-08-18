@@ -820,6 +820,17 @@ describe('discoverLaunch — compounds & serverReadyAction (launch-configs playg
     expect(root!.configs.some((c) => c.name === 'Service B')).toBe(true)
   })
 
+  it('parses the inputs array — promptString and pickString with options and defaults', async () => {
+    const { discoverLaunch } = await import('../src/main/launch')
+    const groups = await discoverLaunch(repoPath('launch-configs'))
+    const root = groups.find((g) => g.isRoot)!
+    const who = root.inputs.find((i) => i.id === 'who')
+    expect(who).toMatchObject({ type: 'promptString', default: 'gitcito' })
+    const greeting = root.inputs.find((i) => i.id === 'greeting')
+    expect(greeting).toMatchObject({ type: 'pickString', default: 'hola' })
+    expect(greeting!.options).toEqual(['hola', 'hello', 'bonjour', 'ciao'])
+  })
+
   it('preserves serverReadyAction on the config it belongs to', async () => {
     const { discoverLaunch } = await import('../src/main/launch')
     const groups = await discoverLaunch(repoPath('launch-configs'))

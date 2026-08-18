@@ -17,6 +17,8 @@ Gitcito はあなたの `.vscode/launch.json` を読み — ルートのもの�
 - 構成の **`preLaunchTask`** が先に走ります。
 - **`${input:…}`** の値は起動前に対話的に尋ねられます（`promptString` と
   `pickString`）。
+  `pickString` は既定値が選択済みの本物のピッカーとして選択肢を表示します。
+  `password` 指定の `promptString` は入力がマスクされます。
 - **`isBackground`** のタスク（ウォッチャー、開発サーバー）はデタッチして走るので、
   起動をブロックすることはありません。
 - **compound** は各メンバーを**それぞれ並列のセッション**として実行します —
@@ -30,6 +32,8 @@ Gitcito はあなたの `.vscode/launch.json` を読み — ルートのもの�
   `debugWithEdge` もブラウザを開くだけです — Gitcito はデバッガをアタッチできません）。
 
 ![2 つの並列セッションを実行する compound](../../screenshots/launch-compound.webp)
+
+![既定値が選択済みの ${input} ピッカー](../../screenshots/launch-input.webp)
 
 フローティングツールバーから **一時停止 / 再開、再起動、停止** ができ、実行中の
 セッションを切り替えられます。

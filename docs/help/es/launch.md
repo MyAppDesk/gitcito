@@ -19,6 +19,8 @@ integrado.
 - El **`preLaunchTask`** de una configuración se ejecuta primero.
 - Los valores **`${input:…}`** se preguntan de forma interactiva antes de lanzar
   (`promptString` y `pickString`).
+  Un `pickString` muestra sus opciones como un selector real con el valor por
+  defecto preseleccionado; un `promptString` marcado `password` se enmascara.
 - Las tareas **`isBackground`** (watchers, servidores de desarrollo) se ejecutan
   desacopladas, así que nunca bloquean el lanzamiento.
 - Los **compounds** ejecutan cada miembro como su **propia sesión paralela**,
@@ -35,6 +37,8 @@ integrado.
   navegador — Gitcito no puede adjuntarle un depurador).
 
 ![Un compound ejecutando dos sesiones paralelas](../../screenshots/launch-compound.webp)
+
+![El selector de ${input} con el valor por defecto preseleccionado](../../screenshots/launch-input.webp)
 
 Una barra flotante te da **pausar / reanudar, reiniciar, parar**, y alterna entre
 las sesiones en marcha.

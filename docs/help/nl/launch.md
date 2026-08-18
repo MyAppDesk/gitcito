@@ -18,6 +18,8 @@ geïntegreerde terminal.
 - De **`preLaunchTask`** van een configuratie draait eerst.
 - **`${input:…}`**-waarden worden interactief gevraagd vóór het starten
   (`promptString` en `pickString`).
+  Een `pickString` toont zijn opties als een echte kiezer met de standaardwaarde
+  voorgeselecteerd; een `promptString` gemarkeerd als `password` wordt gemaskeerd.
 - **`isBackground`**-taken (watchers, ontwikkelservers) draaien losgekoppeld,
   zodat ze het starten nooit blokkeren.
 - **Compounds** draaien elk lid als **eigen parallelle sessie**, in één
@@ -34,6 +36,8 @@ geïntegreerde terminal.
   — Gitcito kan er geen debugger aan koppelen).
 
 ![Een compound met twee parallelle sessies](../../screenshots/launch-compound.webp)
+
+![De ${input}-kiezer met voorgeselecteerde standaardwaarde](../../screenshots/launch-input.webp)
 
 Een zwevende werkbalk geeft je **pauzeren / hervatten, herstarten, stoppen**, en
 schakelt tussen draaiende sessies.

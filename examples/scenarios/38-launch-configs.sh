@@ -119,6 +119,13 @@ cat > "$R/.vscode/launch.json" <<'EOF'
       "preLaunchTask": "serve"
     },
     {
+      "name": "Run hello (secret token)",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/scripts/hello.js",
+      "env": { "GREETING": "${input:token}" }
+    },
+    {
       "name": "Service A",
       "type": "node",
       "request": "launch",
@@ -165,6 +172,12 @@ cat > "$R/.vscode/launch.json" <<'EOF'
       "description": "Pick a greeting",
       "default": "hola",
       "options": ["hola", "hello", "bonjour", "ciao"]
+    },
+    {
+      "id": "token",
+      "type": "promptString",
+      "description": "Paste a secret token (input is masked)",
+      "password": true
     }
   ]
 }

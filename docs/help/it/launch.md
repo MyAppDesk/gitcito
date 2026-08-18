@@ -18,6 +18,8 @@ nel terminale integrato.
 - Il **`preLaunchTask`** di una configurazione viene eseguito per primo.
 - I valori **`${input:…}`** ti vengono chiesti interattivamente prima
   dell'avvio (`promptString` e `pickString`).
+  Un `pickString` mostra le sue opzioni come vero selettore col valore
+  predefinito preselezionato; un `promptString` marcato `password` è mascherato.
 - I task **`isBackground`** (watcher, server di sviluppo) girano staccati, così
   non bloccano mai l'avvio.
 - I **compound** eseguono ogni membro come **sessione parallela a sé**, in un
@@ -34,6 +36,8 @@ nel terminale integrato.
   browser — Gitcito non può collegarvi un debugger).
 
 ![Un compound che esegue due sessioni parallele](../../screenshots/launch-compound.webp)
+
+![Il selettore ${input} col valore predefinito preselezionato](../../screenshots/launch-input.webp)
 
 Una barra degli strumenti fluttuante ti dà **pausa / ripresa, riavvio, stop**, e
 permette di passare da una sessione in esecuzione all'altra.

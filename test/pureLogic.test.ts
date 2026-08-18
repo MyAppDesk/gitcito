@@ -10,6 +10,8 @@ import { isSecretFile, maskSecretLine } from '../src/renderer/src/lib/secrets'
 import { comboFromEvent, formatCombo, effectiveBindings, isReservedCombo, matchShortcut, tabActionFromEvent, tabIndexFromEvent } from '../src/renderer/src/lib/shortcuts'
 import { terminalCloseTarget, terminalShortcutFromEvent } from '../src/renderer/src/lib/terminalShortcuts'
 import { taskChain, sharedTaskLabels, memberFullyCovered } from '../src/renderer/src/lib/launchTasks'
+import { collectInputRefs, normalizeOptions, defaultOptionIndex, isPickInput } from '../src/renderer/src/lib/launchInputs'
+import { resolveInputTokens } from '../src/main/launch'
 import { closeTabPrompt, repoCloseStatus, tabCloseStatus } from '../src/renderer/src/lib/tabClose'
 import type { TabState } from '../src/shared/types'
 import { autolink, remoteWebUrl, filePermalink } from '../src/renderer/src/lib/autolink'
@@ -3703,5 +3705,74 @@ describe('launch shared tasks (compound run-once hoisting)', () => {
     // A launch-request member always spawns, even with an empty chain.
     const c = { name: 'C', request: 'launch', program: 'c.js', preLaunchTask: 'sync-config' }
     expect(memberFullyCovered(c, tasks, shared)).toBe(false)
+  })
+})
+
+describe('launch ${input:…} prompts (launchInputs + resolveInputTokens)', () => {
+  const inputs = [
+    { id: 'who', type: 'promptString', description: 'Who?', default: 'gitcito' },
+    {
+      id: 'greeting',
+      type: 'pickString',
+      description: 'Pick a greeting',
+      default: 'hola',
+      options: ['hola', { label: 'English', value: 'hello' }, 'ciao']
+    },
+    { id: 'secret', type: 'promptString', password: true }
+  ]
+  const mkGroup = (configs: object[], tasks: object[] = []): never =>
+    ({ id: '/r', dir: '/r', label: 'Workspace', isRoot: true, configs, tasks, inputs }) as never
+
+  it('collects referenced input ids in first-seen order, defined ids only', () => {
+    const config = {
+      name: 'A',
+      args: ['--from', '${input:who}'],
+      env: { GREETING: '${input:greeting}', MISSING: '${input:undefined-id}' }
+    }
+    expect(collectInputRefs(mkGroup([config]), config as never)).toEqual(['who', 'greeting'])
+  })
+
+  it('collects across compound members and their task chains, deduped', () => {
+    const a = { name: 'A', args: ['${input:who}'], preLaunchTask: 'build' }
+    const b = { name: 'B', args: ['${input:who}'] }
+    const compound = { name: 'Both', compound: ['A', 'B'] }
+    const tasks = [
+      { label: 'prep', args: ['${input:greeting}'] },
+      { label: 'build', command: 'make', dependsOn: 'prep' }
+    ]
+    const group = mkGroup([a, b, compound], tasks)
+    expect(collectInputRefs(group, compound as never)).toEqual(['who', 'greeting'])
+  })
+
+  it('normalises mixed string/object options and finds the default', () => {
+    const pick = inputs[1] as never
+    expect(normalizeOptions(pick)).toEqual([
+      { label: 'hola', value: 'hola' },
+      { label: 'English', value: 'hello' },
+      { label: 'ciao', value: 'ciao' }
+    ])
+    expect(defaultOptionIndex(pick)).toBe(0)
+    expect(defaultOptionIndex({ ...(pick as object), default: 'hello' } as never)).toBe(1)
+    expect(defaultOptionIndex({ ...(pick as object), default: 'nope' } as never)).toBe(0)
+  })
+
+  it('renders a picker only for pickString with options', () => {
+    expect(isPickInput(inputs[1] as never)).toBe(true)
+    expect(isPickInput(inputs[0] as never)).toBe(false)
+    expect(isPickInput({ id: 'x', type: 'pickString' } as never)).toBe(false)
+  })
+
+  it('resolves ${input:id} tokens deep in configs and tasks, leaving unknown ids intact', () => {
+    const config = {
+      name: 'Run ${input:who}',
+      args: ['--from', '${input:who}', '${input:who}+${input:greeting}'],
+      env: { GREETING: '${input:greeting}', KEEP: '${input:unknown}' },
+      nested: { deep: ['${input:who}'] }
+    }
+    const out = resolveInputTokens(config, { who: 'carlos', greeting: 'hola' })
+    expect(out.name).toBe('Run carlos')
+    expect(out.args).toEqual(['--from', 'carlos', 'carlos+hola'])
+    expect(out.env).toEqual({ GREETING: 'hola', KEEP: '${input:unknown}' })
+    expect(out.nested).toEqual({ deep: ['carlos'] })
   })
 })

@@ -4,7 +4,6 @@
     "Add a feature to the app → add it here. `covered` points at a page id in docs/help/;",
     "`exempt` records, with a reason, the surfaces that are not features of their own."
   ],
-
   "modals": {
     "covered": {
       "absorb": "absorb",
@@ -57,7 +56,8 @@
       "subtree": "subtree",
       "stash-partial": "stashes",
       "time-machine": "time-machine",
-      "timelapse": "timelapse"
+      "timelapse": "timelapse",
+      "launch-input": "launch"
     },
     "exempt": {
       "input": "Generic single-field prompt reused everywhere; not a feature.",
@@ -66,7 +66,6 @@
       "cosmos": "DO NOT DOCUMENT — easter egg (five clicks on the repo-settings title). Documenting it would spoil it."
     }
   },
-
   "pages": {
     "covered": {
       "insights": "insights",
@@ -84,7 +83,6 @@
       "changelog": "The app's own 'What's new' release notes, not a Git feature."
     }
   },
-
   "panels": {
     "covered": {
       "chat": "repo-chat"
@@ -93,7 +91,6 @@
       "details": "The commit/stash/WIP inspector documented by the view it belongs to (graph, staging, stashes)."
     }
   },
-
   "commands": {
     "covered": {
       "absorb": "absorb",

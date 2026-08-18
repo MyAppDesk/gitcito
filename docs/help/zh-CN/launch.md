@@ -15,6 +15,8 @@ Gitcito 会读取你的 `.vscode/launch.json`——根目录那一份以及任�
 - VS Code 的**变量会被解析**（`${workspaceFolder}` 及其同伴）。
 - 配置里的 **`preLaunchTask`** 会先跑。
 - **`${input:…}`** 的值会在启动前交互式询问（`promptString` 与 `pickString`）。
+  `pickString` 会以真正的选择器展示选项并预选默认值；标记为 `password` 的
+  `promptString` 输入会被掩码。
 - **`isBackground`** 任务（监视器、开发服务器）以分离方式运行，因此永远不会挡住启动。
 - **compound** 会把每个成员作为**各自的并行会话**运行 — 在一个以 compound 命名的
   拆分终端里，每个成员一个窗格，和 VS Code 的调试会话完全一样。配置 `stopAll: true`
@@ -27,6 +29,8 @@ Gitcito 会读取你的 `.vscode/launch.json`——根目录那一份以及任�
   Gitcito 无法附加调试器）。
 
 ![一个 compound 正在运行两个并行会话](../../screenshots/launch-compound.webp)
+
+![预选默认值的 ${input} 选择器](../../screenshots/launch-input.webp)
 
 一条悬浮工具栏给你**暂停／恢复、重启、停止**，并可在多个运行中的会话之间切换。
 

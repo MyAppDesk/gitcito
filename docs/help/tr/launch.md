@@ -18,6 +18,8 @@ terminalde çalıştırır.
 - Bir yapılandırmanın **`preLaunchTask`** görevi önce çalışır.
 - **`${input:…}`** değerleri çalıştırmadan önce etkileşimli olarak sorulur
   (`promptString` ve `pickString`).
+  `pickString` seçeneklerini, varsayılanı önceden seçili gerçek bir seçici
+  olarak gösterir; `password` işaretli `promptString` maskelenir.
 - **`isBackground`** görevleri (izleyiciler, geliştirme sunucuları) ayrık
   çalışır, böylece çalıştırmayı asla engellemezler.
 - **Compound**'lar her üyeyi **kendi paralel oturumu** olarak çalıştırır —
@@ -34,6 +36,8 @@ terminalde çalıştırır.
   Gitcito ona bir hata ayıklayıcı bağlayamaz).
 
 ![İki paralel oturum çalıştıran bir compound](../../screenshots/launch-compound.webp)
+
+![Varsayılanı önceden seçili ${input} seçicisi](../../screenshots/launch-input.webp)
 
 Yüzen bir araç çubuğu size **duraklat / sürdür, yeniden başlat, durdur**
 düğmelerini verir ve çalışan oturumlar arasında geçiş yapar.

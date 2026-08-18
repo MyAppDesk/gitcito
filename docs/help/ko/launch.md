@@ -17,6 +17,8 @@ Gitcito는 여러분의 `.vscode/launch.json`을 읽어서 — 루트에 있는 
 - 구성의 **`preLaunchTask`**가 먼저 실행돼요.
 - **`${input:…}`** 값은 실행 전에 대화형으로 물어봐요(`promptString`과
   `pickString`).
+  `pickString`은 기본값이 미리 선택된 진짜 선택기로 옵션을 보여줍니다.
+  `password`로 표시된 `promptString`은 입력이 가려집니다.
 - **`isBackground`** 작업(감시자, 개발 서버)은 분리되어 실행되므로 실행을 막지
   않아요.
 - **컴파운드**는 각 멤버를 **저마다의 병렬 세션**으로 실행합니다 — 컴파운드
@@ -30,6 +32,8 @@ Gitcito는 여러분의 `.vscode/launch.json`을 읽어서 — 루트에 있는 
   `debugWithEdge`도 브라우저만 엽니다 — Gitcito는 디버거를 붙일 수 없습니다).
 
 ![두 개의 병렬 세션을 실행하는 컴파운드](../../screenshots/launch-compound.webp)
+
+![기본값이 미리 선택된 ${input} 선택기](../../screenshots/launch-input.webp)
 
 떠 있는 도구 모음에서 **일시 정지 / 재개, 재시작, 중지**를 할 수 있고, 실행 중인
 세션 사이를 오갈 수 있어요.

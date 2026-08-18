@@ -17,6 +17,8 @@ grouped with dividers — and runs the config you pick in the integrated termina
 - A config's **`preLaunchTask`** runs first.
 - **`${input:…}`** values are asked interactively before launching
   (`promptString` and `pickString`).
+  A `pickString` shows its options as a real picker with the default
+  preselected; a `promptString` marked `password` is masked.
 - **`isBackground`** tasks (watchers, dev servers) run detached, so they never
   block the launch.
 - **Compounds** run each member as its **own parallel session**, in one split
@@ -32,6 +34,8 @@ grouped with dividers — and runs the config you pick in the integrated termina
   — Gitcito cannot attach a debugger to it).
 
 ![A compound running two parallel sessions](../screenshots/launch-compound.webp)
+
+![The ${input} picker with a preselected default](../screenshots/launch-input.webp)
 
 A floating toolbar gives you **pause / resume, restart, stop**, and switches
 between running sessions. A compound member shows as *compound › member*, and

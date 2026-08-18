@@ -218,7 +218,7 @@ function applyPlatform<T extends { [key: string]: unknown }>(obj: T): T {
 // here we deep-replace those tokens in every string of the config / tasks
 // *before* doing the usual variable substitution.
 
-function resolveInputTokens<T>(value: T, values: Record<string, string>): T {
+export function resolveInputTokens<T>(value: T, values: Record<string, string>): T {
   if (typeof value === 'string') {
     return value.replace(/\$\{input:([^}]+)\}/g, (m, id: string) =>
       id in values ? values[id] : m

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { X, Globe, Github, Gitlab, Cloud, Server, Loader2, Search, Lock, ExternalLink, Plug, FolderGit2, Folder, Plus, Check, ChevronDown, ChevronRight, RefreshCw, Sparkles, GitMerge, ArrowUpFromLine } from 'lucide-react'
+import { X, Globe, Github, Gitlab, Cloud, Server, Loader2, Search, Lock, ExternalLink, Plug, FolderGit2, Folder, Plus, Check, ChevronDown, ChevronRight, RefreshCw, Sparkles, GitMerge, ArrowUpFromLine, TextCursorInput } from 'lucide-react'
 import { useUIStore, type ModalSpec } from '../stores/ui'
 import { useSettingsStore, GROUP_COLORS } from '../stores/settings'
 import { hostingApi, gitApi, shellApi, aiApi } from '../infrastructure/api'
@@ -60,6 +60,7 @@ import { CheatsheetModal } from './CheatsheetModal'
 import { CreateIssueModal } from './CreateIssueModal'
 import { RepoSettingsModal } from './RepoSettingsModal'
 import { useT, interp } from '../i18n'
+import { defaultOptionIndex, isPickInput, normalizeOptions } from '../lib/launchInputs'
 import { AIAccountsNotice } from './AIAccountsNotice'
 
 function GroupColorModal({ spec }: { spec: Extract<ModalSpec, { kind: 'group-color' }> }): React.JSX.Element {
@@ -146,6 +147,106 @@ function InputModal({ spec }: { spec: Extract<ModalSpec, { kind: 'input' }> }): 
           {spec.submitLabel ?? 'OK'}
         </button>
       </div>
+    </>
+  )
+}
+
+/**
+ * One `${input:id}` prompt from a launch.json `inputs` array, VS Code-style:
+ * a `pickString` renders its options as a real picker (default preselected,
+ * arrow keys + Enter, click to choose); a `promptString` is a text field,
+ * masked when the input is marked `password`.
+ */
+function LaunchInputModal({ spec }: { spec: Extract<ModalSpec, { kind: 'launch-input' }> }): React.JSX.Element {
+  const t = useT()
+  const closeModal = useUIStore((s) => s.closeModal)
+  const { input } = spec
+  const pick = isPickInput(input)
+  const options = normalizeOptions(input)
+  const [selected, setSelected] = useState(() => defaultOptionIndex(input))
+  const [value, setValue] = useState(input.default ?? '')
+  const listRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (pick) listRef.current?.focus()
+  }, [pick])
+
+  const submit = (v: string): void => {
+    closeModal()
+    spec.onSubmit(v)
+  }
+
+  const onPickKeys = (e: React.KeyboardEvent): void => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setSelected((i) => Math.min(i + 1, options.length - 1))
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setSelected((i) => Math.max(i - 1, 0))
+    } else if (e.key === 'Enter') {
+      submit(options[selected].value)
+    } else if (e.key === 'Escape') {
+      closeModal()
+    }
+  }
+
+  return (
+    <>
+      <h3 className="modal-title-row">
+        <TextCursorInput size={17} /> {input.description || interp(t('launch.inputTitle'), { id: input.id })}
+      </h3>
+      {spec.total > 1 && (
+        <p className="modal-message launch-input-step">
+          {interp(t('launch.inputStep'), { current: String(spec.step), total: String(spec.total) })}
+        </p>
+      )}
+      {pick ? (
+        <>
+          <div className="launch-input-options" role="listbox" tabIndex={0} ref={listRef} onKeyDown={onPickKeys}>
+            {options.map((o, i) => (
+              <button
+                key={`${o.value}-${i}`}
+                role="option"
+                aria-selected={i === selected}
+                className={`launch-input-option${i === selected ? ' selected' : ''}`}
+                onMouseEnter={() => setSelected(i)}
+                onClick={() => submit(o.value)}
+              >
+                <span className="launch-input-option-label">{o.label}</span>
+                {o.value !== o.label && <span className="launch-input-option-value">{o.value}</span>}
+                {o.value === input.default && <Check size={13} className="launch-input-default-mark" />}
+              </button>
+            ))}
+          </div>
+          <div className="modal-actions">
+            <button className="btn ghost" onClick={closeModal}>
+              {t('common.cancel')}
+            </button>
+          </div>
+        </>
+      ) : (
+        <>
+          <input
+            autoFocus
+            className="modal-input"
+            type={input.password ? 'password' : 'text'}
+            value={value}
+            placeholder={input.default ?? ''}
+            onChange={(e) => setValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') submit(value)
+              if (e.key === 'Escape') closeModal()
+            }}
+          />
+          <div className="modal-actions">
+            <button className="btn ghost" onClick={closeModal}>
+              {t('common.cancel')}
+            </button>
+            <button className="btn primary" onClick={() => submit(value)}>
+              {t('launch.inputSubmit')}
+            </button>
+          </div>
+        </>
+      )}
     </>
   )
 }
@@ -1614,6 +1715,7 @@ export function ModalHost(): React.JSX.Element {
             </button>
             <ErrorBoundary key={modal.kind} label={t('modal.dialogError')} onReset={closeModal}>
             {modal.kind === 'input' && <InputModal spec={modal} />}
+            {modal.kind === 'launch-input' && <LaunchInputModal spec={modal} />}
             {modal.kind === 'create-branch' && <CreateBranchModal spec={modal} />}
             {modal.kind === 'confirm' && <ConfirmModal spec={modal} />}
             {modal.kind === 'diverged-checkout' && <DivergedCheckoutModal spec={modal} />}

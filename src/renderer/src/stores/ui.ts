@@ -39,6 +39,16 @@ export type ModalSpec =
       onSubmit: (value: string) => void
     }
   | {
+      /** One `${input:id}` prompt from a launch.json `inputs` array: a real
+       *  picker for `pickString`, a (maskable) text field for `promptString`. */
+      kind: 'launch-input'
+      input: import('../../../shared/types').LaunchInput
+      /** 1-based position in the run's input sequence, for "n of m". */
+      step: number
+      total: number
+      onSubmit: (value: string) => void
+    }
+  | {
       kind: 'confirm'
       title: string
       message: string

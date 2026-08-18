@@ -747,6 +747,33 @@ export const shots = [
     }
   },
   {
+    // ${input:…} prompt — a pickString renders as a real picker (default
+    // preselected, arrow keys, click to choose), VS Code-style.
+    out: 'launch-input',
+    repos: ['launch-configs'],
+    themes: ['dark'],
+    appTheme: 'midnight',
+    clipTo: '.modal',
+    clipPad: 28,
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['launch-configs']
+      await page.evaluate(async (p) => {
+        const s = window.__shot
+        s.repo.getState().select(p, { type: 'wip' })
+        const launch = s.launch.getState()
+        await launch.discover(p)
+        const groups = s.launch.getState().groupsByRepo[p] ?? []
+        const root = groups.find((g) => g.isRoot) ?? groups[0]
+        const def = root?.inputs.find((i) => i.type === 'pickString')
+        if (def) {
+          s.ui.getState().openModal({ kind: 'launch-input', input: def, step: 2, total: 2, onSubmit: () => {} })
+        }
+      }, repo)
+      await page.waitForSelector('.launch-input-options', { timeout: 5000 }).catch(() => {})
+      await page.waitForTimeout(400)
+    }
+  },
+  {
     out: 'conflict-radar',
     repos: ['conflict-radar'],
     themes: ['dark'],

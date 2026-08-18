@@ -19,6 +19,8 @@ vous choisissez dans le terminal intégré.
 - Le **`preLaunchTask`** d'une configuration s'exécute d'abord.
 - Les valeurs **`${input:…}`** sont demandées interactivement avant le lancement
   (`promptString` et `pickString`).
+  Un `pickString` affiche ses options dans un vrai sélecteur avec la valeur par
+  défaut présélectionnée ; un `promptString` marqué `password` est masqué.
 - Les tâches **`isBackground`** (observateurs, serveurs de développement)
   s'exécutent détachées : elles ne bloquent donc jamais le lancement.
 - Les **compounds** lancent chaque membre dans sa **propre session parallèle**,
@@ -35,6 +37,8 @@ vous choisissez dans le terminal intégré.
   navigateur — Gitcito ne peut pas y attacher de débogueur).
 
 ![Un compound exécutant deux sessions parallèles](../../screenshots/launch-compound.webp)
+
+![Le sélecteur ${input} avec la valeur par défaut présélectionnée](../../screenshots/launch-input.webp)
 
 Une barre d'outils flottante vous donne **pause / reprise, redémarrage, arrêt**,
 et permet de passer d'une session en cours à l'autre.

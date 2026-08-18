@@ -2432,6 +2432,7 @@ export const ko: Dict = {
   'terminal.listTitle': '터미널',
   'terminal.new': '새 터미널',
   'terminal.hideList': '목록 숨기기',
+  'terminal.closePane': '터미널 패널 닫기',
   'terminal.rename': '이름 변경…',
   'terminal.renameTerminal': '터미널 이름 변경',
   'terminal.renamePanel': '패널 이름 변경',

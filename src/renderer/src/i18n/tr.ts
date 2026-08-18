@@ -2372,6 +2372,7 @@ export const tr: Dict = {
   'terminal.listTitle': 'Terminaller',
   'terminal.new': 'Yeni terminal',
   'terminal.hideList': 'Listeyi gizle',
+  'terminal.closePane': 'Terminal panelini kapat',
   'terminal.rename': 'Yeniden adlandır…',
   'terminal.renameTerminal': 'Terminali yeniden adlandır',
   'terminal.renamePanel': 'Paneli yeniden adlandır',

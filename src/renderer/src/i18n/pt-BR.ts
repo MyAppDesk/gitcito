@@ -2432,6 +2432,7 @@ export const ptBR: Dict = {
   'terminal.listTitle': 'Terminais',
   'terminal.new': 'Novo terminal',
   'terminal.hideList': 'Ocultar a lista',
+  'terminal.closePane': 'Fechar o painel do terminal',
   'terminal.rename': 'Renomear…',
   'terminal.renameTerminal': 'Renomear terminal',
   'terminal.renamePanel': 'Renomear painel',

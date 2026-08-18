@@ -2432,6 +2432,7 @@ export const ru: Dict = {
   'terminal.listTitle': 'Терминалы',
   'terminal.new': 'Новый терминал',
   'terminal.hideList': 'Скрыть список',
+  'terminal.closePane': 'Закрыть панель терминала',
   'terminal.rename': 'Переименовать…',
   'terminal.renameTerminal': 'Переименовать терминал',
   'terminal.renamePanel': 'Переименовать панель',

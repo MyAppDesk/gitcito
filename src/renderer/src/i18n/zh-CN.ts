@@ -2432,6 +2432,7 @@ export const zhCN: Dict = {
   'terminal.listTitle': '终端',
   'terminal.new': '新建终端',
   'terminal.hideList': '隐藏列表',
+  'terminal.closePane': '关闭终端面板',
   'terminal.rename': '重命名…',
   'terminal.renameTerminal': '重命名终端',
   'terminal.renamePanel': '重命名面板',

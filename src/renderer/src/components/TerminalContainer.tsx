@@ -9,7 +9,8 @@ import {
   ChevronRight,
   ChevronDown,
   Pencil,
-  Ungroup
+  Ungroup,
+  X
 } from 'lucide-react'
 import { TerminalPanel } from './TerminalPanel'
 import { ResizeHandle } from './ResizeHandle'
@@ -292,6 +293,13 @@ export function TerminalContainer({ cwd }: { cwd: string }): React.JSX.Element {
           <button className="icon-btn" title={t('terminal.new')} onClick={() => addGroup(cwd, cwd)}>
             <Plus size={14} />
           </button>
+          <button
+            className="icon-btn"
+            title={t('app.closePanel')}
+            onClick={() => setTerminalOpen(cwd, false)}
+          >
+            <X size={14} />
+          </button>
           <div className="terminal-rail-sep" />
           <div className="terminal-rail-body">
             {groups.map((group) => {
@@ -352,6 +360,13 @@ export function TerminalContainer({ cwd }: { cwd: string }): React.JSX.Element {
                   onClick={() => setLayout({ terminalListCollapsed: true })}
                 >
                   <PanelRightClose size={14} />
+                </button>
+                <button
+                  className="icon-btn"
+                  title={t('app.closePanel')}
+                  onClick={() => setTerminalOpen(cwd, false)}
+                >
+                  <X size={14} />
                 </button>
               </span>
             </div>

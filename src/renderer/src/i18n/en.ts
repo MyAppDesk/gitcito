@@ -2436,6 +2436,7 @@ export const en = {
   'terminal.listTitle': 'Terminals',
   'terminal.new': 'New terminal',
   'terminal.hideList': 'Hide list',
+  'terminal.closePane': 'Close terminal panel',
   'terminal.rename': 'Rename…',
   'terminal.renameTerminal': 'Rename terminal',
   'terminal.renamePanel': 'Rename panel',

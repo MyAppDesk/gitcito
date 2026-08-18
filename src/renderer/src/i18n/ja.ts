@@ -2372,6 +2372,7 @@ export const ja: Dict = {
   'terminal.listTitle': 'ターミナル',
   'terminal.new': '新しいターミナル',
   'terminal.hideList': '一覧を隠す',
+  'terminal.closePane': 'ターミナルパネルを閉じる',
   'terminal.rename': '名前を変更…',
   'terminal.renameTerminal': 'ターミナルの名前を変更',
   'terminal.renamePanel': 'パネルの名前を変更',

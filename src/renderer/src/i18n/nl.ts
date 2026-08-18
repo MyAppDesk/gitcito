@@ -2432,6 +2432,7 @@ export const nl: Dict = {
   'terminal.listTitle': 'Terminals',
   'terminal.new': 'Nieuwe terminal',
   'terminal.hideList': 'Lijst verbergen',
+  'terminal.closePane': 'Terminalpaneel sluiten',
   'terminal.rename': 'Hernoemen…',
   'terminal.renameTerminal': 'Terminal hernoemen',
   'terminal.renamePanel': 'Paneel hernoemen',

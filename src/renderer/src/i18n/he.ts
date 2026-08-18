@@ -2432,6 +2432,7 @@ export const he: Dict = {
   'terminal.listTitle': 'טרמינלים',
   'terminal.new': 'טרמינל חדש',
   'terminal.hideList': 'הסתרת הרשימה',
+  'terminal.closePane': 'סגירת חלונית המסוף',
   'terminal.rename': 'שינוי שם…',
   'terminal.renameTerminal': 'שינוי שם הטרמינל',
   'terminal.renamePanel': 'שינוי שם הפאנל',

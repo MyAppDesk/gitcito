@@ -2427,6 +2427,7 @@ export const es: Dict = {
   'terminal.listTitle': 'Terminales',
   'terminal.new': 'Nueva terminal',
   'terminal.hideList': 'Ocultar lista',
+  'terminal.closePane': 'Cerrar el panel de terminales',
   'terminal.rename': 'Renombrar…',
   'terminal.renameTerminal': 'Renombrar terminal',
   'terminal.renamePanel': 'Renombrar panel',

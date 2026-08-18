@@ -2432,6 +2432,7 @@ export const ar: Dict = {
   'terminal.listTitle': 'الطرفيات',
   'terminal.new': 'طرفية جديدة',
   'terminal.hideList': 'إخفاء القائمة',
+  'terminal.closePane': 'إغلاق لوحة الطرفية',
   'terminal.rename': 'إعادة تسمية…',
   'terminal.renameTerminal': 'إعادة تسمية الطرفية',
   'terminal.renamePanel': 'إعادة تسمية اللوحة',

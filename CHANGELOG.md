@@ -1,5 +1,12 @@
 
 
+## [3.13.0](https://github.com/MyAppDesk/gitcito/compare/v3.12.0...v3.13.0) (2026-08-18)
+
+
+### Features
+
+* improves chat menu with preview and links ([fd23514](https://github.com/MyAppDesk/gitcito/commit/fd23514b9ae849717597b6a1eb3af151836e163e))
+
 ## [3.12.0](https://github.com/MyAppDesk/gitcito/compare/v3.11.0...v3.12.0) (2026-08-18)
 
 

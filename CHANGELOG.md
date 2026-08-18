@@ -1,5 +1,17 @@
 
 
+## [3.10.0](https://github.com/MyAppDesk/gitcito/compare/v3.9.0...v3.10.0) (2026-08-18)
+
+
+### Features
+
+* add close button for terminal panel ([637ee86](https://github.com/MyAppDesk/gitcito/commit/637ee866af4402ad516fdb554c9382f63fdb26f8))
+
+
+### Bug Fixes
+
+* handle npm command execution on Windows ([92dbfb8](https://github.com/MyAppDesk/gitcito/commit/92dbfb8600529f08903b961246943014778bb4f9))
+
 ## [3.9.0](https://github.com/MyAppDesk/gitcito/compare/v3.8.0...v3.9.0) (2026-08-18)
 
 

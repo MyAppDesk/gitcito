@@ -208,12 +208,25 @@ async function writeSettings(settings: AppSettings): Promise<void> {
   await writeFile(settingsPath(), JSON.stringify(stripSettingsSecrets(settings), null, 2), 'utf-8')
 }
 
+// Dev aid: launching with GITCITO_FORCE_ONBOARDING=1 re-runs the first-run
+// wizard without touching the settings file. The flag holds until the wizard
+// itself saves its completion (consuming it per read breaks under StrictMode's
+// double hydration), so a reload before finishing shows the wizard again.
+let forceOnboarding = process.env['GITCITO_FORCE_ONBOARDING'] === '1'
+
+function withForcedOnboarding(settings: AppSettings): AppSettings {
+  return forceOnboarding ? { ...settings, onboardingCompleted: false } : settings
+}
+
 export function registerSettingsHandlers(): void {
-  ipcMain.handle('settings:get', () => readSettings())
-  ipcMain.handle('settings:set', (_e, settings: AppSettings) => writeSettings(settings))
+  ipcMain.handle('settings:get', async () => withForcedOnboarding(await readSettings()))
+  ipcMain.handle('settings:set', (_e, settings: AppSettings) => {
+    if (settings.onboardingCompleted) forceOnboarding = false
+    return writeSettings(settings)
+  })
   // Called when the user opens Settings: that is an explicit "show me my
   // credentials", so it is a fair moment to decrypt (and to ask, if needed).
-  ipcMain.handle('settings:unlock', () => readSettingsWithSecrets('settings'))
+  ipcMain.handle('settings:unlock', async () => withForcedOnboarding(await readSettingsWithSecrets('settings')))
 
   ipcMain.handle('settings:importFile', async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({

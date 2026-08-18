@@ -14,6 +14,20 @@
       "presentation": { "group": "1_app", "order": 1 }
     },
     {
+      // Re-runs the first-run wizard on this launch only, without touching the
+      // saved settings — for testing onboarding changes.
+      "name": "Launch App (onboarding)",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron-vite",
+      "runtimeArgs": ["dev"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"],
+      "env": { "GITCITO_FORCE_ONBOARDING": "1" },
+      "presentation": { "group": "1_app", "order": 3 }
+    },
+    {
       "name": "Launch App (keep dev state)",
       "type": "node",
       "request": "launch",

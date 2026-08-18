@@ -917,12 +917,7 @@ export default function App(): React.JSX.Element {
     <div className="app">
       <TitleBar />
 
-      {/*
-      Normal:
       {!settings.onboardingCompleted && <OnboardingWizard />}
-      Always
-      <OnboardingWizard />
-      */}
 
       {/* Mission control takes over the whole body while it is on — the
           title-bar button is its "tab", so the strip stays untouched. */}

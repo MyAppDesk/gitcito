@@ -1442,6 +1442,14 @@ export const pl: Dict = {
   'tag.deleteConfirm': 'Usuń',
 
   // Menu kontekstowe brancha (w grafie)
+  // Remote branch double-clicked while the local copy is ahead
+  'aheadCheckout.title': 'Twoja lokalna gałąź jest do przodu',
+  'aheadCheckout.message': 'Twoja lokalna gałąź {local} ma {n} commitów więcej niż {remote}, która nie ma nic nowego. Przełącz się na nią, aby zachować te commity, albo cofnij gałąź do wierzchołka zdalnej.',
+  'aheadCheckout.backup': 'Najpierw utwórz gałąź zapasową — odzyskasz commity w każdej chwili',
+  'aheadCheckout.keepLocal': 'Przełącz na {local} — zachowaj swoje commity',
+  'aheadCheckout.soft': 'Zresetuj do {remote} (soft) — cofnij commity, zmiany zostaną w poczekalni',
+  'aheadCheckout.mixed': 'Zresetuj do {remote} (mixed) — cofnij commity, zmiany poza poczekalnią',
+  'aheadCheckout.hard': 'Zresetuj do {remote} (hard) — odrzuć commity i ich zmiany',
   'branch.checkoutAsLocal': 'Przełącz się na {branch} jako branch lokalny',
   'branch.mergeInto': 'Scal {ref} do {branch}',
   'branch.rebaseOnto': 'Zrób rebase {current} na {ref}',
@@ -2505,6 +2513,10 @@ export const pl: Dict = {
   'act.fetchedWord': 'Pobrano',
   'act.pulledWord': 'Pobrano (pull)',
   'act.checkedOut': 'Przełączono na {ref}',
+  'act.rebasedBranch': 'Zmieniono bazę {branch}',
+  'act.mergedBranch': 'Scalono {branch}',
+  'act.resetBranch': 'Zresetowano {branch}',
+  'act.withBackup': '{done} — kopia zapasowa zapisana jako {ref}',
   'act.createdBranch': 'Utworzono branch {name}',
   'act.deletedBranch': 'Usunięto branch {name}',
   'act.deletedRemoteBranch': 'Usunięto {remote}/{name}',
@@ -2582,6 +2594,7 @@ export const pl: Dict = {
   'act.conflictKeptOurs': 'Zachowano nasze dla',
   'act.conflictKeptTheirs': 'Zachowano ich dla',
   'undoLabel.checkout': 'przełączenie na {ref}',
+  'undoLabel.reconcileBranch': 'uzgodnienie {branch} ze zdalną gałęzią',
   'undoLabel.previewCheckout': 'podgląd na {name}',
   'undoLabel.previewMerge': 'podgląd scalenia',
   'undoLabel.createBranch': 'utworzenie brancha {name}',

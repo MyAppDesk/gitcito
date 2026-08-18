@@ -1691,3 +1691,86 @@ describe('object replacement (git replace)', () => {
     await expect(gitService.replaceDelete(R, '')).rejects.toThrow()
   })
 })
+
+// Double-clicking a remote branch whose local copy is AHEAD used to switch to
+// the local branch silently — the user asked for the remote and got their own
+// unpushed work. checkoutRemote now reports it and leaves HEAD alone.
+describe('checkout remote: local branch ahead', () => {
+  /** Put the fixture's local `feature` strictly ahead of origin/feature. */
+  const aheadFixture = async (): Promise<string> => {
+    const R = cloneFixture('diverged-checkout')
+    await raw(R, ['checkout', '-q', 'feature'])
+    await raw(R, ['reset', '--hard', 'origin/feature'])
+    writeFileSync(join(R, 'local-only.ts'), 'export const localOnly = 1\n')
+    await raw(R, ['add', '-A'])
+    await raw(R, ['commit', '-qm', 'feat: unpushed work'])
+    await raw(R, ['checkout', '-q', 'main'])
+    return R
+  }
+
+  it('reports ahead-only without checking anything out', async () => {
+    const R = await aheadFixture()
+
+    const res = await gitService.checkoutRemote(R, 'origin/feature', 'feature', 'origin')
+    expect(res).toMatchObject({ diverged: false, aheadOnly: true, ahead: 1, behind: 0 })
+    // Nothing moved: the user still has to say which side they meant.
+    expect((await gitService.status(R)).current).toBe('main')
+  })
+
+  it('resets mixed to the remote tip, keeping the changes unstaged', async () => {
+    const R = await aheadFixture()
+    const before = await shaOf(R, 'feature')
+
+    const { previousRef, backupRef } = await gitService.resolveDivergedCheckout(
+      R,
+      'origin/feature',
+      'feature',
+      'reset-mixed',
+      true
+    )
+
+    expect(previousRef).toBe(before)
+    expect(await shaOf(R, 'feature')).toBe(await shaOf(R, 'origin/feature'))
+    // The backup branch still points at the commits the reset walked away from.
+    expect(backupRef).toMatch(/^backup\/feature-/)
+    expect(await shaOf(R, backupRef!)).toBe(before)
+
+    const st = await gitService.status(R)
+    expect(st.current).toBe('feature')
+    expect(st.staged).toHaveLength(0)
+    expect([...st.staged, ...st.unstaged].some((f) => f.path === 'local-only.ts')).toBe(true)
+  })
+
+  it('resets soft to the remote tip, keeping the changes staged', async () => {
+    const R = await aheadFixture()
+
+    await gitService.resolveDivergedCheckout(R, 'origin/feature', 'feature', 'reset-soft', false)
+
+    expect(await shaOf(R, 'feature')).toBe(await shaOf(R, 'origin/feature'))
+    const st = await gitService.status(R)
+    expect(st.staged.some((f) => f.path === 'local-only.ts')).toBe(true)
+  })
+
+  it('resets hard to the remote tip, discarding the commits and their changes', async () => {
+    const R = await aheadFixture()
+
+    await gitService.resolveDivergedCheckout(R, 'origin/feature', 'feature', 'reset-hard', false)
+
+    expect(await shaOf(R, 'feature')).toBe(await shaOf(R, 'origin/feature'))
+    expect(existsSync(join(R, 'local-only.ts'))).toBe(false)
+    const st = await gitService.status(R)
+    expect(st.staged).toHaveLength(0)
+    expect(st.unstaged).toHaveLength(0)
+  })
+
+  it('still fast-forwards when the local branch is only behind', async () => {
+    const R = cloneFixture('diverged-checkout')
+    await raw(R, ['checkout', '-q', 'feature'])
+    await raw(R, ['reset', '--hard', 'origin/feature~1'])
+    await raw(R, ['checkout', '-q', 'main'])
+
+    const res = await gitService.checkoutRemote(R, 'origin/feature', 'feature', 'origin')
+    expect(res).toMatchObject({ diverged: false, aheadOnly: false, behind: 1 })
+    expect(await shaOf(R, 'feature')).toBe(await shaOf(R, 'origin/feature'))
+  })
+})

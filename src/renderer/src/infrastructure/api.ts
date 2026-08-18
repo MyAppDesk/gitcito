@@ -5,6 +5,8 @@ import type {
   BlameLine,
   BranchCompareResult,
   BranchesPayload,
+  CheckoutRemoteResult,
+  DivergedStrategy,
   BlobSpec,
   MergePreviewResult,
   SemanticDiff,
@@ -158,14 +160,14 @@ export const gitApi = {
 
   checkout: (path: string, ref: string) => call<void>('checkout', path, ref),
   checkoutRemote: (path: string, fullName: string, localName: string, remote?: string) =>
-    call<{ diverged: boolean; ahead: number; behind: number }>('checkoutRemote', path, fullName, localName, remote),
+    call<CheckoutRemoteResult>('checkoutRemote', path, fullName, localName, remote),
   resolveDivergedCheckout: (
     path: string,
     fullName: string,
     localName: string,
-    strategy: 'rebase' | 'merge' | 'reset',
+    strategy: DivergedStrategy,
     backup: boolean
-  ) => call<{ backupRef?: string }>('resolveDivergedCheckout', path, fullName, localName, strategy, backup),
+  ) => call<{ backupRef?: string; previousRef: string }>('resolveDivergedCheckout', path, fullName, localName, strategy, backup),
   createBranch: (path: string, name: string, at?: string, checkout?: boolean) =>
     call<void>('createBranch', path, name, at, checkout),
   deleteBranch: (path: string, name: string, force?: boolean) => call<void>('deleteBranch', path, name, force),

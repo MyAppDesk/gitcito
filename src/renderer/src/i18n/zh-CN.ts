@@ -1442,6 +1442,14 @@ export const zhCN: Dict = {
   'tag.deleteConfirm': '删除',
 
   // Branch context menu (in graph)
+  // Remote branch double-clicked while the local copy is ahead
+  'aheadCheckout.title': '本地分支领先',
+  'aheadCheckout.message': '本地分支 {local} 比 {remote} 多 {n} 个提交，而远程没有新内容。可以检出它保留这些提交，或把分支重置回远程最新提交。',
+  'aheadCheckout.backup': '先创建备份分支 — 随时可以找回你的提交',
+  'aheadCheckout.keepLocal': '检出 {local} — 保留你的提交',
+  'aheadCheckout.soft': '重置到 {remote}（soft）— 撤销提交，改动保留在暂存区',
+  'aheadCheckout.mixed': '重置到 {remote}（mixed）— 撤销提交，改动保留在工作区',
+  'aheadCheckout.hard': '重置到 {remote}（hard）— 丢弃提交及其改动',
   'branch.checkoutAsLocal': '把 {branch} 检出为本地分支',
   'branch.mergeInto': '把 {ref} 并入 {branch}',
   'branch.rebaseOnto': '把 {current} 变基到 {ref}',
@@ -2505,6 +2513,10 @@ export const zhCN: Dict = {
   'act.fetchedWord': '已获取',
   'act.pulledWord': '已拉取',
   'act.checkedOut': '已检出 {ref}',
+  'act.rebasedBranch': '已变基 {branch}',
+  'act.mergedBranch': '已合并 {branch}',
+  'act.resetBranch': '已重置 {branch}',
+  'act.withBackup': '{done} — 备份已保存为 {ref}',
   'act.createdBranch': '已创建分支 {name}',
   'act.deletedBranch': '已删除分支 {name}',
   'act.deletedRemoteBranch': '已删除 {remote}/{name}',
@@ -2582,6 +2594,7 @@ export const zhCN: Dict = {
   'act.conflictKeptOurs': '保留了我们的版本：',
   'act.conflictKeptTheirs': '保留了他们的版本：',
   'undoLabel.checkout': '检出 {ref}',
+  'undoLabel.reconcileBranch': '将 {branch} 与远程分支对齐',
   'undoLabel.previewCheckout': '在 {name} 上的预览',
   'undoLabel.previewMerge': '预览合并',
   'undoLabel.createBranch': '创建分支 {name}',

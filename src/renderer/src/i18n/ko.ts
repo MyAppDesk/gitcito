@@ -1442,6 +1442,14 @@ export const ko: Dict = {
   'tag.deleteConfirm': '삭제',
 
   // 브랜치 컨텍스트 메뉴 (그래프)
+  // Remote branch double-clicked while the local copy is ahead
+  'aheadCheckout.title': '로컬 브랜치가 앞서 있습니다',
+  'aheadCheckout.message': '로컬 {local} 브랜치가 {remote}보다 {n}개 커밋 앞서 있고, 원격에는 새 내용이 없습니다. 체크아웃해 커밋을 유지하거나 브랜치를 원격 끝으로 되돌리세요.',
+  'aheadCheckout.backup': '먼저 백업 브랜치 만들기 — 커밋을 언제든 되찾을 수 있습니다',
+  'aheadCheckout.keepLocal': '{local} 체크아웃 — 커밋 유지',
+  'aheadCheckout.soft': '{remote}로 리셋(soft) — 커밋을 취소하고 변경 사항은 스테이지에 유지',
+  'aheadCheckout.mixed': '{remote}로 리셋(mixed) — 커밋을 취소하고 변경 사항은 스테이지에서 내림',
+  'aheadCheckout.hard': '{remote}로 리셋(hard) — 커밋과 변경 사항을 모두 버림',
   'branch.checkoutAsLocal': '{branch}를 로컬 브랜치로 체크아웃',
   'branch.mergeInto': '{ref}를 {branch}에 머지',
   'branch.rebaseOnto': '{current}를 {ref} 위로 리베이스',
@@ -2505,6 +2513,10 @@ export const ko: Dict = {
   'act.fetchedWord': '페치함',
   'act.pulledWord': '풀함',
   'act.checkedOut': '{ref} — 체크아웃 완료',
+  'act.rebasedBranch': '{branch} 리베이스 완료',
+  'act.mergedBranch': '{branch} 병합 완료',
+  'act.resetBranch': '{branch} 리셋 완료',
+  'act.withBackup': '{done} — 백업을 {ref}(으)로 저장했습니다',
   'act.createdBranch': '브랜치 {name} — 만들었습니다',
   'act.deletedBranch': '브랜치 {name} — 삭제했습니다',
   'act.deletedRemoteBranch': '{remote}/{name} — 삭제했습니다',
@@ -2582,6 +2594,7 @@ export const ko: Dict = {
   'act.conflictKeptOurs': '우리 쪽을 남긴 대상:',
   'act.conflictKeptTheirs': '상대 쪽을 남긴 대상:',
   'undoLabel.checkout': '{ref} 체크아웃',
+  'undoLabel.reconcileBranch': '{branch}를 원격과 맞추기',
   'undoLabel.previewCheckout': '{name} 미리보기',
   'undoLabel.previewMerge': '미리보기 머지',
   'undoLabel.createBranch': '브랜치 {name} 만들기',

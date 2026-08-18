@@ -1442,6 +1442,14 @@ export const nl: Dict = {
   'tag.deleteConfirm': 'Verwijderen',
 
   // Contextmenu van een branch (in de graaf)
+  // Remote branch double-clicked while the local copy is ahead
+  'aheadCheckout.title': 'Je lokale branch loopt voor',
+  'aheadCheckout.message': 'Je lokale {local} heeft {n} commits die {remote} niet heeft, en de remote heeft niets nieuws. Check hem uit om die commits te houden, of zet de branch terug op de remote-tip.',
+  'aheadCheckout.backup': 'Eerst een back-upbranch maken — herstel je commits wanneer je wilt',
+  'aheadCheckout.keepLocal': '{local} uitchecken — je commits behouden',
+  'aheadCheckout.soft': 'Terugzetten naar {remote} (soft) — commits ongedaan maken, wijzigingen blijven staged',
+  'aheadCheckout.mixed': 'Terugzetten naar {remote} (mixed) — commits ongedaan maken, wijzigingen blijven unstaged',
+  'aheadCheckout.hard': 'Terugzetten naar {remote} (hard) — commits en hun wijzigingen weggooien',
   'branch.checkoutAsLocal': '{branch} uitchecken als lokale branch',
   'branch.mergeInto': '{ref} in {branch} mergen',
   'branch.rebaseOnto': '{current} rebasen op {ref}',
@@ -2505,6 +2513,10 @@ export const nl: Dict = {
   'act.fetchedWord': 'Gefetcht',
   'act.pulledWord': 'Gepulld',
   'act.checkedOut': '{ref} uitgecheckt',
+  'act.rebasedBranch': '{branch} gerebased',
+  'act.mergedBranch': '{branch} gemerged',
+  'act.resetBranch': '{branch} teruggezet',
+  'act.withBackup': '{done} — back-up opgeslagen als {ref}',
   'act.createdBranch': 'Branch {name} aangemaakt',
   'act.deletedBranch': 'Branch {name} verwijderd',
   'act.deletedRemoteBranch': '{remote}/{name} verwijderd',
@@ -2582,6 +2594,7 @@ export const nl: Dict = {
   'act.conflictKeptOurs': 'Onze kant gehouden voor',
   'act.conflictKeptTheirs': 'Hun kant gehouden voor',
   'undoLabel.checkout': 'checkout {ref}',
+  'undoLabel.reconcileBranch': '{branch} afstemmen op de remote',
   'undoLabel.previewCheckout': 'preview op {name}',
   'undoLabel.previewMerge': 'preview-merge',
   'undoLabel.createBranch': 'branch {name} aanmaken',

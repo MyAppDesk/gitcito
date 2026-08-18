@@ -44,4 +44,36 @@ come riconciliarlo — rebase, merge o reset — e ti offre di farne prima un ba
 
 ![La richiesta per il branch divergente: rebase, merge o reset, con l'opzione di backup](../../screenshots/diverged-checkout.webp)
 
+### Quando il tuo branch locale è indietro
+
+Viene portato avanti (fast-forward) alla punta del remoto durante il checkout.
+Un albero di lavoro sporco finisce in uno stash con nome e viene ripristinato
+dopo, così le modifiche locali non interrompono l'aggiornamento.
+
+### Quando il tuo branch locale è avanti
+
+Se il branch locale è avanti e il remoto non ha nulla di nuovo, il checkout
+risponderebbe a una richiesta del branch *remoto* con il tuo lavoro non ancora
+pushato — quindi non viene cambiato nulla finché non dici quale lato intendevi:
+
+| Scelta | Cosa succede |
+|--------|--------------|
+| Passa al locale | Passa al branch locale, commit intatti. Quello che ogni altro client fa in silenzio. |
+| Reimposta (soft) | Riporta il branch alla punta del remoto; le modifiche dei commit restano **in stage**, pronte per un nuovo commit. |
+| Reimposta (mixed) | Stesso spostamento, modifiche lasciate **fuori dallo stage** nell'albero di lavoro. |
+| Reimposta (hard) | Scarta i commit *e* le loro modifiche. |
+
+![Il dialogo del branch avanti: passa al locale, oppure reset soft, mixed o hard](../../screenshots/ahead-checkout.webp)
+
+Lascia spuntato *Crea prima un branch di backup* e la punta locale viene salvata
+come `backup/<branch>-<timestamp>` prima di ogni spostamento: anche un reset hard
+resta a un checkout di distanza dall'essere annullato. Il reset entra anche nello
+stack di annullamento (⌘Z), ma solo finché non chiudi il repository — il branch di
+backup dura più a lungo.
+
+**Limiti:** il dialogo confronta il branch solo con il riferimento di tracking
+appena recuperato, quindi un remoto che ha rifiutato il fetch (offline,
+credenziali errate) viene confrontato con l'ultima punta nota. Non dice se i tuoi
+commit sono *buoni*: solo che esistono qui e non lì.
+
 **Vedi anche:** [Merge e rebase](merging.md) · [Worktree](worktrees.md)

@@ -1442,6 +1442,14 @@ export const he: Dict = {
   'tag.deleteConfirm': 'מחיקה',
 
   // Branch context menu (in graph)
+  // Remote branch double-clicked while the local copy is ahead
+  'aheadCheckout.title': 'הענף המקומי שלך מקדים',
+  'aheadCheckout.message': 'הענף המקומי {local} מקדים את {remote} ב-{n} קומיטים, ואין ברמוט שום דבר חדש. עבור אליו כדי לשמור את הקומיטים, או החזר את הענף לקצה הרמוט.',
+  'aheadCheckout.backup': 'ליצור קודם ענף גיבוי — אפשר לשחזר את הקומיטים בכל רגע',
+  'aheadCheckout.keepLocal': 'לעבור אל {local} — לשמור את הקומיטים שלך',
+  'aheadCheckout.soft': 'איפוס אל {remote} (soft) — לבטל את הקומיטים ולהשאיר את השינויים ב-staging',
+  'aheadCheckout.mixed': 'איפוס אל {remote} (mixed) — לבטל את הקומיטים ולהשאיר את השינויים מחוץ ל-staging',
+  'aheadCheckout.hard': 'איפוס אל {remote} (hard) — למחוק את הקומיטים ואת השינויים שלהם',
   'branch.checkoutAsLocal': 'צ׳קאאוט ל־{branch} כענף מקומי',
   'branch.mergeInto': 'מיזוג {ref} לתוך {branch}',
   'branch.rebaseOnto': 'ריבייס ל־{current} על גבי {ref}',
@@ -2505,6 +2513,10 @@ export const he: Dict = {
   'act.fetchedWord': 'הובא',
   'act.pulledWord': 'נמשך',
   'act.checkedOut': 'בוצע צ׳קאאוט אל {ref}',
+  'act.rebasedBranch': '{branch} עבר rebase',
+  'act.mergedBranch': '{branch} מוזג',
+  'act.resetBranch': '{branch} אופס',
+  'act.withBackup': '{done} — הגיבוי נשמר בשם {ref}',
   'act.createdBranch': 'נוצר הענף {name}',
   'act.deletedBranch': 'נמחק הענף {name}',
   'act.deletedRemoteBranch': 'נמחק {remote}/{name}',
@@ -2582,6 +2594,7 @@ export const he: Dict = {
   'act.conflictKeptOurs': 'נשמר הצד שלנו עבור',
   'act.conflictKeptTheirs': 'נשמר הצד שלהם עבור',
   'undoLabel.checkout': 'צ׳קאאוט אל {ref}',
+  'undoLabel.reconcileBranch': 'התאמת {branch} לרמוט',
   'undoLabel.previewCheckout': 'תצוגה מקדימה על {name}',
   'undoLabel.previewMerge': 'מיזוג לתצוגה מקדימה',
   'undoLabel.createBranch': 'יצירת הענף {name}',

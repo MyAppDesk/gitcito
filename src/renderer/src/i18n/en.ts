@@ -1446,6 +1446,14 @@ export const en = {
   'tag.deleteConfirm': 'Delete',
 
   // Branch context menu (in graph)
+  // Remote branch double-clicked while the local copy is ahead
+  'aheadCheckout.title': 'Your local branch is ahead',
+  'aheadCheckout.message': 'Your local {local} is {n} commits ahead of {remote}, which has nothing new. Check it out to keep those commits, or move the branch back to the remote tip.',
+  'aheadCheckout.backup': 'Create a backup branch first — recover your commits anytime',
+  'aheadCheckout.keepLocal': 'Check out {local} — keep your commits',
+  'aheadCheckout.soft': 'Reset to {remote} (soft) — undo the commits, keep the changes staged',
+  'aheadCheckout.mixed': 'Reset to {remote} (mixed) — undo the commits, keep the changes unstaged',
+  'aheadCheckout.hard': 'Reset to {remote} (hard) — discard the commits and their changes',
   'branch.checkoutAsLocal': 'Checkout {branch} as local branch',
   'branch.mergeInto': 'Merge {ref} into {branch}',
   'branch.rebaseOnto': 'Rebase {current} onto {ref}',
@@ -2509,6 +2517,10 @@ export const en = {
   'act.fetchedWord': 'Fetched',
   'act.pulledWord': 'Pulled',
   'act.checkedOut': 'Checked out {ref}',
+  'act.rebasedBranch': 'Rebased {branch}',
+  'act.mergedBranch': 'Merged {branch}',
+  'act.resetBranch': 'Reset {branch}',
+  'act.withBackup': '{done} — backup saved as {ref}',
   'act.createdBranch': 'Created branch {name}',
   'act.deletedBranch': 'Deleted branch {name}',
   'act.deletedRemoteBranch': 'Deleted {remote}/{name}',
@@ -2586,6 +2598,7 @@ export const en = {
   'act.conflictKeptOurs': 'Kept ours for',
   'act.conflictKeptTheirs': 'Kept theirs for',
   'undoLabel.checkout': 'checkout {ref}',
+  'undoLabel.reconcileBranch': 'reconcile {branch} with its remote',
   'undoLabel.previewCheckout': 'preview on {name}',
   'undoLabel.previewMerge': 'preview merge',
   'undoLabel.createBranch': 'create branch {name}',

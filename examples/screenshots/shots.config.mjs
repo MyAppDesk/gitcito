@@ -987,6 +987,26 @@ export const shots = [
     }
   },
   {
+    // The ahead-only guard: asked for the remote branch, but the local copy
+    // carries commits the remote has never seen.
+    out: 'ahead-checkout',
+    repos: ['diverged-checkout'],
+    themes: ['light'],
+    drive: async (page) => {
+      await page.evaluate(() => {
+        window.__shot.ui.getState().openModal({
+          kind: 'ahead-checkout',
+          localName: 'feature/pricing',
+          fullName: 'origin/feature/pricing',
+          ahead: 3,
+          onKeepLocal: () => {},
+          onReset: () => {}
+        })
+      })
+      await page.waitForTimeout(600)
+    }
+  },
+  {
     // Profiles — separate identity and tokens for work vs everything else.
     out: 'settings-profiles',
     repos: ['octopus-merge'],

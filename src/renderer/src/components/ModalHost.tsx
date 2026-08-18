@@ -1,11 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { X, Globe, Github, Gitlab, Cloud, Server, Loader2, Search, Lock, ExternalLink, Plug, FolderGit2, Folder, Plus, Check, ChevronDown, ChevronRight, RefreshCw, Sparkles, GitMerge } from 'lucide-react'
+import { X, Globe, Github, Gitlab, Cloud, Server, Loader2, Search, Lock, ExternalLink, Plug, FolderGit2, Folder, Plus, Check, ChevronDown, ChevronRight, RefreshCw, Sparkles, GitMerge, ArrowUpFromLine } from 'lucide-react'
 import { useUIStore, type ModalSpec } from '../stores/ui'
 import { useSettingsStore, GROUP_COLORS } from '../stores/settings'
 import { hostingApi, gitApi, shellApi, aiApi } from '../infrastructure/api'
 import { repoActions } from '../stores/repo'
-import type { CloneProgress, CreateRepoOpts, GroupTab, RemoteOwner, RemoteRepo, RepoHost } from '../../../shared/types'
+import type {
+  CloneProgress,
+  CreateRepoOpts,
+  DivergedStrategy,
+  GroupTab,
+  RemoteOwner,
+  RemoteRepo,
+  RepoHost,
+  ResetStrategy
+} from '../../../shared/types'
 import { SettingsPanel } from './SettingsPanel'
 import { LauncherPanel, type LauncherItem } from './Welcome'
 import { AIConfigWizard } from './AIConfigWizard'
@@ -1260,7 +1269,7 @@ function DivergedCheckoutModal({
   const [backup, setBackup] = useState(true)
   const aheadN = `${spec.ahead} commit${spec.ahead === 1 ? '' : 's'}`
   const behindN = `${spec.behind} commit${spec.behind === 1 ? '' : 's'}`
-  const choose = (strategy: 'rebase' | 'merge' | 'reset'): void => {
+  const choose = (strategy: DivergedStrategy): void => {
     closeModal()
     spec.onResolve(strategy, backup)
   }
@@ -1288,8 +1297,67 @@ function DivergedCheckoutModal({
         <button className="btn ghost" onClick={() => choose('merge')}>
           Merge — keep both histories
         </button>
-        <button className="btn danger" onClick={() => choose('reset')}>
+        <button className="btn danger" onClick={() => choose('reset-hard')}>
           Reset to remote — discard your {aheadN}
+        </button>
+        <button className="btn ghost" onClick={closeModal} style={{ marginTop: 4 }}>
+          {t('common.cancel')}
+        </button>
+      </div>
+    </>
+  )
+}
+
+/**
+ * The user asked for a remote branch whose local counterpart is ahead. Nothing
+ * has been checked out yet — they choose between keeping their commits and
+ * moving the branch back to the remote tip, picking how much of the discarded
+ * work survives (soft keeps it staged, mixed unstaged, hard nothing).
+ */
+function AheadCheckoutModal({
+  spec
+}: {
+  spec: Extract<ModalSpec, { kind: 'ahead-checkout' }>
+}): React.JSX.Element {
+  const t = useT()
+  const closeModal = useUIStore((s) => s.closeModal)
+  const [backup, setBackup] = useState(true)
+  const vars = { local: spec.localName, remote: spec.fullName, n: spec.ahead }
+  const reset = (strategy: ResetStrategy): void => {
+    closeModal()
+    spec.onReset(strategy, backup)
+  }
+  return (
+    <>
+      <h3 className="modal-title-row">
+        <ArrowUpFromLine size={17} /> {t('aheadCheckout.title')}
+      </h3>
+      <p className="modal-message">{interp(t('aheadCheckout.message'), vars)}</p>
+      <label
+        className="modal-label"
+        style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', marginTop: 12 }}
+      >
+        <input type="checkbox" checked={backup} onChange={(e) => setBackup(e.target.checked)} />
+        {t('aheadCheckout.backup')}
+      </label>
+      <div className="modal-actions" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 8 }}>
+        <button
+          className="btn primary"
+          onClick={() => {
+            closeModal()
+            spec.onKeepLocal()
+          }}
+        >
+          {interp(t('aheadCheckout.keepLocal'), vars)}
+        </button>
+        <button className="btn ghost" onClick={() => reset('reset-soft')}>
+          {interp(t('aheadCheckout.soft'), vars)}
+        </button>
+        <button className="btn ghost" onClick={() => reset('reset-mixed')}>
+          {interp(t('aheadCheckout.mixed'), vars)}
+        </button>
+        <button className="btn danger" onClick={() => reset('reset-hard')}>
+          {interp(t('aheadCheckout.hard'), vars)}
         </button>
         <button className="btn ghost" onClick={closeModal} style={{ marginTop: 4 }}>
           {t('common.cancel')}
@@ -1549,6 +1617,7 @@ export function ModalHost(): React.JSX.Element {
             {modal.kind === 'create-branch' && <CreateBranchModal spec={modal} />}
             {modal.kind === 'confirm' && <ConfirmModal spec={modal} />}
             {modal.kind === 'diverged-checkout' && <DivergedCheckoutModal spec={modal} />}
+            {modal.kind === 'ahead-checkout' && <AheadCheckoutModal spec={modal} />}
             {modal.kind === 'addRemote' && <AddRemoteModal spec={modal} />}
             {modal.kind === 'editRemote' && <EditRemoteModal spec={modal} />}
             {modal.kind === 'clone' && <CloneModal spec={modal} />}

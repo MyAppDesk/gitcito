@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { ReactNode } from 'react'
-import type { CiState, KeychainReason } from '../../../shared/types'
+import type { CiState, DivergedStrategy, KeychainReason, ResetStrategy } from '../../../shared/types'
 
 export type CiFilter = 'all' | CiState
 
@@ -70,7 +70,17 @@ export type ModalSpec =
       fullName: string
       ahead: number
       behind: number
-      onResolve: (strategy: 'rebase' | 'merge' | 'reset', backup: boolean) => void
+      onResolve: (strategy: DivergedStrategy, backup: boolean) => void
+    }
+  | {
+      // Asked for a remote branch whose local counterpart is ahead: checking
+      // out would hand back local work, so the user picks which side wins.
+      kind: 'ahead-checkout'
+      localName: string
+      fullName: string
+      ahead: number
+      onKeepLocal: () => void
+      onReset: (strategy: ResetStrategy, backup: boolean) => void
     }
   | { kind: 'clone'; onClone: (repo: { path: string; name: string }) => void }
   | { kind: 'create-branch'; path: string; currentBranch?: string; description?: string }

@@ -1442,6 +1442,14 @@ export const de: Dict = {
   'tag.deleteConfirm': 'Löschen',
 
   // Branch context menu (in graph)
+  // Remote branch double-clicked while the local copy is ahead
+  'aheadCheckout.title': 'Dein lokaler Branch ist voraus',
+  'aheadCheckout.message': 'Dein lokaler {local} ist {n} Commits vor {remote}, das nichts Neues hat. Checke ihn aus, um diese Commits zu behalten, oder setze den Branch auf den Stand des Remote zurück.',
+  'aheadCheckout.backup': 'Zuerst einen Backup-Branch anlegen — deine Commits bleiben jederzeit wiederherstellbar',
+  'aheadCheckout.keepLocal': '{local} auschecken — deine Commits behalten',
+  'aheadCheckout.soft': 'Auf {remote} zurücksetzen (soft) — Commits rückgängig, Änderungen bleiben gestaged',
+  'aheadCheckout.mixed': 'Auf {remote} zurücksetzen (mixed) — Commits rückgängig, Änderungen bleiben ungestaged',
+  'aheadCheckout.hard': 'Auf {remote} zurücksetzen (hard) — Commits und ihre Änderungen verwerfen',
   'branch.checkoutAsLocal': '{branch} als lokalen Branch auschecken',
   'branch.mergeInto': '{ref} in {branch} mergen',
   'branch.rebaseOnto': '{current} auf {ref} rebasen',
@@ -2505,6 +2513,10 @@ export const de: Dict = {
   'act.fetchedWord': 'Abgerufen',
   'act.pulledWord': 'Gepullt',
   'act.checkedOut': '{ref} ausgecheckt',
+  'act.rebasedBranch': '{branch} rebased',
+  'act.mergedBranch': '{branch} gemerged',
+  'act.resetBranch': '{branch} zurückgesetzt',
+  'act.withBackup': '{done} — Backup gespeichert als {ref}',
   'act.createdBranch': 'Branch {name} erstellt',
   'act.deletedBranch': 'Branch {name} gelöscht',
   'act.deletedRemoteBranch': '{remote}/{name} gelöscht',
@@ -2582,6 +2594,7 @@ export const de: Dict = {
   'act.conflictKeptOurs': 'Unsere behalten für',
   'act.conflictKeptTheirs': 'Ihre behalten für',
   'undoLabel.checkout': 'Checkout von {ref}',
+  'undoLabel.reconcileBranch': '{branch} mit dem Remote abgleichen',
   'undoLabel.previewCheckout': 'Vorschau auf {name}',
   'undoLabel.previewMerge': 'Vorschau-Merge',
   'undoLabel.createBranch': 'Branch {name} erstellen',

@@ -1442,6 +1442,14 @@ export const ar: Dict = {
   'tag.deleteConfirm': 'حذف',
 
   // Branch context menu (in graph)
+  // Remote branch double-clicked while the local copy is ahead
+  'aheadCheckout.title': 'فرعك المحلي متقدّم',
+  'aheadCheckout.message': 'فرعك المحلي {local} متقدّم بمقدار {n} إيداعات على {remote}، ولا جديد في الفرع البعيد. انتقل إليه للاحتفاظ بهذه الإيداعات، أو أعد الفرع إلى رأس الفرع البعيد.',
+  'aheadCheckout.backup': 'أنشئ فرع نسخة احتياطية أولاً — يمكنك استعادة إيداعاتك في أي وقت',
+  'aheadCheckout.keepLocal': 'الانتقال إلى {local} — الاحتفاظ بإيداعاتك',
+  'aheadCheckout.soft': 'إعادة التعيين إلى {remote} (soft) — التراجع عن الإيداعات مع إبقاء التغييرات مهيّأة',
+  'aheadCheckout.mixed': 'إعادة التعيين إلى {remote} (mixed) — التراجع عن الإيداعات مع إبقاء التغييرات غير مهيّأة',
+  'aheadCheckout.hard': 'إعادة التعيين إلى {remote} (hard) — تجاهل الإيداعات وتغييراتها',
   'branch.checkoutAsLocal': 'سحب {branch} كفرع محلي',
   'branch.mergeInto': 'دمج {ref} في {branch}',
   'branch.rebaseOnto': 'إعادة أساس {current} على {ref}',
@@ -2505,6 +2513,10 @@ export const ar: Dict = {
   'act.fetchedWord': 'جُلب',
   'act.pulledWord': 'سُحب',
   'act.checkedOut': 'سُحب {ref}',
+  'act.rebasedBranch': 'تمت إعادة تأسيس {branch}',
+  'act.mergedBranch': 'تم دمج {branch}',
+  'act.resetBranch': 'تمت إعادة تعيين {branch}',
+  'act.withBackup': '{done} — تم حفظ النسخة الاحتياطية باسم {ref}',
   'act.createdBranch': 'أُنشئ الفرع {name}',
   'act.deletedBranch': 'حُذف الفرع {name}',
   'act.deletedRemoteBranch': 'حُذف {remote}/{name}',
@@ -2582,6 +2594,7 @@ export const ar: Dict = {
   'act.conflictKeptOurs': 'احتُفظ بجانبنا لـ',
   'act.conflictKeptTheirs': 'احتُفظ بجانبهم لـ',
   'undoLabel.checkout': 'سحب {ref}',
+  'undoLabel.reconcileBranch': 'مواءمة {branch} مع الفرع البعيد',
   'undoLabel.previewCheckout': 'معاينة على {name}',
   'undoLabel.previewMerge': 'معاينة دمج',
   'undoLabel.createBranch': 'إنشاء الفرع {name}',

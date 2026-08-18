@@ -46,4 +46,38 @@ oder zurücksetzen — und bietet an, den Branch vorher zu sichern.
 
 ![Die Abfrage bei divergiertem Branch: rebasen, mergen oder zurücksetzen, mit Backup-Option](../../screenshots/diverged-checkout.webp)
 
+### Wenn dein lokaler Branch zurückliegt
+
+Er wird im Zuge des Checkouts auf den Stand des Remote vorgespult
+(fast-forward). Ein schmutziger Arbeitsbaum wird vorher in einem benannten Stash
+abgelegt und danach zurückgespielt, damit lokale Änderungen das Update nicht
+abbrechen.
+
+### Wenn dein lokaler Branch voraus ist
+
+Liegt der lokale Branch vorn und das Remote hat nichts Neues, würde ein Checkout
+die Anfrage nach dem *Remote*-Branch mit deiner eigenen, ungepushten Arbeit
+beantworten — deshalb wird nichts ausgecheckt, bis du sagst, welche Seite du
+meintest:
+
+| Option | Was passiert |
+|--------|--------------|
+| Lokalen Branch auschecken | Wechselt zum lokalen Branch, Commits bleiben erhalten. Das, was jeder andere Client stillschweigend tut. |
+| Reset (soft) | Setzt den Branch auf den Remote-Stand zurück; die Änderungen der Commits bleiben **gestaged** und können neu committet werden. |
+| Reset (mixed) | Derselbe Schritt, die Änderungen bleiben **ungestaged** im Arbeitsbaum. |
+| Reset (hard) | Verwirft die Commits *und* ihre Änderungen. |
+
+![Der Dialog für den vorausliegenden Branch: lokal auschecken oder Reset soft, mixed, hard](../../screenshots/ahead-checkout.webp)
+
+Lass *Zuerst einen Backup-Branch anlegen* aktiviert, dann wird der lokale Stand
+vor jeder Änderung als `backup/<branch>-<zeitstempel>` gesichert — selbst ein
+Hard-Reset ist damit nur einen Checkout vom Rückgängigmachen entfernt. Der Reset
+landet außerdem im Undo-Stapel (⌘Z), allerdings nur bis du das Repository
+schließt; der Backup-Branch überlebt das.
+
+**Grenzen:** der Dialog vergleicht den Branch nur mit dem gerade geholten
+Tracking-Ref. Ein Remote, das den Fetch abgelehnt hat (offline, falsche
+Zugangsdaten), wird also gegen den zuletzt bekannten Stand verglichen. Ob deine
+Commits *gut* sind, sagt er nicht — nur, dass es sie hier gibt und dort nicht.
+
 **Siehe auch:** [Mergen & Rebasen](merging.md) · [Worktrees](worktrees.md)

@@ -80,6 +80,25 @@ export interface StackInfo {
   branches: StackBranch[]
 }
 
+/**
+ * What `checkoutRemote` found when a local branch of the same name already
+ * exists. `diverged` means both sides have unique commits; `aheadOnly` means
+ * the local branch has commits the remote lacks and nothing was checked out —
+ * the renderer asks the user which side they meant.
+ */
+export interface CheckoutRemoteResult {
+  diverged: boolean
+  aheadOnly: boolean
+  ahead: number
+  behind: number
+}
+
+/** Which of git's reset modes to use when moving a branch onto another tip. */
+export type ResetStrategy = 'reset-soft' | 'reset-mixed' | 'reset-hard'
+
+/** How to reconcile a local branch with its remote tip. */
+export type DivergedStrategy = 'rebase' | 'merge' | ResetStrategy
+
 /** Per-repo commit-signing configuration. */
 export interface SigningConfig {
   sign: boolean // commit.gpgsign

@@ -31,6 +31,7 @@
       "create-repo": "getting-started",
       "create-tag": "tags",
       "credentials": "credentials",
+      "ahead-checkout": "branching",
       "diverged-checkout": "branching",
       "hooks": "hooks",
       "ignore": "hooks",

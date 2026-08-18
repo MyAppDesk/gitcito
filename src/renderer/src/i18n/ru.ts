@@ -1442,6 +1442,14 @@ export const ru: Dict = {
   'tag.deleteConfirm': 'Удалить',
 
   // Контекстное меню ветки (в графе)
+  // Remote branch double-clicked while the local copy is ahead
+  'aheadCheckout.title': 'Локальная ветка впереди',
+  'aheadCheckout.message': 'Ваша локальная ветка {local} на {n} коммитов впереди {remote}, и на удалённой ничего нового нет. Переключитесь на неё, чтобы сохранить эти коммиты, или верните ветку на вершину удалённой.',
+  'aheadCheckout.backup': 'Сначала создать резервную ветку — коммиты можно будет вернуть в любой момент',
+  'aheadCheckout.keepLocal': 'Переключиться на {local} — сохранить свои коммиты',
+  'aheadCheckout.soft': 'Сбросить на {remote} (soft) — отменить коммиты, изменения останутся в индексе',
+  'aheadCheckout.mixed': 'Сбросить на {remote} (mixed) — отменить коммиты, изменения останутся вне индекса',
+  'aheadCheckout.hard': 'Сбросить на {remote} (hard) — отбросить коммиты вместе с изменениями',
   'branch.checkoutAsLocal': 'Переключиться на {branch} как на локальную ветку',
   'branch.mergeInto': 'Слить {ref} в {branch}',
   'branch.rebaseOnto': 'Ребейз ветки {current} на {ref}',
@@ -2505,6 +2513,10 @@ export const ru: Dict = {
   'act.fetchedWord': 'Получены изменения',
   'act.pulledWord': 'Забрано',
   'act.checkedOut': 'Переключение выполнено: {ref}',
+  'act.rebasedBranch': 'Ветка {branch} перебазирована',
+  'act.mergedBranch': 'Ветка {branch} слита',
+  'act.resetBranch': 'Ветка {branch} сброшена',
+  'act.withBackup': '{done} — резервная копия сохранена как {ref}',
   'act.createdBranch': 'Ветка создана: {name}',
   'act.deletedBranch': 'Ветка удалена: {name}',
   'act.deletedRemoteBranch': 'Удалено: {remote}/{name}',
@@ -2582,6 +2594,7 @@ export const ru: Dict = {
   'act.conflictKeptOurs': 'Оставлена наша версия для',
   'act.conflictKeptTheirs': 'Оставлена их версия для',
   'undoLabel.checkout': 'переключение на {ref}',
+  'undoLabel.reconcileBranch': 'согласование {branch} с удалённой веткой',
   'undoLabel.previewCheckout': 'предпросмотр на {name}',
   'undoLabel.previewMerge': 'предпросмотр слияния',
   'undoLabel.createBranch': 'создание ветки {name}',

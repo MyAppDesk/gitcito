@@ -43,4 +43,36 @@ como reconciliar — rebase, merge ou reset — e oferece fazer backup da branch
 
 ![O aviso de branch divergente: rebase, merge ou reset, com uma opção de backup](../../screenshots/diverged-checkout.webp)
 
+### Quando seu branch local está atrás
+
+Ele é avançado (fast-forward) até a ponta do remoto durante o checkout. Uma
+árvore de trabalho suja vai para um stash nomeado e é restaurada depois, para
+que suas edições locais não abortem a atualização.
+
+### Quando seu branch local está à frente
+
+Se o branch local está à frente e o remoto não tem nada novo, fazer checkout
+responderia a um pedido pelo branch *remoto* com o seu próprio trabalho não
+enviado — então nada é trocado até você dizer de que lado estava falando:
+
+| Escolha | O que acontece |
+|---------|----------------|
+| Fazer checkout do local | Muda para o branch local, com os commits intactos. O que todo outro cliente faz em silêncio. |
+| Redefinir (soft) | Leva o branch de volta à ponta do remoto; as alterações dos commits ficam **no stage**, prontas para recommitar. |
+| Redefinir (mixed) | O mesmo movimento, com as alterações **fora do stage** na árvore de trabalho. |
+| Redefinir (hard) | Descarta os commits *e* suas alterações. |
+
+![O diálogo de branch à frente: checkout do local, ou reset soft, mixed ou hard](../../screenshots/ahead-checkout.webp)
+
+Deixe *Criar antes um branch de backup* marcado e a ponta local é salva como
+`backup/<branch>-<carimbo-de-tempo>` antes de qualquer movimento, de modo que até
+um reset hard fica a um checkout de ser desfeito. O reset também entra na pilha
+de desfazer (⌘Z), mas só até você fechar o repositório — o branch de backup dura
+mais.
+
+**Limites:** o diálogo só compara o branch com a referência de rastreamento
+recém-buscada, então um remoto que recusou o fetch (offline, credenciais
+inválidas) é comparado com a última ponta conhecida. Ele não diz se seus commits
+são *bons* — apenas que existem aqui e não lá.
+
 **Veja também:** [Merge e rebase](merging.md) · [Worktrees](worktrees.md)

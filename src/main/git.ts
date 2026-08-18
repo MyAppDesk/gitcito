@@ -12,7 +12,9 @@ const pexecFile = promisify(execFile)
 import type {
   BlameLine,
   BranchCompareResult,
+  CheckoutRemoteResult,
   ConflictSide,
+  DivergedStrategy,
   BranchesPayload,
   BranchInfo,
   CommitBranchInfo,
@@ -1802,7 +1804,7 @@ export const gitService = {
     fullName: string,
     localName: string,
     remote?: string
-  ): Promise<{ diverged: boolean; ahead: number; behind: number }> {
+  ): Promise<CheckoutRemoteResult> {
     const git = gitFor(repoPath)
     if (remote) {
       // Refresh the remote-tracking ref first, so "checkout as local" always
@@ -1825,7 +1827,13 @@ export const gitService = {
       // reconcile instead of dumping git's raw "Not possible to fast-forward".
       const { ahead, behind } = await divergence(git, localName, fullName)
       if (ahead > 0 && behind > 0) {
-        return { diverged: true, ahead, behind }
+        return { diverged: true, aheadOnly: false, ahead, behind }
+      }
+      // The local branch is ahead and the remote has nothing new. Silently
+      // checking it out answers a request for the remote branch with local
+      // work — so report it and let the renderer ask what the user meant.
+      if (ahead > 0) {
+        return { diverged: false, aheadOnly: true, ahead, behind }
       }
       // Fast-forward the existing local branch to the remote tip so the
       // checkout actually brings in the remote changes. withAutoStash shelves a
@@ -1835,10 +1843,10 @@ export const gitService = {
         await git.checkout(localName)
         if (behind > 0) await git.merge(['--ff-only', fullName])
       })
-      return { diverged: false, ahead, behind }
+      return { diverged: false, aheadOnly: false, ahead, behind }
     } else {
       await git.checkout(['-b', localName, '--track', fullName])
-      return { diverged: false, ahead: 0, behind: 0 }
+      return { diverged: false, aheadOnly: false, ahead: 0, behind: 0 }
     }
   },
 
@@ -1847,19 +1855,24 @@ export const gitService = {
    * strategy in the divergence dialog. When `backup` is set, a
    * `backup/<localName>-<timestamp>` branch is created at the current local tip
    * first, so even a `reset` can be undone by checking that branch out.
-   *   - rebase: replay local commits on top of the remote tip (linear history)
-   *   - merge:  --no-ff merge, keeping both histories
-   *   - reset:  hard-reset local to the remote tip, discarding local commits
+   *   - rebase:       replay local commits on top of the remote tip (linear history)
+   *   - merge:        --no-ff merge, keeping both histories
+   *   - reset-soft:   move the branch to the remote tip, keep the commits' changes staged
+   *   - reset-mixed:  same, but leave the changes unstaged in the working tree
+   *   - reset-hard:   discard the local commits and their changes entirely
    */
   async resolveDivergedCheckout(
     repoPath: string,
     fullName: string,
     localName: string,
-    strategy: 'rebase' | 'merge' | 'reset',
+    strategy: DivergedStrategy,
     backup: boolean
-  ): Promise<{ backupRef?: string }> {
+  ): Promise<{ backupRef?: string; previousRef: string }> {
     const git = gitFor(repoPath)
     let backupRef: string | undefined
+    // The tip we are about to move away from — the renderer keeps it as the
+    // undo target, so a reset is recoverable even without a backup branch.
+    const previousRef = (await git.revparse([localName])).trim()
     await withAutoStash(repoPath, `checkout ${localName}`, async () => {
       await git.checkout(localName)
       if (backup) {
@@ -1868,9 +1881,11 @@ export const gitService = {
       }
       if (strategy === 'rebase') await git.rebase([fullName])
       else if (strategy === 'merge') await git.merge(['--no-ff', fullName])
-      else await git.reset(['--hard', fullName])
+      // reset-soft / reset-mixed / reset-hard map straight onto git's modes:
+      // how much of the discarded commits survives in the index and the tree.
+      else await git.reset([`--${strategy.slice('reset-'.length)}`, fullName])
     })
-    return { backupRef }
+    return { backupRef, previousRef }
   },
 
   async createBranch(repoPath: string, name: string, at?: string, checkout = true): Promise<void> {

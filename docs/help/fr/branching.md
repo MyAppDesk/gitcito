@@ -48,4 +48,38 @@ sauvegarder la branche d'abord.
 
 ![L'invite de branche divergente : rebaser, fusionner ou réinitialiser, avec une option de sauvegarde](../../screenshots/diverged-checkout.webp)
 
+### Quand votre branche locale est en retard
+
+Elle est avancée (fast-forward) jusqu'à la pointe du distant pendant le
+checkout. Un arbre de travail modifié est mis de côté dans un stash nommé puis
+restauré, afin que vos modifications locales n'interrompent pas la mise à jour.
+
+### Quand votre branche locale est en avance
+
+Si la branche locale est en avance et que le distant n'a rien de neuf, basculer
+répondrait à une demande de la branche *distante* par votre propre travail non
+poussé — rien n'est donc extrait tant que vous n'avez pas dit quel côté vous
+vouliez :
+
+| Choix | Ce qui se passe |
+|-------|-----------------|
+| Basculer sur la locale | Passe sur la branche locale, commits intacts. Ce que tous les autres clients font silencieusement. |
+| Réinitialiser (soft) | Ramène la branche sur la pointe du distant ; les modifications des commits restent **indexées**, prêtes à être recommittées. |
+| Réinitialiser (mixed) | Même déplacement, modifications laissées **non indexées** dans l'arbre de travail. |
+| Réinitialiser (hard) | Supprime les commits *et* leurs modifications. |
+
+![Le dialogue de branche en avance : basculer sur la locale, ou réinitialiser soft, mixed, hard](../../screenshots/ahead-checkout.webp)
+
+Laissez *Créer d'abord une branche de sauvegarde* coché et la pointe locale est
+enregistrée sous `backup/<branche>-<horodatage>` avant tout déplacement : même un
+reset hard n'est alors qu'à un checkout d'être annulé. Le reset entre aussi dans
+la pile d'annulation (⌘Z), mais seulement jusqu'à la fermeture du dépôt — la
+branche de sauvegarde, elle, reste.
+
+**Limites :** le dialogue compare uniquement la branche à la référence de suivi
+qui vient d'être récupérée ; un distant qui a refusé le fetch (hors ligne,
+identifiants invalides) est donc comparé à sa dernière pointe connue. Il ne dit
+rien de la *qualité* de vos commits — seulement qu'ils existent ici et pas
+là-bas.
+
 **Voir aussi :** [Fusion et rebase](merging.md) · [Arbres de travail](worktrees.md)

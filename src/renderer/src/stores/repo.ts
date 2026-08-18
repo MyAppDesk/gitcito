@@ -5,6 +5,7 @@ import type {
   ConflictContext,
   ConflictOpKind,
   ConflictSide,
+  DivergedStrategy,
   GraphCommit,
   PrPreviewMode,
   PullRequest,
@@ -706,6 +707,21 @@ async function runCheckoutRemoteInner(
   muteWatcher(path)
   try {
     const res = await gitApi.checkoutRemote(path, fullName, localName, remote)
+    if (res.aheadOnly) {
+      // Nothing was checked out: the local branch carries commits the remote
+      // has not seen, so switching to it silently would answer "give me the
+      // remote branch" with local work.
+      ui.openModal({
+        kind: 'ahead-checkout',
+        localName,
+        fullName,
+        ahead: res.ahead,
+        onKeepLocal: () => void repoActions.checkout(path, localName),
+        onReset: (strategy, backup) =>
+          void runResolveDivergedCheckout(path, fullName, localName, strategy, backup)
+      })
+      return false
+    }
     if (res.diverged) {
       ui.openModal({
         kind: 'diverged-checkout',
@@ -735,7 +751,7 @@ function runResolveDivergedCheckout(
   path: string,
   fullName: string,
   localName: string,
-  strategy: 'rebase' | 'merge' | 'reset',
+  strategy: DivergedStrategy,
   backup: boolean
 ): Promise<boolean> {
   return enqueue(path, async () => {
@@ -750,9 +766,29 @@ function runResolveDivergedCheckout(
     ui.setBusy(`${verb} ${localName}`)
     muteWatcher(path)
     try {
-      const { backupRef } = await gitApi.resolveDivergedCheckout(path, fullName, localName, strategy, backup)
-      const done = strategy === 'rebase' ? 'Rebased' : strategy === 'merge' ? 'Merged' : 'Reset'
-      toast('success', backupRef ? `${done} ${localName} — backup saved as ${backupRef}` : `${done} ${localName}`)
+      const { backupRef, previousRef } = await gitApi.resolveDivergedCheckout(
+        path,
+        fullName,
+        localName,
+        strategy,
+        backup
+      )
+      const doneKey =
+        strategy === 'rebase' ? 'act.rebasedBranch' : strategy === 'merge' ? 'act.mergedBranch' : 'act.resetBranch'
+      const done = interp(t(doneKey), { branch: localName })
+      toast('success', backupRef ? interp(t('act.withBackup'), { done, ref: backupRef }) : done)
+      // The branch moved off a known tip, so the move is undoable: put it back
+      // with a hard reset, and redo by replaying the same strategy.
+      pushUndo(path, {
+        label: interp(t('undoLabel.reconcileBranch'), { branch: localName }),
+        undo: async () => {
+          await gitApi.checkout(path, localName)
+          await gitApi.reset(path, previousRef, 'hard')
+        },
+        redo: async () => {
+          await gitApi.resolveDivergedCheckout(path, fullName, localName, strategy, false)
+        }
+      })
       return true
     } catch (err) {
       toast('error', err instanceof Error ? err.message : String(err))
@@ -764,6 +800,17 @@ function runResolveDivergedCheckout(
       ui2.endInflight()
     }
   })
+}
+
+/**
+ * Record an undo entry for an operation that ran outside `run()` — the modal
+ * flows queue their own work, but their result is just as reversible.
+ */
+function pushUndo(path: string, entry: UndoEntry): void {
+  const store = useRepoStore.getState()
+  const repo = store.repos[path]
+  if (!repo) return
+  store.patch(path, { undoStack: [...repo.undoStack, entry].slice(-30), redoStack: [] })
 }
 
 /** True when the repository really is mid-merge/rebase/cherry-pick right now. */

@@ -44,4 +44,36 @@ seguridad de la rama.
 
 ![El diálogo de rama divergida: rebase, merge o reset, con opción de copia de seguridad](../../screenshots/diverged-checkout.webp)
 
+### Cuando tu rama local está por detrás
+
+Se avanza (fast-forward) hasta la punta del remoto como parte del checkout. Si
+el árbol de trabajo está sucio, se guarda en un stash con nombre y se restaura
+después, para que tus ediciones locales no aborten la actualización.
+
+### Cuando tu rama local está por delante
+
+Si la rama local va por delante y el remoto no tiene nada nuevo, hacer checkout
+respondería a una petición de la rama *remota* con tu propio trabajo sin subir —
+así que no se cambia de rama hasta que digas a qué lado te referías:
+
+| Opción | Qué ocurre |
+|--------|------------|
+| Cambiar a la local | Cambia a la rama local con los commits intactos. Lo que cualquier otro cliente hace en silencio. |
+| Reset (soft) | Devuelve la rama a la punta del remoto; los cambios de esos commits quedan **preparados**, listos para volver a commitear. |
+| Reset (mixed) | El mismo movimiento, con los cambios **sin preparar** en el árbol de trabajo. |
+| Reset (hard) | Descarta los commits *y* sus cambios. |
+
+![El diálogo de rama por delante: cambiar a la local, o reset soft, mixed o hard](../../screenshots/ahead-checkout.webp)
+
+Deja marcado *Crear primero una rama de respaldo* y la punta local se guarda como
+`backup/<rama>-<marca-de-tiempo>` antes de mover nada, de modo que incluso un
+reset hard queda a un checkout de distancia de deshacerse. El reset también entra
+en la pila de deshacer (⌘Z), pero solo hasta que cierres el repositorio — la rama
+de respaldo dura más.
+
+**Límites:** el diálogo solo compara la rama con la referencia de seguimiento
+recién obtenida, así que un remoto que rechazó el fetch (sin conexión,
+credenciales incorrectas) se compara con la última punta conocida. No dice nada
+sobre si tus commits son *buenos*: solo que existen aquí y no allí.
+
 **Ver también:** [Fusionar y rebasar](merging.md) · [Worktrees](worktrees.md)

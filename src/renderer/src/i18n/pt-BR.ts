@@ -1442,6 +1442,14 @@ export const ptBR: Dict = {
   'tag.deleteConfirm': 'Excluir',
 
   // Menu de contexto da branch (no grafo)
+  // Remote branch double-clicked while the local copy is ahead
+  'aheadCheckout.title': 'Seu branch local está à frente',
+  'aheadCheckout.message': 'Seu branch local {local} tem {n} commits a mais que {remote}, que não tem nada novo. Faça checkout dele para manter esses commits ou traga o branch de volta para a ponta do remoto.',
+  'aheadCheckout.backup': 'Criar antes um branch de backup — recupere seus commits quando quiser',
+  'aheadCheckout.keepLocal': 'Fazer checkout de {local} — manter seus commits',
+  'aheadCheckout.soft': 'Redefinir para {remote} (soft) — desfazer os commits e manter as alterações no stage',
+  'aheadCheckout.mixed': 'Redefinir para {remote} (mixed) — desfazer os commits e deixar as alterações fora do stage',
+  'aheadCheckout.hard': 'Redefinir para {remote} (hard) — descartar os commits e suas alterações',
   'branch.checkoutAsLocal': 'Checkout de {branch} como branch local',
   'branch.mergeInto': 'Merge de {ref} em {branch}',
   'branch.rebaseOnto': 'Rebase de {current} em {ref}',
@@ -2505,6 +2513,10 @@ export const ptBR: Dict = {
   'act.fetchedWord': 'Fetch em',
   'act.pulledWord': 'Pull em',
   'act.checkedOut': 'Checkout em {ref}',
+  'act.rebasedBranch': 'Rebase aplicado em {branch}',
+  'act.mergedBranch': 'Mesclado {branch}',
+  'act.resetBranch': 'Redefinido {branch}',
+  'act.withBackup': '{done} — backup salvo como {ref}',
   'act.createdBranch': 'Branch {name} criada',
   'act.deletedBranch': 'Branch {name} excluída',
   'act.deletedRemoteBranch': '{remote}/{name} excluída',
@@ -2582,6 +2594,7 @@ export const ptBR: Dict = {
   'act.conflictKeptOurs': 'Mantido o nosso em',
   'act.conflictKeptTheirs': 'Mantido o deles em',
   'undoLabel.checkout': 'checkout em {ref}',
+  'undoLabel.reconcileBranch': 'reconciliar {branch} com o remoto',
   'undoLabel.previewCheckout': 'pré-visualização de {name}',
   'undoLabel.previewMerge': 'merge de pré-visualização',
   'undoLabel.createBranch': 'criação da branch {name}',

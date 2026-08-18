@@ -44,4 +44,35 @@ sorar — rebase, merge ya da reset — ve önce dalı yedeklemeyi önerir.
 
 ![Ayrışmış dal sorusu: rebase, merge veya reset, yedekleme seçeneğiyle](../../screenshots/diverged-checkout.webp)
 
+### Yerel dalınız gerideyken
+
+Checkout sırasında uzak ucuna ileri sarılır (fast-forward). Kirli bir çalışma
+ağacı önce adlandırılmış bir stash'e alınır ve sonra geri konur, böylece yerel
+düzenlemeleriniz güncellemeyi iptal etmez.
+
+### Yerel dalınız ilerideyken
+
+Yerel dal ilerideyse ve uzakta yeni bir şey yoksa, checkout *uzak* dal isteğine
+sizin push edilmemiş çalışmanızla cevap verirdi — bu yüzden hangi tarafı
+kastettiğinizi söyleyene kadar hiçbir şey checkout edilmez:
+
+| Seçim | Ne olur |
+|-------|---------|
+| Yereli checkout et | Yerel dala geçer, commit'ler olduğu gibi kalır. Diğer istemcilerin sessizce yaptığı şey. |
+| Sıfırla (soft) | Dalı uzak ucuna geri alır; commit'lerin değişiklikleri **hazırlıkta** kalır, yeniden commit'lenmeye hazırdır. |
+| Sıfırla (mixed) | Aynı hareket, değişiklikler çalışma ağacında **hazırlık dışında** kalır. |
+| Sıfırla (hard) | Commit'leri *ve* değişikliklerini atar. |
+
+![İleride olan dal penceresi: yereli checkout et ya da soft, mixed, hard sıfırla](../../screenshots/ahead-checkout.webp)
+
+*Önce yedek dal oluştur* seçili kalsın; yerel uç, hiçbir şey kıpırdamadan önce
+`backup/<dal>-<zaman-damgası>` olarak saklanır, böylece hard sıfırlama bile bir
+checkout uzaklıkta geri alınabilir. Sıfırlama ayrıca geri alma yığınına (⌘Z)
+girer — ama yalnızca depoyu kapatana kadar; yedek dal daha uzun yaşar.
+
+**Sınırlar:** pencere dalı yalnızca az önce alınan izleme referansıyla
+karşılaştırır; fetch'i reddeden bir uzak sunucu (çevrimdışı, hatalı kimlik
+bilgileri) son bilinen uçla karşılaştırılır. Commit'lerinizin *iyi* olup
+olmadığını söylemez — yalnızca burada var, orada yok olduğunu.
+
 **Ayrıca bakınız:** [Birleştirme ve rebase](merging.md) · [Çalışma ağaçları](worktrees.md)

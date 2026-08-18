@@ -1436,6 +1436,14 @@ export const es: Dict = {
   'tag.deleteConfirm': 'Eliminar',
 
   // Branch context menu (in graph)
+  // Remote branch double-clicked while the local copy is ahead
+  'aheadCheckout.title': 'Tu rama local está por delante',
+  'aheadCheckout.message': 'Tu rama local {local} tiene {n} commits más que {remote}, que no tiene nada nuevo. Cámbiate a ella para conservar esos commits o devuelve la rama a la punta del remoto.',
+  'aheadCheckout.backup': 'Crear primero una rama de respaldo — recupera tus commits cuando quieras',
+  'aheadCheckout.keepLocal': 'Cambiar a {local} — conservar tus commits',
+  'aheadCheckout.soft': 'Restablecer a {remote} (soft) — deshacer los commits y mantener los cambios preparados',
+  'aheadCheckout.mixed': 'Restablecer a {remote} (mixed) — deshacer los commits y dejar los cambios sin preparar',
+  'aheadCheckout.hard': 'Restablecer a {remote} (hard) — descartar los commits y sus cambios',
   'branch.checkoutAsLocal': 'Checkout {branch} como rama local',
   'branch.mergeInto': 'Merge {ref} en {branch}',
   'branch.rebaseOnto': 'Rebase {current} en {ref}',
@@ -2500,6 +2508,10 @@ export const es: Dict = {
   'act.fetchedWord': 'Fetch de',
   'act.pulledWord': 'Pull de',
   'act.checkedOut': 'Cambiado a {ref}',
+  'act.rebasedBranch': 'Rebase aplicado a {branch}',
+  'act.mergedBranch': 'Fusionado {branch}',
+  'act.resetBranch': 'Restablecido {branch}',
+  'act.withBackup': '{done} — respaldo guardado como {ref}',
   'act.createdBranch': 'Rama {name} creada',
   'act.deletedBranch': 'Rama {name} eliminada',
   'act.deletedRemoteBranch': '{remote}/{name} eliminada',
@@ -2577,6 +2589,7 @@ export const es: Dict = {
   'act.conflictKeptOurs': 'Se conservó el nuestro para',
   'act.conflictKeptTheirs': 'Se conservó el suyo para',
   'undoLabel.checkout': 'checkout {ref}',
+  'undoLabel.reconcileBranch': 'reconciliar {branch} con su remoto',
   'undoLabel.previewCheckout': 'previsualización en {name}',
   'undoLabel.previewMerge': 'fusión de previsualización',
   'undoLabel.createBranch': 'crear rama {name}',

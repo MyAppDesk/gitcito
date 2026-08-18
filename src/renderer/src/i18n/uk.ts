@@ -1442,6 +1442,14 @@ export const uk: Dict = {
   'tag.deleteConfirm': 'Видалити',
 
   // Контекстне меню гілки (у графі)
+  // Remote branch double-clicked while the local copy is ahead
+  'aheadCheckout.title': 'Локальна гілка попереду',
+  'aheadCheckout.message': 'Ваша локальна гілка {local} на {n} комітів попереду {remote}, і на віддаленій немає нічого нового. Перемкніться на неї, щоб зберегти ці коміти, або поверніть гілку на вершину віддаленої.',
+  'aheadCheckout.backup': 'Спочатку створити резервну гілку — коміти можна повернути будь-коли',
+  'aheadCheckout.keepLocal': 'Перемкнутися на {local} — зберегти свої коміти',
+  'aheadCheckout.soft': 'Скинути до {remote} (soft) — скасувати коміти, зміни лишаться в індексі',
+  'aheadCheckout.mixed': 'Скинути до {remote} (mixed) — скасувати коміти, зміни лишаться поза індексом',
+  'aheadCheckout.hard': 'Скинути до {remote} (hard) — відкинути коміти разом зі змінами',
   'branch.checkoutAsLocal': 'Перейти на {branch} як на локальну гілку',
   'branch.mergeInto': 'Злити {ref} у {branch}',
   'branch.rebaseOnto': 'Ребейз {current} на {ref}',
@@ -2505,6 +2513,10 @@ export const uk: Dict = {
   'act.fetchedWord': 'Отримано',
   'act.pulledWord': 'Стягнуто',
   'act.checkedOut': 'Перейшли на {ref}',
+  'act.rebasedBranch': 'Гілку {branch} перебазовано',
+  'act.mergedBranch': 'Гілку {branch} злито',
+  'act.resetBranch': 'Гілку {branch} скинуто',
+  'act.withBackup': '{done} — резервну копію збережено як {ref}',
   'act.createdBranch': 'Створено гілку {name}',
   'act.deletedBranch': 'Видалено гілку {name}',
   'act.deletedRemoteBranch': 'Видалено {remote}/{name}',
@@ -2582,6 +2594,7 @@ export const uk: Dict = {
   'act.conflictKeptOurs': 'Лишили наше для',
   'act.conflictKeptTheirs': 'Лишили їхнє для',
   'undoLabel.checkout': 'перехід на {ref}',
+  'undoLabel.reconcileBranch': 'узгодження {branch} з віддаленою гілкою',
   'undoLabel.previewCheckout': 'перегляд {name}',
   'undoLabel.previewMerge': 'перегляд злиття',
   'undoLabel.createBranch': 'створення гілки {name}',

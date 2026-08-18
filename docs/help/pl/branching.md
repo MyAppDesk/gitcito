@@ -46,4 +46,37 @@ kopii gałęzi.
 
 ![Pytanie o rozeszłą gałąź: rebase, merge albo reset, z opcją kopii zapasowej](../../screenshots/diverged-checkout.webp)
 
+### Gdy Twoja lokalna gałąź jest z tyłu
+
+Przy przełączaniu zostaje przewinięta (fast-forward) do wierzchołka zdalnej
+gałęzi. Brudne drzewo robocze trafia najpierw do nazwanego stasha i wraca po
+aktualizacji, więc lokalne zmiany jej nie przerywają.
+
+### Gdy Twoja lokalna gałąź jest do przodu
+
+Jeśli lokalna gałąź jest do przodu, a zdalna nie ma nic nowego, przełączenie
+odpowiedziałoby na prośbę o gałąź *zdalną* Twoją własną, niewypchniętą pracą —
+dlatego nic nie zostaje przełączone, dopóki nie powiesz, którą stronę masz na
+myśli:
+
+| Wybór | Co się dzieje |
+|-------|---------------|
+| Przełącz na lokalną | Przechodzi na lokalną gałąź z nienaruszonymi commitami. To, co każdy inny klient robi po cichu. |
+| Reset (soft) | Cofa gałąź do wierzchołka zdalnej; zmiany z commitów zostają **w poczekalni**, gotowe do ponownego commita. |
+| Reset (mixed) | To samo cofnięcie, zmiany zostają **poza poczekalnią** w drzewie roboczym. |
+| Reset (hard) | Odrzuca commity *i* ich zmiany. |
+
+![Okno gałęzi do przodu: przełącz na lokalną albo zresetuj soft, mixed lub hard](../../screenshots/ahead-checkout.webp)
+
+Zostaw zaznaczone *Najpierw utwórz gałąź zapasową*, a wierzchołek lokalnej gałęzi
+zostanie zapisany jako `backup/<gałąź>-<znacznik-czasu>`, zanim cokolwiek się
+przesunie — nawet reset hard dzieli wtedy od cofnięcia jedno przełączenie. Reset
+trafia też na stos cofania (⌘Z), ale tylko do zamknięcia repozytorium; gałąź
+zapasowa zostaje dłużej.
+
+**Ograniczenia:** okno porównuje gałąź wyłącznie z właśnie pobraną referencją
+śledzącą, więc zdalne repozytorium, które odrzuciło pobranie (brak sieci, złe
+dane logowania), zostanie porównane z ostatnio znanym wierzchołkiem. Nie mówi
+nic o tym, czy Twoje commity są *dobre* — tylko że są tu, a nie tam.
+
 **Zobacz też:** [Merge i rebase](merging.md) · [Worktree](worktrees.md)

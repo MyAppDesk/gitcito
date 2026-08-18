@@ -2536,6 +2536,38 @@ textarea:focus {
   line-height: 1.55;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+  user-select: text;
+  -webkit-user-select: text;
+  cursor: text;
+}
+
+.repo-chat-bubble a,
+.repo-chat-bubble button {
+  cursor: pointer;
+}
+
+.repo-chat-img-ref {
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+  cursor: zoom-in;
+}
+
+.repo-chat-img-pop {
+  position: fixed;
+  z-index: 1000;
+  padding: 4px;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  background: var(--bg-2);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+}
+
+.repo-chat-img-pop img {
+  display: block;
+  max-width: 280px;
+  max-height: 220px;
+  border-radius: 5px;
 }
 
 .repo-chat-message.user .repo-chat-bubble {

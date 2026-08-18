@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import {
   Bot,
+  Copy,
   FileCode2,
   FolderOpen,
   GitCommitHorizontal,
+  Link2,
   Loader2,
   Paperclip,
   Plus,
@@ -29,6 +32,8 @@ import {
   parseChatDrop,
   suggestedAttachments
 } from '../lib/repoChatContext'
+import { annotateChatHtml, tokenizeChatText } from '../lib/chatText'
+import { gitApi } from '../infrastructure/api'
 import { useRepoChatStore, type RepoChatEntry } from '../stores/chat'
 import { useRepoStore } from '../stores/repo'
 import { useSettingsStore } from '../stores/settings'
@@ -83,18 +88,84 @@ function AttachmentChip({
   )
 }
 
+/** Right-click menu on a message bubble: copy the selection, the whole
+ *  message, or — when the click landed on a link — its address. */
+function useCopyMenu(content: string): (event: React.MouseEvent) => void {
+  const t = useT()
+  const openContextMenu = useUIStore((state) => state.openContextMenu)
+  return (event) => {
+    event.preventDefault()
+    const selection = window.getSelection()?.toString() ?? ''
+    const href = (event.target as HTMLElement).closest('a')?.getAttribute('href')
+    openContextMenu(event.clientX, event.clientY, [
+      ...(selection.trim()
+        ? [
+            {
+              label: t('chat.copySelection'),
+              icon: <Copy size={13} />,
+              onClick: () => void navigator.clipboard.writeText(selection)
+            }
+          ]
+        : []),
+      {
+        label: t('chat.copyMessage'),
+        icon: <Copy size={13} />,
+        onClick: () => void navigator.clipboard.writeText(content)
+      },
+      ...(href && /^https?:/i.test(href)
+        ? [
+            {
+              label: t('chat.copyLink'),
+              icon: <Link2 size={13} />,
+              onClick: () => void navigator.clipboard.writeText(href)
+            }
+          ]
+        : [])
+    ])
+  }
+}
+
+/** Plain user text with URLs turned into links and image mentions marked for
+ *  the hover preview. */
+function UserText({ content }: { content: string }): React.JSX.Element {
+  const tokens = useMemo(() => tokenizeChatText(content), [content])
+  return (
+    <>
+      {tokens.map((tok, i) =>
+        tok.kind === 'text' ? (
+          tok.value
+        ) : tok.kind === 'link' ? (
+          <a
+            key={i}
+            href={tok.value}
+            className={tok.image ? 'repo-chat-img-ref' : undefined}
+            data-img={tok.image ? tok.value : undefined}
+          >
+            {tok.value}
+          </a>
+        ) : (
+          <span key={i} className="repo-chat-img-ref" data-img={tok.value}>
+            {tok.value}
+          </span>
+        )
+      )}
+    </>
+  )
+}
+
 function AssistantMessage({ message, repoPath }: { message: RepoChatEntry; repoPath: string }): React.JSX.Element {
   const t = useT()
   const setFileView = useUIStore((state) => state.setFileView)
-  const html = useMemo(() => renderMarkdown(message.content), [message.content])
+  const html = useMemo(() => annotateChatHtml(renderMarkdown(message.content)), [message.content])
   const sources = message.sources ?? []
+  const copyMenu = useCopyMenu(message.content)
 
   return (
     <div className="repo-chat-message assistant">
       <div className="repo-chat-avatar" aria-hidden="true">
         <Bot size={14} />
       </div>
-      <div className="repo-chat-bubble">
+      <div className="repo-chat-bubble" onContextMenu={copyMenu}>
         <div className="repo-chat-markdown" dangerouslySetInnerHTML={{ __html: html }} />
         {sources.length > 0 && (
           <div className="repo-chat-sources">
@@ -130,6 +201,24 @@ function AssistantMessage({ message, repoPath }: { message: RepoChatEntry; repoP
   )
 }
 
+function UserMessage({ message }: { message: RepoChatEntry }): React.JSX.Element {
+  const copyMenu = useCopyMenu(message.content)
+  return (
+    <div className="repo-chat-message user">
+      <div className="repo-chat-bubble" onContextMenu={copyMenu}>
+        <UserText content={message.content} />
+        {!!message.attachments?.length && (
+          <div className="repo-chat-chips sent">
+            {message.attachments.map((item) => (
+              <AttachmentChip key={attachmentKey(item)} item={item} />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoName: string }): React.JSX.Element {
   const t = useT()
   const profile = useSettingsStore((state) => state.activeProfile())
@@ -146,6 +235,12 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
   const selected = useRepoStore((state) => state.repos[repoPath]?.selected ?? null)
   const [draft, setDraft] = useState('')
   const [dropActive, setDropActive] = useState(false)
+  const [imgPreview, setImgPreview] = useState<{ ref: string; url: string; x: number; y: number } | null>(null)
+  const hoveredImg = useRef<string | null>(null)
+  // Resolved once per mention: an https URL is used as-is, a repo path is read
+  // through git into a data URL. null caches a failed read so a path that does
+  // not resolve to an image is not retried on every hover.
+  const imgCache = useRef(new Map<string, Promise<string | null>>())
   const endRef = useRef<HTMLDivElement>(null)
   const messages = thread?.messages ?? []
   const pending = thread?.pending ?? false
@@ -180,6 +275,41 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
     if (!canSubmitRepoChat(profile.ai.enabled !== false, pending, content)) return
     setDraft('')
     void send(repoPath, content, resolveAI(profile.ai, 'chat'))
+  }
+
+  const resolveImg = (ref: string): Promise<string | null> => {
+    let promise = imgCache.current.get(ref)
+    if (!promise) {
+      promise = /^https?:/i.test(ref)
+        ? Promise.resolve(ref)
+        : gitApi.fileDataUrl(repoPath, ref.replace(/^\.\//, '')).catch(() => null)
+      imgCache.current.set(ref, promise)
+    }
+    return promise
+  }
+
+  const onImgOver = (event: React.MouseEvent): void => {
+    const el = (event.target as HTMLElement).closest<HTMLElement>('[data-img]')
+    const ref = el?.dataset.img
+    if (!el || !ref || hoveredImg.current === ref) return
+    hoveredImg.current = ref
+    const rect = el.getBoundingClientRect()
+    // Clamp into the viewport; flip above the mention when there is no room
+    // below (the popup is capped at ~230px tall in CSS).
+    const x = Math.max(8, Math.min(rect.left, window.innerWidth - 300))
+    const y = rect.bottom + 236 <= window.innerHeight ? rect.bottom + 6 : Math.max(8, rect.top - 236)
+    void resolveImg(ref).then((url) => {
+      if (url && hoveredImg.current === ref) setImgPreview({ ref, url, x, y })
+    })
+  }
+
+  const onImgOut = (event: React.MouseEvent): void => {
+    const from = (event.target as HTMLElement).closest('[data-img]')
+    if (!from) return
+    const to = event.relatedTarget
+    if (to instanceof Node && from.contains(to)) return
+    hoveredImg.current = null
+    setImgPreview(null)
   }
 
   const onDrop = (event: React.DragEvent): void => {
@@ -292,7 +422,7 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
         </div>
       ) : (
         <>
-          <div className="repo-chat-messages" aria-live="polite">
+          <div className="repo-chat-messages" aria-live="polite" onMouseOver={onImgOver} onMouseOut={onImgOut}>
             {messages.length === 0 && (
               <div className="repo-chat-empty">
                 <Bot size={28} />
@@ -306,18 +436,7 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
               message.role === 'assistant' ? (
                 <AssistantMessage key={message.id} message={message} repoPath={repoPath} />
               ) : (
-                <div key={message.id} className="repo-chat-message user">
-                  <div className="repo-chat-bubble">
-                    {message.content}
-                    {!!message.attachments?.length && (
-                      <div className="repo-chat-chips sent">
-                        {message.attachments.map((item) => (
-                          <AttachmentChip key={attachmentKey(item)} item={item} />
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
+                <UserMessage key={message.id} message={message} />
               )
             )}
 
@@ -418,6 +537,13 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
           </div>
         </>
       )}
+      {imgPreview &&
+        createPortal(
+          <div className="repo-chat-img-pop" style={{ left: imgPreview.x, top: imgPreview.y }}>
+            <img src={imgPreview.url} alt={imgPreview.ref} onError={() => setImgPreview(null)} />
+          </div>,
+          document.body
+        )}
     </section>
   )
 }

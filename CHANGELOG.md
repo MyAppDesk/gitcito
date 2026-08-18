@@ -1,5 +1,12 @@
 
 
+## [3.12.0](https://github.com/MyAppDesk/gitcito/compare/v3.11.0...v3.12.0) (2026-08-18)
+
+
+### Features
+
+* add launch input modal for user prompts ([321d9e2](https://github.com/MyAppDesk/gitcito/commit/321d9e25302a580f7a1255b0ddc21ffb5aca867e))
+
 ## [3.11.0](https://github.com/MyAppDesk/gitcito/compare/v3.10.0...v3.11.0) (2026-08-18)
 
 

@@ -3555,13 +3555,16 @@ textarea:focus {
   flex: 1;
 }
 
+/* Add/del text colour is a token, not a literal: the pale mint and pink only
+   have contrast against a dark canvas — on a light theme they wash out to
+   unreadable, and the word-diff marks underneath make it worse. */
 .diff-line.add {
-  background: rgba(63, 208, 164, 0.09);
-  color: #9ee8cd;
+  background: var(--diff-add-bg, rgba(63, 208, 164, 0.09));
+  color: var(--diff-add-fg, #9ee8cd);
 }
 .diff-line.del {
-  background: rgba(231, 89, 108, 0.09);
-  color: #f1a0ac;
+  background: var(--diff-del-bg, rgba(231, 89, 108, 0.09));
+  color: var(--diff-del-fg, #f1a0ac);
 }
 .diff-line.hunk {
   background: var(--bg-3);
@@ -3571,6 +3574,15 @@ textarea:focus {
 }
 .diff-line.ctx {
   color: var(--text-1);
+}
+
+/* Light appearance: the diff canvas is near-white, so the row tints go up a
+   little and the text goes dark enough to survive a word-diff mark on top. */
+:root[data-mode='light'] {
+  --diff-add-bg: rgba(0, 180, 135, 0.13);
+  --diff-del-bg: rgba(226, 61, 99, 0.11);
+  --diff-add-fg: #0a6349;
+  --diff-del-fg: #97213f;
 }
 
 .diff-empty {
@@ -12863,14 +12875,20 @@ button.insights-row:hover { background: var(--bg-2); }
 .diff-word-toggle:hover { color: var(--text-0); }
 .diff-word-toggle.on { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
 .diff-text mark.word-del {
-  background: rgba(229, 72, 77, 0.32);
+  background: var(--word-del-bg, rgba(229, 72, 77, 0.32));
   color: inherit;
   border-radius: 2px;
 }
 .diff-text mark.word-add {
-  background: rgba(46, 160, 67, 0.34);
+  background: var(--word-add-bg, rgba(46, 160, 67, 0.34));
   color: inherit;
   border-radius: 2px;
+}
+/* On white those alphas swallow the glyphs; a lighter wash still reads as a
+   marked run because the row tint underneath is already the weaker one. */
+:root[data-mode='light'] {
+  --word-del-bg: rgba(226, 61, 99, 0.22);
+  --word-add-bg: rgba(0, 180, 135, 0.26);
 }
 
 /* ─── WIP snapshots ────────────────────────────────────────────────────── */

@@ -2177,9 +2177,20 @@ export type PageContent =
   | { type: 'wiki'; repoPath: string }
   | { type: 'vault' }
   | { type: 'help'; page?: string }
+  | { type: 'licenses' }
   | { type: 'release'; release: ReleaseInfo; repoPath: string }
   | { type: 'issue'; issue: IssueInfo; repoPath: string; remoteUrl: string }
   | { type: 'milestone'; milestone: MilestoneInfo; repoPath: string; remoteUrl: string }
+
+/** One dependency's licence, collected at build time by scripts/gen-licenses.mjs.
+ *  `text` is null when the package ships an SPDX id but no licence file. */
+export interface DependencyLicense {
+  name: string
+  version: string
+  license: string
+  homepage: string | null
+  text: string | null
+}
 
 /** A published GitHub release, as surfaced to the changelog page. */
 export interface AppRelease {

@@ -29,6 +29,7 @@ import { useUpdatesStore, hasPendingUpdate } from './stores/updates'
 import { Welcome, LauncherPanel, type LauncherItem } from './components/Welcome'
 import { OnboardingWizard } from './components/OnboardingWizard'
 import { ChangelogPage } from './components/ChangelogPage'
+import { LicensesPage } from './components/LicensesPage'
 import { MissionControlPage } from './components/MissionControlPage'
 import { HelpPage } from './components/HelpPage'
 import { LogsPage } from './components/LogsPage'
@@ -168,6 +169,8 @@ function PageView({ tab }: { tab: PageTab }): React.JSX.Element {
       return <VaultPage />
     case 'help':
       return <HelpPage initialPage={tab.page.page} />
+    case 'licenses':
+      return <LicensesPage />
     case 'release':
       return <ReleasePage tab={tab} />
     case 'issue':

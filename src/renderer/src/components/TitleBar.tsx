@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Plus, FolderGit2, X, Minus, Square, Settings, Sparkles, LifeBuoy, FileText, Bell, BarChart3, BookOpen, ScrollText, CircleDot, Flag, Tag, Download, ArrowDownToLine, KeyRound, LayoutGrid, Folder, FolderOpen, FolderPlus, FolderTree, Trash2 } from 'lucide-react'
+import { Plus, FolderGit2, X, Minus, Square, Settings, Sparkles, LifeBuoy, FileText, Bell, BarChart3, BookOpen, ScrollText, CircleDot, Flag, Tag, Download, ArrowDownToLine, KeyRound, LayoutGrid, Folder, FolderOpen, FolderPlus, FolderTree, Trash2, Scale } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore, type MenuItem } from '../stores/ui'
@@ -80,6 +80,8 @@ function pageTabIcon(type: string): React.JSX.Element {
       return <Tag size={13} />
     case 'help':
       return <LifeBuoy size={13} />
+    case 'licenses':
+      return <Scale size={13} />
     // Explicit, so a new page type never inherits the release-notes sparkle by
     // falling through to the default.
     case 'changelog':

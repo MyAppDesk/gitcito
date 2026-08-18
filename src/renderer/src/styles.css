@@ -185,6 +185,9 @@ textarea:focus {
   -webkit-app-region: no-drag;
   display: flex;
   align-items: center;
+  /* Never shrink: the strip scrolls instead. A tab that clips its own overflow
+     (the changelog shimmer) would otherwise resolve min-width to 0 and collapse. */
+  flex: none;
   gap: 6px;
   height: 32px;
   padding: 0 8px 0 12px;
@@ -13845,4 +13848,247 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 :root[dir='rtl'] .rtl-flip > svg,
 :root[dir='rtl'] svg.rtl-flip {
   transform: scaleX(-1);
+}
+
+/* ── What's new: header actions ─────────────────────────────────────────── */
+.changelog-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+.changelog-header-actions .changelog-source {
+  margin-top: 0;
+}
+
+.changelog-source-btn {
+  cursor: pointer;
+  font-family: inherit;
+  transition: color 0.12s, border-color 0.12s, background 0.12s;
+}
+
+.changelog-source-btn:hover {
+  color: var(--accent, #8b5cf6);
+  border-color: var(--accent, #8b5cf6);
+}
+
+/* ── Licenses page ──────────────────────────────────────────────────────── */
+.licenses-page {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  background: var(--bg-1);
+}
+
+.licenses-inner {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 32px 32px 64px;
+}
+
+.licenses-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.licenses-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--accent, #8b5cf6);
+}
+
+.licenses-title h1 {
+  margin: 0;
+  font-size: 22px;
+  color: var(--text-0);
+}
+
+.licenses-count {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.licenses-own {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  margin-top: 4px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--text-2);
+  background: var(--bg-2);
+  border: 1px solid var(--border-soft);
+  cursor: pointer;
+  transition: color 0.12s, border-color 0.12s;
+}
+
+.licenses-own:hover {
+  color: var(--accent, #8b5cf6);
+  border-color: var(--accent, #8b5cf6);
+}
+
+.licenses-lead {
+  margin: 0 0 16px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-2);
+}
+
+.licenses-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--bg-2);
+  border: 1px solid var(--border-soft);
+  color: var(--text-2);
+}
+
+.licenses-search input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text-0);
+  font-family: inherit;
+  font-size: 13px;
+}
+
+.licenses-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.licenses-row + .licenses-row {
+  border-top: 1px solid var(--border-soft);
+}
+
+.licenses-row-head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-right: 8px;
+}
+
+.licenses-row-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  border: none;
+  background: transparent;
+  color: var(--text-1);
+  font-family: inherit;
+  font-size: 13px;
+  text-align: start;
+  cursor: pointer;
+}
+
+.licenses-row-btn:hover {
+  background: var(--bg-2);
+}
+
+.licenses-chevron {
+  flex: 0 0 auto;
+  color: var(--text-2);
+  transition: transform 0.12s;
+}
+
+.licenses-row.expanded .licenses-chevron {
+  transform: rotate(90deg);
+}
+
+.licenses-name {
+  font-weight: 600;
+  color: var(--text-0);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.licenses-version {
+  flex: 0 0 auto;
+  font-family: var(--mono, monospace);
+  font-size: 11px;
+  color: var(--text-2);
+}
+
+.licenses-spdx {
+  flex: 0 0 auto;
+  margin-inline-start: auto;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--text-2);
+  background: var(--bg-2);
+  border: 1px solid var(--border-soft);
+}
+
+.licenses-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  flex: 0 0 auto;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+}
+
+.licenses-link:hover {
+  color: var(--accent, #8b5cf6);
+  background: var(--bg-2);
+}
+
+.licenses-text {
+  margin: 0;
+  padding: 12px 16px 16px 31px;
+  max-height: 340px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: var(--mono, monospace);
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--text-2);
+  background: var(--bg-2);
+}
+
+.licenses-text-missing {
+  font-family: inherit;
+  font-size: 12px;
+}
+
+.licenses-empty {
+  margin: 24px 0;
+  font-size: 13px;
+  color: var(--text-2);
+  text-align: center;
 }

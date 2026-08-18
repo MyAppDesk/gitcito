@@ -123,7 +123,9 @@ conflicts and unpushed piles ·
 [**Open in your editor**](docs/help/editor.md) — repo, file, or the exact line
 you right-clicked ·
 [**Run & debug**](docs/help/launch.md) from your `.vscode/launch.json` ·
-[previews](docs/help/diffs.md) for Markdown, Word, Excel, PDF, video and images.
+[previews](docs/help/diffs.md) for Markdown, Word, Excel, PDF, video and images ·
+[open-source licenses](docs/help/licenses.md) for every package the build ships,
+readable in the app.
 
 ## A few things other clients don't do
 

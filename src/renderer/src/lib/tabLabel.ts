@@ -26,6 +26,8 @@ export function pageTabLabel(page: PageContent, t: (key: TranslationKey) => stri
       return t('tab.help')
     case 'changelog':
       return t('tab.changelog')
+    case 'licenses':
+      return t('tab.licenses')
     case 'wiki':
       return interp(t('tab.wiki'), { repo: basename(page.repoPath) })
     case 'issue':

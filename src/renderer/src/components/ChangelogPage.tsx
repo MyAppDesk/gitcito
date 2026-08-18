@@ -7,18 +7,23 @@ import {
   Download,
   ArrowUpCircle,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Scale
 } from 'lucide-react'
 import { renderMarkdown } from '../preview/markdown'
 import { bundledChangelog } from '../changelog'
 import { compareVersions, isNewerVersion } from '../../../shared/version'
 import type { AppRelease } from '../../../shared/types'
 import { useUpdatesStore } from '../stores/updates'
+import { useSettingsStore } from '../stores/settings'
 import { useT } from '../i18n'
 
 type Source = 'loading' | 'live' | 'bundled'
 
 const stripV = (s: string): string => s.replace(/^v/i, '')
+
+/** Where the badge sends you when GitHub has not told us a release URL yet. */
+const RELEASES_URL = 'https://github.com/MyAppDesk/gitcito/releases/latest'
 
 /** The "What's new" page tab. Steps through every GitHub release (newest →
  *  oldest) with ‹ › arrows, opening on the *currently installed* version. If
@@ -73,6 +78,10 @@ export function ChangelogPage(): React.JSX.Element {
     setIdx(installed >= 0 ? installed : 0)
   }, [timeline, version])
 
+  // The badge is a way *out* of the app: it points at the newest published
+  // release, which is what "latest from GitHub" means to a reader.
+  const latestUrl = timeline[0]?.url || RELEASES_URL
+
   const selected = timeline[idx] ?? null
   const isInstalled = !!selected && stripV(selected.tag) === stripV(version)
 
@@ -114,19 +123,35 @@ export function ChangelogPage(): React.JSX.Element {
               {version && <span className="changelog-version">v{version}</span>}
             </div>
           </div>
-          <span className={`changelog-source changelog-source-${source}`}>
-            {source === 'loading' && (
-              <>
-                <RefreshCw size={12} className="spin" /> {t('changelog.checking')}
-              </>
-            )}
-            {source === 'live' && (
-              <>
+          <div className="changelog-header-actions">
+            {source === 'live' ? (
+              <button
+                type="button"
+                className="changelog-source changelog-source-live changelog-source-btn"
+                title={t('changelog.openLatest')}
+                onClick={() => void window.api.openExternal(latestUrl)}
+              >
                 <Github size={12} /> {t('changelog.live')}
-              </>
+              </button>
+            ) : (
+              <span className={`changelog-source changelog-source-${source}`}>
+                {source === 'loading' && (
+                  <>
+                    <RefreshCw size={12} className="spin" /> {t('changelog.checking')}
+                  </>
+                )}
+                {source === 'bundled' && t('changelog.bundled')}
+              </span>
             )}
-            {source === 'bundled' && t('changelog.bundled')}
-          </span>
+            <button
+              type="button"
+              className="changelog-source changelog-source-btn"
+              title={t('changelog.licensesTitle')}
+              onClick={() => useSettingsStore.getState().openPageTab({ type: 'licenses' })}
+            >
+              <Scale size={12} /> {t('changelog.licenses')}
+            </button>
+          </div>
         </header>
 
         {newer && (

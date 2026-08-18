@@ -8,7 +8,7 @@
   "author": "MyAppDesk <team@myappdesk.dev>",
   "scripts": {
     "dev": "electron-vite dev",
-    "build": "node scripts/sync-grammars.mjs && electron-vite build",
+    "build": "node scripts/sync-grammars.mjs && node scripts/gen-licenses.mjs && electron-vite build",
     "dist:mac": "electron-builder --mac",
     "dist:win": "electron-builder --win",
     "dist:linux": "electron-builder --linux",
@@ -24,6 +24,7 @@
     "screenshots:gif": "node examples/screenshots/capture.mjs --clips",
     "lint:i18n": "node scripts/check-i18n.mjs",
     "lint:docs": "node scripts/docs-check.mjs",
+    "licenses": "node scripts/gen-licenses.mjs",
     "site": "node scripts/build-site.mjs",
     "site:serve": "node scripts/build-site.mjs && npx --yes serve dist-site",
     "test": "vitest run",

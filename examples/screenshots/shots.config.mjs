@@ -334,6 +334,19 @@ export const shots = [
     }
   },
   {
+    // The licences tab with one package expanded: the list alone looks like a
+    // manifest, and the point of the page is the text underneath a row.
+    out: 'licenses',
+    repos: ['octopus-merge'],
+    themes: ['light'],
+    drive: async (page) => {
+      await page.evaluate(() => window.__shot.settings.getState().openPageTab({ type: 'licenses' }))
+      await page.waitForTimeout(500)
+      await page.click('.licenses-row-btn').catch(() => {})
+      await page.waitForTimeout(400)
+    }
+  },
+  {
     // Settings → Shortcuts tab (rebindable shortcut editor).
     out: 'settings-shortcuts',
     repos: ['octopus-merge'],

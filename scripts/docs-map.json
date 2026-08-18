@@ -75,7 +75,8 @@
       "milestone": "hosting",
       "release": "hosting",
       "notifications": "hosting",
-      "logs": "repo-settings"
+      "logs": "repo-settings",
+      "licenses": "licenses"
     },
     "exempt": {
       "help": "This handbook itself.",
@@ -152,7 +153,8 @@
       "vault": "vault",
       "wiki": "repo-wiki",
       "ws-secure-export": "secure-share",
-      "ws-secure-import": "secure-share"
+      "ws-secure-import": "secure-share",
+      "licenses": "licenses"
     },
     "exempt": {
       "help": "Opens this handbook."

@@ -47,7 +47,8 @@ import {
   Package,
   HardDrive,
   FileCog,
-  GitGraph
+  GitGraph,
+  Scale
 } from 'lucide-react'
 import { useUIStore } from '../stores/ui'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
@@ -274,6 +275,7 @@ export function CommandPalette(): React.JSX.Element {
       { id: 'theme', title: t('cmd.theme'), group: 'Actions', keywords: 'appearance dark light mode', icon: <SunMoon size={15} />, run: act(() => useSettingsStore.getState().update((s) => ({ ...s, themeMode: s.themeMode === 'dark' ? 'light' : 'dark' }))) },
       { id: 'notifications', title: t('cmd.notifications'), group: 'Actions', keywords: 'inbox review mention github bell', icon: <Bell size={15} />, run: act(() => useSettingsStore.getState().openPageTab({ type: 'notifications' })) },
       { id: 'changelog', title: t('cmd.changelog'), group: 'Actions', keywords: 'release notes version', icon: <FileText size={15} />, run: act(() => useSettingsStore.getState().openPageTab({ type: 'changelog' })) },
+      { id: 'licenses', title: t('cmd.licenses'), group: 'Actions', keywords: 'open source third party attribution notices mit apache', icon: <Scale size={15} />, run: act(() => useSettingsStore.getState().openPageTab({ type: 'licenses' })) },
       { id: 'settings', title: t('cmd.settings'), group: 'Actions', keywords: 'preferences config', icon: <Settings size={15} />, run: act(() => ui.openModal({ kind: 'settings' })) },
       { id: 'ssh-keys', title: t('cmd.sshKeys'), group: 'Actions', keywords: 'ssh key agent ssh-add publickey permission denied git@ remote fingerprint', icon: <KeyRound size={15} />, run: act(() => ui.openModal({ kind: 'settings', page: 'security' })) },
       { id: 'settings-security', title: t('cmd.settingsSecurity'), group: 'Actions', keywords: 'preferences mask secrets large file protected branch vault', icon: <Settings size={15} />, run: act(() => ui.openModal({ kind: 'settings', page: 'security' })) },

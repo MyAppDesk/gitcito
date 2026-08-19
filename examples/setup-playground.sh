@@ -38,20 +38,54 @@ matches_filter() {
 }
 
 shopt -s nullglob
-ran=0
-for scenario in "$HERE"/scenarios/*.sh; do
-  base="$(basename "$scenario")"
-  if matches_filter "$base" "$@"; then
-    echo "▶ $base"
-    # shellcheck source=/dev/null
-    . "$scenario"
-    ran=$((ran + 1))
-  fi
+
+# In-place progress bar when attached to a terminal; plain per-scenario lines
+# otherwise so CI logs stay greppable.
+TTY=0
+[ -t 1 ] && TTY=1
+
+progress() {
+  local cur="$1" total="$2" label="$3" width=28 filled bar='' i
+  filled=$(( cur * width / total ))
+  for ((i = 0; i < filled; i++)); do bar+='█'; done
+  for ((i = filled; i < width; i++)); do bar+='░'; done
+  printf '\r\033[K  %s %*d/%d  %s' "$bar" "${#total}" "$cur" "$total" "$label"
+}
+
+# Collect matches up front so the bar knows its denominator. Scenarios are
+# sourced into this shell, so orchestrator state is PG_-prefixed to survive
+# whatever variable names a scenario uses internally.
+PG_SCENARIOS=()
+for PG_FILE in "$HERE"/scenarios/*.sh; do
+  matches_filter "$(basename "$PG_FILE")" "$@" && PG_SCENARIOS+=("$PG_FILE")
 done
 
-if [ "$ran" -eq 0 ]; then
+if [ "${#PG_SCENARIOS[@]}" -eq 0 ]; then
   echo "No scenarios matched: $*" >&2
   exit 1
+fi
+
+# If a scenario dies under set -e, break out of the bar line so the error
+# lands on its own line instead of appending to it.
+[ "$TTY" -eq 1 ] && trap 'printf "\n" >&2' ERR
+
+PG_TOTAL=${#PG_SCENARIOS[@]}
+PG_IDX=0
+for PG_FILE in "${PG_SCENARIOS[@]}"; do
+  PG_BASE="$(basename "$PG_FILE")"
+  if [ "$TTY" -eq 1 ]; then
+    progress "$PG_IDX" "$PG_TOTAL" "$PG_BASE"
+  else
+    echo "▶ $PG_BASE"
+  fi
+  # shellcheck source=/dev/null
+  . "$PG_FILE"
+  PG_IDX=$((PG_IDX + 1))
+done
+
+if [ "$TTY" -eq 1 ]; then
+  progress "$PG_TOTAL" "$PG_TOTAL" "done"
+  printf '\n'
 fi
 
 print_summary

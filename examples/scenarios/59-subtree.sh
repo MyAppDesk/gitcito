@@ -33,7 +33,13 @@ EOF
 printf 'const { parse } = require("./vendor/parser/parser")\nconsole.log(parse("{}"))\n' > "$R/app.js"
 git -C "$R" add -A && git -C "$R" commit -qm "init: app + readme"
 
-git -C "$R" subtree add -q --prefix=vendor/parser "$LIB_BARE" main --squash
+# Even with -q, git-subtree echoes its internal `git fetch` plus the fetch's
+# transport progress whenever stderr is a terminal. Capture everything and only
+# replay it if the import actually failed.
+if ! SUBTREE_OUT=$(git -C "$R" subtree add -q --prefix=vendor/parser "$LIB_BARE" main --squash 2>&1); then
+  printf '%s\n' "$SUBTREE_OUT" >&2
+  false
+fi
 
 # A local commit after the import, so history is not just the subtree merge.
 printf 'const { parse, safe } = require("./vendor/parser/parser")\nconsole.log(safe("{}"))\n' > "$R/app.js"

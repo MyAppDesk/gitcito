@@ -118,6 +118,8 @@ voorstellen, en elk voorstel wordt tegen de werkmap gecontroleerd voordat jij
 het ziet — een actie die een niet-bestaand bestand noemt, wordt afgewezen, niet
 getoond.
 
+![Leeg gesprek met voorbeeldverzoeken](../../screenshots/repo-chat-empty.webp)
+
 ![Voorgestelde acties in de chat](../../screenshots/repo-chat-actions.webp)
 
 De set acties ligt vast: ignore-patronen, stage, unstage, commit, stash, discard, branch,

@@ -121,6 +121,8 @@ ne peut que proposer, et chaque proposition est vérifiée contre la copie de
 travail avant même que vous la voyiez — une action nommant un fichier qui
 n’existe pas est rejetée, pas affichée.
 
+![Discussion vide avec des demandes d’exemple](../../screenshots/repo-chat-empty.webp)
+
 ![Actions proposées dans la discussion](../../screenshots/repo-chat-actions.webp)
 
 L’ensemble d’actions est fixe : motifs d’exclusion, indexer, désindexer, valider, remiser,

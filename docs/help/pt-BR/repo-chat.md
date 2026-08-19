@@ -119,6 +119,8 @@ no cartão aconteceu ainda; o modelo só pode propor, e cada proposta é conferi
 contra a árvore de trabalho antes de você sequer vê-la — uma ação que cita um
 arquivo inexistente é rejeitada, não exibida.
 
+![Chat vazio com pedidos de exemplo](../../screenshots/repo-chat-empty.webp)
+
 ![Ações propostas no chat](../../screenshots/repo-chat-actions.webp)
 
 O conjunto de ações é fixo: padrões de ignore, stage, unstage, commit, stash, descartar,

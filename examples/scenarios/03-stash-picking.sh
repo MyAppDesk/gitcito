@@ -13,6 +13,6 @@ echo "alpha v2 (stashed change)" > "$R/alpha.txt"
 echo "beta v2 (stashed change)"  > "$R/beta.txt"
 echo "gamma v2 (stashed change)" > "$R/src/gamma.txt"
 echo "delta — untracked file captured by the stash" > "$R/delta-untracked.txt"
-git -C "$R" stash push -u -m "WIP: alpha+beta+gamma edits and a new untracked file"
+git -C "$R" stash push -q -u -m "WIP: alpha+beta+gamma edits and a new untracked file"
 
 summary "stash-picking" "click the stash node and apply only some files"

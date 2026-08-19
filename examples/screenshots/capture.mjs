@@ -239,6 +239,36 @@ async function settle(page, ms = 800) {
 // a .vscode/launch.json config); the Electron renderer can occasionally crash
 // mid-drive ("Target page has been closed"). Retry so one flaky native crash
 // doesn't lose the shot — and, crucially, doesn't abort the whole run.
+// In-place progress bar pinned to the bottom of the terminal; completed-shot
+// and warning lines scroll above it via logLine(). Disabled off-TTY so CI logs
+// stay one plain line per shot.
+const isTTY = Boolean(process.stdout.isTTY) && !process.env.CI
+let progress = null
+
+function startProgress(total, emoji) {
+  progress = isTTY ? { total, done: 0, label: '', emoji } : null
+}
+
+function drawProgress() {
+  if (!progress) return
+  const width = 28
+  const filled = Math.round((progress.done / progress.total) * width)
+  const bar = '█'.repeat(filled) + '░'.repeat(width - filled)
+  process.stdout.write(`\r\x1b[K${progress.emoji} ${bar} ${progress.done}/${progress.total}  ${progress.label}`)
+}
+
+function endProgress() {
+  if (progress) process.stdout.write('\r\x1b[K')
+  progress = null
+}
+
+// Print a line without corrupting the bar: clear it, print, redraw.
+function logLine(line, { err = false } = {}) {
+  if (progress) process.stdout.write('\r\x1b[K')
+  ;(err ? console.error : console.log)(line)
+  drawProgress()
+}
+
 const SHOT_ATTEMPTS = 3
 
 async function withRetry(label, fn) {
@@ -249,7 +279,7 @@ async function withRetry(label, fn) {
     } catch (e) {
       lastErr = e
       const msg = String(e?.message ?? e).split('\n')[0]
-      if (attempt < SHOT_ATTEMPTS) console.warn(`  ↻ ${label}: ${msg} — retry ${attempt + 1}/${SHOT_ATTEMPTS}`)
+      if (attempt < SHOT_ATTEMPTS) logLine(`  ↻ ${label}: ${msg} — retry ${attempt + 1}/${SHOT_ATTEMPTS}`, { err: true })
     }
   }
   throw lastErr
@@ -290,7 +320,7 @@ async function capturePngTheme(shot, theme) {
     const tmpPng = join(userDataDir, 'shot.png')
     await writeFile(tmpPng, raw)
     await sh('ffmpeg', ['-y', '-loglevel', 'error', '-i', tmpPng, '-c:v', 'libwebp', '-q:v', '90', file])
-    console.log(`  ✓ ${file.replace(ROOT + '/', '')}`)
+    logLine(`  ✓ ${file.replace(ROOT + '/', '')}`)
   } finally {
     // A crashed app makes close()/rm() throw too — never let cleanup mask the
     // real error or bubble past the retry boundary.
@@ -308,7 +338,7 @@ async function capturePng(shot) {
 
 async function captureGif(shot) {
   if (!hasFfmpeg()) {
-    console.warn(`  ⚠ skipping ${shot.out}: ffmpeg not found (brew install ffmpeg)`)
+    logLine(`  ⚠ skipping ${shot.out}: ffmpeg not found (brew install ffmpeg)`, { err: true })
     return
   }
   await withRetry(shot.out, () => captureGifOnce(shot))
@@ -363,7 +393,7 @@ async function captureGifOnce(shot) {
     let i = 0
     for (const buf of frames) await writeFile(join(framesDir, `f${String(i++).padStart(4, '0')}.png`), buf)
     if (!frames.length) {
-      console.warn(`  ⚠ ${shot.out}: no frames captured`)
+      logLine(`  ⚠ ${shot.out}: no frames captured`, { err: true })
       return
     }
     const inputFps = elapsedSec > 0 ? frames.length / elapsedSec : fps
@@ -377,7 +407,7 @@ async function captureGifOnce(shot) {
       '-vf', vf, '-c:v', 'libwebp_anim', '-lossless', '0', '-q:v', '70',
       '-compression_level', '5', '-loop', '0', '-an', out
     ])
-    console.log(`  ✓ ${out.replace(ROOT + '/', '')} (${frames.length} frames)`)
+    logLine(`  ✓ ${out.replace(ROOT + '/', '')} (${frames.length} frames)`)
   } finally {
     await app.close().catch(() => {})
     await rm(userDataDir, { recursive: true, force: true }).catch(() => {})
@@ -393,25 +423,38 @@ async function main() {
   // can, report the rest at the end.
   const failures = []
   const run = async (shot, fn) => {
-    console.log(`▶ ${shot.out}`)
+    if (progress) {
+      progress.label = shot.out
+      drawProgress()
+    } else {
+      console.log(`▶ ${shot.out}`)
+    }
     try {
       await fn(shot)
     } catch (e) {
       failures.push(shot.out)
-      console.error(`  ✗ ${shot.out}: ${String(e?.message ?? e).split('\n')[0]}`)
+      logLine(`  ✗ ${shot.out}: ${String(e?.message ?? e).split('\n')[0]}`, { err: true })
+    }
+    if (progress) {
+      progress.done++
+      drawProgress()
     }
   }
 
   if (!gifOnly) {
     const todo = shots.filter(match)
     console.log(`\n📸 ${todo.length} still(s)`)
+    startProgress(todo.length, '📸')
     for (const shot of todo) await run(shot, capturePng)
+    endProgress()
   }
 
   if (wantGif) {
     const todo = clips.filter(match)
     console.log(`\n🎬 ${todo.length} GIF clip(s)`)
+    startProgress(todo.length, '🎬')
     for (const shot of todo) await run(shot, captureGif)
+    endProgress()
   }
 
   if (failures.length) {

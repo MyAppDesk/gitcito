@@ -120,6 +120,8 @@ vorschlagen, und jeder Vorschlag wird gegen das Arbeitsverzeichnis geprüft,
 bevor du ihn überhaupt siehst — eine Aktion, die eine nicht existierende Datei
 nennt, wird abgewiesen, nicht angezeigt.
 
+![Leere Unterhaltung mit Beispielanfragen](../../screenshots/repo-chat-empty.webp)
+
 ![Vorgeschlagene Aktionen im Chat](../../screenshots/repo-chat-actions.webp)
 
 Der Aktionsumfang ist fest: Ignore-Muster, stagen, unstagen, committen, stashen, verwerfen,

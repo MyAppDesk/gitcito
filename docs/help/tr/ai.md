@@ -89,6 +89,7 @@ Hiçbir sağlayıcı sıralanmış ya da seçilmiş bir liste yayımlamaz, dolay
 | **PR açıklaması** · **dal adları** | Dalın commit'lerinden ve diff'inden taslaklanır |
 | **Temalar** · **grafik paletleri** | Bir istemden üretilir |
 | **Akıllı hazırlama** | Bu commit'e neyin ait olduğuna dair öneriler |
+| **Yapay zekâ yapılandırma sihirbazı** | Depo için asistan yapılandırma dosyaları (talimatlar, ajanlar, hook'lar) üretir — sohbet paneli başlığındaki sihirli değnek düğmesi |
 
 ## Tahmin değil, dayanaklı
 

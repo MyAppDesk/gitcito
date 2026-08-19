@@ -76,6 +76,11 @@ yanıtlayamayacağı bir şeyi öneren panel kalmaz.
 Sohbet modeli, panelin kendi başlığından da değiştirilebilir; sağlayıcı adının
 yanındadır — aynı ayar, Ayarlar’ı açmadan.
 
+Panel başlığının yanındaki sihirli değnek düğmesi **yapay zekâ yapılandırma
+sihirbazını** açar — bu depo için asistan yapılandırma dosyaları (talimatlar,
+ajanlar, hook’lar) üreten rehberli bir akış. Bkz.
+[Yapay zekâ özellikleri](ai.md).
+
 ![Depo sohbeti ayarları](../../screenshots/settings-repo-chat.webp)
 
 ## Mesajlarla çalışma
@@ -100,15 +105,20 @@ görsele karşılık gelmeyen bir söz hiçbir şey göstermez.
 
 Bir olgu yerine bir değişiklik isteyin — *markdown dosyalarını hazırla, bunu
 düzeltme olarak commit’le, derleme çıktısını yoksayma listesine ekle* — ve
-yanıt bir **eylem kartıyla** gelir: asistanın atmak istediği somut adımlar, her
+yanıt bir **eylem kartıyla** gelir. Boş bir konuşma, giriş metninin altında
+birkaç örnek isteği çip olarak sunar; birine tıklamak yazma kutusunu doldurur,
+göndermeden önce düzenleyebilirsiniz. Kart, asistanın atmak istediği somut
+adımları listeler: her
 eyleme bir satır, **Çalıştır** ve **Reddet** düğmeleriyle. Karttaki hiçbir şey
 henüz olmuş değildir; model yalnızca önerebilir ve her öneri siz görmeden önce
 çalışma ağacıyla karşılaştırılır — var olmayan bir dosyayı anan eylem
 reddedilir, gösterilmez.
 
+![Örnek isteklerle boş sohbet](../../screenshots/repo-chat-empty.webp)
+
 ![Sohbette önerilen eylemler](../../screenshots/repo-chat-actions.webp)
 
-Eylem kümesi, araç çubuğundaki **Çalıştır** asistanının kullandığıyla aynıdır:
+Eylem kümesi sabittir:
 yoksayma desenleri, stage, unstage, commit, stash, discard, dal, checkout,
 etiket. Bunun ötesindeki her şey — push, pull, reset, rebase, force işlemleri —
 tasarım gereği reddedilir; sohbet sizi bunun yerine ilgili arayüze yönlendirir.

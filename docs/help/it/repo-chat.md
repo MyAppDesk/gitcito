@@ -119,6 +119,8 @@ solo proporre, e ogni proposta viene verificata contro la copia di lavoro prima
 ancora che tu la veda — un'azione che nomina un file inesistente viene
 rifiutata, non mostrata.
 
+![Chat vuota con richieste di esempio](../../screenshots/repo-chat-empty.webp)
+
 ![Azioni proposte in chat](../../screenshots/repo-chat-actions.webp)
 
 L'insieme di azioni è fisso: pattern di ignore, stage, unstage, commit, stash, scarto delle

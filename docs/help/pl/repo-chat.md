@@ -117,6 +117,8 @@ karty jeszcze się nie wydarzyło; model może tylko proponować, a każda
 propozycja jest sprawdzana z katalogiem roboczym, zanim ją zobaczysz — akcja
 wskazująca nieistniejący plik zostaje odrzucona, a nie wyświetlona.
 
+![Pusta rozmowa z przykładowymi prośbami](../../screenshots/repo-chat-empty.webp)
+
 ![Proponowane akcje na czacie](../../screenshots/repo-chat-actions.webp)
 
 Zestaw akcji jest stały:

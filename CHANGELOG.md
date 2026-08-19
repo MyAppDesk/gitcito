@@ -1,5 +1,32 @@
 
 
+## [3.15.0](https://github.com/MyAppDesk/gitcito/compare/v3.14.0...v3.15.0) (2026-08-19)
+
+
+### Features
+
+* add branch folder bulk delete and persistent sidebar state ([4760e56](https://github.com/MyAppDesk/gitcito/commit/4760e5651f03582308fde23ffd4b47d6b3651a03))
+* add commit editing functionality with preview and apply ([6d682a3](https://github.com/MyAppDesk/gitcito/commit/6d682a3b6cd606459d8cb53253bb247bf224bf9a))
+* add line wrapping and sync scrolling options in ConflictResolver ([60e605a](https://github.com/MyAppDesk/gitcito/commit/60e605a011802159e022f87b5934d3d014eeb28d))
+* add opt-in local CI via act ([a28ad4b](https://github.com/MyAppDesk/gitcito/commit/a28ad4b433caa4c20029b1c9a1d49f4d0f5903d8))
+* add safe file actions to repository chat ([#10](https://github.com/MyAppDesk/gitcito/issues/10)) ([f10221d](https://github.com/MyAppDesk/gitcito/commit/f10221daf6159f04ad99d7beaa80af11b089f80a))
+* add stack PR planning and merging helpers ([009a1a9](https://github.com/MyAppDesk/gitcito/commit/009a1a9385a70a73208796453c550f89996702fd))
+* add teammate radar feature for remote awareness ([551e468](https://github.com/MyAppDesk/gitcito/commit/551e468c4d360b395f3e184b492ff63dee8192c2))
+* detect squash-merged stack bottoms via GitHub ([99c0dd9](https://github.com/MyAppDesk/gitcito/commit/99c0dd92145d44cbef15b85268fc520f7bbb5378))
+* enhance subject display with hover effects ([43c40ba](https://github.com/MyAppDesk/gitcito/commit/43c40ba5f5fa616385e43e09757fcfa2cf4f3ebb))
+* expand label on hover for graph reference badges ([35e592d](https://github.com/MyAppDesk/gitcito/commit/35e592d0391f59c6df2cf55eacf89ddd3c0b4621))
+* extend multi-select with shift and arrow keys across panels ([617ca63](https://github.com/MyAppDesk/gitcito/commit/617ca63af60869a973a4bac3a52c96750d8c7124))
+* implement snapshot management features in git service ([659bc99](https://github.com/MyAppDesk/gitcito/commit/659bc994f594b281ac0a90293b6a256f7b4d5ff6))
+* improve playground repo setup and parallel execution ([d8137e2](https://github.com/MyAppDesk/gitcito/commit/d8137e24a3d69837592c4625019d2f0506748d68))
+* pin local CI verdicts to commits on the graph ([d40375c](https://github.com/MyAppDesk/gitcito/commit/d40375cc573afe139970e32de7ac61e5776c1211))
+* prune merged stack bottoms on submit ([9cd3e08](https://github.com/MyAppDesk/gitcito/commit/9cd3e08d683ed400353e2e10d85a29feed419090))
+* restore commit files to the working tree and stash selected files ([8bef90d](https://github.com/MyAppDesk/gitcito/commit/8bef90d3f0912f4f02f2d5bb76e832de662b61a4))
+
+
+### Bug Fixes
+
+* prevent icons from shrinking in ref badge ([e6f8e84](https://github.com/MyAppDesk/gitcito/commit/e6f8e8491c0a1eb3aaec6e635f4286bb03e8f9e7))
+
 ## [3.14.0](https://github.com/MyAppDesk/gitcito/compare/v3.13.0...v3.14.0) (2026-08-18)
 
 

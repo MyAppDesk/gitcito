@@ -26,6 +26,7 @@ import type {
   GitflowKind,
   GitflowSnapshot,
   SnapshotInfo,
+  TeammateRadarResult,
   MaintenanceTask,
   MergeOptions
 } from '../../../shared/types'
@@ -95,6 +96,8 @@ export interface RepoData {
    *  (`origin/feature`). Feeds the "history was rewritten" marker and gives the
    *  range-diff the exact commit the branch used to point at. */
   forcedUpdates: Record<string, ForcedRefUpdate>
+  /** Last teammate-radar sweep (remote activity vs local dirty files). */
+  teammateRadar: TeammateRadarResult | null
 }
 
 const emptyRepo = (path: string): RepoData => ({
@@ -129,7 +132,8 @@ const emptyRepo = (path: string): RepoData => ({
   notedShas: [],
   notGit: false,
   mergeRisk: null,
-  forcedUpdates: {}
+  forcedUpdates: {},
+  teammateRadar: null
 })
 
 interface RepoStoreState {
@@ -1089,7 +1093,7 @@ export const repoActions = {
     let forced: ForcedRefUpdate[] = []
     const ok = await useRepoStore.getState().run(
       path,
-      'Fetched all remotes',
+      t('act.fetchedAll'),
       async () => {
         forced = await gitApi.fetchAll(path)
       },
@@ -1108,12 +1112,38 @@ export const repoActions = {
         toast(
           'info',
           forced.length === 1
-            ? `${forced[0].ref} was force-pushed — right-click it to see what changed`
-            : `${forced.length} branches were force-pushed — right-click one to see what changed`
+            ? interp(t('sync.forcedOne'), { ref: forced[0].ref })
+            : interp(t('sync.forcedMany'), { n: forced.length })
         )
       }
+      // Fresh remote state → sweep the teammate radar in the background.
+      void repoActions.radarSweep(path)
     }
     return ok
+  },
+
+  /** Teammate-radar sweep after a fetch. Silent unless upstream commits touch
+   *  files that are dirty locally AND the offending set actually changed —
+   *  awareness, not a notification firehose. */
+  radarSweep: async (path: string) => {
+    const st = useRepoStore.getState().repos[path]
+    const dirtyCount =
+      (st?.status?.staged.length ?? 0) + (st?.status?.unstaged.length ?? 0) + (st?.status?.conflicted.length ?? 0)
+    if (!dirtyCount) return
+    const result = await gitApi.teammateRadar(path).catch(() => null)
+    if (!result) return
+    const prev = useRepoStore.getState().repos[path]?.teammateRadar
+    useRepoStore.getState().patch(path, { teammateRadar: result })
+
+    const sig = (r: TeammateRadarResult | null | undefined): string =>
+      (r?.entries ?? [])
+        .filter((e) => e.overlap.length)
+        .map((e) => `${e.ref}@${e.sha}`)
+        .join(',')
+    const overlapping = result.entries.filter((e) => e.overlap.length)
+    if (!overlapping.length || sig(result) === sig(prev)) return
+    const files = new Set(overlapping.flatMap((e) => e.overlap))
+    toast('info', interp(t('teamRadar.overlapToast'), { files: files.size, branches: overlapping.length }))
   },
 
   // ─── Multi-repo batch (group tabs) ───

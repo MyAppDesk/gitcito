@@ -176,6 +176,40 @@ describe('WIP snapshots (snapshots playground)', () => {
   })
 })
 
+describe('teammateRadar (teammate-radar playground)', () => {
+  it('reports remote activity, overlap with dirty files and conflict risk', async () => {
+    const R = cloneFixture('teammate-radar')
+    const r = await gitService.teammateRadar(R)
+    expect(r.dirtyCount).toBeGreaterThan(0)
+
+    const api = r.entries.find((e) => e.ref === 'origin/feature/api-tokens')
+    expect(api).toBeDefined()
+    expect(api!.overlap).toContain('api.ts')
+    expect(api!.author).toBe('María García')
+    expect(api!.ahead).toBe(1)
+    expect(api!.risk).toBe('clean')
+
+    const ui = r.entries.find((e) => e.ref === 'origin/feature/ui-polish')
+    expect(ui).toBeDefined()
+    expect(ui!.risk).toBe('conflict')
+    expect(ui!.conflictFiles).toContain('ui.css')
+    expect(ui!.overlap).toEqual([])
+
+    const main = r.entries.find((e) => e.ref === 'origin/main')
+    expect(main).toBeDefined()
+    expect(main!.risk).toBe('clean')
+
+    // Collision-prone first: the branch touching a dirty file leads.
+    expect(r.entries[0].ref).toBe('origin/feature/api-tokens')
+  })
+
+  it('is quiet in a repo with no remote branches', async () => {
+    const R = cloneFixture('stash-picking')
+    const r = await gitService.teammateRadar(R)
+    expect(r.entries).toEqual([])
+  })
+})
+
 describe('rebaseOnto (drag-to-rebase)', () => {
   it('checks out the branch and rebases it onto the target', async () => {
     const R = cloneFixture('stacked-branches')

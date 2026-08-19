@@ -138,6 +138,7 @@ because git already knows the answer and no client bothers to ask it.
 | | |
 |---|---|
 | <img src="docs/screenshots/conflict-radar.webp" width="400" alt="Conflict radar" /> | 🛰️ [Conflict radar](docs/help/conflict-radar.md)<br><br>See which branches will conflict **before** merging any of them. The merges happen inside the object database — no checkout, no working-tree change, nothing to clean up. |
+| 📡 [Teammate radar](docs/help/teammate-radar.md)<br><br>Who moved what upstream — and whether it touches files you have modified right now. Computed from the last fetch; no server involved. | <img src="docs/screenshots/teammate-radar.webp" width="400" alt="Teammate radar" /> |
 | 🧠 [Semantic diff](docs/help/semantic-diff.md)<br><br>`startServer` → `bootServer`, instead of a 400-line red/green wall. Real tree-sitter parsing, not a regex. | <img src="docs/screenshots/semantic-diff.webp" width="400" alt="Semantic diff" /> |
 | <img src="docs/screenshots/time-machine.webp" width="400" alt="Time machine" /> | 🕰️ [Time machine](docs/help/time-machine.md)<br><br>Drag a slider and watch the repository change: files appear, move, come back. HEAD never moves and your uncommitted work is untouched. |
 | 🎛️ [Mission control](docs/help/mission-control.md)<br><br>Twenty repositories, one question: which one needs me? Blocked first, then to sync, then dirty, then the quiet ones. | <img src="docs/screenshots/mission-control.webp" width="400" alt="Mission control" /> |

@@ -44,14 +44,6 @@ with nothing installed. The work is a stable CLI entry point, not the parsing.
 Branch-from-issue and smart commits against Jira or Linear. Both are what teams
 actually run, and both mean another token and another API surface.
 
-### Teammate radar — remote awareness without a server
-A periodic fetch already knows everything a "who is doing what" feature needs:
-ghost overlays of remote branch tips on the graph, and a warning when an
-upstream commit touches a file that is dirty in your working tree. The conflict
-prediction engine exists (conflict radar); this points it at `origin/*` on a
-timer. Costs a fetch cadence setting and restraint — this must never become a
-notification firehose.
-
 ### Stacked-PR autopilot
 The stacks view shows a dependency chain; it does not yet **submit** one. The
 missing half is what Graphite sells: open the whole stack as chained PRs with

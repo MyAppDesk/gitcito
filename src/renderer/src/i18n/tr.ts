@@ -1742,6 +1742,25 @@ export const tr: Dict = {
   'radar.hotspots': 'Çekişmeli dosyalar',
   'radar.empty': 'Taranacak bir şey yok — başka dal yok.',
   'radar.open': 'Çakışma radarı…',
+  'teamRadar.title': 'Ekip arkadaşı radarı',
+  'teamRadar.open': 'Ekip arkadaşı radarı…',
+  'teamRadar.intro':
+    'Yukarı akışta kim neyi taşıdı — ve bunun commit’lenmemiş çalışmanızın üzerine gelip gelmeyeceği. Son getirmeden, tamamen makinenizde hesaplanır.',
+  'teamRadar.scan': 'Yeniden tara',
+  'teamRadar.fetchScan': 'Getir ve tara',
+  'teamRadar.empty': 'Hiçbir uzak dalda sizde olmayan commit yok. Ortalık sakin.',
+  'teamRadar.cleanHint':
+    'Çalışma ağacınız temiz, dolayısıyla hiçbir şey çakışamaz — liste yine de gelen çalışmayı ve birleştirme riskini gösterir.',
+  'teamRadar.ahead': 'sizde olmayan {n} commit',
+  'teamRadar.touches': '{n} dosyaya dokunuyor',
+  'teamRadar.overlap': 'dosyalarınızdan {n} tanesi',
+  'teamRadar.overlapTitle': 'Değiştirdiğiniz dosyalara dokunuyor',
+  'teamRadar.conflictTitle': 'Dalınızla şurada çakışır',
+  'teamRadar.overlapToast':
+    'Yukarı akıştaki commit’ler değiştirdiğiniz dosyalardan {files} tanesine dokunuyor ({branches} dal) — Ekip arkadaşı radarına bakın',
+  'act.fetchedAll': 'Tüm uzak depolardan getirildi',
+  'sync.forcedOne': 'Force push yapıldı: {ref} — nelerin değiştiğini görmek için sağ tıklayın',
+  'sync.forcedMany': '{n} dala force push yapıldı — nelerin değiştiğini görmek için birine sağ tıklayın',
 
   'sem.title': 'Ne değişti',
   'sem.kind.renamed': 'yeniden adlandırıldı',

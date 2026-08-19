@@ -110,6 +110,7 @@ import type {
   ChangelogResult,
   SnapshotInfo,
   SnapshotKind,
+  TeammateRadarResult,
   VaultEntry,
   VaultListResult,
   VaultExport,
@@ -518,6 +519,7 @@ export const gitApi = {
     call<BranchCompareResult>('compareBranches', path, a, b),
   mergePreview: (path: string, base: string, refs: string[]) =>
     call<MergePreviewResult>('mergePreview', path, base, refs),
+  teammateRadar: (path: string) => call<TeammateRadarResult>('teammateRadar', path),
   semanticDiff: (path: string, file: string, oldSide: BlobSpec, newSide: BlobSpec) =>
     call<SemanticDiff>('semanticDiff', path, file, oldSide, newSide),
   rangeDiff: (path: string, oldRev: string, newRev: string, base?: string) =>

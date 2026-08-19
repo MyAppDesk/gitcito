@@ -21,6 +21,7 @@ import { AIConfigWizard } from './AIConfigWizard'
 import { InteractiveRebase } from './InteractiveRebase'
 import { BranchComparison } from './BranchComparison'
 import { ConflictRadar } from './ConflictRadar'
+import { TeammateRadarModal } from './TeammateRadarModal'
 import { KeychainConsentModal } from './KeychainConsentModal'
 import { RangeDiffModal } from './RangeDiffModal'
 import { AbsorbModal } from './AbsorbModal'
@@ -1702,7 +1703,8 @@ export function ModalHost(): React.JSX.Element {
                     modal.kind === 'repo-settings' ||
                     modal.kind === 'secure-share' ||
                     modal.kind === 'secure-workspace' ||
-                    modal.kind === 'snapshots'
+                    modal.kind === 'snapshots' ||
+                    modal.kind === 'teammate-radar'
                   ? 'modal-tall'
                   : ''
             }`}
@@ -1778,6 +1780,7 @@ export function ModalHost(): React.JSX.Element {
             )}
             {modal.kind === 'changelog-gen' && <ChangelogGenModal repoPath={modal.repoPath} />}
             {modal.kind === 'snapshots' && <SnapshotsModal repoPath={modal.repoPath} />}
+            {modal.kind === 'teammate-radar' && <TeammateRadarModal repoPath={modal.repoPath} />}
             {modal.kind === 'secure-share' && (
               <SecureShareModal repoPath={modal.repoPath} initialMode={modal.initialMode} />
             )}

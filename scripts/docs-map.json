@@ -57,7 +57,8 @@
       "stash-partial": "stashes",
       "time-machine": "time-machine",
       "timelapse": "timelapse",
-      "launch-input": "launch"
+      "launch-input": "launch",
+      "teammate-radar": "teammate-radar"
     },
     "exempt": {
       "input": "Generic single-field prompt reused everywhere; not a feature.",
@@ -152,7 +153,8 @@
       "wiki": "repo-wiki",
       "ws-secure-export": "secure-share",
       "ws-secure-import": "secure-share",
-      "licenses": "licenses"
+      "licenses": "licenses",
+      "teammate-radar": "teammate-radar"
     },
     "exempt": {
       "help": "Opens this handbook."

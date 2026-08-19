@@ -1786,6 +1786,25 @@ export const ar: Dict = {
   'radar.hotspots': 'الملفات المتنازع عليها',
   'radar.empty': 'لا شيء لفحصه — لا توجد فروع أخرى.',
   'radar.open': 'رادار التعارضات…',
+  'teamRadar.title': 'رادار الزملاء',
+  'teamRadar.open': 'رادار الزملاء…',
+  'teamRadar.intro':
+    'مَن حرّك ماذا في المنبع — وما إذا كان سيقع فوق عملك غير المُلتزَم به. يُحسب من آخر جلب، على جهازك بالكامل.',
+  'teamRadar.scan': 'إعادة الفحص',
+  'teamRadar.fetchScan': 'جلب وفحص',
+  'teamRadar.empty': 'لا يوجد فرع بعيد لديه التزامات لا تملكها. كل شيء هادئ.',
+  'teamRadar.cleanHint':
+    'شجرة العمل لديك نظيفة، فلا شيء يمكن أن يتصادم — ومع ذلك تعرض القائمة العمل الوارد ومخاطر دمجه.',
+  'teamRadar.ahead': '{n} التزامًا لا تملكها',
+  'teamRadar.touches': 'يمسّ {n} ملفًا',
+  'teamRadar.overlap': '{n} من ملفاتك',
+  'teamRadar.overlapTitle': 'يمسّ ملفات قمت بتعديلها',
+  'teamRadar.conflictTitle': 'سيتعارض مع فرعك في',
+  'teamRadar.overlapToast':
+    'التزامات المنبع تمسّ {files} من ملفاتك المعدّلة ({branches} فروع) — انظر رادار الزملاء',
+  'act.fetchedAll': 'جُلب من جميع المستودعات البعيدة',
+  'sync.forcedOne': 'أُرسل {ref} قسريًا — انقر عليه بزر الفأرة الأيمن لرؤية ما تغيّر',
+  'sync.forcedMany': 'أُرسلت {n} فروع قسريًا — انقر على أحدها بزر الفأرة الأيمن لرؤية ما تغيّر',
 
   // Semantic diff
   'sem.title': 'ما الذي تغيّر',

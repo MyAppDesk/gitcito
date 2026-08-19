@@ -62,6 +62,8 @@ import type {
   ChangelogResult,
   SnapshotInfo,
   SnapshotKind,
+  TeammateRadarEntry,
+  TeammateRadarResult,
   CloneProgress,
   CloneOptions,
   GitflowConfig,
@@ -1318,6 +1320,94 @@ export const gitService = {
     }
 
     return { base, baseSha, entries, scannedAt: Date.now() }
+  },
+
+  /**
+   * Teammate radar: remote awareness computed entirely from the last fetch.
+   * For every recently-moved remote branch with commits HEAD does not have,
+   * report who moved it, which files those commits touch, which of them are
+   * dirty in the local working tree right now, and whether merging the branch
+   * into HEAD would conflict (batched in-memory merge-tree). No network.
+   */
+  async teammateRadar(
+    repoPath: string,
+    opts?: { maxBranches?: number; maxDays?: number }
+  ): Promise<TeammateRadarResult> {
+    const maxBranches = opts?.maxBranches ?? 30
+    const maxAgeSec = (opts?.maxDays ?? 45) * 86_400
+    const empty: TeammateRadarResult = { entries: [], dirtyCount: 0, scannedAt: Date.now() }
+
+    // Unborn HEAD → nothing to compare against.
+    const head = (await runGit(repoPath, ['rev-parse', '--verify', 'HEAD']).catch(() => '')).trim()
+    if (!head) return empty
+
+    // One call: every remote tip with its last committer and date, newest first.
+    const raw = await runGit(repoPath, [
+      'for-each-ref',
+      '--sort=-committerdate',
+      '--format=%(refname:short)|%(objectname:short)|%(committerdate:unix)|%(committername)',
+      'refs/remotes'
+    ]).catch(() => '')
+    const now = Math.floor(Date.now() / 1000)
+    const tips: { ref: string; sha: string; time: number; author: string }[] = []
+    for (const line of raw.split('\n')) {
+      if (!line.trim()) continue
+      // committername may itself contain '|' in pathological configs — keep it last and rejoin.
+      const [ref, sha, time, ...rest] = line.split('|')
+      // Symbolic origin/HEAD shortens to just "origin" — a real remote branch
+      // short name always carries a slash.
+      if (ref.endsWith('/HEAD') || !ref.includes('/')) continue
+      if (now - Number(time) > maxAgeSec) continue
+      tips.push({ ref, sha, time: Number(time), author: rest.join('|') })
+      if (tips.length >= maxBranches) break
+    }
+    if (!tips.length) return empty
+
+    const status = await gitFor(repoPath).status().catch(() => null)
+    const dirty = new Set((status?.files ?? []).map((f) => f.path))
+
+    const entries: TeammateRadarEntry[] = []
+    for (const t of tips) {
+      const ahead = Number(
+        (await runGit(repoPath, ['rev-list', '--count', `${head}..${t.ref}`]).catch(() => '0')).trim()
+      )
+      if (!ahead) continue
+      // Three-dot diff = what the branch would bring in, measured from the merge base.
+      const files = (await runGit(repoPath, ['diff', '--name-only', `${head}...${t.ref}`]).catch(() => ''))
+        .split('\n')
+        .filter(Boolean)
+      entries.push({
+        ref: t.ref,
+        sha: t.sha,
+        author: t.author,
+        time: t.time,
+        ahead,
+        filesTouched: files.length,
+        overlap: files.filter((f) => dirty.has(f)),
+        risk: 'clean',
+        conflictFiles: []
+      })
+    }
+
+    // One batched merge-tree for the conflict forecast.
+    if (entries.length) {
+      const preview = await gitService.mergePreview(repoPath, 'HEAD', entries.map((e) => e.ref)).catch(() => null)
+      for (const p of preview?.entries ?? []) {
+        const e = entries.find((x) => x.ref === p.ref)
+        if (!e) continue
+        e.risk = p.status
+        e.conflictFiles = p.status === 'conflict' ? p.files : []
+      }
+    }
+
+    // Most collision-prone first: overlap, then predicted conflicts, then recency.
+    entries.sort(
+      (a, b) =>
+        b.overlap.length - a.overlap.length ||
+        Number(b.risk === 'conflict') - Number(a.risk === 'conflict') ||
+        b.time - a.time
+    )
+    return { entries, dirtyCount: dirty.size, scannedAt: Date.now() }
   },
 
   /**
@@ -6048,6 +6138,7 @@ const READ_METHODS = new Set<string>([
   'interactiveRebaseSteps',
   'compareBranches',
   'mergePreview',
+  'teammateRadar',
   'semanticDiff',
   'rangeDiff',
   'refTips',

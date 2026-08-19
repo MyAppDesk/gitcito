@@ -198,6 +198,29 @@ export interface MergePreviewResult {
   scannedAt: number
 }
 
+/** One remote branch's activity as seen by the teammate radar. */
+export interface TeammateRadarEntry {
+  ref: string // short remote ref, e.g. origin/feature-x
+  sha: string
+  author: string // last committer on the branch
+  time: number // unix seconds of that commit
+  ahead: number // commits this branch has that HEAD does not
+  filesTouched: number // files those commits change
+  /** Of those files, the ones currently dirty in the local working tree. */
+  overlap: string[]
+  /** Predicted result of merging this branch into HEAD (merge-tree, in-memory). */
+  risk: MergeRiskKind
+  conflictFiles: string[]
+}
+
+/** Remote awareness computed from the last fetch — no server, no network. */
+export interface TeammateRadarResult {
+  entries: TeammateRadarEntry[]
+  /** How many files were dirty locally when the scan ran. */
+  dirtyCount: number
+  scannedAt: number // unix ms
+}
+
 /** How one commit fared between two versions of a branch (`git range-diff`). */
 export type RangeDiffKind = 'unchanged' | 'modified' | 'removed' | 'added'
 

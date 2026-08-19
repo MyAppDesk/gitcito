@@ -231,6 +231,12 @@ const FEATURES = [
     body: 'Your whole working tree — untracked files included — snapshotted on a timer and <strong>right before every destructive action</strong>. A discard you regret is a restore away.'
   },
   {
+    icon: '📡',
+    title: 'Teammate radar',
+    id: 'teammate-radar',
+    body: 'Who moved what upstream — and whether it lands on <strong>files you have modified right now</strong>. Computed from the last fetch. No server, no agents, no telemetry.'
+  },
+  {
     icon: '🧠',
     title: 'Semantic diff',
     id: 'semantic-diff',

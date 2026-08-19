@@ -1786,6 +1786,25 @@ export const he: Dict = {
   'radar.hotspots': 'קבצים שנויים במחלוקת',
   'radar.empty': 'אין מה לסרוק — אין ענפים אחרים.',
   'radar.open': 'מכ״ם התנגשויות…',
+  'teamRadar.title': 'מכ״ם עמיתים',
+  'teamRadar.open': 'מכ״ם עמיתים…',
+  'teamRadar.intro':
+    'מי הזיז מה במעלה הזרם — והאם זה נוחת מעל העבודה שלך שטרם בוצע לה קומיט. מחושב מההבאה האחרונה, כולו על המחשב שלך.',
+  'teamRadar.scan': 'סריקה מחדש',
+  'teamRadar.fetchScan': 'הבאה וסריקה',
+  'teamRadar.empty': 'לאף ענף מרוחק אין קומיטים שאין לך. הכול שקט.',
+  'teamRadar.cleanHint':
+    'עץ העבודה שלך נקי, אז שום דבר לא יכול להתנגש — הרשימה עדיין מציגה את העבודה הנכנסת ואת סיכון המיזוג שלה.',
+  'teamRadar.ahead': '{n} קומיטים שאין לך',
+  'teamRadar.touches': 'נוגע ב-{n} קבצים',
+  'teamRadar.overlap': '{n} מהקבצים שלך',
+  'teamRadar.overlapTitle': 'נוגע בקבצים ששינית',
+  'teamRadar.conflictTitle': 'יתנגש עם הענף שלך ב',
+  'teamRadar.overlapToast':
+    'קומיטים במעלה הזרם נוגעים ב-{files} מהקבצים ששינית ({branches} ענפים) — ראו מכ״ם עמיתים',
+  'act.fetchedAll': 'הובא מכל המאגרים המרוחקים',
+  'sync.forcedOne': '{ref} נדחף בכוח — לחיצה ימנית עליו תציג מה השתנה',
+  'sync.forcedMany': '{n} ענפים נדחפו בכוח — לחיצה ימנית על אחד מהם תציג מה השתנה',
 
   // Semantic diff
   'sem.title': 'מה השתנה',

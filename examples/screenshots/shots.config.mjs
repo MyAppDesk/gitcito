@@ -708,6 +708,20 @@ export const shots = [
     }
   },
   {
+    // Teammate radar — remote activity crossed with local dirty files.
+    // Expand the overlapping row so the shot shows the file-level detail.
+    out: 'teammate-radar',
+    repos: ['teammate-radar'],
+    themes: ['light'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['teammate-radar']
+      await page.evaluate((p) => window.__shot.ui.getState().openModal({ kind: 'teammate-radar', repoPath: p }), repo)
+      await page.waitForTimeout(1400)
+      await page.locator('.radar-row').first().click()
+      await page.waitForTimeout(500)
+    }
+  },
+  {
     // Conventional-commit changelog generator.
     out: 'changelog-gen',
     repos: ['changelog'],

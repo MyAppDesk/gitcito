@@ -2097,6 +2097,8 @@ export const ru: Dict = {
   'sidebar.deleteBranchesMsg': 'Удалить {n} локальных веток? Это необратимо.',
   'sidebar.deleteBranchesConfirm': 'Удалить',
   'sidebar.deleteNRemoteBranches': 'Удалить {n} удалённых веток',
+  'sidebar.deleteFolderBranches': 'Удалить все ветки в {folder} ({n} веток)',
+  'sidebar.deleteFolderRemoteBranches': 'Удалить все удалённые ветки в {folder} ({n} веток)',
   'sidebar.deleteRemoteBranchesTitle': 'Удалить удалённые ветки',
   'sidebar.deleteRemoteBranchesMsg': 'Удалить {n} веток с их серверов?',
   'sidebar.deleteRemoteBranchesConfirm': 'Удалить',

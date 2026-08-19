@@ -2097,6 +2097,8 @@ export const ptBR: Dict = {
   'sidebar.deleteBranchesMsg': 'Excluir {n} branches locais? Isso não pode ser desfeito.',
   'sidebar.deleteBranchesConfirm': 'Excluir',
   'sidebar.deleteNRemoteBranches': 'Excluir {n} branches remotas',
+  'sidebar.deleteFolderBranches': 'Excluir todas as branches em {folder} ({n} branches)',
+  'sidebar.deleteFolderRemoteBranches': 'Excluir todas as branches remotas em {folder} ({n} branches)',
   'sidebar.deleteRemoteBranchesTitle': 'Excluir branches remotas',
   'sidebar.deleteRemoteBranchesMsg': 'Excluir {n} branches dos remotos delas?',
   'sidebar.deleteRemoteBranchesConfirm': 'Excluir',

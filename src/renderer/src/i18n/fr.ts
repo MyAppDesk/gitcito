@@ -2037,6 +2037,8 @@ export const fr: Dict = {
   'sidebar.deleteBranchesMsg': 'Supprimer {n} branches locales ? C’est irréversible.',
   'sidebar.deleteBranchesConfirm': 'Supprimer',
   'sidebar.deleteNRemoteBranches': 'Supprimer {n} branches distantes',
+  'sidebar.deleteFolderBranches': 'Supprimer toutes les branches sous {folder} ({n} branches)',
+  'sidebar.deleteFolderRemoteBranches': 'Supprimer toutes les branches distantes sous {folder} ({n} branches)',
   'sidebar.deleteRemoteBranchesTitle': 'Supprimer des branches distantes',
   'sidebar.deleteRemoteBranchesMsg': 'Supprimer {n} branches de leurs distants ?',
   'sidebar.deleteRemoteBranchesConfirm': 'Supprimer',

@@ -2037,6 +2037,8 @@ export const ja: Dict = {
   'sidebar.deleteBranchesMsg': 'ローカルブランチを {n} 件削除しますか？ 取り消せません。',
   'sidebar.deleteBranchesConfirm': '削除',
   'sidebar.deleteNRemoteBranches': '{n} 件のリモートブランチを削除',
+  'sidebar.deleteFolderBranches': '{folder} 配下のブランチをすべて削除（{n} 件）',
+  'sidebar.deleteFolderRemoteBranches': '{folder} 配下のリモートブランチをすべて削除（{n} 件）',
   'sidebar.deleteRemoteBranchesTitle': 'リモートブランチを削除',
   'sidebar.deleteRemoteBranchesMsg': '{n} 件のブランチを、それぞれのリモートから削除しますか？',
   'sidebar.deleteRemoteBranchesConfirm': '削除',

@@ -2097,6 +2097,8 @@ export const de: Dict = {
   'sidebar.deleteBranchesMsg': '{n} lokale Branches löschen? Das lässt sich nicht rückgängig machen.',
   'sidebar.deleteBranchesConfirm': 'Löschen',
   'sidebar.deleteNRemoteBranches': '{n} Remote-Branches löschen',
+  'sidebar.deleteFolderBranches': 'Alle Branches unter {folder} löschen ({n} Branches)',
+  'sidebar.deleteFolderRemoteBranches': 'Alle Remote-Branches unter {folder} löschen ({n} Branches)',
   'sidebar.deleteRemoteBranchesTitle': 'Remote-Branches löschen',
   'sidebar.deleteRemoteBranchesMsg': '{n} Branches auf ihren Remotes löschen?',
   'sidebar.deleteRemoteBranchesConfirm': 'Löschen',

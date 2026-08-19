@@ -10,7 +10,9 @@ keywords: branch branches create checkout rename delete remote pinned sidebar pr
 
 One reorderable, searchable sidebar holds **branches, remotes, tags, stashes,
 worktrees and submodules**. Every section can be hidden or reordered
-(Settings → Layout), and the filter box applies to all of them.
+(Settings → Layout), and the filter box applies to all of them. Which sections
+and folders you keep expanded or collapsed is remembered per repository, across
+restarts.
 
 ![The sidebar, with pinned branches held at the top](../screenshots/pinned-branches.webp)
 
@@ -24,6 +26,16 @@ Create, check out, rename and delete — local and remote. Branch rows show:
 - a **⟳ marker** when the remote [rewrote history](range-diff.md).
 
 Branches with `/` in their names fold into collapsible folders automatically.
+Right-click a folder header to act on the whole group: *Delete all branches
+under `feature` (4 branches)* removes everything inside after one confirmation
+that lists exactly which branches go — the branch you are on is excluded. The
+same menu exists on remote branch folders, deleting from the remote instead.
+
+Rows multi-select like files: <kbd>⌘/Ctrl</kbd>-click toggles a row,
+<kbd>Shift</kbd>-click selects a range, and <kbd>Shift</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd>
+grows the selection from the last row you clicked. Right-click the selection
+for the bulk menu — *Delete 4 branches* — which confirms with the full list.
+The same gestures work on remote branches, tags and stashes.
 
 ![Slash-separated branch names folded into a tree](../screenshots/branch-grouping.webp)
 

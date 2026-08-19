@@ -2097,6 +2097,8 @@ export const ar: Dict = {
   'sidebar.deleteBranchesMsg': 'أتحذف {n} فرعًا محليًا؟ لا يمكن التراجع عن هذا.',
   'sidebar.deleteBranchesConfirm': 'حذف',
   'sidebar.deleteNRemoteBranches': 'حذف {n} فرعًا بعيدًا',
+  'sidebar.deleteFolderBranches': 'حذف كل الفروع ضمن {folder} ({n} فرعًا)',
+  'sidebar.deleteFolderRemoteBranches': 'حذف كل الفروع البعيدة ضمن {folder} ({n} فرعًا)',
   'sidebar.deleteRemoteBranchesTitle': 'حذف الفروع البعيدة',
   'sidebar.deleteRemoteBranchesMsg': 'أتحذف {n} فرعًا من مستودعاتها البعيدة؟',
   'sidebar.deleteRemoteBranchesConfirm': 'حذف',

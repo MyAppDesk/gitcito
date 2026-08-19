@@ -2037,6 +2037,8 @@ export const it: Dict = {
   'sidebar.deleteBranchesMsg': 'Eliminare {n} branch locali? Non si può annullare.',
   'sidebar.deleteBranchesConfirm': 'Elimina',
   'sidebar.deleteNRemoteBranches': 'Elimina {n} branch remoti',
+  'sidebar.deleteFolderBranches': 'Elimina tutti i branch sotto {folder} ({n} branch)',
+  'sidebar.deleteFolderRemoteBranches': 'Elimina tutti i branch remoti sotto {folder} ({n} branch)',
   'sidebar.deleteRemoteBranchesTitle': 'Elimina i branch remoti',
   'sidebar.deleteRemoteBranchesMsg': 'Eliminare {n} branch dai loro remoti?',
   'sidebar.deleteRemoteBranchesConfirm': 'Elimina',

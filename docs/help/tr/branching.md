@@ -12,6 +12,8 @@ Yeniden sıralanabilir, aranabilir tek bir kenar çubuğu **dalları, uzak
 depoları, etiketleri, stash'leri, çalışma ağaçlarını ve alt modülleri** barındırır.
 Her bölüm gizlenebilir ya da yeniden sıralanabilir (Ayarlar → Düzen) ve filtre
 kutusu hepsine birden uygulanır.
+Hangi bölümleri ve klasörleri açık ya da kapalı bıraktığınız depo başına
+hatırlanır; yeniden başlatınca da korunur.
 
 ![Sabitlenmiş dalların en üstte tutulduğu kenar çubuğu](../../screenshots/pinned-branches.webp)
 
@@ -26,6 +28,18 @@ Dal satırları şunları gösterir:
 - uzak depo [geçmişi yeniden yazdığında](range-diff.md) bir **⟳ işareti**.
 
 Adında `/` bulunan dallar otomatik olarak katlanabilir klasörlere toplanır.
+Bir klasör başlığına sağ tıklamak tüm grup üzerinde çalışır: *`feature`
+altındaki tüm dalları sil (4 dal)*, tam olarak hangi dalların gideceğini
+listeleyen tek bir onaydan sonra içindeki her şeyi kaldırır — üzerinde
+olduğunuz dal hariç tutulur. Aynı menü uzak dal klasörlerinde de vardır; orada
+silme uzak depodan yapılır.
+
+Satırlar dosyalar gibi çoklu seçilir: <kbd>⌘/Ctrl</kbd> ile tıklamak bir satırı
+açıp kapatır, <kbd>Shift</kbd> ile tıklamak bir aralık seçer,
+<kbd>Shift</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> ise seçimi en son tıkladığınız
+satırdan genişletir. Toplu menü için seçime sağ tıklayın — *4 dalı sil* — tam
+listeyle onay ister. Aynı hareketler uzak dallarda, etiketlerde ve stash'lerde
+de çalışır.
 
 ![Eğik çizgiyle ayrılmış dal adlarının ağaca katlanmış hâli](../../screenshots/branch-grouping.webp)
 

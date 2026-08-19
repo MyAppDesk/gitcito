@@ -2097,6 +2097,8 @@ export const nl: Dict = {
   'sidebar.deleteBranchesMsg': '{n} lokale branches verwijderen? Dit kan niet ongedaan gemaakt worden.',
   'sidebar.deleteBranchesConfirm': 'Verwijderen',
   'sidebar.deleteNRemoteBranches': '{n} remote branches verwijderen',
+  'sidebar.deleteFolderBranches': 'Alle branches onder {folder} verwijderen ({n} branches)',
+  'sidebar.deleteFolderRemoteBranches': 'Alle remote branches onder {folder} verwijderen ({n} branches)',
   'sidebar.deleteRemoteBranchesTitle': 'Remote branches verwijderen',
   'sidebar.deleteRemoteBranchesMsg': '{n} branches van hun remotes verwijderen?',
   'sidebar.deleteRemoteBranchesConfirm': 'Verwijderen',

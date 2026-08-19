@@ -12,6 +12,8 @@ Eine einzige umsortierbare, durchsuchbare Seitenleiste beherbergt **Branches,
 Remotes, Tags, Stashes, Worktrees und Submodule**. Jeder Abschnitt lässt sich
 ausblenden oder umsortieren (Einstellungen → Layout), und das Filterfeld gilt
 für alle.
+Welche Abschnitte und Ordner auf- oder zugeklappt sind, merkt sich die
+Seitenleiste pro Repository — auch über Neustarts hinweg.
 
 ![Die Seitenleiste, mit angehefteten Branches ganz oben](../../screenshots/pinned-branches.webp)
 
@@ -27,6 +29,18 @@ zeigen:
   [die Historie umgeschrieben hat](range-diff.md).
 
 Branches mit `/` im Namen werden automatisch in aufklappbare Ordner gefaltet.
+Ein Rechtsklick auf einen Ordnerkopf wirkt auf die ganze Gruppe: *Alle Branches
+unter `feature` löschen (4 Branches)* entfernt alles darin nach einer einzigen
+Bestätigung, die genau auflistet, welche Branches gehen — der Branch, auf dem
+du stehst, bleibt außen vor. Dasselbe Menü gibt es auf Remote-Branch-Ordnern;
+dort wird vom Remote gelöscht.
+
+Zeilen lassen sich wie Dateien mehrfach auswählen: <kbd>⌘/Strg</kbd>-Klick
+schaltet eine Zeile um, <kbd>Umschalt</kbd>-Klick wählt einen Bereich, und
+<kbd>Umschalt</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> erweitert die Auswahl von der
+zuletzt geklickten Zeile aus. Ein Rechtsklick auf die Auswahl öffnet das
+Sammelmenü — *4 Branches löschen* — das mit der vollständigen Liste bestätigt.
+Dieselben Gesten funktionieren auf Remote-Branches, Tags und Stashes.
 
 ![Branch-Namen mit Schrägstrich, zu einem Baum gefaltet](../../screenshots/branch-grouping.webp)
 

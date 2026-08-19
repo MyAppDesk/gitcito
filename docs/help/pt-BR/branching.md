@@ -11,6 +11,8 @@ keywords: branch branches criar create checkout renomear rename apagar delete re
 Uma única barra lateral, reordenável e pesquisável, guarda **branches, remotes,
 tags, stashes, worktrees e submódulos**. Toda seção pode ser escondida ou
 reordenada (Configurações → Layout), e a caixa de filtro vale para todas elas.
+Quais seções e pastas você deixa abertas ou fechadas fica lembrado por
+repositório, mesmo depois de reiniciar.
 
 ![A barra lateral, com as branches fixadas seguras no topo](../../screenshots/pinned-branches.webp)
 
@@ -25,6 +27,18 @@ mostram:
 - um **marcador ⟳** quando o remote [reescreveu o histórico](range-diff.md).
 
 Branches com `/` no nome se dobram automaticamente em pastas colapsáveis.
+Clique com o botão direito no cabeçalho de uma pasta para agir sobre o grupo
+inteiro: *Excluir todas as branches em `feature` (4 branches)* remove tudo o
+que há dentro após uma única confirmação que lista exatamente quais branches se
+vão — a branch em que você está fica de fora. O mesmo menu existe nas pastas de
+branches remotas, excluindo do remote.
+
+As linhas se selecionam em grupo como arquivos: clique com <kbd>⌘/Ctrl</kbd>
+alterna uma linha, clique com <kbd>Shift</kbd> seleciona um intervalo, e
+<kbd>Shift</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> amplia a seleção a partir da última
+linha clicada. Clique com o botão direito na seleção para o menu em lote —
+*Excluir 4 branches* — que confirma com a lista completa. Os mesmos gestos
+funcionam em branches remotas, tags e stashes.
 
 ![Nomes de branch separados por barra dobrados numa árvore](../../screenshots/branch-grouping.webp)
 

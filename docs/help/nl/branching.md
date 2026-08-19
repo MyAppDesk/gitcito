@@ -11,6 +11,8 @@ keywords: branch branches aanmaken checkout hernoemen verwijderen remote pinned 
 Eén herschikbare, doorzoekbare zijbalk bevat **branches, remotes, tags, stashes,
 worktrees en submodules**. Elke sectie kan verborgen of verplaatst worden
 (Instellingen → Indeling), en het filterveld werkt op alle secties tegelijk.
+Welke secties en mappen je open of dicht laat staan wordt per repository
+onthouden, ook na een herstart.
 
 ![De zijbalk, met vastgezette branches bovenaan](../../screenshots/pinned-branches.webp)
 
@@ -25,6 +27,18 @@ tonen:
 - een **⟳-markering** wanneer de remote [de geschiedenis herschreef](range-diff.md).
 
 Branches met een `/` in hun naam vouwen zich automatisch in inklapbare mappen.
+Rechtsklik op een mapkop om op de hele groep te werken: *Alle branches onder
+`feature` verwijderen (4 branches)* verwijdert alles erin na één bevestiging
+die precies opsomt welke branches verdwijnen — de branch waarop je staat blijft
+buiten schot. Hetzelfde menu bestaat op mappen met remote branches; daar wordt
+van de remote verwijderd.
+
+Rijen zijn meervoudig te selecteren zoals bestanden: <kbd>⌘/Ctrl</kbd>-klik
+schakelt een rij om, <kbd>Shift</kbd>-klik selecteert een bereik, en
+<kbd>Shift</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> breidt de selectie uit vanaf de
+laatst aangeklikte rij. Rechtsklik op de selectie voor het bulkmenu — *4
+branches verwijderen* — dat bevestigt met de volledige lijst. Dezelfde gebaren
+werken op remote branches, tags en stashes.
 
 ![Branchnamen met schuine strepen, opgevouwen tot een boom](../../screenshots/branch-grouping.webp)
 

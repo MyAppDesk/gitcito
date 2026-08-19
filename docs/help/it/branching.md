@@ -11,6 +11,8 @@ keywords: branch ramo crea checkout rinomina elimina remote pinned appuntati sid
 Un'unica barra laterale, riordinabile e ricercabile, contiene **branch, remote,
 tag, stash, worktree e sottomoduli**. Ogni sezione può essere nascosta o
 riordinata (Impostazioni → Layout), e il filtro di ricerca vale per tutte.
+Quali sezioni e cartelle restano aperte o chiuse viene ricordato per
+repository, anche dopo un riavvio.
 
 ![La barra laterale, con i branch appuntati tenuti in cima](../../screenshots/pinned-branches.webp)
 
@@ -26,6 +28,18 @@ mostrano:
 
 I branch con `/` nel nome si raggruppano automaticamente in cartelle
 richiudibili.
+Un clic destro sull'intestazione di una cartella agisce sull'intero gruppo:
+*Elimina tutti i branch sotto `feature` (4 branch)* rimuove tutto il contenuto
+dopo un'unica conferma che elenca esattamente quali branch se ne vanno — il
+branch su cui ti trovi è escluso. Lo stesso menu esiste sulle cartelle dei
+branch remoti, eliminando dal remote.
+
+Le righe si selezionano in gruppo come i file: un clic con <kbd>⌘/Ctrl</kbd>
+commuta una riga, un clic con <kbd>Maiusc</kbd> seleziona un intervallo, e
+<kbd>Maiusc</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> estende la selezione dall'ultima
+riga cliccata. Un clic destro sulla selezione apre il menu di gruppo — *Elimina
+4 branch* — che conferma con l'elenco completo. Gli stessi gesti funzionano su
+branch remoti, tag e stash.
 
 ![Nomi di branch separati da slash raccolti in un albero](../../screenshots/branch-grouping.webp)
 

@@ -11,6 +11,8 @@ keywords: gałąź gałęzie utwórz przełącz zmień nazwę usuń zdalne przyp
 Jeden panel boczny — przestawialny i przeszukiwalny — mieści **gałęzie, zdalne
 repozytoria, tagi, stashe, worktree i podmoduły**. Każdą sekcję da się ukryć
 albo przestawić (Ustawienia → Układ), a pole filtra działa na wszystkie naraz.
+To, które sekcje i katalogi zostawiasz rozwinięte albo zwinięte, jest
+zapamiętywane per repozytorium — także po restarcie.
 
 ![Panel boczny z przypiętymi gałęziami trzymanymi na górze](../../screenshots/pinned-branches.webp)
 
@@ -27,6 +29,18 @@ pokazują:
   [przepisało historię](range-diff.md).
 
 Gałęzie z `/` w nazwie same zwijają się w składane katalogi.
+Kliknij prawym przyciskiem nagłówek katalogu, by zadziałać na całą grupę: *Usuń
+wszystkie branche pod `feature` (4 branchy)* usuwa wszystko w środku po jednym
+potwierdzeniu, które wypisuje dokładnie, które gałęzie znikną — gałąź, na
+której jesteś, jest wykluczona. To samo menu istnieje na katalogach zdalnych
+gałęzi, usuwając wtedy ze zdalnego repozytorium.
+
+Wiersze zaznacza się grupowo jak pliki: klik z <kbd>⌘/Ctrl</kbd> przełącza
+wiersz, klik z <kbd>Shift</kbd> zaznacza zakres, a
+<kbd>Shift</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> rozszerza zaznaczenie od ostatnio
+klikniętego wiersza. Kliknij zaznaczenie prawym przyciskiem, by otworzyć menu
+zbiorcze — *Usuń 4 branchy* — które potwierdza pełną listą. Te same gesty
+działają na zdalnych gałęziach, tagach i stashach.
 
 ![Nazwy gałęzi rozdzielone ukośnikiem zwinięte w drzewo](../../screenshots/branch-grouping.webp)
 

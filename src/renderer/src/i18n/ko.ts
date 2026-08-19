@@ -2097,6 +2097,8 @@ export const ko: Dict = {
   'sidebar.deleteBranchesMsg': '로컬 브랜치 {n}개를 삭제할까요? 되돌릴 수 없습니다.',
   'sidebar.deleteBranchesConfirm': '삭제',
   'sidebar.deleteNRemoteBranches': '원격 브랜치 {n}개 삭제',
+  'sidebar.deleteFolderBranches': '{folder} 아래 모든 브랜치 삭제 ({n}개)',
+  'sidebar.deleteFolderRemoteBranches': '{folder} 아래 모든 원격 브랜치 삭제 ({n}개)',
   'sidebar.deleteRemoteBranchesTitle': '원격 브랜치 삭제',
   'sidebar.deleteRemoteBranchesMsg': '브랜치 {n}개를 각자의 원격에서 삭제할까요?',
   'sidebar.deleteRemoteBranchesConfirm': '삭제',

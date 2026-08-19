@@ -2092,6 +2092,8 @@ export const es: Dict = {
   'sidebar.deleteBranchesMsg': '¿Eliminar {n} ramas locales? Esta acción no se puede deshacer.',
   'sidebar.deleteBranchesConfirm': 'Eliminar',
   'sidebar.deleteNRemoteBranches': 'Eliminar {n} ramas remotas',
+  'sidebar.deleteFolderBranches': 'Eliminar todas las ramas bajo {folder} ({n} ramas)',
+  'sidebar.deleteFolderRemoteBranches': 'Eliminar todas las ramas remotas bajo {folder} ({n} ramas)',
   'sidebar.deleteRemoteBranchesTitle': 'Eliminar ramas remotas',
   'sidebar.deleteRemoteBranchesMsg': '¿Eliminar {n} ramas de sus remotos?',
   'sidebar.deleteRemoteBranchesConfirm': 'Eliminar',

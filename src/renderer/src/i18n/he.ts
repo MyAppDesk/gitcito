@@ -2097,6 +2097,8 @@ export const he: Dict = {
   'sidebar.deleteBranchesMsg': 'למחוק {n} ענפים מקומיים? לא ניתן לבטל את הפעולה.',
   'sidebar.deleteBranchesConfirm': 'מחיקה',
   'sidebar.deleteNRemoteBranches': 'מחיקת {n} ענפים מרוחקים',
+  'sidebar.deleteFolderBranches': 'מחיקת כל הענפים תחת {folder} ({n} ענפים)',
+  'sidebar.deleteFolderRemoteBranches': 'מחיקת כל הענפים המרוחקים תחת {folder} ({n} ענפים)',
   'sidebar.deleteRemoteBranchesTitle': 'מחיקת ענפים מרוחקים',
   'sidebar.deleteRemoteBranchesMsg': 'למחוק {n} ענפים מהרימוטים שלהם?',
   'sidebar.deleteRemoteBranchesConfirm': 'מחיקה',

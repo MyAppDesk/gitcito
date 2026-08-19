@@ -2097,6 +2097,8 @@ export const zhCN: Dict = {
   'sidebar.deleteBranchesMsg': '删除 {n} 个本地分支？此操作无法撤销。',
   'sidebar.deleteBranchesConfirm': '删除',
   'sidebar.deleteNRemoteBranches': '删除 {n} 个远程分支',
+  'sidebar.deleteFolderBranches': '删除 {folder} 下的所有分支（{n} 个分支）',
+  'sidebar.deleteFolderRemoteBranches': '删除 {folder} 下的所有远程分支（{n} 个分支）',
   'sidebar.deleteRemoteBranchesTitle': '删除远程分支',
   'sidebar.deleteRemoteBranchesMsg': '从各自的远程删除 {n} 个分支？',
   'sidebar.deleteRemoteBranchesConfirm': '删除',

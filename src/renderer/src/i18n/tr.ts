@@ -2037,6 +2037,8 @@ export const tr: Dict = {
   'sidebar.deleteBranchesMsg': '{n} yerel dal silinsin mi? Bu geri alınamaz.',
   'sidebar.deleteBranchesConfirm': 'Sil',
   'sidebar.deleteNRemoteBranches': '{n} uzak dalı sil',
+  'sidebar.deleteFolderBranches': '{folder} altındaki tüm dalları sil ({n} dal)',
+  'sidebar.deleteFolderRemoteBranches': '{folder} altındaki tüm uzak dalları sil ({n} dal)',
   'sidebar.deleteRemoteBranchesTitle': 'Uzak dalları sil',
   'sidebar.deleteRemoteBranchesMsg': '{n} dal kendi uzak sunucularından silinsin mi?',
   'sidebar.deleteRemoteBranchesConfirm': 'Sil',

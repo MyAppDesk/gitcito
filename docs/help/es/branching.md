@@ -11,6 +11,8 @@ keywords: rama ramas branch branches crear checkout renombrar borrar remoto fija
 Una única barra lateral, reordenable y con búsqueda, contiene **ramas, remotos,
 etiquetas, stashes, worktrees y submódulos**. Cada sección se puede esconder o
 reordenar (Ajustes → Disposición), y la caja de filtro se aplica a todas.
+Qué secciones y carpetas dejas abiertas o cerradas se recuerda por repositorio,
+incluso tras reiniciar.
 
 ![La barra lateral, con las ramas fijadas arriba del todo](../../screenshots/pinned-branches.webp)
 
@@ -25,6 +27,18 @@ rama muestran:
 - un **marcador ⟳** cuando el remoto [reescribió el historial](range-diff.md).
 
 Las ramas con `/` en el nombre se pliegan en carpetas plegables automáticamente.
+Haz clic derecho en la cabecera de una carpeta para actuar sobre el grupo
+entero: *Eliminar todas las ramas bajo `feature` (4 ramas)* borra todo lo que
+contiene tras una única confirmación que lista exactamente qué ramas se van —
+la rama en la que estás queda excluida. El mismo menú existe en las carpetas de
+ramas remotas, borrando del remoto en su lugar.
+
+Las filas se seleccionan en grupo como los archivos: clic con <kbd>⌘/Ctrl</kbd>
+alterna una fila, clic con <kbd>Mayús</kbd> selecciona un rango, y
+<kbd>Mayús</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> amplía la selección desde la última
+fila en la que hiciste clic. Haz clic derecho sobre la selección para el menú
+en bloque — *Eliminar 4 ramas* — que confirma con la lista completa. Los mismos
+gestos funcionan en ramas remotas, etiquetas y stashes.
 
 ![Nombres de rama separados por barras plegados en un árbol](../../screenshots/branch-grouping.webp)
 

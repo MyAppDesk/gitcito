@@ -2101,6 +2101,8 @@ export const en = {
   'sidebar.deleteBranchesMsg': 'Delete {n} local branches? This cannot be undone.',
   'sidebar.deleteBranchesConfirm': 'Delete',
   'sidebar.deleteNRemoteBranches': 'Delete {n} remote branches',
+  'sidebar.deleteFolderBranches': 'Delete all branches under {folder} ({n} branches)',
+  'sidebar.deleteFolderRemoteBranches': 'Delete all remote branches under {folder} ({n} branches)',
   'sidebar.deleteRemoteBranchesTitle': 'Delete remote branches',
   'sidebar.deleteRemoteBranchesMsg': 'Delete {n} branches from their remotes?',
   'sidebar.deleteRemoteBranchesConfirm': 'Delete',

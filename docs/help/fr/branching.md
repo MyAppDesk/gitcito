@@ -12,6 +12,8 @@ Une seule barre latérale, réordonnable et cherchable, contient les **branches,
 les distants, les étiquettes, les remisages, les arbres de travail et les
 sous-modules**. Chaque section peut être masquée ou déplacée (Réglages →
 Disposition), et le champ de filtre s'applique à toutes.
+Les sections et dossiers laissés ouverts ou repliés sont mémorisés par dépôt,
+même après un redémarrage.
 
 ![La barre latérale, avec les branches épinglées maintenues en haut](../../screenshots/pinned-branches.webp)
 
@@ -29,6 +31,19 @@ branche affichent :
 
 Les branches dont le nom contient un `/` se replient automatiquement en dossiers
 pliables.
+Un clic droit sur l'en-tête d'un dossier agit sur tout le groupe : *Supprimer
+toutes les branches sous `feature` (4 branches)* supprime tout son contenu
+après une seule confirmation qui liste exactement les branches concernées — la
+branche courante est exclue. Le même menu existe sur les dossiers de branches
+distantes, en supprimant côté distant.
+
+Les lignes se sélectionnent en groupe comme des fichiers : un clic avec
+<kbd>⌘/Ctrl</kbd> bascule une ligne, un clic avec <kbd>Maj</kbd> sélectionne
+une plage, et <kbd>Maj</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> étend la sélection
+depuis la dernière ligne cliquée. Un clic droit sur la sélection ouvre le menu
+groupé — *Supprimer 4 branches* — qui confirme avec la liste complète. Les
+mêmes gestes fonctionnent sur les branches distantes, les étiquettes et les
+remisages.
 
 ![Des noms de branche séparés par des barres obliques, repliés en arborescence](../../screenshots/branch-grouping.webp)
 

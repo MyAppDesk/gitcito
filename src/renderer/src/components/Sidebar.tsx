@@ -72,6 +72,10 @@ interface SectionProps {
   /** Nesting level (0 = top). Drives compounding left-indent so deep folders
    *  (feature/payments/…) read as children, not siblings. */
   depth?: number
+  /** Controlled open state — set together with `onToggle` to persist the
+   *  expand/collapse choice instead of keeping it in component state. */
+  open?: boolean
+  onToggle?: (open: boolean) => void
 }
 
 /** A node in a branch folder tree (local or per-remote). `item` is set when
@@ -108,6 +112,13 @@ function leafCount<T>(node: TreeNode<T>): number {
   return n
 }
 
+/** Every branch under a node, in tree order — the scope of a folder-wide action. */
+function collectLeaves<T>(node: TreeNode<T>, out: T[] = []): T[] {
+  if (node.item) out.push(node.item)
+  for (const c of node.children.values()) collectLeaves(c, out)
+  return out
+}
+
 function Section({
   title,
   icon,
@@ -125,9 +136,13 @@ function Section({
   onReorderEnd,
   onHeaderContextMenu,
   nested,
-  depth = 0
+  depth = 0,
+  open: openProp,
+  onToggle
 }: SectionProps): React.JSX.Element {
-  const [open, setOpen] = useState(defaultOpen)
+  const [localOpen, setLocalOpen] = useState(defaultOpen)
+  const open = openProp ?? localOpen
+  const toggle = (): void => (onToggle ? onToggle(!open) : setLocalOpen(!open))
   const draggable = !!sectionId
   return (
     <div
@@ -146,7 +161,7 @@ function Section({
       <div
         className="sb-header"
         draggable={draggable}
-        onClick={() => setOpen(!open)}
+        onClick={toggle}
         onContextMenu={onHeaderContextMenu}
         onDragStart={draggable ? onReorderStart : undefined}
         onDragEnd={draggable ? onReorderEnd : undefined}
@@ -365,6 +380,51 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     ]
   }
 
+  // Right-click on a branch folder header: delete everything the folder holds.
+  // The current branch is silently excluded — git refuses to delete it anyway.
+  const localFolderMenu = (folder: string, node: TreeNode<BranchInfo>): MenuItem[] => {
+    const deletable = collectLeaves(node)
+      .map((b) => b.name)
+      .filter((n) => n !== repo.branches.current.trim())
+    return [
+      {
+        label: interp(t('sidebar.deleteFolderBranches'), { folder, n: deletable.length }),
+        danger: true,
+        disabled: deletable.length === 0,
+        onClick: () =>
+          openModal({
+            kind: 'confirm',
+            title: t('sidebar.deleteBranchesTitle'),
+            message: `${interp(t('sidebar.deleteBranchesMsg'), { n: deletable.length })}\n\n${deletable.join('\n')}`,
+            danger: true,
+            confirmLabel: t('sidebar.deleteBranchesConfirm'),
+            onConfirm: () => void repoActions.deleteBranches(path, deletable)
+          })
+      }
+    ]
+  }
+
+  const remoteFolderMenu = (folder: string, node: TreeNode<RemoteBranchInfo>): MenuItem[] => {
+    const branches = collectLeaves(node)
+    const items = branches.map((b) => ({ remote: b.remote, name: b.name }))
+    return [
+      {
+        label: interp(t('sidebar.deleteFolderRemoteBranches'), { folder, n: items.length }),
+        danger: true,
+        disabled: items.length === 0,
+        onClick: () =>
+          openModal({
+            kind: 'confirm',
+            title: t('sidebar.deleteRemoteBranchesTitle'),
+            message: `${interp(t('sidebar.deleteRemoteBranchesMsg'), { n: items.length })}\n\n${branches.map((b) => b.fullName).join('\n')}`,
+            danger: true,
+            confirmLabel: t('sidebar.deleteRemoteBranchesConfirm'),
+            onConfirm: () => void repoActions.deleteRemoteBranches(path, items)
+          })
+      }
+    ]
+  }
+
   const stashBulkMenu = (ids: string[]): MenuItem[] => {
     const indices = ids.map(Number)
     return [
@@ -425,6 +485,15 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   const isPinned = (name: string): boolean => pinnedNames.includes(name)
   const togglePinBranch = (name: string): void =>
     updateRepoLayout(path, (l) => ({ ...l, pinnedBranches: togglePin(l.pinnedBranches ?? [], name) }))
+
+  // Expand/collapse choices are per-repo and survive restarts: an explicit
+  // toggle is recorded in RepoLayout and wins over the section's default.
+  const sidebarExpanded = repoLayout?.sidebarExpanded
+  const persistOpen = (key: string, defaultOpen = true): Pick<SectionProps, 'open' | 'onToggle'> => ({
+    open: sidebarExpanded?.[key] ?? defaultOpen,
+    onToggle: (o: boolean) =>
+      updateRepoLayout(path, (l) => ({ ...l, sidebarExpanded: { ...(l.sidebarExpanded ?? {}), [key]: o } }))
+  })
   const remotes = useMemo(
     () => repo.branches.remotes.filter((b) => !f || b.fullName.toLowerCase().includes(f)),
     [repo.branches.remotes, f]
@@ -1096,26 +1165,39 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   // Recursively render a branch folder node: flatten single-child folders into
   // one "a/b" row, leaves become items, folders with ≥2 entries become a
   // collapsible nested Section. `prefix` carries the flattened path so far.
-  const renderBranchNode = (node: TreeNode<BranchInfo>, prefix: string, depth: number): React.JSX.Element => {
+  const renderBranchNode = (
+    node: TreeNode<BranchInfo>,
+    prefix: string,
+    depth: number,
+    ancestor = ''
+  ): React.JSX.Element => {
     const display = prefix ? `${prefix}/${node.seg}` : node.seg
     // Single-child folder folds into one row — same visual depth, no extra level.
     if (!node.item && node.children.size === 1) {
-      return renderBranchNode([...node.children.values()][0], display, depth)
+      return renderBranchNode([...node.children.values()][0], display, depth, ancestor)
     }
     if (node.children.size === 0 && node.item) {
       return branchItem(node.item, display)
     }
+    // Full "/"-path from the section root: unlike `display` it cannot collide
+    // across nesting levels, so it can key persisted state and name the folder.
+    const fullPath = ancestor ? `${ancestor}/${display}` : display
     return (
       <Section
-        key={`grp:${display}`}
+        key={`grp:${fullPath}`}
         nested
         depth={depth}
         title={display}
         icon={<GitBranch size={13} />}
         count={leafCount(node)}
+        {...persistOpen(`grp:${fullPath}`)}
+        onHeaderContextMenu={(e) => {
+          e.preventDefault()
+          openContextMenu(e.clientX, e.clientY, localFolderMenu(fullPath, node))
+        }}
       >
         {node.item && branchItem(node.item, node.seg)}
-        {[...node.children.values()].map((c) => renderBranchNode(c, '', depth + 1))}
+        {[...node.children.values()].map((c) => renderBranchNode(c, '', depth + 1, fullPath))}
       </Section>
     )
   }
@@ -1153,25 +1235,37 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     </div>
   )
 
-  const renderRemoteNode = (node: TreeNode<RemoteBranchInfo>, prefix: string, depth: number): React.JSX.Element => {
+  const renderRemoteNode = (
+    node: TreeNode<RemoteBranchInfo>,
+    prefix: string,
+    depth: number,
+    remoteName: string,
+    ancestor = ''
+  ): React.JSX.Element => {
     const display = prefix ? `${prefix}/${node.seg}` : node.seg
     if (!node.item && node.children.size === 1) {
-      return renderRemoteNode([...node.children.values()][0], display, depth)
+      return renderRemoteNode([...node.children.values()][0], display, depth, remoteName, ancestor)
     }
     if (node.children.size === 0 && node.item) {
       return remoteItem(node.item, display)
     }
+    const fullPath = ancestor ? `${ancestor}/${display}` : display
     return (
       <Section
-        key={`rgrp:${display}`}
+        key={`rgrp:${remoteName}/${fullPath}`}
         nested
         depth={depth}
         title={display}
         icon={<GitBranch size={13} />}
         count={leafCount(node)}
+        {...persistOpen(`rgrp:${remoteName}/${fullPath}`)}
+        onHeaderContextMenu={(e) => {
+          e.preventDefault()
+          openContextMenu(e.clientX, e.clientY, remoteFolderMenu(`${remoteName}/${fullPath}`, node))
+        }}
       >
         {node.item && remoteItem(node.item, node.seg)}
-        {[...node.children.values()].map((c) => renderRemoteNode(c, '', depth + 1))}
+        {[...node.children.values()].map((c) => renderRemoteNode(c, '', depth + 1, remoteName, fullPath))}
       </Section>
     )
   }
@@ -1227,25 +1321,32 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     )
   }
 
-  const renderTagNode = (node: TreeNode<TagInfo>, prefix: string, depth: number): React.JSX.Element => {
+  const renderTagNode = (
+    node: TreeNode<TagInfo>,
+    prefix: string,
+    depth: number,
+    ancestor = ''
+  ): React.JSX.Element => {
     const display = prefix ? `${prefix}/${node.seg}` : node.seg
     if (!node.item && node.children.size === 1) {
-      return renderTagNode([...node.children.values()][0], display, depth)
+      return renderTagNode([...node.children.values()][0], display, depth, ancestor)
     }
     if (node.children.size === 0 && node.item) {
       return tagItem(node.item, display)
     }
+    const fullPath = ancestor ? `${ancestor}/${display}` : display
     return (
       <Section
-        key={`tgrp:${display}`}
+        key={`tgrp:${fullPath}`}
         nested
         depth={depth}
         title={display}
         icon={<Tag size={13} />}
         count={leafCount(node)}
+        {...persistOpen(`tgrp:${fullPath}`)}
       >
         {node.item && tagItem(node.item, node.seg)}
-        {[...node.children.values()].map((c) => renderTagNode(c, '', depth + 1))}
+        {[...node.children.values()].map((c) => renderTagNode(c, '', depth + 1, fullPath))}
       </Section>
     )
   }
@@ -1257,6 +1358,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         icon={<GitBranch size={13} />}
         count={locals.length}
         {...dragProps('local')}
+        {...persistOpen('local')}
         actions={
           <span
             className="icon-btn"
@@ -1271,7 +1373,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         }
       >
         {pinnedLocals.length > 0 && (
-          <Section nested depth={1} title={t('sidebar.pinned')} icon={<Star size={13} />} count={pinnedLocals.length}>
+          <Section nested depth={1} title={t('sidebar.pinned')} icon={<Star size={13} />} count={pinnedLocals.length} {...persistOpen('pinned')}>
             {pinnedLocals.map((b) => branchItem(b, b.name))}
           </Section>
         )}
@@ -1286,6 +1388,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         icon={<Cloud size={13} />}
         count={repo.remotes.length}
         {...dragProps('remotes')}
+        {...persistOpen('remotes')}
         actions={
           <span
             className="icon-btn"
@@ -1310,7 +1413,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
               title={remote.name}
               icon={<RemoteIcon url={remote.url} />}
               count={branches.length}
-              defaultOpen={remote.name === 'origin'}
+              {...persistOpen(`remote:${remote.name}`, remote.name === 'origin')}
               onHeaderContextMenu={(e) => {
                 e.preventDefault()
                 openContextMenu(e.clientX, e.clientY, remoteMgmtMenu(remote.name, remote.url))
@@ -1331,7 +1434,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
               {branches.length === 0 && <div className="sb-empty">{t('sidebar.noBranches')}</div>}
               {groupBranches
                 ? [...(remoteTrees.get(remote.name)?.children.values() ?? [])].map((c) =>
-                    renderRemoteNode(c, '', 2)
+                    renderRemoteNode(c, '', 2, remote.name)
                   )
                 : branches.map((b) => remoteItem(b, b.name))}
             </Section>
@@ -1344,8 +1447,8 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         title={t('sidebar.pullRequests')}
         icon={<GitPullRequest size={13} />}
         count={repo.prs.length}
-        defaultOpen={false}
         {...dragProps('prs')}
+        {...persistOpen('prs', false)}
         actions={
           <>
             <span
@@ -1447,8 +1550,8 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         title={t('sidebar.issues')}
         icon={<CircleDot size={13} />}
         count={repo.issues.length}
-        defaultOpen={false}
         {...dragProps('issues')}
+        {...persistOpen('issues', false)}
         actions={
           <>
             {(() => {
@@ -1514,8 +1617,8 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         title={t('sidebar.milestones')}
         icon={<Milestone size={13} />}
         count={repo.milestones.filter((m) => m.state === 'open').length}
-        defaultOpen={false}
         {...dragProps('milestones')}
+        {...persistOpen('milestones', false)}
         actions={
           <span
             className="icon-btn"
@@ -1573,8 +1676,8 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         title={t('sidebar.tags')}
         icon={<Tag size={13} />}
         count={tags.length}
-        defaultOpen={false}
         {...dragProps('tags')}
+        {...persistOpen('tags', false)}
         actions={
           <span
             className="icon-btn"
@@ -1603,8 +1706,8 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
           title={t('sidebar.releases')}
           icon={<Rocket size={13} />}
           count={releases.length}
-          defaultOpen={false}
           {...dragProps('releases')}
+          {...persistOpen('releases', false)}
           actions={
             <>
               {releasesUrl && (
@@ -1689,8 +1792,8 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         title={t('sidebar.worktrees')}
         icon={<FolderGit2 size={13} />}
         count={repo.worktrees.length}
-        defaultOpen={false}
         {...dragProps('worktrees')}
+        {...persistOpen('worktrees', false)}
         actions={
           <span
             className="icon-btn"
@@ -1728,8 +1831,8 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         title={t('sidebar.submodules')}
         icon={<Boxes size={13} />}
         count={repo.submodules.length}
-        defaultOpen={false}
         {...dragProps('submodules')}
+        {...persistOpen('submodules', false)}
         actions={
           <>
             {repo.submodules.length > 0 && (

@@ -2530,6 +2530,11 @@ export interface RepoLayout {
   sidebarHidden?: string[]
   /** Local branch names starred by the user, in the order they were pinned. */
   pinnedBranches?: string[]
+  /** Explicit expand/collapse choices for sidebar sections and branch folders,
+   *  keyed by section id (`local`, `prs`, …) or folder key (`grp:feature`,
+   *  `rgrp:origin/feature`, `tgrp:release`, `remote:origin`, `pinned`).
+   *  Absent keys fall back to the section's default. */
+  sidebarExpanded?: Record<string, boolean>
 }
 
 export interface AppThemeColors {

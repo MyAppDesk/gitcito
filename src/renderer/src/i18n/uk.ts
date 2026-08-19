@@ -2097,6 +2097,8 @@ export const uk: Dict = {
   'sidebar.deleteBranchesMsg': 'Видалити {n} локальних гілок? Цю дію не можна скасувати.',
   'sidebar.deleteBranchesConfirm': 'Видалити',
   'sidebar.deleteNRemoteBranches': 'Видалити {n} віддалених гілок',
+  'sidebar.deleteFolderBranches': 'Видалити всі гілки в {folder} ({n} гілок)',
+  'sidebar.deleteFolderRemoteBranches': 'Видалити всі віддалені гілки в {folder} ({n} гілок)',
   'sidebar.deleteRemoteBranchesTitle': 'Видалити віддалені гілки',
   'sidebar.deleteRemoteBranchesMsg': 'Видалити {n} гілок з їхніх віддалених репозиторіїв?',
   'sidebar.deleteRemoteBranchesConfirm': 'Видалити',

@@ -134,6 +134,16 @@ evidence the assistant read; unsafe, secret, ignored, generated, binary, stale,
 oversized, and symlinked targets are refused. Push, pull, reset, rebase, and
 force operations remain available only in their dedicated UI.
 
+With **Auto-run all actions**, a valid file change runs immediately and the
+card records the completed action:
+
+![Automatically completed repository chat file action](../screenshots/repo-chat-file-action-auto-run.webp)
+
+With **Always ask**, the same kind of change remains pending until you choose
+**Run** or **Dismiss**:
+
+![Repository chat file action awaiting approval](../screenshots/repo-chat-file-action-approval.webp)
+
 The complete file batch is rechecked before the first write and rolls back if
 one step fails. Before a commit, Gitcito also verifies that something is staged.
 The card marks every completed, failed, and skipped row and keeps partial counts.

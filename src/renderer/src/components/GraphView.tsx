@@ -184,7 +184,7 @@ function GraphColumnsHeader({
   order: GraphFlowColumnId[]
   branchCol: number
   graphCol: number
-  onResize: (id: GraphColumnId, width: number) => void
+  onResize: (updates: Partial<Record<GraphColumnId, number>>) => void
   onMenu: (x: number, y: number) => void
   onReorder: (from: GraphFlowColumnId, to: GraphFlowColumnId) => void
   renderFilter?: (id: GraphFlowColumnId) => React.ReactNode
@@ -192,65 +192,130 @@ function GraphColumnsHeader({
   const [dragId, setDragId] = useState<GraphFlowColumnId | null>(null)
   const [dropId, setDropId] = useState<GraphFlowColumnId | null>(null)
   const t = useT()
+  const headerRef = useRef<HTMLDivElement>(null)
   // True while a resize handle is being dragged. The header cells are HTML5
   // `draggable` for reordering, so grabbing a handle would otherwise kick off a
   // column-move drag instead of a resize — this flag cancels that dragstart.
   const resizing = useRef(false)
-  // `side` = which edge of the column the handle sits on. A left-edge handle
-  // resizes the column inward as you drag right (its left border moves), so the
-  // divider *left of* a column resizes that column — what users expect.
-  const startResize = (id: GraphColumnId, side: 'left' | 'right', e: React.MouseEvent): void => {
+  const visibleFlow = order.filter((id) => columns[id].visible)
+  // Every visible column in visual order — each cell owns the divider on its
+  // right edge.
+  const visibleCols: GraphColumnId[] = [
+    ...(columns.branch.visible ? (['branch'] as GraphColumnId[]) : []),
+    ...(columns.graph.visible ? (['graph'] as GraphColumnId[]) : []),
+    ...visibleFlow
+  ]
+  // Dragging a divider moves that boundary like a train coupling: the column
+  // on the pointer's side of the boundary grows, and the columns being pushed
+  // give up width nearest-first — the flex `message` column contributes its
+  // slack at its position in the chain. The divider therefore follows the
+  // pointer until every column on the shrinking side has hit its minimum.
+  const startResize = (dividerLeft: GraphColumnId, e: React.PointerEvent): void => {
+    const b = visibleCols.indexOf(dividerLeft)
+    if (b < 0) return
     e.preventDefault()
     e.stopPropagation()
     resizing.current = true
+    // Capture the pointer so the drag survives leaving the window; releases
+    // outside still deliver pointerup.
+    try {
+      ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+    } catch {
+      /* capture is best-effort */
+    }
     const startX = e.clientX
-    // The graph column may be in `auto` mode (stored width 0); seed the drag
-    // from its currently-rendered width so it doesn't jump on first move.
-    const startW = id === 'graph' ? graphCol : columns[id].width
-    const move = (ev: MouseEvent): void => {
-      const delta = ev.clientX - startX
-      const w = side === 'left' ? startW - delta : startW + delta
-      onResize(id, Math.max(COL_MIN[id], w))
+    // Snapshot the drag-start widths once — every frame recomputes from this
+    // base, so reversing a drag restores columns instead of drifting. The
+    // graph column may be in `auto` mode (stored width 0); seed it from its
+    // currently-rendered width so it doesn't jump on first move.
+    const base = {} as Record<GraphColumnId, number>
+    for (const c of visibleCols) base[c] = c === 'graph' ? graphCol : columns[c].width
+    // The flex column has no stored width — measure how much it can give up.
+    const flexEl = headerRef.current?.querySelector('.ghc-flex')
+    const flexCap = flexEl ? Math.max(0, flexEl.getBoundingClientRect().width - COL_MIN.message) : 0
+    // Free space right of the last column only exists with `message` hidden;
+    // rightward drags may spill into it before squeezing any column.
+    const total = headerRef.current?.clientWidth ?? 0
+    const fixedSum = visibleCols.reduce((s, c) => s + (c === 'message' ? 0 : base[c]), 0)
+    const headroom = flexEl || !total ? 0 : Math.max(0, total - 26 - fixedSum)
+    // Columns changed at any point during this drag — always rewritten, so
+    // dragging back releases them to their base width.
+    const touched = new Set<GraphColumnId>()
+    // One store write per frame, not per mousemove — each write re-renders the
+    // whole graph.
+    let raf = 0
+    let dx = 0
+    const apply = (): void => {
+      raf = 0
+      const w = { ...base }
+      const want = Math.abs(dx)
+      const growId = dx >= 0 ? visibleCols[b] : visibleCols[b + 1]
+      const donors = dx >= 0 ? visibleCols.slice(b + 1) : visibleCols.slice(0, b + 1).reverse()
+      let got = dx > 0 ? Math.min(want, headroom) : 0
+      for (const c of donors) {
+        if (got >= want) break
+        const cap = c === 'message' ? flexCap : base[c] - COL_MIN[c]
+        const take = Math.min(cap, want - got)
+        if (take <= 0) continue
+        if (c !== 'message') w[c] = base[c] - take
+        got += take
+      }
+      // The flex column grows/shrinks by layout, never by a stored width.
+      if (growId && growId !== 'message') w[growId] = base[growId] + got
+      for (const c of visibleCols) if (c !== 'message' && w[c] !== base[c]) touched.add(c)
+      if (!touched.size) return
+      const updates: Partial<Record<GraphColumnId, number>> = {}
+      for (const c of touched) updates[c] = w[c]
+      onResize(updates)
+    }
+    const move = (ev: PointerEvent): void => {
+      dx = ev.clientX - startX
+      if (!raf) raf = requestAnimationFrame(apply)
     }
     const up = (): void => {
-      window.removeEventListener('mousemove', move)
-      window.removeEventListener('mouseup', up)
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', up)
+      window.removeEventListener('pointercancel', up)
+      if (raf) cancelAnimationFrame(raf)
+      apply()
       document.body.style.cursor = ''
       // Defer so the cell's `onDragStart` (if any) still sees resizing === true.
       setTimeout(() => (resizing.current = false), 0)
     }
     document.body.style.cursor = 'col-resize'
-    window.addEventListener('mousemove', move)
-    window.addEventListener('mouseup', up)
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', up)
+    window.addEventListener('pointercancel', up)
   }
 
-  const handle = (id: GraphColumnId, side: 'left' | 'right'): React.JSX.Element => (
+  const handle = (dividerLeft: GraphColumnId): React.JSX.Element => (
     <span
-      className={`col-resize col-resize-${side}`}
+      className="col-resize col-resize-right"
       draggable={false}
       onDragStart={(e) => e.preventDefault()}
-      onMouseDown={(e) => startResize(id, side, e)}
+      onPointerDown={(e) => startResize(dividerLeft, e)}
     />
   )
 
   return (
-    <div className="graph-header">
+    <div className="graph-header" ref={headerRef}>
       {columns.branch.visible && (
         <div className="ghc" style={{ width: branchCol }}>
           <span className="ghc-label">{t(COL_LABEL_KEY.branch as Parameters<typeof t>[0])}</span>
-          {handle('branch', 'right')}
+          {handle('branch')}
         </div>
       )}
       {columns.graph.visible && (
         <div className="ghc ghc-graph" style={{ width: graphCol }}>
           <span className="ghc-label">{t(COL_LABEL_KEY.graph as Parameters<typeof t>[0])}</span>
-          {handle('graph', 'right')}
+          {handle('graph')}
         </div>
       )}
-      {order
-        .filter((id) => columns[id].visible)
-        .map((id) => {
+      {visibleFlow.map((id, i) => {
           const isFlex = id === 'message'
+          // The flex column's own divider resizes its right neighbour, so it
+          // has none when it is the last column.
+          const hasHandle = !isFlex || i < visibleFlow.length - 1
           return (
             <div
               key={id}
@@ -282,9 +347,9 @@ function GraphColumnsHeader({
                 setDropId(null)
               }}
             >
-              {!isFlex && handle(id, 'left')}
               <span className="ghc-label">{t(COL_LABEL_KEY[id] as Parameters<typeof t>[0])}</span>
               {renderFilter?.(id)}
+              {hasHandle && handle(id)}
             </div>
           )
         })}
@@ -370,6 +435,17 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
     updateRepoLayout(repo.path, (l) => {
       const cols = l.graphColumns ?? baseColumns
       return { ...l, graphColumns: { ...cols, [id]: { ...cols[id], ...patch } } }
+    })
+
+  // One store write for a whole cascade of column widths, so a single drag
+  // frame re-renders the graph once.
+  const setColumnWidths = (updates: Partial<Record<GraphColumnId, number>>): void =>
+    updateRepoLayout(repo.path, (l) => {
+      const cols = { ...(l.graphColumns ?? baseColumns) }
+      for (const id of Object.keys(updates) as GraphColumnId[]) {
+        cols[id] = { ...cols[id], width: Math.round(updates[id]!) }
+      }
+      return { ...l, graphColumns: cols }
     })
 
   const reorderColumns = (from: GraphFlowColumnId, to: GraphFlowColumnId): void =>
@@ -1404,7 +1480,7 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
         order={columnOrder}
         branchCol={branchCol}
         graphCol={graphCol}
-        onResize={(id, width) => setColumn(id, { width })}
+        onResize={setColumnWidths}
         onMenu={openColumnsMenu}
         onReorder={reorderColumns}
         renderFilter={renderFilter}

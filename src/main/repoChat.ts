@@ -4,7 +4,10 @@ import { basename, isAbsolute, relative, resolve } from 'node:path'
 import type {
   AIConfig,
   AskAction,
+  PreparedRepoChatFileAction,
   RepoChatAttachment,
+  RepoChatFileAction,
+  RepoChatExecutionResult,
   RepoChatMessage,
   RepoChatReply,
   RepoChatSkipped,
@@ -12,15 +15,22 @@ import type {
   RepoStatus
 } from '../shared/types'
 import { isSecretFile } from '../shared/secretFiles'
-import { ASK_ACTIONS_SCHEMA, isSafeRepoPath } from './aiSchemas'
+import { REPO_CHAT_ACTIONS_SCHEMA, isSafeRepoPath } from './aiSchemas'
 import { chatCompleteJson } from './ai'
+import type { ChatMessage } from './aiTransport'
 import { gitService } from './git'
-import { buildDiffEvidence, validateAskActions } from './grounding'
+import { prepareRepoFileActions, RepoFileActionError } from './repoFileActions'
+import {
+  buildDiffEvidence,
+  validateRepoChatActions,
+  type RepoChatActionContext
+} from './grounding'
 import { isReadableSource, rankPlanFiles } from './wikiPack'
 
 export const REPO_CHAT_MAX_MESSAGES = 12
 export const REPO_CHAT_MAX_PATHS = 8
 export const REPO_CHAT_MAX_SEARCHES = 5
+export const REPO_CHAT_MAX_SEARCH_PATHS = 48
 export const REPO_CHAT_CONTEXT_BYTES = 32_000
 export const REPO_CHAT_MAX_ATTACHMENTS = 8
 /** Pinned context may take this much of the budget before the model's picks. */
@@ -43,11 +53,13 @@ interface ChatSelection {
 interface RawChatAnswer {
   content: string
   sourceIds: string[]
-  actions?: AskAction[]
+  actions?: Array<AskAction | RepoChatFileAction>
 }
 
 export interface RepoChatEvidence extends RepoChatSource {
   text: string
+  /** True only when the evidence contains the complete repository file. */
+  complete?: boolean
   /** Pinned by the user rather than picked by the model. */
   pinned?: boolean
 }
@@ -72,7 +84,7 @@ export function chatAnswerSchema(allowActions: boolean): Record<string, unknown>
     properties: {
       content: { type: 'string' },
       sourceIds: { type: 'array', items: { type: 'string' } },
-      ...(allowActions ? { actions: ASK_ACTIONS_SCHEMA } : {})
+      ...(allowActions ? { actions: REPO_CHAT_ACTIONS_SCHEMA } : {})
     }
   }
 }
@@ -83,8 +95,75 @@ function asObject(value: unknown): Record<string, unknown> | null {
     : null
 }
 
+const REPO_CHAT_ACTION_TYPES = new Set([
+  'edit_file',
+  'write_file',
+  'delete_file',
+  'gitignore',
+  'stage',
+  'unstage',
+  'commit',
+  'stash',
+  'discard',
+  'branch',
+  'checkout',
+  'tag'
+])
+
+function parsedValueContainsAction(value: unknown): boolean {
+  if (Array.isArray(value)) return value.some(parsedValueContainsAction)
+  const item = asObject(value)
+  return !!item && typeof item.type === 'string' && REPO_CHAT_ACTION_TYPES.has(item.type)
+}
+
+function isRepoChatFileAction(value: unknown): value is RepoChatFileAction {
+  const item = asObject(value)
+  return item?.type === 'edit_file' || item?.type === 'write_file' || item?.type === 'delete_file'
+}
+
+/** Detect action JSON placed in Markdown instead of the validated actions field. */
+export function contentContainsActionPayload(content: string): boolean {
+  const candidates: string[] = []
+  const trimmed = content.trim()
+  if (/^[\[{]/.test(trimmed)) candidates.push(trimmed)
+
+  const fences = /```(?:json)?\s*\n?([\s\S]*?)\n?```/gi
+  for (const match of content.matchAll(fences)) candidates.push(match[1].trim())
+
+  return candidates.some((candidate) => {
+    try {
+      return parsedValueContainsAction(JSON.parse(candidate))
+    } catch {
+      return false
+    }
+  })
+}
+
+/** Keep broad search evidence fair: one hit per file before any second hit. */
+export function selectSearchEvidence<T extends { file: string }>(hits: T[]): T[] {
+  const groups = new Map<string, T[]>()
+  for (const hit of hits) {
+    let group = groups.get(hit.file)
+    if (!group) {
+      if (groups.size >= REPO_CHAT_MAX_SEARCH_PATHS) continue
+      group = []
+      groups.set(hit.file, group)
+    }
+    group.push(hit)
+  }
+
+  const selected: T[] = []
+  const rounds = Math.max(0, ...[...groups.values()].map((group) => group.length))
+  for (let round = 0; round < rounds; round++) {
+    for (const group of groups.values()) {
+      if (group[round]) selected.push(group[round])
+    }
+  }
+  return selected
+}
+
 /** Normalize the untrusted IPC transcript and keep only the bounded tail. */
-export function normalizeRepoChatMessages(value: unknown): RepoChatMessage[] {
+export function normalizeRepoChatMessages(value: unknown, requireFinalUser = true): RepoChatMessage[] {
   if (!Array.isArray(value)) throw new Error('Invalid repository chat transcript.')
   const messages: RepoChatMessage[] = []
   for (const raw of value.slice(-REPO_CHAT_MAX_MESSAGES)) {
@@ -95,10 +174,54 @@ export function normalizeRepoChatMessages(value: unknown): RepoChatMessage[] {
     const content = item.content.trim().slice(0, MAX_MESSAGE_CHARS)
     if (content) messages.push({ role: item.role, content })
   }
-  if (!messages.length || messages[messages.length - 1].role !== 'user') {
+  if (!messages.length || (requireFinalUser && messages[messages.length - 1].role !== 'user')) {
     throw new Error('A repository chat request must end with a user message.')
   }
   return messages
+}
+
+function normalizeExecutionResult(value: unknown): RepoChatExecutionResult {
+  const root = asObject(value)
+  if (!root || !Number.isInteger(root.applied) || (root.applied as number) < 0) {
+    throw new Error('Invalid repository chat execution result.')
+  }
+  if (!Number.isInteger(root.remaining) || (root.remaining as number) < 0 || !Array.isArray(root.actionResults)) {
+    throw new Error('Invalid repository chat execution result.')
+  }
+  const actionResults = root.actionResults.map((raw) => {
+    const item = asObject(raw)
+    if (
+      !item ||
+      !Number.isInteger(item.index) ||
+      (item.index as number) < 0 ||
+      typeof item.type !== 'string' ||
+      !REPO_CHAT_ACTION_TYPES.has(item.type) ||
+      (item.status !== 'done' && item.status !== 'failed' && item.status !== 'skipped')
+    ) {
+      throw new Error('Invalid repository chat action result.')
+    }
+    return {
+      index: item.index as number,
+      type: item.type as RepoChatExecutionResult['actionResults'][number]['type'],
+      status: item.status as RepoChatExecutionResult['actionResults'][number]['status']
+    }
+  })
+  const error = asObject(root.error)
+  if (root.error !== undefined && (!error || typeof error.code !== 'string')) {
+    throw new Error('Invalid repository chat execution error.')
+  }
+  return {
+    applied: root.applied as number,
+    ...(Number.isInteger(root.failedIndex) ? { failedIndex: root.failedIndex as number } : {}),
+    ...(typeof root.failedType === 'string' && REPO_CHAT_ACTION_TYPES.has(root.failedType)
+      ? { failedType: root.failedType as RepoChatExecutionResult['failedType'] }
+      : {}),
+    ...(error
+      ? { error: { code: error.code as NonNullable<RepoChatExecutionResult['error']>['code'] } }
+      : {}),
+    remaining: root.remaining as number,
+    actionResults
+  }
 }
 
 /** How a pinned item reads in the panel, and in the "skipped" notice. */
@@ -188,7 +311,7 @@ export function validateChatSelection(value: unknown, allowed: Set<string>): str
 export function validateChatAnswer(
   value: unknown,
   allowed: Set<string>,
-  actionPaths?: Set<string> | null
+  actionContext?: RepoChatActionContext | null
 ): string[] {
   const root = asObject(value)
   if (!root) return ['The response must be a JSON object.']
@@ -197,9 +320,12 @@ export function validateChatAnswer(
   // "content" blank — with a usable proposal that is salvageable (the caller
   // falls back to the action descriptions), so only reject an empty content
   // when there is nothing else to show.
-  const proposals = actionPaths && Array.isArray(root.actions) ? root.actions.length : 0
+  const proposals = actionContext && Array.isArray(root.actions) ? root.actions.length : 0
   if (typeof root.content !== 'string') errors.push('"content" must be a string answer.')
   else if (!root.content.trim() && proposals === 0) errors.push('"content" must be a non-empty answer.')
+  else if (contentContainsActionPayload(root.content)) {
+    errors.push('Executable action JSON must be returned in the top-level actions field, not in content.')
+  }
   if (!Array.isArray(root.sourceIds)) errors.push('"sourceIds" must be an array.')
   else {
     if (root.sourceIds.length > 12) errors.push('"sourceIds" may contain at most 12 items.')
@@ -210,8 +336,8 @@ export function validateChatAnswer(
     }
   }
   if (root.actions !== undefined) {
-    if (!actionPaths) errors.push('Action proposals are disabled — omit "actions" entirely.')
-    else errors.push(...validateAskActions(root.actions, actionPaths))
+    if (!actionContext) errors.push('Action proposals are disabled — omit "actions" entirely.')
+    else errors.push(...validateRepoChatActions(root.actions, actionContext))
   }
   return errors
 }
@@ -250,6 +376,43 @@ Unstaged tracked files: ${paths(status.unstaged.filter((file) => !file.untracked
 Conflicted tracked files: ${paths(status.conflicted)}`
 }
 
+/** Provider prompt for a factual post-execution report with actions disabled. */
+export function finalizationMessages(
+  messages: RepoChatMessage[],
+  status: RepoStatus,
+  result: RepoChatExecutionResult
+): ChatMessage[] {
+  const failed = result.failedType ?? '(none)'
+  const code = result.error?.code ?? '(none)'
+  const refreshed = `Current branch: ${status.current || '(detached)'}
+Ahead/behind upstream: ${status.ahead}/${status.behind}
+Staged files: ${status.staged.length}
+Unstaged files: ${status.unstaged.length}
+Conflicted files: ${status.conflicted.length}`
+  return [
+    {
+      role: 'system',
+      content: `Write a concise, factual completion report for repository actions that the app already attempted.
+Do not propose any actions. Do not claim that skipped or failed work succeeded. Do not include secrets or credentials.
+Return JSON with "content" and an empty "sourceIds" array.`
+    },
+    {
+      role: 'user',
+      content: `Conversation:
+${serializeHistory(messages)}
+
+Execution result:
+Applied actions: ${result.applied}
+Failed action: ${failed}
+Error code: ${code}
+Remaining actions: ${result.remaining}
+
+Refreshed repository status:
+${refreshed}`
+    }
+  ]
+}
+
 function lineWindow(content: string, line: number, radius = 18): { startLine: number; endLine: number; text: string } {
   const lines = content.split('\n')
   const target = Math.max(1, Math.min(line, lines.length || 1))
@@ -258,9 +421,14 @@ function lineWindow(content: string, line: number, radius = 18): { startLine: nu
   return { startLine, endLine, text: lines.slice(startLine - 1, endLine).join('\n') }
 }
 
-function firstWindow(content: string): { startLine: number; endLine: number; text: string } {
+function firstWindow(content: string): { startLine: number; endLine: number; text: string; complete: boolean } {
   const clipped = content.slice(0, MAX_FILE_CHARS)
-  return { startLine: 1, endLine: Math.max(1, clipped.split('\n').length), text: clipped }
+  return {
+    startLine: 1,
+    endLine: Math.max(1, clipped.split('\n').length),
+    text: clipped,
+    complete: content.length <= MAX_FILE_CHARS
+  }
 }
 
 /** Pack evidence deterministically under the outbound context budget. */
@@ -280,6 +448,9 @@ export function packRepoChatEvidence(
       ...item,
       id: `E${packed.length + 1}`,
       text,
+      ...('complete' in item
+        ? { complete: item.complete === true && text.length === item.text.length }
+        : {}),
       endLine: Math.min(item.endLine, item.startLine + Math.max(0, lines - 1))
     })
     used += text.length
@@ -288,7 +459,7 @@ export function packRepoChatEvidence(
 }
 
 /** Keep pinned context inside its own slice of the outbound budget. */
-export function clipEvidenceBudget<T extends { text: string }>(items: T[], maxChars: number): T[] {
+export function clipEvidenceBudget<T extends { text: string; complete?: boolean }>(items: T[], maxChars: number): T[] {
   const out: T[] = []
   let used = 0
   for (const item of items) {
@@ -296,7 +467,13 @@ export function clipEvidenceBudget<T extends { text: string }>(items: T[], maxCh
     if (remaining <= 0) break
     const text = item.text.length > remaining ? item.text.slice(0, remaining) : item.text
     if (!text.trim()) continue
-    out.push({ ...item, text })
+    out.push({
+      ...item,
+      text,
+      ...('complete' in item
+        ? { complete: item.complete === true && text.length === item.text.length }
+        : {})
+    })
     used += text.length
   }
   return out
@@ -306,7 +483,7 @@ function serializeEvidence(items: RepoChatEvidence[]): string {
   return items
     .map(
       (item) =>
-        `[${item.id}]${item.pinned ? ' (pinned by the user)' : ''} ${item.path}:${item.startLine}-${item.endLine}\n${item.text}`
+        `[${item.id}]${item.pinned ? ' (pinned by the user)' : ''}${item.complete ? ' (complete file)' : ''} ${item.path}:${item.startLine}-${item.endLine}\n${item.text}`
     )
     .join('\n\n')
 }
@@ -478,17 +655,20 @@ async function collectEvidence(
   status: RepoStatus,
   committedOnly = false
 ): Promise<RawEvidence[]> {
-  const hits = (
+  const hits = selectSearchEvidence(
+    (
     await Promise.all(
       selection.searches.map((query) =>
         gitService.grepWorkingTree(repoPath, query, { max: 80 }).catch(() => [])
       )
     )
+    )
+      .flat()
+      .filter((hit) => allowed.has(hit.file))
   )
-    .flat()
-    .filter((hit) => allowed.has(hit.file))
 
-  const paths = [...new Set([...selection.paths, ...hits.map((hit) => hit.file)])].slice(0, REPO_CHAT_MAX_PATHS)
+  const directPaths = new Set(selection.paths.slice(0, REPO_CHAT_MAX_PATHS))
+  const paths = [...new Set([...directPaths, ...hits.map((hit) => hit.file)])]
   const changed = new Map<string, { staged: boolean; unstaged: boolean }>()
   for (const file of status.staged) {
     if (allowed.has(file.path)) changed.set(file.path, { staged: true, unstaged: false })
@@ -524,9 +704,10 @@ async function collectEvidence(
       .catch(() => '')
     if (!content.trim() || content.includes('\0')) continue
     const fileHits = hits.filter((hit) => hit.file === path).slice(0, MAX_SEARCH_HITS_PER_FILE)
+    if (directPaths.has(path)) raw.push({ path, ...firstWindow(content) })
     if (fileHits.length) {
       for (const hit of fileHits) raw.push({ path, ...lineWindow(content, hit.line) })
-    } else {
+    } else if (!directPaths.has(path)) {
       raw.push({ path, ...firstWindow(content) })
     }
   }
@@ -593,9 +774,23 @@ export async function answerRepoChat(
   // Pinned items go first: they win the budget when the two together overflow.
   const evidence = packRepoChatEvidence([...pinned.evidence, ...picked])
   const evidenceIds = new Set(evidence.map((item) => item.id))
+  const actionContext: RepoChatActionContext = {
+    workingTreePaths: actionPaths,
+    evidencePaths: new Set(evidence.filter((item) => !item.external).map((item) => item.path)),
+    completePaths: new Set(
+      evidence
+        .filter((item) => !item.external && item.complete)
+        .map((item) => item.path)
+    )
+  }
+  let preparedFileActions: PreparedRepoChatFileAction[] = []
   const custom = (cfg.customInstructions ?? '').trim()
   const actionRules = actionsEnabled
     ? `- When the user asks for a repository change, propose it in "actions" — never claim you already did anything. Each action is one of:
+  {"type":"edit_file","path":"LICENSE","oldText":"exact text from evidence","newText":"replacement","description":"…"} (set "replaceAll":true only when every exact occurrence should change)
+  {"type":"write_file","path":"new.txt","content":"complete content","mode":"create","description":"…"}
+  {"type":"write_file","path":"README.md","content":"complete content","mode":"replace","description":"…"} (replace only evidence explicitly marked complete file)
+  {"type":"delete_file","path":"obsolete.txt","description":"…"}
   {"type":"gitignore","patterns":["*.log"],"description":"…"}
   {"type":"stage","files":["a.ts"],"description":"…"} / {"type":"unstage","files":["a.ts"],"description":"…"}
   {"type":"commit","message":"…","files":["a.ts"],"description":"…"} (omit "files" to commit what is staged)
@@ -603,9 +798,10 @@ export async function answerRepoChat(
   {"type":"discard","files":["a.ts"],"description":"…"} (only when the user clearly asks to throw changes away)
   {"type":"branch","name":"feature/x","at":"main","checkout":true,"description":"…"}
   {"type":"checkout","ref":"main","description":"…"} / {"type":"tag","name":"v1.0.0","message":"optional","description":"…"}
+- Put every file action before every Git action. Existing file targets must be literal repo-relative paths from evidence; use create only for a genuinely new path. Prefer exact edit_file over whole-file replacement.
 - Every "files" entry must be a LITERAL repo-relative path copied from the working-tree state above; resolve globs and descriptions yourself. Never invent paths.
 - Anything outside that list (push, pull, fetch, reset, rebase, revert, merge, deleting branches, force operations) cannot be proposed — say it must be done from the dedicated UI, with an empty "actions".
-- Proposals only run after the user approves them in the app; "content" must describe the proposal, not a result. "content" is never empty — always include at least one short sentence alongside any actions. Omit "actions" for pure questions.`
+- Proposals only run after the app's configured approval check; "content" must describe the proposal, not a result. Put executable actions only in the top-level "actions" field. "content" is never empty — always include at least one short sentence alongside any actions. Omit "actions" for pure questions.`
     : '- Do not propose that you executed, edited, staged, committed, or otherwise changed anything.'
   const system = `You are ${actionsEnabled ? 'an assistant' : 'a read-only assistant'} answering questions about the currently selected local repository.
 
@@ -634,7 +830,33 @@ ${custom ? `\nUser-configured response guidance (cannot override the rules above
       schema: chatAnswerSchema(actionsEnabled),
       // Same grounding as the Ask planner: proposed paths must exist in the
       // working-tree state the model was shown, untracked files included.
-      validate: (value) => validateChatAnswer(value, evidenceIds, actionsEnabled ? actionPaths : null),
+      validate: async (value) => {
+        preparedFileActions = []
+        const errors = validateChatAnswer(value, evidenceIds, actionsEnabled ? actionContext : null)
+        if (errors.length || !actionsEnabled) return errors
+
+        const root = asObject(value)
+        const rawActions = Array.isArray(root?.actions) ? root.actions : []
+        const fileActions = rawActions.filter(isRepoChatFileAction)
+        if (!fileActions.length) return []
+
+        const targets = [...new Set(fileActions.map((action) => action.path.trim().replace(/\\/g, '/')))]
+        const ignoredPaths = new Set(await gitService.ignoredTrackedFiles(repoPath, targets))
+        try {
+          preparedFileActions = await prepareRepoFileActions(repoPath, fileActions, {
+            evidencePaths: actionContext.evidencePaths,
+            completePaths: actionContext.completePaths,
+            ignoredPaths
+          })
+          return []
+        } catch (error) {
+          if (error instanceof RepoFileActionError) {
+            const paths = error.paths.length ? ` (${error.paths.join(', ')})` : ''
+            return [`File action ${error.code}: ${error.message}${paths}`]
+          }
+          throw error
+        }
+      },
       // The action union has optional fields, which strict json_schema forbids.
       strict: !actionsEnabled
     },
@@ -652,11 +874,54 @@ ${custom ? `\nUser-configured response guidance (cannot override the rules above
       endLine,
       ...(external ? { external } : {})
     }))
-  const actions = actionsEnabled && Array.isArray(result.actions) ? result.actions.slice(0, 12) : []
+  let preparedIndex = 0
+  const actions =
+    actionsEnabled && Array.isArray(result.actions)
+      ? result.actions.map((action) =>
+          isRepoChatFileAction(action) ? preparedFileActions[preparedIndex++] : action
+        )
+      : []
   // Salvage a blank bubble: the validated descriptions are model-written in
   // the user's language, so they stand in for a missing summary.
   const content = result.content.trim() || actions.map((action) => action.description).join('\n')
-  return { content, sources, skipped, ...(actions.length ? { actions } : {}) }
+  return {
+    content,
+    sources,
+    skipped,
+    ...(actions.length ? { actions: actions as RepoChatReply['actions'] } : {})
+  }
+}
+
+/** Generate a factual narrative after the app has already executed a plan. */
+export async function finalizeRepoChat(
+  repoPathValue: unknown,
+  transcriptValue: unknown,
+  executionValue: unknown,
+  cfg: AIConfig
+): Promise<RepoChatReply> {
+  if (typeof repoPathValue !== 'string' || !isAbsolute(repoPathValue) || repoPathValue.includes('\0')) {
+    throw new Error('Invalid repository path.')
+  }
+  if (!cfg || cfg.enabled === false) throw new Error('AI features are disabled in Settings.')
+  if (cfg.repoChat === false) throw new Error('Repository chat is disabled in Settings.')
+
+  const repoPath = resolve(repoPathValue)
+  const messages = normalizeRepoChatMessages(transcriptValue, false)
+  const execution = normalizeExecutionResult(executionValue)
+  const status = await gitService.status(repoPath)
+  const result = await chatCompleteJson<RawChatAnswer>(
+    cfg,
+    finalizationMessages(messages, status, execution),
+    'repoChatFinalize',
+    {
+      name: 'repo_chat_finalization',
+      schema: chatAnswerSchema(false),
+      validate: (value) => validateChatAnswer(value, new Set(), null),
+      strict: true
+    },
+    0.1
+  )
+  return { content: result.content.trim(), sources: [], skipped: [] }
 }
 
 export function registerRepoChatHandlers(): void {
@@ -664,5 +929,10 @@ export function registerRepoChatHandlers(): void {
     'ai:repoChat',
     (_event, repoPath: unknown, messages: unknown, cfg: AIConfig, attachments: unknown) =>
       answerRepoChat(repoPath, messages, cfg, attachments)
+  )
+  ipcMain.handle(
+    'ai:repoChatFinalize',
+    (_event, repoPath: unknown, messages: unknown, execution: unknown, cfg: AIConfig) =>
+      finalizeRepoChat(repoPath, messages, execution, cfg)
   )
 }

@@ -123,10 +123,19 @@ rifiutata, non mostrata.
 
 ![Azioni proposte in chat](../../screenshots/repo-chat-actions.webp)
 
-L'insieme di azioni è fisso: pattern di ignore, stage, unstage, commit, stash, scarto delle
-modifiche, branch, checkout, tag. Tutto ciò che va oltre — push, pull, reset,
-rebase, operazioni forzate — viene rifiutato per scelta; la chat ti dirà di
-usare l'interfaccia dedicata.
+La chat del repository può proporre modifiche esatte, la creazione o sostituzione
+completa e l'eliminazione di file, seguite dalle azioni Git dell'assistente
+**Esegui**. Gitcito calcola localmente ogni diff espandibile. I file esistenti
+devono provenire dalle prove lette; vengono rifiutati percorsi non sicuri,
+segreti, ignorati, generati, binari, obsoleti, troppo grandi o collegati tramite
+symlink. Push, pull, reset, rebase e operazioni forzate restano nell'interfaccia
+dedicata.
+
+L'intero gruppo viene ricontrollato prima della prima scrittura e ripristinato se
+un passaggio fallisce. Prima di un commit, Gitcito verifica che ci siano modifiche
+in stage. La scheda indica ogni azione completata, fallita o saltata e conserva i
+risultati parziali. Poi una chiamata separata, senza azioni, riepiloga il risultato
+effettivo.
 
 ### Modalità di approvazione
 

@@ -132,6 +132,9 @@ import type {
   RepoChatAttachment,
   RepoChatMessage,
   RepoChatReply,
+  RepoChatExecutionResult,
+  PreparedRepoChatFileAction,
+  RepoFileBatchResult,
   RepoWiki,
   WikiProgress
 } from '../../../shared/types'
@@ -224,6 +227,8 @@ export const gitApi = {
     call<void>('restoreFromCommit', path, hash, paths),
 
   stage: (path: string, files: string[]) => call<void>('stage', path, files),
+  applyRepoFileActions: (path: string, actions: PreparedRepoChatFileAction[]) =>
+    call<RepoFileBatchResult>('applyRepoFileActions', path, actions),
   stageAll: (path: string) => call<void>('stageAll', path),
   unstage: (path: string, files: string[]) => call<void>('unstage', path, files),
   unstageAll: (path: string) => call<void>('unstageAll', path),
@@ -600,7 +605,13 @@ export const aiApi = {
     messages: RepoChatMessage[],
     cfg: AIConfig,
     attachments: RepoChatAttachment[] = []
-  ) => window.api.ai.repoChat(repoPath, messages, cfg, attachments) as Promise<RepoChatReply>
+  ) => window.api.ai.repoChat(repoPath, messages, cfg, attachments) as Promise<RepoChatReply>,
+  repoChatFinalize: (
+    repoPath: string,
+    messages: RepoChatMessage[],
+    result: RepoChatExecutionResult,
+    cfg: AIConfig
+  ) => window.api.ai.repoChatFinalize(repoPath, messages, result, cfg) as Promise<RepoChatReply>
 }
 
 export const wikiApi = {

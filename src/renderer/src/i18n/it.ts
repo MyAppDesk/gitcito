@@ -1077,8 +1077,8 @@ export const it: Dict = {
   'settings.repoChatEnableHint': 'Aggiunge una scheda Chat al pannello destro. Disattivata, sparisce ovunque.',
   'settings.repoChatCommitted': 'Solo contenuti committati',
   'settings.repoChatCommittedHint': 'Risponde a partire dall’ultimo commit invece che dal working tree, così le modifiche non committate non lasciano questa macchina.',
-  'settings.repoChatActions': 'Proponi azioni git in chat',
-  'settings.repoChatActionsHint': 'Le risposte della chat possono includere azioni eseguibili: staging, commit, branch e simili. Nulla viene eseguito senza le regole di approvazione qui sotto.',
+  'settings.repoChatActions': 'Proponi azioni su file e Git in chat',
+  'settings.repoChatActionsHint': 'Le risposte possono includere modifiche ai file da revisionare seguite da azioni Git. Vengono eseguite solo con le regole di approvazione qui sotto.',
   'settings.repoChatApprovalHint': 'Le modalità automatiche eseguono una proposta appena arriva. Le azioni distruttive chiedono sempre conferma prima.',
   'settings.conflictStyle': 'Stile di risoluzione dei conflitti',
   'settings.conflictStyleHint': 'Come l’AI sistema il file quando risolve i conflitti di merge.',
@@ -2383,6 +2383,13 @@ export const it: Dict = {
   'chat.actionsAutoRan': 'Eseguite automaticamente {n} azione/i',
   'chat.actionsDismissed': 'Ignorato: non è stato eseguito nulla',
   'chat.actionsRunLabel': 'Eseguite {n} azione/i della chat',
+  'chat.actionsPartial': '{applied} completate; {remaining} non eseguite',
+  'chat.actionsFinalizing': 'Verifica del risultato…',
+  'chat.actionsFinalizationFailed': 'Le azioni sono terminate, ma l’assistente non è riuscito a riepilogarle.',
+  'chat.actionStale': 'Un file è cambiato dopo la preparazione della proposta.',
+  'chat.actionNoStaged': 'Non ci sono modifiche in stage da includere nel commit.',
+  'chat.actionHookFailed': 'Un hook Git ha bloccato il commit.',
+  'chat.actionRollbackFailed': 'Gitcito non è riuscito a ripristinare completamente il gruppo di file.',
   'chat.confirmDiscardMessage':
     'Questa proposta scarta in modo permanente le modifiche non committate di: {files}',
   'chat.approvalSafe': 'Esegui in automatico le azioni sicure',
@@ -2942,5 +2949,9 @@ export const it: Dict = {
   'askAction.branch': 'Branch',
   'askAction.checkout': 'Passa a',
   'askAction.tag': 'Tag',
-  'askAction.fallback': 'Azione'
+  'askAction.fallback': 'Azione',
+  'askAction.createFile': 'Crea file',
+  'askAction.editFile': 'Modifica file',
+  'askAction.replaceFile': 'Sostituisci file',
+  'askAction.deleteFile': 'Elimina file'
 }

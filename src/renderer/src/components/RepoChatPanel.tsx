@@ -21,7 +21,14 @@ import {
   Wand2,
   X
 } from 'lucide-react'
-import type { ChatActionApproval, RepoChatAttachment } from '../../../shared/types'
+import type {
+  ChatActionApproval,
+  PreparedRepoChatFileAction,
+  RepoChatAction,
+  RepoChatActionErrorCode,
+  RepoChatAttachment,
+  RepoChatExecutionResult
+} from '../../../shared/types'
 import { modelFor, resolveAI } from '../../../shared/aiAccounts'
 import { useModelCatalogs } from './useModelCatalogs'
 import { useT, interp, type TranslationKey } from '../i18n'
@@ -39,8 +46,8 @@ import {
 } from '../lib/repoChatContext'
 import { annotateChatHtml, tokenizeChatText } from '../lib/chatText'
 import { askActionDetail, askActionsAutoRun, destructiveAskFiles } from '../lib/askActions'
-import { executeAskActions } from '../lib/askActionRun'
-import { ASK_ACTION_FALLBACK_META, ASK_ACTION_META } from '../lib/askActionMeta'
+import { executeRepoChatActions } from '../lib/askActionRun'
+import { repoChatActionMeta } from '../lib/askActionMeta'
 import { gitApi } from '../infrastructure/api'
 import { useRepoChatStore, type RepoChatEntry } from '../stores/chat'
 import { useRepoStore } from '../stores/repo'
@@ -53,6 +60,17 @@ const SKIP_REASON_KEYS: Record<string, TranslationKey> = {
   binary: 'chat.skipBinary',
   tooLarge: 'chat.skipTooLarge',
   unreadable: 'chat.skipUnreadable'
+}
+
+const ACTION_ERROR_KEYS: Partial<Record<RepoChatActionErrorCode, TranslationKey>> = {
+  stale_file: 'chat.actionStale',
+  no_staged_changes: 'chat.actionNoStaged',
+  hook_failed: 'chat.actionHookFailed',
+  rollback_failed: 'chat.actionRollbackFailed'
+}
+
+function isFileAction(action: RepoChatAction): action is PreparedRepoChatFileAction {
+  return action.type === 'edit_file' || action.type === 'write_file' || action.type === 'delete_file'
 }
 
 function AttachmentChip({
@@ -176,21 +194,34 @@ function ChatActionCard({
   const t = useT()
   const actions = message.actions ?? []
   const state = message.actionsState ?? 'pending'
+  const execution = message.execution
   return (
     <div className={`repo-chat-actions ${state}`}>
       <div className="repo-chat-actions-list">
         {actions.map((action, i) => {
-          const meta = ASK_ACTION_META[action.type] ?? ASK_ACTION_FALLBACK_META
+          const meta = repoChatActionMeta(
+            action.type,
+            action.type === 'write_file' ? action.mode : undefined
+          )
           const Icon = meta.Icon
           const detail = askActionDetail(action, t('aiWizard.allChanges'))
+          const result = execution?.actionResults.find((item) => item.index === i)
           return (
-            <div key={i} className="repo-chat-action">
-              <span className="repo-chat-action-badge">
-                <Icon size={12} /> {t(meta.labelKey)}
-              </span>
-              <span className="repo-chat-action-desc" title={detail}>
-                {action.description || detail}
-              </span>
+            <div key={i} className={`repo-chat-action ${result?.status ?? ''}`}>
+              <div className="repo-chat-action-main">
+                <span className="repo-chat-action-badge">
+                  <Icon size={12} /> {t(meta.labelKey)}
+                </span>
+                <span className="repo-chat-action-desc" title={detail}>
+                  {action.description || detail}
+                </span>
+              </div>
+              {isFileAction(action) && (
+                <details className="repo-chat-action-preview">
+                  <summary>{action.path}</summary>
+                  <pre><code>{action.preview}</code></pre>
+                </details>
+              )}
             </div>
           )
         })}
@@ -211,28 +242,49 @@ function ChatActionCard({
             <Loader2 size={12} className="spin" /> {t('chat.actionsRunning')}
           </span>
         )}
+        {state === 'finalizing' && (
+          <span className="repo-chat-actions-status">
+            <Loader2 size={12} className="spin" /> {t('chat.actionsFinalizing')}
+          </span>
+        )}
         {state === 'done' && (
           <span className="repo-chat-actions-status done">
             <Check size={12} />{' '}
             {interp(t(message.actionsAuto ? 'chat.actionsAutoRan' : 'chat.actionsRan'), {
-              n: message.actionsApplied ?? actions.length
+              n: execution?.applied ?? message.actionsApplied ?? actions.length
             })}
           </span>
         )}
         {state === 'failed' && (
           <>
-            <span className="repo-chat-actions-status failed" title={message.actionsError}>
-              <AlertTriangle size={12} /> {t('chat.actionsFailed')}
+            <span className="repo-chat-actions-status failed" title={execution?.error?.detail ?? message.actionsError}>
+              <AlertTriangle size={12} />{' '}
+              {t(execution?.error ? ACTION_ERROR_KEYS[execution.error.code] ?? 'chat.actionsFailed' : 'chat.actionsFailed')}
             </span>
-            <button type="button" className="btn ghost small" onClick={onRun}>
-              <RotateCcw size={12} /> {t('chat.retry')}
-            </button>
+            {execution && (execution.applied > 0 || execution.remaining > 0) && (
+              <span className="repo-chat-actions-status">
+                {interp(t('chat.actionsPartial'), {
+                  applied: execution.applied,
+                  remaining: execution.remaining
+                })}
+              </span>
+            )}
+            {!execution && (
+              <button type="button" className="btn ghost small" onClick={onRun}>
+                <RotateCcw size={12} /> {t('chat.retry')}
+              </button>
+            )}
           </>
         )}
         {state === 'dismissed' && (
           <span className="repo-chat-actions-status">{t('chat.actionsDismissed')}</span>
         )}
       </div>
+      {message.finalizationFailed && (
+        <div className="repo-chat-actions-finalization-failed">
+          {t('chat.actionsFinalizationFailed')}
+        </div>
+      )}
     </div>
   )
 }
@@ -331,6 +383,7 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
   const attach = useRepoChatStore((state) => state.attach)
   const detach = useRepoChatStore((state) => state.detach)
   const setActions = useRepoChatStore((state) => state.setActions)
+  const finalizeActions = useRepoChatStore((state) => state.finalizeActions)
   const openModal = useUIStore((state) => state.openModal)
   const openContextMenu = useUIStore((state) => state.openContextMenu)
   const chatPrompt = useUIStore((state) => state.chatPrompt)
@@ -390,11 +443,12 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
   const runActions = (message: RepoChatEntry, auto = false): void => {
     const actions = message.actions
     if (!actions?.length) return
+    if (message.execution) return
     const state = message.actionsState ?? 'pending'
     if (state !== 'pending' && state !== 'failed') return
     const execute = (): void => {
       setActions(repoPath, message.id, { actionsState: 'running', actionsAuto: auto, actionsError: undefined })
-      let applied = actions.length
+      let execution: RepoChatExecutionResult | undefined
       let failMessage = ''
       void useRepoStore
         .getState()
@@ -402,8 +456,9 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
           repoPath,
           interp(t('chat.actionsRunLabel'), { n: actions.length }),
           async () => {
-            const result = await executeAskActions(repoPath, actions)
-            applied = result.applied
+            execution = await executeRepoChatActions(repoPath, actions)
+            void finalizeActions(repoPath, message.id, execution, resolveAI(profile.ai, 'chat'))
+            if (execution.error) throw new Error(execution.error.detail ?? execution.error.code)
           },
           undefined,
           null,
@@ -415,13 +470,15 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
           }
         )
         .then((ok) => {
-          setActions(
-            repoPath,
-            message.id,
-            ok
-              ? { actionsState: 'done', actionsApplied: applied }
-              : { actionsState: 'failed', actionsError: failMessage }
-          )
+          if (!execution) {
+            setActions(
+              repoPath,
+              message.id,
+              ok
+                ? { actionsState: 'done', actionsApplied: actions.length }
+                : { actionsState: 'failed', actionsError: failMessage }
+            )
+          }
         })
     }
     // Destructive proposals always confirm, whatever the approval mode says —

@@ -1,4 +1,4 @@
-import type { AskAction, ChatActionApproval } from '../../../shared/types'
+import type { ChatActionApproval, RepoChatAction } from '../../../shared/types'
 
 /**
  * How much trust one proposed action needs before running:
@@ -9,13 +9,16 @@ import type { AskAction, ChatActionApproval } from '../../../shared/types'
  */
 export type AskActionSafety = 'safe' | 'normal' | 'destructive'
 
-export function askActionSafety(action: AskAction): AskActionSafety {
+export function askActionSafety(action: RepoChatAction): AskActionSafety {
   switch (action.type) {
     case 'discard':
       return 'destructive'
     case 'commit':
     case 'stash':
     case 'checkout':
+    case 'edit_file':
+    case 'write_file':
+    case 'delete_file':
       return 'normal'
     default:
       return 'safe'
@@ -23,7 +26,7 @@ export function askActionSafety(action: AskAction): AskActionSafety {
 }
 
 /** True when a proposal may run on arrival under the given approval mode. */
-export function askActionsAutoRun(actions: AskAction[], mode: ChatActionApproval | undefined): boolean {
+export function askActionsAutoRun(actions: RepoChatAction[], mode: ChatActionApproval | undefined): boolean {
   if (!actions.length) return false
   if (mode === 'auto-all') return actions.every((action) => askActionSafety(action) !== 'destructive')
   if (mode === 'auto-safe') return actions.every((action) => askActionSafety(action) === 'safe')
@@ -31,12 +34,12 @@ export function askActionsAutoRun(actions: AskAction[], mode: ChatActionApproval
 }
 
 /** Files a plan would irreversibly discard — what the confirm dialog must name. */
-export function destructiveAskFiles(actions: AskAction[]): string[] {
+export function destructiveAskFiles(actions: RepoChatAction[]): string[] {
   return [...new Set(actions.flatMap((action) => (action.type === 'discard' ? action.files : [])))]
 }
 
 /** One-line parameter summary of an action, shared by every proposal card. */
-export function askActionDetail(action: AskAction, allChangesLabel: string): string {
+export function askActionDetail(action: RepoChatAction, allChangesLabel: string): string {
   switch (action.type) {
     case 'gitignore':
       return action.patterns.join(', ')
@@ -50,6 +53,10 @@ export function askActionDetail(action: AskAction, allChangesLabel: string): str
       return action.ref
     case 'tag':
       return `${action.name}${action.message ? ` · “${action.message}”` : ''}`
+    case 'edit_file':
+    case 'write_file':
+    case 'delete_file':
+      return action.path
     default:
       return action.files.join(', ')
   }

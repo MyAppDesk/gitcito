@@ -118,10 +118,17 @@ reddedilir, gösterilmez.
 
 ![Sohbette önerilen eylemler](../../screenshots/repo-chat-actions.webp)
 
-Eylem kümesi sabittir:
-yoksayma desenleri, stage, unstage, commit, stash, discard, dal, checkout,
-etiket. Bunun ötesindeki her şey — push, pull, reset, rebase, force işlemleri —
-tasarım gereği reddedilir; sohbet sizi bunun yerine ilgili arayüze yönlendirir.
+Depo sohbeti tam metin düzenlemeleri, dosya oluşturma veya bütünüyle değiştirme
+ve dosya silme işlemlerini; ardından **Çalıştır** asistanının Git eylemlerini
+önerebilir. Gitcito açılabilir diff’i yerel olarak hesaplar. Mevcut dosyalar
+okunan kanıtlardan gelmelidir; güvensiz, gizli, yoksayılan, üretilmiş, ikili,
+eskimiş, çok büyük veya symlink üzerinden erişilen hedefler reddedilir. Push,
+pull, reset, rebase ve force işlemleri ilgili arayüzde kalır.
+
+Dosya grubunun tamamı ilk yazmadan önce yeniden doğrulanır ve bir adım başarısız
+olursa geri alınır. Commit öncesinde Gitcito stage’de değişiklik bulunduğunu da
+denetler. Kart tamamlanan, başarısız ve atlanan her eylemi ve kısmi sonucu
+gösterir. Ardından eylemsiz ayrı bir model çağrısı gerçek sonucu özetler.
 
 ### Onay modları
 

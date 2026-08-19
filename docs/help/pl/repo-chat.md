@@ -121,10 +121,17 @@ wskazująca nieistniejący plik zostaje odrzucona, a nie wyświetlona.
 
 ![Proponowane akcje na czacie](../../screenshots/repo-chat-actions.webp)
 
-Zestaw akcji jest stały:
-wzorce ignorowania, stage, unstage, commit, stash, discard, branch, checkout,
-tag. Wszystko poza nim — push, pull, reset, rebase, operacje z force — jest
-odrzucane celowo; czat odeśle cię wtedy do właściwego interfejsu.
+Czat repozytorium może proponować dokładne edycje, tworzenie lub pełne
+zastępowanie oraz usuwanie plików, a następnie akcje Git asystenta **Uruchom**.
+Gitcito oblicza rozwijany diff lokalnie. Istniejące pliki muszą pochodzić z
+odczytanych dowodów; odrzucane są cele niebezpieczne, tajne, ignorowane,
+generowane, binarne, nieaktualne, zbyt duże lub dostępne przez symlink. Push,
+pull, reset, rebase i operacje force pozostają we właściwym interfejsie.
+
+Cała partia jest ponownie sprawdzana przed pierwszym zapisem i wycofywana, gdy
+któryś krok zawiedzie. Przed commitem Gitcito sprawdza też, czy coś jest w stage.
+Karta oznacza akcje ukończone, nieudane i pominięte oraz zachowuje wynik
+częściowy. Potem osobne wywołanie bez akcji podsumowuje rzeczywisty rezultat.
 
 ### Tryby zatwierdzania
 

@@ -1101,8 +1101,8 @@ export const en = {
   'settings.repoChatEnableHint': 'Adds a Chat tab to the right panel. Off hides it everywhere.',
   'settings.repoChatCommitted': 'Committed content only',
   'settings.repoChatCommittedHint': 'Answer from the last commit instead of your working tree, so uncommitted edits never leave this machine.',
-  'settings.repoChatActions': 'Propose git actions in chat',
-  'settings.repoChatActionsHint': 'Chat replies can include runnable actions — stage, commit, branch and friends. Nothing runs without the approval rules below.',
+  'settings.repoChatActions': 'Propose file and Git actions in chat',
+  'settings.repoChatActionsHint': 'Chat replies can include reviewed file changes followed by Git actions. They run only under the approval rules below.',
   'settings.repoChatApprovalHint': 'Auto-run modes execute a proposal as soon as it arrives. Destructive actions always ask for confirmation first.',
   'settings.conflictStyle': 'Conflict resolution style',
   'settings.conflictStyleHint': 'How the AI shapes the file when resolving merge conflicts.',
@@ -2443,6 +2443,13 @@ export const en = {
   'chat.actionsFailed': 'Actions failed',
   'chat.actionsDismissed': 'Dismissed — nothing was run',
   'chat.actionsRunLabel': 'Ran {n} chat action(s)',
+  'chat.actionsPartial': '{applied} completed; {remaining} not run',
+  'chat.actionsFinalizing': 'Checking the result…',
+  'chat.actionsFinalizationFailed': 'The actions finished, but the assistant could not summarize them.',
+  'chat.actionStale': 'A file changed after this proposal was prepared.',
+  'chat.actionNoStaged': 'There are no staged changes to commit.',
+  'chat.actionHookFailed': 'A Git hook stopped the commit.',
+  'chat.actionRollbackFailed': 'Gitcito could not fully restore the file batch.',
   'chat.confirmDiscardTitle': 'Discard changes?',
   'chat.confirmDiscardMessage': 'This proposal permanently discards uncommitted changes to: {files}',
   'chat.confirmDiscardOk': 'Discard and run',
@@ -3005,7 +3012,11 @@ export const en = {
   'askAction.branch': 'Branch',
   'askAction.checkout': 'Switch',
   'askAction.tag': 'Tag',
-  'askAction.fallback': 'Action'
+  'askAction.fallback': 'Action',
+  'askAction.createFile': 'Create file',
+  'askAction.editFile': 'Edit file',
+  'askAction.replaceFile': 'Replace file',
+  'askAction.deleteFile': 'Delete file'
 }
 
 /** The shape every locale must implement. */

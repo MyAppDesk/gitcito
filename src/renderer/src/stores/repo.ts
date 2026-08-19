@@ -973,7 +973,16 @@ export const repoActions = {
 
         // A landed bottom first: reparent its child, untrack it, drop the
         // branch — then the rest of the submit sees the shortened chain.
-        const pruned = await gitApi.stackPruneMerged(path)
+        // Squash merges are invisible to git's ancestry check, so ask the host
+        // which of the stack's branches have a merged PR (best-effort).
+        const profileForPrune = useSettingsStore.getState().activeProfile()
+        const preStack = await gitApi.stackInfo(path).catch(() => null)
+        const hostMerged = preStack?.branches.length
+          ? await hostingApi
+              .mergedPrHeads(origin.url, { github: profileForPrune.githubToken || undefined }, preStack.branches.map((b) => b.name))
+              .catch(() => [])
+          : []
+        const pruned = await gitApi.stackPruneMerged(path, hostMerged)
         if (pruned.length) toast('info', interp(t('act.stackPruned'), { branches: pruned.join(', ') }))
 
         let stack = await gitApi.stackInfo(path)

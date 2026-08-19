@@ -1025,6 +1025,26 @@ async function applyPrMeta(
 }
 
 /**
+ * Which of these head branches have a MERGED pull request (GitHub only)?
+ * This is how squash-merged stack bottoms get detected: the squashed patch
+ * leaves no ancestry a local git can follow, but the host knows the PR landed.
+ * One request per branch, filtered server-side by head ref.
+ */
+async function mergedPrHeads(remoteUrl: string, tokens: { github?: string }, branches: string[]): Promise<string[]> {
+  const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
+  const api = `https://api.github.com/repos/${owner}/${repo}`
+  const merged: string[] = []
+  for (const branch of branches) {
+    const prs = await ghJson<Array<{ merged_at: string | null }>>(
+      `${api}/pulls?state=closed&head=${encodeURIComponent(`${owner}:${branch}`)}&per_page=5`,
+      token
+    ).catch(() => [])
+    if (prs.some((p) => p.merged_at)) merged.push(branch)
+  }
+  return merged
+}
+
+/**
  * Mutate an open PR (GitHub only): retarget its base, retitle, or maintain the
  * marked stack-navigation section in its body. `stackSection` merges into the
  * live body server-side (one GET) so a user's own description edits survive.
@@ -1629,6 +1649,9 @@ export function registerHostingHandlers(): void {
     'hosting:prMerge',
     (_e, remoteUrl: string, tokens: { github?: string }, number: number, method: PrMergeMethod) =>
       mergePr(remoteUrl, tokens, number, method)
+  )
+  ipcMain.handle('hosting:mergedPrHeads', (_e, remoteUrl: string, tokens: { github?: string }, branches: string[]) =>
+    mergedPrHeads(remoteUrl, tokens, branches)
   )
   ipcMain.handle(
     'hosting:updatePR',

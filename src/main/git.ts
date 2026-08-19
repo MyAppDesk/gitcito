@@ -2314,11 +2314,11 @@ export const gitService = {
    * is already contained in the trunk (as seen by the last fetch when an
    * origin/<trunk> exists), reparent its child onto the trunk, untrack it, and
    * safe-delete the branch (`-d` refuses anything unmerged; the current branch
-   * is left alone). Squash-merged bottoms are invisible to this check — git
-   * cannot prove containment for a squashed patch — and stay untouched.
+   * is left alone). Squash merges are invisible to the local ancestry check;
+   * callers pass branches with a host-verified merged PR via `alsoMerged`.
    * Returns the pruned branch names, bottom first.
    */
-  async stackPruneMerged(repoPath: string): Promise<string[]> {
+  async stackPruneMerged(repoPath: string, alsoMerged: string[] = []): Promise<string[]> {
     const git = gitFor(repoPath)
     const pruned: string[] = []
     for (;;) {
@@ -2328,10 +2328,14 @@ export const gitService = {
       const trunkRef = (await runGit(repoPath, ['rev-parse', '--verify', `origin/${info.trunk}`]).catch(() => ''))
         ? `origin/${info.trunk}`
         : info.trunk
-      const merged = await runGit(repoPath, ['merge-base', '--is-ancestor', bottom.name, trunkRef]).then(
-        () => true,
-        () => false
-      )
+      // `alsoMerged` carries host-side proof (a merged PR) for squash merges,
+      // which leave no ancestry a local git can see.
+      const merged =
+        alsoMerged.includes(bottom.name) ||
+        (await runGit(repoPath, ['merge-base', '--is-ancestor', bottom.name, trunkRef]).then(
+          () => true,
+          () => false
+        ))
       if (!merged) break
       const child = info.branches[1]
       if (child) await gitService.stackSetParent(repoPath, child.name, info.trunk)

@@ -50,10 +50,11 @@ rewritten levels and the PRs update in place.
 
 - Submission is **GitHub-only** for now (creation works on all four hosts, but
   retargeting and body updates need the GitHub API).
-- The merged-bottom cleanup sees merge and rebase merges, not **squash**
-  merges: a squashed patch is a new commit git cannot trace back to the branch,
-  so a squash-merged level must be untracked by hand. Fetch first, too — the
-  cleanup reads the trunk as of your last fetch.
+- The merged-bottom cleanup sees merge and rebase merges by ancestry, and
+  **squash** merges by asking GitHub whether the branch's PR landed — so with a
+  GitHub token every merge style is cleaned up. On other hosts, or without a
+  token, a squash-merged level still needs a manual untrack. Fetch first, too —
+  the ancestry check reads the trunk as of your last fetch.
 - The stack section in a PR body is maintained between hidden markers — your
   own description above it is preserved.
 

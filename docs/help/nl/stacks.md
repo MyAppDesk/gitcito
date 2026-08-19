@@ -57,11 +57,12 @@ plekke bijgewerkt.
 - Indienen is voorlopig **alleen voor GitHub** (aanmaken werkt op alle vier de
   hosts, maar het omhangen van de basis en het bijwerken van de body vereisen
   de GitHub-API).
-- Het opruimen na een merge onderin ziet merge- en rebase-merges, geen
-  **squash**-merges: een gesquashte patch is een nieuwe commit die git niet
-  naar de branch kan herleiden, dus bij een squash-gemergd niveau moet je het
-  volgen handmatig stoppen. Fetch bovendien eerst — het opruimen leest de
-  trunk zoals die was bij je laatste fetch.
+- Het opruimen na een merge onderin ziet merge- en rebase-merges via de
+  afstamming, en **squash**-merges door GitHub te vragen of de PR van de
+  branch is geland — met een GitHub-token wordt dus elke mergestijl opgeruimd.
+  Op andere hosts, of zonder token, moet je bij een squash-gemergd niveau het
+  volgen nog steeds handmatig stoppen. Fetch bovendien eerst — de
+  afstammingscontrole leest de trunk zoals die was bij je laatste fetch.
 - De stapelsectie in een PR-body wordt bijgehouden tussen verborgen markeringen
   — je eigen beschrijving erboven blijft behouden.
 

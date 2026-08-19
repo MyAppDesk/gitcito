@@ -59,10 +59,12 @@ sont poussés en force et les pull requests se mettent à jour sur place.
   fonctionne sur les quatre hébergeurs, mais le reciblage et la mise à jour
   des corps demandent l'API GitHub).
 - Le nettoyage après la fusion du bas voit les merges et les merges par
-  rebase, pas les merges par **squash** : un patch squashé est un nouveau
-  commit que git ne peut pas relier à la branche, donc un niveau fusionné en
-  squash doit être détaché à la main. Faites d'abord un fetch, aussi — le
-  nettoyage lit le tronc tel qu'il était lors de votre dernier fetch.
+  rebase par l'ascendance, et les merges par **squash** en demandant à GitHub
+  si la pull request de la branche a atterri — avec un jeton GitHub, tous les
+  styles de merge sont donc nettoyés. Sur les autres hébergeurs, ou sans
+  jeton, un niveau fusionné en squash doit encore être détaché à la main.
+  Faites d'abord un fetch, aussi — la vérification d'ascendance lit le tronc
+  tel qu'il était lors de votre dernier fetch.
 - La section de pile dans le corps d'une PR est entretenue entre des marqueurs
   cachés — votre propre description au-dessus est préservée.
 

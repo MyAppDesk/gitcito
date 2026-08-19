@@ -54,11 +54,12 @@ atualizam no lugar.
 
 - O envio é **só para o GitHub** por enquanto (a criação funciona nos quatro
   hosts, mas mudar a base e atualizar o corpo exigem a API do GitHub).
-- A limpeza após o merge de baixo enxerga merges e merges por rebase, não
-  merges por **squash**: um patch squashado é um commit novo que o git não
-  consegue rastrear de volta até a branch, então um nível mesclado com squash
-  precisa deixar de ser rastreado à mão. Faça fetch antes, também — a limpeza
-  lê o trunk como estava no seu último fetch.
+- A limpeza após o merge de baixo enxerga merges e merges por rebase pela
+  ancestralidade, e merges por **squash** perguntando ao GitHub se o PR da
+  branch foi integrado — então, com um token do GitHub, todo estilo de merge é
+  limpo. Em outros hosts, ou sem um token, um nível mesclado com squash ainda
+  precisa deixar de ser rastreado à mão. Faça fetch antes, também — a
+  verificação de ancestralidade lê o trunk como estava no seu último fetch.
 - A seção da pilha no corpo de um PR é mantida entre marcadores ocultos — a sua
   própria descrição acima dela é preservada.
 

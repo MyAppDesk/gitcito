@@ -279,6 +279,17 @@ describe('stacked-PR autopilot plumbing (stacked-branches playground)', () => {
     expect(leftover).toBe('')
   })
 
+  it('prunes a squash-merged bottom when the host vouches for it', async () => {
+    const R = cloneFixture('stacked-branches')
+    // No local ancestry at all — the branch "merged" only as a squashed patch.
+    // The host-side proof arrives via the alsoMerged parameter.
+    const pruned = await gitService.stackPruneMerged(R, ['feature/api'])
+    expect(pruned).toEqual(['feature/api'])
+    const info = await gitService.stackInfo(R)
+    expect(info.branches.map((b) => b.name)).toEqual(['feature/ui'])
+    expect(info.branches[0].parent).toBe('main')
+  })
+
   it('prune is a no-op while nothing has landed', async () => {
     const R = cloneFixture('stacked-branches')
     expect(await gitService.stackPruneMerged(R)).toEqual([])

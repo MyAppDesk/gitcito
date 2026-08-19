@@ -59,11 +59,12 @@ Ebenen und die PRs aktualisieren sich an Ort und Stelle.
   funktioniert auf allen vier Hosts, aber Umzielen und Body-Updates brauchen
   die GitHub-API).
 - Das Aufräumen nach dem Merge der untersten Ebene erkennt Merge- und
-  Rebase-Merges, keine **Squash**-Merges: ein gesquashter Patch ist ein neuer
-  Commit, den git nicht zum Branch zurückverfolgen kann, also muss das
-  Tracking einer squash-gemergten Ebene von Hand aufgehoben werden. Fetche
-  außerdem zuerst — das Aufräumen liest den Trunk im Stand deines letzten
-  Fetch.
+  Rebase-Merges über die Abstammung, und **Squash**-Merges, indem es GitHub
+  fragt, ob der PR des Branches gelandet ist — mit einem GitHub-Token wird
+  also jeder Merge-Stil aufgeräumt. Auf anderen Hosts, oder ohne Token, muss
+  das Tracking einer squash-gemergten Ebene weiterhin von Hand aufgehoben
+  werden. Fetche außerdem zuerst — die Abstammungsprüfung liest den Trunk im
+  Stand deines letzten Fetch.
 - Der Stack-Abschnitt in einem PR-Body wird zwischen versteckten Markern
   gepflegt — deine eigene Beschreibung darüber bleibt erhalten.
 

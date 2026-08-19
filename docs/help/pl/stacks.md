@@ -55,10 +55,11 @@ z wymuszeniem przepisane poziomy, a PR-y aktualizują się w miejscu.
 - Wysyłka działa na razie **tylko z GitHubem** (tworzenie działa na wszystkich
   czterech hostach, ale przekierowanie bazy i aktualizacja treści wymagają
   API GitHuba).
-- Sprzątanie po mergu dołu widzi merge'e zwykłe i przez rebase, ale nie
-  merge'e przez **squash**: zesquashowana łatka to nowy commit, którego git
-  nie potrafi powiązać z gałęzią, więc poziom zmergowany przez squash trzeba
-  przestać śledzić ręcznie. Najpierw zrób też fetch — sprzątanie czyta główną
+- Sprzątanie po mergu dołu widzi merge'e zwykłe i przez rebase po pochodzeniu,
+  a merge'e przez **squash** — pytając GitHuba, czy PR gałęzi wylądował; z
+  tokenem GitHuba sprzątany jest więc każdy styl merge'a. Na innych hostach
+  albo bez tokena poziom zmergowany przez squash nadal trzeba przestać śledzić
+  ręcznie. Najpierw zrób też fetch — sprawdzenie pochodzenia czyta główną
   gałąź według stanu z twojego ostatniego fetcha.
 - Sekcja stosu w treści PR-a jest utrzymywana między ukrytymi znacznikami —
   twój własny opis nad nią zostaje zachowany.

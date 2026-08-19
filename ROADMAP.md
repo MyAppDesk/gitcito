@@ -44,16 +44,6 @@ with nothing installed. The work is a stable CLI entry point, not the parsing.
 Branch-from-issue and smart commits against Jira or Linear. Both are what teams
 actually run, and both mean another token and another API surface.
 
-### Stacked-PR autopilot — squash-merge detection
-The merged-bottom cleanup covers merge and rebase merges; a **squash** merge
-leaves no trace git can follow, so those levels still need a manual untrack.
-Closing that gap means asking the host API about closed PRs — another request
-surface, only worth it if squash-heavy teams actually hit this.
-
----
-
-## Bigger bets
-
 ### Commit editing across merges
 Editing a commit in place shipped for linear history. The hard half remains:
 a cascade that has to replay **merge commits** (re-merge with the rewritten

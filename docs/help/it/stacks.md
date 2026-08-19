@@ -57,11 +57,12 @@ PR si aggiornano sul posto.
 - Per ora l'invio è **solo per GitHub** (la creazione funziona su tutti e
   quattro gli host, ma il cambio di base e l'aggiornamento del corpo richiedono
   l'API di GitHub).
-- La pulizia dopo il merge in basso vede i merge e i merge via rebase, non i
-  merge con **squash**: una patch squashata è un commit nuovo che git non può
-  ricondurre al branch, quindi per un livello mergiato con squash devi
-  smettere di tracciarlo a mano. Fai prima anche il fetch — la pulizia legge
-  il trunk com'era al tuo ultimo fetch.
+- La pulizia dopo il merge in basso vede i merge e i merge via rebase tramite
+  la discendenza, e i merge con **squash** chiedendo a GitHub se la PR del
+  branch è atterrata — quindi con un token GitHub ogni stile di merge viene
+  ripulito. Su altri host, o senza token, per un livello mergiato con squash
+  devi ancora smettere di tracciarlo a mano. Fai prima anche il fetch — il
+  controllo di discendenza legge il trunk com'era al tuo ultimo fetch.
 - La sezione dello stack nel corpo di una PR è mantenuta tra marcatori
   nascosti — la tua descrizione sopra di essa viene preservata.
 

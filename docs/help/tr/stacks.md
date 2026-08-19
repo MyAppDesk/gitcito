@@ -55,11 +55,12 @@ seviyeleri zorla push eder ve PR'lar yerinde güncellenir.
 - Gönderme şimdilik **yalnızca GitHub** içindir (oluşturma dört barındırıcının
   hepsinde çalışır, ancak yeniden hedefleme ve gövde güncellemeleri GitHub
   API'sini gerektirir).
-- Alt birleşme temizliği merge ve rebase birleştirmelerini görür, **squash**
-  birleştirmelerini görmez: squash'lenmiş bir yama, git'in dala kadar izini
-  süremediği yeni bir commit'tir; bu yüzden squash ile birleşen bir seviyenin
-  izlemesi elle kaldırılmalıdır. Ayrıca önce fetch yapın — temizlik, ana dalı
-  son fetch'inizdeki haliyle okur.
+- Alt birleşme temizliği merge ve rebase birleştirmelerini soy ilişkisinden,
+  **squash** birleştirmelerini ise dalın PR'ının birleşip birleşmediğini
+  GitHub'a sorarak görür — yani bir GitHub token'ıyla her birleştirme stili
+  temizlenir. Diğer barındırıcılarda veya token olmadan, squash ile birleşen
+  bir seviyenin izlemesi yine elle kaldırılmalıdır. Ayrıca önce fetch yapın —
+  soy denetimi ana dalı son fetch'inizdeki haliyle okur.
 - PR gövdesindeki yığın bölümü gizli işaretçiler arasında tutulur — onun
   üzerindeki kendi açıklamanız korunur.
 

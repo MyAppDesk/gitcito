@@ -526,7 +526,8 @@ export const gitApi = {
   mergePreview: (path: string, base: string, refs: string[]) =>
     call<MergePreviewResult>('mergePreview', path, base, refs),
   teammateRadar: (path: string) => call<TeammateRadarResult>('teammateRadar', path),
-  stackPruneMerged: (path: string) => call<string[]>('stackPruneMerged', path),
+  stackPruneMerged: (path: string, alsoMerged?: string[]) =>
+    call<string[]>('stackPruneMerged', path, alsoMerged),
   commitEditInfo: (path: string, sha: string) => call<CommitEditInfo>('commitEditInfo', path, sha),
   blobAtCommit: (path: string, sha: string, file: string) => call<BlobAtCommit>('blobAtCommit', path, sha, file),
   commitEditPreview: (path: string, sha: string, edits: Record<string, string>, message: string) =>
@@ -833,6 +834,8 @@ export const hostingApi = {
     number: number,
     patch: { base?: string; title?: string; stackSection?: string }
   ) => window.api.hosting.updatePR(remoteUrl, tokens, number, patch) as Promise<void>,
+  mergedPrHeads: (remoteUrl: string, tokens: { github?: string }, branches: string[]) =>
+    window.api.hosting.mergedPrHeads(remoteUrl, tokens, branches) as Promise<string[]>,
   listMilestones: (remoteUrl: string, tokens: { github?: string }) =>
     window.api.hosting.listMilestones(remoteUrl, tokens) as Promise<{
       provider: HostingProvider

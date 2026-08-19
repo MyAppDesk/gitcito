@@ -57,11 +57,13 @@ niveles reescritos y los PRs se actualizan en su sitio.
 - El envío es **solo para GitHub** por ahora (la creación funciona en los
   cuatro servicios de hosting, pero redirigir la base y actualizar los cuerpos
   requiere la API de GitHub).
-- La limpieza tras fusionar el nivel de abajo ve merges y merges por rebase,
-  no merges por **squash**: un parche aplastado es un commit nuevo que git no
-  puede rastrear hasta la rama, así que un nivel fusionado con squash hay que
-  desvincularlo a mano. Haz fetch primero, además — la limpieza lee el tronco
-  tal como estaba en tu último fetch.
+- La limpieza tras fusionar el nivel de abajo ve los merges y los merges por
+  rebase por ascendencia, y los merges por **squash** preguntando a GitHub si
+  el PR de la rama aterrizó — así que con un token de GitHub todos los estilos
+  de merge se limpian. En otros servicios, o sin token, un nivel fusionado con
+  squash sigue necesitando desvincularse a mano. Haz fetch primero, además —
+  la comprobación de ascendencia lee el tronco tal como estaba en tu último
+  fetch.
 - La sección de la pila en el cuerpo de un PR se mantiene entre marcadores
   ocultos — tu propia descripción encima de ella se conserva.
 

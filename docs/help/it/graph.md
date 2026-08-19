@@ -51,6 +51,13 @@ Selezionando un commit vedi i suoi file modificati (ad albero o piatti),
 l'autore, lo SHA, i coautori e la sua firma. I riferimenti `#123` e le
 `@menzioni` diventano automaticamente link al tuo host.
 
+L'elenco dei file si seleziona in gruppo con i gesti consueti (clic
+<kbd>⌘</kbd>/<kbd>Ctrl</kbd>, clic <kbd>⇧</kbd>,
+<kbd>⇧</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd>). Clic destro sulla selezione →
+*Ripristina {n} file nell'albero di lavoro* riprende quei file esattamente come
+li aveva questo commit: dopo un'unica conferma sovrascrive le copie di lavoro,
+senza toccare né HEAD né l'indice.
+
 ![Una passeggiata fra i dettagli dei commit](../../screenshots/clip-commit-details.webp)
 
 **Vedi anche:** [Blame e cronologia del file](blame.md) · [Ricerca](search.md) · [Macchina del tempo](time-machine.md)

@@ -2311,6 +2311,14 @@ export const gitService = {
     if (untracked.length) await git.raw(['restore', '--source', `${sha}^3`, '--worktree', '--', ...untracked])
   },
 
+  /** Overwrite the working copies of `paths` with their content at `hash` —
+   *  "take these changes" from a commit without touching HEAD or the index. */
+  async restoreFromCommit(repoPath: string, hash: string, paths: string[]): Promise<void> {
+    if (!paths.length) return
+    const git = gitFor(repoPath)
+    await git.raw(['restore', '--source', hash, '--worktree', '--', ...paths])
+  },
+
   /**
    * Force-apply (or pop) a stash whose untracked files collide with files that
    * already exist in the working tree. Plain `git stash apply` aborts with

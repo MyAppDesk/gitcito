@@ -46,6 +46,11 @@ keywords: 그래프 graph 히스토리 history 커밋 commits 레인 lanes 브�
 커밋을 선택하면 변경된 파일(트리 또는 평면), 작성자, SHA, 공동 작성자, 서명이
 보여요. `#123` 참조와 `@mentions`는 사용하는 호스트로 자동 링크돼요.
 
+파일 목록은 익숙한 제스처로 여러 개를 선택할 수 있어요(<kbd>⌘</kbd>/<kbd>Ctrl</kbd>+클릭,
+<kbd>⇧</kbd>+클릭, <kbd>⇧</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd>). 선택 위에서 우클릭 → *파일
+{n}개를 작업 트리로 복원*은 이 커밋 시점 그대로의 파일을 가져와요. 한 번의 확인 뒤 작업 사본을 덮어쓰고, HEAD와 인덱스는 건드리지
+않아요.
+
 ![커밋 상세를 하나씩 살펴보기](../../screenshots/clip-commit-details.webp)
 
 **함께 보기:** [Blame과 파일 히스토리](blame.md) · [검색](search.md) · [타임머신](time-machine.md)

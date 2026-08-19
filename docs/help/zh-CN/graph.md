@@ -36,6 +36,9 @@ keywords: 提交图 graph 历史 history 提交 commits 泳道 lanes 分支 bran
 
 选中一个提交会显示它改动的文件（按树状或平铺）、作者、SHA、共同作者，以及它的签名。`#123` 引用和 `@mentions` 会自动链接到你的托管方。
 
+文件列表可以用惯常的手势多选（<kbd>⌘</kbd>/<kbd>Ctrl</kbd>+点击、<kbd>⇧</kbd>+点击、<kbd>⇧</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd>）。在选中项上右键
+→ *将 {n} 个文件恢复到工作树*，会拿到这些文件在该提交时的原样：一次确认后覆盖工作副本，不动 HEAD，也不动索引。
+
 ![逐个查看提交详情](../../screenshots/clip-commit-details.webp)
 
 **另请参阅：** [追溯与文件历史](blame.md) · [搜索](search.md) · [时光机](time-machine.md)

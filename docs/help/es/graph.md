@@ -48,6 +48,13 @@ Al seleccionar un commit se ven sus archivos modificados (en árbol o en plano),
 la autoría, el SHA, los coautores y su firma. Las referencias `#123` y las
 `@menciones` se enlazan automáticamente a tu hosting.
 
+La lista de archivos se selecciona en grupo con los gestos habituales (clic con
+<kbd>⌘</kbd>/<kbd>Ctrl</kbd>, clic con <kbd>⇧</kbd>,
+<kbd>⇧</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd>). Clic derecho sobre la selección →
+*Restaurar {n} archivos al árbol de trabajo* toma esos archivos exactamente
+como estaban en este commit: tras una única confirmación sobrescribe las copias
+de trabajo, sin tocar HEAD ni el índice.
+
 ![Recorriendo los detalles de un commit](../../screenshots/clip-commit-details.webp)
 
 **Ver también:** [Blame e historial de archivo](blame.md) · [Búsqueda](search.md) · [Máquina del tiempo](time-machine.md)

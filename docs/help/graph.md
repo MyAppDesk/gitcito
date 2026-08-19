@@ -47,6 +47,13 @@ Selecting a commit shows its changed files (tree or flat), author, SHA,
 co-authors, and its signature. `#123` references and `@mentions` are autolinked
 to your host.
 
+The file list multi-selects with the usual gestures
+(<kbd>⌘</kbd>/<kbd>Ctrl</kbd>-click, <kbd>⇧</kbd>-click,
+<kbd>⇧</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd>). Right-click the selection → *Restore
+{n} files to working tree* takes those files exactly as this commit had them:
+after one confirmation it overwrites the working copies, and touches neither
+HEAD nor the index.
+
 ![Walking through commit details](../screenshots/clip-commit-details.webp)
 
 **See also:** [Blame & file history](blame.md) · [Search](search.md) · [Time machine](time-machine.md) · [Author avatars](avatars.md)

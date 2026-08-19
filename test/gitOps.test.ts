@@ -121,6 +121,24 @@ describe('partial stash apply', () => {
   })
 })
 
+describe('restore files from a commit', () => {
+  it('overwrites the working copy with the version at the commit, leaving HEAD alone', async () => {
+    const R = cloneFixture('stash-picking')
+    const head = await shaOf(R, 'HEAD')
+
+    writeFileSync(join(R, 'alpha.txt'), 'local edit\n')
+    await gitService.restoreFromCommit(R, head, ['alpha.txt'])
+
+    expect(readFileSync(join(R, 'alpha.txt'), 'utf8')).toContain('alpha v1')
+    expect(await shaOf(R, 'HEAD')).toBe(head)
+  })
+
+  it('is a no-op with an empty path list', async () => {
+    const R = cloneFixture('stash-picking')
+    await gitService.restoreFromCommit(R, await shaOf(R, 'HEAD'), [])
+  })
+})
+
 describe('stash apply with colliding untracked files', () => {
   it('plain apply aborts, overwrite variant clobbers the collider and applies', async () => {
     // A pre-existing untracked file blocks a plain apply of an -u stash.

@@ -517,6 +517,10 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
       list === 'staged'
         ? { label: targets.length > 1 ? interp(t('composer.unstageFiles'), { n: targets.length }) : t('composer.unstageFile'), onClick: () => void repoActions.unstage(path, targets) }
         : { label: targets.length > 1 ? interp(t('composer.stageFiles'), { n: targets.length }) : t('composer.stageFile'), onClick: () => void repoActions.stage(path, targets) },
+      {
+        label: targets.length > 1 ? interp(t('composer.stashFiles'), { n: targets.length }) : t('composer.stashFile'),
+        onClick: () => void repoActions.stashPush(path, undefined, targets, false)
+      },
       { separator: true },
       { label: shellApi.revealLabel, onClick: () => void shellApi.revealInFolder(`${path}/${file.path}`) },
       { label: t('composer.openDefaultApp'), onClick: () => void shellApi.openPath(`${path}/${file.path}`) },

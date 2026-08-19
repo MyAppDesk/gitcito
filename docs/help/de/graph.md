@@ -51,6 +51,13 @@ Wählst du einen Commit aus, siehst du seine geänderten Dateien (als Baum oder
 flach), Autor, SHA, Co-Autoren und seine Signatur. `#123`-Referenzen und
 `@mentions` werden automatisch mit deinem Host verlinkt.
 
+Die Dateiliste lässt sich mit den üblichen Gesten mehrfach auswählen
+(<kbd>⌘</kbd>/<kbd>Strg</kbd>-Klick, <kbd>⇧</kbd>-Klick,
+<kbd>⇧</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd>). Rechtsklick auf die Auswahl → *{n}
+Dateien in den Arbeitsbaum zurückholen* übernimmt diese Dateien genau so, wie
+dieser Commit sie hatte: nach einer einzigen Bestätigung werden die
+Arbeitskopien überschrieben — HEAD und Index bleiben unangetastet.
+
 ![Durch die Commit-Details laufen](../../screenshots/clip-commit-details.webp)
 
 **Siehe auch:** [Blame & Dateiverlauf](blame.md) · [Suche](search.md) · [Zeitmaschine](time-machine.md)

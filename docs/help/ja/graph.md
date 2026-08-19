@@ -47,6 +47,10 @@ keywords: グラフ graph 履歴 history コミット commits レーン lanes �
 共著者、そして署名が表示されます。`#123` の参照や `@mentions` は、あなたのホストへ
 自動でリンクされます。
 
+ファイル一覧はいつもの操作で複数選択できます（<kbd>⌘</kbd>/<kbd>Ctrl</kbd>+クリック、<kbd>⇧</kbd>+クリック、<kbd>⇧</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd>）。選択範囲を右クリック
+→ *{n} 件のファイルを作業ツリーへ復元* で、このコミット時点そのままの内容を持ってきます。1 回の確認のあと作業コピーを上書きし、HEAD
+にもインデックスにも触れません。
+
 ![コミットの詳細をたどる](../../screenshots/clip-commit-details.webp)
 
 **関連項目:** [blame とファイル履歴](blame.md) · [検索](search.md) · [タイムマシン](time-machine.md)

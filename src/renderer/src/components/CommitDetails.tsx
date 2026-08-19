@@ -24,6 +24,7 @@ import { SignatureBadge } from './SignatureBadge'
 import type { RepoData } from '../stores/repo'
 import { useT, interp } from '../i18n'
 import { openWithMenuItems } from '../lib/openWith'
+import { stepRange, claimRangeKeys, ownsRangeKeys, rangeKeysBlocked, domOrder } from '../lib/rangeSelect'
 
 function profileUrl(name: string, email: string, remotes: RemoteInfo[]): string | undefined {
   const origin = remotes.find((r) => r.name === 'origin')?.url ?? remotes[0]?.url
@@ -65,8 +66,16 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
   const commit: GraphCommit | undefined = repo.commits.find((c) => c.hash === hash)
   const t = useT()
 
+  // Multi-select over the commit's file list (⌘/Ctrl-click, Shift-click,
+  // Shift+↑/↓), so "restore from this commit" can take several files at once.
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const lastClicked = useRef<string | null>(null)
+  const keyToken = useRef(Symbol('commit-files')).current
+
   useEffect(() => {
     setFiles([])
+    setSelected(new Set())
+    lastClicked.current = null
     let cancelled = false
     void gitApi.commitFiles(repo.path, hash).then((f) => {
       if (!cancelled) setFiles(f)
@@ -190,6 +199,31 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
     inputRef.current?.focus()
     inputRef.current?.select()
   }, [editingSubject])
+
+  // Shift+↑/↓ extends the file selection while this panel owns the keys. Row
+  // order comes from the DOM so ranges follow the tree view's visual order.
+  const listWrapRef = useRef<HTMLDivElement>(null)
+  const visibleOrder = (): string[] => domOrder(listWrapRef.current, '[data-file-path]', 'data-file-path')
+  const selectedRef = useRef(selected)
+  selectedRef.current = selected
+  const rangeEnd = useRef<string | null>(null)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      if (!e.shiftKey || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return
+      if (!ownsRangeKeys(keyToken) || rangeKeysBlocked(e.target)) return
+      const anchor = lastClicked.current
+      if (!anchor) return
+      const live = rangeEnd.current !== null && selectedRef.current.has(rangeEnd.current)
+      const step = stepRange(visibleOrder(), anchor, live ? rangeEnd.current : null, e.key === 'ArrowDown' ? 1 : -1)
+      if (!step) return
+      e.preventDefault()
+      rangeEnd.current = step.end
+      setSelected(new Set(step.ids))
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [keyToken])
 
   if (!commit) return <div className="panel-empty">{t('commitPanel.notFound')}</div>
 
@@ -509,6 +543,7 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
         </div>
         <FileSearchBar value={filter} onChange={setFilter} />
         {hits && <MatchSummary hits={hits} label={(n, f) => interp(t('search.summary'), { n, files: f })} />}
+        <div ref={listWrapRef}>
         <FileListView
           files={filteredFiles}
           current={currentFile}
@@ -520,17 +555,57 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
           onMatchClick={(file, line) =>
             setFileView({ repoPath: repo.path, file, source: { type: 'commit', hash }, mode: 'file', line })
           }
-          onFileClick={(f) =>
+          selected={selected}
+          onFileClick={(f, e) => {
+            claimRangeKeys(keyToken)
+            const order = visibleOrder()
+            let next: Set<string>
+            if (e.shiftKey && lastClicked.current) {
+              const a = order.indexOf(lastClicked.current)
+              const b = order.indexOf(f.path)
+              next =
+                a !== -1 && b !== -1
+                  ? new Set([...selected, ...order.slice(Math.min(a, b), Math.max(a, b) + 1)])
+                  : new Set([f.path])
+            } else if (e.metaKey || e.ctrlKey) {
+              next = new Set(selected)
+              if (next.has(f.path)) next.delete(f.path)
+              else next.add(f.path)
+              lastClicked.current = f.path
+            } else {
+              next = new Set([f.path])
+              lastClicked.current = f.path
+            }
+            setSelected(next)
             setFileView({
               repoPath: repo.path,
               file: f.path,
               source: { type: 'commit', hash },
               mode: useUIStore.getState().fileView?.mode === 'file' ? 'file' : 'diff'
             })
-          }
+          }}
           onFileContext={(f, e) => {
             e.preventDefault()
+            const targets = selected.has(f.path) && selected.size > 1 ? [...selected] : [f.path]
             useUIStore.getState().openContextMenu(e.clientX, e.clientY, [
+              // "Take these changes": overwrite the working copies with this
+              // commit's version of the selected files.
+              {
+                label:
+                  targets.length > 1
+                    ? interp(t('commitPanel.restoreFiles'), { n: targets.length })
+                    : t('commitPanel.restoreFile'),
+                onClick: () =>
+                  openModal({
+                    kind: 'confirm',
+                    title: t('commitPanel.restoreTitle'),
+                    message: `${interp(t('commitPanel.restoreMsg'), { n: targets.length, hash: hash.slice(0, 7) })}\n\n${targets.join('\n')}`,
+                    danger: true,
+                    confirmLabel: t('commitPanel.restoreConfirm'),
+                    onConfirm: () => void repoActions.restoreFromCommit(repo.path, hash, targets)
+                  })
+              },
+              { separator: true },
               { label: shellApi.revealLabel, onClick: () => void shellApi.revealInFolder(`${repo.path}/${f.path}`) },
               { label: t('commitPanel.openDefaultApp'), onClick: () => void shellApi.openPath(`${repo.path}/${f.path}`) },
               ...openWithMenuItems(
@@ -572,6 +647,7 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
             ])
           }}
         />
+        </div>
         {files.length > 0 && filteredFiles.length === 0 && (
           <div className="sb-empty">{t('composer.noFilesMatch')}</div>
         )}

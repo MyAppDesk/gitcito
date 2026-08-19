@@ -48,6 +48,13 @@ Selecionar um commit mostra os arquivos alterados dele (em árvore ou plano), au
 SHA, coautores e a assinatura. Referências `#123` e `@menções` viram links
 automáticos para o seu host.
 
+A lista de arquivos se seleciona em grupo com os gestos de sempre (clique com
+<kbd>⌘</kbd>/<kbd>Ctrl</kbd>, clique com <kbd>⇧</kbd>,
+<kbd>⇧</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd>). Clique com o botão direito na seleção
+→ *Restaurar {n} arquivos na árvore de trabalho* pega esses arquivos exatamente
+como este commit os tinha: depois de uma única confirmação sobrescreve as
+cópias de trabalho, sem tocar em HEAD nem no índice.
+
 ![Percorrendo os detalhes de um commit](../../screenshots/clip-commit-details.webp)
 
 **Veja também:** [Blame e histórico do arquivo](blame.md) · [Busca](search.md) · [Máquina do tempo](time-machine.md)

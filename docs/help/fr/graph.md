@@ -51,6 +51,13 @@ Sélectionner un commit affiche ses fichiers modifiés (en arbre ou à plat),
 l'auteur, le SHA, les co-auteurs et sa signature. Les références `#123` et les
 `@mentions` sont automatiquement liées à votre hébergeur.
 
+La liste de fichiers se sélectionne en groupe avec les gestes habituels (clic
+<kbd>⌘</kbd>/<kbd>Ctrl</kbd>, clic <kbd>⇧</kbd>,
+<kbd>⇧</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd>). Clic droit sur la sélection →
+*Restaurer {n} fichiers dans l'arbre de travail* reprend ces fichiers
+exactement tels que ce commit les avait : après une seule confirmation, les
+copies de travail sont écrasées, sans toucher ni HEAD ni l'index.
+
 ![Parcours des détails d'un commit](../../screenshots/clip-commit-details.webp)
 
 **Voir aussi :** [Blame et historique de fichier](blame.md) · [Recherche](search.md) · [Machine à remonter le temps](time-machine.md)

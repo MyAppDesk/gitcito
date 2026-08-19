@@ -49,6 +49,13 @@ Bir commit'i seçmek değişen dosyalarını (ağaç ya da düz), yazarını, SH
 ortak yazarlarını ve imzasını gösterir. `#123` referansları ve `@mentions`
 sunucunuza otomatik bağlanır.
 
+Dosya listesi alışıldık hareketlerle çoklu seçilir
+(<kbd>⌘</kbd>/<kbd>Ctrl</kbd> ile tıklama, <kbd>⇧</kbd> ile tıklama,
+<kbd>⇧</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd>). Seçime sağ tıklayın → *{n} dosyayı
+çalışma ağacına geri yükle* o dosyaları tam bu commit'teki hâlleriyle alır: tek
+bir onaydan sonra çalışma kopyalarının üzerine yazar; HEAD'e de indekse de
+dokunmaz.
+
 ![Commit ayrıntılarında gezinme](../../screenshots/clip-commit-details.webp)
 
 **Ayrıca bakınız:** [Blame ve dosya geçmişi](blame.md) · [Arama](search.md) · [Zaman makinesi](time-machine.md)

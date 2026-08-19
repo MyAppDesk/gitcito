@@ -220,6 +220,8 @@ export const gitApi = {
   renameStash: (path: string, index: number, message: string) => call<void>('renameStash', path, index, message),
   stashApplyFiles: (path: string, sha: string, tracked: string[], untracked: string[]) =>
     call<void>('stashApplyFiles', path, sha, tracked, untracked),
+  restoreFromCommit: (path: string, hash: string, paths: string[]) =>
+    call<void>('restoreFromCommit', path, hash, paths),
 
   stage: (path: string, files: string[]) => call<void>('stage', path, files),
   stageAll: (path: string) => call<void>('stageAll', path),

@@ -52,6 +52,13 @@ Zaznaczenie commita pokazuje jego zmienione pliki (jako drzewo albo płasko),
 autora, SHA, współautorów i podpis. Referencje `#123` i `@wzmianki` są
 automatycznie linkowane do twojego hostingu.
 
+Listę plików zaznacza się grupowo zwykłymi gestami (klik z
+<kbd>⌘</kbd>/<kbd>Ctrl</kbd>, klik z <kbd>⇧</kbd>,
+<kbd>⇧</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd>). Prawy klik na zaznaczeniu → *Przywróć
+{n} plików do drzewa roboczego* bierze te pliki dokładnie takie, jakie miał ten
+commit: po jednym potwierdzeniu nadpisuje kopie robocze, nie ruszając ani HEAD,
+ani indeksu.
+
 ![Przechodzenie przez szczegóły commita](../../screenshots/clip-commit-details.webp)
 
 **Zobacz też:** [Blame i historia pliku](blame.md) · [Wyszukiwanie](search.md) · [Wehikuł czasu](time-machine.md)

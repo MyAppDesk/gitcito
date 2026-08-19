@@ -1544,6 +1544,13 @@ export const repoActions = {
         gitApi.stashApplyFiles(path, sha, tracked, untracked)
       , undefined, null, undefined, ['status', 'stashes']),
 
+  restoreFromCommit: (path: string, hash: string, paths: string[]) =>
+    useRepoStore
+      .getState()
+      .run(path, interp(t('act.restoredFromCommit'), { n: paths.length }), () =>
+        gitApi.restoreFromCommit(path, hash, paths)
+      , undefined, null, undefined, ['status', 'treeStatus']),
+
   stashDrop: (path: string, index = 0) =>
     useRepoStore.getState().run(path, t('act.droppedStash'), () => gitApi.stashDrop(path, index), undefined, null, undefined, ['stashes']),
 

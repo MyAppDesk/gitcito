@@ -50,6 +50,13 @@ Een commit selecteren toont zijn gewijzigde bestanden (boom of plat), auteur,
 SHA, co-auteurs en zijn handtekening. `#123`-verwijzingen en `@vermeldingen`
 worden automatisch gelinkt naar je host.
 
+De bestandenlijst is meervoudig te selecteren met de gebruikelijke gebaren
+(<kbd>⌘</kbd>/<kbd>Ctrl</kbd>-klik, <kbd>⇧</kbd>-klik,
+<kbd>⇧</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd>). Rechtsklik op de selectie → *{n}
+bestanden terugzetten naar de werkboom* neemt die bestanden precies zoals deze
+commit ze had: na één bevestiging worden de werkkopieën overschreven, zonder
+HEAD of de index aan te raken.
+
 ![Door de commitdetails lopen](../../screenshots/clip-commit-details.webp)
 
 **Zie ook:** [Blame & bestandsgeschiedenis](blame.md) · [Zoeken](search.md) · [Tijdmachine](time-machine.md)

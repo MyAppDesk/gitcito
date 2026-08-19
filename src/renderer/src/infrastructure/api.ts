@@ -141,6 +141,7 @@ import type {
   RepoWiki,
   WikiProgress
 } from '../../../shared/types'
+import type { LocalCiStatus, LocalCiWorkflow } from '../../../shared/localCi'
 import type { EditorSetting, EditorTarget } from '../../../shared/editors'
 
 // Typed adapter over the IPC bridge — the only place that talks to window.api.
@@ -722,6 +723,16 @@ export const shellApi = {
       : window.api.platform === 'win32'
         ? 'Reveal in File Explorer'
         : 'Reveal in file manager'
+}
+
+export const localCiApi = {
+  status: () => window.api.localci.status() as Promise<LocalCiStatus>,
+  workflows: (repoPath: string) => window.api.localci.workflows(repoPath) as Promise<LocalCiWorkflow[]>,
+  /** Resolves with act's exit code (0 = green), null when cancelled. */
+  run: (repoPath: string, workflowFile: string) =>
+    window.api.localci.run(repoPath, workflowFile) as Promise<number | null>,
+  cancel: (repoPath: string) => window.api.localci.cancel(repoPath) as Promise<void>,
+  onData: (cb: (p: { repoPath: string; chunk: string }) => void) => window.api.localci.onData(cb)
 }
 
 export const diffToolApi = {

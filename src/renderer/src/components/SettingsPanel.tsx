@@ -15,6 +15,7 @@ import {
   Gitlab,
   Server,
   BadgeCheck,
+  FlaskConical,
   Plug,
   RefreshCw,
   Loader2,
@@ -49,7 +50,8 @@ import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
 import { Avatar } from './Avatar'
 import { useUpdatesStore, hasPendingUpdate } from '../stores/updates'
-import { gitApi, aiApi, settingsApi, analyticsApi, logApi, infoApi, vaultApi, shellApi, hostingApi, keychainApi, editorApi, sshApi, diffToolApi } from '../infrastructure/api'
+import { gitApi, aiApi, settingsApi, analyticsApi, logApi, infoApi, vaultApi, shellApi, hostingApi, keychainApi, editorApi, sshApi, diffToolApi, localCiApi } from '../infrastructure/api'
+import type { LocalCiStatus } from '../../../shared/localCi'
 import type { DetectedEditor, EditorSetting } from '../../../shared/editors'
 import type { SshKey, SshStatus, SshTest } from '../../../shared/sshKeys'
 import type { DiffToolConfig, DiffToolInfo } from '../../../shared/diffTools'
@@ -569,6 +571,49 @@ export function IntegrationsPage({
         <ExternalLink size={12} /> {t('settings.createToken')}
       </button>
       <p className="settings-hint">{t('settings.integrationsHint')}</p>
+
+      <LocalCiSection />
+    </>
+  )
+}
+
+/** Local CI (act) — an opt-in tool integration, not a host account. */
+function LocalCiSection(): React.JSX.Element {
+  const t = useT()
+  const enabled = useSettingsStore((s) => s.settings.localCiEnabled)
+  const update = useSettingsStore((s) => s.update)
+  const [status, setStatus] = useState<LocalCiStatus | null>(null)
+
+  useEffect(() => {
+    void localCiApi.status().then(setStatus)
+  }, [])
+
+  return (
+    <>
+      <h4>
+        <FlaskConical size={14} /> {t('localCi.title')}
+      </h4>
+      <label className="settings-toggle-card">
+        <input
+          type="checkbox"
+          checked={enabled}
+          onChange={(e) => update((s) => ({ ...s, localCiEnabled: e.target.checked }))}
+        />
+        <span className="settings-toggle-control" aria-hidden="true">
+          <span className="settings-toggle-thumb" />
+        </span>
+        <span className="settings-toggle-copy">
+          <strong>{t('localCi.enable')}</strong>
+          <span className="settings-hint">{t('localCi.intro')}</span>
+        </span>
+      </label>
+      {enabled && status && (
+        <p className="settings-hint">
+          {/* i18n-ignore tool names and versions, identical in every language */}
+          {status.act ? `act: ${status.act}` : t('localCi.actMissing')} ·{' '}
+          {status.docker ? 'Docker ✓' : t('localCi.dockerMissing')}
+        </p>
+      )}
     </>
   )
 }

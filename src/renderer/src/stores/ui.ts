@@ -105,6 +105,7 @@ export type ModalSpec =
   | { kind: 'conflict-radar'; repoPath: string; base?: string }
   | { kind: 'teammate-radar'; repoPath: string }
   | { kind: 'commit-edit'; repoPath: string; sha: string; subject: string }
+  | { kind: 'local-ci'; repoPath: string }
   | { kind: 'keychain-consent'; reason: KeychainReason; adopted?: boolean }
   | { kind: 'range-diff'; repoPath: string; branch: string; initialOld?: string }
   | { kind: 'absorb'; repoPath: string }

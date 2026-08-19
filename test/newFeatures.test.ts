@@ -4,6 +4,7 @@ import { execFileSync } from 'node:child_process'
 import { tmpdir } from 'node:os'
 import { join, dirname } from 'node:path'
 import { gitService } from '../src/main/git'
+import { localCiService } from '../src/main/localCi'
 import { repoPath } from './helpers'
 import { cloneFixture, cleanupFixtures } from './fixtures'
 import { diffSymbols, semanticCompare } from '../src/main/semantic'
@@ -173,6 +174,26 @@ describe('WIP snapshots (snapshots playground)', () => {
     const content = readFileSync(join(R, 'draft.md'), 'utf-8')
     expect(content).toContain('section one')
     expect(content).not.toContain('section two')
+  })
+})
+
+describe('local CI (local-ci playground)', () => {
+  it('lists workflows with their names, filename as fallback', async () => {
+    const ws = await localCiService.workflows(repoPath('local-ci'))
+    expect(ws.map((w) => w.file)).toEqual(['ci.yml', 'lint.yml'])
+    expect(ws[0].name).toBe('CI')
+    expect(ws[1].name).toBe('lint.yml') // no name: → filename
+  })
+
+  it('reports tool availability truthfully (machine-dependent, shape only)', async () => {
+    const s = await localCiService.status()
+    expect(s.act === null || typeof s.act === 'string').toBe(true)
+    expect(typeof s.docker).toBe('boolean')
+  })
+
+  it('refuses workflow paths that escape .github/workflows', async () => {
+    const sender = { isDestroyed: () => true, send: () => {} } as unknown as Electron.WebContents
+    await expect(localCiService.run(repoPath('local-ci'), '../../evil.yml', sender)).rejects.toThrow(/workflow/i)
   })
 })
 

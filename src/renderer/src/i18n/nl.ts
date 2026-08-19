@@ -1795,6 +1795,22 @@ export const nl: Dict = {
   'radar.hotspots': 'Betwiste bestanden',
   'radar.empty': 'Niets te scannen — er zijn geen andere branches.',
   'radar.open': 'Conflictradar…',
+  'localCi.title': 'Lokale CI',
+  'localCi.open': 'Lokale CI…',
+  'localCi.intro':
+    'Voer de GitHub Actions-workflows van deze repository op je eigen machine uit met act, voordat er iets wordt gepusht. Een optionele integratie: Gitcito orkestreert alleen — act en Docker installeer je zelf, en er draait niets tenzij je het inschakelt.',
+  'localCi.enable': 'Lokale CI inschakelen (act)',
+  'localCi.actMissing': 'act is niet geïnstalleerd.',
+  'localCi.actInstallHint':
+    'act voert elke workflow uit in een Docker-container, op dezelfde manier als GitHub. Installeer het en open dit dialoogvenster daarna opnieuw.',
+  'localCi.actDocs': 'Installatiehandleiding',
+  'localCi.dockerMissing': 'Docker draait niet — act heeft een bereikbare Docker-daemon nodig.',
+  'localCi.noWorkflows': 'Deze repository heeft geen workflows onder .github/workflows.',
+  'localCi.run': 'Uitvoeren',
+  'localCi.stop': 'Stoppen',
+  'localCi.passed': 'Geslaagd',
+  'localCi.failed': 'Mislukt (exitcode {code})',
+  'localCi.waiting': 'Wachten op uitvoer…',
   'commit.editCommit': 'Deze commit bewerken…',
   'commitEdit.title': 'Commit bewerken',
   'commitEdit.intro':

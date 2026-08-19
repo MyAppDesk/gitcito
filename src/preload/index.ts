@@ -22,6 +22,19 @@ const api = {
     return () => ipcRenderer.removeListener('bisect:output', listener)
   },
 
+  localci: {
+    status: (): Promise<unknown> => ipcRenderer.invoke('localci:status'),
+    workflows: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('localci:workflows', repoPath),
+    run: (repoPath: string, workflowFile: string): Promise<unknown> =>
+      ipcRenderer.invoke('localci:run', repoPath, workflowFile),
+    cancel: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('localci:cancel', repoPath),
+    onData: (cb: (p: { repoPath: string; chunk: string }) => void): (() => void) => {
+      const listener = (_e: unknown, p: { repoPath: string; chunk: string }): void => cb(p)
+      ipcRenderer.on('localci:data', listener)
+      return () => ipcRenderer.removeListener('localci:data', listener)
+    }
+  },
+
   // Resolve a dropped File to its absolute path (File.path was removed in Electron 32).
   getPathForFile: (file: File): string => webUtils.getPathForFile(file),
 

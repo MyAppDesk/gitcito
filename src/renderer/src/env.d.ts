@@ -45,6 +45,13 @@ interface PreloadApi {
   onCloneProgress(cb: (p: import('../../shared/types').CloneProgress) => void): () => void
   /** Live stdout/stderr of a running `git bisect run`. */
   onBisectOutput(cb: (chunk: string) => void): () => void
+  localci: {
+    status(): Promise<unknown>
+    workflows(repoPath: string): Promise<unknown>
+    run(repoPath: string, workflowFile: string): Promise<unknown>
+    cancel(repoPath: string): Promise<unknown>
+    onData(cb: (p: { repoPath: string; chunk: string }) => void): () => void
+  }
   getPathForFile(file: File): string
   keychain: {
     onAsk(cb: (payload: { reason: string; adopted: boolean }) => void): () => void

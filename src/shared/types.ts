@@ -2445,6 +2445,8 @@ export interface AppSettings {
   /** Take a WIP snapshot automatically before destructive operations
    *  (discard, clean, hard reset, restore from commit). */
   snapshotGuard: boolean
+  /** Local CI via `act` (optional integration; needs act + Docker installed). */
+  localCiEnabled: boolean
   /** Mask secret values (KEY=••••) in .env/key files in the diff & file viewer. */
   maskSecrets: boolean
   /** Surface a Run/Launch picker in the sidebar when a `.vscode/launch.json`
@@ -2760,6 +2762,7 @@ export function defaultSettings(): AppSettings {
     autoOpenChangelog: true,
     wipSnapshotMinutes: 15,
     snapshotGuard: true,
+    localCiEnabled: false,
     maskSecrets: true,
     enableLaunchJson: true,
     shortcuts: {},

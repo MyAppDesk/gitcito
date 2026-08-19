@@ -708,6 +708,22 @@ export const shots = [
     }
   },
   {
+    // Local CI — the guided-setup state is the honest shot: enabled, act not
+    // installed, the dialog walking the user through it. Workflows listed.
+    out: 'local-ci',
+    repos: ['local-ci'],
+    themes: ['light'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['local-ci']
+      await page.evaluate(() => {
+        const s = window.__shot.settings.getState()
+        s.update((cur) => ({ ...cur, localCiEnabled: true }))
+      })
+      await page.evaluate((p) => window.__shot.ui.getState().openModal({ kind: 'local-ci', repoPath: p }), repo)
+      await page.waitForTimeout(900)
+    }
+  },
+  {
     // Edit any commit — pick the README commit mid-history, edit its file,
     // and run the cascade preview so the shot shows the whole promise.
     out: 'commit-edit',

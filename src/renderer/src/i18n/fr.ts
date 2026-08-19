@@ -1750,6 +1750,22 @@ export const fr: Dict = {
   'radar.hotspots': 'Fichiers disputés',
   'radar.empty': 'Rien à analyser — aucune autre branche.',
   'radar.open': 'Radar à conflits…',
+  'localCi.title': 'CI locale',
+  'localCi.open': 'CI locale…',
+  'localCi.intro':
+    'Exécutez les workflows GitHub Actions de ce dépôt sur votre machine avec act, avant tout push. Une intégration facultative : Gitcito ne fait qu’orchestrer — act et Docker sont à installer vous-même, et rien ne s’exécute tant que vous ne l’activez pas.',
+  'localCi.enable': 'Activer la CI locale (act)',
+  'localCi.actMissing': 'act n’est pas installé.',
+  'localCi.actInstallHint':
+    'act exécute chaque workflow dans un conteneur Docker, exactement comme GitHub. Installez-le, puis rouvrez cette boîte de dialogue.',
+  'localCi.actDocs': 'Guide d’installation',
+  'localCi.dockerMissing': 'Docker n’est pas lancé — act a besoin d’un démon Docker accessible.',
+  'localCi.noWorkflows': 'Ce dépôt n’a aucun workflow sous .github/workflows.',
+  'localCi.run': 'Exécuter',
+  'localCi.stop': 'Arrêter',
+  'localCi.passed': 'Réussi',
+  'localCi.failed': 'Échec (code de sortie {code})',
+  'localCi.waiting': 'En attente de sortie…',
   'commit.editCommit': 'Modifier ce commit…',
   'commitEdit.title': 'Modifier le commit',
   'commitEdit.intro':

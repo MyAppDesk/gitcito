@@ -60,14 +60,12 @@ a cascade that has to replay **merge commits** (re-merge with the rewritten
 parent, carry conflict resolutions via rerere). Until then, a merge between the
 commit and HEAD simply disables the feature.
 
-### Local CI as an opt-in extension
-Run the repo's GitHub Actions locally via [`act`](https://github.com/nektos/act)
-and pin per-commit ✓/✗ onto the graph before anything is pushed. Deliberately
-**not** built in: it drags Docker plus a runner image along, which is the
-opposite of an app that ships as one binary. The shape is an optional
-integration in settings — detect `act`, guide the install, stay silent unless
-the user turns it on. Same pattern as diff converters: Gitcito orchestrates,
-the tool does the work.
+### Local CI — per-commit verdicts on the graph
+Running a workflow against the working tree shipped (the act integration).
+The bigger promise remains: run CI against *each commit* and pin ✓/✗ onto the
+graph rows, like hosted CI status but before pushing. That means one worktree
+checkout per commit and real runtime cost — needs a deliberate design, not a
+loop.
 
 ### Team features without a backend
 Gitcito has no server and intends to keep it that way, so the GitKraken-style

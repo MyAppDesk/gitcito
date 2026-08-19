@@ -27,6 +27,7 @@ import {
   STACK_SECTION_START,
   STACK_SECTION_END
 } from '../src/shared/stackPr'
+import { parseWorkflowName } from '../src/shared/localCi'
 import { parseRangeDiff } from '../src/shared/rangeDiff'
 import { editorArgs, editorLaunch, supportsLine } from '../src/shared/editors'
 import { branchDropActions, encodeDropRef, decodeDropRef, type DropRef } from '../src/renderer/src/lib/branchDrop'
@@ -3949,5 +3950,20 @@ describe('stackPr (stacked-PR autopilot planning)', () => {
   it('mergeStackSection on an empty body is just the section', () => {
     const section = buildStackSection([{ branch: 'a', number: 1 }], 1, 'main')
     expect(mergeStackSection('', section)).toBe(section)
+  })
+})
+
+describe('parseWorkflowName (local CI)', () => {
+  it('reads a plain top-level name', () => {
+    expect(parseWorkflowName('name: CI\non: [push]\n')).toBe('CI')
+  })
+  it('strips quotes', () => {
+    expect(parseWorkflowName('name: "Build & Test"\njobs:\n')).toBe('Build & Test')
+  })
+  it('returns null without a name', () => {
+    expect(parseWorkflowName('on: [push]\njobs:\n  x: {}\n')).toBeNull()
+  })
+  it('ignores an indented name inside a job', () => {
+    expect(parseWorkflowName('on: [push]\njobs:\n  build:\n    name: inner\n')).toBeNull()
   })
 })

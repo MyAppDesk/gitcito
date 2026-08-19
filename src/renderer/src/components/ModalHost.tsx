@@ -23,6 +23,7 @@ import { BranchComparison } from './BranchComparison'
 import { ConflictRadar } from './ConflictRadar'
 import { TeammateRadarModal } from './TeammateRadarModal'
 import { CommitEditModal } from './CommitEditModal'
+import { LocalCIModal } from './LocalCIModal'
 import { KeychainConsentModal } from './KeychainConsentModal'
 import { RangeDiffModal } from './RangeDiffModal'
 import { AbsorbModal } from './AbsorbModal'
@@ -1706,7 +1707,8 @@ export function ModalHost(): React.JSX.Element {
                     modal.kind === 'secure-workspace' ||
                     modal.kind === 'snapshots' ||
                     modal.kind === 'teammate-radar' ||
-                    modal.kind === 'commit-edit'
+                    modal.kind === 'commit-edit' ||
+                    modal.kind === 'local-ci'
                   ? 'modal-tall'
                   : ''
             }`}
@@ -1786,6 +1788,7 @@ export function ModalHost(): React.JSX.Element {
             {modal.kind === 'commit-edit' && (
               <CommitEditModal repoPath={modal.repoPath} sha={modal.sha} subject={modal.subject} />
             )}
+            {modal.kind === 'local-ci' && <LocalCIModal repoPath={modal.repoPath} />}
             {modal.kind === 'secure-share' && (
               <SecureShareModal repoPath={modal.repoPath} initialMode={modal.initialMode} />
             )}

@@ -68,7 +68,8 @@ const EXPECTED = [
   'subtree',
   'untracked-mess',
   'attributes',
-  'teammate-radar'
+  'teammate-radar',
+  'local-ci'
 ]
 
 describe('playground fixtures', () => {

@@ -1711,7 +1711,6 @@ export const de: Dict = {
   'commitPanel.notFound': 'Commit nicht gefunden',
   'commitPanel.nothingToSummarize': 'Nichts zusammenzufassen',
   'commitPanel.aiGenerated': 'KI-Commit-Nachricht erzeugt',
-  'commitPanel.editMsgTitle': 'Nachricht des letzten Commits bearbeiten',
   'commitPanel.generateWithAiTitle': 'Commit-Nachricht mit KI erzeugen',
   'commitPanel.openProfileTitle': 'Profil von {author}',
   'commitPanel.changedFile': '{n} geänderte Datei',
@@ -1794,6 +1793,33 @@ export const de: Dict = {
   'radar.hotspots': 'Umkämpfte Dateien',
   'radar.empty': 'Nichts zu scannen — es gibt keine anderen Branches.',
   'radar.open': 'Konfliktradar…',
+  'commit.editCommit': 'Diesen Commit bearbeiten…',
+  'commitEdit.title': 'Commit bearbeiten',
+  'commitEdit.intro':
+    'Schreibe die Dateien oder die Nachricht dieses Commits an Ort und Stelle um. Alles darüber wird neu angewendet — mit Vorschau zuerst, damit du jeden Konflikt siehst, bevor sich eine einzige Ref bewegt.',
+  'commitEdit.notLinear':
+    'Dieser Commit liegt nicht auf einem merge-freien Pfad zu HEAD — Bearbeiten an Ort und Stelle funktioniert nur bei linearer Historie.',
+  'commitEdit.pushedWarning':
+    'Dieser Commit wurde bereits gepusht. Ihn umzuschreiben bedeutet, dass dein nächster Push ein Force-Push sein muss.',
+  'commitEdit.message': 'Commit-Nachricht',
+  'commitEdit.selectFile': 'Wähle eine Datei, um ihren Inhalt zum Stand dieses Commits zu bearbeiten.',
+  'commitEdit.notEditable': 'Diese Datei wurde vom Commit gelöscht — nichts zu bearbeiten.',
+  'commitEdit.binary': 'Binärdatei — hier nicht bearbeitbar.',
+  'commitEdit.tooLarge': 'Datei zu groß, um sie hier zu bearbeiten (Limit: 2 MB).',
+  'commitEdit.modified': 'Geändert',
+  'commitEdit.preview': 'Kaskade als Vorschau',
+  'commitEdit.descendants': '{n} Commits darüber werden neu angewendet',
+  'commitEdit.noDescendants': 'Nichts über diesem Commit — nur er selbst wird umgeschrieben.',
+  'commitEdit.conflictHint':
+    'Die Kaskade hat Konflikte — löse sie, indem du anders editierst, oder nutze stattdessen einen interaktiven Rebase.',
+  'commitEdit.apply': 'Historie umschreiben',
+  'commitEdit.applyTitle': 'Historie umschreiben?',
+  'commitEdit.applyConfirm':
+    '{sha} umschreiben und die {n} Commits darüber neu anwenden? Jeder umgeschriebene Commit bekommt einen neuen Hash. Deine nicht committeten Änderungen werden übernommen, und Rückgängig stellt die alte Kette wieder her.',
+  'commitEdit.applyConfirmPushed':
+    '{sha} umschreiben und die {n} Commits darüber neu anwenden? Jeder umgeschriebene Commit bekommt einen neuen Hash — und dieser Commit ist bereits auf dem Remote, also muss der nächste Push ein Force-Push sein. Rückgängig stellt die alte Kette wieder her.',
+  'act.commitEdited': 'Commit umgeschrieben',
+  'undoLabel.commitEdit': 'Umschreiben von {sha}',
   'teamRadar.title': 'Team-Radar',
   'teamRadar.open': 'Team-Radar…',
   'teamRadar.intro': 'Wer was upstream bewegt hat — und ob es auf deiner nicht committeten Arbeit landet. Berechnet aus dem letzten Abruf, komplett auf deinem Rechner.',

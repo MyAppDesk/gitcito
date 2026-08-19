@@ -955,6 +955,10 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
       : []),
     { separator: true },
     {
+      label: t('commit.editCommit'),
+      onClick: () => openModal({ kind: 'commit-edit', repoPath: repo.path, sha: c.hash, subject: c.subject })
+    },
+    {
       label: t('commit.interactiveRebase'),
       onClick: () =>
         openModal({

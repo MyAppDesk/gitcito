@@ -231,6 +231,12 @@ const FEATURES = [
     body: 'Your whole working tree — untracked files included — snapshotted on a timer and <strong>right before every destructive action</strong>. A discard you regret is a restore away.'
   },
   {
+    icon: '✏️',
+    title: 'Edit any commit',
+    id: 'commit-edit',
+    body: 'The typo is three weeks back? Edit the file <strong>inside the old commit</strong> — everything above replays, and the whole cascade is previewed before a single ref moves.'
+  },
+  {
     icon: '📡',
     title: 'Teammate radar',
     id: 'teammate-radar',

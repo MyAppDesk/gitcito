@@ -13148,6 +13148,85 @@ button.insights-row:hover { background: var(--bg-2); }
 .snapshot-file-path { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .snapshot-diff { flex: 1; min-height: 0; overflow: auto; border: 1px solid var(--border-soft); border-radius: 8px; }
 
+/* ─── Commit editing ───────────────────────────────────────────────────── */
+.commitedit { display: flex; flex-direction: column; min-height: 0; flex: 1; gap: 8px; }
+.commitedit-sha {
+  font-family: var(--mono, monospace);
+  font-size: 12px;
+  color: var(--text-2);
+  background: var(--bg-2);
+  border-radius: 6px;
+  padding: 1px 6px;
+  margin-left: 8px;
+}
+.commitedit-subject {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-2);
+  margin-left: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 40%;
+  vertical-align: middle;
+  display: inline-block;
+}
+.commitedit-banner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 8px;
+}
+.commitedit-banner.error { background: color-mix(in srgb, var(--red, #e5484d) 12%, transparent); color: var(--red, #e5484d); }
+.commitedit-banner.warn { background: color-mix(in srgb, var(--yellow, #f5a524) 14%, transparent); color: var(--yellow, #b8860b); }
+.commitedit-label { font-size: 11px; font-weight: 600; color: var(--text-2); }
+.commitedit-label-row { display: flex; align-items: center; gap: 6px; }
+.commitedit-message {
+  width: 100%;
+  resize: vertical;
+  font-family: var(--mono, monospace);
+  font-size: 12px;
+  background: var(--bg-0);
+  color: var(--text-0);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+.commitedit-split { display: flex; gap: 10px; flex: 1; min-height: 160px; }
+.commitedit-files {
+  width: 260px;
+  flex-shrink: 0;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  overflow-y: auto;
+}
+.commitedit-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent, #6366f1); flex-shrink: 0; }
+.commitedit-editor { flex: 1; min-width: 0; display: flex; border: 1px solid var(--border-soft); border-radius: 8px; overflow: hidden; }
+.commitedit-textarea {
+  flex: 1;
+  resize: none;
+  border: none;
+  outline: none;
+  font-family: var(--mono, monospace);
+  font-size: 12px;
+  line-height: 1.5;
+  background: var(--bg-0);
+  color: var(--text-0);
+  padding: 10px;
+  white-space: pre;
+}
+.commitedit-cascade { border-top: 1px solid var(--border-soft); padding-top: 8px; }
+.commitedit-cascade-head { display: flex; align-items: center; gap: 10px; }
+.commitedit-steps { margin-top: 8px; max-height: 140px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
+.commitedit-step { display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 2px 4px; color: var(--text-1); }
+.commitedit-step.clean svg { color: var(--green, #46a758); }
+.commitedit-step.conflict { color: var(--red, #e5484d); }
+.commitedit-step.blocked { color: var(--text-2); }
+.commitedit-step-subject { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.commitedit-step-files { flex-shrink: 0; font-size: 11px; font-weight: 600; }
+
 /* ─── Stacked PRs ──────────────────────────────────────────────────────── */
 .stack-pr-chip {
   display: inline-flex;

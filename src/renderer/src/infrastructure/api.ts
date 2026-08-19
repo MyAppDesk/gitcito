@@ -111,6 +111,10 @@ import type {
   SnapshotInfo,
   SnapshotKind,
   TeammateRadarResult,
+  CommitEditInfo,
+  CommitEditPreview,
+  CommitEditResult,
+  BlobAtCommit,
   VaultEntry,
   VaultListResult,
   VaultExport,
@@ -373,7 +377,8 @@ export const gitApi = {
 
   cherryPick: (path: string, hash: string, noCommit?: boolean) => call<void>('cherryPick', path, hash, noCommit),
   revertCommit: (path: string, hash: string) => call<void>('revertCommit', path, hash),
-  reset: (path: string, ref: string, mode: 'soft' | 'mixed' | 'hard') => call<void>('reset', path, ref, mode),
+  reset: (path: string, ref: string, mode: 'soft' | 'mixed' | 'hard' | 'keep') =>
+    call<void>('reset', path, ref, mode),
   reflog: (path: string, ref?: string, max?: number) => call<ReflogEntry[]>('reflog', path, ref, max),
   bisectStatus: (path: string) => call<BisectStatus>('bisectStatus', path),
   bisectStart: (path: string) => call<BisectStatus>('bisectStart', path),
@@ -520,6 +525,12 @@ export const gitApi = {
   mergePreview: (path: string, base: string, refs: string[]) =>
     call<MergePreviewResult>('mergePreview', path, base, refs),
   teammateRadar: (path: string) => call<TeammateRadarResult>('teammateRadar', path),
+  commitEditInfo: (path: string, sha: string) => call<CommitEditInfo>('commitEditInfo', path, sha),
+  blobAtCommit: (path: string, sha: string, file: string) => call<BlobAtCommit>('blobAtCommit', path, sha, file),
+  commitEditPreview: (path: string, sha: string, edits: Record<string, string>, message: string) =>
+    call<CommitEditPreview>('commitEditPreview', path, sha, edits, message),
+  commitEditApply: (path: string, sha: string, edits: Record<string, string>, message: string) =>
+    call<CommitEditResult>('commitEditApply', path, sha, edits, message),
   semanticDiff: (path: string, file: string, oldSide: BlobSpec, newSide: BlobSpec) =>
     call<SemanticDiff>('semanticDiff', path, file, oldSide, newSide),
   rangeDiff: (path: string, oldRev: string, newRev: string, base?: string) =>

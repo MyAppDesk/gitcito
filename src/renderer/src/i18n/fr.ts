@@ -1671,7 +1671,6 @@ export const fr: Dict = {
   'commitPanel.notFound': 'Commit introuvable',
   'commitPanel.nothingToSummarize': 'Rien à résumer',
   'commitPanel.aiGenerated': 'Message de commit généré par l’IA',
-  'commitPanel.editMsgTitle': 'Modifier le message du dernier commit',
   'commitPanel.generateWithAiTitle': 'Générer le message de commit avec l’IA',
   'commitPanel.openProfileTitle': 'Profil de {author}',
   'commitPanel.changedFile': '{n} fichier modifié',
@@ -1750,6 +1749,33 @@ export const fr: Dict = {
   'radar.hotspots': 'Fichiers disputés',
   'radar.empty': 'Rien à analyser — aucune autre branche.',
   'radar.open': 'Radar à conflits…',
+  'commit.editCommit': 'Modifier ce commit…',
+  'commitEdit.title': 'Modifier le commit',
+  'commitEdit.intro':
+    'Réécrivez les fichiers ou le message de ce commit sur place. Tout ce qui est au-dessus est rejoué — avec un aperçu d’abord, pour voir chaque conflit avant qu’une seule réf ne bouge.',
+  'commitEdit.notLinear':
+    'Ce commit n’est pas sur un chemin sans fusion jusqu’à HEAD — la modification sur place ne fonctionne que sur un historique linéaire.',
+  'commitEdit.pushedWarning':
+    'Ce commit a déjà été poussé. Le réécrire signifie que votre prochain push devra être un push forcé.',
+  'commitEdit.message': 'Message du commit',
+  'commitEdit.selectFile': 'Sélectionnez un fichier pour modifier son contenu tel qu’il était à ce commit.',
+  'commitEdit.notEditable': 'Ce fichier a été supprimé par le commit — rien à modifier.',
+  'commitEdit.binary': 'Fichier binaire — non modifiable ici.',
+  'commitEdit.tooLarge': 'Fichier trop volumineux pour être modifié ici (limite de 2 Mo).',
+  'commitEdit.modified': 'Modifié',
+  'commitEdit.preview': 'Prévisualiser la cascade',
+  'commitEdit.descendants': '{n} commits au-dessus seront rejoués',
+  'commitEdit.noDescendants': 'Rien au-dessus de ce commit — lui seul est réécrit.',
+  'commitEdit.conflictHint':
+    'La cascade entre en conflit — résolvez-le en modifiant autrement, ou utilisez plutôt un rebase interactif.',
+  'commitEdit.apply': 'Réécrire l’historique',
+  'commitEdit.applyTitle': 'Réécrire l’historique ?',
+  'commitEdit.applyConfirm':
+    'Réécrire {sha} et rejouer les {n} commits au-dessus ? Chaque commit réécrit reçoit un nouveau hash. Vos modifications non validées sont conservées, et l’annulation restaure l’ancienne chaîne.',
+  'commitEdit.applyConfirmPushed':
+    'Réécrire {sha} et rejouer les {n} commits au-dessus ? Chaque commit réécrit reçoit un nouveau hash — et ce commit est déjà sur le distant, donc le prochain push devra être forcé. L’annulation restaure l’ancienne chaîne.',
+  'act.commitEdited': 'Commit réécrit',
+  'undoLabel.commitEdit': 'réécriture de {sha}',
   'teamRadar.title': 'Radar d’équipe',
   'teamRadar.open': 'Radar d’équipe…',
   'teamRadar.intro': 'Qui a bougé quoi en amont — et si cela atterrit sur votre travail non validé. Calculé à partir de la dernière récupération, entièrement sur votre machine.',

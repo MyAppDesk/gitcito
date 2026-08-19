@@ -708,6 +708,30 @@ export const shots = [
     }
   },
   {
+    // Edit any commit — pick the README commit mid-history, edit its file,
+    // and run the cascade preview so the shot shows the whole promise.
+    out: 'commit-edit',
+    repos: ['bisect-bug'],
+    themes: ['light'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['bisect-bug']
+      await page.waitForFunction((p) => (window.__shot.repo.getState().repos[p]?.commits ?? []).length > 0, repo)
+      await page.evaluate((p) => {
+        const commits = window.__shot.repo.getState().repos[p].commits
+        const c = commits.find((x) => x.subject.toLowerCase().includes('readme')) ?? commits[Math.floor(commits.length / 2)]
+        window.__shot.ui.getState().openModal({ kind: 'commit-edit', repoPath: p, sha: c.hash, subject: c.subject })
+      }, repo)
+      await page.waitForTimeout(900)
+      await page.locator('.commitedit-files .snapshot-file-row').first().click()
+      await page.waitForTimeout(500)
+      await page.locator('.commitedit-textarea').fill(
+        (await page.locator('.commitedit-textarea').inputValue()) + '\nEdited three weeks later.\n'
+      )
+      await page.locator('.commitedit-cascade-head button').first().click()
+      await page.waitForTimeout(1500)
+    }
+  },
+  {
     // Teammate radar — remote activity crossed with local dirty files.
     // Expand the overlapping row so the shot shows the file-level detail.
     out: 'teammate-radar',

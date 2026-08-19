@@ -1685,6 +1685,31 @@ export const repoActions = {
     )
   },
 
+  /** Rewrite a historical commit (files and/or message) and replay everything
+   *  above it. Undo moves the branch back with `reset --keep`, so uncommitted
+   *  work rides along both ways. */
+  commitEditApply: (path: string, sha: string, edits: Record<string, string>, message: string) => {
+    let oldHead = ''
+    let newTip = ''
+    return useRepoStore.getState().run(
+      path,
+      t('act.commitEdited'),
+      async () => {
+        const res = await gitApi.commitEditApply(path, sha, edits, message)
+        oldHead = res.oldHead
+        newTip = res.newTip
+      },
+      {
+        label: interp(t('undoLabel.commitEdit'), { sha: sha.slice(0, 7) }),
+        undo: () => gitApi.reset(path, oldHead, 'keep'),
+        redo: () => gitApi.reset(path, newTip, 'keep')
+      },
+      null,
+      undefined,
+      ['log', 'status', 'branches', 'treeStatus']
+    )
+  },
+
   stashDrop: (path: string, index = 0) =>
     useRepoStore.getState().run(path, t('act.droppedStash'), () => gitApi.stashDrop(path, index), undefined, null, undefined, ['stashes']),
 

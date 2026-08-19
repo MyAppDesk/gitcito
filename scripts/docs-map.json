@@ -58,7 +58,8 @@
       "time-machine": "time-machine",
       "timelapse": "timelapse",
       "launch-input": "launch",
-      "teammate-radar": "teammate-radar"
+      "teammate-radar": "teammate-radar",
+      "commit-edit": "commit-edit"
     },
     "exempt": {
       "input": "Generic single-field prompt reused everywhere; not a feature.",

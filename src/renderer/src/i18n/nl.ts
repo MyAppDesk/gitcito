@@ -1712,7 +1712,6 @@ export const nl: Dict = {
   'commitPanel.notFound': 'Commit niet gevonden',
   'commitPanel.nothingToSummarize': 'Niets om samen te vatten',
   'commitPanel.aiGenerated': 'AI-commit-bericht gegenereerd',
-  'commitPanel.editMsgTitle': 'Het laatste commit-bericht bewerken',
   'commitPanel.generateWithAiTitle': 'Commit-bericht met AI genereren',
   'commitPanel.openProfileTitle': 'Profiel van {author}',
   'commitPanel.changedFile': '{n} gewijzigd bestand',
@@ -1795,6 +1794,33 @@ export const nl: Dict = {
   'radar.hotspots': 'Betwiste bestanden',
   'radar.empty': 'Niets te scannen — er zijn geen andere branches.',
   'radar.open': 'Conflictradar…',
+  'commit.editCommit': 'Deze commit bewerken…',
+  'commitEdit.title': 'Commit bewerken',
+  'commitEdit.intro':
+    'Herschrijf de bestanden of het bericht van deze commit ter plekke. Alles erboven wordt opnieuw toegepast — eerst als voorbeeld, zodat je elk conflict ziet voordat er ook maar één ref beweegt.',
+  'commitEdit.notLinear':
+    'Deze commit ligt niet op een merge-vrij pad naar HEAD — ter plekke bewerken werkt alleen op een lineaire geschiedenis.',
+  'commitEdit.pushedWarning':
+    'Deze commit is al gepusht. Hem herschrijven betekent dat je volgende push een force push moet zijn.',
+  'commitEdit.message': 'Commitbericht',
+  'commitEdit.selectFile': 'Selecteer een bestand om de inhoud ervan te bewerken zoals die was in deze commit.',
+  'commitEdit.notEditable': 'Dit bestand is door de commit verwijderd — niets te bewerken.',
+  'commitEdit.binary': 'Binair bestand — hier niet te bewerken.',
+  'commitEdit.tooLarge': 'Bestand te groot om hier te bewerken (limiet van 2 MB).',
+  'commitEdit.modified': 'Gewijzigd',
+  'commitEdit.preview': 'Cascade voorvertonen',
+  'commitEdit.descendants': '{n} commits erboven worden opnieuw toegepast',
+  'commitEdit.noDescendants': 'Niets boven deze commit — alleen deze commit zelf wordt herschreven.',
+  'commitEdit.conflictHint':
+    'De cascade geeft conflicten — los het op door anders te bewerken, of gebruik in plaats daarvan een interactieve rebase.',
+  'commitEdit.apply': 'Geschiedenis herschrijven',
+  'commitEdit.applyTitle': 'Geschiedenis herschrijven?',
+  'commitEdit.applyConfirm':
+    '{sha} herschrijven en de {n} commits erboven opnieuw toepassen? Elke herschreven commit krijgt een nieuwe hash. Je niet-gecommitte wijzigingen gaan mee, en ongedaan maken herstelt de oude keten.',
+  'commitEdit.applyConfirmPushed':
+    '{sha} herschrijven en de {n} commits erboven opnieuw toepassen? Elke herschreven commit krijgt een nieuwe hash — en deze commit staat al op de remote, dus de volgende push moet een force push zijn. Ongedaan maken herstelt de oude keten.',
+  'act.commitEdited': 'Commit herschreven',
+  'undoLabel.commitEdit': 'herschrijving van {sha}',
   'teamRadar.title': 'Teamradar',
   'teamRadar.open': 'Teamradar…',
   'teamRadar.intro': 'Wie wat upstream heeft verplaatst — en of het bovenop je niet-gecommitte werk landt. Berekend vanaf de laatste fetch, volledig op je eigen machine.',

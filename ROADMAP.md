@@ -54,13 +54,11 @@ three clicks; they should be zero.
 
 ## Bigger bets
 
-### Edit any commit like a document
-Click a commit anywhere in history, edit its files in place, and let Gitcito
-rebase every descendant — with the conflict radar predicting the cascade
-*before* anything moves. Interactive rebase already covers reordering and
-squashing; this is the "fix the typo three weeks back" gesture no client has.
-Honest limits: linear history first, merges in the cascade are a hard problem,
-and rewritten history still means force-push rules apply.
+### Commit editing across merges
+Editing a commit in place shipped for linear history. The hard half remains:
+a cascade that has to replay **merge commits** (re-merge with the rewritten
+parent, carry conflict resolutions via rerere). Until then, a merge between the
+commit and HEAD simply disables the feature.
 
 ### Local CI as an opt-in extension
 Run the repo's GitHub Actions locally via [`act`](https://github.com/nektos/act)

@@ -1672,7 +1672,6 @@ export const it: Dict = {
   'commitPanel.notFound': 'Commit non trovato',
   'commitPanel.nothingToSummarize': 'Niente da riassumere',
   'commitPanel.aiGenerated': 'Messaggio di commit generato dall’AI',
-  'commitPanel.editMsgTitle': 'Modifica il messaggio dell’ultimo commit',
   'commitPanel.generateWithAiTitle': 'Genera il messaggio di commit con l’AI',
   'commitPanel.openProfileTitle': 'Profilo di {author}',
   'commitPanel.changedFile': '{n} file cambiato',
@@ -1751,6 +1750,33 @@ export const it: Dict = {
   'radar.hotspots': 'File contesi',
   'radar.empty': 'Niente da scansionare — non ci sono altri branch.',
   'radar.open': 'Radar dei conflitti…',
+  'commit.editCommit': 'Modifica questo commit…',
+  'commitEdit.title': 'Modifica il commit',
+  'commitEdit.intro':
+    'Riscrivi sul posto i file o il messaggio di questo commit. Tutto quello che sta sopra viene riapplicato — prima in anteprima, così vedi ogni conflitto prima che un solo ref si muova.',
+  'commitEdit.notLinear':
+    'Questo commit non è su un percorso senza merge fino a HEAD — la modifica sul posto funziona solo su una cronologia lineare.',
+  'commitEdit.pushedWarning':
+    'Questo commit è già stato pushato. Riscriverlo significa che il tuo prossimo push dovrà essere un force push.',
+  'commitEdit.message': 'Messaggio del commit',
+  'commitEdit.selectFile': 'Seleziona un file per modificarne il contenuto com’era in questo commit.',
+  'commitEdit.notEditable': 'Questo file è stato cancellato dal commit — niente da modificare.',
+  'commitEdit.binary': 'File binario — non modificabile qui.',
+  'commitEdit.tooLarge': 'File troppo grande per essere modificato qui (limite di 2 MB).',
+  'commitEdit.modified': 'Modificato',
+  'commitEdit.preview': 'Anteprima della cascata',
+  'commitEdit.descendants': '{n} commit sopra a questo verranno riapplicati',
+  'commitEdit.noDescendants': 'Niente sopra questo commit — viene riscritto solo lui.',
+  'commitEdit.conflictHint':
+    'La cascata va in conflitto — risolvi modificando in modo diverso, oppure usa un rebase interattivo.',
+  'commitEdit.apply': 'Riscrivi la cronologia',
+  'commitEdit.applyTitle': 'Riscrivere la cronologia?',
+  'commitEdit.applyConfirm':
+    'Riscrivere {sha} e riapplicare i {n} commit sopra di lui? Ogni commit riscritto prende un hash nuovo. Le tue modifiche non committate vengono portate avanti, e un annulla ripristina la vecchia catena.',
+  'commitEdit.applyConfirmPushed':
+    'Riscrivere {sha} e riapplicare i {n} commit sopra di lui? Ogni commit riscritto prende un hash nuovo — e questo commit è già sul remoto, quindi il prossimo push dovrà essere un force push. Un annulla ripristina la vecchia catena.',
+  'act.commitEdited': 'Commit riscritto',
+  'undoLabel.commitEdit': 'riscrittura di {sha}',
   'teamRadar.title': 'Radar del team',
   'teamRadar.open': 'Radar del team…',
   'teamRadar.intro': 'Chi ha spostato cosa upstream — e se finisce sopra il tuo lavoro non ancora committato. Calcolato dall’ultimo fetch, interamente sulla tua macchina.',

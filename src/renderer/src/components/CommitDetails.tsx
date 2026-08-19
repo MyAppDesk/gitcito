@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { motion } from 'framer-motion'
-import { SquarePen, ExternalLink, Sparkles, Loader2, Laptop, Tag, Cloud, Copy, StickyNote, Pencil, Trash2 } from 'lucide-react'
+import { ExternalLink, Laptop, Tag, Cloud, Copy, StickyNote, Pencil, Trash2, FilePenLine } from 'lucide-react'
 import type { CodeSearchHit, CommitBranchInfo, FileEntry, GraphCommit, RemoteInfo } from '../../../shared/types'
 import { autolink, remoteWebUrl } from '../lib/autolink'
-import { gitApi, aiApi, shellApi } from '../infrastructure/api'
+import { gitApi, shellApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { repoActions } from '../stores/repo'
@@ -44,23 +43,16 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
   const [files, setFiles] = useState<FileEntry[]>([])
   const [branches, setBranches] = useState<CommitBranchInfo[]>([])
   const [tags, setTags] = useState<string[]>([])
-  const [amendBusy, setAmendBusy] = useState(false)
-  const [aiBusy, setAiBusy] = useState(false)
-  const [editingSubject, setEditingSubject] = useState(false)
-  const [draftSubject, setDraftSubject] = useState('')
   const [note, setNote] = useState('')
   const [noteDraft, setNoteDraft] = useState('')
   const [editingNote, setEditingNote] = useState(false)
   const [filter, setFilter] = useState<FileFilter>(EMPTY_FILTER)
   const [hits, setHits] = useState<CodeSearchHit[] | null>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
   const fileView = useUIStore((s) => s.fileView)
   const setFileView = useUIStore((s) => s.setFileView)
   const toast = useUIStore((s) => s.toast)
   const openModal = useUIStore((s) => s.openModal)
   const activeProfile = useSettingsStore((s) => s.activeProfile)
-  const aiFor = useSettingsStore((s) => s.aiFor)
-  const aiEnabled = useSettingsStore((s) => s.activeProfile().ai.enabled !== false)
   const defaultOpenApp = useSettingsStore((s) => s.settings.defaultOpenApp)
   const editor = useSettingsStore((s) => s.settings.editor)
   const commit: GraphCommit | undefined = repo.commits.find((c) => c.hash === hash)
@@ -121,12 +113,6 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
       cancelled = true
     }
   }, [repo.path, hash])
-
-  useEffect(() => {
-    if (!commit) return
-    setEditingSubject(false)
-    setDraftSubject(commit.subject)
-  }, [commit])
 
   // ─── File search / filter inside this commit ──────────────────────────────
   // Content search greps the commit's own tree, so hits are the file as it
@@ -194,12 +180,6 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
     })
   }, [files, filter, query, nameRe, hitsByFile])
 
-  useEffect(() => {
-    if (!editingSubject) return
-    inputRef.current?.focus()
-    inputRef.current?.select()
-  }, [editingSubject])
-
   // Shift+↑/↓ extends the file selection while this panel owns the keys. Row
   // order comes from the DOM so ranges follow the tree view's visual order.
   const listWrapRef = useRef<HTMLDivElement>(null)
@@ -226,50 +206,6 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
   }, [keyToken])
 
   if (!commit) return <div className="panel-empty">{t('commitPanel.notFound')}</div>
-
-  const canAmendMessage = commit.refs.some((ref) => ref === 'HEAD' || ref.startsWith('HEAD ->'))
-
-  const cancelEditing = (): void => {
-    setEditingSubject(false)
-    setDraftSubject(commit.subject)
-  }
-
-  const submitSubject = async (): Promise<void> => {
-    const nextSubject = draftSubject.trim()
-    if (!nextSubject || nextSubject === commit.subject) {
-      cancelEditing()
-      return
-    }
-
-    if (!canAmendMessage || amendBusy) return
-    setAmendBusy(true)
-    try {
-      const ok = await repoActions.amendCommitMessage(repo.path, nextSubject, commit.subject)
-      if (ok) setEditingSubject(false)
-    } finally {
-      setAmendBusy(false)
-    }
-  }
-
-  const generateWithAI = async (): Promise<void> => {
-    if (!canAmendMessage || aiBusy || amendBusy) return
-    setAiBusy(true)
-    try {
-      const diff = await gitApi.commitDiff(repo.path, hash)
-      if (!diff.trim()) {
-        toast('info', t('commitPanel.nothingToSummarize'))
-        return
-      }
-      const msg = await aiApi.commitMessage(diff, aiFor('commit'), { branch: repo.branches.current })
-      setDraftSubject(msg.summary)
-      setEditingSubject(true)
-      toast('success', t('commitPanel.aiGenerated'))
-    } catch (err) {
-      toast('error', err instanceof Error ? err.message : String(err))
-    } finally {
-      setAiBusy(false)
-    }
-  }
 
   const currentFile =
     fileView && fileView.repoPath === repo.path && fileView.source.type === 'commit' && fileView.source.hash === hash
@@ -418,58 +354,21 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
         )}
         <div className="commit-message-toolbar">
           <span className="commit-message-label">{t('commitPanel.messageLabel')}</span>
-          {canAmendMessage && (
-            <button
-              className="icon-btn commit-edit-btn"
-              type="button"
-              onClick={() => {
-                setDraftSubject(commit.subject)
-                setEditingSubject(true)
-              }}
-              title={t('commitPanel.editMsgTitle')}
-              disabled={amendBusy || aiBusy}
-            >
-              <SquarePen size={13} />
-            </button>
-          )}
-          {canAmendMessage && aiEnabled && (
-            <motion.button
-              className="icon-btn commit-edit-btn"
-              type="button"
-              onClick={() => void generateWithAI()}
-              title={t('commitPanel.generateWithAiTitle')}
-              disabled={amendBusy || aiBusy}
-              whileTap={{ scale: 0.92 }}
-            >
-              {aiBusy ? <Loader2 size={13} className="spin" /> : <Sparkles size={13} />}
-            </motion.button>
-          )}
+          {/* One entry point: the commit-edit modal covers renaming (any commit,
+              not just HEAD), AI generation, and file edits — three buttons
+              collapsed into one. */}
+          <button
+            className="icon-btn commit-edit-btn"
+            type="button"
+            onClick={() =>
+              openModal({ kind: 'commit-edit', repoPath: repo.path, sha: commit.hash, subject: commit.subject })
+            }
+            title={t('commit.editCommit')}
+          >
+            <FilePenLine size={13} />
+          </button>
         </div>
-        {editingSubject ? (
-          <input
-            ref={inputRef}
-            className="commit-subject commit-subject-input"
-            value={draftSubject}
-            maxLength={100}
-            disabled={amendBusy}
-            onChange={(e) => setDraftSubject(e.target.value)}
-            onBlur={() => {
-              if (!amendBusy) cancelEditing()
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault()
-                void submitSubject()
-              }
-              if (e.key === 'Escape') {
-                e.preventDefault()
-                cancelEditing()
-              }
-            }}
-          />
-        ) : (
-          <p className="commit-subject">{autolink(commit.subject, remoteWebUrl(repo.remotes.find((r) => r.name === 'origin')?.url ?? repo.remotes[0]?.url))}</p>
-        )}
+        <p className="commit-subject">{autolink(commit.subject, remoteWebUrl(repo.remotes.find((r) => r.name === 'origin')?.url ?? repo.remotes[0]?.url))}</p>
 
         {/* Full-bleed like the subject above it, and absent entirely when there
             is nothing to show — an empty box on every commit is noise. */}

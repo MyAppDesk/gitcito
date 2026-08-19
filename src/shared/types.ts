@@ -198,6 +198,50 @@ export interface MergePreviewResult {
   scannedAt: number
 }
 
+/** Validation + metadata for editing a historical commit in place. */
+export interface CommitEditInfo {
+  /** Commit is an ancestor of HEAD and the path up to HEAD is merge-free. */
+  linear: boolean
+  /** Commits between it and HEAD that a rewrite would replay. */
+  descendants: number
+  /** Reachable from a remote ref — rewriting means a force push later. */
+  pushed: boolean
+  message: string
+  authorName: string
+  authorDate: string // ISO
+}
+
+/** A historical blob, loaded for in-place editing. */
+export interface BlobAtCommit {
+  /** null when binary or too large to edit. */
+  content: string | null
+  binary: boolean
+  size: number
+}
+
+/** One replayed descendant in a commit-edit cascade. */
+export interface CommitEditStep {
+  sha: string
+  subject: string
+  /** blocked = never attempted because an earlier step conflicted. */
+  status: 'clean' | 'conflict' | 'blocked'
+  /** Conflicting paths (conflict only). */
+  files: string[]
+}
+
+/** Dry-run result of rewriting a commit: the cascade forecast. */
+export interface CommitEditPreview {
+  /** The would-be new HEAD; null when the cascade conflicts. */
+  newTip: string | null
+  steps: CommitEditStep[]
+}
+
+export interface CommitEditResult {
+  oldHead: string
+  newTip: string
+  rewritten: number
+}
+
 /** One remote branch's activity as seen by the teammate radar. */
 export interface TeammateRadarEntry {
   ref: string // short remote ref, e.g. origin/feature-x

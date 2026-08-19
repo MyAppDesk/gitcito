@@ -64,6 +64,11 @@ import type {
   SnapshotKind,
   TeammateRadarEntry,
   TeammateRadarResult,
+  CommitEditInfo,
+  CommitEditStep,
+  CommitEditPreview,
+  CommitEditResult,
+  BlobAtCommit,
   CloneProgress,
   CloneOptions,
   GitflowConfig,
@@ -713,6 +718,151 @@ async function guardSnapshot(repoPath: string): Promise<void> {
   } catch {
     /* the operation must not be blocked by its own parachute */
   }
+}
+
+// ─── Commit-edit plumbing (see the gitService section for the full story) ───
+
+/** Read a blob at `<sha>:<file>` as a raw Buffer (git show, no encoding loss). */
+function readBlobBuffer(repoPath: string, spec: string): Promise<Buffer> {
+  return new Promise<Buffer>((resolve, reject) => {
+    const child = spawn('git', ['-C', repoPath, 'show', spec], { env: noPromptEnv() })
+    const chunks: Buffer[] = []
+    const errChunks: Buffer[] = []
+    child.stdout.on('data', (d: Buffer) => chunks.push(d))
+    child.stderr.on('data', (d: Buffer) => errChunks.push(d))
+    child.on('error', reject)
+    child.on('close', (code) =>
+      code === 0
+        ? resolve(Buffer.concat(chunks))
+        : reject(new Error(Buffer.concat(errChunks).toString() || `git show exited ${code}`))
+    )
+  })
+}
+
+/**
+ * Cherry-pick `commit` onto `onto` entirely in memory: merge-tree with the
+ * commit's own parent as the explicit base, so only the commit's patch moves.
+ * Exit 1 (conflict) is a result, not an error.
+ */
+async function cherryPickTree(
+  repoPath: string,
+  base: string,
+  onto: string,
+  commit: string
+): Promise<MergeTreeRecord> {
+  const args = ['-C', repoPath, 'merge-tree', '--write-tree', '--name-only', '--messages', `--merge-base=${base}`, onto, commit]
+  try {
+    const { stdout } = await pexecFile('git', args, { env: noPromptEnv(), maxBuffer: 16 * 1024 * 1024 })
+    return parseMergeTreeSingle(stdout, 0)
+  } catch (err) {
+    const e = err as { code?: number; stdout?: string; stderr?: string; message?: string }
+    const code = typeof e.code === 'number' ? e.code : 2
+    return parseMergeTreeSingle(e.stdout ?? '', code, e.stderr || e.message || '')
+  }
+}
+
+/** Author identity + full message of one commit, for faithful rewrites. */
+async function commitIdentity(
+  repoPath: string,
+  sha: string
+): Promise<{ name: string; email: string; date: string; message: string }> {
+  const raw = await runGit(repoPath, ['log', '-1', '--format=%an%x00%ae%x00%aI%x00%B', sha])
+  const [name, email, date, ...rest] = raw.split('\x00')
+  return { name, email, date, message: rest.join('\x00').replace(/\n+$/, '') }
+}
+
+/** Env that re-commits as the original author (committer stays the local user). */
+function authorEnv(id: { name: string; email: string; date: string }): NodeJS.ProcessEnv {
+  return { GIT_AUTHOR_NAME: id.name, GIT_AUTHOR_EMAIL: id.email, GIT_AUTHOR_DATE: id.date }
+}
+
+/**
+ * The engine under commit editing: build a replacement for `sha` with edited
+ * file contents and/or a new message, then replay every descendant up to HEAD
+ * on top of it — all with plumbing (temp index, hash-object, commit-tree,
+ * in-memory merge-tree). No ref moves, no worktree writes: the caller decides
+ * whether the resulting tip becomes real. Dangling objects from a discarded
+ * preview are ordinary gc food.
+ */
+async function rewriteWithEdits(
+  repoPath: string,
+  sha: string,
+  edits: Record<string, string>,
+  message: string
+): Promise<CommitEditPreview> {
+  const gitDir = (await runGit(repoPath, ['rev-parse', '--absolute-git-dir'])).trim()
+  const stamp = `${process.pid}-${Date.now()}`
+  const tmpIndex = join(gitDir, `gitcito-edit-index-${stamp}`)
+  const tmpBlob = join(gitDir, `gitcito-edit-blob-${stamp}`)
+  const env = { GIT_INDEX_FILE: tmpIndex }
+  try {
+    // 1. The edited commit's replacement tree.
+    await runGit(repoPath, ['read-tree', `${sha}^{tree}`], env)
+    for (const [file, content] of Object.entries(edits)) {
+      const entry = (await runGit(repoPath, ['ls-tree', sha, '--', file])).trim()
+      const mode = entry.split(' ')[0]
+      if (mode !== '100644' && mode !== '100755') throw new Error(`Not an editable file in this commit: ${file}`)
+      await writeFile(tmpBlob, content, 'utf-8')
+      const blob = (await runGit(repoPath, ['hash-object', '-w', '--', tmpBlob])).trim()
+      await runGit(repoPath, ['update-index', '--add', '--cacheinfo', `${mode},${blob},${file}`], env)
+    }
+    const newTree = (await runGit(repoPath, ['write-tree'], env)).trim()
+
+    // 2. Replacement commit, same parents and author, possibly a new message.
+    const parentLine = (await runGit(repoPath, ['rev-list', '--parents', '-n', '1', sha])).trim().split(' ')
+    const parents = parentLine.slice(1).flatMap((p) => ['-p', p])
+    const id = await commitIdentity(repoPath, sha)
+    let tip = (
+      await runGit(repoPath, ['commit-tree', newTree, ...parents, '-m', message || id.message], authorEnv(id))
+    ).trim()
+
+    // 3. Replay descendants oldest → newest. Each one is an in-memory
+    //    cherry-pick; the first conflict stops the cascade and marks the rest.
+    const range = (await runGit(repoPath, ['log', '--reverse', '--format=%H%x00%s', `${sha}..HEAD`]))
+      .split('\n')
+      .filter(Boolean)
+      .map((l) => {
+        const [h, ...s] = l.split('\x00')
+        return { sha: h, subject: s.join('\x00') }
+      })
+    const steps: CommitEditStep[] = []
+    let prevOld = sha
+    let conflicted = false
+    for (const c of range) {
+      if (conflicted) {
+        steps.push({ sha: c.sha, subject: c.subject, status: 'blocked', files: [] })
+        continue
+      }
+      const rec = await cherryPickTree(repoPath, prevOld, tip, c.sha)
+      if (rec.status !== 'clean') {
+        conflicted = true
+        steps.push({ sha: c.sha, subject: c.subject, status: 'conflict', files: rec.files })
+        continue
+      }
+      const cid = await commitIdentity(repoPath, c.sha)
+      tip = (await runGit(repoPath, ['commit-tree', rec.tree, '-p', tip, '-m', cid.message], authorEnv(cid))).trim()
+      steps.push({ sha: c.sha, subject: c.subject, status: 'clean', files: [] })
+      prevOld = c.sha
+    }
+    return { newTip: conflicted ? null : tip, steps }
+  } finally {
+    await unlink(tmpIndex).catch(() => {})
+    await unlink(tmpBlob).catch(() => {})
+  }
+}
+
+/** True when `sha` is an ancestor of HEAD with a merge-free path up to it. */
+async function isLinearToHead(repoPath: string, sha: string): Promise<boolean> {
+  const ancestor = await runGit(repoPath, ['merge-base', '--is-ancestor', sha, 'HEAD']).then(
+    () => true,
+    () => false
+  )
+  if (!ancestor) return false
+  const merges = (await runGit(repoPath, ['rev-list', '--merges', `${sha}..HEAD`]).catch(() => 'x')).trim()
+  if (merges) return false
+  // The edited commit itself must not be a merge either.
+  const parents = (await runGit(repoPath, ['rev-list', '--parents', '-n', '1', sha])).trim().split(' ')
+  return parents.length <= 2
 }
 
 /**
@@ -4470,8 +4620,9 @@ export const gitService = {
     await gitFor(repoPath).raw(['revert', '--no-edit', hash])
   },
 
-  async reset(repoPath: string, ref: string, mode: 'soft' | 'mixed' | 'hard'): Promise<void> {
-    // Only --hard destroys working-tree content; soft/mixed just move refs/index.
+  async reset(repoPath: string, ref: string, mode: 'soft' | 'mixed' | 'hard' | 'keep'): Promise<void> {
+    // Only --hard destroys working-tree content; soft/mixed move refs/index and
+    // --keep carries local changes over or aborts.
     if (mode === 'hard') await guardSnapshot(repoPath)
     await gitFor(repoPath).reset([`--${mode}`, ref])
   },
@@ -5858,6 +6009,68 @@ export const gitService = {
     return { markdown: out.join('\n').trimEnd() + '\n', count }
   },
 
+  // ─── Commit editing ─────────────────────────────────────────────────────
+  // "Edit any commit like a document": rewrite a historical commit's files or
+  // message and replay everything above it — previewed in memory first, so the
+  // user sees the whole cascade (including conflicts) before a single ref
+  // moves. Linear, merge-free ranges only.
+
+  /** Can this commit be edited in place, and what would a rewrite drag along? */
+  async commitEditInfo(repoPath: string, sha: string): Promise<CommitEditInfo> {
+    const linear = await isLinearToHead(repoPath, sha)
+    const descendants = linear
+      ? Number((await runGit(repoPath, ['rev-list', '--count', `${sha}..HEAD`])).trim())
+      : 0
+    const pushed = Boolean((await runGit(repoPath, ['branch', '-r', '--contains', sha]).catch(() => '')).trim())
+    const id = await commitIdentity(repoPath, sha)
+    return { linear, descendants, pushed, message: id.message, authorName: id.name, authorDate: id.date }
+  },
+
+  /** A file's content at a commit, gated for the editor: binary and oversized
+   *  blobs come back with `content: null` rather than garbage. */
+  async blobAtCommit(repoPath: string, sha: string, file: string): Promise<BlobAtCommit> {
+    const size = Number((await runGit(repoPath, ['cat-file', '-s', `${sha}:${file}`])).trim())
+    if (size > 2_000_000) return { content: null, binary: false, size }
+    const buf = await readBlobBuffer(repoPath, `${sha}:${file}`)
+    const binary = buf.subarray(0, 8192).includes(0)
+    return { content: binary ? null : buf.toString('utf-8'), binary, size }
+  },
+
+  /** Dry-run the rewrite: same engine as apply, no ref ever moves. */
+  async commitEditPreview(
+    repoPath: string,
+    sha: string,
+    edits: Record<string, string>,
+    message: string
+  ): Promise<CommitEditPreview> {
+    if (!(await isLinearToHead(repoPath, sha))) throw new Error('Commit is not on a linear path to HEAD.')
+    return rewriteWithEdits(repoPath, sha, edits, message)
+  },
+
+  /**
+   * Rewrite for real: guard-snapshot the working tree, rebuild the chain, then
+   * `reset --keep` the current branch onto the new tip — index and worktree
+   * follow, local uncommitted changes are carried over (or the reset aborts
+   * and nothing has moved). Refuses detached HEAD and conflicted cascades.
+   */
+  async commitEditApply(
+    repoPath: string,
+    sha: string,
+    edits: Record<string, string>,
+    message: string
+  ): Promise<CommitEditResult> {
+    if (!(await isLinearToHead(repoPath, sha))) throw new Error('Commit is not on a linear path to HEAD.')
+    await runGit(repoPath, ['symbolic-ref', '-q', 'HEAD']).catch(() => {
+      throw new Error('HEAD is detached — check out a branch first.')
+    })
+    await guardSnapshot(repoPath)
+    const oldHead = (await runGit(repoPath, ['rev-parse', 'HEAD'])).trim()
+    const { newTip, steps } = await rewriteWithEdits(repoPath, sha, edits, message)
+    if (!newTip) throw new Error('The rewrite would conflict — see the preview.')
+    await runGit(repoPath, ['reset', '--keep', newTip])
+    return { oldHead, newTip, rewritten: steps.length }
+  },
+
   // ─── WIP snapshots ─────────────────────────────────────────────────────
   // A safety net for uncommitted work: the whole working tree — modified,
   // staged AND untracked files — is committed through a throwaway index
@@ -6139,6 +6352,8 @@ const READ_METHODS = new Set<string>([
   'compareBranches',
   'mergePreview',
   'teammateRadar',
+  'commitEditInfo',
+  'blobAtCommit',
   'semanticDiff',
   'rangeDiff',
   'refTips',

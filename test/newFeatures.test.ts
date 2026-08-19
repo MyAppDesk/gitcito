@@ -176,6 +176,70 @@ describe('WIP snapshots (snapshots playground)', () => {
   })
 })
 
+describe('commit editing (bisect-bug playground)', () => {
+  const g = (R: string, args: string[]): string => execFileSync('git', ['-C', R, ...args]).toString().trim()
+
+  it('rewrites a mid-history commit file and replays the cascade cleanly', async () => {
+    const R = cloneFixture('bisect-bug')
+    // README.md is written once and never touched again → clean cascade.
+    const target = g(R, ['log', '--format=%H', '--', 'README.md'])
+    const before = g(R, ['log', '--format=%s'])
+    const countBefore = g(R, ['rev-list', '--count', 'HEAD'])
+
+    const info = await gitService.commitEditInfo(R, target)
+    expect(info.linear).toBe(true)
+    expect(info.pushed).toBe(false)
+
+    const blob = await gitService.blobAtCommit(R, target, 'README.md')
+    expect(blob.binary).toBe(false)
+    const edits = { 'README.md': `${blob.content}\nEdited three weeks later.\n` }
+
+    const preview = await gitService.commitEditPreview(R, target, edits, info.message)
+    expect(preview.newTip).not.toBeNull()
+    expect(preview.steps.length).toBe(info.descendants)
+    expect(preview.steps.every((s) => s.status === 'clean')).toBe(true)
+
+    const res = await gitService.commitEditApply(R, target, edits, info.message)
+    expect(res.newTip).toBe(g(R, ['rev-parse', 'HEAD']))
+    expect(g(R, ['rev-list', '--count', 'HEAD'])).toBe(countBefore)
+    expect(g(R, ['log', '--format=%s'])).toBe(before) // subjects preserved
+    const newTarget = g(R, ['log', '--format=%H', '--', 'README.md'])
+    expect(g(R, ['show', `${newTarget}:README.md`])).toContain('Edited three weeks later.')
+  })
+
+  it('forecasts a conflict when a descendant rewrote the same file', async () => {
+    const R = cloneFixture('bisect-bug')
+    // discount.js is rewritten again later in history → editing its first
+    // version collides with that rewrite.
+    const target = g(R, ['log', '--reverse', '--format=%H', '--', 'discount.js']).split('\n')[0]
+    const edits = { 'discount.js': 'module.exports = { discount: () => 0 }\n' }
+    const preview = await gitService.commitEditPreview(R, target, edits, 'sabotage')
+    expect(preview.newTip).toBeNull()
+    const conflict = preview.steps.find((s) => s.status === 'conflict')
+    expect(conflict).toBeDefined()
+    expect(conflict!.files).toContain('discount.js')
+    await expect(gitService.commitEditApply(R, target, edits, 'sabotage')).rejects.toThrow(/conflict/i)
+  })
+
+  it('rewords a mid-history commit without touching its tree', async () => {
+    const R = cloneFixture('bisect-bug')
+    const target = g(R, ['log', '--format=%H', '--', 'tax.js'])
+    const oldTree = g(R, ['rev-parse', `${target}^{tree}`])
+    await gitService.commitEditApply(R, target, {}, 'chore: reworded from the future')
+    const newTarget = g(R, ['log', '--format=%H', '--grep=reworded from the future'])
+    expect(newTarget).not.toBe('')
+    expect(g(R, ['rev-parse', `${newTarget}^{tree}`])).toBe(oldTree)
+  })
+
+  it('refuses non-linear history', async () => {
+    const R = cloneFixture('collaborators') // history contains merge commits
+    const root = g(R, ['rev-list', '--max-parents=0', 'HEAD']).split('\n')[0]
+    const info = await gitService.commitEditInfo(R, root)
+    expect(info.linear).toBe(false)
+    await expect(gitService.commitEditPreview(R, root, {}, 'x')).rejects.toThrow(/linear/i)
+  })
+})
+
 describe('stacked-PR autopilot plumbing (stacked-branches playground)', () => {
   it('pushes a non-current stack level to a remote without checking it out', async () => {
     const R = cloneFixture('stacked-branches') // checked out on feature/ui

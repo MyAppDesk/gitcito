@@ -104,6 +104,7 @@ export type ModalSpec =
   | { kind: 'branch-compare'; repoPath: string; branchA: string; branchB: string }
   | { kind: 'conflict-radar'; repoPath: string; base?: string }
   | { kind: 'teammate-radar'; repoPath: string }
+  | { kind: 'commit-edit'; repoPath: string; sha: string; subject: string }
   | { kind: 'keychain-consent'; reason: KeychainReason; adopted?: boolean }
   | { kind: 'range-diff'; repoPath: string; branch: string; initialOld?: string }
   | { kind: 'absorb'; repoPath: string }

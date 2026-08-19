@@ -1712,7 +1712,6 @@ export const ptBR: Dict = {
   'commitPanel.notFound': 'Commit não encontrado',
   'commitPanel.nothingToSummarize': 'Nada para resumir',
   'commitPanel.aiGenerated': 'Mensagem de commit gerada pela IA',
-  'commitPanel.editMsgTitle': 'Editar a mensagem do último commit',
   'commitPanel.generateWithAiTitle': 'Gerar a mensagem de commit com IA',
   'commitPanel.openProfileTitle': 'Perfil de {author}',
   'commitPanel.changedFile': '{n} arquivo alterado',
@@ -1795,6 +1794,33 @@ export const ptBR: Dict = {
   'radar.hotspots': 'Arquivos disputados',
   'radar.empty': 'Nada para escanear — não há outras branches.',
   'radar.open': 'Radar de conflitos…',
+  'commit.editCommit': 'Editar este commit…',
+  'commitEdit.title': 'Editar o commit',
+  'commitEdit.intro':
+    'Reescreva os arquivos ou a mensagem deste commit no lugar. Tudo o que vem acima é reaplicado — com uma prévia antes, para você ver cada conflito antes de qualquer ref se mover.',
+  'commitEdit.notLinear':
+    'Este commit não está em um caminho sem merges até o HEAD — a edição no lugar só funciona em histórico linear.',
+  'commitEdit.pushedWarning':
+    'Este commit já foi enviado ao remoto. Reescrevê-lo significa que o seu próximo push terá que ser um force push.',
+  'commitEdit.message': 'Mensagem do commit',
+  'commitEdit.selectFile': 'Selecione um arquivo para editar o conteúdo dele como estava neste commit.',
+  'commitEdit.notEditable': 'Este arquivo foi apagado pelo commit — nada para editar.',
+  'commitEdit.binary': 'Arquivo binário — não editável aqui.',
+  'commitEdit.tooLarge': 'Arquivo grande demais para editar aqui (limite de 2 MB).',
+  'commitEdit.modified': 'Modificado',
+  'commitEdit.preview': 'Prévia da cascata',
+  'commitEdit.descendants': '{n} commits acima serão reaplicados',
+  'commitEdit.noDescendants': 'Nada acima deste commit — só ele é reescrito.',
+  'commitEdit.conflictHint':
+    'A cascata dá conflito — resolva editando de outro jeito, ou use um rebase interativo no lugar.',
+  'commitEdit.apply': 'Reescrever o histórico',
+  'commitEdit.applyTitle': 'Reescrever o histórico?',
+  'commitEdit.applyConfirm':
+    'Reescrever {sha} e reaplicar os {n} commits acima dele? Cada commit reescrito ganha um hash novo. Suas mudanças não comitadas são levadas junto, e o desfazer restaura a cadeia antiga.',
+  'commitEdit.applyConfirmPushed':
+    'Reescrever {sha} e reaplicar os {n} commits acima dele? Cada commit reescrito ganha um hash novo — e este commit já está no remoto, então o próximo push terá que ser um force push. O desfazer restaura a cadeia antiga.',
+  'act.commitEdited': 'Commit reescrito',
+  'undoLabel.commitEdit': 'reescrita de {sha}',
   'teamRadar.title': 'Radar do time',
   'teamRadar.open': 'Radar do time…',
   'teamRadar.intro': 'Quem moveu o quê no upstream — e se isso cai em cima do seu trabalho não comitado. Calculado a partir do último fetch, inteiramente na sua máquina.',

@@ -2051,6 +2051,24 @@ textarea:focus {
   font-size: 12.5px;
   color: var(--text-0);
 }
+/* A subject truncated by its column expands to the full text on hover — the
+ * same courtesy branch labels get. The solid pill keeps it readable while it
+ * temporarily overlaps the columns to its right. */
+.row-subject:hover {
+  overflow: visible;
+  position: relative;
+  z-index: 6;
+}
+.row-subject:hover .row-subject-text {
+  background: var(--bg-1);
+  box-shadow: 0 0 0 3px var(--bg-1), 0 1px 8px rgba(0, 0, 0, 0.35);
+  border-radius: 3px;
+}
+.stash-subject:hover .ref-stash {
+  max-width: none;
+  flex-shrink: 0;
+  background: color-mix(in srgb, var(--yellow) 10%, var(--bg-1));
+}
 
 .wip-subject {
   display: flex;

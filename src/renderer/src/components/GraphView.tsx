@@ -1873,7 +1873,7 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
                             <FlaskConical size={11} />
                           </span>
                         )}
-                        {c.subject}
+                        <span className="row-subject-text">{c.subject}</span>
                       </span>
                     )
                   if (id === 'deployment')

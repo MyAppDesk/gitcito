@@ -98,6 +98,29 @@ describe('repository chat grounding', () => {
     expect(contentContainsActionPayload('Example: {"kind":"stage"}')).toBe(false)
   })
 
+  it('detects an edit_file payload whose newText contains a nested Markdown fence', () => {
+    const content = [
+      'I will add a Quick build section to README.md.',
+      '```json',
+      '[',
+      '  {',
+      '    "type": "edit_file",',
+      '    "path": "README.md",',
+      '    "oldText": "## Install\\nInstall the app.",',
+      '    "newText": "## Install\\nInstall the app.\\n\\n## Quick build\\n```sh\\nnpm run build\\n```",',
+      '    "description": "Add a Quick build section"',
+      '  }',
+      ']',
+      '```'
+    ].join('\n')
+
+    expect(contentContainsActionPayload(content)).toBe(true)
+    expect(
+      validateChatAnswer({ content, sourceIds: [] }, new Set()).join(' ')
+    ).toContain('top-level actions field')
+    expect(contentContainsActionPayload('The field `"type": "edit_file"` names the action.')).toBe(false)
+  })
+
   it('allows only readable tracked paths outside privacy filters', () => {
     const paths = filterRepoChatPaths(
       [

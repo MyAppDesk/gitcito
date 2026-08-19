@@ -121,6 +121,20 @@ function isRepoChatFileAction(value: unknown): value is RepoChatFileAction {
   return item?.type === 'edit_file' || item?.type === 'write_file' || item?.type === 'delete_file'
 }
 
+/** Catch action-shaped JSON that cannot be parsed because its text embeds a Markdown fence. */
+function contentContainsJsonLikeAction(content: string): boolean {
+  const trimmed = content.trim()
+  if (!/^[\[{]/.test(trimmed) && !/```(?:json)?(?=\s|$)/i.test(content)) return false
+
+  const types = [...REPO_CHAT_ACTION_TYPES].join('|')
+  const typeField = new RegExp(`"type"\\s*:\\s*"(?:${types})"`, 'g')
+  for (const match of content.matchAll(typeField)) {
+    const remainder = content.slice((match.index ?? 0) + match[0].length)
+    if (/"description"\s*:/.test(remainder)) return true
+  }
+  return false
+}
+
 /** Detect action JSON placed in Markdown instead of the validated actions field. */
 export function contentContainsActionPayload(content: string): boolean {
   const candidates: string[] = []
@@ -130,13 +144,14 @@ export function contentContainsActionPayload(content: string): boolean {
   const fences = /```(?:json)?\s*\n?([\s\S]*?)\n?```/gi
   for (const match of content.matchAll(fences)) candidates.push(match[1].trim())
 
-  return candidates.some((candidate) => {
+  const parsedAction = candidates.some((candidate) => {
     try {
       return parsedValueContainsAction(JSON.parse(candidate))
     } catch {
       return false
     }
   })
+  return parsedAction || contentContainsJsonLikeAction(content)
 }
 
 /** Keep broad search evidence fair: one hit per file before any second hit. */

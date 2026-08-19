@@ -2,13 +2,13 @@
 //
 // Decoration, not instrumentation: the status bar carries the real counts, and
 // this only ever says "something is up" at a glance. It stays deliberately
-// coarse — four poses is the whole vocabulary blobatar offers, so a fifth
-// distinction would have to borrow a pose and make both readings unreliable.
+// coarse — four poses cover the states worth a glance; a fifth distinction
+// would blur the readings even though blobatar's roster now offers more.
 
 import type { TranslationKey } from '../i18n'
 import type { RepoStatus } from '../../../shared/types'
 
-/** The four poses blobatar draws. `idle` is the neutral face. */
+/** The four blobatar poses we use. `idle` is the neutral face. */
 export type Mood = 'idle' | 'happy' | 'sad' | 'mad'
 
 export interface MoodHint {

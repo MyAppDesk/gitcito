@@ -1,9 +1,10 @@
 import { describe, it, expect, afterAll, beforeAll } from 'vitest'
-import { writeFileSync, existsSync, mkdtempSync, rmSync } from 'node:fs'
+import { writeFileSync, readFileSync, existsSync, mkdtempSync, rmSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { join, dirname } from 'node:path'
 import { gitService } from '../src/main/git'
+import { localCiService } from '../src/main/localCi'
 import { repoPath } from './helpers'
 import { cloneFixture, cleanupFixtures } from './fixtures'
 import { diffSymbols, semanticCompare } from '../src/main/semantic'
@@ -118,16 +119,253 @@ describe('stacked branches (stacked-branches playground)', () => {
 })
 
 describe('WIP snapshots (snapshots playground)', () => {
-  it('lists the seeded snapshots and takes a new one when dirty', async () => {
+  it('lists the seeded snapshots with their kinds and takes a new one when dirty', async () => {
     const R = cloneFixture('snapshots')
     const before = await gitService.listSnapshots(R)
-    expect(before.length).toBe(2)
+    expect(before.length).toBe(3)
+    expect(before.map((s) => s.kind).sort()).toEqual(['auto', 'guard', 'manual'])
     expect(before.every((s) => s.sha && s.time > 0)).toBe(true)
 
     const snap = await gitService.createSnapshot(R) // working tree is dirty in this fixture
     expect(snap).not.toBeNull()
+    expect(snap!.kind).toBe('manual')
     const after = await gitService.listSnapshots(R)
-    expect(after.length).toBe(3)
+    expect(after.length).toBe(4)
+  })
+
+  it('captures untracked files and restores one after deletion', async () => {
+    const R = cloneFixture('snapshots')
+    // scratch.txt is untracked in the fixture — the legacy `git stash create`
+    // mechanism could not capture it; the temp-index one must.
+    const snap = await gitService.createSnapshot(R)
+    expect(snap).not.toBeNull()
+    rmSync(join(R, 'scratch.txt'))
+    await gitService.restoreSnapshot(R, snap!.sha, ['scratch.txt'])
+    expect(readFileSync(join(R, 'scratch.txt'), 'utf-8')).toContain('todo: not yet added')
+  })
+
+  it('dedupes timer ticks on an unchanged tree but always honours a manual request', async () => {
+    const R = cloneFixture('snapshots')
+    const first = await gitService.createSnapshot(R, 'auto')
+    expect(first).not.toBeNull()
+    expect(await gitService.createSnapshot(R, 'auto')).toBeNull()
+    expect(await gitService.createSnapshot(R, 'manual')).not.toBeNull()
+  })
+
+  it('guards a discard: the destroyed state lands in a guard snapshot', async () => {
+    const R = cloneFixture('snapshots')
+    const before = (await gitService.listSnapshots(R)).length
+    await gitService.discard(R, ['draft.md'], false)
+    expect(readFileSync(join(R, 'draft.md'), 'utf-8')).not.toContain('Even more uncommitted edits.')
+
+    const after = await gitService.listSnapshots(R)
+    expect(after.length).toBe(before + 1)
+    expect(after[0].kind).toBe('guard')
+    await gitService.restoreSnapshot(R, after[0].sha, ['draft.md'])
+    expect(readFileSync(join(R, 'draft.md'), 'utf-8')).toContain('Even more uncommitted edits.')
+  })
+
+  it('restores a legacy stash-shaped snapshot', async () => {
+    const R = cloneFixture('snapshots')
+    const seeded = await gitService.listSnapshots(R)
+    const manualSeed = seeded.find((s) => s.kind === 'manual')
+    expect(manualSeed).toBeDefined()
+    await gitService.restoreSnapshot(R, manualSeed!.sha, ['draft.md'])
+    const content = readFileSync(join(R, 'draft.md'), 'utf-8')
+    expect(content).toContain('section one')
+    expect(content).not.toContain('section two')
+  })
+})
+
+describe('local CI (local-ci playground)', () => {
+  it('lists workflows with their names, filename as fallback', async () => {
+    const ws = await localCiService.workflows(repoPath('local-ci'))
+    expect(ws.map((w) => w.file)).toEqual(['ci.yml', 'lint.yml'])
+    expect(ws[0].name).toBe('CI')
+    expect(ws[1].name).toBe('lint.yml') // no name: → filename
+  })
+
+  it('reports tool availability truthfully (machine-dependent, shape only)', async () => {
+    const s = await localCiService.status()
+    expect(s.act === null || typeof s.act === 'string').toBe(true)
+    expect(typeof s.docker).toBe('boolean')
+  })
+
+  it('reads the seeded per-commit verdicts', async () => {
+    const v = await localCiService.verdicts(repoPath('local-ci'))
+    const entries = Object.values(v)
+    expect(entries.length).toBe(2)
+    expect(entries.filter((e) => e.ok).length).toBe(1)
+    expect(entries.every((e) => e.workflow === 'ci.yml')).toBe(true)
+  })
+
+  it('records a verdict only on a clean tree', async () => {
+    const R = cloneFixture('local-ci')
+    const clean = await localCiService.record(R, 'ci.yml', true)
+    expect(clean.recorded).toBe(true)
+    expect((await localCiService.verdicts(R))[clean.sha]?.ok).toBe(true)
+
+    writeFileSync(join(R, 'dirty.txt'), 'wip')
+    const dirty = await localCiService.record(R, 'ci.yml', false)
+    expect(dirty.recorded).toBe(false)
+    // The clean verdict is untouched.
+    expect((await localCiService.verdicts(R))[clean.sha]?.ok).toBe(true)
+  })
+
+  it('refuses workflow paths that escape .github/workflows', async () => {
+    const sender = { isDestroyed: () => true, send: () => {} } as unknown as Electron.WebContents
+    await expect(localCiService.run(repoPath('local-ci'), '../../evil.yml', sender)).rejects.toThrow(/workflow/i)
+  })
+})
+
+describe('commit editing (bisect-bug playground)', () => {
+  const g = (R: string, args: string[]): string => execFileSync('git', ['-C', R, ...args]).toString().trim()
+
+  it('rewrites a mid-history commit file and replays the cascade cleanly', async () => {
+    const R = cloneFixture('bisect-bug')
+    // README.md is written once and never touched again → clean cascade.
+    const target = g(R, ['log', '--format=%H', '--', 'README.md'])
+    const before = g(R, ['log', '--format=%s'])
+    const countBefore = g(R, ['rev-list', '--count', 'HEAD'])
+
+    const info = await gitService.commitEditInfo(R, target)
+    expect(info.linear).toBe(true)
+    expect(info.pushed).toBe(false)
+
+    const blob = await gitService.blobAtCommit(R, target, 'README.md')
+    expect(blob.binary).toBe(false)
+    const edits = { 'README.md': `${blob.content}\nEdited three weeks later.\n` }
+
+    const preview = await gitService.commitEditPreview(R, target, edits, info.message)
+    expect(preview.newTip).not.toBeNull()
+    expect(preview.steps.length).toBe(info.descendants)
+    expect(preview.steps.every((s) => s.status === 'clean')).toBe(true)
+
+    const res = await gitService.commitEditApply(R, target, edits, info.message)
+    expect(res.newTip).toBe(g(R, ['rev-parse', 'HEAD']))
+    expect(g(R, ['rev-list', '--count', 'HEAD'])).toBe(countBefore)
+    expect(g(R, ['log', '--format=%s'])).toBe(before) // subjects preserved
+    const newTarget = g(R, ['log', '--format=%H', '--', 'README.md'])
+    expect(g(R, ['show', `${newTarget}:README.md`])).toContain('Edited three weeks later.')
+  })
+
+  it('forecasts a conflict when a descendant rewrote the same file', async () => {
+    const R = cloneFixture('bisect-bug')
+    // discount.js is rewritten again later in history → editing its first
+    // version collides with that rewrite.
+    const target = g(R, ['log', '--reverse', '--format=%H', '--', 'discount.js']).split('\n')[0]
+    const edits = { 'discount.js': 'module.exports = { discount: () => 0 }\n' }
+    const preview = await gitService.commitEditPreview(R, target, edits, 'sabotage')
+    expect(preview.newTip).toBeNull()
+    const conflict = preview.steps.find((s) => s.status === 'conflict')
+    expect(conflict).toBeDefined()
+    expect(conflict!.files).toContain('discount.js')
+    await expect(gitService.commitEditApply(R, target, edits, 'sabotage')).rejects.toThrow(/conflict/i)
+  })
+
+  it('rewords a mid-history commit without touching its tree', async () => {
+    const R = cloneFixture('bisect-bug')
+    const target = g(R, ['log', '--format=%H', '--', 'tax.js'])
+    const oldTree = g(R, ['rev-parse', `${target}^{tree}`])
+    await gitService.commitEditApply(R, target, {}, 'chore: reworded from the future')
+    const newTarget = g(R, ['log', '--format=%H', '--grep=reworded from the future'])
+    expect(newTarget).not.toBe('')
+    expect(g(R, ['rev-parse', `${newTarget}^{tree}`])).toBe(oldTree)
+  })
+
+  it('refuses non-linear history', async () => {
+    const R = cloneFixture('collaborators') // history contains merge commits
+    const root = g(R, ['rev-list', '--max-parents=0', 'HEAD']).split('\n')[0]
+    const info = await gitService.commitEditInfo(R, root)
+    expect(info.linear).toBe(false)
+    await expect(gitService.commitEditPreview(R, root, {}, 'x')).rejects.toThrow(/linear/i)
+  })
+})
+
+describe('stacked-PR autopilot plumbing (stacked-branches playground)', () => {
+  it('prunes a merged bottom: reparents the child, untracks and deletes it', async () => {
+    const R = cloneFixture('stacked-branches') // main ← feature/api ← feature/ui, checked out on the leaf
+    execFileSync('git', ['-C', R, 'checkout', '-q', 'main'])
+    execFileSync('git', ['-C', R, 'merge', '-q', '--no-ff', '-m', 'merge feature/api', 'feature/api'])
+    execFileSync('git', ['-C', R, 'checkout', '-q', 'feature/ui'])
+
+    const pruned = await gitService.stackPruneMerged(R)
+    expect(pruned).toEqual(['feature/api'])
+
+    const info = await gitService.stackInfo(R)
+    expect(info.trunk).toBe('main')
+    expect(info.branches.map((b) => b.name)).toEqual(['feature/ui'])
+    expect(info.branches[0].parent).toBe('main')
+    const leftover = execFileSync('git', ['-C', R, 'branch', '--list', 'feature/api']).toString().trim()
+    expect(leftover).toBe('')
+  })
+
+  it('prunes a squash-merged bottom when the host vouches for it', async () => {
+    const R = cloneFixture('stacked-branches')
+    // No local ancestry at all — the branch "merged" only as a squashed patch.
+    // The host-side proof arrives via the alsoMerged parameter.
+    const pruned = await gitService.stackPruneMerged(R, ['feature/api'])
+    expect(pruned).toEqual(['feature/api'])
+    const info = await gitService.stackInfo(R)
+    expect(info.branches.map((b) => b.name)).toEqual(['feature/ui'])
+    expect(info.branches[0].parent).toBe('main')
+  })
+
+  it('prune is a no-op while nothing has landed', async () => {
+    const R = cloneFixture('stacked-branches')
+    expect(await gitService.stackPruneMerged(R)).toEqual([])
+    expect((await gitService.stackInfo(R)).branches.length).toBe(2)
+  })
+
+  it('pushes a non-current stack level to a remote without checking it out', async () => {
+    const R = cloneFixture('stacked-branches') // checked out on feature/ui
+    const bare = join(mkdtempSync(join(tmpdir(), 'gitcito-stack-origin-')), 'origin.git')
+    execFileSync('git', ['init', '-q', '--bare', bare])
+    execFileSync('git', ['-C', R, 'remote', 'add', 'origin', bare])
+    try {
+      await gitService.push(R, 'feature/api', { force: true })
+      const pushed = execFileSync('git', ['-C', bare, 'rev-parse', 'refs/heads/feature/api']).toString().trim()
+      const local = execFileSync('git', ['-C', R, 'rev-parse', 'feature/api']).toString().trim()
+      expect(pushed).toBe(local)
+      // Still on the leaf — the push never touched the working tree.
+      expect((await gitService.open(R)).current).toBe('feature/ui')
+    } finally {
+      rmSync(dirname(bare), { recursive: true, force: true })
+    }
+  })
+})
+
+describe('teammateRadar (teammate-radar playground)', () => {
+  it('reports remote activity, overlap with dirty files and conflict risk', async () => {
+    const R = cloneFixture('teammate-radar')
+    const r = await gitService.teammateRadar(R)
+    expect(r.dirtyCount).toBeGreaterThan(0)
+
+    const api = r.entries.find((e) => e.ref === 'origin/feature/api-tokens')
+    expect(api).toBeDefined()
+    expect(api!.overlap).toContain('api.ts')
+    expect(api!.author).toBe('María García')
+    expect(api!.ahead).toBe(1)
+    expect(api!.risk).toBe('clean')
+
+    const ui = r.entries.find((e) => e.ref === 'origin/feature/ui-polish')
+    expect(ui).toBeDefined()
+    expect(ui!.risk).toBe('conflict')
+    expect(ui!.conflictFiles).toContain('ui.css')
+    expect(ui!.overlap).toEqual([])
+
+    const main = r.entries.find((e) => e.ref === 'origin/main')
+    expect(main).toBeDefined()
+    expect(main!.risk).toBe('clean')
+
+    // Collision-prone first: the branch touching a dirty file leads.
+    expect(r.entries[0].ref).toBe('origin/feature/api-tokens')
+  })
+
+  it('is quiet in a repo with no remote branches', async () => {
+    const R = cloneFixture('stash-picking')
+    const r = await gitService.teammateRadar(R)
+    expect(r.entries).toEqual([])
   })
 })
 

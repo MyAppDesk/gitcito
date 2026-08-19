@@ -198,6 +198,73 @@ export interface MergePreviewResult {
   scannedAt: number
 }
 
+/** Validation + metadata for editing a historical commit in place. */
+export interface CommitEditInfo {
+  /** Commit is an ancestor of HEAD and the path up to HEAD is merge-free. */
+  linear: boolean
+  /** Commits between it and HEAD that a rewrite would replay. */
+  descendants: number
+  /** Reachable from a remote ref — rewriting means a force push later. */
+  pushed: boolean
+  message: string
+  authorName: string
+  authorDate: string // ISO
+}
+
+/** A historical blob, loaded for in-place editing. */
+export interface BlobAtCommit {
+  /** null when binary or too large to edit. */
+  content: string | null
+  binary: boolean
+  size: number
+}
+
+/** One replayed descendant in a commit-edit cascade. */
+export interface CommitEditStep {
+  sha: string
+  subject: string
+  /** blocked = never attempted because an earlier step conflicted. */
+  status: 'clean' | 'conflict' | 'blocked'
+  /** Conflicting paths (conflict only). */
+  files: string[]
+}
+
+/** Dry-run result of rewriting a commit: the cascade forecast. */
+export interface CommitEditPreview {
+  /** The would-be new HEAD; null when the cascade conflicts. */
+  newTip: string | null
+  steps: CommitEditStep[]
+}
+
+export interface CommitEditResult {
+  oldHead: string
+  newTip: string
+  rewritten: number
+}
+
+/** One remote branch's activity as seen by the teammate radar. */
+export interface TeammateRadarEntry {
+  ref: string // short remote ref, e.g. origin/feature-x
+  sha: string
+  author: string // last committer on the branch
+  time: number // unix seconds of that commit
+  ahead: number // commits this branch has that HEAD does not
+  filesTouched: number // files those commits change
+  /** Of those files, the ones currently dirty in the local working tree. */
+  overlap: string[]
+  /** Predicted result of merging this branch into HEAD (merge-tree, in-memory). */
+  risk: MergeRiskKind
+  conflictFiles: string[]
+}
+
+/** Remote awareness computed from the last fetch — no server, no network. */
+export interface TeammateRadarResult {
+  entries: TeammateRadarEntry[]
+  /** How many files were dirty locally when the scan ran. */
+  dirtyCount: number
+  scannedAt: number // unix ms
+}
+
 /** How one commit fared between two versions of a branch (`git range-diff`). */
 export type RangeDiffKind = 'unchanged' | 'modified' | 'removed' | 'added'
 
@@ -1722,13 +1789,16 @@ export interface InfoEntry {
   updatedAt: number
 }
 
-/** A saved WIP snapshot (a `git stash create` commit kept under refs/gitcito/wip). */
+/** What triggered a WIP snapshot. */
+export type SnapshotKind = 'auto' | 'manual' | 'guard'
+
+/** A saved WIP snapshot (a commit of the whole working tree kept under refs/gitcito/wip). */
 export interface SnapshotInfo {
-  ref: string // full ref name (refs/gitcito/wip/<ts>)
+  ref: string // full ref name (refs/gitcito/wip/<ts>-<a|m|g>)
   sha: string
   time: number // unix seconds
   files: number // changed files captured
-  auto: boolean // created by the timer vs. manually
+  kind: SnapshotKind // timer, user action, or pre-destructive guard
 }
 
 /** Progress event streamed from `git clone --progress` while a clone runs. */
@@ -2446,6 +2516,11 @@ export interface AppSettings {
   autoOpenChangelog: boolean
   /** Minutes between automatic WIP snapshots (0 = off). */
   wipSnapshotMinutes: number
+  /** Take a WIP snapshot automatically before destructive operations
+   *  (discard, clean, hard reset, restore from commit). */
+  snapshotGuard: boolean
+  /** Local CI via `act` (optional integration; needs act + Docker installed). */
+  localCiEnabled: boolean
   /** Mask secret values (KEY=••••) in .env/key files in the diff & file viewer. */
   maskSecrets: boolean
   /** Surface a Run/Launch picker in the sidebar when a `.vscode/launch.json`
@@ -2760,7 +2835,9 @@ export function defaultSettings(): AppSettings {
     onboardingCompleted: false,
     aiAccountsNoticeSeen: false,
     autoOpenChangelog: true,
-    wipSnapshotMinutes: 0,
+    wipSnapshotMinutes: 15,
+    snapshotGuard: true,
+    localCiEnabled: false,
     maskSecrets: true,
     enableLaunchJson: true,
     shortcuts: {},

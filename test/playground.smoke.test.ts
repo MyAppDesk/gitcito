@@ -67,7 +67,9 @@ const EXPECTED = [
   'leaked-secret',
   'subtree',
   'untracked-mess',
-  'attributes'
+  'attributes',
+  'teammate-radar',
+  'local-ci'
 ]
 
 describe('playground fixtures', () => {

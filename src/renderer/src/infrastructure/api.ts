@@ -109,6 +109,12 @@ import type {
   CosmosCommit,
   ChangelogResult,
   SnapshotInfo,
+  SnapshotKind,
+  TeammateRadarResult,
+  CommitEditInfo,
+  CommitEditPreview,
+  CommitEditResult,
+  BlobAtCommit,
   VaultEntry,
   VaultListResult,
   VaultExport,
@@ -138,6 +144,7 @@ import type {
   RepoWiki,
   WikiProgress
 } from '../../../shared/types'
+import type { LocalCiStatus, LocalCiVerdict, LocalCiWorkflow } from '../../../shared/localCi'
 import type { EditorSetting, EditorTarget } from '../../../shared/editors'
 
 // Typed adapter over the IPC bridge — the only place that talks to window.api.
@@ -376,7 +383,8 @@ export const gitApi = {
 
   cherryPick: (path: string, hash: string, noCommit?: boolean) => call<void>('cherryPick', path, hash, noCommit),
   revertCommit: (path: string, hash: string) => call<void>('revertCommit', path, hash),
-  reset: (path: string, ref: string, mode: 'soft' | 'mixed' | 'hard') => call<void>('reset', path, ref, mode),
+  reset: (path: string, ref: string, mode: 'soft' | 'mixed' | 'hard' | 'keep') =>
+    call<void>('reset', path, ref, mode),
   reflog: (path: string, ref?: string, max?: number) => call<ReflogEntry[]>('reflog', path, ref, max),
   bisectStatus: (path: string) => call<BisectStatus>('bisectStatus', path),
   bisectStart: (path: string) => call<BisectStatus>('bisectStart', path),
@@ -522,6 +530,15 @@ export const gitApi = {
     call<BranchCompareResult>('compareBranches', path, a, b),
   mergePreview: (path: string, base: string, refs: string[]) =>
     call<MergePreviewResult>('mergePreview', path, base, refs),
+  teammateRadar: (path: string) => call<TeammateRadarResult>('teammateRadar', path),
+  stackPruneMerged: (path: string, alsoMerged?: string[]) =>
+    call<string[]>('stackPruneMerged', path, alsoMerged),
+  commitEditInfo: (path: string, sha: string) => call<CommitEditInfo>('commitEditInfo', path, sha),
+  blobAtCommit: (path: string, sha: string, file: string) => call<BlobAtCommit>('blobAtCommit', path, sha, file),
+  commitEditPreview: (path: string, sha: string, edits: Record<string, string>, message: string) =>
+    call<CommitEditPreview>('commitEditPreview', path, sha, edits, message),
+  commitEditApply: (path: string, sha: string, edits: Record<string, string>, message: string) =>
+    call<CommitEditResult>('commitEditApply', path, sha, edits, message),
   semanticDiff: (path: string, file: string, oldSide: BlobSpec, newSide: BlobSpec) =>
     call<SemanticDiff>('semanticDiff', path, file, oldSide, newSide),
   rangeDiff: (path: string, oldRev: string, newRev: string, base?: string) =>
@@ -536,9 +553,10 @@ export const gitApi = {
   generateChangelog: (path: string, opts?: { from?: string; to?: string; version?: string }) =>
     call<ChangelogResult>('generateChangelog', path, opts),
   writeChangelogFile: (path: string, markdown: string) => call<void>('writeChangelogFile', path, markdown),
-  createSnapshot: (path: string, auto?: boolean) => call<SnapshotInfo | null>('createSnapshot', path, auto),
+  createSnapshot: (path: string, kind?: SnapshotKind) => call<SnapshotInfo | null>('createSnapshot', path, kind),
   listSnapshots: (path: string) => call<SnapshotInfo[]>('listSnapshots', path),
-  restoreSnapshot: (path: string, sha: string) => call<void>('restoreSnapshot', path, sha),
+  restoreSnapshot: (path: string, sha: string, files?: string[]) =>
+    call<void>('restoreSnapshot', path, sha, files),
   deleteSnapshot: (path: string, ref: string) => call<void>('deleteSnapshot', path, ref)
 }
 
@@ -719,6 +737,20 @@ export const shellApi = {
         : 'Reveal in file manager'
 }
 
+export const localCiApi = {
+  status: () => window.api.localci.status() as Promise<LocalCiStatus>,
+  workflows: (repoPath: string) => window.api.localci.workflows(repoPath) as Promise<LocalCiWorkflow[]>,
+  /** Resolves with act's exit code (0 = green), null when cancelled. */
+  run: (repoPath: string, workflowFile: string) =>
+    window.api.localci.run(repoPath, workflowFile) as Promise<number | null>,
+  cancel: (repoPath: string) => window.api.localci.cancel(repoPath) as Promise<void>,
+  /** Pin a run's verdict to HEAD (clean tree only). */
+  record: (repoPath: string, workflowFile: string, ok: boolean) =>
+    window.api.localci.record(repoPath, workflowFile, ok) as Promise<{ recorded: boolean; sha: string }>,
+  verdicts: (repoPath: string) => window.api.localci.verdicts(repoPath) as Promise<Record<string, LocalCiVerdict>>,
+  onData: (cb: (p: { repoPath: string; chunk: string }) => void) => window.api.localci.onData(cb)
+}
+
 export const diffToolApi = {
   /** Tools git knows about here, plus the currently configured choices. */
   config: (repoPath: string) => window.api.difftool.config(repoPath),
@@ -811,6 +843,14 @@ export const hostingApi = {
     number: number,
     meta: { reviewers?: string[]; labels?: string[]; assignees?: string[] }
   ) => window.api.hosting.applyPrMeta(remoteUrl, tokens, number, meta) as Promise<void>,
+  updatePR: (
+    remoteUrl: string,
+    tokens: { github?: string },
+    number: number,
+    patch: { base?: string; title?: string; stackSection?: string }
+  ) => window.api.hosting.updatePR(remoteUrl, tokens, number, patch) as Promise<void>,
+  mergedPrHeads: (remoteUrl: string, tokens: { github?: string }, branches: string[]) =>
+    window.api.hosting.mergedPrHeads(remoteUrl, tokens, branches) as Promise<string[]>,
   listMilestones: (remoteUrl: string, tokens: { github?: string }) =>
     window.api.hosting.listMilestones(remoteUrl, tokens) as Promise<{
       provider: HostingProvider

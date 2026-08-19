@@ -3,7 +3,7 @@ title: Odzyskiwanie i reflog
 category: Odzyskiwanie i ochrona
 order: 60
 summary: Siatka bezpieczeństwa: reflog, migawki WIP i bisect.
-keywords: reflog odzyskiwanie cofnij zgubione commity migawki wip bisect skrypt kod wyjścia hard reset recovery undo lost snapshots run automated
+keywords: reflog odzyskiwanie cofnij zgubione commity migawki wip strażnik guard nieśledzone untracked odrzucenie discard czyszczenie clean bisect skrypt kod wyjścia hard reset recovery undo lost snapshots run automated
 ---
 
 # Odzyskiwanie i reflog
@@ -24,15 +24,34 @@ To jest przycisk „właśnie zresetowałem nie tę gałąź".
 ## Migawki WIP
 
 Niezacommitowana praca to jedyna rzecz, której reflog nie uratuje — więc Gitcito
-robi jej migawki: twoje zmiany w śledzonych plikach plus indeks z przechowalni,
-uchwycone jako commit `git stash create` przypięty pod `refs/gitcito/wip`.
+robi jej migawki: **całe drzewo robocze — pliki zmodyfikowane, zestage'owane i
+nieśledzone** — zacommitowane przez jednorazowy indeks i przypięte pod
+`refs/gitcito/wip`. Ani twój prawdziwy indeks, ani lista stashy nie są ruszane.
 
 ![Migawki WIP](../../screenshots/snapshots.webp)
 
-- **Nigdy nie rusza twojego drzewa roboczego** i **nigdy nie pojawia się na
-  twojej liście stashy** — to ukryta referencja, a nie stash.
-- Zrób migawkę ręcznie albo pozwól jej chodzić co **5 / 15 / 30 minut**.
-- Przywróć albo usuń dowolną migawkę z listy.
+Migawkę robią trzy rzeczy:
+
+| Wyzwalacz | Kiedy |
+|---------|------|
+| **Strażnik** | Automatycznie, tuż przed destrukcyjną operacją — odrzuceniem zmian, czyszczeniem, hard resetem, przywróceniem z commita. Domyślnie włączony; przełączysz go w oknie migawek. |
+| **Timer** | Co 5 / 15 / 30 minut, póki repozytorium jest otwarte. |
+| **Ręcznie** | Przycisk **Zrób migawkę teraz**. |
+
+To strażnik się tu liczy: praca przepada na zawsze zwykle w sekundę po
+odrzuceniu, którego nie chciałeś. Z włączonym strażnikiem ten stan jest migawką
+— otwórz listę, kliknij przywróć, odetchnij.
+
+Zaznacz migawkę, żeby zobaczyć uchwycone przez nią pliki, podejrzeć zmianę w
+dowolnym pliku i przywrócić **pojedynczy plik** albo całe drzewo. Przywracanie
+kopiuje pliki z migawki na obecne kopie — najpierw powstaje migawka strażnika,
+więc samo przywrócenie też da się cofnąć.
+
+**Ograniczenia warte poznania.** Tyknięcie timera lub strażnika, które nie
+znajdzie niczego nowego, niczego nie zapisuje. Przywracanie nadpisuje i odtwarza
+pliki, ale nigdy nie usuwa pliku utworzonego po migawce. Pliki ignorowane nie są
+uchwytywane. Migawki to lokalne ukryte referencje: nigdy nie są wypychane, są
+bezpieczne przed `git gc`, trzymanych jest 50 najnowszych.
 
 ## Prowadzony bisect
 

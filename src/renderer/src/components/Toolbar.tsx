@@ -49,7 +49,9 @@ import {
   BarChart3,
   GitPullRequestArrow,
   Lock,
-  MessageSquare
+  MessageSquare,
+  Users,
+  FlaskConical
 } from 'lucide-react'
 import type { MenuItem } from '../stores/ui'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
@@ -196,6 +198,16 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
         label: t('radar.open'),
         icon: <Radar size={15} />,
         onClick: () => openModal({ kind: 'conflict-radar', repoPath: path, base: repo.branches.current || 'HEAD' })
+      },
+      {
+        label: t('teamRadar.open'),
+        icon: <Users size={15} />,
+        onClick: () => openModal({ kind: 'teammate-radar', repoPath: path })
+      },
+      {
+        label: t('localCi.open'),
+        icon: <FlaskConical size={15} />,
+        onClick: () => openModal({ kind: 'local-ci', repoPath: path })
       },
       {
         label: t('tools.compareRefs'),

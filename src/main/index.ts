@@ -14,6 +14,7 @@ import { isSafeRepoPath } from './aiSchemas'
 import { registerAnalyticsHandlers } from './analytics'
 import { registerLogHandlers } from './log'
 import { registerHostingHandlers } from './hosting'
+import { registerLocalCiHandlers } from './localCi'
 import { registerTerminalHandlers } from './terminal'
 import { registerLaunchHandlers } from './launch'
 import { registerWatcherHandlers } from './watcher'
@@ -369,6 +370,7 @@ app.whenReady().then(() => {
   registerAnalyticsHandlers()
   registerLogHandlers()
   registerHostingHandlers()
+  registerLocalCiHandlers()
   registerTerminalHandlers()
   registerLaunchHandlers()
   registerWatcherHandlers()

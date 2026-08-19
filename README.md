@@ -70,10 +70,11 @@ git actually is.
 | **[Conflict resolver](docs/help/conflicts.md)** | Three panes, per-line picking, a conflict-by-conflict navigator, editable output. |
 | **[External diff & merge tools](docs/help/diff-tools.md)** | Hand a file to Kaleidoscope, Beyond Compare, Meld — read straight from git's own tool list. |
 | **[Interactive rebase](docs/help/rebase.md)** | Drag to reorder, squash, fixup, reword, edit or drop. |
-| **[Stacked branches](docs/help/stacks.md)** | Graphite-style chains with cascade restack and a PR per level. |
+| **[Stacked branches](docs/help/stacks.md)** | Graphite-style chains: cascade restack, then one click pushes every level and opens/retargets the chained PRs, each carrying stack navigation in its body. |
 | **[Git flow](docs/help/gitflow.md)** | Start and finish features, releases and hotfixes — merges, tag and cleanup in one step, undoable. |
 | **[Merge options](docs/help/merge-options.md)** | `-X ours`, whitespace-blind merges, squash, `-s subtree` — and the commits behind a conflict. |
-| **[Recovery](docs/help/recovery.md)** | Reflog, WIP snapshots under `refs/gitcito/wip`, guided bisect — or hand the search to `git bisect run`. |
+| **[Recovery](docs/help/recovery.md)** | Reflog, WIP snapshots of the whole tree — untracked files included, taken automatically before every destructive action — and guided bisect, or hand the search to `git bisect run`. |
+| **[Local CI](docs/help/local-ci.md)** | Run the repo's GitHub Actions on your machine with [act](https://nektosact.com) before pushing — opt-in integration, Gitcito guides the install and streams the log. |
 | **[Remove a file from history](docs/help/history-purge.md)** | A leaked key or a 400 MB blob out of every commit — measured first, backed up, undoable. |
 | **[File attributes](docs/help/attributes.md)** | `.gitattributes` with a UI: line endings, `merge=union`, `export-ignore`, and readable diffs for Word and PDF. |
 | **[Replace & graft](docs/help/replace.md)** | Shorten a clone's history without rewriting a byte — reversible, and honest about what it hides. |
@@ -138,7 +139,9 @@ because git already knows the answer and no client bothers to ask it.
 | | |
 |---|---|
 | <img src="docs/screenshots/conflict-radar.webp" width="400" alt="Conflict radar" /> | 🛰️ [Conflict radar](docs/help/conflict-radar.md)<br><br>See which branches will conflict **before** merging any of them. The merges happen inside the object database — no checkout, no working-tree change, nothing to clean up. |
+| 📡 [Teammate radar](docs/help/teammate-radar.md)<br><br>Who moved what upstream — and whether it touches files you have modified right now. Computed from the last fetch; no server involved. | <img src="docs/screenshots/teammate-radar.webp" width="400" alt="Teammate radar" /> |
 | 🧠 [Semantic diff](docs/help/semantic-diff.md)<br><br>`startServer` → `bootServer`, instead of a 400-line red/green wall. Real tree-sitter parsing, not a regex. | <img src="docs/screenshots/semantic-diff.webp" width="400" alt="Semantic diff" /> |
+| <img src="docs/screenshots/commit-edit.webp" width="400" alt="Edit any commit" /> | ✏️ [Edit any commit](docs/help/commit-edit.md)<br><br>The typo is three weeks back? Right-click the commit, edit the file, done — every commit above it replays, with the whole cascade (and its conflicts) previewed **before** anything moves. |
 | <img src="docs/screenshots/time-machine.webp" width="400" alt="Time machine" /> | 🕰️ [Time machine](docs/help/time-machine.md)<br><br>Drag a slider and watch the repository change: files appear, move, come back. HEAD never moves and your uncommitted work is untouched. |
 | 🎛️ [Mission control](docs/help/mission-control.md)<br><br>Twenty repositories, one question: which one needs me? Blocked first, then to sync, then dirty, then the quiet ones. | <img src="docs/screenshots/mission-control.webp" width="400" alt="Mission control" /> |
 

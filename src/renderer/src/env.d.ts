@@ -45,6 +45,15 @@ interface PreloadApi {
   onCloneProgress(cb: (p: import('../../shared/types').CloneProgress) => void): () => void
   /** Live stdout/stderr of a running `git bisect run`. */
   onBisectOutput(cb: (chunk: string) => void): () => void
+  localci: {
+    status(): Promise<unknown>
+    workflows(repoPath: string): Promise<unknown>
+    run(repoPath: string, workflowFile: string): Promise<unknown>
+    cancel(repoPath: string): Promise<unknown>
+    record(repoPath: string, workflowFile: string, ok: boolean): Promise<unknown>
+    verdicts(repoPath: string): Promise<unknown>
+    onData(cb: (p: { repoPath: string; chunk: string }) => void): () => void
+  }
   getPathForFile(file: File): string
   keychain: {
     onAsk(cb: (payload: { reason: string; adopted: boolean }) => void): () => void
@@ -208,6 +217,8 @@ interface PreloadApi {
     setIssueState(remoteUrl: string, tokens: unknown, number: number, state: string): Promise<unknown>
     createIssue(remoteUrl: string, tokens: unknown, opts: unknown): Promise<unknown>
     applyPrMeta(remoteUrl: string, tokens: unknown, number: number, meta: unknown): Promise<unknown>
+    updatePR(remoteUrl: string, tokens: unknown, number: number, patch: unknown): Promise<unknown>
+    mergedPrHeads(remoteUrl: string, tokens: unknown, branches: string[]): Promise<unknown>
     listMilestones(remoteUrl: string, tokens: unknown): Promise<unknown>
     milestoneIssues(remoteUrl: string, tokens: unknown, number: number): Promise<unknown>
   }

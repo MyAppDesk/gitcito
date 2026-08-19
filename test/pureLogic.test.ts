@@ -20,6 +20,14 @@ import { tokenizeChatText, isImageRef } from '../src/renderer/src/lib/chatText'
 import { togglePin, selectPinned } from '../src/renderer/src/lib/pinnedBranches'
 import { stepRange } from '../src/renderer/src/lib/rangeSelect'
 import { parseMergeTreeSingle, parseMergeTreeStdin } from '../src/shared/mergeTree'
+import {
+  planStackSubmit,
+  buildStackSection,
+  mergeStackSection,
+  STACK_SECTION_START,
+  STACK_SECTION_END
+} from '../src/shared/stackPr'
+import { parseWorkflowName } from '../src/shared/localCi'
 import { parseRangeDiff } from '../src/shared/rangeDiff'
 import { editorArgs, editorLaunch, supportsLine } from '../src/shared/editors'
 import { branchDropActions, encodeDropRef, decodeDropRef, type DropRef } from '../src/renderer/src/lib/branchDrop'
@@ -3860,5 +3868,102 @@ describe('stepRange (Shift+↑/↓ range selection)', () => {
 
   it('handles a single-item list', () => {
     expect(stepRange(['only'], 'only', null, 1)).toEqual({ ids: ['only'], end: 'only' })
+  })
+})
+
+describe('stackPr (stacked-PR autopilot planning)', () => {
+  const stack = {
+    trunk: 'main',
+    branches: [
+      { name: 'feature/api', parent: 'main', isCurrent: false, ahead: 3, needsRestack: false },
+      { name: 'feature/ui', parent: 'feature/api', isCurrent: true, ahead: 2, needsRestack: false }
+    ]
+  }
+
+  it('plans creates bottom-up with chained bases when no PRs exist', () => {
+    const plan = planStackSubmit(stack, [], 'main')
+    expect(plan).toEqual([
+      { branch: 'feature/api', base: 'main', action: 'create' },
+      { branch: 'feature/ui', base: 'feature/api', action: 'create' }
+    ])
+  })
+
+  it('is idempotent: correct existing PRs come back as ok', () => {
+    const prs = [
+      { id: 10, sourceBranch: 'feature/api', targetBranch: 'main', url: 'u10' },
+      { id: 11, sourceBranch: 'feature/ui', targetBranch: 'feature/api', url: 'u11' }
+    ]
+    expect(planStackSubmit(stack, prs, 'main').every((a) => a.action === 'ok')).toBe(true)
+  })
+
+  it('retargets a PR whose base drifted', () => {
+    const prs = [
+      { id: 10, sourceBranch: 'feature/api', targetBranch: 'main', url: 'u10' },
+      { id: 11, sourceBranch: 'feature/ui', targetBranch: 'main', url: 'u11' }
+    ]
+    const plan = planStackSubmit(stack, prs, 'main')
+    expect(plan[1]).toEqual({ branch: 'feature/ui', base: 'feature/api', action: 'retarget', number: 11, url: 'u11' })
+  })
+
+  it('falls back to the default trunk when the stack has none', () => {
+    const noTrunk = { ...stack, trunk: '', branches: [{ ...stack.branches[0], parent: null }] }
+    expect(planStackSubmit(noTrunk, [], 'develop')[0].base).toBe('develop')
+  })
+
+  it('builds a section listing top→bottom with a self pointer', () => {
+    const section = buildStackSection(
+      [
+        { branch: 'feature/api', number: 10 },
+        { branch: 'feature/ui', number: 11 }
+      ],
+      10,
+      'main'
+    )
+    expect(section.startsWith(STACK_SECTION_START)).toBe(true)
+    expect(section.endsWith(STACK_SECTION_END)).toBe(true)
+    // Top of the stack renders first; the self entry carries the pointer.
+    expect(section.indexOf('#11')).toBeLessThan(section.indexOf('#10'))
+    expect(section).toContain('**#10 ◀**')
+    expect(section).not.toContain('**#11')
+  })
+
+  it('mergeStackSection appends once, then replaces in place', () => {
+    const section1 = buildStackSection([{ branch: 'a', number: 1 }], 1, 'main')
+    const body1 = mergeStackSection('My description.', section1)
+    expect(body1).toContain('My description.')
+    expect(body1).toContain('#1')
+
+    const section2 = buildStackSection(
+      [
+        { branch: 'a', number: 1 },
+        { branch: 'b', number: 2 }
+      ],
+      1,
+      'main'
+    )
+    const body2 = mergeStackSection(body1, section2)
+    expect(body2).toContain('My description.')
+    expect(body2).toContain('#2')
+    expect(body2.match(new RegExp(STACK_SECTION_START, 'g'))?.length).toBe(1)
+  })
+
+  it('mergeStackSection on an empty body is just the section', () => {
+    const section = buildStackSection([{ branch: 'a', number: 1 }], 1, 'main')
+    expect(mergeStackSection('', section)).toBe(section)
+  })
+})
+
+describe('parseWorkflowName (local CI)', () => {
+  it('reads a plain top-level name', () => {
+    expect(parseWorkflowName('name: CI\non: [push]\n')).toBe('CI')
+  })
+  it('strips quotes', () => {
+    expect(parseWorkflowName('name: "Build & Test"\njobs:\n')).toBe('Build & Test')
+  })
+  it('returns null without a name', () => {
+    expect(parseWorkflowName('on: [push]\njobs:\n  x: {}\n')).toBeNull()
+  })
+  it('ignores an indented name inside a job', () => {
+    expect(parseWorkflowName('on: [push]\njobs:\n  build:\n    name: inner\n')).toBeNull()
   })
 })

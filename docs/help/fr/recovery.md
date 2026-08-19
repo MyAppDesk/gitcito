@@ -3,7 +3,7 @@ title: Récupération et le reflog
 category: Récupération et sûreté
 order: 60
 summary: Le filet d'annulation : reflog, instantanés de travail en cours et bisect.
-keywords: reflog récupération recovery annuler undo commits perdus lost commits instantanés snapshots wip travail en cours bisect bisect run automatisé script code de sortie exit code restaurer restore hard reset
+keywords: reflog récupération recovery annuler undo commits perdus lost commits instantanés snapshots wip travail en cours garde-fou guard non suivi untracked abandonner discard nettoyer clean bisect bisect run automatisé script code de sortie exit code restaurer restore hard reset
 ---
 
 # Récupération et le reflog
@@ -24,17 +24,38 @@ C'est le bouton « je viens de réinitialiser la mauvaise branche ».
 ## Instantanés de travail en cours
 
 Le travail non validé est la seule chose que le reflog ne peut pas sauver :
-Gitcito en prend donc des instantanés. Vos modifications suivies, plus l'index
-indexé, capturés sous forme de commit `git stash create` épinglé sous
-`refs/gitcito/wip`.
+Gitcito en prend donc des instantanés. La **copie de travail entière — fichiers
+modifiés, indexés et non suivis** — validée via un index jetable et épinglée
+sous `refs/gitcito/wip`. Ni votre index réel ni votre liste de remisages ne
+sont touchés.
 
 ![Instantanés de travail en cours](../../screenshots/snapshots.webp)
 
-- Cela **ne touche jamais à votre copie de travail** et **n'apparaît jamais dans
-  votre liste de remisages** — c'est une référence cachée, pas un remisage.
-- Prenez-en un à la main, ou laissez-le tourner toutes les **5 / 15 / 30
-  minutes**.
-- Restaurez ou supprimez n'importe quel instantané depuis la liste.
+Trois choses en prennent un :
+
+| Déclencheur | Quand |
+|---------|------|
+| **Garde-fou** | Automatiquement, juste avant une action destructrice — abandon des modifications, nettoyage, reset hard, restauration depuis un commit. Activé par défaut ; à basculer dans la boîte de dialogue des instantanés. |
+| **Minuteur** | Toutes les 5 / 15 / 30 minutes tant que le dépôt est ouvert. |
+| **À la main** | Le bouton **Instantané maintenant**. |
+
+Le garde-fou est celui qui compte : le moment où le travail se perd
+généralement à jamais, c'est la seconde qui suit un abandon que vous ne vouliez
+pas. Avec le garde-fou activé, cet état est un instantané — ouvrez la liste,
+cliquez sur restaurer, respirez à nouveau.
+
+Sélectionnez un instantané pour voir les fichiers qu'il a capturés,
+prévisualiser le changement de n'importe quel fichier, et restaurer un **seul
+fichier** ou toute la copie de travail. La restauration copie les fichiers de
+l'instantané par-dessus les copies actuelles — un instantané de garde-fou est
+pris d'abord, donc une restauration est elle-même annulable.
+
+**Limites à connaître.** Un passage du minuteur ou du garde-fou qui ne trouve
+rien de nouveau n'enregistre rien. La restauration écrase et recrée des
+fichiers, mais ne supprime jamais un fichier créé après l'instantané. Les
+fichiers ignorés ne sont pas capturés. Les instantanés sont des références
+cachées locales : jamais poussées, à l'abri de `git gc`, les 50 plus récentes
+conservées.
 
 ## Bisect guidé
 

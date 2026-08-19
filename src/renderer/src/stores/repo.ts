@@ -25,10 +25,14 @@ import type {
   GitflowConfig,
   GitflowKind,
   GitflowSnapshot,
+  SnapshotInfo,
+  TeammateRadarResult,
   MaintenanceTask,
   MergeOptions
 } from '../../../shared/types'
 import { gitApi, hostingApi } from '../infrastructure/api'
+import { planStackSubmit, buildStackSection } from '../../../shared/stackPr'
+import type { LocalCiVerdict } from '../../../shared/localCi'
 import { useUIStore } from './ui'
 import { useSettingsStore } from './settings'
 import { isSecretFile } from '../lib/secrets'
@@ -94,6 +98,10 @@ export interface RepoData {
    *  (`origin/feature`). Feeds the "history was rewritten" marker and gives the
    *  range-diff the exact commit the branch used to point at. */
   forcedUpdates: Record<string, ForcedRefUpdate>
+  /** Last teammate-radar sweep (remote activity vs local dirty files). */
+  teammateRadar: TeammateRadarResult | null
+  /** Local-CI verdicts pinned to commits (git notes, refs/notes/gitcito-ci). */
+  localCiVerdicts: Record<string, LocalCiVerdict>
 }
 
 const emptyRepo = (path: string): RepoData => ({
@@ -128,7 +136,9 @@ const emptyRepo = (path: string): RepoData => ({
   notedShas: [],
   notGit: false,
   mergeRisk: null,
-  forcedUpdates: {}
+  forcedUpdates: {},
+  teammateRadar: null,
+  localCiVerdicts: {}
 })
 
 interface RepoStoreState {
@@ -951,6 +961,102 @@ export const repoActions = {
   stackRestack: (path: string, leaf: string) =>
     useRepoStore.getState().run(path, interp(t('act.restacked'), { leaf }), () => gitApi.stackRestack(path, leaf)),
 
+  /** Submit the whole stack as chained PRs (GitHub only): push every level with
+   *  a lease, create missing PRs with the right bases, retarget any that point
+   *  at the wrong base, then write the stack-navigation section into every PR
+   *  body. Idempotent — the button is safe to press after every restack. */
+  submitStack: (path: string) =>
+    useRepoStore.getState().run(
+      path,
+      t('act.stackSubmitted'),
+      async () => {
+        const state = useRepoStore.getState()
+        const repo = state.repos[path]
+        const origin = repo?.remotes.find((r) => r.name === 'origin') ?? repo?.remotes[0]
+        if (!origin) throw new Error(t('stack.noRemote'))
+
+        // A landed bottom first: reparent its child, untrack it, drop the
+        // branch — then the rest of the submit sees the shortened chain.
+        // Squash merges are invisible to git's ancestry check, so ask the host
+        // which of the stack's branches have a merged PR (best-effort).
+        const profileForPrune = useSettingsStore.getState().activeProfile()
+        const preStack = await gitApi.stackInfo(path).catch(() => null)
+        const hostMerged = preStack?.branches.length
+          ? await hostingApi
+              .mergedPrHeads(origin.url, { github: profileForPrune.githubToken || undefined }, preStack.branches.map((b) => b.name))
+              .catch(() => [])
+          : []
+        const pruned = await gitApi.stackPruneMerged(path, hostMerged)
+        if (pruned.length) toast('info', interp(t('act.stackPruned'), { branches: pruned.join(', ') }))
+
+        let stack = await gitApi.stackInfo(path)
+        if (!stack.branches.length) throw new Error(t('stack.empty'))
+        // Restack before pushing when anything drifted (a prune usually means
+        // the children now sit on an outdated base). Throws on conflict.
+        if (stack.branches.some((b) => b.needsRestack)) {
+          await gitApi.stackRestack(path, stack.branches[stack.branches.length - 1].name)
+          stack = await gitApi.stackInfo(path)
+        }
+
+        await state.refreshPRs(path, { silent: true })
+        const fresh = useRepoStore.getState().repos[path]
+        if (fresh?.prProvider && fresh.prProvider !== 'github') throw new Error(t('stack.githubOnly'))
+
+        const profile = useSettingsStore.getState().activeProfile()
+        const tokens = { github: profile.githubToken || undefined }
+
+        // Every level pushed with a lease: restacked branches need the force,
+        // fresh ones tolerate it.
+        for (const b of stack.branches) await gitApi.push(path, b.name, { force: true })
+
+        const trunk =
+          stack.trunk ||
+          fresh?.branches.locals.find((l) => /^(main|master)$/.test(l.name))?.name ||
+          'main'
+        const openPrs = (fresh?.prs ?? []).map((p) => ({
+          id: p.id,
+          sourceBranch: p.sourceBranch,
+          targetBranch: p.targetBranch,
+          url: p.url
+        }))
+        const plan = planStackSubmit(stack, openPrs, trunk)
+
+        const numbered: { branch: string; number: number }[] = []
+        for (const a of plan) {
+          if (a.action === 'create') {
+            // Title/body from the level's own commits — oldest subject names
+            // the PR, the list becomes the description.
+            const cmp = await gitApi.compareBranches(path, a.branch, a.base).catch(() => null)
+            const oldest = cmp?.aheadCommits.at(-1)
+            const res = await hostingApi.createPR(origin.url, tokens, {
+              title: oldest?.subject || a.branch,
+              body: (cmp?.aheadCommits ?? []).map((c) => `- ${c.subject}`).join('\n'),
+              source: a.branch,
+              target: a.base,
+              draft: false
+            })
+            numbered.push({ branch: a.branch, number: res.number })
+          } else {
+            if (a.action === 'retarget') await hostingApi.updatePR(origin.url, tokens, a.number!, { base: a.base })
+            numbered.push({ branch: a.branch, number: a.number! })
+          }
+        }
+
+        // Second pass, once every number is known: the navigation section,
+        // with the "you are here" pointer personalised per PR.
+        for (const n of numbered) {
+          await hostingApi.updatePR(origin.url, tokens, n.number, {
+            stackSection: buildStackSection(numbered, n.number, trunk)
+          })
+        }
+        await useRepoStore.getState().refreshPRs(path, { silent: true })
+      },
+      undefined,
+      'push',
+      undefined,
+      ['branches', 'status']
+    ),
+
   addRemote: (path: string, name: string, url: string, pushUrl?: string) =>
     useRepoStore.getState().run(path, interp(t('act.addedRemote'), { name }), async () => {
       await gitApi.addRemote(path, name, url, pushUrl)
@@ -1088,7 +1194,7 @@ export const repoActions = {
     let forced: ForcedRefUpdate[] = []
     const ok = await useRepoStore.getState().run(
       path,
-      'Fetched all remotes',
+      t('act.fetchedAll'),
       async () => {
         forced = await gitApi.fetchAll(path)
       },
@@ -1107,12 +1213,38 @@ export const repoActions = {
         toast(
           'info',
           forced.length === 1
-            ? `${forced[0].ref} was force-pushed — right-click it to see what changed`
-            : `${forced.length} branches were force-pushed — right-click one to see what changed`
+            ? interp(t('sync.forcedOne'), { ref: forced[0].ref })
+            : interp(t('sync.forcedMany'), { n: forced.length })
         )
       }
+      // Fresh remote state → sweep the teammate radar in the background.
+      void repoActions.radarSweep(path)
     }
     return ok
+  },
+
+  /** Teammate-radar sweep after a fetch. Silent unless upstream commits touch
+   *  files that are dirty locally AND the offending set actually changed —
+   *  awareness, not a notification firehose. */
+  radarSweep: async (path: string) => {
+    const st = useRepoStore.getState().repos[path]
+    const dirtyCount =
+      (st?.status?.staged.length ?? 0) + (st?.status?.unstaged.length ?? 0) + (st?.status?.conflicted.length ?? 0)
+    if (!dirtyCount) return
+    const result = await gitApi.teammateRadar(path).catch(() => null)
+    if (!result) return
+    const prev = useRepoStore.getState().repos[path]?.teammateRadar
+    useRepoStore.getState().patch(path, { teammateRadar: result })
+
+    const sig = (r: TeammateRadarResult | null | undefined): string =>
+      (r?.entries ?? [])
+        .filter((e) => e.overlap.length)
+        .map((e) => `${e.ref}@${e.sha}`)
+        .join(',')
+    const overlapping = result.entries.filter((e) => e.overlap.length)
+    if (!overlapping.length || sig(result) === sig(prev)) return
+    const files = new Set(overlapping.flatMap((e) => e.overlap))
+    toast('info', interp(t('teamRadar.overlapToast'), { files: files.size, branches: overlapping.length }))
   },
 
   // ─── Multi-repo batch (group tabs) ───
@@ -1550,6 +1682,58 @@ export const repoActions = {
       .run(path, interp(t('act.restoredFromCommit'), { n: paths.length }), () =>
         gitApi.restoreFromCommit(path, hash, paths)
       , undefined, null, undefined, ['status', 'treeStatus']),
+
+  /** Restore a WIP snapshot (whole tree, or just `files`). A guard snapshot of
+   *  the current state is taken first so the restore itself can be undone; when
+   *  the tree was clean there is nothing to guard, and undo falls back to
+   *  restoring the touched paths from HEAD. */
+  restoreSnapshot: (path: string, sha: string, files?: string[]) => {
+    let before: SnapshotInfo | null = null
+    return useRepoStore.getState().run(
+      path,
+      t('act.snapshotRestored'),
+      async () => {
+        before = await gitApi.createSnapshot(path, 'guard').catch(() => null)
+        await gitApi.restoreSnapshot(path, sha, files)
+      },
+      {
+        label: t('undoLabel.snapshotRestore'),
+        undo: async () => {
+          if (before) await gitApi.restoreSnapshot(path, before.sha, files)
+          else await gitApi.restoreFromCommit(path, 'HEAD', files ?? ['.'])
+        },
+        redo: () => gitApi.restoreSnapshot(path, sha, files)
+      },
+      null,
+      undefined,
+      ['status', 'treeStatus']
+    )
+  },
+
+  /** Rewrite a historical commit (files and/or message) and replay everything
+   *  above it. Undo moves the branch back with `reset --keep`, so uncommitted
+   *  work rides along both ways. */
+  commitEditApply: (path: string, sha: string, edits: Record<string, string>, message: string) => {
+    let oldHead = ''
+    let newTip = ''
+    return useRepoStore.getState().run(
+      path,
+      t('act.commitEdited'),
+      async () => {
+        const res = await gitApi.commitEditApply(path, sha, edits, message)
+        oldHead = res.oldHead
+        newTip = res.newTip
+      },
+      {
+        label: interp(t('undoLabel.commitEdit'), { sha: sha.slice(0, 7) }),
+        undo: () => gitApi.reset(path, oldHead, 'keep'),
+        redo: () => gitApi.reset(path, newTip, 'keep')
+      },
+      null,
+      undefined,
+      ['log', 'status', 'branches', 'treeStatus']
+    )
+  },
 
   stashDrop: (path: string, index = 0) =>
     useRepoStore.getState().run(path, t('act.droppedStash'), () => gitApi.stashDrop(path, index), undefined, null, undefined, ['stashes']),

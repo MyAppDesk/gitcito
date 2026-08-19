@@ -1,10 +1,12 @@
 # shellcheck shell=bash disable=SC2154
 # 33. snapshots — exercise WIP snapshots (Camera / ⌘K), the uncommitted-work
-# safety net (git stash create pinned under refs/gitcito/wip/<ts>).
+# safety net (commits pinned under refs/gitcito/wip/<ts>).
 #
-# Seeds two existing snapshots (one "manual", one "auto") taken from different
-# working-tree states, then leaves the tree dirty so "Snapshot now" works and
-# "Restore" has something to apply.
+# Seeds three existing snapshots (manual, auto, guard) taken from different
+# working-tree states, then leaves the tree dirty — with an untracked file —
+# so "Snapshot now" captures something and "Restore" has files to copy back.
+# The seeds use `git stash create` on purpose: that is the app's legacy
+# snapshot shape, so listing/restoring them also covers backwards compat.
 R="$ROOT/snapshots"
 new_repo "$R"
 
@@ -31,7 +33,13 @@ printf 'Work in progress: section two.\n' >> "$R/draft.md"
 echo "scratch notes" > "$R/notes.md" && git -C "$R" add notes.md
 snap "gitcito-wip (auto)" "-a" 1200
 
-# Leave the working tree dirty (tracked edit) for "Snapshot now" / "Restore".
-printf 'Even more uncommitted edits.\n' >> "$R/draft.md"
+# State C → guard snapshot (5 minutes ago), as taken before a destructive op
+printf 'Work in progress: section three.\n' >> "$R/draft.md"
+snap "gitcito-wip (guard)" "-g" 300
 
-summary "snapshots" "WIP snapshots: 2 seeded (manual + auto) + dirty tree — Snapshot now / Restore / auto-interval"
+# Leave the working tree dirty — a tracked edit AND an untracked file — for
+# "Snapshot now" / "Restore" (untracked capture is the new mechanism's point).
+printf 'Even more uncommitted edits.\n' >> "$R/draft.md"
+echo "todo: not yet added" > "$R/scratch.txt"
+
+summary "snapshots" "WIP snapshots: 3 seeded (manual + auto + guard) + dirty tree with an untracked file"

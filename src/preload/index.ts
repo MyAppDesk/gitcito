@@ -22,6 +22,22 @@ const api = {
     return () => ipcRenderer.removeListener('bisect:output', listener)
   },
 
+  localci: {
+    status: (): Promise<unknown> => ipcRenderer.invoke('localci:status'),
+    workflows: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('localci:workflows', repoPath),
+    run: (repoPath: string, workflowFile: string): Promise<unknown> =>
+      ipcRenderer.invoke('localci:run', repoPath, workflowFile),
+    cancel: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('localci:cancel', repoPath),
+    record: (repoPath: string, workflowFile: string, ok: boolean): Promise<unknown> =>
+      ipcRenderer.invoke('localci:record', repoPath, workflowFile, ok),
+    verdicts: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('localci:verdicts', repoPath),
+    onData: (cb: (p: { repoPath: string; chunk: string }) => void): (() => void) => {
+      const listener = (_e: unknown, p: { repoPath: string; chunk: string }): void => cb(p)
+      ipcRenderer.on('localci:data', listener)
+      return () => ipcRenderer.removeListener('localci:data', listener)
+    }
+  },
+
   // Resolve a dropped File to its absolute path (File.path was removed in Electron 32).
   getPathForFile: (file: File): string => webUtils.getPathForFile(file),
 
@@ -261,6 +277,10 @@ const api = {
       ipcRenderer.invoke('hosting:createIssue', remoteUrl, tokens, opts),
     applyPrMeta: (remoteUrl: string, tokens: unknown, number: number, meta: unknown): Promise<unknown> =>
       ipcRenderer.invoke('hosting:applyPrMeta', remoteUrl, tokens, number, meta),
+    updatePR: (remoteUrl: string, tokens: unknown, number: number, patch: unknown): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:updatePR', remoteUrl, tokens, number, patch),
+    mergedPrHeads: (remoteUrl: string, tokens: unknown, branches: string[]): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:mergedPrHeads', remoteUrl, tokens, branches),
     listMilestones: (remoteUrl: string, tokens: unknown): Promise<unknown> =>
       ipcRenderer.invoke('hosting:listMilestones', remoteUrl, tokens),
     milestoneIssues: (remoteUrl: string, tokens: unknown, number: number): Promise<unknown> =>

@@ -2233,6 +2233,14 @@ textarea:focus {
 .graph-refs > .ref-collapsed {
   max-width: var(--branch-cap, 100%);
 }
+/* A label truncated by the cap expands to its full name on hover — the same
+ * courtesy the +N popup gives collapsed refs. The solid lane pill keeps the
+ * text readable while it temporarily overlaps the graph. */
+.graph-refs .ref-badge:hover {
+  max-width: none;
+  flex-shrink: 0;
+  z-index: 5;
+}
 .ref-more-chip {
   flex-shrink: 0;
   font-size: 9.5px;

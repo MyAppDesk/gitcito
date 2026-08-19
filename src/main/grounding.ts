@@ -414,6 +414,7 @@ export interface RepoChatActionContext {
   workingTreePaths: Set<string>
   evidencePaths: Set<string>
   completePaths: Set<string>
+  allowFileActions?: boolean
 }
 
 /**
@@ -444,6 +445,10 @@ export function validateRepoChatActions(value: unknown, context: RepoChatActionC
     if (typeof action.type !== 'string' || !REPO_CHAT_FILE_ACTION_TYPES.has(action.type)) {
       gitActions.push(action)
       sawGitAction = true
+      return
+    }
+    if (context.allowFileActions === false) {
+      errors.push(`${at} file actions are disabled by file read-only mode.`)
       return
     }
 

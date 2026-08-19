@@ -1099,6 +1099,8 @@ export const nl: Dict = {
   'settings.repoChatCommittedHint': 'Antwoordt vanuit de laatste commit in plaats van je werkmap, zodat niet-vastgelegde wijzigingen deze machine niet verlaten.',
   'settings.repoChatActions': 'Bestands- en Git-acties voorstellen in de chat',
   'settings.repoChatActionsHint': 'Chatantwoorden kunnen controleerbare bestandswijzigingen gevolgd door Git-acties bevatten. Ze lopen alleen volgens de regels hieronder.',
+  'settings.repoChatReadOnly': 'Alleen-lezenmodus voor bestanden',
+  'settings.repoChatReadOnlyHint': 'Voorkomt dat repositorychat bestanden maakt, bewerkt, vervangt of verwijdert. Git-acties blijven beschikbaar volgens de goedkeuringsregels.',
   'settings.repoChatApprovalHint': 'In de automatische modi wordt een voorstel uitgevoerd zodra het binnenkomt. Destructieve acties vragen altijd eerst om bevestiging.',
   'settings.conflictStyle': 'Stijl van conflictoplossing',
   'settings.conflictStyleHint': 'Hoe de AI het bestand vormgeeft bij het oplossen van merge-conflicten.',

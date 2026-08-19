@@ -72,6 +72,7 @@ tocam um caminho excluído saem daquele diff, não o commit inteiro.
 | **Modelo do chat** | Um modelo só para o chat. Vazio usa o do perfil: perguntar custa menos que revisar, um menor costuma bastar |
 | **Apenas conteúdo commitado** | Responde a partir do último commit em vez da árvore de trabalho: alterações não commitadas nunca saem da máquina |
 | **Propor ações de arquivo e Git no chat** | Desligado devolve o chat ao modo somente leitura: sem cartões de ações, sem menu de aprovação |
+| **Modo somente leitura de arquivos** | Ligado bloqueia criação, edição, substituição e exclusão de arquivos, mas mantém as ações Git disponíveis. Vem ligado por padrão |
 | **Como as ações propostas são executadas** | O modo de aprovação — veja [Modos de aprovação](#modos-de-aprovação). Ações destrutivas confirmam de qualquer jeito |
 
 Com a IA desligada por completo, o chat some junto — nenhum painel oferecendo

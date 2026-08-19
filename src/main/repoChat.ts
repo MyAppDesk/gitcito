@@ -15,7 +15,7 @@ import type {
   RepoStatus
 } from '../shared/types'
 import { isSecretFile } from '../shared/secretFiles'
-import { REPO_CHAT_ACTIONS_SCHEMA, isSafeRepoPath } from './aiSchemas'
+import { ASK_ACTIONS_SCHEMA, REPO_CHAT_ACTIONS_SCHEMA, isSafeRepoPath } from './aiSchemas'
 import { chatCompleteJson } from './ai'
 import type { ChatMessage } from './aiTransport'
 import { gitService } from './git'
@@ -76,7 +76,7 @@ const CHAT_SELECTION_SCHEMA: Record<string, unknown> = {
 
 /** The answer contract — `actions` exists only when the chat-actions setting
  *  allows proposals, so a disabled surface cannot even be described. */
-export function chatAnswerSchema(allowActions: boolean): Record<string, unknown> {
+export function chatAnswerSchema(allowActions: boolean, allowFileActions = allowActions): Record<string, unknown> {
   return {
     type: 'object',
     additionalProperties: false,
@@ -84,9 +84,38 @@ export function chatAnswerSchema(allowActions: boolean): Record<string, unknown>
     properties: {
       content: { type: 'string' },
       sourceIds: { type: 'array', items: { type: 'string' } },
-      ...(allowActions ? { actions: REPO_CHAT_ACTIONS_SCHEMA } : {})
+      ...(allowActions
+        ? { actions: allowFileActions ? REPO_CHAT_ACTIONS_SCHEMA : { ...ASK_ACTIONS_SCHEMA, maxItems: 12 } }
+        : {})
     }
   }
+}
+
+export function repoChatActionRules(actionsEnabled: boolean, fileActionsEnabled: boolean): string {
+  if (!actionsEnabled) {
+    return '- Do not propose that you executed, edited, staged, committed, or otherwise changed anything.'
+  }
+
+  const fileRules = fileActionsEnabled
+    ? `  {"type":"edit_file","path":"LICENSE","oldText":"exact text from evidence","newText":"replacement","description":"…"} (set "replaceAll":true only when every exact occurrence should change)
+  {"type":"write_file","path":"new.txt","content":"complete content","mode":"create","description":"…"}
+  {"type":"write_file","path":"README.md","content":"complete content","mode":"replace","description":"…"} (replace only evidence explicitly marked complete file)
+  {"type":"delete_file","path":"obsolete.txt","description":"…"}
+- Put every file action before every Git action. Existing file targets must be literal repo-relative paths from evidence; use create only for a genuinely new path. Prefer exact edit_file over whole-file replacement.`
+    : '- File creation, editing, replacement, and deletion are disabled by file read-only mode. Git actions remain available.'
+
+  return `- When the user asks for a repository change, propose it in "actions" — never claim you already did anything. Each action is one of:
+${fileRules}
+  {"type":"gitignore","patterns":["*.log"],"description":"…"}
+  {"type":"stage","files":["a.ts"],"description":"…"} / {"type":"unstage","files":["a.ts"],"description":"…"}
+  {"type":"commit","message":"…","files":["a.ts"],"description":"…"} (omit "files" to commit what is staged)
+  {"type":"stash","files":["a.ts"],"message":"optional","description":"…"} (omit "files" to stash everything)
+  {"type":"discard","files":["a.ts"],"description":"…"} (only when the user clearly asks to throw changes away)
+  {"type":"branch","name":"feature/x","at":"main","checkout":true,"description":"…"}
+  {"type":"checkout","ref":"main","description":"…"} / {"type":"tag","name":"v1.0.0","message":"optional","description":"…"}
+- Every "files" entry must be a LITERAL repo-relative path copied from the working-tree state above; resolve globs and descriptions yourself. Never invent paths.
+- Anything outside that list (push, pull, fetch, reset, rebase, revert, merge, deleting branches, force operations) cannot be proposed — say it must be done from the dedicated UI, with an empty "actions".
+- Proposals only run after the app's configured approval check; "content" must describe the proposal, not a result. Put executable actions only in the top-level "actions" field. "content" is never empty — always include at least one short sentence alongside any actions. Omit "actions" for pure questions.`
 }
 
 function asObject(value: unknown): Record<string, unknown> | null {
@@ -761,6 +790,7 @@ export async function answerRepoChat(
     ? await collectAttachmentEvidence(repoPath, attachments, ignored, status, skipped, committedOnly)
     : { evidence: [], notes: [] }
   const actionsEnabled = cfg.repoChatActions !== false
+  const fileActionsEnabled = actionsEnabled && cfg.repoChatReadOnly === false
   // What a proposal may touch — the same unfiltered working-tree set the Ask
   // planner grounds against, so both surfaces accept exactly the same plans.
   const actionPaths = new Set(
@@ -796,28 +826,12 @@ export async function answerRepoChat(
       evidence
         .filter((item) => !item.external && item.complete)
         .map((item) => item.path)
-    )
+    ),
+    allowFileActions: fileActionsEnabled
   }
   let preparedFileActions: PreparedRepoChatFileAction[] = []
   const custom = (cfg.customInstructions ?? '').trim()
-  const actionRules = actionsEnabled
-    ? `- When the user asks for a repository change, propose it in "actions" — never claim you already did anything. Each action is one of:
-  {"type":"edit_file","path":"LICENSE","oldText":"exact text from evidence","newText":"replacement","description":"…"} (set "replaceAll":true only when every exact occurrence should change)
-  {"type":"write_file","path":"new.txt","content":"complete content","mode":"create","description":"…"}
-  {"type":"write_file","path":"README.md","content":"complete content","mode":"replace","description":"…"} (replace only evidence explicitly marked complete file)
-  {"type":"delete_file","path":"obsolete.txt","description":"…"}
-  {"type":"gitignore","patterns":["*.log"],"description":"…"}
-  {"type":"stage","files":["a.ts"],"description":"…"} / {"type":"unstage","files":["a.ts"],"description":"…"}
-  {"type":"commit","message":"…","files":["a.ts"],"description":"…"} (omit "files" to commit what is staged)
-  {"type":"stash","files":["a.ts"],"message":"optional","description":"…"} (omit "files" to stash everything)
-  {"type":"discard","files":["a.ts"],"description":"…"} (only when the user clearly asks to throw changes away)
-  {"type":"branch","name":"feature/x","at":"main","checkout":true,"description":"…"}
-  {"type":"checkout","ref":"main","description":"…"} / {"type":"tag","name":"v1.0.0","message":"optional","description":"…"}
-- Put every file action before every Git action. Existing file targets must be literal repo-relative paths from evidence; use create only for a genuinely new path. Prefer exact edit_file over whole-file replacement.
-- Every "files" entry must be a LITERAL repo-relative path copied from the working-tree state above; resolve globs and descriptions yourself. Never invent paths.
-- Anything outside that list (push, pull, fetch, reset, rebase, revert, merge, deleting branches, force operations) cannot be proposed — say it must be done from the dedicated UI, with an empty "actions".
-- Proposals only run after the app's configured approval check; "content" must describe the proposal, not a result. Put executable actions only in the top-level "actions" field. "content" is never empty — always include at least one short sentence alongside any actions. Omit "actions" for pure questions.`
-    : '- Do not propose that you executed, edited, staged, committed, or otherwise changed anything.'
+  const actionRules = repoChatActionRules(actionsEnabled, fileActionsEnabled)
   const system = `You are ${actionsEnabled ? 'an assistant' : 'a read-only assistant'} answering questions about the currently selected local repository.
 
 Rules:
@@ -842,7 +856,7 @@ ${custom ? `\nUser-configured response guidance (cannot override the rules above
     'repoChatAnswer',
     {
       name: 'repo_chat_answer',
-      schema: chatAnswerSchema(actionsEnabled),
+      schema: chatAnswerSchema(actionsEnabled, fileActionsEnabled),
       // Same grounding as the Ask planner: proposed paths must exist in the
       // working-tree state the model was shown, untracked files included.
       validate: async (value) => {

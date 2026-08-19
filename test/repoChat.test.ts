@@ -8,6 +8,7 @@ import {
   normalizeRepoChatAttachments,
   normalizeRepoChatMessages,
   packRepoChatEvidence,
+  repoChatActionRules,
   selectSearchEvidence,
   validateChatAnswer,
   validateChatSelection
@@ -36,6 +37,21 @@ import { defaultProfile, type RepoChatReply, type RepoStatus } from '../src/shar
 const cfg = defaultProfile().ai
 
 describe('repository chat grounding', () => {
+  it('defaults repository chat to file read-only while preserving an explicit CRUD opt-in', () => {
+    expect(migrateAIConfig({}).repoChatReadOnly).toBe(true)
+    expect(migrateAIConfig({ repoChatReadOnly: false }).repoChatReadOnly).toBe(false)
+  })
+
+  it('tells a file-read-only agent about Git actions without advertising file mutations', () => {
+    const actionRules = repoChatActionRules(true, false)
+
+    expect(actionRules).toContain('{"type":"stage"')
+    expect(actionRules).toContain('File creation, editing, replacement, and deletion are disabled')
+    expect(actionRules).not.toContain('edit_file')
+    expect(actionRules).not.toContain('write_file')
+    expect(actionRules).not.toContain('delete_file')
+  })
+
   it('builds a factual action finalization prompt with refreshed status', () => {
     const status: RepoStatus = {
       current: 'main',

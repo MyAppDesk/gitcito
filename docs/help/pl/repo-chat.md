@@ -70,7 +70,8 @@ wykluczonej ścieżki wypadają z tego diffa, a nie cały commit.
 | **Zadawaj pytania o repozytorium** | Wyłączone usuwa kartę, przycisk paska i cel skrótu. Reszta AI działa dalej |
 | **Model czatu** | Model tylko dla czatu. Puste oznacza model profilu — pytanie kosztuje mniej niż przegląd, mniejszy zwykle wystarcza |
 | **Tylko zatwierdzona treść** | Odpowiada z ostatniego commita zamiast z katalogu roboczego: niezatwierdzone zmiany nigdy nie opuszczają komputera |
-| **Proponowanie akcji Gita na czacie** | Wyłączone znów czyni czat czysto tylko do odczytu: żadnych kart akcji, żadnej listy zatwierdzania |
+| **Proponowanie akcji na plikach i w Git** | Wyłączone znów czyni czat czysto tylko do odczytu: żadnych kart akcji, żadnej listy zatwierdzania |
+| **Tryb plików tylko do odczytu** | Włączony blokuje tworzenie, edytowanie, zastępowanie i usuwanie plików, ale pozostawia dostępne akcje Git. Domyślnie jest włączony |
 | **Jak uruchamiane są proponowane akcje** | Tryb zatwierdzania — zobacz [Tryby zatwierdzania](#tryby-zatwierdzania). Akcje destrukcyjne i tak proszą o potwierdzenie |
 
 Gdy AI jest wyłączone w całości, czat znika razem z nim — żaden panel nie

@@ -1079,6 +1079,8 @@ export const ja: Dict = {
   'settings.repoChatCommittedHint': '作業ツリーではなく最新のコミットから回答します。未コミットの変更がこの端末から出ることはありません。',
   'settings.repoChatActions': 'チャットでファイルと Git の操作を提案',
   'settings.repoChatActionsHint': '返信には確認可能なファイル変更と、それに続く Git 操作を含められます。下の承認ルールに従ってのみ実行されます。',
+  'settings.repoChatReadOnly': 'ファイル読み取り専用モード',
+  'settings.repoChatReadOnlyHint': 'リポジトリチャットによるファイルの作成、編集、置換、削除を禁止します。Git 操作は承認ルールに従って引き続き利用できます。',
   'settings.repoChatApprovalHint': '自動実行モードでは、提案が届き次第すぐに実行します。破壊的な操作は必ず先に確認を求めます。',
   'settings.conflictStyle': 'コンフリクト解決のスタイル',
   'settings.conflictStyleHint': 'マージコンフリクトを解決するとき、AI がファイルをどう整えるかです。',

@@ -1079,6 +1079,8 @@ export const fr: Dict = {
   'settings.repoChatCommittedHint': 'Répond à partir du dernier commit plutôt que de votre copie de travail, afin que les modifications non validées ne quittent pas cette machine.',
   'settings.repoChatActions': 'Proposer des actions sur les fichiers et Git',
   'settings.repoChatActionsHint': 'Les réponses peuvent inclure des changements de fichiers vérifiables suivis d’actions Git. Ils ne s’exécutent que selon les règles ci-dessous.',
+  'settings.repoChatReadOnly': 'Mode fichiers en lecture seule',
+  'settings.repoChatReadOnlyHint': 'Empêche le chat du dépôt de créer, modifier, remplacer ou supprimer des fichiers. Les actions Git restent disponibles selon les règles d’approbation.',
   'settings.repoChatApprovalHint': 'Les modes automatiques exécutent une proposition dès qu’elle arrive. Les actions destructrices demandent toujours une confirmation d’abord.',
   'settings.conflictStyle': 'Style de résolution des conflits',
   'settings.conflictStyleHint': 'La façon dont l’IA met en forme le fichier quand elle résout des conflits de fusion.',

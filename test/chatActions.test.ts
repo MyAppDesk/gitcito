@@ -45,6 +45,31 @@ const actionContext = {
 }
 
 describe('repository chat file action contract', () => {
+  it('keeps Git actions but rejects file mutations in file read-only mode', () => {
+    const readOnlyContext = {
+      ...actionContext,
+      allowFileActions: false,
+      workingTreePaths: new Set(['a.ts'])
+    }
+    expect(validateRepoChatActions([stage], readOnlyContext)).toEqual([])
+    expect(validateRepoChatActions([editFile], readOnlyContext).join(' ')).toContain('file read-only mode')
+
+    const schema = chatAnswerSchema(true, false) as {
+      properties: {
+        actions: {
+          items: { anyOf?: unknown; properties?: { type?: { enum?: string[] } } }
+        }
+      }
+    }
+    expect(schema.properties.actions.items.anyOf).toBeUndefined()
+    expect(schema.properties.actions.items.properties?.type?.enum).toEqual(
+      expect.arrayContaining(['stage', 'commit'])
+    )
+    expect(schema.properties.actions.items.properties?.type?.enum).not.toEqual(
+      expect.arrayContaining(['edit_file', 'write_file', 'delete_file'])
+    )
+  })
+
   it('validates grounded file actions followed by Git actions', () => {
     const actions = [editFile, { type: 'stage', files: ['LICENSE'], description: 'Stage LICENSE' }]
     expect(validateRepoChatActions(actions, actionContext)).toEqual([])

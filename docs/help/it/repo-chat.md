@@ -70,7 +70,8 @@ blocchi su percorsi esclusi vengono tolti da quel diff, non l’intero commit.
 | **Fai domande sul repository** | Disattivata toglie la scheda, il pulsante e il bersaglio della scorciatoia. Il resto dell’IA continua |
 | **Modello della chat** | Un modello solo per la chat. Vuoto significa quello del profilo: chiedere costa meno che revisionare, spesso basta uno più piccolo |
 | **Solo contenuti committati** | Risponde dall’ultimo commit invece che dal working tree: le modifiche non committate non lasciano mai la macchina |
-| **Proponi azioni git in chat** | Disattivata riporta la chat alla sola lettura: niente schede di azioni, niente menu di approvazione |
+| **Proponi azioni su file e Git in chat** | Disattivata riporta la chat alla sola lettura: niente schede di azioni, niente menu di approvazione |
+| **Modalità file di sola lettura** | Attivata blocca creazione, modifica, sostituzione ed eliminazione dei file, ma mantiene disponibili le azioni Git. È attiva per impostazione predefinita |
 | **Come vengono eseguite le azioni proposte** | La modalità di approvazione — vedi [Modalità di approvazione](#modalità-di-approvazione). Le azioni distruttive chiedono comunque conferma |
 
 Con l’IA spenta del tutto la chat sparisce con lei: nessun pannello che offre

@@ -1100,6 +1100,8 @@ export const ko: Dict = {
   'settings.repoChatApprovalHint': '자동 실행 모드는 제안이 도착하는 즉시 실행합니다. 파괴적인 작업은 항상 먼저 확인을 요청합니다.',
   'settings.repoChatActions': '채팅에서 파일 및 Git 작업 제안',
   'settings.repoChatActionsHint': '답변에는 검토 가능한 파일 변경과 이어지는 Git 작업이 포함될 수 있습니다. 아래 승인 규칙에 따라서만 실행됩니다.',
+  'settings.repoChatReadOnly': '파일 읽기 전용 모드',
+  'settings.repoChatReadOnlyHint': '저장소 채팅이 파일을 생성, 편집, 교체 또는 삭제하지 못하게 합니다. Git 작업은 승인 규칙에 따라 계속 사용할 수 있습니다.',
   'settings.conflictStyle': '충돌 해결 스타일',
   'settings.conflictStyleHint': 'AI가 머지 충돌을 해결할 때 파일을 어떤 모양으로 만들지 정합니다.',
   'settings.generateDescription': '커밋 본문 생성',

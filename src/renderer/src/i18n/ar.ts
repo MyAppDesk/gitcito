@@ -1099,6 +1099,8 @@ export const ar: Dict = {
   'settings.repoChatCommittedHint': 'يجيب اعتماداً على آخر التزام بدل شجرة العمل، فلا تغادر التعديلات غير المُلتزمة هذا الجهاز.',
   'settings.repoChatActions': 'اقتراح إجراءات الملفات وGit في الدردشة',
   'settings.repoChatActionsHint': 'يمكن أن تتضمن الردود تغييرات ملفات قابلة للمراجعة تتبعها إجراءات Git. لا تُنفذ إلا وفق قواعد الموافقة أدناه.',
+  'settings.repoChatReadOnly': 'وضع الملفات للقراءة فقط',
+  'settings.repoChatReadOnlyHint': 'يمنع دردشة المستودع من إنشاء الملفات أو تعديلها أو استبدالها أو حذفها. تبقى إجراءات Git متاحة وفق قواعد الموافقة.',
   'settings.repoChatApprovalHint': 'أوضاع التنفيذ التلقائي تنفّذ الاقتراح فور وصوله. أما الإجراءات المدمّرة فتطلب التأكيد أولاً دائماً.',
   'settings.conflictStyle': 'أسلوب حل التعارضات',
   'settings.conflictStyleHint': 'كيف يشكّل الذكاء الاصطناعي الملف عند حل تعارضات الدمج.',

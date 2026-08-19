@@ -1099,6 +1099,8 @@ export const pl: Dict = {
   'settings.repoChatCommittedHint': 'Odpowiada na podstawie ostatniego commita zamiast katalogu roboczego, więc niezatwierdzone zmiany nie opuszczają tego komputera.',
   'settings.repoChatActions': 'Proponowanie akcji na plikach i w Git',
   'settings.repoChatActionsHint': 'Odpowiedzi mogą zawierać sprawdzalne zmiany plików, a po nich akcje Git. Są wykonywane tylko według poniższych reguł.',
+  'settings.repoChatReadOnly': 'Tryb plików tylko do odczytu',
+  'settings.repoChatReadOnlyHint': 'Blokuje tworzenie, edytowanie, zastępowanie i usuwanie plików przez czat repozytorium. Akcje Git pozostają dostępne zgodnie z regułami zatwierdzania.',
   'settings.repoChatApprovalHint': 'Tryby automatyczne wykonują propozycję od razu po jej otrzymaniu. Akcje destrukcyjne zawsze najpierw proszą o potwierdzenie.',
   'settings.conflictStyle': 'Styl rozwiązywania konfliktów',
   'settings.conflictStyleHint': 'Jak AI formuje plik przy rozwiązywaniu konfliktów scalania.',

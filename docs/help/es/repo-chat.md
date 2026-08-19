@@ -71,7 +71,8 @@ entero.
 | **Haz preguntas sobre el repositorio** | Desactivado quita la pestaña, el botón de la barra y el destino del atajo. El resto de la IA sigue funcionando |
 | **Modelo del chat** | Un modelo solo para el chat. Vacío significa el del perfil: preguntar cuesta menos que revisar, y suele bastar uno más pequeño |
 | **Solo contenido confirmado** | Responde con el último commit en vez de la copia de trabajo: los cambios sin confirmar nunca salen del equipo |
-| **Proponer acciones de git en el chat** | Desactivado vuelve el chat de solo lectura otra vez: sin tarjetas de acciones ni desplegable de aprobación |
+| **Proponer acciones de archivos y Git en el chat** | Desactivado vuelve el chat de solo lectura otra vez: sin tarjetas de acciones ni desplegable de aprobación |
+| **Modo de solo lectura de archivos** | Activado bloquea crear, editar, reemplazar y eliminar archivos, pero mantiene disponibles las acciones Git. Está activado de forma predeterminada |
 | **Cómo se ejecutan las acciones propuestas** | El modo de aprobación — consulta [Modos de aprobación](#modos-de-aprobación). Las acciones destructivas confirman de todos modos |
 
 Con la IA desactivada por completo, el chat desaparece con ella: no queda un

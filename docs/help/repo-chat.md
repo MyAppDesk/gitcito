@@ -72,6 +72,7 @@ touch an excluded path are dropped from that diff, not the whole commit.
 | **Ask questions about the repository** | Off removes the tab, the toolbar button and the shortcut target. The rest of the AI features keep working |
 | **Committed content only** | Answers from the last commit instead of the working tree: uncommitted edits and diffs never leave the machine |
 | **Propose file and Git actions in chat** | Off makes chat purely read-only again: no action cards, no approval dropdown |
+| **File read-only mode** | On blocks file creation, editing, replacement, and deletion while keeping Git actions available. It is on by default |
 | **How proposed actions run** | The approval mode — see [Approval modes](#approval-modes). Destructive actions confirm regardless |
 
 Which account and model answers chat is set under **Which account answers what**

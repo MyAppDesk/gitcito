@@ -70,7 +70,8 @@ op een uitgesloten pad vallen uit die diff, niet de hele commit.
 | **Vragen stellen over de repository** | Uit verwijdert het tabblad, de knop en het doel van de sneltoets. De rest van de AI blijft werken |
 | **Chatmodel** | Een model alleen voor de chat. Leeg is dat van het profiel — vragen kost minder dan reviewen, een kleiner model volstaat vaak |
 | **Alleen vastgelegde inhoud** | Antwoordt vanuit de laatste commit in plaats van je werkmap: niet-vastgelegde bewerkingen verlaten de machine nooit |
-| **Git-acties voorstellen in de chat** | Uit maakt de chat weer puur alleen-lezen: geen actiekaarten, geen goedkeuringsmenu |
+| **Bestands- en Git-acties voorstellen in de chat** | Uit maakt de chat weer puur alleen-lezen: geen actiekaarten, geen goedkeuringsmenu |
+| **Alleen-lezenmodus voor bestanden** | Aan blokkeert bestanden maken, bewerken, vervangen en verwijderen, maar Git-acties blijven beschikbaar. Standaard ingeschakeld |
 | **Hoe voorgestelde acties worden uitgevoerd** | De goedkeuringsmodus — zie [Goedkeuringsmodi](#goedkeuringsmodi). Destructieve acties vragen hoe dan ook bevestiging |
 
 Staat AI helemaal uit, dan verdwijnt de chat mee — geen paneel dat een antwoord

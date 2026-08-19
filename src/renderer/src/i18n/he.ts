@@ -1099,6 +1099,8 @@ export const he: Dict = {
   'settings.repoChatCommittedHint': 'עונה לפי הקומיט האחרון במקום לפי עץ העבודה, כך ששינויים שלא נשמרו בקומיט לא עוזבים את המחשב.',
   'settings.repoChatActions': 'הצעת פעולות קבצים ו-Git בצ׳אט',
   'settings.repoChatActionsHint': 'תשובות יכולות לכלול שינויי קבצים לבדיקה ואחריהם פעולות Git. הן רצות רק לפי כללי האישור שלמטה.',
+  'settings.repoChatReadOnly': 'מצב קריאה בלבד לקבצים',
+  'settings.repoChatReadOnlyHint': 'מונע מצ׳אט המאגר ליצור, לערוך, להחליף או למחוק קבצים. פעולות Git נשארות זמינות לפי כללי האישור.',
   'settings.repoChatApprovalHint': 'מצבי הרצה אוטומטית מבצעים הצעה מיד כשהיא מגיעה. פעולות הרסניות תמיד מבקשות אישור קודם.',
   'settings.conflictStyle': 'סגנון פתרון התנגשויות',
   'settings.conflictStyleHint': 'איך ה־AI מעצב את הקובץ כשהוא פותר התנגשויות מיזוג.',

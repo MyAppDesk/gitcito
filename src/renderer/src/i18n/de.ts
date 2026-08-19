@@ -1099,6 +1099,8 @@ export const de: Dict = {
   'settings.repoChatCommittedHint': 'Antwortet aus dem letzten Commit statt aus dem Arbeitsverzeichnis, damit nicht committete Änderungen dieses Gerät nicht verlassen.',
   'settings.repoChatActions': 'Datei- und Git-Aktionen im Chat vorschlagen',
   'settings.repoChatActionsHint': 'Chat-Antworten können prüfbare Dateiänderungen gefolgt von Git-Aktionen enthalten. Sie laufen nur nach den Freigaberegeln unten.',
+  'settings.repoChatReadOnly': 'Dateien nur lesen',
+  'settings.repoChatReadOnlyHint': 'Verhindert, dass der Repository-Chat Dateien erstellt, bearbeitet, ersetzt oder löscht. Git-Aktionen bleiben gemäß den Freigaberegeln verfügbar.',
   'settings.repoChatApprovalHint': 'Auto-Modi führen einen Vorschlag aus, sobald er eintrifft. Destruktive Aktionen fragen immer zuerst nach einer Bestätigung.',
   'settings.conflictStyle': 'Stil der Konfliktlösung',
   'settings.conflictStyleHint': 'Wie die KI die Datei formt, wenn sie Merge-Konflikte löst.',

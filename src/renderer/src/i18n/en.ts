@@ -1103,6 +1103,8 @@ export const en = {
   'settings.repoChatCommittedHint': 'Answer from the last commit instead of your working tree, so uncommitted edits never leave this machine.',
   'settings.repoChatActions': 'Propose file and Git actions in chat',
   'settings.repoChatActionsHint': 'Chat replies can include reviewed file changes followed by Git actions. They run only under the approval rules below.',
+  'settings.repoChatReadOnly': 'File read-only mode',
+  'settings.repoChatReadOnlyHint': 'Prevent repository chat from creating, editing, replacing, or deleting files. Git actions remain available under the approval rules.',
   'settings.repoChatApprovalHint': 'Auto-run modes execute a proposal as soon as it arrives. Destructive actions always ask for confirmation first.',
   'settings.conflictStyle': 'Conflict resolution style',
   'settings.conflictStyleHint': 'How the AI shapes the file when resolving merge conflicts.',

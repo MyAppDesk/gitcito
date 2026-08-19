@@ -1079,6 +1079,8 @@ export const tr: Dict = {
   'settings.repoChatCommittedHint': 'Çalışma ağacı yerine son commit üzerinden yanıtlar, böylece işlenmemiş değişiklikler bu makineden çıkmaz.',
   'settings.repoChatActions': 'Sohbette dosya ve Git eylemleri önerilsin',
   'settings.repoChatActionsHint': 'Yanıtlar incelenebilir dosya değişiklikleri ve ardından Git eylemleri içerebilir. Yalnızca aşağıdaki onay kurallarına göre çalışırlar.',
+  'settings.repoChatReadOnly': 'Dosyalar için salt okunur kip',
+  'settings.repoChatReadOnlyHint': 'Depo sohbetinin dosya oluşturmasını, düzenlemesini, değiştirmesini veya silmesini engeller. Git eylemleri onay kurallarına göre kullanılabilir kalır.',
   'settings.repoChatApprovalHint': 'Otomatik çalıştırma kipleri bir öneriyi gelir gelmez yürütür. Yıkıcı eylemler her zaman önce onay ister.',
   'settings.conflictStyle': 'Çakışma çözme biçemi',
   'settings.conflictStyleHint': 'Yapay zekânın birleştirme çakışmalarını çözerken dosyayı nasıl biçimlendireceği.',

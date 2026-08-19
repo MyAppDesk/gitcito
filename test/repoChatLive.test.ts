@@ -41,7 +41,8 @@ live('prepares a license file action through an OpenAI-compatible provider', asy
       endpoint: endpoint!,
       apiKey: apiKey!,
       model: model!,
-      repoChatActions: true
+      repoChatActions: true,
+      repoChatReadOnly: false
     }
   ).catch(() => {
     throw new Error('Live provider probe failed without exposing its configuration.')

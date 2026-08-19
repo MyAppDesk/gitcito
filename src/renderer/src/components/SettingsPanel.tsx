@@ -711,6 +711,21 @@ export function AIPage({ profile, edit }: { profile: Profile; edit: (p: Partial<
 
           {ai.repoChatActions !== false && (
             <>
+              <label className="settings-toggle-card" style={{ marginTop: 12 }}>
+                <input
+                  type="checkbox"
+                  checked={ai.repoChatReadOnly !== false}
+                  onChange={(e) => edit({ ai: { ...ai, repoChatReadOnly: e.target.checked } })}
+                />
+                <span className="settings-toggle-control" aria-hidden="true">
+                  <span className="settings-toggle-thumb" />
+                </span>
+                <span className="settings-toggle-copy">
+                  <strong>{t('settings.repoChatReadOnly')}</strong>
+                  <span className="settings-hint">{t('settings.repoChatReadOnlyHint')}</span>
+                </span>
+              </label>
+
               <label style={{ marginTop: 12 }}>
                 {t('chat.approvalTitle')}
                 <select

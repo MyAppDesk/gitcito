@@ -1079,6 +1079,8 @@ export const it: Dict = {
   'settings.repoChatCommittedHint': 'Risponde a partire dall’ultimo commit invece che dal working tree, così le modifiche non committate non lasciano questa macchina.',
   'settings.repoChatActions': 'Proponi azioni su file e Git in chat',
   'settings.repoChatActionsHint': 'Le risposte possono includere modifiche ai file da revisionare seguite da azioni Git. Vengono eseguite solo con le regole di approvazione qui sotto.',
+  'settings.repoChatReadOnly': 'Modalità file di sola lettura',
+  'settings.repoChatReadOnlyHint': 'Impedisce alla chat del repository di creare, modificare, sostituire o eliminare file. Le azioni Git restano disponibili secondo le regole di approvazione.',
   'settings.repoChatApprovalHint': 'Le modalità automatiche eseguono una proposta appena arriva. Le azioni distruttive chiedono sempre conferma prima.',
   'settings.conflictStyle': 'Stile di risoluzione dei conflitti',
   'settings.conflictStyleHint': 'Come l’AI sistema il file quando risolve i conflitti di merge.',

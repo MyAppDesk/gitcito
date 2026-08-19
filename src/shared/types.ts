@@ -1026,6 +1026,9 @@ export interface AIConfig {
   /** Chat may propose repo actions (the "Ask" action set) for the user to run.
    *  Defaults to on — proposals still never execute without the rules below. */
   repoChatActions?: boolean
+  /** Prevent chat from proposing file creation, edits, replacement, or deletion.
+   *  Git actions remain available. Defaults to on. */
+  repoChatReadOnly?: boolean
   /** How chat-proposed actions run. Destructive actions always confirm,
    *  whatever the mode says. Defaults to 'ask'. */
   repoChatApproval?: ChatActionApproval
@@ -2698,6 +2701,7 @@ export function defaultAIConfig(): AIConfig {
     repoChatModel: '',
     repoChatCommittedOnly: false,
     repoChatActions: true,
+    repoChatReadOnly: true,
     repoChatApproval: 'ask'
   }
 }

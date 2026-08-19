@@ -1099,6 +1099,8 @@ export const zhCN: Dict = {
   'settings.repoChatCommittedHint': '基于最后一次提交而非工作区作答，未提交的修改不会离开本机。',
   'settings.repoChatActions': '在聊天中提议文件和 Git 操作',
   'settings.repoChatActionsHint': '回复可以包含可审查的文件更改以及后续 Git 操作；它们只会按下方的批准规则运行。',
+  'settings.repoChatReadOnly': '文件只读模式',
+  'settings.repoChatReadOnlyHint': '阻止仓库聊天创建、编辑、替换或删除文件。Git 操作仍可按批准规则使用。',
   'settings.repoChatApprovalHint': '自动运行模式会在提议到达后立即执行。破坏性操作总是会先要求确认。',
   'settings.conflictStyle': '冲突解决风格',
   'settings.conflictStyleHint': 'AI 解决合并冲突时如何组织文件内容。',

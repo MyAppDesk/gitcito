@@ -67,7 +67,8 @@ tutulan bir yola dokunan parçalar o diff’ten düşer, commit’in tamamı de�
 | **Depo hakkında soru sorun** | Kapalıyken sekmeyi, araç çubuğu düğmesini ve kısayol hedefini kaldırır. Diğer yapay zekâ özellikleri çalışmaya devam eder |
 | **Sohbet modeli** | Yalnızca sohbete özel model. Boşsa profilinki kullanılır — soru sormak incelemeden ucuzdur, küçüğü çoğu zaman yeter |
 | **Yalnızca işlenmiş içerik** | Çalışma ağacı yerine son commit üzerinden yanıtlar: işlenmemiş düzenlemeler makineden hiç çıkmaz |
-| **Sohbette git eylemleri önerilsin** | Kapalıyken sohbet yeniden salt okunur olur: eylem kartı da onay menüsü de yok |
+| **Sohbette dosya ve Git eylemleri önerilsin** | Kapalıyken sohbet yeniden salt okunur olur: eylem kartı da onay menüsü de yok |
+| **Dosyalar için salt okunur kip** | Açıkken dosya oluşturma, düzenleme, değiştirme ve silmeyi engeller; Git eylemleri kullanılabilir kalır. Varsayılan olarak açıktır |
 | **Önerilen eylemler nasıl çalıştırılır** | Onay modu — bkz. [Onay modları](#onay-modları). Yıkıcı eylemler her durumda onay ister |
 
 Yapay zekâ tümüyle kapalıysa sohbet de onunla birlikte kaybolur — kimsenin

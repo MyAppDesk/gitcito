@@ -71,7 +71,8 @@ Commit.
 | **Fragen zum Repository stellen** | Aus entfernt Reiter, Symbolleisten-Knopf und Kürzelziel. Der Rest der KI bleibt |
 | **Chat-Modell** | Ein Modell nur für den Chat. Leer heißt: das des Profils — Fragen kosten weniger als Reviews, ein kleineres reicht oft |
 | **Nur committete Inhalte** | Antwortet aus dem letzten Commit statt aus dem Arbeitsverzeichnis: nicht committete Änderungen verlassen den Rechner nie |
-| **Git-Aktionen im Chat vorschlagen** | Aus macht den Chat wieder rein lesend: keine Aktionskarten, kein Freigabe-Menü |
+| **Datei- und Git-Aktionen im Chat vorschlagen** | Aus macht den Chat wieder rein lesend: keine Aktionskarten, kein Freigabe-Menü |
+| **Dateien nur lesen** | Ein verhindert Erstellen, Bearbeiten, Ersetzen und Löschen von Dateien; Git-Aktionen bleiben verfügbar. Standardmäßig eingeschaltet |
 | **Wie vorgeschlagene Aktionen ausgeführt werden** | Der Freigabemodus — siehe [Freigabemodi](#freigabemodi). Destruktive Aktionen bestätigen in jedem Fall |
 
 Ist die KI ganz aus, verschwindet der Chat mit ihr — kein Panel, das etwas

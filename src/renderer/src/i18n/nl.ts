@@ -202,7 +202,8 @@ export const nl: Dict = {
   'stack.untrack': 'Niet meer volgen',
   'stack.submit': 'Stack als PR’s indienen',
   'stack.submitHint':
-    'Pusht elk niveau met een lease, opent de ontbrekende PR’s aan elkaar geketend, verlegt de PR’s die op de verkeerde basis mikken en schrijft de stack-navigatie in de body van elke PR. Alleen GitHub, en na een restack veilig om opnieuw in te drukken.',
+    'Ruimt gemergde onderste niveaus op, restackt als er iets is verschoven, pusht elk niveau met een lease, opent de ontbrekende PR’s aan elkaar geketend, verlegt de PR’s die op de verkeerde basis mikken en schrijft de stack-navigatie in de body van elke PR. Alleen GitHub, idempotent — druk erop wanneer je maar wilt.',
+  'act.stackPruned': 'Gemerged en opgeruimd: {branches}',
   'stack.loading': 'Laden…',
   'stack.commit': 'commit',
   'stack.commits': 'commits',

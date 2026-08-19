@@ -241,6 +241,29 @@ describe('commit editing (bisect-bug playground)', () => {
 })
 
 describe('stacked-PR autopilot plumbing (stacked-branches playground)', () => {
+  it('prunes a merged bottom: reparents the child, untracks and deletes it', async () => {
+    const R = cloneFixture('stacked-branches') // main ← feature/api ← feature/ui, checked out on the leaf
+    execFileSync('git', ['-C', R, 'checkout', '-q', 'main'])
+    execFileSync('git', ['-C', R, 'merge', '-q', '--no-ff', '-m', 'merge feature/api', 'feature/api'])
+    execFileSync('git', ['-C', R, 'checkout', '-q', 'feature/ui'])
+
+    const pruned = await gitService.stackPruneMerged(R)
+    expect(pruned).toEqual(['feature/api'])
+
+    const info = await gitService.stackInfo(R)
+    expect(info.trunk).toBe('main')
+    expect(info.branches.map((b) => b.name)).toEqual(['feature/ui'])
+    expect(info.branches[0].parent).toBe('main')
+    const leftover = execFileSync('git', ['-C', R, 'branch', '--list', 'feature/api']).toString().trim()
+    expect(leftover).toBe('')
+  })
+
+  it('prune is a no-op while nothing has landed', async () => {
+    const R = cloneFixture('stacked-branches')
+    expect(await gitService.stackPruneMerged(R)).toEqual([])
+    expect((await gitService.stackInfo(R)).branches.length).toBe(2)
+  })
+
   it('pushes a non-current stack level to a remote without checking it out', async () => {
     const R = cloneFixture('stacked-branches') // checked out on feature/ui
     const bare = join(mkdtempSync(join(tmpdir(), 'gitcito-stack-origin-')), 'origin.git')

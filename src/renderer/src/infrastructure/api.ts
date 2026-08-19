@@ -525,6 +525,7 @@ export const gitApi = {
   mergePreview: (path: string, base: string, refs: string[]) =>
     call<MergePreviewResult>('mergePreview', path, base, refs),
   teammateRadar: (path: string) => call<TeammateRadarResult>('teammateRadar', path),
+  stackPruneMerged: (path: string) => call<string[]>('stackPruneMerged', path),
   commitEditInfo: (path: string, sha: string) => call<CommitEditInfo>('commitEditInfo', path, sha),
   blobAtCommit: (path: string, sha: string, file: string) => call<BlobAtCommit>('blobAtCommit', path, sha, file),
   commitEditPreview: (path: string, sha: string, edits: Record<string, string>, message: string) =>

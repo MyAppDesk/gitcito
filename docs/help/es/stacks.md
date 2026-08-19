@@ -33,8 +33,15 @@ cobran:
    para que quien revisa cualquier nivel pueda ver la cadena completa y dónde
    encaja este PR en ella.
 
-La acción es **idempotente**: púlsala tras cada restack o nivel nuevo y
-converge — no se duplica nada, solo se toca lo que se había desviado.
+La acción es **idempotente**: púlsala tras cada restack, nivel nuevo o PR
+fusionado y converge — no se duplica nada, solo se toca lo que se había
+desviado.
+
+Cuando el PR de abajo se ha **fusionado**, el mismo botón limpia lo que queda:
+el hijo del nivel fusionado se reapunta al tronco, el nivel se desvincula, su
+rama local se borra (sin riesgo — el tronco demostradamente la contiene), la
+cadena se reapila y todos los PR restantes se redirigen. Fusiona de abajo
+arriba, pulsa Enviar, repite.
 
 ## Restack
 
@@ -50,10 +57,11 @@ niveles reescritos y los PRs se actualizan en su sitio.
 - El envío es **solo para GitHub** por ahora (la creación funciona en los
   cuatro servicios de hosting, pero redirigir la base y actualizar los cuerpos
   requiere la API de GitHub).
-- Después de que el PR de abajo se fusione, git sigue viendo la cadena antigua:
-  **desvincula** el nivel fusionado (o apunta el padre de su hijo al tronco),
-  reapila y envía. La limpieza tras fusionar el nivel de abajo aún no está
-  automatizada.
+- La limpieza tras fusionar el nivel de abajo ve merges y merges por rebase,
+  no merges por **squash**: un parche aplastado es un commit nuevo que git no
+  puede rastrear hasta la rama, así que un nivel fusionado con squash hay que
+  desvincularlo a mano. Haz fetch primero, además — la limpieza lee el tronco
+  tal como estaba en tu último fetch.
 - La sección de la pila en el cuerpo de un PR se mantiene entre marcadores
   ocultos — tu propia descripción encima de ella se conserva.
 

@@ -29,8 +29,14 @@ level that has an open PR wears its number as a chip — click it to open the PR
 4. Writes a **stack navigation section** into every PR body, so a reviewer on
    any level can see the whole chain and where this PR sits in it.
 
-The action is **idempotent**: press it after every restack or new level and it
-converges — nothing is duplicated, only what drifted is touched.
+The action is **idempotent**: press it after every restack, new level or merged
+PR and it converges — nothing is duplicated, only what drifted is touched.
+
+When the bottom PR has **merged**, the same button cleans up after it: the
+merged level's child is reparented onto the trunk, the level is untracked, its
+local branch deleted (safe — the trunk provably contains it), the chain
+restacked and every remaining PR retargeted. Merge bottom-up, press Submit,
+repeat.
 
 ## Restack
 
@@ -44,9 +50,10 @@ rewritten levels and the PRs update in place.
 
 - Submission is **GitHub-only** for now (creation works on all four hosts, but
   retargeting and body updates need the GitHub API).
-- After the bottom PR merges, git still sees the old chain: **untrack** the
-  merged level (or set its child's parent to the trunk), restack, submit. The
-  bottom-merge cleanup is not automated yet.
+- The merged-bottom cleanup sees merge and rebase merges, not **squash**
+  merges: a squashed patch is a new commit git cannot trace back to the branch,
+  so a squash-merged level must be untracked by hand. Fetch first, too — the
+  cleanup reads the trunk as of your last fetch.
 - The stack section in a PR body is maintained between hidden markers — your
   own description above it is preserved.
 

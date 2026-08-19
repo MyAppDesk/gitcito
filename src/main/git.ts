@@ -2309,6 +2309,42 @@ export const gitService = {
     await git.checkout(leaf)
   },
 
+  /**
+   * Drop stack levels whose PR has landed: while the bottom-most tracked branch
+   * is already contained in the trunk (as seen by the last fetch when an
+   * origin/<trunk> exists), reparent its child onto the trunk, untrack it, and
+   * safe-delete the branch (`-d` refuses anything unmerged; the current branch
+   * is left alone). Squash-merged bottoms are invisible to this check — git
+   * cannot prove containment for a squashed patch — and stay untouched.
+   * Returns the pruned branch names, bottom first.
+   */
+  async stackPruneMerged(repoPath: string): Promise<string[]> {
+    const git = gitFor(repoPath)
+    const pruned: string[] = []
+    for (;;) {
+      const info = await gitService.stackInfo(repoPath)
+      const bottom = info.branches[0]
+      if (!info.trunk || !bottom) break
+      const trunkRef = (await runGit(repoPath, ['rev-parse', '--verify', `origin/${info.trunk}`]).catch(() => ''))
+        ? `origin/${info.trunk}`
+        : info.trunk
+      const merged = await runGit(repoPath, ['merge-base', '--is-ancestor', bottom.name, trunkRef]).then(
+        () => true,
+        () => false
+      )
+      if (!merged) break
+      const child = info.branches[1]
+      if (child) await gitService.stackSetParent(repoPath, child.name, info.trunk)
+      await gitService.stackClearParent(repoPath, bottom.name)
+      // -D, not -d: git's own safety check measures against HEAD (the leaf),
+      // which need not contain the bottom — the ancestor test above already
+      // proved the trunk has everything this branch ever was.
+      if (!bottom.isCurrent) await git.raw(['branch', '-D', bottom.name]).catch(() => {})
+      pruned.push(bottom.name)
+    }
+    return pruned
+  },
+
   async renameBranch(repoPath: string, oldName: string, newName: string): Promise<void> {
     await gitFor(repoPath).branch(['-m', oldName, newName])
   },

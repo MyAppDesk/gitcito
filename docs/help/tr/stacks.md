@@ -31,9 +31,15 @@ PR'ı açmak için rozete tıklayın.
    seviyedeki inceleyici zincirin tamamını ve bu PR'ın zincirdeki yerini
    görebilir.
 
-Eylem **idempotenttir**: her yeniden yığmadan veya yeni seviyeden sonra basın,
-sonuç aynı noktaya yakınsar — hiçbir şey çoğaltılmaz, yalnızca kaymış olana
-dokunulur.
+Eylem **idempotenttir**: her yeniden yığmadan, yeni seviyeden veya birleşen
+PR'dan sonra basın, sonuç aynı noktaya yakınsar — hiçbir şey çoğaltılmaz,
+yalnızca kaymış olana dokunulur.
+
+En alttaki PR **birleştiğinde**, aynı düğme arkasını da temizler: birleşen
+seviyenin çocuğu ana dala aktarılır, seviyenin izlemesi kaldırılır, yerel dalı
+silinir (güvenlidir — ana dalın onu içerdiği kanıtlanabilir), zincir yeniden
+yığılır ve kalan her PR yeniden hedeflenir. Aşağıdan yukarıya birleştirin,
+Gönder'e basın, tekrarlayın.
 
 ## Yeniden yığma
 
@@ -49,10 +55,11 @@ seviyeleri zorla push eder ve PR'lar yerinde güncellenir.
 - Gönderme şimdilik **yalnızca GitHub** içindir (oluşturma dört barındırıcının
   hepsinde çalışır, ancak yeniden hedefleme ve gövde güncellemeleri GitHub
   API'sini gerektirir).
-- En alttaki PR birleştikten sonra git eski zinciri görmeye devam eder:
-  birleşen seviyenin **izlemesini kaldırın** (veya çocuğunun ebeveynini ana
-  dala ayarlayın), yeniden yığın, gönderin. Alt birleşme temizliği henüz
-  otomatik değildir.
+- Alt birleşme temizliği merge ve rebase birleştirmelerini görür, **squash**
+  birleştirmelerini görmez: squash'lenmiş bir yama, git'in dala kadar izini
+  süremediği yeni bir commit'tir; bu yüzden squash ile birleşen bir seviyenin
+  izlemesi elle kaldırılmalıdır. Ayrıca önce fetch yapın — temizlik, ana dalı
+  son fetch'inizdeki haliyle okur.
 - PR gövdesindeki yığın bölümü gizli işaretçiler arasında tutulur — onun
   üzerindeki kendi açıklamanız korunur.
 

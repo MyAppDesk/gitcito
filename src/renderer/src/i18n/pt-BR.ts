@@ -202,7 +202,8 @@ export const ptBR: Dict = {
   'stack.untrack': 'Desvincular',
   'stack.submit': 'Enviar a pilha como PRs',
   'stack.submitHint':
-    'Faz push de cada nível com lease, abre os PRs que faltam encadeados um sobre o outro, redireciona os que apontam para a base errada e escreve a navegação da pilha no corpo de cada PR. Só no GitHub, e é seguro apertar de novo depois de um restack.',
+    'Limpa os níveis de baixo já mesclados, faz restack se algo saiu do lugar, faz push de cada nível com lease, abre os PRs que faltam encadeados um sobre o outro, redireciona os que apontam para a base errada e escreve a navegação da pilha no corpo de cada PR. Só no GitHub, idempotente — pode apertar quando quiser.',
+  'act.stackPruned': 'Mescladas e limpas: {branches}',
   'stack.loading': 'Carregando…',
   'stack.commit': 'commit',
   'stack.commits': 'commits',

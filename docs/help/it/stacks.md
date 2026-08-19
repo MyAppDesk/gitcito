@@ -32,9 +32,16 @@ fanno pagare:
    un reviewer su qualsiasi livello può vedere l'intera catena e dove si colloca
    questa PR al suo interno.
 
-L'azione è **idempotente**: premila dopo ogni restack o nuovo livello e
-converge — niente viene duplicato, viene toccato solo ciò che è andato alla
-deriva.
+L'azione è **idempotente**: premila dopo ogni restack, nuovo livello o PR
+mergiata e converge — niente viene duplicato, viene toccato solo ciò che è
+andato alla deriva.
+
+Quando la PR più in basso è stata **mergiata**, lo stesso pulsante ripulisce
+dopo di lei: il figlio del livello mergiato viene riagganciato al trunk, il
+livello smette di essere tracciato, il suo branch locale viene eliminato
+(senza rischi — il trunk lo contiene in modo dimostrabile), la catena viene
+ristackata e ogni PR rimasta cambia base. Fai il merge dal basso verso l'alto,
+premi Invia, ripeti.
 
 ## Restack
 
@@ -50,10 +57,11 @@ PR si aggiornano sul posto.
 - Per ora l'invio è **solo per GitHub** (la creazione funziona su tutti e
   quattro gli host, ma il cambio di base e l'aggiornamento del corpo richiedono
   l'API di GitHub).
-- Dopo il merge della PR più in basso, git vede ancora la vecchia catena:
-  **smetti di tracciare** il livello mergiato (o imposta il trunk come genitore
-  del suo figlio), fai il restack, invia. La pulizia dopo il merge in basso non
-  è ancora automatizzata.
+- La pulizia dopo il merge in basso vede i merge e i merge via rebase, non i
+  merge con **squash**: una patch squashata è un commit nuovo che git non può
+  ricondurre al branch, quindi per un livello mergiato con squash devi
+  smettere di tracciarlo a mano. Fai prima anche il fetch — la pulizia legge
+  il trunk com'era al tuo ultimo fetch.
 - La sezione dello stack nel corpo di una PR è mantenuta tra marcatori
   nascosti — la tua descrizione sopra di essa viene preservata.
 

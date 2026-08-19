@@ -32,8 +32,14 @@ cobram para fazer:
    revisor em qualquer nível veja a corrente inteira e onde este PR se encaixa
    nela.
 
-A ação é **idempotente**: aperte depois de cada restack ou novo nível e ela
-converge — nada é duplicado, só o que derivou é tocado.
+A ação é **idempotente**: aperte depois de cada restack, novo nível ou PR
+mesclado e ela converge — nada é duplicado, só o que derivou é tocado.
+
+Quando o PR de baixo foi **mesclado**, o mesmo botão limpa o que ficou: o
+filho do nível mesclado passa a ter o trunk como pai, o nível deixa de ser
+rastreado, a branch local dele é apagada (sem risco — o trunk comprovadamente
+a contém), a corrente passa por restack e todos os PRs restantes têm a base
+atualizada. Mescle de baixo para cima, aperte Enviar, repita.
 
 ## Restack
 
@@ -48,10 +54,11 @@ atualizam no lugar.
 
 - O envio é **só para o GitHub** por enquanto (a criação funciona nos quatro
   hosts, mas mudar a base e atualizar o corpo exigem a API do GitHub).
-- Depois que o PR de baixo é mesclado, o git ainda enxerga a corrente antiga:
-  **pare de rastrear** o nível mesclado (ou aponte o pai do filho dele para o
-  trunk), faça o restack, envie. A limpeza após o merge de baixo ainda não é
-  automatizada.
+- A limpeza após o merge de baixo enxerga merges e merges por rebase, não
+  merges por **squash**: um patch squashado é um commit novo que o git não
+  consegue rastrear de volta até a branch, então um nível mesclado com squash
+  precisa deixar de ser rastreado à mão. Faça fetch antes, também — a limpeza
+  lê o trunk como estava no seu último fetch.
 - A seção da pilha no corpo de um PR é mantida entre marcadores ocultos — a sua
   própria descrição acima dela é preservada.
 

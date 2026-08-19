@@ -195,7 +195,8 @@ export const it: Dict = {
   'stack.untrack': 'Togli dalla pila',
   'stack.submit': 'Invia la pila come PR',
   'stack.submitHint':
-    'Fa il push di ogni livello con lease, apre le PR mancanti concatenate l’una sull’altra, reindirizza quelle che puntano alla base sbagliata e scrive la navigazione della pila nel corpo di ogni PR. Solo GitHub, e dopo un restack si può premere di nuovo senza rischi.',
+    'Ripulisce i livelli in basso già uniti, fa un restack se qualcosa si è spostato, fa il push di ogni livello con lease, apre le PR mancanti concatenate l’una sull’altra, reindirizza quelle che puntano alla base sbagliata e scrive la navigazione della pila nel corpo di ogni PR. Solo GitHub, idempotente — si può premere quando si vuole.',
+  'act.stackPruned': 'Unite e ripulite: {branches}',
   'stack.loading': 'Caricamento…',
   'stack.commit': 'commit',
   'stack.commits': 'commit',

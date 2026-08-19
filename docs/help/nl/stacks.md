@@ -33,8 +33,15 @@ vragen:
    reviewer op elk willekeurig niveau de hele keten kan zien en waar deze PR
    erin zit.
 
-De actie is **idempotent**: druk erop na elke restack of elk nieuw niveau en ze
-convergeert — niets wordt gedupliceerd, alleen wat wegdreef wordt aangeraakt.
+De actie is **idempotent**: druk erop na elke restack, elk nieuw niveau of
+elke gemergde PR en ze convergeert — niets wordt gedupliceerd, alleen wat
+wegdreef wordt aangeraakt.
+
+Wanneer de onderste PR is **gemergd**, ruimt dezelfde knop erachter op: het
+kind van het gemergde niveau wordt omgehangen naar de trunk, het niveau wordt
+niet langer gevolgd, zijn lokale branch verwijderd (veilig — de trunk bevat
+hem aantoonbaar), de keten gerestackt en elke overgebleven PR omgehangen.
+Merge van onder naar boven, druk op Indienen, herhaal.
 
 ## Restack
 
@@ -50,10 +57,11 @@ plekke bijgewerkt.
 - Indienen is voorlopig **alleen voor GitHub** (aanmaken werkt op alle vier de
   hosts, maar het omhangen van de basis en het bijwerken van de body vereisen
   de GitHub-API).
-- Nadat de onderste PR is gemergd, ziet git nog steeds de oude keten: **stop
-  het volgen** van het gemergde niveau (of zet de ouder van zijn kind op de
-  trunk), restack, dien in. Het opruimen na een merge onderin is nog niet
-  geautomatiseerd.
+- Het opruimen na een merge onderin ziet merge- en rebase-merges, geen
+  **squash**-merges: een gesquashte patch is een nieuwe commit die git niet
+  naar de branch kan herleiden, dus bij een squash-gemergd niveau moet je het
+  volgen handmatig stoppen. Fetch bovendien eerst — het opruimen leest de
+  trunk zoals die was bij je laatste fetch.
 - De stapelsectie in een PR-body wordt bijgehouden tussen verborgen markeringen
   — je eigen beschrijving erboven blijft behouden.
 

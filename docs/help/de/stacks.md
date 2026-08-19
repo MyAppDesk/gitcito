@@ -34,9 +34,15 @@ Geld verlangen:
    Reviewer auf jeder Ebene die ganze Kette sehen kann und wo dieser PR darin
    steht.
 
-Die Aktion ist **idempotent**: Drücke sie nach jedem Restack oder jeder neuen
-Ebene und sie konvergiert — nichts wird dupliziert, angefasst wird nur, was
-abgedriftet ist.
+Die Aktion ist **idempotent**: Drücke sie nach jedem Restack, jeder neuen
+Ebene oder jedem gemergten PR und sie konvergiert — nichts wird dupliziert,
+angefasst wird nur, was abgedriftet ist.
+
+Wenn der unterste PR **gemergt** ist, räumt derselbe Button hinterher: das
+Kind der gemergten Ebene wird auf den Trunk umgehängt, das Tracking der Ebene
+aufgehoben, ihr lokaler Branch gelöscht (sicher — der Trunk enthält ihn
+nachweislich), die Kette restackt und jeder verbleibende PR umgezielt. Von
+unten nach oben mergen, Einreichen drücken, wiederholen.
 
 ## Restack
 
@@ -52,10 +58,12 @@ Ebenen und die PRs aktualisieren sich an Ort und Stelle.
 - Das Einreichen ist vorerst **nur für GitHub** möglich (das Erstellen
   funktioniert auf allen vier Hosts, aber Umzielen und Body-Updates brauchen
   die GitHub-API).
-- Nachdem der unterste PR gemergt ist, sieht git weiterhin die alte Kette:
-  **hebe das Tracking** der gemergten Ebene auf (oder setze den Parent ihres
-  Kindes auf den Trunk), restacke, reiche ein. Das Aufräumen nach dem Merge
-  der untersten Ebene ist noch nicht automatisiert.
+- Das Aufräumen nach dem Merge der untersten Ebene erkennt Merge- und
+  Rebase-Merges, keine **Squash**-Merges: ein gesquashter Patch ist ein neuer
+  Commit, den git nicht zum Branch zurückverfolgen kann, also muss das
+  Tracking einer squash-gemergten Ebene von Hand aufgehoben werden. Fetche
+  außerdem zuerst — das Aufräumen liest den Trunk im Stand deines letzten
+  Fetch.
 - Der Stack-Abschnitt in einem PR-Body wird zwischen versteckten Markern
   gepflegt — deine eigene Beschreibung darüber bleibt erhalten.
 

@@ -34,8 +34,15 @@ font payer :
    request, pour qu'un relecteur, à n'importe quel niveau, voie toute la chaîne
    et la place qu'y occupe cette PR.
 
-L'action est **idempotente** : appuyez après chaque réempilement ou nouveau
-niveau et elle converge — rien n'est dupliqué, seul ce qui a dérivé est touché.
+L'action est **idempotente** : appuyez après chaque réempilement, nouveau
+niveau ou pull request fusionnée et elle converge — rien n'est dupliqué, seul
+ce qui a dérivé est touché.
+
+Quand la pull request du bas a été **fusionnée**, le même bouton nettoie
+derrière elle : l'enfant du niveau fusionné est rattaché au tronc, le niveau
+est détaché, sa branche locale supprimée (sans danger — le tronc la contient
+de façon prouvable), la chaîne réempilée et chaque pull request restante
+reciblée. Fusionnez de bas en haut, appuyez sur Soumettre, recommencez.
 
 ## Réempiler
 
@@ -51,10 +58,11 @@ sont poussés en force et les pull requests se mettent à jour sur place.
 - La soumission est pour l'instant **réservée à GitHub** (la création
   fonctionne sur les quatre hébergeurs, mais le reciblage et la mise à jour
   des corps demandent l'API GitHub).
-- Une fois la pull request du bas fusionnée, git voit toujours l'ancienne
-  chaîne : **détachez** le niveau fusionné (ou pointez le parent de son enfant
-  vers le tronc), réempilez, soumettez. Le nettoyage après la fusion du bas
-  n'est pas encore automatisé.
+- Le nettoyage après la fusion du bas voit les merges et les merges par
+  rebase, pas les merges par **squash** : un patch squashé est un nouveau
+  commit que git ne peut pas relier à la branche, donc un niveau fusionné en
+  squash doit être détaché à la main. Faites d'abord un fetch, aussi — le
+  nettoyage lit le tronc tel qu'il était lors de votre dernier fetch.
 - La section de pile dans le corps d'une PR est entretenue entre des marqueurs
   cachés — votre propre description au-dessus est préservée.
 

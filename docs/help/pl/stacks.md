@@ -32,9 +32,15 @@ stackowania każą sobie płacić:
 4. Wpisuje do treści każdego PR-a **sekcję nawigacji po stosie**, dzięki czemu
    recenzent na dowolnym poziomie widzi cały łańcuch i miejsce tego PR-a w nim.
 
-Akcja jest **idempotentna**: naciśnij ją po każdym restacku albo nowym
-poziomie, a wszystko się zbiegnie — nic nie jest duplikowane, dotykane jest
-tylko to, co się rozjechało.
+Akcja jest **idempotentna**: naciśnij ją po każdym restacku, nowym poziomie
+albo zmergowanym PR-ze, a wszystko się zbiegnie — nic nie jest duplikowane,
+dotykane jest tylko to, co się rozjechało.
+
+Kiedy dolny PR jest już **zmergowany**, ten sam przycisk po nim sprząta:
+dziecko zmergowanego poziomu dostaje za rodzica główną gałąź, poziom przestaje
+być śledzony, jego lokalna gałąź jest usuwana (bezpiecznie — główna gałąź
+dowodnie ją zawiera), łańcuch przechodzi restack, a każdy pozostały PR jest
+przekierowywany. Merguj od dołu do góry, naciskaj Wyślij, powtarzaj.
 
 ## Restack
 
@@ -49,10 +55,11 @@ z wymuszeniem przepisane poziomy, a PR-y aktualizują się w miejscu.
 - Wysyłka działa na razie **tylko z GitHubem** (tworzenie działa na wszystkich
   czterech hostach, ale przekierowanie bazy i aktualizacja treści wymagają
   API GitHuba).
-- Po zmergowaniu dolnego PR-a git nadal widzi stary łańcuch: **przestań
-  śledzić** zmergowany poziom (albo ustaw głównej gałęzi rolę rodzica jego
-  dziecka), zrób restack, wyślij. Sprzątanie po mergu dołu nie jest jeszcze
-  zautomatyzowane.
+- Sprzątanie po mergu dołu widzi merge'e zwykłe i przez rebase, ale nie
+  merge'e przez **squash**: zesquashowana łatka to nowy commit, którego git
+  nie potrafi powiązać z gałęzią, więc poziom zmergowany przez squash trzeba
+  przestać śledzić ręcznie. Najpierw zrób też fetch — sprzątanie czyta główną
+  gałąź według stanu z twojego ostatniego fetcha.
 - Sekcja stosu w treści PR-a jest utrzymywana między ukrytymi znacznikami —
   twój własny opis nad nią zostaje zachowany.
 

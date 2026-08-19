@@ -970,8 +970,20 @@ export const repoActions = {
         const repo = state.repos[path]
         const origin = repo?.remotes.find((r) => r.name === 'origin') ?? repo?.remotes[0]
         if (!origin) throw new Error(t('stack.noRemote'))
-        const stack = await gitApi.stackInfo(path)
+
+        // A landed bottom first: reparent its child, untrack it, drop the
+        // branch — then the rest of the submit sees the shortened chain.
+        const pruned = await gitApi.stackPruneMerged(path)
+        if (pruned.length) toast('info', interp(t('act.stackPruned'), { branches: pruned.join(', ') }))
+
+        let stack = await gitApi.stackInfo(path)
         if (!stack.branches.length) throw new Error(t('stack.empty'))
+        // Restack before pushing when anything drifted (a prune usually means
+        // the children now sit on an outdated base). Throws on conflict.
+        if (stack.branches.some((b) => b.needsRestack)) {
+          await gitApi.stackRestack(path, stack.branches[stack.branches.length - 1].name)
+          stack = await gitApi.stackInfo(path)
+        }
 
         await state.refreshPRs(path, { silent: true })
         const fresh = useRepoStore.getState().repos[path]

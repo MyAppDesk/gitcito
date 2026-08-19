@@ -79,6 +79,11 @@ proponuje odpowiedzi, której nic nie może udzielić.
 Model czatu można przełączyć także w nagłówku samego panelu, obok nazwy dostawcy
 — to to samo ustawienie, bez otwierania Ustawień.
 
+Przycisk różdżki obok tytułu panelu otwiera **kreator konfiguracji AI** —
+prowadzony przepływ, który generuje pliki konfiguracyjne asystenta
+(instrukcje, agenci, hooki) dla tego repozytorium. Zobacz
+[Funkcje AI](ai.md).
+
 ![Ustawienia czatu repozytorium](../../screenshots/settings-repo-chat.webp)
 
 ## Praca z wiadomościami
@@ -103,7 +108,10 @@ która nie prowadzi do czytelnego obrazu, po prostu nic nie pokazuje.
 
 Poproś o zmianę zamiast o fakt — *dodaj pliki markdown do przechowalni,
 zatwierdź to jako poprawkę, wpisz wynik builda na listę ignorowanych* — a
-odpowiedź przyjdzie z **kartą akcji**: konkretnymi krokami, które asystent chce
+odpowiedź przyjdzie z **kartą akcji**. Pusta rozmowa proponuje pod
+wprowadzeniem kilka przykładowych próśb w postaci chipów; kliknięcie jednego
+wypełnia pole wiadomości, więc możesz je zredagować przed wysłaniem. Karta
+wymienia konkretne kroki, które asystent chce
 wykonać, jeden wiersz na akcję, z przyciskami **Uruchom** i **Odrzuć**. Nic z
 karty jeszcze się nie wydarzyło; model może tylko proponować, a każda
 propozycja jest sprawdzana z katalogiem roboczym, zanim ją zobaczysz — akcja
@@ -111,7 +119,7 @@ wskazująca nieistniejący plik zostaje odrzucona, a nie wyświetlona.
 
 ![Proponowane akcje na czacie](../../screenshots/repo-chat-actions.webp)
 
-Zestaw akcji jest ten sam, którego używa asystent **Uruchom** z paska narzędzi:
+Zestaw akcji jest stały:
 wzorce ignorowania, stage, unstage, commit, stash, discard, branch, checkout,
 tag. Wszystko poza nim — push, pull, reset, rebase, operacje z force — jest
 odrzucane celowo; czat odeśle cię wtedy do właściwego interfejsu.

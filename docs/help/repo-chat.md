@@ -86,6 +86,10 @@ dropdown groups every model by the account that serves it, so moving a single
 question to a stronger model is one click and does not disturb the rest of the
 app.
 
+The wand button next to the panel title opens the **AI config wizard** — a
+guided flow that generates assistant configuration files (instructions, agents,
+hooks) for this repository. See [AI features](ai.md).
+
 ![Repository chat settings](../screenshots/settings-repo-chat.webp)
 
 ## Working with messages
@@ -109,16 +113,20 @@ not resolve to a readable image simply shows nothing.
 
 Ask for a change instead of a fact — *stage the markdown files, commit this as
 a fix, put the build output on the ignore list* — and the reply arrives with an
-**action card**: the concrete steps the assistant wants to take, one row per
-action, with **Run** and **Dismiss** buttons. Nothing in the card has happened
+**action card**. An empty conversation offers a few example requests as chips
+under the introduction; clicking one fills the composer so you can edit it
+before sending. The card lists the concrete steps the assistant wants to take,
+one row per action, with **Run** and **Dismiss** buttons. Nothing in the card has happened
 yet; the model can only propose, and every proposal is checked against the
 working tree before you ever see it — an action naming a file that does not
 exist is rejected, not rendered.
 
+![Empty chat with example requests](../screenshots/repo-chat-empty.webp)
+
 ![Proposed actions in chat](../screenshots/repo-chat-actions.webp)
 
-The action set is the same one the toolbar's **Run** assistant uses: ignore
-patterns, stage, unstage, commit, stash, discard, branch, checkout, tag.
+The action set is fixed: ignore patterns, stage, unstage, commit, stash,
+discard, branch, checkout, tag.
 Anything beyond it — push, pull, reset, rebase, force operations — is refused
 by design; chat will tell you to use the dedicated UI instead.
 

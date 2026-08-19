@@ -157,6 +157,23 @@ export const shots = [
     }
   },
   {
+    // Empty repository chat: the example-request chips and the config-wizard
+    // wand in the header, before anything has been asked.
+    out: 'repo-chat-empty',
+    repos: ['deep-history-monorepo'],
+    themes: ['dark'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['deep-history-monorepo']
+      await page.evaluate(async (path) => {
+        const shot = window.__shot
+        await shot.waitForRepo(path)
+        shot.ui.getState().openChatPanel()
+      }, repo)
+      await page.waitForSelector('.ai-ask-chip')
+      await page.waitForTimeout(300)
+    }
+  },
+  {
     // Repository chat with a finished exchange and pinned context. The reply is
     // seeded through the store on purpose: a shot must never call a provider,
     // and a screenshot of a real answer would change on every capture.

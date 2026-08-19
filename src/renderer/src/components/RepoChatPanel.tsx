@@ -18,6 +18,7 @@ import {
   Settings,
   ShieldCheck,
   Trash2,
+  Wand2,
   X
 } from 'lucide-react'
 import type { ChatActionApproval, RepoChatAttachment } from '../../../shared/types'
@@ -554,6 +555,15 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
       onDrop={onDrop}
     >
       <header className="repo-chat-header">
+        <button
+          type="button"
+          className="icon-btn"
+          title={t('aiWizard.configTitle')}
+          aria-label={t('aiWizard.configTitle')}
+          onClick={() => openModal({ kind: 'ai-config-wizard', repoPath, repoName })}
+        >
+          <Wand2 size={14} />
+        </button>
         <div>
           <strong>{t('chat.title')}</strong>
           <span className="repo-chat-model">
@@ -616,6 +626,22 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
                 <strong>{interp(t('chat.emptyTitle'), { repo: repoName })}</strong>
                 <p>{t('chat.emptyHint')}</p>
                 <small>{t('chat.privacyHint')}</small>
+                <div className="ai-ask-examples repo-chat-examples">
+                  {[t('aiWizard.example1'), t('aiWizard.example2'), t('aiWizard.example3')].map((example) => (
+                    <button
+                      key={example}
+                      type="button"
+                      className="ai-ask-chip"
+                      disabled={pending}
+                      onClick={() => {
+                        setDraft(example)
+                        draftRef.current?.focus()
+                      }}
+                    >
+                      {example}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
 

@@ -79,6 +79,11 @@ risposte che nessuno può dare.
 Il modello della chat si cambia anche dall’intestazione del pannello, accanto al
 nome del provider: è la stessa impostazione, senza aprire le Impostazioni.
 
+Il pulsante a bacchetta accanto al titolo del pannello apre la **procedura
+guidata di configurazione IA** — un percorso guidato che genera i file di
+configurazione dell'assistente (istruzioni, agenti, hook) per questo
+repository. Vedi [Funzioni IA](ai.md).
+
 ![Impostazioni della chat del repository](../../screenshots/settings-repo-chat.webp)
 
 ## Lavorare con i messaggi
@@ -104,7 +109,10 @@ un'immagine leggibile semplicemente non mostra nulla.
 
 Chiedi una modifica invece di un fatto — *metti in stage i file markdown,
 committa questo come fix, aggiungi l'output di build alla lista degli ignore* —
-e la risposta arriva con una **scheda di azioni**: i passi concreti che
+e la risposta arriva con una **scheda di azioni**. Una conversazione vuota
+offre alcune richieste di esempio come chip sotto l'introduzione; cliccarne una
+riempie il campo di testo, così puoi modificarla prima dell'invio. La scheda
+elenca i passi concreti che
 l'assistente vuole compiere, una riga per azione, con i pulsanti **Esegui** e
 **Ignora**. Nulla di ciò che c'è nella scheda è già accaduto; il modello può
 solo proporre, e ogni proposta viene verificata contro la copia di lavoro prima
@@ -113,8 +121,7 @@ rifiutata, non mostrata.
 
 ![Azioni proposte in chat](../../screenshots/repo-chat-actions.webp)
 
-L'insieme di azioni è lo stesso dell'assistente **Esegui** della barra
-strumenti: pattern di ignore, stage, unstage, commit, stash, scarto delle
+L'insieme di azioni è fisso: pattern di ignore, stage, unstage, commit, stash, scarto delle
 modifiche, branch, checkout, tag. Tutto ciò che va oltre — push, pull, reset,
 rebase, operazioni forzate — viene rifiutato per scelta; la chat ti dirà di
 usare l'interfaccia dedicata.

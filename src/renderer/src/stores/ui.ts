@@ -99,7 +99,7 @@ export type ModalSpec =
   | { kind: 'settings'; page?: 'profile' | 'layout' | 'integrations' | 'ai' | 'themes' | 'general' | 'security' | 'shortcuts' | 'data'; themeTab?: 'theme' | 'graph' }
   | { kind: 'launcher'; groupId?: string }
   | { kind: 'create-repo'; onCreate: (repo: { path: string; name: string }) => void }
-  | { kind: 'ai-config-wizard'; repoPath: string; repoName: string; initialTab?: 'ask' | 'config' }
+  | { kind: 'ai-config-wizard'; repoPath: string; repoName: string }
   | { kind: 'interactive-rebase'; repoPath: string; base: string; baseSubject: string }
   | { kind: 'branch-compare'; repoPath: string; branchA: string; branchB: string }
   | { kind: 'conflict-radar'; repoPath: string; base?: string }

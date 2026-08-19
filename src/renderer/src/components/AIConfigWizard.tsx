@@ -3,19 +3,15 @@ import {
   Bot, Github, MousePointer2, Wind, Terminal, Code2, GitCommit,
   Loader2, ChevronRight, ChevronLeft, Check, FileText, Wand2,
   Sparkles, Plus, X, Server, MessageSquare, Zap, SlidersHorizontal,
-  HelpCircle, FolderOpen, Send, Play, AlertTriangle
+  HelpCircle, FolderOpen
 } from 'lucide-react'
 import { marked } from 'marked'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
-import { useRepoStore } from '../stores/repo'
-import { aiApi, gitApi, shellApi, type GeneratedFile, type ArtifactRequest, type ArtifactSuggestion } from '../infrastructure/api'
+import { aiApi, shellApi, type GeneratedFile, type ArtifactRequest, type ArtifactSuggestion } from '../infrastructure/api'
 import { useT, translate, interp, type TranslationKey } from '../i18n'
-import type { AIConfig, AskPlan } from '../../../shared/types'
+import type { AIConfig } from '../../../shared/types'
 import { resolveAI } from '../../../shared/aiAccounts'
-import { askActionDetail } from '../lib/askActions'
-import { executeAskActions } from '../lib/askActionRun'
-import { ASK_ACTION_FALLBACK_META, ASK_ACTION_META } from '../lib/askActionMeta'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -137,7 +133,7 @@ function parseMarkdown(content: string): string {
 export function AIConfigWizard({
   spec
 }: {
-  spec: { repoPath: string; repoName: string; initialTab?: 'ask' | 'config' }
+  spec: { repoPath: string; repoName: string }
 }): React.JSX.Element {
   const t = useT()
   const closeModal = useUIStore((s) => s.closeModal)
@@ -145,15 +141,6 @@ export function AIConfigWizard({
   const activeProfileId = useSettingsStore((s) => s.settings.activeProfileId)
   const profiles = useSettingsStore((s) => s.settings.profiles)
   const aiCfg: AIConfig = resolveAI((profiles.find((p) => p.id === activeProfileId) ?? profiles[0]).ai, 'chat')
-
-  const [tab, setTab] = useState<'ask' | 'config'>(spec.initialTab ?? 'ask')
-
-  // ── Ask tab ──────────────────────────────────────────────────────────────────
-  const [askPrompt, setAskPrompt] = useState('')
-  const [planning, setPlanning] = useState(false)
-  const [plan, setPlan] = useState<AskPlan | null>(null)
-  const [applying, setApplying] = useState(false)
-  const [askError, setAskError] = useState<string | null>(null)
 
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1)
 
@@ -371,174 +358,6 @@ export function AIConfigWizard({
     }
   }
 
-  // ── Ask handlers ─────────────────────────────────────────────────────────────
-
-  const askPlan = async (): Promise<void> => {
-    const instruction = askPrompt.trim()
-    if (!instruction) return
-    setAskError(null)
-    setPlan(null)
-    setPlanning(true)
-    try {
-      const status = await gitApi.status(spec.repoPath)
-      const result = await aiApi.planActions(instruction, status, aiCfg)
-      setPlan(result)
-    } catch (e) {
-      setAskError(e instanceof Error ? e.message : String(e))
-    } finally {
-      setPlanning(false)
-    }
-  }
-
-  const applyPlan = async (): Promise<void> => {
-    if (!plan || plan.actions.length === 0) return
-    setApplying(true)
-    try {
-      const { applied, skipped } = await executeAskActions(spec.repoPath, plan.actions)
-      await useRepoStore.getState().refresh(spec.repoPath)
-      closeModal()
-      if (skipped.length) {
-        toast(
-          'error',
-          interp(t('aiWizard.appliedPartial'), {
-            applied,
-            total: plan.actions.length,
-            skipped: skipped.join(', ')
-          })
-        )
-      } else {
-        toast('success', interp(t('aiWizard.appliedActions'), { n: applied, repo: spec.repoName }))
-      }
-    } catch (e) {
-      toast('error', e instanceof Error ? e.message : String(e))
-      setApplying(false)
-    }
-  }
-
-  // ── Tab bar (shared by both tabs) ─────────────────────────────────────────────
-
-  const Tabs = (): React.JSX.Element => (
-    <div className="remote-tabs ai-config-tabs">
-      <button
-        type="button"
-        className={`remote-tab ${tab === 'ask' ? 'active' : ''}`}
-        onClick={() => setTab('ask')}
-      >
-        <MessageSquare size={16} /> <span>{t('aiWizard.tabAsk')}</span>
-      </button>
-      <button
-        type="button"
-        className={`remote-tab ${tab === 'config' ? 'active' : ''}`}
-        onClick={() => setTab('config')}
-      >
-        <Wand2 size={16} /> <span>{t('aiWizard.tabConfig')}</span>
-      </button>
-    </div>
-  )
-
-  // ── Ask tab render ─────────────────────────────────────────────────────────
-
-  if (tab === 'ask') {
-    const ACTION_META = ASK_ACTION_META
-    const FALLBACK_META = ASK_ACTION_FALLBACK_META
-    return (
-      <>
-        <h3 className="modal-title-row">
-          <Bot size={17} /> {t('aiWizard.assistantTitle')}
-        </h3>
-        <Tabs />
-        <p className="modal-message" style={{ marginBottom: 10 }}>
-          {t('aiWizard.askHint')}
-        </p>
-        <textarea
-          className="modal-input wizard-context-area"
-          placeholder={t('aiWizard.askPlaceholder')}
-          value={askPrompt}
-          onChange={(e) => setAskPrompt(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) void askPlan() }}
-          rows={3}
-          autoFocus
-        />
-        <div className="ai-ask-examples">
-          {[t('aiWizard.example1'), t('aiWizard.example2'), t('aiWizard.example3')].map((ex) => (
-            <button key={ex} type="button" className="ai-ask-chip" onClick={() => setAskPrompt(ex)}>
-              {ex}
-            </button>
-          ))}
-        </div>
-
-        {askError && <div className="modal-hint danger" style={{ marginTop: 8 }}>{askError}</div>}
-
-        {plan && (
-          <div className="ai-ask-plan">
-            {plan.summary && <div className="ai-ask-plan-summary">{plan.summary}</div>}
-            {plan.actions.length > 0 ? (
-              plan.actions.map((a, i) => {
-                const meta = ACTION_META[a.type] ?? FALLBACK_META
-                const Icon = meta.Icon
-                const detail = askActionDetail(a, t('aiWizard.allChanges'))
-                return (
-                  <div key={i} className="ai-ask-action">
-                    <span className="ai-ask-action-badge">
-                      <Icon size={12} /> {t(meta.labelKey)}
-                    </span>
-                    <span className="ai-ask-action-desc" title={detail}>{a.description || detail}</span>
-                  </div>
-                )
-              })
-            ) : (
-              <div className="ai-ask-note">
-                <AlertTriangle size={13} /> {plan.note || t('aiWizard.nothingToDo')}
-              </div>
-            )}
-          </div>
-        )}
-
-        <div className="modal-actions" style={{ marginTop: 14 }}>
-          <button className="btn ghost" onClick={closeModal} type="button" disabled={applying}>
-            {t('common.cancel')}
-          </button>
-          {plan && plan.actions.length > 0 ? (
-            <>
-              <button className="btn ghost" type="button" disabled={applying} onClick={() => void askPlan()}>
-                {planning ? (
-                  <>
-                    <Loader2 size={13} className="spin" /> {t('aiWizard.replanning')}
-                  </>
-                ) : (
-                  <>{t('aiWizard.replan')}</>
-                )}
-              </button>
-              <button className="btn primary" type="button" disabled={applying} onClick={() => void applyPlan()}>
-                {applying ? (
-                  <>
-                    <Loader2 size={14} className="spin" /> {t('aiWizard.applying')}
-                  </>
-                ) : (
-                  <>
-                    <Play size={14} /> {interp(t('aiWizard.applyN'), { n: plan.actions.length })}
-                  </>
-                )}
-              </button>
-            </>
-          ) : (
-            <button className="btn primary" type="button" disabled={planning || !askPrompt.trim()} onClick={() => void askPlan()}>
-              {planning ? (
-                <>
-                  <Loader2 size={14} className="spin" /> {t('aiWizard.thinking')}
-                </>
-              ) : (
-                <>
-                  <Send size={14} /> {t('aiWizard.planActions')}
-                </>
-              )}
-            </button>
-          )}
-        </div>
-      </>
-    )
-  }
-
   // ── Step indicator ─────────────────────────────────────────────────────────
 
   const STEP_LABELS: TranslationKey[] = [
@@ -573,7 +392,6 @@ export function AIConfigWizard({
         <h3 className="modal-title-row">
           <Wand2 size={17} /> {t('aiWizard.configTitle')}
         </h3>
-        <Tabs />
         <StepBar />
         <p className="modal-message" style={{ marginBottom: 14 }}>
           {t('aiWizard.whatConfigure')}
@@ -622,7 +440,6 @@ export function AIConfigWizard({
         <h3 className="modal-title-row">
           <Wand2 size={17} /> {t('aiWizard.configTitle')}
         </h3>
-        <Tabs />
         <StepBar />
         <p className="modal-message" style={{ marginBottom: 14 }}>
           {t('aiWizard.whichTools')}
@@ -706,7 +523,6 @@ export function AIConfigWizard({
         <h3 className="modal-title-row">
           <Wand2 size={17} /> {t('aiWizard.configTitle')}
         </h3>
-        <Tabs />
         <StepBar />
 
         <div className="wizard-artifacts-list">

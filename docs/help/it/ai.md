@@ -89,6 +89,7 @@ Nessun provider pubblica un elenco ordinato o curato, quindi la selezione è di 
 | **Descrizione della PR** · **nomi dei branch** | Redatti a partire dai commit e dal diff del branch |
 | **Temi** · **palette del grafo** | Generati da un prompt |
 | **Staging intelligente** | Suggerimenti su cosa appartiene a questo commit |
+| **Procedura guidata di configurazione IA** | Genera i file di configurazione dell'assistente (istruzioni, agenti, hook) per il repository — il pulsante a bacchetta nell'intestazione del pannello chat |
 
 ## Ancorata, non improvvisata
 

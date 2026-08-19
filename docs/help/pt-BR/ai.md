@@ -88,6 +88,7 @@ Nenhum provedor publica uma lista ordenada ou curada, então o recorte é do Git
 | **Descrição de PR** · **nomes de branch** | Redigidos a partir dos commits e do diff da branch |
 | **Temas** · **paletas de grafo** | Gerados a partir de um prompt |
 | **Staging inteligente** | Sugestões do que pertence a este commit |
+| **Assistente de configuração de IA** | Gera arquivos de configuração do assistente (instruções, agentes, hooks) para o repositório — o botão de varinha no cabeçalho do painel de chat |
 
 ## Ancorada, não chutando
 

@@ -87,6 +87,7 @@ Geen enkele aanbieder publiceert een gerangschikte of samengestelde lijst, dus d
 | **PR-beschrijving** · **branchnamen** | Opgesteld uit de commits en de diff van de branch |
 | **Thema's** · **grafiekpaletten** | Gegenereerd uit een prompt |
 | **Slim stagen** | Suggesties voor wat in deze commit thuishoort |
+| **AI-configuratiewizard** | Genereert assistentconfiguratiebestanden (instructies, agents, hooks) voor de repository — de toverstafknop in de koptekst van het chatpaneel |
 
 ## Geworteld, niet gegokt
 

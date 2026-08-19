@@ -91,6 +91,7 @@ Kein Anbieter veröffentlicht eine sortierte oder kuratierte Liste, die Aufberei
 | **PR-Beschreibung** · **Branch-Namen** | Entworfen aus den Commits und dem Diff des Branches |
 | **Themes** · **Graph-Paletten** | Aus einem Prompt generiert |
 | **Smartes Staging** | Vorschläge, was in diesen Commit gehört |
+| **KI-Konfigurationsassistent** | Erzeugt Assistenten-Konfigurationsdateien (Anweisungen, Agenten, Hooks) für das Repository — der Zauberstab-Knopf in der Kopfzeile des Chat-Panels |
 
 ## Verankert, nicht geraten
 

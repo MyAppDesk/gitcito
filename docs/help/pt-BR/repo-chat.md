@@ -80,6 +80,11 @@ resposta quando nada pode responder.
 O modelo do chat também pode ser trocado no cabeçalho do próprio painel, ao lado
 do nome do provedor — a mesma configuração, sem abrir as Configurações.
 
+O botão de varinha ao lado do título do painel abre o **assistente de
+configuração de IA** — um fluxo guiado que gera arquivos de configuração do
+assistente (instruções, agentes, hooks) para este repositório. Veja
+[Funções de IA](ai.md).
+
 ![Configurações do chat do repositório](../../screenshots/settings-repo-chat.webp)
 
 ## Trabalhando com mensagens
@@ -105,7 +110,10 @@ legível simplesmente não mostra nada.
 
 Peça uma mudança em vez de um fato — *coloque os arquivos markdown no stage,
 commite isto como um fix, ponha a saída do build na lista de ignore* — e a
-resposta chega com um **cartão de ações**: os passos concretos que o assistente
+resposta chega com um **cartão de ações**. Uma conversa vazia oferece alguns
+pedidos de exemplo como chips abaixo da introdução; clicar em um preenche a
+caixa de mensagem, para você editar antes de enviar. O cartão lista os passos
+concretos que o assistente
 quer dar, uma linha por ação, com os botões **Executar** e **Dispensar**. Nada
 no cartão aconteceu ainda; o modelo só pode propor, e cada proposta é conferida
 contra a árvore de trabalho antes de você sequer vê-la — uma ação que cita um
@@ -113,8 +121,7 @@ arquivo inexistente é rejeitada, não exibida.
 
 ![Ações propostas no chat](../../screenshots/repo-chat-actions.webp)
 
-O conjunto de ações é o mesmo que o assistente **Rodar** da barra de
-ferramentas usa: padrões de ignore, stage, unstage, commit, stash, descartar,
+O conjunto de ações é fixo: padrões de ignore, stage, unstage, commit, stash, descartar,
 branch, checkout, tag. Qualquer coisa além disso — push, pull, reset, rebase,
 operações forçadas — é recusada de propósito; o chat vai mandar você usar a
 interface dedicada.

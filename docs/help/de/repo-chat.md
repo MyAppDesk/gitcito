@@ -80,6 +80,11 @@ anbietet, was niemand beantworten kann.
 Das Chat-Modell lässt sich auch in der Kopfzeile des Panels umstellen, neben dem
 Anbieternamen — dieselbe Einstellung, ohne die Einstellungen zu öffnen.
 
+Der Zauberstab-Knopf neben dem Paneltitel öffnet den
+**KI-Konfigurationsassistenten** — einen geführten Ablauf, der
+Assistenten-Konfigurationsdateien (Anweisungen, Agenten, Hooks) für dieses
+Repository erzeugt. Siehe [KI-Funktionen](ai.md).
+
 ![Einstellungen des Repository-Chats](../../screenshots/settings-repo-chat.webp)
 
 ## Mit Nachrichten arbeiten
@@ -105,7 +110,10 @@ Erwähnung, die nicht zu einem lesbaren Bild führt, zeigt einfach nichts.
 
 Bitte um eine Änderung statt um eine Auskunft — *stage die Markdown-Dateien,
 committe das als Fix, setz die Build-Ausgabe auf die Ignore-Liste* — und die
-Antwort kommt mit einer **Aktionskarte**: die konkreten Schritte, die der
+Antwort kommt mit einer **Aktionskarte**. Eine leere Unterhaltung bietet unter
+der Einführung ein paar Beispielanfragen als Chips an; ein Klick darauf füllt
+das Eingabefeld, sodass du sie vor dem Senden bearbeiten kannst. Die Karte
+listet die konkreten Schritte, die der
 Assistent gehen will, eine Zeile pro Aktion, mit den Knöpfen **Ausführen** und
 **Ablehnen**. Nichts auf der Karte ist schon passiert; das Modell kann nur
 vorschlagen, und jeder Vorschlag wird gegen das Arbeitsverzeichnis geprüft,
@@ -114,8 +122,7 @@ nennt, wird abgewiesen, nicht angezeigt.
 
 ![Vorgeschlagene Aktionen im Chat](../../screenshots/repo-chat-actions.webp)
 
-Der Aktionsumfang ist derselbe wie beim **Ausführen**-Assistenten der
-Symbolleiste: Ignore-Muster, stagen, unstagen, committen, stashen, verwerfen,
+Der Aktionsumfang ist fest: Ignore-Muster, stagen, unstagen, committen, stashen, verwerfen,
 Branch, Checkout, Tag. Alles darüber hinaus — Push, Pull, Reset, Rebase,
 erzwungene Operationen — wird absichtlich verweigert; der Chat verweist dich
 stattdessen auf die dafür gedachte Oberfläche.

@@ -90,6 +90,7 @@ listy wbudowanej zamiast pokazywać pustą listę rozwijaną.
 | **Opis PR-a** · **nazwy gałęzi** | Naszkicowane z commitów i diffa gałęzi |
 | **Motywy** · **palety grafu** | Generowane z promptu |
 | **Sprytna przechowalnia** | Sugestie, co należy do tego commita |
+| **Kreator konfiguracji AI** | Generuje pliki konfiguracyjne asystenta (instrukcje, agenci, hooki) dla repozytorium — przycisk różdżki w nagłówku panelu czatu |
 
 ## Osadzone, nie zgadywane
 

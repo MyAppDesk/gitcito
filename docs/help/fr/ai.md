@@ -93,6 +93,7 @@ Aucun fournisseur ne publie de liste classée ou triée sur le volet ; la mise e
 | **Description de PR** · **noms de branche** | Rédigés à partir des commits et du diff de la branche |
 | **Thèmes** · **palettes de graphe** | Générés à partir d'une consigne |
 | **Indexation intelligente** | Des suggestions sur ce qui a sa place dans ce commit |
+| **Assistant de configuration IA** | Génère des fichiers de configuration d'assistant (instructions, agents, hooks) pour le dépôt — le bouton baguette dans l'en-tête du panneau de discussion |
 
 ## Ancré, pas devinant
 

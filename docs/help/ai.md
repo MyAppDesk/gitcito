@@ -85,6 +85,7 @@ No provider publishes a ranked or curated list, so the shaping is Gitcito's: dat
 | **Themes** · **graph palettes** | Generated from a prompt |
 | **Smart staging** | Suggestions for what belongs in this commit |
 | **[Repository chat](repo-chat.md)** | Questions about this repository, answered from files and commits you can pin as context |
+| **AI config wizard** | Generates assistant configuration files (instructions, agents, hooks) for the repository — the wand button in the chat panel header |
 
 ## Grounded, not guessing
 

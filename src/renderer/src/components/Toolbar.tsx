@@ -29,7 +29,6 @@ import {
   Camera,
   KeyRound,
   Settings,
-  Sparkles,
   ArrowLeftRight,
   PanelLeft,
   PanelRight,
@@ -87,7 +86,6 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
   const inflight = useUIStore((s) => s.inflight > 0)
   const confirmForcePush = useSettingsStore((s) => s.settings.confirmForcePush)
   const sidebarSide = useSettingsStore((s) => s.settings.sidebarSide)
-  const aiEnabled = useSettingsStore((s) => s.activeProfile().ai.enabled !== false)
   const path = repo.path
   const current = repo.branches.locals.find((b) => b.isCurrent)
 
@@ -480,16 +478,6 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
           <ArchiveRestore size={17} />
           <span>{t('stashPanel.pop')}</span>
         </button>
-        {aiEnabled && (
-          <button
-            className="tool-btn"
-            title={t('toolbar.runTitle')}
-            onClick={() => openModal({ kind: 'ai-config-wizard', repoPath: path, repoName: repo.name, initialTab: 'ask' })}
-          >
-            <Sparkles size={16} />
-            <span>{t('toolbar.run')}</span>
-          </button>
-        )}
         <button className="tool-btn split" title={t('toolbar.toolsTitle')} onClick={toolsMenu}>
           <Wrench size={16} />
           <span>{t('toolbar.tools')}</span>

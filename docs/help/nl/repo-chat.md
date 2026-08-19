@@ -79,6 +79,10 @@ aanbiedt dat niemand kan geven.
 Het chatmodel is ook te wisselen in de koptekst van het paneel zelf, naast de
 naam van de provider — dezelfde instelling, zonder Instellingen te openen.
 
+De toverstafknop naast de paneeltitel opent de **AI-configuratiewizard** — een
+begeleide flow die assistentconfiguratiebestanden (instructies, agents, hooks)
+voor deze repository genereert. Zie [AI-functies](ai.md).
+
 ![Instellingen van de repository-chat](../../screenshots/settings-repo-chat.webp)
 
 ## Werken met berichten
@@ -104,7 +108,10 @@ leidt, toont gewoon niets.
 
 Vraag om een verandering in plaats van een feit — *stage de
 markdown-bestanden, commit dit als fix, zet de buildoutput op de ignorelijst* —
-en het antwoord komt met een **actiekaart**: de concrete stappen die de
+en het antwoord komt met een **actiekaart**. Een leeg gesprek biedt onder de
+introductie een paar voorbeeldverzoeken als chips aan; erop klikken vult het
+invoerveld, zodat je het verzoek kunt bewerken voor je het verstuurt. De kaart
+somt de concrete stappen op die de
 assistent wil zetten, één rij per actie, met de knoppen **Uitvoeren** en
 **Afwijzen**. Niets op de kaart is al gebeurd; het model kan alleen
 voorstellen, en elk voorstel wordt tegen de werkmap gecontroleerd voordat jij
@@ -113,8 +120,7 @@ getoond.
 
 ![Voorgestelde acties in de chat](../../screenshots/repo-chat-actions.webp)
 
-De set acties is dezelfde die de **Uitvoeren**-assistent in de werkbalk
-gebruikt: ignore-patronen, stage, unstage, commit, stash, discard, branch,
+De set acties ligt vast: ignore-patronen, stage, unstage, commit, stash, discard, branch,
 checkout, tag. Alles daarbuiten — push, pull, reset, rebase, force-operaties —
 wordt bewust geweigerd; de chat verwijst je dan naar de gewone UI.
 

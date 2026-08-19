@@ -80,6 +80,11 @@ panel ofreciendo respuestas que nadie puede dar.
 El modelo del chat también se cambia desde la cabecera del propio panel, junto
 al nombre del proveedor: es el mismo ajuste, sin abrir los Ajustes.
 
+El botón de la varita junto al título del panel abre el **asistente de
+configuración de IA** — un flujo guiado que genera archivos de configuración
+del asistente (instrucciones, agentes, hooks) para este repositorio. Consulta
+[Funciones de IA](ai.md).
+
 ![Ajustes del chat del repositorio](../../screenshots/settings-repo-chat.webp)
 
 ## Trabajar con los mensajes
@@ -105,17 +110,20 @@ una imagen legible simplemente no muestra nada.
 
 Pide un cambio en vez de un dato — *prepara los archivos markdown, haz commit
 de esto como un fix, pon la salida del build en la lista de ignorados* — y la
-respuesta llega con una **tarjeta de acciones**: los pasos concretos que el
-asistente quiere dar, una fila por acción, con los botones **Ejecutar** e
-**Ignorar**. Nada de lo que hay en la tarjeta ha ocurrido todavía; el modelo
+respuesta llega con una **tarjeta de acciones**. Una conversación vacía ofrece
+algunas peticiones de ejemplo como fichas bajo la introducción; al pulsar una
+se rellena el cuadro de texto para que puedas editarla antes de enviarla. La
+tarjeta enumera los pasos concretos que el asistente quiere dar, una fila por
+acción, con los botones **Ejecutar** e **Ignorar**. Nada de lo que hay en la tarjeta ha ocurrido todavía; el modelo
 solo puede proponer, y cada propuesta se comprueba contra la copia de trabajo
 antes de que llegues a verla — una acción que nombre un archivo inexistente se
 rechaza, no se muestra.
 
+![Chat vacío con peticiones de ejemplo](../../screenshots/repo-chat-empty.webp)
+
 ![Acciones propuestas en el chat](../../screenshots/repo-chat-actions.webp)
 
-El conjunto de acciones es el mismo que usa el asistente **Ejecutar** de la
-barra de herramientas: patrones de ignorados, preparar, quitar de preparados,
+El conjunto de acciones es fijo: patrones de ignorados, preparar, quitar de preparados,
 commit, stash, descartar, rama, checkout, etiqueta. Todo lo que quede fuera —
 push, pull, reset, rebase, operaciones forzadas — se rechaza por diseño; el
 chat te dirá que uses la interfaz dedicada en su lugar.

@@ -90,6 +90,7 @@ Ningún proveedor publica una lista ordenada ni curada, así que el criterio es 
 | **Descripción de PR** · **nombres de rama** | Redactados a partir de los commits y el diff de la rama |
 | **Temas** · **paletas del grafo** | Generados desde un prompt |
 | **Preparación inteligente** | Sugerencias de qué pertenece a este commit |
+| **Asistente de configuración de IA** | Genera archivos de configuración del asistente (instrucciones, agentes, hooks) para el repositorio — el botón de la varita en la cabecera del panel de chat |
 
 ## Anclada, no adivinando
 

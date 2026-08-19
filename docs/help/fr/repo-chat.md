@@ -80,6 +80,11 @@ panneau proposant une réponse que rien ne peut produire.
 Le modèle de la discussion se change aussi depuis l’en-tête du panneau, à côté
 du nom du fournisseur : même réglage, sans ouvrir les Réglages.
 
+Le bouton baguette à côté du titre du panneau ouvre l’**assistant de
+configuration IA** — un parcours guidé qui génère des fichiers de configuration
+d’assistant (instructions, agents, hooks) pour ce dépôt. Voir
+[Fonctions d’IA](ai.md).
+
 ![Réglages de la discussion du dépôt](../../screenshots/settings-repo-chat.webp)
 
 ## Travailler avec les messages
@@ -106,7 +111,10 @@ n'affiche simplement rien.
 
 Demandez un changement plutôt qu’un fait — *indexe les fichiers markdown,
 valide ceci comme un correctif, mets la sortie du build dans les exclusions* —
-et la réponse arrive avec une **carte d’actions** : les étapes concrètes que
+et la réponse arrive avec une **carte d’actions**. Une conversation vide
+propose quelques demandes d’exemple sous forme de pastilles sous
+l’introduction ; en cliquer une remplit le champ de saisie, pour que vous
+puissiez la modifier avant l’envoi. La carte liste les étapes concrètes que
 l’assistant veut effectuer, une ligne par action, avec les boutons **Exécuter**
 et **Ignorer**. Rien de ce que contient la carte n’a encore eu lieu ; le modèle
 ne peut que proposer, et chaque proposition est vérifiée contre la copie de
@@ -115,8 +123,7 @@ n’existe pas est rejetée, pas affichée.
 
 ![Actions proposées dans la discussion](../../screenshots/repo-chat-actions.webp)
 
-L’ensemble d’actions est le même que celui de l’assistant **Exécuter** de la
-barre d’outils : motifs d’exclusion, indexer, désindexer, valider, remiser,
+L’ensemble d’actions est fixe : motifs d’exclusion, indexer, désindexer, valider, remiser,
 abandonner, créer une branche, basculer de branche, étiqueter. Tout ce qui
 dépasse — push, pull, reset, rebase, opérations forcées — est refusé par
 conception ; la discussion vous dira d’utiliser l’interface dédiée à la place.

@@ -186,7 +186,8 @@ que vous pressiez Envoyer.
 |---|---|
 | Le bouton bulle dans la barre d’outils | Affiche ou masque l’onglet Discussion |
 | <kbd>⌘⌥B</kbd> / <kbd>Ctrl+Alt+B</kbd> | Affiche ou masque tout le panneau droit |
-| <kbd>⌘⏎</kbd> / <kbd>Ctrl+Entrée</kbd> | Envoie le message |
+| <kbd>Entrée</kbd> | Envoie le message |
+| <kbd>Maj+Entrée</kbd> | Insère un saut de ligne |
 
 Voir [Clavier et raccourcis](keyboard.md) pour le reste, y compris comment
 réassigner les bascules de panneau.

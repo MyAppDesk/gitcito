@@ -183,7 +183,8 @@ Invia.
 |---|---|
 | Il pulsante a fumetto nella barra strumenti | Mostra o nasconde la scheda Chat |
 | <kbd>⌘⌥B</kbd> / <kbd>Ctrl+Alt+B</kbd> | Mostra o nasconde tutto il pannello destro |
-| <kbd>⌘⏎</kbd> / <kbd>Ctrl+Invio</kbd> | Invia il messaggio |
+| <kbd>Invio</kbd> | Invia il messaggio |
+| <kbd>Maiusc+Invio</kbd> | Inserisce una nuova riga |
 
 [Tastiera e scorciatoie](keyboard.md) ha il resto, incluso come riassegnare gli
 interruttori dei pannelli.

@@ -2409,7 +2409,7 @@ export const he: Dict = {
   'chat.emptyHint': 'שאלו כיצד הקוד פועל, היכן נמצאת יכולת או מה עושים השינויים הנעקבים הנוכחיים.',
   'chat.privacyHint': 'רק קבצים נעקבים מתאימים ומצב Git נשלחים לספק שנבחר בהגדרות.',
   'chat.placeholder': 'שאלו שאלה על המאגר הזה…',
-  'chat.sendHint': 'Ctrl/⌘ + Enter',
+  'chat.sendHint': 'Shift+Enter לשורה חדשה',
   'chat.send': 'שליחה',
   'chat.thinking': 'המאגר נקרא…',
   'chat.retry': 'ניסיון חוזר',

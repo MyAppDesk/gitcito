@@ -181,7 +181,8 @@ editável — nada é enviado até você apertar Enviar.
 |---|---|
 | O botão de balão na barra de ferramentas | Alterna a aba Chat |
 | <kbd>⌘⌥B</kbd> / <kbd>Ctrl+Alt+B</kbd> | Alterna o painel direito inteiro |
-| <kbd>⌘⏎</kbd> / <kbd>Ctrl+Enter</kbd> | Envia a mensagem |
+| <kbd>Enter</kbd> | Envia a mensagem |
+| <kbd>Shift+Enter</kbd> | Insere uma nova linha |
 
 Veja [Teclado e atalhos](keyboard.md) para o resto, inclusive como remapear os
 interruptores de painel.

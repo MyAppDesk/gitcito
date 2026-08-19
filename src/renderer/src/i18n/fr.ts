@@ -2349,7 +2349,7 @@ export const fr: Dict = {
   'chat.emptyHint': 'Demandez comment fonctionne le code, où se trouve une fonctionnalité ou ce que font les modifications suivies.',
   'chat.privacyHint': 'Seuls les fichiers suivis admissibles et l’état Git sont envoyés au fournisseur choisi dans les réglages.',
   'chat.placeholder': 'Posez une question sur ce dépôt…',
-  'chat.sendHint': 'Ctrl/⌘ + Entrée',
+  'chat.sendHint': 'Maj+Entrée pour un saut de ligne',
   'chat.send': 'Envoyer',
   'chat.thinking': 'Lecture du dépôt…',
   'chat.retry': 'Réessayer',

@@ -2349,7 +2349,7 @@ export const it: Dict = {
   'chat.emptyHint': 'Chiedi come funziona il codice, dove si trova una funzione o cosa fanno le modifiche tracciate correnti.',
   'chat.privacyHint': 'Solo i file tracciati idonei e lo stato Git vengono inviati al provider configurato nelle Impostazioni.',
   'chat.placeholder': 'Fai una domanda su questo repository…',
-  'chat.sendHint': 'Ctrl/⌘ + Invio',
+  'chat.sendHint': 'Maiusc+Invio per andare a capo',
   'chat.send': 'Invia',
   'chat.thinking': 'Lettura del repository…',
   'chat.retry': 'Riprova',

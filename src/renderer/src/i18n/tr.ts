@@ -2349,7 +2349,7 @@ export const tr: Dict = {
   'chat.emptyHint': 'Kodun nasıl çalıştığını, bir özelliğin nerede olduğunu veya izlenen güncel değişikliklerin ne yaptığını sor.',
   'chat.privacyHint': 'Yalnızca uygun izlenen dosyalar ve Git durumu Ayarlar’da seçilen sağlayıcıya gönderilir.',
   'chat.placeholder': 'Bu depo hakkında bir soru sor…',
-  'chat.sendHint': 'Ctrl/⌘ + Enter',
+  'chat.sendHint': 'Yeni satır için Shift+Enter',
   'chat.send': 'Gönder',
   'chat.thinking': 'Depo okunuyor…',
   'chat.retry': 'Tekrar dene',

@@ -2404,7 +2404,7 @@ export const es: Dict = {
   'chat.emptyHint': 'Pregunta cómo funciona el código, dónde está una función o qué hacen los cambios rastreados actuales.',
   'chat.privacyHint': 'Solo se envían archivos rastreados aptos y el estado de Git al proveedor configurado en Ajustes.',
   'chat.placeholder': 'Haz una pregunta sobre este repositorio…',
-  'chat.sendHint': 'Ctrl/⌘ + Enter',
+  'chat.sendHint': 'Shift+Enter para una nueva línea',
   'chat.send': 'Enviar',
   'chat.thinking': 'Leyendo el repositorio…',
   'chat.retry': 'Reintentar',

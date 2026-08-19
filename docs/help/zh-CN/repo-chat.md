@@ -146,7 +146,8 @@ URL——把鼠标悬停在该处会显示一个小预览。仓库路径从工�
 |---|---|
 | 工具栏上的对话气泡按钮 | 切换“聊天”标签 |
 | <kbd>⌘⌥B</kbd> / <kbd>Ctrl+Alt+B</kbd> | 切换整个右侧面板 |
-| <kbd>⌘⏎</kbd> / <kbd>Ctrl+Enter</kbd> | 发送消息 |
+| <kbd>Enter</kbd> | 发送消息 |
+| <kbd>Shift+Enter</kbd> | 插入新行 |
 
 其余内容（包括如何重新绑定面板开关）见[键盘与快捷键](keyboard.md)。
 

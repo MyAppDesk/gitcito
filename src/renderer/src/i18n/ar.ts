@@ -2409,7 +2409,7 @@ export const ar: Dict = {
   'chat.emptyHint': 'اسأل كيف تعمل الشفرة أو أين توجد ميزة أو ماذا تفعل التغييرات المتعقبة الحالية.',
   'chat.privacyHint': 'تُرسل الملفات المتعقبة المؤهلة وحالة Git فقط إلى المزوّد المحدد في الإعدادات.',
   'chat.placeholder': 'اطرح سؤالاً عن هذا المستودع…',
-  'chat.sendHint': 'Ctrl/⌘ + Enter',
+  'chat.sendHint': 'Shift+Enter لسطر جديد',
   'chat.send': 'إرسال',
   'chat.thinking': 'جارٍ قراءة المستودع…',
   'chat.retry': 'إعادة المحاولة',

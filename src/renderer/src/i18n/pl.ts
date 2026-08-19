@@ -2409,7 +2409,7 @@ export const pl: Dict = {
   'chat.emptyHint': 'Zapytaj, jak działa kod, gdzie znajduje się funkcja lub co robią bieżące śledzone zmiany.',
   'chat.privacyHint': 'Do dostawcy skonfigurowanego w Ustawieniach trafiają tylko dozwolone śledzone pliki i stan Git.',
   'chat.placeholder': 'Zadaj pytanie o to repozytorium…',
-  'chat.sendHint': 'Ctrl/⌘ + Enter',
+  'chat.sendHint': 'Shift+Enter, aby przejść do nowego wiersza',
   'chat.send': 'Wyślij',
   'chat.thinking': 'Odczytywanie repozytorium…',
   'chat.retry': 'Spróbuj ponownie',

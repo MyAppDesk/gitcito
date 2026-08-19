@@ -2413,7 +2413,7 @@ export const en = {
   'chat.emptyHint': 'Ask how the code works, where a feature lives, or what the current tracked changes do.',
   'chat.privacyHint': 'Only eligible tracked files and Git state are sent to the provider configured in Settings.',
   'chat.placeholder': 'Ask a question about this repository…',
-  'chat.sendHint': 'Ctrl/⌘ + Enter',
+  'chat.sendHint': 'Shift+Enter for a new line',
   'chat.send': 'Send',
   'chat.thinking': 'Reading the repository…',
   'chat.retry': 'Try again',

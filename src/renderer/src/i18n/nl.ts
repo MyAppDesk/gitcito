@@ -2409,7 +2409,7 @@ export const nl: Dict = {
   'chat.emptyHint': 'Vraag hoe de code werkt, waar een functie staat of wat de huidige bijgehouden wijzigingen doen.',
   'chat.privacyHint': 'Alleen geschikte bijgehouden bestanden en de Git-status worden naar de ingestelde provider gestuurd.',
   'chat.placeholder': 'Stel een vraag over deze repository…',
-  'chat.sendHint': 'Ctrl/⌘ + Enter',
+  'chat.sendHint': 'Shift+Enter voor een nieuwe regel',
   'chat.send': 'Versturen',
   'chat.thinking': 'Repository wordt gelezen…',
   'chat.retry': 'Opnieuw proberen',

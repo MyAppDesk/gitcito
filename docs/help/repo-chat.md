@@ -183,7 +183,8 @@ nothing is sent until you press Send.
 |---|---|
 | The speech-bubble button in the toolbar | Toggles the Chat tab |
 | <kbd>⌘⌥B</kbd> / <kbd>Ctrl+Alt+B</kbd> | Toggles the whole right panel |
-| <kbd>⌘⏎</kbd> / <kbd>Ctrl+Enter</kbd> | Sends the message |
+| <kbd>Enter</kbd> | Sends the message |
+| <kbd>Shift+Enter</kbd> | Inserts a new line |
 
 See [Keyboard & shortcuts](keyboard.md) for the rest, including how to rebind
 the panel toggles.

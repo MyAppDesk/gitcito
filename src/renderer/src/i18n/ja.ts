@@ -2349,7 +2349,7 @@ export const ja: Dict = {
   'chat.emptyHint': 'コードの仕組み、機能の場所、現在追跡されている変更の内容を質問できます。',
   'chat.privacyHint': '対象の追跡済みファイルと Git の状態のみが、設定したプロバイダーに送信されます。',
   'chat.placeholder': 'このリポジトリについて質問…',
-  'chat.sendHint': 'Ctrl/⌘ + Enter',
+  'chat.sendHint': 'Shift+Enter で改行',
   'chat.send': '送信',
   'chat.thinking': 'リポジトリを読み取り中…',
   'chat.retry': '再試行',

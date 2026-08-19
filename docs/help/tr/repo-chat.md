@@ -175,7 +175,8 @@ Taslak düzenlenebilir — Gönder’e basana kadar hiçbir şey gönderilmez.
 |---|---|
 | Araç çubuğundaki konuşma balonu düğmesi | Sohbet sekmesini açıp kapatır |
 | <kbd>⌘⌥B</kbd> / <kbd>Ctrl+Alt+B</kbd> | Sağ panelin tamamını açıp kapatır |
-| <kbd>⌘⏎</kbd> / <kbd>Ctrl+Enter</kbd> | Mesajı gönderir |
+| <kbd>Enter</kbd> | Mesajı gönderir |
+| <kbd>Shift+Enter</kbd> | Yeni bir satır ekler |
 
 Panel anahtarlarının yeniden atanması dahil geri kalanı için
 [Klavye ve kısayollar](keyboard.md) sayfasına bakın.

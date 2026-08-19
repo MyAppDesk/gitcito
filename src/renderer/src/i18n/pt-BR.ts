@@ -2409,7 +2409,7 @@ export const ptBR: Dict = {
   'chat.emptyHint': 'Pergunte como o código funciona, onde fica um recurso ou o que fazem as alterações rastreadas atuais.',
   'chat.privacyHint': 'Apenas arquivos rastreados elegíveis e o estado do Git são enviados ao provedor definido nos Ajustes.',
   'chat.placeholder': 'Faça uma pergunta sobre este repositório…',
-  'chat.sendHint': 'Ctrl/⌘ + Enter',
+  'chat.sendHint': 'Shift+Enter para uma nova linha',
   'chat.send': 'Enviar',
   'chat.thinking': 'Lendo o repositório…',
   'chat.retry': 'Tentar novamente',

@@ -27,7 +27,8 @@ import {
   repoChatAvailable,
   repoChatSourceView,
   rightPanelDetailsState,
-  rightPanelToggleAction
+  rightPanelToggleAction,
+  shouldSubmitRepoChatOnKeyDown
 } from '../src/renderer/src/lib/repoChatUI'
 import { useUIStore } from '../src/renderer/src/stores/ui'
 import { defaultProfile, type RepoChatReply, type RepoStatus } from '../src/shared/types'
@@ -365,6 +366,20 @@ describe('repository chat panel behavior', () => {
     expect(canSubmitRepoChat(true, true, 'question')).toBe(false)
     expect(canSubmitRepoChat(true, false, '   ')).toBe(false)
     expect(canSubmitRepoChat(true, false, 'question')).toBe(true)
+  })
+
+  it('submits with Enter while reserving Shift+Enter and IME composition for editing', () => {
+    const cases = [
+      { key: 'Enter', shiftKey: false, metaKey: false, ctrlKey: false, isComposing: false, submits: true },
+      { key: 'Enter', shiftKey: false, metaKey: true, ctrlKey: false, isComposing: false, submits: true },
+      { key: 'Enter', shiftKey: true, metaKey: true, ctrlKey: false, isComposing: false, submits: false },
+      { key: 'Enter', shiftKey: false, metaKey: false, ctrlKey: false, isComposing: true, submits: false },
+      { key: 'a', shiftKey: false, metaKey: false, ctrlKey: false, isComposing: false, submits: false }
+    ]
+
+    for (const { submits, ...event } of cases) {
+      expect(shouldSubmitRepoChatOnKeyDown(event)).toBe(submits)
+    }
   })
 })
 

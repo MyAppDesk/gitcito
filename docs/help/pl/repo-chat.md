@@ -178,7 +178,8 @@ Szkic można edytować — nic nie zostanie wysłane, póki nie naciśniesz Wyś
 |---|---|
 | Przycisk dymka na pasku narzędzi | Przełącza kartę Czat |
 | <kbd>⌘⌥B</kbd> / <kbd>Ctrl+Alt+B</kbd> | Przełącza cały prawy panel |
-| <kbd>⌘⏎</kbd> / <kbd>Ctrl+Enter</kbd> | Wysyła wiadomość |
+| <kbd>Enter</kbd> | Wysyła wiadomość |
+| <kbd>Shift+Enter</kbd> | Wstawia nowy wiersz |
 
 Resztę, w tym zmianę przypisania przełączników paneli, opisuje
 [Klawiatura i skróty](keyboard.md).

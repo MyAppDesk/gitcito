@@ -33,7 +33,11 @@ import { modelFor, resolveAI } from '../../../shared/aiAccounts'
 import { useModelCatalogs } from './useModelCatalogs'
 import { useT, interp, type TranslationKey } from '../i18n'
 import { renderMarkdown } from '../preview/markdown'
-import { canSubmitRepoChat, repoChatSourceView } from '../lib/repoChatUI'
+import {
+  canSubmitRepoChat,
+  repoChatSourceView,
+  shouldSubmitRepoChatOnKeyDown
+} from '../lib/repoChatUI'
 import {
   CHAT_COMMIT_MIME,
   CHAT_PATH_MIME,
@@ -789,11 +793,7 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
               disabled={pending}
               onChange={(event) => setDraft(event.target.value)}
               onKeyDown={(event) => {
-                if (
-                  event.key === 'Enter' &&
-                  (event.metaKey || event.ctrlKey) &&
-                  !event.nativeEvent.isComposing
-                ) {
+                if (shouldSubmitRepoChatOnKeyDown(event.nativeEvent)) {
                   event.preventDefault()
                   submit()
                 }

@@ -2409,7 +2409,7 @@ export const ko: Dict = {
   'chat.emptyHint': '코드의 작동 방식, 기능의 위치 또는 현재 추적 중인 변경 사항을 질문하세요.',
   'chat.privacyHint': '허용된 추적 파일과 Git 상태만 설정에서 선택한 제공자에게 전송됩니다.',
   'chat.placeholder': '이 저장소에 대해 질문하세요…',
-  'chat.sendHint': 'Ctrl/⌘ + Enter',
+  'chat.sendHint': 'Shift+Enter로 줄바꿈',
   'chat.send': '보내기',
   'chat.thinking': '저장소 읽는 중…',
   'chat.retry': '다시 시도',

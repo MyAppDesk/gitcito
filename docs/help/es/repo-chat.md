@@ -181,7 +181,8 @@ borrador es editable — no se envía nada hasta que pulsas Enviar.
 |---|---|
 | El botón de bocadillo en la barra de herramientas | Alterna la pestaña Chat |
 | <kbd>⌘⌥B</kbd> / <kbd>Ctrl+Alt+B</kbd> | Alterna todo el panel derecho |
-| <kbd>⌘⏎</kbd> / <kbd>Ctrl+Enter</kbd> | Envía el mensaje |
+| <kbd>Enter</kbd> | Envía el mensaje |
+| <kbd>Shift+Enter</kbd> | Inserta una nueva línea |
 
 Consulta [Teclado y atajos](keyboard.md) para el resto, incluido cómo reasignar
 los interruptores de panel.

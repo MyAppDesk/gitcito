@@ -2409,7 +2409,7 @@ export const zhCN: Dict = {
   'chat.emptyHint': '询问代码如何工作、某项功能位于何处，或当前已跟踪的更改有何作用。',
   'chat.privacyHint': '只会将符合条件的已跟踪文件和 Git 状态发送给设置中配置的提供商。',
   'chat.placeholder': '询问有关此仓库的问题…',
-  'chat.sendHint': 'Ctrl/⌘ + Enter',
+  'chat.sendHint': 'Shift+Enter 换行',
   'chat.send': '发送',
   'chat.thinking': '正在读取仓库…',
   'chat.retry': '重试',

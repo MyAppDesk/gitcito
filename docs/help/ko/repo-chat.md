@@ -167,7 +167,8 @@ Git 작업이 실패하고 AI 채팅을 쓸 수 있으면 오류 토스트에 �
 |---|---|
 | 툴바의 말풍선 버튼 | 채팅 탭을 켜고 끕니다 |
 | <kbd>⌘⌥B</kbd> / <kbd>Ctrl+Alt+B</kbd> | 오른쪽 패널 전체를 켜고 끕니다 |
-| <kbd>⌘⏎</kbd> / <kbd>Ctrl+Enter</kbd> | 메시지를 보냅니다 |
+| <kbd>Enter</kbd> | 메시지를 보냅니다 |
+| <kbd>Shift+Enter</kbd> | 새 줄을 삽입합니다 |
 
 패널 토글 재지정을 포함한 나머지는 [키보드와 단축키](keyboard.md)에 있습니다.
 

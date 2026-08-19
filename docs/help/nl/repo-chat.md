@@ -181,7 +181,8 @@ er wordt niets verstuurd tot je op Verzenden drukt.
 |---|---|
 | De tekstballonknop in de werkbalk | Toont of verbergt het tabblad Chat |
 | <kbd>⌘⌥B</kbd> / <kbd>Ctrl+Alt+B</kbd> | Toont of verbergt het hele rechterpaneel |
-| <kbd>⌘⏎</kbd> / <kbd>Ctrl+Enter</kbd> | Verstuurt het bericht |
+| <kbd>Enter</kbd> | Verstuurt het bericht |
+| <kbd>Shift+Enter</kbd> | Voegt een nieuwe regel in |
 
 Zie [Toetsenbord & sneltoetsen](keyboard.md) voor de rest, inclusief het
 opnieuw toewijzen van de paneelschakelaars.

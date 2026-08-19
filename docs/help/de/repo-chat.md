@@ -184,7 +184,8 @@ Entwurf bleibt bearbeitbar; nichts wird gesendet, bis du Senden drückst.
 |---|---|
 | Der Sprechblasen-Knopf in der Symbolleiste | Schaltet den Chat-Reiter um |
 | <kbd>⌘⌥B</kbd> / <kbd>Ctrl+Alt+B</kbd> | Schaltet das ganze rechte Panel um |
-| <kbd>⌘⏎</kbd> / <kbd>Ctrl+Enter</kbd> | Sendet die Nachricht |
+| <kbd>Enter</kbd> | Sendet die Nachricht |
+| <kbd>Shift+Enter</kbd> | Fügt eine neue Zeile ein |
 
 [Tastatur & Kürzel](keyboard.md) hat den Rest, auch das Neubelegen der
 Panel-Schalter.

@@ -3,7 +3,7 @@ title: Wiederherstellung & das Reflog
 category: Wiederherstellung & Schutz
 order: 60
 summary: Das Auffangnetz: Reflog, WIP-Schnappschüsse und Bisect.
-keywords: reflog wiederherstellung recovery undo rückgängig verlorene commits schnappschüsse snapshots wip bisect bisect run automatisiert skript exit code restore hard reset
+keywords: reflog wiederherstellung recovery undo rückgängig verlorene commits schnappschüsse snapshots wip wächter guard ungetrackt untracked verwerfen discard bereinigen clean bisect bisect run automatisiert skript exit code restore hard reset
 ---
 
 # Wiederherstellung & das Reflog
@@ -24,16 +24,39 @@ Das ist der „ich habe gerade den falschen Branch zurückgesetzt“-Knopf.
 ## WIP-Schnappschüsse
 
 Nicht committete Arbeit ist das Einzige, was das Reflog nicht retten kann, also
-macht Gitcito Schnappschüsse davon: deine getrackten Änderungen plus den
-gestagten Index, festgehalten als ein `git stash create`-Commit, der unter
-`refs/gitcito/wip` festgepinnt wird.
+macht Gitcito Schnappschüsse davon: das **gesamte Arbeitsverzeichnis —
+geänderte, gestagte und ungetrackte Dateien** — committet über einen
+Wegwerf-Index und festgepinnt unter `refs/gitcito/wip`. Weder dein echter Index
+noch deine Stash-Liste werden angefasst.
 
 ![WIP-Schnappschüsse](../../screenshots/snapshots.webp)
 
-- Er **fasst dein Arbeitsverzeichnis nie an** und **taucht nie in deiner
-  Stash-Liste auf** — es ist eine versteckte Ref, kein Stash.
-- Nimm einen von Hand auf, oder lass es alle **5 / 15 / 30 Minuten** laufen.
-- Stell jeden Schnappschuss aus der Liste wieder her oder lösch ihn.
+Drei Dinge nehmen einen auf:
+
+| Auslöser | Wann |
+|---------|------|
+| **Wächter** | Automatisch, direkt vor einer destruktiven Aktion — Verwerfen, Bereinigen, Hard Reset, Wiederherstellen aus einem Commit. Standardmäßig an; im Schnappschuss-Dialog umschaltbar. |
+| **Timer** | Alle 5 / 15 / 30 Minuten, solange das Repo geöffnet ist. |
+| **Von Hand** | Der Knopf **Jetzt Schnappschuss aufnehmen**. |
+
+Der Wächter ist der entscheidende: Der Moment, in dem Arbeit gewöhnlich für
+immer verloren geht, ist die Sekunde nach einem Verwerfen, das du nicht gemeint
+hast. Mit eingeschaltetem Wächter ist dieser Zustand ein Schnappschuss — öffne
+die Liste, klick auf Wiederherstellen, atme wieder durch.
+
+Wähl einen Schnappschuss aus, um die erfassten Dateien zu sehen, die Änderung
+jeder Datei in der Vorschau zu betrachten und eine **einzelne Datei** oder das
+ganze Arbeitsverzeichnis wiederherzustellen. Wiederherstellen kopiert Dateien
+aus dem Schnappschuss über die aktuellen Kopien — vorher wird ein
+Wächter-Schnappschuss aufgenommen, sodass sich eine Wiederherstellung selbst
+rückgängig machen lässt.
+
+**Grenzen, die man kennen sollte.** Ein Timer- oder Wächter-Durchlauf, der
+nichts Neues findet, zeichnet nichts auf. Wiederherstellen überschreibt Dateien
+und legt sie neu an, löscht aber nie eine Datei, die du nach dem Schnappschuss
+erstellt hast. Ignorierte Dateien werden nicht erfasst. Schnappschüsse sind
+lokale versteckte Refs: nie gepusht, sicher vor `git gc`, die neuesten 50
+werden behalten.
 
 ## Geführtes Bisect
 

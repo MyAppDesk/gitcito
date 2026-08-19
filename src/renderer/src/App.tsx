@@ -665,7 +665,7 @@ export default function App(): React.JSX.Element {
     const minutes = settings.wipSnapshotMinutes ?? 0
     if (!activeRepoPath || minutes <= 0) return
     const interval = setInterval(
-      () => void window.api.git('createSnapshot', activeRepoPath, true).catch(() => {}),
+      () => void window.api.git('createSnapshot', activeRepoPath, 'auto').catch(() => {}),
       minutes * 60_000
     )
     return () => clearInterval(interval)

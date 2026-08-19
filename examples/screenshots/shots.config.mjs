@@ -692,7 +692,8 @@ export const shots = [
     }
   },
   {
-    // WIP snapshots — uncommitted-work safety net.
+    // WIP snapshots — uncommitted-work safety net. Select a snapshot and a
+    // file so the shot shows the whole story: list, kinds, file list, diff.
     out: 'snapshots',
     repos: ['snapshots'],
     themes: ['light'],
@@ -700,6 +701,10 @@ export const shots = [
       const repo = repoPaths['snapshots']
       await page.evaluate((p) => window.__shot.ui.getState().openModal({ kind: 'snapshots', repoPath: p }), repo)
       await page.waitForTimeout(700)
+      await page.locator('.snapshot-row').first().click()
+      await page.waitForTimeout(400)
+      await page.locator('.snapshot-file-row').first().click()
+      await page.waitForTimeout(600)
     }
   },
   {

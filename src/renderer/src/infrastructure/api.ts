@@ -109,6 +109,7 @@ import type {
   CosmosCommit,
   ChangelogResult,
   SnapshotInfo,
+  SnapshotKind,
   VaultEntry,
   VaultListResult,
   VaultExport,
@@ -531,9 +532,10 @@ export const gitApi = {
   generateChangelog: (path: string, opts?: { from?: string; to?: string; version?: string }) =>
     call<ChangelogResult>('generateChangelog', path, opts),
   writeChangelogFile: (path: string, markdown: string) => call<void>('writeChangelogFile', path, markdown),
-  createSnapshot: (path: string, auto?: boolean) => call<SnapshotInfo | null>('createSnapshot', path, auto),
+  createSnapshot: (path: string, kind?: SnapshotKind) => call<SnapshotInfo | null>('createSnapshot', path, kind),
   listSnapshots: (path: string) => call<SnapshotInfo[]>('listSnapshots', path),
-  restoreSnapshot: (path: string, sha: string) => call<void>('restoreSnapshot', path, sha),
+  restoreSnapshot: (path: string, sha: string, files?: string[]) =>
+    call<void>('restoreSnapshot', path, sha, files),
   deleteSnapshot: (path: string, ref: string) => call<void>('deleteSnapshot', path, ref)
 }
 

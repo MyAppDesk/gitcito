@@ -44,9 +44,40 @@ with nothing installed. The work is a stable CLI entry point, not the parsing.
 Branch-from-issue and smart commits against Jira or Linear. Both are what teams
 actually run, and both mean another token and another API surface.
 
+### Teammate radar — remote awareness without a server
+A periodic fetch already knows everything a "who is doing what" feature needs:
+ghost overlays of remote branch tips on the graph, and a warning when an
+upstream commit touches a file that is dirty in your working tree. The conflict
+prediction engine exists (conflict radar); this points it at `origin/*` on a
+timer. Costs a fetch cadence setting and restraint — this must never become a
+notification firehose.
+
+### Stacked-PR autopilot
+The stacks view shows a dependency chain; it does not yet **submit** one. The
+missing half is what Graphite sells: open the whole stack as chained PRs with
+correct bases, restack after the bottom merges, update the chain's PRs in one
+action. GitHub-only at first, same as review/merge today.
+
 ---
 
 ## Bigger bets
+
+### Edit any commit like a document
+Click a commit anywhere in history, edit its files in place, and let Gitcito
+rebase every descendant — with the conflict radar predicting the cascade
+*before* anything moves. Interactive rebase already covers reordering and
+squashing; this is the "fix the typo three weeks back" gesture no client has.
+Honest limits: linear history first, merges in the cascade are a hard problem,
+and rewritten history still means force-push rules apply.
+
+### Local CI as an opt-in extension
+Run the repo's GitHub Actions locally via [`act`](https://github.com/nektos/act)
+and pin per-commit ✓/✗ onto the graph before anything is pushed. Deliberately
+**not** built in: it drags Docker plus a runner image along, which is the
+opposite of an app that ships as one binary. The shape is an optional
+integration in settings — detect `act`, guide the install, stay silent unless
+the user turns it on. Same pattern as diff converters: Gitcito orchestrates,
+the tool does the work.
 
 ### Team features without a backend
 Gitcito has no server and intends to keep it that way, so the GitKraken-style

@@ -3,7 +3,7 @@ title: 恢复与 reflog
 category: 恢复与保护
 order: 60
 summary: 那张撤销的安全网：reflog、WIP 快照与二分查找。
-keywords: reflog 恢复 撤销 丢失的提交 快照 二分查找 退出码 硬重置 recovery undo lost commits snapshots wip bisect bisect run automated script exit code restore hard reset
+keywords: reflog 恢复 撤销 丢失的提交 快照 守护 未跟踪 丢弃 清理 二分查找 退出码 硬重置 recovery undo lost commits snapshots wip guard untracked discard clean bisect bisect run automated script exit code restore hard reset
 ---
 
 # 恢复与 reflog
@@ -22,15 +22,30 @@ Git 很少真的丢东西。难的是把它重新找回来。
 
 ## WIP 快照
 
-未提交的工作是 reflog 唯一救不了的东西，所以 Gitcito 会为它拍快照：你已跟踪的改动加上
-已暂存的索引，作为一个 `git stash create` 提交捕获下来，钉在 `refs/gitcito/wip` 下面。
+未提交的工作是 reflog 唯一救不了的东西，所以 Gitcito 会为它拍快照：把**整个工作区——
+已修改、已暂存以及未跟踪的文件**——通过一个一次性的索引提交出来，钉在
+`refs/gitcito/wip` 下面。你真正的索引和贮藏列表都不会被碰到。
 
 ![WIP 快照](../../screenshots/snapshots.webp)
 
-- 它**从不碰你的工作区**，也**从不出现在你的贮藏列表里**——它是一个隐藏的引用，不是
-  贮藏。
-- 你可以手动拍一张，也可以让它每 **5 / 15 / 30 分钟** 自动跑一次。
-- 列表里的任何一张快照都可以恢复或删除。
+三种情形会拍下一张：
+
+| 触发方式 | 何时 |
+|---------|------|
+| **守护** | 在破坏性操作——丢弃、清理、硬重置、从某个提交恢复——之前自动拍下。默认开启；可在快照对话框里切换。 |
+| **定时器** | 仓库打开期间，每 5 / 15 / 30 分钟一次。 |
+| **手动** | **立即快照**按钮。 |
+
+真正要紧的是守护：工作往往就是在一次不小心的丢弃之后的那一秒永远丢失的。开着守护，
+那个状态就是一张快照——打开列表，点恢复，松一口气。
+
+选中一张快照，就能看到它捕获的文件，预览任何文件的改动，并恢复**单个文件**或整棵树。
+恢复会把文件从快照里复制出来，盖到当前的副本上——恢复之前会先拍一张守护快照，所以
+恢复本身也可以撤销。
+
+**值得知道的限制。** 定时器或守护触发时若没有发现任何新内容，就什么也不记录。恢复会
+覆盖并重建文件，但绝不会删除你在拍快照之后新建的文件。被忽略的文件不会被捕获。快照是
+本地的隐藏引用：从不推送，不怕 `git gc`，保留最新的 50 张。
 
 ## 引导式二分查找
 

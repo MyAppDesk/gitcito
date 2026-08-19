@@ -3,7 +3,7 @@ title: Recuperación y el reflog
 category: Recuperación y seguridad
 order: 60
 summary: La red de seguridad: reflog, instantáneas WIP y bisect.
-keywords: reflog recuperación deshacer undo commits perdidos instantáneas snapshots wip bisect bisect run script automatizado código de salida exit code restaurar hard reset
+keywords: reflog recuperación deshacer undo commits perdidos instantáneas snapshots wip guardián guard sin seguimiento untracked descartar discard limpiar clean bisect bisect run script automatizado código de salida exit code restaurar hard reset
 ---
 
 # Recuperación y el reflog
@@ -24,15 +24,37 @@ Este es el botón de "acabo de resetear la rama equivocada".
 ## Instantáneas WIP
 
 El trabajo sin commitear es lo único que el reflog no puede salvar, así que
-Gitcito le hace instantáneas: tus cambios seguidos más el índice preparado,
-capturados como un commit de `git stash create` fijado bajo `refs/gitcito/wip`.
+Gitcito le hace instantáneas: el **árbol de trabajo entero — archivos
+modificados, preparados y sin seguimiento** — commiteado a través de un índice
+desechable y fijado bajo `refs/gitcito/wip`. Ni tu índice real ni tu lista de
+stashes se tocan.
 
 ![Instantáneas WIP](../../screenshots/snapshots.webp)
 
-- **Nunca toca tu árbol de trabajo** y **nunca aparece en tu lista de stashes**
-  — es una ref oculta, no un stash.
-- Haz una a mano, o déjala correr cada **5 / 15 / 30 minutos**.
-- Restaura o borra cualquier instantánea desde la lista.
+Tres cosas toman una:
+
+| Disparador | Cuándo |
+|---------|------|
+| **Guardián** | Automáticamente, justo antes de una acción destructiva — descartar, limpiar, hard reset, restaurar desde un commit. Activado por defecto; se puede conmutar en el diálogo de instantáneas. |
+| **Temporizador** | Cada 5 / 15 / 30 minutos mientras el repositorio esté abierto. |
+| **A mano** | El botón **Instantánea ahora**. |
+
+El guardián es el que importa: el momento en que el trabajo suele perderse para
+siempre es el segundo después de un descarte que no querías. Con el guardián
+activado, ese estado es una instantánea — abre la lista, pulsa restaurar,
+respira de nuevo.
+
+Selecciona una instantánea para ver los archivos que capturó, previsualizar el
+cambio de cualquier archivo y restaurar un **solo archivo** o el árbol entero.
+Restaurar copia archivos de la instantánea sobre las copias actuales — antes se
+toma una instantánea del guardián, así que una restauración también se puede
+deshacer.
+
+**Límites que conviene conocer.** Un tick del temporizador o del guardián que no
+encuentra nada nuevo no registra nada. Restaurar sobrescribe y recrea archivos,
+pero nunca borra un archivo que creaste después de la instantánea. Los archivos
+ignorados no se capturan. Las instantáneas son refs ocultas locales: nunca se
+pushean, están a salvo de `git gc`, y se conservan las 50 más recientes.
 
 ## Bisect guiado
 

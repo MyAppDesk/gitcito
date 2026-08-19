@@ -3,7 +3,7 @@ title: Recupero e il reflog
 category: Recupero e protezione
 order: 60
 summary: La rete di sicurezza: reflog, snapshot del lavoro in corso e bisect.
-keywords: reflog recupero recovery annulla undo commit perduti snapshot wip bisect bisect run automatico script codice di uscita ripristina hard reset
+keywords: reflog recupero recovery annulla undo commit perduti snapshot wip guardia guard non tracciati untracked scarta discard pulizia clean bisect bisect run automatico script codice di uscita ripristina hard reset
 ---
 
 # Recupero e il reflog
@@ -23,15 +23,37 @@ Questo è il pulsante "ho appena resettato il branch sbagliato".
 ## Snapshot del lavoro in corso
 
 Il lavoro non committato è l'unica cosa che il reflog non può salvare, quindi
-Gitcito ne fa uno snapshot: le tue modifiche tracciate più l'indice in stage,
-catturati come un commit `git stash create` fissato sotto `refs/gitcito/wip`.
+Gitcito ne fa uno snapshot: l'**intero albero di lavoro — file modificati, in
+stage e non tracciati** — committato tramite un indice usa e getta e fissato
+sotto `refs/gitcito/wip`. Né il tuo indice reale né il tuo elenco degli stash
+vengono toccati.
 
 ![Gli snapshot del lavoro in corso](../../screenshots/snapshots.webp)
 
-- **Non tocca mai il tuo albero di lavoro** e **non compare mai nel tuo elenco
-  degli stash** — è un ref nascosto, non uno stash.
-- Prendine uno a mano, oppure lascialo girare ogni **5 / 15 / 30 minuti**.
-- Ripristina o elimina qualsiasi snapshot dall'elenco.
+Tre cose ne prendono uno:
+
+| Attivazione | Quando |
+|---------|------|
+| **Guardia** | Automaticamente, subito prima di un'azione distruttiva — scarto delle modifiche, clean, hard reset, ripristino da un commit. Attiva per impostazione predefinita; la accendi o spegni nella finestra degli snapshot. |
+| **Timer** | Ogni 5 / 15 / 30 minuti mentre il repository è aperto. |
+| **A mano** | Il pulsante **Snapshot adesso**. |
+
+La guardia è quella che conta: il momento in cui di solito il lavoro va perso
+per sempre è il secondo dopo uno scarto che non intendevi fare. Con la guardia
+attiva, quello stato è uno snapshot — apri l'elenco, fai clic su ripristina,
+tira il fiato.
+
+Seleziona uno snapshot per vedere i file che ha catturato, visualizzare in
+anteprima la modifica di qualsiasi file e ripristinare un **singolo file** o
+l'intero albero. Il ripristino copia i file dallo snapshot sopra le copie
+correnti — prima viene preso uno snapshot di guardia, quindi anche un
+ripristino è annullabile.
+
+**Limiti da conoscere.** Un tick del timer o della guardia che non trova nulla
+di nuovo non registra nulla. Il ripristino sovrascrive e ricrea i file, ma non
+elimina mai un file creato dopo lo snapshot. I file ignorati non vengono
+catturati. Gli snapshot sono ref nascosti locali: mai pushati, al sicuro da
+`git gc`, si conservano i 50 più recenti.
 
 ## Bisect guidato
 

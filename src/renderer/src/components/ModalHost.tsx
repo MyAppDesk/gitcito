@@ -1701,7 +1701,8 @@ export function ModalHost(): React.JSX.Element {
                     modal.kind === 'changelog-gen' ||
                     modal.kind === 'repo-settings' ||
                     modal.kind === 'secure-share' ||
-                    modal.kind === 'secure-workspace'
+                    modal.kind === 'secure-workspace' ||
+                    modal.kind === 'snapshots'
                   ? 'modal-tall'
                   : ''
             }`}

@@ -225,6 +225,12 @@ const FEATURES = [
     body: 'See which branches will conflict <strong>before</strong> merging any of them. The merges happen inside the object database — no checkout, no working-tree change, nothing to clean up.'
   },
   {
+    icon: '🛡️',
+    title: 'WIP snapshots',
+    id: 'recovery',
+    body: 'Your whole working tree — untracked files included — snapshotted on a timer and <strong>right before every destructive action</strong>. A discard you regret is a restore away.'
+  },
+  {
     icon: '🧠',
     title: 'Semantic diff',
     id: 'semantic-diff',

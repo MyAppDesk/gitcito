@@ -3,7 +3,7 @@ title: Recuperação e o reflog
 category: Recuperação e proteção
 order: 60
 summary: A rede de proteção: reflog, snapshots de WIP e bisect.
-keywords: reflog recuperação recovery desfazer undo commits perdidos snapshots wip bisect bisect run script automatizado código de saída restaurar hard reset
+keywords: reflog recuperação recovery desfazer undo commits perdidos snapshots wip guarda guard não rastreados untracked descartar discard limpar clean bisect bisect run script automatizado código de saída restaurar hard reset
 ---
 
 # Recuperação e o reflog
@@ -23,15 +23,37 @@ Este é o botão de "acabei de resetar a branch errada".
 ## Snapshots de WIP
 
 Trabalho não commitado é a única coisa que o reflog não consegue salvar, então o
-Gitcito tira snapshots dele: suas mudanças rastreadas mais o índice preparado,
-capturados como um commit de `git stash create` fixado em `refs/gitcito/wip`.
+Gitcito tira snapshots dele: a **árvore de trabalho inteira — arquivos
+modificados, preparados e não rastreados** — commitada por meio de um índice
+descartável e fixada em `refs/gitcito/wip`. Nem o seu índice de verdade nem a
+sua lista de stashes são tocados.
 
 ![Snapshots de WIP](../../screenshots/snapshots.webp)
 
-- Ele **nunca toca na sua árvore de trabalho** e **nunca aparece na sua lista de
-  stashes** — é uma ref escondida, não um stash.
-- Tire um na mão, ou deixe rodar a cada **5 / 15 / 30 minutos**.
-- Restaure ou apague qualquer snapshot pela lista.
+Três coisas tiram um:
+
+| Gatilho | Quando |
+|---------|------|
+| **Guarda** | Automaticamente, logo antes de uma ação destrutiva — descartar, clean, hard reset, restaurar de um commit. Ligada por padrão; ligue ou desligue no diálogo de snapshots. |
+| **Timer** | A cada 5 / 15 / 30 minutos enquanto o repositório estiver aberto. |
+| **Na mão** | O botão **Tirar snapshot agora**. |
+
+A guarda é a que importa: o momento em que o trabalho costuma se perder para
+sempre é o segundo depois de um descarte que você não queria. Com a guarda
+ligada, aquele estado é um snapshot — abra a lista, clique em restaurar,
+respire de novo.
+
+Selecione um snapshot para ver os arquivos que ele capturou, pré-visualizar a
+mudança de qualquer arquivo, e restaurar um **único arquivo** ou a árvore
+inteira. Restaurar copia arquivos do snapshot por cima das cópias atuais — um
+snapshot de guarda é tirado antes, então uma restauração é ela mesma
+desfazível.
+
+**Limites que vale a pena conhecer.** Um tique do timer ou da guarda que não
+encontra nada de novo não registra nada. Restaurar sobrescreve e recria
+arquivos, mas nunca apaga um arquivo que você criou depois do snapshot.
+Arquivos ignorados não são capturados. Snapshots são refs locais escondidas:
+nunca enviadas por push, a salvo do `git gc`, os 50 mais recentes são mantidos.
 
 ## Bisect guiado
 

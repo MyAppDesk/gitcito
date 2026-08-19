@@ -13109,6 +13109,44 @@ button.insights-row:hover { background: var(--bg-2); }
 }
 .snapshot-action:hover { background: var(--bg-3); color: var(--text-0); }
 .snapshot-action.danger:hover { color: var(--red, #e5484d); }
+.snapshots-guard {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-1);
+  cursor: pointer;
+  user-select: none;
+}
+.snapshots-split { display: flex; gap: 12px; flex: 1; min-height: 0; }
+.snapshots-split .snapshots-list { width: 300px; flex-shrink: 0; }
+.snapshot-row { cursor: pointer; }
+.snapshot-row.active { background: var(--bg-3); }
+.snapshot-detail { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.snapshot-files {
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  overflow-y: auto;
+  max-height: 180px;
+  flex-shrink: 0;
+}
+.snapshot-file-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  border-top: 1px solid var(--border-soft);
+}
+.snapshot-file-row:first-child { border-top: none; }
+.snapshot-file-row:hover { background: var(--bg-2); }
+.snapshot-file-row.active { background: var(--bg-3); }
+.snapshot-file-status { font-family: var(--mono, monospace); font-weight: 600; color: var(--text-2); width: 14px; flex-shrink: 0; }
+.snapshot-file-status.st-a { color: var(--green, #46a758); }
+.snapshot-file-status.st-d { color: var(--red, #e5484d); }
+.snapshot-file-path { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.snapshot-diff { flex: 1; min-height: 0; overflow: auto; border: 1px solid var(--border-soft); border-radius: 8px; }
 
 /* ─── Error boundary fallback ──────────────────────────────────────────── */
 .error-boundary { padding: 4px 2px; }

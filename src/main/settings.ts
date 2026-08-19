@@ -63,7 +63,7 @@ async function saveSecrets(store: SecretStore): Promise<void> {
 }
 
 /** The settings JSON, with whatever secrets are already in memory applied. */
-async function readSettings(): Promise<AppSettings> {
+export async function readSettings(): Promise<AppSettings> {
   let settings: AppSettings
   try {
     const raw = await readFile(settingsPath(), 'utf-8')

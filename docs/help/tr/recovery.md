@@ -3,7 +3,7 @@ title: Kurtarma ve reflog
 category: Kurtarma ve emniyet
 order: 60
 summary: Geri alma ağı: reflog, WIP anlık görüntüleri ve bisect.
-keywords: reflog kurtarma geri al kayıp commit anlık görüntü snapshot wip bisect bisect run betik çıkış kodu geri yükleme hard reset
+keywords: reflog kurtarma geri al kayıp commit anlık görüntü snapshot wip koruma izlenmeyen atma temizleme guard untracked discard clean bisect bisect run betik çıkış kodu geri yükleme hard reset
 ---
 
 # Kurtarma ve reflog
@@ -24,17 +24,37 @@ Bu, "az önce yanlış dalı resetledim" düğmesidir.
 ## WIP anlık görüntüleri
 
 Commit'lenmemiş çalışma, reflog'un kurtaramadığı tek şeydir; bu yüzden Gitcito
-onun anlık görüntüsünü alır: izlenen değişiklikleriniz artı hazırlanmış indeks,
-`refs/gitcito/wip` altına sabitlenmiş bir `git stash create` commit'i olarak
-yakalanır.
+onun anlık görüntüsünü alır: **çalışma dizininin tamamı — değiştirilmiş,
+hazırlanmış ve izlenmeyen dosyalar** — kullanılıp atılan bir indeks üzerinden
+commit'lenir ve `refs/gitcito/wip` altına sabitlenir. Ne gerçek indeksinize ne
+de stash listenize dokunulur.
 
 ![WIP anlık görüntüleri](../../screenshots/snapshots.webp)
 
-- **Çalışma dizininize asla dokunmaz** ve **stash listenizde asla görünmez** —
-  bu bir stash değil, gizli bir ref'tir.
-- Elle bir tane alın ya da her **5 / 15 / 30 dakikada** bir çalışmasına izin
-  verin.
-- Listedeki herhangi bir anlık görüntüyü geri yükleyin ya da silin.
+Üç şey bir tane alır:
+
+| Tetikleyici | Ne zaman |
+|---------|------|
+| **Koruma** | Otomatik olarak, yıkıcı bir eylemin hemen öncesinde — atma, temizleme, hard reset, bir commit'ten geri yükleme. Varsayılan olarak açıktır; anlık görüntüler diyaloğundan açıp kapatabilirsiniz. |
+| **Zamanlayıcı** | Depo açıkken her 5 / 15 / 30 dakikada bir. |
+| **Elle** | **Şimdi anlık görüntü al** düğmesi. |
+
+Asıl önemli olan korumadır: çalışmanın genelde sonsuza dek kaybolduğu an,
+istemediğiniz bir atmanın hemen ardındaki saniyedir. Koruma açıkken o durum bir
+anlık görüntüdür — listeyi açın, geri yükle'ye tıklayın, rahat bir nefes alın.
+
+Bir anlık görüntüyü seçerek yakaladığı dosyaları görün, herhangi bir dosyanın
+değişikliğini önizleyin ve **tek bir dosyayı** ya da dizinin tamamını geri
+yükleyin. Geri yükleme, dosyaları anlık görüntüden mevcut kopyaların üzerine
+kopyalar — önce bir koruma anlık görüntüsü alınır, dolayısıyla geri yüklemenin
+kendisi de geri alınabilir.
+
+**Bilmeye değer sınırlar.** Yeni bir şey bulamayan bir zamanlayıcı ya da koruma
+tetiklemesi hiçbir şey kaydetmez. Geri yükleme dosyaların üzerine yazar ve
+onları yeniden oluşturur, ama anlık görüntüden sonra oluşturduğunuz bir dosyayı
+asla silmez. Yoksayılan dosyalar yakalanmaz. Anlık görüntüler yerel gizli
+ref'lerdir: asla push'lanmaz, `git gc`'den etkilenmez, en yeni 50 tanesi
+saklanır.
 
 ## Rehberli bisect
 

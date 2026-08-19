@@ -61,6 +61,7 @@ import type {
   CosmosCommit,
   ChangelogResult,
   SnapshotInfo,
+  SnapshotKind,
   CloneProgress,
   CloneOptions,
   GitflowConfig,
@@ -129,7 +130,7 @@ import { buildPatch, parsePatch, touchedOldLines } from '../shared/patchHunks'
 import { semanticCompare } from './semantic'
 import { recordEvent } from './analytics'
 import { recordLog } from './log'
-import { activeProfileToken } from './settings'
+import { activeProfileToken, readSettings } from './settings'
 
 const SEP = '\x1f'
 
@@ -660,13 +661,55 @@ export function redactCredentials(msg: string): string {
 }
 
 /** Run a git command non-interactively, surfacing stderr as the thrown message. */
-async function runGit(repoPath: string, args: string[]): Promise<string> {
+async function runGit(repoPath: string, args: string[], extraEnv?: NodeJS.ProcessEnv): Promise<string> {
   try {
-    const { stdout } = await pexecFile('git', ['-C', repoPath, ...args], { env: noPromptEnv() })
+    const { stdout } = await pexecFile('git', ['-C', repoPath, ...args], {
+      env: extraEnv ? { ...noPromptEnv(), ...extraEnv } : noPromptEnv()
+    })
     return stdout
   } catch (err) {
     const e = err as { stderr?: string; message?: string }
     throw new Error(redactCredentials((e.stderr || e.message || 'git command failed').trim()))
+  }
+}
+
+// ─── WIP snapshot plumbing (see the gitService section for the full story) ───
+
+const SNAPSHOT_SUFFIX: Record<SnapshotKind, string> = { auto: '-a', manual: '-m', guard: '-g' }
+
+function kindForSnapshotRef(ref: string): SnapshotKind {
+  return ref.endsWith('-a') ? 'auto' : ref.endsWith('-g') ? 'guard' : 'manual'
+}
+
+/** Snapshot refs, newest first. Cheap: one for-each-ref, no per-ref subprocesses. */
+async function listSnapshotRefs(repoPath: string): Promise<{ ref: string; sha: string; time: number }[]> {
+  // NB: for-each-ref does NOT interpret %xHH hex escapes (that's a git-log
+  // pretty-format feature). refname/sha/unixtime contain no spaces, so a plain
+  // space is a safe field separator here.
+  const raw = await gitFor(repoPath)
+    .raw(['for-each-ref', '--sort=-creatordate', '--format=%(refname) %(objectname) %(creatordate:unix)', 'refs/gitcito/wip'])
+    .catch(() => '')
+  const out: { ref: string; sha: string; time: number }[] = []
+  for (const line of raw.split('\n')) {
+    if (!line.trim()) continue
+    const [ref, sha, time] = line.split(' ')
+    out.push({ ref, sha, time: Number(time) })
+  }
+  return out
+}
+
+/**
+ * Best-effort snapshot taken right before a destructive operation, so the state
+ * about to be destroyed stays recoverable. Never blocks the operation: every
+ * failure here is swallowed — the guard is a parachute, not a gate.
+ */
+async function guardSnapshot(repoPath: string): Promise<void> {
+  try {
+    const settings = await readSettings()
+    if (settings.snapshotGuard === false) return
+    await gitService.createSnapshot(repoPath, 'guard')
+  } catch {
+    /* the operation must not be blocked by its own parachute */
   }
 }
 
@@ -2315,6 +2358,7 @@ export const gitService = {
    *  "take these changes" from a commit without touching HEAD or the index. */
   async restoreFromCommit(repoPath: string, hash: string, paths: string[]): Promise<void> {
     if (!paths.length) return
+    await guardSnapshot(repoPath)
     const git = gitFor(repoPath)
     await git.raw(['restore', '--source', hash, '--worktree', '--', ...paths])
   },
@@ -3021,6 +3065,7 @@ export const gitService = {
   async clean(repoPath: string, paths: string[], trash: boolean): Promise<CleanResult> {
     const targets = paths.filter(Boolean)
     if (!targets.length) throw new Error('Nothing selected to remove.')
+    await guardSnapshot(repoPath)
 
     const { untracked, ignored } = await cleanCandidates(repoPath)
     const removable = new Set([...untracked, ...ignored])
@@ -3060,6 +3105,7 @@ export const gitService = {
   },
 
   async discard(repoPath: string, files: string[], untracked: boolean): Promise<void> {
+    await guardSnapshot(repoPath)
     const git = gitFor(repoPath)
     if (untracked) {
       await git.clean('f', ['--', ...files])
@@ -4335,6 +4381,8 @@ export const gitService = {
   },
 
   async reset(repoPath: string, ref: string, mode: 'soft' | 'mixed' | 'hard'): Promise<void> {
+    // Only --hard destroys working-tree content; soft/mixed just move refs/index.
+    if (mode === 'hard') await guardSnapshot(repoPath)
     await gitFor(repoPath).reset([`--${mode}`, ref])
   },
 
@@ -5721,56 +5769,82 @@ export const gitService = {
   },
 
   // ─── WIP snapshots ─────────────────────────────────────────────────────
-  // A lightweight safety net: `git stash create` builds a commit capturing the
-  // working tree + index WITHOUT touching either or the stash list. We pin it
-  // under refs/gitcito/wip/<ts> so it survives gc and is browseable/restorable.
+  // A safety net for uncommitted work: the whole working tree — modified,
+  // staged AND untracked files — is committed through a throwaway index
+  // (read-tree/add/write-tree/commit-tree, so neither the real index nor the
+  // stash list is touched) and pinned under refs/gitcito/wip/ where gc cannot
+  // reach it. Taken on a timer, by hand, or as a guard right before a
+  // destructive operation (see guardSnapshot). `git stash create` was the old
+  // mechanism; it cannot capture untracked files, which is exactly what a
+  // `clean` destroys — old stash-shaped refs are still listed and restorable.
 
-  /** Take a snapshot of the current changes. Returns null when nothing changed. */
-  async createSnapshot(repoPath: string, auto = false, max = 30): Promise<SnapshotInfo | null> {
+  /** Take a snapshot of the current working tree. Returns null when nothing changed. */
+  async createSnapshot(repoPath: string, kind: SnapshotKind = 'manual', max = 50): Promise<SnapshotInfo | null> {
     const git = gitFor(repoPath)
     const status = await git.status().catch(() => null)
     if (!status || status.isClean()) return null
-    const ts = Math.floor(Date.now() / 1000)
-    const label = `gitcito-wip ${new Date(ts * 1000).toISOString()}${auto ? ' (auto)' : ''}`
-    const sha = (await git.raw(['stash', 'create', label]).catch(() => '')).trim()
-    if (!sha) return null
-    const ref = `refs/gitcito/wip/${ts}${auto ? '-a' : '-m'}`
-    await git.raw(['update-ref', ref, sha])
-    // Prune oldest beyond `max`.
-    const all = await gitService.listSnapshots(repoPath)
-    for (const old of all.slice(max)) await git.raw(['update-ref', '-d', old.ref]).catch(() => {})
-    const files = await git
-      .raw(['stash', 'show', '--name-only', sha])
-      .then((o) => o.split('\n').filter(Boolean).length)
-      .catch(() => 0)
-    return { ref, sha, time: ts, files, auto }
+
+    const gitDir = (await runGit(repoPath, ['rev-parse', '--absolute-git-dir'])).trim()
+    const tmpIndex = join(gitDir, `gitcito-snap-${process.pid}-${Date.now()}`)
+    const env = { GIT_INDEX_FILE: tmpIndex }
+    try {
+      const head = (await runGit(repoPath, ['rev-parse', '--verify', 'HEAD']).catch(() => '')).trim()
+      // Seed from HEAD so unchanged entries reuse existing blobs, then stage
+      // everything — `add -A` in the throwaway index is what pulls untracked
+      // files in, the one thing `git stash create` cannot do.
+      await runGit(repoPath, ['read-tree', head || '--empty'], env)
+      await runGit(repoPath, ['add', '-A'], env)
+      const tree = (await runGit(repoPath, ['write-tree'], env)).trim()
+
+      // Nothing effectively changed (e.g. only ignored files were touched).
+      const headTree = head ? (await runGit(repoPath, [`rev-parse`, `${head}^{tree}`])).trim() : ''
+      if (tree === headTree) return null
+      // Timer/guard ticks dedupe against the latest snapshot; a manual
+      // "snapshot now" always records, because the user asked for a receipt.
+      if (kind !== 'manual') {
+        const latest = (await listSnapshotRefs(repoPath))[0]
+        const latestTree = latest
+          ? (await runGit(repoPath, ['rev-parse', `${latest.sha}^{tree}`]).catch(() => '')).trim()
+          : ''
+        if (tree === latestTree) return null
+      }
+
+      const ts = Math.floor(Date.now() / 1000)
+      const label = `gitcito-wip ${new Date(ts * 1000).toISOString()} (${kind})`
+      const sha = (await runGit(repoPath, ['commit-tree', tree, '-m', label, ...(head ? ['-p', head] : [])])).trim()
+      // Millisecond ref names keep a guard and a timer tick within the same
+      // second from colliding; displayed time comes from the commit, not the name.
+      const ref = `refs/gitcito/wip/${Date.now()}${SNAPSHOT_SUFFIX[kind]}`
+      await git.raw(['update-ref', ref, sha])
+      // Prune oldest beyond `max`.
+      const all = await listSnapshotRefs(repoPath)
+      for (const old of all.slice(max)) await git.raw(['update-ref', '-d', old.ref]).catch(() => {})
+      const files = (await gitService.commitFiles(repoPath, sha)).length
+      return { ref, sha, time: ts, files, kind }
+    } finally {
+      await unlink(tmpIndex).catch(() => {})
+    }
   },
 
   /** All saved snapshots, newest first. */
   async listSnapshots(repoPath: string): Promise<SnapshotInfo[]> {
-    const git = gitFor(repoPath)
-    // NB: for-each-ref does NOT interpret %xHH hex escapes (that's a git-log
-    // pretty-format feature). refname/sha/unixtime contain no spaces, so a plain
-    // space is a safe field separator here.
-    const raw = await git
-      .raw(['for-each-ref', '--sort=-creatordate', '--format=%(refname) %(objectname) %(creatordate:unix)', 'refs/gitcito/wip'])
-      .catch(() => '')
+    const refs = await listSnapshotRefs(repoPath)
     const out: SnapshotInfo[] = []
-    for (const line of raw.split('\n')) {
-      if (!line.trim()) continue
-      const [ref, sha, time] = line.split(' ')
-      const files = await git
-        .raw(['stash', 'show', '--name-only', sha])
-        .then((o) => o.split('\n').filter(Boolean).length)
-        .catch(() => 0)
-      out.push({ ref, sha, time: Number(time), files, auto: ref.endsWith('-a') })
+    for (const r of refs) {
+      const files = (await gitService.commitFiles(repoPath, r.sha).catch(() => [])).length
+      out.push({ ...r, files, kind: kindForSnapshotRef(r.ref) })
     }
     return out
   },
 
-  /** Apply a snapshot back into the working tree (does not delete it). */
-  async restoreSnapshot(repoPath: string, sha: string): Promise<void> {
-    await gitFor(repoPath).raw(['stash', 'apply', sha])
+  /**
+   * Copy files out of a snapshot back into the working tree (the snapshot is
+   * kept). With no `files`, the snapshot's entire tree is restored. Files
+   * created after the snapshot are left alone — restore overwrites and
+   * recreates, it never deletes.
+   */
+  async restoreSnapshot(repoPath: string, sha: string, files?: string[]): Promise<void> {
+    await gitFor(repoPath).raw(['restore', '--source', sha, '--worktree', '--', ...(files?.length ? files : ['.'])])
   },
 
   async deleteSnapshot(repoPath: string, ref: string): Promise<void> {

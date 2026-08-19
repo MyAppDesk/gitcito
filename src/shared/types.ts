@@ -1648,13 +1648,16 @@ export interface InfoEntry {
   updatedAt: number
 }
 
-/** A saved WIP snapshot (a `git stash create` commit kept under refs/gitcito/wip). */
+/** What triggered a WIP snapshot. */
+export type SnapshotKind = 'auto' | 'manual' | 'guard'
+
+/** A saved WIP snapshot (a commit of the whole working tree kept under refs/gitcito/wip). */
 export interface SnapshotInfo {
-  ref: string // full ref name (refs/gitcito/wip/<ts>)
+  ref: string // full ref name (refs/gitcito/wip/<ts>-<a|m|g>)
   sha: string
   time: number // unix seconds
   files: number // changed files captured
-  auto: boolean // created by the timer vs. manually
+  kind: SnapshotKind // timer, user action, or pre-destructive guard
 }
 
 /** Progress event streamed from `git clone --progress` while a clone runs. */
@@ -2372,6 +2375,9 @@ export interface AppSettings {
   autoOpenChangelog: boolean
   /** Minutes between automatic WIP snapshots (0 = off). */
   wipSnapshotMinutes: number
+  /** Take a WIP snapshot automatically before destructive operations
+   *  (discard, clean, hard reset, restore from commit). */
+  snapshotGuard: boolean
   /** Mask secret values (KEY=••••) in .env/key files in the diff & file viewer. */
   maskSecrets: boolean
   /** Surface a Run/Launch picker in the sidebar when a `.vscode/launch.json`
@@ -2685,7 +2691,8 @@ export function defaultSettings(): AppSettings {
     onboardingCompleted: false,
     aiAccountsNoticeSeen: false,
     autoOpenChangelog: true,
-    wipSnapshotMinutes: 0,
+    wipSnapshotMinutes: 15,
+    snapshotGuard: true,
     maskSecrets: true,
     enableLaunchJson: true,
     shortcuts: {},

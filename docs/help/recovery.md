@@ -3,7 +3,7 @@ title: Recovery & the reflog
 category: Recovery & safety
 order: 60
 summary: The undo net: reflog, WIP snapshots and bisect.
-keywords: reflog recovery undo lost commits snapshots wip bisect bisect run automated script exit code restore hard reset
+keywords: reflog recovery undo lost commits snapshots wip guard untracked discard clean bisect bisect run automated script exit code restore hard reset
 ---
 
 # Recovery & the reflog
@@ -23,15 +23,33 @@ This is the "I just reset the wrong branch" button.
 ## WIP snapshots
 
 Uncommitted work is the one thing the reflog cannot save, so Gitcito snapshots
-it: your tracked changes plus the staged index, captured as a `git stash create`
-commit pinned under `refs/gitcito/wip`.
+it: the **whole working tree — modified, staged and untracked files** —
+committed through a throwaway index and pinned under `refs/gitcito/wip`.
+Neither your real index nor your stash list is touched.
 
 ![WIP snapshots](../screenshots/snapshots.webp)
 
-- It **never touches your working tree** and **never appears in your stash
-  list** — it is a hidden ref, not a stash.
-- Take one by hand, or let it run every **5 / 15 / 30 minutes**.
-- Restore or delete any snapshot from the list.
+Three things take one:
+
+| Trigger | When |
+|---------|------|
+| **Guard** | Automatically, right before a destructive action — discard, clean, hard reset, restore from a commit. On by default; toggle it in the snapshots dialog. |
+| **Timer** | Every 5 / 15 / 30 minutes while the repo is open. |
+| **By hand** | The **Snapshot now** button. |
+
+The guard is the one that matters: the moment work is usually lost forever is
+the second after a discard you didn't mean. With the guard on, that state is a
+snapshot — open the list, click restore, breathe again.
+
+Select a snapshot to see the files it captured, preview any file's change, and
+restore a **single file** or the whole tree. Restoring copies files out of the
+snapshot over the current copies — a guard snapshot is taken first, so a
+restore is itself undoable.
+
+**Limits worth knowing.** A timer or guard tick that finds nothing new records
+nothing. Restore overwrites and recreates files, but never deletes a file you
+created after the snapshot. Ignored files are not captured. Snapshots are
+local hidden refs: never pushed, safe from `git gc`, newest 50 kept.
 
 ## Guided bisect
 

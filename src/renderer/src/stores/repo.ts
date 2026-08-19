@@ -25,6 +25,7 @@ import type {
   GitflowConfig,
   GitflowKind,
   GitflowSnapshot,
+  SnapshotInfo,
   MaintenanceTask,
   MergeOptions
 } from '../../../shared/types'
@@ -1550,6 +1551,33 @@ export const repoActions = {
       .run(path, interp(t('act.restoredFromCommit'), { n: paths.length }), () =>
         gitApi.restoreFromCommit(path, hash, paths)
       , undefined, null, undefined, ['status', 'treeStatus']),
+
+  /** Restore a WIP snapshot (whole tree, or just `files`). A guard snapshot of
+   *  the current state is taken first so the restore itself can be undone; when
+   *  the tree was clean there is nothing to guard, and undo falls back to
+   *  restoring the touched paths from HEAD. */
+  restoreSnapshot: (path: string, sha: string, files?: string[]) => {
+    let before: SnapshotInfo | null = null
+    return useRepoStore.getState().run(
+      path,
+      t('act.snapshotRestored'),
+      async () => {
+        before = await gitApi.createSnapshot(path, 'guard').catch(() => null)
+        await gitApi.restoreSnapshot(path, sha, files)
+      },
+      {
+        label: t('undoLabel.snapshotRestore'),
+        undo: async () => {
+          if (before) await gitApi.restoreSnapshot(path, before.sha, files)
+          else await gitApi.restoreFromCommit(path, 'HEAD', files ?? ['.'])
+        },
+        redo: () => gitApi.restoreSnapshot(path, sha, files)
+      },
+      null,
+      undefined,
+      ['status', 'treeStatus']
+    )
+  },
 
   stashDrop: (path: string, index = 0) =>
     useRepoStore.getState().run(path, t('act.droppedStash'), () => gitApi.stashDrop(path, index), undefined, null, undefined, ['stashes']),

@@ -1,5 +1,5 @@
 import { describe, it, expect, afterAll, beforeAll } from 'vitest'
-import { writeFileSync, existsSync, mkdtempSync, rmSync } from 'node:fs'
+import { writeFileSync, readFileSync, existsSync, mkdtempSync, rmSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -118,16 +118,61 @@ describe('stacked branches (stacked-branches playground)', () => {
 })
 
 describe('WIP snapshots (snapshots playground)', () => {
-  it('lists the seeded snapshots and takes a new one when dirty', async () => {
+  it('lists the seeded snapshots with their kinds and takes a new one when dirty', async () => {
     const R = cloneFixture('snapshots')
     const before = await gitService.listSnapshots(R)
-    expect(before.length).toBe(2)
+    expect(before.length).toBe(3)
+    expect(before.map((s) => s.kind).sort()).toEqual(['auto', 'guard', 'manual'])
     expect(before.every((s) => s.sha && s.time > 0)).toBe(true)
 
     const snap = await gitService.createSnapshot(R) // working tree is dirty in this fixture
     expect(snap).not.toBeNull()
+    expect(snap!.kind).toBe('manual')
     const after = await gitService.listSnapshots(R)
-    expect(after.length).toBe(3)
+    expect(after.length).toBe(4)
+  })
+
+  it('captures untracked files and restores one after deletion', async () => {
+    const R = cloneFixture('snapshots')
+    // scratch.txt is untracked in the fixture — the legacy `git stash create`
+    // mechanism could not capture it; the temp-index one must.
+    const snap = await gitService.createSnapshot(R)
+    expect(snap).not.toBeNull()
+    rmSync(join(R, 'scratch.txt'))
+    await gitService.restoreSnapshot(R, snap!.sha, ['scratch.txt'])
+    expect(readFileSync(join(R, 'scratch.txt'), 'utf-8')).toContain('todo: not yet added')
+  })
+
+  it('dedupes timer ticks on an unchanged tree but always honours a manual request', async () => {
+    const R = cloneFixture('snapshots')
+    const first = await gitService.createSnapshot(R, 'auto')
+    expect(first).not.toBeNull()
+    expect(await gitService.createSnapshot(R, 'auto')).toBeNull()
+    expect(await gitService.createSnapshot(R, 'manual')).not.toBeNull()
+  })
+
+  it('guards a discard: the destroyed state lands in a guard snapshot', async () => {
+    const R = cloneFixture('snapshots')
+    const before = (await gitService.listSnapshots(R)).length
+    await gitService.discard(R, ['draft.md'], false)
+    expect(readFileSync(join(R, 'draft.md'), 'utf-8')).not.toContain('Even more uncommitted edits.')
+
+    const after = await gitService.listSnapshots(R)
+    expect(after.length).toBe(before + 1)
+    expect(after[0].kind).toBe('guard')
+    await gitService.restoreSnapshot(R, after[0].sha, ['draft.md'])
+    expect(readFileSync(join(R, 'draft.md'), 'utf-8')).toContain('Even more uncommitted edits.')
+  })
+
+  it('restores a legacy stash-shaped snapshot', async () => {
+    const R = cloneFixture('snapshots')
+    const seeded = await gitService.listSnapshots(R)
+    const manualSeed = seeded.find((s) => s.kind === 'manual')
+    expect(manualSeed).toBeDefined()
+    await gitService.restoreSnapshot(R, manualSeed!.sha, ['draft.md'])
+    const content = readFileSync(join(R, 'draft.md'), 'utf-8')
+    expect(content).toContain('section one')
+    expect(content).not.toContain('section two')
   })
 })
 

@@ -5,6 +5,7 @@
 //   node examples/screenshots/capture.mjs graph      # only shots matching "graph"
 //   node examples/screenshots/capture.mjs --clips    # also render animated WebP clips
 //   node examples/screenshots/capture.mjs --clips-only conflict
+//   node examples/screenshots/capture.mjs --jobs=6   # concurrent still captures
 //
 // How it works: builds the app if needed, ensures the deterministic playground
 // repos exist, then for each shot launches the built Electron app with `--shot`
@@ -16,7 +17,7 @@ import { _electron as electron } from 'playwright'
 import { spawn, spawnSync } from 'node:child_process'
 import { mkdtemp, mkdir, writeFile, rm, readdir, symlink } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { tmpdir, cpus } from 'node:os'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { shots, clips } from './shots.config.mjs'
@@ -44,6 +45,12 @@ const filters = args.filter((a) => !a.startsWith('--'))
 const clipsOnly = flags.has('--clips-only') || flags.has('--gif-only')
 const wantGif = clipsOnly || flags.has('--clips') || flags.has('--gif')
 const gifOnly = clipsOnly
+
+// Stills run several Electron instances at once; each is a full app, so the
+// ceiling is memory and CPU contention, not core count. 4 is a comfortable
+// default on a dev laptop — raise it with --jobs=N on beefier machines.
+const jobsArg = args.find((a) => a.startsWith('--jobs='))
+const JOBS = jobsArg ? Math.max(1, Number(jobsArg.split('=')[1]) || 1) : Math.min(4, Math.max(1, cpus().length - 2))
 
 function sh(cmd, cmdArgs, opts = {}) {
   return new Promise((resolve, reject) => {
@@ -415,6 +422,51 @@ async function captureGifOnce(shot) {
   }
 }
 
+// Plain concurrency limiter: at most `n` tasks in flight, the rest queue.
+function makeLimiter(n) {
+  let active = 0
+  const queue = []
+  const pump = () => {
+    if (active >= n || queue.length === 0) return
+    active++
+    const { fn, resolve, reject } = queue.shift()
+    fn()
+      .then(resolve, reject)
+      .finally(() => {
+        active--
+        pump()
+      })
+  }
+  return (fn) => new Promise((resolve, reject) => {
+    queue.push({ fn, resolve, reject })
+    pump()
+  })
+}
+
+/**
+ * Run shots concurrently, but never two shots touching the same repo at once.
+ *
+ * A shot's `prepare` mutates the playground repo on disk and that state leaks
+ * into every later shot of the same repo — under the old serial runner that
+ * ordering was implicit. Chaining each shot behind the previous one that uses
+ * any of its repos preserves exactly the serial per-repo order, so parallel
+ * runs produce the same pixels; shots on disjoint repos overlap freely.
+ */
+async function runPool(todo, fn) {
+  const limit = makeLimiter(JOBS)
+  const repoTail = new Map()
+  await Promise.all(
+    todo.map((shot) => {
+      const keys = [...shot.repos, ...(shot.recents ?? [])]
+      const ready = Promise.all(keys.map((k) => repoTail.get(k)))
+      // run() never rejects (failures are collected), so the chain never breaks.
+      const done = ready.then(() => limit(() => fn(shot)))
+      for (const k of keys) repoTail.set(k, done)
+      return done
+    })
+  )
+}
+
 async function main() {
   await ensurePrereqs()
   const match = (s) => filters.length === 0 || filters.some((f) => s.out.includes(f))
@@ -443,13 +495,15 @@ async function main() {
 
   if (!gifOnly) {
     const todo = shots.filter(match)
-    console.log(`\n📸 ${todo.length} still(s)`)
+    console.log(`\n📸 ${todo.length} still(s), ${JOBS} at a time`)
     startProgress(todo.length, '📸')
-    for (const shot of todo) await run(shot, capturePng)
+    await runPool(todo, (shot) => run(shot, capturePng))
     endProgress()
   }
 
   if (wantGif) {
+    // Clips stay strictly serial: frames are sampled on wall-clock time, so a
+    // CPU fighting other Electron instances would stutter the recording.
     const todo = clips.filter(match)
     console.log(`\n🎬 ${todo.length} GIF clip(s)`)
     startProgress(todo.length, '🎬')

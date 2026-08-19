@@ -11,15 +11,23 @@ new_repo() {
   local dir="$1"
   mkdir -p "$dir"
   git -C "$dir" init -q -b main
-  git -C "$dir" config user.name "Playground"
-  git -C "$dir" config user.email "playground@example.com"
-  # Deterministic so re-runs produce identical history (helps future e2e).
-  git -C "$dir" config commit.gpgsign false
-  git -C "$dir" config core.autocrlf false
-  # The machine's global config must not change what a scenario builds. rerere
-  # in particular rewrites conflicted files during a scenario's own merges, so a
-  # developer with it enabled would generate different fixtures from everyone else.
-  git -C "$dir" config rerere.enabled false
+  # One append instead of five `git config` spawns — across ~80 repos the
+  # process overhead is measurable. Deterministic identity so re-runs produce
+  # identical history (helps future e2e); rerere off because the machine's
+  # config must not change what a scenario builds — rerere rewrites conflicted
+  # files during a scenario's own merges, so a developer with it enabled would
+  # generate different fixtures from everyone else.
+  cat >> "$dir/.git/config" <<'EOF'
+[user]
+	name = Playground
+	email = playground@example.com
+[commit]
+	gpgsign = false
+[core]
+	autocrlf = false
+[rerere]
+	enabled = false
+EOF
 }
 
 # Commit as a specific author. Usage:
@@ -57,25 +65,24 @@ rand_text() {
 
 # Record a playground repo for the final summary + e2e manifest.
 # Usage: summary <repo-name> <one-line description>
-SUMMARY_NAMES=()
-SUMMARY_DESCS=()
+# Scenarios run in parallel child processes, so the file (not shell state) is
+# the only channel back to the orchestrator — each child writes its own
+# fragment, which the orchestrator stitches into the real manifest in order.
 summary() {
-  SUMMARY_NAMES+=("$1")
-  SUMMARY_DESCS+=("$2")
   printf '%s\t%s\n' "$1" "$2" >> "$MANIFEST"
 }
 
-# Pretty-print everything collected via summary().
+# Pretty-print everything collected via summary(), read back from $MANIFEST.
 print_summary() {
-  local i width=0
-  for i in "${!SUMMARY_NAMES[@]}"; do
-    (( ${#SUMMARY_NAMES[i]} > width )) && width=${#SUMMARY_NAMES[i]}
-  done
+  local name desc width=0
+  while IFS=$'\t' read -r name desc; do
+    (( ${#name} > width )) && width=${#name}
+  done < "$MANIFEST"
   echo
   echo "Playground ready! Open these repos in Gitcito:"
-  for i in "${!SUMMARY_NAMES[@]}"; do
-    printf "  %s/%-${width}s  → %s\n" "$ROOT" "${SUMMARY_NAMES[i]}" "${SUMMARY_DESCS[i]}"
-  done
+  while IFS=$'\t' read -r name desc; do
+    printf "  %s/%-${width}s  → %s\n" "$ROOT" "$name" "$desc"
+  done < "$MANIFEST"
   echo
   echo "Manifest (name<TAB>description) written to: $MANIFEST"
 }

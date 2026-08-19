@@ -15,6 +15,12 @@ npm run screenshots:clips    # stills + animated motion clips
 Both rebuild the app and reseed the playground first. `--no-build` and
 `--no-seed` skip those when you are iterating on one shot.
 
+Stills are captured several at a time (default 4 Electron instances; tune with
+`--jobs=N`). Shots touching the same playground repo never overlap and keep
+their serial order, so `prepare` mutations land exactly as they would one by
+one. Clips always record one at a time — their frames are sampled on
+wall-clock time, and CPU contention would stutter the recording.
+
 Needs **ffmpeg** (`brew install ffmpeg`): it encodes every image.
 
 ## How it works

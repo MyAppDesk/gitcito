@@ -50,6 +50,8 @@ interface PreloadApi {
     workflows(repoPath: string): Promise<unknown>
     run(repoPath: string, workflowFile: string): Promise<unknown>
     cancel(repoPath: string): Promise<unknown>
+    record(repoPath: string, workflowFile: string, ok: boolean): Promise<unknown>
+    verdicts(repoPath: string): Promise<unknown>
     onData(cb: (p: { repoPath: string; chunk: string }) => void): () => void
   }
   getPathForFile(file: File): string

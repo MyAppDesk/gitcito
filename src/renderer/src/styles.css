@@ -13178,6 +13178,14 @@ button.insights-row:hover { background: var(--bg-2); }
 .localci-verdict { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; }
 .localci-verdict.pass { color: var(--green, #46a758); }
 .localci-verdict.fail { color: var(--red, #e5484d); }
+.localci-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 4px;
+  vertical-align: -1px;
+}
+.localci-badge.pass { color: var(--green, #46a758); }
+.localci-badge.fail { color: var(--red, #e5484d); }
 .localci-log {
   flex: 1;
   min-height: 120px;

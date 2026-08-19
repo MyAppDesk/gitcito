@@ -3,7 +3,7 @@ title: Lokalne CI
 category: Synchronizacja i wiele repozytoriów
 order: 58
 summary: Uruchamiaj GitHub Actions repozytorium lokalnie przez act — zanim cokolwiek zostanie wypchnięte.
-keywords: lokalne ci local ci act actions workflow przepływ runner docker potok pipeline test przed pushem before push nektos
+keywords: lokalne ci local ci act actions workflow przepływ runner docker potok pipeline test przed pushem before push nektos werdykt plakietka notatki na commit verdict badge notes per-commit
 ---
 
 # Lokalne CI
@@ -35,6 +35,21 @@ zainstalowany, Docker osiągalny.
 - Wyjście strumieniuje się na żywo do okna dialogowego; **Zatrzymaj** przerywa
   uruchomienie. Kod wyjścia 0 pokazuje **Zaliczono**, wszystko inne —
   **Niepowodzenie** z kodem.
+
+## Werdykty per commit na grafie
+
+![Werdykty Local-CI na grafie](../../screenshots/local-ci-verdicts.webp)
+
+Zakończone uruchomienie przypina swój wynik do przetestowanego commita: mała
+kolba oznacza wiersz na grafie **zielenią lub czerwienią**, więc na pierwszy
+rzut oka widać, które commity przeszły już CI lokalnie. Werdykt jest
+przechowywany jako notatka gita pod `refs/notes/gitcito-ci` — lokalnie na
+Twojej maszynie, domyślnie nigdy nie wypychany.
+
+Zasada uczciwości: werdykt jest przypinany tylko wtedy, gdy Twoje drzewo
+robocze było **czyste**. Uruchomienie na niezatwierdzonych zmianach
+przetestowało coś, czego nie zawiera żaden commit, więc pokazuje swój wynik
+w oknie dialogowym, ale niczego nie oznacza.
 
 ## Ograniczenia
 

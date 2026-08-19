@@ -3,7 +3,7 @@ title: 로컬 CI
 category: 동기화와 여러 저장소
 order: 58
 summary: 푸시하기 전에, 저장소의 GitHub Actions를 act로 로컬에서 실행해요.
-keywords: 로컬 CI local ci act actions 워크플로 workflow 러너 runner docker 파이프라인 pipeline 테스트 test 푸시 전 before push nektos
+keywords: 로컬 CI local ci act actions 워크플로 workflow 러너 runner docker 파이프라인 pipeline 테스트 test 푸시 전 before push nektos 판정 verdict 배지 badge 노트 notes 커밋별 per-commit
 ---
 
 # 로컬 CI
@@ -33,6 +33,20 @@ Docker 데몬, 그러면 끝이에요. 세 가지가 모두 갖춰지기 전에�
   전에 테스트하는 거죠.
 - 출력은 다이얼로그로 실시간 스트리밍되고, **중지**를 누르면 실행이 종료돼요.
   종료 코드 0이면 **통과**, 그 외에는 코드와 함께 **실패**로 표시돼요.
+
+## 그래프의 커밋별 판정
+
+![그래프의 Local-CI 판정](../../screenshots/local-ci-verdicts.webp)
+
+실행이 끝나면 그 결과가 테스트한 커밋에 고정돼요. 그래프의 해당 행에 작은
+플라스크가 붙어 **초록 또는 빨강**으로 표시되니, 어떤 커밋이 이미 로컬에서
+CI를 통과했는지 한눈에 알 수 있어요. 판정은 `refs/notes/gitcito-ci` 아래의
+git 노트로 저장돼요 — 내 컴퓨터에만 있는 로컬 데이터고, 기본적으로는 절대
+푸시되지 않아요.
+
+정직함의 규칙: 판정은 작업 트리가 **깨끗했을** 때만 고정돼요. 커밋하지 않은
+변경 위에서 돌린 실행은 어떤 커밋에도 담겨 있지 않은 것을 테스트한 셈이라,
+결과는 다이얼로그에 보여 주지만 아무것도 표시하지 않아요.
 
 ## 한계
 

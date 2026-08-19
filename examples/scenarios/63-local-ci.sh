@@ -29,4 +29,13 @@ console.log('hello from local-ci')
 EOF
 git -C "$R" add -A && git -C "$R" commit -qm "ci: workflows + app"
 
-summary "local-ci" "two GitHub Actions workflows (one named, one not) — Local CI / act integration"
+# A second commit plus seeded local-CI verdicts (git notes under
+# refs/notes/gitcito-ci), so the graph's ✓/✗ flask badges are visible without
+# act installed: the first commit passed, the follow-up broke the build.
+FIRST=$(git -C "$R" rev-parse HEAD)
+printf 'console.log(oops_undefined)\n' >> "$R/app.js"
+git -C "$R" add -A && git -C "$R" commit -qm "feat: risky change"
+git -C "$R" notes --ref=gitcito-ci add -m '{"ok":true,"workflow":"ci.yml","at":1755600000000}' "$FIRST"
+git -C "$R" notes --ref=gitcito-ci add -m '{"ok":false,"workflow":"ci.yml","at":1755603600000}' HEAD
+
+summary "local-ci" "two workflows (one named, one not) + seeded per-commit local-CI verdicts (pass, fail)"

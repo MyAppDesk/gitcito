@@ -32,6 +32,7 @@ import type {
 } from '../../../shared/types'
 import { gitApi, hostingApi } from '../infrastructure/api'
 import { planStackSubmit, buildStackSection } from '../../../shared/stackPr'
+import type { LocalCiVerdict } from '../../../shared/localCi'
 import { useUIStore } from './ui'
 import { useSettingsStore } from './settings'
 import { isSecretFile } from '../lib/secrets'
@@ -99,6 +100,8 @@ export interface RepoData {
   forcedUpdates: Record<string, ForcedRefUpdate>
   /** Last teammate-radar sweep (remote activity vs local dirty files). */
   teammateRadar: TeammateRadarResult | null
+  /** Local-CI verdicts pinned to commits (git notes, refs/notes/gitcito-ci). */
+  localCiVerdicts: Record<string, LocalCiVerdict>
 }
 
 const emptyRepo = (path: string): RepoData => ({
@@ -134,7 +137,8 @@ const emptyRepo = (path: string): RepoData => ({
   notGit: false,
   mergeRisk: null,
   forcedUpdates: {},
-  teammateRadar: null
+  teammateRadar: null,
+  localCiVerdicts: {}
 })
 
 interface RepoStoreState {

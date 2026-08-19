@@ -28,6 +28,9 @@ const api = {
     run: (repoPath: string, workflowFile: string): Promise<unknown> =>
       ipcRenderer.invoke('localci:run', repoPath, workflowFile),
     cancel: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('localci:cancel', repoPath),
+    record: (repoPath: string, workflowFile: string, ok: boolean): Promise<unknown> =>
+      ipcRenderer.invoke('localci:record', repoPath, workflowFile, ok),
+    verdicts: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('localci:verdicts', repoPath),
     onData: (cb: (p: { repoPath: string; chunk: string }) => void): (() => void) => {
       const listener = (_e: unknown, p: { repoPath: string; chunk: string }): void => cb(p)
       ipcRenderer.on('localci:data', listener)

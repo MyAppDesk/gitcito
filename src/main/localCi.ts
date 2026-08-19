@@ -8,7 +8,7 @@ import { spawn, execFile } from 'child_process'
 import { promisify } from 'util'
 import { readdir, readFile } from 'fs/promises'
 import { join } from 'path'
-import { parseWorkflowName, type LocalCiStatus, type LocalCiWorkflow } from '../shared/localCi'
+import { parseWorkflowName, type LocalCiStatus, type LocalCiVerdict, type LocalCiWorkflow } from '../shared/localCi'
 
 const pexecFile = promisify(execFile)
 
@@ -77,12 +77,52 @@ function run(repoPath: string, workflowFile: string, sender: Electron.WebContent
   })
 }
 
+const git = (repoPath: string, args: string[]): Promise<string> =>
+  pexecFile('git', ['-C', repoPath, ...args]).then(({ stdout }) => stdout)
+
+/**
+ * Pin a finished run's verdict to the commit it tested, as a git note under
+ * refs/notes/gitcito-ci. Only recorded when the working tree is CLEAN — a
+ * dirty tree means the run tested something no commit contains, and a verdict
+ * pinned to HEAD would lie. Notes are local and never pushed by default.
+ */
+async function record(repoPath: string, workflowFile: string, ok: boolean): Promise<{ recorded: boolean; sha: string }> {
+  const dirty = (await git(repoPath, ['status', '--porcelain'])).trim()
+  const sha = (await git(repoPath, ['rev-parse', 'HEAD'])).trim()
+  if (dirty) return { recorded: false, sha }
+  const note = JSON.stringify({ ok, workflow: workflowFile, at: Date.now() })
+  await git(repoPath, ['notes', '--ref=gitcito-ci', 'add', '-f', '-m', note, sha])
+  return { recorded: true, sha }
+}
+
+/** Every recorded verdict, keyed by commit sha — feeds the graph's ✓/✗ badges. */
+async function verdicts(repoPath: string): Promise<Record<string, LocalCiVerdict>> {
+  const raw = await git(repoPath, ['notes', '--ref=gitcito-ci', 'list']).catch(() => '')
+  const out: Record<string, LocalCiVerdict> = {}
+  for (const line of raw.split('\n')) {
+    const [, sha] = line.trim().split(' ')
+    if (!sha) continue
+    const body = await git(repoPath, ['notes', '--ref=gitcito-ci', 'show', sha]).catch(() => '')
+    try {
+      const parsed = JSON.parse(body) as LocalCiVerdict
+      if (typeof parsed.ok === 'boolean') out[sha] = { ok: parsed.ok, workflow: parsed.workflow, at: parsed.at }
+    } catch {
+      /* an unreadable note is just skipped */
+    }
+  }
+  return out
+}
+
 export function registerLocalCiHandlers(): void {
   ipcMain.handle('localci:status', () => status())
   ipcMain.handle('localci:workflows', (_e, repoPath: string) => workflows(repoPath))
   ipcMain.handle('localci:run', (e, repoPath: string, workflowFile: string) => run(repoPath, workflowFile, e.sender))
   ipcMain.handle('localci:cancel', (_e, repoPath: string) => cancel(repoPath))
+  ipcMain.handle('localci:record', (_e, repoPath: string, workflowFile: string, ok: boolean) =>
+    record(repoPath, workflowFile, ok)
+  )
+  ipcMain.handle('localci:verdicts', (_e, repoPath: string) => verdicts(repoPath))
 }
 
 // Exported for tests (vitest imports the module directly, no IPC).
-export const localCiService = { status, workflows, run, cancel }
+export const localCiService = { status, workflows, run, cancel, record, verdicts }

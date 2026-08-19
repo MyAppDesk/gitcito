@@ -3,7 +3,7 @@ title: CI local
 category: Sincronizar y muchos repos
 order: 58
 summary: Ejecuta las GitHub Actions del repo en local con act — antes de hacer push de nada.
-keywords: ci local act actions workflow flujo de trabajo runner docker pipeline probar test antes de push before push nektos
+keywords: ci local act actions workflow flujo de trabajo runner docker pipeline probar test antes de push before push nektos verdict badge notes per-commit veredicto insignia notas por commit
 ---
 
 # CI local
@@ -34,6 +34,21 @@ que las tres condiciones se cumplen: activada, act instalado, Docker accesible.
 - La salida se transmite en directo al diálogo; **Detener** mata la ejecución.
   Un código de salida 0 muestra **Correcto**; cualquier otro, **Falló** con el
   código.
+
+## Veredictos por commit en el grafo
+
+![Veredictos de Local-CI en el grafo](../../screenshots/local-ci-verdicts.webp)
+
+Una ejecución terminada fija su resultado al commit que probó: un pequeño
+matraz marca la fila en **verde o rojo** en el grafo, para que veas de un
+vistazo qué commits ya han sobrevivido a la CI en local. El veredicto se guarda
+como una nota de git bajo `refs/notes/gitcito-ci` — local a tu máquina, nunca
+se hace push de él por defecto.
+
+Regla de honestidad: el veredicto solo se fija cuando tu árbol de trabajo
+estaba **limpio**. Una ejecución sobre cambios sin commitear probó algo que
+ningún commit contiene, así que muestra su resultado en el diálogo pero no
+marca nada.
 
 ## Límites
 

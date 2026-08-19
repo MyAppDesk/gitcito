@@ -1811,6 +1811,9 @@ export const nl: Dict = {
   'localCi.passed': 'Geslaagd',
   'localCi.failed': 'Mislukt (exitcode {code})',
   'localCi.waiting': 'Wachten op uitvoer…',
+  'localCi.verdictPass': 'Lokale CI geslaagd ({workflow})',
+  'localCi.verdictFail': 'Lokale CI mislukt ({workflow})',
+  'localCi.notRecorded': 'De working tree was niet schoon — het oordeel wordt hier getoond, maar is niet aan de commit vastgepind.',
   'commit.editCommit': 'Deze commit bewerken…',
   'commitEdit.title': 'Commit bewerken',
   'commitEdit.intro':

@@ -13,6 +13,7 @@ import {
 import type { LocalCiStatus, LocalCiWorkflow } from '../../../shared/localCi'
 import { localCiApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
+import { useRepoStore } from '../stores/repo'
 import { useSettingsStore } from '../stores/settings'
 import { useT, interp } from '../i18n'
 
@@ -55,6 +56,16 @@ export function LocalCIModal({ repoPath }: { repoPath: string }): React.JSX.Elem
     try {
       const exit = await localCiApi.run(repoPath, w.file)
       setRun({ workflow: w.file, running: false, exit })
+      // Pin the verdict to HEAD so the graph remembers it — only when the tree
+      // is clean, because a dirty run tested something no commit contains.
+      if (exit !== null) {
+        const rec = await localCiApi.record(repoPath, w.file, exit === 0).catch(() => null)
+        if (rec && !rec.recorded) toast('info', t('localCi.notRecorded'))
+        if (rec?.recorded) {
+          const v = await localCiApi.verdicts(repoPath).catch(() => null)
+          if (v) useRepoStore.getState().patch(repoPath, { localCiVerdicts: v })
+        }
+      }
     } catch (err) {
       setRun(null)
       toast('error', err instanceof Error ? err.message : String(err))

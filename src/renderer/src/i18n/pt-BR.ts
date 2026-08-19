@@ -1811,6 +1811,9 @@ export const ptBR: Dict = {
   'localCi.passed': 'Passou',
   'localCi.failed': 'Falhou (saída {code})',
   'localCi.waiting': 'Aguardando saída…',
+  'localCi.verdictPass': 'Passou na CI local ({workflow})',
+  'localCi.verdictFail': 'Falhou na CI local ({workflow})',
+  'localCi.notRecorded': 'A working tree não estava limpa — o veredicto é mostrado aqui, mas não fica fixado ao commit.',
   'commit.editCommit': 'Editar este commit…',
   'commitEdit.title': 'Editar o commit',
   'commitEdit.intro':

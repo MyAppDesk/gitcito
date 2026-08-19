@@ -3,7 +3,7 @@ title: ローカル CI
 category: 同期と複数リポジトリ
 order: 58
 summary: リポジトリの GitHub Actions を act でローカル実行 — プッシュする前に。
-keywords: ローカル CI local ci act actions ワークフロー workflow ランナー runner docker パイプライン pipeline テスト test プッシュ前 before push nektos
+keywords: ローカル CI local ci act actions ワークフロー workflow ランナー runner docker パイプライン pipeline テスト test プッシュ前 before push nektos 判定 verdict バッジ badge ノート notes コミットごと per-commit
 ---
 
 # ローカル CI
@@ -34,6 +34,21 @@ Docker に到達できる、の 3 つがすべてそろうまで、何も実行�
   テストできます。
 - 出力はダイアログにライブでストリームされ、**停止**で実行を打ち切れます。
   終了コード 0 なら**成功**、それ以外はコード付きで**失敗**と表示されます。
+
+## グラフ上のコミットごとの判定
+
+![グラフ上の Local-CI 判定](../../screenshots/local-ci-verdicts.webp)
+
+実行が完了すると、その結果はテストしたコミットに留め付けられます。グラフ上の
+その行に小さなフラスコが付き、**緑または赤**で表示されるので、どのコミットが
+すでにローカルで CI を生き延びたかが一目でわかります。判定は
+`refs/notes/gitcito-ci` 配下の git ノートとして保存されます — あなたのマシンに
+ローカルなもので、デフォルトでプッシュされることはありません。
+
+正直さのルール：判定が留め付けられるのは、作業ツリーが**クリーン**だったとき
+だけです。未コミットの変更を含む実行は、どのコミットにも含まれない何かを
+テストしたことになるので、結果はダイアログに表示されますが、何にも印は
+付きません。
 
 ## 制限
 

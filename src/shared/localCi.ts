@@ -9,6 +9,13 @@ export interface LocalCiStatus {
   docker: boolean
 }
 
+/** A recorded local-CI result for one commit (stored as a git note). */
+export interface LocalCiVerdict {
+  ok: boolean
+  workflow: string
+  at: number // unix ms
+}
+
 export interface LocalCiWorkflow {
   /** Filename under .github/workflows (e.g. "ci.yml"). */
   file: string

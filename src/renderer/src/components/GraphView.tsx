@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Archive, GitCommitHorizontal, Tag, Laptop, Cloud, Check, Settings2, Pencil, Plus, Minus, CheckCircle2, XCircle, Clock, MinusCircle, StickyNote } from 'lucide-react'
+import { Archive, GitCommitHorizontal, Tag, Laptop, Cloud, Check, Settings2, Pencil, Plus, Minus, CheckCircle2, XCircle, Clock, MinusCircle, StickyNote, FlaskConical } from 'lucide-react'
 import type { CiState, CiStatus, GraphCommit, StashInfo, GraphColumnId, GraphFlowColumnId, GraphColumns, FileEntry } from '../../../shared/types'
 import { defaultGraphColumns, defaultGraphColumnOrder, defaultGraphStyle } from '../../../shared/types'
 import { GraphHeaderFilter, type FilterOption } from './GraphHeaderFilter'
@@ -12,7 +12,7 @@ import { useT, interp } from '../i18n'
 import { Avatar } from './Avatar'
 import { RemoteIcon } from './RemoteIcon'
 import { SignatureBadge } from './SignatureBadge'
-import { gitApi } from '../infrastructure/api'
+import { gitApi, localCiApi } from '../infrastructure/api'
 import { repoIsGitHub } from '../lib/hosting'
 import { branchDropActions, encodeDropRef, BRANCH_DND_TYPE, type DropRef } from '../lib/branchDrop'
 import { openBranchDropMenu } from '../lib/branchDropMenu'
@@ -701,6 +701,16 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
     const id = setInterval(() => void repoActions.refreshCiStatuses(repo.path), 60000)
     return () => clearInterval(id)
   }, [repo.path, repo.commits.length])
+
+  // Local-CI verdicts (git notes) — a single local read, refreshed with the log.
+  const localCiOn = useSettingsStore((s) => s.settings.localCiEnabled)
+  useEffect(() => {
+    if (!localCiOn) return
+    void localCiApi
+      .verdicts(repo.path)
+      .then((v) => useRepoStore.getState().patch(repo.path, { localCiVerdicts: v }))
+      .catch(() => {})
+  }, [repo.path, repo.commits.length, localCiOn])
 
   // Auto-load more commits when scrolling near the bottom. scrollTop state is
   // coalesced to one update per animation frame so a fast scroll doesn't fire a
@@ -1775,6 +1785,17 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
                             only place anyone would find out it exists. */}
                         {notedSet.has(c.hash) && (
                           <StickyNote size={11} className="row-note-mark" aria-label={t('notes.marker')} />
+                        )}
+                        {repo.localCiVerdicts[c.hash] && (
+                          <span
+                            className={`localci-badge ${repo.localCiVerdicts[c.hash].ok ? 'pass' : 'fail'}`}
+                            title={interp(
+                              t(repo.localCiVerdicts[c.hash].ok ? 'localCi.verdictPass' : 'localCi.verdictFail'),
+                              { workflow: repo.localCiVerdicts[c.hash].workflow }
+                            )}
+                          >
+                            <FlaskConical size={11} />
+                          </span>
                         )}
                         {c.subject}
                       </span>

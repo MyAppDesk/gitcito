@@ -1810,6 +1810,9 @@ export const de: Dict = {
   'localCi.passed': 'Bestanden',
   'localCi.failed': 'Fehlgeschlagen (Exit-Code {code})',
   'localCi.waiting': 'Warte auf Ausgabe…',
+  'localCi.verdictPass': 'Lokale CI bestanden ({workflow})',
+  'localCi.verdictFail': 'Lokale CI fehlgeschlagen ({workflow})',
+  'localCi.notRecorded': 'Das Arbeitsverzeichnis war nicht sauber — das Ergebnis wird hier angezeigt, ist aber nicht an den Commit angeheftet.',
   'commit.editCommit': 'Diesen Commit bearbeiten…',
   'commitEdit.title': 'Commit bearbeiten',
   'commitEdit.intro':

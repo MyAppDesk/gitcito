@@ -3,7 +3,7 @@ title: 本地 CI
 category: 同步与多仓库
 order: 58
 summary: 在推送之前，用 act 在本地运行仓库的 GitHub Actions。
-keywords: 本地 CI local ci act actions 工作流 workflow 运行器 runner docker 流水线 pipeline 测试 test 推送前 before push nektos
+keywords: 本地 CI local ci act actions 工作流 workflow 运行器 runner docker 流水线 pipeline 测试 test 推送前 before push nektos 判定 verdict 徽章 badge 备注 notes 逐提交 per-commit
 ---
 
 # 本地 CI
@@ -30,6 +30,19 @@ Gitcito 刻意**不**捆绑 act 或 Docker——一个拖着容器运行时的�
   重点：在提交之前测试，而不是在推送之后。
 - 输出实时流入对话框；**停止**会终止运行。退出码 0 显示**通过**，其余情况
   显示**失败**并附上退出码。
+
+## 图上的逐提交判定
+
+![图上的 Local-CI 判定](../../screenshots/local-ci-verdicts.webp)
+
+一次运行结束后，会把结果钉在它所测试的那个提交上：图中对应的行会出现一个小
+烧瓶，标成**绿色或红色**，让你一眼看出哪些提交已经在本地扛过了 CI。判定以
+git 备注的形式存储在 `refs/notes/gitcito-ci` 下——只存在于你的机器上，默认
+永远不会被推送。
+
+诚实原则：只有当你的工作区是**干净的**时，判定才会被钉上。在未提交的更改上
+跑的一次运行，测试的是任何提交都不包含的内容，所以它只在对话框里显示结果，
+不做任何标记。
 
 ## 局限
 

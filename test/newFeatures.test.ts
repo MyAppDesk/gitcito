@@ -191,6 +191,27 @@ describe('local CI (local-ci playground)', () => {
     expect(typeof s.docker).toBe('boolean')
   })
 
+  it('reads the seeded per-commit verdicts', async () => {
+    const v = await localCiService.verdicts(repoPath('local-ci'))
+    const entries = Object.values(v)
+    expect(entries.length).toBe(2)
+    expect(entries.filter((e) => e.ok).length).toBe(1)
+    expect(entries.every((e) => e.workflow === 'ci.yml')).toBe(true)
+  })
+
+  it('records a verdict only on a clean tree', async () => {
+    const R = cloneFixture('local-ci')
+    const clean = await localCiService.record(R, 'ci.yml', true)
+    expect(clean.recorded).toBe(true)
+    expect((await localCiService.verdicts(R))[clean.sha]?.ok).toBe(true)
+
+    writeFileSync(join(R, 'dirty.txt'), 'wip')
+    const dirty = await localCiService.record(R, 'ci.yml', false)
+    expect(dirty.recorded).toBe(false)
+    // The clean verdict is untouched.
+    expect((await localCiService.verdicts(R))[clean.sha]?.ok).toBe(true)
+  })
+
   it('refuses workflow paths that escape .github/workflows', async () => {
     const sender = { isDestroyed: () => true, send: () => {} } as unknown as Electron.WebContents
     await expect(localCiService.run(repoPath('local-ci'), '../../evil.yml', sender)).rejects.toThrow(/workflow/i)

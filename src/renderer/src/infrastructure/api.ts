@@ -141,7 +141,7 @@ import type {
   RepoWiki,
   WikiProgress
 } from '../../../shared/types'
-import type { LocalCiStatus, LocalCiWorkflow } from '../../../shared/localCi'
+import type { LocalCiStatus, LocalCiVerdict, LocalCiWorkflow } from '../../../shared/localCi'
 import type { EditorSetting, EditorTarget } from '../../../shared/editors'
 
 // Typed adapter over the IPC bridge — the only place that talks to window.api.
@@ -733,6 +733,10 @@ export const localCiApi = {
   run: (repoPath: string, workflowFile: string) =>
     window.api.localci.run(repoPath, workflowFile) as Promise<number | null>,
   cancel: (repoPath: string) => window.api.localci.cancel(repoPath) as Promise<void>,
+  /** Pin a run's verdict to HEAD (clean tree only). */
+  record: (repoPath: string, workflowFile: string, ok: boolean) =>
+    window.api.localci.record(repoPath, workflowFile, ok) as Promise<{ recorded: boolean; sha: string }>,
+  verdicts: (repoPath: string) => window.api.localci.verdicts(repoPath) as Promise<Record<string, LocalCiVerdict>>,
   onData: (cb: (p: { repoPath: string; chunk: string }) => void) => window.api.localci.onData(cb)
 }
 

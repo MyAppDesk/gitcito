@@ -44,18 +44,22 @@ with nothing installed. The work is a stable CLI entry point, not the parsing.
 Branch-from-issue and smart commits against Jira or Linear. Both are what teams
 actually run, and both mean another token and another API surface.
 
+---
+
+## Bigger bets
+
 ### Commit editing across merges
 Editing a commit in place shipped for linear history. The hard half remains:
 a cascade that has to replay **merge commits** (re-merge with the rewritten
 parent, carry conflict resolutions via rerere). Until then, a merge between the
 commit and HEAD simply disables the feature.
 
-### Local CI — per-commit verdicts on the graph
-Running a workflow against the working tree shipped (the act integration).
-The bigger promise remains: run CI against *each commit* and pin ✓/✗ onto the
-graph rows, like hosted CI status but before pushing. That means one worktree
-checkout per commit and real runtime cost — needs a deliberate design, not a
-loop.
+### Local CI — run against a chosen commit or range
+Verdicts now pin to commits (clean-tree runs mark their HEAD ✓/✗ on the graph
+via git notes). What remains is running CI against a commit you *aren't* on:
+a temporary worktree checkout per run, and a "test this range" sweep that walks
+several commits. Real runtime cost per commit — worth building only with an
+explicit budget in the UI, not as an invisible loop.
 
 ### Team features without a backend
 Gitcito has no server and intends to keep it that way, so the GitKraken-style

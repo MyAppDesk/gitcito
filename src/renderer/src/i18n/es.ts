@@ -1804,6 +1804,9 @@ export const es: Dict = {
   'localCi.passed': 'Correcto',
   'localCi.failed': 'Falló (código de salida {code})',
   'localCi.waiting': 'Esperando salida…',
+  'localCi.verdictPass': 'Pasó la CI local ({workflow})',
+  'localCi.verdictFail': 'Falló la CI local ({workflow})',
+  'localCi.notRecorded': 'El árbol de trabajo no estaba limpio — el veredicto se muestra aquí, pero no queda fijado al commit.',
   'commit.editCommit': 'Editar este commit…',
   'commitEdit.title': 'Editar commit',
   'commitEdit.intro':

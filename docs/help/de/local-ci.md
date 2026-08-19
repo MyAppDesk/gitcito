@@ -3,7 +3,7 @@ title: Lokale CI
 category: Sync & viele Repos
 order: 58
 summary: Die GitHub Actions des Repos lokal mit act ausführen — bevor irgendetwas gepusht wird.
-keywords: lokale ci local ci act actions workflow runner docker pipeline testen vor dem push before push nektos
+keywords: lokale ci local ci act actions workflow runner docker pipeline testen vor dem push before push nektos verdict badge notes per-commit urteil notizen pro commit
 ---
 
 # Lokale CI
@@ -34,6 +34,21 @@ installiert, Docker erreichbar.
   vor dem Commit, nicht nach dem Push.
 - Die Ausgabe streamt live in den Dialog; **Stoppen** beendet den Lauf. Exit 0
   zeigt **Bestanden**, alles andere **Fehlgeschlagen** mit dem Code.
+
+## Urteile pro Commit im Graphen
+
+![Local-CI-Urteile im Graphen](../../screenshots/local-ci-verdicts.webp)
+
+Ein abgeschlossener Lauf heftet sein Ergebnis an den Commit, den er getestet
+hat: ein kleiner Kolben markiert die Zeile im Graphen **grün oder rot**, sodass
+du auf einen Blick siehst, welche Commits die CI lokal schon überstanden haben.
+Das Urteil wird als Git-Note unter `refs/notes/gitcito-ci` gespeichert — lokal
+auf deinem Rechner, standardmäßig nie gepusht.
+
+Ehrlichkeitsregel: Das Urteil wird nur angeheftet, wenn dein Arbeitsbaum
+**sauber** war. Ein Lauf über ungecommittete Änderungen hat etwas getestet, das
+kein Commit enthält — er zeigt sein Ergebnis also im Dialog, markiert aber
+nichts.
 
 ## Grenzen
 

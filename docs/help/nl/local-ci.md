@@ -3,7 +3,7 @@ title: Lokale CI
 category: Synchroniseren & meerdere repo's
 order: 58
 summary: Draai de GitHub Actions van de repo lokaal met act — voordat er iets gepusht is.
-keywords: lokale ci local ci act actions workflow runner docker pipeline test testen voor push nektos
+keywords: lokale ci local ci act actions workflow runner docker pipeline test testen voor push nektos verdict badge notes per-commit oordeel notities per commit
 ---
 
 # Lokale CI
@@ -34,6 +34,21 @@ geïnstalleerd, Docker bereikbaar.
   je commit, niet nadat je pusht.
 - De uitvoer streamt live het dialoogvenster in; **Stoppen** beëindigt de run.
   Exitcode 0 toont **Geslaagd**, al het andere **Mislukt** met de code.
+
+## Oordelen per commit op de graaf
+
+![Local-CI-oordelen op de graaf](../../screenshots/local-ci-verdicts.webp)
+
+Een afgeronde run pint zijn resultaat vast aan de commit die hij testte: een
+klein kolfje markeert de rij **groen of rood** in de graaf, zodat je in één
+oogopslag ziet welke commits CI lokaal al hebben overleefd. Het oordeel wordt
+opgeslagen als een git-notitie onder `refs/notes/gitcito-ci` — lokaal op je
+machine, standaard nooit gepusht.
+
+Eerlijkheidsregel: het oordeel wordt alleen vastgepind als je werkboom
+**schoon** was. Een run over niet-gecommitte wijzigingen testte iets dat geen
+enkele commit bevat, dus die toont zijn resultaat in het dialoogvenster maar
+markeert niets.
 
 ## Beperkingen
 

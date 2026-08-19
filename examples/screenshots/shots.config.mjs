@@ -724,6 +724,20 @@ export const shots = [
     }
   },
   {
+    // Local-CI verdicts pinned to commits — seeded git notes make the flask
+    // badges real without act installed. No modal: the graph is the shot.
+    out: 'local-ci-verdicts',
+    repos: ['local-ci'],
+    themes: ['light'],
+    drive: async (page) => {
+      await page.evaluate(() => {
+        const s = window.__shot.settings.getState()
+        s.update((cur) => ({ ...cur, localCiEnabled: true }))
+      })
+      await page.waitForTimeout(1500)
+    }
+  },
+  {
     // Edit any commit — pick the README commit mid-history, edit its file,
     // and run the cascade preview so the shot shows the whole promise.
     out: 'commit-edit',

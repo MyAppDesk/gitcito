@@ -3,7 +3,7 @@ title: Yerel CI
 category: Eşitleme ve çoklu depo
 order: 58
 summary: Deponun GitHub Actions iş akışlarını act ile yerelde çalıştırın — daha hiçbir şey push edilmeden.
-keywords: yerel ci iş akışı çalıştırıcı konteyner boru hattı push öncesi test local ci act actions workflow runner docker pipeline test before push nektos
+keywords: yerel ci iş akışı çalıştırıcı konteyner boru hattı push öncesi test karar rozeti notlar commit başına local ci act actions workflow runner docker pipeline test before push nektos verdict badge notes per-commit
 ---
 
 # Yerel CI
@@ -34,6 +34,21 @@ Docker erişilebilir.
   ettikten sonra değil, commit etmeden önce test edin.
 - Çıktı diyaloğa canlı akar; **Durdur** çalıştırmayı sonlandırır. Çıkış kodu
   0 **Başarılı** gösterir, diğer her şey kodla birlikte **Başarısız**.
+
+## Grafikte commit başına kararlar
+
+![Grafikte Local-CI kararları](../../screenshots/local-ci-verdicts.webp)
+
+Biten bir çalıştırma, sonucunu test ettiği commit'e iliştirir: küçük bir deney
+şişesi grafikteki satırı **yeşil veya kırmızı** işaretler; böylece hangi
+commit'lerin CI'dan yerelde zaten sağ çıktığını bir bakışta görürsünüz. Karar,
+`refs/notes/gitcito-ci` altında bir git notu olarak saklanır — makinenize
+özeldir, varsayılan olarak asla push edilmez.
+
+Dürüstlük kuralı: karar yalnızca çalışma ağacınız **temizken** iliştirilir.
+Commit edilmemiş değişiklikler üzerinde yapılan bir çalıştırma, hiçbir
+commit'in içermediği bir şeyi test etmiştir; bu yüzden sonucunu diyalogda
+gösterir ama hiçbir şeyi işaretlemez.
 
 ## Sınırlar
 

@@ -35,7 +35,23 @@ l'opposition vient d'un renommage ou d'un déplacement.
 | Droite | **Le leur** — le côté qui arrive, étiqueté avec son commit |
 | Milieu | La **sortie** : éditable, numérotée, et c'est elle qui est réellement indexée |
 
-Les trois panneaux se redimensionnent.
+Les trois panneaux se redimensionnent, et l'en-tête de la sortie porte deux
+bascules d'affichage :
+
+| Bascule | Ce qu'elle fait |
+|---|---|
+| **Retour à la ligne** | Coupe les lignes longues dans les panneaux A et B au lieu de les faire défiler. Le panneau de sortie garde une rangée par ligne — ses marqueurs latéraux en dépendent — donc il défile toujours |
+| **Lié** | Fait défiler A, B et la sortie ensemble, verticalement et latéralement. Leurs nombres de lignes diffèrent, donc la position verticale est alignée par proportion |
+
+Le retour à la ligne démarre désactivé, Lié démarre activé, et les deux
+retiennent leur état.
+
+## Se déplacer
+
+Ouvrir un fichier vous amène sur son **premier conflit**, pas en haut du
+fichier. Les flèches ⌃ / ⌄ de l'en-tête de la sortie — ou <kbd>Alt+↑</kbd> /
+<kbd>Alt+↓</kbd> — parcourent les suivants, en faisant défiler les trois
+panneaux jusqu'à chacun.
 
 ## Choisir
 

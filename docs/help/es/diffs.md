@@ -16,7 +16,7 @@ keywords: diff partido split lado a lado side-by-side palabra word level espacio
 | **Por palabras** | Resalta solo los tokens que cambiaron dentro de una línea editada — rojo en la vieja, verde en la nueva |
 | **Ignorar espacios** | Oculta los reindentados para que salga a la superficie el cambio de verdad |
 | **Ajustar** (solo en vista partida) | Pliega las líneas largas dentro de su columna en vez de desplazarlas |
-| **Vinculado** (partido, sin ajuste) | Desplaza las dos mitades a la vez en horizontal — desactivado, cada columna va por su cuenta |
+| **Vinculado** (partido, sin ajuste) | Desplaza las dos mitades a la vez, en vertical y en horizontal — desactivado, cada columna va por su cuenta |
 | <kbd>⌘F</kbd> | Buscar dentro del diff, con salto al siguiente/anterior |
 
 El ajuste viene desactivado: cada línea ocupa una sola fila, así los dos lados
@@ -25,12 +25,13 @@ su propia barra. Actívalo cuando prefieras leer una línea larga a perseguirla 
 cambio, una línea plegada en tres filas deja de quedar enfrente de su
 contraparte. Cada interruptor recuerda su estado entre archivos y sesiones.
 
-Sin ajuste, las dos mitades se desplazan en horizontal **vinculadas** por
-defecto, así la columna 90 de la izquierda queda sobre la 90 de la derecha.
-Desvincúlalas cuando los lados se hayan separado — un bloque indentado frente a
-uno sin indentar, un renombrado que movió cada línea — y quieras dejar cada
-mitad donde está su contenido. El desplazamiento vertical sigue siendo
-compartido en ambos casos; es lo que mantiene las filas enfrentadas.
+Sin ajuste, las dos mitades se desplazan **vinculadas** por defecto — en
+vertical, lo que mantiene las filas enfrentadas, y en horizontal, así la
+columna 90 de la izquierda queda sobre la 90 de la derecha. Desvincúlalas
+cuando los lados se hayan separado — un bloque indentado frente a uno sin
+indentar, un renombrado que movió cada línea — o cuando quieras comparar dos
+regiones distantes del mismo archivo, y deja cada mitad donde está su
+contenido.
 
 ![Diff partido con resaltado por palabras](../../screenshots/split-diff.webp)
 

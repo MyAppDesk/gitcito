@@ -16,7 +16,7 @@ keywords: diff bölünmüş yan yana sözcük düzeyi boşluk görsel önizleme 
 | **Sözcük düzeyi** | Düzenlenmiş bir satırın içinde yalnızca değişen belirteçleri vurgular — eskisinde kırmızı, yenisinde yeşil |
 | **Boşlukları yok say** | Yeniden girintilemeyi gizler, böylece gerçek değişiklik öne çıkar |
 | **Satır kaydırma** (yalnızca bölünmüş görünüm) | Uzun satırları kaydırmak yerine kendi sütununda alt satıra taşır |
-| **Bağlı** (bölünmüş, kaydırma kapalı) | İki yarıyı yatayda birlikte kaydırır — kapalıyken her sütun kendi başına kayar |
+| **Bağlı** (bölünmüş, kaydırma kapalı) | İki yarıyı dikeyde ve yatayda birlikte kaydırır — kapalıyken her sütun kendi başına kayar |
 | <kbd>⌘F</kbd> | Diff içinde arama, sonraki/önceki adımlamasıyla |
 
 Satır kaydırma varsayılan olarak kapalıdır: bir satır tek bir sırada kalır,
@@ -25,12 +25,13 @@ böylece iki taraf sıra sıra karşılaştırılabilir olur ve her yarı kendi
 açın — karşılığında üç sıraya taşan bir satır artık karşılığının tam karşısında
 durmaz. Her düğme durumunu dosyalar ve oturumlar arasında hatırlar.
 
-Satır kaydırma kapalıyken iki yarı varsayılan olarak **bağlı** biçimde yatayda
-kayar; böylece soldaki 90. sütun sağdaki 90. sütunun üstünde durur. Taraflar
-birbirinden uzaklaştıysa — girintili bir blok girintisiz bir bloğun karşısında,
-her satırı kaydıran bir yeniden adlandırma — ve her yarıyı kendi içeriğinin
-olduğu yere bırakmak istiyorsanız bağı kaldırın. Dikey kaydırma her iki durumda
-da ortaktır; satırları karşı karşıya tutan şey odur.
+Satır kaydırma kapalıyken iki yarı varsayılan olarak **bağlı** kayar — dikeyde,
+satırlar karşı karşıya kalsın diye; yatayda, soldaki 90. sütun sağdaki 90.
+sütunun üstünde dursun diye. Taraflar birbirinden uzaklaştığında — girintili
+bir blok girintisiz bir bloğun karşısında, her satırı kaydıran bir yeniden
+adlandırma — ya da aynı dosyanın birbirinden uzak iki bölgesini karşılaştırmak
+istediğinizde bağı kaldırın ve her yarıyı kendi içeriğinin olduğu yerde
+bırakın.
 
 ![Sözcük düzeyinde vurgulamalı bölünmüş diff](../../screenshots/split-diff.webp)
 

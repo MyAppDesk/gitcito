@@ -35,7 +35,23 @@ questo percorso: lo scontro è nato da una rinomina o da uno spostamento.
 | Destra | **Loro** — il lato in arrivo, etichettato con il suo commit |
 | Centro | L'**output**: modificabile, con i numeri di riga, ed è ciò che finisce davvero in stage |
 
-Tutti e tre i pannelli sono ridimensionabili.
+Tutti e tre i pannelli sono ridimensionabili, e l'intestazione dell'output
+porta due interruttori di vista:
+
+| Interruttore | Cosa fa |
+|---|---|
+| **A capo** | Manda a capo le righe lunghe dentro i pannelli A e B invece di scorrerle. Il pannello dell'output mantiene una riga per riga — i suoi marcatori laterali dipendono da questo — quindi scorre sempre |
+| **Collegato** | Fa scorrere A, B e l'output insieme, in verticale e in orizzontale. I loro conteggi di righe differiscono, quindi la posizione verticale viene allineata in proporzione |
+
+A capo parte disattivato, Collegato parte attivato, ed entrambi ricordano il
+proprio stato.
+
+## Muoversi
+
+Aprendo un file atterri sul suo **primo conflitto**, non in cima al file. Le
+frecce ⌃ / ⌄ nell'intestazione dell'output — o <kbd>Alt+↑</kbd> /
+<kbd>Alt+↓</kbd> — passano in rassegna gli altri, facendo scorrere tutti e tre
+i pannelli fino a ciascuno.
 
 ## Scegliere
 

@@ -16,7 +16,7 @@ keywords: diff différence split côte à côte side-by-side mot word level espa
 | **Au niveau du mot** | Ne surligne que les jetons modifiés à l'intérieur d'une ligne éditée — rouge sur l'ancienne, vert sur la nouvelle |
 | **Ignorer les espaces** | Masque les réindentations pour faire remonter le vrai changement |
 | **Retour à la ligne** (vue côte à côte) | Coupe les lignes longues dans leur colonne au lieu de les faire défiler |
-| **Lié** (côte à côte, sans retour à la ligne) | Fait défiler les deux moitiés latéralement ensemble — désactivé, chaque colonne défile seule |
+| **Lié** (côte à côte, sans retour à la ligne) | Fait défiler les deux moitiés ensemble, verticalement et latéralement — désactivé, chaque colonne défile seule |
 | <kbd>⌘F</kbd> | Chercher dans le diff, avec passage au suivant/précédent |
 
 Le retour à la ligne est désactivé par défaut : une ligne tient sur une rangée,
@@ -26,12 +26,13 @@ une longue ligne plutôt que la poursuivre — en échange, une ligne repliée s
 trois rangées ne fait plus face à son homologue. Chaque bouton retient son état
 d'un fichier et d'une session à l'autre.
 
-Sans retour à la ligne, les deux moitiés défilent latéralement **liées** par
-défaut : la colonne 90 à gauche se trouve au-dessus de la colonne 90 à droite.
+Sans retour à la ligne, les deux moitiés défilent **liées** par défaut —
+verticalement, ce qui garde les rangées face à face, et latéralement, si bien
+que la colonne 90 à gauche se trouve au-dessus de la colonne 90 à droite.
 Déliez-les quand les côtés se sont écartés — un bloc indenté face à un bloc qui
-ne l’est pas, un renommage qui a décalé chaque ligne — et que vous voulez poser
-chaque moitié là où est son contenu. Le défilement vertical reste partagé dans
-les deux cas ; c’est lui qui garde les rangées face à face.
+ne l’est pas, un renommage qui a décalé chaque ligne — ou quand vous voulez
+comparer deux régions éloignées du même fichier, et posez chaque moitié là où
+est son contenu.
 
 ![Diff partagé avec surlignage au mot près](../../screenshots/split-diff.webp)
 

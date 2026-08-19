@@ -35,7 +35,21 @@ adlandırmadan ya da taşımadan gelmiştir.
 | Sağ | **Onlarınki** — gelen taraf, commit'iyle etiketli |
 | Orta | **Çıktı**: düzenlenebilir, satır numaralı ve gerçekten hazırlanacak olan içerik |
 
-Üç panel de yeniden boyutlandırılabilir.
+Üç panel de yeniden boyutlandırılabilir ve çıktı başlığı iki görünüm anahtarı
+taşır:
+
+| Anahtar | Ne yapar |
+|---|---|
+| **Satır kaydır** | A ve B panellerindeki uzun satırları kaydırmak yerine alt satıra taşır. Çıktı paneli satır başına tek sıra tutar — yan işaretçileri buna dayanır — bu yüzden her zaman kayar |
+| **Bağlı** | A'yı, B'yi ve çıktıyı birlikte kaydırır; dikeyde ve yatayda. Satır sayıları farklı olduğundan dikey konum oranla eşleştirilir |
+
+Satır kaydır kapalı başlar, Bağlı açık başlar ve ikisi de durumunu hatırlar.
+
+## Gezinmek
+
+Bir dosyayı açmak sizi dosyanın başına değil, **ilk çakışmasına** götürür.
+Çıktı başlığındaki ⌃ / ⌄ okları — ya da <kbd>Alt+↑</kbd> / <kbd>Alt+↓</kbd> —
+kalanlar arasında adım adım ilerleyerek üç paneli de her birine kaydırır.
 
 ## Seçmek
 

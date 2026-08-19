@@ -34,7 +34,22 @@ ou de uma movimentação.
 | Direito | **Deles** — o lado que está chegando, rotulado com o commit dele |
 | Central | A **saída**: editável, com números de linha, e o que de fato vai ser preparado |
 
-Os três painéis são redimensionáveis.
+Os três painéis são redimensionáveis, e o cabeçalho da saída traz duas
+alternâncias de visão:
+
+| Alternância | O que faz |
+|---|---|
+| **Quebrar linha** | Quebra linhas longas dentro dos painéis A e B em vez de rolá-las. O painel de saída mantém uma fileira por linha — os marcadores laterais dele dependem disso — então ele sempre rola |
+| **Vinculado** | Rola A, B e a saída juntos, na vertical e na horizontal. As contagens de linhas deles diferem, então a posição vertical é alinhada por proporção |
+
+Quebrar linha começa desligado, Vinculado começa ligado, e os dois lembram o
+próprio estado.
+
+## Navegando
+
+Abrir um arquivo leva você ao **primeiro conflito** dele, não ao topo do
+arquivo. As setas ⌃ / ⌄ no cabeçalho da saída — ou <kbd>Alt+↑</kbd> /
+<kbd>Alt+↓</kbd> — percorrem os demais, rolando os três painéis até cada um.
 
 ## Escolhendo
 

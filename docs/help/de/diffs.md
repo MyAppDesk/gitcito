@@ -16,7 +16,7 @@ keywords: diff geteilt split side-by-side nebeneinander wortgenau word level whi
 | **Wortgenau** | Hebt nur die geänderten Tokens innerhalb einer bearbeiteten Zeile hervor — rot auf der alten, grün auf der neuen |
 | **Whitespace ignorieren** | Blendet Neu-Einrückungen aus, damit die eigentliche Änderung sichtbar wird |
 | **Umbruch** (nur geteilte Ansicht) | Bricht lange Zeilen in ihrer Spalte um, statt sie zu scrollen |
-| **Verknüpft** (geteilt, ohne Umbruch) | Scrollt beide Hälften seitlich gemeinsam — aus scrollt jede Spalte für sich |
+| **Verknüpft** (geteilt, ohne Umbruch) | Scrollt beide Hälften gemeinsam, vertikal und seitlich — aus scrollt jede Spalte für sich |
 | <kbd>⌘F</kbd> | Suchen innerhalb des Diffs, mit Sprüngen zum nächsten/vorherigen Treffer |
 
 Der Umbruch ist standardmäßig aus: Eine Zeile bleibt eine Zeile, damit beide
@@ -26,12 +26,13 @@ verfolgst — dafür steht eine über drei Zeilen umgebrochene Zeile ihrem
 Gegenstück nicht mehr gegenüber. Jeder Schalter merkt sich seinen Zustand über
 Dateien und Sitzungen hinweg.
 
-Ohne Umbruch scrollen beide Hälften seitlich standardmäßig **verknüpft**, damit
-Spalte 90 links über Spalte 90 rechts steht. Löse die Verknüpfung, wenn die
-Seiten auseinandergelaufen sind — ein eingerückter Block gegen einen nicht
-eingerückten, eine Umbenennung, die jede Zeile verschoben hat — und du jede
-Hälfte dort abstellen willst, wo ihr Inhalt liegt. Der vertikale Scroll bleibt
-in beiden Fällen gemeinsam; er hält die Zeilen einander gegenüber.
+Ohne Umbruch scrollen beide Hälften standardmäßig **verknüpft** — vertikal, was
+die Zeilen einander gegenüber hält, und seitlich, damit Spalte 90 links über
+Spalte 90 rechts steht. Löse die Verknüpfung, wenn die Seiten
+auseinandergelaufen sind — ein eingerückter Block gegen einen nicht
+eingerückten, eine Umbenennung, die jede Zeile verschoben hat — oder wenn du
+zwei weit auseinanderliegende Stellen derselben Datei vergleichen willst, und
+stelle jede Hälfte dort ab, wo ihr Inhalt liegt.
 
 ![Geteilter Diff mit wortgenauer Hervorhebung](../../screenshots/split-diff.webp)
 

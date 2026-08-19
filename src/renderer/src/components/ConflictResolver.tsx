@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Check, ChevronDown, ChevronUp, ExternalLink, GitMerge, History, Minus, Pencil, Plus, RotateCcw, Sparkles, Loader2, X } from 'lucide-react'
+import { Check, ChevronDown, ChevronUp, ExternalLink, GitMerge, History, Link2, Minus, Pencil, Plus, RotateCcw, Sparkles, Loader2, Unlink2, WrapText, X } from 'lucide-react'
 import hljs from 'highlight.js'
 import { gitApi, aiApi, diffToolApi } from '../infrastructure/api'
 import { useSettingsStore } from '../stores/settings'
@@ -94,6 +94,13 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
   // refresh remounts this component, and local state would close it again.
   const whyFile = useUIStore((s) => s.conflictWhy)
   const setWhyFile = useUIStore((s) => s.setConflictWhy)
+  // View toggles, mirroring the diff viewer's habits. Wrap folds long lines
+  // inside the A/B panes (the output keeps one row per line — its gutter and
+  // side tints are aligned by line height and would drift under wrapping).
+  const [wrapOn, setWrapOn] = useState(() => localStorage.getItem('gitcito-conflict-wrap') === 'on')
+  useEffect(() => localStorage.setItem('gitcito-conflict-wrap', wrapOn ? 'on' : 'off'), [wrapOn])
+  const [syncOn, setSyncOn] = useState(() => localStorage.getItem('gitcito-conflict-sync') !== 'off')
+  useEffect(() => localStorage.setItem('gitcito-conflict-sync', syncOn ? 'on' : 'off'), [syncOn])
   const editRef = useRef<HTMLTextAreaElement>(null)
   const highlightRef = useRef<HTMLPreElement>(null)
   const gutterRef = useRef<HTMLDivElement>(null)
@@ -211,12 +218,35 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
     if (rowsRef.current) rowsRef.current.scrollTop = top
   }
 
+  // Keep A, B and the output moving together. Their line counts differ, so the
+  // vertical position is matched by proportion rather than pixel; horizontal is
+  // pixel-for-pixel. The guard stops a mirrored write from echoing back as a
+  // second sync, and goToHunk raises it too so its precise per-hunk positioning
+  // is not immediately overwritten by a proportional mirror.
+  const syncGuard = useRef(false)
+  const syncPanes = (src: HTMLElement): void => {
+    if (syncGuard.current || !syncOn) return
+    syncGuard.current = true
+    for (const el of [oursPaneRef.current, theirsPaneRef.current, editRef.current]) {
+      if (!el || el === src) continue
+      const max = src.scrollHeight - src.clientHeight
+      el.scrollTop = max > 0 ? (src.scrollTop / max) * (el.scrollHeight - el.clientHeight) : 0
+      el.scrollLeft = src.scrollLeft
+    }
+    // The textarea may have been scrolled programmatically above, which fires
+    // its scroll event too late for this frame — realign its layers now.
+    if (editRef.current && src !== editRef.current)
+      syncOutputScroll(editRef.current.scrollTop, editRef.current.scrollLeft)
+    requestAnimationFrame(() => (syncGuard.current = false))
+  }
+
   // Scroll both side panes and the output to a given conflict. Wraps around, so
   // ⌃ on the first conflict lands on the last and ⌄ on the last on the first.
   const goToHunk = (idx: number): void => {
     if (hunks.length === 0) return
     const next = ((idx % hunks.length) + hunks.length) % hunks.length
     setActiveHunk(next)
+    syncGuard.current = true
     for (const pane of [oursPaneRef.current, theirsPaneRef.current]) {
       const el = pane?.querySelector<HTMLElement>(`[data-hunk="${next}"]`)
       if (!pane || !el) continue
@@ -230,7 +260,18 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
       ta.scrollTop = Math.max(0, start * lineHeight - ta.clientHeight / 3)
       syncOutputScroll(ta.scrollTop, ta.scrollLeft)
     }
+    requestAnimationFrame(() => (syncGuard.current = false))
   }
+
+  // Land on the first conflict when a file opens, instead of at the top of the
+  // file — the first decision to make is the first thing on screen.
+  useEffect(() => {
+    if (hunks.length === 0) return
+    const id = requestAnimationFrame(() => goToHunk(0))
+    return () => cancelAnimationFrame(id)
+    // Only when a new set of hunks is loaded — goToHunk is stable enough here.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hunks])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
@@ -435,7 +476,7 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
   const theirsName = ctx?.source || hunks[0].theirsLabel
 
   return (
-    <div className="file-viewer conflict-resolver conflict-editor">
+    <div className={`file-viewer conflict-resolver conflict-editor ${wrapOn ? 'is-wrap' : ''}`}>
       <div className="fv-header">
         {header}
         <span className="fv-chip conflict">
@@ -526,6 +567,7 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
             allPicked={sideFullyPicked(hunks, 'ours', selected)}
             somePicked={sidePartlyPicked(hunks, 'ours', selected)}
             bodyRef={oursPaneRef}
+            onBodyScroll={syncPanes}
             style={{ flex: `${sideRatio} 1 0` }}
             onToggleLine={toggleLine}
             onToggleSide={toggleChunkSide}
@@ -553,6 +595,7 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
             allPicked={sideFullyPicked(hunks, 'theirs', selected)}
             somePicked={sidePartlyPicked(hunks, 'theirs', selected)}
             bodyRef={theirsPaneRef}
+            onBodyScroll={syncPanes}
             style={{ flex: `${1 - sideRatio} 1 0` }}
             onToggleLine={toggleLine}
             onToggleSide={toggleChunkSide}
@@ -592,6 +635,22 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
                 onClick={() => goToHunk(activeHunk + 1)}
               >
                 <ChevronDown size={13} />
+              </button>
+            </div>
+            <div className="conflict-toggles">
+              <button
+                className={`diff-word-toggle ${wrapOn ? 'on' : ''}`}
+                title={t('conflict.wrapTitle')}
+                onClick={() => setWrapOn((v) => !v)}
+              >
+                <WrapText size={12} /> {t('diff.wrap')}
+              </button>
+              <button
+                className={`diff-word-toggle ${syncOn ? 'on' : ''}`}
+                title={t('conflict.syncTitle')}
+                onClick={() => setSyncOn((v) => !v)}
+              >
+                {syncOn ? <Link2 size={12} /> : <Unlink2 size={12} />} {t('diff.linkScroll')}
               </button>
             </div>
             <span className="text-2 conflict-output-count">
@@ -647,7 +706,10 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
               className="conflict-output-editor"
               value={editOutput}
               onChange={(e) => handleEditChange(e.target.value)}
-              onScroll={(e) => syncOutputScroll(e.currentTarget.scrollTop, e.currentTarget.scrollLeft)}
+              onScroll={(e) => {
+                syncOutputScroll(e.currentTarget.scrollTop, e.currentTarget.scrollLeft)
+                syncPanes(e.currentTarget)
+              }}
               spellCheck={false}
               placeholder={t('conflict.outputPlaceholder')}
             />
@@ -673,6 +735,7 @@ function SideFile({
   allPicked,
   somePicked,
   bodyRef,
+  onBodyScroll,
   style,
   onToggleLine,
   onToggleSide,
@@ -692,6 +755,7 @@ function SideFile({
   allPicked: boolean
   somePicked: boolean
   bodyRef: React.RefObject<HTMLDivElement>
+  onBodyScroll: (el: HTMLElement) => void
   style?: React.CSSProperties
   onToggleLine: (hunkIdx: number, side: Side, lineIdx: number) => void
   onToggleSide: (hunk: Hunk, side: Side) => void
@@ -746,7 +810,7 @@ function SideFile({
         </span>
         {commitLabel && <span className="conflict-side-commit">{commitLabel}</span>}
       </div>
-      <div className="conflict-file-body" ref={bodyRef}>
+      <div className="conflict-file-body" ref={bodyRef} onScroll={(e) => onBodyScroll(e.currentTarget)}>
         <pre className="conflict-code hljs">
           {lines.map((line, i) => {
             const meta = lineMeta.get(i)

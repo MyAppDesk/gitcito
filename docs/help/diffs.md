@@ -16,7 +16,7 @@ keywords: diff split side-by-side word level whitespace image diff preview markd
 | **Word-level** | Highlights just the changed tokens inside an edited line — red on the old, green on the new |
 | **Ignore whitespace** | Hides reindentation so the real change surfaces |
 | **Wrap** (split only) | Folds long lines inside their column instead of scrolling them |
-| **Linked** (split, wrap off) | Scrolls both halves sideways together — off, each column scrolls on its own |
+| **Linked** (split, wrap off) | Scrolls both halves together, vertically and sideways — off, each column scrolls on its own |
 | <kbd>⌘F</kbd> | Find inside the diff, with next/previous stepping |
 
 Wrap is off by default, so one line stays on one row and the two sides remain
@@ -25,12 +25,12 @@ it on when you would rather read a long line than chase it — the cost is that 
 line folding over three rows on one side no longer sits opposite its
 counterpart. Every toggle remembers its state across files and sessions.
 
-With wrap off the two halves scroll sideways **linked** by default, so column 90
-on the left sits above column 90 on the right. Unlink them when the sides have
-drifted apart — an indented block against an unindented one, a rename that
-shifted every line — and you want to park each half where its own content is.
-The vertical scroll stays shared either way; that is what keeps the rows facing
-each other.
+With wrap off the two halves scroll **linked** by default — vertically, which
+keeps the rows facing each other, and sideways, so column 90 on the left sits
+above column 90 on the right. Unlink them when the sides have drifted apart —
+an indented block against an unindented one, a rename that shifted every line —
+or when you want to compare two distant regions of the same file, and park each
+half where its own content is.
 
 ![Split diff with word-level highlighting](../screenshots/split-diff.webp)
 

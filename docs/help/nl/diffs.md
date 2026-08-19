@@ -16,7 +16,7 @@ keywords: diff split side-by-side gesplitst woordniveau word level witruimte whi
 | **Woordniveau** | Markeert alleen de gewijzigde tokens binnen een bewerkte regel — rood op de oude, groen op de nieuwe |
 | **Witruimte negeren** | Verbergt herinspringen zodat de echte wijziging bovendrijft |
 | **Terugloop** (alleen gesplitste weergave) | Laat lange regels teruglopen binnen hun kolom in plaats van te scrollen |
-| **Gekoppeld** (gesplitst, zonder terugloop) | Scrolt beide helften zijwaarts samen — uit scrollt elke kolom apart |
+| **Gekoppeld** (gesplitst, zonder terugloop) | Scrolt beide helften samen, verticaal en zijwaarts — uit scrolt elke kolom apart |
 | <kbd>⌘F</kbd> | Zoeken binnen de diff, met stappen naar volgende/vorige |
 
 Terugloop staat standaard uit: één regel blijft één rij, zodat beide kanten rij
@@ -26,12 +26,13 @@ is dat een regel die over drie rijen terugloopt niet meer tegenover zijn
 tegenhanger staat. Elke schakelaar onthoudt zijn stand over bestanden en
 sessies heen.
 
-Zonder terugloop scrollen beide helften standaard **gekoppeld** zijwaarts, zodat
-kolom 90 links boven kolom 90 rechts staat. Ontkoppel ze wanneer de kanten uit
-elkaar zijn gelopen — een ingesprongen blok tegenover een niet ingesprongen
-blok, een hernoeming die elke regel verschoof — en je elke helft wilt parkeren
-waar haar eigen inhoud staat. Het verticaal scrollen blijft in beide gevallen
-gedeeld; dat houdt de rijen tegenover elkaar.
+Zonder terugloop scrollen de twee helften standaard **gekoppeld** — verticaal,
+wat de rijen tegenover elkaar houdt, en zijwaarts, zodat kolom 90 links boven
+kolom 90 rechts staat. Ontkoppel ze wanneer de kanten uit elkaar zijn gelopen —
+een ingesprongen blok tegenover een niet ingesprongen blok, een hernoeming die
+elke regel verschoof — of wanneer je twee ver uiteenliggende delen van
+hetzelfde bestand wilt vergelijken, en parkeer elke helft waar haar eigen
+inhoud staat.
 
 ![Gesplitste diff met markering op woordniveau](../../screenshots/split-diff.webp)
 

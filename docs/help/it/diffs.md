@@ -16,7 +16,7 @@ keywords: diff split affiancato side-by-side parola whitespace spazi immagine an
 | **A livello di parola** | Evidenzia solo i token cambiati dentro una riga modificata — rosso sul vecchio, verde sul nuovo |
 | **Ignora gli spazi** | Nasconde le reindentazioni così emerge la modifica vera |
 | **A capo** (solo vista affiancata) | Manda a capo le righe lunghe dentro la loro colonna invece di scorrerle |
-| **Collegato** (affiancata, senza a capo) | Fa scorrere lateralmente le due metà insieme — disattivato, ogni colonna scorre per conto suo |
+| **Collegato** (affiancata, senza a capo) | Fa scorrere le due metà insieme, in verticale e in orizzontale — disattivato, ogni colonna scorre per conto suo |
 | <kbd>⌘F</kbd> | Cerca dentro il diff, con avanti/indietro |
 
 L'andata a capo è disattivata: una riga resta su una riga, così i due lati
@@ -26,12 +26,13 @@ inseguirla — in cambio, una riga ripiegata su tre righe non sta più di fronte
 alla sua controparte. Ogni interruttore ricorda il proprio stato tra file e
 sessioni.
 
-Senza andata a capo le due metà scorrono lateralmente **collegate** per
-impostazione predefinita, così la colonna 90 a sinistra sta sopra la 90 a
-destra. Scollegale quando i lati si sono allontanati — un blocco indentato
-contro uno non indentato, una rinomina che ha spostato ogni riga — e vuoi
-lasciare ogni metà dov'è il suo contenuto. Lo scorrimento verticale resta
-condiviso in entrambi i casi; è ciò che tiene le righe una di fronte all'altra.
+Senza andata a capo le due metà scorrono **collegate** per impostazione
+predefinita — in verticale, il che tiene le righe una di fronte all'altra, e in
+orizzontale, così la colonna 90 a sinistra sta sopra la 90 a destra. Scollegale
+quando i lati si sono allontanati — un blocco indentato contro uno non
+indentato, una rinomina che ha spostato ogni riga — o quando vuoi confrontare
+due regioni distanti dello stesso file, e lascia ogni metà dov'è il suo
+contenuto.
 
 ![Diff affiancato con evidenziazione a livello di parola](../../screenshots/split-diff.webp)
 

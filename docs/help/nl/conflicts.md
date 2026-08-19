@@ -35,7 +35,23 @@ hernoeming of een verplaatsing.
 | Rechts | **Theirs** — de kant die binnenkomt, gelabeld met zijn commit |
 | Midden | De **uitvoer**: bewerkbaar, met regelnummers, en wat er daadwerkelijk gestaged wordt |
 
-Alle drie de panelen zijn in grootte aan te passen.
+Alle drie de panelen zijn in grootte aan te passen, en de kop van de uitvoer
+draagt twee weergaveschakelaars:
+
+| Schakelaar | Wat het doet |
+|---|---|
+| **Terugloop** | Laat lange regels teruglopen binnen de panelen A en B in plaats van ze te scrollen. Het uitvoerpaneel houdt één rij per regel — zijn zijmarkeringen hangen daarvan af — dus dat scrolt altijd |
+| **Gekoppeld** | Scrolt A, B en de uitvoer samen, verticaal en zijwaarts. Hun regelaantallen verschillen, dus de verticale positie wordt naar verhouding gelijkgehouden |
+
+Terugloop staat aanvankelijk uit, Gekoppeld aanvankelijk aan, en beide
+onthouden hun stand.
+
+## Navigeren
+
+Een bestand openen zet je op zijn **eerste conflict**, niet bovenaan het
+bestand. De pijlen ⌃ / ⌄ in de kop van de uitvoer — of <kbd>Alt+↑</kbd> /
+<kbd>Alt+↓</kbd> — stappen door de rest en scrollen alle drie de panelen naar
+elk conflict.
 
 ## Kiezen
 

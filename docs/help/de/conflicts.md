@@ -35,7 +35,22 @@ Kollision kam von einer Umbenennung oder einer Verschiebung.
 | Rechts | **Theirs** — die hereinkommende Seite, beschriftet mit ihrem Commit |
 | Mitte | Das **Ergebnis**: editierbar, mit Zeilennummern, und das, was tatsächlich gestaged wird |
 
-Alle drei Fenster lassen sich in der Größe verändern.
+Alle drei Fenster lassen sich in der Größe verändern, und die Kopfzeile des
+Ergebnisses trägt zwei Ansichtsschalter:
+
+| Schalter | Was er tut |
+|---|---|
+| **Umbruch** | Bricht lange Zeilen in den Fenstern A und B um, statt sie zu scrollen. Das Ergebnisfenster behält eine Zeile pro Zeile — seine Seitenmarker hängen davon ab — und scrollt deshalb immer |
+| **Verknüpft** | Scrollt A, B und das Ergebnis gemeinsam, vertikal und seitlich. Ihre Zeilenzahlen unterscheiden sich, deshalb wird die vertikale Position proportional angeglichen |
+
+Umbruch startet aus, Verknüpft startet an, und beide merken sich ihren Zustand.
+
+## Sich zurechtfinden
+
+Beim Öffnen einer Datei landest du auf ihrem **ersten Konflikt**, nicht am
+Anfang der Datei. Die Pfeile ⌃ / ⌄ in der Kopfzeile des Ergebnisses — oder
+<kbd>Alt+↑</kbd> / <kbd>Alt+↓</kbd> — führen durch die übrigen und scrollen
+dabei alle drei Fenster zu jedem einzelnen.
 
 ## Auswählen
 

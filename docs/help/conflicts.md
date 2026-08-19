@@ -34,7 +34,21 @@ a change to this exact path — the clash came from a rename or a move.
 | Right | **Theirs** — the side coming in, labelled with its commit |
 | Middle | The **output**: editable, with line numbers, and what actually gets staged |
 
-All three panes resize.
+All three panes resize, and the output header carries two view toggles:
+
+| Toggle | What it does |
+|---|---|
+| **Wrap** | Folds long lines inside the A and B panes instead of scrolling them. The output pane keeps one row per line — its side markers depend on that — so it always scrolls |
+| **Linked** | Scrolls A, B and the output together, vertically and sideways. Their line counts differ, so the vertical position is matched by proportion |
+
+Wrap starts off, Linked starts on, and both remember their state.
+
+## Getting around
+
+Opening a file lands you on its **first conflict**, not at the top of the file.
+The ⌃ / ⌄ arrows in the output header — or <kbd>Alt+↑</kbd> /
+<kbd>Alt+↓</kbd> — step through the rest, scrolling all three panes to each
+one.
 
 ## Picking
 

@@ -209,9 +209,10 @@ export function DiffViewer({
   const [wrapOn, setWrapOn] = useState(() => localStorage.getItem('gitcito-diff-wrap') === 'on')
   useEffect(() => localStorage.setItem('gitcito-diff-wrap', wrapOn ? 'on' : 'off'), [wrapOn])
 
-  // Sideways scrolling with wrap off: each column on its own, or the two locked
-  // together. Locked is the default — the sides are worth comparing at the same
-  // column, and one that drifts is the reason to look away from a split view.
+  // Scrolling with wrap off: each column fully on its own, or the two locked
+  // together both ways — vertically and sideways. Locked is the default: the
+  // sides are worth comparing at the same row and column, and one that drifts
+  // is the reason to look away from a split view.
   const [linkScroll, setLinkScroll] = useState(() => localStorage.getItem('gitcito-diff-link-scroll') !== 'off')
   useEffect(() => localStorage.setItem('gitcito-diff-link-scroll', linkScroll ? 'on' : 'off'), [linkScroll])
 
@@ -256,12 +257,14 @@ export function DiffViewer({
   const syncingScroll = useRef(false)
   const syncScroll = (from: React.RefObject<HTMLDivElement>, to: React.RefObject<HTMLDivElement>): void => {
     if (syncingScroll.current || !from.current || !to.current) return
-    const sameTop = to.current.scrollTop === from.current.scrollTop
+    const sameTop = !linkScroll || to.current.scrollTop === from.current.scrollTop
     const sameLeft = !linkScroll || to.current.scrollLeft === from.current.scrollLeft
     if (sameTop && sameLeft) return
     syncingScroll.current = true
-    to.current.scrollTop = from.current.scrollTop
-    if (linkScroll) to.current.scrollLeft = from.current.scrollLeft
+    if (linkScroll) {
+      to.current.scrollTop = from.current.scrollTop
+      to.current.scrollLeft = from.current.scrollLeft
+    }
     requestAnimationFrame(() => (syncingScroll.current = false))
   }
 
@@ -386,7 +389,7 @@ export function DiffViewer({
             <WrapText size={12} /> {t('diff.wrap')}
           </button>
         )}
-        {/* Only means anything when there is sideways scrolling to link. */}
+        {/* Only means anything when each column has its own scroller. */}
         {splitView && !wrapOn && (
           <button
             className={`diff-word-toggle ${linkScroll ? 'on' : ''}`}

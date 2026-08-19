@@ -35,7 +35,23 @@ nazwy albo przeniesienia.
 | Prawy | **Ich** — strona, która przychodzi, opisana swoim commitem |
 | Środkowy | **Wynik**: edytowalny, z numerami linii, i to on faktycznie trafia do przechowalni |
 
-Wszystkie trzy panele da się rozsuwać.
+Wszystkie trzy panele da się rozsuwać, a nagłówek wyniku niesie dwa
+przełączniki widoku:
+
+| Przełącznik | Co robi |
+|---|---|
+| **Zawijaj** | Zawija długie wiersze w panelach A i B zamiast je przewijać. Panel wyniku trzyma jeden rząd na wiersz — od tego zależą jego boczne znaczniki — więc zawsze się przewija |
+| **Powiązane** | Przewija A, B i wynik razem, w pionie i w poziomie. Ich liczby wierszy się różnią, więc pozycja pionowa jest dopasowywana proporcjonalnie |
+
+Zawijaj na starcie jest wyłączone, Powiązane — włączone, a oba przełączniki
+pamiętają swój stan.
+
+## Poruszanie się
+
+Otwarcie pliku ląduje na jego **pierwszym konflikcie**, a nie na początku
+pliku. Strzałki ⌃ / ⌄ w nagłówku wyniku — albo <kbd>Alt+↑</kbd> /
+<kbd>Alt+↓</kbd> — przechodzą przez resztę, przewijając wszystkie trzy panele
+do każdego z nich.
 
 ## Wybieranie
 

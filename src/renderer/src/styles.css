@@ -7513,6 +7513,19 @@ textarea:focus {
   padding: 0 6px 0 0;
 }
 
+/* Wrap toggle: long lines fold inside each side pane instead of scrolling
+   sideways. The output pane is exempt — its gutter and side tints assume one
+   row per line and would drift out of alignment under wrapping. */
+.conflict-editor.is-wrap .conflict-code {
+  width: auto;
+}
+.conflict-editor.is-wrap .conflict-code-line {
+  white-space: pre-wrap;
+}
+.conflict-editor.is-wrap .conflict-code-text {
+  overflow-wrap: anywhere;
+}
+
 /* Allow normal text selection + copy inside the conflict viewers */
 .conflict-code,
 .conflict-code-text {
@@ -7672,6 +7685,21 @@ textarea:focus {
   text-transform: uppercase;
   color: var(--text-2);
   flex-shrink: 0;
+}
+
+/* View toggles in the output header — same chips as the diff viewer, minus
+   the header's uppercase styling and the chip's own sticky/float placement. */
+.conflict-toggles {
+  display: inline-flex;
+  gap: 6px;
+}
+.conflict-toggles .diff-word-toggle {
+  position: static;
+  float: none;
+  margin: 0;
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 500;
 }
 
 .conflict-output-editor {

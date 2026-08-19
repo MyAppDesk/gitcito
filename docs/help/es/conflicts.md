@@ -35,7 +35,23 @@ de un movimiento.
 | Derecha | **Theirs** — el lado que entra, etiquetado con su commit |
 | Centro | La **salida**: editable, con números de línea, y lo que realmente se prepara |
 
-Los tres paneles se redimensionan.
+Los tres paneles se redimensionan, y la cabecera de la salida lleva dos
+interruptores de vista:
+
+| Interruptor | Qué hace |
+|---|---|
+| **Ajustar** | Pliega las líneas largas dentro de los paneles A y B en vez de desplazarlas. El panel de salida mantiene una fila por línea — sus marcadores laterales dependen de eso — así que siempre se desplaza |
+| **Vinculado** | Desplaza A, B y la salida a la vez, en vertical y en horizontal. Sus recuentos de líneas difieren, así que la posición vertical se iguala por proporción |
+
+Ajustar empieza desactivado, Vinculado empieza activado, y ambos recuerdan su
+estado.
+
+## Moverse
+
+Al abrir un archivo aterrizas en su **primer conflicto**, no al principio del
+archivo. Las flechas ⌃ / ⌄ de la cabecera de la salida — o <kbd>Alt+↑</kbd> /
+<kbd>Alt+↓</kbd> — recorren el resto, desplazando los tres paneles hasta cada
+uno.
 
 ## Elegir
 

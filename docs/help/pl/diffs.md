@@ -16,7 +16,7 @@ keywords: diff widok dzielony obok siebie słowa białe znaki obraz podgląd mar
 | **Na poziomie słów** | Podświetla tylko zmienione tokeny wewnątrz edytowanej linii — na czerwono w starej, na zielono w nowej |
 | **Ignoruj białe znaki** | Ukrywa zmiany wcięć, żeby na wierzch wypłynęła prawdziwa zmiana |
 | **Zawijanie** (tylko widok podzielony) | Zawija długie wiersze w ich kolumnie zamiast je przewijać |
-| **Powiązane** (podzielony, bez zawijania) | Przewija obie połowy w poziomie razem — wyłączone, każda kolumna osobno |
+| **Powiązane** (podzielony, bez zawijania) | Przewija obie połowy razem, w pionie i w poziomie — wyłączone, każda kolumna osobno |
 | <kbd>⌘F</kbd> | Szukaj wewnątrz diffa, z przechodzeniem do następnego/poprzedniego |
 
 Zawijanie jest domyślnie wyłączone: jeden wiersz zajmuje jeden rząd, więc obie
@@ -26,12 +26,12 @@ gonić — kosztem tego, że wiersz zawinięty na trzy rzędy nie stoi już napr
 swojego odpowiednika. Każdy przełącznik pamięta swój stan między plikami i
 sesjami.
 
-Bez zawijania obie połowy przewijają się w poziomie domyślnie **powiązane**, więc
-kolumna 90 po lewej stoi nad kolumną 90 po prawej. Rozłącz je, gdy strony się
-rozjechały — blok z wcięciem naprzeciw bloku bez wcięcia, zmiana nazwy, która
-przesunęła każdy wiersz — i chcesz zaparkować każdą połowę tam, gdzie jest jej
-treść. Przewijanie w pionie pozostaje wspólne w obu przypadkach; to ono trzyma
-wiersze naprzeciw siebie.
+Bez zawijania obie połowy przewijają się domyślnie **powiązane** — w pionie, co
+trzyma wiersze naprzeciw siebie, i w poziomie, więc kolumna 90 po lewej stoi
+nad kolumną 90 po prawej. Rozłącz je, gdy strony się rozjechały — blok z
+wcięciem naprzeciw bloku bez wcięcia, zmiana nazwy, która przesunęła każdy
+wiersz — albo gdy chcesz porównać dwa odległe fragmenty tego samego pliku, i
+zaparkuj każdą połowę tam, gdzie jest jej treść.
 
 ![Diff dzielony z podświetlaniem na poziomie słów](../../screenshots/split-diff.webp)
 

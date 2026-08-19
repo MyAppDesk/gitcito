@@ -2203,6 +2203,8 @@ textarea:focus {
 .ref-badge .ref-ic {
   display: inline-flex;
   opacity: 0.8;
+  /* Icons keep their size no matter how tight the badge gets — only the text shrinks */
+  flex-shrink: 0;
 }
 
 /* Left ref gutter — branch/tag labels next to the graph */

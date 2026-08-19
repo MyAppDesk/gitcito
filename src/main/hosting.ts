@@ -1,5 +1,6 @@
 import { ipcMain, shell } from 'electron'
 import { apiToken, forgetCredential, isJwt, type GitCredential } from './credentials'
+import { mergeStackSection } from '../shared/stackPr'
 import type {
   CiJob,
   CiState,
@@ -1023,6 +1024,30 @@ async function applyPrMeta(
   await Promise.all(tasks)
 }
 
+/**
+ * Mutate an open PR (GitHub only): retarget its base, retitle, or maintain the
+ * marked stack-navigation section in its body. `stackSection` merges into the
+ * live body server-side (one GET) so a user's own description edits survive.
+ */
+async function updatePullRequest(
+  remoteUrl: string,
+  tokens: { github?: string },
+  number: number,
+  patch: { base?: string; title?: string; stackSection?: string }
+): Promise<void> {
+  const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
+  const api = `https://api.github.com/repos/${owner}/${repo}`
+  const body: { base?: string; title?: string; body?: string } = {}
+  if (patch.base) body.base = patch.base
+  if (patch.title) body.title = patch.title
+  if (patch.stackSection !== undefined) {
+    const current = await ghJson<{ body: string | null }>(`${api}/pulls/${number}`, token)
+    body.body = mergeStackSection(current.body ?? '', patch.stackSection)
+  }
+  if (!Object.keys(body).length) return
+  await ghJson(`${api}/pulls/${number}`, token, { method: 'PATCH', body: JSON.stringify(body) })
+}
+
 async function listRepositories(provider: RepoHost, token: string, org?: string): Promise<RemoteRepo[]> {
   const auth = await tokenForProvider(provider, token, org)
   if (!auth) throw noCredential(provider, providerBaseUrl(provider, org))
@@ -1604,6 +1629,16 @@ export function registerHostingHandlers(): void {
     'hosting:prMerge',
     (_e, remoteUrl: string, tokens: { github?: string }, number: number, method: PrMergeMethod) =>
       mergePr(remoteUrl, tokens, number, method)
+  )
+  ipcMain.handle(
+    'hosting:updatePR',
+    (
+      _e,
+      remoteUrl: string,
+      tokens: { github?: string },
+      number: number,
+      patch: { base?: string; title?: string; stackSection?: string }
+    ) => updatePullRequest(remoteUrl, tokens, number, patch)
   )
   ipcMain.handle('hosting:listNotifications', (_e, token: string, all?: boolean) =>
     listNotifications(token, all)

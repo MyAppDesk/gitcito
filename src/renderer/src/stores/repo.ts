@@ -31,6 +31,7 @@ import type {
   MergeOptions
 } from '../../../shared/types'
 import { gitApi, hostingApi } from '../infrastructure/api'
+import { planStackSubmit, buildStackSection } from '../../../shared/stackPr'
 import { useUIStore } from './ui'
 import { useSettingsStore } from './settings'
 import { isSecretFile } from '../lib/secrets'
@@ -955,6 +956,81 @@ export const repoActions = {
 
   stackRestack: (path: string, leaf: string) =>
     useRepoStore.getState().run(path, interp(t('act.restacked'), { leaf }), () => gitApi.stackRestack(path, leaf)),
+
+  /** Submit the whole stack as chained PRs (GitHub only): push every level with
+   *  a lease, create missing PRs with the right bases, retarget any that point
+   *  at the wrong base, then write the stack-navigation section into every PR
+   *  body. Idempotent — the button is safe to press after every restack. */
+  submitStack: (path: string) =>
+    useRepoStore.getState().run(
+      path,
+      t('act.stackSubmitted'),
+      async () => {
+        const state = useRepoStore.getState()
+        const repo = state.repos[path]
+        const origin = repo?.remotes.find((r) => r.name === 'origin') ?? repo?.remotes[0]
+        if (!origin) throw new Error(t('stack.noRemote'))
+        const stack = await gitApi.stackInfo(path)
+        if (!stack.branches.length) throw new Error(t('stack.empty'))
+
+        await state.refreshPRs(path, { silent: true })
+        const fresh = useRepoStore.getState().repos[path]
+        if (fresh?.prProvider && fresh.prProvider !== 'github') throw new Error(t('stack.githubOnly'))
+
+        const profile = useSettingsStore.getState().activeProfile()
+        const tokens = { github: profile.githubToken || undefined }
+
+        // Every level pushed with a lease: restacked branches need the force,
+        // fresh ones tolerate it.
+        for (const b of stack.branches) await gitApi.push(path, b.name, { force: true })
+
+        const trunk =
+          stack.trunk ||
+          fresh?.branches.locals.find((l) => /^(main|master)$/.test(l.name))?.name ||
+          'main'
+        const openPrs = (fresh?.prs ?? []).map((p) => ({
+          id: p.id,
+          sourceBranch: p.sourceBranch,
+          targetBranch: p.targetBranch,
+          url: p.url
+        }))
+        const plan = planStackSubmit(stack, openPrs, trunk)
+
+        const numbered: { branch: string; number: number }[] = []
+        for (const a of plan) {
+          if (a.action === 'create') {
+            // Title/body from the level's own commits — oldest subject names
+            // the PR, the list becomes the description.
+            const cmp = await gitApi.compareBranches(path, a.branch, a.base).catch(() => null)
+            const oldest = cmp?.aheadCommits.at(-1)
+            const res = await hostingApi.createPR(origin.url, tokens, {
+              title: oldest?.subject || a.branch,
+              body: (cmp?.aheadCommits ?? []).map((c) => `- ${c.subject}`).join('\n'),
+              source: a.branch,
+              target: a.base,
+              draft: false
+            })
+            numbered.push({ branch: a.branch, number: res.number })
+          } else {
+            if (a.action === 'retarget') await hostingApi.updatePR(origin.url, tokens, a.number!, { base: a.base })
+            numbered.push({ branch: a.branch, number: a.number! })
+          }
+        }
+
+        // Second pass, once every number is known: the navigation section,
+        // with the "you are here" pointer personalised per PR.
+        for (const n of numbered) {
+          await hostingApi.updatePR(origin.url, tokens, n.number, {
+            stackSection: buildStackSection(numbered, n.number, trunk)
+          })
+        }
+        await useRepoStore.getState().refreshPRs(path, { silent: true })
+      },
+      undefined,
+      'push',
+      undefined,
+      ['branches', 'status']
+    ),
 
   addRemote: (path: string, name: string, url: string, pushUrl?: string) =>
     useRepoStore.getState().run(path, interp(t('act.addedRemote'), { name }), async () => {

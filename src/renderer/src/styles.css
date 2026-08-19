@@ -13148,6 +13148,22 @@ button.insights-row:hover { background: var(--bg-2); }
 .snapshot-file-path { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .snapshot-diff { flex: 1; min-height: 0; overflow: auto; border: 1px solid var(--border-soft); border-radius: 8px; }
 
+/* ─── Stacked PRs ──────────────────────────────────────────────────────── */
+.stack-pr-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  background: color-mix(in srgb, var(--accent, #6366f1) 14%, transparent);
+  color: var(--accent, #6366f1);
+}
+.stack-pr-chip:hover { background: color-mix(in srgb, var(--accent, #6366f1) 24%, transparent); }
+
 /* ─── Teammate radar ───────────────────────────────────────────────────── */
 .teamradar-meta { display: block; font-size: 11px; color: var(--text-2); margin-top: 1px; }
 .teamradar-overlap {

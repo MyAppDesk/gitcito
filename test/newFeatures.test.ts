@@ -2,7 +2,7 @@ import { describe, it, expect, afterAll, beforeAll } from 'vitest'
 import { writeFileSync, readFileSync, existsSync, mkdtempSync, rmSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { join, dirname } from 'node:path'
 import { gitService } from '../src/main/git'
 import { repoPath } from './helpers'
 import { cloneFixture, cleanupFixtures } from './fixtures'
@@ -173,6 +173,25 @@ describe('WIP snapshots (snapshots playground)', () => {
     const content = readFileSync(join(R, 'draft.md'), 'utf-8')
     expect(content).toContain('section one')
     expect(content).not.toContain('section two')
+  })
+})
+
+describe('stacked-PR autopilot plumbing (stacked-branches playground)', () => {
+  it('pushes a non-current stack level to a remote without checking it out', async () => {
+    const R = cloneFixture('stacked-branches') // checked out on feature/ui
+    const bare = join(mkdtempSync(join(tmpdir(), 'gitcito-stack-origin-')), 'origin.git')
+    execFileSync('git', ['init', '-q', '--bare', bare])
+    execFileSync('git', ['-C', R, 'remote', 'add', 'origin', bare])
+    try {
+      await gitService.push(R, 'feature/api', { force: true })
+      const pushed = execFileSync('git', ['-C', bare, 'rev-parse', 'refs/heads/feature/api']).toString().trim()
+      const local = execFileSync('git', ['-C', R, 'rev-parse', 'feature/api']).toString().trim()
+      expect(pushed).toBe(local)
+      // Still on the leaf — the push never touched the working tree.
+      expect((await gitService.open(R)).current).toBe('feature/ui')
+    } finally {
+      rmSync(dirname(bare), { recursive: true, force: true })
+    }
   })
 })
 

@@ -207,6 +207,7 @@ interface PreloadApi {
     setIssueState(remoteUrl: string, tokens: unknown, number: number, state: string): Promise<unknown>
     createIssue(remoteUrl: string, tokens: unknown, opts: unknown): Promise<unknown>
     applyPrMeta(remoteUrl: string, tokens: unknown, number: number, meta: unknown): Promise<unknown>
+    updatePR(remoteUrl: string, tokens: unknown, number: number, patch: unknown): Promise<unknown>
     listMilestones(remoteUrl: string, tokens: unknown): Promise<unknown>
     milestoneIssues(remoteUrl: string, tokens: unknown, number: number): Promise<unknown>
   }

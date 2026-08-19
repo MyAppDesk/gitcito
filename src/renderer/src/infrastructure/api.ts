@@ -804,6 +804,12 @@ export const hostingApi = {
     number: number,
     meta: { reviewers?: string[]; labels?: string[]; assignees?: string[] }
   ) => window.api.hosting.applyPrMeta(remoteUrl, tokens, number, meta) as Promise<void>,
+  updatePR: (
+    remoteUrl: string,
+    tokens: { github?: string },
+    number: number,
+    patch: { base?: string; title?: string; stackSection?: string }
+  ) => window.api.hosting.updatePR(remoteUrl, tokens, number, patch) as Promise<void>,
   listMilestones: (remoteUrl: string, tokens: { github?: string }) =>
     window.api.hosting.listMilestones(remoteUrl, tokens) as Promise<{
       provider: HostingProvider

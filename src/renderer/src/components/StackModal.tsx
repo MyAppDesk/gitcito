@@ -12,6 +12,7 @@ export function StackModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
   const repo = useRepoStore((s) => s.repos[repoPath])
   const [info, setInfo] = useState<StackInfo | null>(null)
   const [loading, setLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
 
   const reload = useCallback(async (): Promise<void> => {
     setLoading(true)
@@ -60,6 +61,18 @@ export function StackModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
   const anyRestack = branches.some((b) => b.needsRestack)
   // Display top (leaf) → bottom (trunk).
   const display = branches.slice().reverse()
+  const prFor = (branch: string): { id: number; url: string } | undefined =>
+    repo?.prs.find((p) => p.sourceBranch === branch)
+
+  const submitStack = async (): Promise<void> => {
+    setSubmitting(true)
+    try {
+      await repoActions.submitStack(repoPath)
+    } finally {
+      setSubmitting(false)
+      await reload()
+    }
+  }
 
   return (
     <div className="stack-modal">
@@ -81,6 +94,14 @@ export function StackModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
         >
           <RefreshCw size={13} /> {t('stack.restack')}
         </button>
+        <button
+          className="btn primary small"
+          onClick={() => void submitStack()}
+          disabled={submitting || branches.length === 0}
+          title={t('stack.submitHint')}
+        >
+          <GitPullRequest size={13} className={submitting ? 'spin' : undefined} /> {t('stack.submit')}
+        </button>
         <button className="btn ghost small" onClick={() => void reload()} style={{ marginLeft: 'auto' }}>
           <RefreshCw size={13} className={loading ? 'spin' : undefined} /> {t('stack.refresh')}
         </button>
@@ -88,7 +109,7 @@ export function StackModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
 
       {branches.length === 0 ? (
         <p className="settings-hint">
-          {loading ? 'Loading…' : t('stack.empty')}
+          {loading ? t('stack.loading') : t('stack.empty')}
         </p>
       ) : (
         <div className="stack-list">
@@ -102,8 +123,17 @@ export function StackModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
                   <span className="stack-node-name">{b.name}</span>
                   {b.isCurrent && <span className="stack-badge current">{t('stack.current')}</span>}
                   {b.needsRestack && <span className="stack-badge warn">{t('stack.needsRestack')}</span>}
+                  {prFor(b.name) && (
+                    <button
+                      className="stack-pr-chip"
+                      title={prFor(b.name)!.url}
+                      onClick={() => void window.api.openExternal(prFor(b.name)!.url)}
+                    >
+                      <GitPullRequest size={11} /> #{prFor(b.name)!.id}
+                    </button>
+                  )}
                   <span className="stack-node-ahead">
-                    {b.ahead} commit{b.ahead === 1 ? '' : 's'}
+                    {b.ahead} {b.ahead === 1 ? t('stack.commit') : t('stack.commits')}
                   </span>
                 </div>
                 <div className="stack-node-actions">

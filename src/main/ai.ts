@@ -207,9 +207,24 @@ export interface JsonSpec {
   name: string
   schema: Record<string, unknown>
   /** Returns one correction line per problem; empty means the value is usable. */
-  validate: (value: unknown) => string[]
+  validate: (value: unknown) => string[] | Promise<string[]>
   /** Off for schemas with optional or union-shaped fields. Default on. */
   strict?: boolean
+}
+
+/** Parse and semantically validate one provider reply without provider I/O. */
+export async function validateJsonReply<T>(
+  text: string,
+  spec: JsonSpec
+): Promise<{ value: T | null; errors: string[] }> {
+  const value = parseLooseJson<T>(text)
+  if (value === null) {
+    return {
+      value: null,
+      errors: ['The reply was not valid JSON. Return a single JSON object and nothing else.']
+    }
+  }
+  return { value, errors: await spec.validate(value) }
 }
 
 /** Thrown when the model's JSON is still unusable after the correction retry. */
@@ -265,15 +280,7 @@ export async function chatCompleteJson<T>(
     raw = await chatComplete(cfg, messages, feature, temperature)
   }
 
-  const check = (text: string): { value: T | null; errors: string[] } => {
-    const value = parseLooseJson<T>(text)
-    if (value === null) {
-      return { value: null, errors: ['The reply was not valid JSON. Return a single JSON object and nothing else.'] }
-    }
-    return { value, errors: spec.validate(value) }
-  }
-
-  let result = check(raw)
+  let result = await validateJsonReply<T>(raw, spec)
   if (result.errors.length === 0 && result.value !== null) return result.value
 
   const retryMessages: ChatMessage[] = [
@@ -282,7 +289,7 @@ export async function chatCompleteJson<T>(
     { role: 'user', content: correctionMessage(result.errors) }
   ]
   raw = await chatComplete(cfg, retryMessages, feature, temperature, extra)
-  result = check(raw)
+  result = await validateJsonReply<T>(raw, spec)
   if (result.errors.length === 0 && result.value !== null) return result.value
 
   throw new InvalidAIResponse(`The AI returned an invalid response: ${result.errors[0]}`, raw)

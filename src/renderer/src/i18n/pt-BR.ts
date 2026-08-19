@@ -1098,8 +1098,8 @@ export const ptBR: Dict = {
   'settings.repoChatEnableHint': 'Adiciona uma aba Chat ao painel direito. Desligado, ela some de todos os lugares.',
   'settings.repoChatCommitted': 'Apenas conteúdo commitado',
   'settings.repoChatCommittedHint': 'Responde a partir do último commit em vez da árvore de trabalho, para que alterações não commitadas não saiam desta máquina.',
-  'settings.repoChatActions': 'Propor ações git no chat',
-  'settings.repoChatActionsHint': 'As respostas do chat podem incluir ações executáveis: stage, commit, branch e afins. Nada é executado sem as regras de aprovação abaixo.',
+  'settings.repoChatActions': 'Propor ações de arquivo e Git no chat',
+  'settings.repoChatActionsHint': 'As respostas podem incluir mudanças revisáveis em arquivos seguidas de ações Git. Elas só executam sob as regras de aprovação abaixo.',
   'settings.repoChatApprovalHint': 'Os modos automáticos executam a proposta assim que ela chega. Ações destrutivas sempre pedem confirmação antes.',
   'settings.conflictStyle': 'Estilo na resolução de conflitos',
   'settings.conflictStyleHint': 'Como a IA molda o arquivo ao resolver conflitos de merge.',
@@ -2436,6 +2436,13 @@ export const ptBR: Dict = {
   'chat.approvalAsk': 'Sempre perguntar',
   'chat.actionsDismissed': 'Dispensado: nada foi executado',
   'chat.actionsRunLabel': '{n} ação(ões) do chat executada(s)',
+  'chat.actionsPartial': '{applied} concluídas; {remaining} não executadas',
+  'chat.actionsFinalizing': 'Verificando o resultado…',
+  'chat.actionsFinalizationFailed': 'As ações terminaram, mas o assistente não conseguiu resumi-las.',
+  'chat.actionStale': 'Um arquivo mudou depois que esta proposta foi preparada.',
+  'chat.actionNoStaged': 'Não há mudanças no stage para comitar.',
+  'chat.actionHookFailed': 'Um hook do Git impediu o commit.',
+  'chat.actionRollbackFailed': 'O Gitcito não conseguiu restaurar completamente o lote de arquivos.',
   'chat.confirmDiscardTitle': 'Descartar as alterações?',
   'chat.confirmDiscardMessage':
     'Esta proposta descarta permanentemente as alterações não commitadas de: {files}',
@@ -3008,5 +3015,9 @@ export const ptBR: Dict = {
   'askAction.branch': 'Branch',
   'askAction.checkout': 'Trocar',
   'askAction.tag': 'Tag',
-  'askAction.fallback': 'Ação'
+  'askAction.fallback': 'Ação',
+  'askAction.createFile': 'Criar arquivo',
+  'askAction.editFile': 'Editar arquivo',
+  'askAction.replaceFile': 'Substituir arquivo',
+  'askAction.deleteFile': 'Excluir arquivo'
 }

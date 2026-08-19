@@ -2,7 +2,7 @@
 title: Chat do repositório
 category: IA
 order: 82
-summary: Faça perguntas sobre este repositório, com os arquivos e commits que você fixa como contexto — e deixe que ele proponha ações git que você aprova antes de executarem.
+summary: Faça perguntas sobre este repositório, fixe arquivos e commits como contexto e deixe que ele proponha mudanças revisáveis em arquivos seguidas de ações Git.
 keywords: chat pergunta perguntar assistente contexto anexar fixar arrastar soltar commit arquivo evidência ancorado ia painel ações executar aprovar aprovação automática permitir corrigir erro aviso
 ---
 
@@ -71,7 +71,7 @@ tocam um caminho excluído saem daquele diff, não o commit inteiro.
 | **Faça perguntas sobre o repositório** | Desligado tira a aba, o botão da barra e o alvo do atalho. O resto da IA continua |
 | **Modelo do chat** | Um modelo só para o chat. Vazio usa o do perfil: perguntar custa menos que revisar, um menor costuma bastar |
 | **Apenas conteúdo commitado** | Responde a partir do último commit em vez da árvore de trabalho: alterações não commitadas nunca saem da máquina |
-| **Propor ações git no chat** | Desligado devolve o chat ao modo somente leitura: sem cartões de ações, sem menu de aprovação |
+| **Propor ações de arquivo e Git no chat** | Desligado devolve o chat ao modo somente leitura: sem cartões de ações, sem menu de aprovação |
 | **Como as ações propostas são executadas** | O modo de aprovação — veja [Modos de aprovação](#modos-de-aprovação). Ações destrutivas confirmam de qualquer jeito |
 
 Com a IA desligada por completo, o chat some junto — nenhum painel oferecendo
@@ -113,11 +113,19 @@ arquivo inexistente é rejeitada, não exibida.
 
 ![Ações propostas no chat](../../screenshots/repo-chat-actions.webp)
 
-O conjunto de ações é o mesmo que o assistente **Rodar** da barra de
-ferramentas usa: padrões de ignore, stage, unstage, commit, stash, descartar,
-branch, checkout, tag. Qualquer coisa além disso — push, pull, reset, rebase,
-operações forçadas — é recusada de propósito; o chat vai mandar você usar a
-interface dedicada.
+O chat pode propor edições exatas, criação ou substituição de arquivos inteiros
+e exclusão de arquivos, seguidas das ações Git do assistente **Rodar**: ignore,
+stage, unstage, commit, stash, descartar, branch, checkout e tag. O Gitcito
+calcula localmente cada diff expansível. Arquivos existentes precisam vir da
+evidência lida; alvos inseguros, secretos, ignorados, gerados, binários,
+desatualizados, grandes demais ou ligados por symlink são recusados. Push, pull,
+reset, rebase e operações forçadas continuam na interface dedicada.
+
+O lote inteiro é conferido de novo antes da primeira escrita e sofre rollback
+se um passo falhar. Antes de um commit, o Gitcito confirma que existe algo no
+stage. O cartão marca cada linha concluída, falha ou pulada e preserva resultados
+parciais. Depois, uma chamada separada e sem ações resume o resultado real; se
+esse resumo falhar, o cartão continua sendo o registro autoritativo.
 
 ### Modos de aprovação
 
@@ -128,7 +136,7 @@ O menu com escudo abaixo da caixa de mensagem (também em **Configurações → 
 |---|---|
 | **Sempre perguntar** | Nada até você apertar **Executar** no cartão |
 | **Executar ações seguras automaticamente** | Propostas feitas só de tarefas reversíveis — stage, unstage, ignore, branch, tag — executam ao chegar; o resto espera o botão |
-| **Executar todas as ações automaticamente** | Toda proposta executa ao chegar, exceto as destrutivas |
+| **Executar todas as ações automaticamente** | Mudanças em arquivos e ações Git comuns executam ao chegar; operações Git destrutivas ainda perguntam |
 
 Uma proposta que **descartaria alterações não commitadas sempre pergunta
 antes**, em qualquer modo, e a confirmação nomeia os arquivos que seriam
@@ -150,10 +158,10 @@ editável — nada é enviado até você apertar Enviar.
   [mascaramento de segredos](security.md).
 - **Binários e arquivos acima de 512 KB** vindos de fora do repositório são
   ignorados do mesmo jeito. Dentro dele valem as regras de sempre.
-- **Ele nunca escreve por conta própria.** O modelo não tem ferramentas, só
-  texto: uma mudança chega como cartão de proposta, executa apenas sob as
-  [suas regras de aprovação](#modos-de-aprovação), e um passo destrutivo sempre
-  confirma. Com **Propor ações git no chat** desligado, ele nem propõe.
+- **O modelo nunca escreve diretamente.** Ele devolve propostas estruturadas;
+  o Gitcito valida, calcula o diff e executa apenas sob as
+  [suas regras de aprovação](#modos-de-aprovação). Trabalho Git destrutivo sempre
+  confirma. Com propostas de ações desligadas, o chat nem propõe mudanças.
 - **As conversas vivem só na memória.** Cada repositório mantém seu fio; sair do
   Gitcito descarta tudo.
 

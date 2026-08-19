@@ -2,13 +2,42 @@ import { describe, it, expect, afterAll } from 'vitest'
 import { readFileSync, writeFileSync, existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
-import { gitService } from '../src/main/git'
+import { gitMethodIsRead, gitService } from '../src/main/git'
+import { prepareRepoFileActions } from '../src/main/repoFileActions'
 import { cloneFixture, cleanupFixtures } from './fixtures'
 
 // Mutation/integration tests: exercise the WRITE paths of gitService (the same
 // code Gitcito runs for merge / cherry-pick / rebase / conflict-resolve / stash
 // / commit). Each test works on an isolated copy of a playground repo.
 afterAll(cleanupFixtures)
+
+describe('repository chat file actions', () => {
+  it('applies a prepared edit as an exclusive repository write', async () => {
+    const repo = cloneFixture('bisect-bug')
+    const prepared = await prepareRepoFileActions(
+      repo,
+      [
+        {
+          type: 'edit_file',
+          path: 'README.md',
+          oldText: '# BugShop',
+          newText: '# BugShop updated',
+          description: 'Update heading'
+        }
+      ],
+      {
+        evidencePaths: new Set(['README.md']),
+        completePaths: new Set(['README.md']),
+        ignoredPaths: new Set()
+      }
+    )
+
+    expect(gitMethodIsRead('applyRepoFileActions')).toBe(false)
+    expect(await gitService.applyRepoFileActions(repo, prepared)).toEqual({ ok: true, applied: 1 })
+    expect(readFileSync(join(repo, 'README.md'), 'utf8')).toContain('# BugShop updated')
+    expect((await gitService.status(repo)).unstaged.map((file) => file.path)).toContain('README.md')
+  })
+})
 
 /** Raw git in a fixture, for assertions the service does not expose. */
 const raw = async (repo: string, args: string[]): Promise<string> => {

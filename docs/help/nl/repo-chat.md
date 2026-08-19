@@ -113,10 +113,19 @@ getoond.
 
 ![Voorgestelde acties in de chat](../../screenshots/repo-chat-actions.webp)
 
-De set acties is dezelfde die de **Uitvoeren**-assistent in de werkbalk
-gebruikt: ignore-patronen, stage, unstage, commit, stash, discard, branch,
-checkout, tag. Alles daarbuiten — push, pull, reset, rebase, force-operaties —
-wordt bewust geweigerd; de chat verwijst je dan naar de gewone UI.
+Repositorychat kan exacte bewerkingen, het maken of volledig vervangen en het
+verwijderen van bestanden voorstellen, gevolgd door de Git-acties van de
+**Uitvoeren**-assistent. Gitcito berekent de uitklapbare diff lokaal. Bestaande
+bestanden moeten uit gelezen bewijs komen; onveilige, geheime, genegeerde,
+gegenereerde, binaire, verouderde, te grote of via symlinks bereikbare doelen
+worden geweigerd. Push, pull, reset, rebase en force-operaties blijven in hun
+eigen interface.
+
+De hele bestandsbatch wordt voor de eerste schrijfactie opnieuw gecontroleerd en
+bij een fout teruggedraaid. Voor een commit controleert Gitcito ook of er iets is
+gestaged. De kaart markeert voltooide, mislukte en overgeslagen acties en bewaart
+gedeeltelijke resultaten. Daarna vat een afzonderlijke aanroep zonder acties het
+werkelijke resultaat samen.
 
 ### Goedkeuringsmodi
 

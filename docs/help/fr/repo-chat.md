@@ -115,11 +115,18 @@ n’existe pas est rejetée, pas affichée.
 
 ![Actions proposées dans la discussion](../../screenshots/repo-chat-actions.webp)
 
-L’ensemble d’actions est le même que celui de l’assistant **Exécuter** de la
-barre d’outils : motifs d’exclusion, indexer, désindexer, valider, remiser,
-abandonner, créer une branche, basculer de branche, étiqueter. Tout ce qui
-dépasse — push, pull, reset, rebase, opérations forcées — est refusé par
-conception ; la discussion vous dira d’utiliser l’interface dédiée à la place.
+La discussion du dépôt peut proposer des modifications exactes, la création ou
+le remplacement complet d’un fichier et la suppression de fichiers, puis les
+actions Git de l’assistant **Exécuter**. Gitcito calcule localement chaque diff
+dépliable. Les fichiers existants doivent provenir des éléments lus ; les cibles
+dangereuses, secrètes, ignorées, générées, binaires, périmées, trop volumineuses
+ou reliées par un lien symbolique sont refusées. Push, pull, reset, rebase et les
+opérations forcées restent dans leur interface dédiée.
+
+Le lot entier est revérifié avant la première écriture et annulé si une étape
+échoue. Avant un commit, Gitcito vérifie aussi que des changements sont indexés.
+La carte marque chaque action terminée, échouée ou ignorée et conserve les
+résultats partiels. Un appel séparé, sans actions, résume ensuite le résultat réel.
 
 ### Modes d’approbation
 

@@ -2643,9 +2643,27 @@ textarea:focus {
 
 .repo-chat-action {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   gap: 8px;
   font-size: 11.5px;
+  min-width: 0;
+  padding-inline-start: 4px;
+  border-inline-start: 2px solid transparent;
+}
+
+.repo-chat-action.done {
+  border-inline-start-color: var(--green);
+}
+
+.repo-chat-action.failed {
+  border-inline-start-color: var(--red);
+}
+
+.repo-chat-action-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -2667,6 +2685,35 @@ textarea:focus {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.repo-chat-action-preview {
+  min-width: 0;
+  border: 1px solid var(--border-soft);
+  border-radius: 5px;
+  background: var(--bg-2);
+}
+
+.repo-chat-action-preview summary {
+  padding: 4px 7px;
+  color: var(--text-2);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  overflow-wrap: anywhere;
+}
+
+.repo-chat-action-preview pre {
+  max-height: 240px;
+  margin: 0;
+  padding: 7px;
+  overflow: auto;
+  border-top: 1px solid var(--border-soft);
+  color: var(--text-1);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1.45;
+  white-space: pre;
 }
 
 .repo-chat-actions-footer {
@@ -2691,6 +2738,12 @@ textarea:focus {
 
 .repo-chat-actions-status.failed {
   color: var(--red);
+}
+
+.repo-chat-actions-finalization-failed {
+  margin-top: 6px;
+  color: var(--text-2);
+  font-size: 10.5px;
 }
 
 /* Approval-mode picker in the composer row — reads as a quiet label, like the

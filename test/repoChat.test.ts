@@ -1,10 +1,14 @@
 import { afterAll, describe, expect, it, vi } from 'vitest'
 import {
+  chatAnswerSchema,
   collectAttachmentEvidence,
+  contentContainsActionPayload,
   filterRepoChatPaths,
+  finalizationMessages,
   normalizeRepoChatAttachments,
   normalizeRepoChatMessages,
   packRepoChatEvidence,
+  selectSearchEvidence,
   validateChatAnswer,
   validateChatSelection
 } from '../src/main/repoChat'
@@ -31,6 +35,69 @@ import { defaultProfile, type RepoChatReply, type RepoStatus } from '../src/shar
 const cfg = defaultProfile().ai
 
 describe('repository chat grounding', () => {
+  it('builds a factual action finalization prompt with refreshed status', () => {
+    const status: RepoStatus = {
+      current: 'main',
+      tracking: 'origin/main',
+      ahead: 1,
+      behind: 0,
+      staged: [{ path: 'LICENSE', status: 'M' }],
+      unstaged: [],
+      conflicted: []
+    }
+    const messages = finalizationMessages(
+      [{ role: 'user', content: 'Change the license.' }],
+      status,
+      {
+        applied: 1,
+        failedIndex: 1,
+        failedType: 'commit',
+        error: { code: 'hook_failed' },
+        remaining: 2,
+        actionResults: [
+          { index: 0, type: 'edit_file', status: 'done' },
+          { index: 1, type: 'commit', status: 'failed' }
+        ]
+      }
+    )
+    const prompt = messages.map((message) => message.content).join('\n')
+    expect(prompt).toContain('Do not propose any actions')
+    expect(prompt).toContain('Applied actions: 1')
+    expect(prompt).toContain('Failed action: commit')
+    expect(prompt).toContain('Remaining actions: 2')
+    expect(prompt).toContain('Current branch: main')
+    const schema = chatAnswerSchema(false) as { properties: Record<string, unknown> }
+    expect(schema.properties.actions).toBeUndefined()
+  })
+
+  it('keeps compact search evidence from more than eight files', () => {
+    const hits = Array.from({ length: 17 }, (_, i) => ({
+      file: `src/i18n/l${i}.ts`,
+      line: i + 1,
+      text: 'MIT'
+    }))
+    const selected = selectSearchEvidence(hits)
+    expect(new Set(selected.map((hit) => hit.file))).toHaveLength(17)
+  })
+
+  it('packs one match per file before second matches', () => {
+    const hits = [
+      { file: 'a.ts', line: 1, text: 'MIT' },
+      { file: 'a.ts', line: 20, text: 'MIT' },
+      { file: 'b.ts', line: 2, text: 'MIT' }
+    ]
+    expect(selectSearchEvidence(hits).map((hit) => `${hit.file}:${hit.line}`)).toEqual([
+      'a.ts:1',
+      'b.ts:2',
+      'a.ts:20'
+    ])
+  })
+
+  it('detects executable action JSON hidden in answer content', () => {
+    expect(contentContainsActionPayload('```json\n[{"type":"stage","files":["a.ts"]}]\n```')).toBe(true)
+    expect(contentContainsActionPayload('Example: {"kind":"stage"}')).toBe(false)
+  })
+
   it('allows only readable tracked paths outside privacy filters', () => {
     const paths = filterRepoChatPaths(
       [

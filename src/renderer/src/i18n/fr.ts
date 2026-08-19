@@ -1078,8 +1078,8 @@ export const fr: Dict = {
   'settings.repoChatEnableHint': 'Ajoute un onglet Discussion au panneau droit. Désactivé, il disparaît partout.',
   'settings.repoChatCommitted': 'Contenu validé uniquement',
   'settings.repoChatCommittedHint': 'Répond à partir du dernier commit plutôt que de votre copie de travail, afin que les modifications non validées ne quittent pas cette machine.',
-  'settings.repoChatActions': 'Proposer des actions git dans la discussion',
-  'settings.repoChatActionsHint': 'Les réponses de la discussion peuvent inclure des actions exécutables : indexer, valider, créer une branche, etc. Rien ne s’exécute sans les règles d’approbation ci-dessous.',
+  'settings.repoChatActions': 'Proposer des actions sur les fichiers et Git',
+  'settings.repoChatActionsHint': 'Les réponses peuvent inclure des changements de fichiers vérifiables suivis d’actions Git. Ils ne s’exécutent que selon les règles ci-dessous.',
   'settings.repoChatApprovalHint': 'Les modes automatiques exécutent une proposition dès qu’elle arrive. Les actions destructrices demandent toujours une confirmation d’abord.',
   'settings.conflictStyle': 'Style de résolution des conflits',
   'settings.conflictStyleHint': 'La façon dont l’IA met en forme le fichier quand elle résout des conflits de fusion.',
@@ -2378,6 +2378,13 @@ export const fr: Dict = {
   'chat.approvalAll': 'Exécuter automatiquement toutes les actions',
   'chat.actionsDismissed': 'Ignoré : rien n’a été exécuté',
   'chat.actionsRunLabel': '{n} action(s) de la discussion exécutée(s)',
+  'chat.actionsPartial': '{applied} terminées ; {remaining} non exécutées',
+  'chat.actionsFinalizing': 'Vérification du résultat…',
+  'chat.actionsFinalizationFailed': 'Les actions sont terminées, mais l’assistant n’a pas pu les résumer.',
+  'chat.actionStale': 'Un fichier a changé après la préparation de cette proposition.',
+  'chat.actionNoStaged': 'Aucune modification indexée à valider.',
+  'chat.actionHookFailed': 'Un hook Git a bloqué le commit.',
+  'chat.actionRollbackFailed': 'Gitcito n’a pas pu restaurer entièrement le lot de fichiers.',
   'chat.confirmDiscardMessage':
     'Cette proposition abandonne définitivement les modifications non validées de : {files}',
   'chat.approvalTitle': 'Comment s’exécutent les actions proposées',
@@ -2948,5 +2955,9 @@ export const fr: Dict = {
   'askAction.branch': 'Branche',
   'askAction.checkout': 'Basculer',
   'askAction.tag': 'Étiqueter',
-  'askAction.fallback': 'Action'
+  'askAction.fallback': 'Action',
+  'askAction.createFile': 'Créer le fichier',
+  'askAction.editFile': 'Modifier le fichier',
+  'askAction.replaceFile': 'Remplacer le fichier',
+  'askAction.deleteFile': 'Supprimer le fichier'
 }

@@ -114,11 +114,19 @@ nennt, wird abgewiesen, nicht angezeigt.
 
 ![Vorgeschlagene Aktionen im Chat](../../screenshots/repo-chat-actions.webp)
 
-Der Aktionsumfang ist derselbe wie beim **Ausführen**-Assistenten der
-Symbolleiste: Ignore-Muster, stagen, unstagen, committen, stashen, verwerfen,
-Branch, Checkout, Tag. Alles darüber hinaus — Push, Pull, Reset, Rebase,
-erzwungene Operationen — wird absichtlich verweigert; der Chat verweist dich
-stattdessen auf die dafür gedachte Oberfläche.
+Der Repository-Chat kann exakte Bearbeitungen, das Erstellen oder vollständige
+Ersetzen sowie das Löschen von Dateien vorschlagen, gefolgt von den Git-Aktionen
+des **Ausführen**-Assistenten. Gitcito berechnet den aufklappbaren Diff lokal.
+Bestehende Dateien müssen aus gelesenen Belegen stammen; unsichere, geheime,
+ignorierte, generierte, binäre, veraltete, zu große oder verlinkte Ziele werden
+abgewiesen. Push, Pull, Reset, Rebase und erzwungene Operationen bleiben in der
+dafür vorgesehenen Oberfläche.
+
+Der gesamte Dateistapel wird vor dem ersten Schreiben erneut geprüft und bei
+einem Fehler zurückgerollt. Vor einem Commit prüft Gitcito außerdem, ob etwas
+vorgemerkt ist. Die Karte zeigt abgeschlossene, fehlgeschlagene und übersprungene
+Schritte sowie Teilergebnisse. Danach fasst ein separater Modellaufruf ohne
+Aktionen das tatsächliche Ergebnis zusammen.
 
 ### Freigabemodi
 

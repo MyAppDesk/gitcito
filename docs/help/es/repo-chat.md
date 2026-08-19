@@ -114,11 +114,19 @@ rechaza, no se muestra.
 
 ![Acciones propuestas en el chat](../../screenshots/repo-chat-actions.webp)
 
-El conjunto de acciones es el mismo que usa el asistente **Ejecutar** de la
-barra de herramientas: patrones de ignorados, preparar, quitar de preparados,
-commit, stash, descartar, rama, checkout, etiqueta. Todo lo que quede fuera —
-push, pull, reset, rebase, operaciones forzadas — se rechaza por diseño; el
-chat te dirá que uses la interfaz dedicada en su lugar.
+El chat del repositorio puede proponer ediciones exactas, crear o reemplazar
+archivos completos y eliminar archivos, y después ejecutar las acciones Git del
+asistente **Ejecutar**. Gitcito calcula localmente el diff desplegable. Los
+archivos existentes deben proceder de la evidencia leída; se rechazan destinos
+inseguros, secretos, ignorados, generados, binarios, obsoletos, demasiado grandes
+o enlazados mediante symlink. Push, pull, reset, rebase y las operaciones
+forzadas siguen en su interfaz dedicada.
+
+Todo el lote se vuelve a comprobar antes de la primera escritura y se revierte
+si falla un paso. Antes de un commit, Gitcito comprueba que haya cambios
+preparados. La tarjeta marca cada acción completada, fallida u omitida y conserva
+los resultados parciales. Después, una llamada separada sin acciones resume el
+resultado real.
 
 ### Modos de aprobación
 

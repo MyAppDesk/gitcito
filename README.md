@@ -131,28 +131,6 @@ compounds as parallel sessions, `stopAll`, `serverReadyAction` ·
 [open-source licenses](docs/help/licenses.md) for every package the build ships,
 readable in the app.
 
-## A few things other clients don't do
-
-None of these is the reason to use Gitcito — the list above is. They exist
-because git already knows the answer and no client bothers to ask it.
-
-| | |
-|---|---|
-| <img src="docs/screenshots/conflict-radar.webp" width="400" alt="Conflict radar" /> | 🛰️ [Conflict radar](docs/help/conflict-radar.md)<br><br>See which branches will conflict **before** merging any of them. The merges happen inside the object database — no checkout, no working-tree change, nothing to clean up. |
-| 📡 [Teammate radar](docs/help/teammate-radar.md)<br><br>Who moved what upstream — and whether it touches files you have modified right now. Computed from the last fetch; no server involved. | <img src="docs/screenshots/teammate-radar.webp" width="400" alt="Teammate radar" /> |
-| 🧠 [Semantic diff](docs/help/semantic-diff.md)<br><br>`startServer` → `bootServer`, instead of a 400-line red/green wall. Real tree-sitter parsing, not a regex. | <img src="docs/screenshots/semantic-diff.webp" width="400" alt="Semantic diff" /> |
-| <img src="docs/screenshots/commit-edit.webp" width="400" alt="Edit any commit" /> | ✏️ [Edit any commit](docs/help/commit-edit.md)<br><br>The typo is three weeks back? Right-click the commit, edit the file, done — every commit above it replays, with the whole cascade (and its conflicts) previewed **before** anything moves. |
-| <img src="docs/screenshots/time-machine.webp" width="400" alt="Time machine" /> | 🕰️ [Time machine](docs/help/time-machine.md)<br><br>Drag a slider and watch the repository change: files appear, move, come back. HEAD never moves and your uncommitted work is untouched. |
-| 🎛️ [Mission control](docs/help/mission-control.md)<br><br>Twenty repositories, one question: which one needs me? Blocked first, then to sync, then dirty, then the quiet ones. | <img src="docs/screenshots/mission-control.webp" width="400" alt="Mission control" /> |
-
-<div align="center">
-
-**[⏪ What changed since](docs/help/range-diff.md)** · **[🧲 Absorb](docs/help/absorb.md)** · **[🎬 Timelapse](docs/help/timelapse.md)** · **[🧪 Preview a PR](docs/help/pr-preview.md)**
-
-<img src="docs/screenshots/clip-timelapse.webp" alt="A repository's whole life, replayed" width="620" />
-
-</div>
-
 ## Your secrets stay yours
 
 Gitcito has no backend. Tokens and [vault](docs/help/vault.md) entries are

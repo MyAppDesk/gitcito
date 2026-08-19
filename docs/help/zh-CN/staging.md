@@ -30,6 +30,9 @@ keywords: staging 暂存 stage unstage 取消暂存 discard 丢弃 hunk 变更�
 
 <kbd>↑</kbd> <kbd>↓</kbd>（或 <kbd>j</kbd> <kbd>k</kbd>）在文件列表里上下移动，按住 <kbd>⇧</kbd> 可以选一段范围，<kbd>⌘</kbd>/<kbd>Ctrl</kbd> 则用来单独切换某个文件的选中状态。
 
+<kbd>⇧</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd>
+从最后点击的那行开始扩展选择。在选中项上右键，可以一次把它们全部暂存、取消暂存、贮藏或丢弃。
+
 ## 提交之前
 
 Gitcito 会检查几件事，并且只问你一次，绝不悄悄放行：

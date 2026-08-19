@@ -46,6 +46,7 @@ import { repoIsGitHub } from '../lib/hosting'
 import { folderOpenMenuItems } from '../lib/openWith'
 import { togglePin, selectPinned } from '../lib/pinnedBranches'
 import { branchDropActions, encodeDropRef, BRANCH_DND_TYPE, type DropRef } from '../lib/branchDrop'
+import { stepRange, claimRangeKeys, ownsRangeKeys, rangeKeysBlocked, domOrder } from '../lib/rangeSelect'
 import { openBranchDropMenu } from '../lib/branchDropMenu'
 import { defaultSettings } from '../../../shared/types'
 import type { BranchInfo, MergeRiskKind, ReleaseInfo, RemoteBranchInfo, StashInfo, TagInfo, WorktreeInfo, SubmoduleInfo, LaunchGroup, LaunchConfig } from '../../../shared/types'
@@ -291,7 +292,17 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
 
   // Returns true when the click was a multi-select gesture (caller skips its
   // normal navigate/select action).
+  // Visual row order for a kind, read from the DOM — with branch grouping on,
+  // the flat id arrays diverge from what is rendered, and ranges must follow
+  // the rows the user actually sees. Falls back to the flat order when the
+  // rows are not mounted.
+  const kbOrder = (kind: string, fallback: string[]): string[] => {
+    const d = domOrder(document.querySelector('.sidebar'), `[data-kbkind="${kind}"]`, 'data-kbid')
+    return d.length ? d : fallback
+  }
+
   const onSelectClick = (kind: string, id: string, ordered: string[], e: React.MouseEvent): boolean => {
+    claimRangeKeys(keyToken)
     if (e.metaKey || e.ctrlKey) {
       setSel((prev) =>
         !prev || prev.kind !== kind
@@ -304,10 +315,11 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       return true
     }
     if (e.shiftKey && lastClick.current?.kind === kind) {
-      const a = ordered.indexOf(lastClick.current.id)
-      const b = ordered.indexOf(id)
+      const order = kbOrder(kind, ordered)
+      const a = order.indexOf(lastClick.current.id)
+      const b = order.indexOf(id)
       if (a !== -1 && b !== -1) {
-        const range = ordered.slice(Math.min(a, b), Math.max(a, b) + 1)
+        const range = order.slice(Math.min(a, b), Math.max(a, b) + 1)
         setSel((prev) => ({ kind, ids: Array.from(new Set([...(prev?.kind === kind ? prev.ids : []), ...range])) }))
         return true
       }
@@ -316,6 +328,44 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     clearSel()
     return false
   }
+
+  // ─── Shift+↑/↓ grows the selection from the last clicked row ───
+  // The anchor is the last plain click; `rangeEnd` is the moving end of the
+  // range, so pressing the opposite arrow shrinks the range back, like a text
+  // selection. Refs (not deps) keep the window listener subscribed once, and
+  // the panel only reacts while it owns the keys (last panel clicked in).
+  const keyToken = useRef(Symbol('sidebar')).current
+  const selRef = useRef(sel)
+  selRef.current = sel
+  const orderedRef = useRef<Record<string, string[]>>({})
+  const rangeEnd = useRef<string | null>(null)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      if (!e.shiftKey || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return
+      if (!ownsRangeKeys(keyToken) || rangeKeysBlocked(e.target)) return
+      const anchor = lastClick.current
+      if (!anchor) return
+      // Continue from the previous range end only while its selection is live;
+      // a fresh click cleared it, so the next press starts from the anchor.
+      const live =
+        selRef.current?.kind === anchor.kind && rangeEnd.current && selRef.current.ids.includes(rangeEnd.current)
+      const step = stepRange(
+        kbOrder(anchor.kind, orderedRef.current[anchor.kind] ?? []),
+        anchor.id,
+        live ? rangeEnd.current : null,
+        e.key === 'ArrowDown' ? 1 : -1
+      )
+      if (!step) return
+      e.preventDefault()
+      rangeEnd.current = step.end
+      setSel({ kind: anchor.kind, ids: step.ids })
+      document
+        .querySelector(`.sidebar [data-kbkind="${anchor.kind}"][data-kbid="${CSS.escape(step.end)}"]`)
+        ?.scrollIntoView({ block: 'nearest' })
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [keyToken])
 
   // Picks the bulk menu when right-clicking inside a multi-selection, else the
   // single-item menu. `bulk` receives the selected ids (≥2).
@@ -1127,12 +1177,15 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   const remoteIds = remotes.map((b) => b.fullName)
   const tagIds = tags.map((t) => t.name)
   const stashIds = repo.stashes.map((s) => String(s.index))
+  orderedRef.current = { local: localIds, remote: remoteIds, tag: tagIds, stash: stashIds }
 
   // One row in the local-branches list. `label` is the displayed text (the last
   // path segment when nested inside a folder, the full name when flat).
   const branchItem = (b: BranchInfo, label: string): React.JSX.Element => (
     <div
       key={b.name}
+      data-kbkind="local"
+      data-kbid={b.name}
       className={`sb-item ${b.isCurrent ? 'current' : ''} ${isSel('local', b.name) ? 'multi-sel' : ''} ${dropBranch === b.name ? 'branch-drop-over' : ''}`}
       {...refDrag({ name: b.name, kind: 'local' })}
       {...refDrop({ name: b.name, kind: 'local' })}
@@ -1206,6 +1259,8 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   const remoteItem = (b: RemoteBranchInfo, label: string): React.JSX.Element => (
     <div
       key={b.fullName}
+      data-kbkind="remote"
+      data-kbid={b.fullName}
       className={`sb-item ${isSel('remote', b.fullName) ? 'multi-sel' : ''}`}
       {...refDrag({ name: b.fullName, kind: 'remote' })}
       onClick={(e) => void onSelectClick('remote', b.fullName, remoteIds, e)}
@@ -1278,6 +1333,8 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     return (
       <div
         key={tag.name}
+        data-kbkind="tag"
+        data-kbid={tag.name}
         className={`sb-item ${isSel('tag', tag.name) ? 'multi-sel' : ''}`}
         {...refDrag({ name: tag.name, kind: 'tag' })}
         onClick={(e) => {
@@ -1766,11 +1823,13 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       )
     })(),
     stashes: (
-      <Section title={t('sidebar.stashes')} icon={<Archive size={13} />} count={repo.stashes.length} {...dragProps('stashes')}>
+      <Section title={t('sidebar.stashes')} icon={<Archive size={13} />} count={repo.stashes.length} {...dragProps('stashes')} {...persistOpen('stashes')}>
         {repo.stashes.length === 0 && <div className="sb-empty">{t('sidebar.noStashes')}</div>}
         {repo.stashes.map((s) => (
           <div
             key={s.index}
+            data-kbkind="stash"
+            data-kbid={String(s.index)}
             className={`sb-item ${repo.selected?.type === 'stash' && repo.selected.sha === s.sha ? 'current' : ''} ${isSel('stash', String(s.index)) ? 'multi-sel' : ''}`}
             onClick={(e) => {
               if (!onSelectClick('stash', String(s.index), stashIds, e))

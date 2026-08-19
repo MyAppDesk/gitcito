@@ -19,6 +19,11 @@ Fare stash in Gitcito non è tutto o niente.
 
 Selezionando uno stash ne vedi i file e i diff, esattamente come per un commit.
 
+L'elenco dei file si seleziona in gruppo con gli stessi gesti dello
+[staging](staging.md) — clic <kbd>⌘</kbd>/<kbd>Ctrl</kbd>, clic <kbd>⇧</kbd>,
+<kbd>⇧</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> — e un clic destro (o il pulsante
+*Applica n file*) ripristina solo la selezione.
+
 ![Uno stash parziale: spunta solo i file che devono entrarci](../../screenshots/stash-partial.webp)
 
 ## Quando uno stash non si applica

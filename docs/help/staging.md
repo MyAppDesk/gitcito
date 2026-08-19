@@ -31,9 +31,11 @@ tracked ones go back to their staged (or committed) state.
 
 ## Keyboard
 
-<kbd>↑</kbd> <kbd>↓</kbd> (or <kbd>j</kbd> <kbd>k</kbd>) walk the file lists,
-with <kbd>⇧</kbd> for a range and <kbd>⌘</kbd>/<kbd>Ctrl</kbd> to toggle
-individual files.
+<kbd>↑</kbd> <kbd>↓</kbd> (or <kbd>j</kbd> <kbd>k</kbd>) walk the file lists.
+<kbd>⇧</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> grows a selection from the last row you
+clicked, <kbd>⇧</kbd>-click takes a range, and <kbd>⌘</kbd>/<kbd>Ctrl</kbd>-click
+toggles individual files. Right-click the selection to stage, unstage, stash or
+discard everything in it at once.
 
 ## Before you commit
 

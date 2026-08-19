@@ -36,6 +36,10 @@ committato).
 di file, con <kbd>⇧</kbd> per un intervallo e <kbd>⌘</kbd>/<kbd>Ctrl</kbd> per
 aggiungere o togliere singoli file.
 
+<kbd>⇧</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> estende la selezione dall'ultima riga
+cliccata. Un clic destro sulla selezione mette in stage, toglie dallo stage,
+stasha o scarta tutto in una volta.
+
 ## Prima di committare
 
 Gitcito controlla alcune cose e chiede una volta, mai in silenzio:

@@ -36,6 +36,10 @@ silinir; izlenenler hazırlanmış (ya da commit'lenmiş) hâline geri döner.
 gezinir; aralık seçmek için <kbd>⇧</kbd>, tek tek dosyaları seçip bırakmak için
 <kbd>⌘</kbd>/<kbd>Ctrl</kbd> kullanılır.
 
+<kbd>⇧</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> seçimi en son tıkladığınız satırdan
+genişletir. Seçime sağ tıklayarak içindeki her şeyi tek seferde stage'leyin,
+stage'den çıkarın, stash'leyin ya da atın.
+
 ## Commit'lemeden önce
 
 Gitcito birkaç şeyi denetler ve bir kez sorar, asla sessizce geçmez:

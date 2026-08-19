@@ -17,7 +17,11 @@ Stashing in Gitcito is not all-or-nothing.
 | **Apply / Pop** | Whole stash, or **just some of its files** |
 | **Stash → branch** | `git stash branch` — the escape hatch when a stash will not apply cleanly |
 
-Selecting a stash shows its files and diffs, exactly like a commit.
+Selecting a stash shows its files and diffs, exactly like a commit. Its file
+list multi-selects with the same gestures as [staging](staging.md) —
+<kbd>⌘</kbd>/<kbd>Ctrl</kbd>-click, <kbd>⇧</kbd>-click,
+<kbd>⇧</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> — and a right-click (or the *Apply n
+files* button) restores just the selection.
 
 ![A partial stash: tick only the files that should go in](../screenshots/stash-partial.webp)
 

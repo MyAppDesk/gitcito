@@ -20,6 +20,11 @@ Gitcito'da stash'leme ya hep ya hiç değildir.
 Bir stash'i seçmek, tıpkı bir commit'te olduğu gibi dosyalarını ve diff'lerini
 gösterir.
 
+Dosya listesi, [stage](staging.md) ile aynı hareketlerle çoklu seçilir —
+<kbd>⌘</kbd>/<kbd>Ctrl</kbd> ile tıklama, <kbd>⇧</kbd> ile tıklama,
+<kbd>⇧</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> — ve sağ tıklama (ya da *n dosyayı
+uygula* düğmesi) yalnızca seçimi geri getirir.
+
 ![Kısmi bir stash: yalnızca girmesi gereken dosyaları işaretleyin](../../screenshots/stash-partial.webp)
 
 ## Bir stash uygulanmadığında

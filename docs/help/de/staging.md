@@ -37,6 +37,10 @@ Zustand zurück.
 Dateilisten, mit <kbd>⇧</kbd> für einen Bereich und <kbd>⌘</kbd>/<kbd>Ctrl</kbd>
 zum Umschalten einzelner Dateien.
 
+<kbd>⇧</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> erweitert die Auswahl von der zuletzt
+geklickten Zeile aus. Ein Rechtsklick auf die Auswahl staged, unstaged, stasht
+oder verwirft alles darin auf einmal.
+
 ## Bevor du committest
 
 Gitcito prüft ein paar Dinge und fragt einmal nach — nie stillschweigend:

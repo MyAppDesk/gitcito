@@ -20,6 +20,11 @@ Stashen ist in Gitcito kein Alles-oder-nichts.
 Wählst du einen Stash aus, siehst du seine Dateien und Diffs, genau wie bei
 einem Commit.
 
+Die Dateiliste lässt sich mit denselben Gesten mehrfach auswählen wie beim
+[Staging](staging.md) — <kbd>⌘</kbd>/<kbd>Strg</kbd>-Klick, <kbd>⇧</kbd>-Klick,
+<kbd>⇧</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> — und ein Rechtsklick (oder der Knopf *n
+Dateien anwenden*) stellt nur die Auswahl wieder her.
+
 ![Ein teilweiser Stash: hake nur die Dateien an, die hinein sollen](../../screenshots/stash-partial.webp)
 
 ## Wenn ein Stash sich nicht anwenden lässt

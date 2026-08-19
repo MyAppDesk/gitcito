@@ -35,6 +35,10 @@ verwijderd; getrackte gaan terug naar hun gestagede (of gecommitte) toestand.
 bestandslijsten, met <kbd>⇧</kbd> voor een reeks en <kbd>⌘</kbd>/<kbd>Ctrl</kbd>
 om losse bestanden aan of uit te zetten.
 
+<kbd>⇧</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> breidt de selectie uit vanaf de laatst
+aangeklikte rij. Rechtsklik op de selectie om alles erin in één keer te stagen,
+unstagen, stashen of te verwerpen.
+
 ## Voor je commit
 
 Gitcito controleert een paar dingen en vraagt één keer, nooit in stilte:

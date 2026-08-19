@@ -296,6 +296,9 @@ export function FileListView(props: FileListProps): React.JSX.Element {
   const onKeyDown = (e: React.KeyboardEvent): void => {
     const tag = (e.target as HTMLElement).tagName
     if (tag === 'INPUT' || tag === 'TEXTAREA' || e.metaKey || e.ctrlKey || e.altKey) return
+    // Shift+↑/↓ is range extension, owned by the panel around this list — let
+    // it bubble to the window listener instead of stepping the cursor.
+    if (e.shiftKey) return
     if (e.key === 'ArrowDown' || e.key === 'j') {
       e.preventDefault()
       step(1)

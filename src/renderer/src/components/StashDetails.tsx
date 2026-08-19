@@ -8,6 +8,7 @@ import { ViewToggle } from './CommitComposer'
 import { repoActions, type RepoData } from '../stores/repo'
 import { useSettingsStore } from '../stores/settings'
 import { openWithMenuItems } from '../lib/openWith'
+import { stepRange, claimRangeKeys, ownsRangeKeys, rangeKeysBlocked, domOrder } from '../lib/rangeSelect'
 import { useT, interp } from '../i18n'
 
 export function StashDetails({ repo, sha }: { repo: RepoData; sha: string }): React.JSX.Element {
@@ -21,6 +22,32 @@ export function StashDetails({ repo, sha }: { repo: RepoData; sha: string }): Re
   const defaultOpenApp = useSettingsStore((s) => s.settings.defaultOpenApp)
   const editor = useSettingsStore((s) => s.settings.editor)
   const t = useT()
+
+  // Shift+↑/↓ extends the file selection while this panel owns the keys. Row
+  // order comes from the DOM so ranges follow the tree view's visual order.
+  const keyToken = useRef(Symbol('stash-files')).current
+  const listWrapRef = useRef<HTMLDivElement>(null)
+  const visibleOrder = (): string[] => domOrder(listWrapRef.current, '[data-file-path]', 'data-file-path')
+  const selectedRef = useRef(selected)
+  selectedRef.current = selected
+  const rangeEnd = useRef<string | null>(null)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      if (!e.shiftKey || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return
+      if (!ownsRangeKeys(keyToken) || rangeKeysBlocked(e.target)) return
+      const anchor = lastClicked.current
+      if (!anchor) return
+      const live = rangeEnd.current !== null && selectedRef.current.has(rangeEnd.current)
+      const step = stepRange(visibleOrder(), anchor, live ? rangeEnd.current : null, e.key === 'ArrowDown' ? 1 : -1)
+      if (!step) return
+      e.preventDefault()
+      rangeEnd.current = step.end
+      setSelected(new Set(step.ids))
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [keyToken])
 
   useEffect(() => {
     setFiles([])
@@ -55,9 +82,10 @@ export function StashDetails({ repo, sha }: { repo: RepoData; sha: string }): Re
     selected.has(file.path) && selected.size > 1 ? files.filter((f) => selected.has(f.path)) : [file]
 
   const handleClick = (file: FileEntry, e: React.MouseEvent): void => {
+    claimRangeKeys(keyToken)
     let paths: Set<string>
     if (e.shiftKey && lastClicked.current) {
-      const order = files.map((f) => f.path)
+      const order = visibleOrder()
       const a = order.indexOf(lastClicked.current)
       const b = order.indexOf(file.path)
       paths =
@@ -158,6 +186,7 @@ export function StashDetails({ repo, sha }: { repo: RepoData; sha: string }): Re
           )}
           <ViewToggle />
         </div>
+        <div ref={listWrapRef}>
         <FileListView
           files={files}
           current={currentFile}
@@ -205,6 +234,7 @@ export function StashDetails({ repo, sha }: { repo: RepoData; sha: string }): Re
             ])
           }}
         />
+        </div>
       </div>
     </div>
   )

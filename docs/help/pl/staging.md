@@ -36,6 +36,10 @@ kasowane; śledzone wracają do swojego stanu z przechowalni (albo z commita).
 plików, <kbd>⇧</kbd> zaznacza zakres, a <kbd>⌘</kbd>/<kbd>Ctrl</kbd> przełącza
 pojedyncze pliki.
 
+<kbd>⇧</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> rozszerza zaznaczenie od ostatnio
+klikniętego wiersza. Kliknij zaznaczenie prawym przyciskiem, by za jednym razem
+dodać do stage, usunąć ze stage, dodać do stasha albo odrzucić wszystko.
+
 ## Zanim zacommitujesz
 
 Gitcito sprawdza kilka rzeczy i pyta raz, nigdy po cichu:

@@ -19,6 +19,10 @@ Gitcito 里的贮藏（stash）不是要么全上、要么全不上。
 
 选中一个贮藏，就能看到它的文件和差异，和看一个提交一模一样。
 
+文件列表可以用与[暂存](staging.md)相同的手势多选 —
+<kbd>⌘</kbd>/<kbd>Ctrl</kbd>+点击、<kbd>⇧</kbd>+点击、<kbd>⇧</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd>
+— 右键（或 *应用 n 个文件* 按钮）只恢复选中的部分。
+
 ![部分贮藏：只勾选该进去的那些文件](../../screenshots/stash-partial.webp)
 
 ## 当一个贮藏应用不上

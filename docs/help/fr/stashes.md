@@ -20,6 +20,11 @@ Remiser dans Gitcito n'est pas du tout ou rien.
 Sélectionner un remisage affiche ses fichiers et ses diffs, exactement comme un
 commit.
 
+La liste de fichiers se sélectionne en groupe avec les mêmes gestes que
+l'[indexation](staging.md) — clic <kbd>⌘</kbd>/<kbd>Ctrl</kbd>, clic
+<kbd>⇧</kbd>, <kbd>⇧</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> — et un clic droit (ou le
+bouton *Appliquer n fichiers*) ne restaure que la sélection.
+
 ![Un remisage partiel : ne cochez que les fichiers qui doivent y entrer](../../screenshots/stash-partial.webp)
 
 ## Quand un remisage refuse de s'appliquer

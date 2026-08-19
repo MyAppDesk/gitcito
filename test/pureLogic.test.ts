@@ -18,6 +18,7 @@ import { autolink, remoteWebUrl, filePermalink } from '../src/renderer/src/lib/a
 import { frecencyScore } from '../src/renderer/src/lib/frecency'
 import { tokenizeChatText, isImageRef } from '../src/renderer/src/lib/chatText'
 import { togglePin, selectPinned } from '../src/renderer/src/lib/pinnedBranches'
+import { stepRange } from '../src/renderer/src/lib/rangeSelect'
 import { parseMergeTreeSingle, parseMergeTreeStdin } from '../src/shared/mergeTree'
 import { parseRangeDiff } from '../src/shared/rangeDiff'
 import { editorArgs, editorLaunch, supportsLine } from '../src/shared/editors'
@@ -3824,5 +3825,40 @@ describe('chat text tokenizer', () => {
     expect(isImageRef('https://x.test/a/b.gif#frag')).toBe(true)
     expect(isImageRef('archive.tar.gz')).toBe(false)
     expect(isImageRef('.png')).toBe(false)
+  })
+})
+
+describe('stepRange (Shift+↑/↓ range selection)', () => {
+  const order = ['a', 'b', 'c', 'd', 'e']
+
+  it('starts a range one step from the anchor', () => {
+    expect(stepRange(order, 'b', null, 1)).toEqual({ ids: ['b', 'c'], end: 'c' })
+    expect(stepRange(order, 'b', null, -1)).toEqual({ ids: ['a', 'b'], end: 'a' })
+  })
+
+  it('grows away from the anchor and shrinks back toward it', () => {
+    expect(stepRange(order, 'b', 'c', 1)).toEqual({ ids: ['b', 'c', 'd'], end: 'd' })
+    expect(stepRange(order, 'b', 'd', -1)).toEqual({ ids: ['b', 'c'], end: 'c' })
+  })
+
+  it('crosses the anchor, flipping the range direction', () => {
+    expect(stepRange(order, 'b', 'b', -1)).toEqual({ ids: ['a', 'b'], end: 'a' })
+    expect(stepRange(order, 'c', 'b', -1)).toEqual({ ids: ['a', 'b', 'c'], end: 'a' })
+  })
+
+  it('clamps at both ends of the list', () => {
+    expect(stepRange(order, 'a', 'a', -1)).toEqual({ ids: ['a'], end: 'a' })
+    expect(stepRange(order, 'e', 'e', 1)).toEqual({ ids: ['e'], end: 'e' })
+    expect(stepRange(order, 'd', 'e', 1)).toEqual({ ids: ['d', 'e'], end: 'e' })
+  })
+
+  it('returns null when the anchor left the list, restarts when the end did', () => {
+    expect(stepRange(order, 'zz', null, 1)).toBeNull()
+    // end no longer present (list refiltered): treated as a fresh range.
+    expect(stepRange(order, 'b', 'zz', 1)).toEqual({ ids: ['b', 'c'], end: 'c' })
+  })
+
+  it('handles a single-item list', () => {
+    expect(stepRange(['only'], 'only', null, 1)).toEqual({ ids: ['only'], end: 'only' })
   })
 })

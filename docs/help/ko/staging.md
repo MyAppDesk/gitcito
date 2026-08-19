@@ -35,6 +35,9 @@ keywords: 스테이징 staging stage unstage 되돌리기 discard 헝크 hunk �
 <kbd>⇧</kbd>로 범위를, <kbd>⌘</kbd>/<kbd>Ctrl</kbd>로 개별 파일을 켜고 끌 수
 있어요.
 
+<kbd>⇧</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd>는 마지막으로 클릭한 행에서 선택을 넓혀요. 선택 위에서 우클릭하면 그
+전부를 한 번에 스테이지·언스테이지·스태시·버리기 할 수 있어요.
+
 ## 커밋하기 전에
 
 Gitcito는 몇 가지를 확인하고 한 번 물어봐요. 조용히 넘어가는 법은 없어요.

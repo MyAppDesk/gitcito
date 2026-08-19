@@ -35,6 +35,10 @@ são apagados; os rastreados voltam ao estado preparado (ou commitado).
 arquivos, com <kbd>⇧</kbd> para um intervalo e <kbd>⌘</kbd>/<kbd>Ctrl</kbd> para
 alternar arquivos individuais.
 
+<kbd>⇧</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> amplia a seleção a partir da última
+linha clicada. Clique com o botão direito na seleção para dar stage, tirar do
+stage, fazer stash ou descartar tudo de uma vez.
+
 ## Antes de você commitar
 
 O Gitcito verifica algumas coisas e pergunta uma vez, nunca em silêncio:

@@ -21,6 +21,7 @@ import {
 } from './FileSearchBar'
 import { useT, interp, type TranslationKey } from '../i18n'
 import { openWithMenuItems } from '../lib/openWith'
+import { stepRange, claimRangeKeys, ownsRangeKeys, rangeKeysBlocked, domOrder } from '../lib/rangeSelect'
 
 type ListName = 'staged' | 'unstaged'
 
@@ -291,6 +292,34 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
   const fStaged = useMemo(() => (active ? staged.filter(matchesFilter) : staged), [staged, filter, contentMatches, active])
   const fConflicted = useMemo(() => (active ? conflicted.filter(matchesFilter) : conflicted), [conflicted, filter, contentMatches, active])
 
+  // ─── Shift+↑/↓ extends the file selection while this panel owns the keys ───
+  // Row order comes from the DOM, not the data array: in tree view the visual
+  // order groups by folder, and ranges must follow what the user sees.
+  const keyToken = useRef(Symbol('wip-files')).current
+  const selectionRef = useRef(selection)
+  selectionRef.current = selection
+  const rangeEnd = useRef<string | null>(null)
+  const visibleOrder = (list: ListName): string[] =>
+    domOrder((list === 'staged' ? stagedRef : unstagedRef).current, '[data-file-path]', 'data-file-path')
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      if (!e.shiftKey || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return
+      if (!ownsRangeKeys(keyToken) || rangeKeysBlocked(e.target)) return
+      const anchor = lastClicked.current
+      if (!anchor) return
+      const list = selectionRef.current.list
+      const live = rangeEnd.current !== null && selectionRef.current.paths.has(rangeEnd.current)
+      const step = stepRange(visibleOrder(list), anchor, live ? rangeEnd.current : null, e.key === 'ArrowDown' ? 1 : -1)
+      if (!step) return
+      e.preventDefault()
+      rangeEnd.current = step.end
+      setSelection({ list, paths: new Set(step.ids) })
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [keyToken])
+
   // When a merge/cherry-pick/revert is in progress, prefill the composer with the
   // message git already prepared (e.g. "Merge branch 'main' into feat/ui") — so
   // resolving conflicts doesn't leave the commit message blank.
@@ -365,10 +394,11 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
 
   const currentFile = fileView && fileView.repoPath === path && fileView.source.type === 'wip' ? fileView.file : null
 
-  const handleClick = (list: ListName, files: FileEntry[]) => (file: FileEntry, e: React.MouseEvent) => {
+  const handleClick = (list: ListName) => (file: FileEntry, e: React.MouseEvent) => {
+    claimRangeKeys(keyToken)
     let paths: Set<string>
     if (e.shiftKey && selection.list === list && lastClicked.current) {
-      const order = files.map((f) => f.path)
+      const order = visibleOrder(list)
       const a = order.indexOf(lastClicked.current)
       const b = order.indexOf(file.path)
       if (a !== -1 && b !== -1) {
@@ -891,7 +921,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
                   files={fUnstaged}
                   current={currentFile}
                   selected={selection.list === 'unstaged' ? selection.paths : undefined}
-                  onFileClick={handleClick('unstaged', fUnstaged)}
+                  onFileClick={handleClick('unstaged')}
                   onFileContext={handleContext('unstaged', fUnstaged)}
                   onFolderContext={handleFolderContext('unstaged', fUnstaged)}
                   action={stageAction('unstaged')}
@@ -960,7 +990,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
                   files={fStaged}
                   current={currentFile}
                   selected={selection.list === 'staged' ? selection.paths : undefined}
-                  onFileClick={handleClick('staged', fStaged)}
+                  onFileClick={handleClick('staged')}
                   onFileContext={handleContext('staged', fStaged)}
                   onFolderContext={handleFolderContext('staged', fStaged)}
                   action={stageAction('staged')}

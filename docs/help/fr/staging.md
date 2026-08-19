@@ -37,6 +37,10 @@ indexé (ou validé).
 fichiers, avec <kbd>⇧</kbd> pour une plage et <kbd>⌘</kbd>/<kbd>Ctrl</kbd> pour
 basculer des fichiers individuels.
 
+<kbd>⇧</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> étend la sélection depuis la dernière
+ligne cliquée. Un clic droit sur la sélection permet d'indexer, de désindexer,
+de remiser ou d'annuler tout d'un coup.
+
 ## Avant de valider
 
 Gitcito vérifie quelques points et demande une fois, jamais en silence :

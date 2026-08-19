@@ -19,6 +19,11 @@ Stashowanie w Gitcito nie jest na zasadzie wszystko albo nic.
 
 Zaznaczenie stasha pokazuje jego pliki i diffy, dokładnie tak jak przy commicie.
 
+Listę plików zaznacza się grupowo tymi samymi gestami co przy
+[stage](staging.md) — klik z <kbd>⌘</kbd>/<kbd>Ctrl</kbd>, klik z <kbd>⇧</kbd>,
+<kbd>⇧</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> — a prawy przycisk (albo przycisk
+*Zastosuj n plików*) przywraca tylko zaznaczenie.
+
 ![Stash częściowy: zaznacz tylko te pliki, które mają wejść](../../screenshots/stash-partial.webp)
 
 ## Kiedy stash nie chce się nałożyć

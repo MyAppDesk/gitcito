@@ -36,6 +36,10 @@ del commit).
 archivos, con <kbd>⇧</kbd> para un rango y <kbd>⌘</kbd>/<kbd>Ctrl</kbd> para
 marcar archivos sueltos.
 
+<kbd>⇧</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> amplía la selección desde la última fila
+en la que hiciste clic. Haz clic derecho sobre la selección para preparar,
+quitar de preparados, guardar en stash o descartar todo de una vez.
+
 ## Antes de hacer commit
 
 Gitcito comprueba unas cuantas cosas y pregunta una vez, nunca en silencio:

@@ -140,6 +140,7 @@ interface PreloadApi {
     prDescription(commits: string, diff: string, cfg: unknown): Promise<unknown>
     planActions(prompt: string, status: unknown, cfg: unknown): Promise<unknown>
     repoChat(repoPath: string, messages: unknown, cfg: unknown, attachments: unknown): Promise<unknown>
+    repoChatFinalize(repoPath: string, messages: unknown, result: unknown, cfg: unknown): Promise<unknown>
   }
   wiki: {
     facts(repoPath: string): Promise<unknown>

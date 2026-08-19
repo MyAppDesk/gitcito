@@ -1,8 +1,9 @@
 import { create, type StoreApi, type UseBoundStore } from 'zustand'
 import type {
   AIConfig,
-  AskAction,
   RepoChatAttachment,
+  RepoChatAction,
+  RepoChatExecutionResult,
   RepoChatMessage,
   RepoChatReply,
   RepoChatSkipped,
@@ -16,7 +17,7 @@ const MAX_USER_CHARS = 8_000
 
 /** Lifecycle of one proposal card. 'pending' waits for the user (or the
  *  approval mode); everything after is terminal except a retry from 'failed'. */
-export type ChatActionsState = 'pending' | 'running' | 'done' | 'failed' | 'dismissed'
+export type ChatActionsState = 'pending' | 'running' | 'finalizing' | 'done' | 'failed' | 'dismissed'
 
 export interface RepoChatEntry {
   id: number
@@ -26,8 +27,12 @@ export interface RepoChatEntry {
   /** What was pinned when this turn was sent — shown under the bubble. */
   attachments?: RepoChatAttachment[]
   /** Validated actions the assistant proposed with this reply. */
-  actions?: AskAction[]
+  actions?: RepoChatAction[]
   actionsState?: ChatActionsState
+  /** Authoritative result of the one execution attempt for this proposal. */
+  execution?: RepoChatExecutionResult
+  /** The mutations remain authoritative even when the narrative call fails. */
+  finalizationFailed?: boolean
   /** Actions actually applied once state reaches 'done'. */
   actionsApplied?: number
   actionsError?: string
@@ -53,10 +58,23 @@ export type RepoChatRequest = (
   attachments: RepoChatAttachment[]
 ) => Promise<RepoChatReply>
 
+export type RepoChatFinalizeRequest = (
+  repoPath: string,
+  messages: RepoChatMessage[],
+  result: RepoChatExecutionResult,
+  cfg: AIConfig
+) => Promise<RepoChatReply>
+
 export interface RepoChatState {
   threads: Record<string, RepoChatThread>
   send(repoPath: string, content: string, cfg: AIConfig): Promise<void>
   retry(repoPath: string, cfg: AIConfig): Promise<void>
+  finalizeActions(
+    repoPath: string,
+    messageId: number,
+    result: RepoChatExecutionResult,
+    cfg: AIConfig
+  ): Promise<void>
   clear(repoPath: string): void
   attach(repoPath: string, items: RepoChatAttachment[]): void
   detach(repoPath: string, key: string): void
@@ -80,13 +98,17 @@ export function actionOutcomeNote(entry: RepoChatEntry): string {
   if (entry.role !== 'assistant' || !entry.actions?.length) return ''
   const list = entry.actions.map((action) => action.type).join(', ')
   const outcome =
-    entry.actionsState === 'done'
-      ? `the user approved and the app executed ${entry.actionsApplied ?? entry.actions.length} of them`
-      : entry.actionsState === 'failed'
-        ? `execution failed: ${entry.actionsError ?? 'unknown error'}`
-        : entry.actionsState === 'dismissed'
-          ? 'the user dismissed them without running anything'
-          : 'they have not been run'
+    entry.execution?.error
+      ? `the app executed ${entry.execution.applied}; ${entry.execution.failedType ?? 'an action'} failed with ${entry.execution.error.code}; ${entry.execution.remaining} remained`
+      : entry.execution
+        ? `the user approved and the app executed ${entry.execution.applied} of them; ${entry.execution.remaining} remained`
+        : entry.actionsState === 'done'
+          ? `the user approved and the app executed ${entry.actionsApplied ?? entry.actions.length} of them`
+          : entry.actionsState === 'failed'
+            ? `execution failed: ${entry.actionsError ?? 'unknown error'}`
+            : entry.actionsState === 'dismissed'
+              ? 'the user dismissed them without running anything'
+              : 'they have not been run'
   return `\n\n[App note: this reply proposed actions (${list}); ${outcome}.]`
 }
 
@@ -96,7 +118,12 @@ function wireMessages(messages: RepoChatEntry[]): RepoChatMessage[] {
     .map((entry) => ({ role: entry.role, content: `${entry.content}${actionOutcomeNote(entry)}` }))
 }
 
-export function createRepoChatStore(request: RepoChatRequest): UseBoundStore<StoreApi<RepoChatState>> {
+export function createRepoChatStore(
+  request: RepoChatRequest,
+  finalize: RepoChatFinalizeRequest = async () => {
+    throw new Error('Repository chat finalization is unavailable.')
+  }
+): UseBoundStore<StoreApi<RepoChatState>> {
   let nextMessageId = 0
   let nextRequestId = 0
 
@@ -162,6 +189,59 @@ export function createRepoChatStore(request: RepoChatRequest): UseBoundStore<Sto
         const current = get().threads[repoPath]
         if (!current || current.pending || !current.error || current.messages.at(-1)?.role !== 'user') return
         await run(repoPath, current.messages, cfg)
+      },
+      finalizeActions: async (repoPath, messageId, result, cfg) => {
+        const current = get().threads[repoPath]
+        const proposal = current?.messages.find((entry) => entry.id === messageId)
+        if (!current || !proposal?.actions?.length || proposal.actionsState === 'dismissed' || proposal.execution) return
+
+        const requestId = ++nextRequestId
+        const actionState: ChatActionsState = result.error ? 'failed' : 'done'
+        const messages = current.messages.map((entry) =>
+          entry.id === messageId
+            ? {
+                ...entry,
+                execution: result,
+                finalizationFailed: false,
+                actionsState: 'finalizing' as const,
+                actionsApplied: result.applied,
+                actionsError: result.error?.detail ?? result.error?.code
+              }
+            : entry
+        )
+        patch(repoPath, { messages, requestId })
+
+        try {
+          const reply = await finalize(repoPath, wireMessages(messages), result, cfg)
+          const latest = get().threads[repoPath]
+          if (!latest || latest.requestId !== requestId) return
+          const assistant: RepoChatEntry = {
+            id: ++nextMessageId,
+            role: 'assistant',
+            content: reply.content,
+            sources: reply.sources
+          }
+          patch(repoPath, {
+            messages: trimMessages([
+              ...latest.messages.map((entry) =>
+                entry.id === messageId ? { ...entry, actionsState: actionState } : entry
+              ),
+              assistant
+            ]),
+            error: null,
+            skipped: reply.skipped ?? latest.skipped
+          })
+        } catch {
+          const latest = get().threads[repoPath]
+          if (!latest || latest.requestId !== requestId) return
+          patch(repoPath, {
+            messages: latest.messages.map((entry) =>
+              entry.id === messageId
+                ? { ...entry, actionsState: actionState, finalizationFailed: true }
+                : entry
+            )
+          })
+        }
       },
       clear: (repoPath) =>
         set((state) => {

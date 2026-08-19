@@ -1,10 +1,15 @@
 import { afterAll, describe, expect, it, vi } from 'vitest'
 import {
+  chatAnswerSchema,
   collectAttachmentEvidence,
+  contentContainsActionPayload,
   filterRepoChatPaths,
+  finalizationMessages,
   normalizeRepoChatAttachments,
   normalizeRepoChatMessages,
   packRepoChatEvidence,
+  repoChatActionRules,
+  selectSearchEvidence,
   validateChatAnswer,
   validateChatSelection
 } from '../src/main/repoChat'
@@ -23,7 +28,8 @@ import {
   repoChatAvailable,
   repoChatSourceView,
   rightPanelDetailsState,
-  rightPanelToggleAction
+  rightPanelToggleAction,
+  shouldSubmitRepoChatOnKeyDown
 } from '../src/renderer/src/lib/repoChatUI'
 import { useUIStore } from '../src/renderer/src/stores/ui'
 import { defaultProfile, type RepoChatReply, type RepoStatus } from '../src/shared/types'
@@ -31,6 +37,107 @@ import { defaultProfile, type RepoChatReply, type RepoStatus } from '../src/shar
 const cfg = defaultProfile().ai
 
 describe('repository chat grounding', () => {
+  it('defaults repository chat to file read-only while preserving an explicit CRUD opt-in', () => {
+    expect(migrateAIConfig({}).repoChatReadOnly).toBe(true)
+    expect(migrateAIConfig({ repoChatReadOnly: false }).repoChatReadOnly).toBe(false)
+  })
+
+  it('tells a file-read-only agent about Git actions without advertising file mutations', () => {
+    const actionRules = repoChatActionRules(true, false)
+
+    expect(actionRules).toContain('{"type":"stage"')
+    expect(actionRules).toContain('File creation, editing, replacement, and deletion are disabled')
+    expect(actionRules).not.toContain('edit_file')
+    expect(actionRules).not.toContain('write_file')
+    expect(actionRules).not.toContain('delete_file')
+  })
+
+  it('builds a factual action finalization prompt with refreshed status', () => {
+    const status: RepoStatus = {
+      current: 'main',
+      tracking: 'origin/main',
+      ahead: 1,
+      behind: 0,
+      staged: [{ path: 'LICENSE', status: 'M' }],
+      unstaged: [],
+      conflicted: []
+    }
+    const messages = finalizationMessages(
+      [{ role: 'user', content: 'Change the license.' }],
+      status,
+      {
+        applied: 1,
+        failedIndex: 1,
+        failedType: 'commit',
+        error: { code: 'hook_failed' },
+        remaining: 2,
+        actionResults: [
+          { index: 0, type: 'edit_file', status: 'done' },
+          { index: 1, type: 'commit', status: 'failed' }
+        ]
+      }
+    )
+    const prompt = messages.map((message) => message.content).join('\n')
+    expect(prompt).toContain('Do not propose any actions')
+    expect(prompt).toContain('Applied actions: 1')
+    expect(prompt).toContain('Failed action: commit')
+    expect(prompt).toContain('Remaining actions: 2')
+    expect(prompt).toContain('Current branch: main')
+    const schema = chatAnswerSchema(false) as { properties: Record<string, unknown> }
+    expect(schema.properties.actions).toBeUndefined()
+  })
+
+  it('keeps compact search evidence from more than eight files', () => {
+    const hits = Array.from({ length: 17 }, (_, i) => ({
+      file: `src/i18n/l${i}.ts`,
+      line: i + 1,
+      text: 'MIT'
+    }))
+    const selected = selectSearchEvidence(hits)
+    expect(new Set(selected.map((hit) => hit.file))).toHaveLength(17)
+  })
+
+  it('packs one match per file before second matches', () => {
+    const hits = [
+      { file: 'a.ts', line: 1, text: 'MIT' },
+      { file: 'a.ts', line: 20, text: 'MIT' },
+      { file: 'b.ts', line: 2, text: 'MIT' }
+    ]
+    expect(selectSearchEvidence(hits).map((hit) => `${hit.file}:${hit.line}`)).toEqual([
+      'a.ts:1',
+      'b.ts:2',
+      'a.ts:20'
+    ])
+  })
+
+  it('detects executable action JSON hidden in answer content', () => {
+    expect(contentContainsActionPayload('```json\n[{"type":"stage","files":["a.ts"]}]\n```')).toBe(true)
+    expect(contentContainsActionPayload('Example: {"kind":"stage"}')).toBe(false)
+  })
+
+  it('detects an edit_file payload whose newText contains a nested Markdown fence', () => {
+    const content = [
+      'I will add a Quick build section to README.md.',
+      '```json',
+      '[',
+      '  {',
+      '    "type": "edit_file",',
+      '    "path": "README.md",',
+      '    "oldText": "## Install\\nInstall the app.",',
+      '    "newText": "## Install\\nInstall the app.\\n\\n## Quick build\\n```sh\\nnpm run build\\n```",',
+      '    "description": "Add a Quick build section"',
+      '  }',
+      ']',
+      '```'
+    ].join('\n')
+
+    expect(contentContainsActionPayload(content)).toBe(true)
+    expect(
+      validateChatAnswer({ content, sourceIds: [] }, new Set()).join(' ')
+    ).toContain('top-level actions field')
+    expect(contentContainsActionPayload('The field `"type": "edit_file"` names the action.')).toBe(false)
+  })
+
   it('allows only readable tracked paths outside privacy filters', () => {
     const paths = filterRepoChatPaths(
       [
@@ -275,6 +382,20 @@ describe('repository chat panel behavior', () => {
     expect(canSubmitRepoChat(true, true, 'question')).toBe(false)
     expect(canSubmitRepoChat(true, false, '   ')).toBe(false)
     expect(canSubmitRepoChat(true, false, 'question')).toBe(true)
+  })
+
+  it('submits with Enter while reserving Shift+Enter and IME composition for editing', () => {
+    const cases = [
+      { key: 'Enter', shiftKey: false, metaKey: false, ctrlKey: false, isComposing: false, submits: true },
+      { key: 'Enter', shiftKey: false, metaKey: true, ctrlKey: false, isComposing: false, submits: true },
+      { key: 'Enter', shiftKey: true, metaKey: true, ctrlKey: false, isComposing: false, submits: false },
+      { key: 'Enter', shiftKey: false, metaKey: false, ctrlKey: false, isComposing: true, submits: false },
+      { key: 'a', shiftKey: false, metaKey: false, ctrlKey: false, isComposing: false, submits: false }
+    ]
+
+    for (const { submits, ...event } of cases) {
+      expect(shouldSubmitRepoChatOnKeyDown(event)).toBe(submits)
+    }
   })
 })
 

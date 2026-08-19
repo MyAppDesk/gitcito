@@ -84,7 +84,7 @@ No provider publishes a ranked or curated list, so the shaping is Gitcito's: dat
 | **PR description** · **branch names** | Drafted from the branch's commits and diff |
 | **Themes** · **graph palettes** | Generated from a prompt |
 | **Smart staging** | Suggestions for what belongs in this commit |
-| **[Repository chat](repo-chat.md)** | Questions about this repository, answered from files and commits you can pin as context |
+| **[Repository chat](repo-chat.md)** | Grounded questions plus reviewed file changes followed by validated Git actions |
 | **AI config wizard** | Generates assistant configuration files (instructions, agents, hooks) for the repository — the wand button in the chat panel header |
 
 ## Grounded, not guessing
@@ -100,7 +100,9 @@ instead of inventing it. Answers are cached per file version.
 
 [Repository chat](repo-chat.md) works the same way: it may cite only the
 excerpts it was handed, and the two-pass request picks those from Git's own
-tracked-file list rather than from anything the model writes.
+tracked-file list rather than from anything the model writes. When it proposes
+a change, Gitcito validates exact file actions, computes their diffs locally,
+then runs any following Git actions under the configured approval policy.
 
 **Masked secret files are never sent.** Neither are files the secret-masking
 rules cover — including a file you pin to chat by hand, which is refused with a

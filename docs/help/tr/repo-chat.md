@@ -67,7 +67,8 @@ tutulan bir yola dokunan parçalar o diff’ten düşer, commit’in tamamı de�
 | **Depo hakkında soru sorun** | Kapalıyken sekmeyi, araç çubuğu düğmesini ve kısayol hedefini kaldırır. Diğer yapay zekâ özellikleri çalışmaya devam eder |
 | **Sohbet modeli** | Yalnızca sohbete özel model. Boşsa profilinki kullanılır — soru sormak incelemeden ucuzdur, küçüğü çoğu zaman yeter |
 | **Yalnızca işlenmiş içerik** | Çalışma ağacı yerine son commit üzerinden yanıtlar: işlenmemiş düzenlemeler makineden hiç çıkmaz |
-| **Sohbette git eylemleri önerilsin** | Kapalıyken sohbet yeniden salt okunur olur: eylem kartı da onay menüsü de yok |
+| **Sohbette dosya ve Git eylemleri önerilsin** | Kapalıyken sohbet yeniden salt okunur olur: eylem kartı da onay menüsü de yok |
+| **Dosyalar için salt okunur kip** | Açıkken dosya oluşturma, düzenleme, değiştirme ve silmeyi engeller; Git eylemleri kullanılabilir kalır. Varsayılan olarak açıktır |
 | **Önerilen eylemler nasıl çalıştırılır** | Onay modu — bkz. [Onay modları](#onay-modları). Yıkıcı eylemler her durumda onay ister |
 
 Yapay zekâ tümüyle kapalıysa sohbet de onunla birlikte kaybolur — kimsenin
@@ -118,10 +119,17 @@ reddedilir, gösterilmez.
 
 ![Sohbette önerilen eylemler](../../screenshots/repo-chat-actions.webp)
 
-Eylem kümesi sabittir:
-yoksayma desenleri, stage, unstage, commit, stash, discard, dal, checkout,
-etiket. Bunun ötesindeki her şey — push, pull, reset, rebase, force işlemleri —
-tasarım gereği reddedilir; sohbet sizi bunun yerine ilgili arayüze yönlendirir.
+Depo sohbeti tam metin düzenlemeleri, dosya oluşturma veya bütünüyle değiştirme
+ve dosya silme işlemlerini; ardından **Çalıştır** asistanının Git eylemlerini
+önerebilir. Gitcito açılabilir diff’i yerel olarak hesaplar. Mevcut dosyalar
+okunan kanıtlardan gelmelidir; güvensiz, gizli, yoksayılan, üretilmiş, ikili,
+eskimiş, çok büyük veya symlink üzerinden erişilen hedefler reddedilir. Push,
+pull, reset, rebase ve force işlemleri ilgili arayüzde kalır.
+
+Dosya grubunun tamamı ilk yazmadan önce yeniden doğrulanır ve bir adım başarısız
+olursa geri alınır. Commit öncesinde Gitcito stage’de değişiklik bulunduğunu da
+denetler. Kart tamamlanan, başarısız ve atlanan her eylemi ve kısmi sonucu
+gösterir. Ardından eylemsiz ayrı bir model çağrısı gerçek sonucu özetler.
 
 ### Onay modları
 
@@ -168,7 +176,8 @@ Taslak düzenlenebilir — Gönder’e basana kadar hiçbir şey gönderilmez.
 |---|---|
 | Araç çubuğundaki konuşma balonu düğmesi | Sohbet sekmesini açıp kapatır |
 | <kbd>⌘⌥B</kbd> / <kbd>Ctrl+Alt+B</kbd> | Sağ panelin tamamını açıp kapatır |
-| <kbd>⌘⏎</kbd> / <kbd>Ctrl+Enter</kbd> | Mesajı gönderir |
+| <kbd>Enter</kbd> | Mesajı gönderir |
+| <kbd>Shift+Enter</kbd> | Yeni bir satır ekler |
 
 Panel anahtarlarının yeniden atanması dahil geri kalanı için
 [Klavye ve kısayollar](keyboard.md) sayfasına bakın.

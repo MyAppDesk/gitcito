@@ -108,28 +108,75 @@ export function validateGeneratedFiles(value: unknown, requested: string[]): str
 
 // ─── "Ask" actions ──────────────────────────────────────────────────────────
 
-/** One entry of the AskAction union, as loose JSON Schema. Shared between the
- *  Ask planner and repository chat so both surfaces speak the same action set
- *  and go through `validateAskActions` for the real checks. */
+/** One entry of the Git-only AskAction union, as loose JSON Schema. */
+export const ASK_ACTION_SCHEMA: Record<string, unknown> = {
+  type: 'object',
+  required: ['type', 'description'],
+  properties: {
+    type: {
+      type: 'string',
+      enum: ['gitignore', 'stage', 'unstage', 'commit', 'stash', 'discard', 'branch', 'checkout', 'tag']
+    },
+    description: { type: 'string' },
+    files: { type: 'array', items: { type: 'string' } },
+    patterns: { type: 'array', items: { type: 'string' } },
+    message: { type: 'string' },
+    name: { type: 'string' },
+    at: { type: 'string' },
+    ref: { type: 'string' },
+    checkout: { type: 'boolean' }
+  }
+}
+
+/** The Ask planner remains Git-only. */
 export const ASK_ACTIONS_SCHEMA: Record<string, unknown> = {
   type: 'array',
+  items: ASK_ACTION_SCHEMA
+}
+
+/** Repository chat may propose a file-action prefix followed by Git actions. */
+export const REPO_CHAT_ACTIONS_SCHEMA: Record<string, unknown> = {
+  type: 'array',
+  maxItems: 64,
   items: {
-    type: 'object',
-    required: ['type', 'description'],
-    properties: {
-      type: {
-        type: 'string',
-        enum: ['gitignore', 'stage', 'unstage', 'commit', 'stash', 'discard', 'branch', 'checkout', 'tag']
+    anyOf: [
+      ASK_ACTION_SCHEMA,
+      {
+        type: 'object',
+        additionalProperties: false,
+        required: ['type', 'path', 'oldText', 'newText', 'description'],
+        properties: {
+          type: { const: 'edit_file' },
+          path: { type: 'string' },
+          oldText: { type: 'string' },
+          newText: { type: 'string' },
+          replaceAll: { type: 'boolean' },
+          description: { type: 'string' }
+        }
       },
-      description: { type: 'string' },
-      files: { type: 'array', items: { type: 'string' } },
-      patterns: { type: 'array', items: { type: 'string' } },
-      message: { type: 'string' },
-      name: { type: 'string' },
-      at: { type: 'string' },
-      ref: { type: 'string' },
-      checkout: { type: 'boolean' }
-    }
+      {
+        type: 'object',
+        additionalProperties: false,
+        required: ['type', 'path', 'content', 'mode', 'description'],
+        properties: {
+          type: { const: 'write_file' },
+          path: { type: 'string' },
+          content: { type: 'string' },
+          mode: { type: 'string', enum: ['create', 'replace'] },
+          description: { type: 'string' }
+        }
+      },
+      {
+        type: 'object',
+        additionalProperties: false,
+        required: ['type', 'path', 'description'],
+        properties: {
+          type: { const: 'delete_file' },
+          path: { type: 'string' },
+          description: { type: 'string' }
+        }
+      }
+    ]
   }
 }
 

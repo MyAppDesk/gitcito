@@ -2,7 +2,7 @@
 title: Repository chat
 category: AI
 order: 82
-summary: Ask questions about this repository, with the files and commits you pin as context — and let it propose git actions you approve before they run.
+summary: Ask questions about this repository, pin files and commits as context, and let it propose reviewed file changes followed by Git actions.
 keywords: chat ask question assistant context attach pin drag drop commit file evidence grounded ai panel actions run approve auto-approve allow fix error toast
 ---
 
@@ -71,7 +71,8 @@ touch an excluded path are dropped from that diff, not the whole commit.
 |---|---|
 | **Ask questions about the repository** | Off removes the tab, the toolbar button and the shortcut target. The rest of the AI features keep working |
 | **Committed content only** | Answers from the last commit instead of the working tree: uncommitted edits and diffs never leave the machine |
-| **Propose git actions in chat** | Off makes chat purely read-only again: no action cards, no approval dropdown |
+| **Propose file and Git actions in chat** | Off makes chat purely read-only again: no action cards, no approval dropdown |
+| **File read-only mode** | On blocks file creation, editing, replacement, and deletion while keeping Git actions available. It is on by default |
 | **How proposed actions run** | The approval mode — see [Approval modes](#approval-modes). Destructive actions confirm regardless |
 
 Which account and model answers chat is set under **Which account answers what**
@@ -125,10 +126,29 @@ exist is rejected, not rendered.
 
 ![Proposed actions in chat](../screenshots/repo-chat-actions.webp)
 
-The action set is fixed: ignore patterns, stage, unstage, commit, stash,
-discard, branch, checkout, tag.
-Anything beyond it — push, pull, reset, rebase, force operations — is refused
-by design; chat will tell you to use the dedicated UI instead.
+Repository chat can propose exact edits, whole-file creation or replacement,
+and file deletion, followed by the toolbar assistant's Git actions: ignore
+patterns, stage, unstage, commit, stash, discard, branch, checkout, and tag.
+Gitcito computes each expandable diff locally. Existing files must come from
+evidence the assistant read; unsafe, secret, ignored, generated, binary, stale,
+oversized, and symlinked targets are refused. Push, pull, reset, rebase, and
+force operations remain available only in their dedicated UI.
+
+With **Auto-run all actions**, a valid file change runs immediately and the
+card records the completed action:
+
+![Automatically completed repository chat file action](../screenshots/repo-chat-file-action-auto-run.webp)
+
+With **Always ask**, the same kind of change remains pending until you choose
+**Run** or **Dismiss**:
+
+![Repository chat file action awaiting approval](../screenshots/repo-chat-file-action-approval.webp)
+
+The complete file batch is rechecked before the first write and rolls back if
+one step fails. Before a commit, Gitcito also verifies that something is staged.
+The card marks every completed, failed, and skipped row and keeps partial counts.
+Afterward, a separate action-free model call summarizes the actual result; if
+that summary fails, the card remains the authoritative record.
 
 ### Approval modes
 
@@ -139,7 +159,7 @@ chat**) decides how a card runs:
 |---|---|
 | **Always ask** | Nothing until you press **Run** on the card |
 | **Auto-run safe actions** | Proposals made only of reversible bookkeeping — stage, unstage, ignore, branch, tag — run on arrival; anything else waits for the button |
-| **Auto-run all actions** | Every proposal runs on arrival, except destructive ones |
+| **Auto-run all actions** | File changes and ordinary Git actions run on arrival; destructive Git operations still ask |
 
 A proposal that would **discard uncommitted changes always asks first**, in
 every mode, and the confirmation names the files that would be lost. The card
@@ -161,10 +181,10 @@ nothing is sent until you press Send.
   [secret masking](security.md).
 - **Binaries and files over 512 KB** from outside the repository are skipped the
   same way. Inside the repository the usual readable-source rules apply.
-- **It never writes on its own.** The model has no tools, only text: a change
-  arrives as a proposal card, runs only under [your approval rules](#approval-modes),
-  and a destructive step always confirms. With **Propose git actions in chat**
-  off, it does not even propose.
+- **The model never writes directly.** It returns structured proposals; Gitcito
+  validates them, computes the diff, and runs them only under
+  [your approval rules](#approval-modes). Destructive Git work always confirms.
+  With action proposals off, chat does not even propose changes.
 - **Conversations live in memory only.** Switching repositories keeps each
   thread separate; quitting Gitcito discards them.
 
@@ -174,7 +194,8 @@ nothing is sent until you press Send.
 |---|---|
 | The speech-bubble button in the toolbar | Toggles the Chat tab |
 | <kbd>⌘⌥B</kbd> / <kbd>Ctrl+Alt+B</kbd> | Toggles the whole right panel |
-| <kbd>⌘⏎</kbd> / <kbd>Ctrl+Enter</kbd> | Sends the message |
+| <kbd>Enter</kbd> | Sends the message |
+| <kbd>Shift+Enter</kbd> | Inserts a new line |
 
 See [Keyboard & shortcuts](keyboard.md) for the rest, including how to rebind
 the panel toggles.

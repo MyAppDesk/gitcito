@@ -70,7 +70,8 @@ op een uitgesloten pad vallen uit die diff, niet de hele commit.
 | **Vragen stellen over de repository** | Uit verwijdert het tabblad, de knop en het doel van de sneltoets. De rest van de AI blijft werken |
 | **Chatmodel** | Een model alleen voor de chat. Leeg is dat van het profiel — vragen kost minder dan reviewen, een kleiner model volstaat vaak |
 | **Alleen vastgelegde inhoud** | Antwoordt vanuit de laatste commit in plaats van je werkmap: niet-vastgelegde bewerkingen verlaten de machine nooit |
-| **Git-acties voorstellen in de chat** | Uit maakt de chat weer puur alleen-lezen: geen actiekaarten, geen goedkeuringsmenu |
+| **Bestands- en Git-acties voorstellen in de chat** | Uit maakt de chat weer puur alleen-lezen: geen actiekaarten, geen goedkeuringsmenu |
+| **Alleen-lezenmodus voor bestanden** | Aan blokkeert bestanden maken, bewerken, vervangen en verwijderen, maar Git-acties blijven beschikbaar. Standaard ingeschakeld |
 | **Hoe voorgestelde acties worden uitgevoerd** | De goedkeuringsmodus — zie [Goedkeuringsmodi](#goedkeuringsmodi). Destructieve acties vragen hoe dan ook bevestiging |
 
 Staat AI helemaal uit, dan verdwijnt de chat mee — geen paneel dat een antwoord
@@ -122,9 +123,19 @@ getoond.
 
 ![Voorgestelde acties in de chat](../../screenshots/repo-chat-actions.webp)
 
-De set acties ligt vast: ignore-patronen, stage, unstage, commit, stash, discard, branch,
-checkout, tag. Alles daarbuiten — push, pull, reset, rebase, force-operaties —
-wordt bewust geweigerd; de chat verwijst je dan naar de gewone UI.
+Repositorychat kan exacte bewerkingen, het maken of volledig vervangen en het
+verwijderen van bestanden voorstellen, gevolgd door de Git-acties van de
+**Uitvoeren**-assistent. Gitcito berekent de uitklapbare diff lokaal. Bestaande
+bestanden moeten uit gelezen bewijs komen; onveilige, geheime, genegeerde,
+gegenereerde, binaire, verouderde, te grote of via symlinks bereikbare doelen
+worden geweigerd. Push, pull, reset, rebase en force-operaties blijven in hun
+eigen interface.
+
+De hele bestandsbatch wordt voor de eerste schrijfactie opnieuw gecontroleerd en
+bij een fout teruggedraaid. Voor een commit controleert Gitcito ook of er iets is
+gestaged. De kaart markeert voltooide, mislukte en overgeslagen acties en bewaart
+gedeeltelijke resultaten. Daarna vat een afzonderlijke aanroep zonder acties het
+werkelijke resultaat samen.
 
 ### Goedkeuringsmodi
 
@@ -171,7 +182,8 @@ er wordt niets verstuurd tot je op Verzenden drukt.
 |---|---|
 | De tekstballonknop in de werkbalk | Toont of verbergt het tabblad Chat |
 | <kbd>⌘⌥B</kbd> / <kbd>Ctrl+Alt+B</kbd> | Toont of verbergt het hele rechterpaneel |
-| <kbd>⌘⏎</kbd> / <kbd>Ctrl+Enter</kbd> | Verstuurt het bericht |
+| <kbd>Enter</kbd> | Verstuurt het bericht |
+| <kbd>Shift+Enter</kbd> | Voegt een nieuwe regel in |
 
 Zie [Toetsenbord & sneltoetsen](keyboard.md) voor de rest, inclusief het
 opnieuw toewijzen van de paneelschakelaars.

@@ -127,7 +127,9 @@ import type {
   RepoDetail,
   PrPreviewMode,
   PrPreviewResult,
-  PrRefProbe
+  PrRefProbe,
+  PreparedRepoChatFileAction,
+  RepoFileBatchResult
 } from '../shared/types'
 import { prRefCandidates } from '../shared/prRefs'
 import { parseMergeTreeSingle, parseMergeTreeStdin, type MergeTreeRecord } from '../shared/mergeTree'
@@ -138,6 +140,7 @@ import { semanticCompare } from './semantic'
 import { recordEvent } from './analytics'
 import { recordLog } from './log'
 import { activeProfileToken, readSettings } from './settings'
+import { applyPreparedRepoFileActions, RepoFileActionError } from './repoFileActions'
 
 const SEP = '\x1f'
 
@@ -4237,6 +4240,27 @@ export const gitService = {
     return ignored
   },
 
+  /** Apply a validated repository-chat file batch under the Git IPC write lock. */
+  async applyRepoFileActions(
+    repoPath: string,
+    actions: PreparedRepoChatFileAction[]
+  ): Promise<RepoFileBatchResult> {
+    const paths = [...new Set(actions.map((action) => action.path))]
+    const ignored = new Set(await gitService.ignoredTrackedFiles(repoPath, paths))
+    try {
+      const result = await applyPreparedRepoFileActions(repoPath, actions, ignored)
+      return { ok: true, applied: result.applied }
+    } catch (error) {
+      if (error instanceof RepoFileActionError) {
+        return {
+          ok: false,
+          error: { code: error.code, detail: error.message, paths: error.paths }
+        }
+      }
+      throw error
+    }
+  },
+
   /** Author, date and message of one commit — for pinned chat context. */
   async commitSummary(
     repoPath: string,
@@ -6407,6 +6431,10 @@ const READ_METHODS = new Set<string>([
   'version'
 ])
 
+export function gitMethodIsRead(method: string): boolean {
+  return READ_METHODS.has(method)
+}
+
 export function registerGitHandlers(): void {
   ipcMain.handle('git', async (_e, method: string, ...args: unknown[]) => {
     const fn = (gitService as Record<string, unknown>)[method]
@@ -6441,7 +6469,7 @@ export function registerGitHandlers(): void {
     // repo path for every repo-scoped method (not just logged ones); the
     // app-level ones run before (or without) a local repo, so they take no lock.
     const lockKey = repoScoped ? (args[0] as string) : null
-    const isWrite = !READ_METHODS.has(method)
+    const isWrite = !gitMethodIsRead(method)
     const release = lockKey ? await lockFor(lockKey).acquire(isWrite) : null
 
     try {

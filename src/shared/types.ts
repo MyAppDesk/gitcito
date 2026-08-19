@@ -1093,6 +1093,9 @@ export interface AIConfig {
   /** Chat may propose repo actions (the "Ask" action set) for the user to run.
    *  Defaults to on — proposals still never execute without the rules below. */
   repoChatActions?: boolean
+  /** Prevent chat from proposing file creation, edits, replacement, or deletion.
+   *  Git actions remain available. Defaults to on. */
+  repoChatReadOnly?: boolean
   /** How chat-proposed actions run. Destructive actions always confirm,
    *  whatever the mode says. Defaults to 'ask'. */
   repoChatApproval?: ChatActionApproval
@@ -1158,7 +1161,7 @@ export interface RepoChatReply {
   /** Validated repo actions the model proposed. Never executed in main — the
    *  renderer renders them as a card and runs them only under the approval
    *  policy. Absent when the chat-actions setting is off. */
-  actions?: AskAction[]
+  actions?: RepoChatAction[]
 }
 
 /** Co-author trailer appended when AIConfig.coAuthor is enabled (default on). */
@@ -1347,6 +1350,77 @@ export type AskAction =
   | { type: 'branch'; name: string; at?: string; checkout?: boolean; description: string }
   | { type: 'checkout'; ref: string; description: string }
   | { type: 'tag'; name: string; message?: string; description: string }
+
+/** A provider-portable repository file mutation proposed by repository chat. */
+export type RepoChatFileAction =
+  | {
+      type: 'edit_file'
+      path: string
+      oldText: string
+      newText: string
+      replaceAll?: boolean
+      description: string
+    }
+  | {
+      type: 'write_file'
+      path: string
+      content: string
+      mode: 'create' | 'replace'
+      description: string
+    }
+  | { type: 'delete_file'; path: string; description: string }
+
+/** A file mutation after the main process has verified it and built its diff. */
+export type PreparedRepoChatFileAction = RepoChatFileAction & {
+  expectedHash: string | null
+  expectedOccurrences?: number
+  preview: string
+}
+
+/** Repository chat can mutate files first and then run the existing Git actions. */
+export type RepoChatAction = AskAction | PreparedRepoChatFileAction
+
+export type RepoChatActionErrorCode =
+  | 'unsafe_path'
+  | 'git_internal_path'
+  | 'symlink_path'
+  | 'secret_file'
+  | 'ignored_path'
+  | 'generated_path'
+  | 'binary_file'
+  | 'file_too_large'
+  | 'batch_too_large'
+  | 'evidence_required'
+  | 'incomplete_evidence'
+  | 'not_found'
+  | 'already_exists'
+  | 'stale_file'
+  | 'old_text_missing'
+  | 'ambiguous_edit'
+  | 'no_staged_changes'
+  | 'hook_failed'
+  | 'rollback_failed'
+  | 'unknown'
+
+export type RepoFileBatchResult =
+  | { ok: true; applied: number }
+  | {
+      ok: false
+      error: { code: RepoChatActionErrorCode; detail?: string; paths?: string[] }
+    }
+
+export interface RepoChatExecutionResult {
+  applied: number
+  failedIndex?: number
+  failedType?: RepoChatAction['type']
+  error?: { code: RepoChatActionErrorCode; detail?: string; paths?: string[] }
+  remaining: number
+  actionResults: Array<{
+    index: number
+    type: RepoChatAction['type']
+    status: 'done' | 'failed' | 'skipped'
+  }>
+}
 
 // ─── Launch configurations (VS Code-style .vscode/launch.json) ──────────────
 
@@ -2702,6 +2776,7 @@ export function defaultAIConfig(): AIConfig {
     repoChatModel: '',
     repoChatCommittedOnly: false,
     repoChatActions: true,
+    repoChatReadOnly: true,
     repoChatApproval: 'ask'
   }
 }

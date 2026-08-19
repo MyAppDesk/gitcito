@@ -60,6 +60,13 @@ export function repoChatSourceView(repoPath: string, source: RepoChatSource) {
   }
 }
 
+/** Keep the composer keyboard rule testable without rendering the Electron UI. */
+export function shouldSubmitRepoChatOnKeyDown(
+  event: Pick<KeyboardEvent, 'key' | 'shiftKey' | 'metaKey' | 'ctrlKey' | 'isComposing'>
+): boolean {
+  return event.key === 'Enter' && !event.shiftKey && !event.isComposing
+}
+
 /** Keep the composer rules testable without rendering the Electron UI. */
 export function canSubmitRepoChat(enabled: boolean, pending: boolean, draft: string): boolean {
   return enabled && !pending && draft.trim().length > 0

@@ -71,7 +71,8 @@ touchant un chemin exclu sont retirés de ce diff, pas le commit entier.
 | **Poser des questions sur le dépôt** | Désactivé, l’onglet, le bouton et la cible du raccourci disparaissent. Le reste de l’IA continue |
 | **Modèle de la discussion** | Un modèle réservé à la discussion. Vide : celui du profil — poser une question coûte moins qu’une relecture, un modèle plus petit suffit souvent |
 | **Contenu validé uniquement** | Répond depuis le dernier commit plutôt que la copie de travail : les modifications non validées ne quittent jamais la machine |
-| **Proposer des actions git dans la discussion** | Désactivé, la discussion redevient purement en lecture seule : plus de cartes d’actions ni de menu d’approbation |
+| **Proposer des actions sur les fichiers et Git** | Désactivé, la discussion redevient purement en lecture seule : plus de cartes d’actions ni de menu d’approbation |
+| **Mode fichiers en lecture seule** | Activé, il bloque la création, la modification, le remplacement et la suppression de fichiers tout en gardant les actions Git disponibles. Activé par défaut |
 | **Comment s’exécutent les actions proposées** | Le mode d’approbation — voir [Modes d’approbation](#modes-dapprobation). Les actions destructrices confirment quoi qu’il arrive |
 
 Avec l’IA entièrement désactivée, la discussion disparaît avec elle : plus de
@@ -125,10 +126,18 @@ n’existe pas est rejetée, pas affichée.
 
 ![Actions proposées dans la discussion](../../screenshots/repo-chat-actions.webp)
 
-L’ensemble d’actions est fixe : motifs d’exclusion, indexer, désindexer, valider, remiser,
-abandonner, créer une branche, basculer de branche, étiqueter. Tout ce qui
-dépasse — push, pull, reset, rebase, opérations forcées — est refusé par
-conception ; la discussion vous dira d’utiliser l’interface dédiée à la place.
+La discussion du dépôt peut proposer des modifications exactes, la création ou
+le remplacement complet d’un fichier et la suppression de fichiers, puis les
+actions Git de l’assistant **Exécuter**. Gitcito calcule localement chaque diff
+dépliable. Les fichiers existants doivent provenir des éléments lus ; les cibles
+dangereuses, secrètes, ignorées, générées, binaires, périmées, trop volumineuses
+ou reliées par un lien symbolique sont refusées. Push, pull, reset, rebase et les
+opérations forcées restent dans leur interface dédiée.
+
+Le lot entier est revérifié avant la première écriture et annulé si une étape
+échoue. Avant un commit, Gitcito vérifie aussi que des changements sont indexés.
+La carte marque chaque action terminée, échouée ou ignorée et conserve les
+résultats partiels. Un appel séparé, sans actions, résume ensuite le résultat réel.
 
 ### Modes d’approbation
 
@@ -178,7 +187,8 @@ que vous pressiez Envoyer.
 |---|---|
 | Le bouton bulle dans la barre d’outils | Affiche ou masque l’onglet Discussion |
 | <kbd>⌘⌥B</kbd> / <kbd>Ctrl+Alt+B</kbd> | Affiche ou masque tout le panneau droit |
-| <kbd>⌘⏎</kbd> / <kbd>Ctrl+Entrée</kbd> | Envoie le message |
+| <kbd>Entrée</kbd> | Envoie le message |
+| <kbd>Maj+Entrée</kbd> | Insère un saut de ligne |
 
 Voir [Clavier et raccourcis](keyboard.md) pour le reste, y compris comment
 réassigner les bascules de panneau.

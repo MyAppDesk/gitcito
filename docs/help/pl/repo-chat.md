@@ -70,7 +70,8 @@ wykluczonej ścieżki wypadają z tego diffa, a nie cały commit.
 | **Zadawaj pytania o repozytorium** | Wyłączone usuwa kartę, przycisk paska i cel skrótu. Reszta AI działa dalej |
 | **Model czatu** | Model tylko dla czatu. Puste oznacza model profilu — pytanie kosztuje mniej niż przegląd, mniejszy zwykle wystarcza |
 | **Tylko zatwierdzona treść** | Odpowiada z ostatniego commita zamiast z katalogu roboczego: niezatwierdzone zmiany nigdy nie opuszczają komputera |
-| **Proponowanie akcji Gita na czacie** | Wyłączone znów czyni czat czysto tylko do odczytu: żadnych kart akcji, żadnej listy zatwierdzania |
+| **Proponowanie akcji na plikach i w Git** | Wyłączone znów czyni czat czysto tylko do odczytu: żadnych kart akcji, żadnej listy zatwierdzania |
+| **Tryb plików tylko do odczytu** | Włączony blokuje tworzenie, edytowanie, zastępowanie i usuwanie plików, ale pozostawia dostępne akcje Git. Domyślnie jest włączony |
 | **Jak uruchamiane są proponowane akcje** | Tryb zatwierdzania — zobacz [Tryby zatwierdzania](#tryby-zatwierdzania). Akcje destrukcyjne i tak proszą o potwierdzenie |
 
 Gdy AI jest wyłączone w całości, czat znika razem z nim — żaden panel nie
@@ -121,10 +122,17 @@ wskazująca nieistniejący plik zostaje odrzucona, a nie wyświetlona.
 
 ![Proponowane akcje na czacie](../../screenshots/repo-chat-actions.webp)
 
-Zestaw akcji jest stały:
-wzorce ignorowania, stage, unstage, commit, stash, discard, branch, checkout,
-tag. Wszystko poza nim — push, pull, reset, rebase, operacje z force — jest
-odrzucane celowo; czat odeśle cię wtedy do właściwego interfejsu.
+Czat repozytorium może proponować dokładne edycje, tworzenie lub pełne
+zastępowanie oraz usuwanie plików, a następnie akcje Git asystenta **Uruchom**.
+Gitcito oblicza rozwijany diff lokalnie. Istniejące pliki muszą pochodzić z
+odczytanych dowodów; odrzucane są cele niebezpieczne, tajne, ignorowane,
+generowane, binarne, nieaktualne, zbyt duże lub dostępne przez symlink. Push,
+pull, reset, rebase i operacje force pozostają we właściwym interfejsie.
+
+Cała partia jest ponownie sprawdzana przed pierwszym zapisem i wycofywana, gdy
+któryś krok zawiedzie. Przed commitem Gitcito sprawdza też, czy coś jest w stage.
+Karta oznacza akcje ukończone, nieudane i pominięte oraz zachowuje wynik
+częściowy. Potem osobne wywołanie bez akcji podsumowuje rzeczywisty rezultat.
 
 ### Tryby zatwierdzania
 
@@ -171,7 +179,8 @@ Szkic można edytować — nic nie zostanie wysłane, póki nie naciśniesz Wyś
 |---|---|
 | Przycisk dymka na pasku narzędzi | Przełącza kartę Czat |
 | <kbd>⌘⌥B</kbd> / <kbd>Ctrl+Alt+B</kbd> | Przełącza cały prawy panel |
-| <kbd>⌘⏎</kbd> / <kbd>Ctrl+Enter</kbd> | Wysyła wiadomość |
+| <kbd>Enter</kbd> | Wysyła wiadomość |
+| <kbd>Shift+Enter</kbd> | Wstawia nowy wiersz |
 
 Resztę, w tym zmianę przypisania przełączników paneli, opisuje
 [Klawiatura i skróty](keyboard.md).

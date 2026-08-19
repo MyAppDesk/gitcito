@@ -71,7 +71,8 @@ Commit.
 | **Fragen zum Repository stellen** | Aus entfernt Reiter, Symbolleisten-Knopf und Kürzelziel. Der Rest der KI bleibt |
 | **Chat-Modell** | Ein Modell nur für den Chat. Leer heißt: das des Profils — Fragen kosten weniger als Reviews, ein kleineres reicht oft |
 | **Nur committete Inhalte** | Antwortet aus dem letzten Commit statt aus dem Arbeitsverzeichnis: nicht committete Änderungen verlassen den Rechner nie |
-| **Git-Aktionen im Chat vorschlagen** | Aus macht den Chat wieder rein lesend: keine Aktionskarten, kein Freigabe-Menü |
+| **Datei- und Git-Aktionen im Chat vorschlagen** | Aus macht den Chat wieder rein lesend: keine Aktionskarten, kein Freigabe-Menü |
+| **Dateien nur lesen** | Ein verhindert Erstellen, Bearbeiten, Ersetzen und Löschen von Dateien; Git-Aktionen bleiben verfügbar. Standardmäßig eingeschaltet |
 | **Wie vorgeschlagene Aktionen ausgeführt werden** | Der Freigabemodus — siehe [Freigabemodi](#freigabemodi). Destruktive Aktionen bestätigen in jedem Fall |
 
 Ist die KI ganz aus, verschwindet der Chat mit ihr — kein Panel, das etwas
@@ -124,10 +125,19 @@ nennt, wird abgewiesen, nicht angezeigt.
 
 ![Vorgeschlagene Aktionen im Chat](../../screenshots/repo-chat-actions.webp)
 
-Der Aktionsumfang ist fest: Ignore-Muster, stagen, unstagen, committen, stashen, verwerfen,
-Branch, Checkout, Tag. Alles darüber hinaus — Push, Pull, Reset, Rebase,
-erzwungene Operationen — wird absichtlich verweigert; der Chat verweist dich
-stattdessen auf die dafür gedachte Oberfläche.
+Der Repository-Chat kann exakte Bearbeitungen, das Erstellen oder vollständige
+Ersetzen sowie das Löschen von Dateien vorschlagen, gefolgt von den Git-Aktionen
+des **Ausführen**-Assistenten. Gitcito berechnet den aufklappbaren Diff lokal.
+Bestehende Dateien müssen aus gelesenen Belegen stammen; unsichere, geheime,
+ignorierte, generierte, binäre, veraltete, zu große oder verlinkte Ziele werden
+abgewiesen. Push, Pull, Reset, Rebase und erzwungene Operationen bleiben in der
+dafür vorgesehenen Oberfläche.
+
+Der gesamte Dateistapel wird vor dem ersten Schreiben erneut geprüft und bei
+einem Fehler zurückgerollt. Vor einem Commit prüft Gitcito außerdem, ob etwas
+vorgemerkt ist. Die Karte zeigt abgeschlossene, fehlgeschlagene und übersprungene
+Schritte sowie Teilergebnisse. Danach fasst ein separater Modellaufruf ohne
+Aktionen das tatsächliche Ergebnis zusammen.
 
 ### Freigabemodi
 
@@ -175,7 +185,8 @@ Entwurf bleibt bearbeitbar; nichts wird gesendet, bis du Senden drückst.
 |---|---|
 | Der Sprechblasen-Knopf in der Symbolleiste | Schaltet den Chat-Reiter um |
 | <kbd>⌘⌥B</kbd> / <kbd>Ctrl+Alt+B</kbd> | Schaltet das ganze rechte Panel um |
-| <kbd>⌘⏎</kbd> / <kbd>Ctrl+Enter</kbd> | Sendet die Nachricht |
+| <kbd>Enter</kbd> | Sendet die Nachricht |
+| <kbd>Shift+Enter</kbd> | Fügt eine neue Zeile ein |
 
 [Tastatur & Kürzel](keyboard.md) hat den Rest, auch das Neubelegen der
 Panel-Schalter.

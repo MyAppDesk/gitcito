@@ -70,7 +70,8 @@ blocchi su percorsi esclusi vengono tolti da quel diff, non l’intero commit.
 | **Fai domande sul repository** | Disattivata toglie la scheda, il pulsante e il bersaglio della scorciatoia. Il resto dell’IA continua |
 | **Modello della chat** | Un modello solo per la chat. Vuoto significa quello del profilo: chiedere costa meno che revisionare, spesso basta uno più piccolo |
 | **Solo contenuti committati** | Risponde dall’ultimo commit invece che dal working tree: le modifiche non committate non lasciano mai la macchina |
-| **Proponi azioni git in chat** | Disattivata riporta la chat alla sola lettura: niente schede di azioni, niente menu di approvazione |
+| **Proponi azioni su file e Git in chat** | Disattivata riporta la chat alla sola lettura: niente schede di azioni, niente menu di approvazione |
+| **Modalità file di sola lettura** | Attivata blocca creazione, modifica, sostituzione ed eliminazione dei file, ma mantiene disponibili le azioni Git. È attiva per impostazione predefinita |
 | **Come vengono eseguite le azioni proposte** | La modalità di approvazione — vedi [Modalità di approvazione](#modalità-di-approvazione). Le azioni distruttive chiedono comunque conferma |
 
 Con l’IA spenta del tutto la chat sparisce con lei: nessun pannello che offre
@@ -123,10 +124,19 @@ rifiutata, non mostrata.
 
 ![Azioni proposte in chat](../../screenshots/repo-chat-actions.webp)
 
-L'insieme di azioni è fisso: pattern di ignore, stage, unstage, commit, stash, scarto delle
-modifiche, branch, checkout, tag. Tutto ciò che va oltre — push, pull, reset,
-rebase, operazioni forzate — viene rifiutato per scelta; la chat ti dirà di
-usare l'interfaccia dedicata.
+La chat del repository può proporre modifiche esatte, la creazione o sostituzione
+completa e l'eliminazione di file, seguite dalle azioni Git dell'assistente
+**Esegui**. Gitcito calcola localmente ogni diff espandibile. I file esistenti
+devono provenire dalle prove lette; vengono rifiutati percorsi non sicuri,
+segreti, ignorati, generati, binari, obsoleti, troppo grandi o collegati tramite
+symlink. Push, pull, reset, rebase e operazioni forzate restano nell'interfaccia
+dedicata.
+
+L'intero gruppo viene ricontrollato prima della prima scrittura e ripristinato se
+un passaggio fallisce. Prima di un commit, Gitcito verifica che ci siano modifiche
+in stage. La scheda indica ogni azione completata, fallita o saltata e conserva i
+risultati parziali. Poi una chiamata separata, senza azioni, riepiloga il risultato
+effettivo.
 
 ### Modalità di approvazione
 
@@ -174,7 +184,8 @@ Invia.
 |---|---|
 | Il pulsante a fumetto nella barra strumenti | Mostra o nasconde la scheda Chat |
 | <kbd>⌘⌥B</kbd> / <kbd>Ctrl+Alt+B</kbd> | Mostra o nasconde tutto il pannello destro |
-| <kbd>⌘⏎</kbd> / <kbd>Ctrl+Invio</kbd> | Invia il messaggio |
+| <kbd>Invio</kbd> | Invia il messaggio |
+| <kbd>Maiusc+Invio</kbd> | Inserisce una nuova riga |
 
 [Tastiera e scorciatoie](keyboard.md) ha il resto, incluso come riassegnare gli
 interruttori dei pannelli.

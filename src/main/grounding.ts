@@ -7,6 +7,8 @@
  * reference is a validation error instead of a plausible-looking lie.
  */
 
+import { isSafeRepoPath } from './aiSchemas'
+
 /** One citable hunk of a unified diff. */
 export interface DiffEvidence {
   id: string
@@ -403,6 +405,94 @@ export function validateAskActions(value: unknown, knownPaths: Set<string>): str
       }
     }
   })
+  return errors
+}
+
+const REPO_CHAT_FILE_ACTION_TYPES = new Set(['edit_file', 'write_file', 'delete_file'])
+
+export interface RepoChatActionContext {
+  workingTreePaths: Set<string>
+  evidencePaths: Set<string>
+  completePaths: Set<string>
+  allowFileActions?: boolean
+}
+
+/**
+ * Validates repository-chat plans without broadening the Ask planner. File
+ * mutations form a prefix, and their outputs become valid paths for later Git
+ * actions such as stage and commit.
+ */
+export function validateRepoChatActions(value: unknown, context: RepoChatActionContext): string[] {
+  if (!Array.isArray(value)) return ['"actions" must be an array (use [] when nothing can be done).']
+
+  const errors: string[] = []
+  const gitActions: unknown[] = []
+  const knownGitPaths = new Set(context.workingTreePaths)
+  let fileActions = 0
+  let sawGitAction = false
+
+  if (value.length > 64) errors.push('Repository chat may propose at most 64 total actions.')
+
+  value.forEach((raw, i) => {
+    const at = `actions[${i}]`
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+      gitActions.push(raw)
+      sawGitAction = true
+      return
+    }
+
+    const action = raw as Record<string, unknown>
+    if (typeof action.type !== 'string' || !REPO_CHAT_FILE_ACTION_TYPES.has(action.type)) {
+      gitActions.push(action)
+      sawGitAction = true
+      return
+    }
+    if (context.allowFileActions === false) {
+      errors.push(`${at} file actions are disabled by file read-only mode.`)
+      return
+    }
+
+    fileActions++
+    if (sawGitAction) errors.push(`${at} file actions must appear before Git actions.`)
+    if (typeof action.description !== 'string' || !action.description.trim()) {
+      errors.push(`${at}.description must be a short sentence.`)
+    }
+    if (!isSafeRepoPath(action.path)) {
+      errors.push(`${at}.path must be a relative path inside the repository.`)
+      return
+    }
+
+    const path = action.path.trim()
+    if (action.type !== 'write_file' || action.mode === 'replace') {
+      if (!context.evidencePaths.has(path)) {
+        errors.push(`${at}.path ${JSON.stringify(path)} requires repository evidence.`)
+      }
+    }
+
+    if (action.type === 'edit_file') {
+      if (typeof action.oldText !== 'string' || action.oldText.length === 0) {
+        errors.push(`${at}.oldText must be a non-empty exact excerpt.`)
+      }
+      if (typeof action.newText !== 'string') errors.push(`${at}.newText must be a string.`)
+      if (action.replaceAll !== undefined && typeof action.replaceAll !== 'boolean') {
+        errors.push(`${at}.replaceAll must be a boolean when provided.`)
+      }
+    } else if (action.type === 'write_file') {
+      if (action.mode !== 'create' && action.mode !== 'replace') {
+        errors.push(`${at}.mode must be either "create" or "replace".`)
+      }
+      if (typeof action.content !== 'string') errors.push(`${at}.content must be a string.`)
+      if (action.mode === 'replace' && !context.completePaths.has(path)) {
+        errors.push(`${at}.path ${JSON.stringify(path)} requires complete evidence before replacement.`)
+      }
+    }
+
+    knownGitPaths.add(path)
+  })
+
+  if (fileActions > 48) errors.push('Repository chat may propose at most 48 file actions.')
+  if (gitActions.length > 12) errors.push('Repository chat may propose at most 12 Git actions.')
+  errors.push(...validateAskActions(gitActions, knownGitPaths))
   return errors
 }
 

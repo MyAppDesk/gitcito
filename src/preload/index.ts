@@ -151,7 +151,9 @@ const api = {
     planActions: (prompt: string, status: unknown, cfg: unknown): Promise<unknown> =>
       ipcRenderer.invoke('ai:planActions', prompt, status, cfg),
     repoChat: (repoPath: string, messages: unknown, cfg: unknown, attachments: unknown): Promise<unknown> =>
-      ipcRenderer.invoke('ai:repoChat', repoPath, messages, cfg, attachments)
+      ipcRenderer.invoke('ai:repoChat', repoPath, messages, cfg, attachments),
+    repoChatFinalize: (repoPath: string, messages: unknown, result: unknown, cfg: unknown): Promise<unknown> =>
+      ipcRenderer.invoke('ai:repoChatFinalize', repoPath, messages, result, cfg)
   },
 
   wiki: {

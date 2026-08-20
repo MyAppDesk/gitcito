@@ -49,7 +49,7 @@ import { branchDropActions, encodeDropRef, BRANCH_DND_TYPE, type DropRef } from 
 import { stepRange, claimRangeKeys, ownsRangeKeys, rangeKeysBlocked, domOrder } from '../lib/rangeSelect'
 import { openBranchDropMenu } from '../lib/branchDropMenu'
 import { defaultSettings } from '../../../shared/types'
-import type { BranchInfo, MergeRiskKind, ReleaseInfo, RemoteBranchInfo, StashInfo, TagInfo, WorktreeInfo, SubmoduleInfo, LaunchGroup, LaunchConfig } from '../../../shared/types'
+import type { BranchInfo, MergeRiskKind, ReleaseInfo, RemoteBranchInfo, StashInfo, TagInfo, WorktreeInfo, SubmoduleInfo, LaunchGroup, LaunchConfig, PullRequest, IssueInfo, MilestoneInfo, RemoteInfo } from '../../../shared/types'
 
 import { RemoteIcon } from './RemoteIcon'
 
@@ -1091,6 +1091,98 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     })
 
 
+  // Hosting items (PRs, issues, milestones, releases) share a shape: open the
+  // in-app detail view, open on the web, copy the link. Origin is the remote
+  // every detail view is keyed to, matching the click handlers above.
+  const hostOrigin = (): RemoteInfo | undefined => repo.remotes.find((r) => r.name === 'origin') ?? repo.remotes[0]
+
+  const prMenu = (pr: PullRequest): MenuItem[] => {
+    const origin = hostOrigin()
+    return [
+      ...(repoIsGitHub(repo.remotes) && origin
+        ? [
+            {
+              label: t('sidebar.openDetails'),
+              onClick: (): void => openModal({ kind: 'pr-detail', repoPath: path, remoteUrl: origin.url, number: pr.id })
+            } satisfies MenuItem
+          ]
+        : []),
+      {
+        label: t('prPreview.open'),
+        onClick: () =>
+          openModal({ kind: 'pr-preview', repoPath: path, number: pr.id, remote: origin?.name, branch: pr.sourceBranch })
+      },
+      ...(aiEnabled && pr.sourceBranch && pr.targetBranch
+        ? [
+            {
+              label: t('sidebar.aiPrReview'),
+              onClick: (): void =>
+                openModal({
+                  kind: 'ai-pr-review',
+                  repoPath: path,
+                  prTitle: pr.title,
+                  sourceBranch: pr.sourceBranch,
+                  targetBranch: pr.targetBranch
+                })
+            } satisfies MenuItem
+          ]
+        : []),
+      { separator: true },
+      { label: t('common.openInBrowser'), onClick: () => void shellApi.openExternal(pr.url) },
+      { label: t('sidebar.copyLink'), onClick: () => void navigator.clipboard.writeText(pr.url) },
+      { label: t('sidebar.copyTitle'), onClick: () => void navigator.clipboard.writeText(pr.title) },
+      ...(pr.sourceBranch
+        ? [{ label: t('sidebar.copyBranchName'), onClick: (): void => void navigator.clipboard.writeText(pr.sourceBranch) }]
+        : [])
+    ]
+  }
+
+  const issueMenu = (issue: IssueInfo): MenuItem[] => {
+    const origin = hostOrigin()
+    return [
+      ...(origin
+        ? [
+            {
+              label: t('sidebar.openDetails'),
+              onClick: (): void => openPageTab({ type: 'issue', issue, repoPath: path, remoteUrl: origin.url })
+            } satisfies MenuItem
+          ]
+        : []),
+      { separator: true },
+      { label: t('common.openInBrowser'), onClick: () => void shellApi.openExternal(issue.url) },
+      { label: t('sidebar.copyLink'), onClick: () => void navigator.clipboard.writeText(issue.url) },
+      { label: t('sidebar.copyTitle'), onClick: () => void navigator.clipboard.writeText(issue.title) }
+    ]
+  }
+
+  const milestoneMenu = (m: MilestoneInfo): MenuItem[] => {
+    const origin = hostOrigin()
+    return [
+      ...(origin
+        ? [
+            {
+              label: t('sidebar.openDetails'),
+              onClick: (): void => openPageTab({ type: 'milestone', milestone: m, repoPath: path, remoteUrl: origin.url })
+            } satisfies MenuItem
+          ]
+        : []),
+      { separator: true },
+      { label: t('common.openInBrowser'), onClick: () => void shellApi.openExternal(m.url) },
+      { label: t('sidebar.copyLink'), onClick: () => void navigator.clipboard.writeText(m.url) },
+      { label: t('sidebar.copyTitle'), onClick: () => void navigator.clipboard.writeText(m.title) }
+    ]
+  }
+
+  const releaseMenu = (rel: ReleaseInfo): MenuItem[] => [
+    { label: t('sidebar.openDetails'), onClick: () => openPageTab({ type: 'release', release: rel, repoPath: path }) },
+    { separator: true },
+    { label: t('sidebar.openOnWeb'), onClick: () => void shellApi.openExternal(rel.url) },
+    { label: t('sidebar.copyLink'), onClick: () => void navigator.clipboard.writeText(rel.url) },
+    ...(rel.tag
+      ? [{ label: t('sidebar.copyTagName'), onClick: (): void => void navigator.clipboard.writeText(rel.tag!) }]
+      : [])
+  ]
+
   const promptCreateRoot = (isDir: boolean): void =>
     openModal({
       kind: 'input',
@@ -1545,6 +1637,10 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
               const origin = repo.remotes.find((r) => r.name === 'origin') ?? repo.remotes[0]
               if (origin) openModal({ kind: 'pr-detail', repoPath: path, remoteUrl: origin.url, number: pr.id })
             }}
+            onContextMenu={(e) => {
+              e.preventDefault()
+              openContextMenu(e.clientX, e.clientY, prMenu(pr))
+            }}
             title={pr.title}
           >
             <GitPullRequest size={12} className={pr.isDraft ? 'pr-draft' : 'pr-open'} />
@@ -1649,6 +1745,10 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
               if (origin)
                 useSettingsStore.getState().openPageTab({ type: 'issue', issue, repoPath: path, remoteUrl: origin.url })
             }}
+            onContextMenu={(e) => {
+              e.preventDefault()
+              openContextMenu(e.clientX, e.clientY, issueMenu(issue))
+            }}
             title={issue.title}
           >
             <CircleDot size={12} className="pr-open" />
@@ -1707,6 +1807,10 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
                   useSettingsStore
                     .getState()
                     .openPageTab({ type: 'milestone', milestone: m, repoPath: path, remoteUrl: origin.url })
+              }}
+              onContextMenu={(e) => {
+                e.preventDefault()
+                openContextMenu(e.clientX, e.clientY, milestoneMenu(m))
               }}
               title={`${m.title}${m.dueOn ? ` · due ${new Date(m.dueOn).toLocaleDateString()}` : ''}`}
             >
@@ -1800,6 +1904,10 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
                 key={rel.id}
                 className="sb-item release"
                 onClick={() => openPageTab({ type: 'release', release: rel, repoPath: path })}
+                onContextMenu={(e) => {
+                  e.preventDefault()
+                  openContextMenu(e.clientX, e.clientY, releaseMenu(rel))
+                }}
                 title={label}
               >
                 <Rocket size={11} className="sb-release-icon" />

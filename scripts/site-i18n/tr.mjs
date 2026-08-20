@@ -15,19 +15,19 @@ export const tr = {
 
   'meta.title': 'Gitcito — git’in tamamı, onu size gösteren bir arayüzle',
   'meta.description':
-    'Baştan sona vibe coding ile yazılmış bir Git istemcisi. Ücretsiz. Commit grafiği, satır satır hazırlama, rebase, çalışma ağaçları, alt modüller, LFS — artı diğer istemcilerin yapmadığı birkaç şey.',
+    'Baştan sona vibe coding ile yazılmış bir Git istemcisi. Ücretsiz. Commit grafiği, satır satır hazırlama, rebase, çalışma ağaçları, alt modüller, LFS — artı git’in yapabildiğini bilmediğiniz birkaç şey.',
 
   'hero.title': 'Git’in tamamı,<br /><em>onu size gösteren bir arayüzle</em>',
   'hero.lede':
-    'Commit grafiği, satır satır hazırlama, rebase, çalışma ağaçları, alt modüller, LFS.<br />Sıradan şeyler, düzgünce yapılmış — artı başka kimsenin yapmadığı birkaçı.',
+    'Commit grafiği, satır satır hazırlama, rebase, çalışma ağaçları, alt modüller, LFS.<br />Sıradan şeyler, düzgünce yapılmış — artı git’in yapabildiğini bilmediğiniz birkaçı.',
   'hero.download': 'Platformunuz için indirin',
   'hero.source': 'Kaynağı görüntüle',
   'hero.terms': 'Ücretsiz · MIT · v{version}',
   'hero.graphAlt': 'Gitcito commit grafiği',
 
-  'features.title': 'Diğer istemcilerin yapmadığı birkaç şey',
+  'features.title': 'Git’in yapabildiğini bilmediğiniz birkaç şey',
   'features.sub':
-    'Bunların hiçbiri Gitcito’yu kullanma sebebi değil — sebep yukarıdaki liste. Var olmalarının nedeni, git’in yanıtı zaten biliyor olması ve hiçbir istemcinin sormaya zahmet etmemesi.',
+    'Bunların hiçbiri Gitcito’yu kullanma sebebi değil — sebep yukarıdaki liste. Var olmalarının nedeni, git’in yanıtı zaten biliyor olması; Gitcito sadece soruyor.',
 
   'ordinary.title': 'Neler var',
   'ordinary.sub':
@@ -72,6 +72,15 @@ export const tr = {
   'feature.conflict-radar.title': 'Çakışma radarı',
   'feature.conflict-radar.body':
     'Hangi dalların çakışacağını, hiçbirini birleştirmeden <strong>önce</strong> görün. Birleştirmeler nesne veritabanının içinde olur — checkout yok, çalışma dizini değişikliği yok, sonradan temizlenecek hiçbir şey yok.',
+  'feature.recovery.title': 'WIP anlık görüntüleri',
+  'feature.recovery.body':
+    'Tüm çalışma ağacınız — izlenmeyen dosyalar dahil — bir zamanlayıcıyla ve <strong>her yıkıcı eylemden hemen önce</strong> anlık görüntüye alınır. Pişman olduğunuz bir vazgeçme, bir geri yükleme uzağınızda.',
+  'feature.commit-edit.title': 'Herhangi bir commit’i düzenleyin',
+  'feature.commit-edit.body':
+    'Yazım hatası üç hafta geride mi? Dosyayı <strong>eski commit’in içinde</strong> düzenleyin — üstteki her şey yeniden oynatılır ve tek bir ref kımıldamadan önce tüm zincir önizlenir.',
+  'feature.ai.title': 'Kendi modellerinizi getirin',
+  'feature.ai.body':
+    'Aynı anda birden çok yapay zekâ hesabı — commit mesajları için bir OpenAI anahtarı, sohbet için Claude, gerisi için yerel bir Ollama. Model listeleri her sağlayıcıdan canlı gelir ve zaten oturum açtığınız bir CLI, API anahtarı yerine geçer.',
   'feature.semantic-diff.title': 'Anlamsal diff',
   'feature.semantic-diff.body':
     '400 satırlık kırmızı/yeşil bir duvar yerine <code>startServer</code> → <code>bootServer</code>. Gerçek tree-sitter ayrıştırması, regex değil.',

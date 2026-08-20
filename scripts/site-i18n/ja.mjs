@@ -14,19 +14,19 @@ export const ja = {
 
   'meta.title': 'Gitcito — git のすべてを見せる UI',
   'meta.description':
-    '完全に vibe-coded な Git クライアント。無料。グラフ、1 行単位のステージング、リベース、ワークツリー、サブモジュール、LFS — さらに、ほかのクライアントがやらないことをいくつか。',
+    '完全に vibe-coded な Git クライアント。無料。グラフ、1 行単位のステージング、リベース、ワークツリー、サブモジュール、LFS — さらに、git にできるとは知らなかったことをいくつか。',
 
   'hero.title': 'git のすべてを、<br /><em>そのまま見せてくれる UI</em>',
   'hero.lede':
-    'グラフ、1 行単位のステージング、リベース、ワークツリー、サブモジュール、LFS。<br />ふつうのことを、きちんと — さらに、ほかの誰もやらないことをいくつか。',
+    'グラフ、1 行単位のステージング、リベース、ワークツリー、サブモジュール、LFS。<br />ふつうのことを、きちんと — さらに、git にできるとは知らなかったことをいくつか。',
   'hero.download': 'お使いのプラットフォーム用をダウンロード',
   'hero.source': 'ソースを見る',
   'hero.terms': '無料 · MIT · v{version}',
   'hero.graphAlt': 'Gitcito のコミットグラフ',
 
-  'features.title': 'ほかのクライアントがやらないことを、いくつか',
+  'features.title': 'git にできるとは知らなかったことを、いくつか',
   'features.sub':
-    'どれも Gitcito を使う理由ではありません — 理由は上のリストです。これらがあるのは、git がすでに答えを知っているのに、どのクライアントもそれを訊こうとしないからです。',
+    'どれも Gitcito を使う理由ではありません — 理由は上のリストです。これらがあるのは、git がすでに答えを知っているから。Gitcito はただ、それを訊くだけです。',
 
   'ordinary.title': '手に入るもの',
   'ordinary.sub':
@@ -73,6 +73,15 @@ export const ja = {
   'feature.conflict-radar.title': 'コンフリクトレーダー',
   'feature.conflict-radar.body':
     'どのブランチがコンフリクトするかを、どれ一つマージする<strong>前に</strong>見られます。マージはオブジェクトデータベースのなかで起きます — チェックアウトなし、作業ツリーの変更なし、あとで片付けるものもなし。',
+  'feature.recovery.title': 'WIP スナップショット',
+  'feature.recovery.body':
+    '作業ツリー全体を — 未追跡ファイルも含めて — タイマーで、そして<strong>破壊的な操作の直前に必ず</strong>スナップショット。後悔した破棄も、復元ひとつで戻せます。',
+  'feature.commit-edit.title': 'どのコミットでも編集',
+  'feature.commit-edit.body':
+    'タイプミスは 3 週間前？ <strong>古いコミットの中で</strong>ファイルを編集 — その上のすべてがリプレイされ、ref がひとつでも動く前にカスケード全体をプレビューできます。',
+  'feature.ai.title': '自分のモデルを持ち込む',
+  'feature.ai.body':
+    '複数の AI アカウントを同時に — コミットメッセージには OpenAI のキー、チャットには Claude、残りはローカルの Ollama。モデル一覧は各プロバイダーからライブで取得。サインイン済みの CLI なら API キーの代わりになります。',
   'feature.semantic-diff.title': 'セマンティック差分',
   'feature.semantic-diff.body':
     '400 行の赤と緑の壁ではなく、<code>startServer</code> → <code>bootServer</code>。正規表現ではなく、本物の tree-sitter 解析です。',

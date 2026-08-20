@@ -14,19 +14,19 @@ export const zhCN = {
 
   'meta.title': 'Gitcito——git 的全部，配上一个让你看得见的界面',
   'meta.description':
-    '一个完全由 vibe coding 写成的 Git 客户端。免费。提交图、逐行暂存、变基、工作树、子模块、LFS——外加一些别的客户端不做的事。',
+    '一个完全由 vibe coding 写成的 Git 客户端。免费。提交图、逐行暂存、变基、工作树、子模块、LFS——外加几件你不知道 git 还能做的事。',
 
   'hero.title': 'git 的全部，<br /><em>配上一个让你看得见的界面</em>',
   'hero.lede':
-    '提交图、逐行暂存、变基、工作树、子模块、LFS。<br />那些寻常的事，都做到位了——外加几件别人都不做的事。',
+    '提交图、逐行暂存、变基、工作树、子模块、LFS。<br />那些寻常的事，都做到位了——外加几件你不知道 git 还能做的事。',
   'hero.download': '下载适合你平台的版本',
   'hero.source': '查看源码',
   'hero.terms': '免费 · MIT · v{version}',
   'hero.graphAlt': 'Gitcito 的提交图',
 
-  'features.title': '一些别的客户端不做的事',
+  'features.title': '几件你不知道 git 还能做的事',
   'features.sub':
-    '这些都不是你该用 Gitcito 的理由——上面那份清单才是。它们存在，只是因为 git 早就知道答案，而没有哪个客户端肯去问它。',
+    '这些都不是你该用 Gitcito 的理由——上面那份清单才是。它们存在，只是因为 git 早就知道答案；Gitcito 不过是去问了一声。',
 
   'ordinary.title': '你会得到什么',
   'ordinary.sub':
@@ -71,6 +71,15 @@ export const zhCN = {
   'feature.conflict-radar.title': '冲突雷达',
   'feature.conflict-radar.body':
     '在合并任何分支<strong>之前</strong>，先看清哪些分支会冲突。合并发生在对象数据库内部——不检出，不动工作区，事后没有任何东西要收拾。',
+  'feature.recovery.title': 'WIP 快照',
+  'feature.recovery.body':
+    '整棵工作树——连同未跟踪的文件——按定时器拍下快照，并且<strong>在每次破坏性操作之前</strong>再拍一次。后悔的丢弃，一次恢复就能找回。',
+  'feature.commit-edit.title': '编辑任意提交',
+  'feature.commit-edit.body':
+    '错别字在三周前？直接<strong>在旧提交里</strong>改文件——上面的一切自动重放，整条级联在任何 ref 移动之前先给你预览。',
+  'feature.ai.title': '自带模型',
+  'feature.ai.body':
+    '同时用多个 AI 账号——OpenAI 密钥写提交信息，Claude 负责聊天，本地 Ollama 干剩下的。模型列表从各家实时拉取；已登录的 CLI 也能直接用，不必再配 API 密钥。',
   'feature.semantic-diff.title': '语义差异',
   'feature.semantic-diff.body':
     '<code>startServer</code> → <code>bootServer</code>，而不是一堵 400 行的红绿墙。真正的 tree-sitter 解析，不是正则。',

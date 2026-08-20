@@ -823,6 +823,30 @@ export const shots = [
     }
   },
   {
+    // Commit editing across merges: the oldest commit of a history that
+    // carries real merge commits, previewed so the shot shows the merges
+    // banner and the merge steps replaying with their recorded resolutions.
+    out: 'commit-edit-merges',
+    repos: ['collaborators'],
+    themes: ['light'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['collaborators']
+      await page.waitForFunction((p) => (window.__shot.repo.getState().repos[p]?.commits ?? []).length > 0, repo)
+      await page.evaluate((p) => {
+        const commits = window.__shot.repo.getState().repos[p].commits
+        const c = commits[commits.length - 1] // the root — every merge sits above it
+        window.__shot.ui.getState().openModal({ kind: 'commit-edit', repoPath: p, sha: c.hash, subject: c.subject })
+      }, repo)
+      await page.waitForTimeout(900)
+      // Preview arms only once something changed — a reword is enough.
+      await page.locator('.commitedit-message').fill(
+        (await page.locator('.commitedit-message').inputValue()) + ' (reworded)'
+      )
+      await page.locator('.commitedit-cascade-head button').first().click()
+      await page.waitForTimeout(1500)
+    }
+  },
+  {
     // Teammate radar — remote activity crossed with local dirty files.
     // Expand the overlapping row so the shot shows the file-level detail.
     out: 'teammate-radar',

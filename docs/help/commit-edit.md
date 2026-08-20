@@ -17,8 +17,8 @@ commit details panel opens the same editor.
 
 ## What it does
 
-Pick any commit on a linear path to `HEAD`. The modal shows its files and
-message; edit either. Two things happen from there:
+Pick any commit that is an ancestor of `HEAD` — linear history or not. The
+modal shows its files and message; edit either. Two things happen from there:
 
 1. **Preview cascade** replays every commit above the edited one *in memory*
    (a chain of `merge-tree` cherry-picks — no checkout, no working tree, no
@@ -33,6 +33,24 @@ message; edit either. Two things happen from there:
 Authorship and dates of every replayed commit are preserved; only the hashes
 change — that is what rewriting history means.
 
+## Merges in the range
+
+![Editing a commit below two merges — the cascade replays them](../screenshots/commit-edit-merges.webp)
+
+A merge between the commit and `HEAD` no longer disables editing. The cascade
+replays a merge by reapplying its **recorded result** — the tree the merge
+actually committed, conflict resolutions included — onto the rewritten parent,
+so resolutions someone made by hand survive the rewrite verbatim. No rerere, no
+re-merging, no worktree: the same in-memory plumbing as the rest of the
+cascade, and both parent pointers are preserved. A side branch that also
+contains the edited commit is rewritten and re-pointed; one that does not keeps
+its identity untouched. The banner in the modal says how many merges the range
+carries, and merge steps show a merge icon in the preview.
+
+The honest caveat: a replayed merge is only as good as its recorded result. If
+your edit collides with lines the merge itself resolved, the preview goes red
+exactly like any other conflicting step — nothing is guessed.
+
 ## When the cascade conflicts
 
 A later commit touched the same lines you are editing. The preview marks that
@@ -42,8 +60,8 @@ with an [interactive rebase](rebase.md).
 
 ## Limits
 
-- **Linear history only.** A merge between the commit and `HEAD` disables
-  editing — replaying merges is a different, harder problem.
+- **The commit must be an ancestor of `HEAD`.** A commit on an unmerged side
+  branch has no path to your current branch to replay.
 - Binary files and files over 2 MB are shown but not editable.
 - A commit that is already on a remote can be edited, but your next push will
   have to be a **force push** — the modal warns before you commit to that.

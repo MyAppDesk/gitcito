@@ -915,53 +915,78 @@ async function rewriteWithEdits(
       await runGit(repoPath, ['commit-tree', newTree, ...parents, '-m', message || id.message], authorEnv(id))
     ).trim()
 
-    // 3. Replay descendants oldest → newest. Each one is an in-memory
-    //    cherry-pick; the first conflict stops the cascade and marks the rest.
-    const range = (await runGit(repoPath, ['log', '--reverse', '--format=%H%x00%s', `${sha}..HEAD`]))
+    // 3. Replay descendants oldest → newest, parent-aware. Every affected
+    //    commit — one whose parents were rewritten — is re-created:
+    //
+    //    - An ordinary commit is an in-memory cherry-pick relative to its own
+    //      first parent (merge-tree, no worktree).
+    //    - A MERGE commit is replayed the same way: its recorded tree already
+    //      contains both sides *and the conflict resolutions its author made*,
+    //      so cherry-picking that result onto the rewritten first parent
+    //      carries the resolutions verbatim — no rerere, no re-merge. All
+    //      parent pointers are preserved, mapped through the rewrite.
+    //
+    //    Side-branch commits inside `sha..HEAD` that don't descend from the
+    //    edited commit are untouched. The first conflict stops the cascade and
+    //    marks the affected remainder.
+    const range = (await runGit(repoPath, ['log', '--reverse', '--topo-order', '--format=%H%x00%P%x00%s', `${sha}..HEAD`]))
       .split('\n')
       .filter(Boolean)
       .map((l) => {
-        const [h, ...s] = l.split('\x00')
-        return { sha: h, subject: s.join('\x00') }
+        const [h, p, ...s] = l.split('\x00')
+        return { sha: h, parents: p.split(' ').filter(Boolean), subject: s.join('\x00') }
       })
     const steps: CommitEditStep[] = []
-    let prevOld = sha
+    const rewritten = new Map<string, string>([[sha, tip]])
+    // Commits that would have been rewritten but sit behind a conflict.
+    const stuck = new Set<string>()
     let conflicted = false
     for (const c of range) {
+      const touchesStuck = c.parents.some((p) => stuck.has(p))
+      const mapped = c.parents.map((p) => rewritten.get(p) ?? p)
+      const affected = touchesStuck || mapped.some((p, i) => p !== c.parents[i])
+      if (!affected) continue // side-branch commit — keeps its identity
+      const isMerge = c.parents.length > 1
       if (conflicted) {
-        steps.push({ sha: c.sha, subject: c.subject, status: 'blocked', files: [] })
+        stuck.add(c.sha)
+        steps.push({ sha: c.sha, subject: c.subject, status: 'blocked', files: [], ...(isMerge ? { merge: true } : {}) })
         continue
       }
-      const rec = await cherryPickTree(repoPath, prevOld, tip, c.sha)
+      const rec = await cherryPickTree(repoPath, c.parents[0], mapped[0], c.sha)
       if (rec.status !== 'clean') {
         conflicted = true
-        steps.push({ sha: c.sha, subject: c.subject, status: 'conflict', files: rec.files })
+        stuck.add(c.sha)
+        steps.push({ sha: c.sha, subject: c.subject, status: 'conflict', files: rec.files, ...(isMerge ? { merge: true } : {}) })
         continue
       }
       const cid = await commitIdentity(repoPath, c.sha)
-      tip = (await runGit(repoPath, ['commit-tree', rec.tree, '-p', tip, '-m', cid.message], authorEnv(cid))).trim()
-      steps.push({ sha: c.sha, subject: c.subject, status: 'clean', files: [] })
-      prevOld = c.sha
+      const parentArgs = mapped.flatMap((p) => ['-p', p])
+      const next = (await runGit(repoPath, ['commit-tree', rec.tree, ...parentArgs, '-m', cid.message], authorEnv(cid))).trim()
+      rewritten.set(c.sha, next)
+      steps.push({ sha: c.sha, subject: c.subject, status: 'clean', files: [], ...(isMerge ? { merge: true } : {}) })
     }
-    return { newTip: conflicted ? null : tip, steps }
+    const headSha = (await runGit(repoPath, ['rev-parse', 'HEAD'])).trim()
+    const newTip = conflicted ? null : (rewritten.get(headSha) ?? null)
+    return { newTip, steps }
   } finally {
     await unlink(tmpIndex).catch(() => {})
     await unlink(tmpBlob).catch(() => {})
   }
 }
 
-/** True when `sha` is an ancestor of HEAD with a merge-free path up to it. */
-async function isLinearToHead(repoPath: string, sha: string): Promise<boolean> {
+/**
+ * What stands between `sha` and HEAD. Editing needs only ancestry — merges in
+ * the range are replayed with their recorded resolutions, so they inform the
+ * UI rather than disable the feature.
+ */
+async function commitEditRange(repoPath: string, sha: string): Promise<{ ancestor: boolean; merges: number }> {
   const ancestor = await runGit(repoPath, ['merge-base', '--is-ancestor', sha, 'HEAD']).then(
     () => true,
     () => false
   )
-  if (!ancestor) return false
-  const merges = (await runGit(repoPath, ['rev-list', '--merges', `${sha}..HEAD`]).catch(() => 'x')).trim()
-  if (merges) return false
-  // The edited commit itself must not be a merge either.
-  const parents = (await runGit(repoPath, ['rev-list', '--parents', '-n', '1', sha])).trim().split(' ')
-  return parents.length <= 2
+  if (!ancestor) return { ancestor: false, merges: 0 }
+  const merges = (await runGit(repoPath, ['rev-list', '--merges', '--count', `${sha}..HEAD`]).catch(() => '0')).trim()
+  return { ancestor: true, merges: parseInt(merges, 10) || 0 }
 }
 
 /**
@@ -6375,17 +6400,27 @@ export const gitService = {
   // "Edit any commit like a document": rewrite a historical commit's files or
   // message and replay everything above it — previewed in memory first, so the
   // user sees the whole cascade (including conflicts) before a single ref
-  // moves. Linear, merge-free ranges only.
+  // moves. Merge commits in the range are replayed with their recorded
+  // conflict resolutions; the only requirement is ancestry to HEAD.
 
   /** Can this commit be edited in place, and what would a rewrite drag along? */
   async commitEditInfo(repoPath: string, sha: string): Promise<CommitEditInfo> {
-    const linear = await isLinearToHead(repoPath, sha)
-    const descendants = linear
+    const range = await commitEditRange(repoPath, sha)
+    const descendants = range.ancestor
       ? Number((await runGit(repoPath, ['rev-list', '--count', `${sha}..HEAD`])).trim())
       : 0
     const pushed = Boolean((await runGit(repoPath, ['branch', '-r', '--contains', sha]).catch(() => '')).trim())
     const id = await commitIdentity(repoPath, sha)
-    return { linear, descendants, pushed, message: id.message, authorName: id.name, authorDate: id.date }
+    return {
+      linear: range.ancestor && range.merges === 0,
+      ancestor: range.ancestor,
+      merges: range.merges,
+      descendants,
+      pushed,
+      message: id.message,
+      authorName: id.name,
+      authorDate: id.date
+    }
   },
 
   /** A file's content at a commit, gated for the editor: binary and oversized
@@ -6405,7 +6440,7 @@ export const gitService = {
     edits: Record<string, string>,
     message: string
   ): Promise<CommitEditPreview> {
-    if (!(await isLinearToHead(repoPath, sha))) throw new Error('Commit is not on a linear path to HEAD.')
+    if (!(await commitEditRange(repoPath, sha)).ancestor) throw new Error('Commit is not an ancestor of HEAD.')
     return rewriteWithEdits(repoPath, sha, edits, message)
   },
 
@@ -6421,7 +6456,7 @@ export const gitService = {
     edits: Record<string, string>,
     message: string
   ): Promise<CommitEditResult> {
-    if (!(await isLinearToHead(repoPath, sha))) throw new Error('Commit is not on a linear path to HEAD.')
+    if (!(await commitEditRange(repoPath, sha)).ancestor) throw new Error('Commit is not an ancestor of HEAD.')
     await runGit(repoPath, ['symbolic-ref', '-q', 'HEAD']).catch(() => {
       throw new Error('HEAD is detached — check out a branch first.')
     })

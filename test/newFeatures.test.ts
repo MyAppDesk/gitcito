@@ -324,12 +324,22 @@ describe('commit editing (bisect-bug playground)', () => {
     expect(g(R, ['rev-parse', `${newTarget}^{tree}`])).toBe(oldTree)
   })
 
-  it('refuses non-linear history', async () => {
+  it('reports merges in range instead of refusing, and still refuses non-ancestors', async () => {
     const R = cloneFixture('collaborators') // history contains merge commits
     const root = g(R, ['rev-list', '--max-parents=0', 'HEAD']).split('\n')[0]
     const info = await gitService.commitEditInfo(R, root)
     expect(info.linear).toBe(false)
-    await expect(gitService.commitEditPreview(R, root, {}, 'x')).rejects.toThrow(/linear/i)
+    expect(info.ancestor).toBe(true)
+    expect(info.merges).toBeGreaterThan(0)
+    // A commit with no path to HEAD is the one thing still off the table.
+    execFileSync('git', ['-C', R, 'branch', 'stray', root])
+    execFileSync('git', ['-C', R, 'checkout', '-q', 'stray'])
+    writeFileSync(join(R, 'stray.txt'), 'x\n')
+    execFileSync('git', ['-C', R, 'add', 'stray.txt'])
+    execFileSync('git', ['-C', R, 'commit', '-qm', 'stray'])
+    const straySha = g(R, ['rev-parse', 'HEAD'])
+    execFileSync('git', ['-C', R, 'checkout', '-q', 'main'])
+    await expect(gitService.commitEditPreview(R, straySha, {}, 'x')).rejects.toThrow(/ancestor/i)
   })
 })
 

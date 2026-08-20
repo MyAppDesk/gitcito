@@ -28,12 +28,6 @@ actually run, and both mean another token and another API surface.
 
 ## Bigger bets
 
-### Commit editing across merges
-Editing a commit in place shipped for linear history. The hard half remains:
-a cascade that has to replay **merge commits** (re-merge with the rewritten
-parent, carry conflict resolutions via rerere). Until then, a merge between the
-commit and HEAD simply disables the feature.
-
 ### Shareable reviews
 Workspace structure and commit notes now travel as
 [secure share](docs/help/secure-share.md) bundles. The remaining piece of the

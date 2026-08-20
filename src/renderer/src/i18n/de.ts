@@ -1882,8 +1882,8 @@ export const de: Dict = {
   'commitEdit.title': 'Commit bearbeiten',
   'commitEdit.intro':
     'Schreibe die Dateien oder die Nachricht dieses Commits an Ort und Stelle um. Alles darüber wird neu angewendet — mit Vorschau zuerst, damit du jeden Konflikt siehst, bevor sich eine einzige Ref bewegt.',
-  'commitEdit.notLinear':
-    'Dieser Commit liegt nicht auf einem merge-freien Pfad zu HEAD — Bearbeiten an Ort und Stelle funktioniert nur bei linearer Historie.',
+  'commitEdit.notLinear': 'Dieser Commit ist kein Vorfahre von HEAD — zum Bearbeiten braucht es einen Pfad von ihm zu deinem aktuellen Branch.',
+  'commitEdit.mergesInRange': '{n} Merge-Commits im Bereich — jeder wird mit seinen aufgezeichneten Konfliktauflösungen wiederholt.',
   'commitEdit.pushedWarning':
     'Dieser Commit wurde bereits gepusht. Ihn umzuschreiben bedeutet, dass dein nächster Push ein Force-Push sein muss.',
   'commitEdit.message': 'Commit-Nachricht',

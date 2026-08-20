@@ -1839,8 +1839,8 @@ export const it: Dict = {
   'commitEdit.title': 'Modifica il commit',
   'commitEdit.intro':
     'Riscrivi sul posto i file o il messaggio di questo commit. Tutto quello che sta sopra viene riapplicato — prima in anteprima, così vedi ogni conflitto prima che un solo ref si muova.',
-  'commitEdit.notLinear':
-    'Questo commit non è su un percorso senza merge fino a HEAD — la modifica sul posto funziona solo su una cronologia lineare.',
+  'commitEdit.notLinear': 'Questo commit non è un antenato di HEAD: per modificarlo serve un percorso da esso al branch attuale.',
+  'commitEdit.mergesInRange': '{n} commit di merge nell’intervallo: ognuno viene riprodotto con le risoluzioni dei conflitti registrate.',
   'commitEdit.pushedWarning':
     'Questo commit è già stato pushato. Riscriverlo significa che il tuo prossimo push dovrà essere un force push.',
   'commitEdit.message': 'Messaggio del commit',

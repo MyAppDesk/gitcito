@@ -18,9 +18,9 @@ mismo editor.
 
 ## Qué hace
 
-Elige cualquier commit en un camino lineal hasta `HEAD`. El modal muestra sus
-archivos y su mensaje; edita cualquiera de los dos. A partir de ahí pasan dos
-cosas:
+Elige cualquier commit que sea ancestro de `HEAD` — con historia lineal o sin
+ella. El modal muestra sus archivos y su mensaje; edita cualquiera de los dos.
+A partir de ahí pasan dos cosas:
 
 1. **Previsualizar la cascada** reproduce cada commit por encima del editado
    *en memoria* (una cadena de cherry-picks con `merge-tree` — sin checkout,
@@ -36,6 +36,26 @@ cosas:
 La autoría y las fechas de cada commit reproducido se conservan; solo cambian
 los hashes — eso es lo que significa reescribir la historia.
 
+## Merges en el rango
+
+![Editando un commit por debajo de dos merges — la cascada los reproduce](../../screenshots/commit-edit-merges.webp)
+
+Un merge entre el commit y `HEAD` ya no desactiva la edición. La cascada
+reproduce un merge reaplicando su **resultado registrado** — el árbol que el
+merge realmente commiteó, resoluciones de conflictos incluidas — sobre el
+padre reescrito, así que las resoluciones que alguien hizo a mano sobreviven
+a la reescritura al pie de la letra. Sin rerere, sin volver a mergear, sin
+worktree: el mismo plumbing en memoria que el resto de la cascada, y los dos
+punteros a los padres se conservan. Una rama lateral que también contiene el
+commit editado se reescribe y se reapunta; una que no lo contiene conserva su
+identidad intacta. El banner del modal dice cuántos merges lleva el rango, y
+los pasos de merge muestran un icono de merge en la previsualización.
+
+La advertencia honesta: un merge reproducido solo es tan bueno como su
+resultado registrado. Si tu edición choca con líneas que el propio merge
+resolvió, la previsualización se pone en rojo exactamente igual que cualquier
+otro paso en conflicto — nada se adivina.
+
 ## Cuando la cascada da conflicto
 
 Un commit posterior tocó las mismas líneas que estás editando. La
@@ -46,8 +66,8 @@ editas de otra forma, o afrontas el conflicto de cara con un
 
 ## Límites
 
-- **Solo historia lineal.** Un merge entre el commit y `HEAD` desactiva la
-  edición — reproducir merges es un problema distinto y más difícil.
+- **El commit debe ser ancestro de `HEAD`.** Un commit en una rama lateral
+  sin mergear no tiene camino hasta tu rama actual por el que reproducirse.
 - Los archivos binarios y los que superan 2 MB se muestran pero no se pueden
   editar.
 - Un commit que ya está en un remoto se puede editar, pero tu siguiente push

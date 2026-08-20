@@ -17,9 +17,9 @@ Commit ayrıntıları panelindeki kalem düğmesi de aynı düzenleyiciyi açar.
 
 ## Ne yapar
 
-`HEAD`'e doğrusal bir yol üzerindeki herhangi bir commit'i seçin. Pencere
-dosyalarını ve mesajını gösterir; ikisinden birini düzenleyin. Oradan itibaren
-iki şey olur:
+`HEAD`'in atası olan herhangi bir commit'i seçin — geçmiş doğrusal olsun ya da
+olmasın. Pencere dosyalarını ve mesajını gösterir; ikisinden birini düzenleyin.
+Oradan itibaren iki şey olur:
 
 1. **Zincirleme önizleme**, düzenlenen commit'in üzerindeki her commit'i
    *bellekte* yeniden oynatır (`merge-tree` cherry-pick'lerinden oluşan bir
@@ -37,6 +37,26 @@ iki şey olur:
 Yeniden oynatılan her commit'in yazarı ve tarihleri korunur; yalnızca
 hash'ler değişir — geçmişi yeniden yazmak zaten budur.
 
+## Aralıktaki merge'ler
+
+![İki merge’in altındaki bir commit’i düzenleme — zincir onları yeniden oynatır](../../screenshots/commit-edit-merges.webp)
+
+Commit ile `HEAD` arasında bir merge olması artık düzenlemeyi devre dışı
+bırakmaz. Zincir, bir merge'i **kaydedilmiş sonucunu** — merge'in gerçekten
+commit'lediği ağacı, çakışma çözümleri dahil — yeniden yazılmış ebeveynin
+üzerine uygulayarak yeniden oynatır; böylece birinin elle yaptığı çözümler
+yeniden yazmayı harfi harfine atlatır. rerere yok, yeniden merge yok, çalışma
+ağacı yok: zincirin geri kalanıyla aynı bellek içi plumbing komutları, üstelik
+her iki ebeveyn işaretçisi de korunur. Düzenlenen commit'i kendisi de içeren
+bir yan dal yeniden yazılır ve yeniden yönlendirilir; içermeyen dalın
+kimliğine ise hiç dokunulmaz. Penceredeki şerit aralığın kaç merge taşıdığını
+söyler ve merge adımları önizlemede bir merge simgesi gösterir.
+
+Dürüst uyarı: yeniden oynatılan bir merge ancak kaydedilmiş sonucu kadar
+iyidir. Düzenlemeniz merge'in kendisinin çözdüğü satırlarla çarpışırsa,
+önizleme diğer her çakışan adım gibi kırmızıya döner — hiçbir şey tahmin
+edilmez.
+
 ## Zincir çakıştığında
 
 Sonraki bir commit, düzenlediğiniz satırlara dokunmuş. Önizleme o commit'i
@@ -46,9 +66,8 @@ reddeder — hiçbir şey asla yarım uygulanmaz. Ya farklı düzenleyin ya da
 
 ## Sınırlar
 
-- **Yalnızca doğrusal geçmiş.** Commit ile `HEAD` arasında bir merge olması
-  düzenlemeyi devre dışı bırakır — merge'leri yeniden oynatmak apayrı ve daha
-  zor bir problemdir.
+- **Commit, `HEAD`'in atası olmalıdır.** Merge edilmemiş bir yan daldaki
+  commit'in, yeniden oynatılabileceği şu anki dalınıza giden bir yolu yoktur.
 - İkili dosyalar ve 2 MB'ın üzerindeki dosyalar gösterilir ama düzenlenemez.
 - Zaten bir uzak depoda olan bir commit düzenlenebilir, ancak bir sonraki
   push'unuz bir **force push** olmak zorundadır — pencere buna karar vermeden

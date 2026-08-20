@@ -1838,8 +1838,8 @@ export const fr: Dict = {
   'commitEdit.title': 'Modifier le commit',
   'commitEdit.intro':
     'Réécrivez les fichiers ou le message de ce commit sur place. Tout ce qui est au-dessus est rejoué — avec un aperçu d’abord, pour voir chaque conflit avant qu’une seule réf ne bouge.',
-  'commitEdit.notLinear':
-    'Ce commit n’est pas sur un chemin sans fusion jusqu’à HEAD — la modification sur place ne fonctionne que sur un historique linéaire.',
+  'commitEdit.notLinear': 'Ce commit n’est pas un ancêtre de HEAD — l’édition exige un chemin de ce commit à votre branche actuelle.',
+  'commitEdit.mergesInRange': '{n} commits de merge dans la plage — chacun est rejoué avec les résolutions de conflits qu’il a enregistrées.',
   'commitEdit.pushedWarning':
     'Ce commit a déjà été poussé. Le réécrire signifie que votre prochain push devra être un push forcé.',
   'commitEdit.message': 'Message du commit',

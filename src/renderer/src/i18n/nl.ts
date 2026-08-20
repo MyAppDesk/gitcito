@@ -1883,8 +1883,8 @@ export const nl: Dict = {
   'commitEdit.title': 'Commit bewerken',
   'commitEdit.intro':
     'Herschrijf de bestanden of het bericht van deze commit ter plekke. Alles erboven wordt opnieuw toegepast — eerst als voorbeeld, zodat je elk conflict ziet voordat er ook maar één ref beweegt.',
-  'commitEdit.notLinear':
-    'Deze commit ligt niet op een merge-vrij pad naar HEAD — ter plekke bewerken werkt alleen op een lineaire geschiedenis.',
+  'commitEdit.notLinear': 'Deze commit is geen voorouder van HEAD — bewerken vereist een pad van deze commit naar je huidige branch.',
+  'commitEdit.mergesInRange': '{n} merge-commits in het bereik — elk wordt opnieuw afgespeeld met de vastgelegde conflictoplossingen.',
   'commitEdit.pushedWarning':
     'Deze commit is al gepusht. Hem herschrijven betekent dat je volgende push een force push moet zijn.',
   'commitEdit.message': 'Commitbericht',

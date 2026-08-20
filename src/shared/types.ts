@@ -202,8 +202,12 @@ export interface MergePreviewResult {
 
 /** Validation + metadata for editing a historical commit in place. */
 export interface CommitEditInfo {
-  /** Commit is an ancestor of HEAD and the path up to HEAD is merge-free. */
+  /** Merge-free path to HEAD. Kept for UI copy — editing no longer requires it. */
   linear: boolean
+  /** The commit is an ancestor of HEAD — the only hard requirement for editing. */
+  ancestor: boolean
+  /** Merge commits in the range, each replayed with its recorded resolutions. */
+  merges: number
   /** Commits between it and HEAD that a rewrite would replay. */
   descendants: number
   /** Reachable from a remote ref — rewriting means a force push later. */
@@ -229,6 +233,8 @@ export interface CommitEditStep {
   status: 'clean' | 'conflict' | 'blocked'
   /** Conflicting paths (conflict only). */
   files: string[]
+  /** A merge commit, replayed with its recorded conflict resolutions. */
+  merge?: boolean
 }
 
 /** Dry-run result of rewriting a commit: the cascade forecast. */

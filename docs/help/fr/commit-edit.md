@@ -18,9 +18,9 @@ détails du commit ouvre le même éditeur.
 
 ## Ce que ça fait
 
-Choisissez n'importe quel commit sur un chemin linéaire jusqu'à `HEAD`. La
-fenêtre montre ses fichiers et son message ; modifiez l'un ou l'autre. Deux
-choses se passent ensuite :
+Choisissez n'importe quel commit qui est un ancêtre de `HEAD` — historique
+linéaire ou non. La fenêtre montre ses fichiers et son message ; modifiez
+l'un ou l'autre. Deux choses se passent ensuite :
 
 1. **Prévisualiser la cascade** rejoue chaque commit au-dessus de celui
    modifié *en mémoire* (une chaîne de cherry-picks `merge-tree` — pas de
@@ -38,6 +38,27 @@ choses se passent ensuite :
 L'auteur et les dates de chaque commit rejoué sont préservés ; seuls les
 hachages changent — c'est exactement ce que réécrire l'historique veut dire.
 
+## Les merges dans la plage
+
+![Édition d’un commit sous deux merges — la cascade les rejoue](../../screenshots/commit-edit-merges.webp)
+
+Un merge entre le commit et `HEAD` ne désactive plus la modification. La
+cascade rejoue un merge en réappliquant son **résultat enregistré** —
+l'arbre que le merge a réellement commité, résolutions de conflits
+comprises — sur le parent réécrit, de sorte que les résolutions faites à la
+main survivent mot pour mot à la réécriture. Pas de rerere, pas de nouveau
+merge, pas d'arbre de travail : la même plomberie en mémoire que le reste de
+la cascade, et les deux pointeurs de parents sont préservés. Une branche
+latérale qui contient elle aussi le commit modifié est réécrite et
+repointée ; une qui ne le contient pas garde son identité intacte. La
+bannière de la fenêtre indique combien de merges la plage contient, et les
+étapes de merge affichent une icône de merge dans l'aperçu.
+
+La mise en garde honnête : un merge rejoué ne vaut que ce que vaut son
+résultat enregistré. Si votre modification entre en collision avec des
+lignes que le merge lui-même a résolues, l'aperçu passe au rouge exactement
+comme n'importe quelle autre étape en conflit — rien n'est deviné.
+
 ## Quand la cascade entre en conflit
 
 Un commit ultérieur a touché les mêmes lignes que vous modifiez. L'aperçu
@@ -48,9 +69,9 @@ autrement, soit vous affrontez le conflit de face avec un
 
 ## Limites
 
-- **Historique linéaire uniquement.** Un merge entre le commit et `HEAD`
-  désactive la modification — rejouer des merges est un problème différent,
-  plus difficile.
+- **Le commit doit être un ancêtre de `HEAD`.** Un commit sur une branche
+  latérale non mergée n'a aucun chemin jusqu'à votre branche actuelle pour
+  être rejoué.
 - Les fichiers binaires et les fichiers de plus de 2 Mo sont affichés mais pas
   modifiables.
 - Un commit déjà présent sur un distant peut être modifié, mais votre prochain

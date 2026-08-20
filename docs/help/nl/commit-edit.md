@@ -18,8 +18,9 @@ editor.
 
 ## Wat het doet
 
-Kies eender welke commit op een lineair pad naar `HEAD`. De modal toont zijn
-bestanden en bericht; bewerk een van beide. Vanaf daar gebeuren twee dingen:
+Kies eender welke commit die een voorouder van `HEAD` is — lineaire
+geschiedenis of niet. De modal toont zijn bestanden en bericht; bewerk een van
+beide. Vanaf daar gebeuren twee dingen:
 
 1. **Preview van de cascade** speelt elke commit boven de bewerkte *in het
    geheugen* opnieuw af (een keten van `merge-tree`-cherry-picks — geen checkout,
@@ -35,6 +36,27 @@ bestanden en bericht; bewerk een van beide. Vanaf daar gebeuren twee dingen:
 Auteurschap en datums van elke opnieuw afgespeelde commit blijven behouden;
 alleen de hashes veranderen — dat is wat geschiedenis herschrijven betekent.
 
+## Merges in het bereik
+
+![Een commit bewerken onder twee merges — de cascade speelt ze opnieuw af](../../screenshots/commit-edit-merges.webp)
+
+Een merge tussen de commit en `HEAD` schakelt bewerken niet langer uit. De
+cascade speelt een merge opnieuw af door zijn **vastgelegde resultaat** — de
+tree die de merge daadwerkelijk heeft gecommit, conflictoplossingen
+inbegrepen — opnieuw toe te passen op de herschreven ouder, zodat oplossingen
+die iemand met de hand maakte het herschrijven woordelijk overleven. Geen
+rerere, geen opnieuw mergen, geen worktree: dezelfde in-memory plumbing als de
+rest van de cascade, en beide ouderpointers blijven behouden. Een zijbranch
+die de bewerkte commit ook bevat wordt herschreven en opnieuw gericht; een die
+dat niet doet behoudt zijn identiteit onaangeroerd. De banner in de modal zegt
+hoeveel merges het bereik bevat, en mergestappen tonen een merge-icoon in de
+preview.
+
+De eerlijke kanttekening: een opnieuw afgespeelde merge is maar zo goed als
+zijn vastgelegde resultaat. Botst je bewerking met regels die de merge zelf
+heeft opgelost, dan kleurt de preview rood, precies zoals elke andere
+conflicterende stap — er wordt niets geraden.
+
 ## Als de cascade conflicteert
 
 Een latere commit raakte dezelfde regels die jij aan het bewerken bent. De
@@ -45,9 +67,9 @@ anders, of ga het conflict frontaal aan met een
 
 ## Beperkingen
 
-- **Alleen lineaire geschiedenis.** Een merge tussen de commit en `HEAD`
-  schakelt bewerken uit — merges opnieuw afspelen is een ander, moeilijker
-  probleem.
+- **De commit moet een voorouder van `HEAD` zijn.** Een commit op een
+  niet-gemergde zijbranch heeft geen pad naar je huidige branch om opnieuw af
+  te spelen.
 - Binaire bestanden en bestanden groter dan 2 MB worden getoond maar zijn niet
   te bewerken.
 - Een commit die al op een remote staat kan worden bewerkt, maar je volgende

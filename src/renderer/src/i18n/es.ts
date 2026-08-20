@@ -1876,8 +1876,8 @@ export const es: Dict = {
   'commitEdit.title': 'Editar commit',
   'commitEdit.intro':
     'Reescribe los archivos o el mensaje de este commit en su sitio. Todo lo que está por encima se vuelve a aplicar — con vista previa primero, para que veas cada conflicto antes de que se mueva una sola ref.',
-  'commitEdit.notLinear':
-    'Este commit no está en un camino sin merges hasta HEAD — la edición en el sitio solo funciona con historial lineal.',
+  'commitEdit.notLinear': 'Este commit no es ancestro de HEAD: editar requiere un camino desde él hasta tu rama actual.',
+  'commitEdit.mergesInRange': '{n} merges en el rango: cada uno se reproduce con las resoluciones de conflictos que dejó grabadas.',
   'commitEdit.pushedWarning':
     'Este commit ya se ha subido. Reescribirlo implica que tu próximo push tendrá que ser un force push.',
   'commitEdit.message': 'Mensaje del commit',

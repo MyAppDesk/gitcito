@@ -1883,8 +1883,8 @@ export const ptBR: Dict = {
   'commitEdit.title': 'Editar o commit',
   'commitEdit.intro':
     'Reescreva os arquivos ou a mensagem deste commit no lugar. Tudo o que vem acima é reaplicado — com uma prévia antes, para você ver cada conflito antes de qualquer ref se mover.',
-  'commitEdit.notLinear':
-    'Este commit não está em um caminho sem merges até o HEAD — a edição no lugar só funciona em histórico linear.',
+  'commitEdit.notLinear': 'Este commit não é ancestral de HEAD — editar exige um caminho dele até o branch atual.',
+  'commitEdit.mergesInRange': '{n} commits de merge no intervalo — cada um é reaplicado com as resoluções de conflito que gravou.',
   'commitEdit.pushedWarning':
     'Este commit já foi enviado ao remoto. Reescrevê-lo significa que o seu próximo push terá que ser um force push.',
   'commitEdit.message': 'Mensagem do commit',

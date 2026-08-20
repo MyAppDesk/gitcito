@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { AlertTriangle, Check, CircleSlash, Loader2, Radar, Sparkles, SquarePen, Upload } from 'lucide-react'
+import { AlertTriangle, Check, CircleSlash, GitMerge, Loader2, Radar, Sparkles, SquarePen, Upload } from 'lucide-react'
 import type { CommitEditInfo, CommitEditPreview, FileEntry } from '../../../shared/types'
 import { gitApi, aiApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
@@ -90,7 +90,9 @@ export function CommitEditModal({
 
   const messageChanged = info !== null && message.trim() !== info.message.trim()
   const dirty = Object.keys(edits).length > 0 || messageChanged
-  const editable = Boolean(info?.linear)
+  // Ancestry is the only hard requirement — merges in the range are replayed
+  // with their recorded resolutions.
+  const editable = Boolean(info?.ancestor)
 
   // Any change invalidates the last forecast.
   const setDraft = (path: string, draft: string): void => {
@@ -160,12 +162,17 @@ export function CommitEditModal({
       </h3>
       <p className="settings-hint">{t('commitEdit.intro')}</p>
 
-      {info && !info.linear && (
+      {info && !info.ancestor && (
         <div className="commitedit-banner error">
           <CircleSlash size={13} /> {t('commitEdit.notLinear')}
         </div>
       )}
-      {info?.pushed && info.linear && (
+      {info && info.ancestor && info.merges > 0 && (
+        <div className="commitedit-banner">
+          <GitMerge size={13} /> {interp(t('commitEdit.mergesInRange'), { n: info.merges })}
+        </div>
+      )}
+      {info?.pushed && info.ancestor && (
         <div className="commitedit-banner warn">
           <Upload size={13} /> {t('commitEdit.pushedWarning')}
         </div>
@@ -240,7 +247,7 @@ export function CommitEditModal({
           <button className="btn ghost small" onClick={() => void runPreview()} disabled={!editable || !dirty || busy}>
             {busy ? <Loader2 size={13} className="spin" /> : <Radar size={13} />} {t('commitEdit.preview')}
           </button>
-          {info && info.linear && (
+          {info && info.ancestor && (
             <span className="settings-hint">{interp(t('commitEdit.descendants'), { n: info.descendants })}</span>
           )}
           <button
@@ -264,6 +271,7 @@ export function CommitEditModal({
                 ) : (
                   <CircleSlash size={12} />
                 )}
+                {s.merge && <GitMerge size={12} className="commitedit-step-merge" aria-hidden="true" />}
                 <span className="commitedit-step-subject">{s.subject}</span>
                 {s.status === 'conflict' && (
                   <span className="commitedit-step-files" title={s.files.join('\n')}>

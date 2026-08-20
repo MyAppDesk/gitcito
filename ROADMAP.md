@@ -26,20 +26,6 @@ actually run, and both mean another token and another API surface.
 
 ---
 
-## Bigger bets
-
-### Shareable reviews
-Workspace structure and commit notes now travel as
-[secure share](docs/help/secure-share.md) bundles. The remaining piece of the
-"team features without a backend" idea is a portable *review*: findings and
-per-file progress anchored to a diff, exported as a file. Nothing review-shaped
-persists in the app today — the file-viewed checklist lives in browser storage
-and AI findings evaporate on close — so this is inventing a domain object, not
-exporting an existing one. Worth doing only with a real design for anchoring
-comments to commits that may move.
-
----
-
 ## Deliberately not doing
 
 - **Cloud workspaces, telemetry, shared team boards.** Gitcito has no backend

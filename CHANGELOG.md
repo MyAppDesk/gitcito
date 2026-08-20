@@ -1,5 +1,7 @@
 
 
+## [3.17.1](https://github.com/MyAppDesk/gitcito/compare/v3.17.0...v3.17.1) (2026-08-20)
+
 ## [3.17.0](https://github.com/MyAppDesk/gitcito/compare/v3.16.0...v3.17.0) (2026-08-20)
 
 

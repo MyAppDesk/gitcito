@@ -55,12 +55,21 @@ Tools → **Notitie** → *Notities pushen* / *Notities ophalen*, per remote. Ze
 draaien:
 
 ```sh
-git push <remote> refs/notes/*
-git fetch <remote> +refs/notes/*:refs/notes/*
+git push <remote> refs/notes/commits
+git fetch <remote> +refs/notes/commits:refs/notes/commits
 ```
+
+Alleen de commitnotities-ref reist mee — Gitcito's eigen machine-lokale refs
+(zoals de oordelen van de [lokale CI](local-ci.md)) worden bewust niet
+gepubliceerd.
 
 Sommige hosts willen notities ook aan hun kant ingeschakeld of toegestaan zien;
 een weigering daar is het beleid van de host, geen beperking van Gitcito.
+
+Geen gedeelde remote, of geen schrijftoegang? [Veilig delen](secure-share.md)
+kan de notities van een repository in een versleuteld bestand pakken dat een
+teamgenoot direct importeert, met een voorvertoning van wat er zou landen en
+een uitdrukkelijke overschrijf-keuze voor uiteengelopen notities.
 
 ## Grenzen
 

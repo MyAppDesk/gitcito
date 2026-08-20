@@ -52,12 +52,22 @@ seu laptop ficam no seu laptop até alguém movê-las explicitamente.
 Ferramentas → **Nota** → *Enviar notas* / *Buscar notas*, por remote. Eles rodam:
 
 ```sh
-git push <remote> refs/notes/*
-git fetch <remote> +refs/notes/*:refs/notes/*
+git push <remote> refs/notes/commits
+git fetch <remote> +refs/notes/commits:refs/notes/commits
 ```
+
+Só a ref de notas de commit viaja — as refs locais da máquina do próprio
+Gitcito (como os veredictos do [CI local](local-ci.md)) deliberadamente não são
+publicadas.
 
 Alguns hosts também precisam que notas estejam habilitadas ou permitidas do lado
 deles; uma rejeição ali é política do host, não um limite do Gitcito.
+
+Sem remote compartilhado, ou sem acesso de escrita? O
+[Compartilhamento seguro](secure-share.md) pode empacotar as notas de um
+repositório num arquivo criptografado que um colega importa diretamente, com
+uma prévia do que chegaria e uma escolha explícita de sobrescrever para notas
+divergentes.
 
 ## Limites
 

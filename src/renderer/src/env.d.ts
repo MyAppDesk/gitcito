@@ -182,6 +182,12 @@ interface PreloadApi {
       repoPath: string
     ): Promise<unknown>
     applyV2(bundlePath: string, password: string, plan: unknown): Promise<unknown>
+    previewNotesV2(
+      bundlePath: string,
+      password: string,
+      sectionIndex: number,
+      repoPath: string
+    ): Promise<unknown>
   }
   info: {
     list(repoPath: string): Promise<unknown>

@@ -50,12 +50,19 @@ fetch`는 노트를 가져오지 않아요.** 노트는 `refs/heads`와 `refs/ta
 이거예요.
 
 ```sh
-git push <remote> refs/notes/*
-git fetch <remote> +refs/notes/*:refs/notes/*
+git push <remote> refs/notes/commits
+git fetch <remote> +refs/notes/commits:refs/notes/commits
 ```
+
+옮겨지는 것은 커밋 노트 레퍼런스뿐이에요 — Gitcito 자신의 기기 로컬
+레퍼런스([로컬 CI](local-ci.md) 판정 같은 것)는 일부러 공개하지 않아요.
 
 일부 호스트는 자기 쪽에서 노트를 켜거나 허용해야 해요. 거기서 거부당한다면 그건
 호스트의 정책이지 Gitcito의 한계가 아니에요.
+
+공유 원격이 없거나 쓰기 권한이 없나요? [안전한 공유](secure-share.md)가 저장소의
+노트를 암호화된 파일로 묶어 주고, 팀 동료가 그걸 바로 가져올 수 있어요. 무엇이
+들어올지 미리 보여 주고, 갈라진 노트에는 명시적인 덮어쓰기 선택이 있어요.
 
 ## 한계
 

@@ -53,13 +53,21 @@ Araçlar → **Not** → *Notları push et* / *Notları fetch et*, uzak depo baz
 Şunları çalıştırırlar:
 
 ```sh
-git push <remote> refs/notes/*
-git fetch <remote> +refs/notes/*:refs/notes/*
+git push <remote> refs/notes/commits
+git fetch <remote> +refs/notes/commits:refs/notes/commits
 ```
+
+Yalnızca commit notlarının ref'i taşınır — Gitcito'nun kendi makineye özgü
+ref'leri ([yerel CI](local-ci.md) kararları gibi) bilerek yayımlanmaz.
 
 Bazı sunucuların kendi taraflarında da notların etkinleştirilmesi ya da izin
 verilmesi gerekir; oradaki bir ret, sunucunun politikasıdır, Gitcito'nun sınırı
 değil.
+
+Ortak bir uzak depo yok mu, ya da yazma erişiminiz mi yok?
+[Güvenli paylaşım](secure-share.md) bir deponun notlarını, bir takım arkadaşının
+doğrudan içe aktardığı şifreli bir dosyaya koyabilir — neyin ineceğinin
+önizlemesi ve ayrışan notlar için açık bir üzerine yazma seçimiyle.
 
 ## Sınırlar
 

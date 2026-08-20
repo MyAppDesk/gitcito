@@ -55,12 +55,22 @@ Strumenti → **Nota** → *Pubblica le note* / *Recupera le note*, per remote.
 Eseguono:
 
 ```sh
-git push <remote> refs/notes/*
-git fetch <remote> +refs/notes/*:refs/notes/*
+git push <remote> refs/notes/commits
+git fetch <remote> +refs/notes/commits:refs/notes/commits
 ```
+
+Viaggia solo il ref delle note sui commit — i ref locali alla macchina propri di
+Gitcito (come i verdetti della [CI locale](local-ci.md)) deliberatamente non
+vengono pubblicati.
 
 Alcuni host richiedono anche che le note siano abilitate o permesse dalla loro
 parte; un rifiuto lì è una politica dell'host, non un limite di Gitcito.
+
+Nessun remote condiviso, o niente accesso in scrittura? La
+[Condivisione sicura](secure-share.md) può impacchettare le note di un
+repository in un file cifrato che un collega importa direttamente, con
+un'anteprima di cosa arriverebbe e una scelta esplicita di sovrascrittura per le
+note divergenti.
 
 ## Limiti
 

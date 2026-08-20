@@ -55,13 +55,22 @@ Outils → **Note** → *Pousser les notes* / *Récupérer les notes*, par dista
 Elles exécutent :
 
 ```sh
-git push <remote> refs/notes/*
-git fetch <remote> +refs/notes/*:refs/notes/*
+git push <remote> refs/notes/commits
+git fetch <remote> +refs/notes/commits:refs/notes/commits
 ```
+
+Seule la référence des notes de commit voyage — les références locales à la
+machine propres à Gitcito (comme les verdicts de la [CI locale](local-ci.md))
+ne sont délibérément pas publiées.
 
 Certains hébergeurs exigent en plus que les notes soient activées ou autorisées
 de leur côté ; un refus à cet endroit relève de la politique de l'hébergeur, pas
 d'une limite de Gitcito.
+
+Pas de distant partagé, ou pas d'accès en écriture ? Le
+[Partage sécurisé](secure-share.md) peut emballer les notes d'un dépôt dans un
+fichier chiffré qu'un coéquipier importe directement, avec un aperçu de ce qui
+atterrirait et un choix d'écrasement explicite pour les notes divergentes.
 
 ## Limites
 

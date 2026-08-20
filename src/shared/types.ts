@@ -1729,11 +1729,26 @@ export interface SecureBundleHeader {
   sections?: SecureBundleSectionSummary[] // present on v2 — one entry per tab
 }
 
+/** A repo reference inside a portable workspace: matched on the receiving
+ *  machine by remote URL first, folder name second — never by absolute path. */
+export interface SecureWorkspaceRepo {
+  name: string
+  remote?: string
+  folder: string
+}
+
+/** One tab of a portable workspace: a bare repo, or a group carrying repos. */
+export type SecureWorkspaceTab =
+  | { kind: 'repo'; repo: SecureWorkspaceRepo }
+  | { kind: 'group'; name: string; color?: string; repos: SecureWorkspaceRepo[] }
+
 /** Per-section summary in a v2 envelope, readable before the password is entered
  *  (so the import UI can show tabs and match repos). No secret values here. */
 export type SecureBundleSectionSummary =
   | { kind: 'repo'; project: string; folder: string; remote?: string; fileCount: number }
   | { kind: 'vault'; entryCount: number }
+  | { kind: 'workspace'; name: string; tabCount: number; repoCount: number }
+  | { kind: 'notes'; folder: string; remote?: string; ref: string; noteCount: number }
 
 /** A decrypted v2 bundle, sanitised for the renderer: file lists and vault keys,
  *  but never file contents or secret values (those stay in the main process). */
@@ -1751,22 +1766,41 @@ export type SecureOpenedSection =
       files: { path: string; size: number; executable?: boolean }[]
     }
   | { kind: 'vault'; entries: { key: string; note?: string }[] }
+  | { kind: 'workspace'; name: string; tabs: SecureWorkspaceTab[] }
+  | { kind: 'notes'; folder: string; remote?: string; ref: string; noteCount: number }
 
-/** What the export UI asks the main process to pack. Repo file contents and
- *  vault values are read in main — the renderer only names what to include. */
+/** What the export UI asks the main process to pack. Repo file contents, vault
+ *  values and note bodies are read in main — the renderer only names what to
+ *  include (and, for a workspace, hands over the already-portable tab shape). */
 export type SecureExportSpec =
   | { kind: 'repo'; repoPath: string; project: string; folder: string; remote?: string; paths: string[] }
   | { kind: 'vault' }
+  | { kind: 'workspace'; name: string; tabs: SecureWorkspaceTab[] }
+  | { kind: 'notes'; repoPath: string; folder: string; remote?: string }
 
-/** How the import UI wants each section applied. Repo sections target a chosen
- *  local repo; the vault section merges into the global vault. */
+/** How the import UI wants each section applied. Repo and notes sections target
+ *  a chosen local repo; the vault section merges into the global vault. A
+ *  workspace section is applied by the renderer (it owns the settings store). */
 export type SecureApplyPlan =
   | { kind: 'repo'; sectionIndex: number; targetRepoPath: string; paths: string[] }
   | { kind: 'vault'; sectionIndex: number; keys: string[] }
+  | { kind: 'notes'; sectionIndex: number; targetRepoPath: string; overwrite: boolean }
 
 export interface SecureApplyResult {
   filesWritten: number
   secretsWritten: number
+  notesWritten: number
+  /** Notes not applied: the commit is absent locally, or a differing note existed and overwrite was off. */
+  notesSkipped: number
+}
+
+/** Preview of one bundled note against a chosen target repo. */
+export interface SecureNotePreviewEntry {
+  sha: string
+  /** The annotated commit exists in the target repo. */
+  commitExists: boolean
+  /** 'new' = no local note; 'same' = identical note; 'different' = would need overwrite. */
+  state: 'new' | 'same' | 'different'
 }
 
 /** One decrypted bundle entry, previewed before writing into the repo. */

@@ -52,12 +52,20 @@ written on your laptop stay on your laptop until someone moves them explicitly.
 Tools → **Note** → *Push notes* / *Fetch notes*, per remote. They run:
 
 ```sh
-git push <remote> refs/notes/*
-git fetch <remote> +refs/notes/*:refs/notes/*
+git push <remote> refs/notes/commits
+git fetch <remote> +refs/notes/commits:refs/notes/commits
 ```
+
+Only the commit-notes ref travels — Gitcito's own machine-local refs (like the
+[local CI](local-ci.md) verdicts) are deliberately not published.
 
 Some hosts also need notes enabled or allowed on their side; a rejection there
 is the host's policy, not a Gitcito limit.
+
+No shared remote, or no write access? [Secure share](secure-share.md) can pack
+a repository's notes into an encrypted file a teammate imports directly, with a
+preview of what would land and an explicit overwrite choice for diverging
+notes.
 
 ## Limits
 

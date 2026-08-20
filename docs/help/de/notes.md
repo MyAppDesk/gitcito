@@ -57,13 +57,23 @@ Werkzeuge → **Notiz** → *Notizen pushen* / *Notizen fetchen*, pro Remote. Si
 führen aus:
 
 ```sh
-git push <remote> refs/notes/*
-git fetch <remote> +refs/notes/*:refs/notes/*
+git push <remote> refs/notes/commits
+git fetch <remote> +refs/notes/commits:refs/notes/commits
 ```
+
+Nur die Commit-Notizen-Ref reist — Gitcitos eigene maschinenlokale Refs (etwa
+die Urteile der [lokalen CI](local-ci.md)) werden absichtlich nicht
+veröffentlicht.
 
 Manche Hoster brauchen zusätzlich, dass Notizen auf ihrer Seite aktiviert oder
 erlaubt sind; eine Ablehnung dort ist die Richtlinie des Hosters, keine Grenze
 von Gitcito.
+
+Kein gemeinsames Remote, oder kein Schreibzugriff?
+[Sicheres Teilen](secure-share.md) kann die Notizen eines Repositorys in eine
+verschlüsselte Datei packen, die ein Teammitglied direkt importiert — mit einer
+Vorschau darauf, was landen würde, und einer ausdrücklichen
+Überschreiben-Entscheidung für auseinanderlaufende Notizen.
 
 ## Grenzen
 

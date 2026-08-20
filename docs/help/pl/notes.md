@@ -54,12 +54,22 @@ Narzędzia → **Notatka** → *Wypchnij notatki* / *Pobierz notatki*, dla każd
 zdalnego repozytorium z osobna. Uruchamiają:
 
 ```sh
-git push <remote> refs/notes/*
-git fetch <remote> +refs/notes/*:refs/notes/*
+git push <remote> refs/notes/commits
+git fetch <remote> +refs/notes/commits:refs/notes/commits
 ```
+
+Podróżuje wyłącznie referencja notatek do commitów — własne, lokalne dla
+maszyny referencje Gitcito (jak werdykty [lokalnego CI](local-ci.md)) celowo
+nie są publikowane.
 
 Niektóre hostingi wymagają jeszcze włączenia albo dopuszczenia notatek po swojej
 stronie; odmowa stamtąd to polityka hostingu, a nie ograniczenie Gitcito.
+
+Brak wspólnego zdalnego repozytorium albo prawa zapisu?
+[Bezpieczne udostępnianie](secure-share.md) potrafi spakować notatki
+repozytorium do zaszyfrowanego pliku, który współpracownik importuje
+bezpośrednio — z podglądem tego, co by wylądowało, i jawnym wyborem nadpisania
+dla rozbieżnych notatek.
 
 ## Ograniczenia
 

@@ -720,6 +720,10 @@ export const secureShareApi = {
   applyV2: (bundlePath: string, password: string, plan: SecureApplyPlan[]) =>
     window.api.secureShare.applyV2(bundlePath, password, plan) as Promise<
       SecureApplyResult | { error: SecureShareError }
+    >,
+  previewNotesV2: (bundlePath: string, password: string, sectionIndex: number, repoPath: string) =>
+    window.api.secureShare.previewNotesV2(bundlePath, password, sectionIndex, repoPath) as Promise<
+      { notes: import('../../../shared/types').SecureNotePreviewEntry[] } | { error: SecureShareError }
     >
 }
 

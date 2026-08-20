@@ -55,12 +55,22 @@ mueva explícitamente.
 Herramientas → **Nota** → *Publicar notas* / *Traer notas*, por remoto. Ejecutan:
 
 ```sh
-git push <remote> refs/notes/*
-git fetch <remote> +refs/notes/*:refs/notes/*
+git push <remote> refs/notes/commits
+git fetch <remote> +refs/notes/commits:refs/notes/commits
 ```
+
+Solo viaja la ref de las notas de commit — las refs locales de máquina propias
+de Gitcito (como los veredictos de la [CI local](local-ci.md)) deliberadamente
+no se publican.
 
 Algunos hosts además necesitan que las notas estén habilitadas o permitidas de su
 lado; un rechazo ahí es política del host, no un límite de Gitcito.
+
+¿Sin remoto compartido, o sin acceso de escritura?
+[Compartir seguro](secure-share.md) puede empaquetar las notas de un repositorio
+en un archivo cifrado que un compañero importa directamente, con una vista
+previa de lo que aterrizaría y una elección explícita de sobrescritura para las
+notas divergentes.
 
 ## Límites
 

@@ -218,7 +218,14 @@ const api = {
     ): Promise<unknown> =>
       ipcRenderer.invoke('secure:previewRepoV2', bundlePath, password, sectionIndex, repoPath),
     applyV2: (bundlePath: string, password: string, plan: unknown): Promise<unknown> =>
-      ipcRenderer.invoke('secure:applyV2', bundlePath, password, plan)
+      ipcRenderer.invoke('secure:applyV2', bundlePath, password, plan),
+    previewNotesV2: (
+      bundlePath: string,
+      password: string,
+      sectionIndex: number,
+      repoPath: string
+    ): Promise<unknown> =>
+      ipcRenderer.invoke('secure:previewNotesV2', bundlePath, password, sectionIndex, repoPath)
   },
   info: {
     list: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('info:list', repoPath),

@@ -14,6 +14,7 @@ import {
   ChevronRight,
   ChevronDown,
   LayoutGrid,
+  StickyNote,
   KeyRound as VaultIcon
 } from 'lucide-react'
 import { secureShareApi, vaultApi, gitApi } from '../infrastructure/api'
@@ -27,10 +28,14 @@ import type {
   SecureBundleHeader,
   SecureBundleOpened,
   SecureOpenedSection,
+  SecureNotePreviewEntry,
   SecureSharePreviewEntry,
   SecureExportSpec,
+  SecureWorkspaceTab,
   SecureApplyPlan,
-  SecureShareError
+  SecureShareError,
+  TabState,
+  Workspace
 } from '../../../shared/types'
 
 // Multi-section secure share, launched from the Global Vault: bundle the global
@@ -154,6 +159,10 @@ export function SecureWorkspaceModal({
   const [vaultCount, setVaultCount] = useState<number | null>(null)
   const [includeVault, setIncludeVault] = useState(false)
   const [repoState, setRepoState] = useState<Record<string, RepoExportState>>({})
+  // Per-workspace "include the tab structure itself" and per-repo "include
+  // commit notes" toggles — the two team artifacts beyond secret files.
+  const [includeStructure, setIncludeStructure] = useState<Record<string, boolean>>({})
+  const [includeNotes, setIncludeNotes] = useState<Record<string, boolean>>({})
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
 
@@ -232,28 +241,64 @@ export function SecureWorkspaceModal({
   const chosenRepos = localRepos.filter(
     (r) => repoState[r.path]?.on && (repoState[r.path]?.selected.size ?? 0) > 0
   )
+  const chosenStructures = workspaces.filter((ws) => includeStructure[ws.id])
+  const chosenNoteRepos = localRepos.filter((r) => includeNotes[r.path])
   const passwordOk = password.length >= MIN_PASSWORD && password === confirm
-  const hasSomething = (includeVault && (vaultCount ?? 0) > 0) || chosenRepos.length > 0
+  const hasSomething =
+    (includeVault && (vaultCount ?? 0) > 0) ||
+    chosenRepos.length > 0 ||
+    chosenStructures.length > 0 ||
+    chosenNoteRepos.length > 0
   const canExport = hasSomething && passwordOk && !busy
+
+  // Workspace-only repos weren't loaded this session, so the store has no
+  // remote for them — look it up on demand so import-side matching still works.
+  const remoteFor = async (repoPath: string): Promise<string | undefined> => {
+    const known = repoByPath.get(repoPath)?.remote
+    if (known) return known
+    const rs = await gitApi.remotes(repoPath).catch(() => [])
+    return (rs.find((x) => x.name === 'origin') ?? rs[0])?.url
+  }
+
+  /** A workspace's tab strip in the portable shape: names, colors and remotes —
+   *  never absolute paths. Page tabs stay home (they reference nothing shareable). */
+  const portableTabs = async (tabs: TabState[]): Promise<SecureWorkspaceTab[]> => {
+    const out: SecureWorkspaceTab[] = []
+    for (const tab of tabs) {
+      if (tab.kind === 'page') continue
+      const repos = await Promise.all(
+        tabRepos(tab).map(async (r) => ({
+          name: r.name || baseName(r.path),
+          folder: baseName(r.path),
+          remote: await remoteFor(r.path)
+        }))
+      )
+      if (tab.kind === 'repo') {
+        if (repos[0]) out.push({ kind: 'repo', repo: repos[0] })
+      } else {
+        out.push({ kind: 'group', name: tab.name, ...(tab.color ? { color: tab.color } : {}), repos })
+      }
+    }
+    return out
+  }
 
   const doExport = async (): Promise<void> => {
     setBusy(true)
     const specs: SecureExportSpec[] = []
     if (includeVault && (vaultCount ?? 0) > 0) specs.push({ kind: 'vault' })
+    for (const ws of chosenStructures) {
+      specs.push({ kind: 'workspace', name: ws.name, tabs: await portableTabs(ws.tabs) })
+    }
+    for (const r of chosenNoteRepos) {
+      specs.push({ kind: 'notes', repoPath: r.path, folder: baseName(r.path), remote: await remoteFor(r.path) })
+    }
     for (const r of chosenRepos) {
-      // Workspace-only repos weren't loaded this session, so the store has no
-      // remote for them — look it up now so import-side auto-match still works.
-      let remote = r.remote
-      if (!remote) {
-        const rs = await gitApi.remotes(r.path).catch(() => [])
-        remote = (rs.find((x) => x.name === 'origin') ?? rs[0])?.url
-      }
       specs.push({
         kind: 'repo',
         repoPath: r.path,
         project: r.name,
         folder: baseName(r.path),
-        remote,
+        remote: await remoteFor(r.path),
         paths: [...(repoState[r.path]?.selected ?? [])]
       })
     }
@@ -288,6 +333,9 @@ export function SecureWorkspaceModal({
   const [previews, setPreviews] = useState<Record<number, SecureSharePreviewEntry[]>>({})
   const [repoSel, setRepoSel] = useState<Record<number, Set<string>>>({})
   const [vaultSel, setVaultSel] = useState<Record<number, Set<string>>>({})
+  const [wsSel, setWsSel] = useState<Record<number, boolean>>({})
+  const [notesPrev, setNotesPrev] = useState<Record<number, SecureNotePreviewEntry[]>>({})
+  const [notesOverwrite, setNotesOverwrite] = useState<Record<number, boolean>>({})
 
   const pickFile = async (): Promise<void> => {
     const res = await secureShareApi.pick()
@@ -303,9 +351,12 @@ export function SecureWorkspaceModal({
     setPreviews({})
     setRepoSel({})
     setVaultSel({})
+    setWsSel({})
+    setNotesPrev({})
+    setNotesOverwrite({})
   }
 
-  const autoMatch = (section: Extract<SecureOpenedSection, { kind: 'repo' }>): string => {
+  const autoMatch = (section: { remote?: string; folder: string }): string => {
     const wantRemote = normalizeRemote(section.remote)
     if (wantRemote) {
       const byRemote = localRepos.find((r) => normalizeRemote(r.remote) === wantRemote)
@@ -313,6 +364,19 @@ export function SecureWorkspaceModal({
     }
     const byFolder = localRepos.find((r) => baseName(r.path) === section.folder)
     return byFolder?.path ?? ''
+  }
+
+  /** Where a bundled workspace repo would land locally, or '' when unknown here. */
+  const matchWorkspaceRepo = (r: { remote?: string; folder: string }): string => autoMatch(r)
+
+  const loadNotesPreview = async (index: number, repoPath: string): Promise<void> => {
+    if (!bundle || !repoPath) return
+    const res = await secureShareApi.previewNotesV2(bundle.path, importPassword, index, repoPath)
+    if ('error' in res) {
+      toast('error', errText(res.error))
+      return
+    }
+    setNotesPrev((prev) => ({ ...prev, [index]: res.notes }))
   }
 
   const loadPreview = async (index: number, repoPath: string): Promise<void> => {
@@ -339,21 +403,30 @@ export function SecureWorkspaceModal({
         return
       }
       setOpened(res)
-      // Auto-match every repo section and load its preview; select all vault keys.
+      // Auto-match repo and notes sections and load previews; select all vault
+      // keys; preselect workspace sections.
       const nextTargets: Record<number, string> = {}
       const nextVaultSel: Record<number, Set<string>> = {}
+      const nextWsSel: Record<number, boolean> = {}
       for (let i = 0; i < res.sections.length; i++) {
         const s = res.sections[i]
         if (s.kind === 'repo') {
           const target = autoMatch(s)
           nextTargets[i] = target
           if (target) void loadPreview(i, target)
+        } else if (s.kind === 'notes') {
+          const target = autoMatch(s)
+          nextTargets[i] = target
+          if (target) void loadNotesPreview(i, target)
+        } else if (s.kind === 'workspace') {
+          nextWsSel[i] = true
         } else {
           nextVaultSel[i] = new Set(s.entries.map((e) => e.key))
         }
       }
       setTargets(nextTargets)
       setVaultSel(nextVaultSel)
+      setWsSel(nextWsSel)
     } finally {
       setBusy(false)
     }
@@ -367,6 +440,16 @@ export function SecureWorkspaceModal({
       return next
     })
     if (repoPath) void loadPreview(index, repoPath)
+  }
+
+  const setNotesTarget = (index: number, repoPath: string): void => {
+    setTargets((prev) => ({ ...prev, [index]: repoPath }))
+    setNotesPrev((prev) => {
+      const next = { ...prev }
+      delete next[index]
+      return next
+    })
+    if (repoPath) void loadNotesPreview(index, repoPath)
   }
 
   const toggleImportFile = (index: number, path: string): void =>
@@ -390,13 +473,53 @@ export function SecureWorkspaceModal({
       const s = opened.sections[i]
       if (s.kind === 'vault') {
         if ((vaultSel[i]?.size ?? 0) > 0) any = true
+      } else if (s.kind === 'workspace') {
+        if (wsSel[i]) any = true
+      } else if (s.kind === 'notes') {
+        if (targets[i]) any = true
       } else if ((repoSel[i]?.size ?? 0) > 0) {
         if (!targets[i]) return false // a chosen repo section still needs a target
         any = true
       }
     }
     return any
-  }, [opened, vaultSel, repoSel, targets])
+  }, [opened, vaultSel, repoSel, targets, wsSel])
+
+  /** Recreate a bundled workspace locally: matched repos slot into the same tab
+   *  structure; repos this machine does not have are simply left out (their
+   *  remotes are listed in the section card so they can be cloned first). */
+  const applyWorkspaceSection = (section: Extract<SecureOpenedSection, { kind: 'workspace' }>): number => {
+    const uid = (): string => Math.random().toString(36).slice(2, 10)
+    const tabs: TabState[] = []
+    let matched = 0
+    for (const tab of section.tabs) {
+      if (tab.kind === 'repo') {
+        const path = matchWorkspaceRepo(tab.repo)
+        if (!path) continue
+        matched++
+        tabs.push({ kind: 'repo', id: uid(), name: tab.repo.name, repos: [{ path, name: tab.repo.name }], activeRepoPath: path })
+      } else {
+        const repos = tab.repos
+          .map((r) => ({ r, path: matchWorkspaceRepo(r) }))
+          .filter((x) => x.path)
+          .map((x) => ({ path: x.path, name: x.r.name }))
+        matched += repos.length
+        if (repos.length > 0) {
+          tabs.push({
+            kind: 'group',
+            id: uid(),
+            name: tab.name,
+            ...(tab.color ? { color: tab.color } : {}),
+            repos,
+            activeRepoPath: repos[0]?.path ?? null
+          })
+        }
+      }
+    }
+    const ws: Workspace = { id: uid(), name: section.name, tabs, activeTabId: tabs[0]?.id ?? null }
+    useSettingsStore.getState().update((s) => ({ ...s, workspaces: [...(s.workspaces ?? []), ws] }))
+    return matched
+  }
 
   const doApply = async (): Promise<void> => {
     if (!bundle || !opened) return
@@ -406,7 +529,11 @@ export function SecureWorkspaceModal({
       if (s.kind === 'vault') {
         const keys = [...(vaultSel[i] ?? [])]
         if (keys.length > 0) plan.push({ kind: 'vault', sectionIndex: i, keys })
-      } else {
+      } else if (s.kind === 'notes') {
+        if (targets[i]) {
+          plan.push({ kind: 'notes', sectionIndex: i, targetRepoPath: targets[i], overwrite: !!notesOverwrite[i] })
+        }
+      } else if (s.kind === 'repo') {
         const paths = [...(repoSel[i] ?? [])]
         if (paths.length > 0 && targets[i]) {
           plan.push({ kind: 'repo', sectionIndex: i, targetRepoPath: targets[i], paths })
@@ -415,12 +542,33 @@ export function SecureWorkspaceModal({
     }
     setBusy(true)
     try {
-      const res = await secureShareApi.applyV2(bundle.path, importPassword, plan)
-      if ('error' in res) toast('error', errText(res.error))
-      else {
-        toast('success', interp(t('wshare.done'), { files: res.filesWritten, secrets: res.secretsWritten }))
-        closeModal()
+      const res = plan.length
+        ? await secureShareApi.applyV2(bundle.path, importPassword, plan)
+        : { filesWritten: 0, secretsWritten: 0, notesWritten: 0, notesSkipped: 0 }
+      if ('error' in res) {
+        toast('error', errText(res.error))
+        return
       }
+      // Workspace sections are applied here — the renderer owns the settings.
+      let workspacesCreated = 0
+      for (let i = 0; i < opened.sections.length; i++) {
+        const s = opened.sections[i]
+        if (s.kind === 'workspace' && wsSel[i]) {
+          applyWorkspaceSection(s)
+          workspacesCreated++
+        }
+      }
+      toast(
+        'success',
+        interp(t('wshare.doneFull'), {
+          files: res.filesWritten,
+          secrets: res.secretsWritten,
+          notes: res.notesWritten,
+          workspaces: workspacesCreated
+        })
+      )
+      if (res.notesSkipped > 0) toast('info', interp(t('wshare.notesSkipped'), { n: res.notesSkipped }))
+      closeModal()
     } finally {
       setBusy(false)
     }
@@ -477,6 +625,16 @@ export function SecureWorkspaceModal({
                         <LayoutGrid size={12} />
                         <span>{g.name}</span>
                       </button>
+                      {g.id !== '__other__' && (
+                        <button
+                          className={`btn ghost tiny ${includeStructure[g.id] ? 'active' : ''}`}
+                          title={t('wshare.structureTitle')}
+                          onClick={() => setIncludeStructure((prev) => ({ ...prev, [g.id]: !prev[g.id] }))}
+                        >
+                          {includeStructure[g.id] ? <CheckSquare size={12} /> : <Square size={12} />}{' '}
+                          {t('wshare.structure')}
+                        </button>
+                      )}
                       <span className="share-size">
                         {g.repos.length} {t('wshare.repos').toLowerCase()}
                       </span>
@@ -493,6 +651,13 @@ export function SecureWorkspaceModal({
                         <span className="share-path" title={r.path}>
                           {r.name}
                         </span>
+                      </button>
+                      <button
+                        className={`btn ghost tiny ${includeNotes[r.path] ? 'active' : ''}`}
+                        title={t('wshare.notesTitle')}
+                        onClick={() => setIncludeNotes((prev) => ({ ...prev, [r.path]: !prev[r.path] }))}
+                      >
+                        <StickyNote size={11} /> {t('wshare.notes')}
                       </button>
                       {on && (
                         <button className="wshare-expand" onClick={() => toggleExpand(r.path)}>
@@ -619,6 +784,81 @@ export function SecureWorkspaceModal({
                         </button>
                       ))}
                     </div>
+                  </div>
+                ) : s.kind === 'workspace' ? (
+                  <div key={i} className="wshare-section">
+                    <div className="wshare-section-head">
+                      <button className="wshare-check" onClick={() => setWsSel((prev) => ({ ...prev, [i]: !prev[i] }))}>
+                        {wsSel[i] ? <CheckSquare size={13} /> : <Square size={13} />}
+                        <LayoutGrid size={13} /> <strong>{s.name}</strong>
+                      </button>
+                      <span className="share-size">{interp(t('wshare.wsSummary'), { tabs: s.tabs.length })}</span>
+                    </div>
+                    <div className="share-list">
+                      {s.tabs.map((tab, j) => {
+                        const repos = tab.kind === 'repo' ? [tab.repo] : tab.repos
+                        return (
+                          <div key={j} className="wshare-ws-tab">
+                            <span className="share-path">
+                              {tab.kind === 'group' ? `▸ ${tab.name}` : repos[0]?.name}
+                            </span>
+                            {repos.map((r, k) => {
+                              const path = matchWorkspaceRepo(r)
+                              return (
+                                <span
+                                  key={k}
+                                  className={`share-badge ${path ? '' : 'warn'}`}
+                                  title={path || r.remote || r.folder}
+                                >
+                                  {r.name}
+                                  {path ? '' : ` — ${t('wshare.wsMissing')}`}
+                                </span>
+                              )
+                            })}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                ) : s.kind === 'notes' ? (
+                  <div key={i} className="wshare-section">
+                    <div className="wshare-section-head">
+                      <StickyNote size={13} /> <strong>{interp(t('wshare.notesSection'), { folder: s.folder })}</strong>
+                      <span className="share-size">{interp(t('wshare.notesCount'), { n: s.noteCount })}</span>
+                    </div>
+                    <div className="wshare-target">
+                      <span className="settings-hint">{t('wshare.target')}</span>
+                      <select
+                        className="modal-input"
+                        value={targets[i] ?? ''}
+                        onChange={(e) => setNotesTarget(i, e.target.value)}
+                      >
+                        <option value="">{t('wshare.pickTarget')}</option>
+                        {localRepos.map((r) => (
+                          <option key={r.path} value={r.path}>
+                            {r.name}
+                          </option>
+                        ))}
+                      </select>
+                      <label className="settings-hint">
+                        <input
+                          type="checkbox"
+                          checked={!!notesOverwrite[i]}
+                          onChange={(e) => setNotesOverwrite((prev) => ({ ...prev, [i]: e.target.checked }))}
+                        />{' '}
+                        {t('wshare.notesOverwrite')}
+                      </label>
+                    </div>
+                    {targets[i] && notesPrev[i] && (
+                      <p className="settings-hint">
+                        {interp(t('wshare.notesPreview'), {
+                          fresh: notesPrev[i].filter((n) => n.commitExists && n.state === 'new').length,
+                          same: notesPrev[i].filter((n) => n.state === 'same').length,
+                          conflicting: notesPrev[i].filter((n) => n.state === 'different').length,
+                          missing: notesPrev[i].filter((n) => !n.commitExists).length
+                        })}
+                      </p>
+                    )}
                   </div>
                 ) : (
                   <div key={i} className="wshare-section">

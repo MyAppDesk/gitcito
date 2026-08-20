@@ -34,11 +34,15 @@ a cascade that has to replay **merge commits** (re-merge with the rewritten
 parent, carry conflict resolutions via rerere). Until then, a merge between the
 commit and HEAD simply disables the feature.
 
-### Team features without a backend
-Gitcito has no server and intends to keep it that way, so the GitKraken-style
-shared workspace is out. What is not out: **exporting** a workspace, a review, or
-a set of repo notes as a file someone else imports — the
-[secure share](docs/help/secure-share.md) model applied to more than secrets.
+### Shareable reviews
+Workspace structure and commit notes now travel as
+[secure share](docs/help/secure-share.md) bundles. The remaining piece of the
+"team features without a backend" idea is a portable *review*: findings and
+per-file progress anchored to a diff, exported as a file. Nothing review-shaped
+persists in the app today — the file-viewed checklist lives in browser storage
+and AI findings evaporate on close — so this is inventing a domain object, not
+exporting an existing one. Worth doing only with a real design for anchoring
+comments to commits that may move.
 
 ---
 

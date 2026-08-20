@@ -4058,16 +4058,18 @@ export const gitService = {
   /**
    * Notes live under `refs/notes/*`, which a normal fetch or push ignores
    * entirely — the single most common reason someone's notes "disappear" on
-   * another machine. These two move them explicitly.
+   * another machine. These two move them explicitly. Only the user-facing
+   * commit-notes ref travels: a wildcard would also publish the app's own
+   * refs/notes/gitcito-ci verdicts, which are promised to stay local.
    */
   async fetchNotes(repoPath: string, remote = 'origin'): Promise<void> {
     await withRemoteAuth(repoPath, remote, () =>
-      runGit(repoPath, ['fetch', remote, '+refs/notes/*:refs/notes/*'])
+      runGit(repoPath, ['fetch', remote, '+refs/notes/commits:refs/notes/commits'])
     )
   },
 
   async pushNotes(repoPath: string, remote = 'origin'): Promise<void> {
-    await withRemoteAuth(repoPath, remote, () => runGit(repoPath, ['push', remote, 'refs/notes/*']))
+    await withRemoteAuth(repoPath, remote, () => runGit(repoPath, ['push', remote, 'refs/notes/commits']))
   },
 
   // ─── Removing a path from history ────────────────────────────────────────

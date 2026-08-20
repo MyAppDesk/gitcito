@@ -37,11 +37,15 @@ keywords: 备注 注释 notes git notes 标注 annotate 评论 comment 提交 co
 工具 → **备注** → *推送备注* ／ *获取备注*，按远程逐个进行。它们执行的是：
 
 ```sh
-git push <remote> refs/notes/*
-git fetch <remote> +refs/notes/*:refs/notes/*
+git push <remote> refs/notes/commits
+git fetch <remote> +refs/notes/commits:refs/notes/commits
 ```
 
+会移动的只有提交备注这一个 ref——Gitcito 自己的机器本地 ref（比如[本地 CI](local-ci.md)的判定）是有意不发布的。
+
 有些托管方还需要在自己那一侧启用或允许备注；被拒绝是托管方的策略，不是 Gitcito 的限制。
+
+没有共享的远程，或者没有写权限？[安全分享](secure-share.md)可以把一个仓库的备注打进一个加密文件，队友直接导入即可——导入前能预览将要落下的内容，对分叉的备注有明确的覆盖选择。
 
 ## 局限
 

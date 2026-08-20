@@ -1,6 +1,8 @@
 import { ipcMain, dialog } from 'electron'
 import { join, resolve, relative, sep, dirname } from 'path'
 import { readFile, writeFile, readdir, stat, mkdir, chmod } from 'fs/promises'
+import { execFile } from 'child_process'
+import { promisify } from 'util'
 import { isSecretFile } from '../shared/secretFiles'
 import {
   packBundle,
@@ -11,12 +13,14 @@ import {
   isSafeRelPath,
   BundleError,
   type BundleFile,
+  type BundleNote,
   type BundleSection
 } from './secureBundle'
 import { exportGlobalEntries, importGlobalEntries } from './vault'
 import type {
   SecureShareCandidate,
   SecureBundleHeader,
+  SecureNotePreviewEntry,
   SecureSharePreviewEntry,
   SecureShareError,
   SecureExportSpec,
@@ -24,6 +28,28 @@ import type {
   SecureApplyPlan,
   SecureApplyResult
 } from '../shared/types'
+
+const pexecFile = promisify(execFile)
+
+// The one notes namespace bundles carry: the user-facing commit notes. The
+// app's own refs (e.g. refs/notes/gitcito-ci) stay machine-local on purpose.
+const NOTES_REF = 'refs/notes/commits'
+
+const gitOut = (repoPath: string, args: string[]): Promise<string> =>
+  pexecFile('git', ['-C', repoPath, ...args], { maxBuffer: 16 * 1024 * 1024 }).then(({ stdout }) => stdout)
+
+/** Every note in the shared notes ref of a repo, bodies included. */
+export async function readRepoNotes(repoPath: string): Promise<BundleNote[]> {
+  const raw = await gitOut(repoPath, ['notes', `--ref=${NOTES_REF}`, 'list']).catch(() => '')
+  const notes: BundleNote[] = []
+  for (const line of raw.split('\n')) {
+    const [, sha] = line.trim().split(' ')
+    if (!sha) continue
+    const body = await gitOut(repoPath, ['notes', `--ref=${NOTES_REF}`, 'show', sha]).catch(() => null)
+    if (body !== null) notes.push({ sha, body: body.replace(/\n$/, '') })
+  }
+  return notes
+}
 
 // IPC surface for sharing files as encrypted .gitcito bundles. All filesystem
 // and crypto work stays in the main process; the renderer only ever sees
@@ -222,7 +248,7 @@ export async function applyBundle(
 /** Build a v2 bundle from export specs and write it. Repo files are read here;
  *  the vault section pulls the global vault directly (values never touch the
  *  renderer). Empty vault sections are dropped; an all-empty request errors. */
-async function exportSectionsV2(
+export async function exportSectionsV2(
   specs: SecureExportSpec[],
   project: string,
   password: string
@@ -232,6 +258,27 @@ async function exportSectionsV2(
     if (spec.kind === 'vault') {
       const entries = await exportGlobalEntries()
       if (entries.length > 0) sections.push({ kind: 'vault', entries })
+      continue
+    }
+    if (spec.kind === 'workspace') {
+      // The renderer owns the settings store, so it hands over the already
+      // portable tab shape; only sanity-shape it here.
+      if (typeof spec.name === 'string' && Array.isArray(spec.tabs)) {
+        sections.push({ kind: 'workspace', name: spec.name, tabs: spec.tabs })
+      }
+      continue
+    }
+    if (spec.kind === 'notes') {
+      const notes = await readRepoNotes(spec.repoPath).catch(() => [] as BundleNote[])
+      if (notes.length > 0) {
+        sections.push({
+          kind: 'notes',
+          folder: spec.folder,
+          ...(spec.remote ? { remote: spec.remote } : {}),
+          ref: NOTES_REF,
+          notes
+        })
+      }
       continue
     }
     const files: BundleFile[] = []
@@ -278,7 +325,7 @@ async function exportSectionsV2(
 
 /** Decrypt a bundle to a renderer-safe shape: repo file lists (path/size) and
  *  vault keys — never file contents or secret values. */
-async function openBundleV2(
+export async function openBundleV2(
   bundlePath: string,
   password: string
 ): Promise<SecureBundleOpened | { error: SecureShareError }> {
@@ -286,21 +333,33 @@ async function openBundleV2(
     const sections = unpackSections(await readFile(bundlePath, 'utf-8'), password)
     return {
       version: 2,
-      sections: sections.map((s) =>
-        s.kind === 'vault'
-          ? { kind: 'vault' as const, entries: s.entries.map((e) => ({ key: e.key, ...(e.note ? { note: e.note } : {}) })) }
-          : {
-              kind: 'repo' as const,
-              project: s.project,
-              folder: s.folder,
-              ...(s.remote ? { remote: s.remote } : {}),
-              files: s.files.map((f) => ({
-                path: f.path,
-                size: f.content.length,
-                ...(f.executable ? { executable: true } : {})
-              }))
-            }
-      )
+      sections: sections.map((s) => {
+        if (s.kind === 'vault') {
+          return { kind: 'vault' as const, entries: s.entries.map((e) => ({ key: e.key, ...(e.note ? { note: e.note } : {}) })) }
+        }
+        if (s.kind === 'workspace') return { kind: 'workspace' as const, name: s.name, tabs: s.tabs }
+        if (s.kind === 'notes') {
+          // Note bodies stay in main until apply; the renderer needs only counts.
+          return {
+            kind: 'notes' as const,
+            folder: s.folder,
+            ...(s.remote ? { remote: s.remote } : {}),
+            ref: s.ref,
+            noteCount: s.notes.length
+          }
+        }
+        return {
+          kind: 'repo' as const,
+          project: s.project,
+          folder: s.folder,
+          ...(s.remote ? { remote: s.remote } : {}),
+          files: s.files.map((f) => ({
+            path: f.path,
+            size: f.content.length,
+            ...(f.executable ? { executable: true } : {})
+          }))
+        }
+      })
     }
   } catch (e) {
     return { error: errCode(e) }
@@ -338,9 +397,38 @@ async function previewRepoSectionV2(
   }
 }
 
+/** Per-note new/same/different check for one notes section against a target repo. */
+export async function previewNotesSectionV2(
+  bundlePath: string,
+  password: string,
+  sectionIndex: number,
+  repoPath: string
+): Promise<{ notes: SecureNotePreviewEntry[] } | { error: SecureShareError }> {
+  try {
+    const sections = unpackSections(await readFile(bundlePath, 'utf-8'), password)
+    const section = sections[sectionIndex]
+    if (!section || section.kind !== 'notes') return { error: 'invalid' }
+    const entries: SecureNotePreviewEntry[] = []
+    for (const n of section.notes) {
+      const commitExists = await gitOut(repoPath, ['cat-file', '-e', `${n.sha}^{commit}`])
+        .then(() => true)
+        .catch(() => false)
+      let state: SecureNotePreviewEntry['state'] = 'new'
+      if (commitExists) {
+        const existing = await gitOut(repoPath, ['notes', `--ref=${section.ref}`, 'show', n.sha]).catch(() => null)
+        if (existing !== null) state = existing.replace(/\n$/, '') === n.body ? 'same' : 'different'
+      }
+      entries.push({ sha: n.sha, commitExists, state })
+    }
+    return { notes: entries }
+  } catch (e) {
+    return { error: errCode(e) }
+  }
+}
+
 /** Apply a decrypted bundle per the plan: repo sections write files into their
  *  chosen target repos; a vault section merges into the global vault. */
-async function applyV2(
+export async function applyV2(
   bundlePath: string,
   password: string,
   plan: SecureApplyPlan[]
@@ -353,6 +441,8 @@ async function applyV2(
   }
   let filesWritten = 0
   let secretsWritten = 0
+  let notesWritten = 0
+  let notesSkipped = 0
   for (const step of plan) {
     const section = sections[step.sectionIndex]
     if (!section) return { error: 'invalid' }
@@ -361,6 +451,34 @@ async function applyV2(
       const wanted = new Set(step.keys)
       const picked = section.entries.filter((e) => wanted.has(e.key))
       secretsWritten += await importGlobalEntries(picked)
+    } else if (step.kind === 'notes') {
+      if (section.kind !== 'notes') return { error: 'invalid' }
+      for (const n of section.notes) {
+        if (!/^[0-9a-f]{4,64}$/.test(n.sha)) continue
+        const commitExists = await gitOut(step.targetRepoPath, ['cat-file', '-e', `${n.sha}^{commit}`])
+          .then(() => true)
+          .catch(() => false)
+        if (!commitExists) {
+          notesSkipped++
+          continue
+        }
+        const existing = await gitOut(step.targetRepoPath, ['notes', `--ref=${section.ref}`, 'show', n.sha]).catch(
+          () => null
+        )
+        if (existing !== null) {
+          if (existing.replace(/\n$/, '') === n.body) continue // identical — nothing to do, nothing skipped
+          if (!step.overwrite) {
+            notesSkipped++
+            continue
+          }
+        }
+        try {
+          await gitOut(step.targetRepoPath, ['notes', `--ref=${section.ref}`, 'add', '-f', '-m', n.body, n.sha])
+          notesWritten++
+        } catch {
+          return { error: 'write-failed' }
+        }
+      }
     } else {
       if (section.kind !== 'repo') return { error: 'invalid' }
       const wanted = new Set(step.paths)
@@ -380,7 +498,7 @@ async function applyV2(
       }
     }
   }
-  return { filesWritten, secretsWritten }
+  return { filesWritten, secretsWritten, notesWritten, notesSkipped }
 }
 
 export function registerSecureShareHandlers(): void {
@@ -400,6 +518,11 @@ export function registerSecureShareHandlers(): void {
   )
   ipcMain.handle('secure:applyV2', (_e, bundlePath: string, password: string, plan: SecureApplyPlan[]) =>
     applyV2(bundlePath, password, plan)
+  )
+  ipcMain.handle(
+    'secure:previewNotesV2',
+    (_e, bundlePath: string, password: string, sectionIndex: number, repoPath: string) =>
+      previewNotesSectionV2(bundlePath, password, sectionIndex, repoPath)
   )
   ipcMain.handle(
     'secure:export',

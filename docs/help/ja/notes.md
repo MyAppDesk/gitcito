@@ -51,12 +51,20 @@ keywords: notes ノート git notes 注釈 annotate コメント comment commit 
 されるのはこれです。
 
 ```sh
-git push <remote> refs/notes/*
-git fetch <remote> +refs/notes/*:refs/notes/*
+git push <remote> refs/notes/commits
+git fetch <remote> +refs/notes/commits:refs/notes/commits
 ```
+
+移動するのはコミットノートの ref だけです — Gitcito 自身のマシンローカルな ref
+（[ローカル CI](local-ci.md) の判定など）は、意図的に公開されません。
 
 ホスティングサービスによっては、向こう側でノートを有効化・許可する必要もあります。
 そこでの拒否はホスト側のポリシーであって、Gitcito の制限ではありません。
+
+共有リモートがない、あるいは書き込み権限がない？ [安全な共有](secure-share.md)
+なら、リポジトリのノートを暗号化ファイルに詰めて、チームメイトが直接インポート
+できます。何が入るかのプレビュー付きで、分岐したノートには明示的な上書きの選択が
+あります。
 
 ## 制限
 

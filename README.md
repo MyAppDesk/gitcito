@@ -141,6 +141,10 @@ tells you what for and lets you say no; the app keeps working either way. Nothin
 is synced or phoned home. The only network calls are to your Git host and, if you
 turn it on, your AI provider. Details in [Security & secrets](docs/help/security.md).
 
+Team sharing works the same way: [secure share](docs/help/secure-share.md) packs
+secrets, commit notes, and whole workspace layouts into one encrypted file a
+teammate imports — no server in between.
+
 ## The handbook
 
 **Built into the app**, in every language it speaks — the **Help** button in the

@@ -1841,7 +1841,7 @@ export function ModalHost(): React.JSX.Element {
             {modal.kind === 'commit-edit' && (
               <CommitEditModal repoPath={modal.repoPath} sha={modal.sha} subject={modal.subject} />
             )}
-            {modal.kind === 'local-ci' && <LocalCIModal repoPath={modal.repoPath} />}
+            {modal.kind === 'local-ci' && <LocalCIModal repoPath={modal.repoPath} rev={modal.rev} />}
             {modal.kind === 'secure-share' && (
               <SecureShareModal repoPath={modal.repoPath} initialMode={modal.initialMode} />
             )}

@@ -50,6 +50,32 @@ Eerlijkheidsregel: het oordeel wordt alleen vastgepind als je werkboom
 enkele commit bevat, dus die toont zijn resultaat in het dialoogvenster maar
 markeert niets.
 
+## Een commit of bereik testen — zonder je branch te verlaten
+
+De sectie **Een commit of bereik testen** van het dialoogvenster draait een
+workflow tegen commits waar je *niet* op staat. Elke commit wordt **detached
+uitgecheckt in een wegwerp-worktree** onder de tijdelijke map van het systeem,
+act draait daar, en de worktree wordt verwijderd hoe de run ook eindigt — je
+werkboom en je branch bewegen nooit. Omdat die checkout per constructie
+brandschoon is, wordt het oordeel altijd vastgepind aan de geteste commit.
+Rechtsklikken op een commit in de graaf biedt direct **Lokale CI op deze
+commit uitvoeren** aan.
+
+De kosten worden genoemd voordat er iets draait, niet achteraf ontdekt: typ
+een revisie of een bereik (`main..HEAD`, `HEAD~5..`, een sha), druk op
+**Voorbeeld**, en Gitcito toont hoeveel commits aan de specificatie voldoen en
+welke nieuwste N — het expliciete budget, gemaximeerd op 50 — daadwerkelijk
+zouden draaien. Een reeks draait ze **na elkaar** (act plus Docker is zwaar
+genoeg dat parallelle runs om de machine zouden vechten), streamt het log van
+elke run, markeert elke commit live als geslaagd/mislukt, en **Stoppen**
+breekt af tussen commits en beëindigt daarbij de lopende run. Reken op echte
+minuten per commit.
+
+Nog één beperking die het weten waard is: de wegwerp-worktree bevat de
+bestanden van de commit maar niet de submodule-checkouts van je repository —
+een workflow die afhangt van geïnitialiseerde submodules gedraagt zich zoals
+op een verse kloon zonder submodules.
+
 ## Beperkingen
 
 - act is een heel goede imitatie van GitHubs runners, geen perfecte: actions

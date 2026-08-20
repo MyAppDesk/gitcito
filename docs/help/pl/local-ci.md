@@ -51,6 +51,31 @@ robocze było **czyste**. Uruchomienie na niezatwierdzonych zmianach
 przetestowało coś, czego nie zawiera żaden commit, więc pokazuje swój wynik
 w oknie dialogowym, ale niczego nie oznacza.
 
+## Przetestuj commit lub zakres — bez opuszczania swojej gałęzi
+
+Sekcja **Przetestuj commit lub zakres** okna dialogowego uruchamia workflow na
+commitach, na których *nie* jesteś. Każdy commit jest wyewidencjonowywany
+**w trybie detached do jednorazowego worktree** w katalogu tymczasowym
+systemu, tam działa act, a worktree jest usuwany niezależnie od tego, jak
+zakończy się uruchomienie — Twoje drzewo robocze i Twoja gałąź nigdy się nie
+ruszają. Ponieważ taki checkout jest z założenia nieskazitelny, werdykt zawsze
+przypina się do przetestowanego commita. Kliknięcie commita prawym przyciskiem
+na grafie oferuje bezpośrednio **Uruchom lokalne CI na tym commicie**.
+
+Koszt jest podawany, zanim cokolwiek się uruchomi, a nie odkrywany po fakcie:
+wpisz rewizję lub zakres (`main..HEAD`, `HEAD~5..`, sha), naciśnij
+**Podgląd**, a Gitcito pokaże, ile commitów pasuje do specyfikacji i które
+najnowsze N — jawny budżet, ograniczony do 50 — faktycznie by się uruchomiły.
+Przebieg wykonuje je **sekwencyjnie** (act plus Docker są na tyle ciężkie, że
+równoległe uruchomienia walczyłyby o maszynę), strumieniuje log każdego
+uruchomienia, na żywo oznacza każdy commit jako zaliczony/niezaliczony, a
+**Zatrzymaj** przerywa między commitami, ubijając ten w trakcie. Licz się z
+realnymi minutami na commit.
+
+Jeszcze jedno ograniczenie warte poznania: jednorazowy worktree zawiera pliki
+commita, ale nie checkouty submodułów Twojego repozytorium — workflow zależny
+od zainicjalizowanych submodułów zachowa się jak na świeżym klonie bez nich.
+
 ## Ograniczenia
 
 - act to bardzo dobra imitacja runnerów GitHuba, ale nie idealna: akcje

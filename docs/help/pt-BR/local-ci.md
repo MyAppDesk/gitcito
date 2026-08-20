@@ -49,6 +49,32 @@ estava **limpa**. Uma execução sobre mudanças não commitadas testou algo que
 nenhum commit contém, então ela mostra o resultado no diálogo, mas não marca
 nada.
 
+## Testar um commit ou intervalo — sem sair do seu branch
+
+A seção **Testar um commit ou intervalo** do diálogo roda um workflow contra
+commits em que você *não* está. Cada commit passa por checkout **detached em
+um worktree descartável** no diretório temporário do sistema, o act roda ali,
+e o worktree é removido seja qual for o fim da execução — a sua árvore de
+trabalho e o seu branch nunca se movem. Como esse checkout é imaculado por
+construção, o veredito sempre é fixado no commit testado. Clicar com o botão
+direito em um commit no grafo oferece diretamente **Executar CI local neste
+commit**.
+
+O custo é anunciado antes de qualquer coisa rodar, não descoberto depois:
+digite uma revisão ou um intervalo (`main..HEAD`, `HEAD~5..`, um sha),
+pressione **Prévia**, e o Gitcito mostra quantos commits a especificação
+abrange e quais N mais recentes — o orçamento explícito, limitado a 50 — de
+fato rodariam. Uma varredura os executa **sequencialmente** (act mais Docker
+pesa o bastante para execuções paralelas brigarem pela máquina), transmite o
+log de cada execução, marca cada commit como passou/falhou em tempo real, e
+**Parar** aborta entre commits, encerrando o que estiver em andamento. Espere
+minutos de verdade por commit.
+
+Mais um limite que vale conhecer: o worktree descartável contém os arquivos do
+commit, mas não os checkouts de submódulos do seu repositório — um workflow
+que dependa de submódulos inicializados vai se comportar como em um clone
+recém-feito sem eles.
+
 ## Limites
 
 - act é uma imitação muito boa dos runners do GitHub, não uma perfeita:

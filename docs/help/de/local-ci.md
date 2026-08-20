@@ -50,6 +50,33 @@ Ehrlichkeitsregel: Das Urteil wird nur angeheftet, wenn dein Arbeitsbaum
 kein Commit enthält — er zeigt sein Ergebnis also im Dialog, markiert aber
 nichts.
 
+## Einen Commit oder Bereich testen — ohne deinen Branch zu verlassen
+
+Der Bereich **Einen Commit oder Bereich testen** im Dialog führt einen
+Workflow gegen Commits aus, auf denen du gerade *nicht* stehst. Jeder Commit
+wird **detached in einen Wegwerf-Worktree** unter dem temporären
+Systemverzeichnis ausgecheckt, act läuft dort, und der Worktree wird entfernt,
+wie auch immer der Lauf endet — dein Arbeitsbaum und dein Branch bewegen sich
+nie. Weil dieser Checkout konstruktionsbedingt makellos ist, wird das Urteil
+immer an den getesteten Commit geheftet. Ein Rechtsklick auf einen Commit im
+Graphen bietet direkt **Lokale CI auf diesem Commit ausführen** an.
+
+Die Kosten werden genannt, bevor irgendetwas läuft, statt hinterher entdeckt
+zu werden: Tippe eine Revision oder einen Bereich ein (`main..HEAD`,
+`HEAD~5..`, eine sha), drücke **Vorschau**, und Gitcito zeigt, wie viele
+Commits die Angabe trifft und welche neuesten N — das explizite Budget,
+gedeckelt bei 50 — tatsächlich laufen würden. Ein Durchlauf führt sie
+**nacheinander** aus (act plus Docker ist schwer genug, dass parallele Läufe
+um die Maschine kämpfen würden), streamt das Log jedes Laufs, markiert jeden
+Commit live als bestanden/fehlgeschlagen, und **Stoppen** bricht zwischen den
+Commits ab und beendet dabei den laufenden. Rechne mit echten Minuten pro
+Commit.
+
+Eine weitere Grenze, die man kennen sollte: Der Wegwerf-Worktree enthält die
+Dateien des Commits, aber nicht die Submodul-Checkouts deines Repositorys —
+ein Workflow, der von initialisierten Submodulen abhängt, verhält sich wie auf
+einem frischen Klon ohne sie.
+
 ## Grenzen
 
 - act ist eine sehr gute Imitation der GitHub-Runner, keine perfekte: Actions,

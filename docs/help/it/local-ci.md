@@ -51,6 +51,32 @@ era **pulito**. Un'esecuzione su modifiche non committate ha testato qualcosa
 che nessun commit contiene, quindi mostra il risultato nella finestra ma non
 segna nulla.
 
+## Testa un commit o un intervallo — senza lasciare il tuo branch
+
+La sezione **Testa un commit o un intervallo** della finestra esegue un
+workflow su commit su cui *non* ti trovi. Ogni commit viene estratto **in
+modalità detached in un worktree usa e getta** sotto la directory temporanea
+di sistema, act gira lì, e il worktree viene rimosso comunque finisca
+l'esecuzione — il tuo albero di lavoro e il tuo branch non si muovono mai.
+Poiché quel checkout è immacolato per costruzione, il verdetto viene sempre
+appuntato al commit testato. Un clic destro su un commit nel grafo offre
+direttamente **Esegui la CI locale su questo commit**.
+
+Il costo viene dichiarato prima che qualcosa parta, non scoperto dopo: digita
+una revisione o un intervallo (`main..HEAD`, `HEAD~5..`, uno sha), premi
+**Anteprima**, e Gitcito mostra quanti commit corrispondono alla specifica e
+quali N più recenti — il budget esplicito, con un tetto di 50 — verrebbero
+davvero eseguiti. Una passata li esegue **in sequenza** (act più Docker pesa
+abbastanza da far litigare esecuzioni parallele per la macchina), trasmette il
+log di ogni esecuzione, segna ogni commit superato/fallito in tempo reale, e
+**Interrompi** annulla tra un commit e l'altro uccidendo quello in corso.
+Aspettati minuti veri per ogni commit.
+
+Un altro limite da conoscere: il worktree usa e getta contiene i file del
+commit ma non i checkout dei submodule del tuo repository — un workflow che
+dipende da submodule inizializzati si comporterà come su un clone appena fatto
+senza di essi.
+
 ## Limiti
 
 - act è un'ottima imitazione dei runner di GitHub, non perfetta: le action che

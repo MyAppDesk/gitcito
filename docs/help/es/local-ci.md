@@ -50,6 +50,32 @@ estaba **limpio**. Una ejecución sobre cambios sin commitear probó algo que
 ningún commit contiene, así que muestra su resultado en el diálogo pero no
 marca nada.
 
+## Probar un commit o un rango — sin salir de tu rama
+
+La sección **Probar un commit o un rango** del diálogo ejecuta un workflow
+contra commits en los que *no* estás. Cada commit se hace checkout **en modo
+detached en un worktree desechable** bajo el directorio temporal del sistema,
+act se ejecuta allí, y el worktree se elimina termine como termine la
+ejecución — tu árbol de trabajo y tu rama nunca se mueven. Como ese checkout
+es impecable por construcción, el veredicto siempre se fija al commit que
+probó. Hacer clic derecho en un commit del grafo ofrece directamente
+**Ejecutar CI local en este commit**.
+
+El coste se anuncia antes de que nada se ejecute, no se descubre después:
+escribe una revisión o un rango (`main..HEAD`, `HEAD~5..`, un sha), pulsa
+**Vista previa**, y Gitcito muestra cuántos commits coinciden con la
+especificación y qué N más recientes — el presupuesto explícito, con un tope
+de 50 — se ejecutarían realmente. Un barrido los ejecuta **secuencialmente**
+(act más Docker pesa lo bastante como para que ejecuciones paralelas se
+pelearan por la máquina), transmite el log de cada ejecución, marca cada
+commit como correcto/fallido en directo, y **Detener** aborta entre commits
+mientras mata el que está en marcha. Cuenta con minutos reales por commit.
+
+Un límite más que conviene conocer: el worktree desechable contiene los
+archivos del commit pero no los checkouts de submódulos de tu repositorio —
+un workflow que dependa de submódulos inicializados se comportará como en un
+clon recién hecho sin ellos.
+
 ## Límites
 
 - act es una imitación muy buena de los runners de GitHub, no una perfecta: las

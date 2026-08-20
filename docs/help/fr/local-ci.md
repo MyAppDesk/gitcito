@@ -52,6 +52,32 @@ Règle d'honnêteté : le verdict n'est épinglé que si votre arbre de travail
 quelque chose qu'aucun commit ne contient : elle affiche donc son résultat
 dans la boîte de dialogue mais ne marque rien.
 
+## Tester un commit ou une plage — sans quitter votre branche
+
+La section **Tester un commit ou une plage** de la boîte de dialogue exécute
+un workflow contre des commits sur lesquels vous n'êtes *pas*. Chaque commit
+est extrait **en mode détaché dans un worktree jetable** sous le répertoire
+temporaire du système, act s'y exécute, et le worktree est supprimé quelle que
+soit la fin de l'exécution — votre arbre de travail et votre branche ne
+bougent jamais. Comme cette extraction est impeccable par construction, le
+verdict s'épingle toujours au commit testé. Un clic droit sur un commit dans
+le graphe propose directement **Lancer la CI locale sur ce commit**.
+
+Le coût est annoncé avant que quoi que ce soit ne s'exécute, pas découvert
+après : tapez une révision ou une plage (`main..HEAD`, `HEAD~5..`, un sha),
+appuyez sur **Aperçu**, et Gitcito montre combien de commits correspondent à
+la spécification et quels N plus récents — le budget explicite, plafonné à
+50 — s'exécuteraient réellement. Un balayage les exécute **séquentiellement**
+(act plus Docker est assez lourd pour que des exécutions parallèles se
+disputent la machine), diffuse le log de chaque exécution, marque chaque
+commit réussi/échoué en direct, et **Arrêter** interrompt entre les commits
+tout en tuant celui en cours. Attendez-vous à de vraies minutes par commit.
+
+Une limite de plus à connaître : le worktree jetable contient les fichiers du
+commit mais pas les checkouts de sous-modules de votre dépôt — un workflow qui
+dépend de sous-modules initialisés se comportera comme sur un clone tout frais
+sans eux.
+
 ## Limites
 
 - act est une très bonne imitation des runners de GitHub, pas une imitation

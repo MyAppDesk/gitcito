@@ -31,10 +31,21 @@ const api = {
     record: (repoPath: string, workflowFile: string, ok: boolean): Promise<unknown> =>
       ipcRenderer.invoke('localci:record', repoPath, workflowFile, ok),
     verdicts: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('localci:verdicts', repoPath),
+    runAt: (repoPath: string, workflowFile: string, sha: string): Promise<unknown> =>
+      ipcRenderer.invoke('localci:runAt', repoPath, workflowFile, sha),
+    resolveRange: (repoPath: string, spec: string, limit: number): Promise<unknown> =>
+      ipcRenderer.invoke('localci:resolveRange', repoPath, spec, limit),
+    sweep: (repoPath: string, workflowFile: string, shas: string[]): Promise<unknown> =>
+      ipcRenderer.invoke('localci:sweep', repoPath, workflowFile, shas),
     onData: (cb: (p: { repoPath: string; chunk: string }) => void): (() => void) => {
       const listener = (_e: unknown, p: { repoPath: string; chunk: string }): void => cb(p)
       ipcRenderer.on('localci:data', listener)
       return () => ipcRenderer.removeListener('localci:data', listener)
+    },
+    onSweepProgress: (cb: (p: unknown) => void): (() => void) => {
+      const listener = (_e: unknown, p: unknown): void => cb(p)
+      ipcRenderer.on('localci:sweep-progress', listener)
+      return () => ipcRenderer.removeListener('localci:sweep-progress', listener)
     }
   },
 

@@ -16,6 +16,24 @@ export interface LocalCiVerdict {
   at: number // unix ms
 }
 
+/** Outcome of a "test this range" sweep: one entry per commit that ran. */
+export interface LocalCiSweepResult {
+  results: Array<{ sha: string; exit: number | null; ok: boolean }>
+  /** True when cancel stopped the loop before every commit ran. */
+  aborted: boolean
+}
+
+/** One live update from a running sweep. */
+export interface LocalCiSweepProgress {
+  repoPath: string
+  sha: string
+  index: number
+  total: number
+  phase: 'start' | 'done'
+  ok?: boolean
+  exit?: number | null
+}
+
 export interface LocalCiWorkflow {
   /** Filename under .github/workflows (e.g. "ci.yml"). */
   file: string

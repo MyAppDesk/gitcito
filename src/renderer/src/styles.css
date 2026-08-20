@@ -13414,6 +13414,18 @@ button.insights-row:hover { background: var(--bg-2); }
 }
 .localci-badge.pass { color: var(--green, #46a758); }
 .localci-badge.fail { color: var(--red, #e5484d); }
+.localci-range {
+  margin-top: 14px;
+}
+.attrs-add .localci-budget {
+  width: 64px;
+  flex: 0 0 auto;
+}
+.localci-sweep-rows {
+  max-height: 180px;
+  overflow-y: auto;
+}
+
 .localci-log {
   flex: 1;
   min-height: 120px;

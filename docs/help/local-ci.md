@@ -46,6 +46,30 @@ Honesty rule: the verdict is only pinned when your working tree was **clean**.
 A run over uncommitted changes tested something no commit contains, so it shows
 its result in the dialog but marks nothing.
 
+## Test a commit or range — without leaving your branch
+
+The dialog's **Test a commit or range** section runs a workflow against commits
+you are *not* on. Each commit is checked out **detached into a throwaway
+worktree** under the system temp directory, act runs there, and the worktree is
+removed however the run ends — your working tree and your branch never move.
+Because that checkout is pristine by construction, the verdict always pins to
+the commit it tested. Right-clicking a commit in the graph offers **Run local
+CI on this commit** directly.
+
+The cost is stated before anything runs, not discovered after: type a revision
+or a range (`main..HEAD`, `HEAD~5..`, a sha), press **Preview**, and Gitcito
+shows how many commits the spec matches and which newest N — the explicit
+budget, capped at 50 — would actually run. A sweep runs them **sequentially**
+(act plus Docker is heavy enough that parallel runs would fight for the
+machine), streams each run's log, marks each commit pass/fail live, and
+**Stop** aborts between commits while killing the one in flight. Expect real
+minutes per commit.
+
+One more limit worth knowing: the throwaway worktree contains the commit's
+files but not your repository's submodule checkouts — a workflow that depends
+on initialized submodules will behave as it would on a fresh clone without
+them.
+
 ## Limits
 
 - act is a very good imitation of GitHub's runners, not a perfect one: actions

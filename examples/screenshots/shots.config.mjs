@@ -762,7 +762,8 @@ export const shots = [
   },
   {
     // Local CI — the guided-setup state is the honest shot: enabled, act not
-    // installed, the dialog walking the user through it. Workflows listed.
+    // installed, the dialog walking the user through it. Workflows listed, and
+    // the range section previewed (Preview is pure git, so it needs no act).
     out: 'local-ci',
     repos: ['local-ci'],
     themes: ['light'],
@@ -774,6 +775,13 @@ export const shots = [
       })
       await page.evaluate((p) => window.__shot.ui.getState().openModal({ kind: 'local-ci', repoPath: p }), repo)
       await page.waitForTimeout(900)
+      await page.fill('input[placeholder="main..HEAD"]', 'HEAD~1..')
+      await page.click('button:has-text("Preview")')
+      await page.waitForTimeout(600)
+      await page.evaluate(() => {
+        document.querySelector('.localci-range')?.scrollIntoView({ block: 'center' })
+      })
+      await page.waitForTimeout(300)
     }
   },
   {

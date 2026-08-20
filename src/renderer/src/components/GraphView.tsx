@@ -1010,6 +1010,14 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
       label: t('commit.createTagHere'),
       onClick: () => openModal({ kind: 'create-tag', repoPath: repo.path, hash: c.hash, at: c.hash.slice(0, 7) })
     },
+    ...(localCiOn
+      ? [
+          {
+            label: t('localCi.runHere'),
+            onClick: () => openModal({ kind: 'local-ci', repoPath: repo.path, rev: c.hash })
+          } satisfies MenuItem
+        ]
+      : []),
     { separator: true },
     { label: t('commit.checkoutDetached'), onClick: () => void repoActions.checkout(repo.path, c.hash) },
     { label: t('commit.cherryPick'), onClick: () => void repoActions.cherryPick(repo.path, c.hash) },

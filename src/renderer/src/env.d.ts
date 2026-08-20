@@ -52,7 +52,11 @@ interface PreloadApi {
     cancel(repoPath: string): Promise<unknown>
     record(repoPath: string, workflowFile: string, ok: boolean): Promise<unknown>
     verdicts(repoPath: string): Promise<unknown>
+    runAt(repoPath: string, workflowFile: string, sha: string): Promise<unknown>
+    resolveRange(repoPath: string, spec: string, limit: number): Promise<unknown>
+    sweep(repoPath: string, workflowFile: string, shas: string[]): Promise<unknown>
     onData(cb: (p: { repoPath: string; chunk: string }) => void): () => void
+    onSweepProgress(cb: (p: unknown) => void): () => void
   }
   getPathForFile(file: File): string
   keychain: {

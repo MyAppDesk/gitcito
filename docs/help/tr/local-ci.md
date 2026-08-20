@@ -50,6 +50,32 @@ Commit edilmemiş değişiklikler üzerinde yapılan bir çalıştırma, hiçbir
 commit'in içermediği bir şeyi test etmiştir; bu yüzden sonucunu diyalogda
 gösterir ama hiçbir şeyi işaretlemez.
 
+## Bir commit veya aralığı test et — dalınızdan ayrılmadan
+
+Diyaloğun **Bir commit veya aralığı test et** bölümü, bir iş akışını üzerinde
+*olmadığınız* commit'lere karşı çalıştırır. Her commit, sistemin geçici dizini
+altında **tek kullanımlık bir worktree'ye detached olarak** checkout edilir,
+act orada çalışır ve çalıştırma nasıl biterse bitsin worktree kaldırılır —
+çalışma ağacınız ve dalınız asla yerinden oynamaz. Bu checkout yapısı gereği
+tertemiz olduğundan, karar her zaman test ettiği commit'e iliştirilir.
+Grafikte bir commit'e sağ tıklamak doğrudan **Bu commit üzerinde yerel CI
+çalıştır** seçeneğini sunar.
+
+Maliyet, bir şey çalışmadan önce söylenir, sonradan keşfedilmez: bir revizyon
+veya aralık yazın (`main..HEAD`, `HEAD~5..`, bir sha), **Önizleme**'ye basın;
+Gitcito, belirtimin kaç commit'le eşleştiğini ve en yeni hangi N commit'in —
+50 ile sınırlı açık bütçe — gerçekten çalışacağını gösterir. Bir tarama
+bunları **sırayla** çalıştırır (act artı Docker, paralel çalıştırmaların
+makine için kavga edeceği kadar ağırdır), her çalıştırmanın logunu canlı
+akıtır, her commit'i anında başarılı/başarısız olarak işaretler ve **Durdur**,
+süren çalıştırmayı sonlandırıp commit'ler arasında iptal eder. Commit başına
+gerçek dakikalar bekleyin.
+
+Bilinmeye değer bir sınır daha: tek kullanımlık worktree, commit'in
+dosyalarını içerir ama deponuzun alt modül checkout'larını içermez —
+başlatılmış alt modüllere bağımlı bir iş akışı, onlar olmadan taze bir
+klondaki gibi davranır.
+
 ## Sınırlar
 
 - act, GitHub çalıştırıcılarının çok iyi bir taklididir ama kusursuz değildir:

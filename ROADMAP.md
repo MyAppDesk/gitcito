@@ -34,13 +34,6 @@ a cascade that has to replay **merge commits** (re-merge with the rewritten
 parent, carry conflict resolutions via rerere). Until then, a merge between the
 commit and HEAD simply disables the feature.
 
-### Local CI — run against a chosen commit or range
-Verdicts now pin to commits (clean-tree runs mark their HEAD ✓/✗ on the graph
-via git notes). What remains is running CI against a commit you *aren't* on:
-a temporary worktree checkout per run, and a "test this range" sweep that walks
-several commits. Real runtime cost per commit — worth building only with an
-explicit budget in the UI, not as an invisible loop.
-
 ### Team features without a backend
 Gitcito has no server and intends to keep it that way, so the GitKraken-style
 shared workspace is out. What is not out: **exporting** a workspace, a review, or

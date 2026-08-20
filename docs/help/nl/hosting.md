@@ -2,7 +2,7 @@
 title: Hosting & pull requests
 category: Synchroniseren & meerdere repo's
 order: 56
-summary: Maak overal PR's aan; review en merge ze op GitHub.
+summary: Maak overal PR's aan; review en merge ze op GitHub en GitLab.
 keywords: pull request PR merge request GitHub GitLab Bitbucket Azure DevOps review goedkeuren approve mergen issues
 ---
 
@@ -23,18 +23,29 @@ voor alle vier staan in de zijbalk.
 Begin er een vanuit branchvergelijking, de grafiek, de `+` in het PR-paneel, of
 vanuit een issue (wat `Closes #N` invult).
 
-## Reviewen — GitHub
+## Reviewen — GitHub en GitLab
 
 | | |
 |---|---|
 | **Gesprek** | Opmerkingen en reviewstatus |
-| **Checks** | CI-checkruns met geslaagd/mislukt/in behandeling en links naar de logs |
+| **Checks** | CI-checkruns (GitHub) of pipeline-jobs (GitLab) met geslaagd/mislukt/in behandeling en links naar de logs |
 | **Bekeken bestanden** | Een ✓-checklist per bestand met voortgang |
-| **Inline threads** | Regelopmerkingen gegroepeerd per `file:line` met hun diff-hunk, en antwoorden |
-| **Acties** | Reageren, goedkeuren, wijzigingen vragen, en mergen / squashen / rebasen |
+| **Inline threads** | Regelopmerkingen gegroepeerd per `file:line`, en antwoorden |
+| **Acties** | Reageren, goedkeuren, wijzigingen vragen, en mergen / squashen |
 
 Force-pusht iemand midden in de review, dan laat
 [wat er veranderd is sinds](range-diff.md) je precies zien wat er verschoof.
+
+De GitLab-verschillen, in duidelijke taal: GitLab kent geen enkele
+"review indienen"-aanroep, dus **goedkeuren** gebruikt zijn approval-endpoint
+en **wijzigingen vragen** trekt je goedkeuring in en plaatst je opmerking.
+**Rebase-mergen** wordt niet aangeboden — GitLab bepaalt merge-commit versus
+fast-forward aan de hand van de projectinstellingen, dus het mergemenu toont
+alleen mergen en squashen. Inline threads tonen het bestand en de regel, maar
+niet de omliggende diff-hunk, die de API van GitLab niet teruggeeft.
+Reviewen/mergen werkt voor projecten op **gitlab.com**; zelf gehoste instanties
+worden nog niet ondersteund. Bitbucket en Azure DevOps openen voor review nog
+steeds in de browser.
 
 ## Issues, milestones, releases — GitHub
 

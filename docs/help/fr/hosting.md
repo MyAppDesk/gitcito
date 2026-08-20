@@ -2,7 +2,7 @@
 title: Hébergement et pull requests
 category: Synchronisation et multi-dépôts
 order: 56
-summary: Créer des pull requests partout ; les relire et les fusionner sur GitHub.
+summary: Créer des pull requests partout ; les relire et les fusionner sur GitHub et GitLab.
 keywords: pull request PR merge request GitHub GitLab Bitbucket Azure DevOps revue review approuver approve fusionner merge tickets issues
 ---
 
@@ -23,18 +23,30 @@ des quatre sont listées dans la barre latérale.
 Démarrez-en une depuis la comparaison de branches, depuis le graphe, depuis le
 `+` du panneau PR, ou depuis un ticket (ce qui remplit `Closes #N`).
 
-## Relire — GitHub
+## Relire — GitHub et GitLab
 
 | | |
 |---|---|
 | **Conversation** | Commentaires et état de la revue |
-| **Vérifications** | Les exécutions de CI avec succès/échec/en attente et des liens vers les journaux |
+| **Vérifications** | Les exécutions de CI (GitHub) ou les jobs de pipeline (GitLab) avec succès/échec/en attente et des liens vers les journaux |
 | **Fichiers vus** | Une liste à cocher ✓ par fichier, avec progression |
-| **Fils en ligne** | Commentaires de ligne groupés par `file:line` avec leur section de diff, et les réponses |
-| **Actions** | Commenter, approuver, demander des changements, et merge / squash / rebase |
+| **Fils en ligne** | Commentaires de ligne groupés par `file:line`, et les réponses |
+| **Actions** | Commenter, approuver, demander des changements, et merge / squash |
 
 Si quelqu'un pousse en force en pleine revue, [ce qui a changé
 depuis](range-diff.md) vous montre exactement ce qui a bougé.
+
+Les différences GitLab, dites clairement : GitLab n'a pas d'appel unique
+« envoyer la revue », donc **approuver** utilise son point d'accès
+d'approbation et **demander des changements** retire votre approbation et
+publie votre commentaire. Le **rebase-merge** n'est pas proposé — GitLab
+choisit entre merge-commit et fast-forward selon les réglages du projet, le
+menu de merge n'affiche donc que merge et squash. Les fils en ligne montrent le
+fichier et la ligne, mais pas la section de diff environnante, que l'API de
+GitLab ne renvoie pas. La revue et la fusion fonctionnent pour les projets sur
+**gitlab.com** ; les instances auto-hébergées ne sont pas encore prises en
+charge. Bitbucket et Azure DevOps s'ouvrent toujours dans le navigateur pour la
+revue.
 
 ## Tickets, jalons, releases — GitHub
 

@@ -2114,7 +2114,7 @@ export const pl: Dict = {
   'prDetail.squash': 'Squash',
   'prDetail.rebase': 'Rebase',
   'prDetail.merge': 'Scal',
-  'prDetail.notMergeable': 'GitHub zgłasza, że tego PR-a nie da się scalić (konflikty).',
+  'prDetail.notMergeable': 'Tego PR-a nie da się scalić (konflikty).',
   'prDetail.commentPosted': 'Komentarz opublikowany',
   'prDetail.reviewSubmitted': 'Review wysłane',
   'prDetail.prMerged': 'Pull request scalony',

@@ -2066,7 +2066,7 @@ export const it: Dict = {
   'prDetail.squash': 'Squash',
   'prDetail.rebase': 'Rebase',
   'prDetail.merge': 'Unisci',
-  'prDetail.notMergeable': 'GitHub segnala che questa PR non è unibile (ci sono conflitti).',
+  'prDetail.notMergeable': 'Questa PR non è unibile (ci sono conflitti).',
   'prDetail.commentPosted': 'Commento pubblicato',
   'prDetail.reviewSubmitted': 'Revisione inviata',
   'prDetail.prMerged': 'Pull request unita',

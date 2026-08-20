@@ -14,13 +14,6 @@ Ideas are welcome as [issues](https://github.com/MyAppDesk/gitcito/issues).
 
 ## Near term
 
-### GitLab merge requests — review, comment, merge
-Gitcito creates MRs on GitLab, Bitbucket and Azure DevOps, but only **reviews and
-merges** on GitHub. The app currently looks like it supports four hosts and then
-stops at the interesting part; the README carries a warning about it, which is
-the wrong place to solve the problem. Mostly a mirror of the existing GitHub
-code against a different API shape.
-
 ### Windows code signing
 The release workflow already builds and publishes Windows and Linux — unsigned.
 An unsigned Windows build hits the SmartScreen wall on first run. The CI change

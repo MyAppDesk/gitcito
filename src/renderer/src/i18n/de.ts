@@ -2122,7 +2122,7 @@ export const de: Dict = {
   'prDetail.squash': 'Squash',
   'prDetail.rebase': 'Rebase',
   'prDetail.merge': 'Mergen',
-  'prDetail.notMergeable': 'GitHub meldet, dass dieser PR nicht mergebar ist (Konflikte).',
+  'prDetail.notMergeable': 'Dieser PR ist nicht mergebar (Konflikte).',
   'prDetail.commentPosted': 'Kommentar veröffentlicht',
   'prDetail.reviewSubmitted': 'Review abgeschickt',
   'prDetail.prMerged': 'Pull Request gemerged',

@@ -2109,7 +2109,7 @@ export const en = {
   'prDetail.squash': 'Squash',
   'prDetail.rebase': 'Rebase',
   'prDetail.merge': 'Merge',
-  'prDetail.notMergeable': 'GitHub reports this PR is not mergeable (conflicts).',
+  'prDetail.notMergeable': 'This PR is not mergeable (conflicts).',
   'prDetail.commentPosted': 'Comment posted',
   'prDetail.reviewSubmitted': 'Review submitted',
   'prDetail.prMerged': 'Pull request merged',

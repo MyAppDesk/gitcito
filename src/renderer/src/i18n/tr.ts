@@ -2060,7 +2060,7 @@ export const tr: Dict = {
   'prDetail.squash': 'Squash',
   'prDetail.rebase': 'Rebase',
   'prDetail.merge': 'Birleştir',
-  'prDetail.notMergeable': 'GitHub bu PR’ın birleştirilebilir olmadığını bildiriyor (çakışmalar var).',
+  'prDetail.notMergeable': 'Bu PR birleştirilemez (çakışmalar var).',
   'prDetail.commentPosted': 'Yorum gönderildi',
   'prDetail.reviewSubmitted': 'İnceleme gönderildi',
   'prDetail.prMerged': 'Pull request birleştirildi',

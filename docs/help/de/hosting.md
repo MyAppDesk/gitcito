@@ -2,7 +2,7 @@
 title: Hosting & Pull Requests
 category: Sync & viele Repos
 order: 56
-summary: PRs überall erstellen; auf GitHub reviewen und mergen.
+summary: PRs überall erstellen; auf GitHub und GitLab reviewen und mergen.
 keywords: pull request PR merge request GitHub GitLab Bitbucket Azure DevOps review prüfen freigeben approve mergen issues benachrichtigungen token
 ---
 
@@ -23,18 +23,29 @@ für alle vier werden in der Seitenleiste aufgelistet.
 Starte einen aus dem Branch-Vergleich, aus dem Graph, über das `+` im PR-Panel
 oder aus einem Issue heraus (was `Closes #N` einträgt).
 
-## Reviewen — GitHub
+## Reviewen — GitHub und GitLab
 
 | | |
 |---|---|
 | **Konversation** | Kommentare und Review-Status |
-| **Checks** | CI-Check-Runs mit bestanden/fehlgeschlagen/ausstehend und Links zu den Logs |
+| **Checks** | CI-Check-Runs (GitHub) oder Pipeline-Jobs (GitLab) mit bestanden/fehlgeschlagen/ausstehend und Links zu den Logs |
 | **Gesehene Dateien** | Eine ✓-Checkliste pro Datei mit Fortschritt |
-| **Inline-Threads** | Zeilenkommentare, gruppiert nach `file:line`, mit ihrem Diff-Hunk und den Antworten |
-| **Aktionen** | Kommentieren, freigeben, Änderungen anfordern und mergen / squashen / rebasen |
+| **Inline-Threads** | Zeilenkommentare, gruppiert nach `file:line`, und die Antworten |
+| **Aktionen** | Kommentieren, freigeben, Änderungen anfordern und mergen / squashen |
 
 Wenn jemand mitten im Review force-pusht, zeigt dir
 [was sich seitdem geändert hat](range-diff.md) genau, was sich bewegt hat.
+
+Die GitLab-Unterschiede, klar benannt: GitLab hat keinen einzelnen
+"Review absenden"-Aufruf, deshalb nutzt **Freigeben** dessen Approval-Endpunkt,
+und **Änderungen anfordern** entfernt deine Freigabe und veröffentlicht deinen
+Kommentar. **Rebase-Merge** wird nicht angeboten — GitLab entscheidet anhand
+der Projekteinstellungen zwischen Merge-Commit und Fast-Forward, das Merge-Menü
+zeigt deshalb nur Mergen und Squashen. Inline-Threads zeigen Datei und Zeile,
+aber nicht den umgebenden Diff-Hunk, den GitLabs API nicht zurückgibt.
+Review/Merge funktioniert für Projekte auf **gitlab.com**; selbst gehostete
+Instanzen werden noch nicht unterstützt. Bitbucket und Azure DevOps öffnen sich
+zum Reviewen weiterhin im Browser.
 
 ## Issues, Meilensteine, Releases — GitHub
 

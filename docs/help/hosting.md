@@ -2,7 +2,7 @@
 title: Hosting & pull requests
 category: Sync & many repos
 order: 56
-summary: Create PRs anywhere; review and merge them on GitHub.
+summary: Create PRs anywhere; review and merge them on GitHub and GitLab.
 keywords: pull request PR merge request GitHub GitLab Bitbucket Azure DevOps review approve merge issues
 ---
 
@@ -22,18 +22,27 @@ four are listed in the sidebar.
 Start one from branch-compare, the graph, the `+` in the PR panel, or from an
 issue (which fills in `Closes #N`).
 
-## Reviewing — GitHub
+## Reviewing — GitHub and GitLab
 
 | | |
 |---|---|
 | **Conversation** | Comments and review state |
-| **Checks** | CI check-runs with pass/fail/pending and view-logs links |
+| **Checks** | CI check-runs (GitHub) or pipeline jobs (GitLab) with pass/fail/pending and view-logs links |
 | **Files viewed** | A per-file ✓ checklist with progress |
-| **Inline threads** | Line comments grouped by `file:line` with their diff hunk, and replies |
-| **Actions** | Comment, approve, request changes, and merge / squash / rebase |
+| **Inline threads** | Line comments grouped by `file:line`, and replies |
+| **Actions** | Comment, approve, request changes, and merge / squash |
 
 If someone force-pushes mid-review, [what changed since](range-diff.md) shows
 you exactly what moved.
+
+GitLab differences, stated plainly: GitLab has no single "submit review" call,
+so **approve** uses its approval endpoint and **request changes** removes your
+approval and posts your comment. **Rebase-merge** is not offered — GitLab
+decides merge-commit vs fast-forward from the project's settings, so the merge
+menu shows merge and squash only. Inline threads show the file and line but not
+the surrounding diff hunk, which GitLab's API does not return. Review/merge
+works for projects on **gitlab.com**; self-hosted instances are not supported
+yet. Bitbucket and Azure DevOps still open in the browser for review.
 
 ## Issues, milestones, releases — GitHub
 

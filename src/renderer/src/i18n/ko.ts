@@ -2114,7 +2114,7 @@ export const ko: Dict = {
   'prDetail.squash': '스쿼시',
   'prDetail.rebase': '리베이스',
   'prDetail.merge': '머지',
-  'prDetail.notMergeable': 'GitHub에 따르면 이 PR은 머지할 수 없습니다 (충돌).',
+  'prDetail.notMergeable': '이 PR은 머지할 수 없습니다 (충돌).',
   'prDetail.commentPosted': '댓글을 남겼습니다',
   'prDetail.reviewSubmitted': '리뷰를 제출했습니다',
   'prDetail.prMerged': '풀 리퀘스트를 머지했습니다',

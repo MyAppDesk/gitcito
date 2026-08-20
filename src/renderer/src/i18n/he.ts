@@ -2117,7 +2117,7 @@ export const he: Dict = {
   'prDetail.squash': 'כיווץ',
   'prDetail.rebase': 'ריבייס',
   'prDetail.merge': 'מיזוג',
-  'prDetail.notMergeable': 'GitHub מדווח שבקשת המשיכה הזו אינה ניתנת למיזוג (התנגשויות).',
+  'prDetail.notMergeable': 'בקשת המשיכה הזו אינה ניתנת למיזוג (התנגשויות).',
   'prDetail.commentPosted': 'התגובה פורסמה',
   'prDetail.reviewSubmitted': 'הביקורת נשלחה',
   'prDetail.prMerged': 'בקשת המשיכה מוזגה',

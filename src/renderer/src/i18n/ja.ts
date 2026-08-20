@@ -2057,7 +2057,7 @@ export const ja: Dict = {
   'prDetail.squash': 'まとめてマージ',
   'prDetail.rebase': 'リベース',
   'prDetail.merge': 'マージ',
-  'prDetail.notMergeable': 'GitHub は、この PR がマージできない（コンフリクトしている）と報告しています。',
+  'prDetail.notMergeable': 'この PR はマージできません（コンフリクトがあります）。',
   'prDetail.commentPosted': 'コメントを投稿しました',
   'prDetail.reviewSubmitted': 'レビューを送信しました',
   'prDetail.prMerged': 'プルリクエストをマージしました',

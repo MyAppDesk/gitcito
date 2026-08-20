@@ -2114,7 +2114,7 @@ export const uk: Dict = {
   'prDetail.squash': 'Стиснути',
   'prDetail.rebase': 'Ребейз',
   'prDetail.merge': 'Злити',
-  'prDetail.notMergeable': 'GitHub повідомляє, що цей PR не можна злити (конфлікти).',
+  'prDetail.notMergeable': 'Цей PR не можна злити (конфлікти).',
   'prDetail.commentPosted': 'Коментар опубліковано',
   'prDetail.reviewSubmitted': 'Рецензію надіслано',
   'prDetail.prMerged': 'Pull request злито',

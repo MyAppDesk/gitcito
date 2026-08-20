@@ -57,10 +57,12 @@ export function PRDetailModal({
   const [comment, setComment] = useState('')
   const [busy, setBusy] = useState(false)
   const [mergeMethod, setMergeMethod] = useState<PrMergeMethod>('merge')
-  // Per-thread reply drafts, keyed by the thread root id.
-  const [replies, setReplies] = useState<Record<number, string>>({})
+  // Per-thread reply drafts, keyed by the thread root id (GitHub comment id or
+  // GitLab discussion id).
+  const [replies, setReplies] = useState<Record<number | string, string>>({})
 
-  const tokens = { github: profile.githubToken || undefined }
+  const provider = useRepoStore((s) => s.repos[repoPath]?.prProvider)
+  const tokens = { github: profile.githubToken || undefined, gitlab: profile.gitlabToken || undefined }
 
   const load = useCallback(async (): Promise<void> => {
     setError(null)
@@ -100,7 +102,7 @@ export function PRDetailModal({
     void act(() => hostingApi.prReview(remoteUrl, tokens, number, event, comment.trim()).then(() => setComment('')), t('prDetail.reviewSubmitted'))
   const merge = (): void => void act(() => hostingApi.prMerge(remoteUrl, tokens, number, mergeMethod), t('prDetail.prMerged'))
 
-  const replyToThread = (rootId: number): void => {
+  const replyToThread = (rootId: number | string): void => {
     const body = (replies[rootId] ?? '').trim()
     if (!body) return
     void act(
@@ -309,7 +311,8 @@ export function PRDetailModal({
                 <select value={mergeMethod} onChange={(e) => setMergeMethod(e.target.value as PrMergeMethod)}>
                   <option value="merge">{t('prDetail.mergeCommit')}</option>
                   <option value="squash">{t('prDetail.squash')}</option>
-                  <option value="rebase">{t('prDetail.rebase')}</option>
+                  {/* GitLab's merge API has no per-request rebase; the project setting decides. */}
+                  {provider !== 'gitlab' && <option value="rebase">{t('prDetail.rebase')}</option>}
                 </select>
                 <button className="btn primary small" onClick={merge} disabled={busy || pr.mergeable === false}>
                   {busy ? <Loader2 size={13} className="spin" /> : <GitMerge size={13} />} {t('prDetail.merge')}

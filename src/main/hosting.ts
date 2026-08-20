@@ -555,11 +555,263 @@ async function ghRepoOf(
   return { owner: parsed.owner, repo: parsed.repo, token: auth.token }
 }
 
+// ── GitLab merge request review ─────────────────────────────────────────────
+// Mirrors the GitHub review surface below, normalised into the shared PR types
+// so the renderer never has to branch on provider vocabulary.
+
+/** GitLab counterpart to ghJson — one place for auth headers and error extraction. */
+export async function glJson<T>(
+  url: string,
+  auth: { token: string; cred?: GitCredential },
+  init?: RequestInit
+): Promise<T> {
+  const res = await fetch(url, {
+    ...init,
+    headers: {
+      ...gitlabAuth(auth),
+      ...(init?.body ? { 'Content-Type': 'application/json' } : {}),
+      ...(init?.headers as Record<string, string>)
+    }
+  })
+  if (!res.ok) {
+    // GitLab errors carry {message} (string or array) or {error}.
+    const d = (await res.json().catch(() => null)) as { message?: unknown; error?: unknown } | null
+    const raw = d?.message ?? d?.error
+    const msg = typeof raw === 'string' ? raw : Array.isArray(raw) ? raw.join('; ') : ''
+    throw new Error(msg ? `GitLab: ${msg}` : `GitLab API error (${res.status})`)
+  }
+  const text = await res.text()
+  return (text ? JSON.parse(text) : undefined) as T
+}
+
+/** Resolve a GitLab remote to its project API base + credential, or throw. */
+async function glProjectOf(
+  remoteUrl: string,
+  token?: string
+): Promise<{ base: string; auth: { token: string; cred?: GitCredential } }> {
+  const parsed = parseRemoteUrl(remoteUrl)
+  if (!parsed || parsed.provider !== 'gitlab') throw new Error('Not a GitLab repository.')
+  const auth = await apiToken(remoteUrl, token)
+  if (!auth) throw noCredential('GitLab', remoteUrl)
+  const pid = encodeURIComponent(`${parsed.owner}/${parsed.repo}`)
+  return { base: `https://gitlab.com/api/v4/projects/${pid}`, auth }
+}
+
+interface GlNote {
+  id: number
+  system: boolean
+  author: { username: string } | null
+  body: string
+  created_at: string
+  position?: {
+    new_path?: string | null
+    old_path?: string | null
+    new_line?: number | null
+    old_line?: number | null
+  } | null
+}
+
+async function glMergeRequestDetail(remoteUrl: string, token: string | undefined, number: number): Promise<PrDetail> {
+  const { base, auth } = await glProjectOf(remoteUrl, token)
+  const mrUrl = `${base}/merge_requests/${number}`
+  const [mr, discussions, approvals] = await Promise.all([
+    glJson<{
+      iid: number
+      title: string
+      description: string | null
+      author: { username: string } | null
+      source_branch: string
+      target_branch: string
+      draft?: boolean
+      work_in_progress?: boolean
+      state: string
+      merge_status?: string
+      web_url: string
+    }>(mrUrl, auth),
+    glJson<Array<{ id: string; notes: GlNote[] }>>(`${mrUrl}/discussions?per_page=100`, auth).catch(
+      () => [] as Array<{ id: string; notes: GlNote[] }>
+    ),
+    glJson<{ approved_by?: Array<{ user: { username: string } | null }> }>(`${mrUrl}/approvals`, auth).catch(() => ({
+      approved_by: []
+    }))
+  ])
+
+  // Discussions hold both kinds of comment: a note with a position is an inline
+  // review thread, one without is plain conversation. System notes are noise.
+  const comments: PrDetail['comments'] = []
+  const reviewThreads: PrReviewThread[] = []
+  for (const d of discussions) {
+    const notes = d.notes.filter((n) => !n.system)
+    if (notes.length === 0) continue
+    const pos = notes[0].position
+    if (pos) {
+      reviewThreads.push({
+        path: pos.new_path || pos.old_path || '',
+        line: pos.new_line ?? pos.old_line ?? null,
+        // GitLab notes carry a file position but not the surrounding hunk.
+        diffHunk: '',
+        rootId: d.id,
+        comments: notes.map((n) => ({
+          id: n.id,
+          author: n.author?.username ?? 'unknown',
+          body: n.body,
+          createdAt: n.created_at
+        }))
+      })
+    } else {
+      for (const n of notes)
+        comments.push({ author: n.author?.username ?? 'unknown', body: n.body, createdAt: n.created_at })
+    }
+  }
+  comments.sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+
+  return {
+    number: mr.iid,
+    title: mr.title,
+    body: mr.description ?? '',
+    author: mr.author?.username ?? 'unknown',
+    source: mr.source_branch,
+    target: mr.target_branch,
+    draft: !!(mr.draft || mr.work_in_progress),
+    state: mr.state === 'opened' ? 'open' : 'closed',
+    merged: mr.state === 'merged',
+    mergeable: mr.merge_status === 'can_be_merged' ? true : mr.merge_status === 'cannot_be_merged' ? false : null,
+    url: mr.web_url,
+    comments,
+    reviews: (approvals.approved_by ?? []).map((a) => ({
+      author: a.user?.username ?? 'unknown',
+      state: 'APPROVED' as const
+    })),
+    reviewThreads
+  }
+}
+
+/** GitLab job status → the check-run vocabulary the renderer already renders. */
+export function glJobToCheck(job: { name: string; status: string; web_url?: string | null }): PrCheck {
+  const map: Record<string, { status: string; conclusion: string | null }> = {
+    created: { status: 'queued', conclusion: null },
+    pending: { status: 'queued', conclusion: null },
+    waiting_for_resource: { status: 'queued', conclusion: null },
+    preparing: { status: 'queued', conclusion: null },
+    scheduled: { status: 'queued', conclusion: null },
+    running: { status: 'in_progress', conclusion: null },
+    success: { status: 'completed', conclusion: 'success' },
+    failed: { status: 'completed', conclusion: 'failure' },
+    canceled: { status: 'completed', conclusion: 'cancelled' },
+    canceling: { status: 'completed', conclusion: 'cancelled' },
+    skipped: { status: 'completed', conclusion: 'skipped' },
+    manual: { status: 'completed', conclusion: 'action_required' }
+  }
+  const m = map[job.status] ?? { status: 'completed', conclusion: 'neutral' }
+  return { name: job.name, status: m.status, conclusion: m.conclusion, url: job.web_url || '' }
+}
+
+async function glMergeRequestChecks(remoteUrl: string, token: string | undefined, number: number): Promise<PrCheck[]> {
+  const { base, auth } = await glProjectOf(remoteUrl, token)
+  // Pipelines come newest-first; the head pipeline's jobs are the checks.
+  const pipelines = await glJson<Array<{ id: number }>>(
+    `${base}/merge_requests/${number}/pipelines?per_page=1`,
+    auth
+  ).catch(() => [] as Array<{ id: number }>)
+  if (pipelines.length === 0) return []
+  const jobs = await glJson<Array<{ name: string; status: string; web_url?: string | null }>>(
+    `${base}/pipelines/${pipelines[0].id}/jobs?per_page=100`,
+    auth
+  ).catch(() => [] as Array<{ name: string; status: string; web_url?: string | null }>)
+  return jobs.map(glJobToCheck)
+}
+
+/** Count added/removed lines in a unified diff body (file headers excluded). */
+export function diffLineCounts(diff: string): { additions: number; deletions: number } {
+  let additions = 0
+  let deletions = 0
+  for (const line of diff.split('\n')) {
+    if (line.startsWith('+') && !line.startsWith('+++')) additions++
+    else if (line.startsWith('-') && !line.startsWith('---')) deletions++
+  }
+  return { additions, deletions }
+}
+
+async function glMergeRequestFiles(remoteUrl: string, token: string | undefined, number: number): Promise<PrFile[]> {
+  const { base, auth } = await glProjectOf(remoteUrl, token)
+  const diffs = await glJson<
+    Array<{
+      old_path: string
+      new_path: string
+      new_file: boolean
+      renamed_file: boolean
+      deleted_file: boolean
+      diff: string
+    }>
+  >(`${base}/merge_requests/${number}/diffs?per_page=100`, auth).catch(() => [])
+  return diffs.map((d) => ({
+    filename: d.new_path || d.old_path,
+    status: d.new_file ? 'added' : d.deleted_file ? 'removed' : d.renamed_file ? 'renamed' : 'modified',
+    ...diffLineCounts(d.diff || '')
+  }))
+}
+
+async function glReplyReviewComment(
+  remoteUrl: string,
+  token: string | undefined,
+  number: number,
+  discussionId: string,
+  body: string
+): Promise<void> {
+  const { base, auth } = await glProjectOf(remoteUrl, token)
+  await glJson(`${base}/merge_requests/${number}/discussions/${encodeURIComponent(discussionId)}/notes`, auth, {
+    method: 'POST',
+    body: JSON.stringify({ body })
+  })
+}
+
+async function glCommentOnMr(remoteUrl: string, token: string | undefined, number: number, body: string): Promise<void> {
+  const { base, auth } = await glProjectOf(remoteUrl, token)
+  await glJson(`${base}/merge_requests/${number}/notes`, auth, { method: 'POST', body: JSON.stringify({ body }) })
+}
+
+async function glReviewMr(
+  remoteUrl: string,
+  token: string | undefined,
+  number: number,
+  event: PrReviewEvent,
+  body: string
+): Promise<void> {
+  const { base, auth } = await glProjectOf(remoteUrl, token)
+  // GitLab has no single "submit review" call: approval is its own endpoint,
+  // and requesting changes is an unapproval plus a comment.
+  if (event === 'APPROVE') {
+    await glJson(`${base}/merge_requests/${number}/approve`, auth, { method: 'POST' })
+  } else if (event === 'REQUEST_CHANGES') {
+    // A 404 here just means "you had not approved" — nothing worth surfacing.
+    await glJson(`${base}/merge_requests/${number}/unapprove`, auth, { method: 'POST' }).catch(() => undefined)
+  }
+  if (body) {
+    await glJson(`${base}/merge_requests/${number}/notes`, auth, { method: 'POST', body: JSON.stringify({ body }) })
+  }
+}
+
+async function glMergeMr(
+  remoteUrl: string,
+  token: string | undefined,
+  number: number,
+  method: PrMergeMethod
+): Promise<void> {
+  const { base, auth } = await glProjectOf(remoteUrl, token)
+  // GitLab picks merge-commit vs fast-forward from the project settings; the
+  // API only takes a squash flag. The renderer hides "rebase" for GitLab.
+  await glJson(`${base}/merge_requests/${number}/merge`, auth, {
+    method: 'PUT',
+    body: JSON.stringify({ squash: method === 'squash' })
+  })
+}
+
 async function pullRequestDetail(
   remoteUrl: string,
-  tokens: { github?: string },
+  tokens: HostTokens,
   number: number
 ): Promise<PrDetail> {
+  if (parseRemoteUrl(remoteUrl)?.provider === 'gitlab') return glMergeRequestDetail(remoteUrl, tokens.gitlab, number)
   const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
   const api = `https://api.github.com/repos/${owner}/${repo}`
   const [pr, comments, reviews, reviewComments] = await Promise.all([
@@ -638,12 +890,13 @@ async function pullRequestDetail(
   }
 }
 
-/** CI check-runs on a PR's head commit (GitHub only). */
+/** CI checks on a PR's head commit (GitHub check-runs / GitLab pipeline jobs). */
 async function pullRequestChecks(
   remoteUrl: string,
-  tokens: { github?: string },
+  tokens: HostTokens,
   number: number
 ): Promise<PrCheck[]> {
+  if (parseRemoteUrl(remoteUrl)?.provider === 'gitlab') return glMergeRequestChecks(remoteUrl, tokens.gitlab, number)
   const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
   const api = `https://api.github.com/repos/${owner}/${repo}`
   const pr = await ghJson<{ head: { sha: string } }>(`${api}/pulls/${number}`, token)
@@ -661,9 +914,10 @@ async function pullRequestChecks(
 /** Changed files in a PR (for the file-by-file review checklist). */
 async function pullRequestFiles(
   remoteUrl: string,
-  tokens: { github?: string },
+  tokens: HostTokens,
   number: number
 ): Promise<PrFile[]> {
+  if (parseRemoteUrl(remoteUrl)?.provider === 'gitlab') return glMergeRequestFiles(remoteUrl, tokens.gitlab, number)
   const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
   const data = await ghJson<Array<{ filename: string; status: string; additions: number; deletions: number }>>(
     `https://api.github.com/repos/${owner}/${repo}/pulls/${number}/files?per_page=300`,
@@ -675,11 +929,15 @@ async function pullRequestFiles(
 /** Reply to an inline review thread (POST a comment in reply to `inReplyTo`). */
 async function replyReviewComment(
   remoteUrl: string,
-  tokens: { github?: string },
+  tokens: HostTokens,
   number: number,
-  inReplyTo: number,
+  inReplyTo: number | string,
   body: string
 ): Promise<void> {
+  // GitHub threads reply to a numeric comment id; GitLab to a discussion id string.
+  if (parseRemoteUrl(remoteUrl)?.provider === 'gitlab') {
+    return glReplyReviewComment(remoteUrl, tokens.gitlab, number, String(inReplyTo), body)
+  }
   const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
   await ghJson(`https://api.github.com/repos/${owner}/${repo}/pulls/${number}/comments`, token, {
     method: 'POST',
@@ -689,10 +947,11 @@ async function replyReviewComment(
 
 async function commentOnPr(
   remoteUrl: string,
-  tokens: { github?: string },
+  tokens: HostTokens,
   number: number,
   body: string
 ): Promise<void> {
+  if (parseRemoteUrl(remoteUrl)?.provider === 'gitlab') return glCommentOnMr(remoteUrl, tokens.gitlab, number, body)
   const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
   await ghJson(`https://api.github.com/repos/${owner}/${repo}/issues/${number}/comments`, token, {
     method: 'POST',
@@ -702,11 +961,12 @@ async function commentOnPr(
 
 async function reviewPr(
   remoteUrl: string,
-  tokens: { github?: string },
+  tokens: HostTokens,
   number: number,
   event: PrReviewEvent,
   body: string
 ): Promise<void> {
+  if (parseRemoteUrl(remoteUrl)?.provider === 'gitlab') return glReviewMr(remoteUrl, tokens.gitlab, number, event, body)
   const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
   await ghJson(`https://api.github.com/repos/${owner}/${repo}/pulls/${number}/reviews`, token, {
     method: 'POST',
@@ -716,10 +976,11 @@ async function reviewPr(
 
 async function mergePr(
   remoteUrl: string,
-  tokens: { github?: string },
+  tokens: HostTokens,
   number: number,
   method: PrMergeMethod
 ): Promise<void> {
+  if (parseRemoteUrl(remoteUrl)?.provider === 'gitlab') return glMergeMr(remoteUrl, tokens.gitlab, number, method)
   const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
   await ghJson(`https://api.github.com/repos/${owner}/${repo}/pulls/${number}/merge`, token, {
     method: 'PUT',
@@ -1623,31 +1884,31 @@ export function registerHostingHandlers(): void {
     (_e, remoteUrl: string, tokens: { github?: string; azure?: string; gitlab?: string; bitbucket?: string }, opts: CreatePrOpts) =>
       createPullRequest(remoteUrl, tokens, opts)
   )
-  ipcMain.handle('hosting:prDetail', (_e, remoteUrl: string, tokens: { github?: string }, number: number) =>
+  ipcMain.handle('hosting:prDetail', (_e, remoteUrl: string, tokens: HostTokens, number: number) =>
     pullRequestDetail(remoteUrl, tokens, number)
   )
-  ipcMain.handle('hosting:prComment', (_e, remoteUrl: string, tokens: { github?: string }, number: number, body: string) =>
+  ipcMain.handle('hosting:prComment', (_e, remoteUrl: string, tokens: HostTokens, number: number, body: string) =>
     commentOnPr(remoteUrl, tokens, number, body)
   )
   ipcMain.handle(
     'hosting:prReplyReviewComment',
-    (_e, remoteUrl: string, tokens: { github?: string }, number: number, inReplyTo: number, body: string) =>
+    (_e, remoteUrl: string, tokens: HostTokens, number: number, inReplyTo: number | string, body: string) =>
       replyReviewComment(remoteUrl, tokens, number, inReplyTo, body)
   )
-  ipcMain.handle('hosting:prFiles', (_e, remoteUrl: string, tokens: { github?: string }, number: number) =>
+  ipcMain.handle('hosting:prFiles', (_e, remoteUrl: string, tokens: HostTokens, number: number) =>
     pullRequestFiles(remoteUrl, tokens, number)
   )
-  ipcMain.handle('hosting:prChecks', (_e, remoteUrl: string, tokens: { github?: string }, number: number) =>
+  ipcMain.handle('hosting:prChecks', (_e, remoteUrl: string, tokens: HostTokens, number: number) =>
     pullRequestChecks(remoteUrl, tokens, number)
   )
   ipcMain.handle(
     'hosting:prReview',
-    (_e, remoteUrl: string, tokens: { github?: string }, number: number, event: PrReviewEvent, body: string) =>
+    (_e, remoteUrl: string, tokens: HostTokens, number: number, event: PrReviewEvent, body: string) =>
       reviewPr(remoteUrl, tokens, number, event, body)
   )
   ipcMain.handle(
     'hosting:prMerge',
-    (_e, remoteUrl: string, tokens: { github?: string }, number: number, method: PrMergeMethod) =>
+    (_e, remoteUrl: string, tokens: HostTokens, number: number, method: PrMergeMethod) =>
       mergePr(remoteUrl, tokens, number, method)
   )
   ipcMain.handle('hosting:mergedPrHeads', (_e, remoteUrl: string, tokens: { github?: string }, branches: string[]) =>

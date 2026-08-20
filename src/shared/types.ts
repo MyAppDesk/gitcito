@@ -578,8 +578,9 @@ export interface PrReviewComment {
 export interface PrReviewThread {
   path: string
   line: number | null
-  diffHunk: string // the surrounding diff context GitHub returns
-  rootId: number // id of the first comment (reply target)
+  diffHunk: string // the surrounding diff context (GitHub only; empty on GitLab)
+  /** Reply target: GitHub root comment id, or GitLab discussion id. */
+  rootId: number | string
   comments: PrReviewComment[]
 }
 

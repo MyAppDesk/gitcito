@@ -21,8 +21,9 @@ _The whole of git — graph, staging by line, rebase, worktrees, submodules, LFS
 
 > [!WARNING]
 > **Honest disclaimer.** Gitcito is young. **GitHub** is the battle-tested path:
-> PR review/merge, issues, milestones, notifications, inline CI and project
-> fields are GitHub-only. GitLab, Bitbucket and Azure DevOps can **list and
+> issues, milestones, notifications, inline CI and project fields are
+> GitHub-only. **GitLab** (gitlab.com) now gets the full PR detail screen too —
+> review, comment, approve and merge. Bitbucket and Azure DevOps can **list and
 > create** PRs/MRs, but their detail/review/merge screens are not built yet.
 > OpenAI and Anthropic each speak their own API; the remaining AI providers use
 > an OpenAI-compatible call shape and are unverified. If it breaks: well, **it

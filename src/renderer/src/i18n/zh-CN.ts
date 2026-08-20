@@ -2114,7 +2114,7 @@ export const zhCN: Dict = {
   'prDetail.squash': '压缩合并',
   'prDetail.rebase': '变基合并',
   'prDetail.merge': '合并',
-  'prDetail.notMergeable': 'GitHub 报告这个拉取请求无法合并（存在冲突）。',
+  'prDetail.notMergeable': '这个拉取请求无法合并（存在冲突）。',
   'prDetail.commentPosted': '评论已发布',
   'prDetail.reviewSubmitted': '评审已提交',
   'prDetail.prMerged': '拉取请求已合并',

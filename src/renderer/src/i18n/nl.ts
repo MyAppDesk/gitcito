@@ -2123,7 +2123,7 @@ export const nl: Dict = {
   'prDetail.squash': 'Squashen',
   'prDetail.rebase': 'Rebasen',
   'prDetail.merge': 'Mergen',
-  'prDetail.notMergeable': 'GitHub meldt dat deze PR niet te mergen is (conflicten).',
+  'prDetail.notMergeable': 'Deze PR is niet te mergen (conflicten).',
   'prDetail.commentPosted': 'Reactie geplaatst',
   'prDetail.reviewSubmitted': 'Review verstuurd',
   'prDetail.prMerged': 'Pull request gemerged',

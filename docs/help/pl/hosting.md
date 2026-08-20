@@ -2,7 +2,7 @@
 title: Hosting i pull requesty
 category: Synchronizacja i wiele repozytoriów
 order: 56
-summary: Twórz PR-y wszędzie; recenzuj je i merguj na GitHubie.
+summary: Twórz PR-y wszędzie; recenzuj je i merguj na GitHubie i GitLabie.
 keywords: pull request PR merge request GitHub GitLab Bitbucket Azure DevOps recenzja zatwierdź merge zgłoszenia review approve issues
 ---
 
@@ -22,18 +22,28 @@ dla wszystkich czterech są wypisane w panelu bocznym.
 Zacznij od porównania gałęzi, z grafu, z `+` w panelu PR-ów albo ze zgłoszenia
 (które wypełni `Closes #N`).
 
-## Recenzowanie — GitHub
+## Recenzowanie — GitHub i GitLab
 
 | | |
 |---|---|
 | **Rozmowa** | Komentarze i stan recenzji |
-| **Sprawdzenia** | Przebiegi CI ze stanem zaliczony/niezaliczony/oczekujący i odnośnikami do logów |
+| **Sprawdzenia** | Przebiegi CI (GitHub) albo zadania pipeline'u (GitLab) ze stanem zaliczony/niezaliczony/oczekujący i odnośnikami do logów |
 | **Obejrzane pliki** | Lista kontrolna z ✓ przy każdym pliku i postępem |
-| **Wątki liniowe** | Komentarze do linii pogrupowane po `plik:linia` razem z ich hunkiem diffa oraz odpowiedziami |
-| **Akcje** | Skomentuj, zatwierdź, poproś o zmiany oraz merge / squash / rebase |
+| **Wątki liniowe** | Komentarze do linii pogrupowane po `plik:linia` oraz odpowiedzi |
+| **Akcje** | Skomentuj, zatwierdź, poproś o zmiany oraz merge / squash |
 
 Jeśli ktoś zrobi force push w środku recenzji,
 [co się zmieniło od](range-diff.md) pokaże ci dokładnie, co się ruszyło.
+
+Różnice GitLaba, powiedziane wprost: GitLab nie ma pojedynczego wywołania
+"wyślij recenzję", więc **zatwierdź** korzysta z jego endpointu zatwierdzeń, a
+**poproś o zmiany** cofa twoje zatwierdzenie i publikuje twój komentarz.
+**Rebase-merge** nie jest oferowany — GitLab sam wybiera między merge-commitem
+a fast-forwardem na podstawie ustawień projektu, więc menu merge'a pokazuje
+tylko merge i squash. Wątki liniowe pokazują plik i linię, ale nie otaczający
+hunk diffa, którego API GitLaba nie zwraca. Recenzja/merge działa dla projektów
+na **gitlab.com**; instancje self-hosted nie są jeszcze obsługiwane. Bitbucket
+i Azure DevOps do recenzji nadal otwierają się w przeglądarce.
 
 ## Zgłoszenia, kamienie milowe, wydania — GitHub
 

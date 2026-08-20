@@ -2114,7 +2114,7 @@ export const ru: Dict = {
   'prDetail.squash': 'Схлопнуть',
   'prDetail.rebase': 'Ребейз',
   'prDetail.merge': 'Влить',
-  'prDetail.notMergeable': 'GitHub сообщает, что этот пул-реквест нельзя влить (конфликты).',
+  'prDetail.notMergeable': 'Этот пул-реквест нельзя влить (конфликты).',
   'prDetail.commentPosted': 'Комментарий отправлен',
   'prDetail.reviewSubmitted': 'Ревью отправлено',
   'prDetail.prMerged': 'Пул-реквест влит',

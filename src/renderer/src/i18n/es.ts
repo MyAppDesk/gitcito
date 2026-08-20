@@ -2116,7 +2116,7 @@ export const es: Dict = {
   'prDetail.squash': 'Squash',
   'prDetail.rebase': 'Rebase',
   'prDetail.merge': 'Fusionar',
-  'prDetail.notMergeable': 'GitHub indica que este PR no se puede fusionar (conflictos).',
+  'prDetail.notMergeable': 'Este PR no se puede fusionar (conflictos).',
   'prDetail.commentPosted': 'Comentario publicado',
   'prDetail.reviewSubmitted': 'Revisión enviada',
   'prDetail.prMerged': 'Pull request fusionado',

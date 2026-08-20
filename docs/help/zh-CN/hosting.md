@@ -2,7 +2,7 @@
 title: 托管与拉取请求
 category: 同步与多仓库
 order: 56
-summary: 在任何平台上创建 PR；在 GitHub 上评审并合并它们。
+summary: 在任何平台上创建 PR；在 GitHub 和 GitLab 上评审并合并它们。
 keywords: pull request 拉取请求 PR merge request 合并请求 GitHub GitLab Bitbucket Azure DevOps review 评审 approve 批准 merge 合并 issues 议题
 ---
 
@@ -18,17 +18,19 @@ keywords: pull request 拉取请求 PR merge request 合并请求 GitHub GitLab 
 
 可以从分支对比、提交图、PR 面板里的 `+`，或者从一个议题出发创建（后者会自动填上 `Closes #N`）。
 
-## 评审——GitHub
+## 评审——GitHub 与 GitLab
 
 | | |
 |---|---|
 | **对话** | 评论与评审状态 |
-| **检查** | CI 检查任务，带通过／失败／等待中状态和查看日志的链接 |
+| **检查** | CI 检查任务（GitHub）或流水线作业（GitLab），带通过／失败／等待中状态和查看日志的链接 |
 | **已看过的文件** | 每个文件一个 ✓ 的清单，带进度 |
-| **行内讨论串** | 按 `file:line` 归组的行评论，附上它所在的变更块，以及回复 |
-| **动作** | 评论、批准、要求修改，以及合并 / 压缩合并 / 变基合并 |
+| **行内讨论串** | 按 `file:line` 归组的行评论，以及回复 |
+| **动作** | 评论、批准、要求修改，以及合并 / 压缩合并 |
 
 如果有人在评审进行到一半时强制推送，[自那以后改了什么](range-diff.md)会准确告诉你哪些东西动了。
+
+GitLab 的差别，直说了就是：GitLab 没有单一的“提交评审”调用，所以**批准**用的是它的批准接口，**要求修改**则会撤掉你的批准并发出你的评论。不提供**变基合并**——GitLab 会根据项目设置自行决定用合并提交还是快进，所以合并菜单里只有合并和压缩合并两项。行内讨论串会显示文件和行号，但不会显示周围的变更块，因为 GitLab 的 API 不返回它。评审／合并适用于 **gitlab.com** 上的项目；自托管实例暂不支持。Bitbucket 和 Azure DevOps 的评审仍会在浏览器中打开。
 
 ## 议题、里程碑、发布——GitHub
 

@@ -2123,7 +2123,7 @@ export const ptBR: Dict = {
   'prDetail.squash': 'Squash',
   'prDetail.rebase': 'Rebase',
   'prDetail.merge': 'Merge',
-  'prDetail.notMergeable': 'O GitHub diz que este PR não pode ser mesclado (há conflitos).',
+  'prDetail.notMergeable': 'Este PR não pode ser mesclado (há conflitos).',
   'prDetail.commentPosted': 'Comentário publicado',
   'prDetail.reviewSubmitted': 'Review enviado',
   'prDetail.prMerged': 'Pull request mesclado',

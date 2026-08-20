@@ -2117,7 +2117,7 @@ export const ar: Dict = {
   'prDetail.squash': 'سحق',
   'prDetail.rebase': 'إعادة أساس',
   'prDetail.merge': 'دمج',
-  'prDetail.notMergeable': 'يفيد GitHub بأن طلب السحب هذا غير قابل للدمج (توجد تعارضات).',
+  'prDetail.notMergeable': 'طلب السحب هذا غير قابل للدمج (توجد تعارضات).',
   'prDetail.commentPosted': 'نُشر التعليق',
   'prDetail.reviewSubmitted': 'أُرسلت المراجعة',
   'prDetail.prMerged': 'دُمج طلب السحب',

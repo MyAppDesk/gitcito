@@ -42,7 +42,7 @@ import { useSettingsStore } from '../stores/settings'
 import { useLaunchStore } from '../stores/launch'
 import { shellApi } from '../infrastructure/api'
 import { useT, interp } from '../i18n'
-import { repoIsGitHub } from '../lib/hosting'
+import { repoIsGitHub, repoSupportsPrReview } from '../lib/hosting'
 import { folderOpenMenuItems } from '../lib/openWith'
 import { togglePin, selectPinned } from '../lib/pinnedBranches'
 import { branchDropActions, encodeDropRef, BRANCH_DND_TYPE, type DropRef } from '../lib/branchDrop'
@@ -1099,7 +1099,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   const prMenu = (pr: PullRequest): MenuItem[] => {
     const origin = hostOrigin()
     return [
-      ...(repoIsGitHub(repo.remotes) && origin
+      ...(repoSupportsPrReview(repo.remotes) && origin
         ? [
             {
               label: t('sidebar.openDetails'),
@@ -1629,8 +1629,8 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
             key={pr.id}
             className="sb-item pr"
             onClick={() => {
-              // Rich PR detail is GitHub-only; for other hosts open in browser.
-              if (!repoIsGitHub(repo.remotes)) {
+              // Rich PR detail exists for GitHub and GitLab; other hosts open in browser.
+              if (!repoSupportsPrReview(repo.remotes)) {
                 void window.api.openExternal(pr.url)
                 return
               }

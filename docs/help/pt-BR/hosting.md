@@ -2,7 +2,7 @@
 title: Hosting e pull requests
 category: Sincronização e vários repositórios
 order: 56
-summary: Crie PRs em qualquer lugar; revise e faça merge deles no GitHub.
+summary: Crie PRs em qualquer lugar; revise e faça merge deles no GitHub e no GitLab.
 keywords: pull request PR merge request GitHub GitLab Bitbucket Azure DevOps revisão review aprovar merge issues
 ---
 
@@ -22,18 +22,28 @@ quatro são listados na barra lateral.
 Comece um pela comparação de branches, pelo grafo, pelo `+` no painel de PRs, ou a
 partir de uma issue (que preenche o `Closes #N`).
 
-## Revisando — GitHub
+## Revisando — GitHub e GitLab
 
 | | |
 |---|---|
 | **Conversa** | Comentários e estado da revisão |
-| **Checks** | Execuções de CI com aprovado/falhou/pendente e links para os logs |
+| **Checks** | Execuções de CI (GitHub) ou jobs de pipeline (GitLab) com aprovado/falhou/pendente e links para os logs |
 | **Arquivos vistos** | Um checklist de ✓ por arquivo, com progresso |
-| **Threads inline** | Comentários de linha agrupados por `file:line` com o hunk de diff deles, e as respostas |
-| **Ações** | Comentar, aprovar, pedir mudanças, e merge / squash / rebase |
+| **Threads inline** | Comentários de linha agrupados por `file:line`, e as respostas |
+| **Ações** | Comentar, aprovar, pedir mudanças, e merge / squash |
 
 Se alguém der force-push no meio da revisão, [o que mudou desde](range-diff.md)
 mostra exatamente o que se mexeu.
+
+As diferenças do GitLab, ditas com clareza: o GitLab não tem uma chamada única
+de "enviar revisão", então **aprovar** usa o endpoint de aprovação dele e
+**pedir mudanças** remove a sua aprovação e publica o seu comentário. O
+**rebase-merge** não é oferecido — o GitLab decide entre merge-commit e
+fast-forward pelas configurações do projeto, então o menu de merge mostra só
+merge e squash. Threads inline mostram o arquivo e a linha, mas não o hunk de
+diff ao redor, que a API do GitLab não retorna. Revisar e fazer merge funciona
+para projetos no **gitlab.com**; instâncias self-hosted ainda não são
+suportadas. Bitbucket e Azure DevOps ainda abrem no navegador para revisão.
 
 ## Issues, milestones, releases — GitHub
 

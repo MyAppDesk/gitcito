@@ -76,6 +76,9 @@ import type {
   ReplaceStatus,
   AttributeFile,
   DiffDriverInfo,
+  FilterDriverInfo,
+  FilterDryRunResult,
+  FilterDriverPrevious,
   DiffDriverSuggestion,
   ConflictCommit,
   GitObject,
@@ -305,6 +308,12 @@ export const gitApi = {
   diffDriverSuggestions: (path: string) => call<DiffDriverSuggestion[]>('diffDriverSuggestions', path),
   setDiffDriver: (path: string, name: string, textconv: string, global?: boolean) =>
     call<void>('setDiffDriver', path, name, textconv, global),
+  filterDrivers: (path: string) => call<FilterDriverInfo[]>('filterDrivers', path),
+  /** Try a clean/smudge pair on real matching files without configuring anything. */
+  filterDryRun: (path: string, pattern: string, clean: string, smudge: string) =>
+    call<FilterDryRunResult>('filterDryRun', path, pattern, clean, smudge),
+  setFilterDriver: (path: string, name: string, driver: { clean: string; smudge: string; required: boolean }, global?: boolean) =>
+    call<FilterDriverPrevious>('setFilterDriver', path, name, driver, global),
 
   /** Every ref, plus HEAD, with the object it names — the explorer's roots. */
   objectRefs: (path: string) => call<RefObject[]>('objectRefs', path),

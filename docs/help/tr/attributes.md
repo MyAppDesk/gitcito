@@ -109,12 +109,49 @@ gösterir; dolayısıyla depoyu klonlayan bir ekip arkadaşınız `diff=word`
 kuralını alır ama kendi dönüştürücüsünü (Gitcito ya da başka bir şey) bağlayana
 kadar yine eski okunaksız diff'i görür. Bunu README'nizde belirtin.
 
+## Clean/smudge filtreleri — önce bir deneme çalıştırmasıyla
+
+Bir **filtre**, içeriği depoya girerken ve depodan çıkarken yeniden yazar:
+`clean` hazırlama sırasında (çalışma dizini → depo), `smudge` checkout
+sırasında (depo → çalışma dizini) çalışır. git-lfs böyle çalışır; ekipler de
+commit'lenen içerikten kimlik bilgilerini ya da üretilmiş gürültüyü böyle
+ayıklar.
+
+Aynı zamanda `.gitattributes`'ın işaret edebileceği en tehlikeli şeydir: bir
+filtre **eşleşen her dosyanın her checkout'unda** çalışır ve yanlış bir filtre
+çalışma dizininizi sessizce bozar. Bu yüzden Gitcito burada düz bir metin
+kutusu olmayı reddeder. Bir filtreyi yapılandırmak, deponuzdaki gerçek eşleşen
+dosyalara karşı bir **deneme çalıştırmasından** geçer:
+
+1. `clean` komutu, eşleşen her dosyanın bir kopyası üzerinde çalışır (en fazla
+   beş dosya) — depoda veya yapılandırmasında hiçbir şeye dokunulmaz.
+2. Bir `smudge` komutu verilmişse, temizlenmiş çıktı üzerinde çalıştırılır ve
+   sonuç, özgün dosyayla bayt bayt karşılaştırılır — **gidiş-dönüş denetimi**.
+   Gidiş-dönüşü tutmayan bir filtre, checkout'un elinizdekini geri
+   getirmeyeceği anlamına gelir.
+3. Kaydet düğmesi ancak tam olarak kaydettiğiniz değerler üzerindeki bir deneme
+   çalıştırmasından sonra etkinleşir. Başarısız olmuş bir deneme çalıştırması —
+   komut hatası, hiçbir eşleşme olmaması ya da farklı bir gidiş-dönüş — yine de
+   kaydedilebilir, ama yalnızca neyin kaybolabileceğini söyleyen açık bir uyarı
+   üzerinden.
+
+Kaydetme, `filter.<name>.clean/smudge` girdisini **yerel** git
+yapılandırmanıza, `filter=<name>` kuralını da öznitelik dosyasına yazar ve
+yapılandırmanın önceki içeriğini geri getiren bir geri alma kaydı bırakır.
+**required** anahtarı `filter.<name>.required` ayarını yapar; bu da filtre
+bozulduğunda git'in dosyaları sessizce olduğu gibi geçirmek yerine işlemi
+başarısız saymasını sağlar.
+
+Sınırlar, açıkça söylersek: deneme çalıştırması, her biri en fazla 5 MB olan en
+fazla beş eşleşen dosyayı örnekler ve komut başına 10 saniyelik bir zaman aşımı
+uygular — örneklemde uslu duran bir filtre, örneklemin kaçırdığı bir dosyada
+yine de yoldan çıkabilir. Komutlar *sizin* yapılandırmanızda yaşar; dolayısıyla
+depoyu klonlayan bir ekip arkadaşınız `filter=<name>` kuralını alır ama
+komutları almaz; onlar olmadan (ve `required` olmadan) dosyaları değişmeden
+geçer.
+
 ## Bilinmeye değer sınırlar
 
-- **Clean/smudge filtreleri burada sunulmaz.** `filter=<name>` kuralları elle
-  yazılabilir, ama Gitcito komutları yapılandırmaz: bir filtre eşleşen her
-  dosyanın her checkout'unda çalışır ve yanlış bir filtre çalışma dizininizi
-  sessizce bozar.
 - **`text=auto` neyin commit'lendiğini değiştirir**, satır sonlarını girişte
   normalleştirir. Mevcut bir depoda önce ekleyin, sonra bilinçli olarak
   `git add --renormalize .` çalıştırın — kendine ait tek bir commit içinde.

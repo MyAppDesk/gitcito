@@ -2052,6 +2052,45 @@ export interface DiffDriverSuggestion {
   available: boolean
 }
 
+/** A configured `filter.<name>` clean/smudge driver. */
+export interface FilterDriverInfo {
+  name: string
+  /** Command run on staging (working tree → repository). '' when unset. */
+  clean: string
+  /** Command run on checkout (repository → working tree). '' when unset. */
+  smudge: string
+  /** With `required`, a failing filter aborts the operation instead of passing bytes through. */
+  required: boolean
+  scope: 'repo' | 'global'
+  cleanAvailable: boolean
+  smudgeAvailable: boolean
+}
+
+/** One file's outcome in a filter dry run. */
+export interface FilterDryRunFile {
+  file: string
+  /** The clean command ran and exited 0. */
+  ok: boolean
+  error?: string
+  /** Whether smudge(clean(file)) reproduced the original bytes. */
+  roundtrip: 'ok' | 'different' | 'skipped'
+  /** The first bytes of the cleaned output, so the user sees what git would store. */
+  preview: string
+}
+
+/** A filter dry run: how many files the pattern matches, and what happened to the sample. */
+export interface FilterDryRunResult {
+  matched: number
+  tested: FilterDryRunFile[]
+}
+
+/** What `filter.<name>` held before setFilterDriver overwrote it — the undo payload. */
+export interface FilterDriverPrevious {
+  clean: string
+  smudge: string
+  required: boolean
+}
+
 /** The four kinds of thing git stores. Everything else is built from these. */
 export type GitObjectKind = 'commit' | 'tree' | 'blob' | 'tag'
 

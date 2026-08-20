@@ -110,12 +110,48 @@ a *tu* ruta de instalación de Gitcito, así que un compañero que clone recibir
 la regla `diff=word` y, hasta que conecte su propio conversor (Gitcito u otro),
 el viejo diff ilegible. Dilo en tu README.
 
+## Filtros clean/smudge — con una prueba en seco primero
+
+Un **filtro** reescribe el contenido al entrar y salir del repositorio: `clean`
+se ejecuta al hacer stage (árbol de trabajo → repo), `smudge` en el checkout
+(repo → árbol de trabajo). Así funciona git-lfs, y así eliminan los equipos las
+credenciales o el ruido generado de lo que se commitea.
+
+También es la cosa más peligrosa a la que puede apuntar `.gitattributes`: un
+filtro se ejecuta en **cada checkout de cada archivo que encaje**, y uno mal
+hecho corrompe tu árbol de trabajo en silencio. Por eso Gitcito se niega a ser
+aquí un simple cuadro de texto. Configurar un
+filtro pasa por una **prueba en seco** contra archivos reales de tu repositorio
+que encajen con el patrón:
+
+1. El comando `clean` se ejecuta sobre una copia de cada archivo que encaje
+   (hasta cinco) — nada del repositorio ni de su configuración se toca.
+2. Si se da un comando `smudge`, se ejecuta sobre la salida limpia y el
+   resultado se compara byte a byte con el original — la **comprobación de ida
+   y vuelta**. Un filtro que no completa la ida y vuelta significa que un
+   checkout no restaurará lo que tenías.
+3. Solo tras una prueba en seco con exactamente los valores que vas a guardar
+   se activa el botón de guardar. Una prueba en seco fallida — error del
+   comando, ningún archivo que encaje, o una ida y vuelta que difiere — aún se
+   puede guardar, pero solo a través de una advertencia explícita que dice qué
+   se puede perder.
+
+Guardar escribe `filter.<name>.clean/smudge` en tu configuración **local** de
+git y la regla `filter=<name>` en el archivo de atributos, y deja una entrada
+de deshacer que restaura lo que la configuración tuviera antes. El interruptor
+**required** establece `filter.<name>.required`, con el que git hace fallar la
+operación en vez de dejar pasar los archivos en silencio cuando el filtro se
+rompe.
+
+Los límites, dichos sin rodeos: la prueba en seco muestrea hasta cinco archivos
+que encajen, de como mucho 5 MB cada uno, con un límite de 10 segundos por
+comando — un filtro que se porta bien con la muestra puede portarse mal con un
+archivo que la muestra no vio. Los comandos viven en *tu* configuración, así
+que un compañero que clone recibe la regla `filter=<name>` pero no los
+comandos; sin ellos (y sin **required**) sus archivos pasan sin cambios.
+
 ## Límites que conviene conocer
 
-- **Los filtros clean/smudge no se ofrecen aquí.** Las reglas `filter=<name>` se
-  pueden escribir a mano, pero Gitcito no configurará los comandos: un filtro se
-  ejecuta en cada checkout de cada archivo que encaje, y uno mal hecho corrompe
-  tu árbol de trabajo en silencio.
 - **`text=auto` cambia lo que se commitea**, normalizando los finales de línea
   al entrar. En un repositorio ya existente, añádelo y luego ejecuta
   `git add --renormalize .` a conciencia, en un commit propio.

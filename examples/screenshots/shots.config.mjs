@@ -1597,14 +1597,37 @@ export const shots = [
     }
   },
   {
-    // .gitattributes: the rules a repository already carries, plus the presets.
+    // .gitattributes: the rules a repository already carries, the presets, and
+    // the clean/smudge filter dry run. Points git at a throwaway HOME so this
+    // machine's global config (a real git-lfs filter, say) stays out of frame.
     out: 'attributes',
     repos: ['attributes'],
     themes: ['light'],
+    env: { HOME: DEMO_HOME },
+    prepare: async ({ repoPaths, run }) => {
+      const repo = repoPaths['attributes']
+      await rm(DEMO_HOME, { recursive: true, force: true })
+      await mkdir(DEMO_HOME, { recursive: true })
+      // A tracked secret-looking file gives the filter dry run something real
+      // to test against.
+      await writeFile(join(repo, 'deploy.secret'), 'api_key=demo-not-a-real-key\n')
+      await run('git', ['-C', repo, 'add', 'deploy.secret'])
+    },
     drive: async (page, repoPaths) => {
       const repo = repoPaths['attributes']
       await page.evaluate((r) => window.__shot.ui.getState().openModal({ kind: 'attributes', repoPath: r }), repo)
       await page.waitForTimeout(1200)
+      // Fill the filter form and run the dry run, so the shot shows the
+      // roundtrip verdict — the point of the feature.
+      await page.fill('input[placeholder="*.secret"]', '*.secret')
+      await page.fill('input[placeholder="vault"]', 'vault')
+      await page.fill('input[placeholder*="clean command"]', "sed 's/api_key=.*/api_key=REDACTED/'")
+      await page.click('button:has-text("Dry run")')
+      await page.waitForTimeout(900)
+      await page.evaluate(() => {
+        document.querySelector('.attrs-check')?.scrollIntoView({ block: 'center' })
+      })
+      await page.waitForTimeout(300)
     }
   },
   {

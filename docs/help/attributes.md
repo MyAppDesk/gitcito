@@ -104,12 +104,45 @@ The bundled drivers also point at *your* Gitcito install path, so a teammate
 who clones gets the `diff=word` rule and, until they wire their own converter
 (Gitcito or otherwise), the old unreadable diff. Say so in your README.
 
+## Clean/smudge filters — with a dry run first
+
+A **filter** rewrites content on its way in and out of the repository: `clean`
+runs at staging (working tree → repo), `smudge` at checkout (repo → working
+tree). It is how git-lfs works, and how teams strip credentials or generated
+noise from what gets committed.
+
+It is also the most dangerous thing `.gitattributes` can point at: a filter
+runs on **every checkout of every matching file**, and a wrong one corrupts
+your working tree quietly. So Gitcito refuses to be a text box here. Configuring
+a filter goes through a **dry run** against real matching files in your
+repository:
+
+1. The `clean` command runs on a copy of each matching file (up to five) —
+   nothing in the repository or its config is touched.
+2. If a `smudge` command is given, it runs on the cleaned output and the result
+   is compared byte-for-byte with the original — the **roundtrip check**. A
+   filter that does not roundtrip means checking out will not restore what you
+   had.
+3. Only after a dry run on exactly the values you are saving does the save
+   button arm. A dry run that failed — command error, nothing matched, or a
+   differing roundtrip — can still be saved, but only through an explicit
+   warning that says what can be lost.
+
+Saving writes `filter.<name>.clean/smudge` to your **local** git config and the
+`filter=<name>` rule to the attributes file, and leaves an undo entry that
+restores whatever the config held before. The **required** toggle sets
+`filter.<name>.required`, which makes git fail an operation instead of silently
+passing files through when the filter breaks.
+
+The limits, stated plainly: the dry run samples up to five matching files of at
+most 5 MB each, with a 10-second timeout per command — a filter that behaves on
+the sample can still misbehave on a file the sample missed. The commands live in
+*your* config, so a teammate who clones gets the `filter=<name>` rule but not the
+commands; without them (and without `required`) their files pass through
+unchanged.
+
 ## Limits worth knowing
 
-- **Clean/smudge filters are not offered here.** `filter=<name>` rules can be
-  written by hand, but Gitcito will not configure the commands: a filter runs on
-  every checkout of every matching file, and a wrong one silently corrupts your
-  working tree.
 - **`text=auto` changes what gets committed**, normalising line endings on the
   way in. On an existing repository, add it and then run
   `git add --renormalize .` deliberately, in one commit of its own.

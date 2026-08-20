@@ -109,12 +109,45 @@ bezpieczeństwa warta zachowania. Dołączone sterowniki wskazują też na *twoj
 regułę `diff=word` i — dopóki nie podłączy własnego konwertera (Gitcito lub
 innego) — stary, nieczytelny diff. Napisz o tym w swoim README.
 
+## Filtry clean/smudge — najpierw próba na sucho
+
+**Filtr** przepisuje zawartość w drodze do repozytorium i z powrotem: `clean`
+uruchamia się przy stage'owaniu (drzewo robocze → repo), `smudge` przy
+wypakowaniu (repo → drzewo robocze). Tak działa git-lfs i tak zespoły wycinają
+dane dostępowe albo wygenerowany szum z tego, co trafia do commita.
+
+To zarazem najniebezpieczniejsza rzecz, na jaką `.gitattributes` może wskazać:
+filtr uruchamia się przy **każdym wypakowaniu każdego pasującego pliku**, a zły
+po cichu psuje twoje drzewo robocze. Dlatego Gitcito odmawia bycia tu zwykłym
+polem tekstowym. Konfiguracja filtra przechodzi przez **próbę na sucho** na
+prawdziwych pasujących plikach w twoim repozytorium:
+
+1. Polecenie `clean` uruchamia się na kopii każdego pasującego pliku (do
+   pięciu) — nic w repozytorium ani jego konfiguracji nie zostaje tknięte.
+2. Jeśli podano polecenie `smudge`, uruchamia się ono na oczyszczonym wyniku,
+   a rezultat jest porównywany bajt po bajcie z oryginałem — to **kontrola
+   roundtripu**. Filtr, który nie przechodzi roundtripu, znaczy tyle:
+   wypakowanie nie przywróci tego, co było.
+3. Dopiero po próbie na sucho na dokładnie tych wartościach, które zapisujesz,
+   przycisk zapisu się uzbraja. Nieudaną próbę — błąd polecenia, brak
+   pasujących plików albo rozjeżdżający się roundtrip — nadal można zapisać,
+   ale tylko przez wyraźne ostrzeżenie mówiące, co można stracić.
+
+Zapis wpisuje `filter.<name>.clean/smudge` do twojej **lokalnej** konfiguracji
+gita, a regułę `filter=<name>` do pliku atrybutów, i zostawia wpis cofania,
+który przywraca to, co konfiguracja zawierała wcześniej. Przełącznik
+**required** ustawia `filter.<name>.required`, przez co git przerywa operację
+błędem, zamiast po cichu przepuszczać pliki, gdy filtr się psuje.
+
+Granice, powiedziane wprost: próba na sucho bierze próbkę do pięciu pasujących
+plików, każdy najwyżej 5 MB, z limitem 10 sekund na polecenie — filtr, który
+zachowuje się dobrze na próbce, wciąż może zawieść na pliku, którego próbka
+nie objęła. Polecenia mieszkają w *twojej* konfiguracji, więc kolega
+z zespołu, który sklonuje, dostanie regułę `filter=<name>`, ale nie polecenia;
+bez nich (i bez `required`) jego pliki przechodzą bez zmian.
+
 ## Ograniczenia warte wiedzy
 
-- **Filtry clean/smudge nie są tutaj oferowane.** Reguły `filter=<name>` da się
-  napisać ręcznie, ale Gitcito nie skonfiguruje poleceń: filtr uruchamia się przy
-  każdym wypakowaniu każdego pasującego pliku, a zły po cichu psuje twoje drzewo
-  robocze.
 - **`text=auto` zmienia to, co trafia do commita**, normalizując końce linii po
   drodze. W istniejącym repozytorium dodaj to, a potem świadomie uruchom
   `git add --renormalize .`, we własnym, osobnym commicie.

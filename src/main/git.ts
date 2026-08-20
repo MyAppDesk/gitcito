@@ -93,6 +93,10 @@ import type {
   AttributeFile,
   DiffDriverInfo,
   DiffDriverSuggestion,
+  FilterDriverInfo,
+  FilterDryRunFile,
+  FilterDryRunResult,
+  FilterDriverPrevious,
   ConflictCommit,
   GitObject,
   GitObjectKind,
@@ -564,6 +568,43 @@ function canExecute(path: string): boolean {
   } catch {
     return false
   }
+}
+
+/** Dry-run bounds: enough to judge a filter, cheap enough to run on a click. */
+const FILTER_DRY_RUN_FILES = 5
+const FILTER_DRY_RUN_MAX_BYTES = 5 * 1024 * 1024
+const FILTER_PREVIEW_BYTES = 400
+const FILTER_TIMEOUT_MS = 10_000
+
+/**
+ * Run one clean/smudge command the way git would: content on stdin, result on
+ * stdout, `%f` replaced by the repo-relative path. Used only by the dry run —
+ * git itself runs the real thing after the config is written.
+ */
+function runFilterCommand(command: string, cwd: string, file: string, input: Buffer): Promise<Buffer> {
+  const cmd = command.replaceAll('%f', `'${file.replaceAll("'", "'\\''")}'`)
+  return new Promise((resolvePromise, reject) => {
+    const child = spawn(cmd, { cwd, shell: true, stdio: ['pipe', 'pipe', 'pipe'] })
+    const out: Buffer[] = []
+    const errOut: Buffer[] = []
+    const timer = setTimeout(() => {
+      child.kill('SIGKILL')
+      reject(new Error(`filter command timed out after ${FILTER_TIMEOUT_MS / 1000}s`))
+    }, FILTER_TIMEOUT_MS)
+    child.stdout.on('data', (c: Buffer) => out.push(c))
+    child.stderr.on('data', (c: Buffer) => errOut.push(c))
+    child.on('error', (err) => {
+      clearTimeout(timer)
+      reject(err)
+    })
+    child.on('close', (code) => {
+      clearTimeout(timer)
+      if (code === 0) resolvePromise(Buffer.concat(out))
+      else reject(new Error(Buffer.concat(errOut).toString('utf-8').trim() || `filter command exited with ${code}`))
+    })
+    child.stdin.on('error', () => undefined) // command may exit without reading stdin
+    child.stdin.end(input)
+  })
 }
 
 /**
@@ -3103,6 +3144,118 @@ export const gitService = {
     const key = `diff.${name}.textconv`
     if (textconv.trim()) await runGit(repoPath, ['config', ...scope, key, textconv.trim()])
     else await runGit(repoPath, ['config', ...scope, '--unset', key]).catch(() => undefined)
+  },
+
+  // ─── Clean/smudge filters ──────────────────────────────────────────────────
+  // A filter runs on every checkout of every matching file, and a wrong one
+  // corrupts a working tree quietly. So configuring one here is gated on a dry
+  // run against real repository files, and setFilterDriver returns what it
+  // overwrote so the store can hang an undo entry on it.
+
+  /** Configured `filter.<name>.clean/smudge` drivers, local and global. */
+  async filterDrivers(repoPath: string): Promise<FilterDriverInfo[]> {
+    const read = async (scope: 'repo' | 'global'): Promise<FilterDriverInfo[]> => {
+      const args = [
+        'config',
+        ...(scope === 'global' ? ['--global'] : ['--local']),
+        '--get-regexp',
+        '^filter\\..*\\.(clean|smudge|required)$'
+      ]
+      const out = await runGit(repoPath, args).catch(() => '')
+      const byName = new Map<string, FilterDriverInfo>()
+      for (const line of out.split('\n')) {
+        const space = line.indexOf(' ')
+        if (space < 0) continue
+        const m = /^filter\.(.+)\.(clean|smudge|required)$/.exec(line.slice(0, space))
+        if (!m) continue
+        const value = line.slice(space + 1).trim()
+        const info =
+          byName.get(m[1]) ??
+          ({ name: m[1], clean: '', smudge: '', required: false, scope, cleanAvailable: true, smudgeAvailable: true } as FilterDriverInfo)
+        if (m[2] === 'clean') {
+          info.clean = value
+          info.cleanAvailable = converterAvailable(value)
+        } else if (m[2] === 'smudge') {
+          info.smudge = value
+          info.smudgeAvailable = converterAvailable(value)
+        } else {
+          info.required = value === 'true'
+        }
+        byName.set(m[1], info)
+      }
+      return [...byName.values()]
+    }
+    return [...(await read('repo')), ...(await read('global'))]
+  },
+
+  /**
+   * Try a clean/smudge pair against real matching files WITHOUT configuring
+   * anything: run `clean` on a copy of each file's bytes, then `smudge` on the
+   * result, and report whether the roundtrip reproduces the original. Nothing
+   * in the repository or its config is touched.
+   */
+  async filterDryRun(repoPath: string, pattern: string, clean: string, smudge: string): Promise<FilterDryRunResult> {
+    const listed = await runGit(repoPath, ['ls-files', '-z', '--', pattern]).catch(() => '')
+    const matches = listed.split('\0').filter(Boolean)
+    const tested: FilterDryRunFile[] = []
+    for (const file of matches.slice(0, FILTER_DRY_RUN_FILES)) {
+      try {
+        const original = await readFile(join(repoPath, file))
+        if (original.byteLength > FILTER_DRY_RUN_MAX_BYTES) {
+          tested.push({ file, ok: false, error: 'file too large for a dry run', roundtrip: 'skipped', preview: '' })
+          continue
+        }
+        const cleaned = await runFilterCommand(clean, repoPath, file, original)
+        let roundtrip: FilterDryRunFile['roundtrip'] = 'skipped'
+        if (smudge.trim()) {
+          const smudged = await runFilterCommand(smudge, repoPath, file, cleaned)
+          roundtrip = smudged.equals(original) ? 'ok' : 'different'
+        }
+        tested.push({
+          file,
+          ok: true,
+          roundtrip,
+          preview: cleaned.subarray(0, FILTER_PREVIEW_BYTES).toString('utf-8')
+        })
+      } catch (err) {
+        tested.push({
+          file,
+          ok: false,
+          error: err instanceof Error ? err.message : String(err),
+          roundtrip: 'skipped',
+          preview: ''
+        })
+      }
+    }
+    return { matched: matches.length, tested }
+  },
+
+  /**
+   * Write (or clear, when both commands are empty) a `filter.<name>` driver.
+   * Returns the values that were there before, for the undo entry.
+   */
+  async setFilterDriver(
+    repoPath: string,
+    name: string,
+    driver: { clean: string; smudge: string; required: boolean },
+    global = false
+  ): Promise<FilterDriverPrevious> {
+    const scope = global ? ['--global'] : ['--local']
+    const get = (key: string): Promise<string> =>
+      runGit(repoPath, ['config', ...scope, '--get', key]).then((v) => v.trim()).catch(() => '')
+    const previous: FilterDriverPrevious = {
+      clean: await get(`filter.${name}.clean`),
+      smudge: await get(`filter.${name}.smudge`),
+      required: (await get(`filter.${name}.required`)) === 'true'
+    }
+    const set = async (key: string, value: string): Promise<void> => {
+      if (value) await runGit(repoPath, ['config', ...scope, key, value])
+      else await runGit(repoPath, ['config', ...scope, '--unset', key]).catch(() => undefined)
+    }
+    await set(`filter.${name}.clean`, driver.clean.trim())
+    await set(`filter.${name}.smudge`, driver.smudge.trim())
+    await set(`filter.${name}.required`, driver.required && (driver.clean.trim() || driver.smudge.trim()) ? 'true' : '')
+    return previous
   },
 
   // ─── Object explorer ───────────────────────────────────────────────────────
@@ -6517,6 +6670,8 @@ const READ_METHODS = new Set<string>([
   'replacements',
   'diffDrivers',
   'diffDriverSuggestions',
+  'filterDrivers',
+  'filterDryRun',
   'conflictCommits',
   'note',
   'notedCommits',

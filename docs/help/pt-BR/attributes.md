@@ -106,12 +106,45 @@ instalação do Gitcito, então um colega que clonar recebe a regra `diff=word` 
 até ligar um conversor próprio (Gitcito ou outro), o velho diff ilegível. Diga
 isso no seu README.
 
+## Filtros clean/smudge — com um ensaio antes
+
+Um **filtro** reescreve o conteúdo na entrada e na saída do repositório: o
+`clean` roda no staging (árvore de trabalho → repositório), o `smudge` no
+checkout (repositório → árvore de trabalho). É assim que o git-lfs funciona, e
+é assim que times tiram credenciais ou ruído gerado do que vai para o commit.
+
+É também a coisa mais perigosa para a qual o `.gitattributes` pode apontar: um
+filtro roda em **todo checkout de todo arquivo que casar**, e um filtro errado
+corrompe a sua árvore de trabalho em silêncio. Por isso o Gitcito se recusa a
+ser uma caixa de texto aqui. Configurar um filtro passa por um **ensaio** contra
+arquivos reais do seu repositório que casam com o padrão:
+
+1. O comando `clean` roda numa cópia de cada arquivo que casar (até cinco) —
+   nada no repositório ou no config dele é tocado.
+2. Se um comando `smudge` for dado, ele roda sobre a saída do `clean` e o
+   resultado é comparado byte a byte com o original — a **verificação de ida e
+   volta**. Um filtro que não fecha a ida e volta significa que fazer checkout
+   não vai restaurar o que você tinha.
+3. Só depois de um ensaio com exatamente os valores que você está salvando o
+   botão de salvar é liberado. Um ensaio que falhou — erro do comando, nenhum
+   arquivo casou, ou uma ida e volta diferente — ainda pode ser salvo, mas só
+   através de um aviso explícito que diz o que pode ser perdido.
+
+Salvar escreve `filter.<name>.clean/smudge` no seu config **local** do git e a
+regra `filter=<name>` no arquivo de atributos, e deixa uma entrada de desfazer
+que restaura o que quer que o config guardasse antes. A opção **required**
+define `filter.<name>.required`, que faz o git falhar a operação em vez de
+deixar os arquivos passarem em silêncio quando o filtro quebra.
+
+Os limites, ditos sem rodeios: o ensaio amostra até cinco arquivos que casam,
+de no máximo 5 MB cada, com um timeout de 10 segundos por comando — um filtro
+que se comporta na amostra ainda pode se comportar mal num arquivo que a
+amostra não viu. Os comandos moram no *seu* config, então um colega que clonar
+recebe a regra `filter=<name>`, mas não os comandos; sem eles (e sem o
+`required`) os arquivos dele passam sem mudança.
+
 ## Limites que vale conhecer
 
-- **Filtros clean/smudge não são oferecidos aqui.** Regras `filter=<name>` podem ser
-  escritas na mão, mas o Gitcito não vai configurar os comandos: um filtro roda em
-  todo checkout de todo arquivo que casar, e um filtro errado corrompe silenciosamente
-  a sua árvore de trabalho.
 - **`text=auto` muda o que é commitado**, normalizando os finais de linha na entrada.
   Num repositório existente, adicione-o e então rode `git add --renormalize .`
   deliberadamente, num commit só dele.

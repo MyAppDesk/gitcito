@@ -113,13 +113,49 @@ donc la règle `diff=word` et, tant qu'il n'a pas branché son propre
 convertisseur (Gitcito ou autre), l'ancien diff illisible. Dites-le dans votre
 README.
 
+## Filtres clean/smudge — avec un essai à blanc d'abord
+
+Un **filtre** réécrit le contenu à l'entrée et à la sortie du dépôt : `clean`
+s'exécute à l'indexation (copie de travail → dépôt), `smudge` à l'extraction
+(dépôt → copie de travail). C'est ainsi que fonctionne git-lfs, et ainsi que
+des équipes retirent des identifiants ou du bruit généré de ce qui est validé.
+
+C'est aussi la chose la plus dangereuse que `.gitattributes` puisse désigner :
+un filtre s'exécute à **chaque extraction de chaque fichier correspondant**, et
+un mauvais filtre corrompt silencieusement votre copie de travail. Gitcito
+refuse donc d'être ici une simple zone de texte. Configurer un filtre
+passe par un **essai à blanc** contre de vrais fichiers correspondants de votre
+dépôt :
+
+1. La commande `clean` s'exécute sur une copie de chaque fichier correspondant
+   (jusqu'à cinq) — rien dans le dépôt ni dans sa configuration n'est touché.
+2. Si une commande `smudge` est donnée, elle s'exécute sur la sortie nettoyée
+   et le résultat est comparé octet par octet à l'original — la **vérification
+   aller-retour**. Un filtre qui ne fait pas l'aller-retour signifie qu'une
+   extraction ne restaurera pas ce que vous aviez.
+3. Ce n'est qu'après un essai à blanc sur exactement les valeurs que vous
+   enregistrez que le bouton d'enregistrement s'active. Un essai qui a échoué —
+   erreur de commande, aucun fichier correspondant, ou un aller-retour qui
+   diffère — peut tout de même être enregistré, mais seulement via un
+   avertissement explicite qui dit ce qui peut être perdu.
+
+Enregistrer écrit `filter.<name>.clean/smudge` dans votre configuration git
+**locale** et la règle `filter=<name>` dans le fichier d'attributs, et laisse
+une entrée d'annulation qui restaure ce que la configuration contenait
+auparavant. L'interrupteur **required** définit `filter.<name>.required`, avec
+lequel git fait échouer l'opération au lieu de laisser passer silencieusement
+les fichiers quand le filtre casse.
+
+Les limites, dites franchement : l'essai à blanc échantillonne jusqu'à cinq
+fichiers correspondants d'au plus 5 Mo chacun, avec un délai de 10 secondes par
+commande — un filtre qui se comporte bien sur l'échantillon peut encore mal se
+comporter sur un fichier que l'échantillon a manqué. Les commandes vivent dans
+*votre* configuration : un coéquipier qui clone reçoit donc la règle
+`filter=<name>` mais pas les commandes ; sans elles (et sans **required**), ses
+fichiers passent inchangés.
+
 ## Limites qu'il vaut mieux connaître
 
-- **Les filtres clean/smudge ne sont pas proposés ici.** Les règles
-  `filter=<name>` peuvent s'écrire à la main, mais Gitcito ne configurera pas les
-  commandes : un filtre s'exécute à chaque extraction de chaque fichier
-  correspondant, et un mauvais filtre corrompt silencieusement votre copie de
-  travail.
 - **`text=auto` change ce qui est validé**, en normalisant les fins de ligne à
   l'entrée. Sur un dépôt existant, ajoutez-le puis exécutez délibérément
   `git add --renormalize .`, dans un commit à part.

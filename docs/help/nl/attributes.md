@@ -112,12 +112,48 @@ die het waard is om te behouden. De meegeleverde drivers wijzen bovendien naar
 `diff=word`-regel en, tot die een eigen converter aansluit (Gitcito of iets
 anders), de oude onleesbare diff. Zet dat in je README.
 
+## Clean/smudge-filters — met eerst een proefrun
+
+Een **filter** herschrijft inhoud op weg de repository in en uit: `clean`
+draait bij het stagen (werkboom → repo), `smudge` bij het uitchecken (repo →
+werkboom). Zo werkt git-lfs, en zo strippen teams inloggegevens of gegenereerde
+ruis uit wat er gecommit wordt.
+
+Het is ook het gevaarlijkste waar `.gitattributes` naar kan wijzen: een filter
+draait bij **elke checkout van elk overeenkomend bestand**, en een verkeerd
+filter verminkt je werkboom in stilte. Daarom weigert Gitcito hier een simpel
+tekstveld te zijn. Een filter instellen loopt via een **proefrun** tegen echte
+overeenkomende bestanden in je repository:
+
+1. Het `clean`-commando draait op een kopie van elk overeenkomend bestand (tot
+   vijf) — niets in de repository of zijn config wordt aangeraakt.
+2. Is er een `smudge`-commando opgegeven, dan draait het op de geschoonde
+   uitvoer en wordt het resultaat byte voor byte met het origineel vergeleken —
+   de **roundtrip-controle**. Een filter dat de roundtrip niet haalt betekent
+   dat uitchecken niet terugbrengt wat je had.
+3. Pas na een proefrun met precies de waarden die je opslaat wordt de
+   opslaanknop actief. Een mislukte proefrun — een commandofout, niets dat
+   overeenkwam, of een afwijkende roundtrip — kan alsnog worden opgeslagen,
+   maar alleen via een expliciete waarschuwing die zegt wat er verloren kan
+   gaan.
+
+Opslaan schrijft `filter.<name>.clean/smudge` naar je **lokale** git-config en
+de `filter=<name>`-regel naar het attributenbestand, en laat een
+ongedaan-maken-item achter dat terugzet wat de config eerst bevatte. De
+schakelaar **required** zet `filter.<name>.required`, waardoor git een operatie
+laat mislukken in plaats van bestanden stilletjes door te laten wanneer het
+filter stukgaat.
+
+De grenzen, zonder omhaal: de proefrun bemonstert tot vijf overeenkomende
+bestanden van elk hoogstens 5 MB, met een timeout van 10 seconden per
+commando — een filter dat zich op de steekproef gedraagt kan zich alsnog
+misdragen op een bestand dat de steekproef miste. De commando's staan in
+*jouw* config, dus een collega die kloont krijgt wel de `filter=<name>`-regel
+maar niet de commando's; zonder die (en zonder `required`) gaan de bestanden
+onveranderd door.
+
 ## Grenzen die je moet kennen
 
-- **Clean/smudge-filters worden hier niet aangeboden.** `filter=<name>`-regels
-  kun je met de hand schrijven, maar Gitcito stelt de commando's niet in: een
-  filter draait bij elke checkout van elk overeenkomend bestand, en een verkeerd
-  filter verminkt je werkboom in stilte.
 - **`text=auto` verandert wat er gecommit wordt** en normaliseert regeleindes op
   de weg naar binnen. Voeg het in een bestaande repository bewust toe en draai
   daarna `git add --renormalize .`, in één eigen commit.

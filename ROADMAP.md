@@ -20,13 +20,6 @@ An unsigned Windows build hits the SmartScreen wall on first run. The CI change
 is about fifteen lines; the blocker is a certificate, and the only option that
 buys immediate reputation for a project this size is Azure Trusted Signing.
 
-### Clean/smudge filters, configured rather than hand-written
-The [attributes UI](docs/help/attributes.md) writes `filter=<name>` rules but
-will not configure the commands behind them. A filter runs on **every checkout
-of every matching file**, and a wrong one corrupts a working tree quietly. Doing
-it properly means a dry run against real files and a way back — a feature of its
-own, not a text box.
-
 ### Issue trackers beyond GitHub
 Branch-from-issue and smart commits against Jira or Linear. Both are what teams
 actually run, and both mean another token and another API surface.

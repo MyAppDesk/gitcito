@@ -110,12 +110,47 @@ zeigen außerdem auf *deinen* Gitcito-Installationspfad; wer also klont, bekommt
 die `diff=word`-Regel und, bis er einen eigenen Konverter verdrahtet (Gitcito
 oder etwas anderes), den alten unlesbaren Diff. Schreib das in dein README.
 
+## Clean-/Smudge-Filter — mit vorherigem Probelauf
+
+Ein **Filter** schreibt Inhalte auf dem Weg ins Repository und wieder heraus
+um: `clean` läuft beim Stagen (Arbeitsverzeichnis → Repo), `smudge` beim
+Checkout (Repo → Arbeitsverzeichnis). So funktioniert git-lfs, und so entfernen
+Teams Zugangsdaten oder generiertes Rauschen aus dem, was committet wird.
+
+Es ist zugleich das Gefährlichste, worauf `.gitattributes` zeigen kann: ein
+Filter läuft bei **jedem Checkout jeder passenden Datei**, und ein falscher
+beschädigt stillschweigend dein Arbeitsverzeichnis. Deshalb weigert sich
+Gitcito, hier ein bloßes Textfeld zu sein. Einen Filter zu konfigurieren führt
+über einen **Probelauf** gegen echte passende Dateien in deinem Repository:
+
+1. Der `clean`-Befehl läuft auf einer Kopie jeder passenden Datei (bis zu
+   fünf) — nichts im Repository oder seiner Config wird angefasst.
+2. Ist ein `smudge`-Befehl angegeben, läuft er auf der bereinigten Ausgabe,
+   und das Ergebnis wird Byte für Byte mit dem Original verglichen — die
+   **Roundtrip-Prüfung**. Ein Filter, der den Roundtrip nicht besteht,
+   bedeutet: ein Checkout stellt nicht wieder her, was du hattest.
+3. Erst nach einem Probelauf mit genau den Werten, die du speicherst, wird der
+   Speichern-Button scharf geschaltet. Ein gescheiterter Probelauf —
+   Befehlsfehler, keine Treffer oder ein abweichender Roundtrip — lässt sich
+   trotzdem speichern, aber nur über eine ausdrückliche Warnung, die sagt, was
+   verloren gehen kann.
+
+Speichern schreibt `filter.<name>.clean/smudge` in deine **lokale** git-Config
+und die `filter=<name>`-Regel in die Attributdatei und hinterlässt einen
+Eintrag zum Rückgängigmachen, der wiederherstellt, was die Config vorher
+enthielt. Der Schalter **required** setzt `filter.<name>.required`, womit git
+eine Operation fehlschlagen lässt, statt Dateien stillschweigend
+durchzureichen, wenn der Filter kaputtgeht.
+
+Die Grenzen, klar benannt: der Probelauf nimmt als Stichprobe bis zu fünf
+passende Dateien von höchstens 5 MB, mit 10 Sekunden Timeout pro Befehl — ein
+Filter, der sich an der Stichprobe gut verhält, kann an einer Datei, die die
+Stichprobe verpasst hat, trotzdem danebengehen. Die Befehle liegen in *deiner*
+Config; wer klont, bekommt also die `filter=<name>`-Regel, aber nicht die
+Befehle — ohne sie (und ohne `required`) laufen die Dateien unverändert durch.
+
 ## Grenzen, die man kennen sollte
 
-- **Clean-/Smudge-Filter werden hier nicht angeboten.** `filter=<name>`-Regeln
-  kannst du von Hand schreiben, aber Gitcito konfiguriert die Befehle nicht: ein
-  Filter läuft bei jedem Checkout jeder passenden Datei, und ein falscher
-  beschädigt stillschweigend dein Arbeitsverzeichnis.
 - **`text=auto` ändert, was committet wird**, und normalisiert Zeilenenden auf
   dem Weg hinein. Füge es in einem bestehenden Repository hinzu und führe dann
   bewusst `git add --renormalize .` aus, in einem eigenen Commit.

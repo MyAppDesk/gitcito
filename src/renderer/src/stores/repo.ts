@@ -1551,6 +1551,28 @@ export const repoActions = {
         []
       ),
 
+  // A wrong clean/smudge filter corrupts checkouts quietly, so the modal gates
+  // this behind a dry run. The undo restores whatever the config held before.
+  setFilterDriver: (path: string, name: string, driver: { clean: string; smudge: string; required: boolean }) => {
+    const clearing = !driver.clean.trim() && !driver.smudge.trim()
+    return useRepoStore.getState().run(
+      path,
+      interp(clearing ? t('act.filterCleared') : t('act.filterSet'), { name }),
+      async () => {
+        const previous = await gitApi.setFilterDriver(path, name, driver)
+        pushUndo(path, {
+          label: interp(t('undoLabel.filter'), { name }),
+          undo: () => gitApi.setFilterDriver(path, name, previous).then(() => undefined),
+          redo: () => gitApi.setFilterDriver(path, name, driver).then(() => undefined)
+        })
+      },
+      undefined,
+      null,
+      undefined,
+      []
+    )
+  },
+
   // ─── Maintenance ───
   // Repacking rewrites the object database, so it takes the write lock like any
   // mutation — but nothing the UI shows changes, hence the empty refresh list.

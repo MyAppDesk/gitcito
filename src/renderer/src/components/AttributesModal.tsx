@@ -1,9 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { AlertTriangle, FileCog, Plus, Search, Trash2, Wrench } from 'lucide-react'
+import { AlertTriangle, FileCog, Filter, FlaskConical, Plus, Search, Trash2, Wrench } from 'lucide-react'
 import { gitApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
 import { repoActions } from '../stores/repo'
-import type { AttributeCheck, AttributeFile, DiffDriverInfo, DiffDriverSuggestion } from '../../../shared/types'
+import type {
+  AttributeCheck,
+  AttributeFile,
+  DiffDriverInfo,
+  DiffDriverSuggestion,
+  FilterDriverInfo,
+  FilterDryRunResult
+} from '../../../shared/types'
 import {
   ATTR_PRESETS,
   formatAttr,
@@ -49,16 +56,27 @@ export function AttributesModal({ repoPath }: { repoPath: string }): React.JSX.E
   const [probe, setProbe] = useState('')
   const [checked, setChecked] = useState<AttributeCheck | null>(null)
   const [busy, setBusy] = useState(false)
+  const [filters, setFilters] = useState<FilterDriverInfo[]>([])
+  const [fPattern, setFPattern] = useState('')
+  const [fName, setFName] = useState('')
+  const [fClean, setFClean] = useState('')
+  const [fSmudge, setFSmudge] = useState('')
+  const [fRequired, setFRequired] = useState(false)
+  const [dry, setDry] = useState<FilterDryRunResult | null>(null)
+  // The inputs the last dry run actually tested — saving is gated on it being current.
+  const [dryKey, setDryKey] = useState('')
 
   const load = useCallback(async (): Promise<void> => {
-    const [found, configured, offered] = await Promise.all([
+    const [found, configured, offered, filt] = await Promise.all([
       gitApi.attributeFiles(repoPath).catch(() => [] as AttributeFile[]),
       gitApi.diffDrivers(repoPath).catch(() => [] as DiffDriverInfo[]),
-      gitApi.diffDriverSuggestions(repoPath).catch(() => [] as DiffDriverSuggestion[])
+      gitApi.diffDriverSuggestions(repoPath).catch(() => [] as DiffDriverSuggestion[]),
+      gitApi.filterDrivers(repoPath).catch(() => [] as FilterDriverInfo[])
     ])
     setFiles(found)
     setDrivers(configured)
     setSuggestions(offered)
+    setFilters(filt)
   }, [repoPath])
 
   useEffect(() => {
@@ -102,6 +120,76 @@ export function AttributesModal({ repoPath }: { repoPath: string }): React.JSX.E
       .then((results) => setChecked(results[0] ?? null))
       .catch(() => setChecked(null))
   }
+
+  const filterInputsKey = JSON.stringify([fPattern.trim(), fClean.trim(), fSmudge.trim()])
+
+  const dryRun = (): void => {
+    setBusy(true)
+    setDry(null)
+    void gitApi
+      .filterDryRun(repoPath, fPattern.trim(), fClean.trim(), fSmudge.trim())
+      .then((result) => {
+        setDry(result)
+        setDryKey(filterInputsKey)
+      })
+      .catch(() => setDry({ matched: 0, tested: [] }))
+      .finally(() => setBusy(false))
+  }
+
+  const saveFilter = (): void => {
+    const name = fName.trim()
+    // "Bad" means the dry run could not vouch for the filter: nothing tested,
+    // a command failed, or the roundtrip did not reproduce the original bytes.
+    const bad =
+      !dry || dry.tested.length === 0 || dry.tested.some((x) => !x.ok || x.roundtrip === 'different')
+    const commit = async (): Promise<void> => {
+      setBusy(true)
+      try {
+        await repoActions.setFilterDriver(repoPath, name, {
+          clean: fClean.trim(),
+          smudge: fSmudge.trim(),
+          required: fRequired
+        })
+        const content = upsertRule(current.content, fPattern.trim(), [{ name: 'filter', value: name }])
+        await repoActions.attributeWrite(repoPath, current.path, content, current.content)
+        await load()
+        setFPattern('')
+        setFName('')
+        setFClean('')
+        setFSmudge('')
+        setFRequired(false)
+        setDry(null)
+        setDryKey('')
+      } finally {
+        setBusy(false)
+      }
+    }
+    if (bad) {
+      openModal({
+        kind: 'confirm',
+        danger: true,
+        title: t('attrs.filterDangerTitle'),
+        message: interp(t('attrs.filterDangerMessage'), { name }),
+        confirmLabel: t('attrs.filterDangerConfirm'),
+        onConfirm: () => void commit()
+      })
+    } else {
+      void commit()
+    }
+  }
+
+  const dropFilter = (filter: FilterDriverInfo): void =>
+    openModal({
+      kind: 'confirm',
+      danger: true,
+      title: t('attrs.filterRemoveTitle'),
+      message: interp(t('attrs.filterRemoveMessage'), { name: filter.name }),
+      confirmLabel: t('attrs.remove'),
+      onConfirm: () =>
+        void repoActions
+          .setFilterDriver(repoPath, filter.name, { clean: '', smudge: '', required: false })
+          .then(() => load())
+    })
 
   return (
     <div className="attrs-modal">
@@ -271,6 +359,118 @@ export function AttributesModal({ repoPath }: { repoPath: string }): React.JSX.E
             </button>
           ))}
         </div>
+      </div>
+
+      <div className="attrs-section">
+        <div className="attrs-section-head">
+          <Filter size={13} /> {t('attrs.filtersTitle')}
+        </div>
+        <p className="settings-hint">{t('attrs.filtersHint')}</p>
+        {filters.map((filter) => (
+          <div key={`${filter.scope}:${filter.name}`} className="attrs-driver">
+            <code>filter={filter.name}</code>
+            <span
+              className="attrs-driver-cmd"
+              title={[filter.clean, filter.smudge].filter(Boolean).join(' ⇄ ')}
+            >
+              {[filter.clean, filter.smudge].filter(Boolean).join(' ⇄ ')}
+            </span>
+            {(!filter.cleanAvailable || !filter.smudgeAvailable) && (
+              <span className="attrs-missing">
+                <AlertTriangle size={11} /> {t('attrs.driverMissing')}
+              </span>
+            )}
+            <button
+              className="icon-btn tiny"
+              title={t('attrs.remove')}
+              disabled={busy}
+              onClick={() => dropFilter(filter)}
+            >
+              <Trash2 size={12} />
+            </button>
+          </div>
+        ))}
+        <div className="attrs-add">
+          <input
+            className="modal-input attrs-pattern-input"
+            value={fPattern}
+            spellCheck={false}
+            placeholder="*.secret" // i18n-ignore a glob pattern, not prose
+            onChange={(e) => setFPattern(e.target.value)}
+          />
+          <input
+            className="modal-input attrs-pattern-input"
+            value={fName}
+            spellCheck={false}
+            placeholder="vault" // i18n-ignore a driver name, not prose
+            onChange={(e) => setFName(e.target.value)}
+          />
+        </div>
+        <div className="attrs-add">
+          <input
+            className="modal-input"
+            value={fClean}
+            spellCheck={false}
+            placeholder={t('attrs.filterCleanPh')}
+            onChange={(e) => setFClean(e.target.value)}
+          />
+          <input
+            className="modal-input"
+            value={fSmudge}
+            spellCheck={false}
+            placeholder={t('attrs.filterSmudgePh')}
+            onChange={(e) => setFSmudge(e.target.value)}
+          />
+        </div>
+        <div className="attrs-add">
+          <label className="settings-hint">
+            <input type="checkbox" checked={fRequired} onChange={(e) => setFRequired(e.target.checked)} />{' '}
+            {t('attrs.filterRequired')}
+          </label>
+          <button
+            className="btn ghost small"
+            disabled={busy || !fPattern.trim() || !fClean.trim()}
+            onClick={dryRun}
+          >
+            <FlaskConical size={13} /> {t('attrs.filterDryRun')}
+          </button>
+          <button
+            className="btn primary small"
+            disabled={busy || !fName.trim() || !fClean.trim() || !dry || dryKey !== filterInputsKey}
+            title={!dry || dryKey !== filterInputsKey ? t('attrs.filterDryRunFirst') : undefined}
+            onClick={saveFilter}
+          >
+            <Plus size={13} /> {t('attrs.filterSave')}
+          </button>
+        </div>
+        {dry && (
+          <div className="attrs-check">
+            <span className="settings-hint">
+              {dry.matched === 0
+                ? t('attrs.filterNoMatches')
+                : interp(t('attrs.filterMatched'), { n: dry.matched, m: dry.tested.length })}
+            </span>
+            {dry.tested.map((result) => (
+              <div key={result.file} className="attrs-row">
+                <code className="attrs-pattern">{result.file}</code>
+                <span className="attrs-attrs" title={result.preview}>
+                  {!result.ok
+                    ? result.error
+                    : result.roundtrip === 'ok'
+                      ? t('attrs.filterRoundtripOk')
+                      : result.roundtrip === 'different'
+                        ? t('attrs.filterRoundtripDifferent')
+                        : t('attrs.filterRoundtripSkipped')}
+                </span>
+                {(!result.ok || result.roundtrip === 'different') && (
+                  <span className="attrs-missing">
+                    <AlertTriangle size={11} />
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

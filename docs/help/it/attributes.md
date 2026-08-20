@@ -108,12 +108,49 @@ sicurezza che vale la pena conservare. I driver inclusi, inoltre, puntano al
 la regola `diff=word` e, finché non collega un proprio convertitore (Gitcito o
 altro), il vecchio diff illeggibile. Scrivilo nel tuo README.
 
+## Filtri clean/smudge — con una prova a secco prima
+
+Un **filtro** riscrive il contenuto in entrata e in uscita dal repository:
+`clean` gira allo stage (albero di lavoro → repo), `smudge` al checkout (repo →
+albero di lavoro). È così che funziona git-lfs, ed è così che i team eliminano
+credenziali o rumore generato da ciò che viene committato.
+
+È anche la cosa più pericolosa a cui `.gitattributes` possa puntare: un filtro
+gira a **ogni checkout di ogni file corrispondente**, e uno sbagliato corrompe
+in silenzio il tuo albero di lavoro. Per questo qui Gitcito si rifiuta di
+essere una semplice casella di testo.
+Configurare un filtro passa per una **prova a secco** contro file reali del tuo
+repository che corrispondono:
+
+1. Il comando `clean` gira su una copia di ogni file corrispondente (fino a
+   cinque) — niente nel repository o nella sua configurazione viene toccato.
+2. Se è indicato un comando `smudge`, gira sull'output pulito e il risultato
+   viene confrontato byte per byte con l'originale — la **verifica di andata e
+   ritorno**. Un filtro che non completa il giro significa che un checkout non
+   ripristinerà quello che avevi.
+3. Solo dopo una prova a secco su esattamente i valori che stai salvando il
+   pulsante di salvataggio si attiva. Una prova a secco fallita — errore del
+   comando, nessun file corrispondente, o un'andata e ritorno che differisce —
+   si può comunque salvare, ma solo attraverso un avviso esplicito che dice
+   cosa si può perdere.
+
+Salvare scrive `filter.<name>.clean/smudge` nella tua configurazione git
+**locale** e la regola `filter=<name>` nel file di attributi, e lascia una voce
+di annullamento che ripristina ciò che la configurazione conteneva prima.
+L'interruttore **required** imposta `filter.<name>.required`, con cui git fa
+fallire l'operazione invece di lasciar passare i file in silenzio quando il
+filtro si rompe.
+
+I limiti, detti chiaramente: la prova a secco campiona fino a cinque file
+corrispondenti di al massimo 5 MB ciascuno, con un timeout di 10 secondi per
+comando — un filtro che si comporta bene sul campione può comportarsi male su
+un file che il campione non ha visto. I comandi vivono nella *tua*
+configurazione, quindi un collega che clona riceve la regola `filter=<name>` ma
+non i comandi; senza di essi (e senza **required**) i suoi file passano
+invariati.
+
 ## Limiti da conoscere
 
-- **I filtri clean/smudge non sono offerti qui.** Le regole `filter=<name>` si
-  possono scrivere a mano, ma Gitcito non configura i comandi: un filtro gira a
-  ogni checkout di ogni file corrispondente, e uno sbagliato corrompe in silenzio
-  il tuo albero di lavoro.
 - **`text=auto` cambia cosa viene committato**, normalizzando i fine riga in
   ingresso. Su un repository esistente, aggiungilo e poi esegui
   `git add --renormalize .` deliberatamente, in un commit tutto suo.

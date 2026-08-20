@@ -1,5 +1,17 @@
 
 
+## [3.17.0](https://github.com/MyAppDesk/gitcito/compare/v3.16.0...v3.17.0) (2026-08-20)
+
+
+### Features
+
+* add bundled textconv support for Word, Excel, and JSON ([1f69fb1](https://github.com/MyAppDesk/gitcito/commit/1f69fb18820d121c6b3040ca4e9a4e51340cbae1))
+* add filter driver management and dry run functionality ([92f19e4](https://github.com/MyAppDesk/gitcito/commit/92f19e4143cecdfe498af2bc57abbae15cfed773))
+* add GitLab support for pull request handling ([51ab11b](https://github.com/MyAppDesk/gitcito/commit/51ab11b07c2c1f7b4dcbb48ba23a06d9588a2cd9))
+* add support for running workflows across multiple commits ([7ae89e9](https://github.com/MyAppDesk/gitcito/commit/7ae89e939908c34fad9666d976cf7af9c62527d2))
+* enhance accessibility with ARIA roles and labels ([fe46298](https://github.com/MyAppDesk/gitcito/commit/fe46298a3a58ed10c62ef2ec3ef341a55c532480))
+* enhance git notes handling and bundle structure ([914030f](https://github.com/MyAppDesk/gitcito/commit/914030fb864c8e1dcc7671e8cc6b4872a6999919))
+
 ## [3.16.0](https://github.com/MyAppDesk/gitcito/compare/v3.15.0...v3.16.0) (2026-08-20)
 
 

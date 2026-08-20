@@ -1,5 +1,23 @@
 
 
+## [3.16.0](https://github.com/MyAppDesk/gitcito/compare/v3.15.0...v3.16.0) (2026-08-20)
+
+
+### Features
+
+* add branch dropdown context actions ([#11](https://github.com/MyAppDesk/gitcito/issues/11)) ([49be7bd](https://github.com/MyAppDesk/gitcito/commit/49be7bd62bc497dae90bc4f2c54e3b2ad30f58c6))
+* add context menus for PRs, issues, milestones, and releases ([ec4b99b](https://github.com/MyAppDesk/gitcito/commit/ec4b99b52478c5d09304204c8bcd67a93e6c46b0))
+
+
+### Bug Fixes
+
+* update landing page features and translations ([58057de](https://github.com/MyAppDesk/gitcito/commit/58057dedfb3fd65fab29488bd50425ebd21f45b4))
+
+
+### Performance Improvements
+
+* optimize memory usage with byte-bound LRU cache ([a053513](https://github.com/MyAppDesk/gitcito/commit/a053513c6ba40ab69ccba2c19c261deb3666fbb7))
+
 ## [3.15.0](https://github.com/MyAppDesk/gitcito/compare/v3.14.0...v3.15.0) (2026-08-19)
 
 

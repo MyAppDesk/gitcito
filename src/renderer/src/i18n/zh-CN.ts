@@ -756,9 +756,10 @@ export const zhCN: Dict = {
   'attrs.checkNothing': '这个路径上没有设置任何属性。',
   'attrs.driversTitle': '差异驱动',
   'attrs.driversHint':
-    '差异驱动会在 git 比较之前，把一个不可读的文件先转成文本，这样一份 Word 文档或 PDF 才会有真正读得懂的历史。Gitcito 不附带任何转换器——这台机器上装了的会列出来可选，其余的置灰。',
+    'diff 驱动会在 git 比较之前把无法阅读的文件转换成文本，让 Word 文档或电子表格拥有可读的历史。Word、Excel 和 JSON 使用 Gitcito 自带的转换器；其余的在已安装时提供，否则显示为灰色。',
   'attrs.driverMissing': '转换器未安装',
   'attrs.needsBinary': '需要 PATH 中有 {binary}。',
+  'attrs.bundledConverter': '随 Gitcito 附带——无需安装。',
   'cmd.objects': '对象浏览器',
   'objects.title': '对象浏览器',
   'objects.intro': 'git 存的一切只有四种对象——提交、树、blob、标签——外加指向它们的 ref。在这里逐层走一遍。本页面不会改动任何东西。',

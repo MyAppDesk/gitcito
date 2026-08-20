@@ -56,17 +56,19 @@ keywords: gitattributes 属性 attributes 差异驱动 diff driver textconv 合�
 1. git config 里的 `diff.<name>.textconv`——转换器命令。
 2. `.gitattributes` 里的 `*.docx diff=<name>`——它适用于哪些文件。
 
-这里的按钮一次把两件都做了。Gitcito **一个转换器都不附带**，而且也不假装附带了：它检查你的 PATH，只提供真正装好的那些，其余的置灰，并写明它需要哪个可执行程序。
+这里的按钮一次把两件都做了。对 Word、Excel 和 JSON，Gitcito **自己附带了转换器**——就是它的预览所用的那套文档解析，以应用内一条小小的 `gitcito-textconv` 命令的形式提供——所以这三个什么都不用装就能用。其余的仍然需要你 PATH 里有真正的工具：Gitcito 会检查，并把缺的置灰，而不是写下一条在第一次对比时就失败的驱动。
 
 | 驱动 | 需要 | 给你什么 |
 |--------|-------|-----------|
-| `word` | `pandoc` | `.docx` 的散文级差异 |
+| `word` | 无——随 Gitcito 附带 | `.docx` 的散文级差异 |
+| `excel` | 无——随 Gitcito 附带 | `.xlsx`/`.xls` 的按行差异（每个工作表一份 CSV） |
+| `json` | 无——随 Gitcito 附带 | 键已排序、结果稳定的 JSON 差异 |
 | `pdf` | `pdftotext`（poppler） | `.pdf` 的文本差异 |
-| `excel` | `xlsx2csv` | 电子表格的按行差异 |
 | `exif` | `exiftool` | 当像素本身看不出名堂时，一张图片改了什么 |
-| `json` | `jq` | 键已排序、结果稳定的 JSON 差异 |
 
-转换器那一半住在**你的**配置里，而不在仓库里——git 不会去运行一次克隆递给你的命令，这是一条值得守住的安全性质。所以一个克隆下来的同事拿到的是 `diff=word` 这条规则，而在他装上 pandoc 之前，看到的还是那份没法读的旧差异。在你的 README 里说一声。
+附带的转换器的限制，明说：`.doc`（老式二进制 Word 格式）不认识，只认 `.docx`；PDF 没有覆盖——Gitcito 是用浏览器的查看器来预览 PDF 的，没有可以复用的文本提取器；另外每对比一次文档都要付出一小段转换器启动的开销。设置 `git config diff.<name>.cachetextconv true` 可以让 git 按 blob 缓存输出。
+
+转换器那一半住在**你的**配置里，而不在仓库里——git 不会去运行一次克隆递给你的命令，这是一条值得守住的安全性质。附带的驱动还指向的是*你的* Gitcito 安装路径，所以一个克隆下来的同事拿到的是 `diff=word` 这条规则，而在他接好自己的转换器（Gitcito 或别的）之前，看到的还是那份没法读的旧差异。在你的 README 里说一声。
 
 ## 值得知道的限制
 

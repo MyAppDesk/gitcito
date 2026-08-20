@@ -82,23 +82,35 @@ Twee helften, en beide zijn nodig:
 2. `*.docx diff=<name>` in `.gitattributes` — op welke bestanden het van
    toepassing is.
 
-De knoppen hier doen allebei tegelijk. Gitcito **levert geen enkele van deze
-converters mee** en doet ook niet alsof: het kijkt in je PATH en biedt alleen aan
-wat echt geïnstalleerd is, met de rest grijs en de benodigde binary erbij.
+De knoppen hier doen allebei tegelijk. Voor Word, Excel en JSON **levert
+Gitcito de converter zelf mee** — dezelfde documentanalyse die zijn
+voorvertoningen gebruiken, beschikbaar als een klein `gitcito-textconv`-commando
+in de app — dus die drie werken zonder iets te installeren. De rest heeft nog
+steeds een echt hulpmiddel in je PATH nodig: Gitcito controleert dat en grijst
+uit wat ontbreekt, in plaats van een driver te schrijven die bij de eerste diff
+faalt.
 
 | Driver | Vereist | Levert je op |
 |--------|---------|--------------|
-| `word` | `pandoc` | Prozadiffs van `.docx` |
+| `word` | niets — zit bij Gitcito | Prozadiffs van `.docx` |
+| `excel` | niets — zit bij Gitcito | Rijdiffs (CSV per werkblad) van `.xlsx`/`.xls` |
+| `json` | niets — zit bij Gitcito | Op sleutel gesorteerde, stabiele JSON-diffs |
 | `pdf` | `pdftotext` (poppler) | Tekstdiffs van `.pdf` |
-| `excel` | `xlsx2csv` | Rijdiffs van spreadsheets |
 | `exif` | `exiftool` | Wat er aan een afbeelding veranderde, als de pixels ondoorzichtig zijn |
-| `json` | `jq` | Op sleutel gesorteerde, stabiele JSON-diffs |
+
+De grenzen van de meegeleverde converter, zonder omhaal: `.doc` (het oude
+binaire Word-formaat) wordt niet begrepen, alleen `.docx`; PDF valt erbuiten —
+Gitcito toont PDF's met de viewer van de browser en heeft geen tekstextractor
+om te hergebruiken; en elke diff van een document betaalt een korte opstarttijd
+van de converter. Met `git config diff.<name>.cachetextconv true` cachet git de
+uitvoer per blob.
 
 De converterhelft staat in **jouw** config, niet in de repository — git draait
 geen commando's die een kloon je aanreikt, en dat is een beveiligingseigenschap
-die het waard is om te behouden. Een collega die kloont krijgt dus wel de
-`diff=word`-regel en, tot die pandoc installeert, de oude onleesbare diff. Zet
-dat in je README.
+die het waard is om te behouden. De meegeleverde drivers wijzen bovendien naar
+*jouw* Gitcito-installatiepad, dus een collega die kloont krijgt wel de
+`diff=word`-regel en, tot die een eigen converter aansluit (Gitcito of iets
+anders), de oude onleesbare diff. Zet dat in je README.
 
 ## Grenzen die je moet kennen
 

@@ -756,9 +756,10 @@ export const ko: Dict = {
   'attrs.checkNothing': '이 경로에 설정된 것이 없습니다.',
   'attrs.driversTitle': 'diff 드라이버',
   'attrs.driversHint':
-    'diff 드라이버는 읽을 수 없는 파일을 git이 비교하기 전에 텍스트로 바꿔 줍니다. 그래서 Word 문서나 PDF도 실제로 읽을 수 있는 히스토리를 갖게 됩니다. Gitcito는 이런 변환기를 함께 배포하지 않습니다 — 이 기기에 설치된 것만 고를 수 있고 나머지는 흐리게 표시됩니다.',
+    'diff 드라이버는 git이 비교하기 전에 읽을 수 없는 파일을 텍스트로 바꿔, Word 문서나 스프레드시트의 역사를 읽을 수 있게 합니다. Word, Excel, JSON은 Gitcito에 포함된 변환기를 사용하고, 나머지는 설치된 경우에만 제공되며 아니면 회색으로 표시됩니다.',
   'attrs.driverMissing': '변환기가 설치되지 않음',
   'attrs.needsBinary': 'PATH에 {binary} — 이 실행 파일이 필요합니다.',
+  'attrs.bundledConverter': 'Gitcito에 포함되어 있어 설치할 것이 없습니다.',
   'cmd.objects': '객체 탐색기',
   'objects.title': '객체 탐색기',
   'objects.intro': 'git이 저장하는 것은 결국 네 종류의 객체 — 커밋, 트리, blob, 태그 — 와 그것을 가리키는 ref뿐입니다. 여기서 그것들을 따라 걸어 보세요. 이 화면은 아무것도 바꾸지 않습니다.',

@@ -741,9 +741,10 @@ export const fr: Dict = {
   'attrs.checkNothing': 'Rien n’est défini pour ce chemin.',
   'attrs.driversTitle': 'Pilotes de diff',
   'attrs.driversHint':
-    'Un pilote de diff transforme un fichier illisible en texte avant que git ne le compare, pour qu’un document Word ou un PDF ait enfin un historique lisible. Gitcito ne fournit aucun de ces convertisseurs — ceux qui sont installés ici sont proposés, les autres sont grisés.',
+    'Un pilote de diff transforme un fichier illisible en texte avant que git ne le compare : un document Word ou un tableur a ainsi un historique lisible. Word, Excel et JSON utilisent le convertisseur fourni avec Gitcito ; les autres sont proposés s’ils sont installés, grisés sinon.',
   'attrs.driverMissing': 'convertisseur non installé',
   'attrs.needsBinary': 'Nécessite {binary} dans votre PATH.',
+  'attrs.bundledConverter': 'Inclus avec Gitcito — rien à installer.',
   'cmd.objects': 'Explorateur d’objets',
   'objects.title': 'Explorateur d’objets',
   'objects.intro': 'Tout ce que git stocke tient en quatre sortes d’objets — commits, arbres, blobs, étiquettes — plus des réfs qui pointent dessus. Parcourez-les ici. Rien sur cette page ne modifie quoi que ce soit.',

@@ -1567,6 +1567,13 @@ describe('gitattributes', () => {
       expect(suggestion.patterns.length).toBeGreaterThan(0)
       expect(typeof suggestion.available).toBe('boolean')
     }
+    // word/excel/json ride the converter Gitcito ships — always available.
+    for (const name of ['word', 'excel', 'json']) {
+      const s = suggestions.find((x) => x.name === name)!
+      expect(s.bundled).toBe(true)
+      expect(s.available).toBe(true)
+      expect(s.textconv).toContain('gitcito-textconv')
+    }
   })
 })
 

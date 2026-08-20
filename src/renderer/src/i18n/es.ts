@@ -752,9 +752,10 @@ export const es: Dict = {
   'attrs.checkNothing': 'No hay nada definido para esta ruta.',
   'attrs.driversTitle': 'Controladores de diff',
   'attrs.driversHint':
-    'Un controlador de diff convierte un archivo ilegible en texto antes de que git lo compare, así un documento de Word o un PDF tienen un historial que se puede leer. Gitcito no incluye ninguno de estos conversores: se ofrecen los instalados aquí y el resto queda en gris.',
+    'Un controlador de diff convierte un archivo ilegible en texto antes de que git lo compare, así un documento de Word o una hoja de cálculo tienen un historial que se puede leer. Word, Excel y JSON usan el conversor que Gitcito incluye; el resto se ofrece si está instalado y queda en gris si no.',
   'attrs.driverMissing': 'conversor no instalado',
   'attrs.needsBinary': 'Necesita {binary} en tu PATH.',
+  'attrs.bundledConverter': 'Incluido con Gitcito: no hay nada que instalar.',
   'cmd.objects': 'Explorador de objetos',
   'objects.title': 'Explorador de objetos',
   'objects.intro': 'Todo lo que git guarda son cuatro tipos de objeto — commits, árboles, blobs, etiquetas — y referencias que apuntan a ellos. Recórrelos aquí. Nada de esta página cambia nada.',

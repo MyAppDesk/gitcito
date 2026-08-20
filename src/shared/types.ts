@@ -2045,8 +2045,10 @@ export interface DiffDriverSuggestion {
   patterns: string[]
   /** The textconv command line. */
   textconv: string
-  /** The binary it needs. */
+  /** The binary it needs ('' when Gitcito ships the converter itself). */
   binary: string
+  /** True when the converter is the one Gitcito ships — nothing to install. */
+  bundled?: boolean
   available: boolean
 }
 

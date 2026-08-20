@@ -77,22 +77,32 @@ Two halves, and both are needed:
 1. `diff.<name>.textconv` in git config — the converter command.
 2. `*.docx diff=<name>` in `.gitattributes` — which files it applies to.
 
-The buttons here do both at once. Gitcito **ships none of these converters** and
-does not pretend otherwise: it checks your PATH and offers only what is really
-installed, greying out the rest with the binary it would need.
+The buttons here do both at once. For Word, Excel and JSON, Gitcito **ships the
+converter itself** — the same document parsing its previews use, exposed as a
+small `gitcito-textconv` command inside the app — so those three work with
+nothing installed. The rest still need a real tool on your PATH: Gitcito checks
+and greys out what is missing rather than writing a driver that fails at the
+first diff.
 
 | Driver | Needs | Gives you |
 |--------|-------|-----------|
-| `word` | `pandoc` | Prose diffs of `.docx` |
+| `word` | nothing — ships with Gitcito | Prose diffs of `.docx` |
+| `excel` | nothing — ships with Gitcito | Row diffs (CSV per sheet) of `.xlsx`/`.xls` |
+| `json` | nothing — ships with Gitcito | Key-sorted, stable JSON diffs |
 | `pdf` | `pdftotext` (poppler) | Text diffs of `.pdf` |
-| `excel` | `xlsx2csv` | Row diffs of spreadsheets |
 | `exif` | `exiftool` | What changed about an image, when the pixels are opaque |
-| `json` | `jq` | Key-sorted, stable JSON diffs |
+
+The bundled converter's limits, stated plainly: `.doc` (the old binary Word
+format) is not understood, only `.docx`; PDF is not covered — Gitcito previews
+PDFs with the browser's viewer and has no text extractor to reuse; and each
+diff of a document pays a short converter start-up cost. Setting
+`git config diff.<name>.cachetextconv true` makes git cache the output per blob.
 
 The converter half lives in **your** config, not in the repository — git will
 not run commands a clone hands you, which is a security property worth keeping.
-So a teammate who clones gets the `diff=word` rule and, until they install
-pandoc, the old unreadable diff. Say so in your README.
+The bundled drivers also point at *your* Gitcito install path, so a teammate
+who clones gets the `diff=word` rule and, until they wire their own converter
+(Gitcito or otherwise), the old unreadable diff. Say so in your README.
 
 ## Limits worth knowing
 

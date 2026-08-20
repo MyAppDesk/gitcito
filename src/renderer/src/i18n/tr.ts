@@ -741,9 +741,10 @@ export const tr: Dict = {
   'attrs.checkNothing': 'Bu yol için ayarlanmış bir şey yok.',
   'attrs.driversTitle': 'Fark sürücüleri',
   'attrs.driversHint':
-    'Bir fark sürücüsü, git karşılaştırmadan önce okunamayan bir dosyayı metne çevirir; böylece bir Word belgesinin ya da bir PDF’in gerçekten okuyabileceğiniz bir geçmişi olur. Gitcito bu dönüştürücülerin hiçbirini içermez — burada kurulu olanlar sunulur, geri kalanlar soluk görünür.',
+    'Bir diff sürücüsü, git karşılaştırmadan önce okunamayan bir dosyayı metne çevirir; böylece bir Word belgesinin veya tablonun okunabilir bir geçmişi olur. Word, Excel ve JSON, Gitcito ile gelen dönüştürücüyü kullanır; diğerleri kuruluysa sunulur, değilse gri görünür.',
   'attrs.driverMissing': 'dönüştürücü kurulu değil',
   'attrs.needsBinary': 'PATH üzerinde {binary} gerekiyor.',
+  'attrs.bundledConverter': 'Gitcito ile birlikte gelir — kurulacak bir şey yok.',
   'cmd.objects': 'Nesne gezgini',
   'objects.title': 'Nesne gezgini',
   'objects.intro': 'Git’in sakladığı her şey dört tür nesnedir — commit, ağaç, blob, etiket — ve onları gösteren ref’ler. Burada aralarında dolaşın. Bu sayfadaki hiçbir şey bir şeyi değiştirmez.',

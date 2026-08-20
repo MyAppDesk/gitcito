@@ -27,12 +27,6 @@ of every matching file**, and a wrong one corrupts a working tree quietly. Doing
 it properly means a dry run against real files and a way back — a feature of its
 own, not a text box.
 
-### Diff converters Gitcito supplies itself
-Diff drivers work, but only with a converter already on your PATH — `pandoc`,
-`pdftotext`, `jq`. Gitcito already parses `.docx`, `.xlsx` and PDF for its
-previews; exposing that as a `textconv` git can call would make those diffs work
-with nothing installed. The work is a stable CLI entry point, not the parsing.
-
 ### Issue trackers beyond GitHub
 Branch-from-issue and smart commits against Jira or Linear. Both are what teams
 actually run, and both mean another token and another API surface.

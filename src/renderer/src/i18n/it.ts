@@ -742,9 +742,10 @@ export const it: Dict = {
   'attrs.checkNothing': 'Per questo percorso non è impostato niente.',
   'attrs.driversTitle': 'Driver di diff',
   'attrs.driversHint':
-    'Un driver di diff trasforma un file illeggibile in testo prima che git lo confronti, così un documento Word o un PDF hanno una cronologia che si riesce davvero a leggere. Gitcito non include nessuno di questi convertitori — quelli installati qui vengono proposti, gli altri restano in grigio.',
+    'Un driver di diff trasforma un file illeggibile in testo prima che git lo confronti, così un documento Word o un foglio di calcolo hanno una cronologia leggibile. Word, Excel e JSON usano il convertitore incluso in Gitcito; gli altri sono offerti se installati, altrimenti in grigio.',
   'attrs.driverMissing': 'convertitore non installato',
   'attrs.needsBinary': 'Richiede {binary} nel tuo PATH.',
+  'attrs.bundledConverter': 'Incluso in Gitcito: niente da installare.',
   'cmd.objects': 'Esploratore di oggetti',
   'objects.title': 'Esploratore di oggetti',
   'objects.intro': 'Tutto quello che git immagazzina sono quattro tipi di oggetto — commit, tree, blob, tag — e le ref che ci puntano. Qui li puoi percorrere. Niente in questa pagina cambia qualcosa.',

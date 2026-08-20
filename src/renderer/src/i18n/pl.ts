@@ -756,9 +756,10 @@ export const pl: Dict = {
   'attrs.checkNothing': 'Dla tej ścieżki nic nie jest ustawione.',
   'attrs.driversTitle': 'Sterowniki diffa',
   'attrs.driversHint':
-    'Sterownik diffa zamienia nieczytelny plik w tekst, zanim git go porówna, więc dokument Worda albo PDF dostaje historię, którą naprawdę da się czytać. Gitcito nie dostarcza żadnego z tych konwerterów — te zainstalowane tutaj są dostępne, reszta jest wyszarzona.',
+    'Sterownik diff zamienia nieczytelny plik na tekst, zanim git go porówna — dzięki temu dokument Worda czy arkusz ma czytelną historię. Word, Excel i JSON używają konwertera dołączonego do Gitcito; reszta jest oferowana, gdy jest zainstalowana, a w przeciwnym razie wyszarzona.',
   'attrs.driverMissing': 'konwerter niezainstalowany',
   'attrs.needsBinary': 'Wymaga {binary} w twoim PATH.',
+  'attrs.bundledConverter': 'Dołączony do Gitcito — nic nie trzeba instalować.',
   'cmd.objects': 'Eksplorator obiektów',
   'objects.title': 'Eksplorator obiektów',
   'objects.intro': 'Wszystko, co git przechowuje, to cztery rodzaje obiektów — commity, drzewa, bloby, tagi — i refy, które na nie wskazują. Tutaj możesz po nich chodzić. Nic na tej stronie niczego nie zmienia.',

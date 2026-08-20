@@ -741,9 +741,10 @@ export const ja: Dict = {
   'attrs.checkNothing': 'このパスには何も設定されていません。',
   'attrs.driversTitle': 'diff ドライバー',
   'attrs.driversHint':
-    'diff ドライバーは、読めないファイルを git が比べる前にテキストへ変換します。おかげで Word 文書や PDF にも、実際に読める履歴が生まれます。Gitcito は変換器を同梱していません — この環境に入っているものだけが選べ、残りは灰色表示になります。',
+    'diff ドライバーは、git が比較する前に読めないファイルをテキストに変換します。これで Word 文書やスプレッドシートの履歴が読めるようになります。Word・Excel・JSON は Gitcito に同梱のコンバーターを使います。それ以外はインストール済みなら提供され、なければグレー表示になります。',
   'attrs.driverMissing': '変換器が未インストール',
   'attrs.needsBinary': 'PATH 上に {binary} が必要です。',
+  'attrs.bundledConverter': 'Gitcito に同梱 — インストールは不要です。',
   'cmd.objects': 'オブジェクトエクスプローラー',
   'objects.title': 'オブジェクトエクスプローラー',
   'objects.intro': 'git が保存しているのは 4 種類のオブジェクト — コミット、ツリー、blob、タグ — と、それらを指す ref だけです。ここを歩いて回れます。このページで何かが変わることはありません。',

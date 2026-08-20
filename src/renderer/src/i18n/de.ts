@@ -756,9 +756,10 @@ export const de: Dict = {
   'attrs.checkNothing': 'Für diesen Pfad ist nichts gesetzt.',
   'attrs.driversTitle': 'Diff-Treiber',
   'attrs.driversHint':
-    'Ein Diff-Treiber verwandelt eine unlesbare Datei in Text, bevor git sie vergleicht — so bekommt ein Word-Dokument oder ein PDF eine Historie, die man wirklich lesen kann. Gitcito liefert keinen dieser Konverter mit: die hier installierten werden angeboten, der Rest ist ausgegraut.',
+    'Ein Diff-Treiber wandelt eine unlesbare Datei in Text um, bevor git sie vergleicht — so hat ein Word-Dokument oder eine Tabelle eine lesbare Historie. Word, Excel und JSON nutzen den Konverter, den Gitcito mitliefert; der Rest wird angeboten, wenn er installiert ist, und sonst ausgegraut.',
   'attrs.driverMissing': 'Konverter nicht installiert',
   'attrs.needsBinary': 'Benötigt {binary} in deinem PATH.',
+  'attrs.bundledConverter': 'In Gitcito enthalten – nichts zu installieren.',
   'cmd.objects': 'Objekt-Explorer',
   'objects.title': 'Objekt-Explorer',
   'objects.intro': 'Alles, was git speichert, sind vier Arten von Objekten — Commits, Trees, Blobs, Tags — und Refs, die darauf zeigen. Hier kannst du sie durchlaufen. Nichts auf dieser Seite verändert irgendetwas.',

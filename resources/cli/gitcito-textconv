@@ -1,0 +1,25 @@
+#!/bin/sh
+# gitcito-textconv — the git textconv filter Gitcito ships.
+#
+# git invokes this with one argument, a path to (a temp copy of) the file,
+# and diffs whatever is printed to stdout. It turns .docx/.xlsx/.json into
+# plain text using Gitcito's own runtime, so document diffs work with no
+# pandoc/xlsx2csv/jq installed.
+#
+# Inside the packaged app this file lives at Contents/Resources/cli/, next to
+# app.asar and two levels below the executable. ELECTRON_RUN_AS_NODE turns
+# that executable into plain Node — no window, no second app instance, and
+# stdout flows back to git. In a source checkout it falls back to node and
+# the built output. It is NOT run from inside the app itself.
+
+DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+
+APP_BIN="$DIR/../../MacOS/Gitcito"
+ASAR_MAIN="$DIR/../app.asar/out/main/textconvCli.js"
+
+if [ -x "$APP_BIN" ] && [ -e "$DIR/../app.asar" ]; then
+  ELECTRON_RUN_AS_NODE=1 exec "$APP_BIN" "$ASAR_MAIN" "$@"
+fi
+
+# Source checkout: resources/cli/ sits at the repo root, the build in out/.
+exec node "$DIR/../../out/main/textconvCli.js" "$@"

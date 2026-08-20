@@ -79,24 +79,35 @@ dönüştürülmüş metni karşılaştırır.
 1. Git yapılandırmasında `diff.<name>.textconv` — dönüştürücü komutu.
 2. `.gitattributes` içinde `*.docx diff=<name>` — hangi dosyalara uygulanacağı.
 
-Buradaki düğmeler ikisini birden yapar. Gitcito **bu dönüştürücülerin hiçbirini
-paketinde getirmez** ve bunu gizlemez: PATH'inizi denetler, yalnızca gerçekten
-kurulu olanları sunar, kalanları ihtiyaç duydukları ikili dosyanın adıyla
-birlikte soluklaştırır.
+Buradaki düğmeler ikisini birden yapar. Word, Excel ve JSON için dönüştürücüyü
+**Gitcito'nun kendisi paketinde getirir** — önizlemelerinin kullandığı belge
+ayrıştırmanın aynısı, uygulamanın içinde küçük bir `gitcito-textconv` komutu
+olarak sunulur — dolayısıyla bu üçü hiçbir şey kurmadan çalışır. Geri
+kalanların hâlâ PATH'inizde gerçek bir araca ihtiyacı vardır: Gitcito bunu
+denetler ve eksik olanı soluklaştırır; ilk diff'te başarısız olacak bir sürücü
+yazmaz.
 
 | Sürücü | Gereksinimi | Size verdiği |
 |--------|-------------|--------------|
-| `word` | `pandoc` | `.docx` dosyalarının düzyazı diff'leri |
+| `word` | hiçbir şey — Gitcito ile gelir | `.docx` dosyalarının düzyazı diff'leri |
+| `excel` | hiçbir şey — Gitcito ile gelir | `.xlsx`/`.xls` dosyalarının satır bazlı diff'leri (sayfa başına CSV) |
+| `json` | hiçbir şey — Gitcito ile gelir | Anahtara göre sıralanmış, kararlı JSON diff'leri |
 | `pdf` | `pdftotext` (poppler) | `.pdf` dosyalarının metin diff'leri |
-| `excel` | `xlsx2csv` | Hesap tablolarının satır bazlı diff'leri |
 | `exif` | `exiftool` | Pikseller anlaşılmaz olduğunda bir görselde neyin değiştiği |
-| `json` | `jq` | Anahtara göre sıralanmış, kararlı JSON diff'leri |
+
+Paketle gelen dönüştürücünün sınırları, açıkça söylersek: `.doc` (Word'ün eski
+ikili biçimi) anlaşılmaz, yalnızca `.docx`; PDF kapsanmaz — Gitcito PDF'leri
+tarayıcının görüntüleyicisiyle önizler ve yeniden kullanabileceği bir metin
+çıkarıcısı yoktur; ayrıca bir belgenin her diff'i kısa bir dönüştürücü başlatma
+bedeli öder. `git config diff.<name>.cachetextconv true` ayarı, git'in çıktıyı
+blob başına önbelleğe almasını sağlar.
 
 Dönüştürücü yarısı **sizin** yapılandırmanızda yaşar, depoda değil — git, bir
 klonun size uzattığı komutları çalıştırmaz ve bu, korunmaya değer bir güvenlik
-özelliğidir. Dolayısıyla depoyu klonlayan bir ekip arkadaşınız `diff=word`
-kuralını alır ama pandoc'u kurana kadar yine eski okunaksız diff'i görür. Bunu
-README'nizde belirtin.
+özelliğidir. Paketle gelen sürücüler ayrıca *sizin* Gitcito kurulum yolunuzu
+gösterir; dolayısıyla depoyu klonlayan bir ekip arkadaşınız `diff=word`
+kuralını alır ama kendi dönüştürücüsünü (Gitcito ya da başka bir şey) bağlayana
+kadar yine eski okunaksız diff'i görür. Bunu README'nizde belirtin.
 
 ## Bilinmeye değer sınırlar
 

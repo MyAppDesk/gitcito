@@ -748,9 +748,10 @@ export const en = {
   'attrs.checkNothing': 'Nothing is set for this path.',
   'attrs.driversTitle': 'Diff drivers',
   'attrs.driversHint':
-    'A diff driver turns an unreadable file into text before git compares it, so a Word document or a PDF has a history you can actually read. Gitcito ships none of these converters — the ones installed here are offered, the rest are greyed out.',
+    'A diff driver turns an unreadable file into text before git compares it, so a Word document or a spreadsheet has a history you can actually read. Word, Excel and JSON use the converter Gitcito ships; the rest are offered when installed and greyed out when not.',
   'attrs.driverMissing': 'converter not installed',
   'attrs.needsBinary': 'Needs {binary} on your PATH.',
+  'attrs.bundledConverter': 'Included with Gitcito — nothing to install.',
   'cmd.objects': 'Object explorer',
   'objects.title': 'Object explorer',
   'objects.intro': 'Everything git stores is four kinds of object — commits, trees, blobs, tags — and refs pointing at them. Walk them here. Nothing on this page changes anything.',

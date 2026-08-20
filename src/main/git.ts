@@ -4,7 +4,7 @@ import { basename, dirname, join, resolve as resolvePath, sep } from 'path'
 import { pathToFileURL } from 'url'
 import { readFile, writeFile, unlink, stat, chmod, mkdir, readdir, rename, cp, open } from 'fs/promises'
 import { tmpdir, homedir } from 'os'
-import { existsSync } from 'fs'
+import { existsSync, accessSync, constants as fsConstants } from 'fs'
 import { spawn, spawnSync, execFile } from 'child_process'
 import { promisify } from 'util'
 
@@ -546,6 +546,35 @@ function hasBinary(command: string): boolean {
   } catch {
     return false
   }
+}
+
+/** The textconv shim Gitcito ships (resources/cli/gitcito-textconv). */
+export function bundledTextconvPath(): string {
+  // Packaged: extraResources puts cli/ next to app.asar. Source checkout and
+  // tests: resources/ sits at the repo root, two levels up from this file.
+  const packaged = process.resourcesPath ? join(process.resourcesPath, 'cli', 'gitcito-textconv') : ''
+  if (packaged && existsSync(packaged)) return packaged
+  return resolvePath(__dirname, '../../resources/cli/gitcito-textconv')
+}
+
+function canExecute(path: string): boolean {
+  try {
+    accessSync(path, fsConstants.X_OK)
+    return true
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Whether a configured textconv command can actually run: a path (quoted or
+ * not) is checked on disk, a bare command on PATH.
+ */
+export function converterAvailable(textconv: string): boolean {
+  const m = /^"([^"]+)"|^(\S+)/.exec(textconv.trim())
+  const cmd = m ? (m[1] ?? m[2]) : ''
+  if (!cmd) return false
+  return cmd.includes('/') || cmd.includes('\\') ? canExecute(cmd) : hasBinary(cmd)
 }
 
 /** How many removable paths a clean preview will size and show. */
@@ -3040,7 +3069,7 @@ export const gitService = {
           const name = /^diff\.(.*)\.textconv$/.exec(line.slice(0, space))?.[1]
           const textconv = line.slice(space + 1).trim()
           if (!name || !textconv) return null
-          return { name, textconv, available: hasBinary(textconv.split(/\s+/)[0]), scope }
+          return { name, textconv, available: converterAvailable(textconv), scope }
         })
         .filter((d): d is DiffDriverInfo => !!d)
     }
@@ -3051,17 +3080,21 @@ export const gitService = {
   // Takes the repo path it will never use: every repo-scoped method does, and
   // the dispatcher locks on it.
   async diffDriverSuggestions(_repoPath: string): Promise<DiffDriverSuggestion[]> {
-    // Each of these is a real, widely packaged tool. Gitcito does not ship any
-    // of them, so the UI says plainly which are missing rather than writing a
-    // driver that fails at the first diff.
-    const candidates: Omit<DiffDriverSuggestion, 'available'>[] = [
-      { name: 'word', patterns: ['*.docx', '*.doc'], textconv: 'pandoc --to=plain', binary: 'pandoc' },
-      { name: 'pdf', patterns: ['*.pdf'], textconv: 'pdftotext -layout - -', binary: 'pdftotext' },
-      { name: 'excel', patterns: ['*.xlsx', '*.xls'], textconv: 'xlsx2csv', binary: 'xlsx2csv' },
-      { name: 'exif', patterns: ['*.jpg', '*.jpeg', '*.png'], textconv: 'exiftool', binary: 'exiftool' },
-      { name: 'json', patterns: ['*.json'], textconv: 'jq --sort-keys .', binary: 'jq' }
+    // Word, Excel and JSON ride the converter Gitcito ships (resources/cli/
+    // gitcito-textconv), so they work with nothing installed. The rest still
+    // need a real tool on PATH, and the UI says plainly which are missing
+    // rather than writing a driver that fails at the first diff.
+    const shim = bundledTextconvPath()
+    const shimConv = `"${shim}"`
+    const shimOk = canExecute(shim)
+    const candidates: DiffDriverSuggestion[] = [
+      { name: 'word', patterns: ['*.docx'], textconv: shimConv, binary: '', bundled: true, available: shimOk },
+      { name: 'excel', patterns: ['*.xlsx', '*.xls'], textconv: shimConv, binary: '', bundled: true, available: shimOk },
+      { name: 'json', patterns: ['*.json'], textconv: shimConv, binary: '', bundled: true, available: shimOk },
+      { name: 'pdf', patterns: ['*.pdf'], textconv: 'pdftotext -layout - -', binary: 'pdftotext', available: hasBinary('pdftotext') },
+      { name: 'exif', patterns: ['*.jpg', '*.jpeg', '*.png'], textconv: 'exiftool', binary: 'exiftool', available: hasBinary('exiftool') }
     ]
-    return candidates.map((c) => ({ ...c, available: hasBinary(c.binary) }))
+    return candidates
   },
 
   /** Set (or clear) `diff.<name>.textconv`. */

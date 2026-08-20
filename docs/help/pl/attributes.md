@@ -79,24 +79,35 @@ Dwie połowy, i obie są potrzebne:
 1. `diff.<name>.textconv` w konfiguracji gita — polecenie konwertera.
 2. `*.docx diff=<name>` w `.gitattributes` — do jakich plików się stosuje.
 
-Przyciski tutaj robią jedno i drugie naraz. Gitcito **nie dostarcza żadnego
-z tych konwerterów** i nie udaje, że jest inaczej: sprawdza twój PATH i oferuje
-tylko to, co naprawdę jest zainstalowane, wyszarzając resztę razem z nazwą
-programu, którego by potrzebowała.
+Przyciski tutaj robią jedno i drugie naraz. Dla Worda, Excela i JSON-a Gitcito
+**dostarcza konwerter samodzielnie** — to samo parsowanie dokumentów, którego
+używają jego podglądy, wystawione jako małe polecenie `gitcito-textconv`
+wewnątrz aplikacji — więc te trzy działają bez instalowania czegokolwiek.
+Reszta wciąż potrzebuje prawdziwego narzędzia w twoim PATH: Gitcito to sprawdza
+i wyszarza to, czego brakuje, zamiast pisać sterownik, który zawiedzie przy
+pierwszym diffie.
 
 | Sterownik | Potrzebuje | Daje ci |
 |--------|-------|-----------|
-| `word` | `pandoc` | Diffy prozy w `.docx` |
+| `word` | niczego — dostarczany z Gitcito | Diffy prozy w `.docx` |
+| `excel` | niczego — dostarczany z Gitcito | Diffy wierszy (CSV na arkusz) w `.xlsx`/`.xls` |
+| `json` | niczego — dostarczany z Gitcito | Stabilne diffy JSON-a z posortowanymi kluczami |
 | `pdf` | `pdftotext` (poppler) | Diffy tekstu w `.pdf` |
-| `excel` | `xlsx2csv` | Diffy wierszy arkuszy |
 | `exif` | `exiftool` | Co zmieniło się w obrazie, gdy piksele są nieprzeniknione |
-| `json` | `jq` | Stabilne diffy JSON-a z posortowanymi kluczami |
+
+Granice dołączonego konwertera, powiedziane wprost: `.doc` (stary, binarny
+format Worda) nie jest rozumiany — tylko `.docx`; PDF nie jest objęty —
+Gitcito podgląda PDF-y podglądem przeglądarki i nie ma ekstraktora tekstu,
+którego mógłby użyć ponownie; a każdy diff dokumentu płaci krótki koszt
+uruchomienia konwertera. Ustawienie `git config diff.<name>.cachetextconv true`
+sprawia, że git cache'uje wynik dla każdego bloba.
 
 Połowa konwerterowa mieszka w **twojej** konfiguracji, a nie w repozytorium —
 git nie uruchomi poleceń, które podsuwa ci klon, i jest to własność
-bezpieczeństwa warta zachowania. Kolega z zespołu, który sklonuje, dostanie więc
-regułę `diff=word` i — dopóki nie zainstaluje pandoca — stary, nieczytelny diff.
-Napisz o tym w swoim README.
+bezpieczeństwa warta zachowania. Dołączone sterowniki wskazują też na *twoją*
+ścieżkę instalacji Gitcito, więc kolega z zespołu, który sklonuje, dostanie
+regułę `diff=word` i — dopóki nie podłączy własnego konwertera (Gitcito lub
+innego) — stary, nieczytelny diff. Napisz o tym w swoim README.
 
 ## Ograniczenia warte wiedzy
 

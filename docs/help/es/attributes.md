@@ -81,24 +81,34 @@ Dos mitades, y hacen falta las dos:
 1. `diff.<name>.textconv` en la configuración de git — el comando conversor.
 2. `*.docx diff=<name>` en `.gitattributes` — a qué archivos aplica.
 
-Los botones de aquí hacen las dos cosas de golpe. Gitcito **no incluye ninguno
-de esos conversores** y no disimula al respecto: comprueba tu PATH y ofrece solo
-lo que hay realmente instalado, dejando el resto en gris con el binario que
-haría falta.
+Los botones de aquí hacen las dos cosas de golpe. Para Word, Excel y JSON,
+Gitcito **incluye el conversor él mismo** — el mismo análisis de documentos que
+usan sus vistas previas, expuesto como un pequeño comando `gitcito-textconv`
+dentro de la app — así que esos tres funcionan sin instalar nada. El resto
+sigue necesitando una herramienta real en tu PATH: Gitcito lo comprueba y deja
+en gris lo que falta, en vez de escribir un driver que falla al primer diff.
 
 | Driver | Necesita | Te da |
 |--------|-------|-----------|
-| `word` | `pandoc` | Diffs de prosa de los `.docx` |
+| `word` | nada — viene con Gitcito | Diffs de prosa de los `.docx` |
+| `excel` | nada — viene con Gitcito | Diffs por filas (CSV por hoja) de los `.xlsx`/`.xls` |
+| `json` | nada — viene con Gitcito | Diffs de JSON estables y con las claves ordenadas |
 | `pdf` | `pdftotext` (poppler) | Diffs de texto de los `.pdf` |
-| `excel` | `xlsx2csv` | Diffs por filas de hojas de cálculo |
 | `exif` | `exiftool` | Qué cambió en una imagen, cuando los píxeles son opacos |
-| `json` | `jq` | Diffs de JSON estables y con las claves ordenadas |
+
+Los límites del conversor incluido, dichos sin rodeos: `.doc` (el viejo formato
+binario de Word) no se entiende, solo `.docx`; el PDF no está cubierto —
+Gitcito previsualiza los PDF con el visor del navegador y no tiene extractor de
+texto que reutilizar —; y cada diff de un documento paga un breve coste de
+arranque del conversor. Con `git config diff.<name>.cachetextconv true`, git
+cachea la salida por blob.
 
 La mitad del conversor vive en **tu** configuración, no en el repositorio — git
 no va a ejecutar comandos que te entregue un clon, y esa es una propiedad de
-seguridad que merece la pena conservar. Así que un compañero que clone recibirá
-la regla `diff=word` y, hasta que instale pandoc, el viejo diff ilegible. Dilo
-en tu README.
+seguridad que merece la pena conservar. Los drivers incluidos, además, apuntan
+a *tu* ruta de instalación de Gitcito, así que un compañero que clone recibirá
+la regla `diff=word` y, hasta que conecte su propio conversor (Gitcito u otro),
+el viejo diff ilegible. Dilo en tu README.
 
 ## Límites que conviene conocer
 

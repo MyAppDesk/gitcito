@@ -248,9 +248,11 @@ export function AttributesModal({ repoPath }: { repoPath: string }): React.JSX.E
               className="btn ghost tiny"
               disabled={busy || !suggestion.available}
               title={
-                suggestion.available
-                  ? suggestion.textconv
-                  : interp(t('attrs.needsBinary'), { binary: suggestion.binary })
+                suggestion.bundled
+                  ? t('attrs.bundledConverter')
+                  : suggestion.available
+                    ? suggestion.textconv
+                    : interp(t('attrs.needsBinary'), { binary: suggestion.binary })
               }
               onClick={() => {
                 void repoActions

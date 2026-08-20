@@ -757,9 +757,10 @@ export const nl: Dict = {
   'attrs.checkNothing': 'Voor dit pad is niets ingesteld.',
   'attrs.driversTitle': 'Diff-drivers',
   'attrs.driversHint':
-    'Een diff-driver maakt tekst van een onleesbaar bestand voordat git het vergelijkt, zodat een Word-document of een PDF een geschiedenis krijgt die je echt kunt lezen. Gitcito levert zelf geen van deze converters mee — de converters die hier geïnstalleerd staan worden aangeboden, de rest staat grijs.',
+    'Een diff-driver zet een onleesbaar bestand om in tekst voordat git het vergelijkt, zodat een Word-document of spreadsheet een leesbare geschiedenis heeft. Word, Excel en JSON gebruiken de converter die Gitcito meelevert; de rest wordt aangeboden indien geïnstalleerd en anders grijs weergegeven.',
   'attrs.driverMissing': 'converter niet geïnstalleerd',
   'attrs.needsBinary': 'Vereist {binary} in je PATH.',
+  'attrs.bundledConverter': 'Meegeleverd met Gitcito — niets te installeren.',
   'cmd.objects': 'Objectverkenner',
   'objects.title': 'Objectverkenner',
   'objects.intro': 'Alles wat git opslaat bestaat uit vier soorten objecten — commits, trees, blobs, tags — en refs die daarnaar wijzen. Loop er hier doorheen. Niets op deze pagina verandert iets.',

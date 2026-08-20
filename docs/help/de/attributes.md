@@ -81,24 +81,34 @@ Zwei Hälften, und beide werden gebraucht:
 1. `diff.<name>.textconv` in der git-Config — der Konverter-Befehl.
 2. `*.docx diff=<name>` in `.gitattributes` — auf welche Dateien er zutrifft.
 
-Die Buttons hier erledigen beides auf einmal. Gitcito **liefert keinen dieser
-Konverter mit** und tut auch nicht so: es prüft deinen PATH und bietet nur an,
-was wirklich installiert ist, und graut den Rest samt der Angabe aus, welches
-Binary er bräuchte.
+Die Buttons hier erledigen beides auf einmal. Für Word, Excel und JSON
+**liefert Gitcito den Konverter selbst mit** — dieselbe Dokumenten-Analyse,
+die auch seine Vorschauen nutzen, als kleiner `gitcito-textconv`-Befehl in der
+App — diese drei funktionieren also ganz ohne Installation. Der Rest braucht
+weiterhin ein echtes Tool in deinem PATH: Gitcito prüft das und graut aus, was
+fehlt, statt einen Treiber zu schreiben, der beim ersten Diff scheitert.
 
 | Treiber | Braucht | Bringt dir |
 |--------|-------|-----------|
-| `word` | `pandoc` | Fließtext-Diffs von `.docx` |
+| `word` | nichts — wird mit Gitcito geliefert | Fließtext-Diffs von `.docx` |
+| `excel` | nichts — wird mit Gitcito geliefert | Zeilen-Diffs (CSV je Blatt) von `.xlsx`/`.xls` |
+| `json` | nichts — wird mit Gitcito geliefert | Nach Schlüsseln sortierte, stabile JSON-Diffs |
 | `pdf` | `pdftotext` (poppler) | Text-Diffs von `.pdf` |
-| `excel` | `xlsx2csv` | Zeilen-Diffs von Tabellen |
 | `exif` | `exiftool` | Was sich an einem Bild geändert hat, wenn die Pixel undurchsichtig sind |
-| `json` | `jq` | Nach Schlüsseln sortierte, stabile JSON-Diffs |
+
+Die Grenzen des mitgelieferten Konverters, klar benannt: `.doc` (das alte
+binäre Word-Format) wird nicht verstanden, nur `.docx`; PDF ist nicht
+abgedeckt — Gitcito zeigt PDFs mit dem Viewer des Browsers an und hat keinen
+Textextraktor zum Wiederverwenden; und jeder Diff eines Dokuments zahlt eine
+kurze Startzeit des Konverters. Mit `git config diff.<name>.cachetextconv true`
+cacht git die Ausgabe pro Blob.
 
 Die Konverter-Hälfte liegt in **deiner** Config, nicht im Repository — git führt
 keine Befehle aus, die ein Klon dir unterschiebt, und das ist eine
-Sicherheitseigenschaft, die man behalten will. Wer also klont, bekommt die
-`diff=word`-Regel und, bis pandoc installiert ist, den alten unlesbaren Diff.
-Schreib das in dein README.
+Sicherheitseigenschaft, die man behalten will. Die mitgelieferten Treiber
+zeigen außerdem auf *deinen* Gitcito-Installationspfad; wer also klont, bekommt
+die `diff=word`-Regel und, bis er einen eigenen Konverter verdrahtet (Gitcito
+oder etwas anderes), den alten unlesbaren Diff. Schreib das in dein README.
 
 ## Grenzen, die man kennen sollte
 

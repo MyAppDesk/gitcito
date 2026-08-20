@@ -48,6 +48,8 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }
   return (
     <motion.div
       className={`toast toast-${toast.kind}`}
+      // Errors interrupt (assertive), everything else waits its turn.
+      role={toast.kind === 'error' ? 'alert' : 'status'}
       initial={{ opacity: 0, y: -20, scale: 0.92 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: -16, scale: 0.95 }}
@@ -60,6 +62,7 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }
           ref={msgRef}
           className={`toast-msg ${expanded ? 'expanded' : ''} ${overflowing ? 'clickable' : ''}`}
           onClick={() => overflowing && setExpanded((v) => !v)}
+          // The keyboard path to expanding is the "show more" button below.
         >
           {toast.message}
         </span>
@@ -113,7 +116,7 @@ export function Toasts(): React.JSX.Element {
   // stray "error invoking…" popup from background hosting/git calls.
   const visible = window.api?.shotMode ? [] : toasts
   return (
-    <div className="toasts">
+    <div className="toasts" aria-live="polite">
       <AnimatePresence>
         {visible.map((t) => (
           <ToastItem key={t.id} toast={t} onDismiss={() => dismissToast(t.id)} />

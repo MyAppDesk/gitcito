@@ -4,6 +4,22 @@ import type { CodeSearchHit, FileEntry } from '../../../shared/types'
 import { useSettingsStore } from '../stores/settings'
 import { stepPath, visiblePaths } from '../lib/fileNav'
 import { MatchRows } from './SearchMatches'
+import { t, type TranslationKey } from '../i18n'
+
+/** The spoken name of a status glyph — the glyph itself is colour + symbol only. */
+export function statusName(s: string): string {
+  const key: TranslationKey =
+    s === 'A' || s === 'C' || s === '?'
+      ? 'a11y.stAdded'
+      : s === 'D'
+        ? 'a11y.stDeleted'
+        : s === 'R'
+          ? 'a11y.stRenamed'
+          : s === 'U'
+            ? 'a11y.stConflict'
+            : 'a11y.stModified'
+  return t(key)
+}
 
 export function statusClass(s: string): string {
   switch (s) {
@@ -169,6 +185,14 @@ function FileRowInner({
         className={`file-item wip ${isCurrent ? 'current' : ''} ${isSelected ? 'multi-selected' : ''}`}
         data-file-path={file.path}
         style={{ paddingLeft: 14 + depth * 14 }}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            props.onFileClick(file, e as unknown as React.MouseEvent)
+          }
+        }}
         onClick={(e) => props.onFileClick(file, e)}
         onContextMenu={(e) => props.onFileContext?.(file, e)}
         title={file.path}
@@ -177,17 +201,25 @@ function FileRowInner({
           <span
             className="file-caret"
             role="button"
+            tabIndex={0}
             title={file.path}
             onClick={(e) => {
               e.stopPropagation()
               setOpen((v) => !v)
             }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                e.stopPropagation()
+                setOpen((v) => !v)
+              }
+            }}
           >
             {open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
           </span>
         )}
-        <span className={`file-status ${statusClass(file.status)}`}>
-          {file.status === 'R' ? <ChevronRight size={12} strokeWidth={3} /> : statusLabel(file.status)}
+        <span className={`file-status ${statusClass(file.status)}`} title={statusName(file.status)} aria-label={statusName(file.status)}>
+          {file.status === 'R' ? <ChevronRight size={12} strokeWidth={3} aria-hidden="true" /> : statusLabel(file.status)}
         </span>
         <span className="file-path">{label}</span>
         {hits && hits.length > 0 && <span className="sm-count">{hits.length}</span>}
@@ -230,8 +262,16 @@ function TreeLevel({
             <div
               className="tree-folder"
               role="button"
+              tabIndex={0}
+              aria-expanded={!collapsed.has(n.path)}
               style={{ paddingLeft: 14 + depth * 14 }}
               onClick={() => toggle(n.path)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  toggle(n.path)
+                }
+              }}
               onContextMenu={(e) => props.onFolderContext?.(n.path, e)}
               title={n.path}
             >

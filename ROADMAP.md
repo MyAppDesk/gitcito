@@ -47,10 +47,6 @@ shared workspace is out. What is not out: **exporting** a workspace, a review, o
 a set of repo notes as a file someone else imports — the
 [secure share](docs/help/secure-share.md) model applied to more than secrets.
 
-### Accessibility pass
-Keyboard reachability is good; screen-reader semantics have never been audited.
-Worth doing properly once rather than badly forever.
-
 ---
 
 ## Deliberately not doing

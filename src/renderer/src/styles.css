@@ -1964,8 +1964,10 @@ textarea:focus {
   overflow: auto;
   position: relative;
 }
-.graph-scroll:focus,
-.graph-scroll:focus-visible { outline: none; }
+.graph-scroll:focus { outline: none; }
+/* Keyboard focus needs a visible anchor — the selected row alone doesn't say
+   where key events go. */
+.graph-scroll:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 
 .graph-canvas {
   position: relative;
@@ -2545,8 +2547,12 @@ textarea:focus {
 }
 
 .right-panel-close {
-  margin-inline-start: auto;
-  align-self: center;
+  /* Sits outside the tablist in the DOM (a non-tab child breaks the announced
+     tab count), overlaid on the tab bar visually. */
+  position: absolute;
+  top: 7px;
+  inset-inline-end: 8px;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3514,11 +3520,15 @@ textarea:focus {
   flex-direction: column;
 }
 
-/* The list is focusable so Up/Down can walk it; the selected row is the
-   visible cue, so no ring on the container itself. */
-.file-list:focus,
-.file-list:focus-visible {
+/* The list is focusable so Up/Down can walk it; mouse focus shows no ring, but
+   keyboard focus needs a visible anchor (focus-visible must come after :focus
+   to win the tie). */
+.file-list:focus {
   outline: none;
+}
+.file-list:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
 }
 
 .file-item {

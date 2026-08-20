@@ -914,6 +914,8 @@ export function TitleBar(): React.JSX.Element {
         )}
         <button
           className="tab-close"
+          aria-label={interp(t('a11y.closeTab'), { name: repo.name })}
+          title={interp(t('a11y.closeTab'), { name: repo.name })}
           onClick={(e) => {
             e.stopPropagation()
             confirmRemoveRepo(tab.id, repo.path)
@@ -1006,6 +1008,8 @@ export function TitleBar(): React.JSX.Element {
       <div
         className="tabs"
         ref={tabsRef}
+        role="tablist"
+        aria-label={t('a11y.tabStrip')}
         onDragOver={(e) => {
           e.preventDefault()
           e.dataTransfer.dropEffect = 'move'
@@ -1033,6 +1037,15 @@ export function TitleBar(): React.JSX.Element {
                 key={tab.id}
                 layout
                 className={`tab ${tab.id === settings.activeTabId ? 'active' : ''} ${dc}`}
+                role="tab"
+                aria-selected={tab.id === settings.activeTabId}
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    setActiveTab(tab.id)
+                  }
+                }}
                 draggable
                 onDragStart={onDragStart({ kind: 'tab', tabId: tab.id }) as any}
                 onDragEnd={onDragEnd as any}
@@ -1058,6 +1071,8 @@ export function TitleBar(): React.JSX.Element {
                 )}
                 <button
                   className="tab-close"
+                  aria-label={interp(t('a11y.closeTab'), { name: tab.name })}
+                  title={interp(t('a11y.closeTab'), { name: tab.name })}
                   onClick={(e) => {
                     e.stopPropagation()
                     requestCloseTab(tab.id)
@@ -1077,6 +1092,15 @@ export function TitleBar(): React.JSX.Element {
                 key={tab.id}
                 layout
                 className={`tab tab-page ${tab.id === settings.activeTabId ? 'active' : tab.page.type === 'changelog' ? 'tab-shimmer' : ''} ${dc}`}
+                role="tab"
+                aria-selected={tab.id === settings.activeTabId}
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    setActiveTab(tab.id)
+                  }
+                }}
                 draggable
                 onDragStart={onDragStart({ kind: 'tab', tabId: tab.id }) as any}
                 onDragEnd={onDragEnd as any}
@@ -1096,6 +1120,8 @@ export function TitleBar(): React.JSX.Element {
                 <span className="tab-name">{tabLabel(tab, t)}</span>
                 <button
                   className="tab-close"
+                  aria-label={interp(t('a11y.closeTab'), { name: tabLabel(tab, t) })}
+                  title={interp(t('a11y.closeTab'), { name: tabLabel(tab, t) })}
                   onClick={(e) => {
                     e.stopPropagation()
                     closeTab(tab.id)
@@ -1224,13 +1250,13 @@ export function TitleBar(): React.JSX.Element {
       </button>
       {!isMac && (
         <div className="window-controls">
-          <button onClick={() => window.api.window.minimize()}>
+          <button aria-label={t('a11y.windowMinimize')} title={t('a11y.windowMinimize')} onClick={() => window.api.window.minimize()}>
             <Minus size={14} />
           </button>
-          <button onClick={() => window.api.window.maximize()}>
+          <button aria-label={t('a11y.windowMaximize')} title={t('a11y.windowMaximize')} onClick={() => window.api.window.maximize()}>
             <Square size={11} />
           </button>
-          <button className="win-close" onClick={() => window.api.window.close()}>
+          <button className="win-close" aria-label={t('a11y.windowClose')} title={t('a11y.windowClose')} onClick={() => window.api.window.close()}>
             <X size={14} />
           </button>
         </div>

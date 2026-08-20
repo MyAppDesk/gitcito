@@ -798,6 +798,7 @@ export default function App(): React.JSX.Element {
               {(selectedDetailsAvailable || chatOpen) && (
                 <motion.section
                   className="right-panel"
+                  aria-label={t('chat.panelTabs')}
                   initial={{ width: 0, opacity: 0 }}
                   animate={{ width: layout.panelWidth, opacity: 1 }}
                   exit={{ width: 0, opacity: 0 }}
@@ -816,7 +817,9 @@ export default function App(): React.JSX.Element {
                     <button
                       type="button"
                       role="tab"
+                      id="right-panel-tab-details"
                       aria-selected={activeRightPanelTab === 'details'}
+                      aria-controls="right-panel-body"
                       className={`right-panel-tab ${activeRightPanelTab === 'details' ? 'active' : ''}`}
                       disabled={!detailsAvailable}
                       onClick={() => {
@@ -830,26 +833,37 @@ export default function App(): React.JSX.Element {
                       <button
                         type="button"
                         role="tab"
+                        id="right-panel-tab-chat"
                         aria-selected={activeRightPanelTab === 'chat'}
+                        aria-controls="right-panel-body"
                         className={`right-panel-tab ${activeRightPanelTab === 'chat' ? 'active' : ''}`}
                         onClick={openChatPanel}
                       >
                         <MessageSquare size={13} /> {t('chat.tabChat')}
                       </button>
                     )}
-                    {!(forceConflictPanel && activeRightPanelTab === 'details') && (
-                      <button
-                        type="button"
-                        className="right-panel-close"
-                        title={t('app.closePanel')}
-                        aria-label={t('app.closePanel')}
-                        onClick={closeRightPanel}
-                      >
-                        <X size={15} />
-                      </button>
-                    )}
                   </div>
-                  <div className="right-panel-inner" style={{ width: layout.panelWidth }}>
+                  {/* The close button lives outside the tablist — a non-tab child
+                      inside role="tablist" corrupts the announced tab count. */}
+                  {!(forceConflictPanel && activeRightPanelTab === 'details') && (
+                    <button
+                      type="button"
+                      className="right-panel-close"
+                      title={t('app.closePanel')}
+                      aria-label={t('app.closePanel')}
+                      onClick={closeRightPanel}
+                    >
+                      <X size={15} />
+                    </button>
+                  )}
+                  <div
+                    className="right-panel-inner"
+                    id="right-panel-body"
+                    role="tabpanel"
+                    aria-labelledby={activeRightPanelTab === 'chat' ? 'right-panel-tab-chat' : 'right-panel-tab-details'}
+                    tabIndex={-1}
+                    style={{ width: layout.panelWidth }}
+                  >
                     {activeRightPanelTab === 'chat' && chatAvailable ? (
                       <RepoChatPanel key={repo.path} repoPath={repo.path} repoName={repo.name} />
                     ) : forceConflictPanel ? (
@@ -921,13 +935,19 @@ export default function App(): React.JSX.Element {
 
       {/* Mission control takes over the whole body while it is on — the
           title-bar button is its "tab", so the strip stays untouched. */}
-      {missionOpen && <MissionControlPage />}
+      {/* display:contents keeps the flex layout while giving non-repo views a
+          main landmark; skipped for the repo workspace, which has its own <main>. */}
+      {!(!missionOpen && activeTab && repo && !repo.notGit) && (
+        <main style={{ display: 'contents' }}>
+          {missionOpen && <MissionControlPage />}
 
-      {!missionOpen && !activeTab && <Welcome />}
-      {!missionOpen && activeTab && activeTab.kind === 'group' && !repo && <GroupView tab={activeTab} />}
-      {!missionOpen && activeTab && activeTab.kind === 'page' && <PageView tab={activeTab} />}
+          {!missionOpen && !activeTab && <Welcome />}
+          {!missionOpen && activeTab && activeTab.kind === 'group' && !repo && <GroupView tab={activeTab} />}
+          {!missionOpen && activeTab && activeTab.kind === 'page' && <PageView tab={activeTab} />}
 
-      {!missionOpen && activeTab && repo && repo.notGit && <InitRepo path={repo.path} />}
+          {!missionOpen && activeTab && repo && repo.notGit && <InitRepo path={repo.path} />}
+        </main>
+      )}
 
       {!missionOpen && activeTab && repo && !repo.notGit && (
         <>

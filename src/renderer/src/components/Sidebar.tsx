@@ -53,6 +53,15 @@ import type { BranchInfo, MergeRiskKind, ReleaseInfo, RemoteBranchInfo, StashInf
 
 import { RemoteIcon } from './RemoteIcon'
 
+// Keyboard activation for clickable non-button elements: Enter/Space runs the
+// same onClick handler the mouse uses, so every row and icon is reachable.
+const keyActivate = (e: React.KeyboardEvent): void => {
+  if (e.key !== 'Enter' && e.key !== ' ') return
+  e.preventDefault()
+  e.stopPropagation()
+  ;(e.currentTarget as HTMLElement).click()
+}
+
 interface SectionProps {
   title: string
   icon: React.ReactNode
@@ -161,8 +170,12 @@ function Section({
     >
       <div
         className="sb-header"
+        role="button"
+        tabIndex={0}
+        aria-expanded={open}
         draggable={draggable}
         onClick={toggle}
+        onKeyDown={keyActivate}
         onContextMenu={onHeaderContextMenu}
         onDragStart={draggable ? onReorderStart : undefined}
         onDragEnd={draggable ? onReorderEnd : undefined}
@@ -1279,6 +1292,9 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       data-kbkind="local"
       data-kbid={b.name}
       className={`sb-item ${b.isCurrent ? 'current' : ''} ${isSel('local', b.name) ? 'multi-sel' : ''} ${dropBranch === b.name ? 'branch-drop-over' : ''}`}
+      role="button"
+      tabIndex={0}
+      onKeyDown={keyActivate}
       {...refDrag({ name: b.name, kind: 'local' })}
       {...refDrop({ name: b.name, kind: 'local' })}
       onClick={(e) => {
@@ -1354,6 +1370,9 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       data-kbkind="remote"
       data-kbid={b.fullName}
       className={`sb-item ${isSel('remote', b.fullName) ? 'multi-sel' : ''}`}
+      role="button"
+      tabIndex={0}
+      onKeyDown={keyActivate}
       {...refDrag({ name: b.fullName, kind: 'remote' })}
       onClick={(e) => void onSelectClick('remote', b.fullName, remoteIds, e)}
       onDoubleClick={() => void repoActions.checkoutRemote(path, b.fullName, b.name, b.remote)}
@@ -1428,6 +1447,9 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         data-kbkind="tag"
         data-kbid={tag.name}
         className={`sb-item ${isSel('tag', tag.name) ? 'multi-sel' : ''}`}
+        role="button"
+        tabIndex={0}
+        onKeyDown={keyActivate}
         {...refDrag({ name: tag.name, kind: 'tag' })}
         onClick={(e) => {
           if (!onSelectClick('tag', tag.name, tagIds, e)) goToBranch(tag.sha)
@@ -1511,6 +1533,10 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         actions={
           <span
             className="icon-btn"
+            role="button"
+            tabIndex={0}
+            aria-label={t('sidebar.createBranch')}
+            onKeyDown={keyActivate}
             title={t('sidebar.createBranch')}
             onClick={(e) => {
               e.stopPropagation()
@@ -1541,6 +1567,10 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         actions={
           <span
             className="icon-btn"
+            role="button"
+            tabIndex={0}
+            aria-label={t('sidebar.addRemote')}
+            onKeyDown={keyActivate}
             title={t('sidebar.addRemote')}
             onClick={(e) => {
               e.stopPropagation()
@@ -1570,6 +1600,10 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
               actions={webUrl(remote.url) ? (
                 <span
                   className="icon-btn"
+                  role="button"
+                  tabIndex={0}
+                  aria-label={interp(t('sidebar.openRemoteOnWeb'), { name: remote.name })}
+                  onKeyDown={keyActivate}
                   title={interp(t('sidebar.openRemoteOnWeb'), { name: remote.name })}
                   onClick={(e) => {
                     e.stopPropagation()
@@ -1602,6 +1636,10 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
           <>
             <span
               className="icon-btn"
+              role="button"
+              tabIndex={0}
+              aria-label={t('sidebar.createPRFromBranch')}
+              onKeyDown={keyActivate}
               title={t('sidebar.createPRFromBranch')}
               onClick={(e) => {
                 e.stopPropagation()
@@ -1612,6 +1650,10 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
             </span>
             <span
               className="icon-btn"
+              role="button"
+              tabIndex={0}
+              aria-label={t('sidebar.fetchPRs')}
+              onKeyDown={keyActivate}
               title={t('sidebar.fetchPRs')}
               onClick={(e) => {
                 e.stopPropagation()
@@ -1628,6 +1670,9 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
           <div
             key={pr.id}
             className="sb-item pr"
+            role="button"
+            tabIndex={0}
+            onKeyDown={keyActivate}
             onClick={() => {
               // Rich PR detail exists for GitHub and GitLab; other hosts open in browser.
               if (!repoSupportsPrReview(repo.remotes)) {
@@ -1651,6 +1696,10 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
                 head is a plain ref, so there is no provider check here. */}
             <span
               className="icon-btn sb-pr-preview"
+              role="button"
+              tabIndex={0}
+              aria-label={t('prPreview.open')}
+              onKeyDown={keyActivate}
               title={t('prPreview.open')}
               onClick={(e) => {
                 e.stopPropagation()
@@ -1669,6 +1718,10 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
             {aiEnabled && pr.sourceBranch && pr.targetBranch && (
               <span
                 className="icon-btn sb-ai-review"
+                role="button"
+                tabIndex={0}
+                aria-label={t('sidebar.aiPrReview')}
+                onKeyDown={keyActivate}
                 title={t('sidebar.aiPrReview')}
                 onClick={(e) => {
                   e.stopPropagation()
@@ -1686,6 +1739,10 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
             )}
             <span
               className="icon-btn sb-pr-open"
+              role="button"
+              tabIndex={0}
+              aria-label={t('common.openInBrowser')}
+              onKeyDown={keyActivate}
               title={t('common.openInBrowser')}
               onClick={(e) => {
                 e.stopPropagation()
@@ -1712,6 +1769,10 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
               return origin ? (
                 <span
                   className="icon-btn"
+                  role="button"
+                  tabIndex={0}
+                  aria-label={t('sidebar.newIssue')}
+                  onKeyDown={keyActivate}
                   title={t('sidebar.newIssue')}
                   onClick={(e) => {
                     e.stopPropagation()
@@ -1724,6 +1785,10 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
             })()}
             <span
               className="icon-btn"
+              role="button"
+              tabIndex={0}
+              aria-label={t('sidebar.issues')}
+              onKeyDown={keyActivate}
               title={t('sidebar.issues')}
               onClick={(e) => {
                 e.stopPropagation()
@@ -1740,6 +1805,9 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
           <div
             key={issue.number}
             className="sb-item pr"
+            role="button"
+            tabIndex={0}
+            onKeyDown={keyActivate}
             onClick={() => {
               const origin = repo.remotes.find((r) => r.name === 'origin') ?? repo.remotes[0]
               if (origin)
@@ -1757,6 +1825,10 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
             </span>
             <span
               className="icon-btn sb-pr-open"
+              role="button"
+              tabIndex={0}
+              aria-label={t('common.openInBrowser')}
+              onKeyDown={keyActivate}
               title={t('common.openInBrowser')}
               onClick={(e) => {
                 e.stopPropagation()
@@ -1779,6 +1851,10 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         actions={
           <span
             className="icon-btn"
+            role="button"
+            tabIndex={0}
+            aria-label={t('sidebar.milestones')}
+            onKeyDown={keyActivate}
             title={t('sidebar.milestones')}
             onClick={(e) => {
               e.stopPropagation()
@@ -1801,6 +1877,9 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
             <div
               key={m.number}
               className="sb-item milestone"
+              role="button"
+              tabIndex={0}
+              onKeyDown={keyActivate}
               onClick={() => {
                 const origin = repo.remotes.find((r) => r.name === 'origin') ?? repo.remotes[0]
                 if (origin)
@@ -1819,6 +1898,10 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
               <span className="sb-milestone-pct">{pct}%</span>
               <span
                 className="icon-btn sb-pr-open"
+                role="button"
+                tabIndex={0}
+                aria-label={t('common.openInBrowser')}
+                onKeyDown={keyActivate}
                 title={t('common.openInBrowser')}
                 onClick={(e) => {
                   e.stopPropagation()
@@ -1842,6 +1925,10 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         actions={
           <span
             className="icon-btn"
+            role="button"
+            tabIndex={0}
+            aria-label={t('sidebar.createTag')}
+            onKeyDown={keyActivate}
             title={t('sidebar.createTag')}
             onClick={(e) => {
               e.stopPropagation()
@@ -1874,6 +1961,10 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
               {releasesUrl && (
                 <span
                   className="icon-btn"
+                  role="button"
+                  tabIndex={0}
+                  aria-label={t('sidebar.openReleases')}
+                  onKeyDown={keyActivate}
                   title={t('sidebar.openReleases')}
                   onClick={(e) => {
                     e.stopPropagation()
@@ -1885,6 +1976,10 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
               )}
               <span
                 className="icon-btn"
+                role="button"
+                tabIndex={0}
+                aria-label={t('sidebar.fetchReleases')}
+                onKeyDown={keyActivate}
                 title={t('sidebar.fetchReleases')}
                 onClick={(e) => {
                   e.stopPropagation()
@@ -1903,6 +1998,9 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
               <div
                 key={rel.id}
                 className="sb-item release"
+                role="button"
+                tabIndex={0}
+                onKeyDown={keyActivate}
                 onClick={() => openPageTab({ type: 'release', release: rel, repoPath: path })}
                 onContextMenu={(e) => {
                   e.preventDefault()
@@ -1916,6 +2014,10 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
                 {rel.prerelease && <span className="badge release-pre">{t('sidebar.preBadge')}</span>}
                 <span
                   className="icon-btn"
+                  role="button"
+                  tabIndex={0}
+                  aria-label={t('sidebar.openOnWeb')}
+                  onKeyDown={keyActivate}
                   title={t('sidebar.openOnWeb')}
                   onClick={(e) => {
                     e.stopPropagation()
@@ -1939,6 +2041,9 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
             data-kbkind="stash"
             data-kbid={String(s.index)}
             className={`sb-item ${repo.selected?.type === 'stash' && repo.selected.sha === s.sha ? 'current' : ''} ${isSel('stash', String(s.index)) ? 'multi-sel' : ''}`}
+            role="button"
+            tabIndex={0}
+            onKeyDown={keyActivate}
             onClick={(e) => {
               if (!onSelectClick('stash', String(s.index), stashIds, e))
                 select(path, { type: 'stash', index: s.index, sha: s.sha })
@@ -1964,6 +2069,10 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         actions={
           <span
             className="icon-btn"
+            role="button"
+            tabIndex={0}
+            aria-label={t('sidebar.addWorktree')}
+            onKeyDown={keyActivate}
             title={t('sidebar.addWorktree')}
             onClick={(e) => {
               e.stopPropagation()
@@ -2005,6 +2114,10 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
             {repo.submodules.length > 0 && (
               <span
                 className="icon-btn"
+                role="button"
+                tabIndex={0}
+                aria-label={t('sidebar.updateAllSubmodules')}
+                onKeyDown={keyActivate}
                 title={t('sidebar.updateAllSubmodules')}
                 onClick={(e) => {
                   e.stopPropagation()
@@ -2016,6 +2129,10 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
             )}
             <span
               className="icon-btn"
+              role="button"
+              tabIndex={0}
+              aria-label={t('sidebar.addSubmodule')}
+              onKeyDown={keyActivate}
               title={t('sidebar.addSubmodule')}
               onClick={(e) => {
                 e.stopPropagation()
@@ -2141,6 +2258,10 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
             </div>
             <span
               className="icon-btn sb-sections-btn"
+              role="button"
+              tabIndex={0}
+              aria-label={t('sidebar.sections')}
+              onKeyDown={keyActivate}
               title={t('sidebar.sections')}
               onClick={(e) => {
                 const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
@@ -2171,14 +2292,34 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
               {repo.name}
             </span>
             <span className="sb-files-actions">
-              <span className="icon-btn" title={t('sidebar.newFilesRoot')} onClick={() => promptCreateRoot(false)}>
+              <span
+                className="icon-btn"
+                role="button"
+                tabIndex={0}
+                aria-label={t('sidebar.newFilesRoot')}
+                onKeyDown={keyActivate}
+                title={t('sidebar.newFilesRoot')}
+                onClick={() => promptCreateRoot(false)}
+              >
                 <FilePlus size={13} />
               </span>
-              <span className="icon-btn" title={t('sidebar.newFolderRoot')} onClick={() => promptCreateRoot(true)}>
+              <span
+                className="icon-btn"
+                role="button"
+                tabIndex={0}
+                aria-label={t('sidebar.newFolderRoot')}
+                onKeyDown={keyActivate}
+                title={t('sidebar.newFolderRoot')}
+                onClick={() => promptCreateRoot(true)}
+              >
                 <FolderPlus size={13} />
               </span>
               <span
                 className="icon-btn"
+                role="button"
+                tabIndex={0}
+                aria-label={t('sidebar.openFolder')}
+                onKeyDown={keyActivate}
                 title={t('sidebar.openFolder')}
                 onClick={(e) => {
                   const r = (e.currentTarget as HTMLElement).getBoundingClientRect()

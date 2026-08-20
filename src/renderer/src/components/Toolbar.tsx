@@ -380,7 +380,21 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
             {t('toolbar.pull')}
             {current && current.behind > 0 && <em className="count-pill">{current.behind}</em>}
           </span>
-          <span className="split-arrow" onClick={pullMenu}>
+          <span
+            className="split-arrow"
+            role="button"
+            tabIndex={0}
+            aria-haspopup="menu"
+            aria-label={t('a11y.moreOptions')}
+            onClick={pullMenu}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                e.stopPropagation()
+                pullMenu(e as unknown as React.MouseEvent)
+              }
+            }}
+          >
             <ChevronDown size={13} />
           </span>
         </button>
@@ -394,7 +408,21 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
             {t('toolbar.push')}
             {current && current.ahead > 0 && <em className="count-pill">{current.ahead}</em>}
           </span>
-          <span className="split-arrow" onClick={pushMenu}>
+          <span
+            className="split-arrow"
+            role="button"
+            tabIndex={0}
+            aria-haspopup="menu"
+            aria-label={t('a11y.moreOptions')}
+            onClick={pushMenu}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                e.stopPropagation()
+                pushMenu(e as unknown as React.MouseEvent)
+              }
+            }}
+          >
             <ChevronDown size={13} />
           </span>
         </button>
@@ -424,7 +452,20 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
         >
           <Archive size={17} />
           <span>{t('toolbar.stash')}</span>
-          <span className="split-arrow" onClick={(e) => {
+          <span
+            className="split-arrow"
+            role="button"
+            tabIndex={0}
+            aria-haspopup="menu"
+            aria-label={t('a11y.moreOptions')}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                e.stopPropagation()
+                ;(e.currentTarget as HTMLElement).click()
+              }
+            }}
+            onClick={(e) => {
               e.stopPropagation()
               const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
               openContextMenu(rect.left, rect.bottom + 6, [
@@ -465,7 +506,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
         <button className="tool-btn split" title={t('toolbar.toolsTitle')} onClick={toolsMenu}>
           <Wrench size={16} />
           <span>{t('toolbar.tools')}</span>
-          <span className="split-arrow">
+          <span className="split-arrow" aria-hidden="true">
             <ChevronDown size={13} />
           </span>
         </button>
@@ -488,7 +529,12 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
 
       <div className="toolbar-group right">
         {busy && !busyOp && (
-          <span className="busy-indicator" title={interp(t('toolbar.fetchedAgo'), { when: timeSince(repo.lastFetchAt) })}>
+          <span
+            className="busy-indicator"
+            role="status"
+            aria-live="polite"
+            title={interp(t('toolbar.fetchedAgo'), { when: timeSince(repo.lastFetchAt) })}
+          >
             <Loader2 size={13} className="spin" /> {busy}
           </span>
         )}

@@ -849,6 +849,18 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
     } else if (e.key === 'ArrowUp' || e.key === 'k') {
       e.preventDefault()
       selectRow(Math.max((selectedRow < 0 ? displayCommits.length : selectedRow) - 1, 0))
+    } else if ((e.key === 'ContextMenu' || (e.shiftKey && e.key === 'F10')) && selectedRow >= 0) {
+      // The keyboard route to the row's context menu, anchored at the row.
+      e.preventDefault()
+      const c = displayCommits[selectedRow]
+      if (!c) return
+      const box = scrollRef.current?.getBoundingClientRect()
+      const x = (box?.left ?? 0) + 80
+      const y = (box?.top ?? 0) + Math.max(0, selectedRow * ROW_H - (scrollRef.current?.scrollTop ?? 0)) + ROW_H
+      const stash = stashBySha.get(c.hash)
+      if (multi.size > 1 && multi.has(c.hash)) openContextMenu(x, y, multiMenu())
+      else if (stash) openContextMenu(x, y, stashMenu(stash))
+      else if (c.hash !== WIP_HASH) openContextMenu(x, y, commitMenu(c))
     }
   }
 
@@ -1485,7 +1497,18 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
         onReorder={reorderColumns}
         renderFilter={renderFilter}
       />
-      <div className="graph-scroll" ref={scrollRef} onScroll={onScroll} tabIndex={0} onKeyDown={onGraphKeyDown}>
+      <div
+        className="graph-scroll"
+        ref={scrollRef}
+        onScroll={onScroll}
+        tabIndex={0}
+        onKeyDown={onGraphKeyDown}
+        role="listbox"
+        aria-label={t('a11y.commitList')}
+        // Focus stays on the scroller; the selected virtualized row is exposed
+        // through aria-activedescendant so arrow-keying announces each commit.
+        aria-activedescendant={selectedRow >= 0 ? `graph-row-${displayCommits[selectedRow]?.hash}` : undefined}
+      >
       <div className="graph-canvas" style={{ height: totalHeight }}>
         {columns.graph.visible && (
         <>
@@ -1701,6 +1724,12 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
           return (
             <div
               key={c.hash}
+              id={`graph-row-${c.hash}`}
+              role="option"
+              aria-selected={selected || multi.has(c.hash)}
+              aria-setsize={displayCommits.length}
+              aria-posinset={row + 1}
+              aria-label={`${c.subject} — ${c.author}`}
               className={`graph-row ${selected ? 'selected' : ''} ${multi.has(c.hash) ? 'multi-selected' : ''} ${newSet.has(c.hash) ? 'row-new' : ''} ${dimmed ? 'dimmed' : ''} ${matches ? 'matched' : ''} ${ghosted ? 'ghosted' : ''}`}
               style={{ top: row * ROW_H, height: ROW_H, paddingLeft: branchCol + graphCol }}
               // Real commits can be dragged onto repository chat as context.

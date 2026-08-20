@@ -1293,13 +1293,20 @@ function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): 
 
       {cloning && (
         <div className="clone-progress">
-          <div className="clone-progress-head">
+          <div className="clone-progress-head" role="status" aria-live="polite">
             <span>{progress ? `${progress.stage}…` : t('clone.starting')}</span>
             {progress && progress.total > 0 && (
               <span className="clone-progress-pct">{Math.round(progress.progress)}%</span>
             )}
           </div>
-          <div className="clone-progress-track">
+          <div
+            className="clone-progress-track"
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={progress && progress.total > 0 ? Math.round(progress.progress) : undefined}
+            aria-valuetext={progress ? `${progress.stage} ${Math.round(progress.progress)}%` : undefined}
+          >
             <div
               className={`clone-progress-bar ${progress && progress.total > 0 ? '' : 'indeterminate'}`}
               style={progress && progress.total > 0 ? { width: `${progress.progress}%` } : undefined}
@@ -1656,6 +1663,7 @@ function LauncherModal({ spec }: { spec: Extract<ModalSpec, { kind: 'launcher' }
 export function ModalHost(): React.JSX.Element {
   const t = useT()
   const { modal, closeModal } = useUIStore()
+  const dialogRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
@@ -1664,6 +1672,46 @@ export function ModalHost(): React.JSX.Element {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [closeModal])
+
+  // Dialog semantics: name the dialog after its own heading, move focus inside
+  // on open (unless a child already autofocused), and hand it back on close.
+  useEffect(() => {
+    if (!modal) return
+    const opener = document.activeElement as HTMLElement | null
+    const dialog = dialogRef.current
+    if (dialog) {
+      const heading = dialog.querySelector('h1, h2, h3')
+      if (heading) {
+        if (!heading.id) heading.id = 'modal-title'
+        dialog.setAttribute('aria-labelledby', heading.id)
+      }
+      if (!dialog.contains(document.activeElement)) dialog.focus()
+    }
+    return () => {
+      if (opener && document.contains(opener)) opener.focus()
+    }
+  }, [modal])
+
+  // Keep Tab inside the dialog — the background is visually inert but would
+  // otherwise still be in the tab order.
+  const trapTab = (e: React.KeyboardEvent): void => {
+    if (e.key !== 'Tab' || !dialogRef.current) return
+    const focusables = Array.from(
+      dialogRef.current.querySelectorAll<HTMLElement>(
+        'a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])'
+      )
+    ).filter((el) => el.offsetParent !== null)
+    if (focusables.length === 0) return
+    const first = focusables[0]
+    const last = focusables[focusables.length - 1]
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault()
+      last.focus()
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault()
+      first.focus()
+    }
+  }
 
   return (
     <AnimatePresence>
@@ -1716,8 +1764,13 @@ export function ModalHost(): React.JSX.Element {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 8 }}
             transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            tabIndex={-1}
+            onKeyDown={trapTab}
           >
-            <button className="modal-close" onClick={closeModal}>
+            <button className="modal-close" onClick={closeModal} aria-label={t('common.close')} title={t('common.close')}>
               <X size={15} />
             </button>
             <ErrorBoundary key={modal.kind} label={t('modal.dialogError')} onReset={closeModal}>

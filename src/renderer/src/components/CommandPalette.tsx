@@ -419,7 +419,10 @@ export function CommandPalette(): React.JSX.Element {
     rows.push(
       <button
         key={cmd.id}
+        id={`cmdp-opt-${idx}`}
         data-idx={idx}
+        role="option"
+        aria-selected={idx === active}
         className={`cmdp-row ${idx === active ? 'active' : ''}`}
         onMouseMove={() => setActive(idx)}
         onClick={() => fire(cmd)}
@@ -448,6 +451,9 @@ export function CommandPalette(): React.JSX.Element {
         >
           <motion.div
             className="cmdp"
+            role="dialog"
+            aria-modal="true"
+            aria-label={repo ? t('cmdp.placeholder') : t('cmdp.placeholderNoRepo')}
             initial={{ opacity: 0, scale: 0.97, y: -8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.98, y: -4 }}
@@ -458,6 +464,10 @@ export function CommandPalette(): React.JSX.Element {
               <input
                 ref={inputRef}
                 className="cmdp-input"
+                role="combobox"
+                aria-expanded={rows.length > 0}
+                aria-controls="cmdp-listbox"
+                aria-activedescendant={rows.length > 0 ? `cmdp-opt-${active}` : undefined}
                 placeholder={repo ? t('cmdp.placeholder') : t('cmdp.placeholderNoRepo')}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
@@ -466,7 +476,7 @@ export function CommandPalette(): React.JSX.Element {
               />
               <kbd className="cmdp-kbd">esc</kbd>
             </div>
-            <div className="cmdp-list" ref={listRef}>
+            <div className="cmdp-list" id="cmdp-listbox" role="listbox" ref={listRef}>
               {rows.length > 0 ? (
                 rows
               ) : (

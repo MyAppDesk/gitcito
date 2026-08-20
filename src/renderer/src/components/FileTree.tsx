@@ -28,6 +28,15 @@ const isExternalDrag = (e: React.DragEvent): boolean => e.dataTransfer.types.inc
 // How long a drag has to hover a collapsed folder before it springs open.
 const SPRING_MS = 700
 
+// Keyboard activation for clickable non-button elements: Enter/Space runs the
+// same onClick handler the mouse uses, so every row and icon is reachable.
+const keyActivate = (e: React.KeyboardEvent): void => {
+  if (e.key !== 'Enter' && e.key !== ' ') return
+  e.preventDefault()
+  e.stopPropagation()
+  ;(e.currentTarget as HTMLElement).click()
+}
+
 export function FileTree({
   repo,
   filter = EMPTY_FILTER
@@ -515,6 +524,9 @@ export function FileTree({
             className={`tree-row${selected ? ' selected' : ''}${status ? ` st-${status}` : ''}${
               dragSrc === node.path ? ' dragging' : ''
             }${node.dir && dropDir === node.path ? ' drop-into' : ''}`}
+            role="button"
+            tabIndex={0}
+            onKeyDown={keyActivate}
             style={{ paddingLeft: 6 + depth * 13 }}
             title={node.path}
             {...dragProps(node)}
@@ -574,6 +586,10 @@ export function FileTree({
             {!node.dir && (
               <span
                 className="icon-btn tree-open-with"
+                role="button"
+                tabIndex={0}
+                aria-label={t('fileTree.openWithIconTitle')}
+                onKeyDown={keyActivate}
                 title={t('fileTree.openWithIconTitle')}
                 onClick={(e) => {
                   e.stopPropagation()
@@ -605,6 +621,10 @@ export function FileTree({
     const openWithBtn = (rel: string): React.ReactNode => (
       <span
         className="icon-btn tree-open-with"
+        role="button"
+        tabIndex={0}
+        aria-label={t('fileTree.openWithIconTitle')}
+        onKeyDown={keyActivate}
         title={t('fileTree.openWithIconTitle')}
         onClick={(e) => {
           e.stopPropagation()
@@ -657,6 +677,9 @@ export function FileTree({
             <div
               key={rel}
               className={`tree-row tree-result${selected ? ' selected' : ''}${status ? ` st-${status}` : ''}`}
+              role="button"
+              tabIndex={0}
+              onKeyDown={keyActivate}
               title={rel}
               onClick={() => openFile(rel)}
               onContextMenu={(e) => {
@@ -674,6 +697,10 @@ export function FileTree({
               {status && status !== 'ignored' && <span className="tree-dot" />}
               <span
                 className="icon-btn tree-open-with"
+                role="button"
+                tabIndex={0}
+                aria-label={t('fileTree.openWithIconTitle')}
+                onKeyDown={keyActivate}
                 title={t('fileTree.openWithIconTitle')}
                 onClick={(e) => {
                   e.stopPropagation()

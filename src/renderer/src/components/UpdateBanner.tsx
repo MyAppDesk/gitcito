@@ -31,14 +31,16 @@ export function UpdateBanner(): React.JSX.Element {
       {show && info && (
         <motion.div
           className="update-banner"
-          role="dialog"
+          // A spontaneously-appearing notification: role="status" announces it
+          // without stealing focus (role="dialog" without a focus move is silent).
+          role="status"
           aria-label={t('update.available.title')}
           initial={{ opacity: 0, y: 24, scale: 0.96 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 24, scale: 0.96 }}
           transition={{ type: 'spring', stiffness: 360, damping: 30 }}
         >
-          <button className="update-banner-close" onClick={dismissBanner} title={t('update.later')}>
+          <button className="update-banner-close" onClick={dismissBanner} title={t('update.later')} aria-label={t('update.later')}>
             <X size={14} />
           </button>
 
@@ -66,7 +68,7 @@ export function UpdateBanner(): React.JSX.Element {
 
           {status === 'downloading' && (
             <div className="update-banner-progress">
-              <div className="update-banner-bar">
+              <div className="update-banner-bar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct}>
                 <motion.span
                   className="update-banner-fill"
                   animate={{ width: `${pct}%` }}

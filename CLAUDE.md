@@ -293,10 +293,11 @@ a marketing page that needs a toolchain to fix a typo is a page nobody fixes.
 CI redeploys on every published release and on any docs push to `main`, so
 there is nothing to publish by hand. `npm run site:serve` previews it.
 
-**The trap:** the landing page's headline features are a hand-written `FEATURES`
-array inside that script — the only copy on the site not derived from `docs/`,
-and so the only part that can silently go stale. A feature big enough for the
-front page has to be added there as well.
+**The trap:** the landing page's headline cards are a hand-written `FEATURES`
+array inside that script, with their copy living as `feature.<id>.*` keys in
+`scripts/site-i18n/` — the only copy on the site not derived from `docs/`, and
+so the only part that can silently go stale. A feature big enough for the front
+page has to be added in both places.
 
 ### How to write a page
 

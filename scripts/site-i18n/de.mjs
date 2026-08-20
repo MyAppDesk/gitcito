@@ -15,19 +15,19 @@ export const de = {
 
   'meta.title': 'Gitcito — das ganze git, mit einer Oberfläche, die es dir zeigt',
   'meta.description':
-    'Ein vollständig vibe-codierter Git-Client. Kostenlos. Graph, Staging bis auf die Zeile, Rebase, Worktrees, Submodule, LFS — dazu ein paar Dinge, die andere Clients nicht tun.',
+    'Ein vollständig vibe-codierter Git-Client. Kostenlos. Graph, Staging bis auf die Zeile, Rebase, Worktrees, Submodule, LFS — dazu ein paar Dinge, von denen du nicht wusstest, dass git sie kann.',
 
   'hero.title': 'Das ganze git,<br /><em>mit einer Oberfläche, die es dir zeigt</em>',
   'hero.lede':
-    'Graph, Staging bis auf die Zeile, Rebase, Worktrees, Submodule, LFS.<br />Die gewöhnlichen Dinge, ordentlich gemacht — dazu ein paar, die sonst niemand macht.',
+    'Graph, Staging bis auf die Zeile, Rebase, Worktrees, Submodule, LFS.<br />Die gewöhnlichen Dinge, ordentlich gemacht — dazu ein paar, von denen du nicht wusstest, dass git sie kann.',
   'hero.download': 'Für deine Plattform herunterladen',
   'hero.source': 'Quellcode ansehen',
   'hero.terms': 'Kostenlos · MIT · v{version}',
   'hero.graphAlt': 'Der Commit-Graph von Gitcito',
 
-  'features.title': 'Ein paar Dinge, die andere Clients nicht tun',
+  'features.title': 'Ein paar Dinge, von denen du nicht wusstest, dass git sie kann',
   'features.sub':
-    'Keines davon ist der Grund, Gitcito zu benutzen — die Liste oben ist es. Es gibt sie, weil git die Antwort ohnehin schon kennt und sich kein Client die Mühe macht, danach zu fragen.',
+    'Keines davon ist der Grund, Gitcito zu benutzen — die Liste oben ist es. Es gibt sie, weil git die Antwort ohnehin schon kennt; Gitcito fragt einfach danach.',
 
   'ordinary.title': 'Was du bekommst',
   'ordinary.sub':
@@ -76,6 +76,15 @@ export const de = {
   'feature.conflict-radar.title': 'Konflikt-Radar',
   'feature.conflict-radar.body':
     'Sieh, welche Branches Konflikte verursachen werden, <strong>bevor</strong> du einen von ihnen mergst. Die Merges passieren innerhalb der Objektdatenbank — kein Checkout, keine Änderung am Arbeitsverzeichnis, nichts, was aufzuräumen wäre.',
+  'feature.recovery.title': 'WIP-Schnappschüsse',
+  'feature.recovery.body':
+    'Dein ganzer Arbeitsbaum — unversionierte Dateien eingeschlossen — per Timer gesichert und <strong>direkt vor jeder destruktiven Aktion</strong>. Ein bereutes Verwerfen ist nur eine Wiederherstellung entfernt.',
+  'feature.commit-edit.title': 'Jeden Commit bearbeiten',
+  'feature.commit-edit.body':
+    'Der Tippfehler liegt drei Wochen zurück? Bearbeite die Datei <strong>im alten Commit selbst</strong> — alles darüber wird neu aufgespielt, und die ganze Kaskade wird als Vorschau gezeigt, bevor sich eine einzige Ref bewegt.',
+  'feature.ai.title': 'Bring deine eigenen Modelle mit',
+  'feature.ai.body':
+    'Mehrere KI-Konten zugleich — ein OpenAI-Schlüssel für Commit-Nachrichten, Claude für den Chat, ein lokales Ollama für den Rest. Die Modelllisten kommen live von jedem Anbieter, und eine CLI, bei der du schon angemeldet bist, funktioniert statt eines API-Schlüssels.',
   'feature.semantic-diff.title': 'Semantischer Diff',
   'feature.semantic-diff.body':
     '<code>startServer</code> → <code>bootServer</code>, statt einer 400 Zeilen langen rot-grünen Wand. Echtes tree-sitter-Parsing, keine Regex.',

@@ -14,19 +14,19 @@ export const ko = {
 
   'meta.title': 'Gitcito — git 전체를 보여 주는 UI',
   'meta.description':
-    '온전히 vibe-coding으로 만든 Git 클라이언트. 무료예요. 그래프, 줄 단위 스테이징, 리베이스, 워크트리, 서브모듈, LFS — 그리고 다른 클라이언트는 하지 않는 몇 가지까지.',
+    '온전히 vibe-coding으로 만든 Git 클라이언트. 무료예요. 그래프, 줄 단위 스테이징, 리베이스, 워크트리, 서브모듈, LFS — 그리고 git이 할 줄은 몰랐던 몇 가지까지.',
 
   'hero.title': 'git 전체를,<br /><em>그대로 보여 주는 UI</em>',
   'hero.lede':
-    '그래프, 줄 단위 스테이징, 리베이스, 워크트리, 서브모듈, LFS.<br />평범한 것들을 제대로 — 그리고 아무도 하지 않는 몇 가지까지.',
+    '그래프, 줄 단위 스테이징, 리베이스, 워크트리, 서브모듈, LFS.<br />평범한 것들을 제대로 — 그리고 git이 할 줄은 몰랐던 몇 가지까지.',
   'hero.download': '내 플랫폼용 다운로드',
   'hero.source': '소스 보기',
   'hero.terms': '무료 · MIT · v{version}',
   'hero.graphAlt': 'Gitcito 커밋 그래프',
 
-  'features.title': '다른 클라이언트는 하지 않는 몇 가지',
+  'features.title': 'git이 할 줄은 몰랐던 몇 가지',
   'features.sub':
-    '이 가운데 어느 것도 Gitcito를 쓸 이유는 아니에요 — 이유는 위의 목록이에요. 이것들이 있는 건 git이 이미 답을 알고 있는데도 어느 클라이언트도 물어보지 않기 때문이에요.',
+    '이 가운데 어느 것도 Gitcito를 쓸 이유는 아니에요 — 이유는 위의 목록이에요. 이것들이 있는 건 git이 이미 답을 알고 있기 때문이고, Gitcito는 그저 물어볼 뿐이에요.',
 
   'ordinary.title': '무엇이 들어 있나요',
   'ordinary.sub':
@@ -71,6 +71,15 @@ export const ko = {
   'feature.conflict-radar.title': '충돌 레이더',
   'feature.conflict-radar.body':
     '어느 브랜치가 충돌할지 하나라도 머지하기 <strong>전에</strong> 확인해요. 머지는 객체 데이터베이스 안에서 일어나요 — 체크아웃도, 작업 트리 변경도, 나중에 치울 것도 없어요.',
+  'feature.recovery.title': 'WIP 스냅샷',
+  'feature.recovery.body':
+    '작업 트리 전체를 — 추적되지 않는 파일까지 — 타이머로, 그리고 <strong>모든 파괴적인 동작 직전에</strong> 스냅샷으로 남겨요. 후회되는 버리기도 복원 한 번이면 돌아와요.',
+  'feature.commit-edit.title': '아무 커밋이나 편집',
+  'feature.commit-edit.body':
+    '오타가 3주 전 커밋에 있나요? <strong>옛 커밋 안에서</strong> 파일을 고치세요 — 그 위의 모든 커밋이 다시 적용되고, ref 하나가 움직이기 전에 전체 연쇄를 미리 볼 수 있어요.',
+  'feature.ai.title': '내 모델 가져오기',
+  'feature.ai.body':
+    '여러 AI 계정을 한꺼번에 — 커밋 메시지엔 OpenAI 키, 채팅엔 Claude, 나머지엔 로컬 Ollama. 모델 목록은 각 제공자에게서 실시간으로 오고, 이미 로그인해 둔 CLI가 API 키 대신 동작해요.',
   'feature.semantic-diff.title': '시맨틱 diff',
   'feature.semantic-diff.body':
     '400줄짜리 빨강·초록 벽 대신 <code>startServer</code> → <code>bootServer</code>. 정규식이 아니라 진짜 tree-sitter 파싱이에요.',

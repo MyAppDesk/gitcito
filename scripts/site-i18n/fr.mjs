@@ -15,19 +15,19 @@ export const fr = {
 
   'meta.title': 'Gitcito — tout git, avec une interface qui vous le montre',
   'meta.description':
-    'Un client Git entièrement vibe-codé. Gratuit. Graphe, indexation ligne par ligne, rebase, arbres de travail, sous-modules, LFS — plus quelques choses que les autres clients ne font pas.',
+    'Un client Git entièrement vibe-codé. Gratuit. Graphe, indexation ligne par ligne, rebase, arbres de travail, sous-modules, LFS — plus quelques choses dont vous ne soupçonniez pas git capable.',
 
   'hero.title': 'Tout git,<br /><em>avec une interface qui vous le montre</em>',
   'hero.lede':
-    'Graphe, indexation ligne par ligne, rebase, arbres de travail, sous-modules, LFS.<br />Les choses ordinaires, faites correctement — plus quelques-unes que personne d’autre ne fait.',
+    'Graphe, indexation ligne par ligne, rebase, arbres de travail, sous-modules, LFS.<br />Les choses ordinaires, faites correctement — plus quelques-unes dont vous ne soupçonniez pas git capable.',
   'hero.download': 'Télécharger pour votre plateforme',
   'hero.source': 'Voir le code source',
   'hero.terms': 'Gratuit · MIT · v{version}',
   'hero.graphAlt': 'Le graphe des commits de Gitcito',
 
-  'features.title': 'Quelques choses que les autres clients ne font pas',
+  'features.title': 'Quelques choses dont vous ne soupçonniez pas git capable',
   'features.sub':
-    'Aucune n’est la raison d’utiliser Gitcito — la liste ci-dessus l’est. Elles existent parce que git connaît déjà la réponse et qu’aucun client ne prend la peine de la lui demander.',
+    'Aucune n’est la raison d’utiliser Gitcito — la liste ci-dessus l’est. Elles existent parce que git connaît déjà la réponse ; Gitcito se contente de la lui demander.',
 
   'ordinary.title': 'Ce que vous obtenez',
   'ordinary.sub':
@@ -78,6 +78,15 @@ export const fr = {
   'feature.conflict-radar.title': 'Radar de conflits',
   'feature.conflict-radar.body':
     'Voyez quelles branches vont entrer en conflit <strong>avant</strong> d’en fusionner aucune. Les fusions ont lieu à l’intérieur de la base d’objets — aucune extraction, aucun changement de la copie de travail, rien à nettoyer.',
+  'feature.recovery.title': 'Instantanés du travail en cours',
+  'feature.recovery.body':
+    'Tout votre arbre de travail — fichiers non suivis compris — capturé à intervalle régulier et <strong>juste avant chaque action destructrice</strong>. Un rejet que vous regrettez n’est qu’à une restauration près.',
+  'feature.commit-edit.title': 'Modifier n’importe quel commit',
+  'feature.commit-edit.body':
+    'La coquille date de trois semaines ? Modifiez le fichier <strong>dans le commit d’origine</strong> — tout ce qui suit est rejoué, et toute la cascade est prévisualisée avant qu’une seule ref ne bouge.',
+  'feature.ai.title': 'Apportez vos propres modèles',
+  'feature.ai.body':
+    'Plusieurs comptes d’IA à la fois — une clé OpenAI pour les messages de commit, Claude pour le chat, un Ollama local pour le reste. Les listes de modèles arrivent en direct de chaque fournisseur, et une CLI où vous êtes déjà connecté remplace une clé d’API.',
   'feature.semantic-diff.title': 'Diff sémantique',
   'feature.semantic-diff.body':
     '<code>startServer</code> → <code>bootServer</code>, au lieu d’un mur rouge et vert de 400 lignes. Une vraie analyse tree-sitter, pas une regex.',

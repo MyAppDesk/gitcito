@@ -217,103 +217,16 @@ const footer = (locale = 'en') => {
 
 // ── Landing ─────────────────────────────────────────────────────────────────
 
+// The landing page's headline cards, in display order. Each id is a handbook
+// page; the card's title and body live in `site-i18n/` as `feature.<id>.*`.
 const FEATURES = [
-  {
-    icon: '🛰️',
-    title: 'Conflict radar',
-    id: 'conflict-radar',
-    body: 'See which branches will conflict <strong>before</strong> merging any of them. The merges happen inside the object database — no checkout, no working-tree change, nothing to clean up.'
-  },
-  {
-    icon: '🛡️',
-    title: 'WIP snapshots',
-    id: 'recovery',
-    body: 'Your whole working tree — untracked files included — snapshotted on a timer and <strong>right before every destructive action</strong>. A discard you regret is a restore away.'
-  },
-  {
-    icon: '✏️',
-    title: 'Edit any commit',
-    id: 'commit-edit',
-    body: 'The typo is three weeks back? Edit the file <strong>inside the old commit</strong> — everything above replays, and the whole cascade is previewed before a single ref moves.'
-  },
-  {
-    icon: '📡',
-    title: 'Teammate radar',
-    id: 'teammate-radar',
-    body: 'Who moved what upstream — and whether it lands on <strong>files you have modified right now</strong>. Computed from the last fetch. No server, no agents, no telemetry.'
-  },
-  {
-    icon: '🧠',
-    title: 'Semantic diff',
-    id: 'semantic-diff',
-    body: '<code>startServer</code> → <code>bootServer</code>, instead of a 400-line red/green wall. Real tree-sitter parsing across 18 languages.'
-  },
-  {
-    icon: '⏪',
-    title: 'What changed since',
-    id: 'range-diff',
-    body: 'They force-pushed the branch you reviewed. See which commits were rewritten, dropped or added — the old positions come free from the reflog.'
-  },
-  {
-    icon: '🔑',
-    title: 'Bring your own models',
-    id: 'ai',
-    body: 'Several AI accounts at once — an OpenAI key for commit messages, Claude for chat, a local Ollama for the rest. Model lists come live from each provider, and a CLI you are already signed into works instead of an API key.'
-  },
-  {
-    icon: '💬',
-    title: 'Repository chat',
-    id: 'repo-chat',
-    body: 'Ask this repository a question and get an answer that cites the lines it read. Ask for a change and approve the proposed git actions before they run.'
-  },
-  {
-    icon: '🧲',
-    title: 'Absorb',
-    id: 'absorb',
-    body: 'Stage your review fixes and let blame route each hunk into the commit that introduced it, as a <code>fixup!</code>.'
-  },
-  {
-    icon: '🕰️',
-    title: 'Time machine',
-    id: 'time-machine',
-    body: 'Drag a slider and watch the repository change: files appear, move, come back. HEAD never moves and your uncommitted work is untouched.'
-  },
-  {
-    icon: '🎬',
-    title: 'Timelapse',
-    id: 'timelapse',
-    body: "Replay the repository's whole life as an animation — and export it as a video, recorded in the page with no encoder to install."
-  },
-  {
-    icon: '🧪',
-    title: 'Preview a pull request',
-    id: 'pr-preview',
-    body: "Run someone else's PR — forks included — without committing anything. No API token, no second remote: the head is fetched from the ref the forge already publishes, on GitHub, GitLab, Bitbucket, Azure DevOps or Gitea."
-  },
-  {
-    icon: '🎛️',
-    title: 'Mission control',
-    id: 'mission-control',
-    body: 'Every repository of the workspace on one screen, ordered by what needs you: blocked first, then to sync, then dirty, then quiet.'
-  },
-  {
-    icon: '🏷️',
-    title: 'File attributes, with a UI',
-    id: 'attributes',
-    body: 'The most useful file in git that nobody writes. Line endings settled once for everyone, a changelog that stops conflicting, fixtures kept out of release tarballs — and readable diffs for Word and PDF, when the converter is installed.'
-  },
-  {
-    icon: '🌍',
-    title: 'Sixteen languages',
-    id: 'languages',
-    body: 'Not a stub translation of the buttons — the whole interface, explanations included. Arabic and Hebrew mirror the layout, while the graph, diffs, paths and the terminal stay left-to-right, because that is the direction code reads in.'
-  },
-  {
-    icon: '🔐',
-    title: 'Your secrets stay yours',
-    id: 'security',
-    body: 'No backend. Tokens and vault entries are encrypted with your OS keychain — and nothing touches that keychain until you have been told what for and said yes.'
-  }
+  { icon: '🛡️', id: 'recovery' },
+  { icon: '✏️', id: 'commit-edit' },
+  { icon: '🔑', id: 'ai' },
+  { icon: '💬', id: 'repo-chat' },
+  { icon: '🎛️', id: 'mission-control' },
+  { icon: '🌍', id: 'languages' },
+  { icon: '🔐', id: 'security' }
 ]
 
 // The OS names are proper nouns and stay; only the note beside each is copy.
@@ -325,7 +238,7 @@ const DOWNLOADS = [
 
 // A feature card shows the handbook page's own screenshot. The file is named
 // after the page id, bar the one case where the page covers more than its shot.
-const CARD_SHOT = { security: 'secret-masking' }
+const CARD_SHOT = { security: 'secret-masking', recovery: 'snapshots', ai: 'settings-ai' }
 
 /** The card's screenshot, or null when there is none to show. */
 function cardShot(id) {

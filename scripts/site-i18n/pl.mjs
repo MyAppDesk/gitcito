@@ -15,19 +15,19 @@ export const pl = {
 
   'meta.title': 'Gitcito — cały git, z interfejsem, który ci go pokazuje',
   'meta.description':
-    'Klient Gita napisany w całości vibe codingiem. Za darmo. Graf, przechowalnia z dokładnością do linii, rebase, worktree, podmoduły, LFS — plus kilka rzeczy, których nie robią inne klienty.',
+    'Klient Gita napisany w całości vibe codingiem. Za darmo. Graf, przechowalnia z dokładnością do linii, rebase, worktree, podmoduły, LFS — plus kilka rzeczy, których nikt się po gicie nie spodziewa.',
 
   'hero.title': 'Cały git,<br /><em>z interfejsem, który ci go pokazuje</em>',
   'hero.lede':
-    'Graf, przechowalnia z dokładnością do linii, rebase, worktree, podmoduły, LFS.<br />Zwyczajne rzeczy, zrobione porządnie — plus kilka, których nie robi nikt inny.',
+    'Graf, przechowalnia z dokładnością do linii, rebase, worktree, podmoduły, LFS.<br />Zwyczajne rzeczy, zrobione porządnie — plus kilka, których nikt się po gicie nie spodziewa.',
   'hero.download': 'Pobierz na swoją platformę',
   'hero.source': 'Zobacz źródła',
   'hero.terms': 'Za darmo · MIT · v{version}',
   'hero.graphAlt': 'Graf commitów w Gitcito',
 
-  'features.title': 'Kilka rzeczy, których nie robią inne klienty',
+  'features.title': 'Kilka rzeczy, których nikt się po gicie nie spodziewa',
   'features.sub':
-    'Żadna z nich nie jest powodem, by używać Gitcito — jest nim lista powyżej. Istnieją dlatego, że git zna już odpowiedź, a żadnemu klientowi nie chce się o nią zapytać.',
+    'Żadna z nich nie jest powodem, by używać Gitcito — jest nim lista powyżej. Istnieją dlatego, że git zna już odpowiedź; Gitcito po prostu o nią pyta.',
 
   'ordinary.title': 'Co dostajesz',
   'ordinary.sub':
@@ -73,6 +73,15 @@ export const pl = {
   'feature.conflict-radar.title': 'Radar konfliktów',
   'feature.conflict-radar.body':
     'Zobacz, które gałęzie wejdą w konflikt, <strong>zanim</strong> zmergujesz którąkolwiek z nich. Merge’e dzieją się wewnątrz bazy obiektów — bez przełączania, bez zmiany drzewa roboczego, bez sprzątania po fakcie.',
+  'feature.recovery.title': 'Migawki pracy w toku',
+  'feature.recovery.body':
+    'Całe twoje drzewo robocze — łącznie z nieśledzonymi plikami — zapisywane co jakiś czas i <strong>tuż przed każdą destrukcyjną akcją</strong>. Odrzucenie, którego żałujesz, jest o jedno przywrócenie stąd.',
+  'feature.commit-edit.title': 'Edytuj dowolny commit',
+  'feature.commit-edit.body':
+    'Literówka sprzed trzech tygodni? Edytuj plik <strong>wewnątrz starego commita</strong> — wszystko powyżej zostaje odtworzone, a cała kaskada ma podgląd, zanim ruszy się choć jedna referencja.',
+  'feature.ai.title': 'Przynieś własne modele',
+  'feature.ai.body':
+    'Kilka kont AI naraz — klucz OpenAI do opisów commitów, Claude do czatu, lokalna Ollama do reszty. Listy modeli przychodzą na żywo od każdego dostawcy, a CLI, w którym już jesteś zalogowany, działa zamiast klucza API.',
   'feature.semantic-diff.title': 'Diff semantyczny',
   'feature.semantic-diff.body':
     '<code>startServer</code> → <code>bootServer</code>, zamiast czterystulinijkowej czerwono-zielonej ściany. Prawdziwe parsowanie przez tree-sitter, a nie regex.',

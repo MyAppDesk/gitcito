@@ -15,19 +15,19 @@ export const nl = {
 
   'meta.title': 'Gitcito — heel git, met een UI die het je laat zien',
   'meta.description':
-    'Een volledig vibe-coded Git-client. Gratis. Grafiek, stagen tot op de regel, rebase, worktrees, submodules, LFS — plus een paar dingen die andere clients niet doen.',
+    'Een volledig vibe-coded Git-client. Gratis. Grafiek, stagen tot op de regel, rebase, worktrees, submodules, LFS — plus een paar dingen waarvan je niet wist dat git ze kon.',
 
   'hero.title': 'Heel git,<br /><em>met een UI die het je laat zien</em>',
   'hero.lede':
-    'Grafiek, stagen tot op de regel, rebase, worktrees, submodules, LFS.<br />De gewone dingen, netjes gedaan — plus een paar die niemand anders doet.',
+    'Grafiek, stagen tot op de regel, rebase, worktrees, submodules, LFS.<br />De gewone dingen, netjes gedaan — plus een paar waarvan je niet wist dat git ze kon.',
   'hero.download': 'Download voor jouw platform',
   'hero.source': 'Broncode bekijken',
   'hero.terms': 'Gratis · MIT · v{version}',
   'hero.graphAlt': 'De commitgrafiek van Gitcito',
 
-  'features.title': 'Een paar dingen die andere clients niet doen',
+  'features.title': 'Een paar dingen waarvan je niet wist dat git ze kon',
   'features.sub':
-    'Geen van deze is de reden om Gitcito te gebruiken — de lijst hierboven is dat. Ze bestaan omdat git het antwoord allang weet en geen enkele client de moeite neemt het te vragen.',
+    'Geen van deze is de reden om Gitcito te gebruiken — de lijst hierboven is dat. Ze bestaan omdat git het antwoord allang weet; Gitcito vraagt er gewoon naar.',
 
   'ordinary.title': 'Wat je krijgt',
   'ordinary.sub':
@@ -75,6 +75,15 @@ export const nl = {
   'feature.conflict-radar.title': 'Conflictradar',
   'feature.conflict-radar.body':
     'Zie welke branches gaan conflicteren <strong>voordat</strong> je er ook maar één merget. Het mergen gebeurt binnen de objectdatabase — geen checkout, geen wijziging aan de werkboom, niets om op te ruimen.',
+  'feature.recovery.title': 'WIP-snapshots',
+  'feature.recovery.body':
+    'Je hele werkboom — ongevolgde bestanden inbegrepen — vastgelegd op een timer en <strong>vlak vóór elke destructieve actie</strong>. Een weggegooide wijziging waar je spijt van hebt is één herstel verwijderd.',
+  'feature.commit-edit.title': 'Bewerk elke commit',
+  'feature.commit-edit.body':
+    'Zit de typfout drie weken terug? Bewerk het bestand <strong>in de oude commit zelf</strong> — alles erboven wordt opnieuw afgespeeld, en de hele cascade krijgt een voorvertoning voordat er één ref beweegt.',
+  'feature.ai.title': 'Breng je eigen modellen mee',
+  'feature.ai.body':
+    'Meerdere AI-accounts tegelijk — een OpenAI-sleutel voor commitberichten, Claude voor de chat, een lokale Ollama voor de rest. Modellenlijsten komen live van elke aanbieder, en een CLI waarop je al bent aangemeld werkt in plaats van een API-sleutel.',
   'feature.semantic-diff.title': 'Semantische diff',
   'feature.semantic-diff.body':
     '<code>startServer</code> → <code>bootServer</code>, in plaats van een rood-groene muur van 400 regels. Echte tree-sitter-parsing, geen regex.',

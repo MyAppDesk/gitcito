@@ -14,19 +14,19 @@ export const ptBR = {
 
   'meta.title': 'Gitcito — o git inteiro, com uma interface que mostra tudo isso',
   'meta.description':
-    'Um cliente Git inteiramente vibe-coded. Grátis. Grafo, staging linha a linha, rebase, worktrees, submódulos, LFS — além de algumas coisas que outros clientes não fazem.',
+    'Um cliente Git inteiramente vibe-coded. Grátis. Grafo, staging linha a linha, rebase, worktrees, submódulos, LFS — além de algumas coisas que você não sabia que o git podia fazer.',
 
   'hero.title': 'O git inteiro,<br /><em>com uma interface que mostra tudo isso</em>',
   'hero.lede':
-    'Grafo, staging linha a linha, rebase, worktrees, submódulos, LFS.<br />As coisas comuns, feitas direito — além de algumas que mais ninguém faz.',
+    'Grafo, staging linha a linha, rebase, worktrees, submódulos, LFS.<br />As coisas comuns, feitas direito — além de algumas que você não sabia que o git podia fazer.',
   'hero.download': 'Baixar para a sua plataforma',
   'hero.source': 'Ver o código',
   'hero.terms': 'Grátis · MIT · v{version}',
   'hero.graphAlt': 'O grafo de commits do Gitcito',
 
-  'features.title': 'Algumas coisas que outros clientes não fazem',
+  'features.title': 'Algumas coisas que você não sabia que o git podia fazer',
   'features.sub':
-    'Nenhuma delas é o motivo para usar o Gitcito — o motivo é a lista acima. Elas existem porque o git já sabe a resposta e nenhum cliente se dá ao trabalho de perguntar.',
+    'Nenhuma delas é o motivo para usar o Gitcito — o motivo é a lista acima. Elas existem porque o git já sabe a resposta; o Gitcito simplesmente pergunta.',
 
   'ordinary.title': 'O que está incluído',
   'ordinary.sub':
@@ -72,6 +72,15 @@ export const ptBR = {
   'feature.conflict-radar.title': 'Radar de conflitos',
   'feature.conflict-radar.body':
     'Veja quais branches vão conflitar <strong>antes</strong> de fazer merge de qualquer uma delas. Os merges acontecem dentro do banco de objetos — sem checkout, sem mexer na árvore de trabalho, nada para limpar.',
+  'feature.recovery.title': 'Snapshots do trabalho em andamento',
+  'feature.recovery.body':
+    'Toda a sua árvore de trabalho — arquivos não rastreados incluídos — fotografada de tempos em tempos e <strong>logo antes de cada ação destrutiva</strong>. Um descarte do qual você se arrepende está a uma restauração de distância.',
+  'feature.commit-edit.title': 'Edite qualquer commit',
+  'feature.commit-edit.body':
+    'O erro de digitação está três semanas atrás? Edite o arquivo <strong>dentro do commit antigo</strong> — tudo acima é reaplicado, e a cascata inteira é pré-visualizada antes de uma única ref se mover.',
+  'feature.ai.title': 'Traga seus próprios modelos',
+  'feature.ai.body':
+    'Várias contas de IA ao mesmo tempo — uma chave da OpenAI para mensagens de commit, Claude para o chat, um Ollama local para o resto. As listas de modelos chegam ao vivo de cada provedor, e uma CLI em que você já está conectado funciona no lugar de uma chave de API.',
   'feature.semantic-diff.title': 'Diff semântico',
   'feature.semantic-diff.body':
     '<code>startServer</code> → <code>bootServer</code>, em vez de um paredão vermelho e verde de 400 linhas. Parsing de verdade com tree-sitter, não uma expressão regular.',

@@ -36,19 +36,19 @@ export const en = {
 
   'meta.title': 'Gitcito — the whole of git, with a UI that shows it to you',
   'meta.description':
-    'A fully vibe-coded Git client. Free. Graph, staging by line, rebase, worktrees, submodules, LFS — plus a few things other clients do not do.',
+    'A fully vibe-coded Git client. Free. Graph, staging by line, rebase, worktrees, submodules, LFS — plus a few things you did not know git could do.',
 
   'hero.title': 'The whole of git,<br /><em>with a UI that shows it to you</em>',
   'hero.lede':
-    'Graph, staging by line, rebase, worktrees, submodules, LFS.<br />The ordinary things, done properly — plus a few nobody else does.',
+    'Graph, staging by line, rebase, worktrees, submodules, LFS.<br />The ordinary things, done properly — plus a few you did not know git could do.',
   'hero.download': 'Download for your platform',
   'hero.source': 'View source',
   'hero.terms': 'Free · MIT · v{version}',
   'hero.graphAlt': 'The Gitcito commit graph',
 
-  'features.title': 'A few things other clients do not do',
+  'features.title': 'A few things you did not know git could do',
   'features.sub':
-    'None of these is the reason to use Gitcito — the list above is. They exist because git already knows the answer and no client bothers to ask it.',
+    'None of these is the reason to use Gitcito — the list above is. They exist because git already knows the answer; Gitcito just asks.',
 
   'ordinary.title': 'What you get',
   'ordinary.sub':
@@ -93,6 +93,15 @@ export const en = {
   'feature.conflict-radar.title': 'Conflict radar',
   'feature.conflict-radar.body':
     'See which branches will conflict <strong>before</strong> merging any of them. The merges happen inside the object database — no checkout, no working-tree change, nothing to clean up.',
+  'feature.recovery.title': 'WIP snapshots',
+  'feature.recovery.body':
+    'Your whole working tree — untracked files included — snapshotted on a timer and <strong>right before every destructive action</strong>. A discard you regret is a restore away.',
+  'feature.commit-edit.title': 'Edit any commit',
+  'feature.commit-edit.body':
+    'The typo is three weeks back? Edit the file <strong>inside the old commit</strong> — everything above replays, and the whole cascade is previewed before a single ref moves.',
+  'feature.ai.title': 'Bring your own models',
+  'feature.ai.body':
+    'Several AI accounts at once — an OpenAI key for commit messages, Claude for chat, a local Ollama for the rest. Model lists come live from each provider, and a CLI you are already signed into works instead of an API key.',
   'feature.semantic-diff.title': 'Semantic diff',
   'feature.semantic-diff.body':
     '<code>startServer</code> → <code>bootServer</code>, instead of a 400-line red/green wall. Real tree-sitter parsing, not a regex.',

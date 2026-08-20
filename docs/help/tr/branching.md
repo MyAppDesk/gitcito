@@ -34,6 +34,18 @@ listeleyen tek bir onaydan sonra içindeki her şeyi kaldırır — üzerinde
 olduğunuz dal hariç tutulur. Aynı menü uzak dal klasörlerinde de vardır; orada
 silme uzak depodan yapılır.
 
+Araç çubuğundaki dal açılır menüsü yerel ve uzak dalları listeler. Bu
+menüdeki herhangi bir dala sağ tıklayarak yerel bir dalı yeniden
+adlandırabilir, adını kopyalayabilir, yeni bir worktree içinde açabilir,
+etkin dala birleştirebilir veya silebilirsiniz. Uzak dallarda yeniden
+adlandırma yoktur; onay sonrasında uzak depodan silinirler. Gitcito, seçilen
+referans zaten etkin dalın içindeyse birleştirmeyi gizler ve o dal zaten
+çekilmişse worktree oluşturmayı devre dışı bırakır.
+
+![Araç çubuğu açılır menüsünde yerel dal eylemleri](../../screenshots/branch-dropdown-local-context-menu.webp)
+
+![Araç çubuğu açılır menüsünde uzak dal eylemleri](../../screenshots/branch-dropdown-remote-context-menu.webp)
+
 Satırlar dosyalar gibi çoklu seçilir: <kbd>⌘/Ctrl</kbd> ile tıklamak bir satırı
 açıp kapatır, <kbd>Shift</kbd> ile tıklamak bir aralık seçer,
 <kbd>Shift</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> ise seçimi en son tıkladığınız

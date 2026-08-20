@@ -212,7 +212,7 @@ export function BranchStatusPicker({ repo }: { repo: RepoData }): React.JSX.Elem
         onClick={toggle}
       >
         <span className="repo-pill-stack">
-          <span className="repo-pill-label">branch</span>
+          <span className="repo-pill-label">{t('toolbar.branch')}</span>
           <strong>
             <GitBranch size={12} /> {repo.branches.current || t('toolbar.noBranch')}
           </strong>

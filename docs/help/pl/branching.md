@@ -35,6 +35,18 @@ potwierdzeniu, które wypisuje dokładnie, które gałęzie znikną — gałąź
 której jesteś, jest wykluczona. To samo menu istnieje na katalogach zdalnych
 gałęzi, usuwając wtedy ze zdalnego repozytorium.
 
+Rozwijana lista gałęzi na pasku narzędzi pokazuje gałęzie lokalne i zdalne.
+Kliknij prawym przyciskiem dowolną gałąź na tej liście, aby zmienić nazwę
+gałęzi lokalnej, skopiować jej nazwę, otworzyć ją w nowym worktree, scalić
+ją z aktywną gałęzią lub ją usunąć. Gałęzie zdalne nie oferują zmiany nazwy
+i po potwierdzeniu są usuwane ze swojego zdalnego repozytorium. Gitcito
+pomija scalanie, gdy wybrana referencja jest już zawarta w aktywnej gałęzi,
+i wyłącza tworzenie worktree, gdy ta gałąź jest już wyewidencjonowana.
+
+![Akcje gałęzi lokalnej na rozwijanej liście paska narzędzi](../../screenshots/branch-dropdown-local-context-menu.webp)
+
+![Akcje gałęzi zdalnej na rozwijanej liście paska narzędzi](../../screenshots/branch-dropdown-remote-context-menu.webp)
+
 Wiersze zaznacza się grupowo jak pliki: klik z <kbd>⌘/Ctrl</kbd> przełącza
 wiersz, klik z <kbd>Shift</kbd> zaznacza zakres, a
 <kbd>Shift</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> rozszerza zaznaczenie od ostatnio

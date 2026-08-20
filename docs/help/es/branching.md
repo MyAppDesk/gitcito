@@ -33,6 +33,18 @@ contiene tras una única confirmación que lista exactamente qué ramas se van �
 la rama en la que estás queda excluida. El mismo menú existe en las carpetas de
 ramas remotas, borrando del remoto en su lugar.
 
+El desplegable de ramas de la barra de herramientas lista las ramas locales
+y remotas. Haz clic derecho en cualquier rama de ese desplegable para
+renombrar una rama local, copiar su nombre, abrirla en un nuevo worktree,
+fusionarla en la rama activa o eliminarla. Las ramas remotas omiten el
+renombrado y se eliminan de su remoto tras una confirmación. Gitcito omite
+la fusión cuando la referencia seleccionada ya está contenida en la rama
+activa, y desactiva la creación del worktree cuando esa rama ya está extraída.
+
+![Acciones de rama local en el desplegable de la barra de herramientas](../../screenshots/branch-dropdown-local-context-menu.webp)
+
+![Acciones de rama remota en el desplegable de la barra de herramientas](../../screenshots/branch-dropdown-remote-context-menu.webp)
+
 Las filas se seleccionan en grupo como los archivos: clic con <kbd>⌘/Ctrl</kbd>
 alterna una fila, clic con <kbd>Mayús</kbd> selecciona un rango, y
 <kbd>Mayús</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> amplía la selección desde la última

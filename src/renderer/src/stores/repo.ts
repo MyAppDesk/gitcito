@@ -1925,8 +1925,12 @@ export const repoActions = {
       }
     ),
 
-  worktreeAdd: (path: string, dir: string, branch: string, newBranch: boolean) =>
-    useRepoStore.getState().run(path, interp(t('act.addedWorktree'), { dir }), () => gitApi.worktreeAdd(path, dir, branch, newBranch)),
+  worktreeAdd: (path: string, dir: string, branch: string, newBranch: boolean, startPoint?: string) =>
+    useRepoStore
+      .getState()
+      .run(path, interp(t('act.addedWorktree'), { dir }), () =>
+        gitApi.worktreeAdd(path, dir, branch, newBranch, startPoint)
+      ),
 
   worktreeRemove: (path: string, dir: string, force = false) =>
     useRepoStore.getState().run(path, interp(t('act.removedWorktree'), { dir }), () => gitApi.worktreeRemove(path, dir, force)),

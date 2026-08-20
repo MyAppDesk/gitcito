@@ -33,6 +33,11 @@ import { editorArgs, editorLaunch, supportsLine } from '../src/shared/editors'
 import { branchDropActions, encodeDropRef, decodeDropRef, type DropRef } from '../src/renderer/src/lib/branchDrop'
 import { refIntegrationActions } from '../src/renderer/src/lib/refMenu'
 import {
+  branchContextActionIds,
+  branchMergeWouldChange,
+  branchWorktreePlan
+} from '../src/renderer/src/lib/branchMenu'
+import {
   ATTR_PRESETS,
   formatRule,
   parseAttributes,
@@ -3263,6 +3268,44 @@ describe('ref integration menu', () => {
       expect(action.vars.current).toBe('main')
       expect(action.disabled).toBe(false)
     }
+  })
+})
+
+describe('branch dropdown context menu', () => {
+  it('offers rename only for local branches', () => {
+    expect(branchContextActionIds('local')).toEqual(['rename', 'copy', 'worktree', 'merge', 'delete'])
+    expect(branchContextActionIds('remote')).toEqual(['copy', 'worktree', 'merge', 'delete'])
+  })
+
+  it('omits merge when it would not change the active branch', () => {
+    expect(branchContextActionIds('remote', false)).toEqual(['copy', 'worktree', 'delete'])
+  })
+
+  it('detects redundant current and upstream merges', () => {
+    const current = { name: 'main', sha: 'abc123', upstream: 'origin/main', behind: 0 }
+    expect(branchMergeWouldChange('main', 'abc123', current)).toBe(false)
+    expect(branchMergeWouldChange('origin/main', 'abc123', current)).toBe(false)
+    expect(branchMergeWouldChange('origin/main', 'def456', current)).toBe(false)
+    expect(branchMergeWouldChange('origin/feature', 'def456', current)).toBe(true)
+    expect(branchMergeWouldChange('origin/feature', 'def456', current, true)).toBe(false)
+    expect(branchMergeWouldChange('origin/main', 'def456', { ...current, behind: 1 })).toBe(true)
+  })
+
+  it('creates a local branch from a remote ref for a remote worktree', () => {
+    expect(branchWorktreePlan('/repos/project', 'feature/topic', 'origin/feature/topic', false)).toEqual({
+      dir: '/repos/project--feature-topic',
+      branch: 'feature/topic',
+      newBranch: true,
+      startPoint: 'origin/feature/topic'
+    })
+  })
+
+  it('reuses an existing local branch without a remote start point', () => {
+    expect(branchWorktreePlan('/repos/project', 'feature/topic', 'origin/feature/topic', true)).toEqual({
+      dir: '/repos/project--feature-topic',
+      branch: 'feature/topic',
+      newBranch: false
+    })
   })
 })
 

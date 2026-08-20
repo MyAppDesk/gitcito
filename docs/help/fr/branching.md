@@ -38,6 +38,19 @@ branche courante est exclue. Le même menu existe sur les dossiers de branches
 distantes, en supprimant côté distant.
 
 Les lignes se sélectionnent en groupe comme des fichiers : un clic avec
+Le menu déroulant des branches dans la barre d'outils liste les branches
+locales et distantes. Un clic droit sur une branche de ce menu permet de
+renommer une branche locale, copier son nom, l'extraire dans un nouveau
+worktree, la fusionner dans la branche active ou la supprimer. Les branches
+distantes n'offrent pas le renommage et sont supprimées de leur dépôt
+distant après confirmation. Gitcito masque la fusion quand la référence
+sélectionnée est déjà contenue dans la branche active, et désactive la
+création de worktree quand cette branche est déjà extraite.
+
+![Actions sur une branche locale dans le menu déroulant de la barre d'outils](../../screenshots/branch-dropdown-local-context-menu.webp)
+
+![Actions sur une branche distante dans le menu déroulant de la barre d'outils](../../screenshots/branch-dropdown-remote-context-menu.webp)
+
 <kbd>⌘/Ctrl</kbd> bascule une ligne, un clic avec <kbd>Maj</kbd> sélectionne
 une plage, et <kbd>Maj</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> étend la sélection
 depuis la dernière ligne cliquée. Un clic droit sur la sélection ouvre le menu

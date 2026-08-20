@@ -692,6 +692,38 @@ export const shots = [
     }
   },
   {
+    // Branch dropdown — right-click a local branch for rename / copy / worktree /
+    // merge / delete. The picker stays open behind the menu on purpose.
+    out: 'branch-dropdown-local-context-menu',
+    repos: ['force-push'],
+    themes: ['dark'],
+    drive: async (page) => {
+      await page.click('.repo-pill[aria-haspopup="menu"]')
+      await page.waitForSelector('.branch-picker-popover')
+      await page.click('.branch-picker-item:has(.branch-picker-name:text-is("feature/login"))', {
+        button: 'right'
+      })
+      await page.waitForSelector('.context-menu')
+      await page.waitForTimeout(400)
+    }
+  },
+  {
+    // The same menu on a remote branch — rename drops out and delete targets
+    // the remote after its own confirmation.
+    out: 'branch-dropdown-remote-context-menu',
+    repos: ['force-push'],
+    themes: ['dark'],
+    drive: async (page) => {
+      await page.click('.repo-pill[aria-haspopup="menu"]')
+      await page.waitForSelector('.branch-picker-popover')
+      await page.click('.branch-picker-item:has(.branch-picker-name:text-is("origin/feature/login"))', {
+        button: 'right'
+      })
+      await page.waitForSelector('.context-menu')
+      await page.waitForTimeout(400)
+    }
+  },
+  {
     // WIP snapshots — uncommitted-work safety net. Select a snapshot and a
     // file so the shot shows the whole story: list, kinds, file list, diff.
     out: 'snapshots',

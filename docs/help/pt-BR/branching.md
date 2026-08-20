@@ -33,6 +33,18 @@ que há dentro após uma única confirmação que lista exatamente quais branche
 vão — a branch em que você está fica de fora. O mesmo menu existe nas pastas de
 branches remotas, excluindo do remote.
 
+O menu suspenso de branches na barra de ferramentas lista branches locais e
+remotos. Clique com o botão direito em qualquer branch desse menu para
+renomear um branch local, copiar seu nome, abri-lo em um novo worktree,
+mesclá-lo no branch ativo ou excluí-lo. Branches remotos omitem a renomeação
+e são excluídos do remoto após confirmação. O Gitcito omite a mesclagem
+quando a referência selecionada já está contida no branch ativo e desativa a
+criação de worktree quando esse branch já está em checkout.
+
+![Ações de branch local no menu suspenso da barra de ferramentas](../../screenshots/branch-dropdown-local-context-menu.webp)
+
+![Ações de branch remoto no menu suspenso da barra de ferramentas](../../screenshots/branch-dropdown-remote-context-menu.webp)
+
 As linhas se selecionam em grupo como arquivos: clique com <kbd>⌘/Ctrl</kbd>
 alterna uma linha, clique com <kbd>Shift</kbd> seleciona um intervalo, e
 <kbd>Shift</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> amplia a seleção a partir da última

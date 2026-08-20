@@ -118,6 +118,57 @@ describe('stacked branches (stacked-branches playground)', () => {
   })
 })
 
+describe('remote branch worktree checkout', () => {
+  const root = mkdtempSync(join(tmpdir(), 'gitcito-remote-worktree-'))
+  const repo = join(root, 'repo')
+  const worktree = join(root, 'worktree')
+
+  beforeAll(() => {
+    execFileSync('git', ['init', '-q', '-b', 'main', repo])
+    execFileSync('git', ['-C', repo, 'config', 'user.name', 'Gitcito Test'])
+    execFileSync('git', ['-C', repo, 'config', 'user.email', 'gitcito@example.com'])
+    writeFileSync(join(repo, 'state.txt'), 'main\n')
+    execFileSync('git', ['-C', repo, 'add', 'state.txt'])
+    execFileSync('git', ['-C', repo, 'commit', '-qm', 'main'])
+    execFileSync('git', ['-C', repo, 'update-ref', 'refs/remotes/origin/base', 'HEAD'])
+    execFileSync('git', ['-C', repo, 'switch', '-qc', 'remote-source'])
+    writeFileSync(join(repo, 'state.txt'), 'remote\n')
+    execFileSync('git', ['-C', repo, 'commit', '-qam', 'remote'])
+    execFileSync('git', ['-C', repo, 'update-ref', 'refs/remotes/origin/feature/topic', 'HEAD'])
+    execFileSync('git', [
+      '-C',
+      repo,
+      'symbolic-ref',
+      'refs/remotes/origin/HEAD',
+      'refs/remotes/origin/feature/topic'
+    ])
+    execFileSync('git', ['-C', repo, 'switch', '-q', 'main'])
+    execFileSync('git', ['-C', repo, 'branch', '-D', 'remote-source'])
+  })
+
+  afterAll(() => rmSync(root, { recursive: true, force: true }))
+
+  it('does not expose a symbolic remote HEAD as a branch named after the remote', async () => {
+    const branches = await gitService.branches(repo)
+    expect(branches.remotes.map((branch) => branch.fullName)).toEqual([
+      'origin/base',
+      'origin/feature/topic'
+    ])
+    expect(branches.remotes.find((branch) => branch.fullName === 'origin/base')?.mergedIntoCurrent).toBe(true)
+    expect(branches.remotes.find((branch) => branch.fullName === 'origin/feature/topic')?.mergedIntoCurrent).toBe(
+      false
+    )
+  })
+
+  it('starts the new local branch at the selected remote ref', async () => {
+    await gitService.worktreeAdd(repo, worktree, 'feature/topic', true, 'origin/feature/topic')
+    expect(execFileSync('git', ['-C', worktree, 'branch', '--show-current'], { encoding: 'utf-8' }).trim()).toBe(
+      'feature/topic'
+    )
+    expect(readFileSync(join(worktree, 'state.txt'), 'utf-8')).toBe('remote\n')
+  })
+})
+
 describe('WIP snapshots (snapshots playground)', () => {
   it('lists the seeded snapshots with their kinds and takes a new one when dirty', async () => {
     const R = cloneFixture('snapshots')

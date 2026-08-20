@@ -59,6 +59,7 @@ import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { repoChatAvailable } from '../lib/repoChatUI'
 import { useT, interp } from '../i18n'
+import { BranchStatusPicker } from './BranchStatusPicker'
 
 /** Short human-readable "time since" label, e.g. "now", "3m ago", "2h ago". */
 function timeSince(at: number | null): string {
@@ -317,27 +318,6 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
     openContextMenu(rect.left, rect.bottom + 6, items)
   }
 
-  // Branch switcher — checkout a local branch, or create a new one.
-  const branchMenu = (e: React.MouseEvent): void => {
-    e.stopPropagation()
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-    const items: MenuItem[] = repo.branches.locals.map((b) => ({
-      label: `${b.isCurrent ? '✓ ' : '   '}${b.name}`,
-      onClick: () => {
-        if (!b.isCurrent) void repoActions.checkout(path, b.name)
-      }
-    }))
-    items.push(
-      { separator: true },
-      {
-        label: t('tools.newBranch'),
-        icon: <GitBranchPlus size={15} />,
-        onClick: () => openModal({ kind: 'create-branch', path, currentBranch: repo.branches.current })
-      }
-    )
-    openContextMenu(rect.left, rect.bottom + 6, items)
-  }
-
   // The sidebar toggle lives on the same edge as the sidebar itself: leftmost
   // when docked left, and after the terminal button when docked right.
   const sidebarToggle = (
@@ -362,15 +342,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
           <ChevronDown size={13} />
         </button>
         <ChevronRight size={14} className="repo-pill-arrow" />
-        <button className="repo-pill" onClick={branchMenu} title={t('toolbar.switchBranch')}>
-          <span className="repo-pill-stack">
-            <span className="repo-pill-label">branch</span>
-            <strong>
-              <GitBranch size={12} /> {repo.branches.current || t('toolbar.noBranch')}
-            </strong>
-          </span>
-          <ChevronDown size={13} />
-        </button>
+        <BranchStatusPicker repo={repo} />
       </div>
 
       <div className="toolbar-center">

@@ -31,6 +31,17 @@ under `feature` (4 branches)* removes everything inside after one confirmation
 that lists exactly which branches go — the branch you are on is excluded. The
 same menu exists on remote branch folders, deleting from the remote instead.
 
+The branch dropdown in the toolbar lists local and remote branches. Right-click
+any branch in that dropdown to rename a local branch, copy its name, check it
+out in a new worktree, merge it into the active branch, or delete it. Remote
+branches omit rename and are deleted from their remote after confirmation.
+Gitcito omits merge when the selected ref is already contained in the active
+branch, and disables worktree creation when that branch is already checked out.
+
+![Local branch actions in the toolbar dropdown](../screenshots/branch-dropdown-local-context-menu.webp)
+
+![Remote branch actions in the toolbar dropdown](../screenshots/branch-dropdown-remote-context-menu.webp)
+
 Rows multi-select like files: <kbd>⌘/Ctrl</kbd>-click toggles a row,
 <kbd>Shift</kbd>-click selects a range, and <kbd>Shift</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd>
 grows the selection from the last row you clicked. Right-click the selection

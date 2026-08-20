@@ -33,6 +33,19 @@ die precies opsomt welke branches verdwijnen — de branch waarop je staat blijf
 buiten schot. Hetzelfde menu bestaat op mappen met remote branches; daar wordt
 van de remote verwijderd.
 
+De branch-dropdown in de werkbalk toont lokale en remote branches. Klik met
+de rechtermuisknop op een branch in die dropdown om een lokale branch te
+hernoemen, de naam te kopiëren, hem in een nieuwe worktree uit te checken,
+hem in de actieve branch te mergen of hem te verwijderen. Remote branches
+bieden geen hernoemen en worden na bevestiging van hun remote verwijderd.
+Gitcito laat de merge weg wanneer de geselecteerde referentie al in de
+actieve branch zit, en schakelt het aanmaken van een worktree uit wanneer
+die branch al is uitgecheckt.
+
+![Acties voor een lokale branch in de werkbalk-dropdown](../../screenshots/branch-dropdown-local-context-menu.webp)
+
+![Acties voor een remote branch in de werkbalk-dropdown](../../screenshots/branch-dropdown-remote-context-menu.webp)
+
 Rijen zijn meervoudig te selecteren zoals bestanden: <kbd>⌘/Ctrl</kbd>-klik
 schakelt een rij om, <kbd>Shift</kbd>-klik selecteert een bereik, en
 <kbd>Shift</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> breidt de selectie uit vanaf de

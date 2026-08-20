@@ -35,6 +35,19 @@ Bestätigung, die genau auflistet, welche Branches gehen — der Branch, auf dem
 du stehst, bleibt außen vor. Dasselbe Menü gibt es auf Remote-Branch-Ordnern;
 dort wird vom Remote gelöscht.
 
+Das Branch-Dropdown in der Werkzeugleiste listet lokale und Remote-Branches.
+Ein Rechtsklick auf einen Branch in diesem Dropdown benennt einen lokalen
+Branch um, kopiert seinen Namen, checkt ihn in einem neuen Worktree aus,
+mergt ihn in den aktiven Branch oder löscht ihn. Remote-Branches bieten kein
+Umbenennen an und werden nach einer Bestätigung von ihrem Remote gelöscht.
+Gitcito blendet den Merge aus, wenn die gewählte Referenz bereits im aktiven
+Branch enthalten ist, und deaktiviert das Anlegen eines Worktrees, wenn der
+Branch schon ausgecheckt ist.
+
+![Aktionen für lokale Branches im Dropdown der Werkzeugleiste](../../screenshots/branch-dropdown-local-context-menu.webp)
+
+![Aktionen für Remote-Branches im Dropdown der Werkzeugleiste](../../screenshots/branch-dropdown-remote-context-menu.webp)
+
 Zeilen lassen sich wie Dateien mehrfach auswählen: <kbd>⌘/Strg</kbd>-Klick
 schaltet eine Zeile um, <kbd>Umschalt</kbd>-Klick wählt einen Bereich, und
 <kbd>Umschalt</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> erweitert die Auswahl von der

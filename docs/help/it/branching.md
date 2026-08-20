@@ -34,6 +34,18 @@ dopo un'unica conferma che elenca esattamente quali branch se ne vanno — il
 branch su cui ti trovi è escluso. Lo stesso menu esiste sulle cartelle dei
 branch remoti, eliminando dal remote.
 
+Il menu a tendina dei branch nella barra degli strumenti elenca i branch
+locali e remoti. Fai clic destro su un branch in quel menu per rinominare un
+branch locale, copiarne il nome, aprirlo in un nuovo worktree, fonderlo nel
+branch attivo o eliminarlo. I branch remoti omettono la rinomina e vengono
+eliminati dal loro remoto dopo una conferma. Gitcito omette il merge quando
+il riferimento selezionato è già contenuto nel branch attivo e disabilita la
+creazione del worktree quando quel branch è già estratto.
+
+![Azioni sul branch locale nel menu a tendina della barra degli strumenti](../../screenshots/branch-dropdown-local-context-menu.webp)
+
+![Azioni sul branch remoto nel menu a tendina della barra degli strumenti](../../screenshots/branch-dropdown-remote-context-menu.webp)
+
 Le righe si selezionano in gruppo come i file: un clic con <kbd>⌘/Ctrl</kbd>
 commuta una riga, un clic con <kbd>Maiusc</kbd> seleziona un intervallo, e
 <kbd>Maiusc</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> estende la selezione dall'ultima

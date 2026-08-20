@@ -54,6 +54,19 @@ con evidenziazione della sintassi per tutto il resto.
 
 ![Anteprima di un Markdown](../../screenshots/markdown-preview.webp)
 
+## File molto grandi
+
+Le anteprime e la vista file caricano l'intero file in memoria, quindi
+entrambe rifiutano i file oltre un limite di dimensione (32 MB per le
+anteprime, 16 MB per il testo) e indicano invece quanto è grande il file.
+**Carica comunque** annulla il limite per quel file — nulla è fuori portata, i
+caricamenti grandi sono solo opzionali. File e diff oltre qualche migliaio di
+righe vengono ancora renderizzati per intero, ma le righe fuori dalla vista non
+vengono più impaginate né disegnate: un diff gigante di un lockfile smette di
+costare la memoria di un intero laptop.
+
+![Un file oltre il limite di dimensione, con Carica comunque](../../screenshots/file-too-large.webp)
+
 ## Scheda File
 
 La scheda **File** della barra laterale sinistra naviga l'albero di lavoro vero e

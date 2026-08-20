@@ -52,6 +52,20 @@ código com destaque de sintaxe para todo o resto.
 
 ![Pré-visualização de Markdown](../../screenshots/markdown-preview.webp)
 
+## Arquivos muito grandes
+
+As pré-visualizações e a visão de arquivo carregam o arquivo inteiro na
+memória, então ambas recusam arquivos acima de um limite de tamanho (32 MB
+para pré-visualizações, 16 MB para texto) e mostram, em vez disso, o tamanho
+do arquivo. **Carregar mesmo assim** derruba o limite para aquele arquivo —
+nada fica fora de alcance, cargas grandes são apenas opcionais. Arquivos e
+diffs com mais de alguns milhares de linhas continuam sendo renderizados por
+completo, mas linhas fora da área visível não são mais dispostas nem pintadas,
+então um diff gigante de lockfile deixa de custar a memória de um laptop
+inteiro.
+
+![Um arquivo acima do limite de tamanho, com Carregar mesmo assim](../../screenshots/file-too-large.webp)
+
 ## Aba de arquivos
 
 A aba **Arquivos** da barra lateral esquerda navega pela própria árvore de

@@ -152,7 +152,7 @@ const call = <T>(method: string, ...args: unknown[]): Promise<T> => window.api.g
 
 export const gitApi = {
   open: (path: string) => call<RepoSummary>('open', path),
-  log: (path: string, max?: number) => call<GraphCommit[]>('log', path, max),
+  log: (path: string, max?: number, skip?: number) => call<GraphCommit[]>('log', path, max, skip),
   branches: (path: string) => call<BranchesPayload>('branches', path),
   status: (path: string) => call<RepoStatus>('status', path),
   stashes: (path: string) => call<StashInfo[]>('stashes', path),
@@ -418,7 +418,8 @@ export const gitApi = {
   commitBranches: (path: string, hash: string) => call<CommitBranchInfo[]>('commitBranches', path, hash),
   commitTags: (path: string, hash: string) => call<string[]>('commitTags', path, hash),
 
-  fileContent: (path: string, file: string, ref?: string) => call<string>('fileContent', path, file, ref),
+  fileContent: (path: string, file: string, ref?: string, force?: boolean) =>
+    call<string>('fileContent', path, file, ref, force),
   searchFileContents: (
     path: string,
     files: string[],
@@ -460,7 +461,8 @@ export const gitApi = {
     query: string,
     opts?: { caseSensitive?: boolean; regex?: boolean; max?: number }
   ) => call<HistorySearchHit[]>('searchHistory', path, query, opts),
-  fileDataUrl: (path: string, file: string, ref?: string) => call<string>('fileDataUrl', path, file, ref),
+  fileDataUrl: (path: string, file: string, ref?: string, force?: boolean) =>
+    call<string>('fileDataUrl', path, file, ref, force),
   imageDiff: (path: string, file: string, beforeRef: string | null, afterRef?: string) =>
     call<{ before: string | null; after: string | null }>('imageDiff', path, file, beforeRef, afterRef),
   blameFile: (path: string, file: string, ref?: string) => call<BlameLine[]>('blameFile', path, file, ref),

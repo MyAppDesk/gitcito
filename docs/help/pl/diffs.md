@@ -53,6 +53,19 @@ z podświetlaniem składni.
 
 ![Podgląd Markdowna](../../screenshots/markdown-preview.webp)
 
+## Bardzo duże pliki
+
+Podglądy i widok pliku wczytują plik w całości do pamięci, więc oba odmawiają
+otwarcia plików powyżej limitu rozmiaru (32 MB dla podglądów, 16 MB dla
+tekstu) i zamiast tego pokazują, jak duży jest plik. **Wczytaj mimo to** znosi
+limit dla tego jednego pliku — nic nie jest niedostępne, duże wczytania są po
+prostu dobrowolne. Pliki i diffy powyżej kilku tysięcy wierszy nadal renderują
+się w całości, ale wiersze przewinięte poza widok nie są już układane ani
+malowane, więc gigantyczny diff lockfile'a przestaje kosztować pamięć całego
+laptopa.
+
+![Plik powyżej limitu rozmiaru, z opcją Wczytaj mimo to](../../screenshots/file-too-large.webp)
+
 ## Zakładka Pliki
 
 Zakładka **Pliki** w lewym panelu przegląda samo drzewo robocze, z plakietkami

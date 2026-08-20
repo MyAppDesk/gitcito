@@ -156,6 +156,8 @@ export const ptBR: Dict = {
   'hover.unpin': 'Desafixar',
   'preview.empty': 'Nada para pré-visualizar.',
   'preview.unsupported': 'Não há pré-visualização para este tipo de arquivo.',
+  'preview.tooLarge': 'Este arquivo tem {size}. Carregá-lo pode usar muita memória.',
+  'preview.tooLargeLoad': 'Carregar mesmo assim',
 
   // Grafo
   'graph.loadMore': 'Carregar mais commits…',

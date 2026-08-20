@@ -156,6 +156,8 @@ export const ko: Dict = {
   'hover.unpin': '고정 해제',
   'preview.empty': '미리 볼 내용이 없습니다.',
   'preview.unsupported': '이 파일 형식은 미리보기를 지원하지 않습니다.',
+  'preview.tooLarge': '이 파일은 {size}입니다. 불러오면 메모리를 많이 사용할 수 있습니다.',
+  'preview.tooLargeLoad': '그래도 불러오기',
 
   // 그래프
   'graph.loadMore': '커밋 더 불러오기…',

@@ -157,6 +157,27 @@ export const shots = [
     }
   },
   {
+    // The size-cap refusal: a file past the in-memory cap shows its size and
+    // an opt-in "Load anyway" instead of silently allocating hundreds of MB.
+    out: 'file-too-large',
+    repos: ['binary-images-unicode'],
+    themes: ['dark'],
+    prepare: async ({ repoPaths }) => {
+      // ~20MB of plausible log text, untracked — past the 16MB text cap.
+      const line = '2026-08-20T10:00:00Z info request handled in 12ms path=/api/health status=200\n'
+      await writeFile(join(repoPaths['binary-images-unicode'], 'server.log'), line.repeat(260000))
+    },
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['binary-images-unicode']
+      await page.evaluate(async (repoPath) => {
+        const s = window.__shot
+        await s.waitForRepo(repoPath)
+        s.ui.getState().setFileView({ repoPath, file: 'server.log', source: { type: 'tree' }, mode: 'file' })
+      }, repo)
+      await page.waitForTimeout(600)
+    }
+  },
+  {
     // Empty repository chat: the example-request chips and the config-wizard
     // wand in the header, before anything has been asked.
     out: 'repo-chat-empty',

@@ -156,6 +156,8 @@ export const he: Dict = {
   'hover.unpin': 'ביטול ההצמדה',
   'preview.empty': 'אין מה להציג בתצוגה מקדימה.',
   'preview.unsupported': 'אין תצוגה מקדימה לסוג הקובץ הזה.',
+  'preview.tooLarge': 'גודל הקובץ הוא {size}. טעינתו עלולה לצרוך זיכרון רב.',
+  'preview.tooLargeLoad': 'טען בכל זאת',
 
   // Graph
   'graph.loadMore': 'טעינת קומיטים נוספים…',

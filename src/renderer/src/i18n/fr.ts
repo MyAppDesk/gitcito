@@ -153,6 +153,8 @@ export const fr: Dict = {
   'hover.unpin': 'Détacher',
   'preview.empty': 'Rien à prévisualiser.',
   'preview.unsupported': 'Aucun aperçu disponible pour ce type de fichier.',
+  'preview.tooLarge': 'Ce fichier fait {size}. Le charger peut consommer beaucoup de mémoire.',
+  'preview.tooLargeLoad': 'Charger quand même',
 
   'graph.loadMore': 'Charger plus de commits…',
   'graph.loading': 'Chargement du graphe…',

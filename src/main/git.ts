@@ -2,7 +2,7 @@ import { ipcMain, shell } from 'electron'
 import { simpleGit, SimpleGit } from 'simple-git'
 import { basename, dirname, join, resolve as resolvePath, sep } from 'path'
 import { pathToFileURL } from 'url'
-import { readFile, writeFile, unlink, stat, chmod, mkdir, readdir, rename, cp } from 'fs/promises'
+import { readFile, writeFile, unlink, stat, chmod, mkdir, readdir, rename, cp, open } from 'fs/promises'
 import { tmpdir, homedir } from 'os'
 import { existsSync } from 'fs'
 import { spawn, spawnSync, execFile } from 'child_process'
@@ -131,6 +131,7 @@ import type {
   PreparedRepoChatFileAction,
   RepoFileBatchResult
 } from '../shared/types'
+import { FILE_TOO_LARGE_PREFIX } from '../shared/types'
 import { prRefCandidates } from '../shared/prRefs'
 import { parseMergeTreeSingle, parseMergeTreeStdin, type MergeTreeRecord } from '../shared/mergeTree'
 import { parseRangeDiff } from '../shared/rangeDiff'
@@ -288,7 +289,14 @@ const gitFor = (repoPath: string): SimpleGit => {
 // shas (amend/rebase) simply orphan their old entries, which age out.
 class LruCache<V> {
   private map = new Map<string, V>()
-  constructor(private readonly max: number) {}
+  private bytes = 0
+  constructor(
+    private readonly max: number,
+    // Byte-bound the cache too: 500 entries of multi-MB lockfile diffs is
+    // gigabytes while the entry count reads as "within limits".
+    private readonly maxBytes: number,
+    private readonly sizeOf: (v: V) => number
+  ) {}
   get(key: string): V | undefined {
     const v = this.map.get(key)
     if (v !== undefined) {
@@ -298,16 +306,34 @@ class LruCache<V> {
     return v
   }
   set(key: string, value: V): void {
-    if (this.map.has(key)) this.map.delete(key)
+    const size = this.sizeOf(value)
+    // An entry bigger than half the byte budget would evict everything else
+    // for one hit — cheaper to just recompute it on demand.
+    if (size > this.maxBytes / 2) return
+    const prev = this.map.get(key)
+    if (prev !== undefined) {
+      this.map.delete(key)
+      this.bytes -= this.sizeOf(prev)
+    }
     this.map.set(key, value)
-    if (this.map.size > this.max) {
+    this.bytes += size
+    while (this.map.size > this.max || this.bytes > this.maxBytes) {
       const oldest = this.map.keys().next().value
-      if (oldest !== undefined) this.map.delete(oldest)
+      if (oldest === undefined) break
+      const evicted = this.map.get(oldest)
+      this.map.delete(oldest)
+      if (evicted !== undefined) this.bytes -= this.sizeOf(evicted)
     }
   }
 }
-const commitDiffCache = new LruCache<string>(500)
-const commitFilesCache = new LruCache<FileEntry[]>(500)
+// JS strings are UTF-16 → ~2 bytes per code unit.
+const strBytes = (s: string): number => s.length * 2
+const commitDiffCache = new LruCache<string>(500, 48 * 1024 * 1024, strBytes)
+const commitFilesCache = new LruCache<FileEntry[]>(
+  500,
+  16 * 1024 * 1024,
+  (files) => files.reduce((n, f) => n + strBytes(f.path) + 64, 0)
+)
 async function memo<V>(cache: LruCache<V>, key: string, fetch: () => Promise<V>): Promise<V> {
   const hit = cache.get(key)
   if (hit !== undefined) return hit
@@ -1170,6 +1196,30 @@ function fileMime(file: string): string {
   return map[ext] || `application/octet-stream`
 }
 
+// In-memory caps for whole-file reads. Both are overridable per call with
+// `force` — the renderer surfaces the refusal and offers "load anyway", so
+// nothing becomes unreachable, but a stray click on a 2GB video no longer
+// allocates 5× its size across main + IPC + renderer.
+const PREVIEW_MAX_BYTES = 32 * 1024 * 1024
+const TEXT_MAX_BYTES = 16 * 1024 * 1024
+
+/** Byte size of a working-tree file or a blob at `ref`, null when unknowable. */
+async function blobSize(repoPath: string, file: string, ref?: string): Promise<number | null> {
+  try {
+    if (!ref) return (await stat(join(repoPath, file))).size
+    const out = await gitFor(repoPath).raw(['cat-file', '-s', `${ref}:${file}`])
+    const n = Number(out.trim())
+    return Number.isFinite(n) ? n : null
+  } catch {
+    return null
+  }
+}
+
+async function assertUnderCap(repoPath: string, file: string, ref: string | undefined, cap: number): Promise<void> {
+  const size = await blobSize(repoPath, file, ref)
+  if (size !== null && size > cap) throw new Error(`${FILE_TOO_LARGE_PREFIX}${size}`)
+}
+
 /** Read a file as a base64 data URL (mime by extension). Returns null if the
  *  file is missing at the given ref (e.g. an added/deleted side of a diff)
  *  instead of throwing. */
@@ -1312,7 +1362,11 @@ export const gitService = {
     }
   },
 
-  async log(repoPath: string, maxCount = 400): Promise<GraphCommit[]> {
+  // `skip` pages deeper into history so "load more" fetches only the next
+  // window instead of re-reading everything already loaded. Ordering is stable
+  // (--date-order over the same revs), and the store dedupes by hash, so a
+  // page boundary shifting under new commits cannot duplicate rows.
+  async log(repoPath: string, maxCount = 400, skip = 0): Promise<GraphCommit[]> {
     // Stash base commits are frequently unreachable from any branch (a stash is
     // the only thing pointing at them). Feed those bases in as explicit revs so
     // the graph can show where each stash was taken from, instead of leaving the
@@ -1333,6 +1387,7 @@ export const gitService = {
       '--ignore-missing',
       '--date-order',
       `--max-count=${maxCount}`,
+      ...(skip > 0 ? [`--skip=${skip}`] : []),
       `--pretty=format:%H${SEP}%P${SEP}%an${SEP}%ae${SEP}%at${SEP}%D${SEP}%s${SEP}%(trailers:key=Co-authored-by,valueonly,separator=%x1d)${SEP}%G?${SEP}%GS${REC}`
     ]
     let raw = ''
@@ -4347,11 +4402,19 @@ export const gitService = {
         try {
           const abs = join(repoPath, f)
           const st = await stat(abs)
-          // Sniff the first 8KB for a NUL byte → treat as binary.
+          // Sniff the first 8KB for a NUL byte → treat as binary. Read only
+          // that window — reading whole files here would buffer every staged
+          // file at once, OOMing on the very large files this guard exists for.
           let binary = false
           try {
-            const buf = await readFile(abs)
-            binary = buf.subarray(0, 8192).includes(0)
+            const fh = await open(abs, 'r')
+            try {
+              const buf = Buffer.alloc(8192)
+              const { bytesRead } = await fh.read(buf, 0, 8192, 0)
+              binary = buf.subarray(0, bytesRead).includes(0)
+            } finally {
+              await fh.close()
+            }
           } catch {
             /* unreadable → leave non-binary */
           }
@@ -4968,7 +5031,8 @@ export const gitService = {
 
   // ─── File inspection (file view / blame / history) ──────────────────────
 
-  async fileContent(repoPath: string, file: string, ref?: string): Promise<string> {
+  async fileContent(repoPath: string, file: string, ref?: string, force = false): Promise<string> {
+    if (!force) await assertUnderCap(repoPath, file, ref, TEXT_MAX_BYTES)
     if (!ref) {
       // Working-tree read; empty if the file was deleted on disk.
       return readFile(join(repoPath, file), 'utf-8').catch(() => '')
@@ -5189,7 +5253,8 @@ export const gitService = {
       })
   },
 
-  async fileDataUrl(repoPath: string, file: string, ref?: string): Promise<string> {
+  async fileDataUrl(repoPath: string, file: string, ref?: string, force = false): Promise<string> {
+    if (!force) await assertUnderCap(repoPath, file, ref, PREVIEW_MAX_BYTES)
     const url = await readFileDataUrl(repoPath, file, ref)
     if (url === null) throw new Error(`Cannot read image: ${file}`)
     return url

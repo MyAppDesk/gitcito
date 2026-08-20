@@ -156,6 +156,8 @@ export const pl: Dict = {
   'hover.unpin': 'Odepnij',
   'preview.empty': 'Nie ma czego pokazać w podglądzie.',
   'preview.unsupported': 'Podgląd niedostępny dla tego typu pliku.',
+  'preview.tooLarge': 'Ten plik ma {size}. Wczytanie go może zużyć dużo pamięci.',
+  'preview.tooLargeLoad': 'Wczytaj mimo to',
 
   // Graf
   'graph.loadMore': 'Wczytaj więcej commitów…',

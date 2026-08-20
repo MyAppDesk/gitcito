@@ -156,6 +156,8 @@ export const de: Dict = {
   'hover.unpin': 'Lösen',
   'preview.empty': 'Nichts zum Vorschauen.',
   'preview.unsupported': 'Für diesen Dateityp gibt es keine Vorschau.',
+  'preview.tooLarge': 'Diese Datei ist {size} groß. Sie zu laden kann viel Speicher belegen.',
+  'preview.tooLargeLoad': 'Trotzdem laden',
 
   // Graph
   'graph.loadMore': 'Mehr Commits laden…',

@@ -156,6 +156,8 @@ export const zhCN: Dict = {
   'hover.unpin': '取消固定',
   'preview.empty': '没有可预览的内容。',
   'preview.unsupported': '该文件类型没有可用的预览。',
+  'preview.tooLarge': '该文件大小为 {size}。加载它可能占用大量内存。',
+  'preview.tooLargeLoad': '仍然加载',
 
   // Graph
   'graph.loadMore': '加载更多提交…',

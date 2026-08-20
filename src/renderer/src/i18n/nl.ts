@@ -156,6 +156,8 @@ export const nl: Dict = {
   'hover.unpin': 'Losmaken',
   'preview.empty': 'Niets om te tonen.',
   'preview.unsupported': 'Geen voorbeeld beschikbaar voor dit bestandstype.',
+  'preview.tooLarge': 'Dit bestand is {size}. Het laden kan veel geheugen gebruiken.',
+  'preview.tooLargeLoad': 'Toch laden',
 
   // Graaf
   'graph.loadMore': 'Meer commits laden…',

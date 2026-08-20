@@ -54,6 +54,19 @@ code met syntaxkleuring voor al het overige.
 
 ![Markdown-voorbeeld](../../screenshots/markdown-preview.webp)
 
+## Zeer grote bestanden
+
+Voorbeelden en de bestandsweergave laden een bestand volledig in het geheugen,
+dus beide weigeren bestanden boven een groottelimiet (32 MB voor voorbeelden,
+16 MB voor tekst) en tonen in plaats daarvan hoe groot het bestand is. **Toch
+laden** heft de limiet voor dat ene bestand op — niets is onbereikbaar, grote
+ladingen zijn alleen opt-in. Bestanden en diffs van meer dan een paar duizend
+regels worden nog steeds volledig gerenderd, maar regels buiten beeld worden
+niet meer opgemaakt en getekend, zodat een gigantische lockfile-diff niet
+langer het geheugen van een hele laptop kost.
+
+![Een bestand boven de groottelimiet, met Toch laden](../../screenshots/file-too-large.webp)
+
 ## Het tabblad Bestanden
 
 Het tabblad **Bestanden** in de linkerzijbalk bladert door de werkboom zelf, met

@@ -13,6 +13,8 @@ import { taskChain, sharedTaskLabels, memberFullyCovered } from '../src/renderer
 import { collectInputRefs, normalizeOptions, defaultOptionIndex, isPickInput } from '../src/renderer/src/lib/launchInputs'
 import { resolveInputTokens } from '../src/main/launch'
 import { closeTabPrompt, repoCloseStatus, tabCloseStatus } from '../src/renderer/src/lib/tabClose'
+import { formatBytes, parseTooLargeError } from '../src/renderer/src/lib/fileSize'
+import { FILE_TOO_LARGE_PREFIX } from '../src/shared/types'
 import type { TabState } from '../src/shared/types'
 import { autolink, remoteWebUrl, filePermalink } from '../src/renderer/src/lib/autolink'
 import { frecencyScore } from '../src/renderer/src/lib/frecency'
@@ -4008,5 +4010,23 @@ describe('parseWorkflowName (local CI)', () => {
   })
   it('ignores an indented name inside a job', () => {
     expect(parseWorkflowName('on: [push]\njobs:\n  build:\n    name: inner\n')).toBeNull()
+  })
+})
+
+describe('fileSize helpers (size-cap refusals)', () => {
+  it('parses the byte count out of a raw refusal message', () => {
+    expect(parseTooLargeError(`${FILE_TOO_LARGE_PREFIX}12345`)).toBe(12345)
+  })
+  it('parses when IPC wrapped the message', () => {
+    expect(parseTooLargeError(`Error invoking remote handler: Error: ${FILE_TOO_LARGE_PREFIX}99`)).toBe(99)
+  })
+  it('returns null for unrelated errors', () => {
+    expect(parseTooLargeError('fatal: not a git repository')).toBeNull()
+  })
+  it('formats bytes at each magnitude', () => {
+    expect(formatBytes(512)).toBe('512 B')
+    expect(formatBytes(2048)).toBe('2 KB')
+    expect(formatBytes(7.3 * 1024 * 1024)).toBe('7.3 MB')
+    expect(formatBytes(2.5 * 1024 * 1024 * 1024)).toBe('2.5 GB')
   })
 })

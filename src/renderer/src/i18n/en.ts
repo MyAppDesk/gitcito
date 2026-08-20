@@ -157,6 +157,8 @@ export const en = {
   'hover.unpin': 'Unpin',
   'preview.empty': 'Nothing to preview.',
   'preview.unsupported': 'No preview available for this file type.',
+  'preview.tooLarge': 'This file is {size}. Loading it may use a lot of memory.',
+  'preview.tooLargeLoad': 'Load anyway',
 
   // Graph
   'graph.loadMore': 'Load more commits…',

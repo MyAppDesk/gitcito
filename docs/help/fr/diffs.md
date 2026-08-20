@@ -54,6 +54,19 @@ syntaxiquement pour tout le reste.
 
 ![Aperçu Markdown](../../screenshots/markdown-preview.webp)
 
+## Fichiers très volumineux
+
+Les aperçus et la vue fichier chargent le fichier entier en mémoire ; tous deux
+refusent donc les fichiers dépassant un plafond de taille (32 Mo pour les
+aperçus, 16 Mo pour le texte) et indiquent à la place la taille du fichier.
+**Charger quand même** lève le plafond pour ce fichier — rien n'est hors de
+portée, les gros chargements sont simplement volontaires. Les fichiers et diffs
+au-delà de quelques milliers de lignes restent rendus en entier, mais les
+lignes hors de la zone visible ne sont plus mises en page ni peintes : un diff
+géant de lockfile ne coûte plus la mémoire d'un ordinateur portable entier.
+
+![Un fichier au-delà du plafond de taille, avec Charger quand même](../../screenshots/file-too-large.webp)
+
 ## L'onglet Fichiers
 
 L'onglet **Fichiers** de la barre latérale gauche parcourt la copie de travail

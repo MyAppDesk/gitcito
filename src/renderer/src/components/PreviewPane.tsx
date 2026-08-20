@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { gitApi } from '../infrastructure/api'
-import { useT } from '../i18n'
+import { useT, interp } from '../i18n'
+import { formatBytes, parseTooLargeError } from '../lib/fileSize'
 import { renderMarkdown, sanitizeHtml } from '../preview/markdown'
 import { type PreviewKind } from '../preview/registry'
 
@@ -70,6 +71,11 @@ export function PreviewPane({ repoPath, file, gitRef, kind }: Props): React.JSX.
   const [sheetIdx, setSheetIdx] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
+  // Size-cap refusal from main (byte count) + the user's explicit override.
+  const [tooLarge, setTooLarge] = useState<number | null>(null)
+  const [force, setForce] = useState(false)
+
+  useEffect(() => setForce(false), [repoPath, file, gitRef, kind])
 
   // Re-fetch working-tree files when the window regains focus/visibility.
   useEffect(() => {
@@ -94,17 +100,18 @@ export function PreviewPane({ repoPath, file, gitRef, kind }: Props): React.JSX.
     setSlidesBuf(null)
     setSheetIdx(0)
     setError(null)
+    setTooLarge(null)
 
     const load = async (): Promise<void> => {
       try {
         if (kind === 'markdown') {
-          let src = await gitApi.fileContent(repoPath, file, gitRef)
+          let src = await gitApi.fileContent(repoPath, file, gitRef, force)
           src = await resolveMarkdownImages(src, repoPath, file, gitRef)
           if (!cancelled) setText(src)
           return
         }
         // Everything else is binary: pull a data URL once, then decode per kind.
-        const url = await gitApi.fileDataUrl(repoPath, file, gitRef)
+        const url = await gitApi.fileDataUrl(repoPath, file, gitRef, force)
         if (cancelled) return
         if (kind === 'video' || kind === 'audio') {
           // Chromium won't reliably play large base64 data: URLs in <video>/<audio>
@@ -133,7 +140,11 @@ export function PreviewPane({ repoPath, file, gitRef, kind }: Props): React.JSX.
           if (!cancelled) setSlidesBuf(dataUrlToArrayBuffer(url))
         }
       } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : String(err))
+        if (cancelled) return
+        const message = err instanceof Error ? err.message : String(err)
+        const size = parseTooLargeError(message)
+        if (size !== null) setTooLarge(size)
+        else setError(message)
       }
     }
     void load()
@@ -141,7 +152,7 @@ export function PreviewPane({ repoPath, file, gitRef, kind }: Props): React.JSX.
       cancelled = true
       if (objUrl) URL.revokeObjectURL(objUrl)
     }
-  }, [repoPath, file, gitRef, kind, refreshKey])
+  }, [repoPath, file, gitRef, kind, refreshKey, force])
 
   const mdHtml = useMemo(() => (text !== null ? renderMarkdown(text) : null), [text])
 
@@ -173,6 +184,16 @@ export function PreviewPane({ repoPath, file, gitRef, kind }: Props): React.JSX.
   }, [kind, slidesBuf])
 
   if (error) return <div className="fv-error">{error}</div>
+
+  // Refused by the size cap — nothing is unreachable, the load is just opt-in.
+  if (tooLarge !== null && !force) {
+    return (
+      <div className="fv-too-large">
+        <p>{interp(t('preview.tooLarge'), { size: formatBytes(tooLarge) })}</p>
+        <button onClick={() => setForce(true)}>{t('preview.tooLargeLoad')}</button>
+      </div>
+    )
+  }
 
   const loading =
     (kind === 'markdown' && text === null) ||

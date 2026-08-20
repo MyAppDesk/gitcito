@@ -153,6 +153,8 @@ export const it: Dict = {
   'hover.unpin': 'Sgancia',
   'preview.empty': 'Niente da mostrare in anteprima.',
   'preview.unsupported': 'Nessuna anteprima disponibile per questo tipo di file.',
+  'preview.tooLarge': 'Questo file è di {size}. Caricarlo può usare molta memoria.',
+  'preview.tooLargeLoad': 'Carica comunque',
 
   'graph.loadMore': 'Carica altri commit…',
   'graph.loading': 'Caricamento del grafo…',

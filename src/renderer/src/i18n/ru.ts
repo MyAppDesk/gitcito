@@ -156,6 +156,8 @@ export const ru: Dict = {
   'hover.unpin': 'Открепить',
   'preview.empty': 'Нечего показать.',
   'preview.unsupported': 'Для этого типа файлов предпросмотр недоступен.',
+  'preview.tooLarge': 'Размер файла — {size}. Его загрузка может занять много памяти.',
+  'preview.tooLargeLoad': 'Всё равно загрузить',
 
   // Граф
   'graph.loadMore': 'Загрузить ещё коммиты…',

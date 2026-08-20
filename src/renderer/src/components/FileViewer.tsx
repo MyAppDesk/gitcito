@@ -14,6 +14,7 @@ import { DiffViewer } from './DiffViewer'
 import { SemanticSummary } from './SemanticSummary'
 import { buildQueryRegExp, highlightHtml, type HighlightLayer } from './FileSearchBar'
 import { fileExt, guessLanguage, highlightLine } from '../lib/highlight'
+import { formatBytes, parseTooLargeError } from '../lib/fileSize'
 import { isSecretFile, maskSecretLine } from '../lib/secrets'
 import { Eye, EyeOff } from 'lucide-react'
 import { ImageDiff } from './ImageDiff'
@@ -31,6 +32,11 @@ const MODES: { id: FileViewMode; labelKey: TranslationKey }[] = [
 ]
 
 const IMAGE_EXTS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'ico', 'svg', 'avif'])
+
+/** Above this many lines the view gets `is-huge`, letting the browser skip
+ *  layout/paint for offscreen rows (`content-visibility: auto`). The DOM stays
+ *  complete, so find, reveal-line and text selection behave exactly as before. */
+const HUGE_LINES = 5000
 
 function isImage(name: string): boolean {
   return IMAGE_EXTS.has(fileExt(name))
@@ -145,6 +151,9 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
   const hoverExplainOn = useSettingsStore((s) => s.activeProfile().ai.hoverExplain !== false)
   const hoverExplainKey = useSettingsStore((s) => s.activeProfile().ai.hoverExplainKey ?? 'shift')
   const [content, setContent] = useState<string | null>(null)
+  // Size-cap refusal from main (byte count) + the user's explicit override.
+  const [tooLarge, setTooLarge] = useState<number | null>(null)
+  const [forceLoad, setForceLoad] = useState(false)
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [imgDiff, setImgDiff] = useState<{ before: string | null; after: string | null } | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -168,6 +177,7 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
 
   // Clear any blame "rewind" when switching files/repos.
   useEffect(() => setBlameOverrideRef(null), [file, repoPath])
+  useEffect(() => setForceLoad(false), [file, repoPath])
 
   // ─── Open a line in the external editor ───
   // Only for content that still matches what is on disk: a file shown at some
@@ -315,16 +325,16 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
   // Hover-to-explain over the file and blame views (the diff view has its own,
   // inside DiffViewer). Never over a masked secret file — the token would be a
   // run of bullets — and never while the editor owns the text.
-  const hoverLines = useMemo<NumberedLine[]>(
-    () => (content ? content.split('\n').map((text, i) => ({ no: i + 1, text })) : []),
-    [content]
-  )
+  // Built lazily on demand: a memoized copy would keep a second full split of
+  // the file alive next to `content` for the whole life of the view.
+  const hoverLines = (): NumberedLine[] =>
+    content ? content.split('\n').map((text, i) => ({ no: i + 1, text })) : []
   const { hoverProps, armed: hoverArmed, card: hoverCard } = useHoverExplain({
     enabled: aiEnabled && hoverExplainOn && (mode === 'file' || mode === 'blame') && !editing && !maskOn,
     file,
     lang,
     modifier: hoverExplainKey,
-    getLines: () => hoverLines,
+    getLines: hoverLines,
     lineOf: (el) => {
       const no = el.closest('.code-line, .blame-line')?.querySelector('.code-no')?.textContent
       const n = Number(no)
@@ -384,6 +394,7 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
     setImageUrl(null)
     setImgDiff(null)
     setError(null)
+    setTooLarge(null)
     const load = async (): Promise<void> => {
       try {
         if (mode === 'preview') {
@@ -401,7 +412,7 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
           return
         }
         if (fileIsImage && mode === 'file') {
-          const url = await gitApi.fileDataUrl(repoPath, file, sourceRef(view))
+          const url = await gitApi.fileDataUrl(repoPath, file, sourceRef(view), forceLoad)
           if (!cancelled) {
             setImageUrl(url)
             setContent('')
@@ -422,7 +433,7 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
           // While editing, always read the on-disk working copy (ignore the
           // staged ':0' ref) so edits and saves target the real file.
           const ref = editing && onDiskFile ? undefined : sourceRef(view)
-          const text = await gitApi.fileContent(repoPath, file, ref)
+          const text = await gitApi.fileContent(repoPath, file, ref, forceLoad)
           if (!cancelled) {
             setContent(text)
             // Seed the editor buffer from this authoritative load (entering edit
@@ -444,7 +455,11 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
           }
         }
       } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : String(err))
+        if (cancelled) return
+        const message = err instanceof Error ? err.message : String(err)
+        const size = parseTooLargeError(message)
+        if (size !== null) setTooLarge(size)
+        else setError(message)
       }
     }
     void load()
@@ -457,6 +472,7 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
     file,
     mode,
     refreshKey,
+    forceLoad,
     blameOverrideRef,
     editing,
     ignoreWs,
@@ -638,7 +654,15 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
           </div>
         )}
         {error && <div className="fv-error">{error}</div>}
-        {!error && content === null && mode !== 'preview' && (
+        {!error && tooLarge !== null && (
+          <div className="fv-too-large">
+            <p>{interp(t('preview.tooLarge'), { size: formatBytes(tooLarge) })}</p>
+            <button className="btn small" onClick={() => setForceLoad(true)}>
+              {t('preview.tooLargeLoad')}
+            </button>
+          </div>
+        )}
+        {!error && tooLarge === null && content === null && mode !== 'preview' && (
           <div className="graph-empty">
             <div className="spinner" />
           </div>
@@ -722,22 +746,31 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
           </div>
         )}
 
-        {!error && content !== null && imageUrl === null && mode === 'file' && !editing && (
-          <div className={`file-content hljs ${hoverArmed ? 'hover-armed' : ''}`} {...hoverProps}>
-            {content.split('\n').map((l, i) => (
-              <div className="code-line" key={i} onContextMenu={lineMenu(i + 1)}>
-                <span className="code-no">{i + 1}</span>
-                <span
-                  className="code-text"
-                  dangerouslySetInnerHTML={{ __html: highlightHtml(highlightLine(maybeMask(l), lang), layers) || '&nbsp;' }}
-                />
-              </div>
-            ))}
-          </div>
-        )}
+        {!error && content !== null && imageUrl === null && mode === 'file' && !editing && (() => {
+          const fileLines = content.split('\n')
+          return (
+            <div
+              className={`file-content hljs ${fileLines.length > HUGE_LINES ? 'is-huge' : ''} ${hoverArmed ? 'hover-armed' : ''}`}
+              {...hoverProps}
+            >
+              {fileLines.map((l, i) => (
+                <div className="code-line" key={i} onContextMenu={lineMenu(i + 1)}>
+                  <span className="code-no">{i + 1}</span>
+                  <span
+                    className="code-text"
+                    dangerouslySetInnerHTML={{ __html: highlightHtml(highlightLine(maybeMask(l), lang), layers) || '&nbsp;' }}
+                  />
+                </div>
+              ))}
+            </div>
+          )
+        })()}
 
         {!error && content !== null && mode === 'blame' && (
-          <div className={`blame-view hljs ${hoverArmed ? 'hover-armed' : ''}`} {...hoverProps}>
+          <div
+            className={`blame-view hljs ${blame.length > HUGE_LINES ? 'is-huge' : ''} ${hoverArmed ? 'hover-armed' : ''}`}
+            {...hoverProps}
+          >
             {blameOverrideRef && (
               <div className="blame-rewind-bar">
                 <span>Blaming at <code>{blameOverrideRef}</code></span>

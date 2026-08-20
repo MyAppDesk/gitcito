@@ -1169,6 +1169,11 @@ export interface RepoChatReply {
 /** Co-author trailer appended when AIConfig.coAuthor is enabled (default on). */
 export const MYAPPDESK_COAUTHOR = 'MyAppDesk <team@myappdesk.dev>'
 
+/** Error-message marker thrown by `fileContent`/`fileDataUrl` when a file
+ *  exceeds the in-memory size cap. The byte count follows the colon; the
+ *  renderer parses it to show the size and offer "load anyway" (force=true). */
+export const FILE_TOO_LARGE_PREFIX = 'GITCITO_FILE_TOO_LARGE:'
+
 // ─── Generated repo wiki ────────────────────────────────────────────────────
 
 /** Share of the codebase written in one language, counted by bytes. */

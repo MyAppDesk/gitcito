@@ -53,6 +53,19 @@ y código con resaltado de sintaxis para todo lo demás.
 
 ![Vista previa de Markdown](../../screenshots/markdown-preview.webp)
 
+## Archivos muy grandes
+
+Las vistas previas y la vista de archivo cargan el archivo completo en memoria,
+así que ambas rechazan archivos que superan un límite de tamaño (32 MB para
+vistas previas, 16 MB para texto) y en su lugar te dicen cuánto ocupa.
+**Cargar de todos modos** anula el límite para ese archivo — nada queda fuera
+de alcance, las cargas grandes son solo opcionales. Los archivos y diffs de más
+de unos miles de líneas se siguen renderizando completos, pero las filas fuera
+de la vista ya no se maquetan ni se pintan, así que un diff gigante de un
+lockfile deja de costar la memoria de todo un portátil.
+
+![Un archivo que supera el límite de tamaño, con Cargar de todos modos](../../screenshots/file-too-large.webp)
+
 ## Pestaña Archivos
 
 La pestaña **Archivos** de la barra lateral izquierda explora el árbol de

@@ -3,6 +3,16 @@
 
 import { blobatarUri } from 'blobatar/uri'
 
+// Distinct authors bound these caches, so they are usually tiny — but a
+// session across huge multi-author repos would grow them forever. Reset at a
+// generous cap instead: refilling is cheap, unbounded growth is not.
+const CACHE_CAP = 4000
+function capped<K, V>(cache: Map<K, V>, key: K, value: V): V {
+  if (cache.size >= CACHE_CAP) cache.clear()
+  cache.set(key, value)
+  return value
+}
+
 const genCache = new Map<string, string>()
 
 /**
@@ -19,9 +29,7 @@ export function generatedAvatar(seed: string): string {
   const key = seed || '?'
   const cached = genCache.get(key)
   if (cached) return cached
-  const uri = blobatarUri(key, { background: 'circle' })
-  genCache.set(key, uri)
-  return uri
+  return capped(genCache, key, blobatarUri(key, { background: 'circle' }))
 }
 
 const hexCache = new Map<string, string>()
@@ -34,8 +42,7 @@ async function sha256Hex(input: string): Promise<string> {
   const hex = Array.from(new Uint8Array(digest))
     .map((b) => b.toString(16).padStart(2, '0'))
     .join('')
-  hexCache.set(input, hex)
-  return hex
+  return capped(hexCache, input, hex)
 }
 
 const urlCache = new Map<string, string>()
@@ -50,7 +57,5 @@ export async function gravatarUrl(email: string, size: number): Promise<string> 
   const cached = urlCache.get(key)
   if (cached) return cached
   const hash = await sha256Hex(norm)
-  const url = `https://gravatar.com/avatar/${hash}?s=${size}&d=404`
-  urlCache.set(key, url)
-  return url
+  return capped(urlCache, key, `https://gravatar.com/avatar/${hash}?s=${size}&d=404`)
 }

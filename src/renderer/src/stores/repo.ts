@@ -28,7 +28,8 @@ import type {
   SnapshotInfo,
   TeammateRadarResult,
   MaintenanceTask,
-  MergeOptions
+  MergeOptions,
+  TabState
 } from '../../../shared/types'
 import { gitApi, hostingApi } from '../infrastructure/api'
 import { planStackSubmit, buildStackSection } from '../../../shared/stackPr'
@@ -151,7 +152,7 @@ interface RepoStoreState {
   patch(path: string, partial: Partial<RepoData>): void
   select(path: string, sel: Selection | null): void
   setDraft(path: string, value: string): void
-  loadMore(path: string): void
+  loadMore(path: string): Promise<void>
   refreshPRs(path: string, opts?: { silent?: boolean }): Promise<void>
   refreshIssues(path: string, opts?: { silent?: boolean }): Promise<void>
   refreshMilestones(path: string, opts?: { silent?: boolean }): Promise<void>
@@ -255,6 +256,13 @@ function muteWatcher(path: string): void {
 // guarantee; the simple-git instance already serializes at the process level,
 // but this makes the whole app-level unit (op + refresh) atomic and ordered.
 const cmdChains = new Map<string, Promise<unknown>>()
+
+/** Paths with a loadMore page in flight — prevents scroll spam from stacking pages. */
+const loadingMore = new Set<string>()
+
+// Undo/redo stacks parked here when a repo is evicted (last tab closed), so
+// reopening the repo restores them — eviction never costs undo history.
+const evictedUndo = new Map<string, Pick<RepoData, 'undoStack' | 'redoStack'>>()
 function enqueue<T>(path: string, task: () => Promise<T>): Promise<T> {
   const prev = cmdChains.get(path) ?? Promise.resolve()
   const next = prev.catch(() => {}).then(task)
@@ -348,14 +356,19 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
   repos: {},
   drafts: {},
 
+  // Deliberately a no-op for unknown paths: only `ensure` creates entries.
+  // Otherwise an in-flight refresh resolving after a tab closes would
+  // resurrect the just-evicted repo with a full commit payload.
   patch: (path, partial) =>
-    set((s) => ({ repos: { ...s.repos, [path]: { ...(s.repos[path] ?? emptyRepo(path)), ...partial } } })),
+    set((s) => (s.repos[path] ? { repos: { ...s.repos, [path]: { ...s.repos[path], ...partial } } } : s)),
 
   setDraft: (path, value) => set((s) => ({ drafts: { ...s.drafts, [path]: value } })),
 
   ensure: async (path) => {
     if (get().repos[path]) return
-    get().patch(path, {})
+    const revived = evictedUndo.get(path)
+    evictedUndo.delete(path)
+    set((s) => ({ repos: { ...s.repos, [path]: { ...emptyRepo(path), ...revived } } }))
     await get().refresh(path)
     // Hosting data (PRs, releases) lives behind the network, so it is fetched
     // after the local refresh and kept silent — a missing token or offline box
@@ -404,12 +417,33 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
     if (selected) useUIStore.getState().showDetailsPanel()
   },
 
-  loadMore: (path) => {
+  loadMore: async (path) => {
     const repo = get().repos[path]
-    if (!repo) return
-    const step = useSettingsStore.getState().settings.loadMoreCount ?? 400
-    get().patch(path, { maxCount: repo.maxCount + step })
-    void get().refresh(path)
+    if (!repo || loadingMore.has(path)) return
+    loadingMore.add(path)
+    try {
+      const step = useSettingsStore.getState().settings.loadMoreCount ?? 400
+      // Bump the window first: a racing full refresh already fetches the wider
+      // window, and GraphView's scroll guard (length >= maxCount) stops firing
+      // until the page below lands.
+      get().patch(path, { maxCount: repo.maxCount + step })
+      // Fetch only the next page and append — refetching the whole window made
+      // every scroll-to-bottom re-shell and re-parse all loaded history. If
+      // commits arrived since the last load the page overlaps by that many
+      // rows; the hash dedupe below absorbs the overlap, and a rewritten
+      // history is corrected by the next full 'log' refresh.
+      const page = await gitApi.log(path, step, repo.commits.length)
+      const cur = get().repos[path]
+      if (!cur) return
+      const seen = new Set(cur.commits.map((c) => c.hash))
+      const fresh = page.filter((c) => !seen.has(c.hash))
+      if (fresh.length) get().patch(path, { commits: [...cur.commits, ...fresh] })
+    } catch {
+      // Page fetch failed (repo moved, git hiccup) — fall back to a full refresh.
+      void get().refresh(path)
+    } finally {
+      loadingMore.delete(path)
+    }
   },
 
   refreshRemoteTags: async (path) => {
@@ -596,6 +630,50 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
     })
   }
 }))
+
+// ─── Eviction: drop repo state when its last referencing tab closes ─────────
+//
+// Without this, `repos` grows for the lifetime of the app: every repo ever
+// opened keeps its commits, PRs, tree status and undo closures alive forever.
+// Watching the tab list from here (settings.ts cannot import this store —
+// repo.ts already imports settings.ts) funnels every close path — closeTab,
+// removeRepoFromGroup, moveTabIntoGroup — through one rule: a path referenced
+// by some tab before and by none now is evicted. Repos that never had a tab
+// (mission-control peeks) are untouched, and reopening a tab re-`ensure`s
+// from scratch, with its undo history restored from `evictedUndo`.
+function referencedRepoPaths(tabs: TabState[]): Set<string> {
+  const out = new Set<string>()
+  for (const tab of tabs) {
+    if (tab.kind === 'page') {
+      if ('repoPath' in tab.page) out.add(tab.page.repoPath)
+    } else {
+      for (const r of tab.repos) out.add(r.path)
+    }
+  }
+  return out
+}
+
+let prevTabPaths = referencedRepoPaths(useSettingsStore.getState().settings.tabs)
+useSettingsStore.subscribe((s) => {
+  const next = referencedRepoPaths(s.settings.tabs)
+  const prev = prevTabPaths
+  prevTabPaths = next
+  const store = useRepoStore.getState()
+  const gone = [...prev].filter((p) => !next.has(p) && store.repos[p])
+  if (!gone.length) return
+  useRepoStore.setState((st) => {
+    const repos = { ...st.repos }
+    for (const p of gone) {
+      const r = repos[p]
+      if (r && (r.undoStack.length > 0 || r.redoStack.length > 0)) {
+        evictedUndo.set(p, { undoStack: r.undoStack, redoStack: r.redoStack })
+      }
+      delete repos[p]
+      refreshPending.delete(p)
+    }
+    return { repos }
+  })
+})
 
 // ─── Use-cases (application layer) ─────────────────────────────────────────
 

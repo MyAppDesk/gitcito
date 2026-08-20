@@ -156,6 +156,8 @@ export const ar: Dict = {
   'hover.unpin': 'إلغاء التثبيت',
   'preview.empty': 'لا شيء لمعاينته.',
   'preview.unsupported': 'لا تتوفر معاينة لهذا النوع من الملفات.',
+  'preview.tooLarge': 'حجم هذا الملف {size}. قد يستهلك تحميله قدرًا كبيرًا من الذاكرة.',
+  'preview.tooLargeLoad': 'تحميل على أي حال',
 
   // Graph
   'graph.loadMore': 'تحميل المزيد من الالتزامات…',

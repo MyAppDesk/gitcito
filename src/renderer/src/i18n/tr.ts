@@ -153,6 +153,8 @@ export const tr: Dict = {
   'hover.unpin': 'Sabitlemeyi kaldır',
   'preview.empty': 'Önizlenecek bir şey yok.',
   'preview.unsupported': 'Bu dosya türü için önizleme yok.',
+  'preview.tooLarge': 'Bu dosya {size} boyutunda. Yüklemek çok bellek kullanabilir.',
+  'preview.tooLargeLoad': 'Yine de yükle',
 
   'graph.loadMore': 'Daha fazla commit yükle…',
   'graph.loading': 'Grafik yükleniyor…',

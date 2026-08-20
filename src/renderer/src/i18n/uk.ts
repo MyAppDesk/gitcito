@@ -156,6 +156,8 @@ export const uk: Dict = {
   'hover.unpin': 'Відкріпити',
   'preview.empty': 'Нема чого показати.',
   'preview.unsupported': 'Для цього типу файлів перегляд недоступний.',
+  'preview.tooLarge': 'Розмір файлу — {size}. Його завантаження може зайняти багато памʼяті.',
+  'preview.tooLargeLoad': 'Усе одно завантажити',
 
   // Граф
   'graph.loadMore': 'Завантажити ще коміти…',

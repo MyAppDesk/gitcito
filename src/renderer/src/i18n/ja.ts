@@ -153,6 +153,8 @@ export const ja: Dict = {
   'hover.unpin': 'ピン留めを解除',
   'preview.empty': 'プレビューするものがありません。',
   'preview.unsupported': 'このファイル形式のプレビューはありません。',
+  'preview.tooLarge': 'このファイルは {size} あります。読み込むと大量のメモリを使用する可能性があります。',
+  'preview.tooLargeLoad': 'それでも読み込む',
 
   'graph.loadMore': 'コミットをさらに読み込む…',
   'graph.loading': 'グラフを読み込み中…',

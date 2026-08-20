@@ -53,6 +53,19 @@ Word (`.docx`), Excel (`.xlsx`), PDF, video, ses, görseller ve geri kalan her
 
 ![Markdown önizlemesi](../../screenshots/markdown-preview.webp)
 
+## Çok büyük dosyalar
+
+Önizlemeler ve dosya görünümü bir dosyayı belleğe bütünüyle yükler; bu yüzden
+ikisi de boyut sınırını aşan dosyaları reddeder (önizlemeler için 32 MB, metin
+için 16 MB) ve bunun yerine dosyanın ne kadar büyük olduğunu söyler. **Yine de
+yükle** sınırı yalnızca o dosya için kaldırır — hiçbir şey erişilmez değildir,
+büyük yüklemeler yalnızca isteğe bağlıdır. Birkaç bin satırı aşan dosyalar ve
+diffler yine eksiksiz işlenir, ancak görünümün dışına kaydırılan satırlar artık
+yerleştirilip boyanmaz; devasa bir lockfile diff'i artık bir dizüstünün tüm
+belleğine mal olmaz.
+
+![Boyut sınırını aşan bir dosya ve Yine de yükle seçeneği](../../screenshots/file-too-large.webp)
+
 ## Dosyalar sekmesi
 
 Sol kenar çubuğundaki **Dosyalar** sekmesi çalışma dizininin kendisine göz

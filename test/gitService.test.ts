@@ -158,4 +158,17 @@ describe('deep-history-monorepo', () => {
     const tags = (await gitService.branches(R)).tags.map((t) => t.name).sort()
     expect(tags).toEqual(['v0.1.0', 'v0.2.0', 'v0.3.0', 'v0.4.0'])
   })
+
+  it('pages with skip: two pages join seamlessly and match one big window', async () => {
+    const [first, second, whole] = await Promise.all([
+      gitService.log(R, 100),
+      gitService.log(R, 100, 100),
+      gitService.log(R, 200)
+    ])
+    expect(first.length).toBe(100)
+    expect(second.length).toBe(100)
+    const firstHashes = new Set(first.map((c) => c.hash))
+    expect(second.some((c) => firstHashes.has(c.hash))).toBe(false)
+    expect([...first, ...second].map((c) => c.hash)).toEqual(whole.map((c) => c.hash))
+  })
 })

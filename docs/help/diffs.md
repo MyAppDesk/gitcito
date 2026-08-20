@@ -52,6 +52,18 @@ syntax-highlighted code for everything else.
 
 ![Markdown preview](../screenshots/markdown-preview.webp)
 
+## Very large files
+
+Previews and the file view load a file fully into memory, so both refuse files
+past a size cap (32 MB for previews, 16 MB for text) and tell you how big the
+file is instead. **Load anyway** overrides the cap for that one file — nothing
+is off limits, big loads are just opt-in. Files and diffs past a few thousand
+lines still render completely, but rows scrolled out of view are no longer
+laid out and painted, so a giant lockfile diff stops costing a laptop's worth
+of memory.
+
+![A file past the size cap, offering Load anyway](../screenshots/file-too-large.webp)
+
 ## Files tab
 
 The left sidebar's **Files** tab browses the working tree itself, with status

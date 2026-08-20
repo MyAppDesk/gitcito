@@ -54,6 +54,20 @@ alles andere Code mit Syntaxhervorhebung.
 
 ![Markdown-Vorschau](../../screenshots/markdown-preview.webp)
 
+## Sehr große Dateien
+
+Vorschauen und die Dateiansicht laden eine Datei vollständig in den Speicher,
+daher lehnen beide Dateien oberhalb einer Größengrenze ab (32 MB für
+Vorschauen, 16 MB für Text) und zeigen stattdessen, wie groß die Datei ist.
+**Trotzdem laden** hebt die Grenze für genau diese Datei auf — nichts ist
+unerreichbar, große Ladevorgänge sind nur opt-in. Dateien und Diffs mit mehr
+als ein paar tausend Zeilen werden weiterhin vollständig gerendert, aber aus
+dem Sichtbereich gescrollte Zeilen werden nicht mehr layoutet und gezeichnet —
+ein riesiger Lockfile-Diff kostet damit nicht mehr den Speicher eines ganzen
+Laptops.
+
+![Eine Datei über der Größengrenze, mit Trotzdem laden](../../screenshots/file-too-large.webp)
+
 ## Der Dateien-Tab
 
 Der Tab **Dateien** in der linken Seitenleiste durchsucht das Arbeitsverzeichnis

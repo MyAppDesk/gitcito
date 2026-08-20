@@ -140,6 +140,11 @@ function buildLinePatch(lines: DiffLine[], header: string, selected: Set<number>
   return `${header}\n${parts.join('\n')}\n`
 }
 
+/** Above this many parsed lines the viewer gets `is-huge` — the browser skips
+ *  layout/paint for offscreen rows (`content-visibility: auto`) while the DOM
+ *  stays complete, so find, staging clicks and selection behave as before. */
+const HUGE_LINES = 5000
+
 export function DiffViewer({
   diff,
   file = '',
@@ -369,8 +374,8 @@ export function DiffViewer({
   return (
     <div
       className={`diff-viewer hljs ${splitView ? 'is-split' : ''} ${splitView && !wrapOn ? 'is-nowrap' : ''} ${
-        hoverArmed ? 'hover-armed' : ''
-      }`}
+        lines.length > HUGE_LINES ? 'is-huge' : ''
+      } ${hoverArmed ? 'hover-armed' : ''}`}
       ref={viewerRef}
       tabIndex={0}
       onKeyDown={onViewerKeyDown}

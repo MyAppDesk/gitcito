@@ -1160,6 +1160,93 @@ textarea:focus {
   flex: 0 0 auto;
 }
 
+.branch-picker-popover {
+  position: fixed;
+  z-index: 990;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 16px);
+  padding: 5px;
+  overflow: hidden;
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  box-shadow: 0 14px 42px rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(8px);
+}
+
+.branch-picker-scroll {
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.branch-picker-heading {
+  padding: 9px 12px 5px;
+  color: var(--text-3);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.branch-picker-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 34px;
+  padding: 7px 12px;
+  color: var(--text-0);
+  font-size: 12.5px;
+  text-align: start;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.08s, color 0.08s;
+}
+
+.branch-picker-item:hover,
+.branch-picker-item:focus-visible {
+  color: #0a1220;
+  background: var(--accent);
+  outline: none;
+}
+
+.branch-picker-item.active {
+  color: var(--text-0);
+  background: var(--bg-2);
+}
+
+.branch-picker-item.active:hover,
+.branch-picker-item.active:focus-visible {
+  color: #0a1220;
+  background: var(--accent);
+}
+
+.branch-picker-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  flex: 0 0 16px;
+}
+
+.branch-picker-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.branch-picker-separator {
+  height: 1px;
+  margin: 5px 8px;
+  flex: 0 0 auto;
+  background: var(--border);
+}
+
+.branch-picker-new {
+  flex: 0 0 auto;
+}
+
 .repo-indicator {
   color: var(--text-2);
   font-size: 12px;

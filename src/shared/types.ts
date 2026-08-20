@@ -153,6 +153,7 @@ export interface BranchInfo {
   ahead: number
   behind: number
   isCurrent: boolean
+  mergedIntoCurrent: boolean
 }
 
 export interface RemoteBranchInfo {
@@ -160,6 +161,7 @@ export interface RemoteBranchInfo {
   name: string
   fullName: string
   sha: string
+  mergedIntoCurrent: boolean
 }
 
 export interface TagInfo {

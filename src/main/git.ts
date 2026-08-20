@@ -1385,6 +1385,20 @@ export const gitService = {
       /* empty repo */
     }
 
+    const mergedRefs = new Set<string>()
+    try {
+      const out = await git.raw([
+        'for-each-ref',
+        '--merged=HEAD',
+        '--format=%(refname)',
+        'refs/heads',
+        'refs/remotes'
+      ])
+      for (const ref of out.split('\n').filter(Boolean)) mergedRefs.add(ref)
+    } catch {
+      /* empty repo */
+    }
+
     const locals: BranchInfo[] = []
     try {
       const out = await git.raw([
@@ -1395,7 +1409,15 @@ export const gitService = {
       for (const line of out.split('\n').filter(Boolean)) {
         const [name, sha, upstream, track] = line.split(SEP)
         const { ahead, behind } = parseTrack(track ?? '')
-        locals.push({ name, sha, upstream: upstream || null, ahead, behind, isCurrent: name === current })
+        locals.push({
+          name,
+          sha,
+          upstream: upstream || null,
+          ahead,
+          behind,
+          isCurrent: name === current,
+          mergedIntoCurrent: mergedRefs.has(`refs/heads/${name}`)
+        })
       }
     } catch {
       /* ignore */
@@ -1403,12 +1425,25 @@ export const gitService = {
 
     const remotes: RemoteBranchInfo[] = []
     try {
-      const out = await git.raw(['for-each-ref', `--format=%(refname:short)${SEP}%(objectname:short)`, 'refs/remotes'])
+      const out = await git.raw([
+        'for-each-ref',
+        `--format=%(refname)${SEP}%(objectname:short)${SEP}%(symref)`,
+        'refs/remotes'
+      ])
       for (const line of out.split('\n').filter(Boolean)) {
-        const [fullName, sha] = line.split(SEP)
+        const [refName, sha, symref] = line.split(SEP)
+        if (symref || !refName.startsWith('refs/remotes/')) continue
+        const fullName = refName.slice('refs/remotes/'.length)
         if (fullName.endsWith('/HEAD')) continue
         const slash = fullName.indexOf('/')
-        remotes.push({ remote: fullName.slice(0, slash), name: fullName.slice(slash + 1), fullName, sha })
+        if (slash <= 0) continue
+        remotes.push({
+          remote: fullName.slice(0, slash),
+          name: fullName.slice(slash + 1),
+          fullName,
+          sha,
+          mergedIntoCurrent: mergedRefs.has(refName)
+        })
       }
     } catch {
       /* ignore */
@@ -5255,10 +5290,20 @@ export const gitService = {
     return result
   },
 
-  async worktreeAdd(repoPath: string, path: string, branch: string, newBranch: boolean): Promise<void> {
+  async worktreeAdd(
+    repoPath: string,
+    path: string,
+    branch: string,
+    newBranch: boolean,
+    startPoint?: string
+  ): Promise<void> {
     const args = ['worktree', 'add']
-    if (newBranch) args.push('-b', branch, path)
-    else args.push(path, branch)
+    if (newBranch) {
+      args.push('-b', branch, path)
+      if (startPoint) args.push(startPoint)
+    } else {
+      args.push(path, branch)
+    }
     await gitFor(repoPath).raw(args)
   },
 

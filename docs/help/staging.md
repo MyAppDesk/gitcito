@@ -3,7 +3,7 @@ title: Staging
 category: Working with changes
 order: 30
 summary: Stage whole files, single hunks, or individual lines.
-keywords: staging stage unstage discard hunk lines index partial
+keywords: staging stage unstage discard hunk lines index partial copy path relative
 ---
 
 # Staging
@@ -36,6 +36,14 @@ tracked ones go back to their staged (or committed) state.
 clicked, <kbd>⇧</kbd>-click takes a range, and <kbd>⌘</kbd>/<kbd>Ctrl</kbd>-click
 toggles individual files. Right-click the selection to stage, unstage, stash or
 discard everything in it at once.
+
+## Copying paths
+
+Right-click an uncommitted file for **Copy File Path** (absolute, with the
+platform's separators) and **Copy Relative File Path** (`src/index.ts`, no
+leading `./`). Several selected files copy one path per line, in list order.
+Deleted files stay enabled — those actions only copy text. Folders still copy
+the folder path.
 
 ## Before you commit
 

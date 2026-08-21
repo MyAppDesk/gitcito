@@ -111,6 +111,8 @@ export const uk: Dict = {
   'common.add': 'Додати',
   'common.copyFilePath': 'Копіювати шлях до файлу',
   'common.copyFolderPath': 'Копіювати шлях до теки',
+  'fileMenu.copyFilePath': 'Копіювати шлях до файлу',
+  'fileMenu.copyRelativeFilePath': 'Копіювати відносний шлях до файлу',
 
   // Розвʼязання конфліктів
   'conflict.resolved': 'розвʼязано',
@@ -1498,6 +1500,41 @@ export const uk: Dict = {
   'commit.changedFiles': 'змінених файлів: {n}',
   'commit.openDefaultApp': 'Відкрити типовим застосунком',
 
+  // Дії з одним комітом (контекстне меню графа)
+  'commitMenu.amend': 'Виправити коміт…',
+  'commitMenu.undo': 'Скасувати коміт…',
+  'commitMenu.resetTo': 'Скинути до коміта…',
+  'commitMenu.viewOnGitHub': 'Переглянути на GitHub',
+  'commitMenu.disabled.notHead': 'Так можна лише з поточним комітом HEAD.',
+  'commitMenu.disabled.detached': 'Спочатку зробіть checkout локальної гілки.',
+  'commitMenu.disabled.published': 'Цей коміт уже надіслано.',
+  'commitMenu.disabled.notAncestor': 'Цей коміт не є предком HEAD.',
+  'commitMenu.disabled.beyondReset': 'Цей коміт старіший за локальну межу скидання.',
+  'commitMenu.disabled.operation': 'Недоступно, поки виконується операція Git.',
+  'commitMenu.disabled.inflight': 'Недоступно, поки виконується інша команда Git.',
+  'commitMenu.disabled.notOnGitHub': 'Немає віддаленого GitHub або цей коміт не опубліковано.',
+  'commitMenu.amendPublishedTitle': 'Виправити опублікований коміт?',
+  'commitMenu.amendPublishedMsg':
+    '{branch} уже надіслано. Виправлення переписує історію — щоб оновити віддалену гілку, знадобиться force push.',
+  'commitMenu.amendPublishedConfirm': 'Продовжити',
+  'commitMenu.undoTitle': 'Скасувати коміт',
+  'commitMenu.undoMsg':
+    'Перемістити {branch} на батька {sha} і залишити зміни нестагованими. Повідомлення повернеться в композер.',
+  'commitMenu.undoRootMsg':
+    'Це перший коміт на {branch}. Скасування залишить ненароджену гілку й збереже файли в робочому дереві.',
+  'commitMenu.undoDirty':
+    'У вас є незакомічені зміни. Вони змішаються зі скасованим комітом у робочому дереві.',
+  'commitMenu.undoConfirm': 'Скасувати коміт',
+  'commitMenu.resetTitle': 'Скинути до коміта',
+  'commitMenu.resetMsg': 'Перемістити {branch} на {sha}. Як вчинити з комітами, що залишаться позаду:',
+  'commitMenu.resetSoft': 'Soft — залишити зміни в індексі',
+  'commitMenu.resetMixed': 'Mixed — залишити зміни поза індексом',
+  'commitMenu.resetHard': 'Hard — відкинути коміти та їхні зміни',
+  'commitMenu.resetDirty': 'У вас є незакомічені зміни. Скидання може перезаписати або конфліктувати з поточною роботою.',
+  'commitMenu.resetHardWarn': 'Жорстке скидання відкидає незакомічену роботу і кожен коміт після {sha}.',
+  'commitMenu.resetConfirm': 'Скинути',
+  'commitMenu.resetHardConfirm': 'Відкинути й скинути',
+
   // Контекстне меню тега (у графі)
   'tag.checkout': 'Перейти на {tag}',
   'tag.worktree': 'Створити робоче дерево з цього коміта…',
@@ -2742,6 +2779,7 @@ export const uk: Dict = {
   'act.aborted': 'Перервано: {kind}',
   'act.reverted': 'Скасовано коміт {sha}',
   'act.reset': 'Скинуто ({mode}) до {sha}',
+  'act.undidCommit': 'Коміт {sha} скасовано',
   'act.createdTag': 'Створено тег {name}',
   'act.deletedTag': 'Видалено тег {name}',
   'act.pushedTag': 'Тег {name} надіслано в {remote}',
@@ -2797,6 +2835,8 @@ export const uk: Dict = {
   'undoLabel.cherryPick': 'cherry-pick',
   'undoLabel.squash': 'стиснення',
   'undoLabel.revert': 'реверт',
+  'undoLabel.undoCommit': 'скасувати коміт',
+  'undoLabel.resetToCommit': 'скидання на {sha}',
   'undoLabel.tag': 'тег {name}',
   'gitmoji.none': 'немає',
   'composer.ignoreAndUntrackMsg': 'Додати {what} до .gitignore і припинити відстеження в Git. Файли лишаються на диску.',
@@ -3150,5 +3190,21 @@ export const uk: Dict = {
   'askAction.createFile': 'Створити файл',
   'askAction.editFile': 'Редагувати файл',
   'askAction.replaceFile': 'Замінити файл',
-  'askAction.deleteFile': 'Видалити файл'
+  'askAction.deleteFile': 'Видалити файл',
+  'repoMenu.createAlias': 'Створити псевдонім…',
+  'repoMenu.changeAlias': 'Змінити псевдонім…',
+  'repoMenu.removeAlias': 'Видалити псевдонім',
+  'repoMenu.aliasTitle': 'Псевдонім репозиторію',
+  'repoMenu.aliasLabel': 'Назва для показу',
+  'repoMenu.showWorktrees': 'Показати робочі дерева',
+  'repoMenu.newWorktree': 'Нове робоче дерево…',
+  'repoMenu.copyName': 'Копіювати назву репозиторію',
+  'repoMenu.copyPath': 'Копіювати шлях репозиторію',
+  'repoMenu.viewOnGitHub': 'Відкрити на GitHub',
+  'repoMenu.openTerminal': 'Відкрити в терміналі',
+  'repoMenu.revealFinder': 'Показати у Finder',
+  'repoMenu.revealExplorer': 'Показати у Провіднику',
+  'repoMenu.revealFileManager': 'Показати у файловому менеджері',
+  'repoMenu.openEditor': 'Відкрити у зовнішньому редакторі',
+  'repoMenu.remove': 'Прибрати…'
 }

@@ -21,7 +21,6 @@ import {
   GitCommit,
   FolderTree,
   ChevronRight,
-  FolderGit2,
   GitBranch,
   Layers,
   StickyNote,
@@ -60,6 +59,7 @@ import { useSettingsStore } from '../stores/settings'
 import { repoChatAvailable } from '../lib/repoChatUI'
 import { useT, interp } from '../i18n'
 import { BranchStatusPicker } from './BranchStatusPicker'
+import { RepoStatusPicker } from './RepoStatusPicker'
 
 /** Short human-readable "time since" label, e.g. "now", "3m ago", "2h ago". */
 function timeSince(at: number | null): string {
@@ -293,31 +293,6 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
     ])
   }
 
-  // Repository switcher — lists every open repo (standalone tabs + group members).
-  const repoMenu = (e: React.MouseEvent): void => {
-    e.stopPropagation()
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-    const s = useSettingsStore.getState()
-    const items: MenuItem[] = []
-    for (const tab of s.settings.tabs) {
-      if (tab.kind !== 'repo' && tab.kind !== 'group') continue
-      for (const r of tab.repos) {
-        items.push({
-          label: `${r.path === path ? '✓ ' : '   '}${r.name}`,
-          onClick: () => {
-            s.setActiveTab(tab.id)
-            if (tab.kind === 'group') s.setGroupActiveRepo(tab.id, r.path)
-          }
-        })
-      }
-    }
-    items.push(
-      { separator: true },
-      { label: t('tools.openRepo'), icon: <FolderGit2 size={15} />, onClick: () => openModal({ kind: 'launcher' }) }
-    )
-    openContextMenu(rect.left, rect.bottom + 6, items)
-  }
-
   // The sidebar toggle lives on the same edge as the sidebar itself: leftmost
   // when docked left, and after the terminal button when docked right.
   const sidebarToggle = (
@@ -334,13 +309,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
     <div className="toolbar">
       <div className="toolbar-left">
         {sidebarSide === 'left' && sidebarToggle}
-        <button className="repo-pill" onClick={repoMenu} title={t('toolbar.switchRepo')}>
-          <span className="repo-pill-stack">
-            <span className="repo-pill-label">{t('toolbar.repository')}</span>
-            <strong>{repo.name}</strong>
-          </span>
-          <ChevronDown size={13} />
-        </button>
+        <RepoStatusPicker repo={repo} />
         <ChevronRight size={14} className="repo-pill-arrow" />
         <BranchStatusPicker repo={repo} />
       </div>

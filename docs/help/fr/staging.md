@@ -41,6 +41,15 @@ basculer des fichiers individuels.
 ligne cliquée. Un clic droit sur la sélection permet d'indexer, de désindexer,
 de remiser ou d'annuler tout d'un coup.
 
+## Copier les chemins
+
+Un clic droit sur un fichier non validé propose **Copier le chemin du fichier**
+(absolu, avec les séparateurs de la plateforme) et **Copier le chemin relatif
+du fichier** (`src/index.ts`, sans `./` initial). Plusieurs fichiers
+sélectionnés copient un chemin par ligne, dans l'ordre de la liste. Les fichiers
+supprimés restent disponibles : ces actions ne copient que du texte. Les
+dossiers copient toujours le chemin du dossier.
+
 ## Avant de valider
 
 Gitcito vérifie quelques points et demande une fois, jamais en silence :

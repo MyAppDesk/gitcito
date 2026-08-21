@@ -40,6 +40,14 @@ pojedyncze pliki.
 klikniętego wiersza. Kliknij zaznaczenie prawym przyciskiem, by za jednym razem
 dodać do stage, usunąć ze stage, dodać do stasha albo odrzucić wszystko.
 
+## Kopiowanie ścieżek
+
+Kliknięcie prawym przyciskiem niezacommitowanego pliku daje **Kopiuj ścieżkę
+pliku** (bezwzględną, ze znakami separatora platformy) oraz **Kopiuj względną
+ścieżkę pliku** (`src/index.ts`, bez wiodącego `./`). Kilka zaznaczonych plików
+kopiuje jedną ścieżkę na linię, w kolejności listy. Usunięte pliki pozostają
+aktywne — te akcje kopiują tylko tekst. Foldery nadal kopiują ścieżkę folderu.
+
 ## Zanim zacommitujesz
 
 Gitcito sprawdza kilka rzeczy i pyta raz, nigdy po cichu:

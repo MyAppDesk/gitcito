@@ -40,6 +40,15 @@ marcar archivos sueltos.
 en la que hiciste clic. Haz clic derecho sobre la selección para preparar,
 quitar de preparados, guardar en stash o descartar todo de una vez.
 
+## Copiar rutas
+
+El clic derecho sobre un archivo sin commitear ofrece **Copiar ruta del
+archivo** (absoluta, con los separadores de la plataforma) y **Copiar ruta
+relativa del archivo** (`src/index.ts`, sin `./` inicial). Varios archivos
+seleccionados copian una ruta por línea, en el orden de la lista. Los archivos
+eliminados siguen disponibles: esas acciones solo copian texto. Las carpetas
+siguen copiando la ruta de la carpeta.
+
 ## Antes de hacer commit
 
 Gitcito comprueba unas cuantas cosas y pregunta una vez, nunca en silencio:

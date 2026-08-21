@@ -111,6 +111,8 @@ export const ptBR: Dict = {
   'common.add': 'Adicionar',
   'common.copyFilePath': 'Copiar o caminho do arquivo',
   'common.copyFolderPath': 'Copiar o caminho da pasta',
+  'fileMenu.copyFilePath': 'Copiar caminho do arquivo',
+  'fileMenu.copyRelativeFilePath': 'Copiar caminho relativo do arquivo',
 
   // Resolvedor de conflitos
   'conflict.resolved': 'resolvido',
@@ -1499,6 +1501,41 @@ export const ptBR: Dict = {
   'commit.changedFiles': '{n} arquivos alterados',
   'commit.openDefaultApp': 'Abrir com o app padrão',
 
+  // Ações de um único commit (menu de contexto do grafo)
+  'commitMenu.amend': 'Fazer amend no commit…',
+  'commitMenu.undo': 'Desfazer commit…',
+  'commitMenu.resetTo': 'Resetar para o commit…',
+  'commitMenu.viewOnGitHub': 'Ver no GitHub',
+  'commitMenu.disabled.notHead': 'Só o commit HEAD atual pode fazer isso.',
+  'commitMenu.disabled.detached': 'Faça checkout de um branch local primeiro.',
+  'commitMenu.disabled.published': 'Este commit já foi enviado.',
+  'commitMenu.disabled.notAncestor': 'Este commit não é ancestral de HEAD.',
+  'commitMenu.disabled.beyondReset': 'Este commit é anterior ao limite local de reset.',
+  'commitMenu.disabled.operation': 'Indisponível enquanto uma operação Git está em andamento.',
+  'commitMenu.disabled.inflight': 'Indisponível enquanto outro comando Git está em execução.',
+  'commitMenu.disabled.notOnGitHub': 'Não há remoto GitHub, ou este commit não está publicado.',
+  'commitMenu.amendPublishedTitle': 'Fazer amend num commit publicado?',
+  'commitMenu.amendPublishedMsg':
+    '{branch} já foi enviado. O amend reescreve o histórico — atualizar o remoto exigirá force push.',
+  'commitMenu.amendPublishedConfirm': 'Continuar',
+  'commitMenu.undoTitle': 'Desfazer commit',
+  'commitMenu.undoMsg':
+    'Mover {branch} para o pai de {sha} e manter as mudanças unstaged. A mensagem volta para o compositor.',
+  'commitMenu.undoRootMsg':
+    'Este é o primeiro commit em {branch}. Desfazê-lo deixa um branch não nascido e preserva os arquivos na árvore de trabalho.',
+  'commitMenu.undoDirty':
+    'Há mudanças não commitadas. Elas serão misturadas com o commit desfeito na árvore de trabalho.',
+  'commitMenu.undoConfirm': 'Desfazer commit',
+  'commitMenu.resetTitle': 'Resetar para o commit',
+  'commitMenu.resetMsg': 'Mover {branch} para {sha}. Escolha como tratar os commits que ficam para trás:',
+  'commitMenu.resetSoft': 'Soft — manter as mudanças no stage',
+  'commitMenu.resetMixed': 'Mixed — manter as mudanças fora do stage',
+  'commitMenu.resetHard': 'Hard — descartar os commits e as mudanças',
+  'commitMenu.resetDirty': 'Há mudanças não commitadas. O reset pode sobrescrever ou conflitar com o trabalho em andamento.',
+  'commitMenu.resetHardWarn': 'O reset hard descarta o trabalho não commitado e cada commit depois de {sha}.',
+  'commitMenu.resetConfirm': 'Resetar',
+  'commitMenu.resetHardConfirm': 'Descartar e resetar',
+
   // Menu de contexto da tag (no grafo)
   'tag.checkout': 'Checkout em {tag}',
   'tag.worktree': 'Criar worktree a partir deste commit…',
@@ -2751,6 +2788,7 @@ export const ptBR: Dict = {
   'act.aborted': '{kind} abortado',
   'act.reverted': '{sha} revertido',
   'act.reset': 'Reset ({mode}) para {sha}',
+  'act.undidCommit': 'Desfez o commit {sha}',
   'act.createdTag': 'Tag {name} criada',
   'act.deletedTag': 'Tag {name} excluída',
   'act.pushedTag': 'Tag {name} enviada para {remote}',
@@ -2806,6 +2844,8 @@ export const ptBR: Dict = {
   'undoLabel.cherryPick': 'cherry-pick',
   'undoLabel.squash': 'squash',
   'undoLabel.revert': 'revert',
+  'undoLabel.undoCommit': 'desfazer commit',
+  'undoLabel.resetToCommit': 'reset para {sha}',
   'undoLabel.tag': 'tag {name}',
   'gitmoji.none': 'nenhum',
   'composer.ignoreAndUntrackMsg': 'Adiciona {what} ao .gitignore e para de rastreá-lo no Git. O(s) arquivo(s) continuam no disco.',
@@ -3159,5 +3199,21 @@ export const ptBR: Dict = {
   'askAction.createFile': 'Criar arquivo',
   'askAction.editFile': 'Editar arquivo',
   'askAction.replaceFile': 'Substituir arquivo',
-  'askAction.deleteFile': 'Excluir arquivo'
+  'askAction.deleteFile': 'Excluir arquivo',
+  'repoMenu.createAlias': 'Criar alias…',
+  'repoMenu.changeAlias': 'Alterar alias…',
+  'repoMenu.removeAlias': 'Remover alias',
+  'repoMenu.aliasTitle': 'Alias do repositório',
+  'repoMenu.aliasLabel': 'Nome de exibição',
+  'repoMenu.showWorktrees': 'Mostrar worktrees',
+  'repoMenu.newWorktree': 'Nova worktree…',
+  'repoMenu.copyName': 'Copiar nome do repositório',
+  'repoMenu.copyPath': 'Copiar caminho do repositório',
+  'repoMenu.viewOnGitHub': 'Ver no GitHub',
+  'repoMenu.openTerminal': 'Abrir no terminal',
+  'repoMenu.revealFinder': 'Mostrar no Finder',
+  'repoMenu.revealExplorer': 'Mostrar no Explorador de Arquivos',
+  'repoMenu.revealFileManager': 'Mostrar no gerenciador de arquivos',
+  'repoMenu.openEditor': 'Abrir no editor externo',
+  'repoMenu.remove': 'Remover…'
 }

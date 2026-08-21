@@ -68,6 +68,8 @@ import type {
   CommitEditStep,
   CommitEditPreview,
   CommitEditResult,
+  CommitMenuProbe,
+  UndoCommitResult,
   BlobAtCommit,
   CloneProgress,
   CloneOptions,
@@ -777,6 +779,23 @@ async function runGit(repoPath: string, args: string[], extraEnv?: NodeJS.Proces
     const e = err as { stderr?: string; message?: string }
     throw new Error(redactCredentials((e.stderr || e.message || 'git command failed').trim()))
   }
+}
+
+/**
+ * Undo the initial commit: leave an unborn branch, keep the working tree,
+ * unstage everything. Deleted worktree files are restored first so they are
+ * not lost when the index is emptied.
+ */
+async function undoRootCommit(repoPath: string): Promise<void> {
+  const status = await gitService.status(repoPath)
+  const deleted = [...status.unstaged, ...status.staged]
+    .filter((f) => f.status === 'D')
+    .map((f) => f.path)
+  if (deleted.length) {
+    await runGit(repoPath, ['checkout', 'HEAD', '--', ...deleted]).catch(() => undefined)
+  }
+  await runGit(repoPath, ['update-ref', '-d', 'HEAD'])
+  await runGit(repoPath, ['rm', '-r', '--cached', '-q', '.']).catch(() => undefined)
 }
 
 // ─── WIP snapshot plumbing (see the gitService section for the full story) ───
@@ -5002,6 +5021,104 @@ export const gitService = {
     await gitFor(repoPath).reset([`--${mode}`, ref])
   },
 
+  /**
+   * One round-trip for the commit context menu: ancestry, remote reachability,
+   * reset boundary, in-progress ops, and the full message for amend/undo prefill.
+   */
+  async commitMenuProbe(repoPath: string, sha: string): Promise<CommitMenuProbe> {
+    const [headSha, symbolic, mergeKind, bisect, message, parentLine, remoteContains] = await Promise.all([
+      runGit(repoPath, ['rev-parse', 'HEAD']).then((s) => s.trim()).catch(() => ''),
+      runGit(repoPath, ['symbolic-ref', '-q', 'HEAD']).then((s) => s.trim()).catch(() => ''),
+      gitService.mergeState(repoPath),
+      buildBisectStatus(repoPath).then((s) => s.inProgress).catch(() => false),
+      gitFor(repoPath).raw(['log', '-1', '--format=%B', sha]).catch(() => ''),
+      runGit(repoPath, ['rev-list', '-n', '1', '--parents', sha]).then((s) => s.trim()).catch(() => ''),
+      runGit(repoPath, ['branch', '-r', '--contains', sha]).then((s) => s.trim()).catch(() => '')
+    ])
+    const parentParts = parentLine.split(/\s+/).filter(Boolean)
+    const parentSha = parentParts.length > 1 ? parentParts[1] : null
+    const isRoot = parentParts.length <= 1
+    const fullSha =
+      parentParts[0] ||
+      (await runGit(repoPath, ['rev-parse', sha]).then((s) => s.trim()).catch(() => sha))
+    const isHead = !!headSha && fullSha === headSha
+    const isOnLocalBranch = symbolic.startsWith('refs/heads/')
+    const isPublished = remoteContains.length > 0
+    let isAncestorOfHead = isHead
+    if (!isAncestorOfHead && headSha) {
+      isAncestorOfHead = await runGit(repoPath, ['merge-base', '--is-ancestor', sha, 'HEAD'])
+        .then(() => true)
+        .catch(() => false)
+    }
+    const localRaw = await runGit(repoPath, ['rev-list', 'HEAD', '--not', '--remotes']).catch(() => '')
+    const localSet = new Set(localRaw.split('\n').map((s) => s.trim()).filter(Boolean))
+    let firstPublished: string | null = null
+    if (headSha && (localSet.size === 0 || !localSet.has(headSha))) {
+      // HEAD itself is published (or there are no remotes producing "local" commits
+      // other than walking off the tip). The first published ancestor is HEAD.
+      if (!localSet.has(headSha)) firstPublished = headSha
+    }
+    if (firstPublished === null && headSha && localSet.size > 0) {
+      let cur = headSha
+      const seen = new Set<string>()
+      while (cur && !seen.has(cur)) {
+        seen.add(cur)
+        if (!localSet.has(cur)) {
+          firstPublished = cur
+          break
+        }
+        const line = await runGit(repoPath, ['rev-list', '-n', '1', '--parents', cur]).catch(() => '')
+        const next = line.trim().split(/\s+/)[1]
+        if (!next) break
+        cur = next
+      }
+    }
+    const isWithinResetBoundary =
+      isAncestorOfHead &&
+      !isHead &&
+      (!isPublished || fullSha === firstPublished || sha === firstPublished)
+    const branch = isOnLocalBranch ? symbolic.replace(/^refs\/heads\//, '') : ''
+    return {
+      isHead,
+      isOnLocalBranch,
+      isPublished,
+      isAncestorOfHead,
+      isWithinResetBoundary,
+      isRoot,
+      parentSha,
+      operationInProgress: mergeKind !== null || bisect,
+      message,
+      headSha,
+      branch
+    }
+  },
+
+  /**
+   * Undo HEAD with mixed-reset semantics (or a safe unborn-branch path for the
+   * root commit). Working-tree changes — including pre-existing WIP — are kept.
+   */
+  async undoCommit(repoPath: string): Promise<UndoCommitResult> {
+    const headSha = (await runGit(repoPath, ['rev-parse', 'HEAD'])).trim()
+    const symbolic = await runGit(repoPath, ['symbolic-ref', '-q', 'HEAD']).then((s) => s.trim()).catch(() => '')
+    if (!symbolic.startsWith('refs/heads/')) throw new Error('HEAD is detached — check out a branch first.')
+    const branch = symbolic.replace(/^refs\/heads\//, '')
+    const message = await gitFor(repoPath).raw(['log', '-1', '--format=%B', headSha])
+    const parentLine = (await runGit(repoPath, ['rev-list', '-n', '1', '--parents', headSha])).trim()
+    const parents = parentLine.split(/\s+/).slice(1)
+    const parentSha = parents[0] ?? null
+    if (!parentSha) {
+      await undoRootCommit(repoPath)
+      return { previousSha: headSha, parentSha: null, wasRoot: true, message, branch }
+    }
+    await gitFor(repoPath).reset(['--mixed', parentSha])
+    return { previousSha: headSha, parentSha, wasRoot: false, message, branch }
+  },
+
+  /** Put a branch tip back after undoCommit — unborn-safe. */
+  async restoreUndoneCommit(repoPath: string, previousSha: string): Promise<void> {
+    await runGit(repoPath, ['update-ref', 'HEAD', previousSha])
+  },
+
   async createTag(
     repoPath: string,
     name: string,
@@ -6752,6 +6869,7 @@ const READ_METHODS = new Set<string>([
   'mergePreview',
   'teammateRadar',
   'commitEditInfo',
+  'commitMenuProbe',
   'blobAtCommit',
   'semanticDiff',
   'rangeDiff',

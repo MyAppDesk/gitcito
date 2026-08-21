@@ -111,6 +111,8 @@ export const ar: Dict = {
   'common.add': 'إضافة',
   'common.copyFilePath': 'نسخ مسار الملف',
   'common.copyFolderPath': 'نسخ مسار المجلد',
+  'fileMenu.copyFilePath': 'نسخ مسار الملف',
+  'fileMenu.copyRelativeFilePath': 'نسخ مسار الملف النسبي',
 
   // Conflict resolver
   'conflict.resolved': 'محلول',
@@ -1498,6 +1500,41 @@ export const ar: Dict = {
   'commit.changedFiles': '{n} ملفات متغيّرة',
   'commit.openDefaultApp': 'فتح بالتطبيق الافتراضي',
 
+  // إجراءات التزام واحد (قائمة سياق المخطط)
+  'commitMenu.amend': 'تعديل الالتزام…',
+  'commitMenu.undo': 'التراجع عن الالتزام…',
+  'commitMenu.resetTo': 'إعادة التعيين إلى الالتزام…',
+  'commitMenu.viewOnGitHub': 'عرض على GitHub',
+  'commitMenu.disabled.notHead': 'يمكن لالتزام HEAD الحالي فقط فعل ذلك.',
+  'commitMenu.disabled.detached': 'أخرج فرعًا محليًا أولًا.',
+  'commitMenu.disabled.published': 'هذا الالتزام دُفع بالفعل.',
+  'commitMenu.disabled.notAncestor': 'هذا الالتزام ليس سلفًا لـ HEAD.',
+  'commitMenu.disabled.beyondReset': 'هذا الالتزام أقدم من حد إعادة التعيين المحلي.',
+  'commitMenu.disabled.operation': 'غير متاح أثناء عملية Git جارية.',
+  'commitMenu.disabled.inflight': 'غير متاح أثناء تشغيل أمر Git آخر.',
+  'commitMenu.disabled.notOnGitHub': 'لا يوجد بعيد GitHub، أو هذا الالتزام غير منشور.',
+  'commitMenu.amendPublishedTitle': 'تعديل التزام منشور؟',
+  'commitMenu.amendPublishedMsg':
+    'دُفع {branch} بالفعل. التعديل يعيد كتابة التاريخ — تحديث البعيد يتطلب دفعًا قسريًا.',
+  'commitMenu.amendPublishedConfirm': 'متابعة',
+  'commitMenu.undoTitle': 'التراجع عن الالتزام',
+  'commitMenu.undoMsg':
+    'انقل {branch} إلى أصل {sha} وأبقِ التغييرات غير مُدرجة. تعود الرسالة إلى المحرر.',
+  'commitMenu.undoRootMsg':
+    'هذا أول التزام على {branch}. التراجع يترك الفرع غير مولود ويحفظ الملفات في شجرة العمل.',
+  'commitMenu.undoDirty':
+    'لديك تغييرات غير ملتزَم بها. ستختلط مع الالتزام المتراجع عنه في شجرة العمل.',
+  'commitMenu.undoConfirm': 'التراجع عن الالتزام',
+  'commitMenu.resetTitle': 'إعادة التعيين إلى الالتزام',
+  'commitMenu.resetMsg': 'انقل {branch} إلى {sha}. اختر كيف تُعامل الالتزامات التي تُترك خلفك:',
+  'commitMenu.resetSoft': 'Soft — أبقِ التغييرات مُدرجة',
+  'commitMenu.resetMixed': 'Mixed — أبقِ التغييرات غير مُدرجة',
+  'commitMenu.resetHard': 'Hard — تخلَّ عن الالتزامات وتغييراتها',
+  'commitMenu.resetDirty': 'لديك تغييرات غير ملتزَم بها. قد تكتب إعادة التعيين فوق العمل الجاري أو تتعارض معه.',
+  'commitMenu.resetHardWarn': 'إعادة التعيين الصلبة تتخلّى عن العمل غير الملتزم به وكل التزام بعد {sha}.',
+  'commitMenu.resetConfirm': 'إعادة تعيين',
+  'commitMenu.resetHardConfirm': 'تخلَّ وأعد التعيين',
+
   // Tag context menu (in graph)
   'tag.checkout': 'سحب {tag}',
   'tag.worktree': 'إنشاء شجرة عمل من هذا الالتزام…',
@@ -2745,6 +2782,7 @@ export const ar: Dict = {
   'act.aborted': 'أُحبط: {kind}',
   'act.reverted': 'عُكس {sha}',
   'act.reset': 'أُعيد التعيين ({mode}) إلى {sha}',
+  'act.undidCommit': 'تُراجع عن الالتزام {sha}',
   'act.createdTag': 'أُنشئ الوسم {name}',
   'act.deletedTag': 'حُذف الوسم {name}',
   'act.pushedTag': 'أُرسل الوسم {name} إلى {remote}',
@@ -2800,6 +2838,8 @@ export const ar: Dict = {
   'undoLabel.cherryPick': 'انتقاء',
   'undoLabel.squash': 'سحق',
   'undoLabel.revert': 'عكس',
+  'undoLabel.undoCommit': 'التراجع عن الالتزام',
+  'undoLabel.resetToCommit': 'إعادة تعيين إلى {sha}',
   'undoLabel.tag': 'وسم {name}',
   'gitmoji.none': 'بلا شيء',
   'composer.ignoreAndUntrackMsg': 'أضف {what} إلى .gitignore وأوقف تتبّعه في Git. وتبقى الملفات على القرص.',
@@ -3153,5 +3193,21 @@ export const ar: Dict = {
   'askAction.createFile': 'إنشاء ملف',
   'askAction.editFile': 'تعديل ملف',
   'askAction.replaceFile': 'استبدال ملف',
-  'askAction.deleteFile': 'حذف ملف'
+  'askAction.deleteFile': 'حذف ملف',
+  'repoMenu.createAlias': 'إنشاء اسم مستعار…',
+  'repoMenu.changeAlias': 'تغيير الاسم المستعار…',
+  'repoMenu.removeAlias': 'إزالة الاسم المستعار',
+  'repoMenu.aliasTitle': 'اسم مستعار للمستودع',
+  'repoMenu.aliasLabel': 'اسم العرض',
+  'repoMenu.showWorktrees': 'إظهار أشجار العمل',
+  'repoMenu.newWorktree': 'شجرة عمل جديدة…',
+  'repoMenu.copyName': 'نسخ اسم المستودع',
+  'repoMenu.copyPath': 'نسخ مسار المستودع',
+  'repoMenu.viewOnGitHub': 'عرض على GitHub',
+  'repoMenu.openTerminal': 'فتح في الطرفية',
+  'repoMenu.revealFinder': 'إظهار في Finder',
+  'repoMenu.revealExplorer': 'إظهار في مستكشف الملفات',
+  'repoMenu.revealFileManager': 'إظهار في مدير الملفات',
+  'repoMenu.openEditor': 'فتح في المحرر الخارجي',
+  'repoMenu.remove': 'إزالة…'
 }

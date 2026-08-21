@@ -17,6 +17,13 @@ import { formatBytes, parseTooLargeError } from '../src/renderer/src/lib/fileSiz
 import { FILE_TOO_LARGE_PREFIX } from '../src/shared/types'
 import type { TabState } from '../src/shared/types'
 import { autolink, remoteWebUrl, filePermalink } from '../src/renderer/src/lib/autolink'
+import { githubCommitUrl, parseGitHubRemote, githubRemote } from '../src/renderer/src/lib/hosting'
+import {
+  commitMenuCapabilities,
+  commitMenuDisabledKey,
+  splitCommitMessage,
+  type CommitMenuInput
+} from '../src/renderer/src/lib/commitMenuCapabilities'
 import { frecencyScore } from '../src/renderer/src/lib/frecency'
 import { tokenizeChatText, isImageRef } from '../src/renderer/src/lib/chatText'
 import { togglePin, selectPinned } from '../src/renderer/src/lib/pinnedBranches'
@@ -225,6 +232,222 @@ describe('parseRemoteUrl', () => {
 
   it('returns null for unknown hosts', () => {
     expect(parseRemoteUrl('https://example.com/x/y.git')).toBeNull()
+  })
+})
+
+const GH = 'https://github.com/acme/app.git'
+const GH_SHA = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+const gitlab = [{ name: 'origin', url: 'https://gitlab.com/acme/app.git' }]
+const github = [{ name: 'origin', url: GH }]
+const mixed = [
+  { name: 'upstream', url: 'https://gitlab.com/acme/app.git' },
+  { name: 'origin', url: GH }
+]
+
+function caps(partial: Partial<CommitMenuInput>): ReturnType<typeof commitMenuCapabilities> {
+  return commitMenuCapabilities({
+    isHead: false,
+    isOnLocalBranch: true,
+    isPublished: false,
+    isAncestorOfHead: true,
+    isWithinResetBoundary: true,
+    operationInProgress: false,
+    mutationInFlight: false,
+    githubCommitUrl: null,
+    ...partial
+  })
+}
+
+describe('githubCommitUrl', () => {
+  it('builds the canonical /commit/<sha> URL from origin', () => {
+    expect(githubCommitUrl(github, GH_SHA)).toBe(`https://github.com/acme/app/commit/${GH_SHA}`)
+  })
+
+  it('prefers origin when origin is GitHub even if another remote exists', () => {
+    expect(githubRemote(mixed)?.name).toBe('origin')
+    expect(githubCommitUrl(mixed, GH_SHA)).toContain('github.com/acme/app/commit/')
+  })
+
+  it('falls back to the first GitHub remote when origin is not GitHub', () => {
+    const remotes = [
+      { name: 'origin', url: 'https://gitlab.com/acme/app.git' },
+      { name: 'github', url: 'git@github.com:acme/app.git' }
+    ]
+    expect(githubCommitUrl(remotes, GH_SHA)).toBe(`https://github.com/acme/app/commit/${GH_SHA}`)
+  })
+
+  it('returns null for a GitLab-only remote', () => {
+    expect(githubCommitUrl(gitlab, GH_SHA)).toBeNull()
+  })
+
+  it('parses ssh and https github remotes', () => {
+    expect(parseGitHubRemote('git@github.com:Acme/App.git')).toEqual({ owner: 'Acme', repo: 'App' })
+    expect(parseGitHubRemote('https://github.com/Acme/App')).toEqual({ owner: 'Acme', repo: 'App' })
+  })
+})
+
+describe('commitMenuCapabilities', () => {
+  it('unpushed HEAD: amend and undo, not reset, not GitHub', () => {
+    const c = caps({ isHead: true, isPublished: false, githubCommitUrl: githubCommitUrl(github, GH_SHA) })
+    expect(c.canAmend).toBe(true)
+    expect(c.canUndo).toBe(true)
+    expect(c.canReset).toBe(false)
+    expect(c.canViewOnGitHub).toBe(false)
+  })
+
+  it('pushed HEAD: amend with publication, undo off, view on GitHub on', () => {
+    const c = caps({
+      isHead: true,
+      isPublished: true,
+      isWithinResetBoundary: false,
+      githubCommitUrl: githubCommitUrl(github, GH_SHA)
+    })
+    expect(c.canAmend).toBe(true)
+    expect(c.canUndo).toBe(false)
+    expect(c.canReset).toBe(false)
+    expect(c.canViewOnGitHub).toBe(true)
+    expect(commitMenuDisabledKey(c, 'undo')).toBe('commitMenu.disabled.published')
+  })
+
+  it('older local ancestor: reset on, rewrite-HEAD actions off, GitHub off', () => {
+    const c = caps({ isHead: false, isPublished: false, isAncestorOfHead: true, isWithinResetBoundary: true })
+    expect(c.canAmend).toBe(false)
+    expect(c.canUndo).toBe(false)
+    expect(c.canReset).toBe(true)
+    expect(c.canViewOnGitHub).toBe(false)
+    expect(commitMenuDisabledKey(c, 'amend')).toBe('commitMenu.disabled.notHead')
+  })
+
+  it('first published/base ancestor: reset on and view on GitHub on', () => {
+    const c = caps({
+      isHead: false,
+      isPublished: true,
+      isAncestorOfHead: true,
+      isWithinResetBoundary: true,
+      githubCommitUrl: githubCommitUrl(github, GH_SHA)
+    })
+    expect(c.canReset).toBe(true)
+    expect(c.canViewOnGitHub).toBe(true)
+  })
+
+  it('older published commit beyond the reset boundary: reset off, view on', () => {
+    const c = caps({
+      isHead: false,
+      isPublished: true,
+      isAncestorOfHead: true,
+      isWithinResetBoundary: false,
+      githubCommitUrl: githubCommitUrl(github, GH_SHA)
+    })
+    expect(c.canReset).toBe(false)
+    expect(c.canViewOnGitHub).toBe(true)
+    expect(commitMenuDisabledKey(c, 'reset')).toBe('commitMenu.disabled.beyondReset')
+  })
+
+  it('tagged published commit is still published — tag does not change reachability flags', () => {
+    const c = caps({
+      isHead: false,
+      isPublished: true,
+      isAncestorOfHead: true,
+      isWithinResetBoundary: false,
+      githubCommitUrl: githubCommitUrl(github, GH_SHA)
+    })
+    expect(c.canReset).toBe(false)
+    expect(c.canViewOnGitHub).toBe(true)
+  })
+
+  it('unpushed root HEAD can be undone (safe backend path)', () => {
+    const c = caps({ isHead: true, isPublished: false })
+    expect(c.canUndo).toBe(true)
+    expect(c.canAmend).toBe(true)
+  })
+
+  it('detached HEAD disables rewrite actions; GitHub still follows publish+url', () => {
+    const detached = caps({
+      isHead: true,
+      isOnLocalBranch: false,
+      isPublished: true,
+      githubCommitUrl: githubCommitUrl(github, GH_SHA)
+    })
+    expect(detached.canAmend).toBe(false)
+    expect(detached.canUndo).toBe(false)
+    expect(detached.canReset).toBe(false)
+    expect(detached.canViewOnGitHub).toBe(true)
+    expect(commitMenuDisabledKey(detached, 'amend')).toBe('commitMenu.disabled.detached')
+  })
+
+  it('no remote: View on GitHub stays disabled even for an otherwise published sha', () => {
+    const c = caps({ isHead: true, isPublished: true, githubCommitUrl: null })
+    expect(c.canViewOnGitHub).toBe(false)
+    expect(commitMenuDisabledKey(c, 'viewOnGitHub')).toBe('commitMenu.disabled.notOnGitHub')
+  })
+
+  it('non-GitHub remote: View on GitHub disabled', () => {
+    const c = caps({
+      isHead: false,
+      isPublished: true,
+      githubCommitUrl: githubCommitUrl(gitlab, GH_SHA)
+    })
+    expect(c.githubCommitUrl).toBeNull()
+    expect(c.canViewOnGitHub).toBe(false)
+  })
+
+  it('dirty working tree and staged changes do not by themselves disable capabilities', () => {
+    const head = caps({ isHead: true, isPublished: false })
+    const ancestor = caps({ isHead: false, isPublished: false })
+    expect(head.canAmend).toBe(true)
+    expect(head.canUndo).toBe(true)
+    expect(ancestor.canReset).toBe(true)
+  })
+
+  it('merge/rebase/cherry-pick in progress disables rewrite actions, not View on GitHub', () => {
+    const c = caps({
+      isHead: true,
+      isPublished: true,
+      operationInProgress: true,
+      githubCommitUrl: githubCommitUrl(github, GH_SHA)
+    })
+    expect(c.canAmend).toBe(false)
+    expect(c.canUndo).toBe(false)
+    expect(c.canReset).toBe(false)
+    expect(c.canViewOnGitHub).toBe(true)
+    expect(commitMenuDisabledKey(c, 'amend')).toBe('commitMenu.disabled.operation')
+  })
+
+  it('mutation already in flight disables rewrite actions', () => {
+    const c = caps({
+      isHead: true,
+      isPublished: false,
+      mutationInFlight: true,
+      githubCommitUrl: githubCommitUrl(github, GH_SHA)
+    })
+    expect(c.canAmend).toBe(false)
+    expect(c.canUndo).toBe(false)
+    expect(c.canReset).toBe(false)
+    expect(commitMenuDisabledKey(c, 'undo')).toBe('commitMenu.disabled.inflight')
+  })
+
+  it('non-ancestor is not resettable', () => {
+    const c = caps({ isHead: false, isAncestorOfHead: false, isWithinResetBoundary: false })
+    expect(c.canReset).toBe(false)
+    expect(commitMenuDisabledKey(c, 'reset')).toBe('commitMenu.disabled.notAncestor')
+  })
+
+  it('HEAD itself is never a reset target', () => {
+    const c = caps({ isHead: true, isAncestorOfHead: true, isWithinResetBoundary: false })
+    expect(c.canReset).toBe(false)
+  })
+})
+
+describe('splitCommitMessage', () => {
+  it('splits summary and body on the first blank-ish newline', () => {
+    expect(splitCommitMessage('Fix typo\n\nMore detail.\n')).toEqual({
+      summary: 'Fix typo',
+      description: 'More detail.'
+    })
+  })
+
+  it('treats a one-line message as summary only', () => {
+    expect(splitCommitMessage('Fix typo')).toEqual({ summary: 'Fix typo', description: '' })
   })
 })
 

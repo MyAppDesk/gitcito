@@ -111,6 +111,8 @@ export const zhCN: Dict = {
   'common.add': '添加',
   'common.copyFilePath': '复制文件路径',
   'common.copyFolderPath': '复制文件夹路径',
+  'fileMenu.copyFilePath': '复制文件路径',
+  'fileMenu.copyRelativeFilePath': '复制相对文件路径',
 
   // Conflict resolver
   'conflict.resolved': '已解决',
@@ -1498,6 +1500,41 @@ export const zhCN: Dict = {
   'commit.changedFiles': '{n} 个文件有改动',
   'commit.openDefaultApp': '用默认应用打开',
 
+  // 单个提交操作（提交图上下文菜单）
+  'commitMenu.amend': '修补提交…',
+  'commitMenu.undo': '撤销提交…',
+  'commitMenu.resetTo': '重置到此提交…',
+  'commitMenu.viewOnGitHub': '在 GitHub 上查看',
+  'commitMenu.disabled.notHead': '只有当前 HEAD 提交可以这样做。',
+  'commitMenu.disabled.detached': '请先检出一个本地分支。',
+  'commitMenu.disabled.published': '此提交已经推送。',
+  'commitMenu.disabled.notAncestor': '此提交不是 HEAD 的祖先。',
+  'commitMenu.disabled.beyondReset': '此提交早于本地可重置边界。',
+  'commitMenu.disabled.operation': '有 Git 操作正在进行时不可用。',
+  'commitMenu.disabled.inflight': '另有 Git 命令正在运行时不可用。',
+  'commitMenu.disabled.notOnGitHub': '没有 GitHub 远程，或此提交尚未发布。',
+  'commitMenu.amendPublishedTitle': '修补已发布的提交？',
+  'commitMenu.amendPublishedMsg':
+    '{branch} 已经推送。修补会改写历史——更新远程需要强制推送。',
+  'commitMenu.amendPublishedConfirm': '继续',
+  'commitMenu.undoTitle': '撤销提交',
+  'commitMenu.undoMsg':
+    '将 {branch} 移到 {sha} 的父提交，并保持更改为未暂存。提交说明会回到编辑器。',
+  'commitMenu.undoRootMsg':
+    '这是 {branch} 上的第一次提交。撤销后分支会变成未诞生状态，工作区文件会保留。',
+  'commitMenu.undoDirty':
+    '你有未提交的更改。它们会与被撤销的提交一起留在工作区。',
+  'commitMenu.undoConfirm': '撤销提交',
+  'commitMenu.resetTitle': '重置到提交',
+  'commitMenu.resetMsg': '将 {branch} 移到 {sha}。选择如何处理被甩在后面的提交：',
+  'commitMenu.resetSoft': 'Soft — 保留已暂存的更改',
+  'commitMenu.resetMixed': 'Mixed — 保留未暂存的更改',
+  'commitMenu.resetHard': 'Hard — 丢弃这些提交及其更改',
+  'commitMenu.resetDirty': '你有未提交的更改。重置可能会覆盖或与进行中的工作冲突。',
+  'commitMenu.resetHardWarn': '硬重置会丢弃未提交的工作以及 {sha} 之后的每个提交。',
+  'commitMenu.resetConfirm': '重置',
+  'commitMenu.resetHardConfirm': '丢弃并重置',
+
   // Tag context menu (in graph)
   'tag.checkout': '检出 {tag}',
   'tag.worktree': '从这个提交创建工作树…',
@@ -2742,6 +2779,7 @@ export const zhCN: Dict = {
   'act.aborted': '已中止{kind}',
   'act.reverted': '已回滚 {sha}',
   'act.reset': '已重置（{mode}）到 {sha}',
+  'act.undidCommit': '已撤销提交 {sha}',
   'act.createdTag': '已创建标签 {name}',
   'act.deletedTag': '已删除标签 {name}',
   'act.pushedTag': '已把标签 {name} 推送到 {remote}',
@@ -2797,6 +2835,8 @@ export const zhCN: Dict = {
   'undoLabel.cherryPick': '拣选',
   'undoLabel.squash': '压缩',
   'undoLabel.revert': '回滚',
+  'undoLabel.undoCommit': '撤销提交',
+  'undoLabel.resetToCommit': '重置到 {sha}',
   'undoLabel.tag': '标签 {name}',
   'gitmoji.none': '无',
   'composer.ignoreAndUntrackMsg': '把 {what} 加进 .gitignore，并让 Git 不再跟踪它。文件仍然留在磁盘上。',
@@ -3150,5 +3190,21 @@ export const zhCN: Dict = {
   'askAction.createFile': '创建文件',
   'askAction.editFile': '编辑文件',
   'askAction.replaceFile': '替换文件',
-  'askAction.deleteFile': '删除文件'
+  'askAction.deleteFile': '删除文件',
+  'repoMenu.createAlias': '创建别名…',
+  'repoMenu.changeAlias': '更改别名…',
+  'repoMenu.removeAlias': '移除别名',
+  'repoMenu.aliasTitle': '仓库别名',
+  'repoMenu.aliasLabel': '显示名称',
+  'repoMenu.showWorktrees': '显示工作树',
+  'repoMenu.newWorktree': '新建工作树…',
+  'repoMenu.copyName': '复制仓库名称',
+  'repoMenu.copyPath': '复制仓库路径',
+  'repoMenu.viewOnGitHub': '在 GitHub 上查看',
+  'repoMenu.openTerminal': '在终端中打开',
+  'repoMenu.revealFinder': '在 Finder 中显示',
+  'repoMenu.revealExplorer': '在文件资源管理器中显示',
+  'repoMenu.revealFileManager': '在文件管理器中显示',
+  'repoMenu.openEditor': '在外部编辑器中打开',
+  'repoMenu.remove': '移除…'
 }

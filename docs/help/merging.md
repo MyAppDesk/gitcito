@@ -3,7 +3,7 @@ title: Merging & rebasing
 category: Branching & surgery
 order: 41
 summary: Merge, rebase, compare refs, and drag one ref onto another in the sidebar or the graph.
-keywords: merge rebase fast-forward compare refs drag drop branch onto graph ref badge tag remote revert reset cherry-pick
+keywords: merge rebase fast-forward compare refs drag drop branch onto graph ref badge tag remote revert reset cherry-pick amend undo github
 ---
 
 # Merging & rebasing
@@ -60,8 +60,28 @@ Reachable from the sidebar (compare with the current branch), the Tools menu, or
 
 ## Cherry-pick, revert, reset
 
-All three from the graph's context menu. Reset offers **soft / mixed / hard**
-and spells out what each one does to your working tree before you pick.
+Cherry-pick and revert live on the graph's context menu, as they always have.
+**Reset** is one entry — **Reset to Commit…** — instead of three raw
+soft/mixed/hard items that contradicted each other.
+
+Amend, undo and reset sit at the top of the single-commit menu and stay
+**visible when they are unsafe**: they disable, with a tooltip that says why.
+Undo is only for an unpushed HEAD; amend is also allowed on a published HEAD,
+but warns that a force push will be needed. Reset only reaches local ancestors
+plus the first published commit — not arbitrary older history.
+
+The reset dialog makes the mode explicit:
+
+| Mode | Result |
+|------|--------|
+| **Soft** | Keep the changes staged |
+| **Mixed** | Keep the changes unstaged |
+| **Hard** | Discard the commits and their changes |
+
+Hard is never preselected. A dirty working tree gets an extra warning, because
+resetting can overwrite or conflict with work in progress. **View on GitHub**
+lives with the copy actions and opens only for published commits on a
+github.com remote.
 
 Multi-select commits first and cherry-pick applies the whole selection, in
 order.

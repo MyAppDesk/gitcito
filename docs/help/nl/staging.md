@@ -39,6 +39,15 @@ om losse bestanden aan of uit te zetten.
 aangeklikte rij. Rechtsklik op de selectie om alles erin in één keer te stagen,
 unstagen, stashen of te verwerpen.
 
+## Paden kopiëren
+
+Rechtsklik op een niet-gecommit bestand voor **Bestandspad kopiëren**
+(absoluut, met de scheidingstekens van het platform) en **Relatief bestandspad
+kopiëren** (`src/index.ts`, zonder `./` vooraan). Meerdere geselecteerde
+bestanden kopiëren één pad per regel, in lijstvolgorde. Verwijderde bestanden
+blijven beschikbaar — die acties kopiëren alleen tekst. Mappen kopiëren nog
+steeds het mappad.
+
 ## Voor je commit
 
 Gitcito controleert een paar dingen en vraagt één keer, nooit in stilte:

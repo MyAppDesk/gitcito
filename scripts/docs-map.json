@@ -60,6 +60,7 @@
       "launch-input": "launch",
       "teammate-radar": "teammate-radar",
       "commit-edit": "commit-edit",
+      "reset-to-commit": "merging",
       "local-ci": "local-ci"
     },
     "exempt": {

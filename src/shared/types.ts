@@ -250,6 +250,32 @@ export interface CommitEditResult {
   rewritten: number
 }
 
+/** Batched git facts for the single-commit context menu (amend / undo / reset / GitHub). */
+export interface CommitMenuProbe {
+  isHead: boolean
+  isOnLocalBranch: boolean
+  /** Reachable from at least one remote-tracking branch — not tags. */
+  isPublished: boolean
+  isAncestorOfHead: boolean
+  /** Local (unpushed) ancestor, or the first published/base ancestor of HEAD. */
+  isWithinResetBoundary: boolean
+  isRoot: boolean
+  parentSha: string | null
+  operationInProgress: boolean
+  message: string
+  headSha: string
+  branch: string
+}
+
+/** Result of undoing HEAD — enough for the composer prefill and an undo entry. */
+export interface UndoCommitResult {
+  previousSha: string
+  parentSha: string | null
+  wasRoot: boolean
+  message: string
+  branch: string
+}
+
 /** One remote branch's activity as seen by the teammate radar. */
 export interface TeammateRadarEntry {
   ref: string // short remote ref, e.g. origin/feature-x
@@ -2551,6 +2577,13 @@ export interface AppSettings {
    *  binding becomes the active repo, its profile is auto-activated. Path-keyed
    *  (not stored on RepoRef) so the same repo across tabs/groups can't diverge. */
   repoProfiles: Record<string, string>
+  /**
+   * Display aliases keyed by canonical repository path. An alias changes only
+   * the name Gitcito shows — it never renames or moves the directory on disk.
+   * Path-keyed (not stored on RepoRef) so the same repo across tabs, groups and
+   * workspaces cannot diverge.
+   */
+  repoAliases: Record<string, string>
   tabs: TabState[]
   activeTabId: string | null
   /** Saved tab layouts. Always has at least one ("Default"); the active one's
@@ -2890,6 +2923,7 @@ export function defaultSettings(): AppSettings {
     profiles: [defaultProfile()],
     activeProfileId: 'default',
     repoProfiles: {},
+    repoAliases: {},
     tabs: [],
     activeTabId: null,
     workspaces: [{ id: 'default', name: 'Default', tabs: [], activeTabId: null }],

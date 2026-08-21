@@ -40,6 +40,15 @@ aggiungere o togliere singoli file.
 cliccata. Un clic destro sulla selezione mette in stage, toglie dallo stage,
 stasha o scarta tutto in una volta.
 
+## Copiare i percorsi
+
+Un clic destro su un file non committato offre **Copia il percorso del file**
+(assoluto, con i separatori della piattaforma) e **Copia il percorso relativo
+del file** (`src/index.ts`, senza `./` iniziale). Più file selezionati copiano
+un percorso per riga, nell'ordine dell'elenco. I file eliminati restano
+disponibili: queste azioni copiano solo testo. Le cartelle continuano a
+copiare il percorso della cartella.
+
 ## Prima di committare
 
 Gitcito controlla alcune cose e chiede una volta, mai in silenzio:

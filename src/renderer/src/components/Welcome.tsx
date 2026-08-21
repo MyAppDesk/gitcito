@@ -4,6 +4,7 @@ import { FolderGit2, Download, Plus, X, Pencil, GripVertical } from 'lucide-reac
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
 import { useT } from '../i18n'
+import { confirmRemoveRecentRepo, repositoryMenuItems } from '../lib/repositoryMenuItems'
 import gitcitoLaunch from '../assets/gitcito-launch.png'
 
 export interface LauncherItem {
@@ -52,6 +53,15 @@ function ItemList({
             className={`launcher-item${item.onSelect && !renaming ? ' clickable' : ''}${dragging ? ' dragging' : ''}${dragOver ? ' drag-over' : ''}`}
             draggable={!!onReorder}
             onClick={!renaming ? item.onSelect : undefined}
+            onContextMenu={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              useUIStore.getState().openContextMenu(
+                e.clientX,
+                e.clientY,
+                repositoryMenuItems(item.path, () => item.onRemove?.())
+              )
+            }}
             onDragStart={onReorder ? () => setDragPath(item.path) : undefined}
             onDragEnd={onReorder ? () => { setDragPath(null); setOverPath(null) } : undefined}
             onDragOver={onReorder ? (e) => { e.preventDefault(); if (dragPath && dragPath !== item.path) setOverPath(item.path) } : undefined}
@@ -222,7 +232,8 @@ export function Welcome(): React.JSX.Element {
   const recentItems: LauncherItem[] = settings.recentRepos.map((r) => ({
     name: r.name,
     path: r.path,
-    onSelect: () => openRepoTab(r)
+    onSelect: () => openRepoTab(r),
+    onRemove: () => confirmRemoveRecentRepo(r.path)
   }))
 
   return (

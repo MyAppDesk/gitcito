@@ -81,6 +81,26 @@ export const shots = [
     themes: ['light', 'dark']
   },
   {
+    out: 'reset-to-commit',
+    repos: ['octopus-merge'],
+    themes: ['dark'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['octopus-merge']
+      await page.evaluate((p) => {
+        window.__shot.ui.getState().openModal({
+          kind: 'reset-to-commit',
+          repoPath: p,
+          sha: '0123456789abcdef',
+          shortSha: '0123456',
+          branch: 'main',
+          dirty: true,
+          onReset: () => {}
+        })
+      }, repo)
+      await page.waitForTimeout(500)
+    }
+  },
+  {
     out: 'conflict-resolver',
     repos: ['merge-conflict'],
     themes: ['light'],
@@ -1485,6 +1505,37 @@ export const shots = [
         if (frontend) store.getState().moveRepoToFolder(tab.id, paths['code-search'], frontend.id)
       }, repoPaths)
       await page.waitForTimeout(1000)
+    }
+  },
+  {
+    // Repository-scoped context menu — same entries on a grouped chip as on a
+    // standalone tab. Alias, worktrees, copy, GitHub, terminal, reveal, editor,
+    // remove.
+    out: 'repo-context-menu',
+    kind: 'group',
+    repos: ['octopus-merge', 'merge-conflict'],
+    themes: ['dark'],
+    clipTo: '.context-menu',
+    clipPad: 16,
+    drive: async (page) => {
+      await page.click('.tab.in-group', { button: 'right' })
+      await page.waitForSelector('.context-menu')
+      await page.waitForTimeout(400)
+    }
+  },
+  {
+    // Toolbar repository dropdown — right-click a row for the same repository
+    // menu as a tab chip. The picker stays open behind the menu on purpose.
+    out: 'repo-dropdown-context-menu',
+    kind: 'group',
+    repos: ['octopus-merge', 'merge-conflict'],
+    themes: ['dark'],
+    drive: async (page) => {
+      await page.click('.repo-pill[aria-haspopup="listbox"]')
+      await page.waitForSelector('.repo-picker-popover')
+      await page.click('.repo-picker-popover .branch-picker-item', { button: 'right' })
+      await page.waitForSelector('.context-menu')
+      await page.waitForTimeout(400)
     }
   },
   {

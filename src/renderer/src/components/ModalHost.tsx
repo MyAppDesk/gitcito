@@ -17,12 +17,14 @@ import type {
 } from '../../../shared/types'
 import { SettingsPanel } from './SettingsPanel'
 import { LauncherPanel, type LauncherItem } from './Welcome'
+import { confirmRemoveRecentRepo, confirmRemoveRepoFromGroup } from '../lib/repositoryMenuItems'
 import { AIConfigWizard } from './AIConfigWizard'
 import { InteractiveRebase } from './InteractiveRebase'
 import { BranchComparison } from './BranchComparison'
 import { ConflictRadar } from './ConflictRadar'
 import { TeammateRadarModal } from './TeammateRadarModal'
 import { CommitEditModal } from './CommitEditModal'
+import { ResetToCommitModal } from './ResetToCommitModal'
 import { LocalCIModal } from './LocalCIModal'
 import { KeychainConsentModal } from './KeychainConsentModal'
 import { RangeDiffModal } from './RangeDiffModal'
@@ -1558,7 +1560,7 @@ function CreateRepoModal({ spec }: { spec: Extract<ModalSpec, { kind: 'create-re
 function LauncherModal({ spec }: { spec: Extract<ModalSpec, { kind: 'launcher' }> }): React.JSX.Element {
   const t = useT()
   const { closeModal, openModal } = useUIStore()
-  const { settings, openRepoTab, createGroupTab, addRepoToGroup, removeRepoFromGroup, renameRepoInGroup, reorderReposInGroup } = useSettingsStore()
+  const { settings, openRepoTab, createGroupTab, addRepoToGroup, renameRepoInGroup, reorderReposInGroup } = useSettingsStore()
 
   const groupTab = spec.groupId
     ? settings.tabs.find((t): t is GroupTab => t.id === spec.groupId && t.kind === 'group')
@@ -1614,7 +1616,7 @@ function LauncherModal({ spec }: { spec: Extract<ModalSpec, { kind: 'launcher' }
     ? groupTab.repos.map((r) => ({
         name: r.name,
         path: r.path,
-        onRemove: () => removeRepoFromGroup(spec.groupId!, r.path),
+        onRemove: () => confirmRemoveRepoFromGroup(spec.groupId!, r.path),
         onRename: (newName) => renameRepoInGroup(spec.groupId!, r.path, newName)
       }))
     : settings.recentRepos.map((r) => ({
@@ -1623,7 +1625,8 @@ function LauncherModal({ spec }: { spec: Extract<ModalSpec, { kind: 'launcher' }
         onSelect: () => {
           closeModal()
           openRepoTab(r)
-        }
+        },
+        onRemove: () => confirmRemoveRecentRepo(r.path)
       }))
 
   const recentItems: LauncherItem[] | undefined = spec.groupId && groupTab
@@ -1632,7 +1635,8 @@ function LauncherModal({ spec }: { spec: Extract<ModalSpec, { kind: 'launcher' }
         .map((r) => ({
           name: r.name,
           path: r.path,
-          onSelect: () => addRepoToGroup(spec.groupId!, r)
+          onSelect: () => addRepoToGroup(spec.groupId!, r),
+          onRemove: () => confirmRemoveRecentRepo(r.path)
         }))
     : undefined
 
@@ -1841,6 +1845,7 @@ export function ModalHost(): React.JSX.Element {
             {modal.kind === 'commit-edit' && (
               <CommitEditModal repoPath={modal.repoPath} sha={modal.sha} subject={modal.subject} />
             )}
+            {modal.kind === 'reset-to-commit' && <ResetToCommitModal spec={modal} />}
             {modal.kind === 'local-ci' && <LocalCIModal repoPath={modal.repoPath} rev={modal.rev} />}
             {modal.kind === 'secure-share' && (
               <SecureShareModal repoPath={modal.repoPath} initialMode={modal.initialMode} />

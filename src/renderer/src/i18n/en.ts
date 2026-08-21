@@ -112,6 +112,8 @@ export const en = {
   'common.add': 'Add',
   'common.copyFilePath': 'Copy file path',
   'common.copyFolderPath': 'Copy folder path',
+  'fileMenu.copyFilePath': 'Copy File Path',
+  'fileMenu.copyRelativeFilePath': 'Copy Relative File Path',
 
   // Conflict resolver
   'conflict.resolved': 'resolved',
@@ -1493,6 +1495,41 @@ export const en = {
   'commit.changedFiles': '{n} changed files',
   'commit.openDefaultApp': 'Open with default app',
 
+  // Single-commit rewrite actions (graph context menu)
+  'commitMenu.amend': 'Amend Commit…',
+  'commitMenu.undo': 'Undo Commit…',
+  'commitMenu.resetTo': 'Reset to Commit…',
+  'commitMenu.viewOnGitHub': 'View on GitHub',
+  'commitMenu.disabled.notHead': 'Only the current HEAD commit can do this.',
+  'commitMenu.disabled.detached': 'Check out a local branch first.',
+  'commitMenu.disabled.published': 'This commit has already been pushed.',
+  'commitMenu.disabled.notAncestor': 'This commit is not an ancestor of HEAD.',
+  'commitMenu.disabled.beyondReset': 'This commit is older than the local reset boundary.',
+  'commitMenu.disabled.operation': 'Unavailable while a Git operation is in progress.',
+  'commitMenu.disabled.inflight': 'Unavailable while another Git command is running.',
+  'commitMenu.disabled.notOnGitHub': 'No GitHub remote, or this commit is not published.',
+  'commitMenu.amendPublishedTitle': 'Amend a published commit?',
+  'commitMenu.amendPublishedMsg':
+    '{branch} was already pushed. Amending rewrites history — updating the remote will require a force push.',
+  'commitMenu.amendPublishedConfirm': 'Continue',
+  'commitMenu.undoTitle': 'Undo commit',
+  'commitMenu.undoMsg':
+    'Move {branch} to the parent of {sha} and keep the changes unstaged. The commit message returns to the composer.',
+  'commitMenu.undoRootMsg':
+    'This is the first commit on {branch}. Undoing it leaves an unborn branch and keeps the files in the working tree.',
+  'commitMenu.undoDirty':
+    'You have uncommitted changes. They will be mixed with the undone commit in the working tree.',
+  'commitMenu.undoConfirm': 'Undo commit',
+  'commitMenu.resetTitle': 'Reset to commit',
+  'commitMenu.resetMsg': 'Move {branch} to {sha}. Choose how the commits you leave behind are treated:',
+  'commitMenu.resetSoft': 'Soft — keep changes staged',
+  'commitMenu.resetMixed': 'Mixed — keep changes unstaged',
+  'commitMenu.resetHard': 'Hard — discard the commits and their changes',
+  'commitMenu.resetDirty': 'You have uncommitted changes. Resetting may overwrite or conflict with work in progress.',
+  'commitMenu.resetHardWarn': 'Hard reset discards uncommitted work and every commit after {sha}.',
+  'commitMenu.resetConfirm': 'Reset',
+  'commitMenu.resetHardConfirm': 'Discard and reset',
+
   // Tag context menu (in graph)
   'tag.checkout': 'Checkout {tag}',
   'tag.worktree': 'Create worktree from this commit…',
@@ -2746,6 +2783,7 @@ export const en = {
   'act.aborted': 'Aborted {kind}',
   'act.reverted': 'Reverted {sha}',
   'act.reset': 'Reset ({mode}) to {sha}',
+  'act.undidCommit': 'Undid commit {sha}',
   'act.createdTag': 'Created tag {name}',
   'act.deletedTag': 'Deleted tag {name}',
   'act.pushedTag': 'Pushed tag {name} to {remote}',
@@ -2801,6 +2839,8 @@ export const en = {
   'undoLabel.cherryPick': 'cherry-pick',
   'undoLabel.squash': 'squash',
   'undoLabel.revert': 'revert',
+  'undoLabel.undoCommit': 'undo commit',
+  'undoLabel.resetToCommit': 'reset to {sha}',
   'undoLabel.tag': 'tag {name}',
   'gitmoji.none': 'none',
   'composer.ignoreAndUntrackMsg': 'Add {what} to .gitignore and stop tracking it in Git. The file(s) stay on disk.',
@@ -3154,7 +3194,23 @@ export const en = {
   'askAction.createFile': 'Create file',
   'askAction.editFile': 'Edit file',
   'askAction.replaceFile': 'Replace file',
-  'askAction.deleteFile': 'Delete file'
+  'askAction.deleteFile': 'Delete file',
+  'repoMenu.createAlias': 'Create Alias…',
+  'repoMenu.changeAlias': 'Change Alias…',
+  'repoMenu.removeAlias': 'Remove Alias',
+  'repoMenu.aliasTitle': 'Repository alias',
+  'repoMenu.aliasLabel': 'Display name',
+  'repoMenu.showWorktrees': 'Show Worktrees',
+  'repoMenu.newWorktree': 'New Worktree…',
+  'repoMenu.copyName': 'Copy Repo Name',
+  'repoMenu.copyPath': 'Copy Repo Path',
+  'repoMenu.viewOnGitHub': 'View on GitHub',
+  'repoMenu.openTerminal': 'Open in Terminal',
+  'repoMenu.revealFinder': 'Reveal in Finder',
+  'repoMenu.revealExplorer': 'Reveal in File Explorer',
+  'repoMenu.revealFileManager': 'Reveal in file manager',
+  'repoMenu.openEditor': 'Open in External Editor',
+  'repoMenu.remove': 'Remove…'
 }
 
 /** The shape every locale must implement. */

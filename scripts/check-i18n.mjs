@@ -107,7 +107,8 @@ const violations = []
 
 for (const file of walk(SCAN_DIR)) {
   const rel = relative(ROOT, file)
-  if (SKIP_PATH.some((p) => file.includes(p))) continue
+  const posix = file.replace(/\\/g, '/')
+  if (SKIP_PATH.some((p) => posix.includes(p))) continue
   const lines = readFileSync(file, 'utf8').split('\n')
 
   lines.forEach((line, i) => {

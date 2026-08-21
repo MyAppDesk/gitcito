@@ -41,6 +41,15 @@ zum Umschalten einzelner Dateien.
 geklickten Zeile aus. Ein Rechtsklick auf die Auswahl staged, unstaged, stasht
 oder verwirft alles darin auf einmal.
 
+## Pfade kopieren
+
+Ein Rechtsklick auf eine uncommittete Datei bietet **Dateipfad kopieren**
+(absolut, mit den Trennzeichen der Plattform) und **Relativen Dateipfad
+kopieren** (`src/index.ts`, ohne führendes `./`). Mehrere ausgewählte Dateien
+landen eine pro Zeile, in Listenreihenfolge. Gelöschte Dateien bleiben
+aktiviert — kopiert wird nur der Pfadtext. Ordner kopieren weiterhin den
+Ordnerpfad.
+
 ## Bevor du committest
 
 Gitcito prüft ein paar Dinge und fragt einmal nach — nie stillschweigend:

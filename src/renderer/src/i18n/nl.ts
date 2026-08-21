@@ -111,6 +111,8 @@ export const nl: Dict = {
   'common.add': 'Toevoegen',
   'common.copyFilePath': 'Bestandspad kopiëren',
   'common.copyFolderPath': 'Mappad kopiëren',
+  'fileMenu.copyFilePath': 'Bestandspad kopiëren',
+  'fileMenu.copyRelativeFilePath': 'Relatief bestandspad kopiëren',
 
   // Conflictoplosser
   'conflict.resolved': 'opgelost',
@@ -1499,6 +1501,41 @@ export const nl: Dict = {
   'commit.changedFiles': '{n} gewijzigde bestanden',
   'commit.openDefaultApp': 'Openen met de standaardapp',
 
+  // Acties voor één commit (contextmenu van de graaf)
+  'commitMenu.amend': 'Commit aanpassen…',
+  'commitMenu.undo': 'Commit ongedaan maken…',
+  'commitMenu.resetTo': 'Resetten naar commit…',
+  'commitMenu.viewOnGitHub': 'Bekijken op GitHub',
+  'commitMenu.disabled.notHead': 'Alleen de huidige HEAD-commit kan dit.',
+  'commitMenu.disabled.detached': 'Check eerst een lokale branch uit.',
+  'commitMenu.disabled.published': 'Deze commit is al gepusht.',
+  'commitMenu.disabled.notAncestor': 'Deze commit is geen voorouder van HEAD.',
+  'commitMenu.disabled.beyondReset': 'Deze commit ligt voor de lokale resetgrens.',
+  'commitMenu.disabled.operation': 'Niet beschikbaar terwijl een Git-bewerking loopt.',
+  'commitMenu.disabled.inflight': 'Niet beschikbaar terwijl een ander Git-commando draait.',
+  'commitMenu.disabled.notOnGitHub': 'Geen GitHub-remote, of deze commit is niet gepubliceerd.',
+  'commitMenu.amendPublishedTitle': 'Een gepubliceerde commit aanpassen?',
+  'commitMenu.amendPublishedMsg':
+    '{branch} is al gepusht. Aanpassen herschrijft de geschiedenis — de remote bijwerken vereist een force-push.',
+  'commitMenu.amendPublishedConfirm': 'Doorgaan',
+  'commitMenu.undoTitle': 'Commit ongedaan maken',
+  'commitMenu.undoMsg':
+    'Verplaats {branch} naar de ouder van {sha} en houd de wijzigingen unstaged. Het bericht keert terug naar de composer.',
+  'commitMenu.undoRootMsg':
+    'Dit is de eerste commit op {branch}. Ongedaan maken laat een ongeboren branch achter en behoudt de bestanden in de werkboom.',
+  'commitMenu.undoDirty':
+    'Je hebt uncommitted wijzigingen. Die worden in de werkboom gemengd met de ongedaan gemaakte commit.',
+  'commitMenu.undoConfirm': 'Commit ongedaan maken',
+  'commitMenu.resetTitle': 'Resetten naar commit',
+  'commitMenu.resetMsg': 'Verplaats {branch} naar {sha}. Kies hoe de commits die je achterlaat behandeld worden:',
+  'commitMenu.resetSoft': 'Soft — wijzigingen staged houden',
+  'commitMenu.resetMixed': 'Mixed — wijzigingen unstaged houden',
+  'commitMenu.resetHard': 'Hard — commits en hun wijzigingen weggooien',
+  'commitMenu.resetDirty': 'Je hebt uncommitted wijzigingen. Resetten kan werk in uitvoering overschrijven of ermee botsen.',
+  'commitMenu.resetHardWarn': 'Een hard reset gooit uncommitted werk weg en elke commit na {sha}.',
+  'commitMenu.resetConfirm': 'Resetten',
+  'commitMenu.resetHardConfirm': 'Weggooien en resetten',
+
   // Contextmenu van een tag (in de graaf)
   'tag.checkout': '{tag} uitchecken',
   'tag.worktree': 'Worktree maken vanaf deze commit…',
@@ -2750,6 +2787,7 @@ export const nl: Dict = {
   'act.aborted': '{kind} afgebroken',
   'act.reverted': '{sha} gerevert',
   'act.reset': 'Gereset ({mode}) naar {sha}',
+  'act.undidCommit': 'Commit {sha} ongedaan gemaakt',
   'act.createdTag': 'Tag {name} aangemaakt',
   'act.deletedTag': 'Tag {name} verwijderd',
   'act.pushedTag': 'Tag {name} gepusht naar {remote}',
@@ -2805,6 +2843,8 @@ export const nl: Dict = {
   'undoLabel.cherryPick': 'cherry-pick',
   'undoLabel.squash': 'squash',
   'undoLabel.revert': 'revert',
+  'undoLabel.undoCommit': 'commit ongedaan maken',
+  'undoLabel.resetToCommit': 'reset naar {sha}',
   'undoLabel.tag': 'tag {name}',
   'gitmoji.none': 'geen',
   'composer.ignoreAndUntrackMsg': '{what} aan .gitignore toevoegen en niet meer trackken in Git. De bestanden blijven op schijf staan.',
@@ -3158,5 +3198,21 @@ export const nl: Dict = {
   'askAction.createFile': 'Bestand maken',
   'askAction.editFile': 'Bestand bewerken',
   'askAction.replaceFile': 'Bestand vervangen',
-  'askAction.deleteFile': 'Bestand verwijderen'
+  'askAction.deleteFile': 'Bestand verwijderen',
+  'repoMenu.createAlias': 'Alias maken…',
+  'repoMenu.changeAlias': 'Alias wijzigen…',
+  'repoMenu.removeAlias': 'Alias verwijderen',
+  'repoMenu.aliasTitle': 'Repository-alias',
+  'repoMenu.aliasLabel': 'Weergavenaam',
+  'repoMenu.showWorktrees': 'Worktrees tonen',
+  'repoMenu.newWorktree': 'Nieuwe worktree…',
+  'repoMenu.copyName': 'Reponaam kopiëren',
+  'repoMenu.copyPath': 'Repopad kopiëren',
+  'repoMenu.viewOnGitHub': 'Bekijken op GitHub',
+  'repoMenu.openTerminal': 'Openen in terminal',
+  'repoMenu.revealFinder': 'Tonen in Finder',
+  'repoMenu.revealExplorer': 'Tonen in Verkenner',
+  'repoMenu.revealFileManager': 'Tonen in bestandsbeheer',
+  'repoMenu.openEditor': 'Openen in externe editor',
+  'repoMenu.remove': 'Verwijderen…'
 }

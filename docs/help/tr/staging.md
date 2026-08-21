@@ -40,6 +40,14 @@ gezinir; aralık seçmek için <kbd>⇧</kbd>, tek tek dosyaları seçip bırakm
 genişletir. Seçime sağ tıklayarak içindeki her şeyi tek seferde stage'leyin,
 stage'den çıkarın, stash'leyin ya da atın.
 
+## Yolları kopyalama
+
+Commit'lenmemiş bir dosyaya sağ tıklayınca **Dosya yolunu kopyala** (mutlak,
+platformun ayırıcılarıyla) ve **Göreli dosya yolunu kopyala** (`src/index.ts`,
+başında `./` yok) çıkar. Birden fazla seçili dosya, liste sırasıyla satır başına
+bir yol kopyalar. Silinmiş dosyalar etkin kalır — bu eylemler yalnızca metin
+kopyalar. Klasörler hâlâ klasör yolunu kopyalar.
+
 ## Commit'lemeden önce
 
 Gitcito birkaç şeyi denetler ve bir kez sorar, asla sessizce geçmez:

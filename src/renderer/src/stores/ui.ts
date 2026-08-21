@@ -18,6 +18,8 @@ export interface MenuItem {
   danger?: boolean
   separator?: boolean
   disabled?: boolean
+  /** Native tooltip — used for disabled-state explanations. */
+  title?: string
   onClick?: () => void
   /** Nested items — renders a flyout submenu on hover instead of a click action. */
   submenu?: MenuItem[]
@@ -105,6 +107,15 @@ export type ModalSpec =
   | { kind: 'conflict-radar'; repoPath: string; base?: string }
   | { kind: 'teammate-radar'; repoPath: string }
   | { kind: 'commit-edit'; repoPath: string; sha: string; subject: string }
+  | {
+      kind: 'reset-to-commit'
+      repoPath: string
+      sha: string
+      shortSha: string
+      branch: string
+      dirty: boolean
+      onReset: (mode: 'soft' | 'mixed' | 'hard') => void
+    }
   | { kind: 'local-ci'; repoPath: string; rev?: string }
   | { kind: 'keychain-consent'; reason: KeychainReason; adopted?: boolean }
   | { kind: 'range-diff'; repoPath: string; branch: string; initialOld?: string }
@@ -272,6 +283,8 @@ interface UIState {
    *  buttons and mutating keyboard shortcuts are disabled until it drops to 0,
    *  so the user can't fire a second action before the first has settled. */
   inflight: number
+  /** Prefill the commit composer (amend from HEAD, or restore after undo). */
+  composerIntent: { path: string; summary: string; description: string; amend: boolean } | null
   fileView: FileViewState | null
   conflictView: ConflictViewState | null
   /** File whose "why this conflicts" strip is open. Lives here rather than in
@@ -315,6 +328,8 @@ interface UIState {
   setBusy(label: string | null, op?: 'push' | 'pull' | 'fetch' | null): void
   beginInflight(): void
   endInflight(): void
+  requestComposerIntent(intent: { path: string; summary: string; description: string; amend: boolean }): void
+  consumeComposerIntent(): void
   setFileView(view: FileViewState | null): void
   setEditorDirty(dirty: boolean): void
   setConflictView(view: ConflictViewState | null): void
@@ -356,6 +371,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   busy: null,
   busyOp: null,
   inflight: 0,
+  composerIntent: null,
   fileView: null,
   conflictView: null,
   conflictWhy: null,
@@ -407,6 +423,8 @@ export const useUIStore = create<UIState>((set, get) => ({
   setBusy: (busy, op = null) => set({ busy, busyOp: op }),
   beginInflight: () => set((s) => ({ inflight: s.inflight + 1 })),
   endInflight: () => set((s) => ({ inflight: Math.max(0, s.inflight - 1) })),
+  requestComposerIntent: (composerIntent) => set({ composerIntent }),
+  consumeComposerIntent: () => set({ composerIntent: null }),
   setFileView: (fileView) =>
     set({
       // Stamp each line-targeted open so clicking the same search hit twice

@@ -40,6 +40,7 @@ function MenuRow({ item, close }: { item: MenuItem; close: () => void }): React.
         className={`menu-item ${item.danger ? 'danger' : ''}`}
         role="menuitem"
         disabled={item.disabled}
+        title={item.title}
         onClick={() => {
           close()
           item.onClick?.()
@@ -78,6 +79,7 @@ function MenuRow({ item, close }: { item: MenuItem; close: () => void }): React.
         aria-haspopup="menu"
         aria-expanded={!!pos}
         disabled={item.disabled}
+        title={item.title}
         onClick={openSubAndFocus}
         onKeyDown={(e) => {
           if (e.key === 'ArrowRight') {

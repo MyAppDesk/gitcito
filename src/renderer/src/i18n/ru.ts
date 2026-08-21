@@ -111,6 +111,8 @@ export const ru: Dict = {
   'common.add': 'Добавить',
   'common.copyFilePath': 'Скопировать путь к файлу',
   'common.copyFolderPath': 'Скопировать путь к папке',
+  'fileMenu.copyFilePath': 'Копировать путь к файлу',
+  'fileMenu.copyRelativeFilePath': 'Копировать относительный путь к файлу',
 
   // Разрешение конфликтов
   'conflict.resolved': 'решено',
@@ -1498,6 +1500,41 @@ export const ru: Dict = {
   'commit.changedFiles': 'изменённых файлов: {n}',
   'commit.openDefaultApp': 'Открыть в приложении по умолчанию',
 
+  // Действия с одним коммитом (контекстное меню графа)
+  'commitMenu.amend': 'Исправить коммит…',
+  'commitMenu.undo': 'Отменить коммит…',
+  'commitMenu.resetTo': 'Сбросить на коммит…',
+  'commitMenu.viewOnGitHub': 'Открыть на GitHub',
+  'commitMenu.disabled.notHead': 'Так можно только с текущим коммитом HEAD.',
+  'commitMenu.disabled.detached': 'Сначала переключитесь на локальную ветку.',
+  'commitMenu.disabled.published': 'Этот коммит уже отправлен.',
+  'commitMenu.disabled.notAncestor': 'Этот коммит не является предком HEAD.',
+  'commitMenu.disabled.beyondReset': 'Этот коммит старше локальной границы сброса.',
+  'commitMenu.disabled.operation': 'Недоступно, пока выполняется операция Git.',
+  'commitMenu.disabled.inflight': 'Недоступно, пока выполняется другая команда Git.',
+  'commitMenu.disabled.notOnGitHub': 'Нет удалённого GitHub или этот коммит не опубликован.',
+  'commitMenu.amendPublishedTitle': 'Исправить опубликованный коммит?',
+  'commitMenu.amendPublishedMsg':
+    '{branch} уже отправлена. Исправление переписывает историю — чтобы обновить удалённую ветку, понадобится force push.',
+  'commitMenu.amendPublishedConfirm': 'Продолжить',
+  'commitMenu.undoTitle': 'Отменить коммит',
+  'commitMenu.undoMsg':
+    'Переместить {branch} на родителя {sha} и оставить изменения нестагированными. Сообщение вернётся в композер.',
+  'commitMenu.undoRootMsg':
+    'Это первый коммит на {branch}. Отмена оставит нерождённую ветку и сохранит файлы в рабочем дереве.',
+  'commitMenu.undoDirty':
+    'У вас есть незакоммиченные изменения. Они смешаются с отменённым коммитом в рабочем дереве.',
+  'commitMenu.undoConfirm': 'Отменить коммит',
+  'commitMenu.resetTitle': 'Сбросить на коммит',
+  'commitMenu.resetMsg': 'Переместить {branch} на {sha}. Как поступить с коммитами, которые останутся позади:',
+  'commitMenu.resetSoft': 'Soft — оставить изменения в индексе',
+  'commitMenu.resetMixed': 'Mixed — оставить изменения вне индекса',
+  'commitMenu.resetHard': 'Hard — отбросить коммиты и их изменения',
+  'commitMenu.resetDirty': 'У вас есть незакоммиченные изменения. Сброс может перезаписать или конфликтовать с текущей работой.',
+  'commitMenu.resetHardWarn': 'Жёсткий сброс отбрасывает незакоммиченную работу и каждый коммит после {sha}.',
+  'commitMenu.resetConfirm': 'Сбросить',
+  'commitMenu.resetHardConfirm': 'Отбросить и сбросить',
+
   // Контекстное меню тега (в графе)
   'tag.checkout': 'Переключиться на {tag}',
   'tag.worktree': 'Создать рабочее дерево из этого коммита…',
@@ -2742,6 +2779,7 @@ export const ru: Dict = {
   'act.aborted': 'Операция прервана: {kind}',
   'act.reverted': 'Откат выполнен: {sha}',
   'act.reset': 'Сброс ({mode}) на {sha}',
+  'act.undidCommit': 'Коммит {sha} отменён',
   'act.createdTag': 'Тег создан: {name}',
   'act.deletedTag': 'Тег удалён: {name}',
   'act.pushedTag': 'Тег {name} отправлен на {remote}',
@@ -2797,6 +2835,8 @@ export const ru: Dict = {
   'undoLabel.cherryPick': 'черри-пик',
   'undoLabel.squash': 'схлопывание',
   'undoLabel.revert': 'откат',
+  'undoLabel.undoCommit': 'отменить коммит',
+  'undoLabel.resetToCommit': 'сброс на {sha}',
   'undoLabel.tag': 'тег {name}',
   'gitmoji.none': 'нет',
   'composer.ignoreAndUntrackMsg': 'Добавить {what} в .gitignore и прекратить отслеживание в Git. Файлы останутся на диске.',
@@ -3150,5 +3190,21 @@ export const ru: Dict = {
   'askAction.createFile': 'Создать файл',
   'askAction.editFile': 'Изменить файл',
   'askAction.replaceFile': 'Заменить файл',
-  'askAction.deleteFile': 'Удалить файл'
+  'askAction.deleteFile': 'Удалить файл',
+  'repoMenu.createAlias': 'Создать псевдоним…',
+  'repoMenu.changeAlias': 'Изменить псевдоним…',
+  'repoMenu.removeAlias': 'Удалить псевдоним',
+  'repoMenu.aliasTitle': 'Псевдоним репозитория',
+  'repoMenu.aliasLabel': 'Отображаемое имя',
+  'repoMenu.showWorktrees': 'Показать рабочие деревья',
+  'repoMenu.newWorktree': 'Новое рабочее дерево…',
+  'repoMenu.copyName': 'Копировать имя репозитория',
+  'repoMenu.copyPath': 'Копировать путь репозитория',
+  'repoMenu.viewOnGitHub': 'Открыть на GitHub',
+  'repoMenu.openTerminal': 'Открыть в терминале',
+  'repoMenu.revealFinder': 'Показать в Finder',
+  'repoMenu.revealExplorer': 'Показать в Проводнике',
+  'repoMenu.revealFileManager': 'Показать в файловом менеджере',
+  'repoMenu.openEditor': 'Открыть во внешнем редакторе',
+  'repoMenu.remove': 'Убрать…'
 }

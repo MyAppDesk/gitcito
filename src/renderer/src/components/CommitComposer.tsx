@@ -21,6 +21,7 @@ import {
 } from './FileSearchBar'
 import { useT, interp, type TranslationKey } from '../i18n'
 import { openWithMenuItems } from '../lib/openWith'
+import { buildFilePathClipboardPayload } from '../lib/filePathClipboard'
 import { stepRange, claimRangeKeys, ownsRangeKeys, rangeKeysBlocked, domOrder } from '../lib/rangeSelect'
 
 type ListName = 'staged' | 'unstaged'
@@ -151,6 +152,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
     setSummary(/^[A-Z][A-Z0-9]+-\d+$/.test(key) ? `${key}: ${rest}` : rest)
   }
   const [amend, setAmend] = useState(false)
+  const summaryRef = useRef<HTMLInputElement>(null)
   // Collapsed by default — the commit-style row is "advanced" and toggled by the
   // chevron on the summary row.
   const [showAdvanced, setShowAdvanced] = useState(false)
@@ -199,6 +201,15 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
   const unstaged = status?.unstaged ?? []
   const conflicted = status?.conflicted ?? []
   const path = repo.path
+  const composerIntent = useUIStore((s) => s.composerIntent)
+  useEffect(() => {
+    if (!composerIntent || composerIntent.path !== path) return
+    setSummary(composerIntent.summary)
+    setDescription(composerIntent.description)
+    setAmend(composerIntent.amend)
+    useUIStore.getState().consumeComposerIntent()
+    requestAnimationFrame(() => summaryRef.current?.focus())
+  }, [composerIntent, path, setSummary])
   // git's configured diff tool, for the per-file "Diff in <tool>" entry. Read
   // once per repo: a context menu is built synchronously on click.
   const [diffTool, setDiffTool] = useState('')
@@ -449,6 +460,15 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
       ? [...selection.paths]
       : [file.path]
 
+  const copyPathItems = (relPaths: string[]): MenuItem[] => {
+    const payload = buildFilePathClipboardPayload(path, relPaths, window.api.platform)
+    return [
+      { label: t('fileMenu.copyFilePath'), onClick: () => void navigator.clipboard.writeText(payload.absolute) },
+      { label: t('fileMenu.copyRelativeFilePath'), onClick: () => void navigator.clipboard.writeText(payload.relative) },
+      { separator: true }
+    ]
+  }
+
   // Builds the ".gitignore / stop tracking" menu items shared by the file and
   // folder context menus. For folders, pass `folderPath` so a single anchored
   // `folder/` pattern is written and `git rm -r` untracks the whole subtree.
@@ -522,6 +542,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
         onClick: () => void repoActions.stashPush(path, undefined, targets, false)
       },
       { separator: true },
+      ...copyPathItems(targetFiles.map((f) => f.path)),
       { label: shellApi.revealLabel, onClick: () => void shellApi.revealInFolder(`${path}/${file.path}`) },
       { label: t('composer.openDefaultApp'), onClick: () => void shellApi.openPath(`${path}/${file.path}`) },
       ...openWithMenuItems(
@@ -533,7 +554,6 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
         },
         editor
       ),
-      { label: t('common.copyFilePath'), onClick: () => void navigator.clipboard.writeText(`${path}/${file.path}`) },
       ...(diffTool
         ? [
             {
@@ -838,6 +858,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
                       onClick: () => void repoActions.stage(path, [f.path])
                     },
                     { separator: true },
+                    ...copyPathItems([f.path]),
                     { label: shellApi.revealLabel, onClick: () => void shellApi.revealInFolder(`${path}/${f.path}`) },
                     { label: t('composer.openDefaultApp'), onClick: () => void shellApi.openPath(`${path}/${f.path}`) },
                     ...openWithMenuItems(
@@ -848,8 +869,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
                         openWith: t('fileTree.openWith')
                       },
                       editor
-                    ),
-                    { label: t('common.copyFilePath'), onClick: () => void navigator.clipboard.writeText(`${path}/${f.path}`) }
+                    )
                   ])
                 }}
                 action={(f) => (
@@ -1025,6 +1045,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
             <ChevronDown size={14} />
           </button>
           <input
+            ref={summaryRef}
             className="commit-summary"
             placeholder={t('composer.summaryPlaceholder')}
             title={t('composer.summaryTitle')}

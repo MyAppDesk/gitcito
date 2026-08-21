@@ -1777,7 +1777,11 @@ async function fetchCiStatuses(
  * can see. Token-level (no remote needed). `all=false` ⇒ unread only.
  */
 async function listNotifications(token: string, all = false): Promise<GitHubNotification[]> {
-  if (!token?.trim()) return []
+  // Same precedence as every other call: a typed token, else the credential
+  // git's helper already holds for github.com. Silent (this backs a poll).
+  const auth = await tokenForProvider('github', token)
+  if (!auth) return []
+  token = auth.token
   const data = await ghJson<
     Array<{
       id: string
@@ -1817,14 +1821,17 @@ async function listNotifications(token: string, all = false): Promise<GitHubNoti
 }
 
 async function markNotificationRead(token: string, id: string): Promise<void> {
-  if (!token?.trim()) return
-  await ghJson<unknown>(`https://api.github.com/notifications/threads/${id}`, token, { method: 'PATCH' }).catch(() => {
+  const auth = await tokenForProvider('github', token)
+  if (!auth) return
+  await ghJson<unknown>(`https://api.github.com/notifications/threads/${id}`, auth.token, { method: 'PATCH' }).catch(() => {
     /* already read / gone — non-fatal */
   })
 }
 
 async function markAllNotificationsRead(token: string): Promise<void> {
-  if (!token?.trim()) return
+  const auth = await tokenForProvider('github', token)
+  if (!auth) return
+  token = auth.token
   // The PUT /notifications endpoint returns 202 with an empty body; ghJson would
   // choke parsing JSON, so call fetch directly.
   await fetch('https://api.github.com/notifications', {

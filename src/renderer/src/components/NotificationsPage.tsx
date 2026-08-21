@@ -74,12 +74,9 @@ export function NotificationsPage(): React.JSX.Element {
   const [showAll, setShowAll] = useState(false)
   const [loading, setLoading] = useState(true)
 
+  // Always ask: main falls back to git's credential helper for github.com when
+  // no token is typed in Settings, and answers [] when it holds nothing either.
   const refresh = async (all = showAll): Promise<void> => {
-    if (!token) {
-      setItems([])
-      setLoading(false)
-      return
-    }
     setLoading(true)
     try {
       setItems(await hostingApi.listNotifications(token, all))
@@ -145,14 +142,14 @@ export function NotificationsPage(): React.JSX.Element {
               {t('notif.all')}
             </button>
           </div>
-          <button className="btn ghost small" onClick={() => void refresh()} disabled={loading || !token}>
+          <button className="btn ghost small" onClick={() => void refresh()} disabled={loading}>
             <RefreshCw size={13} className={loading ? 'spin' : undefined} />
             {t('notif.refresh')}
           </button>
           <button
             className="btn ghost small"
             onClick={() => void markAllRead()}
-            disabled={!token || unreadCount === 0}
+            disabled={unreadCount === 0}
             style={{ marginLeft: 'auto' }}
           >
             <CheckCheck size={13} />
@@ -160,7 +157,9 @@ export function NotificationsPage(): React.JSX.Element {
           </button>
         </div>
 
-        {!token ? (
+        {/* An empty list without a typed token may also mean the credential
+            helper had nothing for github.com — point at Settings either way. */}
+        {!token && !loading && items.length === 0 ? (
           <p className="settings-hint">{t('notif.noToken')}</p>
         ) : items.length === 0 ? (
           <p className="settings-hint">{loading ? t('notif.loading') : showAll ? t('notif.noneAll') : t('notif.noneUnread')}</p>

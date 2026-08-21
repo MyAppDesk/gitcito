@@ -620,15 +620,13 @@ export default function App(): React.JSX.Element {
   const notifSeen = useRef<Set<string>>(new Set())
   const notifPrimed = useRef(false)
   useEffect(() => {
-    const token = useSettingsStore.getState().activeProfile().githubToken
+    // No typed-token gate: main falls back to git's credential helper for
+    // github.com, and answers an empty [] cheaply when it holds nothing.
+    const token = useSettingsStore.getState().activeProfile().githubToken ?? ''
     // Reset the per-profile seen-set so switching accounts doesn't leak IDs and
     // doesn't replay the new account's whole inbox as desktop notifications.
     notifSeen.current = new Set()
     notifPrimed.current = false
-    if (!token) {
-      useUIStore.getState().setGithubUnread(0)
-      return
-    }
     const poll = (): void => {
       void hostingApi
         .listNotifications(token, false)

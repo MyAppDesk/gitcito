@@ -1231,7 +1231,9 @@ export function TitleBar(): React.JSX.Element {
         </button>
       </div>
       <ProfileSwitcher />
-      {hasGithubToken && (
+      {/* A typed token or a live inbox: the credential-helper fallback can
+          feed the badge without any token in Settings. */}
+      {(hasGithubToken || githubUnread > 0) && (
         <button
           className="titlebar-action notif-bell"
           title={t('titlebar.notifications')}

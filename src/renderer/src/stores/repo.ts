@@ -458,9 +458,9 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
     const repo = get().repos[path]
     const origin = repo?.remotes.find((r) => r.name === 'origin') ?? repo?.remotes[0]
     if (!origin) return
-    const profile = useSettingsStore.getState().activeProfile()
-    const token = profile.githubToken
-    if (!token) return
+    // No typed-token gate here: main's apiToken falls back to git's credential
+    // helper for the remote, the same way the Settings "Connected" check does.
+    const token = useSettingsStore.getState().activeProfile().githubToken ?? ''
     const shas = (repo?.commits ?? []).slice(0, 40).map((c) => c.hash)
     if (!shas.length) return
     const existing = repo?.ciStatuses ?? {}

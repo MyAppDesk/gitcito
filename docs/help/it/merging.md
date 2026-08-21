@@ -3,7 +3,7 @@ title: Merge e rebase
 category: Branch e chirurgia
 order: 41
 summary: Fondi, fai rebase, confronta ref e trascina un ref su un altro nella barra laterale o nel grafo.
-keywords: merge rebase fast-forward confronta ref trascina drag drop branch grafo badge tag remote revert reset cherry-pick
+keywords: merge rebase fast-forward confronta ref trascina drag drop branch grafo badge tag remote revert reset cherry-pick correggi amend annulla undo github
 ---
 
 # Merge e rebase
@@ -65,9 +65,31 @@ Strumenti o con <kbd>⌘K</kbd>.
 
 ## Cherry-pick, revert, reset
 
-Tutti e tre dal menu contestuale del grafo. Il reset offre **soft / mixed /
-hard** e ti dice per esteso cosa fa ciascuno al tuo albero di lavoro prima che tu
-scelga.
+Cherry-pick e revert vivono nel menu contestuale del grafo, come hanno sempre
+fatto. Il **reset** è una voce sola — **Reset al commit…** — invece di tre voci
+soft/mixed/hard grezze che si contraddicevano a vicenda.
+
+Correggi, annulla e reset stanno in cima al menu del singolo commit e restano
+**visibili quando non sono sicuri**: si disabilitano, con un tooltip che spiega
+perché. Annulla vale solo per un HEAD non ancora inviato; correggere è permesso
+anche su un HEAD pubblicato, ma con l'avviso che servirà un force push. Il reset
+raggiunge solo gli antenati locali più il primo commit pubblicato — non la
+storia più vecchia a piacere.
+
+La finestra di reset rende esplicita la modalità:
+
+![La finestra Reset al commit, con le tre modalità spiegate per esteso](../../screenshots/reset-to-commit.webp)
+
+| Modalità | Risultato |
+|------|--------|
+| **Soft** | Tieni le modifiche in stage |
+| **Mixed** | Tieni le modifiche fuori dallo stage |
+| **Hard** | Scarta i commit e le loro modifiche |
+
+Hard non è mai preselezionato. Un albero di lavoro sporco riceve un avviso in
+più, perché il reset può sovrascrivere il lavoro in corso o andarci in
+conflitto. **Apri su GitHub** sta con le azioni di copia e si apre solo per i
+commit pubblicati su un remote github.com.
 
 Seleziona prima più commit e il cherry-pick applica l'intera selezione, in
 ordine.

@@ -3,7 +3,7 @@ title: O grafo de commits
 category: Repositório e histórico
 order: 10
 summary: Lendo o histórico: faixas, refs, colunas, filtros e seleção múltipla.
-keywords: grafo graph histórico history commits faixas lanes branches merges colunas columns filtro filter linear first-parent
+keywords: grafo graph histórico history commits faixas lanes branches merges colunas columns filtro filter linear first-parent amend desfazer undo reset github
 ---
 
 # O grafo de commits
@@ -24,6 +24,10 @@ com cem.
   botão direito para fazer cherry-pick deles na branch atual, dar squash numa
   sequência contígua, exportar um patch combinado, ou copiar os SHAs.
 - Commits que chegaram no seu **último fetch ou pull** são sinalizados como novos.
+- Clique com o botão direito num commit para **Amend**, **Desfazer**,
+  **Resetar para o commit…** e **Ver no GitHub**, além de checkout, cherry-pick,
+  revert, branch, tag e cópia. Ações inseguras continuam visíveis e se
+  desabilitam.
 
 ## Fazendo o grafo mostrar o que você quer
 

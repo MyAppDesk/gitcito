@@ -3,7 +3,7 @@ title: Der Commit-Graph
 category: Repository & Historie
 order: 10
 summary: Historie lesen: Spuren, Refs, Spalten, Filter und Mehrfachauswahl.
-keywords: graph graf historie verlauf commits spuren lanes branches merges spalten columns filter linear first-parent
+keywords: graph graf historie verlauf commits spuren lanes branches merges spalten columns filter linear first-parent amend rückgängig undo reset github
 ---
 
 # Der Commit-Graph
@@ -26,6 +26,10 @@ Commits wie eines mit hundert.
   squashen, einen kombinierten Patch exportieren oder ihre SHAs kopieren.
 - Commits, die mit deinem **letzten Fetch oder Pull** hereinkamen, werden als neu
   markiert.
+- Rechtsklick auf einen Commit für **Ändern**, **Rückgängig**, **Auf Commit
+  zurücksetzen…** und **Auf GitHub anzeigen**, dazu Checkout, Cherry-Pick,
+  Revert, Branch, Tag und Kopieren. Unsichere Aktionen bleiben sichtbar und
+  werden deaktiviert.
 
 ## Ihn zeigen lassen, was du willst
 

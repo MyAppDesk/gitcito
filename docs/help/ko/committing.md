@@ -3,7 +3,7 @@ title: 커밋하기
 category: 변경 사항 다루기
 order: 31
 summary: 메시지 스타일, 템플릿, 공동 작성자, 그리고 린터.
-keywords: 커밋 commit 메시지 message 작성기 composer conventional gitmoji 티켓 ticket amend 템플릿 template 공동 작성자 co-author 린터 linter
+keywords: 커밋 commit 메시지 message 작성기 composer conventional gitmoji 티켓 ticket amend 템플릿 template 공동 작성자 co-author 린터 linter undo 되돌리기 reset 리셋
 ---
 
 # 커밋하기
@@ -42,5 +42,13 @@ keywords: 커밋 commit 메시지 message 작성기 composer conventional gitmoj
 
 Amend는 스테이징된 내용으로 마지막 커밋을 다시 써요. Gitcito는 기존 메시지를 먼저
 보여 주기 때문에, 다시 입력하는 게 아니라 고치는 셈이 돼요.
+
+그래프 행의 **커밋 수정…**은 같은 일을 HEAD에 대해 해 줘요. 전체 메시지를
+불러오고, 작성기를 amend 모드로 바꾸고, 포커스를 옮겨요. 이미 푸시된 HEAD도
+수정할 수는 있지만, 원격을 갱신하려면 강제 푸시가 필요하다고 Gitcito가 경고해요.
+
+**커밋 되돌리기…**는 푸시하지 않은 HEAD를 위한 짝이에요. 부모로 mixed 리셋을
+하고, 작업 트리의 변경은 그대로 두고, 메시지는 작성기로 복원해요. 첫 커밋에는
+전용 경로가 있어서, 파일을 부수는 대신 태어나지 않은(unborn) 브랜치를 남겨요.
 
 **함께 보기:** [스테이징](staging.md) · [Absorb](absorb.md) · [변경 기록 생성기](changelog.md)

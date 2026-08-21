@@ -3,7 +3,7 @@ title: Fare commit
 category: Lavorare con le modifiche
 order: 31
 summary: Stili di messaggio, template, coautori e il linter.
-keywords: commit messaggio composer conventional gitmoji ticket amend template co-author coautore linter
+keywords: commit messaggio composer conventional gitmoji ticket amend template co-author coautore linter annulla undo reset
 ---
 
 # Fare commit
@@ -44,5 +44,15 @@ troppo larghe. Suggerimenti, mai un cancello — non ti impedirà di committare.
 
 L'amend riscrive l'ultimo commit con quello che c'è in stage. Gitcito ti mostra
 prima il messaggio esistente, così stai modificando e non riscrivendo da capo.
+
+**Correggi commit…** su una riga del grafo fa la stessa cosa per HEAD: carica il
+messaggio completo, mette il compositore in modalità amend e gli dà il focus. Un
+HEAD già inviato si può comunque correggere, ma Gitcito avvisa che aggiornare il
+remote richiederà un force push.
+
+**Annulla commit…** è il gemello per un HEAD non ancora inviato: reset mixed al
+genitore, modifiche dell'albero di lavoro conservate, messaggio riportato nel
+compositore. Il commit iniziale ha un percorso dedicato che lascia un branch non
+nato invece di distruggere i file.
 
 **Vedi anche:** [Staging](staging.md) · [Absorb](absorb.md) · [Generatore di changelog](changelog.md)

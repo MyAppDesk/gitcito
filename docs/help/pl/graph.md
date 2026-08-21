@@ -3,7 +3,7 @@ title: Graf commitów
 category: Repozytorium i historia
 order: 10
 summary: Czytanie historii: tory, referencje, kolumny, filtry i zaznaczanie wielu commitów.
-keywords: graf historia commity tory gałęzie merge kolumny filtr liniowy graph lanes branches merges columns filter first-parent
+keywords: graf historia commity tory gałęzie merge kolumny filtr liniowy graph lanes branches merges columns filter first-parent amend cofnij undo reset github
 ---
 
 # Graf commitów
@@ -27,6 +27,10 @@ commitów przewija się tak jak to ze stoma.
   skopiować ich SHA.
 - Commity, które przyszły z twoim **ostatnim fetchem lub pullem**, są oznaczone
   jako nowe.
+- Kliknij commit prawym przyciskiem, żeby dostać **Popraw**, **Cofnij**,
+  **Zresetuj do commita…** i **Zobacz na GitHubie**, a do tego checkout,
+  cherry-pick, revert, gałąź, tag i kopiowanie. Akcje niebezpieczne pozostają
+  widoczne i się dezaktywują.
 
 ## Ustawianie tego, co ma pokazywać
 

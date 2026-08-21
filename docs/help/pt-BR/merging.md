@@ -3,7 +3,7 @@ title: Merge e rebase
 category: Branches e cirurgia
 order: 41
 summary: Faça merge, rebase, compare refs e arraste uma ref sobre outra na barra lateral ou no grafo.
-keywords: merge rebase fast-forward comparar compare refs arrastar drag drop branch grafo graph selo de ref badge tag remote revert reset cherry-pick
+keywords: merge rebase fast-forward comparar compare refs arrastar drag drop branch grafo graph selo de ref badge tag remote revert reset cherry-pick amend desfazer undo github
 ---
 
 # Merge e rebase
@@ -61,8 +61,31 @@ ou por <kbd>⌘K</kbd>.
 
 ## Cherry-pick, revert, reset
 
-Os três pelo menu de contexto do grafo. O reset oferece **soft / mixed / hard** e
-soletra o que cada um faz com a sua árvore de trabalho antes de você escolher.
+Cherry-pick e revert moram no menu de contexto do grafo, como sempre moraram.
+**Reset** é uma entrada só — **Resetar para o commit…** — em vez de três itens
+crus soft/mixed/hard que se contradiziam.
+
+Amend, desfazer e reset ficam no topo do menu de commit único e continuam
+**visíveis quando são inseguros**: eles se desabilitam, com um tooltip dizendo
+por quê. Desfazer é só para um HEAD não enviado; amend também é permitido num
+HEAD publicado, mas avisa que um force push será necessário. Reset só alcança
+ancestrais locais mais o primeiro commit publicado — não histórico antigo
+arbitrário.
+
+O diálogo de reset deixa o modo explícito:
+
+![O diálogo Resetar para o commit, com os três modos soletrados](../../screenshots/reset-to-commit.webp)
+
+| Modo | Resultado |
+|------|--------|
+| **Soft** | Manter as mudanças no stage |
+| **Mixed** | Manter as mudanças fora do stage |
+| **Hard** | Descartar os commits e as mudanças |
+
+Hard nunca vem pré-selecionado. Uma árvore de trabalho suja recebe um aviso
+extra, porque resetar pode sobrescrever ou conflitar com trabalho em andamento.
+**Ver no GitHub** mora junto das ações de cópia e só abre para commits
+publicados num remoto github.com.
 
 Selecione vários commits primeiro e o cherry-pick aplica a seleção inteira, em
 ordem.

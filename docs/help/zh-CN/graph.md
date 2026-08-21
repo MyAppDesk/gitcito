@@ -3,7 +3,7 @@ title: 提交图
 category: 仓库与历史
 order: 10
 summary: 读懂历史：泳道、引用、列、筛选与多选。
-keywords: 提交图 graph 历史 history 提交 commits 泳道 lanes 分支 branches 合并 merges 列 columns 筛选 filter 线性 linear first-parent
+keywords: 提交图 graph 历史 history 提交 commits 泳道 lanes 分支 branches 合并 merges 列 columns 筛选 filter 线性 linear first-parent amend 修补 undo 撤销 reset 重置 github
 ---
 
 # 提交图
@@ -19,6 +19,7 @@ keywords: 提交图 graph 历史 history 提交 commits 泳道 lanes 分支 bran
 - <kbd>↑</kbd> <kbd>↓</kbd>（或 <kbd>j</kbd> <kbd>k</kbd>）移动选中项。
 - <kbd>⌘</kbd>／<kbd>Ctrl</kbd>+点击把一个提交加入或移出**多选**；<kbd>⇧</kbd>+点击选取一个区间。选中若干个之后右键，即可把它们拣选（cherry-pick）到当前分支上、把连续的一段压缩成一个、导出一份合并后的补丁，或者复制它们的 SHA。
 - 在你**最近一次获取或拉取**中到达的提交会被标为新提交。
+- 右键一个提交，可以看到**修补**、**撤销**、**重置到此提交…**和**在 GitHub 上查看**，外加检出、拣选、还原、建分支、打标签和复制。不安全的操作保持可见，但会被禁用。
 
 ## 让它只显示你想看的
 

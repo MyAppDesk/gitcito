@@ -3,7 +3,7 @@ title: Fusionar y rebasar
 category: Ramas y cirugía
 order: 41
 summary: Fusiona, rebasa, compara refs y arrastra una ref sobre otra en la barra lateral o en el grafo.
-keywords: merge fusionar fusión rebase rebasar fast-forward comparar refs arrastrar soltar rama grafo insignia badge tag etiqueta remoto revert reset cherry-pick
+keywords: merge fusionar fusión rebase rebasar fast-forward comparar refs arrastrar soltar rama grafo insignia badge tag etiqueta remoto revert reset cherry-pick amend enmendar deshacer undo github
 ---
 
 # Fusionar y rebasar
@@ -64,9 +64,31 @@ Herramientas o con <kbd>⌘K</kbd>.
 
 ## Cherry-pick, revert, reset
 
-Los tres desde el menú contextual del grafo. El reset ofrece **soft / mixed /
-hard** y deja claro qué le hace cada uno a tu árbol de trabajo antes de que
-elijas.
+El cherry-pick y el revert viven en el menú contextual del grafo, como siempre.
+**Reset** es una sola entrada — **Restablecer al commit…** — en lugar de tres
+elementos crudos soft/mixed/hard que se contradecían entre sí.
+
+Enmendar, deshacer y restablecer están en lo alto del menú de un solo commit y
+siguen **visibles cuando no son seguros**: se deshabilitan, con un tooltip que
+dice por qué. Deshacer es solo para un HEAD sin enviar; enmendar también se
+permite sobre un HEAD publicado, pero avisa de que hará falta un force push.
+Restablecer solo alcanza a los ancestros locales más el primer commit
+publicado — no a historia arbitrariamente más antigua.
+
+El diálogo de reset hace explícito el modo:
+
+![El diálogo Restablecer al commit, con los tres modos explicados](../../screenshots/reset-to-commit.webp)
+
+| Modo | Resultado |
+|------|--------|
+| **Soft** | Conserva los cambios en el área de stage |
+| **Mixed** | Conserva los cambios sin preparar |
+| **Hard** | Descarta los commits y sus cambios |
+
+Hard nunca viene preseleccionado. Un árbol de trabajo sucio recibe un aviso
+extra, porque restablecer puede sobrescribir trabajo en curso o entrar en
+conflicto con él. **Ver en GitHub** vive junto a las acciones de copiar y solo
+se abre para commits publicados en un remoto de github.com.
 
 Selecciona varios commits primero y el cherry-pick aplica la selección entera, en
 orden.

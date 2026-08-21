@@ -3,7 +3,7 @@ title: 커밋 그래프
 category: 저장소와 히스토리
 order: 10
 summary: 히스토리 읽기 — 레인, 레퍼런스, 열, 필터, 다중 선택.
-keywords: 그래프 graph 히스토리 history 커밋 commits 레인 lanes 브랜치 branches 머지 merges 열 columns 필터 filter 선형 linear first-parent
+keywords: 그래프 graph 히스토리 history 커밋 commits 레인 lanes 브랜치 branches 머지 merges 열 columns 필터 filter 선형 linear first-parent amend 수정 undo 되돌리기 reset 리셋 github
 ---
 
 # 커밋 그래프
@@ -24,6 +24,9 @@ keywords: 그래프 graph 히스토리 history 커밋 commits 레인 lanes 브�
   체리픽하거나, 연속된 구간을 스쿼시하거나, 하나로 합친 패치를 내보내거나, SHA를
   복사할 수 있어요.
 - **가장 최근 페치나 풀**로 들어온 커밋에는 새 커밋이라는 표시가 붙어요.
+- 커밋을 우클릭하면 **수정**, **되돌리기**, **커밋으로 리셋…**, **GitHub에서
+  보기**가 나오고, 체크아웃, 체리픽, 리버트, 브랜치, 태그, 복사도 함께 있어요.
+  안전하지 않은 동작은 사라지지 않고 비활성화돼요.
 
 ## 원하는 것만 보기
 

@@ -3,7 +3,7 @@ title: Commit grafiği
 category: Depo ve geçmiş
 order: 10
 summary: Geçmişi okumak: şeritler, ref'ler, sütunlar, filtreler ve çoklu seçim.
-keywords: grafik geçmiş commit'ler şeritler dallar birleştirmeler sütunlar filtre doğrusal graph history commits lanes branches merges columns filter linear first-parent
+keywords: grafik geçmiş commit'ler şeritler dallar birleştirmeler sütunlar filtre doğrusal graph history commits lanes branches merges columns filter linear first-parent amend geri al sıfırla undo reset github
 ---
 
 # Commit grafiği
@@ -25,6 +25,10 @@ depo gibi kayar.
   squash edebilir, tek bir birleşik yama dışa aktarabilir veya SHA'larını
   kopyalayabilirsiniz.
 - **Son fetch ya da pull** işleminizle gelen commit'ler yeni olarak işaretlenir.
+- Bir commit'e sağ tıklamak **Düzelt**, **Geri al**, **Commit’e sıfırla…** ve
+  **GitHub’da görüntüle** ile birlikte checkout, cherry-pick, revert, dal,
+  etiket ve kopyalama sunar. Güvenli olmayan eylemler görünür kalır ve devre
+  dışı olur.
 
 ## İstediğinizi göstermesi
 

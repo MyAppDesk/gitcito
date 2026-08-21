@@ -3,7 +3,7 @@ title: Commitando
 category: Trabalhando com mudanças
 order: 31
 summary: Estilos de mensagem, templates, coautores e o linter.
-keywords: commit mensagem message compositor composer conventional gitmoji ticket amend template coautor co-author linter
+keywords: commit mensagem message compositor composer conventional gitmoji ticket amend template coautor co-author linter desfazer undo reset
 ---
 
 # Commitando
@@ -45,5 +45,15 @@ commitar.
 
 O amend reescreve o último commit com o que estiver preparado. O Gitcito mostra a
 mensagem existente primeiro, então você está editando, não redigitando.
+
+**Fazer amend no commit…** numa linha do grafo faz a mesma coisa para o HEAD:
+carrega a mensagem completa, coloca o compositor em modo amend e o foca. Um HEAD
+que já foi enviado ainda pode receber amend, mas o Gitcito avisa que atualizar o
+remoto vai exigir um force push.
+
+**Desfazer commit…** é o irmão para um HEAD não enviado: reset mixed para o pai,
+mudanças da árvore de trabalho mantidas, mensagem restaurada no compositor. O
+commit inicial tem um caminho dedicado que deixa uma branch não nascida em vez
+de destruir os arquivos.
 
 **Veja também:** [Staging](staging.md) · [Absorb](absorb.md) · [Gerador de changelog](changelog.md)

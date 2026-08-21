@@ -3,7 +3,7 @@ title: 提交
 category: 处理变更
 order: 31
 summary: 消息风格、模板、共同作者，以及检查器。
-keywords: commit 提交 message 消息 composer 编辑器 conventional gitmoji ticket 工单 amend 修补 template 模板 co-author 共同作者 linter 检查器
+keywords: commit 提交 message 消息 composer 编辑器 conventional gitmoji ticket 工单 amend 修补 template 模板 co-author 共同作者 linter 检查器 undo 撤销 reset 重置
 ---
 
 # 提交
@@ -37,5 +37,9 @@ keywords: commit 提交 message 消息 composer 编辑器 conventional gitmoji t
 ## 修补
 
 修补会用当前已暂存的内容重写上一个提交。Gitcito 会先把原有的消息显示出来，这样你是在编辑，而不是在重打一遍。
+
+在提交图的某一行上，**修补提交…**对 HEAD 做的就是同一件事：加载完整的消息，把编辑框切换到修补模式并聚焦。已经推送过的 HEAD 仍然可以修补，但 Gitcito 会警告：更新远程将需要一次强制推送。
+
+**撤销提交…**是它的孪生兄弟，面向尚未推送的 HEAD：mixed 重置到父提交，工作树的更改保留，消息回到编辑框里。首个提交有一条专门的路径，留下的是一个尚未诞生的分支，而不是毁掉那些文件。
 
 **另请参阅：** [暂存](staging.md) · [吸收](absorb.md) · [变更日志生成器](changelog.md)

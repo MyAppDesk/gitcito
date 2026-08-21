@@ -3,7 +3,7 @@ title: Committen
 category: Werken met wijzigingen
 order: 31
 summary: Boodschapstijlen, sjablonen, co-auteurs en de linter.
-keywords: commit boodschap message composer conventional gitmoji ticket amend sjabloon template co-author linter
+keywords: commit boodschap message composer conventional gitmoji ticket amend sjabloon template co-author linter undo ongedaan maken reset
 ---
 
 # Committen
@@ -45,5 +45,15 @@ het houdt je niet tegen bij het committen.
 
 Amend herschrijft de laatste commit met wat er gestaged staat. Gitcito laat je
 eerst de bestaande boodschap zien, zodat je bewerkt in plaats van overtypt.
+
+**Commit aanpassen…** op een grafiekrij doet hetzelfde voor HEAD: het laadt de
+volledige boodschap, zet de opsteller in de amend-stand en geeft hem focus. Een
+HEAD die al gepusht is kan nog steeds worden aangepast, maar Gitcito waarschuwt
+dat het bijwerken van de remote een force push zal kosten.
+
+**Commit ongedaan maken…** is de tegenhanger voor een niet-gepushte HEAD: een
+mixed reset naar de ouder, de wijzigingen in de werkboom blijven behouden, en de
+boodschap komt terug in de opsteller. De eerste commit heeft een eigen pad dat
+een ongeboren branch achterlaat in plaats van de bestanden te vernietigen.
 
 **Zie ook:** [Stagen](staging.md) · [Absorb](absorb.md) · [Changeloggenerator](changelog.md)

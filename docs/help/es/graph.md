@@ -3,7 +3,7 @@ title: El grafo de commits
 category: Repositorio e historial
 order: 10
 summary: Leer el historial: carriles, refs, columnas, filtros y selección múltiple.
-keywords: grafo graph historial commits carriles lanes ramas branches fusiones merges columnas filtro lineal first-parent
+keywords: grafo graph historial commits carriles lanes ramas branches fusiones merges columnas filtro lineal first-parent amend enmendar deshacer undo reset github
 ---
 
 # El grafo de commits
@@ -24,6 +24,9 @@ desplaza igual que uno con cien.
   clic derecho para hacerles cherry-pick sobre la rama actual, aplastar un tramo
   contiguo, exportar un único parche combinado, o copiar sus SHA.
 - Los commits que llegaron en tu **último fetch o pull** se marcan como nuevos.
+- Clic derecho en un commit para **Enmendar**, **Deshacer**, **Restablecer al
+  commit…** y **Ver en GitHub**, además de checkout, cherry-pick, revert, rama,
+  etiqueta y copiar. Las acciones inseguras siguen visibles y se deshabilitan.
 
 ## Que muestre lo que tú quieres
 

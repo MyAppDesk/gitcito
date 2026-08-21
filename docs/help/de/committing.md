@@ -3,7 +3,7 @@ title: Committen
 category: Mit Änderungen arbeiten
 order: 31
 summary: Nachrichtenstile, Vorlagen, Co-Autoren und der Linter.
-keywords: commit committen nachricht message composer conventional gitmoji ticket amend template vorlage co-author linter
+keywords: commit committen nachricht message composer conventional gitmoji ticket amend template vorlage co-author linter rückgängig undo reset
 ---
 
 # Committen
@@ -46,5 +46,16 @@ hält dich nicht vom Committen ab.
 Amend schreibt den letzten Commit mit dem um, was gerade gestaged ist. Gitcito
 zeigt dir zuerst die vorhandene Nachricht, damit du sie bearbeitest, statt sie
 neu zu tippen.
+
+**Commit ändern…** auf einer Zeile des Graphen tut dasselbe für HEAD: Es lädt
+die vollständige Nachricht, schaltet den Editor in den Amend-Modus und
+fokussiert ihn. Ein bereits gepushter HEAD lässt sich weiterhin ändern, aber
+Gitcito warnt, dass das Aktualisieren des Remotes einen Force-Push braucht.
+
+**Commit rückgängig…** ist das Geschwister für einen ungepushten HEAD: Mixed
+Reset auf den Eltern-Commit, die Änderungen im Arbeitsbaum bleiben erhalten,
+die Nachricht kehrt in den Editor zurück. Der allererste Commit hat einen
+eigenen Weg, der einen ungeborenen Branch hinterlässt, statt die Dateien zu
+zerstören.
 
 **Siehe auch:** [Staging](staging.md) · [Absorbieren](absorb.md) · [Changelog-Generator](changelog.md)

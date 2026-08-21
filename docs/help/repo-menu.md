@@ -14,11 +14,15 @@ toolbar's repository dropdown — and you get the same repository-scoped menu.
 The group chip itself still opens the group menu; the click has to land on the
 repository.
 
+![The repository context menu on a grouped chip](../screenshots/repo-context-menu.webp)
+
 The repository dropdown in the toolbar lists every open repository, the same
 way the branch dropdown lists branches. Left-click a row to switch to it.
 Right-click a row (or the current-repository pill itself) for alias, worktrees,
 GitHub, terminal, reveal, editor and remove. **Open repository…** at the bottom
 opens the launcher.
+
+![Right-clicking a row in the toolbar's repository dropdown](../screenshots/repo-dropdown-context-menu.webp)
 
 ## What each action does
 

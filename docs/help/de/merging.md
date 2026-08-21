@@ -3,7 +3,7 @@ title: Mergen & Rebasen
 category: Branches & Eingriffe
 order: 41
 summary: Mergen, rebasen, Refs vergleichen und eine Ref auf eine andere ziehen — in der Seitenleiste oder im Graphen.
-keywords: merge mergen rebase rebasen fast-forward vergleichen compare refs ziehen drag drop branch graph ref badge tag remote revert reset cherry-pick
+keywords: merge mergen rebase rebasen fast-forward vergleichen compare refs ziehen drag drop branch graph ref badge tag remote revert reset cherry-pick amend ändern undo rückgängig github
 ---
 
 # Mergen & Rebasen
@@ -65,9 +65,32 @@ Werkzeuge oder über <kbd>⌘K</kbd>.
 
 ## Cherry-Pick, Revert, Reset
 
-Alle drei aus dem Kontextmenü des Graphen. Reset bietet **soft / mixed / hard**
-und schreibt dir aus, was jede Variante mit deinem Arbeitsverzeichnis anstellt,
-bevor du wählst.
+Cherry-Pick und Revert leben im Kontextmenü des Graphen, wie eh und je.
+**Reset** ist ein einziger Eintrag — **Auf Commit zurücksetzen…** — statt drei
+roher Soft/Mixed/Hard-Einträge, die sich gegenseitig widersprachen.
+
+Ändern, Rückgängig und Zurücksetzen sitzen oben im Menü eines einzelnen Commits
+und bleiben **sichtbar, wenn sie unsicher sind**: Sie werden deaktiviert, mit
+einem Tooltip, der sagt, warum. Rückgängig gibt es nur für einen ungepushten
+HEAD; Ändern ist auch auf einem veröffentlichten HEAD erlaubt, warnt aber, dass
+ein Force-Push nötig sein wird. Zurücksetzen erreicht nur lokale Vorfahren plus
+den ersten veröffentlichten Commit — nicht beliebig ältere Historie.
+
+Der Reset-Dialog macht den Modus explizit:
+
+![Der Dialog „Auf Commit zurücksetzen“, mit den drei ausgeschriebenen Modi](../../screenshots/reset-to-commit.webp)
+
+| Modus | Ergebnis |
+|------|--------|
+| **Soft** | Änderungen bleiben gestaged |
+| **Mixed** | Änderungen bleiben ungestaged |
+| **Hard** | Commits und ihre Änderungen verwerfen |
+
+Hard ist nie vorausgewählt. Ein schmutziger Arbeitsbaum bekommt eine
+zusätzliche Warnung, weil Zurücksetzen laufende Arbeit überschreiben oder mit
+ihr in Konflikt geraten kann. **Auf GitHub anzeigen** liegt bei den
+Kopieraktionen und öffnet sich nur für veröffentlichte Commits auf einem
+github.com-Remote.
 
 Wähle vorher mehrere Commits aus, und Cherry-Pick wendet die gesamte Auswahl
 an, der Reihe nach.

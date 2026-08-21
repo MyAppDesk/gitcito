@@ -72,6 +72,8 @@ plus the first published commit — not arbitrary older history.
 
 The reset dialog makes the mode explicit:
 
+![The Reset to Commit dialog, with the three modes spelled out](../screenshots/reset-to-commit.webp)
+
 | Mode | Result |
 |------|--------|
 | **Soft** | Keep the changes staged |

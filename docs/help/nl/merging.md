@@ -3,7 +3,7 @@ title: Mergen & rebasen
 category: Branches & ingrepen
 order: 41
 summary: Mergen, rebasen, refs vergelijken, en de ene ref op de andere slepen in de zijbalk of de grafiek.
-keywords: merge mergen rebase rebasen fast-forward vergelijken refs slepen drag drop branch grafiek ref badge tag remote revert reset cherry-pick
+keywords: merge mergen rebase rebasen fast-forward vergelijken refs slepen drag drop branch grafiek ref badge tag remote revert reset cherry-pick amend aanpassen undo ongedaan maken github
 ---
 
 # Mergen & rebasen
@@ -62,8 +62,31 @@ of <kbd>⌘K</kbd>.
 
 ## Cherry-picken, reverten, resetten
 
-Alle drie via het contextmenu van de grafiek. Reset biedt **soft / mixed /
-hard** en schrijft uit wat elk daarvan met je werkboom doet vóór je kiest.
+Cherry-picken en reverten wonen in het contextmenu van de grafiek, zoals altijd
+al. **Reset** is één item — **Resetten naar commit…** — in plaats van drie kale
+soft/mixed/hard-items die elkaar tegenspraken.
+
+Aanpassen, ongedaan maken en resetten staan bovenaan het menu voor één commit en
+blijven **zichtbaar wanneer ze onveilig zijn**: ze worden uitgeschakeld, met een
+tooltip die zegt waarom. Ongedaan maken is alleen voor een niet-gepushte HEAD;
+aanpassen mag ook op een gepubliceerde HEAD, maar waarschuwt dat er een force
+push nodig zal zijn. Resetten reikt alleen tot lokale voorouders plus de eerste
+gepubliceerde commit — niet tot willekeurige oudere geschiedenis.
+
+De resetdialoog maakt de modus expliciet:
+
+![De dialoog Resetten naar commit, met de drie modi uitgeschreven](../../screenshots/reset-to-commit.webp)
+
+| Modus | Resultaat |
+|------|--------|
+| **Soft** | Houd de wijzigingen gestaged |
+| **Mixed** | Houd de wijzigingen unstaged |
+| **Hard** | Gooi de commits en hun wijzigingen weg |
+
+Hard is nooit vooraf geselecteerd. Een vuile werkboom krijgt een extra
+waarschuwing, omdat resetten werk in uitvoering kan overschrijven of ermee kan
+conflicteren. **Bekijken op GitHub** staat bij de kopieeracties en opent alleen
+voor gepubliceerde commits op een github.com-remote.
 
 Selecteer eerst meerdere commits en cherry-pick past de hele selectie toe, op
 volgorde.

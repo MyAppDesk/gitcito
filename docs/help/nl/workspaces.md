@@ -16,8 +16,10 @@ Eén repository, één tabblad. Gebruik <kbd>⌘T</kbd> / <kbd>Ctrl+T</kbd> om d
 kiezer voor een nieuw tabblad te openen en <kbd>⌘W</kbd> / <kbd>Ctrl+W</kbd> om
 het actieve tabblad te sluiten. Je kunt ook slepen om te herordenen,
 middenklikken om te sluiten, of op <kbd>⌘⇧T</kbd> drukken om het laatst gesloten
-tabblad te heropenen. Sluit het laatste tabblad en <kbd>⌘W</kbd> sluit het
-venster. Een stip op het tabblad betekent niet-gecommit werk; een andere stip
+tabblad te heropenen. Rechtsklik een repositorytabblad (of een chip in een
+[groep](#groepen)) voor het [contextmenu van de repository](repo-menu.md) —
+alias, worktrees, GitHub, terminal, tonen, editor en verwijderen. Sluit het
+laatste tabblad en <kbd>⌘W</kbd> sluit het venster. Een stip op het tabblad betekent niet-gecommit werk; een andere stip
 betekent conflicten.
 
 Verschijnt er een sluitwaarschuwing, dan annuleert <kbd>Escape</kbd> altijd.

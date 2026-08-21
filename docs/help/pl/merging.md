@@ -3,7 +3,7 @@ title: Merge i rebase
 category: Gałęzie i operacje na historii
 order: 41
 summary: Merge, rebase, porównywanie referencji i przeciąganie jednej referencji na drugą — w panelu bocznym albo w grafie.
-keywords: merge rebase fast-forward porównaj referencje przeciągnij upuść graf plakietka tag zdalne revert reset cherry-pick compare refs drag drop
+keywords: merge rebase fast-forward porównaj referencje przeciągnij upuść graf plakietka tag zdalne revert reset cherry-pick compare refs drag drop amend cofnij undo github
 ---
 
 # Merge i rebase
@@ -64,9 +64,31 @@ przez <kbd>⌘K</kbd>.
 
 ## Cherry-pick, revert, reset
 
-Wszystkie trzy z menu kontekstowego grafu. Reset oferuje **soft / mixed / hard**
-i wypisuje wprost, co każdy z nich zrobi z twoim drzewem roboczym, zanim
-wybierzesz.
+Cherry-pick i revert mieszkają w menu kontekstowym grafu, tak jak zawsze.
+**Reset** to jedna pozycja — **Zresetuj do commita…** — zamiast trzech surowych
+wpisów soft/mixed/hard, które sobie nawzajem przeczyły.
+
+Amend, cofnięcie i reset siedzą na górze menu pojedynczego commita i pozostają
+**widoczne, gdy są niebezpieczne**: dezaktywują się, a podpowiedź mówi dlaczego.
+Cofnięcie jest tylko dla niewypchniętego HEAD; amend jest dozwolony także na
+opublikowanym HEAD, ale ostrzega, że potrzebny będzie force push. Reset sięga
+tylko lokalnych przodków plus pierwszego opublikowanego commita — nie dowolnej
+starszej historii.
+
+Dialog resetu mówi wprost, który to tryb:
+
+![Dialog Zresetuj do commita, z trzema trybami wypisanymi wprost](../../screenshots/reset-to-commit.webp)
+
+| Tryb | Rezultat |
+|------|--------|
+| **Soft** | Zachowaj zmiany w indeksie |
+| **Mixed** | Zachowaj zmiany poza indeksem |
+| **Hard** | Odrzuć commity i ich zmiany |
+
+Hard nigdy nie jest wstępnie zaznaczony. Brudne drzewo robocze dostaje dodatkowe
+ostrzeżenie, bo reset może nadpisać pracę w toku albo wejść z nią w konflikt.
+**Zobacz na GitHubie** mieszka przy akcjach kopiowania i otwiera się tylko dla
+opublikowanych commitów na zdalnym github.com.
 
 Zaznacz najpierw wiele commitów, a cherry-pick zastosuje całe zaznaczenie, po
 kolei.

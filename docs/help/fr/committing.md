@@ -3,7 +3,7 @@ title: Faire des commits
 category: Travailler sur les changements
 order: 31
 summary: Styles de message, modèles, co-auteurs et le linter.
-keywords: commit valider message compositeur composer conventional gitmoji ticket amend amender modèle template co-auteur co-author linter
+keywords: commit valider message compositeur composer conventional gitmoji ticket amend amender modèle template co-auteur co-author linter annuler undo réinitialisation reset
 ---
 
 # Faire des commits
@@ -46,5 +46,15 @@ faire votre commit.
 Amender réécrit le dernier commit avec ce qui est indexé. Gitcito vous montre
 d'abord le message existant, pour que vous soyez en train d'éditer et non de
 retaper.
+
+**Amender le commit…** sur une ligne du graphe fait la même chose pour HEAD :
+il charge le message complet, fait passer le compositeur en mode amend et lui
+donne le focus. Un HEAD déjà poussé peut toujours être amendé, mais Gitcito
+prévient que mettre à jour le distant exigera un push forcé.
+
+**Annuler le commit…** est son pendant pour un HEAD non poussé : reset mixed
+vers le parent, changements de l'arbre de travail conservés, message restauré
+dans le compositeur. Le commit initial a un chemin dédié qui laisse une branche
+non née au lieu de détruire les fichiers.
 
 **Voir aussi :** [Indexation](staging.md) · [Absorption](absorb.md) · [Générateur de changelog](changelog.md)

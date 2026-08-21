@@ -15,7 +15,10 @@ Tre livelli, dal più lasco al più stretto.
 Un repository, una scheda. Usa <kbd>⌘T</kbd> / <kbd>Ctrl+T</kbd> per aprire il
 selettore della nuova scheda e <kbd>⌘W</kbd> / <kbd>Ctrl+W</kbd> per chiudere
 quella attiva. Puoi anche trascinarle per riordinarle, chiuderle con il clic
-centrale, o premere <kbd>⌘⇧T</kbd> per riaprire l'ultima che hai chiuso. Chiudi
+centrale, o premere <kbd>⌘⇧T</kbd> per riaprire l'ultima che hai chiuso. Clic
+destro su una scheda di repository (o su una pillola dentro un
+[gruppo](#gruppi)) per il [menu contestuale del repository](repo-menu.md) —
+alias, worktree, GitHub, terminale, mostra, editor e rimozione. Chiudi
 l'ultima scheda e <kbd>⌘W</kbd> chiude invece la finestra. Un punto sulla scheda
 significa lavoro non committato; uno diverso significa conflitti.
 

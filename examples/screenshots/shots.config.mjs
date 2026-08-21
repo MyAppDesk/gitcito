@@ -1515,8 +1515,6 @@ export const shots = [
     kind: 'group',
     repos: ['octopus-merge', 'merge-conflict'],
     themes: ['dark'],
-    clipTo: '.context-menu',
-    clipPad: 16,
     drive: async (page) => {
       await page.click('.tab.in-group', { button: 'right' })
       await page.waitForSelector('.context-menu')

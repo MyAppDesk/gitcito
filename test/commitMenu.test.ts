@@ -152,6 +152,9 @@ describe('commitMenuProbe + undoCommit', () => {
     expect(() => git(repo, ['rev-parse', 'HEAD'])).toThrow()
     await gitService.restoreUndoneCommit(repo, result.previousSha)
     expect(git(repo, ['rev-parse', 'HEAD'])).toBe(result.previousSha)
+    // The index is realigned with the restored HEAD: only the WIP file is
+    // left over, and nothing shows as a staged reversal of the commit.
+    expect(git(repo, ['status', '--porcelain', '-uall'])).toBe('?? wip.txt')
   })
 
   it('undo of a non-root HEAD is a mixed reset and keeps prior WIP', async () => {

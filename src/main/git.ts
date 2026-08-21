@@ -5117,6 +5117,10 @@ export const gitService = {
   /** Put a branch tip back after undoCommit — unborn-safe. */
   async restoreUndoneCommit(repoPath: string, previousSha: string): Promise<void> {
     await runGit(repoPath, ['update-ref', 'HEAD', previousSha])
+    // undoCommit left the index at the parent (or emptied it, for the root
+    // commit); realign it with the restored HEAD or status shows the whole
+    // commit as staged reversals. Working tree stays untouched.
+    await runGit(repoPath, ['reset', '--mixed'])
   },
 
   async createTag(

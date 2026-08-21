@@ -47,6 +47,9 @@ Attivalo in **Impostazioni → Generali → Abilita launch.json**. Il pulsante
 
 Un membro di un compound compare come *compound › membro*, e riavviarlo
 riavvia solo quel membro.
+Se la barra copre qualcosa che ti serve, trascinala di lato con la sua
+maniglia — la posizione viene ricordata, e un doppio clic sulla maniglia la
+ricentra.
 
 Ciò che Gitcito deliberatamente **non** fa: esegue i tuoi programmi in
 terminali veri, ma non è un debugger — niente breakpoint, niente ispezione

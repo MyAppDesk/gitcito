@@ -60,6 +60,12 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
 
   const isLaunch = launchId != null
   const cleanups: (() => void)[] = []
+
+  // Programs push their own tab title via OSC 0/2 (claude, vim, ssh…); prefer
+  // it over the polled process name, which can be meaningless for some
+  // binaries. Disposed together with the terminal.
+  term.onTitleChange((title) => useTermTitlesStore.getState().setOsc(panelId, title.trim()))
+
   const handle: TermHandle = {
     term,
     fit,

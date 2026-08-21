@@ -9,6 +9,7 @@ import { commitHookFailureHint, lintCommit, subjectCounterLevel, parseCcPrefix, 
 import { isSecretFile, maskSecretLine } from '../src/renderer/src/lib/secrets'
 import { comboFromEvent, formatCombo, effectiveBindings, isReservedCombo, matchShortcut, tabActionFromEvent, tabIndexFromEvent } from '../src/renderer/src/lib/shortcuts'
 import { terminalCloseTarget, terminalShortcutFromEvent } from '../src/renderer/src/lib/terminalShortcuts'
+import { panelDisplayName, groupDisplayName } from '../src/renderer/src/lib/terminalTitles'
 import { taskChain, sharedTaskLabels, memberFullyCovered } from '../src/renderer/src/lib/launchTasks'
 import { collectInputRefs, normalizeOptions, defaultOptionIndex, isPickInput } from '../src/renderer/src/lib/launchInputs'
 import { resolveInputTokens } from '../src/main/launch'
@@ -566,6 +567,49 @@ describe('secret masking', () => {
     expect(maskSecretLine('TOKEN: abc123')).toBe('TOKEN: ••••••')
     expect(maskSecretLine('# a comment')).toBe('# a comment')
     expect(maskSecretLine('not an assignment')).toBe('not an assignment')
+  })
+})
+
+describe('terminal titles', () => {
+  it('panel: manual alias beats every auto source', () => {
+    expect(panelDisplayName({ alias: 'api server', osc: '✳ compacting', proc: 'claude' })).toBe('api server')
+  })
+  it('panel: OSC title beats the process name', () => {
+    expect(panelDisplayName({ osc: '✳ claude', proc: '2.1.238' })).toBe('✳ claude')
+  })
+  it('panel: process name when nothing better exists', () => {
+    expect(panelDisplayName({ proc: 'vim' })).toBe('vim')
+  })
+  it('panel: blank sources fall through to the shell default', () => {
+    expect(panelDisplayName({ alias: '  ', osc: '', proc: undefined })).toBe('zsh')
+  })
+  it('group: alias always wins', () => {
+    expect(groupDisplayName('build', 3, { osc: 'ignored' })).toBe('build')
+  })
+  it('group: lone panel lends its OSC title as-is', () => {
+    expect(groupDisplayName('', 2, { osc: '✳ claude' })).toBe('✳ claude')
+  })
+  it('group: lone panel process name keeps the stable number', () => {
+    expect(groupDisplayName('', 2, { proc: 'zsh' })).toBe('zsh 2')
+  })
+  it('group: split groups keep the numbered default', () => {
+    expect(groupDisplayName('', 4, null)).toBe('zsh 4')
+  })
+  it('panel: shell prompt boilerplate is ignored, process name wins', () => {
+    expect(
+      panelDisplayName({ osc: 'cgutierr@MacBook-Pro:~/Documents/Projects/hub', proc: 'zsh' })
+    ).toBe('zsh')
+    expect(panelDisplayName({ osc: '~/Documents/Projects/hub', proc: 'zsh' })).toBe('zsh')
+    expect(panelDisplayName({ osc: 'C:\\Users\\dev', proc: 'pwsh' })).toBe('pwsh')
+  })
+  it('panel: a running command pushed as title still shows', () => {
+    expect(panelDisplayName({ osc: 'npm run dev', proc: 'node' })).toBe('npm run dev')
+  })
+  it('group: lone panel ignores prompt boilerplate too', () => {
+    expect(groupDisplayName('', 3, { osc: 'user@host: ~/x', proc: 'zsh' })).toBe('zsh 3')
+  })
+  it('group: lone panel alias wins over its live title', () => {
+    expect(groupDisplayName('', 1, { alias: 'worker', osc: 'noise', proc: 'node' })).toBe('worker')
   })
 })
 

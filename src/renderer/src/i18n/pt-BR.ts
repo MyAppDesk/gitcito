@@ -11,6 +11,7 @@ export const ptBR: Dict = {
   'sidebar.launch': 'Executar',
   'sidebar.launchTitle': 'Rodar uma configuração de execução',
   'launch.switchSession': 'Trocar de sessão',
+  'launch.dragHint': 'Arraste para mover (clique duplo para redefinir)',
   'launch.pause': 'Pausar',
   'launch.resume': 'Retomar',
   'launch.restart': 'Reiniciar',

@@ -19,6 +19,7 @@ import { useTermTitlesStore } from '../stores/termTitles'
 import { useUIStore } from '../stores/ui'
 import { useT, interp } from '../i18n'
 import { terminalCloseTarget, terminalShortcutFromEvent } from '../lib/terminalShortcuts'
+import { panelDisplayName, groupDisplayName } from '../lib/terminalTitles'
 
 const MIN_PANEL_PX = 80
 
@@ -112,6 +113,7 @@ export function TerminalContainer({ cwd }: { cwd: string }): React.JSX.Element {
   const setGroupTitle = useTerminalsStore((s) => s.setGroupTitle)
   const setPanelTitle = useTerminalsStore((s) => s.setPanelTitle)
   const autoTitles = useTermTitlesStore((s) => s.byPanel)
+  const oscTitles = useTermTitlesStore((s) => s.oscByPanel)
   const setTerminalOpen = useUIStore((s) => s.setTerminalOpen)
   const openContextMenu = useUIStore((s) => s.openContextMenu)
   const layout = useUIStore((s) => s.layout)
@@ -157,9 +159,9 @@ export function TerminalContainer({ cwd }: { cwd: string }): React.JSX.Element {
     onGroupDragEnd()
   }
 
-  // Manual alias wins; otherwise show the auto-detected foreground process name.
+  // Manual alias wins; otherwise the OSC-pushed title, then the process name.
   const nameFor = (alias: string | undefined, panelId: string): string =>
-    (alias && alias.trim()) || autoTitles[panelId] || 'zsh'
+    panelDisplayName({ alias, osc: oscTitles[panelId], proc: autoTitles[panelId] })
 
   const startRename = (groupId: string, panelId: string | null, current: string): void => {
     setEditing({ groupId, panelId })
@@ -185,15 +187,22 @@ export function TerminalContainer({ cwd }: { cwd: string }): React.JSX.Element {
     }
   }
 
-  // Groups keep a stable numbered name; only panels auto-name to their
-  // running process. Manual alias still wins.
-  const groupDisplayName = (group: TermGroup): string => group.title.trim() || `zsh ${group.num}`
+  // A lone-panel group borrows its panel's live title (VS Code style); split
+  // groups keep the stable numbered name. Manual alias still wins.
+  const groupLabelFor = (group: TermGroup): string => {
+    const single = group.panels.length === 1 ? group.panels[0] : null
+    return groupDisplayName(
+      group.title,
+      group.num,
+      single ? { alias: single.title, osc: oscTitles[single.id], proc: autoTitles[single.id] } : null
+    )
+  }
 
   const openGroupMenuAt = (e: React.MouseEvent, group: TermGroup): void => {
     e.preventDefault()
     e.stopPropagation()
     const split = group.panels.length > 1
-    const groupName = groupDisplayName(group)
+    const groupName = groupLabelFor(group)
     openContextMenu(e.clientX, e.clientY, [
       {
         label: t('terminal.rename'),
@@ -304,7 +313,7 @@ export function TerminalContainer({ cwd }: { cwd: string }): React.JSX.Element {
           <div className="terminal-rail-body">
             {groups.map((group) => {
               const split = group.panels.length > 1
-              const groupName = groupDisplayName(group)
+              const groupName = groupLabelFor(group)
               const tooltip = split
                 ? interp(t('terminal.groupSplitTooltip'), {
                     name: groupName,
@@ -374,7 +383,7 @@ export function TerminalContainer({ cwd }: { cwd: string }): React.JSX.Element {
               {groups.map((group) => {
                 const split = group.panels.length > 1
                 const groupCollapsed = collapsedGroups.has(group.id)
-                const groupName = groupDisplayName(group)
+                const groupName = groupLabelFor(group)
                 const editingGroup = editing?.groupId === group.id && editing.panelId === null
                 return (
                   <div key={group.id} className="terminal-list-group">

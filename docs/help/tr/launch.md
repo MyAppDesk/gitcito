@@ -47,6 +47,8 @@ Git / Dosyalar sekmelerinin yanında belirir.
 
 Bir compound üyesi *compound › üye* olarak görünür ve yeniden başlatmak
 yalnızca o üyeyi yeniden başlatır.
+Araç çubuğu ihtiyacınız olan bir şeyi örtüyorsa, tutamacından kenara
+sürükleyin — konum hatırlanır ve tutamaca çift tıklamak onu yeniden ortalar.
 
 Gitcito'nun bilerek **yapmadığı** şey: programlarınızı gerçek terminallerde
 çalıştırır ama bir hata ayıklayıcı değildir — kesme noktası yok, değişken

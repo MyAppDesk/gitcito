@@ -11,6 +11,7 @@ export const de: Dict = {
   'sidebar.launch': 'Starten',
   'sidebar.launchTitle': 'Eine Startkonfiguration ausführen',
   'launch.switchSession': 'Sitzung wechseln',
+  'launch.dragHint': 'Zum Verschieben ziehen (Doppelklick zum Zurücksetzen)',
   'launch.pause': 'Pausieren',
   'launch.resume': 'Fortsetzen',
   'launch.restart': 'Neu starten',

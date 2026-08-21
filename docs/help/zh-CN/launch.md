@@ -37,6 +37,7 @@ Gitcito 会读取你的 `.vscode/launch.json`——根目录那一份以及任�
 在**设置 → 通用 → 启用 launch.json** 中打开它。**启动**按钮会出现在 Git／文件标签页旁边。
 
 compound 成员显示为 *compound › 成员*，重启只会重启该成员。
+如果工具栏挡住了你需要的内容，可以拖动手柄把它移开 — 位置会被记住，双击手柄可让它回到居中位置。
 
 Gitcito 有意**不做**的事：它在真实终端里运行你的程序，但它不是调试器 — 没有断点、
 没有变量检查、没有 Debug Adapter Protocol。仅 attach 的配置在带有 `preLaunchTask`

@@ -47,6 +47,8 @@ Knopf **LAUNCH** erscheint dann neben den Tabs Git / Dateien.
 
 Ein Compound-Mitglied erscheint als *Compound › Mitglied*, und ein Neustart
 startet nur dieses Mitglied neu.
+Wenn die Leiste etwas verdeckt, ziehe sie an ihrem Griff zur Seite — die
+Position wird gemerkt, und ein Doppelklick auf den Griff zentriert sie wieder.
 
 Was Gitcito bewusst **nicht** tut: Es führt deine Programme in echten Terminals
 aus, ist aber kein Debugger — keine Breakpoints, keine Variablenansicht, kein

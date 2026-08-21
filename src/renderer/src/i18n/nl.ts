@@ -11,6 +11,7 @@ export const nl: Dict = {
   'sidebar.launch': 'Uitvoeren',
   'sidebar.launchTitle': 'Een launch-configuratie uitvoeren',
   'launch.switchSession': 'Van sessie wisselen',
+  'launch.dragHint': 'Sleep om te verplaatsen (dubbelklik om te herstellen)',
   'launch.pause': 'Pauzeren',
   'launch.resume': 'Hervatten',
   'launch.restart': 'Herstarten',

@@ -11,6 +11,7 @@ export const ru: Dict = {
   'sidebar.launch': 'Запуск',
   'sidebar.launchTitle': 'Запустить конфигурацию запуска',
   'launch.switchSession': 'Переключить сессию',
+  'launch.dragHint': 'Перетащите, чтобы переместить (двойной щелчок — сброс)',
   'launch.pause': 'Пауза',
   'launch.resume': 'Продолжить',
   'launch.restart': 'Перезапустить',

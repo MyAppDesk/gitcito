@@ -11,6 +11,7 @@ export const he: Dict = {
   'sidebar.launch': 'הפעלה',
   'sidebar.launchTitle': 'הרצת תצורת הפעלה',
   'launch.switchSession': 'החלפת סשן',
+  'launch.dragHint': 'גרור כדי להזיז (לחיצה כפולה לאיפוס)',
   'launch.pause': 'השהיה',
   'launch.resume': 'המשך',
   'launch.restart': 'הפעלה מחדש',

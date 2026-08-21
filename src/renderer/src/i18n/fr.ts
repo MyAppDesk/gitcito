@@ -10,6 +10,7 @@ export const fr: Dict = {
   'sidebar.launch': 'Lancement',
   'sidebar.launchTitle': 'Exécuter une configuration de lancement',
   'launch.switchSession': 'Changer de session',
+  'launch.dragHint': 'Glisser pour déplacer (double-clic pour réinitialiser)',
   'launch.pause': 'Mettre en pause',
   'launch.resume': 'Reprendre',
   'launch.restart': 'Redémarrer',

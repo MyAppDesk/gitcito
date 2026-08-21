@@ -48,6 +48,8 @@ aparece junto a las pestañas Git / Ficheros.
 
 Un miembro de un compound se muestra como *compound › miembro*, y reiniciarlo
 reinicia solo ese miembro.
+Si la barra tapa algo que necesitas, arrástrala a un lado por su asa — la
+posición se recuerda, y un doble clic en el asa la vuelve a centrar.
 
 Lo que Gitcito deliberadamente **no** hace: ejecuta tus programas en terminales
 reales, pero no es un depurador — sin puntos de interrupción, sin inspección de

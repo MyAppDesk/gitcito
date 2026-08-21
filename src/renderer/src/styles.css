@@ -12061,6 +12061,18 @@ mark.find-hit.active {
   border: 1px solid var(--border);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.32);
 }
+.debug-grip {
+  display: inline-flex;
+  align-items: center;
+  align-self: stretch;
+  padding: 0 1px;
+  margin-right: 1px;
+  color: var(--text-3);
+  cursor: grab;
+  touch-action: none;
+}
+.debug-grip:hover { color: var(--text-1); }
+.debug-grip:active { cursor: grabbing; }
 .debug-switcher {
   display: inline-flex;
   align-items: center;

@@ -1,5 +1,19 @@
 
 
+## [3.18.0](https://github.com/MyAppDesk/gitcito/compare/v3.17.1...v3.18.0) (2026-08-21)
+
+
+### Features
+
+* add draggable functionality to debug toolbar ([f33f0c9](https://github.com/MyAppDesk/gitcito/commit/f33f0c9659be45716f6432c055f1dbcb02fca5af))
+* enhance terminal title handling with OSC support ([38b01b0](https://github.com/MyAppDesk/gitcito/commit/38b01b06699dc22c63e6e9420be2345b0a8c1dfe))
+* handle unreadable secrets and vault files gracefully ([5902e65](https://github.com/MyAppDesk/gitcito/commit/5902e653607256d484a8550f4e1353b85e33b491))
+
+
+### Bug Fixes
+
+* handle missing githubToken gracefully in repo store ([b268be6](https://github.com/MyAppDesk/gitcito/commit/b268be671e3b9c3d268835d2d9288e54a3e74117))
+
 ## [3.17.1](https://github.com/MyAppDesk/gitcito/compare/v3.17.0...v3.17.1) (2026-08-20)
 
 ## [3.17.0](https://github.com/MyAppDesk/gitcito/compare/v3.16.0...v3.17.0) (2026-08-20)

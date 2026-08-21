@@ -48,6 +48,9 @@ Activez-le dans **Réglages → Général → Activer launch.json**. Le bouton
 
 Un membre d’un compound s’affiche comme *compound › membre*, et le redémarrer
 ne redémarre que ce membre.
+Si la barre recouvre quelque chose dont vous avez besoin, déplacez-la par sa
+poignée — la position est mémorisée, et un double-clic sur la poignée la
+recentre.
 
 Ce que Gitcito ne fait délibérément **pas** : il exécute vos programmes dans de
 vrais terminaux, mais ce n’est pas un débogueur — pas de points d’arrêt, pas

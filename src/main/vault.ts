@@ -1,6 +1,7 @@
 import { app, ipcMain, safeStorage } from 'electron'
 import { join } from 'path'
-import { readFile, writeFile, mkdir } from 'fs/promises'
+import { readFile, writeFile, mkdir, copyFile } from 'fs/promises'
+import { existsSync } from 'fs'
 import { randomUUID } from 'node:crypto'
 import type { VaultEntry, VaultListResult, VaultExport } from '../shared/types'
 import type { BundleVaultEntry } from './secureBundle'
@@ -20,18 +21,30 @@ interface VaultData {
 const filePath = (): string => join(app.getPath('userData'), 'gitcito-vault.enc')
 const empty = (): VaultData => ({ repos: {}, global: [] })
 
+// A vault file exists but this build's safeStorage key cannot read it — written
+// by a different app identity (dev vs packaged). See the same flag in settings.ts.
+let vaultUnreadable = false
+
 async function load(): Promise<VaultData> {
   try {
     const b64 = await readFile(filePath(), 'utf-8')
     const plain = safeStorage.decryptString(Buffer.from(b64, 'base64'))
+    vaultUnreadable = false
     return { ...empty(), ...(JSON.parse(plain) as VaultData) }
   } catch {
+    vaultUnreadable = existsSync(filePath())
     return empty() // missing, corrupt, or key changed → start fresh
   }
 }
 
 async function save(data: VaultData): Promise<void> {
   await mkdir(app.getPath('userData'), { recursive: true })
+  if (vaultUnreadable) {
+    // Preserve the copy the other build identity can still decrypt before we
+    // overwrite it with a vault that started fresh.
+    await copyFile(filePath(), `${filePath()}.bak`).catch(() => {})
+    vaultUnreadable = false
+  }
   const enc = safeStorage.encryptString(JSON.stringify(data))
   await writeFile(filePath(), enc.toString('base64'), 'utf-8')
 }

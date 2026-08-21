@@ -11,6 +11,7 @@ export const ko: Dict = {
   'sidebar.launch': '실행',
   'sidebar.launchTitle': '실행 구성을 시작합니다',
   'launch.switchSession': '세션 전환',
+  'launch.dragHint': '드래그하여 이동 (더블 클릭으로 초기화)',
   'launch.pause': '일시정지',
   'launch.resume': '재개',
   'launch.restart': '다시 시작',

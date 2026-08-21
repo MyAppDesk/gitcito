@@ -1,12 +1,16 @@
-import { Play, Pause, RotateCcw, Square, ChevronDown, X } from 'lucide-react'
+import { useRef, useState } from 'react'
+import { Play, Pause, RotateCcw, Square, ChevronDown, X, GripVertical } from 'lucide-react'
 import { useLaunchStore } from '../stores/launch'
 import { useUIStore } from '../stores/ui'
 import { useT } from '../i18n'
 
+const OFFSET_KEY = 'gitcito.debugToolbarX'
+
 /**
  * VS Code-style floating debug bar. Shown whenever the active repo has at least
  * one launch session. Controls the active session (pause/resume, restart, stop)
- * and switches between sessions via a dropdown.
+ * and switches between sessions via a dropdown. Draggable horizontally by its
+ * grip so it can be moved off whatever it happens to cover.
  */
 export function DebugToolbar({ repoPath }: { repoPath: string }): React.JSX.Element | null {
   const sessions = useLaunchStore((s) => s.sessions)
@@ -18,6 +22,42 @@ export function DebugToolbar({ repoPath }: { repoPath: string }): React.JSX.Elem
   const clearExited = useLaunchStore((s) => s.clearExited)
   const openContextMenu = useUIStore((s) => s.openContextMenu)
   const t = useT()
+
+  const barRef = useRef<HTMLDivElement>(null)
+  const offsetRef = useRef(0)
+  const [offset, setOffset] = useState<number>(() => {
+    const v = Number(localStorage.getItem(OFFSET_KEY))
+    return Number.isFinite(v) ? v : 0
+  })
+  offsetRef.current = offset
+
+  const startDrag = (e: React.PointerEvent): void => {
+    if (e.button !== 0) return
+    const bar = barRef.current
+    if (!bar) return
+    // Clamp so the bar never leaves its pane; the bar is centred, so the
+    // allowed offset is symmetric around zero.
+    const pane = bar.offsetParent as HTMLElement | null
+    const max = pane ? Math.max(0, (pane.clientWidth - bar.offsetWidth) / 2 - 6) : Number.MAX_SAFE_INTEGER
+    const startX = e.clientX
+    const startOffset = offsetRef.current
+    const move = (ev: PointerEvent): void => {
+      setOffset(Math.min(max, Math.max(-max, startOffset + ev.clientX - startX)))
+    }
+    const up = (): void => {
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', up)
+      localStorage.setItem(OFFSET_KEY, String(Math.round(offsetRef.current)))
+    }
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', up)
+    e.preventDefault()
+  }
+
+  const resetDrag = (): void => {
+    setOffset(0)
+    localStorage.removeItem(OFFSET_KEY)
+  }
 
   const repoSessions = sessions.filter((x) => x.repoPath === repoPath)
   if (repoSessions.length === 0) return null
@@ -48,7 +88,19 @@ export function DebugToolbar({ repoPath }: { repoPath: string }): React.JSX.Elem
   }
 
   return (
-    <div className="debug-toolbar">
+    <div
+      ref={barRef}
+      className="debug-toolbar"
+      style={{ transform: `translateX(calc(-50% + ${offset}px))` }}
+    >
+      <div
+        className="debug-grip"
+        title={t('launch.dragHint')}
+        onPointerDown={startDrag}
+        onDoubleClick={resetDrag}
+      >
+        <GripVertical size={14} />
+      </div>
       <button className="debug-switcher" onClick={openSwitcher} title={t('launch.switchSession')}>
         <span className={`debug-dot ${active.status}`} />
         <span className="debug-name">{nameOf(active)}</span>

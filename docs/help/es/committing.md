@@ -3,7 +3,7 @@ title: Hacer commits
 category: Trabajar con cambios
 order: 31
 summary: Estilos de mensaje, plantillas, coautores y el linter.
-keywords: commit mensaje compositor convencional conventional gitmoji ticket amend enmendar plantilla template coautor co-author linter
+keywords: commit mensaje compositor convencional conventional gitmoji ticket amend enmendar plantilla template coautor co-author linter deshacer undo reset
 ---
 
 # Hacer commits
@@ -44,5 +44,15 @@ demasiado anchas. Son pistas, nunca una barrera — no te impedirá hacer el com
 
 Amend reescribe el último commit con lo que tengas preparado. Gitcito te enseña
 antes el mensaje existente, para que estés editando y no reescribiendo.
+
+**Enmendar commit…** en una fila del grafo hace lo mismo para HEAD: carga el
+mensaje completo, pone el compositor en modo amend y le da el foco. Un HEAD ya
+enviado también se puede enmendar, pero Gitcito avisa de que actualizar el
+remoto exigirá un force push.
+
+**Deshacer commit…** es su hermano para un HEAD sin enviar: reset mixed al
+padre, los cambios del árbol de trabajo se conservan, y el mensaje vuelve al
+compositor. El commit inicial tiene un camino propio que deja una rama sin
+nacer en lugar de destruir los archivos.
 
 **Ver también:** [Preparación](staging.md) · [Absorb](absorb.md) · [Generador de changelog](changelog.md)

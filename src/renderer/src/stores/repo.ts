@@ -38,6 +38,7 @@ import { useUIStore } from './ui'
 import { useSettingsStore } from './settings'
 import { isSecretFile } from '../lib/secrets'
 import { commitHookFailureHint } from '../lib/commitLint'
+import { splitCommitMessage } from '../lib/commitMenuCapabilities'
 import { t, interp } from '../i18n'
 
 /** Repos already warned this session about pushing tracked secrets (don't nag). */
@@ -1941,8 +1942,50 @@ export const repoActions = {
       redo: () => gitApi.revertCommit(path, hash)
     }),
 
-  reset: (path: string, ref: string, mode: 'soft' | 'mixed' | 'hard') =>
-    useRepoStore.getState().run(path, interp(t('act.reset'), { mode, sha: ref.slice(0, 7) }), () => gitApi.reset(path, ref, mode)),
+  undoCommit: (path: string) => {
+    const current = useRepoStore.getState().repos[path]?.branches.locals.find((b) => b.isCurrent)
+    const sha = (current?.sha ?? 'HEAD').slice(0, 7)
+    let previousSha = current?.sha ?? ''
+    return useRepoStore.getState().run(
+      path,
+      interp(t('act.undidCommit'), { sha }),
+      async () => {
+        const result = await gitApi.undoCommit(path)
+        previousSha = result.previousSha
+        const { summary, description } = splitCommitMessage(result.message)
+        useUIStore.getState().requestComposerIntent({ path, summary, description, amend: false })
+      },
+      {
+        label: t('undoLabel.undoCommit'),
+        undo: () => gitApi.restoreUndoneCommit(path, previousSha),
+        redo: async () => {
+          await gitApi.undoCommit(path)
+        }
+      },
+      null,
+      undefined,
+      ['log', 'status', 'branches']
+    )
+  },
+
+  reset: (path: string, ref: string, mode: 'soft' | 'mixed' | 'hard') => {
+    const prev = useRepoStore.getState().repos[path]?.branches.locals.find((b) => b.isCurrent)?.sha
+    return useRepoStore.getState().run(
+      path,
+      interp(t('act.reset'), { mode, sha: ref.slice(0, 7) }),
+      () => gitApi.reset(path, ref, mode),
+      prev
+        ? {
+            label: interp(t('undoLabel.resetToCommit'), { sha: ref.slice(0, 7) }),
+            undo: () => gitApi.reset(path, prev, mode === 'hard' ? 'hard' : mode),
+            redo: () => gitApi.reset(path, ref, mode)
+          }
+        : undefined,
+      null,
+      undefined,
+      ['log', 'status', 'branches']
+    )
+  },
 
   applyPatch: (path: string, content: string, am: boolean) =>
     useRepoStore

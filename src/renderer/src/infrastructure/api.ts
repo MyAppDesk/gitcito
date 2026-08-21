@@ -117,6 +117,8 @@ import type {
   CommitEditInfo,
   CommitEditPreview,
   CommitEditResult,
+  CommitMenuProbe,
+  UndoCommitResult,
   BlobAtCommit,
   VaultEntry,
   VaultListResult,
@@ -400,6 +402,10 @@ export const gitApi = {
   revertCommit: (path: string, hash: string) => call<void>('revertCommit', path, hash),
   reset: (path: string, ref: string, mode: 'soft' | 'mixed' | 'hard' | 'keep') =>
     call<void>('reset', path, ref, mode),
+  commitMenuProbe: (path: string, sha: string) => call<CommitMenuProbe>('commitMenuProbe', path, sha),
+  undoCommit: (path: string) => call<UndoCommitResult>('undoCommit', path),
+  restoreUndoneCommit: (path: string, previousSha: string) =>
+    call<void>('restoreUndoneCommit', path, previousSha),
   reflog: (path: string, ref?: string, max?: number) => call<ReflogEntry[]>('reflog', path, ref, max),
   bisectStatus: (path: string) => call<BisectStatus>('bisectStatus', path),
   bisectStart: (path: string) => call<BisectStatus>('bisectStart', path),

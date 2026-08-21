@@ -112,6 +112,8 @@ export const pl: Dict = {
   'common.add': 'Dodaj',
   'common.copyFilePath': 'Kopiuj ścieżkę pliku',
   'common.copyFolderPath': 'Kopiuj ścieżkę folderu',
+  'fileMenu.copyFilePath': 'Kopiuj ścieżkę pliku',
+  'fileMenu.copyRelativeFilePath': 'Kopiuj względną ścieżkę pliku',
 
   // Rozwiązywanie konfliktów
   'conflict.resolved': 'rozwiązany',
@@ -1499,6 +1501,41 @@ export const pl: Dict = {
   'commit.changedFiles': '{n} zmienionych plików',
   'commit.openDefaultApp': 'Otwórz w domyślnej aplikacji',
 
+  // Akcje pojedynczego commita (menu kontekstowe grafu)
+  'commitMenu.amend': 'Popraw commit…',
+  'commitMenu.undo': 'Cofnij commit…',
+  'commitMenu.resetTo': 'Zresetuj do commita…',
+  'commitMenu.viewOnGitHub': 'Zobacz na GitHubie',
+  'commitMenu.disabled.notHead': 'Tylko bieżący commit HEAD może to zrobić.',
+  'commitMenu.disabled.detached': 'Najpierw zrób checkout lokalnej gałęzi.',
+  'commitMenu.disabled.published': 'Ten commit został już wypchnięty.',
+  'commitMenu.disabled.notAncestor': 'Ten commit nie jest przodkiem HEAD.',
+  'commitMenu.disabled.beyondReset': 'Ten commit jest starszy niż lokalna granica resetu.',
+  'commitMenu.disabled.operation': 'Niedostępne, gdy trwa operacja Gita.',
+  'commitMenu.disabled.inflight': 'Niedostępne, gdy działa inne polecenie Gita.',
+  'commitMenu.disabled.notOnGitHub': 'Brak zdalnego GitHuba albo ten commit nie jest opublikowany.',
+  'commitMenu.amendPublishedTitle': 'Poprawić opublikowany commit?',
+  'commitMenu.amendPublishedMsg':
+    '{branch} została już wypchnięta. Poprawka przepisuje historię — aktualizacja zdalnego wymaga force pusha.',
+  'commitMenu.amendPublishedConfirm': 'Kontynuuj',
+  'commitMenu.undoTitle': 'Cofnij commit',
+  'commitMenu.undoMsg':
+    'Przesuń {branch} na rodzica {sha} i zostaw zmiany nietage’owane. Wiadomość wraca do kompozytora.',
+  'commitMenu.undoRootMsg':
+    'To pierwszy commit na {branch}. Cofnięcie zostawia nienarodzoną gałąź i zachowuje pliki w drzewie roboczym.',
+  'commitMenu.undoDirty':
+    'Masz niezacommitowane zmiany. Zostaną zmieszane z cofniętym commitem w drzewie roboczym.',
+  'commitMenu.undoConfirm': 'Cofnij commit',
+  'commitMenu.resetTitle': 'Zresetuj do commita',
+  'commitMenu.resetMsg': 'Przesuń {branch} na {sha}. Wybierz, jak potraktować commity, które zostawiasz:',
+  'commitMenu.resetSoft': 'Soft — zachowaj zmiany w indeksie',
+  'commitMenu.resetMixed': 'Mixed — zachowaj zmiany poza indeksem',
+  'commitMenu.resetHard': 'Hard — odrzuć commity i ich zmiany',
+  'commitMenu.resetDirty': 'Masz niezacommitowane zmiany. Reset może nadpisać lub skonfliktować z pracą w toku.',
+  'commitMenu.resetHardWarn': 'Hard reset odrzuca niezacommitowaną pracę i każdy commit po {sha}.',
+  'commitMenu.resetConfirm': 'Resetuj',
+  'commitMenu.resetHardConfirm': 'Odrzuć i zresetuj',
+
   // Menu kontekstowe tagu (w grafie)
   'tag.checkout': 'Przełącz się na {tag}',
   'tag.worktree': 'Utwórz worktree z tego commita…',
@@ -2743,6 +2780,7 @@ export const pl: Dict = {
   'act.aborted': 'Przerwano: {kind}',
   'act.reverted': 'Cofnięto {sha}',
   'act.reset': 'Zresetowano ({mode}) do {sha}',
+  'act.undidCommit': 'Cofnięto commit {sha}',
   'act.createdTag': 'Utworzono tag {name}',
   'act.deletedTag': 'Usunięto tag {name}',
   'act.pushedTag': 'Wypchnięto tag {name} do {remote}',
@@ -2798,6 +2836,8 @@ export const pl: Dict = {
   'undoLabel.cherryPick': 'cherry-pick',
   'undoLabel.squash': 'squash',
   'undoLabel.revert': 'revert',
+  'undoLabel.undoCommit': 'cofnij commit',
+  'undoLabel.resetToCommit': 'reset do {sha}',
   'undoLabel.tag': 'tag {name}',
   'gitmoji.none': 'brak',
   'composer.ignoreAndUntrackMsg': 'Dodaj {what} do .gitignore i przestań śledzić to w Gicie. Plik(i) zostają na dysku.',
@@ -3151,5 +3191,21 @@ export const pl: Dict = {
   'askAction.createFile': 'Utwórz plik',
   'askAction.editFile': 'Edytuj plik',
   'askAction.replaceFile': 'Zastąp plik',
-  'askAction.deleteFile': 'Usuń plik'
+  'askAction.deleteFile': 'Usuń plik',
+  'repoMenu.createAlias': 'Utwórz alias…',
+  'repoMenu.changeAlias': 'Zmień alias…',
+  'repoMenu.removeAlias': 'Usuń alias',
+  'repoMenu.aliasTitle': 'Alias repozytorium',
+  'repoMenu.aliasLabel': 'Nazwa wyświetlana',
+  'repoMenu.showWorktrees': 'Pokaż worktree',
+  'repoMenu.newWorktree': 'Nowe worktree…',
+  'repoMenu.copyName': 'Kopiuj nazwę repozytorium',
+  'repoMenu.copyPath': 'Kopiuj ścieżkę repozytorium',
+  'repoMenu.viewOnGitHub': 'Zobacz na GitHubie',
+  'repoMenu.openTerminal': 'Otwórz w terminalu',
+  'repoMenu.revealFinder': 'Pokaż w Finderze',
+  'repoMenu.revealExplorer': 'Pokaż w Eksploratorze plików',
+  'repoMenu.revealFileManager': 'Pokaż w menedżerze plików',
+  'repoMenu.openEditor': 'Otwórz w edytorze zewnętrznym',
+  'repoMenu.remove': 'Usuń…'
 }

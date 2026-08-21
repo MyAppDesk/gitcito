@@ -15,7 +15,10 @@ Tres niveles, del más suelto al más apretado.
 Un repositorio, una pestaña. Usa <kbd>⌘T</kbd> / <kbd>Ctrl+T</kbd> para abrir
 el selector de pestaña nueva y <kbd>⌘W</kbd> / <kbd>Ctrl+W</kbd> para cerrar la
 activa. También puedes arrastrar para reordenar, cerrar con el botón central, o
-pulsar <kbd>⌘⇧T</kbd> para reabrir la última que cerraste. Cierra la última
+pulsar <kbd>⌘⇧T</kbd> para reabrir la última que cerraste. Haz clic derecho en
+una pestaña de repositorio (o en una ficha dentro de un [grupo](#grupos)) para
+el [menú contextual del repositorio](repo-menu.md) — alias, worktrees, GitHub,
+terminal, mostrar, editor y quitar. Cierra la última
 pestaña y <kbd>⌘W</kbd> cierra la ventana. Un punto en la pestaña significa
 trabajo sin commitear; otro distinto significa conflictos.
 

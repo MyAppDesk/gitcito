@@ -3,7 +3,7 @@ title: Commit almak
 category: Değişikliklerle çalışma
 order: 31
 summary: Mesaj biçemleri, şablonlar, ortak yazarlar ve linter.
-keywords: commit mesaj besteci conventional gitmoji ticket amend şablon ortak yazar linter template co-author
+keywords: commit mesaj besteci conventional gitmoji ticket amend şablon ortak yazar linter template co-author geri al sıfırla undo reset
 ---
 
 # Commit almak
@@ -45,5 +45,15 @@ engellemez.
 
 Amend, son commit'i hazırlanmış olan neyse onunla yeniden yazar. Gitcito size
 önce mevcut mesajı gösterir; böylece baştan yazmak yerine düzenlemiş olursunuz.
+
+**Commit’i düzelt…** grafikteki bir satırda HEAD için aynı şeyi yapar: mesajın
+tamamını yükler, besteci panelini amend kipine alır ve ona odaklanır. Zaten
+push edilmiş bir HEAD yine de düzeltilebilir; ama Gitcito, uzak depoyu
+güncellemenin bir force push gerektireceği konusunda uyarır.
+
+**Commit’i geri al…** ise push edilmemiş bir HEAD için olan kardeşidir: üst
+commit'e mixed reset, çalışma ağacındaki değişiklikler korunur, mesaj besteci
+paneline geri gelir. İlk commit'in, dosyaları yok etmek yerine geride doğmamış
+bir dal bırakan kendine özgü bir yolu vardır.
 
 **Ayrıca bakınız:** [Hazırlama](staging.md) · [Absorb](absorb.md) · [Changelog üreteci](changelog.md)

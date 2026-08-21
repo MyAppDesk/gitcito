@@ -3,7 +3,7 @@ title: Committing
 category: Working with changes
 order: 31
 summary: Message styles, templates, co-authors and the linter.
-keywords: commit message composer conventional gitmoji ticket amend template co-author linter
+keywords: commit message composer conventional gitmoji ticket amend template co-author linter undo reset
 ---
 
 # Committing
@@ -43,5 +43,15 @@ Hints, never a gate — it will not stop you committing.
 
 Amend rewrites the last commit with whatever is staged. Gitcito shows you the
 existing message first so you are editing, not retyping.
+
+**Amend Commit…** on a graph row does the same thing for HEAD: it loads the
+full message, switches the composer into amend mode, and focuses it. A HEAD
+that was already pushed can still be amended, but Gitcito warns that updating
+the remote will take a force push.
+
+**Undo Commit…** is the sibling for an unpushed HEAD: mixed reset to the
+parent, working-tree changes kept, message restored to the composer. The
+initial commit has a dedicated path that leaves an unborn branch instead of
+destroying the files.
 
 **See also:** [Staging](staging.md) · [Absorb](absorb.md) · [Changelog generator](changelog.md)

@@ -17,40 +17,13 @@ import {
 } from '../lib/repoFolders'
 import { ProfileSwitcher } from './ProfileSwitcher'
 import { WorkspaceSwitcher } from './WorkspaceSwitcher'
-import { folderOpenMenuItems } from '../lib/openWith'
 import { tabLabel } from '../lib/tabLabel'
-import { closeTabPrompt, repoCloseStatus, tabCloseStatus, type TabStatus } from '../lib/tabClose'
-import { useT, t as translate, interp } from '../i18n'
+import { repoCloseStatus, tabCloseStatus, type TabStatus } from '../lib/tabClose'
+import { repoDisplayName } from '../lib/repoAlias'
+import { confirmRemoveRepoFromGroup, repositoryMenuItems, requestCloseTab } from '../lib/repositoryMenuItems'
+import { useT, interp } from '../i18n'
 
-/** Close a tab through the same configured confirmation path used by its X button. */
-export function requestCloseTab(tabId: string): void {
-  const settingsStore = useSettingsStore.getState()
-  const tab = settingsStore.settings.tabs.find((candidate) => candidate.id === tabId)
-  if (!tab) return
-
-  const status =
-    tab.kind === 'page' ? null : tabCloseStatus(tab.repos, useRepoStore.getState().repos)
-  const prompt = closeTabPrompt(tab, status, settingsStore.settings.warnOnClose)
-  if (!prompt) {
-    settingsStore.closeTab(tab.id)
-    return
-  }
-
-  useUIStore.getState().openModal({
-    kind: 'confirm',
-    title: translate(prompt.titleKey),
-    message: prompt.vars
-      ? interp(translate(prompt.messageKey), {
-          ...prompt.vars,
-          ...(prompt.reasonKey ? { reason: translate(prompt.reasonKey) } : {})
-        })
-      : translate(prompt.messageKey),
-    danger: true,
-    confirmLabel: translate('common.close'),
-    autoFocusConfirm: prompt.autoFocusConfirm,
-    onConfirm: () => settingsStore.closeTab(tab.id)
-  })
-}
+export { requestCloseTab }
 
 // Tracing for the folder drag & drop, off by default: it logs on every dragover,
 // which is unusable noise outside of debugging that specific behaviour.
@@ -111,7 +84,7 @@ export function TitleBar(): React.JSX.Element {
   const t = useT()
   const {
     settings, setGroupActiveRepo, closeTab, setActiveTab, renameTab,
-    setTabColor, toggleTabCollapsed, removeRepoFromGroup, renameRepoInGroup,
+    setTabColor, toggleTabCollapsed,
     reorderTabs, moveTabIntoGroup, ejectRepoFromGroup,
     moveRepoBetweenGroups, reorderReposInGroup, moveTabToWorkspace,
     createFolder, renameFolder, setFolderColor, removeFolder,
@@ -579,42 +552,8 @@ export function TitleBar(): React.JSX.Element {
   // ── menus ───────────────────────────────────────────────────────────────
   const plusMenu = (): void => openModal({ kind: 'launcher' })
 
-  const confirmRemoveRepo = (groupTabId: string, repoPath: string): void => {
-    const warn = settings.warnOnClose ?? 'always'
-    const status = repoStatus(repoPath)
-    const shouldWarn = warn === 'always' || (warn === 'wip' && status !== null)
-    if (!shouldWarn) { removeRepoFromGroup(groupTabId, repoPath); return }
-    const message =
-      status === 'conflict'
-        ? t('titlebar.removeRepoConflicts')
-        : status === 'wip'
-          ? t('titlebar.removeRepoWip')
-          : t('titlebar.removeRepoConfirm')
-    openModal({
-      kind: 'confirm',
-      title: t('titlebar.removeRepoTitle'),
-      message,
-      danger: true,
-      confirmLabel: t('common.remove'),
-      onConfirm: () => removeRepoFromGroup(groupTabId, repoPath)
-    })
-  }
-
-  // Opens the repo's root folder, or an app the user has picked as their default
-  // "Open with" target (e.g. VS Code, like running `code <path>`), or shows the
-  // native "Open With…" picker to choose one-off.
-  const openRepoMenuItems = (repoPath: string): MenuItem[] =>
-    folderOpenMenuItems(
-      repoPath,
-      settings.defaultOpenApp,
-      {
-        openFolder: t('sidebar.openFolder'),
-        openWithDefault: (name) => interp(t('sidebar.openWithApp'), { name }),
-        openWith: t('sidebar.openFolderWith'),
-        copyPath: t('common.copyFolderPath')
-      },
-      settings.editor
-    )
+  const confirmRemoveRepo = (groupTabId: string, repoPath: string): void =>
+    confirmRemoveRepoFromGroup(groupTabId, repoPath)
 
   // "Move to workspace →" submenu — only offered when another workspace exists.
   const moveToWorkspaceItem = (tab: TabState): MenuItem | null => {
@@ -638,10 +577,13 @@ export function TitleBar(): React.JSX.Element {
         { label: t('titlebar.closeTab'), onClick: () => closeTab(tab.id) }
       ]
     }
-    const items: MenuItem[] = []
     if (tab.kind === 'repo' && tab.repos[0]) {
-      items.push(...openRepoMenuItems(tab.repos[0].path), { separator: true })
+      const extras: MenuItem[] = []
+      const move = moveToWorkspaceItem(tab)
+      if (move) extras.push(move)
+      return repositoryMenuItems(tab.repos[0].path, () => requestCloseTab(tab.id), extras)
     }
+    const items: MenuItem[] = []
     if (tab.kind === 'group') {
       if (tab.repos.length > 0) {
         const paths = tab.repos.map((r) => r.path)
@@ -826,37 +768,18 @@ export function TitleBar(): React.JSX.Element {
       icon: <FolderPlus size={15} />,
       onClick: () => promptNewFolder(groupTab.id, null)
     }
-    return [
-      ...openRepoMenuItems(repoPath),
-      { separator: true },
-      filing,
-      { separator: true },
-      {
-        label: t('titlebar.rename'),
-        onClick: () => {
-          const currentName = groupTab.repos.find((r) => r.path === repoPath)?.name ?? ''
-          openModal({
-            kind: 'input',
-            title: t('titlebar.renameRepo'),
-            label: t('modal.name'),
-            initial: currentName,
-            submitLabel: t('common.rename'),
-            onSubmit: (name) => renameRepoInGroup(groupTab.id, repoPath, name)
-          })
+    return repositoryMenuItems(
+      repoPath,
+      () => confirmRemoveRepo(groupTab.id, repoPath),
+      [
+        filing,
+        { separator: true },
+        {
+          label: t('titlebar.eject'),
+          onClick: () => ejectRepoFromGroup(groupTab.id, repoPath, null)
         }
-      },
-      { separator: true },
-      {
-        label: t('titlebar.eject'),
-        onClick: () => ejectRepoFromGroup(groupTab.id, repoPath, null)
-      },
-      { separator: true },
-      {
-        label: t('titlebar.removeFromGroup'),
-        danger: true,
-        onClick: () => confirmRemoveRepo(groupTab.id, repoPath)
-      }
-    ]
+      ]
+    )
   }
 
   // Worst status found anywhere under a folder, so a collapsed folder still
@@ -905,7 +828,7 @@ export function TitleBar(): React.JSX.Element {
         transition={{ duration: 0.2, ease: 'easeInOut' }}
       >
         <FolderGit2 size={13} />
-        <span className="tab-name">{repo.name}</span>
+        <span className="tab-name">{repoDisplayName(repo.path, settings.repoAliases, repo.name)}</span>
         {rs && (
           <span
             className={`tab-status tab-status-${rs}`}
@@ -914,8 +837,8 @@ export function TitleBar(): React.JSX.Element {
         )}
         <button
           className="tab-close"
-          aria-label={interp(t('a11y.closeTab'), { name: repo.name })}
-          title={interp(t('a11y.closeTab'), { name: repo.name })}
+          aria-label={interp(t('a11y.closeTab'), { name: repoDisplayName(repo.path, settings.repoAliases, repo.name) })}
+          title={interp(t('a11y.closeTab'), { name: repoDisplayName(repo.path, settings.repoAliases, repo.name) })}
           onClick={(e) => {
             e.stopPropagation()
             confirmRemoveRepo(tab.id, repo.path)

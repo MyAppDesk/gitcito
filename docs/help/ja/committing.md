@@ -3,7 +3,7 @@ title: コミット
 category: 変更を扱う
 order: 31
 summary: メッセージのスタイル、テンプレート、共著者、そしてリンター。
-keywords: commit message composer conventional gitmoji ticket amend template co-author linter コミット メッセージ 入力欄 チケット 修正 テンプレート 共著者 リンター
+keywords: commit message composer conventional gitmoji ticket amend template co-author linter undo reset コミット メッセージ 入力欄 チケット 修正 テンプレート 共著者 リンター 取り消し リセット
 ---
 
 # コミット
@@ -44,5 +44,15 @@ keywords: commit message composer conventional gitmoji ticket amend template co-
 
 修正は、ステージされているものを使って直前のコミットを書き換えます。Gitcito は
 既存のメッセージを先に表示するので、打ち直すのではなく編集することになります。
+
+グラフの行にある **コミットを修正…** は、同じことを HEAD に対して行います。
+メッセージ全体を読み込み、入力欄を修正モードに切り替えて、フォーカスを移します。
+すでにプッシュ済みの HEAD でも修正はできますが、リモートを更新するには強制
+プッシュが必要になると Gitcito が警告します。
+
+**コミットを取り消す…** は、未プッシュの HEAD 向けの対になる操作です。親への
+mixed リセットを行い、作業ツリーの変更は保たれ、メッセージは入力欄に復元されます。
+最初のコミットには専用の経路があり、ファイルを壊す代わりに未出生（unborn）の
+ブランチを残します。
 
 **関連項目:** [ステージング](staging.md) · [アブソーブ](absorb.md) · [変更履歴ジェネレータ](changelog.md)

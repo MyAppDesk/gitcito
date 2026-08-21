@@ -15,7 +15,10 @@ En gevşekten en sıkıya üç düzey.
 Bir depo, bir sekme. Yeni sekme seçicisini açmak için <kbd>⌘T</kbd> /
 <kbd>Ctrl+T</kbd>, etkin sekmeyi kapatmak için <kbd>⌘W</kbd> / <kbd>Ctrl+W</kbd>
 kullanın. Ayrıca sürükleyerek sıralayabilir, orta tıkla kapatabilir ya da en son
-kapattığınızı yeniden açmak için <kbd>⌘⇧T</kbd> tuşuna basabilirsiniz. Son
+kapattığınızı yeniden açmak için <kbd>⌘⇧T</kbd> tuşuna basabilirsiniz. Bir depo
+sekmesine (ya da bir [grup](#gruplar) içindeki çipe) sağ tıklamak
+[depo bağlam menüsünü](repo-menu.md) getirir — takma ad, worktree'ler, GitHub,
+terminal, gösterme, düzenleyici ve kaldırma. Son
 sekmeyi kapatın; <kbd>⌘W</kbd> bu kez pencereyi kapatır. Sekmedeki bir nokta
 commit'lenmemiş çalışma, farklı bir nokta ise çakışma anlamına gelir.
 

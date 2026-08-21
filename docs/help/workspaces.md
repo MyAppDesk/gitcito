@@ -15,9 +15,11 @@ Three levels, from loosest to tightest.
 One repository, one tab. Use <kbd>⌘T</kbd> / <kbd>Ctrl+T</kbd> to open the
 new-tab picker and <kbd>⌘W</kbd> / <kbd>Ctrl+W</kbd> to close the active tab.
 You can also drag to reorder, middle-click to close, or press <kbd>⌘⇧T</kbd>
-to reopen the last one you closed. Close the last tab and <kbd>⌘W</kbd> closes
-the window instead. A dot on the tab means uncommitted work; a different one
-means conflicts.
+to reopen the last one you closed. Right-click a repository tab (or a chip
+inside a [group](#groups)) for the [repository context menu](repo-menu.md) —
+alias, worktrees, GitHub, terminal, reveal, editor, and remove. Close the last
+tab and <kbd>⌘W</kbd> closes the window instead. A dot on the tab means
+uncommitted work; a different one means conflicts.
 
 If a close warning appears, <kbd>Escape</kbd> always cancels. <kbd>Enter</kbd>
 confirms only when the tab is clean — when there are uncommitted changes or

@@ -16,8 +16,10 @@ Un dépôt, un onglet. Utilisez <kbd>⌘T</kbd> / <kbd>Ctrl+T</kbd> pour ouvrir 
 sélecteur de nouvel onglet et <kbd>⌘W</kbd> / <kbd>Ctrl+W</kbd> pour fermer
 l'onglet actif. Vous pouvez aussi glisser pour réordonner, cliquer avec le bouton
 du milieu pour fermer, ou appuyer sur <kbd>⌘⇧T</kbd> pour rouvrir le dernier
-onglet fermé. Fermez le dernier onglet et <kbd>⌘W</kbd> ferme la fenêtre à la
-place. Un point sur l'onglet signale du travail non validé ; un autre signale des
+onglet fermé. Un clic droit sur un onglet de dépôt (ou sur une pastille dans un
+[groupe](#groupes)) ouvre le [menu contextuel du dépôt](repo-menu.md) — alias,
+worktrees, GitHub, terminal, affichage, éditeur et retrait. Fermez le dernier
+onglet et <kbd>⌘W</kbd> ferme la fenêtre à la place. Un point sur l'onglet signale du travail non validé ; un autre signale des
 conflits.
 
 Si un avertissement de fermeture apparaît, <kbd>Escape</kbd> annule toujours.

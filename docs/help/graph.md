@@ -3,7 +3,7 @@ title: The commit graph
 category: Repository & history
 order: 10
 summary: Reading history: lanes, refs, columns, filters and multi-select.
-keywords: graph history commits lanes branches merges columns filter linear first-parent
+keywords: graph history commits lanes branches merges columns filter linear first-parent amend undo reset github
 ---
 
 # The commit graph
@@ -24,6 +24,9 @@ with a hundred.
   cherry-pick them onto the current branch, squash a contiguous run, export one
   combined patch, or copy their SHAs.
 - Commits that arrived in your **last fetch or pull** are flagged as new.
+- Right-click a commit for **Amend**, **Undo**, **Reset to Commit…** and
+  **View on GitHub**, plus checkout, cherry-pick, revert, branch, tag and
+  copy. Unsafe actions stay visible and disable.
 
 ## Making it show what you want
 

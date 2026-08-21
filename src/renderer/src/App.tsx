@@ -27,6 +27,7 @@ import { UpdateBanner } from './components/UpdateBanner'
 import { RepoCosmos } from './components/cosmos/RepoCosmos'
 import { useUpdatesStore, hasPendingUpdate } from './stores/updates'
 import { Welcome, LauncherPanel, type LauncherItem } from './components/Welcome'
+import { confirmRemoveRecentRepo, confirmRemoveRepoFromGroup } from './lib/repositoryMenuItems'
 import { OnboardingWizard } from './components/OnboardingWizard'
 import { ChangelogPage } from './components/ChangelogPage'
 import { LicensesPage } from './components/LicensesPage'
@@ -80,7 +81,7 @@ function InitRepo({ path }: { path: string }): React.JSX.Element {
 
 function GroupView({ tab }: { tab: GroupTab }): React.JSX.Element {
   const t = useT()
-  const { settings, addRepoToGroup, removeRepoFromGroup, renameRepoInGroup, reorderReposInGroup, setGroupActiveRepo } = useSettingsStore()
+  const { settings, addRepoToGroup, renameRepoInGroup, reorderReposInGroup, setGroupActiveRepo } = useSettingsStore()
   const openModal = useUIStore((s) => s.openModal)
 
   const openRepo = async (): Promise<void> => {
@@ -101,7 +102,7 @@ function GroupView({ tab }: { tab: GroupTab }): React.JSX.Element {
     name: r.name,
     path: r.path,
     onSelect: () => setGroupActiveRepo(tab.id, r.path),
-    onRemove: () => removeRepoFromGroup(tab.id, r.path),
+    onRemove: () => confirmRemoveRepoFromGroup(tab.id, r.path),
     onRename: (newName) => renameRepoInGroup(tab.id, r.path, newName)
   }))
 
@@ -110,7 +111,8 @@ function GroupView({ tab }: { tab: GroupTab }): React.JSX.Element {
     .map((r) => ({
       name: r.name,
       path: r.path,
-      onSelect: () => addRepoToGroup(tab.id, r)
+      onSelect: () => addRepoToGroup(tab.id, r),
+      onRemove: () => confirmRemoveRecentRepo(r.path)
     }))
 
   return (

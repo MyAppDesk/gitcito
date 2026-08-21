@@ -15,8 +15,11 @@ Trzy poziomy, od najluźniejszego do najściślejszego.
 Jedno repozytorium, jedna karta. <kbd>⌘T</kbd> / <kbd>Ctrl+T</kbd> otwiera wybór
 nowej karty, a <kbd>⌘W</kbd> / <kbd>Ctrl+W</kbd> zamyka aktywną. Karty można też
 przeciągać, żeby zmienić kolejność, zamykać środkowym przyciskiem myszy albo
-przywracać ostatnio zamkniętą przez <kbd>⌘⇧T</kbd>. Zamknij ostatnią kartę,
-a <kbd>⌘W</kbd> zamknie zamiast niej okno. Kropka na karcie oznacza
+przywracać ostatnio zamkniętą przez <kbd>⌘⇧T</kbd>. Kliknij kartę repozytorium
+(albo chip wewnątrz [grupy](#grupy)) prawym przyciskiem, żeby dostać
+[menu kontekstowe repozytorium](repo-menu.md) — alias, worktree, GitHub,
+terminal, pokazanie w menedżerze plików, edytor i usuwanie. Zamknij ostatnią
+kartę, a <kbd>⌘W</kbd> zamknie zamiast niej okno. Kropka na karcie oznacza
 niezacommitowaną pracę; inna kropka oznacza konflikty.
 
 Jeśli pojawi się ostrzeżenie przy zamykaniu, <kbd>Escape</kbd> zawsze anuluje.

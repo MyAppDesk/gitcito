@@ -3,7 +3,7 @@ title: Birleştirme ve rebase
 category: Dallanma ve cerrahi
 order: 41
 summary: Merge, rebase, ref karşılaştırma ve kenar çubuğunda ya da grafikte bir ref'i diğerinin üzerine sürükleme.
-keywords: birleştirme merge rebase fast-forward karşılaştırma ref sürükle bırak dal grafik rozet etiket uzak revert reset cherry-pick
+keywords: birleştirme merge rebase fast-forward karşılaştırma ref sürükle bırak dal grafik rozet etiket uzak revert reset cherry-pick amend geri al undo github
 ---
 
 # Birleştirme ve rebase
@@ -63,9 +63,31 @@ Kenar çubuğundan (geçerli dalla karşılaştır), Araçlar menüsünden ya da
 
 ## Cherry-pick, revert, reset
 
-Üçü de grafiğin bağlam menüsünde. Reset **soft / mixed / hard** seçeneklerini
-sunar ve siz seçmeden önce her birinin çalışma dizininize ne yapacağını açıkça
-yazar.
+Cherry-pick ve revert her zamanki gibi grafiğin bağlam menüsünde durur.
+**Reset** ise birbirini yalanlayan üç ham soft/mixed/hard öğe yerine tek bir
+girdidir — **Commit’e sıfırla…**.
+
+Amend, geri alma ve sıfırlama tek commit menüsünün en üstünde durur ve
+**güvenli olmadıklarında da görünür kalır**: devre dışı kalırlar ve nedenini
+söyleyen bir ipucu taşırlar. Geri alma yalnızca push edilmemiş bir HEAD
+içindir; amend yayımlanmış bir HEAD'de de yapılabilir ama bir force push
+gerekeceği konusunda uyarır. Sıfırlama yalnızca yerel atalara ve ilk
+yayımlanmış commit'e uzanır — keyfî eski geçmişe değil.
+
+Sıfırlama iletişim kutusu kipi açıkça ortaya koyar:
+
+![Üç kipin açıkça yazıldığı Commit’e sıfırla iletişim kutusu](../../screenshots/reset-to-commit.webp)
+
+| Kip | Sonuç |
+|------|--------|
+| **Soft** | Değişiklikleri staged tutar |
+| **Mixed** | Değişiklikleri unstaged tutar |
+| **Hard** | Commit'leri ve değişikliklerini atar |
+
+Hard asla önceden seçili gelmez. Kirli bir çalışma ağacı fazladan bir uyarı
+alır, çünkü sıfırlama sürmekte olan çalışmanın üzerine yazabilir ya da onunla
+çakışabilir. **GitHub’da görüntüle** kopyalama eylemlerinin yanında durur ve
+yalnızca github.com uzak deposundaki yayımlanmış commit'ler için açılır.
 
 Önce birden fazla commit seçerseniz cherry-pick seçimin tamamını sırayla
 uygular.

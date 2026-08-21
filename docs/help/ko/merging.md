@@ -3,7 +3,7 @@ title: 머지와 리베이스
 category: 브랜치와 수술
 order: 41
 summary: 머지하고, 리베이스하고, 레퍼런스를 비교하고, 사이드바나 그래프에서 하나를 다른 하나 위로 끌어다 놓으세요.
-keywords: 머지 merge 리베이스 rebase fast-forward 비교 compare refs 끌어다 놓기 drag drop 브랜치 branch onto 그래프 graph ref 배지 badge 태그 tag 원격 remote revert reset cherry-pick
+keywords: 머지 merge 리베이스 rebase fast-forward 비교 compare refs 끌어다 놓기 drag drop 브랜치 branch onto 그래프 graph ref 배지 badge 태그 tag 원격 remote revert reset cherry-pick amend 수정 undo 되돌리기 github
 ---
 
 # 머지와 리베이스
@@ -58,8 +58,30 @@ Gitcito가 그 놓기가 뜻할 수 있는 것들을 작은 메뉴로 보여 주
 
 ## 체리픽, 리버트, 리셋
 
-셋 다 그래프의 컨텍스트 메뉴에 있어요. 리셋은 **soft / mixed / hard**를 제안하고,
-고르기 전에 각각이 작업 트리에 무슨 일을 하는지 또박또박 알려 줘요.
+체리픽과 리버트는 늘 그랬듯 그래프의 컨텍스트 메뉴에 있어요. 리셋은 항목
+하나 — **커밋으로 리셋…** — 가 됐어요. 서로 모순되던 soft/mixed/hard 세 개의
+날것 항목 대신에요.
+
+수정, 되돌리기, 리셋은 단일 커밋 메뉴의 맨 위에 놓이고, 안전하지 않을 때도
+**사라지지 않아요**. 비활성화되고, 이유를 알려 주는 툴팁이 붙어요. 되돌리기는
+푸시하지 않은 HEAD 전용이에요. 수정은 공개된 HEAD에도 허용되지만, 강제 푸시가
+필요해질 거라고 경고해요. 리셋은 로컬 조상과 첫 번째 공개된 커밋까지만 닿아요 —
+그보다 오래된 임의의 히스토리에는 닿지 않아요.
+
+리셋 대화 상자는 모드를 분명하게 보여 줘요:
+
+![세 가지 모드가 또박또박 적힌 커밋으로 리셋 대화 상자](../../screenshots/reset-to-commit.webp)
+
+| 모드 | 결과 |
+|------|--------|
+| **Soft** | 변경을 스테이징된 채로 남겨요 |
+| **Mixed** | 변경을 스테이징하지 않은 채로 남겨요 |
+| **Hard** | 커밋과 그 변경을 버려요 |
+
+Hard가 미리 선택되어 있는 일은 절대 없어요. 작업 트리가 더럽혀져 있으면 경고가
+하나 더 붙어요. 리셋이 진행 중인 작업을 덮어쓰거나 충돌시킬 수 있으니까요.
+**GitHub에서 보기**는 복사 동작들 옆에 있고, github.com 원격에 공개된 커밋에
+대해서만 열려요.
 
 커밋을 여러 개 선택해 두면 체리픽이 선택 전체를 순서대로 적용해요.
 

@@ -3,7 +3,7 @@ title: Fusion et rebase
 category: Branches et chirurgie
 order: 41
 summary: Fusionner, rebaser, comparer des références, et glisser une référence sur une autre dans la barre latérale ou dans le graphe.
-keywords: fusion merge rebase avance rapide fast-forward comparer compare références refs glisser déposer drag drop branche sur graphe badge de référence étiquette tag distant remote revert reset cherry-pick
+keywords: fusion merge rebase avance rapide fast-forward comparer compare références refs glisser déposer drag drop branche sur graphe badge de référence étiquette tag distant remote revert reset cherry-pick amender amend annuler undo github
 ---
 
 # Fusion et rebase
@@ -67,9 +67,32 @@ le menu Outils, ou par <kbd>⌘K</kbd>.
 
 ## Cherry-pick, revert, réinitialisation
 
-Les trois depuis le menu contextuel du graphe. La réinitialisation propose
-**soft / mixed / hard** et explique ce que chacune fait à votre copie de travail
-avant que vous ne choisissiez.
+Le cherry-pick et le revert vivent dans le menu contextuel du graphe, comme ils
+l'ont toujours fait. **La réinitialisation** est une seule entrée —
+**Réinitialiser au commit…** — au lieu de trois éléments soft/mixed/hard bruts
+qui se contredisaient.
+
+Amender, annuler et réinitialiser sont en haut du menu de commit unique et
+restent **visibles quand ils sont risqués** : ils se désactivent, avec une
+info-bulle qui dit pourquoi. Annuler n'existe que pour un HEAD non poussé ;
+amender est aussi permis sur un HEAD publié, mais prévient qu'un push forcé
+sera nécessaire. La réinitialisation n'atteint que les ancêtres locaux plus le
+premier commit publié — pas un historique plus ancien arbitraire.
+
+La boîte de dialogue de réinitialisation rend le mode explicite :
+
+![La boîte de dialogue Réinitialiser au commit, avec les trois modes détaillés](../../screenshots/reset-to-commit.webp)
+
+| Mode | Résultat |
+|------|----------|
+| **Soft** | Garder les changements indexés |
+| **Mixed** | Garder les changements non indexés |
+| **Hard** | Jeter les commits et leurs changements |
+
+Hard n'est jamais présélectionné. Un arbre de travail sale reçoit un
+avertissement supplémentaire, parce que réinitialiser peut écraser du travail en
+cours ou entrer en conflit avec lui. **Voir sur GitHub** vit avec les actions de
+copie et ne s'ouvre que pour les commits publiés sur un distant github.com.
 
 Sélectionnez d'abord plusieurs commits et le cherry-pick applique toute la
 sélection, dans l'ordre.

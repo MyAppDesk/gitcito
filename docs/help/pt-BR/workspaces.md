@@ -15,8 +15,11 @@ Três níveis, do mais solto ao mais apertado.
 Um repositório, uma aba. Use <kbd>⌘T</kbd> / <kbd>Ctrl+T</kbd> para abrir o
 seletor de nova aba e <kbd>⌘W</kbd> / <kbd>Ctrl+W</kbd> para fechar a aba ativa.
 Você também pode arrastar para reordenar, clicar com o botão do meio para fechar,
-ou apertar <kbd>⌘⇧T</kbd> para reabrir a última que fechou. Feche a última aba e
-o <kbd>⌘W</kbd> fecha a janela. Um ponto na aba significa trabalho não commitado;
+ou apertar <kbd>⌘⇧T</kbd> para reabrir a última que fechou. Clique com o botão
+direito numa aba de repositório (ou num chip dentro de um [grupo](#grupos)) para
+o [menu de contexto do repositório](repo-menu.md) — alias, worktrees, GitHub,
+terminal, mostrar no gerenciador de arquivos, editor e remoção. Feche a última
+aba e o <kbd>⌘W</kbd> fecha a janela. Um ponto na aba significa trabalho não commitado;
 um ponto diferente significa conflitos.
 
 Se um aviso de fechamento aparecer, <kbd>Escape</kbd> sempre cancela.

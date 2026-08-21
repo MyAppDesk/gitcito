@@ -112,6 +112,8 @@ export const ko: Dict = {
   'common.add': '추가',
   'common.copyFilePath': '파일 경로 복사',
   'common.copyFolderPath': '폴더 경로 복사',
+  'fileMenu.copyFilePath': '파일 경로 복사',
+  'fileMenu.copyRelativeFilePath': '상대 파일 경로 복사',
 
   // 충돌 해결 도구
   'conflict.resolved': '해결됨',
@@ -1499,6 +1501,41 @@ export const ko: Dict = {
   'commit.changedFiles': '변경된 파일 {n}개',
   'commit.openDefaultApp': '기본 앱으로 열기',
 
+  // 단일 커밋 동작 (그래프 컨텍스트 메뉴)
+  'commitMenu.amend': '커밋 수정…',
+  'commitMenu.undo': '커밋 되돌리기…',
+  'commitMenu.resetTo': '이 커밋으로 리셋…',
+  'commitMenu.viewOnGitHub': 'GitHub에서 보기',
+  'commitMenu.disabled.notHead': '현재 HEAD 커밋만 할 수 있습니다.',
+  'commitMenu.disabled.detached': '먼저 로컬 브랜치를 체크아웃하세요.',
+  'commitMenu.disabled.published': '이 커밋은 이미 푸시되었습니다.',
+  'commitMenu.disabled.notAncestor': '이 커밋은 HEAD의 조상이 아닙니다.',
+  'commitMenu.disabled.beyondReset': '이 커밋은 로컬 리셋 경계보다 이전입니다.',
+  'commitMenu.disabled.operation': 'Git 작업이 진행 중일 때는 사용할 수 없습니다.',
+  'commitMenu.disabled.inflight': '다른 Git 명령이 실행 중일 때는 사용할 수 없습니다.',
+  'commitMenu.disabled.notOnGitHub': 'GitHub 원격이 없거나 이 커밋이 게시되지 않았습니다.',
+  'commitMenu.amendPublishedTitle': '게시된 커밋을 수정할까요?',
+  'commitMenu.amendPublishedMsg':
+    '{branch}는 이미 푸시되었습니다. 수정하면 기록이 바뀌므로 원격을 갱신하려면 강제 푸시가 필요합니다.',
+  'commitMenu.amendPublishedConfirm': '계속',
+  'commitMenu.undoTitle': '커밋 되돌리기',
+  'commitMenu.undoMsg':
+    '{branch}를 {sha}의 부모로 옮기고 변경은 스테이징하지 않은 채로 둡니다. 메시지는 작성기로 돌아갑니다.',
+  'commitMenu.undoRootMsg':
+    '{branch}의 첫 커밋입니다. 되돌리면 브랜치가 태어나지 않은 상태가 되고 작업 트리의 파일은 유지됩니다.',
+  'commitMenu.undoDirty':
+    '커밋하지 않은 변경이 있습니다. 작업 트리에서 되돌린 커밋과 섞입니다.',
+  'commitMenu.undoConfirm': '커밋 되돌리기',
+  'commitMenu.resetTitle': '커밋으로 리셋',
+  'commitMenu.resetMsg': '{branch}를 {sha}로 옮깁니다. 뒤에 남는 커밋을 어떻게 처리할까요:',
+  'commitMenu.resetSoft': 'Soft — 변경을 스테이징된 채로 유지',
+  'commitMenu.resetMixed': 'Mixed — 변경을 스테이징하지 않은 채로 유지',
+  'commitMenu.resetHard': 'Hard — 커밋과 변경을 버림',
+  'commitMenu.resetDirty': '커밋하지 않은 변경이 있습니다. 리셋이 진행 중인 작업을 덮어쓰거나 충돌할 수 있습니다.',
+  'commitMenu.resetHardWarn': '하드 리셋은 커밋하지 않은 작업과 {sha} 이후의 모든 커밋을 버립니다.',
+  'commitMenu.resetConfirm': '리셋',
+  'commitMenu.resetHardConfirm': '버리고 리셋',
+
   // 태그 컨텍스트 메뉴 (그래프)
   'tag.checkout': '{tag} 체크아웃',
   'tag.worktree': '이 커밋에서 워크트리 만들기…',
@@ -2743,6 +2780,7 @@ export const ko: Dict = {
   'act.aborted': '{kind} — 중단했습니다',
   'act.reverted': '{sha} — 되돌렸습니다',
   'act.reset': '{sha}로 리셋했습니다 ({mode})',
+  'act.undidCommit': '{sha} 커밋을 되돌렸습니다',
   'act.createdTag': '태그 {name} — 만들었습니다',
   'act.deletedTag': '태그 {name} — 삭제했습니다',
   'act.pushedTag': '태그 {name}을 {remote}에 푸시했습니다',
@@ -2798,6 +2836,8 @@ export const ko: Dict = {
   'undoLabel.cherryPick': '체리픽',
   'undoLabel.squash': '스쿼시',
   'undoLabel.revert': '되돌리기',
+  'undoLabel.undoCommit': '커밋 되돌리기',
+  'undoLabel.resetToCommit': '{sha}로 리셋',
   'undoLabel.tag': '태그 {name}',
   'gitmoji.none': '없음',
   'composer.ignoreAndUntrackMsg': '{what}를 .gitignore에 추가하고 Git 추적에서 뺍니다. 파일은 디스크에 그대로 남습니다.',
@@ -3151,5 +3191,21 @@ export const ko: Dict = {
   'askAction.createFile': '파일 만들기',
   'askAction.editFile': '파일 편집',
   'askAction.replaceFile': '파일 바꾸기',
-  'askAction.deleteFile': '파일 삭제'
+  'askAction.deleteFile': '파일 삭제',
+  'repoMenu.createAlias': '별칭 만들기…',
+  'repoMenu.changeAlias': '별칭 변경…',
+  'repoMenu.removeAlias': '별칭 제거',
+  'repoMenu.aliasTitle': '저장소 별칭',
+  'repoMenu.aliasLabel': '표시 이름',
+  'repoMenu.showWorktrees': '워크트리 표시',
+  'repoMenu.newWorktree': '새 워크트리…',
+  'repoMenu.copyName': '저장소 이름 복사',
+  'repoMenu.copyPath': '저장소 경로 복사',
+  'repoMenu.viewOnGitHub': 'GitHub에서 보기',
+  'repoMenu.openTerminal': '터미널에서 열기',
+  'repoMenu.revealFinder': 'Finder에서 보기',
+  'repoMenu.revealExplorer': '파일 탐색기에서 보기',
+  'repoMenu.revealFileManager': '파일 관리자에서 보기',
+  'repoMenu.openEditor': '외부 편집기에서 열기',
+  'repoMenu.remove': '제거…'
 }

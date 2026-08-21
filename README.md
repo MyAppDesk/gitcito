@@ -66,7 +66,7 @@ git actually is.
 
 | | |
 |---|---|
-| **[Commit composer](docs/help/committing.md)** | Conventional, Gitmoji, Ticket, Plain… even Caveman. Co-author picker, message recall, live linter. |
+| **[Commit composer](docs/help/committing.md)** | Conventional, Gitmoji, Ticket, Plain… even Caveman. Co-author picker, message recall, live linter. Amend and undo from the graph menu prefill it. |
 | **[Staging](docs/help/staging.md)** | Whole files, hunks, or **individual lines**. |
 | **[Conflict resolver](docs/help/conflicts.md)** | Three panes, per-line picking, a conflict-by-conflict navigator, editable output. |
 | **[External diff & merge tools](docs/help/diff-tools.md)** | Hand a file to Kaleidoscope, Beyond Compare, Meld — read straight from git's own tool list. |
@@ -88,7 +88,7 @@ git actually is.
 
 | | |
 |---|---|
-| **[Groups & workspaces](docs/help/workspaces.md)** | Tabs with folders nested to any depth, colour-coded, fetch-all per subtree. |
+| **[Groups & workspaces](docs/help/workspaces.md)** | Tabs with folders nested to any depth, colour-coded, fetch-all per subtree. [Right-click a repository](docs/help/repo-menu.md) for alias, worktrees, GitHub, terminal and remove. |
 | **[Pull requests](docs/help/hosting.md)** | Create on GitHub, GitLab, Bitbucket and Azure DevOps. Review, comment, approve and merge on GitHub. |
 | **[Plumbing, with a UI](docs/help/lfs-sparse.md)** | Stashes, tags, worktrees, submodules, LFS, sparse-checkout, patches, hooks. |
 | **[Subtrees](docs/help/subtree.md)** | Vendor another repo into a directory — and remember where it came from, which git does not. |

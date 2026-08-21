@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Archive, GitCommitHorizontal, Tag, Laptop, Cloud, Check, Settings2, Pencil, Plus, Minus, CheckCircle2, XCircle, Clock, MinusCircle, StickyNote, FlaskConical } from 'lucide-react'
-import type { CiState, CiStatus, GraphCommit, StashInfo, GraphColumnId, GraphFlowColumnId, GraphColumns, FileEntry } from '../../../shared/types'
+import type { CiState, CiStatus, GraphCommit, StashInfo, GraphColumnId, GraphFlowColumnId, GraphColumns, FileEntry, CommitMenuProbe } from '../../../shared/types'
 import { defaultGraphColumns, defaultGraphColumnOrder, defaultGraphStyle } from '../../../shared/types'
 import { GraphHeaderFilter, type FilterOption } from './GraphHeaderFilter'
 import { layoutGraph } from '../graph/layout'
@@ -12,8 +12,14 @@ import { useT, interp } from '../i18n'
 import { Avatar } from './Avatar'
 import { RemoteIcon } from './RemoteIcon'
 import { SignatureBadge } from './SignatureBadge'
-import { gitApi, localCiApi } from '../infrastructure/api'
-import { repoIsGitHub } from '../lib/hosting'
+import { gitApi, localCiApi, shellApi } from '../infrastructure/api'
+import { repoIsGitHub, githubCommitUrl } from '../lib/hosting'
+import {
+  commitMenuCapabilities,
+  commitMenuDisabledKey,
+  splitCommitMessage,
+  type CommitMenuCapabilities
+} from '../lib/commitMenuCapabilities'
 import { branchDropActions, encodeDropRef, BRANCH_DND_TYPE, type DropRef } from '../lib/branchDrop'
 import { openBranchDropMenu } from '../lib/branchDropMenu'
 import { CHAT_COMMIT_MIME } from '../lib/repoChatContext'
@@ -859,8 +865,8 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
       const y = (box?.top ?? 0) + Math.max(0, selectedRow * ROW_H - (scrollRef.current?.scrollTop ?? 0)) + ROW_H
       const stash = stashBySha.get(c.hash)
       if (multi.size > 1 && multi.has(c.hash)) openContextMenu(x, y, multiMenu())
-      else if (stash) openContextMenu(x, y, stashMenu(stash))
-      else if (c.hash !== WIP_HASH) openContextMenu(x, y, commitMenu(c))
+      if (stash) openContextMenu(x, y, stashMenu(stash))
+      else if (c.hash !== WIP_HASH) openCommitMenu(x, y, c)
     }
   }
 
@@ -981,7 +987,36 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
     return items
   }
 
-  const commitMenu = (c: GraphCommit): MenuItem[] => {
+  const openCommitMenu = (x: number, y: number, c: GraphCommit): void => {
+    void (async () => {
+      let probe: CommitMenuProbe
+      try {
+        probe = await gitApi.commitMenuProbe(repo.path, c.hash)
+      } catch {
+        probe = {
+          isHead: false,
+          isOnLocalBranch: false,
+          isPublished: false,
+          isAncestorOfHead: false,
+          isWithinResetBoundary: false,
+          isRoot: true,
+          parentSha: null,
+          operationInProgress: true,
+          message: '',
+          headSha: '',
+          branch: ''
+        }
+      }
+      const caps = commitMenuCapabilities({
+        ...probe,
+        mutationInFlight: useUIStore.getState().inflight > 0,
+        githubCommitUrl: githubCommitUrl(repo.remotes, c.hash)
+      })
+      openContextMenu(x, y, commitMenu(c, caps, probe))
+    })()
+  }
+
+  const commitMenu = (c: GraphCommit, caps: CommitMenuCapabilities, probe: CommitMenuProbe): MenuItem[] => {
     const currentBranch = repo.branches.current.trim()
     const branchNames = buildRefGroups(c.refs, remoteNames).filter((g) => !g.isTag).map((g) => g.label)
     const copyBranch = branchNames.length ? branchNames.join('\n') : currentBranch
@@ -990,8 +1025,79 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
       disabled: !currentBranch || ref === currentBranch,
       onClick: () => void repoActions.merge(repo.path, ref)
     }))
+    const disabledTitle = (action: 'amend' | 'undo' | 'reset' | 'viewOnGitHub'): string | undefined => {
+      const key = commitMenuDisabledKey(caps, action)
+      return key ? t(key) : undefined
+    }
+    const enterAmend = (): void => {
+      const { summary, description } = splitCommitMessage(probe.message)
+      const go = (): void => {
+        useUIStore.getState().requestComposerIntent({
+          path: repo.path,
+          summary,
+          description,
+          amend: true
+        })
+      }
+      if (caps.isPublished) {
+        openModal({
+          kind: 'confirm',
+          title: t('commitMenu.amendPublishedTitle'),
+          message: interp(t('commitMenu.amendPublishedMsg'), { branch: probe.branch || currentBranch }),
+          confirmLabel: t('commitMenu.amendPublishedConfirm'),
+          onConfirm: go
+        })
+        return
+      }
+      go()
+    }
+    const dirty =
+      (repo.status?.staged.length ?? 0) + (repo.status?.unstaged.length ?? 0) > 0
+    const undoMsg = [
+      probe.isRoot
+        ? interp(t('commitMenu.undoRootMsg'), { branch: probe.branch || currentBranch })
+        : interp(t('commitMenu.undoMsg'), { branch: probe.branch || currentBranch, sha: c.hash.slice(0, 7) }),
+      dirty ? t('commitMenu.undoDirty') : ''
+    ]
+      .filter(Boolean)
+      .join('\n\n')
 
     return [
+      {
+        label: t('commitMenu.amend'),
+        disabled: !caps.canAmend,
+        title: disabledTitle('amend'),
+        onClick: enterAmend
+      },
+      {
+        label: t('commitMenu.undo'),
+        disabled: !caps.canUndo,
+        title: disabledTitle('undo'),
+        onClick: () =>
+          openModal({
+            kind: 'confirm',
+            title: t('commitMenu.undoTitle'),
+            message: undoMsg,
+            confirmLabel: t('commitMenu.undoConfirm'),
+            onConfirm: () => void repoActions.undoCommit(repo.path)
+          })
+      },
+      {
+        label: t('commitMenu.resetTo'),
+        disabled: !caps.canReset,
+        title: disabledTitle('reset'),
+        onClick: () =>
+          openModal({
+            kind: 'reset-to-commit',
+            repoPath: repo.path,
+            sha: c.hash,
+            shortSha: c.hash.slice(0, 7),
+            branch: probe.branch || currentBranch,
+            dirty,
+            onReset: (mode) => void repoActions.reset(repo.path, c.hash, mode)
+          })
+      },
+      { separator: true },
       ...mergeItems,
       ...(mergeItems.length ? [{ separator: true } satisfies MenuItem] : []),
       {
@@ -1028,33 +1134,19 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
     { label: t('commit.revert'), onClick: () => void repoActions.revertCommit(repo.path, c.hash) },
     { separator: true },
     {
-      label: t('commit.resetSoft'),
-      onClick: () => void repoActions.reset(repo.path, c.hash, 'soft')
-    },
-    {
-      label: t('commit.resetMixed'),
-      onClick: () => void repoActions.reset(repo.path, c.hash, 'mixed')
-    },
-    {
-      label: t('commit.resetHard'),
-      danger: true,
-      onClick: () =>
-        openModal({
-          kind: 'confirm',
-          title: t('commit.hardResetTitle'),
-          message: interp(t('commit.hardResetMsg'), { sha: c.hash.slice(0, 7) }),
-          danger: true,
-          confirmLabel: t('commit.hardResetConfirm'),
-          onConfirm: () => void repoActions.reset(repo.path, c.hash, 'hard')
-        })
-    },
-    { separator: true },
-    {
       label: t('commit.createPr'),
       onClick: () => openModal({ kind: 'create-pr', repoPath: repo.path, source: repo.branches.current ?? undefined })
     },
     { label: t('commit.exportPatch'), onClick: () => void exportPatch(c) },
     { label: t('commit.copySha'), onClick: () => void navigator.clipboard.writeText(c.hash) },
+    {
+      label: t('commitMenu.viewOnGitHub'),
+      disabled: !caps.canViewOnGitHub,
+      title: disabledTitle('viewOnGitHub'),
+      onClick: () => {
+        if (caps.githubCommitUrl) void shellApi.openExternal(caps.githubCommitUrl)
+      }
+    },
     { label: t('commit.copyMessage'), onClick: () => void navigator.clipboard.writeText(c.subject) },
     ...(copyBranch
       ? [{ label: t('branch.copyBranchName'), onClick: () => void navigator.clipboard.writeText(copyBranch) } satisfies MenuItem]
@@ -1756,7 +1848,7 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
                 // A right-click on one of several selected rows acts on the batch.
                 if (multi.size > 1 && multi.has(c.hash)) openContextMenu(e.clientX, e.clientY, multiMenu())
                 else if (stash) openContextMenu(e.clientX, e.clientY, stashMenu(stash))
-                else if (!isWip) openContextMenu(e.clientX, e.clientY, commitMenu(c))
+                else if (!isWip) openCommitMenu(e.clientX, e.clientY, c)
               }}
             >
               {columns.graph.visible && (() => {

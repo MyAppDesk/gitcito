@@ -16,6 +16,9 @@ Ein Repository, ein Tab. Mit <kbd>⌘T</kbd> / <kbd>Ctrl+T</kbd> öffnest du die
 Auswahl für einen neuen Tab, mit <kbd>⌘W</kbd> / <kbd>Ctrl+W</kbd> schließt du den
 aktiven. Du kannst sie außerdem per Drag umsortieren, mit der mittleren Maustaste
 schließen oder mit <kbd>⌘⇧T</kbd> den zuletzt geschlossenen wieder öffnen.
+Rechtsklick auf einen Repository-Tab (oder einen Chip in einer
+[Gruppe](#gruppen)) öffnet das [Repository-Kontextmenü](repo-menu.md) — Alias,
+Worktrees, GitHub, Terminal, Anzeigen, Editor und Entfernen.
 Schließt du den letzten Tab, schließt <kbd>⌘W</kbd> stattdessen das Fenster. Ein
 Punkt auf dem Tab bedeutet nicht committete Arbeit; ein anderer bedeutet
 Konflikte.

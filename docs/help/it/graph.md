@@ -3,7 +3,7 @@ title: Il grafo dei commit
 category: Repository e cronologia
 order: 10
 summary: Leggere la storia: corsie, ref, colonne, filtri e selezione multipla.
-keywords: grafo graph storia cronologia commit corsie lanes branch merge colonne filtro lineare first-parent
+keywords: grafo graph storia cronologia commit corsie lanes branch merge colonne filtro lineare first-parent correggi amend annulla undo reset github
 ---
 
 # Il grafo dei commit
@@ -27,6 +27,9 @@ che ne ha cento.
   copiare i loro SHA.
 - I commit arrivati con il tuo **ultimo fetch o pull** sono contrassegnati come
   nuovi.
+- Clic destro su un commit per **Correggi**, **Annulla**, **Reset al commit…** e
+  **Apri su GitHub**, oltre a checkout, cherry-pick, revert, branch, tag e
+  copia. Le azioni non sicure restano visibili e si disabilitano.
 
 ## Fargli mostrare quello che vuoi
 

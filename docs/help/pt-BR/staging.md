@@ -39,6 +39,15 @@ alternar arquivos individuais.
 linha clicada. Clique com o botão direito na seleção para dar stage, tirar do
 stage, fazer stash ou descartar tudo de uma vez.
 
+## Copiar caminhos
+
+O clique com o botão direito num arquivo não commitado oferece **Copiar
+caminho do arquivo** (absoluto, com os separadores da plataforma) e **Copiar
+caminho relativo do arquivo** (`src/index.ts`, sem `./` no início). Vários
+arquivos selecionados copiam um caminho por linha, na ordem da lista. Arquivos
+apagados continuam disponíveis — essas ações só copiam texto. Pastas ainda
+copiam o caminho da pasta.
+
 ## Antes de você commitar
 
 O Gitcito verifica algumas coisas e pergunta uma vez, nunca em silêncio:

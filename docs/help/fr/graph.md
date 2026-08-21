@@ -3,7 +3,7 @@ title: Le graphe des commits
 category: Dépôt et historique
 order: 10
 summary: Lire l'histoire : couloirs, références, colonnes, filtres et sélection multiple.
-keywords: graphe graph historique history commits couloirs lanes branches fusions merges colonnes columns filtre filter linéaire linear first-parent
+keywords: graphe graph historique history commits couloirs lanes branches fusions merges colonnes columns filtre filter linéaire linear first-parent amender amend annuler undo réinitialisation reset github
 ---
 
 # Le graphe des commits
@@ -27,6 +27,10 @@ dépôt d'une centaine.
   de copier leurs SHA.
 - Les commits arrivés lors de votre **dernier fetch ou pull** sont signalés comme
   nouveaux.
+- Clic droit sur un commit pour **Amender**, **Annuler**, **Réinitialiser au
+  commit…** et **Voir sur GitHub**, en plus du checkout, du cherry-pick, du
+  revert, de la branche, de l'étiquette et de la copie. Les actions risquées
+  restent visibles et se désactivent.
 
 ## Lui faire montrer ce que vous voulez
 

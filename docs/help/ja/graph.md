@@ -3,7 +3,7 @@ title: コミットグラフ
 category: リポジトリと履歴
 order: 10
 summary: 履歴の読み方 — レーン、ref、列、フィルタ、複数選択。
-keywords: グラフ graph 履歴 history コミット commits レーン lanes ブランチ branches マージ merges 列 columns フィルタ filter 直線 linear first-parent
+keywords: グラフ graph 履歴 history コミット commits レーン lanes ブランチ branches マージ merges 列 columns フィルタ filter 直線 linear first-parent amend 修正 undo 取り消し reset リセット github
 ---
 
 # コミットグラフ
@@ -24,6 +24,9 @@ keywords: グラフ graph 履歴 history コミット commits レーン lanes �
   現在のブランチへまとめてチェリーピックしたり、連続した範囲をスカッシュしたり、
   1 つにまとめたパッチを書き出したり、SHA をコピーしたりできます。
 - **直近のフェッチやプル** で届いたコミットには、新着の印が付きます。
+- コミットを右クリックすると **修正**、**取り消し**、**コミットへリセット…**、
+  **GitHub で見る** のほか、チェックアウト、チェリーピック、リバート、ブランチ、
+  タグ、コピーが使えます。危険な操作は表示されたまま無効になります。
 
 ## 見たいものだけを見る
 

@@ -3,7 +3,7 @@ title: 合并与变基
 category: 分支与手术
 order: 41
 summary: 合并、变基、比较引用，以及在侧边栏或提交图里把一个引用拖到另一个上面。
-keywords: merge 合并 rebase 变基 fast-forward 快进 compare 比较 refs 引用 drag drop 拖放 branch 分支 onto graph 提交图 ref badge 徽标 tag 标签 remote 远程 revert 还原 reset 重置 cherry-pick 拣选
+keywords: merge 合并 rebase 变基 fast-forward 快进 compare 比较 refs 引用 drag drop 拖放 branch 分支 onto graph 提交图 ref badge 徽标 tag 标签 remote 远程 revert 还原 reset 重置 cherry-pick 拣选 amend 修补 undo 撤销 github
 ---
 
 # 合并与变基
@@ -44,7 +44,21 @@ keywords: merge 合并 rebase 变基 fast-forward 快进 compare 比较 refs 引
 
 ## 拣选、还原、重置
 
-这三个都在提交图的右键菜单里。重置提供 **soft / mixed / hard** 三种，并且在你挑之前就把每一种对你的工作区意味着什么讲清楚。
+拣选和还原一如既往地待在提交图的右键菜单里。**重置**现在是单独一项——**重置到此提交…**——而不是三个彼此矛盾的裸 soft/mixed/hard 条目。
+
+修补、撤销和重置排在单个提交菜单的最上面，并且**在不安全时保持可见**：它们会被禁用，并用提示说明原因。撤销只面向尚未推送的 HEAD；修补对已发布的 HEAD 也放行，但会警告需要一次强制推送。重置只能到达本地祖先，外加第一个已发布的提交——不能到任意更老的历史。
+
+重置对话框把模式讲得明明白白：
+
+![重置到提交的对话框，三种模式一一说清](../../screenshots/reset-to-commit.webp)
+
+| 模式 | 结果 |
+|------|--------|
+| **Soft** | 保留已暂存的更改 |
+| **Mixed** | 保留未暂存的更改 |
+| **Hard** | 丢弃这些提交及其更改 |
+
+Hard 永远不会被预先选中。工作树不干净时还会多一道警告，因为重置可能覆盖进行中的工作，或与之冲突。**在 GitHub 上查看**和复制操作放在一起，只对 github.com 远程上已发布的提交开放。
 
 先多选若干提交，拣选就会把整个选区按顺序全部应用。
 

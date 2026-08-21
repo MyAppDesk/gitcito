@@ -112,6 +112,8 @@ export const de: Dict = {
   'common.add': 'Hinzufügen',
   'common.copyFilePath': 'Dateipfad kopieren',
   'common.copyFolderPath': 'Ordnerpfad kopieren',
+  'fileMenu.copyFilePath': 'Dateipfad kopieren',
+  'fileMenu.copyRelativeFilePath': 'Relativen Dateipfad kopieren',
 
   // Conflict resolver
   'conflict.resolved': 'gelöst',
@@ -1499,6 +1501,41 @@ export const de: Dict = {
   'commit.changedFiles': '{n} geänderte Dateien',
   'commit.openDefaultApp': 'Mit der Standard-App öffnen',
 
+  // Einzel-Commit-Aktionen (Kontextmenü des Graphen)
+  'commitMenu.amend': 'Commit ändern…',
+  'commitMenu.undo': 'Commit rückgängig…',
+  'commitMenu.resetTo': 'Auf Commit zurücksetzen…',
+  'commitMenu.viewOnGitHub': 'Auf GitHub anzeigen',
+  'commitMenu.disabled.notHead': 'Nur der aktuelle HEAD-Commit kann das.',
+  'commitMenu.disabled.detached': 'Checken Sie zuerst einen lokalen Branch aus.',
+  'commitMenu.disabled.published': 'Dieser Commit wurde bereits gepusht.',
+  'commitMenu.disabled.notAncestor': 'Dieser Commit ist kein Vorfahre von HEAD.',
+  'commitMenu.disabled.beyondReset': 'Dieser Commit liegt vor der lokalen Reset-Grenze.',
+  'commitMenu.disabled.operation': 'Nicht verfügbar, solange eine Git-Operation läuft.',
+  'commitMenu.disabled.inflight': 'Nicht verfügbar, solange ein anderer Git-Befehl läuft.',
+  'commitMenu.disabled.notOnGitHub': 'Kein GitHub-Remote, oder dieser Commit ist nicht veröffentlicht.',
+  'commitMenu.amendPublishedTitle': 'Einen veröffentlichten Commit ändern?',
+  'commitMenu.amendPublishedMsg':
+    '{branch} wurde bereits gepusht. Ändern schreibt die Geschichte um — der Remote braucht danach einen Force-Push.',
+  'commitMenu.amendPublishedConfirm': 'Weiter',
+  'commitMenu.undoTitle': 'Commit rückgängig',
+  'commitMenu.undoMsg':
+    '{branch} auf den Eltern von {sha} setzen und die Änderungen ungestaged lassen. Die Commit-Nachricht kehrt in den Composer zurück.',
+  'commitMenu.undoRootMsg':
+    'Das ist der erste Commit auf {branch}. Rückgängig lassen macht den Branch ungeboren und behält die Dateien im Arbeitsverzeichnis.',
+  'commitMenu.undoDirty':
+    'Sie haben uncommittete Änderungen. Sie werden mit dem rückgängig gemachten Commit im Arbeitsverzeichnis vermischt.',
+  'commitMenu.undoConfirm': 'Commit rückgängig',
+  'commitMenu.resetTitle': 'Auf Commit zurücksetzen',
+  'commitMenu.resetMsg': 'Verschiebe {branch} auf {sha}. Wie sollen die Commits danach behandelt werden:',
+  'commitMenu.resetSoft': 'Soft — Änderungen gestaged behalten',
+  'commitMenu.resetMixed': 'Mixed — Änderungen ungestaged behalten',
+  'commitMenu.resetHard': 'Hard — Commits und ihre Änderungen verwerfen',
+  'commitMenu.resetDirty': 'Sie haben uncommittete Änderungen. Ein Reset kann Arbeit im Gange überschreiben oder kollidieren.',
+  'commitMenu.resetHardWarn': 'Ein Hard-Reset verwirft uncommittete Arbeit und jeden Commit nach {sha}.',
+  'commitMenu.resetConfirm': 'Zurücksetzen',
+  'commitMenu.resetHardConfirm': 'Verwerfen und zurücksetzen',
+
   // Tag context menu (in graph)
   'tag.checkout': '{tag} auschecken',
   'tag.worktree': 'Worktree aus diesem Commit erstellen…',
@@ -2751,6 +2788,7 @@ export const de: Dict = {
   'act.aborted': '{kind} abgebrochen',
   'act.reverted': '{sha} zurückgenommen',
   'act.reset': 'Auf {sha} zurückgesetzt ({mode})',
+  'act.undidCommit': 'Commit {sha} rückgängig gemacht',
   'act.createdTag': 'Tag {name} erstellt',
   'act.deletedTag': 'Tag {name} gelöscht',
   'act.pushedTag': 'Tag {name} zu {remote} gepusht',
@@ -2806,6 +2844,8 @@ export const de: Dict = {
   'undoLabel.cherryPick': 'Cherry-Pick',
   'undoLabel.squash': 'Squash',
   'undoLabel.revert': 'Revert',
+  'undoLabel.undoCommit': 'Commit rückgängig',
+  'undoLabel.resetToCommit': 'Reset auf {sha}',
   'undoLabel.tag': 'Tag {name}',
   'gitmoji.none': 'keines',
   'composer.ignoreAndUntrackMsg': '{what} zu .gitignore hinzufügen und in Git nicht mehr verfolgen. Die Datei(en) bleiben auf der Platte.',
@@ -3159,5 +3199,21 @@ export const de: Dict = {
   'askAction.createFile': 'Datei erstellen',
   'askAction.editFile': 'Datei bearbeiten',
   'askAction.replaceFile': 'Datei ersetzen',
-  'askAction.deleteFile': 'Datei löschen'
+  'askAction.deleteFile': 'Datei löschen',
+  'repoMenu.createAlias': 'Alias erstellen…',
+  'repoMenu.changeAlias': 'Alias ändern…',
+  'repoMenu.removeAlias': 'Alias entfernen',
+  'repoMenu.aliasTitle': 'Repository-Alias',
+  'repoMenu.aliasLabel': 'Anzeigename',
+  'repoMenu.showWorktrees': 'Worktrees anzeigen',
+  'repoMenu.newWorktree': 'Neuer Worktree…',
+  'repoMenu.copyName': 'Repository-Namen kopieren',
+  'repoMenu.copyPath': 'Repository-Pfad kopieren',
+  'repoMenu.viewOnGitHub': 'Auf GitHub anzeigen',
+  'repoMenu.openTerminal': 'Im Terminal öffnen',
+  'repoMenu.revealFinder': 'Im Finder anzeigen',
+  'repoMenu.revealExplorer': 'Im Explorer anzeigen',
+  'repoMenu.revealFileManager': 'Im Dateimanager anzeigen',
+  'repoMenu.openEditor': 'Im externen Editor öffnen',
+  'repoMenu.remove': 'Entfernen…'
 }

@@ -3,7 +3,7 @@ title: De commitgrafiek
 category: Repository & geschiedenis
 order: 10
 summary: Geschiedenis lezen: banen, refs, kolommen, filters en meervoudige selectie.
-keywords: grafiek graph geschiedenis history commits banen lanes branches merges kolommen filter lineair first-parent
+keywords: grafiek graph geschiedenis history commits banen lanes branches merges kolommen filter lineair first-parent amend aanpassen undo ongedaan maken reset github
 ---
 
 # De commitgrafiek
@@ -26,6 +26,10 @@ een met honderd.
   SHA's te kopiëren.
 - Commits die bij je **laatste fetch of pull** binnenkwamen zijn gemarkeerd als
   nieuw.
+- Rechtsklik een commit voor **Aanpassen**, **Ongedaan maken**, **Resetten naar
+  commit…** en **Bekijken op GitHub**, plus checkout, cherry-pick, revert,
+  branch, tag en kopiëren. Onveilige acties blijven zichtbaar en worden
+  uitgeschakeld.
 
 ## Het laten tonen wat jij wilt
 

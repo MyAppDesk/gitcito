@@ -112,6 +112,8 @@ export const he: Dict = {
   'common.add': 'הוספה',
   'common.copyFilePath': 'העתקת נתיב הקובץ',
   'common.copyFolderPath': 'העתקת נתיב התיקייה',
+  'fileMenu.copyFilePath': 'העתקת נתיב הקובץ',
+  'fileMenu.copyRelativeFilePath': 'העתקת נתיב קובץ יחסי',
 
   // Conflict resolver
   'conflict.resolved': 'נפתר',
@@ -1499,6 +1501,41 @@ export const he: Dict = {
   'commit.changedFiles': '{n} קבצים השתנו',
   'commit.openDefaultApp': 'פתיחה באפליקציית ברירת המחדל',
 
+  // פעולות על קומיט בודד (תפריט ההקשר של הגרף)
+  'commitMenu.amend': 'תיקון הקומיט…',
+  'commitMenu.undo': 'ביטול הקומיט…',
+  'commitMenu.resetTo': 'איפוס לקומיט…',
+  'commitMenu.viewOnGitHub': 'הצגה ב-GitHub',
+  'commitMenu.disabled.notHead': 'רק קומיט ה-HEAD הנוכחי יכול לעשות זאת.',
+  'commitMenu.disabled.detached': 'עשו checkout תחילה לענף מקומי.',
+  'commitMenu.disabled.published': 'הקומיט הזה כבר נדחף.',
+  'commitMenu.disabled.notAncestor': 'הקומיט הזה אינו אב-קדמון של HEAD.',
+  'commitMenu.disabled.beyondReset': 'הקומיט הזה ישן מגבול האיפוס המקומי.',
+  'commitMenu.disabled.operation': 'לא זמין בזמן פעולת Git.',
+  'commitMenu.disabled.inflight': 'לא זמין בזמן שפקודת Git אחרת רצה.',
+  'commitMenu.disabled.notOnGitHub': 'אין מרוחק GitHub, או שהקומיט הזה אינו מפורסם.',
+  'commitMenu.amendPublishedTitle': 'לתקן קומיט שכבר פורסם?',
+  'commitMenu.amendPublishedMsg':
+    '{branch} כבר נדחף. תיקון משכתב את ההיסטוריה — עדכון המרוחק ידרוש force push.',
+  'commitMenu.amendPublishedConfirm': 'המשך',
+  'commitMenu.undoTitle': 'ביטול קומיט',
+  'commitMenu.undoMsg':
+    'הזיזו את {branch} להורה של {sha} והשאירו את השינויים לא באינדקס. ההודעה תחזור למלחין.',
+  'commitMenu.undoRootMsg':
+    'זה הקומיט הראשון ב-{branch}. הביטול משאיר ענף שלא נולד ושומר את הקבצים בעץ העבודה.',
+  'commitMenu.undoDirty':
+    'יש לכם שינויים שלא נשמרו בקומיט. הם יתערבבו עם הקומיט המבוטל בעץ העבודה.',
+  'commitMenu.undoConfirm': 'בטל קומיט',
+  'commitMenu.resetTitle': 'איפוס לקומיט',
+  'commitMenu.resetMsg': 'הזיזו את {branch} אל {sha}. בחרו איך לטפל בקומיטים שמשאירים מאחור:',
+  'commitMenu.resetSoft': 'Soft — להשאיר את השינויים באינדקס',
+  'commitMenu.resetMixed': 'Mixed — להשאיר את השינויים מחוץ לאינדקס',
+  'commitMenu.resetHard': 'Hard — לזרוק את הקומיטים ואת השינויים שלהם',
+  'commitMenu.resetDirty': 'יש לכם שינויים שלא נשמרו בקומיט. איפוס עלול לדרוס או להתנגש עם עבודה בתהליך.',
+  'commitMenu.resetHardWarn': 'איפוס קשיח זורק עבודה שלא נשמרה וכל קומיט אחרי {sha}.',
+  'commitMenu.resetConfirm': 'אפס',
+  'commitMenu.resetHardConfirm': 'זרוק ואפס',
+
   // Tag context menu (in graph)
   'tag.checkout': 'צ׳קאאוט אל {tag}',
   'tag.worktree': 'יצירת עץ עבודה מהקומיט הזה…',
@@ -2746,6 +2783,7 @@ export const he: Dict = {
   'act.aborted': 'הפעולה בוטלה: {kind}',
   'act.reverted': 'בוטל {sha}',
   'act.reset': 'איפוס ({mode}) אל {sha}',
+  'act.undidCommit': 'בוטל הקומיט {sha}',
   'act.createdTag': 'נוצרה התגית {name}',
   'act.deletedTag': 'נמחקה התגית {name}',
   'act.pushedTag': 'נדחפה התגית {name} אל {remote}',
@@ -2801,6 +2839,8 @@ export const he: Dict = {
   'undoLabel.cherryPick': 'צ׳רי־פיק',
   'undoLabel.squash': 'כיווץ',
   'undoLabel.revert': 'ביטול קומיט',
+  'undoLabel.undoCommit': 'ביטול קומיט',
+  'undoLabel.resetToCommit': 'איפוס אל {sha}',
   'undoLabel.tag': 'תגית {name}',
   'gitmoji.none': 'ללא',
   'composer.ignoreAndUntrackMsg': 'הוספת {what} אל .gitignore והפסקת המעקב אחריו ב־Git. הקבצים נשארים בדיסק.',
@@ -3154,5 +3194,21 @@ export const he: Dict = {
   'askAction.createFile': 'יצירת קובץ',
   'askAction.editFile': 'עריכת קובץ',
   'askAction.replaceFile': 'החלפת קובץ',
-  'askAction.deleteFile': 'מחיקת קובץ'
+  'askAction.deleteFile': 'מחיקת קובץ',
+  'repoMenu.createAlias': 'יצירת כינוי…',
+  'repoMenu.changeAlias': 'שינוי כינוי…',
+  'repoMenu.removeAlias': 'הסרת כינוי',
+  'repoMenu.aliasTitle': 'כינוי למאגר',
+  'repoMenu.aliasLabel': 'שם תצוגה',
+  'repoMenu.showWorktrees': 'הצגת עצי עבודה',
+  'repoMenu.newWorktree': 'עץ עבודה חדש…',
+  'repoMenu.copyName': 'העתקת שם המאגר',
+  'repoMenu.copyPath': 'העתקת נתיב המאגר',
+  'repoMenu.viewOnGitHub': 'הצגה ב-GitHub',
+  'repoMenu.openTerminal': 'פתיחה במסוף',
+  'repoMenu.revealFinder': 'הצגה ב-Finder',
+  'repoMenu.revealExplorer': 'הצגה בסייר הקבצים',
+  'repoMenu.revealFileManager': 'הצגה במנהל הקבצים',
+  'repoMenu.openEditor': 'פתיחה בעורך חיצוני',
+  'repoMenu.remove': 'הסרה…'
 }

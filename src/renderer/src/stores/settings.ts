@@ -28,6 +28,7 @@ import {
 } from '../lib/repoFolders'
 import { settingsApi } from '../infrastructure/api'
 import { useUIStore } from './ui'
+import { applyRepoAlias, migrateRepoAliases, repoDisplayName } from '../lib/repoAlias'
 
 const uid = (): string => Math.random().toString(36).slice(2, 10)
 
@@ -134,6 +135,8 @@ interface SettingsState {
   addRepoToGroup(tabId: string, repo: RepoRef): void
   removeRepoFromGroup(tabId: string, path: string): void
   renameRepoInGroup(tabId: string, path: string, newName: string): void
+  /** Set or clear a path-keyed display alias. Empty / canonical name removes it. */
+  setRepoAlias(path: string, alias: string | null): void
   reorderReposInGroup(tabId: string, fromPath: string, toPath: string | null): void
   setGroupActiveRepo(tabId: string, path: string | null): void
   closeTab(tabId: string): void
@@ -263,6 +266,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     settings.sidebarSide = settings.sidebarSide ?? sd.sidebarSide
     settings.rightPanelFullHeight = settings.rightPanelFullHeight ?? sd.rightPanelFullHeight
     settings.repoProfiles = settings.repoProfiles ?? sd.repoProfiles
+    settings.repoAliases = settings.repoAliases ?? sd.repoAliases
     settings.repoLayouts = settings.repoLayouts ?? {}
     // Workspaces: wrap a pre-workspaces install's existing tabs into a default
     // workspace, then load the active workspace's tabs into the live view.
@@ -304,7 +308,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       )
     settings.workspaces = settings.workspaces.map((w) => ({ ...w, tabs: normalizeTabs(w.tabs ?? []) }))
     settings.tabs = normalizeTabs(settings.tabs)
-    set({ settings, loaded: true })
+    set({ settings: migrateRepoAliases(settings), loaded: true })
   },
 
   update: (mut) => {
@@ -370,8 +374,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     return get().update((s) => {
       const existing = s.tabs.find((t) => t.kind === 'repo' && t.activeRepoPath === repo.path)
       if (existing) return { ...s, activeTabId: existing.id }
-      const tab: TabState = { id: uid(), kind: 'repo', name: repo.name, repos: [repo], activeRepoPath: repo.path }
-      const recentRepos = [repo, ...s.recentRepos.filter((r) => r.path !== repo.path)].slice(0, 8)
+      const name = repoDisplayName(repo.path, s.repoAliases, repo.name)
+      const named = { ...repo, name }
+      const tab: TabState = { id: uid(), kind: 'repo', name, repos: [named], activeRepoPath: repo.path }
+      const recentRepos = [named, ...s.recentRepos.filter((r) => r.path !== repo.path)].slice(0, 8)
       return { ...s, tabs: [...s.tabs, tab], activeTabId: tab.id, recentRepos }
     })
   },
@@ -380,7 +386,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     leaveMission()
     return get().update((s) => {
       const path = payload.path
-      const displayName = payload.name?.trim() || path.split('/').pop() || path
+      const displayName =
+        payload.name?.trim() || repoDisplayName(path, s.repoAliases) || path.split('/').pop() || path
       const groupName = payload.group?.trim()
 
       // Already open somewhere (standalone or inside a group) — just focus it,
@@ -469,15 +476,18 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   },
 
   addRepoToGroup: (tabId, repo) =>
-    get().update((s) => ({
-      ...s,
-      recentRepos: [repo, ...s.recentRepos.filter((r) => r.path !== repo.path)].slice(0, 8),
-      tabs: s.tabs.map((t) =>
-        t.id === tabId && t.kind !== 'page' && !t.repos.some((r) => r.path === repo.path)
-          ? { ...t, repos: [...t.repos, repo], activeRepoPath: t.activeRepoPath ?? repo.path }
-          : t
-      )
-    })),
+    get().update((s) => {
+      const named = { ...repo, name: repoDisplayName(repo.path, s.repoAliases, repo.name) }
+      return {
+        ...s,
+        recentRepos: [named, ...s.recentRepos.filter((r) => r.path !== repo.path)].slice(0, 8),
+        tabs: s.tabs.map((t) =>
+          t.id === tabId && t.kind !== 'page' && !t.repos.some((r) => r.path === repo.path)
+            ? { ...t, repos: [...t.repos, named], activeRepoPath: t.activeRepoPath ?? named.path }
+            : t
+        )
+      }
+    }),
 
   removeRepoFromGroup: (tabId, path) =>
     get().update((s) => {
@@ -498,15 +508,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       return { ...s, tabs, activeTabId }
     }),
 
-  renameRepoInGroup: (tabId, path, newName) =>
-    get().update((s) => ({
-      ...s,
-      tabs: s.tabs.map((t) =>
-        t.id === tabId && t.kind !== 'page'
-          ? { ...t, repos: t.repos.map((r) => (r.path === path ? { ...r, name: newName } : r)) }
-          : t
-      )
-    })),
+  renameRepoInGroup: (_tabId, path, newName) =>
+    get().update((s) => applyRepoAlias(s, path, newName)),
+
+  setRepoAlias: (path, alias) => get().update((s) => applyRepoAlias(s, path, alias)),
 
   reorderReposInGroup: (tabId, fromPath, toPath) =>
     get().update((s) => ({

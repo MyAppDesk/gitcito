@@ -1,7 +1,7 @@
 import { app, ipcMain, dialog, safeStorage } from 'electron'
 import { join } from 'path'
 import { existsSync } from 'fs'
-import { readFile, writeFile, mkdir } from 'fs/promises'
+import { readFile, writeFile, mkdir, copyFile } from 'fs/promises'
 import { defaultSettings, type AppSettings, type RepoHost } from '../shared/types'
 import {
   applySecrets,
@@ -47,17 +47,34 @@ async function canEncrypt(): Promise<boolean> {
   return canUseKeychain()
 }
 
+/**
+ * An encrypted file exists on disk but this build's safeStorage key cannot read
+ * it — a different app identity wrote it (dev vs packaged, or a re-signed
+ * build). Distinct from "no secrets": overwriting that file with our empty view
+ * of it would destroy tokens another build can still decrypt.
+ */
+let secretsUnreadable = false
+
 async function loadSecrets(): Promise<SecretStore> {
   try {
     const b64 = await readFile(secretsPath(), 'utf-8')
-    return JSON.parse(safeStorage.decryptString(Buffer.from(b64, 'base64'))) as SecretStore
+    const store = JSON.parse(safeStorage.decryptString(Buffer.from(b64, 'base64'))) as SecretStore
+    secretsUnreadable = false
+    return store
   } catch {
-    return {} // missing, corrupt, or the keychain entry changed
+    secretsUnreadable = existsSync(secretsPath())
+    return {}
   }
 }
 
 async function saveSecrets(store: SecretStore): Promise<void> {
   await mkdir(app.getPath('userData'), { recursive: true })
+  if (secretsUnreadable) {
+    // Keep the copy we could not decrypt: the build identity that wrote it can
+    // still read it, and this write would otherwise be the point of no return.
+    await copyFile(secretsPath(), `${secretsPath()}.bak`).catch(() => {})
+    secretsUnreadable = false
+  }
   const enc = safeStorage.encryptString(JSON.stringify(store))
   await writeFile(secretsPath(), enc.toString('base64'), 'utf-8')
 }
@@ -182,8 +199,10 @@ async function writeSettings(settings: AppSettings): Promise<void> {
   const hasSecrets = Object.keys(secrets).length > 0
 
   // Saving anything else while the secrets are still encrypted on disk must not
-  // wipe them: the caller simply never had them to send back.
-  if (!hasSecrets && !secretCache) {
+  // wipe them: the caller simply never had them to send back. Same when the
+  // file exists but this build could not decrypt it — our empty view of the
+  // store is not the truth, and persisting it would erase the real one.
+  if (!hasSecrets && (!secretCache || secretsUnreadable)) {
     await writeFile(settingsPath(), JSON.stringify(stripSettingsSecrets(settings), null, 2), 'utf-8')
     return
   }

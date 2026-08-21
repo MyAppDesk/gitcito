@@ -10,6 +10,7 @@ export const ja: Dict = {
   'sidebar.launch': '実行',
   'sidebar.launchTitle': '起動設定を実行します',
   'launch.switchSession': 'セッションを切り替え',
+  'launch.dragHint': 'ドラッグで移動（ダブルクリックでリセット）',
   'launch.pause': '一時停止',
   'launch.resume': '再開',
   'launch.restart': '再起動',

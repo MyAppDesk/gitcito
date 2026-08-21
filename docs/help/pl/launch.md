@@ -47,6 +47,9 @@ pojawia się obok zakładek Git / Pliki.
 
 Członek compoundu wyświetla się jako *compound › członek*, a jego restart
 restartuje tylko tego członka.
+Jeśli pasek zasłania coś, czego potrzebujesz, przeciągnij go w bok za uchwyt —
+pozycja jest zapamiętywana, a podwójne kliknięcie uchwytu ponownie go
+wyśrodkowuje.
 
 Czego Gitcito celowo **nie** robi: uruchamia programy w prawdziwych
 terminalach, ale nie jest debugerem — bez breakpointów, bez podglądu

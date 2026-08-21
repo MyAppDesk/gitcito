@@ -11,6 +11,7 @@ export const es: Dict = {
   'sidebar.launch': 'Ejecutar',
   'sidebar.launchTitle': 'Ejecutar una configuración de lanzamiento',
   'launch.switchSession': 'Cambiar de sesión',
+  'launch.dragHint': 'Arrastra para mover (doble clic para restablecer)',
   'launch.pause': 'Pausar',
   'launch.resume': 'Reanudar',
   'launch.restart': 'Reiniciar',

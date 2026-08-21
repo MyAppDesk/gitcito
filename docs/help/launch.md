@@ -39,7 +39,9 @@ grouped with dividers — and runs the config you pick in the integrated termina
 
 A floating toolbar gives you **pause / resume, restart, stop**, and switches
 between running sessions. A compound member shows as *compound › member*, and
-restarting one restarts just that member.
+restarting one restarts just that member. If the toolbar sits on top of
+something you need, drag it aside by its grip — the position is remembered,
+and a double-click on the grip re-centres it.
 
 What Gitcito deliberately does **not** do: it runs your programs in real
 terminals, but it is not a debugger — no breakpoints, no variable inspection,

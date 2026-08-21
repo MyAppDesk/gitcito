@@ -11,6 +11,7 @@ export const zhCN: Dict = {
   'sidebar.launch': '启动',
   'sidebar.launchTitle': '运行一个启动配置',
   'launch.switchSession': '切换会话',
+  'launch.dragHint': '拖动以移动（双击重置）',
   'launch.pause': '暂停',
   'launch.resume': '继续',
   'launch.restart': '重新启动',

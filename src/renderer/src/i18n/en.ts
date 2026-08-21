@@ -12,6 +12,7 @@ export const en = {
   'sidebar.launch': 'Launch',
   'sidebar.launchTitle': 'Run a launch configuration',
   'launch.switchSession': 'Switch session',
+  'launch.dragHint': 'Drag to move (double-click to reset)',
   'launch.pause': 'Pause',
   'launch.resume': 'Resume',
   'launch.restart': 'Restart',

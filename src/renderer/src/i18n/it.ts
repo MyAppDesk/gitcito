@@ -10,6 +10,7 @@ export const it: Dict = {
   'sidebar.launch': 'Avvio',
   'sidebar.launchTitle': 'Esegui una configurazione di avvio',
   'launch.switchSession': 'Cambia sessione',
+  'launch.dragHint': 'Trascina per spostare (doppio clic per ripristinare)',
   'launch.pause': 'Metti in pausa',
   'launch.resume': 'Riprendi',
   'launch.restart': 'Riavvia',

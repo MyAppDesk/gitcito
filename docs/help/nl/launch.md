@@ -47,6 +47,9 @@ Zet het aan onder **Instellingen → Algemeen → launch.json inschakelen**. De 
 
 Een compound-lid verschijnt als *compound › lid*, en herstarten herstart
 alleen dat lid.
+Als de balk iets bedekt dat je nodig hebt, sleep hem dan opzij aan zijn greep
+— de positie wordt onthouden, en een dubbelklik op de greep centreert hem
+weer.
 
 Wat Gitcito bewust **niet** doet: het draait je programma's in echte
 terminals, maar het is geen debugger — geen breakpoints, geen inspectie van

@@ -10,6 +10,7 @@ export const tr: Dict = {
   'sidebar.launch': 'Çalıştır',
   'sidebar.launchTitle': 'Bir çalıştırma yapılandırmasını başlat',
   'launch.switchSession': 'Oturum değiştir',
+  'launch.dragHint': 'Taşımak için sürükleyin (sıfırlamak için çift tıklayın)',
   'launch.pause': 'Duraklat',
   'launch.resume': 'Devam et',
   'launch.restart': 'Yeniden başlat',

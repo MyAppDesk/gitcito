@@ -11,6 +11,7 @@ export const uk: Dict = {
   'sidebar.launch': 'Запуск',
   'sidebar.launchTitle': 'Виконати конфігурацію запуску',
   'launch.switchSession': 'Перемкнути сеанс',
+  'launch.dragHint': 'Перетягніть, щоб перемістити (подвійний клік — скинути)',
   'launch.pause': 'Пауза',
   'launch.resume': 'Продовжити',
   'launch.restart': 'Перезапустити',

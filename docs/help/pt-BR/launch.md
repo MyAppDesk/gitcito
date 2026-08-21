@@ -47,6 +47,8 @@ aparece ao lado das abas Git / Arquivos.
 
 Um membro de compound aparece como *compound › membro*, e reiniciá-lo
 reinicia só aquele membro.
+Se a barra cobrir algo de que você precisa, arraste-a para o lado pela alça —
+a posição é lembrada, e um clique duplo na alça a centraliza de novo.
 
 O que o Gitcito deliberadamente **não** faz: ele executa seus programas em
 terminais reais, mas não é um depurador — sem breakpoints, sem inspeção de

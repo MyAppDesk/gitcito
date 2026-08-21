@@ -11,6 +11,7 @@ export const ar: Dict = {
   'sidebar.launch': 'تشغيل',
   'sidebar.launchTitle': 'تشغيل إحدى إعدادات التشغيل',
   'launch.switchSession': 'تبديل الجلسة',
+  'launch.dragHint': 'اسحب للتحريك (انقر نقرًا مزدوجًا لإعادة التعيين)',
   'launch.pause': 'إيقاف مؤقت',
   'launch.resume': 'استئناف',
   'launch.restart': 'إعادة التشغيل',

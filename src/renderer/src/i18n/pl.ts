@@ -11,6 +11,7 @@ export const pl: Dict = {
   'sidebar.launch': 'Uruchom',
   'sidebar.launchTitle': 'Uruchom konfigurację startową',
   'launch.switchSession': 'Przełącz sesję',
+  'launch.dragHint': 'Przeciągnij, aby przesunąć (kliknij dwukrotnie, aby zresetować)',
   'launch.pause': 'Wstrzymaj',
   'launch.resume': 'Wznów',
   'launch.restart': 'Uruchom ponownie',

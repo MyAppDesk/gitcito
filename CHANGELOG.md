@@ -1,5 +1,12 @@
 
 
+## [3.19.0](https://github.com/MyAppDesk/gitcito/compare/v3.18.0...v3.19.0) (2026-08-21)
+
+
+### Features
+
+* add repository context menu, graph amend/undo/reset, and file path copy ([#12](https://github.com/MyAppDesk/gitcito/issues/12)) ([be619f2](https://github.com/MyAppDesk/gitcito/commit/be619f25f6402754a861eb03ab2f8f38491ef675))
+
 ## [3.18.0](https://github.com/MyAppDesk/gitcito/compare/v3.17.1...v3.18.0) (2026-08-21)
 
 

@@ -293,9 +293,13 @@ function taskCommandSelf(task: LaunchTask, folder: string): string {
     const extra = (task.args ?? []).map((a) => shQuote(subAll(a, folder)))
     line = ['npm', 'run', shQuote(subAll(task.script, folder)), ...extra].join(' ')
   } else if (task.command) {
-    // `shell` / `process` (and unknown types) — command + args, run as-is.
     const args = (task.args ?? []).map((a) => shQuote(subAll(a, folder)))
-    line = [shQuote(subAll(task.command, folder)), ...args].join(' ')
+    // VS Code treats a `shell` task's bare command string as a full command
+    // line (pipes, `&&`, redirects); quoting it would exec it as one word.
+    line =
+      type === 'shell' && args.length === 0
+        ? subAll(task.command, folder)
+        : [shQuote(subAll(task.command, folder)), ...args].join(' ')
   } else {
     return '' // dependsOn-only task: nothing of its own to run.
   }

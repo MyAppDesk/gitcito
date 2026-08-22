@@ -1,5 +1,17 @@
 
 
+## [3.21.0](https://github.com/MyAppDesk/gitcito/compare/v3.20.0...v3.21.0) (2026-08-22)
+
+
+### Features
+
+* implement draggable debug toolbar with portal rendering ([aeebd19](https://github.com/MyAppDesk/gitcito/commit/aeebd19d8f9d408ce6ee430ad4320a4b0ea10b79))
+
+
+### Bug Fixes
+
+* run shell tasks from tasks.json as full command lines ([0c38b60](https://github.com/MyAppDesk/gitcito/commit/0c38b609bfbf2a08365916c3facad956b1f8c167))
+
 ## [3.20.0](https://github.com/MyAppDesk/gitcito/compare/v3.19.0...v3.20.0) (2026-08-22)
 
 

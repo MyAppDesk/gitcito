@@ -1445,6 +1445,8 @@ export const he: Dict = {
   'graph.ciFailure': 'כישלון',
   'graph.ciPending': 'ממתין',
   'graph.ciNeutral': 'ניטרלי',
+  'graph.ciChecks': 'בדיקות CI',
+  'graph.ciPassedOf': '{passed}/{total} עברו',
   'graph.filterByDeployment': 'סינון לפי מצב הפריסה',
   'graph.filterByAuthor': 'סינון לפי מחבר',
   'graph.resetColumns': 'איפוס העמודות',

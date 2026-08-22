@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Archive, GitCommitHorizontal, Tag, Laptop, Cloud, Check, Settings2, Pencil, Plus, Minus, CheckCircle2, XCircle, Clock, MinusCircle, StickyNote, FlaskConical } from 'lucide-react'
 import type { CiState, CiStatus, GraphCommit, StashInfo, GraphColumnId, GraphFlowColumnId, GraphColumns, FileEntry, CommitMenuProbe } from '../../../shared/types'
 import { defaultGraphColumns, defaultGraphColumnOrder, defaultGraphStyle } from '../../../shared/types'
@@ -8,7 +9,7 @@ import { edgePath, spurPath, colorForPalette, findGraphPalette, DENSITY_ROW_H, L
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
 import { useUIStore, type MenuItem } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
-import { useT, interp } from '../i18n'
+import { useT, interp, type TranslationKey } from '../i18n'
 import { Avatar } from './Avatar'
 import { RemoteIcon } from './RemoteIcon'
 import { SignatureBadge } from './SignatureBadge'
@@ -164,15 +165,95 @@ function timeAgo(unixSeconds: number): string {
   return new Date(unixSeconds * 1000).toLocaleDateString()
 }
 
+const CI_STATE_KEY: Record<CiState, TranslationKey> = {
+  success: 'graph.ciSuccess',
+  failure: 'graph.ciFailure',
+  pending: 'graph.ciPending',
+  neutral: 'graph.ciNeutral'
+}
+
+function ciIcon(state: CiState, size: number, cls = ''): React.JSX.Element {
+  if (state === 'success') return <CheckCircle2 size={size} className={`${cls} ci-success`} />
+  if (state === 'failure') return <XCircle size={size} className={`${cls} ci-failure`} />
+  if (state === 'pending') return <Clock size={size} className={`${cls} ci-pending ci-pulse`} />
+  return <MinusCircle size={size} className={`${cls} ci-neutral`} />
+}
+
 function CiBadge({ status, onClick }: { status: CiStatus; onClick: () => void }): React.JSX.Element {
   const { state, jobs } = status
-  const title = jobs.map((j) => `${j.name}: ${j.state}`).join('\n') || state
-  let icon: React.ReactNode
-  if (state === 'success') icon = <CheckCircle2 size={12} className="ci-badge ci-success" />
-  else if (state === 'failure') icon = <XCircle size={12} className="ci-badge ci-failure" />
-  else if (state === 'pending') icon = <Clock size={12} className="ci-badge ci-pending" />
-  else icon = <MinusCircle size={12} className="ci-badge ci-neutral" />
-  return <span title={title} onClick={onClick} style={{ display: 'contents' }}>{icon}</span>
+  const t = useT()
+  const [pop, setPop] = useState<{ x: number; y: number; up: boolean } | null>(null)
+  const closeTimer = useRef<number | null>(null)
+  useEffect(() => () => { if (closeTimer.current != null) window.clearTimeout(closeTimer.current) }, [])
+
+  const cancelClose = (): void => {
+    if (closeTimer.current != null) { window.clearTimeout(closeTimer.current); closeTimer.current = null }
+  }
+  const open = (e: React.MouseEvent<HTMLSpanElement>): void => {
+    cancelClose()
+    // The wrapper is `display: contents`, so it has no box of its own — measure
+    // the icon inside it.
+    const r = (e.currentTarget.firstElementChild ?? e.currentTarget).getBoundingClientRect()
+    // Rough height estimate decides whether the card fits below the badge.
+    const estH = 46 + Math.min(jobs.length, 9) * 26
+    const up = r.bottom + estH + 12 > window.innerHeight
+    const x = Math.max(8, Math.min(r.left - 10, window.innerWidth - 308))
+    setPop({ x, y: up ? r.top - 6 : r.bottom + 6, up })
+  }
+  const scheduleClose = (): void => {
+    cancelClose()
+    closeTimer.current = window.setTimeout(() => setPop(null), 150)
+  }
+
+  const passed = jobs.filter((j) => j.state === 'success').length
+  return (
+    <>
+      <span
+        onClick={onClick}
+        onMouseEnter={open}
+        onMouseLeave={scheduleClose}
+        style={{ display: 'contents' }}
+      >
+        {ciIcon(state, 12, 'ci-badge')}
+      </span>
+      {pop != null &&
+        createPortal(
+          <div
+            className="ci-pop"
+            style={pop.up ? { left: pop.x, bottom: window.innerHeight - pop.y } : { left: pop.x, top: pop.y }}
+            onMouseEnter={cancelClose}
+            onMouseLeave={scheduleClose}
+          >
+            <div className="ci-pop-head">
+              {ciIcon(state, 13)}
+              <span className="ci-pop-title">{t('graph.ciChecks')}</span>
+              <span className="ci-pop-count">
+                {jobs.length > 0
+                  ? interp(t('graph.ciPassedOf'), { passed, total: jobs.length })
+                  : t(CI_STATE_KEY[state])}
+              </span>
+            </div>
+            {jobs.length > 0 && (
+              <div className="ci-pop-jobs">
+                {jobs.map((job, i) => (
+                  <button
+                    key={i}
+                    className="ci-pop-job"
+                    disabled={!job.url}
+                    onClick={() => { if (job.url) void shellApi.openExternal(job.url) }}
+                  >
+                    {ciIcon(job.state, 12)}
+                    <span className="ci-pop-name">{job.name}</span>
+                    <span className={`ci-pop-state ${job.state}`}>{t(CI_STATE_KEY[job.state])}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>,
+          document.body
+        )}
+    </>
+  )
 }
 
 /** Resizable / toggleable / reorderable column header. */

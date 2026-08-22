@@ -1445,6 +1445,8 @@ export const pl: Dict = {
   'graph.ciFailure': 'Porażka',
   'graph.ciPending': 'W toku',
   'graph.ciNeutral': 'Neutralne',
+  'graph.ciChecks': 'Kontrole CI',
+  'graph.ciPassedOf': '{passed}/{total} zaliczone',
   'graph.filterByDeployment': 'Filtruj po statusie wdrożenia',
   'graph.filterByAuthor': 'Filtruj po autorze',
   'graph.resetColumns': 'Zresetuj kolumny',

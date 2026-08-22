@@ -1417,6 +1417,8 @@ export const tr: Dict = {
   'graph.ciFailure': 'Başarısız',
   'graph.ciPending': 'Bekliyor',
   'graph.ciNeutral': 'Nötr',
+  'graph.ciChecks': 'CI kontrolleri',
+  'graph.ciPassedOf': '{passed}/{total} başarılı',
   'graph.filterByDeployment': 'Dağıtım durumuna göre süz',
   'graph.filterByAuthor': 'Yazara göre süz',
   'graph.resetColumns': 'Sütunları sıfırla',

@@ -1417,6 +1417,8 @@ export const ja: Dict = {
   'graph.ciFailure': '失敗',
   'graph.ciPending': '実行中',
   'graph.ciNeutral': 'どちらでもない',
+  'graph.ciChecks': 'CI チェック',
+  'graph.ciPassedOf': '{passed}/{total} 件成功',
   'graph.filterByDeployment': 'デプロイの状態で絞り込む',
   'graph.filterByAuthor': '作者で絞り込む',
   'graph.resetColumns': '列をリセット',

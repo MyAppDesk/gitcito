@@ -1445,6 +1445,8 @@ export const ar: Dict = {
   'graph.ciFailure': 'فشل',
   'graph.ciPending': 'قيد الانتظار',
   'graph.ciNeutral': 'محايد',
+  'graph.ciChecks': 'فحوصات CI',
+  'graph.ciPassedOf': 'نجح {passed}/{total}',
   'graph.filterByDeployment': 'التصفية حسب حالة النشر',
   'graph.filterByAuthor': 'التصفية حسب المؤلف',
   'graph.resetColumns': 'إعادة تعيين الأعمدة',

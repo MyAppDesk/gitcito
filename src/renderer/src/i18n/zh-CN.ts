@@ -1445,6 +1445,8 @@ export const zhCN: Dict = {
   'graph.ciFailure': '失败',
   'graph.ciPending': '进行中',
   'graph.ciNeutral': '中性',
+  'graph.ciChecks': 'CI 检查',
+  'graph.ciPassedOf': '{passed}/{total} 通过',
   'graph.filterByDeployment': '按部署状态筛选',
   'graph.filterByAuthor': '按作者筛选',
   'graph.resetColumns': '重置列',

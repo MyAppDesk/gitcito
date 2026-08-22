@@ -1440,6 +1440,8 @@ export const en = {
   'graph.ciFailure': 'Failure',
   'graph.ciPending': 'Pending',
   'graph.ciNeutral': 'Neutral',
+  'graph.ciChecks': 'CI checks',
+  'graph.ciPassedOf': '{passed}/{total} passed',
   'graph.filterByDeployment': 'Filter by deployment status',
   'graph.filterByAuthor': 'Filter by author',
   'graph.resetColumns': 'Reset columns',

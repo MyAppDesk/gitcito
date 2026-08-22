@@ -1445,6 +1445,8 @@ export const uk: Dict = {
   'graph.ciFailure': 'Невдача',
   'graph.ciPending': 'В очікуванні',
   'graph.ciNeutral': 'Нейтрально',
+  'graph.ciChecks': 'Перевірки CI',
+  'graph.ciPassedOf': 'Пройдено {passed}/{total}',
   'graph.filterByDeployment': 'Фільтрувати за станом розгортання',
   'graph.filterByAuthor': 'Фільтрувати за автором',
   'graph.resetColumns': 'Скинути колонки',

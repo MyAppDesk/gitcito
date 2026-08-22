@@ -1446,6 +1446,8 @@ export const nl: Dict = {
   'graph.ciFailure': 'Mislukt',
   'graph.ciPending': 'In afwachting',
   'graph.ciNeutral': 'Neutraal',
+  'graph.ciChecks': 'CI-checks',
+  'graph.ciPassedOf': '{passed}/{total} geslaagd',
   'graph.filterByDeployment': 'Filteren op deploy-status',
   'graph.filterByAuthor': 'Filteren op auteur',
   'graph.resetColumns': 'Kolommen herstellen',

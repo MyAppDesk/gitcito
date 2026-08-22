@@ -1446,6 +1446,8 @@ export const ptBR: Dict = {
   'graph.ciFailure': 'Falha',
   'graph.ciPending': 'Pendente',
   'graph.ciNeutral': 'Neutro',
+  'graph.ciChecks': 'Verificações de CI',
+  'graph.ciPassedOf': '{passed}/{total} aprovadas',
   'graph.filterByDeployment': 'Filtrar por status do deploy',
   'graph.filterByAuthor': 'Filtrar por autor',
   'graph.resetColumns': 'Redefinir colunas',

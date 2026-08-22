@@ -1445,6 +1445,8 @@ export const ko: Dict = {
   'graph.ciFailure': '실패',
   'graph.ciPending': '대기 중',
   'graph.ciNeutral': '중립',
+  'graph.ciChecks': 'CI 검사',
+  'graph.ciPassedOf': '{passed}/{total}개 통과',
   'graph.filterByDeployment': '배포 상태로 필터링',
   'graph.filterByAuthor': '작성자로 필터링',
   'graph.resetColumns': '열 초기화',

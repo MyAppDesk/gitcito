@@ -12126,9 +12126,10 @@ mark.find-hit.active {
 }
 .sb-tab-launch-caret { opacity: 0.7; margin-inline-start: -2px; }
 
-/* VS Code-style floating debug toolbar over the graph pane. */
+/* VS Code-style floating debug toolbar. Portalled to <body> and fixed so its
+   grip can drag it anywhere in the window, not just over the graph pane. */
 .debug-toolbar {
-  position: absolute;
+  position: fixed;
   top: 10px;
   left: 50%;
   transform: translateX(-50%);
@@ -12195,25 +12196,6 @@ mark.find-hit.active {
   justify-content: center;
 }
 .debug-btn.danger:hover { color: var(--red, #ff5c7a); }
-.debug-status-pill {
-  margin-inline-start: 4px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  color: var(--green, #00e6a8);
-  background: color-mix(in srgb, var(--green, #00e6a8) 16%, transparent);
-}
-.debug-status-pill.paused {
-  color: var(--yellow, #ff7a1a);
-  background: color-mix(in srgb, var(--yellow, #ff7a1a) 16%, transparent);
-}
-.debug-status-pill.exited {
-  color: var(--text-2);
-  background: var(--bg-3);
-}
 
 .sb-files-toolbar {
   display: flex;

@@ -1,5 +1,12 @@
 
 
+## [3.20.0](https://github.com/MyAppDesk/gitcito/compare/v3.19.0...v3.20.0) (2026-08-22)
+
+
+### Features
+
+* add CI checks popover with translations and styles ([62f7f34](https://github.com/MyAppDesk/gitcito/commit/62f7f3410a501da89901c7c7bd5800722f39d2ef))
+
 ## [3.19.0](https://github.com/MyAppDesk/gitcito/compare/v3.18.0...v3.19.0) (2026-08-21)
 
 

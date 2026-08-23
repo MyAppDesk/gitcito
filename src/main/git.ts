@@ -6822,6 +6822,18 @@ export const gitService = {
   },
 
   /**
+   * Everything uncommitted in a repository, as one diff.
+   *
+   * The cross-repo judgement needs this: "the backend changed the schema, does
+   * MY uncommitted work in the app still hold" is a question about two
+   * different repositories, so the local side cannot come from the same
+   * `collisionDiffs` call the same-repo case uses.
+   */
+  async worktreeDiff(repoPath: string): Promise<string> {
+    return runGit(repoPath, ['diff', 'HEAD']).catch(() => '')
+  },
+
+  /**
    * Publish the current working tree to a personal WIP branch.
    *
    * Reuses the snapshot machinery — the tree is already committed to a real
@@ -7130,6 +7142,7 @@ const READ_METHODS = new Set<string>([
   'readCodeowners',
   'contractRadar',
   'collisionDiffs',
+  'worktreeDiff',
   'commitEditInfo',
   'commitMenuProbe',
   'blobAtCommit',

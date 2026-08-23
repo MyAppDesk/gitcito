@@ -3317,5 +3317,9 @@ export const es: Dict = {
   'hack.roleLabel': 'Qué es esta parte',
   'hack.noContracts': 'Sin archivos de contrato: este repo no rompe nada a los demás.',
   'hack.addContract': 'Añade un archivo o patrón y pulsa Enter',
-  'hack.removeContract': 'Quitar {file}'
+  'hack.removeContract': 'Quitar {file}',
+  'hack.crossTitle': 'Un cambio de contrato puede haberte roto algo',
+  'hack.crossToast': '{repo} → {file}:{line} — {claim}',
+  'hack.aiBudgetSpent': 'La sesión ha gastado sus {n} consultas a la IA. Los avisos por rutas y contratos siguen funcionando.',
+  'hack.statAi': 'Consultas a la IA gastadas en la sesión'
 }

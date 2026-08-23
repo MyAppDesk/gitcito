@@ -3322,5 +3322,9 @@ export const nl: Dict = {
   'hack.roleLabel': 'Wat dit onderdeel is',
   'hack.noContracts': 'Geen contractbestanden — deze repo breekt niets voor de anderen.',
   'hack.addContract': 'Voeg een bestand of glob toe, dan Enter',
-  'hack.removeContract': '{file} verwijderen'
+  'hack.removeContract': '{file} verwijderen',
+  'hack.crossTitle': 'Een contractwijziging heeft je mogelijk gebroken',
+  'hack.crossToast': '{repo} → {file}:{line} — {claim}',
+  'hack.aiBudgetSpent': 'De sessie heeft haar {n} AI-oordelen opgebruikt. Pad- en contractwaarschuwingen blijven werken.',
+  'hack.statAi': 'AI-oordelen die deze sessie zijn verbruikt'
 }

@@ -3322,5 +3322,9 @@ export const de: Dict = {
   'hack.roleLabel': 'Was dieser Teil ist',
   'hack.noContracts': 'Keine Vertragsdateien — dieses Repo bricht für die anderen nichts.',
   'hack.addContract': 'Datei oder Glob eingeben, dann Enter',
-  'hack.removeContract': '{file} entfernen'
+  'hack.removeContract': '{file} entfernen',
+  'hack.crossTitle': 'Eine Vertragsänderung könnte dich gebrochen haben',
+  'hack.crossToast': '{repo} → {file}:{line} — {claim}',
+  'hack.aiBudgetSpent': 'Die Session hat ihre {n} KI-Urteile aufgebraucht. Pfad- und Vertragswarnungen laufen weiter.',
+  'hack.statAi': 'In dieser Session verbrauchte KI-Urteile'
 }

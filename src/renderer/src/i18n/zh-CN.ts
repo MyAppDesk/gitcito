@@ -3314,5 +3314,9 @@ export const zhCN: Dict = {
   'hack.roleLabel': '这部分是什么',
   'hack.noContracts': '没有契约文件——这个仓库不会影响其他人。',
   'hack.addContract': '输入文件或通配符后按 Enter',
-  'hack.removeContract': '移除 {file}'
+  'hack.removeContract': '移除 {file}',
+  'hack.crossTitle': '契约变更可能已经影响到你',
+  'hack.crossToast': '{repo} → {file}:{line} — {claim}',
+  'hack.aiBudgetSpent': '本次会话已用完 {n} 次 AI 判断。路径和契约提醒照常工作。',
+  'hack.statAi': '本次会话已用的 AI 判断次数'
 }

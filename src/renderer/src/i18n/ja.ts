@@ -3254,5 +3254,9 @@ export const ja: Dict = {
   'hack.roleLabel': 'この部分は何か',
   'hack.noContracts': '契約ファイルはありません。このリポジトリは他を壊しません。',
   'hack.addContract': 'ファイルかグロブを入力して Enter',
-  'hack.removeContract': '{file} を削除'
+  'hack.removeContract': '{file} を削除',
+  'hack.crossTitle': '契約の変更があなたのコードを壊したかもしれません',
+  'hack.crossToast': '{repo} → {file}:{line} — {claim}',
+  'hack.aiBudgetSpent': 'このセッションは AI 判定を {n} 回分使い切りました。パスと契約の警告は引き続き動作します。',
+  'hack.statAi': 'このセッションで使った AI 判定'
 }

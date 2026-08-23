@@ -3323,5 +3323,9 @@ export const ptBR: Dict = {
   'hack.roleLabel': 'O que é esta parte',
   'hack.noContracts': 'Sem arquivos de contrato — este repo não quebra nada para os outros.',
   'hack.addContract': 'Adicione um arquivo ou glob e tecle Enter',
-  'hack.removeContract': 'Remover {file}'
+  'hack.removeContract': 'Remover {file}',
+  'hack.crossTitle': 'Uma mudança de contrato pode ter quebrado algo seu',
+  'hack.crossToast': '{repo} → {file}:{line} — {claim}',
+  'hack.aiBudgetSpent': 'A sessão gastou seus {n} julgamentos de IA. Os avisos por caminho e contrato continuam funcionando.',
+  'hack.statAi': 'Julgamentos de IA gastos nesta sessão'
 }

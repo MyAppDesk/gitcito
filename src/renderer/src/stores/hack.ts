@@ -12,7 +12,16 @@ import { gitApi, aiApi } from '../infrastructure/api'
 import { useSettingsStore } from './settings'
 import { useUIStore } from './ui'
 import { useFetchStore } from './fetch'
-import { contractAudience, contractHits, contractsForRepo, wipBranchName, wipBranchPrefix } from '../lib/hackSession'
+import {
+  AI_CALL_BUDGET,
+  aiBudget,
+  collisionKey,
+  contractAudience,
+  contractHits,
+  contractsForRepo,
+  wipBranchName,
+  wipBranchPrefix
+} from '../lib/hackSession'
 import { HACK_APP_THEME, HACK_CODE_THEME, HACK_GRAPH_STYLE } from '../theme/hackTheme'
 import { t, interp } from '../i18n'
 
@@ -42,6 +51,8 @@ export interface HackStats {
   combo: number
   /** Highest combo the session has seen — the number worth bragging about. */
   bestCombo: number
+  /** AI judgements spent this session. Shown, because the user pays for them. */
+  aiCalls: number
 }
 
 /** How long one good event keeps the combo alive. Long enough to chain a
@@ -55,6 +66,10 @@ interface HackStore {
   owners: Record<string, OwnerIndex>
   /** Last contract sweep per repo, so a warning fires once per push. */
   contractSeen: Record<string, string>
+  /** Judgements already paid for, keyed by what determines the answer. */
+  judged: string[]
+  /** Whether the "budget spent" notice has already been shown. */
+  budgetAnnounced: boolean
   /** One celebration at a time; the overlay clears it when the animation ends. */
   celebration: { kind: 'push' | 'merge' | 'commit'; at: number; combo: number } | null
   /** When the current combo lapses. Read by `celebrate`, never rendered. */
@@ -83,6 +98,10 @@ interface HackStore {
   contractSweep(repoPath: string): Promise<void>
   /** Optional AI second pass over a path overlap the radar already found. */
   semanticSweep(repoPath: string, entries: TeammateRadarEntry[]): Promise<void>
+  /** Optional AI pass over a contract change that crossed a repo boundary. */
+  crossRepoSemantic(sourceRepo: string, changes: ContractChange[], audience: string[]): Promise<void>
+  /** Take one unit of the session's AI budget. False when it is spent. */
+  spendAiCall(): boolean
   /** Publish a WIP snapshot for one repo. */
   wipPush(repoPath: string): Promise<void>
 }
@@ -106,9 +125,11 @@ function notify(title: string, body: string, repoPath: string): void {
 
 export const useHackStore = create<HackStore>((set, get) => ({
   alerts: [],
-  stats: { pushes: 0, commits: 0, caught: 0, wipPushes: 0, combo: 0, bestCombo: 0 },
+  stats: { pushes: 0, commits: 0, caught: 0, wipPushes: 0, combo: 0, bestCombo: 0, aiCalls: 0 },
   owners: {},
   contractSeen: {},
+  judged: [],
+  budgetAnnounced: false,
   celebration: null,
   comboUntil: 0,
 
@@ -137,8 +158,10 @@ export const useHackStore = create<HackStore>((set, get) => ({
     }))
     set({
       alerts: [],
-      stats: { pushes: 0, commits: 0, caught: 0, wipPushes: 0, combo: 0, bestCombo: 0 },
+      stats: { pushes: 0, commits: 0, caught: 0, wipPushes: 0, combo: 0, bestCombo: 0, aiCalls: 0 },
       contractSeen: {},
+      judged: [],
+      budgetAnnounced: false,
       comboUntil: 0
     })
     // Ownership hints are only meaningful once we know who owns what.
@@ -168,7 +191,7 @@ export const useHackStore = create<HackStore>((set, get) => ({
         ? { appThemeId: restore.appThemeId, codeThemeId: restore.codeThemeId, graphStyle: restore.graphStyle }
         : {})
     }))
-    set({ alerts: [], owners: {}, contractSeen: {}, celebration: null, comboUntil: 0 })
+    set({ alerts: [], owners: {}, contractSeen: {}, judged: [], celebration: null, comboUntil: 0 })
   },
 
   update: (patch) =>
@@ -256,6 +279,10 @@ export const useHackStore = create<HackStore>((set, get) => ({
     get().bump('caught')
     useUIStore.getState().toast('info', message)
     notify(t('hack.contractTitle'), message, repoPath)
+
+    // The exact signal has fired. Now — and only now — it is worth paying a
+    // model to say what the change actually did to the people downstream.
+    void get().crossRepoSemantic(repoPath, changes, dirtyElsewhere)
   },
 
   semanticSweep: async (repoPath, entries) => {
@@ -271,23 +298,112 @@ export const useHackStore = create<HackStore>((set, get) => ({
     // already said these two changes touch the same files. Running the model
     // first would spend money and latency on the 99% of fetches that collide
     // with nothing.
-    const entry = overlapping[0]
-    const { local: localDiff, incoming: incomingDiff } = await gitApi
-      .collisionDiffs(repoPath, entry.ref, entry.overlap)
-      .catch(() => ({ local: '', incoming: '' }))
-    if (!localDiff.trim() || !incomingDiff.trim()) return
+    //
+    // Judge every overlapping branch, not just the first — with three people
+    // pushing, "the first one the radar happened to sort highest" is an
+    // arbitrary choice, and the branch that actually breaks you may be second.
+    for (const entry of overlapping.slice(0, 3)) {
+      const key = collisionKey(repoPath, entry.sha, entry.overlap)
+      if (get().judged.includes(key)) continue
+      if (!get().spendAiCall()) return
 
-    const collisions: SemanticCollision[] = await aiApi
-      .semanticCollision(localDiff, incomingDiff, cfg)
-      .catch(() => [] as SemanticCollision[])
-    if (collisions.length === 0) return
+      set((st) => ({ judged: [...st.judged, key].slice(-200) }))
+      const { local: localDiff, incoming: incomingDiff } = await gitApi
+        .collisionDiffs(repoPath, entry.ref, entry.overlap)
+        .catch(() => ({ local: '', incoming: '' }))
+      if (!localDiff.trim() || !incomingDiff.trim()) continue
 
-    for (const c of collisions) {
-      const message = interp(t('hack.semanticToast'), { file: c.path, line: String(c.line), claim: c.claim })
-      get().alert({ kind: 'semantic', repoPath, message, files: [c.path] })
+      const collisions: SemanticCollision[] = await aiApi
+        .semanticCollision(localDiff, incomingDiff, cfg)
+        .catch(() => [] as SemanticCollision[])
+      if (collisions.length === 0) continue
+
+      for (const c of collisions) {
+        const message = interp(t('hack.semanticToast'), { file: c.path, line: String(c.line), claim: c.claim })
+        get().alert({ kind: 'semantic', repoPath, message, files: [c.path] })
+      }
+      get().bump('caught', collisions.length)
+      notify(t('hack.semanticTitle'), collisions[0].claim, repoPath)
     }
-    get().bump('caught', collisions.length)
-    notify(t('hack.semanticTitle'), collisions[0].claim, repoPath)
+  },
+
+  /**
+   * The judgement that actually crosses a repository boundary.
+   *
+   * This is the case the path comparison genuinely cannot answer. Inside one
+   * repo, "we both touched api.ts" is exact and free. Between repos there is no
+   * shared path at all: the backend changed `openapi.yaml`, and whether that
+   * breaks the half-written client in another checkout is a question about
+   * meaning, not about filenames.
+   *
+   * So it runs second here too — the contract declaration has already fired,
+   * and this only asks what that change *did*. Grounding is on the consumer's
+   * own uncommitted hunks, so every claim points at a line in code that person
+   * is actually editing rather than at a file they have never opened.
+   */
+  crossRepoSemantic: async (sourceRepo, changes, audience) => {
+    const session = get().session()
+    if (!session?.semanticCollisions || changes.length === 0) return
+    const cfg = useSettingsStore.getState().activeProfile().ai
+    if (!cfg?.enabled) return
+
+    const files = [...new Set(changes.flatMap((c) => c.files))]
+    const incoming = await gitApi
+      .collisionDiffs(sourceRepo, changes[0].ref, files)
+      .then((d) => d.incoming)
+      .catch(() => '')
+    if (!incoming.trim()) return
+
+    const sourceName = sourceRepo.split('/').pop() ?? sourceRepo
+    for (const target of audience.slice(0, 4)) {
+      const key = collisionKey(target, changes[0].sha, files)
+      if (get().judged.includes(key)) continue
+      // Only ask about a repo that has work to break. A clean checkout cannot
+      // be wrong about a schema it has not started consuming yet.
+      if ((useHackDirty.getState().dirty[target] ?? 0) === 0) continue
+      if (!get().spendAiCall()) return
+
+      set((st) => ({ judged: [...st.judged, key].slice(-200) }))
+      const local = await gitApi.worktreeDiff(target).catch(() => '')
+      if (!local.trim()) continue
+
+      const collisions: SemanticCollision[] = await aiApi
+        .semanticCollision(local, incoming, cfg)
+        .catch(() => [] as SemanticCollision[])
+      if (collisions.length === 0) continue
+
+      for (const c of collisions) {
+        const message = interp(t('hack.crossToast'), {
+          repo: sourceName,
+          file: c.path,
+          line: String(c.line),
+          claim: c.claim
+        })
+        get().alert({ kind: 'semantic', repoPath: target, message, files: [c.path] })
+      }
+      get().bump('caught', collisions.length)
+      notify(t('hack.crossTitle'), collisions[0].claim, target)
+    }
+  },
+
+  /**
+   * Take one unit of the session's AI budget, or refuse and say so once.
+   *
+   * A ceiling rather than a warning: a 36-hour event sweeping every 45 seconds
+   * has thousands of opportunities to ask, and the person paying is the user.
+   */
+  spendAiCall: () => {
+    const { left, allowed } = aiBudget(get().stats.aiCalls)
+    if (!allowed) {
+      if (!get().budgetAnnounced) {
+        set({ budgetAnnounced: true })
+        useUIStore.getState().toast('info', interp(t('hack.aiBudgetSpent'), { n: String(AI_CALL_BUDGET) }))
+      }
+      return false
+    }
+    set((st) => ({ stats: { ...st.stats, aiCalls: st.stats.aiCalls + 1 } }))
+    void left
+    return true
   },
 
   wipPush: async (repoPath) => {

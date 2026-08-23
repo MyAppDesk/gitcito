@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { AlertTriangle, Flame, GitPullRequestArrow, Snowflake, Timer, Users, X, Zap } from 'lucide-react'
+import { AlertTriangle, Flame, GitPullRequestArrow, Snowflake, Sparkles, Timer, Users, X, Zap } from 'lucide-react'
 import { useSettingsStore } from '../stores/settings'
 import { useHackStore } from '../stores/hack'
 import { useUIStore } from '../stores/ui'
 import { useRepoStore } from '../stores/repo'
-import { formatCountdown, hackClock } from '../lib/hackSession'
+import { AI_CALL_BUDGET, formatCountdown, hackClock } from '../lib/hackSession'
 import { useT, interp } from '../i18n'
 
 /**
@@ -124,6 +124,11 @@ export function HackBanner(): React.JSX.Element | null {
         {stats.bestCombo > 1 && (
           <span className="hack-best" title={t('hack.statBest')}>
             <Flame size={12} /> ×{stats.bestCombo}
+          </span>
+        )}
+        {stats.aiCalls > 0 && (
+          <span className="hack-ai-spend" title={t('hack.statAi')}>
+            <Sparkles size={12} /> {stats.aiCalls}/{AI_CALL_BUDGET}
           </span>
         )}
         <span className={totals.behind > 0 ? 'hack-warn' : ''} title={t('hack.statBehind')}>

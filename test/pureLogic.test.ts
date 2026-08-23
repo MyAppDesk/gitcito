@@ -53,7 +53,10 @@ import {
 import { BUILTIN_HACK_TEMPLATES } from '../src/shared/hackTemplates'
 import type { HackSession } from '../src/shared/types'
 import {
+  AI_CALL_BUDGET,
   IMPORT_LIMITS,
+  aiBudget,
+  collisionKey,
   contractAudience,
   contractHits,
   contractsForRepo,
@@ -4624,6 +4627,31 @@ describe('hack session', () => {
     const { matched, missing } = matchPortableRepos(portable, [{ path: '/x/api', name: 'api' }])
     expect(matched).toHaveLength(1)
     expect(missing.map((m) => m.name)).toEqual(['app'])
+  })
+})
+
+describe('AI judgement budget', () => {
+  it('allows calls until the ceiling, then refuses', () => {
+    expect(aiBudget(0)).toEqual({ left: AI_CALL_BUDGET, allowed: true })
+    expect(aiBudget(AI_CALL_BUDGET - 1)).toEqual({ left: 1, allowed: true })
+    expect(aiBudget(AI_CALL_BUDGET)).toEqual({ left: 0, allowed: false })
+  })
+
+  it('never reports a negative remainder', () => {
+    expect(aiBudget(AI_CALL_BUDGET + 99)).toEqual({ left: 0, allowed: false })
+  })
+
+  it('keys a judgement on what determines its answer, not on file order', () => {
+    expect(collisionKey('/w/api', 'abc123', ['b.ts', 'a.ts'])).toBe(
+      collisionKey('/w/api', 'abc123', ['a.ts', 'b.ts'])
+    )
+  })
+
+  it('asks again when the repo, the upstream commit or the files change', () => {
+    const base = collisionKey('/w/api', 'abc123', ['a.ts'])
+    expect(collisionKey('/w/app', 'abc123', ['a.ts'])).not.toBe(base)
+    expect(collisionKey('/w/api', 'def456', ['a.ts'])).not.toBe(base)
+    expect(collisionKey('/w/api', 'abc123', ['a.ts', 'b.ts'])).not.toBe(base)
   })
 })
 

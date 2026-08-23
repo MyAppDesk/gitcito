@@ -3262,5 +3262,9 @@ export const fr: Dict = {
   'hack.roleLabel': 'Ce qu\'est cette partie',
   'hack.noContracts': 'Aucun fichier de contrat — ce dépôt ne casse rien pour les autres.',
   'hack.addContract': 'Ajoutez un fichier ou motif, puis Entrée',
-  'hack.removeContract': 'Retirer {file}'
+  'hack.removeContract': 'Retirer {file}',
+  'hack.crossTitle': 'Un changement de contrat vous a peut-être cassé quelque chose',
+  'hack.crossToast': '{repo} → {file}:{line} — {claim}',
+  'hack.aiBudgetSpent': 'La session a dépensé ses {n} jugements IA. Les alertes par chemin et par contrat continuent.',
+  'hack.statAi': 'Jugements IA dépensés dans cette session'
 }

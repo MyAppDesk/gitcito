@@ -3314,5 +3314,9 @@ export const ko: Dict = {
   'hack.roleLabel': '이 부분이 무엇인지',
   'hack.noContracts': '계약 파일 없음 — 이 저장소는 다른 곳을 깨뜨리지 않습니다.',
   'hack.addContract': '파일이나 글롭을 적고 Enter',
-  'hack.removeContract': '{file} 제거'
+  'hack.removeContract': '{file} 제거',
+  'hack.crossTitle': '계약 변경이 당신 코드를 깨뜨렸을 수 있습니다',
+  'hack.crossToast': '{repo} → {file}:{line} — {claim}',
+  'hack.aiBudgetSpent': '이 세션의 AI 판단 {n}회를 모두 썼습니다. 경로와 계약 경고는 계속 동작합니다.',
+  'hack.statAi': '이번 세션에서 쓴 AI 판단'
 }

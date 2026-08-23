@@ -3314,5 +3314,9 @@ export const ru: Dict = {
   'hack.roleLabel': 'Что это за часть',
   'hack.noContracts': 'Файлов-контрактов нет — этот репозиторий ничего не ломает другим.',
   'hack.addContract': 'Добавьте файл или шаблон и нажмите Enter',
-  'hack.removeContract': 'Убрать {file}'
+  'hack.removeContract': 'Убрать {file}',
+  'hack.crossTitle': 'Изменение контракта могло что-то у вас сломать',
+  'hack.crossToast': '{repo} → {file}:{line} — {claim}',
+  'hack.aiBudgetSpent': 'Сессия израсходовала свои {n} суждений ИИ. Предупреждения по путям и контрактам продолжают работать.',
+  'hack.statAi': 'Суждений ИИ израсходовано за сессию'
 }

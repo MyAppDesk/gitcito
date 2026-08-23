@@ -3317,5 +3317,9 @@ export const ar: Dict = {
   'hack.roleLabel': 'ما هذا الجزء',
   'hack.noContracts': 'لا ملفات عقد — هذا المستودع لا يكسر شيئًا للآخرين.',
   'hack.addContract': 'أضف ملفًا أو نمطًا ثم Enter',
-  'hack.removeContract': 'أزل {file}'
+  'hack.removeContract': 'أزل {file}',
+  'hack.crossTitle': 'قد يكون تغيير في العقد قد كسر شيئًا لديك',
+  'hack.crossToast': '{repo} → {file}:{line} — {claim}',
+  'hack.aiBudgetSpent': 'استهلكت الجلسة {n} من أحكام الذكاء الاصطناعي. تنبيهات المسارات والعقود تواصل العمل.',
+  'hack.statAi': 'أحكام الذكاء الاصطناعي المستهلكة في الجلسة'
 }

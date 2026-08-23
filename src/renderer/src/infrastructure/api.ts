@@ -567,6 +567,7 @@ export const gitApi = {
     call<ContractChange[]>('contractRadar', path, globs, sinceMs),
   collisionDiffs: (path: string, ref: string, files: string[]) =>
     call<{ local: string; incoming: string }>('collisionDiffs', path, ref, files),
+  worktreeDiff: (path: string) => call<string>('worktreeDiff', path),
   pushWipSnapshot: (path: string, branch: string, remote?: string) =>
     call<WipPushResult | null>('pushWipSnapshot', path, branch, remote),
   deleteWipBranches: (path: string, prefix: string, remote?: string) =>

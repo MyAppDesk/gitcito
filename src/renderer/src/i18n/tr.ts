@@ -3257,5 +3257,9 @@ export const tr: Dict = {
   'hack.roleLabel': 'Bu parça ne',
   'hack.noContracts': 'Sözleşme dosyası yok — bu depo diğerleri için bir şey bozmuyor.',
   'hack.addContract': 'Dosya ya da glob ekle, sonra Enter',
-  'hack.removeContract': '{file} dosyasını kaldır'
+  'hack.removeContract': '{file} dosyasını kaldır',
+  'hack.crossTitle': 'Bir sözleşme değişikliği sende bir şeyi bozmuş olabilir',
+  'hack.crossToast': '{repo} → {file}:{line} — {claim}',
+  'hack.aiBudgetSpent': 'Oturum {n} yapay zekâ değerlendirmesini harcadı. Yol ve sözleşme uyarıları çalışmaya devam ediyor.',
+  'hack.statAi': 'Bu oturumda harcanan yapay zekâ değerlendirmeleri'
 }

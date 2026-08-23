@@ -3318,7 +3318,11 @@ export const en = {
   'hack.roleLabel': 'What this part is',
   'hack.noContracts': 'No contract files — this repo breaks nothing for the others.',
   'hack.addContract': 'Add a file or glob, then Enter',
-  'hack.removeContract': 'Remove {file}'
+  'hack.removeContract': 'Remove {file}',
+  'hack.crossTitle': 'A contract change may have broken you',
+  'hack.crossToast': '{repo} → {file}:{line} — {claim}',
+  'hack.aiBudgetSpent': 'The session has spent its {n} AI judgements. Path and contract warnings keep working.',
+  'hack.statAi': 'AI judgements spent this session'
 }
 
 /** The shape every locale must implement. */

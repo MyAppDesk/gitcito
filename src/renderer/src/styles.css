@@ -15790,3 +15790,9 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .hack-modal .settings-field textarea {
   width: 100%;
 }
+
+/* The AI counter is deliberately quiet: it is a receipt, not a feature badge. */
+.hack-ai-spend {
+  color: var(--purple);
+  font-variant-numeric: tabular-nums;
+}

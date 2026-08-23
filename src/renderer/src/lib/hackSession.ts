@@ -136,6 +136,36 @@ export function wipBranchPrefix(me: string): string {
   return `wip/${(me || 'me').replace(/^@/, '').replace(/[^\w.-]+/g, '-')}/`
 }
 
+/**
+ * How many AI judgements one session may spend.
+ *
+ * The prompt behind this feature asked who pays for the calls, and the honest
+ * answer is "the user, on their own key". A 36-hour event with a fetch every 45
+ * seconds is ~2900 sweeps per repo; without a ceiling, one noisy afternoon
+ * could turn into hundreds of requests nobody asked for. The cap is deliberately
+ * low enough to be affordable and high enough to cover a real event's genuine
+ * collisions, and the counter is shown so it is never a surprise.
+ */
+export const AI_CALL_BUDGET = 40
+
+/** Whether another judgement is allowed, and how many are left. */
+export function aiBudget(used: number): { left: number; allowed: boolean } {
+  const left = Math.max(0, AI_CALL_BUDGET - used)
+  return { left, allowed: left > 0 }
+}
+
+/**
+ * The identity of one AI judgement, so the same question is never paid for
+ * twice.
+ *
+ * Keyed on what actually determines the answer: which repository is asking,
+ * which upstream commit prompted it, and which files are in play. A sweep that
+ * re-runs over unchanged state produces the same key and is skipped.
+ */
+export function collisionKey(repoPath: string, sha: string, files: string[]): string {
+  return `${repoPath}@${sha}:${[...files].sort().join(',')}`
+}
+
 // ─── Portability ────────────────────────────────────────────────────────────
 
 /**

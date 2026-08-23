@@ -3314,5 +3314,9 @@ export const uk: Dict = {
   'hack.roleLabel': 'Що це за частина',
   'hack.noContracts': 'Файлів-контрактів немає — цей репозиторій нічого не ламає іншим.',
   'hack.addContract': 'Додайте файл або шаблон і натисніть Enter',
-  'hack.removeContract': 'Прибрати {file}'
+  'hack.removeContract': 'Прибрати {file}',
+  'hack.crossTitle': 'Зміна контракту могла щось у вас зламати',
+  'hack.crossToast': '{repo} → {file}:{line} — {claim}',
+  'hack.aiBudgetSpent': 'Сесія витратила свої {n} суджень ШІ. Попередження за шляхами й контрактами працюють далі.',
+  'hack.statAi': 'Суджень ШІ витрачено за сесію'
 }

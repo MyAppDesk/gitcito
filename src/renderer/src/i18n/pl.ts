@@ -3314,5 +3314,9 @@ export const pl: Dict = {
   'hack.roleLabel': 'Czym jest ta część',
   'hack.noContracts': 'Brak plików kontraktu — to repo nic nie psuje innym.',
   'hack.addContract': 'Dodaj plik lub wzorzec i naciśnij Enter',
-  'hack.removeContract': 'Usuń {file}'
+  'hack.removeContract': 'Usuń {file}',
+  'hack.crossTitle': 'Zmiana kontraktu mogła coś u ciebie zepsuć',
+  'hack.crossToast': '{repo} → {file}:{line} — {claim}',
+  'hack.aiBudgetSpent': 'Sesja zużyła swoje {n} ocen AI. Ostrzeżenia po ścieżkach i kontraktach działają dalej.',
+  'hack.statAi': 'Oceny AI zużyte w tej sesji'
 }

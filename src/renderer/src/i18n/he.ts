@@ -3317,5 +3317,9 @@ export const he: Dict = {
   'hack.roleLabel': 'מה החלק הזה',
   'hack.noContracts': 'אין קבצי חוזה — המאגר הזה לא שובר כלום לאחרים.',
   'hack.addContract': 'הוסף קובץ או תבנית ואז Enter',
-  'hack.removeContract': 'הסר {file}'
+  'hack.removeContract': 'הסר {file}',
+  'hack.crossTitle': 'ייתכן ששינוי בחוזה שבר לך משהו',
+  'hack.crossToast': '{repo} → {file}:{line} — {claim}',
+  'hack.aiBudgetSpent': 'המושב ניצל את {n} שיפוטי ה-AI שלו. אזהרות נתיב וחוזה ממשיכות לעבוד.',
+  'hack.statAi': 'שיפוטי AI שנוצלו במושב'
 }

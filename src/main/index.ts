@@ -159,6 +159,16 @@ app.whenReady().then(() => {
     if (/^https?:\/\//.test(url)) shell.openExternal(url)
   })
 
+  // Raise the window. A renderer cannot un-minimise or steal focus by itself, so
+  // a click on an OS notification has to come through here to land anywhere.
+  ipcMain.handle('win:focus', (e) => {
+    const win = BrowserWindow.fromWebContents(e.sender)
+    if (!win) return
+    if (win.isMinimized()) win.restore()
+    win.show()
+    win.focus()
+  })
+
   // Save a generated patch to a user-chosen file. Returns the path, or null if cancelled.
   ipcMain.handle('dialog:savePatch', async (_e, defaultName: string, content: string) => {
     const { canceled, filePath } = await dialog.showSaveDialog({

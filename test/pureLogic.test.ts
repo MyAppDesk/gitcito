@@ -25,6 +25,24 @@ import {
   splitCommitMessage,
   type CommitMenuInput
 } from '../src/renderer/src/lib/commitMenuCapabilities'
+import {
+  CIRCUIT_TRIP_AT,
+  MAX_BACKOFF_MS,
+  MIN_FETCH_SECONDS,
+  backoffMs,
+  circuitOpen,
+  dueRepos,
+  markAttempt,
+  markFailure,
+  markSuccess,
+  periodMsFor,
+  pruneStates,
+  resetRepo,
+  seedStates,
+  staggerOffset,
+  trippedRepos,
+  type FetchStates
+} from '../src/renderer/src/lib/fetchScheduler'
 import { frecencyScore } from '../src/renderer/src/lib/frecency'
 import { tokenizeChatText, isImageRef } from '../src/renderer/src/lib/chatText'
 import { togglePin, selectPinned } from '../src/renderer/src/lib/pinnedBranches'
@@ -4328,5 +4346,88 @@ describe('fileSize helpers (size-cap refusals)', () => {
     expect(formatBytes(2048)).toBe('2 KB')
     expect(formatBytes(7.3 * 1024 * 1024)).toBe('7.3 MB')
     expect(formatBytes(2.5 * 1024 * 1024 * 1024)).toBe('2.5 GB')
+  })
+})
+
+describe('background fetch scheduler', () => {
+  const P = 60_000 // one-minute period
+
+  it('spreads a set of repos across the period instead of firing them together', () => {
+    const offsets = ['a', 'b', 'c', 'd'].map((_, i) => staggerOffset(i, 4, P))
+    expect(offsets).toEqual([0, 15_000, 30_000, 45_000])
+  })
+
+  it('gives a single repo no offset', () => {
+    expect(staggerOffset(0, 1, P)).toBe(0)
+  })
+
+  it('doubles the wait per consecutive failure, capped', () => {
+    expect(backoffMs(0, P)).toBe(P)
+    expect(backoffMs(1, P)).toBe(2 * P)
+    expect(backoffMs(3, P)).toBe(8 * P)
+    // 2^10 minutes would be 17 hours; the cap is what stops that.
+    expect(backoffMs(50, P)).toBe(MAX_BACKOFF_MS)
+  })
+
+  it('seeds newcomers but never resets a repo already being backed off', () => {
+    const failing: FetchStates = { a: { failures: 3, nextAt: 9_000_000 } }
+    const next = seedStates(['a', 'b'], failing, 1000, P)
+    expect(next.a).toEqual({ failures: 3, nextAt: 9_000_000 })
+    expect(next.b.failures).toBe(0)
+  })
+
+  it('reports only repos whose slot has come', () => {
+    const states: FetchStates = { a: { failures: 0, nextAt: 500 }, b: { failures: 0, nextAt: 5000 } }
+    expect(dueRepos(['a', 'b'], states, 1000)).toEqual(['a'])
+  })
+
+  it('treats an untracked repo as due', () => {
+    expect(dueRepos(['fresh'], {}, 1000)).toEqual(['fresh'])
+  })
+
+  it('claims a slot on attempt so a slow fetch is not re-entered', () => {
+    const claimed = markAttempt({}, 'a', 1000, P)
+    expect(dueRepos(['a'], claimed, 1000)).toEqual([])
+  })
+
+  it('trips the breaker after enough consecutive failures and then stops trying', () => {
+    let states: FetchStates = {}
+    for (let i = 0; i < CIRCUIT_TRIP_AT; i++) states = markFailure(states, 'a', 1000, P)
+    expect(circuitOpen(states.a)).toBe(true)
+    // Even long after the backoff window, a tripped repo is excluded entirely —
+    // this is what stops a dead credential prompting once a minute forever.
+    expect(dueRepos(['a'], states, 10 ** 12)).toEqual([])
+  })
+
+  it('re-arms a tripped repo when the user does something that could have fixed it', () => {
+    let states: FetchStates = {}
+    for (let i = 0; i < CIRCUIT_TRIP_AT; i++) states = markFailure(states, 'a', 1000, P)
+    states = resetRepo(states, 'a', 2000)
+    expect(circuitOpen(states.a)).toBe(false)
+    expect(dueRepos(['a'], states, 2000)).toEqual(['a'])
+  })
+
+  it('clears the failure history on a success', () => {
+    let states = markFailure({}, 'a', 1000, P)
+    states = markFailure(states, 'a', 1000, P)
+    states = markSuccess(states, 'a', 5000, P)
+    expect(states.a).toEqual({ failures: 0, nextAt: 5000 + P })
+  })
+
+  it('lists the parked repos for the UI', () => {
+    let states: FetchStates = { ok: { failures: 1, nextAt: 0 } }
+    for (let i = 0; i < CIRCUIT_TRIP_AT; i++) states = markFailure(states, 'dead', 1000, P)
+    expect(trippedRepos(states)).toEqual(['dead'])
+  })
+
+  it('drops repos that left scope', () => {
+    const states: FetchStates = { a: { failures: 0, nextAt: 0 }, b: { failures: 0, nextAt: 0 } }
+    expect(Object.keys(pruneStates(states, ['b']))).toEqual(['b'])
+  })
+
+  it('raises a too-short period to the floor and passes 0 (off) through', () => {
+    expect(periodMsFor(0)).toBe(0)
+    expect(periodMsFor(5)).toBe(MIN_FETCH_SECONDS * 1000)
+    expect(periodMsFor(90)).toBe(90_000)
   })
 })

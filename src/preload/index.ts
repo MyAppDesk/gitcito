@@ -82,6 +82,8 @@ const api = {
     filters?: { name: string; extensions: string[] }[]
   ): Promise<string | null> => ipcRenderer.invoke('dialog:saveBinary', defaultName, data, filters),
   openExternal: (url: string): Promise<void> => ipcRenderer.invoke('shell:openExternal', url),
+  /** Raise and focus the app window — what an OS notification click needs. */
+  focusWindow: (): Promise<void> => ipcRenderer.invoke('win:focus'),
   appVersion: (): Promise<string> => ipcRenderer.invoke('app:version'),
   appReleases: (): Promise<unknown> => ipcRenderer.invoke('app:releases'),
 

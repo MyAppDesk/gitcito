@@ -2619,9 +2619,26 @@ export interface AppSettings {
   /** Per-repository layout overrides (graph columns + sidebar sections), keyed
    *  by repo path. A repo with no entry inherits the global defaults. */
   repoLayouts: Record<string, RepoLayout>
+  /** Legacy background-fetch cadence. Superseded by `autoFetchSeconds`, which is
+   *  seeded from it on first load; kept so an older settings file still reads and
+   *  so the hosting/inbox polls keep a minute-shaped cadence of their own. */
   autoFetchMinutes: number
+  /** Seconds between background fetches (0 = off). Seconds rather than minutes
+   *  because the cadence that keeps a team's divergence cheap is well under one. */
+  autoFetchSeconds: number
+  /** How far the background fetch reaches: only the visible repository, or every
+   *  repository of the active tab — a group tab's whole set. */
+  autoFetchScope: 'active' | 'tab'
+  /** Pause the background fetch and the periodic status refresh while the window
+   *  is hidden. Both resume, with an immediate pass, when it comes back. */
+  pauseWhenHidden: boolean
   /** Raise an OS notification for new review-requested / CI inbox items. */
   desktopNotifications?: boolean
+  /** Raise an OS notification — not only a toast — when the teammate radar finds
+   *  incoming commits landing on files that are dirty locally. Needs
+   *  `desktopNotifications`; a toast in a window nobody is looking at is not a
+   *  warning. */
+  radarNotifications?: boolean
   confirmForcePush: boolean
   /** Force a merge commit even when a fast-forward is possible. */
   mergeCommit: boolean
@@ -2950,7 +2967,11 @@ export function defaultSettings(): AppSettings {
     customGraphPalettes: [],
     repoLayouts: {},
     autoFetchMinutes: 5,
+    autoFetchSeconds: 300,
+    autoFetchScope: 'tab',
+    pauseWhenHidden: true,
     desktopNotifications: false,
+    radarNotifications: false,
     confirmForcePush: true,
     mergeCommit: true,
     sidebarOrder: ['local', 'remotes', 'stashes', 'tags', 'prs', 'issues', 'milestones', 'releases', 'worktrees', 'submodules'],

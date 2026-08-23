@@ -58,6 +58,7 @@ import type { DiffToolConfig, DiffToolInfo } from '../../../shared/diffTools'
 import type { RerereStatus } from '../../../shared/types'
 import { AI_PROVIDERS, emptyAnalytics, defaultGraphStyle, type AIProvider, type Analytics, type AIUsageStat, type ActivityEvent, type RepoStats, type AppSettings, type BranchNamingStyle, type CommitStyle, type ConflictStyle, type ExplainStyle, type Profile, type SigningConfig, type SettingsBundle, type GraphStyle, type GraphPalette, type GraphEdgeStyle, type GraphDensity, type GraphLineWidth, type GraphNodeStyle, type GraphTopology, type GraphCommit, type ConnectedAccount } from '../../../shared/types'
 import { hasSettingsSecrets, stripSettingsSecrets } from '../../../shared/secrets'
+import { MIN_FETCH_SECONDS } from '../lib/fetchScheduler'
 import { tabActiveRepoPath } from '../../../shared/types'
 import type { HoverModifier, KeychainConsent } from '../../../shared/types'
 import { allGraphPalettes, findGraphPalette, colorForPalette, edgePath, spurPath, DENSITY_ROW_H, LINE_WIDTH_PX, GRAPH_PALETTES } from '../graph/style'
@@ -2390,12 +2391,35 @@ function GeneralPage(): React.JSX.Element {
           <input
             type="number"
             min={0}
-            max={120}
-            step={1}
-            value={settings.autoFetchMinutes}
-            onChange={(e) => update((s) => ({ ...s, autoFetchMinutes: Math.max(0, Number(e.target.value) || 0) }))}
+            max={7200}
+            step={15}
+            value={settings.autoFetchSeconds}
+            onChange={(e) =>
+              update((s) => {
+                const seconds = Math.max(0, Number(e.target.value) || 0)
+                // Keep the legacy minutes field roughly in step so a downgrade
+                // to an older build does not land on a stale cadence.
+                return { ...s, autoFetchSeconds: seconds, autoFetchMinutes: Math.round(seconds / 60) }
+              })
+            }
           />
-          <span className="settings-hint">{t('settings.autoFetchHint')}</span>
+          <span className="settings-hint">
+            {interp(t('settings.autoFetchHint'), { min: String(MIN_FETCH_SECONDS) })}
+          </span>
+        </label>
+
+        <label className="settings-field">
+          <span className="settings-field-label">{t('settings.autoFetchScope')}</span>
+          <select
+            value={settings.autoFetchScope ?? 'tab'}
+            onChange={(e) =>
+              update((s) => ({ ...s, autoFetchScope: e.target.value as AppSettings['autoFetchScope'] }))
+            }
+          >
+            <option value="tab">{t('settings.autoFetchScope.tab')}</option>
+            <option value="active">{t('settings.autoFetchScope.active')}</option>
+          </select>
+          <span className="settings-hint">{t('settings.autoFetchScopeHint')}</span>
         </label>
 
         <label className="settings-field">
@@ -2439,6 +2463,37 @@ function GeneralPage(): React.JSX.Element {
         <span className="settings-toggle-copy">
           <strong>{t('settings.desktopNotifications')}</strong>
           <span className="settings-hint">{t('settings.desktopNotificationsHint')}</span>
+        </span>
+      </label>
+
+      <label className="settings-toggle-card">
+        <input
+          type="checkbox"
+          checked={settings.radarNotifications ?? false}
+          disabled={!settings.desktopNotifications}
+          onChange={(e) => update((s) => ({ ...s, radarNotifications: e.target.checked }))}
+        />
+        <span className="settings-toggle-control" aria-hidden="true">
+          <span className="settings-toggle-thumb" />
+        </span>
+        <span className="settings-toggle-copy">
+          <strong>{t('settings.radarNotifications')}</strong>
+          <span className="settings-hint">{t('settings.radarNotificationsHint')}</span>
+        </span>
+      </label>
+
+      <label className="settings-toggle-card">
+        <input
+          type="checkbox"
+          checked={settings.pauseWhenHidden ?? true}
+          onChange={(e) => update((s) => ({ ...s, pauseWhenHidden: e.target.checked }))}
+        />
+        <span className="settings-toggle-control" aria-hidden="true">
+          <span className="settings-toggle-thumb" />
+        </span>
+        <span className="settings-toggle-copy">
+          <strong>{t('settings.pauseWhenHidden')}</strong>
+          <span className="settings-hint">{t('settings.pauseWhenHiddenHint')}</span>
         </span>
       </label>
 

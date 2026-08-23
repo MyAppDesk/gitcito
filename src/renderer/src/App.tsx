@@ -4,6 +4,8 @@ import { GitMerge, FolderOpen, Download, ArrowDownToLine, Bug, LifeBuoy, Message
 import { takeAccountsNotice, useSettingsStore } from './stores/settings'
 import { useRepoStore, repoActions, type RepoData } from './stores/repo'
 import { useUIStore } from './stores/ui'
+import { useFetchStore } from './stores/fetch'
+import { periodMsFor } from './lib/fetchScheduler'
 import { tabActiveRepoPath, tabRepos, type ConflictOpKind, type GroupTab, type PageTab } from '../../shared/types'
 import { useT, t as tr, interp } from './i18n'
 import { applyDirection } from './i18n/direction'
@@ -243,6 +245,11 @@ function ConflictBanner({ repo }: { repo: RepoData }): React.JSX.Element | null 
     </div>
   )
 }
+
+/** How often the background-fetch scheduler wakes to ask what is due. Finer than
+ *  any usable period, so a repo's staggered slot lands close to where it was
+ *  placed without giving every repository a timer of its own. */
+const SCHEDULER_TICK_MS = 5000
 
 export default function App(): React.JSX.Element {
   const t = useT()
@@ -566,30 +573,35 @@ export default function App(): React.JSX.Element {
     }
   }, [activeRepoPath])
 
-  // Periodic light refresh of the active repo (status + branches drift).
+  // Periodic light refresh of the active repo (status + branches drift). Skipped
+  // while the window is hidden — the focus/visibility listener above already
+  // refreshes on the way back, so the pause costs nothing but the spin.
   useEffect(() => {
     if (!activeRepoPath) return
-    const interval = setInterval(
-      () => void useRepoStore.getState().refresh(activeRepoPath, { light: true }),
-      20000
-    )
+    const interval = setInterval(() => {
+      if (settings.pauseWhenHidden && document.hidden) return
+      void useRepoStore.getState().refresh(activeRepoPath, { light: true })
+    }, 20000)
     return () => clearInterval(interval)
-  }, [activeRepoPath])
+  }, [activeRepoPath, settings.pauseWhenHidden])
 
   // Periodic silent refresh of hosting data (PRs + releases). Tied to the same
   // user-configured cadence as the background remote fetch — these live behind
   // the network/token, change in lockstep with what a fetch would surface, and
   // must not toast on failure, so they stay quiet and follow autoFetchMinutes.
   useEffect(() => {
-    const minutes = settings.autoFetchMinutes ?? 0
-    if (!activeRepoPath || minutes <= 0) return
+    // Floored at a minute: these are host API calls against a rate limit, not
+    // git refs, so they do not follow the fetch cadence below that.
+    const seconds = settings.autoFetchSeconds ?? 0
+    if (!activeRepoPath || seconds <= 0) return
     const poll = (): void => {
+      if (settings.pauseWhenHidden && document.hidden) return
       void useRepoStore.getState().refreshPRs(activeRepoPath, { silent: true })
       void useRepoStore.getState().refreshReleases(activeRepoPath, { silent: true })
     }
-    const interval = setInterval(poll, minutes * 60_000)
+    const interval = setInterval(poll, Math.max(seconds, 60) * 1000)
     return () => clearInterval(interval)
-  }, [activeRepoPath, settings.autoFetchMinutes])
+  }, [activeRepoPath, settings.autoFetchSeconds, settings.pauseWhenHidden])
 
   // Near real-time refresh driven by a file system watcher on the repo. The
   // main process watches the working tree and .git directory and pushes change
@@ -608,13 +620,58 @@ export default function App(): React.JSX.Element {
     }
   }, [activeRepoPath])
 
-  // Optional automatic background fetch of remotes.
+  // ─── Background fetch scheduler ──────────────────────────────────────────
+  // One timer for the whole set rather than one per repo. It ticks faster than
+  // the configured period and asks the scheduler which repos are due, which is
+  // what makes stagger and per-repo backoff expressible at all — a plain
+  // `setInterval(fetchAll)` has nowhere to put either.
+  //
+  // Scope is the active *tab*, not the active repo: a group tab whose other
+  // repositories never fetch shows stale ahead/behind counts for everything the
+  // user is not looking at, which is exactly when the counts matter.
+  const fetchPathsKey = (
+    settings.autoFetchScope === 'active'
+      ? activeRepoPath
+        ? [activeRepoPath]
+        : []
+      : activeTab
+        ? tabRepos(activeTab).map((r) => r.path)
+        : []
+  ).join('\n')
+
   useEffect(() => {
-    const minutes = settings.autoFetchMinutes ?? 0
-    if (!activeRepoPath || minutes <= 0) return
-    const interval = setInterval(() => void repoActions.fetchAll(activeRepoPath), minutes * 60_000)
-    return () => clearInterval(interval)
-  }, [activeRepoPath, settings.autoFetchMinutes])
+    const periodMs = periodMsFor(settings.autoFetchSeconds ?? 0)
+    const paths = fetchPathsKey ? fetchPathsKey.split('\n') : []
+    if (!periodMs || paths.length === 0) return
+    const sched = useFetchStore.getState()
+    sched.seed(paths, periodMs)
+
+    const tick = (): void => {
+      // A hidden window is a laptop lid or another desktop; fetching for a view
+      // nobody can see spends battery and credentials for nothing.
+      if (settings.pauseWhenHidden && document.hidden) return
+      for (const path of useFetchStore.getState().due(paths, Date.now())) {
+        if (!useFetchStore.getState().claim(path, periodMs)) continue
+        void repoActions
+          .backgroundFetch(path)
+          .then((ok) => useFetchStore.getState().settle(path, ok, periodMs))
+          .catch(() => useFetchStore.getState().settle(path, false, periodMs))
+      }
+    }
+
+    // Coming back to the window is worth an immediate pass — the whole point of
+    // pausing is that the paused time produced a gap.
+    const onVisible = (): void => {
+      if (document.visibilityState === 'visible') tick()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    const interval = setInterval(tick, Math.min(SCHEDULER_TICK_MS, periodMs))
+    tick()
+    return () => {
+      clearInterval(interval)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [fetchPathsKey, settings.autoFetchSeconds, settings.pauseWhenHidden, settings.autoFetchScope])
 
   // Poll the GitHub notifications inbox for an unread count (toolbar bell badge).
   // Initial fetch on load + repeat on the auto-fetch cadence; silent on failure.
@@ -655,10 +712,10 @@ export default function App(): React.JSX.Element {
         .catch(() => {})
     }
     poll()
-    const minutes = Math.max(settings.autoFetchMinutes ?? 0, 5)
-    const interval = setInterval(poll, minutes * 60_000)
+    const seconds = Math.max(settings.autoFetchSeconds ?? 0, 300)
+    const interval = setInterval(poll, seconds * 1000)
     return () => clearInterval(interval)
-  }, [settings.autoFetchMinutes, settings.activeProfileId])
+  }, [settings.autoFetchSeconds, settings.activeProfileId])
 
   // Optional periodic WIP snapshot — a silent safety net for uncommitted work.
   useEffect(() => {

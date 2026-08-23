@@ -251,6 +251,12 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       settings.graphColumnOrder = [...saved, ...sd.graphColumnOrder.filter((id) => !seen.has(id))]
     }
     settings.autoFetchMinutes = settings.autoFetchMinutes ?? sd.autoFetchMinutes
+    // Seed the seconds-based cadence from the old minutes field once, so an
+    // upgrade keeps the cadence the user chose instead of snapping to the default.
+    settings.autoFetchSeconds = settings.autoFetchSeconds ?? settings.autoFetchMinutes * 60
+    settings.autoFetchScope = settings.autoFetchScope ?? sd.autoFetchScope
+    settings.pauseWhenHidden = settings.pauseWhenHidden ?? sd.pauseWhenHidden
+    settings.radarNotifications = settings.radarNotifications ?? sd.radarNotifications
     settings.confirmForcePush = settings.confirmForcePush ?? sd.confirmForcePush
     settings.mergeCommit = settings.mergeCommit ?? sd.mergeCommit
     settings.sidebarOrder =

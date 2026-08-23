@@ -86,6 +86,7 @@ interface PreloadApi {
   /** Pick an existing file, by path only. */
   openFilePath(title: string, filters?: { name: string; extensions: string[] }[]): Promise<string | null>
   openExternal(url: string): Promise<void>
+  focusWindow(): Promise<void>
   appVersion(): Promise<string>
   appReleases(): Promise<import('../../shared/types').AppRelease[]>
   shell: {

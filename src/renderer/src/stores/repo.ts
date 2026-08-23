@@ -36,6 +36,7 @@ import { planStackSubmit, buildStackSection } from '../../../shared/stackPr'
 import type { LocalCiVerdict } from '../../../shared/localCi'
 import { useUIStore } from './ui'
 import { useSettingsStore } from './settings'
+import { useFetchStore } from './fetch'
 import { isSecretFile } from '../lib/secrets'
 import { commitHookFailureHint } from '../lib/commitLint'
 import { splitCommitMessage } from '../lib/commitMenuCapabilities'
@@ -249,6 +250,62 @@ function muteWatcher(path: string): void {
   } catch {
     /* ignore — muting is a best-effort optimisation */
   }
+}
+
+/**
+ * Raise an OS notification for a radar overlap, on top of the toast.
+ *
+ * Deliberately rides the same dedupe as the toast (the caller only reaches here
+ * when the overlap set actually changed) and the same opt-in as every other
+ * desktop notification, plus its own switch — someone who wants CI notifications
+ * does not automatically want these.
+ *
+ * Clicking it raises the window and opens the radar on the repo it is about, so
+ * the notification lands you on the thing it warned you about rather than on
+ * whatever tab happened to be in front.
+ */
+function notifyOverlap(path: string, message: string, overlapping: { author: string }[]): void {
+  const settings = useSettingsStore.getState().settings
+  if (!settings.desktopNotifications || !settings.radarNotifications) return
+  const repo = useRepoStore.getState().repos[path]
+  const name = repo?.name || path.split('/').pop() || path
+  // Name the people, not the branches: "Ana pushed onto your files" is the fact.
+  const authors = [...new Set(overlapping.map((e) => e.author).filter(Boolean))]
+  const body = authors.length ? `${authors.slice(0, 3).join(', ')} · ${message}` : message
+  try {
+    const note = new Notification(`${t('teamRadar.title')} · ${name}`, { body })
+    note.onclick = () => {
+      void window.api?.focusWindow?.()
+      useUIStore.getState().openModal({ kind: 'teammate-radar', repoPath: path })
+    }
+  } catch {
+    // OS notifications unavailable or denied — the toast already fired.
+  }
+}
+
+/** The commit hashes known before a fetch, so what the fetch brought in can be
+ *  diffed out of what was already there. */
+function fetchCommitSignature(path: string): Set<string> {
+  return new Set((useRepoStore.getState().repos[path]?.commits ?? []).map((c) => c.hash))
+}
+
+/**
+ * Post-fetch bookkeeping shared by the user-initiated and background paths:
+ * record the fetch time, mark the commits that arrived (the graph's "new since
+ * last fetch" ring) and accumulate forced ref updates.
+ *
+ * Returns the forced updates so only the interactive caller has to decide
+ * whether to say anything about them.
+ */
+function applyFetchResult(path: string, before: Set<string>, forced: ForcedRefUpdate[]): ForcedRefUpdate[] {
+  const after = useRepoStore.getState().repos[path]?.commits ?? []
+  const newCommits = before.size ? after.filter((c) => !before.has(c.hash)).map((c) => c.hash) : []
+  // Keep earlier rewrites around: a branch you haven't looked at yet should
+  // still be flagged after an unrelated fetch.
+  const seen = { ...(useRepoStore.getState().repos[path]?.forcedUpdates ?? {}) }
+  for (const f of forced) seen[f.ref] = f
+  useRepoStore.getState().patch(path, { lastFetchAt: Date.now(), newCommits, forcedUpdates: seen })
+  return forced
 }
 
 // Serialize every mutating op per repo. `next` chains onto the tail so the user
@@ -1269,7 +1326,7 @@ export const repoActions = {
     }),
 
   fetchAll: async (path: string) => {
-    const before = new Set((useRepoStore.getState().repos[path]?.commits ?? []).map((c) => c.hash))
+    const before = fetchCommitSignature(path)
     let forced: ForcedRefUpdate[] = []
     const ok = await useRepoStore.getState().run(
       path,
@@ -1281,19 +1338,16 @@ export const repoActions = {
       'fetch'
     )
     if (ok) {
-      const after = useRepoStore.getState().repos[path]?.commits ?? []
-      const newCommits = before.size ? after.filter((c) => !before.has(c.hash)).map((c) => c.hash) : []
-      // Keep earlier rewrites around: a branch you haven't looked at yet should
-      // still be flagged after an unrelated fetch.
-      const seen = { ...(useRepoStore.getState().repos[path]?.forcedUpdates ?? {}) }
-      for (const f of forced) seen[f.ref] = f
-      useRepoStore.getState().patch(path, { lastFetchAt: Date.now(), newCommits, forcedUpdates: seen })
-      if (forced.length) {
+      // A manual fetch that worked is evidence the reason the scheduler backed
+      // off is gone — re-arm it rather than leaving the repo parked.
+      useFetchStore.getState().reset(path)
+      const forcedRefs = applyFetchResult(path, before, forced)
+      if (forcedRefs.length) {
         toast(
           'info',
-          forced.length === 1
-            ? interp(t('sync.forcedOne'), { ref: forced[0].ref })
-            : interp(t('sync.forcedMany'), { n: forced.length })
+          forcedRefs.length === 1
+            ? interp(t('sync.forcedOne'), { ref: forcedRefs[0].ref })
+            : interp(t('sync.forcedMany'), { n: forcedRefs.length })
         )
       }
       // Fresh remote state → sweep the teammate radar in the background.
@@ -1301,6 +1355,38 @@ export const repoActions = {
     }
     return ok
   },
+
+  /**
+   * The background scheduler's fetch: same work as `fetchAll`, none of the
+   * ceremony. No busy label, no success toast, no error toast — a timer that
+   * narrates itself six times a minute is worse than one that stays quiet, and
+   * failure is reported by the scheduler's own backoff instead.
+   *
+   * It still rides the per-repo command chain, so a background tick can never
+   * interleave with a user action on the same repository, and it still runs the
+   * radar sweep — surfacing a collision is the entire point of fetching often.
+   *
+   * Returns whether the fetch succeeded; the caller uses that to drive backoff.
+   */
+  backgroundFetch: (path: string): Promise<boolean> =>
+    enqueue(path, async () => {
+      const before = fetchCommitSignature(path)
+      let forced: ForcedRefUpdate[] = []
+      try {
+        muteWatcher(path)
+        forced = await gitApi.fetchAll(path)
+      } catch {
+        return false
+      }
+      // Only repos already open in the store carry graph state worth refreshing;
+      // a group member that has never been visited just needs its refs on disk.
+      if (useRepoStore.getState().repos[path]) {
+        await useRepoStore.getState().refresh(path)
+        applyFetchResult(path, before, forced)
+        await repoActions.radarSweep(path)
+      }
+      return true
+    }),
 
   /** Teammate-radar sweep after a fetch. Silent unless upstream commits touch
    *  files that are dirty locally AND the offending set actually changed —
@@ -1323,7 +1409,12 @@ export const repoActions = {
     const overlapping = result.entries.filter((e) => e.overlap.length)
     if (!overlapping.length || sig(result) === sig(prev)) return
     const files = new Set(overlapping.flatMap((e) => e.overlap))
-    toast('info', interp(t('teamRadar.overlapToast'), { files: files.size, branches: overlapping.length }))
+    const message = interp(t('teamRadar.overlapToast'), { files: files.size, branches: overlapping.length })
+    toast('info', message)
+    // A toast lives 3.5s in a window that, during the hours this matters, is
+    // behind an editor. The OS notification is the same warning where it can
+    // actually be seen — same dedupe, so it is not a second firehose.
+    notifyOverlap(path, message, overlapping)
   },
 
   // ─── Multi-repo batch (group tabs) ───

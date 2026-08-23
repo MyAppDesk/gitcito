@@ -2710,21 +2710,16 @@ export interface AppSettings {
 // ─── Hack mode ───────────────────────────────────────────────────────────────
 
 /**
- * How loud the session is allowed to be.
+ * A session has one look, and it is not a preference.
  *
- * `anime` is the point of the mode — continuous motion on the banner, bursts on
- * a push, a combo counter. It is confined to celebration and status surfaces:
- * a diff, the staging list, the conflict resolver and the graph never move,
- * because at 4am those are precision work.
+ * The whole app changes — app palette, syntax palette, graph style — because a
+ * mode you can only detect by reading a strip at the top is not a mode. There
+ * is deliberately no "quiet hack mode": that is just not starting a session.
  *
- * `calm` keeps the banner and the counters and drops the motion. `off` hides
- * the chrome entirely and leaves only the behaviour — fetch cadence, radar,
- * freeze — for someone who wants the coordination without the theatre.
- *
- * The OS `prefers-reduced-motion` setting overrides `anime` down to `calm` at
- * render time; this field records the intent, not the outcome.
+ * The one thing that does override it is the OS `prefers-reduced-motion`
+ * setting, which stops every animation. That is an accessibility guarantee
+ * rather than a user preference, and it is not negotiable.
  */
-export type HackMotionLevel = 'off' | 'calm' | 'anime'
 
 /**
  * One repository's part in the session.
@@ -2760,7 +2755,6 @@ export interface HackTemplate {
   wipPushMinutes: number
   /** Hours before the deadline at which the freeze starts warning (0 = off). */
   freezeFromHours: number
-  motion: HackMotionLevel
   radarNotify: boolean
 }
 
@@ -2785,7 +2779,6 @@ export interface HackSession {
   /** Globs still safe to touch once the freeze is on. Everything else warns. */
   freezeAllowlist: string[]
   freezeFromHours: number
-  motion: HackMotionLevel
   radarNotify: boolean
   /** Run the AI second pass over a path overlap the radar already found.
    *  Off unless the user turned it on and has a provider configured. */
@@ -2793,6 +2786,9 @@ export interface HackSession {
   /** Push periodic WIP snapshots to `wip/<me>/<branch>`. Off by default: it
    *  publishes to a shared remote. */
   wipPush: boolean
+  /** The theme ids and graph style in use before the session took over, so
+   *  ending it restores exactly what the user had — custom themes included. */
+  restore?: { appThemeId: string; codeThemeId: string; graphStyle: GraphStyle }
 }
 
 /** A session as it travels between machines. No absolute paths — repos are
@@ -2807,7 +2803,6 @@ export interface PortableHackSession {
   wipPushMinutes: number
   freezeAllowlist: string[]
   freezeFromHours: number
-  motion: HackMotionLevel
   radarNotify: boolean
   repos: { name: string; remote?: string; folder: string }[]
   /** Roles keyed by the repo folder name plus an optional sub-path, so they

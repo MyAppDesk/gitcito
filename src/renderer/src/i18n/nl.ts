@@ -3272,11 +3272,6 @@ export const nl: Dict = {
   'hack.createFoot': 'Er verlaat niets deze machine. Geen server, geen telemetrie — de sessie is een lokale instelling die je als bestand kunt doorgeven.',
   'hack.fetchSeconds': 'Fetchen elke (seconden)',
   'hack.fetchSecondsHint': 'Vervangt het normale ritme zolang de sessie loopt. Repos worden gespreid en een falende wacht langer.',
-  'hack.motion': 'Uiterlijk',
-  'hack.motionAnime': 'Anime — banner, beweging en uitbarstingen',
-  'hack.motionCalm': 'Rustig — banner en tellers, geen beweging',
-  'hack.motionOff': 'Uit — alleen gedrag, geen opsmuk',
-  'hack.motionHint': 'Beweging blijft beperkt tot deze banner en zijn uitbarstingen. De diff, de stagelijst, de conflictoplosser en de graaf bewegen nooit, en de reduced-motion-instelling van je systeem wint altijd.',
   'hack.freezeFrom': 'Freeze vanaf (uren voor het einde)',
   'hack.freezeFromHint': '0 schakelt het uit. Het waarschuwt alleen — er wordt niets geblokkeerd.',
   'hack.freezeAllowlist': 'Tijdens de freeze nog wel aan te raken',
@@ -3320,9 +3315,12 @@ export const nl: Dict = {
   'hack.looseRepos': 'Losse tabbladen',
   'hack.all': 'Alle',
   'hack.none': 'Geen',
-  'hack.tagAnime': 'Anime',
-  'hack.tagCalm': 'Rustig',
-  'hack.tagPlain': 'Geen opsmuk',
   'hack.tagFreeze': 'freeze {h} u',
-  'hack.tagWip': 'WIP {m} min'
+  'hack.tagWip': 'WIP {m} min',
+  'hack.tagNotify': 'meldingen',
+  'hack.detecting': 'Manifesten lezen…',
+  'hack.roleLabel': 'Wat dit onderdeel is',
+  'hack.noContracts': 'Geen contractbestanden — deze repo breekt niets voor de anderen.',
+  'hack.addContract': 'Voeg een bestand of glob toe, dan Enter',
+  'hack.removeContract': '{file} verwijderen'
 }

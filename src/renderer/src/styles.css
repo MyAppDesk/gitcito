@@ -15648,3 +15648,145 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
     background: color-mix(in srgb, var(--accent) 70%, transparent);
   }
 }
+
+/* ─── Hack mode: session chrome the palette cannot express ──────────────────
+   The colours come from a real theme (theme/hackTheme.ts) that the session
+   swaps in and hands back at the end. What is left here is the geometry a
+   palette has no way to say: the banner's weight, the grain, the glow. */
+
+:root[data-hack] .hack-banner {
+  height: 34px;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
+  box-shadow: 0 1px 18px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+:root[data-hack] .hack-banner-name strong {
+  font-weight: 800;
+  font-style: italic;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+/* A faint scanline grain across the banner. Static, so it costs nothing to
+   composite and does not compete with the sheen. */
+:root[data-hack] .hack-banner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    180deg,
+    transparent 0 2px,
+    color-mix(in srgb, var(--text-0) 4%, transparent) 2px 3px
+  );
+  opacity: 0.5;
+}
+
+/* The status bar picks up the accent line so the mode frames the window rather
+   than sitting on top of it. */
+:root[data-hack] .status-bar {
+  border-top-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+}
+
+/* ─── Roles and contract files ─── */
+
+.hack-role {
+  gap: 8px;
+  padding: 10px;
+}
+
+.hack-role-label {
+  width: 14ch;
+  flex: 0 0 auto;
+  font-weight: 600;
+}
+
+.hack-role-where {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--text-2);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hack-role-sub {
+  color: var(--accent);
+}
+
+.hack-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
+
+.hack-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 5px 3px 8px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--accent) 14%, var(--bg-3));
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  font-family: var(--mono, monospace);
+  font-size: 11px;
+  color: var(--text-0);
+}
+
+.hack-chip button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+}
+
+.hack-chip button:hover {
+  background: color-mix(in srgb, var(--red) 30%, transparent);
+  color: var(--text-0);
+}
+
+.hack-chip-input {
+  flex: 1 1 180px;
+  min-width: 150px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px dashed var(--border);
+  background: transparent;
+  color: var(--text-0);
+  font-family: var(--mono, monospace);
+  font-size: 11px;
+}
+
+.hack-chip-input:focus {
+  border-style: solid;
+  border-color: var(--accent);
+  outline: none;
+}
+
+.hack-add-role {
+  align-self: flex-start;
+}
+
+/* The modal borrows the settings form's controls, so it inherits their sizing
+   rather than re-deriving it — the toggle cards below depend on it. */
+.hack-modal .settings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.hack-modal .settings-field textarea {
+  width: 100%;
+}

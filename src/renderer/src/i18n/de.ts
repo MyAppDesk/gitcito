@@ -3272,11 +3272,6 @@ export const de: Dict = {
   'hack.createFoot': 'Nichts verlässt diesen Rechner. Kein Server, keine Telemetrie — die Session ist eine lokale Einstellung, die du als Datei weitergeben kannst.',
   'hack.fetchSeconds': 'Abruf alle (Sekunden)',
   'hack.fetchSecondsHint': 'Ersetzt die normale Taktung, solange die Session läuft. Repos werden versetzt, ein fehlschlagendes wartet länger.',
-  'hack.motion': 'Erscheinung',
-  'hack.motionAnime': 'Anime — Banner, Bewegung und Effekte',
-  'hack.motionCalm': 'Ruhig — Banner und Zähler, ohne Bewegung',
-  'hack.motionOff': 'Aus — nur Verhalten, keine Optik',
-  'hack.motionHint': 'Bewegung bleibt auf dieses Banner und seine Effekte beschränkt. Diff, Staging-Liste, Konfliktlöser und Graph bewegen sich nie, und die Reduzierte-Bewegung-Einstellung des Systems gewinnt immer.',
   'hack.freezeFrom': 'Freeze ab (Stunden vor Schluss)',
   'hack.freezeFromHint': '0 schaltet es ab. Es warnt nur — blockiert wird nie etwas.',
   'hack.freezeAllowlist': 'Während des Freeze weiterhin anfassbar',
@@ -3320,9 +3315,12 @@ export const de: Dict = {
   'hack.looseRepos': 'Einzelne Tabs',
   'hack.all': 'Alle',
   'hack.none': 'Keine',
-  'hack.tagAnime': 'Anime',
-  'hack.tagCalm': 'Ruhig',
-  'hack.tagPlain': 'Ohne Optik',
   'hack.tagFreeze': 'Freeze {h} Std.',
-  'hack.tagWip': 'WIP {m} Min.'
+  'hack.tagWip': 'WIP {m} Min.',
+  'hack.tagNotify': 'Warnungen',
+  'hack.detecting': 'Manifeste werden gelesen…',
+  'hack.roleLabel': 'Was dieser Teil ist',
+  'hack.noContracts': 'Keine Vertragsdateien — dieses Repo bricht für die anderen nichts.',
+  'hack.addContract': 'Datei oder Glob eingeben, dann Enter',
+  'hack.removeContract': '{file} entfernen'
 }

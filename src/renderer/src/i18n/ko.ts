@@ -3264,11 +3264,6 @@ export const ko: Dict = {
   'hack.createFoot': '이 기기를 벗어나는 것은 없습니다. 서버도 원격 측정도 없습니다. 세션은 파일로 건넬 수 있는 로컬 설정입니다.',
   'hack.fetchSeconds': '페치 주기 (초)',
   'hack.fetchSecondsHint': '세션이 도는 동안 평소 주기를 덮어씁니다. 저장소는 시차를 두고, 실패한 것은 물러섭니다.',
-  'hack.motion': '외관',
-  'hack.motionAnime': '애니메 — 배너, 모션, 연출',
-  'hack.motionCalm': '차분 — 배너와 카운터만, 모션 없음',
-  'hack.motionOff': '끔 — 동작만, 장식 없음',
-  'hack.motionHint': '모션은 이 배너와 연출에만 한정됩니다. диф, 스테이징 목록, 충돌 해결기, 그래프는 절대 움직이지 않으며 OS의 모션 줄이기 설정이 항상 우선합니다.',
   'hack.freezeFrom': '프리즈 시작 (종료 몇 시간 전)',
   'hack.freezeFromHint': '0이면 꺼집니다. 경고만 하고 아무것도 막지 않습니다.',
   'hack.freezeAllowlist': '프리즈 중에도 건드려도 되는 것',
@@ -3312,9 +3307,12 @@ export const ko: Dict = {
   'hack.looseRepos': '단독 탭',
   'hack.all': '전체',
   'hack.none': '없음',
-  'hack.tagAnime': '애니메',
-  'hack.tagCalm': '차분',
-  'hack.tagPlain': '장식 없음',
   'hack.tagFreeze': '프리즈 {h}시간',
-  'hack.tagWip': 'WIP {m}분'
+  'hack.tagWip': 'WIP {m}분',
+  'hack.tagNotify': '알림',
+  'hack.detecting': '매니페스트를 읽는 중…',
+  'hack.roleLabel': '이 부분이 무엇인지',
+  'hack.noContracts': '계약 파일 없음 — 이 저장소는 다른 곳을 깨뜨리지 않습니다.',
+  'hack.addContract': '파일이나 글롭을 적고 Enter',
+  'hack.removeContract': '{file} 제거'
 }

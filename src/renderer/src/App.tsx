@@ -685,18 +685,18 @@ export default function App(): React.JSX.Element {
   }, [fetchPathsKey, fetchSeconds, settings.pauseWhenHidden, settings.autoFetchScope])
 
   // ─── Hack mode: the visual layer's root hook and the WIP push timer ───────
-  // A body class rather than a theme: `AppTheme` is fifteen colours, with no
-  // axis for motion or density, so the mode's look is a scoped stylesheet keyed
-  // off the root element instead of a fake theme.
+  // The palette swap is a real theme (see theme/hackTheme.ts). This attribute is
+  // only for the extra chrome a palette cannot express — the rails, the tab
+  // sweep, the banner's sheen.
   useEffect(() => {
     const root = document.documentElement
-    if (!session || session.motion === 'off') {
+    if (!session) {
       root.removeAttribute('data-hack')
       return
     }
-    root.setAttribute('data-hack', session.motion)
+    root.setAttribute('data-hack', 'on')
     return () => root.removeAttribute('data-hack')
-  }, [session, session?.motion])
+  }, [session])
 
   // Periodic WIP push. Separate from the fetch scheduler on purpose: it writes
   // to a shared remote, runs on its own much slower cadence, and refuses on its

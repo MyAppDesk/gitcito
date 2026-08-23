@@ -3264,11 +3264,6 @@ export const zhCN: Dict = {
   'hack.createFoot': '没有任何东西离开这台机器。没有服务器，没有遥测——会话只是一份本地设置，可以当作文件交给别人。',
   'hack.fetchSeconds': '获取间隔（秒）',
   'hack.fetchSecondsHint': '会话期间覆盖常规节奏。各仓库错峰进行，失败的会退避。',
-  'hack.motion': '外观',
-  'hack.motionAnime': '动漫风——横幅、动效与爆闪',
-  'hack.motionCalm': '安静——横幅与计数器，无动效',
-  'hack.motionOff': '关闭——只保留行为，不显示装饰',
-  'hack.motionHint': '动效只限于这条横幅及其爆闪。差异视图、暂存列表、冲突解决器和提交图从不移动，系统的“减少动态效果”设置始终优先。',
   'hack.freezeFrom': '冻结开始（结束前几小时）',
   'hack.freezeFromHint': '设为 0 即关闭。它只会提醒，不会阻止任何操作。',
   'hack.freezeAllowlist': '冻结期间仍可改动的范围',
@@ -3312,9 +3307,12 @@ export const zhCN: Dict = {
   'hack.looseRepos': '独立标签页',
   'hack.all': '全选',
   'hack.none': '取消',
-  'hack.tagAnime': '动漫风',
-  'hack.tagCalm': '安静',
-  'hack.tagPlain': '无装饰',
   'hack.tagFreeze': '冻结 {h} 小时',
-  'hack.tagWip': 'WIP {m} 分钟'
+  'hack.tagWip': 'WIP {m} 分钟',
+  'hack.tagNotify': '提醒',
+  'hack.detecting': '正在读取清单文件…',
+  'hack.roleLabel': '这部分是什么',
+  'hack.noContracts': '没有契约文件——这个仓库不会影响其他人。',
+  'hack.addContract': '输入文件或通配符后按 Enter',
+  'hack.removeContract': '移除 {file}'
 }

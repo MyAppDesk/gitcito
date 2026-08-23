@@ -117,7 +117,6 @@ export function sessionFromTemplate(
     wipPushMinutes: template.wipPushMinutes,
     freezeAllowlist: [],
     freezeFromHours: template.freezeFromHours,
-    motion: template.motion,
     radarNotify: template.radarNotify,
     semanticCollisions: false,
     wipPush: false
@@ -158,7 +157,6 @@ export function toPortable(
     wipPushMinutes: session.wipPushMinutes,
     freezeAllowlist: session.freezeAllowlist,
     freezeFromHours: session.freezeFromHours,
-    motion: session.motion,
     radarNotify: session.radarNotify,
     repos: session.repos.map((p) => {
       const info = repoInfo.find((r) => r.path === p)
@@ -221,8 +219,6 @@ const safeText = (v: unknown, max: number): string =>
 const safeNumber = (v: unknown, fallback: number): number =>
   typeof v === 'number' && Number.isFinite(v) ? v : fallback
 
-const safeMotion = (v: unknown): PortableHackSession['motion'] =>
-  v === 'off' || v === 'calm' || v === 'anime' ? v : 'calm'
 
 /**
  * Validate and clamp a parsed session file.
@@ -304,7 +300,6 @@ export function parsePortableSession(raw: unknown): PortableHackSession | null {
     wipPushMinutes: clamp(Math.round(safeNumber(o.wipPushMinutes, 0)), 0, IMPORT_LIMITS.maxWipPushMinutes),
     freezeAllowlist,
     freezeFromHours: clamp(Math.round(safeNumber(o.freezeFromHours, 0)), 0, IMPORT_LIMITS.maxFreezeFromHours),
-    motion: safeMotion(o.motion),
     radarNotify: o.radarNotify === true,
     repos,
     roles
@@ -372,7 +367,6 @@ export function fromPortable(
     wipPushMinutes: portable.wipPushMinutes,
     freezeAllowlist: portable.freezeAllowlist,
     freezeFromHours: portable.freezeFromHours,
-    motion: portable.motion,
     radarNotify: portable.radarNotify,
     semanticCollisions: false,
     wipPush: false

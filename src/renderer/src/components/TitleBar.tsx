@@ -795,14 +795,11 @@ export function TitleBar(): React.JSX.Element {
     return wip ? 'wip' : null
   }
 
-  /**
-   * Marks the tabs that belong to a running session, so the strip itself says
-   * which repositories the event covers. Only in `anime`: at `calm` the mode is
-   * deliberately quiet, and at `off` it has no chrome at all.
-   */
+  /** Marks the tabs that belong to a running session, so the strip itself says
+   *  which repositories the event covers. */
   const hackClass = (paths: string[]): string => {
     const session = settings.hackSession
-    if (!session || session.motion !== 'anime') return ''
+    if (!session) return ''
     return paths.some((p) => session.repos.includes(p)) ? 'hack-tab' : ''
   }
 

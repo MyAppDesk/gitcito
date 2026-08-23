@@ -78,9 +78,11 @@ export function HackBanner(): React.JSX.Element | null {
     return { ahead, behind, dirty }
   }, [session, repos])
 
-  if (!session || !clock || session.motion === 'off') return null
+  if (!session || !clock) return null
 
-  const motionOn = session.motion === 'anime' && !reduced
+  // A session always wears its look; only the OS reduced-motion setting stops
+  // the movement, and it stops all of it.
+  const motionOn = !reduced
   const phaseClass = `hack-banner--${clock.phase}`
 
   return (

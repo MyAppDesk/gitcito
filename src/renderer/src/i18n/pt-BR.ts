@@ -3273,11 +3273,6 @@ export const ptBR: Dict = {
   'hack.createFoot': 'Nada sai desta máquina. Sem servidor, sem telemetria — a sessão é uma configuração local que você pode passar como arquivo.',
   'hack.fetchSeconds': 'Fetch a cada (segundos)',
   'hack.fetchSecondsHint': 'Substitui a cadência normal enquanto a sessão dura. Os repos são escalonados e o que falha recua.',
-  'hack.motion': 'Aparência',
-  'hack.motionAnime': 'Anime — banner, movimento e explosões',
-  'hack.motionCalm': 'Calmo — banner e contadores, sem movimento',
-  'hack.motionOff': 'Desligado — só o comportamento, sem enfeites',
-  'hack.motionHint': 'O movimento fica restrito a este banner e às suas explosões. O diff, a área de staging, o resolvedor de conflitos e o grafo nunca se mexem, e a preferência de movimento reduzido do sistema sempre vence.',
   'hack.freezeFrom': 'Freeze a partir de (horas antes do fim)',
   'hack.freezeFromHint': '0 desliga. Ele apenas avisa — nada é bloqueado.',
   'hack.freezeAllowlist': 'Ainda pode mexer durante o freeze',
@@ -3321,9 +3316,12 @@ export const ptBR: Dict = {
   'hack.looseRepos': 'Abas avulsas',
   'hack.all': 'Todos',
   'hack.none': 'Nenhum',
-  'hack.tagAnime': 'Anime',
-  'hack.tagCalm': 'Calmo',
-  'hack.tagPlain': 'Sem enfeites',
   'hack.tagFreeze': 'freeze {h} h',
-  'hack.tagWip': 'WIP {m} min'
+  'hack.tagWip': 'WIP {m} min',
+  'hack.tagNotify': 'alertas',
+  'hack.detecting': 'Lendo manifestos…',
+  'hack.roleLabel': 'O que é esta parte',
+  'hack.noContracts': 'Sem arquivos de contrato — este repo não quebra nada para os outros.',
+  'hack.addContract': 'Adicione um arquivo ou glob e tecle Enter',
+  'hack.removeContract': 'Remover {file}'
 }

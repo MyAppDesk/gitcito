@@ -5,6 +5,7 @@ import type {
   GraphLineWidth
 } from '../../../shared/types'
 import { GRAPH_COLORS } from './layout'
+import { HACK_GRAPH_PALETTE } from '../theme/hackTheme'
 
 // ─── Built-in graph palettes ─────────────────────────────────────────────────
 // `classic` mirrors the historical hard-coded rails so existing repos look
@@ -58,7 +59,9 @@ export const GRAPH_PALETTES: GraphPalette[] = [
 ]
 
 export function allGraphPalettes(custom: GraphPalette[]): GraphPalette[] {
-  return [...GRAPH_PALETTES, ...custom]
+  // The session palette rides along so a session's graph resolves its lane
+  // colours by id like any other, and reverts cleanly when the session ends.
+  return [...GRAPH_PALETTES, HACK_GRAPH_PALETTE, ...custom]
 }
 
 export function findGraphPalette(id: string, custom: GraphPalette[]): GraphPalette {

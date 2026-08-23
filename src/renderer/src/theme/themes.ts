@@ -1,4 +1,5 @@
-import type { AppTheme, CodeTheme, ThemeMode, AppThemeColors, CodeThemeColors } from '../../../shared/types'
+import type { AppTheme, CodeTheme, ThemeMode, AppThemeColors, CodeThemeColors, GraphPalette } from '../../../shared/types'
+import { HACK_APP_THEME, HACK_CODE_THEME, HACK_GRAPH_PALETTE } from './hackTheme'
 
 // ─── Built-in app themes ─────────────────────────────────────────────────────
 // Every built-in theme ships a light and a dark palette. The active palette is
@@ -794,11 +795,17 @@ function hexToRgba(hex: string, alpha: number): string {
 }
 
 export function allAppThemes(custom: AppTheme[]): AppTheme[] {
-  return [...APP_THEMES, ...custom]
+  return [...APP_THEMES, HACK_APP_THEME, ...custom]
 }
 
+/** The session skin, alongside the shipped themes so `findAppTheme` resolves it
+ *  like any other id and nothing downstream needs a special case. */
+export const SESSION_APP_THEME = HACK_APP_THEME
+export const SESSION_CODE_THEME = HACK_CODE_THEME
+export const SESSION_GRAPH_PALETTE: GraphPalette = HACK_GRAPH_PALETTE
+
 export function allCodeThemes(custom: CodeTheme[]): CodeTheme[] {
-  return [...CODE_THEMES, ...custom]
+  return [...CODE_THEMES, HACK_CODE_THEME, ...custom]
 }
 
 export function findAppTheme(id: string, custom: AppTheme[]): AppTheme {

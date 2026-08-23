@@ -3268,11 +3268,6 @@ export const en = {
   'hack.createFoot': 'Nothing leaves this machine. No server, no telemetry — the session is a local setting you can hand to someone as a file.',
   'hack.fetchSeconds': 'Fetch every (seconds)',
   'hack.fetchSecondsHint': 'Overrides the normal cadence while the session runs. Repos are staggered and a failing one backs off.',
-  'hack.motion': 'Look',
-  'hack.motionAnime': 'Anime — banner, motion and bursts',
-  'hack.motionCalm': 'Calm — banner and counters, no motion',
-  'hack.motionOff': 'Off — behaviour only, no chrome',
-  'hack.motionHint': 'Motion is confined to this banner and its bursts. The diff, the staging list, the conflict resolver and the graph never move, and your OS reduced-motion setting always wins.',
   'hack.freezeFrom': 'Freeze from (hours before the end)',
   'hack.freezeFromHint': '0 turns it off. It only ever warns — nothing is blocked.',
   'hack.freezeAllowlist': 'Still safe to touch during the freeze',
@@ -3316,11 +3311,14 @@ export const en = {
   'hack.looseRepos': 'Standalone tabs',
   'hack.all': 'All',
   'hack.none': 'None',
-  'hack.tagAnime': 'Anime',
-  'hack.tagCalm': 'Calm',
-  'hack.tagPlain': 'No chrome',
   'hack.tagFreeze': 'freeze {h}h',
-  'hack.tagWip': 'WIP {m}m'
+  'hack.tagWip': 'WIP {m}m',
+  'hack.tagNotify': 'alerts',
+  'hack.detecting': 'Reading manifests…',
+  'hack.roleLabel': 'What this part is',
+  'hack.noContracts': 'No contract files — this repo breaks nothing for the others.',
+  'hack.addContract': 'Add a file or glob, then Enter',
+  'hack.removeContract': 'Remove {file}'
 }
 
 /** The shape every locale must implement. */

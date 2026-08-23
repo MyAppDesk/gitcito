@@ -20,7 +20,6 @@ export const BUILTIN_HACK_TEMPLATES: HackTemplate[] = [
     fetchSeconds: 45,
     wipPushMinutes: 20,
     freezeFromHours: 4,
-    motion: 'anime',
     radarNotify: true
   },
   {
@@ -31,8 +30,6 @@ export const BUILTIN_HACK_TEMPLATES: HackTemplate[] = [
     wipPushMinutes: 15,
     // An incident has no demo to freeze before — the whole session is the edge.
     freezeFromHours: 0,
-    // People are reading production diffs; the theatre is actively unhelpful.
-    motion: 'calm',
     radarNotify: true
   },
   {
@@ -42,7 +39,6 @@ export const BUILTIN_HACK_TEMPLATES: HackTemplate[] = [
     fetchSeconds: 120,
     wipPushMinutes: 0,
     freezeFromHours: 0,
-    motion: 'off',
     radarNotify: false
   }
 ]

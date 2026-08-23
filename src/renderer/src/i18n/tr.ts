@@ -3207,11 +3207,6 @@ export const tr: Dict = {
   'hack.createFoot': 'Hiçbir şey bu makineden çıkmaz. Sunucu yok, telemetri yok — oturum, birine dosya olarak verebileceğin yerel bir ayardır.',
   'hack.fetchSeconds': 'Getirme aralığı (saniye)',
   'hack.fetchSecondsHint': 'Oturum sürerken normal tempoyu geçersiz kılar. Depolar kademelenir, hata veren geri çekilir.',
-  'hack.motion': 'Görünüm',
-  'hack.motionAnime': 'Anime — afiş, hareket ve patlamalar',
-  'hack.motionCalm': 'Sakin — afiş ve sayaçlar, hareketsiz',
-  'hack.motionOff': 'Kapalı — yalnızca davranış, süs yok',
-  'hack.motionHint': 'Hareket bu afiş ve patlamalarıyla sınırlıdır. Diff, hazırlık listesi, çakışma çözücü ve grafik asla kıpırdamaz; işletim sisteminin azaltılmış hareket ayarı her zaman kazanır.',
   'hack.freezeFrom': 'Dondurma başlangıcı (bitişten kaç saat önce)',
   'hack.freezeFromHint': '0 kapatır. Yalnızca uyarır — hiçbir şey engellenmez.',
   'hack.freezeAllowlist': 'Dondurma sırasında hâlâ dokunulabilir',
@@ -3255,9 +3250,12 @@ export const tr: Dict = {
   'hack.looseRepos': 'Tek başına sekmeler',
   'hack.all': 'Tümü',
   'hack.none': 'Hiçbiri',
-  'hack.tagAnime': 'Anime',
-  'hack.tagCalm': 'Sakin',
-  'hack.tagPlain': 'Süssüz',
   'hack.tagFreeze': 'dondurma {h} sa',
-  'hack.tagWip': 'WIP {m} dk'
+  'hack.tagWip': 'WIP {m} dk',
+  'hack.tagNotify': 'uyarılar',
+  'hack.detecting': 'Manifestler okunuyor…',
+  'hack.roleLabel': 'Bu parça ne',
+  'hack.noContracts': 'Sözleşme dosyası yok — bu depo diğerleri için bir şey bozmuyor.',
+  'hack.addContract': 'Dosya ya da glob ekle, sonra Enter',
+  'hack.removeContract': '{file} dosyasını kaldır'
 }

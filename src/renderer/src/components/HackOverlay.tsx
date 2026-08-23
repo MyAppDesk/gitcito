@@ -59,7 +59,9 @@ export function HackOverlay(): React.JSX.Element | null {
 
   const phase = useMemo(() => (session ? hackClock(session, now).phase : null), [session, now])
 
-  if (!session || session.motion !== 'anime' || reduced) return null
+  // A session always looks like one. The only thing that turns this off is
+  // the OS asking for reduced motion, which is a guarantee rather than a taste.
+  if (!session || reduced) return null
 
   // The rails read the clock: they drift while there is time, run harder in the
   // freeze, and turn red once the deadline has passed. The intensity is the

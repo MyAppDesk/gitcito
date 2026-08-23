@@ -3267,11 +3267,6 @@ export const he: Dict = {
   'hack.createFoot': 'שום דבר לא עוזב את המכונה הזאת. אין שרת, אין טלמטריה — המושב הוא הגדרה מקומית שאפשר למסור כקובץ.',
   'hack.fetchSeconds': 'הבאה כל (שניות)',
   'hack.fetchSecondsHint': 'דורס את הקצב הרגיל בזמן המושב. המאגרים מפוזרים בזמן, וכזה שנכשל נסוג.',
-  'hack.motion': 'מראה',
-  'hack.motionAnime': 'אנימה — באנר, תנועה והתפרצויות',
-  'hack.motionCalm': 'רגוע — באנר ומונים, בלי תנועה',
-  'hack.motionOff': 'כבוי — התנהגות בלבד, בלי קישוט',
-  'hack.motionHint': 'התנועה מוגבלת לבאנר הזה ולהתפרצויות שלו. ההשוואה, רשימת ההכנה, פותר ההתנגשויות והגרף לעולם לא זזים, והגדרת הפחתת התנועה של מערכת ההפעלה תמיד מנצחת.',
   'hack.freezeFrom': 'הקפאה החל מ-(שעות לפני הסוף)',
   'hack.freezeFromHint': '0 מכבה. הוא רק מזהיר — כלום לא נחסם.',
   'hack.freezeAllowlist': 'עדיין מותר לגעת בזמן ההקפאה',
@@ -3315,9 +3310,12 @@ export const he: Dict = {
   'hack.looseRepos': 'לשוניות בודדות',
   'hack.all': 'הכול',
   'hack.none': 'כלום',
-  'hack.tagAnime': 'אנימה',
-  'hack.tagCalm': 'רגוע',
-  'hack.tagPlain': 'בלי קישוט',
   'hack.tagFreeze': 'הקפאה {h} שעות',
-  'hack.tagWip': 'WIP {m} דק׳'
+  'hack.tagWip': 'WIP {m} דק׳',
+  'hack.tagNotify': 'התראות',
+  'hack.detecting': 'קורא מניפסטים…',
+  'hack.roleLabel': 'מה החלק הזה',
+  'hack.noContracts': 'אין קבצי חוזה — המאגר הזה לא שובר כלום לאחרים.',
+  'hack.addContract': 'הוסף קובץ או תבנית ואז Enter',
+  'hack.removeContract': 'הסר {file}'
 }

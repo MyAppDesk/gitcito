@@ -3264,11 +3264,6 @@ export const pl: Dict = {
   'hack.createFoot': 'Nic nie opuszcza tej maszyny. Bez serwera, bez telemetrii — sesja to lokalne ustawienie, które możesz przekazać jako plik.',
   'hack.fetchSeconds': 'Fetch co (sekundy)',
   'hack.fetchSecondsHint': 'Zastępuje normalny rytm na czas sesji. Repozytoria są rozłożone w czasie, a to, które zawodzi, zwalnia.',
-  'hack.motion': 'Wygląd',
-  'hack.motionAnime': 'Anime — baner, ruch i wybuchy',
-  'hack.motionCalm': 'Spokojnie — baner i liczniki, bez ruchu',
-  'hack.motionOff': 'Wyłączone — tylko zachowanie, bez ozdób',
-  'hack.motionHint': 'Ruch ogranicza się do tego banera i jego wybuchów. Diff, lista staging, rozwiązywanie konfliktów i graf nigdy się nie ruszają, a systemowe ustawienie ograniczonego ruchu zawsze wygrywa.',
   'hack.freezeFrom': 'Freeze od (godzin przed końcem)',
   'hack.freezeFromHint': '0 wyłącza. Tylko ostrzega — nic nie jest blokowane.',
   'hack.freezeAllowlist': 'Nadal wolno ruszać podczas freeze',
@@ -3312,9 +3307,12 @@ export const pl: Dict = {
   'hack.looseRepos': 'Pojedyncze karty',
   'hack.all': 'Wszystkie',
   'hack.none': 'Żadne',
-  'hack.tagAnime': 'Anime',
-  'hack.tagCalm': 'Spokojnie',
-  'hack.tagPlain': 'Bez ozdób',
   'hack.tagFreeze': 'freeze {h} h',
-  'hack.tagWip': 'WIP {m} min'
+  'hack.tagWip': 'WIP {m} min',
+  'hack.tagNotify': 'alerty',
+  'hack.detecting': 'Czytanie manifestów…',
+  'hack.roleLabel': 'Czym jest ta część',
+  'hack.noContracts': 'Brak plików kontraktu — to repo nic nie psuje innym.',
+  'hack.addContract': 'Dodaj plik lub wzorzec i naciśnij Enter',
+  'hack.removeContract': 'Usuń {file}'
 }

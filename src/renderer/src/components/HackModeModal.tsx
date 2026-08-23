@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   Download,
+  FileCode2,
   Flame,
   FolderGit2,
   Layers,
@@ -13,7 +14,8 @@ import {
   Square,
   Trash2,
   Upload,
-  Users
+  Users,
+  X
 } from 'lucide-react'
 import type { AppSettings, HackRepoRole, HackTemplate, PortableHackSession } from '../../../shared/types'
 import { tabRepos } from '../../../shared/types'
@@ -331,7 +333,7 @@ export function HackModeModal(): React.JSX.Element {
   // ─── Running session: settings, invite, teardown ───
   if (running) {
     return (
-      <div className="hack-modal">
+      <div className="hack-modal settings-form">
         <div className="hack-modal-head">
           <Flame size={16} />
           <h3>{running.name}</h3>
@@ -351,18 +353,6 @@ export function HackModeModal(): React.JSX.Element {
             <span className="settings-hint">{t('hack.fetchSecondsHint')}</span>
           </label>
 
-          <label className="settings-field">
-            <span className="settings-field-label">{t('hack.motion')}</span>
-            <select
-              value={running.motion}
-              onChange={(e) => setSessionField('motion', e.target.value as typeof running.motion)}
-            >
-              <option value="anime">{t('hack.motionAnime')}</option>
-              <option value="calm">{t('hack.motionCalm')}</option>
-              <option value="off">{t('hack.motionOff')}</option>
-            </select>
-            <span className="settings-hint">{t('hack.motionHint')}</span>
-          </label>
 
           <label className="settings-field">
             <span className="settings-field-label">{t('hack.freezeFrom')}</span>
@@ -475,7 +465,7 @@ export function HackModeModal(): React.JSX.Element {
 
   // ─── Creation ───
   return (
-    <div className="hack-modal">
+    <div className="hack-modal settings-form">
       <div className="hack-modal-head">
         <Flame size={16} />
         <h3>{t('hack.createTitle')}</h3>
@@ -497,13 +487,6 @@ export function HackModeModal(): React.JSX.Element {
               })}
             </span>
             <span className="hack-template-tags">
-              <span className={`hack-tag hack-tag--${tpl.motion}`}>
-                {tpl.motion === 'anime'
-                  ? t('hack.tagAnime')
-                  : tpl.motion === 'calm'
-                    ? t('hack.tagCalm')
-                    : t('hack.tagPlain')}
-              </span>
               {tpl.freezeFromHours > 0 && (
                 <span className="hack-tag">
                   <Snowflake size={9} /> {interp(t('hack.tagFreeze'), { h: String(tpl.freezeFromHours) })}
@@ -512,6 +495,7 @@ export function HackModeModal(): React.JSX.Element {
               {tpl.wipPushMinutes > 0 && (
                 <span className="hack-tag">{interp(t('hack.tagWip'), { m: String(tpl.wipPushMinutes) })}</span>
               )}
+              {tpl.radarNotify && <span className="hack-tag">{t('hack.tagNotify')}</span>}
             </span>
           </button>
         ))}
@@ -603,45 +587,84 @@ export function HackModeModal(): React.JSX.Element {
       <p className="settings-hint">{t('hack.rolesHint')}</p>
 
       <div className="hack-role-list">
+        {detecting && (
+          <p className="settings-hint">
+            <Loader2 size={12} className="spin" /> {t('hack.detecting')}
+          </p>
+        )}
         {roles.length === 0 && !detecting && <p className="settings-hint">{t('hack.noRoles')}</p>}
-        {roles.map((role, i) => (
-          <div key={role.path} className="hack-role">
-            <div className="hack-role-head">
-              <input
-                className="hack-role-label"
-                value={role.label}
-                onChange={(e) =>
-                  setRoles((prev) => prev.map((r, j) => (j === i ? { ...r, label: e.target.value } : r)))
-                }
-              />
-              <span className="settings-hint">{role.path}</span>
-              <button
-                className="btn ghost small"
-                title={t('hack.removeRole')}
-                onClick={() => setRoles((prev) => prev.filter((_, j) => j !== i))}
-              >
-                <Trash2 size={12} />
-              </button>
+        {roles.map((role, i) => {
+          const repo = [...picked].find((p) => role.path === p || role.path.startsWith(`${p}/`))
+          const sub = repo && role.path !== repo ? role.path.slice(repo.length + 1) : ''
+          return (
+            <div key={`${role.path}-${i}`} className="hack-role">
+              <div className="hack-role-head">
+                <input
+                  className="hack-role-label"
+                  value={role.label}
+                  aria-label={t('hack.roleLabel')}
+                  onChange={(e) =>
+                    setRoles((prev) => prev.map((r, j) => (j === i ? { ...r, label: e.target.value } : r)))
+                  }
+                />
+                <span className="hack-role-where">
+                  <FolderGit2 size={11} />
+                  {repo ? (repo.split('/').pop() ?? repo) : role.path}
+                  {sub && <span className="hack-role-sub">/{sub}</span>}
+                </span>
+                <button
+                  className="btn ghost small"
+                  title={t('hack.removeRole')}
+                  onClick={() => setRoles((prev) => prev.filter((_, j) => j !== i))}
+                >
+                  <Trash2 size={12} />
+                </button>
+              </div>
+
+              {/* Contract files as chips rather than a wall of text: they are a
+                  short list you curate by deleting, not prose you compose. */}
+              <div className="hack-chips">
+                {role.contracts.length === 0 && <span className="settings-hint">{t('hack.noContracts')}</span>}
+                {role.contracts.map((c) => (
+                  <span key={c} className="hack-chip">
+                    <FileCode2 size={10} />
+                    {c}
+                    <button
+                      aria-label={interp(t('hack.removeContract'), { file: c })}
+                      title={interp(t('hack.removeContract'), { file: c })}
+                      onClick={() =>
+                        setRoles((prev) =>
+                          prev.map((r, j) => (j === i ? { ...r, contracts: r.contracts.filter((x) => x !== c) } : r))
+                        )
+                      }
+                    >
+                      <X size={9} />
+                    </button>
+                  </span>
+                ))}
+                <input
+                  className="hack-chip-input"
+                  placeholder={t('hack.addContract')}
+                  onKeyDown={(e) => {
+                    if (e.key !== 'Enter') return
+                    const value = e.currentTarget.value.trim()
+                    if (!value) return
+                    e.currentTarget.value = ''
+                    setRoles((prev) =>
+                      prev.map((r, j) =>
+                        j === i && !r.contracts.includes(value) ? { ...r, contracts: [...r.contracts, value] } : r
+                      )
+                    )
+                  }}
+                />
+              </div>
             </div>
-            <textarea
-              rows={Math.min(5, Math.max(2, role.contracts.length + 1))}
-              value={role.contracts.join('\n')}
-              onChange={(e) =>
-                setRoles((prev) =>
-                  prev.map((r, j) =>
-                    j === i
-                      ? { ...r, contracts: e.target.value.split('\n').map((l) => l.trim()).filter(Boolean) }
-                      : r
-                  )
-                )
-              }
-            />
-          </div>
-        ))}
+          )
+        })}
         <button
-          className="btn ghost small"
+          className="btn ghost small hack-add-role"
           onClick={() =>
-            setRoles((prev) => [...prev, { path: [...picked][0] ?? '', label: 'repo', contracts: [] }])
+            setRoles((prev) => [...prev, { path: [...picked][0] ?? '', label: '', contracts: [] }])
           }
         >
           <Plus size={12} /> {t('hack.addRole')}

@@ -3267,11 +3267,6 @@ export const es: Dict = {
   'hack.createFoot': 'Nada sale de esta máquina. Sin servidor ni telemetría: la sesión es un ajuste local que puedes pasar a alguien como archivo.',
   'hack.fetchSeconds': 'Fetch cada (segundos)',
   'hack.fetchSecondsHint': 'Sustituye la cadencia normal mientras dura la sesión. Los repos van escalonados y el que falla se retrasa.',
-  'hack.motion': 'Aspecto',
-  'hack.motionAnime': 'Anime: banner, movimiento y estallidos',
-  'hack.motionCalm': 'Tranquilo: banner y contadores, sin movimiento',
-  'hack.motionOff': 'Apagado: solo comportamiento, sin adornos',
-  'hack.motionHint': 'El movimiento se limita a este banner y sus estallidos. El diff, el área de staging, el resolutor de conflictos y el grafo nunca se mueven, y el ajuste de movimiento reducido del sistema siempre manda.',
   'hack.freezeFrom': 'Freeze desde (horas antes del final)',
   'hack.freezeFromHint': '0 lo desactiva. Solo avisa: nunca bloquea nada.',
   'hack.freezeAllowlist': 'Se puede tocar durante el freeze',
@@ -3315,9 +3310,12 @@ export const es: Dict = {
   'hack.looseRepos': 'Pestañas sueltas',
   'hack.all': 'Todos',
   'hack.none': 'Ninguno',
-  'hack.tagAnime': 'Anime',
-  'hack.tagCalm': 'Tranquilo',
-  'hack.tagPlain': 'Sin adornos',
   'hack.tagFreeze': 'freeze {h} h',
-  'hack.tagWip': 'WIP {m} min'
+  'hack.tagWip': 'WIP {m} min',
+  'hack.tagNotify': 'avisos',
+  'hack.detecting': 'Leyendo manifiestos…',
+  'hack.roleLabel': 'Qué es esta parte',
+  'hack.noContracts': 'Sin archivos de contrato: este repo no rompe nada a los demás.',
+  'hack.addContract': 'Añade un archivo o patrón y pulsa Enter',
+  'hack.removeContract': 'Quitar {file}'
 }

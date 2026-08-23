@@ -3267,11 +3267,6 @@ export const ar: Dict = {
   'hack.createFoot': 'لا شيء يغادر هذا الجهاز. لا خادم ولا قياس عن بُعد — الجلسة إعداد محلي يمكنك تسليمه كملف.',
   'hack.fetchSeconds': 'الجلب كل (ثوانٍ)',
   'hack.fetchSecondsHint': 'يتجاوز الإيقاع المعتاد أثناء الجلسة. تُوزَّع المستودعات زمنيًا ويتراجع المتعثر منها.',
-  'hack.motion': 'المظهر',
-  'hack.motionAnime': 'أنمي — شريط وحركة وومضات',
-  'hack.motionCalm': 'هادئ — شريط وعدادات، بلا حركة',
-  'hack.motionOff': 'مغلق — السلوك فقط، بلا زخرفة',
-  'hack.motionHint': 'الحركة محصورة في هذا الشريط وومضاته. لا يتحرك الفرق ولا قائمة التجهيز ولا حلّال التعارضات ولا الرسم البياني أبدًا، وإعداد تقليل الحركة في نظامك يفوز دائمًا.',
   'hack.freezeFrom': 'التجميد قبل النهاية بـ (ساعات)',
   'hack.freezeFromHint': 'القيمة 0 تعطّله. ينبّه فقط — ولا يمنع شيئًا.',
   'hack.freezeAllowlist': 'ما يزال يمكن تعديله أثناء التجميد',
@@ -3315,9 +3310,12 @@ export const ar: Dict = {
   'hack.looseRepos': 'تبويبات مفردة',
   'hack.all': 'الكل',
   'hack.none': 'لا شيء',
-  'hack.tagAnime': 'أنمي',
-  'hack.tagCalm': 'هادئ',
-  'hack.tagPlain': 'بلا زخرفة',
   'hack.tagFreeze': 'تجميد {h} ساعة',
-  'hack.tagWip': 'WIP {m} دقيقة'
+  'hack.tagWip': 'WIP {m} دقيقة',
+  'hack.tagNotify': 'تنبيهات',
+  'hack.detecting': 'جارٍ قراءة ملفات البيان…',
+  'hack.roleLabel': 'ما هذا الجزء',
+  'hack.noContracts': 'لا ملفات عقد — هذا المستودع لا يكسر شيئًا للآخرين.',
+  'hack.addContract': 'أضف ملفًا أو نمطًا ثم Enter',
+  'hack.removeContract': 'أزل {file}'
 }

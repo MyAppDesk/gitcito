@@ -13,6 +13,7 @@ import { useSettingsStore } from './settings'
 import { useUIStore } from './ui'
 import { useFetchStore } from './fetch'
 import { contractAudience, contractHits, contractsForRepo, wipBranchName, wipBranchPrefix } from '../lib/hackSession'
+import { HACK_APP_THEME, HACK_CODE_THEME, HACK_GRAPH_STYLE } from '../theme/hackTheme'
 import { t, interp } from '../i18n'
 
 /** A live warning the session raised. Kept in memory only — a session's alerts
@@ -115,7 +116,25 @@ export const useHackStore = create<HackStore>((set, get) => ({
   active: () => useSettingsStore.getState().settings.hackSession !== null,
 
   start: async (session) => {
-    useSettingsStore.getState().update((s) => ({ ...s, hackSession: session }))
+    // Take the whole look over, and remember exactly what was there — including
+    // a custom theme the user built themselves — so ending the session is a
+    // restore rather than a reset to the shipped defaults.
+    const before = useSettingsStore.getState().settings
+    const withRestore: HackSession = {
+      ...session,
+      restore: {
+        appThemeId: before.appThemeId,
+        codeThemeId: before.codeThemeId,
+        graphStyle: before.graphStyle
+      }
+    }
+    useSettingsStore.getState().update((s) => ({
+      ...s,
+      hackSession: withRestore,
+      appThemeId: HACK_APP_THEME.id,
+      codeThemeId: HACK_CODE_THEME.id,
+      graphStyle: HACK_GRAPH_STYLE
+    }))
     set({
       alerts: [],
       stats: { pushes: 0, commits: 0, caught: 0, wipPushes: 0, combo: 0, bestCombo: 0 },
@@ -141,8 +160,15 @@ export const useHackStore = create<HackStore>((set, get) => ({
         }
       }
     }
-    useSettingsStore.getState().update((s) => ({ ...s, hackSession: null }))
-    set({ alerts: [], owners: {}, contractSeen: {}, celebration: null })
+    const restore = session.restore
+    useSettingsStore.getState().update((s) => ({
+      ...s,
+      hackSession: null,
+      ...(restore
+        ? { appThemeId: restore.appThemeId, codeThemeId: restore.codeThemeId, graphStyle: restore.graphStyle }
+        : {})
+    }))
+    set({ alerts: [], owners: {}, contractSeen: {}, celebration: null, comboUntil: 0 })
   },
 
   update: (patch) =>

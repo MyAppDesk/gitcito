@@ -892,7 +892,9 @@ describe('graph style', () => {
   it('findGraphPalette resolves custom palettes', () => {
     const custom = [{ id: 'mine', name: 'Mine', colors: ['#111111', '#222222'] }]
     expect(findGraphPalette('mine', custom).name).toBe('Mine')
-    expect(allGraphPalettes(custom).length).toBe(GRAPH_PALETTES.length + 1)
+    // Built-ins, plus the session skin that rides along, plus the custom one.
+    expect(allGraphPalettes(custom).length).toBe(GRAPH_PALETTES.length + 2)
+    expect(allGraphPalettes([]).some((p) => p.id === 'hack-mode')).toBe(true)
   })
 
   it('colorForPalette wraps round-robin and handles negative indices', () => {
@@ -4531,7 +4533,6 @@ describe('hack session', () => {
     wipPushMinutes: 20,
     freezeAllowlist: [],
     freezeFromHours: 4,
-    motion: 'anime',
     radarNotify: true,
     semanticCollisions: false,
     wipPush: false
@@ -4636,7 +4637,6 @@ describe('imported session files (someone else\u2019s input)', () => {
     wipPushMinutes: 20,
     freezeAllowlist: ['docs/**'],
     freezeFromHours: 4,
-    motion: 'anime',
     radarNotify: true,
     repos: [{ name: 'api', folder: 'api', remote: 'git@github.com:acme/api.git' }],
     roles: [{ folder: 'api', label: 'api', contracts: ['openapi.yaml'] }]
@@ -4694,7 +4694,8 @@ describe('imported session files (someone else\u2019s input)', () => {
     expect(far.endsAt - Date.now()).toBeLessThanOrEqual(IMPORT_LIMITS.maxDurationMs + 1000)
   })
 
-  it('falls back to a calm look rather than trusting an unknown value', () => {
-    expect(parsePortableSession({ ...good, motion: 'seizure' })?.motion).toBe('calm')
+  it('ignores a look field entirely — a session has one look and it is not shared', () => {
+    const parsed = parsePortableSession({ ...good, motion: 'seizure' }) as unknown as Record<string, unknown>
+    expect(parsed.motion).toBeUndefined()
   })
 })

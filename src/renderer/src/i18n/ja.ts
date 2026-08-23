@@ -3204,11 +3204,6 @@ export const ja: Dict = {
   'hack.createFoot': 'このマシンから何も出ていきません。サーバーもテレメトリもなく、セッションはファイルとして手渡せるローカル設定です。',
   'hack.fetchSeconds': 'フェッチ間隔（秒）',
   'hack.fetchSecondsHint': 'セッション中は通常の間隔を上書きします。リポジトリは時間をずらし、失敗したものは待ち時間を延ばします。',
-  'hack.motion': '見た目',
-  'hack.motionAnime': 'アニメ — バナー、モーション、演出',
-  'hack.motionCalm': '静か — バナーとカウンターのみ、モーションなし',
-  'hack.motionOff': 'オフ — 動作のみ、装飾なし',
-  'hack.motionHint': 'モーションはこのバナーと演出だけに限られます。差分、ステージング一覧、コンフリクト解決、グラフは決して動かず、OS の視差効果を減らす設定が常に優先されます。',
   'hack.freezeFrom': 'フリーズ開始（終了の何時間前）',
   'hack.freezeFromHint': '0 で無効になります。警告するだけで、何もブロックしません。',
   'hack.freezeAllowlist': 'フリーズ中も触ってよい対象',
@@ -3252,9 +3247,12 @@ export const ja: Dict = {
   'hack.looseRepos': '単独のタブ',
   'hack.all': 'すべて',
   'hack.none': 'なし',
-  'hack.tagAnime': 'アニメ',
-  'hack.tagCalm': '静か',
-  'hack.tagPlain': '装飾なし',
   'hack.tagFreeze': 'フリーズ {h}時間',
-  'hack.tagWip': 'WIP {m}分'
+  'hack.tagWip': 'WIP {m}分',
+  'hack.tagNotify': '通知',
+  'hack.detecting': 'マニフェストを読み込み中…',
+  'hack.roleLabel': 'この部分は何か',
+  'hack.noContracts': '契約ファイルはありません。このリポジトリは他を壊しません。',
+  'hack.addContract': 'ファイルかグロブを入力して Enter',
+  'hack.removeContract': '{file} を削除'
 }

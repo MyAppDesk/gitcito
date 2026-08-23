@@ -3212,11 +3212,6 @@ export const fr: Dict = {
   'hack.createFoot': 'Rien ne quitte cette machine. Pas de serveur, pas de télémétrie : la session est un réglage local que vous pouvez transmettre sous forme de fichier.',
   'hack.fetchSeconds': 'Récupérer toutes les (secondes)',
   'hack.fetchSecondsHint': 'Remplace la cadence normale pendant la session. Les dépôts sont échelonnés et celui qui échoue temporise.',
-  'hack.motion': 'Apparence',
-  'hack.motionAnime': 'Anime — bandeau, mouvement et éclats',
-  'hack.motionCalm': 'Calme — bandeau et compteurs, sans mouvement',
-  'hack.motionOff': 'Désactivé — comportement seul, sans décor',
-  'hack.motionHint': 'Le mouvement se limite à ce bandeau et à ses éclats. Le diff, la zone de staging, le résolveur de conflits et le graphe ne bougent jamais, et le réglage système de mouvement réduit l\'emporte toujours.',
   'hack.freezeFrom': 'Gel à partir de (heures avant la fin)',
   'hack.freezeFromHint': '0 le désactive. Il avertit seulement — rien n\'est bloqué.',
   'hack.freezeAllowlist': 'Encore modifiable pendant le gel',
@@ -3260,9 +3255,12 @@ export const fr: Dict = {
   'hack.looseRepos': 'Onglets isolés',
   'hack.all': 'Tout',
   'hack.none': 'Aucun',
-  'hack.tagAnime': 'Anime',
-  'hack.tagCalm': 'Calme',
-  'hack.tagPlain': 'Sans décor',
   'hack.tagFreeze': 'gel {h} h',
-  'hack.tagWip': 'WIP {m} min'
+  'hack.tagWip': 'WIP {m} min',
+  'hack.tagNotify': 'alertes',
+  'hack.detecting': 'Lecture des manifestes…',
+  'hack.roleLabel': 'Ce qu\'est cette partie',
+  'hack.noContracts': 'Aucun fichier de contrat — ce dépôt ne casse rien pour les autres.',
+  'hack.addContract': 'Ajoutez un fichier ou motif, puis Entrée',
+  'hack.removeContract': 'Retirer {file}'
 }

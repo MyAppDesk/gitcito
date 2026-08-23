@@ -7,6 +7,7 @@ import {
   applySecrets,
   extractSecrets,
   hasSettingsSecrets,
+  mergeSecretStores,
   pruneSecrets,
   stripSettingsSecrets,
   type SecretStore
@@ -54,6 +55,18 @@ async function canEncrypt(): Promise<boolean> {
  * of it would destroy tokens another build can still decrypt.
  */
 let secretsUnreadable = false
+
+/**
+ * Whether the settings the renderer last loaded included the stored secrets.
+ *
+ * A renderer hydrated before any unlock persists a credential-less copy of the
+ * settings on every mutation (a tab move, a repo opened). If a background
+ * operation — a fetch resolving its token, an AI call resolving its key — has
+ * unlocked the store in the meantime, treating such a save as "the user
+ * cleared everything" overwrites the encrypted store with nothing. Only once
+ * the renderer was actually served the secrets is an empty save a deletion.
+ */
+let servedSecrets = false
 
 async function loadSecrets(): Promise<SecretStore> {
   try {
@@ -197,13 +210,16 @@ async function writeSettings(settings: AppSettings): Promise<void> {
   await mkdir(app.getPath('userData'), { recursive: true })
   const secrets = extractSecrets(settings)
   const hasSecrets = Object.keys(secrets).length > 0
+  const stripped = JSON.stringify(stripSettingsSecrets(settings), null, 2)
 
-  // Saving anything else while the secrets are still encrypted on disk must not
-  // wipe them: the caller simply never had them to send back. Same when the
-  // file exists but this build could not decrypt it — our empty view of the
-  // store is not the truth, and persisting it would erase the real one.
-  if (!hasSecrets && (!secretCache || secretsUnreadable)) {
-    await writeFile(settingsPath(), JSON.stringify(stripSettingsSecrets(settings), null, 2), 'utf-8')
+  // A credential-less save must not wipe the store unless the renderer was
+  // actually holding the credentials (`servedSecrets`) — otherwise it simply
+  // never had them to send back. Same while they are still encrypted on disk,
+  // and when the file exists but this build could not decrypt it: our empty
+  // view of the store is not the truth, and persisting it would erase the
+  // real one.
+  if (!hasSecrets && (!servedSecrets || !secretCache || secretsUnreadable)) {
+    await writeFile(settingsPath(), stripped, 'utf-8')
     return
   }
 
@@ -214,17 +230,24 @@ async function writeSettings(settings: AppSettings): Promise<void> {
   if (!allowed) {
     // Refused (or no keyring): hold the secrets in memory for this session and
     // keep them out of the file, rather than writing them in the clear.
-    if (hasSecrets) sessionSecrets = secrets
-    await writeFile(settingsPath(), JSON.stringify(stripSettingsSecrets(settings), null, 2), 'utf-8')
+    if (hasSecrets) sessionSecrets = mergeSecretStores(sessionSecrets, secrets)
+    await writeFile(settingsPath(), stripped, 'utf-8')
     return
   }
   // Secrets first: if the keychain write fails, the JSON on disk still holds the
   // previous values instead of being stripped with nowhere to read them from.
-  // Clearing a token in the UI removes it here too; so does deleting a profile.
-  await saveSecrets(secrets)
-  secretCache = secrets
+  //
+  // A renderer that was served the secrets is authoritative: clearing a token
+  // in the UI removes it here too, and so does deleting a profile. One that
+  // never saw them can only add — its save is overlaid on the stored values,
+  // so the credentials it was never given survive.
+  const ids = (settings.profiles ?? []).map((p) => p.id)
+  const base = servedSecrets ? {} : (secretCache ?? (await loadSecrets()))
+  const merged = pruneSecrets(mergeSecretStores(base, secrets), ids)
+  await saveSecrets(merged)
+  secretCache = merged
   sessionSecrets = {}
-  await writeFile(settingsPath(), JSON.stringify(stripSettingsSecrets(settings), null, 2), 'utf-8')
+  await writeFile(settingsPath(), stripped, 'utf-8')
 }
 
 // Dev aid: launching with GITCITO_FORCE_ONBOARDING=1 re-runs the first-run
@@ -238,14 +261,22 @@ function withForcedOnboarding(settings: AppSettings): AppSettings {
 }
 
 export function registerSettingsHandlers(): void {
-  ipcMain.handle('settings:get', async () => withForcedOnboarding(await readSettings()))
+  ipcMain.handle('settings:get', async () => {
+    const settings = withForcedOnboarding(await readSettings())
+    servedSecrets = hasSettingsSecrets(settings)
+    return settings
+  })
   ipcMain.handle('settings:set', (_e, settings: AppSettings) => {
     if (settings.onboardingCompleted) forceOnboarding = false
     return writeSettings(settings)
   })
   // Called when the user opens Settings: that is an explicit "show me my
   // credentials", so it is a fair moment to decrypt (and to ask, if needed).
-  ipcMain.handle('settings:unlock', async () => withForcedOnboarding(await readSettingsWithSecrets('settings')))
+  ipcMain.handle('settings:unlock', async () => {
+    const settings = withForcedOnboarding(await readSettingsWithSecrets('settings'))
+    servedSecrets = hasSettingsSecrets(settings)
+    return settings
+  })
 
   ipcMain.handle('settings:importFile', async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({

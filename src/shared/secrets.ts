@@ -113,6 +113,26 @@ export function applySecrets(settings: AppSettings, store: SecretStore): AppSett
   }
 }
 
+/**
+ * Overlays `next` onto `stored` without dropping credentials `next` never had.
+ * Used for saves coming from a renderer that was hydrated before the store was
+ * unlocked: such a save can add or replace a credential, but an absence in it
+ * means "I was never given this", not "the user cleared it".
+ */
+export function mergeSecretStores(stored: SecretStore, next: SecretStore): SecretStore {
+  const out: SecretStore = { ...stored }
+  for (const [id, secrets] of Object.entries(next)) {
+    const base = out[id] ?? {}
+    const aiKeys = { ...(base.aiKeys ?? {}), ...(secrets.aiKeys ?? {}) }
+    out[id] = {
+      ...base,
+      ...secrets,
+      ...(Object.keys(aiKeys).length > 0 ? { aiKeys } : {})
+    }
+  }
+  return out
+}
+
 /** Drops entries for profiles that no longer exist. */
 export function pruneSecrets(store: SecretStore, profileIds: string[]): SecretStore {
   const keep = new Set(profileIds)

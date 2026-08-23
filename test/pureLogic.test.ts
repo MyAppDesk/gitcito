@@ -189,6 +189,7 @@ import {
   stripSettingsSecrets,
   extractSecrets,
   applySecrets,
+  mergeSecretStores,
   pruneSecrets
 } from '../src/shared/secrets'
 import { defaultSettings, type AppSettings, type Profile } from '../src/shared/types'
@@ -1304,6 +1305,38 @@ describe('profile secrets — keeping credentials out of settings.json', () => {
     const merged = pruneSecrets({ ...older, ...extractSecrets(loaded) }, ['p1', 'p2'])
     expect(merged.p1.githubToken).toBe('ghp_secret')
     expect(merged.p2.gitlabToken).toBe('glpat_secret')
+  })
+
+  describe('mergeSecretStores — a save never deletes what it was not given', () => {
+    const stored = {
+      p1: { githubToken: 'ghp_stored', aiKeys: { default: 'sk-stored' } },
+      p2: { gitlabToken: 'glpat_stored' }
+    }
+
+    it('keeps every stored credential when the save carries none', () => {
+      // The regression: a renderer hydrated before unlock persisting a tab move
+      // used to overwrite the whole store with {}, losing the AI key on the
+      // next launch — the "add my key again after every update" bug.
+      expect(mergeSecretStores(stored, {})).toEqual(stored)
+    })
+
+    it('replaces only the credential the save actually carries', () => {
+      const merged = mergeSecretStores(stored, { p1: { githubToken: 'ghp_new' } })
+      expect(merged.p1.githubToken).toBe('ghp_new')
+      expect(merged.p1.aiKeys).toEqual({ default: 'sk-stored' })
+      expect(merged.p2.gitlabToken).toBe('glpat_stored')
+    })
+
+    it('merges AI keys per account instead of swapping the whole map', () => {
+      const merged = mergeSecretStores(stored, { p1: { aiKeys: { work: 'sk-work' } } })
+      expect(merged.p1.aiKeys).toEqual({ default: 'sk-stored', work: 'sk-work' })
+    })
+
+    it('adds a profile the store has never seen', () => {
+      const merged = mergeSecretStores(stored, { p3: { azureToken: 'az_new' } })
+      expect(merged.p3.azureToken).toBe('az_new')
+      expect(merged.p1).toEqual(stored.p1)
+    })
   })
 })
 

@@ -44,8 +44,6 @@ export function HackBanner(): React.JSX.Element | null {
   const stats = useHackStore((s) => s.stats)
   const alerts = useHackStore((s) => s.alerts)
   const dismissAlert = useHackStore((s) => s.dismissAlert)
-  const celebration = useHackStore((s) => s.celebration)
-  const clearCelebration = useHackStore((s) => s.clearCelebration)
   const openModal = useUIStore((s) => s.openModal)
   const repos = useRepoStore((s) => s.repos)
   const reduced = usePrefersReducedMotion()
@@ -58,13 +56,6 @@ export function HackBanner(): React.JSX.Element | null {
     const id = setInterval(() => setNow(Date.now()), 30_000)
     return () => clearInterval(id)
   }, [])
-
-  // The burst clears itself; the store only records that one happened.
-  useEffect(() => {
-    if (!celebration) return
-    const id = setTimeout(() => clearCelebration(), reduced ? 400 : 1400)
-    return () => clearTimeout(id)
-  }, [celebration, clearCelebration, reduced])
 
   const clock = useMemo(() => (session ? hackClock(session, now) : null), [session, now])
 
@@ -128,6 +119,11 @@ export function HackBanner(): React.JSX.Element | null {
         <span title={t('hack.statRepos')}>
           <Users size={12} /> {session.repos.length}
         </span>
+        {stats.bestCombo > 1 && (
+          <span className="hack-best" title={t('hack.statBest')}>
+            <Flame size={12} /> ×{stats.bestCombo}
+          </span>
+        )}
         <span className={totals.behind > 0 ? 'hack-warn' : ''} title={t('hack.statBehind')}>
           ↓{totals.behind}
         </span>
@@ -167,35 +163,6 @@ export function HackBanner(): React.JSX.Element | null {
         )}
       </AnimatePresence>
 
-      {/* The celebration. Deliberately over the top and deliberately confined
-          to this strip — nothing below it moves. */}
-      <AnimatePresence>
-        {celebration && (
-          <motion.div
-            className={`hack-burst hack-burst--${celebration.kind}`}
-            initial={{ opacity: 0, scale: motionOn ? 0.6 : 1 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: motionOn ? 1.3 : 1 }}
-            transition={{ duration: motionOn ? 0.35 : 0.1 }}
-            aria-hidden="true"
-          >
-            {motionOn && (
-              <>
-                <span className="hack-speedline" />
-                <span className="hack-speedline" />
-                <span className="hack-speedline" />
-              </>
-            )}
-            <span className="hack-burst-word">
-              {celebration.kind === 'push'
-                ? t('hack.burstPush')
-                : celebration.kind === 'merge'
-                  ? t('hack.burstMerge')
-                  : t('hack.burstCommit')}
-            </span>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   )
 }

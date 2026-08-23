@@ -3312,5 +3312,17 @@ export const de: Dict = {
   'hack.semanticTitle': 'Deine lokale Änderung könnte kaputt sein',
   'hack.semanticToast': '{file}:{line} — {claim}',
   'hack.wipSecretsTitle': 'WIP-Push abgelehnt',
-  'hack.wipSecrets': 'Es wurde nichts gepusht: Der Snapshot enthält Dateien, die nach Zugangsdaten aussehen ({files}). Committe oder ignoriere sie, dann läuft es von selbst weiter.'
+  'hack.wipSecrets': 'Es wurde nichts gepusht: Der Snapshot enthält Dateien, die nach Zugangsdaten aussehen ({files}). Committe oder ignoriere sie, dann läuft es von selbst weiter.',
+  'hack.combo': 'Combo',
+  'hack.comboX': 'COMBO ×{n}',
+  'hack.statBest': 'Bestes Combo dieser Session',
+  'hack.workspaceHint': 'Eine Session umfasst die Repositories des aktiven Workspace. Wechsle zuerst den Workspace, um sie aus einem anderen Satz zu bauen.',
+  'hack.looseRepos': 'Einzelne Tabs',
+  'hack.all': 'Alle',
+  'hack.none': 'Keine',
+  'hack.tagAnime': 'Anime',
+  'hack.tagCalm': 'Ruhig',
+  'hack.tagPlain': 'Ohne Optik',
+  'hack.tagFreeze': 'Freeze {h} Std.',
+  'hack.tagWip': 'WIP {m} Min.'
 }

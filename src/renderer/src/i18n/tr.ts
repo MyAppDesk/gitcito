@@ -3247,5 +3247,17 @@ export const tr: Dict = {
   'hack.semanticTitle': 'Yerel değişikliğin bozulmuş olabilir',
   'hack.semanticToast': '{file}:{line} — {claim}',
   'hack.wipSecretsTitle': 'WIP gönderimi reddedildi',
-  'hack.wipSecrets': 'Hiçbir şey gönderilmedi: anlık görüntü kimlik bilgisi gibi görünen dosyalar içeriyor ({files}). Onları commitle ya da yok say; sonra kendiliğinden sürer.'
+  'hack.wipSecrets': 'Hiçbir şey gönderilmedi: anlık görüntü kimlik bilgisi gibi görünen dosyalar içeriyor ({files}). Onları commitle ya da yok say; sonra kendiliğinden sürer.',
+  'hack.combo': 'kombo',
+  'hack.comboX': 'KOMBO ×{n}',
+  'hack.statBest': 'Bu oturumun en iyi kombosu',
+  'hack.workspaceHint': 'Bir oturum, etkin çalışma alanının depolarını kapsar. Farklı bir kümeden kurmak için önce çalışma alanını değiştir.',
+  'hack.looseRepos': 'Tek başına sekmeler',
+  'hack.all': 'Tümü',
+  'hack.none': 'Hiçbiri',
+  'hack.tagAnime': 'Anime',
+  'hack.tagCalm': 'Sakin',
+  'hack.tagPlain': 'Süssüz',
+  'hack.tagFreeze': 'dondurma {h} sa',
+  'hack.tagWip': 'WIP {m} dk'
 }

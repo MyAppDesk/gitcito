@@ -5,6 +5,7 @@ import { useSettingsStore } from '../stores/settings'
 import { useUIStore, type MenuItem } from '../stores/ui'
 import { useRepoStore, repoActions } from '../stores/repo'
 import type { GroupTab, RepoFolder, RepoRef, TabState } from '../../../shared/types'
+import { tabRepos } from '../../../shared/types'
 import {
   findFolder,
   flattenFolders,
@@ -794,6 +795,17 @@ export function TitleBar(): React.JSX.Element {
     return wip ? 'wip' : null
   }
 
+  /**
+   * Marks the tabs that belong to a running session, so the strip itself says
+   * which repositories the event covers. Only in `anime`: at `calm` the mode is
+   * deliberately quiet, and at `off` it has no chrome at all.
+   */
+  const hackClass = (paths: string[]): string => {
+    const session = settings.hackSession
+    if (!session || session.motion !== 'anime') return ''
+    return paths.some((p) => session.repos.includes(p)) ? 'hack-tab' : ''
+  }
+
   // One repository chip inside a group — same markup whether it sits at the
   // group root or several folders deep.
   const renderRepoChip = (tab: GroupTab, repo: RepoRef): React.JSX.Element => {
@@ -806,7 +818,7 @@ export function TitleBar(): React.JSX.Element {
       <motion.div
         key={repo.path}
         layout
-        className={`tab in-group ${isActiveRepo ? 'active' : ''} ${repoDc}`}
+        className={`tab in-group ${isActiveRepo ? 'active' : ''} ${repoDc} ${hackClass([repo.path])}`}
         draggable
         onDragStart={onDragStart({ kind: 'repo', tabId: tab.id, repoPath: repo.path }) as any}
         onDragEnd={onDragEnd as any}
@@ -959,7 +971,7 @@ export function TitleBar(): React.JSX.Element {
               <motion.div
                 key={tab.id}
                 layout
-                className={`tab ${tab.id === settings.activeTabId ? 'active' : ''} ${dc}`}
+                className={`tab ${tab.id === settings.activeTabId ? 'active' : ''} ${dc} ${hackClass(tabRepos(tab).map((r) => r.path))}`}
                 role="tab"
                 aria-selected={tab.id === settings.activeTabId}
                 tabIndex={0}

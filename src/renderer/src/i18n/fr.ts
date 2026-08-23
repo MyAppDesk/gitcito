@@ -3252,5 +3252,17 @@ export const fr: Dict = {
   'hack.semanticTitle': 'Votre modification locale est peut-être cassée',
   'hack.semanticToast': '{file}:{line} — {claim}',
   'hack.wipSecretsTitle': 'Push WIP refusé',
-  'hack.wipSecrets': 'Rien n\'a été poussé : l\'instantané contient des fichiers qui ressemblent à des identifiants ({files}). Committez-les ou ignorez-les, et cela reprendra tout seul.'
+  'hack.wipSecrets': 'Rien n\'a été poussé : l\'instantané contient des fichiers qui ressemblent à des identifiants ({files}). Committez-les ou ignorez-les, et cela reprendra tout seul.',
+  'hack.combo': 'combo',
+  'hack.comboX': 'COMBO ×{n}',
+  'hack.statBest': 'Meilleur combo de la session',
+  'hack.workspaceHint': 'Une session couvre les dépôts de l\'espace de travail actif. Changez d\'espace de travail d\'abord pour en construire une à partir d\'un autre ensemble.',
+  'hack.looseRepos': 'Onglets isolés',
+  'hack.all': 'Tout',
+  'hack.none': 'Aucun',
+  'hack.tagAnime': 'Anime',
+  'hack.tagCalm': 'Calme',
+  'hack.tagPlain': 'Sans décor',
+  'hack.tagFreeze': 'gel {h} h',
+  'hack.tagWip': 'WIP {m} min'
 }

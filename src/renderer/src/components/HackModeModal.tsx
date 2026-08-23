@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   Download,
   Flame,
+  FolderGit2,
+  Layers,
   Loader2,
   Play,
   Plus,
@@ -59,21 +61,37 @@ export function HackModeModal(): React.JSX.Element {
 
   const running = settings.hackSession
 
-  // Everything on offer to put in a session: whatever is open in the current
-  // workspace. There is no separate "add repo" flow, because a repo you have
-  // not opened is not one you are about to work in for 36 hours.
-  const available = useMemo(() => {
-    const out: { path: string; name: string }[] = []
+  // The event's repositories, grouped the way the user already grouped them.
+  //
+  // A flat checkbox list ignores the structure that is right there: a group tab
+  // IS the set of repositories someone decided belong together, and picking one
+  // in one click is the difference between a form and a decision. Standalone
+  // tabs come last, under their own heading.
+  const sections = useMemo(() => {
+    const out: { id: string; name: string; kind: 'group' | 'loose'; repos: { path: string; name: string }[] }[] = []
     const seen = new Set<string>()
+    const loose: { path: string; name: string }[] = []
     for (const tab of settings.tabs) {
-      for (const r of tabRepos(tab)) {
-        if (seen.has(r.path)) continue
-        seen.add(r.path)
-        out.push({ path: r.path, name: r.name })
+      if (tab.kind === 'page') continue
+      const repos = tabRepos(tab).filter((r) => !seen.has(r.path))
+      for (const r of repos) seen.add(r.path)
+      if (repos.length === 0) continue
+      if (tab.kind === 'group') {
+        out.push({ id: tab.id, name: tab.name, kind: 'group', repos: repos.map((r) => ({ path: r.path, name: r.name })) })
+      } else {
+        loose.push(...repos.map((r) => ({ path: r.path, name: r.name })))
       }
     }
+    if (loose.length) out.push({ id: '__loose', name: '', kind: 'loose', repos: loose })
     return out
   }, [settings.tabs])
+
+  const available = useMemo(() => sections.flatMap((s) => s.repos), [sections])
+
+  /** Which saved workspace this picker is showing — switching swaps the tab
+   *  strip, so it swaps what a session can cover. */
+  const workspaces = settings.workspaces ?? []
+  const activeWorkspace = workspaces.find((w) => w.id === settings.activeWorkspaceId)
 
   const templates = useMemo<HackTemplate[]>(
     () => [...BUILTIN_HACK_TEMPLATES, ...(settings.hackTemplates ?? [])],
@@ -478,6 +496,23 @@ export function HackModeModal(): React.JSX.Element {
                 seconds: String(tpl.fetchSeconds)
               })}
             </span>
+            <span className="hack-template-tags">
+              <span className={`hack-tag hack-tag--${tpl.motion}`}>
+                {tpl.motion === 'anime'
+                  ? t('hack.tagAnime')
+                  : tpl.motion === 'calm'
+                    ? t('hack.tagCalm')
+                    : t('hack.tagPlain')}
+              </span>
+              {tpl.freezeFromHours > 0 && (
+                <span className="hack-tag">
+                  <Snowflake size={9} /> {interp(t('hack.tagFreeze'), { h: String(tpl.freezeFromHours) })}
+                </span>
+              )}
+              {tpl.wipPushMinutes > 0 && (
+                <span className="hack-tag">{interp(t('hack.tagWip'), { m: String(tpl.wipPushMinutes) })}</span>
+              )}
+            </span>
           </button>
         ))}
       </div>
@@ -494,27 +529,66 @@ export function HackModeModal(): React.JSX.Element {
         </label>
       </div>
 
-      <h4 className="settings-section-title">{t('hack.repos')}</h4>
-      <div className="hack-repo-list">
+      <h4 className="settings-section-title">
+        {t('hack.repos')}
+        {activeWorkspace && workspaces.length > 1 && (
+          <span className="hack-ws-chip" title={t('hack.workspaceHint')}>
+            <Layers size={11} /> {activeWorkspace.name}
+          </span>
+        )}
+      </h4>
+      {workspaces.length > 1 && <p className="settings-hint">{t('hack.workspaceHint')}</p>}
+
+      <div className="hack-sections">
         {available.length === 0 && <p className="settings-hint">{t('hack.noRepos')}</p>}
-        {available.map((r) => (
-          <label key={r.path} className="hack-repo-row">
-            <input
-              type="checkbox"
-              checked={picked.has(r.path)}
-              onChange={(e) =>
-                setPicked((prev) => {
-                  const next = new Set(prev)
-                  if (e.target.checked) next.add(r.path)
-                  else next.delete(r.path)
-                  return next
-                })
-              }
-            />
-            <span className="hack-repo-name">{r.name}</span>
-            <span className="settings-hint">{r.path}</span>
-          </label>
-        ))}
+        {sections.map((section) => {
+          const all = section.repos.every((r) => picked.has(r.path))
+          const some = !all && section.repos.some((r) => picked.has(r.path))
+          return (
+            <div key={section.id} className={`hack-section ${all ? 'all' : some ? 'some' : ''}`}>
+              <button
+                className="hack-section-head"
+                onClick={() =>
+                  setPicked((prev) => {
+                    const next = new Set(prev)
+                    for (const r of section.repos) {
+                      if (all) next.delete(r.path)
+                      else next.add(r.path)
+                    }
+                    return next
+                  })
+                }
+              >
+                {section.kind === 'group' ? <Layers size={12} /> : <FolderGit2 size={12} />}
+                <strong>{section.kind === 'group' ? section.name : t('hack.looseRepos')}</strong>
+                <span className="hack-section-count">
+                  {section.repos.filter((r) => picked.has(r.path)).length}/{section.repos.length}
+                </span>
+                <span className="hack-section-toggle">{all ? t('hack.none') : t('hack.all')}</span>
+              </button>
+              <div className="hack-section-body">
+                {section.repos.map((r) => (
+                  <label key={r.path} className={`hack-repo-row ${picked.has(r.path) ? 'on' : ''}`}>
+                    <input
+                      type="checkbox"
+                      checked={picked.has(r.path)}
+                      onChange={(e) =>
+                        setPicked((prev) => {
+                          const next = new Set(prev)
+                          if (e.target.checked) next.add(r.path)
+                          else next.delete(r.path)
+                          return next
+                        })
+                      }
+                    />
+                    <span className="hack-repo-name">{r.name}</span>
+                    <span className="settings-hint">{r.path}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )
+        })}
       </div>
 
       <h4 className="settings-section-title">

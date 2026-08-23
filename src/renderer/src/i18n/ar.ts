@@ -3307,5 +3307,17 @@ export const ar: Dict = {
   'hack.semanticTitle': 'قد يكون تغييرك المحلي معطوبًا',
   'hack.semanticToast': '{file}:{line} — {claim}',
   'hack.wipSecretsTitle': 'رُفض دفع WIP',
-  'hack.wipSecrets': 'لم يُدفع شيء: تحتوي اللقطة على ملفات تبدو كبيانات اعتماد ({files}). التزم بها أو تجاهلها، ثم يستأنف من تلقاء نفسه.'
+  'hack.wipSecrets': 'لم يُدفع شيء: تحتوي اللقطة على ملفات تبدو كبيانات اعتماد ({files}). التزم بها أو تجاهلها، ثم يستأنف من تلقاء نفسه.',
+  'hack.combo': 'كومبو',
+  'hack.comboX': 'كومبو ×{n}',
+  'hack.statBest': 'أفضل كومبو في الجلسة',
+  'hack.workspaceHint': 'تغطي الجلسة مستودعات مساحة العمل النشطة. بدّل مساحة العمل أولًا لبنائها من مجموعة أخرى.',
+  'hack.looseRepos': 'تبويبات مفردة',
+  'hack.all': 'الكل',
+  'hack.none': 'لا شيء',
+  'hack.tagAnime': 'أنمي',
+  'hack.tagCalm': 'هادئ',
+  'hack.tagPlain': 'بلا زخرفة',
+  'hack.tagFreeze': 'تجميد {h} ساعة',
+  'hack.tagWip': 'WIP {m} دقيقة'
 }

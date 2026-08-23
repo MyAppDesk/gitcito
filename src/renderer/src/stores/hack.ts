@@ -37,7 +37,15 @@ export interface HackStats {
   caught: number
   /** WIP snapshots published. */
   wipPushes: number
+  /** Consecutive good events inside the combo window. Resets when it lapses. */
+  combo: number
+  /** Highest combo the session has seen — the number worth bragging about. */
+  bestCombo: number
 }
+
+/** How long one good event keeps the combo alive. Long enough to chain a
+ *  commit into its push, short enough that a quiet hour resets it. */
+const COMBO_WINDOW_MS = 90_000
 
 interface HackStore {
   alerts: HackAlert[]
@@ -46,8 +54,10 @@ interface HackStore {
   owners: Record<string, OwnerIndex>
   /** Last contract sweep per repo, so a warning fires once per push. */
   contractSeen: Record<string, string>
-  /** One celebration at a time; the banner clears it when the animation ends. */
-  celebration: { kind: 'push' | 'merge' | 'commit'; at: number } | null
+  /** One celebration at a time; the overlay clears it when the animation ends. */
+  celebration: { kind: 'push' | 'merge' | 'commit'; at: number; combo: number } | null
+  /** When the current combo lapses. Read by `celebrate`, never rendered. */
+  comboUntil: number
 
   session(): HackSession | null
   active(): boolean
@@ -95,17 +105,23 @@ function notify(title: string, body: string, repoPath: string): void {
 
 export const useHackStore = create<HackStore>((set, get) => ({
   alerts: [],
-  stats: { pushes: 0, commits: 0, caught: 0, wipPushes: 0 },
+  stats: { pushes: 0, commits: 0, caught: 0, wipPushes: 0, combo: 0, bestCombo: 0 },
   owners: {},
   contractSeen: {},
   celebration: null,
+  comboUntil: 0,
 
   session: () => useSettingsStore.getState().settings.hackSession,
   active: () => useSettingsStore.getState().settings.hackSession !== null,
 
   start: async (session) => {
     useSettingsStore.getState().update((s) => ({ ...s, hackSession: session }))
-    set({ alerts: [], stats: { pushes: 0, commits: 0, caught: 0, wipPushes: 0 }, contractSeen: {} })
+    set({
+      alerts: [],
+      stats: { pushes: 0, commits: 0, caught: 0, wipPushes: 0, combo: 0, bestCombo: 0 },
+      contractSeen: {},
+      comboUntil: 0
+    })
     // Ownership hints are only meaningful once we know who owns what.
     await Promise.all(session.repos.map((p) => get().loadOwners(p)))
     // Re-arm any repo the ordinary scheduler had parked: the session raises the
@@ -161,7 +177,16 @@ export const useHackStore = create<HackStore>((set, get) => ({
 
   celebrate: (kind) => {
     if (!get().active()) return
-    set({ celebration: { kind, at: Date.now() } })
+    const now = Date.now()
+    // Chain anything good that lands inside the window. A commit followed by
+    // its push is a 2 — which is the point: the counter rewards finishing a
+    // thing rather than starting five.
+    const combo = now < get().comboUntil ? get().stats.combo + 1 : 1
+    set((s) => ({
+      celebration: { kind, at: now, combo },
+      comboUntil: now + COMBO_WINDOW_MS,
+      stats: { ...s.stats, combo, bestCombo: Math.max(s.stats.bestCombo, combo) }
+    }))
   },
   clearCelebration: () => set({ celebration: null }),
 

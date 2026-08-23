@@ -3308,7 +3308,19 @@ export const en = {
   'hack.semanticTitle': 'Your local change may be broken',
   'hack.semanticToast': '{file}:{line} — {claim}',
   'hack.wipSecretsTitle': 'WIP push refused',
-  'hack.wipSecrets': 'Nothing was pushed: the snapshot holds credential-looking files ({files}). Commit or ignore them, then it resumes on its own.'
+  'hack.wipSecrets': 'Nothing was pushed: the snapshot holds credential-looking files ({files}). Commit or ignore them, then it resumes on its own.',
+  'hack.combo': 'combo',
+  'hack.comboX': 'COMBO ×{n}',
+  'hack.statBest': 'Best combo this session',
+  'hack.workspaceHint': 'A session covers the repositories of the active workspace. Switch workspace first to build one from a different set.',
+  'hack.looseRepos': 'Standalone tabs',
+  'hack.all': 'All',
+  'hack.none': 'None',
+  'hack.tagAnime': 'Anime',
+  'hack.tagCalm': 'Calm',
+  'hack.tagPlain': 'No chrome',
+  'hack.tagFreeze': 'freeze {h}h',
+  'hack.tagWip': 'WIP {m}m'
 }
 
 /** The shape every locale must implement. */

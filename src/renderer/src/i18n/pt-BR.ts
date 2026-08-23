@@ -3313,5 +3313,17 @@ export const ptBR: Dict = {
   'hack.semanticTitle': 'Sua mudança local pode estar quebrada',
   'hack.semanticToast': '{file}:{line} — {claim}',
   'hack.wipSecretsTitle': 'Push WIP recusado',
-  'hack.wipSecrets': 'Nada foi enviado: o snapshot contém arquivos que parecem credenciais ({files}). Commite ou ignore-os, e ele retoma sozinho.'
+  'hack.wipSecrets': 'Nada foi enviado: o snapshot contém arquivos que parecem credenciais ({files}). Commite ou ignore-os, e ele retoma sozinho.',
+  'hack.combo': 'combo',
+  'hack.comboX': 'COMBO ×{n}',
+  'hack.statBest': 'Melhor combo da sessão',
+  'hack.workspaceHint': 'Uma sessão cobre os repositórios do workspace ativo. Troque de workspace antes para montar uma a partir de outro conjunto.',
+  'hack.looseRepos': 'Abas avulsas',
+  'hack.all': 'Todos',
+  'hack.none': 'Nenhum',
+  'hack.tagAnime': 'Anime',
+  'hack.tagCalm': 'Calmo',
+  'hack.tagPlain': 'Sem enfeites',
+  'hack.tagFreeze': 'freeze {h} h',
+  'hack.tagWip': 'WIP {m} min'
 }

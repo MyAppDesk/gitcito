@@ -7,6 +7,7 @@ import { useUIStore } from './stores/ui'
 import { useFetchStore } from './stores/fetch'
 import { useHackStore } from './stores/hack'
 import { HackBanner } from './components/HackBanner'
+import { HackOverlay } from './components/HackOverlay'
 import { periodMsFor } from './lib/fetchScheduler'
 import { tabActiveRepoPath, tabRepos, type ConflictOpKind, type GroupTab, type PageTab } from '../../shared/types'
 import { useT, t as tr, interp } from './i18n'
@@ -1030,6 +1031,8 @@ export default function App(): React.JSX.Element {
       {/* Directly under the tab strip and above everything else: status and
           celebration live here, and nothing below this line ever animates. */}
       <HackBanner />
+      {/* Full-window, pointer-events:none. Loud without ever being in the way. */}
+      <HackOverlay />
 
       {!settings.onboardingCompleted && <OnboardingWizard />}
 

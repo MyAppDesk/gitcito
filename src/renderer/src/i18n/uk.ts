@@ -3304,5 +3304,17 @@ export const uk: Dict = {
   'hack.semanticTitle': 'Ваша локальна зміна може бути зламана',
   'hack.semanticToast': '{file}:{line} — {claim}',
   'hack.wipSecretsTitle': 'WIP-пуш відхилено',
-  'hack.wipSecrets': 'Нічого не відправлено: знімок містить файли, схожі на облікові дані ({files}). Закомітьте або ігноруйте їх, і все продовжиться саме.'
+  'hack.wipSecrets': 'Нічого не відправлено: знімок містить файли, схожі на облікові дані ({files}). Закомітьте або ігноруйте їх, і все продовжиться саме.',
+  'hack.combo': 'комбо',
+  'hack.comboX': 'КОМБО ×{n}',
+  'hack.statBest': 'Найкраще комбо сесії',
+  'hack.workspaceHint': 'Сесія охоплює репозиторії активного workspace. Спершу змініть workspace, щоб зібрати її з іншого набору.',
+  'hack.looseRepos': 'Окремі вкладки',
+  'hack.all': 'Усі',
+  'hack.none': 'Жодного',
+  'hack.tagAnime': 'Аніме',
+  'hack.tagCalm': 'Спокійний',
+  'hack.tagPlain': 'Без оздоблення',
+  'hack.tagFreeze': 'заморозка {h} год',
+  'hack.tagWip': 'WIP {m} хв'
 }

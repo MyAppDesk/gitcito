@@ -3304,5 +3304,17 @@ export const ru: Dict = {
   'hack.semanticTitle': 'Ваше локальное изменение может быть сломано',
   'hack.semanticToast': '{file}:{line} — {claim}',
   'hack.wipSecretsTitle': 'WIP-пуш отклонён',
-  'hack.wipSecrets': 'Ничего не отправлено: снимок содержит файлы, похожие на учётные данные ({files}). Закоммитьте или игнорируйте их, и всё продолжится само.'
+  'hack.wipSecrets': 'Ничего не отправлено: снимок содержит файлы, похожие на учётные данные ({files}). Закоммитьте или игнорируйте их, и всё продолжится само.',
+  'hack.combo': 'комбо',
+  'hack.comboX': 'КОМБО ×{n}',
+  'hack.statBest': 'Лучшее комбо сессии',
+  'hack.workspaceHint': 'Сессия охватывает репозитории активного workspace. Сначала смените workspace, чтобы собрать её из другого набора.',
+  'hack.looseRepos': 'Отдельные вкладки',
+  'hack.all': 'Все',
+  'hack.none': 'Ничего',
+  'hack.tagAnime': 'Аниме',
+  'hack.tagCalm': 'Спокойный',
+  'hack.tagPlain': 'Без оформления',
+  'hack.tagFreeze': 'заморозка {h} ч',
+  'hack.tagWip': 'WIP {m} мин'
 }

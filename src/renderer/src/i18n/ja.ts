@@ -3244,5 +3244,17 @@ export const ja: Dict = {
   'hack.semanticTitle': 'ローカルの変更が壊れているかもしれません',
   'hack.semanticToast': '{file}:{line} — {claim}',
   'hack.wipSecretsTitle': 'WIP プッシュを拒否しました',
-  'hack.wipSecrets': '何もプッシュしていません。スナップショットに認証情報らしきファイル（{files}）が含まれています。コミットするか無視すれば自動的に再開します。'
+  'hack.wipSecrets': '何もプッシュしていません。スナップショットに認証情報らしきファイル（{files}）が含まれています。コミットするか無視すれば自動的に再開します。',
+  'hack.combo': 'コンボ',
+  'hack.comboX': 'コンボ ×{n}',
+  'hack.statBest': 'このセッションの最高コンボ',
+  'hack.workspaceHint': 'セッションはアクティブなワークスペースのリポジトリを対象にします。別の組み合わせから作るには、先にワークスペースを切り替えてください。',
+  'hack.looseRepos': '単独のタブ',
+  'hack.all': 'すべて',
+  'hack.none': 'なし',
+  'hack.tagAnime': 'アニメ',
+  'hack.tagCalm': '静か',
+  'hack.tagPlain': '装飾なし',
+  'hack.tagFreeze': 'フリーズ {h}時間',
+  'hack.tagWip': 'WIP {m}分'
 }

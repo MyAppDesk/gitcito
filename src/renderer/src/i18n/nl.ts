@@ -3312,5 +3312,17 @@ export const nl: Dict = {
   'hack.semanticTitle': 'Je lokale wijziging is mogelijk kapot',
   'hack.semanticToast': '{file}:{line} — {claim}',
   'hack.wipSecretsTitle': 'WIP-push geweigerd',
-  'hack.wipSecrets': 'Er is niets gepusht: de momentopname bevat bestanden die op inloggegevens lijken ({files}). Commit of negeer ze, dan hervat het vanzelf.'
+  'hack.wipSecrets': 'Er is niets gepusht: de momentopname bevat bestanden die op inloggegevens lijken ({files}). Commit of negeer ze, dan hervat het vanzelf.',
+  'hack.combo': 'combo',
+  'hack.comboX': 'COMBO ×{n}',
+  'hack.statBest': 'Beste combo van deze sessie',
+  'hack.workspaceHint': 'Een sessie dekt de repositories van de actieve workspace. Wissel eerst van workspace om er een uit een andere set te bouwen.',
+  'hack.looseRepos': 'Losse tabbladen',
+  'hack.all': 'Alle',
+  'hack.none': 'Geen',
+  'hack.tagAnime': 'Anime',
+  'hack.tagCalm': 'Rustig',
+  'hack.tagPlain': 'Geen opsmuk',
+  'hack.tagFreeze': 'freeze {h} u',
+  'hack.tagWip': 'WIP {m} min'
 }

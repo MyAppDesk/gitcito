@@ -3304,5 +3304,17 @@ export const pl: Dict = {
   'hack.semanticTitle': 'Twoja lokalna zmiana może być zepsuta',
   'hack.semanticToast': '{file}:{line} — {claim}',
   'hack.wipSecretsTitle': 'Push WIP odrzucony',
-  'hack.wipSecrets': 'Nic nie wypchnięto: migawka zawiera pliki wyglądające na poświadczenia ({files}). Zacommituj je lub zignoruj, a wznowi się samo.'
+  'hack.wipSecrets': 'Nic nie wypchnięto: migawka zawiera pliki wyglądające na poświadczenia ({files}). Zacommituj je lub zignoruj, a wznowi się samo.',
+  'hack.combo': 'combo',
+  'hack.comboX': 'COMBO ×{n}',
+  'hack.statBest': 'Najlepsze combo tej sesji',
+  'hack.workspaceHint': 'Sesja obejmuje repozytoria aktywnego workspace. Najpierw zmień workspace, aby zbudować ją z innego zestawu.',
+  'hack.looseRepos': 'Pojedyncze karty',
+  'hack.all': 'Wszystkie',
+  'hack.none': 'Żadne',
+  'hack.tagAnime': 'Anime',
+  'hack.tagCalm': 'Spokojnie',
+  'hack.tagPlain': 'Bez ozdób',
+  'hack.tagFreeze': 'freeze {h} h',
+  'hack.tagWip': 'WIP {m} min'
 }

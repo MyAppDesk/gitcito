@@ -3304,5 +3304,17 @@ export const zhCN: Dict = {
   'hack.semanticTitle': '你的本地改动可能已失效',
   'hack.semanticToast': '{file}:{line} — {claim}',
   'hack.wipSecretsTitle': 'WIP 推送已拒绝',
-  'hack.wipSecrets': '什么都没推送：快照里含有看起来像凭据的文件（{files}）。提交或忽略它们后会自动恢复。'
+  'hack.wipSecrets': '什么都没推送：快照里含有看起来像凭据的文件（{files}）。提交或忽略它们后会自动恢复。',
+  'hack.combo': '连击',
+  'hack.comboX': '连击 ×{n}',
+  'hack.statBest': '本次会话最佳连击',
+  'hack.workspaceHint': '会话覆盖当前工作区的仓库。想用另一组仓库，先切换工作区。',
+  'hack.looseRepos': '独立标签页',
+  'hack.all': '全选',
+  'hack.none': '取消',
+  'hack.tagAnime': '动漫风',
+  'hack.tagCalm': '安静',
+  'hack.tagPlain': '无装饰',
+  'hack.tagFreeze': '冻结 {h} 小时',
+  'hack.tagWip': 'WIP {m} 分钟'
 }

@@ -15264,3 +15264,387 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
     transition: none;
   }
 }
+
+/* ─── Hack mode: the full-window layer ──────────────────────────────────────
+   Mounted only at `anime`, and never when the OS asks for reduced motion — the
+   component returns null rather than animating to nothing, so none of this
+   exists on the page in either case.
+
+   `pointer-events: none` throughout. That is what lets the look be loud while
+   the rule still holds: the working surfaces underneath (diff, staging list,
+   conflict resolver, graph) do not move, do not re-render, and never end up
+   behind something you cannot click through. */
+
+.hack-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* Vertical action lines down both edges. Slow drift while the session is
+   running, faster and hotter as the deadline arrives — the speed is the status,
+   readable without looking at the clock. */
+.hack-rail {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 74px;
+  overflow: hidden;
+}
+
+.hack-rail--left {
+  left: 0;
+  mask-image: linear-gradient(90deg, #000 0%, transparent 100%);
+  -webkit-mask-image: linear-gradient(90deg, #000 0%, transparent 100%);
+}
+
+.hack-rail--right {
+  right: 0;
+  mask-image: linear-gradient(270deg, #000 0%, transparent 100%);
+  -webkit-mask-image: linear-gradient(270deg, #000 0%, transparent 100%);
+}
+
+.hack-streak {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 16vh;
+  background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--accent) 55%, transparent), transparent);
+  opacity: 0;
+  animation: hack-rail-run 5.6s linear infinite;
+}
+
+.hack-rail--left .hack-streak {
+  left: 2px;
+  right: auto;
+  width: 2px;
+}
+
+.hack-rail--right .hack-streak {
+  right: 2px;
+  left: auto;
+  width: 2px;
+}
+
+/* A second, wider ghost line per rail, offset — two speeds read as depth where
+   one reads as a progress bar stood on its end. */
+.hack-rail::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 34px;
+  background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--accent) 12%, transparent), transparent);
+  animation: hack-rail-run 9s linear infinite;
+}
+
+.hack-rail--left::after {
+  left: 0;
+}
+
+.hack-rail--right::after {
+  right: 0;
+}
+
+@keyframes hack-rail-run {
+  0% {
+    transform: translateY(-20vh);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  88% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(110vh);
+    opacity: 0;
+  }
+}
+
+.hack-overlay--freeze .hack-streak {
+  animation-duration: 3.2s;
+  background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--yellow) 60%, transparent), transparent);
+}
+
+.hack-overlay--over .hack-streak {
+  animation-duration: 1.9s;
+  background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--red) 70%, transparent), transparent);
+}
+
+.hack-overlay--over .hack-rail::after {
+  background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--red) 16%, transparent), transparent);
+}
+
+/* The standing combo badge — what you are holding, not what just happened. */
+.hack-combo-standing {
+  position: absolute;
+  top: 44px;
+  right: 26px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1;
+}
+
+.hack-combo-x {
+  font-size: 26px;
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: -0.02em;
+  color: var(--accent);
+  text-shadow: 0 0 18px color-mix(in srgb, var(--accent) 70%, transparent);
+}
+
+.hack-combo-label {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+
+/* ─── The celebration ─── */
+
+.hack-cel {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Radial impact lines converging on the middle of the window. */
+.hack-impact {
+  position: absolute;
+  width: min(78vw, 900px);
+  height: min(78vw, 900px);
+}
+
+.hack-impact-line {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 50%;
+  height: 3px;
+  transform-origin: 0 50%;
+  background: linear-gradient(90deg, transparent 8%, color-mix(in srgb, var(--accent) 85%, transparent) 100%);
+  animation: hack-impact-out 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes hack-impact-out {
+  0% {
+    opacity: 0;
+    scale: 0.15 1;
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    scale: 1 1;
+  }
+}
+
+.hack-cel-core {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.hack-cel-word {
+  font-size: clamp(34px, 7vw, 82px);
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-0);
+  -webkit-text-stroke: 2px color-mix(in srgb, var(--bg-0) 80%, transparent);
+  text-shadow:
+    0 0 30px color-mix(in srgb, var(--accent) 85%, transparent),
+    0 6px 0 color-mix(in srgb, var(--bg-0) 55%, transparent);
+}
+
+.hack-cel--push .hack-cel-word {
+  color: var(--green);
+}
+
+.hack-cel--merge .hack-cel-word {
+  color: var(--purple);
+}
+
+.hack-cel-combo {
+  font-size: clamp(20px, 3.6vw, 40px);
+  font-weight: 900;
+  font-style: italic;
+  color: var(--yellow);
+  text-shadow: 0 0 22px color-mix(in srgb, var(--yellow) 75%, transparent);
+}
+
+/* ─── Session tabs ─── */
+/* The tab strip says which repositories the event covers. A rim and a slow
+   sweep, no layout change — a tab that resizes when a session starts would move
+   every other tab under the pointer. */
+
+.tab.hack-tab {
+  position: relative;
+  box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--accent) 70%, transparent);
+}
+
+.tab.hack-tab::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  overflow: hidden;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--accent) 95%, transparent),
+    transparent
+  );
+  background-size: 55% 100%;
+  background-repeat: no-repeat;
+  animation: hack-tab-sweep 2.6s linear infinite;
+}
+
+@keyframes hack-tab-sweep {
+  0% {
+    background-position: -60% 0;
+  }
+  100% {
+    background-position: 160% 0;
+  }
+}
+
+/* ─── Creation picker ─── */
+
+.hack-ws-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 10px;
+  background: var(--bg-3);
+  color: var(--text-1);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.hack-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hack-section {
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg-1);
+}
+
+.hack-section.all {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+}
+
+.hack-section-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  background: var(--bg-2);
+  border: 0;
+  color: var(--text-0);
+  cursor: pointer;
+  text-align: left;
+}
+
+.hack-section.all .hack-section-head {
+  background: color-mix(in srgb, var(--accent) 14%, var(--bg-2));
+}
+
+.hack-section.some .hack-section-head {
+  background: color-mix(in srgb, var(--accent) 7%, var(--bg-2));
+}
+
+.hack-section-count {
+  margin-left: auto;
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+}
+
+.hack-section-toggle {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.hack-section-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+}
+
+.hack-section-body .hack-repo-row {
+  background: transparent;
+}
+
+.hack-section-body .hack-repo-row.on {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.hack-template-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.hack-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: var(--bg-3);
+  color: var(--text-1);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.hack-tag--anime {
+  background: color-mix(in srgb, var(--accent) 24%, var(--bg-3));
+  color: var(--text-0);
+}
+
+.hack-tag--calm {
+  background: color-mix(in srgb, var(--green) 18%, var(--bg-3));
+}
+
+.hack-best {
+  color: var(--yellow);
+  font-weight: 700;
+}
+
+/* Reduced motion: the overlay is not mounted at all, so only the tab sweep and
+   the banner need switching off here. */
+@media (prefers-reduced-motion: reduce) {
+  .tab.hack-tab::after {
+    animation: none;
+    background: color-mix(in srgb, var(--accent) 70%, transparent);
+  }
+}

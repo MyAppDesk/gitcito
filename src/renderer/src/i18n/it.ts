@@ -3253,5 +3253,17 @@ export const it: Dict = {
   'hack.semanticTitle': 'La tua modifica locale potrebbe essere rotta',
   'hack.semanticToast': '{file}:{line} — {claim}',
   'hack.wipSecretsTitle': 'Push WIP rifiutato',
-  'hack.wipSecrets': 'Non è stato inviato nulla: lo snapshot contiene file che sembrano credenziali ({files}). Committali o ignorali, poi riprende da solo.'
+  'hack.wipSecrets': 'Non è stato inviato nulla: lo snapshot contiene file che sembrano credenziali ({files}). Committali o ignorali, poi riprende da solo.',
+  'hack.combo': 'combo',
+  'hack.comboX': 'COMBO ×{n}',
+  'hack.statBest': 'Miglior combo della sessione',
+  'hack.workspaceHint': 'Una sessione copre i repository del workspace attivo. Cambia workspace prima per costruirne una da un altro insieme.',
+  'hack.looseRepos': 'Schede singole',
+  'hack.all': 'Tutti',
+  'hack.none': 'Nessuno',
+  'hack.tagAnime': 'Anime',
+  'hack.tagCalm': 'Sobrio',
+  'hack.tagPlain': 'Senza fronzoli',
+  'hack.tagFreeze': 'freeze {h} h',
+  'hack.tagWip': 'WIP {m} min'
 }

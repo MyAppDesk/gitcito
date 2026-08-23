@@ -3307,5 +3307,17 @@ export const he: Dict = {
   'hack.semanticTitle': 'ייתכן שהשינוי המקומי שלך שבור',
   'hack.semanticToast': '{file}:{line} — {claim}',
   'hack.wipSecretsTitle': 'דחיפת WIP נדחתה',
-  'hack.wipSecrets': 'שום דבר לא נדחף: התמונה מכילה קבצים שנראים כמו סודות ({files}). בצע להם קומיט או התעלם מהם, וזה יתחדש מעצמו.'
+  'hack.wipSecrets': 'שום דבר לא נדחף: התמונה מכילה קבצים שנראים כמו סודות ({files}). בצע להם קומיט או התעלם מהם, וזה יתחדש מעצמו.',
+  'hack.combo': 'קומבו',
+  'hack.comboX': 'קומבו ×{n}',
+  'hack.statBest': 'הקומבו הטוב במושב',
+  'hack.workspaceHint': 'מושב מכסה את המאגרים של סביבת העבודה הפעילה. החלף סביבת עבודה קודם כדי לבנות אותו מאוסף אחר.',
+  'hack.looseRepos': 'לשוניות בודדות',
+  'hack.all': 'הכול',
+  'hack.none': 'כלום',
+  'hack.tagAnime': 'אנימה',
+  'hack.tagCalm': 'רגוע',
+  'hack.tagPlain': 'בלי קישוט',
+  'hack.tagFreeze': 'הקפאה {h} שעות',
+  'hack.tagWip': 'WIP {m} דק׳'
 }

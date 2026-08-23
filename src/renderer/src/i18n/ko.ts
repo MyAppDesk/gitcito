@@ -3304,5 +3304,17 @@ export const ko: Dict = {
   'hack.semanticTitle': '로컬 변경이 깨졌을 수 있습니다',
   'hack.semanticToast': '{file}:{line} — {claim}',
   'hack.wipSecretsTitle': 'WIP 푸시를 거부했습니다',
-  'hack.wipSecrets': '아무것도 푸시하지 않았습니다. 스냅샷에 자격 증명처럼 보이는 파일({files})이 있습니다. 커밋하거나 무시하면 알아서 다시 시작합니다.'
+  'hack.wipSecrets': '아무것도 푸시하지 않았습니다. 스냅샷에 자격 증명처럼 보이는 파일({files})이 있습니다. 커밋하거나 무시하면 알아서 다시 시작합니다.',
+  'hack.combo': '콤보',
+  'hack.comboX': '콤보 ×{n}',
+  'hack.statBest': '이번 세션 최고 콤보',
+  'hack.workspaceHint': '세션은 활성 워크스페이스의 저장소를 대상으로 합니다. 다른 묶음으로 만들려면 워크스페이스를 먼저 바꾸세요.',
+  'hack.looseRepos': '단독 탭',
+  'hack.all': '전체',
+  'hack.none': '없음',
+  'hack.tagAnime': '애니메',
+  'hack.tagCalm': '차분',
+  'hack.tagPlain': '장식 없음',
+  'hack.tagFreeze': '프리즈 {h}시간',
+  'hack.tagWip': 'WIP {m}분'
 }

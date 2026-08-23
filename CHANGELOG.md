@@ -1,5 +1,12 @@
 
 
+## [3.21.1](https://github.com/MyAppDesk/gitcito/compare/v3.21.0...v3.21.1) (2026-08-23)
+
+
+### Features
+
+* implement mergeSecretStores to preserve credentials ([4f0ab09](https://github.com/MyAppDesk/gitcito/commit/4f0ab09484d9cf33f3aeb8119010c8edbb63ac9f))
+
 ## [3.21.0](https://github.com/MyAppDesk/gitcito/compare/v3.20.0...v3.21.0) (2026-08-22)
 
 

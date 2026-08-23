@@ -59,6 +59,8 @@
       "timelapse": "timelapse",
       "launch-input": "launch",
       "teammate-radar": "teammate-radar",
+      "hack-mode": "hack-mode",
+      "hack-alerts": "hack-mode",
       "commit-edit": "commit-edit",
       "reset-to-commit": "merging",
       "local-ci": "local-ci"
@@ -158,6 +160,8 @@
       "ws-secure-import": "secure-share",
       "licenses": "licenses",
       "teammate-radar": "teammate-radar",
+      "hack-mode": "hack-mode",
+      "hack-alerts": "hack-mode",
       "local-ci": "local-ci"
     },
     "exempt": {

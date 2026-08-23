@@ -159,6 +159,16 @@ const api = {
       ipcRenderer.invoke('ai:generateBranchName', description, cfg, ctx),
     reviewPR: (diff: string, cfg: unknown): Promise<unknown> =>
       ipcRenderer.invoke('ai:reviewPR', diff, cfg),
+    semanticCollision: (localDiff: string, incomingDiff: string, cfg: unknown): Promise<unknown> =>
+      ipcRenderer.invoke('ai:semanticCollision', localDiff, incomingDiff, cfg),
+    proposeSessionPlan: (
+      repoName: string,
+      detected: unknown,
+      hotspots: unknown,
+      authors: unknown,
+      cfg: unknown
+    ): Promise<unknown> =>
+      ipcRenderer.invoke('ai:proposeSessionPlan', repoName, detected, hotspots, authors, cfg),
     prDescription: (commits: string, diff: string, cfg: unknown): Promise<unknown> =>
       ipcRenderer.invoke('ai:prDescription', commits, diff, cfg),
     planActions: (prompt: string, status: unknown, cfg: unknown): Promise<unknown> =>

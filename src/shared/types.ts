@@ -2699,6 +2699,166 @@ export interface AppSettings {
   /** Version the user chose to skip via "don't show again". The new-version
    *  banner stays hidden for exactly this version; a later one shows again. */
   skippedUpdateVersion?: string
+  /** The running hack session, or null when the app is in its ordinary mode.
+   *  Exactly one runs at a time — a second event is a second session, not a
+   *  second copy of the same one. */
+  hackSession: HackSession | null
+  /** Templates the user saved on top of the built-ins. */
+  hackTemplates: HackTemplate[]
+}
+
+// ─── Hack mode ───────────────────────────────────────────────────────────────
+
+/**
+ * How loud the session is allowed to be.
+ *
+ * `anime` is the point of the mode — continuous motion on the banner, bursts on
+ * a push, a combo counter. It is confined to celebration and status surfaces:
+ * a diff, the staging list, the conflict resolver and the graph never move,
+ * because at 4am those are precision work.
+ *
+ * `calm` keeps the banner and the counters and drops the motion. `off` hides
+ * the chrome entirely and leaves only the behaviour — fetch cadence, radar,
+ * freeze — for someone who wants the coordination without the theatre.
+ *
+ * The OS `prefers-reduced-motion` setting overrides `anime` down to `calm` at
+ * render time; this field records the intent, not the outcome.
+ */
+export type HackMotionLevel = 'off' | 'calm' | 'anime'
+
+/**
+ * One repository's part in the session.
+ *
+ * `path` is a repo path, or a path *inside* a repo — which is what makes a
+ * monorepo work without a separate concept: `~/mono` can carry a role at
+ * `~/mono/api` and another at `~/mono/app`, and everything downstream matches
+ * by prefix rather than by repository identity.
+ */
+export interface HackRepoRole {
+  /** Absolute repo path, or a directory inside one. */
+  path: string
+  /** What this part is — detected from its manifest, always editable. Free text
+   *  on purpose: a catalogue of stacks is a promise that ages. */
+  label: string
+  /** Repo-relative globs whose change breaks the other repos of the session.
+   *  Proposed by manifest detection, then edited by hand. */
+  contracts: string[]
+}
+
+/** Everything a template hands a new session. Pure data — no behaviour, no
+ *  hooks, no conditional UI — so composing two of them is merging fields. */
+export interface HackTemplate {
+  id: string
+  /** Built-ins name themselves through the dictionary; a saved template carries
+   *  its own name, because the user typed it and it is not translatable. */
+  nameKey?: string
+  name?: string
+  /** How long the event runs, used to seed the deadline. */
+  durationHours: number
+  fetchSeconds: number
+  /** Minutes between WIP branch pushes (0 = off). */
+  wipPushMinutes: number
+  /** Hours before the deadline at which the freeze starts warning (0 = off). */
+  freezeFromHours: number
+  motion: HackMotionLevel
+  radarNotify: boolean
+}
+
+/** A running session. Everything here is editable while it runs — starting from
+ *  a named template must never mean being stuck with what it chose. */
+export interface HackSession {
+  id: string
+  name: string
+  /** Which template seeded it, for display only. */
+  templateId: string
+  /** Repositories in the event, by path. */
+  repos: string[]
+  roles: HackRepoRole[]
+  /** Your CODEOWNERS handle (e.g. `@ana`). Empty when the repos have no
+   *  CODEOWNERS or you did not say — ownership hints then stay off. */
+  me: string
+  startedAt: number
+  /** Epoch ms of the demo. Drives the countdown and the freeze window. */
+  endsAt: number
+  fetchSeconds: number
+  wipPushMinutes: number
+  /** Globs still safe to touch once the freeze is on. Everything else warns. */
+  freezeAllowlist: string[]
+  freezeFromHours: number
+  motion: HackMotionLevel
+  radarNotify: boolean
+  /** Run the AI second pass over a path overlap the radar already found.
+   *  Off unless the user turned it on and has a provider configured. */
+  semanticCollisions: boolean
+  /** Push periodic WIP snapshots to `wip/<me>/<branch>`. Off by default: it
+   *  publishes to a shared remote. */
+  wipPush: boolean
+}
+
+/** A session as it travels between machines. No absolute paths — repos are
+ *  matched on the receiving side by remote URL first, folder name second, the
+ *  same rule the portable workspace uses. */
+export interface PortableHackSession {
+  version: 1
+  name: string
+  templateId: string
+  endsAt: number
+  fetchSeconds: number
+  wipPushMinutes: number
+  freezeAllowlist: string[]
+  freezeFromHours: number
+  motion: HackMotionLevel
+  radarNotify: boolean
+  repos: { name: string; remote?: string; folder: string }[]
+  /** Roles keyed by the repo folder name plus an optional sub-path, so they
+   *  survive landing in a different directory. */
+  roles: { folder: string; sub?: string; label: string; contracts: string[] }[]
+}
+
+/** One repo's detected shape: what its manifests say it is, and which files
+ *  look like the contract other repos would break against. */
+export interface DetectedRepoRole {
+  /** Directory the manifest sits in, relative to the repo root ('' = root). */
+  dir: string
+  /** Derived from the manifest kind and its declared dependencies. */
+  label: string
+  /** Candidate contract files that actually exist, repo-relative. */
+  contracts: string[]
+}
+
+/** One CODEOWNERS rule, in file order. Last match wins — unlike gitignore. */
+export interface OwnerRule {
+  pattern: string
+  owners: string[]
+}
+
+/** An incoming remote change that lands on a file the session declared as a
+ *  contract — the signal that crosses a repository boundary. */
+export interface ContractChange {
+  ref: string
+  sha: string
+  time: number
+  author: string
+  /** The contract files this branch touches, repo-relative. */
+  files: string[]
+}
+
+/** What a WIP snapshot push actually published. */
+export interface WipPushResult {
+  branch: string
+  sha: string
+  files: number
+}
+
+/** A collision the AI second pass judged to be real, anchored to a hunk the
+ *  model was allowed to cite rather than to a path it invented. */
+export interface SemanticCollision {
+  /** Repo-relative file, resolved by the app from the cited evidence id. */
+  path: string
+  line: number
+  /** One sentence on what incoming change breaks the local edit. */
+  claim: string
+  severity: 'high' | 'medium' | 'low'
 }
 
 export type Language =
@@ -2966,6 +3126,8 @@ export function defaultSettings(): AppSettings {
     graphStyle: defaultGraphStyle(),
     customGraphPalettes: [],
     repoLayouts: {},
+    hackSession: null,
+    hackTemplates: [],
     autoFetchMinutes: 5,
     autoFetchSeconds: 300,
     autoFetchScope: 'tab',

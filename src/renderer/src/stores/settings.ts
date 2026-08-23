@@ -257,6 +257,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     settings.autoFetchScope = settings.autoFetchScope ?? sd.autoFetchScope
     settings.pauseWhenHidden = settings.pauseWhenHidden ?? sd.pauseWhenHidden
     settings.radarNotifications = settings.radarNotifications ?? sd.radarNotifications
+    // A session is explicitly null rather than undefined when none is running,
+    // so `?? null` is a migration for old files and not a state reset.
+    settings.hackSession = settings.hackSession ?? null
+    settings.hackTemplates = settings.hackTemplates ?? []
     settings.confirmForcePush = settings.confirmForcePush ?? sd.confirmForcePush
     settings.mergeCommit = settings.mergeCommit ?? sd.mergeCommit
     settings.sidebarOrder =

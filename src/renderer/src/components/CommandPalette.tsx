@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
+  AlertTriangle,
+  Flame,
   GitBranch,
   GitCommit,
   FileText,
@@ -250,6 +252,8 @@ export function CommandPalette(): React.JSX.Element {
       { id: 'pr-preview', title: t('prPreview.open'), group: 'Actions', keywords: 'preview pull request merge request pr mr fork check out locally test try refs/pull', icon: <GitPullRequestArrow size={15} />, run: act(() => ui.openModal({ kind: 'pr-preview', repoPath: path })) },
       { id: 'conflict-radar', title: t('radar.open'), group: 'Actions', keywords: 'conflict radar merge preview predict clash risk branches', icon: <Radar size={15} />, run: act(() => ui.openModal({ kind: 'conflict-radar', repoPath: path, base: repo.branches.current || 'HEAD' })) },
       { id: 'teammate-radar', title: t('teamRadar.open'), group: 'Actions', keywords: 'teammate radar remote activity upstream overlap dirty files collision who touched awareness', icon: <Users size={15} />, run: act(() => ui.openModal({ kind: 'teammate-radar', repoPath: path })) },
+      { id: 'hack-mode', title: t('cmd.hackMode'), group: 'Actions', keywords: 'hack mode session hackathon war room sprint team event countdown freeze template anime motion', icon: <Flame size={15} />, run: act(() => ui.openModal({ kind: 'hack-mode' })) },
+      { id: 'hack-alerts', title: t('cmd.hackAlerts'), group: 'Actions', keywords: 'hack alerts collisions contract warnings session caught', icon: <AlertTriangle size={15} />, run: act(() => ui.openModal({ kind: 'hack-alerts' })) },
       { id: 'local-ci', title: t('localCi.open'), group: 'Actions', keywords: 'local ci act actions workflow run test docker pipeline before push', icon: <FlaskConical size={15} />, run: act(() => ui.openModal({ kind: 'local-ci', repoPath: path })) },
       { id: 'compare-refs', title: t('cmd.compareRefs'), group: 'Actions', keywords: 'compare diff branches refs tags ahead behind range', icon: <ArrowLeftRight size={15} />, run: act(() => {
         const cur = repo.branches.current || 'HEAD'

@@ -43,6 +43,31 @@ import {
   trippedRepos,
   type FetchStates
 } from '../src/renderer/src/lib/fetchScheduler'
+import {
+  buildOwnerIndex,
+  matchesPattern,
+  ownedByMe,
+  ownersOf,
+  parseCodeowners
+} from '../src/shared/codeowners'
+import { BUILTIN_HACK_TEMPLATES } from '../src/shared/hackTemplates'
+import type { HackSession } from '../src/shared/types'
+import {
+  IMPORT_LIMITS,
+  contractAudience,
+  contractHits,
+  contractsForRepo,
+  formatCountdown,
+  fromPortable,
+  frozenViolations,
+  hackClock,
+  matchPortableRepos,
+  parsePortableSession,
+  sessionFromTemplate,
+  toPortable,
+  wipBranchName,
+  wipBranchPrefix
+} from '../src/renderer/src/lib/hackSession'
 import { frecencyScore } from '../src/renderer/src/lib/frecency'
 import { tokenizeChatText, isImageRef } from '../src/renderer/src/lib/chatText'
 import { togglePin, selectPinned } from '../src/renderer/src/lib/pinnedBranches'
@@ -4429,5 +4454,247 @@ describe('background fetch scheduler', () => {
     expect(periodMsFor(0)).toBe(0)
     expect(periodMsFor(5)).toBe(MIN_FETCH_SECONDS * 1000)
     expect(periodMsFor(90)).toBe(90_000)
+  })
+})
+
+describe('CODEOWNERS', () => {
+  it('parses patterns and owner tokens, ignoring comments and blanks', () => {
+    const rules = parseCodeowners('# who owns what\n\n*       @core\n/api/   @ana @org/backend\ndocs/   \n')
+    expect(rules).toEqual([
+      { pattern: '*', owners: ['@core'] },
+      { pattern: '/api/', owners: ['@ana', '@org/backend'] },
+      // An explicitly unowned path is a real CODEOWNERS statement, not junk.
+      { pattern: 'docs/', owners: [] }
+    ])
+  })
+
+  it('accepts bare emails as owners and drops anything that is not an owner token', () => {
+    expect(parseCodeowners('* ana@example.com not-an-owner')).toEqual([
+      { pattern: '*', owners: ['ana@example.com'] }
+    ])
+  })
+
+  it('lets the LAST matching rule win, unlike gitignore', () => {
+    const idx = buildOwnerIndex(parseCodeowners('* @core\n/api/ @ana'))
+    expect(ownersOf(idx, 'api/schema.ts')).toEqual(['@ana'])
+    expect(ownersOf(idx, 'src/app.ts')).toEqual(['@core'])
+  })
+
+  it('matches a bare name at any depth but a slashed pattern from the root', () => {
+    const idx = buildOwnerIndex(parseCodeowners('schema.ts @ana\n/src/app.ts @bob'))
+    expect(ownersOf(idx, 'deep/nested/schema.ts')).toEqual(['@ana'])
+    expect(ownersOf(idx, 'src/app.ts')).toEqual(['@bob'])
+    expect(ownersOf(idx, 'other/src/app.ts')).toEqual([])
+  })
+
+  it('gives a directory pattern everything beneath it', () => {
+    const idx = buildOwnerIndex(parseCodeowners('/api/ @ana'))
+    expect(ownersOf(idx, 'api/v2/deep/thing.ts')).toEqual(['@ana'])
+    expect(ownersOf(idx, 'apixyz/thing.ts')).toEqual([])
+  })
+
+  it('stops * at a separator and lets ** cross one', () => {
+    expect(matchesPattern('src/*.ts', 'src/a.ts')).toBe(true)
+    expect(matchesPattern('src/*.ts', 'src/deep/a.ts')).toBe(false)
+    expect(matchesPattern('src/**/*.ts', 'src/deep/a.ts')).toBe(true)
+    // `**/` must also match zero directories.
+    expect(matchesPattern('src/**/a.ts', 'src/a.ts')).toBe(true)
+  })
+
+  it('treats an unclaimed file as yours — a claim list is not a blocklist', () => {
+    const idx = buildOwnerIndex(parseCodeowners('/api/ @ana'))
+    expect(ownedByMe(idx, 'src/app.ts', '@bob')).toBe(true)
+    expect(ownedByMe(idx, 'api/schema.ts', '@bob')).toBe(false)
+    expect(ownedByMe(idx, 'api/schema.ts', '@ana')).toBe(true)
+  })
+
+  it('treats everything as yours when no handle is set', () => {
+    const idx = buildOwnerIndex(parseCodeowners('/api/ @ana'))
+    expect(ownedByMe(idx, 'api/schema.ts', '')).toBe(true)
+  })
+})
+
+describe('hack session', () => {
+  const base: HackSession = {
+    id: 's1',
+    name: 'Demo',
+    templateId: 'hackathon-36h',
+    repos: ['/w/api', '/w/app'],
+    roles: [
+      { path: '/w/api', label: 'fastapi', contracts: ['openapi.yaml'] },
+      { path: '/w/app', label: 'flutter', contracts: ['pubspec.yaml'] }
+    ],
+    me: '@ana',
+    startedAt: 0,
+    endsAt: 36 * 3600_000,
+    fetchSeconds: 45,
+    wipPushMinutes: 20,
+    freezeAllowlist: [],
+    freezeFromHours: 4,
+    motion: 'anime',
+    radarNotify: true,
+    semanticCollisions: false,
+    wipPush: false
+  }
+
+  it('reports running, then freeze inside the window, then overtime', () => {
+    expect(hackClock(base, 0).phase).toBe('running')
+    expect(hackClock(base, 33 * 3600_000).phase).toBe('freeze')
+    expect(hackClock(base, 37 * 3600_000).phase).toBe('overtime')
+  })
+
+  it('clamps progress and keeps the countdown in hours and minutes', () => {
+    expect(hackClock(base, 18 * 3600_000).progress).toBeCloseTo(0.5, 5)
+    expect(hackClock(base, 99 * 3600_000).progress).toBe(1)
+    expect(formatCountdown(36 * 3600_000 + 12 * 60_000)).toBe('36:12')
+    expect(formatCountdown(-90 * 60_000)).toBe('01:30')
+  })
+
+  it('rebases a monorepo role\u2019s contracts onto the repository root', () => {
+    const mono: HackSession = {
+      ...base,
+      repos: ['/w/mono'],
+      roles: [{ path: '/w/mono/api', label: 'api', contracts: ['openapi.yaml'] }]
+    }
+    expect(contractsForRepo(mono, '/w/mono')).toEqual(['api/openapi.yaml'])
+    expect(contractHits(mono, '/w/mono', ['api/openapi.yaml', 'app/main.dart'])).toEqual(['api/openapi.yaml'])
+  })
+
+  it('reports no contract hits for a repo that declared none', () => {
+    const bare = { ...base, roles: [] }
+    expect(contractHits(bare, '/w/api', ['openapi.yaml'])).toEqual([])
+  })
+
+  it('tells every other repo of the session, and never the source', () => {
+    expect(contractAudience(base, '/w/api')).toEqual(['/w/app'])
+  })
+
+  it('only warns about frozen files once the window is open', () => {
+    const s = { ...base, freezeAllowlist: ['docs/**'] }
+    expect(frozenViolations(s, ['src/app.ts'], 0)).toEqual([])
+    expect(frozenViolations(s, ['src/app.ts', 'docs/a.md'], 33 * 3600_000)).toEqual(['src/app.ts'])
+  })
+
+  it('stays silent when the freeze is configured off or has no allow-list', () => {
+    expect(frozenViolations({ ...base, freezeFromHours: 0 }, ['x.ts'], 35 * 3600_000)).toEqual([])
+    expect(frozenViolations(base, ['x.ts'], 35 * 3600_000)).toEqual([])
+  })
+
+  it('namespaces WIP branches per person and sanitises the branch name', () => {
+    expect(wipBranchName('@ana', 'feat/thing')).toBe('wip/ana/feat/thing')
+    expect(wipBranchName('', 'weird name!')).toBe('wip/me/weird-name-')
+    expect(wipBranchPrefix('@ana')).toBe('wip/ana/')
+  })
+
+  it('seeds a session from a template with every field editable afterwards', () => {
+    const tpl = BUILTIN_HACK_TEMPLATES[0]
+    const s = sessionFromTemplate(tpl, { id: 'x', name: 'Ev', repos: ['/w/a'], roles: [], me: '@a', now: 1000 })
+    expect(s.endsAt).toBe(1000 + tpl.durationHours * 3600_000)
+    expect(s.fetchSeconds).toBe(tpl.fetchSeconds)
+    // Neither of these is a template concern — both are opt-in afterwards.
+    expect(s.wipPush).toBe(false)
+    expect(s.semanticCollisions).toBe(false)
+  })
+
+  it('round-trips through the portable form without carrying absolute paths', () => {
+    const portable = toPortable(base, [
+      { path: '/w/api', name: 'api', remote: 'git@github.com:acme/api.git' },
+      { path: '/w/app', name: 'app' }
+    ])
+    expect(JSON.stringify(portable)).not.toContain('/w/')
+    const local = [
+      // Same repo, different directory: matched on the remote, not the path.
+      { path: '/elsewhere/backend', name: 'backend', remote: 'https://github.com/acme/api' },
+      { path: '/elsewhere/app', name: 'app' }
+    ]
+    const { matched, missing } = matchPortableRepos(portable, local)
+    expect(missing).toEqual([])
+    expect(matched).toEqual([
+      { folder: 'api', path: '/elsewhere/backend' },
+      { folder: 'app', path: '/elsewhere/app' }
+    ])
+    const rebuilt = fromPortable(portable, matched, { id: 'n', me: '@bob', now: 5 })
+    expect(rebuilt.repos).toEqual(['/elsewhere/backend', '/elsewhere/app'])
+    expect(rebuilt.roles[0]).toEqual({ path: '/elsewhere/backend', label: 'fastapi', contracts: ['openapi.yaml'] })
+  })
+
+  it('reports repos it could not match instead of silently shrinking the session', () => {
+    const portable = toPortable(base, [{ path: '/w/api', name: 'api' }, { path: '/w/app', name: 'app' }])
+    const { matched, missing } = matchPortableRepos(portable, [{ path: '/x/api', name: 'api' }])
+    expect(matched).toHaveLength(1)
+    expect(missing.map((m) => m.name)).toEqual(['app'])
+  })
+})
+
+describe('imported session files (someone else\u2019s input)', () => {
+  const good = {
+    version: 1,
+    name: 'Event',
+    templateId: 'hackathon-36h',
+    endsAt: Date.now() + 3600_000,
+    fetchSeconds: 45,
+    wipPushMinutes: 20,
+    freezeAllowlist: ['docs/**'],
+    freezeFromHours: 4,
+    motion: 'anime',
+    radarNotify: true,
+    repos: [{ name: 'api', folder: 'api', remote: 'git@github.com:acme/api.git' }],
+    roles: [{ folder: 'api', label: 'api', contracts: ['openapi.yaml'] }]
+  }
+
+  it('accepts a well-formed file', () => {
+    const parsed = parsePortableSession(good)
+    expect(parsed?.name).toBe('Event')
+    expect(parsed?.repos[0].remote).toBe('git@github.com:acme/api.git')
+  })
+
+  it('refuses anything that is not a version-1 session with a name and a repo', () => {
+    expect(parsePortableSession(null)).toBeNull()
+    expect(parsePortableSession({ version: 2, name: 'x', repos: [{ folder: 'a' }] })).toBeNull()
+    expect(parsePortableSession({ ...good, name: '' })).toBeNull()
+    expect(parsePortableSession({ ...good, repos: [] })).toBeNull()
+  })
+
+  it('clamps the cadence so a shared file cannot make the app fetch every second', () => {
+    expect(parsePortableSession({ ...good, fetchSeconds: 0 })?.fetchSeconds).toBe(IMPORT_LIMITS.minFetchSeconds)
+    expect(parsePortableSession({ ...good, fetchSeconds: 99999 })?.fetchSeconds).toBe(IMPORT_LIMITS.maxFetchSeconds)
+    expect(parsePortableSession({ ...good, wipPushMinutes: 10_000 })?.wipPushMinutes).toBe(
+      IMPORT_LIMITS.maxWipPushMinutes
+    )
+  })
+
+  it('drops patterns that try to escape the repository or name an absolute path', () => {
+    const parsed = parsePortableSession({
+      ...good,
+      freezeAllowlist: ['../../etc/passwd', '~/secrets', 'C:/Windows', 'src/**'],
+      roles: [{ folder: 'api', label: 'api', contracts: ['../outside.yaml', 'openapi.yaml'] }]
+    })
+    expect(parsed?.freezeAllowlist).toEqual(['src/**'])
+    expect(parsed?.roles[0].contracts).toEqual(['openapi.yaml'])
+  })
+
+  it('keeps only remote strings that look like a remote, and never invents one', () => {
+    const parsed = parsePortableSession({
+      ...good,
+      repos: [{ name: 'api', folder: 'api', remote: 'file:///etc/passwd' }]
+    })
+    expect(parsed?.repos[0].remote).toBeUndefined()
+  })
+
+  it('refuses a folder that is really a path', () => {
+    const parsed = parsePortableSession({ ...good, repos: [{ name: 'a', folder: '../../a' }] })
+    // The separators are stripped rather than the entry trusted.
+    expect(parsed?.repos[0].folder).toBe('....a')
+  })
+
+  it('never lets a deadline sit outside a sane window', () => {
+    const past = parsePortableSession({ ...good, endsAt: 0 })!
+    expect(past.endsAt).toBeGreaterThanOrEqual(Date.now() - 1000)
+    const far = parsePortableSession({ ...good, endsAt: Date.now() + 10 ** 13 })!
+    expect(far.endsAt - Date.now()).toBeLessThanOrEqual(IMPORT_LIMITS.maxDurationMs + 1000)
+  })
+
+  it('falls back to a calm look rather than trusting an unknown value', () => {
+    expect(parsePortableSession({ ...good, motion: 'seizure' })?.motion).toBe('calm')
   })
 })

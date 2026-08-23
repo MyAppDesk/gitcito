@@ -37,6 +37,7 @@ import type { LocalCiVerdict } from '../../../shared/localCi'
 import { useUIStore } from './ui'
 import { useSettingsStore } from './settings'
 import { useFetchStore } from './fetch'
+import { useHackStore, useHackDirty } from './hack'
 import { isSecretFile } from '../lib/secrets'
 import { commitHookFailureHint } from '../lib/commitLint'
 import { splitCommitMessage } from '../lib/commitMenuCapabilities'
@@ -398,6 +399,16 @@ async function doRefresh(path: string, slices: RefreshSlice[]): Promise<void> {
       notGit: false,
       lastRefreshAt: Date.now()
     })
+    // Mirror "is there uncommitted work here, and on what branch" for hack
+    // mode, which has to answer that for repositories that are not the active
+    // tab — the cross-repo warning is about the tab you are not looking at.
+    useHackDirty
+      .getState()
+      .note(
+        path,
+        (status?.staged.length ?? 0) + (status?.unstaged.length ?? 0) + (status?.conflicted.length ?? 0),
+        branches?.current ?? ''
+      )
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     // Opened a plain folder, not a repo — offer to `git init` instead of a toast.
@@ -805,6 +816,10 @@ async function runPushInner(path: string, branch: string, force: boolean): Promi
   try {
     await gitApi.push(path, branch, { force })
     toast('success', label)
+    // A push landing is the session's one unambiguously good event — the thing
+    // the celebration layer exists for. No-ops outside a session.
+    useHackStore.getState().celebrate('push')
+    useHackStore.getState().bump('pushes')
     return true
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
@@ -1385,6 +1400,10 @@ export const repoActions = {
         applyFetchResult(path, before, forced)
         await repoActions.radarSweep(path)
       }
+      // The cross-repo contract sweep runs whether or not the repo is open:
+      // "the backend changed openapi.yaml" is news precisely when the backend
+      // is the tab you are not looking at.
+      await useHackStore.getState().contractSweep(path)
       return true
     }),
 
@@ -1411,6 +1430,15 @@ export const repoActions = {
     const files = new Set(overlapping.flatMap((e) => e.overlap))
     const message = interp(t('teamRadar.overlapToast'), { files: files.size, branches: overlapping.length })
     toast('info', message)
+    // In a session the overlap is also a counter, an alert row and — when the
+    // user opted in and has a provider — the trigger for the AI second pass.
+    // Outside one, none of this exists.
+    const hack = useHackStore.getState()
+    if (hack.active()) {
+      hack.alert({ kind: 'overlap', repoPath: path, message, files: [...files] })
+      hack.bump('caught')
+      void hack.semanticSweep(path, overlapping)
+    }
     // A toast lives 3.5s in a window that, during the hours this matters, is
     // behind an editor. The OS notification is the same warning where it can
     // actually be seen — same dedupe, so it is not a second firehose.
@@ -1937,7 +1965,11 @@ export const repoActions = {
     useRepoStore.getState().run(
       path,
       amend ? 'Amended commit' : 'Committed',
-      () => gitApi.commit(path, message, amend),
+      async () => {
+        await gitApi.commit(path, message, amend)
+        useHackStore.getState().celebrate('commit')
+        useHackStore.getState().bump('commits')
+      },
       {
         label: t('undoLabel.commit'),
         undo: () => gitApi.reset(path, 'HEAD~1', 'soft'),

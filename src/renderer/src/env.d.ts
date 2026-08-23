@@ -142,6 +142,14 @@ interface PreloadApi {
     generateGraphPalette(prompt: string, cfg: unknown): Promise<unknown>
     generateBranchName(description: string, cfg: unknown, ctx: unknown): Promise<unknown>
     reviewPR(diff: string, cfg: unknown): Promise<unknown>
+    semanticCollision(localDiff: string, incomingDiff: string, cfg: unknown): Promise<unknown>
+    proposeSessionPlan(
+      repoName: string,
+      detected: unknown,
+      hotspots: unknown,
+      authors: unknown,
+      cfg: unknown
+    ): Promise<unknown>
     prDescription(commits: string, diff: string, cfg: unknown): Promise<unknown>
     planActions(prompt: string, status: unknown, cfg: unknown): Promise<unknown>
     repoChat(repoPath: string, messages: unknown, cfg: unknown, attachments: unknown): Promise<unknown>

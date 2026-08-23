@@ -14814,3 +14814,453 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
   color: var(--text-2);
   text-align: center;
 }
+
+/* ─── Hack mode ─────────────────────────────────────────────────────────────
+   The mode's visual layer. Two rules govern everything below:
+
+   1. Motion lives here and nowhere else. The banner, the burst, the counters.
+      No rule in this block targets a diff, the staging list, the conflict
+      resolver or the graph — at 4am those are precision work, and a moving
+      background is an obstacle rather than an atmosphere.
+
+   2. `prefers-reduced-motion` wins outright. Every animation in this block is
+      switched off by the media query at the bottom, and the banner also
+      collapses `anime` to `calm` in JS so the layout does not depend on CSS
+      having taken effect.
+
+   Scoped off `:root[data-hack]` rather than a theme: `AppTheme` is fifteen
+   colours with no axis for motion, so a mode look is a stylesheet, not a fake
+   palette. */
+
+.hack-banner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 14px;
+  height: 30px;
+  flex: 0 0 auto;
+  overflow: hidden;
+  font-size: 12px;
+  color: var(--text-0);
+  background: linear-gradient(90deg, var(--bg-2), var(--bg-3));
+  border-bottom: 1px solid var(--border);
+}
+
+.hack-banner--freeze {
+  background: linear-gradient(90deg, var(--bg-2), color-mix(in srgb, var(--accent) 18%, var(--bg-3)));
+}
+
+.hack-banner--overtime {
+  background: linear-gradient(90deg, var(--bg-2), color-mix(in srgb, var(--red) 24%, var(--bg-3)));
+}
+
+/* The continuous sheen — the single piece of always-on motion in the app, and
+   the thing that makes the mode read as a mode at a glance. */
+.hack-banner-sheen {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    100deg,
+    transparent 20%,
+    color-mix(in srgb, var(--accent) 22%, transparent) 45%,
+    transparent 70%
+  );
+  animation: hack-sheen 4.5s linear infinite;
+}
+
+@keyframes hack-sheen {
+  0% {
+    transform: translateX(-60%);
+  }
+  100% {
+    transform: translateX(60%);
+  }
+}
+
+.hack-banner-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+  font-size: 12px;
+}
+
+.hack-banner-name strong {
+  letter-spacing: 0.02em;
+}
+
+.hack-banner--anime .hack-banner-name strong {
+  text-shadow: 0 0 10px color-mix(in srgb, var(--accent) 60%, transparent);
+}
+
+.hack-banner-clock {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+.hack-banner-clock .hack-over {
+  color: var(--red);
+  font-weight: 700;
+}
+
+.hack-progress {
+  width: 90px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--bg-4);
+  overflow: hidden;
+}
+
+.hack-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.6s ease;
+}
+
+.hack-banner-stats {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-1);
+  font-variant-numeric: tabular-nums;
+}
+
+.hack-banner-stats span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.hack-banner-stats .hack-warn {
+  color: var(--yellow);
+}
+
+.hack-freeze-chip,
+.hack-alert-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-1);
+  color: var(--text-1);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.hack-alert-chip {
+  color: var(--yellow);
+  border-color: color-mix(in srgb, var(--yellow) 45%, var(--border));
+}
+
+.hack-alert-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  max-width: 46ch;
+  color: var(--text-1);
+}
+
+.hack-alert-inline span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hack-alert-inline button {
+  background: none;
+  border: 0;
+  color: var(--text-2);
+  cursor: pointer;
+  display: inline-flex;
+}
+
+/* The celebration. Loud, brief, and contained inside the banner's own box. */
+.hack-burst {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  background: color-mix(in srgb, var(--accent) 26%, transparent);
+}
+
+.hack-burst-word {
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-0);
+  text-shadow: 0 0 14px color-mix(in srgb, var(--accent) 80%, transparent);
+}
+
+.hack-burst--push .hack-burst-word {
+  color: var(--green);
+}
+
+.hack-burst--merge .hack-burst-word {
+  color: var(--purple);
+}
+
+.hack-speedline {
+  position: absolute;
+  height: 2px;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, var(--text-0), transparent);
+  opacity: 0.75;
+  animation: hack-speed 0.45s ease-out forwards;
+}
+
+.hack-speedline:nth-child(1) {
+  top: 26%;
+}
+
+.hack-speedline:nth-child(2) {
+  top: 52%;
+  animation-delay: 0.05s;
+}
+
+.hack-speedline:nth-child(3) {
+  top: 76%;
+  animation-delay: 0.1s;
+}
+
+@keyframes hack-speed {
+  0% {
+    transform: translateX(-120%);
+    opacity: 0;
+  }
+  40% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateX(160%);
+    opacity: 0;
+  }
+}
+
+/* Ownership hint in the staging lists. A marker, never a state change: the row
+   stages, opens and commits exactly as it did without it. */
+.hack-owner-flag {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+  color: var(--yellow);
+  opacity: 0.85;
+}
+
+/* ─── Hack modals ─── */
+
+.hack-modal,
+.hack-alerts {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px 20px 20px;
+  overflow-y: auto;
+}
+
+.hack-modal-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hack-modal-head h3 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.hack-modal-head .btn {
+  margin-left: auto;
+}
+
+.hack-template-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.hack-template {
+  flex: 1 1 150px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-2);
+  color: var(--text-0);
+  cursor: pointer;
+  text-align: left;
+}
+
+.hack-template.active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg-2));
+}
+
+.hack-template span {
+  font-size: 11px;
+  color: var(--text-2);
+}
+
+.hack-repo-list,
+.hack-role-list,
+.hack-alert-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hack-repo-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: var(--bg-2);
+}
+
+.hack-repo-row .settings-hint {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hack-repo-name {
+  font-weight: 600;
+  flex: 0 0 auto;
+}
+
+.hack-repo-row .btn {
+  margin-left: auto;
+}
+
+.hack-role {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border-soft);
+  background: var(--bg-2);
+}
+
+.hack-role-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hack-role-label {
+  width: 12ch;
+  flex: 0 0 auto;
+}
+
+.hack-role-head .settings-hint {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hack-role textarea,
+.hack-modal textarea {
+  font-family: var(--mono, monospace);
+  font-size: 12px;
+  resize: vertical;
+}
+
+.hack-modal-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.hack-modal-foot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hack-alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: var(--bg-2);
+  border-left: 3px solid var(--border);
+}
+
+.hack-alert--contract {
+  border-left-color: var(--yellow);
+}
+
+.hack-alert--semantic {
+  border-left-color: var(--purple);
+}
+
+.hack-alert--wip {
+  border-left-color: var(--red);
+}
+
+.hack-alert--overlap {
+  border-left-color: var(--accent);
+}
+
+.hack-alert-icon {
+  display: inline-flex;
+  color: var(--text-1);
+}
+
+.hack-alert-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.hack-alert-msg {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hack-alert-age {
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+  flex: 0 0 auto;
+}
+
+/* The accessibility commitment wins over the aesthetic one. Every animated
+   rule above is switched off here — the mode keeps its colours, its counters
+   and all of its behaviour, and stops moving. */
+@media (prefers-reduced-motion: reduce) {
+  .hack-banner-sheen,
+  .hack-speedline {
+    animation: none;
+  }
+
+  .hack-banner-sheen {
+    display: none;
+  }
+
+  .hack-progress-fill {
+    transition: none;
+  }
+}

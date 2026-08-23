@@ -6,6 +6,8 @@ import { gitApi, aiApi, shellApi, diffToolApi } from '../infrastructure/api'
 import { repoActions, useRepoStore, type RepoData } from '../stores/repo'
 import { useUIStore, type MenuItem } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
+import { frozenViolations } from '../lib/hackSession'
+import { useHackStore } from '../stores/hack'
 import { FileListView } from './FileListView'
 import { MatchSummary, matchesByFile } from './SearchMatches'
 import { Avatar } from './Avatar'
@@ -633,6 +635,27 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
   // The row action is an icon, not a label: a per-file "Stage file" button
   // repeated down a tree crowds out the filenames it belongs to. The wording
   // survives as the tooltip and the accessible name.
+  /**
+   * Hack mode's ownership hint: a marker on files CODEOWNERS says belong to
+   * someone else. Purely visual — the row stages, opens and commits exactly as
+   * it did — because "you are editing Ana's file" is information, and blocking
+   * on it would be the app deciding who may touch what.
+   *
+   * Renders nothing when there is no session, no CODEOWNERS, or no handle.
+   */
+  const notMine = useHackStore((s) => s.notMine)
+  const hackActive = useHackStore((s) => s.active())
+  const ownerFlag = hackActive
+    ? (file: FileEntry): React.ReactNode => {
+        if (notMine(path, [file.path]).length === 0) return null
+        return (
+          <span className="hack-owner-flag" title={t('hack.notYours')}>
+            <Users size={11} />
+          </span>
+        )
+      }
+    : undefined
+
   const stageAction = (list: ListName) => (file: FileEntry) => {
     const label = list === 'staged' ? t('composer.unstageFile') : t('composer.stageFile')
     return (
@@ -756,10 +779,18 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
     const protectedList = await gitApi.protectedBranches(path).catch(() => [] as string[])
     const onProtected = !amend && protectedList.includes(repo.branches.current)
 
-    if (flagged.length > 0 || onProtected) {
+    // Freeze warning: in the last hours before a demo, touching anything the
+    // team did not put on the allow-list is worth a second look. A warning and
+    // never a block — the list is something five people agreed in a hurry, and
+    // being wrong about it must cost a dialog, not a commit.
+    const session = useSettingsStore.getState().settings.hackSession
+    const frozen = session ? frozenViolations(session, staged.map((f) => f.path), Date.now()) : []
+
+    if (flagged.length > 0 || onProtected || frozen.length > 0) {
       const all = flagged.map((f) => f.path)
       const parts: string[] = []
       if (onProtected) parts.push(`• You're committing directly to protected branch "${repo.branches.current}"`)
+      for (const f of frozen.slice(0, 8)) parts.push(`• ${f} ${t('hack.frozenFile')}`)
       for (const f of flagged) parts.push(`• ${f.path} (${f.reason})`)
       useUIStore.getState().openModal({
         kind: 'confirm',
@@ -950,6 +981,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
                   onFolderContext={handleFolderContext('unstaged', fUnstaged)}
                   action={stageAction('unstaged')}
                   folderAction={folderStageAction('unstaged', fUnstaged)}
+                  flag={ownerFlag}
                   matches={hitsByFile ?? undefined}
                   matchRe={contentRe}
                   activeLine={fileView?.line ?? null}
@@ -1019,6 +1051,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
                   onFolderContext={handleFolderContext('staged', fStaged)}
                   action={stageAction('staged')}
                   folderAction={folderStageAction('staged', fStaged)}
+                  flag={ownerFlag}
                   matches={hitsByFile ?? undefined}
                   matchRe={contentRe}
                   activeLine={fileView?.line ?? null}

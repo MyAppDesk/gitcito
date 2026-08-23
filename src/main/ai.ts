@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron'
-import type { AIConfig, AppThemeColors, AskAction, AskPlan, BranchNamingStyle, CodeThemeColors, ConflictStyle, ExplainStyle, PRReviewResult, RepoStatus } from '../shared/types'
+import type { AIConfig, AppThemeColors, AskAction, AskPlan, BranchNamingStyle, CodeThemeColors, ConflictStyle, ExplainStyle, PRReviewResult, RepoStatus, SemanticCollision } from '../shared/types'
 import { recordAIUsage } from './analytics'
 import { activeProfileAiKey } from './settings'
 import { callModel, missingCredential, type ChatMessage } from './aiTransport'
@@ -861,6 +861,235 @@ Reply ONLY with valid JSON (no markdown fences):
   }
 }
 
+// ─── Hack mode: the two optional AI passes ───────────────────────────────────
+// Both are strictly additive. With no provider configured, session creation
+// still proposes roles and contracts from manifests, and the radar still warns
+// on path overlap — the AI makes those proposals better, it never makes them
+// possible.
+
+const COLLISION_SCHEMA: Record<string, unknown> = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['collisions'],
+  properties: {
+    collisions: {
+      type: 'array',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['evidenceId', 'severity', 'claim'],
+        properties: {
+          evidenceId: { type: 'string' },
+          severity: { type: 'string', enum: ['high', 'medium', 'low'] },
+          claim: { type: 'string' }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Second pass over a collision the path comparison already found.
+ *
+ * Never a first pass: it runs only once the exact, free, offline signal has
+ * said these two changes touch the same files, which bounds both the cost and
+ * the blast radius of being wrong. The evidence given to the model is the
+ * *local* diff, so every claim resolves to a line in code the user is actually
+ * editing — a warning about a hunk they cannot see is not actionable.
+ *
+ * A model that cannot point at a real hunk produces nothing: the same grounding
+ * contract the PR review uses, for the same reason. Here it matters more, since
+ * a false positive sends a teammate to audit healthy code during the hour they
+ * have least to spare.
+ */
+async function semanticCollision(
+  localDiff: string,
+  incomingDiff: string,
+  cfg: AIConfig
+): Promise<SemanticCollision[]> {
+  const evidence = buildDiffEvidence(localDiff, { maxBytes: 12000, maxHunks: 20 })
+  if (evidence.items.length === 0) return []
+  const index = evidenceIndex(evidence)
+  const allowed = new Set(index.keys())
+
+  const system = `You judge whether an incoming change breaks a teammate's uncommitted work.
+
+You are given YOUR TEAMMATE'S INCOMING DIFF and YOUR LOCAL UNCOMMITTED HUNKS. Each local hunk is labelled with an EvidenceID like [E3].
+
+Rules:
+- Report a collision ONLY when the incoming change makes a specific local hunk wrong — a changed signature, a renamed or removed symbol, an altered type or contract that the local hunk still relies on.
+- Two edits in the same file are NOT a collision. Overlapping line ranges are NOT a collision. Only broken assumptions are.
+- Ground every collision in exactly one local hunk and cite it with "evidenceId". Only cite EvidenceIDs from the list. Never invent one.
+- Never write file paths, line numbers or code excerpts — the app resolves those from the EvidenceID.
+- Prefer silence. An empty array is the correct answer most of the time, and a wrong alarm costs more than a missed one.
+- At most 5 collisions, most severe first.
+
+Reply ONLY with valid JSON (no markdown fences):
+{"collisions":[{"evidenceId":"E1","severity":"high","claim":"one sentence naming what changed upstream and what local code still assumes"}]}`
+
+  const parsed = await chatCompleteJson<{ collisions: RawCollision[] }>(
+    cfg,
+    [
+      { role: 'system', content: system },
+      {
+        role: 'user',
+        content: `Teammate's incoming diff:\n\n${clip(incomingDiff, 12000)}\n\nYour local uncommitted hunks:\n\n${serializeEvidence(evidence)}`
+      }
+    ],
+    'semanticCollision',
+    { name: 'semantic_collision', schema: COLLISION_SCHEMA, validate: (v) => validateCollisions(v, allowed) },
+    // Low: this is a judgement call where creativity is a defect.
+    0.1
+  )
+
+  const out: SemanticCollision[] = []
+  for (const raw of parsed.collisions.slice(0, 5)) {
+    const hit = typeof raw.evidenceId === 'string' ? index.get(raw.evidenceId) : undefined
+    if (!hit) continue
+    out.push({
+      path: hit.path,
+      line: hit.startLine,
+      severity: raw.severity === 'high' || raw.severity === 'low' ? raw.severity : 'medium',
+      claim: String(raw.claim ?? '').trim()
+    })
+  }
+  return out
+}
+
+interface RawCollision {
+  evidenceId?: unknown
+  severity?: unknown
+  claim?: unknown
+}
+
+function validateCollisions(value: unknown, allowed: Set<string>): string[] {
+  const errors: string[] = []
+  const root = value as { collisions?: unknown } | null
+  if (!root || typeof root !== 'object') return ['The response must be a JSON object.']
+  if (!Array.isArray(root.collisions)) {
+    return ['"collisions" must be an array (use [] when nothing actually breaks).']
+  }
+  const ids = [...allowed].join(', ') || '(none)'
+  root.collisions.forEach((raw: RawCollision, i) => {
+    const at = `collisions[${i}]`
+    if (!raw || typeof raw !== 'object') {
+      errors.push(`${at} must be an object.`)
+      return
+    }
+    if (typeof raw.evidenceId !== 'string' || !allowed.has(raw.evidenceId)) {
+      errors.push(`${at}.evidenceId is not in the evidence list. Cite one of: ${ids}.`)
+    }
+    if (typeof raw.severity !== 'string' || !['high', 'medium', 'low'].includes(raw.severity)) {
+      errors.push(`${at}.severity must be "high", "medium" or "low".`)
+    }
+    if (typeof raw.claim !== 'string' || !raw.claim.trim()) {
+      errors.push(`${at}.claim must be a non-empty sentence.`)
+    }
+  })
+  return errors
+}
+
+const SESSION_PLAN_SCHEMA: Record<string, unknown> = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['roles'],
+  properties: {
+    roles: {
+      type: 'array',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['dir', 'label', 'contracts', 'owner'],
+        properties: {
+          dir: { type: 'string' },
+          label: { type: 'string' },
+          contracts: { type: 'array', items: { type: 'string' } },
+          owner: { type: 'string' }
+        }
+      }
+    }
+  }
+}
+
+export interface SessionPlanProposal {
+  roles: { dir: string; label: string; contracts: string[]; owner: string }[]
+}
+
+/**
+ * Propose a session's roles, contract files and owners from real evidence.
+ *
+ * The evidence is the repository's own history — who has touched which
+ * directory, which files change most — plus the manifests the detector already
+ * found. It exists because the alternative is a blank form at minute two of an
+ * event, which is exactly when nobody fills one in.
+ *
+ * The output is a proposal shown in an editable form. Nothing is applied on its
+ * own, and the caller passes only paths that already exist, so a hallucinated
+ * directory has nowhere to land.
+ */
+async function proposeSessionPlan(
+  repoName: string,
+  detected: { dir: string; label: string; contracts: string[] }[],
+  hotspots: { path: string; commits: number }[],
+  authors: { name: string; commits: number }[],
+  cfg: AIConfig
+): Promise<SessionPlanProposal> {
+  const system = `You help a team set up a short, intense working session on a git repository.
+
+Given the directories detected in a repo, its most-changed files and its top authors, propose for each directory:
+- "label": a short lowercase name for what it is (e.g. "api", "app", "web"). Keep the detected label when it is already right.
+- "contracts": repo-relative files whose change would break OTHER repositories or other parts of the team — schemas, API definitions, shared types, lockfiles, generated clients. Only list files that appear in the input. Prefer 0-4 per directory; an empty list is fine.
+- "owner": the author who has most clearly been working in that directory, or "" when the history does not say clearly.
+
+Reply ONLY with valid JSON (no markdown fences):
+{"roles":[{"dir":"","label":"api","contracts":["openapi.yaml"],"owner":"Ana"}]}
+Use the exact "dir" values you were given and no others.`
+
+  const user = [
+    `Repository: ${repoName}`,
+    `Detected directories: ${JSON.stringify(detected)}`,
+    `Most-changed files: ${JSON.stringify(hotspots.slice(0, 30))}`,
+    `Top authors: ${JSON.stringify(authors.slice(0, 10))}`
+  ].join('\n\n')
+
+  const allowedDirs = new Set(detected.map((d) => d.dir))
+  const parsed = await chatCompleteJson<SessionPlanProposal>(
+    cfg,
+    [
+      { role: 'system', content: system },
+      { role: 'user', content: clip(user, 12000) }
+    ],
+    'proposeSessionPlan',
+    {
+      name: 'session_plan',
+      schema: SESSION_PLAN_SCHEMA,
+      validate: (v) => {
+        const root = v as SessionPlanProposal | null
+        if (!root || !Array.isArray(root.roles)) return ['"roles" must be an array.']
+        const bad = root.roles.filter((r) => !allowedDirs.has(r?.dir))
+        return bad.length
+          ? [`Unknown "dir" values: ${bad.map((r) => JSON.stringify(r?.dir)).join(', ')}. Use only the ones given.`]
+          : []
+      }
+    },
+    0.2
+  )
+
+  // Belt and braces on top of the validator: only keep directories we offered,
+  // and only contract paths the detector or the hotspot list actually saw.
+  const known = new Set([...hotspots.map((h) => h.path), ...detected.flatMap((d) => d.contracts)])
+  return {
+    roles: parsed.roles
+      .filter((r) => allowedDirs.has(r.dir))
+      .map((r) => ({
+        dir: r.dir,
+        label: String(r.label ?? '').slice(0, 40),
+        contracts: (Array.isArray(r.contracts) ? r.contracts : []).filter((c) => known.has(c)).slice(0, 8),
+        owner: String(r.owner ?? '').slice(0, 60)
+      }))
+  }
+}
+
 export interface PRDescriptionResult {
   title: string
   body: string
@@ -1009,6 +1238,20 @@ export function registerAiHandlers(): void {
     generateBranchName(description, cfg, ctx)
   )
   ipcMain.handle('ai:reviewPR', (_e, diff: string, cfg: AIConfig) => reviewPR(diff, cfg))
+  ipcMain.handle('ai:semanticCollision', (_e, localDiff: string, incomingDiff: string, cfg: AIConfig) =>
+    semanticCollision(localDiff, incomingDiff, cfg)
+  )
+  ipcMain.handle(
+    'ai:proposeSessionPlan',
+    (
+      _e,
+      repoName: string,
+      detected: { dir: string; label: string; contracts: string[] }[],
+      hotspots: { path: string; commits: number }[],
+      authors: { name: string; commits: number }[],
+      cfg: AIConfig
+    ) => proposeSessionPlan(repoName, detected, hotspots, authors, cfg)
+  )
   ipcMain.handle('ai:prDescription', (_e, commits: string, diff: string, cfg: AIConfig) =>
     prDescription(commits, diff, cfg)
   )

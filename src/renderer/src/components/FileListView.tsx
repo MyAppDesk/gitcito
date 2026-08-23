@@ -72,6 +72,9 @@ interface FileListProps {
   onMatchClick?: (file: string, line: number) => void
   /** Line currently open in the viewer, highlighted in the match list. */
   activeLine?: number | null
+  /** A marker rendered before the row's actions — hack mode's "this file is
+   *  not yours" hint. A hint and never a block: the row behaves identically. */
+  flag?: (file: FileEntry) => React.ReactNode
 }
 
 interface TreeNode {
@@ -222,6 +225,7 @@ function FileRowInner({
           {file.status === 'R' ? <ChevronRight size={12} strokeWidth={3} aria-hidden="true" /> : statusLabel(file.status)}
         </span>
         <span className="file-path">{label}</span>
+        {props.flag?.(file)}
         {hits && hits.length > 0 && <span className="sm-count">{hits.length}</span>}
         {props.action?.(file)}
       </div>

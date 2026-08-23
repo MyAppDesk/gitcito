@@ -135,9 +135,16 @@ import type {
   PrPreviewResult,
   PrRefProbe,
   PreparedRepoChatFileAction,
-  RepoFileBatchResult
+  RepoFileBatchResult,
+  DetectedRepoRole,
+  OwnerRule,
+  ContractChange,
+  WipPushResult
 } from '../shared/types'
 import { FILE_TOO_LARGE_PREFIX } from '../shared/types'
+import { MANIFEST_FILES, parseManifest } from '../shared/repoFacts'
+import { CODEOWNERS_PATHS, matchesAny, parseCodeowners } from '../shared/codeowners'
+import { isSecretFile } from '../shared/secretFiles'
 import { prRefCandidates } from '../shared/prRefs'
 import { parseMergeTreeSingle, parseMergeTreeStdin, type MergeTreeRecord } from '../shared/mergeTree'
 import { parseRangeDiff } from '../shared/rangeDiff'
@@ -6681,10 +6688,255 @@ export const gitService = {
     await writeFile(file, `${header}${markdown.trimEnd()}\n\n${bodyExisting}`.trimEnd() + '\n', 'utf-8')
   },
 
+  // ─── Hack mode ───────────────────────────────────────────────────────────
+  // Everything a session needs from git that is not already a general feature:
+  // what a repository looks like (so roles can be proposed rather than typed),
+  // who owns what, what a teammate's push did to a declared contract, and the
+  // WIP branch plumbing.
+
+  /**
+   * What this repository appears to be, from its manifests.
+   *
+   * Deliberately a detector and not a catalogue of stacks. A curated list of
+   * frameworks is a promise that ages and a stream of "you forgot mine" issues;
+   * a detector is written once, and an unrecognised project simply proposes
+   * nothing and lets the user name its contract files by hand — the feature
+   * stays whole either way.
+   *
+   * Scans the root and one level down, which is what makes a monorepo produce
+   * several roles without a separate monorepo concept.
+   */
+  async detectRepoRoles(repoPath: string): Promise<DetectedRepoRole[]> {
+    const out: DetectedRepoRole[] = []
+    const seen = new Set<string>()
+
+    const scan = async (dir: string): Promise<void> => {
+      const abs = dir ? join(repoPath, dir) : repoPath
+      const names = await readdir(abs, { withFileTypes: true }).catch(() => [])
+      const manifests = names
+        .filter((e) => e.isFile() && MANIFEST_FILES.includes(e.name.toLowerCase()))
+        .map((e) => e.name)
+      if (manifests.length === 0) return
+
+      const deps: string[] = []
+      for (const m of manifests) {
+        const content = await readFile(join(abs, m), 'utf-8').catch(() => '')
+        if (content) deps.push(...parseManifest(m, content).map((d) => d.name.toLowerCase()))
+      }
+      const label = roleLabelFor(manifests, deps)
+      // Only propose contract files that are actually there — a list of
+      // plausible names the user has to delete is worse than an empty list.
+      const present = new Set(names.filter((e) => e.isFile()).map((e) => e.name))
+      const contracts = CONTRACT_CANDIDATES.filter((c) => present.has(c)).map((c) => (dir ? `${dir}/${c}` : c))
+      // The manifest itself is a contract: a lockfile or dependency list moving
+      // under someone is the classic silent break.
+      for (const m of manifests) contracts.push(dir ? `${dir}/${m}` : m)
+
+      const key = dir || '.'
+      if (seen.has(key)) return
+      seen.add(key)
+      out.push({ dir, label, contracts: [...new Set(contracts)] })
+    }
+
+    await scan('')
+    const top = await readdir(repoPath, { withFileTypes: true }).catch(() => [])
+    for (const entry of top) {
+      if (!entry.isDirectory()) continue
+      if (entry.name.startsWith('.') || IGNORED_SCAN_DIRS.has(entry.name)) continue
+      await scan(entry.name)
+    }
+    return out
+  },
+
+  /** CODEOWNERS as rules, from the first of the standard locations that exists. */
+  async readCodeowners(repoPath: string): Promise<OwnerRule[]> {
+    for (const rel of CODEOWNERS_PATHS) {
+      const content = await readFile(join(repoPath, rel), 'utf-8').catch(() => null)
+      if (content !== null) return parseCodeowners(content)
+    }
+    return []
+  },
+
+  /** Write a CODEOWNERS the user reviewed. Always at the repo root — the other
+   *  locations exist for repos that already chose one, not for new files. */
+  async writeCodeowners(repoPath: string, content: string): Promise<void> {
+    await writeFile(join(repoPath, 'CODEOWNERS'), content, 'utf-8')
+  },
+
+  /**
+   * Incoming commits that touch a declared contract file.
+   *
+   * The same shape as the teammate radar and from the same source — remote refs
+   * the last fetch brought in — but crossed against the session's contract
+   * globs instead of against the local dirty set. That is what lets a warning
+   * cross a repository boundary at all: inside one repo the signal is an exact
+   * path comparison, and between repos the only honest signal is a file someone
+   * declared as the interface.
+   */
+  async contractRadar(repoPath: string, globs: string[], sinceMs = 0): Promise<ContractChange[]> {
+    if (globs.length === 0) return []
+    const head = (await runGit(repoPath, ['rev-parse', '--verify', 'HEAD']).catch(() => '')).trim()
+    if (!head) return []
+    const raw = await runGit(repoPath, [
+      'for-each-ref',
+      '--sort=-committerdate',
+      '--format=%(refname:short)|%(objectname:short)|%(committerdate:unix)|%(committername)',
+      'refs/remotes'
+    ]).catch(() => '')
+
+    const cutoff = Math.floor(sinceMs / 1000)
+    const out: ContractChange[] = []
+    for (const line of raw.split('\n')) {
+      if (!line.trim()) continue
+      const [ref, sha, time, ...rest] = line.split('|')
+      if (ref.endsWith('/HEAD') || !ref.includes('/')) continue
+      if (Number(time) <= cutoff) continue
+      const files = (await runGit(repoPath, ['diff', '--name-only', `${head}...${ref}`]).catch(() => ''))
+        .split('\n')
+        .filter(Boolean)
+      const hits = files.filter((f) => matchesAny(globs, f))
+      if (hits.length === 0) continue
+      out.push({ ref, sha, time: Number(time), author: rest.join('|'), files: hits })
+      if (out.length >= 10) break
+    }
+    return out
+  },
+
+  /**
+   * The two diffs a collision judgement needs, limited to the files that
+   * actually overlap.
+   *
+   * One call rather than two so the pair is consistent — between a "what did
+   * they change" and a "what did I change" taken seconds apart, the working
+   * tree can move. Paths are passed after `--` so a filename can never be read
+   * as a revision.
+   */
+  async collisionDiffs(repoPath: string, ref: string, files: string[]): Promise<{ local: string; incoming: string }> {
+    if (files.length === 0) return { local: '', incoming: '' }
+    const [local, incoming] = await Promise.all([
+      // Working tree against HEAD: everything uncommitted, staged or not.
+      runGit(repoPath, ['diff', 'HEAD', '--', ...files]).catch(() => ''),
+      runGit(repoPath, ['diff', `HEAD...${ref}`, '--', ...files]).catch(() => '')
+    ])
+    return { local, incoming }
+  },
+
+  /**
+   * Publish the current working tree to a personal WIP branch.
+   *
+   * Reuses the snapshot machinery — the tree is already committed to a real
+   * object under `refs/gitcito/wip/`, so this is a push of an existing commit
+   * rather than a second way of capturing uncommitted work.
+   *
+   * Refuses when the snapshot contains credential-looking files. That check is
+   * the reason this is safe to run on a timer at all: the interactive push
+   * guard is a confirmation dialog, and a dialog cannot gate something that
+   * happens while nobody is looking. Returns null when there was nothing to
+   * push, and throws `WIP_PUSH_SECRETS` with the offending paths when it
+   * refuses — the caller surfaces that instead of silently doing nothing.
+   */
+  async pushWipSnapshot(repoPath: string, branchName: string, remote = 'origin'): Promise<WipPushResult | null> {
+    const snapshot = await gitService.createSnapshot(repoPath, 'auto')
+    // Nothing changed since the last snapshot — reuse the newest one so a quiet
+    // period still keeps the remote copy current rather than skipping forever.
+    const sha = snapshot?.sha ?? (await listSnapshotRefs(repoPath))[0]?.sha
+    if (!sha) return null
+
+    const files = await gitService.commitFiles(repoPath, sha).catch(() => [])
+    const secrets = files.map((f) => f.path).filter(isSecretFile)
+    if (secrets.length > 0) {
+      const err = new Error(`WIP_PUSH_SECRETS:${secrets.slice(0, 10).join(',')}`)
+      throw err
+    }
+
+    await withRemoteAuth(repoPath, remote, () =>
+      // force: the branch is a moving mirror of one person's working tree, and
+      // its whole history is throwaway snapshots.
+      runGit(repoPath, ['push', '--force', remote, `${sha}:refs/heads/${branchName}`])
+    )
+    return { branch: branchName, sha, files: files.length }
+  },
+
+  /** Remove this session's WIP branches from the remote — the teardown that
+   *  keeps a shared repo from carrying six people's scratch refs forever. */
+  async deleteWipBranches(repoPath: string, prefix: string, remote = 'origin'): Promise<string[]> {
+    const raw = await runGit(repoPath, ['for-each-ref', '--format=%(refname:short)', `refs/remotes/${remote}`]).catch(
+      () => ''
+    )
+    const branches = raw
+      .split('\n')
+      .map((l) => l.trim())
+      .filter(Boolean)
+      .map((r) => r.slice(remote.length + 1))
+      .filter((b) => b.startsWith(prefix))
+    if (branches.length === 0) return []
+    await withRemoteAuth(repoPath, remote, () =>
+      runGit(repoPath, ['push', remote, ...branches.map((b) => `:refs/heads/${b}`)])
+    )
+    // Drop the now-dangling remote-tracking refs so the branch list agrees.
+    await runGit(repoPath, ['fetch', '--prune', remote]).catch(() => '')
+    return branches
+  },
+
   async version(): Promise<string> {
     const res = await simpleGit().version()
     return `${res.major}.${res.minor}.${res.patch}`
   }
+}
+
+/** Directories never worth scanning for a manifest. */
+const IGNORED_SCAN_DIRS = new Set(['node_modules', 'vendor', 'dist', 'build', 'out', 'target', 'Pods'])
+
+/** Files that are an interface between repositories often enough to propose. */
+const CONTRACT_CANDIDATES = [
+  'openapi.yaml',
+  'openapi.yml',
+  'openapi.json',
+  'swagger.yaml',
+  'swagger.json',
+  'schema.graphql',
+  'schema.prisma',
+  'schema.sql',
+  'proto.lock',
+  '.env.example',
+  'docker-compose.yml',
+  'docker-compose.yaml'
+]
+
+/**
+ * A short name for what a directory is, from its manifest and top dependencies.
+ *
+ * Descriptive, not authoritative — the user edits it, and nothing downstream
+ * branches on the value. It exists so a five-repo session reads as "api / app /
+ * web" instead of five identical rows.
+ */
+function roleLabelFor(manifests: string[], deps: string[]): string {
+  const has = (name: string): boolean => deps.includes(name)
+  const m = manifests.map((x) => x.toLowerCase())
+  if (m.includes('pubspec.yaml')) return 'flutter'
+  if (m.includes('go.mod')) return 'go'
+  if (m.includes('cargo.toml')) return 'rust'
+  if (m.includes('gemfile')) return 'ruby'
+  if (m.includes('composer.json')) return 'php'
+  if (m.includes('pyproject.toml') || m.includes('requirements.txt')) {
+    if (has('fastapi')) return 'fastapi'
+    if (has('django')) return 'django'
+    if (has('flask')) return 'flask'
+    return 'python'
+  }
+  if (m.includes('package.json')) {
+    if (has('react-native') || has('expo')) return 'react-native'
+    if (has('next')) return 'next'
+    if (has('nuxt')) return 'nuxt'
+    if (has('vue')) return 'vue'
+    if (has('svelte') || has('@sveltejs/kit')) return 'svelte'
+    if (has('@angular/core')) return 'angular'
+    if (has('electron')) return 'electron'
+    if (has('express') || has('fastify') || has('nestjs') || has('@nestjs/core')) return 'node-api'
+    if (has('react')) return 'react'
+    return 'node'
+  }
+  return 'repo'
 }
 
 /** True for git's "Unable to create '.../index.lock': File exists" — thrown when
@@ -6872,6 +7124,12 @@ const READ_METHODS = new Set<string>([
   'compareBranches',
   'mergePreview',
   'teammateRadar',
+  // Hack mode reads: manifests, CODEOWNERS and remote-tracking refs. None of
+  // them touch the index, the working tree, refs or config.
+  'detectRepoRoles',
+  'readCodeowners',
+  'contractRadar',
+  'collisionDiffs',
   'commitEditInfo',
   'commitMenuProbe',
   'blobAtCommit',

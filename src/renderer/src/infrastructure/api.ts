@@ -114,6 +114,11 @@ import type {
   SnapshotInfo,
   SnapshotKind,
   TeammateRadarResult,
+  DetectedRepoRole,
+  OwnerRule,
+  ContractChange,
+  WipPushResult,
+  SemanticCollision,
   CommitEditInfo,
   CommitEditPreview,
   CommitEditResult,
@@ -554,6 +559,18 @@ export const gitApi = {
   mergePreview: (path: string, base: string, refs: string[]) =>
     call<MergePreviewResult>('mergePreview', path, base, refs),
   teammateRadar: (path: string) => call<TeammateRadarResult>('teammateRadar', path),
+  // ─── Hack mode ───
+  detectRepoRoles: (path: string) => call<DetectedRepoRole[]>('detectRepoRoles', path),
+  readCodeowners: (path: string) => call<OwnerRule[]>('readCodeowners', path),
+  writeCodeowners: (path: string, content: string) => call<void>('writeCodeowners', path, content),
+  contractRadar: (path: string, globs: string[], sinceMs?: number) =>
+    call<ContractChange[]>('contractRadar', path, globs, sinceMs),
+  collisionDiffs: (path: string, ref: string, files: string[]) =>
+    call<{ local: string; incoming: string }>('collisionDiffs', path, ref, files),
+  pushWipSnapshot: (path: string, branch: string, remote?: string) =>
+    call<WipPushResult | null>('pushWipSnapshot', path, branch, remote),
+  deleteWipBranches: (path: string, prefix: string, remote?: string) =>
+    call<string[]>('deleteWipBranches', path, prefix, remote),
   stackPruneMerged: (path: string, alsoMerged?: string[]) =>
     call<string[]>('stackPruneMerged', path, alsoMerged),
   commitEditInfo: (path: string, sha: string) => call<CommitEditInfo>('commitEditInfo', path, sha),
@@ -637,6 +654,20 @@ export const aiApi = {
     window.api.ai.generateBranchName(description, cfg, ctx) as Promise<string>,
   reviewPR: (diff: string, cfg: AIConfig) =>
     window.api.ai.reviewPR(diff, cfg) as Promise<PRReviewResult>,
+  /** Second pass over a collision the path comparison already found. */
+  semanticCollision: (localDiff: string, incomingDiff: string, cfg: AIConfig) =>
+    window.api.ai.semanticCollision(localDiff, incomingDiff, cfg) as Promise<SemanticCollision[]>,
+  /** Roles, contract files and owners proposed from a repo's own history. */
+  proposeSessionPlan: (
+    repoName: string,
+    detected: { dir: string; label: string; contracts: string[] }[],
+    hotspots: { path: string; commits: number }[],
+    authors: { name: string; commits: number }[],
+    cfg: AIConfig
+  ) =>
+    window.api.ai.proposeSessionPlan(repoName, detected, hotspots, authors, cfg) as Promise<{
+      roles: { dir: string; label: string; contracts: string[]; owner: string }[]
+    }>,
   prDescription: (commits: string, diff: string, cfg: AIConfig) =>
     window.api.ai.prDescription(commits, diff, cfg) as Promise<{ title: string; body: string }>,
   planActions: (prompt: string, status: RepoStatus, cfg: AIConfig) =>

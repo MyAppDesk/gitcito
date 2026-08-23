@@ -106,6 +106,8 @@ export type ModalSpec =
   | { kind: 'branch-compare'; repoPath: string; branchA: string; branchB: string }
   | { kind: 'conflict-radar'; repoPath: string; base?: string }
   | { kind: 'teammate-radar'; repoPath: string }
+  | { kind: 'hack-mode' }
+  | { kind: 'hack-alerts' }
   | { kind: 'commit-edit'; repoPath: string; sha: string; subject: string }
   | {
       kind: 'reset-to-commit'

@@ -5,6 +5,8 @@ import { takeAccountsNotice, useSettingsStore } from './stores/settings'
 import { useRepoStore, repoActions, type RepoData } from './stores/repo'
 import { useUIStore } from './stores/ui'
 import { useFetchStore } from './stores/fetch'
+import { useHackStore } from './stores/hack'
+import { HackBanner } from './components/HackBanner'
 import { periodMsFor } from './lib/fetchScheduler'
 import { tabActiveRepoPath, tabRepos, type ConflictOpKind, type GroupTab, type PageTab } from '../../shared/types'
 import { useT, t as tr, interp } from './i18n'
@@ -629,18 +631,26 @@ export default function App(): React.JSX.Element {
   // Scope is the active *tab*, not the active repo: a group tab whose other
   // repositories never fetch shows stale ahead/behind counts for everything the
   // user is not looking at, which is exactly when the counts matter.
+  //
+  // A running session takes over both the scope and the cadence: its repos are
+  // the event, and its interval is the whole point of being in one. Ending the
+  // session hands both back to the ordinary settings.
+  const session = settings.hackSession
   const fetchPathsKey = (
-    settings.autoFetchScope === 'active'
-      ? activeRepoPath
-        ? [activeRepoPath]
-        : []
-      : activeTab
-        ? tabRepos(activeTab).map((r) => r.path)
-        : []
+    session
+      ? session.repos
+      : settings.autoFetchScope === 'active'
+        ? activeRepoPath
+          ? [activeRepoPath]
+          : []
+        : activeTab
+          ? tabRepos(activeTab).map((r) => r.path)
+          : []
   ).join('\n')
+  const fetchSeconds = session ? session.fetchSeconds : (settings.autoFetchSeconds ?? 0)
 
   useEffect(() => {
-    const periodMs = periodMsFor(settings.autoFetchSeconds ?? 0)
+    const periodMs = periodMsFor(fetchSeconds)
     const paths = fetchPathsKey ? fetchPathsKey.split('\n') : []
     if (!periodMs || paths.length === 0) return
     const sched = useFetchStore.getState()
@@ -671,7 +681,37 @@ export default function App(): React.JSX.Element {
       clearInterval(interval)
       document.removeEventListener('visibilitychange', onVisible)
     }
-  }, [fetchPathsKey, settings.autoFetchSeconds, settings.pauseWhenHidden, settings.autoFetchScope])
+  }, [fetchPathsKey, fetchSeconds, settings.pauseWhenHidden, settings.autoFetchScope])
+
+  // ─── Hack mode: the visual layer's root hook and the WIP push timer ───────
+  // A body class rather than a theme: `AppTheme` is fifteen colours, with no
+  // axis for motion or density, so the mode's look is a scoped stylesheet keyed
+  // off the root element instead of a fake theme.
+  useEffect(() => {
+    const root = document.documentElement
+    if (!session || session.motion === 'off') {
+      root.removeAttribute('data-hack')
+      return
+    }
+    root.setAttribute('data-hack', session.motion)
+    return () => root.removeAttribute('data-hack')
+  }, [session, session?.motion])
+
+  // Periodic WIP push. Separate from the fetch scheduler on purpose: it writes
+  // to a shared remote, runs on its own much slower cadence, and refuses on its
+  // own terms when a snapshot carries credential-looking files.
+  const wipMinutes = session?.wipPush ? session.wipPushMinutes : 0
+  const wipPathsKey = session ? session.repos.join('\n') : ''
+  useEffect(() => {
+    if (wipMinutes <= 0 || !wipPathsKey) return
+    const paths = wipPathsKey.split('\n')
+    const tick = (): void => {
+      if (settings.pauseWhenHidden && document.hidden) return
+      for (const p of paths) void useHackStore.getState().wipPush(p)
+    }
+    const id = setInterval(tick, wipMinutes * 60_000)
+    return () => clearInterval(id)
+  }, [wipMinutes, wipPathsKey, settings.pauseWhenHidden])
 
   // Poll the GitHub notifications inbox for an unread count (toolbar bell badge).
   // Initial fetch on load + repeat on the auto-fetch cadence; silent on failure.
@@ -987,6 +1027,9 @@ export default function App(): React.JSX.Element {
   return (
     <div className="app">
       <TitleBar />
+      {/* Directly under the tab strip and above everything else: status and
+          celebration live here, and nothing below this line ever animates. */}
+      <HackBanner />
 
       {!settings.onboardingCompleted && <OnboardingWizard />}
 

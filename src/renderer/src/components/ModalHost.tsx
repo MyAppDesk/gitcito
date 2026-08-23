@@ -22,6 +22,8 @@ import { AIConfigWizard } from './AIConfigWizard'
 import { InteractiveRebase } from './InteractiveRebase'
 import { BranchComparison } from './BranchComparison'
 import { ConflictRadar } from './ConflictRadar'
+import { HackModeModal } from './HackModeModal'
+import { HackAlertsModal } from './HackAlertsModal'
 import { TeammateRadarModal } from './TeammateRadarModal'
 import { CommitEditModal } from './CommitEditModal'
 import { ResetToCommitModal } from './ResetToCommitModal'
@@ -1759,6 +1761,8 @@ export function ModalHost(): React.JSX.Element {
                     modal.kind === 'secure-workspace' ||
                     modal.kind === 'snapshots' ||
                     modal.kind === 'teammate-radar' ||
+                    modal.kind === 'hack-mode' ||
+                    modal.kind === 'hack-alerts' ||
                     modal.kind === 'commit-edit' ||
                     modal.kind === 'local-ci'
                   ? 'modal-tall'
@@ -1842,6 +1846,8 @@ export function ModalHost(): React.JSX.Element {
             {modal.kind === 'changelog-gen' && <ChangelogGenModal repoPath={modal.repoPath} />}
             {modal.kind === 'snapshots' && <SnapshotsModal repoPath={modal.repoPath} />}
             {modal.kind === 'teammate-radar' && <TeammateRadarModal repoPath={modal.repoPath} />}
+            {modal.kind === 'hack-mode' && <HackModeModal />}
+            {modal.kind === 'hack-alerts' && <HackAlertsModal />}
             {modal.kind === 'commit-edit' && (
               <CommitEditModal repoPath={modal.repoPath} sha={modal.sha} subject={modal.subject} />
             )}

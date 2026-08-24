@@ -1,5 +1,13 @@
 
 
+## [3.26.0](https://github.com/MyAppDesk/gitcito/compare/v3.25.0...v3.26.0) (2026-08-24)
+
+
+### Features
+
+* give fetch its own toolbar button ([1971f08](https://github.com/MyAppDesk/gitcito/commit/1971f08f8e57a14f1f25d35360dcc9c35b805372))
+* offer the fix when a pull finds no tracking information ([cf94673](https://github.com/MyAppDesk/gitcito/commit/cf94673b32722d623b37c17cbe7ddc6375a20596))
+
 ## [3.25.0](https://github.com/MyAppDesk/gitcito/compare/v3.24.0...v3.25.0) (2026-08-24)
 
 ## [3.24.0](https://github.com/MyAppDesk/gitcito/compare/v3.23.0...v3.24.0) (2026-08-24)

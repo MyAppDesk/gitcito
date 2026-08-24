@@ -1,5 +1,17 @@
 
 
+## [3.26.1](https://github.com/MyAppDesk/gitcito/compare/v3.26.0...v3.26.1) (2026-08-24)
+
+
+### Features
+
+* surface how long ago the repo last fetched ([3a09a8a](https://github.com/MyAppDesk/gitcito/commit/3a09a8abb381c705aa005c7b19cf7b20f986f13e))
+
+
+### Bug Fixes
+
+* stop the workspace painting over the fetch age ([20daede](https://github.com/MyAppDesk/gitcito/commit/20daedea9606b8be41f3ed3f422e26c246564257))
+
 ## [3.26.0](https://github.com/MyAppDesk/gitcito/compare/v3.25.0...v3.26.0) (2026-08-24)
 
 

@@ -14,10 +14,16 @@ Worktree to drugie wypakowanie tego samego repozytorium, we własnym katalogu �
 możesz więc popatrzeć na `main`, a `feature/x` zostaje dokładnie tak, jak je
 zostawiłeś, bez stashowania.
 
-- Twórz i usuwaj worktree z panelu bocznego, a któreś otwórz **we własnym
-  oknie**.
+- Twórz i usuwaj worktree z panelu bocznego. **Dwuklik** otwiera dany worktree
+  jako własną kartę; prawy przycisk daje *Otwórz worktree*, *Pokaż w folderze*
+  i usunięcie.
 - Kliknij dowolną lokalną gałąź prawym przyciskiem → **Otwórz w worktree**, żeby
   postawić je w katalogu obok i otworzyć jako kartę.
+- Gałąź mieszka naraz tylko w jednym worktree, więc przełączenie się na gałąź,
+  którą trzyma inny worktree, nie może się udać — git odmawia komunikatem
+  *already used by worktree at …*. Gitcito zamiast tego cię tam zabiera: menu
+  gałęzi mówi *Przejdź do `x` w jej worktree*, a dwuklik na wierszu otwiera kartę
+  tego worktree, zamiast się wywalić.
 
 ![Sekcje worktree i podmodułów w panelu bocznym, obie wypełnione](../../screenshots/worktrees.webp)
 

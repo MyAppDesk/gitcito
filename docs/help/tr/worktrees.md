@@ -14,10 +14,16 @@ Bir çalışma ağacı, aynı deponun kendi klasöründeki ikinci bir checkout'u
 böylece `feature/x` bıraktığınız gibi dururken `main`'e bakabilirsiniz, hiç stash
 yapmadan.
 
-- Çalışma ağaçlarını kenar çubuğundan oluşturun ve kaldırın; birini **kendi
-  penceresinde** açın.
+- Çalışma ağaçlarını kenar çubuğundan oluşturun ve kaldırın. Birine **çift
+  tıklamak** onu kendi sekmesinde açar; sağ tık *Worktree'yi aç*, *Klasörde
+  göster* ve kaldırmayı verir.
 - Herhangi bir yerel dala sağ tıklayın → **Bir çalışma ağacında aç**; kardeş bir
   klasörde bir tane oluşturulur ve sekme olarak açılır.
+- Bir dal aynı anda yalnızca bir çalışma ağacında yaşar; başka bir ağacın tuttuğu
+  dala geçmek bu yüzden işleyemez — git *already used by worktree at …* diyerek
+  reddeder. Gitcito bunun yerine sizi oraya götürür: dalın menüsünde *`x` dalına
+  worktree'sinde git* yazar ve satıra çift tıklamak, hata vermek yerine o çalışma
+  ağacının sekmesini açar.
 
 ![Kenar çubuğunun çalışma ağacı ve alt modül bölümleri, ikisi de dolu](../../screenshots/worktrees.webp)
 

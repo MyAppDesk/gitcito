@@ -48,6 +48,7 @@ import { togglePin, selectPinned } from '../lib/pinnedBranches'
 import { branchDropActions, encodeDropRef, BRANCH_DND_TYPE, type DropRef } from '../lib/branchDrop'
 import { stepRange, claimRangeKeys, ownsRangeKeys, rangeKeysBlocked, domOrder } from '../lib/rangeSelect'
 import { openBranchDropMenu } from '../lib/branchDropMenu'
+import { worktreeForBranch, worktreeTabName } from '../lib/worktrees'
 import { defaultSettings } from '../../../shared/types'
 import type { BranchInfo, MergeRiskKind, ReleaseInfo, RemoteBranchInfo, StashInfo, TagInfo, WorktreeInfo, SubmoduleInfo, LaunchGroup, LaunchConfig, PullRequest, IssueInfo, MilestoneInfo, RemoteInfo } from '../../../shared/types'
 
@@ -797,9 +798,18 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     if (ok) useSettingsStore.getState().openRepoTab({ path: dir, name: `${repoName} · ${branch}` })
   }
 
+  /** Open an existing worktree as its own repo tab — the sibling of
+   *  openInWorktree, which creates one first. */
+  const openWorktreeTab = (w: WorktreeInfo): void =>
+    useSettingsStore.getState().openRepoTab({ path: w.path, name: worktreeTabName(path, w) })
+
   const localMenu = (b: BranchInfo): MenuItem[] => [
-    { label: interp(t('sidebar.checkoutBranch'), { branch: b.name }), disabled: b.isCurrent, onClick: () => void repoActions.checkout(path, b.name) },
-    { label: interp(t('sidebar.openInWorktree'), { branch: b.name }), onClick: () => void openInWorktree(b.name) },
+    ...(worktreeForBranch(repo.worktrees, b.name)
+      ? [{ label: interp(t('sidebar.goToWorktree'), { branch: b.name }), onClick: () => void repoActions.checkout(path, b.name) }]
+      : [
+          { label: interp(t('sidebar.checkoutBranch'), { branch: b.name }), disabled: b.isCurrent, onClick: () => void repoActions.checkout(path, b.name) },
+          { label: interp(t('sidebar.openInWorktree'), { branch: b.name }), onClick: () => void openInWorktree(b.name) }
+        ]),
     // Merge / merge with options / rebase / compare — the same block the graph's
     // ref badges render, from one place so the two cannot drift apart.
     ...refIntegrationItems(path, b.name, repo.branches.current),
@@ -938,6 +948,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   ]
 
   const worktreeMenu = (w: WorktreeInfo): MenuItem[] => [
+    { label: t('sidebar.openWorktree'), disabled: w.isCurrent, onClick: () => openWorktreeTab(w) },
     { label: t('sidebar.revealWorktree'), onClick: () => void shellApi.revealInFolder(w.path) },
     { label: t('sidebar.copyPath'), onClick: () => void navigator.clipboard.writeText(w.path) },
     { separator: true },
@@ -949,7 +960,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         openModal({
           kind: 'confirm',
           title: t('sidebar.removeWorktree'),
-          message: `Remove worktree "${w.path}"?`,
+          message: interp(t('sidebar.removeWorktreeMsg'), { path: w.path }),
           danger: true,
           confirmLabel: t('common.delete'),
           onConfirm: () => void repoActions.worktreeRemove(path, w.path)
@@ -2088,7 +2099,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
           <div
             key={w.path}
             className={`sb-item ${w.isCurrent ? 'current' : ''}`}
-            onDoubleClick={() => void shellApi.revealInFolder(w.path)}
+            onDoubleClick={() => !w.isCurrent && openWorktreeTab(w)}
             onContextMenu={(e) => {
               e.preventDefault()
               openContextMenu(e.clientX, e.clientY, worktreeMenu(w))

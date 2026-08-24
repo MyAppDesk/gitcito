@@ -36,6 +36,7 @@ import { planStackSubmit, buildStackSection } from '../../../shared/stackPr'
 import type { LocalCiVerdict } from '../../../shared/localCi'
 import { useUIStore } from './ui'
 import { useSettingsStore } from './settings'
+import { worktreeForBranch, worktreeTabName } from '../lib/worktrees'
 import { isSecretFile } from '../lib/secrets'
 import { commitHookFailureHint } from '../lib/commitLint'
 import { splitCommitMessage } from '../lib/commitMenuCapabilities'
@@ -936,6 +937,15 @@ export const repoActions = {
   // graph's head badge (and the file-tree markers) on the previous branch until
   // something else triggered a full refresh — e.g. switching repo tabs.
   checkout: (path: string, ref: string) => {
+    // A branch checked out in another worktree cannot be checked out here —
+    // git says so, in words that answer a question nobody asked. Go where the
+    // branch already lives instead.
+    const elsewhere = worktreeForBranch(useRepoStore.getState().repos[path]?.worktrees ?? [], ref)
+    if (elsewhere) {
+      useSettingsStore.getState().openRepoTab({ path: elsewhere.path, name: worktreeTabName(path, elsewhere) })
+      toast('info', interp(t('act.openedWorktree'), { ref }), { repoPath: path })
+      return Promise.resolve()
+    }
     const prev = useRepoStore.getState().repos[path]?.branches.current
     return useRepoStore.getState().run(path, interp(t('act.checkedOut'), { ref }), () => gitApi.checkout(path, ref), {
       label: interp(t('undoLabel.checkout'), { ref }),

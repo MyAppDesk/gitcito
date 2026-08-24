@@ -7,6 +7,8 @@ import { parseRemoteUrl } from '../src/main/hosting'
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 import { commitHookFailureHint, lintCommit, subjectCounterLevel, parseCcPrefix, applyCcType, parseGitmojiPrefix, applyGitmoji, parseTicketPrefix, applyTicket, ticketFromBranch } from '../src/renderer/src/lib/commitLint'
 import { isSecretFile, maskSecretLine } from '../src/renderer/src/lib/secrets'
+import { worktreeForBranch, worktreeTabName } from '../src/renderer/src/lib/worktrees'
+import type { WorktreeInfo } from '../src/shared/types'
 import { comboFromEvent, formatCombo, effectiveBindings, isReservedCombo, matchShortcut, tabActionFromEvent, tabIndexFromEvent } from '../src/renderer/src/lib/shortcuts'
 import { terminalCloseTarget, terminalShortcutFromEvent } from '../src/renderer/src/lib/terminalShortcuts'
 import { panelDisplayName, groupDisplayName } from '../src/renderer/src/lib/terminalTitles'
@@ -4328,5 +4330,51 @@ describe('fileSize helpers (size-cap refusals)', () => {
     expect(formatBytes(2048)).toBe('2 KB')
     expect(formatBytes(7.3 * 1024 * 1024)).toBe('7.3 MB')
     expect(formatBytes(2.5 * 1024 * 1024 * 1024)).toBe('2.5 GB')
+  })
+})
+
+
+describe('worktreeForBranch', () => {
+  const wt = (over: Partial<WorktreeInfo>): WorktreeInfo => ({
+    path: '/repo',
+    branch: null,
+    head: 'abc1234',
+    isMain: false,
+    isCurrent: false,
+    locked: false,
+    detached: false,
+    ...over
+  })
+
+  it('finds the other worktree holding the branch', () => {
+    const trees = [wt({ path: '/repo', branch: 'main', isMain: true, isCurrent: true }), wt({ path: '/repo--feat', branch: 'feat' })]
+    expect(worktreeForBranch(trees, 'feat')?.path).toBe('/repo--feat')
+  })
+
+  // The current worktree is where the user already is — checking out the branch
+  // it holds is a no-op, not a trip somewhere else.
+  it('ignores the worktree you are standing in', () => {
+    const trees = [wt({ path: '/repo', branch: 'feat', isCurrent: true })]
+    expect(worktreeForBranch(trees, 'feat')).toBeUndefined()
+  })
+
+  it('ignores a detached worktree that happens to carry the name', () => {
+    const trees = [wt({ path: '/repo--old', branch: 'feat', detached: true })]
+    expect(worktreeForBranch(trees, 'feat')).toBeUndefined()
+  })
+
+  it('says nothing for a branch no worktree holds', () => {
+    const trees = [wt({ path: '/repo--feat', branch: 'feat' })]
+    expect(worktreeForBranch(trees, 'other')).toBeUndefined()
+  })
+
+  it('names the tab after the repo and the branch', () => {
+    const w = wt({ path: '/src/gitcito/.claude/worktrees/rename', branch: 'worktree-rename' })
+    expect(worktreeTabName('/src/gitcito/', w)).toBe('gitcito · worktree-rename')
+  })
+
+  it('falls back to the folder when the worktree is detached', () => {
+    const w = wt({ path: '/src/gitcito--spike', branch: null, detached: true })
+    expect(worktreeTabName('/src/gitcito', w)).toBe('gitcito · gitcito--spike')
   })
 })

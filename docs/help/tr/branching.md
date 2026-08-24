@@ -83,6 +83,12 @@ request'ler hâlâ açıldıkları dalı gösterir ve dal desenine göre eşleş
 kuralları eşleşmeyi bırakır. Başka bir [worktree](worktrees.md) içinde checkout
 edilmiş bir dalı yeniden adlandırmak başarısız olur, git de bunu söyler.
 
+## Üzerinde olmadığın bir dalı pull ve push etmek
+
+Herhangi bir yerel dala sağ tıkla: **Çek** ve **Push’la** girişleri checkout
+edilmiş dal üzerinde değil, *o* dal üzerinde çalışır — üç dalı güncellemek için
+checkout dolambacı yok. Bkz. [fetch, pull ve push](syncing.md).
+
 ## Sabitlenmiş dallar
 
 Sürekli döndüğünüz dalları yıldızlayın — satırın üzerine gelip ★ simgesine

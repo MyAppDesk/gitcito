@@ -1485,7 +1485,21 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
     items.push({ separator: true })
     items.push({ label: t('branch.copyBranchName'), onClick: () => void navigator.clipboard.writeText(g.label) })
     items.push({ label: t('branch.copySha'), onClick: () => void navigator.clipboard.writeText(c.hash) })
-    if (g.isLocal && isCurrent) items.push({ label: t('branch.push'), onClick: () => void repoActions.push(repo.path) })
+    // Any local branch, not only the checked-out one — a branch you can see in
+    // the graph is a branch you can publish or catch up.
+    if (g.isLocal) {
+      items.push({
+        label: interp(t('branch.pushNamed'), { branch: g.label }),
+        onClick: () => void repoActions.push(repo.path, false, false, g.label)
+      })
+      const local = repo.branches.locals.find((b) => b.name === g.label)
+      items.push({
+        label: interp(t('branch.pullNamed'), { branch: g.label }),
+        disabled: !local?.upstream,
+        onClick: () =>
+          void (isCurrent ? repoActions.pull(repo.path, 'default') : repoActions.pullBranch(repo.path, g.label))
+      })
+    }
     // Rename from the badge itself — the graph is where you notice a branch is
     // badly named, and bouncing to the sidebar to fix it is friction.
     if (g.isLocal) {

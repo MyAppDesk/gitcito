@@ -51,6 +51,29 @@ Los dos caminos pasan las mismas comprobaciones que un push normal — la
 confirmación de rama protegida y el [guardia de secretos](security.md). Publicar
 en dos remotos es el doble de exposición, no la mitad de precaución.
 
+## Ramas en las que no estás
+
+`git pull` sólo mueve HEAD, y por eso casi todos los clientes te obligan a hacer
+checkout de una rama antes de poder ponerla al día. Gitcito no: haz clic derecho
+en cualquier rama local —en la barra lateral o en su etiqueta del
+[grafo](graph.md)— y tendrás **Pull de \<rama\>** y **Push de \<rama\>**, ambos
+sobre *esa* rama y no sobre la que tienes en checkout.
+
+| | |
+|---|---|
+| **Pull de `<rama>`** | Adelanta la referencia local hasta su upstream, sin checkout. El árbol de trabajo no se toca. **Deshacible con ⌘Z**: el undo devuelve la rama donde estaba. |
+| **Push de `<rama>`** | Un push normal de esa rama, con las mismas protecciones de rama protegida y de [secretos](security.md) que el botón de la barra. |
+
+El pull queda deshabilitado en una rama que no sigue nada: no hay de dónde
+traer. En la rama en la que *sí* estás, ambos caen en el pull normal, que además
+actualiza el árbol de trabajo.
+
+**El límite que conviene saber:** una rama que ha **divergido** de su upstream se
+rechaza, con un mensaje que lo dice. Reconciliar una divergencia es un merge o un
+rebase, y ambos necesitan árbol de trabajo, así que ese caso sí te cuesta un
+checkout. Forzar el push de una rama en la que no estás se ofrece cuando el
+remoto rechaza el push; la ruta de "pull y reintento" no, por el mismo motivo.
+
 ## Fetch
 
 **Traer todo y podar** en todos los remotos, más el **auto-fetch** en segundo

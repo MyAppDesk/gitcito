@@ -83,6 +83,12 @@ regras de CI que casam com um padrão de branch deixam de casar. Renomear uma
 branch que está em checkout em outro [worktree](worktrees.md) falha, e o git diz
 isso.
 
+## Pull e push de uma branch em que você não está
+
+Clique com o botão direito em qualquer branch local: as entradas **Pull** e
+**Push** agem sobre *aquela* branch, não sobre a que está em checkout — sem
+desvio para colocar três branches em dia. Veja [fetch, pull e push](syncing.md).
+
 ## Branches fixadas
 
 Marque com estrela as branches às quais você sempre volta — passe o mouse na linha

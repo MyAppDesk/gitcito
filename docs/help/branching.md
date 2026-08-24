@@ -77,6 +77,12 @@ open pull requests still point at the branch they were opened against, and CI
 rules matching a branch pattern stop matching. Renaming a branch that is checked
 out in another [worktree](worktrees.md) fails, and git says so.
 
+## Pulling and pushing a branch you are not on
+
+Right-click any local branch for **Pull** and **Push** entries that act on that
+branch, not on the checked-out one — no detour through a checkout to catch up
+three branches. See [fetching, pulling & pushing](syncing.md).
+
 ## Pinned branches
 
 Star the branches you keep coming back to — hover the row and click ★, or

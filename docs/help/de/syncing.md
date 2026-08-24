@@ -51,6 +51,30 @@ Beide Wege durchlaufen dieselben Prüfungen wie ein gewöhnlicher Push — die
 Bestätigung für geschützte Branches und den [Secret-Schutz](security.md). An zwei
 Remotes zu veröffentlichen ist die doppelte Exposition, nicht die halbe Vorsicht.
 
+## Branches, auf denen du nicht stehst
+
+`git pull` bewegt immer nur HEAD — deshalb verlangen die meisten Clients erst
+einen Checkout, bevor ein Branch nachziehen kann. Gitcito nicht: Rechtsklick auf
+einen lokalen Branch — in der Seitenleiste oder auf dem Badge im
+[Graphen](graph.md) — bringt **\<Branch\> pullen** und **\<Branch\> pushen**, beide
+auf *diesen* Branch bezogen.
+
+| | |
+|---|---|
+| **`<Branch>` pullen** | Zieht die lokale Ref per Fast-Forward auf ihr Upstream nach, ohne Checkout. Das Arbeitsverzeichnis bleibt unberührt. **Mit ⌘Z rückgängig** — das Undo setzt den Branch zurück. |
+| **`<Branch>` pushen** | Ein gewöhnlicher Push dieses Branches, mit denselben Protected-Branch- und [Secret-Wächtern](security.md) wie der Button in der Toolbar. |
+
+Pullen ist ausgegraut, wenn der Branch nichts trackt — es gibt nichts zu holen.
+Auf dem Branch, auf dem du *stehst*, fallen beide auf den normalen Pull zurück,
+der auch das Arbeitsverzeichnis aktualisiert.
+
+**Die Grenze, die zählt:** ein Branch, der von seinem Upstream **abgewichen**
+ist, wird abgelehnt — mit einer Meldung, die das sagt. Eine Divergenz aufzulösen
+heißt Merge oder Rebase, und beide brauchen ein Arbeitsverzeichnis; dieser Fall
+kostet dich also weiterhin einen Checkout. Ein Force-Push für einen Branch, auf
+dem du nicht stehst, wird angeboten, wenn der Remote den Push ablehnt — der Weg
+"erst pullen, dann erneut" aus demselben Grund nicht.
+
 ## Fetch
 
 **Alles fetchen & prunen** über jeden Remote hinweg, dazu ein **Auto-Fetch** im

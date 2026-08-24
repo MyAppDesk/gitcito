@@ -282,6 +282,114 @@ describe('rename branch', () => {
   })
 })
 
+describe('pull a branch you are not on', () => {
+  /** A working clone of a bare repo, plus a second clone used to publish to it. */
+  const twoClones = async (): Promise<{ mine: string; theirs: string; tmp: string }> => {
+    const tmp = mkdtempSync(join(tmpdir(), 'gitcito-pullbranch-'))
+    const bare = join(tmp, 'origin.git')
+    await raw(tmp, ['init', '--bare', '-b', 'main', bare])
+    const seed = join(tmp, 'seed')
+    mkdirSync(seed)
+    await raw(seed, ['init', '-b', 'main'])
+    writeFileSync(join(seed, 'a.txt'), 'one\n')
+    await raw(seed, ['add', '-A'])
+    await raw(seed, ['-c', 'user.email=t@e', '-c', 'user.name=T', 'commit', '-m', 'feat: seed'])
+    await raw(seed, ['remote', 'add', 'origin', bare])
+    await raw(seed, ['push', '-u', 'origin', 'main'])
+    await raw(tmp, ['clone', bare, 'mine'])
+    await raw(tmp, ['clone', bare, 'theirs'])
+    return { mine: join(tmp, 'mine'), theirs: join(tmp, 'theirs'), tmp }
+  }
+
+  /** Push a new commit on `branch` from the second clone. */
+  const publish = async (theirs: string, branch: string, text: string): Promise<void> => {
+    await raw(theirs, ['checkout', '-B', branch, 'origin/main'])
+    writeFileSync(join(theirs, 'a.txt'), text)
+    await raw(theirs, ['-c', 'user.email=t@e', '-c', 'user.name=T', 'commit', '-am', 'feat: theirs'])
+    await raw(theirs, ['push', '-u', 'origin', branch])
+  }
+
+  it('fast-forwards a branch without checking it out', async () => {
+    const { mine, theirs, tmp } = await twoClones()
+    await publish(theirs, 'feature', 'two\n')
+    await raw(mine, ['fetch', 'origin'])
+    await raw(mine, ['branch', '--track', 'feature', 'origin/feature'])
+    await raw(mine, ['checkout', 'main'])
+    const head = (await raw(mine, ['rev-parse', 'HEAD'])).trim()
+
+    await gitService.pullBranch(mine, 'feature')
+
+    // The branch moved, HEAD did not, and the working tree is untouched.
+    expect((await raw(mine, ['rev-parse', 'feature'])).trim()).toBe(
+      (await raw(mine, ['rev-parse', 'origin/feature'])).trim()
+    )
+    expect((await raw(mine, ['rev-parse', 'HEAD'])).trim()).toBe(head)
+    expect(readFileSync(join(mine, 'a.txt'), 'utf-8')).toBe('one\n')
+    rmSync(tmp, { recursive: true, force: true })
+  })
+
+  it('falls back to a normal pull when the branch is the checked-out one', async () => {
+    const { mine, theirs, tmp } = await twoClones()
+    await raw(theirs, ['checkout', 'main'])
+    writeFileSync(join(theirs, 'a.txt'), 'two\n')
+    await raw(theirs, ['-c', 'user.email=t@e', '-c', 'user.name=T', 'commit', '-am', 'feat: theirs'])
+    await raw(theirs, ['push', 'origin', 'main'])
+
+    await gitService.pullBranch(mine, 'main')
+
+    // A plain pull updates the working tree too — that is why HEAD takes this path.
+    expect(readFileSync(join(mine, 'a.txt'), 'utf-8')).toBe('two\n')
+    rmSync(tmp, { recursive: true, force: true })
+  })
+
+  it('refuses a branch that tracks nothing', async () => {
+    const { mine, tmp } = await twoClones()
+    await raw(mine, ['branch', 'local-only'])
+    await expect(gitService.pullBranch(mine, 'local-only')).rejects.toThrow(/no upstream/i)
+    rmSync(tmp, { recursive: true, force: true })
+  })
+
+  it('refuses a diverged branch instead of merging behind your back', async () => {
+    const { mine, theirs, tmp } = await twoClones()
+    await publish(theirs, 'feature', 'theirs\n')
+    await raw(mine, ['fetch', 'origin'])
+    await raw(mine, ['branch', '--track', 'feature', 'origin/feature'])
+    // Rewrite the local side so it is no longer a fast-forward of the remote.
+    await raw(mine, ['checkout', 'feature'])
+    writeFileSync(join(mine, 'a.txt'), 'mine\n')
+    await raw(mine, ['-c', 'user.email=t@e', '-c', 'user.name=T', 'commit', '--amend', '-am', 'feat: mine'])
+    await raw(mine, ['checkout', 'main'])
+    const before = (await raw(mine, ['rev-parse', 'feature'])).trim()
+
+    await expect(gitService.pullBranch(mine, 'feature')).rejects.toThrow(/diverged/i)
+    expect((await raw(mine, ['rev-parse', 'feature'])).trim()).toBe(before)
+    rmSync(tmp, { recursive: true, force: true })
+  })
+
+  // setBranchRef is the undo for a branch-level pull.
+  it('moves a branch back to where it was, and refuses to move the current one', async () => {
+    const { mine, theirs, tmp } = await twoClones()
+    await publish(theirs, 'feature', 'two\n')
+    await raw(mine, ['fetch', 'origin'])
+    await raw(mine, ['branch', '--track', 'feature', 'origin/feature'])
+    await raw(mine, ['checkout', 'main'])
+    const start = (await raw(mine, ['rev-parse', 'main'])).trim()
+    await raw(mine, ['branch', '-f', 'feature', start])
+
+    await gitService.pullBranch(mine, 'feature')
+    await gitService.setBranchRef(mine, 'feature', start)
+    expect((await raw(mine, ['rev-parse', 'feature'])).trim()).toBe(start)
+
+    await expect(gitService.setBranchRef(mine, 'main', start + '~0')).rejects.toThrow()
+    rmSync(tmp, { recursive: true, force: true })
+  })
+
+  it('takes the exclusive lock — a branch pull is a write', () => {
+    expect(gitMethodIsRead('pullBranch')).toBe(false)
+    expect(gitMethodIsRead('setBranchRef')).toBe(false)
+  })
+})
+
 describe('gitignore + untrack', () => {
   it('adds patterns to .gitignore without duplicating', async () => {
     const R = cloneFixture('bisect-bug')

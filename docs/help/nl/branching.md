@@ -84,6 +84,12 @@ CI-regels die op een branchpatroon matchen, matchen niet meer. Een branch
 hernoemen die in een andere [worktree](worktrees.md) is uitgecheckt mislukt, en
 git zegt dat ook.
 
+## Pullen en pushen van een branch waar je niet op staat
+
+Rechtsklik op een lokale branch: de items **Pullen** en **Pushen** werken op
+*die* branch, niet op de uitgecheckte — geen omweg via een checkout om drie
+branches bij te werken. Zie [fetchen, pullen & pushen](syncing.md).
+
 ## Vastgezette branches
 
 Geef de branches waar je steeds naar terugkeert een ster — zweef over de rij en

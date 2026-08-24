@@ -84,6 +84,12 @@ regole di CI basate su un pattern di branch smettono di corrispondere.
 Rinominare un branch in checkout in un altro [worktree](worktrees.md) fallisce,
 e git lo dice.
 
+## Pull e push di un branch su cui non sei
+
+Fai clic destro su un branch locale: le voci **Pulla** e **Pusha** agiscono su
+*quel* branch, non su quello in checkout — niente deviazioni per aggiornare tre
+branch. Vedi [fetch, pull e push](syncing.md).
+
 ## Branch appuntati
 
 Metti una stella sui branch a cui torni di continuo — passa sopra la riga e

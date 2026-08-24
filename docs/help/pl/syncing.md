@@ -50,6 +50,30 @@ Obie drogi wykonują te same sprawdzenia co zwykły push — potwierdzenie chron
 gałęzi i [zabezpieczenie przed sekretami](security.md). Publikowanie do dwóch
 zdalnych to podwójna ekspozycja, a nie połowa ostrożności.
 
+## Gałęzie, na których nie jesteś
+
+`git pull` przesuwa tylko HEAD — dlatego większość klientów każe najpierw
+przełączyć się na gałąź, żeby ją zaktualizować. Gitcito nie: kliknij prawym
+przyciskiem dowolną gałąź lokalną — na pasku bocznym albo na jej etykiecie w
+[grafie](graph.md) — i dostaniesz **Pobierz \<gałąź\>** oraz **Wypchnij
+\<gałąź\>**, działające na *tej* gałęzi.
+
+| | |
+|---|---|
+| **Pobierz `<gałąź>`** | Przesuwa lokalną referencję do upstreamu w trybie fast-forward, bez checkoutu. Drzewo robocze pozostaje nietknięte. **Cofalne przez ⌘Z** — undo wraca gałąź na poprzednie miejsce. |
+| **Wypchnij `<gałąź>`** | Zwykły push tej gałęzi, z tymi samymi zabezpieczeniami gałęzi chronionych i [sekretów](security.md) co przycisk na pasku. |
+
+Pull jest wyszarzony dla gałęzi, która niczego nie śledzi — nie ma skąd
+pobierać. Na gałęzi, na której *jesteś*, oba wracają do zwykłego pulla, który
+aktualizuje także drzewo robocze.
+
+**Ograniczenie warte zapamiętania:** gałąź, która **rozeszła się** z upstreamem,
+zostaje odrzucona wraz z komunikatem. Pogodzenie rozbieżności to merge albo
+rebase, a oba potrzebują drzewa roboczego — ten przypadek nadal kosztuje
+checkout. Wymuszony push gałęzi, na której nie jesteś, jest oferowany, gdy zdalne
+repozytorium odrzuci push; ścieżka "pobierz i spróbuj ponownie" — nie, z tego
+samego powodu.
+
 ## Fetch
 
 **Pobierz wszystko i przytnij** na każdym zdalnym, plus **auto-fetch** w tle

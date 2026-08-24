@@ -86,6 +86,13 @@ wurden, und CI-Regeln mit Branch-Muster greifen nicht mehr. Einen Branch
 umzubenennen, der in einem anderen [Worktree](worktrees.md) ausgecheckt ist,
 schlägt fehl, und git sagt das auch.
 
+## Einen Branch pullen und pushen, auf dem du nicht stehst
+
+Rechtsklick auf einen lokalen Branch zeigt **Pullen** und **Pushen**, die auf
+*diesen* Branch wirken, nicht auf den ausgecheckten — kein Umweg über einen
+Checkout, um drei Branches nachzuziehen. Siehe
+[Fetchen, Pullen & Pushen](syncing.md).
+
 ## Angeheftete Branches
 
 Markiere die Branches, zu denen du immer wieder zurückkehrst, mit einem Stern —

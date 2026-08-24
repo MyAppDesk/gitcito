@@ -82,6 +82,12 @@ pull requests abiertos siguen apuntando a la rama con la que se abrieron, y las
 reglas de CI que casan con un patrón de rama dejan de casar. Renombrar una rama
 que está activa en otro [worktree](worktrees.md) falla, y git lo dice.
 
+## Pull y push de una rama en la que no estás
+
+Haz clic derecho en cualquier rama local para ver entradas **Pull** y **Push**
+que actúan sobre esa rama, no sobre la que tienes en checkout — sin rodeos para
+poner al día tres ramas. Ver [fetch, pull y push](syncing.md).
+
 ## Ramas fijadas
 
 Marca con una estrella las ramas a las que vuelves una y otra vez — pasa el

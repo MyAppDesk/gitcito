@@ -50,6 +50,29 @@ Her iki yol da sıradan bir push ile aynı kontrolleri çalıştırır — korum
 onayı ve [gizli bilgi koruması](security.md). İki uzak depoya yayımlamak, riskin
 iki katı demektir; yarısı değil.
 
+## Üzerinde olmadığın dallar
+
+`git pull` yalnızca HEAD’i oynatır; çoğu istemcinin bir dalı güncellemek için
+önce checkout etmeni istemesinin sebebi bu. Gitcito istemez: herhangi bir yerel
+dala sağ tıkla — kenar çubuğunda ya da [grafikteki](graph.md) rozetinde — ve
+**\<dal\> dalını çek** ile **\<dal\> dalını push’la** karşına çıksın; ikisi de
+checkout edilmiş dala değil, *o* dala uygulanır.
+
+| | |
+|---|---|
+| **`<dal>` dalını çek** | Yerel referansı upstream’ine fast-forward eder, checkout olmadan. Çalışma ağacına dokunulmaz. **⌘Z ile geri alınabilir** — geri alma dalı eski yerine koyar. |
+| **`<dal>` dalını push’la** | O dalın sıradan bir push’u; araç çubuğundaki düğmeyle aynı korumalı dal ve [gizli dosya](security.md) kontrolleriyle. |
+
+Hiçbir şeyi izlemeyen bir dalda çekme soluklaştırılır — çekilecek yer yok.
+*Üzerinde olduğun* dalda ikisi de normal pull’a düşer; o da çalışma ağacını
+günceller.
+
+**Bilinmesi gereken sınır:** upstream’inden **ayrışmış** bir dal reddedilir ve
+mesaj bunu söyler. Ayrışmayı uzlaştırmak merge ya da rebase demektir, ikisi de
+çalışma ağacı ister — yani o durum hâlâ bir checkout’a mal olur. Uzak taraf
+push’u reddettiğinde, üzerinde olmadığın dal için zorla push önerilir; “çek ve
+yeniden dene” yolu aynı sebeple önerilmez.
+
 ## Fetch
 
 Her uzak depoda **Hepsini fetch et ve prune**, ayrıca belirlediğiniz aralıkta

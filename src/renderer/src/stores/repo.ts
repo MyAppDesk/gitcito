@@ -733,11 +733,11 @@ async function pushGuards(
   return true
 }
 
-function runPush(path: string, branch: string, force: boolean): Promise<boolean> {
-  return enqueue(path, () => runPushInner(path, branch, force))
+function runPush(path: string, branch: string, force: boolean, isCurrent = true): Promise<boolean> {
+  return enqueue(path, () => runPushInner(path, branch, force, isCurrent))
 }
 
-async function runPushInner(path: string, branch: string, force: boolean): Promise<boolean> {
+async function runPushInner(path: string, branch: string, force: boolean, isCurrent: boolean): Promise<boolean> {
   const ui = useUIStore.getState()
   ui.beginInflight()
   const label = interp(force ? t('act.forcePushed') : t('act.pushed'), { branch })
@@ -753,20 +753,34 @@ async function runPushInner(path: string, branch: string, force: boolean): Promi
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     if (!force && isNonFastForwardError(message)) {
-      useUIStore.getState().openModal({
-        kind: 'confirm',
-        title: t('confirm.pushRejected.title'),
-        message: interp(t('confirm.pushRejected.message'), { branch }),
-        confirmLabel: t('confirm.pushRejected.ok'),
-        onConfirm: () => {
-          void repoActions.pull(path, 'rebase').then((ok) => {
-            if (ok) void runPush(path, branch, false)
-          })
-        },
-        secondaryLabel: t('confirm.forcePush.ok'),
-        secondaryDanger: true,
-        onSecondary: () => void runPush(path, branch, true)
-      })
+      // Rebasing to reconcile needs a working tree, so it is only on offer for
+      // the branch actually checked out. For any other branch the honest set of
+      // choices is force it or go check it out.
+      useUIStore.getState().openModal(
+        isCurrent
+          ? {
+              kind: 'confirm',
+              title: t('confirm.pushRejected.title'),
+              message: interp(t('confirm.pushRejected.message'), { branch }),
+              confirmLabel: t('confirm.pushRejected.ok'),
+              onConfirm: () => {
+                void repoActions.pull(path, 'rebase').then((ok) => {
+                  if (ok) void runPush(path, branch, false)
+                })
+              },
+              secondaryLabel: t('confirm.forcePush.ok'),
+              secondaryDanger: true,
+              onSecondary: () => void runPush(path, branch, true)
+            }
+          : {
+              kind: 'confirm',
+              danger: true,
+              title: t('confirm.pushRejected.title'),
+              message: interp(t('confirm.pushRejectedOther.message'), { branch }),
+              confirmLabel: t('confirm.forcePush.ok'),
+              onConfirm: () => void runPush(path, branch, true, false)
+            }
+      )
       return false
     }
     toast('error', message)
@@ -1395,6 +1409,33 @@ export const repoActions = {
   },
 
   /**
+   * Pull a branch you are not standing on.
+   *
+   * Fast-forwards the local ref from its upstream without a checkout, so
+   * catching a teammate's work up on three branches no longer costs three
+   * checkouts. Diverged branches are refused, not silently merged.
+   */
+  pullBranch: async (path: string, branch: string): Promise<boolean> => {
+    const repo = useRepoStore.getState().repos[path]
+    const before = repo?.branches.locals.find((b) => b.name === branch)?.sha ?? ''
+    return useRepoStore.getState().run(
+      path,
+      interp(t('act.pulledBranch'), { branch }),
+      () => gitApi.pullBranch(path, branch),
+      before
+        ? {
+            label: interp(t('undoLabel.pullBranch'), { branch }),
+            undo: () => gitApi.setBranchRef(path, branch, before),
+            redo: () => gitApi.pullBranch(path, branch)
+          }
+        : undefined,
+      'pull',
+      undefined,
+      ['log', 'branches']
+    )
+  },
+
+  /**
    * Push the current branch to several remotes at once. Runs the same protected
    * branch and secret checks as a normal push — publishing to two remotes is
    * twice the exposure, not half the caution.
@@ -1688,15 +1729,17 @@ export const repoActions = {
       .getState()
       .run(path, interp(t('act.pushedTags'), { remote }), () => gitApi.pushAllTags(path, remote), undefined, 'push'),
 
-  push: async (path: string, force = false, protectedConfirmed = false): Promise<boolean> => {
+  /** Push `branch`, or the checked-out one when it is omitted. */
+  push: async (path: string, force = false, protectedConfirmed = false, branch?: string): Promise<boolean> => {
     const repo = useRepoStore.getState().repos[path]
-    const branch = repo?.branches.current
-    if (!branch) return false
+    const current = repo?.branches.current
+    const target = branch ?? current
+    if (!target) return false
     const cleared = await pushGuards(
       path,
-      branch,
+      target,
       force,
-      () => void repoActions.push(path, force, true),
+      () => void repoActions.push(path, force, true, branch),
       protectedConfirmed
     )
     if (!cleared) return false
@@ -1717,7 +1760,7 @@ export const repoActions = {
       })
       return Promise.resolve(false)
     }
-    return runPush(path, branch, force)
+    return runPush(path, target, force, target === current)
   },
 
   stash: (path: string, message?: string) =>

@@ -90,6 +90,13 @@ règles de CI qui filtrent sur un motif de branche cessent de correspondre.
 Renommer une branche extraite dans un autre [worktree](worktrees.md) échoue, et
 git le dit.
 
+## Tirer et pousser une branche sur laquelle vous n'êtes pas
+
+Faites un clic droit sur n'importe quelle branche locale : les entrées **Tirer**
+et **Pousser** agissent sur *cette* branche, pas sur celle extraite — plus
+besoin d'un détour par un checkout pour mettre trois branches à jour. Voir
+[récupérer, tirer et pousser](syncing.md).
+
 ## Branches épinglées
 
 Marquez d'une étoile les branches sur lesquelles vous revenez sans cesse —

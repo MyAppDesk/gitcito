@@ -49,6 +49,28 @@ Os dois caminhos rodam as mesmas verificações de um push comum — a confirma�
 branch protegida e a [proteção contra segredos](security.md). Publicar em dois
 remotes é o dobro da exposição, não metade do cuidado.
 
+## Branches em que você não está
+
+`git pull` só move o HEAD, e por isso a maioria dos clientes exige checkout antes
+de atualizar uma branch. O Gitcito não: clique com o botão direito em qualquer
+branch local — na sidebar ou no badge do [grafo](graph.md) — e você tem **Pull de
+\<branch\>** e **Push de \<branch\>**, ambos agindo sobre *aquela* branch.
+
+| | |
+|---|---|
+| **Pull de `<branch>`** | Avança a ref local até o upstream, sem checkout. A árvore de trabalho não é tocada. **Desfazível com ⌘Z** — o undo devolve a branch ao ponto anterior. |
+| **Push de `<branch>`** | Um push comum daquela branch, com as mesmas proteções de branch protegida e de [segredos](security.md) do botão da barra. |
+
+O pull fica desabilitado para uma branch que não rastreia nada: não há de onde
+puxar. Na branch em que você *está*, os dois caem no pull normal, que também
+atualiza a árvore de trabalho.
+
+**O limite que importa:** uma branch que **divergiu** do upstream é recusada, com
+uma mensagem dizendo isso. Reconciliar uma divergência é um merge ou um rebase, e
+ambos precisam de árvore de trabalho — esse caso ainda custa um checkout. O force
+push de uma branch em que você não está é oferecido quando o remoto rejeita; o
+caminho "puxar e tentar de novo", não, pelo mesmo motivo.
+
 ## Fetch
 
 **Fetch em todos e prune** em cada remote, mais o **auto-fetch** em segundo plano

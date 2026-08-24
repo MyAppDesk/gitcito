@@ -49,6 +49,29 @@ Both paths run the same checks as an ordinary push — the protected-branch
 confirmation and the [secret guard](security.md). Publishing to two remotes is
 twice the exposure, not half the caution.
 
+## Branches you are not standing on
+
+`git pull` only ever moves HEAD, which is why most clients make you check a
+branch out before you can catch it up. Gitcito does not: right-click any local
+branch — in the sidebar or on its badge in the [graph](graph.md) — and you get
+**Pull <branch>** and **Push <branch>**, both acting on *that* branch rather
+than the checked-out one.
+
+| | |
+|---|---|
+| **Pull `<branch>`** | Fast-forwards the local ref from its upstream, without a checkout. The working tree is not touched. **Undoable with ⌘Z** — the undo puts the branch back where it was. |
+| **Push `<branch>`** | An ordinary push of that branch, with the same protected-branch and [secret guards](security.md) as the toolbar button. |
+
+Pull is greyed out for a branch that tracks nothing — there is nowhere to pull
+from. On the branch you *are* on, both fall back to the normal pull, which
+updates the working tree too.
+
+**The limit worth knowing:** a branch that has **diverged** from its upstream is
+refused, with a message saying so. Reconciling a divergence is a merge or a
+rebase, and both need a working tree — so that one still costs you a checkout.
+Force-pushing a branch you are not on is offered when the remote rejects the
+push, but the pull-and-retry route is not, for the same reason.
+
 ## Fetch
 
 **Fetch all & prune** across every remote, plus background **auto-fetch** on an

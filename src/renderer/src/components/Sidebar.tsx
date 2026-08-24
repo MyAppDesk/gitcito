@@ -856,7 +856,15 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
           }
         ]
       : []),
-    { label: t('sidebar.pushBranch'), onClick: () => void repoActions.push(path) },
+    // Named, and wired to *this* branch — pushing the checked-out one from a
+    // menu you opened on another branch is a trap, not a shortcut.
+    { label: interp(t('branch.pushNamed'), { branch: b.name }), onClick: () => void repoActions.push(path, false, false, b.name) },
+    {
+      label: interp(t('branch.pullNamed'), { branch: b.name }),
+      disabled: !b.upstream,
+      onClick: () =>
+        void (b.isCurrent ? repoActions.pull(path, 'default') : repoActions.pullBranch(path, b.name))
+    },
     {
       label: t('sidebar.createPRFromBranch'),
       onClick: () => openModal({ kind: 'create-pr', repoPath: path, source: b.name })

@@ -50,6 +50,29 @@ Beide routes draaien dezelfde controles als een gewone push — de bevestiging v
 beschermde branches en de [geheimenbewaking](security.md). Naar twee remotes
 publiceren is twee keer zo veel blootstelling, niet half zo veel voorzichtigheid.
 
+## Branches waar je niet op staat
+
+`git pull` verzet alleen HEAD, en daarom laten de meeste clients je eerst een
+branch uitchecken voordat je hem kunt bijwerken. Gitcito niet: rechtsklik op een
+lokale branch — in de zijbalk of op de badge in de [graaf](graph.md) — en je
+krijgt **\<branch\> pullen** en **\<branch\> pushen**, allebei op *die* branch.
+
+| | |
+|---|---|
+| **`<branch>` pullen** | Fast-forwardt de lokale ref naar zijn upstream, zonder checkout. De working tree blijft onaangeroerd. **Ongedaan te maken met ⌘Z** — de undo zet de branch terug. |
+| **`<branch>` pushen** | Een gewone push van die branch, met dezelfde beschermde-branch- en [secret-waarschuwingen](security.md) als de knop in de werkbalk. |
+
+Pullen is grijs voor een branch die niets volgt — er valt niets te halen. Op de
+branch waar je *wel* op staat vallen beide terug op de normale pull, die ook de
+working tree bijwerkt.
+
+**De grens die telt:** een branch die is **afgeweken** van zijn upstream wordt
+geweigerd, met een melding die dat zegt. Een divergentie oplossen is een merge of
+een rebase, en beide hebben een working tree nodig — dat geval kost je nog steeds
+een checkout. Force pushen van een branch waar je niet op staat wordt aangeboden
+als de remote de push weigert; de route "eerst pullen, dan opnieuw" niet, om
+dezelfde reden.
+
 ## Fetchen
 
 **Alles fetchen & prunen** over elke remote, plus **auto-fetch** op de

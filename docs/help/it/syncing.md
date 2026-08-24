@@ -50,6 +50,28 @@ Entrambe le strade eseguono gli stessi controlli di un push normale — la confe
 per il branch protetto e la [protezione sui segreti](security.md). Pubblicare su
 due remote è il doppio dell'esposizione, non metà della prudenza.
 
+## Branch su cui non sei
+
+`git pull` muove solo HEAD, ed è per questo che quasi tutti i client ti fanno
+fare il checkout di un branch prima di poterlo aggiornare. Gitcito no: clic
+destro su un branch locale — nella sidebar o sul badge nel [grafo](graph.md) — e
+trovi **Pulla \<branch\>** e **Pusha \<branch\>**, che agiscono su *quel* branch.
+
+| | |
+|---|---|
+| **Pulla `<branch>`** | Porta in fast-forward la ref locale al suo upstream, senza checkout. Il working tree non viene toccato. **Annullabile con ⌘Z**: l'undo rimette il branch dov'era. |
+| **Pusha `<branch>`** | Un push normale di quel branch, con le stesse protezioni per branch protetti e [segreti](security.md) del pulsante in barra. |
+
+Il pull è disattivato per un branch che non traccia nulla: non c'è da dove
+tirare. Sul branch su cui *sei*, entrambi ricadono sul pull normale, che
+aggiorna anche il working tree.
+
+**Il limite da conoscere:** un branch che è **divergito** dal suo upstream viene
+rifiutato, con un messaggio che lo dice. Riconciliare una divergenza è un merge o
+un rebase, e servono entrambi un working tree — quel caso costa ancora un
+checkout. Il force push di un branch su cui non sei viene offerto quando il
+remoto rifiuta; la strada "pull e riprova" no, per lo stesso motivo.
+
 ## Fetch
 
 **Fetch di tutto con prune** su ogni remote, più un **auto-fetch** in background

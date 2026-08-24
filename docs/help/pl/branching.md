@@ -84,6 +84,13 @@ nazwy — otwarte pull requesty nadal wskazują gałąź, wobec której powstał
 reguły CI dopasowane do wzorca gałęzi przestają pasować. Zmiana nazwy gałęzi
 wybranej w innym [worktree](worktrees.md) kończy się błędem, a git to zgłasza.
 
+## Pull i push gałęzi, na której nie jesteś
+
+Kliknij prawym przyciskiem dowolną gałąź lokalną — pozycje **Pobierz** i
+**Wypchnij** działają na *tej* gałęzi, a nie na aktualnie przełączonej: bez
+objazdu przez checkout, gdy trzeba nadgonić trzy gałęzie. Zobacz
+[fetch, pull i push](syncing.md).
+
 ## Przypięte gałęzie
 
 Oznacz gwiazdką gałęzie, do których ciągle wracasz — najedź na wiersz i kliknij

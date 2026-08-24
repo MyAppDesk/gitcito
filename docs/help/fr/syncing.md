@@ -52,6 +52,30 @@ confirmation de branche protégée et le [garde-fou des secrets](security.md).
 Publier vers deux distants, c'est deux fois l'exposition, pas la moitié de la
 prudence.
 
+## Les branches sur lesquelles vous n'êtes pas
+
+`git pull` ne déplace jamais que HEAD : c'est pourquoi la plupart des clients
+exigent d'extraire une branche avant de pouvoir la mettre à jour. Pas Gitcito :
+clic droit sur n'importe quelle branche locale — dans la barre latérale ou sur
+son badge dans le [graphe](graph.md) — et vous obtenez **Tirer \<branche\>** et
+**Pousser \<branche\>**, qui agissent sur *cette* branche.
+
+| | |
+|---|---|
+| **Tirer `<branche>`** | Avance la référence locale jusqu'à son amont, sans extraction. La copie de travail n'est pas touchée. **Annulable avec ⌘Z** : l'annulation remet la branche où elle était. |
+| **Pousser `<branche>`** | Une poussée ordinaire de cette branche, avec les mêmes garde-fous branche protégée et [secrets](security.md) que le bouton de la barre d'outils. |
+
+Tirer est grisé pour une branche qui ne suit rien — il n'y a rien à tirer. Sur la
+branche où vous êtes, les deux retombent sur le pull normal, qui met aussi la
+copie de travail à jour.
+
+**La limite à connaître :** une branche qui a **divergé** de son amont est
+refusée, avec un message qui le dit. Réconcilier une divergence, c'est une fusion
+ou un rebase, et les deux exigent une copie de travail — ce cas-là coûte donc
+encore une extraction. La poussée forcée d'une branche où vous n'êtes pas est
+proposée quand le distant refuse ; le chemin « tirer puis réessayer », non, pour
+la même raison.
+
 ## Fetch
 
 **Tout récupérer et élaguer** sur tous les distants, plus une **récupération

@@ -1185,6 +1185,24 @@ async function getRemoteUrl(repoPath: string, remote: string): Promise<string> {
   }
 }
 
+/** The full upstream ref of `branch` (e.g. `origin/main`), or '' when it tracks nothing. */
+async function branchUpstream(repoPath: string, branch: string): Promise<string> {
+  try {
+    const { stdout } = await pexecFile('git', [
+      '-C',
+      repoPath,
+      'rev-parse',
+      '--abbrev-ref',
+      '--symbolic-full-name',
+      `${branch}@{u}`
+    ])
+    const ref = stdout.trim()
+    return ref.includes('/') ? ref : ''
+  } catch {
+    return ''
+  }
+}
+
 /** The remote a plain `git pull` would use (the current branch's upstream), or 'origin'. */
 async function upstreamRemote(repoPath: string): Promise<string> {
   try {
@@ -2715,6 +2733,51 @@ export const gitService = {
     if (opts.force) args.push('--force-with-lease')
     args.push('--set-upstream', remote, branch)
     await withRemoteAuth(repoPath, remote, () => runGit(repoPath, args))
+  },
+
+  /**
+   * Update a local branch from its upstream **without checking it out**.
+   *
+   * `git pull` only ever moves HEAD, which is why a branch you are not standing
+   * on looks unpullable. A refspec fetch moves the ref directly, and git refuses
+   * it unless the update is a fast-forward — that refusal is the point: a
+   * diverged branch needs a merge or rebase the user picked, not a silent one.
+   */
+  async pullBranch(repoPath: string, branch: string): Promise<void> {
+    const head = await runGit(repoPath, ['symbolic-ref', '--quiet', '--short', 'HEAD'])
+      .then((s) => s.trim())
+      .catch(() => '')
+    // Standing on it? Then the ordinary pull is both possible and better — it
+    // updates the working tree too.
+    if (head && head === branch) return gitService.pull(repoPath, 'default')
+
+    const upstream = await branchUpstream(repoPath, branch)
+    if (!upstream) throw new Error(`'${branch}' has no upstream branch to pull from.`)
+    const slash = upstream.indexOf('/')
+    const remote = upstream.slice(0, slash)
+    const remoteBranch = upstream.slice(slash + 1)
+    try {
+      await withRemoteAuth(repoPath, remote, () =>
+        runGit(repoPath, ['fetch', remote, `${remoteBranch}:${branch}`])
+      )
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      if (/non-fast-forward|rejected/i.test(message))
+        throw new Error(
+          `'${branch}' has diverged from ${upstream}. Check it out and merge or rebase to reconcile them.`
+        )
+      throw err
+    }
+  },
+
+  /**
+   * Move a local branch to `sha` without checking it out — `git branch -f`.
+   *
+   * The undo for a branch-level pull. Git refuses to move a branch that is
+   * checked out in this worktree or another one, which is the guard we want.
+   */
+  async setBranchRef(repoPath: string, branch: string, sha: string): Promise<void> {
+    await runGit(repoPath, ['branch', '-f', branch, sha])
   },
 
   /**

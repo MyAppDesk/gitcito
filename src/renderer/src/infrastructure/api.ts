@@ -216,6 +216,9 @@ export const gitApi = {
   pull: (path: string, mode: 'default' | 'ff-only' | 'rebase') => call<void>('pull', path, mode),
   push: (path: string, branch: string, opts?: { force?: boolean; remote?: string }) =>
     call<void>('push', path, branch, opts),
+  /** Fast-forward a local branch from its upstream without checking it out. */
+  pullBranch: (path: string, branch: string) => call<void>('pullBranch', path, branch),
+  setBranchRef: (path: string, branch: string, sha: string) => call<void>('setBranchRef', path, branch, sha),
   /** One push per remote, reported separately — one rejection does not cancel
    *  the rest. */
   pushToRemotes: (path: string, branch: string, remotes: string[], opts?: { force?: boolean; tags?: boolean }) =>

@@ -95,9 +95,15 @@ remoto rifiuta; la strada "pull e riprova" no, per lo stesso motivo.
 
 ## Fetch
 
-**Fetch di tutto con prune** su ogni remote, più un **auto-fetch** in background
-a un intervallo che imposti tu (Impostazioni → Generali) e un badge "recuperato X
-fa" nella barra degli strumenti.
+**Fetch** ha un pulsante tutto suo nella barra degli strumenti, accanto a Pull.
+Recupera da ogni remoto e fa prune, così le tue ref `origin/*` e tutti i
+contatori avanti/indietro sono aggiornati — e non tocca né il tuo branch né la
+working tree. È quello da usare quando vuoi *vedere* cosa hanno fatto gli altri
+senza muovere il tuo lavoro.
+
+C'è anche un **auto-fetch** in background a un intervallo che imposti tu
+(Impostazioni → Generali) e un badge "recuperato X fa" nella barra degli
+strumenti.
 
 Un fetch che trova **storia riscritta** lo dice: un toast nomina il branch, e la
 sua riga guadagna un marcatore che apre

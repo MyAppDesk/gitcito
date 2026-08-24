@@ -96,9 +96,13 @@ yeniden dene” yolu aynı sebeple önerilmez.
 
 ## Fetch
 
-Her uzak depoda **Hepsini fetch et ve prune**, ayrıca belirlediğiniz aralıkta
-arka planda **otomatik fetch** (Ayarlar → Genel) ve araç çubuğunda "X önce fetch
-edildi" rozeti.
+**Getir**'in araç çubuğunda Pull'un yanında kendi düğmesi var. Her uzak depodan
+getirir ve budar; böylece `origin/*` reflerin ve tüm ileri/geri sayaçların güncel
+olur — dalına da çalışma ağacına da dokunmaz. Kendi işini kımıldatmadan
+başkalarının ne yaptığını *görmek* istediğinde başvuracağın düğme budur.
+
+Ayrıca belirlediğiniz aralıkta arka planda **otomatik fetch** (Ayarlar → Genel)
+ve araç çubuğunda "X önce fetch edildi" rozeti var.
 
 **Yeniden yazılmış geçmiş** bulan bir fetch bunu söyler: bir bildirim dalı
 adıyla anar ve satırı, tam olarak eskiden gösterdiği commit'te

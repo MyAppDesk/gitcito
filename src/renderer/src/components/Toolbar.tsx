@@ -3,6 +3,7 @@ import {
   Undo2,
   Redo2,
   ArrowDownToLine,
+  Download,
   ArrowUpFromLine,
   GitBranchPlus,
   Archive,
@@ -105,9 +106,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
     openContextMenu(rect.left, rect.bottom + 6, [
       { label: t('pull.default'), onClick: () => void repoActions.pull(path, 'default') },
       { label: t('pull.ffOnly'), onClick: () => void repoActions.pull(path, 'ff-only') },
-      { label: t('pull.rebase'), onClick: () => void repoActions.pull(path, 'rebase') },
-      { separator: true },
-      { label: t('pull.fetchPrune'), onClick: () => void repoActions.fetchAll(path) }
+      { label: t('pull.rebase'), onClick: () => void repoActions.pull(path, 'rebase') }
     ])
   }
 
@@ -339,8 +338,12 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
       <div className="toolbar-sep" />
 
       <div className="toolbar-group">
+        <button className="tool-btn" disabled={inflight} onClick={() => void repoActions.fetchAll(path)} title={t('toolbar.fetchTitle')}>
+          {busyOp === 'fetch' ? <Loader2 size={17} className="spin" /> : <Download size={17} />}
+          <span>{t('toolbar.fetch')}</span>
+        </button>
         <button className="tool-btn split" disabled={inflight} onClick={() => void repoActions.pull(path, 'default')} title={t('toolbar.pull')}>
-          {busyOp === 'pull' || busyOp === 'fetch' ? (
+          {busyOp === 'pull' ? (
             <Loader2 size={17} className="spin" />
           ) : (
             <ArrowDownToLine size={17} />

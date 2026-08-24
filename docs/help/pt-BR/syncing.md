@@ -94,9 +94,14 @@ caminho "puxar e tentar de novo", não, pelo mesmo motivo.
 
 ## Fetch
 
-**Fetch em todos e prune** em cada remote, mais o **auto-fetch** em segundo plano
-num intervalo que você define (Configurações → Geral) e um selo "buscado há X" na
-barra de ferramentas.
+**Fetch** tem seu próprio botão na barra de ferramentas, ao lado de Pull. Ele faz
+fetch de todos os remotos e prune, deixando suas refs `origin/*` e todos os
+contadores à frente/atrás em dia — e não toca nem no seu branch nem na sua árvore
+de trabalho. É o botão para quando você quer *ver* o que os outros fizeram sem
+mexer no seu próprio trabalho.
+
+Há também o **auto-fetch** em segundo plano num intervalo que você define
+(Configurações → Geral) e um selo "buscado há X" na barra de ferramentas.
 
 Um fetch que encontra **histórico reescrito** avisa: um toast nomeia a branch, e a
 linha dela ganha um marcador que abre [o que mudou desde](range-diff.md) exatamente

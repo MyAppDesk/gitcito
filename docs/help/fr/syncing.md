@@ -99,9 +99,15 @@ la même raison.
 
 ## Fetch
 
-**Tout récupérer et élaguer** sur tous les distants, plus une **récupération
-automatique** en arrière-plan à l'intervalle que vous fixez (Réglages → Général)
-et un badge « récupéré il y a X » dans la barre d'outils.
+**Récupérer** a son propre bouton dans la barre d'outils, à côté de Tirer. Il
+récupère depuis tous les distants et élague, de sorte que vos refs `origin/*` et
+tous les compteurs d'avance/retard sont à jour — et il ne touche ni votre branche
+ni votre copie de travail. C'est le bouton à utiliser quand vous voulez *voir* ce
+que les autres ont fait sans déplacer votre propre travail.
+
+Il y a aussi une **récupération automatique** en arrière-plan à l'intervalle que
+vous fixez (Réglages → Général) et un badge « récupéré il y a X » dans la barre
+d'outils.
 
 Un fetch qui découvre de l'**histoire réécrite** le dit : une notification nomme
 la branche, et sa ligne gagne un marqueur qui ouvre [ce qui a changé

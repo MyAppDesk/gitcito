@@ -97,9 +97,14 @@ samego powodu.
 
 ## Fetch
 
-**Pobierz wszystko i przytnij** na każdym zdalnym, plus **auto-fetch** w tle
-w ustawionym przez ciebie interwale (Ustawienia → Ogólne) i plakietka „pobrano X
-temu" na pasku narzędzi.
+**Fetch** ma własny przycisk na pasku narzędzi, obok Pull. Pobiera z każdego
+remote'a i przycina, więc twoje refy `origin/*` i wszystkie liczniki
+przed/za są aktualne — i nie rusza ani twojej gałęzi, ani drzewa roboczego. To
+przycisk na chwile, gdy chcesz *zobaczyć*, co zrobili inni, nie ruszając własnej
+pracy.
+
+Jest też **auto-fetch** w tle w ustawionym przez ciebie interwale (Ustawienia →
+Ogólne) i plakietka „pobrano X temu" na pasku narzędzi.
 
 Fetch, który natrafi na **przepisaną historię**, mówi to wprost: toast nazywa
 gałąź, a jej wiersz dostaje znacznik otwierający

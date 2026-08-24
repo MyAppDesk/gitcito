@@ -96,9 +96,13 @@ dezelfde reden.
 
 ## Fetchen
 
-**Alles fetchen & prunen** over elke remote, plus **auto-fetch** op de
-achtergrond met een interval die jij instelt (Instellingen → Algemeen) en een
-badge "X geleden gefetcht" in de werkbalk.
+**Fetchen** heeft een eigen knop in de werkbalk, naast Pullen. Het fetcht van elke
+remote en prunet, zodat je `origin/*`-refs en alle voor/achter-tellers actueel
+zijn — en het raakt noch je branch noch je working tree aan. Dat is de knop als je
+wilt *zien* wat iedereen heeft gedaan zonder je eigen werk te verplaatsen.
+
+Er is ook **auto-fetch** op de achtergrond met een interval die jij instelt
+(Instellingen → Algemeen) en een badge "X geleden gefetcht" in de werkbalk.
 
 Een fetch die **herschreven geschiedenis** aantreft zegt dat: een melding noemt
 de branch, en zijn rij krijgt een markering die

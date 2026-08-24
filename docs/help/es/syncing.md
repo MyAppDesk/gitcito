@@ -97,9 +97,15 @@ remoto rechaza el push; la ruta de "pull y reintento" no, por el mismo motivo.
 
 ## Fetch
 
-**Traer todo y podar** en todos los remotos, más el **auto-fetch** en segundo
-plano con el intervalo que tú fijes (Ajustes → General) y una insignia de
-"traído hace X" en la barra de herramientas.
+**Fetch** tiene su propio botón en la barra de herramientas, junto a Pull. Trae
+de todos los remotos y poda, así que tus refs `origin/*` y todos los contadores
+de adelanto/atraso quedan al día — y no toca ni tu rama ni tu árbol de trabajo.
+Es el botón al que acudir cuando quieres *ver* lo que ha hecho el resto sin mover
+tu propio trabajo.
+
+También hay **auto-fetch** en segundo plano con el intervalo que tú fijes
+(Ajustes → General) y una insignia de "traído hace X" en la barra de
+herramientas.
 
 Un fetch que encuentra **historial reescrito** lo dice: un aviso nombra la rama, y
 su fila gana un marcador que abre [qué ha cambiado desde](range-diff.md)

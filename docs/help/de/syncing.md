@@ -98,9 +98,15 @@ dem du nicht stehst, wird angeboten, wenn der Remote den Push ablehnt — der We
 
 ## Fetch
 
-**Alles fetchen & prunen** über jeden Remote hinweg, dazu ein **Auto-Fetch** im
-Hintergrund in einem von dir gesetzten Intervall (Einstellungen → Allgemein) und
-ein "vor X gefetcht"-Badge in der Toolbar.
+**Fetch** hat einen eigenen Button in der Toolbar, direkt neben Pull. Er holt von
+jedem Remote und prunt, sodass deine `origin/*`-Refs und alle Ahead/Behind-Zähler
+aktuell sind — und rührt weder deinen Branch noch deinen Arbeitsbaum an. Das ist
+der Button, wenn du *sehen* willst, was die anderen getan haben, ohne deine
+eigene Arbeit zu bewegen.
+
+Dazu gibt es einen **Auto-Fetch** im Hintergrund in einem von dir gesetzten
+Intervall (Einstellungen → Allgemein) und ein "vor X gefetcht"-Badge in der
+Toolbar.
 
 Ein Fetch, der **umgeschriebene Historie** findet, sagt das: ein Toast nennt den
 Branch, und dessen Zeile bekommt einen Marker, der [was sich seither geändert

@@ -95,8 +95,13 @@ push, but the pull-and-retry route is not, for the same reason.
 
 ## Fetch
 
-**Fetch all & prune** across every remote, plus background **auto-fetch** on an
-interval you set (Settings → General) and a "fetched X ago" badge in the toolbar.
+**Fetch** has its own toolbar button, next to Pull. It fetches every remote and
+prunes, so your `origin/*` refs and every ahead/behind count go current — and it
+touches neither your branch nor your working tree. That is the one to reach for
+when you want to *see* what everyone else has done without moving your own work.
+
+There is also background **auto-fetch** on an interval you set (Settings →
+General) and a "fetched X ago" badge in the toolbar.
 
 A fetch that finds **rewritten history** says so: a toast names the branch, and
 its row gains a marker that opens [what changed since](range-diff.md) at exactly

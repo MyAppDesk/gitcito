@@ -2752,6 +2752,17 @@ export type GraphNodeStyle = 'normal' | 'compact'
  *   minimal — stashes sit inline on their parent's lane; no extra lanes.
  */
 export type GraphTopology = 'full' | 'simple' | 'minimal'
+/**
+ * Which slice of history the graph draws. Orthogonal to topology — this drops
+ * rows, topology only changes how the remaining ones are railed.
+ *   all        — every commit the log returned.
+ *   linear     — HEAD's first-parent chain only; merged-in work disappears.
+ *   hideMerged — the trunk plus branches that are still unmerged; anything
+ *                that only exists on the far side of a finished merge goes.
+ *   solo       — the first-parent chains of HEAD, the starred branches and the
+ *                default branch. "My branch and the ones that matter."
+ */
+export type GraphFocus = 'all' | 'linear' | 'hideMerged' | 'solo'
 
 /** A named set of lane colours for the graph rails. */
 export interface GraphPalette {
@@ -2772,10 +2783,12 @@ export interface GraphStyle {
   nodeStyle: GraphNodeStyle
   /** How much rail topology to draw (mainly stash lane strategy). */
   topology: GraphTopology
+  /** Which commits the graph keeps. See GraphFocus. */
+  focus: GraphFocus
 }
 
 export function defaultGraphStyle(): GraphStyle {
-  return { paletteId: 'classic', edgeStyle: 'rounded', density: 'comfortable', lineWidth: 'normal', nodeStyle: 'normal', topology: 'full' }
+  return { paletteId: 'classic', edgeStyle: 'rounded', density: 'comfortable', lineWidth: 'normal', nodeStyle: 'normal', topology: 'full', focus: 'all' }
 }
 
 /**

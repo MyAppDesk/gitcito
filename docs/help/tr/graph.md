@@ -32,8 +32,19 @@ depo gibi kayar.
 
 ## İstediğinizi göstermesi
 
-- **Doğrusal görünüm** (first-parent) birleştirilmiş olan her şeyi gizler,
-  geriye ana gövdeyi bırakır.
+- **Grafik odağı**, geçmişin ne kadarının çizileceğini belirler — Ayarlar →
+  Temalar → **Grafik** ya da grafik başlığındaki dişli menüsü. *Her şey* hepsini
+  çizer; *Doğrusal geçmiş* (ilk üst commit) yalnızca gövdeyi bırakır;
+  *Birleştirilmiş dalları gizle* gövdeyi ve henüz birleştirilmemiş dalları tutar;
+  *Solo mod* kendi dalını, yıldızladığın dalları ve varsayılan dalı tutar.
+
+  Yalnızca günlüğün zaten yüklediğini süzer. *Birleştirilmiş dalları gizle*,
+  git'in "geçerli dala zaten dahil" yanıtına güvenir; dal değiştirmek neyin
+  gizlendiğini değiştirir — ve hâlâ bir etiketin ya da tanımadığı bir ref'in
+  işaret ettiği her commit'i tutar, ki silinmiş bir dalın geride bıraktığı tam
+  olarak budur. *Doğrusal geçmiş* ile *Solo mod* daha serttir: gizledikleri bir
+  commit üzerindeki etiket ya da zula onunla birlikte gider.
+
 - **Yola göre filtreleme**: bir dosyaya ya da klasöre sağ tıklayın → *Grafiği bu
   yola göre filtrele*, yalnızca ona dokunmuş commit'ler ışıklı kalsın.
 

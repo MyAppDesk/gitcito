@@ -33,8 +33,19 @@ che ne ha cento.
 
 ## Fargli mostrare quello che vuoi
 
-- La **vista lineare** (first-parent) nasconde tutto ciò che è stato fuso,
-  lasciando il tronco.
+- Il **focus del grafo** decide quanta storia viene disegnata — Impostazioni →
+  Temi → **Grafo**, o il menu dell'ingranaggio nell'intestazione del grafo.
+  *Tutto* disegna ogni cosa; *Cronologia lineare* (first-parent) lascia solo il
+  tronco; *Nascondi i rami già uniti* tiene il tronco più i rami ancora aperti;
+  *Modalità solo* tiene il tuo ramo, i rami preferiti e il ramo predefinito.
+
+  Filtra soltanto ciò che il log ha già caricato. *Nascondi i rami già uniti* si
+  fida della risposta di git a «già contenuto nel ramo corrente», quindi cambiare
+  ramo cambia ciò che sparisce — e tiene ogni commit ancora puntato da un tag o
+  da un riferimento che non riconosce, cioè proprio quello che lascia un ramo
+  cancellato. *Cronologia lineare* e *Modalità solo* sono più drastiche: un tag o
+  uno stash su un commit che nascondono sparisce con lui.
+
 - **Filtra per percorso**: clic destro su un file o una cartella → *Filtra il
   grafo per questo percorso*, e restano accesi solo i commit che l'hanno toccato.
 

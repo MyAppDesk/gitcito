@@ -30,7 +30,19 @@ with a hundred.
 
 ## Making it show what you want
 
-- **Linear view** (first-parent) hides everything merged in, leaving the trunk.
+- **Graph focus** decides how much history is drawn — Settings → Themes →
+  **Graph**, or the gear menu in the graph header. *Everything* draws it all;
+  *Linear history* (first-parent) leaves only the trunk; *Hide merged branches*
+  keeps the trunk plus the branches that are still unmerged; *Solo* keeps your
+  branch, your starred branches and the default branch.
+
+  It filters only what the log has already loaded. *Hide merged branches* trusts
+  git's own "already contained in the current branch" answer, so checking out a
+  different branch changes what it hides — and it keeps every commit a tag or an
+  unrecognised ref still points at, which is exactly what a deleted branch leaves
+  behind. *Linear history* and *Solo* are blunter: a tag or a stash sitting on a
+  commit they drop goes with it.
+
 - **Filter by path**: right-click a file or folder → *Filter graph by this
   path*, and only the commits that touched it stay lit.
 

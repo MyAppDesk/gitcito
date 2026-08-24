@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Archive, GitCommitHorizontal, Tag, Laptop, Cloud, Check, Star, Settings2, Pencil, Plus, Minus, CheckCircle2, XCircle, Clock, MinusCircle, StickyNote, FlaskConical } from 'lucide-react'
-import type { CiState, CiStatus, GraphCommit, StashInfo, GraphColumnId, GraphFlowColumnId, GraphColumns, FileEntry, CommitMenuProbe } from '../../../shared/types'
+import type { CiState, CiStatus, GraphCommit, StashInfo, GraphColumnId, GraphFlowColumnId, GraphColumns, FileEntry, CommitMenuProbe, GraphFocus } from '../../../shared/types'
 import { defaultGraphColumns, defaultGraphColumnOrder, defaultGraphStyle } from '../../../shared/types'
 import { GraphHeaderFilter, type FilterOption } from './GraphHeaderFilter'
 import { layoutGraph } from '../graph/layout'
@@ -23,6 +23,7 @@ import {
 } from '../lib/commitMenuCapabilities'
 import { branchDropActions, encodeDropRef, BRANCH_DND_TYPE, type DropRef } from '../lib/branchDrop'
 import { togglePin } from '../lib/pinnedBranches'
+import { focusedHashes, focusedStashes, GRAPH_FOCUS_MODES, type FocusInput } from '../lib/graphFocus'
 import { openBranchDropMenu } from '../lib/branchDropMenu'
 import { CHAT_COMMIT_MIME } from '../lib/repoChatContext'
 import { refIntegrationItems } from '../lib/refMenuItems'
@@ -503,6 +504,7 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
   const graphStyle = useSettingsStore((s) => s.settings.graphStyle ?? defaultGraphStyle())
   const customGraphPalettes = useSettingsStore((s) => s.settings.customGraphPalettes ?? [])
   const updateRepoLayout = useSettingsStore((s) => s.updateRepoLayout)
+  const updateSettings = useSettingsStore((s) => s.update)
   const t = useT()
 
   // Starred (pinned) branches — the same per-repo list the sidebar keeps, so a
@@ -522,9 +524,18 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
     () => colorForPalette(findGraphPalette(graphStyle.paletteId, customGraphPalettes).colors),
     [graphStyle.paletteId, customGraphPalettes]
   )
-  // First-parent-only view: hides merged side-branches. Persisted per machine.
-  const [linearOnly, setLinearOnly] = useState(() => localStorage.getItem('gitcito-graph-linear') === 'on')
-  useEffect(() => localStorage.setItem('gitcito-graph-linear', linearOnly ? 'on' : 'off'), [linearOnly])
+  // Which slice of history is drawn. Lives in settings so the graph gear menu
+  // and Settings → Themes → Graph edit exactly the same value.
+  const focus = graphStyle.focus ?? 'all'
+  const setFocus = (next: GraphFocus): void =>
+    updateSettings((s) => ({ ...s, graphStyle: { ...(s.graphStyle ?? defaultGraphStyle()), focus: next } }))
+  // The linear toggle used to be a per-machine localStorage flag; carry an
+  // existing "on" over to the new setting once, then forget the key.
+  useEffect(() => {
+    if (localStorage.getItem('gitcito-graph-linear') === 'on') setFocus('linear')
+    localStorage.removeItem('gitcito-graph-linear')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const setColumn = (id: GraphColumnId, patch: Partial<{ width: number; visible: boolean }>): void =>
     updateRepoLayout(repo.path, (l) => {
@@ -571,8 +582,11 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
     items.push(
       { separator: true },
       {
-        label: `${linearOnly ? '✓ ' : '   '}${t('graph.linearHistory')}`,
-        onClick: () => setLinearOnly((v) => !v)
+        label: t('graph.focus'),
+        submenu: GRAPH_FOCUS_MODES.map((m) => ({
+          label: `${focus === m.id ? '✓ ' : '   '}${t(m.labelKey)}`,
+          onClick: () => setFocus(m.id)
+        }))
       },
       {
         label: t('graph.resetColumns'),
@@ -623,27 +637,29 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
   const stashBySha = useMemo(() => new Map(repo.stashes.map((s) => [s.sha, s])), [repo.stashes])
   const remoteNames = useMemo(() => new Set(repo.remotes.map((r) => r.name)), [repo.remotes])
 
+  // Null unless a focus mode is active: a stable value means a plain branch
+  // refetch never re-runs the layout while the graph is showing everything.
+  const focusInput = useMemo<FocusInput | null>(
+    () =>
+      focus === 'all'
+        ? null
+        : { locals: repo.branches.locals, remotes: repo.branches.remotes, pinned: pinnedNames, remoteNames },
+    [focus, repo.branches, pinnedNames, remoteNames]
+  )
+
   const displayCommits = useMemo<GraphCommit[]>(() => {
     if (repo.commits.length === 0 && !hasWip) return repo.commits
     const head = repo.commits.find((c) => c.refs.some((r) => r.startsWith('HEAD')))
-    // Linear view: keep only HEAD's first-parent chain (hides merged-in branches).
-    let commits = repo.commits
-    if (linearOnly && head) {
-      const byHash = new Map(repo.commits.map((c) => [c.hash, c]))
-      const chain = new Set<string>()
-      let cur: GraphCommit | undefined = head
-      while (cur && !chain.has(cur.hash)) {
-        chain.add(cur.hash)
-        cur = cur.parents[0] ? byHash.get(cur.parents[0]) : undefined
-      }
-      commits = repo.commits.filter((c) => chain.has(c.hash))
-    }
+    // Focus modes drop rows before layout; with no focus the array identity —
+    // and with it the layout memo — survives untouched.
+    const keep = focusInput && focusedHashes(repo.commits, focus, focusInput)
+    const commits = keep ? repo.commits.filter((c) => keep.has(c.hash)) : repo.commits
     const out: GraphCommit[] = [...commits]
     // Stashes float to their chronological slot (by the time they were made),
     // not glued above their parent commit — the edge still descends to the
     // parent. Insert newest-first by date, but never below the stash's own
     // parent (keeps the edge pointing downward / topology valid).
-    for (const s of repo.stashes) {
+    for (const s of focusedStashes(repo.stashes, repo.commits, keep)) {
       const stashCommit: GraphCommit = {
         hash: s.sha,
         parents: [s.parentSha],
@@ -675,7 +691,7 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
     // layout only cares whether a WIP row exists, so staging/unstaging while
     // already dirty (status object replaced, hasWip unchanged) no longer forces
     // a full graph relayout. Only a clean↔dirty toggle rebuilds.
-  }, [repo.commits, repo.stashes, hasWip, linearOnly])
+  }, [repo.commits, repo.stashes, hasWip, focus, focusInput])
 
   // Stashes are laid out as right-side spurs so they never displace the trunk.
   const topology = graphStyle.topology ?? 'full'

@@ -56,7 +56,7 @@ git actually is.
 | | |
 |---|---|
 | **[Command palette](docs/help/search.md)** (`⌘K`) | Fuzzy-jump to any branch, commit, file or action. |
-| **[Commit graph](docs/help/graph.md)** | Octopus merges drawn properly, windowed for huge histories, linear first-parent toggle, "new since last fetch" marks. |
+| **[Commit graph](docs/help/graph.md)** | Octopus merges drawn properly, windowed for huge histories, focus modes (linear, hide merged branches, solo), "new since last fetch" marks. |
 | **[Code search](docs/help/search.md)** (`⌘⇧F`) | `git grep` across the tree, or a history pickaxe. |
 | **[Blame & history](docs/help/blame.md)** | Per-file, with follow-the-line and "reblame before this commit". |
 | **[Commit notes](docs/help/notes.md)** | Annotate a commit that is already pushed, without rewriting it. |

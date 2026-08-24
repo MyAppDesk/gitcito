@@ -43,7 +43,8 @@ import {
   GitBranch,
   Spline,
   PanelBottom,
-  RotateCcw
+  RotateCcw,
+  Filter
 } from 'lucide-react'
 import hljs from 'highlight.js'
 import { useSettingsStore } from '../stores/settings'
@@ -56,11 +57,12 @@ import type { DetectedEditor, EditorSetting } from '../../../shared/editors'
 import type { SshKey, SshStatus, SshTest } from '../../../shared/sshKeys'
 import type { DiffToolConfig, DiffToolInfo } from '../../../shared/diffTools'
 import type { RerereStatus } from '../../../shared/types'
-import { AI_PROVIDERS, emptyAnalytics, defaultGraphStyle, type AIProvider, type Analytics, type AIUsageStat, type ActivityEvent, type RepoStats, type AppSettings, type BranchNamingStyle, type CommitStyle, type ConflictStyle, type ExplainStyle, type Profile, type SigningConfig, type SettingsBundle, type GraphStyle, type GraphPalette, type GraphEdgeStyle, type GraphDensity, type GraphLineWidth, type GraphNodeStyle, type GraphTopology, type GraphCommit, type ConnectedAccount } from '../../../shared/types'
+import { AI_PROVIDERS, emptyAnalytics, defaultGraphStyle, type AIProvider, type Analytics, type AIUsageStat, type ActivityEvent, type RepoStats, type AppSettings, type BranchNamingStyle, type CommitStyle, type ConflictStyle, type ExplainStyle, type Profile, type SigningConfig, type SettingsBundle, type GraphStyle, type GraphPalette, type GraphEdgeStyle, type GraphDensity, type GraphLineWidth, type GraphNodeStyle, type GraphTopology, type GraphFocus, type GraphCommit, type ConnectedAccount } from '../../../shared/types'
 import { hasSettingsSecrets, stripSettingsSecrets } from '../../../shared/secrets'
 import { tabActiveRepoPath } from '../../../shared/types'
 import type { HoverModifier, KeychainConsent } from '../../../shared/types'
 import { allGraphPalettes, findGraphPalette, colorForPalette, edgePath, spurPath, DENSITY_ROW_H, LINE_WIDTH_PX, GRAPH_PALETTES } from '../graph/style'
+import { GRAPH_FOCUS_MODES, focusedHashes, type FocusInput } from '../lib/graphFocus'
 import { layoutGraph } from '../graph/layout'
 import type {
   AppTheme,
@@ -1018,28 +1020,44 @@ function toSlots(colors: string[]): string[] {
 // different points. Rows increase downward (newest first); every edge runs
 // child → parent. Running it through the real `layoutGraph` means the preview
 // mirrors the actual renderer — including how each topology lays out stashes.
-const mk = (hash: string, parents: string[], subject: string): GraphCommit => ({
+const mk = (hash: string, parents: string[], subject: string, refs: string[] = []): GraphCommit => ({
   hash,
   parents,
   author: '',
   email: '',
   date: 0,
-  refs: [],
+  refs,
   subject
 })
 const PREVIEW_COMMITS: GraphCommit[] = [
-  mk('a', ['b'], 'Polish release notes'),
+  mk('a', ['b'], 'Polish release notes', ['HEAD -> main']),
   mk('s1', ['e'], 'WIP: experiment'),
   mk('s2', ['f1'], 'On feature: tweaks'),
   mk('b', ['c', 'f2'], "Merge branch 'feature'"),
+  mk('w1', ['c'], 'Try another approach', ['wip']),
   mk('c', ['d'], 'Wire up settings'),
-  mk('f2', ['f1'], 'Feature polish'),
+  mk('f2', ['f1'], 'Feature polish', ['feature']),
+  mk('p1', ['d'], 'Spike: new layout', ['spike']),
   mk('f1', ['d'], 'Start feature'),
   mk('s3', ['d'], 'On master: quick save'),
   mk('d', ['e'], 'Add graph module'),
   mk('e', [], 'Initial commit')
 ]
 const PREVIEW_SPURS = new Set(['s1', 's2', 's3'])
+// What the preview pretends the repository looks like, so the focus modes have
+// something to bite on: `feature` is merged, `wip` is starred and unmerged,
+// `spike` is unmerged and unstarred — enough to tell all four modes apart.
+const PREVIEW_FOCUS_INPUT: FocusInput = {
+  locals: [
+    { name: 'main', isCurrent: true, mergedIntoCurrent: true },
+    { name: 'feature', isCurrent: false, mergedIntoCurrent: true },
+    { name: 'wip', isCurrent: false, mergedIntoCurrent: false },
+    { name: 'spike', isCurrent: false, mergedIntoCurrent: false }
+  ],
+  remotes: [],
+  pinned: ['wip'],
+  remoteNames: new Set<string>()
+}
 
 // Sample identities for the live preview's avatar nodes, so it mirrors the
 // real graph (Gravatar when available, generated avatar otherwise).
@@ -1084,7 +1102,8 @@ function GraphMiniPreview({
   rowH,
   lineW,
   nodeStyle,
-  topology
+  topology,
+  focus
 }: {
   colors: string[]
   edgeStyle: GraphEdgeStyle
@@ -1092,17 +1111,28 @@ function GraphMiniPreview({
   lineW: number
   nodeStyle: GraphNodeStyle
   topology: GraphTopology
+  focus: GraphFocus
 }): React.JSX.Element {
   const laneW = 22
   const leftPad = 16
   const compact = nodeStyle === 'compact'
   const uid = useId().replace(/:/g, '')
   const cf = colorForPalette(colors)
-  const layout = useMemo(() => layoutGraph(PREVIEW_COMMITS, PREVIEW_SPURS, topology), [topology])
-  const rowOf = useMemo(() => new Map(PREVIEW_COMMITS.map((c, i) => [c.hash, i])), [])
+  // Stashes ride along like in the real graph — kept regardless of the focus,
+  // but only while the commit they were saved on is still drawn. A stash whose
+  // parent the focus dropped would have nothing to hang its edge from.
+  const commits = useMemo(() => {
+    const keep = focusedHashes(PREVIEW_COMMITS, focus, PREVIEW_FOCUS_INPUT)
+    if (!keep) return PREVIEW_COMMITS
+    return PREVIEW_COMMITS.filter((c) =>
+      PREVIEW_SPURS.has(c.hash) ? keep.has(c.parents[0]) : keep.has(c.hash)
+    )
+  }, [focus])
+  const layout = useMemo(() => layoutGraph(commits, PREVIEW_SPURS, topology), [commits, topology])
+  const rowOf = useMemo(() => new Map(commits.map((c, i) => [c.hash, i])), [commits])
   const x = (lane: number): number => leftPad + lane * laneW
   const y = (row: number): number => row * rowH + rowH / 2
-  const height = PREVIEW_COMMITS.length * rowH
+  const height = commits.length * rowH
   const width = leftPad + (layout.laneCount + 0.5) * laneW + 18
   const avaSize = 17
   // Deeper rails first so the trunk sits on top of the branches it spawns.
@@ -1132,7 +1162,7 @@ function GraphMiniPreview({
             />
           )
         })}
-        {PREVIEW_COMMITS.map((c, i) => {
+        {commits.map((c, i) => {
           const n = layout.nodes.get(c.hash)
           if (!n) return null
           const cx = x(n.lane)
@@ -1161,7 +1191,7 @@ function GraphMiniPreview({
         })}
       </svg>
       {!compact &&
-        PREVIEW_COMMITS.filter((c) => !PREVIEW_SPURS.has(c.hash) && c.parents.length < 2).map((c, i) => {
+        commits.filter((c) => !PREVIEW_SPURS.has(c.hash) && c.parents.length < 2).map((c, i) => {
           const n = layout.nodes.get(c.hash)
           if (!n) return null
           const cx = x(n.lane)
@@ -1356,6 +1386,20 @@ function GraphStyleTab(): React.JSX.Element {
             ))}
           </div>
 
+          <h4 style={{ marginTop: 18 }}><Filter size={14} /> {t('settings.graphFocus')}</h4>
+          <select
+            className="theme-select"
+            value={style.focus ?? 'all'}
+            onChange={(e) => setStyle({ focus: e.target.value as GraphFocus })}
+          >
+            {GRAPH_FOCUS_MODES.map((f) => (
+              <option key={f.id} value={f.id}>
+                {t(f.labelKey)}
+              </option>
+            ))}
+          </select>
+          <p className="settings-hint">{t(`graphFocus.${style.focus ?? 'all'}.desc` as TranslationKey)}</p>
+
           <h4 style={{ marginTop: 18 }}><GitBranch size={14} /> {t('settings.graphTopology')}</h4>
           <div className="theme-mode-switch">
             {TOPOLOGIES.map((topo) => (
@@ -1389,7 +1433,7 @@ function GraphStyleTab(): React.JSX.Element {
         <div className="graph-style-preview">
           <div className="code-preview-head">{t('settings.graphPreview')}</div>
           <div className="graph-mini-stage">
-            <GraphMiniPreview colors={current.colors} edgeStyle={style.edgeStyle} rowH={rowH} lineW={lineW} nodeStyle={style.nodeStyle} topology={style.topology ?? 'full'} />
+            <GraphMiniPreview colors={current.colors} edgeStyle={style.edgeStyle} rowH={rowH} lineW={lineW} nodeStyle={style.nodeStyle} topology={style.topology ?? 'full'} focus={style.focus ?? 'all'} />
           </div>
         </div>
       </div>
@@ -1440,7 +1484,7 @@ function GraphStyleTab(): React.JSX.Element {
               ))}
             </div>
             <div className="graph-mini-stage" style={{ marginTop: 12 }}>
-              <GraphMiniPreview colors={draft} edgeStyle={style.edgeStyle} rowH={rowH} lineW={lineW} nodeStyle={style.nodeStyle} topology={style.topology ?? 'full'} />
+              <GraphMiniPreview colors={draft} edgeStyle={style.edgeStyle} rowH={rowH} lineW={lineW} nodeStyle={style.nodeStyle} topology={style.topology ?? 'full'} focus={style.focus ?? 'all'} />
             </div>
             <div className="theme-editor-actions">
               <button className="btn primary small" onClick={savePalette}>

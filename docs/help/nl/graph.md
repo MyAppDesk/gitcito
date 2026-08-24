@@ -33,8 +33,20 @@ een met honderd.
 
 ## Het laten tonen wat jij wilt
 
-- **Lineaire weergave** (first-parent) verbergt alles wat ingemerged is en laat
-  de stam over.
+- De **graaffocus** bepaalt hoeveel geschiedenis wordt getekend — Instellingen →
+  Thema's → **Graaf**, of het tandwielmenu in de kop van de graaf. *Alles* tekent
+  alles; *Lineaire geschiedenis* (first-parent) laat alleen de stam over;
+  *Samengevoegde branches verbergen* houdt de stam plus de branches die nog niet
+  zijn samengevoegd; *Solomodus* houdt jouw branch, je favoriete branches en de
+  standaardbranch.
+
+  Het filtert alleen wat het log al heeft geladen. *Samengevoegde branches
+  verbergen* volgt gits eigen antwoord op "zit al in de huidige branch", dus van
+  branch wisselen verandert wat verdwijnt — en het houdt elke commit waar nog een
+  tag of een onbekende ref naar wijst, precies wat een verwijderde branch
+  achterlaat. *Lineaire geschiedenis* en *Solomodus* zijn botter: een tag of een
+  stash op een commit die zij verbergen, verdwijnt mee.
+
 - **Filteren op pad**: rechtsklik een bestand of map → *Grafiek filteren op dit
   pad*, en alleen de commits die het aanraakten blijven verlicht.
 

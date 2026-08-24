@@ -8222,6 +8222,30 @@ textarea:focus {
   color: #fff;
 }
 
+/* A plain dropdown for graph options with too many words to fit a segmented
+   switch — the focus modes name whole behaviours, not one-word densities. */
+.theme-select {
+  display: block;
+  margin-top: 10px;
+  min-width: 240px;
+  max-width: 100%;
+  padding: 8px 12px;
+  border-radius: 9px;
+  background: var(--bg-2);
+  color: var(--text-0);
+  border: 1px solid var(--border-soft);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.theme-select:hover {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border-soft));
+}
+.theme-select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
 /* ── Theme / Graph sub-tabs ───────────────────────────────────────────────── */
 .theme-tabs {
   display: flex;

@@ -34,8 +34,19 @@ commitów przewija się tak jak to ze stoma.
 
 ## Ustawianie tego, co ma pokazywać
 
-- **Widok liniowy** (first-parent) ukrywa wszystko, co zostało wmergowane,
-  zostawiając pień.
+- **Fokus grafu** decyduje, ile historii jest rysowane — Ustawienia → Motywy →
+  **Graf**, albo menu koła zębatego w nagłówku grafu. *Wszystko* rysuje całość;
+  *Historia liniowa* (first-parent) zostawia sam pień; *Ukryj scalone gałęzie*
+  zostawia pień plus gałęzie jeszcze niescalone; *Tryb solo* zostawia twoją
+  gałąź, gałęzie oznaczone gwiazdką i gałąź domyślną.
+
+  Filtruje tylko to, co log już wczytał. *Ukryj scalone gałęzie* ufa odpowiedzi
+  samego gita na „już zawarta w bieżącej gałęzi”, więc zmiana gałęzi zmienia to,
+  co znika — i zachowuje każdy commit, na który wciąż wskazuje tag albo ref,
+  którego nie rozpoznaje, czyli dokładnie to, co zostaje po usuniętej gałęzi.
+  *Historia liniowa* i *Tryb solo* są bardziej brutalne: tag albo schowek na
+  ukrywanym commicie znika razem z nim.
+
 - **Filtr po ścieżce**: kliknij plik albo katalog prawym przyciskiem →
   *Filtruj graf po tej ścieżce*, a zapalone zostaną tylko commity, które go
   dotknęły.

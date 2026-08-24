@@ -30,8 +30,19 @@ desplaza igual que uno con cien.
 
 ## Que muestre lo que tú quieres
 
-- **Vista lineal** (first-parent) esconde todo lo que se fusionó, dejando sólo
-  el tronco.
+- El **enfoque del grafo** decide cuánto historial se dibuja — Ajustes → Temas →
+  **Grafo**, o el menú del engranaje en la cabecera del grafo. *Todo* lo dibuja
+  entero; *Historial lineal* (first-parent) deja sólo el tronco; *Ocultar ramas
+  fusionadas* deja el tronco más las ramas aún sin fusionar; *Modo solo* deja tu
+  rama, tus ramas favoritas y la rama por defecto.
+
+  Sólo filtra lo que el log ya ha cargado. *Ocultar ramas fusionadas* se fía de
+  la respuesta de git a «ya está contenida en la rama actual», así que cambiar de
+  rama cambia lo que esconde — y conserva todo commit al que aún apunte una
+  etiqueta o una ref que no reconozca, que es justo lo que deja atrás una rama
+  borrada. *Historial lineal* y *Modo solo* son más bruscos: una etiqueta o un
+  stash que vivan en un commit que ocultan se van con él.
+
 - **Filtrar por ruta**: clic derecho en un archivo o carpeta → *Filtrar el grafo
   por esta ruta*, y sólo se quedan encendidos los commits que la tocaron.
 

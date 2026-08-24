@@ -34,8 +34,21 @@ dépôt d'une centaine.
 
 ## Lui faire montrer ce que vous voulez
 
-- La **vue linéaire** (premier parent) masque tout ce qui a été fusionné et ne
-  laisse que le tronc.
+- La **focalisation du graphe** décide de la quantité d'historique dessinée —
+  Réglages → Thèmes → **Graphe**, ou le menu engrenage de l'en-tête du graphe.
+  *Tout* dessine l'ensemble ; *Historique linéaire* (premier parent) ne laisse
+  que le tronc ; *Masquer les branches fusionnées* garde le tronc plus les
+  branches encore non fusionnées ; *Mode solo* garde votre branche, vos branches
+  favorites et la branche par défaut.
+
+  Elle ne filtre que ce que le journal a déjà chargé. *Masquer les branches
+  fusionnées* s'appuie sur la réponse de git à « déjà contenue dans la branche
+  courante » : changer de branche change donc ce qui est masqué — et ce mode
+  garde tout commit encore pointé par une étiquette ou une référence qu'il ne
+  reconnaît pas, c'est-à-dire précisément ce que laisse une branche supprimée.
+  *Historique linéaire* et *Mode solo* sont plus brutaux : une étiquette ou une
+  remise posée sur un commit qu'ils masquent disparaît avec lui.
+
 - **Filtrer par chemin** : clic droit sur un fichier ou un dossier → *Filtrer le
   graphe par ce chemin*, et seuls les commits qui l'ont touché restent allumés.
 

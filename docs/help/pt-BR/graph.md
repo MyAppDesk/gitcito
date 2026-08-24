@@ -31,8 +31,19 @@ com cem.
 
 ## Fazendo o grafo mostrar o que você quer
 
-- A **visão linear** (first-parent) esconde tudo que foi mesclado para dentro,
-  deixando o tronco.
+- O **foco do grafo** decide quanto histórico é desenhado — Configurações →
+  Temas → **Grafo**, ou o menu da engrenagem no cabeçalho do grafo. *Tudo*
+  desenha tudo; *Histórico linear* (first-parent) deixa só o tronco; *Ocultar
+  ramos mesclados* mantém o tronco mais os ramos ainda não mesclados; *Modo solo*
+  mantém o seu ramo, os ramos favoritos e o ramo padrão.
+
+  Ele só filtra o que o log já carregou. *Ocultar ramos mesclados* confia na
+  resposta do próprio git a "já contido no ramo atual", então trocar de ramo muda
+  o que some — e mantém todo commit que ainda tenha uma tag ou uma ref que ele
+  não reconheça apontando para ele, que é justamente o que um ramo apagado deixa
+  para trás. *Histórico linear* e *Modo solo* são mais brutos: uma tag ou um
+  stash num commit que eles escondem some junto.
+
 - **Filtrar por caminho**: clique com o botão direito num arquivo ou pasta →
   *Filtrar grafo por este caminho*, e só os commits que o tocaram continuam acesos.
 

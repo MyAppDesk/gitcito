@@ -33,8 +33,21 @@ Commits wie eines mit hundert.
 
 ## Ihn zeigen lassen, was du willst
 
-- **Lineare Ansicht** (first-parent) blendet alles Hereingemergte aus und lässt
-  den Hauptstrang übrig.
+- Der **Graph-Fokus** entscheidet, wie viel Historie gezeichnet wird —
+  Einstellungen → Themes → **Graph** oder das Zahnradmenü in der Kopfzeile des
+  Graphen. *Alles* zeichnet alles; *Lineare Historie* (First-Parent) lässt nur
+  den Hauptstrang übrig; *Zusammengeführte Branches ausblenden* behält den
+  Hauptstrang plus die noch offenen Branches; *Solo-Modus* behält deinen Branch,
+  deine markierten Branches und den Standard-Branch.
+
+  Gefiltert wird nur, was das Log bereits geladen hat. *Zusammengeführte Branches
+  ausblenden* verlässt sich auf gits eigene Antwort auf „bereits im aktuellen
+  Branch enthalten“, ein Branch-Wechsel ändert also das Ergebnis — und der Modus
+  behält jeden Commit, auf den noch ein Tag oder eine unbekannte Ref zeigt, genau
+  das, was ein gelöschter Branch hinterlässt. *Lineare Historie* und *Solo-Modus*
+  sind gröber: Ein Tag oder ein Stash auf einem ausgeblendeten Commit geht mit
+  ihm.
+
 - **Nach Pfad filtern**: Rechtsklick auf eine Datei oder einen Ordner → *Graph
   nach diesem Pfad filtern*, und nur die Commits, die ihn berührt haben, bleiben
   hell.

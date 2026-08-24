@@ -8,7 +8,8 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 import { commitHookFailureHint, lintCommit, subjectCounterLevel, parseCcPrefix, applyCcType, parseGitmojiPrefix, applyGitmoji, parseTicketPrefix, applyTicket, ticketFromBranch } from '../src/renderer/src/lib/commitLint'
 import { isSecretFile, maskSecretLine } from '../src/renderer/src/lib/secrets'
 import { worktreeForBranch, worktreeTabName } from '../src/renderer/src/lib/worktrees'
-import type { WorktreeInfo } from '../src/shared/types'
+import { focusedHashes, focusedStashes, defaultBranchName } from '../src/renderer/src/lib/graphFocus'
+import type { WorktreeInfo, GraphCommit, GraphFocus } from '../src/shared/types'
 import { comboFromEvent, formatCombo, effectiveBindings, isReservedCombo, matchShortcut, tabActionFromEvent, tabIndexFromEvent } from '../src/renderer/src/lib/shortcuts'
 import { terminalCloseTarget, terminalShortcutFromEvent } from '../src/renderer/src/lib/terminalShortcuts'
 import { panelDisplayName, groupDisplayName } from '../src/renderer/src/lib/terminalTitles'
@@ -1024,6 +1025,149 @@ describe('pinnedBranches', () => {
 
   it('selectPinned is empty when nothing is pinned', () => {
     expect(selectPinned([branch('main')], [], (b) => b.name)).toEqual([])
+  })
+})
+
+describe('graph focus', () => {
+  // A tiny history: main → merge of a finished branch, plus a live branch and
+  // a stale merged one.
+  //
+  //   m3 (HEAD -> main)  ── merge of feat-done
+  //   ├─ d1 (feat-done, merged)
+  //   m2
+  //   m1
+  //   f1 (feat-live, unmerged, off m1)
+  const c = (hash: string, parents: string[], refs: string[] = []): GraphCommit => ({
+    hash, parents, refs, author: 'a', email: 'a@e', date: 1, subject: hash
+  })
+  const commits: GraphCommit[] = [
+    c('m3', ['m2', 'd1'], ['HEAD -> main', 'origin/main']),
+    c('f1', ['m1'], ['feat-live', 'origin/feat-live']),
+    c('d1', ['m2'], ['feat-done']),
+    c('m2', ['m1']),
+    c('m1', [])
+  ]
+  const input = {
+    locals: [
+      { name: 'main', isCurrent: true, mergedIntoCurrent: true },
+      { name: 'feat-done', isCurrent: false, mergedIntoCurrent: true },
+      { name: 'feat-live', isCurrent: false, mergedIntoCurrent: false }
+    ],
+    remotes: [
+      { fullName: 'origin/main', mergedIntoCurrent: true },
+      { fullName: 'origin/feat-live', mergedIntoCurrent: false }
+    ],
+    pinned: [] as string[],
+    remoteNames: new Set(['origin'])
+  }
+  const kept = (focus: GraphFocus, over = input): string[] => {
+    const keep = focusedHashes(commits, focus, over)
+    return commits.filter((x) => !keep || keep.has(x.hash)).map((x) => x.hash)
+  }
+
+  it('all keeps every commit and returns null so the array identity survives', () => {
+    expect(focusedHashes(commits, 'all', input)).toBeNull()
+  })
+
+  it('linear keeps only HEAD’s first-parent chain', () => {
+    expect(kept('linear')).toEqual(['m3', 'm2', 'm1'])
+  })
+
+  it('hideMerged drops the merged side branch but keeps the unmerged one', () => {
+    expect(kept('hideMerged')).toEqual(['m3', 'f1', 'm2', 'm1'])
+  })
+
+  it('hideMerged keeps a merged branch that is starred', () => {
+    expect(kept('hideMerged', { ...input, pinned: ['feat-done'] })).toEqual(['m3', 'f1', 'd1', 'm2', 'm1'])
+  })
+
+  it('solo keeps the trunk only when nothing is starred', () => {
+    expect(kept('solo')).toEqual(['m3', 'm2', 'm1'])
+  })
+
+  it('solo adds the first-parent chain of each starred branch', () => {
+    expect(kept('solo', { ...input, pinned: ['feat-live'] })).toEqual(['m3', 'f1', 'm2', 'm1'])
+  })
+
+  it('solo keeps the default branch even when it is not the current one', () => {
+    const detached: GraphCommit[] = [
+      c('x1', ['m1'], ['HEAD -> wip']),
+      c('m3', ['m2'], ['main']),
+      c('m2', ['m1']),
+      c('m1', [])
+    ]
+    const keep = focusedHashes(detached, 'solo', {
+      ...input,
+      locals: [
+        { name: 'wip', isCurrent: true, mergedIntoCurrent: false },
+        { name: 'main', isCurrent: false, mergedIntoCurrent: false }
+      ]
+    })
+    expect([...(keep ?? [])].sort()).toEqual(['m1', 'm2', 'm3', 'x1'])
+  })
+
+  it('defaultBranchName prefers main, falls back to master, else null', () => {
+    expect(defaultBranchName([{ name: 'master' }, { name: 'main' }])).toBe('main')
+    expect(defaultBranchName([{ name: 'master' }])).toBe('master')
+    expect(defaultBranchName([{ name: 'trunk' }])).toBeNull()
+  })
+
+  it('an empty history short-circuits to null', () => {
+    expect(focusedHashes([], 'solo', input)).toBeNull()
+  })
+
+  it('drops the stashes whose parent commit the focus hid', () => {
+    const stashes = [{ parentSha: 'm2' }, { parentSha: 'd1' }, { parentSha: 'older' }]
+    const keep = focusedHashes(commits, 'linear', input)
+    // m2 is on the trunk and stays; d1 was hidden with the merged branch;
+    // `older` is outside the loaded window, so it floated before the filter too.
+    expect(focusedStashes(stashes, commits, keep)).toEqual([{ parentSha: 'm2' }, { parentSha: 'older' }])
+  })
+
+  it('keeps every stash when nothing is filtered', () => {
+    const stashes = [{ parentSha: 'd1' }]
+    expect(focusedStashes(stashes, commits, null)).toEqual(stashes)
+  })
+
+  // What a deleted branch leaves behind: commits still in the log (a tag, the
+  // stash bases `git log` is fed explicitly) with no branch to vouch for them.
+  describe('refs no branch list accounts for', () => {
+    const orphan: GraphCommit[] = [
+      c('m3', ['m2', 'd1'], ['HEAD -> main']),
+      c('t1', ['m2'], ['tag: v1']),
+      c('g1', ['m2'], ['ghost']),
+      c('b1', ['m2'], []),
+      c('d1', ['m2'], ['feat-done']),
+      c('m2', ['m1']),
+      c('m1', [])
+    ]
+    const only = (focus: GraphFocus): string[] => {
+      const keep = focusedHashes(orphan, focus, input)
+      return orphan.filter((x) => !keep || keep.has(x.hash)).map((x) => x.hash)
+    }
+
+    it('hideMerged keeps a commit only a tag points at', () => {
+      expect(only('hideMerged')).toContain('t1')
+    })
+
+    it('hideMerged keeps a branch the list cannot account for', () => {
+      expect(only('hideMerged')).toContain('g1')
+    })
+
+    it('hideMerged still drops the merged branch and the bare stash base', () => {
+      expect(only('hideMerged')).toEqual(['m3', 't1', 'g1', 'm2', 'm1'])
+    })
+
+    it('a stash on a base no ref points at hides with its base', () => {
+      const keep = focusedHashes(orphan, 'hideMerged', input)
+      expect(focusedStashes([{ parentSha: 'b1' }, { parentSha: 'm2' }], orphan, keep)).toEqual([{ parentSha: 'm2' }])
+    })
+
+    it('solo ignores a starred branch that no longer exists', () => {
+      expect(only('solo')).toEqual(['m3', 'm2', 'm1'])
+      const keep = focusedHashes(orphan, 'solo', { ...input, pinned: ['deleted-ages-ago'] })
+      expect([...(keep ?? [])].sort()).toEqual(['m1', 'm2', 'm3'])
+    })
   })
 })
 

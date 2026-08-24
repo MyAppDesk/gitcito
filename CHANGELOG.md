@@ -1,5 +1,18 @@
 
 
+## [3.24.0](https://github.com/MyAppDesk/gitcito/compare/v3.23.0...v3.24.0) (2026-08-24)
+
+
+### Features
+
+* add graph focus modes to GraphView and SettingsPanel ([6dde908](https://github.com/MyAppDesk/gitcito/commit/6dde9086c034092cf934d4e0ed13bf84c88ef176))
+* add star functionality for pinned branches in GraphView ([d21a2f9](https://github.com/MyAppDesk/gitcito/commit/d21a2f9d1cc23e9483dc6289ad37a186be5f8ee4))
+
+
+### Bug Fixes
+
+* prevent avatar nodes from lagging during column resizing ([1158d5f](https://github.com/MyAppDesk/gitcito/commit/1158d5f56b85ad40bada57e5bbb9bc4b46c3af5f))
+
 ## [3.23.0](https://github.com/MyAppDesk/gitcito/compare/v3.22.0...v3.23.0) (2026-08-24)
 
 ## [3.22.0](https://github.com/MyAppDesk/gitcito/compare/v3.21.1...v3.22.0) (2026-08-24)

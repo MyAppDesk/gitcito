@@ -362,7 +362,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
                 exit={{ opacity: 0, y: -3 }}
                 transition={{ duration: 0.14, ease: 'easeOut' }}
               >
-                {since(repo.lastFetchAt)}
+                <span>{since(repo.lastFetchAt)}</span>
               </motion.span>
             )}
           </AnimatePresence>

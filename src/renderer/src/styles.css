@@ -1003,6 +1003,11 @@ textarea:focus {
   padding: 7px 12px;
   background: var(--bg-2);
   border-bottom: 1px solid var(--border-soft);
+  /* Own stacking context, so what hangs below the bar (the fetch age) is not
+     painted over by the workspace that follows it in the DOM. Well under the
+     900+ that menus and modals use. */
+  position: relative;
+  z-index: 20;
 }
 
 .toolbar-group {
@@ -1101,6 +1106,14 @@ textarea:focus {
   color: var(--text-2);
   white-space: nowrap;
   pointer-events: none;
+}
+
+/* Carries the bar's own background past its edge, so the label stays legible
+   over whatever the graph happens to be drawing underneath. */
+.age-hint > span {
+  background: var(--bg-2);
+  border-radius: 0 0 3px 3px;
+  padding: 1px 5px 2px;
 }
 
 /* Past the staleness threshold the same label stops being background noise. */

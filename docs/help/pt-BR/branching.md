@@ -54,6 +54,35 @@ funcionam em branches remotas, tags e stashes.
 
 ![Nomes de branch separados por barra dobrados numa árvore](../../screenshots/branch-grouping.webp)
 
+## Renomeando uma branch
+
+Uma branch chamada `fix` três dias atrás é uma branch que hoje ninguém situa.
+Renomeie de onde você percebeu o problema:
+
+| Onde | Como |
+|------|------|
+| Barra lateral | Clique com o botão direito na branch → *Renomear…* |
+| Dropdown de branches na barra de ferramentas | Clique com o botão direito na branch → *Renomear…* |
+| Grafo de commits | Clique com o botão direito no selo da branch em um commit → *Renomear…* |
+| Paleta de comandos | <kbd>⌘/Ctrl</kbd>+<kbd>K</kbd> → *Renomear branch* (age na branch atual) |
+
+Uma renomeação local é `git branch -m`: instantânea e **desfazível com ⌘Z** — a
+entrada de desfazer devolve o nome antigo. Renomear a branch em que você está
+mantém você nela.
+
+Quando a branch acompanha um remoto, o menu também oferece *Renomear (incl. no
+remoto)…*, que renomeia localmente, envia o nome novo e apaga o antigo no
+remoto. Isso **não é desfazível** — a branch remota antiga se foi, e quem a
+tinha em checkout precisa reapontar. Num selo do grafo, só aparece quando a
+branch acompanha exatamente um remoto; com vários, escolha a branch na barra
+lateral para o upstream ficar inequívoco.
+
+**Limites:** o Gitcito não reescreve nada que referenciava o nome antigo — pull
+requests abertos continuam apontando para a branch com que foram abertos, e
+regras de CI que casam com um padrão de branch deixam de casar. Renomear uma
+branch que está em checkout em outro [worktree](worktrees.md) falha, e o git diz
+isso.
+
 ## Branches fixadas
 
 Marque com estrela as branches às quais você sempre volta — passe o mouse na linha

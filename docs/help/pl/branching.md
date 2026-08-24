@@ -56,6 +56,34 @@ działają na zdalnych gałęziach, tagach i stashach.
 
 ![Nazwy gałęzi rozdzielone ukośnikiem zwinięte w drzewo](../../screenshots/branch-grouping.webp)
 
+## Zmiana nazwy gałęzi
+
+Gałąź nazwana trzy dni temu `fix` to dziś gałąź, której nikt nie potrafi
+umiejscowić. Zmień jej nazwę tam, gdzie zauważysz problem:
+
+| Gdzie | Jak |
+|-------|-----|
+| Panel boczny | Prawy przycisk na gałęzi → *Zmień nazwę…* |
+| Lista gałęzi na pasku narzędzi | Prawy przycisk na gałęzi → *Zmień nazwę…* |
+| Graf commitów | Prawy przycisk na plakietce gałęzi przy commicie → *Zmień nazwę…* |
+| Paleta poleceń | <kbd>⌘/Ctrl</kbd>+<kbd>K</kbd> → *Zmień nazwę brancha* (działa na bieżącej gałęzi) |
+
+Lokalna zmiana nazwy to `git branch -m`: natychmiastowa i **odwracalna przez
+⌘Z** — wpis cofnięcia przywraca starą nazwę. Zmiana nazwy gałęzi, na której
+jesteś, pozostawia cię na niej.
+
+Gdy gałąź śledzi zdalną, menu oferuje też *Zmień nazwę (także na remote)…*:
+zmiana lokalna, wypchnięcie nowej nazwy i usunięcie starej po stronie zdalnej.
+Tego **nie da się cofnąć** — stara gałąź zdalna znika, a każdy, kto ją miał
+wybraną, musi przestawić się sam. Na plakietce w grafie opcja pojawia się tylko
+wtedy, gdy gałąź śledzi dokładnie jedną zdalną; przy kilku wybierz gałąź w
+panelu bocznym, żeby upstream był jednoznaczny.
+
+**Ograniczenia:** Gitcito nie przepisuje niczego, co odwoływało się do starej
+nazwy — otwarte pull requesty nadal wskazują gałąź, wobec której powstały, a
+reguły CI dopasowane do wzorca gałęzi przestają pasować. Zmiana nazwy gałęzi
+wybranej w innym [worktree](worktrees.md) kończy się błędem, a git to zgłasza.
+
 ## Przypięte gałęzie
 
 Oznacz gwiazdką gałęzie, do których ciągle wracasz — najedź na wiersz i kliknij

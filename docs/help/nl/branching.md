@@ -55,6 +55,35 @@ werken op remote branches, tags en stashes.
 
 ![Branchnamen met schuine strepen, opgevouwen tot een boom](../../screenshots/branch-grouping.webp)
 
+## Een branch hernoemen
+
+Een branch die je drie dagen geleden `fix` noemde, is vandaag een branch die
+niemand kan plaatsen. Hernoem hem daar waar je het probleem opmerkte:
+
+| Waar | Hoe |
+|------|-----|
+| Zijbalk | Rechtsklik op de branch → *Hernoemen…* |
+| Branch-dropdown in de werkbalk | Rechtsklik op de branch → *Hernoemen…* |
+| Commitgrafiek | Rechtsklik op het branchlabel bij een commit → *Hernoemen…* |
+| Commandopalet | <kbd>⌘/Ctrl</kbd>+<kbd>K</kbd> → *Branch hernoemen* (werkt op de uitgecheckte branch) |
+
+Lokaal hernoemen is `git branch -m`: direct en **ongedaan te maken met ⌘Z** — de
+undo-actie zet de oude naam terug. Hernoem je de branch waarop je staat, dan
+blijf je erop.
+
+Volgt de branch een remote, dan biedt het menu ook *Hernoemen (incl. remote)…*:
+lokaal hernoemen, de nieuwe naam pushen, de oude upstream verwijderen. Dat is
+**niet ongedaan te maken** — de oude remote branch is weg en wie hem had
+uitgecheckt moet opnieuw richten. Op een label in de grafiek verschijnt de optie
+alleen als de branch precies één remote volgt; bij meerdere kies je de branch in
+de zijbalk, zodat de upstream eenduidig is.
+
+**Grenzen:** Gitcito herschrijft niets dat naar de oude naam verwees — open pull
+requests wijzen nog steeds naar de branch waartegen ze zijn geopend, en
+CI-regels die op een branchpatroon matchen, matchen niet meer. Een branch
+hernoemen die in een andere [worktree](worktrees.md) is uitgecheckt mislukt, en
+git zegt dat ook.
+
 ## Vastgezette branches
 
 Geef de branches waar je steeds naar terugkeert een ster — zweef over de rij en

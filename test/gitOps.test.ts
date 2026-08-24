@@ -236,6 +236,52 @@ describe('branch + stage + commit', () => {
   })
 })
 
+describe('rename branch', () => {
+  it('renames the checked-out branch and stays on it', async () => {
+    const R = cloneFixture('bisect-bug')
+    await gitService.createBranch(R, 'fix', undefined, true)
+
+    await gitService.renameBranch(R, 'fix', 'fix/login-redirect')
+
+    const after = await gitService.branches(R)
+    expect(after.current).toBe('fix/login-redirect')
+    expect(after.locals.map((b) => b.name)).not.toContain('fix')
+  })
+
+  it('renames a branch you are not on, leaving HEAD alone', async () => {
+    const R = cloneFixture('bisect-bug')
+    const before = (await gitService.branches(R)).current
+    await gitService.createBranch(R, 'wip', 'HEAD', false)
+
+    await gitService.renameBranch(R, 'wip', 'feature/checkout')
+
+    const after = await gitService.branches(R)
+    expect(after.current).toBe(before)
+    expect(after.locals.map((b) => b.name)).toContain('feature/checkout')
+  })
+
+  // The undo entry is just the rename applied backwards — worth pinning, since
+  // that is what makes the action safe to try.
+  it('renames back, which is what undo does', async () => {
+    const R = cloneFixture('bisect-bug')
+    await gitService.createBranch(R, 'typoo', 'HEAD', false)
+
+    await gitService.renameBranch(R, 'typoo', 'typo')
+    await gitService.renameBranch(R, 'typo', 'typoo')
+
+    expect((await gitService.branches(R)).locals.map((b) => b.name)).toContain('typoo')
+  })
+
+  it('refuses a name that is already taken', async () => {
+    const R = cloneFixture('bisect-bug')
+    await gitService.createBranch(R, 'one', 'HEAD', false)
+    await gitService.createBranch(R, 'two', 'HEAD', false)
+
+    await expect(gitService.renameBranch(R, 'one', 'two')).rejects.toThrow()
+    expect((await gitService.branches(R)).locals.map((b) => b.name)).toContain('one')
+  })
+})
+
 describe('gitignore + untrack', () => {
   it('adds patterns to .gitignore without duplicating', async () => {
     const R = cloneFixture('bisect-bug')

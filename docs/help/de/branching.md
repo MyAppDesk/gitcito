@@ -57,6 +57,35 @@ Dieselben Gesten funktionieren auf Remote-Branches, Tags und Stashes.
 
 ![Branch-Namen mit Schrägstrich, zu einem Baum gefaltet](../../screenshots/branch-grouping.webp)
 
+## Einen Branch umbenennen
+
+Ein Branch, der vor drei Tagen `fix` hieß, ist heute ein Branch, den niemand
+mehr einordnen kann. Benenne ihn dort um, wo dir das Problem aufgefallen ist:
+
+| Wo | Wie |
+|----|-----|
+| Seitenleiste | Rechtsklick auf den Branch → *Umbenennen…* |
+| Branch-Dropdown in der Toolbar | Rechtsklick auf den Branch → *Umbenennen…* |
+| Commit-Graph | Rechtsklick auf das Branch-Badge an einem Commit → *Umbenennen…* |
+| Befehlspalette | <kbd>⌘/Strg</kbd>+<kbd>K</kbd> → *Branch umbenennen* (wirkt auf den ausgecheckten Branch) |
+
+Eine lokale Umbenennung ist `git branch -m`: sofort und **mit ⌘Z rückgängig zu
+machen** — der Undo-Eintrag benennt zurück. Wer den Branch umbenennt, auf dem er
+steht, bleibt darauf.
+
+Verfolgt der Branch ein Remote, bietet das Menü zusätzlich *Umbenennen (inkl.
+Remote)…*: lokal umbenennen, den neuen Namen pushen, den alten upstream löschen.
+Das ist **nicht rückgängig zu machen** — der alte Remote-Branch ist weg, und wer
+ihn ausgecheckt hatte, muss neu zeigen. An einem Graph-Badge erscheint die
+Option nur, wenn der Branch genau ein Remote verfolgt; bei mehreren wähle den
+Branch in der Seitenleiste, damit der Upstream eindeutig ist.
+
+**Grenzen:** Gitcito schreibt nichts um, was auf den alten Namen verwies —
+offene Pull Requests zeigen weiter auf den Branch, gegen den sie geöffnet
+wurden, und CI-Regeln mit Branch-Muster greifen nicht mehr. Einen Branch
+umzubenennen, der in einem anderen [Worktree](worktrees.md) ausgecheckt ist,
+schlägt fehl, und git sagt das auch.
+
 ## Angeheftete Branches
 
 Markiere die Branches, zu denen du immer wieder zurückkehrst, mit einem Stern —

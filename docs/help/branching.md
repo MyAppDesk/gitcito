@@ -50,6 +50,33 @@ The same gestures work on remote branches, tags and stashes.
 
 ![Slash-separated branch names folded into a tree](../screenshots/branch-grouping.webp)
 
+## Renaming a branch
+
+A branch named `fix` three days ago is a branch nobody can place today. Rename
+it from wherever you noticed the problem:
+
+| Where | How |
+|-------|-----|
+| Sidebar | Right-click the branch → *Rename…* |
+| Toolbar branch dropdown | Right-click the branch → *Rename…* |
+| Commit graph | Right-click the branch badge on a commit → *Rename…* |
+| Command palette | <kbd>⌘/Ctrl</kbd>+<kbd>K</kbd> → *Rename branch* (acts on the checked-out branch) |
+
+A local rename is `git branch -m`: instant, and **undoable with ⌘Z** — the undo
+entry renames it back. Renaming the branch you are on keeps you on it.
+
+When the branch tracks a remote, the menu also offers *Rename (incl. remote)…*,
+which renames locally, pushes the new name and deletes the old one upstream.
+That is **not undoable** — the old remote branch is gone, and anyone who had it
+checked out has to repoint. It is offered on a graph badge only when the branch
+tracks exactly one remote; with several, pick the branch in the sidebar so the
+upstream is unambiguous.
+
+**Limits:** Gitcito does not rewrite anything that referred to the old name —
+open pull requests still point at the branch they were opened against, and CI
+rules matching a branch pattern stop matching. Renaming a branch that is checked
+out in another [worktree](worktrees.md) fails, and git says so.
+
 ## Pinned branches
 
 Star the branches you keep coming back to — hover the row and click ★, or

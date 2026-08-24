@@ -60,6 +60,36 @@ remisages.
 
 ![Des noms de branche séparés par des barres obliques, repliés en arborescence](../../screenshots/branch-grouping.webp)
 
+## Renommer une branche
+
+Une branche nommée `fix` il y a trois jours est une branche que personne ne
+situe aujourd'hui. Renommez-la depuis l'endroit où vous avez repéré le problème :
+
+| Où | Comment |
+|----|---------|
+| Barre latérale | Clic droit sur la branche → *Renommer…* |
+| Menu déroulant des branches | Clic droit sur la branche → *Renommer…* |
+| Graphe des commits | Clic droit sur le badge de branche d'un commit → *Renommer…* |
+| Palette de commandes | <kbd>⌘/Ctrl</kbd>+<kbd>K</kbd> → *Renommer la branche* (agit sur la branche courante) |
+
+Un renommage local, c'est `git branch -m` : instantané et **annulable avec ⌘Z** —
+l'entrée d'annulation lui rend son ancien nom. Renommer la branche sur laquelle
+vous êtes vous y laisse.
+
+Si la branche suit une branche distante, le menu propose aussi *Renommer
+(distant compris)…* : renommage local, publication du nouveau nom, suppression
+de l'ancien en amont. Ceci **n'est pas annulable** — l'ancienne branche distante
+n'existe plus, et quiconque l'avait extraite doit se repositionner. Sur un badge
+du graphe, l'option n'apparaît que si la branche suit exactement un dépôt
+distant ; s'il y en a plusieurs, passez par la barre latérale pour lever
+l'ambiguïté.
+
+**Limites :** Gitcito ne réécrit rien de ce qui référençait l'ancien nom — les
+pull requests ouvertes pointent toujours vers la branche d'origine, et les
+règles de CI qui filtrent sur un motif de branche cessent de correspondre.
+Renommer une branche extraite dans un autre [worktree](worktrees.md) échoue, et
+git le dit.
+
 ## Branches épinglées
 
 Marquez d'une étoile les branches sur lesquelles vous revenez sans cesse —

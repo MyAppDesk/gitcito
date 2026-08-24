@@ -221,6 +221,24 @@ export function CommandPalette(): React.JSX.Element {
       { id: 'stash', title: t('cmd.stash'), group: 'Actions', keywords: 'save shelve', icon: <Archive size={15} />, run: act(() => void repoActions.stash(path)) },
       { id: 'stash-partial', title: t('cmd.stashSelected'), group: 'Actions', keywords: 'partial stash selected files keep-index shelve', icon: <Archive size={15} />, run: act(() => ui.openModal({ kind: 'stash-partial', repoPath: path })) },
       { id: 'create-branch', title: t('cmd.createBranch'), group: 'Actions', keywords: 'new', icon: <Plus size={15} />, run: act(() => ui.openModal({ kind: 'create-branch', path, currentBranch: repo.branches.current })) },
+      // Renaming the checked-out branch is the one branch edit you reach for
+      // without first hunting the branch down in the sidebar.
+      ...((): Command[] => {
+        const cur = repo.branches.current
+        if (!cur) return []
+        const ask = (): void => ui.openModal({
+          kind: 'input',
+          title: t('sidebar.renameBranchTitle'),
+          label: t('sidebar.renameBranchLabel'),
+          initial: cur,
+          submitLabel: t('sidebar.renameBranchSubmit'),
+          onSubmit: (name) => {
+            const next = name.trim()
+            if (next && next !== cur) void repoActions.renameBranch(path, cur, next)
+          }
+        })
+        return [{ id: 'rename-branch', title: t('sidebar.renameBranchTitle'), subtitle: cur, group: 'Actions', keywords: 'rename branch move current head -m', icon: <SquarePen size={15} />, run: act(ask) } as Command]
+      })(),
       { id: 'create-pr', title: t('cmd.createPr'), group: 'Actions', keywords: 'pr github merge request', icon: <GitPullRequest size={15} />, run: act(() => ui.openModal({ kind: 'create-pr', repoPath: path, source: repo.branches.current })) },
       ...((): Command[] => {
         const origin = repo.remotes.find((r) => r.name === 'origin') ?? repo.remotes[0]

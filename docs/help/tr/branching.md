@@ -55,6 +55,34 @@ de çalışır.
 
 ![Eğik çizgiyle ayrılmış dal adlarının ağaca katlanmış hâli](../../screenshots/branch-grouping.webp)
 
+## Bir dalı yeniden adlandırmak
+
+Üç gün önce `fix` diye adlandırdığın dal, bugün kimsenin yerini kestiremediği
+bir daldır. Sorunu nerede fark ettiysen orada adını değiştir:
+
+| Nerede | Nasıl |
+|--------|-------|
+| Kenar çubuğu | Dala sağ tıkla → *Yeniden adlandır…* |
+| Araç çubuğundaki dal listesi | Dala sağ tıkla → *Yeniden adlandır…* |
+| Commit grafiği | Bir commit'teki dal rozetine sağ tıkla → *Yeniden adlandır…* |
+| Komut paleti | <kbd>⌘/Ctrl</kbd>+<kbd>K</kbd> → *Dalı yeniden adlandır* (etkin dal üzerinde çalışır) |
+
+Yerel yeniden adlandırma `git branch -m` demektir: anında olur ve **⌘Z ile geri
+alınır** — geri alma girdisi eski adı iade eder. Üzerinde bulunduğun dalın adını
+değiştirmek seni o dalda bırakır.
+
+Dal bir uzak dalı izliyorsa menü ayrıca *Yeniden adlandır (uzak dahil)…* sunar:
+yerelde adı değiştirir, yeni adı push eder, eskisini uzakta siler. Bu **geri
+alınamaz** — eski uzak dal yok olur ve onu checkout etmiş olan herkesin yeniden
+yönlenmesi gerekir. Graf rozetinde bu seçenek yalnızca dal tam olarak bir uzağı
+izliyorsa görünür; birden fazlaysa upstream belirsiz kalmasın diye dalı kenar
+çubuğundan seç.
+
+**Sınırlar:** Gitcito eski ada başvuran hiçbir şeyi yeniden yazmaz — açık pull
+request'ler hâlâ açıldıkları dalı gösterir ve dal desenine göre eşleşen CI
+kuralları eşleşmeyi bırakır. Başka bir [worktree](worktrees.md) içinde checkout
+edilmiş bir dalı yeniden adlandırmak başarısız olur, git de bunu söyler.
+
 ## Sabitlenmiş dallar
 
 Sürekli döndüğünüz dalları yıldızlayın — satırın üzerine gelip ★ simgesine

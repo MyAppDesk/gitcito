@@ -55,6 +55,35 @@ branch remoti, tag e stash.
 
 ![Nomi di branch separati da slash raccolti in un albero](../../screenshots/branch-grouping.webp)
 
+## Rinominare un branch
+
+Un branch chiamato `fix` tre giorni fa è un branch che oggi nessuno sa
+collocare. Rinominalo da dove hai notato il problema:
+
+| Dove | Come |
+|------|------|
+| Barra laterale | Clic destro sul branch → *Rinomina…* |
+| Menu a tendina dei branch nella toolbar | Clic destro sul branch → *Rinomina…* |
+| Grafo dei commit | Clic destro sul badge del branch su un commit → *Rinomina…* |
+| Palette dei comandi | <kbd>⌘/Ctrl</kbd>+<kbd>K</kbd> → *Rinomina il branch* (agisce sul branch attivo) |
+
+Una rinomina locale è `git branch -m`: immediata e **annullabile con ⌘Z** — la
+voce di undo rimette il nome precedente. Rinominare il branch su cui ti trovi ti
+lascia lì.
+
+Se il branch traccia un remoto, il menu offre anche *Rinomina (anche sul
+remoto)…*, che rinomina in locale, pubblica il nuovo nome ed elimina quello
+vecchio a monte. Questo **non è annullabile**: il vecchio branch remoto non
+c'è più e chi lo aveva in checkout deve ripuntare. Su un badge del grafo compare
+solo se il branch traccia esattamente un remoto; con più remoti scegli il branch
+dalla barra laterale, così l'upstream è univoco.
+
+**Limiti:** Gitcito non riscrive nulla che facesse riferimento al vecchio nome —
+le pull request aperte puntano ancora al branch con cui sono state aperte e le
+regole di CI basate su un pattern di branch smettono di corrispondere.
+Rinominare un branch in checkout in un altro [worktree](worktrees.md) fallisce,
+e git lo dice.
+
 ## Branch appuntati
 
 Metti una stella sui branch a cui torni di continuo — passa sopra la riga e

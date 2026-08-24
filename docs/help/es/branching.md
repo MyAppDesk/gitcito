@@ -54,6 +54,34 @@ gestos funcionan en ramas remotas, etiquetas y stashes.
 
 ![Nombres de rama separados por barras plegados en un árbol](../../screenshots/branch-grouping.webp)
 
+## Renombrar una rama
+
+Una rama que llamaste `fix` hace tres días es una rama que hoy nadie sabe
+ubicar. Renómbrala desde donde hayas notado el problema:
+
+| Dónde | Cómo |
+|-------|------|
+| Barra lateral | Clic derecho en la rama → *Renombrar…* |
+| Desplegable de ramas de la barra de herramientas | Clic derecho en la rama → *Renombrar…* |
+| Grafo de commits | Clic derecho en la etiqueta de la rama sobre un commit → *Renombrar…* |
+| Paleta de comandos | <kbd>⌘/Ctrl</kbd>+<kbd>K</kbd> → *Renombrar rama* (actúa sobre la rama activa) |
+
+Un renombrado local es `git branch -m`: instantáneo y **deshacible con ⌘Z** —
+la entrada de deshacer vuelve a ponerle el nombre anterior. Si renombras la rama
+en la que estás, sigues en ella.
+
+Cuando la rama sigue a un remoto, el menú ofrece además *Renombrar (incl.
+remoto)…*, que renombra en local, empuja el nombre nuevo y borra el antiguo en
+el remoto. Eso **no se puede deshacer**: la rama remota antigua desaparece y
+quien la tuviera activa debe reapuntar. En una etiqueta del grafo solo se ofrece
+cuando la rama sigue exactamente a un remoto; con varios, elige la rama en la
+barra lateral para que el upstream sea inequívoco.
+
+**Límites:** Gitcito no reescribe nada que se refiriera al nombre anterior — los
+pull requests abiertos siguen apuntando a la rama con la que se abrieron, y las
+reglas de CI que casan con un patrón de rama dejan de casar. Renombrar una rama
+que está activa en otro [worktree](worktrees.md) falla, y git lo dice.
+
 ## Ramas fijadas
 
 Marca con una estrella las ramas a las que vuelves una y otra vez — pasa el

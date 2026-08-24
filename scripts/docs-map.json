@@ -112,6 +112,7 @@
       "compare-refs": "merging",
       "conflict-radar": "conflict-radar",
       "create-branch": "branching",
+      "rename-branch": "branching",
       "create-issue": "hosting",
       "create-pr": "hosting",
       "credentials": "credentials",

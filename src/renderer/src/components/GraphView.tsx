@@ -1486,6 +1486,46 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
     items.push({ label: t('branch.copyBranchName'), onClick: () => void navigator.clipboard.writeText(g.label) })
     items.push({ label: t('branch.copySha'), onClick: () => void navigator.clipboard.writeText(c.hash) })
     if (g.isLocal && isCurrent) items.push({ label: t('branch.push'), onClick: () => void repoActions.push(repo.path) })
+    // Rename from the badge itself — the graph is where you notice a branch is
+    // badly named, and bouncing to the sidebar to fix it is friction.
+    if (g.isLocal) {
+      items.push({ separator: true })
+      items.push({
+        label: t('sidebar.renameBranch'),
+        onClick: () =>
+          openModal({
+            kind: 'input',
+            title: t('sidebar.renameBranchTitle'),
+            label: t('sidebar.renameBranchLabel'),
+            initial: g.label,
+            submitLabel: t('sidebar.renameBranchSubmit'),
+            onSubmit: (name) => {
+              const next = name.trim()
+              if (next && next !== g.label) void repoActions.renameBranch(repo.path, g.label, next)
+            }
+          })
+      })
+      // Only offered when the branch tracks exactly one remote: with several,
+      // "and the remote" has no single answer worth guessing.
+      if (g.remotes.length === 1) {
+        const remote = g.remotes[0]
+        items.push({
+          label: t('sidebar.renameWithRemote'),
+          onClick: () =>
+            openModal({
+              kind: 'input',
+              title: t('sidebar.renameWithRemoteTitle'),
+              label: t('sidebar.renameBranchLabel'),
+              initial: g.label,
+              submitLabel: t('sidebar.renameBranchSubmit'),
+              onSubmit: (name) => {
+                const next = name.trim()
+                if (next && next !== g.label) void repoActions.renameBranchRemote(repo.path, g.label, next, remote)
+              }
+            })
+        })
+      }
+    }
 
     const deletions: MenuItem[] = []
     if (g.isLocal) {

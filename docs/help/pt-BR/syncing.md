@@ -101,11 +101,11 @@ de trabalho. É o botão para quando você quer *ver* o que os outros fizeram se
 mexer no seu próprio trabalho.
 
 Há também o **auto-fetch** em segundo plano num intervalo que você define
-(Configurações → Geral). O tooltip do botão Fetch sempre carrega a idade —
-*último fetch há 4min* — e assim que um fetch passa de quinze minutos a idade vai
-para o próprio botão, em texto apagado. Fica calado enquanto a resposta é chata e
-fala quando deixa de ser. A idade é lida do `FETCH_HEAD`, então um `git fetch`
-rodado num terminal conta igual a um rodado aqui.
+(Configurações → Geral). Passe o mouse no botão Fetch e a idade aparece embaixo —
+*há 4min* — em âmbar assim que um fetch passa de quinze minutos. Ela nunca ocupa
+espaço na barra, porque responde a uma pergunta que você só faz enquanto vai
+clicar no botão. É lida do `FETCH_HEAD`, então um `git fetch` rodado num terminal
+conta igual a um rodado aqui.
 
 Um fetch que encontra **histórico reescrito** avisa: um toast nomeia a branch, e a
 linha dela ganha um marcador que abre [o que mudou desde](range-diff.md) exatamente

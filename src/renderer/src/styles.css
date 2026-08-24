@@ -1080,14 +1080,32 @@ textarea:focus {
   color: var(--text-0);
 }
 
-/* The fetch age, shown beside the button only once it has gone stale. */
-.age-note {
+.fetch-wrap {
+  position: relative;
+  display: flex;
+}
+
+/* The fetch age, revealed under the button on hover. Absolute so it never
+   reflows the toolbar, and flex-centred rather than transform-centred — the
+   transform belongs to the entry animation. */
+.age-hint {
+  position: absolute;
+  top: 100%;
+  inset-inline: 0;
+  display: flex;
+  justify-content: center;
+  margin-top: 3px;
   font-style: normal;
-  color: var(--text-2);
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 500;
-  margin-inline-start: 5px;
-  opacity: 0.75;
+  color: var(--text-2);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* Past the staleness threshold the same label stops being background noise. */
+.age-hint.stale {
+  color: var(--yellow);
 }
 
 .count-pill {

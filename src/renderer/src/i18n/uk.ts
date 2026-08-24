@@ -1366,7 +1366,7 @@ export const uk: Dict = {
   'toolbar.settingsTitle': 'Налаштування репозиторію',
   'toolbar.notifTitle': 'Сповіщення GitHub',
   'toolbar.refreshTitle': 'Оновити (востаннє оновлено {time})',
-  'toolbar.fetchTitle': 'Отримати з усіх віддалених і почистити — останній фетч {when}. Вашу гілку не змінює.',
+  'toolbar.fetchTitle': 'Отримати з усіх віддалених і почистити — вашу гілку не змінює',
   'toolbar.terminalTitle': 'Показати/сховати термінал',
   'toolbar.sidebarTitle': 'Показати/сховати бічну панель',
   'toolbar.searchPlaceholder': 'Шукати коміти, авторів, SHA…',

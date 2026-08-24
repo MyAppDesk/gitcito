@@ -1342,7 +1342,7 @@ export const tr: Dict = {
   'toolbar.settingsTitle': 'Depo ayarları',
   'toolbar.notifTitle': 'GitHub bildirimleri',
   'toolbar.refreshTitle': 'Yenile (son yenileme {time})',
-  'toolbar.fetchTitle': 'Tüm uzak depolardan getir ve buda — son getirme {when}. Dalını değiştirmez.',
+  'toolbar.fetchTitle': 'Tüm uzak depolardan getir ve buda — dalını değiştirmez',
   'toolbar.terminalTitle': 'Terminali aç/kapat',
   'toolbar.sidebarTitle': 'Kenar çubuğunu aç/kapat',
   'toolbar.searchPlaceholder': 'Commit, yazar, SHA ara…',

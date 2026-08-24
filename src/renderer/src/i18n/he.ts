@@ -1366,7 +1366,7 @@ export const he: Dict = {
   'toolbar.settingsTitle': 'הגדרות המאגר',
   'toolbar.notifTitle': 'התראות GitHub',
   'toolbar.refreshTitle': 'רענון (רוענן לאחרונה {time})',
-  'toolbar.fetchTitle': 'הבאה מכל הרימוטים וגיזום — הבאה אחרונה {when}. לא נוגע בענף שלך.',
+  'toolbar.fetchTitle': 'הבאה מכל הרימוטים וגיזום — לא נוגע בענף שלך',
   'toolbar.terminalTitle': 'הצגה או הסתרה של הטרמינל',
   'toolbar.sidebarTitle': 'הצגה או הסתרה של סרגל הצד',
   'toolbar.searchPlaceholder': 'חיפוש קומיטים, מחברים, SHA…',

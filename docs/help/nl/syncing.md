@@ -102,12 +102,11 @@ zijn — en het raakt noch je branch noch je working tree aan. Dat is de knop al
 wilt *zien* wat iedereen heeft gedaan zonder je eigen werk te verplaatsen.
 
 Er is ook **auto-fetch** op de achtergrond met een interval die jij instelt
-(Instellingen → Algemeen). De tooltip van de Fetch-knop draagt altijd de
-ouderdom — *laatst 4m geleden gefetcht* — en zodra een fetch ouder is dan vijftien
-minuten verhuist de ouderdom naar de knop zelf, in gedempte tekst. Hij zwijgt
-zolang het antwoord saai is en meldt zich wanneer dat niet meer zo is. De
-ouderdom komt uit `FETCH_HEAD`, dus een `git fetch` in een terminal telt net zo
-goed.
+(Instellingen → Algemeen). Zweef over de Fetch-knop en de ouderdom verschijnt
+eronder — *4m geleden* — in amber zodra een fetch ouder is dan vijftien minuten.
+Hij neemt nooit ruimte in de werkbalk in, want hij beantwoordt een vraag die je
+alleen stelt terwijl je naar de knop reikt. Hij komt uit `FETCH_HEAD`, dus een
+`git fetch` in een terminal telt net zo goed.
 
 Een fetch die **herschreven geschiedenis** aantreft zegt dat: een melding noemt
 de branch, en zijn rij krijgt een markering die

@@ -106,12 +106,12 @@ ni votre copie de travail. C'est le bouton à utiliser quand vous voulez *voir* 
 que les autres ont fait sans déplacer votre propre travail.
 
 Il y a aussi une **récupération automatique** en arrière-plan à l'intervalle que
-vous fixez (Réglages → Général). L'infobulle du bouton Récupérer porte toujours
-l'ancienneté — *dernière récupération il y a 4 min* — et dès qu'une récupération
-dépasse quinze minutes, l'ancienneté passe sur le bouton lui-même, en texte
-atténué. Elle se tait tant que la réponse est ennuyeuse et parle quand elle ne
-l'est plus. Elle est lue dans `FETCH_HEAD` : un `git fetch` lancé dans un
-terminal compte donc autant qu'un lancé ici.
+vous fixez (Réglages → Général). Survolez le bouton Récupérer et l'ancienneté
+apparaît en dessous — *il y a 4 min* — en ambre dès qu'une récupération dépasse
+quinze minutes. Elle ne prend jamais de place dans la barre d'outils, car elle
+répond à une question qu'on ne se pose qu'en tendant la main vers le bouton. Elle
+est lue dans `FETCH_HEAD` : un `git fetch` lancé dans un terminal compte donc
+autant qu'un lancé ici.
 
 Un fetch qui découvre de l'**histoire réécrite** le dit : une notification nomme
 la branche, et sa ligne gagne un marqueur qui ouvre [ce qui a changé

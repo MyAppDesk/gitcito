@@ -105,11 +105,11 @@ der Button, wenn du *sehen* willst, was die anderen getan haben, ohne deine
 eigene Arbeit zu bewegen.
 
 Dazu gibt es einen **Auto-Fetch** im Hintergrund in einem von dir gesetzten
-Intervall (Einstellungen → Allgemein). Der Tooltip des Fetch-Buttons trägt immer
-das Alter — *zuletzt vor 4 Min. abgerufen* — und sobald ein Fetch älter als
-fünfzehn Minuten ist, wandert das Alter in gedämpftem Text auf den Button selbst.
-Es schweigt, solange die Antwort langweilig ist, und meldet sich, wenn nicht. Das
-Alter stammt aus `FETCH_HEAD`, ein `git fetch` im Terminal zählt also genauso.
+Intervall (Einstellungen → Allgemein). Fahre über den Fetch-Button, und das Alter
+blendet sich darunter ein — *vor 4 Min.* — bernsteinfarben, sobald ein Fetch
+älter als fünfzehn Minuten ist. Es belegt nie Platz in der Toolbar, denn es
+beantwortet eine Frage, die man nur beim Griff zum Button stellt. Es stammt aus
+`FETCH_HEAD`, ein `git fetch` im Terminal zählt also genauso.
 
 Ein Fetch, der **umgeschriebene Historie** findet, sagt das: ein Toast nennt den
 Branch, und dessen Zeile bekommt einen Marker, der [was sich seither geändert

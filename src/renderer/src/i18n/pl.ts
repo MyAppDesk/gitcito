@@ -1366,7 +1366,7 @@ export const pl: Dict = {
   'toolbar.settingsTitle': 'Ustawienia repozytorium',
   'toolbar.notifTitle': 'Powiadomienia GitHuba',
   'toolbar.refreshTitle': 'Odśwież (ostatnie odświeżenie: {time})',
-  'toolbar.fetchTitle': 'Fetch ze wszystkich remote’ów i prune — ostatni fetch {when}. Nie rusza twojej gałęzi.',
+  'toolbar.fetchTitle': 'Fetch ze wszystkich remote’ów i prune — nie rusza twojej gałęzi',
   'toolbar.terminalTitle': 'Przełącz terminal',
   'toolbar.sidebarTitle': 'Przełącz panel boczny',
   'toolbar.searchPlaceholder': 'Szukaj commitów, autorów, sum SHA…',

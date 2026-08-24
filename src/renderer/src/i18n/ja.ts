@@ -1342,7 +1342,7 @@ export const ja: Dict = {
   'toolbar.settingsTitle': 'リポジトリ設定',
   'toolbar.notifTitle': 'GitHub の通知',
   'toolbar.refreshTitle': '更新（最終更新 {time}）',
-  'toolbar.fetchTitle': 'すべてのリモートをフェッチして prune — 最終フェッチ {when}。現在のブランチは変更しません。',
+  'toolbar.fetchTitle': 'すべてのリモートをフェッチして prune — 現在のブランチは変更しません',
   'toolbar.terminalTitle': 'ターミナルの表示を切り替え',
   'toolbar.sidebarTitle': 'サイドバーの表示を切り替え',
   'toolbar.searchPlaceholder': 'コミット、作者、SHA を検索…',

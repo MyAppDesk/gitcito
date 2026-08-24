@@ -1367,7 +1367,7 @@ export const nl: Dict = {
   'toolbar.settingsTitle': 'Repository-instellingen',
   'toolbar.notifTitle': 'GitHub-meldingen',
   'toolbar.refreshTitle': 'Vernieuwen (laatst vernieuwd {time})',
-  'toolbar.fetchTitle': 'Alle remotes fetchen & prunen — laatst gefetcht {when}. Je branch blijft ongemoeid.',
+  'toolbar.fetchTitle': 'Alle remotes fetchen & prunen — je branch blijft ongemoeid',
   'toolbar.terminalTitle': 'Terminal in-/uitschakelen',
   'toolbar.sidebarTitle': 'Zijbalk in-/uitschakelen',
   'toolbar.searchPlaceholder': 'Zoek commits, auteurs, SHA’s…',

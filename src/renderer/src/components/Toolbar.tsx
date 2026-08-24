@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
 import {
   Undo2,
   Redo2,
@@ -96,6 +97,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
     return ago ? interp(t(ago.key), { n: ago.n }) : t('time.never')
   }
   const fetchStale = isStale(repo.lastFetchAt, Date.now())
+  const [fetchHover, setFetchHover] = useState(false)
 
   const pullMenu = (e: React.MouseEvent): void => {
     e.stopPropagation()
@@ -335,19 +337,36 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
       <div className="toolbar-sep" />
 
       <div className="toolbar-group">
-        <button
-          className="tool-btn"
-          disabled={inflight}
-          onClick={() => void repoActions.fetchAll(path)}
-          title={interp(t('toolbar.fetchTitle'), { when: since(repo.lastFetchAt) })}
+        {/* The age answers a question you only ask while reaching for the
+            button, so it lives under it on hover rather than in the layout. */}
+        <div
+          className="fetch-wrap"
+          onMouseEnter={() => setFetchHover(true)}
+          onMouseLeave={() => setFetchHover(false)}
         >
-          {busyOp === 'fetch' ? <Loader2 size={17} className="spin" /> : <Download size={17} />}
-          <span>
-            {t('toolbar.fetch')}
-            {/* Silent while the answer is boring; speaks up once it is not. */}
-            {fetchStale && <em className="age-note">{since(repo.lastFetchAt)}</em>}
-          </span>
-        </button>
+          <button
+            className="tool-btn"
+            disabled={inflight}
+            onClick={() => void repoActions.fetchAll(path)}
+            title={t('toolbar.fetchTitle')}
+          >
+            {busyOp === 'fetch' ? <Loader2 size={17} className="spin" /> : <Download size={17} />}
+            <span>{t('toolbar.fetch')}</span>
+          </button>
+          <AnimatePresence>
+            {fetchHover && repo.lastFetchAt !== null && (
+              <motion.span
+                className={`age-hint${fetchStale ? ' stale' : ''}`}
+                initial={{ opacity: 0, y: -3 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -3 }}
+                transition={{ duration: 0.14, ease: 'easeOut' }}
+              >
+                {since(repo.lastFetchAt)}
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </div>
         <button className="tool-btn split" disabled={inflight} onClick={() => void repoActions.pull(path, 'default')} title={t('toolbar.pull')}>
           {busyOp === 'pull' ? (
             <Loader2 size={17} className="spin" />

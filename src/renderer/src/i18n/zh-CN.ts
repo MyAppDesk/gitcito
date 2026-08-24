@@ -1366,7 +1366,7 @@ export const zhCN: Dict = {
   'toolbar.settingsTitle': '仓库设置',
   'toolbar.notifTitle': 'GitHub 通知',
   'toolbar.refreshTitle': '刷新（上次刷新于 {time}）',
-  'toolbar.fetchTitle': '获取所有远程并清理 — 上次获取{when}。不会改动当前分支。',
+  'toolbar.fetchTitle': '获取所有远程并清理 — 不会改动当前分支',
   'toolbar.terminalTitle': '切换终端',
   'toolbar.sidebarTitle': '切换侧边栏',
   'toolbar.searchPlaceholder': '搜索提交、作者、SHA…',

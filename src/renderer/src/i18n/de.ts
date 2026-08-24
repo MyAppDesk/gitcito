@@ -1366,7 +1366,7 @@ export const de: Dict = {
   'toolbar.settingsTitle': 'Repository-Einstellungen',
   'toolbar.notifTitle': 'GitHub-Benachrichtigungen',
   'toolbar.refreshTitle': 'Aktualisieren (zuletzt aktualisiert {time})',
-  'toolbar.fetchTitle': 'Alle Remotes abrufen & aufräumen — zuletzt {when} abgerufen. Dein Branch bleibt unverändert.',
+  'toolbar.fetchTitle': 'Alle Remotes abrufen & aufräumen — dein Branch bleibt unverändert',
   'toolbar.terminalTitle': 'Terminal umschalten',
   'toolbar.sidebarTitle': 'Seitenleiste umschalten',
   'toolbar.searchPlaceholder': 'Commits, Autor:innen, SHAs suchen…',

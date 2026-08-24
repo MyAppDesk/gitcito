@@ -101,11 +101,11 @@ touches neither your branch nor your working tree. That is the one to reach for
 when you want to *see* what everyone else has done without moving your own work.
 
 There is also background **auto-fetch** on an interval you set (Settings →
-General). The Fetch button's tooltip always carries the age — *last fetched 4m
-ago* — and once a fetch is more than fifteen minutes old the age moves onto the
-button itself, in muted text. It stays quiet while the answer is boring, and
-says so when it is not. The age is read from `FETCH_HEAD`, so a `git fetch` run
-in a terminal counts the same as one run here.
+General). Hover the Fetch button and the age fades in underneath it — *4m ago* —
+in amber once a fetch is more than fifteen minutes old. It never takes up room
+in the toolbar, because it answers a question you only ask while reaching for
+the button. It is read from `FETCH_HEAD`, so a `git fetch` run in a terminal
+counts the same as one run here.
 
 A fetch that finds **rewritten history** says so: a toast names the branch, and
 its row gains a marker that opens [what changed since](range-diff.md) at exactly

@@ -1342,7 +1342,7 @@ export const fr: Dict = {
   'toolbar.settingsTitle': 'Paramètres du dépôt',
   'toolbar.notifTitle': 'Notifications GitHub',
   'toolbar.refreshTitle': 'Actualiser (dernière actualisation {time})',
-  'toolbar.fetchTitle': 'Récupérer tous les distants et élaguer — dernière récupération {when}. Votre branche reste intacte.',
+  'toolbar.fetchTitle': 'Récupérer tous les distants et élaguer — votre branche reste intacte',
   'toolbar.terminalTitle': 'Afficher ou masquer le terminal',
   'toolbar.sidebarTitle': 'Afficher ou masquer la barre latérale',
   'toolbar.searchPlaceholder': 'Rechercher commits, auteurs, SHAs…',

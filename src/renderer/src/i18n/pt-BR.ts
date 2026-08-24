@@ -1367,7 +1367,7 @@ export const ptBR: Dict = {
   'toolbar.settingsTitle': 'Configurações do repositório',
   'toolbar.notifTitle': 'Notificações do GitHub',
   'toolbar.refreshTitle': 'Atualizar (última atualização {time})',
-  'toolbar.fetchTitle': 'Fetch em todos os remotos e prune — último fetch {when}. Não mexe no seu branch.',
+  'toolbar.fetchTitle': 'Fetch em todos os remotos e prune — não mexe no seu branch',
   'toolbar.terminalTitle': 'Alternar o terminal',
   'toolbar.sidebarTitle': 'Alternar a barra lateral',
   'toolbar.searchPlaceholder': 'Buscar commits, autores, SHAs…',

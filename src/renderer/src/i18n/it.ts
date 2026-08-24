@@ -1343,7 +1343,7 @@ export const it: Dict = {
   'toolbar.settingsTitle': 'Impostazioni del repository',
   'toolbar.notifTitle': 'Notifiche di GitHub',
   'toolbar.refreshTitle': 'Aggiorna (ultimo aggiornamento {time})',
-  'toolbar.fetchTitle': 'Fetch di tutti i remoti e prune — ultimo fetch {when}. Non tocca il tuo branch.',
+  'toolbar.fetchTitle': 'Fetch di tutti i remoti e prune — non tocca il tuo branch',
   'toolbar.terminalTitle': 'Mostra o nascondi il terminale',
   'toolbar.sidebarTitle': 'Mostra o nascondi la barra laterale',
   'toolbar.searchPlaceholder': 'Cerca commit, autori, SHA…',

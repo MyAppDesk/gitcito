@@ -1366,7 +1366,7 @@ export const ar: Dict = {
   'toolbar.settingsTitle': 'إعدادات المستودع',
   'toolbar.notifTitle': 'إشعارات GitHub',
   'toolbar.refreshTitle': 'تحديث (آخر تحديث {time})',
-  'toolbar.fetchTitle': 'جلب من كل المستودعات البعيدة وتشذيب — آخر جلب {when}. لا يمسّ فرعك الحالي.',
+  'toolbar.fetchTitle': 'جلب من كل المستودعات البعيدة وتشذيب — لا يمسّ فرعك الحالي',
   'toolbar.terminalTitle': 'إظهار أو إخفاء الطرفية',
   'toolbar.sidebarTitle': 'إظهار أو إخفاء الشريط الجانبي',
   'toolbar.searchPlaceholder': 'ابحث في الالتزامات والمؤلفين والمعرّفات…',

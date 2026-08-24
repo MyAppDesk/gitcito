@@ -1361,7 +1361,7 @@ export const en = {
   'toolbar.settingsTitle': 'Repository settings',
   'toolbar.notifTitle': 'GitHub notifications',
   'toolbar.refreshTitle': 'Refresh (last refreshed {time})',
-  'toolbar.fetchTitle': 'Fetch all remotes & prune — last fetched {when}. Leaves your branch untouched.',
+  'toolbar.fetchTitle': 'Fetch all remotes & prune — leaves your branch untouched',
   'toolbar.terminalTitle': 'Toggle terminal',
   'toolbar.sidebarTitle': 'Toggle sidebar',
   'toolbar.searchPlaceholder': 'Search commits, authors, SHAs…',

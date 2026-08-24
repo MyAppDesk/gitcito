@@ -1366,7 +1366,7 @@ export const ru: Dict = {
   'toolbar.settingsTitle': 'Настройки репозитория',
   'toolbar.notifTitle': 'Уведомления GitHub',
   'toolbar.refreshTitle': 'Обновить (последнее обновление {time})',
-  'toolbar.fetchTitle': 'Получить со всех удалённых и очистить устаревшие — последний фетч {when}. Вашу ветку не трогает.',
+  'toolbar.fetchTitle': 'Получить со всех удалённых и очистить устаревшие — вашу ветку не трогает',
   'toolbar.terminalTitle': 'Показать или скрыть терминал',
   'toolbar.sidebarTitle': 'Показать или скрыть боковую панель',
   'toolbar.searchPlaceholder': 'Поиск коммитов, авторов, SHA…',

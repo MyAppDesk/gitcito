@@ -102,10 +102,11 @@ olur — dalına da çalışma ağacına da dokunmaz. Kendi işini kımıldatmad
 başkalarının ne yaptığını *görmek* istediğinde başvuracağın düğme budur.
 
 Ayrıca belirlediğiniz aralıkta arka planda **otomatik fetch** (Ayarlar → Genel)
-var. Getir düğmesinin ipucu yaşı hep taşır — *son getirme 4dk önce* — ve bir
-getirme on beş dakikayı geçtiğinde yaş, soluk bir yazıyla düğmenin üzerine taşınır.
-Cevap sıkıcıyken susar, sıkıcı olmaktan çıktığında konuşur. Yaş `FETCH_HEAD`'den
-okunur; yani terminalde çalıştırılan bir `git fetch` de buradakiyle aynı sayılır.
+var. Getir düğmesinin üzerine gelin, yaş altında belirir — *4dk önce* — bir
+getirme on beş dakikayı geçtiğinde kehribar rengiyle. Araç çubuğunda hiç yer
+kaplamaz, çünkü yalnızca düğmeye uzanırken sorulan bir soruyu yanıtlar.
+`FETCH_HEAD`'den okunur; yani terminalde çalıştırılan bir `git fetch` de
+buradakiyle aynı sayılır.
 
 **Yeniden yazılmış geçmiş** bulan bir fetch bunu söyler: bir bildirim dalı
 adıyla anar ve satırı, tam olarak eskiden gösterdiği commit'te

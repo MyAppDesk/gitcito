@@ -1366,7 +1366,7 @@ export const ko: Dict = {
   'toolbar.settingsTitle': '저장소 설정',
   'toolbar.notifTitle': 'GitHub 알림',
   'toolbar.refreshTitle': '새로 고침 (마지막 갱신 {time})',
-  'toolbar.fetchTitle': '모든 원격 가져오고 정리 — 마지막 가져오기 {when}. 현재 브랜치는 그대로 둡니다.',
+  'toolbar.fetchTitle': '모든 원격 가져오고 정리 — 현재 브랜치는 그대로 둡니다',
   'toolbar.terminalTitle': '터미널 토글',
   'toolbar.sidebarTitle': '사이드바 토글',
   'toolbar.searchPlaceholder': '커밋, 작성자, SHA 검색…',

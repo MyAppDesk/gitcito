@@ -1360,7 +1360,7 @@ export const es: Dict = {
   'toolbar.settingsTitle': 'Ajustes del repositorio',
   'toolbar.notifTitle': 'Notificaciones de GitHub',
   'toolbar.refreshTitle': 'Actualizar (última actualización {time})',
-  'toolbar.fetchTitle': 'Fetch de todos los remotos y prune — último fetch {when}. No toca tu rama.',
+  'toolbar.fetchTitle': 'Fetch de todos los remotos y prune — no toca tu rama',
   'toolbar.terminalTitle': 'Alternar terminal',
   'toolbar.sidebarTitle': 'Alternar barra lateral',
   'toolbar.searchPlaceholder': 'Buscar commits, autores, SHAs…',

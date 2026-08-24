@@ -4,6 +4,9 @@ import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { parseRemoteUrl } from '../src/main/hosting'
 
+import { treeStatusOf } from '../src/renderer/src/lib/treeStatus'
+import { HUGE_SECTION, openUnlessHuge } from '../src/renderer/src/lib/sidebarSections'
+
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 import { commitHookFailureHint, lintCommit, subjectCounterLevel, parseCcPrefix, applyCcType, parseGitmojiPrefix, applyGitmoji, parseTicketPrefix, applyTicket, ticketFromBranch } from '../src/renderer/src/lib/commitLint'
 import { isSecretFile, maskSecretLine } from '../src/renderer/src/lib/secrets'
@@ -4520,5 +4523,54 @@ describe('worktreeForBranch', () => {
   it('falls back to the folder when the worktree is detached', () => {
     const w = wt({ path: '/src/gitcito--spike', branch: null, detached: true })
     expect(worktreeTabName('/src/gitcito', w)).toBe('gitcito · gitcito--spike')
+  })
+})
+
+describe('treeStatusOf', () => {
+  const map = {
+    'src/app.ts': 'modified',
+    src: 'modified',
+    node_modules: 'ignored',
+    'build/out': 'ignored',
+    'notes.md': 'untracked'
+  } as const
+
+  it('prefers a path\'s own status', () => {
+    expect(treeStatusOf({ ...map }, 'src/app.ts')).toBe('modified')
+    expect(treeStatusOf({ ...map }, 'notes.md')).toBe('untracked')
+  })
+
+  it('inherits ignored from the nearest ignored ancestor', () => {
+    expect(treeStatusOf({ ...map }, 'node_modules/left-pad/index.js')).toBe('ignored')
+    expect(treeStatusOf({ ...map }, 'build/out/assets/app.css')).toBe('ignored')
+  })
+
+  it('does not inherit anything other than ignored', () => {
+    // src is modified because a file under it is; that must not paint its siblings.
+    expect(treeStatusOf({ ...map }, 'src/untouched.ts')).toBeUndefined()
+  })
+
+  it('returns undefined for a clean path with no marked ancestor', () => {
+    expect(treeStatusOf({ ...map }, 'README.md')).toBeUndefined()
+    expect(treeStatusOf({}, 'a/b/c')).toBeUndefined()
+  })
+})
+
+describe('openUnlessHuge', () => {
+  it('opens a section of ordinary size', () => {
+    expect(openUnlessHuge(0)).toBe(true)
+    expect(openUnlessHuge(42)).toBe(true)
+    expect(openUnlessHuge(HUGE_SECTION)).toBe(true)
+  })
+
+  it('leaves a section closed once it is big enough to be the problem', () => {
+    expect(openUnlessHuge(HUGE_SECTION + 1)).toBe(false)
+    expect(openUnlessHuge(3436)).toBe(false)
+  })
+
+  it('never overrules a caller that already wants it closed', () => {
+    // A non-origin remote passes base=false; being small must not open it.
+    expect(openUnlessHuge(5, false)).toBe(false)
+    expect(openUnlessHuge(9000, false)).toBe(false)
   })
 })

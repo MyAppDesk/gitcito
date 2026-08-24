@@ -14,6 +14,11 @@ worktrees and submodules**. Every section can be hidden or reordered
 and folders you keep expanded or collapsed is remembered per repository, across
 restarts.
 
+A section holding more than 300 refs starts collapsed. A repository with
+thousands of never-deleted remote branches would otherwise put every one of them
+on screen before you asked for any; open it once and that choice is remembered
+like any other.
+
 ![The sidebar, with pinned branches held at the top](../screenshots/pinned-branches.webp)
 
 ## Branches

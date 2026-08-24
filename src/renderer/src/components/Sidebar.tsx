@@ -49,6 +49,7 @@ import { branchDropActions, encodeDropRef, BRANCH_DND_TYPE, type DropRef } from 
 import { stepRange, claimRangeKeys, ownsRangeKeys, rangeKeysBlocked, domOrder } from '../lib/rangeSelect'
 import { openBranchDropMenu } from '../lib/branchDropMenu'
 import { worktreeForBranch, worktreeTabName } from '../lib/worktrees'
+import { HUGE_SECTION, openUnlessHuge } from '../lib/sidebarSections'
 import { defaultSettings } from '../../../shared/types'
 import type { BranchInfo, MergeRiskKind, ReleaseInfo, RemoteBranchInfo, StashInfo, TagInfo, WorktreeInfo, SubmoduleInfo, LaunchGroup, LaunchConfig, PullRequest, IssueInfo, MilestoneInfo, RemoteInfo } from '../../../shared/types'
 
@@ -67,7 +68,14 @@ interface SectionProps {
   title: string
   icon: React.ReactNode
   count: number
-  children: React.ReactNode
+  /**
+   * A thunk builds the body only when the section is open. JSX children are an
+   * argument, so `{open && children}` still pays for constructing them — and on
+   * a repository with thousands of remote branches that is thousands of
+   * elements built on every Sidebar render, collapsed or not. Pass a function
+   * for anything that maps over a ref list; plain nodes are fine for a handful.
+   */
+  children: React.ReactNode | (() => React.ReactNode)
   defaultOpen?: boolean
   actions?: React.ReactNode
   sectionId?: string
@@ -201,9 +209,9 @@ function Section({
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.18 }}
-            className="sb-body"
+            className={`sb-body${count > HUGE_SECTION ? ' is-huge' : ''}`}
           >
-            {children}
+            {typeof children === 'function' ? children() : children}
           </motion.div>
         )}
       </AnimatePresence>
@@ -234,7 +242,17 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   const editor = useSettingsStore((s) => s.settings.editor)
   const t = useT()
   const [filter, setFilter] = useState('')
-  const [tab, setTab] = useState<'git' | 'files'>('git')
+  // The refresh cycle reads this to decide whether the file tree's badges are
+  // worth a second `git status` walk, so it lives in the UI store, not here.
+  const tab = useUIStore((s) => s.sidebarTab)
+  const setTab = useUIStore((s) => s.setSidebarTab)
+
+  // ...and because refreshes skip that slice while the tab is closed, fetch it
+  // the moment it opens, or when the repo changes under an open one.
+  useEffect(() => {
+    if (tab !== 'files') return
+    void useRepoStore.getState().refresh(repo.path, { only: ['treeStatus'] })
+  }, [tab, repo.path])
 
   // ─── Launch configs (.vscode/launch.json) ───
   const enableLaunchJson = useSettingsStore((s) => s.settings.enableLaunchJson)
@@ -1362,6 +1380,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     // Full "/"-path from the section root: unlike `display` it cannot collide
     // across nesting levels, so it can key persisted state and name the folder.
     const fullPath = ancestor ? `${ancestor}/${display}` : display
+    const leaves = leafCount(node)
     return (
       <Section
         key={`grp:${fullPath}`}
@@ -1369,15 +1388,19 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         depth={depth}
         title={display}
         icon={<GitBranch size={13} />}
-        count={leafCount(node)}
-        {...persistOpen(`grp:${fullPath}`)}
+        count={leaves}
+        {...persistOpen(`grp:${fullPath}`, openUnlessHuge(leaves))}
         onHeaderContextMenu={(e) => {
           e.preventDefault()
           openContextMenu(e.clientX, e.clientY, localFolderMenu(fullPath, node))
         }}
       >
-        {node.item && branchItem(node.item, node.seg)}
-        {[...node.children.values()].map((c) => renderBranchNode(c, '', depth + 1, fullPath))}
+        {() => (
+          <>
+            {node.item && branchItem(node.item, node.seg)}
+            {[...node.children.values()].map((c) => renderBranchNode(c, '', depth + 1, fullPath))}
+          </>
+        )}
       </Section>
     )
   }
@@ -1435,6 +1458,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       return remoteItem(node.item, display)
     }
     const fullPath = ancestor ? `${ancestor}/${display}` : display
+    const leaves = leafCount(node)
     return (
       <Section
         key={`rgrp:${remoteName}/${fullPath}`}
@@ -1442,15 +1466,19 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         depth={depth}
         title={display}
         icon={<GitBranch size={13} />}
-        count={leafCount(node)}
-        {...persistOpen(`rgrp:${remoteName}/${fullPath}`)}
+        count={leaves}
+        {...persistOpen(`rgrp:${remoteName}/${fullPath}`, openUnlessHuge(leaves))}
         onHeaderContextMenu={(e) => {
           e.preventDefault()
           openContextMenu(e.clientX, e.clientY, remoteFolderMenu(`${remoteName}/${fullPath}`, node))
         }}
       >
-        {node.item && remoteItem(node.item, node.seg)}
-        {[...node.children.values()].map((c) => renderRemoteNode(c, '', depth + 1, remoteName, fullPath))}
+        {() => (
+          <>
+            {node.item && remoteItem(node.item, node.seg)}
+            {[...node.children.values()].map((c) => renderRemoteNode(c, '', depth + 1, remoteName, fullPath))}
+          </>
+        )}
       </Section>
     )
   }
@@ -1525,6 +1553,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       return tagItem(node.item, display)
     }
     const fullPath = ancestor ? `${ancestor}/${display}` : display
+    const leaves = leafCount(node)
     return (
       <Section
         key={`tgrp:${fullPath}`}
@@ -1532,11 +1561,15 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         depth={depth}
         title={display}
         icon={<Tag size={13} />}
-        count={leafCount(node)}
-        {...persistOpen(`tgrp:${fullPath}`)}
+        count={leaves}
+        {...persistOpen(`tgrp:${fullPath}`, openUnlessHuge(leaves))}
       >
-        {node.item && tagItem(node.item, node.seg)}
-        {[...node.children.values()].map((c) => renderTagNode(c, '', depth + 1, fullPath))}
+        {() => (
+          <>
+            {node.item && tagItem(node.item, node.seg)}
+            {[...node.children.values()].map((c) => renderTagNode(c, '', depth + 1, fullPath))}
+          </>
+        )}
       </Section>
     )
   }
@@ -1548,7 +1581,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         icon={<GitBranch size={13} />}
         count={locals.length}
         {...dragProps('local')}
-        {...persistOpen('local')}
+        {...persistOpen('local', openUnlessHuge(locals.length))}
         actions={
           <span
             className="icon-btn"
@@ -1566,14 +1599,18 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
           </span>
         }
       >
-        {pinnedLocals.length > 0 && (
-          <Section nested depth={1} title={t('sidebar.pinned')} icon={<Star size={13} />} count={pinnedLocals.length} {...persistOpen('pinned')}>
-            {pinnedLocals.map((b) => branchItem(b, b.name))}
-          </Section>
+        {() => (
+          <>
+            {pinnedLocals.length > 0 && (
+              <Section nested depth={1} title={t('sidebar.pinned')} icon={<Star size={13} />} count={pinnedLocals.length} {...persistOpen('pinned')}>
+                {() => pinnedLocals.map((b) => branchItem(b, b.name))}
+              </Section>
+            )}
+            {groupBranches
+              ? [...branchTree.children.values()].map((c) => renderBranchNode(c, '', 1))
+              : locals.map((b) => branchItem(b, b.name))}
+          </>
         )}
-        {groupBranches
-          ? [...branchTree.children.values()].map((c) => renderBranchNode(c, '', 1))
-          : locals.map((b) => branchItem(b, b.name))}
       </Section>
     ),
     remotes: (
@@ -1600,8 +1637,10 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
           </span>
         }
       >
-        {repo.remotes.length === 0 && <div className="sb-empty">{t('sidebar.noRemotes')}</div>}
-        {repo.remotes.map((remote) => {
+        {() => (
+          <>
+            {repo.remotes.length === 0 && <div className="sb-empty">{t('sidebar.noRemotes')}</div>}
+            {repo.remotes.map((remote) => {
           const branches = remoteGroups.get(remote.name) ?? []
           return (
             <Section
@@ -1611,7 +1650,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
               title={remote.name}
               icon={<RemoteIcon url={remote.url} />}
               count={branches.length}
-              {...persistOpen(`remote:${remote.name}`, remote.name === 'origin')}
+              {...persistOpen(`remote:${remote.name}`, openUnlessHuge(branches.length, remote.name === 'origin'))}
               onHeaderContextMenu={(e) => {
                 e.preventDefault()
                 openContextMenu(e.clientX, e.clientY, remoteMgmtMenu(remote.name, remote.url))
@@ -1633,15 +1672,21 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
                 </span>
               ) : undefined}
             >
-              {branches.length === 0 && <div className="sb-empty">{t('sidebar.noBranches')}</div>}
-              {groupBranches
-                ? [...(remoteTrees.get(remote.name)?.children.values() ?? [])].map((c) =>
-                    renderRemoteNode(c, '', 2, remote.name)
-                  )
-                : branches.map((b) => remoteItem(b, b.name))}
+              {() => (
+                <>
+                  {branches.length === 0 && <div className="sb-empty">{t('sidebar.noBranches')}</div>}
+                  {groupBranches
+                    ? [...(remoteTrees.get(remote.name)?.children.values() ?? [])].map((c) =>
+                        renderRemoteNode(c, '', 2, remote.name)
+                      )
+                    : branches.map((b) => remoteItem(b, b.name))}
+                </>
+              )}
             </Section>
           )
-        })}
+            })}
+          </>
+        )}
       </Section>
     ),
     prs: (
@@ -1958,10 +2003,14 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
           </span>
         }
       >
-        {tags.length === 0 && <div className="sb-empty">{t('sidebar.noTags')}</div>}
-        {groupBranches
-          ? [...tagTree.children.values()].map((c) => renderTagNode(c, '', 1))
-          : tags.map((tag) => tagItem(tag, tag.name))}
+        {() => (
+          <>
+            {tags.length === 0 && <div className="sb-empty">{t('sidebar.noTags')}</div>}
+            {groupBranches
+              ? [...tagTree.children.values()].map((c) => renderTagNode(c, '', 1))
+              : tags.map((tag) => tagItem(tag, tag.name))}
+          </>
+        )}
       </Section>
     ),
     releases: (() => {

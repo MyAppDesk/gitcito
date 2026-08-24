@@ -14,6 +14,11 @@ reordenar (Ajustes → Disposición), y la caja de filtro se aplica a todas.
 Qué secciones y carpetas dejas abiertas o cerradas se recuerda por repositorio,
 incluso tras reiniciar.
 
+Una sección con más de 300 refs empieza cerrada. En un repositorio con miles de
+ramas remotas que nadie ha borrado nunca, lo contrario significa tenerlas todas
+en pantalla sin haberlas pedido; ábrela una vez y esa elección se recuerda como
+cualquier otra.
+
 ![La barra lateral, con las ramas fijadas arriba del todo](../../screenshots/pinned-branches.webp)
 
 ## Ramas

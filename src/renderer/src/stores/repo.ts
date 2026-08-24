@@ -323,7 +323,16 @@ async function doRefresh(path: string, slices: RefreshSlice[]): Promise<void> {
         keep(repo?.conflictContext, want.has('mergeState'), () => gitApi.conflictContext(path), null),
         keep(repo?.worktrees, want.has('worktrees'), () => gitApi.worktrees(path).catch(() => []), []),
         keep(repo?.submodules, want.has('submodules'), () => gitApi.submodules(path).catch(() => []), []),
-        keep(repo?.treeStatus, want.has('treeStatus'), () => gitApi.treeStatus(path).catch(() => ({})), {}),
+        // The tree badges cost a second full `git status` walk — on a big
+        // working tree that is the most expensive thing a refresh does, and the
+        // sidebar's Files tab is the only thing that displays them. Skip it
+        // while that tab is closed; opening it fetches this slice on its own.
+        keep(
+          repo?.treeStatus,
+          want.has('treeStatus') && useUIStore.getState().sidebarTab === 'files',
+          () => gitApi.treeStatus(path).catch(() => ({})),
+          {}
+        ),
         keep(repo?.notedShas, want.has('log'), () => gitApi.notedCommits(path).catch(() => []), [])
       ])
     store.patch(path, {
@@ -961,11 +970,19 @@ export const repoActions = {
       return Promise.resolve()
     }
     const prev = useRepoStore.getState().repos[path]?.branches.current
-    return useRepoStore.getState().run(path, interp(t('act.checkedOut'), { ref }), () => gitApi.checkout(path, ref), {
-      label: interp(t('undoLabel.checkout'), { ref }),
-      undo: () => gitApi.checkout(path, prev ?? '-'),
-      redo: () => gitApi.checkout(path, ref)
-    })
+    return useRepoStore.getState().run(
+      path,
+      interp(t('act.checkedOut'), { ref }),
+      () => gitApi.checkout(path, ref),
+      {
+        label: interp(t('undoLabel.checkout'), { ref }),
+        undo: () => gitApi.checkout(path, prev ?? '-'),
+        redo: () => gitApi.checkout(path, ref)
+      },
+      null,
+      undefined,
+      ['branches', 'status', 'treeStatus']
+    )
   },
 
   checkoutRemote: (path: string, fullName: string, localName: string, remote?: string) =>
@@ -973,27 +990,51 @@ export const repoActions = {
 
   createBranch: (path: string, name: string, at?: string) => {
     const prev = useRepoStore.getState().repos[path]?.branches.current
-    return useRepoStore.getState().run(path, interp(t('act.createdBranch'), { name }), () => gitApi.createBranch(path, name, at), {
-      label: interp(t('undoLabel.createBranch'), { name }),
-      undo: async () => {
-        await gitApi.checkout(path, prev ?? '-')
-        await gitApi.deleteBranch(path, name, true)
+    return useRepoStore.getState().run(
+      path,
+      interp(t('act.createdBranch'), { name }),
+      () => gitApi.createBranch(path, name, at),
+      {
+        label: interp(t('undoLabel.createBranch'), { name }),
+        undo: async () => {
+          await gitApi.checkout(path, prev ?? '-')
+          await gitApi.deleteBranch(path, name, true)
+        },
+        redo: () => gitApi.createBranch(path, name, at)
       },
-      redo: () => gitApi.createBranch(path, name, at)
-    })
+      null,
+      undefined,
+      ['log', 'branches']
+    )
   },
 
   deleteBranch: (path: string, name: string, sha: string) =>
-    useRepoStore.getState().run(path, interp(t('act.deletedBranch'), { name }), () => gitApi.deleteBranch(path, name, true), {
-      label: interp(t('undoLabel.deleteBranch'), { name }),
-      undo: () => gitApi.createBranch(path, name, sha, false),
-      redo: () => gitApi.deleteBranch(path, name, true)
-    }),
+    useRepoStore.getState().run(
+      path,
+      interp(t('act.deletedBranch'), { name }),
+      () => gitApi.deleteBranch(path, name, true),
+      {
+        label: interp(t('undoLabel.deleteBranch'), { name }),
+        undo: () => gitApi.createBranch(path, name, sha, false),
+        redo: () => gitApi.deleteBranch(path, name, true)
+      },
+      null,
+      undefined,
+      ['log', 'branches']
+    ),
 
   deleteRemoteBranch: (path: string, remote: string, name: string) =>
     useRepoStore
       .getState()
-      .run(path, interp(t('act.deletedRemoteBranch'), { remote, name }), () => gitApi.deleteRemoteBranch(path, remote, name)),
+      .run(
+        path,
+        interp(t('act.deletedRemoteBranch'), { remote, name }),
+        () => gitApi.deleteRemoteBranch(path, remote, name),
+        undefined,
+        null,
+        undefined,
+        ['log', 'branches']
+      ),
 
   // ─── git-flow ───
   gitflowStart: (path: string, kind: GitflowKind, name: string) => {
@@ -1230,16 +1271,32 @@ export const repoActions = {
     }),
 
   renameBranch: (path: string, oldName: string, newName: string) =>
-    useRepoStore.getState().run(path, interp(t('act.renamedBranch'), { oldName, newName }), () => gitApi.renameBranch(path, oldName, newName), {
-      label: t('undoLabel.renameBranch'),
-      undo: () => gitApi.renameBranch(path, newName, oldName),
-      redo: () => gitApi.renameBranch(path, oldName, newName)
-    }),
+    useRepoStore.getState().run(
+      path,
+      interp(t('act.renamedBranch'), { oldName, newName }),
+      () => gitApi.renameBranch(path, oldName, newName),
+      {
+        label: t('undoLabel.renameBranch'),
+        undo: () => gitApi.renameBranch(path, newName, oldName),
+        redo: () => gitApi.renameBranch(path, oldName, newName)
+      },
+      null,
+      undefined,
+      ['branches']
+    ),
 
   renameBranchRemote: (path: string, oldName: string, newName: string, remote: string) =>
     useRepoStore
       .getState()
-      .run(path, interp(t('act.renamedBranchWithRemote'), { oldName, newName, remote }), () => gitApi.renameBranchRemote(path, oldName, newName, remote)),
+      .run(
+        path,
+        interp(t('act.renamedBranchWithRemote'), { oldName, newName, remote }),
+        () => gitApi.renameBranchRemote(path, oldName, newName, remote),
+        undefined,
+        null,
+        undefined,
+        ['branches']
+      ),
 
   /** `options` overrides the settings default; the plain menu entry passes none. */
   merge: (path: string, ref: string, options?: MergeOptions) => {

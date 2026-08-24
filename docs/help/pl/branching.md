@@ -14,6 +14,11 @@ albo przestawić (Ustawienia → Układ), a pole filtra działa na wszystkie nar
 To, które sekcje i katalogi zostawiasz rozwinięte albo zwinięte, jest
 zapamiętywane per repozytorium — także po restarcie.
 
+Sekcja zawierająca ponad 300 referencji startuje zwinięta. W repozytorium z
+tysiącami nigdy nieusuniętych gałęzi zdalnych wszystkie trafiłyby inaczej na
+ekran, choć nikt o to nie prosił; rozwiń ją raz, a ten wybór zostanie
+zapamiętany jak każdy inny.
+
 ![Panel boczny z przypiętymi gałęziami trzymanymi na górze](../../screenshots/pinned-branches.webp)
 
 ## Gałęzie

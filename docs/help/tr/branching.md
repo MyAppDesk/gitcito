@@ -15,6 +15,10 @@ kutusu hepsine birden uygulanır.
 Hangi bölümleri ve klasörleri açık ya da kapalı bıraktığınız depo başına
 hatırlanır; yeniden başlatınca da korunur.
 
+300'den fazla referans içeren bir bölüm kapalı başlar. Hiç silinmemiş binlerce
+uzak dalı olan bir depoda aksi hâlde hepsi siz istemeden ekrana gelirdi; bir kez
+açın, bu tercih diğerleri gibi hatırlanır.
+
 ![Sabitlenmiş dalların en üstte tutulduğu kenar çubuğu](../../screenshots/pinned-branches.webp)
 
 ## Dallar

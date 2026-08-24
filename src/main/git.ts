@@ -1,5 +1,5 @@
 import { ipcMain, shell } from 'electron'
-import { simpleGit, SimpleGit } from 'simple-git'
+import { simpleGit, SimpleGit, type StatusResult } from 'simple-git'
 import { basename, dirname, join, resolve as resolvePath, sep } from 'path'
 import { pathToFileURL } from 'url'
 import { readFile, writeFile, unlink, stat, chmod, mkdir, readdir, rename, cp, open } from 'fs/promises'
@@ -7,6 +7,7 @@ import { tmpdir, homedir } from 'os'
 import { existsSync, accessSync, constants as fsConstants } from 'fs'
 import { spawn, spawnSync, execFile } from 'child_process'
 import { promisify } from 'util'
+import { createHash } from 'crypto'
 
 const pexecFile = promisify(execFile)
 import type {
@@ -287,6 +288,83 @@ const gitFor = (repoPath: string): SimpleGit => {
     gitInstances.set(repoPath, git)
   }
   return git
+}
+
+// The per-worktree git-dir (where MERGE_HEAD, rebase-merge, etc. live) never
+// moves for the lifetime of a repo tab, so resolve it with `rev-parse` once
+// and reuse it — `mergeState()` is polled on every refresh (watcher, 20s
+// idle tick, focus), and spawning a subprocess per candidate path there adds
+// up on a repo a user keeps open all day.
+// `for-each-ref --merged=HEAD` has to prove ancestry for every ref it is given,
+// so on a repo carrying thousands of never-deleted remote branches it costs more
+// than the rest of branches() put together. Its answer depends on exactly two
+// things: where HEAD is, and what every ref points at — both of which we already
+// read, so the ref listing itself is the cache key. Staging a file, stashing,
+// writing a note: none of them move a ref, and all of them now skip the walk.
+const mergedCache = new Map<string, { key: string; refs: Set<string> }>()
+
+async function mergedIntoHead(repoPath: string, headSha: string, refListing: string): Promise<Set<string>> {
+  // No HEAD (unborn branch) means nothing can be merged into it.
+  if (!headSha) return new Set()
+  const key = `${headSha}\n${createHash('sha1').update(refListing).digest('hex')}`
+  const hit = mergedCache.get(repoPath)
+  if (hit && hit.key === key) return hit.refs
+
+  const refs = new Set<string>()
+  try {
+    const out = await runGit(
+      repoPath,
+      ['for-each-ref', '--merged=HEAD', '--format=%(refname)', 'refs/heads', 'refs/remotes'],
+      undefined,
+      16 * 1024 * 1024
+    )
+    for (const ref of out.split('\n').filter(Boolean)) refs.add(ref)
+  } catch {
+    // An empty repo, or a HEAD git cannot resolve. Cache nothing rather than
+    // caching an empty answer that a later valid read would have to undo.
+    return refs
+  }
+  mergedCache.set(repoPath, { key, refs })
+  return refs
+}
+
+/**
+ * The one walk of the working tree a refresh needs.
+ *
+ * `status()` (the commit panel's file list) and `treeStatus()` (the file tree's
+ * per-path badges) used to spawn a `git status` each, and on a large working
+ * tree that walk is the most expensive thing a refresh does — paying for it
+ * twice was the single biggest waste left. The two commands differed only by
+ * `--ignored=matching`, which adds the `!!` lines and leaves everything else
+ * byte-identical, so one call now serves both.
+ *
+ * The map is in-flight coalescing, not a cache: `doRefresh` issues both reads
+ * in the same tick, so they share one process, and the entry is dropped the
+ * moment it settles. Nothing is ever served from a previous refresh — and as a
+ * side effect the two halves can no longer disagree, which two independent
+ * snapshots could.
+ */
+const statusInFlight = new Map<string, Promise<StatusResult>>()
+
+async function statusScan(repoPath: string): Promise<StatusResult> {
+  const running = statusInFlight.get(repoPath)
+  if (running) return running
+  const p = gitFor(repoPath).status(['--ignored=matching'])
+  statusInFlight.set(repoPath, p)
+  try {
+    return await p
+  } finally {
+    statusInFlight.delete(repoPath)
+  }
+}
+
+const gitDirCache = new Map<string, string>()
+async function absoluteGitDir(repoPath: string): Promise<string> {
+  const cached = gitDirCache.get(repoPath)
+  if (cached) return cached
+  const dir = (await gitFor(repoPath).raw(['rev-parse', '--absolute-git-dir'])).trim()
+  gitDirCache.set(repoPath, dir)
+  return dir
 }
 
 // Bounded LRU for immutable, content-addressed reads. A commit's file list and
@@ -768,11 +846,26 @@ export function redactCredentials(msg: string): string {
   return msg.replace(/(:\/\/)[^/\s@]+(?::[^/\s@]*)?@/g, '$1***@')
 }
 
-/** Run a git command non-interactively, surfacing stderr as the thrown message. */
-async function runGit(repoPath: string, args: string[], extraEnv?: NodeJS.ProcessEnv): Promise<string> {
+/**
+ * Run a git command non-interactively, surfacing stderr as the thrown message.
+ *
+ * Prefer this over `gitFor(repo).raw(...)` on any read a refresh performs.
+ * simple-git's completion-detection plugin sleeps a flat 50ms after a command
+ * that wrote nothing to stdout or stderr, to guard against output arriving
+ * after `close` on some platforms. `execFile` already waits for stdio EOF, so
+ * it does not need the guard — and it is exactly the *clean* repo, where the
+ * reads return nothing, that pays the 50ms per call otherwise.
+ */
+async function runGit(
+  repoPath: string,
+  args: string[],
+  extraEnv?: NodeJS.ProcessEnv,
+  maxBuffer?: number
+): Promise<string> {
   try {
     const { stdout } = await pexecFile('git', ['-C', repoPath, ...args], {
-      env: extraEnv ? { ...noPromptEnv(), ...extraEnv } : noPromptEnv()
+      env: extraEnv ? { ...noPromptEnv(), ...extraEnv } : noPromptEnv(),
+      ...(maxBuffer ? { maxBuffer } : {})
     })
     return stdout
   } catch (err) {
@@ -1482,7 +1575,7 @@ export const gitService = {
    */
   async stashBaseShas(repoPath: string): Promise<string[]> {
     try {
-      const out = await gitFor(repoPath).raw(['stash', 'list', '--pretty=format:%P'])
+      const out = await runGit(repoPath, ['stash', 'list', '--pretty=format:%P'])
       const bases = new Set<string>()
       for (const line of out.split('\n')) {
         const first = line.trim().split(' ')[0]
@@ -1564,92 +1657,73 @@ export const gitService = {
   },
 
   async branches(repoPath: string): Promise<BranchesPayload> {
-    const git = gitFor(repoPath)
-    let current = ''
-    try {
-      current = (await git.revparse(['--abbrev-ref', 'HEAD'])).trim()
-    } catch {
-      /* empty repo */
-    }
-
-    const mergedRefs = new Set<string>()
-    try {
-      const out = await git.raw([
-        'for-each-ref',
-        '--merged=HEAD',
-        '--format=%(refname)',
-        'refs/heads',
-        'refs/remotes'
-      ])
-      for (const ref of out.split('\n').filter(Boolean)) mergedRefs.add(ref)
-    } catch {
-      /* empty repo */
-    }
-
-    const locals: BranchInfo[] = []
-    try {
-      const out = await git.raw([
+    // Four independent reads, so run them together rather than one after
+    // another — the dispatcher's lock is already held by branches() as a whole,
+    // and these are the only git processes in flight for this repo.
+    const [current, headSha, localsOut, remotesOut, tagsOut] = await Promise.all([
+      runGit(repoPath, ['rev-parse', '--abbrev-ref', 'HEAD'])
+        .then((s) => s.trim())
+        .catch(() => ''),
+      runGit(repoPath, ['rev-parse', 'HEAD'])
+        .then((s) => s.trim())
+        .catch(() => ''),
+      runGit(repoPath, [
         'for-each-ref',
         `--format=%(refname:short)${SEP}%(objectname:short)${SEP}%(upstream:short)${SEP}%(upstream:track)`,
         'refs/heads'
-      ])
-      for (const line of out.split('\n').filter(Boolean)) {
-        const [name, sha, upstream, track] = line.split(SEP)
-        const { ahead, behind } = parseTrack(track ?? '')
-        locals.push({
-          name,
-          sha,
-          upstream: upstream || null,
-          ahead,
-          behind,
-          isCurrent: name === current,
-          mergedIntoCurrent: mergedRefs.has(`refs/heads/${name}`)
-        })
-      }
-    } catch {
-      /* ignore */
+      ]).catch(() => ''),
+      runGit(
+        repoPath,
+        ['for-each-ref', `--format=%(refname)${SEP}%(objectname:short)${SEP}%(symref)`, 'refs/remotes'],
+        undefined,
+        16 * 1024 * 1024
+      ).catch(() => ''),
+      runGit(
+        repoPath,
+        ['for-each-ref', '--sort=-version:refname', `--format=%(refname:short)${SEP}%(objectname:short)`, 'refs/tags'],
+        undefined,
+        16 * 1024 * 1024
+      ).catch(() => '')
+    ])
+
+    const mergedRefs = await mergedIntoHead(repoPath, headSha, localsOut + remotesOut)
+
+    const locals: BranchInfo[] = []
+    for (const line of localsOut.split('\n').filter(Boolean)) {
+      const [name, sha, upstream, track] = line.split(SEP)
+      const { ahead, behind } = parseTrack(track ?? '')
+      locals.push({
+        name,
+        sha,
+        upstream: upstream || null,
+        ahead,
+        behind,
+        isCurrent: name === current,
+        mergedIntoCurrent: mergedRefs.has(`refs/heads/${name}`)
+      })
     }
 
     const remotes: RemoteBranchInfo[] = []
-    try {
-      const out = await git.raw([
-        'for-each-ref',
-        `--format=%(refname)${SEP}%(objectname:short)${SEP}%(symref)`,
-        'refs/remotes'
-      ])
-      for (const line of out.split('\n').filter(Boolean)) {
-        const [refName, sha, symref] = line.split(SEP)
-        if (symref || !refName.startsWith('refs/remotes/')) continue
-        const fullName = refName.slice('refs/remotes/'.length)
-        if (fullName.endsWith('/HEAD')) continue
-        const slash = fullName.indexOf('/')
-        if (slash <= 0) continue
-        remotes.push({
-          remote: fullName.slice(0, slash),
-          name: fullName.slice(slash + 1),
-          fullName,
-          sha,
-          mergedIntoCurrent: mergedRefs.has(refName)
-        })
-      }
-    } catch {
-      /* ignore */
+    for (const line of remotesOut.split('\n').filter(Boolean)) {
+      const [refName, sha, symref] = line.split(SEP)
+      if (symref || !refName.startsWith('refs/remotes/')) continue
+      const fullName = refName.slice('refs/remotes/'.length)
+      if (fullName.endsWith('/HEAD')) continue
+      const slash = fullName.indexOf('/')
+      if (slash <= 0) continue
+      remotes.push({
+        remote: fullName.slice(0, slash),
+        name: fullName.slice(slash + 1),
+        fullName,
+        sha,
+        mergedIntoCurrent: mergedRefs.has(refName)
+      })
     }
 
     const tags: TagInfo[] = []
-    try {
-      const out = await git.raw([
-        'for-each-ref',
-        '--sort=-version:refname',
-        `--format=%(refname:short)${SEP}%(objectname:short)`,
-        'refs/tags'
-      ])
-      for (const line of out.split('\n').filter(Boolean)) {
-        const [name, sha] = line.split(SEP)
-        tags.push({ name, sha })
-      }
-    } catch {
-      /* ignore */
+    for (const line of tagsOut.split('\n').filter(Boolean)) {
+      const [name, sha] = line.split(SEP)
+      tags.push({ name, sha })
     }
 
     return { current, locals, remotes, tags }
@@ -1958,8 +2032,7 @@ export const gitService = {
   },
 
   async status(repoPath: string): Promise<RepoStatus> {
-    const git = gitFor(repoPath)
-    const st = await git.status()
+    const st = await statusScan(repoPath)
     const conflictPaths = new Set(st.conflicted)
     const staged: FileEntry[] = []
     const unstaged: FileEntry[] = []
@@ -1990,13 +2063,12 @@ export const gitService = {
   },
 
   async mergeState(repoPath: string): Promise<ConflictOpKind | null> {
-    const git = gitFor(repoPath)
-    const gitPath = async (name: string): Promise<string> => (await git.raw(['rev-parse', '--git-path', name])).trim()
-    const abs = (p: string): string => (p.startsWith('/') ? p : join(repoPath, p))
-    if (existsSync(abs(await gitPath('rebase-merge'))) || existsSync(abs(await gitPath('rebase-apply')))) return 'rebase'
-    if (existsSync(abs(await gitPath('MERGE_HEAD')))) return 'merge'
-    if (existsSync(abs(await gitPath('CHERRY_PICK_HEAD')))) return 'cherry-pick'
-    if (existsSync(abs(await gitPath('REVERT_HEAD')))) return 'revert'
+    const gitDir = await absoluteGitDir(repoPath)
+    const has = (name: string): boolean => existsSync(join(gitDir, name))
+    if (has('rebase-merge') || has('rebase-apply')) return 'rebase'
+    if (has('MERGE_HEAD')) return 'merge'
+    if (has('CHERRY_PICK_HEAD')) return 'cherry-pick'
+    if (has('REVERT_HEAD')) return 'revert'
     return null
   },
 
@@ -2157,9 +2229,8 @@ export const gitService = {
   },
 
   async stashes(repoPath: string): Promise<StashInfo[]> {
-    const git = gitFor(repoPath)
     try {
-      const out = await git.raw(['stash', 'list', `--pretty=format:%H${SEP}%P${SEP}%at${SEP}%gs`])
+      const out = await runGit(repoPath, ['stash', 'list', `--pretty=format:%H${SEP}%P${SEP}%at${SEP}%gs`])
       return out
         .split('\n')
         .filter(Boolean)
@@ -4729,9 +4800,11 @@ export const gitService = {
    * when something inside them changed. Clean tracked files are absent (= clean).
    */
   async treeStatus(repoPath: string): Promise<Record<string, TreeStatusKind>> {
-    const git = gitFor(repoPath)
-    const raw = await git.raw(['status', '--porcelain=v1', '--ignored', '-uall', '-z']).catch(() => '')
+    // Shares the refresh's single status walk — see `statusScan`. Failing soft
+    // matches the old behaviour: no badges is a worse tree, not a broken one.
+    const st = await statusScan(repoPath).catch(() => null)
     const out: Record<string, TreeStatusKind> = {}
+    if (!st) return out
     // Priority when a folder aggregates mixed child statuses (higher wins).
     const rank: Record<TreeStatusKind, number> = {
       conflicted: 6, modified: 5, added: 4, deleted: 3, renamed: 2, untracked: 1, ignored: 0
@@ -4740,33 +4813,34 @@ export const gitService = {
       const cur = out[p]
       if (!cur || rank[kind] > rank[cur]) out[p] = kind
     }
-    const records = raw.split('\0').filter(Boolean)
-    for (let i = 0; i < records.length; i++) {
-      const rec = records[i]
-      const xy = rec.slice(0, 2)
-      let path = rec.slice(3)
-      // Renames/copies emit "R  new\0old" — the old path is the next NUL field.
-      if (xy[0] === 'R' || xy[0] === 'C') i++
+    // An untracked directory arrives as "tmp/" — strip the slash so it keys the
+    // same way the tree addresses it.
+    const clean = (p: string): string => p.replace(/\/$/, '')
+
+    for (const f of st.files) {
+      const x = f.index
+      const y = f.working_dir
       const kind: TreeStatusKind =
-        xy === '!!' ? 'ignored'
-          : xy === '??' ? 'untracked'
-          : xy.includes('U') || xy === 'AA' || xy === 'DD' ? 'conflicted'
-          : xy.includes('R') ? 'renamed'
-          : xy.includes('A') ? 'added'
-          : xy.includes('D') ? 'deleted'
+        x === '?' || y === '?' ? 'untracked'
+          : x === 'U' || y === 'U' || (x === 'A' && y === 'A') || (x === 'D' && y === 'D') ? 'conflicted'
+          : x === 'R' || y === 'R' ? 'renamed'
+          : x === 'A' || y === 'A' ? 'added'
+          : x === 'D' || y === 'D' ? 'deleted'
           : 'modified'
-      path = path.replace(/\/$/, '')
+      const path = clean(f.path)
       bump(path, kind)
-      // Propagate to ancestor directories (ignored stays leaf-only so whole
-      // ignored trees don't paint every parent grey).
-      if (kind !== 'ignored') {
-        let slash = path.lastIndexOf('/')
-        while (slash > 0) {
-          bump(path.slice(0, slash), kind)
-          slash = path.lastIndexOf('/', slash - 1)
-        }
+      // Propagate to ancestor directories so a collapsed folder can show a dot.
+      let slash = path.lastIndexOf('/')
+      while (slash > 0) {
+        bump(path.slice(0, slash), kind)
+        slash = path.lastIndexOf('/', slash - 1)
       }
     }
+
+    // Ignored stays leaf-only, so a whole ignored tree does not paint every
+    // parent grey. `--ignored=matching` reports the directory itself, and
+    // `treeStatusOf` in the renderer resolves the files inside it.
+    for (const p of st.ignored ?? []) bump(clean(p), 'ignored')
     return out
   },
 

@@ -566,13 +566,18 @@ export default function App(): React.JSX.Element {
     }
   }, [activeRepoPath])
 
-  // Periodic light refresh of the active repo (status + branches drift).
+  // Periodic light refresh of the active repo (status + branches drift), as a
+  // backstop for the rare case the FS watcher misses something (e.g. a
+  // network drive). Skipped while the window isn't visible — the focus/
+  // visibilitychange effect above already refreshes the moment it's looked at
+  // again, so ticking in the background only costs subprocess spawns for no
+  // one to see, which adds up on a repo left open all day.
   useEffect(() => {
     if (!activeRepoPath) return
-    const interval = setInterval(
-      () => void useRepoStore.getState().refresh(activeRepoPath, { light: true }),
-      20000
-    )
+    const interval = setInterval(() => {
+      if (document.visibilityState !== 'visible') return
+      void useRepoStore.getState().refresh(activeRepoPath, { light: true })
+    }, 60000)
     return () => clearInterval(interval)
   }, [activeRepoPath])
 

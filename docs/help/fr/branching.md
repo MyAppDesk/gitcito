@@ -15,6 +15,11 @@ Disposition), et le champ de filtre s'applique à toutes.
 Les sections et dossiers laissés ouverts ou repliés sont mémorisés par dépôt,
 même après un redémarrage.
 
+Une section contenant plus de 300 références démarre repliée. Dans un dépôt
+comptant des milliers de branches distantes jamais supprimées, elles seraient
+sinon toutes à l'écran sans que vous les ayez demandées ; dépliez-la une fois et
+ce choix est mémorisé comme les autres.
+
 ![La barre latérale, avec les branches épinglées maintenues en haut](../../screenshots/pinned-branches.webp)
 
 ## Branches

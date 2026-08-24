@@ -17,3 +17,6 @@ resources/tree-sitter/
 
 # Generated GitHub Pages site (npm run site)
 dist-site/
+
+# Generated perf-testing repo (npm run playground:monster) — minutes to build, never wiped automatically
+examples/monster/

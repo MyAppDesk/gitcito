@@ -14,6 +14,11 @@ riordinata (Impostazioni → Layout), e il filtro di ricerca vale per tutte.
 Quali sezioni e cartelle restano aperte o chiuse viene ricordato per
 repository, anche dopo un riavvio.
 
+Una sezione con più di 300 riferimenti parte chiusa. In un repository con
+migliaia di rami remoti mai cancellati sarebbero altrimenti tutti a schermo
+senza averli chiesti; aprila una volta e la scelta viene ricordata come le
+altre.
+
 ![La barra laterale, con i branch appuntati tenuti in cima](../../screenshots/pinned-branches.webp)
 
 ## Branch

@@ -7,6 +7,7 @@ import { useUIStore, type MenuItem } from '../stores/ui'
 import { repoActions, type RepoData } from '../stores/repo'
 import { useSettingsStore } from '../stores/settings'
 import { openWithMenuItems } from '../lib/openWith'
+import { treeStatusOf } from '../lib/treeStatus'
 import {
   EMPTY_FILTER,
   isFilterActive,
@@ -407,7 +408,7 @@ export function FileTree({
   // file menu (Add to .gitignore · Ignore… · & stop tracking · Stop tracking ·
   // Delete from Git and disk). Untrack actions only show for tracked paths.
   const ignoreMenu = (node: TreeEntry): MenuItem[] => {
-    const status = treeStatus[node.path]
+    const status = treeStatusOf(treeStatus, node.path)
     const patterns = [node.dir ? `/${node.path}/` : `/${node.path}`]
     const tracked = status !== 'untracked' && status !== 'ignored'
     const items: MenuItem[] = [
@@ -511,7 +512,7 @@ export function FileTree({
     if (!ents) return []
     return ents.map((node) => {
       const open = node.dir && expanded.has(node.path)
-      const status = treeStatus[node.path]
+      const status = treeStatusOf(treeStatus, node.path)
       const selected = !node.dir && fileView?.repoPath === path && fileView.file === node.path
       // Collapsed folders show aggregate change counts instead of the plain dot.
       const counts = node.dir && !open ? folderCounts[node.path] : undefined
@@ -652,7 +653,10 @@ export function FileTree({
             activeFile={fileView?.repoPath === path ? fileView.file : null}
             activeLine={fileView?.line ?? null}
             onOpen={(rel, line) => openFile(rel, line)}
-            fileRowClass={(rel) => (treeStatus[rel] ? `st-${treeStatus[rel]}` : '')}
+            fileRowClass={(rel) => {
+              const kind = treeStatusOf(treeStatus, rel)
+              return kind ? `st-${kind}` : ''
+            }}
             fileRowExtras={openWithBtn}
             onFileContext={(rel, e) => {
               e.preventDefault()
@@ -671,7 +675,7 @@ export function FileTree({
         )}
         {results.map((rel) => {
           const node: TreeEntry = { name: baseOf(rel), path: rel, dir: false }
-          const status = treeStatus[rel]
+          const status = treeStatusOf(treeStatus, rel)
           const selected = fileView?.repoPath === path && fileView.file === rel
           return (
             <div

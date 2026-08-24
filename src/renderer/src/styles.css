@@ -6785,6 +6785,15 @@ body.col-resizing .node-ava {
   contain-intrinsic-size: auto 19px;
 }
 
+/* Sidebar sections holding hundreds of refs: same trick as the huge diffs
+   above. The rows stay in the DOM — keyboard navigation, scroll-to-ref and
+   multi-select all query them — the browser just skips layout and paint for
+   the ones scrolled out of view. The fallback height is one `.sb-item`. */
+.sb-body.is-huge .sb-item {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 26px;
+}
+
 /* ─── Rich file preview (markdown / pdf / media / sheet / word) ─────────── */
 .md-preview {
   white-space: normal;

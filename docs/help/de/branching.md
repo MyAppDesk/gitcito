@@ -15,6 +15,11 @@ für alle.
 Welche Abschnitte und Ordner auf- oder zugeklappt sind, merkt sich die
 Seitenleiste pro Repository — auch über Neustarts hinweg.
 
+Ein Abschnitt mit mehr als 300 Refs startet zugeklappt. In einem Repository mit
+Tausenden nie gelöschter Remote-Branches stünden sonst alle auf dem Bildschirm,
+ohne dass jemand danach gefragt hat; einmal aufklappen genügt, die Entscheidung
+wird wie jede andere gemerkt.
+
 ![Die Seitenleiste, mit angehefteten Branches ganz oben](../../screenshots/pinned-branches.webp)
 
 ## Branches

@@ -31,7 +31,9 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
     "postinstall": "electron-rebuild -f -w node-pty || true && node scripts/sync-grammars.mjs",
-    "prepare": "husky"
+    "prepare": "husky",
+    "playground:monster": "bash examples/monster-repo.sh",
+    "repo:stats": "bash examples/repo-stats.sh"
   },
   "build": {
     "appId": "com.gitcito.desktop",

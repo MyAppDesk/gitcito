@@ -398,5 +398,8 @@ redaction logic in production code.
 | `scripts/docs-map.json` | Which page documents which modal / page tab / command |
 | `scripts/build-site.mjs` | The GitHub Pages site (`npm run site`) |
 | `examples/screenshots/` | Playwright screenshot + clip automation (`npm run screenshots`) |
+| `examples/monster-repo.sh` | Builds a 140k-commit / 92k-file repo for perf work (`npm run playground:monster`). Not part of the playground — it lives in gitignored `examples/monster/` and nothing wipes it |
+| `examples/repo-stats.sh` | Times the git commands a refresh spawns, against any repo (`npm run repo:stats [path]`) |
+| `test/perf.bench.test.ts` | Times the gitService reads a refresh performs — skipped unless `GITCITO_BENCH_REPO` points at a repo |
 | `ROADMAP.md` | What might come next, and what is deliberately out |
 | `.github/workflows/pages.yml` | Deploys that site on release and on docs pushes |

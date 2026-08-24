@@ -14,6 +14,11 @@ worktrees en submodules**. Elke sectie kan verborgen of verplaatst worden
 Welke secties en mappen je open of dicht laat staan wordt per repository
 onthouden, ook na een herstart.
 
+Een sectie met meer dan 300 refs begint ingeklapt. In een repository met
+duizenden nooit verwijderde remote branches zouden ze anders allemaal in beeld
+staan zonder dat je erom vroeg; klap hem één keer uit en die keuze wordt net als
+elke andere onthouden.
+
 ![De zijbalk, met vastgezette branches bovenaan](../../screenshots/pinned-branches.webp)
 
 ## Branches

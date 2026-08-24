@@ -1140,3 +1140,28 @@ describe('discoverLaunch — compounds & serverReadyAction (launch-configs playg
     expect(srv!.serverReadyAction?.action).toBe('openExternally')
   })
 })
+
+describe('tree status (untracked-mess playground)', () => {
+  it('collapses an ignored directory instead of naming every file inside it', async () => {
+    const st = await gitService.treeStatus(repoPath('untracked-mess'))
+    // The whole point of --ignored=matching: node_modules is one entry, not one
+    // per file. Walking into it is the most expensive thing a refresh can do.
+    expect(st['node_modules']).toBe('ignored')
+    expect(st['dist']).toBe('ignored')
+    expect(st['node_modules/left-pad/index.js']).toBeUndefined()
+    expect(st['dist/assets/app.css']).toBeUndefined()
+    // Ignored files that are not inside an ignored directory still appear by name.
+    expect(st['.env']).toBe('ignored')
+    expect(st['app.log']).toBe('ignored')
+  })
+
+  it('still names every untracked file individually, which -uall is for', async () => {
+    const st = await gitService.treeStatus(repoPath('untracked-mess'))
+    expect(st['notes.md']).toBe('untracked')
+    expect(st['tmp/cache/blob.txt']).toBe('untracked')
+    // Untracked status propagates up to the folders holding it, so a collapsed
+    // folder can show a dot; ignored deliberately does not.
+    expect(st['tmp']).toBe('untracked')
+    expect(st['node_modules/left-pad']).toBeUndefined()
+  })
+})

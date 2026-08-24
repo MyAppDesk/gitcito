@@ -264,6 +264,12 @@ interface UIState {
   /** Left sidebar (branches/files) collapsed. Global workspace preference —
    *  hides the sidebar column so the graph gets the full width. */
   sidebarCollapsed: boolean
+  /** Which sidebar tab is showing. Lives here rather than in the component
+   *  because the refresh cycle reads it: the file tree's per-path badges cost a
+   *  second full `git status` walk, and nothing displays them until this is
+   *  'files'. */
+  sidebarTab: 'git' | 'files'
+  setSidebarTab: (tab: 'git' | 'files') => void
   /** Chat shares the contextual right panel with commit/stash details. */
   chatPanelOpen: boolean
   rightPanelTab: 'details' | 'chat'
@@ -401,6 +407,8 @@ export const useUIStore = create<UIState>((set, get) => ({
     set((s) => ({ terminalOpenByRepo: { ...s.terminalOpenByRepo, [repoPath]: !s.terminalOpenByRepo[repoPath] } })),
   setTerminalOpen: (repoPath, open) =>
     set((s) => ({ terminalOpenByRepo: { ...s.terminalOpenByRepo, [repoPath]: open } })),
+  sidebarTab: 'git',
+  setSidebarTab: (sidebarTab) => set({ sidebarTab }),
   toggleSidebar: () => get().setSidebarCollapsed(!get().sidebarCollapsed),
   setSidebarCollapsed: (sidebarCollapsed) => {
     set({ sidebarCollapsed })

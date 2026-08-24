@@ -14,6 +14,10 @@ reordenada (Configurações → Layout), e a caixa de filtro vale para todas ela
 Quais seções e pastas você deixa abertas ou fechadas fica lembrado por
 repositório, mesmo depois de reiniciar.
 
+Uma seção com mais de 300 refs começa recolhida. Num repositório com milhares de
+branches remotos que ninguém nunca apagou, todos estariam na tela sem você ter
+pedido; abra uma vez e essa escolha é lembrada como qualquer outra.
+
 ![A barra lateral, com as branches fixadas seguras no topo](../../screenshots/pinned-branches.webp)
 
 ## Branches

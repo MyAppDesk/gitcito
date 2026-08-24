@@ -2789,6 +2789,21 @@ export const gitService = {
     }
   },
 
+  /**
+   * When this repository last fetched, from `FETCH_HEAD`'s mtime. Reading the
+   * file rather than trusting our own bookkeeping is the point: a `git fetch`
+   * run in a terminal, or by another Gitcito window, counts the same as ours.
+   * Null when the repository has never fetched.
+   */
+  async lastFetchAt(repoPath: string): Promise<number | null> {
+    try {
+      const rel = (await gitFor(repoPath).raw(['rev-parse', '--git-path', 'FETCH_HEAD'])).trim()
+      return (await stat(rel.startsWith('/') ? rel : join(repoPath, rel))).mtimeMs
+    } catch {
+      return null
+    }
+  },
+
   async pull(repoPath: string, mode: 'default' | 'ff-only' | 'rebase' = 'default'): Promise<void> {
     const remote = await upstreamRemote(repoPath)
     const args = ['pull']
@@ -6957,6 +6972,7 @@ const APP_LEVEL_METHODS = new Set<string>(['clone', 'init', 'remoteBranches'])
 
 const READ_METHODS = new Set<string>([
   'open',
+  'lastFetchAt',
   'upstreamSuggestion',
   'log',
   'branches',

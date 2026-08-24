@@ -214,6 +214,8 @@ export const gitApi = {
   autosquash: (path: string, base: string) => call<void>('autosquash', path, base),
 
   fetchAll: (path: string) => call<ForcedRefUpdate[]>('fetchAll', path),
+  /** When the repo last fetched, from FETCH_HEAD — a CLI fetch counts too. */
+  lastFetchAt: (path: string) => call<number | null>('lastFetchAt', path),
   pull: (path: string, mode: 'default' | 'ff-only' | 'rebase') => call<void>('pull', path, mode),
   push: (path: string, branch: string, opts?: { force?: boolean; remote?: string }) =>
     call<void>('push', path, branch, opts),

@@ -351,8 +351,19 @@ async function doRefresh(path: string, slices: RefreshSlice[]): Promise<void> {
   const keep = <T>(cur: T | undefined, want: boolean, fetch: () => Promise<T>, fallback: T): Promise<T> =>
     want ? fetch() : Promise.resolve(cur ?? fallback)
   try {
-    const [commits, branches, status, stashes, remotes, conflictContext, worktrees, submodules, treeStatus, notedShas] =
-      await Promise.all([
+    const [
+      commits,
+      branches,
+      status,
+      stashes,
+      remotes,
+      conflictContext,
+      worktrees,
+      submodules,
+      treeStatus,
+      notedShas,
+      lastFetchAt
+    ] = await Promise.all([
         keep(repo?.commits, want.has('log'), () => gitApi.log(path, maxCount), []),
         keep(repo?.branches, want.has('branches'), () => gitApi.branches(path), {
           current: '',
@@ -377,7 +388,11 @@ async function doRefresh(path: string, slices: RefreshSlice[]): Promise<void> {
           () => gitApi.treeStatus(path).catch(() => ({})),
           {}
         ),
-        keep(repo?.notedShas, want.has('log'), () => gitApi.notedCommits(path).catch(() => []), [])
+        keep(repo?.notedShas, want.has('log'), () => gitApi.notedCommits(path).catch(() => []), []),
+        // One stat(), and only when the remotes slice is due — which is what a
+        // fetch refetches. Cheap enough to keep the age honest after a fetch
+        // run outside the app.
+        keep(repo?.lastFetchAt, want.has('remotes'), () => gitApi.lastFetchAt(path).catch(() => null), null)
       ])
     store.patch(path, {
       commits,
@@ -391,6 +406,7 @@ async function doRefresh(path: string, slices: RefreshSlice[]): Promise<void> {
       submodules,
       treeStatus,
       notedShas,
+      lastFetchAt,
       loading: false,
       notGit: false,
       lastRefreshAt: Date.now()

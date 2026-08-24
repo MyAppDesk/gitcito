@@ -5,6 +5,7 @@ import { dirname, join } from 'node:path'
 import { parseRemoteUrl } from '../src/main/hosting'
 
 import { treeStatusOf } from '../src/renderer/src/lib/treeStatus'
+import { timeAgo, isStale, STALE_AFTER_MS } from '../src/renderer/src/lib/timeAgo'
 import { HUGE_SECTION, openUnlessHuge } from '../src/renderer/src/lib/sidebarSections'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -4572,5 +4573,44 @@ describe('openUnlessHuge', () => {
     // A non-origin remote passes base=false; being small must not open it.
     expect(openUnlessHuge(5, false)).toBe(false)
     expect(openUnlessHuge(9000, false)).toBe(false)
+  })
+})
+
+describe('timeAgo', () => {
+  const NOW = 1_700_000_000_000
+  const ago = (ms: number): ReturnType<typeof timeAgo> => timeAgo(NOW - ms, NOW)
+
+  it('has no label for a timestamp we do not have', () => {
+    expect(timeAgo(null, NOW)).toBeNull()
+  })
+
+  it('picks the coarsest unit that still says something', () => {
+    expect(ago(3_000)).toEqual({ key: 'time.justNow', n: 0 })
+    expect(ago(42_000)).toEqual({ key: 'time.secondsAgo', n: 42 })
+    expect(ago(5 * 60_000)).toEqual({ key: 'time.minutesAgo', n: 5 })
+    expect(ago(3 * 3_600_000)).toEqual({ key: 'time.hoursAgo', n: 3 })
+    expect(ago(2 * 86_400_000)).toEqual({ key: 'time.daysAgo', n: 2 })
+  })
+
+  it('reads a clock that jumped backwards as "just now", not as a negative age', () => {
+    expect(timeAgo(NOW + 60_000, NOW)).toEqual({ key: 'time.justNow', n: 0 })
+  })
+})
+
+describe('isStale', () => {
+  const NOW = 1_700_000_000_000
+
+  it('stays quiet for a fetch that is still fresh', () => {
+    expect(isStale(NOW, NOW)).toBe(false)
+    expect(isStale(NOW - (STALE_AFTER_MS - 1), NOW)).toBe(false)
+  })
+
+  it('speaks up exactly on the threshold and beyond', () => {
+    expect(isStale(NOW - STALE_AFTER_MS, NOW)).toBe(true)
+    expect(isStale(NOW - 86_400_000, NOW)).toBe(true)
+  })
+
+  it('says nothing at all when there is no timestamp — the caller words that', () => {
+    expect(isStale(null, NOW)).toBe(false)
   })
 })

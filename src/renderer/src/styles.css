@@ -1080,6 +1080,16 @@ textarea:focus {
   color: var(--text-0);
 }
 
+/* The fetch age, shown beside the button only once it has gone stale. */
+.age-note {
+  font-style: normal;
+  color: var(--text-2);
+  font-size: 10px;
+  font-weight: 500;
+  margin-inline-start: 5px;
+  opacity: 0.75;
+}
+
 .count-pill {
   font-style: normal;
   background: var(--accent);

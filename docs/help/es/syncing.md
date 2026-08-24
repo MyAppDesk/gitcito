@@ -104,8 +104,11 @@ Es el botón al que acudir cuando quieres *ver* lo que ha hecho el resto sin mov
 tu propio trabajo.
 
 También hay **auto-fetch** en segundo plano con el intervalo que tú fijes
-(Ajustes → General) y una insignia de "traído hace X" en la barra de
-herramientas.
+(Ajustes → General). El tooltip del botón Fetch siempre lleva la antigüedad —
+*último fetch hace 4 min* — y en cuanto un fetch pasa de quince minutos la
+antigüedad salta al propio botón, en texto atenuado. Calla mientras la respuesta
+es aburrida y habla cuando deja de serlo. La antigüedad se lee de `FETCH_HEAD`,
+así que un `git fetch` lanzado en una terminal cuenta igual que uno de aquí.
 
 Un fetch que encuentra **historial reescrito** lo dice: un aviso nombra la rama, y
 su fila gana un marcador que abre [qué ha cambiado desde](range-diff.md)

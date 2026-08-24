@@ -104,7 +104,11 @@ przycisk na chwile, gdy chcesz *zobaczyć*, co zrobili inni, nie ruszając włas
 pracy.
 
 Jest też **auto-fetch** w tle w ustawionym przez ciebie interwale (Ustawienia →
-Ogólne) i plakietka „pobrano X temu" na pasku narzędzi.
+Ogólne). Podpowiedź przycisku Fetch zawsze niesie wiek — *ostatni fetch 4 min
+temu* — a gdy fetch przekroczy piętnaście minut, wiek przenosi się na sam
+przycisk, przygaszonym tekstem. Milczy, dopóki odpowiedź jest nudna, i odzywa
+się, gdy przestaje. Wiek czytany jest z `FETCH_HEAD`, więc `git fetch`
+uruchomiony w terminalu liczy się tak samo.
 
 Fetch, który natrafi na **przepisaną historię**, mówi to wprost: toast nazywa
 gałąź, a jej wiersz dostaje znacznik otwierający

@@ -873,6 +873,23 @@ describe('rangeDiff + refTips (force-push playground)', () => {
   })
 })
 
+describe('lastFetchAt', () => {
+  it('is null for a repository that has never fetched', async () => {
+    expect(await gitService.lastFetchAt(repoPath('empty-repo'))).toBeNull()
+  })
+
+  it("reports FETCH_HEAD's mtime, so a fetch run outside the app counts too", async () => {
+    const R = cloneFixture('force-push')
+    const before = Date.now()
+    await gitService.fetchAll(R)
+    const at = await gitService.lastFetchAt(R)
+    expect(at).not.toBeNull()
+    // Filesystem timestamps can round down a little; a second of slack is plenty.
+    expect(at!).toBeGreaterThanOrEqual(before - 1000)
+    expect(at!).toBeLessThanOrEqual(Date.now() + 1000)
+  })
+})
+
 describe('upstreamSuggestion + setUpstream (force-push playground)', () => {
   let R = ''
   const git = (...args: string[]): string =>

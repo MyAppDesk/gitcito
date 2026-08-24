@@ -102,8 +102,11 @@ working tree. È quello da usare quando vuoi *vedere* cosa hanno fatto gli altri
 senza muovere il tuo lavoro.
 
 C'è anche un **auto-fetch** in background a un intervallo che imposti tu
-(Impostazioni → Generali) e un badge "recuperato X fa" nella barra degli
-strumenti.
+(Impostazioni → Generali). Il tooltip del pulsante Fetch porta sempre l'età —
+*ultimo fetch 4 min fa* — e appena un fetch supera i quindici minuti l'età si
+sposta sul pulsante stesso, in testo attenuato. Tace finché la risposta è noiosa
+e parla quando smette di esserlo. L'età si legge da `FETCH_HEAD`, quindi un `git
+fetch` lanciato in un terminale conta come uno lanciato qui.
 
 Un fetch che trova **storia riscritta** lo dice: un toast nomina il branch, e la
 sua riga guadagna un marcatore che apre

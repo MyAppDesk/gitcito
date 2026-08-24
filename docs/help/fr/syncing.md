@@ -106,8 +106,12 @@ ni votre copie de travail. C'est le bouton à utiliser quand vous voulez *voir* 
 que les autres ont fait sans déplacer votre propre travail.
 
 Il y a aussi une **récupération automatique** en arrière-plan à l'intervalle que
-vous fixez (Réglages → Général) et un badge « récupéré il y a X » dans la barre
-d'outils.
+vous fixez (Réglages → Général). L'infobulle du bouton Récupérer porte toujours
+l'ancienneté — *dernière récupération il y a 4 min* — et dès qu'une récupération
+dépasse quinze minutes, l'ancienneté passe sur le bouton lui-même, en texte
+atténué. Elle se tait tant que la réponse est ennuyeuse et parle quand elle ne
+l'est plus. Elle est lue dans `FETCH_HEAD` : un `git fetch` lancé dans un
+terminal compte donc autant qu'un lancé ici.
 
 Un fetch qui découvre de l'**histoire réécrite** le dit : une notification nomme
 la branche, et sa ligne gagne un marqueur qui ouvre [ce qui a changé

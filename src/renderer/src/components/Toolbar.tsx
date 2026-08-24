@@ -59,19 +59,9 @@ import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { repoChatAvailable } from '../lib/repoChatUI'
 import { useT, interp } from '../i18n'
+import { timeAgo, isStale } from '../lib/timeAgo'
 import { BranchStatusPicker } from './BranchStatusPicker'
 import { RepoStatusPicker } from './RepoStatusPicker'
-
-/** Short human-readable "time since" label, e.g. "now", "3m ago", "2h ago". */
-function timeSince(at: number | null): string {
-  if (!at) return 'never'
-  const diff = (Date.now() - at) / 1000
-  if (diff < 10) return 'just now'
-  if (diff < 60) return `${Math.floor(diff)}s ago`
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
-  return `${Math.floor(diff / 86400)}d ago`
-}
 
 export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
   const t = useT()
@@ -99,6 +89,13 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
     const id = setInterval(() => setTick((n) => n + 1), 15000)
     return () => clearInterval(id)
   }, [])
+
+  /** Renders a timeAgo through the dictionary — "never" when there is nothing. */
+  const since = (at: number | null): string => {
+    const ago = timeAgo(at, Date.now())
+    return ago ? interp(t(ago.key), { n: ago.n }) : t('time.never')
+  }
+  const fetchStale = isStale(repo.lastFetchAt, Date.now())
 
   const pullMenu = (e: React.MouseEvent): void => {
     e.stopPropagation()
@@ -338,9 +335,18 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
       <div className="toolbar-sep" />
 
       <div className="toolbar-group">
-        <button className="tool-btn" disabled={inflight} onClick={() => void repoActions.fetchAll(path)} title={t('toolbar.fetchTitle')}>
+        <button
+          className="tool-btn"
+          disabled={inflight}
+          onClick={() => void repoActions.fetchAll(path)}
+          title={interp(t('toolbar.fetchTitle'), { when: since(repo.lastFetchAt) })}
+        >
           {busyOp === 'fetch' ? <Loader2 size={17} className="spin" /> : <Download size={17} />}
-          <span>{t('toolbar.fetch')}</span>
+          <span>
+            {t('toolbar.fetch')}
+            {/* Silent while the answer is boring; speaks up once it is not. */}
+            {fetchStale && <em className="age-note">{since(repo.lastFetchAt)}</em>}
+          </span>
         </button>
         <button className="tool-btn split" disabled={inflight} onClick={() => void repoActions.pull(path, 'default')} title={t('toolbar.pull')}>
           {busyOp === 'pull' ? (
@@ -505,7 +511,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
             className="busy-indicator"
             role="status"
             aria-live="polite"
-            title={interp(t('toolbar.fetchedAgo'), { when: timeSince(repo.lastFetchAt) })}
+            title={interp(t('toolbar.fetchedAgo'), { when: since(repo.lastFetchAt) })}
           >
             <Loader2 size={13} className="spin" /> {busy}
           </span>
@@ -520,7 +526,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
         </div>
         <button
           className="tool-btn icon-only"
-          title={interp(t('toolbar.refreshTitle'), { time: timeSince(repo.lastRefreshAt) })}
+          title={interp(t('toolbar.refreshTitle'), { time: since(repo.lastRefreshAt) })}
           onClick={() => void useRepoStore.getState().refresh(path)}
         >
           <RefreshCw size={16} />

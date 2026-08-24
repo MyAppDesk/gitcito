@@ -3326,5 +3326,11 @@ export const de: Dict = {
   'hack.crossTitle': 'Eine Vertragsänderung könnte dich gebrochen haben',
   'hack.crossToast': '{repo} → {file}:{line} — {claim}',
   'hack.aiBudgetSpent': 'Die Session hat ihre {n} KI-Urteile aufgebraucht. Pfad- und Vertragswarnungen laufen weiter.',
-  'hack.statAi': 'In dieser Session verbrauchte KI-Urteile'
+  'hack.statAi': 'In dieser Session verbrauchte KI-Urteile',
+  'hack.conflictTitle': 'Ein Konflikt kommt',
+  'hack.conflictAhead': '{ref} ({who}) wird beim Mergen in {n} Dateien kollidieren: {files}',
+  'hack.activityTitle': 'Anderswo gelandet',
+  'hack.activityToast': '{repo}: {n} neue — {what}',
+  'hack.activity': 'Sag mir, was in den anderen Repos gelandet ist',
+  'hack.activityHint': 'Höchstens eine Nachricht pro Repository alle zehn Minuten, nie für den Tab, den du gerade ansiehst. Mit KI entscheidet sie zusätzlich, ob etwas davon deine Arbeit berührt, und schweigt sonst.'
 }

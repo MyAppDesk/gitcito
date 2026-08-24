@@ -117,6 +117,7 @@ import type {
   DetectedRepoRole,
   OwnerRule,
   ContractChange,
+  IncomingCommit,
   WipPushResult,
   SemanticCollision,
   CommitEditInfo,
@@ -568,6 +569,8 @@ export const gitApi = {
   collisionDiffs: (path: string, ref: string, files: string[]) =>
     call<{ local: string; incoming: string }>('collisionDiffs', path, ref, files),
   worktreeDiff: (path: string) => call<string>('worktreeDiff', path),
+  incomingCommits: (path: string, max?: number, sinceSec?: number) =>
+    call<IncomingCommit[]>('incomingCommits', path, max, sinceSec),
   pushWipSnapshot: (path: string, branch: string, remote?: string) =>
     call<WipPushResult | null>('pushWipSnapshot', path, branch, remote),
   deleteWipBranches: (path: string, prefix: string, remote?: string) =>
@@ -658,6 +661,18 @@ export const aiApi = {
   /** Second pass over a collision the path comparison already found. */
   semanticCollision: (localDiff: string, incomingDiff: string, cfg: AIConfig) =>
     window.api.ai.semanticCollision(localDiff, incomingDiff, cfg) as Promise<SemanticCollision[]>,
+  /** Whether work that landed in another repository matters to you right now. */
+  activityDigest: (
+    sourceRepo: string,
+    commits: { author: string; subject: string; files: string[] }[],
+    myBranch: string,
+    myFiles: string[],
+    cfg: AIConfig
+  ) =>
+    window.api.ai.activityDigest(sourceRepo, commits, myBranch, myFiles, cfg) as Promise<{
+      relevant: boolean
+      summary: string
+    }>,
   /** Roles, contract files and owners proposed from a repo's own history. */
   proposeSessionPlan: (
     repoName: string,

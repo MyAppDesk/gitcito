@@ -3318,5 +3318,11 @@ export const zhCN: Dict = {
   'hack.crossTitle': '契约变更可能已经影响到你',
   'hack.crossToast': '{repo} → {file}:{line} — {claim}',
   'hack.aiBudgetSpent': '本次会话已用完 {n} 次 AI 判断。路径和契约提醒照常工作。',
-  'hack.statAi': '本次会话已用的 AI 判断次数'
+  'hack.statAi': '本次会话已用的 AI 判断次数',
+  'hack.conflictTitle': '冲突即将发生',
+  'hack.conflictAhead': '{ref}（{who}）合并时会在 {n} 个文件上冲突：{files}',
+  'hack.activityTitle': '别处有进展',
+  'hack.activityToast': '{repo}：{n} 条新提交 — {what}',
+  'hack.activity': '告诉我其他仓库有什么进展',
+  'hack.activityHint': '每个仓库最多十分钟一条，永远不会提示你正在看的那个标签页。开启 AI 后，它还会判断这些是否跟你的活儿有关，无关就闭嘴。'
 }

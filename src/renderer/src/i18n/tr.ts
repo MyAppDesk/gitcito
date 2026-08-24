@@ -3261,5 +3261,11 @@ export const tr: Dict = {
   'hack.crossTitle': 'Bir sözleşme değişikliği sende bir şeyi bozmuş olabilir',
   'hack.crossToast': '{repo} → {file}:{line} — {claim}',
   'hack.aiBudgetSpent': 'Oturum {n} yapay zekâ değerlendirmesini harcadı. Yol ve sözleşme uyarıları çalışmaya devam ediyor.',
-  'hack.statAi': 'Bu oturumda harcanan yapay zekâ değerlendirmeleri'
+  'hack.statAi': 'Bu oturumda harcanan yapay zekâ değerlendirmeleri',
+  'hack.conflictTitle': 'Bir çakışma geliyor',
+  'hack.conflictAhead': '{ref} ({who}) birleştirmede {n} dosyada çakışacak: {files}',
+  'hack.activityTitle': 'Başka yerde indi',
+  'hack.activityToast': '{repo}: {n} yeni — {what}',
+  'hack.activity': 'Diğer depolara ne indiğini bana söyle',
+  'hack.activityHint': 'Depo başına en fazla on dakikada bir mesaj, baktığın sekme için asla. Yapay zekâ açıkken ayrıca bunun işine dokunup dokunmadığına karar verir ve dokunmuyorsa susar.'
 }

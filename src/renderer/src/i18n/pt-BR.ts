@@ -3327,5 +3327,11 @@ export const ptBR: Dict = {
   'hack.crossTitle': 'Uma mudança de contrato pode ter quebrado algo seu',
   'hack.crossToast': '{repo} → {file}:{line} — {claim}',
   'hack.aiBudgetSpent': 'A sessão gastou seus {n} julgamentos de IA. Os avisos por caminho e contrato continuam funcionando.',
-  'hack.statAi': 'Julgamentos de IA gastos nesta sessão'
+  'hack.statAi': 'Julgamentos de IA gastos nesta sessão',
+  'hack.conflictTitle': 'Vem um conflito',
+  'hack.conflictAhead': '{ref} ({who}) vai conflitar em {n} arquivos ao mesclar: {files}',
+  'hack.activityTitle': 'Chegou em outro repo',
+  'hack.activityToast': '{repo}: {n} novos — {what}',
+  'hack.activity': 'Me contar o que chegou nos outros repos',
+  'hack.activityHint': 'No máximo uma mensagem por repositório a cada dez minutos, nunca da aba que você está vendo. Com a IA ligada, ela ainda decide se algo disso toca seu trabalho e fica quieta quando não.'
 }

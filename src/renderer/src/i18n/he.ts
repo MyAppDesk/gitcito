@@ -3321,5 +3321,11 @@ export const he: Dict = {
   'hack.crossTitle': 'ייתכן ששינוי בחוזה שבר לך משהו',
   'hack.crossToast': '{repo} → {file}:{line} — {claim}',
   'hack.aiBudgetSpent': 'המושב ניצל את {n} שיפוטי ה-AI שלו. אזהרות נתיב וחוזה ממשיכות לעבוד.',
-  'hack.statAi': 'שיפוטי AI שנוצלו במושב'
+  'hack.statAi': 'שיפוטי AI שנוצלו במושב',
+  'hack.conflictTitle': 'התנגשות מתקרבת',
+  'hack.conflictAhead': '{ref} ({who}) יתנגש ב-{n} קבצים במיזוג: {files}',
+  'hack.activityTitle': 'נחת במקום אחר',
+  'hack.activityToast': '{repo}: {n} חדשים — {what}',
+  'hack.activity': 'ספר לי מה נחת במאגרים האחרים',
+  'hack.activityHint': 'הודעה אחת לכל מאגר לכל היותר כל עשר דקות, ולעולם לא על הלשונית שאתה מסתכל עליה. עם AI פעיל הוא גם מחליט אם זה נוגע לעבודה שלך ושותק כשלא.'
 }

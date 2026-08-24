@@ -2783,6 +2783,10 @@ export interface HackSession {
   /** Run the AI second pass over a path overlap the radar already found.
    *  Off unless the user turned it on and has a provider configured. */
   semanticCollisions: boolean
+  /** Digest what landed in the session's OTHER repositories, so "the backend
+   *  shipped the endpoint you were waiting for" is something you hear rather
+   *  than discover. Rate-limited hard; see `stores/hack.ts`. */
+  activityDigest: boolean
   /** Push periodic WIP snapshots to `wip/<me>/<branch>`. Off by default: it
    *  publishes to a shared remote. */
   wipPush: boolean
@@ -2835,6 +2839,16 @@ export interface ContractChange {
   time: number
   author: string
   /** The contract files this branch touches, repo-relative. */
+  files: string[]
+}
+
+/** One commit sitting on a remote ref that HEAD does not have yet. Feeds the
+ *  cross-repo activity digest — "what landed over there while I was here". */
+export interface IncomingCommit {
+  sha: string
+  author: string
+  time: number
+  subject: string
   files: string[]
 }
 

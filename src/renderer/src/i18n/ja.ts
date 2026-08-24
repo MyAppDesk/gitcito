@@ -3258,5 +3258,11 @@ export const ja: Dict = {
   'hack.crossTitle': '契約の変更があなたのコードを壊したかもしれません',
   'hack.crossToast': '{repo} → {file}:{line} — {claim}',
   'hack.aiBudgetSpent': 'このセッションは AI 判定を {n} 回分使い切りました。パスと契約の警告は引き続き動作します。',
-  'hack.statAi': 'このセッションで使った AI 判定'
+  'hack.statAi': 'このセッションで使った AI 判定',
+  'hack.conflictTitle': 'コンフリクトが近づいています',
+  'hack.conflictAhead': '{ref}（{who}）はマージ時に {n} 個のファイルで衝突します: {files}',
+  'hack.activityTitle': '別のリポジトリで進展',
+  'hack.activityToast': '{repo}: 新着 {n} 件 — {what}',
+  'hack.activity': '他のリポジトリで何が入ったか教えて',
+  'hack.activityHint': 'リポジトリごとに最短でも10分に1件、いま見ているタブについては通知しません。AI を有効にすると、それがあなたの作業に関係するかも判断し、しなければ黙ります。'
 }

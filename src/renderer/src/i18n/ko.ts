@@ -3318,5 +3318,11 @@ export const ko: Dict = {
   'hack.crossTitle': '계약 변경이 당신 코드를 깨뜨렸을 수 있습니다',
   'hack.crossToast': '{repo} → {file}:{line} — {claim}',
   'hack.aiBudgetSpent': '이 세션의 AI 판단 {n}회를 모두 썼습니다. 경로와 계약 경고는 계속 동작합니다.',
-  'hack.statAi': '이번 세션에서 쓴 AI 판단'
+  'hack.statAi': '이번 세션에서 쓴 AI 판단',
+  'hack.conflictTitle': '충돌이 다가옵니다',
+  'hack.conflictAhead': '{ref}({who})는 병합 시 파일 {n}개에서 충돌합니다: {files}',
+  'hack.activityTitle': '다른 곳에서 진행됨',
+  'hack.activityToast': '{repo}: 새 커밋 {n}개 — {what}',
+  'hack.activity': '다른 저장소에 뭐가 들어왔는지 알려줘',
+  'hack.activityHint': '저장소당 최대 10분에 한 번, 지금 보고 있는 탭은 절대 알리지 않습니다. AI를 켜면 그것이 내 작업과 관련 있는지도 판단하고, 아니면 조용히 있습니다.'
 }

@@ -143,6 +143,13 @@ interface PreloadApi {
     generateBranchName(description: string, cfg: unknown, ctx: unknown): Promise<unknown>
     reviewPR(diff: string, cfg: unknown): Promise<unknown>
     semanticCollision(localDiff: string, incomingDiff: string, cfg: unknown): Promise<unknown>
+    activityDigest(
+      sourceRepo: string,
+      commits: unknown,
+      myBranch: string,
+      myFiles: unknown,
+      cfg: unknown
+    ): Promise<unknown>
     proposeSessionPlan(
       repoName: string,
       detected: unknown,

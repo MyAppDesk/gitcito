@@ -54,10 +54,15 @@ import { BUILTIN_HACK_TEMPLATES } from '../src/shared/hackTemplates'
 import type { HackSession } from '../src/shared/types'
 import {
   AI_CALL_BUDGET,
+  DIGEST_BURST,
+  DIGEST_QUIET_MS,
   IMPORT_LIMITS,
   aiBudget,
   collisionKey,
   contractAudience,
+  describeActivity,
+  digestWorthy,
+  shouldDigest,
   contractHits,
   contractsForRepo,
   formatCountdown,
@@ -4627,6 +4632,49 @@ describe('hack session', () => {
     const { matched, missing } = matchPortableRepos(portable, [{ path: '/x/api', name: 'api' }])
     expect(matched).toHaveLength(1)
     expect(missing.map((m) => m.name)).toEqual(['app'])
+  })
+})
+
+describe('cross-repo activity digest', () => {
+  const c = (sha: string, author: string, subject: string) => ({ sha, author, subject })
+
+  it('stays silent with nothing new', () => {
+    expect(shouldDigest(0, 0, DIGEST_QUIET_MS * 10)).toBe(false)
+  })
+
+  it('waits out the quiet window for a trickle', () => {
+    expect(shouldDigest(2, 1000, 1000 + DIGEST_QUIET_MS - 1)).toBe(false)
+    expect(shouldDigest(2, 1000, 1000 + DIGEST_QUIET_MS)).toBe(true)
+  })
+
+  it('interrupts early when a burst lands', () => {
+    expect(shouldDigest(DIGEST_BURST, 1000, 1001)).toBe(true)
+  })
+
+  it('drops commits already digested, and your own', () => {
+    // 'ana' is me (handle matching is case-insensitive), 'c' was already sent.
+    const commits = [c('a', 'Bo', 'add endpoint'), c('b', 'ana', 'my own work'), c('c', 'Cy', 'fix client')]
+    const fresh = digestWorthy(commits, '@Ana', ['c'])
+    expect(fresh.map((x) => x.sha)).toEqual(['a'])
+  })
+
+  it('keeps everyone when no handle is set', () => {
+    const commits = [c('a', 'Ana', 'x'), c('b', 'Bo', 'y')]
+    expect(digestWorthy(commits, '', []).length).toBe(2)
+  })
+
+  it('drops commits with no subject to describe', () => {
+    expect(digestWorthy([c('a', 'Ana', '   ')], '', []).length).toBe(0)
+  })
+
+  it('describes who and what without a model', () => {
+    const line = describeActivity([c('a', 'Ana', 'add endpoint'), c('b', 'Bo', 'fix client')])
+    expect(line).toContain('Ana')
+    expect(line).toContain('add endpoint')
+  })
+
+  it('survives commits with no author', () => {
+    expect(describeActivity([c('a', '', 'add endpoint')])).toBe('add endpoint')
   })
 })
 

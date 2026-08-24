@@ -1090,6 +1090,86 @@ Use the exact "dir" values you were given and no others.`
   }
 }
 
+const ACTIVITY_SCHEMA: Record<string, unknown> = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['relevant', 'summary'],
+  properties: {
+    relevant: { type: 'boolean' },
+    summary: { type: 'string' }
+  }
+}
+
+export interface ActivityDigestResult {
+  relevant: boolean
+  summary: string
+}
+
+/**
+ * Does what landed in another repository matter to what you are doing?
+ *
+ * The digest without a model can say "Ana pushed three commits about auth". It
+ * cannot say "and one of them is the endpoint your half-written client is
+ * waiting for" — that needs someone to hold both sides at once, and it is the
+ * only part of this feature a model does better than a path comparison.
+ *
+ * The output is a gate as much as a sentence: `relevant: false` means nothing
+ * is shown at all. A digest that fires on every push is one people mute on the
+ * first day, so the model is asked to be the thing that stays quiet.
+ */
+async function activityDigest(
+  sourceRepo: string,
+  commits: { author: string; subject: string; files: string[] }[],
+  myBranch: string,
+  myFiles: string[],
+  cfg: AIConfig
+): Promise<ActivityDigestResult> {
+  const system = `You tell a developer whether work that landed in ANOTHER repository matters to what they are doing right now.
+
+You are given commits from a teammate's repository, and the branch and uncommitted files of the person you are advising.
+
+Rules:
+- "relevant": true ONLY when one of those commits plausibly affects this person's current work — an interface they consume, a thing they are waiting on, a change to shared behaviour they depend on. Coincidental overlap of topic is NOT relevance.
+- Prefer false. Most of what lands elsewhere does not matter, and a digest that always fires gets muted.
+- "summary": one sentence, plain, naming what landed and why it touches them. Empty string when not relevant.
+- Only describe commits you were given. Never invent a file, a name or a change.
+
+Reply ONLY with valid JSON (no markdown fences):
+{"relevant":true,"summary":"one sentence"}`
+
+  const user = [
+    `Their repository: ${sourceRepo}`,
+    `Their commits: ${JSON.stringify(commits.slice(0, 20))}`,
+    `Your branch: ${myBranch || '(unknown)'}`,
+    `Your uncommitted files: ${JSON.stringify(myFiles.slice(0, 40))}`
+  ].join('\n\n')
+
+  return chatCompleteJson<ActivityDigestResult>(
+    cfg,
+    [
+      { role: 'system', content: system },
+      { role: 'user', content: clip(user, 10000) }
+    ],
+    'activityDigest',
+    {
+      name: 'activity_digest',
+      schema: ACTIVITY_SCHEMA,
+      validate: (v) => {
+        const root = v as ActivityDigestResult | null
+        if (!root || typeof root !== 'object') return ['The response must be a JSON object.']
+        const errs: string[] = []
+        if (typeof root.relevant !== 'boolean') errs.push('"relevant" must be a boolean.')
+        if (typeof root.summary !== 'string') errs.push('"summary" must be a string.')
+        if (root.relevant === true && !String(root.summary ?? '').trim()) {
+          errs.push('"summary" cannot be empty when "relevant" is true.')
+        }
+        return errs
+      }
+    },
+    0.2
+  )
+}
+
 export interface PRDescriptionResult {
   title: string
   body: string
@@ -1238,6 +1318,17 @@ export function registerAiHandlers(): void {
     generateBranchName(description, cfg, ctx)
   )
   ipcMain.handle('ai:reviewPR', (_e, diff: string, cfg: AIConfig) => reviewPR(diff, cfg))
+  ipcMain.handle(
+    'ai:activityDigest',
+    (
+      _e,
+      sourceRepo: string,
+      commits: { author: string; subject: string; files: string[] }[],
+      myBranch: string,
+      myFiles: string[],
+      cfg: AIConfig
+    ) => activityDigest(sourceRepo, commits, myBranch, myFiles, cfg)
+  )
   ipcMain.handle('ai:semanticCollision', (_e, localDiff: string, incomingDiff: string, cfg: AIConfig) =>
     semanticCollision(localDiff, incomingDiff, cfg)
   )

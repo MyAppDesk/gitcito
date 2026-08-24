@@ -15796,3 +15796,11 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
   color: var(--purple);
   font-variant-numeric: tabular-nums;
 }
+
+.hack-alert--conflict {
+  border-left-color: var(--red);
+}
+
+.hack-alert--activity {
+  border-left-color: var(--green);
+}

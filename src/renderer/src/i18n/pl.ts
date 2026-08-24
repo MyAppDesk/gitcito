@@ -3318,5 +3318,11 @@ export const pl: Dict = {
   'hack.crossTitle': 'Zmiana kontraktu mogła coś u ciebie zepsuć',
   'hack.crossToast': '{repo} → {file}:{line} — {claim}',
   'hack.aiBudgetSpent': 'Sesja zużyła swoje {n} ocen AI. Ostrzeżenia po ścieżkach i kontraktach działają dalej.',
-  'hack.statAi': 'Oceny AI zużyte w tej sesji'
+  'hack.statAi': 'Oceny AI zużyte w tej sesji',
+  'hack.conflictTitle': 'Nadchodzi konflikt',
+  'hack.conflictAhead': '{ref} ({who}) da konflikt w {n} plikach przy scalaniu: {files}',
+  'hack.activityTitle': 'Wylądowało gdzie indziej',
+  'hack.activityToast': '{repo}: {n} nowych — {what}',
+  'hack.activity': 'Mów mi, co wylądowało w innych repozytoriach',
+  'hack.activityHint': 'Najwyżej jedna wiadomość na repozytorium co dziesięć minut, nigdy z karty, na którą patrzysz. Z włączonym AI dodatkowo ocenia, czy to dotyka twojej pracy, i milczy, gdy nie.'
 }

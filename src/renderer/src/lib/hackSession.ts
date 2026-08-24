@@ -119,6 +119,9 @@ export function sessionFromTemplate(
     freezeFromHours: template.freezeFromHours,
     radarNotify: template.radarNotify,
     semanticCollisions: false,
+    // On by default: unlike the AI passes it costs nothing and answers the
+    // question people actually ask each other across a room all day.
+    activityDigest: true,
     wipPush: false
   }
 }
@@ -164,6 +167,64 @@ export function aiBudget(used: number): { left: number; allowed: boolean } {
  */
 export function collisionKey(repoPath: string, sha: string, files: string[]): string {
   return `${repoPath}@${sha}:${[...files].sort().join(',')}`
+}
+
+/**
+ * How long one repository must stay quiet before it may interrupt again.
+ *
+ * The digest exists to answer "what shipped over there while I was here", and
+ * the fastest way to make that worthless is to send it per commit. One message
+ * per repository per ten minutes is a colleague leaning over; one per push is a
+ * firehose people mute on day one.
+ */
+export const DIGEST_QUIET_MS = 10 * 60_000
+
+/** At this many unseen commits a repository may interrupt early — something
+ *  substantial landed and waiting out the timer would just make it stale. */
+export const DIGEST_BURST = 5
+
+/**
+ * Should this repository's activity be surfaced now?
+ *
+ * Deliberately not "is there anything new": there is almost always something
+ * new. It fires on volume or on patience, never on every arrival.
+ */
+export function shouldDigest(pending: number, lastAt: number, now: number): boolean {
+  if (pending === 0) return false
+  if (pending >= DIGEST_BURST) return true
+  return now - lastAt >= DIGEST_QUIET_MS
+}
+
+/**
+ * A one-line description of what landed, without a model.
+ *
+ * This is the fallback that keeps the feature whole with no API key: the people
+ * and the subjects, which is most of what a digest is for. The AI pass, when it
+ * is on, replaces this with a judgement about whether any of it touches *your*
+ * work — but its absence costs detail, never the feature.
+ */
+export function describeActivity(commits: { author: string; subject: string }[]): string {
+  const authors = [...new Set(commits.map((c) => c.author).filter(Boolean))]
+  const subjects = commits.slice(0, 3).map((c) => c.subject).filter(Boolean)
+  const who = authors.slice(0, 2).join(', ')
+  const what = subjects.join(' · ')
+  return [who, what].filter(Boolean).join(' — ')
+}
+
+/** Commits worth putting in a digest: not mine, and actually described. */
+export function digestWorthy<T extends { author: string; subject: string; sha: string }>(
+  commits: T[],
+  me: string,
+  seen: string[]
+): T[] {
+  const mine = me.replace(/^@/, '').toLowerCase()
+  const seenSet = new Set(seen)
+  return commits.filter((c) => {
+    if (seenSet.has(c.sha)) return false
+    if (!c.subject.trim()) return false
+    // Your own commits arriving back from the remote are not news.
+    return !mine || c.author.toLowerCase() !== mine
+  })
 }
 
 // ─── Portability ────────────────────────────────────────────────────────────
@@ -399,6 +460,9 @@ export function fromPortable(
     freezeFromHours: portable.freezeFromHours,
     radarNotify: portable.radarNotify,
     semanticCollisions: false,
+    // On by default: unlike the AI passes it costs nothing and answers the
+    // question people actually ask each other across a room all day.
+    activityDigest: true,
     wipPush: false
   }
 }

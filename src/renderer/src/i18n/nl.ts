@@ -3326,5 +3326,11 @@ export const nl: Dict = {
   'hack.crossTitle': 'Een contractwijziging heeft je mogelijk gebroken',
   'hack.crossToast': '{repo} → {file}:{line} — {claim}',
   'hack.aiBudgetSpent': 'De sessie heeft haar {n} AI-oordelen opgebruikt. Pad- en contractwaarschuwingen blijven werken.',
-  'hack.statAi': 'AI-oordelen die deze sessie zijn verbruikt'
+  'hack.statAi': 'AI-oordelen die deze sessie zijn verbruikt',
+  'hack.conflictTitle': 'Er komt een conflict aan',
+  'hack.conflictAhead': '{ref} ({who}) botst bij het samenvoegen op {n} bestanden: {files}',
+  'hack.activityTitle': 'Elders geland',
+  'hack.activityToast': '{repo}: {n} nieuwe — {what}',
+  'hack.activity': 'Vertel me wat er in de andere repos is geland',
+  'hack.activityHint': 'Hooguit één bericht per repository per tien minuten, nooit voor het tabblad waar je naar kijkt. Met AI aan bepaalt het bovendien of het jouw werk raakt en zwijgt anders.'
 }

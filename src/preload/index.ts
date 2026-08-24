@@ -161,6 +161,14 @@ const api = {
       ipcRenderer.invoke('ai:reviewPR', diff, cfg),
     semanticCollision: (localDiff: string, incomingDiff: string, cfg: unknown): Promise<unknown> =>
       ipcRenderer.invoke('ai:semanticCollision', localDiff, incomingDiff, cfg),
+    activityDigest: (
+      sourceRepo: string,
+      commits: unknown,
+      myBranch: string,
+      myFiles: unknown,
+      cfg: unknown
+    ): Promise<unknown> =>
+      ipcRenderer.invoke('ai:activityDigest', sourceRepo, commits, myBranch, myFiles, cfg),
     proposeSessionPlan: (
       repoName: string,
       detected: unknown,

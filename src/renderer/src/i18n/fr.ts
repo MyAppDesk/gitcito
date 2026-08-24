@@ -3266,5 +3266,11 @@ export const fr: Dict = {
   'hack.crossTitle': 'Un changement de contrat vous a peut-être cassé quelque chose',
   'hack.crossToast': '{repo} → {file}:{line} — {claim}',
   'hack.aiBudgetSpent': 'La session a dépensé ses {n} jugements IA. Les alertes par chemin et par contrat continuent.',
-  'hack.statAi': 'Jugements IA dépensés dans cette session'
+  'hack.statAi': 'Jugements IA dépensés dans cette session',
+  'hack.conflictTitle': 'Un conflit arrive',
+  'hack.conflictAhead': '{ref} ({who}) entrera en conflit sur {n} fichiers à la fusion : {files}',
+  'hack.activityTitle': 'Arrivé ailleurs',
+  'hack.activityToast': '{repo} : {n} nouveaux — {what}',
+  'hack.activity': 'Me dire ce qui est arrivé dans les autres dépôts',
+  'hack.activityHint': 'Un message par dépôt au plus toutes les dix minutes, jamais pour l\'onglet que vous regardez. Avec l\'IA activée, elle décide en plus si cela touche votre travail et se tait sinon.'
 }

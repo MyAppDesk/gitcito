@@ -139,6 +139,7 @@ import type {
   DetectedRepoRole,
   OwnerRule,
   ContractChange,
+  IncomingCommit,
   WipPushResult
 } from '../shared/types'
 import { FILE_TOO_LARGE_PREFIX } from '../shared/types'
@@ -6822,6 +6823,45 @@ export const gitService = {
   },
 
   /**
+   * Commits sitting on remote refs that HEAD does not have.
+   *
+   * The raw material for "what landed elsewhere". Merges are excluded — a merge
+   * commit is bookkeeping, and a digest full of "Merge branch main" teaches
+   * nobody anything. Newest first, capped, and every commit carries the files
+   * it touched so the digest can say whether it is near your work.
+   */
+  async incomingCommits(repoPath: string, max = 40, sinceSec = 0): Promise<IncomingCommit[]> {
+    const args = [
+      'log',
+      '--remotes',
+      '^HEAD',
+      '--no-merges',
+      `-n${Math.max(1, Math.min(max, 200))}`,
+      '--name-only',
+      '--date=unix',
+      '--format=\x01%H|%an|%ct|%s'
+    ]
+    if (sinceSec > 0) args.push(`--since=${sinceSec}`)
+    const raw = await runGit(repoPath, args).catch(() => '')
+    const out: IncomingCommit[] = []
+    // \x01 delimits records because a subject can contain anything a newline can.
+    for (const block of raw.split('\x01')) {
+      if (!block.trim()) continue
+      const [header, ...rest] = block.split('\n')
+      const [sha, author, time, ...subjectParts] = header.split('|')
+      if (!sha) continue
+      out.push({
+        sha,
+        author,
+        time: Number(time) || 0,
+        subject: subjectParts.join('|').trim(),
+        files: rest.map((l) => l.trim()).filter(Boolean)
+      })
+    }
+    return out
+  },
+
+  /**
    * Everything uncommitted in a repository, as one diff.
    *
    * The cross-repo judgement needs this: "the backend changed the schema, does
@@ -7143,6 +7183,7 @@ const READ_METHODS = new Set<string>([
   'contractRadar',
   'collisionDiffs',
   'worktreeDiff',
+  'incomingCommits',
   'commitEditInfo',
   'commitMenuProbe',
   'blobAtCommit',

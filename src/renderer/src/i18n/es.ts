@@ -3321,5 +3321,11 @@ export const es: Dict = {
   'hack.crossTitle': 'Un cambio de contrato puede haberte roto algo',
   'hack.crossToast': '{repo} → {file}:{line} — {claim}',
   'hack.aiBudgetSpent': 'La sesión ha gastado sus {n} consultas a la IA. Los avisos por rutas y contratos siguen funcionando.',
-  'hack.statAi': 'Consultas a la IA gastadas en la sesión'
+  'hack.statAi': 'Consultas a la IA gastadas en la sesión',
+  'hack.conflictTitle': 'Viene un conflicto',
+  'hack.conflictAhead': '{ref} ({who}) dará conflicto en {n} archivos al fusionar: {files}',
+  'hack.activityTitle': 'Ha aterrizado en otro repo',
+  'hack.activityToast': '{repo}: {n} nuevos — {what}',
+  'hack.activity': 'Contarme qué ha aterrizado en los otros repos',
+  'hack.activityHint': 'Un mensaje por repositorio como mucho cada diez minutos, y nunca del que tienes delante. Con la IA activada, además decide si algo de eso toca tu trabajo y se calla cuando no.'
 }

@@ -427,6 +427,21 @@ export function HackModeModal(): React.JSX.Element {
         <label className="settings-toggle-card">
           <input
             type="checkbox"
+            checked={running.activityDigest}
+            onChange={(e) => setSessionField('activityDigest', e.target.checked)}
+          />
+          <span className="settings-toggle-control" aria-hidden="true">
+            <span className="settings-toggle-thumb" />
+          </span>
+          <span className="settings-toggle-copy">
+            <strong>{t('hack.activity')}</strong>
+            <span className="settings-hint">{t('hack.activityHint')}</span>
+          </span>
+        </label>
+
+        <label className="settings-toggle-card">
+          <input
+            type="checkbox"
             checked={running.semanticCollisions}
             onChange={(e) => setSessionField('semanticCollisions', e.target.checked)}
           />

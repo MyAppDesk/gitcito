@@ -3322,7 +3322,13 @@ export const en = {
   'hack.crossTitle': 'A contract change may have broken you',
   'hack.crossToast': '{repo} → {file}:{line} — {claim}',
   'hack.aiBudgetSpent': 'The session has spent its {n} AI judgements. Path and contract warnings keep working.',
-  'hack.statAi': 'AI judgements spent this session'
+  'hack.statAi': 'AI judgements spent this session',
+  'hack.conflictTitle': 'A conflict is coming',
+  'hack.conflictAhead': '{ref} ({who}) will conflict on {n} files when merged: {files}',
+  'hack.activityTitle': 'Landed elsewhere',
+  'hack.activityToast': '{repo}: {n} new — {what}',
+  'hack.activity': 'Tell me what landed in the other repos',
+  'hack.activityHint': 'One message per repository at most every ten minutes, never for the tab you are looking at. With AI on, it also decides whether any of it touches your work and stays quiet when it does not.'
 }
 
 /** The shape every locale must implement. */

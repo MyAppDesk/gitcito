@@ -1,10 +1,12 @@
-import { AlertTriangle, FileWarning, KeyRound, Radar, Sparkles, Trash2 } from 'lucide-react'
+import { AlertTriangle, FileWarning, GitMerge, KeyRound, Megaphone, Radar, Sparkles, Trash2 } from 'lucide-react'
 import { useHackStore, type HackAlert } from '../stores/hack'
 import { useUIStore } from '../stores/ui'
 import { useT, interp } from '../i18n'
 
 function icon(kind: HackAlert['kind']): React.JSX.Element {
   if (kind === 'contract') return <FileWarning size={13} />
+  if (kind === 'conflict') return <GitMerge size={13} />
+  if (kind === 'activity') return <Megaphone size={13} />
   if (kind === 'semantic') return <Sparkles size={13} />
   if (kind === 'wip') return <KeyRound size={13} />
   if (kind === 'freeze') return <AlertTriangle size={13} />

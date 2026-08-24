@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type {
   ContractChange,
+  IncomingCommit,
   HackSession,
   HackTemplate,
   OwnerRule,
@@ -16,6 +17,9 @@ import {
   AI_CALL_BUDGET,
   aiBudget,
   collisionKey,
+  describeActivity,
+  digestWorthy,
+  shouldDigest,
   contractAudience,
   contractHits,
   contractsForRepo,
@@ -29,7 +33,7 @@ import { t, interp } from '../i18n'
  *  are about right now, and persisting them would resurrect stale ones. */
 export interface HackAlert {
   id: string
-  kind: 'overlap' | 'contract' | 'semantic' | 'freeze' | 'wip'
+  kind: 'overlap' | 'contract' | 'semantic' | 'freeze' | 'wip' | 'conflict' | 'activity'
   repoPath: string
   /** Already-translated, ready to render. */
   message: string
@@ -70,6 +74,12 @@ interface HackStore {
   judged: string[]
   /** Whether the "budget spent" notice has already been shown. */
   budgetAnnounced: boolean
+  /** Branches already reported as heading for a conflict, by ref@sha. */
+  conflictSeen: string[]
+  /** Commits already folded into a digest, so nothing is reported twice. */
+  activitySeen: string[]
+  /** When each repository last interrupted, so it has to earn the next one. */
+  digestAt: Record<string, number>
   /** One celebration at a time; the overlay clears it when the animation ends. */
   celebration: { kind: 'push' | 'merge' | 'commit'; at: number; combo: number } | null
   /** When the current combo lapses. Read by `celebrate`, never rendered. */
@@ -102,6 +112,10 @@ interface HackStore {
   crossRepoSemantic(sourceRepo: string, changes: ContractChange[], audience: string[]): Promise<void>
   /** Take one unit of the session's AI budget. False when it is spent. */
   spendAiCall(): boolean
+  /** Warn about branches that WILL conflict, before anyone merges them. */
+  conflictWatch(repoPath: string, entries: TeammateRadarEntry[]): void
+  /** Digest what landed in the session's other repositories. */
+  activitySweep(repoPath: string): Promise<void>
   /** Publish a WIP snapshot for one repo. */
   wipPush(repoPath: string): Promise<void>
 }
@@ -130,6 +144,9 @@ export const useHackStore = create<HackStore>((set, get) => ({
   contractSeen: {},
   judged: [],
   budgetAnnounced: false,
+  conflictSeen: [],
+  activitySeen: [],
+  digestAt: {},
   celebration: null,
   comboUntil: 0,
 
@@ -162,6 +179,9 @@ export const useHackStore = create<HackStore>((set, get) => ({
       contractSeen: {},
       judged: [],
       budgetAnnounced: false,
+      conflictSeen: [],
+      activitySeen: [],
+      digestAt: {},
       comboUntil: 0
     })
     // Ownership hints are only meaningful once we know who owns what.
@@ -191,7 +211,17 @@ export const useHackStore = create<HackStore>((set, get) => ({
         ? { appThemeId: restore.appThemeId, codeThemeId: restore.codeThemeId, graphStyle: restore.graphStyle }
         : {})
     }))
-    set({ alerts: [], owners: {}, contractSeen: {}, judged: [], celebration: null, comboUntil: 0 })
+    set({
+      alerts: [],
+      owners: {},
+      contractSeen: {},
+      judged: [],
+      conflictSeen: [],
+      activitySeen: [],
+      digestAt: {},
+      celebration: null,
+      comboUntil: 0
+    })
   },
 
   update: (patch) =>
@@ -283,6 +313,107 @@ export const useHackStore = create<HackStore>((set, get) => ({
     // The exact signal has fired. Now — and only now — it is worth paying a
     // model to say what the change actually did to the people downstream.
     void get().crossRepoSemantic(repoPath, changes, dirtyElsewhere)
+  },
+
+  /**
+   * The conflict that has not happened yet.
+   *
+   * The radar already runs an in-memory merge-tree per branch, so it knows
+   * which of them WILL conflict — and until now that verdict was computed and
+   * thrown away unless the same files also happened to be dirty. That is the
+   * wrong gate: a branch that will collide with work you already committed is
+   * exactly the thing worth hearing about a day early, and being clean is not a
+   * reason to stay silent.
+   *
+   * Exact, offline, free. No model anywhere near this.
+   */
+  conflictWatch: (repoPath, entries) => {
+    const session = get().session()
+    if (!session) return
+    const risky = entries.filter((e) => e.risk === 'conflict' && e.conflictFiles.length > 0)
+    if (risky.length === 0) return
+
+    for (const entry of risky) {
+      // A branch is one piece of news per tip: a re-scan of the same commit is
+      // the same fact, and repeating it is how a warning becomes wallpaper.
+      const key = `${entry.ref}@${entry.sha}`
+      if (get().conflictSeen.includes(key)) continue
+      set((st) => ({ conflictSeen: [...st.conflictSeen, key].slice(-200) }))
+
+      const message = interp(t('hack.conflictAhead'), {
+        ref: entry.ref,
+        who: entry.author || '—',
+        files: entry.conflictFiles.slice(0, 3).join(', '),
+        n: String(entry.conflictFiles.length)
+      })
+      get().alert({ kind: 'conflict', repoPath, message, files: entry.conflictFiles })
+      get().bump('caught')
+      useUIStore.getState().toast('info', message)
+      notify(t('hack.conflictTitle'), message, repoPath)
+    }
+  },
+
+  /**
+   * What landed in the other repositories of the session.
+   *
+   * The question people ask across a room all day — "did anyone do the thing I
+   * am waiting for" — and the one nothing in a git client answers, because git
+   * has no notion of a repository being interesting to another one.
+   *
+   * Rate-limited on purpose. It fires on volume or on patience, never on
+   * arrival, and never for the repository you are looking at: you can see that
+   * one's graph yourself.
+   */
+  activitySweep: async (repoPath) => {
+    const session = get().session()
+    if (!session?.activityDigest || !session.repos.includes(repoPath)) return
+    // The tab in front of you is not news.
+    const active = useSettingsStore.getState().settings
+    const activeTab = active.tabs.find((tb) => tb.id === active.activeTabId)
+    const activePath = activeTab && activeTab.kind !== 'page' ? activeTab.activeRepoPath : null
+    if (activePath === repoPath) return
+
+    const commits: IncomingCommit[] = await gitApi.incomingCommits(repoPath, 40).catch(() => [])
+    const fresh = digestWorthy(commits, session.me, get().activitySeen)
+    const lastAt = get().digestAt[repoPath] ?? session.startedAt
+    if (!shouldDigest(fresh.length, lastAt, Date.now())) return
+
+    set((st) => ({
+      activitySeen: [...st.activitySeen, ...fresh.map((c) => c.sha)].slice(-500),
+      digestAt: { ...st.digestAt, [repoPath]: Date.now() }
+    }))
+
+    const repoName = repoPath.split('/').pop() ?? repoPath
+    // Without a model this is the digest: who, and what they said they did.
+    // That is most of the value, and it costs nothing.
+    let body = describeActivity(fresh)
+    let relevant = true
+
+    const cfg = useSettingsStore.getState().activeProfile().ai
+    if (session.semanticCollisions && cfg?.enabled && get().spendAiCall()) {
+      // With one, the model does the part a path comparison cannot: decide
+      // whether any of it actually touches what you are doing, and stay quiet
+      // when it does not.
+      const mine = useHackDirty.getState()
+      const verdict = await aiApi
+        .activityDigest(
+          repoName,
+          fresh.slice(0, 20).map((c) => ({ author: c.author, subject: c.subject, files: c.files })),
+          mine.branch[activePath ?? ''] ?? '',
+          mine.files[activePath ?? ''] ?? [],
+          cfg
+        )
+        .catch(() => null)
+      if (verdict) {
+        relevant = verdict.relevant
+        if (verdict.relevant) body = verdict.summary
+      }
+    }
+    if (!relevant) return
+
+    const message = interp(t('hack.activityToast'), { repo: repoName, n: String(fresh.length), what: body })
+    get().alert({ kind: 'activity', repoPath, message, files: [] })
+    notify(t('hack.activityTitle'), message, repoPath)
   },
 
   semanticSweep: async (repoPath, entries) => {
@@ -446,15 +577,19 @@ export const useHackStore = create<HackStore>((set, get) => ({
 interface HackDirtyStore {
   dirty: Record<string, number>
   branch: Record<string, string>
-  note(repoPath: string, dirtyCount: number, branch: string): void
+  /** The dirty paths themselves — what the digest needs to judge relevance. */
+  files: Record<string, string[]>
+  note(repoPath: string, files: string[], branch: string): void
 }
 
 export const useHackDirty = create<HackDirtyStore>((set) => ({
   dirty: {},
   branch: {},
-  note: (repoPath, dirtyCount, branch) =>
+  files: {},
+  note: (repoPath, files, branch) =>
     set((s) => ({
-      dirty: { ...s.dirty, [repoPath]: dirtyCount },
+      dirty: { ...s.dirty, [repoPath]: files.length },
+      files: { ...s.files, [repoPath]: files },
       branch: { ...s.branch, [repoPath]: branch }
     }))
 }))

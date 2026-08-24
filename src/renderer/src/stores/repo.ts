@@ -406,7 +406,7 @@ async function doRefresh(path: string, slices: RefreshSlice[]): Promise<void> {
       .getState()
       .note(
         path,
-        (status?.staged.length ?? 0) + (status?.unstaged.length ?? 0) + (status?.conflicted.length ?? 0),
+        [...(status?.staged ?? []), ...(status?.unstaged ?? []), ...(status?.conflicted ?? [])].map((f) => f.path),
         branches?.current ?? ''
       )
   } catch (err) {
@@ -1404,6 +1404,7 @@ export const repoActions = {
       // "the backend changed openapi.yaml" is news precisely when the backend
       // is the tab you are not looking at.
       await useHackStore.getState().contractSweep(path)
+      await useHackStore.getState().activitySweep(path)
       return true
     }),
 
@@ -1435,6 +1436,7 @@ export const repoActions = {
     // Outside one, none of this exists.
     const hack = useHackStore.getState()
     if (hack.active()) {
+      hack.conflictWatch(path, result.entries)
       hack.alert({ kind: 'overlap', repoPath: path, message, files: [...files] })
       hack.bump('caught')
       void hack.semanticSweep(path, overlapping)

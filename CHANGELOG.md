@@ -1,5 +1,17 @@
 
 
+## [3.22.0](https://github.com/MyAppDesk/gitcito/compare/v3.21.1...v3.22.0) (2026-08-24)
+
+
+### Features
+
+* rename a branch from the graph and the palette ([4d15c80](https://github.com/MyAppDesk/gitcito/commit/4d15c80f336fbec72a408a50a8dcd348b3c46f3a))
+
+
+### Bug Fixes
+
+* go to the worktree that holds a branch instead of failing ([e2065d5](https://github.com/MyAppDesk/gitcito/commit/e2065d5e409ec35d7ebe94fc2a73ec6835527754))
+
 ## [3.21.1](https://github.com/MyAppDesk/gitcito/compare/v3.21.0...v3.21.1) (2026-08-23)
 
 

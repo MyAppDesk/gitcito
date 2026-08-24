@@ -368,10 +368,14 @@ function GraphColumnsHeader({
       if (raf) cancelAnimationFrame(raf)
       apply()
       document.body.style.cursor = ''
+      document.body.classList.remove('col-resizing')
       // Defer so the cell's `onDragStart` (if any) still sees resizing === true.
       setTimeout(() => (resizing.current = false), 0)
     }
     document.body.style.cursor = 'col-resize'
+    // Suppresses the avatar nodes' `left` transition for the drag, so the balls
+    // track the lanes instead of lagging behind them.
+    document.body.classList.add('col-resizing')
     window.addEventListener('pointermove', move)
     window.addEventListener('pointerup', up)
     window.addEventListener('pointercancel', up)
@@ -1949,8 +1953,10 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
             // Merge commits render as a small SVG dot (above), not an avatar —
             // but they still get a connector line from their branch label.
             const isMerge = c.parents.length >= 2
-            const ballR = isMerge ? 6 : AVA / 2
-            const x = branchCol + Math.min(LEFT_PAD + n.lane * LANE_W, graphCol - ballR - 1)
+            // Clamped with the SVG's own radius, not the avatar's: a wider clamp
+            // would park the ball left of the line end it is supposed to cap.
+            // The overlay's overflow:hidden takes care of the spill.
+            const x = branchCol + Math.min(LEFT_PAD + n.lane * LANE_W, graphCol - NODE_R - 1)
             const y = n.row * ROW_H + ROW_H / 2
             const color = colorFor(n.color)
             const ghost = preview != null && !preview.hashes.has(c.hash)

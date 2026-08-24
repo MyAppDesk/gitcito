@@ -2010,6 +2010,11 @@ textarea:focus {
   background: var(--bg-1);
   transition: left 0.15s ease;
 }
+/* While a column divider is dragged, the SVG lanes follow the pointer frame by
+   frame — the avatars must too, or they trail 150ms behind their own line. */
+body.col-resizing .node-ava {
+  transition: none;
+}
 .node-connector {
   position: relative;
   flex: 1 1 auto;

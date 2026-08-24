@@ -14,6 +14,27 @@ Trzy tryby, wybierane z listy: **domyślny**, **tylko fast-forward** albo
 **rebase**. Lokalne zmiany są automatycznie chowane do stasha i przywracane
 wokół pulla, więc brudne drzewo cię nie blokuje.
 
+### Gałąź, która niczego nie śledzi
+
+`git pull` to fetch, a po nim merge — i ten merge musi wiedzieć, *do czego*
+scalać: do upstreamu gałęzi. Gałąź utworzona lokalnie albo pobrana bez śledzenia
+nie ma go wcale. Fetch i tak się udaje, przewija się długa lista zaktualizowanych
+refów `origin/*`, a potem git staje z *"There is no tracking information for the
+current branch"*. Nic nie zostało pobrane i nic się nie zepsuło: druga połowa po
+prostu nie miała celu.
+
+Gitcito czyta ten błąd i podaje naprawę jako przycisk, wybierając którą — zależnie
+od tego, czy remote ma już tę gałąź:
+
+| | |
+|---|---|
+| **Jest na remote** | **Połącz i zrób pull** — ustawia upstream na `<remote>/<gałąź>`, a potem robi pull, o który prosiłeś. **Cofalne przez ⌘Z**, co znów zdejmuje śledzenie. |
+| **Jeszcze jej tam nie ma** | **Wypchnij gałąź** — zwykły push, który przy okazji ustawia upstream. |
+
+Proponowany remote to `origin`, jeśli istnieje, w przeciwnym razie pierwszy z
+listy. To, w którym przypadku jesteś, odczytywane jest z refów śledzących, a nie
+z sieci — odpowiedź odzwierciedla więc fetch, który właśnie przebiegł.
+
 ## Push
 
 Force push zawsze używa `--force-with-lease` — bezpiecznego wariantu, który

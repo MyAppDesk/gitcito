@@ -15,6 +15,27 @@ uniquement**, ou **rebase**. Les changements locaux sont remisés puis restauré
 automatiquement autour du pull : une copie de travail sale ne vous bloque donc
 pas.
 
+### Une branche qui ne suit rien
+
+`git pull`, c'est une récupération suivie d'une fusion, et la fusion doit savoir
+*dans quoi* fusionner — la branche amont. Une branche créée en local, ou sortie
+sans suivi, n'en a pas. La récupération réussit quand même, une longue liste de
+refs `origin/*` mises à jour défile, puis git s'arrête sur *"There is no tracking
+information for the current branch"*. Rien n'a été tiré et rien n'est cassé : la
+seconde moitié n'avait tout simplement pas de cible.
+
+Gitcito lit cette erreur et propose la réparation sous forme de bouton, en
+choisissant laquelle selon que le distant porte déjà la branche :
+
+| | |
+|---|---|
+| **Elle est sur le distant** | **Relier et tirer** — définit la branche amont sur `<distant>/<branche>` puis lance le tirage demandé. **Annulable avec ⌘Z**, ce qui retire à nouveau le suivi. |
+| **Elle n'y est pas encore** | **Pousser la branche** — une poussée ordinaire, qui définit la branche amont au passage. |
+
+Le distant proposé est `origin` s'il existe, sinon le premier de la liste. Le cas
+dans lequel vous êtes se lit dans les refs de suivi, pas sur le réseau : la
+réponse reflète donc la récupération qui vient d'avoir lieu.
+
 ## Push
 
 Les push forcés utilisent toujours `--force-with-lease` — la variante sûre, qui

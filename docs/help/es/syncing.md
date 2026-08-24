@@ -15,6 +15,27 @@ fast-forward** o **rebase**. Los cambios locales se guardan en un stash y se
 restauran automáticamente alrededor del pull, así que un árbol sucio no te
 bloquea.
 
+### Una rama que no sigue a ninguna
+
+`git pull` es un fetch seguido de un merge, y el merge necesita saber *contra
+qué* fusionar: el upstream de la rama. Una rama creada en local, o sacada sin
+seguimiento, no tiene ninguno. El fetch igualmente funciona, pasa una lista larga
+de refs `origin/*` actualizadas, y entonces git se para con *"There is no
+tracking information for the current branch"*. No se hizo pull de nada y no se
+rompió nada: la segunda mitad sencillamente no tenía objetivo.
+
+Gitcito lee ese error y ofrece la reparación como un botón, eligiendo cuál según
+si el remoto ya tiene la rama:
+
+| | |
+|---|---|
+| **Está en el remoto** | **Enlazar y hacer pull** — fija el upstream a `<remoto>/<rama>` y luego hace el pull que pediste. **Deshacible con ⌘Z**, que vuelve a quitar el seguimiento. |
+| **Todavía no está** | **Subir rama** — un push normal, que fija el upstream de paso. |
+
+El remoto que ofrece es `origin` si existe, y si no el primero de la lista. En
+qué caso estás se lee de las refs de seguimiento, no de la red, así que la
+respuesta refleja el fetch que acaba de correr.
+
 ## Push
 
 Los force push usan siempre `--force-with-lease` — la variante segura, que se

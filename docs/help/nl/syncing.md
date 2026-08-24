@@ -14,6 +14,27 @@ Drie modi, gekozen uit de keuzelijst: **standaard**, **alleen fast-forward**, of
 **rebase**. Lokale wijzigingen worden rond de pull automatisch gestasht en
 teruggezet, zodat een vuile boom je niet blokkeert.
 
+### Een branch die niets volgt
+
+`git pull` is een fetch gevolgd door een merge, en die merge moet weten *waarin*
+hij moet mergen — de upstream van de branch. Een lokaal aangemaakte branch, of
+een die zonder tracking is uitgecheckt, heeft er geen. De fetch slaagt gewoon, er
+schuift een lange lijst bijgewerkte `origin/*`-refs voorbij, en dan stopt git met
+*"There is no tracking information for the current branch"*. Er is niets gepulld
+en er is niets stuk: de tweede helft had eenvoudigweg geen doelwit.
+
+Gitcito leest die fout en biedt de reparatie als knop aan, en kiest welke aan de
+hand van of de remote de branch al heeft:
+
+| | |
+|---|---|
+| **Hij staat op de remote** | **Koppelen & pullen** — zet de upstream op `<remote>/<branch>` en doet dan de pull die je vroeg. **Ongedaan te maken met ⌘Z**, wat de tracking weer weghaalt. |
+| **Hij staat er nog niet** | **Branch pushen** — een gewone push, die de upstream meteen instelt. |
+
+De aangeboden remote is `origin` als die er is, anders de eerste uit de lijst. In
+welk geval je zit wordt uit de remote-tracking refs gelezen, niet van het
+netwerk — het antwoord weerspiegelt dus de fetch die net liep.
+
 ## Pushen
 
 Force pushes gebruiken altijd `--force-with-lease` — de veilige variant die

@@ -391,6 +391,19 @@ export interface ForcedRefUpdate {
   newSha: string
 }
 
+/**
+ * Why a plain `git pull` had nothing to merge into, and which repair fits.
+ * `remoteRefExists` splits the two cases apart: a branch already on the remote
+ * only needs the tracking config, one that is not there yet needs a push.
+ */
+export interface UpstreamSuggestion {
+  /** The checked-out branch that tracks nothing. */
+  branch: string
+  /** The remote it would track — `origin` when present, else the first one. */
+  remote: string
+  remoteRefExists: boolean
+}
+
 /** One past position of a ref, read from its reflog. */
 export interface RefTip {
   sha: string

@@ -14,6 +14,27 @@ Três modos, escolhidos no dropdown: **padrão**, **somente fast-forward** ou
 **rebase**. As mudanças locais entram e saem do stash automaticamente em volta do
 pull, então uma árvore suja não te bloqueia.
 
+### Um branch que não rastreia nada
+
+`git pull` é um fetch seguido de um merge, e o merge precisa saber *em que*
+mesclar — o upstream do branch. Um branch criado localmente, ou obtido sem
+rastreamento, não tem nenhum. O fetch funciona mesmo assim, passa uma lista longa
+de refs `origin/*` atualizadas, e então o git para com *"There is no tracking
+information for the current branch"*. Nada foi puxado e nada quebrou: a segunda
+metade simplesmente não tinha alvo.
+
+O Gitcito lê esse erro e oferece o conserto como um botão, escolhendo qual
+conforme o remoto já carregue ou não o branch:
+
+| | |
+|---|---|
+| **Está no remoto** | **Ligar e fazer pull** — define o upstream como `<remoto>/<branch>` e então roda o pull que você pediu. **Desfazível com ⌘Z**, que tira o rastreamento de novo. |
+| **Ainda não está lá** | **Fazer push do branch** — um push comum, que define o upstream no caminho. |
+
+O remoto oferecido é `origin` quando existe, senão o primeiro da lista. Em qual
+caso você está é lido das refs de rastreamento, não da rede — então a resposta
+reflete o fetch que acabou de rodar.
+
 ## Push
 
 Force pushes sempre usam `--force-with-lease` — a variante segura, que recusa se o

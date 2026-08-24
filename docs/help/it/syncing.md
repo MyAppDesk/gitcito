@@ -14,6 +14,27 @@ Tre modalità, scelte dal menu a tendina: **predefinita**, **solo fast-forward**
 oppure **rebase**. Le modifiche locali vengono messe automaticamente in stash e
 ripristinate attorno al pull, così un albero sporco non ti blocca.
 
+### Un branch che non traccia nulla
+
+`git pull` è un fetch seguito da un merge, e il merge deve sapere *in cosa*
+unire — l'upstream del branch. Un branch creato in locale, o preso senza
+tracking, non ne ha. Il fetch riesce comunque, scorre un lungo elenco di ref
+`origin/*` aggiornate, e poi git si ferma con *"There is no tracking information
+for the current branch"*. Non è stato fatto pull di niente e niente si è rotto:
+la seconda metà semplicemente non aveva un bersaglio.
+
+Gitcito legge quell'errore e offre la riparazione come pulsante, scegliendo quale
+in base al fatto che il remoto porti già il branch:
+
+| | |
+|---|---|
+| **È sul remoto** | **Collega e fai pull** — imposta l'upstream su `<remoto>/<branch>` ed esegue il pull che avevi chiesto. **Annullabile con ⌘Z**, che toglie di nuovo il tracking. |
+| **Non c'è ancora** | **Fai push del branch** — un push normale, che imposta l'upstream strada facendo. |
+
+Il remoto proposto è `origin` se c'è, altrimenti il primo dell'elenco. In quale
+caso ti trovi si legge dalle ref di tracking, non dalla rete: la risposta
+rispecchia il fetch appena eseguito.
+
 ## Push
 
 I force push usano sempre `--force-with-lease` — la variante sicura, che rifiuta

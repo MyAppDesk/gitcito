@@ -14,6 +14,27 @@ Açılır menüden seçilen üç kip: **varsayılan**, **yalnızca fast-forward*
 **rebase**. Yerel değişiklikler pull'un başında otomatik olarak stash'lenir ve
 sonunda geri konur; böylece kirli bir ağaç sizi engellemez.
 
+### Hiçbir şeyi izlemeyen bir dal
+
+`git pull`, bir fetch ve ardından bir merge demektir; merge'ün de *neyin içine*
+birleştireceğini bilmesi gerekir — dalın upstream'ini. Yerelde oluşturulmuş ya da
+izleme kurulmadan checkout edilmiş bir dalın böyle bir şeyi yoktur. Fetch yine de
+başarılı olur, güncellenen `origin/*` reflerinin uzun listesi akıp geçer, sonra
+git *"There is no tracking information for the current branch"* diyerek durur.
+Hiçbir şey çekilmedi ve hiçbir şey bozulmadı: ikinci yarının hedefi yoktu.
+
+Gitcito bu hatayı okur ve onarımı bir düğme olarak sunar; hangisini sunacağını
+uzak deponun dalı zaten taşıyıp taşımadığına bakarak seçer:
+
+| | |
+|---|---|
+| **Uzak depoda var** | **Bağla ve pull yap** — upstream'i `<uzak>/<dal>` olarak ayarlar, sonra istediğin pull'u çalıştırır. **⌘Z ile geri alınabilir**; bu izlemeyi yeniden kaldırır. |
+| **Henüz orada değil** | **Dalı push et** — sıradan bir push, upstream'i yol üstünde ayarlar. |
+
+Sunulan uzak depo varsa `origin`, yoksa listedeki ilkidir. Hangi durumda olduğun
+ağdan değil, uzak izleme reflerinden okunur — yani cevap az önce çalışan fetch'i
+yansıtır.
+
 ## Push
 
 Force push'lar her zaman `--force-with-lease` kullanır — son baktığınızdan beri

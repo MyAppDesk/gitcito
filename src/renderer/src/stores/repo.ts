@@ -170,6 +170,9 @@ interface RepoStoreState {
 const toast = (kind: 'success' | 'error' | 'info', msg: string, opts?: { repoPath?: string }): void =>
   useUIStore.getState().toast(kind, msg, opts)
 
+/** How a pull reconciles: git's default, refuse-unless-ff, or rebase. */
+type PullMode = 'default' | 'ff-only' | 'rebase'
+
 function isConflictErrorMessage(msg: string): boolean {
   return /\bCONFLICT(S)?\b|Automatic merge failed|after resolving the conflicts|CHERRY_PICK_HEAD/i.test(msg)
 }
@@ -197,6 +200,47 @@ function promptStashOverwrite(message: string, path: string, index: number, pop:
     confirmLabel: t('confirm.overwriteUntracked.ok'),
     onConfirm: () => void repoActions.stashApplyOverwrite(path, index, pop)
   })
+  return true
+}
+
+/**
+ * A pull that fetched cleanly but had nothing to merge into: the branch tracks
+ * nothing. Git answers with two CLI incantations and leaves the choice to the
+ * reader; offer the right one as a button instead. The remote-tracking ref is
+ * what decides — already there means a config line, missing means a push.
+ *
+ * Returns true if the error was handled (the caller suppresses its own toast).
+ */
+function promptUpstreamRepair(message: string, path: string, mode: PullMode): boolean {
+  if (!/no tracking information/i.test(message)) return false
+  void (async () => {
+    const s = await gitApi.upstreamSuggestion(path).catch(() => null)
+    // Nothing repairable (detached HEAD, no remote) → the raw git error is
+    // still the most honest thing to show.
+    if (!s) {
+      toast('error', message, { repoPath: path })
+      return
+    }
+    const upstream = `${s.remote}/${s.branch}`
+    useUIStore.getState().openModal({
+      kind: 'confirm',
+      title: t('upstream.title'),
+      message: s.remoteRefExists
+        ? interp(t('upstream.linkMessage'), { branch: s.branch, upstream })
+        : interp(t('upstream.pushMessage'), { branch: s.branch, remote: s.remote }),
+      confirmLabel: s.remoteRefExists ? t('upstream.link') : t('upstream.push'),
+      autoFocusConfirm: true,
+      onConfirm: () =>
+        void (async () => {
+          if (!s.remoteRefExists) {
+            await repoActions.push(path)
+            return
+          }
+          // Linking alone leaves the branch behind; finish the pull the user asked for.
+          if (await repoActions.setUpstream(path, s.branch, s.remote)) await repoActions.pull(path, mode)
+        })()
+    })
+  })()
   return true
 }
 
@@ -1410,7 +1454,7 @@ export const repoActions = {
   // ─── Multi-repo batch (group tabs) ───
   // Run fetch/pull across several repos with a single summary toast instead of
   // one per repo. Returns nothing; refreshes each affected repo afterwards.
-  batch: async (paths: string[], op: 'fetch' | 'pull', mode: 'default' | 'ff-only' | 'rebase' = 'default') => {
+  batch: async (paths: string[], op: 'fetch' | 'pull', mode: PullMode = 'default') => {
     if (paths.length === 0) return
     const ui = useUIStore.getState()
     const verb = op === 'fetch' ? 'Fetching' : 'Pulling'
@@ -1450,13 +1494,13 @@ export const repoActions = {
       )
   },
 
-  pull: async (path: string, mode: 'default' | 'ff-only' | 'rebase') => {
+  pull: async (path: string, mode: PullMode) => {
     const before = new Set((useRepoStore.getState().repos[path]?.commits ?? []).map((c) => c.hash))
     const ok = await useRepoStore.getState().run(path, interp(t('act.pulledMode'), { mode }), () => gitApi.pull(path, mode), {
       label: interp(t('undoLabel.pull'), { mode }),
       undo: () => gitApi.reset(path, 'ORIG_HEAD', 'hard'),
       redo: () => gitApi.pull(path, mode)
-    }, 'pull')
+    }, 'pull', (msg) => promptUpstreamRepair(msg, path, mode))
     if (ok) {
       const after = useRepoStore.getState().repos[path]?.commits ?? []
       const newCommits = before.size ? after.filter((c) => !before.has(c.hash)).map((c) => c.hash) : []
@@ -1464,6 +1508,26 @@ export const repoActions = {
     }
     return ok
   },
+
+  /**
+   * Link the current branch to `<remote>/<branch>` so plain pull and push work.
+   * Reversible — `--unset-upstream` puts it back — so it carries an undo entry
+   * like any other config change.
+   */
+  setUpstream: (path: string, branch: string, remote: string) =>
+    useRepoStore.getState().run(
+      path,
+      interp(t('act.setUpstream'), { branch, upstream: `${remote}/${branch}` }),
+      () => gitApi.setUpstream(path, branch, remote),
+      {
+        label: interp(t('undoLabel.setUpstream'), { branch }),
+        undo: () => gitApi.setUpstream(path, branch, null),
+        redo: () => gitApi.setUpstream(path, branch, remote)
+      },
+      null,
+      undefined,
+      ['branches', 'status']
+    ),
 
   /**
    * Pull a branch you are not standing on.

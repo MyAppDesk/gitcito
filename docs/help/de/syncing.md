@@ -14,6 +14,27 @@ Drei Modi, aus dem Dropdown gewählt: **Standard**, **nur Fast-Forward** oder
 **Rebase**. Lokale Änderungen werden rund um den Pull automatisch gestasht und
 wiederhergestellt, ein schmutziger Working Tree blockiert dich also nicht.
 
+### Ein Branch, der nichts verfolgt
+
+`git pull` ist ein Fetch gefolgt von einem Merge, und der Merge muss wissen,
+*wohin* er mergen soll — in den Upstream des Branches. Ein lokal angelegter oder
+ohne Tracking ausgecheckter Branch hat keinen. Der Fetch gelingt trotzdem, eine
+lange Liste aktualisierter `origin/*`-Refs zieht vorbei, und dann bricht git ab
+mit *"There is no tracking information for the current branch"*. Es wurde nichts
+gepullt und nichts kaputtgemacht: der zweiten Hälfte fehlte schlicht das Ziel.
+
+Gitcito liest diesen Fehler und bietet die Reparatur als Button an — welche,
+hängt davon ab, ob der Remote den Branch schon führt:
+
+| | |
+|---|---|
+| **Er liegt auf dem Remote** | **Verbinden & pullen** — setzt den Upstream auf `<remote>/<branch>` und führt dann den gewünschten Pull aus. **Mit ⌘Z widerrufbar**, was das Tracking wieder löst. |
+| **Er ist noch nicht dort** | **Branch pushen** — ein gewöhnlicher Push, der den Upstream nebenbei setzt. |
+
+Angeboten wird `origin`, sofern vorhanden, sonst der erste Remote der Liste.
+Welcher Fall vorliegt, wird aus den Remote-Tracking-Refs gelesen, nicht über das
+Netz — die Antwort spiegelt also den gerade gelaufenen Fetch.
+
 ## Push
 
 Force-Pushes verwenden immer `--force-with-lease` — die sichere Variante, die

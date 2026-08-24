@@ -126,6 +126,7 @@ import type {
   RangeDiffEntry,
   RefTip,
   ForcedRefUpdate,
+  UpstreamSuggestion,
   AbsorbPlan,
   AbsorbTarget,
   AbsorbHunk,
@@ -2796,6 +2797,42 @@ export const gitService = {
     await withRerereCapture(repoPath, () =>
       withAutoStash(repoPath, 'pull', () => withRemoteAuth(repoPath, remote, () => runGit(repoPath, args)))
     )
+  },
+
+  /**
+   * What a "there is no tracking information" pull is actually missing. Git
+   * prints the two repairs as CLI incantations and leaves the user to pick;
+   * this answers the question the choice hinges on — whether the remote already
+   * carries the branch — so the UI can offer one button instead of a man page.
+   * Returns null when there is nothing to repair (detached HEAD, an upstream
+   * already set, or no remote at all).
+   */
+  async upstreamSuggestion(repoPath: string): Promise<UpstreamSuggestion | null> {
+    const branch = await runGit(repoPath, ['symbolic-ref', '--quiet', '--short', 'HEAD'])
+      .then((s) => s.trim())
+      .catch(() => '')
+    if (!branch) return null
+    if (await branchUpstream(repoPath, branch)) return null
+    const remotes = await gitService.remotes(repoPath)
+    if (!remotes.length) return null
+    const remote = remotes.some((r) => r.name === 'origin') ? 'origin' : remotes[0].name
+    // Reads the remote-tracking ref, not the network: a fetch has just run, so
+    // this is current, and an offline repo still gets a sensible answer.
+    const remoteRefExists = await runGit(repoPath, [
+      'rev-parse',
+      '--verify',
+      '--quiet',
+      `refs/remotes/${remote}/${branch}`
+    ])
+      .then((s) => !!s.trim())
+      .catch(() => false)
+    return { branch, remote, remoteRefExists }
+  },
+
+  /** Point `branch` at `<remote>/<branch>`; a null remote unsets the tracking. */
+  async setUpstream(repoPath: string, branch: string, remote: string | null): Promise<void> {
+    if (remote === null) await runGit(repoPath, ['branch', '--unset-upstream', branch])
+    else await runGit(repoPath, ['branch', `--set-upstream-to=${remote}/${branch}`, branch])
   },
 
   async push(repoPath: string, branch: string, opts: { force?: boolean; remote?: string } = {}): Promise<void> {
@@ -6920,6 +6957,7 @@ const APP_LEVEL_METHODS = new Set<string>(['clone', 'init', 'remoteBranches'])
 
 const READ_METHODS = new Set<string>([
   'open',
+  'upstreamSuggestion',
   'log',
   'branches',
   'status',

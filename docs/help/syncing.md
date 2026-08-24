@@ -14,6 +14,27 @@ Three modes, picked from the dropdown: **default**, **fast-forward only**, or
 **rebase**. Local changes are auto-stashed and restored around the pull, so a
 dirty tree does not block you.
 
+### A branch that tracks nothing
+
+`git pull` is a fetch followed by a merge, and the merge needs to know *what* to
+merge into — the branch's upstream. A branch you created locally, or one checked
+out without tracking, has none. The fetch still succeeds, a long list of updated
+`origin/*` refs scrolls past, and then git stops with *"There is no tracking
+information for the current branch"*. Nothing was pulled and nothing was broken:
+the second half simply had no target.
+
+Gitcito reads that error and offers the repair as a button, picking which one
+from whether the remote already carries the branch:
+
+| | |
+|---|---|
+| **It is on the remote** | **Link & pull** — sets the upstream to `<remote>/<branch>`, then runs the pull you asked for. **Undoable with ⌘Z**, which unsets the tracking again. |
+| **It is not there yet** | **Push branch** — an ordinary push, which sets the upstream as it goes. |
+
+The remote offered is `origin` when there is one, otherwise the first in the
+list. Which case you are in is read from the remote-tracking refs rather than
+the network, so the answer reflects the fetch that has just run.
+
 ## Push
 
 Force pushes always use `--force-with-lease` — the safe variant that refuses if

@@ -13,6 +13,7 @@ import type {
   RangeDiffEntry,
   RefTip,
   ForcedRefUpdate,
+  UpstreamSuggestion,
   AbsorbPlan,
   TimelapseCommit,
   RepoPulse,
@@ -216,6 +217,11 @@ export const gitApi = {
   pull: (path: string, mode: 'default' | 'ff-only' | 'rebase') => call<void>('pull', path, mode),
   push: (path: string, branch: string, opts?: { force?: boolean; remote?: string }) =>
     call<void>('push', path, branch, opts),
+  /** Why a pull found no tracking information, and which repair fits. */
+  upstreamSuggestion: (path: string) => call<UpstreamSuggestion | null>('upstreamSuggestion', path),
+  /** Set the branch's upstream to `<remote>/<branch>`; a null remote unsets it. */
+  setUpstream: (path: string, branch: string, remote: string | null) =>
+    call<void>('setUpstream', path, branch, remote),
   /** Fast-forward a local branch from its upstream without checking it out. */
   pullBranch: (path: string, branch: string) => call<void>('pullBranch', path, branch),
   setBranchRef: (path: string, branch: string, sha: string) => call<void>('setBranchRef', path, branch, sha),

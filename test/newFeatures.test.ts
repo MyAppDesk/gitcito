@@ -873,6 +873,52 @@ describe('rangeDiff + refTips (force-push playground)', () => {
   })
 })
 
+describe('upstreamSuggestion + setUpstream (force-push playground)', () => {
+  let R = ''
+  const git = (...args: string[]): string =>
+    execFileSync('git', ['-C', R, ...args], { encoding: 'utf8' }).trim()
+
+  beforeAll(async () => {
+    R = cloneFixture('force-push')
+    // The suggestion reads remote-tracking refs, so they have to exist first.
+    await gitService.fetchAll(R)
+  })
+
+  it('has nothing to suggest while the branch already tracks something', async () => {
+    expect(await gitService.upstreamSuggestion(R)).toBeNull()
+  })
+
+  it('offers the remote branch that is already there once tracking is dropped', async () => {
+    git('checkout', 'feature/login')
+    await gitService.setUpstream(R, 'feature/login', null)
+    expect(await gitService.upstreamSuggestion(R)).toEqual({
+      branch: 'feature/login',
+      remote: 'origin',
+      remoteRefExists: true
+    })
+  })
+
+  it('links the branch back to its remote, and then has nothing left to offer', async () => {
+    await gitService.setUpstream(R, 'feature/login', 'origin')
+    expect(git('rev-parse', '--abbrev-ref', 'feature/login@{u}')).toBe('origin/feature/login')
+    expect(await gitService.upstreamSuggestion(R)).toBeNull()
+  })
+
+  it('marks a branch the remote has never seen, so the repair is a push', async () => {
+    git('checkout', '-b', 'local-only')
+    expect(await gitService.upstreamSuggestion(R)).toEqual({
+      branch: 'local-only',
+      remote: 'origin',
+      remoteRefExists: false
+    })
+  })
+
+  it('suggests nothing on a detached HEAD — there is no branch to track with', async () => {
+    git('checkout', '--detach', 'main')
+    expect(await gitService.upstreamSuggestion(R)).toBeNull()
+  })
+})
+
 describe('absorb (absorb playground)', () => {
   it('routes each staged hunk to the commit that introduced its lines', async () => {
     const R = cloneFixture('absorb')

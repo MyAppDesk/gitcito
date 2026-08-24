@@ -2459,6 +2459,7 @@ export const ja: Dict = {
   'ref.pushed': 'プッシュ済み',
   'ref.localOnly': 'ローカルのみ',
   'ref.local': 'ローカル',
+  'ref.favorite': 'お気に入り',
   'graph.wipPlaceholder': '作業中の変更',
   'toolbar.stashWip': '作業中の変更をスタッシュ',
   'toolbar.fetchedAgo': '{when} にフェッチ',

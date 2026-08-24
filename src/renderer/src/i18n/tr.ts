@@ -2462,6 +2462,7 @@ export const tr: Dict = {
   'ref.pushed': 'push’landı',
   'ref.localOnly': 'yalnızca yerel',
   'ref.local': 'yerel',
+  'ref.favorite': 'favori',
   'graph.wipPlaceholder': 'Devam eden çalışma',
   'toolbar.stashWip': 'Devam eden çalışmayı stash’le',
   'toolbar.fetchedAgo': 'Getirildi: {when}',

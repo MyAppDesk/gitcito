@@ -2527,6 +2527,7 @@ export const ptBR: Dict = {
   'ref.pushed': 'enviada',
   'ref.localOnly': 'só local',
   'ref.local': 'local',
+  'ref.favorite': 'favorita',
   'graph.wipPlaceholder': 'Trabalho em andamento',
   'toolbar.stashWip': 'Guardar o trabalho em andamento no stash',
   'toolbar.fetchedAgo': 'Fetch {when}',

@@ -2519,6 +2519,7 @@ export const zhCN: Dict = {
   'ref.pushed': '已推送',
   'ref.localOnly': '仅本地',
   'ref.local': '本地',
+  'ref.favorite': '收藏',
   'graph.wipPlaceholder': '进行中的工作',
   'toolbar.stashWip': '贮藏进行中的工作',
   'toolbar.fetchedAgo': '{when}获取过',

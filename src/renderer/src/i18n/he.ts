@@ -2522,6 +2522,7 @@ export const he: Dict = {
   'ref.pushed': 'נדחף',
   'ref.localOnly': 'מקומי בלבד',
   'ref.local': 'מקומי',
+  'ref.favorite': 'מועדף',
   'graph.wipPlaceholder': 'עבודה בתהליך',
   'toolbar.stashWip': 'שמירת העבודה בתהליך בסטאש',
   'toolbar.fetchedAgo': 'הובא {when}',

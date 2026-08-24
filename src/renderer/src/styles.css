@@ -24,6 +24,9 @@
   --red: #ff5c7a;
   --yellow: #ff7a1a;
   --purple: #00d4ff;
+  /* Star colour for favourite branches — one hue for the sidebar pin and the
+     graph badge ring, so both read as the same idea. Follows the theme. */
+  --fav-ring: var(--yellow);
 
   /* Rounded design language */
   --radius-sm: 8px;
@@ -1662,11 +1665,11 @@ textarea:focus {
 }
 .sb-pin-action:hover {
   opacity: 1;
-  color: var(--accent);
+  color: var(--fav-ring);
 }
 .sb-pin-action.pinned {
   opacity: 1;
-  color: var(--accent);
+  color: var(--fav-ring);
 }
 
 .pr-open {
@@ -2312,6 +2315,72 @@ textarea:focus {
   opacity: 0.8;
   /* Icons keep their size no matter how tight the badge gets — only the text shrinks */
   flex-shrink: 0;
+}
+
+/* The checked-out branch: solid lane fill, heavier text and a soft halo of its
+ * own lane colour. Every other ref is a tinted plate, so HEAD is the inverted
+ * one — the eye lands on it before it reads any name. */
+.ref-badge.ref-head {
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  /* Same lane fill as its neighbours, but ringed twice: a bright keyline drawn
+   * just inside the pill and a soft halo of its own colour outside it. The
+   * checked-out label pops out of the gutter without breaking the family. */
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, currentColor 80%, transparent),
+    0 0 0 2px color-mix(in srgb, var(--lane-c, var(--accent)) 32%, transparent),
+    0 1px 6px color-mix(in srgb, var(--lane-c, var(--accent)) 45%, transparent);
+}
+.ref-badge.ref-head .ref-ic,
+.ref-badge.ref-head .ref-check {
+  opacity: 1;
+}
+
+/* Favourite (pinned) branches: an offset ring set apart from the border — a
+ * second, detached outline no other badge has. The star stays folded away at
+ * zero width until the badge is hovered, then springs open. */
+.ref-badge.ref-starred {
+  outline: 1.5px solid color-mix(in srgb, var(--fav-ring) 45%, transparent);
+  outline-offset: 2px;
+  transition: outline-color 0.2s ease, outline-offset 0.26s cubic-bezier(0.34, 1.56, 0.64, 1),
+    transform 0.26s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.ref-badge.ref-starred:hover {
+  outline-color: var(--fav-ring);
+  outline-offset: 3px;
+  transform: translateY(-1px);
+}
+.ref-fav-star {
+  flex-shrink: 0;
+  width: 0;
+  opacity: 0;
+  /* The pill is already lane-coloured, so the star borrows the pill's own
+     contrast colour — the amber lives in the ring outside it. */
+  color: currentColor;
+  transform: scale(0.2) rotate(-140deg);
+  transition: width 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+    margin-inline-start 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.16s ease,
+    transform 0.34s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.ref-badge.ref-starred:hover .ref-fav-star {
+  width: 9px;
+  margin-inline-start: 3px;
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
+}
+.ref-more-chip.has-fav::after {
+  content: '★';
+  margin-inline-start: 3px;
+  color: var(--fav-ring);
+  font-size: 9px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ref-fav-star,
+  .ref-badge.ref-starred {
+    transition: none;
+  }
+  .ref-badge.ref-starred:hover {
+    transform: none;
+  }
 }
 
 /* Left ref gutter — branch/tag labels next to the graph */

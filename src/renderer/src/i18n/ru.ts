@@ -2519,6 +2519,7 @@ export const ru: Dict = {
   'ref.pushed': 'отправлено',
   'ref.localOnly': 'только локально',
   'ref.local': 'локально',
+  'ref.favorite': 'избранная',
   'graph.wipPlaceholder': 'Незавершённая работа',
   'toolbar.stashWip': 'Отложить незавершённую работу',
   'toolbar.fetchedAgo': 'Изменения получены {when}',

@@ -2466,6 +2466,7 @@ export const fr: Dict = {
   'ref.pushed': 'poussée',
   'ref.localOnly': 'locale uniquement',
   'ref.local': 'locale',
+  'ref.favorite': 'favorite',
   'graph.wipPlaceholder': 'Travail en cours',
   'toolbar.stashWip': 'Remiser le travail en cours',
   'toolbar.fetchedAgo': 'Récupéré {when}',

@@ -2521,6 +2521,7 @@ export const es: Dict = {
   'ref.pushed': 'subida',
   'ref.localOnly': 'solo local',
   'ref.local': 'local',
+  'ref.favorite': 'favorita',
   'graph.wipPlaceholder': 'Trabajo en curso',
   'toolbar.stashWip': 'Guardar el trabajo en curso',
   'toolbar.fetchedAgo': 'Fetch {when}',

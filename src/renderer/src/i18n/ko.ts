@@ -2519,6 +2519,7 @@ export const ko: Dict = {
   'ref.pushed': '푸시됨',
   'ref.localOnly': '로컬 전용',
   'ref.local': '로컬',
+  'ref.favorite': '즐겨찾기',
   'graph.wipPlaceholder': '작업 중',
   'toolbar.stashWip': '작업 중인 변경 스태시',
   'toolbar.fetchedAgo': '{when} 페치함',

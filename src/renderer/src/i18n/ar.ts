@@ -2522,6 +2522,7 @@ export const ar: Dict = {
   'ref.pushed': 'مرسَل',
   'ref.localOnly': 'محلي فقط',
   'ref.local': 'محلي',
+  'ref.favorite': 'مفضلة',
   'graph.wipPlaceholder': 'عمل قيد التنفيذ',
   'toolbar.stashWip': 'إخفاء العمل الجاري',
   'toolbar.fetchedAgo': 'جُلب {when}',

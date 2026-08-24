@@ -2523,6 +2523,7 @@ export const en = {
   'ref.pushed': 'pushed',
   'ref.localOnly': 'local only',
   'ref.local': 'local',
+  'ref.favorite': 'favorite',
   'graph.wipPlaceholder': 'Work in progress',
   'toolbar.stashWip': 'Stash work in progress',
   'toolbar.fetchedAgo': 'Fetched {when}',

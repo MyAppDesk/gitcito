@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Archive, GitCommitHorizontal, Tag, Laptop, Cloud, Check, Settings2, Pencil, Plus, Minus, CheckCircle2, XCircle, Clock, MinusCircle, StickyNote, FlaskConical } from 'lucide-react'
+import { Archive, GitCommitHorizontal, Tag, Laptop, Cloud, Check, Star, Settings2, Pencil, Plus, Minus, CheckCircle2, XCircle, Clock, MinusCircle, StickyNote, FlaskConical } from 'lucide-react'
 import type { CiState, CiStatus, GraphCommit, StashInfo, GraphColumnId, GraphFlowColumnId, GraphColumns, FileEntry, CommitMenuProbe } from '../../../shared/types'
 import { defaultGraphColumns, defaultGraphColumnOrder, defaultGraphStyle } from '../../../shared/types'
 import { GraphHeaderFilter, type FilterOption } from './GraphHeaderFilter'
@@ -22,6 +22,7 @@ import {
   type CommitMenuCapabilities
 } from '../lib/commitMenuCapabilities'
 import { branchDropActions, encodeDropRef, BRANCH_DND_TYPE, type DropRef } from '../lib/branchDrop'
+import { togglePin } from '../lib/pinnedBranches'
 import { openBranchDropMenu } from '../lib/branchDropMenu'
 import { CHAT_COMMIT_MIME } from '../lib/repoChatContext'
 import { refIntegrationItems } from '../lib/refMenuItems'
@@ -503,6 +504,13 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
   const customGraphPalettes = useSettingsStore((s) => s.settings.customGraphPalettes ?? [])
   const updateRepoLayout = useSettingsStore((s) => s.updateRepoLayout)
   const t = useT()
+
+  // Starred (pinned) branches — the same per-repo list the sidebar keeps, so a
+  // branch starred there is recognisable here without a second toggle to learn.
+  const pinnedNames = useMemo(() => repoLayout?.pinnedBranches ?? [], [repoLayout])
+  const isStarred = (g: RefGroup): boolean => !g.isTag && g.isLocal && pinnedNames.includes(g.label)
+  const togglePinBranch = (name: string): void =>
+    updateRepoLayout(repo.path, (l) => ({ ...l, pinnedBranches: togglePin(l.pinnedBranches ?? [], name) }))
 
   // Visual style of the rails — palette, row spacing, line corners, thickness.
   const ROW_H = DENSITY_ROW_H[graphStyle.density] ?? DENSITY_ROW_H.comfortable
@@ -1500,6 +1508,15 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
           void (isCurrent ? repoActions.pull(repo.path, 'default') : repoActions.pullBranch(repo.path, g.label))
       })
     }
+    // Star/unstar from the badge: the graph is where you notice a branch matters,
+    // and the pin list is shared with the sidebar's Pinned group.
+    if (g.isLocal) {
+      items.push({ separator: true })
+      items.push({
+        label: isStarred(g) ? t('sidebar.unpinBranch') : t('sidebar.pinBranch'),
+        onClick: () => togglePinBranch(g.label)
+      })
+    }
     // Rename from the badge itself — the graph is where you notice a branch is
     // badly named, and bouncing to the sidebar to fix it is friction.
     if (g.isLocal) {
@@ -1618,13 +1635,15 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
   }
 
   const renderGroup = (g: RefGroup, c: GraphCommit, laneColor?: string): React.JSX.Element => {
+    const starred = isStarred(g)
     const title = g.isTag
       ? `${g.label}${repo.remoteTagNames.includes(g.label) ? ` · ${t('ref.pushed')}` : ` · ${t('ref.localOnly')}`}`
-      : `${g.label}${g.isLocal ? ` · ${t('ref.local')}` : ''}${g.remotes.length ? ` · ${g.remotes.join(', ')}` : ''}`
-    // Active branch (HEAD) gets a solid lane-colored pill so it stands out as
-    // the checked-out branch; others keep the soft lane tint.
-    const solidStyle = laneColor
-      ? { borderColor: laneColor, background: laneColor, color: contrastText(laneColor) }
+      : `${g.label}${g.isLocal ? ` · ${t('ref.local')}` : ''}${g.remotes.length ? ` · ${g.remotes.join(', ')}` : ''}${starred ? ` · ${t('ref.favorite')}` : ''}`
+    // Every badge keeps its solid lane-coloured pill; the checked-out one is
+    // set apart in CSS (inner keyline + halo) instead of by a different fill,
+    // so the gutter still reads as one family of labels.
+    const solidStyle: React.CSSProperties | undefined = laneColor
+      ? ({ '--lane-c': laneColor, borderColor: laneColor, background: laneColor, color: contrastText(laneColor) } as React.CSSProperties)
       : undefined
     const laneStyle: React.CSSProperties | undefined = solidStyle
       ? g.isTag ? { ...solidStyle, opacity: 0.72 } : solidStyle
@@ -1640,7 +1659,7 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
     return (
       <span
         key={g.key}
-        className={`ref-badge ref-${g.kind} ${dropRefKey === g.key ? 'ref-drop-over' : ''}`}
+        className={`ref-badge ref-${g.kind} ${starred ? 'ref-starred' : ''} ${dropRefKey === g.key ? 'ref-drop-over' : ''}`}
         style={laneStyle}
         title={title}
         draggable
@@ -1687,6 +1706,9 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
         {g.isHead && <Check size={10} className="ref-check" />}
         {groupIcons(g)}
         <span className="ref-text">{g.label}</span>
+        {/* Idle, a favourite says so with its offset ring alone; the star is
+            folded to zero width and springs in only under the cursor. */}
+        {starred && <Star size={9} className="ref-fav-star" fill="currentColor" />}
       </span>
     )
   }
@@ -2043,8 +2065,10 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
                     ) : (
                       <span className="ref-collapsed" style={{ '--lane': laneColor } as React.CSSProperties}>
                         {renderGroup(groups[0], c, laneColor)}
+                        {/* A favourite hidden behind the +N would be invisible — the
+                            chip carries a star so it is worth opening. */}
                         <span
-                          className="ref-more-chip"
+                          className={`ref-more-chip ${groups.slice(1).some(isStarred) ? 'has-fav' : ''}`}
                           style={laneColor ? { background: laneColor, borderColor: laneColor, color: contrastText(laneColor) } : undefined}
                         >+{groups.length - 1}</span>
                         <div className="graph-refs-pop">

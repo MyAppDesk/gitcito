@@ -2519,6 +2519,7 @@ export const pl: Dict = {
   'ref.pushed': 'wypchnięty',
   'ref.localOnly': 'tylko lokalny',
   'ref.local': 'lokalny',
+  'ref.favorite': 'ulubiona',
   'graph.wipPlaceholder': 'Praca w toku',
   'toolbar.stashWip': 'Odłóż pracę w toku do stasha',
   'toolbar.fetchedAgo': 'Pobrano {when}',

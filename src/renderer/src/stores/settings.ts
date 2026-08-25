@@ -13,6 +13,7 @@ import {
   type RepoFolder,
   type RepoLayout,
   type RepoRef,
+  type RepoTodo,
   type TabState,
   type Workspace
 } from '../../../shared/types'
@@ -28,7 +29,8 @@ import {
 } from '../lib/repoFolders'
 import { settingsApi } from '../infrastructure/api'
 import { useUIStore } from './ui'
-import { applyRepoAlias, migrateRepoAliases, repoDisplayName } from '../lib/repoAlias'
+import { applyRepoAlias, canonicalRepoPath, migrateRepoAliases, repoDisplayName } from '../lib/repoAlias'
+import { clearDoneTodos, createTodo, patchTodo, removeTodo, toggleTodo } from '../lib/todos'
 
 const uid = (): string => Math.random().toString(36).slice(2, 10)
 
@@ -73,6 +75,23 @@ function withGroupFolders(
       return { ...t, folders: pruneFolders(fn(t.folders ?? [], t), t.repos) }
     })
   }
+}
+
+/** Edit one repository's todo list by canonical path, dropping the entry once
+ *  the list empties so settings do not grow a key per repo ever visited. */
+function withTodos(
+  update: (mut: (s: AppSettings) => AppSettings) => void,
+  path: string,
+  fn: (list: RepoTodo[]) => RepoTodo[]
+): void {
+  const key = canonicalRepoPath(path)
+  update((s) => {
+    const all = { ...(s.repoTodos ?? {}) }
+    const next = fn(all[key] ?? [])
+    if (next.length) all[key] = next
+    else delete all[key]
+    return { ...s, repoTodos: all }
+  })
 }
 
 let saveTimer: ReturnType<typeof setTimeout> | null = null
@@ -120,6 +139,17 @@ interface SettingsState {
   /** Patch a repo's per-repo layout override (graph columns + sidebar sections),
    *  keyed by repo path. */
   updateRepoLayout(path: string, mut: (layout: RepoLayout) => RepoLayout): void
+
+  /** This repository's todo list, in storage order. Empty for a repo nobody has
+   *  written one for; never undefined, so callers can map straight away. */
+  todosFor(path: string): RepoTodo[]
+  /** Append a todo. No-op on an empty title, so an accidental Enter is free. */
+  addTodo(path: string, title: string, opts?: { notes?: string; priority?: RepoTodo['priority']; branch?: string }): void
+  patchTodo(path: string, id: string, patch: Partial<Omit<RepoTodo, 'id'>>): void
+  /** Tick / untick, stamping `doneAt` on the way in. */
+  toggleTodo(path: string, id: string): void
+  deleteTodo(path: string, id: string): void
+  clearDoneTodos(path: string): void
 
   openRepoTab(repo: RepoRef): void
   /** Open (or focus) a repo requested by the `gitcito` CLI shim. Unlike
@@ -368,6 +398,21 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       ...s,
       repoLayouts: { ...(s.repoLayouts ?? {}), [path]: mut(s.repoLayouts?.[path] ?? {}) }
     })),
+
+  todosFor: (path) => get().settings.repoTodos?.[canonicalRepoPath(path)] ?? [],
+
+  addTodo: (path, title, opts) => {
+    if (!title.trim()) return
+    withTodos(get().update, path, (list) => [...list, createTodo(title, Date.now(), opts)])
+  },
+
+  patchTodo: (path, id, patch) => withTodos(get().update, path, (list) => patchTodo(list, id, patch)),
+
+  toggleTodo: (path, id) => withTodos(get().update, path, (list) => toggleTodo(list, id, Date.now())),
+
+  deleteTodo: (path, id) => withTodos(get().update, path, (list) => removeTodo(list, id)),
+
+  clearDoneTodos: (path) => withTodos(get().update, path, (list) => clearDoneTodos(list)),
 
   openRepoTab: (repo) => {
     leaveMission()

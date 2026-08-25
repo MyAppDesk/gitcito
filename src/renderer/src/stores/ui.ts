@@ -151,6 +151,7 @@ export type ModalSpec =
   | { kind: 'replace'; repoPath: string; commit?: string }
   | { kind: 'changelog-gen'; repoPath: string }
   | { kind: 'snapshots'; repoPath: string }
+  | { kind: 'todos'; repoPath: string; focusId?: string }
   | { kind: 'stash-partial'; repoPath: string }
   | { kind: 'create-tag'; repoPath: string; hash?: string; at?: string }
   | { kind: 'cheatsheet' }

@@ -34,7 +34,8 @@ import {
   History,
   Layers,
   ArrowDown,
-  Ban
+  Ban,
+  CheckSquare
 } from 'lucide-react'
 import { FileTree } from './FileTree'
 import { FileSearchBar, EMPTY_FILTER, type FileFilter } from './FileSearchBar'
@@ -55,8 +56,10 @@ import { stepRange, claimRangeKeys, ownsRangeKeys, rangeKeysBlocked, domOrder } 
 import { openBranchDropMenu } from '../lib/branchDropMenu'
 import { worktreeForBranch, worktreeTabName } from '../lib/worktrees'
 import { HUGE_SECTION, openUnlessHuge } from '../lib/sidebarSections'
+import { sortTodos, todoSummary } from '../lib/todos'
+import { canonicalRepoPath } from '../lib/repoAlias'
 import { defaultSettings } from '../../../shared/types'
-import type { BranchInfo, MergeRiskKind, ReleaseInfo, RemoteBranchInfo, StashInfo, TagInfo, WorktreeInfo, SubmoduleInfo, LaunchGroup, LaunchConfig, PullRequest, IssueInfo, MilestoneInfo, RemoteInfo } from '../../../shared/types'
+import type { BranchInfo, MergeRiskKind, ReleaseInfo, RemoteBranchInfo, StashInfo, TagInfo, WorktreeInfo, SubmoduleInfo, LaunchGroup, LaunchConfig, PullRequest, IssueInfo, MilestoneInfo, RemoteInfo, RepoTodo } from '../../../shared/types'
 
 import { RemoteIcon } from './RemoteIcon'
 
@@ -245,6 +248,13 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   const aiEnabled = activeProfile().ai.enabled !== false
   const defaultOpenApp = useSettingsStore((s) => s.settings.defaultOpenApp)
   const editor = useSettingsStore((s) => s.settings.editor)
+  // Todos are app state, not repository state: they live in settings keyed by
+  // canonical path, so the same repo opened twice shows one list.
+  const todosByRepo = useSettingsStore((s) => s.settings.repoTodos)
+  const todos = useMemo(
+    () => todosByRepo?.[canonicalRepoPath(repo.path)] ?? [],
+    [todosByRepo, repo.path]
+  )
   const t = useT()
   const [filter, setFilter] = useState('')
   // The refresh cycle reads this to decide whether the file tree's badges are
@@ -1278,6 +1288,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     tags: t('sidebar.tags'),
     releases: t('sidebar.releases'),
     stashes: t('sidebar.stashes'),
+    todos: t('sidebar.todos'),
     worktrees: t('sidebar.worktrees'),
     submodules: t('sidebar.submodules')
   }
@@ -1695,6 +1706,63 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
             <ExternalLink size={11} />
           </span>
         </div>
+  )
+
+  // ─── Todos ───
+  const sortedTodos = sortTodos(todos)
+  const todoCounts = todoSummary(todos)
+  const PRIORITY_LABEL: Record<RepoTodo['priority'], TranslationKey> = {
+    high: 'todos.priorityHigh',
+    normal: 'todos.priorityNormal',
+    low: 'todos.priorityLow'
+  }
+
+  const todoMenu = (td: RepoTodo): MenuItem[] => {
+    const settings = useSettingsStore.getState()
+    return [
+      { label: t('todos.openDetail'), onClick: () => openModal({ kind: 'todos', repoPath: path, focusId: td.id }) },
+      { label: td.done ? t('todos.markOpen') : t('todos.markDone'), onClick: () => settings.toggleTodo(path, td.id) },
+      { separator: true },
+      {
+        label: t('todos.priority'),
+        submenu: (['high', 'normal', 'low'] as const).map((p) => ({
+          label: `${td.priority === p ? '✓ ' : '   '}${t(PRIORITY_LABEL[p])}`,
+          onClick: () => settings.patchTodo(path, td.id, { priority: p })
+        }))
+      },
+      { separator: true },
+      { label: t('todos.delete'), danger: true, onClick: () => settings.deleteTodo(path, td.id) }
+    ]
+  }
+
+  const todoItem = (td: RepoTodo): React.JSX.Element => (
+    <div
+      key={td.id}
+      className={`sb-item sb-todo ${td.done ? 'done' : ''}`}
+      role="button"
+      tabIndex={0}
+      onKeyDown={keyActivate}
+      onClick={() => openModal({ kind: 'todos', repoPath: path, focusId: td.id })}
+      onContextMenu={(e) => {
+        e.preventDefault()
+        openContextMenu(e.clientX, e.clientY, todoMenu(td))
+      }}
+      title={td.notes ? `${td.title}\n\n${td.notes}` : td.title}
+    >
+      <input
+        type="checkbox"
+        className="sb-todo-box"
+        checked={td.done}
+        aria-label={td.done ? t('todos.markOpen') : t('todos.markDone')}
+        title={td.done ? t('todos.markOpen') : t('todos.markDone')}
+        onClick={(e) => e.stopPropagation()}
+        onChange={() => useSettingsStore.getState().toggleTodo(path, td.id)}
+      />
+      <span className="sb-name">{td.title}</span>
+      {!td.done && td.priority !== 'normal' && (
+        <span className={`sb-todo-prio ${td.priority}`} title={t(td.priority === 'high' ? 'todos.priorityHigh' : 'todos.priorityLow')} />
+      )}
+    </div>
   )
 
   const sections: Record<string, React.JSX.Element> = {
@@ -2179,6 +2247,38 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         </Section>
       )
     })(),
+    todos: (
+      <Section
+        title={t('sidebar.todos')}
+        icon={<CheckSquare size={13} />}
+        count={todoCounts.open}
+        {...dragProps('todos')}
+        {...persistOpen('todos')}
+        actions={
+          <span
+            className="icon-btn"
+            role="button"
+            tabIndex={0}
+            aria-label={t('todos.openList')}
+            onKeyDown={keyActivate}
+            title={t('todos.openList')}
+            onClick={(e) => {
+              e.stopPropagation()
+              openModal({ kind: 'todos', repoPath: path })
+            }}
+          >
+            <ExternalLink size={11} />
+          </span>
+        }
+      >
+        {() => (
+          <>
+            {sortedTodos.length === 0 && <div className="sb-empty">{t('sidebar.noTodos')}</div>}
+            {sortedTodos.map(todoItem)}
+          </>
+        )}
+      </Section>
+    ),
     stashes: (
       <Section title={t('sidebar.stashes')} icon={<Archive size={13} />} count={repo.stashes.length} {...dragProps('stashes')} {...persistOpen('stashes')}>
         {repo.stashes.length === 0 && <div className="sb-empty">{t('sidebar.noStashes')}</div>}

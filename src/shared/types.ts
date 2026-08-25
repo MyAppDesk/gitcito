@@ -2672,6 +2672,9 @@ export interface AppSettings {
   /** Per-repository layout overrides (graph columns + sidebar sections), keyed
    *  by repo path. A repo with no entry inherits the global defaults. */
   repoLayouts: Record<string, RepoLayout>
+  /** Per-repository todo lists, keyed by canonical repo path. Absent for a
+   *  repository nobody has written a todo for. */
+  repoTodos?: Record<string, RepoTodo[]>
   autoFetchMinutes: number
   /** Raise an OS notification for new review-requested / CI inbox items. */
   desktopNotifications?: boolean
@@ -2855,6 +2858,29 @@ export function defaultGraphColumnOrder(): GraphFlowColumnId[] {
   return ['message', 'author', 'date', 'sha', 'signature', 'deployment']
 }
 
+/** How loud a todo is in the list. `normal` is the unmarked default. */
+export type TodoPriority = 'low' | 'normal' | 'high'
+
+/**
+ * One checklist entry attached to a repository. Stored in app settings keyed by
+ * canonical repo path — never written into the repository itself, so a todo
+ * cannot leak into a commit, a diff or a colleague's clone.
+ */
+export interface RepoTodo {
+  id: string
+  title: string
+  done: boolean
+  /** Free-form detail shown when the todo is opened. */
+  notes?: string
+  priority: TodoPriority
+  /** Epoch ms. Ordering key for todos of equal priority. */
+  createdAt: number
+  /** Epoch ms the box was ticked; cleared when it is unticked again. */
+  doneAt?: number
+  /** Branch that was checked out when it was written — context, not a filter. */
+  branch?: string
+}
+
 /**
  * Per-repository overrides for layout that is otherwise global. Stored in
  * AppSettings.repoLayouts keyed by repo path; any absent field falls back to
@@ -3015,11 +3041,12 @@ export function defaultSettings(): AppSettings {
     graphStyle: defaultGraphStyle(),
     customGraphPalettes: [],
     repoLayouts: {},
+    repoTodos: {},
     autoFetchMinutes: 5,
     desktopNotifications: false,
     confirmForcePush: true,
     mergeCommit: true,
-    sidebarOrder: ['local', 'remotes', 'stashes', 'tags', 'prs', 'issues', 'milestones', 'releases', 'worktrees', 'submodules'],
+    sidebarOrder: ['local', 'todos', 'remotes', 'stashes', 'tags', 'prs', 'issues', 'milestones', 'releases', 'worktrees', 'submodules'],
     sidebarHidden: [],
     onboardingCompleted: false,
     aiAccountsNoticeSeen: false,

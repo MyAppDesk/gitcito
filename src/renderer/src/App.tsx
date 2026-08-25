@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { GitMerge, FolderOpen, Download, ArrowDownToLine, Bug, LifeBuoy, MessageSquare, X } from 'lucide-react'
+import { GitMerge, FolderOpen, Download, ArrowDownToLine, Bug, LifeBuoy, MessageSquare, X, CheckSquare } from 'lucide-react'
 import { takeAccountsNotice, useSettingsStore } from './stores/settings'
 import { useRepoStore, repoActions, type RepoData } from './stores/repo'
 import { useUIStore } from './stores/ui'
 import { tabActiveRepoPath, tabRepos, type ConflictOpKind, type GroupTab, type PageTab } from '../../shared/types'
 import { useT, t as tr, interp } from './i18n'
 import { applyDirection } from './i18n/direction'
+import { todoSummary } from './lib/todos'
+import { canonicalRepoPath } from './lib/repoAlias'
 import { applyAppTheme, applyCodeTheme, findAppTheme, findCodeTheme } from './theme/themes'
 import { TitleBar, requestCloseTab } from './components/TitleBar'
 import { Toolbar } from './components/Toolbar'
@@ -243,6 +245,29 @@ function ConflictBanner({ repo }: { repo: RepoData }): React.JSX.Element | null 
         </button>
       </div>
     </div>
+  )
+}
+
+/**
+ * Open-todo count in the status bar — the always-visible half of the feature.
+ * Hidden entirely at zero: a permanent "0 todos" chip is furniture, and the
+ * sidebar section is where an empty list is discovered.
+ */
+function TodoStatusChip({ path }: { path: string }): React.JSX.Element | null {
+  const t = useT()
+  const byRepo = useSettingsStore((s) => s.settings.repoTodos)
+  const openModal = useUIStore((s) => s.openModal)
+  const { open, high } = todoSummary(byRepo?.[canonicalRepoPath(path)])
+  if (open === 0) return null
+  return (
+    <button
+      className={`status-issue-btn status-todo-btn ${high > 0 ? 'has-high' : ''}`}
+      title={interp(t('todos.openBadge'), { n: open })}
+      onClick={() => openModal({ kind: 'todos', repoPath: path })}
+    >
+      <CheckSquare size={12} />
+      <span>{open}</span>
+    </button>
   )
 }
 
@@ -941,6 +966,8 @@ export default function App(): React.JSX.Element {
             </button>
             <span className="status-right">
               <ZoomControl compact />
+              <span className="status-sep" />
+              <TodoStatusChip path={repo.path} />
               <span className="status-sep" />
               <button
                 className="status-branch-profile status-branch-btn"

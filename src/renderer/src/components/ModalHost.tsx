@@ -57,6 +57,7 @@ import { CredentialsModal } from './CredentialsModal'
 import { ReplaceModal } from './ReplaceModal'
 import { ChangelogGenModal } from './ChangelogGenModal'
 import { SnapshotsModal } from './SnapshotsModal'
+import { TodosModal } from './TodosModal'
 import { SecureShareModal } from './SecureShareModal'
 import { SecureWorkspaceModal } from './SecureWorkspaceModal'
 import { StashPartialModal } from './StashPartialModal'
@@ -1759,6 +1760,7 @@ export function ModalHost(): React.JSX.Element {
                     modal.kind === 'secure-share' ||
                     modal.kind === 'secure-workspace' ||
                     modal.kind === 'snapshots' ||
+                    modal.kind === 'todos' ||
                     modal.kind === 'teammate-radar' ||
                     modal.kind === 'commit-edit' ||
                     modal.kind === 'local-ci' ||
@@ -1844,6 +1846,7 @@ export function ModalHost(): React.JSX.Element {
             )}
             {modal.kind === 'changelog-gen' && <ChangelogGenModal repoPath={modal.repoPath} />}
             {modal.kind === 'snapshots' && <SnapshotsModal repoPath={modal.repoPath} />}
+            {modal.kind === 'todos' && <TodosModal repoPath={modal.repoPath} focusId={modal.focusId} />}
             {modal.kind === 'teammate-radar' && <TeammateRadarModal repoPath={modal.repoPath} />}
             {modal.kind === 'commit-edit' && (
               <CommitEditModal repoPath={modal.repoPath} sha={modal.sha} subject={modal.subject} />

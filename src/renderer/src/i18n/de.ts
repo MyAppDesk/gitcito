@@ -212,6 +212,7 @@ export const de: Dict = {
   'search.historyHint': 'Listet Commits, deren Diff den gesuchten Text ändert.',
   // Branch stack
   'stack.title': 'Branch-Stapel',
+  'stack.routeConflict': '{branch} und {parent} ändern dieselben Zeilen, deshalb ließ sich die Route nicht abspielen. Nichts wurde geändert — ordne sie von Hand um oder mache nach dem Auflösen ein Restack.',
   'stack.stepPrepare': 'Prüfe, was bereits gelandet ist…',
   'stack.stepPush': 'Pushe {branch} ({n}/{total})',
   'stack.stepVerify': 'Frage das Remote, was es hat…',

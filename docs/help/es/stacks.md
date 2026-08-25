@@ -42,9 +42,16 @@ rastro de enlaces a medio aplicar.
 
 Todo lo que cambie el orden —un intercambio, un movimiento, otro inicio—
 **reproduce** la cadena: los commits propios de cada parada se rebasan sobre su
-nueva base. Por eso puede dar **conflictos**, igual que un restack. Gitcito se
-detiene en el primero y te entrega la vista de conflictos; las paradas anteriores
-ya se han movido.
+nueva base. Por eso puede dar **conflictos**, igual que un restack. Dos paradas que tocan las mismas líneas no pueden
+intercambiarse sin una persona, y cuando eso pasa **no pasa nada**: la edición
+entera se revierte —puntas, enlaces de padre y el rebase a medias— y Gitcito
+nombra las dos paradas que chocan. Un desplegable que rozaste no debería dejarte
+a mitad de un rebase.
+
+**Restack** es la otra mitad del trato: es un rebase que pediste por su nombre,
+así que sí se detiene en el conflicto y te da la vista de conflictos — que es
+además la forma de conseguir el reordenamiento que Gitcito rechazó: resuelve ahí
+y luego mueve la parada.
 
 Deshacer reproduce la ruta anterior. No resucita los commits antiguos, porque los
 nuevos son el mismo trabajo con otros padres.

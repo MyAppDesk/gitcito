@@ -205,6 +205,7 @@ export const ja: Dict = {
   'search.filesHint': '追跡中と未追跡のファイルを検索します（.gitignore を尊重します）。',
   'search.historyHint': '一致したテキストを差分で変更しているコミットを一覧表示します。',
   'stack.title': 'ブランチスタック',
+  'stack.routeConflict': '{branch} と {parent} は同じ行を変更しているため、ルートを再生できませんでした。何も変わっていません — 手作業で並べ替えるか、解決してから restack してください。',
   'stack.stepPrepare': 'すでに着地したものを確認中…',
   'stack.stepPush': '{branch} をプッシュ中（{n}/{total}）',
   'stack.stepVerify': 'リモートに何があるか問い合わせ中…',

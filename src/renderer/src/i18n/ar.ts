@@ -212,6 +212,7 @@ export const ar: Dict = {
   'search.historyHint': 'يعرض الالتزامات التي يغيّر فرقها النص المطابق.',
   // Branch stack
   'stack.title': 'مكدس الفروع',
+  'stack.routeConflict': 'يغيّر {branch} و{parent} السطور نفسها، فتعذّر إعادة تشغيل المسار. لم يتغيّر شيء — أعد ترتيبهما يدويًا، أو أعد التكديس بعد حلّ التعارض.',
   'stack.stepPrepare': 'يجري التحقق مما هبط بالفعل…',
   'stack.stepPush': 'يجري دفع {branch} ({n}/{total})',
   'stack.stepVerify': 'يجري سؤال المستودع البعيد عمّا لديه…',

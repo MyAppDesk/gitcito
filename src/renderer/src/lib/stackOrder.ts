@@ -56,3 +56,13 @@ export function targetFor(info: StackInfo | null, branch: string): string {
   if (i <= 0) return info?.trunk ?? ''
   return order[i - 1]
 }
+
+/**
+ * The marker `stackRestack` throws when a replay hits a conflict, so the two
+ * branches that clash can be named in the reader's own language rather than in
+ * git's paragraph about `rebase --continue`.
+ */
+export function parseRouteConflict(message: string): { branch: string; parent: string } | null {
+  const m = /GITCITO_ROUTE_CONFLICT:([^:\s]+):([^:\s]+)/.exec(message)
+  return m ? { branch: m[1], parent: m[2] } : null
+}

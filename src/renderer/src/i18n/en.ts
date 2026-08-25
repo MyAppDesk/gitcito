@@ -213,6 +213,7 @@ export const en = {
   'search.historyHint': 'Lists commits whose diff changes the matched text.',
   // Branch stack
   'stack.title': 'Branch stack',
+  'stack.routeConflict': '{branch} and {parent} change the same lines, so the route could not be replayed. Nothing was changed — reorder them by hand, or restack after resolving.',
   'stack.stepPrepare': 'Checking what has already landed…',
   'stack.stepPush': 'Pushing {branch} ({n}/{total})',
   'stack.stepVerify': 'Asking the remote what it has…',

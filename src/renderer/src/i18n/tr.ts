@@ -205,6 +205,7 @@ export const tr: Dict = {
   'search.filesHint': 'Takip edilen ve edilmeyen dosyalarda arar (.gitignore dikkate alınır).',
   'search.historyHint': 'Farkı eşleşen metni değiştiren commit’leri listeler.',
   'stack.title': 'Dal yığını',
+  'stack.routeConflict': '{branch} ile {parent} aynı satırları değiştiriyor, bu yüzden güzergâh yeniden oynatılamadı. Hiçbir şey değişmedi — elle sırala ya da çözdükten sonra restack yap.',
   'stack.stepPrepare': 'Neyin çoktan indiği denetleniyor…',
   'stack.stepPush': '{branch} gönderiliyor ({n}/{total})',
   'stack.stepVerify': 'Uzağa neye sahip olduğu soruluyor…',

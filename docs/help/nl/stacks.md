@@ -41,9 +41,16 @@ plaats van een spoor van half toegepaste links.
 
 Alles wat de volgorde verandert — een wissel, een verplaatsing, een andere start —
 **speelt** de ketting **opnieuw af**: de eigen commits van elke stop worden op hun
-nieuwe basis gerebaset. Het kan dus **conflicteren**, net als een restack. Gitcito
-stopt bij het eerste conflict en geeft je de conflictweergave; de stops ervoor zijn
-al verplaatst.
+nieuwe basis gerebaset. Het kan dus **conflicteren**, net als een restack. Twee stops die dezelfde regels raken wisselen niet zonder
+mens, en dan **gebeurt er niets**: de hele bewerking wordt teruggedraaid —
+punten, ouderlinks en de halve rebase — en Gitcito noemt de twee stops die
+botsen. Een aangetikt keuzemenu hoort je niet midden in een rebase achter te
+laten.
+
+**Restack** is de andere helft van de afspraak: dat is een rebase die je bij naam
+vroeg, dus die stopt wél bij het conflict en geeft je de conflictweergave — ook
+de manier om de geweigerde volgorde alsnog te krijgen: los het daar op,
+verplaats dan de stop.
 
 Ongedaan maken speelt de vorige route terug. Het wekt de oude commits niet op, want
 de nieuwe zijn hetzelfde werk met andere ouders.

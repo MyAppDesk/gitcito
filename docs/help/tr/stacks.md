@@ -41,8 +41,15 @@ uygulanmış bağlantı izleri değil.
 
 Sırayı değiştiren her şey — takas, taşıma, başka bir başlangıç — zinciri **yeniden
 oynatır**: her durağın kendi commit'leri yeni temeline rebase edilir. Yani tıpkı
-restack gibi **çakışabilir**. Gitcito ilk çakışmada durur ve çakışma görünümünü
-verir; öndeki duraklar çoktan taşınmıştır.
+restack gibi **çakışabilir**. Aynı satırlara dokunan iki durak, bir insan olmadan yer
+değiştiremez; böyle olduğunda **hiçbir şey olmaz**: değişikliğin tamamı geri
+alınır — uçlar, ebeveyn bağları ve yarım kalan rebase — ve Gitcito çarpışan iki
+durağı adıyla söyler. Dürttüğün bir açılır liste seni rebase'in ortasında
+bırakmamalı.
+
+**Restack** anlaşmanın öteki yarısıdır: adıyla istediğin bir rebase olduğu için
+çakışmada durur ve çakışma görünümünü verir — bu aynı zamanda Gitcito'nun
+reddettiği sıralamayı elde etmenin yoludur: orada çöz, sonra durağı taşı.
 
 Geri alma önceki güzergâhı yeniden oynatır. Eski commit'leri diriltmez, çünkü
 yenileri farklı ebeveynlerle aynı iştir.

@@ -212,6 +212,7 @@ export const ptBR: Dict = {
   'search.historyHint': 'Lista os commits cujo diff mexe no texto procurado.',
   // Pilha de branches
   'stack.title': 'Pilha de branches',
+  'stack.routeConflict': '{branch} e {parent} mexem nas mesmas linhas, então a rota não pôde ser reproduzida. Nada foi alterado — reordene na mão, ou faça restack depois de resolver.',
   'stack.stepPrepare': 'Conferindo o que já aterrissou…',
   'stack.stepPush': 'Enviando {branch} ({n}/{total})',
   'stack.stepVerify': 'Perguntando ao remoto o que ele tem…',

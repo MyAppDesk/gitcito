@@ -212,6 +212,7 @@ export const nl: Dict = {
   'search.historyHint': 'Toont commits waarvan de diff de gezochte tekst wijzigt.',
   // Branch-stack
   'stack.title': 'Branch-stack',
+  'stack.routeConflict': '{branch} en {parent} wijzigen dezelfde regels, dus de route kon niet worden afgespeeld. Er is niets veranderd — zet ze met de hand op volgorde, of restack na het oplossen.',
   'stack.stepPrepare': 'Nagaan wat er al geland is…',
   'stack.stepPush': '{branch} pushen ({n}/{total})',
   'stack.stepVerify': 'De remote vragen wat hij heeft…',

@@ -42,9 +42,16 @@ keine Spur halb angewandter Verknüpfungen.
 
 Alles, was die Reihenfolge ändert — ein Tausch, ein Zug, ein anderer Start —
 **spielt** die Kette **neu ab**: die eigenen Commits jeder Station werden auf ihre
-neue Basis rebased. Das kann also **Konflikte** geben, genau wie ein Restack.
-Gitcito hält beim ersten Konflikt an und übergibt die Konfliktansicht; die
-Stationen davor sind bereits verschoben.
+neue Basis rebased. Zwei Stationen, die dieselben Zeilen anfassen, tauschen
+nicht ohne einen Menschen, und dann **passiert nichts**: die ganze Änderung wird
+zurückgenommen — Spitzen, Parent-Links und der halbe Rebase — und Gitcito nennt
+die beiden Stationen, die sich beißen. Ein angestupstes Dropdown darf einen nicht
+mitten im Rebase zurücklassen.
+
+**Restack** ist die andere Hälfte der Abmachung: ein Rebase, den du beim Namen
+verlangt hast, hält beim Konflikt an und übergibt die Konfliktansicht — was auch
+der Weg zu dem Umordnen ist, das Gitcito abgelehnt hat: dort auflösen, dann die
+Station verschieben.
 
 Das Widerrufen spielt die vorherige Route nach. Es erweckt nicht die alten Commits,
 denn die neuen sind dieselbe Arbeit mit anderen Eltern.

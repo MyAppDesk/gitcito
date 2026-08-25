@@ -212,6 +212,7 @@ export const pl: Dict = {
   'search.historyHint': 'Wypisuje commity, których diff zmienia dopasowany tekst.',
   // Stos branchy
   'stack.title': 'Stos branchy',
+  'stack.routeConflict': '{branch} i {parent} zmieniają te same wiersze, więc trasy nie dało się odtworzyć. Nic nie zostało zmienione — przestaw je ręcznie albo zrób restack po rozwiązaniu konfliktu.',
   'stack.stepPrepare': 'Sprawdzanie, co już wylądowało…',
   'stack.stepPush': 'Wypychanie {branch} ({n}/{total})',
   'stack.stepVerify': 'Pytanie zdalnego repozytorium, co ma…',

@@ -41,6 +41,7 @@ import { worktreeForBranch, worktreeTabName } from '../lib/worktrees'
 import { isSecretFile } from '../lib/secrets'
 import { commitHookFailureHint } from '../lib/commitLint'
 import { isLockErrorMessage, lockRepairPlan } from '../lib/gitLocks'
+import { parseRouteConflict } from '../lib/stackOrder'
 import { timeAgo } from '../lib/timeAgo'
 import { splitCommitMessage } from '../lib/commitMenuCapabilities'
 import { t, interp } from '../i18n'
@@ -1241,7 +1242,14 @@ export const repoActions = {
         redo: () => gitApi.stackSetRoute(path, trunk, order)
       },
       null,
-      undefined,
+      // A replay that conflicted has already been rolled back by the main
+      // process, so this is a report, not a state the user has to get out of.
+      (message) => {
+        const clash = parseRouteConflict(message)
+        if (!clash) return false
+        toast('error', interp(t('stack.routeConflict'), clash), { repoPath: path })
+        return true
+      },
       ['branches', 'status', 'log']
     ),
 

@@ -212,6 +212,7 @@ export const zhCN: Dict = {
   'search.historyHint': '列出差异中改动了匹配文本的提交。',
   // Branch stack
   'stack.title': '分支栈',
+  'stack.routeConflict': '{branch} 和 {parent} 改的是同一批行，所以这条路线没法重放。什么都没改——手动调整顺序，或者解决冲突后再 restack。',
   'stack.stepPrepare': '正在检查哪些已经落地……',
   'stack.stepPush': '正在推送 {branch}（{n}/{total}）',
   'stack.stepVerify': '正在向远端确认它有什么……',

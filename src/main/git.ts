@@ -2602,6 +2602,7 @@ export const gitService = {
     // not a stop, and neither is a protected branch — either one here would
     // quietly rewrite the history everyone else is working from.
     if (order.includes(trunk)) throw new Error(`"${trunk}" is where the stack lands — it cannot also be a stop on it.`)
+    if (new Set(order).size !== order.length) throw new Error('A branch cannot be on the same stack twice.')
     const protectedNames = await gitService.protectedBranches(repoPath).catch(() => [] as string[])
     const guarded = order.filter((b) => protectedNames.includes(b))
     if (guarded.length) {
@@ -2609,18 +2610,23 @@ export const gitService = {
         `Refusing to rebase protected ${guarded.length === 1 ? 'branch' : 'branches'}: ${guarded.join(', ')}.`
       )
     }
-    for (const branch of order) {
-      const existing = (await git.raw(['config', '--get', `branch.${branch}.gitcitobase`]).catch(() => '')).trim()
-      if (existing) continue
-      const oldParent =
-        (await git.raw(['config', '--get', `branch.${branch}.gitcitoparent`]).catch(() => '')).trim() || trunk
-      const base = (await git.raw(['merge-base', oldParent, branch]).catch(() => '')).trim()
-      if (base) await git.raw(['config', `branch.${branch}.gitcitobase`, base])
-    }
-    for (let i = 0; i < order.length; i++) {
-      await git.raw(['config', `branch.${order[i]}.gitcitoparent`, i === 0 ? trunk : order[i - 1]])
-    }
-    await gitService.stackRestack(repoPath, order[order.length - 1])
+    // Atomic: a reorder is a picker gesture, and one that half-lands and drops
+    // the user into a mid-rebase is worse than one that refuses. The snapshot
+    // below is what makes "nothing happened" true after a conflict.
+    await withStackRollback(repoPath, [...order, trunk], async () => {
+      for (const branch of order) {
+        const existing = (await git.raw(['config', '--get', `branch.${branch}.gitcitobase`]).catch(() => '')).trim()
+        if (existing) continue
+        const oldParent =
+          (await git.raw(['config', '--get', `branch.${branch}.gitcitoparent`]).catch(() => '')).trim() || trunk
+        const base = (await git.raw(['merge-base', oldParent, branch]).catch(() => '')).trim()
+        if (base) await git.raw(['config', `branch.${branch}.gitcitobase`, base])
+      }
+      for (let i = 0; i < order.length; i++) {
+        await git.raw(['config', `branch.${order[i]}.gitcitoparent`, i === 0 ? trunk : order[i - 1]])
+      }
+      await gitService.stackRestack(repoPath, order[order.length - 1])
+    })
   },
 
   /**
@@ -2655,11 +2661,14 @@ export const gitService = {
    */
   async stackSetRoute(repoPath: string, trunk: string, order: string[]): Promise<void> {
     const before = await gitService.stackInfo(repoPath)
-    const keep = new Set(order)
-    for (const b of before.branches) {
-      if (!keep.has(b.name)) await gitService.stackClearParent(repoPath, b.name)
-    }
-    if (order.length) await gitService.stackReorder(repoPath, trunk, order)
+    const dropped = before.branches.map((b) => b.name).filter((n) => !order.includes(n))
+    // The untracking is part of the same gesture, so it is inside the same
+    // snapshot: a conflict half-way through the replay must not leave levels
+    // detached from a stack that never changed.
+    await withStackRollback(repoPath, [...new Set([...order, ...dropped, trunk])], async () => {
+      for (const name of dropped) await gitService.stackClearParent(repoPath, name)
+      if (order.length) await gitService.stackReorder(repoPath, trunk, order)
+    })
   },
 
   /**
@@ -2711,7 +2720,13 @@ export const gitService = {
       let base = (await git.raw(['config', '--get', `branch.${b.name}.gitcitobase`]).catch(() => '')).trim()
       if (!base) base = (await git.raw(['merge-base', b.parent, b.name])).trim()
       // 3-arg form checks out b.name and rebases its commits since `base` onto parentTip.
-      await git.raw(['rebase', '--onto', parentTip, base, b.name])
+      // A conflict here is the only failure a user meets often, so it is named
+      // rather than left as git's own paragraph about running `rebase --continue`.
+      await git.raw(['rebase', '--onto', parentTip, base, b.name]).catch((err) => {
+        const msg = err instanceof Error ? err.message : String(err)
+        if (!/conflict/i.test(msg)) throw err
+        throw new Error(`${ROUTE_CONFLICT}:${b.name}:${b.parent}`)
+      })
       await git.raw(['config', `branch.${b.name}.gitcitobase`, parentTip])
     }
     await git.checkout(leaf)
@@ -7109,6 +7124,63 @@ async function withLockRetry<T>(op: () => Promise<T>): Promise<T> {
       if (attempt >= maxAttempts || !isGitLockError(err)) throw err
       await new Promise((r) => setTimeout(r, 150 * attempt))
     }
+  }
+}
+
+/** Marker the renderer looks for, so a conflicted route edit can be worded in
+ *  the user's language with the two branches in it. */
+export const ROUTE_CONFLICT = 'GITCITO_ROUTE_CONFLICT'
+
+/**
+ * Run a stack edit so that a failure leaves the repository exactly as it was.
+ *
+ * Reordering a stack is a series of rebases, and rebases conflict — two stops
+ * that touch the same lines cannot swap without a human. Git's own answer is to
+ * stop mid-rebase and wait, which is right for a rebase the user asked for by
+ * name and wrong for a dropdown they nudged: it strands them in a state they
+ * did not choose, with half the chain moved and the parent links already
+ * rewritten.
+ *
+ * So every branch this edit can touch is snapshotted first — tip and both
+ * config keys — and put back on the way out. What the user sees instead is a
+ * message naming the two branches that clash.
+ */
+async function withStackRollback<T>(repoPath: string, branches: string[], fn: () => Promise<T>): Promise<T> {
+  const git = gitFor(repoPath)
+  const names = [...new Set(branches.filter(Boolean))]
+  const head = (await git.revparse(['--abbrev-ref', 'HEAD']).catch(() => '')).trim()
+  const tips = new Map<string, string>()
+  const config = new Map<string, { parent: string; base: string }>()
+  for (const b of names) {
+    const tip = (await git.revparse([b]).catch(() => '')).trim()
+    if (tip) tips.set(b, tip)
+    config.set(b, {
+      parent: (await git.raw(['config', '--get', `branch.${b}.gitcitoparent`]).catch(() => '')).trim(),
+      base: (await git.raw(['config', '--get', `branch.${b}.gitcitobase`]).catch(() => '')).trim()
+    })
+  }
+  try {
+    return await fn()
+  } catch (err) {
+    // Order matters: end the rebase first, stand on the branch we started on,
+    // and only then move refs — a ref moved under a checked-out branch leaves
+    // the working tree describing a commit that is no longer there.
+    await runGit(repoPath, ['rebase', '--abort']).catch(() => undefined)
+    if (head && head !== 'HEAD') await git.checkout(head).catch(() => undefined)
+    for (const [branch, tip] of tips) {
+      if (branch === head) await runGit(repoPath, ['reset', '--hard', tip]).catch(() => undefined)
+      else await runGit(repoPath, ['update-ref', `refs/heads/${branch}`, tip]).catch(() => undefined)
+    }
+    for (const [branch, saved] of config) {
+      for (const [key, value] of [
+        [`branch.${branch}.gitcitoparent`, saved.parent],
+        [`branch.${branch}.gitcitobase`, saved.base]
+      ] as const) {
+        if (value) await git.raw(['config', key, value]).catch(() => undefined)
+        else await git.raw(['config', '--unset', key]).catch(() => undefined)
+      }
+    }
+    throw err
   }
 }
 

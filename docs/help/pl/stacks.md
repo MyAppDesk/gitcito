@@ -42,8 +42,15 @@ zastosowanych powiązaniach.
 
 Wszystko, co zmienia kolejność — zamiana, przesunięcie, inny start — **odtwarza**
 łańcuch: własne commity każdego przystanku są rebase'owane na nową bazę. Może więc
-dawać **konflikty**, dokładnie jak restack. Gitcito zatrzymuje się na pierwszym i
-oddaje ci widok konfliktów; wcześniejsze przystanki już się przesunęły.
+dawać **konflikty**, dokładnie jak restack. Dwa przystanki dotykające tych samych wierszy nie zamienią
+się bez człowieka, a wtedy **nic się nie dzieje**: cała zmiana jest wycofywana —
+czubki, powiązania rodzica i rozgrzebany rebase — a Gitcito nazywa dwa
+przystanki, które się gryzą. Trącona lista rozwijana nie powinna zostawiać cię w
+środku rebase'a.
+
+**Restack** to druga połowa umowy: to rebase, o który poprosiłeś z nazwy, więc
+zatrzymuje się na konflikcie i daje widok konfliktów — a to zarazem sposób na
+przestawienie, którego Gitcito odmówiło: rozwiąż tam, potem przesuń przystanek.
 
 Cofnięcie odtwarza poprzednią trasę. Nie wskrzesza starych commitów, bo nowe to ta
 sama praca z innymi rodzicami.

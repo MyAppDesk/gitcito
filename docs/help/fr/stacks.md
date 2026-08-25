@@ -42,9 +42,16 @@ rendu d’un coup. C’est pourquoi un geste vaut une seule annulation
 
 Tout ce qui change l’ordre — un échange, un déplacement, un autre départ —
 **rejoue** la chaîne : les commits propres à chaque étape sont rebasés sur leur
-nouvelle base. Cela peut donc **entrer en conflit**, exactement comme un restack.
-Gitcito s’arrête au premier conflit et vous passe la vue de résolution ; les
-étapes précédentes ont déjà bougé.
+nouvelle base. Deux étapes qui touchent les mêmes lignes ne peuvent pas
+s’échanger sans un humain, et dans ce cas **il ne se passe rien** : la
+modification entière est annulée — pointes, liens de parent et rebase à moitié
+fait — et Gitcito nomme les deux étapes qui s’opposent. Un menu déroulant
+effleuré ne devrait pas vous laisser en plein rebase.
+
+**Restack** est l’autre moitié du marché : c’est un rebase que vous avez demandé
+nommément, il s’arrête donc au conflit et vous passe la vue de résolution — qui
+est aussi le moyen d’obtenir le réordonnancement refusé : résolvez là, puis
+déplacez l’étape.
 
 L’annulation rejoue l’itinéraire précédent. Elle ne ressuscite pas les anciens
 commits : les nouveaux sont le même travail avec d’autres parents.

@@ -212,6 +212,7 @@ export const ko: Dict = {
   'search.historyHint': '해당 텍스트를 변경한 커밋을 나열합니다.',
   // 브랜치 스택
   'stack.title': '브랜치 스택',
+  'stack.routeConflict': '{branch}과(와) {parent}이(가) 같은 줄을 바꿔서 경로를 재생하지 못했습니다. 아무것도 바뀌지 않았습니다 — 직접 순서를 바꾸거나, 충돌을 해결한 뒤 restack 하세요.',
   'stack.stepPrepare': '이미 착지한 것을 확인하는 중…',
   'stack.stepPush': '{branch} 푸시 중 ({n}/{total})',
   'stack.stepVerify': '원격에 무엇이 있는지 확인하는 중…',

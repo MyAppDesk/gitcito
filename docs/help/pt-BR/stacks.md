@@ -41,8 +41,15 @@ rastro de vínculos meio aplicados.
 
 Tudo que muda a ordem — uma troca, um movimento, outro início — **reproduz** a
 cadeia: os commits próprios de cada parada são rebaseados na nova base. Então pode
-dar **conflito**, igual a um restack. O Gitcito para no primeiro e entrega a tela
-de conflitos; as paradas anteriores já se moveram.
+dar **conflito**, igual a um restack. Duas paradas que mexem nas mesmas linhas não trocam de
+lugar sem gente, e quando isso acontece **não acontece nada**: a edição inteira é
+desfeita — pontas, vínculos de pai e o rebase pela metade — e o Gitcito diz quais
+duas paradas batem. Um menu que você encostou não deve largar você no meio de um
+rebase.
+
+**Restack** é a outra metade do trato: é um rebase que você pediu pelo nome,
+então ele para no conflito e entrega a tela de conflitos — que também é o jeito
+de conseguir a reordenação recusada: resolva ali e depois mova a parada.
 
 O desfazer reproduz a rota anterior. Ele não ressuscita os commits antigos, porque
 os novos são o mesmo trabalho com outros pais.

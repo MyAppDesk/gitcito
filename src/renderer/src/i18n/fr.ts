@@ -205,6 +205,7 @@ export const fr: Dict = {
   'search.filesHint': 'Cherche dans les fichiers suivis et non suivis (respecte .gitignore).',
   'search.historyHint': 'Liste les commits dont le diff modifie le texte recherché.',
   'stack.title': 'Pile de branches',
+  'stack.routeConflict': '{branch} et {parent} modifient les mêmes lignes : l’itinéraire n’a pas pu être rejoué. Rien n’a changé — réordonnez-les à la main, ou faites un restack après résolution.',
   'stack.stepPrepare': 'Vérification de ce qui a déjà atterri…',
   'stack.stepPush': 'Poussée de {branch} ({n}/{total})',
   'stack.stepVerify': 'Interrogation du distant sur ce qu’il possède…',

@@ -1349,3 +1349,48 @@ describe('stack route guards (stacked-branches playground)', () => {
     expect(tip).toBe(execFileSync('git', ['-C', R, 'rev-parse', 'main']).toString().trim())
   })
 })
+
+describe('a route edit that conflicts (stacked-branches playground)', () => {
+  /** Two stops whose commits append to the same file: swapping them cannot replay. */
+  function conflictingStack(): string {
+    const R = cloneFixture('stacked-branches')
+    const run = (...args: string[]): string => execFileSync('git', ['-C', R, ...args]).toString()
+    run('checkout', '-q', 'main')
+    run('checkout', '-q', '-b', 'note-1')
+    writeFileSync(join(R, 'NOTES.md'), 'one\n')
+    run('add', 'NOTES.md')
+    run('commit', '-q', '-m', 'note one')
+    run('checkout', '-q', '-b', 'note-2')
+    writeFileSync(join(R, 'NOTES.md'), 'one\ntwo\n')
+    run('add', 'NOTES.md')
+    run('commit', '-q', '-m', 'note two')
+    run('config', 'branch.note-1.gitcitoparent', 'main')
+    run('config', 'branch.note-2.gitcitoparent', 'note-1')
+    return R
+  }
+
+  it('rolls the whole thing back: tips, parent links and the rebase itself', async () => {
+    const R = conflictingStack()
+    const at = (ref: string): string => execFileSync('git', ['-C', R, 'rev-parse', ref]).toString().trim()
+    const before = { one: at('note-1'), two: at('note-2'), head: at('HEAD') }
+
+    await expect(gitService.stackSetRoute(R, 'main', ['note-2', 'note-1'])).rejects.toThrow(/ROUTE_CONFLICT/)
+
+    expect(at('note-1')).toBe(before.one)
+    expect(at('note-2')).toBe(before.two)
+    expect(at('HEAD')).toBe(before.head)
+    // No half-finished rebase left behind, and the links still describe the old route.
+    expect(existsSync(join(R, '.git', 'rebase-merge'))).toBe(false)
+    expect(existsSync(join(R, '.git', 'rebase-apply'))).toBe(false)
+    const info = await gitService.stackInfo(R, 'note-2')
+    expect(info.branches.map((b) => b.name)).toEqual(['note-1', 'note-2'])
+    expect(info.trunk).toBe('main')
+  })
+
+  it('names both branches, so the toast can say which two clash', async () => {
+    const R = conflictingStack()
+    await expect(gitService.stackSetRoute(R, 'main', ['note-2', 'note-1'])).rejects.toThrow(
+      /GITCITO_ROUTE_CONFLICT:note-1:note-2/
+    )
+  })
+})

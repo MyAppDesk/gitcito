@@ -41,8 +41,15 @@ than a trail of half-applied link changes.
 
 Anything that changes the order — a swap, a move, a different start — **replays**
 the chain: each stop's own commits are rebased onto its new base. So it can
-**conflict**, exactly like a restack. Gitcito stops at the first conflict and
-hands you the conflict view; the stops before it have already moved.
+**conflict** — two stops that touch the same lines cannot swap without a human.
+When that happens **nothing happens**: the whole edit is rolled back, tips,
+parent links and the half-finished rebase alike, and Gitcito names the two stops
+that clash. A dropdown you nudged should not strand you mid-rebase.
+
+**Restack** is the other half of that bargain. It is a rebase you asked for by
+name, so it does stop at the conflict and hand you the conflict view — which is
+also the way to make a reorder that Gitcito refused: resolve there, then move the
+stop.
 
 Undo replays the previous route. It does not resurrect the old commits, because
 the new ones are the same work with different parents.

@@ -41,9 +41,16 @@ restituito in una volta. Per questo un gesto è un solo annullamento
 
 Tutto ciò che cambia l'ordine — uno scambio, uno spostamento, un'altra partenza —
 **riproduce** la catena: i commit propri di ogni tappa vengono rebasati sulla nuova
-base. Quindi può dare **conflitti**, esattamente come un restack. Gitcito si ferma
-al primo e ti consegna la vista dei conflitti; le tappe precedenti si sono già
-spostate.
+base. Quindi può dare **conflitti**, esattamente come un restack. Due tappe che toccano le stesse righe non si scambiano
+senza una persona, e quando succede **non succede nulla**: l'intera modifica
+viene annullata — punte, collegamenti al genitore e il rebase a metà — e Gitcito
+nomina le due tappe che si scontrano. Un menu sfiorato non deve lasciarti in
+mezzo a un rebase.
+
+**Restack** è l'altra metà del patto: è un rebase che hai chiesto per nome,
+quindi si ferma al conflitto e ti dà la vista dei conflitti — che è anche il modo
+di ottenere il riordino che Gitcito ha rifiutato: risolvi lì, poi sposta la
+tappa.
 
 L'annullamento riproduce l'itinerario precedente. Non resuscita i vecchi commit,
 perché i nuovi sono lo stesso lavoro con genitori diversi.

@@ -207,6 +207,7 @@ export const es: Dict = {
   'search.historyHint': 'Lista commits cuyo diff cambia el texto buscado.',
   // Branch stack
   'stack.title': 'Pila de ramas',
+  'stack.routeConflict': '{branch} y {parent} tocan las mismas líneas, así que la ruta no pudo reproducirse. No se cambió nada: reordénalas a mano o haz restack tras resolver.',
   'stack.stepPrepare': 'Comprobando qué ha aterrizado ya…',
   'stack.stepPush': 'Enviando {branch} ({n}/{total})',
   'stack.stepVerify': 'Preguntando al remoto qué tiene…',

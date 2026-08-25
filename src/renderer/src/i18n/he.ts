@@ -212,6 +212,7 @@ export const he: Dict = {
   'search.historyHint': 'מציג קומיטים שהדיף שלהם משנה את הטקסט שנמצא.',
   // Branch stack
   'stack.title': 'ערימת ענפים',
+  'stack.routeConflict': '{branch} ו־{parent} משנים את אותן שורות, ולכן לא ניתן היה לנגן את המסלול מחדש. שום דבר לא השתנה — סדרו אותם ידנית, או בצעו restack אחרי הפתרון.',
   'stack.stepPrepare': 'בודקים מה כבר נחת…',
   'stack.stepPush': 'דוחפים את {branch} ({n}/{total})',
   'stack.stepVerify': 'שואלים את המרוחק מה יש לו…',

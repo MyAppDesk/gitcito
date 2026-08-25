@@ -1,5 +1,12 @@
 
 
+## [3.27.1](https://github.com/MyAppDesk/gitcito/compare/v3.27.0...v3.27.1) (2026-08-25)
+
+
+### Bug Fixes
+
+* improve shell command execution for PATH resolution ([67cf117](https://github.com/MyAppDesk/gitcito/commit/67cf1174a9a0a3eaaee3bf00367bbbe8421e4a28))
+
 ## [3.27.0](https://github.com/MyAppDesk/gitcito/compare/v3.26.1...v3.27.0) (2026-08-25)
 
 

@@ -1,5 +1,12 @@
 
 
+## [3.30.0](https://github.com/MyAppDesk/gitcito/compare/v3.29.0...v3.30.0) (2026-08-25)
+
+
+### Features
+
+* add CLI features ([9b3a51b](https://github.com/MyAppDesk/gitcito/commit/9b3a51bae41aa0dd15b30a9662933a14ee9b09e0))
+
 ## [3.29.0](https://github.com/MyAppDesk/gitcito/compare/v3.28.0...v3.29.0) (2026-08-25)
 
 

@@ -1424,3 +1424,21 @@ describe('protected branches default (stacked-branches playground)', () => {
     expect(await gitService.protectedBranches(R)).toEqual(['release', 'main'])
   })
 })
+
+describe('a branch that is on no stack (stacked-branches playground)', () => {
+  it('answers with an empty stack, not a one-level stack that lands on itself', async () => {
+    const R = cloneFixture('stacked-branches')
+    execFileSync('git', ['-C', R, 'checkout', '-q', 'main'])
+    const info = await gitService.stackInfo(R)
+    expect(info.branches).toEqual([])
+    expect(info.trunk).toBe('')
+  })
+
+  it('still answers for a stack asked about by its leaf, wherever you stand', async () => {
+    const R = cloneFixture('stacked-branches')
+    execFileSync('git', ['-C', R, 'checkout', '-q', 'main'])
+    const info = await gitService.stackInfo(R, 'feature/ui')
+    expect(info.branches.map((b) => b.name)).toEqual(['feature/api', 'feature/ui'])
+    expect(info.trunk).toBe('main')
+  })
+})

@@ -48,24 +48,41 @@ export function StackModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
 
   /** The route being drawn: bottom → top, like `StackInfo.branches`. */
   const [draft, setDraft] = useState<{ trunk: string; order: string[] } | null>(null)
+  /**
+   * Which stack to show. `stackInfo` answers for the branch you are standing
+   * on, and applying a route leaves you where you started — often the trunk,
+   * which is on no stack at all. Remembering the leaf keeps the route you were
+   * just editing on screen instead of an empty one.
+   */
+  const [focus, setFocus] = useState<string | null>(null)
 
-  const reload = useCallback(async (): Promise<void> => {
-    setLoading(true)
-    try {
-      const fresh = await gitApi.stackInfo(repoPath)
-      setInfo(fresh)
-      setDraft({ trunk: fresh.trunk, order: stackOrder(fresh) })
-    } catch {
-      setInfo({ trunk: '', branches: [] })
-      setDraft({ trunk: '', order: [] })
-    } finally {
-      setLoading(false)
-    }
-  }, [repoPath])
+  const reload = useCallback(
+    async (leaf?: string | null): Promise<void> => {
+      setLoading(true)
+      const target = leaf === undefined ? focus : leaf
+      try {
+        let fresh = await gitApi.stackInfo(repoPath, target ?? undefined)
+        // The remembered leaf may have been taken off the route; fall back to
+        // whatever the current branch is on rather than showing nothing.
+        if (!fresh.branches.length && target) fresh = await gitApi.stackInfo(repoPath)
+        setInfo(fresh)
+        setFocus(stackOrder(fresh).at(-1) ?? null)
+        setDraft({ trunk: fresh.trunk, order: stackOrder(fresh) })
+      } catch {
+        setInfo({ trunk: '', branches: [] })
+        setDraft({ trunk: '', order: [] })
+      } finally {
+        setLoading(false)
+      }
+    },
+    [repoPath, focus]
+  )
 
   useEffect(() => {
     void reload()
-  }, [reload, repo?.branches.current])
+    // `focus` is set by reload itself; re-running on it would loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [repoPath, repo?.branches.current])
 
   useEffect(() => {
     void gitApi
@@ -74,7 +91,16 @@ export function StackModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
       .catch(() => setProtectedNames([]))
   }, [repoPath])
 
-  const saved = useMemo(() => ({ trunk: info?.trunk ?? '', order: stackOrder(info) }), [info])
+  const defaultTrunk = useMemo(
+    () => (repo?.branches.locals ?? []).find((b) => /^(main|master)$/.test(b.name))?.name ?? '',
+    [repo?.branches.locals]
+  )
+  // With no stack there is no trunk to read, but the field still has to offer
+  // the obvious answer rather than an empty box.
+  const saved = useMemo(
+    () => ({ trunk: info?.trunk || (info && !info.branches.length ? defaultTrunk : ''), order: stackOrder(info) }),
+    [info, defaultTrunk]
+  )
   const trunk = draft?.trunk ?? saved.trunk
   const order = draft?.order ?? saved.order
   const dirty = trunk !== saved.trunk || order.join(' ') !== saved.order.join(' ')
@@ -126,11 +152,12 @@ export function StackModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
   const apply = async (): Promise<void> => {
     if (!dirty) return
     setApplying(true)
+    const leafApplied = order[order.length - 1] ?? null
     try {
       await repoActions.stackSetRoute(repoPath, trunk, order, saved.trunk, saved.order)
     } finally {
       setApplying(false)
-      await reload()
+      await reload(leafApplied)
     }
   }
 

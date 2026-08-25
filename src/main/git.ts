@@ -2552,9 +2552,11 @@ export const gitService = {
       chainTopDown.push(cur)
       cur = parents[cur]
     }
-    // The bottom-most tracked branch (if any) keeps its parent as trunk; if the
-    // leaf itself isn't tracked, the stack is just the leaf on top of `cur`.
-    if (chainTopDown.length === 0) chainTopDown.push(head)
+    // A branch with no recorded parent is not on a stack. Saying so is the
+    // honest answer: the alternative — a one-level stack whose trunk is the
+    // branch itself — reads in the UI as "main lands on main", which is not a
+    // thing, and invites edits to a route that does not exist.
+    if (chainTopDown.length === 0) return { trunk: '', branches: [] }
     const trunk = parents[chainTopDown[chainTopDown.length - 1]] ?? cur ?? ''
     const ordered = chainTopDown.slice().reverse() // bottom → top
 

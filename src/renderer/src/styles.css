@@ -12241,13 +12241,19 @@ mark.find-hit.active {
 
 /* ─── Sidebar Git/Files tabs ───────────────────────────────────────────── */
 .sb-tabs {
-  display: flex;
-  gap: 4px;
   padding: 8px 8px 4px;
   flex-shrink: 0;
+  /* Query the row's own width, not the viewport's: the sidebar is resizable. */
+  container-type: inline-size;
+}
+.sb-tabs-row {
+  display: flex;
+  gap: 4px;
 }
 .sb-tab {
   flex: 1;
+  min-width: 0;
+  overflow: hidden;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -12274,6 +12280,17 @@ mark.find-hit.active {
   background: color-mix(in srgb, var(--green, #00e6a8) 16%, transparent);
 }
 .sb-tab-launch-caret { opacity: 0.7; margin-inline-start: -2px; }
+
+/* Narrow sidebar: drop the labels rather than clip them. Two thresholds
+   because the LAUNCH tab is optional and a third label needs more room; the
+   title attribute keeps every tab identifiable once the text is gone. */
+@container (max-width: 128px) {
+  .sb-tabs-row:not(.has-launch) .sb-tab-text { display: none; }
+}
+@container (max-width: 196px) {
+  .sb-tabs-row.has-launch .sb-tab-text,
+  .sb-tabs-row.has-launch .sb-tab-launch-caret { display: none; }
+}
 
 /* VS Code-style floating debug toolbar. Portalled to <body> and fixed so its
    grip can drag it anywhere in the window, not just over the graph pane. */

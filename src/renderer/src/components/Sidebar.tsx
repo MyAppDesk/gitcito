@@ -2369,31 +2369,38 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
 
   return (
     <aside className="sidebar">
+      {/* The row is a container query context: below a threshold the labels drop
+          and the tabs become icons only, so a narrow sidebar never clips them. */}
       <div className="sb-tabs">
-        <button
-          className={`sb-tab ${tab === 'git' ? 'active' : ''}`}
-          onClick={() => setTab('git')}
-        >
-          <GitBranch size={13} /> {t('sidebar.tabGit')}
-        </button>
-        <button
-          className={`sb-tab ${tab === 'files' ? 'active' : ''}`}
-          onClick={() => setTab('files')}
-        >
-          <FolderTree size={13} /> {t('sidebar.files')}
-        </button>
-        {hasLaunch && (
+        <div className={`sb-tabs-row ${hasLaunch ? 'has-launch' : ''}`}>
           <button
-            className="sb-tab sb-tab-launch"
-            title={t('sidebar.launchTitle')}
-            onClick={(e) => {
-              const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
-              openLaunchMenu(r.left, r.bottom)
-            }}
+            className={`sb-tab ${tab === 'git' ? 'active' : ''}`}
+            title={t('sidebar.tabGit')}
+            onClick={() => setTab('git')}
           >
-            <Play size={13} /> {t('sidebar.launch')} <ChevronDown size={12} className="sb-tab-launch-caret" />
+            <GitBranch size={13} /> <span className="sb-tab-text">{t('sidebar.tabGit')}</span>
           </button>
-        )}
+          <button
+            className={`sb-tab ${tab === 'files' ? 'active' : ''}`}
+            title={t('sidebar.files')}
+            onClick={() => setTab('files')}
+          >
+            <FolderTree size={13} /> <span className="sb-tab-text">{t('sidebar.files')}</span>
+          </button>
+          {hasLaunch && (
+            <button
+              className="sb-tab sb-tab-launch"
+              title={t('sidebar.launchTitle')}
+              onClick={(e) => {
+                const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
+                openLaunchMenu(r.left, r.bottom)
+              }}
+            >
+              <Play size={13} /> <span className="sb-tab-text">{t('sidebar.launch')}</span>
+              <ChevronDown size={12} className="sb-tab-launch-caret" />
+            </button>
+          )}
+        </div>
       </div>
 
       {tab === 'git' ? (

@@ -73,6 +73,12 @@ ainda não a revisão.
 
 ## Envie a pilha como PRs encadeados
 
+**Enviar** pergunta antes: quantos pull requests vai abrir, quantos vai reapontar,
+em qual remoto, e a linha `branch → base` de cada um — abrir PRs é público e
+chato de desfazer. No fim, um aviso diz quantos foram abertos e quantos
+reapontados. A seção de navegação escrita em cada corpo é o que torna a cadeia
+visível no GitHub, que não tem noção de pilha.
+
 **Enviar pilha como PRs** faz com um clique o que as ferramentas de stacking
 cobram para fazer:
 

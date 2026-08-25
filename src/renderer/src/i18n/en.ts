@@ -213,6 +213,11 @@ export const en = {
   'search.historyHint': 'Lists commits whose diff changes the matched text.',
   // Branch stack
   'stack.title': 'Branch stack',
+  'stack.submitConfirmTitle': 'Submit this stack as pull requests?',
+  'stack.submitConfirmMessage': 'This opens {create} and retargets {retarget} pull requests on {remote}. Each one targets the branch below it:',
+  'stack.submitConfirmOk': 'Open pull requests',
+  'stack.nothingToSubmit': 'Every level already has a pull request pointing at the right branch.',
+  'stack.submitReport': 'Opened {created}, retargeted {retargeted}',
   'stack.trunkMissingTitle': 'The branch this stack lands on is only local',
   'stack.trunkMissingMessage': '{trunk} is not on {remote}, so the bottom pull request has nothing to target. Push it and submit the stack?',
   'stack.trunkPushAndSubmit': 'Push & submit',

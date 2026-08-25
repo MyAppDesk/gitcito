@@ -75,6 +75,12 @@ remoto pero aún no la revisión.
 
 ## Enviar la pila como PRs encadenados
 
+**Enviar** pregunta antes: cuántos pull requests abrirá, cuántos redirigirá, en
+qué remoto y la línea `rama → base` de cada uno — abrir PRs es público y cuesta
+deshacerlo. Al terminar, un aviso dice cuántos se abrieron y cuántos se
+redirigieron. La sección de navegación que escribe en cada cuerpo es lo que hace
+visible la cadena en GitHub, que no tiene concepto de pila.
+
 **Enviar pila como PRs** hace en un clic lo que las herramientas de stacking
 cobran:
 

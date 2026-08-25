@@ -212,6 +212,11 @@ export const he: Dict = {
   'search.historyHint': 'מציג קומיטים שהדיף שלהם משנה את הטקסט שנמצא.',
   // Branch stack
   'stack.title': 'ערימת ענפים',
+  'stack.submitConfirmTitle': 'לשלוח את הערימה הזאת כ־pull requests?',
+  'stack.submitConfirmMessage': 'זה יפתח {create} ויכוון מחדש {retarget} pull requests ב־{remote}. כל אחד מכוון לענף שמתחתיו:',
+  'stack.submitConfirmOk': 'לפתוח pull requests',
+  'stack.nothingToSubmit': 'לכל שכבה כבר יש pull request שמכוון לענף הנכון.',
+  'stack.submitReport': 'נפתחו {created}, כוונו מחדש {retargeted}',
   'stack.trunkMissingTitle': 'הענף שעליו הערימה הזאת נוחתת קיים רק מקומית',
   'stack.trunkMissingMessage': '{trunk} לא נמצא ב־{remote}, ולכן ל־pull request התחתון אין למה לכוון. לדחוף אותו ולשלוח את הערימה?',
   'stack.trunkPushAndSubmit': 'לדחוף ולשלוח',

@@ -212,6 +212,11 @@ export const ar: Dict = {
   'search.historyHint': 'يعرض الالتزامات التي يغيّر فرقها النص المطابق.',
   // Branch stack
   'stack.title': 'مكدس الفروع',
+  'stack.submitConfirmTitle': 'هل تُرسل هذه الكومة كطلبات دمج؟',
+  'stack.submitConfirmMessage': 'سيفتح هذا {create} ويعيد توجيه {retarget} من طلبات الدمج على {remote}. يستهدف كل واحد الفرع الذي تحته:',
+  'stack.submitConfirmOk': 'افتح طلبات الدمج',
+  'stack.nothingToSubmit': 'كل مستوى لديه بالفعل طلب دمج يستهدف الفرع الصحيح.',
+  'stack.submitReport': 'فُتح {created}، وأُعيد توجيه {retargeted}',
   'stack.trunkMissingTitle': 'الفرع الذي تحطّ عليه هذه الكومة موجود محليًا فقط',
   'stack.trunkMissingMessage': '{trunk} ليس على {remote}، لذا لا هدف لطلب الدمج الأسفل. أندفعه ونرسل الكومة؟',
   'stack.trunkPushAndSubmit': 'ادفع وأرسل',

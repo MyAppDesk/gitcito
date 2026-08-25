@@ -74,6 +74,12 @@ remote wilt maar nog geen review.
 
 ## Dien de stapel in als geketende PR's
 
+**Indienen** vraagt eerst: hoeveel pull requests het opent, hoeveel het opnieuw
+richt, op welke remote, en per stuk de regel `branch → basis` — PR's openen is
+openbaar en lastig terug te draaien. Aan het eind zegt een melding hoeveel er
+zijn geopend en hoeveel opnieuw gericht. De navigatiesectie in elke tekst is wat
+de ketting zichtbaar maakt op GitHub, dat geen begrip van stapels heeft.
+
 **Stapel indienen als PR's** doet met één klik waar stacking-tools geld voor
 vragen:
 

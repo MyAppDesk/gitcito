@@ -212,6 +212,11 @@ export const ko: Dict = {
   'search.historyHint': '해당 텍스트를 변경한 커밋을 나열합니다.',
   // 브랜치 스택
   'stack.title': '브랜치 스택',
+  'stack.submitConfirmTitle': '이 스택을 풀 리퀘스트로 제출할까요?',
+  'stack.submitConfirmMessage': '{remote}에 {create}개를 열고 {retarget}개의 대상을 바꿉니다. 각각 바로 아래 브랜치를 대상으로 합니다:',
+  'stack.submitConfirmOk': '풀 리퀘스트 열기',
+  'stack.nothingToSubmit': '모든 레벨에 이미 올바른 브랜치를 대상으로 하는 풀 리퀘스트가 있습니다.',
+  'stack.submitReport': '{created}개 열고, {retargeted}개 대상 변경',
   'stack.trunkMissingTitle': '이 스택이 착지하는 브랜치가 로컬에만 있습니다',
   'stack.trunkMissingMessage': '{trunk}이(가) {remote}에 없어서 맨 아래 풀 리퀘스트가 대상으로 삼을 것이 없습니다. 푸시하고 스택을 제출할까요?',
   'stack.trunkPushAndSubmit': '푸시하고 제출',

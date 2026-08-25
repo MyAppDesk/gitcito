@@ -1441,6 +1441,11 @@ export const repoActions = {
           })
         }
         await useRepoStore.getState().refreshPRs(path, { silent: true })
+        // Four pull requests opening silently is indistinguishable from none,
+        // so the run's own toast is followed by what actually happened.
+        const created = plan.filter((a) => a.action === 'create').length
+        const retargeted = plan.filter((a) => a.action === 'retarget').length
+        if (created || retargeted) toast('info', interp(t('stack.submitReport'), { created, retargeted }))
       },
       undefined,
       'push',

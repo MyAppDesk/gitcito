@@ -212,6 +212,11 @@ export const ru: Dict = {
   'search.historyHint': 'Показывает коммиты, в диффе которых меняется найденный текст.',
   // Стек веток
   'stack.title': 'Стек веток',
+  'stack.submitConfirmTitle': 'Подать этот стек как pull request’ы?',
+  'stack.submitConfirmMessage': 'Будет открыто {create} и перенацелено {retarget} pull request’ов на {remote}. Каждый нацелен на ветку ниже:',
+  'stack.submitConfirmOk': 'Открыть pull request’ы',
+  'stack.nothingToSubmit': 'У каждого уровня уже есть pull request, нацеленный на нужную ветку.',
+  'stack.submitReport': 'Открыто: {created}, перенацелено: {retargeted}',
   'stack.trunkMissingTitle': 'Ветка, на которую приземляется стек, есть только локально',
   'stack.trunkMissingMessage': '{trunk} нет на {remote}, поэтому нижнему pull request не на что нацелиться. Отправить её и подать стек?',
   'stack.trunkPushAndSubmit': 'Отправить и подать',

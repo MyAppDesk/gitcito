@@ -74,6 +74,12 @@ sei ancora pronto per la revisione.
 
 ## Invia lo stack come PR concatenate
 
+**Invia** chiede prima: quante pull request aprirà, quante ne ripunterà, su quale
+remoto e la riga `ramo → base` di ognuna — aprire PR è pubblico e scomodo da
+disfare. Alla fine un avviso dice quante ne ha aperte e quante ripuntate. La
+sezione di navigazione scritta in ogni corpo è ciò che rende visibile la catena
+su GitHub, che non ha alcuna nozione di pila.
+
 **Invia lo stack come PR** fa in un clic quello che gli strumenti di stacking
 fanno pagare:
 

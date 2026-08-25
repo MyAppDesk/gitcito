@@ -212,6 +212,11 @@ export const nl: Dict = {
   'search.historyHint': 'Toont commits waarvan de diff de gezochte tekst wijzigt.',
   // Branch-stack
   'stack.title': 'Branch-stack',
+  'stack.submitConfirmTitle': 'Deze stapel als pull requests indienen?',
+  'stack.submitConfirmMessage': 'Dit opent {create} en richt {retarget} pull requests opnieuw op {remote}. Elke richt zich op de branch eronder:',
+  'stack.submitConfirmOk': 'Pull requests openen',
+  'stack.nothingToSubmit': 'Elk niveau heeft al een pull request die naar de juiste branch wijst.',
+  'stack.submitReport': '{created} geopend, {retargeted} opnieuw gericht',
   'stack.trunkMissingTitle': 'De branch waarop deze stapel landt bestaat alleen lokaal',
   'stack.trunkMissingMessage': '{trunk} staat niet op {remote}, dus de onderste pull request heeft geen doel. Pushen en de stapel indienen?',
   'stack.trunkPushAndSubmit': 'Pushen en indienen',

@@ -8,6 +8,7 @@ import { treeStatusOf } from '../src/renderer/src/lib/treeStatus'
 import { timeAgo, isStale, STALE_AFTER_MS } from '../src/renderer/src/lib/timeAgo'
 import { isLockErrorMessage, lockRepairPlan } from '../src/renderer/src/lib/gitLocks'
 import { stackOrder, moveLevel, adoptableBranches, targetFor } from '../src/renderer/src/lib/stackOrder'
+import { planStackSubmit, summariseStackPlan } from '../src/shared/stackPr'
 import { HUGE_SECTION, openUnlessHuge } from '../src/renderer/src/lib/sidebarSections'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -4683,5 +4684,45 @@ describe('stack ordering', () => {
     expect(targetFor(info, 'ui')).toBe('api')
     expect(targetFor(info, 'api')).toBe('main')
     expect(targetFor(info, 'nope')).toBe('main')
+  })
+})
+
+describe('summarising a stack submit', () => {
+  const stack: StackInfo = {
+    trunk: 'main',
+    branches: [
+      { name: 'api', parent: 'main', isCurrent: false, ahead: 1, needsRestack: false },
+      { name: 'ui', parent: 'api', isCurrent: false, ahead: 1, needsRestack: false },
+      { name: 'polish', parent: 'ui', isCurrent: true, ahead: 1, needsRestack: false }
+    ]
+  }
+
+  it('counts what will be opened and retargeted, leaf first', () => {
+    const summary = summariseStackPlan(
+      planStackSubmit(
+        stack,
+        [
+          { id: 1, sourceBranch: 'api', targetBranch: 'main', url: 'u1' }, // already right
+          { id: 2, sourceBranch: 'ui', targetBranch: 'main', url: 'u2' } // wrong base
+        ],
+        'main'
+      )
+    )
+    expect(summary).toEqual({ create: 1, retarget: 1, ok: 1, lines: ['polish → ui', 'ui → api'] })
+  })
+
+  it('says nothing needs doing once every level points at the level below', () => {
+    const summary = summariseStackPlan(
+      planStackSubmit(
+        stack,
+        [
+          { id: 1, sourceBranch: 'api', targetBranch: 'main', url: 'u1' },
+          { id: 2, sourceBranch: 'ui', targetBranch: 'api', url: 'u2' },
+          { id: 3, sourceBranch: 'polish', targetBranch: 'ui', url: 'u3' }
+        ],
+        'main'
+      )
+    )
+    expect(summary).toEqual({ create: 0, retarget: 0, ok: 3, lines: [] })
   })
 })

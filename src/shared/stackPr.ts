@@ -83,3 +83,30 @@ export function mergeStackSection(body: string, section: string): string {
   const trimmed = body.trimEnd()
   return trimmed ? `${trimmed}\n\n${section}` : section
 }
+
+/** What a submit is about to do, in numbers the user can be asked about. */
+export interface StackPlanSummary {
+  create: number
+  retarget: number
+  ok: number
+  /** One "branch → base" line per level that will change, top level first. */
+  lines: string[]
+}
+
+/**
+ * Fold a plan into the sentence a confirmation needs. Opening pull requests is
+ * outward-facing and hard to take back, so the dialog says exactly how many and
+ * against what, rather than "submit stack?".
+ */
+export function summariseStackPlan(plan: StackPrAction[]): StackPlanSummary {
+  const changing = plan.filter((a) => a.action !== 'ok')
+  return {
+    create: plan.filter((a) => a.action === 'create').length,
+    retarget: plan.filter((a) => a.action === 'retarget').length,
+    ok: plan.filter((a) => a.action === 'ok').length,
+    lines: changing
+      .slice()
+      .reverse()
+      .map((a) => `${a.branch} → ${a.base}`)
+  }
+}

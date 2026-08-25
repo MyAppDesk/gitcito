@@ -73,6 +73,12 @@ değilsen **Hepsini gönder**'i kullan.
 
 ## Yığını zincirlenmiş PR'lar olarak gönderme
 
+**Gönder** önce sorar: kaç pull request açacağını, kaçını yeniden hedefleyeceğini,
+hangi uzakta ve her biri için `dal → temel` satırını — PR açmak halka açıktır ve
+geri alması zahmetlidir. Bitince bir bildirim kaçının açıldığını ve kaçının
+yeniden hedeflendiğini söyler. Her gövdeye yazılan gezinme bölümü, zinciri
+GitHub'da görünür kılan şeydir; GitHub'ın yığın diye bir kavramı yoktur.
+
 **Yığını PR olarak gönder**, yığınlama araçlarının para aldığı işi tek tıkla yapar:
 
 1. Her seviyeyi `--force-with-lease` ile push eder (taze dallar bunu tolere

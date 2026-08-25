@@ -212,6 +212,11 @@ export const pl: Dict = {
   'search.historyHint': 'Wypisuje commity, których diff zmienia dopasowany tekst.',
   // Stos branchy
   'stack.title': 'Stos branchy',
+  'stack.submitConfirmTitle': 'Wysłać ten stos jako pull requesty?',
+  'stack.submitConfirmMessage': 'Otworzy to {create} i przestawi {retarget} pull requestów na {remote}. Każdy celuje w gałąź poniżej:',
+  'stack.submitConfirmOk': 'Otwórz pull requesty',
+  'stack.nothingToSubmit': 'Każdy poziom ma już pull request celujący we właściwą gałąź.',
+  'stack.submitReport': 'Otwarto {created}, przestawiono {retargeted}',
   'stack.trunkMissingTitle': 'Gałąź, na której ląduje ten stos, istnieje tylko lokalnie',
   'stack.trunkMissingMessage': '{trunk} nie ma na {remote}, więc dolny pull request nie ma w co celować. Wypchnąć ją i wysłać stos?',
   'stack.trunkPushAndSubmit': 'Wypchnij i wyślij',

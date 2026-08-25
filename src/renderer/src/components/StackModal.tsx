@@ -20,6 +20,7 @@ import { useRepoStore, repoActions } from '../stores/repo'
 import type { StackInfo, StackBranch } from '../../../shared/types'
 import { RefPicker, type RefOption } from './RefPicker'
 import { moveLevel, stackOrder } from '../lib/stackOrder'
+import { planStackSubmit, summariseStackPlan } from '../../../shared/stackPr'
 import { useT, interp } from '../i18n'
 
 /**
@@ -167,6 +168,38 @@ export function StackModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
       setApplying(false)
       await reload(leafApplied)
     }
+  }
+
+  /**
+   * Opening pull requests is outward-facing and awkward to take back, so the
+   * chain is spelled out first — how many, and against what.
+   */
+  const confirmSubmit = (): void => {
+    if (!info) return
+    const openPrs = (repo?.prs ?? []).map((p) => ({
+      id: p.id,
+      sourceBranch: p.sourceBranch,
+      targetBranch: p.targetBranch,
+      url: p.url
+    }))
+    const summary = summariseStackPlan(planStackSubmit(info, openPrs, trunk))
+    if (!summary.create && !summary.retarget) {
+      useUIStore.getState().toast('info', t('stack.nothingToSubmit'))
+      return
+    }
+    const remote = repo?.remotes.find((r) => r.name === 'origin')?.name ?? repo?.remotes[0]?.name ?? 'origin'
+    useUIStore.getState().openModal({
+      kind: 'confirm',
+      title: t('stack.submitConfirmTitle'),
+      message: `${interp(t('stack.submitConfirmMessage'), {
+        create: summary.create,
+        retarget: summary.retarget,
+        remote
+      })}\n\n${summary.lines.join('\n')}`,
+      confirmLabel: t('stack.submitConfirmOk'),
+      autoFocusConfirm: true,
+      onConfirm: () => void submitStack()
+    })
   }
 
   const submitStack = async (): Promise<void> => {
@@ -357,7 +390,7 @@ export function StackModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
         </button>
         <button
           className="btn primary small"
-          onClick={() => void submitStack()}
+          onClick={confirmSubmit}
           disabled={saved.order.length === 0 || dirty || working}
           title={dirty ? t('stack.applyFirst') : t('stack.submitHint')}
         >

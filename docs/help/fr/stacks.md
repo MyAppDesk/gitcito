@@ -75,6 +75,12 @@ branches sur le distant sans encore demander de revue.
 
 ## Soumettre la pile en pull requests chaînées
 
+**Soumettre** demande d’abord : combien de pull requests seront ouvertes, combien
+reciblées, sur quel distant, et la ligne `branche → base` de chacune — ouvrir des
+PR est public et pénible à défaire. À la fin, une notification dit combien ont
+été ouvertes et reciblées. La section de navigation écrite dans chaque corps est
+ce qui rend la chaîne visible sur GitHub, qui n’a aucune notion de pile.
+
 **Soumettre la pile en PR** fait en un clic ce que les outils d'empilement
 font payer :
 

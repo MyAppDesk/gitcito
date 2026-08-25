@@ -27,8 +27,9 @@ issue'dan başlatın (issue `Closes #N` satırını sizin için doldurur).
 
 Birbirinin üstünde duran pull request'ler tek bir satıra katlanır: yığın
 simgesi, zincirin indiği dal ve kaç tane olduğu. Açtığında zinciri okuma
-sırasıyla görürsün — yapraktan tabana — temellerine bakıp yeniden kurman gereken
-dört eş satır yerine.
+sırasıyla görürsün — yapraktan tabana — ve her satırın altında neye merge
+olduğunu söyleyen küçük bir ok olur; yön ekranda durur, dört temele bakıp
+çıkarılmaz.
 
 O grubu iki şey oluşturur: pull request'ler bir [yerel yığına](stacks.md) aitse
 GitHub'ın kendi yığın numarası; değilse ref'lerin kendisi — temeli bir başkasının

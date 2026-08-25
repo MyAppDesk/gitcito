@@ -28,7 +28,9 @@ oder aus einem Issue heraus (was `Closes #N` einträgt).
 Pull Requests, die aufeinander sitzen, klappen zu einer Zeile zusammen: mit
 Stapelsymbol, dem Branch, auf dem die Kette landet, und wie viele es sind.
 Aufklappen zeigt die Kette in Leserichtung — Blatt zuerst, hinunter zur Basis —
-statt vier gleichrangiger Zeilen, die man sich aus ihren Basen zusammenreimt.
+mit einem kleinen Pfeil unter jeder Zeile, der nennt, wohin sie gemergt wird. Die
+Richtung steht damit auf dem Bildschirm, statt aus vier Basen erschlossen zu
+werden.
 
 Zwei Dinge bilden so eine Gruppe: GitHubs eigene Stapelnummer, wenn die Pull
 Requests zu einem [nativen Stapel](stacks.md) gehören, und sonst die Refs selbst

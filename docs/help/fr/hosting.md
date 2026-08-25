@@ -28,7 +28,8 @@ Démarrez-en une depuis la comparaison de branches, depuis le graphe, depuis le
 Les pull requests posées les unes sur les autres se replient en une seule ligne
 avec une icône de pile, la branche sur laquelle la chaîne atterrit et leur
 nombre. Dépliez-la pour voir la chaîne dans l’ordre de lecture — de la feuille
-vers la base — au lieu de quatre lignes à recomposer à partir de leurs bases.
+vers la base — avec une petite flèche sous chacune nommant ce dans quoi elle
+fusionne : le sens est à l’écran, pas à déduire de quatre branches de base.
 
 Deux choses forment ce groupe : le numéro de pile de GitHub, quand les PR
 appartiennent à une [pile native](stacks.md), et sinon les refs elles-mêmes —

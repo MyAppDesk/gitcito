@@ -26,8 +26,9 @@ Zacznij od porównania gałęzi, z grafu, z `+` w panelu PR-ów albo ze zgłosze
 
 Pull requesty stojące jeden na drugim zwijają się do jednego wiersza z ikoną
 stosu, gałęzią, na której ląduje łańcuch, i liczbą elementów. Rozwiń go, aby
-zobaczyć łańcuch w kolejności czytania — od liścia w dół do bazy — zamiast
-czterech równorzędnych wierszy do poskładania z ich baz.
+zobaczyć łańcuch w kolejności czytania — od liścia w dół do bazy — ze strzałką
+pod każdym wierszem mówiącą, w co się scala; kierunek jest na ekranie, a nie do
+wywnioskowania z czterech baz.
 
 Grupę tworzą dwie rzeczy: własny numer stosu GitHuba, gdy PR-y należą do
 [stosu natywnego](stacks.md), a poza tym same refy — pull request, którego bazą

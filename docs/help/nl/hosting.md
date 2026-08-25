@@ -28,7 +28,8 @@ vanuit een issue (wat `Closes #N` invult).
 Pull requests die op elkaar staan vouwen samen tot één regel met een
 stapelpictogram, de branch waarop de ketting landt en hoeveel het er zijn. Klap
 hem uit om de ketting in leesvolgorde te zien — blad eerst, tot aan de basis —
-in plaats van vier gelijken die je uit hun bases moet afleiden.
+met een pijltje onder elke regel dat noemt waarin hij samengaat, zodat de
+richting op het scherm staat in plaats van uit vier bases te volgen.
 
 Twee dingen maken zo'n groep: GitHubs eigen stapelnummer, als de pull requests
 bij een [native stapel](stacks.md) horen, en anders de refs zelf — een pull

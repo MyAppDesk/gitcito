@@ -13500,6 +13500,19 @@ mark.find-hit.active {
   color: var(--text-3);
 }
 .sb-pr-stack-body { border-inline-start: 1px solid var(--border); margin-inline-start: 12px; }
+.sb-pr-stack-link {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0 0 0 10px;
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--text-3);
+}
+.sb-pr-stack-link span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* The last link is the ground the chain lands on, not another PR. */
+.sb-pr-stack-body > .sb-pr-stack-link:last-child { color: var(--text-2); }
+
 
 
 

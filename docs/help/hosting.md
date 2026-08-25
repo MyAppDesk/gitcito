@@ -26,8 +26,9 @@ issue (which fills in `Closes #N`).
 
 Pull requests that sit on each other collapse into one row with a stack icon,
 the branch the chain lands on, and how many are in it. Expand it to see the
-chain in reading order — leaf first, down to the base — instead of four peers
-you have to reassemble from their base branches.
+chain in reading order — leaf first, down to the base — with a small arrow under
+each one naming what it merges into, so the direction is on screen rather than
+inferred from four base branches.
 
 Two things put a group there: GitHub's own stack number, when the pull requests
 belong to a [native stack](stacks.md), and otherwise the refs themselves — a

@@ -26,8 +26,9 @@ partir de uma issue (que preenche o `Closes #N`).
 
 Pull requests apoiados uns nos outros se recolhem em uma única linha com ícone
 de pilha, o branch em que a cadeia aterrissa e quantos são. Expanda para ver a
-cadeia na ordem de leitura — da folha até a base — em vez de quatro iguais que
-você precisa remontar olhando as bases.
+cadeia na ordem de leitura — da folha até a base — com uma setinha embaixo de
+cada uma dizendo em que ela entra, então a direção fica na tela em vez de ser
+deduzida de quatro bases.
 
 Duas coisas formam esse grupo: o número de pilha do próprio GitHub, quando os PRs
 pertencem a uma [pilha nativa](stacks.md), e senão as próprias refs — um pull

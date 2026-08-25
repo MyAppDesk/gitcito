@@ -27,8 +27,9 @@ oppure da una issue (che compila `Closes #N`).
 
 Le pull request appoggiate una sull’altra si richiudono in una sola riga con
 un’icona di pila, il ramo su cui atterra la catena e quante sono. Espandila per
-vedere la catena in ordine di lettura — dalla foglia giù fino alla base — invece
-di quattro righe pari da ricostruire guardando le basi.
+vedere la catena in ordine di lettura — dalla foglia giù fino alla base — con una
+freccetta sotto ognuna che dice in cosa confluisce: la direzione è a schermo,
+non da dedurre da quattro rami base.
 
 Due cose formano quel gruppo: il numero di pila di GitHub, quando le PR
 appartengono a una [pila nativa](stacks.md), altrimenti le ref stesse: una pull

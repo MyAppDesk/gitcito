@@ -27,8 +27,9 @@ panel de PRs, o desde una incidencia (lo que rellena `Closes #N`).
 
 Los pull requests que se apoyan unos en otros se colapsan en una sola fila con
 un icono de pila, la rama en la que aterriza la cadena y cuántos hay. Despliégala
-para ver la cadena en orden de lectura —de la hoja hacia la base— en vez de
-cuatro iguales que tienes que recomponer mirando sus bases.
+para ver la cadena en orden de lectura —de la hoja hacia la base— con una
+flechita bajo cada una que dice en qué se fusiona, así la dirección se ve en vez
+de deducirse de cuatro ramas base.
 
 Dos cosas forman ese grupo: el número de pila propio de GitHub, cuando los PR
 pertenecen a una [pila nativa](stacks.md), y si no las propias refs: un pull

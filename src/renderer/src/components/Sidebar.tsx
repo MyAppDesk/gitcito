@@ -32,7 +32,8 @@ import {
   ChevronDown,
   Star,
   History,
-  Layers
+  Layers,
+  ArrowDown
 } from 'lucide-react'
 import { FileTree } from './FileTree'
 import { FileSearchBar, EMPTY_FILTER, type FileFilter } from './FileSearchBar'
@@ -1849,7 +1850,25 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
                 <span className="sb-count">{group.prs.length}</span>
               </div>
               {openPrStacks[group.prs[0].id] && (
-                <div className="sb-pr-stack-body">{group.prs.map(prRow)}</div>
+                <div className="sb-pr-stack-body">
+                  {group.prs.map((pr, i) => (
+                    <Fragment key={pr.id}>
+                      {prRow(pr)}
+                      {/* Where this one lands: the next row down, or the base
+                          the whole chain sits on. The order is already the
+                          chain's; the arrow says which way it flows. */}
+                      <div
+                        className="sb-pr-stack-link"
+                        title={interp(t('stack.mergesInto'), {
+                          target: i === group.prs.length - 1 ? group.base : group.prs[i + 1].sourceBranch
+                        })}
+                      >
+                        <ArrowDown size={10} />
+                        <span>{i === group.prs.length - 1 ? group.base : group.prs[i + 1].sourceBranch}</span>
+                      </div>
+                    </Fragment>
+                  ))}
+                </div>
               )}
             </div>
           )

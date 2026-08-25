@@ -1394,3 +1394,33 @@ describe('a route edit that conflicts (stacked-branches playground)', () => {
     )
   })
 })
+
+describe('restack refuses protected branches (stacked-branches playground)', () => {
+  it('will not replay a level whose own branch is protected', async () => {
+    const R = cloneFixture('stacked-branches')
+    // A stack whose bottom level is main itself — the shape that rewrote main.
+    execFileSync('git', ['-C', R, 'config', 'branch.main.gitcitoparent', 'feature/api'])
+    const before = execFileSync('git', ['-C', R, 'rev-parse', 'main']).toString().trim()
+    await expect(gitService.stackRestack(R, 'main')).rejects.toThrow(/protected/i)
+    expect(execFileSync('git', ['-C', R, 'rev-parse', 'main']).toString().trim()).toBe(before)
+  })
+})
+
+describe('protected branches default (stacked-branches playground)', () => {
+  it('defaults to main/master when the setting was never configured', async () => {
+    const R = cloneFixture('stacked-branches')
+    expect(await gitService.protectedBranches(R)).toEqual(['main', 'master'])
+  })
+
+  it('honours an explicit empty list — that is a choice, not an absence', async () => {
+    const R = cloneFixture('stacked-branches')
+    await gitService.setProtectedBranches(R, [])
+    expect(await gitService.protectedBranches(R)).toEqual([])
+  })
+
+  it('reads a configured list', async () => {
+    const R = cloneFixture('stacked-branches')
+    await gitService.setProtectedBranches(R, ['release', 'main'])
+    expect(await gitService.protectedBranches(R)).toEqual(['release', 'main'])
+  })
+})

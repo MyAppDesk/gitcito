@@ -2718,6 +2718,16 @@ export const gitService = {
   async stackRestack(repoPath: string, leaf: string): Promise<void> {
     const git = gitFor(repoPath)
     const info = await gitService.stackInfo(repoPath, leaf)
+    // Defence in depth: a restack rebases every level it walks, and a parent
+    // link that somehow names a protected branch would rewrite shared history
+    // without anyone asking for it.
+    const protectedNames = await gitService.protectedBranches(repoPath).catch(() => [] as string[])
+    const guarded = info.branches.filter((b) => b.parent && protectedNames.includes(b.name)).map((b) => b.name)
+    if (guarded.length) {
+      throw new Error(
+        `Refusing to rebase protected ${guarded.length === 1 ? 'branch' : 'branches'}: ${guarded.join(', ')}.`
+      )
+    }
     for (const b of info.branches) {
       if (!b.parent) continue
       const parentTip = (await git.revparse([b.parent])).trim()
@@ -4270,7 +4280,11 @@ export const gitService = {
    * comma-joined) so they travel with the repo. Unset → default main/master.
    */
   async protectedBranches(repoPath: string): Promise<string[]> {
-    const raw = await gitFor(repoPath).raw(['config', '--get', 'gitcito.protectedbranches']).catch(() => null)
+    // `runGit`, not simple-git: `config --get` exits 1 for a key that is not
+    // there, and simple-git hands that back as an empty string rather than an
+    // error — which quietly turned "never configured" into "nothing is
+    // protected", and took the force-push guard on main with it.
+    const raw = await runGit(repoPath, ['config', '--get', 'gitcito.protectedbranches']).catch(() => null)
     if (raw === null) return ['main', 'master'] // never configured → sensible default
     return raw
       .trim()

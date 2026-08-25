@@ -205,6 +205,8 @@ export const fr: Dict = {
   'search.filesHint': 'Cherche dans les fichiers suivis et non suivis (respecte .gitignore).',
   'search.historyHint': 'Liste les commits dont le diff modifie le texte recherché.',
   'stack.title': 'Pile de branches',
+  'stack.stepRegister': 'Enregistrement de la pile sur GitHub…',
+  'stack.registered': 'GitHub les traite comme la pile #{n}',
   'stack.submitConfirmTitle': 'Soumettre cette pile en pull requests ?',
   'stack.submitConfirmMessage': 'Cela ouvre {create} et recible {retarget} pull requests sur {remote}. Chacune vise la branche du dessous :',
   'stack.submitConfirmOk': 'Ouvrir les pull requests',

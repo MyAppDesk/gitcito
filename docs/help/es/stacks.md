@@ -104,6 +104,19 @@ rama local se borra (sin riesgo — el tronco demostradamente la contiene), la
 cadena se reapila y todos los PR restantes se redirigen. Fusiona de abajo
 arriba, pulsa Enviar, repite.
 
+### En GitHub además se convierte en una pila de verdad
+
+Las bases encadenadas son lo que entiende cualquier host, y en GitLab, Bitbucket
+y Azure DevOps son todo lo que hay. GitHub tiene más: desde su preview de
+stacked pull requests, una pila es un objeto del servidor. Una vez creados los
+PR, Gitcito los registra como pila —de abajo arriba— y obtienes el mapa de la
+pila en la UI del PR, un rebase en cascada del lado del servidor y un merge en
+el PR de arriba que aterriza todos los niveles de debajo.
+
+Si el repositorio no está en ese preview, o el token no puede gestionar pilas,
+la llamada se omite sin ruido: la cadena y su sección de navegación se sostienen
+solas, igual que en los demás hosts.
+
 ## Restack
 
 Cuando una rama de abajo cambia — has atendido los comentarios de revisión en

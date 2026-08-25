@@ -205,6 +205,8 @@ export const tr: Dict = {
   'search.filesHint': 'Takip edilen ve edilmeyen dosyalarda arar (.gitignore dikkate alınır).',
   'search.historyHint': 'Farkı eşleşen metni değiştiren commit’leri listeler.',
   'stack.title': 'Dal yığını',
+  'stack.stepRegister': 'Yığın GitHub üzerinde kaydediliyor…',
+  'stack.registered': 'GitHub bunları #{n} numaralı yığın olarak görüyor',
   'stack.submitConfirmTitle': 'Bu yığın pull request olarak gönderilsin mi?',
   'stack.submitConfirmMessage': 'Bu, {remote} üzerinde {create} pull request açar ve {retarget} tanesini yeniden hedefler. Her biri altındaki dalı hedefler:',
   'stack.submitConfirmOk': 'Pull request aç',

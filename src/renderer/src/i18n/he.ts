@@ -212,6 +212,8 @@ export const he: Dict = {
   'search.historyHint': 'מציג קומיטים שהדיף שלהם משנה את הטקסט שנמצא.',
   // Branch stack
   'stack.title': 'ערימת ענפים',
+  'stack.stepRegister': 'רושמים את הערימה ב־GitHub…',
+  'stack.registered': 'GitHub מתייחס אליהן כערימה #{n}',
   'stack.submitConfirmTitle': 'לשלוח את הערימה הזאת כ־pull requests?',
   'stack.submitConfirmMessage': 'זה יפתח {create} ויכוון מחדש {retarget} pull requests ב־{remote}. כל אחד מכוון לענף שמתחתיו:',
   'stack.submitConfirmOk': 'לפתוח pull requests',

@@ -100,6 +100,19 @@ local branch deleted (safe — the trunk provably contains it), the chain
 restacked and every remaining PR retargeted. Merge bottom-up, press Submit,
 repeat.
 
+### On GitHub it also becomes a real stack
+
+Chained bases are what every host understands, and on GitLab, Bitbucket and
+Azure DevOps they are all there is. GitHub has more: since its stacked pull
+requests preview, a stack is an object on the server. Once the pull requests
+exist, Gitcito registers them as one — bottom to top — and you get the stack map
+in the PR UI, a cascading rebase run server-side, and a merge on the top PR that
+lands every unmerged level below it.
+
+If the repository is not in that preview, or the token cannot manage stacks, the
+call is skipped without comment: the chain and its navigation section stand on
+their own, exactly as they do on the other hosts.
+
 ## Restack
 
 When a lower branch changes — you addressed review comments on `api` — every

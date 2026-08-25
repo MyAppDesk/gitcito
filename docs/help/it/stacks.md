@@ -104,6 +104,19 @@ livello smette di essere tracciato, il suo branch locale viene eliminato
 ristackata e ogni PR rimasta cambia base. Fai il merge dal basso verso l'alto,
 premi Invia, ripeti.
 
+### Su GitHub diventa anche una pila vera
+
+Le basi concatenate sono ciò che capisce qualunque host, e su GitLab, Bitbucket e
+Azure DevOps sono tutto quello che c’è. GitHub offre di più: dalla preview delle
+stacked pull requests, una pila è un oggetto sul server. Create le pull request,
+Gitcito le registra come pila — dal basso verso l’alto — e ottieni la mappa della
+pila nella UI, un rebase a cascata lato server e un merge sulla PR in cima che fa
+atterrare ogni livello sottostante.
+
+Se il repository non è in quella preview, o il token non può gestire le pile, la
+chiamata viene saltata senza rumore: la catena e la sua sezione di navigazione
+reggono da sole, come sugli altri host.
+
 ## Restack
 
 Quando un branch più in basso cambia — hai sistemato i commenti della review su

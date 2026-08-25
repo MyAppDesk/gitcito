@@ -101,6 +101,19 @@ silinir (güvenlidir — ana dalın onu içerdiği kanıtlanabilir), zincir yeni
 yığılır ve kalan her PR yeniden hedeflenir. Aşağıdan yukarıya birleştirin,
 Gönder'e basın, tekrarlayın.
 
+### GitHub'da ayrıca gerçek bir yığın olur
+
+Zincirlenmiş temeller her sunucunun anladığı şeydir; GitLab, Bitbucket ve Azure
+DevOps'ta olan da yalnızca budur. GitHub'da fazlası var: stacked pull requests
+önizlemesinden beri yığın, sunucu tarafında bir nesne. Pull request'ler
+oluştuktan sonra Gitcito onları — alttan üste — yığın olarak kaydeder; PR
+arayüzünde yığın haritasını, sunucu tarafında kademeli rebase'i ve en üstteki
+PR'da yapılan, altındaki tüm katmanları indiren bir merge'ü kazanırsın.
+
+Depo o önizlemede değilse ya da belirteç yığınları yönetemiyorsa çağrı sessizce
+atlanır: zincir ve gezinme bölümü kendi başlarına ayakta durur, tıpkı diğer
+sunucularda olduğu gibi.
+
 ## Yeniden yığma
 
 Alttaki bir dal değiştiğinde — `api` üzerindeki inceleme yorumlarını

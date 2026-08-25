@@ -212,6 +212,8 @@ export const de: Dict = {
   'search.historyHint': 'Listet Commits, deren Diff den gesuchten Text ändert.',
   // Branch stack
   'stack.title': 'Branch-Stapel',
+  'stack.stepRegister': 'Stapel auf GitHub registrieren…',
+  'stack.registered': 'GitHub behandelt sie als Stapel #{n}',
   'stack.submitConfirmTitle': 'Diesen Stapel als Pull Requests einreichen?',
   'stack.submitConfirmMessage': 'Das öffnet {create} und richtet {retarget} Pull Requests auf {remote} neu aus. Jeder zielt auf den Branch darunter:',
   'stack.submitConfirmOk': 'Pull Requests öffnen',

@@ -27,7 +27,8 @@ import type {
   ReleaseInfo,
   RemoteOwner,
   RemoteRepo,
-  RepoHost
+  RepoHost,
+  GithubStackInfo
 } from '../shared/types'
 
 interface ParsedRemote {
@@ -1360,6 +1361,64 @@ async function updatePullRequest(
   await ghJson(`${api}/pulls/${number}`, token, { method: 'PATCH', body: JSON.stringify(body) })
 }
 
+/**
+ * Register the chain as a **native GitHub stack**, and report what it is now.
+ *
+ * Chaining the bases is what makes a stack reviewable anywhere — GitLab,
+ * Bitbucket and Azure have nothing else. GitHub, since its stacked pull
+ * requests preview, also has a stack of its own: a real object that draws the
+ * chain in the PR UI, rebases the levels above server-side, and lands the whole
+ * thing from one merge. That is worth having, and it is one call on top of the
+ * PRs we already opened.
+ *
+ * `numbers` arrive bottom → top, the order the API wants. A repository that is
+ * not in the preview answers 404/403 for the endpoint; that is not a failure of
+ * the submit, so it returns null and the chained PRs stand on their own.
+ */
+async function ensureGithubStack(
+  remoteUrl: string,
+  tokens: { github?: string },
+  numbers: number[]
+): Promise<GithubStackInfo | null> {
+  if (numbers.length < 2) return null // one PR is not a stack
+  const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
+  const api = `https://api.github.com/repos/${owner}/${repo}`
+
+  // Whatever stack these PRs are already in, if any: the bottom one decides,
+  // because a stack is extended upward.
+  const bottom = await ghJson<{ stack: { number: number } | null }>(`${api}/pulls/${numbers[0]}`, token).catch(
+    () => null
+  )
+  // The field is absent entirely on a server without the feature — treat that
+  // the same as "no stack" and let the POST below decide.
+  const existing = bottom?.stack?.number ?? null
+
+  try {
+    if (existing === null) {
+      const created = await ghJson<{ number: number; html_url?: string }>(`${api}/stacks`, token, {
+        method: 'POST',
+        body: JSON.stringify({ pull_requests: numbers })
+      })
+      return { number: created.number, url: created.html_url, added: numbers.length }
+    }
+    // Extend: only the levels the stack does not already carry, still bottom → top.
+    const current = await ghJson<{ pull_requests?: { number: number }[] }>(`${api}/stacks/${existing}`, token)
+    const have = new Set((current.pull_requests ?? []).map((p) => p.number))
+    const missing = numbers.filter((n) => !have.has(n))
+    if (missing.length) {
+      await ghJson(`${api}/stacks/${existing}/add`, token, {
+        method: 'POST',
+        body: JSON.stringify({ pull_requests: missing })
+      })
+    }
+    return { number: existing, added: missing.length }
+  } catch {
+    // Not enrolled in the preview, or the token cannot manage stacks. The PRs
+    // are already chained and navigable; say nothing rather than fail the run.
+    return null
+  }
+}
+
 async function listRepositories(provider: RepoHost, token: string, org?: string): Promise<RemoteRepo[]> {
   const auth = await tokenForProvider(provider, token, org)
   if (!auth) throw noCredential(provider, providerBaseUrl(provider, org))
@@ -1951,6 +2010,11 @@ export function registerHostingHandlers(): void {
   )
   ipcMain.handle('hosting:mergedPrHeads', (_e, remoteUrl: string, tokens: { github?: string }, branches: string[]) =>
     mergedPrHeads(remoteUrl, tokens, branches)
+  )
+  ipcMain.handle(
+    'hosting:ensureStack',
+    (_e, remoteUrl: string, tokens: { github?: string }, numbers: number[]) =>
+      ensureGithubStack(remoteUrl, tokens, numbers)
   )
   ipcMain.handle(
     'hosting:updatePR',

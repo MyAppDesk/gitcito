@@ -104,6 +104,19 @@ niet langer gevolgd, zijn lokale branch verwijderd (veilig — de trunk bevat
 hem aantoonbaar), de keten gerestackt en elke overgebleven PR omgehangen.
 Merge van onder naar boven, druk op Indienen, herhaal.
 
+### Op GitHub wordt het ook een echte stapel
+
+Geketende bases zijn wat elke host begrijpt, en op GitLab, Bitbucket en Azure
+DevOps is dat alles. GitHub kan meer: sinds de preview van stacked pull requests
+is een stapel een object op de server. Zodra de pull requests bestaan meldt
+Gitcito ze als stapel aan — van onder naar boven — en krijg je de stapelkaart in
+de PR-UI, een cascading rebase aan de serverkant, en een merge op de bovenste PR
+die elk niveau eronder mee laat landen.
+
+Zit de repository niet in die preview, of kan het token geen stapels beheren, dan
+wordt de aanroep geruisloos overgeslagen: de ketting en de navigatiesectie staan
+op zichzelf, net als bij de andere hosts.
+
 ## Restack
 
 Wanneer een lagere branch verandert — je verwerkte reviewopmerkingen op `api` —

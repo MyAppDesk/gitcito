@@ -212,6 +212,8 @@ export const zhCN: Dict = {
   'search.historyHint': '列出差异中改动了匹配文本的提交。',
   // Branch stack
   'stack.title': '分支栈',
+  'stack.stepRegister': '正在 GitHub 上注册这个堆栈……',
+  'stack.registered': 'GitHub 已把它们当作堆栈 #{n}',
   'stack.submitConfirmTitle': '把这个堆栈提交为 PR 吗？',
   'stack.submitConfirmMessage': '这会在 {remote} 上新开 {create} 个 PR，并改掉 {retarget} 个的目标。每个都指向它下面那个分支：',
   'stack.submitConfirmOk': '创建 PR',

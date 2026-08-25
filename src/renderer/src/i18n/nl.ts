@@ -212,6 +212,8 @@ export const nl: Dict = {
   'search.historyHint': 'Toont commits waarvan de diff de gezochte tekst wijzigt.',
   // Branch-stack
   'stack.title': 'Branch-stack',
+  'stack.stepRegister': 'De stapel op GitHub registreren…',
+  'stack.registered': 'GitHub behandelt ze als stapel #{n}',
   'stack.submitConfirmTitle': 'Deze stapel als pull requests indienen?',
   'stack.submitConfirmMessage': 'Dit opent {create} en richt {retarget} pull requests opnieuw op {remote}. Elke richt zich op de branch eronder:',
   'stack.submitConfirmOk': 'Pull requests openen',

@@ -1440,7 +1440,16 @@ export const repoActions = {
             stackSection: buildStackSection(numbered, n.number, trunk)
           })
         }
+        // GitHub knows what a stack is; the other hosts do not. Registering the
+        // chain there buys the stack map in its UI, the server-side cascading
+        // rebase and a merge that lands the levels below — and costs one call.
+        step(t('stack.stepRegister'))
+        const stackInfo = await hostingApi
+          .ensureStack(origin.url, tokens, numbered.map((n) => n.number))
+          .catch(() => null)
+
         await useRepoStore.getState().refreshPRs(path, { silent: true })
+        if (stackInfo) toast('success', interp(t('stack.registered'), { n: stackInfo.number }))
         // Four pull requests opening silently is indistinguishable from none,
         // so the run's own toast is followed by what actually happened.
         const created = plan.filter((a) => a.action === 'create').length

@@ -212,6 +212,8 @@ export const ar: Dict = {
   'search.historyHint': 'يعرض الالتزامات التي يغيّر فرقها النص المطابق.',
   // Branch stack
   'stack.title': 'مكدس الفروع',
+  'stack.stepRegister': 'يجري تسجيل الكومة على GitHub…',
+  'stack.registered': 'يتعامل GitHub معها بوصفها الكومة رقم {n}',
   'stack.submitConfirmTitle': 'هل تُرسل هذه الكومة كطلبات دمج؟',
   'stack.submitConfirmMessage': 'سيفتح هذا {create} ويعيد توجيه {retarget} من طلبات الدمج على {remote}. يستهدف كل واحد الفرع الذي تحته:',
   'stack.submitConfirmOk': 'افتح طلبات الدمج',

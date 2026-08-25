@@ -207,6 +207,8 @@ export const es: Dict = {
   'search.historyHint': 'Lista commits cuyo diff cambia el texto buscado.',
   // Branch stack
   'stack.title': 'Pila de ramas',
+  'stack.stepRegister': 'Registrando la pila en GitHub…',
+  'stack.registered': 'GitHub las trata como la pila n.º {n}',
   'stack.submitConfirmTitle': '¿Enviar esta pila como pull requests?',
   'stack.submitConfirmMessage': 'Se abrirán {create} y se redirigirán {retarget} pull requests en {remote}. Cada uno apunta a la rama de debajo:',
   'stack.submitConfirmOk': 'Abrir pull requests',

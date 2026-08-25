@@ -299,6 +299,8 @@ const api = {
       ipcRenderer.invoke('hosting:updatePR', remoteUrl, tokens, number, patch),
     mergedPrHeads: (remoteUrl: string, tokens: unknown, branches: string[]): Promise<unknown> =>
       ipcRenderer.invoke('hosting:mergedPrHeads', remoteUrl, tokens, branches),
+    ensureStack: (remoteUrl: string, tokens: unknown, numbers: number[]): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:ensureStack', remoteUrl, tokens, numbers),
     listMilestones: (remoteUrl: string, tokens: unknown): Promise<unknown> =>
       ipcRenderer.invoke('hosting:listMilestones', remoteUrl, tokens),
     milestoneIssues: (remoteUrl: string, tokens: unknown, number: number): Promise<unknown> =>

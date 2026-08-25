@@ -105,6 +105,19 @@ est détaché, sa branche locale supprimée (sans danger — le tronc la contien
 de façon prouvable), la chaîne réempilée et chaque pull request restante
 reciblée. Fusionnez de bas en haut, appuyez sur Soumettre, recommencez.
 
+### Sur GitHub, cela devient aussi une vraie pile
+
+Les bases chaînées sont ce que comprend n’importe quel hôte, et sur GitLab,
+Bitbucket et Azure DevOps c’est tout ce qu’il y a. GitHub va plus loin : depuis
+sa préversion des stacked pull requests, une pile est un objet côté serveur. Une
+fois les PR créées, Gitcito les enregistre comme pile — de bas en haut — et vous
+obtenez la carte de la pile dans l’UI, un rebase en cascade côté serveur, et une
+fusion sur la PR du haut qui fait atterrir tous les niveaux en dessous.
+
+Si le dépôt n’est pas dans cette préversion, ou si le jeton ne peut pas gérer les
+piles, l’appel est ignoré sans bruit : la chaîne et sa section de navigation
+tiennent seules, comme sur les autres hôtes.
+
 ## Réempiler
 
 Quand une branche du bas change — vous avez traité les remarques de revue sur

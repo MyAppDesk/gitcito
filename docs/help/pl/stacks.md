@@ -102,6 +102,18 @@ być śledzony, jego lokalna gałąź jest usuwana (bezpiecznie — główna ga�
 dowodnie ją zawiera), łańcuch przechodzi restack, a każdy pozostały PR jest
 przekierowywany. Merguj od dołu do góry, naciskaj Wyślij, powtarzaj.
 
+### Na GitHubie staje się to też prawdziwym stosem
+
+Połączone bazy rozumie każdy host, a na GitLabie, Bitbuckecie i Azure DevOps to
+wszystko, co jest. GitHub ma więcej: od czasu preview stacked pull requests stos
+jest obiektem na serwerze. Gdy pull requesty już istnieją, Gitcito rejestruje je
+jako stos — od dołu do góry — a ty dostajesz mapę stosu w UI, kaskadowy rebase po
+stronie serwera i merge górnego PR-a, który ląduje wszystkie poziomy poniżej.
+
+Jeśli repozytorium nie jest w tym preview albo token nie może zarządzać stosami,
+wywołanie jest po cichu pomijane: łańcuch i jego sekcja nawigacji bronią się
+same, tak jak na pozostałych hostach.
+
 ## Restack
 
 Kiedy zmieni się niższa gałąź — poprawiłeś uwagi z recenzji na `api` — każda

@@ -101,6 +101,19 @@ rastreado, a branch local dele é apagada (sem risco — o trunk comprovadamente
 a contém), a corrente passa por restack e todos os PRs restantes têm a base
 atualizada. Mescle de baixo para cima, aperte Enviar, repita.
 
+### No GitHub também vira uma pilha de verdade
+
+Bases encadeadas são o que qualquer host entende, e no GitLab, Bitbucket e Azure
+DevOps é tudo o que existe. O GitHub tem mais: desde o preview de stacked pull
+requests, uma pilha é um objeto no servidor. Assim que os pull requests existem,
+o Gitcito registra tudo como pilha — de baixo para cima — e você ganha o mapa da
+pilha na UI, um rebase em cascata no servidor e um merge no PR de cima que faz
+aterrissar todos os níveis abaixo.
+
+Se o repositório não estiver nesse preview, ou o token não puder gerenciar
+pilhas, a chamada é pulada sem alarde: a cadeia e a seção de navegação se
+sustentam sozinhas, como nos outros hosts.
+
 ## Restack
 
 Quando uma branch mais abaixo muda — você atendeu aos comentários de revisão na

@@ -205,6 +205,8 @@ export const ja: Dict = {
   'search.filesHint': '追跡中と未追跡のファイルを検索します（.gitignore を尊重します）。',
   'search.historyHint': '一致したテキストを差分で変更しているコミットを一覧表示します。',
   'stack.title': 'ブランチスタック',
+  'stack.stepRegister': 'GitHub にスタックを登録中…',
+  'stack.registered': 'GitHub はこれらをスタック #{n} として扱います',
   'stack.submitConfirmTitle': 'このスタックをプルリクエストとして提出しますか？',
   'stack.submitConfirmMessage': '{remote} に {create} 件を作成し、{retarget} 件のターゲットを変更します。それぞれがひとつ下のブランチを狙います:',
   'stack.submitConfirmOk': 'プルリクエストを作成',

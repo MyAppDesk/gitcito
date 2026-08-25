@@ -420,6 +420,20 @@ export interface GitLockFile {
   kind: 'index' | 'ref' | 'config' | 'other'
 }
 
+/**
+ * A native GitHub stack, once the chain has been registered as one. Chaining
+ * the bases is what every host understands; this is the extra GitHub gives on
+ * top — the stack map in its UI, the server-side cascading rebase, and one
+ * merge that lands the levels below.
+ */
+export interface GithubStackInfo {
+  /** The stack's own number on GitHub. */
+  number: number
+  url?: string
+  /** How many levels this submit put into it. */
+  added: number
+}
+
 /** One past position of a ref, read from its reflog. */
 export interface RefTip {
   sha: string

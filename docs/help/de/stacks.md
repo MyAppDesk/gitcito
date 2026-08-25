@@ -106,6 +106,20 @@ aufgehoben, ihr lokaler Branch gelöscht (sicher — der Trunk enthält ihn
 nachweislich), die Kette restackt und jeder verbleibende PR umgezielt. Von
 unten nach oben mergen, Einreichen drücken, wiederholen.
 
+### Auf GitHub wird daraus auch ein echter Stapel
+
+Verkettete Basen versteht jeder Host, und auf GitLab, Bitbucket und Azure DevOps
+sind sie alles, was es gibt. GitHub kann mehr: seit der Vorschau auf stacked pull
+requests ist ein Stapel ein Objekt auf dem Server. Sobald die Pull Requests
+existieren, meldet Gitcito sie als Stapel an — von unten nach oben — und du
+bekommst die Stapelkarte in der PR-Oberfläche, einen serverseitigen Cascading
+Rebase und einen Merge auf dem obersten PR, der jede darunterliegende Ebene
+mitlandet.
+
+Ist das Repository nicht in dieser Vorschau, oder kann das Token keine Stapel
+verwalten, wird der Aufruf kommentarlos übersprungen: die Kette und ihr
+Navigationsabschnitt tragen sich selbst, genau wie auf den anderen Hosts.
+
 ## Restack
 
 Wenn ein unterer Branch sich ändert — du hast Review-Kommentare auf `api`

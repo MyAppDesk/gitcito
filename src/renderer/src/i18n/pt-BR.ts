@@ -212,6 +212,8 @@ export const ptBR: Dict = {
   'search.historyHint': 'Lista os commits cujo diff mexe no texto procurado.',
   // Pilha de branches
   'stack.title': 'Pilha de branches',
+  'stack.stepRegister': 'Registrando a pilha no GitHub…',
+  'stack.registered': 'O GitHub trata isso como a pilha #{n}',
   'stack.submitConfirmTitle': 'Enviar esta pilha como pull requests?',
   'stack.submitConfirmMessage': 'Isso abre {create} e reaponta {retarget} pull requests em {remote}. Cada um aponta para o branch de baixo:',
   'stack.submitConfirmOk': 'Abrir pull requests',

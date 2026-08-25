@@ -229,6 +229,7 @@ interface PreloadApi {
     applyPrMeta(remoteUrl: string, tokens: unknown, number: number, meta: unknown): Promise<unknown>
     updatePR(remoteUrl: string, tokens: unknown, number: number, patch: unknown): Promise<unknown>
     mergedPrHeads(remoteUrl: string, tokens: unknown, branches: string[]): Promise<unknown>
+    ensureStack(remoteUrl: string, tokens: unknown, numbers: number[]): Promise<unknown>
     listMilestones(remoteUrl: string, tokens: unknown): Promise<unknown>
     milestoneIssues(remoteUrl: string, tokens: unknown, number: number): Promise<unknown>
   }

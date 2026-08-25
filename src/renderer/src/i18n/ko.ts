@@ -212,6 +212,8 @@ export const ko: Dict = {
   'search.historyHint': '해당 텍스트를 변경한 커밋을 나열합니다.',
   // 브랜치 스택
   'stack.title': '브랜치 스택',
+  'stack.stepRegister': 'GitHub에 스택을 등록하는 중…',
+  'stack.registered': 'GitHub이 이것들을 스택 #{n}(으)로 다룹니다',
   'stack.submitConfirmTitle': '이 스택을 풀 리퀘스트로 제출할까요?',
   'stack.submitConfirmMessage': '{remote}에 {create}개를 열고 {retarget}개의 대상을 바꿉니다. 각각 바로 아래 브랜치를 대상으로 합니다:',
   'stack.submitConfirmOk': '풀 리퀘스트 열기',

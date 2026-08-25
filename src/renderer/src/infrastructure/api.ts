@@ -15,6 +15,7 @@ import type {
   ForcedRefUpdate,
   UpstreamSuggestion,
   GitLockFile,
+  GithubStackInfo,
   AbsorbPlan,
   TimelapseCommit,
   RepoPulse,
@@ -940,6 +941,9 @@ export const hostingApi = {
   ) => window.api.hosting.updatePR(remoteUrl, tokens, number, patch) as Promise<void>,
   mergedPrHeads: (remoteUrl: string, tokens: { github?: string }, branches: string[]) =>
     window.api.hosting.mergedPrHeads(remoteUrl, tokens, branches) as Promise<string[]>,
+  /** Register chained PRs as a native GitHub stack; null when unavailable. */
+  ensureStack: (remoteUrl: string, tokens: { github?: string }, numbers: number[]) =>
+    window.api.hosting.ensureStack(remoteUrl, tokens, numbers) as Promise<GithubStackInfo | null>,
   listMilestones: (remoteUrl: string, tokens: { github?: string }) =>
     window.api.hosting.listMilestones(remoteUrl, tokens) as Promise<{
       provider: HostingProvider

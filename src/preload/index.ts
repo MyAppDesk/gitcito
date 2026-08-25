@@ -404,7 +404,16 @@ const api = {
       const listener = (_e: unknown, payload: CliOpenPayload): void => cb(payload)
       ipcRenderer.on('cli:open-path', listener)
       return () => ipcRenderer.removeListener('cli:open-path', listener)
-    }
+    },
+    // `gitcito --wait <file>` — git is blocked until finishEdit is called, so
+    // every path out of the editor surface must call it exactly once.
+    onEdit: (cb: (req: { file: string; sentinel: string; content: string }) => void): (() => void) => {
+      const listener = (_e: unknown, req: { file: string; sentinel: string; content: string }): void => cb(req)
+      ipcRenderer.on('cli:edit', listener)
+      return () => ipcRenderer.removeListener('cli:edit', listener)
+    },
+    finishEdit: (sentinel: string, content: string | null): Promise<{ ok: boolean; error?: string }> =>
+      ipcRenderer.invoke('cli:finishEdit', sentinel, content)
   }
 }
 

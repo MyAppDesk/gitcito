@@ -113,5 +113,8 @@ export const tr = {
     'Düğmelerin yarım yamalak bir çevirisi değil — açıklamalar dahil bütün arayüz. Arapça ve İbranice yerleşimi aynalar; grafik, diff’ler, yollar ve terminal ise soldan sağa kalır, çünkü kod o yönde okunur.',
   'feature.security.title': 'Sırlarınız sizde kalır',
   'feature.security.body':
-    'Arka uç yok. Token’lar ve kasa girdileri işletim sisteminizin anahtar zinciriyle şifrelenir — ve ne için olduğu size söylenip siz evet demeden o anahtar zincirine hiçbir şey dokunmaz.'
+    'Arka uç yok. Token’lar ve kasa girdileri işletim sisteminizin anahtar zinciriyle şifrelenir — ve ne için olduğu size söylenip siz evet demeden o anahtar zincirine hiçbir şey dokunmaz.',
+  'feature.cli.title': 'Gerçek bir CLI’si olan Git arayüzü',
+  'feature.cli.body':
+    '`gitcito .` bir depoyu açar, `gitcito blame src/api.ts -l 84` onu tam o satırda açar, `gitcito doctor` ise hiç pencere açmaz — deponun neyi gerektirdiğini denetler ve CI’nizin okuyabileceği bir çıkış koduyla biter.'
 }

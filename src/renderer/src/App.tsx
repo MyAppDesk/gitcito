@@ -53,8 +53,71 @@ import { terminalShortcutFromEvent } from './lib/terminalShortcuts'
 import { repoChatAvailable, rightPanelDetailsState, rightPanelToggleAction } from './lib/repoChatUI'
 import { folderOpenMenuItems } from './lib/openWith'
 import { hostingApi, gitApi, cliApi, keychainApi } from './infrastructure/api'
+import { cliViewAction, type CliAction } from './lib/cliView'
+import type { CliOpenPayload } from '../../shared/cli'
 import { runAppCommand } from './appCommands'
 import { useAppMenu } from './useAppMenu'
+
+/**
+ * Carry out what a `gitcito <verb>` invocation asked for, once its repository
+ * has a tab.
+ *
+ * Everything here is a normal store call — the CLI gets no privileged path
+ * into the app, it just presses the same buttons a user would. `show` is the
+ * one verb that needs git: a revision expression has to become the full hash
+ * the details panel selects by.
+ */
+async function runCliAction(path: string, action: CliAction): Promise<void> {
+  const ui = useUIStore.getState()
+  switch (action.kind) {
+    case 'modal':
+      ui.openModal(
+        action.modal === 'code-search'
+          ? { kind: 'code-search', repoPath: path, query: action.arg }
+          : action.modal === 'objects'
+            ? { kind: 'objects', repoPath: path, rev: action.arg }
+            : ({ kind: action.modal, repoPath: path } as Parameters<typeof ui.openModal>[0])
+      )
+      return
+    case 'file':
+      ui.setFileView({
+        repoPath: path,
+        file: action.file,
+        source: { type: 'tree' },
+        mode: action.mode,
+        ...(action.line ? { line: action.line } : {})
+      })
+      return
+    case 'commit': {
+      const hash = await gitApi.resolveRev(path, action.ref).catch(() => null)
+      if (!hash) {
+        ui.toast('error', interp(tr('cli.noSuchRef'), { ref: action.ref }))
+        return
+      }
+      ui.setFileView(null)
+      useRepoStore.getState().select(path, { type: 'commit', hash })
+      return
+    }
+    case 'wip':
+      ui.setFileView(null)
+      useRepoStore.getState().select(path, { type: 'wip' })
+      return
+    case 'graph':
+      ui.setFileView(null)
+      return
+    case 'terminal':
+      ui.setTerminalOpen(path, true)
+      return
+    case 'chat':
+      ui.openChatPanel()
+      return
+    case 'page':
+      useSettingsStore
+        .getState()
+        .openPageTab(action.page === 'insights' ? { type: 'insights', repoPath: path } : { type: 'changelog' })
+      return
+  }
+}
 
 function InitRepo({ path }: { path: string }): React.JSX.Element {
   const t = useT()
@@ -351,10 +414,21 @@ export default function App(): React.JSX.Element {
   // and its `set(...)` would otherwise clobber a tab added too early), so any
   // payload received pre-load is queued and flushed once settingsLoaded flips.
   useEffect(() => {
-    const pending: { path: string; name?: string; group?: string }[] = []
+    const pending: CliOpenPayload[] = []
     const flush = (): void => {
       if (!useSettingsStore.getState().loaded) return
-      while (pending.length) useSettingsStore.getState().openFromCli(pending.shift()!)
+      while (pending.length) {
+        const payload = pending.shift()!
+        useSettingsStore.getState().openFromCli(payload)
+        // The surface is opened after the tab exists, on the next tick, so the
+        // repo store has been told which repository is active. A verb that
+        // needs an argument it never got resolves to null and leaves the
+        // repository simply open, which is the right fallback.
+        if (payload.view) {
+          const action = cliViewAction(payload.view, payload.arg, payload.line)
+          if (action) setTimeout(() => void runCliAction(payload.path, action), 0)
+        }
+      }
     }
     const off = cliApi.onOpenPath((payload) => {
       pending.push(payload)
@@ -367,6 +441,14 @@ export default function App(): React.JSX.Element {
       off()
       unsub()
     }
+  }, [])
+
+  // `gitcito --wait <file>` — git is blocked on a shell process until the app
+  // answers, so the request always ends in a modal that must call finishEdit.
+  useEffect(() => {
+    return cliApi.onEdit(({ file, sentinel, content }) => {
+      useUIStore.getState().openModal({ kind: 'cli-edit', file, sentinel, content })
+    })
   }, [])
 
   // The main process never touches the OS keychain without asking first: it

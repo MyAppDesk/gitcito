@@ -117,5 +117,8 @@ export const de = {
     'Keine Alibi-Übersetzung der Buttons — die ganze Oberfläche, Erklärungen inklusive. Arabisch und Hebräisch spiegeln das Layout, während Graph, Diffs, Pfade und das Terminal von links nach rechts bleiben, weil Code in dieser Richtung gelesen wird.',
   'feature.security.title': 'Deine Geheimnisse bleiben deine',
   'feature.security.body':
-    'Kein Backend. Tokens und Tresor-Einträge werden mit dem Schlüsselbund deines Betriebssystems verschlüsselt — und nichts rührt diesen Schlüsselbund an, bevor dir gesagt wurde wofür und du ja gesagt hast.'
+    'Kein Backend. Tokens und Tresor-Einträge werden mit dem Schlüsselbund deines Betriebssystems verschlüsselt — und nichts rührt diesen Schlüsselbund an, bevor dir gesagt wurde wofür und du ja gesagt hast.',
+  'feature.cli.title': 'Eine Git-Oberfläche mit echter CLI',
+  'feature.cli.body':
+    '`gitcito .` öffnet ein Repository, `gitcito blame src/api.ts -l 84` öffnet es an genau dieser Zeile, und `gitcito doctor` öffnet gar kein Fenster – es prüft, was das Repository verlangt, und endet mit einem Code, den deine CI lesen kann.'
 }

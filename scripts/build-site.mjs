@@ -225,6 +225,7 @@ const FEATURES = [
   { icon: '🔑', id: 'ai' },
   { icon: '💬', id: 'repo-chat' },
   { icon: '🎛️', id: 'mission-control' },
+  { icon: '⌨️', id: 'cli' },
   { icon: '🌍', id: 'languages' },
   { icon: '🔐', id: 'security' }
 ]
@@ -238,7 +239,7 @@ const DOWNLOADS = [
 
 // A feature card shows the handbook page's own screenshot. The file is named
 // after the page id, bar the one case where the page covers more than its shot.
-const CARD_SHOT = { security: 'secret-masking', recovery: 'snapshots', ai: 'settings-ai' }
+const CARD_SHOT = { security: 'secret-masking', recovery: 'snapshots', ai: 'settings-ai', cli: 'cli-edit' }
 
 /** The card's screenshot, or null when there is none to show. */
 function cardShot(id) {

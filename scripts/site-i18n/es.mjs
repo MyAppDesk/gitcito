@@ -113,5 +113,8 @@ export const es = {
     'No una traducción de adorno de los botones — toda la interfaz, explicaciones incluidas. El árabe y el hebreo reflejan la disposición, mientras que el grafo, los diffs, las rutas y el terminal siguen de izquierda a derecha, porque esa es la dirección en la que se lee el código.',
   'feature.security.title': 'Tus secretos siguen siendo tuyos',
   'feature.security.body':
-    'Sin backend. Los tokens y las entradas de la caja fuerte se cifran con el llavero de tu sistema — y nada toca ese llavero hasta que se te ha dicho para qué y has dicho que sí.'
+    'Sin backend. Los tokens y las entradas de la caja fuerte se cifran con el llavero de tu sistema — y nada toca ese llavero hasta que se te ha dicho para qué y has dicho que sí.',
+  'feature.cli.title': 'Una GUI de Git con una CLI de verdad',
+  'feature.cli.body':
+    '`gitcito .` abre un repositorio, `gitcito blame src/api.ts -l 84` lo abre en esa línea, y `gitcito doctor` no abre ninguna ventana: comprueba lo que el repositorio exige y sale con un código que tu CI puede leer.'
 }

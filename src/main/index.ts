@@ -1,7 +1,7 @@
 import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join, dirname, resolve, sep } from 'path'
 import { existsSync, mkdirSync, readdirSync, copyFileSync } from 'fs'
-import { writeFile, readFile, mkdir, chmod } from 'fs/promises'
+import { writeFile, readFile, mkdir, chmod, unlink } from 'fs/promises'
 import { execFile, spawn } from 'child_process'
 import icon from '../../resources/icon.png?asset'
 import type { AppRelease } from '../shared/types'
@@ -24,7 +24,7 @@ import { registerSecureShareHandlers } from './secureShare'
 import { registerInfoHandlers } from './info'
 import { registerUpdaterHandlers, checkForUpdatesOnLaunch } from './updater'
 import { fixPath } from './fix-path'
-import { registerCliHandlers } from './cli'
+import { registerCliHandlers, trackWait, releaseAllWaits } from './cli'
 import { registerEditorHandlers } from './editor'
 import { registerMenuHandlers } from './menu'
 import { registerSshHandlers } from './ssh'
@@ -41,11 +41,26 @@ fixPath()
 // settings store has finished loading from disk, since settings load()
 // resolves asynchronously and would otherwise clobber a tab added too early.
 function sendOpenPath(win: BrowserWindow, payload: CliOpenPayload): void {
-  if (win.webContents.isLoadingMainFrame()) {
-    win.webContents.once('did-finish-load', () => win.webContents.send('cli:open-path', payload))
-  } else {
+  const deliver = (): void => {
     win.webContents.send('cli:open-path', payload)
+    if (payload.edit && payload.wait) void deliverEdit(win, payload.edit, payload.wait)
   }
+  if (win.webContents.isLoadingMainFrame()) win.webContents.once('did-finish-load', deliver)
+  else deliver()
+}
+
+/** `gitcito --wait <file>` — git is blocked on a shell process polling a
+ *  sentinel, so the file's contents go to the renderer and the sentinel is
+ *  recorded here. Reading fails? Release immediately: a hung `git commit` is a
+ *  far worse outcome than an editor that refused to open. */
+async function deliverEdit(win: BrowserWindow, file: string, sentinel: string): Promise<void> {
+  const content = await readFile(file, 'utf8').catch(() => null)
+  if (content === null) {
+    await unlink(sentinel).catch(() => undefined)
+    return
+  }
+  trackWait(sentinel, file)
+  win.webContents.send('cli:edit', { file, sentinel, content })
 }
 
 // Dev builds get their own userData dir. The single-instance lock below lives
@@ -385,6 +400,12 @@ app.whenReady().then(() => {
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
+})
+
+// Quitting mid-edit must not leave a `git commit` waiting on a sentinel that
+// will never be deleted.
+app.on('before-quit', () => {
+  void releaseAllWaits()
 })
 
 app.on('window-all-closed', () => {

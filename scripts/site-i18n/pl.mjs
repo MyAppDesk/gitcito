@@ -114,5 +114,8 @@ export const pl = {
     'Nie zaślepka z tłumaczeniem przycisków — cały interfejs, razem z objaśnieniami. Arabski i hebrajski odbijają układ lustrzanie, podczas gdy graf, diffy, ścieżki i terminal zostają od lewej do prawej, bo w tę stronę czyta się kod.',
   'feature.security.title': 'Twoje sekrety zostają twoje',
   'feature.security.body':
-    'Żadnego backendu. Tokeny i wpisy sejfu są szyfrowane pękiem kluczy twojego systemu — a nic nie dotyka tego pęku, dopóki nie usłyszysz po co i się nie zgodzisz.'
+    'Żadnego backendu. Tokeny i wpisy sejfu są szyfrowane pękiem kluczy twojego systemu — a nic nie dotyka tego pęku, dopóki nie usłyszysz po co i się nie zgodzisz.',
+  'feature.cli.title': 'Graficzny klient Gita z prawdziwym CLI',
+  'feature.cli.body':
+    '`gitcito .` otwiera repozytorium, `gitcito blame src/api.ts -l 84` otwiera je w tym wierszu, a `gitcito doctor` nie otwiera żadnego okna — sprawdza, czego wymaga repozytorium, i kończy się kodem, który odczyta twoje CI.'
 }

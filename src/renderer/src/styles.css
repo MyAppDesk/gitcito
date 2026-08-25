@@ -15378,3 +15378,22 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 /* The save row carries a hint, so it cannot use the modal's default right-align. */
 .rc-actions { align-items: center; gap: 10px; }
 .rc-actions .settings-hint { flex: 1; margin: 0; }
+
+/* ─── gitcito --wait: git's editor, in a dialog ─────────────────────────── */
+.cliedit-root { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+.cliedit-head { display: flex; align-items: flex-start; gap: 11px; }
+.cliedit-head h3 { margin: 0 0 2px; font-size: 15px; }
+.cliedit-head-text { min-width: 0; }
+.cliedit-icon { display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 8px; background: var(--bg-3); color: var(--accent); flex: none; }
+.cliedit-sub { display: block; font-size: 11px; color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: ltr; }
+.cliedit-area { flex: 1; min-height: 42vh; resize: none; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-2); color: var(--text-1); font-family: var(--mono, monospace); font-size: 12.5px; line-height: 1.55; tab-size: 4; }
+.cliedit-area:focus { outline: none; border-color: var(--accent); }
+.cliedit-meta { display: flex; align-items: center; gap: 12px; font-size: 11px; color: var(--text-3); }
+.cliedit-counter.warn { color: var(--warn); }
+.cliedit-counter.error { color: var(--danger); }
+.cliedit-note { color: var(--text-3); }
+.cliedit-hints { margin: 0; padding: 0 0 0 16px; display: flex; flex-direction: column; gap: 3px; font-size: 11.5px; }
+.cliedit-hints li.warn { color: var(--warn); }
+.cliedit-hints li.error { color: var(--danger); }
+.cliedit-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+.cliedit-abort { margin-right: auto; font-size: 11px; color: var(--text-3); }

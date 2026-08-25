@@ -119,5 +119,8 @@ export const fr = {
     'Pas une traduction bâclée des boutons — toute l’interface, explications comprises. L’arabe et l’hébreu inversent la mise en page, tandis que le graphe, les diffs, les chemins et le terminal restent de gauche à droite, parce que c’est dans ce sens que le code se lit.',
   'feature.security.title': 'Vos secrets restent les vôtres',
   'feature.security.body':
-    'Pas de backend. Les jetons et les entrées du coffre sont chiffrés avec le trousseau de votre système — et rien ne touche à ce trousseau tant qu’on ne vous a pas dit pourquoi et que vous n’avez pas dit oui.'
+    'Pas de backend. Les jetons et les entrées du coffre sont chiffrés avec le trousseau de votre système — et rien ne touche à ce trousseau tant qu’on ne vous a pas dit pourquoi et que vous n’avez pas dit oui.',
+  'feature.cli.title': 'Une interface Git avec une vraie CLI',
+  'feature.cli.body':
+    '`gitcito .` ouvre un dépôt, `gitcito blame src/api.ts -l 84` l’ouvre à cette ligne, et `gitcito doctor` n’ouvre aucune fenêtre : il vérifie ce que le dépôt exige et sort avec un code que votre CI sait lire.'
 }

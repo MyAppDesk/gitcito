@@ -2087,6 +2087,42 @@ export const shots = [
     }
   },
   {
+    // `gitcito --wait` — what git gets instead of vim. Driven through the same
+    // IPC payload the shim sends, with a realistic COMMIT_EDITMSG (subject,
+    // body, and git's own comment block) so the counter and hints have
+    // something true to say.
+    out: 'cli-edit',
+    repos: ['untracked-mess'],
+    themes: ['light'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['untracked-mess']
+      await page.evaluate((p) => {
+        const content = [
+          'feat(api): return a typed error for an unknown revision.',
+          '',
+          'Callers were parsing the message to tell "no such commit" from a real',
+          'failure. Return null instead so the difference survives the boundary.',
+          '',
+          '# Please enter the commit message for your changes. Lines starting',
+          "# with '#' will be ignored, and an empty message aborts the commit.",
+          '#',
+          '# On branch main',
+          '# Changes to be committed:',
+          '#\tmodified:   src/main/git.ts',
+          ''
+        ].join('\n')
+        window.__shot.ui.getState().openModal({
+          kind: 'cli-edit',
+          file: `${p}/.git/COMMIT_EDITMSG`,
+          sentinel: '/tmp/gitcito-wait.example',
+          content
+        })
+      }, repo)
+      await page.waitForSelector('.cliedit-area', { timeout: 10000 })
+      await page.waitForTimeout(500)
+    }
+  },
+  {
     // The same repo with nothing open: the three markers that carry the feature
     // when you are not looking for it — tab ring, sidebar section, status chip.
     // A dirty working tree on purpose, so the todo ring reads as *different*

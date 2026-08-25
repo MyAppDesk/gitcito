@@ -116,5 +116,8 @@ export const nl = {
     'Geen half vertaalde knoppen — de hele interface, uitleg inbegrepen. Arabisch en Hebreeuws spiegelen de indeling, terwijl de grafiek, diffs, paden en de terminal van links naar rechts blijven, want dat is de richting waarin code gelezen wordt.',
   'feature.security.title': 'Je geheimen blijven van jou',
   'feature.security.body':
-    'Geen backend. Tokens en kluisregels worden versleuteld met de sleutelhanger van je besturingssysteem — en er raakt niets die sleutelhanger tot je verteld is waarvoor, en je ja hebt gezegd.'
+    'Geen backend. Tokens en kluisregels worden versleuteld met de sleutelhanger van je besturingssysteem — en er raakt niets die sleutelhanger tot je verteld is waarvoor, en je ja hebt gezegd.',
+  'feature.cli.title': 'Een Git-GUI met een echte CLI',
+  'feature.cli.body':
+    '`gitcito .` opent een repository, `gitcito blame src/api.ts -l 84` opent hem op die regel, en `gitcito doctor` opent helemaal geen venster — het controleert wat de repository vereist en eindigt met een code die je CI kan lezen.'
 }

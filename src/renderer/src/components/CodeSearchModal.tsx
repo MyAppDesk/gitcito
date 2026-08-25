@@ -10,7 +10,7 @@ import { useT } from '../i18n'
 
 type Tab = 'files' | 'history'
 
-export function CodeSearchModal({ repoPath }: { repoPath: string }): React.JSX.Element {
+export function CodeSearchModal({ repoPath, query: initial }: { repoPath: string; query?: string }): React.JSX.Element {
   const t = useT()
   const closeModal = useUIStore((s) => s.closeModal)
   const setFileView = useUIStore((s) => s.setFileView)
@@ -18,7 +18,7 @@ export function CodeSearchModal({ repoPath }: { repoPath: string }): React.JSX.E
   const requestScrollTo = useUIStore((s) => s.requestScrollTo)
 
   const [tab, setTab] = useState<Tab>('files')
-  const [query, setQuery] = useState('')
+  const [query, setQuery] = useState(initial ?? '')
   const [caseSensitive, setCaseSensitive] = useState(false)
   const [wholeWord, setWholeWord] = useState(false)
   const [regex, setRegex] = useState(false)

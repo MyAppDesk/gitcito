@@ -134,5 +134,8 @@ export const en = {
     'Not a stub translation of the buttons — the whole interface, explanations included. Arabic and Hebrew mirror the layout, while the graph, diffs, paths and the terminal stay left-to-right, because that is the direction code reads in.',
   'feature.security.title': 'Your secrets stay yours',
   'feature.security.body':
-    'No backend. Tokens and vault entries are encrypted with your OS keychain — and nothing touches that keychain until you have been told what for and said yes.'
+    'No backend. Tokens and vault entries are encrypted with your OS keychain — and nothing touches that keychain until you have been told what for and said yes.',
+  'feature.cli.title': 'A Git GUI with a real CLI',
+  'feature.cli.body':
+    '`gitcito .` opens a repository, `gitcito blame src/api.ts -l 84` opens it at that line, and `gitcito doctor` never opens a window at all — it checks what the repository requires and exits with a code your CI can read.'
 }

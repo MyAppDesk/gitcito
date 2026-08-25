@@ -113,5 +113,8 @@ export const ptBR = {
     'Não uma tradução de fachada dos botões — a interface inteira, explicações incluídas. Árabe e hebraico espelham o layout, enquanto o grafo, os diffs, os caminhos e o terminal continuam da esquerda para a direita, porque é nessa direção que se lê código.',
   'feature.security.title': 'Seus segredos continuam seus',
   'feature.security.body':
-    'Sem backend. Tokens e entradas do cofre são criptografados com o chaveiro do seu sistema — e nada toca esse chaveiro até você ter sido avisado para quê e ter dito sim.'
+    'Sem backend. Tokens e entradas do cofre são criptografados com o chaveiro do seu sistema — e nada toca esse chaveiro até você ter sido avisado para quê e ter dito sim.',
+  'feature.cli.title': 'Uma GUI de Git com uma CLI de verdade',
+  'feature.cli.body':
+    '`gitcito .` abre um repositório, `gitcito blame src/api.ts -l 84` abre nessa linha, e `gitcito doctor` não abre janela alguma: verifica o que o repositório exige e sai com um código que o seu CI consegue ler.'
 }

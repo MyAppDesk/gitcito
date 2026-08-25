@@ -5289,6 +5289,20 @@ export const gitService = {
     return gitFor(repoPath).raw(['log', '-1', '--format=%B', hash])
   },
 
+  /** Full SHA for any revision expression — `HEAD~2`, a tag, a short hash.
+   *  Returns null rather than throwing when it names nothing: the caller is
+   *  usually turning user input into a selection, and "no such commit" is an
+   *  answer, not a failure. */
+  async resolveRev(repoPath: string, rev: string): Promise<string | null> {
+    // `^{commit}` peels an annotated tag down to the commit it points at, so a
+    // tag name selects the commit rather than the tag object.
+    const out = await gitFor(repoPath)
+      .raw(['rev-parse', '--verify', '--quiet', `${rev}^{commit}`])
+      .catch(() => '')
+    const sha = out.trim()
+    return /^[0-9a-f]{40}$/.test(sha) ? sha : null
+  },
+
   async amendCommitMessage(repoPath: string, message: string): Promise<void> {
     await gitFor(repoPath).raw(['commit', '--amend', '--only', '-m', message])
   },
@@ -7392,6 +7406,7 @@ const READ_METHODS = new Set<string>([
   'fileSizes',
   'treeStatus',
   'getCommitMessage',
+  'resolveRev',
   'commitTemplate',
   'reflog',
   'bisectStatus',

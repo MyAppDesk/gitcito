@@ -1,42 +1,171 @@
 #!/bin/sh
 # Gitcito CLI launcher.
 #
-# Installed to /usr/local/bin/gitcito (or similar) via Command Palette →
-# "Install 'gitcito' command in PATH". Mirrors `code .` / `subl .`: opens the
-# given folder (default: cwd) as a repo tab in the Gitcito app.
+# Installed to /usr/local/bin/gitcito (or ~/.local/bin on Linux) via Command
+# Palette → "Install 'gitcito' command in PATH". One binary, two halves:
 #
-# Usage: gitcito [dir] [-n|--name <name>] [-g|--group <group>]
-#   -n  Name to give the repo tab (defaults to the folder name)
-#   -g  Group tab to open/create the repo in (defaults to a standalone tab)
+#   * Verbs that answer in the terminal — doctor, status, repos, commit-check,
+#     config, editor, completions, --help, --version — are executed by
+#     out/main/cliEntry.js through the app binary with ELECTRON_RUN_AS_NODE.
+#     No window opens; stdout and the exit code flow back to the caller.
+#
+#   * Everything else opens (or focuses) the app on a repository, optionally at
+#     a particular surface: `gitcito blame src/x.ts -l 40`, `gitcito show HEAD~2`.
+#
+# `gitcito --wait <file>` is the git-editor mode: it opens the file in the app
+# and blocks until the app deletes the sentinel it was handed, which is what
+# lets `core.editor = gitcito --wait` work at all.
 #
 # This script is bundled as a packaged app resource — see build.extraResources
 # in package.json — and symlinked into PATH by src/main/cli.ts. It is NOT run
 # from inside the app itself.
 
+# Resolve through the PATH symlink to the real resource directory: $0 is
+# /usr/local/bin/gitcito, and everything below is addressed relative to where
+# the shim actually lives inside the app bundle.
+self=$0
+while [ -L "$self" ]; do
+  link=$(readlink "$self")
+  case "$link" in
+    /*) self=$link ;;
+    *) self=$(dirname "$self")/$link ;;
+  esac
+done
+DIR=$(CDPATH= cd -- "$(dirname -- "$self")" && pwd)
+
+APP_BIN="$DIR/../../MacOS/Gitcito"
+ASAR_MAIN="$DIR/../app.asar/out/main/cliEntry.js"
+
+# Run a terminal verb as plain Node. Packaged: the app binary with
+# ELECTRON_RUN_AS_NODE (no second instance, no window). Source checkout:
+# whatever `node` is on PATH, against the electron-vite build in out/.
+headless() {
+  if [ -x "$APP_BIN" ] && [ -e "$DIR/../app.asar" ]; then
+    ELECTRON_RUN_AS_NODE=1 exec "$APP_BIN" "$ASAR_MAIN" "$@"
+  fi
+  exec node "$DIR/../../out/main/cliEntry.js" "$@"
+}
+
+case "$1" in
+  doctor|status|repos|commit-check|config|editor|completions|help|--help|-h|--version|-V|--resolve)
+    headless "$@"
+    ;;
+esac
+
+# ─── Window verbs ────────────────────────────────────────────────────────────
+
+# Surfaces the app can be asked to open on arrival. Kept in sync with CLI_VIEWS
+# in src/shared/cli.ts — a verb the app does not know is dropped there, so an
+# older app still opens the repository rather than failing.
+is_view() {
+  case "$1" in
+    absorb|bisect|blame|changelog|chat|clean|conflicts|diff|export|file|gitflow|graph|history|hooks|insights|lfs|ci|maintenance|objects|purge|reflog|search|settings|show|snapshots|sparse|stack|stash|subtree|terminal|timelapse|time-machine|todos)
+      return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
 dir=""
 name=""
 group=""
+view=""
+arg=""
+line=""
+wait_file=""
+edit_file=""
+
+# A leading verb selects the surface; `open` is the explicit form of the
+# default. Anything else is treated as a path, so `gitcito .` still works.
+if [ $# -gt 0 ]; then
+  if is_view "$1"; then
+    view=$1
+    shift
+  elif [ "$1" = "open" ]; then
+    shift
+    by_name=1
+  fi
+fi
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    -n|--name)
-      name=$2
-      shift 2
-      ;;
-    -g|--group)
-      group=$2
-      shift 2
+    -n|--name) name=$2; shift 2 ;;
+    -g|--group) group=$2; shift 2 ;;
+    -l|--line) line=$2; shift 2 ;;
+    -w|--wait) edit_file="WAIT"; shift ;;
+    --) shift ;;
+    -*)
+      echo "gitcito: unknown option: $1" >&2
+      echo "Try 'gitcito --help'." >&2
+      exit 2
       ;;
     *)
-      dir=$1
+      # The first bare word after a surface verb is that surface's subject — a
+      # ref for `show`, a file for `blame`, a query for `search`. Views that
+      # take no subject treat it as the repository path instead.
+      case "$view" in
+        show|blame|file|search)
+          if [ -z "$arg" ]; then arg=$1; else dir=$1; fi
+          ;;
+        *) dir=$1 ;;
+      esac
       shift
       ;;
   esac
 done
 
+# ─── --wait: git's editor ────────────────────────────────────────────────────
+#
+# git hands us a path (COMMIT_EDITMSG, git-rebase-todo, …) and blocks on our
+# exit. We pass the file plus a sentinel to the app, then poll: the app deletes
+# the sentinel when the user is done, and only then do we return to git.
+if [ "$edit_file" = "WAIT" ]; then
+  target=$arg
+  [ -z "$target" ] && target=$dir
+  if [ -z "$target" ]; then
+    echo "gitcito: --wait needs a file to edit" >&2
+    exit 2
+  fi
+  case "$target" in
+    /*) edit_file=$target ;;
+    *) edit_file=$PWD/$target ;;
+  esac
+  if [ ! -e "$edit_file" ]; then
+    echo "gitcito: no such file: $edit_file" >&2
+    exit 2
+  fi
+  wait_file=$(mktemp "${TMPDIR:-/tmp}/gitcito-wait.XXXXXX") || exit 2
+  # The repository the file belongs to, so the app can open it in context.
+  dir=$(cd "$(dirname "$edit_file")" 2>/dev/null && git rev-parse --show-toplevel 2>/dev/null)
+  [ -z "$dir" ] && dir=$(dirname "$edit_file")
+fi
+
+# `gitcito open api` — a word that is not a directory is a repository Gitcito
+# already knows by tab name. Resolved through the headless half, which is the
+# only side that can read the app's settings file.
+if [ "${by_name:-0}" = "1" ] && [ -n "$dir" ] && [ ! -d "$dir" ]; then
+  resolved=$(
+    if [ -x "$APP_BIN" ] && [ -e "$DIR/../app.asar" ]; then
+      ELECTRON_RUN_AS_NODE=1 "$APP_BIN" "$ASAR_MAIN" --resolve "$dir" 2>/dev/null
+    else
+      node "$DIR/../../out/main/cliEntry.js" --resolve "$dir" 2>/dev/null
+    fi
+  )
+  if [ -z "$resolved" ]; then
+    echo "gitcito: no repository matching \"$dir\" — try 'gitcito repos'" >&2
+    exit 1
+  fi
+  dir=$resolved
+fi
+
 target=$(cd "${dir:-.}" 2>/dev/null && pwd)
 if [ -z "$target" ]; then
+  # A bare word that is neither a directory nor a known verb is almost always a
+  # mistyped verb, so point at the list rather than only at the missing path.
   echo "gitcito: no such directory: ${dir:-.}" >&2
+  case "$dir" in
+    */*|.|..) ;;
+    ?*) echo "If you meant a command, 'gitcito help verbs' lists them." >&2 ;;
+  esac
   exit 1
 fi
 
@@ -50,6 +179,10 @@ fi
 set -- "--open=$target"
 [ -n "$name" ] && set -- "$@" "--name=$name"
 [ -n "$group" ] && set -- "$@" "--group=$group"
+[ -n "$view" ] && set -- "$@" "--view=$view"
+[ -n "$arg" ] && set -- "$@" "--arg=$arg"
+[ -n "$line" ] && set -- "$@" "--line=$line"
+[ -n "$wait_file" ] && set -- "$@" "--edit=$edit_file" "--wait=$wait_file"
 
 # `-n` forces `open` to launch a new process even when Gitcito is already
 # running. Without it, macOS just re-activates the running app and silently
@@ -57,4 +190,34 @@ set -- "--open=$target"
 # --open/--name/--group) — Electron's single-instance lock then takes over,
 # quitting this new process immediately after handing its argv off to the
 # already-running window via the `second-instance` event.
-open -n -a "Gitcito" --args "$@"
+# A launch that never happens must not leave a sentinel behind for a `git`
+# that is about to be told the editor failed.
+launch_failed() {
+  [ -n "$wait_file" ] && rm -f "$wait_file"
+  exit 1
+}
+
+if [ "$(uname -s)" = "Darwin" ]; then
+  open -n -a "Gitcito" --args "$@" || launch_failed
+else
+  # Linux: no `open --args`. Launch the binary directly and detach — Electron's
+  # own single-instance lock does the hand-off to a running window.
+  if [ -x "$DIR/../../gitcito" ]; then
+    "$DIR/../../gitcito" "$@" >/dev/null 2>&1 &
+  elif command -v gitcito-app >/dev/null 2>&1; then
+    gitcito-app "$@" >/dev/null 2>&1 &
+  else
+    echo "gitcito: could not find the Gitcito application binary" >&2
+    launch_failed
+  fi
+fi
+
+if [ -n "$wait_file" ]; then
+  # Poll rather than block on a fifo: the app may already be running (the
+  # launch above returns immediately) or may still be starting, and a fifo
+  # would deadlock if it never opens the write end. A deleted sentinel is the
+  # single signal, so an app crash releases git rather than hanging it.
+  while [ -e "$wait_file" ]; do
+    sleep 0.2
+  done
+fi

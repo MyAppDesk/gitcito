@@ -136,7 +136,7 @@ export type ModalSpec =
   | { kind: 'ai-pr-review'; repoPath: string; prTitle: string; sourceBranch: string; targetBranch: string }
   | { kind: 'group-color'; tabId: string; current?: string; onSelect: (color: string) => void }
   | { kind: 'reflog'; repoPath: string }
-  | { kind: 'code-search'; repoPath: string }
+  | { kind: 'code-search'; repoPath: string; query?: string }
   | { kind: 'stack'; repoPath: string }
   | { kind: 'gitflow'; repoPath: string }
   | { kind: 'history-purge'; repoPath: string; initialPath?: string }
@@ -155,6 +155,9 @@ export type ModalSpec =
   | { kind: 'stash-partial'; repoPath: string }
   | { kind: 'create-tag'; repoPath: string; hash?: string; at?: string }
   | { kind: 'cheatsheet' }
+  // `gitcito --wait <file>` — a `git commit`/`git rebase -i` is blocked on this
+  // dialog, so closing it by any route must answer git (see CliEditModal).
+  | { kind: 'cli-edit'; file: string; sentinel: string; content: string }
   | { kind: 'ai-accounts-notice' }
   | { kind: 'create-issue'; repoPath: string; remoteUrl: string }
   | { kind: 'repo-settings'; repoPath: string; tab?: 'general' | 'config' | 'info' | 'vault' | 'analytics' | 'insights' | 'history' | 'logs' }

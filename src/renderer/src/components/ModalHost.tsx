@@ -29,6 +29,7 @@ import { LocalCIModal } from './LocalCIModal'
 import { KeychainConsentModal } from './KeychainConsentModal'
 import { RangeDiffModal } from './RangeDiffModal'
 import { AbsorbModal } from './AbsorbModal'
+import { CliEditModal } from './CliEditModal'
 import { TimeMachineModal } from './TimeMachineModal'
 import { TimelapseModal } from './TimelapseModal'
 import { AIPRReview } from './AIPRReview'
@@ -1764,6 +1765,7 @@ export function ModalHost(): React.JSX.Element {
                     modal.kind === 'teammate-radar' ||
                     modal.kind === 'commit-edit' ||
                     modal.kind === 'local-ci' ||
+                    modal.kind === 'cli-edit' ||
                     modal.kind === 'stack'
                   ? 'modal-tall'
                   : ''
@@ -1805,6 +1807,9 @@ export function ModalHost(): React.JSX.Element {
               <KeychainConsentModal reason={modal.reason} adopted={modal.adopted} />
             )}
             {modal.kind === 'absorb' && <AbsorbModal repoPath={modal.repoPath} />}
+            {modal.kind === 'cli-edit' && (
+              <CliEditModal file={modal.file} sentinel={modal.sentinel} content={modal.content} />
+            )}
             {modal.kind === 'time-machine' && <TimeMachineModal repoPath={modal.repoPath} />}
             {modal.kind === 'timelapse' && <TimelapseModal repoPath={modal.repoPath} />}
             {modal.kind === 'range-diff' && (
@@ -1826,7 +1831,7 @@ export function ModalHost(): React.JSX.Element {
             )}
             {modal.kind === 'group-color' && <GroupColorModal spec={modal} />}
             {modal.kind === 'reflog' && <ReflogModal repoPath={modal.repoPath} />}
-            {modal.kind === 'code-search' && <CodeSearchModal repoPath={modal.repoPath} />}
+            {modal.kind === 'code-search' && <CodeSearchModal repoPath={modal.repoPath} query={modal.query} />}
             {modal.kind === 'stack' && <StackModal repoPath={modal.repoPath} />}
             {modal.kind === 'stack-submit' && <StackSubmitModal spec={modal} />}
             {modal.kind === 'gitflow' && <GitflowModal repoPath={modal.repoPath} />}

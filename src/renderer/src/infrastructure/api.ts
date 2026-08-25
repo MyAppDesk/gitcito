@@ -165,6 +165,7 @@ import type {
 } from '../../../shared/localCi'
 import type { EditorSetting, EditorTarget } from '../../../shared/editors'
 import type { MenuSpec } from '../../../shared/menu'
+import type { CliOpenPayload } from '../../../shared/cli'
 
 // Typed adapter over the IPC bridge — the only place that talks to window.api.
 const call = <T>(method: string, ...args: unknown[]): Promise<T> => window.api.git(method, ...args) as Promise<T>
@@ -436,6 +437,7 @@ export const gitApi = {
     call<void>('fsImport', path, srcPaths, destDir, mode),
   commit: (path: string, message: string, amend?: boolean) => call<void>('commit', path, message, amend),
   getCommitMessage: (path: string, hash: string) => call<string>('getCommitMessage', path, hash),
+  resolveRev: (path: string, rev: string) => call<string | null>('resolveRev', path, rev),
   commitTemplate: (path: string) => call<string>('commitTemplate', path),
   amendCommitMessage: (path: string, message: string) => call<void>('amendCommitMessage', path, message),
 
@@ -979,14 +981,20 @@ export const keychainApi = {
   set: (granted: boolean) => window.api.keychain.set(granted)
 }
 
-// Installs/checks the `gitcito` shell command (macOS only), the equivalent of
-// VS Code's "Shell Command: Install 'code' in PATH".
+// Installs/checks the `gitcito` shell command, the equivalent of VS Code's
+// "Shell Command: Install 'code' in PATH", plus the two channels the CLI uses
+// once it is installed: a request to open something, and a file git is waiting
+// on (`gitcito --wait`).
 export const cliApi = {
   isInstalled: () => window.api.cli.isInstalled(),
   install: () => window.api.cli.install(),
   uninstall: () => window.api.cli.uninstall(),
-  onOpenPath: (cb: (payload: { path: string; name?: string; group?: string }) => void) =>
-    window.api.cli.onOpenPath(cb)
+  onOpenPath: (cb: (payload: CliOpenPayload) => void) => window.api.cli.onOpenPath(cb),
+  onEdit: (cb: (req: { file: string; sentinel: string; content: string }) => void) =>
+    window.api.cli.onEdit(cb),
+  /** Hand the edited text back to git. `null` cancels, which git reads as
+   *  "abort". Exactly one call per request — git is blocked until it lands. */
+  finishEdit: (sentinel: string, content: string | null) => window.api.cli.finishEdit(sentinel, content)
 }
 
 // The native application menu. The renderer owns the menu's content — labels

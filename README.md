@@ -130,6 +130,10 @@ for separate identities ·
 blob drawn offline where it does not, and a title-bar face that pulls a face at
 conflicts and unpushed piles ·
 [integrated terminal](docs/help/terminal.md) with splits ·
+[**A real CLI**](docs/help/cli.md) — `gitcito .` opens a repo, `gitcito blame
+src/api.ts -l 84` opens it *there*, `gitcito doctor` answers in the terminal with
+an exit code your CI can use, and `gitcito editor install` makes Gitcito the
+editor `git commit` and `git rebase -i` open ·
 [**Todos**](docs/help/todos.md) — a private checklist per repository, marked on
 the tab and in the status bar, and never written into the repo ·
 [**Open in your editor**](docs/help/editor.md) — repo, file, or the exact line

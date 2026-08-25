@@ -264,6 +264,8 @@ interface PreloadApi {
     install(): Promise<{ ok: boolean; error?: string }>
     uninstall(): Promise<{ ok: boolean; error?: string }>
     onOpenPath(cb: (payload: import('../../shared/cli').CliOpenPayload) => void): () => void
+    onEdit(cb: (req: { file: string; sentinel: string; content: string }) => void): () => void
+    finishEdit(sentinel: string, content: string | null): Promise<{ ok: boolean; error?: string }>
   }
 }
 

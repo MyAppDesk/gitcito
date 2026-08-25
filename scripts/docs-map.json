@@ -7,6 +7,7 @@
   "modals": {
     "covered": {
       "todos": "todos",
+      "cli-edit": "cli",
       "absorb": "absorb",
       "attributes": "attributes",
       "ai-config-wizard": "ai",

@@ -94,6 +94,39 @@ de la historia, por ejemplo — marca un commit bueno como malo y manda la búsq
 al sitio equivocado. Salir con `125` desde un script envoltorio es la salida que
 git da para eso.
 
+## Un archivo de bloqueo olvidado
+
+Git crea un archivo `.lock` junto a lo que va a escribir y lo borra cuando la
+escritura termina. Un proceso que muere sosteniendo uno —un editor que se cae,
+una terminal cerrada durante `git commit`, un fetch matado mientras podaba
+referencias remotas— deja el bloqueo ahí, y a partir de entonces toda escritura
+falla con la misma línea:
+
+```
+error: could not delete references: cannot lock ref 'refs/remotes/origin/x':
+Unable to create '…/refs/remotes/origin/x.lock': File exists.
+```
+
+El repositorio no está dañado. Simplemente hay un archivo en medio.
+
+Gitcito reintenta unas cuantas veces primero, porque un bloqueo en manos de un
+git *en marcha* suele liberarse en milisegundos. Cuando no ocurre, el fallo abre
+un diálogo en lugar de un muro de texto: todos los bloqueos que siguen en disco,
+la antigüedad de cada uno y un botón que los elimina y reintenta la acción que
+había fallado.
+
+**La antigüedad es todo el argumento.** Un bloqueo de menos de 30 segundos se
+presume de un git que sigue trabajando, y Gitcito se niega a borrarlo: ofrece
+esperar y reintentar. Los más viejos sí se ofrecen para eliminar, del más
+antiguo al más reciente, y el diálogo dice sin rodeos qué comprobar antes de
+aceptar: que ningún editor, terminal u otro cliente de Git esté trabajando ahora
+mismo en este repositorio. Borrar un bloqueo bajo una escritura viva es como se
+rompe un índice.
+
+El barrido cubre el directorio git del repositorio y su directorio común, así
+que también encuentra los bloqueos de un worktree enlazado. Los submódulos se
+saltan: pertenecen a otro repositorio y se limpian abriéndolo.
+
 ## Deshacer / rehacer
 
 La mayoría de las operaciones apilan una entrada en una pila de deshacer, así que

@@ -3,7 +3,7 @@ title: Recovery & the reflog
 category: Recovery & safety
 order: 60
 summary: The undo net: reflog, WIP snapshots and bisect.
-keywords: reflog recovery undo lost commits snapshots wip guard untracked discard clean bisect bisect run automated script exit code restore hard reset
+keywords: reflog recovery undo lost commits snapshots wip guard untracked discard clean bisect bisect run automated script exit code restore hard reset lock index.lock file exists cannot lock ref stale unable to create another git process
 ---
 
 # Recovery & the reflog
@@ -87,6 +87,36 @@ kills the run and leaves the session open, so you can carry on marking by hand;
 A command that fails for an unrelated reason — a missing dependency at that
 point in history, say — marks a good commit bad and sends the search to the
 wrong place. Exiting `125` from a wrapper script is git's way out of that.
+
+## A leftover lock file
+
+Git takes a `.lock` file next to whatever it is about to write, and removes it
+when the write lands. A process that dies holding one — a crashed editor, a
+terminal closed during `git commit`, a fetch killed while pruning remote refs —
+leaves the lock behind, and from then on every write fails with the same line:
+
+```
+error: could not delete references: cannot lock ref 'refs/remotes/origin/x':
+Unable to create '…/refs/remotes/origin/x.lock': File exists.
+```
+
+The repository is not damaged. A file is simply in the way.
+
+Gitcito retries a handful of times first, because a lock held by a *running*
+git usually clears within milliseconds. When it does not, the failure opens a
+dialog instead of a wall of text: every lock still on disk, how old each one is,
+and one button that removes them and re-runs the action that failed.
+
+**Age is the whole argument.** A lock younger than 30 seconds is presumed to
+belong to a git that is still working, and Gitcito refuses to delete it — it
+offers to wait and retry instead. Older ones are offered for removal, oldest
+first, and the dialog says plainly what to check before agreeing: that no
+editor, terminal or other Git client is working in this repository right now.
+Deleting a lock out from under a live write is how an index gets torn.
+
+The scan covers the repository's own git directory and its common directory, so
+a linked worktree's locks are found too. Submodules are skipped — those belong
+to another repository, and are cleared by opening it.
 
 ## Undo / redo
 

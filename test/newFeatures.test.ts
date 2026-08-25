@@ -1,5 +1,5 @@
 import { describe, it, expect, afterAll, beforeAll } from 'vitest'
-import { writeFileSync, readFileSync, existsSync, mkdtempSync, rmSync } from 'node:fs'
+import { writeFileSync, readFileSync, existsSync, mkdtempSync, rmSync, utimesSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import { tmpdir } from 'node:os'
 import { join, dirname } from 'node:path'
@@ -1226,5 +1226,47 @@ describe('tree status (untracked-mess playground)', () => {
     // folder can show a dot; ignored deliberately does not.
     expect(st['tmp']).toBe('untracked')
     expect(st['node_modules/left-pad']).toBeUndefined()
+  })
+})
+
+describe('leftover git locks (stacked-branches playground)', () => {
+  it('reports a lock with its age and kind, and refuses to delete a fresh one', async () => {
+    const R = cloneFixture('stacked-branches')
+    const gitDir = join(R, '.git')
+    writeFileSync(join(gitDir, 'index.lock'), '')
+
+    const fresh = await gitService.staleLocks(R)
+    expect(fresh.map((l) => l.path)).toContain('index.lock')
+    expect(fresh.find((l) => l.path === 'index.lock')!.kind).toBe('index')
+    // Just created: a running git could own it, so it stays.
+    expect(await gitService.clearLocks(R, ['index.lock'])).toBe(0)
+    expect(existsSync(join(gitDir, 'index.lock'))).toBe(true)
+  })
+
+  it('removes an old lock, including one on a single ref', async () => {
+    const R = cloneFixture('stacked-branches')
+    const gitDir = join(R, '.git')
+    const refLock = join(gitDir, 'refs', 'heads', 'feature', 'api.lock')
+    writeFileSync(join(gitDir, 'index.lock'), '')
+    writeFileSync(refLock, '')
+    const old = new Date(Date.now() - 60 * 60 * 1000)
+    utimesSync(join(gitDir, 'index.lock'), old, old)
+    utimesSync(refLock, old, old)
+
+    const locks = await gitService.staleLocks(R)
+    expect(locks.find((l) => l.path === 'refs/heads/feature/api.lock')!.kind).toBe('ref')
+    expect(locks.every((l) => l.ageSeconds > 60)).toBe(true)
+
+    expect(await gitService.clearLocks(R, ['index.lock', 'refs/heads/feature/api.lock'])).toBe(2)
+    expect(existsSync(join(gitDir, 'index.lock'))).toBe(false)
+    expect(existsSync(refLock)).toBe(false)
+    expect(await gitService.staleLocks(R)).toEqual([])
+  })
+
+  it('refuses a path that escapes the git directory or is not a lock', async () => {
+    const R = cloneFixture('stacked-branches')
+    writeFileSync(join(R, 'victim.txt'), 'still here')
+    expect(await gitService.clearLocks(R, ['../victim.txt', '../../etc/hosts', 'config'])).toBe(0)
+    expect(existsSync(join(R, 'victim.txt'))).toBe(true)
   })
 })

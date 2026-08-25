@@ -93,6 +93,37 @@ naquele ponto do histórico, digamos — marca um commit bom como ruim e manda a
 para o lugar errado. Sair com `125` a partir de um script wrapper é a saída que o
 git oferece para isso.
 
+## Um arquivo de lock esquecido
+
+O git cria um arquivo `.lock` ao lado do que está prestes a escrever e o remove
+quando a escrita termina. Um processo que morre segurando um — um editor que
+trava, um terminal fechado durante o `git commit`, um fetch morto enquanto podava
+referências remotas — deixa o lock lá, e daí em diante toda escrita falha com a
+mesma linha:
+
+```
+error: could not delete references: cannot lock ref 'refs/remotes/origin/x':
+Unable to create '…/refs/remotes/origin/x.lock': File exists.
+```
+
+O repositório não está danificado. Só há um arquivo no caminho.
+
+O Gitcito primeiro tenta de novo algumas vezes, porque um lock nas mãos de um git
+*em execução* costuma sair em milissegundos. Quando não sai, a falha abre um
+diálogo em vez de um muro de texto: todos os locks ainda em disco, a idade de
+cada um, e um botão que os remove e repete a ação que falhou.
+
+**A idade é o argumento inteiro.** Um lock com menos de 30 segundos é presumido
+de um git ainda trabalhando, e o Gitcito se recusa a apagá-lo — oferece esperar e
+tentar de novo. Os mais velhos são oferecidos para remoção, do mais antigo para
+o mais novo, e o diálogo diz sem rodeios o que conferir antes de aceitar: que
+nenhum editor, terminal ou outro cliente Git esteja trabalhando neste repositório
+agora. Apagar um lock debaixo de uma escrita viva é como um índice se rasga.
+
+A varredura cobre o diretório git do repositório e o diretório comum, então os
+locks de um worktree vinculado também aparecem. Submódulos ficam de fora — são de
+outro repositório, e se limpam abrindo ele.
+
 ## Desfazer / refazer
 
 A maioria das operações empilha uma entrada numa pilha de desfazer, então

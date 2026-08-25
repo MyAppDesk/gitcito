@@ -6,6 +6,7 @@ import type {
   ConflictOpKind,
   ConflictSide,
   DivergedStrategy,
+  GitLockFile,
   GraphCommit,
   PrPreviewMode,
   PullRequest,
@@ -39,6 +40,8 @@ import { useSettingsStore } from './settings'
 import { worktreeForBranch, worktreeTabName } from '../lib/worktrees'
 import { isSecretFile } from '../lib/secrets'
 import { commitHookFailureHint } from '../lib/commitLint'
+import { isLockErrorMessage, lockRepairPlan } from '../lib/gitLocks'
+import { timeAgo } from '../lib/timeAgo'
 import { splitCommitMessage } from '../lib/commitMenuCapabilities'
 import { t, interp } from '../i18n'
 
@@ -238,6 +241,68 @@ function promptUpstreamRepair(message: string, path: string, mode: PullMode): bo
           }
           // Linking alone leaves the branch behind; finish the pull the user asked for.
           if (await repoActions.setUpstream(path, s.branch, s.remote)) await repoActions.pull(path, mode)
+        })()
+    })
+  })()
+  return true
+}
+
+/**
+ * A write that failed because a `*.lock` file is in the way. Git names the file
+ * and then leaves the reader to hunt for a process and `rm` it; offer the two
+ * honest answers instead — wait, if something is plainly still running, or
+ * remove the leftovers and retry the operation that just failed.
+ *
+ * Returns true if the error was handled (the caller suppresses its own toast).
+ */
+function promptLockRepair(message: string, path: string, retry: () => void): boolean {
+  if (!isLockErrorMessage(message)) return false
+  void (async () => {
+    const locks = await gitApi.staleLocks(path).catch(() => [] as GitLockFile[])
+    const { removable, young } = lockRepairPlan(locks)
+    // Nothing on disk to blame (the lock was released between the failure and
+    // this read, or the message meant something else) — the raw git error is
+    // still the most honest thing to show.
+    if (!removable.length) {
+      const ui = useUIStore.getState()
+      if (young.length) {
+        ui.openModal({
+          kind: 'confirm',
+          title: t('lock.busyTitle'),
+          message: interp(t('lock.busyMessage'), { file: young[0].path }),
+          confirmLabel: t('lock.retry'),
+          autoFocusConfirm: true,
+          onConfirm: retry
+        })
+        return
+      }
+      toast('error', message, { repoPath: path })
+      return
+    }
+    const now = Date.now()
+    const lines = removable
+      .map((l) => {
+        const ago = timeAgo(now - l.ageSeconds * 1000, now)
+        return `• ${l.path}${ago ? ` — ${interp(t(ago.key), { n: ago.n })}` : ''}`
+      })
+      .join('\n')
+    useUIStore.getState().openModal({
+      kind: 'confirm',
+      danger: true,
+      title: t('lock.title'),
+      message: `${interp(removable.length === 1 ? t('lock.messageOne') : t('lock.messageMany'), {
+        count: removable.length
+      })}\n\n${lines}\n\n${t('lock.warning')}`,
+      confirmLabel: t('lock.remove'),
+      onConfirm: () =>
+        void (async () => {
+          const removed = await gitApi.clearLocks(path, removable.map((l) => l.path)).catch(() => 0)
+          if (!removed) {
+            toast('error', t('lock.removeFailed'), { repoPath: path })
+            return
+          }
+          toast('success', interp(t('lock.removed'), { count: removed }))
+          retry()
         })()
     })
   })()
@@ -630,6 +695,10 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err)
         if (onError?.(message)) return false
+        // Generic, because any write can lose to a leftover lock: offer the
+        // repair and re-run the very operation that failed.
+        if (promptLockRepair(message, path, () => void get().run(path, label, fn, undoEntry, op, onError, refetch)))
+          return false
         if (isConflictErrorMessage(message)) toast('info', conflictHint(message))
         else toast('error', message, { repoPath: path })
         return false

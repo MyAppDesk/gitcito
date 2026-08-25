@@ -6,6 +6,7 @@ import { parseRemoteUrl } from '../src/main/hosting'
 
 import { treeStatusOf } from '../src/renderer/src/lib/treeStatus'
 import { timeAgo, isStale, STALE_AFTER_MS } from '../src/renderer/src/lib/timeAgo'
+import { isLockErrorMessage, lockRepairPlan } from '../src/renderer/src/lib/gitLocks'
 import { HUGE_SECTION, openUnlessHuge } from '../src/renderer/src/lib/sidebarSections'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -4612,5 +4613,38 @@ describe('isStale', () => {
 
   it('says nothing at all when there is no timestamp — the caller words that', () => {
     expect(isStale(null, NOW)).toBe(false)
+  })
+})
+
+describe('git lock errors', () => {
+  it('recognises the index lock and a single ref lock alike', () => {
+    expect(isLockErrorMessage("Unable to create '/r/.git/index.lock': File exists.")).toBe(true)
+    expect(
+      isLockErrorMessage(
+        "error: could not delete references: cannot lock ref 'refs/remotes/origin/x': " +
+          "Unable to create '/r/.git/refs/remotes/origin/x.lock': File exists."
+      )
+    ).toBe(true)
+  })
+
+  it('does not claim unrelated failures', () => {
+    expect(isLockErrorMessage('fatal: not a git repository')).toBe(false)
+    expect(isLockErrorMessage('error: pathspec .lock did not match any file')).toBe(false)
+  })
+
+  it('offers only locks old enough to be nobody\u2019s, oldest first', () => {
+    const plan = lockRepairPlan([
+      { path: 'index.lock', ageSeconds: 3, kind: 'index' },
+      { path: 'refs/heads/a.lock', ageSeconds: 900, kind: 'ref' },
+      { path: 'packed-refs.lock', ageSeconds: 40, kind: 'ref' }
+    ])
+    expect(plan.removable.map((l) => l.path)).toEqual(['refs/heads/a.lock', 'packed-refs.lock'])
+    expect(plan.young.map((l) => l.path)).toEqual(['index.lock'])
+  })
+
+  it('holds everything back while a git is plausibly still running', () => {
+    const plan = lockRepairPlan([{ path: 'index.lock', ageSeconds: 1, kind: 'index' }])
+    expect(plan.removable).toEqual([])
+    expect(plan.young.length).toBe(1)
   })
 })

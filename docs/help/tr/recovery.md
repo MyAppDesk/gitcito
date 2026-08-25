@@ -94,6 +94,37 @@ eksik olan bir bağımlılık — iyi bir commit'i kötü olarak işaretler ve a
 yanlış yere yönlendirir. Bir sarmalayıcı betikten `125` ile çıkmak, git'in bu
 durumdan kaçış yoludur.
 
+## Geride kalan bir kilit dosyası
+
+Git, yazacağı şeyin yanına bir `.lock` dosyası koyar ve yazma tamamlanınca onu
+kaldırır. Onu tutarken ölen bir süreç — çöken bir düzenleyici, `git commit`
+sırasında kapatılan bir uçbirim, uzak referansları budarken öldürülen bir fetch —
+kilidi geride bırakır ve o andan sonra her yazma aynı satırla başarısız olur:
+
+```
+error: could not delete references: cannot lock ref 'refs/remotes/origin/x':
+Unable to create '…/refs/remotes/origin/x.lock': File exists.
+```
+
+Depo bozulmuş değil. Yolda duran yalnızca bir dosya var.
+
+Gitcito önce birkaç kez yeniden dener, çünkü *çalışan* bir git'in tuttuğu kilit
+genelde milisaniyeler içinde serbest kalır. Kalmazsa hata, bir metin duvarı
+yerine bir pencere açar: diskte duran her kilit, her birinin yaşı ve onları
+kaldırıp başarısız olan işlemi yeniden çalıştıran tek bir düğme.
+
+**Bütün mesele yaş.** 30 saniyeden genç bir kilidin hâlâ çalışan bir git'e ait
+olduğu varsayılır ve Gitcito onu silmeyi reddeder; bunun yerine bekleyip yeniden
+denemeyi önerir. Daha eskiler, en eskiden başlayarak kaldırılmak üzere sunulur ve
+pencere kabul etmeden önce neye bakman gerektiğini açıkça söyler: şu anda bu
+depoda çalışan bir düzenleyici, uçbirim ya da başka bir Git istemcisi
+olmadığından emin ol. Canlı bir yazmanın altından kilidi çekmek, bir dizini
+yırtmanın yoludur.
+
+Tarama, deponun kendi git dizinini ve ortak dizinini kapsar; bağlı bir worktree'
+nin kilitleri de bulunur. Alt modüller atlanır — onlar başka bir depoya aittir ve
+o depoyu açarak temizlenir.
+
 ## Geri al / yinele
 
 Çoğu işlem bir geri alma yığınına kayıt ekler; böylece <kbd>⌘Z</kbd>, git'in

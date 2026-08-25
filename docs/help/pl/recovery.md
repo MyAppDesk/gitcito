@@ -91,6 +91,36 @@ w tamtym punkcie historii — oznacza dobry commit jako zły i wysyła poszukiwa
 w złe miejsce. Wyjście z kodem `125` ze skryptu opakowującego jest wyjściem
 gita z tej sytuacji.
 
+## Pozostawiony plik blokady
+
+Git zakłada plik `.lock` obok tego, co za chwilę zapisze, i usuwa go, gdy zapis
+się uda. Proces, który ginie, trzymając blokadę — padnięty edytor, terminal
+zamknięty w trakcie `git commit`, fetch ubity podczas czyszczenia zdalnych
+referencji — zostawia ją, i od tej pory każdy zapis kończy się tą samą linią:
+
+```
+error: could not delete references: cannot lock ref 'refs/remotes/origin/x':
+Unable to create '…/refs/remotes/origin/x.lock': File exists.
+```
+
+Repozytorium nie jest uszkodzone. Po prostu na drodze leży plik.
+
+Gitcito najpierw ponawia kilka razy, bo blokada trzymana przez *działający* git
+zwykle zwalnia się w milisekundach. Gdy tak się nie stanie, błąd otwiera okno
+zamiast ściany tekstu: wszystkie blokady wciąż na dysku, wiek każdej z nich i
+jeden przycisk, który je usuwa i ponawia operację, która się nie udała.
+
+**Wiek to cały argument.** Blokadę młodszą niż 30 sekund przypisuje się gitowi,
+który wciąż pracuje, i Gitcito odmawia jej usunięcia — proponuje poczekać i
+spróbować ponownie. Starsze są proponowane do usunięcia, od najstarszej, a okno
+mówi wprost, co sprawdzić przed zgodą: że żaden edytor, terminal ani inny klient
+Gita nie pracuje teraz w tym repozytorium. Wyjęcie blokady spod żywego zapisu to
+prosta droga do rozdartego indeksu.
+
+Skanowanie obejmuje własny katalog git repozytorium i katalog wspólny, więc
+blokady dowiązanego worktree też się znajdą. Podmoduły są pomijane — należą do
+innego repozytorium i sprząta się je, otwierając je.
+
 ## Cofnij / ponów
 
 Większość operacji odkłada wpis na stos cofnięć, więc <kbd>⌘Z</kbd> odwraca

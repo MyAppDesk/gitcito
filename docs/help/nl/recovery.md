@@ -93,6 +93,40 @@ op dat punt in de geschiedenis, bijvoorbeeld — markeert een goede commit als
 slecht en stuurt de zoektocht de verkeerde kant op. Met `125` afsluiten vanuit
 een wrapper-script is de uitweg die git daarvoor biedt.
 
+## Een achtergebleven lock-bestand
+
+Git legt een `.lock`-bestand naast wat het gaat schrijven en haalt het weg zodra
+de schrijfactie klaar is. Een proces dat sterft terwijl het er een vasthoudt —
+een gecrashte editor, een terminal die tijdens `git commit` werd gesloten, een
+fetch die werd afgeschoten tijdens het opruimen van remote refs — laat de lock
+achter, en vanaf dan mislukt elke schrijfactie met dezelfde regel:
+
+```
+error: could not delete references: cannot lock ref 'refs/remotes/origin/x':
+Unable to create '…/refs/remotes/origin/x.lock': File exists.
+```
+
+De repository is niet beschadigd. Er ligt simpelweg een bestand in de weg.
+
+Gitcito probeert het eerst een paar keer opnieuw, want een lock in handen van een
+*lopende* git komt meestal binnen milliseconden vrij. Zo niet, dan opent de fout
+een dialoog in plaats van een muur tekst: elke lock die nog op schijf staat, hoe
+oud elk ervan is, en één knop die ze verwijdert en de mislukte actie opnieuw
+uitvoert.
+
+**Leeftijd is het hele argument.** Een lock jonger dan 30 seconden hoort
+vermoedelijk bij een git die nog werkt, en Gitcito weigert die te verwijderen —
+het biedt aan te wachten en het opnieuw te proberen. Oudere worden aangeboden om
+te verwijderen, oudste eerst, en de dialoog zegt onomwonden wat je eerst moet
+nagaan: dat er nu geen editor, terminal of andere Git-client in deze repository
+bezig is. Een lock weghalen onder een levende schrijfactie is precies hoe een
+index scheurt.
+
+De scan dekt de eigen git-map van de repository en de gemeenschappelijke map, dus
+locks van een gekoppelde worktree worden ook gevonden. Submodules worden
+overgeslagen — die horen bij een andere repository en ruim je op door die te
+openen.
+
 ## Ongedaan maken / opnieuw
 
 De meeste operaties leggen een regel op een undo-stapel, dus <kbd>⌘Z</kbd>

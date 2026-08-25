@@ -14,6 +14,7 @@ import type {
   RefTip,
   ForcedRefUpdate,
   UpstreamSuggestion,
+  GitLockFile,
   AbsorbPlan,
   TimelapseCommit,
   RepoPulse,
@@ -224,6 +225,10 @@ export const gitApi = {
   /** Set the branch's upstream to `<remote>/<branch>`; a null remote unsets it. */
   setUpstream: (path: string, branch: string, remote: string | null) =>
     call<void>('setUpstream', path, branch, remote),
+  /** Every `*.lock` file sitting in the repo's git directory, youngest first. */
+  staleLocks: (path: string) => call<GitLockFile[]>('staleLocks', path),
+  /** Delete lock files by relative path; returns how many were actually removed. */
+  clearLocks: (path: string, paths: string[]) => call<number>('clearLocks', path, paths),
   /** Fast-forward a local branch from its upstream without checking it out. */
   pullBranch: (path: string, branch: string) => call<void>('pullBranch', path, branch),
   setBranchRef: (path: string, branch: string, sha: string) => call<void>('setBranchRef', path, branch, sha),

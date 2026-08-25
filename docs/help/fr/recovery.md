@@ -97,6 +97,39 @@ ce point de l'histoire, par exemple — marque un bon commit comme mauvais et
 envoie la recherche au mauvais endroit. Sortir avec `125` depuis un script
 enveloppe est la porte de sortie que git prévoit pour cela.
 
+## Un fichier de verrou oublié
+
+Git pose un fichier `.lock` à côté de ce qu’il s’apprête à écrire et le retire
+quand l’écriture aboutit. Un processus qui meurt en le tenant — un éditeur qui
+plante, un terminal fermé pendant `git commit`, un fetch tué en pleine purge de
+références distantes — laisse le verrou derrière lui, et dès lors toute écriture
+échoue sur la même ligne :
+
+```
+error: could not delete references: cannot lock ref 'refs/remotes/origin/x':
+Unable to create '…/refs/remotes/origin/x.lock': File exists.
+```
+
+Le dépôt n’est pas abîmé. Un fichier est simplement en travers du chemin.
+
+Gitcito réessaie d’abord quelques fois, car un verrou tenu par un git *en cours*
+se libère généralement en quelques millisecondes. Sinon, l’échec ouvre une
+boîte de dialogue au lieu d’un mur de texte : tous les verrous encore sur le
+disque, l’âge de chacun, et un bouton qui les supprime et relance l’action qui
+avait échoué.
+
+**L’âge fait tout l’argument.** Un verrou de moins de 30 secondes est présumé
+appartenir à un git encore au travail, et Gitcito refuse de le supprimer — il
+propose d’attendre et de réessayer. Les plus vieux sont proposés à la
+suppression, du plus ancien au plus récent, et la boîte de dialogue dit
+franchement quoi vérifier avant d’accepter : qu’aucun éditeur, terminal ou autre
+client Git ne travaille dans ce dépôt en ce moment. Supprimer un verrou sous une
+écriture vivante, c’est ainsi qu’un index se déchire.
+
+Le balayage couvre le répertoire git du dépôt et son répertoire commun : les
+verrous d’un arbre de travail lié sont donc trouvés aussi. Les sous-modules sont
+ignorés — ils appartiennent à un autre dépôt et se nettoient en l’ouvrant.
+
 ## Annuler / rétablir
 
 La plupart des opérations empilent une entrée sur une pile d'annulation :

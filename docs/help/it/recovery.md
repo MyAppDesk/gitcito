@@ -93,6 +93,38 @@ quel punto della storia, per esempio — segna come cattivo un commit buono e ma
 la ricerca nel posto sbagliato. Uscire con `125` da uno script wrapper è la via
 d'uscita che git offre.
 
+## Un file di lock rimasto indietro
+
+Git crea un file `.lock` accanto a ciò che sta per scrivere e lo rimuove quando
+la scrittura va a buon fine. Un processo che muore tenendolo — un editor che si
+pianta, un terminale chiuso durante `git commit`, un fetch ucciso mentre potava
+i riferimenti remoti — lascia lì il lock, e da quel momento ogni scrittura
+fallisce con la stessa riga:
+
+```
+error: could not delete references: cannot lock ref 'refs/remotes/origin/x':
+Unable to create '…/refs/remotes/origin/x.lock': File exists.
+```
+
+Il repository non è danneggiato. C'è semplicemente un file di mezzo.
+
+Gitcito prima riprova qualche volta, perché un lock tenuto da un git *in corso*
+di solito si libera in millisecondi. Quando non succede, l'errore apre una
+finestra invece di un muro di testo: tutti i lock ancora su disco, quanto è
+vecchio ciascuno, e un pulsante che li rimuove e riesegue l'azione fallita.
+
+**L'età è tutto l'argomento.** Un lock più giovane di 30 secondi si presume di un
+git ancora al lavoro, e Gitcito si rifiuta di cancellarlo: offre invece di
+aspettare e riprovare. Quelli più vecchi vengono proposti per la rimozione, dal
+più vecchio in giù, e la finestra dice chiaramente cosa controllare prima di
+accettare: che nessun editor, terminale o altro client Git stia lavorando adesso
+in questo repository. Togliere un lock sotto una scrittura viva è il modo in cui
+un indice si lacera.
+
+La scansione copre la directory git del repository e la sua directory comune,
+quindi trova anche i lock di un worktree collegato. I sottomoduli vengono
+saltati: appartengono a un altro repository e si puliscono aprendolo.
+
 ## Annulla / ripeti
 
 Quasi tutte le operazioni infilano una voce in una pila di annullamento, quindi

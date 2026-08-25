@@ -97,6 +97,40 @@ Stelle der Historie fehlende Abhängigkeit — markiert einen guten Commit als
 schlecht und schickt die Suche in die falsche Richtung. Ein Wrapper-Skript, das
 mit `125` beendet, ist gits Ausweg daraus.
 
+## Eine übrig gebliebene Sperrdatei
+
+Git legt eine `.lock`-Datei neben das, was es gleich schreibt, und entfernt sie,
+wenn der Schreibvorgang durch ist. Ein Prozess, der mit ihr in der Hand stirbt —
+ein abgestürzter Editor, ein während `git commit` geschlossenes Terminal, ein
+Fetch, der beim Aufräumen von Remote-Refs abgeschossen wurde — lässt die Sperre
+zurück, und von da an scheitert jeder Schreibvorgang an derselben Zeile:
+
+```
+error: could not delete references: cannot lock ref 'refs/remotes/origin/x':
+Unable to create '…/refs/remotes/origin/x.lock': File exists.
+```
+
+Das Repository ist nicht beschädigt. Es liegt schlicht eine Datei im Weg.
+
+Gitcito versucht es zuerst ein paar Mal erneut, denn eine Sperre in der Hand
+eines *laufenden* git löst sich meist binnen Millisekunden. Wenn nicht, öffnet
+der Fehler einen Dialog statt einer Textwand: jede Sperre, die noch auf der
+Platte liegt, wie alt sie jeweils ist, und eine Schaltfläche, die sie entfernt
+und die gescheiterte Aktion erneut ausführt.
+
+**Das Alter ist das ganze Argument.** Eine Sperre, die jünger als 30 Sekunden
+ist, gehört vermutlich einem git, das noch arbeitet — Gitcito weigert sich, sie
+zu löschen, und bietet stattdessen Warten und Wiederholen an. Ältere werden zum
+Entfernen angeboten, die ältesten zuerst, und der Dialog sagt klar, was vorher
+zu prüfen ist: dass gerade kein Editor, kein Terminal und kein anderer
+Git-Client in diesem Repository arbeitet. Eine Sperre unter einem laufenden
+Schreibvorgang wegzunehmen ist der Weg zu einem zerrissenen Index.
+
+Der Suchlauf deckt das eigene Git-Verzeichnis des Repositorys und sein
+Common-Verzeichnis ab, findet also auch die Sperren eines verknüpften Worktrees.
+Submodule werden übersprungen — sie gehören zu einem anderen Repository und
+werden aufgeräumt, indem man dieses öffnet.
+
 ## Undo / Redo
 
 Die meisten Operationen legen einen Eintrag auf einen Undo-Stapel, sodass

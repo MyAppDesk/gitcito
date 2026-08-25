@@ -127,6 +127,7 @@ import type {
   RefTip,
   ForcedRefUpdate,
   UpstreamSuggestion,
+  GitLockFile,
   AbsorbPlan,
   AbsorbTarget,
   AbsorbHunk,
@@ -2842,6 +2843,92 @@ export const gitService = {
       .then((s) => !!s.trim())
       .catch(() => false)
     return { branch, remote, remoteRefExists }
+  },
+
+  /**
+   * Every `*.lock` file left inside the repository's git directory, newest
+   * first, with its age.
+   *
+   * Git writes a lock next to whatever it is about to change and removes it
+   * when the write lands. A lock that outlives its process — a crashed editor,
+   * a `git commit` whose terminal was closed, a killed fetch mid-prune — is
+   * invisible from the UI and turns every later write into
+   * "Unable to create '...lock': File exists". The age is the whole story: a
+   * lock two seconds old belongs to a running git, one twenty minutes old does
+   * not.
+   *
+   * Submodule git directories (`modules/`) and the pack directory are skipped —
+   * the first belongs to another repository, the second holds no lock a user
+   * can act on.
+   */
+  async staleLocks(repoPath: string): Promise<GitLockFile[]> {
+    const dirs = new Set<string>()
+    for (const arg of ['--absolute-git-dir', '--git-common-dir']) {
+      const raw = (await runGit(repoPath, ['rev-parse', arg]).catch(() => '')).trim()
+      if (raw) dirs.add(resolvePath(repoPath, raw))
+    }
+    const now = Date.now()
+    const found: GitLockFile[] = []
+    for (const gitDir of dirs) {
+      const walk = async (dir: string, rel: string): Promise<void> => {
+        const entries = await readdir(dir, { withFileTypes: true }).catch(() => [])
+        for (const e of entries) {
+          const child = rel ? `${rel}/${e.name}` : e.name
+          if (e.isDirectory()) {
+            if (child === 'modules' || child === 'objects/pack' || child === 'lfs') continue
+            await walk(join(dir, e.name), child)
+            continue
+          }
+          if (!e.name.endsWith('.lock')) continue
+          const st = await stat(join(dir, e.name)).catch(() => null)
+          if (!st) continue
+          found.push({
+            path: child,
+            ageSeconds: Math.max(0, Math.round((now - st.mtimeMs) / 1000)),
+            kind: lockKind(child)
+          })
+        }
+      }
+      await walk(gitDir, '')
+    }
+    // Same file reachable through both git dirs (a plain repo answers the same
+    // path twice) — one entry per path.
+    const byPath = new Map(found.map((f) => [f.path, f]))
+    return [...byPath.values()].sort((a, b) => a.ageSeconds - b.ageSeconds)
+  },
+
+  /**
+   * Delete lock files by the relative paths `staleLocks` reported. Returns how
+   * many actually went.
+   *
+   * Three guards, because this deletes files inside `.git` on a path that
+   * starts in the renderer: the name must end in `.lock`, it must resolve
+   * inside one of the repository's git directories (no `..` escape), and it
+   * must be older than `MIN_LOCK_AGE_SECONDS` — a young lock is a git process
+   * still running, and removing it from under a live write is how a repository
+   * gets a torn index.
+   */
+  async clearLocks(repoPath: string, paths: string[]): Promise<number> {
+    const dirs: string[] = []
+    for (const arg of ['--absolute-git-dir', '--git-common-dir']) {
+      const raw = (await runGit(repoPath, ['rev-parse', arg]).catch(() => '')).trim()
+      if (raw) dirs.push(resolvePath(repoPath, raw))
+    }
+    let removed = 0
+    for (const rel of paths) {
+      if (!rel.endsWith('.lock') || rel.includes('\0')) continue
+      for (const gitDir of dirs) {
+        const target = resolvePath(gitDir, rel)
+        if (!target.startsWith(gitDir + sep)) continue
+        const st = await stat(target).catch(() => null)
+        if (!st || !st.isFile()) continue
+        if ((Date.now() - st.mtimeMs) / 1000 < MIN_LOCK_AGE_SECONDS) continue
+        await unlink(target).catch(() => undefined)
+        removed++
+        break
+      }
+    }
+    return removed
   },
 
   /** Point `branch` at `<remote>/<branch>`; a null remote unsets the tracking. */
@@ -6876,15 +6963,31 @@ export const gitService = {
   }
 }
 
-/** True for git's "Unable to create '.../index.lock': File exists" — thrown when
- *  another process (this app's own queue is already serialized, but an IDE's
- *  git integration, a terminal, or another Git GUI open on the same repo) held
- *  the lock for the instant this command tried to start. The lock is almost
- *  always released within milliseconds, so a short retry clears it without
- *  bothering the user — only a genuinely stuck/crashed lock survives all retries. */
-function isIndexLockError(err: unknown): boolean {
+/** Below this age a lock is presumed to belong to a git that is still running,
+ *  and is never removed on the user's behalf. Git's own writes finish in
+ *  milliseconds; a fetch of a large repo holding `packed-refs.lock` is the slow
+ *  end, and stays well inside this. */
+const MIN_LOCK_AGE_SECONDS = 30
+
+/** What a lock file guards, from its path inside the git directory. */
+function lockKind(rel: string): GitLockFile['kind'] {
+  if (rel === 'index.lock') return 'index'
+  if (rel === 'config.lock') return 'config'
+  if (rel === 'packed-refs.lock' || rel.startsWith('refs/') || rel.startsWith('logs/')) return 'ref'
+  return 'other'
+}
+
+/** True for git's "Unable to create '...lock': File exists" — the index lock,
+ *  but equally `packed-refs.lock` or a single `refs/remotes/<remote>/<branch>.lock`
+ *  during a prune. Thrown when another process (this app's own queue is already
+ *  serialized, but an IDE's git integration, a terminal, or another Git GUI open
+ *  on the same repo) held the lock for the instant this command tried to start.
+ *  A live lock is almost always released within milliseconds, so a short retry
+ *  clears it without bothering the user — only a genuinely stuck/crashed lock
+ *  survives all retries, and that one the user is offered a repair for. */
+function isGitLockError(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err)
-  return /index\.lock['"]?:\s*File exists/i.test(msg)
+  return /\.lock['"]?:\s*File exists/i.test(msg)
 }
 
 async function withLockRetry<T>(op: () => Promise<T>): Promise<T> {
@@ -6893,7 +6996,7 @@ async function withLockRetry<T>(op: () => Promise<T>): Promise<T> {
     try {
       return await op()
     } catch (err) {
-      if (attempt >= maxAttempts || !isIndexLockError(err)) throw err
+      if (attempt >= maxAttempts || !isGitLockError(err)) throw err
       await new Promise((r) => setTimeout(r, 150 * attempt))
     }
   }
@@ -6974,6 +7077,7 @@ const READ_METHODS = new Set<string>([
   'open',
   'lastFetchAt',
   'upstreamSuggestion',
+  'staleLocks',
   'log',
   'branches',
   'status',

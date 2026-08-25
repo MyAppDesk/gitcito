@@ -404,6 +404,22 @@ export interface UpstreamSuggestion {
   remoteRefExists: boolean
 }
 
+/**
+ * A `*.lock` file still sitting inside the git directory. Git takes one for the
+ * duration of a write and removes it on the way out; one that outlives the
+ * process that made it (a crash, a killed terminal, a network share that lost
+ * the file handle) blocks every later write with "File exists" until someone
+ * deletes it by hand.
+ */
+export interface GitLockFile {
+  /** Path relative to the git directory: `index.lock`, `refs/remotes/origin/x.lock`. */
+  path: string
+  /** Seconds since the file was last touched — a young lock is a live git process. */
+  ageSeconds: number
+  /** What the lock guards, for copy that does not require reading git internals. */
+  kind: 'index' | 'ref' | 'config' | 'other'
+}
+
 /** One past position of a ref, read from its reflog. */
 export interface RefTip {
   sha: string

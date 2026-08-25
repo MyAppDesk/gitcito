@@ -66,3 +66,36 @@ export function groupPrStacks(prs: PullRequest[]): PrGroup[] {
   for (const pr of prs) if (!claimed.has(pr.id)) groups.push({ kind: 'single', pr })
   return groups
 }
+
+/** How a level of a stack reads: ready to land, or why it cannot. */
+export type StackRowState = 'ready' | 'merged' | 'closed' | 'blocked'
+
+/**
+ * The state of each level in a chain, top first — the same reading GitHub puts
+ * on a stack's rows.
+ *
+ * A level is **blocked** when something below it is closed: its own checks may
+ * be green, but the base it targets is never going to land, so nothing above
+ * that point can merge either. Merged levels below are not a problem — that is
+ * the chain working.
+ */
+export function stackRowStates(chain: PullRequest[]): Map<number, StackRowState> {
+  const out = new Map<number, StackRowState>()
+  // Walk bottom → top so "is anything below me closed" is already known.
+  let blockedFromHere = false
+  for (let i = chain.length - 1; i >= 0; i--) {
+    const pr = chain[i]
+    const own = pr.state ?? 'open'
+    if (own === 'closed') {
+      out.set(pr.id, 'closed')
+      blockedFromHere = true
+      continue
+    }
+    if (own === 'merged') {
+      out.set(pr.id, 'merged')
+      continue
+    }
+    out.set(pr.id, blockedFromHere ? 'blocked' : 'ready')
+  }
+  return out
+}

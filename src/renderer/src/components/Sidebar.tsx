@@ -33,7 +33,8 @@ import {
   Star,
   History,
   Layers,
-  ArrowDown
+  ArrowDown,
+  Ban
 } from 'lucide-react'
 import { FileTree } from './FileTree'
 import { FileSearchBar, EMPTY_FILTER, type FileFilter } from './FileSearchBar'
@@ -43,8 +44,9 @@ import { refIntegrationItems } from '../lib/refMenuItems'
 import { useSettingsStore } from '../stores/settings'
 import { useLaunchStore } from '../stores/launch'
 import { shellApi } from '../infrastructure/api'
-import { groupPrStacks } from '../lib/prStacks'
-import { useT, interp } from '../i18n'
+import { groupPrStacks, stackRowStates, type StackRowState } from '../lib/prStacks'
+import { ciIcon, CI_STATE_KEY } from './CiIcon'
+import { useT, interp, type TranslationKey } from '../i18n'
 import { repoIsGitHub, repoSupportsPrReview } from '../lib/hosting'
 import { folderOpenMenuItems } from '../lib/openWith'
 import { togglePin, selectPinned } from '../lib/pinnedBranches'
@@ -1579,8 +1581,15 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     )
   }
 
+  /** What a non-ready level of a stack is called. */
+  const PR_ROW_STATE_KEY: Record<Exclude<StackRowState, 'ready'>, TranslationKey> = {
+    merged: 'pr.merged',
+    closed: 'pr.closed',
+    blocked: 'pr.blockedDownstack'
+  }
+
   /** One pull request row — shared by the flat list and by a stack's body. */
-  const prRow = (pr: PullRequest): React.JSX.Element => (
+  const prRow = (pr: PullRequest, rowState?: StackRowState): React.JSX.Element => (
         <div
           key={pr.id}
           className="sb-item pr"
@@ -1602,10 +1611,30 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
           }}
           title={pr.title}
         >
-          <GitPullRequest size={12} className={pr.isDraft ? 'pr-draft' : 'pr-open'} />
+          <GitPullRequest
+            size={12}
+            className={
+              rowState === 'merged' || rowState === 'closed' ? `pr-${rowState}` : pr.isDraft ? 'pr-draft' : 'pr-open'
+            }
+          />
           <span className="sb-name">
             #{pr.id} {pr.title}
           </span>
+          {/* The checks on the head, read with the list. Hover for the counts;
+              the row is too narrow to spell them out. */}
+          {pr.ci && (
+            <span className="sb-pr-ci" title={`${t(CI_STATE_KEY[pr.ci])}${pr.ciSummary ? ` — ${pr.ciSummary}` : ''}`}>
+              {ciIcon(pr.ci, 11)}
+            </span>
+          )}
+          {/* A word like "Blocked downstack" does not fit a sidebar row without
+              evicting the title, so the state is a glyph with the words on
+              hover — closed and merged are already legible from the icon. */}
+          {rowState === 'blocked' && (
+            <span className="sb-pr-flag blocked" title={t('pr.blockedDownstack')}>
+              <Ban size={11} />
+            </span>
+          )}
           {/* Unlike the detail view, previewing works on every host — the PR
               head is a plain ref, so there is no provider check here. */}
           <span
@@ -1850,24 +1879,18 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
                 <span className="sb-count">{group.prs.length}</span>
               </div>
               {openPrStacks[group.prs[0].id] && (
+                // A continuous rail, the way GitHub draws it: the line is the
+                // connector, so the rows stay one line each and no arrow has to
+                // be squeezed between them.
                 <div className="sb-pr-stack-body">
-                  {group.prs.map((pr, i) => (
-                    <Fragment key={pr.id}>
-                      {prRow(pr)}
-                      {/* Where this one lands: the next row down, or the base
-                          the whole chain sits on. The order is already the
-                          chain's; the arrow says which way it flows. */}
-                      <div
-                        className="sb-pr-stack-link"
-                        title={interp(t('stack.mergesInto'), {
-                          target: i === group.prs.length - 1 ? group.base : group.prs[i + 1].sourceBranch
-                        })}
-                      >
-                        <ArrowDown size={10} />
-                        <span>{i === group.prs.length - 1 ? group.base : group.prs[i + 1].sourceBranch}</span>
-                      </div>
-                    </Fragment>
-                  ))}
+                  {(() => {
+                    const states = stackRowStates(group.prs)
+                    return group.prs.map((pr) => prRow(pr, states.get(pr.id)))
+                  })()}
+                  <div className="sb-pr-stack-foot" title={interp(t('stack.mergesInto'), { target: group.base })}>
+                    <span className="sb-pr-stack-dot" />
+                    <span className="sb-pr-stack-chip">{group.base}</span>
+                  </div>
                 </div>
               )}
             </div>

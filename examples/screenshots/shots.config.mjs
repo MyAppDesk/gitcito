@@ -723,6 +723,68 @@ export const shots = [
   },
   {
     // Branch stack — dependent branches with restack.
+    // The sidebar's pull-request list with a stack in it. A real host cannot be
+    // reached from a shot, so the PRs are seeded straight into the store — the
+    // grouping and the rail are what is being photographed, and both are pure
+    // renderer work over that list.
+    out: 'pr-stack-list',
+    repos: ['stacked-branches'],
+    themes: ['light'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['stacked-branches']
+      await page.evaluate((p) => {
+        const pr = (id, head, base, title, extra = {}) => ({
+          id,
+          title,
+          author: 'you',
+          sourceBranch: head,
+          targetBranch: base,
+          url: `https://github.com/acme/app/pull/${id}`,
+          isDraft: false,
+          stackNumber: 12,
+          state: 'open',
+          ...extra
+        })
+        window.__shot.repo.getState().patch(p, {
+          prs: [
+            pr(16, 'chore-4', 'chore-3', 'chore: polish the empty state', {
+              ci: 'pending',
+              ciSummary: '2 passed · 1 running'
+            }),
+            pr(15, 'chore-3', 'chore-2', 'chore: extract the row component', {
+              ci: 'failure',
+              ciSummary: '2 passed · 1 failing'
+            }),
+            pr(14, 'chore-2', 'chore-1', 'chore: type the api client', { ci: 'success', ciSummary: '3 passed' }),
+            pr(13, 'chore-1', 'choremain', 'chore: scaffold the settings page', {
+              state: 'closed',
+              ci: 'success',
+              ciSummary: '3 passed'
+            }),
+            {
+              ...pr(9, 'docs/readme', 'main', 'docs: rewrite the getting started page', {
+                ci: 'success',
+                ciSummary: '1 passed'
+              }),
+              stackNumber: undefined
+            }
+          ]
+        })
+      }, repo)
+      await page.waitForTimeout(300)
+      const section = page.locator('.sb-header', { hasText: 'PULL REQUESTS' }).first()
+      if (await section.count()) {
+        await section.click()
+        await page.waitForTimeout(250)
+      }
+      const stackRow = page.locator('.pr-stack-head').first()
+      if (await stackRow.count()) {
+        await stackRow.click()
+        await page.waitForTimeout(400)
+      }
+    }
+  },
+  {
     // The submit screen, on its plan step: what a submit is about to open, and
     // against what. The result step needs a live host, so this is the half that
     // can be photographed deterministically.

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Archive, GitCommitHorizontal, Tag, Laptop, Cloud, Check, Star, Settings2, Pencil, Plus, Minus, CheckCircle2, XCircle, Clock, MinusCircle, StickyNote, FlaskConical } from 'lucide-react'
+import { ciIcon, CI_STATE_KEY } from './CiIcon'
 import type { CiState, CiStatus, GraphCommit, StashInfo, GraphColumnId, GraphFlowColumnId, GraphColumns, FileEntry, CommitMenuProbe, GraphFocus } from '../../../shared/types'
 import { defaultGraphColumns, defaultGraphColumnOrder, defaultGraphStyle } from '../../../shared/types'
 import { GraphHeaderFilter, type FilterOption } from './GraphHeaderFilter'
@@ -165,20 +166,6 @@ function timeAgo(unixSeconds: number): string {
   if (diff < 86400) return `${Math.floor(diff / 3600)}h`
   if (diff < 86400 * 30) return `${Math.floor(diff / 86400)}d`
   return new Date(unixSeconds * 1000).toLocaleDateString()
-}
-
-const CI_STATE_KEY: Record<CiState, TranslationKey> = {
-  success: 'graph.ciSuccess',
-  failure: 'graph.ciFailure',
-  pending: 'graph.ciPending',
-  neutral: 'graph.ciNeutral'
-}
-
-function ciIcon(state: CiState, size: number, cls = ''): React.JSX.Element {
-  if (state === 'success') return <CheckCircle2 size={size} className={`${cls} ci-success`} />
-  if (state === 'failure') return <XCircle size={size} className={`${cls} ci-failure`} />
-  if (state === 'pending') return <Clock size={size} className={`${cls} ci-pending ci-pulse`} />
-  return <MinusCircle size={size} className={`${cls} ci-neutral`} />
 }
 
 function CiBadge({ status, onClick }: { status: CiStatus; onClick: () => void }): React.JSX.Element {

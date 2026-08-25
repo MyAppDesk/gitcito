@@ -9,7 +9,7 @@ import { timeAgo, isStale, STALE_AFTER_MS } from '../src/renderer/src/lib/timeAg
 import { isLockErrorMessage, lockRepairPlan } from '../src/renderer/src/lib/gitLocks'
 import { stackOrder, moveLevel, adoptableBranches, targetFor } from '../src/renderer/src/lib/stackOrder'
 import { planStackSubmit, summariseStackPlan } from '../src/shared/stackPr'
-import { groupPrStacks } from '../src/renderer/src/lib/prStacks'
+import { groupPrStacks, stackRowStates } from '../src/renderer/src/lib/prStacks'
 import { HUGE_SECTION, openUnlessHuge } from '../src/renderer/src/lib/sidebarSections'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -4768,5 +4768,38 @@ describe('folding pull requests back into stacks', () => {
   it('lists a cycle rather than looping on it', () => {
     const groups = groupPrStacks([pr(1, 'a', 'b'), pr(2, 'b', 'a')])
     expect(groups.map((g) => g.kind)).toEqual(['single', 'single'])
+  })
+})
+
+describe('how each level of a stack reads', () => {
+  const pr = (id: number, head: string, base: string, state?: 'open' | 'closed' | 'merged'): PullRequest => ({
+    id,
+    title: `pr ${id}`,
+    author: 'a',
+    sourceBranch: head,
+    targetBranch: base,
+    url: `u${id}`,
+    isDraft: false,
+    ...(state ? { state } : {})
+  })
+
+  it('calls every level ready while the chain is intact', () => {
+    const chain = [pr(3, 'c', 'b'), pr(2, 'b', 'a'), pr(1, 'a', 'main')]
+    expect([...stackRowStates(chain).values()]).toEqual(['ready', 'ready', 'ready'])
+  })
+
+  it('blocks everything above a closed level, and says so about the closed one', () => {
+    const chain = [pr(3, 'c', 'b'), pr(2, 'b', 'a'), pr(1, 'a', 'main', 'closed')]
+    const states = stackRowStates(chain)
+    expect(states.get(1)).toBe('closed')
+    expect(states.get(2)).toBe('blocked')
+    expect(states.get(3)).toBe('blocked')
+  })
+
+  it('does not treat a merged level below as a problem', () => {
+    const chain = [pr(3, 'c', 'b'), pr(2, 'b', 'a'), pr(1, 'a', 'main', 'merged')]
+    const states = stackRowStates(chain)
+    expect(states.get(1)).toBe('merged')
+    expect(states.get(3)).toBe('ready')
   })
 })

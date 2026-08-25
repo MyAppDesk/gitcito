@@ -13499,19 +13499,75 @@ mark.find-hit.active {
   font-size: 10.5px;
   color: var(--text-3);
 }
-.sb-pr-stack-body { border-inline-start: 1px solid var(--border); margin-inline-start: 12px; }
-.sb-pr-stack-link {
+/* The chain, drawn the way a stack reads: one rail behind the rows, each PR's
+   own icon sitting on it, and the branch it all lands on at the foot. The rail
+   is placed on the icon's centre — 2px row border + 26px row padding + half of
+   a 12px icon — so it threads the icons rather than running beside them. */
+.sb-pr-stack-body { position: relative; }
+.sb-pr-stack-body::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: 33.25px;
+  top: 2px;
+  bottom: 12px;
+  width: 1.5px;
+  background: var(--border-strong, var(--border));
+}
+/* The icon punches through the rail: a solid disc slightly larger than the
+   glyph, so the line reads as passing behind it rather than touching it. */
+.sb-pr-stack-body .sb-item.pr > svg:first-of-type {
+  position: relative;
+  z-index: 1;
+  box-sizing: content-box;
+  padding: 1.5px;
+  margin: -1.5px;
+  background: var(--bg-1);
+  border-radius: 50%;
+}
+.sb-pr-stack-body .sb-item.pr:hover > svg:first-of-type { background: var(--bg-3); }
+.sb-pr-stack-foot {
   display: flex;
   align-items: center;
-  gap: 3px;
-  padding: 0 0 0 10px;
-  font-size: 10px;
-  line-height: 1.4;
-  color: var(--text-3);
+  gap: 8px;
+  padding: 2px 10px 6px 30px;
 }
-.sb-pr-stack-link span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-/* The last link is the ground the chain lands on, not another PR. */
-.sb-pr-stack-body > .sb-pr-stack-link:last-child { color: var(--text-2); }
+.sb-pr-stack-dot {
+  position: relative;
+  z-index: 1;
+  width: 8px;
+  height: 8px;
+  border: 1.5px solid var(--text-3);
+  border-radius: 50%;
+  background: var(--bg-1);
+  flex: 0 0 auto;
+}
+.sb-pr-ci { display: flex; align-items: center; flex: 0 0 auto; }
+.sb-pr-flag { display: flex; align-items: center; flex: 0 0 auto; }
+.sb-pr-flag.blocked { color: #e0a020; }
+/* Inside a stack the row is one of four, and the title has to survive: the
+   per-row actions wait for hover, the state glyphs do not. */
+.sb-pr-stack-body .sb-item.pr .sb-pr-preview,
+.sb-pr-stack-body .sb-item.pr .sb-ai-review,
+.sb-pr-stack-body .sb-item.pr .sb-pr-open { display: none; }
+.sb-pr-stack-body .sb-item.pr:hover .sb-pr-preview,
+.sb-pr-stack-body .sb-item.pr:hover .sb-ai-review,
+.sb-pr-stack-body .sb-item.pr:hover .sb-pr-open { display: flex; }
+.sb-pr-stack-body .sb-item.pr .sb-name { flex: 1 1 auto; min-width: 0; }
+
+/* A level that cannot land reads quieter than one that can. */
+.sb-item.pr:has(svg.pr-closed) .sb-name { text-decoration: line-through; opacity: 0.7; }
+svg.pr-merged { color: #9a7ae5; }
+svg.pr-closed { color: var(--red, #e5484d); }
+.sb-pr-stack-chip {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--bg-3);
+  color: var(--text-2);
+  font-size: 10.5px;
+}
 
 
 

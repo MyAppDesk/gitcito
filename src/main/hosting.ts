@@ -325,25 +325,65 @@ async function listPullRequests(
       draft: boolean
       html_url: string
       user: { login: string }
-      head: { ref: string }
+      head: { ref: string; sha: string }
       base: { ref: string }
       // Present once GitHub's stacked pull requests are in play; absent on a
       // server without them, which is the same as "this one is on its own".
       stack?: { number: number } | null
     }>
-    return {
-      provider: 'github',
-      prs: data.map((p) => ({
-        id: p.number,
-        title: p.title,
-        author: p.user.login,
-        sourceBranch: p.head.ref,
-        targetBranch: p.base.ref,
-        url: p.html_url,
-        isDraft: p.draft,
-        stackNumber: p.stack?.number
-      }))
+    const prs: PullRequest[] = data.map((p) => ({
+      id: p.number,
+      title: p.title,
+      author: p.user.login,
+      sourceBranch: p.head.ref,
+      targetBranch: p.base.ref,
+      url: p.html_url,
+      isDraft: p.draft,
+      stackNumber: p.stack?.number,
+      state: 'open',
+      headSha: p.head.sha
+    }))
+    if (!auth) return { provider: 'github', prs }
+
+    // A stack is only legible if the levels that are already closed or merged
+    // are in the list too, and `state=open` hides exactly those. GitHub knows
+    // the membership, so ask it — once per stack, not once per level.
+    const stackNumbers = [...new Set(prs.map((p) => p.stackNumber).filter((n): n is number => n !== undefined))]
+    const known = new Set(prs.map((p) => p.id))
+    for (const stackNumber of stackNumbers) {
+      const members = await ghJson<{ pull_requests?: GithubStackMember[] }>(
+        `https://api.github.com/repos/${parsed.owner}/${parsed.repo}/stacks/${stackNumber}`,
+        auth.token
+      ).catch(() => null)
+      for (const m of members?.pull_requests ?? []) {
+        if (!m?.number || known.has(m.number)) continue
+        known.add(m.number)
+        prs.push({
+          id: m.number,
+          title: m.title ?? `#${m.number}`,
+          author: m.user?.login ?? '',
+          sourceBranch: m.head?.ref ?? '',
+          targetBranch: m.base?.ref ?? '',
+          url: m.html_url ?? `https://github.com/${parsed.owner}/${parsed.repo}/pull/${m.number}`,
+          isDraft: m.draft ?? false,
+          stackNumber,
+          state: m.merged_at ? 'merged' : m.state === 'closed' ? 'closed' : 'open',
+          headSha: m.head?.sha
+        })
+      }
     }
+
+    // The checks on each head, in the same batched shape the graph already
+    // uses — one request per pull request, only when the list is refreshed.
+    const shas = prs.map((p) => p.headSha).filter((sha): sha is string => !!sha)
+    const ci = await fetchCiStatuses(remoteUrl, shas, auth.token).catch(() => ({}) as Record<string, CiStatus>)
+    for (const pr of prs) {
+      const status = pr.headSha ? ci[pr.headSha] : undefined
+      if (!status) continue
+      pr.ci = status.state
+      pr.ciSummary = summariseChecks(status)
+    }
+    return { provider: 'github', prs }
   }
 
   // Azure DevOps
@@ -1814,6 +1854,30 @@ function ghCiState(conclusion: string | null, status: string): CiState {
   if (conclusion === 'success') return 'success'
   if (conclusion === 'neutral' || conclusion === 'skipped') return 'neutral'
   return 'failure'
+}
+
+/** The shape of a stack member, as much of it as we rely on. */
+interface GithubStackMember {
+  number: number
+  title?: string
+  html_url?: string
+  draft?: boolean
+  state?: string
+  merged_at?: string | null
+  user?: { login: string }
+  head?: { ref: string; sha: string }
+  base?: { ref: string }
+}
+
+/** "3 passed · 1 failing" — the row shows a dot, the tooltip shows this. */
+function summariseChecks(status: CiStatus): string {
+  const count = (state: CiState): number => status.jobs.filter((j) => j.state === state).length
+  const parts: string[] = []
+  if (count('success')) parts.push(`${count('success')} passed`)
+  if (count('failure')) parts.push(`${count('failure')} failing`)
+  if (count('pending')) parts.push(`${count('pending')} running`)
+  if (count('neutral')) parts.push(`${count('neutral')} skipped`)
+  return parts.join(' · ')
 }
 
 async function fetchCiStatuses(

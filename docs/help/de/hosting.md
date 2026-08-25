@@ -38,6 +38,18 @@ Requests zu einem [nativen Stapel](stacks.md) gehören, und sonst die Refs selbs
 zweite Regel ist der Grund, warum das auch auf GitLab, Bitbucket und Azure
 DevOps funktioniert, und für Ketten von früher.
 
+![Ein Stapel in der Pull-Request-Liste](../../screenshots/pr-stack-list.webp)
+
+Jede Zeile trägt den Zustand der **Checks** ihres Heads — für die Zahlen darüber
+fahren — und auf GitHub auch die bereits geschlossenen oder gemergten Ebenen, die
+eine Liste offener Pull Requests verstecken würde. Eine Ebene über einer
+**geschlossenen** gilt als blockiert: ihre eigenen Checks mögen grün sein, aber
+der Branch, auf den sie zielt, wird nie landen. Die Aktionen der Zeile erscheinen
+beim Überfahren, damit der Titel die Breite behält.
+
+Die Checks zu lesen kostet eine Anfrage pro Pull Request, und nur beim
+Aktualisieren der Liste.
+
 ## Reviewen — GitHub und GitLab
 
 | | |

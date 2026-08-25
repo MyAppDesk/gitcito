@@ -36,6 +36,18 @@ appartengono a una [pila nativa](stacks.md), altrimenti le ref stesse: una pull
 request la cui base è la testa di un’altra si appoggia su di essa. La seconda
 regola è ciò che lo fa funzionare anche su GitLab, Bitbucket e Azure DevOps.
 
+![Una pila nell’elenco delle pull request](../../screenshots/pr-stack-list.webp)
+
+Ogni riga porta lo stato dei **check** della sua testa — passa sopra per i
+conteggi — e, su GitHub, anche i livelli già chiusi o uniti, che un elenco di PR
+aperte nasconderebbe. Un livello sopra uno **chiuso** viene segnato come
+bloccato: i suoi check possono essere verdi, ma il ramo a cui punta non atterrerà
+mai. Le azioni della riga compaiono al passaggio del mouse, così il titolo tiene
+la larghezza.
+
+Leggere i check costa una richiesta per pull request, e solo quando l’elenco
+viene aggiornato.
+
 ## Revisione — GitHub e GitLab
 
 | | |

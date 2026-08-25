@@ -35,6 +35,17 @@ Grupę tworzą dwie rzeczy: własny numer stosu GitHuba, gdy PR-y należą do
 jest głowa innego, stoi na nim. Ta druga reguła sprawia, że działa to również na
 GitLabie, Bitbuckecie i Azure DevOps.
 
+![Stos na liście pull requestów](../../screenshots/pr-stack-list.webp)
+
+Każdy wiersz niesie stan **checków** swojej głowy — najedź, aby zobaczyć liczby —
+a na GitHubie także poziomy już zamknięte lub scalone, które lista otwartych PR-ów
+by ukryła. Poziom nad **zamkniętym** jest oznaczony jako zablokowany: jego checki
+mogą być zielone, ale gałąź, w którą celuje, nigdy nie wyląduje. Akcje wiersza
+pojawiają się po najechaniu, żeby tytuł zachował szerokość.
+
+Odczyt checków kosztuje jedno zapytanie na pull request i tylko przy odświeżaniu
+listy.
+
 ## Recenzowanie — GitHub i GitLab
 
 | | |

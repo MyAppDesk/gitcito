@@ -36,6 +36,18 @@ GitHub'ın kendi yığın numarası; değilse ref'lerin kendisi — temeli bir b
 ucu olan pull request onun üstünde durur. İkinci kural, bunun GitLab, Bitbucket
 ve Azure DevOps'ta da çalışmasının sebebidir.
 
+![Pull request listesindeki bir yığın](../../screenshots/pr-stack-list.webp)
+
+Her satır kendi ucundaki **kontrollerin** durumunu taşır — sayılar için üzerine
+gel — ve GitHub'da ayrıca çoktan kapanmış ya da merge edilmiş katmanları da; açık
+PR listesi bunları gizlerdi. **Kapalı** bir katmanın üstündeki katman engellenmiş
+olarak işaretlenir: kendi kontrolleri yeşil olabilir, ama hedeflediği dal asla
+inmeyecektir. Satırın eylemleri üzerine gelince çıkar, başlık genişliğini korusun
+diye.
+
+Kontrolleri okumak pull request başına bir istek eder, o da yalnızca liste
+yenilenince.
+
 ## İnceleme — GitHub ve GitLab
 
 | | |

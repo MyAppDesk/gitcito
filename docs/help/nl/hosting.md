@@ -36,6 +36,18 @@ bij een [native stapel](stacks.md) horen, en anders de refs zelf — een pull
 request wiens basis de head van een andere is, staat erop. Die tweede regel is
 waarom dit ook op GitLab, Bitbucket en Azure DevOps werkt.
 
+![Een stapel in de pull-requestlijst](../../screenshots/pr-stack-list.webp)
+
+Elke regel draagt de staat van de **checks** van zijn head — hover voor de
+aantallen — en op GitHub ook de niveaus die al gesloten of gemerged zijn, die een
+lijst met open PR's zou verbergen. Een niveau boven een **gesloten** niveau wordt
+als geblokkeerd gemarkeerd: zijn eigen checks mogen groen zijn, maar de branch
+waarop hij mikt gaat nooit landen. De acties van de regel verschijnen bij hover,
+zodat de titel de breedte houdt.
+
+De checks lezen kost één verzoek per pull request, en alleen bij het verversen
+van de lijst.
+
 ## Reviewen — GitHub en GitLab
 
 | | |

@@ -35,6 +35,17 @@ pertencem a uma [pilha nativa](stacks.md), e senão as próprias refs — um pul
 request cuja base é o head de outro se apoia nele. Essa segunda regra é o que faz
 isso funcionar também no GitLab, Bitbucket e Azure DevOps.
 
+![Uma pilha na lista de pull requests](../../screenshots/pr-stack-list.webp)
+
+Cada linha carrega o estado dos **checks** do seu head — passe o mouse para ver as
+contagens — e, no GitHub, também os níveis já fechados ou mesclados, que uma lista
+de PRs abertos esconderia. Um nível acima de um **fechado** fica marcado como
+bloqueado: os checks dele podem estar verdes, mas o branch que ele mira nunca vai
+aterrissar. As ações da linha aparecem no hover, para o título manter a largura.
+
+Ler os checks custa uma requisição por pull request, e só quando a lista é
+atualizada.
+
 ## Revisando — GitHub e GitLab
 
 | | |

@@ -27,6 +27,15 @@ keywords: pull request 拉取请求 PR merge request 合并请求 GitHub GitLab 
 否则看 ref 本身——基底是另一个 PR 的 head，就说明它压在那个上面。第二条规则正是它在 GitLab、
 Bitbucket 和 Azure DevOps 上同样管用的原因。
 
+![PR 列表里的堆栈](../../screenshots/pr-stack-list.webp)
+
+每一行都带着它 head 的**检查**状态——悬停能看到数量——在 GitHub 上还会列出已经关闭或已
+合并的层，这些在“只看开着的 PR”的列表里本来是看不到的。位于**已关闭**那层之上的层会被标
+成受阻：它自己的检查也许是绿的，但它指向的分支永远不会落地了。行上的操作按钮悬停才出现，
+好把宽度让给标题。
+
+读取检查的代价是每个 PR 一个请求，而且只在刷新列表时发生。
+
 ## 评审——GitHub 与 GitLab
 
 | | |

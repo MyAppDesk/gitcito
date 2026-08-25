@@ -36,6 +36,17 @@ pull request whose base is another's head sits on it. The second rule is why
 this also works on GitLab, Bitbucket and Azure DevOps, and for chains opened
 before any of that existed.
 
+![A stack in the pull request list](../screenshots/pr-stack-list.webp)
+
+Each row carries the state of its head's **checks** — hover for the counts —
+and, on GitHub, the levels that are already closed or merged, which a list of
+open pull requests would otherwise hide. A level above a **closed** one is
+marked blocked: its own checks may be green, but the branch it targets is never
+going to land. The row's actions appear on hover, so the title keeps the width.
+
+Reading the checks costs one request per pull request, and only when the list is
+refreshed.
+
 ## Reviewing — GitHub and GitLab
 
 | | |

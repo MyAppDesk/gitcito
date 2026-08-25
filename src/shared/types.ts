@@ -595,6 +595,14 @@ export interface PullRequest {
   isDraft: boolean
   /** GitHub's own stack number, when this PR belongs to a native stack. */
   stackNumber?: number
+  /** Where it stands. Absent means open — the state a plain list implies. */
+  state?: 'open' | 'closed' | 'merged'
+  /** The head commit, so its checks can be looked up. */
+  headSha?: string
+  /** Rolled-up state of the head commit's checks, when they were read. */
+  ci?: CiState
+  /** "2 passed · 1 failing", for the row's tooltip. */
+  ciSummary?: string
 }
 
 export type HostingProvider = 'github' | 'azure' | 'gitlab' | 'bitbucket' | null

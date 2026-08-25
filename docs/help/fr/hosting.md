@@ -37,6 +37,18 @@ une pull request dont la base est la tête d’une autre repose sur elle. Cette
 seconde règle est ce qui fait que cela marche aussi sur GitLab, Bitbucket et
 Azure DevOps, et pour des chaînes ouvertes avant tout cela.
 
+![Une pile dans la liste des pull requests](../../screenshots/pr-stack-list.webp)
+
+Chaque ligne porte l’état des **vérifications** de sa tête — survolez pour les
+comptes — et, sur GitHub, les niveaux déjà fermés ou fusionnés, qu’une liste de
+PR ouvertes masquerait. Un niveau au-dessus d’un niveau **fermé** est marqué
+bloqué : ses vérifications peuvent être vertes, mais la branche qu’il vise
+n’atterrira jamais. Les actions de la ligne apparaissent au survol, pour que le
+titre garde la largeur.
+
+Lire les vérifications coûte une requête par pull request, et seulement au
+rafraîchissement de la liste.
+
 ## Relire — GitHub et GitLab
 
 | | |

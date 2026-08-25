@@ -37,6 +37,18 @@ request cuya base es la cabeza de otro se apoya en él. Esa segunda regla es la
 que hace que también funcione en GitLab, Bitbucket y Azure DevOps, y con cadenas
 abiertas antes de que nada de esto existiera.
 
+![Una pila en la lista de pull requests](../../screenshots/pr-stack-list.webp)
+
+Cada fila lleva el estado de los **checks** de su cabeza —pasa el ratón para ver
+las cuentas— y, en GitHub, también los niveles ya cerrados o fusionados, que una
+lista de PR abiertos escondería. Un nivel por encima de uno **cerrado** se marca
+como bloqueado: sus checks pueden estar en verde, pero la rama a la que apunta no
+va a aterrizar nunca. Las acciones de la fila salen al pasar el ratón, para que
+el título conserve el ancho.
+
+Leer los checks cuesta una petición por pull request, y solo al refrescar la
+lista.
+
 ## Revisar — GitHub y GitLab
 
 | | |

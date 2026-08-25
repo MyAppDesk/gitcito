@@ -157,7 +157,7 @@ export type ModalSpec =
   | { kind: 'cheatsheet' }
   | { kind: 'ai-accounts-notice' }
   | { kind: 'create-issue'; repoPath: string; remoteUrl: string }
-  | { kind: 'repo-settings'; repoPath: string; tab?: 'general' | 'info' | 'vault' | 'analytics' | 'insights' | 'history' | 'logs' }
+  | { kind: 'repo-settings'; repoPath: string; tab?: 'general' | 'config' | 'info' | 'vault' | 'analytics' | 'insights' | 'history' | 'logs' }
   | { kind: 'secure-share'; repoPath: string; initialMode?: 'export' | 'import' }
   | { kind: 'secure-workspace'; initialMode?: 'export' | 'import' }
   | { kind: 'bisect'; repoPath: string }

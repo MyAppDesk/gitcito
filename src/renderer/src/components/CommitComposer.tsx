@@ -9,7 +9,8 @@ import { useSettingsStore } from '../stores/settings'
 import { FileListView } from './FileListView'
 import { MatchSummary, matchesByFile } from './SearchMatches'
 import { Avatar } from './Avatar'
-import { lintCommit, subjectCounterLevel, SUBJECT_IDEAL_LEN, CC_TYPES, parseCcPrefix, applyCcType, GITMOJIS, parseGitmojiPrefix, applyGitmoji, parseTicketPrefix, ticketFromBranch } from '../lib/commitLint'
+import { lintCommit, subjectCounterLevel, SUBJECT_IDEAL_LEN, CC_TYPES, parseCcPrefix, applyCcType, applyCcScope, currentCcScope, GITMOJIS, parseGitmojiPrefix, applyGitmoji, parseTicketPrefix, ticketFromBranch } from '../lib/commitLint'
+import { appendTrailers, configTrailers } from '../lib/repoConfig'
 import { isSecretFile } from '../lib/secrets'
 import {
   FileSearchBar,
@@ -101,6 +102,15 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
     histIdx.current = -1
     setSummary(applyCcType(summary, ty))
   }
+  // Scopes the repository itself declares in `.gitcito.json`. When it lists
+  // them, the composer stops being a free-text field and offers the real set —
+  // which is the difference between `feat(renderer)` and `feat(rendererr)`.
+  const repoConfig = repo.config?.config ?? null
+  const declaredScopes = repoConfig?.commit?.scopes ?? []
+  const applyCcScopeToDraft = (scope: string): void => {
+    histIdx.current = -1
+    setSummary(applyCcScope(summary, scope))
+  }
   const currentGitmoji = parseGitmojiPrefix(summary).emoji
   const applyGitmojiToDraft = (emoji: string): void => {
     histIdx.current = -1
@@ -151,6 +161,20 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
     const key = v.trim().toUpperCase()
     setSummary(/^[A-Z][A-Z0-9]+-\d+$/.test(key) ? `${key}: ${rest}` : rest)
   }
+  // A repo that asks for `commit.ticketFromBranch` gets the key filled in from
+  // the branch name — but only into an empty composer, so it can never rewrite
+  // a subject someone is in the middle of typing.
+  const wantsBranchTicket = repoConfig?.commit?.ticketFromBranch === true
+  const branchTicket = ticketFromBranch(repo.branches.current)
+  useEffect(() => {
+    if (!wantsBranchTicket || !branchTicket) return
+    if (summary.trim() || ticketField) return
+    setTicketField(branchTicket)
+    setSummary(`${branchTicket}: `)
+    // Keyed on the branch: switching branches offers that branch's key once.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wantsBranchTicket, branchTicket])
+
   const [amend, setAmend] = useState(false)
   const summaryRef = useRef<HTMLInputElement>(null)
   // Collapsed by default — the commit-style row is "advanced" and toggled by the
@@ -737,6 +761,13 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
     if (activeProfile().ai.coAuthor !== false && !message.includes(trailer)) {
       message = `${message}\n\n${trailer}`
     }
+    // Trailers the repository asks every commit to carry (`Refs: {ticket}`…).
+    // Dropped rather than half-written when their placeholder has nothing to
+    // fill it — see configTrailers.
+    message = appendTrailers(
+      message,
+      configTrailers(repoConfig, { ticket: parseTicketPrefix(summary).ticket || branchTicket, branch: repo.branches.current })
+    )
     // Pre-commit guard: flag credential-looking files and oversized blobs before
     // they enter history. Both are hard to fully erase later.
     const flagged: { path: string; reason: string }[] = []
@@ -1109,6 +1140,22 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
                   {CC_TYPES.map((ty) => (
                     <option key={ty} value={ty}>
                       {ty}
+                    </option>
+                  ))}
+                </select>
+              )}
+              {commitStyle === 'conventional' && declaredScopes.length > 0 && (
+                <select
+                  className="commit-type"
+                  title={t('composer.ccScope')}
+                  value={currentCcScope(summary)}
+                  disabled={!currentCcType}
+                  onChange={(e) => applyCcScopeToDraft(e.target.value)}
+                >
+                  <option value="">{t('composer.ccScopePlaceholder')}</option>
+                  {declaredScopes.map((sc) => (
+                    <option key={sc} value={sc}>
+                      {sc}
                     </option>
                   ))}
                 </select>

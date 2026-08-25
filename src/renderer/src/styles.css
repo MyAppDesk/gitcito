@@ -15290,3 +15290,91 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .todos-detail-actions { display: flex; gap: 8px; margin-top: auto; padding-top: 6px; }
 .todos-footer { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
 .todos-footer .btn { margin-inline-start: auto; }
+
+/* ─── Repo config (.gitcito.json) ─────────────────────────────────────────── */
+
+/* Like the todo chip, this one has to climb out of the status bar's muted
+   opacity — a warning nobody can see is not a warning. */
+.status-doctor-btn { color: var(--yellow, #d29922); opacity: 0.95; }
+.status-doctor-btn.has-fail { color: var(--red, #f85149); }
+
+.rc { display: flex; flex-direction: column; gap: 4px; }
+.rc-section { margin-top: 18px; display: flex; flex-direction: column; gap: 4px; }
+.rc-section > h4 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 2px;
+}
+.rc-head-btn { margin-inline-start: auto; }
+.rc-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 14px;
+  margin-top: 10px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+}
+.rc-list { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; align-items: flex-start; }
+.rc-row { display: flex; align-items: center; gap: 6px; width: 100%; }
+.rc-label { flex: none; font-size: 12px; color: var(--text-2); }
+.rc-input {
+  flex: 1;
+  min-width: 0;
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-1);
+  color: var(--text-0);
+  font-size: 12px;
+  outline: none;
+}
+.rc-input:focus { border-color: var(--accent); }
+/* Pattern / path columns hold short tokens; the free-text column takes the rest. */
+.rc-narrow { flex: 0 0 150px; }
+.rc-del { flex: none; }
+.rc-check { display: flex; align-items: center; gap: 7px; margin-top: 8px; font-size: 12px; cursor: pointer; }
+.rc-check input { margin: 0; cursor: pointer; }
+
+.rc-preview { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+.rc-preview-out {
+  padding: 7px 9px;
+  border-radius: 6px;
+  background: var(--bg-2);
+  font-size: 12px;
+  word-break: break-word;
+}
+
+.rc-issues {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--yellow, #d29922);
+  background: color-mix(in srgb, var(--yellow, #d29922) 8%, transparent);
+}
+.rc-issues h4 { margin: 0 0 6px; }
+.rc-issue { display: flex; gap: 8px; font-size: 12px; padding: 2px 0; }
+.rc-issue code { flex: none; color: var(--text-2); }
+
+.rc-doctor-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  font-size: 12px;
+  border-bottom: 1px solid var(--border-subtle, var(--border));
+}
+.rc-doctor-row:last-of-type { border-bottom: none; }
+.rc-doctor-icon { flex: none; }
+.rc-doctor-row.is-ok .rc-doctor-icon { color: var(--green, #3fb950); }
+.rc-doctor-row.is-warn .rc-doctor-icon { color: var(--yellow, #d29922); }
+.rc-doctor-row.is-fail .rc-doctor-icon { color: var(--red, #f85149); }
+.rc-doctor-name { flex: 0 0 130px; }
+.rc-doctor-detail { flex: 1; min-width: 0; color: var(--text-2); }
+.rc-doctor-row button { flex: none; margin-inline-start: auto; }
+
+/* The save row carries a hint, so it cannot use the modal's default right-align. */
+.rc-actions { align-items: center; gap: 10px; }
+.rc-actions .settings-hint { flex: 1; margin: 0; }

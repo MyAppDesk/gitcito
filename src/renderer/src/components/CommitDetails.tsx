@@ -368,7 +368,13 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
             <FilePenLine size={13} />
           </button>
         </div>
-        <p className="commit-subject">{autolink(commit.subject, remoteWebUrl(repo.remotes.find((r) => r.name === 'origin')?.url ?? repo.remotes[0]?.url))}</p>
+        <p className="commit-subject">
+          {autolink(
+            commit.subject,
+            remoteWebUrl(repo.remotes.find((r) => r.name === 'origin')?.url ?? repo.remotes[0]?.url),
+            repo.config?.config?.links?.tickets
+          )}
+        </p>
 
         {/* Full-bleed like the subject above it, and absent entirely when there
             is nothing to show — an empty box on every commit is noise. */}

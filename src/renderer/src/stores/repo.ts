@@ -1,6 +1,9 @@
 import { create } from 'zustand'
 import type {
   BranchesPayload,
+  DoctorCheck,
+  RepoConfig,
+  RepoConfigResult,
   CiStatus,
   ConflictContext,
   ConflictOpKind,
@@ -40,6 +43,7 @@ import { useUIStore } from './ui'
 import { useSettingsStore } from './settings'
 import { worktreeForBranch, worktreeTabName } from '../lib/worktrees'
 import { isSecretFile } from '../lib/secrets'
+import { isProtectedBranch } from '../lib/repoConfig'
 import { commitHookFailureHint } from '../lib/commitLint'
 import { isLockErrorMessage, lockRepairPlan } from '../lib/gitLocks'
 import { parseRouteConflict } from '../lib/stackOrder'
@@ -49,6 +53,10 @@ import { t, interp } from '../i18n'
 
 /** Repos already warned this session about pushing tracked secrets (don't nag). */
 const secretPushWarned = new Set<string>()
+
+/** Repos whose `.gitcito.json` push checklist has been shown this session. A
+ *  reminder that appears on every push is a reminder nobody reads. */
+const pushChecklistShown = new Set<string>()
 
 export type Selection =
   | { type: 'commit'; hash: string }
@@ -110,6 +118,10 @@ export interface RepoData {
   teammateRadar: TeammateRadarResult | null
   /** Local-CI verdicts pinned to commits (git notes, refs/notes/gitcito-ci). */
   localCiVerdicts: Record<string, LocalCiVerdict>
+  /** The repository's own `.gitcito.json`, or null while it has not been read. */
+  config: RepoConfigResult | null
+  /** Last doctor sweep. Only run on demand — each check spawns a process. */
+  doctor: DoctorCheck[]
 }
 
 const emptyRepo = (path: string): RepoData => ({
@@ -146,7 +158,9 @@ const emptyRepo = (path: string): RepoData => ({
   mergeRisk: null,
   forcedUpdates: {},
   teammateRadar: null,
-  localCiVerdicts: {}
+  localCiVerdicts: {},
+  config: null,
+  doctor: []
 })
 
 interface RepoStoreState {
@@ -166,6 +180,12 @@ interface RepoStoreState {
   refreshReleases(path: string, opts?: { silent?: boolean }): Promise<void>
   refreshRemoteTags(path: string): Promise<void>
   refreshCiStatuses(path: string): Promise<void>
+  /** Re-run the repository's doctor checks. Spawns processes — call it on
+   *  demand (opening the panel, applying a fix), not on every refresh. */
+  refreshDoctor(path: string): Promise<void>
+  /** Write `.gitcito.json` and adopt the result. Leaves the file staged for the
+   *  user to commit: it is a tracked file like any other. */
+  saveRepoConfig(path: string, config: RepoConfig): Promise<boolean>
 
   run(path: string, label: string, fn: () => Promise<void>, undoEntry?: UndoEntry, op?: 'push' | 'pull' | 'fetch' | null, onError?: (message: string) => boolean, refetch?: RefreshSlice[]): Promise<boolean>
   undo(path: string): Promise<void>
@@ -378,6 +398,7 @@ export type RefreshSlice =
   | 'worktrees'
   | 'submodules'
   | 'treeStatus'
+  | 'config'
 
 const ALL_SLICES: RefreshSlice[] = [
   'log',
@@ -388,7 +409,8 @@ const ALL_SLICES: RefreshSlice[] = [
   'mergeState',
   'worktrees',
   'submodules',
-  'treeStatus'
+  'treeStatus',
+  'config'
 ]
 
 /** How long the FS watcher ignores its own repo after a local git write, so the
@@ -473,7 +495,8 @@ async function doRefresh(path: string, slices: RefreshSlice[]): Promise<void> {
       submodules,
       treeStatus,
       notedShas,
-      lastFetchAt
+      lastFetchAt,
+      config
     ] = await Promise.all([
         keep(repo?.commits, want.has('log'), () => gitApi.log(path, maxCount), []),
         keep(repo?.branches, want.has('branches'), () => gitApi.branches(path), {
@@ -503,7 +526,10 @@ async function doRefresh(path: string, slices: RefreshSlice[]): Promise<void> {
         // One stat(), and only when the remotes slice is due — which is what a
         // fetch refetches. Cheap enough to keep the age honest after a fetch
         // run outside the app.
-        keep(repo?.lastFetchAt, want.has('remotes'), () => gitApi.lastFetchAt(path).catch(() => null), null)
+        keep(repo?.lastFetchAt, want.has('remotes'), () => gitApi.lastFetchAt(path).catch(() => null), null),
+        // A tracked file, so a checkout or a pull can change it — it rides
+        // along with every refresh rather than being read once on open.
+        keep(repo?.config, want.has('config'), () => gitApi.repoConfig(path).catch(() => null), null)
       ])
     store.patch(path, {
       commits,
@@ -518,6 +544,7 @@ async function doRefresh(path: string, slices: RefreshSlice[]): Promise<void> {
       treeStatus,
       notedShas,
       lastFetchAt,
+      config,
       loading: false,
       notGit: false,
       lastRefreshAt: Date.now()
@@ -656,6 +683,27 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
     if (!toFetch.length) return
     const fresh = await hostingApi.ciStatuses(origin.url, toFetch, token).catch(() => ({}))
     get().patch(path, { ciStatuses: { ...existing, ...fresh } })
+  },
+
+  refreshDoctor: async (path) => {
+    const checks = await gitApi.repoDoctor(path).catch(() => [] as DoctorCheck[])
+    get().patch(path, { doctor: checks })
+  },
+
+  saveRepoConfig: async (path, config) => {
+    try {
+      const result = await gitApi.setRepoConfig(path, config)
+      get().patch(path, { config: result })
+      toast('success', t('repoConfig.saved'))
+      // The file is a working-tree change now, and its requirements may have
+      // moved — refresh both so the reader is not looking at a stale verdict.
+      void get().refresh(path, { only: ['status', 'treeStatus'] })
+      void get().refreshDoctor(path)
+      return true
+    } catch (err) {
+      toast('error', err instanceof Error ? err.message : String(err))
+      return false
+    }
   },
 
   refreshPRs: async (path, opts) => {
@@ -877,10 +925,12 @@ async function pushGuards(
   retry: () => void,
   protectedConfirmed = false
 ): Promise<boolean> {
+  const repoConfig = useRepoStore.getState().repos[path]?.config?.config ?? null
   // Force-pushing a protected branch rewrites shared history — confirm first.
   if (force && !protectedConfirmed) {
     const protectedBranches = await gitApi.protectedBranches(path).catch(() => [] as string[])
-    if (protectedBranches.includes(branch)) {
+    // The repository's own `protect` list counts too, and it may be a pattern.
+    if (isProtectedBranch(branch, protectedBranches, repoConfig)) {
       useUIStore.getState().openModal({
         kind: 'confirm',
         danger: true,
@@ -913,6 +963,21 @@ async function pushGuards(
       })
       return false
     }
+  }
+  // The repository's own pre-push reminders. Inert text it ships in
+  // `.gitcito.json`, so it is shown verbatim and never translated — and it can
+  // only ever add a confirmation, never remove one.
+  const checklist = repoConfig?.checklist?.push ?? []
+  if (checklist.length && !pushChecklistShown.has(path)) {
+    pushChecklistShown.add(path)
+    useUIStore.getState().openModal({
+      kind: 'confirm',
+      title: t('repoConfig.checklistTitle'),
+      message: `${t('repoConfig.checklistIntro')}\n\n${checklist.map((line) => `☐ ${line}`).join('\n')}`,
+      confirmLabel: t('repoConfig.checklistOk'),
+      onConfirm: retry
+    })
+    return false
   }
   return true
 }

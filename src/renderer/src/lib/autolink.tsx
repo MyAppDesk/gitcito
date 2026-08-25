@@ -1,4 +1,6 @@
 import type { ReactNode } from 'react'
+import type { RepoConfigLink } from '../../../shared/types'
+import { ticketSegments } from './repoConfig'
 
 /** Convert a git remote URL (ssh or https) to its web base, or undefined. */
 export function remoteWebUrl(url?: string): string | undefined {
@@ -25,10 +27,33 @@ const TOKEN = /(#\d+)|(\B@[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})?)/g
 
 /**
  * Turn `#123` issue/PR refs and `@user` mentions in free text into links to the
- * hosting provider. Plain http(s) URLs in the text are left to the app's global
- * external-link handler. Returns a ReactNode (string when nothing to link).
+ * hosting provider, and any token the repository's `.gitcito.json` describes
+ * into a link to its tracker. Plain http(s) URLs in the text are left to the
+ * app's global external-link handler.
+ *
+ * Tracker patterns win where both could match: they are the repository's own
+ * statement about what its commit text means.
  */
-export function autolink(text: string, repoWebUrl?: string): ReactNode {
+export function autolink(text: string, repoWebUrl?: string, tickets?: RepoConfigLink[]): ReactNode {
+  if (tickets?.length) {
+    const segments = ticketSegments(text, tickets)
+    if (segments.length > 1 || segments[0]?.href) {
+      return segments.map((seg, i) =>
+        seg.href ? (
+          <a key={i} href={seg.href} title={seg.label ?? seg.href}>
+            {seg.text}
+          </a>
+        ) : (
+          <span key={i}>{hostLinks(seg.text, repoWebUrl)}</span>
+        )
+      )
+    }
+  }
+  return hostLinks(text, repoWebUrl)
+}
+
+/** `#123` and `@user`, linked to the hosting provider. */
+function hostLinks(text: string, repoWebUrl?: string): ReactNode {
   if (!text || !repoWebUrl) return text
   let origin: string
   try {

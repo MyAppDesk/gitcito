@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { GitMerge, FolderOpen, Download, ArrowDownToLine, Bug, LifeBuoy, MessageSquare, X, CheckSquare } from 'lucide-react'
+import { GitMerge, FolderOpen, Download, ArrowDownToLine, Bug, LifeBuoy, MessageSquare, X, CheckSquare, Stethoscope } from 'lucide-react'
 import { takeAccountsNotice, useSettingsStore } from './stores/settings'
 import { useRepoStore, repoActions, type RepoData } from './stores/repo'
 import { useUIStore } from './stores/ui'
@@ -8,6 +8,7 @@ import { tabActiveRepoPath, tabRepos, type ConflictOpKind, type GroupTab, type P
 import { useT, t as tr, interp } from './i18n'
 import { applyDirection } from './i18n/direction'
 import { todoSummary } from './lib/todos'
+import { doctorSummary } from './lib/repoConfig'
 import { canonicalRepoPath } from './lib/repoAlias'
 import { applyAppTheme, applyCodeTheme, findAppTheme, findCodeTheme } from './theme/themes'
 import { TitleBar, requestCloseTab } from './components/TitleBar'
@@ -267,6 +268,31 @@ function TodoStatusChip({ path }: { path: string }): React.JSX.Element | null {
     >
       <CheckSquare size={12} />
       <span>{open}</span>
+    </button>
+  )
+}
+
+/**
+ * The repository's doctor, when it has something to say.
+ *
+ * Only failures and warnings get a chip: a repo whose requirements are all met
+ * should look exactly like a repo that declares none, because in both cases
+ * there is nothing to do.
+ */
+function DoctorStatusChip({ path }: { path: string }): React.JSX.Element | null {
+  const t = useT()
+  const checks = useRepoStore((s) => s.repos[path]?.doctor)
+  const openModal = useUIStore((s) => s.openModal)
+  const { warn, fail } = doctorSummary(checks)
+  if (warn + fail === 0) return null
+  return (
+    <button
+      className={`status-issue-btn status-doctor-btn ${fail > 0 ? 'has-fail' : ''}`}
+      title={interp(t('doctor.chip'), { n: warn + fail })}
+      onClick={() => openModal({ kind: 'repo-settings', repoPath: path, tab: 'config' })}
+    >
+      <Stethoscope size={12} />
+      <span>{warn + fail}</span>
     </button>
   )
 }
@@ -968,6 +994,7 @@ export default function App(): React.JSX.Element {
               <ZoomControl compact />
               <span className="status-sep" />
               <TodoStatusChip path={repo.path} />
+              <DoctorStatusChip path={repo.path} />
               <span className="status-sep" />
               <button
                 className="status-branch-profile status-branch-btn"

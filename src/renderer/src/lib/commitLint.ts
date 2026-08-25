@@ -87,6 +87,20 @@ export function applyCcType(summary: string, type: string): string {
   return type ? `${type}${scope}${bang}: ${rest}` : rest
 }
 
+/** Apply (or, with an empty scope, strip) a Conventional-Commit scope. Only
+ *  meaningful once a type is set — a bare `(scope):` is not a valid prefix. */
+export function applyCcScope(summary: string, scope: string): string {
+  const { type, bang, rest } = parseCcPrefix(summary)
+  if (!type) return summary
+  const s = scope.trim()
+  return `${type}${s ? `(${s})` : ''}${bang}: ${rest}`
+}
+
+/** The scope currently written on the subject, without its parentheses. */
+export function currentCcScope(summary: string): string {
+  return parseCcPrefix(summary).scope.replace(/^\(|\)$/g, '')
+}
+
 /** Common gitmoji, each with a short intent label (shown in the picker).
  *  Labels are dictionary keys — resolve them with `t()` at render time. */
 export const GITMOJIS: { emoji: string; labelKey: TranslationKey }[] = [

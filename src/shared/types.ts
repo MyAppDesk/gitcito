@@ -3064,3 +3064,117 @@ export function defaultSettings(): AppSettings {
     rightPanelFullHeight: false
   }
 }
+
+// ─── .gitcito.json — the repository's own house rules ────────────────────────
+//
+// An optional file committed at the root of a repository. Unlike everything in
+// AppSettings, it travels with the clone: whoever opens the repo inherits it.
+// That is exactly why nothing in this schema can *execute* anything or *relax*
+// a guard — every field is either inert data or an extra restriction. See
+// docs/help/repo-config.md for the reasoning.
+
+/** A pattern that turns a token in commit text (`ABC-123`) into a tracker link. */
+export interface RepoConfigLink {
+  /** JavaScript regular expression source, matched against commit text. */
+  match: string
+  /** Target URL. `$0` is the whole match, `$1`… the capture groups. */
+  url: string
+  /** Optional name of the tracker, shown in the link's tooltip. */
+  label?: string
+}
+
+/** A file the repository needs but cannot track — typically a local `.env`. */
+export interface RepoConfigFileReq {
+  /** Repo-relative path that must exist. */
+  path: string
+  /** Repo-relative template to copy it from, enabling the one-click fix. */
+  from?: string
+  /** Why it is needed — shown verbatim in the doctor row. */
+  why?: string
+}
+
+export interface RepoConfig {
+  version: number
+  /** Branch names or `glob*` patterns that are protected on top of the local list. */
+  protect?: string[]
+  links?: {
+    tickets?: RepoConfigLink[]
+  }
+  commit?: {
+    /** Allowed Conventional-Commit scopes, offered in the composer's picker. */
+    scopes?: string[]
+    /** Prefill the ticket key parsed out of the current branch name. */
+    ticketFromBranch?: boolean
+    /** Trailer lines appended on commit. `{ticket}` and `{branch}` interpolate. */
+    trailers?: string[]
+  }
+  /** Preconditions the doctor checks when the repository is opened. */
+  requires?: {
+    /** Node major version or range: `20`, `20.x`, `>=20`. */
+    node?: string
+    submodules?: boolean
+    lfs?: boolean
+    /** Expected value of `core.hooksPath`, e.g. `.husky`. */
+    hooksPath?: string
+    files?: RepoConfigFileReq[]
+  }
+  checklist?: {
+    /** Reminders shown once per session before the first push. */
+    push?: string[]
+  }
+}
+
+/** Why a field of `.gitcito.json` was rejected. Rendered from the dictionary. */
+export type RepoConfigIssueCode =
+  | 'json'
+  | 'version'
+  | 'type'
+  | 'unknown'
+  | 'unsafe'
+  | 'regex'
+  | 'url'
+  | 'limit'
+
+export interface RepoConfigIssue {
+  /** Dotted path of the offending field, e.g. `links.tickets[0].url`. */
+  field: string
+  code: RepoConfigIssueCode
+}
+
+export interface RepoConfigResult {
+  /** Absolute path of the config file, whether or not it is there. */
+  path: string
+  exists: boolean
+  /** The validated config — null when the file is absent or unparseable. */
+  config: RepoConfig | null
+  /** Everything that was rejected. A file with issues still yields a config:
+   *  bad fields are dropped, the rest applies. */
+  issues: RepoConfigIssue[]
+}
+
+export type DoctorStatus = 'ok' | 'warn' | 'fail'
+
+/**
+ * A repair the doctor can perform. Deliberately a closed union: the config
+ * supplies *data* (a path, a config value), never a command. Nothing a
+ * repository ships can make Gitcito run something of its choosing.
+ */
+export type DoctorFix =
+  | { kind: 'submodules' }
+  | { kind: 'lfsPull' }
+  | { kind: 'hooksPath'; value: string }
+  | { kind: 'copyFile'; from: string; to: string }
+
+export interface DoctorCheck {
+  /** Stable identity for the row: `node`, `lfs`, `file:.env`… */
+  id: string
+  kind: 'node' | 'submodules' | 'lfs' | 'hooks' | 'file'
+  status: DoctorStatus
+  /** What the config asked for. */
+  expected?: string
+  /** What the machine actually has — absent when nothing was found at all. */
+  actual?: string
+  /** The repo's own explanation, from `requires.files[].why`. Untranslated. */
+  why?: string
+  fix?: DoctorFix
+}

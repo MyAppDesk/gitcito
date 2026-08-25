@@ -1,5 +1,9 @@
 import type {
   AskPlan,
+  DoctorCheck,
+  DoctorFix,
+  RepoConfig,
+  RepoConfigResult,
   DetectedCli,
   ModelCatalog,
   BlameLine,
@@ -301,6 +305,12 @@ export const gitApi = {
   protectedBranches: (path: string) => call<string[]>('protectedBranches', path),
   setProtectedBranches: (path: string, branches: string[]) =>
     call<void>('setProtectedBranches', path, branches),
+  repoConfig: (path: string) => call<RepoConfigResult>('repoConfig', path),
+  setRepoConfig: (path: string, config: RepoConfig) =>
+    call<RepoConfigResult>('setRepoConfig', path, config),
+  repoDoctor: (path: string) => call<DoctorCheck[]>('repoDoctor', path),
+  applyDoctorFix: (path: string, fix: DoctorFix) => call<void>('applyDoctorFix', path, fix),
+  suggestRepoConfig: (path: string) => call<RepoConfig>('suggestRepoConfig', path),
 
   /** Every path ever committed, heaviest first — the purge dialog's picker. */
   /** Whether git is memorising conflict resolutions, and what it replayed here. */

@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "protect": [
+    "main"
+  ],
+  "requires": {
+    "node": ">=20",
+    "hooksPath": ".husky/_"
+  },
+  "checklist": {
+    "push": [
+      "typecheck, lint:i18n, lint:docs, test and build all pass",
+      "Every new string is in all 16 locale files",
+      "Every new surface has a docs/help page and a scripts/docs-map.json entry",
+      "Destructive actions confirm; reversible ones record an undo entry",
+      "README updated if this changes what the app can do"
+    ]
+  }
+}

@@ -12,6 +12,8 @@ import { planStackSubmit, summariseStackPlan } from '../src/shared/stackPr'
 import { groupPrStacks, stackRowStates } from '../src/renderer/src/lib/prStacks'
 import { HUGE_SECTION, openUnlessHuge } from '../src/renderer/src/lib/sidebarSections'
 import { clearDoneTodos, createTodo, filterTodos, patchTodo, removeTodo, sortTodos, todoSummary, toggleTodo } from '../src/renderer/src/lib/todos'
+import { branchMatches, isSafeLinkUrl, isSafeRepoRelPath, parseRepoConfig, satisfiesNodeRange, serializeRepoConfig, validateRepoConfig } from '../src/shared/repoConfig'
+import { appendTrailers, configTrailers, doctorSummary, effectiveProtected, isProtectedBranch, ticketSegments } from '../src/renderer/src/lib/repoConfig'
 import { buildMenuSpec } from '../src/renderer/src/lib/appMenu'
 import { acceleratorFromCombo, isMenuRole } from '../src/shared/menu'
 
@@ -4970,5 +4972,184 @@ describe('repository todos', () => {
     expect(filterTodos(base, 'CRASH').map((td) => td.id)).toEqual(['b'])
     expect(filterTodos(base, 'parser').map((td) => td.id)).toEqual(['c'])
     expect(filterTodos(base, '  ')).toBe(base)
+  })
+})
+
+describe('.gitcito.json validation', () => {
+  it('accepts a full config and keeps every field', () => {
+    const { config, issues } = validateRepoConfig({
+      version: 1,
+      protect: ['main', 'release/*'],
+      links: { tickets: [{ match: '([A-Z]+-\\d+)', url: 'https://tracker.example/browse/$1', label: 'Jira' }] },
+      commit: { scopes: ['main', 'renderer'], ticketFromBranch: true, trailers: ['Refs: {ticket}'] },
+      requires: { node: '>=20', submodules: true, lfs: true, hooksPath: '.husky', files: [{ path: '.env', from: '.env.example' }] },
+      checklist: { push: ['Update the handbook'] }
+    })
+    expect(issues).toEqual([])
+    expect(config?.protect).toEqual(['main', 'release/*'])
+    expect(config?.commit?.scopes).toEqual(['main', 'renderer'])
+    expect(config?.requires?.files?.[0]).toEqual({ path: '.env', from: '.env.example' })
+    expect(config?.checklist?.push).toEqual(['Update the handbook'])
+  })
+
+  it('refuses a version it does not know rather than guessing at the fields', () => {
+    const { config, issues } = validateRepoConfig({ version: 99, protect: ['main'] })
+    expect(config).toBeNull()
+    expect(issues).toEqual([{ field: 'version', code: 'version' }])
+  })
+
+  it('drops the bad field and keeps the rest', () => {
+    const { config, issues } = validateRepoConfig({
+      version: 1,
+      protect: ['main'],
+      links: { tickets: [{ match: '([', url: 'https://ok.example/$0' }] },
+      requires: { hooksPath: '../../etc' }
+    })
+    expect(config?.protect).toEqual(['main'])
+    expect(config?.links).toBeUndefined()
+    expect(config?.requires).toBeUndefined()
+    expect(issues.map((i) => i.code).sort()).toEqual(['regex', 'unsafe'])
+  })
+
+  it('rejects a link that is not an http(s) address', () => {
+    const { config, issues } = validateRepoConfig({
+      version: 1,
+      // A repository is a stranger: a javascript: URL must never reach the opener.
+      links: { tickets: [{ match: 'X-\\d+', url: 'javascript:alert(1)' }] }
+    })
+    expect(config?.links).toBeUndefined()
+    expect(issues).toEqual([{ field: 'links.tickets[0].url', code: 'url' }])
+  })
+
+  it('records unknown top-level fields without discarding the file', () => {
+    const { config, issues } = validateRepoConfig({ version: 1, protect: ['main'], runOnOpen: 'rm -rf /' })
+    expect(config?.protect).toEqual(['main'])
+    expect(issues).toEqual([{ field: 'runOnOpen', code: 'unknown' }])
+  })
+
+  it('trims lists and lines that are past their cap', () => {
+    const { config, issues } = validateRepoConfig({
+      version: 1,
+      checklist: { push: ['ok', 'x'.repeat(400)] }
+    })
+    expect(config?.checklist?.push).toEqual(['ok'])
+    expect(issues).toEqual([{ field: 'checklist.push[1]', code: 'limit' }])
+  })
+
+  it('reports invalid JSON as one issue instead of throwing', () => {
+    const { config, issues } = parseRepoConfig('{ nope')
+    expect(config).toBeNull()
+    expect(issues).toEqual([{ field: '.gitcito.json', code: 'json' }])
+  })
+
+  it('round-trips through the serializer', () => {
+    const config = { version: 1, protect: ['main'] }
+    expect(parseRepoConfig(serializeRepoConfig(config)).config).toEqual(config)
+    expect(serializeRepoConfig(config).endsWith('\n')).toBe(true)
+  })
+
+  it('refuses paths that leave the repository', () => {
+    expect(isSafeRepoRelPath('config/.env')).toBe(true)
+    expect(isSafeRepoRelPath('../secrets')).toBe(false)
+    expect(isSafeRepoRelPath('/etc/passwd')).toBe(false)
+    expect(isSafeRepoRelPath('~/.ssh/id_rsa')).toBe(false)
+    expect(isSafeRepoRelPath('C:\\Windows')).toBe(false)
+    expect(isSafeRepoRelPath('.git/config')).toBe(false)
+  })
+
+  it('only accepts http(s) links', () => {
+    expect(isSafeLinkUrl('https://example.com/a')).toBe(true)
+    expect(isSafeLinkUrl('http://example.com')).toBe(true)
+    expect(isSafeLinkUrl('file:///etc/passwd')).toBe(false)
+  })
+})
+
+describe('node ranges and branch patterns', () => {
+  it('reads the specs that actually appear in .nvmrc and engines', () => {
+    expect(satisfiesNodeRange('20.11.1', '20')).toBe(true)
+    expect(satisfiesNodeRange('20.11.1', '20.x')).toBe(true)
+    expect(satisfiesNodeRange('22.1.0', '>=20')).toBe(true)
+    expect(satisfiesNodeRange('18.19.0', '>=20')).toBe(false)
+    expect(satisfiesNodeRange('20.11.1', '^20.1.0')).toBe(true)
+    expect(satisfiesNodeRange('21.0.0', '20')).toBe(false)
+  })
+
+  it('says nothing rather than inventing a failure for a spec it cannot read', () => {
+    expect(satisfiesNodeRange('20.0.0', 'lts/*')).toBe(true)
+  })
+
+  it('matches branch patterns with * and nothing else', () => {
+    expect(branchMatches('main', 'main')).toBe(true)
+    expect(branchMatches('main', 'maintenance')).toBe(false)
+    expect(branchMatches('release/*', 'release/3.2')).toBe(true)
+    expect(branchMatches('release/*', 'feature/release/3.2')).toBe(false)
+    // A dot is a literal, not "any character".
+    expect(branchMatches('v1.0', 'v1x0')).toBe(false)
+  })
+})
+
+describe('repo config in the renderer', () => {
+  const links = [{ match: '(GC-\\d+)', url: 'https://tracker.example/browse/$1', label: 'Jira' }]
+
+  it('adds the repo\'s protected branches to the local ones, never subtracts', () => {
+    expect(effectiveProtected(['main'], { version: 1, protect: ['release/*', 'main'] })).toEqual([
+      'main',
+      'release/*'
+    ])
+    expect(isProtectedBranch('release/3.2', ['main'], { version: 1, protect: ['release/*'] })).toBe(true)
+    expect(isProtectedBranch('feature/x', ['main'], { version: 1, protect: ['release/*'] })).toBe(false)
+    // With no config the local list still decides.
+    expect(isProtectedBranch('main', ['main'], null)).toBe(true)
+  })
+
+  it('splits commit text into plain runs and tracker links', () => {
+    const segs = ticketSegments('fix GC-412 and GC-9', links)
+    expect(segs.map((s) => s.text)).toEqual(['fix ', 'GC-412', ' and ', 'GC-9'])
+    expect(segs[1].href).toBe('https://tracker.example/browse/GC-412')
+    expect(segs[1].label).toBe('Jira')
+  })
+
+  it('leaves text alone when nothing matches or nothing is configured', () => {
+    expect(ticketSegments('no keys here', links)).toEqual([{ text: 'no keys here' }])
+    expect(ticketSegments('GC-1', undefined)).toEqual([{ text: 'GC-1' }])
+  })
+
+  it('does not hang on a pattern that can match nothing', () => {
+    expect(ticketSegments('abc', [{ match: 'x*', url: 'https://e.example/$0' }])).toEqual([{ text: 'abc' }])
+  })
+
+  it('gives the first pattern the span where two overlap', () => {
+    const segs = ticketSegments('GC-412', [
+      { match: 'GC-\\d+', url: 'https://first.example/$0' },
+      { match: 'GC-4', url: 'https://second.example/$0' }
+    ])
+    expect(segs).toEqual([{ text: 'GC-412', href: 'https://first.example/GC-412' }])
+  })
+
+  it('fills trailers in, and drops the ones it cannot fill', () => {
+    const config = { version: 1, commit: { trailers: ['Refs: {ticket}', 'Branch: {branch}'] } }
+    expect(configTrailers(config, { ticket: 'GC-1', branch: 'feature/x' })).toEqual([
+      'Refs: GC-1',
+      'Branch: feature/x'
+    ])
+    // No ticket → `Refs: ` would look like something was lost.
+    expect(configTrailers(config, { branch: 'feature/x' })).toEqual(['Branch: feature/x'])
+  })
+
+  it('appends trailers once, keeping the blank line git needs', () => {
+    expect(appendTrailers('', ['Refs: GC-1'])).toBe('Refs: GC-1')
+    expect(appendTrailers('why this change', ['Refs: GC-1'])).toBe('why this change\n\nRefs: GC-1')
+    expect(appendTrailers('why\n\nRefs: GC-1', ['Refs: GC-1'])).toBe('why\n\nRefs: GC-1')
+  })
+
+  it('counts doctor verdicts for the status chip', () => {
+    expect(doctorSummary(undefined)).toEqual({ ok: 0, warn: 0, fail: 0 })
+    expect(
+      doctorSummary([
+        { id: 'a', kind: 'node', status: 'ok' },
+        { id: 'b', kind: 'lfs', status: 'warn' },
+        { id: 'c', kind: 'file', status: 'fail' }
+      ])
+    ).toEqual({ ok: 1, warn: 1, fail: 1 })
   })
 })

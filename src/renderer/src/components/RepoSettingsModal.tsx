@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Settings, X, ShieldCheck, Loader2, BarChart3, History, ScrollText, Flame, Info, KeyRound } from 'lucide-react'
+import { Settings, ShieldCheck, Loader2, BarChart3, History, ScrollText, Flame, Info, KeyRound, FileCog } from 'lucide-react'
 import { gitApi, logApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
 import { useRepoStore } from '../stores/repo'
@@ -9,6 +9,8 @@ import { InsightsPage } from './InsightsPage'
 import { RepoInfoTab } from './RepoInfoTab'
 import { RepoVaultTab } from './RepoVaultTab'
 import { useT, t as tr, interp } from '../i18n'
+import { BranchMultiSelect } from './BranchMultiSelect'
+import { RepoConfigTab } from './RepoConfigTab'
 import type { LogEntry } from '../../../shared/types'
 
 function relTime(ms: number): string {
@@ -71,85 +73,7 @@ function RepoLogsTab({ repoPath }: { repoPath: string }): React.JSX.Element {
   )
 }
 
-type Tab = 'general' | 'info' | 'vault' | 'analytics' | 'insights' | 'history' | 'logs'
-
-/** A chip multi-select: pick from the repo's branches or type a free value. */
-function BranchMultiSelect({
-  options,
-  value,
-  onChange,
-  placeholder
-}: {
-  options: string[]
-  value: string[]
-  onChange: (next: string[]) => void
-  placeholder?: string
-}): React.JSX.Element {
-  const t = useT()
-  const [text, setText] = useState('')
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-
-  const available = options.filter((o) => !value.includes(o) && o.toLowerCase().includes(text.toLowerCase()))
-  const canAddTyped = text.trim() && !value.includes(text.trim())
-
-  const add = (b: string): void => {
-    const v = b.trim()
-    if (!v || value.includes(v)) return
-    onChange([...value, v])
-    setText('')
-    setOpen(false)
-  }
-  const remove = (b: string): void => onChange(value.filter((x) => x !== b))
-
-  useEffect(() => {
-    const onDown = (e: MouseEvent): void => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
-    }
-    window.addEventListener('mousedown', onDown)
-    return () => window.removeEventListener('mousedown', onDown)
-  }, [])
-
-  return (
-    <div className="bms" ref={ref}>
-      <div className="bms-control" onClick={() => setOpen(true)}>
-        {value.map((b) => (
-          <span key={b} className="bms-chip">
-            {b}
-            <button className="bms-chip-x" onClick={(e) => { e.stopPropagation(); remove(b) }}>
-              <X size={11} />
-            </button>
-          </span>
-        ))}
-        <input
-          className="bms-input"
-          value={text}
-          placeholder={value.length ? '' : (placeholder ?? t('repoSettings.addBranch'))}
-          onFocus={() => setOpen(true)}
-          onChange={(e) => { setText(e.target.value); setOpen(true) }}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && canAddTyped) { e.preventDefault(); add(text) }
-            else if (e.key === 'Backspace' && !text && value.length) remove(value[value.length - 1])
-          }}
-        />
-      </div>
-      {open && (available.length > 0 || canAddTyped) && (
-        <div className="bms-menu">
-          {available.map((o) => (
-            <button key={o} className="bms-opt" onClick={() => add(o)}>
-              {o}
-            </button>
-          ))}
-          {canAddTyped && (
-            <button className="bms-opt add" onClick={() => add(text)}>
-              {interp(t('common.addQuoted'), { value: text.trim() })}
-            </button>
-          )}
-        </div>
-      )}
-    </div>
-  )
-}
+type Tab = 'general' | 'config' | 'info' | 'vault' | 'analytics' | 'insights' | 'history' | 'logs'
 
 function GeneralTab({ repoPath }: { repoPath: string }): React.JSX.Element {
   const closeModal = useUIStore((s) => s.closeModal)
@@ -230,6 +154,7 @@ export function RepoSettingsModal({ repoPath, initialTab }: { repoPath: string; 
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: 'general', label: t('repoSettings.general'), icon: <Settings size={13} /> },
+    { id: 'config', label: t('repoSettings.config'), icon: <FileCog size={13} /> },
     { id: 'info', label: t('repoSettings.info'), icon: <Info size={13} /> },
     { id: 'vault', label: t('repoSettings.vault'), icon: <KeyRound size={13} /> },
     { id: 'analytics', label: t('repoSettings.analytics'), icon: <BarChart3 size={13} /> },
@@ -253,6 +178,7 @@ export function RepoSettingsModal({ repoPath, initialTab }: { repoPath: string; 
       </div>
       <div className="repo-settings-body">
         {tab === 'general' && <GeneralTab repoPath={repoPath} />}
+        {tab === 'config' && <RepoConfigTab repoPath={repoPath} />}
         {tab === 'info' && <RepoInfoTab repoPath={repoPath} />}
         {tab === 'vault' && <RepoVaultTab repoPath={repoPath} />}
         {tab === 'analytics' && <AnalyticsSection aiEnabled={aiEnabled} />}

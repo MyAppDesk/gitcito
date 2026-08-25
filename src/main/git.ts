@@ -10,8 +10,20 @@ import { promisify } from 'util'
 import { createHash } from 'crypto'
 
 const pexecFile = promisify(execFile)
+
+import {
+  applyDoctorFix as applyDoctorFixOnDisk,
+  readRepoConfig,
+  runRepoDoctor,
+  suggestRepoConfig as suggestRepoConfigFromRepo,
+  writeRepoConfig
+} from './repoConfig'
 import type {
   BlameLine,
+  DoctorCheck,
+  DoctorFix,
+  RepoConfig,
+  RepoConfigResult,
   BranchCompareResult,
   CheckoutRemoteResult,
   ConflictSide,
@@ -4328,6 +4340,31 @@ export const gitService = {
     await gitFor(repoPath).raw(['config', 'gitcito.protectedbranches', value])
   },
 
+  // ─── .gitcito.json ───────────────────────────────────────────────────────
+  // The repository's own house rules, committed alongside the code. Thin
+  // delegates: the reasoning, the validation and the safety rules all live in
+  // main/repoConfig.ts, next to shared/repoConfig.ts which the editor shares.
+
+  async repoConfig(repoPath: string): Promise<RepoConfigResult> {
+    return readRepoConfig(repoPath)
+  },
+
+  async setRepoConfig(repoPath: string, config: RepoConfig): Promise<RepoConfigResult> {
+    return writeRepoConfig(repoPath, config)
+  },
+
+  async repoDoctor(repoPath: string): Promise<DoctorCheck[]> {
+    return runRepoDoctor(repoPath)
+  },
+
+  async applyDoctorFix(repoPath: string, fix: DoctorFix): Promise<void> {
+    return applyDoctorFixOnDisk(repoPath, fix)
+  },
+
+  async suggestRepoConfig(repoPath: string): Promise<RepoConfig> {
+    return suggestRepoConfigFromRepo(repoPath)
+  },
+
   // ─── rerere ──────────────────────────────────────────────────────────────
   // "reuse recorded resolution": git memorises how you resolved a conflict and
   // replays it the next time the same one appears. The payoff is a long-lived
@@ -7349,6 +7386,9 @@ const READ_METHODS = new Set<string>([
   'filesToPush',
   'commitsTouchingPath',
   'protectedBranches',
+  'repoConfig',
+  'repoDoctor',
+  'suggestRepoConfig',
   'fileSizes',
   'treeStatus',
   'getCommitMessage',

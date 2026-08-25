@@ -61,7 +61,8 @@
       "teammate-radar": "teammate-radar",
       "commit-edit": "commit-edit",
       "reset-to-commit": "merging",
-      "local-ci": "local-ci"
+      "local-ci": "local-ci",
+      "stack-submit": "stacks"
     },
     "exempt": {
       "input": "Generic single-field prompt reused everywhere; not a feature.",

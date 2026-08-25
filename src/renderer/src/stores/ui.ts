@@ -65,6 +65,17 @@ export type ModalSpec =
       onSecondary?: () => void
     }
   | {
+      /** The submit screen: the plan, the progress, and the links it produced. */
+      kind: 'stack-submit'
+      repoPath: string
+      /** Which stack — the modal can be showing one you are not standing on. */
+      leaf?: string
+      create: number
+      retarget: number
+      /** "branch → base" per level that changes, top level first. */
+      lines: string[]
+    }
+  | {
       kind: 'addRemote'
       path: string
       defaultName: string

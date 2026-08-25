@@ -212,6 +212,12 @@ export const ru: Dict = {
   'search.historyHint': 'Показывает коммиты, в диффе которых меняется найденный текст.',
   // Стек веток
   'stack.title': 'Стек веток',
+  'stack.resultTitle': 'Стек опубликован',
+  'stack.resultOpened': 'открыт',
+  'stack.resultRetargeted': 'перенацелен',
+  'stack.resultUnchanged': 'без изменений',
+  'stack.retrySubmit': 'Повторить',
+  'common.done': 'Готово',
   'stack.stepRegister': 'Регистрируем стек на GitHub…',
   'stack.registered': 'GitHub считает их стеком #{n}',
   'stack.submitConfirmTitle': 'Подать этот стек как pull request’ы?',

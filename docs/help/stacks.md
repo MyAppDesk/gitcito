@@ -72,10 +72,16 @@ the remote but are not ready for review.
 
 ## Submit the stack as chained PRs
 
-**Submit stack as PRs** asks first — how many pull requests it will open, how
-many it will retarget, on which remote, and the `branch → base` line for each —
-because opening pull requests is public and awkward to take back. Confirm, and
-it does in one click what stacking tools charge for:
+**Submit stack as PRs** opens a screen of its own, because opening pull requests
+is public and awkward to take back. It shows the plan first — how many it will
+open, how many it will retarget, on which remote, and the `branch → base` line
+for each — then runs in place, naming each step as it goes, and finishes on the
+links: every pull request it touched, and the stack itself where GitHub made
+one.
+
+![Submitting a stack](../screenshots/stack-submit.webp)
+
+Behind that button it does in one click what stacking tools charge for:
 
 1. Pushes every level with `--force-with-lease` (fresh branches tolerate it,
    restacked ones need it).
@@ -88,8 +94,8 @@ it does in one click what stacking tools charge for:
    is what makes the chain visible on GitHub, which has no notion of a stack —
    the bases alone only show up one PR at a time.
 
-When it finishes, a second toast says what happened: how many were opened and
-how many retargeted.
+When it finishes, the screen lists what happened — click any row to open that
+pull request.
 
 The action is **idempotent**: press it after every restack, new level or merged
 PR and it converges — nothing is duplicated, only what drifted is touched.

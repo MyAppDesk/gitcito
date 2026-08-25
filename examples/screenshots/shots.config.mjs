@@ -723,6 +723,29 @@ export const shots = [
   },
   {
     // Branch stack — dependent branches with restack.
+    // The submit screen, on its plan step: what a submit is about to open, and
+    // against what. The result step needs a live host, so this is the half that
+    // can be photographed deterministically.
+    out: 'stack-submit',
+    repos: ['stacked-branches'],
+    themes: ['light'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['stacked-branches']
+      await page.evaluate(
+        (p) =>
+          window.__shot.ui.getState().openModal({
+            kind: 'stack-submit',
+            repoPath: p,
+            create: 2,
+            retarget: 0,
+            lines: ['feature/ui → feature/api', 'feature/api → main']
+          }),
+        repo
+      )
+      await page.waitForTimeout(600)
+    }
+  },
+  {
     out: 'branch-stack',
     repos: ['stacked-branches'],
     themes: ['light'],

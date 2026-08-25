@@ -77,10 +77,15 @@ Remote liegen sollen, aber noch keine Review ansteht.
 
 **Einreichen** fragt zuerst: wie viele Pull Requests geöffnet und wie viele neu
 ausgerichtet werden, auf welchem Remote, und je eine `Branch → Basis`-Zeile —
-Pull Requests zu öffnen ist öffentlich und mühsam rückgängig zu machen. Am Ende
-sagt eine Meldung, wie viele geöffnet und wie viele neu ausgerichtet wurden. Der
+Pull Requests zu öffnen ist öffentlich und mühsam rückgängig zu machen. Der
 Navigationsabschnitt in jedem Text ist das, was die Kette auf GitHub sichtbar
 macht — GitHub kennt keine Stapel.
+
+Das Einreichen passiert auf einem eigenen Bildschirm: erst der Plan, dann der
+Fortschritt Schritt für Schritt, am Ende die Links zu jedem Pull Request und zum
+Stapel.
+
+![Einen Stapel einreichen](../../screenshots/stack-submit.webp)
 
 **Stack als PRs einreichen** erledigt mit einem Klick, wofür Stacking-Tools
 Geld verlangen:

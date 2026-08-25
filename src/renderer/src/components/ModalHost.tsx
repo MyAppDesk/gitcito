@@ -43,6 +43,7 @@ import { PRDetailModal } from './PRDetailModal'
 import { PrPreviewModal } from './PrPreviewModal'
 import { CodeSearchModal } from './CodeSearchModal'
 import { StackModal } from './StackModal'
+import { StackSubmitModal } from './StackSubmitModal'
 import { GitflowModal } from './GitflowModal'
 import { HistoryPurgeModal } from './HistoryPurgeModal'
 import { SubtreeModal } from './SubtreeModal'
@@ -1825,6 +1826,7 @@ export function ModalHost(): React.JSX.Element {
             {modal.kind === 'reflog' && <ReflogModal repoPath={modal.repoPath} />}
             {modal.kind === 'code-search' && <CodeSearchModal repoPath={modal.repoPath} />}
             {modal.kind === 'stack' && <StackModal repoPath={modal.repoPath} />}
+            {modal.kind === 'stack-submit' && <StackSubmitModal spec={modal} />}
             {modal.kind === 'gitflow' && <GitflowModal repoPath={modal.repoPath} />}
             {modal.kind === 'subtree' && <SubtreeModal repoPath={modal.repoPath} />}
             {modal.kind === 'clean' && <CleanModal repoPath={modal.repoPath} />}

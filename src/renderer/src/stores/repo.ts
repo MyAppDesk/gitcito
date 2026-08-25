@@ -7,6 +7,7 @@ import type {
   ConflictSide,
   DivergedStrategy,
   GitLockFile,
+  GithubStackInfo,
   GraphCommit,
   PrPreviewMode,
   PullRequest,
@@ -308,6 +309,23 @@ function promptLockRepair(message: string, path: string, retry: () => void): boo
     })
   })()
   return true
+}
+
+/** One level, as the submit left it. */
+export interface StackSubmitEntry {
+  branch: string
+  base: string
+  number: number
+  url: string
+  action: 'create' | 'retarget' | 'ok'
+}
+
+/** What a submit did, top level first — rendered by the submit screen. */
+export interface StackSubmitResult {
+  entries: StackSubmitEntry[]
+  stack: GithubStackInfo | null
+  /** Levels whose PR had landed and were cleaned up on the way in. */
+  pruned: string[]
 }
 
 /** Thrown when the branch a stack lands on has never been pushed. */
@@ -1322,8 +1340,11 @@ export const repoActions = {
    *  a lease, create missing PRs with the right bases, retarget any that point
    *  at the wrong base, then write the stack-navigation section into every PR
    *  body. Idempotent — the button is safe to press after every restack. */
-  submitStack: (path: string, leaf?: string) =>
-    useRepoStore.getState().run(
+  submitStack: async (path: string, leaf?: string): Promise<StackSubmitResult | null> => {
+    // The action reports what it did, not just whether it worked: four pull
+    // requests and a stack are worth showing, with their links.
+    let outcome: StackSubmitResult | null = null
+    const ok = await useRepoStore.getState().run(
       path,
       t('act.stackSubmitted'),
       async () => {
@@ -1405,6 +1426,8 @@ export const repoActions = {
         const plan = planStackSubmit(stack, openPrs, trunk)
 
         const numbered: { branch: string; number: number }[] = []
+        /** What the submit did, per level — the result screen renders this. */
+        const done: StackSubmitEntry[] = []
         for (const [i, a] of plan.entries()) {
           step(
             interp(t(a.action === 'create' ? 'stack.stepPr' : 'stack.stepRetarget'), {
@@ -1426,9 +1449,11 @@ export const repoActions = {
               draft: false
             })
             numbered.push({ branch: a.branch, number: res.number })
+            done.push({ branch: a.branch, base: a.base, number: res.number, url: res.url, action: 'create' })
           } else {
             if (a.action === 'retarget') await hostingApi.updatePR(origin.url, tokens, a.number!, { base: a.base })
             numbered.push({ branch: a.branch, number: a.number! })
+            done.push({ branch: a.branch, base: a.base, number: a.number!, url: a.url ?? '', action: a.action })
           }
         }
 
@@ -1450,6 +1475,7 @@ export const repoActions = {
 
         await useRepoStore.getState().refreshPRs(path, { silent: true })
         if (stackInfo) toast('success', interp(t('stack.registered'), { n: stackInfo.number }))
+        outcome = { entries: done.slice().reverse(), stack: stackInfo, pruned }
         // Four pull requests opening silently is indistinguishable from none,
         // so the run's own toast is followed by what actually happened.
         const created = plan.filter((a) => a.action === 'create').length
@@ -1460,7 +1486,9 @@ export const repoActions = {
       'push',
       (message) => promptTrunkPush(message, path, leaf),
       ['branches', 'status']
-    ),
+    )
+    return ok ? outcome : null
+  },
 
   addRemote: (path: string, name: string, url: string, pushUrl?: string) =>
     useRepoStore.getState().run(path, interp(t('act.addedRemote'), { name }), async () => {

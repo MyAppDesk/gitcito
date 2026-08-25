@@ -212,6 +212,12 @@ export const uk: Dict = {
   'search.historyHint': 'Показує коміти, чий diff змінює знайдений текст.',
   // Стек гілок
   'stack.title': 'Стек гілок',
+  'stack.resultTitle': 'Стек опубліковано',
+  'stack.resultOpened': 'відкрито',
+  'stack.resultRetargeted': 'перенацілено',
+  'stack.resultUnchanged': 'без змін',
+  'stack.retrySubmit': 'Повторити',
+  'common.done': 'Готово',
   'stack.stepRegister': 'Реєструємо стек на GitHub…',
   'stack.registered': 'GitHub вважає їх стеком #{n}',
   'stack.submitConfirmTitle': 'Подати цей стек як pull request’и?',

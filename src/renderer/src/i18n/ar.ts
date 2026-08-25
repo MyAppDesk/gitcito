@@ -212,6 +212,12 @@ export const ar: Dict = {
   'search.historyHint': 'يعرض الالتزامات التي يغيّر فرقها النص المطابق.',
   // Branch stack
   'stack.title': 'مكدس الفروع',
+  'stack.resultTitle': 'الكومة منشورة',
+  'stack.resultOpened': 'فُتح',
+  'stack.resultRetargeted': 'أُعيد توجيهه',
+  'stack.resultUnchanged': 'دون تغيير',
+  'stack.retrySubmit': 'أعد المحاولة',
+  'common.done': 'تم',
   'stack.stepRegister': 'يجري تسجيل الكومة على GitHub…',
   'stack.registered': 'يتعامل GitHub معها بوصفها الكومة رقم {n}',
   'stack.submitConfirmTitle': 'هل تُرسل هذه الكومة كطلبات دمج؟',

@@ -76,9 +76,13 @@ remote wilt maar nog geen review.
 
 **Indienen** vraagt eerst: hoeveel pull requests het opent, hoeveel het opnieuw
 richt, op welke remote, en per stuk de regel `branch → basis` — PR's openen is
-openbaar en lastig terug te draaien. Aan het eind zegt een melding hoeveel er
-zijn geopend en hoeveel opnieuw gericht. De navigatiesectie in elke tekst is wat
+openbaar en lastig terug te draaien. De navigatiesectie in elke tekst is wat
 de ketting zichtbaar maakt op GitHub, dat geen begrip van stapels heeft.
+
+Indienen gebeurt op een eigen scherm: eerst het plan, dan de voortgang stap voor
+stap, en tot slot de links naar elke pull request en naar de stapel.
+
+![Een stapel indienen](../../screenshots/stack-submit.webp)
 
 **Stapel indienen als PR's** doet met één klik waar stacking-tools geld voor
 vragen:

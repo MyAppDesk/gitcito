@@ -75,9 +75,13 @@ ainda não a revisão.
 
 **Enviar** pergunta antes: quantos pull requests vai abrir, quantos vai reapontar,
 em qual remoto, e a linha `branch → base` de cada um — abrir PRs é público e
-chato de desfazer. No fim, um aviso diz quantos foram abertos e quantos
-reapontados. A seção de navegação escrita em cada corpo é o que torna a cadeia
+chato de desfazer. A seção de navegação escrita em cada corpo é o que torna a cadeia
 visível no GitHub, que não tem noção de pilha.
+
+O envio acontece numa tela própria: primeiro o plano, depois o progresso passo a
+passo e, no fim, os links de cada pull request e da pilha.
+
+![Enviando uma pilha](../../screenshots/stack-submit.webp)
 
 **Enviar pilha como PRs** faz com um clique o que as ferramentas de stacking
 cobram para fazer:

@@ -75,9 +75,13 @@ değilsen **Hepsini gönder**'i kullan.
 
 **Gönder** önce sorar: kaç pull request açacağını, kaçını yeniden hedefleyeceğini,
 hangi uzakta ve her biri için `dal → temel` satırını — PR açmak halka açıktır ve
-geri alması zahmetlidir. Bitince bir bildirim kaçının açıldığını ve kaçının
-yeniden hedeflendiğini söyler. Her gövdeye yazılan gezinme bölümü, zinciri
+geri alması zahmetlidir. Her gövdeye yazılan gezinme bölümü, zinciri
 GitHub'da görünür kılan şeydir; GitHub'ın yığın diye bir kavramı yoktur.
+
+Gönderme kendi ekranında olur: önce plan, sonra adım adım ilerleme, en sonunda da
+her pull request’in ve yığının bağlantıları.
+
+![Bir yığını gönderme](../../screenshots/stack-submit.webp)
 
 **Yığını PR olarak gönder**, yığınlama araçlarının para aldığı işi tek tıkla yapar:
 

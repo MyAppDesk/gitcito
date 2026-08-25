@@ -212,6 +212,12 @@ export const pl: Dict = {
   'search.historyHint': 'Wypisuje commity, których diff zmienia dopasowany tekst.',
   // Stos branchy
   'stack.title': 'Stos branchy',
+  'stack.resultTitle': 'Stos jest wysłany',
+  'stack.resultOpened': 'otwarty',
+  'stack.resultRetargeted': 'przestawiony',
+  'stack.resultUnchanged': 'bez zmian',
+  'stack.retrySubmit': 'Spróbuj ponownie',
+  'common.done': 'Gotowe',
   'stack.stepRegister': 'Rejestrowanie stosu na GitHubie…',
   'stack.registered': 'GitHub traktuje je jako stos #{n}',
   'stack.submitConfirmTitle': 'Wysłać ten stos jako pull requesty?',

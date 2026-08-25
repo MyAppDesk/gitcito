@@ -76,9 +76,14 @@ sei ancora pronto per la revisione.
 
 **Invia** chiede prima: quante pull request aprirà, quante ne ripunterà, su quale
 remoto e la riga `ramo → base` di ognuna — aprire PR è pubblico e scomodo da
-disfare. Alla fine un avviso dice quante ne ha aperte e quante ripuntate. La
+disfare. La
 sezione di navigazione scritta in ogni corpo è ciò che rende visibile la catena
 su GitHub, che non ha alcuna nozione di pila.
+
+L’invio avviene in una schermata dedicata: prima il piano, poi l’avanzamento
+passo per passo e infine i link di ogni pull request e della pila.
+
+![Invio di una pila](../../screenshots/stack-submit.webp)
 
 **Invia lo stack come PR** fa in un clic quello che gli strumenti di stacking
 fanno pagare:

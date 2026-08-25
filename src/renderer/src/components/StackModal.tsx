@@ -43,7 +43,6 @@ export function StackModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
   const [info, setInfo] = useState<StackInfo | null>(null)
   const [loading, setLoading] = useState(true)
   const [applying, setApplying] = useState(false)
-  const [submitting, setSubmitting] = useState(false)
   const [adding, setAdding] = useState('')
   const [protectedNames, setProtectedNames] = useState<string[]>([])
 
@@ -172,9 +171,10 @@ export function StackModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
 
   /**
    * Opening pull requests is outward-facing and awkward to take back, so the
-   * chain is spelled out first — how many, and against what.
+   * plan goes to a screen of its own that asks, runs, and then shows the links
+   * it produced — rather than a confirm that closes this dialog behind it.
    */
-  const confirmSubmit = (): void => {
+  const openSubmit = (): void => {
     if (!info) return
     const openPrs = (repo?.prs ?? []).map((p) => ({
       id: p.id,
@@ -187,29 +187,14 @@ export function StackModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
       useUIStore.getState().toast('info', t('stack.nothingToSubmit'))
       return
     }
-    const remote = repo?.remotes.find((r) => r.name === 'origin')?.name ?? repo?.remotes[0]?.name ?? 'origin'
     useUIStore.getState().openModal({
-      kind: 'confirm',
-      title: t('stack.submitConfirmTitle'),
-      message: `${interp(t('stack.submitConfirmMessage'), {
-        create: summary.create,
-        retarget: summary.retarget,
-        remote
-      })}\n\n${summary.lines.join('\n')}`,
-      confirmLabel: t('stack.submitConfirmOk'),
-      autoFocusConfirm: true,
-      onConfirm: () => void submitStack()
+      kind: 'stack-submit',
+      repoPath,
+      leaf: leaf || undefined,
+      create: summary.create,
+      retarget: summary.retarget,
+      lines: summary.lines
     })
-  }
-
-  const submitStack = async (): Promise<void> => {
-    setSubmitting(true)
-    try {
-      await repoActions.submitStack(repoPath, leaf || undefined)
-    } finally {
-      setSubmitting(false)
-      await reload()
-    }
   }
 
   const after = async (p: Promise<unknown>): Promise<void> => {
@@ -219,7 +204,7 @@ export function StackModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
 
   // Drawn leaf-first: the branch on top merges into the one below it.
   const rows = order.slice().reverse()
-  const working = applying || submitting
+  const working = applying
 
   return (
     <div className="stack-modal">
@@ -390,11 +375,11 @@ export function StackModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
         </button>
         <button
           className="btn primary small"
-          onClick={confirmSubmit}
+          onClick={openSubmit}
           disabled={saved.order.length === 0 || dirty || working}
           title={dirty ? t('stack.applyFirst') : t('stack.submitHint')}
         >
-          {submitting ? <Loader2 size={13} className="spin" /> : <GitPullRequest size={13} />} {t('stack.submit')}
+          <GitPullRequest size={13} /> {t('stack.submit')}
         </button>
         <button className="btn ghost small" onClick={() => void reload()} style={{ marginLeft: 'auto' }}>
           <RefreshCw size={13} className={loading ? 'spin' : undefined} /> {t('stack.refresh')}

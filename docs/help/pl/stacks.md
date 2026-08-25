@@ -76,9 +76,13 @@ chcesz mieć gałęzie na zdalnym, ale jeszcze nie recenzję.
 
 **Wyślij** pyta najpierw: ile pull requestów otworzy, ile przestawi, na którym
 zdalnym repozytorium i po jednym wierszu `gałąź → baza` — otwieranie PR-ów jest
-publiczne i trudno je cofnąć. Na koniec powiadomienie mówi, ile otwarto i ile
-przestawiono. Sekcja nawigacji w każdym opisie jest tym, co czyni łańcuch
+publiczne i trudno je cofnąć. Sekcja nawigacji w każdym opisie jest tym, co czyni łańcuch
 widocznym na GitHubie, który nie zna pojęcia stosu.
+
+Wysyłka dzieje się na osobnym ekranie: najpierw plan, potem postęp krok po kroku,
+a na końcu linki do każdego pull requesta i do stosu.
+
+![Wysyłanie stosu](../../screenshots/stack-submit.webp)
 
 **Wyślij stos jako PR-y** robi jednym kliknięciem to, za co narzędzia do
 stackowania każą sobie płacić:

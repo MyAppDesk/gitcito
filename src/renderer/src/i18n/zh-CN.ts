@@ -212,6 +212,12 @@ export const zhCN: Dict = {
   'search.historyHint': '列出差异中改动了匹配文本的提交。',
   // Branch stack
   'stack.title': '分支栈',
+  'stack.resultTitle': '堆栈已就绪',
+  'stack.resultOpened': '已创建',
+  'stack.resultRetargeted': '已改目标',
+  'stack.resultUnchanged': '未变动',
+  'stack.retrySubmit': '重试',
+  'common.done': '完成',
   'stack.stepRegister': '正在 GitHub 上注册这个堆栈……',
   'stack.registered': 'GitHub 已把它们当作堆栈 #{n}',
   'stack.submitConfirmTitle': '把这个堆栈提交为 PR 吗？',

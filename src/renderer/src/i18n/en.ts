@@ -213,6 +213,12 @@ export const en = {
   'search.historyHint': 'Lists commits whose diff changes the matched text.',
   // Branch stack
   'stack.title': 'Branch stack',
+  'stack.resultTitle': 'The stack is up',
+  'stack.resultOpened': 'opened',
+  'stack.resultRetargeted': 'retargeted',
+  'stack.resultUnchanged': 'unchanged',
+  'stack.retrySubmit': 'Try again',
+  'common.done': 'Done',
   'stack.stepRegister': 'Registering the stack on GitHub…',
   'stack.registered': 'GitHub is treating these as stack #{n}',
   'stack.submitConfirmTitle': 'Submit this stack as pull requests?',

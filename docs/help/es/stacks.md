@@ -77,9 +77,13 @@ remoto pero aún no la revisión.
 
 **Enviar** pregunta antes: cuántos pull requests abrirá, cuántos redirigirá, en
 qué remoto y la línea `rama → base` de cada uno — abrir PRs es público y cuesta
-deshacerlo. Al terminar, un aviso dice cuántos se abrieron y cuántos se
-redirigieron. La sección de navegación que escribe en cada cuerpo es lo que hace
+deshacerlo. La sección de navegación que escribe en cada cuerpo es lo que hace
 visible la cadena en GitHub, que no tiene concepto de pila.
+
+El envío ocurre en una pantalla propia: primero el plan, luego el progreso paso
+a paso y, al final, los enlaces de cada pull request y de la pila.
+
+![Enviando una pila](../../screenshots/stack-submit.webp)
 
 **Enviar pila como PRs** hace en un clic lo que las herramientas de stacking
 cobran:

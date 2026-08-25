@@ -212,6 +212,12 @@ export const nl: Dict = {
   'search.historyHint': 'Toont commits waarvan de diff de gezochte tekst wijzigt.',
   // Branch-stack
   'stack.title': 'Branch-stack',
+  'stack.resultTitle': 'De stapel staat online',
+  'stack.resultOpened': 'geopend',
+  'stack.resultRetargeted': 'opnieuw gericht',
+  'stack.resultUnchanged': 'ongewijzigd',
+  'stack.retrySubmit': 'Opnieuw proberen',
+  'common.done': 'Klaar',
   'stack.stepRegister': 'De stapel op GitHub registreren…',
   'stack.registered': 'GitHub behandelt ze als stapel #{n}',
   'stack.submitConfirmTitle': 'Deze stapel als pull requests indienen?',

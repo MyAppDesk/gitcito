@@ -212,6 +212,13 @@ export const ar: Dict = {
   'search.historyHint': 'يعرض الالتزامات التي يغيّر فرقها النص المطابق.',
   // Branch stack
   'stack.title': 'مكدس الفروع',
+  'stack.stepPrepare': 'يجري التحقق مما هبط بالفعل…',
+  'stack.stepPush': 'يجري دفع {branch} ({n}/{total})',
+  'stack.stepVerify': 'يجري سؤال المستودع البعيد عمّا لديه…',
+  'stack.stepPr': 'يجري فتح طلب الدمج لـ {branch} ({n}/{total})',
+  'stack.stepRetarget': 'يجري إعادة توجيه طلب الدمج لـ {branch} ({n}/{total})',
+  'stack.stepNav': 'يجري كتابة تنقّل الكومة في {n} من طلبات الدمج…',
+  'stack.notOnRemote': 'لم تصل هذه الفروع إلى {remote}: {branches}. ادفعها ثم أعد المحاولة.',
   'stack.restack': 'إعادة التكديس',
   'stack.refresh': 'تحديث',
   'stack.empty': 'هذا الفرع ليس جزءًا من مكدس. أنشئ فرعًا مكدَّسًا، أو عيّن أبًا لفرع قائم لتبدأ مكدسًا.',

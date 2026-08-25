@@ -105,6 +105,12 @@ seviyeleri zorla push eder ve PR'lar yerinde güncellenir.
   ama zaten incelemede olan bir katman bir sonraki göndermede force-push yer.
 - Bir katman seferde tek sıra yer değiştirir. İki takas iki rebase demektir ve
   yarıda kalmak okunaklı bir durumdur; üç sıra öteye düşen bir sürükleme değil.
+- Bir durak **rebase edilir**, dolayısıyla yığının indiği dal asla aynı zamanda
+  durak olamaz; **korumalı** bir dal da olamaz (listeyi değiştirmedikçe `main` ve
+  `master`). İkisi de sessizce ortak geçmişi yeniden yazmak yerine reddedilir.
+- Gönderme, herhangi bir şey açmadan önce uzağa hangi dalların gerçekten
+  ulaştığını sorar ve ulaşmayanları adıyla söyler. GitHub, eksik bir head'e kuru
+  bir "Validation Failed" ile yanıt verir; kimsenin işine yaramaz.
 
 ## Bağlantılar nerede yaşar
 

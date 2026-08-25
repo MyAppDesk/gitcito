@@ -212,6 +212,13 @@ export const ru: Dict = {
   'search.historyHint': 'Показывает коммиты, в диффе которых меняется найденный текст.',
   // Стек веток
   'stack.title': 'Стек веток',
+  'stack.stepPrepare': 'Проверяю, что уже приземлилось…',
+  'stack.stepPush': 'Отправляю {branch} ({n}/{total})',
+  'stack.stepVerify': 'Спрашиваю удалённый репозиторий, что у него есть…',
+  'stack.stepPr': 'Открываю PR для {branch} ({n}/{total})',
+  'stack.stepRetarget': 'Перенацеливаю PR для {branch} ({n}/{total})',
+  'stack.stepNav': 'Записываю навигацию по стеку в {n} PR…',
+  'stack.notOnRemote': 'Эти ветки так и не попали на {remote}: {branches}. Отправьте их и повторите.',
   'stack.restack': 'Перестроить стек',
   'stack.refresh': 'Обновить',
   'stack.empty': 'Эта ветка не входит в стек. Создайте ветку в стеке или задайте родителя существующей, чтобы начать.',

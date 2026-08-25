@@ -112,6 +112,13 @@ Ebenen und die PRs aktualisieren sich an Ort und Stelle.
 - Eine Ebene bewegt sich immer nur um einen Platz. Zwei Tausche sind zwei
   Rebases, und auf halbem Weg stehenzubleiben ist ein lesbarer Zustand; ein Zug,
   der drei Plätze weiter landet, ist es nicht.
+- Eine Station wird **rebased**, also ist der Branch, auf dem der Stapel landet,
+  nie zugleich eine Station — und ein **geschützter** Branch ebenso wenig (`main`
+  und `master`, solange du die Liste nicht änderst). Beide werden abgelehnt,
+  statt geteilte Historie still umzuschreiben.
+- Vor dem Öffnen fragt das Einreichen das Remote, welche Branches wirklich
+  angekommen sind, und nennt die fehlenden. GitHub beantwortet einen fehlenden
+  Head mit einem nackten „Validation Failed“, mit dem niemand etwas anfangen kann.
 
 ## Wo die Verknüpfungen liegen
 

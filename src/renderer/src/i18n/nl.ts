@@ -212,6 +212,13 @@ export const nl: Dict = {
   'search.historyHint': 'Toont commits waarvan de diff de gezochte tekst wijzigt.',
   // Branch-stack
   'stack.title': 'Branch-stack',
+  'stack.stepPrepare': 'Nagaan wat er al geland is…',
+  'stack.stepPush': '{branch} pushen ({n}/{total})',
+  'stack.stepVerify': 'De remote vragen wat hij heeft…',
+  'stack.stepPr': 'De PR voor {branch} openen ({n}/{total})',
+  'stack.stepRetarget': 'De PR voor {branch} opnieuw richten ({n}/{total})',
+  'stack.stepNav': 'Stapelnavigatie in {n} PR’s schrijven…',
+  'stack.notOnRemote': 'Deze branches hebben {remote} nooit bereikt: {branches}. Push ze en probeer opnieuw.',
   'stack.restack': 'Restacken',
   'stack.refresh': 'Vernieuwen',
   'stack.empty': 'Deze branch hoort niet bij een stack. Maak een gestapelde branch, of geef een bestaande branch een parent om er een te beginnen.',

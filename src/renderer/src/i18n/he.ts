@@ -212,6 +212,13 @@ export const he: Dict = {
   'search.historyHint': 'מציג קומיטים שהדיף שלהם משנה את הטקסט שנמצא.',
   // Branch stack
   'stack.title': 'ערימת ענפים',
+  'stack.stepPrepare': 'בודקים מה כבר נחת…',
+  'stack.stepPush': 'דוחפים את {branch} ({n}/{total})',
+  'stack.stepVerify': 'שואלים את המרוחק מה יש לו…',
+  'stack.stepPr': 'פותחים את ה־PR עבור {branch} ({n}/{total})',
+  'stack.stepRetarget': 'מכוונים מחדש את ה־PR עבור {branch} ({n}/{total})',
+  'stack.stepNav': 'כותבים ניווט ערימה ל־{n} PR…',
+  'stack.notOnRemote': 'הענפים האלה מעולם לא הגיעו אל {remote}: {branches}. דחפו אותם ונסו שוב.',
   'stack.restack': 'ריסטאק',
   'stack.refresh': 'רענון',
   'stack.empty': 'הענף הזה אינו חלק מערימה. צרו ענף בערימה, או קבעו הורה לענף קיים כדי להתחיל אחת.',

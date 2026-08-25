@@ -212,6 +212,13 @@ export const ptBR: Dict = {
   'search.historyHint': 'Lista os commits cujo diff mexe no texto procurado.',
   // Pilha de branches
   'stack.title': 'Pilha de branches',
+  'stack.stepPrepare': 'Conferindo o que já aterrissou…',
+  'stack.stepPush': 'Enviando {branch} ({n}/{total})',
+  'stack.stepVerify': 'Perguntando ao remoto o que ele tem…',
+  'stack.stepPr': 'Abrindo a PR de {branch} ({n}/{total})',
+  'stack.stepRetarget': 'Reapontando a PR de {branch} ({n}/{total})',
+  'stack.stepNav': 'Escrevendo a navegação da pilha em {n} PRs…',
+  'stack.notOnRemote': 'Estes branches nunca chegaram em {remote}: {branches}. Envie-os e tente de novo.',
   'stack.restack': 'Restack',
   'stack.refresh': 'Atualizar',
   'stack.empty': 'Esta branch não faz parte de nenhuma pilha. Crie uma branch empilhada, ou defina um pai numa branch existente para começar uma.',

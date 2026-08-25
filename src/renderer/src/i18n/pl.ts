@@ -212,6 +212,13 @@ export const pl: Dict = {
   'search.historyHint': 'Wypisuje commity, których diff zmienia dopasowany tekst.',
   // Stos branchy
   'stack.title': 'Stos branchy',
+  'stack.stepPrepare': 'Sprawdzanie, co już wylądowało…',
+  'stack.stepPush': 'Wypychanie {branch} ({n}/{total})',
+  'stack.stepVerify': 'Pytanie zdalnego repozytorium, co ma…',
+  'stack.stepPr': 'Otwieranie PR dla {branch} ({n}/{total})',
+  'stack.stepRetarget': 'Przestawianie celu PR dla {branch} ({n}/{total})',
+  'stack.stepNav': 'Zapisywanie nawigacji stosu w {n} PR-ach…',
+  'stack.notOnRemote': 'Te gałęzie nigdy nie dotarły do {remote}: {branches}. Wypchnij je i spróbuj ponownie.',
   'stack.restack': 'Przebuduj stos',
   'stack.refresh': 'Odśwież',
   'stack.empty': 'Ten branch nie należy do żadnego stosu. Utwórz branch na stosie albo ustaw rodzica istniejącemu branchowi, żeby zacząć.',

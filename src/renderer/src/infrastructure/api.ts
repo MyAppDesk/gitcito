@@ -204,6 +204,9 @@ export const gitApi = {
   /** Re-link a stack to `order` (bottom → top on `trunk`) and replay it. */
   stackReorder: (path: string, trunk: string, order: string[]) =>
     call<void>('stackReorder', path, trunk, order),
+  /** Which of these branches the remote actually has (one ls-remote). */
+  remoteHasBranches: (path: string, remote: string, branches: string[]) =>
+    call<string[]>('remoteHasBranches', path, remote, branches),
   /** Set the whole route: `order` on `trunk`, untracking anything left out. */
   stackSetRoute: (path: string, trunk: string, order: string[]) =>
     call<void>('stackSetRoute', path, trunk, order),

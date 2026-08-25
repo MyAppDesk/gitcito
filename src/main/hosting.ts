@@ -435,6 +435,38 @@ function createPullRequestUrl(remoteUrl: string, source: string, target: string)
  * (GitLab/Bitbucket creation is tracked separately under hosting verification —
  * their remotes aren't parsed by parseRemoteUrl yet.)
  */
+/** GitHub's error envelope: a headline plus, on a 422, one entry per problem. */
+interface GithubErrorBody {
+  message?: string
+  errors?: { resource?: string; field?: string; code?: string; message?: string }[]
+}
+
+/**
+ * A GitHub API failure, said in words.
+ *
+ * The headline for a rejected PR is always "Validation Failed", and the entry
+ * that explains it usually carries no `message` at all — only a `field` and a
+ * `code`, which the user cannot be expected to read. So the two that actually
+ * happen get spelled out with the branch names in them, and anything else
+ * degrades to `field: code` rather than being dropped, which is how the
+ * useless headline used to be all that survived.
+ */
+function githubErrorMessage(detail: GithubErrorBody | null, status: number, opts: CreatePrOpts): string {
+  const parts = (detail?.errors ?? []).map((e) => {
+    if (e.message) return e.message
+    if (e.field === 'head') {
+      // The commonest cause by far: the branch was never pushed, so as far as
+      // GitHub is concerned there is nothing to open a pull request from.
+      return `the branch "${opts.source}" is not on the remote — push it first`
+    }
+    if (e.field === 'base') return `the base branch "${opts.target}" is not on the remote`
+    return [e.field, e.code].filter(Boolean).join(': ')
+  })
+  const listed = parts.filter(Boolean).join('; ')
+  if (listed && detail?.message) return `${detail.message} — ${listed}`
+  return listed || detail?.message || `API error (${status})`
+}
+
 async function createPullRequest(
   remoteUrl: string,
   tokens: HostTokens,
@@ -508,9 +540,8 @@ async function createPullRequest(
       })
     })
     if (!res.ok) {
-      const detail = (await res.json().catch(() => null)) as { message?: string; errors?: { message?: string }[] } | null
-      const msg = detail?.errors?.map((e) => e.message).filter(Boolean).join('; ') || detail?.message
-      throw new Error(`GitHub: ${msg || `API error (${res.status})`}`)
+      const detail = (await res.json().catch(() => null)) as GithubErrorBody | null
+      throw new Error(`GitHub: ${githubErrorMessage(detail, res.status, opts)}`)
     }
     const d = (await res.json()) as { html_url: string; number: number }
     return { url: d.html_url, number: d.number }

@@ -110,6 +110,13 @@ plekke bijgewerkt.
 - Een niveau schuift één plek per keer. Twee wissels zijn twee rebases, en
   halverwege stoppen is een leesbare toestand; een sleep die drie plekken verder
   landt niet.
+- Een stop wordt **gerebased**, dus de branch waarop de stapel landt is nooit
+  óók een stop, en een **beschermde** branch evenmin (`main` en `master`, tenzij
+  je de lijst wijzigt). Allebei worden geweigerd in plaats van stilletjes gedeelde
+  geschiedenis te herschrijven.
+- Voor er iets geopend wordt vraagt het indienen aan de remote welke branches er
+  echt zijn aangekomen, en noemt de ontbrekende. GitHub antwoordt op een
+  ontbrekende head met een kaal "Validation Failed", waar niemand iets aan heeft.
 
 ## Waar de verbanden wonen
 

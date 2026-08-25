@@ -13424,6 +13424,14 @@ mark.find-hit.active {
 .stack-icon-btn:hover:not(:disabled) { background: var(--bg-3); color: var(--text-0); border-color: var(--border); }
 .stack-icon-btn:disabled { opacity: 0.3; cursor: default; }
 .stack-icon-btn.danger:hover:not(:disabled) { color: var(--red, #e5484d); }
+.stack-progress {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--text-1);
+}
 
 /* ─── Insights page ─────────────────────────────────────────────────────── */
 .ins-add { color: var(--green, #2ea043); }

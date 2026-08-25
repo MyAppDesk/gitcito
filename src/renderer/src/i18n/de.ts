@@ -212,6 +212,13 @@ export const de: Dict = {
   'search.historyHint': 'Listet Commits, deren Diff den gesuchten Text ändert.',
   // Branch stack
   'stack.title': 'Branch-Stapel',
+  'stack.stepPrepare': 'Prüfe, was bereits gelandet ist…',
+  'stack.stepPush': 'Pushe {branch} ({n}/{total})',
+  'stack.stepVerify': 'Frage das Remote, was es hat…',
+  'stack.stepPr': 'Öffne den PR für {branch} ({n}/{total})',
+  'stack.stepRetarget': 'Ziele den PR für {branch} neu aus ({n}/{total})',
+  'stack.stepNav': 'Schreibe die Stapelnavigation in {n} PRs…',
+  'stack.notOnRemote': 'Diese Branches sind nie bei {remote} angekommen: {branches}. Pushe sie und versuche es erneut.',
   'stack.restack': 'Restack',
   'stack.refresh': 'Aktualisieren',
   'stack.empty': 'Dieser Branch gehört zu keinem Stapel. Erstelle einen gestapelten Branch oder setze bei einem bestehenden Branch einen Parent, um einen anzulegen.',

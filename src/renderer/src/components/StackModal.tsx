@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Layers, RefreshCw, GitPullRequest, Plus, X, ChevronUp, ChevronDown, Upload, LogIn } from 'lucide-react'
+import { Layers, RefreshCw, GitPullRequest, Plus, X, ChevronUp, ChevronDown, Upload, LogIn, Loader2 } from 'lucide-react'
 import { gitApi } from '../infrastructure/api'
+import { useUIStore } from '../stores/ui'
 import { useRepoStore, repoActions } from '../stores/repo'
 import type { StackInfo } from '../../../shared/types'
 import { RefPicker, type RefOption } from './RefPicker'
@@ -20,10 +21,15 @@ import { useT, interp } from '../i18n'
 export function StackModal({ repoPath }: { repoPath: string }): React.JSX.Element {
   const t = useT()
   const repo = useRepoStore((s) => s.repos[repoPath])
+  // A submit is a dozen network calls; show which one, where the user is
+  // looking, instead of only spinning an icon.
+  const busy = useUIStore((s) => s.busy)
   const [info, setInfo] = useState<StackInfo | null>(null)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [adding, setAdding] = useState('')
+  /** main/master by default — never offered as a stop, because a stop is rebased. */
+  const [protectedNames, setProtectedNames] = useState<string[]>([])
 
   const reload = useCallback(async (): Promise<void> => {
     setLoading(true)
@@ -39,6 +45,13 @@ export function StackModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
   useEffect(() => {
     void reload()
   }, [reload, repo?.branches.current])
+
+  useEffect(() => {
+    void gitApi
+      .protectedBranches(repoPath)
+      .then(setProtectedNames)
+      .catch(() => setProtectedNames([]))
+  }, [repoPath])
 
   const after = async (p: Promise<unknown>): Promise<void> => {
     await p
@@ -64,10 +77,10 @@ export function StackModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
   const freeBranches = useMemo<RefOption[]>(
     () =>
       locals
-        .filter((n) => n !== trunk && !order.includes(n))
+        .filter((n) => n !== trunk && !order.includes(n) && !protectedNames.includes(n))
         .sort((a, b) => a.localeCompare(b))
         .map((value) => ({ value, kind: 'local' as const })),
-    [locals, order, trunk]
+    [locals, order, trunk, protectedNames]
   )
 
   const prFor = (branch: string): { id: number; url: string } | undefined =>
@@ -216,6 +229,12 @@ export function StackModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
       </div>
 
       {order.length === 0 && !loading && <p className="settings-hint">{t('stack.emptyRoute')}</p>}
+
+      {submitting && busy && (
+        <p className="stack-progress">
+          <Loader2 size={13} className="spin" /> {busy}
+        </p>
+      )}
 
       <div className="stack-toolbar">
         <button

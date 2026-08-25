@@ -1332,3 +1332,20 @@ describe('stack route (stacked-branches playground)', () => {
     expect(parents).not.toContain('branch.feature/api.')
   })
 })
+
+describe('stack route guards (stacked-branches playground)', () => {
+  it('refuses to make the landing branch a stop on its own stack', async () => {
+    const R = cloneFixture('stacked-branches')
+    await expect(gitService.stackSetRoute(R, 'main', ['main', 'feature/ui'])).rejects.toThrow(/where the stack lands/i)
+  })
+
+  it('refuses to rebase a protected branch, so a stack cannot rewrite main', async () => {
+    const R = cloneFixture('stacked-branches')
+    execFileSync('git', ['-C', R, 'branch', 'release', 'main'])
+    execFileSync('git', ['-C', R, 'config', 'gitcito.protectedbranches', 'main,release'])
+    await expect(gitService.stackSetRoute(R, 'feature/api', ['release'])).rejects.toThrow(/protected/i)
+    // Nothing moved.
+    const tip = execFileSync('git', ['-C', R, 'rev-parse', 'release']).toString().trim()
+    expect(tip).toBe(execFileSync('git', ['-C', R, 'rev-parse', 'main']).toString().trim())
+  })
+})

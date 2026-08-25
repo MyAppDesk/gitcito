@@ -212,6 +212,13 @@ export const zhCN: Dict = {
   'search.historyHint': '列出差异中改动了匹配文本的提交。',
   // Branch stack
   'stack.title': '分支栈',
+  'stack.stepPrepare': '正在检查哪些已经落地……',
+  'stack.stepPush': '正在推送 {branch}（{n}/{total}）',
+  'stack.stepVerify': '正在向远端确认它有什么……',
+  'stack.stepPr': '正在为 {branch} 创建 PR（{n}/{total}）',
+  'stack.stepRetarget': '正在改掉 {branch} 的 PR 目标（{n}/{total}）',
+  'stack.stepNav': '正在把堆栈导航写进 {n} 个 PR……',
+  'stack.notOnRemote': '这些分支没有到达 {remote}：{branches}。推送后再试。',
   'stack.restack': '重新堆叠',
   'stack.refresh': '刷新',
   'stack.empty': '这个分支不属于任何分支栈。创建一个堆叠分支，或者给已有分支设置父分支来开始一个。',

@@ -212,6 +212,13 @@ export const ko: Dict = {
   'search.historyHint': '해당 텍스트를 변경한 커밋을 나열합니다.',
   // 브랜치 스택
   'stack.title': '브랜치 스택',
+  'stack.stepPrepare': '이미 착지한 것을 확인하는 중…',
+  'stack.stepPush': '{branch} 푸시 중 ({n}/{total})',
+  'stack.stepVerify': '원격에 무엇이 있는지 확인하는 중…',
+  'stack.stepPr': '{branch}의 PR을 여는 중 ({n}/{total})',
+  'stack.stepRetarget': '{branch}의 PR 대상을 바꾸는 중 ({n}/{total})',
+  'stack.stepNav': 'PR {n}개에 스택 내비게이션을 쓰는 중…',
+  'stack.notOnRemote': '이 브랜치들은 {remote}에 도달하지 못했습니다: {branches}. 푸시한 뒤 다시 시도하세요.',
   'stack.restack': '리스택',
   'stack.refresh': '새로 고침',
   'stack.empty': '이 브랜치는 스택에 속해 있지 않습니다. 스택 브랜치를 만들거나 기존 브랜치에 부모를 지정해 시작하세요.',

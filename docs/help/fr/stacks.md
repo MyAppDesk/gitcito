@@ -112,6 +112,13 @@ sont poussés en force et les pull requests se mettent à jour sur place.
 - Un niveau ne bouge que d’une place à la fois. Deux échanges font deux rebases,
   et s’arrêter à mi-chemin reste un état lisible ; un glisser-déposer qui
   atterrit trois places plus loin, non.
+- Une étape est **rebasée** : la branche sur laquelle la pile atterrit n’est donc
+  jamais aussi une étape, pas plus qu’une branche **protégée** (`main` et
+  `master`, sauf si vous changez la liste). Les deux sont refusées plutôt que de
+  réécrire en silence une histoire partagée.
+- Avant d’ouvrir quoi que ce soit, la soumission demande au distant quelles
+  branches sont bien arrivées et nomme celles qui manquent. GitHub répond à une
+  head absente par un « Validation Failed » sec, qui ne sert personne.
 
 ## Où vivent les liens
 

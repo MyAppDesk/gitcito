@@ -101,6 +101,12 @@ rewritten levels and the PRs update in place.
 - A stop moves one place at a time. Two swaps are two rebases, and
   stopping halfway is a legible state; a drag that lands three places away is
   not.
+- A stop gets **rebased**, so the branch the stack lands on is never also a stop,
+  and neither is a **protected** branch — `main` and `master` unless you changed
+  the list. Both are refused rather than quietly rewriting shared history.
+- Submit asks the remote which branches actually arrived before it opens
+  anything, and names the ones that did not. GitHub answers a missing head with
+  a bare "Validation Failed", which is worth nobody's afternoon.
 
 ## Where the links live
 

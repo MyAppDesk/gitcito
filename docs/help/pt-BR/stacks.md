@@ -104,6 +104,13 @@ atualizam no lugar.
   nível já em revisão leva um force-push no próximo envio.
 - Um nível só anda uma posição por vez. Duas trocas são dois rebases, e parar no
   meio é um estado legível; um arraste que cai três posições adiante não é.
+- Uma parada é **rebaseada**, então o branch em que a pilha aterrissa nunca é
+  também uma parada, e um branch **protegido** também não (`main` e `master`, a
+  menos que você mude a lista). Os dois são recusados em vez de reescrever
+  silenciosamente história compartilhada.
+- Antes de abrir qualquer coisa, o envio pergunta ao remoto quais branches
+  realmente chegaram e diz quais faltaram. O GitHub responde a um head ausente com
+  um seco "Validation Failed", que não ajuda ninguém.
 
 ## Onde os vínculos ficam
 

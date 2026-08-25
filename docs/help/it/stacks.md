@@ -109,6 +109,13 @@ PR si aggiornano sul posto.
 - Un livello si sposta di un posto alla volta. Due scambi sono due rebase, e
   fermarsi a metà è uno stato leggibile; un trascinamento che atterra tre posti
   più in là non lo è.
+- Una tappa viene **rebasata**, quindi il ramo su cui atterra la pila non è mai
+  anche una tappa, e nemmeno lo è un ramo **protetto** (`main` e `master`, se non
+  cambi l'elenco). Entrambi vengono rifiutati invece di riscrivere in silenzio
+  storia condivisa.
+- Prima di aprire qualsiasi cosa, l'invio chiede al remoto quali rami sono
+  davvero arrivati e nomina quelli che mancano. GitHub risponde a una head
+  assente con un secco "Validation Failed", che non serve a nessuno.
 
 ## Dove vivono i collegamenti
 

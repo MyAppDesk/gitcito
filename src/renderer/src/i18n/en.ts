@@ -213,6 +213,13 @@ export const en = {
   'search.historyHint': 'Lists commits whose diff changes the matched text.',
   // Branch stack
   'stack.title': 'Branch stack',
+  'stack.stepPrepare': 'Checking what has already landed…',
+  'stack.stepPush': 'Pushing {branch} ({n}/{total})',
+  'stack.stepVerify': 'Asking the remote what it has…',
+  'stack.stepPr': 'Opening the PR for {branch} ({n}/{total})',
+  'stack.stepRetarget': 'Retargeting the PR for {branch} ({n}/{total})',
+  'stack.stepNav': 'Writing stack navigation into {n} PRs…',
+  'stack.notOnRemote': 'These branches never reached {remote}: {branches}. Push them and try again.',
   'stack.restack': 'Restack',
   'stack.refresh': 'Refresh',
   'stack.empty': 'This branch isn’t part of a stack. Create a stacked branch, or set a parent on an existing branch to start one.',

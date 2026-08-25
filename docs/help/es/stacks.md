@@ -110,6 +110,13 @@ niveles reescritos y los PRs se actualizan en su sitio.
 - Un nivel solo se mueve una posición cada vez. Dos intercambios son dos rebases,
   y quedarse a medias es un estado legible; un arrastre que aterriza tres
   posiciones más allá no lo es.
+- Una parada se **rebasa**, así que la rama en la que aterriza la pila nunca es
+  además una parada, y tampoco lo es una rama **protegida** (`main` y `master`
+  salvo que cambies la lista). Ambas se rechazan en vez de reescribir en silencio
+  historia compartida.
+- Antes de abrir nada, el envío pregunta al remoto qué ramas llegaron de verdad
+  y nombra las que no. GitHub responde a un head ausente con un escueto
+  «Validation Failed», que no le sirve a nadie.
 
 ## Dónde viven los enlaces
 

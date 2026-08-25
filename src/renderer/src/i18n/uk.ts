@@ -212,6 +212,13 @@ export const uk: Dict = {
   'search.historyHint': 'Показує коміти, чий diff змінює знайдений текст.',
   // Стек гілок
   'stack.title': 'Стек гілок',
+  'stack.stepPrepare': 'Перевіряю, що вже приземлилося…',
+  'stack.stepPush': 'Надсилаю {branch} ({n}/{total})',
+  'stack.stepVerify': 'Питаю віддалений репозиторій, що в нього є…',
+  'stack.stepPr': 'Відкриваю PR для {branch} ({n}/{total})',
+  'stack.stepRetarget': 'Перенацілюю PR для {branch} ({n}/{total})',
+  'stack.stepNav': 'Записую навігацію стека до {n} PR…',
+  'stack.notOnRemote': 'Ці гілки так і не потрапили на {remote}: {branches}. Надішліть їх і повторіть.',
   'stack.restack': 'Перескласти',
   'stack.refresh': 'Оновити',
   'stack.empty': 'Ця гілка не входить у стек. Створіть гілку у стеку або задайте батьківську гілку наявній, щоб почати.',

@@ -207,6 +207,13 @@ export const es: Dict = {
   'search.historyHint': 'Lista commits cuyo diff cambia el texto buscado.',
   // Branch stack
   'stack.title': 'Pila de ramas',
+  'stack.stepPrepare': 'Comprobando qué ha aterrizado ya…',
+  'stack.stepPush': 'Enviando {branch} ({n}/{total})',
+  'stack.stepVerify': 'Preguntando al remoto qué tiene…',
+  'stack.stepPr': 'Abriendo el PR de {branch} ({n}/{total})',
+  'stack.stepRetarget': 'Redirigiendo el PR de {branch} ({n}/{total})',
+  'stack.stepNav': 'Escribiendo la navegación de la pila en {n} PRs…',
+  'stack.notOnRemote': 'Estas ramas no llegaron a {remote}: {branches}. Envíalas y vuelve a intentarlo.',
   'stack.restack': 'Restack',
   'stack.refresh': 'Actualizar',
   'stack.empty': 'Esta rama no es parte de una pila. Crea una rama apilada, o asigna un padre a una rama existente para empezar.',

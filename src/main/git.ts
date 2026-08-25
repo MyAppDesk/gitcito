@@ -2598,6 +2598,17 @@ export const gitService = {
   async stackReorder(repoPath: string, trunk: string, order: string[]): Promise<void> {
     const git = gitFor(repoPath)
     if (order.length === 0) return
+    // Every stop in the route gets rebased. The branch the stack lands on is
+    // not a stop, and neither is a protected branch — either one here would
+    // quietly rewrite the history everyone else is working from.
+    if (order.includes(trunk)) throw new Error(`"${trunk}" is where the stack lands — it cannot also be a stop on it.`)
+    const protectedNames = await gitService.protectedBranches(repoPath).catch(() => [] as string[])
+    const guarded = order.filter((b) => protectedNames.includes(b))
+    if (guarded.length) {
+      throw new Error(
+        `Refusing to rebase protected ${guarded.length === 1 ? 'branch' : 'branches'}: ${guarded.join(', ')}.`
+      )
+    }
     for (const branch of order) {
       const existing = (await git.raw(['config', '--get', `branch.${branch}.gitcitobase`]).catch(() => '')).trim()
       if (existing) continue
@@ -2610,6 +2621,27 @@ export const gitService = {
       await git.raw(['config', `branch.${order[i]}.gitcitoparent`, i === 0 ? trunk : order[i - 1]])
     }
     await gitService.stackRestack(repoPath, order[order.length - 1])
+  },
+
+  /**
+   * Which of `branches` the remote actually carries, in one `ls-remote`.
+   *
+   * A push that "succeeded" into the wrong remote, or a branch nobody pushed,
+   * both end as the same GitHub 422 — a validation failure whose entry carries
+   * no message. Asking the remote first turns that into a sentence naming the
+   * branch.
+   */
+  async remoteHasBranches(repoPath: string, remote: string, branches: string[]): Promise<string[]> {
+    if (!branches.length) return []
+    const out = await withRemoteAuth(repoPath, remote, () =>
+      runGit(repoPath, ['ls-remote', '--heads', remote, ...branches.map((b) => `refs/heads/${b}`)])
+    ).catch(() => '')
+    const present = new Set<string>()
+    for (const line of out.split('\n')) {
+      const ref = line.split('\t')[1]?.trim()
+      if (ref?.startsWith('refs/heads/')) present.add(ref.slice('refs/heads/'.length))
+    }
+    return branches.filter((b) => present.has(b))
   },
 
   /**
@@ -7156,6 +7188,7 @@ const READ_METHODS = new Set<string>([
   'lastFetchAt',
   'upstreamSuggestion',
   'staleLocks',
+  'remoteHasBranches',
   'log',
   'branches',
   'status',

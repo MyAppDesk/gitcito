@@ -1295,6 +1295,10 @@ export const repoActions = {
         const repo = state.repos[path]
         const origin = repo?.remotes.find((r) => r.name === 'origin') ?? repo?.remotes[0]
         if (!origin) throw new Error(t('stack.noRemote'))
+        // A submit is a dozen network calls; the busy label says which one, so
+        // the wait reads as progress rather than as a spinning icon.
+        const step = (label: string): void => useUIStore.getState().setBusy(label, 'push')
+        step(t('stack.stepPrepare'))
 
         // A landed bottom first: reparent its child, untrack it, drop the
         // branch — then the rest of the submit sees the shortened chain.
@@ -1327,8 +1331,24 @@ export const repoActions = {
         const tokens = { github: profile.githubToken || undefined }
 
         // Every level pushed with a lease: restacked branches need the force,
-        // fresh ones tolerate it.
-        for (const b of stack.branches) await gitApi.push(path, b.name, { force: true })
+        // fresh ones tolerate it. The remote is the one the PRs will be opened
+        // against — pushing to a different one is how a PR ends up with a head
+        // GitHub cannot see.
+        for (const [i, b] of stack.branches.entries()) {
+          step(interp(t('stack.stepPush'), { branch: b.name, n: i + 1, total: stack.branches.length }))
+          await gitApi.push(path, b.name, { force: true, remote: origin.name })
+        }
+
+        // Ask the remote what it actually has before asking GitHub to open
+        // anything: a missing head comes back from the API as "Validation
+        // Failed" with no field the user can act on.
+        step(t('stack.stepVerify'))
+        const onRemote = await gitApi
+          .remoteHasBranches(path, origin.name, stack.branches.map((b) => b.name))
+          .catch(() => stack.branches.map((b) => b.name))
+        const missing = stack.branches.map((b) => b.name).filter((n) => !onRemote.includes(n))
+        if (missing.length)
+          throw new Error(interp(t('stack.notOnRemote'), { remote: origin.name, branches: missing.join(', ') }))
 
         const trunk =
           stack.trunk ||
@@ -1343,7 +1363,14 @@ export const repoActions = {
         const plan = planStackSubmit(stack, openPrs, trunk)
 
         const numbered: { branch: string; number: number }[] = []
-        for (const a of plan) {
+        for (const [i, a] of plan.entries()) {
+          step(
+            interp(t(a.action === 'create' ? 'stack.stepPr' : 'stack.stepRetarget'), {
+              branch: a.branch,
+              n: i + 1,
+              total: plan.length
+            })
+          )
           if (a.action === 'create') {
             // Title/body from the level's own commits — oldest subject names
             // the PR, the list becomes the description.
@@ -1365,6 +1392,7 @@ export const repoActions = {
 
         // Second pass, once every number is known: the navigation section,
         // with the "you are here" pointer personalised per PR.
+        step(interp(t('stack.stepNav'), { n: numbered.length }))
         for (const n of numbered) {
           await hostingApi.updatePR(origin.url, tokens, n.number, {
             stackSection: buildStackSection(numbered, n.number, trunk)

@@ -106,6 +106,13 @@ z wymuszeniem przepisane poziomy, a PR-y aktualizują się w miejscu.
 - Poziom przesuwa się o jedno miejsce naraz. Dwie zamiany to dwa rebase'y, a
   zatrzymanie się w połowie to czytelny stan; przeciągnięcie lądujące trzy
   miejsca dalej — nie.
+- Przystanek jest **rebase'owany**, więc gałąź, na której ląduje stos, nigdy nie
+  jest zarazem przystankiem — podobnie jak gałąź **chroniona** (`main` i `master`,
+  o ile nie zmienisz listy). Obie są odrzucane, zamiast po cichu przepisywać
+  wspólną historię.
+- Zanim cokolwiek otworzy, wysyłka pyta zdalne repozytorium, które gałęzie
+  faktycznie dotarły, i wymienia brakujące. GitHub odpowiada na brak heada suchym
+  „Validation Failed”, z którego nikt nic nie ma.
 
 ## Gdzie mieszkają powiązania
 

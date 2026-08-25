@@ -1,5 +1,33 @@
 
 
+## [3.27.0](https://github.com/MyAppDesk/gitcito/compare/v3.26.1...v3.27.0) (2026-08-25)
+
+
+### Features
+
+* add menu bar documentation in multiple languages ([7c53fa7](https://github.com/MyAppDesk/gitcito/commit/7c53fa731d01d38290159e4d7c6fa285d5ce580d))
+* ask before opening pull requests, and report what happened ([89bfa44](https://github.com/MyAppDesk/gitcito/commit/89bfa449fe0df60dbc5602b0b9b68891cc3340ef))
+* collapse a chain of pull requests into one row ([38bc57c](https://github.com/MyAppDesk/gitcito/commit/38bc57c4aacb87c120c3e0062a63619a9a905b2f))
+* give a stack submit a screen of its own ([f6f2c04](https://github.com/MyAppDesk/gitcito/commit/f6f2c041ccbf719c6128f03fd3b6c7dd4fe46ebe))
+* offer to push the branch a stack lands on ([6e3460f](https://github.com/MyAppDesk/gitcito/commit/6e3460f24cf8b045e390257b6ee08a76937ee963))
+* read a pull-request stack the way GitHub draws it ([0964cc3](https://github.com/MyAppDesk/gitcito/commit/0964cc36e8785f1e3e6177316b6bce7f73ac3a81))
+* rebuild the stack modal around pickers, arrows and mid-stack levels ([cc197cd](https://github.com/MyAppDesk/gitcito/commit/cc197cd11c8c1efa131f2b7bd4184ea628d1be56))
+* register the chain as a native GitHub stack ([145afa5](https://github.com/MyAppDesk/gitcito/commit/145afa54bfc3eeb048d103097bf58ad56f63f5de))
+* show which way a stacked pull request flows ([db8883d](https://github.com/MyAppDesk/gitcito/commit/db8883d842f72a14702692f6ef8bdef261ec0aac))
+
+
+### Bug Fixes
+
+* act on the stack the dialog is showing, not the one you stand on ([686be07](https://github.com/MyAppDesk/gitcito/commit/686be0786c7565e8c113625f366bd482def54d30))
+* draw the stack route first, apply it once ([7c4f3b7](https://github.com/MyAppDesk/gitcito/commit/7c4f3b712512adb3c028a2c36c310f5d271f9866))
+* ensure tasks always run in a subshell for isolation ([7e75e40](https://github.com/MyAppDesk/gitcito/commit/7e75e4008830f481e73eb245011fd801225ce07a))
+* keep the stack on screen after applying a route ([ab6e838](https://github.com/MyAppDesk/gitcito/commit/ab6e838498159a436c9dec5b59a4b788dedd3228))
+* offer a repair when a leftover lock blocks the repo ([65583c4](https://github.com/MyAppDesk/gitcito/commit/65583c4d5bf3d86da5b890aa43d7e2116682a90a))
+* protected branches were empty everywhere they were never configured ([5978ae5](https://github.com/MyAppDesk/gitcito/commit/5978ae55f2b1663170446514b5b92cfc6e56ba0c))
+* roll a conflicted route edit all the way back ([1350f51](https://github.com/MyAppDesk/gitcito/commit/1350f51c3a74de719d5ba97326943b9f080b92fc))
+* say what GitHub refused, show submit progress, protect the trunk ([5462098](https://github.com/MyAppDesk/gitcito/commit/546209830b32a904f5d6bef5f083f089cf94baf5))
+* show a stack when standing on the trunk, and spin a spinner ([8ec70db](https://github.com/MyAppDesk/gitcito/commit/8ec70dbd5b03a8a1b0aa629627fcec4277736467))
+
 ## [3.26.1](https://github.com/MyAppDesk/gitcito/compare/v3.26.0...v3.26.1) (2026-08-24)
 
 

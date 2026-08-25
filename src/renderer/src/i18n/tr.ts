@@ -37,6 +37,8 @@ export const tr: Dict = {
   'sidebar.filter': 'Dalları, etiketleri süz…',
   'sidebar.noStashes': 'Stash yok',
   'sidebar.noPRs': 'Yüklenmiş açık PR yok',
+  'sidebar.stackOf': '{n} katmanlı yığın',
+  'sidebar.stackNumbered': 'Yığın #{n}',
   'sidebar.noTags': 'Etiket yok',
   'sidebar.noReleases': 'Yüklenmiş sürüm yok',
   'sidebar.noWorktrees': 'Bağlı worktree yok',

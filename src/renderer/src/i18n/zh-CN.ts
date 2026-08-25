@@ -38,6 +38,8 @@ export const zhCN: Dict = {
   'sidebar.filter': '筛选分支、标签…',
   'sidebar.noStashes': '没有贮藏',
   'sidebar.noPRs': '未加载任何开启中的拉取请求',
+  'sidebar.stackOf': '{n} 个 PR 的堆栈',
+  'sidebar.stackNumbered': '堆栈 #{n}',
   'sidebar.noTags': '没有标签',
   'sidebar.noReleases': '未加载任何发布',
   'sidebar.noWorktrees': '没有关联的工作树',

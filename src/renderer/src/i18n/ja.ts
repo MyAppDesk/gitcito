@@ -37,6 +37,8 @@ export const ja: Dict = {
   'sidebar.filter': 'ブランチ、タグを絞り込み…',
   'sidebar.noStashes': 'スタッシュはありません',
   'sidebar.noPRs': '読み込まれたオープンなプルリクエストはありません',
+  'sidebar.stackOf': '{n} 件のスタック',
+  'sidebar.stackNumbered': 'スタック #{n}',
   'sidebar.noTags': 'タグはありません',
   'sidebar.noReleases': '読み込まれたリリースはありません',
   'sidebar.noWorktrees': 'リンクされたワークツリーはありません',

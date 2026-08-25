@@ -39,6 +39,8 @@ export const en = {
   'sidebar.filter': 'Filter branches, tags…',
   'sidebar.noStashes': 'No stashes',
   'sidebar.noPRs': 'No open PRs loaded',
+  'sidebar.stackOf': 'Stack of {n}',
+  'sidebar.stackNumbered': 'Stack #{n}',
   'sidebar.noTags': 'No tags',
   'sidebar.noReleases': 'No releases loaded',
   'sidebar.noWorktrees': 'No linked worktrees',

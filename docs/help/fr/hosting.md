@@ -23,6 +23,19 @@ des quatre sont listées dans la barre latérale.
 Démarrez-en une depuis la comparaison de branches, depuis le graphe, depuis le
 `+` du panneau PR, ou depuis un ticket (ce qui remplit `Closes #N`).
 
+## Les piles dans la liste
+
+Les pull requests posées les unes sur les autres se replient en une seule ligne
+avec une icône de pile, la branche sur laquelle la chaîne atterrit et leur
+nombre. Dépliez-la pour voir la chaîne dans l’ordre de lecture — de la feuille
+vers la base — au lieu de quatre lignes à recomposer à partir de leurs bases.
+
+Deux choses forment ce groupe : le numéro de pile de GitHub, quand les PR
+appartiennent à une [pile native](stacks.md), et sinon les refs elles-mêmes —
+une pull request dont la base est la tête d’une autre repose sur elle. Cette
+seconde règle est ce qui fait que cela marche aussi sur GitLab, Bitbucket et
+Azure DevOps, et pour des chaînes ouvertes avant tout cela.
+
 ## Relire — GitHub et GitLab
 
 | | |

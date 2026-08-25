@@ -38,6 +38,8 @@ export const ptBR: Dict = {
   'sidebar.filter': 'Filtrar branches, tags…',
   'sidebar.noStashes': 'Nenhum stash',
   'sidebar.noPRs': 'Nenhum PR aberto carregado',
+  'sidebar.stackOf': 'Pilha de {n}',
+  'sidebar.stackNumbered': 'Pilha #{n}',
   'sidebar.noTags': 'Nenhuma tag',
   'sidebar.noReleases': 'Nenhum release carregado',
   'sidebar.noWorktrees': 'Nenhuma worktree vinculada',

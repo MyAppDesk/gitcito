@@ -38,6 +38,8 @@ export const ru: Dict = {
   'sidebar.filter': 'Фильтр веток, тегов…',
   'sidebar.noStashes': 'Стешей нет',
   'sidebar.noPRs': 'Открытые пул-реквесты не загружены',
+  'sidebar.stackOf': 'Стек из {n}',
+  'sidebar.stackNumbered': 'Стек #{n}',
   'sidebar.noTags': 'Тегов нет',
   'sidebar.noReleases': 'Релизы не загружены',
   'sidebar.noWorktrees': 'Связанных рабочих деревьев нет',

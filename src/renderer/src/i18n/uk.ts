@@ -38,6 +38,8 @@ export const uk: Dict = {
   'sidebar.filter': 'Фільтрувати гілки, теги…',
   'sidebar.noStashes': 'Немає стешів',
   'sidebar.noPRs': 'Відкриті PR не завантажено',
+  'sidebar.stackOf': 'Стек із {n}',
+  'sidebar.stackNumbered': 'Стек #{n}',
   'sidebar.noTags': 'Немає тегів',
   'sidebar.noReleases': 'Релізи не завантажено',
   'sidebar.noWorktrees': 'Немає приєднаних робочих дерев',

@@ -23,6 +23,18 @@ PR/MR'ları kenar çubuğunda listelenir.
 Dal karşılaştırmasından, grafikten, PR panelindeki `+` düğmesinden ya da bir
 issue'dan başlatın (issue `Closes #N` satırını sizin için doldurur).
 
+## Listedeki yığınlar
+
+Birbirinin üstünde duran pull request'ler tek bir satıra katlanır: yığın
+simgesi, zincirin indiği dal ve kaç tane olduğu. Açtığında zinciri okuma
+sırasıyla görürsün — yapraktan tabana — temellerine bakıp yeniden kurman gereken
+dört eş satır yerine.
+
+O grubu iki şey oluşturur: pull request'ler bir [yerel yığına](stacks.md) aitse
+GitHub'ın kendi yığın numarası; değilse ref'lerin kendisi — temeli bir başkasının
+ucu olan pull request onun üstünde durur. İkinci kural, bunun GitLab, Bitbucket
+ve Azure DevOps'ta da çalışmasının sebebidir.
+
 ## İnceleme — GitHub ve GitLab
 
 | | |

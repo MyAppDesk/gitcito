@@ -23,6 +23,19 @@ für alle vier werden in der Seitenleiste aufgelistet.
 Starte einen aus dem Branch-Vergleich, aus dem Graph, über das `+` im PR-Panel
 oder aus einem Issue heraus (was `Closes #N` einträgt).
 
+## Stapel in der Liste
+
+Pull Requests, die aufeinander sitzen, klappen zu einer Zeile zusammen: mit
+Stapelsymbol, dem Branch, auf dem die Kette landet, und wie viele es sind.
+Aufklappen zeigt die Kette in Leserichtung — Blatt zuerst, hinunter zur Basis —
+statt vier gleichrangiger Zeilen, die man sich aus ihren Basen zusammenreimt.
+
+Zwei Dinge bilden so eine Gruppe: GitHubs eigene Stapelnummer, wenn die Pull
+Requests zu einem [nativen Stapel](stacks.md) gehören, und sonst die Refs selbst
+— ein Pull Request, dessen Basis der Head eines anderen ist, sitzt auf ihm. Die
+zweite Regel ist der Grund, warum das auch auf GitLab, Bitbucket und Azure
+DevOps funktioniert, und für Ketten von früher.
+
 ## Reviewen — GitHub und GitLab
 
 | | |

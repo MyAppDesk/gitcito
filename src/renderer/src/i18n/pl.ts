@@ -38,6 +38,8 @@ export const pl: Dict = {
   'sidebar.filter': 'Filtruj branche, tagi…',
   'sidebar.noStashes': 'Brak stashy',
   'sidebar.noPRs': 'Nie wczytano otwartych PR-ów',
+  'sidebar.stackOf': 'Stos z {n}',
+  'sidebar.stackNumbered': 'Stos #{n}',
   'sidebar.noTags': 'Brak tagów',
   'sidebar.noReleases': 'Nie wczytano wydań',
   'sidebar.noWorktrees': 'Brak podłączonych worktree',

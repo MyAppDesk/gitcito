@@ -38,6 +38,8 @@ export const ar: Dict = {
   'sidebar.filter': 'تصفية الفروع والوسوم…',
   'sidebar.noStashes': 'لا توجد مخابئ',
   'sidebar.noPRs': 'لم تُحمَّل أي طلبات سحب مفتوحة',
+  'sidebar.stackOf': 'كومة من {n}',
+  'sidebar.stackNumbered': 'الكومة #{n}',
   'sidebar.noTags': 'لا توجد وسوم',
   'sidebar.noReleases': 'لم تُحمَّل أي إصدارات',
   'sidebar.noWorktrees': 'لا توجد أشجار عمل مرتبطة',

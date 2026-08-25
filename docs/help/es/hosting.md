@@ -23,6 +23,19 @@ los cuatro aparecen listados en la barra lateral.
 Empieza uno desde la comparación de ramas, desde el grafo, desde el `+` del
 panel de PRs, o desde una incidencia (lo que rellena `Closes #N`).
 
+## Pilas en la lista
+
+Los pull requests que se apoyan unos en otros se colapsan en una sola fila con
+un icono de pila, la rama en la que aterriza la cadena y cuántos hay. Despliégala
+para ver la cadena en orden de lectura —de la hoja hacia la base— en vez de
+cuatro iguales que tienes que recomponer mirando sus bases.
+
+Dos cosas forman ese grupo: el número de pila propio de GitHub, cuando los PR
+pertenecen a una [pila nativa](stacks.md), y si no las propias refs: un pull
+request cuya base es la cabeza de otro se apoya en él. Esa segunda regla es la
+que hace que también funcione en GitLab, Bitbucket y Azure DevOps, y con cadenas
+abiertas antes de que nada de esto existiera.
+
 ## Revisar — GitHub y GitLab
 
 | | |

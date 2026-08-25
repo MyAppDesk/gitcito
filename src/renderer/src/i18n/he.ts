@@ -38,6 +38,8 @@ export const he: Dict = {
   'sidebar.filter': 'סינון ענפים, תגיות…',
   'sidebar.noStashes': 'אין סטאשים',
   'sidebar.noPRs': 'לא נטענו בקשות משיכה פתוחות',
+  'sidebar.stackOf': 'ערימה של {n}',
+  'sidebar.stackNumbered': 'ערימה #{n}',
   'sidebar.noTags': 'אין תגיות',
   'sidebar.noReleases': 'לא נטענו ריליסים',
   'sidebar.noWorktrees': 'אין עצי עבודה מקושרים',

@@ -37,6 +37,8 @@ export const fr: Dict = {
   'sidebar.filter': 'Filtrer les branches, étiquettes…',
   'sidebar.noStashes': 'Aucun remisage',
   'sidebar.noPRs': 'Aucune pull request ouverte chargée',
+  'sidebar.stackOf': 'Pile de {n}',
+  'sidebar.stackNumbered': 'Pile #{n}',
   'sidebar.noTags': 'Aucune étiquette',
   'sidebar.noReleases': 'Aucune version chargée',
   'sidebar.noWorktrees': 'Aucun arbre de travail lié',

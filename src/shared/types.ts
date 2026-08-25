@@ -593,6 +593,8 @@ export interface PullRequest {
   targetBranch: string
   url: string
   isDraft: boolean
+  /** GitHub's own stack number, when this PR belongs to a native stack. */
+  stackNumber?: number
 }
 
 export type HostingProvider = 'github' | 'azure' | 'gitlab' | 'bitbucket' | null

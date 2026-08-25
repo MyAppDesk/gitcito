@@ -327,6 +327,9 @@ async function listPullRequests(
       user: { login: string }
       head: { ref: string }
       base: { ref: string }
+      // Present once GitHub's stacked pull requests are in play; absent on a
+      // server without them, which is the same as "this one is on its own".
+      stack?: { number: number } | null
     }>
     return {
       provider: 'github',
@@ -337,7 +340,8 @@ async function listPullRequests(
         sourceBranch: p.head.ref,
         targetBranch: p.base.ref,
         url: p.html_url,
-        isDraft: p.draft
+        isDraft: p.draft,
+        stackNumber: p.stack?.number
       }))
     }
   }

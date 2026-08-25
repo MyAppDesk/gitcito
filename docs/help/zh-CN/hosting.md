@@ -18,6 +18,15 @@ keywords: pull request 拉取请求 PR merge request 合并请求 GitHub GitLab 
 
 可以从分支对比、提交图、PR 面板里的 `+`，或者从一个议题出发创建（后者会自动填上 `Closes #N`）。
 
+## 列表里的堆栈
+
+互相叠在一起的 PR 会折叠成一行：堆栈图标、这条链落脚的分支，以及一共几个。展开就能按阅读
+顺序看到整条链——从最上面一直到基底——而不是四条平级的行，让你对着各自的基底自己拼。
+
+决定它们成组的有两件事：如果这些 PR 属于[原生堆栈](stacks.md)，就用 GitHub 自己的堆栈编号；
+否则看 ref 本身——基底是另一个 PR 的 head，就说明它压在那个上面。第二条规则正是它在 GitLab、
+Bitbucket 和 Azure DevOps 上同样管用的原因。
+
 ## 评审——GitHub 与 GitLab
 
 | | |

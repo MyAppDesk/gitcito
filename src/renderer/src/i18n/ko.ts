@@ -38,6 +38,8 @@ export const ko: Dict = {
   'sidebar.filter': '브랜치, 태그 검색…',
   'sidebar.noStashes': '스태시 없음',
   'sidebar.noPRs': '불러온 열린 PR이 없습니다',
+  'sidebar.stackOf': '{n}개짜리 스택',
+  'sidebar.stackNumbered': '스택 #{n}',
   'sidebar.noTags': '태그 없음',
   'sidebar.noReleases': '불러온 릴리스가 없습니다',
   'sidebar.noWorktrees': '연결된 워크트리 없음',

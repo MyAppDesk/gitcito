@@ -37,6 +37,8 @@ export const it: Dict = {
   'sidebar.filter': 'Filtra branch, tag…',
   'sidebar.noStashes': 'Nessuno stash',
   'sidebar.noPRs': 'Nessuna PR aperta caricata',
+  'sidebar.stackOf': 'Pila di {n}',
+  'sidebar.stackNumbered': 'Pila #{n}',
   'sidebar.noTags': 'Nessun tag',
   'sidebar.noReleases': 'Nessuna release caricata',
   'sidebar.noWorktrees': 'Nessun worktree collegato',

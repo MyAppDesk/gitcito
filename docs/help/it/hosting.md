@@ -23,6 +23,18 @@ tutti e quattro sono elencate nella barra laterale.
 Puoi partire dal confronto fra branch, dal grafo, dal `+` nel pannello delle PR,
 oppure da una issue (che compila `Closes #N`).
 
+## Le pile nell’elenco
+
+Le pull request appoggiate una sull’altra si richiudono in una sola riga con
+un’icona di pila, il ramo su cui atterra la catena e quante sono. Espandila per
+vedere la catena in ordine di lettura — dalla foglia giù fino alla base — invece
+di quattro righe pari da ricostruire guardando le basi.
+
+Due cose formano quel gruppo: il numero di pila di GitHub, quando le PR
+appartengono a una [pila nativa](stacks.md), altrimenti le ref stesse: una pull
+request la cui base è la testa di un’altra si appoggia su di essa. La seconda
+regola è ciò che lo fa funzionare anche su GitLab, Bitbucket e Azure DevOps.
+
 ## Revisione — GitHub e GitLab
 
 | | |

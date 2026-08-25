@@ -22,6 +22,19 @@ four are listed in the sidebar.
 Start one from branch-compare, the graph, the `+` in the PR panel, or from an
 issue (which fills in `Closes #N`).
 
+## Stacks in the list
+
+Pull requests that sit on each other collapse into one row with a stack icon,
+the branch the chain lands on, and how many are in it. Expand it to see the
+chain in reading order — leaf first, down to the base — instead of four peers
+you have to reassemble from their base branches.
+
+Two things put a group there: GitHub's own stack number, when the pull requests
+belong to a [native stack](stacks.md), and otherwise the refs themselves — a
+pull request whose base is another's head sits on it. The second rule is why
+this also works on GitLab, Bitbucket and Azure DevOps, and for chains opened
+before any of that existed.
+
 ## Reviewing — GitHub and GitLab
 
 | | |

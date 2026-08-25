@@ -9,6 +9,7 @@ import { timeAgo, isStale, STALE_AFTER_MS } from '../src/renderer/src/lib/timeAg
 import { isLockErrorMessage, lockRepairPlan } from '../src/renderer/src/lib/gitLocks'
 import { stackOrder, moveLevel, adoptableBranches, targetFor } from '../src/renderer/src/lib/stackOrder'
 import { planStackSubmit, summariseStackPlan } from '../src/shared/stackPr'
+import { groupPrStacks } from '../src/renderer/src/lib/prStacks'
 import { HUGE_SECTION, openUnlessHuge } from '../src/renderer/src/lib/sidebarSections'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -16,7 +17,7 @@ import { commitHookFailureHint, lintCommit, subjectCounterLevel, parseCcPrefix, 
 import { isSecretFile, maskSecretLine } from '../src/renderer/src/lib/secrets'
 import { worktreeForBranch, worktreeTabName } from '../src/renderer/src/lib/worktrees'
 import { focusedHashes, focusedStashes, defaultBranchName } from '../src/renderer/src/lib/graphFocus'
-import type { WorktreeInfo, GraphCommit, GraphFocus, StackInfo } from '../src/shared/types'
+import type { WorktreeInfo, GraphCommit, GraphFocus, StackInfo, PullRequest } from '../src/shared/types'
 import { comboFromEvent, formatCombo, effectiveBindings, isReservedCombo, matchShortcut, tabActionFromEvent, tabIndexFromEvent } from '../src/renderer/src/lib/shortcuts'
 import { terminalCloseTarget, terminalShortcutFromEvent } from '../src/renderer/src/lib/terminalShortcuts'
 import { panelDisplayName, groupDisplayName } from '../src/renderer/src/lib/terminalTitles'
@@ -4724,5 +4725,48 @@ describe('summarising a stack submit', () => {
       )
     )
     expect(summary).toEqual({ create: 0, retarget: 0, ok: 3, lines: [] })
+  })
+})
+
+describe('folding pull requests back into stacks', () => {
+  const pr = (id: number, head: string, base: string, stackNumber?: number): PullRequest => ({
+    id,
+    title: `pr ${id}`,
+    author: 'a',
+    sourceBranch: head,
+    targetBranch: base,
+    url: `u${id}`,
+    isDraft: false,
+    ...(stackNumber === undefined ? {} : { stackNumber })
+  })
+
+  it('chains by base branch, leaf first, with the base it lands on', () => {
+    const groups = groupPrStacks([pr(1, 'api', 'main'), pr(2, 'ui', 'api'), pr(3, 'polish', 'ui')])
+    expect(groups.length).toBe(1)
+    const [g] = groups
+    expect(g.kind).toBe('stack')
+    if (g.kind !== 'stack') return
+    expect(g.prs.map((p) => p.id)).toEqual([3, 2, 1])
+    expect(g.base).toBe('main')
+  })
+
+  it('leaves unrelated pull requests alone', () => {
+    const groups = groupPrStacks([pr(1, 'api', 'main'), pr(2, 'ui', 'api'), pr(9, 'docs', 'main')])
+    expect(groups.map((g) => (g.kind === 'stack' ? g.prs.map((p) => p.id) : g.pr.id))).toEqual([[2, 1], 9])
+  })
+
+  it('carries GitHub’s own stack number when there is one', () => {
+    const groups = groupPrStacks([pr(1, 'api', 'main', 7), pr(2, 'ui', 'api', 7)])
+    expect(groups[0].kind === 'stack' && groups[0].number).toBe(7)
+  })
+
+  it('does not chain two pull requests GitHub puts in different stacks', () => {
+    const groups = groupPrStacks([pr(1, 'api', 'main', 7), pr(2, 'ui', 'api', 8)])
+    expect(groups.every((g) => g.kind === 'single')).toBe(true)
+  })
+
+  it('lists a cycle rather than looping on it', () => {
+    const groups = groupPrStacks([pr(1, 'a', 'b'), pr(2, 'b', 'a')])
+    expect(groups.map((g) => g.kind)).toEqual(['single', 'single'])
   })
 })

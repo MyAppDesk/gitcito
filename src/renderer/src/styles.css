@@ -13487,6 +13487,20 @@ mark.find-hit.active {
 .stack-result-arrow, .stack-result-open { flex: 0 0 auto; color: var(--text-3); }
 .stack-result-base { color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .stack-result-open { margin-inline-start: auto; }
+/* A pull-request stack in the sidebar: one row, expandable into its chain. */
+.sb-pr-stack { display: flex; flex-direction: column; }
+.sb-item.pr-stack-head { gap: 5px; }
+.sb-pr-stack-base {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10.5px;
+  color: var(--text-3);
+}
+.sb-pr-stack-body { border-inline-start: 1px solid var(--border); margin-inline-start: 12px; }
+
 
 
 .stack-progress {

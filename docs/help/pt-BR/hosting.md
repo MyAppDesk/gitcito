@@ -22,6 +22,18 @@ quatro são listados na barra lateral.
 Comece um pela comparação de branches, pelo grafo, pelo `+` no painel de PRs, ou a
 partir de uma issue (que preenche o `Closes #N`).
 
+## Pilhas na lista
+
+Pull requests apoiados uns nos outros se recolhem em uma única linha com ícone
+de pilha, o branch em que a cadeia aterrissa e quantos são. Expanda para ver a
+cadeia na ordem de leitura — da folha até a base — em vez de quatro iguais que
+você precisa remontar olhando as bases.
+
+Duas coisas formam esse grupo: o número de pilha do próprio GitHub, quando os PRs
+pertencem a uma [pilha nativa](stacks.md), e senão as próprias refs — um pull
+request cuja base é o head de outro se apoia nele. Essa segunda regra é o que faz
+isso funcionar também no GitLab, Bitbucket e Azure DevOps.
+
 ## Revisando — GitHub e GitLab
 
 | | |

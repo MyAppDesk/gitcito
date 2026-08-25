@@ -31,7 +31,8 @@ import {
   Play,
   ChevronDown,
   Star,
-  History
+  History,
+  Layers
 } from 'lucide-react'
 import { FileTree } from './FileTree'
 import { FileSearchBar, EMPTY_FILTER, type FileFilter } from './FileSearchBar'
@@ -41,6 +42,7 @@ import { refIntegrationItems } from '../lib/refMenuItems'
 import { useSettingsStore } from '../stores/settings'
 import { useLaunchStore } from '../stores/launch'
 import { shellApi } from '../infrastructure/api'
+import { groupPrStacks } from '../lib/prStacks'
 import { useT, interp } from '../i18n'
 import { repoIsGitHub, repoSupportsPrReview } from '../lib/hosting'
 import { folderOpenMenuItems } from '../lib/openWith'
@@ -318,6 +320,8 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   // ─── Multi-select (Cmd/Ctrl-click toggle, Shift-click range) ───
   // One section "owns" the selection at a time; `kind` namespaces the ids.
   const [sel, setSel] = useState<{ kind: string; ids: string[] } | null>(null)
+  /** Which pull-request stacks are expanded; collapsed is the point of them. */
+  const [openPrStacks, setOpenPrStacks] = useState<Record<number, boolean>>({})
   const lastClick = useRef<{ kind: string; id: string } | null>(null)
   const isSel = (kind: string, id: string): boolean => sel?.kind === kind && sel.ids.includes(id)
   const clearSel = (): void => setSel(null)
@@ -1574,6 +1578,95 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     )
   }
 
+  /** One pull request row — shared by the flat list and by a stack's body. */
+  const prRow = (pr: PullRequest): React.JSX.Element => (
+        <div
+          key={pr.id}
+          className="sb-item pr"
+          role="button"
+          tabIndex={0}
+          onKeyDown={keyActivate}
+          onClick={() => {
+            // Rich PR detail exists for GitHub and GitLab; other hosts open in browser.
+            if (!repoSupportsPrReview(repo.remotes)) {
+              void window.api.openExternal(pr.url)
+              return
+            }
+            const origin = repo.remotes.find((r) => r.name === 'origin') ?? repo.remotes[0]
+            if (origin) openModal({ kind: 'pr-detail', repoPath: path, remoteUrl: origin.url, number: pr.id })
+          }}
+          onContextMenu={(e) => {
+            e.preventDefault()
+            openContextMenu(e.clientX, e.clientY, prMenu(pr))
+          }}
+          title={pr.title}
+        >
+          <GitPullRequest size={12} className={pr.isDraft ? 'pr-draft' : 'pr-open'} />
+          <span className="sb-name">
+            #{pr.id} {pr.title}
+          </span>
+          {/* Unlike the detail view, previewing works on every host — the PR
+              head is a plain ref, so there is no provider check here. */}
+          <span
+            className="icon-btn sb-pr-preview"
+            role="button"
+            tabIndex={0}
+            aria-label={t('prPreview.open')}
+            onKeyDown={keyActivate}
+            title={t('prPreview.open')}
+            onClick={(e) => {
+              e.stopPropagation()
+              const origin = repo.remotes.find((r) => r.name === 'origin') ?? repo.remotes[0]
+              openModal({
+                kind: 'pr-preview',
+                repoPath: path,
+                number: pr.id,
+                remote: origin?.name,
+                branch: pr.sourceBranch
+              })
+            }}
+          >
+            <GitPullRequestArrow size={11} />
+          </span>
+          {aiEnabled && pr.sourceBranch && pr.targetBranch && (
+            <span
+              className="icon-btn sb-ai-review"
+              role="button"
+              tabIndex={0}
+              aria-label={t('sidebar.aiPrReview')}
+              onKeyDown={keyActivate}
+              title={t('sidebar.aiPrReview')}
+              onClick={(e) => {
+                e.stopPropagation()
+                openModal({
+                  kind: 'ai-pr-review',
+                  repoPath: path,
+                  prTitle: pr.title,
+                  sourceBranch: pr.sourceBranch!,
+                  targetBranch: pr.targetBranch!
+                })
+              }}
+            >
+              <Sparkles size={11} />
+            </span>
+          )}
+          <span
+            className="icon-btn sb-pr-open"
+            role="button"
+            tabIndex={0}
+            aria-label={t('common.openInBrowser')}
+            onKeyDown={keyActivate}
+            title={t('common.openInBrowser')}
+            onClick={(e) => {
+              e.stopPropagation()
+              void window.api.openExternal(pr.url)
+            }}
+          >
+            <ExternalLink size={11} />
+          </span>
+        </div>
+  )
+
   const sections: Record<string, React.JSX.Element> = {
     local: (
       <Section
@@ -1730,93 +1823,37 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         }
       >
         {repo.prs.length === 0 && <div className="sb-empty">{t('sidebar.noPRs')}</div>}
-        {repo.prs.map((pr) => (
-          <div
-            key={pr.id}
-            className="sb-item pr"
-            role="button"
-            tabIndex={0}
-            onKeyDown={keyActivate}
-            onClick={() => {
-              // Rich PR detail exists for GitHub and GitLab; other hosts open in browser.
-              if (!repoSupportsPrReview(repo.remotes)) {
-                void window.api.openExternal(pr.url)
-                return
-              }
-              const origin = repo.remotes.find((r) => r.name === 'origin') ?? repo.remotes[0]
-              if (origin) openModal({ kind: 'pr-detail', repoPath: path, remoteUrl: origin.url, number: pr.id })
-            }}
-            onContextMenu={(e) => {
-              e.preventDefault()
-              openContextMenu(e.clientX, e.clientY, prMenu(pr))
-            }}
-            title={pr.title}
-          >
-            <GitPullRequest size={12} className={pr.isDraft ? 'pr-draft' : 'pr-open'} />
-            <span className="sb-name">
-              #{pr.id} {pr.title}
-            </span>
-            {/* Unlike the detail view, previewing works on every host — the PR
-                head is a plain ref, so there is no provider check here. */}
-            <span
-              className="icon-btn sb-pr-preview"
-              role="button"
-              tabIndex={0}
-              aria-label={t('prPreview.open')}
-              onKeyDown={keyActivate}
-              title={t('prPreview.open')}
-              onClick={(e) => {
-                e.stopPropagation()
-                const origin = repo.remotes.find((r) => r.name === 'origin') ?? repo.remotes[0]
-                openModal({
-                  kind: 'pr-preview',
-                  repoPath: path,
-                  number: pr.id,
-                  remote: origin?.name,
-                  branch: pr.sourceBranch
-                })
-              }}
-            >
-              <GitPullRequestArrow size={11} />
-            </span>
-            {aiEnabled && pr.sourceBranch && pr.targetBranch && (
-              <span
-                className="icon-btn sb-ai-review"
+        {groupPrStacks(repo.prs).map((group) =>
+          group.kind === 'single' ? (
+            prRow(group.pr)
+          ) : (
+            // A chain is one piece of work: it collapses to a single row rather
+            // than spending four lines of the sidebar saying so four times.
+            <div key={`stack-${group.prs[0].id}`} className="sb-pr-stack">
+              <div
+                className="sb-item pr-stack-head"
                 role="button"
                 tabIndex={0}
-                aria-label={t('sidebar.aiPrReview')}
                 onKeyDown={keyActivate}
-                title={t('sidebar.aiPrReview')}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  openModal({
-                    kind: 'ai-pr-review',
-                    repoPath: path,
-                    prTitle: pr.title,
-                    sourceBranch: pr.sourceBranch!,
-                    targetBranch: pr.targetBranch!
-                  })
-                }}
+                onClick={() => setOpenPrStacks((o) => ({ ...o, [group.prs[0].id]: !o[group.prs[0].id] }))}
+                title={group.prs.map((p) => `#${p.id} ${p.title}`).join('\n')}
               >
-                <Sparkles size={11} />
-              </span>
-            )}
-            <span
-              className="icon-btn sb-pr-open"
-              role="button"
-              tabIndex={0}
-              aria-label={t('common.openInBrowser')}
-              onKeyDown={keyActivate}
-              title={t('common.openInBrowser')}
-              onClick={(e) => {
-                e.stopPropagation()
-                void window.api.openExternal(pr.url)
-              }}
-            >
-              <ExternalLink size={11} />
-            </span>
-          </div>
-        ))}
+                {openPrStacks[group.prs[0].id] ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                <Layers size={12} className="pr-open" />
+                <span className="sb-name">
+                  {group.number
+                    ? interp(t('sidebar.stackNumbered'), { n: group.number })
+                    : interp(t('sidebar.stackOf'), { n: group.prs.length })}
+                </span>
+                <span className="sb-pr-stack-base">{group.base}</span>
+                <span className="sb-count">{group.prs.length}</span>
+              </div>
+              {openPrStacks[group.prs[0].id] && (
+                <div className="sb-pr-stack-body">{group.prs.map(prRow)}</div>
+              )}
+            </div>
+          )
+        )}
       </Section>
     ),
     issues: (

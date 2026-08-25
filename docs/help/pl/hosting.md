@@ -22,6 +22,18 @@ dla wszystkich czterech są wypisane w panelu bocznym.
 Zacznij od porównania gałęzi, z grafu, z `+` w panelu PR-ów albo ze zgłoszenia
 (które wypełni `Closes #N`).
 
+## Stosy na liście
+
+Pull requesty stojące jeden na drugim zwijają się do jednego wiersza z ikoną
+stosu, gałęzią, na której ląduje łańcuch, i liczbą elementów. Rozwiń go, aby
+zobaczyć łańcuch w kolejności czytania — od liścia w dół do bazy — zamiast
+czterech równorzędnych wierszy do poskładania z ich baz.
+
+Grupę tworzą dwie rzeczy: własny numer stosu GitHuba, gdy PR-y należą do
+[stosu natywnego](stacks.md), a poza tym same refy — pull request, którego bazą
+jest głowa innego, stoi na nim. Ta druga reguła sprawia, że działa to również na
+GitLabie, Bitbuckecie i Azure DevOps.
+
 ## Recenzowanie — GitHub i GitLab
 
 | | |

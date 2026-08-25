@@ -23,6 +23,18 @@ voor alle vier staan in de zijbalk.
 Begin er een vanuit branchvergelijking, de grafiek, de `+` in het PR-paneel, of
 vanuit een issue (wat `Closes #N` invult).
 
+## Stapels in de lijst
+
+Pull requests die op elkaar staan vouwen samen tot één regel met een
+stapelpictogram, de branch waarop de ketting landt en hoeveel het er zijn. Klap
+hem uit om de ketting in leesvolgorde te zien — blad eerst, tot aan de basis —
+in plaats van vier gelijken die je uit hun bases moet afleiden.
+
+Twee dingen maken zo'n groep: GitHubs eigen stapelnummer, als de pull requests
+bij een [native stapel](stacks.md) horen, en anders de refs zelf — een pull
+request wiens basis de head van een andere is, staat erop. Die tweede regel is
+waarom dit ook op GitLab, Bitbucket en Azure DevOps werkt.
+
 ## Reviewen — GitHub en GitLab
 
 | | |

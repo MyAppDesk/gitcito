@@ -21,6 +21,16 @@ restacku, a po wysłaniu numer PR.
 
 ## Edycja trasy
 
+**Nic się nie wykonuje, dopóki nie naciśniesz Zastosuj.** Wybór gałęzi,
+przesunięcie przystanku, zdjęcie go z trasy — to wszystko edytuje listę na
+ekranie. Prawdziwa operacja robi rebase gałęzi i je przełącza, a tego nie
+powinno robić ciekawskie kliknięcie. Gdy trasa wygląda dobrze, **Zastosuj trasę**
+wykonuje ją jako jeden odwracalny krok; **Odrzuć** przywraca rysunek do tego, co
+mówi repozytorium.
+
+Trasa jest rysowana w kolejności scalania: gałąź na górze scala się do tej
+poniżej, aż do gałęzi, na której ląduje stos.
+
 | Element | Co robi |
 |---------|---------|
 | Pole **Start** | Gdzie ląduje stos. Zmień je, a cały łańcuch zostanie przepięty na nową gałąź i odtworzony. |

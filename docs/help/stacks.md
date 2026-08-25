@@ -20,14 +20,23 @@ its PR number once submitted.
 
 ## Editing the route
 
+**Nothing runs until you press Apply.** Picking a branch, moving a stop, taking
+one off the route — all of it edits a list on screen. The real operation rebases
+branches and checks them out, which is not something an exploratory click should
+do. When the route reads right, **Apply route** performs it as one undoable
+step; **Discard** puts the drawing back to what the repository actually says.
+
+The route is drawn in merge order: the branch on top merges into the one below
+it, down to the branch the stack lands on.
+
 | Control | What it does |
 |---------|--------------|
 | The **Start** field | Where the stack lands. Change it and the whole chain re-links onto the new branch and replays. |
 | A **stop's** field | Swaps which branch occupies that position. The branch that leaves is untracked, never deleted. |
 | **↑ / ↓** | Moves a stop one place along the route. |
 | **✕** | Takes the stop off the route; its neighbours join up. |
-| **Add stop** | Pick a branch you already have and it joins the top of the route — or type a name that does not exist yet, and it is created on the last stop's tip and checked out. |
-| The arrow button | Checks that stop out. |
+| **Add stop** | Pick a branch you already have and it joins the top of the route — or type a name that does not exist yet, and Apply creates it on the tip of the stop below. |
+| The arrow button | Checks that stop out. This one is immediate — it is a checkout, not a route edit. |
 
 Every field is a typeahead: type to filter, ↑/↓ and Enter to pick, and anything
 you type that is not in the list still counts — so a remote-tracking ref like

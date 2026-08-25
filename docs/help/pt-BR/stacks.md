@@ -20,6 +20,16 @@ de restack e, depois de enviada, o número da PR.
 
 ## Editando a rota
 
+**Nada roda até você apertar Aplicar.** Escolher um branch, mover uma parada,
+tirá-la da rota — tudo isso edita uma lista na tela. A operação de verdade
+rebaseia branches e faz checkout deles, e isso não é coisa para um clique
+exploratório fazer. Quando a rota estiver certa, **Aplicar rota** executa tudo
+como um passo só, desfazível; **Descartar** volta o desenho para o que o
+repositório diz.
+
+A rota é desenhada em ordem de merge: o branch de cima entra no de baixo, até o
+branch em que a pilha aterrissa.
+
 | Controle | O que faz |
 |----------|-----------|
 | O campo **Início** | Onde a pilha aterrissa. Troque-o e a cadeia inteira é religada ao novo branch e reproduzida. |

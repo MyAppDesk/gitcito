@@ -20,6 +20,16 @@ gönderildikten sonra PR numarasını gösterir.
 
 ## Güzergâhı düzenlemek
 
+**Uygula'ya basana kadar hiçbir şey çalışmaz.** Bir dal seçmek, bir durağı
+taşımak, onu güzergâhtan çıkarmak — hepsi ekrandaki bir listeyi düzenler. Gerçek
+işlem dalları rebase eder ve checkout yapar; keşif amaçlı bir tıklamanın yapacağı
+iş değildir. Güzergâh doğru okununca **Güzergâhı uygula** onu tek ve geri
+alınabilir bir adım olarak yürütür; **Vazgeç** çizimi deponun söylediğine
+döndürür.
+
+Güzergâh merge sırasına göre çizilir: üstteki dal altındakine merge olur, en
+altta da yığının indiği dal vardır.
+
 | Denetim | Ne yapar |
 |---------|----------|
 | **Başlangıç** alanı | Yığının indiği yer. Değiştir; bütün zincir yeni dala bağlanır ve yeniden oynatılır. |

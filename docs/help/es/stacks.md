@@ -21,6 +21,16 @@ y, una vez enviada, su número de PR.
 
 ## Editar la ruta
 
+**Nada se ejecuta hasta que pulsas Aplicar.** Elegir una rama, mover una parada,
+quitarla de la ruta: todo eso edita una lista en pantalla. La operación real
+rebasa ramas y las deja activas, y eso no es algo que deba hacer un clic
+exploratorio. Cuando la ruta se lea bien, **Aplicar ruta** la ejecuta como un
+único paso deshacible; **Descartar** devuelve el dibujo a lo que dice el
+repositorio.
+
+La ruta se dibuja en orden de fusión: la rama de arriba se fusiona en la de
+abajo, hasta la rama en la que aterriza la pila.
+
 | Control | Qué hace |
 |---------|----------|
 | El campo **Inicio** | Dónde aterriza la pila. Cámbialo y toda la cadena se reengancha a la rama nueva y se reproduce. |

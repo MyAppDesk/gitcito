@@ -20,6 +20,16 @@ en, eenmaal ingediend, zijn PR-nummer.
 
 ## De route bewerken
 
+**Er gebeurt niets tot je op Toepassen drukt.** Een branch kiezen, een stop
+verplaatsen, hem van de route halen — het bewerkt allemaal een lijst op het
+scherm. De echte operatie rebaset branches en checkt ze uit, en dat hoort een
+verkennende klik niet te doen. Als de route klopt, voert **Route toepassen** hem
+uit als één ongedaan te maken stap; **Weggooien** zet de tekening terug op wat de
+repository zegt.
+
+De route staat in merge-volgorde: de bovenste branch gaat samen in die eronder,
+tot aan de branch waarop de stapel landt.
+
 | Bediening | Wat het doet |
 |-----------|--------------|
 | Het veld **Start** | Waar de stapel landt. Verander het en de hele ketting wordt op de nieuwe branch gelegd en afgespeeld. |

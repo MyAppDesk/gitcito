@@ -13424,6 +13424,33 @@ mark.find-hit.active {
 .stack-icon-btn:hover:not(:disabled) { background: var(--bg-3); color: var(--text-0); border-color: var(--border); }
 .stack-icon-btn:disabled { opacity: 0.3; cursor: default; }
 .stack-icon-btn.danger:hover:not(:disabled) { color: var(--red, #e5484d); }
+.stack-row-into {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+  max-width: 190px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 11px;
+  color: var(--text-2);
+}
+.stack-row-into svg { flex: 0 0 auto; color: var(--text-3); }
+/* The draft bar: what would happen, and the two ways out of it. */
+.stack-apply {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--accent, #6366f1);
+  border-radius: 8px;
+  background: var(--accent-soft, rgba(99, 102, 241, 0.12));
+}
+.stack-apply-note { flex: 1 1 200px; font-size: 11.5px; color: var(--text-1); }
+
 .stack-progress {
   display: flex;
   align-items: center;

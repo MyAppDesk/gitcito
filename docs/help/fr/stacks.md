@@ -21,6 +21,16 @@ faut un restack, et son numéro de PR une fois soumise.
 
 ## Modifier l’itinéraire
 
+**Rien ne s’exécute avant que vous appuyiez sur Appliquer.** Choisir une branche,
+déplacer une étape, la retirer de l’itinéraire : tout cela modifie une liste à
+l’écran. L’opération réelle rebase des branches et les extrait, ce qu’un clic
+exploratoire ne devrait pas faire. Quand l’itinéraire se lit bien, **Appliquer
+l’itinéraire** l’exécute en une seule étape annulable ; **Abandonner** remet le
+dessin sur ce que dit le dépôt.
+
+L’itinéraire est dessiné dans l’ordre de fusion : la branche du haut fusionne
+dans celle du dessous, jusqu’à celle sur laquelle la pile atterrit.
+
 | Contrôle | Ce qu’il fait |
 |----------|---------------|
 | Le champ **Départ** | Où la pile atterrit. Changez-le : toute la chaîne est re-liée à la nouvelle branche et rejouée. |

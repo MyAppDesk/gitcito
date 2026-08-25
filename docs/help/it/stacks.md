@@ -20,6 +20,16 @@ una volta inviata, il numero della PR.
 
 ## Modificare l'itinerario
 
+**Nulla viene eseguito finché non premi Applica.** Scegliere un ramo, spostare
+una tappa, toglierla dall’itinerario: tutto questo modifica un elenco sullo
+schermo. L’operazione vera rebasa i rami e li porta in checkout, cosa che un
+clic esplorativo non deve fare. Quando l’itinerario si legge bene, **Applica
+itinerario** lo esegue come un unico passo annullabile; **Scarta** riporta il
+disegno a ciò che dice il repository.
+
+L’itinerario è disegnato in ordine di merge: il ramo in alto confluisce in
+quello sotto, fino al ramo su cui atterra la pila.
+
 | Comando | Cosa fa |
 |---------|---------|
 | Il campo **Partenza** | Dove atterra la pila. Cambialo e l'intera catena viene ricollegata al nuovo ramo e riprodotta. |

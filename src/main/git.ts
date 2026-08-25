@@ -2665,7 +2665,17 @@ export const gitService = {
     // The untracking is part of the same gesture, so it is inside the same
     // snapshot: a conflict half-way through the replay must not leave levels
     // detached from a stack that never changed.
-    await withStackRollback(repoPath, [...new Set([...order, ...dropped, trunk])], async () => {
+    await withStackRollback(repoPath, [...new Set([...order, ...dropped, trunk])], async (created) => {
+      // A stop the user typed that is not a branch yet is created here, on the
+      // tip of the stop below it — so "add a stop, then apply" is one gesture
+      // and rolls back as one.
+      const git = gitFor(repoPath)
+      for (let i = 0; i < order.length; i++) {
+        const exists = await git.raw(['rev-parse', '--verify', '--quiet', `refs/heads/${order[i]}`]).catch(() => '')
+        if (exists.trim()) continue
+        await git.raw(['branch', order[i], i === 0 ? trunk : order[i - 1]])
+        created.push(order[i])
+      }
       for (const name of dropped) await gitService.stackClearParent(repoPath, name)
       if (order.length) await gitService.stackReorder(repoPath, trunk, order)
     })
@@ -7145,10 +7155,16 @@ export const ROUTE_CONFLICT = 'GITCITO_ROUTE_CONFLICT'
  * config keys — and put back on the way out. What the user sees instead is a
  * message naming the two branches that clash.
  */
-async function withStackRollback<T>(repoPath: string, branches: string[], fn: () => Promise<T>): Promise<T> {
+async function withStackRollback<T>(
+  repoPath: string,
+  branches: string[],
+  fn: (created: string[]) => Promise<T>
+): Promise<T> {
   const git = gitFor(repoPath)
   const names = [...new Set(branches.filter(Boolean))]
   const head = (await git.revparse(['--abbrev-ref', 'HEAD']).catch(() => '')).trim()
+  /** Branches `fn` creates, so a rollback can take them away again. */
+  const created: string[] = []
   const tips = new Map<string, string>()
   const config = new Map<string, { parent: string; base: string }>()
   for (const b of names) {
@@ -7160,13 +7176,22 @@ async function withStackRollback<T>(repoPath: string, branches: string[], fn: ()
     })
   }
   try {
-    return await fn()
+    const result = await fn(created)
+    // A route edit replays branches, and replaying checks them out. Standing
+    // somewhere the user did not choose is its own kind of damage, so the
+    // branch they were on is restored on the way out as well.
+    if (head && head !== 'HEAD') {
+      const now = (await git.revparse(['--abbrev-ref', 'HEAD']).catch(() => '')).trim()
+      if (now !== head) await git.checkout(head).catch(() => undefined)
+    }
+    return result
   } catch (err) {
     // Order matters: end the rebase first, stand on the branch we started on,
     // and only then move refs — a ref moved under a checked-out branch leaves
     // the working tree describing a commit that is no longer there.
     await runGit(repoPath, ['rebase', '--abort']).catch(() => undefined)
     if (head && head !== 'HEAD') await git.checkout(head).catch(() => undefined)
+    for (const branch of created) await runGit(repoPath, ['branch', '-D', branch]).catch(() => undefined)
     for (const [branch, tip] of tips) {
       if (branch === head) await runGit(repoPath, ['reset', '--hard', tip]).catch(() => undefined)
       else await runGit(repoPath, ['update-ref', `refs/heads/${branch}`, tip]).catch(() => undefined)

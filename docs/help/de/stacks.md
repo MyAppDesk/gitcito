@@ -21,6 +21,16 @@ braucht, und nach dem Einreichen ihre PR-Nummer.
 
 ## Die Route bearbeiten
 
+**Nichts läuft, bis du auf Anwenden drückst.** Einen Branch wählen, eine Station
+verschieben, sie von der Route nehmen — all das ändert eine Liste auf dem
+Bildschirm. Die echte Operation rebased Branches und checkt sie aus, und das
+sollte ein neugieriger Klick nicht tun. Wenn die Route stimmt, führt **Route
+anwenden** sie als einen widerrufbaren Schritt aus; **Verwerfen** setzt die
+Zeichnung auf das zurück, was das Repository tatsächlich sagt.
+
+Die Route ist in Merge-Reihenfolge gezeichnet: der obere Branch wird in den
+darunter gemergt, bis hinunter zu dem, auf dem der Stapel landet.
+
 | Bedienelement | Was es tut |
 |---------------|------------|
 | Das Feld **Start** | Wo der Stapel landet. Ändere es, und die ganze Kette wird auf den neuen Branch verknüpft und abgespielt. |

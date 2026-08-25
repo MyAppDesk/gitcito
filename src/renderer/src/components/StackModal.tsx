@@ -1,42 +1,63 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Layers, RefreshCw, GitPullRequest, Plus, X, ChevronUp, ChevronDown, Upload, LogIn, Loader2 } from 'lucide-react'
+import {
+  Layers,
+  RefreshCw,
+  GitPullRequest,
+  Plus,
+  X,
+  ChevronUp,
+  ChevronDown,
+  Upload,
+  LogIn,
+  Loader2,
+  Check,
+  CornerDownRight
+} from 'lucide-react'
 import { gitApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
 import { useRepoStore, repoActions } from '../stores/repo'
-import type { StackInfo } from '../../../shared/types'
+import type { StackInfo, StackBranch } from '../../../shared/types'
 import { RefPicker, type RefOption } from './RefPicker'
 import { moveLevel, stackOrder } from '../lib/stackOrder'
 import { useT, interp } from '../i18n'
 
 /**
- * The stack as a route: a start branch, then a list of stops, each one's PR
- * targeting the stop before it.
+ * The stack as a route you draw before you drive it.
  *
- * Every edit is the same edit — hand the whole route back. Swap a stop, drop
- * one, move it up, start somewhere else: one list, one call, one undo entry.
- * The earlier version exposed the parent links directly (set parent, add above,
- * untrack, adopt) and left the reader to assemble the chain in their head.
+ * Two things this screen learned the hard way. **Editing is a draft**: picking
+ * a branch in a dropdown changes a list on screen and nothing else, because the
+ * real operation rebases branches and checks them out — doing that on every
+ * click turns an exploratory edit into a conflicted repository. Nothing touches
+ * git until **Apply**.
+ *
+ * And it is drawn **in merge order**, leaf first, each row naming the branch it
+ * merges into, down to the trunk at the bottom. That is the sentence the reader
+ * is already saying: this one goes into that one.
  */
 export function StackModal({ repoPath }: { repoPath: string }): React.JSX.Element {
   const t = useT()
   const repo = useRepoStore((s) => s.repos[repoPath])
-  // A submit is a dozen network calls; show which one, where the user is
-  // looking, instead of only spinning an icon.
   const busy = useUIStore((s) => s.busy)
   const [info, setInfo] = useState<StackInfo | null>(null)
   const [loading, setLoading] = useState(true)
+  const [applying, setApplying] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [adding, setAdding] = useState('')
-  /** main/master by default — never offered as a stop, because a stop is rebased. */
   const [protectedNames, setProtectedNames] = useState<string[]>([])
+
+  /** The route being drawn: bottom → top, like `StackInfo.branches`. */
+  const [draft, setDraft] = useState<{ trunk: string; order: string[] } | null>(null)
 
   const reload = useCallback(async (): Promise<void> => {
     setLoading(true)
     try {
-      setInfo(await gitApi.stackInfo(repoPath))
+      const fresh = await gitApi.stackInfo(repoPath)
+      setInfo(fresh)
+      setDraft({ trunk: fresh.trunk, order: stackOrder(fresh) })
     } catch {
       setInfo({ trunk: '', branches: [] })
+      setDraft({ trunk: '', order: [] })
     } finally {
       setLoading(false)
     }
@@ -53,19 +74,18 @@ export function StackModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
       .catch(() => setProtectedNames([]))
   }, [repoPath])
 
-  const after = async (p: Promise<unknown>): Promise<void> => {
-    await p
-    await reload()
-  }
+  const saved = useMemo(() => ({ trunk: info?.trunk ?? '', order: stackOrder(info) }), [info])
+  const trunk = draft?.trunk ?? saved.trunk
+  const order = draft?.order ?? saved.order
+  const dirty = trunk !== saved.trunk || order.join(' ') !== saved.order.join(' ')
 
   const branches = info?.branches ?? []
-  const order = stackOrder(info)
-  const trunk = info?.trunk || repo?.branches.locals.find((b) => /^(main|master)$/.test(b.name))?.name || ''
-  const leaf = order[order.length - 1] ?? ''
+  const infoFor = (name: string): StackBranch | undefined => branches.find((b) => b.name === name)
+  const leaf = saved.order[saved.order.length - 1] ?? ''
   const anyRestack = branches.some((b) => b.needsRestack)
   const locals = useMemo(() => (repo?.branches.locals ?? []).map((b) => b.name), [repo?.branches.locals])
 
-  /** Local branches plus remote-tracking refs — a stack can start on either. */
+  /** Local branches plus remote-tracking refs — a stack can land on either. */
   const allRefs = useMemo<RefOption[]>(
     () => [
       ...locals.map((value) => ({ value, kind: 'local' as const })),
@@ -73,7 +93,8 @@ export function StackModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
     ],
     [locals, repo?.branches.remotes]
   )
-  /** What a stop can become: any local branch not already on the route. */
+  /** What a stop can become: a local branch not already on the route, and never
+   *  a protected one — a stop gets rebased. */
   const freeBranches = useMemo<RefOption[]>(
     () =>
       locals
@@ -86,25 +107,31 @@ export function StackModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
   const prFor = (branch: string): { id: number; url: string } | undefined =>
     repo?.prs.find((p) => p.sourceBranch === branch)
 
-  /** Every route edit lands here: the new list, against the one on screen. */
-  const route = (nextTrunk: string, next: string[]): void => {
-    if (nextTrunk === trunk && next.join(' ') === order.join(' ')) return
-    void after(repoActions.stackSetRoute(repoPath, nextTrunk, next, trunk, order))
-  }
+  // ─── Draft edits: on screen only, until Apply ─────────────────────────────
+  const edit = (next: { trunk?: string; order?: string[] }): void =>
+    setDraft({ trunk: next.trunk ?? trunk, order: next.order ?? order })
 
   const move = (branch: string, direction: 1 | -1): void => {
     const next = moveLevel(order, branch, direction)
-    if (next) route(trunk, next)
+    if (next) edit({ order: next })
   }
 
   const addStop = (value: string): void => {
     const name = value.trim()
-    if (!name) return
+    if (!name || order.includes(name) || name === trunk) return
     setAdding('')
-    // A branch that already exists joins the route; anything else is a new
-    // branch, created on the tip of the stop it will sit above.
-    if (locals.includes(name)) route(trunk, [...order, name])
-    else void after(repoActions.stackInsert(repoPath, name, leaf || trunk))
+    edit({ order: [...order, name] })
+  }
+
+  const apply = async (): Promise<void> => {
+    if (!dirty) return
+    setApplying(true)
+    try {
+      await repoActions.stackSetRoute(repoPath, trunk, order, saved.trunk, saved.order)
+    } finally {
+      setApplying(false)
+      await reload()
+    }
   }
 
   const submitStack = async (): Promise<void> => {
@@ -117,6 +144,15 @@ export function StackModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
     }
   }
 
+  const after = async (p: Promise<unknown>): Promise<void> => {
+    await p
+    await reload()
+  }
+
+  // Drawn leaf-first: the branch on top merges into the one below it.
+  const rows = order.slice().reverse()
+  const working = applying || submitting
+
   return (
     <div className="stack-modal">
       <h3>
@@ -126,92 +162,6 @@ export function StackModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
       <p className="settings-hint">{t('stack.routeHint')}</p>
 
       <div className="stack-route">
-        <div className="stack-row start">
-          <span className="stack-pin start" />
-          <span className="stack-row-label">{t('stack.start')}</span>
-          <DraftRefPicker
-            className="stack-row-pick"
-            initial={trunk}
-            options={allRefs}
-            placeholder={t('stack.trunkPlaceholder')}
-            onCommit={(v) => v && route(v, order)}
-          />
-        </div>
-
-        {order.map((name, i) => {
-          const b = branches[i]
-          const pr = prFor(name)
-          return (
-            <motion.div
-              key={name}
-              layout
-              transition={{ type: 'spring', stiffness: 420, damping: 34 }}
-              className={`stack-row ${b?.isCurrent ? 'current' : ''}`}
-            >
-              <span className="stack-pin" />
-              <span className="stack-row-label">{interp(t('stack.stop'), { n: i + 1 })}</span>
-              <DraftRefPicker
-                className="stack-row-pick"
-                initial={name}
-                // Its own name stays in the list, so the field is never a dead
-                // control in a repository whose branches are all on the route.
-                options={[{ value: name, kind: 'local' }, ...freeBranches]}
-                onCommit={(v) => {
-                  if (!v || v === name) return
-                  route(
-                    trunk,
-                    order.map((n) => (n === name ? v : n))
-                  )
-                }}
-              />
-              <span className="stack-row-meta">
-                {b && `${b.ahead} ${b.ahead === 1 ? t('stack.commit') : t('stack.commits')}`}
-              </span>
-              {b?.needsRestack && <span className="stack-badge warn">{t('stack.needsRestack')}</span>}
-              {pr && (
-                <button className="stack-pr-chip" title={pr.url} onClick={() => void window.api.openExternal(pr.url)}>
-                  {/* i18n-ignore GitHub's own PR numbering */}
-                  <GitPullRequest size={11} /> #{pr.id}
-                </button>
-              )}
-              <div className="stack-row-actions">
-                {!b?.isCurrent && (
-                  <button
-                    className="stack-icon-btn"
-                    title={t('stack.checkout')}
-                    onClick={() => void after(repoActions.checkout(repoPath, name))}
-                  >
-                    <LogIn size={13} />
-                  </button>
-                )}
-                <button
-                  className="stack-icon-btn"
-                  title={t('stack.moveUp')}
-                  disabled={i === 0}
-                  onClick={() => move(name, -1)}
-                >
-                  <ChevronUp size={13} />
-                </button>
-                <button
-                  className="stack-icon-btn"
-                  title={t('stack.moveDown')}
-                  disabled={i === order.length - 1}
-                  onClick={() => move(name, 1)}
-                >
-                  <ChevronDown size={13} />
-                </button>
-                <button
-                  className="stack-icon-btn danger"
-                  title={t('stack.removeStop')}
-                  onClick={() => route(trunk, order.filter((n) => n !== name))}
-                >
-                  <X size={13} />
-                </button>
-              </div>
-            </motion.div>
-          )
-        })}
-
         <motion.div layout className="stack-row add">
           <span className="stack-pin add">
             <Plus size={11} />
@@ -226,11 +176,114 @@ export function StackModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
             onCommit={addStop}
           />
         </motion.div>
+
+        {rows.map((name, row) => {
+          const i = order.length - 1 - row // index in the bottom → top order
+          const b = infoFor(name)
+          const pr = prFor(name)
+          const into = i === 0 ? trunk : order[i - 1]
+          const isNew = !locals.includes(name)
+          return (
+            <motion.div
+              key={name}
+              layout
+              transition={{ type: 'spring', stiffness: 420, damping: 34 }}
+              className={`stack-row ${b?.isCurrent ? 'current' : ''}`}
+            >
+              <span className="stack-pin" />
+              <DraftRefPicker
+                className="stack-row-pick"
+                initial={name}
+                // Its own name stays in the list, so the field is never a dead
+                // control in a repository whose branches are all on the route.
+                options={[{ value: name, kind: 'local' }, ...freeBranches]}
+                onCommit={(v) => {
+                  if (!v || v === name || order.includes(v)) return
+                  edit({ order: order.map((n) => (n === name ? v : n)) })
+                }}
+              />
+              <span className="stack-row-into" title={interp(t('stack.mergesInto'), { target: into })}>
+                <CornerDownRight size={11} /> {into || '—'}
+              </span>
+              <span className="stack-row-meta">
+                {isNew
+                  ? t('stack.willBeCreated')
+                  : b && `${b.ahead} ${b.ahead === 1 ? t('stack.commit') : t('stack.commits')}`}
+              </span>
+              {b?.needsRestack && <span className="stack-badge warn">{t('stack.needsRestack')}</span>}
+              {pr && (
+                <button className="stack-pr-chip" title={pr.url} onClick={() => void window.api.openExternal(pr.url)}>
+                  {/* i18n-ignore GitHub's own PR numbering */}
+                  <GitPullRequest size={11} /> #{pr.id}
+                </button>
+              )}
+              <div className="stack-row-actions">
+                {!b?.isCurrent && !isNew && (
+                  <button
+                    className="stack-icon-btn"
+                    title={t('stack.checkout')}
+                    disabled={working}
+                    onClick={() => void after(repoActions.checkout(repoPath, name))}
+                  >
+                    <LogIn size={13} />
+                  </button>
+                )}
+                <button
+                  className="stack-icon-btn"
+                  title={t('stack.moveUp')}
+                  disabled={row === 0}
+                  onClick={() => move(name, 1)}
+                >
+                  <ChevronUp size={13} />
+                </button>
+                <button
+                  className="stack-icon-btn"
+                  title={t('stack.moveDown')}
+                  disabled={row === rows.length - 1}
+                  onClick={() => move(name, -1)}
+                >
+                  <ChevronDown size={13} />
+                </button>
+                <button
+                  className="stack-icon-btn danger"
+                  title={t('stack.removeStop')}
+                  onClick={() => edit({ order: order.filter((n) => n !== name) })}
+                >
+                  <X size={13} />
+                </button>
+              </div>
+            </motion.div>
+          )
+        })}
+
+        <motion.div layout className="stack-row start">
+          <span className="stack-pin start" />
+          <span className="stack-row-label">{t('stack.landsOn')}</span>
+          <DraftRefPicker
+            className="stack-row-pick"
+            initial={trunk}
+            options={allRefs}
+            placeholder={t('stack.trunkPlaceholder')}
+            onCommit={(v) => v && v !== trunk && edit({ trunk: v })}
+          />
+        </motion.div>
       </div>
 
       {order.length === 0 && !loading && <p className="settings-hint">{t('stack.emptyRoute')}</p>}
 
-      {submitting && busy && (
+      {dirty && (
+        <div className="stack-apply">
+          <span className="stack-apply-note">{t('stack.draftNote')}</span>
+          <button className="btn primary small" onClick={() => void apply()} disabled={working}>
+            <Check size={13} className={applying ? 'spin' : undefined} /> {t('stack.apply')}
+          </button>
+          <button className="btn ghost small" onClick={() => setDraft(saved)} disabled={working}>
+            {t('stack.discard')}
+          </button>
+        </div>
+      )}
+
+      {working && busy && (
         <p className="stack-progress">
           <Loader2 size={13} className="spin" /> {busy}
         </p>
@@ -240,7 +293,7 @@ export function StackModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
         <button
           className="btn primary small"
           onClick={() => void after(repoActions.stackRestack(repoPath, leaf))}
-          disabled={!anyRestack || !leaf}
+          disabled={!anyRestack || !leaf || dirty || working}
           title={anyRestack ? t('stack.restackHint') : t('stack.nothingToRestack')}
         >
           <RefreshCw size={13} /> {t('stack.restack')}
@@ -248,7 +301,7 @@ export function StackModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
         <button
           className="btn ghost small"
           onClick={() => void after(repoActions.stackPushAll(repoPath))}
-          disabled={order.length === 0}
+          disabled={saved.order.length === 0 || dirty || working}
           title={t('stack.pushAllHint')}
         >
           <Upload size={13} /> {t('stack.pushAll')}
@@ -256,8 +309,8 @@ export function StackModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
         <button
           className="btn primary small"
           onClick={() => void submitStack()}
-          disabled={submitting || order.length === 0}
-          title={t('stack.submitHint')}
+          disabled={saved.order.length === 0 || dirty || working}
+          title={dirty ? t('stack.applyFirst') : t('stack.submitHint')}
         >
           <GitPullRequest size={13} className={submitting ? 'spin' : undefined} /> {t('stack.submit')}
         </button>
@@ -270,10 +323,8 @@ export function StackModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
 }
 
 /**
- * A `RefPicker` that owns its draft text: the route's fields commit on
- * pick-or-Enter and are re-seeded from the stack on every reload, so holding
- * the half-typed value in the modal's state would only be a way to forget to
- * clear it.
+ * A `RefPicker` that owns its draft text and re-seeds when the route changes
+ * under it, so a field never shows a name its row no longer holds.
  */
 function DraftRefPicker({
   initial,

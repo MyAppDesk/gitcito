@@ -212,6 +212,7 @@ export const ptBR: Dict = {
   'search.historyHint': 'Lista os commits cujo diff mexe no texto procurado.',
   // Pilha de branches
   'stack.title': 'Pilha de branches',
+  'stack.showing': 'Pilha',
   'stack.landsOn': 'Aterrissa em',
   'stack.mergesInto': 'Entra em {target}',
   'stack.apply': 'Aplicar rota',

@@ -212,6 +212,7 @@ export const ar: Dict = {
   'search.historyHint': 'يعرض الالتزامات التي يغيّر فرقها النص المطابق.',
   // Branch stack
   'stack.title': 'مكدس الفروع',
+  'stack.showing': 'الكومة',
   'stack.landsOn': 'يحطّ على',
   'stack.mergesInto': 'يُدمج في {target}',
   'stack.apply': 'تطبيق المسار',

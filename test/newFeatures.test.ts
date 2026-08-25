@@ -1442,3 +1442,18 @@ describe('a branch that is on no stack (stacked-branches playground)', () => {
     expect(info.trunk).toBe('main')
   })
 })
+
+describe('finding the stacks in a repository (stacked-branches playground)', () => {
+  it('lists the leaf of each stack, and nothing that is somebody’s parent', async () => {
+    const R = cloneFixture('stacked-branches') // main ← feature/api ← feature/ui
+    execFileSync('git', ['-C', R, 'branch', 'docs-1', 'main'])
+    execFileSync('git', ['-C', R, 'config', 'branch.docs-1.gitcitoparent', 'main'])
+
+    expect(await gitService.stackLeaves(R)).toEqual(['docs-1', 'feature/ui'])
+  })
+
+  it('answers nothing for a repository with no stacks at all', async () => {
+    const R = cloneFixture('merge-conflict')
+    expect(await gitService.stackLeaves(R)).toEqual([])
+  })
+})

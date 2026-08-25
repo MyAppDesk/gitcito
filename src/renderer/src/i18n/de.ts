@@ -212,6 +212,7 @@ export const de: Dict = {
   'search.historyHint': 'Listet Commits, deren Diff den gesuchten Text ändert.',
   // Branch stack
   'stack.title': 'Branch-Stapel',
+  'stack.showing': 'Stapel',
   'stack.landsOn': 'Landet auf',
   'stack.mergesInto': 'Wird in {target} gemergt',
   'stack.apply': 'Route anwenden',

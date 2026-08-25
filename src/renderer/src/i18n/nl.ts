@@ -212,6 +212,7 @@ export const nl: Dict = {
   'search.historyHint': 'Toont commits waarvan de diff de gezochte tekst wijzigt.',
   // Branch-stack
   'stack.title': 'Branch-stack',
+  'stack.showing': 'Stapel',
   'stack.landsOn': 'Landt op',
   'stack.mergesInto': 'Gaat samen in {target}',
   'stack.apply': 'Route toepassen',

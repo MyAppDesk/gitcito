@@ -197,6 +197,8 @@ export const gitApi = {
   deleteRemoteBranch: (path: string, remote: string, name: string) =>
     call<void>('deleteRemoteBranch', path, remote, name),
   stackInfo: (path: string, leaf?: string) => call<StackInfo>('stackInfo', path, leaf),
+  /** The leaf of every stack recorded in this repository. */
+  stackLeaves: (path: string) => call<string[]>('stackLeaves', path),
   stackSetParent: (path: string, branch: string, parent: string) =>
     call<void>('stackSetParent', path, branch, parent),
   stackClearParent: (path: string, branch: string) => call<void>('stackClearParent', path, branch),

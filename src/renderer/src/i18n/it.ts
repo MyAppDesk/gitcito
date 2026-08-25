@@ -205,6 +205,7 @@ export const it: Dict = {
   'search.filesHint': 'Cerca nei file tracciati e non tracciati (rispetta .gitignore).',
   'search.historyHint': 'Elenca i commit il cui diff modifica il testo cercato.',
   'stack.title': 'Pila di branch',
+  'stack.showing': 'Pila',
   'stack.landsOn': 'Atterra su',
   'stack.mergesInto': 'Confluisce in {target}',
   'stack.apply': 'Applica itinerario',

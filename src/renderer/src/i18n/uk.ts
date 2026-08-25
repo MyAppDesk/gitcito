@@ -212,6 +212,7 @@ export const uk: Dict = {
   'search.historyHint': 'Показує коміти, чий diff змінює знайдений текст.',
   // Стек гілок
   'stack.title': 'Стек гілок',
+  'stack.showing': 'Стек',
   'stack.landsOn': 'Приземляється на',
   'stack.mergesInto': 'Вливається в {target}',
   'stack.apply': 'Застосувати маршрут',

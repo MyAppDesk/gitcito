@@ -212,6 +212,7 @@ export const ru: Dict = {
   'search.historyHint': 'Показывает коммиты, в диффе которых меняется найденный текст.',
   // Стек веток
   'stack.title': 'Стек веток',
+  'stack.showing': 'Стек',
   'stack.landsOn': 'Приземляется на',
   'stack.mergesInto': 'Вливается в {target}',
   'stack.apply': 'Применить маршрут',

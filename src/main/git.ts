@@ -2653,6 +2653,30 @@ export const gitService = {
   },
 
   /**
+   * The leaf of every stack in the repository: a branch that records a parent
+   * and that nothing else records as its parent.
+   *
+   * `stackInfo` answers for one branch, which is right when you are standing on
+   * a stack and useless when you are not — the modal opens on the trunk more
+   * often than not. This is how it finds the stacks that exist anyway.
+   */
+  async stackLeaves(repoPath: string): Promise<string[]> {
+    const raw = await gitFor(repoPath)
+      .raw(['config', '--get-regexp', '^branch\\..*\\.gitcitoparent$'])
+      .catch(() => '')
+    const parents = new Map<string, string>()
+    for (const line of raw.split('\n')) {
+      const sp = line.indexOf(' ')
+      if (sp < 0) continue
+      const key = line.slice(0, sp)
+      const name = key.slice('branch.'.length, key.length - '.gitcitoparent'.length)
+      if (name) parents.set(name, line.slice(sp + 1).trim())
+    }
+    const claimed = new Set(parents.values())
+    return [...parents.keys()].filter((b) => !claimed.has(b)).sort((a, b) => a.localeCompare(b))
+  },
+
+  /**
    * Set the whole route in one move: `order` (bottom → top) sitting on `trunk`,
    * and anything currently in the stack but missing from `order` untracked.
    *
@@ -7308,6 +7332,7 @@ const READ_METHODS = new Set<string>([
   'stashes',
   'remotes',
   'stackInfo',
+  'stackLeaves',
   'listDir',
   'listDirAt',
   'timelapseData',

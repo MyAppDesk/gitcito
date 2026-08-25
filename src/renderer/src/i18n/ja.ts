@@ -205,6 +205,7 @@ export const ja: Dict = {
   'search.filesHint': '追跡中と未追跡のファイルを検索します（.gitignore を尊重します）。',
   'search.historyHint': '一致したテキストを差分で変更しているコミットを一覧表示します。',
   'stack.title': 'ブランチスタック',
+  'stack.showing': 'スタック',
   'stack.landsOn': '着地先',
   'stack.mergesInto': '{target} にマージ',
   'stack.apply': 'ルートを適用',

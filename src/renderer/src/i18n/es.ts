@@ -207,6 +207,7 @@ export const es: Dict = {
   'search.historyHint': 'Lista commits cuyo diff cambia el texto buscado.',
   // Branch stack
   'stack.title': 'Pila de ramas',
+  'stack.showing': 'Pila',
   'stack.landsOn': 'Aterriza en',
   'stack.mergesInto': 'Se fusiona en {target}',
   'stack.apply': 'Aplicar ruta',

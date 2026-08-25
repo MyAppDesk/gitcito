@@ -212,6 +212,7 @@ export const zhCN: Dict = {
   'search.historyHint': '列出差异中改动了匹配文本的提交。',
   // Branch stack
   'stack.title': '分支栈',
+  'stack.showing': '堆栈',
   'stack.landsOn': '落到',
   'stack.mergesInto': '合并进 {target}',
   'stack.apply': '应用路线',

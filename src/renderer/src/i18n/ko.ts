@@ -212,6 +212,7 @@ export const ko: Dict = {
   'search.historyHint': '해당 텍스트를 변경한 커밋을 나열합니다.',
   // 브랜치 스택
   'stack.title': '브랜치 스택',
+  'stack.showing': '스택',
   'stack.landsOn': '착지 지점',
   'stack.mergesInto': '{target}에 병합',
   'stack.apply': '경로 적용',

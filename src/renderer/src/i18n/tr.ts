@@ -205,6 +205,7 @@ export const tr: Dict = {
   'search.filesHint': 'Takip edilen ve edilmeyen dosyalarda arar (.gitignore dikkate alınır).',
   'search.historyHint': 'Farkı eşleşen metni değiştiren commit’leri listeler.',
   'stack.title': 'Dal yığını',
+  'stack.showing': 'Yığın',
   'stack.landsOn': 'İneceği yer',
   'stack.mergesInto': '{target} içine merge olur',
   'stack.apply': 'Güzergâhı uygula',

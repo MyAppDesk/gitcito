@@ -13450,6 +13450,7 @@ mark.find-hit.active {
   background: var(--accent-soft, rgba(99, 102, 241, 0.12));
 }
 .stack-apply-note { flex: 1 1 200px; font-size: 11.5px; color: var(--text-1); }
+.stack-switch { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
 
 .stack-progress {
   display: flex;

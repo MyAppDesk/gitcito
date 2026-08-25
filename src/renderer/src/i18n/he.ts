@@ -212,6 +212,7 @@ export const he: Dict = {
   'search.historyHint': 'מציג קומיטים שהדיף שלהם משנה את הטקסט שנמצא.',
   // Branch stack
   'stack.title': 'ערימת ענפים',
+  'stack.showing': 'ערימה',
   'stack.landsOn': 'נוחת על',
   'stack.mergesInto': 'ממוזג אל {target}',
   'stack.apply': 'להחיל את המסלול',

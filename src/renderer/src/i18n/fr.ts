@@ -205,6 +205,7 @@ export const fr: Dict = {
   'search.filesHint': 'Cherche dans les fichiers suivis et non suivis (respecte .gitignore).',
   'search.historyHint': 'Liste les commits dont le diff modifie le texte recherché.',
   'stack.title': 'Pile de branches',
+  'stack.showing': 'Pile',
   'stack.landsOn': 'Atterrit sur',
   'stack.mergesInto': 'Fusionne dans {target}',
   'stack.apply': 'Appliquer l’itinéraire',

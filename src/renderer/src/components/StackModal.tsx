@@ -55,6 +55,8 @@ export function StackModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
    * just editing on screen instead of an empty one.
    */
   const [focus, setFocus] = useState<string | null>(null)
+  /** Every stack in the repository, by leaf — for the picker when HEAD is on none. */
+  const [leaves, setLeaves] = useState<string[]>([])
 
   const reload = useCallback(
     async (leaf?: string | null): Promise<void> => {
@@ -65,12 +67,18 @@ export function StackModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
         // The remembered leaf may have been taken off the route; fall back to
         // whatever the current branch is on rather than showing nothing.
         if (!fresh.branches.length && target) fresh = await gitApi.stackInfo(repoPath)
+        // Standing on the trunk is the common case, and it is on no stack. Show
+        // one that exists instead of an empty screen the user has to guess at.
+        const known = await gitApi.stackLeaves(repoPath).catch(() => [] as string[])
+        setLeaves(known)
+        if (!fresh.branches.length && known.length) fresh = await gitApi.stackInfo(repoPath, known[0])
         setInfo(fresh)
         setFocus(stackOrder(fresh).at(-1) ?? null)
-        setDraft({ trunk: fresh.trunk, order: stackOrder(fresh) })
+        setDraft(null) // seeded from `saved` below, so an untouched route is never "dirty"
+
       } catch {
         setInfo({ trunk: '', branches: [] })
-        setDraft({ trunk: '', order: [] })
+        setDraft(null)
       } finally {
         setLoading(false)
       }
@@ -188,6 +196,20 @@ export function StackModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
       </h3>
       <p className="settings-hint">{t('stack.routeHint')}</p>
 
+      {leaves.length > 1 && (
+        <div className="stack-switch">
+          <span className="stack-row-label">{t('stack.showing')}</span>
+          <DraftRefPicker
+            className="stack-row-pick"
+            initial={focus ?? leaves[0]}
+            options={leaves.map((value) => ({ value, kind: 'local' as const }))}
+            onCommit={(v) => {
+              if (v && v !== focus) void reload(v)
+            }}
+          />
+        </div>
+      )}
+
       <div className="stack-route">
         <motion.div layout className="stack-row add">
           <span className="stack-pin add">
@@ -302,9 +324,9 @@ export function StackModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
         <div className="stack-apply">
           <span className="stack-apply-note">{t('stack.draftNote')}</span>
           <button className="btn primary small" onClick={() => void apply()} disabled={working}>
-            <Check size={13} className={applying ? 'spin' : undefined} /> {t('stack.apply')}
+            {applying ? <Loader2 size={13} className="spin" /> : <Check size={13} />} {t('stack.apply')}
           </button>
-          <button className="btn ghost small" onClick={() => setDraft(saved)} disabled={working}>
+          <button className="btn ghost small" onClick={() => setDraft(null)} disabled={working}>
             {t('stack.discard')}
           </button>
         </div>
@@ -339,7 +361,7 @@ export function StackModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
           disabled={saved.order.length === 0 || dirty || working}
           title={dirty ? t('stack.applyFirst') : t('stack.submitHint')}
         >
-          <GitPullRequest size={13} className={submitting ? 'spin' : undefined} /> {t('stack.submit')}
+          {submitting ? <Loader2 size={13} className="spin" /> : <GitPullRequest size={13} />} {t('stack.submit')}
         </button>
         <button className="btn ghost small" onClick={() => void reload()} style={{ marginLeft: 'auto' }}>
           <RefreshCw size={13} className={loading ? 'spin' : undefined} /> {t('stack.refresh')}

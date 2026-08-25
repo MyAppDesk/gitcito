@@ -213,6 +213,7 @@ export const en = {
   'search.historyHint': 'Lists commits whose diff changes the matched text.',
   // Branch stack
   'stack.title': 'Branch stack',
+  'stack.showing': 'Stack',
   'stack.landsOn': 'Lands on',
   'stack.mergesInto': 'Merges into {target}',
   'stack.apply': 'Apply route',

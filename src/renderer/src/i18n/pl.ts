@@ -212,6 +212,7 @@ export const pl: Dict = {
   'search.historyHint': 'Wypisuje commity, których diff zmienia dopasowany tekst.',
   // Stos branchy
   'stack.title': 'Stos branchy',
+  'stack.showing': 'Stos',
   'stack.landsOn': 'Ląduje na',
   'stack.mergesInto': 'Scala się do {target}',
   'stack.apply': 'Zastosuj trasę',

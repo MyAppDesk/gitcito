@@ -313,9 +313,11 @@ function taskCommandSelf(task: LaunchTask, folder: string): string {
           .join(' ')
       : ''
   if (envPrefix) line = `${envPrefix} ${line}`
-  // Respect the task's working directory by wrapping in a subshell.
+  // Always a subshell: VS Code runs each task in its own shell, so a task body
+  // that ends in `exit` (a common way to swallow a failing step) must not take
+  // the launch chain down with it. The subshell also scopes `options.cwd`.
   const cwd = task.options?.cwd ? subAll(task.options.cwd, folder) : ''
-  return cwd ? `( cd ${shQuote(cwd)} && ${line} )` : line
+  return cwd ? `( cd ${shQuote(cwd)} && ${line} )` : `( ${line} )`
 }
 
 /**

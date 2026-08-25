@@ -172,7 +172,7 @@ export function StackModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
   const submitStack = async (): Promise<void> => {
     setSubmitting(true)
     try {
-      await repoActions.submitStack(repoPath)
+      await repoActions.submitStack(repoPath, leaf || undefined)
     } finally {
       setSubmitting(false)
       await reload()
@@ -349,7 +349,7 @@ export function StackModal({ repoPath }: { repoPath: string }): React.JSX.Elemen
         </button>
         <button
           className="btn ghost small"
-          onClick={() => void after(repoActions.stackPushAll(repoPath))}
+          onClick={() => void after(repoActions.stackPushAll(repoPath, leaf || undefined))}
           disabled={saved.order.length === 0 || dirty || working}
           title={t('stack.pushAllHint')}
         >

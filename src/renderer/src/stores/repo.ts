@@ -1274,13 +1274,14 @@ export const repoActions = {
       ['branches', 'status', 'log']
     ),
 
-  /** `gh stack push`: every level to the remote, with a lease. */
-  stackPushAll: (path: string) =>
+  /** `gh stack push`: every level to the remote, with a lease. `leaf` names the
+   *  stack to push — the modal can be showing one you are not standing on. */
+  stackPushAll: (path: string, leaf?: string) =>
     useRepoStore.getState().run(
       path,
       t('act.stackPushed'),
       async () => {
-        const stack = await gitApi.stackInfo(path)
+        const stack = await gitApi.stackInfo(path, leaf)
         if (!stack.branches.length) throw new Error(t('stack.empty'))
         for (const b of stack.branches) await gitApi.push(path, b.name, { force: true })
       },
@@ -1294,7 +1295,7 @@ export const repoActions = {
    *  a lease, create missing PRs with the right bases, retarget any that point
    *  at the wrong base, then write the stack-navigation section into every PR
    *  body. Idempotent — the button is safe to press after every restack. */
-  submitStack: (path: string) =>
+  submitStack: (path: string, leaf?: string) =>
     useRepoStore.getState().run(
       path,
       t('act.stackSubmitted'),
@@ -1313,22 +1314,22 @@ export const repoActions = {
         // Squash merges are invisible to git's ancestry check, so ask the host
         // which of the stack's branches have a merged PR (best-effort).
         const profileForPrune = useSettingsStore.getState().activeProfile()
-        const preStack = await gitApi.stackInfo(path).catch(() => null)
+        const preStack = await gitApi.stackInfo(path, leaf).catch(() => null)
         const hostMerged = preStack?.branches.length
           ? await hostingApi
               .mergedPrHeads(origin.url, { github: profileForPrune.githubToken || undefined }, preStack.branches.map((b) => b.name))
               .catch(() => [])
           : []
-        const pruned = await gitApi.stackPruneMerged(path, hostMerged)
+        const pruned = await gitApi.stackPruneMerged(path, hostMerged, leaf)
         if (pruned.length) toast('info', interp(t('act.stackPruned'), { branches: pruned.join(', ') }))
 
-        let stack = await gitApi.stackInfo(path)
+        let stack = await gitApi.stackInfo(path, leaf)
         if (!stack.branches.length) throw new Error(t('stack.empty'))
         // Restack before pushing when anything drifted (a prune usually means
         // the children now sit on an outdated base). Throws on conflict.
         if (stack.branches.some((b) => b.needsRestack)) {
           await gitApi.stackRestack(path, stack.branches[stack.branches.length - 1].name)
-          stack = await gitApi.stackInfo(path)
+          stack = await gitApi.stackInfo(path, leaf)
         }
 
         await state.refreshPRs(path, { silent: true })

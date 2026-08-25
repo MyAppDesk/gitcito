@@ -1457,3 +1457,20 @@ describe('finding the stacks in a repository (stacked-branches playground)', () 
     expect(await gitService.stackLeaves(R)).toEqual([])
   })
 })
+
+describe('acting on a stack you are not standing on (stacked-branches playground)', () => {
+  it('prunes the stack named by its leaf, from anywhere', async () => {
+    const R = cloneFixture('stacked-branches') // main ← feature/api ← feature/ui
+    execFileSync('git', ['-C', R, 'checkout', '-q', 'main'])
+    execFileSync('git', ['-C', R, 'merge', '-q', '--no-ff', '-m', 'merge feature/api', 'feature/api'])
+
+    // Standing on main, which is on no stack: without the leaf there is nothing
+    // to prune, with it the merged bottom goes.
+    expect(await gitService.stackPruneMerged(R)).toEqual([])
+    expect(await gitService.stackPruneMerged(R, [], 'feature/ui')).toEqual(['feature/api'])
+
+    const info = await gitService.stackInfo(R, 'feature/ui')
+    expect(info.branches.map((b) => b.name)).toEqual(['feature/ui'])
+    expect(info.branches[0].parent).toBe('main')
+  })
+})

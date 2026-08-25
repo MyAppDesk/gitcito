@@ -2787,11 +2787,12 @@ export const gitService = {
    * callers pass branches with a host-verified merged PR via `alsoMerged`.
    * Returns the pruned branch names, bottom first.
    */
-  async stackPruneMerged(repoPath: string, alsoMerged: string[] = []): Promise<string[]> {
+  async stackPruneMerged(repoPath: string, alsoMerged: string[] = [], leaf?: string): Promise<string[]> {
     const git = gitFor(repoPath)
     const pruned: string[] = []
+    let head = leaf
     for (;;) {
-      const info = await gitService.stackInfo(repoPath)
+      const info = await gitService.stackInfo(repoPath, head)
       const bottom = info.branches[0]
       if (!info.trunk || !bottom) break
       const trunkRef = (await runGit(repoPath, ['rev-parse', '--verify', `origin/${info.trunk}`]).catch(() => ''))
@@ -2814,6 +2815,9 @@ export const gitService = {
       // proved the trunk has everything this branch ever was.
       if (!bottom.isCurrent) await git.raw(['branch', '-D', bottom.name]).catch(() => {})
       pruned.push(bottom.name)
+      // The leaf survives a prune of the bottom, so keep asking about the same
+      // stack rather than falling back to whatever branch is checked out.
+      head = info.branches[info.branches.length - 1]?.name ?? head
     }
     return pruned
   },

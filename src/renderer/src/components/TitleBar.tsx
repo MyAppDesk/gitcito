@@ -19,8 +19,7 @@ import { ProfileSwitcher } from './ProfileSwitcher'
 import { WorkspaceSwitcher } from './WorkspaceSwitcher'
 import { tabLabel } from '../lib/tabLabel'
 import { repoCloseStatus, tabCloseStatus, type TabStatus } from '../lib/tabClose'
-import { canonicalRepoPath, repoDisplayName } from '../lib/repoAlias'
-import { todoSummary } from '../lib/todos'
+import { repoDisplayName } from '../lib/repoAlias'
 import { confirmRemoveRepoFromGroup, repositoryMenuItems, requestCloseTab } from '../lib/repositoryMenuItems'
 import { useT, interp } from '../i18n'
 
@@ -533,13 +532,6 @@ export function TitleBar(): React.JSX.Element {
 
   const repoStatus = (path: string): TabStatus => repoCloseStatus(repos[path])
 
-  // Open todos ride next to the working-tree dot: the same glance that says
-  // "uncommitted work here" should say "and something you asked yourself to do".
-  const repoTodos = (path: string): number =>
-    todoSummary(settings.repoTodos?.[canonicalRepoPath(path)]).open
-  const tabTodos = (tab: TabState): number =>
-    tab.kind === 'page' ? 0 : tab.repos.reduce((n, r) => n + repoTodos(r.path), 0)
-
   // Aggregate ahead/behind + dirty repo count across a whole group, for the
   // chip badge + tooltip so the group's sync state is visible without opening
   // each repo.
@@ -843,12 +835,6 @@ export function TitleBar(): React.JSX.Element {
             title={rs === 'conflict' ? t('titlebar.conflictsInProgress') : t('titlebar.uncommittedChangesShort')}
           />
         )}
-        {repoTodos(repo.path) > 0 && (
-          <span
-            className="tab-todo-dot"
-            title={interp(t('todos.openBadge'), { n: repoTodos(repo.path) })}
-          />
-        )}
         <button
           className="tab-close"
           aria-label={interp(t('a11y.closeTab'), { name: repoDisplayName(repo.path, settings.repoAliases, repo.name) })}
@@ -1005,9 +991,6 @@ export function TitleBar(): React.JSX.Element {
                     className={`tab-status tab-status-${status}`}
                     title={status === 'conflict' ? t('titlebar.conflictsInProgress') : t('titlebar.uncommittedChangesShort')}
                   />
-                )}
-                {tabTodos(tab) > 0 && (
-                  <span className="tab-todo-dot" title={interp(t('todos.openBadge'), { n: tabTodos(tab) })} />
                 )}
                 <button
                   className="tab-close"

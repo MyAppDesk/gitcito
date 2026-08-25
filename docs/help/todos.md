@@ -2,7 +2,7 @@
 title: Todos
 category: Workspace tools
 order: 97
-summary: A private checklist per repository, visible from the tab strip and the status bar.
+summary: A private checklist per repository, visible from the sidebar and the status bar.
 keywords: todo todos task tasks checklist checkbox note notes reminder chore backlog priority
 ---
 
@@ -49,15 +49,14 @@ recently ticked at the top, so undoing a mis-click is one move away.
 
 ## Seeing them without looking
 
-![The tab ring, the sidebar section and the status-bar chip, all on one window](../screenshots/todos-markers.webp)
+![The sidebar section and the status-bar chip, both on one window](../screenshots/todos-markers.webp)
 
 | Marker | Where | Means |
 |---|---|---|
-| Hollow ring | Next to the tab name, beside the grey uncommitted-changes dot | This repository has open todos |
 | <kbd>☑ 3</kbd> chip | Status bar, left of the branch name | How many are open; yellow if any is high priority |
 | Count badge | The sidebar section header | The same number, next to the list itself |
 
-All three disappear at zero. A permanent "0 todos" is furniture, and furniture
+Both disappear at zero. A permanent "0 todos" is furniture, and furniture
 is what people stop seeing.
 
 ## The detail view

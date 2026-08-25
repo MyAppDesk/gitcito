@@ -2,7 +2,7 @@
 title: Taken
 category: Werkomgeving & tools
 order: 97
-summary: Een privélijst per repository, zichtbaar vanaf de tabbladen en de statusbalk.
+summary: Een privélijst per repository, zichtbaar vanaf de zijbalk en de statusbalk.
 keywords: todo taak taken lijst checklist vinkje notitie notities herinnering prioriteit
 ---
 
@@ -51,15 +51,14 @@ zet ongedaan is.
 
 ## Ze zien zonder te kijken
 
-![De ring op het tabblad, de sectie in de zijbalk en de chip in de statusbalk, in één venster](../../screenshots/todos-markers.webp)
+![De sectie in de zijbalk en de chip in de statusbalk, in één venster](../../screenshots/todos-markers.webp)
 
 | Markering | Waar | Betekent |
 |---|---|---|
-| Holle ring | Naast de tabbladnaam, bij het grijze stipje voor niet-gecommitte wijzigingen | Deze repository heeft openstaande taken |
 | Chip <kbd>☑ 3</kbd> | Statusbalk, links van de branchnaam | Hoeveel er open staan; geel als er een hoge prioriteit tussen zit |
 | Teller | De kop van de sectie in de zijbalk | Hetzelfde getal, naast de lijst zelf |
 
-Alle drie verdwijnen bij nul. Een permanente “0 taken” is meubilair, en
+Beide verdwijnen bij nul. Een permanente “0 taken” is meubilair, en
 meubilair is precies wat mensen niet meer zien.
 
 ## Het detail

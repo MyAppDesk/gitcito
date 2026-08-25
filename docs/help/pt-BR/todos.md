@@ -2,7 +2,7 @@
 title: Tarefas
 category: Ferramentas de workspace
 order: 97
-summary: Uma lista privada por repositório, visível nas abas e na barra de status.
+summary: Uma lista privada por repositório, visível na barra lateral e na barra de status.
 keywords: todo tarefa tarefas lista checklist caixa nota notas lembrete pendências prioridade
 ---
 
@@ -51,15 +51,14 @@ errado seja imediato.
 
 ## Vendo sem procurar
 
-![O anel na aba, a seção da barra lateral e o chip da barra de status, na mesma janela](../../screenshots/todos-markers.webp)
+![A seção da barra lateral e o chip da barra de status, na mesma janela](../../screenshots/todos-markers.webp)
 
 | Marca | Onde | O que significa |
 |---|---|---|
-| Anel vazado | Ao lado do nome da aba, junto ao ponto cinza de mudanças não commitadas | Este repositório tem tarefas abertas |
 | Chip <kbd>☑ 3</kbd> | Barra de status, à esquerda do branch | Quantas estão abertas; amarelo se alguma for de prioridade alta |
 | Contador | O cabeçalho da seção na barra lateral | O mesmo número, ao lado da lista |
 
-As três somem no zero. Um “0 tarefas” permanente é mobília, e mobília é
+As duas somem no zero. Um “0 tarefas” permanente é mobília, e mobília é
 exatamente o que as pessoas param de enxergar.
 
 ## O detalhe

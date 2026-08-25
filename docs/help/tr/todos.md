@@ -2,7 +2,7 @@
 title: Yapılacaklar
 category: Çalışma alanı araçları
 order: 97
-summary: Her depo için özel bir kontrol listesi; sekme şeridinden ve durum çubuğundan görünür.
+summary: Her depo için özel bir kontrol listesi; kenar çubuğundan ve durum çubuğundan görünür.
 keywords: todo görev görevler yapılacaklar liste kontrol listesi not notlar hatırlatma öncelik
 ---
 
@@ -48,15 +48,14 @@ işaretlenen en üstte; böylece yanlış tık tek hamlede geri alınır.
 
 ## Bakmadan görmek
 
-![Sekmedeki halka, kenar çubuğundaki bölüm ve durum çubuğundaki rozet, tek pencerede](../../screenshots/todos-markers.webp)
+![Kenar çubuğundaki bölüm ve durum çubuğundaki rozet, tek pencerede](../../screenshots/todos-markers.webp)
 
 | İşaret | Nerede | Anlamı |
 |---|---|---|
-| İçi boş halka | Sekme adının yanında, commit’lenmemiş değişikliklerin gri noktasının bitişiğinde | Bu depoda açık görev var |
 | <kbd>☑ 3</kbd> rozeti | Durum çubuğu, dal adının solunda | Kaç tanesi açık; biri yüksek öncelikliyse sarı |
 | Sayaç | Kenar çubuğundaki bölüm başlığı | Aynı sayı, listenin yanında |
 
-Üçü de sıfırda kaybolur. Kalıcı bir “0 görev” mobilyadır ve insanın görmeyi
+İkisi de sıfırda kaybolur. Kalıcı bir “0 görev” mobilyadır ve insanın görmeyi
 bıraktığı şey tam olarak mobilyadır.
 
 ## Ayrıntı görünümü

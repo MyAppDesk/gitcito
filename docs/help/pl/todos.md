@@ -2,7 +2,7 @@
 title: Zadania
 category: Narzędzia środowiska pracy
 order: 97
-summary: Prywatna lista dla każdego repozytorium, widoczna na kartach i na pasku stanu.
+summary: Prywatna lista dla każdego repozytorium, widoczna na pasku bocznym i na pasku stanu.
 keywords: todo zadanie zadania lista checklista notatka notatki przypomnienie priorytet
 ---
 
@@ -50,15 +50,14 @@ odhaczone na górze, żeby cofnięcie pomyłki było jednym ruchem.
 
 ## Widać je bez szukania
 
-![Pierścień na karcie, sekcja paska bocznego i plakietka na pasku stanu w jednym oknie](../../screenshots/todos-markers.webp)
+![Sekcja paska bocznego i plakietka na pasku stanu w jednym oknie](../../screenshots/todos-markers.webp)
 
 | Znacznik | Gdzie | Co znaczy |
 |---|---|---|
-| Pusty pierścień | Obok nazwy karty, przy szarej kropce niezacommitowanych zmian | To repozytorium ma otwarte zadania |
 | Plakietka <kbd>☑ 3</kbd> | Pasek stanu, na lewo od nazwy gałęzi | Ile jest otwartych; żółta, gdy któreś ma wysoki priorytet |
 | Licznik | Nagłówek sekcji na pasku bocznym | Ta sama liczba, tuż przy liście |
 
-Wszystkie trzy znikają przy zerze. Stałe „0 zadań” to mebel, a mebli w końcu
+Obie znikają przy zerze. Stałe „0 zadań” to mebel, a mebli w końcu
 przestaje się zauważać.
 
 ## Szczegóły

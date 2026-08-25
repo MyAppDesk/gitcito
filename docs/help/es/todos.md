@@ -2,7 +2,7 @@
 title: Tareas
 category: Herramientas del espacio de trabajo
 order: 97
-summary: Una lista privada por repositorio, visible desde las pestañas y la barra de estado.
+summary: Una lista privada por repositorio, visible desde la barra lateral y la barra de estado.
 keywords: todo todos tarea tareas lista checklist casilla nota notas recordatorio pendientes prioridad
 ---
 
@@ -51,15 +51,14 @@ deshacer un clic equivocado sea inmediato.
 
 ## Verlas sin buscarlas
 
-![El anillo en la pestaña, la sección de la barra lateral y el indicador de la barra de estado, en una misma ventana](../../screenshots/todos-markers.webp)
+![La sección de la barra lateral y el indicador de la barra de estado, en una misma ventana](../../screenshots/todos-markers.webp)
 
 | Marca | Dónde | Qué significa |
 |---|---|---|
-| Anillo hueco | Junto al nombre de la pestaña, al lado del punto gris de cambios sin commitear | Este repositorio tiene tareas abiertas |
 | Indicador <kbd>☑ 3</kbd> | Barra de estado, a la izquierda de la rama | Cuántas están abiertas; amarillo si alguna es de prioridad alta |
 | Contador | La cabecera de la sección en la barra lateral | El mismo número, junto a la lista |
 
-Las tres desaparecen cuando llegas a cero. Un «0 tareas» permanente es
+Ambas desaparecen cuando llegas a cero. Un «0 tareas» permanente es
 mobiliario, y el mobiliario es justo lo que la gente deja de ver.
 
 ## El detalle

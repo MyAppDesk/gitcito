@@ -2,7 +2,7 @@
 title: Tâches
 category: Outils de l'espace de travail
 order: 97
-summary: Une liste privée par dépôt, visible depuis les onglets et la barre d'état.
+summary: Une liste privée par dépôt, visible depuis la barre latérale et la barre d'état.
 keywords: todo tâche tâches liste checklist case note notes rappel pense-bête priorité
 ---
 
@@ -51,15 +51,14 @@ pour qu'annuler une erreur de clic reste immédiat.
 
 ## Les voir sans les chercher
 
-![L'anneau sur l'onglet, la section de la barre latérale et la pastille de la barre d'état, dans une même fenêtre](../../screenshots/todos-markers.webp)
+![La section de la barre latérale et la pastille de la barre d'état, dans une même fenêtre](../../screenshots/todos-markers.webp)
 
 | Repère | Où | Ce que ça veut dire |
 |---|---|---|
-| Anneau creux | À côté du nom de l'onglet, près du point gris des modifications non committées | Ce dépôt a des tâches en cours |
 | Pastille <kbd>☑ 3</kbd> | Barre d'état, à gauche de la branche | Combien sont en cours ; jaune si l'une est en priorité haute |
 | Compteur | L'en-tête de section dans la barre latérale | Le même nombre, à côté de la liste |
 
-Les trois disparaissent à zéro. Un « 0 tâche » permanent est du mobilier, et le
+Les deux disparaissent à zéro. Un « 0 tâche » permanent est du mobilier, et le
 mobilier est exactement ce qu'on cesse de voir.
 
 ## Le détail

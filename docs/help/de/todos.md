@@ -2,7 +2,7 @@
 title: Aufgaben
 category: Workspace-Werkzeuge
 order: 97
-summary: Eine private Checkliste pro Repository, sichtbar in der Tab-Leiste und der Statusleiste.
+summary: Eine private Checkliste pro Repository, sichtbar in der Seitenleiste und der Statusleiste.
 keywords: todo aufgabe aufgaben checkliste liste notiz notizen erinnerung merkzettel priorität
 ---
 
@@ -51,15 +51,14 @@ Abgehaktes oben, damit ein Fehlklick sofort rückgängig zu machen ist.
 
 ## Sie sehen, ohne hinzusehen
 
-![Der Ring am Tab, der Abschnitt in der Seitenleiste und der Chip in der Statusleiste in einem Fenster](../../screenshots/todos-markers.webp)
+![Der Abschnitt in der Seitenleiste und der Chip in der Statusleiste in einem Fenster](../../screenshots/todos-markers.webp)
 
 | Markierung | Wo | Bedeutet |
 |---|---|---|
-| Hohler Ring | Neben dem Tab-Namen, direkt beim grauen Punkt für nicht committete Änderungen | Dieses Repository hat offene Aufgaben |
 | Chip <kbd>☑ 3</kbd> | Statusleiste, links vom Branch-Namen | Wie viele offen sind; gelb, wenn eine hohe Priorität hat |
 | Zähler | Die Kopfzeile des Seitenleisten-Abschnitts | Dieselbe Zahl, direkt an der Liste |
 
-Alle drei verschwinden bei null. Ein dauerhaftes „0 Aufgaben“ ist Mobiliar, und
+Beide verschwinden bei null. Ein dauerhaftes „0 Aufgaben“ ist Mobiliar, und
 Mobiliar ist genau das, was man irgendwann nicht mehr sieht.
 
 ## Die Detailansicht

@@ -15177,18 +15177,6 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
    A per-repository checklist. Three surfaces share this block: the sidebar
    section, the status-bar chip, and the detail modal. */
 
-/* The tab marker sits beside .tab-status, so it must read as a different
-   thing at a glance: hollow ring, accent colour, never a filled grey dot. */
-.tab-todo-dot {
-  flex: none;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  margin-inline-start: 1px;
-  border: 1.5px solid var(--accent);
-  opacity: 0.85;
-}
-
 /* The chip inherits the status bar's muted 0.6 opacity; an urgent todo has to
    climb back out of it or the colour never lands. */
 .status-todo-btn.has-high { color: var(--yellow, #d29922); opacity: 0.95; }

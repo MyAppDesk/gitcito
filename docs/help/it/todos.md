@@ -2,7 +2,7 @@
 title: Attività
 category: Strumenti dell'area di lavoro
 order: 97
-summary: Un elenco privato per repository, visibile dalle schede e dalla barra di stato.
+summary: Un elenco privato per repository, visibile dalla barra laterale e dalla barra di stato.
 keywords: todo attività compiti elenco checklist casella nota note promemoria priorità
 ---
 
@@ -51,15 +51,14 @@ clic sbagliato è immediato.
 
 ## Vederle senza cercarle
 
-![L'anello sulla scheda, la sezione della barra laterale e il contrassegno nella barra di stato, in un'unica finestra](../../screenshots/todos-markers.webp)
+![La sezione della barra laterale e il contrassegno nella barra di stato, in un'unica finestra](../../screenshots/todos-markers.webp)
 
 | Segno | Dove | Che cosa significa |
 |---|---|---|
-| Anello vuoto | Accanto al nome della scheda, di fianco al puntino grigio delle modifiche non committate | Questo repository ha attività aperte |
 | Contrassegno <kbd>☑ 3</kbd> | Barra di stato, a sinistra del branch | Quante sono aperte; giallo se una ha priorità alta |
 | Contatore | L'intestazione della sezione nella barra laterale | Lo stesso numero, accanto all'elenco |
 
-Tutti e tre spariscono a zero. Uno «0 attività» permanente è arredamento, e
+Entrambi spariscono a zero. Uno «0 attività» permanente è arredamento, e
 l'arredamento è esattamente ciò che si smette di vedere.
 
 ## Il dettaglio

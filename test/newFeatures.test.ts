@@ -1270,3 +1270,41 @@ describe('leftover git locks (stacked-branches playground)', () => {
     expect(existsSync(join(R, 'victim.txt'))).toBe(true)
   })
 })
+
+describe('stack editing (stacked-branches playground)', () => {
+  it('inserts a level in the middle and re-points the level that sat there', async () => {
+    const R = cloneFixture('stacked-branches') // main ← feature/api ← feature/ui
+    await gitService.stackInsert(R, 'feature/mid', 'feature/api')
+
+    const info = await gitService.stackInfo(R, 'feature/ui')
+    expect(info.branches.map((b) => b.name)).toEqual(['feature/api', 'feature/mid', 'feature/ui'])
+    expect(info.trunk).toBe('main')
+    // The new level sits at its parent's tip, so it is already in sync — and
+    // the level that moved onto it inherits exactly the drift it already had.
+    expect(info.branches.find((b) => b.name === 'feature/mid')!.needsRestack).toBe(false)
+    // `gs add` leaves you on the new level.
+    expect((await gitService.open(R)).current).toBe('feature/mid')
+  })
+
+  it('swaps two levels and replays them so nothing needs restacking', async () => {
+    const R = cloneFixture('stacked-branches')
+    await gitService.stackReorder(R, 'main', ['feature/ui', 'feature/api'])
+
+    const info = await gitService.stackInfo(R, 'feature/api')
+    expect(info.branches.map((b) => b.name)).toEqual(['feature/ui', 'feature/api'])
+    expect(info.branches[0].parent).toBe('main')
+    expect(info.branches[1].parent).toBe('feature/ui')
+    expect(info.branches.every((b) => !b.needsRestack)).toBe(true)
+    // Each level keeps its own commits — a swap moves bases, not authorship.
+    expect(info.branches.every((b) => b.ahead > 0)).toBe(true)
+  })
+
+  it('re-links the stack onto a different trunk', async () => {
+    const R = cloneFixture('stacked-branches')
+    execFileSync('git', ['-C', R, 'branch', 'release', 'main'])
+    await gitService.stackReorder(R, 'release', ['feature/api', 'feature/ui'])
+    const info = await gitService.stackInfo(R, 'feature/ui')
+    expect(info.trunk).toBe('release')
+    expect(info.branches[0].parent).toBe('release')
+  })
+})

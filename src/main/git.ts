@@ -2582,6 +2582,66 @@ export const gitService = {
   },
 
   /**
+   * Re-link a whole stack to `order` (bottom → top, sitting on `trunk`) and
+   * replay it.
+   *
+   * Reordering is not "set some config": each level's commits have to move onto
+   * a different base, which is a rebase per level. What makes that survivable is
+   * the boundary snapshot below — a level's own commits are the ones after its
+   * recorded base, and once the parent links are rewritten the old merge-base is
+   * gone. So the boundary is written first, for every level that lacks one, and
+   * only then do the links change.
+   *
+   * Throws on the first conflicting rebase, leaving git in its usual
+   * mid-rebase state for the conflict UI to pick up.
+   */
+  async stackReorder(repoPath: string, trunk: string, order: string[]): Promise<void> {
+    const git = gitFor(repoPath)
+    if (order.length === 0) return
+    for (const branch of order) {
+      const existing = (await git.raw(['config', '--get', `branch.${branch}.gitcitobase`]).catch(() => '')).trim()
+      if (existing) continue
+      const oldParent =
+        (await git.raw(['config', '--get', `branch.${branch}.gitcitoparent`]).catch(() => '')).trim() || trunk
+      const base = (await git.raw(['merge-base', oldParent, branch]).catch(() => '')).trim()
+      if (base) await git.raw(['config', `branch.${branch}.gitcitobase`, base])
+    }
+    for (let i = 0; i < order.length; i++) {
+      await git.raw(['config', `branch.${order[i]}.gitcitoparent`, i === 0 ? trunk : order[i - 1]])
+    }
+    await gitService.stackRestack(repoPath, order[order.length - 1])
+  },
+
+  /**
+   * Add a level directly above `parent` — `gh stack`'s `add`, including in the
+   * middle of a stack: whatever level sat on `parent` is re-pointed at the new
+   * branch, so the chain keeps its order and gains a floor.
+   *
+   * No restack follows, and that is deliberate: the branch is created at the
+   * parent's tip, so the level that moved onto it sees the same commits it saw
+   * before and has nothing to replay.
+   */
+  async stackInsert(repoPath: string, name: string, parent: string): Promise<void> {
+    const git = gitFor(repoPath)
+    const raw = await git.raw(['config', '--get-regexp', '^branch\\..*\\.gitcitoparent$']).catch(() => '')
+    let child: string | null = null
+    for (const line of raw.split('\n')) {
+      const sp = line.indexOf(' ')
+      if (sp < 0) continue
+      const key = line.slice(0, sp)
+      if (line.slice(sp + 1).trim() !== parent) continue
+      child = key.slice('branch.'.length, key.length - '.gitcitoparent'.length)
+      break
+    }
+    await git.raw(['branch', name, parent])
+    await gitService.stackSetParent(repoPath, name, parent)
+    // Only the link moves — the child's recorded base still marks where its own
+    // commits start, and the new level's tip is the same commit it had before.
+    if (child && child !== name) await git.raw(['config', `branch.${child}.gitcitoparent`, name])
+    await git.checkout(name)
+  },
+
+  /**
    * Restack the chain ending at `leaf`: bottom→top, rebase each branch onto its
    * parent's current tip using the recorded base (so parent rewrites don't
    * duplicate commits). Leaves you back on `leaf`. Throws on conflict.

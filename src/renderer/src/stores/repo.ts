@@ -1234,6 +1234,64 @@ export const repoActions = {
   stackRestack: (path: string, leaf: string) =>
     useRepoStore.getState().run(path, interp(t('act.restacked'), { leaf }), () => gitApi.stackRestack(path, leaf)),
 
+  /**
+   * Move the stack into `order` (bottom → top) and replay it. Undo puts the old
+   * order back the same way — a reorder is a rebase, so "undo" here means
+   * replaying the levels onto their previous bases, not resurrecting the old
+   * commits.
+   */
+  stackReorder: (path: string, trunk: string, order: string[], previous: string[], previousTrunk?: string) =>
+    useRepoStore.getState().run(
+      path,
+      t('act.stackReordered'),
+      () => gitApi.stackReorder(path, trunk, order),
+      {
+        label: t('undoLabel.stackReordered'),
+        undo: () => gitApi.stackReorder(path, previousTrunk ?? trunk, previous),
+        redo: () => gitApi.stackReorder(path, trunk, order)
+      },
+      null,
+      undefined,
+      ['branches', 'status', 'log']
+    ),
+
+  /** Add a level above `parent`; `child` is the level that sat there, if any. */
+  stackInsert: (path: string, name: string, parent: string, child?: string) =>
+    useRepoStore.getState().run(
+      path,
+      interp(t('act.stackInserted'), { name, parent }),
+      () => gitApi.stackInsert(path, name, parent),
+      {
+        label: interp(t('undoLabel.stackInserted'), { name }),
+        undo: async () => {
+          if (child) await gitApi.stackSetParent(path, child, parent)
+          await gitApi.checkout(path, parent)
+          await gitApi.stackClearParent(path, name)
+          await gitApi.deleteBranch(path, name, true)
+        },
+        redo: () => gitApi.stackInsert(path, name, parent)
+      },
+      null,
+      undefined,
+      ['branches', 'status', 'log']
+    ),
+
+  /** `gh stack push`: every level to the remote, with a lease. */
+  stackPushAll: (path: string) =>
+    useRepoStore.getState().run(
+      path,
+      t('act.stackPushed'),
+      async () => {
+        const stack = await gitApi.stackInfo(path)
+        if (!stack.branches.length) throw new Error(t('stack.empty'))
+        for (const b of stack.branches) await gitApi.push(path, b.name, { force: true })
+      },
+      undefined,
+      'push',
+      undefined,
+      ['branches', 'status']
+    ),
+
   /** Submit the whole stack as chained PRs (GitHub only): push every level with
    *  a lease, create missing PRs with the right bases, retarget any that point
    *  at the wrong base, then write the stack-navigation section into every PR

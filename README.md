@@ -72,7 +72,7 @@ git actually is.
 | **[External diff & merge tools](docs/help/diff-tools.md)** | Hand a file to Kaleidoscope, Beyond Compare, Meld — read straight from git's own tool list. |
 | **[Edit any commit](docs/help/commit-edit.md)** | Rewrite a past commit's files or message in place — cascade previewed before anything moves, merges replayed with their recorded resolutions. |
 | **[Interactive rebase](docs/help/rebase.md)** | Drag to reorder, squash, fixup, reword, edit or drop. |
-| **[Stacked branches](docs/help/stacks.md)** | Graphite-style chains: cascade restack, then one click pushes every level and opens/retargets the chained PRs, each carrying stack navigation in its body. |
+| **[Stacked branches](docs/help/stacks.md)** | Graphite-style chains: add a level anywhere, reorder with arrows, re-point any level or the trunk from a typeahead — then one click pushes every level and opens/retargets the chained PRs, each carrying stack navigation in its body. |
 | **[Git flow](docs/help/gitflow.md)** | Start and finish features, releases and hotfixes — merges, tag and cleanup in one step, undoable. |
 | **[Merge options](docs/help/merge-options.md)** | `-X ours`, whitespace-blind merges, squash, `-s subtree` — and the commits behind a conflict. |
 | **[Recovery](docs/help/recovery.md)** | Reflog, WIP snapshots of the whole tree — untracked files included, taken automatically before every destructive action — guided bisect, or hand the search to `git bisect run`, and one-click removal of the stale `.lock` file a crashed git left behind. |

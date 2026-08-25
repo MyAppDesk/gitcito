@@ -4,6 +4,7 @@ import { gitApi, hostingApi, aiApi } from '../infrastructure/api'
 import { useUIStore, type ModalSpec } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { useRepoStore } from '../stores/repo'
+import { RefPicker, type RefOption } from './RefPicker'
 import { useT, interp } from '../i18n'
 
 /** Best guess at the base branch when none is supplied — never the source itself. */
@@ -23,6 +24,8 @@ export function CreatePRModal({ spec }: { spec: Extract<ModalSpec, { kind: 'crea
   const repo = useRepoStore((s) => s.repos[spec.repoPath])
 
   const locals = repo?.branches.locals.map((b) => b.name) ?? []
+  // A long branch list is unusable as a <select>: typing filters it instead.
+  const branchOptions: RefOption[] = locals.map((value) => ({ value, kind: 'local' }))
   const origin = repo?.remotes.find((r) => r.name === 'origin') ?? repo?.remotes[0]
   const remoteUrl = spec.remoteUrl ?? origin?.url ?? ''
 
@@ -136,24 +139,12 @@ export function CreatePRModal({ spec }: { spec: Extract<ModalSpec, { kind: 'crea
       <div className="pr-branch-pick">
         <label className="pr-branch-field">
           <span>{t('createPR.from')}</span>
-          <select value={source} onChange={(e) => setSource(e.target.value)}>
-            {locals.map((b) => (
-              <option key={b} value={b}>
-                {b}
-              </option>
-            ))}
-          </select>
+          <RefPicker value={source} options={branchOptions} onChange={setSource} />
         </label>
         <ArrowRight size={14} className="pr-branch-arrow" />
         <label className="pr-branch-field">
           <span>{t('createPR.into')}</span>
-          <select value={target} onChange={(e) => setTarget(e.target.value)}>
-            {locals.map((b) => (
-              <option key={b} value={b}>
-                {b}
-              </option>
-            ))}
-          </select>
+          <RefPicker value={target} options={branchOptions} onChange={setTarget} />
         </label>
       </div>
       {source === target && <p className="pr-warn">{t('createPR.differentBranches')}</p>}

@@ -13,9 +13,47 @@ Uno stack è una catena di branch in cui ciascuno si costruisce su quello sotto:
 
 ![Uno stack di branch](../../screenshots/branch-stack.webp)
 
-Gitcito mostra lo stack dal basso verso l'alto con il numero di commit a ogni
-livello. Ogni livello con una PR aperta porta il suo numero come chip — cliccalo
-per aprire la PR.
+Gitcito disegna la pila dall'alto verso il basso, fino al tronco su cui atterra.
+Ogni livello mostra i propri commit, **a cosa punterà la sua PR** — al livello
+sottostante, e al tronco per quello in fondo — e, una volta inviata, il numero
+della PR come una targhetta cliccabile.
+
+## Costruirne una
+
+| Fai questo | E |
+|------------|---|
+| **Aggiungi livello** | Crea un ramo sopra la foglia e ci si sposta. È `gh stack add`, con un selettore al posto di un argomento obbligatorio. |
+| **Aggiungi sopra** su un livello | Lo stesso, ma in *mezzo* alla pila: ciò che stava su quel livello viene ripuntato al nuovo ramo, così la catena mantiene l'ordine e guadagna un piano. Non si riproduce nulla — il nuovo ramo nasce sulla punta del suo genitore. |
+| **Aggiungi un ramo esistente** | Un ramo che hai già entra nella pila sopra la foglia. Utile quando hai iniziato in modo normale e solo dopo hai capito che era una pila. |
+
+Tutti i campi ramo sono a **digitazione predittiva**: scrivi per filtrare, ↑/↓ e
+Invio per scegliere, e ciò che scrivi vale anche fuori elenco — quindi un
+riferimento remoto come `origin/main` funziona come base.
+
+## Riordinare
+
+Le frecce **↑ / ↓** di un livello lo scambiano con il vicino. Non è una modifica
+di metadati: la catena viene ricollegata e riprodotta, così i commit propri di
+ogni livello atterrano sulla nuova base. La mossa è annullabile (<kbd>⌘Z</kbd>) —
+l'annullamento riproduce l'ordine precedente, non resuscita i vecchi commit.
+
+Poiché riordinare è una serie di rebase, può dare **conflitti**, esattamente come
+un restack. Gitcito si ferma al primo e ti consegna la vista dei conflitti; i
+livelli sotto sono già stati spostati.
+
+## Puntare altrove
+
+**Imposta genitore** su un livello apre lo stesso selettore: scegli un altro ramo
+e il collegamento di quel livello si sposta. La riga **base** in fondo fa lo
+stesso per il tronco — cambialo e l'intera pila viene ricollegata al nuovo tronco
+e riprodotta.
+
+## Invia tutto
+
+**Invia tutto** spinge ogni livello con `--force-with-lease` e si ferma lì — `gh
+stack push` senza aprire niente. **Invia la pila come PR** fa lo stesso push e
+poi il lavoro sulle PR; usa **Invia tutto** quando vuoi i rami sul remoto ma non
+sei ancora pronto per la revisione.
 
 ## Invia lo stack come PR concatenate
 
@@ -65,6 +103,12 @@ PR si aggiornano sul posto.
   controllo di discendenza legge il trunk com'era al tuo ultimo fetch.
 - La sezione dello stack nel corpo di una PR è mantenuta tra marcatori
   nascosti — la tua descrizione sopra di essa viene preservata.
+- Riordinare e cambiare tronco **riscrivono la storia** su ogni livello toccato.
+  I rami sono tuoi e i livelli non ancora inviati non costano nulla, ma un
+  livello già in revisione riceverà un force-push al prossimo invio.
+- Un livello si sposta di un posto alla volta. Due scambi sono due rebase, e
+  fermarsi a metà è uno stato leggibile; un trascinamento che atterra tre posti
+  più in là non lo è.
 
 ## Dove vivono i collegamenti
 

@@ -13,9 +13,48 @@ eronder: `main → api → ui`. Drie kleine PR's reviewen is beter dan één eno
 
 ![Een branchstapel](../../screenshots/branch-stack.webp)
 
-Gitcito toont de stapel van onder naar boven met het aantal commits op elk
-niveau. Elk niveau met een open PR draagt zijn nummer als chip — klik erop om de
-PR te openen.
+Gitcito tekent de stapel van boven naar beneden, tot aan de trunk waarop hij
+landt. Elk niveau toont zijn eigen commits, **waar zijn PR op gaat richten** —
+het niveau eronder, en de trunk voor de onderste — en, eenmaal ingediend, zijn
+PR-nummer als een klikbaar plaatje.
+
+## Er een bouwen
+
+| Doe dit | En |
+|---------|-----|
+| **Niveau toevoegen** | Maakt een branch boven op het blad en checkt hem uit. Dit is `gh stack add`, met een keuzeveld in plaats van een verplicht argument. |
+| **Erboven toevoegen** op een niveau | Hetzelfde, maar *midden* in de stapel: wat op dat niveau stond wordt naar de nieuwe branch verlegd, dus de ketting houdt zijn volgorde en krijgt er een verdieping bij. Er wordt niets opnieuw afgespeeld — de nieuwe branch ontstaat op de punt van zijn ouder. |
+| **Bestaande branch toevoegen** | Een branch die je al hebt komt boven op het blad in de stapel. Handig als je gewoon begon en pas later doorhad dat het een stapel was. |
+
+Elk branchveld werkt met **typen-en-filteren**: typ om te filteren, ↑/↓ en Enter
+om te kiezen, en wat je typt telt ook buiten de lijst — een remote-ref als
+`origin/main` is dus een prima basis.
+
+## Opnieuw ordenen
+
+De pijlen **↑ / ↓** op een niveau wisselen het met zijn buur. Dat is geen
+metadatawijziging: de ketting wordt opnieuw gelegd en afgespeeld, zodat de eigen
+commits van elk niveau op hun nieuwe basis landen. De zet is ongedaan te maken
+(<kbd>⌘Z</kbd>) — dat speelt de oude volgorde terug, het wekt de oude commits
+niet op.
+
+Omdat opnieuw ordenen een reeks rebases is, kan het **conflicteren**, net als een
+restack. Gitcito stopt bij het eerste conflict en geeft je de conflictweergave;
+de niveaus eronder zijn al verplaatst.
+
+## Ergens anders op richten
+
+**Ouder instellen** op een niveau opent hetzelfde keuzeveld: kies een andere
+branch en de link van dat niveau verschuift. De **basis**-regel onderaan doet dat
+voor de trunk — verander hem en de hele stapel wordt op de nieuwe trunk gelegd en
+afgespeeld.
+
+## Alles pushen
+
+**Alles pushen** pusht elk niveau met `--force-with-lease` en houdt daar op — `gh
+stack push`, zonder iets te openen. **Stapel als PR's indienen** doet dezelfde
+push en daarna het PR-werk; gebruik **Alles pushen** als je de branches op de
+remote wilt maar nog geen review.
 
 ## Dien de stapel in als geketende PR's
 
@@ -65,6 +104,13 @@ plekke bijgewerkt.
   afstammingscontrole leest de trunk zoals die was bij je laatste fetch.
 - De stapelsectie in een PR-body wordt bijgehouden tussen verborgen markeringen
   — je eigen beschrijving erboven blijft behouden.
+- Opnieuw ordenen en van trunk wisselen **herschrijven geschiedenis** op elk
+  niveau dat ze raken. De branches zijn van jou en ongepushte niveaus kosten
+  niets, maar een niveau dat al in review is krijgt bij de volgende indiening een
+  force-push.
+- Een niveau schuift één plek per keer. Twee wissels zijn twee rebases, en
+  halverwege stoppen is een leesbare toestand; een sleep die drie plekken verder
+  landt niet.
 
 ## Waar de verbanden wonen
 

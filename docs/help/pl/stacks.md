@@ -14,9 +14,46 @@ jednego ogromnego.
 
 ![Stos gałęzi](../../screenshots/branch-stack.webp)
 
-Gitcito pokazuje stos od dołu do góry, z liczbą commitów na każdym poziomie.
-Każdy poziom z otwartym PR-em nosi jego numer jako plakietkę — kliknij ją,
-aby otworzyć PR.
+Gitcito rysuje stos z góry na dół, aż do pnia, na którym ląduje. Każdy poziom
+pokazuje własne commity, **w co wyceluje jego PR** — w poziom poniżej, a w
+przypadku najniższego w pień — a po wysłaniu także numer PR jako klikalną
+plakietkę.
+
+## Budowanie stosu
+
+| Zrób to | A |
+|---------|---|
+| **Dodaj poziom** | Tworzy gałąź nad liściem i przełącza się na nią. To `gh stack add`, tylko z selektorem zamiast obowiązkowego argumentu. |
+| **Dodaj powyżej** na dowolnym poziomie | To samo, ale w *środku* stosu: to, co siedziało na tym poziomie, zostaje przepięte na nową gałąź, więc łańcuch zachowuje kolejność i zyskuje piętro. Nic nie jest odtwarzane — nowa gałąź powstaje na czubku rodzica. |
+| **Dodaj istniejącą gałąź** | Gałąź, którą już masz, dołącza do stosu nad liściem. Przydatne, gdy zacząłeś zwyczajnie i dopiero potem zobaczyłeś, że to stos. |
+
+Każde pole gałęzi ma **podpowiedzi w trakcie pisania**: pisz, aby filtrować, ↑/↓
+i Enter, aby wybrać, a to, co wpiszesz spoza listy, też się liczy — zdalna
+referencja w rodzaju `origin/main` nadaje się na bazę.
+
+## Przestawianie
+
+Strzałki **↑ / ↓** przy poziomie zamieniają go z sąsiadem. To nie jest edycja
+metadanych: łańcuch zostaje przepięty i odtworzony, więc własne commity każdego
+poziomu lądują na nowej bazie. Ruch można cofnąć (<kbd>⌘Z</kbd>) — cofnięcie
+odtwarza poprzednią kolejność, nie wskrzesza starych commitów.
+
+Ponieważ przestawianie to seria rebase'ów, może dawać **konflikty**, dokładnie
+jak restack. Gitcito zatrzymuje się na pierwszym i oddaje ci widok konfliktów;
+poziomy poniżej są już przeniesione.
+
+## Wskazywanie gdzie indziej
+
+**Ustaw rodzica** na poziomie otwiera ten sam selektor: wybierz inną gałąź, a
+powiązanie tego poziomu się przesunie. Wiersz **bazy** na dole robi to samo dla
+pnia — zmień go, a cały stos zostanie przepięty na nowy pień i odtworzony.
+
+## Wypchnij wszystko
+
+**Wypchnij wszystko** wypycha każdy poziom z `--force-with-lease` i na tym
+kończy — to `gh stack push`, bez otwierania czegokolwiek. **Wyślij stos jako PR**
+robi ten sam push, a potem robotę wokół PR-ów; użyj **Wypchnij wszystko**, gdy
+chcesz mieć gałęzie na zdalnym, ale jeszcze nie recenzję.
 
 ## Wyślij stos jako połączone PR-y
 
@@ -63,6 +100,12 @@ z wymuszeniem przepisane poziomy, a PR-y aktualizują się w miejscu.
   gałąź według stanu z twojego ostatniego fetcha.
 - Sekcja stosu w treści PR-a jest utrzymywana między ukrytymi znacznikami —
   twój własny opis nad nią zostaje zachowany.
+- Przestawianie i zmiana pnia **przepisują historię** na każdym dotkniętym
+  poziomie. Gałęzie są twoje, a niewypchnięte poziomy nic nie kosztują, ale
+  poziom już w recenzji dostanie force-push przy następnym wysłaniu.
+- Poziom przesuwa się o jedno miejsce naraz. Dwie zamiany to dwa rebase'y, a
+  zatrzymanie się w połowie to czytelny stan; przeciągnięcie lądujące trzy
+  miejsca dalej — nie.
 
 ## Gdzie mieszkają powiązania
 

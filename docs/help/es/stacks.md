@@ -14,9 +14,47 @@ descomunal.
 
 ![Una pila de ramas](../../screenshots/branch-stack.webp)
 
-Gitcito muestra la pila de abajo → arriba con el número de commits en cada
-nivel. Cada nivel que tiene un PR abierto lleva su número como una etiqueta —
-haz clic en ella para abrir el PR.
+Gitcito dibuja la pila de arriba abajo, terminando en el tronco sobre el que
+aterriza. Cada nivel muestra sus propios commits, **a qué apuntará su PR** —al
+nivel de debajo, y al tronco en el caso del último— y, una vez enviado, su
+número de PR como una chapa en la que puedes hacer clic.
+
+## Construir una
+
+| Haz esto | Y |
+|----------|---|
+| **Añadir nivel** | Crea una rama encima de la hoja y la deja activa. Es `gh stack add`, con un selector en lugar de un argumento obligatorio. |
+| **Añadir encima** en cualquier nivel | Lo mismo, pero en *mitad* de la pila: lo que estuviera sobre ese nivel se reengancha a la rama nueva, así la cadena conserva su orden y gana un piso. No se rebobina nada: la rama nueva se crea en la punta de su padre. |
+| **Añadir una rama existente** | Una rama que ya tienes se une a la pila encima de la hoja. Útil cuando empezaste de forma normal y solo después viste que era una pila. |
+
+Todos los campos de rama son de **escritura predictiva**: escribe para filtrar,
+↑/↓ y Enter para elegir, y lo que escribas aunque no esté en la lista también
+vale, así que una referencia remota como `origin/main` funciona como base.
+
+## Reordenar
+
+Las flechas **↑ / ↓** de un nivel lo intercambian con su vecino. Eso no es una
+edición de metadatos: la cadena se reengancha y se vuelve a reproducir, de modo
+que los commits propios de cada nivel aterrizan sobre su nueva base. El
+movimiento se puede deshacer (<kbd>⌘Z</kbd>): deshacer reproduce el orden
+anterior, no resucita los commits antiguos.
+
+Como reordenar es una serie de rebases, puede dar **conflictos**, igual que un
+restack. Gitcito se detiene en el primero y te entrega la vista de conflictos;
+los niveles de debajo ya están movidos.
+
+## Apuntar a otro sitio
+
+**Establecer padre** en un nivel abre el mismo selector: elige otra rama y el
+enlace de ese nivel se mueve. La fila **base** de abajo hace lo propio con el
+tronco: cámbialo y toda la pila se reengancha al nuevo tronco y se reproduce.
+
+## Enviar todo
+
+**Enviar todo** empuja cada nivel con `--force-with-lease` y ahí se detiene: es
+`gh stack push` sin abrir nada. **Enviar la pila como PRs** hace ese mismo push
+y además el trabajo de PR; usa **Enviar todo** cuando quieras las ramas en el
+remoto pero aún no la revisión.
 
 ## Enviar la pila como PRs encadenados
 
@@ -66,6 +104,12 @@ niveles reescritos y los PRs se actualizan en su sitio.
   fetch.
 - La sección de la pila en el cuerpo de un PR se mantiene entre marcadores
   ocultos — tu propia descripción encima de ella se conserva.
+- Reordenar y cambiar de tronco **reescriben la historia** en cada nivel que
+  tocan. Las ramas son tuyas y los niveles sin publicar no cuestan nada, pero un
+  nivel que ya está en revisión recibirá un force-push en el siguiente envío.
+- Un nivel solo se mueve una posición cada vez. Dos intercambios son dos rebases,
+  y quedarse a medias es un estado legible; un arrastre que aterriza tres
+  posiciones más allá no lo es.
 
 ## Dónde viven los enlaces
 

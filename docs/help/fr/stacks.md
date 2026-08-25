@@ -14,9 +14,48 @@ une énorme.
 
 ![Une pile de branches](../../screenshots/branch-stack.webp)
 
-Gitcito affiche la pile de bas en haut avec le nombre de commits à chaque
-niveau. Chaque niveau qui a une pull request ouverte porte son numéro sous
-forme de pastille — cliquez dessus pour ouvrir la pull request.
+Gitcito dessine la pile de haut en bas, jusqu’au tronc sur lequel elle atterrit.
+Chaque niveau affiche ses propres commits, **ce que sa PR visera** — le niveau du
+dessous, et le tronc pour celui du bas — et, une fois soumise, son numéro de PR
+sous forme de pastille cliquable.
+
+## En construire une
+
+| Faites ceci | Et |
+|-------------|-----|
+| **Ajouter un niveau** | Crée une branche au-dessus de la feuille et s’y place. C’est `gh stack add`, avec un sélecteur au lieu d’un argument obligatoire. |
+| **Ajouter au-dessus** sur un niveau | Pareil, mais au *milieu* de la pile : ce qui reposait sur ce niveau est redirigé vers la nouvelle branche, la chaîne garde son ordre et gagne un étage. Rien n’est rejoué — la nouvelle branche naît sur la pointe de son parent. |
+| **Ajouter une branche existante** | Une branche que vous avez déjà rejoint la pile au-dessus de la feuille. Pratique quand vous avez commencé normalement et compris seulement après que c’était une pile. |
+
+Tous les champs de branche sont en **saisie prédictive** : tapez pour filtrer,
+↑/↓ et Entrée pour choisir, et ce que vous tapez hors liste compte aussi — une
+référence distante comme `origin/main` fait donc une base valable.
+
+## Réordonner
+
+Les flèches **↑ / ↓** d’un niveau l’échangent avec son voisin. Ce n’est pas une
+modification de métadonnées : la chaîne est re-liée puis rejouée, si bien que les
+commits propres à chaque niveau atterrissent sur leur nouvelle base. Le
+déplacement est annulable (<kbd>⌘Z</kbd>) — l’annulation rejoue l’ordre
+précédent, elle ne ressuscite pas les anciens commits.
+
+Comme un réordonnancement est une série de rebases, il peut **entrer en
+conflit**, exactement comme un restack. Gitcito s’arrête au premier conflit et
+vous passe la vue de résolution ; les niveaux du dessous sont déjà déplacés.
+
+## Viser ailleurs
+
+**Définir le parent** sur un niveau ouvre le même sélecteur : choisissez une
+autre branche et le lien de ce niveau se déplace. La ligne **base**, en bas, fait
+de même pour le tronc — changez-le et toute la pile est re-liée au nouveau tronc
+puis rejouée.
+
+## Tout pousser
+
+**Tout pousser** pousse chaque niveau avec `--force-with-lease` et s’arrête là —
+`gh stack push`, sans rien ouvrir. **Soumettre la pile en PR** fait la même
+poussée puis le travail de PR ; utilisez **Tout pousser** quand vous voulez les
+branches sur le distant sans encore demander de revue.
 
 ## Soumettre la pile en pull requests chaînées
 
@@ -67,6 +106,13 @@ sont poussés en force et les pull requests se mettent à jour sur place.
   tel qu'il était lors de votre dernier fetch.
 - La section de pile dans le corps d'une PR est entretenue entre des marqueurs
   cachés — votre propre description au-dessus est préservée.
+- Réordonner et changer de tronc **réécrivent l’historique** de chaque niveau
+  touché. Les branches sont les vôtres et les niveaux non poussés ne coûtent
+  rien, mais un niveau déjà en revue recevra un force-push à la prochaine
+  soumission.
+- Un niveau ne bouge que d’une place à la fois. Deux échanges font deux rebases,
+  et s’arrêter à mi-chemin reste un état lisible ; un glisser-déposer qui
+  atterrit trois places plus loin, non.
 
 ## Où vivent les liens
 

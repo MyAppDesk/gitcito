@@ -12029,6 +12029,8 @@ mark.find-hit.active {
   color: var(--text-0);
   font-size: 12.5px;
 }
+.pr-branch-field .refpick { width: 100%; }
+.pr-branch-field .refpick-input { font-size: 12.5px; }
 .pr-branch-arrow {
   color: var(--text-3);
   margin-bottom: 8px;
@@ -13387,6 +13389,36 @@ mark.find-hit.active {
 .stack-badge.warn { background: rgba(230, 160, 30, 0.18); color: #e0a020; }
 .stack-node-actions { display: flex; gap: 14px; margin-top: 6px; flex-wrap: wrap; }
 .stack-node-actions .link-btn.danger { color: var(--red, #e5484d); }
+
+/* Stack: reorder arrows, inline pickers and the "add a level" row. */
+.stack-node-right { display: flex; align-items: center; gap: 10px; margin-inline-start: auto; flex: none; }
+.stack-node-right .stack-node-ahead { margin-inline-start: 0; }
+.stack-move { display: flex; gap: 2px; }
+.stack-move-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; padding: 0;
+  border: 1px solid var(--border); border-radius: 5px;
+  background: var(--bg-2); color: var(--text-2); cursor: pointer;
+}
+.stack-move-btn:hover:not(:disabled) { background: var(--bg-3); color: var(--text-0); }
+.stack-move-btn:disabled { opacity: 0.35; cursor: default; }
+.stack-node-target { font-size: 11px; color: var(--text-2); margin-top: 3px; }
+.stack-parent-edit { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.stack-parent-edit .refpick { flex: 1; min-width: 0; max-width: 320px; }
+.stack-add {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin: 8px 0; padding: 8px; overflow: hidden;
+  border: 1px dashed var(--border); border-radius: 8px; background: var(--bg-2);
+}
+.stack-add-name { flex: 1; min-width: 160px; }
+.stack-add-on { font-size: 11px; color: var(--text-2); }
+.stack-add .refpick { flex: 1; min-width: 160px; max-width: 280px; }
+.stack-trunk-pick { max-width: 220px; }
+.stack-trunk-hint { margin: 0; }
+.stack-adopt { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.stack-adopt-label { font-size: 11px; color: var(--text-2); }
+.stack-adopt .refpick { min-width: 200px; }
+.stack-adopt .settings-hint { margin: 0; }
 
 /* ─── Insights page ─────────────────────────────────────────────────────── */
 .ins-add { color: var(--green, #2ea043); }

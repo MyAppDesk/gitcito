@@ -13,9 +13,46 @@ Yığın, her birinin altındakinin üzerine kurulduğu bir dal zinciridir:
 
 ![Bir dal yığını](../../screenshots/branch-stack.webp)
 
-Gitcito yığını alttan üste doğru, her seviyedeki commit sayısıyla birlikte
-gösterir. Açık bir PR'ı olan her seviye numarasını bir rozet olarak taşır —
-PR'ı açmak için rozete tıklayın.
+Gitcito yığını yukarıdan aşağıya, indiği ana dala kadar çizer. Her katman kendi
+commit'lerini, **PR'ının neyi hedefleyeceğini** — altındaki katmanı, en alttaki
+için ana dalı — ve gönderildikten sonra PR numarasını tıklanabilir bir rozet
+olarak gösterir.
+
+## Bir yığın kurmak
+
+| Bunu yap | Şu olur |
+|----------|---------|
+| **Katman ekle** | Yaprağın üstünde bir dal oluşturup ona geçer. Bu `gh stack add`'dir, zorunlu argüman yerine bir seçiciyle. |
+| Herhangi bir katmanda **Üstüne ekle** | Aynısı, ama yığının *ortasında*: o katmanın üstünde ne varsa yeni dala yönlendirilir, böylece zincir sırasını korur ve bir kat kazanır. Hiçbir şey yeniden oynatılmaz — yeni dal, ebeveyninin ucunda doğar. |
+| **Var olan bir dalı ekle** | Zaten sahip olduğun bir dal, yaprağın üstünde yığına katılır. Sıradan başlayıp bunun bir yığın olduğunu sonradan fark ettiğinde işe yarar. |
+
+Bütün dal alanları **yazdıkça süzen** alanlardır: süzmek için yaz, seçmek için
+↑/↓ ve Enter; listede olmayan bir şey yazsan da geçerlidir — yani `origin/main`
+gibi uzak bir referans da temel olur.
+
+## Yeniden sıralama
+
+Bir katmandaki **↑ / ↓** okları onu komşusuyla değiştirir. Bu bir üstveri
+düzenlemesi değildir: zincir yeniden bağlanır ve oynatılır, böylece her katmanın
+kendi commit'leri yeni temeline iner. Hareket geri alınabilir (<kbd>⌘Z</kbd>) —
+geri alma eski sırayı yeniden oynatır, eski commit'leri diriltmez.
+
+Yeniden sıralama bir dizi rebase olduğu için, tıpkı restack gibi **çakışabilir**.
+Gitcito ilk çakışmada durur ve çakışma görünümünü sana verir; altındaki katmanlar
+çoktan taşınmıştır.
+
+## Başka bir yeri hedeflemek
+
+Bir katmandaki **Ebeveyni ayarla** aynı seçiciyi açar: başka bir dal seç, o
+katmanın bağı oraya kayar. En alttaki **temel** satırı bunu ana dal için yapar —
+değiştir, bütün yığın yeni ana dala bağlanır ve oynatılır.
+
+## Hepsini gönder
+
+**Hepsini gönder** her katmanı `--force-with-lease` ile iter ve orada durur —
+hiçbir şey açmadan `gh stack push`. **Yığını PR olarak gönder** aynı push'u yapıp
+ardından PR işini de yapar; dalları uzakta isteyip incelemeye henüz hazır
+değilsen **Hepsini gönder**'i kullan.
 
 ## Yığını zincirlenmiş PR'lar olarak gönderme
 
@@ -63,6 +100,11 @@ seviyeleri zorla push eder ve PR'lar yerinde güncellenir.
   soy denetimi ana dalı son fetch'inizdeki haliyle okur.
 - PR gövdesindeki yığın bölümü gizli işaretçiler arasında tutulur — onun
   üzerindeki kendi açıklamanız korunur.
+- Yeniden sıralama ve ana dal değiştirme, dokundukları her katmanda **geçmişi
+  yeniden yazar**. Dallar senindir ve gönderilmemiş katmanların maliyeti yoktur,
+  ama zaten incelemede olan bir katman bir sonraki göndermede force-push yer.
+- Bir katman seferde tek sıra yer değiştirir. İki takas iki rebase demektir ve
+  yarıda kalmak okunaklı bir durumdur; üç sıra öteye düşen bir sürükleme değil.
 
 ## Bağlantılar nerede yaşar
 

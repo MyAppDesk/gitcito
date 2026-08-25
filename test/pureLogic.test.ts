@@ -7,6 +7,7 @@ import { parseRemoteUrl } from '../src/main/hosting'
 import { treeStatusOf } from '../src/renderer/src/lib/treeStatus'
 import { timeAgo, isStale, STALE_AFTER_MS } from '../src/renderer/src/lib/timeAgo'
 import { isLockErrorMessage, lockRepairPlan } from '../src/renderer/src/lib/gitLocks'
+import { stackOrder, moveLevel, adoptableBranches, targetFor } from '../src/renderer/src/lib/stackOrder'
 import { HUGE_SECTION, openUnlessHuge } from '../src/renderer/src/lib/sidebarSections'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -14,7 +15,7 @@ import { commitHookFailureHint, lintCommit, subjectCounterLevel, parseCcPrefix, 
 import { isSecretFile, maskSecretLine } from '../src/renderer/src/lib/secrets'
 import { worktreeForBranch, worktreeTabName } from '../src/renderer/src/lib/worktrees'
 import { focusedHashes, focusedStashes, defaultBranchName } from '../src/renderer/src/lib/graphFocus'
-import type { WorktreeInfo, GraphCommit, GraphFocus } from '../src/shared/types'
+import type { WorktreeInfo, GraphCommit, GraphFocus, StackInfo } from '../src/shared/types'
 import { comboFromEvent, formatCombo, effectiveBindings, isReservedCombo, matchShortcut, tabActionFromEvent, tabIndexFromEvent } from '../src/renderer/src/lib/shortcuts'
 import { terminalCloseTarget, terminalShortcutFromEvent } from '../src/renderer/src/lib/terminalShortcuts'
 import { panelDisplayName, groupDisplayName } from '../src/renderer/src/lib/terminalTitles'
@@ -4632,7 +4633,7 @@ describe('git lock errors', () => {
     expect(isLockErrorMessage('error: pathspec .lock did not match any file')).toBe(false)
   })
 
-  it('offers only locks old enough to be nobody\u2019s, oldest first', () => {
+  it('offers only locks old enough to be nobody’s, oldest first', () => {
     const plan = lockRepairPlan([
       { path: 'index.lock', ageSeconds: 3, kind: 'index' },
       { path: 'refs/heads/a.lock', ageSeconds: 900, kind: 'ref' },
@@ -4646,5 +4647,41 @@ describe('git lock errors', () => {
     const plan = lockRepairPlan([{ path: 'index.lock', ageSeconds: 1, kind: 'index' }])
     expect(plan.removable).toEqual([])
     expect(plan.young.length).toBe(1)
+  })
+})
+
+describe('stack ordering', () => {
+  const info: StackInfo = {
+    trunk: 'main',
+    branches: [
+      { name: 'api', parent: 'main', isCurrent: false, ahead: 2, needsRestack: false },
+      { name: 'ui', parent: 'api', isCurrent: true, ahead: 1, needsRestack: false }
+    ]
+  }
+
+  it('reads the chain bottom → top', () => {
+    expect(stackOrder(info)).toEqual(['api', 'ui'])
+    expect(stackOrder(null)).toEqual([])
+  })
+
+  it('swaps a level with its neighbour', () => {
+    expect(moveLevel(['api', 'ui'], 'ui', -1)).toEqual(['ui', 'api'])
+    expect(moveLevel(['api', 'ui'], 'api', 1)).toEqual(['ui', 'api'])
+  })
+
+  it('refuses a move off either end, and one for a branch not in the stack', () => {
+    expect(moveLevel(['api', 'ui'], 'ui', 1)).toBeNull()
+    expect(moveLevel(['api', 'ui'], 'api', -1)).toBeNull()
+    expect(moveLevel(['api', 'ui'], 'docs', 1)).toBeNull()
+  })
+
+  it('offers to adopt only branches that are neither levels nor the trunk', () => {
+    expect(adoptableBranches(['main', 'api', 'ui', 'docs', 'chore'], info)).toEqual(['chore', 'docs'])
+  })
+
+  it('targets the level below, and the trunk at the bottom', () => {
+    expect(targetFor(info, 'ui')).toBe('api')
+    expect(targetFor(info, 'api')).toBe('main')
+    expect(targetFor(info, 'nope')).toBe('main')
   })
 })

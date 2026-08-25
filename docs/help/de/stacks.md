@@ -14,9 +14,48 @@ reviewen.
 
 ![Ein Branch-Stack](../../screenshots/branch-stack.webp)
 
-Gitcito zeigt den Stack von unten nach oben mit der Anzahl der Commits auf jeder
-Ebene. Jede Ebene mit einem offenen PR trägt dessen Nummer als Chip — ein Klick
-darauf öffnet den PR.
+Gitcito zeichnet den Stapel von oben nach unten, bis zum Trunk, auf dem er
+landet. Jede Ebene zeigt ihre eigenen Commits, **worauf ihr PR zielen wird** —
+auf die Ebene darunter, bei der untersten auf den Trunk — und, sobald
+eingereicht, ihre PR-Nummer als anklickbaren Chip.
+
+## Einen aufbauen
+
+| Das hier | Bewirkt |
+|----------|---------|
+| **Ebene hinzufügen** | Legt einen Branch über dem Blatt an und checkt ihn aus. Das ist `gh stack add`, mit Auswahlfeld statt Pflichtargument. |
+| **Darüber hinzufügen** auf einer Ebene | Dasselbe, aber *mitten* im Stapel: was auf dieser Ebene saß, wird auf den neuen Branch umgehängt, die Kette behält ihre Reihenfolge und bekommt ein Stockwerk dazu. Nichts wird neu abgespielt — der neue Branch entsteht auf der Spitze seines Parents. |
+| **Vorhandenen Branch aufnehmen** | Ein Branch, den du schon hast, tritt oben auf dem Blatt in den Stapel ein. Praktisch, wenn du ganz normal angefangen und erst später gemerkt hast, dass es ein Stapel ist. |
+
+Alle Branch-Felder sind **Tippfelder mit Vorschlägen**: tippen filtert, ↑/↓ und
+Enter wählen, und was du tippst, zählt auch abseits der Liste — eine
+Remote-Referenz wie `origin/main` taugt also als Basis.
+
+## Neu ordnen
+
+Die Pfeile **↑ / ↓** einer Ebene tauschen sie mit ihrer Nachbarin. Das ist keine
+Metadaten-Änderung: die Kette wird neu verknüpft und abgespielt, damit die
+eigenen Commits jeder Ebene auf ihrer neuen Basis landen. Der Zug ist widerrufbar
+(<kbd>⌘Z</kbd>) — das Widerrufen spielt die alte Reihenfolge nach, es erweckt
+nicht die alten Commits.
+
+Weil ein Umordnen eine Folge von Rebases ist, kann es **Konflikte** geben, genau
+wie ein Restack. Gitcito hält beim ersten Konflikt an und übergibt die
+Konfliktansicht; die Ebenen darunter sind bereits verschoben.
+
+## Woanders hin zeigen
+
+**Parent setzen** auf einer Ebene öffnet dasselbe Auswahlfeld: einen anderen
+Branch wählen, und der Link dieser Ebene wandert. Die **Basis**-Zeile ganz unten
+tut das für den Trunk — ändere ihn, und der ganze Stapel wird auf den neuen Trunk
+verknüpft und abgespielt.
+
+## Alle pushen
+
+**Alle pushen** pusht jede Ebene mit `--force-with-lease` und hört dort auf — `gh
+stack push`, ohne etwas zu öffnen. **Stapel als PRs einreichen** macht denselben
+Push und dann die PR-Arbeit; nimm **Alle pushen**, wenn die Branches auf dem
+Remote liegen sollen, aber noch keine Review ansteht.
 
 ## Den Stack als verkettete PRs einreichen
 
@@ -67,6 +106,13 @@ Ebenen und die PRs aktualisieren sich an Ort und Stelle.
   Stand deines letzten Fetch.
 - Der Stack-Abschnitt in einem PR-Body wird zwischen versteckten Markern
   gepflegt — deine eigene Beschreibung darüber bleibt erhalten.
+- Umordnen und ein Trunk-Wechsel **schreiben Historie um**, auf jeder berührten
+  Ebene. Die Branches gehören dir, und ungepushte Ebenen kosten nichts — aber
+  eine Ebene, die bereits in Review ist, bekommt beim nächsten Einreichen einen
+  Force-Push.
+- Eine Ebene bewegt sich immer nur um einen Platz. Zwei Tausche sind zwei
+  Rebases, und auf halbem Weg stehenzubleiben ist ein lesbarer Zustand; ein Zug,
+  der drei Plätze weiter landet, ist es nicht.
 
 ## Wo die Verknüpfungen liegen
 

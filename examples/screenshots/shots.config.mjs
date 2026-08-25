@@ -46,6 +46,41 @@ async function openSections(page, titles) {
 }
 
 /**
+ * Seed a repository's todo list through the settings store.
+ *
+ * Written straight into `repoTodos` rather than through `addTodo` so the ages
+ * are fixed offsets from launch: "2 days ago" instead of "just now" for every
+ * row, which is what makes the sort order legible in a still.
+ */
+async function seedTodos(page, repoPath) {
+  await page.evaluate((p) => {
+    const day = 86400000
+    const now = Date.now()
+    window.__shot.settings.getState().update((cur) => ({
+      ...cur,
+      repoTodos: {
+        ...(cur.repoTodos ?? {}),
+        [p]: [
+          {
+            id: 'shot1',
+            title: 'Retry limit is hard-coded to 3 — make it configurable',
+            done: false,
+            priority: 'high',
+            createdAt: now - 3 * day,
+            branch: 'main',
+            notes: 'src/net/client.ts, the loop at the bottom of send(). Config lives in settings.ts already, so this is one field plus a default. Ask whether 0 should mean "never retry" or "retry forever" before shipping.'
+          },
+          { id: 'shot2', title: 'Rename `tmp2` in the parser before the PR goes up', done: false, priority: 'normal', createdAt: now - 2 * day, branch: 'main' },
+          { id: 'shot3', title: 'Fixture path is wrong on Windows', done: false, priority: 'normal', createdAt: now - day, branch: 'feature/report-export' },
+          { id: 'shot4', title: 'Drop the dead flag in the CLI help text', done: false, priority: 'low', createdAt: now - 4 * day, branch: 'main' },
+          { id: 'shot5', title: 'Write the migration note for the schema change', done: true, priority: 'normal', createdAt: now - 5 * day, doneAt: now - 4 * 3600000, branch: 'main' }
+        ]
+      }
+    }))
+  }, repoPath)
+}
+
+/**
  * @typedef {Object} Shot
  * @property {string}   out      Output basename under docs/screenshots.
  * @property {string[]} repos    Playground repo dir names; first is active.
@@ -2032,6 +2067,45 @@ export const shots = [
       await page.evaluate(() => {
         document.querySelector('.clone-advanced-toggle')?.click()
       })
+      await page.waitForTimeout(600)
+    }
+  },
+  {
+    // Todos — the private per-repository checklist. The list with one todo
+    // open: this is where a todo is written, filtered and given its detail.
+    out: 'todos',
+    repos: ['untracked-mess'],
+    themes: ['light'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['untracked-mess']
+      await seedTodos(page, repo)
+      await page.waitForTimeout(300)
+      await page.evaluate((p) => window.__shot.ui.getState().openModal({ kind: 'todos', repoPath: p }), repo)
+      await page.waitForSelector('.todo-row', { timeout: 10000 })
+      await page.locator('.todo-row').first().click()
+      await page.waitForTimeout(500)
+    }
+  },
+  {
+    // The same repo with nothing open: the three markers that carry the feature
+    // when you are not looking for it — tab ring, sidebar section, status chip.
+    // A dirty working tree on purpose, so the todo ring reads as *different*
+    // from the uncommitted-changes dot sitting next to it.
+    out: 'todos-markers',
+    repos: ['untracked-mess'],
+    themes: ['light'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['untracked-mess']
+      await seedTodos(page, repo)
+      // Expand through the store rather than clicking the header: the section's
+      // open state is persisted per repo, so this holds whatever it defaulted to.
+      await page.evaluate(
+        (p) =>
+          window.__shot.settings
+            .getState()
+            .updateRepoLayout(p, (l) => ({ ...l, sidebarExpanded: { ...(l.sidebarExpanded ?? {}), todos: true } })),
+        repo
+      )
       await page.waitForTimeout(600)
     }
   },

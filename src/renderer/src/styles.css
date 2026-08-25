@@ -15189,7 +15189,9 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
   opacity: 0.85;
 }
 
-.status-todo-btn.has-high { color: var(--yellow, #d29922); }
+/* The chip inherits the status bar's muted 0.6 opacity; an urgent todo has to
+   climb back out of it or the colour never lands. */
+.status-todo-btn.has-high { color: var(--yellow, #d29922); opacity: 0.95; }
 
 .sb-todo { gap: 7px; }
 .sb-todo-box { flex: none; margin: 0; cursor: pointer; }

@@ -6,6 +6,7 @@
   ],
   "modals": {
     "covered": {
+      "todos": "todos",
       "absorb": "absorb",
       "attributes": "attributes",
       "ai-config-wizard": "ai",
@@ -98,6 +99,7 @@
   },
   "commands": {
     "covered": {
+      "todos": "todos",
       "absorb": "absorb",
       "ai-assistant": "ai",
       "attributes": "attributes",

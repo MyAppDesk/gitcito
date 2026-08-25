@@ -11,6 +11,7 @@ import { stackOrder, moveLevel, adoptableBranches, targetFor } from '../src/rend
 import { planStackSubmit, summariseStackPlan } from '../src/shared/stackPr'
 import { groupPrStacks, stackRowStates } from '../src/renderer/src/lib/prStacks'
 import { HUGE_SECTION, openUnlessHuge } from '../src/renderer/src/lib/sidebarSections'
+import { clearDoneTodos, createTodo, filterTodos, patchTodo, removeTodo, sortTodos, todoSummary, toggleTodo } from '../src/renderer/src/lib/todos'
 import { buildMenuSpec } from '../src/renderer/src/lib/appMenu'
 import { acceleratorFromCombo, isMenuRole } from '../src/shared/menu'
 
@@ -4904,5 +4905,70 @@ describe('buildMenuSpec', () => {
     for (const item of flatten(build({ isDev: true }))) {
       if (item.role) expect(isMenuRole(item.role)).toBe(true)
     }
+  })
+})
+
+
+describe('repository todos', () => {
+  const at = (n: number): number => 1_700_000_000_000 + n * 1000
+  const base = [
+    { ...createTodo('write the docs', at(1)), id: 'a' },
+    { ...createTodo('fix the crash', at(2), { priority: 'high' as const }), id: 'b' },
+    { ...createTodo('rename a var', at(3), { priority: 'low' as const, notes: 'in parser.ts' }), id: 'c' }
+  ]
+
+  it('trims the title and defaults to normal priority', () => {
+    const td = createTodo('  ship it  ', at(0))
+    expect(td.title).toBe('ship it')
+    expect(td.priority).toBe('normal')
+    expect(td.done).toBe(false)
+    expect(td.doneAt).toBeUndefined()
+  })
+
+  it('drops empty optional fields rather than storing blanks', () => {
+    const td = createTodo('x', at(0), { notes: '   ', branch: '' })
+    expect('notes' in td).toBe(false)
+    expect('branch' in td).toBe(false)
+  })
+
+  it('sorts open todos loudest first, then oldest', () => {
+    expect(sortTodos(base).map((td) => td.id)).toEqual(['b', 'a', 'c'])
+  })
+
+  it('sinks completed todos below open ones, most recently ticked first', () => {
+    const ticked = toggleTodo(toggleTodo(base, 'b', at(10)), 'a', at(20))
+    expect(sortTodos(ticked).map((td) => td.id)).toEqual(['c', 'a', 'b'])
+  })
+
+  it('stamps doneAt on tick and clears it on untick', () => {
+    const done = toggleTodo(base, 'a', at(9))
+    expect(done.find((td) => td.id === 'a')).toMatchObject({ done: true, doneAt: at(9) })
+    const reopened = toggleTodo(done, 'a', at(11))
+    const a = reopened.find((td) => td.id === 'a')!
+    expect(a.done).toBe(false)
+    expect('doneAt' in a).toBe(false)
+  })
+
+  it('counts open, done and urgent separately', () => {
+    expect(todoSummary(base)).toEqual({ open: 3, done: 0, high: 1 })
+    expect(todoSummary(toggleTodo(base, 'b', at(10)))).toEqual({ open: 2, done: 1, high: 0 })
+    expect(todoSummary(undefined)).toEqual({ open: 0, done: 0, high: 0 })
+  })
+
+  it('patches and removes by id, leaving the rest untouched', () => {
+    const patched = patchTodo(base, 'c', { title: 'renamed' })
+    expect(patched.find((td) => td.id === 'c')?.title).toBe('renamed')
+    expect(patched.find((td) => td.id === 'a')).toBe(base[0])
+    expect(removeTodo(base, 'a').map((td) => td.id)).toEqual(['b', 'c'])
+  })
+
+  it('clears only the completed ones', () => {
+    expect(clearDoneTodos(toggleTodo(base, 'b', at(10))).map((td) => td.id)).toEqual(['a', 'c'])
+  })
+
+  it('filters over title and notes, case-insensitively', () => {
+    expect(filterTodos(base, 'CRASH').map((td) => td.id)).toEqual(['b'])
+    expect(filterTodos(base, 'parser').map((td) => td.id)).toEqual(['c'])
+    expect(filterTodos(base, '  ')).toBe(base)
   })
 })

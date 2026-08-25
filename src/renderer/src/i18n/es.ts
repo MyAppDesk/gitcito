@@ -207,6 +207,9 @@ export const es: Dict = {
   'search.historyHint': 'Lista commits cuyo diff cambia el texto buscado.',
   // Branch stack
   'stack.title': 'Pila de ramas',
+  'stack.trunkMissingTitle': 'La rama en la que aterriza esta pila solo existe en local',
+  'stack.trunkMissingMessage': '{trunk} no está en {remote}, así que el PR de abajo no tiene a qué apuntar. ¿La enviamos y seguimos con la pila?',
+  'stack.trunkPushAndSubmit': 'Enviar y publicar',
   'stack.showing': 'Pila',
   'stack.landsOn': 'Aterriza en',
   'stack.mergesInto': 'Se fusiona en {target}',

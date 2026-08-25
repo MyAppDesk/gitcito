@@ -136,6 +136,8 @@ Ebenen und die PRs aktualisieren sich an Ort und Stelle.
 - Vor dem Öffnen fragt das Einreichen das Remote, welche Branches wirklich
   angekommen sind, und nennt die fehlenden. GitHub beantwortet einen fehlenden
   Head mit einem nackten „Validation Failed“, mit dem niemand etwas anfangen kann.
+  Der Branch, auf dem der Stapel landet, wird ebenfalls geprüft: existiert er nur
+  lokal, bietet das Einreichen an, ihn zu pushen und weiterzumachen.
 
 ## Wo die Verknüpfungen liegen
 

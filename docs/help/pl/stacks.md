@@ -130,6 +130,8 @@ z wymuszeniem przepisane poziomy, a PR-y aktualizują się w miejscu.
 - Zanim cokolwiek otworzy, wysyłka pyta zdalne repozytorium, które gałęzie
   faktycznie dotarły, i wymienia brakujące. GitHub odpowiada na brak heada suchym
   „Validation Failed”, z którego nikt nic nie ma.
+  Sprawdzana jest też gałąź, na której ląduje stos: jeśli istnieje tylko lokalnie,
+  wysyłka proponuje ją wypchnąć i kontynuować.
 
 ## Gdzie mieszkają powiązania
 

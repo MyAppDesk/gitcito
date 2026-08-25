@@ -133,6 +133,8 @@ PR si aggiornano sul posto.
 - Prima di aprire qualsiasi cosa, l'invio chiede al remoto quali rami sono
   davvero arrivati e nomina quelli che mancano. GitHub risponde a una head
   assente con un secco "Validation Failed", che non serve a nessuno.
+  Anche il ramo su cui atterra la pila viene controllato: se esiste solo in locale,
+  l’invio si offre di inviarlo e proseguire.
 
 ## Dove vivono i collegamenti
 

@@ -128,6 +128,8 @@ atualizam no lugar.
 - Antes de abrir qualquer coisa, o envio pergunta ao remoto quais branches
   realmente chegaram e diz quais faltaram. O GitHub responde a um head ausente com
   um seco "Validation Failed", que não ajuda ninguém.
+  O branch em que a pilha aterrissa também é conferido: se ele só existe local, o
+  envio se oferece para enviá-lo e seguir.
 
 ## Onde os vínculos ficam
 

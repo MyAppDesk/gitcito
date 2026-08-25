@@ -136,6 +136,8 @@ sont poussés en force et les pull requests se mettent à jour sur place.
 - Avant d’ouvrir quoi que ce soit, la soumission demande au distant quelles
   branches sont bien arrivées et nomme celles qui manquent. GitHub répond à une
   head absente par un « Validation Failed » sec, qui ne sert personne.
+  La branche sur laquelle la pile atterrit est vérifiée aussi : si elle n’existe
+  qu’en local, la soumission propose de la pousser et de continuer.
 
 ## Où vivent les liens
 

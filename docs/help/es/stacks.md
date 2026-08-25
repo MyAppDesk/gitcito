@@ -134,6 +134,8 @@ niveles reescritos y los PRs se actualizan en su sitio.
 - Antes de abrir nada, el envío pregunta al remoto qué ramas llegaron de verdad
   y nombra las que no. GitHub responde a un head ausente con un escueto
   «Validation Failed», que no le sirve a nadie.
+  La rama en la que aterriza la pila también se comprueba: si solo existe en
+  local, el envío se ofrece a enviarla y continuar en vez de fallar en el PR de abajo.
 
 ## Dónde viven los enlaces
 

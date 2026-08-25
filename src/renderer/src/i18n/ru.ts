@@ -212,6 +212,9 @@ export const ru: Dict = {
   'search.historyHint': 'Показывает коммиты, в диффе которых меняется найденный текст.',
   // Стек веток
   'stack.title': 'Стек веток',
+  'stack.trunkMissingTitle': 'Ветка, на которую приземляется стек, есть только локально',
+  'stack.trunkMissingMessage': '{trunk} нет на {remote}, поэтому нижнему pull request не на что нацелиться. Отправить её и подать стек?',
+  'stack.trunkPushAndSubmit': 'Отправить и подать',
   'stack.showing': 'Стек',
   'stack.landsOn': 'Приземляется на',
   'stack.mergesInto': 'Вливается в {target}',

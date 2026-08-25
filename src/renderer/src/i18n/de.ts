@@ -212,6 +212,9 @@ export const de: Dict = {
   'search.historyHint': 'Listet Commits, deren Diff den gesuchten Text ändert.',
   // Branch stack
   'stack.title': 'Branch-Stapel',
+  'stack.trunkMissingTitle': 'Der Branch, auf dem dieser Stapel landet, existiert nur lokal',
+  'stack.trunkMissingMessage': '{trunk} liegt nicht auf {remote}, also hat der unterste Pull Request kein Ziel. Pushen und den Stapel einreichen?',
+  'stack.trunkPushAndSubmit': 'Pushen & einreichen',
   'stack.showing': 'Stapel',
   'stack.landsOn': 'Landet auf',
   'stack.mergesInto': 'Wird in {target} gemergt',

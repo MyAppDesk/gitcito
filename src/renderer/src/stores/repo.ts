@@ -310,6 +310,33 @@ function promptLockRepair(message: string, path: string, retry: () => void): boo
   return true
 }
 
+/** Thrown when the branch a stack lands on has never been pushed. */
+const TRUNK_MISSING = 'GITCITO_TRUNK_MISSING'
+
+/**
+ * A submit that cannot open its bottom PR because the branch the stack lands on
+ * is only local. One push fixes it, so offer that instead of the refusal.
+ *
+ * Returns true if the error was handled (the caller suppresses its own toast).
+ */
+function promptTrunkPush(message: string, path: string, leaf?: string): boolean {
+  const m = new RegExp(`${TRUNK_MISSING}:([^:\\s]+):([^:\\s]+)`).exec(message)
+  if (!m) return false
+  const [, trunk, remote] = m
+  useUIStore.getState().openModal({
+    kind: 'confirm',
+    title: t('stack.trunkMissingTitle'),
+    message: interp(t('stack.trunkMissingMessage'), { trunk, remote }),
+    confirmLabel: t('stack.trunkPushAndSubmit'),
+    autoFocusConfirm: true,
+    onConfirm: () =>
+      void (async () => {
+        if (await repoActions.push(path, false, false, trunk)) await repoActions.submitStack(path, leaf)
+      })()
+  })
+  return true
+}
+
 function conflictHint(msg: string): string {
   if (/CHERRY_PICK_HEAD/i.test(msg)) return t('conflictHint.cherryPick')
   if (/rebase/i.test(msg)) return t('conflictHint.rebase')
@@ -1352,17 +1379,23 @@ export const repoActions = {
         // anything: a missing head comes back from the API as "Validation
         // Failed" with no field the user can act on.
         step(t('stack.stepVerify'))
-        const onRemote = await gitApi
-          .remoteHasBranches(path, origin.name, stack.branches.map((b) => b.name))
-          .catch(() => stack.branches.map((b) => b.name))
+        // The base of the bottom PR has to exist on the remote too — a trunk
+        // that only exists locally is the other half of the same 422.
+        const resolvedTrunk =
+          stack.trunk ||
+          useRepoStore.getState().repos[path]?.branches.locals.find((l) => /^(main|master)$/.test(l.name))?.name ||
+          'main'
+        const wanted = [...stack.branches.map((b) => b.name), resolvedTrunk]
+        const onRemote = await gitApi.remoteHasBranches(path, origin.name, wanted).catch(() => wanted)
         const missing = stack.branches.map((b) => b.name).filter((n) => !onRemote.includes(n))
         if (missing.length)
           throw new Error(interp(t('stack.notOnRemote'), { remote: origin.name, branches: missing.join(', ') }))
+        // A missing trunk is offered as a repair rather than a refusal: it is
+        // one push, and the submit that wanted it can then finish.
+        if (!onRemote.includes(resolvedTrunk))
+          throw new Error(`${TRUNK_MISSING}:${resolvedTrunk}:${origin.name}`)
 
-        const trunk =
-          stack.trunk ||
-          fresh?.branches.locals.find((l) => /^(main|master)$/.test(l.name))?.name ||
-          'main'
+        const trunk = resolvedTrunk
         const openPrs = (fresh?.prs ?? []).map((p) => ({
           id: p.id,
           sourceBranch: p.sourceBranch,
@@ -1411,7 +1444,7 @@ export const repoActions = {
       },
       undefined,
       'push',
-      undefined,
+      (message) => promptTrunkPush(message, path, leaf),
       ['branches', 'status']
     ),
 

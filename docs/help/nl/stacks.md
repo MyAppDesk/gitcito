@@ -134,6 +134,8 @@ plekke bijgewerkt.
 - Voor er iets geopend wordt vraagt het indienen aan de remote welke branches er
   echt zijn aangekomen, en noemt de ontbrekende. GitHub antwoordt op een
   ontbrekende head met een kaal "Validation Failed", waar niemand iets aan heeft.
+  De branch waarop de stapel landt wordt ook gecontroleerd: bestaat hij alleen
+  lokaal, dan biedt het indienen aan hem te pushen en door te gaan.
 
 ## Waar de verbanden wonen
 

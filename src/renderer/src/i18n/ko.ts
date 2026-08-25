@@ -212,6 +212,9 @@ export const ko: Dict = {
   'search.historyHint': '해당 텍스트를 변경한 커밋을 나열합니다.',
   // 브랜치 스택
   'stack.title': '브랜치 스택',
+  'stack.trunkMissingTitle': '이 스택이 착지하는 브랜치가 로컬에만 있습니다',
+  'stack.trunkMissingMessage': '{trunk}이(가) {remote}에 없어서 맨 아래 풀 리퀘스트가 대상으로 삼을 것이 없습니다. 푸시하고 스택을 제출할까요?',
+  'stack.trunkPushAndSubmit': '푸시하고 제출',
   'stack.showing': '스택',
   'stack.landsOn': '착지 지점',
   'stack.mergesInto': '{target}에 병합',

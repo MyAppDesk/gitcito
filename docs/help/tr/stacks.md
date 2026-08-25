@@ -128,6 +128,8 @@ seviyeleri zorla push eder ve PR'lar yerinde güncellenir.
 - Gönderme, herhangi bir şey açmadan önce uzağa hangi dalların gerçekten
   ulaştığını sorar ve ulaşmayanları adıyla söyler. GitHub, eksik bir head'e kuru
   bir "Validation Failed" ile yanıt verir; kimsenin işine yaramaz.
+  Yığının indiği dal da denetlenir: yalnızca yereldeyse gönderme, onu gönderip
+  devam etmeyi önerir.
 
 ## Bağlantılar nerede yaşar
 

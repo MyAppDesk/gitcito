@@ -212,6 +212,9 @@ export const ptBR: Dict = {
   'search.historyHint': 'Lista os commits cujo diff mexe no texto procurado.',
   // Pilha de branches
   'stack.title': 'Pilha de branches',
+  'stack.trunkMissingTitle': 'O branch em que esta pilha aterrissa só existe local',
+  'stack.trunkMissingMessage': '{trunk} não está em {remote}, então o pull request de baixo não tem para onde apontar. Enviar e submeter a pilha?',
+  'stack.trunkPushAndSubmit': 'Enviar e submeter',
   'stack.showing': 'Pilha',
   'stack.landsOn': 'Aterrissa em',
   'stack.mergesInto': 'Entra em {target}',

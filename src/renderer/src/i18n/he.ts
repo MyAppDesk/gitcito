@@ -212,6 +212,9 @@ export const he: Dict = {
   'search.historyHint': 'מציג קומיטים שהדיף שלהם משנה את הטקסט שנמצא.',
   // Branch stack
   'stack.title': 'ערימת ענפים',
+  'stack.trunkMissingTitle': 'הענף שעליו הערימה הזאת נוחתת קיים רק מקומית',
+  'stack.trunkMissingMessage': '{trunk} לא נמצא ב־{remote}, ולכן ל־pull request התחתון אין למה לכוון. לדחוף אותו ולשלוח את הערימה?',
+  'stack.trunkPushAndSubmit': 'לדחוף ולשלוח',
   'stack.showing': 'ערימה',
   'stack.landsOn': 'נוחת על',
   'stack.mergesInto': 'ממוזג אל {target}',

@@ -212,6 +212,9 @@ export const ar: Dict = {
   'search.historyHint': 'يعرض الالتزامات التي يغيّر فرقها النص المطابق.',
   // Branch stack
   'stack.title': 'مكدس الفروع',
+  'stack.trunkMissingTitle': 'الفرع الذي تحطّ عليه هذه الكومة موجود محليًا فقط',
+  'stack.trunkMissingMessage': '{trunk} ليس على {remote}، لذا لا هدف لطلب الدمج الأسفل. أندفعه ونرسل الكومة؟',
+  'stack.trunkPushAndSubmit': 'ادفع وأرسل',
   'stack.showing': 'الكومة',
   'stack.landsOn': 'يحطّ على',
   'stack.mergesInto': 'يُدمج في {target}',

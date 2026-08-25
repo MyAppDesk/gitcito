@@ -212,6 +212,9 @@ export const uk: Dict = {
   'search.historyHint': 'Показує коміти, чий diff змінює знайдений текст.',
   // Стек гілок
   'stack.title': 'Стек гілок',
+  'stack.trunkMissingTitle': 'Гілка, на яку приземляється стек, є лише локально',
+  'stack.trunkMissingMessage': '{trunk} немає на {remote}, тож нижньому pull request нема на що націлитися. Надіслати її й подати стек?',
+  'stack.trunkPushAndSubmit': 'Надіслати й подати',
   'stack.showing': 'Стек',
   'stack.landsOn': 'Приземляється на',
   'stack.mergesInto': 'Вливається в {target}',

@@ -122,7 +122,9 @@ rewritten levels and the PRs update in place.
   the list. Both are refused rather than quietly rewriting shared history.
 - Submit asks the remote which branches actually arrived before it opens
   anything, and names the ones that did not. GitHub answers a missing head with
-  a bare "Validation Failed", which is worth nobody's afternoon.
+  a bare "Validation Failed", which is worth nobody's afternoon. The branch the
+  stack lands on is checked too — if it is still only local, Submit offers to
+  push it and carry on rather than failing on the bottom PR.
 
 ## Where the links live
 

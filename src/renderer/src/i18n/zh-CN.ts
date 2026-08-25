@@ -212,6 +212,9 @@ export const zhCN: Dict = {
   'search.historyHint': '列出差异中改动了匹配文本的提交。',
   // Branch stack
   'stack.title': '分支栈',
+  'stack.trunkMissingTitle': '这个堆栈落脚的分支只在本地',
+  'stack.trunkMissingMessage': '{trunk} 不在 {remote} 上，所以最底下的 PR 没有可指向的目标。要推送它并提交这个堆栈吗？',
+  'stack.trunkPushAndSubmit': '推送并提交',
   'stack.showing': '堆栈',
   'stack.landsOn': '落到',
   'stack.mergesInto': '合并进 {target}',

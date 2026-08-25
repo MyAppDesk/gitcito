@@ -13,39 +13,39 @@ Yığın, her birinin altındakinin üzerine kurulduğu bir dal zinciridir:
 
 ![Bir dal yığını](../../screenshots/branch-stack.webp)
 
-Gitcito yığını yukarıdan aşağıya, indiği ana dala kadar çizer. Her katman kendi
-commit'lerini, **PR'ının neyi hedefleyeceğini** — altındaki katmanı, en alttaki
-için ana dalı — ve gönderildikten sonra PR numarasını tıklanabilir bir rozet
-olarak gösterir.
+Gitcito bunu bir **güzergâh** olarak çizer: en üstte bir başlangıç dalı, altında her
+katman için bir durak. Her durağın PR'ı üstündeki durağı hedefler, ilk durak da
+başlangıç dalına iner. Durak kendi commit'lerini, restack gerekip gerekmediğini ve
+gönderildikten sonra PR numarasını gösterir.
 
-## Bir yığın kurmak
+## Güzergâhı düzenlemek
 
-| Bunu yap | Şu olur |
-|----------|---------|
-| **Katman ekle** | Yaprağın üstünde bir dal oluşturup ona geçer. Bu `gh stack add`'dir, zorunlu argüman yerine bir seçiciyle. |
-| Herhangi bir katmanda **Üstüne ekle** | Aynısı, ama yığının *ortasında*: o katmanın üstünde ne varsa yeni dala yönlendirilir, böylece zincir sırasını korur ve bir kat kazanır. Hiçbir şey yeniden oynatılmaz — yeni dal, ebeveyninin ucunda doğar. |
-| **Var olan bir dalı ekle** | Zaten sahip olduğun bir dal, yaprağın üstünde yığına katılır. Sıradan başlayıp bunun bir yığın olduğunu sonradan fark ettiğinde işe yarar. |
+| Denetim | Ne yapar |
+|---------|----------|
+| **Başlangıç** alanı | Yığının indiği yer. Değiştir; bütün zincir yeni dala bağlanır ve yeniden oynatılır. |
+| Bir **durağın** alanı | O konumu hangi dalın tuttuğunu değiştirir. Güzergâhtan çıkan dal yalnızca çözülür, asla silinmez. |
+| **↑ / ↓** | Durağı bir sıra taşır. |
+| **✕** | Durağı güzergâhtan çıkarır; komşuları birleşir. |
+| **Durak ekle** | Zaten sahip olduğun bir dalı seç, güzergâhın tepesine katılsın — ya da henüz olmayan bir ad yaz: son durağın ucunda oluşturulur ve ona geçilir. |
+| Ok düğmesi | O durağa geçer (checkout). |
 
-Bütün dal alanları **yazdıkça süzen** alanlardır: süzmek için yaz, seçmek için
-↑/↓ ve Enter; listede olmayan bir şey yazsan da geçerlidir — yani `origin/main`
-gibi uzak bir referans da temel olur.
+Bütün alanlar yazdıkça süzer: süzmek için yaz, seçmek için ↑/↓ ve Enter; listede
+olmayan bir şey yazsan da geçerlidir — yani `origin/main` gibi uzak bir referans
+başlangıç dalı olabilir.
 
-## Yeniden sıralama
+Altta bu düzenlemelerin hepsi *aynı* işlemdir: güzergâhın tamamı, tek seferde geri
+verilir. Bu yüzden bir hareket tek bir geri alma (<kbd>⌘Z</kbd>) demektir; yarım
+uygulanmış bağlantı izleri değil.
 
-Bir katmandaki **↑ / ↓** okları onu komşusuyla değiştirir. Bu bir üstveri
-düzenlemesi değildir: zincir yeniden bağlanır ve oynatılır, böylece her katmanın
-kendi commit'leri yeni temeline iner. Hareket geri alınabilir (<kbd>⌘Z</kbd>) —
-geri alma eski sırayı yeniden oynatır, eski commit'leri diriltmez.
+## Güzergâh değişikliğinin bedeli
 
-Yeniden sıralama bir dizi rebase olduğu için, tıpkı restack gibi **çakışabilir**.
-Gitcito ilk çakışmada durur ve çakışma görünümünü sana verir; altındaki katmanlar
-çoktan taşınmıştır.
+Sırayı değiştiren her şey — takas, taşıma, başka bir başlangıç — zinciri **yeniden
+oynatır**: her durağın kendi commit'leri yeni temeline rebase edilir. Yani tıpkı
+restack gibi **çakışabilir**. Gitcito ilk çakışmada durur ve çakışma görünümünü
+verir; öndeki duraklar çoktan taşınmıştır.
 
-## Başka bir yeri hedeflemek
-
-Bir katmandaki **Ebeveyni ayarla** aynı seçiciyi açar: başka bir dal seç, o
-katmanın bağı oraya kayar. En alttaki **temel** satırı bunu ana dal için yapar —
-değiştir, bütün yığın yeni ana dala bağlanır ve oynatılır.
+Geri alma önceki güzergâhı yeniden oynatır. Eski commit'leri diriltmez, çünkü
+yenileri farklı ebeveynlerle aynı iştir.
 
 ## Hepsini gönder
 

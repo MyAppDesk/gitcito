@@ -1308,3 +1308,27 @@ describe('stack editing (stacked-branches playground)', () => {
     expect(info.branches[0].parent).toBe('release')
   })
 })
+
+describe('stack route (stacked-branches playground)', () => {
+  it('drops a stop from the route and joins its neighbours up', async () => {
+    const R = cloneFixture('stacked-branches') // main ← feature/api ← feature/ui
+    await gitService.stackSetRoute(R, 'main', ['feature/ui'])
+
+    const info = await gitService.stackInfo(R, 'feature/ui')
+    expect(info.branches.map((b) => b.name)).toEqual(['feature/ui'])
+    expect(info.branches[0].parent).toBe('main')
+    // Taken off the route, not deleted.
+    expect(execFileSync('git', ['-C', R, 'branch', '--list', 'feature/api']).toString().trim()).toContain('feature/api')
+  })
+
+  it('swaps the branch at a position, untracking the one that left', async () => {
+    const R = cloneFixture('stacked-branches')
+    execFileSync('git', ['-C', R, 'branch', 'feature/docs', 'main'])
+    await gitService.stackSetRoute(R, 'main', ['feature/docs', 'feature/ui'])
+
+    const info = await gitService.stackInfo(R, 'feature/ui')
+    expect(info.branches.map((b) => b.name)).toEqual(['feature/docs', 'feature/ui'])
+    const parents = execFileSync('git', ['-C', R, 'config', '--get-regexp', 'gitcitoparent']).toString()
+    expect(parents).not.toContain('branch.feature/api.')
+  })
+})

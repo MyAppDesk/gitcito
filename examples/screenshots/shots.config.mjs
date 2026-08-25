@@ -730,6 +730,13 @@ export const shots = [
       const repo = repoPaths['stacked-branches']
       await page.evaluate((p) => window.__shot.ui.getState().openModal({ kind: 'stack', repoPath: p }), repo)
       await page.waitForTimeout(700)
+      // Open one stop's picker: the list is what the route is edited with, and
+      // it escapes the dialog, which a closed field cannot show.
+      const pick = page.locator('.stack-row .refpick-toggle').first()
+      if (await pick.count()) {
+        await pick.click()
+        await page.waitForTimeout(400)
+      }
     }
   },
   {

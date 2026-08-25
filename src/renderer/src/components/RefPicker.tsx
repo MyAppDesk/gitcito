@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { ChevronDown, Cloud, GitBranch, Tag } from 'lucide-react'
 
 export type RefKind = 'local' | 'remote' | 'tag'
@@ -37,6 +38,8 @@ export function RefPicker({
   const [cursor, setCursor] = useState(0)
   const rootRef = useRef<HTMLDivElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
+  /** Where to draw the popup, in viewport coordinates — see the portal below. */
+  const [rect, setRect] = useState<{ left: number; top: number; width: number; drop: 'down' | 'up' } | null>(null)
 
   // While the popup is open the typed text filters it; reopening from the
   // chevron shows everything again.
@@ -47,10 +50,44 @@ export function RefPicker({
     return options.filter((o) => o.value.toLowerCase().includes(q))
   }, [options, query])
 
+  // The popup is drawn into a portal on <body> rather than inside the field,
+  // because every caller so far lives in a scrolling dialog that would clip it.
+  // That trades the automatic position for this measurement.
+  const place = (): void => {
+    const el = rootRef.current
+    if (!el) return
+    const r = el.getBoundingClientRect()
+    const below = window.innerHeight - r.bottom
+    const drop = below < 200 && r.top > below ? 'up' : 'down'
+    setRect({
+      left: r.left,
+      top: drop === 'down' ? r.bottom + 4 : Math.max(8, r.top - 4 - Math.min(240, filtered.length * 26 + 8)),
+      width: r.width,
+      drop
+    })
+  }
+
+  useLayoutEffect(() => {
+    if (!open) return
+    place()
+    // Any ancestor scroll moves the field out from under a fixed popup, so the
+    // capture phase catches them all; a resize invalidates the measurement too.
+    const onMove = (): void => place()
+    window.addEventListener('scroll', onMove, true)
+    window.addEventListener('resize', onMove)
+    return () => {
+      window.removeEventListener('scroll', onMove, true)
+      window.removeEventListener('resize', onMove)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, filtered.length])
+
   useEffect(() => {
     if (!open) return
     const onDown = (e: MouseEvent): void => {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false)
+      const target = e.target as Node
+      if (rootRef.current?.contains(target) || listRef.current?.contains(target)) return
+      setOpen(false)
     }
     document.addEventListener('mousedown', onDown)
     return () => document.removeEventListener('mousedown', onDown)
@@ -128,29 +165,37 @@ export function RefPicker({
       >
         <ChevronDown size={13} />
       </button>
-      {open && filtered.length > 0 && (
-        <div className="refpick-pop" ref={listRef}>
-          {filtered.map((o, i) => {
-            const Icon = ICON[o.kind]
-            return (
-              <div
-                key={`${o.kind}:${o.value}`}
-                className={`refpick-opt ${i === cursor ? 'active' : ''} ${o.value === value ? 'current' : ''}`}
-                onMouseEnter={() => setCursor(i)}
-                onMouseDown={(e) => {
-                  e.preventDefault() // don't blur the input before the click lands
-                  pick(o.value)
-                }}
-              >
-                <Icon size={12} className={`refpick-icon ${o.kind}`} />
-                <span className="refpick-value" title={o.value}>
-                  {o.value}
-                </span>
-              </div>
-            )
-          })}
-        </div>
-      )}
+      {open &&
+        filtered.length > 0 &&
+        rect &&
+        createPortal(
+          <div
+            className="refpick-pop"
+            ref={listRef}
+            style={{ position: 'fixed', left: rect.left, top: rect.top, width: rect.width }}
+          >
+            {filtered.map((o, i) => {
+              const Icon = ICON[o.kind]
+              return (
+                <div
+                  key={`${o.kind}:${o.value}`}
+                  className={`refpick-opt ${i === cursor ? 'active' : ''} ${o.value === value ? 'current' : ''}`}
+                  onMouseEnter={() => setCursor(i)}
+                  onMouseDown={(e) => {
+                    e.preventDefault() // don't blur the input before the click lands
+                    pick(o.value)
+                  }}
+                >
+                  <Icon size={12} className={`refpick-icon ${o.kind}`} />
+                  <span className="refpick-value" title={o.value}>
+                    {o.value}
+                  </span>
+                </div>
+              )
+            })}
+          </div>,
+          document.body
+        )}
     </div>
   )
 }

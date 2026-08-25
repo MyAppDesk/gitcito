@@ -13,40 +13,40 @@ Uno stack è una catena di branch in cui ciascuno si costruisce su quello sotto:
 
 ![Uno stack di branch](../../screenshots/branch-stack.webp)
 
-Gitcito disegna la pila dall'alto verso il basso, fino al tronco su cui atterra.
-Ogni livello mostra i propri commit, **a cosa punterà la sua PR** — al livello
-sottostante, e al tronco per quello in fondo — e, una volta inviata, il numero
-della PR come una targhetta cliccabile.
+Gitcito la disegna come un **itinerario**: in alto un ramo di partenza, poi una
+tappa per livello. La PR di ogni tappa punta alla tappa sopra, e la prima atterra
+sul ramo di partenza. Ogni tappa mostra i propri commit, se le serve un restack e,
+una volta inviata, il numero della PR.
 
-## Costruirne una
+## Modificare l'itinerario
 
-| Fai questo | E |
-|------------|---|
-| **Aggiungi livello** | Crea un ramo sopra la foglia e ci si sposta. È `gh stack add`, con un selettore al posto di un argomento obbligatorio. |
-| **Aggiungi sopra** su un livello | Lo stesso, ma in *mezzo* alla pila: ciò che stava su quel livello viene ripuntato al nuovo ramo, così la catena mantiene l'ordine e guadagna un piano. Non si riproduce nulla — il nuovo ramo nasce sulla punta del suo genitore. |
-| **Aggiungi un ramo esistente** | Un ramo che hai già entra nella pila sopra la foglia. Utile quando hai iniziato in modo normale e solo dopo hai capito che era una pila. |
+| Comando | Cosa fa |
+|---------|---------|
+| Il campo **Partenza** | Dove atterra la pila. Cambialo e l'intera catena viene ricollegata al nuovo ramo e riprodotta. |
+| Il campo di una **tappa** | Scambia quale ramo occupa quella posizione. Il ramo che esce viene solo scollegato, mai cancellato. |
+| **↑ / ↓** | Sposta una tappa di un posto. |
+| **✕** | Toglie la tappa dall'itinerario; le vicine si ricongiungono. |
+| **Aggiungi tappa** | Scegli un ramo che hai già e si unisce in cima, oppure scrivi un nome che non esiste ancora: viene creato sulla punta dell'ultima tappa e ci si sposta sopra. |
+| Il pulsante freccia | Passa a quella tappa. |
 
-Tutti i campi ramo sono a **digitazione predittiva**: scrivi per filtrare, ↑/↓ e
-Invio per scegliere, e ciò che scrivi vale anche fuori elenco — quindi un
-riferimento remoto come `origin/main` funziona come base.
+Tutti i campi sono a digitazione predittiva: scrivi per filtrare, ↑/↓ e Invio per
+scegliere, e ciò che scrivi vale anche fuori elenco — quindi un riferimento remoto
+come `origin/main` funziona come ramo di partenza.
 
-## Riordinare
+Sotto, tutte queste modifiche sono la *stessa* operazione: l'itinerario intero,
+restituito in una volta. Per questo un gesto è un solo annullamento
+(<kbd>⌘Z</kbd>) e non una scia di collegamenti applicati a metà.
 
-Le frecce **↑ / ↓** di un livello lo scambiano con il vicino. Non è una modifica
-di metadati: la catena viene ricollegata e riprodotta, così i commit propri di
-ogni livello atterrano sulla nuova base. La mossa è annullabile (<kbd>⌘Z</kbd>) —
-l'annullamento riproduce l'ordine precedente, non resuscita i vecchi commit.
+## Quanto costa modificare l'itinerario
 
-Poiché riordinare è una serie di rebase, può dare **conflitti**, esattamente come
-un restack. Gitcito si ferma al primo e ti consegna la vista dei conflitti; i
-livelli sotto sono già stati spostati.
+Tutto ciò che cambia l'ordine — uno scambio, uno spostamento, un'altra partenza —
+**riproduce** la catena: i commit propri di ogni tappa vengono rebasati sulla nuova
+base. Quindi può dare **conflitti**, esattamente come un restack. Gitcito si ferma
+al primo e ti consegna la vista dei conflitti; le tappe precedenti si sono già
+spostate.
 
-## Puntare altrove
-
-**Imposta genitore** su un livello apre lo stesso selettore: scegli un altro ramo
-e il collegamento di quel livello si sposta. La riga **base** in fondo fa lo
-stesso per il tronco — cambialo e l'intera pila viene ricollegata al nuovo tronco
-e riprodotta.
+L'annullamento riproduce l'itinerario precedente. Non resuscita i vecchi commit,
+perché i nuovi sono lo stesso lavoro con genitori diversi.
 
 ## Invia tutto
 

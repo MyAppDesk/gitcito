@@ -1760,7 +1760,8 @@ export function ModalHost(): React.JSX.Element {
                     modal.kind === 'snapshots' ||
                     modal.kind === 'teammate-radar' ||
                     modal.kind === 'commit-edit' ||
-                    modal.kind === 'local-ci'
+                    modal.kind === 'local-ci' ||
+                    modal.kind === 'stack'
                   ? 'modal-tall'
                   : ''
             }`}

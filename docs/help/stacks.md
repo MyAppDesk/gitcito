@@ -3,7 +3,7 @@ title: Stacked branches
 category: Branching & surgery
 order: 43
 summary: Chains of dependent branches — cascade restack and one-click chained PRs.
-keywords: stack stacked branches graphite restack dependent chain parent PR per level submit autopilot retarget reorder move up down insert add level adopt trunk base picker typeahead push all gh-stack gs add
+keywords: stack stacked branches graphite restack dependent chain parent PR per level submit autopilot retarget route stop start reorder move up down add stop remove picker typeahead push all gh-stack gs add
 ---
 
 # Stacked branches
@@ -13,39 +13,39 @@ A stack is a chain of branches where each one builds on the one below:
 
 ![A branch stack](../screenshots/branch-stack.webp)
 
-Gitcito draws the stack top → bottom, ending at the trunk it lands on. Each
-level shows its own commit count, **what its PR will target** — the level below
-it, and the trunk for the bottom one — and, once submitted, its PR number as a
-chip you can click.
+Gitcito draws it as a **route**: a start branch at the top, then one stop per
+level. Each stop's PR targets the stop above it, and the first stop lands on the
+start branch. A stop shows its own commit count, whether it needs a restack, and
+its PR number once submitted.
 
-## Building one
+## Editing the route
 
-| Do this | And |
-|---------|-----|
-| **Add level** | Creates a branch on top of the leaf and checks it out. This is `gh stack add`, with a picker instead of a required argument. |
-| **Add above** on any level | Same, but in the *middle* of the stack: whatever sat on that level is re-pointed at the new branch, so the chain keeps its order and gains a floor. Nothing is replayed — the new branch is created at its parent's tip. |
-| **Add an existing branch** | A branch you already have joins the stack on top of the leaf. Useful when you started ordinarily and only later realised it was a stack. |
+| Control | What it does |
+|---------|--------------|
+| The **Start** field | Where the stack lands. Change it and the whole chain re-links onto the new branch and replays. |
+| A **stop's** field | Swaps which branch occupies that position. The branch that leaves is untracked, never deleted. |
+| **↑ / ↓** | Moves a stop one place along the route. |
+| **✕** | Takes the stop off the route; its neighbours join up. |
+| **Add stop** | Pick a branch you already have and it joins the top of the route — or type a name that does not exist yet, and it is created on the last stop's tip and checked out. |
+| The arrow button | Checks that stop out. |
 
-Every branch field is a **typeahead**: type to filter, ↑/↓ and Enter to pick,
-and anything you type that is not in the list still counts, so a remote-tracking
-ref like `origin/main` works as a base.
+Every field is a typeahead: type to filter, ↑/↓ and Enter to pick, and anything
+you type that is not in the list still counts — so a remote-tracking ref like
+`origin/main` works as a start branch.
 
-## Reordering
+Each of those edits is the *same* operation underneath: the whole route, handed
+back at once. That is why one gesture is one undo entry (<kbd>⌘Z</kbd>) rather
+than a trail of half-applied link changes.
 
-The **↑ / ↓** arrows on a level swap it with its neighbour. That is not a
-metadata edit: the chain is re-linked and replayed, so each level's own commits
-land on their new base. The move is undoable (<kbd>⌘Z</kbd>) — the undo replays
-the old order, it does not resurrect the old commits.
+## What a route edit costs
 
-Because a reorder is a series of rebases, it can **conflict**, exactly like a
-restack. Gitcito stops on the first conflict and hands you the conflict view;
-the levels below it are already moved.
+Anything that changes the order — a swap, a move, a different start — **replays**
+the chain: each stop's own commits are rebased onto its new base. So it can
+**conflict**, exactly like a restack. Gitcito stops at the first conflict and
+hands you the conflict view; the stops before it have already moved.
 
-## Pointing it somewhere else
-
-**Set parent** on a level opens the same typeahead: pick a different branch and
-that level's link moves. The **base** row at the bottom does it for the trunk —
-change it and the whole stack is re-linked onto the new trunk and replayed.
+Undo replays the previous route. It does not resurrect the old commits, because
+the new ones are the same work with different parents.
 
 ## Push all
 
@@ -95,10 +95,10 @@ rewritten levels and the PRs update in place.
   the ancestry check reads the trunk as of your last fetch.
 - The stack section in a PR body is maintained between hidden markers — your
   own description above it is preserved.
-- Reordering and re-trunking **rewrite history** on every level they touch. The
-  branches are yours and unpushed levels cost nothing, but a level that is
+- Reordering and changing the start **rewrite history** on every stop they touch. The
+  The branches are yours and unpushed stops cost nothing, but a stop that is
   already under review gets a force-push on the next submit.
-- A level can only move one place at a time. Two swaps are two rebases, and
+- A stop moves one place at a time. Two swaps are two rebases, and
   stopping halfway is a legible state; a drag that lands three places away is
   not.
 

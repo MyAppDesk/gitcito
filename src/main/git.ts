@@ -2613,6 +2613,24 @@ export const gitService = {
   },
 
   /**
+   * Set the whole route in one move: `order` (bottom → top) sitting on `trunk`,
+   * and anything currently in the stack but missing from `order` untracked.
+   *
+   * The modal edits the stack as a list — swap a stop, drop one, change where it
+   * starts — and each of those is this call with a different list. Doing it in
+   * one operation is what keeps the undo entry honest: half a re-route is not a
+   * state the user asked for.
+   */
+  async stackSetRoute(repoPath: string, trunk: string, order: string[]): Promise<void> {
+    const before = await gitService.stackInfo(repoPath)
+    const keep = new Set(order)
+    for (const b of before.branches) {
+      if (!keep.has(b.name)) await gitService.stackClearParent(repoPath, b.name)
+    }
+    if (order.length) await gitService.stackReorder(repoPath, trunk, order)
+  },
+
+  /**
    * Add a level directly above `parent` — `gh stack`'s `add`, including in the
    * middle of a stack: whatever level sat on `parent` is re-pointed at the new
    * branch, so the chain keeps its order and gains a floor.

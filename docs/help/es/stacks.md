@@ -14,40 +14,40 @@ descomunal.
 
 ![Una pila de ramas](../../screenshots/branch-stack.webp)
 
-Gitcito dibuja la pila de arriba abajo, terminando en el tronco sobre el que
-aterriza. Cada nivel muestra sus propios commits, **a qué apuntará su PR** —al
-nivel de debajo, y al tronco en el caso del último— y, una vez enviado, su
-número de PR como una chapa en la que puedes hacer clic.
+Gitcito lo dibuja como una **ruta**: una rama de inicio arriba y luego una parada
+por nivel. El PR de cada parada apunta a la parada de encima, y la primera aterriza
+en la rama de inicio. Cada parada muestra sus propios commits, si necesita restack
+y, una vez enviada, su número de PR.
 
-## Construir una
+## Editar la ruta
 
-| Haz esto | Y |
-|----------|---|
-| **Añadir nivel** | Crea una rama encima de la hoja y la deja activa. Es `gh stack add`, con un selector en lugar de un argumento obligatorio. |
-| **Añadir encima** en cualquier nivel | Lo mismo, pero en *mitad* de la pila: lo que estuviera sobre ese nivel se reengancha a la rama nueva, así la cadena conserva su orden y gana un piso. No se rebobina nada: la rama nueva se crea en la punta de su padre. |
-| **Añadir una rama existente** | Una rama que ya tienes se une a la pila encima de la hoja. Útil cuando empezaste de forma normal y solo después viste que era una pila. |
+| Control | Qué hace |
+|---------|----------|
+| El campo **Inicio** | Dónde aterriza la pila. Cámbialo y toda la cadena se reengancha a la rama nueva y se reproduce. |
+| El campo de una **parada** | Cambia qué rama ocupa esa posición. La rama que sale se desvincula, nunca se borra. |
+| **↑ / ↓** | Mueve una parada un puesto por la ruta. |
+| **✕** | Saca la parada de la ruta; sus vecinas se unen. |
+| **Añadir parada** | Elige una rama que ya tengas y se une arriba del todo, o escribe un nombre que no exista y se crea sobre la punta de la última parada y se deja activa. |
+| El botón de flecha | Cambia a esa parada (checkout). |
 
-Todos los campos de rama son de **escritura predictiva**: escribe para filtrar,
-↑/↓ y Enter para elegir, y lo que escribas aunque no esté en la lista también
-vale, así que una referencia remota como `origin/main` funciona como base.
+Todos los campos son de escritura predictiva: escribe para filtrar, ↑/↓ y Enter
+para elegir, y lo que escribas aunque no esté en la lista también vale — así una
+referencia remota como `origin/main` sirve de rama de inicio.
 
-## Reordenar
+Por debajo, todas esas ediciones son la *misma* operación: la ruta entera, de una
+vez. Por eso cada gesto es una sola entrada de deshacer (<kbd>⌘Z</kbd>) y no un
+rastro de enlaces a medio aplicar.
 
-Las flechas **↑ / ↓** de un nivel lo intercambian con su vecino. Eso no es una
-edición de metadatos: la cadena se reengancha y se vuelve a reproducir, de modo
-que los commits propios de cada nivel aterrizan sobre su nueva base. El
-movimiento se puede deshacer (<kbd>⌘Z</kbd>): deshacer reproduce el orden
-anterior, no resucita los commits antiguos.
+## Qué cuesta editar la ruta
 
-Como reordenar es una serie de rebases, puede dar **conflictos**, igual que un
-restack. Gitcito se detiene en el primero y te entrega la vista de conflictos;
-los niveles de debajo ya están movidos.
+Todo lo que cambie el orden —un intercambio, un movimiento, otro inicio—
+**reproduce** la cadena: los commits propios de cada parada se rebasan sobre su
+nueva base. Por eso puede dar **conflictos**, igual que un restack. Gitcito se
+detiene en el primero y te entrega la vista de conflictos; las paradas anteriores
+ya se han movido.
 
-## Apuntar a otro sitio
-
-**Establecer padre** en un nivel abre el mismo selector: elige otra rama y el
-enlace de ese nivel se mueve. La fila **base** de abajo hace lo propio con el
-tronco: cámbialo y toda la pila se reengancha al nuevo tronco y se reproduce.
+Deshacer reproduce la ruta anterior. No resucita los commits antiguos, porque los
+nuevos son el mismo trabajo con otros padres.
 
 ## Enviar todo
 

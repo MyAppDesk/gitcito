@@ -13,39 +13,39 @@ Uma pilha é uma corrente de branches em que cada uma se constrói sobre a de ba
 
 ![Uma pilha de branches](../../screenshots/branch-stack.webp)
 
-O Gitcito desenha a pilha de cima para baixo, terminando no tronco em que ela
-aterrissa. Cada nível mostra os próprios commits, **para onde a PR dele vai
-apontar** — o nível de baixo, e o tronco no caso do último — e, depois de
-enviado, o número da PR como uma etiqueta clicável.
+O Gitcito desenha isso como uma **rota**: um branch de início no topo, depois uma
+parada por nível. A PR de cada parada aponta para a parada acima, e a primeira
+aterrissa no branch de início. Cada parada mostra os próprios commits, se precisa
+de restack e, depois de enviada, o número da PR.
 
-## Montando uma
+## Editando a rota
 
-| Faça isto | E |
-|-----------|---|
-| **Adicionar nível** | Cria um branch em cima da folha e faz checkout nele. É o `gh stack add`, com um seletor no lugar de um argumento obrigatório. |
-| **Adicionar acima** em qualquer nível | O mesmo, mas no *meio* da pilha: o que estava sobre aquele nível é reapontado para o novo branch, então a cadeia mantém a ordem e ganha um andar. Nada é reproduzido — o novo branch nasce na ponta do pai. |
-| **Adicionar um branch existente** | Um branch que você já tem entra na pilha em cima da folha. Útil quando você começou do jeito comum e só depois percebeu que era uma pilha. |
+| Controle | O que faz |
+|----------|-----------|
+| O campo **Início** | Onde a pilha aterrissa. Troque-o e a cadeia inteira é religada ao novo branch e reproduzida. |
+| O campo de uma **parada** | Troca qual branch ocupa aquela posição. O branch que sai é só desvinculado, nunca apagado. |
+| **↑ / ↓** | Move uma parada uma posição na rota. |
+| **✕** | Tira a parada da rota; as vizinhas se juntam. |
+| **Adicionar parada** | Escolha um branch que você já tem e ele entra no topo, ou digite um nome que ainda não existe: ele é criado na ponta da última parada e você vai para ele. |
+| O botão de seta | Faz checkout daquela parada. |
 
-Todo campo de branch tem **digitação preditiva**: digite para filtrar, ↑/↓ e
-Enter para escolher, e o que você digitar fora da lista também vale — uma
-referência remota como `origin/main` serve de base.
+Todo campo tem digitação preditiva: digite para filtrar, ↑/↓ e Enter para escolher,
+e o que você digitar fora da lista também vale — então uma referência remota como
+`origin/main` serve de branch de início.
 
-## Reordenar
+Por baixo, todas essas edições são a *mesma* operação: a rota inteira, devolvida de
+uma vez. É por isso que um gesto é um desfazer só (<kbd>⌘Z</kbd>) em vez de um
+rastro de vínculos meio aplicados.
 
-As setas **↑ / ↓** de um nível o trocam com o vizinho. Isso não é edição de
-metadados: a cadeia é religada e reproduzida, de modo que os commits próprios de
-cada nível aterrissam na nova base. O movimento é desfazível (<kbd>⌘Z</kbd>) — o
-desfazer reproduz a ordem anterior, não ressuscita os commits antigos.
+## Quanto custa editar a rota
 
-Como reordenar é uma sequência de rebases, pode dar **conflito**, igual a um
-restack. O Gitcito para no primeiro e entrega a tela de conflitos; os níveis
-abaixo dele já foram movidos.
+Tudo que muda a ordem — uma troca, um movimento, outro início — **reproduz** a
+cadeia: os commits próprios de cada parada são rebaseados na nova base. Então pode
+dar **conflito**, igual a um restack. O Gitcito para no primeiro e entrega a tela
+de conflitos; as paradas anteriores já se moveram.
 
-## Apontando para outro lugar
-
-**Definir pai** em um nível abre o mesmo seletor: escolha outro branch e o
-vínculo daquele nível se move. A linha **base**, lá embaixo, faz isso com o
-tronco — troque-o e a pilha inteira é religada ao novo tronco e reproduzida.
+O desfazer reproduz a rota anterior. Ele não ressuscita os commits antigos, porque
+os novos são o mesmo trabalho com outros pais.
 
 ## Enviar tudo
 

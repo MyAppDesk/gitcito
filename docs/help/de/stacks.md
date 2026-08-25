@@ -14,41 +14,40 @@ reviewen.
 
 ![Ein Branch-Stack](../../screenshots/branch-stack.webp)
 
-Gitcito zeichnet den Stapel von oben nach unten, bis zum Trunk, auf dem er
-landet. Jede Ebene zeigt ihre eigenen Commits, **worauf ihr PR zielen wird** —
-auf die Ebene darunter, bei der untersten auf den Trunk — und, sobald
-eingereicht, ihre PR-Nummer als anklickbaren Chip.
+Gitcito zeichnet ihn als **Route**: oben ein Start-Branch, darunter eine Station
+pro Ebene. Der PR jeder Station zielt auf die Station darüber, und die erste landet
+auf dem Start-Branch. Eine Station zeigt ihre eigenen Commits, ob sie ein Restack
+braucht, und nach dem Einreichen ihre PR-Nummer.
 
-## Einen aufbauen
+## Die Route bearbeiten
 
-| Das hier | Bewirkt |
-|----------|---------|
-| **Ebene hinzufügen** | Legt einen Branch über dem Blatt an und checkt ihn aus. Das ist `gh stack add`, mit Auswahlfeld statt Pflichtargument. |
-| **Darüber hinzufügen** auf einer Ebene | Dasselbe, aber *mitten* im Stapel: was auf dieser Ebene saß, wird auf den neuen Branch umgehängt, die Kette behält ihre Reihenfolge und bekommt ein Stockwerk dazu. Nichts wird neu abgespielt — der neue Branch entsteht auf der Spitze seines Parents. |
-| **Vorhandenen Branch aufnehmen** | Ein Branch, den du schon hast, tritt oben auf dem Blatt in den Stapel ein. Praktisch, wenn du ganz normal angefangen und erst später gemerkt hast, dass es ein Stapel ist. |
+| Bedienelement | Was es tut |
+|---------------|------------|
+| Das Feld **Start** | Wo der Stapel landet. Ändere es, und die ganze Kette wird auf den neuen Branch verknüpft und abgespielt. |
+| Das Feld einer **Station** | Tauscht, welcher Branch an dieser Stelle steht. Der Branch, der die Route verlässt, wird nur ausgehängt, nie gelöscht. |
+| **↑ / ↓** | Verschiebt eine Station um einen Platz. |
+| **✕** | Nimmt die Station aus der Route; ihre Nachbarn rücken zusammen. |
+| **Station hinzufügen** | Wähle einen Branch, den du schon hast — er kommt oben dazu — oder tippe einen Namen, den es noch nicht gibt: er wird auf der Spitze der letzten Station angelegt und ausgecheckt. |
+| Die Pfeil-Schaltfläche | Checkt diese Station aus. |
 
-Alle Branch-Felder sind **Tippfelder mit Vorschlägen**: tippen filtert, ↑/↓ und
-Enter wählen, und was du tippst, zählt auch abseits der Liste — eine
-Remote-Referenz wie `origin/main` taugt also als Basis.
+Jedes Feld ist ein Tippfeld mit Vorschlägen: tippen filtert, ↑/↓ und Enter wählen,
+und was du tippst, zählt auch abseits der Liste — eine Remote-Referenz wie
+`origin/main` taugt also als Start-Branch.
 
-## Neu ordnen
+Unter der Haube sind all diese Änderungen *dieselbe* Operation: die ganze Route,
+auf einmal zurückgegeben. Deshalb ist eine Geste ein Widerruf (<kbd>⌘Z</kbd>) und
+keine Spur halb angewandter Verknüpfungen.
 
-Die Pfeile **↑ / ↓** einer Ebene tauschen sie mit ihrer Nachbarin. Das ist keine
-Metadaten-Änderung: die Kette wird neu verknüpft und abgespielt, damit die
-eigenen Commits jeder Ebene auf ihrer neuen Basis landen. Der Zug ist widerrufbar
-(<kbd>⌘Z</kbd>) — das Widerrufen spielt die alte Reihenfolge nach, es erweckt
-nicht die alten Commits.
+## Was eine Routenänderung kostet
 
-Weil ein Umordnen eine Folge von Rebases ist, kann es **Konflikte** geben, genau
-wie ein Restack. Gitcito hält beim ersten Konflikt an und übergibt die
-Konfliktansicht; die Ebenen darunter sind bereits verschoben.
+Alles, was die Reihenfolge ändert — ein Tausch, ein Zug, ein anderer Start —
+**spielt** die Kette **neu ab**: die eigenen Commits jeder Station werden auf ihre
+neue Basis rebased. Das kann also **Konflikte** geben, genau wie ein Restack.
+Gitcito hält beim ersten Konflikt an und übergibt die Konfliktansicht; die
+Stationen davor sind bereits verschoben.
 
-## Woanders hin zeigen
-
-**Parent setzen** auf einer Ebene öffnet dasselbe Auswahlfeld: einen anderen
-Branch wählen, und der Link dieser Ebene wandert. Die **Basis**-Zeile ganz unten
-tut das für den Trunk — ändere ihn, und der ganze Stapel wird auf den neuen Trunk
-verknüpft und abgespielt.
+Das Widerrufen spielt die vorherige Route nach. Es erweckt nicht die alten Commits,
+denn die neuen sind dieselbe Arbeit mit anderen Eltern.
 
 ## Alle pushen
 

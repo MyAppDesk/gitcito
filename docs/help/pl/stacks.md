@@ -14,39 +14,39 @@ jednego ogromnego.
 
 ![Stos gałęzi](../../screenshots/branch-stack.webp)
 
-Gitcito rysuje stos z góry na dół, aż do pnia, na którym ląduje. Każdy poziom
-pokazuje własne commity, **w co wyceluje jego PR** — w poziom poniżej, a w
-przypadku najniższego w pień — a po wysłaniu także numer PR jako klikalną
-plakietkę.
+Gitcito rysuje go jako **trasę**: na górze gałąź startowa, a pod nią po jednym
+przystanku na poziom. PR każdego przystanku celuje w przystanek powyżej, a pierwszy
+ląduje na gałęzi startowej. Przystanek pokazuje własne commity, czy potrzebuje
+restacku, a po wysłaniu numer PR.
 
-## Budowanie stosu
+## Edycja trasy
 
-| Zrób to | A |
-|---------|---|
-| **Dodaj poziom** | Tworzy gałąź nad liściem i przełącza się na nią. To `gh stack add`, tylko z selektorem zamiast obowiązkowego argumentu. |
-| **Dodaj powyżej** na dowolnym poziomie | To samo, ale w *środku* stosu: to, co siedziało na tym poziomie, zostaje przepięte na nową gałąź, więc łańcuch zachowuje kolejność i zyskuje piętro. Nic nie jest odtwarzane — nowa gałąź powstaje na czubku rodzica. |
-| **Dodaj istniejącą gałąź** | Gałąź, którą już masz, dołącza do stosu nad liściem. Przydatne, gdy zacząłeś zwyczajnie i dopiero potem zobaczyłeś, że to stos. |
+| Element | Co robi |
+|---------|---------|
+| Pole **Start** | Gdzie ląduje stos. Zmień je, a cały łańcuch zostanie przepięty na nową gałąź i odtworzony. |
+| Pole **przystanku** | Zamienia, która gałąź zajmuje to miejsce. Gałąź, która schodzi z trasy, jest tylko odpinana, nigdy usuwana. |
+| **↑ / ↓** | Przesuwa przystanek o jedno miejsce. |
+| **✕** | Zdejmuje przystanek z trasy; sąsiedzi się łączą. |
+| **Dodaj przystanek** | Wybierz gałąź, którą już masz — dołączy na szczycie trasy — albo wpisz nazwę, której jeszcze nie ma: powstanie na czubku ostatniego przystanku i zostanie przełączona. |
+| Przycisk ze strzałką | Przełącza na ten przystanek. |
 
-Każde pole gałęzi ma **podpowiedzi w trakcie pisania**: pisz, aby filtrować, ↑/↓
-i Enter, aby wybrać, a to, co wpiszesz spoza listy, też się liczy — zdalna
-referencja w rodzaju `origin/main` nadaje się na bazę.
+Każde pole ma podpowiedzi w trakcie pisania: pisz, aby filtrować, ↑/↓ i Enter, aby
+wybrać, a to, co wpiszesz spoza listy, też się liczy — zdalna referencja w rodzaju
+`origin/main` nadaje się na gałąź startową.
 
-## Przestawianie
+Pod spodem wszystkie te zmiany to ta *sama* operacja: cała trasa, oddana naraz.
+Dlatego jeden gest to jedno cofnięcie (<kbd>⌘Z</kbd>), a nie ślad po połowicznie
+zastosowanych powiązaniach.
 
-Strzałki **↑ / ↓** przy poziomie zamieniają go z sąsiadem. To nie jest edycja
-metadanych: łańcuch zostaje przepięty i odtworzony, więc własne commity każdego
-poziomu lądują na nowej bazie. Ruch można cofnąć (<kbd>⌘Z</kbd>) — cofnięcie
-odtwarza poprzednią kolejność, nie wskrzesza starych commitów.
+## Ile kosztuje zmiana trasy
 
-Ponieważ przestawianie to seria rebase'ów, może dawać **konflikty**, dokładnie
-jak restack. Gitcito zatrzymuje się na pierwszym i oddaje ci widok konfliktów;
-poziomy poniżej są już przeniesione.
+Wszystko, co zmienia kolejność — zamiana, przesunięcie, inny start — **odtwarza**
+łańcuch: własne commity każdego przystanku są rebase'owane na nową bazę. Może więc
+dawać **konflikty**, dokładnie jak restack. Gitcito zatrzymuje się na pierwszym i
+oddaje ci widok konfliktów; wcześniejsze przystanki już się przesunęły.
 
-## Wskazywanie gdzie indziej
-
-**Ustaw rodzica** na poziomie otwiera ten sam selektor: wybierz inną gałąź, a
-powiązanie tego poziomu się przesunie. Wiersz **bazy** na dole robi to samo dla
-pnia — zmień go, a cały stos zostanie przepięty na nowy pień i odtworzony.
+Cofnięcie odtwarza poprzednią trasę. Nie wskrzesza starych commitów, bo nowe to ta
+sama praca z innymi rodzicami.
 
 ## Wypchnij wszystko
 

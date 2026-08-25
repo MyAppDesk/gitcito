@@ -204,6 +204,9 @@ export const gitApi = {
   /** Re-link a stack to `order` (bottom → top on `trunk`) and replay it. */
   stackReorder: (path: string, trunk: string, order: string[]) =>
     call<void>('stackReorder', path, trunk, order),
+  /** Set the whole route: `order` on `trunk`, untracking anything left out. */
+  stackSetRoute: (path: string, trunk: string, order: string[]) =>
+    call<void>('stackSetRoute', path, trunk, order),
   /** Add a level on top of `parent`, re-pointing whatever sat there at it. */
   stackInsert: (path: string, name: string, parent: string) => call<void>('stackInsert', path, name, parent),
   renameBranch: (path: string, oldName: string, newName: string) => call<void>('renameBranch', path, oldName, newName),

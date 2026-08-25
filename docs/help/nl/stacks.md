@@ -13,41 +13,40 @@ eronder: `main → api → ui`. Drie kleine PR's reviewen is beter dan één eno
 
 ![Een branchstapel](../../screenshots/branch-stack.webp)
 
-Gitcito tekent de stapel van boven naar beneden, tot aan de trunk waarop hij
-landt. Elk niveau toont zijn eigen commits, **waar zijn PR op gaat richten** —
-het niveau eronder, en de trunk voor de onderste — en, eenmaal ingediend, zijn
-PR-nummer als een klikbaar plaatje.
+Gitcito tekent hem als een **route**: bovenaan een startbranch, daaronder één stop
+per niveau. De PR van elke stop richt zich op de stop erboven, en de eerste landt op
+de startbranch. Een stop toont zijn eigen commits, of hij een restack nodig heeft
+en, eenmaal ingediend, zijn PR-nummer.
 
-## Er een bouwen
+## De route bewerken
 
-| Doe dit | En |
-|---------|-----|
-| **Niveau toevoegen** | Maakt een branch boven op het blad en checkt hem uit. Dit is `gh stack add`, met een keuzeveld in plaats van een verplicht argument. |
-| **Erboven toevoegen** op een niveau | Hetzelfde, maar *midden* in de stapel: wat op dat niveau stond wordt naar de nieuwe branch verlegd, dus de ketting houdt zijn volgorde en krijgt er een verdieping bij. Er wordt niets opnieuw afgespeeld — de nieuwe branch ontstaat op de punt van zijn ouder. |
-| **Bestaande branch toevoegen** | Een branch die je al hebt komt boven op het blad in de stapel. Handig als je gewoon begon en pas later doorhad dat het een stapel was. |
+| Bediening | Wat het doet |
+|-----------|--------------|
+| Het veld **Start** | Waar de stapel landt. Verander het en de hele ketting wordt op de nieuwe branch gelegd en afgespeeld. |
+| Het veld van een **stop** | Wisselt welke branch die positie inneemt. De branch die de route verlaat wordt alleen losgekoppeld, nooit verwijderd. |
+| **↑ / ↓** | Verplaatst een stop één plek. |
+| **✕** | Haalt de stop van de route; zijn buren sluiten aan. |
+| **Stop toevoegen** | Kies een branch die je al hebt en hij komt bovenaan de route — of typ een naam die nog niet bestaat: hij wordt op de punt van de laatste stop gemaakt en uitgecheckt. |
+| De pijlknop | Checkt die stop uit. |
 
-Elk branchveld werkt met **typen-en-filteren**: typ om te filteren, ↑/↓ en Enter
-om te kiezen, en wat je typt telt ook buiten de lijst — een remote-ref als
-`origin/main` is dus een prima basis.
+Elk veld werkt met typen-en-filteren: typ om te filteren, ↑/↓ en Enter om te kiezen,
+en wat je typt telt ook buiten de lijst — een remote-ref als `origin/main` is dus
+een prima startbranch.
 
-## Opnieuw ordenen
+Onderhuids zijn al die bewerkingen *dezelfde* operatie: de hele route, in één keer
+teruggegeven. Daarom is één handeling één keer ongedaan maken (<kbd>⌘Z</kbd>) in
+plaats van een spoor van half toegepaste links.
 
-De pijlen **↑ / ↓** op een niveau wisselen het met zijn buur. Dat is geen
-metadatawijziging: de ketting wordt opnieuw gelegd en afgespeeld, zodat de eigen
-commits van elk niveau op hun nieuwe basis landen. De zet is ongedaan te maken
-(<kbd>⌘Z</kbd>) — dat speelt de oude volgorde terug, het wekt de oude commits
-niet op.
+## Wat een routewijziging kost
 
-Omdat opnieuw ordenen een reeks rebases is, kan het **conflicteren**, net als een
-restack. Gitcito stopt bij het eerste conflict en geeft je de conflictweergave;
-de niveaus eronder zijn al verplaatst.
+Alles wat de volgorde verandert — een wissel, een verplaatsing, een andere start —
+**speelt** de ketting **opnieuw af**: de eigen commits van elke stop worden op hun
+nieuwe basis gerebaset. Het kan dus **conflicteren**, net als een restack. Gitcito
+stopt bij het eerste conflict en geeft je de conflictweergave; de stops ervoor zijn
+al verplaatst.
 
-## Ergens anders op richten
-
-**Ouder instellen** op een niveau opent hetzelfde keuzeveld: kies een andere
-branch en de link van dat niveau verschuift. De **basis**-regel onderaan doet dat
-voor de trunk — verander hem en de hele stapel wordt op de nieuwe trunk gelegd en
-afgespeeld.
+Ongedaan maken speelt de vorige route terug. Het wekt de oude commits niet op, want
+de nieuwe zijn hetzelfde werk met andere ouders.
 
 ## Alles pushen
 

@@ -10598,11 +10598,10 @@ input[type='range']:focus-visible {
 }
 .refpick-toggle:hover { color: var(--text-1); background: var(--bg-4); }
 .refpick-pop {
-  position: absolute;
-  top: calc(100% + 4px);
-  inset-inline-start: 0;
-  inset-inline-end: 0;
-  z-index: 30;
+  /* Drawn in a portal on <body>: fixed, and above every dialog, because the
+     fields live inside scrolling modals that used to clip the list. */
+  position: fixed;
+  z-index: 1100;
   max-height: 240px;
   overflow-y: auto;
   padding: 4px;
@@ -13332,49 +13331,6 @@ mark.find-hit.active {
 
 .stack-modal { display: flex; flex-direction: column; min-height: 0; }
 .stack-toolbar { display: flex; align-items: center; gap: 8px; margin: 12px 0; flex-wrap: wrap; }
-.stack-list { overflow-y: auto; min-height: 0; }
-.stack-node { display: flex; gap: 10px; }
-.stack-node-rail {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 18px;
-  flex-shrink: 0;
-  position: relative;
-}
-/* vertical connector line between nodes */
-.stack-node-rail::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  background: var(--border);
-}
-.stack-node:first-child .stack-node-rail::before { top: 14px; }
-.stack-node.trunk .stack-node-rail::before { bottom: 50%; }
-.stack-node-dot {
-  width: 11px;
-  height: 11px;
-  border-radius: 50%;
-  background: var(--bg-3);
-  border: 2px solid var(--border);
-  margin-top: 9px;
-  z-index: 1;
-}
-.stack-node.current .stack-node-dot { background: var(--accent); border-color: var(--accent); }
-.stack-trunk-icon { color: var(--text-2); margin-top: 8px; z-index: 1; background: var(--bg-1); }
-.stack-node-body {
-  flex: 1;
-  min-width: 0;
-  padding: 6px 0 12px;
-  border-bottom: 1px solid var(--border-soft);
-}
-.stack-node.trunk .stack-node-body { display: flex; align-items: center; gap: 8px; border-bottom: none; }
-.stack-node-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.stack-node-name { font-size: 13px; font-weight: 600; color: var(--text-0); }
-.stack-node.trunk .stack-node-name { font-weight: 500; color: var(--text-1); }
-.stack-node-ahead { font-size: 11px; color: var(--text-2); margin-inline-start: auto; }
 .stack-badge {
   font-size: 10px;
   font-weight: 600;
@@ -13387,38 +13343,87 @@ mark.find-hit.active {
 }
 .stack-badge.current { background: var(--accent-soft); color: var(--accent); }
 .stack-badge.warn { background: rgba(230, 160, 30, 0.18); color: #e0a020; }
-.stack-node-actions { display: flex; gap: 14px; margin-top: 6px; flex-wrap: wrap; }
-.stack-node-actions .link-btn.danger { color: var(--red, #e5484d); }
 
-/* Stack: reorder arrows, inline pickers and the "add a level" row. */
-.stack-node-right { display: flex; align-items: center; gap: 10px; margin-inline-start: auto; flex: none; }
-.stack-node-right .stack-node-ahead { margin-inline-start: 0; }
-.stack-move { display: flex; gap: 2px; }
-.stack-move-btn {
-  display: flex; align-items: center; justify-content: center;
-  width: 20px; height: 20px; padding: 0;
-  border: 1px solid var(--border); border-radius: 5px;
-  background: var(--bg-2); color: var(--text-2); cursor: pointer;
+/* Stack: the route — a start branch, then one row per stop. */
+.stack-route {
+  display: flex;
+  flex-direction: column;
+  margin: 10px 0;
+  overflow-y: auto;
+  min-height: 0;
 }
-.stack-move-btn:hover:not(:disabled) { background: var(--bg-3); color: var(--text-0); }
-.stack-move-btn:disabled { opacity: 0.35; cursor: default; }
-.stack-node-target { font-size: 11px; color: var(--text-2); margin-top: 3px; }
-.stack-parent-edit { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
-.stack-parent-edit .refpick { flex: 1; min-width: 0; max-width: 320px; }
-.stack-add {
-  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-  margin: 8px 0; padding: 8px; overflow: hidden;
-  border: 1px dashed var(--border); border-radius: 8px; background: var(--bg-2);
+.stack-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 4px 7px 0;
 }
-.stack-add-name { flex: 1; min-width: 160px; }
-.stack-add-on { font-size: 11px; color: var(--text-2); }
-.stack-add .refpick { flex: 1; min-width: 160px; max-width: 280px; }
-.stack-trunk-pick { max-width: 220px; }
-.stack-trunk-hint { margin: 0; }
-.stack-adopt { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
-.stack-adopt-label { font-size: 11px; color: var(--text-2); }
-.stack-adopt .refpick { min-width: 200px; }
-.stack-adopt .settings-hint { margin: 0; }
+/* The line joining the pins, drawn behind them. */
+.stack-row::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: 5px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--border);
+}
+.stack-row:first-child::before { top: 50%; }
+.stack-row:last-child::before { bottom: 50%; }
+.stack-pin {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--border-strong, var(--border));
+  background: var(--bg-1);
+  color: var(--text-2);
+}
+.stack-pin.start { border-color: var(--text-2); background: var(--text-2); }
+.stack-row.current .stack-pin { border-color: var(--accent); background: var(--accent); }
+.stack-pin.add { border-style: dashed; }
+.stack-row-label {
+  flex: 0 0 auto;
+  min-width: 62px;
+  font-size: 11px;
+  color: var(--text-3);
+}
+.stack-row-pick { flex: 0 1 300px; min-width: 140px; }
+.stack-row-pick .refpick-input { font-size: 12.5px; padding: 5px 26px 5px 8px; }
+/* The middle strip is the only part allowed to run out of room. */
+.stack-row-meta {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 11px;
+  color: var(--text-2);
+}
+.stack-row .stack-badge { flex: 0 0 auto; white-space: nowrap; }
+.stack-row-actions { display: flex; gap: 2px; margin-inline-start: auto; flex: 0 0 auto; }
+.stack-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+}
+.stack-icon-btn:hover:not(:disabled) { background: var(--bg-3); color: var(--text-0); border-color: var(--border); }
+.stack-icon-btn:disabled { opacity: 0.3; cursor: default; }
+.stack-icon-btn.danger:hover:not(:disabled) { color: var(--red, #e5484d); }
 
 /* ─── Insights page ─────────────────────────────────────────────────────── */
 .ins-add { color: var(--green, #2ea043); }

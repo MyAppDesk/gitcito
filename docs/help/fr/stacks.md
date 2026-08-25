@@ -14,41 +14,40 @@ une énorme.
 
 ![Une pile de branches](../../screenshots/branch-stack.webp)
 
-Gitcito dessine la pile de haut en bas, jusqu’au tronc sur lequel elle atterrit.
-Chaque niveau affiche ses propres commits, **ce que sa PR visera** — le niveau du
-dessous, et le tronc pour celui du bas — et, une fois soumise, son numéro de PR
-sous forme de pastille cliquable.
+Gitcito le dessine comme un **itinéraire** : une branche de départ en haut, puis
+une étape par niveau. La PR de chaque étape vise l’étape au-dessus, et la première
+atterrit sur la branche de départ. Une étape affiche ses propres commits, s’il lui
+faut un restack, et son numéro de PR une fois soumise.
 
-## En construire une
+## Modifier l’itinéraire
 
-| Faites ceci | Et |
-|-------------|-----|
-| **Ajouter un niveau** | Crée une branche au-dessus de la feuille et s’y place. C’est `gh stack add`, avec un sélecteur au lieu d’un argument obligatoire. |
-| **Ajouter au-dessus** sur un niveau | Pareil, mais au *milieu* de la pile : ce qui reposait sur ce niveau est redirigé vers la nouvelle branche, la chaîne garde son ordre et gagne un étage. Rien n’est rejoué — la nouvelle branche naît sur la pointe de son parent. |
-| **Ajouter une branche existante** | Une branche que vous avez déjà rejoint la pile au-dessus de la feuille. Pratique quand vous avez commencé normalement et compris seulement après que c’était une pile. |
+| Contrôle | Ce qu’il fait |
+|----------|---------------|
+| Le champ **Départ** | Où la pile atterrit. Changez-le : toute la chaîne est re-liée à la nouvelle branche et rejouée. |
+| Le champ d’une **étape** | Change quelle branche occupe cette position. La branche qui sort est simplement détachée, jamais supprimée. |
+| **↑ / ↓** | Déplace une étape d’un cran. |
+| **✕** | Retire l’étape de l’itinéraire ; ses voisines se rejoignent. |
+| **Ajouter une étape** | Choisissez une branche existante et elle rejoint le sommet, ou tapez un nom qui n’existe pas encore : elle est créée sur la pointe de la dernière étape, et vous y êtes placé. |
+| Le bouton flèche | Bascule sur cette étape. |
 
-Tous les champs de branche sont en **saisie prédictive** : tapez pour filtrer,
-↑/↓ et Entrée pour choisir, et ce que vous tapez hors liste compte aussi — une
-référence distante comme `origin/main` fait donc une base valable.
+Tous les champs sont en saisie prédictive : tapez pour filtrer, ↑/↓ et Entrée pour
+choisir, et ce que vous tapez hors liste compte aussi — une référence distante
+comme `origin/main` fait donc une branche de départ valable.
 
-## Réordonner
+Sous le capot, ces modifications sont la *même* opération : l’itinéraire entier,
+rendu d’un coup. C’est pourquoi un geste vaut une seule annulation
+(<kbd>⌘Z</kbd>) plutôt qu’une traînée de liens à moitié appliqués.
 
-Les flèches **↑ / ↓** d’un niveau l’échangent avec son voisin. Ce n’est pas une
-modification de métadonnées : la chaîne est re-liée puis rejouée, si bien que les
-commits propres à chaque niveau atterrissent sur leur nouvelle base. Le
-déplacement est annulable (<kbd>⌘Z</kbd>) — l’annulation rejoue l’ordre
-précédent, elle ne ressuscite pas les anciens commits.
+## Ce que coûte une modification
 
-Comme un réordonnancement est une série de rebases, il peut **entrer en
-conflit**, exactement comme un restack. Gitcito s’arrête au premier conflit et
-vous passe la vue de résolution ; les niveaux du dessous sont déjà déplacés.
+Tout ce qui change l’ordre — un échange, un déplacement, un autre départ —
+**rejoue** la chaîne : les commits propres à chaque étape sont rebasés sur leur
+nouvelle base. Cela peut donc **entrer en conflit**, exactement comme un restack.
+Gitcito s’arrête au premier conflit et vous passe la vue de résolution ; les
+étapes précédentes ont déjà bougé.
 
-## Viser ailleurs
-
-**Définir le parent** sur un niveau ouvre le même sélecteur : choisissez une
-autre branche et le lien de ce niveau se déplace. La ligne **base**, en bas, fait
-de même pour le tronc — changez-le et toute la pile est re-liée au nouveau tronc
-puis rejouée.
+L’annulation rejoue l’itinéraire précédent. Elle ne ressuscite pas les anciens
+commits : les nouveaux sont le même travail avec d’autres parents.
 
 ## Tout pousser
 

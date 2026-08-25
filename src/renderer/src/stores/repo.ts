@@ -1217,14 +1217,6 @@ export const repoActions = {
 
   // ─── Stacked branches ───
   // Create a new branch on top of the current one and record the dependency.
-  createStackedBranch: (path: string, name: string) => {
-    const parent = useRepoStore.getState().repos[path]?.branches.current
-    return useRepoStore.getState().run(path, interp(t('act.createdStackedBranch'), { name }), async () => {
-      await gitApi.createBranch(path, name)
-      if (parent) await gitApi.stackSetParent(path, name, parent)
-    })
-  },
-
   stackSetParent: (path: string, branch: string, parent: string) =>
     useRepoStore.getState().run(path, interp(t('act.stacked'), { branch, parent }), () => gitApi.stackSetParent(path, branch, parent)),
 
@@ -1235,20 +1227,18 @@ export const repoActions = {
     useRepoStore.getState().run(path, interp(t('act.restacked'), { leaf }), () => gitApi.stackRestack(path, leaf)),
 
   /**
-   * Move the stack into `order` (bottom → top) and replay it. Undo puts the old
-   * order back the same way — a reorder is a rebase, so "undo" here means
-   * replaying the levels onto their previous bases, not resurrecting the old
-   * commits.
+   * Change the stack's route — reorder, swap a stop, drop one, start somewhere
+   * else. Undo re-applies the previous route the same way.
    */
-  stackReorder: (path: string, trunk: string, order: string[], previous: string[], previousTrunk?: string) =>
+  stackSetRoute: (path: string, trunk: string, order: string[], prevTrunk: string, prev: string[]) =>
     useRepoStore.getState().run(
       path,
-      t('act.stackReordered'),
-      () => gitApi.stackReorder(path, trunk, order),
+      t('act.stackRouted'),
+      () => gitApi.stackSetRoute(path, trunk, order),
       {
-        label: t('undoLabel.stackReordered'),
-        undo: () => gitApi.stackReorder(path, previousTrunk ?? trunk, previous),
-        redo: () => gitApi.stackReorder(path, trunk, order)
+        label: t('undoLabel.stackRouted'),
+        undo: () => gitApi.stackSetRoute(path, prevTrunk, prev),
+        redo: () => gitApi.stackSetRoute(path, trunk, order)
       },
       null,
       undefined,

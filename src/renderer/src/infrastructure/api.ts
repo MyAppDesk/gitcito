@@ -160,6 +160,7 @@ import type {
   LocalCiWorkflow
 } from '../../../shared/localCi'
 import type { EditorSetting, EditorTarget } from '../../../shared/editors'
+import type { MenuSpec } from '../../../shared/menu'
 
 // Typed adapter over the IPC bridge — the only place that talks to window.api.
 const call = <T>(method: string, ...args: unknown[]): Promise<T> => window.api.git(method, ...args) as Promise<T>
@@ -976,4 +977,12 @@ export const cliApi = {
   uninstall: () => window.api.cli.uninstall(),
   onOpenPath: (cb: (payload: { path: string; name?: string; group?: string }) => void) =>
     window.api.cli.onOpenPath(cb)
+}
+
+// The native application menu. The renderer owns the menu's content — labels
+// come from the dictionaries — and pushes a fresh spec whenever the language,
+// the open repository or the tab list changes.
+export const menuApi = {
+  set: (spec: MenuSpec) => window.api.menu.set(spec),
+  onCommand: (cb: (id: string) => void) => window.api.menu.onCommand(cb)
 }

@@ -235,6 +235,10 @@ interface PreloadApi {
   }
   term: TermApi
   launch: LaunchApi
+  menu: {
+    set(spec: unknown): Promise<void>
+    onCommand(cb: (id: string) => void): () => void
+  }
   window: {
     minimize(): void
     maximize(): void

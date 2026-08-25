@@ -8,7 +8,8 @@ keywords: shortcuts keyboard keys cheatsheet rebind hotkeys palette
 
 # Keyboard & shortcuts
 
-Press <kbd>?</kbd> anywhere for the cheatsheet.
+Press <kbd>?</kbd> anywhere for the cheatsheet. On macOS the same keys are
+listed next to their commands in the [menu bar](menu-bar.md).
 
 ![The shortcut cheatsheet](../screenshots/cheatsheet.webp)
 

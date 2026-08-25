@@ -122,7 +122,9 @@ you already pay for instead of an API key.
 
 [Themes](docs/help/themes.md) in light and dark, plus **AI-generated** ones ·
 [screen-reader and keyboard accessibility](docs/help/accessibility.md) ·
-[rebindable shortcuts](docs/help/keyboard.md) · [profiles](docs/help/profiles.md)
+[rebindable shortcuts](docs/help/keyboard.md) ·
+[a native macOS menu bar](docs/help/menu-bar.md) that shows the keys you actually
+bound · [profiles](docs/help/profiles.md)
 for separate identities ·
 [author avatars](docs/help/avatars.md) — Gravatar where it exists, a generated
 blob drawn offline where it does not, and a title-bar face that pulls a face at

@@ -50,6 +50,8 @@ import { terminalShortcutFromEvent } from './lib/terminalShortcuts'
 import { repoChatAvailable, rightPanelDetailsState, rightPanelToggleAction } from './lib/repoChatUI'
 import { folderOpenMenuItems } from './lib/openWith'
 import { hostingApi, gitApi, cliApi, keychainApi } from './infrastructure/api'
+import { runAppCommand } from './appCommands'
+import { useAppMenu } from './useAppMenu'
 
 function InitRepo({ path }: { path: string }): React.JSX.Element {
   const t = useT()
@@ -262,6 +264,8 @@ export default function App(): React.JSX.Element {
   const openChatPanel = useUIStore((s) => s.openChatPanel)
   const closeChatPanel = useUIStore((s) => s.closeChatPanel)
   const showDetailsPanel = useUIStore((s) => s.showDetailsPanel)
+  // The native menu bar, kept in step with the language and the open repository.
+  useAppMenu()
   const [resizing, setResizing] = useState(false)
   const [appVersion, setAppVersion] = useState('')
   const updateStatus = useUpdatesStore((s) => s.status)
@@ -384,58 +388,12 @@ export default function App(): React.JSX.Element {
         return
       }
 
+      // Everything past this point is a command the native menu can trigger too,
+      // so both entry points go through the same table. A command that reports
+      // it did nothing (no repository open) leaves the key event alone.
       const id = matchShortcut(e, effectiveBindings(st.settings.shortcuts))
       if (!id) return
-      if (id === 'command-palette') {
-        e.preventDefault()
-        ui.toggleCommandPalette()
-      } else if (id === 'code-search') {
-        const path = activeRepoPath()
-        if (path) {
-          e.preventDefault()
-          ui.openModal({ kind: 'code-search', repoPath: path })
-        }
-      } else if (id === 'vault') {
-        e.preventDefault()
-        st.openPageTab({ type: 'vault' })
-      } else if (id === 'settings') {
-        e.preventDefault()
-        ui.openModal({ kind: 'settings' })
-      } else if (id === 'toggle-left-sidebar') {
-        const path = activeRepoPath()
-        if (path) {
-          e.preventDefault()
-          ui.toggleSidebar()
-        }
-      } else if (id === 'toggle-right-panel') {
-        const path = activeRepoPath()
-        const activeRepo = path ? useRepoStore.getState().repos[path] : null
-        if (path && activeRepo && !activeRepo.notGit) {
-          e.preventDefault()
-          const forceConflict = !!activeRepo.mergeState && (activeRepo.status?.conflicted.length ?? 0) > 0
-          const action = rightPanelToggleAction(
-            !!activeRepo.selected,
-            forceConflict,
-            ui.chatPanelOpen,
-            repoChatAvailable(useSettingsStore.getState().activeProfile().ai)
-          )
-          if (action === 'open-chat') {
-            ui.openChatPanel()
-          } else if (action === 'show-required-details') {
-            ui.closeChatPanel()
-          } else {
-            if (activeRepo.selected) useRepoStore.getState().select(path, null)
-            ui.closeChatPanel()
-          }
-        }
-      } else if (id === 'open-repository') {
-        e.preventDefault()
-        void window.api.selectDirectory().then((path) => {
-          if (!path) return
-          const name = path.split(/[\\/]/).filter(Boolean).pop() ?? path
-          useSettingsStore.getState().openRepoTab({ path, name })
-        })
-      }
+      if (runAppCommand(id)) e.preventDefault()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)

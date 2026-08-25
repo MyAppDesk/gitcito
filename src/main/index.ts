@@ -26,6 +26,7 @@ import { registerUpdaterHandlers, checkForUpdatesOnLaunch } from './updater'
 import { fixPath } from './fix-path'
 import { registerCliHandlers } from './cli'
 import { registerEditorHandlers } from './editor'
+import { registerMenuHandlers } from './menu'
 import { registerSshHandlers } from './ssh'
 import { registerDiffToolHandlers } from './difftool'
 import { parseCliOpenArgs, type CliOpenPayload } from '../shared/cli'
@@ -119,22 +120,6 @@ function createWindow(): void {
     shell.openExternal(details.url)
     return { action: 'deny' }
   })
-  // The default application menu owns Cmd/Ctrl+W ("Close Window") and would swallow
-  // it before the renderer can close the active tab, so suppress the accelerator for
-  // that one combo. The renderer falls back to closing the window when no tab is left.
-  // This fires on every keystroke, so only cross into the browser process on a real
-  // change — and only on key-down, since the flag has to be set before the accelerator
-  // for the same event is resolved.
-  let ignoringMenuShortcuts = false
-  win.webContents.on('before-input-event', (_event, input) => {
-    if (input.type !== 'keyDown') return
-    const isCloseTab =
-      (input.meta || input.control) && !input.shift && !input.alt && input.key.toLowerCase() === 'w'
-    if (isCloseTab === ignoringMenuShortcuts) return
-    ignoringMenuShortcuts = isCloseTab
-    win.webContents.setIgnoreMenuShortcuts(isCloseTab)
-  })
-
   if (process.env['ELECTRON_RENDERER_URL']) {
     win.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
@@ -383,6 +368,7 @@ app.whenReady().then(() => {
   registerEditorHandlers()
   registerSshHandlers()
   registerDiffToolHandlers()
+  registerMenuHandlers()
 
   createWindow()
   checkForUpdatesOnLaunch()

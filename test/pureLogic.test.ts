@@ -11,6 +11,8 @@ import { stackOrder, moveLevel, adoptableBranches, targetFor } from '../src/rend
 import { planStackSubmit, summariseStackPlan } from '../src/shared/stackPr'
 import { groupPrStacks, stackRowStates } from '../src/renderer/src/lib/prStacks'
 import { HUGE_SECTION, openUnlessHuge } from '../src/renderer/src/lib/sidebarSections'
+import { buildMenuSpec } from '../src/renderer/src/lib/appMenu'
+import { acceleratorFromCombo, isMenuRole } from '../src/shared/menu'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 import { commitHookFailureHint, lintCommit, subjectCounterLevel, parseCcPrefix, applyCcType, parseGitmojiPrefix, applyGitmoji, parseTicketPrefix, applyTicket, ticketFromBranch } from '../src/renderer/src/lib/commitLint'
@@ -4801,5 +4803,106 @@ describe('how each level of a stack reads', () => {
     const states = stackRowStates(chain)
     expect(states.get(1)).toBe('merged')
     expect(states.get(3)).toBe('ready')
+  })
+})
+
+describe('acceleratorFromCombo', () => {
+  it('maps internal combos onto Electron accelerators', () => {
+    expect(acceleratorFromCombo('mod+k')).toBe('CmdOrCtrl+K')
+    expect(acceleratorFromCombo('mod+shift+f')).toBe('CmdOrCtrl+Shift+F')
+    expect(acceleratorFromCombo('mod+alt+b')).toBe('CmdOrCtrl+Alt+B')
+    expect(acceleratorFromCombo('ctrl+`')).toBe('Control+`')
+    expect(acceleratorFromCombo('mod+,')).toBe('CmdOrCtrl+,')
+  })
+
+  it('refuses combos Electron cannot express, rather than emitting a broken one', () => {
+    expect(acceleratorFromCombo('')).toBeNull()
+    expect(acceleratorFromCombo('mod')).toBeNull()
+    expect(acceleratorFromCombo('mod+shift')).toBeNull()
+    expect(acceleratorFromCombo('hyper+k')).toBeNull()
+  })
+})
+
+describe('buildMenuSpec', () => {
+  const ctx = {
+    appName: 'Gitcito',
+    isDev: false,
+    hasTabs: true,
+    hasRepo: true,
+    canUndo: true,
+    editorName: 'VS Code',
+    bindings: effectiveBindings(undefined),
+    recent: [{ path: '/a/one', name: 'one' }]
+  }
+  // The identity translator: every label should be a key that went through `t`,
+  // so a raw string in the spec shows up as a value that is not a dotted key.
+  const idT = (key: string): string => key
+  const build = (over: Partial<typeof ctx> = {}): ReturnType<typeof buildMenuSpec> =>
+    buildMenuSpec({ ...ctx, ...over }, idT as never)
+
+  const flatten = (spec: ReturnType<typeof buildMenuSpec>): typeof spec => {
+    const out: typeof spec = []
+    const walk = (items: typeof spec): void => {
+      for (const item of items) {
+        out.push(item)
+        if (item.submenu) walk(item.submenu)
+      }
+    }
+    walk(spec)
+    return out
+  }
+
+  it('renders every label through the dictionary', () => {
+    for (const item of flatten(build())) {
+      if (!item.label || item.type === 'separator') continue
+      // Recent repositories and interpolated app names are the documented
+      // exceptions: a repository's own name is not translatable copy.
+      if (item.label === 'one' || item.label === 'Gitcito') continue
+      expect(item.label, `label ${item.label} is not a dictionary key`).toMatch(/^[a-zA-Z]+\.[A-Za-z.]+$/)
+    }
+  })
+
+  it('disables the repository actions when no repository is open', () => {
+    const repoMenu = build({ hasRepo: false }).find((m) => m.label === 'menu.repository')
+    expect(repoMenu?.submenu?.every((i) => i.type === 'separator' || i.enabled === false)).toBe(true)
+  })
+
+  it('keeps the shortcuts the renderer owns unregistered, so the key still reaches it', () => {
+    const palette = flatten(build()).find((i) => i.id === 'command-palette')
+    expect(palette?.accelerator).toBe('CmdOrCtrl+K')
+    expect(palette?.showOnly).toBe(true)
+  })
+
+  it('follows a rebound shortcut instead of the default', () => {
+    const bindings = effectiveBindings({ 'command-palette': 'mod+shift+p' })
+    const palette = flatten(build({ bindings })).find((i) => i.id === 'command-palette')
+    expect(palette?.accelerator).toBe('CmdOrCtrl+Shift+P')
+  })
+
+  it('offers reload and the inspector only in development builds', () => {
+    expect(flatten(build()).some((i) => i.role === 'toggleDevTools')).toBe(false)
+    expect(flatten(build({ isDev: true })).some((i) => i.role === 'toggleDevTools')).toBe(true)
+  })
+
+  it('never claims Cmd+W with a window-closing role — that combo closes a tab', () => {
+    expect(flatten(build()).some((i) => i.role === ('close' as never))).toBe(false)
+    const closeTab = flatten(build()).find((i) => i.id === 'close-tab')
+    expect(closeTab?.accelerator).toBe('CmdOrCtrl+W')
+    expect(closeTab?.showOnly).toBe(true)
+  })
+
+  it('lists recent repositories, and says so when there are none', () => {
+    const recent = build().find((m) => m.label === 'menu.file')?.submenu?.find((i) => i.label === 'menu.openRecent')
+    expect(recent?.submenu?.[0]?.id).toBe('open-recent:/a/one')
+    const empty = build({ recent: [] })
+      .find((m) => m.label === 'menu.file')
+      ?.submenu?.find((i) => i.label === 'menu.openRecent')
+    expect(empty?.submenu?.[0]).toMatchObject({ label: 'menu.noRecent', enabled: false })
+  })
+
+  it('only emits roles the main process is willing to build', () => {
+    for (const item of flatten(build({ isDev: true }))) {
+      if (item.role) expect(isMenuRole(item.role)).toBe(true)
+    }
   })
 })

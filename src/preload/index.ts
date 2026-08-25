@@ -349,6 +349,17 @@ const api = {
     }
   },
 
+  // The native application menu: the renderer describes it (translated, with
+  // the right items enabled) and gets clicks back as command ids.
+  menu: {
+    set: (spec: unknown): Promise<void> => ipcRenderer.invoke('menu:set', spec),
+    onCommand: (cb: (id: string) => void): (() => void) => {
+      const listener = (_e: unknown, id: string): void => cb(id)
+      ipcRenderer.on('menu:command', listener)
+      return () => ipcRenderer.removeListener('menu:command', listener)
+    }
+  },
+
   window: {
     minimize: (): void => ipcRenderer.send('window:minimize'),
     maximize: (): void => ipcRenderer.send('window:maximize'),

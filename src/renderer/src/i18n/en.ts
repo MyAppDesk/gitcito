@@ -3290,7 +3290,38 @@ export const en = {
   'repoMenu.revealExplorer': 'Reveal in File Explorer',
   'repoMenu.revealFileManager': 'Reveal in file manager',
   'repoMenu.openEditor': 'Open in External Editor',
-  'repoMenu.remove': 'Remove…'
+  'repoMenu.remove': 'Remove…',
+
+  // Native application menu (macOS).
+  'menu.file': 'File',
+  'menu.edit': 'Edit',
+  'menu.view': 'View',
+  'menu.repository': 'Repository',
+  'menu.window': 'Window',
+  'menu.help': 'Help',
+  'menu.about': 'About {app}',
+  'menu.checkUpdates': 'Check for updates…',
+  'menu.services': 'Services',
+  'menu.hide': 'Hide {app}',
+  'menu.hideOthers': 'Hide others',
+  'menu.showAll': 'Show all',
+  'menu.quit': 'Quit {app}',
+  'menu.openRecent': 'Open recent',
+  'menu.noRecent': 'No recent repositories',
+  'menu.cut': 'Cut',
+  'menu.copy': 'Copy',
+  'menu.paste': 'Paste',
+  'menu.selectAll': 'Select all',
+  'menu.actualSize': 'Actual size',
+  'menu.zoomIn': 'Zoom in',
+  'menu.zoomOut': 'Zoom out',
+  'menu.toggleFullScreen': 'Toggle full screen',
+  'menu.reload': 'Reload',
+  'menu.devTools': 'Developer tools',
+  'menu.minimize': 'Minimize',
+  'menu.zoomWindow': 'Zoom',
+  'menu.front': 'Bring all to front',
+  'menu.reportIssue': 'Report an issue'
 }
 
 /** The shape every locale must implement. */

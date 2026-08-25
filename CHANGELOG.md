@@ -1,5 +1,12 @@
 
 
+## [3.29.0](https://github.com/MyAppDesk/gitcito/compare/v3.28.0...v3.29.0) (2026-08-25)
+
+
+### Features
+
+* add .gitcito.json and repoConfig management ([d920be5](https://github.com/MyAppDesk/gitcito/commit/d920be5fee7aaa0ba0016dbb567e4c2936e098c5))
+
 ## [3.28.0](https://github.com/MyAppDesk/gitcito/compare/v3.27.1...v3.28.0) (2026-08-25)
 
 

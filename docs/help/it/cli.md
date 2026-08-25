@@ -70,14 +70,14 @@ essere in esecuzione.
 ### `gitcito status`
 
 Ramo, tracciamento, avanti/indietro, albero di lavoro, stash e — se il repository
-la porta con sé — la [checklist di push da `.gitcito.json`](repo-settings.md).
+la porta con sé — la [checklist di push da `.gitcito.json`](repo-config.md).
 Esce con 1 quando l’albero di lavoro ha conflitti, quindi
 `gitcito status || echo bloccato` funziona.
 
 ### `gitcito doctor [--fix]`
 
 Esegue gli stessi controlli del pannello di [configurazione del
-repository](repo-settings.md): versione di Node, sottomoduli, LFS,
+repository](repo-config.md): versione di Node, sottomoduli, LFS,
 `core.hooksPath`, file richiesti. **Esce con 1 se un controllo fallisce**, ed è
 questo il punto: le regole che un repository dichiara valgono poco se le vede
 solo chi ha l’interfaccia aperta:
@@ -161,4 +161,4 @@ Aggiungi `--local` per limitarlo a un repository, e annullalo con
   il percorso di installazione.
 
 **Vedi anche:** [Spazi di lavoro, schede e gruppi](workspaces.md) ·
-[Configurazione del repository](repo-settings.md) · [Fare commit](committing.md)
+[Configurazione del repository](repo-config.md) · [Fare commit](committing.md)

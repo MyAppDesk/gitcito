@@ -16,6 +16,7 @@ A engrenagem ao lado das ferramentas da barra abre as configurações que perten
 | Aba | O que contém |
 |---|---|
 | **Geral** | Branches protegidas (uma seleção múltipla de branches, guardada no git config), assinatura |
+| **Config** | As [regras que este repositório carrega](repo-config.md) em `.gitcito.json`, e o doctor que as verifica |
 | **Informações** | Notas e campos livres sobre este repositório, mantidos localmente |
 | **Cofre** | As entradas do [cofre](vault.md) deste repositório |
 | **Insights** | O [painel de histórico](insights.md) |

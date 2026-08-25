@@ -16,6 +16,7 @@ repository horen, niet bij de app.
 | Tabblad | Wat erin zit |
 |---|---|
 | **Algemeen** | Beschermde branches (een meervoudige branchkeuze, opgeslagen in de git-config), ondertekenen |
+| **Config** | De [regels die deze repository meebrengt](repo-config.md) in `.gitcito.json`, en de doctor die ze controleert |
 | **Info** | Vrije notities en velden over deze repository, lokaal bewaard |
 | **Kluis** | De [kluis](vault.md)-regels van deze repository |
 | **Inzichten** | Het [geschiedenisdashboard](insights.md) |

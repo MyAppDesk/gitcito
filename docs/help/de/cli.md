@@ -74,13 +74,13 @@ nicht einmal laufen.
 
 Branch, Tracking, Vorsprung/Rückstand, Arbeitskopie, Stashes und — falls das
 Repository sie mitbringt — die [Push-Checkliste aus
-`.gitcito.json`](repo-settings.md). Exit 1, wenn die Arbeitskopie Konflikte hat,
+`.gitcito.json`](repo-config.md). Exit 1, wenn die Arbeitskopie Konflikte hat,
 also funktioniert `gitcito status || echo blockiert`.
 
 ### `gitcito doctor [--fix]`
 
 Führt dieselben Prüfungen aus wie das Panel für die
-[Repository-Konfiguration](repo-settings.md): Node-Version, Submodule, LFS,
+[Repository-Konfiguration](repo-config.md): Node-Version, Submodule, LFS,
 `core.hooksPath`, benötigte Dateien. **Exit 1, wenn eine Prüfung fehlschlägt** —
 genau darum geht es: Regeln, die ein Repository deklariert, sind wenig wert, wenn
 nur die Person mit offener Oberfläche sie je sieht:
@@ -166,4 +166,4 @@ rückgängig.
   nur der Installationsweg fehlt.
 
 **Siehe auch:** [Arbeitsbereiche, Tabs und Gruppen](workspaces.md) ·
-[Repository-Konfiguration](repo-settings.md) · [Committen](committing.md)
+[Repository-Konfiguration](repo-config.md) · [Committen](committing.md)

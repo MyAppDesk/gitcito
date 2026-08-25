@@ -16,6 +16,7 @@ ayarları açar.
 | Sekme | Neler var |
 |---|---|
 | **Genel** | Korumalı dallar (git config'te saklanan çoklu dal seçimi), imzalama |
+| **Config** | Bu deponun `.gitcito.json` içinde taşıdığı [kurallar](repo-config.md) ve onları denetleyen doctor |
 | **Bilgi** | Bu depo hakkında serbest biçimli notlar ve alanlar, yerelde tutulur |
 | **Kasa** | Bu deponun [kasa](vault.md) girdileri |
 | **İçgörüler** | [Geçmiş panosu](insights.md) |

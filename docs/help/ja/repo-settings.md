@@ -16,6 +16,7 @@ keywords: repo settings protected branches analytics operation log history info 
 | タブ | 中身 |
 |---|---|
 | **一般** | 保護ブランチ（ブランチの複数選択。git config に保存されます）、署名 |
+| **Config** | このリポジトリが `.gitcito.json` で[持ち運ぶルール](repo-config.md)と、それを確認する doctor |
 | **情報** | このリポジトリについての自由記述のメモと項目。ローカルに保持されます |
 | **保管庫** | このリポジトリの [保管庫](vault.md) のエントリ |
 | **インサイト** | [履歴ダッシュボード](insights.md) |

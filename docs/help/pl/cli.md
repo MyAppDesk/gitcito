@@ -71,13 +71,13 @@ aplikacja nie musi nawet działać.
 ### `gitcito status`
 
 Gałąź, śledzenie, przed/za, katalog roboczy, schowki oraz — jeśli repozytorium ją
-dostarcza — [listę kontrolną przed pushem z `.gitcito.json`](repo-settings.md).
+dostarcza — [listę kontrolną przed pushem z `.gitcito.json`](repo-config.md).
 Kończy się kodem 1, gdy w katalogu roboczym są konflikty, więc
 `gitcito status || echo zablokowane` działa.
 
 ### `gitcito doctor [--fix]`
 
-Wykonuje te same kontrole co panel [konfiguracji repozytorium](repo-settings.md):
+Wykonuje te same kontrole co panel [konfiguracji repozytorium](repo-config.md):
 wersję Node, submoduły, LFS, `core.hooksPath`, wymagane pliki. **Kończy się
 kodem 1, jeśli któraś zawiedzie** — i o to chodzi: reguły, które repozytorium
 deklaruje, niewiele znaczą, jeśli widzi je tylko osoba z otwartym interfejsem:
@@ -162,4 +162,4 @@ Dodaj `--local`, aby ograniczyć to do jednego repozytorium, i cofnij przez
   brakuje tylko ścieżki instalacji.
 
 **Zobacz też:** [Obszary robocze, karty i grupy](workspaces.md) ·
-[Konfiguracja repozytorium](repo-settings.md) · [Commitowanie](committing.md)
+[Konfiguracja repozytorium](repo-config.md) · [Commitowanie](committing.md)

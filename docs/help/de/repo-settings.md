@@ -16,6 +16,7 @@ zu **diesem** Repository gehören, nicht zur App.
 | Tab | Was drinsteckt |
 |---|---|
 | **Allgemein** | Geschützte Branches (eine Mehrfachauswahl von Branches, in der git-Konfiguration gespeichert), Signieren |
+| **Config** | Die [Regeln, die dieses Repository mitbringt](repo-config.md), in `.gitcito.json` — und der Doctor, der sie prüft |
 | **Info** | Freie Notizen und Felder zu diesem Repository, lokal gespeichert |
 | **Tresor** | Die Einträge im [Tresor](vault.md) dieses Repositorys |
 | **Einblicke** | Das [Historie-Dashboard](insights.md) |

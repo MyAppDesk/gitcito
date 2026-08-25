@@ -16,6 +16,7 @@ keywords: 저장소 설정 repo settings 보호된 브랜치 protected branches 
 | 탭 | 담는 것 |
 |---|---|
 | **일반** | 보호된 브랜치(브랜치 다중 선택, git 설정에 저장돼요), 서명 |
+| **Config** | 이 저장소가 `.gitcito.json` 에 담아 [가지고 다니는 규칙](repo-config.md)과 그것을 확인하는 doctor |
 | **정보** | 이 저장소에 대한 자유 형식 메모와 항목들, 로컬에 보관돼요 |
 | **금고** | 이 저장소의 [금고](vault.md) 항목 |
 | **인사이트** | [히스토리 대시보드](insights.md) |

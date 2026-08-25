@@ -16,6 +16,7 @@ repozytorium, a nie do aplikacji.
 | Zakładka | Co zawiera |
 |---|---|
 | **Ogólne** | Chronione gałęzie (wielokrotny wybór gałęzi, zapisany w konfiguracji gita), podpisywanie |
+| **Config** | [Zasady, które niesie to repozytorium](repo-config.md) w `.gitcito.json`, oraz doctor, który je sprawdza |
 | **Informacje** | Dowolne notatki i pola o tym repozytorium, trzymane lokalnie |
 | **Sejf** | Wpisy [sejfu](vault.md) tego repozytorium |
 | **Statystyki** | [Panel historii](insights.md) |

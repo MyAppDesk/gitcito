@@ -16,6 +16,7 @@ pertenecen a **este** repositorio, no a la aplicación.
 | Pestaña | Qué contiene |
 |---|---|
 | **General** | Ramas protegidas (un multiselector de ramas, guardado en la config de git), firma |
+| **Config** | Las [reglas que este repositorio trae consigo](repo-config.md) en `.gitcito.json`, y el doctor que las comprueba |
 | **Info** | Notas y campos libres sobre este repositorio, guardados en local |
 | **Caja fuerte** | Las entradas de la [caja fuerte](vault.md) de este repositorio |
 | **Métricas** | El [panel de historial](insights.md) |

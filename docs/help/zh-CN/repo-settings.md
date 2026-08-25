@@ -15,6 +15,7 @@ keywords: 仓库设置 repo settings 受保护分支 protected branches 统计 a
 | 标签页 | 里面有什么 |
 |---|---|
 | **通用** | 受保护分支（一个分支多选框，存在 git config 里）、签名 |
+| **Config** | 这个仓库在 `.gitcito.json` 里[携带的规则](repo-config.md)，以及检查它们的 doctor |
 | **信息** | 关于这个仓库的自由格式笔记与字段，只保存在本地 |
 | **保险库** | 这个仓库的[保险库](vault.md)条目 |
 | **洞察** | [历史仪表盘](insights.md) |

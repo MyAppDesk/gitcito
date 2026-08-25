@@ -69,12 +69,12 @@ These print and exit. No window opens, and the app does not need to be running.
 ### `gitcito status`
 
 Branch, tracking, ahead/behind, working tree, stashes, and — if the repository
-ships one — the [push checklist from `.gitcito.json`](repo-settings.md). Exits 1
+ships one — the [push checklist from `.gitcito.json`](repo-config.md). Exits 1
 when the working tree has conflicts, so `gitcito status || echo blocked` works.
 
 ### `gitcito doctor [--fix]`
 
-Runs the same checks the [repository config](repo-settings.md) panel runs: the
+Runs the same checks the [repository rules](repo-config.md) panel runs: the
 Node version, submodules, LFS, `core.hooksPath`, required files. **Exits 1 if
 any check fails**, which is the point — the rules a repository declares are
 worth little if only the person with the GUI open ever sees them:
@@ -158,4 +158,4 @@ Add `--local` to scope it to one repository, and undo it with
   install path is missing.
 
 **See also:** [Workspaces, tabs & groups](workspaces.md) ·
-[Repository config](repo-settings.md) · [Committing](committing.md)
+[Repository rules](repo-config.md) · [Committing](committing.md)

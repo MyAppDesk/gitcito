@@ -68,12 +68,12 @@ Gitcito는 **단일 인스턴스**입니다. 앱이 열려 있는 상태에서 `
 ### `gitcito status`
 
 브랜치, 추적, 앞섬/뒤처짐, 작업 트리, 스태시, 그리고 저장소가 제공한다면
-[`.gitcito.json`의 푸시 체크리스트](repo-settings.md)까지. 작업 트리에 충돌이 있으면
+[`.gitcito.json`의 푸시 체크리스트](repo-config.md)까지. 작업 트리에 충돌이 있으면
 1로 종료하므로 `gitcito status || echo 차단됨`이 동작합니다.
 
 ### `gitcito doctor [--fix]`
 
-[저장소 설정](repo-settings.md) 패널과 같은 점검을 수행합니다. Node 버전, 서브모듈,
+[저장소 설정](repo-config.md) 패널과 같은 점검을 수행합니다. Node 버전, 서브모듈,
 LFS, `core.hooksPath`, 필수 파일. **하나라도 실패하면 1로 종료합니다.** 그게 핵심
 입니다. 저장소가 선언한 규칙도 GUI를 열어 둔 사람만 본다면 값어치가 적습니다.
 
@@ -151,4 +151,4 @@ vim 대신 Gitcito에서 파일을 열며, 글자 수 표시와 컴포저에서 
   입니다.
 
 **함께 보기:** [작업 공간, 탭, 그룹](workspaces.md) ·
-[저장소 설정](repo-settings.md) · [커밋하기](committing.md)
+[저장소 설정](repo-config.md) · [커밋하기](committing.md)

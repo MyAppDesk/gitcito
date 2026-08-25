@@ -2071,6 +2071,54 @@ export const shots = [
     }
   },
   {
+    // The repository's own rules — `.gitcito.json` and the doctor that checks
+    // them. Written in `prepare` rather than shipped in a scenario so the shot
+    // shows a mixed verdict on purpose: Node passing, a hooks path and a
+    // missing `.env` failing with a repair offered.
+    out: 'repo-config',
+    repos: ['deep-history-monorepo'],
+    themes: ['light'],
+    prepare: async ({ repoPaths }) => {
+      const repo = repoPaths['deep-history-monorepo']
+      await writeFile(join(repo, '.env.example'), 'API_URL=https://staging.example.com\nAPI_TOKEN=replace-me\n')
+      await writeFile(
+        join(repo, '.gitcito.json'),
+        `${JSON.stringify(
+          {
+            version: 1,
+            protect: ['main', 'release/*'],
+            links: {
+              tickets: [
+                { match: '\\b[A-Z][A-Z0-9]+-\\d+\\b', url: 'https://tracker.example.com/browse/$0', label: 'Jira' }
+              ]
+            },
+            commit: { scopes: ['api', 'web', 'infra'], ticketFromBranch: true, trailers: ['Refs: {ticket}'] },
+            requires: {
+              node: '>=20',
+              hooksPath: '.husky',
+              files: [{ path: '.env', from: '.env.example', why: 'API base URL and a dev token' }]
+            },
+            checklist: { push: ['Run the integration suite against staging'] }
+          },
+          null,
+          2
+        )}\n`
+      )
+    },
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['deep-history-monorepo']
+      await page.evaluate(
+        (p) => window.__shot.ui.getState().openModal({ kind: 'repo-settings', repoPath: p, tab: 'config' }),
+        repo
+      )
+      await page.waitForSelector('.rc-section', { timeout: 10000 })
+      // The link preview defaults to a real commit subject from this repo, which
+      // carries no ticket key — type one so the preview shows what it is for.
+      await page.locator('.rc-preview .rc-input').fill('ABC-451: retry budget is per-request, not per-batch')
+      await page.waitForTimeout(900)
+    }
+  },
+  {
     // Todos — the private per-repository checklist. The list with one todo
     // open: this is where a todo is written, filtered and given its detail.
     out: 'todos',

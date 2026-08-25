@@ -72,14 +72,14 @@ draaien.
 ### `gitcito status`
 
 Branch, tracking, voor/achter, werkkopie, stashes en — als de repository er een
-meelevert — de [pushchecklist uit `.gitcito.json`](repo-settings.md). Exit 1
+meelevert — de [pushchecklist uit `.gitcito.json`](repo-config.md). Exit 1
 wanneer de werkkopie conflicten heeft, dus `gitcito status || echo geblokkeerd`
 werkt.
 
 ### `gitcito doctor [--fix]`
 
 Voert dezelfde controles uit als het paneel voor
-[repositoryconfiguratie](repo-settings.md): de Node-versie, submodules, LFS,
+[repositoryconfiguratie](repo-config.md): de Node-versie, submodules, LFS,
 `core.hooksPath`, vereiste bestanden. **Exit 1 als een controle faalt**, en dat
 is het hele punt — de regels die een repository verklaart zijn weinig waard als
 alleen degene met de interface open ze ooit ziet:
@@ -163,4 +163,4 @@ Voeg `--local` toe om het tot één repository te beperken, en draai het terug m
   alleen het installatiepad ontbreekt.
 
 **Zie ook:** [Werkruimtes, tabbladen en groepen](workspaces.md) ·
-[Repositoryconfiguratie](repo-settings.md) · [Committen](committing.md)
+[Repositoryconfiguratie](repo-config.md) · [Committen](committing.md)

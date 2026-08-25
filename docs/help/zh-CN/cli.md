@@ -63,12 +63,12 @@ Gitcito 是**单实例**的：应用已打开时再运行 `gitcito`，请求会�
 ### `gitcito status`
 
 分支、跟踪关系、领先/落后、工作区、储藏，以及——如果仓库提供了的话——
-[`.gitcito.json` 里的推送清单](repo-settings.md)。工作区存在冲突时以 1 退出，所以
+[`.gitcito.json` 里的推送清单](repo-config.md)。工作区存在冲突时以 1 退出，所以
 `gitcito status || echo 被阻塞` 是可用的。
 
 ### `gitcito doctor [--fix]`
 
-运行与[仓库配置](repo-settings.md)面板相同的检查：Node 版本、子模块、LFS、
+运行与[仓库配置](repo-config.md)面板相同的检查：Node 版本、子模块、LFS、
 `core.hooksPath`、必需文件。**任一检查失败即以 1 退出**——这正是重点：仓库声明的
 规则，如果只有开着图形界面的人才看得到，价值就有限：
 
@@ -140,4 +140,4 @@ gitcito editor install
 - **Windows 还没有 shim。** 所有动词都已实现，缺的只是安装路径。
 
 **另见：**[工作区、标签页与分组](workspaces.md) ·
-[仓库配置](repo-settings.md) · [提交](committing.md)
+[仓库配置](repo-config.md) · [提交](committing.md)

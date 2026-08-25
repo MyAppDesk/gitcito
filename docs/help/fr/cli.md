@@ -74,13 +74,13 @@ l’application n’a même pas besoin de tourner.
 
 Branche, suivi, avance/retard, copie de travail, remises, et — si le dépôt en
 fournit une — la [liste de vérification avant push de
-`.gitcito.json`](repo-settings.md). Sort en 1 quand la copie de travail est en
+`.gitcito.json`](repo-config.md). Sort en 1 quand la copie de travail est en
 conflit, donc `gitcito status || echo bloqué` fonctionne.
 
 ### `gitcito doctor [--fix]`
 
 Exécute les mêmes contrôles que le panneau de [configuration du
-dépôt](repo-settings.md) : version de Node, sous-modules, LFS, `core.hooksPath`,
+dépôt](repo-config.md) : version de Node, sous-modules, LFS, `core.hooksPath`,
 fichiers requis. **Sort en 1 si un contrôle échoue**, et c’est tout l’intérêt —
 les règles qu’un dépôt déclare ne valent pas grand-chose si seule la personne
 ayant l’interface ouverte les voit :
@@ -166,4 +166,4 @@ Ajoutez `--local` pour n’agir que sur un dépôt, et défaites-le avec
   chemin d’installation manque.
 
 **Voir aussi :** [Espaces de travail, onglets et groupes](workspaces.md) ·
-[Configuration du dépôt](repo-settings.md) · [Commiter](committing.md)
+[Configuration du dépôt](repo-config.md) · [Commiter](committing.md)

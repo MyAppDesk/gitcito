@@ -3,7 +3,7 @@ title: Per-repository settings
 category: Workspace tools
 order: 94
 summary: Protected branches, info, analytics, history and the operation log.
-keywords: repo settings protected branches analytics operation log history info gear
+keywords: repo settings protected branches analytics operation log history info gear config gitcito.json doctor
 ---
 
 # Per-repository settings
@@ -16,6 +16,7 @@ repository, not the app.
 | Tab | What it holds |
 |---|---|
 | **General** | Protected branches (a branch multi-select, stored in git config), signing |
+| **Config** | The [rules this repository ships](repo-config.md) in `.gitcito.json`, and the doctor that checks them |
 | **Info** | Free-form notes and fields about this repository, kept locally |
 | **Vault** | This repository's [vault](vault.md) entries |
 | **Insights** | The [history dashboard](insights.md) |
@@ -26,4 +27,5 @@ The operation log is the honest one: when something behaves oddly, it shows the
 exact command and the exact error, so a bug report can carry facts rather than
 adjectives.
 
-**See also:** [Security & secrets](security.md) · [Insights](insights.md)
+**See also:** [Repository rules](repo-config.md) · [Security & secrets](security.md) ·
+[Insights](insights.md)

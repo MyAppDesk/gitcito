@@ -16,6 +16,7 @@ appartiennent à **ce** dépôt, pas à l'application.
 | Onglet | Ce qu'il contient |
 |---|---|
 | **Général** | Branches protégées (une sélection multiple de branches, stockée dans la configuration git), signature |
+| **Config** | Les [règles que ce dépôt emporte](repo-config.md) dans `.gitcito.json`, et le doctor qui les vérifie |
 | **Infos** | Notes et champs libres à propos de ce dépôt, conservés localement |
 | **Coffre** | Les entrées de [coffre](vault.md) de ce dépôt |
 | **Analyses** | Le [tableau de bord d'historique](insights.md) |

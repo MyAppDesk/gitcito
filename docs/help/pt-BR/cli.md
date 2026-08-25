@@ -71,13 +71,13 @@ rodando.
 
 Branch, rastreamento, à frente/atrás, árvore de trabalho, stashes e — se o
 repositório trouxer uma — a [lista de verificação de push do
-`.gitcito.json`](repo-settings.md). Sai com 1 quando a árvore de trabalho tem
+`.gitcito.json`](repo-config.md). Sai com 1 quando a árvore de trabalho tem
 conflitos, então `gitcito status || echo bloqueado` funciona.
 
 ### `gitcito doctor [--fix]`
 
 Roda as mesmas verificações do painel de [configuração do
-repositório](repo-settings.md): versão do Node, submódulos, LFS,
+repositório](repo-config.md): versão do Node, submódulos, LFS,
 `core.hooksPath`, arquivos exigidos. **Sai com 1 se alguma falhar**, que é o
 ponto — as regras que um repositório declara valem pouco se só quem está com a
 interface aberta as vê:
@@ -161,4 +161,4 @@ Adicione `--local` para limitar a um repositório, e desfaça com
   caminho de instalação.
 
 **Veja também:** [Espaços de trabalho, abas e grupos](workspaces.md) ·
-[Configuração do repositório](repo-settings.md) · [Fazendo commits](committing.md)
+[Configuração do repositório](repo-config.md) · [Fazendo commits](committing.md)

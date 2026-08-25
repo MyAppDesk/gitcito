@@ -68,12 +68,12 @@ Gitcito は**単一インスタンス**です。アプリが開いている状�
 ### `gitcito status`
 
 ブランチ、追跡、先行／遅れ、作業ツリー、スタッシュ、そしてリポジトリが用意していれば
-[`.gitcito.json` の push チェックリスト](repo-settings.md)。作業ツリーに衝突がある
+[`.gitcito.json` の push チェックリスト](repo-config.md)。作業ツリーに衝突がある
 ときは 1 で終了するので、`gitcito status || echo ブロック中` が使えます。
 
 ### `gitcito doctor [--fix]`
 
-[リポジトリ設定](repo-settings.md)パネルと同じ検査を実行します。Node のバージョン、
+[リポジトリ設定](repo-config.md)パネルと同じ検査を実行します。Node のバージョン、
 サブモジュール、LFS、`core.hooksPath`、必須ファイル。**いずれかが失敗すれば 1 で
 終了します**。それこそが要点です。リポジトリが宣言した規則も、GUI を開いている人しか
 見ないのでは値打ちがありません。
@@ -154,4 +154,4 @@ vim ではなく Gitcito でファイルを開き、文字数カウンタとコ�
   インストール経路だけです。
 
 **関連:** [ワークスペース・タブ・グループ](workspaces.md) ·
-[リポジトリ設定](repo-settings.md) · [コミット](committing.md)
+[リポジトリ設定](repo-config.md) · [コミット](committing.md)

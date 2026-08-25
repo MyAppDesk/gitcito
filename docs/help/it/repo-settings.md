@@ -16,6 +16,7 @@ appartengono a **questo** repository, non all'applicazione.
 | Scheda | Cosa contiene |
 |---|---|
 | **Generali** | Branch protetti (una selezione multipla di branch, conservata nella configurazione git), firma |
+| **Config** | Le [regole che questo repository porta con sé](repo-config.md) in `.gitcito.json`, e il doctor che le controlla |
 | **Info** | Note e campi liberi su questo repository, conservati in locale |
 | **Cassaforte** | Le voci della [cassaforte](vault.md) di questo repository |
 | **Insight** | Il [cruscotto della storia](insights.md) |

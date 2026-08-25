@@ -69,13 +69,13 @@ bile gerekmez.
 ### `gitcito status`
 
 Dal, izleme, ileri/geri, çalışma ağacı, zulalar ve — depo bir tane getiriyorsa —
-[`.gitcito.json` içindeki push denetim listesi](repo-settings.md). Çalışma
+[`.gitcito.json` içindeki push denetim listesi](repo-config.md). Çalışma
 ağacında çakışma varsa 1 ile çıkar; yani `gitcito status || echo engelli`
 çalışır.
 
 ### `gitcito doctor [--fix]`
 
-[Depo yapılandırması](repo-settings.md) panelinin yaptığı denetimlerin aynısını
+[Depo yapılandırması](repo-config.md) panelinin yaptığı denetimlerin aynısını
 çalıştırır: Node sürümü, alt modüller, LFS, `core.hooksPath`, gerekli dosyalar.
 **Bir denetim başarısız olursa 1 ile çıkar** — bütün mesele bu: bir deponun
 bildirdiği kurallar, yalnızca arayüzü açık olan kişi görüyorsa pek bir şey ifade
@@ -159,4 +159,4 @@ Tek bir depoyla sınırlamak için `--local` ekle; geri almak için
   yalnızca kurulum yolu.
 
 **Ayrıca bakınız:** [Çalışma alanları, sekmeler ve gruplar](workspaces.md) ·
-[Depo yapılandırması](repo-settings.md) · [Commit’lemek](committing.md)
+[Depo yapılandırması](repo-config.md) · [Commit’lemek](committing.md)

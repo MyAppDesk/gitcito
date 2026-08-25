@@ -134,6 +134,10 @@ conflicts and unpushed piles ·
 src/api.ts -l 84` opens it *there*, `gitcito doctor` answers in the terminal with
 an exit code your CI can use, and `gitcito editor install` makes Gitcito the
 editor `git commit` and `git rebase -i` open ·
+[**Repository rules**](docs/help/repo-config.md) — an optional `.gitcito.json`
+carries the house rules with the clone: protected branches, commit scopes,
+tracker links, a push checklist, and a doctor that tells a newcomer why the
+project does not run yet ·
 [**Todos**](docs/help/todos.md) — a private checklist per repository, marked in
 the sidebar and the status bar, and never written into the repo ·
 [**Open in your editor**](docs/help/editor.md) — repo, file, or the exact line

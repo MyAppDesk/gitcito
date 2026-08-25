@@ -23,19 +23,29 @@ export function fixPath(): void {
   const begin = '__GITCITO_PATH_BEGIN__'
   const end = '__GITCITO_PATH_END__'
 
+  // `${PATH}` must be brace-wrapped — `$PATH${end}` would glue the marker into
+  // the variable name (`$PATHmarker` → empty), yielding no PATH at all.
+  const script = `echo "${begin}\${PATH}${end}"`
+
+  const ask = (args: string[]): string | undefined => {
+    try {
+      const out = execFileSync(shell, args, {
+        encoding: 'utf8',
+        timeout: 5000,
+        // A login shell with no tty can emit job-control noise on stderr; drop it.
+        stdio: ['ignore', 'pipe', 'ignore']
+      })
+      return out.match(new RegExp(`${begin}(.*)${end}`))?.[1]?.trim() || undefined
+    } catch {
+      return undefined
+    }
+  }
+
   try {
     // `-ilc`: interactive login shell so ~/.zprofile, ~/.zshrc, nvm, etc. load.
-    // `${PATH}` must be brace-wrapped — `$PATH${end}` would glue the marker into
-    // the variable name (`$PATHmarker` → empty), yielding no PATH at all.
-    const out = execFileSync(shell, ['-ilc', `echo "${begin}\${PATH}${end}"`], {
-      encoding: 'utf8',
-      timeout: 5000,
-      // A login shell with no tty can emit job-control noise on stderr; drop it.
-      stdio: ['ignore', 'pipe', 'ignore']
-    })
-
-    const match = out.match(new RegExp(`${begin}(.*)${end}`))
-    const resolved = match?.[1]?.trim()
+    // Interactive rc files can hang without a tty (prompt frameworks, compinit),
+    // so fall back to a plain login shell rather than losing PATH entirely.
+    const resolved = ask(['-ilc', script]) ?? ask(['-lc', script])
     if (!resolved) return
 
     // Merge: shell PATH first (its tools win), then anything we already had,

@@ -30,6 +30,18 @@ tuo prompt, i tuoi alias.
 
 ![Due pannelli affiancati in un unico gruppo di terminali](../../screenshots/terminal-split.webp)
 
+## Il tuo PATH
+
+La shell parte come **shell di login**, come in Terminal.app o iTerm, quindi
+`~/.zprofile`, `~/.zlogin` e `~/.bash_profile` vengono eseguiti. Conta perché i
+gestori di versioni e `brew shellenv` di solito si installano lì: uno strumento
+come `fvm`, `nvm` o `pyenv` che funziona nel tuo terminale funziona anche qui.
+
+Gitcito chiede inoltre alla tua shell di login il suo `PATH` reale all'avvio e
+lo unisce a tutto ciò che lancia, perché un'app grafica aperta dal Dock non
+eredita quasi nulla. Se un comando resta introvabile, verifica che sia nel
+`PATH` di una shell di login e non solo di una interattiva.
+
 Tutto quello che esegui qui è invisibile al meccanismo di lock di Gitcito, quindi
 un lungo `git rebase` digitato a mano e un clic nell'interfaccia possono ancora
 scontrarsi — l'app si aggiorna da disco quando il terminale cambia qualcosa.

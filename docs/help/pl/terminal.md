@@ -29,6 +29,19 @@ twój znak zachęty, twoje aliasy.
 
 ![Dwa panele podzielone obok siebie w jednej grupie terminali](../../screenshots/terminal-split.webp)
 
+## Twój PATH
+
+Powłoka startuje jako **powłoka logowania**, tak samo jak w Terminal.app czy
+iTermie, więc `~/.zprofile`, `~/.zlogin` i `~/.bash_profile` są wczytywane. To
+istotne, bo menedżery wersji i `brew shellenv` zwykle wpisują się właśnie tam —
+narzędzie takie jak `fvm`, `nvm` czy `pyenv`, które działa w twoim terminalu,
+zadziała też tutaj.
+
+Gitcito przy starcie pyta też twoją powłokę logowania o prawdziwy `PATH` i
+scala go we wszystkim, co uruchamia, bo aplikacja graficzna otwarta z Docka nie
+dziedziczy prawie niczego. Jeśli mimo to polecenia nie widać, sprawdź, czy jest
+w `PATH` powłoki logowania, a nie tylko interaktywnej.
+
 Wszystko, co tutaj uruchomisz, jest niewidoczne dla własnego blokowania
 Gitcito, więc długi `git rebase` wpisany ręcznie i kliknięcie w interfejsie
 wciąż mogą się zderzyć — aplikacja odświeża się z dysku, gdy terminal coś

@@ -17,6 +17,18 @@ function defaultShell(): string {
   return process.env['SHELL'] || '/bin/zsh'
 }
 
+/**
+ * Args that make the shell a *login* shell.
+ *
+ * Without them zsh/bash skip ~/.zprofile, ~/.zlogin and ~/.bash_profile — which
+ * is where version managers and `brew shellenv` put themselves on PATH. The
+ * symptom is a tool that runs fine in Terminal.app (always a login shell)
+ * failing here with `command not found`.
+ */
+function shellArgs(): string[] {
+  return process.platform === 'win32' ? [] : ['-l']
+}
+
 function createPty(wc: WebContents, id: number, cwd: string, cols: number, rows: number): TermSession | null {
   try {
     interface PtyProcess {
@@ -32,12 +44,13 @@ function createPty(wc: WebContents, id: number, cwd: string, cols: number, rows:
     const pty = require('node-pty') as {
       spawn(file: string, args: string[], opts: Record<string, unknown>): PtyProcess
     }
-    const p = pty.spawn(defaultShell(), [], {
+    const p = pty.spawn(defaultShell(), shellArgs(), {
       name: 'xterm-256color',
       cwd,
       cols,
       rows,
-      env: process.env as Record<string, string>
+      // TERM is often unset when the app is launched from Finder/Dock.
+      env: { ...process.env, TERM: 'xterm-256color' } as Record<string, string>
     })
     p.onData((d) => !wc.isDestroyed() && wc.send(`term:data:${id}`, d))
     p.onExit(() => {
@@ -62,7 +75,7 @@ function createPty(wc: WebContents, id: number, cwd: string, cols: number, rows:
 }
 
 function createFallback(wc: WebContents, id: number, cwd: string): TermSession {
-  const child: ChildProcess = spawn(defaultShell(), [], {
+  const child: ChildProcess = spawn(defaultShell(), shellArgs(), {
     cwd,
     env: { ...process.env, TERM: 'dumb' }
   })

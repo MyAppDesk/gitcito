@@ -28,6 +28,20 @@ invite, vos alias.
 
 ![Deux panneaux divisés côte à côte dans un même groupe de terminaux](../../screenshots/terminal-split.webp)
 
+## Votre PATH
+
+Le shell démarre comme **shell de login**, exactement comme dans Terminal.app ou
+iTerm : `~/.zprofile`, `~/.zlogin` et `~/.bash_profile` sont donc chargés. C'est
+important, car les gestionnaires de versions et `brew shellenv` s'y installent
+en général — un outil comme `fvm`, `nvm` ou `pyenv` qui marche dans votre
+terminal marche aussi ici.
+
+Gitcito demande également son vrai `PATH` à votre shell de login au démarrage et
+le fusionne dans tout ce qu'il lance, car une application graphique ouverte
+depuis le Dock n'hérite presque de rien. Si une commande reste introuvable,
+vérifiez qu'elle est dans le `PATH` d'un shell de login et pas seulement d'un
+shell interactif.
+
 Tout ce que vous lancez ici est invisible pour le verrouillage propre à Gitcito :
 un long `git rebase` tapé à la main et un clic dans l'interface peuvent donc
 encore entrer en collision — l'application se rafraîchit depuis le disque quand

@@ -28,6 +28,18 @@ keywords: 터미널 셸 콘솔 탭 도킹 분할 terminal shell pty xterm consol
 
 ![한 터미널 그룹 안에서 두 패널이 나란히 분할된 모습](../../screenshots/terminal-split.webp)
 
+## PATH 이야기
+
+셸은 Terminal.app이나 iTerm과 똑같이 **로그인 셸**로 시작해요. 그래서
+`~/.zprofile`, `~/.zlogin`, `~/.bash_profile`이 모두 실행됩니다. 버전 관리
+도구나 `brew shellenv`는 보통 그 파일들에 자신을 등록하기 때문에 이게
+중요해요 — 터미널에서 되는 `fvm`, `nvm`, `pyenv` 같은 도구는 여기서도 됩니다.
+
+Gitcito는 시작할 때 로그인 셸에 진짜 `PATH`를 물어보고, 자신이 띄우는 모든
+프로세스에 합쳐 넣어요. Dock에서 실행한 GUI 앱은 거의 아무것도 물려받지 못하기
+때문입니다. 그래도 명령을 찾지 못한다면, 그 명령이 대화형 셸이 아니라 로그인
+셸의 `PATH`에 있는지 확인해 보세요.
+
 여기서 실행하는 것은 Gitcito 자신의 잠금에 보이지 않아요. 그래서 손으로 입력한 긴
 `git rebase`와 UI에서의 클릭이 여전히 부딪힐 수 있어요. 터미널이 무언가를 바꾸면 앱은
 디스크에서 다시 읽어 새로고침해요.

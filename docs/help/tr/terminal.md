@@ -28,6 +28,20 @@ sizin komut satırınız, sizin takma adlarınız.
 
 ![Tek bir terminal grubunda yan yana bölünmüş iki panel](../../screenshots/terminal-split.webp)
 
+## PATH'iniz
+
+Kabuk, Terminal.app veya iTerm'deki gibi bir **oturum açma kabuğu (login
+shell)** olarak başlar; yani `~/.zprofile`, `~/.zlogin` ve `~/.bash_profile`
+çalışır. Bu önemli, çünkü sürüm yöneticileri ve `brew shellenv` kendilerini
+genellikle oraya yazar — terminalinizde çalışan `fvm`, `nvm` veya `pyenv` gibi
+bir araç burada da çalışır.
+
+Gitcito ayrıca açılışta oturum açma kabuğunuza gerçek `PATH` değerini sorar ve
+başlattığı her şeye karıştırır; çünkü Dock'tan açılan bir arayüz uygulaması
+neredeyse hiçbir şey devralmaz. Bir komut yine de bulunamıyorsa, onun yalnızca
+etkileşimli bir kabuğun değil, oturum açma kabuğunun `PATH`'inde olduğundan emin
+olun.
+
 Burada çalıştırdığınız hiçbir şey Gitcito'nun kendi kilitleme mekanizmasına
 görünmez; dolayısıyla elle yazılmış uzun bir `git rebase` ile arayüzdeki bir
 tıklama yine de çakışabilir — terminal bir şeyi değiştirdiğinde uygulama

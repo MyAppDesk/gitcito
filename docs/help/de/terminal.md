@@ -28,6 +28,19 @@ deine Aliase.
 
 ![Zwei Panels nebeneinander geteilt in einer Terminal-Gruppe](../../screenshots/terminal-split.webp)
 
+## Dein PATH
+
+Die Shell startet als **Login-Shell**, genau wie in Terminal.app oder iTerm —
+`~/.zprofile`, `~/.zlogin` und `~/.bash_profile` laufen also mit. Das zählt,
+weil Versionsmanager und `brew shellenv` sich üblicherweise genau dort
+eintragen: Ein Werkzeug wie `fvm`, `nvm` oder `pyenv`, das in deinem Terminal
+funktioniert, funktioniert auch hier.
+
+Gitcito fragt außerdem beim Start deine Login-Shell nach ihrem echten `PATH` und
+mischt ihn in alles, was es startet — eine GUI-App aus dem Dock erbt sonst so
+gut wie nichts. Wird ein Befehl trotzdem nicht gefunden, prüfe, ob er im `PATH`
+einer Login-Shell liegt und nicht nur in dem einer interaktiven Shell.
+
 Alles, was du hier ausführst, ist für Gitcitos eigenes Locking unsichtbar — ein
 von Hand getipptes langes `git rebase` und ein Klick in der UI können sich also
 weiterhin in die Quere kommen. Die App lädt von der Platte neu, wenn das Terminal

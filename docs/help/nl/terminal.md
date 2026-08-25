@@ -29,6 +29,20 @@ prompt, jouw aliassen.
 
 ![Twee panelen naast elkaar gesplitst in één terminalgroep](../../screenshots/terminal-split.webp)
 
+## Je PATH
+
+De shell start als **login-shell**, net als in Terminal.app of iTerm, dus
+`~/.zprofile`, `~/.zlogin` en `~/.bash_profile` worden allemaal uitgevoerd. Dat
+telt, want versiebeheerders en `brew shellenv` zetten zichzelf daar meestal
+neer — een tool als `fvm`, `nvm` of `pyenv` die in je terminal werkt, werkt hier
+ook.
+
+Gitcito vraagt bij het opstarten ook je login-shell om het echte `PATH` en mengt
+dat door alles wat het start, want een GUI-app die vanuit het Dock opent erft
+bijna niets. Wordt een commando alsnog niet gevonden, controleer dan of het in
+het `PATH` van een login-shell staat en niet alleen in dat van een interactieve
+shell.
+
 Wat je hier draait is onzichtbaar voor de eigen vergrendeling van Gitcito, dus
 een lange `git rebase` die je met de hand typt en een klik in de UI kunnen alsnog
 botsen — de app ververst vanaf schijf wanneer de terminal iets verandert.

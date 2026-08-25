@@ -28,6 +28,20 @@ prompt, seus aliases.
 
 ![Dois painéis divididos lado a lado num mesmo grupo de terminal](../../screenshots/terminal-split.webp)
 
+## O seu PATH
+
+O shell sobe como **shell de login**, igual ao Terminal.app ou ao iTerm, então
+`~/.zprofile`, `~/.zlogin` e `~/.bash_profile` são executados. Isso importa
+porque gerenciadores de versão e o `brew shellenv` costumam se instalar ali —
+uma ferramenta como `fvm`, `nvm` ou `pyenv` que funciona no seu terminal
+funciona aqui também.
+
+O Gitcito também pergunta ao seu shell de login qual é o `PATH` real na
+inicialização e o mescla em tudo o que dispara, porque um app gráfico aberto
+pelo Dock não herda quase nada. Se um comando continuar não sendo encontrado,
+confira se ele está no `PATH` de um shell de login, e não só no de um
+interativo.
+
 Qualquer coisa que você rode aqui é invisível para o travamento interno do Gitcito,
 então um `git rebase` longo digitado à mão e um clique na interface ainda podem
 colidir — o app se atualiza a partir do disco quando o terminal muda alguma coisa.

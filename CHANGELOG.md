@@ -1,5 +1,13 @@
 
 
+## [3.28.0](https://github.com/MyAppDesk/gitcito/compare/v3.27.1...v3.28.0) (2026-08-25)
+
+
+### Features
+
+* add private todos feature with multi-language support ([6ba9a4a](https://github.com/MyAppDesk/gitcito/commit/6ba9a4a1ea3c7edc6bae795a3de33a641ccc4634))
+* add todos feature with status chip and modal ([6f275e4](https://github.com/MyAppDesk/gitcito/commit/6f275e40b00e1d5e0dd60c4fb5e13c0c6ade26c3))
+
 ## [3.27.1](https://github.com/MyAppDesk/gitcito/compare/v3.27.0...v3.27.1) (2026-08-25)
 
 

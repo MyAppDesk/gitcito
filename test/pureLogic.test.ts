@@ -35,7 +35,7 @@ import {
 } from '../src/renderer/src/lib/launchActions'
 import { countBySeverity, filterProblems, groupByFile, baseName, dirName } from '../src/renderer/src/lib/problems'
 import { locateBookmark, bookmarkLabel, sortBookmarks } from '../src/renderer/src/lib/bookmarks'
-import { planAttach, planClose } from '../src/renderer/src/lib/tabPages'
+import { planAttach, planClose, pagesForRepo } from '../src/renderer/src/lib/tabPages'
 import {
   deviceFamily,
   familyPlatforms,
@@ -4355,12 +4355,24 @@ describe('pages that ride on a repository tab', () => {
     expect(planAttach(tabs, 't2', wiki('/r'))?.tabId).toBe('t2')
   })
 
-  it('falls back to a tab of its own when no repo tab holds it', () => {
-    // The silent-no-op bug: a repo open only inside a group has no repo tab, and
-    // "nothing happens" is the one outcome an open action may not have.
-    expect(planAttach([groupTab('g1', '/r')], 'g1', wiki('/r'))).toBeNull()
+  it('attaches to a group tab too, selecting the repository it belongs to', () => {
+    // Most people keep their repos filed in groups; a page that skipped them
+    // would land in a tab of its own, far from the repository it belongs to.
+    const plan = planAttach([groupTab('g1', '/r')], 'g1', wiki('/r'))
+    expect(plan).toMatchObject({ tabId: 'g1', index: 0, activeRepoPath: '/r' })
+  })
+
+  it('falls back to a tab of its own when nothing holds the repository', () => {
+    // "Nothing happens" is the one outcome an open action may not have.
     expect(planAttach([repoTab('t1', '/other')], 't1', wiki('/r'))).toBeNull()
     expect(planAttach([], null, wiki('/r'))).toBeNull()
+  })
+
+  it('gives each repository in a group only its own icons', () => {
+    const pages = [wiki('/a'), devtools('/b', 7), wiki('/b')]
+    expect(pagesForRepo(pages, '/b').map((x) => x.index)).toEqual([1, 2])
+    expect(pagesForRepo(pages, '/a').map((x) => x.index)).toEqual([0])
+    expect(pagesForRepo(undefined, '/a')).toEqual([])
   })
 
   it('leaves pages that belong to no repository alone', () => {

@@ -1629,6 +1629,34 @@ export interface AnalyzeResult {
   ms: number
 }
 
+/**
+ * One TODO-style marker found in the repository's own source, the way an editor's
+ * todo tree shows them — the tag, who it was addressed to, and where it lives.
+ */
+export interface CodeTodo {
+  /** Repo-relative, forward slashes. */
+  file: string
+  line: number
+  /** 1-based column of the tag itself, so opening the file lands on the marker. */
+  col: number
+  /** Normalised upper-case tag — `todo`, `Todo` and `TODO` are one bucket. */
+  tag: string
+  /** Owner from `TODO(cgm)`, `TODO (cgm)` or `TODO: @cgm`, lower-cased. Absent means unassigned. */
+  owner?: string
+  /** The note itself, with the tag, the owner and any separator removed. */
+  message: string
+  /** The whole source line, trimmed — the tooltip, and what the row falls back to. */
+  text: string
+}
+
+export interface TodoScanResult {
+  todos: CodeTodo[]
+  /** True when the scan hit its cap and was cut short. */
+  truncated: boolean
+  /** Wall-clock of the sweep, for the panel's footer. */
+  ms: number
+}
+
 /** Where a launch config can be pointed: a handset, a simulator, this desktop. */
 export type DevicePlatform = 'ios' | 'android' | 'macos' | 'windows' | 'linux' | 'web' | 'other'
 
@@ -2575,6 +2603,11 @@ export interface GroupTab extends TabBase {
   folders?: RepoFolder[]
   activeRepoPath: string | null
   collapsed?: boolean
+  /** Same as `RepoTab.pages`: repo-scoped pages opened inside this tab. They
+   *  are drawn on the chip of the repository they belong to, and only while
+   *  that repository is the selected one. */
+  pages?: PageContent[]
+  activePage?: number | null
 }
 
 /** A non-repository "page" tab (changelog today; docs/others later).

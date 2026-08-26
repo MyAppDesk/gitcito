@@ -27,6 +27,9 @@ export interface AttachPlan {
   pages: PageContent[]
   /** Index of the page to show. */
   index: number
+  /** For a group tab: the repository whose chip must be the selected one, or
+   *  its icons would be hidden the moment they appeared. */
+  activeRepoPath?: string
 }
 
 /**
@@ -36,18 +39,26 @@ export interface AttachPlan {
  */
 export function planAttach(tabs: TabState[], activeTabId: string | null, page: PageContent): AttachPlan | null {
   if (!ATTACHED_PAGES.has(page.type) || !('repoPath' in page)) return null
+  // A group tab holds repositories just as much as a repo tab does — most
+  // people keep their repos filed in groups, and a page that skipped them would
+  // land in a tab of its own, far from the repository it belongs to.
   const holds = (tab: TabState): boolean =>
-    tab.kind === 'repo' && tab.repos.some((r) => r.path === page.repoPath)
+    (tab.kind === 'repo' || tab.kind === 'group') && tab.repos.some((r) => r.path === page.repoPath)
   const active = tabs.find((t) => t.id === activeTabId)
   const host = active && holds(active) ? active : tabs.find(holds)
-  if (!host || host.kind !== 'repo') return null
+  if (!host || (host.kind !== 'repo' && host.kind !== 'group')) return null
 
   const pages = host.pages ?? []
   const existing = pages.findIndex((p) => samePage(p, page))
   // Re-opening replaces in place: a DevTools address changes between runs, and
   // the icon should follow it rather than multiply.
   const next = existing >= 0 ? pages.map((p, i) => (i === existing ? page : p)) : [...pages, page]
-  return { tabId: host.id, pages: next, index: existing >= 0 ? existing : next.length - 1 }
+  return {
+    tabId: host.id,
+    pages: next,
+    index: existing >= 0 ? existing : next.length - 1,
+    ...(host.kind === 'group' ? { activeRepoPath: page.repoPath } : {})
+  }
 }
 
 /** Closing one page: the list without it, and what to show afterwards. */
@@ -62,4 +73,15 @@ export function planClose(
   // whichever neighbour happens to shift into its place.
   if (activePage == null || activePage === index) return { pages: next, activePage: null }
   return { pages: next, activePage: activePage > index ? activePage - 1 : activePage }
+}
+
+/** The pages on a tab that belong to one repository, with their real indices —
+ *  a group's list is flat, but each chip only shows its own. */
+export function pagesForRepo(
+  pages: PageContent[] | undefined,
+  repoPath: string
+): { page: PageContent; index: number }[] {
+  return (pages ?? [])
+    .map((page, index) => ({ page, index }))
+    .filter(({ page }) => 'repoPath' in page && page.repoPath === repoPath)
 }

@@ -847,11 +847,18 @@ export default function App(): React.JSX.Element {
   //   • rightPanelFullHeight — in bottom mode, keep the terminal out from under
   //     the right panel so that panel spans the full height.
   // Toolbar (above) and the status bar (below) stay put in the main return.
-  // The page this repo tab is showing instead of the repository, if any.
-  const repoPage =
-    activeTab?.kind === 'repo' && activeTab.activePage != null
-      ? (activeTab.pages?.[activeTab.activePage] ?? null)
-      : null
+  // The page the active tab is showing instead of its repository, if any.
+  // In a group, a page only counts while its own repository is the selected
+  // one — switching repos inside the group puts the repository back on screen
+  // rather than leaving another repo's tool open over it.
+  const repoPage = ((): PageContent | null => {
+    if (!activeTab || (activeTab.kind !== 'repo' && activeTab.kind !== 'group')) return null
+    if (activeTab.activePage == null) return null
+    const page = activeTab.pages?.[activeTab.activePage] ?? null
+    if (!page || !('repoPath' in page)) return null
+    if (activeTab.kind === 'group' && activeTab.activeRepoPath !== page.repoPath) return null
+    return page
+  })()
 
   const placement = settings.terminalPlacement
   const sbSide = settings.sidebarSide

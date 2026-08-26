@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore, type MenuItem } from '../stores/ui'
 import { useRepoStore, repoActions } from '../stores/repo'
-import type { GroupTab, RepoFolder, RepoRef, TabState } from '../../../shared/types'
+import type { GroupTab, PageContent, RepoFolder, RepoRef, TabState } from '../../../shared/types'
 import {
   findFolder,
   flattenFolders,
@@ -18,6 +18,7 @@ import {
 import { ProfileSwitcher } from './ProfileSwitcher'
 import { WorkspaceSwitcher } from './WorkspaceSwitcher'
 import { tabLabel, pageTabLabel } from '../lib/tabLabel'
+import { pagesForRepo } from '../lib/tabPages'
 import { repoCloseStatus, tabCloseStatus, type TabStatus } from '../lib/tabClose'
 import { repoDisplayName } from '../lib/repoAlias'
 import { confirmRemoveRepoFromGroup, repositoryMenuItems, requestCloseTab } from '../lib/repositoryMenuItems'
@@ -804,6 +805,48 @@ export function TitleBar(): React.JSX.Element {
     return wip ? 'wip' : null
   }
 
+  /**
+   * The icons for the pages a repository has open — DevTools, its wiki — drawn
+   * on the thing that owns them. A click shows one (and a second click on the
+   * lit one goes back to the repository); the ✕ appears on hover.
+   */
+  const renderPageChips = (
+    tabId: string,
+    pages: PageContent[] | undefined,
+    activePage: number | null | undefined,
+    repoPath: string
+  ): React.JSX.Element[] =>
+    pagesForRepo(pages, repoPath).map(({ page, index }) => (
+      <span
+        key={`${page.type}-${index}`}
+        className={`tab-page-chip ${activePage === index ? 'active' : ''}`}
+        role="button"
+        tabIndex={0}
+        title={pageTabLabel(page, t)}
+        aria-label={pageTabLabel(page, t)}
+        onKeyDown={keyActivate}
+        onClick={(e) => {
+          e.stopPropagation()
+          setActiveTab(tabId)
+          setRepoPage(tabId, activePage === index ? null : index)
+        }}
+      >
+        {pageTabIcon(page.type)}
+        <span
+          className="tab-page-close"
+          role="button"
+          tabIndex={-1}
+          aria-label={interp(t('a11y.closeTab'), { name: pageTabLabel(page, t) })}
+          onClick={(e) => {
+            e.stopPropagation()
+            closeRepoPage(tabId, index)
+          }}
+        >
+          <X size={9} />
+        </span>
+      </span>
+    ))
+
   // One repository chip inside a group — same markup whether it sits at the
   // group root or several folders deep.
   const renderRepoChip = (tab: GroupTab, repo: RepoRef): React.JSX.Element => {
@@ -839,6 +882,9 @@ export function TitleBar(): React.JSX.Element {
       >
         <FolderGit2 size={13} />
         <span className="tab-name">{repoDisplayName(repo.path, settings.repoAliases, repo.name)}</span>
+        {/* Only on the selected repository: the icons belong to it, and every
+            chip carrying its own row of them would drown the group. */}
+        {isActiveRepo && renderPageChips(tab.id, tab.pages, tab.activePage, repo.path)}
         {rs && (
           <span
             className={`tab-status tab-status-${rs}`}
@@ -1001,38 +1047,7 @@ export function TitleBar(): React.JSX.Element {
               >
                 <FolderGit2 size={13} />
                 <span className="tab-name">{tab.name}</span>
-                {/* Pages that belong to this repository ride here as icons: a
-                    click shows one, and the × that appears on hover closes it. */}
-                {(tab.pages ?? []).map((page, i) => (
-                  <span
-                    key={`${page.type}-${i}`}
-                    className={`tab-page-chip ${tab.activePage === i ? 'active' : ''}`}
-                    role="button"
-                    tabIndex={0}
-                    title={pageTabLabel(page, t)}
-                    aria-label={pageTabLabel(page, t)}
-                    onKeyDown={keyActivate}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setActiveTab(tab.id)
-                      setRepoPage(tab.id, tab.activePage === i ? null : i)
-                    }}
-                  >
-                    {pageTabIcon(page.type)}
-                    <span
-                      className="tab-page-close"
-                      role="button"
-                      tabIndex={-1}
-                      aria-label={interp(t('a11y.closeTab'), { name: pageTabLabel(page, t) })}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        closeRepoPage(tab.id, i)
-                      }}
-                    >
-                      <X size={9} />
-                    </span>
-                  </span>
-                ))}
+                {renderPageChips(tab.id, tab.pages, tab.activePage, tab.repos[0]?.path ?? '')}
                 {status && (
                   <span
                     className={`tab-status tab-status-${status}`}

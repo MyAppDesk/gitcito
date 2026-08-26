@@ -589,14 +589,18 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   setRepoPage: (tabId, index) =>
     get().update((s) => ({
       ...s,
-      tabs: s.tabs.map((t) => (t.id === tabId && t.kind === 'repo' ? { ...t, activePage: index } : t))
+      tabs: s.tabs.map((t) =>
+        t.id === tabId && (t.kind === 'repo' || t.kind === 'group') ? { ...t, activePage: index } : t
+      )
     })),
 
   closeRepoPage: (tabId, index) =>
     get().update((s) => ({
       ...s,
       tabs: s.tabs.map((t) =>
-        t.id === tabId && t.kind === 'repo' ? { ...t, ...planClose(t.pages ?? [], t.activePage, index) } : t
+        t.id === tabId && (t.kind === 'repo' || t.kind === 'group')
+          ? { ...t, ...planClose(t.pages ?? [], t.activePage, index) }
+          : t
       )
     })),
 
@@ -611,9 +615,17 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       return get().update((s) => ({
         ...s,
         activeTabId: plan.tabId,
-        tabs: s.tabs.map((t) =>
-          t.id === plan.tabId && t.kind === 'repo' ? { ...t, pages: plan.pages, activePage: plan.index } : t
-        )
+        tabs: s.tabs.map((t) => {
+          if (t.id !== plan.tabId || (t.kind !== 'repo' && t.kind !== 'group')) return t
+          return {
+            ...t,
+            pages: plan.pages,
+            activePage: plan.index,
+            // In a group, the page shows on its repository's chip — so that
+            // repository has to be the selected one.
+            ...(plan.activeRepoPath ? { activeRepoPath: plan.activeRepoPath } : {})
+          }
+        })
       }))
     }
     return get().update((s) => {

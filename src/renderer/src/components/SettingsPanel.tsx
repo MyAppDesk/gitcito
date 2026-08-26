@@ -44,7 +44,22 @@ import {
   Spline,
   PanelBottom,
   RotateCcw,
-  Filter
+  Filter,
+  AppWindow,
+  ArrowDownUp,
+  Circle,
+  GitCompareArrows,
+  GitMerge,
+  MessageSquare,
+  Network,
+  Repeat2,
+  Rows3,
+  Ruler,
+  ScanSearch,
+  SlidersHorizontal,
+  SquarePen,
+  ToggleLeft,
+  Keyboard
 } from 'lucide-react'
 import hljs from 'highlight.js'
 import { useSettingsStore } from '../stores/settings'
@@ -310,7 +325,7 @@ function ProfilePage({ profile, edit }: { profile: Profile; edit: (p: Partial<Pr
 
       <SigningSection />
 
-      <h4>{t('settings.preferences')}</h4>
+      <h4><SlidersHorizontal size={14} /> {t('settings.preferences')}</h4>
       <label>
         {t('settings.commitStyle')}
         <select
@@ -660,7 +675,7 @@ export function AIPage({ profile, edit }: { profile: Profile; edit: (p: Partial<
         </span>
       </label>
 
-      <h4>{t('settings.explainStyle')}</h4>
+      <h4><MessageSquare size={14} /> {t('settings.explainStyle')}</h4>
       <label>
         <select
           value={ai.explainStyle ?? 'normal'}
@@ -692,7 +707,7 @@ export function AIPage({ profile, edit }: { profile: Profile; edit: (p: Partial<
 
       {ai.hoverExplain !== false && (
         <>
-          <h4>{t('settings.hoverExplainKey')}</h4>
+          <h4><Keyboard size={14} /> {t('settings.hoverExplainKey')}</h4>
           <label>
             <select
               value={ai.hoverExplainKey ?? 'shift'}
@@ -709,7 +724,7 @@ export function AIPage({ profile, edit }: { profile: Profile; edit: (p: Partial<
         </>
       )}
 
-      <h4>{t('settings.repoChat')}</h4>
+      <h4><Bot size={14} /> {t('settings.repoChat')}</h4>
       <label className="settings-toggle-card">
         <input
           type="checkbox"
@@ -808,7 +823,7 @@ export function AIPage({ profile, edit }: { profile: Profile; edit: (p: Partial<
         </>
       )}
 
-      <h4>{t('settings.conflictStyle')}</h4>
+      <h4><GitMerge size={14} /> {t('settings.conflictStyle')}</h4>
       <label>
         <select
           value={ai.conflictStyle ?? 'clean'}
@@ -823,7 +838,7 @@ export function AIPage({ profile, edit }: { profile: Profile; edit: (p: Partial<
       </label>
       <span className="settings-hint">{t('settings.conflictStyleHint')}</span>
 
-      <h4>{t('settings.branchNamingStyle')}</h4>
+      <h4><GitBranch size={14} /> {t('settings.branchNamingStyle')}</h4>
       <label>
         <select
           value={ai.branchNamingStyle ?? 'prefix/description'}
@@ -1374,7 +1389,7 @@ function GraphStyleTab(): React.JSX.Element {
             ))}
           </div>
 
-          <h4 style={{ marginTop: 18 }}>{t('settings.graphDensity')}</h4>
+          <h4 style={{ marginTop: 18 }}><Rows3 size={14} /> {t('settings.graphDensity')}</h4>
           <div className="theme-mode-switch">
             {DENSITIES.map((d) => (
               <button
@@ -1388,7 +1403,7 @@ function GraphStyleTab(): React.JSX.Element {
             ))}
           </div>
 
-          <h4 style={{ marginTop: 18 }}>{t('settings.graphNodeStyle')}</h4>
+          <h4 style={{ marginTop: 18 }}><Circle size={14} /> {t('settings.graphNodeStyle')}</h4>
           <div className="theme-mode-switch">
             {NODE_STYLES.map((nstyle) => (
               <button
@@ -1431,7 +1446,7 @@ function GraphStyleTab(): React.JSX.Element {
           </div>
           <p className="settings-hint">{t(`graphTopology.${style.topology ?? 'full'}.desc` as TranslationKey)}</p>
 
-          <h4 style={{ marginTop: 18 }}>{t('settings.graphLineWidth')}</h4>
+          <h4 style={{ marginTop: 18 }}><Ruler size={14} /> {t('settings.graphLineWidth')}</h4>
           <div className="theme-mode-switch">
             {LINE_WIDTHS.map((w) => (
               <button
@@ -2007,7 +2022,10 @@ function DataManagementSection(): React.JSX.Element {
 
   return (
     <div>
-      <h4 className="settings-section-title">{t('settings.importExport')}</h4>
+      <h4 className="settings-section-title">
+        <ArrowDownUp size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />
+        {t('settings.importExport')}
+      </h4>
       <p className="settings-hint">{t('settings.importExportHint')}</p>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
         <button className="btn ghost small" onClick={() => void doImport()} disabled={importing}>
@@ -2332,7 +2350,10 @@ function GeneralPage(): React.JSX.Element {
         />
       </label>
 
-      <h4 className="settings-section-title">{t('settings.graph')}</h4>
+      <h4 className="settings-section-title">
+        <Network size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />
+        {t('settings.graph')}
+      </h4>
       <p className="settings-hint">{t('settings.graphIntro')}</p>
 
       <div className="settings-grid two">
@@ -2456,7 +2477,10 @@ function GeneralPage(): React.JSX.Element {
         </label>
       </div>
 
-      <h4 className="settings-section-title">{t('settings.behaviour')}</h4>
+      <h4 className="settings-section-title">
+        <ToggleLeft size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />
+        {t('settings.behaviour')}
+      </h4>
       <p className="settings-hint">{t('settings.behaviourIntro')}</p>
 
       <div className="settings-grid">
@@ -2562,7 +2586,7 @@ function GeneralPage(): React.JSX.Element {
         </span>
       </label>
 
-      <h4>{t('settings.analyzerMode')}</h4>
+      <h4><ScanSearch size={14} /> {t('settings.analyzerMode')}</h4>
       <label>
         <select
           value={settings.analyzerMode ?? 'onOpen'}
@@ -2575,19 +2599,31 @@ function GeneralPage(): React.JSX.Element {
       </label>
       <span className="settings-hint">{t('settings.analyzerModeHint')}</span>
 
-      <h4 className="settings-section-title">{t('rerere.title')}</h4>
+      <h4 className="settings-section-title">
+        <Repeat2 size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />
+        {t('rerere.title')}
+      </h4>
       <p className="settings-hint">{t('rerere.intro')}</p>
       <RerereCard />
 
-      <h4 className="settings-section-title">{t('difftool.title')}</h4>
+      <h4 className="settings-section-title">
+        <GitCompareArrows size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />
+        {t('difftool.title')}
+      </h4>
       <p className="settings-hint">{t('difftool.intro')}</p>
       <DiffToolCard />
 
-      <h4 className="settings-section-title">{t('settings.editor')}</h4>
+      <h4 className="settings-section-title">
+        <SquarePen size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />
+        {t('settings.editor')}
+      </h4>
       <p className="settings-hint">{t('settings.editorHint')}</p>
       <EditorCard />
 
-      <h4 className="settings-section-title">{t('settings.defaultOpenApp')}</h4>
+      <h4 className="settings-section-title">
+        <AppWindow size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />
+        {t('settings.defaultOpenApp')}
+      </h4>
       <p className="settings-hint">{t('settings.defaultOpenAppHint')}</p>
       <div className="settings-app-picker">
         <span className="settings-app-picker-name">

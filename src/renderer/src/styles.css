@@ -4059,6 +4059,23 @@ body.col-resizing .node-ava {
   white-space: nowrap;
 }
 
+/* While one of a repository's pages is showing, its name is the way back — so
+   it stops looking like a label and starts looking like a target. */
+.tab-name-back {
+  cursor: pointer;
+  border-radius: 5px;
+  padding: 1px 5px;
+  margin-inline: -3px;
+  transition: background 0.1s, color 0.1s;
+}
+.tab-name-back:hover {
+  background: var(--bg-3);
+  color: var(--text-1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .tab-name-back { transition: none; }
+}
+
 /* Pages that ride on a repository's tab. Small enough to read as part of the
    tab rather than as tabs of their own; the close affordance only appears on
    hover, so a row of chips does not turn into a row of ✕. */
@@ -4319,6 +4336,70 @@ body.col-resizing .node-ava {
 }
 .problems-missing { color: var(--yellow, #ff7a1a); }
 
+/* The dock's two tabs. They replace the panel title, so they carry its weight —
+   an unselected tab still has to read as a heading, not as a link. */
+.problems-tabs { display: inline-flex; gap: 2px; flex: none; }
+.prob-tab {
+  padding: 2px 8px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-2);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.prob-tab:hover { color: var(--text-1); background: var(--bg-2); }
+.prob-tab.on { color: var(--text-1); background: var(--bg-2); }
+
+.todo-groupby { display: inline-flex; gap: 2px; flex: none; }
+.todo-chip { padding-inline-start: 3px; }
+/* The tag is the row's anchor: fixed width would waste the line, so it is a
+   badge that shrinks to its word and never wraps. */
+.todo-tag {
+  flex: none;
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: var(--bg-2);
+  color: var(--text-2);
+  font-family: var(--mono, monospace);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+/* Only the tags that mean "this is broken" get a colour. Colouring all of them
+   turns the list into confetti and says nothing. */
+.todo-tag-fixme,
+.todo-tag-bug { background: color-mix(in srgb, var(--red, #ff5c7a) 18%, transparent); color: var(--red, #ff5c7a); }
+.todo-tag-hack,
+.todo-tag-xxx,
+.todo-tag-deprecated { background: color-mix(in srgb, var(--yellow, #ff7a1a) 18%, transparent); color: var(--yellow, #ff7a1a); }
+.todo-tag-todo { background: var(--accent-soft); color: var(--accent); }
+.todo-row .prob-msg { color: var(--text-1); }
+.todo-owner {
+  flex: none;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 10.5px;
+  font-weight: 650;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.todo-owner:hover { filter: brightness(1.15); }
+.problems-clear {
+  border: none;
+  background: transparent;
+  padding: 0;
+  color: var(--accent);
+  font-size: 11px;
+  cursor: pointer;
+}
+
 /* The status bar's chips come and go (no todos, a healthy doctor, no analyzer),
    and a separator either side of a chip that rendered nothing leaves two bars
    leaning on each other. The second one stands down. */
@@ -4327,6 +4408,7 @@ body.col-resizing .node-ava {
 /* The status-bar counter: three severities, the way VS Code taught it. */
 .status-problems-btn { gap: 3px; }
 .status-problems-btn.has-error { color: var(--red, #ff5c7a); }
+.status-ctodo-btn { gap: 4px; }
 
 /* ─── Configurable panel layout (terminal placement / sidebar side) ─────── */
 
@@ -15556,7 +15638,16 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .sb-todo.done .sb-name { text-decoration: line-through; color: var(--text-2); }
 
 
-.todos { display: flex; flex-direction: column; min-height: 0; position: relative; }
+/* The detail sheet is absolutely positioned inside this box, so a repository
+   with two todos would collapse the panel to a couple of rows and squash the
+   sheet flat — the floor is what keeps the sheet readable. */
+.todos {
+  display: flex;
+  flex-direction: column;
+  min-height: min(520px, 60vh);
+  position: relative;
+}
+
 .todos-toolbar { display: flex; align-items: center; gap: 10px; margin: 12px 0 8px; flex-wrap: wrap; }
 .todos-add-input {
   flex: 1;

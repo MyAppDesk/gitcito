@@ -54,6 +54,13 @@ gdy otworzysz panel albo naciśniesz odświeżenie — nigdy z własnej woli. Dl
 lista jest zdjęciem chwili: zmień plik, a będzie nieaktualna do kolejnego
 uruchomienia.
 
+**Wynik builda odpada.** Narzędzie wycelowane w katalog główny projektu sprawdza
+wszystko, co znajdzie, a znajduje też `.next/build/chunks`, spakowany `dist`,
+wciągniętą kopię — setki uwag o kodzie napisanym przez maszynę, które zasypują tę
+garstkę o twoim. Gitcito pyta gita, które pliki są ignorowane, i te odrzuca, ale
+nigdy pliku *śledzonego*: commitowanie wyniku builda to decyzja, którą
+`git check-ignore` szanuje. `node_modules` leci tak czy siak.
+
 ## Tylko to, co zmieniłeś
 
 Przełącznik w nagłówku odrzuca każdy problem w pliku, którego nie tknąłeś. To

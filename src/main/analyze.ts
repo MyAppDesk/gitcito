@@ -21,6 +21,8 @@ import type { AnalyzeResult, Problem, ProblemSeverity } from '../shared/types'
 const MAX_PROBLEMS = 5000
 /** A analyzer that has not answered by now is not going to be useful. */
 const ANALYZER_TIMEOUT = 120_000
+/** `git check-ignore` on a few thousand paths is one fast process, not a sweep. */
+const GIT_TIMEOUT = 20_000
 
 interface Analyzer {
   id: string
@@ -388,6 +390,39 @@ export function normaliseProblems(problems: Problem[]): Problem[] {
   )
 }
 
+/**
+ * Drop diagnostics about files git ignores.
+ *
+ * A tool pointed at the project root will happily lint whatever it finds, and
+ * what it finds includes generated output — `.next/build/chunks`, a bundled
+ * `dist`, a vendored copy. Hundreds of complaints about machine-written code
+ * bury the handful about yours, and the repository has already stated which
+ * files it does not care about. Tracked files are never dropped, even when a
+ * pattern matches them: committing generated output is a choice, and `git
+ * check-ignore` respects it.
+ */
+export async function dropIgnored(repoPath: string, problems: Problem[]): Promise<Problem[]> {
+  // Nothing in a dependency tree is ever the user's problem, ignored or not.
+  const candidates = problems.filter((p) => !p.file.split('/').includes('node_modules'))
+  const files = [...new Set(candidates.map((p) => p.file))]
+  if (files.length === 0) return candidates
+  const ignored = await new Promise<Set<string>>((done) => {
+    const child = execFile(
+      'git',
+      ['check-ignore', '--stdin', '-z'],
+      { cwd: repoPath, timeout: GIT_TIMEOUT, maxBuffer: 16 * 1024 * 1024, windowsHide: true },
+      (err, stdout) => {
+        // Exit 1 simply means "none of them are ignored"; anything worse (no
+        // git, not a repo) means we cannot tell, and we keep everything.
+        const failed = !!err && (!('code' in err) || (err.code !== 1 && err.code !== 0))
+        done(failed ? new Set() : new Set(stdout.toString().split('\0').filter(Boolean)))
+      }
+    )
+    child.stdin?.end(files.join('\0'))
+  })
+  return ignored.size === 0 ? candidates : candidates.filter((p) => !ignored.has(p.file))
+}
+
 /** Running sweeps, so a second click cancels rather than piling up. */
 const running = new Map<string, { kill(): void }[]>()
 
@@ -450,7 +485,7 @@ export async function analyzeRepo(repoPath: string): Promise<AnalyzeResult> {
   )
   running.delete(repoPath)
 
-  const problems = normaliseProblems(collected)
+  const problems = normaliseProblems(await dropIgnored(repoPath, collected))
   return {
     problems: problems.slice(0, MAX_PROBLEMS),
     ran,

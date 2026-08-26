@@ -52,6 +52,14 @@ saniyedir ve bu komutlar Gitcito’nun değil, deponun kendi araç zinciridir. P
 açtığında ya da yenilediğinde başlarlar, asla kendiliğinden. Liste bu yüzden bir
 anlık görüntüdür: bir dosyayı düzenle, yeniden çalıştırana kadar bayattır.
 
+**Üretilmiş çıktı elenir.** Proje köküne yöneltilmiş bir araç bulduğu her şeyi
+denetler; bulduğu şeylerin arasında `.next/build/chunks`, paketlenmiş bir `dist`,
+depoya alınmış bir kopya da vardır — makine yazımı koda dair yüzlerce şikâyet,
+seninkine dair bir avuç şikâyeti gömer. Gitcito git’e hangi dosyaların yok
+sayıldığını sorar ve onları eler; *izlenen* bir dosyayı ise asla elemez: üretilmiş
+çıktıyı commit’lemek bir tercihtir ve `git check-ignore` buna saygı duyar.
+`node_modules` her hâlükârda gider.
+
 ## Yalnızca senin değiştirdiklerin
 
 Başlıktaki düğme, dokunmadığın dosyalardaki her sorunu eler. Açık tutmaya değen

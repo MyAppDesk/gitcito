@@ -54,6 +54,14 @@ Partono quando apri il pannello o premi aggiorna, mai da soli. È anche il motiv
 per cui la lista è un’istantanea: modifica un file e resta vecchia finché non la
 rilanci.
 
+**L’output generato viene scartato.** Uno strumento puntato sulla radice del
+progetto analizza tutto ciò che trova, e ciò include `.next/build/chunks`, un
+`dist` impacchettato, una copia vendorizzata — centinaia di lamentele su codice
+scritto da una macchina che seppelliscono le poche sul tuo. Gitcito chiede a git
+quali file sono ignorati e scarta quelli, ma mai un file *tracciato*: committare
+l’output generato è una scelta, e `git check-ignore` la rispetta. `node_modules`
+se ne va comunque.
+
 ## Solo ciò che hai cambiato
 
 L’interruttore nell’intestazione scarta ogni problema in un file che non hai

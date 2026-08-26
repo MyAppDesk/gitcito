@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import { execFileSync } from 'node:child_process'
 import {
   parseDartAnalyze,
   parseTsc,
@@ -7,7 +8,8 @@ import {
   parseRuff,
   normaliseProblems,
   detectAnalyzers,
-  analyzerPlan
+  analyzerPlan,
+  dropIgnored
 } from '../src/main/analyze'
 import { mkdtempSync, mkdirSync, symlinkSync, writeFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -138,6 +140,43 @@ describe('problems: normalising the merged list', () => {
       ['a.ts', 'info'],
       ['b.ts', 'warning']
     ])
+  })
+})
+
+describe('problems: ignored files', () => {
+  const p = (file: string): never =>
+    ({ file, line: 1, col: 1, severity: 'error', message: 'm', source: 'eslint' }) as never
+
+  it('drops what git ignores and keeps what it tracks', async () => {
+    // A tool pointed at the project root lints generated output too; hundreds of
+    // complaints about machine-written code bury the ones about yours.
+    const dir = mkdtempSync(join(tmpdir(), 'gitcito-ignored-'))
+    try {
+      execFileSync('git', ['init', '-q'], { cwd: dir })
+      mkdirSync(join(dir, 'src'), { recursive: true })
+      writeFileSync(join(dir, '.gitignore'), '.next/\ndist/\n')
+      const kept = await dropIgnored(dir, [
+        p('src/app.ts'),
+        p('.next/build/chunks/[root-of-the-server]__51225daf._.js'),
+        p('dist/bundle.js'),
+        p('node_modules/lib/index.js')
+      ])
+      expect(kept.map((x) => x.file)).toEqual(['src/app.ts'])
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
+  it('keeps everything when git cannot answer', async () => {
+    // Outside a repository there is no opinion to honour — showing less than
+    // the analyzers found would be the worse failure.
+    const dir = mkdtempSync(join(tmpdir(), 'gitcito-nogit-'))
+    try {
+      const kept = await dropIgnored(dir, [p('src/app.ts'), p('dist/bundle.js')])
+      expect(kept).toHaveLength(2)
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
   })
 })
 

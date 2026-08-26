@@ -54,6 +54,14 @@ Gitcito. Arrancan cuando abres el panel o pulsas actualizar, nunca por su
 cuenta. Por eso la lista es una foto fija: edita un archivo y queda obsoleta
 hasta que la vuelvas a ejecutar.
 
+**La salida de build se descarta.** Una herramienta apuntada a la raíz del
+proyecto analiza lo que encuentre, y lo que encuentra incluye
+`.next/build/chunks`, un `dist` empaquetado, una copia vendorizada — cientos de
+quejas sobre código escrito por máquinas que entierran las pocas sobre el tuyo.
+Gitcito le pregunta a git qué archivos están ignorados y los descarta, pero nunca
+descarta un archivo *rastreado*: commitear la salida generada es una decisión, y
+`git check-ignore` la respeta. `node_modules` se va igualmente.
+
 ## Solo lo que has cambiado
 
 El interruptor de la cabecera descarta todos los problemas de archivos que no

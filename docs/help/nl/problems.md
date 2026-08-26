@@ -53,6 +53,14 @@ Gitcito. Ze starten wanneer je het paneel opent of ververst, nooit vanzelf.
 Daarom is de lijst een momentopname: bewerk een bestand en hij is verouderd tot
 je opnieuw draait.
 
+**Gegenereerde uitvoer valt af.** Gereedschap dat op de projectroot is gericht
+controleert alles wat het vindt, en dat omvat `.next/build/chunks`, een gebundelde
+`dist`, een meegeleverde kopie — honderden klachten over machinaal geschreven code
+die de handvol over die van jou bedelven. Gitcito vraagt git welke bestanden
+genegeerd zijn en laat die vallen, en nooit een *gevolgd* bestand: gegenereerde
+uitvoer committen is een keuze, en `git check-ignore` respecteert die.
+`node_modules` gaat er sowieso uit.
+
 ## Alleen wat je hebt gewijzigd
 
 De schakelaar in de kop gooit elk probleem weg in een bestand dat je niet hebt

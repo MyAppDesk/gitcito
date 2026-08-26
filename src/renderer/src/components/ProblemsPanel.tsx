@@ -134,7 +134,13 @@ export function ProblemsPanel({ repoPath }: { repoPath: string }): React.JSX.Ele
                 <span className="prob-file-count">{g.problems.length}</span>
               </div>
               {g.problems.map((p, i) => (
-                <button key={`${p.line}:${p.col}:${i}`} className="prob-row" onClick={() => open(p)}>
+                <button
+                  key={`${p.line}:${p.col}:${i}`}
+                  className="prob-row"
+                  // The row ellipsises; a long analyzer message keeps its tail here.
+                  title={p.message}
+                  onClick={() => open(p)}
+                >
                   {severityIcon(p.severity)}
                   <span className="prob-msg">{p.message}</span>
                   {p.code && <span className="prob-code">{p.code}</span>}

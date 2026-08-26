@@ -53,6 +53,13 @@ They start when you open the dock or press refresh, and never on their own. That
 is also why the list is a snapshot: edit a file and it is stale until you run it
 again.
 
+**Generated output is dropped.** A tool pointed at the project root lints
+whatever it finds, and what it finds includes `.next/build/chunks`, a bundled
+`dist`, a vendored copy — hundreds of complaints about machine-written code that
+bury the handful about yours. Gitcito asks git which files are ignored and drops
+those, and never drops a *tracked* file: committing generated output is a
+choice, and `git check-ignore` respects it. `node_modules` goes regardless.
+
 ## Only what you changed
 
 The toggle in the header drops every problem in a file you have not touched.

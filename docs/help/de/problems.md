@@ -54,6 +54,15 @@ von Gitcito. Sie starten, wenn du die Leiste öffnest oder aktualisierst, sonst
 nie. Deshalb ist die Liste eine Momentaufnahme: Bearbeite eine Datei, und sie ist
 veraltet, bis du erneut ausführst.
 
+**Generierte Ausgabe fliegt raus.** Ein Werkzeug, das auf das Projektwurzel-
+verzeichnis zeigt, prüft alles, was es findet — und dazu gehören
+`.next/build/chunks`, ein gebündeltes `dist`, eine eingecheckte Kopie: Hunderte
+Beschwerden über maschinengeschriebenen Code, die die Handvoll über deinen
+begraben. Gitcito fragt git, welche Dateien ignoriert sind, und wirft diese weg —
+aber nie eine *versionierte* Datei: generierte Ausgabe einzuchecken ist eine
+Entscheidung, und `git check-ignore` respektiert sie. `node_modules` fliegt
+ohnehin.
+
 ## Nur was du geändert hast
 
 Der Schalter in der Kopfzeile wirft jedes Problem aus Dateien weg, die du nicht

@@ -53,6 +53,14 @@ começam quando você abre o painel ou aperta atualizar, nunca por conta própri
 Por isso a lista é um retrato: edite um arquivo e ela fica velha até você rodar
 de novo.
 
+**Saída gerada é descartada.** Uma ferramenta apontada para a raiz do projeto
+analisa o que encontrar, e o que encontra inclui `.next/build/chunks`, um `dist`
+empacotado, uma cópia vendorizada — centenas de reclamações sobre código escrito
+por máquina que enterram as poucas sobre o seu. O Gitcito pergunta ao git quais
+arquivos são ignorados e descarta esses, e nunca descarta um arquivo
+*rastreado*: commitar saída gerada é uma escolha, e `git check-ignore` a
+respeita. `node_modules` sai de qualquer jeito.
+
 ## Só o que você mudou
 
 O botão do cabeçalho descarta todo problema em arquivo que você não tocou. Essa é

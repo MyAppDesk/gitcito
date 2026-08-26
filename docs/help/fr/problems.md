@@ -54,6 +54,14 @@ celle de Gitcito. Elles démarrent quand vous ouvrez le panneau ou appuyez sur
 actualiser, jamais d’elles-mêmes. C’est aussi pourquoi la liste est un
 instantané : modifiez un fichier et elle est périmée jusqu’à la relance.
 
+**La sortie générée est écartée.** Un outil pointé sur la racine du projet
+analyse tout ce qu’il trouve, et cela inclut `.next/build/chunks`, un `dist`
+bundlé, une copie vendorisée — des centaines de plaintes sur du code écrit par
+une machine, qui enterrent la poignée qui parle du vôtre. Gitcito demande à git
+quels fichiers sont ignorés et les écarte, sans jamais écarter un fichier
+*suivi* : committer la sortie générée est un choix, et `git check-ignore` le
+respecte. `node_modules` part de toute façon.
+
 ## Seulement ce que vous avez changé
 
 L’interrupteur de l’en-tête écarte tout problème situé dans un fichier que vous

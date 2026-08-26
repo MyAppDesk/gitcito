@@ -75,6 +75,8 @@ Aynı görünüm süzgeç kutusunu, **Tamamlananları göster** anahtarını ve
 **Tamamlananları temizle**’yi taşır; sonuncusu işaretlileri kalıcı olarak siler
 ve önce sorar.
 
+Bu anahtar, **Ayarlar → Görünüm → Tamamlanan görevleri gizle** ile aynı anahtardır: kapattığınızda işaretli görevler hem bu listeden hem de kenar çubuğu bölümünden kaybolur. Hiçbir şey silinmez ve sayaçlar onları saymaya devam eder.
+
 ## Bilerek yapmadıkları
 
 - **Son tarih yok, hatırlatma yok, bildirim yok.** Dırdır eden bir görev listesi

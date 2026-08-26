@@ -78,6 +78,8 @@ con su panel de detalle.
 Esa misma vista trae el filtro, el conmutador **Mostrar completadas** y **Borrar
 completadas**, que elimina lo marcado para siempre y pregunta antes.
 
+Ese conmutador es el mismo interruptor que **Ajustes → Apariencia → Ocultar tareas completadas**: al desactivarlo, las tareas marcadas desaparecen tanto de esta lista como de la sección de la barra lateral. No se borra nada y los recuentos siguen incluyéndolas.
+
 ## Lo que a propósito no hace
 
 - **Ni fechas límite, ni recordatorios, ni notificaciones.** Una lista de tareas

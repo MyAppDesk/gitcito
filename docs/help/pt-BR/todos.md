@@ -78,6 +78,8 @@ detalhe.
 A mesma visão traz o filtro, a chave **Mostrar concluídas** e **Limpar
 concluídas**, que apaga as marcadas de vez e pergunta antes.
 
+Essa chave é o mesmo interruptor de **Configurações → Aparência → Ocultar tarefas concluídas**: ao desligá-la, as tarefas marcadas somem tanto desta lista quanto da seção da barra lateral. Nada é apagado e as contagens continuam incluindo elas.
+
 ## O que ela deliberadamente não faz
 
 - **Sem prazos, sem lembretes, sem notificações.** Uma lista de tarefas que

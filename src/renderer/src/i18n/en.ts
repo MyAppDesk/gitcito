@@ -651,6 +651,8 @@ export const en = {
   'settings.avatarMotionHint': 'The avatar in the title bar breathes and blinks. Its expression still follows the repository when this is off.',
   'settings.groupBranches': 'Group refs by prefix',
   'settings.groupBranchesHint': 'Fold branches, remote branches and tags into collapsible folders by their “/” prefix (feature/*, release/*). A prefix with only one ref stays flat.',
+  'settings.todosHideDone': 'Hide completed todos',
+  'settings.todosHideDoneHint': 'Ticked todos drop out of the sidebar section and the todo list. Nothing is deleted — the counts still include them.',
   'settings.behaviour': 'Behaviour',
   'settings.autoFetch': 'Auto-fetch every (minutes)',
   'settings.autoFetchHint': '0 disables automatic background fetching.',

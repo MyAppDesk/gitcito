@@ -658,6 +658,8 @@ export const uk: Dict = {
   'settings.avatarMotionHint': 'Аватар у заголовку вікна дихає та блимає. Його вираз усе одно відповідає стану репозиторію, коли це вимкнено.',
   'settings.groupBranches': 'Групувати ref за префіксом',
   'settings.groupBranchesHint': 'Складати гілки, віддалені гілки й теги у згортані теки за префіксом до «/» (feature/*, release/*). Префікс з єдиним ref лишається пласким.',
+  'settings.todosHideDone': 'Приховувати виконані завдання',
+  'settings.todosHideDoneHint': 'Позначені завдання зникають із розділу бічної панелі та зі списку. Нічого не видаляється — лічильники досі їх враховують.',
   'settings.behaviour': 'Поведінка',
   'settings.autoFetch': 'Автоматичний fetch кожні (хвилин)',
   'settings.autoFetchHint': '0 вимикає автоматичне фонове отримання.',

@@ -643,6 +643,8 @@ export const fr: Dict = {
   'settings.avatarMotionHint': 'L’avatar de la barre de titre respire et clignote. Son expression suit le dépôt même lorsque c’est désactivé.',
   'settings.groupBranches': 'Grouper les réfs par préfixe',
   'settings.groupBranchesHint': 'Replie les branches, les branches distantes et les étiquettes dans des dossiers repliables selon leur préfixe « / » (feature/*, release/*). Un préfixe qui n’a qu’une seule réf reste à plat.',
+  'settings.todosHideDone': 'Masquer les tâches terminées',
+  'settings.todosHideDoneHint': 'Les tâches cochées disparaissent de la section de la barre latérale et de la liste. Rien n’est supprimé : les compteurs les comptent toujours.',
   'settings.behaviour': 'Comportement',
   'settings.autoFetch': 'Récupération automatique toutes les (minutes)',
   'settings.autoFetchHint': '0 désactive la récupération automatique en arrière-plan.',

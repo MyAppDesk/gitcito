@@ -1593,6 +1593,10 @@ export interface LaunchGroup {
   tasks: LaunchTask[]
   /** `inputs` definitions, used to prompt for `${input:id}` before launching. */
   inputs: LaunchInput[]
+  /** The folder's `package.json` scripts — how the renderer sees through an
+   *  `npm run dev` to the dev server it actually starts. Empty when there is
+   *  no package.json. */
+  scripts: Record<string, string>
 }
 
 export type LaunchStatus = 'running' | 'paused' | 'exited'
@@ -2675,6 +2679,9 @@ export interface AppSettings {
   /** Per-repository todo lists, keyed by canonical repo path. Absent for a
    *  repository nobody has written a todo for. */
   repoTodos?: Record<string, RepoTodo[]>
+  /** Hide ticked todos in the sidebar section and the todo list. The entries
+   *  are kept — only the display drops them. */
+  todosHideDone: boolean
   autoFetchMinutes: number
   /** Raise an OS notification for new review-requested / CI inbox items. */
   desktopNotifications?: boolean
@@ -3042,6 +3049,7 @@ export function defaultSettings(): AppSettings {
     customGraphPalettes: [],
     repoLayouts: {},
     repoTodos: {},
+    todosHideDone: false,
     autoFetchMinutes: 5,
     desktopNotifications: false,
     confirmForcePush: true,

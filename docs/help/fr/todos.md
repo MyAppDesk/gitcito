@@ -79,6 +79,8 @@ La même vue porte le champ de filtre, l'interrupteur **Afficher les tâches
 terminées** et **Effacer les terminées**, qui supprime définitivement les tâches
 cochées, après confirmation.
 
+Cet interrupteur est le même que **Réglages → Apparence → Masquer les tâches terminées** : en le désactivant, les tâches cochées disparaissent de cette liste comme de la section de la barre latérale. Rien n'est supprimé, et les compteurs continuent de les compter.
+
 ## Ce qu'elles ne font délibérément pas
 
 - **Ni échéances, ni rappels, ni notifications.** Une liste de tâches qui

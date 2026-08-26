@@ -659,6 +659,8 @@ export const nl: Dict = {
   'settings.avatarMotionHint': 'De avatar in de titelbalk ademt en knippert. Zijn uitdrukking volgt de repository ook als dit uit staat.',
   'settings.groupBranches': 'Refs groeperen op prefix',
   'settings.groupBranchesHint': 'Vouw branches, remote branches en tags op hun “/”-prefix (feature/*, release/*) samen in inklapbare mappen. Een prefix met maar één ref blijft plat staan.',
+  'settings.todosHideDone': 'Voltooide taken verbergen',
+  'settings.todosHideDoneHint': 'Afgevinkte taken verdwijnen uit het zijbalkonderdeel en uit de lijst. Er wordt niets verwijderd — de tellingen nemen ze nog steeds mee.',
   'settings.behaviour': 'Gedrag',
   'settings.autoFetch': 'Automatisch fetchen elke (minuten)',
   'settings.autoFetchHint': '0 schakelt automatisch fetchen op de achtergrond uit.',

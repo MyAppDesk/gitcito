@@ -643,6 +643,8 @@ export const tr: Dict = {
   'settings.avatarMotionHint': 'Başlık çubuğundaki avatar nefes alır ve göz kırpar. Bu kapalıyken de ifadesi depoyu izlemeye devam eder.',
   'settings.groupBranches': 'Ref’leri öneke göre grupla',
   'settings.groupBranchesHint': 'Dalları, uzak dalları ve etiketleri “/” öneklerine göre katlanabilir klasörlere toplar (feature/*, release/*). Tek ref içeren bir önek düz kalır.',
+  'settings.todosHideDone': 'Tamamlanan görevleri gizle',
+  'settings.todosHideDoneHint': 'İşaretlenen görevler kenar çubuğu bölümünden ve listeden çıkar. Hiçbir şey silinmez — sayaçlar onları saymaya devam eder.',
   'settings.behaviour': 'Davranış',
   'settings.autoFetch': 'Otomatik getirme aralığı (dakika)',
   'settings.autoFetchHint': '0 arka planda otomatik getirmeyi kapatır.',

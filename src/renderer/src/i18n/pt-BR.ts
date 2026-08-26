@@ -659,6 +659,8 @@ export const ptBR: Dict = {
   'settings.avatarMotionHint': 'O avatar na barra de título respira e pisca. A expressão dele continua seguindo o repositório mesmo desativado.',
   'settings.groupBranches': 'Agrupar refs por prefixo',
   'settings.groupBranchesHint': 'Dobra branches, branches remotas e tags em pastas recolhíveis pelo prefixo antes da “/” (feature/*, release/*). Um prefixo com uma ref só continua solto.',
+  'settings.todosHideDone': 'Ocultar tarefas concluídas',
+  'settings.todosHideDoneHint': 'As tarefas marcadas saem da seção da barra lateral e da lista. Nada é apagado — as contagens continuam incluindo elas.',
   'settings.behaviour': 'Comportamento',
   'settings.autoFetch': 'Fetch automático a cada (minutos)',
   'settings.autoFetchHint': '0 desliga o fetch automático em segundo plano.',

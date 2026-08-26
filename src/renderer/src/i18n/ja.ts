@@ -643,6 +643,8 @@ export const ja: Dict = {
   'settings.avatarMotionHint': 'タイトルバーのアバターが呼吸してまばたきします。オフにしても表情はリポジトリの状態に合わせて変わります。',
   'settings.groupBranches': '接頭辞で ref をまとめる',
   'settings.groupBranchesHint': 'ブランチ、リモートブランチ、タグを「/」の接頭辞（feature/*、release/*）ごとに、折りたためるフォルダーへまとめます。ref が 1 つしかない接頭辞はそのまま並びます。',
+  'settings.todosHideDone': '完了したタスクを隠す',
+  'settings.todosHideDoneHint': 'チェックしたタスクはサイドバーのセクションとタスク一覧から消えます。削除はされず、件数には引き続き含まれます。',
   'settings.behaviour': '動作',
   'settings.autoFetch': '自動フェッチの間隔（分）',
   'settings.autoFetchHint': '0 にすると、バックグラウンドの自動フェッチを無効にします。',

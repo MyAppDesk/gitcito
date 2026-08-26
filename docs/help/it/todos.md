@@ -78,6 +78,8 @@ con il pannello di dettaglio.
 La stessa vista porta il filtro, l'interruttore **Mostra completate** e **Elimina
 completate**, che cancella per sempre le spuntate e chiede prima di farlo.
 
+Quell'interruttore è lo stesso di **Impostazioni → Aspetto → Nascondi le attività completate**: spegnendolo, le attività spuntate spariscono sia da questo elenco sia dalla sezione della barra laterale. Non viene eliminato nulla e i conteggi continuano a includerle.
+
 ## Ciò che deliberatamente non fa
 
 - **Niente scadenze, niente promemoria, niente notifiche.** Un elenco di attività

@@ -78,6 +78,8 @@ Detailbereich zu öffnen.
 Dieselbe Ansicht trägt das Filterfeld, den Schalter **Erledigte anzeigen** und
 **Erledigte löschen** — das entfernt Abgehaktes endgültig und fragt vorher.
 
+Dieser Schalter ist derselbe wie **Einstellungen → Darstellung → Erledigte Aufgaben ausblenden**: schaltest du ihn aus, verschwinden abgehakte Aufgaben aus dieser Liste und aus dem Seitenleisten-Abschnitt. Gelöscht wird nichts, und die Zähler berücksichtigen sie weiterhin.
+
 ## Was sie bewusst nicht tut
 
 - **Keine Fälligkeitsdaten, keine Erinnerungen, keine Benachrichtigungen.** Eine

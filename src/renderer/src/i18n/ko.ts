@@ -658,6 +658,8 @@ export const ko: Dict = {
   'settings.avatarMotionHint': '제목 표시줄의 아바타가 숨을 쉬고 눈을 깜빡입니다. 꺼져 있어도 표정은 저장소 상태를 따릅니다.',
   'settings.groupBranches': '접두사로 ref 묶기',
   'settings.groupBranchesHint': '브랜치, 원격 브랜치, 태그를 “/” 접두사(feature/*, release/*)에 따라 접을 수 있는 폴더로 묶습니다. ref가 하나뿐인 접두사는 그대로 둡니다.',
+  'settings.todosHideDone': '완료한 할 일 숨기기',
+  'settings.todosHideDoneHint': '체크한 할 일이 사이드바 섹션과 할 일 목록에서 사라집니다. 삭제되지는 않으며 개수에는 계속 포함됩니다.',
   'settings.behaviour': '동작',
   'settings.autoFetch': '자동 페치 주기 (분)',
   'settings.autoFetchHint': '0으로 두면 백그라운드 자동 페치를 끕니다.',

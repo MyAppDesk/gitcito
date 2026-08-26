@@ -658,6 +658,8 @@ export const ar: Dict = {
   'settings.avatarMotionHint': 'تتنفّس الصورة في شريط العنوان وترمش. ويبقى تعبيرها يتبع حالة المستودع حتى عند إيقاف هذا الخيار.',
   'settings.groupBranches': 'تجميع المراجع حسب البادئة',
   'settings.groupBranchesHint': 'اطوِ الفروع والفروع البعيدة والوسوم في مجلدات قابلة للطي حسب البادئة قبل «/» (feature/*، release/*). وتبقى البادئة التي لها مرجع واحد فقط مسطّحة.',
+  'settings.todosHideDone': 'إخفاء المهام المكتملة',
+  'settings.todosHideDoneHint': 'تختفي المهام المؤشَّرة من قسم الشريط الجانبي ومن قائمة المهام. لا يُحذف شيء — وتظل الأعداد تحتسبها.',
   'settings.behaviour': 'السلوك',
   'settings.autoFetch': 'الجلب التلقائي كل (دقائق)',
   'settings.autoFetchHint': 'القيمة 0 تعطّل الجلب التلقائي في الخلفية.',

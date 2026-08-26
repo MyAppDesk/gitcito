@@ -31,7 +31,11 @@ export function TodosModal({ repoPath, focusId }: { repoPath: string; focusId?: 
   const [draft, setDraft] = useState('')
   const [draftPriority, setDraftPriority] = useState<TodoPriority>('normal')
   const [query, setQuery] = useState('')
-  const [showDone, setShowDone] = useState(true)
+  // One switch, two surfaces: the same setting the sidebar reads, so ticking it
+  // here is not a per-modal preference that silently disagrees with the tree.
+  const showDone = !useSettingsStore((s) => s.settings.todosHideDone)
+  const setShowDone = (on: boolean): void =>
+    store.getState().update((s) => ({ ...s, todosHideDone: !on }))
   const [selId, setSelId] = useState<string | undefined>(focusId)
   const addRef = useRef<HTMLInputElement>(null)
 

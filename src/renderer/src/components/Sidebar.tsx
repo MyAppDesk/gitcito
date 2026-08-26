@@ -251,6 +251,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   // Todos are app state, not repository state: they live in settings keyed by
   // canonical path, so the same repo opened twice shows one list.
   const todosByRepo = useSettingsStore((s) => s.settings.repoTodos)
+  const hideDoneTodos = useSettingsStore((s) => s.settings.todosHideDone)
   const todos = useMemo(
     () => todosByRepo?.[canonicalRepoPath(repo.path)] ?? [],
     [todosByRepo, repo.path]
@@ -1709,7 +1710,9 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   )
 
   // ─── Todos ───
-  const sortedTodos = sortTodos(todos)
+  // The done pile is hidden here, not deleted — the counts below still read
+  // from the full list so the badge does not lie about what exists.
+  const sortedTodos = hideDoneTodos ? sortTodos(todos).filter((td) => !td.done) : sortTodos(todos)
   const todoCounts = todoSummary(todos)
   const PRIORITY_LABEL: Record<RepoTodo['priority'], TranslationKey> = {
     high: 'todos.priorityHigh',

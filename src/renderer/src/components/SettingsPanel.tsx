@@ -2423,6 +2423,21 @@ function GeneralPage(): React.JSX.Element {
             <span className="settings-hint">{t('settings.groupBranchesHint')}</span>
           </span>
         </label>
+
+        <label className="settings-toggle-card">
+          <input
+            type="checkbox"
+            checked={settings.todosHideDone}
+            onChange={(e) => update((s) => ({ ...s, todosHideDone: e.target.checked }))}
+          />
+          <span className="settings-toggle-control" aria-hidden="true">
+            <span className="settings-toggle-thumb" />
+          </span>
+          <span className="settings-toggle-copy">
+            <strong>{t('settings.todosHideDone')}</strong>
+            <span className="settings-hint">{t('settings.todosHideDoneHint')}</span>
+          </span>
+        </label>
       </div>
 
       <h4 className="settings-section-title">{t('settings.behaviour')}</h4>

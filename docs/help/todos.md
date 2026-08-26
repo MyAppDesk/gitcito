@@ -75,6 +75,8 @@ the command palette — to open the full list with a detail pane.
 The same view carries the filter box, a **Show completed** toggle, and **Clear
 completed** — which deletes the ticked items for good and asks first.
 
+That toggle is the same switch as **Settings → Appearance → Hide completed todos**: turn it off and ticked items vanish from the sidebar section as well as from this list. Nothing is deleted, and the counts keep including them.
+
 ## What it deliberately does not do
 
 - **No due dates, no reminders, no notifications.** A todo list that nags is a

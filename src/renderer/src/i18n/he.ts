@@ -658,6 +658,8 @@ export const he: Dict = {
   'settings.avatarMotionHint': 'האווטר בשורת הכותרת נושם ומצמץ. הבעת הפנים שלו ממשיכה לעקוב אחרי המאגר גם כשזה כבוי.',
   'settings.groupBranches': 'קיבוץ refs לפי קידומת',
   'settings.groupBranchesHint': 'קיפול ענפים, ענפים מרוחקים ותגיות לתיקיות מתקפלות לפי הקידומת שלפני ה־״/״ (feature/*, release/*). קידומת עם ref יחיד נשארת שטוחה.',
+  'settings.todosHideDone': 'הסתרת משימות שהושלמו',
+  'settings.todosHideDoneHint': 'משימות מסומנות נעלמות ממקטע סרגל הצד ומרשימת המשימות. שום דבר לא נמחק — הספירות עדיין כוללות אותן.',
   'settings.behaviour': 'התנהגות',
   'settings.autoFetch': 'הבאה אוטומטית כל (דקות)',
   'settings.autoFetchHint': 'הערך 0 מבטל הבאה אוטומטית ברקע.',

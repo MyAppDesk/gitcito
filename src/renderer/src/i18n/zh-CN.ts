@@ -658,6 +658,8 @@ export const zhCN: Dict = {
   'settings.avatarMotionHint': '标题栏中的头像会呼吸和眨眼。关闭后表情仍会跟随仓库状态。',
   'settings.groupBranches': '按前缀分组 ref',
   'settings.groupBranchesHint': '把分支、远程分支和标签按「/」前缀（feature/*、release/*）折叠进可展开的文件夹。只有一个 ref 的前缀保持平铺。',
+  'settings.todosHideDone': '隐藏已完成的待办',
+  'settings.todosHideDoneHint': '勾选过的待办会从侧边栏分区和待办列表中消失。不会删除任何内容——计数里仍然包含它们。',
   'settings.behaviour': '行为',
   'settings.autoFetch': '自动获取间隔（分钟）',
   'settings.autoFetchHint': '设为 0 可关闭后台自动获取。',

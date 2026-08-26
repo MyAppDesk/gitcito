@@ -1601,6 +1601,34 @@ export interface LaunchGroup {
 
 export type LaunchStatus = 'running' | 'paused' | 'exited'
 
+/** One diagnostic from a project's own analyzer, normalised across tools. */
+export type ProblemSeverity = 'error' | 'warning' | 'info'
+
+export interface Problem {
+  /** Repo-relative, forward slashes — the key the UI groups and filters on. */
+  file: string
+  line: number
+  col: number
+  severity: ProblemSeverity
+  message: string
+  /** The tool's own code (`TS2304`, `unused_import`, an ESLint rule id). */
+  code?: string
+  /** Which analyzer said so (`dart`, `tsc`, `eslint`, …). */
+  source: string
+}
+
+export interface AnalyzeResult {
+  problems: Problem[]
+  /** Analyzers that ran, in the order they finished. */
+  ran: string[]
+  /** Analyzers the project asks for but the machine could not run. */
+  missing: string[]
+  /** True when the problem list hit its cap and was cut short. */
+  truncated: boolean
+  /** Wall-clock of the whole sweep, for the panel's footer. */
+  ms: number
+}
+
 /** Where a launch config can be pointed: a handset, a simulator, this desktop. */
 export type DevicePlatform = 'ios' | 'android' | 'macos' | 'windows' | 'linux' | 'web' | 'other'
 

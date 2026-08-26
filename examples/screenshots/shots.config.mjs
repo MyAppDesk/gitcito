@@ -1133,6 +1133,26 @@ export const shots = [
     }
   },
   {
+    // The Problems dock: what the project's own analyzers said, grouped by
+    // file. The playground repo ships stand-in tsc / eslint binaries in
+    // node_modules/.bin, so the shot exercises the real detect → run → parse
+    // path and prints the same diagnostics every time.
+    out: 'problems',
+    repos: ['analyzer-problems'],
+    themes: ['dark'],
+    appTheme: 'midnight',
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['analyzer-problems']
+      await page.evaluate((p) => {
+        const s = window.__shot
+        s.repo.getState().select(p, { type: 'wip' })
+        s.ui.getState().setProblemsOpen(p, true)
+      }, repo)
+      // The sweep spawns both analyzers; give them a moment to answer.
+      await page.waitForTimeout(2600)
+    }
+  },
+  {
     // Run target — the device picker next to the LAUNCH tab.
     //
     // Driven by a fake SDK tree rather than the real `flutter` / `adb` /

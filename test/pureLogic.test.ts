@@ -33,6 +33,7 @@ import {
   primaryActions,
   overflowActions
 } from '../src/renderer/src/lib/launchActions'
+import { countBySeverity, filterProblems, groupByFile, baseName, dirName } from '../src/renderer/src/lib/problems'
 import {
   deviceFamily,
   familyPlatforms,
@@ -4330,6 +4331,58 @@ describe('launch hot actions (detectHotRuntime)', () => {
     expect(overflowActions(flutter).length).toBeGreaterThan(0)
     // Everything is one or the other, nothing is both.
     expect(primaryActions(flutter).length + overflowActions(flutter).length).toBe(flutter.actions.length)
+  })
+})
+
+describe('problems panel filtering', () => {
+  const p = (file: string, severity: 'error' | 'warning' | 'info', message: string, code?: string): never =>
+    ({ file, line: 1, col: 1, severity, message, source: 'tsc', ...(code ? { code } : {}) }) as never
+  const all = [
+    p('src/a.ts', 'error', 'Cannot find name x', 'TS2304'),
+    p('src/a.ts', 'warning', 'Unused variable'),
+    p('src/deep/b.ts', 'info', 'Consider const'),
+    p('README.md', 'warning', 'Trailing space')
+  ]
+
+  it('counts by severity', () => {
+    expect(countBySeverity(all)).toEqual({ error: 1, warning: 2, info: 1 })
+  })
+
+  it('treats an empty severity list as no filter, not as nothing', () => {
+    // The chips start unlit: that has to mean "show everything".
+    const base = { severities: [], changedOnly: false, changedFiles: [], query: '' }
+    expect(filterProblems(all, base)).toHaveLength(4)
+    expect(filterProblems(all, { ...base, severities: ['error'] })).toHaveLength(1)
+  })
+
+  it('narrows to the files with uncommitted changes', () => {
+    const out = filterProblems(all, {
+      severities: [],
+      changedOnly: true,
+      changedFiles: ['src/a.ts'],
+      query: ''
+    })
+    expect(out.map((x) => x.file)).toEqual(['src/a.ts', 'src/a.ts'])
+  })
+
+  it('searches the message, the path, the code and the tool', () => {
+    const base = { severities: [], changedOnly: false, changedFiles: [] }
+    expect(filterProblems(all, { ...base, query: 'unused' })).toHaveLength(1)
+    expect(filterProblems(all, { ...base, query: 'deep/' })).toHaveLength(1)
+    expect(filterProblems(all, { ...base, query: 'ts2304' })).toHaveLength(1)
+    expect(filterProblems(all, { ...base, query: 'tsc' })).toHaveLength(4)
+  })
+
+  it('groups by file, keeping the incoming order and counting each group', () => {
+    const groups = groupByFile(all)
+    expect(groups.map((g) => g.file)).toEqual(['src/a.ts', 'src/deep/b.ts', 'README.md'])
+    expect(groups[0].counts).toEqual({ error: 1, warning: 1, info: 0 })
+  })
+
+  it('splits a path into the name and the directory', () => {
+    expect(baseName('src/deep/b.ts')).toBe('b.ts')
+    expect(dirName('src/deep/b.ts')).toBe('src/deep')
+    expect(dirName('README.md')).toBe('')
   })
 })
 

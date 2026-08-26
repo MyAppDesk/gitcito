@@ -69,7 +69,8 @@ const EXPECTED = [
   'untracked-mess',
   'attributes',
   'teammate-radar',
-  'local-ci'
+  'local-ci',
+  'analyzer-problems'
 ]
 
 describe('playground fixtures', () => {

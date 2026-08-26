@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { GitMerge, FolderOpen, Download, ArrowDownToLine, Bug, LifeBuoy, MessageSquare, X, CheckSquare, Stethoscope } from 'lucide-react'
+import { GitMerge, FolderOpen, Download, ArrowDownToLine, Bug, LifeBuoy, MessageSquare, X, CheckSquare, Stethoscope, CircleX, TriangleAlert, Info } from 'lucide-react'
 import { takeAccountsNotice, useSettingsStore } from './stores/settings'
 import { useRepoStore, repoActions, type RepoData } from './stores/repo'
 import { useUIStore } from './stores/ui'
@@ -21,6 +21,9 @@ import { CommitDetails } from './components/CommitDetails'
 import { StashDetails } from './components/StashDetails'
 import { CommitComposer } from './components/CommitComposer'
 import { TerminalContainer } from './components/TerminalContainer'
+import { ProblemsPanel } from './components/ProblemsPanel'
+import { useProblemsStore } from './stores/problems'
+import { countBySeverity } from './lib/problems'
 import { DebugToolbar } from './components/DebugToolbar'
 import { ContextMenu } from './components/ContextMenu'
 import { ModalHost } from './components/ModalHost'
@@ -336,6 +339,44 @@ function TodoStatusChip({ path }: { path: string }): React.JSX.Element | null {
 }
 
 /**
+ * The analyzers' verdict, in the shape VS Code taught everyone to read:
+ * errors, warnings, infos. Clicking opens the dock.
+ *
+ * Only shown for a repo that actually asks for an analyzer — a counter reading
+ * three zeroes on a repo with no toolchain says nothing and takes up room.
+ */
+function ProblemsStatusChip({ path }: { path: string }): React.JSX.Element | null {
+  const t = useT()
+  const available = useProblemsStore((s) => s.availableByRepo[path])
+  const result = useProblemsStore((s) => s.resultByRepo[path])
+  const detect = useProblemsStore((s) => s.detect)
+  const toggleProblems = useUIStore((s) => s.toggleProblems)
+  useEffect(() => {
+    if (available === undefined) void detect(path)
+  }, [path, available, detect])
+  if (!available || available.length === 0) return null
+  const counts = countBySeverity(result?.problems ?? [])
+  return (
+    <button
+      className={`status-issue-btn status-problems-btn ${counts.error > 0 ? 'has-error' : ''}`}
+      title={interp(t('problems.chip'), {
+        errors: counts.error,
+        warnings: counts.warning,
+        infos: counts.info
+      })}
+      onClick={() => toggleProblems(path)}
+    >
+      <CircleX size={12} className="prob-icon-error" />
+      <span>{counts.error}</span>
+      <TriangleAlert size={12} className="prob-icon-warning" />
+      <span>{counts.warning}</span>
+      <Info size={12} className="prob-icon-info" />
+      <span>{counts.info}</span>
+    </button>
+  )
+}
+
+/**
  * The repository's doctor, when it has something to say.
  *
  * Only failures and warnings get a chip: a repo whose requirements are all met
@@ -368,6 +409,7 @@ export default function App(): React.JSX.Element {
   const activeProfile = useSettingsStore((s) => s.activeProfile())
   const ensure = useRepoStore((s) => s.ensure)
   const terminalOpenByRepo = useUIStore((s) => s.terminalOpenByRepo)
+  const problemsOpenByRepo = useUIStore((s) => s.problemsOpenByRepo)
   const fileView = useUIStore((s) => s.fileView)
   const conflictView = useUIStore((s) => s.conflictView)
   const layout = useUIStore((s) => s.layout)
@@ -853,6 +895,32 @@ export default function App(): React.JSX.Element {
             </>
           )
 
+          const problemsOpen = !!problemsOpenByRepo[repo.path]
+          const problemsNode = (
+            <AnimatePresence>
+              {problemsOpen && (
+                <motion.div
+                  className="problems-pane"
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: layout.problemsHeight, opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={resizing ? { duration: 0 } : { type: 'spring', stiffness: 320, damping: 34 }}
+                >
+                  <ResizeHandle
+                    axis="y"
+                    value={layout.problemsHeight}
+                    min={120}
+                    max={600}
+                    invert
+                    onChange={(v) => setLayout({ problemsHeight: v })}
+                    onDragging={setResizing}
+                  />
+                  <ProblemsPanel repoPath={repo.path} />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          )
+
           const centerCol = (
             <div className="center-col">
               <main className="graph-pane">
@@ -866,6 +934,7 @@ export default function App(): React.JSX.Element {
                   <GraphView repo={repo} />
                 )}
               </main>
+              {problemsNode}
               {placement === 'center' && terminalNode}
             </div>
           )
@@ -1077,6 +1146,7 @@ export default function App(): React.JSX.Element {
               <span className="status-sep" />
               <TodoStatusChip path={repo.path} />
               <DoctorStatusChip path={repo.path} />
+              <ProblemsStatusChip path={repo.path} />
               <span className="status-sep" />
               <button
                 className="status-branch-profile status-branch-btn"

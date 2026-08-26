@@ -4020,6 +4020,190 @@ body.col-resizing .node-ava {
   flex-direction: column;
 }
 
+/* ─── Problems dock ──────────────────────────────────────────────────────── */
+
+.problems-pane {
+  position: relative;
+  border-top: 1px solid var(--border);
+  background: var(--bg-0);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.problems-panel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.problems-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.problems-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+.problems-head-spacer { flex: 1; }
+.problems-counts { display: inline-flex; gap: 2px; }
+.prob-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-2);
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.prob-count:hover { background: var(--bg-2); color: var(--text-1); }
+/* A lit chip means "only this severity" — the filter is on, not merely hovered. */
+.prob-count.on { background: var(--accent-soft); color: var(--accent); }
+.prob-icon-error { color: var(--red, #ff5c7a); }
+.prob-icon-warning { color: var(--yellow, #ff7a1a); }
+.prob-icon-info { color: var(--text-2); }
+.problems-search {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  color: var(--text-2);
+  min-width: 0;
+  flex: 0 1 220px;
+}
+.problems-search input {
+  border: none;
+  background: transparent;
+  color: var(--text-1);
+  font-size: 12px;
+  outline: none;
+  min-width: 0;
+  width: 100%;
+}
+.prob-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-2);
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.prob-toggle:hover { color: var(--text-1); background: var(--bg-2); }
+.prob-toggle.on {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: transparent;
+}
+.prob-spin { animation: prob-spin 1s linear infinite; }
+@keyframes prob-spin {
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .prob-spin { animation: none; }
+}
+
+.problems-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 4px 0 8px;
+}
+.problems-empty {
+  margin: 0;
+  padding: 18px 12px;
+  color: var(--text-2);
+  font-size: 12.5px;
+  text-align: center;
+}
+.prob-file {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 5px 12px 3px;
+  font-size: 12px;
+}
+.prob-file-name { font-weight: 650; color: var(--text-1); }
+.prob-file-dir {
+  color: var(--text-2);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.prob-file-count {
+  margin-inline-start: auto;
+  color: var(--text-2);
+  font-size: 11px;
+}
+.prob-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  padding: 3px 12px 3px 22px;
+  border: none;
+  background: transparent;
+  color: var(--text-1);
+  font-size: 12.5px;
+  text-align: start;
+  cursor: pointer;
+}
+.prob-row:hover { background: var(--bg-2); }
+.prob-row .prob-icon { flex: none; }
+.prob-msg {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.prob-code,
+.prob-src,
+.prob-pos {
+  flex: none;
+  color: var(--text-2);
+  font-size: 11px;
+}
+.prob-code { font-family: var(--mono, monospace); }
+.prob-src { opacity: 0.75; }
+.problems-foot {
+  display: flex;
+  gap: 12px;
+  padding: 4px 12px 6px;
+  border-top: 1px solid var(--border);
+  color: var(--text-2);
+  font-size: 11px;
+  flex-shrink: 0;
+}
+.problems-missing { color: var(--yellow, #ff7a1a); }
+
+/* The status bar's chips come and go (no todos, a healthy doctor, no analyzer),
+   and a separator either side of a chip that rendered nothing leaves two bars
+   leaning on each other. The second one stands down. */
+.status-sep + .status-sep { display: none; }
+
+/* The status-bar counter: three severities, the way VS Code taught it. */
+.status-problems-btn { gap: 3px; }
+.status-problems-btn.has-error { color: var(--red, #ff5c7a); }
+
 /* ─── Configurable panel layout (terminal placement / sidebar side) ─────── */
 
 /* Center column stacks the graph pane and, in 'center' placement, the

@@ -219,6 +219,8 @@ export interface PanelLayout {
   sidebarWidth: number
   panelWidth: number
   terminalHeight: number
+  /** Height of the Problems dock at the bottom of the centre column. */
+  problemsHeight: number
   /** Width of the terminal pane when docked as a right-hand column. */
   terminalWidth: number
   terminalListWidth: number
@@ -239,6 +241,7 @@ const DEFAULT_LAYOUT: PanelLayout = {
   sidebarWidth: 248,
   panelWidth: 420,
   terminalHeight: 260,
+  problemsHeight: 240,
   terminalWidth: 480,
   terminalListWidth: 220,
   terminalListCollapsed: false,
@@ -276,6 +279,8 @@ interface UIState {
    *  opened its terminal keeps the pane closed; reopening the tab restores it.
    *  In-memory only — resets to all-closed on cold start. */
   terminalOpenByRepo: Record<string, boolean>
+  /** Which repos have the Problems dock open. */
+  problemsOpenByRepo: Record<string, boolean>
   /** Left sidebar (branches/files) collapsed. Global workspace preference —
    *  hides the sidebar column so the graph gets the full width. */
   sidebarCollapsed: boolean
@@ -333,6 +338,8 @@ interface UIState {
   toast(kind: Toast['kind'], message: string, opts?: { repoPath?: string }): void
   dismissToast(id: number): void
   toggleTerminal(repoPath: string): void
+  toggleProblems(repoPath: string): void
+  setProblemsOpen(repoPath: string, open: boolean): void
   setTerminalOpen(repoPath: string, open: boolean): void
   toggleSidebar(): void
   setSidebarCollapsed(collapsed: boolean): void
@@ -375,6 +382,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   missionOpen: false,
   githubUnread: 0,
   terminalOpenByRepo: {},
+  problemsOpenByRepo: {},
   sidebarCollapsed: (() => {
     try {
       return localStorage.getItem(SIDEBAR_KEY) === '1'
@@ -422,6 +430,10 @@ export const useUIStore = create<UIState>((set, get) => ({
     set((s) => ({ terminalOpenByRepo: { ...s.terminalOpenByRepo, [repoPath]: !s.terminalOpenByRepo[repoPath] } })),
   setTerminalOpen: (repoPath, open) =>
     set((s) => ({ terminalOpenByRepo: { ...s.terminalOpenByRepo, [repoPath]: open } })),
+  toggleProblems: (repoPath) =>
+    set((s) => ({ problemsOpenByRepo: { ...s.problemsOpenByRepo, [repoPath]: !s.problemsOpenByRepo[repoPath] } })),
+  setProblemsOpen: (repoPath, open) =>
+    set((s) => ({ problemsOpenByRepo: { ...s.problemsOpenByRepo, [repoPath]: open } })),
   sidebarTab: 'git',
   setSidebarTab: (sidebarTab) => set({ sidebarTab }),
   toggleSidebar: () => get().setSidebarCollapsed(!get().sidebarCollapsed),

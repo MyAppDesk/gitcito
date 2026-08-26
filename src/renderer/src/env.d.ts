@@ -236,6 +236,11 @@ interface PreloadApi {
   }
   term: TermApi
   launch: LaunchApi
+  analyze: {
+    run(repoPath: string): Promise<import('../../shared/types').AnalyzeResult>
+    detect(repoPath: string): Promise<string[]>
+    cancel(repoPath: string): void
+  }
   devices: {
     list(repoPath: string): Promise<import('../../shared/types').RunDeviceSnapshot>
     boot(

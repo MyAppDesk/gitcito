@@ -142,6 +142,9 @@ project does not run yet ·
 the sidebar and the status bar, and never written into the repo ·
 [**Open in your editor**](docs/help/editor.md) — repo, file, or the exact line
 you right-clicked ·
+[**Problems**](docs/help/problems.md) — what your project's own analyzers
+(`tsc`, `dart analyze`, ESLint, Clippy, `go vet`, Ruff) say, in a dock at the
+bottom, with a toggle for "only the files I changed" ·
 [**Run & debug**](docs/help/launch.md) from your `.vscode/launch.json` —
 compounds as parallel sessions, `stopAll`, `serverReadyAction`, a
 [hot reload](docs/help/launch.md) button for the runtime you actually launched,

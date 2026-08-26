@@ -351,6 +351,13 @@ const api = {
     }
   },
 
+  // Problems: the project's own analyzers, run on demand.
+  analyze: {
+    run: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('analyze:run', repoPath),
+    detect: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('analyze:detect', repoPath),
+    cancel: (repoPath: string): void => ipcRenderer.send('analyze:cancel', repoPath)
+  },
+
   // Run targets for a launch config: phones, simulators, emulators, desktops.
   devices: {
     list: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('devices:list', repoPath),

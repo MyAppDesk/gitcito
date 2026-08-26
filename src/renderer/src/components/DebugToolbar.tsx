@@ -1,14 +1,81 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Play, Pause, RotateCcw, Square, ChevronDown, X, GripVertical } from 'lucide-react'
+import {
+  Play,
+  Pause,
+  RotateCcw,
+  Square,
+  ChevronDown,
+  X,
+  GripVertical,
+  Zap,
+  RefreshCw,
+  ListRestart,
+  ListX,
+  Camera,
+  LayoutList,
+  Bug,
+  Globe,
+  Eraser,
+  Paintbrush,
+  Gauge,
+  Smartphone,
+  Wrench,
+  Link,
+  Cloud,
+  Ellipsis
+} from 'lucide-react'
 import { useLaunchStore } from '../stores/launch'
 import { useUIStore } from '../stores/ui'
-import { useT } from '../i18n'
+import { useT, interp } from '../i18n'
+import {
+  detectHotRuntime,
+  primaryActions,
+  overflowActions,
+  type HotAction,
+  type HotIcon
+} from '../lib/launchActions'
 
 const POS_KEY = 'gitcito.debugToolbarPos'
 // Must match the CSS `top` of .debug-toolbar — offsets are relative to it.
 const BASE_TOP = 10
 const EDGE_MARGIN = 6
+
+/** One glyph per hot-action kind — the toolbar's only vocabulary for them. */
+function hotIcon(icon: HotIcon, size = 14): React.JSX.Element {
+  switch (icon) {
+    case 'restart':
+      return <RefreshCw size={size} />
+    case 'rerun':
+      return <ListRestart size={size} />
+    case 'failed':
+      return <ListX size={size} />
+    case 'snapshot':
+      return <Camera size={size} />
+    case 'menu':
+      return <LayoutList size={size} />
+    case 'debugger':
+      return <Bug size={size} />
+    case 'browser':
+      return <Globe size={size} />
+    case 'clear':
+      return <Eraser size={size} />
+    case 'paint':
+      return <Paintbrush size={size} />
+    case 'perf':
+      return <Gauge size={size} />
+    case 'platform':
+      return <Smartphone size={size} />
+    case 'devtools':
+      return <Wrench size={size} />
+    case 'urls':
+      return <Link size={size} />
+    case 'cloud':
+      return <Cloud size={size} />
+    default:
+      return <Zap size={size} />
+  }
+}
 
 /**
  * VS Code-style floating debug bar. Shown whenever the active repo has at least
@@ -27,6 +94,8 @@ export function DebugToolbar({ repoPath }: { repoPath: string }): React.JSX.Elem
   const stop = useLaunchStore((s) => s.stop)
   const setActive = useLaunchStore((s) => s.setActive)
   const clearExited = useLaunchStore((s) => s.clearExited)
+  const hot = useLaunchStore((s) => s.hot)
+  const groupsByRepo = useLaunchStore((s) => s.groupsByRepo)
   const openContextMenu = useUIStore((s) => s.openContextMenu)
   const t = useT()
 
@@ -50,6 +119,10 @@ export function DebugToolbar({ repoPath }: { repoPath: string }): React.JSX.Elem
     return null
   })
   const [defaultPos, setDefaultPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 })
+  // The keystroke goes out silently and the process answers in its terminal —
+  // the pressed button lights up briefly so the toolbar confirms it itself.
+  const [flash, setFlash] = useState<string | null>(null)
+  const flashTimer = useRef<number | null>(null)
   const posRef = useRef({ x: 0, y: 0 })
   posRef.current = custom ?? defaultPos
 
@@ -116,6 +189,13 @@ export function DebugToolbar({ repoPath }: { repoPath: string }): React.JSX.Elem
     localStorage.removeItem(POS_KEY)
   }
 
+  const sendHot = (launchId: number, action: HotAction): void => {
+    hot(launchId, action.send)
+    if (flashTimer.current !== null) window.clearTimeout(flashTimer.current)
+    setFlash(action.id)
+    flashTimer.current = window.setTimeout(() => setFlash(null), 450)
+  }
+
   const repoSessions = sessions.filter((x) => x.repoPath === repoPath)
   if (repoSessions.length === 0) return null
 
@@ -126,6 +206,29 @@ export function DebugToolbar({ repoPath }: { repoPath: string }): React.JSX.Elem
   const active = repoSessions.find((x) => x.launchId === activeId) ?? repoSessions[repoSessions.length - 1]
   const paused = active.status === 'paused'
   const exited = active.status === 'exited'
+
+  // Hot actions — the keys this runtime already listens for. A hot reload beats
+  // a restart: it keeps the app's state and skips every preLaunchTask.
+  const scripts = (groupsByRepo[repoPath] ?? []).find((g) => g.dir === active.dir)?.scripts ?? {}
+  const runtime = detectHotRuntime(active.config, scripts)
+  const hotPrimary = runtime ? primaryActions(runtime) : []
+  const hotMore = runtime ? overflowActions(runtime) : []
+  const hotLabel = (a: HotAction): string => a.label ?? (a.labelKey ? t(a.labelKey) : a.id)
+  const hotTitle = (a: HotAction): string =>
+    interp(t('launch.hotTitle'), { runtime: runtime?.name ?? '', label: hotLabel(a), key: a.keyHint })
+
+  const openHotMenu = (e: React.MouseEvent): void => {
+    const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    openContextMenu(
+      r.left,
+      r.bottom,
+      hotMore.map((a) => ({
+        label: `${hotLabel(a)}   ${a.keyHint}`,
+        icon: hotIcon(a.icon, 13),
+        onClick: () => sendHot(active.launchId, a)
+      }))
+    )
+  }
 
   const openSwitcher = (e: React.MouseEvent): void => {
     const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
@@ -166,6 +269,32 @@ export function DebugToolbar({ repoPath }: { repoPath: string }): React.JSX.Elem
             <span className="debug-name">{nameOf(active)}</span>
             <ChevronDown size={13} />
           </button>
+          {runtime && hotPrimary.length > 0 && (
+            <>
+              <span className="debug-sep" />
+              {hotPrimary.map((a) => (
+                <button
+                  key={a.id}
+                  className={`icon-btn debug-btn hot${flash === a.id ? ' flashed' : ''}`}
+                  title={hotTitle(a)}
+                  disabled={exited || paused}
+                  onClick={() => sendHot(active.launchId, a)}
+                >
+                  {hotIcon(a.icon)}
+                </button>
+              ))}
+              {hotMore.length > 0 && (
+                <button
+                  className="icon-btn debug-btn hot"
+                  title={t('launch.hotMore')}
+                  disabled={exited || paused}
+                  onClick={openHotMenu}
+                >
+                  <Ellipsis size={14} />
+                </button>
+              )}
+            </>
+          )}
           <span className="debug-sep" />
           <button
             className="icon-btn debug-btn"

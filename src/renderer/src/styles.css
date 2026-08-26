@@ -12280,7 +12280,6 @@ mark.find-hit.active {
   background: color-mix(in srgb, var(--green, #00e6a8) 16%, transparent);
 }
 .sb-tab-launch-caret { opacity: 0.7; margin-inline-start: -2px; }
-
 /* Narrow sidebar: drop the labels rather than clip them. Two thresholds
    because the LAUNCH tab is optional and a third label needs more room; the
    title attribute keeps every tab identifiable once the text is gone. */
@@ -12362,6 +12361,21 @@ mark.find-hit.active {
   justify-content: center;
 }
 .debug-btn.danger:hover { color: var(--red, #ff5c7a); }
+/* Hot actions (hot reload & friends) — the fast path next to the plain
+   restart, so they read as a different kind of button. */
+.debug-btn.hot:hover:not(:disabled) { color: var(--accent, #7c5cff); }
+.debug-btn.hot:disabled { opacity: 0.35; }
+.debug-btn.hot.flashed {
+  color: var(--accent, #7c5cff);
+  animation: debug-hot-flash 450ms ease-out;
+}
+@keyframes debug-hot-flash {
+  0% { background: color-mix(in srgb, var(--accent, #7c5cff) 45%, transparent); transform: scale(1.14); }
+  100% { background: transparent; transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .debug-btn.hot.flashed { animation: none; }
+}
 
 .sb-files-toolbar {
   display: flex;

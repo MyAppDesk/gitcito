@@ -1601,6 +1601,7 @@ export interface LaunchGroup {
 
 export type LaunchStatus = 'running' | 'paused' | 'exited'
 
+
 /** A full app backup: settings plus the separate info & vault stores. Written
  *  by Settings → Data → Export. `vault` and the profile API tokens are only
  *  present when the user opts into "include secrets"; `info` is always included

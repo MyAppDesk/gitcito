@@ -1131,6 +1131,34 @@ export const shots = [
     }
   },
   {
+    // Hot actions — the toolbar reads `flutter run` off the command line and
+    // offers the keys that CLI already listens for. The shot is taken right
+    // after a hot reload, so the button flash and the reload line line up.
+    out: 'launch-hot',
+    repos: ['launch-configs'],
+    themes: ['dark'],
+    appTheme: 'midnight',
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['launch-configs']
+      await page.evaluate(async (p) => {
+        const s = window.__shot
+        s.repo.getState().select(p, { type: 'wip' })
+        const launch = s.launch.getState()
+        await launch.discover(p)
+        const groups = s.launch.getState().groupsByRepo[p] ?? []
+        const root = groups.find((g) => g.isRoot) ?? groups[0]
+        const flutter = root?.configs.find((c) => /flutter/i.test(c.name))
+        if (root && flutter) await launch.run(p, root, flutter)
+      }, repo)
+      // Let the fake `flutter run` print its key-command banner.
+      await page.waitForTimeout(2200)
+      // Hot reload: the first hot button is `r`.
+      await page.click('.debug-btn.hot')
+      // Long enough for the reload line, short enough that the flash is still on.
+      await page.waitForTimeout(300)
+    }
+  },
+  {
     // Compound launch — one click spawns both member configs as *parallel*
     // sessions (VS Code parity), each with its own terminal; the debug toolbar
     // shows "compound › member" and Stop takes all of them down (stopAll).

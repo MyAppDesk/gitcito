@@ -76,6 +76,58 @@ const srv = http.createServer((_q, res) => res.end('Hello from the launch demo!\
 srv.listen(0, () => console.log(`- Local:   http://localhost:${srv.address().port}`))
 EOF
 
+# ── A stand-in `flutter` on PATH — exercises the HOT ACTIONS ────────────────
+# The debug toolbar reads the command line, spots `flutter run` and offers the
+# keys that CLI listens for (r = hot reload, R = hot restart). This shim answers
+# them exactly like the real thing so the fast path is demonstrable without a
+# Flutter SDK on the machine.
+mkdir -p "$R/lib"
+cat > "$R/lib/main.dart" <<'EOF'
+// A stand-in entrypoint: the launch config points here, the shim fakes the run.
+void main() => print('hello from the launch demo');
+EOF
+
+cat > "$R/scripts/flutter" <<'EOF'
+#!/usr/bin/env node
+// Fake `flutter run`: the same banner and the same interactive keys.
+const out = (s) => process.stdout.write(s + '\n')
+out('Launching lib/main.dart on iPhone 16 Pro in debug mode...')
+out('Running Xcode build...  \x1b[32m✓\x1b[0m  Built build/ios/iphonesimulator/Runner.app')
+out('Syncing files to device iPhone 16 Pro...                     412ms')
+out('')
+out('\x1b[1mFlutter run key commands.\x1b[0m')
+out('r Hot reload. 🔥🔥🔥')
+out('R Hot restart.')
+out('p Toggle the display of construction lines (debugPaintSizeEnabled).')
+out('P Toggle performance overlay.')
+out('o Toggle platform (iOS / Android).')
+out('v Open Flutter DevTools.')
+out('q Quit (terminate the application on the device).')
+out('')
+out('A Dart VM Service on iPhone 16 Pro is available at: http://127.0.0.1:53412/uJ8k=/')
+let libs = 3
+let platform = 'iOS'
+const keys = {
+  r: () => { out('\nPerforming hot reload...'); setTimeout(() => out(`\x1b[32mReloaded ${libs++} of 718 libraries in 231ms.\x1b[0m`), 220) },
+  R: () => { out('\nPerforming hot restart...'); setTimeout(() => out('\x1b[32mRestarted application in 1,148ms.\x1b[0m'), 700) },
+  p: () => out('\nToggled debug paint.'),
+  P: () => out('\nToggled performance overlay.'),
+  o: () => { platform = platform === 'iOS' ? 'Android' : 'iOS'; out(`\nSwitched target platform to ${platform}.`) },
+  v: () => out('\nThe Flutter DevTools debugger is available at: http://127.0.0.1:9100?uri=http://127.0.0.1:53412/uJ8k=/')
+}
+if (process.stdin.isTTY) process.stdin.setRawMode(true)
+process.stdin.resume()
+process.stdin.setEncoding('utf8')
+process.stdin.on('data', (d) => {
+  for (const ch of d) {
+    if (ch === 'q' || ch === '\u0003') process.exit(0)
+    keys[ch]?.()
+  }
+})
+setInterval(() => {}, 1000)
+EOF
+chmod +x "$R/scripts/flutter"
+
 # ── Root launch.json — three configs, JSONC with comments + a preLaunchTask ──
 cat > "$R/.vscode/launch.json" <<'EOF'
 {
@@ -89,6 +141,14 @@ cat > "$R/.vscode/launch.json" <<'EOF'
       "program": "${workspaceFolder}/scripts/hello.js",
       "args": ["--from", "gitcito"],
       "env": { "GREETING": "hola" }
+    },
+    {
+      // Hot actions: the toolbar spots `flutter run` and offers r / R, which
+      // reload the app in place instead of restarting the whole config.
+      "name": "Flutter app (hot reload)",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "env PATH=\"${workspaceFolder}/scripts:$PATH\" flutter run -t lib/main.dart"
     },
     {
       "name": "Watch (long-running)",

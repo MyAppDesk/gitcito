@@ -151,6 +151,15 @@ async function readGroup(repoRoot: string, dir: string): Promise<LaunchGroup | n
       )
     : []
 
+  // package.json scripts travel with the group so the renderer can tell what
+  // `npm run dev` really starts (see lib/launchActions.ts).
+  const pkgRaw = await readFile(join(dir, 'package.json'), 'utf-8').catch(() => null)
+  const pkgScripts = pkgRaw ? parseJsonc<{ scripts?: Record<string, unknown> }>(pkgRaw)?.scripts : undefined
+  const scripts: Record<string, string> = {}
+  if (pkgScripts && typeof pkgScripts === 'object') {
+    for (const [k, v] of Object.entries(pkgScripts)) if (typeof v === 'string') scripts[k] = v
+  }
+
   const isRoot = dir === repoRoot
   const rel = relative(repoRoot, dir) || '.'
   const inputs = Array.isArray(launch?.inputs)
@@ -163,7 +172,8 @@ async function readGroup(repoRoot: string, dir: string): Promise<LaunchGroup | n
     isRoot,
     configs: allConfigs,
     tasks,
-    inputs
+    inputs,
+    scripts
   }
 }
 

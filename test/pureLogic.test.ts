@@ -27,6 +27,12 @@ import { comboFromEvent, formatCombo, effectiveBindings, isReservedCombo, matchS
 import { terminalCloseTarget, terminalShortcutFromEvent } from '../src/renderer/src/lib/terminalShortcuts'
 import { panelDisplayName, groupDisplayName } from '../src/renderer/src/lib/terminalTitles'
 import { taskChain, sharedTaskLabels, memberFullyCovered } from '../src/renderer/src/lib/launchTasks'
+import {
+  detectHotRuntime,
+  launchHaystack,
+  primaryActions,
+  overflowActions
+} from '../src/renderer/src/lib/launchActions'
 import { collectInputRefs, normalizeOptions, defaultOptionIndex, isPickInput } from '../src/renderer/src/lib/launchInputs'
 import { resolveInputTokens } from '../src/main/launch'
 import { closeTabPrompt, repoCloseStatus, tabCloseStatus } from '../src/renderer/src/lib/tabClose'
@@ -4219,6 +4225,104 @@ describe('launch shared tasks (compound run-once hoisting)', () => {
     // A launch-request member always spawns, even with an empty chain.
     const c = { name: 'C', request: 'launch', program: 'c.js', preLaunchTask: 'sync-config' }
     expect(memberFullyCovered(c, tasks, shared)).toBe(false)
+  })
+})
+
+describe('launch hot actions (detectHotRuntime)', () => {
+  const cfg = (o: object): never => ({ name: 'X', ...o }) as never
+
+  it('reads a Dart-Code Flutter config, which never names the CLI', () => {
+    // main.ts turns `type: dart` + a lib/ entrypoint into `flutter run`.
+    expect(detectHotRuntime(cfg({ type: 'dart', program: 'lib/main.dart' }))?.id).toBe('flutter')
+    expect(detectHotRuntime(cfg({ type: 'flutter' }))?.id).toBe('flutter')
+    // A bare script is `dart run` — no interactive keys to press.
+    expect(detectHotRuntime(cfg({ type: 'dart', program: 'bin/tool.dart' }))).toBeNull()
+  })
+
+  it('finds the runtime in a raw command line', () => {
+    expect(detectHotRuntime(cfg({ command: 'flutter run -t lib/main.dart' }))?.id).toBe('flutter')
+    expect(detectHotRuntime(cfg({ command: 'npx nodemon server.js' }))?.id).toBe('nodemon')
+    expect(detectHotRuntime(cfg({ command: 'npx expo start --ios' }))?.id).toBe('expo')
+    expect(detectHotRuntime(cfg({ command: 'react-native start' }))?.id).toBe('metro')
+  })
+
+  it('sees through an npm script to the dev server it starts', () => {
+    const scripts = { dev: 'vite --port 3000', build: 'vite build' }
+    expect(detectHotRuntime(cfg({ command: 'npm run dev' }), scripts)?.id).toBe('vite')
+    // A build is a one-shot compile: nothing is listening afterwards.
+    expect(detectHotRuntime(cfg({ command: 'npm run build' }), scripts)).toBeNull()
+    // runtimeExecutable + runtimeArgs is the other way VS Code spells it.
+    expect(detectHotRuntime(cfg({ runtimeExecutable: 'npm', runtimeArgs: ['run', 'dev'] }), scripts)?.id).toBe('vite')
+  })
+
+  it('expands one script through another', () => {
+    const scripts = { dev: 'npm run dev:web', 'dev:web': 'vitest --watch' }
+    expect(launchHaystack(cfg({ command: 'npm run dev' }), scripts)).toContain('vitest')
+    expect(detectHotRuntime(cfg({ command: 'npm run dev' }), scripts)?.id).toBe('vitest')
+  })
+
+  it('does not read electron-vite as vite', () => {
+    // The word boundary is the whole point: a hyphenated tool is a different
+    // program, and it has no shortcut bar to talk to.
+    expect(detectHotRuntime(cfg({ command: 'electron-vite dev' }))).toBeNull()
+  })
+
+  it('only offers test keys when the runner is actually watching', () => {
+    expect(detectHotRuntime(cfg({ command: 'vitest' }))?.id).toBe('vitest')
+    expect(detectHotRuntime(cfg({ command: 'vitest run' }))).toBeNull()
+    expect(detectHotRuntime(cfg({ command: 'vitest run --watch' }))?.id).toBe('vitest')
+    expect(detectHotRuntime(cfg({ command: 'jest' }))).toBeNull()
+    expect(detectHotRuntime(cfg({ command: 'jest --watchAll' }))?.id).toBe('jest')
+  })
+
+  it('stays quiet for runtimes that reload on their own', () => {
+    for (const command of ['node --watch server.js', 'ng serve', 'cargo watch -x run', 'next dev', 'tsc --watch']) {
+      expect(detectHotRuntime(cfg({ command }))).toBeNull()
+    }
+  })
+
+  it('covers the rest of the interactive CLIs', () => {
+    // `dotnet watch` reloads on its own but keeps Ctrl+R for the edits hot
+    // reload has to refuse.
+    const dotnet = detectHotRuntime(cfg({ command: 'dotnet watch run' }))
+    expect(dotnet?.id).toBe('dotnet')
+    expect(dotnet?.actions[0].send).toBe('\x12')
+    expect(detectHotRuntime(cfg({ command: 'npx wrangler dev' }))?.id).toBe('wrangler')
+    expect(detectHotRuntime(cfg({ command: 'wrangler pages dev ./dist' }))?.id).toBe('wrangler')
+    expect(detectHotRuntime(cfg({ command: 'mocha --watch' }))?.id).toBe('mocha')
+    expect(detectHotRuntime(cfg({ command: 'ava --watch' }))?.id).toBe('ava')
+    // Both test runners are silent outside watch mode.
+    expect(detectHotRuntime(cfg({ command: 'mocha' }))).toBeNull()
+    expect(detectHotRuntime(cfg({ command: 'ava' }))).toBeNull()
+    // `ava` is a short word — it must not be found inside another one.
+    expect(detectHotRuntime(cfg({ command: 'java -jar app.jar --watch' }))).toBeNull()
+  })
+
+  it('never claims a compound — a compound is sessions, not a process', () => {
+    expect(detectHotRuntime(cfg({ type: 'compound', compound: ['A', 'B'], command: 'flutter run' }))).toBeNull()
+  })
+
+  it('lets a config override the detection, and turn it off', () => {
+    const custom = detectHotRuntime(
+      cfg({ command: 'python app.py', gitcito: { hotActions: [{ label: 'Reload', send: 'r', icon: 'reload' }] } })
+    )
+    expect(custom?.actions).toHaveLength(1)
+    expect(custom?.actions[0]).toMatchObject({ send: 'r', label: 'Reload', keyHint: 'r', primary: true })
+    // An empty array is how a repo says "these buttons are wrong for me".
+    expect(detectHotRuntime(cfg({ command: 'flutter run', gitcito: { hotActions: [] } }))).toBeNull()
+  })
+
+  it('shows a newline in an override as the Enter key', () => {
+    const rt = detectHotRuntime(cfg({ gitcito: { hotActions: [{ label: 'Restart', send: 'rs\n' }] } }))
+    expect(rt?.actions[0].keyHint).toBe('rs ⏎')
+  })
+
+  it('splits the actions into buttons and an overflow menu', () => {
+    const flutter = detectHotRuntime(cfg({ type: 'flutter' }))!
+    expect(primaryActions(flutter).map((a) => a.send)).toEqual(['r', 'R'])
+    expect(overflowActions(flutter).length).toBeGreaterThan(0)
+    // Everything is one or the other, nothing is both.
+    expect(primaryActions(flutter).length + overflowActions(flutter).length).toBe(flutter.actions.length)
   })
 })
 

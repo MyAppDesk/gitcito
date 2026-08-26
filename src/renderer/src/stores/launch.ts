@@ -10,6 +10,7 @@ import { collectInputRefs } from '../lib/launchInputs'
 /** Monotonic id source for compound runs (unique per app session is enough). */
 let compoundSeq = 0
 
+
 /** Remove one session's terminal. A compound member is a pane of a shared
  *  split group — remove just its panel so sibling sessions stay alive; only
  *  the last panel (or a plain config's group) takes the group with it. */
@@ -124,6 +125,9 @@ interface LaunchState {
   ): Promise<number | null>
   stop(launchId: number): void
   restart(launchId: number): Promise<void>
+  /** Write a runtime hot key (`r` for Flutter, `rs\n` for nodemon…) to a
+   *  running session's stdin — see `lib/launchActions.ts`. */
+  hot(launchId: number, send: string): void
   togglePause(launchId: number): void
   setActive(launchId: number): void
   clearExited(launchId: number): void
@@ -357,6 +361,16 @@ export const useLaunchStore = create<LaunchState>((set, get) => ({
     // Reuse the original `${input:id}` answers so restart doesn't re-prompt,
     // and keep the compound membership so stopAll still finds this session.
     await get()._launch(session.repoPath, group, session.config, session.inputValues, session.compound, session.skipTasks)
+  },
+
+  hot: (launchId, send) => {
+    const session = get().sessions.find((x) => x.launchId === launchId)
+    if (!session || session.status !== 'running') return
+    window.api.launch.input(launchId, send)
+    // The process answers in its own terminal — surface it, or a hot reload
+    // that scrolled past is a hot reload the user never saw happen.
+    useUIStore.getState().setTerminalOpen(session.repoPath, true)
+    get().setActive(launchId)
   },
 
   togglePause: (launchId) => {

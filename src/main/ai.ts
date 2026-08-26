@@ -2,7 +2,7 @@ import { ipcMain } from 'electron'
 import type { AIConfig, AppThemeColors, AskAction, AskPlan, BranchNamingStyle, CodeThemeColors, ConflictStyle, ExplainStyle, PRReviewResult, RepoStatus } from '../shared/types'
 import { recordAIUsage } from './analytics'
 import { activeProfileAiKey } from './settings'
-import { callModel, missingCredential, type ChatMessage } from './aiTransport'
+import { callModel, missingCredential, type ChatMessage, type ModelCallOptions } from './aiTransport'
 import { listAccountModels } from './aiModels'
 import { detectCliBinaries } from './aiCli'
 import { createHash } from 'node:crypto'
@@ -190,13 +190,13 @@ async function chatComplete(
   messages: ChatMessage[],
   feature: string,
   temperature = 0.2,
-  extra?: Record<string, unknown>
+  options?: ModelCallOptions
 ): Promise<string> {
   const cfg = await withStoredKey(input)
   if (missingCredential(cfg)) throw new Error('No AI API key configured. Add one in Settings → AI.')
 
   const model = cfg.model || 'gpt-4o-mini'
-  const reply = await callModel({ ...cfg, model }, messages, temperature, extra)
+  const reply = await callModel({ ...cfg, model }, messages, temperature, options)
   void recordAIUsage(feature, model, reply.usage)
   return reply.text
 }
@@ -210,6 +210,10 @@ export interface JsonSpec {
   validate: (value: unknown) => string[] | Promise<string[]>
   /** Off for schemas with optional or union-shaped fields. Default on. */
   strict?: boolean
+  /** Maximum completion budget for this JSON shape. */
+  maxTokens?: number
+  /** Skip provider-native json_schema when a self-hosted model handles prompt JSON more reliably. */
+  nativeStructuredOutput?: boolean
 }
 
 /** Parse and semantically validate one provider reply without provider I/O. */
@@ -238,10 +242,13 @@ export class InvalidAIResponse extends Error {
   }
 }
 
-/** True when a provider rejected the request because it can't do json_schema. */
+/** True when native json_schema was rejected or exhausted its own validation retries. */
 function rejectsJsonSchema(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err)
-  return /failed \(4\d\d\)/.test(msg) && /response_format|json[_ ]schema|structured/i.test(msg)
+  const rejectedFormat = /failed \(4\d\d\)/.test(msg) && /response_format|json[_ ]schema|structured/i.test(msg)
+  const exhaustedValidation =
+    /structured_output_validation_error|failed to produce a schema-valid structured response/i.test(msg)
+  return rejectedFormat || exhaustedValidation
 }
 
 function correctionMessage(errors: string[]): string {
@@ -270,15 +277,21 @@ export async function chatCompleteJson<T>(
     }
   }
 
-  let extra: Record<string, unknown> | undefined = format
-  let raw: string
-  try {
-    raw = await chatComplete(cfg, messages, feature, temperature, extra)
-  } catch (err) {
-    if (!rejectsJsonSchema(err)) throw err
-    extra = undefined
-    raw = await chatComplete(cfg, messages, feature, temperature)
+  const options: ModelCallOptions = {
+    disableThinking: true,
+    ...(spec.maxTokens !== undefined ? { maxTokens: spec.maxTokens } : {}),
+    ...(spec.nativeStructuredOutput === false ? {} : { extra: format })
   }
+  const complete = async (turns: ChatMessage[]): Promise<string> => {
+    try {
+      return await chatComplete(cfg, turns, feature, temperature, options)
+    } catch (err) {
+      if (!options.extra || !rejectsJsonSchema(err)) throw err
+      options.extra = undefined
+      return chatComplete(cfg, turns, feature, temperature, options)
+    }
+  }
+  let raw = await complete(messages)
 
   let result = await validateJsonReply<T>(raw, spec)
   if (result.errors.length === 0 && result.value !== null) return result.value
@@ -288,7 +301,7 @@ export async function chatCompleteJson<T>(
     { role: 'assistant', content: raw },
     { role: 'user', content: correctionMessage(result.errors) }
   ]
-  raw = await chatComplete(cfg, retryMessages, feature, temperature, extra)
+  raw = await complete(retryMessages)
   result = await validateJsonReply<T>(raw, spec)
   if (result.errors.length === 0 && result.value !== null) return result.value
 

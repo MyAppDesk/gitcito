@@ -21,6 +21,15 @@ export interface ModelReply {
   usage: TokenUsage
 }
 
+export interface ModelCallOptions {
+  /** Provider-specific fields such as OpenAI's response_format. */
+  extra?: Record<string, unknown>
+  /** Bounds generation so a malformed structured reply cannot consume an open-ended completion budget. */
+  maxTokens?: number
+  /** Structured tasks need the answer, not a model's visible reasoning prelude. */
+  disableThinking?: boolean
+}
+
 /** Token-usage block as returned by OpenAI-compatible and native Anthropic APIs. */
 export interface ApiUsage {
   prompt_tokens?: number
@@ -108,19 +117,46 @@ async function callOpenAI(
   cfg: AIConfig,
   messages: ChatMessage[],
   temperature: number,
-  extra?: Record<string, unknown>
+  options?: ModelCallOptions
 ): Promise<ModelReply> {
   const base = baseUrl(cfg)
-  let res: Response
-  try {
-    res = await fetch(`${base}/chat/completions`, {
-      method: 'POST',
-      headers: authHeaders(cfg),
-      body: JSON.stringify({ model: cfg.model, temperature, messages, ...extra })
-    })
-  } catch (err) {
-    const reason = fetchFailureReason(err)
-    throw new Error(`Could not reach ${base}.${reason ? ` ${reason}` : ''}`)
+  const maxTokens = options?.maxTokens
+  const provider = cfg.provider ?? 'custom'
+  const mayDisableThinking =
+    options?.disableThinking === true && (provider === 'custom' || provider === 'ollama')
+  const payload: Record<string, unknown> = {
+    model: cfg.model,
+    temperature,
+    messages,
+    ...(maxTokens !== undefined ? { max_tokens: Math.max(1, Math.floor(maxTokens)) } : {}),
+    ...(mayDisableThinking ? { chat_template_kwargs: { enable_thinking: false } } : {}),
+    ...options?.extra
+  }
+
+  const post = async (body: Record<string, unknown>): Promise<Response> => {
+    try {
+      return await fetch(`${base}/chat/completions`, {
+        method: 'POST',
+        headers: authHeaders(cfg),
+        body: JSON.stringify(body)
+      })
+    } catch (err) {
+      const reason = fetchFailureReason(err)
+      throw new Error(`Could not reach ${base}.${reason ? ` ${reason}` : ''}`)
+    }
+  }
+
+  let res = await post(payload)
+  if (!res.ok && mayDisableThinking && (res.status === 400 || res.status === 422)) {
+    const body = await res.text().catch(() => '')
+    if (/chat_template_kwargs|enable_thinking/i.test(body)) {
+      // Strict OpenAI-compatible gateways may reject this self-hosted-model
+      // extension. Retry once without it instead of breaking that provider.
+      const { chat_template_kwargs: _ignored, ...compatible } = payload
+      res = await post(compatible)
+    } else {
+      throw new Error(`AI request failed (${res.status}): ${body.slice(0, 200)}`)
+    }
   }
   if (!res.ok) throw new Error(await readError(res))
   const json = (await res.json()) as { choices?: { message?: { content?: string } }[]; usage?: ApiUsage }
@@ -136,7 +172,12 @@ async function callOpenAI(
  * JSON already fall back to prompt-only JSON with a validation retry, which is
  * the same path every non-OpenAI provider takes.
  */
-async function callAnthropic(cfg: AIConfig, messages: ChatMessage[], temperature: number): Promise<ModelReply> {
+async function callAnthropic(
+  cfg: AIConfig,
+  messages: ChatMessage[],
+  temperature: number,
+  options?: ModelCallOptions
+): Promise<ModelReply> {
   const base = baseUrl(cfg)
   const system = messages
     .filter((m) => m.role === 'system')
@@ -154,7 +195,7 @@ async function callAnthropic(cfg: AIConfig, messages: ChatMessage[], temperature
       headers: authHeaders(cfg),
       body: JSON.stringify({
         model: cfg.model,
-        max_tokens: ANTHROPIC_MAX_TOKENS,
+        max_tokens: options?.maxTokens ?? ANTHROPIC_MAX_TOKENS,
         temperature,
         ...(system ? { system } : {}),
         messages: turns
@@ -181,14 +222,14 @@ export async function callModel(
   cfg: AIConfig,
   messages: ChatMessage[],
   temperature: number,
-  extra?: Record<string, unknown>
+  options?: ModelCallOptions
 ): Promise<ModelReply> {
   switch (transportOf(cfg)) {
     case 'anthropic':
-      return callAnthropic(cfg, messages, temperature)
+      return callAnthropic(cfg, messages, temperature, options)
     case 'cli':
       return runCliModel(cfg, messages)
     default:
-      return callOpenAI(cfg, messages, temperature, extra)
+      return callOpenAI(cfg, messages, temperature, options)
   }
 }

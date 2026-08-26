@@ -8,6 +8,7 @@
  */
 
 import { isSafeRepoPath } from './aiSchemas'
+import { jsonrepair } from 'jsonrepair'
 
 /** One citable hunk of a unified diff. */
 export interface DiffEvidence {
@@ -554,14 +555,115 @@ export function validateRepoChatActions(value: unknown, context: RepoChatActionC
   return errors
 }
 
+/**
+ * Repairs a narrow DiffusionGemma failure mode where array objects acquire an
+ * extra quote and brace (`{"{"text"...}`) plus a quote before the closing
+ * bracket. The normal parser always runs first, so valid JSON strings that
+ * happen to contain braces are left untouched.
+ */
+function repairQuotedArrayObjects(value: string): string {
+  return value
+    .replace(/\{\s*"\s*\{/g, '{')
+    .replace(/\{"(\s+)(?="[^"]+"\s*:)/g, '{$1')
+    .replace(/\}\s*"\s*(?=[,\]])/g, '}')
+}
+
+/** Decodes providers that return the JSON object escaped as if it were a string. */
+function unescapeJsonEnvelope(value: string): string {
+  const trimmed = value.trim()
+  if (!/^[{\[]\s*\\"/.test(trimmed)) return value
+  try {
+    const decoded = JSON.parse(`"${trimmed.replace(/\r/g, '\\r').replace(/\n/g, '\\n')}"`)
+    return typeof decoded === 'string' ? decoded : value
+  } catch {
+    return value
+  }
+}
+
+/** Finds complete top-level JSON containers inside prose or repeated replies. */
+function jsonContainerCandidates(value: string): string[] {
+  const candidates: string[] = []
+  const stack: string[] = []
+  let start = -1
+  let inString = false
+  let escaped = false
+
+  for (let i = 0; i < value.length; i++) {
+    const char = value[i]
+    if (start < 0) {
+      if (char === '{' || char === '[') {
+        start = i
+        stack.push(char)
+      }
+      continue
+    }
+    if (inString) {
+      if (escaped) escaped = false
+      else if (char === '\\') escaped = true
+      else if (char === '"') inString = false
+      continue
+    }
+    if (char === '"') {
+      inString = true
+      continue
+    }
+    if (char === '{' || char === '[') {
+      stack.push(char)
+      continue
+    }
+    if (char !== '}' && char !== ']') continue
+
+    const open = stack[stack.length - 1]
+    if ((open === '{' && char === '}') || (open === '[' && char === ']')) {
+      stack.pop()
+      if (stack.length === 0) {
+        candidates.push(value.slice(start, i + 1))
+        start = -1
+      }
+    }
+  }
+  return candidates
+}
+
 /** Strips a stray ```json fence and parses; returns null when unparseable. */
 export function parseLooseJson<T>(text: string): T | null {
-  const cleaned = text
-    .replace(/^```(json)?/m, '')
-    .replace(/```$/m, '')
-    .trim()
+  const clean = (value: string): string =>
+    value
+      .replace(/^```(json)?/m, '')
+      .replace(/```$/m, '')
+      .trim()
+  const parse = (value: string): T | null => {
+    try {
+      return JSON.parse(clean(value)) as T
+    } catch {
+      return null
+    }
+  }
+
+  const direct = parse(text)
+  if (direct !== null) return direct
+
+  // Some self-hosted reasoning models wrap an otherwise valid answer in a
+  // visible <think> prelude. Never use that prose; remove the wrapper and
+  // validate the JSON payload through the same semantic contract as usual.
+  let withoutThinking = text.replace(/<think>[\s\S]*?<\/think>/gi, '')
+  const lastClose = withoutThinking.toLowerCase().lastIndexOf('</think>')
+  if (lastClose >= 0) withoutThinking = withoutThinking.slice(lastClose + '</think>'.length)
+  withoutThinking = withoutThinking.replace(/<think>[\s\S]*$/i, '')
+  const withoutThinkingResult = parse(withoutThinking)
+  if (withoutThinkingResult !== null) return withoutThinkingResult
+  const unescaped = unescapeJsonEnvelope(clean(withoutThinking))
+  const unescapedResult = parse(unescaped)
+  if (unescapedResult !== null) return unescapedResult
+  const normalized = repairQuotedArrayObjects(unescaped)
+  const candidates = jsonContainerCandidates(normalized)
+  for (let i = candidates.length - 1; i >= 0; i--) {
+    const candidate = parse(candidates[i])
+    if (candidate !== null) return candidate
+  }
+  if (!/^[{\[]/.test(normalized.trim())) return null
   try {
-    return JSON.parse(cleaned) as T
+    return parse(jsonrepair(normalized))
   } catch {
     return null
   }

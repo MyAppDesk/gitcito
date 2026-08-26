@@ -1381,6 +1381,86 @@ describe('AI grounding — loose JSON parsing', () => {
   it('returns null instead of throwing on prose', () => {
     expect(parseLooseJson('Sure! Here is the answer.')).toBeNull()
   })
+
+  it('repairs quoted objects emitted inside a DiffusionGemma array', () => {
+    const malformed =
+      '{"summary":"x","sections":[{"heading":"Core","claims":[{"text":"one","sourcePaths":["README.md"]},{"{"text":"two","sourcePaths":["README.md"]}"]}],"related":[]}'
+    expect(parseLooseJson(malformed)).toEqual({
+      summary: 'x',
+      sections: [
+        {
+          heading: 'Core',
+          claims: [
+            { text: 'one', sourcePaths: ['README.md'] },
+            { text: 'two', sourcePaths: ['README.md'] }
+          ]
+        }
+      ],
+      related: []
+    })
+  })
+
+  it('parses a JSON object escaped by one provider response layer', () => {
+    expect(parseLooseJson<{ value: string }>('{\\"value\\":\\"x\\"}')).toEqual({ value: 'x' })
+  })
+
+  it('repairs quoted array objects after removing a provider escape layer', () => {
+    const escapedMalformed =
+      '{\\"summary\\":\\"x\\",\\"sections\\":[{\\"heading\\":\\"Core\\",\\"claims\\":[{\\"text\\":\\"one\\",\\"sourcePaths\\":[\\"README.md\\"]},{\\"{\\"text\\":\\"two\\",\\"sourcePaths\\":[\\"README.md\\"]}\\"]}],\\"related\\":[]}'
+    expect(parseLooseJson(escapedMalformed)).toEqual({
+      summary: 'x',
+      sections: [
+        {
+          heading: 'Core',
+          claims: [
+            { text: 'one', sourcePaths: ['README.md'] },
+            { text: 'two', sourcePaths: ['README.md'] }
+          ]
+        }
+      ],
+      related: []
+    })
+  })
+
+  it('restores a missing section brace in truncated model JSON', () => {
+    const malformed =
+      '{"summary":"x","sections":[{"heading":"CI","claims":[{"text":"one","sourcePaths":["src/main/localCi.ts"]}]],"related":[]}'
+    expect(parseLooseJson(malformed)).toEqual({
+      summary: 'x',
+      sections: [
+        {
+          heading: 'CI',
+          claims: [{ text: 'one', sourcePaths: ['src/main/localCi.ts'] }]
+        }
+      ],
+      related: []
+    })
+  })
+
+  it('uses the last complete JSON object when a model repeats itself and is truncated', () => {
+    const repeated =
+      '{"value":"first"}\nWait, here is the corrected object.\n{"value":"second"}\n{"value":"truncated"'
+    expect(parseLooseJson<{ value: string }>(repeated)).toEqual({ value: 'second' })
+  })
+
+  it('extracts a valid repeated object after repairing quoted array entries', () => {
+    const repeated =
+      '{"items":[{"value":"one"},{"{"value":"two"}"]}\nCorrected:\n{"items":[{"value":"three"}]}'
+    expect(parseLooseJson(repeated)).toEqual({ items: [{ value: 'three' }] })
+  })
+
+  it('removes a quote inserted before an indented object property', () => {
+    const malformed = '{"pages":[{"\n  "slug":"overview","title":"Overview"}]}'
+    expect(parseLooseJson(malformed)).toEqual({
+      pages: [{ slug: 'overview', title: 'Overview' }]
+    })
+  })
+
+  it('does not alter valid strings that contain serialized JSON', () => {
+    expect(parseLooseJson<{ value: string }>('{"value":"{\\"nested\\":true}"}')).toEqual({
+      value: '{"nested":true}'
+    })
+  })
 })
 
 describe('profile secrets — keeping credentials out of settings.json', () => {

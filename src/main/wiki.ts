@@ -71,6 +71,12 @@ async function save(data: WikiData): Promise<void> {
 
 /** How many pages are written at once. Enough to be quick, few enough to be polite. */
 const WORKERS = 3
+
+function nativeWikiSchema(cfg: AIConfig): boolean {
+  const provider = cfg.provider ?? 'custom'
+  return provider !== 'custom' && provider !== 'ollama'
+}
+
 /** Files whose paths are shown to the planner. */
 const PLAN_FILE_LIMIT = 400
 /** Files packed into one page's prompt. */
@@ -131,7 +137,13 @@ Reply ONLY with valid JSON (no markdown fences):
       { role: 'user', content: `${facts}\n\nFiles:\n${ranked.join('\n')}` }
     ],
     'wikiPlan',
-    { name: 'wiki_plan', schema: WIKI_PLAN_SCHEMA, validate: (v) => validateWikiPlan(v, known) },
+    {
+      name: 'wiki_plan',
+      schema: WIKI_PLAN_SCHEMA,
+      validate: (v) => validateWikiPlan(v, known),
+      maxTokens: 2048,
+      nativeStructuredOutput: nativeWikiSchema(cfg)
+    },
     0.2
   )
   return orderPlan(plan.pages.map((p) => ({ ...p, title: cleanPageTitle(p.title) })))
@@ -182,7 +194,9 @@ ${serializePack(pack)}`
     {
       name: 'wiki_page',
       schema: WIKI_PAGE_SCHEMA,
-      validate: (v) => validateWikiPage(v, allowed)
+      validate: (v) => validateWikiPage(v, allowed),
+      maxTokens: 4096,
+      nativeStructuredOutput: nativeWikiSchema(cfg)
     },
     0.3
   )
@@ -277,7 +291,13 @@ ${list}`
         { role: 'user', content: user }
       ],
       'wikiStack',
-      { name: 'tech_stack', schema: TECH_STACK_SCHEMA, validate: (v) => validateTechStack(v, declared) },
+      {
+        name: 'tech_stack',
+        schema: TECH_STACK_SCHEMA,
+        validate: (v) => validateTechStack(v, declared),
+        maxTokens: 2048,
+        nativeStructuredOutput: nativeWikiSchema(cfg)
+      },
       0.2
     )
   } catch (err) {

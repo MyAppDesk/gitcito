@@ -35,6 +35,7 @@ import {
 } from '../src/renderer/src/lib/launchActions'
 import { countBySeverity, filterProblems, groupByFile, baseName, dirName } from '../src/renderer/src/lib/problems'
 import { locateBookmark, bookmarkLabel, sortBookmarks } from '../src/renderer/src/lib/bookmarks'
+import { planAttach, planClose } from '../src/renderer/src/lib/tabPages'
 import {
   deviceFamily,
   familyPlatforms,
@@ -4332,6 +4333,56 @@ describe('launch hot actions (detectHotRuntime)', () => {
     expect(overflowActions(flutter).length).toBeGreaterThan(0)
     // Everything is one or the other, nothing is both.
     expect(primaryActions(flutter).length + overflowActions(flutter).length).toBe(flutter.actions.length)
+  })
+})
+
+describe('pages that ride on a repository tab', () => {
+  const repoTab = (id: string, path: string, pages?: object[]): never =>
+    ({ id, kind: 'repo', name: id, repos: [{ path, name: id }], activeRepoPath: path, ...(pages ? { pages } : {}) }) as never
+  const groupTab = (id: string, path: string): never =>
+    ({ id, kind: 'group', name: id, repos: [{ path, name: id }], activeRepoPath: path }) as never
+  const wiki = (repoPath: string): never => ({ type: 'wiki', repoPath }) as never
+  const devtools = (repoPath: string, launchId: number): never =>
+    ({ type: 'devtools', repoPath, launchId, url: `http://127.0.0.1:${launchId}/`, label: 'app', tool: 'Flutter DevTools' }) as never
+
+  it('attaches a repo-scoped page to that repository’s tab', () => {
+    const plan = planAttach([repoTab('t1', '/r')], 't1', wiki('/r'))
+    expect(plan).toEqual({ tabId: 't1', pages: [wiki('/r')], index: 0 })
+  })
+
+  it('prefers the tab you are looking at when two hold the same repo', () => {
+    const tabs = [repoTab('t1', '/r'), repoTab('t2', '/r')]
+    expect(planAttach(tabs, 't2', wiki('/r'))?.tabId).toBe('t2')
+  })
+
+  it('falls back to a tab of its own when no repo tab holds it', () => {
+    // The silent-no-op bug: a repo open only inside a group has no repo tab, and
+    // "nothing happens" is the one outcome an open action may not have.
+    expect(planAttach([groupTab('g1', '/r')], 'g1', wiki('/r'))).toBeNull()
+    expect(planAttach([repoTab('t1', '/other')], 't1', wiki('/r'))).toBeNull()
+    expect(planAttach([], null, wiki('/r'))).toBeNull()
+  })
+
+  it('leaves pages that belong to no repository alone', () => {
+    expect(planAttach([repoTab('t1', '/r')], 't1', { type: 'changelog' } as never)).toBeNull()
+  })
+
+  it('replaces a page in place instead of multiplying icons', () => {
+    // A restarted app announces a new DevTools address; the session is the same,
+    // so the icon must be too.
+    const tabs = [repoTab('t1', '/r', [devtools('/r', 7)])]
+    const plan = planAttach(tabs, 't1', devtools('/r', 7))
+    expect(plan?.pages).toHaveLength(1)
+    expect(plan?.index).toBe(0)
+    // A second session is a second icon.
+    expect(planAttach(tabs, 't1', devtools('/r', 8))?.pages).toHaveLength(2)
+  })
+
+  it('drops back to the repository when the open page is closed', () => {
+    expect(planClose([wiki('/r'), devtools('/r', 7)], 0, 0)).toEqual({ pages: [devtools('/r', 7)], activePage: null })
+    // Closing a page to the left of the open one keeps you on the same page.
+    expect(planClose([wiki('/r'), devtools('/r', 7)], 1, 0)).toEqual({ pages: [devtools('/r', 7)], activePage: 0 })
+    expect(planClose([wiki('/r')], 0, 0)).toEqual({ pages: [], activePage: null })
   })
 })
 

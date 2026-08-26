@@ -16,7 +16,7 @@ import { buildQueryRegExp, highlightHtml, type HighlightLayer } from './FileSear
 import { fileExt, guessLanguage, highlightLine } from '../lib/highlight'
 import { formatBytes, parseTooLargeError } from '../lib/fileSize'
 import { isSecretFile, maskSecretLine } from '../lib/secrets'
-import { Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff, Bookmark as BookmarkIcon } from 'lucide-react'
 import { ImageDiff } from './ImageDiff'
 import { PreviewPane } from './PreviewPane'
 import { renderMarkdown } from '../preview/markdown'
@@ -184,12 +184,25 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
   // commit would send the editor to a line that has since moved.
   const editorSetting = useSettingsStore((s) => s.settings.editor)
   const editorTracksDisk = source.type === 'tree' || source.type === 'wip'
+  const addBookmark = useSettingsStore((s) => s.addBookmark)
   const lineMenu = (line: number) => (e: React.MouseEvent): void => {
     // A rewound blame ("blaming at <sha>^") lists lines as they were then, and
     // the row's own menu (the sha actions) wins where it has already answered.
     if (!editorTracksDisk || blameOverrideRef || e.defaultPrevented) return
     const items = editorLineMenuItems(editorSetting, { path: `${repoPath}/${file}`, line, repo: repoPath })
-    if (!items.length) return
+    // The line's own text is stored with the bookmark: it is what finds the
+    // line again once the file has moved on (see lib/bookmarks.ts).
+    const snippet = (content ?? '').split('\n')[line - 1] ?? ''
+    if (items.length) items.push({ separator: true })
+    items.push({
+      label: t('bookmarks.add'),
+      icon: <BookmarkIcon size={13} />,
+      onClick: () => {
+        const branch = useRepoStore.getState().repos[repoPath]?.status?.current
+        addBookmark(repoPath, { file, line, snippet, ...(branch ? { branch } : {}) })
+        toast('info', t('bookmarks.added'))
+      }
+    })
     e.preventDefault()
     openContextMenu(e.clientX, e.clientY, items)
   }

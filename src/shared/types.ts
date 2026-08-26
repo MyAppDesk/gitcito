@@ -2736,6 +2736,8 @@ export interface AppSettings {
   /** Per-repository todo lists, keyed by canonical repo path. Absent for a
    *  repository nobody has written a todo for. */
   repoTodos?: Record<string, RepoTodo[]>
+  /** Bookmarked places in the code, per repository. */
+  repoBookmarks?: Record<string, RepoBookmark[]>
   /** Hide ticked todos in the sidebar section and the todo list. The entries
    *  are kept — only the display drops them. */
   todosHideDone: boolean
@@ -2941,6 +2943,26 @@ export type TodoStatus = 'todo' | 'progress' | 'blocked' | 'qa' | 'done'
  * canonical repo path — never written into the repository itself, so a todo
  * cannot leak into a commit, a diff or a colleague's clone.
  */
+/**
+ * A remembered place in the code: a file, a line, and enough of that line to
+ * find it again after the file has moved on. Private to this machine and this
+ * repository, like a todo — never written into the repo.
+ */
+export interface RepoBookmark {
+  id: string
+  /** Repo-relative, forward slashes. */
+  file: string
+  line: number
+  /** Why it is worth coming back to. Optional — a place can speak for itself. */
+  note?: string
+  /** The line's text when it was marked. What makes relocation possible. */
+  snippet: string
+  /** Epoch ms. */
+  createdAt: number
+  /** Branch it was taken on — context, not a filter. */
+  branch?: string
+}
+
 export interface RepoTodo {
   id: string
   title: string
@@ -3124,13 +3146,14 @@ export function defaultSettings(): AppSettings {
     customGraphPalettes: [],
     repoLayouts: {},
     repoTodos: {},
+    repoBookmarks: {},
     todosHideDone: true,
     todosManualOrder: false,
     autoFetchMinutes: 5,
     desktopNotifications: false,
     confirmForcePush: true,
     mergeCommit: true,
-    sidebarOrder: ['local', 'todos', 'remotes', 'stashes', 'tags', 'prs', 'issues', 'milestones', 'releases', 'worktrees', 'submodules'],
+    sidebarOrder: ['local', 'todos', 'bookmarks', 'remotes', 'stashes', 'tags', 'prs', 'issues', 'milestones', 'releases', 'worktrees', 'submodules'],
     sidebarHidden: [],
     onboardingCompleted: false,
     aiAccountsNoticeSeen: false,

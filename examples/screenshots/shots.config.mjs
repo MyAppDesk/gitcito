@@ -1133,6 +1133,42 @@ export const shots = [
     }
   },
   {
+    // Bookmarks in the sidebar. Seeded through the store bridge, because a
+    // bookmark is a per-machine note and the playground repos carry none.
+    out: 'bookmarks',
+    repos: ['analyzer-problems'],
+    themes: ['dark'],
+    appTheme: 'midnight',
+    clipTo: '.sidebar',
+    clipPad: 10,
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['analyzer-problems']
+      await page.evaluate((p) => {
+        const s = window.__shot
+        s.repo.getState().select(p, { type: 'wip' })
+        const settings = s.settings.getState()
+        settings.addBookmark(p, {
+          file: 'src/cart.ts',
+          line: 8,
+          snippet: '  const discount = COUPONS[code]',
+          note: 'COUPONS is never defined — start here'
+        })
+        settings.addBookmark(p, {
+          file: 'src/checkout.ts',
+          line: 5,
+          snippet: '  if (amount == 0) return { ok: false }'
+        })
+        settings.addBookmark(p, {
+          file: 'src/index.ts',
+          line: 3,
+          snippet: "const unused = 'left over from the refactor'",
+          note: 'delete once the refactor lands'
+        })
+      }, repo)
+      await page.waitForTimeout(900)
+    }
+  },
+  {
     // The Problems dock: what the project's own analyzers said, grouped by
     // file. The playground repo ships stand-in tsc / eslint binaries in
     // node_modules/.bin, so the shot exercises the real detect → run → parse

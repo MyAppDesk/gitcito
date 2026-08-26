@@ -13,6 +13,7 @@ import {
   type RepoFolder,
   type RepoLayout,
   type RepoRef,
+  type RepoBookmark,
   type RepoTodo,
   type TodoStatus,
   type TabState,
@@ -31,6 +32,7 @@ import {
 import { settingsApi } from '../infrastructure/api'
 import { useUIStore } from './ui'
 import { applyRepoAlias, canonicalRepoPath, migrateRepoAliases, repoDisplayName } from '../lib/repoAlias'
+import { sortBookmarks } from '../lib/bookmarks'
 import {
   clearDoneTodos,
   createTodo,
@@ -106,6 +108,23 @@ function withTodos(
   })
 }
 
+/** Same shape as `withTodos`: keyed by canonical path, and an empty list is
+ *  removed rather than stored as an empty array. */
+function withBookmarks(
+  update: (mut: (s: AppSettings) => AppSettings) => void,
+  path: string,
+  fn: (list: RepoBookmark[]) => RepoBookmark[]
+): void {
+  const key = canonicalRepoPath(path)
+  update((s) => {
+    const all = { ...(s.repoBookmarks ?? {}) }
+    const next = fn(all[key] ?? [])
+    if (next.length) all[key] = next
+    else delete all[key]
+    return { ...s, repoBookmarks: all }
+  })
+}
+
 /** Reorder helper. A drag or an arrow press is also the moment the list stops
  *  sorting itself, so the order currently on screen is frozen into storage and
  *  `todosManualOrder` flips in the same write — otherwise the first nudge would
@@ -169,6 +188,13 @@ interface SettingsState {
   /** Patch a repo's per-repo layout override (graph columns + sidebar sections),
    *  keyed by repo path. */
   updateRepoLayout(path: string, mut: (layout: RepoLayout) => RepoLayout): void
+
+  /** This repository's bookmarks — remembered places in the code, newest first. */
+  bookmarksFor(path: string): RepoBookmark[]
+  /** Mark a line. `snippet` is what makes it findable after the file changes. */
+  addBookmark(path: string, entry: { file: string; line: number; snippet: string; note?: string; branch?: string }): void
+  patchBookmark(path: string, id: string, patch: Partial<Omit<RepoBookmark, 'id'>>): void
+  deleteBookmark(path: string, id: string): void
 
   /** This repository's todo list, in storage order. Empty for a repo nobody has
    *  written one for; never undefined, so callers can map straight away. */
@@ -444,6 +470,19 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       ...s,
       repoLayouts: { ...(s.repoLayouts ?? {}), [path]: mut(s.repoLayouts?.[path] ?? {}) }
     })),
+
+  bookmarksFor: (path) => sortBookmarks(get().settings.repoBookmarks?.[canonicalRepoPath(path)] ?? []),
+
+  addBookmark: (path, entry) =>
+    withBookmarks(get().update, path, (list) => [
+      ...list,
+      { id: uid(), createdAt: Date.now(), ...entry }
+    ]),
+
+  patchBookmark: (path, id, patch) =>
+    withBookmarks(get().update, path, (list) => list.map((b) => (b.id === id ? { ...b, ...patch } : b))),
+
+  deleteBookmark: (path, id) => withBookmarks(get().update, path, (list) => list.filter((b) => b.id !== id)),
 
   todosFor: (path) => get().settings.repoTodos?.[canonicalRepoPath(path)] ?? [],
 

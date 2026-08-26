@@ -4020,6 +4020,26 @@ body.col-resizing .node-ava {
   flex-direction: column;
 }
 
+/* A bookmark row: what it is on top, where it lives underneath. */
+.sb-bookmark {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.sb-bookmark-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sb-bookmark-where {
+  font-size: 10.5px;
+  color: var(--text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* ─── DevTools page (embedded webview) ───────────────────────────────────── */
 
 .devtools-page {

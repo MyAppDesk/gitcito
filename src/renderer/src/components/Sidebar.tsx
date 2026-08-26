@@ -38,7 +38,8 @@ import {
   CheckSquare,
   Smartphone,
   Globe,
-  Power
+  Power,
+  Bookmark as BookmarkIcon
 } from 'lucide-react'
 import { FileTree } from './FileTree'
 import { FileSearchBar, EMPTY_FILTER, type FileFilter } from './FileSearchBar'
@@ -46,9 +47,10 @@ import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
 import { useUIStore, type MenuItem } from '../stores/ui'
 import { refIntegrationItems } from '../lib/refMenuItems'
 import { repoWantsDevices, repoDevicePlatforms } from '../lib/launchDevices'
+import { locateBookmark, bookmarkLabel, sortBookmarks, baseName } from '../lib/bookmarks'
 import { useSettingsStore } from '../stores/settings'
 import { useLaunchStore } from '../stores/launch'
-import { shellApi } from '../infrastructure/api'
+import { gitApi, shellApi } from '../infrastructure/api'
 import { groupPrStacks, stackRowStates, type StackRowState } from '../lib/prStacks'
 import { ciIcon, CI_STATE_KEY } from './CiIcon'
 import { useT, interp, type TranslationKey } from '../i18n'
@@ -65,7 +67,7 @@ import { TodoPriorityIcon } from './TodoPriorityIcon'
 import { TodoStatusIcon, TODO_STATUS_LABEL } from './TodoStatusIcon'
 import { canonicalRepoPath } from '../lib/repoAlias'
 import { defaultSettings } from '../../../shared/types'
-import type { BranchInfo, MergeRiskKind, ReleaseInfo, RemoteBranchInfo, StashInfo, TagInfo, WorktreeInfo, SubmoduleInfo, LaunchGroup, LaunchConfig, PullRequest, IssueInfo, MilestoneInfo, RemoteInfo, RepoTodo } from '../../../shared/types'
+import type { BranchInfo, MergeRiskKind, ReleaseInfo, RemoteBranchInfo, StashInfo, TagInfo, WorktreeInfo, SubmoduleInfo, LaunchGroup, LaunchConfig, PullRequest, IssueInfo, MilestoneInfo, RemoteInfo, RepoTodo, RepoBookmark } from '../../../shared/types'
 
 import { RemoteIcon } from './RemoteIcon'
 
@@ -234,7 +236,7 @@ function Section({
 }
 
 export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
-  const { openContextMenu, openModal } = useUIStore()
+  const { openContextMenu, openModal, setFileView, toast } = useUIStore()
   const refreshPRs = useRepoStore((s) => s.refreshPRs)
   const refreshReleases = useRepoStore((s) => s.refreshReleases)
   const select = useRepoStore((s) => s.select)
@@ -1374,6 +1376,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     releases: t('sidebar.releases'),
     stashes: t('sidebar.stashes'),
     todos: t('sidebar.todos'),
+    bookmarks: t('sidebar.bookmarks'),
     worktrees: t('sidebar.worktrees'),
     submodules: t('sidebar.submodules')
   }
@@ -1792,6 +1795,53 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
           </span>
         </div>
   )
+
+  // ─── Bookmarks ───
+  // Remembered places in the code. The stored line is a starting guess: the
+  // snippet is what actually finds it again once the file has moved on.
+  const bookmarksByRepo = useSettingsStore((s) => s.settings.repoBookmarks)
+  const bookmarks = useMemo(
+    () => sortBookmarks(bookmarksByRepo?.[canonicalRepoPath(repo.path)] ?? []),
+    [bookmarksByRepo, repo.path]
+  )
+  const patchBookmark = useSettingsStore((s) => s.patchBookmark)
+  const deleteBookmark = useSettingsStore((s) => s.deleteBookmark)
+
+  const openBookmark = async (bookmark: RepoBookmark): Promise<void> => {
+    const text = await gitApi.fileContent(repo.path, bookmark.file).catch(() => null)
+    // No file, no relocation — open where it was last seen and say so.
+    if (text == null) {
+      toast('error', interp(t('bookmarks.gone'), { file: bookmark.file }))
+      return
+    }
+    const found = locateBookmark(bookmark, text.split('\n'))
+    if (found.state === 'moved') {
+      // Heal the entry, so the next open starts from where it actually is.
+      patchBookmark(repo.path, bookmark.id, { line: found.line })
+      toast('info', interp(t('bookmarks.moved'), { line: String(found.line) }))
+    } else if (found.state === 'lost') {
+      toast('info', t('bookmarks.lost'))
+    }
+    setFileView({ repoPath: repo.path, file: bookmark.file, source: { type: 'tree' }, mode: 'file', line: found.line })
+  }
+
+  const bookmarkMenu = (bookmark: RepoBookmark): MenuItem[] => [
+    { label: t('bookmarks.open'), icon: <BookmarkIcon size={13} />, onClick: () => void openBookmark(bookmark) },
+    {
+      label: t('bookmarks.editNote'),
+      onClick: () =>
+        openModal({
+          kind: 'input',
+          title: t('bookmarks.editNote'),
+          label: t('bookmarks.note'),
+          initial: bookmark.note ?? '',
+          allowEmpty: true,
+          onSubmit: (v) => patchBookmark(repo.path, bookmark.id, { note: v.trim() || undefined })
+        })
+    },
+    { separator: true },
+    { label: t('bookmarks.remove'), danger: true, onClick: () => deleteBookmark(repo.path, bookmark.id) }
+  ]
 
   // ─── Todos ───
   // The done pile is hidden here, not deleted — the counts below still read
@@ -2386,6 +2436,39 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
             {sortedTodos.map(todoItem)}
           </>
         )}
+      </Section>
+    ),
+    bookmarks: (
+      <Section
+        title={t('sidebar.bookmarks')}
+        icon={<BookmarkIcon size={13} />}
+        count={bookmarks.length}
+        {...dragProps('bookmarks')}
+        {...persistOpen('bookmarks')}
+      >
+        {bookmarks.length === 0 && <div className="sb-empty">{t('sidebar.noBookmarks')}</div>}
+        {bookmarks.map((b) => (
+          <div
+            key={b.id}
+            className="sb-item"
+            role="button"
+            tabIndex={0}
+            onKeyDown={keyActivate}
+            onClick={() => void openBookmark(b)}
+            onContextMenu={(e) => {
+              e.preventDefault()
+              openContextMenu(e.clientX, e.clientY, bookmarkMenu(b))
+            }}
+            title={`${b.file}:${b.line}`}
+          >
+            <span className="sb-name sb-bookmark">
+              <span className="sb-bookmark-label">{bookmarkLabel(b)}</span>
+              <span className="sb-bookmark-where">
+                {baseName(b.file)}:{b.line}
+              </span>
+            </span>
+          </div>
+        ))}
       </Section>
     ),
     stashes: (

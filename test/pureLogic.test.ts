@@ -34,6 +34,7 @@ import {
   overflowActions
 } from '../src/renderer/src/lib/launchActions'
 import { countBySeverity, filterProblems, groupByFile, baseName, dirName } from '../src/renderer/src/lib/problems'
+import { locateBookmark, bookmarkLabel, sortBookmarks } from '../src/renderer/src/lib/bookmarks'
 import {
   deviceFamily,
   familyPlatforms,
@@ -4331,6 +4332,71 @@ describe('launch hot actions (detectHotRuntime)', () => {
     expect(overflowActions(flutter).length).toBeGreaterThan(0)
     // Everything is one or the other, nothing is both.
     expect(primaryActions(flutter).length + overflowActions(flutter).length).toBe(flutter.actions.length)
+  })
+})
+
+describe('bookmarks: finding the line again', () => {
+  const mark = (line: number, snippet: string): never =>
+    ({ id: 'b1', file: 'src/a.ts', line, snippet, createdAt: 1 }) as never
+  const file = [
+    'import { thing } from "./thing"',
+    '',
+    'export function total(items: Item[]): number {',
+    '  return items.reduce((sum, i) => sum + i.price, 0)',
+    '}'
+  ]
+
+  it('is exact when the line has not moved', () => {
+    expect(locateBookmark(mark(3, file[2]), file)).toEqual({ line: 3, state: 'exact' })
+  })
+
+  it('follows the line when something was inserted above it', () => {
+    const shifted = ['// a new header', '// and another', ...file]
+    expect(locateBookmark(mark(3, file[2]), shifted)).toEqual({ line: 5, state: 'moved' })
+  })
+
+  it('follows it when lines were deleted above it', () => {
+    expect(locateBookmark(mark(5, file[2]), file.slice(0))).toEqual({ line: 3, state: 'moved' })
+  })
+
+  it('still finds it when only the whitespace changed', () => {
+    const reindented = [...file]
+    reindented[3] = '    return items.reduce((sum, i) => sum + i.price, 0)'
+    expect(locateBookmark(mark(4, file[3]), reindented)).toEqual({ line: 4, state: 'exact' })
+    // …and when the reindent also moved it.
+    expect(locateBookmark(mark(2, file[3]), reindented).state).toBe('moved')
+  })
+
+  it('says lost rather than opening the wrong line', () => {
+    // The silent failure mode is the one that matters: landing on line 3 of a
+    // rewritten file and pretending it is the bookmark.
+    const rewritten = ['export const nothing = 1', 'export const like = 2', 'export const before = 3']
+    const found = locateBookmark(mark(3, file[2]), rewritten)
+    expect(found.state).toBe('lost')
+    expect(found.line).toBe(3)
+  })
+
+  it('picks the copy nearest to where it used to be', () => {
+    const dup = ['x()', 'x()', 'x()', 'x()', 'x()']
+    expect(locateBookmark(mark(4, 'x()'), dup)).toEqual({ line: 4, state: 'exact' })
+    expect(locateBookmark(mark(9, 'x()'), dup)).toEqual({ line: 5, state: 'moved' })
+  })
+
+  it('falls back to the number for a blank line, which matches nothing', () => {
+    expect(locateBookmark(mark(2, ''), file)).toEqual({ line: 2, state: 'exact' })
+    expect(locateBookmark(mark(99, ''), file).state).toBe('lost')
+  })
+
+  it('labels a bookmark by its note, then its line, then its place', () => {
+    expect(bookmarkLabel(mark(3, 'const x = 1'))).toBe('const x = 1')
+    expect(bookmarkLabel({ ...(mark(3, 'const x = 1') as object), note: 'fix this' } as never)).toBe('fix this')
+    expect(bookmarkLabel(mark(3, '   '))).toBe('a.ts:3')
+  })
+
+  it('lists the newest first', () => {
+    const a = { id: 'a', file: 'x', line: 1, snippet: '', createdAt: 1 } as never
+    const b = { id: 'b', file: 'x', line: 1, snippet: '', createdAt: 2 } as never
+    expect(sortBookmarks([a, b]).map((x) => x.id)).toEqual(['b', 'a'])
   })
 })
 

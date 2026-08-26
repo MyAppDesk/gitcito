@@ -365,6 +365,12 @@ const api = {
     cancel: (repoPath: string): void => ipcRenderer.send('analyze:cancel', repoPath)
   },
 
+  // TODO markers carried by the repository's own source, scanned on demand.
+  todoScan: {
+    run: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('todoscan:run', repoPath),
+    cancel: (repoPath: string): void => ipcRenderer.send('todoscan:cancel', repoPath)
+  },
+
   // Run targets for a launch config: phones, simulators, emulators, desktops.
   devices: {
     list: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('devices:list', repoPath),

@@ -12,6 +12,7 @@ import { useUpdatesStore } from '../stores/updates'
 import { useLaunchStore } from '../stores/launch'
 import { useTerminalsStore } from '../stores/terminals'
 import { useRepoChatStore } from '../stores/chat'
+import { useProblemsStore } from '../stores/problems'
 
 export interface ShotBridge {
   settings: typeof useSettingsStore
@@ -24,6 +25,8 @@ export interface ShotBridge {
   /** Repository chat threads, so a shot can seed a finished exchange rather
    *  than calling a real provider. */
   chat: typeof useRepoChatStore
+  /** The analyzer dock: which tab, which filters, which grouping. */
+  problems: typeof useProblemsStore
   repoActions: typeof repoActions
   /** True once the bridge has attached; the driver polls for this. */
   ready: true
@@ -50,5 +53,5 @@ export function installShotBridge(): void {
       tick()
     })
 
-  window.__shot = { settings: useSettingsStore, ui: useUIStore, repo: useRepoStore, updates: useUpdatesStore, launch: useLaunchStore, terminals: useTerminalsStore, chat: useRepoChatStore, repoActions, ready: true, waitForRepo }
+  window.__shot = { settings: useSettingsStore, ui: useUIStore, repo: useRepoStore, updates: useUpdatesStore, launch: useLaunchStore, terminals: useTerminalsStore, chat: useRepoChatStore, problems: useProblemsStore, repoActions, ready: true, waitForRepo }
 }

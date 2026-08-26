@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { GitMerge, FolderOpen, Download, ArrowDownToLine, Bug, LifeBuoy, MessageSquare, X, CheckSquare, Stethoscope, CircleX, TriangleAlert, Info } from 'lucide-react'
+import { GitMerge, FolderOpen, Download, ArrowDownToLine, Bug, LifeBuoy, MessageSquare, X, CheckSquare, Stethoscope, CircleX, TriangleAlert, Info, ListTodo } from 'lucide-react'
 import { takeAccountsNotice, useSettingsStore } from './stores/settings'
 import { useRepoStore, repoActions, type RepoData } from './stores/repo'
 import { useUIStore } from './stores/ui'
@@ -397,6 +397,42 @@ function ProblemsStatusChip({ path }: { path: string }): React.JSX.Element | nul
       <span>{counts.warning}</span>
       <Info size={12} className="prob-icon-info" />
       <span>{counts.info}</span>
+    </button>
+  )
+}
+
+/**
+ * How many TODO markers the source carries, beside the analyzers' three counts.
+ *
+ * This one scans on its own, which the analyzers deliberately do not: a single
+ * `git grep` over the working tree costs milliseconds, and a counter that only
+ * appears once you have already opened the panel is a counter that never tells
+ * you anything you did not know. A repo with no markers shows nothing.
+ */
+function CodeTodosStatusChip({ path }: { path: string }): React.JSX.Element | null {
+  const t = useT()
+  const result = useProblemsStore((s) => s.todoByRepo[path])
+  const running = useProblemsStore((s) => s.todoRunningByRepo[path] === true)
+  const scan = useProblemsStore((s) => s.scanTodos)
+  const setMode = useProblemsStore((s) => s.setMode)
+  const setProblemsOpen = useUIStore((s) => s.setProblemsOpen)
+  useEffect(() => {
+    if (!result && !running) void scan(path)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [path])
+  const n = result?.todos.length ?? 0
+  if (n === 0) return null
+  return (
+    <button
+      className="status-issue-btn status-ctodo-btn"
+      title={interp(t('ctodo.chip'), { n })}
+      onClick={() => {
+        setMode('todos')
+        setProblemsOpen(path, true)
+      }}
+    >
+      <ListTodo size={12} />
+      <span>{n}</span>
     </button>
   )
 }
@@ -1188,6 +1224,7 @@ export default function App(): React.JSX.Element {
               <TodoStatusChip path={repo.path} />
               <DoctorStatusChip path={repo.path} />
               <ProblemsStatusChip path={repo.path} />
+              <CodeTodosStatusChip path={repo.path} />
               <span className="status-sep" />
               <button
                 className="status-branch-profile status-branch-btn"

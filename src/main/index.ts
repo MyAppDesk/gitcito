@@ -19,6 +19,7 @@ import { registerTerminalHandlers } from './terminal'
 import { registerLaunchHandlers } from './launch'
 import { registerDeviceHandlers } from './devices'
 import { registerAnalyzeHandlers } from './analyze'
+import { registerTodoScanHandlers } from './todoScan'
 import { registerWatcherHandlers } from './watcher'
 import { registerVaultHandlers } from './vault'
 import { registerKeychainHandlers } from './keychain'
@@ -419,6 +420,7 @@ app.whenReady().then(() => {
   registerLaunchHandlers()
   registerDeviceHandlers()
   registerAnalyzeHandlers()
+  registerTodoScanHandlers()
   registerWatcherHandlers()
   registerVaultHandlers()
   registerKeychainHandlers()

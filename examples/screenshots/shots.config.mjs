@@ -1198,6 +1198,30 @@ export const shots = [
     }
   },
   {
+    // The TODOs tab of the same dock, grouped by owner — the shot has to show
+    // that `TODO(cgm)` and `todo (ana)` land in named piles, which a grouping
+    // by file would hide.
+    out: 'code-todos',
+    repos: ['analyzer-problems'],
+    themes: ['dark'],
+    appTheme: 'midnight',
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['analyzer-problems']
+      await page.evaluate((p) => {
+        const s = window.__shot
+        s.repo.getState().select(p, { type: 'wip' })
+        s.problems.getState().setMode('todos')
+        s.problems.getState().setGroupBy('owner')
+        s.ui.getState().setProblemsOpen(p, true)
+        // Taller than the default dock: the shot exists to show three named
+        // piles, and two of them below the fold proves nothing.
+        s.ui.getState().setLayout({ problemsHeight: 330 })
+      }, repo)
+      // One `git grep`, but it is still a process.
+      await page.waitForTimeout(1400)
+    }
+  },
+  {
     // Run target — the device picker next to the LAUNCH tab.
     //
     // Driven by a fake SDK tree rather than the real `flutter` / `adb` /

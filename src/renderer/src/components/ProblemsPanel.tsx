@@ -2,6 +2,7 @@ import { useEffect, useMemo } from 'react'
 import { CircleX, TriangleAlert, Info, RefreshCw, X, Search, GitCompareArrows, Loader } from 'lucide-react'
 import type { Problem, ProblemSeverity } from '../../../shared/types'
 import { useProblemsStore } from '../stores/problems'
+import { CodeTodosView } from './CodeTodosPanel'
 import { useRepoStore } from '../stores/repo'
 import { useUIStore } from '../stores/ui'
 import { useT, interp } from '../i18n'
@@ -15,6 +16,45 @@ export function severityIcon(severity: ProblemSeverity, size = 13): React.JSX.El
 }
 
 /**
+ * The two halves of the dock, as a header control.
+ *
+ * They share one pane because they answer the same question from two sides:
+ * what the toolchain complains about, and what the people who wrote the code
+ * already knew was wrong. Tabs, not two docks — the screen has one bottom edge.
+ */
+export function DockTabs(): React.JSX.Element {
+  const t = useT()
+  const mode = useProblemsStore((s) => s.mode)
+  const setMode = useProblemsStore((s) => s.setMode)
+  return (
+    <span className="problems-tabs" role="tablist">
+      <button
+        className={`prob-tab ${mode === 'problems' ? 'on' : ''}`}
+        role="tab"
+        aria-selected={mode === 'problems'}
+        onClick={() => setMode('problems')}
+      >
+        {t('problems.title')}
+      </button>
+      <button
+        className={`prob-tab ${mode === 'todos' ? 'on' : ''}`}
+        role="tab"
+        aria-selected={mode === 'todos'}
+        onClick={() => setMode('todos')}
+      >
+        {t('ctodo.title')}
+      </button>
+    </span>
+  )
+}
+
+/** The dock itself: whichever half is showing. */
+export function ProblemsPanel({ repoPath }: { repoPath: string }): React.JSX.Element {
+  const mode = useProblemsStore((s) => s.mode)
+  return mode === 'todos' ? <CodeTodosView repoPath={repoPath} /> : <AnalyzerView repoPath={repoPath} />
+}
+
+/**
  * The Problems dock: everything the project's own analyzers said, grouped by
  * file, one click from the line that said it.
  *
@@ -23,7 +63,7 @@ export function severityIcon(severity: ProblemSeverity, size = 13): React.JSX.El
  * within a week, and the question a git client can answer that an editor cannot
  * is whether *this* diff is what introduced them.
  */
-export function ProblemsPanel({ repoPath }: { repoPath: string }): React.JSX.Element {
+function AnalyzerView({ repoPath }: { repoPath: string }): React.JSX.Element {
   const t = useT()
   const result = useProblemsStore((s) => s.resultByRepo[repoPath])
   const running = useProblemsStore((s) => s.runningByRepo[repoPath] === true)
@@ -76,7 +116,7 @@ export function ProblemsPanel({ repoPath }: { repoPath: string }): React.JSX.Ele
   return (
     <section className="problems-panel" aria-label={t('problems.title')}>
       <header className="problems-head">
-        <span className="problems-title">{t('problems.title')}</span>
+        <DockTabs />
         <span className="problems-counts">
           {severityChip('error', counts.error, t('problems.errors'))}
           {severityChip('warning', counts.warning, t('problems.warnings'))}

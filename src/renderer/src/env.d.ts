@@ -242,6 +242,10 @@ interface PreloadApi {
     detect(repoPath: string): Promise<string[]>
     cancel(repoPath: string): void
   }
+  todoScan: {
+    run(repoPath: string): Promise<import('../../shared/types').TodoScanResult>
+    cancel(repoPath: string): void
+  }
   devices: {
     list(repoPath: string): Promise<import('../../shared/types').RunDeviceSnapshot>
     boot(

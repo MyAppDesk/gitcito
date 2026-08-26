@@ -39,6 +39,9 @@ export function applyCoupon(items: Item[], code: string): number {
   const discount = COUPONS[code]
   return total(items) * (1 - discount)
 }
+
+// TODO(cgm): move the coupon table into config
+// NOTE: prices are integer cents everywhere below this line
 EOF
 
 cat > "$R/src/checkout.ts" <<'EOF'
@@ -49,6 +52,9 @@ export async function checkout(items: Item[], token) {
   if (amount == 0) return { ok: false }
   return { ok: true, amount, token }
 }
+
+//FIXME(cgm) retry once before we surface a failure
+// todo (ana): the gateway wants an idempotency key
 EOF
 
 cat > "$R/src/index.ts" <<'EOF'
@@ -57,6 +63,9 @@ import { checkout } from './checkout'
 const unused = 'left over from the refactor'
 
 void checkout([], 'tok_123')
+
+// XXX: delete once the refactor lands
+/* todo (ana): drop the legacy entry point with it */
 EOF
 
 # ── The stand-in analyzers ───────────────────────────────────────────────────
@@ -105,5 +114,12 @@ git -C "$R" add -A && git -C "$R" commit -qm "feat: cart and checkout"
 # differs from HEAD, and the point of the toggle is that it narrows.
 printf '\nexport const FREE_SHIPPING = 50\n' >> "$R/src/cart.ts"
 printf '\n// TODO: validate the token\n' >> "$R/src/checkout.ts"
+
+# Untracked on purpose: a marker written five minutes ago is the one most worth
+# seeing, and `git grep --untracked` is what makes it visible.
+cat > "$R/src/legacy.js" <<'EOF'
+// HACK (ana): keep the old response shape until the API v2 lands
+export const legacy = true
+EOF
 
 summary "analyzer-problems" "a repo with stand-in tsc/eslint in node_modules/.bin — for the Problems dock (errors, warnings, and the changed-files filter)"

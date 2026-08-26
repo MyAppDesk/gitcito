@@ -52,9 +52,11 @@ import {
   Scale,
   Users,
   FlaskConical,
-  TriangleAlert
+  TriangleAlert,
+  ListTodo
 } from 'lucide-react'
 import { useUIStore } from '../stores/ui'
+import { useProblemsStore } from '../stores/problems'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
 import { useSettingsStore } from '../stores/settings'
 import { gitApi, cliApi } from '../infrastructure/api'
@@ -290,6 +292,7 @@ export function CommandPalette(): React.JSX.Element {
       ...(aiEnabled ? [{ id: 'ai-assistant', title: t('aiWizard.configTitle'), group: 'Actions', keywords: 'ai config wizard generate claude cursor copilot instructions', icon: <Sparkles size={15} />, run: act(() => ui.openModal({ kind: 'ai-config-wizard', repoPath: path, repoName: repo.name })) } as Command] : []),
       { id: 'terminal', title: t('cmd.terminal'), group: 'Actions', keywords: 'shell console pty', icon: <TerminalSquare size={15} />, run: act(() => { if (repoPath) ui.toggleTerminal(repoPath) }) },
       { id: 'problems', title: t('cmd.problems'), group: 'Actions', keywords: 'analyzer analyzers diagnostics errors warnings lint tsc eslint dart clippy vet ruff', icon: <TriangleAlert size={15} />, run: act(() => { if (repoPath) ui.toggleProblems(repoPath) }) },
+      { id: 'code-todos', title: t('cmd.codeTodos'), group: 'Actions', keywords: 'todo todos fixme hack xxx note marker markers comment comments backlog owner tag', icon: <ListTodo size={15} />, run: act(() => { if (repoPath) { useProblemsStore.getState().setMode('todos'); ui.setProblemsOpen(repoPath, true) } }) },
       ...(editor?.command ? [{ id: 'open-in-editor', title: interp(t('cmd.openInEditor'), { app: editor.name }), group: 'Actions', keywords: 'editor vscode code cursor zed sublime jetbrains open folder workspace', icon: <SquarePen size={15} />, run: act(() => void openInEditor(editor, { path, isDir: true, repo: path })) } as Command] : []),
       { id: 'reflog', title: t('cmd.reflog'), group: 'Actions', keywords: 'recovery undo history head', icon: <History size={15} />, run: act(() => ui.openModal({ kind: 'reflog', repoPath: path })) },
       { id: 'todos', title: t('cmd.todos'), group: 'Actions', keywords: 'todo task checklist note reminder chore', icon: <CheckSquare size={15} />, run: act(() => ui.openModal({ kind: 'todos', repoPath: path })) },

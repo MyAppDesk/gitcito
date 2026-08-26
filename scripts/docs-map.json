@@ -102,6 +102,7 @@
   "commands": {
     "covered": {
       "problems": "problems",
+      "code-todos": "code-todos",
       "todos": "todos",
       "absorb": "absorb",
       "ai-assistant": "ai",

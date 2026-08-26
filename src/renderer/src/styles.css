@@ -4040,6 +4040,39 @@ body.col-resizing .node-ava {
   white-space: nowrap;
 }
 
+/* Pages that ride on a repository's tab. Small enough to read as part of the
+   tab rather than as tabs of their own; the close affordance only appears on
+   hover, so a row of chips does not turn into a row of ✕. */
+.tab-page-chip {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+  padding: 2px;
+  margin-inline-start: 2px;
+  border-radius: 5px;
+  color: var(--text-2);
+  cursor: pointer;
+  flex: none;
+}
+.tab-page-chip:hover { color: var(--text-1); background: var(--bg-3); }
+.tab-page-chip.active { color: var(--accent); background: var(--accent-soft); }
+.tab-page-close {
+  position: absolute;
+  inset-block-start: -4px;
+  inset-inline-end: -5px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  color: var(--text-2);
+}
+.tab-page-chip:hover .tab-page-close { display: inline-flex; }
+.tab-page-close:hover { color: var(--red, #ff5c7a); }
+
 /* ─── DevTools page (embedded webview) ───────────────────────────────────── */
 
 .devtools-page {

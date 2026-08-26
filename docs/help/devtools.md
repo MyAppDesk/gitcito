@@ -23,7 +23,9 @@ http://127.0.0.1:9100?uri=http://127.0.0.1:53412/uJ8k=/
 ```
 
 The launch session watches its own output for it, and the debug toolbar grows a
-button. Click it and DevTools opens in a tab of its own, one per session — two
+button. Click it and DevTools opens **inside the repository's tab**: the tab
+gains a small icon, clicking that icon swaps between the repository and the
+tool, and the ✕ that appears on hover closes it. One icon per session — two
 apps running at once are two DevTools.
 
 A **hot restart publishes a new address**, and the tab follows it while its

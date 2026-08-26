@@ -23,8 +23,10 @@ http://127.0.0.1:9100?uri=http://127.0.0.1:53412/uJ8k=/
 ```
 
 La sesión de lanzamiento vigila su propia salida buscándola, y a la barra de
-depuración le sale un botón. Al pulsarlo, DevTools se abre en su propia pestaña,
-una por sesión — dos apps corriendo a la vez son dos DevTools.
+depuración le sale un botón. Al pulsarlo, DevTools se abre **dentro de la
+pestaña del repositorio**: a la pestaña le aparece un iconito, al pulsarlo
+alternas entre el repositorio y la herramienta, y la ✕ que sale al pasar por
+encima lo cierra. Un icono por sesión — dos apps a la vez son dos DevTools.
 
 Un **hot restart publica una dirección nueva**, y la pestaña la sigue mientras su
 sesión viva. Cuando la sesión desaparece, la pestaña conserva la última dirección

@@ -23,7 +23,9 @@ http://127.0.0.1:9100?uri=http://127.0.0.1:53412/uJ8k=/
 ```
 
 La sessione di avvio sorveglia il proprio output per trovarla, e nella barra di
-debug compare un pulsante. Un clic apre DevTools in una scheda tutta sua, una per
+debug compare un pulsante. Un clic apre DevTools **dentro la scheda del
+repository**: la scheda guadagna una piccola icona, cliccarla alterna fra
+repository e strumento, e la ✕ che appare al passaggio la chiude. Un’icona per
 sessione — due app in esecuzione sono due DevTools.
 
 Un **riavvio a caldo pubblica un nuovo indirizzo**, e la scheda lo segue finché la

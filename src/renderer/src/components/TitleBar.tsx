@@ -17,7 +17,7 @@ import {
 } from '../lib/repoFolders'
 import { ProfileSwitcher } from './ProfileSwitcher'
 import { WorkspaceSwitcher } from './WorkspaceSwitcher'
-import { tabLabel } from '../lib/tabLabel'
+import { tabLabel, pageTabLabel } from '../lib/tabLabel'
 import { repoCloseStatus, tabCloseStatus, type TabStatus } from '../lib/tabClose'
 import { repoDisplayName } from '../lib/repoAlias'
 import { confirmRemoveRepoFromGroup, repositoryMenuItems, requestCloseTab } from '../lib/repositoryMenuItems'
@@ -33,6 +33,14 @@ const dnd = (...args: unknown[]): void => {
 }
 
 /** Icon for a page tab, by page type. */
+/** Space / Enter on a role="button" span, the same as everywhere else. */
+const keyActivate = (e: React.KeyboardEvent): void => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault()
+    ;(e.currentTarget as HTMLElement).click()
+  }
+}
+
 function pageTabIcon(type: string): React.JSX.Element {
   switch (type) {
     case 'notifications':
@@ -85,7 +93,7 @@ type DropTarget =
 export function TitleBar(): React.JSX.Element {
   const t = useT()
   const {
-    settings, setGroupActiveRepo, closeTab, setActiveTab, renameTab,
+    settings, setGroupActiveRepo, closeTab, setActiveTab, renameTab, setRepoPage, closeRepoPage,
     setTabColor, toggleTabCollapsed,
     reorderTabs, moveTabIntoGroup, ejectRepoFromGroup,
     moveRepoBetweenGroups, reorderReposInGroup, moveTabToWorkspace,
@@ -977,7 +985,12 @@ export function TitleBar(): React.JSX.Element {
                 onDragOver={onDragOverTab(tab.id)}
                 onDrop={onDropTab(tab.id)}
                 {...middleClose(() => requestCloseTab(tab.id))}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => {
+                  setActiveTab(tab.id)
+                  // Clicking the tab body means "the repository", not whichever
+                  // of its pages happened to be open.
+                  if (tab.activePage != null) setRepoPage(tab.id, null)
+                }}
                 onContextMenu={(e) => {
                   e.preventDefault()
                   openContextMenu(e.clientX, e.clientY, tabMenu(tab))
@@ -988,6 +1001,38 @@ export function TitleBar(): React.JSX.Element {
               >
                 <FolderGit2 size={13} />
                 <span className="tab-name">{tab.name}</span>
+                {/* Pages that belong to this repository ride here as icons: a
+                    click shows one, and the × that appears on hover closes it. */}
+                {(tab.pages ?? []).map((page, i) => (
+                  <span
+                    key={`${page.type}-${i}`}
+                    className={`tab-page-chip ${tab.activePage === i ? 'active' : ''}`}
+                    role="button"
+                    tabIndex={0}
+                    title={pageTabLabel(page, t)}
+                    aria-label={pageTabLabel(page, t)}
+                    onKeyDown={keyActivate}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setActiveTab(tab.id)
+                      setRepoPage(tab.id, tab.activePage === i ? null : i)
+                    }}
+                  >
+                    {pageTabIcon(page.type)}
+                    <span
+                      className="tab-page-close"
+                      role="button"
+                      tabIndex={-1}
+                      aria-label={interp(t('a11y.closeTab'), { name: pageTabLabel(page, t) })}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        closeRepoPage(tab.id, i)
+                      }}
+                    >
+                      <X size={9} />
+                    </span>
+                  </span>
+                ))}
                 {status && (
                   <span
                     className={`tab-status tab-status-${status}`}

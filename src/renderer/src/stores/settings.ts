@@ -14,6 +14,7 @@ import {
   type RepoLayout,
   type RepoRef,
   type RepoBookmark,
+  type RepoTab,
   type RepoTodo,
   type TodoStatus,
   type TabState,
@@ -143,6 +144,18 @@ function withTodoOrder(
   })
 }
 
+/** Page kinds that ride on their repository's tab instead of taking their own.
+ *  Everything else — the changelog, an issue, a release — stands alone. */
+const ATTACHED_PAGES = new Set(['devtools', 'wiki', 'insights'])
+
+/** Two attached pages are "the same" when they address the same thing: one
+ *  wiki per repo, one DevTools per launch session. */
+function samePage(a: PageContent, b: PageContent): boolean {
+  if (a.type !== b.type) return false
+  if (a.type === 'devtools' && b.type === 'devtools') return a.launchId === b.launchId
+  return 'repoPath' in a && 'repoPath' in b ? a.repoPath === b.repoPath : true
+}
+
 let saveTimer: ReturnType<typeof setTimeout> | null = null
 function persist(settings: AppSettings): void {
   if (saveTimer) clearTimeout(saveTimer)
@@ -231,6 +244,10 @@ interface SettingsState {
   openFromCli(payload: { path: string; name?: string; group?: string }): void
   /** Open (or focus the existing) non-repo page tab, e.g. the changelog. */
   openPageTab(page: PageContent): void
+  /** Show one of a repo tab's attached pages, or the repository itself (null). */
+  setRepoPage(tabId: string, index: number | null): void
+  /** Detach a page from a repo tab. */
+  closeRepoPage(tabId: string, index: number): void
   /** Replace an existing page tab's content in place (e.g. prev/next release). */
   navigatePageTab(tabId: string, page: PageContent): void
   createGroupTab(name: string): void
@@ -581,8 +598,50 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     })
   },
 
+  setRepoPage: (tabId, index) =>
+    get().update((s) => ({
+      ...s,
+      tabs: s.tabs.map((t) => (t.id === tabId && t.kind === 'repo' ? { ...t, activePage: index } : t))
+    })),
+
+  closeRepoPage: (tabId, index) =>
+    get().update((s) => ({
+      ...s,
+      tabs: s.tabs.map((t) => {
+        if (t.id !== tabId || t.kind !== 'repo') return t
+        const pages = (t.pages ?? []).filter((_, i) => i !== index)
+        // Closing what you were looking at drops you back on the repository,
+        // not on some neighbouring page you did not ask for.
+        const activePage = t.activePage == null || t.activePage === index ? null : t.activePage > index ? t.activePage - 1 : t.activePage
+        return { ...t, pages, activePage: pages.length ? activePage : null }
+      })
+    })),
+
   openPageTab: (page) => {
     leaveMission()
+    // A repo-scoped page rides on its repository's tab rather than taking one
+    // of its own: it belongs to that repo and is meaningless without it.
+    const host = ATTACHED_PAGES.has(page.type) && 'repoPath' in page ? page.repoPath : null
+    if (host) {
+      const attached = get().update((s) => {
+        const tab = s.tabs.find(
+          (t) => t.kind === 'repo' && t.repos.some((r) => r.path === host)
+        ) as RepoTab | undefined
+        if (!tab) return s
+        const pages = tab.pages ?? []
+        const existing = pages.findIndex((p) => samePage(p, page))
+        // Re-opening replaces in place: a DevTools address changes between runs
+        // and the icon should follow it, not multiply.
+        const next = existing >= 0 ? pages.map((p, i) => (i === existing ? page : p)) : [...pages, page]
+        const index = existing >= 0 ? existing : next.length - 1
+        return {
+          ...s,
+          activeTabId: tab.id,
+          tabs: s.tabs.map((t) => (t.id === tab.id ? { ...t, pages: next, activePage: index } : t))
+        }
+      })
+      return attached
+    }
     return get().update((s) => {
       // One tab per page identity — focus it if already open. Changelog is a
       // singleton; releases are keyed by release id so each opens its own tab.

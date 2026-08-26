@@ -23,8 +23,10 @@ http://127.0.0.1:9100?uri=http://127.0.0.1:53412/uJ8k=/
 ```
 
 A sessão de launch vigia a própria saída atrás dela, e a barra de depuração ganha
-um botão. Ao clicar, o DevTools abre numa aba só dele, uma por sessão — dois apps
-rodando ao mesmo tempo são dois DevTools.
+um botão. Ao clicar, o DevTools abre **dentro da aba do repositório**: a aba
+ganha um ícone pequeno, clicar nele alterna entre o repositório e a ferramenta, e
+o ✕ que aparece ao passar o mouse fecha. Um ícone por sessão — dois apps rodando
+ao mesmo tempo são dois DevTools.
 
 Um **hot restart publica um endereço novo**, e a aba acompanha enquanto a sessão
 viver. Quando a sessão acaba, a aba guarda o último endereço, que normalmente já

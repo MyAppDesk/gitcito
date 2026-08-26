@@ -4,7 +4,7 @@ import { GitMerge, FolderOpen, Download, ArrowDownToLine, Bug, LifeBuoy, Message
 import { takeAccountsNotice, useSettingsStore } from './stores/settings'
 import { useRepoStore, repoActions, type RepoData } from './stores/repo'
 import { useUIStore } from './stores/ui'
-import { tabActiveRepoPath, tabRepos, type ConflictOpKind, type GroupTab, type PageTab } from '../../shared/types'
+import { tabActiveRepoPath, tabRepos, type ConflictOpKind, type GroupTab, type PageTab, type PageContent } from '../../shared/types'
 import { useT, t as tr, interp } from './i18n'
 import { applyDirection } from './i18n/direction'
 import { todoSummary } from './lib/todos'
@@ -223,6 +223,21 @@ function GroupView({ tab }: { tab: GroupTab }): React.JSX.Element {
       </motion.div>
     </div>
   )
+}
+
+/** The body of a page, without the tab around it — a page can be a tab of its
+ *  own or ride on a repository's tab, and both render the same thing. */
+function PageBody({ page }: { page: PageContent }): React.JSX.Element | null {
+  switch (page.type) {
+    case 'insights':
+      return <InsightsPage repoPath={page.repoPath} />
+    case 'wiki':
+      return <WikiPageView repoPath={page.repoPath} />
+    case 'devtools':
+      return <DevToolsPage launchId={page.launchId} url={page.url} label={page.label} tool={page.tool} />
+    default:
+      return null
+  }
 }
 
 /** Renders a non-repo page tab. Dispatches on the page type so new page
@@ -832,6 +847,12 @@ export default function App(): React.JSX.Element {
   //   • rightPanelFullHeight — in bottom mode, keep the terminal out from under
   //     the right panel so that panel spans the full height.
   // Toolbar (above) and the status bar (below) stay put in the main return.
+  // The page this repo tab is showing instead of the repository, if any.
+  const repoPage =
+    activeTab?.kind === 'repo' && activeTab.activePage != null
+      ? (activeTab.pages?.[activeTab.activePage] ?? null)
+      : null
+
   const placement = settings.terminalPlacement
   const sbSide = settings.sidebarSide
   const rpFull = settings.rightPanelFullHeight
@@ -1112,19 +1133,22 @@ export default function App(): React.JSX.Element {
           title-bar button is its "tab", so the strip stays untouched. */}
       {/* display:contents keeps the flex layout while giving non-repo views a
           main landmark; skipped for the repo workspace, which has its own <main>. */}
-      {!(!missionOpen && activeTab && repo && !repo.notGit) && (
+      {!(!missionOpen && activeTab && repo && !repo.notGit && !repoPage) && (
         <main style={{ display: 'contents' }}>
           {missionOpen && <MissionControlPage />}
 
           {!missionOpen && !activeTab && <Welcome />}
           {!missionOpen && activeTab && activeTab.kind === 'group' && !repo && <GroupView tab={activeTab} />}
           {!missionOpen && activeTab && activeTab.kind === 'page' && <PageView tab={activeTab} />}
+          {/* A page riding on a repo tab: the repository's own view steps aside
+              for it, and the tab's icon is how you get back. */}
+          {!missionOpen && repoPage && <PageBody page={repoPage} />}
 
           {!missionOpen && activeTab && repo && repo.notGit && <InitRepo path={repo.path} />}
         </main>
       )}
 
-      {!missionOpen && activeTab && repo && !repo.notGit && (
+      {!missionOpen && activeTab && repo && !repo.notGit && !repoPage && (
         <>
           <Toolbar repo={repo} />
           {workspaceBody}

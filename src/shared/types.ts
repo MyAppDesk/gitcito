@@ -2541,6 +2541,14 @@ export interface RepoTab extends TabBase {
   kind: 'repo'
   repos: RepoRef[]
   activeRepoPath: string | null
+  /**
+   * Repo-scoped pages opened *inside* this tab — DevTools, the wiki, insights.
+   * They ride on the tab as small icons instead of claiming a tab of their own:
+   * they belong to this repository and are meaningless without it.
+   */
+  pages?: PageContent[]
+  /** Index into `pages` that is showing, or null for the repository itself. */
+  activePage?: number | null
 }
 
 /** A folder inside a group tab. Holds repositories (by path, referencing the

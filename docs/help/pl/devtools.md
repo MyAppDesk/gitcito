@@ -23,8 +23,10 @@ http://127.0.0.1:9100?uri=http://127.0.0.1:53412/uJ8k=/
 ```
 
 Sesja uruchomienia pilnuje własnego wyjścia w jej poszukiwaniu, a na pasku
-debugowania pojawia się przycisk. Kliknięcie otwiera DevTools we własnej karcie,
-po jednej na sesję — dwie działające aplikacje to dwa DevTools.
+debugowania pojawia się przycisk. Kliknięcie otwiera DevTools **wewnątrz karty
+repozytorium**: karta dostaje małą ikonę, kliknięcie jej przełącza między
+repozytorium a narzędziem, a ✕ pojawiające się po najechaniu zamyka je. Jedna
+ikona na sesję — dwie działające aplikacje to dwa DevTools.
 
 **Hot restart publikuje nowy adres**, a karta podąża za nim, dopóki żyje jej
 sesja. Gdy sesja zniknie, karta zachowa ostatni adres, zwykle już martwy: zamknij

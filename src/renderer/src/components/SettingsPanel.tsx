@@ -52,6 +52,7 @@ import { useUIStore } from '../stores/ui'
 import { Avatar } from './Avatar'
 import { useUpdatesStore, hasPendingUpdate } from '../stores/updates'
 import { gitApi, aiApi, settingsApi, analyticsApi, logApi, infoApi, vaultApi, shellApi, hostingApi, keychainApi, editorApi, sshApi, diffToolApi, localCiApi } from '../infrastructure/api'
+import type { AnalyzerMode } from '../../../shared/types'
 import type { LocalCiStatus } from '../../../shared/localCi'
 import type { DetectedEditor, EditorSetting } from '../../../shared/editors'
 import type { SshKey, SshStatus, SshTest } from '../../../shared/sshKeys'
@@ -2560,6 +2561,19 @@ function GeneralPage(): React.JSX.Element {
           <span className="settings-hint">{t('settings.launchEnabledHint')}</span>
         </span>
       </label>
+
+      <h4>{t('settings.analyzerMode')}</h4>
+      <label>
+        <select
+          value={settings.analyzerMode ?? 'onOpen'}
+          onChange={(e) => update((s) => ({ ...s, analyzerMode: e.target.value as AnalyzerMode }))}
+        >
+          <option value="onOpen">{t('settings.analyzerOnOpen')}</option>
+          <option value="manual">{t('settings.analyzerManual')}</option>
+          <option value="off">{t('settings.analyzerOff')}</option>
+        </select>
+      </label>
+      <span className="settings-hint">{t('settings.analyzerModeHint')}</span>
 
       <h4 className="settings-section-title">{t('rerere.title')}</h4>
       <p className="settings-hint">{t('rerere.intro')}</p>

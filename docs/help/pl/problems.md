@@ -54,6 +54,11 @@ gdy otworzysz panel albo naciśniesz odświeżenie — nigdy z własnej woli. Dl
 lista jest zdjęciem chwili: zmień plik, a będzie nieaktualna do kolejnego
 uruchomienia.
 
+**Ustawienia → Ogólne → Analizatory kodu** decydują, jak bardzo się spieszy:
+przebieg przy otwarciu panelu (domyślnie), tylko po naciśnięciu odświeżenia, albo
+wyłączone — co całkowicie ukrywa połowę z analizatorami, jej licznik na pasku
+stanu i jej polecenie.
+
 **Wynik builda odpada.** Narzędzie wycelowane w katalog główny projektu sprawdza
 wszystko, co znajdzie, a znajduje też `.next/build/chunks`, spakowany `dist`,
 wciągniętą kopię — setki uwag o kodzie napisanym przez maszynę, które zasypują tę

@@ -376,9 +376,11 @@ function ProblemsStatusChip({ path }: { path: string }): React.JSX.Element | nul
   const result = useProblemsStore((s) => s.resultByRepo[path])
   const detect = useProblemsStore((s) => s.detect)
   const toggleProblems = useUIStore((s) => s.toggleProblems)
+  const analyzerMode = useSettingsStore((s) => s.settings.analyzerMode ?? 'onOpen')
   useEffect(() => {
-    if (available === undefined) void detect(path)
-  }, [path, available, detect])
+    if (analyzerMode !== 'off' && available === undefined) void detect(path)
+  }, [path, available, detect, analyzerMode])
+  if (analyzerMode === 'off') return null
   if (!available || available.length === 0) return null
   // Before the first sweep there is no verdict — and three zeroes would read as
   // "clean" when they mean "nobody has looked yet". A dash says the latter.

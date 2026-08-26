@@ -1429,6 +1429,11 @@ export const ptBR: Dict = {
   'settings.maskSecretsHint':
     'Esconde os valores em arquivos .env / de chave / de credencial (CHAVE=••••••) nas visões de diff, arquivo e blame. É só exibição — use o olhinho para revelar. Nunca muda o arquivo nem o que vai para o stage.',
   'settings.launchEnabled': 'Ativar o launch.json',
+  'settings.analyzerMode': 'Analisadores de código',
+  'settings.analyzerModeHint': 'São a toolchain do seu próprio projeto — tsc, ESLint, cargo clippy — então uma varredura custa segundos e CPU de verdade. Isto decide quando o Gitcito pode gastá-los.',
+  'settings.analyzerOnOpen': 'Ao abrir o painel de Problemas',
+  'settings.analyzerManual': 'Só quando eu apertar atualizar',
+  'settings.analyzerOff': 'Desligados — esconder os analisadores',
   'settings.launchEnabledHint':
     'Mostra um seletor de execução na barra lateral quando o repositório tem um .vscode/launch.json. Roda as configurações (com o preLaunchTask delas) no terminal integrado. Desligado → a interface de execução some por completo.',
   'settings.openVault': 'Abrir o cofre',

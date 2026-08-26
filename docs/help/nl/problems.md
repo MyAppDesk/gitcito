@@ -53,6 +53,11 @@ Gitcito. Ze starten wanneer je het paneel opent of ververst, nooit vanzelf.
 Daarom is de lijst een momentopname: bewerk een bestand en hij is verouderd tot
 je opnieuw draait.
 
+**Instellingen → Algemeen → Code-analyzers** bepaalt hoe gretig dat gaat:
+sweepen bij het openen van het paneel (standaard), alleen bij verversen, of uit —
+wat de analyzerhelft, de teller in de statusbalk en het commando volledig
+verbergt.
+
 **Gegenereerde uitvoer valt af.** Gereedschap dat op de projectroot is gericht
 controleert alles wat het vindt, en dat omvat `.next/build/chunks`, een gebundelde
 `dist`, een meegeleverde kopie — honderden klachten over machinaal geschreven code

@@ -54,6 +54,11 @@ Partono quando apri il pannello o premi aggiorna, mai da soli. È anche il motiv
 per cui la lista è un’istantanea: modifica un file e resta vecchia finché non la
 rilanci.
 
+**Impostazioni → Generale → Analizzatori di codice** decide quanto è solerte:
+scansione all’apertura del pannello (predefinito), solo premendo aggiorna, o
+disattivato — il che nasconde del tutto la metà analizzatori, il suo contatore
+nella barra di stato e il suo comando.
+
 **L’output generato viene scartato.** Uno strumento puntato sulla radice del
 progetto analizza tutto ciò che trova, e ciò include `.next/build/chunks`, un
 `dist` impacchettato, una copia vendorizzata — centinaia di lamentele su codice

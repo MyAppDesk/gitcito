@@ -1428,6 +1428,11 @@ export const ar: Dict = {
   'settings.maskSecretsHint':
     'أخفِ القيم في ملفات .env والمفاتيح وبيانات الاعتماد (KEY=••••••) في عروض الفروق والملف والمسؤولية. للعرض فقط — استخدم زر العين للكشف. ولا يغيّر هذا الملف ولا ما تحضّره أبدًا.',
   'settings.launchEnabled': 'تفعيل launch.json',
+  'settings.analyzerMode': 'محلّلات الشيفرة',
+  'settings.analyzerModeHint': 'هذه سلسلة أدوات مشروعك نفسه — tsc وESLint وcargo clippy — فالمسحة تكلّف ثواني حقيقية ومعالجًا حقيقيًا. وهنا يُقرَّر متى يحقّ لـ Gitcito إنفاقها.',
+  'settings.analyzerOnOpen': 'عند فتح لوحة المشاكل',
+  'settings.analyzerManual': 'فقط عندما أضغط التحديث',
+  'settings.analyzerOff': 'معطّلة — إخفاء المحلّلات',
   'settings.launchEnabledHint':
     'اعرض منتقي التشغيل في الشريط الجانبي حين يحتوي المستودع على .vscode/launch.json. ويشغّل الإعدادات (مع مهمة ما قبل التشغيل) في الطرفية المدمجة. وعند الإطفاء تُخفى واجهة التشغيل تمامًا.',
   'settings.openVault': 'فتح الخزنة',

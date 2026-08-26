@@ -1408,6 +1408,11 @@ export const fr: Dict = {
   'settings.maskSecretsHint':
     'Masque les valeurs des fichiers .env / de clés / d’identifiants (CLÉ=••••••) dans les vues diff, fichier et blame. Purement visuel — utilisez l’œil pour révéler. Ne modifie jamais le fichier ni ce que vous indexez.',
   'settings.launchEnabled': 'Activer launch.json',
+  'settings.analyzerMode': 'Analyseurs de code',
+  'settings.analyzerModeHint': 'C’est la chaîne d’outils de votre projet — tsc, ESLint, cargo clippy — un balayage coûte donc de vraies secondes et du vrai CPU. Ceci décide quand Gitcito peut les dépenser.',
+  'settings.analyzerOnOpen': 'À l’ouverture du panneau Problèmes',
+  'settings.analyzerManual': 'Uniquement quand j’appuie sur actualiser',
+  'settings.analyzerOff': 'Désactivés — masquer les analyseurs',
   'settings.launchEnabledHint':
     'Affiche un sélecteur d’exécution dans la barre latérale quand un dépôt contient un .vscode/launch.json. Lance les configurations (avec leur preLaunchTask) dans le terminal intégré. Désactivé → l’interface de lancement disparaît entièrement.',
   'settings.openVault': 'Ouvrir le coffre-fort',

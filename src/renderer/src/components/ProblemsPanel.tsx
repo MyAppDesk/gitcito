@@ -4,6 +4,7 @@ import type { Problem, ProblemSeverity } from '../../../shared/types'
 import { useProblemsStore } from '../stores/problems'
 import { CodeTodosView } from './CodeTodosPanel'
 import { useRepoStore } from '../stores/repo'
+import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
 import { useT, interp } from '../i18n'
 import { baseName, countBySeverity, dirName, filterProblems, groupByFile } from '../lib/problems'
@@ -26,16 +27,20 @@ export function DockTabs(): React.JSX.Element {
   const t = useT()
   const mode = useProblemsStore((s) => s.mode)
   const setMode = useProblemsStore((s) => s.setMode)
+  const analyzerMode = useSettingsStore((s) => s.settings.analyzerMode ?? 'onOpen')
   return (
     <span className="problems-tabs" role="tablist">
-      <button
-        className={`prob-tab ${mode === 'problems' ? 'on' : ''}`}
-        role="tab"
-        aria-selected={mode === 'problems'}
-        onClick={() => setMode('problems')}
-      >
-        {t('problems.title')}
-      </button>
+      {/* Turned off means gone, not present-but-empty. */}
+      {analyzerMode !== 'off' && (
+        <button
+          className={`prob-tab ${mode === 'problems' ? 'on' : ''}`}
+          role="tab"
+          aria-selected={mode === 'problems'}
+          onClick={() => setMode('problems')}
+        >
+          {t('problems.title')}
+        </button>
+      )}
       <button
         className={`prob-tab ${mode === 'todos' ? 'on' : ''}`}
         role="tab"
@@ -51,7 +56,14 @@ export function DockTabs(): React.JSX.Element {
 /** The dock itself: whichever half is showing. */
 export function ProblemsPanel({ repoPath }: { repoPath: string }): React.JSX.Element {
   const mode = useProblemsStore((s) => s.mode)
-  return mode === 'todos' ? <CodeTodosView repoPath={repoPath} /> : <AnalyzerView repoPath={repoPath} />
+  const analyzerMode = useSettingsStore((s) => s.settings.analyzerMode ?? 'onOpen')
+  // With the analyzers off the dock is the TODO scan and nothing else, even if
+  // the analyzer half happened to be the one selected last.
+  return mode === 'todos' || analyzerMode === 'off' ? (
+    <CodeTodosView repoPath={repoPath} />
+  ) : (
+    <AnalyzerView repoPath={repoPath} />
+  )
 }
 
 /**
@@ -80,11 +92,14 @@ function AnalyzerView({ repoPath }: { repoPath: string }): React.JSX.Element {
   const setFileView = useUIStore((s) => s.setFileView)
   const setProblemsOpen = useUIStore((s) => s.setProblemsOpen)
 
-  // Opening the panel with nothing to show is a dead end — sweep once.
+  // Opening the panel with nothing to show is a dead end — sweep once. Unless
+  // the user asked for manual only: these are their machine's compilers, and
+  // "when I say so" is a reasonable thing to want.
+  const analyzerMode = useSettingsStore((s) => s.settings.analyzerMode ?? 'onOpen')
   useEffect(() => {
-    if (!result && !running) void run(repoPath)
+    if (analyzerMode === 'onOpen' && !result && !running) void run(repoPath)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [repoPath])
+  }, [repoPath, analyzerMode])
 
   const problems = result?.problems ?? []
   const counts = useMemo(() => countBySeverity(problems), [problems])

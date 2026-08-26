@@ -1408,6 +1408,11 @@ export const ja: Dict = {
   'settings.maskSecretsHint':
     '.env や鍵、認証情報のファイルの値を、差分、ファイル、blame の各ビューで隠します（KEY=••••••）。表示だけの機能で、目のアイコンで表示に戻せます。ファイルの中身やステージする内容が変わることはありません。',
   'settings.launchEnabled': 'launch.json を有効にする',
+  'settings.analyzerMode': 'コードアナライザー',
+  'settings.analyzerModeHint': 'これらはあなたのプロジェクト自身のツールチェーン（tsc、ESLint、cargo clippy）です。一回のスイープは実時間と CPU を本当に消費します。ここでは、それをいつ使ってよいかを決めます。',
+  'settings.analyzerOnOpen': '「問題」ドックを開いたとき',
+  'settings.analyzerManual': '更新を押したときだけ',
+  'settings.analyzerOff': 'オフ — アナライザーを隠す',
   'settings.launchEnabledHint':
     'リポジトリに .vscode/launch.json があるとき、サイドバーに実行 / 起動のピッカーを出します。設定は preLaunchTask ごと統合ターミナルで実行されます。オフにすると、起動まわりの UI は完全に隠れます。',
   'settings.openVault': '保管庫を開く',

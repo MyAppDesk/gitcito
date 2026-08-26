@@ -1424,6 +1424,11 @@ export const en = {
   'settings.maskSecretsHint':
     'Hide values in .env / key / credential files (KEY=••••••) in the diff, file and blame views. Display-only — use the eye toggle to reveal. Never changes the file or what you stage.',
   'settings.launchEnabled': 'Enable launch.json',
+  'settings.analyzerMode': 'Code analyzers',
+  'settings.analyzerModeHint': 'They are your project’s own toolchain — tsc, ESLint, cargo clippy — so a sweep costs real seconds and real CPU. This decides when Gitcito may spend them.',
+  'settings.analyzerOnOpen': 'When the Problems dock opens',
+  'settings.analyzerManual': 'Only when I press refresh',
+  'settings.analyzerOff': 'Off — hide the analyzers',
   'settings.launchEnabledHint':
     'Show a Run/Launch picker in the sidebar when a repo has a .vscode/launch.json. Runs configs (with their preLaunchTask) in the integrated terminal. Off → the launch UI is hidden entirely.',
   'settings.openVault': 'Open vault',

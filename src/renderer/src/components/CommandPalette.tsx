@@ -120,6 +120,7 @@ export function CommandPalette(): React.JSX.Element {
   const tabs = useSettingsStore((s) => s.settings.tabs)
   const activeTabId = useSettingsStore((s) => s.settings.activeTabId)
   const aiEnabled = useSettingsStore((s) => s.activeProfile().ai.enabled !== false)
+  const analyzerMode = useSettingsStore((s) => s.settings.analyzerMode ?? 'onOpen')
   const editor = useSettingsStore((s) => s.settings.editor)
 
   const activeTab = tabs.find((t) => t.id === activeTabId) ?? null
@@ -291,7 +292,7 @@ export function CommandPalette(): React.JSX.Element {
       { id: 'filter-path', title: t('cmd.filterPath'), group: 'Actions', keywords: 'path file folder history touched commits filter', icon: <FolderTree size={15} />, run: act(() => ui.openModal({ kind: 'input', title: t('cmdp.filterTitle'), label: t('cmdp.filterLabel'), placeholder: 'src/main', submitLabel: t('cmdp.filterSubmit'), onSubmit: (v) => ui.setPathFilter(v.trim() || null) })) },
       ...(aiEnabled ? [{ id: 'ai-assistant', title: t('aiWizard.configTitle'), group: 'Actions', keywords: 'ai config wizard generate claude cursor copilot instructions', icon: <Sparkles size={15} />, run: act(() => ui.openModal({ kind: 'ai-config-wizard', repoPath: path, repoName: repo.name })) } as Command] : []),
       { id: 'terminal', title: t('cmd.terminal'), group: 'Actions', keywords: 'shell console pty', icon: <TerminalSquare size={15} />, run: act(() => { if (repoPath) ui.toggleTerminal(repoPath) }) },
-      { id: 'problems', title: t('cmd.problems'), group: 'Actions', keywords: 'analyzer analyzers diagnostics errors warnings lint tsc eslint dart clippy vet ruff', icon: <TriangleAlert size={15} />, run: act(() => { if (repoPath) ui.toggleProblems(repoPath) }) },
+      ...(analyzerMode === 'off' ? [] : [{ id: 'problems', title: t('cmd.problems'), group: 'Actions', keywords: 'analyzer analyzers diagnostics errors warnings lint tsc eslint dart clippy vet ruff', icon: <TriangleAlert size={15} />, run: act(() => { if (repoPath) ui.toggleProblems(repoPath) }) } as Command]),
       { id: 'code-todos', title: t('cmd.codeTodos'), group: 'Actions', keywords: 'todo todos fixme hack xxx note marker markers comment comments backlog owner tag', icon: <ListTodo size={15} />, run: act(() => { if (repoPath) { useProblemsStore.getState().setMode('todos'); ui.setProblemsOpen(repoPath, true) } }) },
       ...(editor?.command ? [{ id: 'open-in-editor', title: interp(t('cmd.openInEditor'), { app: editor.name }), group: 'Actions', keywords: 'editor vscode code cursor zed sublime jetbrains open folder workspace', icon: <SquarePen size={15} />, run: act(() => void openInEditor(editor, { path, isDir: true, repo: path })) } as Command] : []),
       { id: 'reflog', title: t('cmd.reflog'), group: 'Actions', keywords: 'recovery undo history head', icon: <History size={15} />, run: act(() => ui.openModal({ kind: 'reflog', repoPath: path })) },

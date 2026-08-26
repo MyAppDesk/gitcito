@@ -1633,6 +1633,9 @@ export interface LaunchGroup {
 
 export type LaunchStatus = 'running' | 'paused' | 'exited'
 
+/** How eagerly the Problems dock runs the project's analyzers. */
+export type AnalyzerMode = 'onOpen' | 'manual' | 'off'
+
 /** One diagnostic from a project's own analyzer, normalised across tools. */
 export type ProblemSeverity = 'error' | 'warning' | 'info'
 
@@ -2811,6 +2814,16 @@ export interface AppSettings {
   repoTodos?: Record<string, RepoTodo[]>
   /** Bookmarked places in the code, per repository. */
   repoBookmarks?: Record<string, RepoBookmark[]>
+  /**
+   * When the Problems dock is allowed to run the project's analyzers. They are
+   * the repository's own toolchain — `tsc`, `eslint`, `cargo clippy` — so this
+   * is about how much of your machine Gitcito may spend without being asked.
+   *
+   * `onOpen` sweeps when the dock is opened with nothing to show (the default),
+   * `manual` only ever sweeps on the refresh button, and `off` hides the
+   * analyzer half of the dock altogether.
+   */
+  analyzerMode?: AnalyzerMode
   /** Hide ticked todos in the sidebar section and the todo list. The entries
    *  are kept — only the display drops them. */
   todosHideDone: boolean
@@ -3220,6 +3233,7 @@ export function defaultSettings(): AppSettings {
     repoLayouts: {},
     repoTodos: {},
     repoBookmarks: {},
+    analyzerMode: 'onOpen',
     todosHideDone: true,
     todosManualOrder: false,
     autoFetchMinutes: 5,

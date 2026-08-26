@@ -54,6 +54,11 @@ Gitcito. Arrancan cuando abres el panel o pulsas actualizar, nunca por su
 cuenta. Por eso la lista es una foto fija: edita un archivo y queda obsoleta
 hasta que la vuelvas a ejecutar.
 
+**Ajustes → General → Analizadores de código** decide cuánta iniciativa tiene:
+barrer al abrir el panel (por defecto), solo al pulsar refrescar, o desactivado —
+que esconde del todo la mitad de analizadores del panel, su contador en la barra
+de estado y su comando.
+
 **La salida de build se descarta.** Una herramienta apuntada a la raíz del
 proyecto analiza lo que encuentre, y lo que encuentra incluye
 `.next/build/chunks`, un `dist` empaquetado, una copia vendorizada — cientos de

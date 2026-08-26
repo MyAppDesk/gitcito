@@ -53,6 +53,10 @@ They start when you open the dock or press refresh, and never on their own. That
 is also why the list is a snapshot: edit a file and it is stale until you run it
 again.
 
+**Settings → General → Code analyzers** decides how eager it is: sweep when the
+dock opens (the default), only when you press refresh, or off — which hides the
+analyzer half of the dock, its status-bar counter and its command entirely.
+
 **Generated output is dropped.** A tool pointed at the project root lints
 whatever it finds, and what it finds includes `.next/build/chunks`, a bundled
 `dist`, a vendored copy — hundreds of complaints about machine-written code that

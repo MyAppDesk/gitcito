@@ -1424,6 +1424,11 @@ export const es: Dict = {
   'settings.maskSecretsHint':
     'Oculta los valores en archivos .env / clave / credenciales (KEY=••••••) en el diff, el visor y el blame. Solo visual — usa el ojo para revelar. Nunca cambia el archivo ni lo que preparas.',
   'settings.launchEnabled': 'Habilitar launch.json',
+  'settings.analyzerMode': 'Analizadores de código',
+  'settings.analyzerModeHint': 'Son la cadena de herramientas de tu propio proyecto — tsc, ESLint, cargo clippy — así que un barrido cuesta segundos y CPU de verdad. Esto decide cuándo puede gastarlos Gitcito.',
+  'settings.analyzerOnOpen': 'Al abrir el panel de Problemas',
+  'settings.analyzerManual': 'Solo cuando pulse refrescar',
+  'settings.analyzerOff': 'Desactivados — ocultar los analizadores',
   'settings.launchEnabledHint':
     'Muestra un selector de ejecución en la barra lateral cuando el repo tiene un .vscode/launch.json. Ejecuta configuraciones (con su preLaunchTask) en la terminal integrada. Desactivado → la interfaz de ejecución se oculta por completo.',
   'settings.openVault': 'Abrir baúl',

@@ -1428,6 +1428,11 @@ export const ko: Dict = {
   'settings.maskSecretsHint':
     '.env / 키 / 자격 증명 파일의 값을 diff, 파일, blame 화면에서 가립니다 (KEY=••••••). 표시만 바꿀 뿐이며, 눈 아이콘으로 드러낼 수 있습니다. 파일이나 스테이징 내용은 절대 바뀌지 않습니다.',
   'settings.launchEnabled': 'launch.json 사용',
+  'settings.analyzerMode': '코드 분석기',
+  'settings.analyzerModeHint': '당신 프로젝트의 툴체인입니다 — tsc, ESLint, cargo clippy — 그래서 한 번의 훑기는 실제 시간과 CPU를 씁니다. 여기서 Gitcito가 언제 그것을 써도 되는지 정합니다.',
+  'settings.analyzerOnOpen': '문제 독을 열 때',
+  'settings.analyzerManual': '새로 고침을 누를 때만',
+  'settings.analyzerOff': '끔 — 분석기 숨기기',
   'settings.launchEnabledHint':
     '저장소에 .vscode/launch.json이 있으면 사이드바에 실행 선택기를 보여 줍니다. 구성은 preLaunchTask와 함께 내장 터미널에서 실행됩니다. 끄면 실행 UI 전체가 숨겨집니다.',
   'settings.openVault': '금고 열기',

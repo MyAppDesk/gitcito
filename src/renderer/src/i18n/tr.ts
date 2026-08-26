@@ -1408,6 +1408,11 @@ export const tr: Dict = {
   'settings.maskSecretsHint':
     '.env / anahtar / kimlik bilgisi dosyalarındaki değerleri fark, dosya ve blame görünümlerinde gizler (ANAHTAR=••••••). Yalnızca görüntüyle ilgilidir — göstermek için göz düğmesini kullanın. Dosyayı ya da stage’e aldığınızı asla değiştirmez.',
   'settings.launchEnabled': 'launch.json desteğini aç',
+  'settings.analyzerMode': 'Kod çözümleyicileri',
+  'settings.analyzerModeHint': 'Bunlar senin projenin araç zinciri — tsc, ESLint, cargo clippy — yani bir tarama gerçek saniyeler ve gerçek işlemci harcar. Bu ayar, Gitcito’nun bunları ne zaman harcayabileceğini belirler.',
+  'settings.analyzerOnOpen': 'Sorunlar paneli açıldığında',
+  'settings.analyzerManual': 'Yalnızca yenile’ye bastığımda',
+  'settings.analyzerOff': 'Kapalı — çözümleyicileri gizle',
   'settings.launchEnabledHint':
     'Bir depoda .vscode/launch.json varsa kenar çubuğunda bir Çalıştır seçici gösterir. Yapılandırmaları (preLaunchTask ile birlikte) gömülü terminalde çalıştırır. Kapalıyken çalıştırma arayüzü tümüyle gizlenir.',
   'settings.openVault': 'Kasayı aç',

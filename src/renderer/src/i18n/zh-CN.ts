@@ -1428,6 +1428,11 @@ export const zhCN: Dict = {
   'settings.maskSecretsHint':
     '在差异、文件和 blame 视图中隐藏 .env / 密钥 / 凭据文件里的值（KEY=••••••）。仅影响显示——点击眼睛图标即可查看。绝不会改动文件，也不会改变你暂存的内容。',
   'settings.launchEnabled': '启用 launch.json',
+  'settings.analyzerMode': '代码分析器',
+  'settings.analyzerModeHint': '它们是你项目自己的工具链 —— tsc、ESLint、cargo clippy —— 一次扫描要花掉实打实的秒数和 CPU。这里决定 Gitcito 什么时候可以花。',
+  'settings.analyzerOnOpen': '打开问题面板时',
+  'settings.analyzerManual': '只在我点刷新时',
+  'settings.analyzerOff': '关闭 —— 隐藏分析器',
   'settings.launchEnabledHint':
     '当仓库中存在 .vscode/launch.json 时，在侧边栏显示一个运行/启动选择器。会在内置终端里运行这些配置（连同它们的 preLaunchTask）。关闭后启动界面完全隐藏。',
   'settings.openVault': '打开保险库',

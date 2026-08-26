@@ -1428,6 +1428,11 @@ export const de: Dict = {
   'settings.maskSecretsHint':
     'Verbirgt Werte in .env-, Schlüssel- und Zugangsdatendateien (KEY=••••••) in der Diff-, Datei- und Blame-Ansicht. Nur die Anzeige — mit dem Augensymbol einblenden. Ändert nie die Datei oder das, was du stagst.',
   'settings.launchEnabled': 'launch.json aktivieren',
+  'settings.analyzerMode': 'Code-Analyzer',
+  'settings.analyzerModeHint': 'Es ist die Toolchain deines Projekts — tsc, ESLint, cargo clippy — ein Durchlauf kostet also echte Sekunden und echte CPU. Das hier entscheidet, wann Gitcito sie ausgeben darf.',
+  'settings.analyzerOnOpen': 'Wenn die Probleme-Leiste geöffnet wird',
+  'settings.analyzerManual': 'Nur wenn ich auf Aktualisieren drücke',
+  'settings.analyzerOff': 'Aus — Analyzer ausblenden',
   'settings.launchEnabledHint':
     'Zeigt in der Seitenleiste eine Start-Auswahl, wenn ein Repo eine .vscode/launch.json hat. Führt Konfigurationen (samt ihrer preLaunchTask) im integrierten Terminal aus. Aus → die Start-Oberfläche ist komplett verborgen.',
   'settings.openVault': 'Tresor öffnen',

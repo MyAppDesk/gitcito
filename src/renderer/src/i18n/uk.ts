@@ -1428,6 +1428,11 @@ export const uk: Dict = {
   'settings.maskSecretsHint':
     'Приховувати значення у файлах .env / ключів / облікових даних (KEY=••••••) у diff, файлі та blame. Лише візуально — натисніть на око, щоб показати. Ніколи не змінює файл і те, що ви індексуєте.',
   'settings.launchEnabled': 'Увімкнути launch.json',
+  'settings.analyzerMode': 'Аналізатори коду',
+  'settings.analyzerModeHint': 'Це інструментарій вашого проєкту — tsc, ESLint, cargo clippy, — тож прохід коштує справжніх секунд і справжнього процесора. Тут вирішується, коли Gitcito має право їх витрачати.',
+  'settings.analyzerOnOpen': 'Коли відкривається панель «Проблеми»',
+  'settings.analyzerManual': 'Лише коли я натисну оновлення',
+  'settings.analyzerOff': 'Вимкнено — сховати аналізатори',
   'settings.launchEnabledHint':
     'Показувати вибір запуску в бічній панелі, коли репозиторій має .vscode/launch.json. Виконує конфігурації (разом з їхнім preLaunchTask) у вбудованому терміналі. Вимкнено → інтерфейс запуску повністю прихований.',
   'settings.openVault': 'Відкрити сейф',

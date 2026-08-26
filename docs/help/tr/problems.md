@@ -42,6 +42,10 @@ altındaki bir paket bulunur ve her çözümleyici kendi proje dizininde çalı�
 `tsconfig.json` tam olarak bunu söyler — ve bir tarama on iki projede durur;
 çünkü bir monorepo elli derleyici başlatmamalı.
 
+**Ayarlar → Genel → Kod çözümleyicileri**, ne kadar istekli olacağını belirler:
+panel açılınca tara (varsayılan), yalnızca yenile’ye basınca, ya da kapalı — ki bu
+çözümleyici yarısını, durum çubuğundaki sayacını ve komutunu tümüyle gizler.
+
 `node_modules/.bin` içindeki ikili, PATH’teki ikiliyi yener — projenin kendi
 betikleri de tam olarak böyle çözümler. Her şey paralel çalışır ve her aracın
 çıktısı tek bir biçime indirgenir, yinelenenler atılır ve sıralanır: aynı satırı

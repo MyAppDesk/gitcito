@@ -53,6 +53,11 @@ começam quando você abre o painel ou aperta atualizar, nunca por conta própri
 Por isso a lista é um retrato: edite um arquivo e ela fica velha até você rodar
 de novo.
 
+**Configurações → Geral → Analisadores de código** decide o quanto ele se
+adianta: varrer ao abrir o painel (padrão), só ao apertar atualizar, ou
+desligado — o que esconde por completo a metade dos analisadores, o contador na
+barra de status e o comando.
+
 **Saída gerada é descartada.** Uma ferramenta apontada para a raiz do projeto
 analisa o que encontrar, e o que encontra inclui `.next/build/chunks`, um `dist`
 empacotado, uma cópia vendorizada — centenas de reclamações sobre código escrito

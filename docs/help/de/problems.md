@@ -54,6 +54,11 @@ von Gitcito. Sie starten, wenn du die Leiste öffnest oder aktualisierst, sonst
 nie. Deshalb ist die Liste eine Momentaufnahme: Bearbeite eine Datei, und sie ist
 veraltet, bis du erneut ausführst.
 
+**Einstellungen → Allgemein → Code-Analyzer** entscheidet, wie eifrig das ist:
+beim Öffnen der Leiste (Standard), nur auf Aktualisieren, oder aus — was die
+Analyzer-Hälfte, ihren Zähler in der Statusleiste und ihren Befehl ganz
+ausblendet.
+
 **Generierte Ausgabe fliegt raus.** Ein Werkzeug, das auf das Projektwurzel-
 verzeichnis zeigt, prüft alles, was es findet — und dazu gehören
 `.next/build/chunks`, ein gebündeltes `dist`, eine eingecheckte Kopie: Hunderte

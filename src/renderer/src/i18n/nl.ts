@@ -1429,6 +1429,11 @@ export const nl: Dict = {
   'settings.maskSecretsHint':
     'Verbergt waarden in .env-, sleutel- en inloggegevensbestanden (KEY=••••••) in de diff-, bestands- en blame-weergave. Alleen visueel — gebruik het oogje om ze te onthullen. Verandert nooit het bestand of wat je staget.',
   'settings.launchEnabled': 'launch.json inschakelen',
+  'settings.analyzerMode': 'Code-analyzers',
+  'settings.analyzerModeHint': 'Het is de toolchain van je eigen project — tsc, ESLint, cargo clippy — een sweep kost dus echte seconden en echte CPU. Dit bepaalt wanneer Gitcito die mag uitgeven.',
+  'settings.analyzerOnOpen': 'Wanneer het Problemen-paneel opent',
+  'settings.analyzerManual': 'Alleen als ik op verversen druk',
+  'settings.analyzerOff': 'Uit — analyzers verbergen',
   'settings.launchEnabledHint':
     'Toont een Uitvoeren/Launch-kiezer in de zijbalk als een repo een .vscode/launch.json heeft. Draait configuraties (met hun preLaunchTask) in de geïntegreerde terminal. Uit → de launch-UI is volledig verborgen.',
   'settings.openVault': 'Kluis openen',

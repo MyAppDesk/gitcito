@@ -1428,6 +1428,11 @@ export const he: Dict = {
   'settings.maskSecretsHint':
     'הסתרת ערכים בקבצי .env / מפתחות / אישורים (KEY=••••••) בתצוגות הדיף, הקובץ וה־blame. תצוגה בלבד — השתמשו בסמל העין כדי לחשוף. אף פעם לא משנה את הקובץ או את מה שעולה לסטייג׳.',
   'settings.launchEnabled': 'הפעלת launch.json',
+  'settings.analyzerMode': 'מנתחי קוד',
+  'settings.analyzerModeHint': 'אלה כלי הפרויקט שלכם — tsc, ‏ESLint, ‏cargo clippy — ולכן סריקה עולה שניות אמיתיות ומעבד אמיתי. כאן נקבע מתי מותר ל‑Gitcito להוציא אותם.',
+  'settings.analyzerOnOpen': 'כשלוח הבעיות נפתח',
+  'settings.analyzerManual': 'רק כשאלחץ על רענון',
+  'settings.analyzerOff': 'כבוי — הסתרת המנתחים',
   'settings.launchEnabledHint':
     'הצגת בורר הרצה/הפעלה בסרגל הצד כשלמאגר יש .vscode/launch.json. מריץ תצורות (יחד עם ה־preLaunchTask שלהן) בטרמינל המשולב. כבוי ← ממשק ההפעלה מוסתר לגמרי.',
   'settings.openVault': 'פתיחת הכספת',

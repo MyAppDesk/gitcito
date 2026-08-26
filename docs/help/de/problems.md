@@ -19,7 +19,7 @@ beantwortet die Frage mit einem Schalter.
 Die Statusleiste trägt den Zähler — Fehler, Warnungen, Hinweise: die drei Zahlen,
 die VS Code allen beigebracht hat. Ein Klick (oder **Probleme** in der
 Befehlspalette) öffnet unten die Leiste, nach Datei gruppiert. Ein Klick auf eine
-Zeile öffnet die Datei genau dort.
+Zeile öffnet die Datei genau dort. Vor dem ersten Durchlauf zeigt er Striche statt Nullen: es hat noch niemand nachgesehen, und drei Nullen würden etwas anderes behaupten.
 
 ## Was ausgeführt wird
 

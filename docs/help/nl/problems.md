@@ -18,7 +18,7 @@ bestanden vuil zijn, dus dezelfde lijst beantwoordt die vraag met één schakela
 De statusbalk draagt de telling — fouten, waarschuwingen, info: de drie getallen
 die VS Code iedereen heeft leren lezen. Klik erop (of **Problemen** in het
 opdrachtenpalet) en het paneel opent onderin, gegroepeerd per bestand. Op een
-regel klikken opent het bestand daar.
+regel klikken opent het bestand daar. Vóór de eerste sweep toont hij streepjes in plaats van nullen: er heeft nog niemand gekeken, en drie nullen zouden iets anders beweren.
 
 ## Wat er wordt uitgevoerd
 

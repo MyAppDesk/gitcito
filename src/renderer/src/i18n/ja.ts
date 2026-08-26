@@ -93,6 +93,7 @@ export const ja: Dict = {
   'problems.missingToast': '実行できませんでした: {tools}',
   'problems.truncated': '最初の {n} 件の問題を表示',
   'problems.chip': 'エラー {errors} 件、警告 {warnings} 件、情報 {infos} 件',
+  'problems.chipUnswept': 'まだ解析していません — クリックでアナライザーを実行',
   'cmd.problems': '問題',
   'devtools.open': 'Gitcito 内で {tool} を開く',
   'devtools.back': '戻る',

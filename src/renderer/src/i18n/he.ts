@@ -94,6 +94,7 @@ export const he: Dict = {
   'problems.missingToast': 'לא ניתן היה להריץ: {tools}',
   'problems.truncated': 'מוצגות {n} הבעיות הראשונות',
   'problems.chip': '{errors} שגיאות, {warnings} אזהרות, {infos} הודעות מידע',
+  'problems.chipUnswept': 'עדיין לא נותח — לחצו כדי להריץ את המנתחים',
   'cmd.problems': 'בעיות',
   'devtools.open': 'פתיחת {tool} בתוך Gitcito',
   'devtools.back': 'חזרה',

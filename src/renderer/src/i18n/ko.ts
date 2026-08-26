@@ -94,6 +94,7 @@ export const ko: Dict = {
   'problems.missingToast': '실행할 수 없음: {tools}',
   'problems.truncated': '처음 {n}개의 문제만 표시',
   'problems.chip': '오류 {errors}개, 경고 {warnings}개, 정보 {infos}개',
+  'problems.chipUnswept': '아직 분석하지 않았습니다 — 클릭하면 분석기를 실행합니다',
   'cmd.problems': '문제',
   'devtools.open': 'Gitcito 안에서 {tool} 열기',
   'devtools.back': '뒤로',

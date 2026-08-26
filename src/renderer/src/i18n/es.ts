@@ -94,6 +94,7 @@ export const es: Dict = {
   'problems.missingToast': 'No se pudo ejecutar: {tools}',
   'problems.truncated': 'Mostrando los primeros {n} problemas',
   'problems.chip': '{errors} errores, {warnings} avisos, {infos} de información',
+  'problems.chipUnswept': 'Sin analizar todavía — haz clic para ejecutar los analizadores',
   'cmd.problems': 'Problemas',
   'devtools.open': 'Abrir {tool} en Gitcito',
   'devtools.back': 'Atrás',

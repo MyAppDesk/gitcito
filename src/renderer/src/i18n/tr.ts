@@ -93,6 +93,7 @@ export const tr: Dict = {
   'problems.missingToast': 'Çalıştırılamadı: {tools}',
   'problems.truncated': 'İlk {n} sorun gösteriliyor',
   'problems.chip': '{errors} hata, {warnings} uyarı, {infos} bilgi',
+  'problems.chipUnswept': 'Henüz çözümlenmedi — çözümleyicileri çalıştırmak için tıkla',
   'cmd.problems': 'Sorunlar',
   'devtools.open': '{tool} aracını Gitcito içinde aç',
   'devtools.back': 'Geri',

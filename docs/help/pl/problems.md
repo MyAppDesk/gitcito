@@ -19,7 +19,7 @@ przełącznikiem.
 Pasek stanu niesie licznik — błędy, ostrzeżenia, informacje: trzy liczby, których
 czytania VS Code nauczył wszystkich. Kliknij (albo **Problemy** w palecie
 poleceń), a panel otworzy się na dole, pogrupowany po plikach. Kliknięcie wiersza
-otwiera plik w tym miejscu.
+otwiera plik w tym miejscu. Przed pierwszym przebiegiem pokazuje myślniki zamiast zer: nikt jeszcze nie patrzył, a trzy zera twierdziłyby co innego.
 
 ## Co uruchamia
 

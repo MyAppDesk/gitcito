@@ -95,6 +95,7 @@ export const en = {
   'problems.missingToast': 'Could not run: {tools}',
   'problems.truncated': 'Showing the first {n} problems',
   'problems.chip': '{errors} errors, {warnings} warnings, {infos} infos',
+  'problems.chipUnswept': 'Not analysed yet — click to run the analyzers',
   'cmd.problems': 'Problems',
   'devtools.open': 'Open {tool} in Gitcito',
   'devtools.back': 'Back',

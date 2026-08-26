@@ -94,6 +94,7 @@ export const ar: Dict = {
   'problems.missingToast': 'تعذّر تشغيل: {tools}',
   'problems.truncated': 'عرض أول {n} مشكلة',
   'problems.chip': '{errors} أخطاء، {warnings} تحذيرات، {infos} معلومات',
+  'problems.chipUnswept': 'لم يُحلَّل بعد — انقر لتشغيل المحلّلات',
   'cmd.problems': 'المشاكل',
   'devtools.open': 'فتح {tool} داخل Gitcito',
   'devtools.back': 'رجوع',

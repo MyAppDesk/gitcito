@@ -94,6 +94,7 @@ export const nl: Dict = {
   'problems.missingToast': 'Kon niet uitvoeren: {tools}',
   'problems.truncated': 'Toont de eerste {n} problemen',
   'problems.chip': '{errors} fouten, {warnings} waarschuwingen, {infos} info',
+  'problems.chipUnswept': 'Nog niet geanalyseerd — klik om de analyzers uit te voeren',
   'cmd.problems': 'Problemen',
   'devtools.open': '{tool} in Gitcito openen',
   'devtools.back': 'Terug',

@@ -4408,6 +4408,10 @@ body.col-resizing .node-ava {
 /* The status-bar counter: three severities, the way VS Code taught it. */
 .status-problems-btn { gap: 3px; }
 .status-problems-btn.has-error { color: var(--red, #ff5c7a); }
+/* Nothing has been analysed yet: dimmed, so the dashes read as "unknown"
+   rather than as a verdict. */
+.status-problems-btn.not-swept { opacity: 0.55; }
+.status-problems-btn.not-swept:hover { opacity: 1; }
 .status-ctodo-btn { gap: 4px; }
 
 /* ─── Configurable panel layout (terminal placement / sidebar side) ─────── */

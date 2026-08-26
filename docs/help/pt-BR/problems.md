@@ -19,7 +19,7 @@ um botão.
 A barra de status carrega a contagem — erros, avisos, informações: os três
 números que o VS Code ensinou todo mundo a ler. Clique (ou use **Problemas** na
 paleta de comandos) e o painel abre embaixo, agrupado por arquivo. Clicar numa
-linha abre o arquivo ali.
+linha abre o arquivo ali. Antes da primeira varredura ele mostra traços em vez de zeros: ninguém olhou ainda, e três zeros diriam o contrário.
 
 ## O que ele executa
 

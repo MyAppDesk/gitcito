@@ -94,6 +94,7 @@ export const zhCN: Dict = {
   'problems.missingToast': '无法运行：{tools}',
   'problems.truncated': '仅显示前 {n} 个问题',
   'problems.chip': '{errors} 个错误，{warnings} 个警告，{infos} 条提示',
+  'problems.chipUnswept': '还没有分析过 —— 点击运行分析器',
   'cmd.problems': '问题',
   'devtools.open': '在 Gitcito 里打开 {tool}',
   'devtools.back': '后退',

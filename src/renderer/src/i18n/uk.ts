@@ -94,6 +94,7 @@ export const uk: Dict = {
   'problems.missingToast': 'Не вдалося запустити: {tools}',
   'problems.truncated': 'Показано перші {n} проблем',
   'problems.chip': '{errors} помилок, {warnings} попереджень, {infos} відомостей',
+  'problems.chipUnswept': 'Ще не аналізувалося — клацніть, щоб запустити аналізатори',
   'cmd.problems': 'Проблеми',
   'devtools.open': 'Відкрити {tool} у Gitcito',
   'devtools.back': 'Назад',

@@ -380,23 +380,33 @@ function ProblemsStatusChip({ path }: { path: string }): React.JSX.Element | nul
     if (available === undefined) void detect(path)
   }, [path, available, detect])
   if (!available || available.length === 0) return null
+  // Before the first sweep there is no verdict — and three zeroes would read as
+  // "clean" when they mean "nobody has looked yet". A dash says the latter.
+  const swept = !!result
   const counts = countBySeverity(result?.problems ?? [])
+  const shown = (n: number): string => (swept ? String(n) : '–')
   return (
     <button
-      className={`status-issue-btn status-problems-btn ${counts.error > 0 ? 'has-error' : ''}`}
-      title={interp(t('problems.chip'), {
-        errors: counts.error,
-        warnings: counts.warning,
-        infos: counts.info
-      })}
+      className={`status-issue-btn status-problems-btn ${swept && counts.error > 0 ? 'has-error' : ''} ${
+        swept ? '' : 'not-swept'
+      }`}
+      title={
+        swept
+          ? interp(t('problems.chip'), {
+              errors: counts.error,
+              warnings: counts.warning,
+              infos: counts.info
+            })
+          : t('problems.chipUnswept')
+      }
       onClick={() => toggleProblems(path)}
     >
       <CircleX size={12} className="prob-icon-error" />
-      <span>{counts.error}</span>
+      <span>{shown(counts.error)}</span>
       <TriangleAlert size={12} className="prob-icon-warning" />
-      <span>{counts.warning}</span>
+      <span>{shown(counts.warning)}</span>
       <Info size={12} className="prob-icon-info" />
-      <span>{counts.info}</span>
+      <span>{shown(counts.info)}</span>
     </button>
   )
 }

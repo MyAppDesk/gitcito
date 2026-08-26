@@ -94,6 +94,7 @@ export const ptBR: Dict = {
   'problems.missingToast': 'Não foi possível executar: {tools}',
   'problems.truncated': 'Mostrando os primeiros {n} problemas',
   'problems.chip': '{errors} erros, {warnings} avisos, {infos} informações',
+  'problems.chipUnswept': 'Ainda não analisado — clique para rodar os analisadores',
   'cmd.problems': 'Problemas',
   'devtools.open': 'Abrir o {tool} no Gitcito',
   'devtools.back': 'Voltar',

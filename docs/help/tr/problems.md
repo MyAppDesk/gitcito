@@ -19,7 +19,7 @@ cevaplıyor.
 Durum çubuğu sayacı taşır — hatalar, uyarılar, bilgiler: VS Code’un herkese
 okumayı öğrettiği üç sayı. Tıkla (ya da komut paletinden **Sorunlar**) ve panel
 altta açılır, dosyaya göre gruplanmış olarak. Bir satıra tıklamak dosyayı tam
-orada açar.
+orada açar. İlk taramadan önce sıfır yerine tire gösterir: henüz kimse bakmadı, üç sıfır ise aksini iddia ederdi.
 
 ## Ne çalıştırır
 

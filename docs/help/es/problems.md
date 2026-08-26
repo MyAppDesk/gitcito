@@ -19,7 +19,7 @@ pregunta con un interruptor.
 La barra de estado lleva la cuenta — errores, avisos, información: las tres
 cifras que VS Code enseñó a leer a todo el mundo. Haz clic (o usa **Problemas**
 en la paleta de comandos) y el panel se abre abajo, agrupado por archivo. Al
-pulsar una línea se abre el archivo justo ahí.
+pulsar una línea se abre el archivo justo ahí. Antes del primer barrido muestra guiones en vez de ceros: nadie ha mirado todavía, y tres ceros dirían lo contrario.
 
 ## Qué ejecuta
 

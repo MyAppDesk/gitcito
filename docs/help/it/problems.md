@@ -19,7 +19,7 @@ interruttore.
 La barra di stato porta il conteggio — errori, avvisi, informazioni: le tre cifre
 che VS Code ha insegnato a leggere a tutti. Un clic (o **Problemi** nella
 palette dei comandi) apre il pannello in basso, raggruppato per file. Cliccare
-una riga apre il file esattamente lì.
+una riga apre il file esattamente lì. Prima della prima scansione mostra trattini invece di zeri: nessuno ha ancora guardato, e tre zeri direbbero il contrario.
 
 ## Cosa esegue
 

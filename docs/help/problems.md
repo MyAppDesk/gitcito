@@ -19,7 +19,7 @@ question with one toggle.
 The status bar carries the count — errors, warnings, infos, the three figures
 VS Code taught everyone to read. Click it (or the command palette's
 **Problems**) and the dock opens at the bottom, grouped by file. Clicking a line
-opens the file there.
+opens the file there. Before the first sweep it shows dashes rather than zeroes: nobody has looked yet, and three zeroes would claim otherwise.
 
 ## What it runs
 

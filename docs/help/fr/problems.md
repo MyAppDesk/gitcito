@@ -19,7 +19,7 @@ cette question avec un seul interrupteur.
 La barre d’état porte le compte — erreurs, avertissements, informations : les
 trois chiffres que VS Code a appris à tout le monde. Un clic (ou **Problèmes**
 dans la palette de commandes) ouvre le panneau en bas, groupé par fichier. Un
-clic sur une ligne ouvre le fichier à cet endroit.
+clic sur une ligne ouvre le fichier à cet endroit. Avant le premier balayage, il affiche des tirets plutôt que des zéros : personne n’a encore regardé, et trois zéros prétendraient le contraire.
 
 ## Ce qui est exécuté
 

@@ -23,6 +23,10 @@ lugar de en su primer push rechazado.
 El archivo es totalmente opcional. Un repositorio sin él se comporta exactamente
 igual que siempre.
 
+No hace falta escribirlo a mano: el [chat del repositorio](repo-chat.md) recibe
+el esquema de este archivo, así que *añade enlaces de tickets para JIRA-1234* o
+*protege las ramas de release* vuelve como una acción de archivo revisable.
+
 ![La pestaña Config del repositorio, con las filas del doctor y las secciones de reglas](../../screenshots/repo-config.webp)
 
 ## Dónde se edita

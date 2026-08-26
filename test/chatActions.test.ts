@@ -7,9 +7,9 @@ import {
 } from '../src/renderer/src/lib/askActions'
 import { actionOutcomeNote, createRepoChatStore } from '../src/renderer/src/lib/repoChatStore'
 import { repoChatActionMeta } from '../src/renderer/src/lib/askActionMeta'
-import { chatAnswerSchema, validateChatAnswer } from '../src/main/repoChat'
-import { REPO_CHAT_ACTIONS_SCHEMA } from '../src/main/aiSchemas'
-import { validateRepoChatActions } from '../src/main/grounding'
+import { chatAnswerSchema, repoChatActionRules, validateChatAnswer } from '../src/main/repoChat'
+import { REPO_CHAT_ACTIONS_SCHEMA, repoChatActionsSchema } from '../src/main/aiSchemas'
+import { validateAskActions, validateRepoChatActions } from '../src/main/grounding'
 import {
   defaultProfile,
   type AskAction,
@@ -438,5 +438,91 @@ describe('chat answer contract with actions', () => {
       sourceIds: []
     }
     expect(validateChatAnswer(value, evidence, paths).join(' ')).toContain('actions field')
+  })
+})
+
+describe('remote and history actions', () => {
+  const context = { ...actionContext, allowFileActions: true }
+
+  it('refuses remote actions until the setting turns them on, and says which setting', () => {
+    const push: AskAction = { type: 'push', branch: 'feature/x', description: 'Publish the branch' }
+    const off = validateRepoChatActions([push], context).join(' ')
+    expect(off).toContain('remote actions')
+    expect(off).toContain('Settings')
+    expect(validateRepoChatActions([push], { ...context, allowRemoteActions: true })).toEqual([])
+  })
+
+  it('lets chat move history, and keeps that out of the Ask planner', () => {
+    const rebase: AskAction = { type: 'rebase', onto: 'main', description: 'Rebase onto main' }
+    expect(validateRepoChatActions([rebase], context)).toEqual([])
+    // validateAskActions with no allowances is the Ask surface: it has no
+    // branch or commit context, so it may not name refs it was never shown.
+    expect(validateAskActions([rebase], new Set()).join(' ')).toContain('repository chat')
+  })
+
+  it('refuses a commit hash that is not a hash, and a pull request with no base', () => {
+    const revert: AskAction = { type: 'revert', hashes: ['the last one'], description: 'Revert' }
+    expect(validateRepoChatActions([revert], context).join(' ')).toContain('hashes')
+
+    const pr = { type: 'open_pr', title: 'feat: x', description: 'Open it' } as unknown as AskAction
+    expect(
+      validateRepoChatActions([pr], { ...context, allowRemoteActions: true }).join(' ')
+    ).toContain('target')
+  })
+
+  it('never offers force as a field a proposal could carry', () => {
+    const schema = JSON.stringify(repoChatActionsSchema(true))
+    expect(schema).toContain('"push"')
+    expect(schema).not.toContain('force')
+  })
+
+  it('describes remote actions in the prompt only while they are allowed', () => {
+    expect(repoChatActionRules(true, true, true)).toContain('stack_submit')
+    const off = repoChatActionRules(true, true, false)
+    expect(off).not.toContain('stack_submit')
+    expect(off).toContain('disabled by settings')
+  })
+
+  it('treats publishing and history as approval-worthy, never as bookkeeping', () => {
+    const push: AskAction = { type: 'push', description: 'Push' }
+    const fetch: AskAction = { type: 'fetch', description: 'Fetch' }
+    expect(askActionSafety(push)).toBe('normal')
+    expect(askActionSafety(fetch)).toBe('safe')
+    expect(askActionsAutoRun([push], 'auto-safe')).toBe(false)
+    expect(askActionsAutoRun([push], 'auto-all')).toBe(true)
+    expect(askActionsAutoRun([fetch], 'auto-safe')).toBe(true)
+  })
+
+  it('summarises the new actions in one line each', () => {
+    expect(askActionDetail({ type: 'merge', ref: 'feature/x', description: '' }, 'all')).toBe('feature/x')
+    expect(
+      askActionDetail({ type: 'cherry_pick', hashes: ['abcdef1234'], description: '' }, 'all')
+    ).toBe('abcdef1')
+    expect(
+      askActionDetail({ type: 'open_pr', title: 'feat: x', source: 'a', target: 'main', description: '' }, 'all')
+    ).toBe('feat: x · a → main')
+    expect(repoChatActionMeta('stack_submit').labelKey).toBe('askAction.stackSubmit')
+  })
+
+  it('offers a second look only while a round remains', () => {
+    const first = chatAnswerSchema(true, true, false, true) as { properties: Record<string, unknown> }
+    const last = chatAnswerSchema(true, true, false, false) as { properties: Record<string, unknown> }
+    expect(first.properties.needMore).toBeTruthy()
+    expect(last.properties.needMore).toBeUndefined()
+  })
+
+  it('accepts an evidence request that arrives without an answer yet', () => {
+    const asking = { content: '', sourceIds: [], needMore: { paths: ['a.ts'], reason: 'need the caller' } }
+    expect(validateChatAnswer(asking, new Set(), null)).toEqual([])
+    expect(validateChatAnswer({ content: '', sourceIds: [] }, new Set(), null).join(' ')).toContain(
+      'non-empty'
+    )
+  })
+
+  it('hands the model the shape of .gitcito.json rather than letting it invent one', () => {
+    const rules = repoChatActionRules(true, true, false)
+    expect(rules).toContain('.gitcito.json')
+    expect(rules).toContain('"version":1')
+    expect(repoChatActionRules(true, false, false)).not.toContain('.gitcito.json')
   })
 })

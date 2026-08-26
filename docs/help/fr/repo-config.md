@@ -24,6 +24,11 @@ qu'au premier push refusé.
 Le fichier est entièrement facultatif. Un dépôt sans lui se comporte exactement
 comme avant.
 
+Vous n'êtes pas obligé de l'écrire à la main : le [chat du dépôt](repo-chat.md)
+reçoit le schéma de ce fichier, donc *ajoute des liens de tickets pour JIRA-1234*
+ou *protège les branches de release* revient sous forme d'action de fichier
+relisible.
+
 ![L'onglet Config du dépôt, avec les lignes du doctor et les sections de règles](../../screenshots/repo-config.webp)
 
 ## Où l'éditer

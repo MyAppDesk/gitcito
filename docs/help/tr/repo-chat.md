@@ -24,6 +24,15 @@ küçük bir yol ve düz metin araması kümesi seçer. İkincisi yalnızca gele
 alıntılarla yanıtlar ve yalnızca onlara kaynak gösterebilir: uydurulmuş bir
 dosya ya da satır, makul görünen bir yanıt değil, bir doğrulama hatasıdır.
 
+**İkinci bir bakış.** İlk geçiş hangi dosyaların önemli olduğunu yalnızca
+adlarından tahmin etmek zorundadır — “bu nereden çağrılıyor” sorusunda tam da
+bu tahmin tutmaz. Bu yüzden bir yanıtın tahmin etmek yerine geri sorma hakkı
+vardır: daha fazla yol, daha fazla birebir arama ya da yakın geçmişten commit
+özetleri isteyebilir ve soru, bunların getirdikleriyle yeniden sorulur. Bu en
+çok iki kez olur — her tur beklediğiniz bir model çağrısı daha demektir — ve
+sonuncusunda elindekiyle yanıt vermek zorundadır. Bundan tek gördüğünüz biraz
+daha uzun bir bekleme ve daha iyi bir yanıttır.
+
 | Dahil | Hariç |
 |---|---|
 | İzlenen dosyalar, çalışma ağacındaki hâlleriyle | İzlenmeyen dosyalar |
@@ -70,6 +79,7 @@ tutulan bir yola dokunan parçalar o diff’ten düşer, commit’in tamamı de�
 | **Sohbette dosya ve Git eylemleri önerilsin** | Kapalıyken sohbet yeniden salt okunur olur: eylem kartı da onay menüsü de yok |
 | **Dosyalar için salt okunur kip** | Açıkken dosya oluşturma, düzenleme, değiştirme ve silmeyi engeller; Git eylemleri kullanılabilir kalır. Varsayılan olarak açıktır |
 | **Önerilen eylemler nasıl çalıştırılır** | Onay modu — bkz. [Onay modları](#onay-modları). Yıkıcı eylemler her durumda onay ister |
+| **Sohbet uzak eylemler önerebilsin** | Varsayılan olarak kapalı. Açıkken getirme, çekme, gönderme, pull request açma ve yığın gönderme eklenir |
 
 Yapay zekâ tümüyle kapalıysa sohbet de onunla birlikte kaybolur — kimsenin
 yanıtlayamayacağı bir şeyi öneren panel kalmaz.
@@ -119,17 +129,74 @@ reddedilir, gösterilmez.
 
 ![Sohbette önerilen eylemler](../../screenshots/repo-chat-actions.webp)
 
-Depo sohbeti tam metin düzenlemeleri, dosya oluşturma veya bütünüyle değiştirme
-ve dosya silme işlemlerini; ardından **Çalıştır** asistanının Git eylemlerini
-önerebilir. Gitcito açılabilir diff’i yerel olarak hesaplar. Mevcut dosyalar
-okunan kanıtlardan gelmelidir; güvensiz, gizli, yoksayılan, üretilmiş, ikili,
-eskimiş, çok büyük veya symlink üzerinden erişilen hedefler reddedilir. Push,
-pull, reset, rebase ve force işlemleri ilgili arayüzde kalır.
+Depo sohbeti tam düzenlemeler, dosya oluşturma veya bütünüyle değiştirme ve
+silme önerebilir; ardından Git eylemleri gelir: yok sayma desenleri, hazırlama,
+hazırlıktan çıkarma, commit, zula, değişiklikleri atma, dal, dal değiştirme,
+etiket ve — dal listesi ile son commit’ler kendisine gösterildiği için — merge,
+rebase, revert ve cherry-pick. Açılır diff’i Gitcito yerelde hesaplar. Var olan
+dosyalar okunan kanıttan gelmelidir; güvensiz, gizli, yok sayılan, üretilmiş,
+ikili, bayatlamış, fazla büyük ve sembolik bağla erişilen hedefler reddedilir.
+Reset, geçmişi yeniden yazma, dal silme ve her türlü zorlamalı işlem yalnızca
+kendi arayüzünde kalır.
+
+Bir merge veya rebase çakışmada durabilir. Durduğunda çalıştırma orada biter,
+kart o satırı başarısız işaretler ve o ana dek çalışanların sayısını korur;
+çakışma şeridi, aynı işlem araç çubuğundan başlatılmış gibi devreye girer.
 
 Dosya grubunun tamamı ilk yazmadan önce yeniden doğrulanır ve bir adım başarısız
 olursa geri alınır. Commit öncesinde Gitcito stage’de değişiklik bulunduğunu da
 denetler. Kart tamamlanan, başarısız ve atlanan her eylemi ve kısmi sonucu
 gösterir. Ardından eylemsiz ayrı bir model çağrısı gerçek sonucu özetler.
+
+**`.gitcito.json` dosyasını da yazabilir.** Sohbete
+[deponun kendi yapılandırma dosyasının](repo-config.md) biçimi verilir; böylece
+*JIRA-1234 için bilet bağlantıları ekle* ya da *release dallarını koru*,
+yükleyicinin reddedeceği makul görünen anahtarlar yerine gerçek şemaya göre
+yazılmış bir dosya eylemine dönüşür. Dosya eylemlerinin açık olmasını ister —
+aynı dosya salt-okunur anahtarı.
+
+**Resim isteyen satırlar resmini alır.** Tek satırlık özet “iki dosyayı
+hazırla” için yeter, “bir yığın üzerinde dört pull request aç” için hiç yetmez;
+bu yüzden biçim anlatan satırlar o biçimi çizer: bir gönderimin yayımladığı dal
+ve ne kadar ilerde olduğu, bir merge veya rebase’in iki referansı, bir revert
+ya da cherry-pick’in yeniden oynatacağı commit’ler konularıyla birlikte, pull
+request’in alacağı hâl ve bir yığın — her seviyenin tabanıyla ve gönderimin onu
+açacağı mı, yeniden hedefleyeceği mi, yoksa olduğu gibi mi bırakacağıyla —
+merdiven olarak.
+
+### Makineden çıkan eylemler
+
+Getirme, çekme, gönderme, pull request açma ve yığın gönderme **varsayılan
+olarak kapalıdır**; **Sohbet uzak eylemler önerebilsin** ayarının ardındadır.
+İşi yayımlamak bilinçli bir karardır ve ayar kapalıyken modele bu eylemlerin
+varlığı bile söylenmez: birini önerip reddedilemez — insanlara ayarları
+okumadan açmayı öğreten kusur tam olarak budur.
+
+Açıkken:
+
+| Eylem | Yapar |
+|---|---|
+| **Getir** / **Çek** | Araç çubuğundakiyle aynı fetch ve pull; çekme kipi (merge, yalnızca fast-forward, rebase) önerinin parçasıdır |
+| **Gönder** | Bir dalı bir uzak depoya yayımlar. **Asla zorlamalı değil**: zorlamalı gönderme bir önerinin söz dağarcığında yoktur, dolayısıyla önerilemez |
+| **PR aç** | Deponun kendi origin’ine karşı bir pull request açar, taslak olsun olmasın. Kart bağlantıyı sonrasında saklar |
+| **Yığını gönder** | Tam [yığın PR gönderimi](stacks.md): her seviyeyi gönder, seviye başına bir pull request aç veya yeniden hedefle, gezinme bölümünü yaz, GitHub yığınını kaydet |
+
+![Dalı gönderip pull request açan bir sohbet planı](../../screenshots/repo-chat-remote-actions.webp)
+
+Önerilen bir gönderim, araç çubuğunun gönderimiyle aynı korumalardan önce geçer:
+korumalı dal onayı, [kimlik bilgisi görünümlü dosyaları](security.md) yayımlama
+uyarısı ve deponun kendi gönderim öncesi kontrol listesi. Bunlar iletişim
+kutularıdır; dolayısıyla plan başlamadan önce yanıtlanır, planın içinden değil.
+
+### Bir planı geri alma
+
+Plan toplu onaylanır, dolayısıyla toplu geri alınır. Bir şeyi değiştirebilecek
+ilk eylemden önce Gitcito dalın nerede olduğunu kaydeder ve çalışma ağacının
+anlık görüntüsünü alır; biten kart bunun üzerine **Planı geri al** sunar. Dalı o
+commit’e döndürür ve ağacı geri yükler; bu, planın ürettiği her şeyi atmak
+demektir, bu yüzden önce onay ister ve dönülecek commit’i adıyla söyler. Açılan
+pull request’ler açık kalır: uzak bir depoyu yerel bir anlık görüntü geri
+alamaz.
 
 ### Onay modları
 

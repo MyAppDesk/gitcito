@@ -1417,139 +1417,7 @@ export const repoActions = {
       path,
       t('act.stackSubmitted'),
       async () => {
-        const state = useRepoStore.getState()
-        const repo = state.repos[path]
-        const origin = repo?.remotes.find((r) => r.name === 'origin') ?? repo?.remotes[0]
-        if (!origin) throw new Error(t('stack.noRemote'))
-        // A submit is a dozen network calls; the busy label says which one, so
-        // the wait reads as progress rather than as a spinning icon.
-        const step = (label: string): void => useUIStore.getState().setBusy(label, 'push')
-        step(t('stack.stepPrepare'))
-
-        // A landed bottom first: reparent its child, untrack it, drop the
-        // branch — then the rest of the submit sees the shortened chain.
-        // Squash merges are invisible to git's ancestry check, so ask the host
-        // which of the stack's branches have a merged PR (best-effort).
-        const profileForPrune = useSettingsStore.getState().activeProfile()
-        const preStack = await gitApi.stackInfo(path, leaf).catch(() => null)
-        const hostMerged = preStack?.branches.length
-          ? await hostingApi
-              .mergedPrHeads(origin.url, { github: profileForPrune.githubToken || undefined }, preStack.branches.map((b) => b.name))
-              .catch(() => [])
-          : []
-        const pruned = await gitApi.stackPruneMerged(path, hostMerged, leaf)
-        if (pruned.length) toast('info', interp(t('act.stackPruned'), { branches: pruned.join(', ') }))
-
-        let stack = await gitApi.stackInfo(path, leaf)
-        if (!stack.branches.length) throw new Error(t('stack.empty'))
-        // Restack before pushing when anything drifted (a prune usually means
-        // the children now sit on an outdated base). Throws on conflict.
-        if (stack.branches.some((b) => b.needsRestack)) {
-          await gitApi.stackRestack(path, stack.branches[stack.branches.length - 1].name)
-          stack = await gitApi.stackInfo(path, leaf)
-        }
-
-        await state.refreshPRs(path, { silent: true })
-        const fresh = useRepoStore.getState().repos[path]
-        if (fresh?.prProvider && fresh.prProvider !== 'github') throw new Error(t('stack.githubOnly'))
-
-        const profile = useSettingsStore.getState().activeProfile()
-        const tokens = { github: profile.githubToken || undefined }
-
-        // Every level pushed with a lease: restacked branches need the force,
-        // fresh ones tolerate it. The remote is the one the PRs will be opened
-        // against — pushing to a different one is how a PR ends up with a head
-        // GitHub cannot see.
-        for (const [i, b] of stack.branches.entries()) {
-          step(interp(t('stack.stepPush'), { branch: b.name, n: i + 1, total: stack.branches.length }))
-          await gitApi.push(path, b.name, { force: true, remote: origin.name })
-        }
-
-        // Ask the remote what it actually has before asking GitHub to open
-        // anything: a missing head comes back from the API as "Validation
-        // Failed" with no field the user can act on.
-        step(t('stack.stepVerify'))
-        // The base of the bottom PR has to exist on the remote too — a trunk
-        // that only exists locally is the other half of the same 422.
-        const resolvedTrunk =
-          stack.trunk ||
-          useRepoStore.getState().repos[path]?.branches.locals.find((l) => /^(main|master)$/.test(l.name))?.name ||
-          'main'
-        const wanted = [...stack.branches.map((b) => b.name), resolvedTrunk]
-        const onRemote = await gitApi.remoteHasBranches(path, origin.name, wanted).catch(() => wanted)
-        const missing = stack.branches.map((b) => b.name).filter((n) => !onRemote.includes(n))
-        if (missing.length)
-          throw new Error(interp(t('stack.notOnRemote'), { remote: origin.name, branches: missing.join(', ') }))
-        // A missing trunk is offered as a repair rather than a refusal: it is
-        // one push, and the submit that wanted it can then finish.
-        if (!onRemote.includes(resolvedTrunk))
-          throw new Error(`${TRUNK_MISSING}:${resolvedTrunk}:${origin.name}`)
-
-        const trunk = resolvedTrunk
-        const openPrs = (fresh?.prs ?? []).map((p) => ({
-          id: p.id,
-          sourceBranch: p.sourceBranch,
-          targetBranch: p.targetBranch,
-          url: p.url
-        }))
-        const plan = planStackSubmit(stack, openPrs, trunk)
-
-        const numbered: { branch: string; number: number }[] = []
-        /** What the submit did, per level — the result screen renders this. */
-        const done: StackSubmitEntry[] = []
-        for (const [i, a] of plan.entries()) {
-          step(
-            interp(t(a.action === 'create' ? 'stack.stepPr' : 'stack.stepRetarget'), {
-              branch: a.branch,
-              n: i + 1,
-              total: plan.length
-            })
-          )
-          if (a.action === 'create') {
-            // Title/body from the level's own commits — oldest subject names
-            // the PR, the list becomes the description.
-            const cmp = await gitApi.compareBranches(path, a.branch, a.base).catch(() => null)
-            const oldest = cmp?.aheadCommits.at(-1)
-            const res = await hostingApi.createPR(origin.url, tokens, {
-              title: oldest?.subject || a.branch,
-              body: (cmp?.aheadCommits ?? []).map((c) => `- ${c.subject}`).join('\n'),
-              source: a.branch,
-              target: a.base,
-              draft: false
-            })
-            numbered.push({ branch: a.branch, number: res.number })
-            done.push({ branch: a.branch, base: a.base, number: res.number, url: res.url, action: 'create' })
-          } else {
-            if (a.action === 'retarget') await hostingApi.updatePR(origin.url, tokens, a.number!, { base: a.base })
-            numbered.push({ branch: a.branch, number: a.number! })
-            done.push({ branch: a.branch, base: a.base, number: a.number!, url: a.url ?? '', action: a.action })
-          }
-        }
-
-        // Second pass, once every number is known: the navigation section,
-        // with the "you are here" pointer personalised per PR.
-        step(interp(t('stack.stepNav'), { n: numbered.length }))
-        for (const n of numbered) {
-          await hostingApi.updatePR(origin.url, tokens, n.number, {
-            stackSection: buildStackSection(numbered, n.number, trunk)
-          })
-        }
-        // GitHub knows what a stack is; the other hosts do not. Registering the
-        // chain there buys the stack map in its UI, the server-side cascading
-        // rebase and a merge that lands the levels below — and costs one call.
-        step(t('stack.stepRegister'))
-        const stackInfo = await hostingApi
-          .ensureStack(origin.url, tokens, numbered.map((n) => n.number))
-          .catch(() => null)
-
-        await useRepoStore.getState().refreshPRs(path, { silent: true })
-        if (stackInfo) toast('success', interp(t('stack.registered'), { n: stackInfo.number }))
-        outcome = { entries: done.slice().reverse(), stack: stackInfo, pruned }
-        // Four pull requests opening silently is indistinguishable from none,
-        // so the run's own toast is followed by what actually happened.
-        const created = plan.filter((a) => a.action === 'create').length
-        const retargeted = plan.filter((a) => a.action === 'retarget').length
-        if (created || retargeted) toast('info', interp(t('stack.submitReport'), { created, retargeted }))
+        outcome = await submitStackCore(path, leaf)
       },
       undefined,
       'push',
@@ -2198,6 +2066,15 @@ export const repoActions = {
     return runPush(path, target, force, target === current)
   },
 
+  /**
+   * The push guards, without the push. Repository chat runs them before it
+   * enqueues a plan: the plan holds the repository lock while it runs, and a
+   * confirm dialog cannot be answered from inside it. Returns false when a
+   * dialog was raised — `retry` re-enters once the user answers.
+   */
+  pushPreflight: (path: string, branch: string, retry: () => void): Promise<boolean> =>
+    pushGuards(path, branch, false, retry),
+
   stash: (path: string, message?: string) =>
     useRepoStore.getState().run(path, t('act.stashed'), () => gitApi.stash(path, message), {
       label: t('undoLabel.stash'),
@@ -2638,3 +2515,150 @@ export const repoActions = {
         () => gitApi.fsImport(path, srcPaths, destDir, mode)
       )
 }
+
+/**
+ * The whole stack submit, without the queue around it: prune landed levels,
+ * restack, push every branch, open or retarget one pull request per level,
+ * write the navigation section and register the GitHub stack.
+ *
+ * Extracted from `repoActions.submitStack` so an AI-proposed `stack_submit`
+ * can run it too — that plan already holds the per-repo lock, and calling
+ * `submitStack` from inside it would wait on the queue entry it is itself.
+ */
+export async function submitStackCore(path: string, leaf?: string): Promise<StackSubmitResult> {
+    const state = useRepoStore.getState()
+    const repo = state.repos[path]
+    const origin = repo?.remotes.find((r) => r.name === 'origin') ?? repo?.remotes[0]
+    if (!origin) throw new Error(t('stack.noRemote'))
+    // A submit is a dozen network calls; the busy label says which one, so
+    // the wait reads as progress rather than as a spinning icon.
+    const step = (label: string): void => useUIStore.getState().setBusy(label, 'push')
+    step(t('stack.stepPrepare'))
+
+    // A landed bottom first: reparent its child, untrack it, drop the
+    // branch — then the rest of the submit sees the shortened chain.
+    // Squash merges are invisible to git's ancestry check, so ask the host
+    // which of the stack's branches have a merged PR (best-effort).
+    const profileForPrune = useSettingsStore.getState().activeProfile()
+    const preStack = await gitApi.stackInfo(path, leaf).catch(() => null)
+    const hostMerged = preStack?.branches.length
+      ? await hostingApi
+          .mergedPrHeads(origin.url, { github: profileForPrune.githubToken || undefined }, preStack.branches.map((b) => b.name))
+          .catch(() => [])
+      : []
+    const pruned = await gitApi.stackPruneMerged(path, hostMerged, leaf)
+    if (pruned.length) toast('info', interp(t('act.stackPruned'), { branches: pruned.join(', ') }))
+
+    let stack = await gitApi.stackInfo(path, leaf)
+    if (!stack.branches.length) throw new Error(t('stack.empty'))
+    // Restack before pushing when anything drifted (a prune usually means
+    // the children now sit on an outdated base). Throws on conflict.
+    if (stack.branches.some((b) => b.needsRestack)) {
+      await gitApi.stackRestack(path, stack.branches[stack.branches.length - 1].name)
+      stack = await gitApi.stackInfo(path, leaf)
+    }
+
+    await state.refreshPRs(path, { silent: true })
+    const fresh = useRepoStore.getState().repos[path]
+    if (fresh?.prProvider && fresh.prProvider !== 'github') throw new Error(t('stack.githubOnly'))
+
+    const profile = useSettingsStore.getState().activeProfile()
+    const tokens = { github: profile.githubToken || undefined }
+
+    // Every level pushed with a lease: restacked branches need the force,
+    // fresh ones tolerate it. The remote is the one the PRs will be opened
+    // against — pushing to a different one is how a PR ends up with a head
+    // GitHub cannot see.
+    for (const [i, b] of stack.branches.entries()) {
+      step(interp(t('stack.stepPush'), { branch: b.name, n: i + 1, total: stack.branches.length }))
+      await gitApi.push(path, b.name, { force: true, remote: origin.name })
+    }
+
+    // Ask the remote what it actually has before asking GitHub to open
+    // anything: a missing head comes back from the API as "Validation
+    // Failed" with no field the user can act on.
+    step(t('stack.stepVerify'))
+    // The base of the bottom PR has to exist on the remote too — a trunk
+    // that only exists locally is the other half of the same 422.
+    const resolvedTrunk =
+      stack.trunk ||
+      useRepoStore.getState().repos[path]?.branches.locals.find((l) => /^(main|master)$/.test(l.name))?.name ||
+      'main'
+    const wanted = [...stack.branches.map((b) => b.name), resolvedTrunk]
+    const onRemote = await gitApi.remoteHasBranches(path, origin.name, wanted).catch(() => wanted)
+    const missing = stack.branches.map((b) => b.name).filter((n) => !onRemote.includes(n))
+    if (missing.length)
+      throw new Error(interp(t('stack.notOnRemote'), { remote: origin.name, branches: missing.join(', ') }))
+    // A missing trunk is offered as a repair rather than a refusal: it is
+    // one push, and the submit that wanted it can then finish.
+    if (!onRemote.includes(resolvedTrunk))
+      throw new Error(`${TRUNK_MISSING}:${resolvedTrunk}:${origin.name}`)
+
+    const trunk = resolvedTrunk
+    const openPrs = (fresh?.prs ?? []).map((p) => ({
+      id: p.id,
+      sourceBranch: p.sourceBranch,
+      targetBranch: p.targetBranch,
+      url: p.url
+    }))
+    const plan = planStackSubmit(stack, openPrs, trunk)
+
+    const numbered: { branch: string; number: number }[] = []
+    /** What the submit did, per level — the result screen renders this. */
+    const done: StackSubmitEntry[] = []
+    for (const [i, a] of plan.entries()) {
+      step(
+        interp(t(a.action === 'create' ? 'stack.stepPr' : 'stack.stepRetarget'), {
+          branch: a.branch,
+          n: i + 1,
+          total: plan.length
+        })
+      )
+      if (a.action === 'create') {
+        // Title/body from the level's own commits — oldest subject names
+        // the PR, the list becomes the description.
+        const cmp = await gitApi.compareBranches(path, a.branch, a.base).catch(() => null)
+        const oldest = cmp?.aheadCommits.at(-1)
+        const res = await hostingApi.createPR(origin.url, tokens, {
+          title: oldest?.subject || a.branch,
+          body: (cmp?.aheadCommits ?? []).map((c) => `- ${c.subject}`).join('\n'),
+          source: a.branch,
+          target: a.base,
+          draft: false
+        })
+        numbered.push({ branch: a.branch, number: res.number })
+        done.push({ branch: a.branch, base: a.base, number: res.number, url: res.url, action: 'create' })
+      } else {
+        if (a.action === 'retarget') await hostingApi.updatePR(origin.url, tokens, a.number!, { base: a.base })
+        numbered.push({ branch: a.branch, number: a.number! })
+        done.push({ branch: a.branch, base: a.base, number: a.number!, url: a.url ?? '', action: a.action })
+      }
+    }
+
+    // Second pass, once every number is known: the navigation section,
+    // with the "you are here" pointer personalised per PR.
+    step(interp(t('stack.stepNav'), { n: numbered.length }))
+    for (const n of numbered) {
+      await hostingApi.updatePR(origin.url, tokens, n.number, {
+        stackSection: buildStackSection(numbered, n.number, trunk)
+      })
+    }
+    // GitHub knows what a stack is; the other hosts do not. Registering the
+    // chain there buys the stack map in its UI, the server-side cascading
+    // rebase and a merge that lands the levels below — and costs one call.
+    step(t('stack.stepRegister'))
+    const stackInfo = await hostingApi
+      .ensureStack(origin.url, tokens, numbered.map((n) => n.number))
+      .catch(() => null)
+
+    await useRepoStore.getState().refreshPRs(path, { silent: true })
+    if (stackInfo) toast('success', interp(t('stack.registered'), { n: stackInfo.number }))
+    const result: StackSubmitResult = { entries: done.slice().reverse(), stack: stackInfo, pruned }
+    // Four pull requests opening silently is indistinguishable from none,
+    // so the run's own toast is followed by what actually happened.
+    const created = plan.filter((a) => a.action === 'create').length
+    const retargeted = plan.filter((a) => a.action === 'retarget').length
+    if (created || retargeted) toast('info', interp(t('stack.submitReport'), { created, retargeted }))
+  return result
+}
+

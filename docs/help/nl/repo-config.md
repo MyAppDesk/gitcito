@@ -24,6 +24,10 @@ van bij de eerste geweigerde push.
 Het bestand is volledig optioneel. Een repository zonder gedraagt zich precies
 zoals altijd.
 
+Je hoeft het niet met de hand te schrijven: de [repository-chat](repo-chat.md)
+krijgt het schema van dit bestand, dus *voeg ticketlinks toe voor JIRA-1234* of
+*bescherm de release-branches* komt terug als een beoordeelbare bestandsactie.
+
 ![Het tabblad Config van de repository, met de doctor-regels en de regelsecties](../../screenshots/repo-config.webp)
 
 ## Waar je het bewerkt

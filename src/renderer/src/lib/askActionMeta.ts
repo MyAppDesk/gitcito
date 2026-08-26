@@ -1,5 +1,8 @@
 import {
   Archive,
+  ArrowDownToLine,
+  ArrowUpToLine,
+  Cherry,
   EyeOff,
   FileMinus,
   FileOutput,
@@ -10,8 +13,14 @@ import {
   GitBranch,
   GitBranchPlus,
   GitCommit,
+  GitFork,
+  GitMerge,
+  GitPullRequest,
+  Layers,
+  RefreshCw,
   Tag,
   Trash2,
+  Undo2,
   Wrench,
   type LucideIcon
 } from 'lucide-react'
@@ -28,7 +37,16 @@ export const ASK_ACTION_META: Record<AskAction['type'], { Icon: LucideIcon; labe
   discard: { Icon: Trash2, labelKey: 'askAction.discard' },
   branch: { Icon: GitBranch, labelKey: 'askAction.branch' },
   checkout: { Icon: GitBranchPlus, labelKey: 'askAction.checkout' },
-  tag: { Icon: Tag, labelKey: 'askAction.tag' }
+  tag: { Icon: Tag, labelKey: 'askAction.tag' },
+  merge: { Icon: GitMerge, labelKey: 'askAction.merge' },
+  rebase: { Icon: GitFork, labelKey: 'askAction.rebase' },
+  revert: { Icon: Undo2, labelKey: 'askAction.revert' },
+  cherry_pick: { Icon: Cherry, labelKey: 'askAction.cherryPick' },
+  fetch: { Icon: RefreshCw, labelKey: 'askAction.fetch' },
+  pull: { Icon: ArrowDownToLine, labelKey: 'askAction.pull' },
+  push: { Icon: ArrowUpToLine, labelKey: 'askAction.push' },
+  open_pr: { Icon: GitPullRequest, labelKey: 'askAction.openPr' },
+  stack_submit: { Icon: Layers, labelKey: 'askAction.stackSubmit' }
 }
 
 export const ASK_ACTION_FALLBACK_META: { Icon: LucideIcon; labelKey: TranslationKey } = {

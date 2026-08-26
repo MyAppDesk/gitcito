@@ -26,6 +26,15 @@ repository zelf. De tweede antwoordt alleen met de fragmenten die dat oplevert,
 en mag ook alleen die citeren: een verzonnen bestand of regel is een
 validatiefout, geen aannemelijk klinkend antwoord.
 
+**Een tweede blik.** De eerste ronde moet alleen aan namen raden welke bestanden
+ertoe doen — precies de gok die misgaat bij "waar wordt dit aangeroepen". Een
+antwoord mag daarom terugvragen in plaats van raden: het kan meer paden, meer
+letterlijke zoekopdrachten of commit-hashes uit de recente historie noemen,
+waarna de vraag opnieuw wordt gesteld met wat dat oplevert. Dat gebeurt hooguit
+twee keer — elke ronde is weer een modelaanroep waar je op wacht — en in de
+laatste moet het antwoorden met wat het heeft. Je merkt er niets van behalve een
+iets langere wachttijd en een beter antwoord.
+
 | Wel | Niet |
 |---|---|
 | Gevolgde bestanden, zoals ze in je werkmap staan | Niet-gevolgde bestanden |
@@ -73,6 +82,7 @@ op een uitgesloten pad vallen uit die diff, niet de hele commit.
 | **Bestands- en Git-acties voorstellen in de chat** | Uit maakt de chat weer puur alleen-lezen: geen actiekaarten, geen goedkeuringsmenu |
 | **Alleen-lezenmodus voor bestanden** | Aan blokkeert bestanden maken, bewerken, vervangen en verwijderen, maar Git-acties blijven beschikbaar. Standaard ingeschakeld |
 | **Hoe voorgestelde acties worden uitgevoerd** | De goedkeuringsmodus — zie [Goedkeuringsmodi](#goedkeuringsmodi). Destructieve acties vragen hoe dan ook bevestiging |
+| **Chat mag externe acties voorstellen** | Standaard uit. Aan voegt fetch, pull, push, een pull request openen en een stack indienen toe |
 
 Staat AI helemaal uit, dan verdwijnt de chat mee — geen paneel dat een antwoord
 aanbiedt dat niemand kan geven.
@@ -123,19 +133,77 @@ getoond.
 
 ![Voorgestelde acties in de chat](../../screenshots/repo-chat-actions.webp)
 
-Repositorychat kan exacte bewerkingen, het maken of volledig vervangen en het
-verwijderen van bestanden voorstellen, gevolgd door de Git-acties van de
-**Uitvoeren**-assistent. Gitcito berekent de uitklapbare diff lokaal. Bestaande
+Repository-chat kan exacte bewerkingen, het aanmaken of volledig vervangen van
+bestanden en verwijderen voorstellen, gevolgd door Git-acties: ignore-patronen,
+stagen, unstagen, committen, stashen, weggooien, branch, wisselen, tag en —
+omdat de branchlijst en de recente commits worden getoond — merge, rebase,
+revert en cherry-pick. Gitcito berekent de uitklapbare diff lokaal. Bestaande
 bestanden moeten uit gelezen bewijs komen; onveilige, geheime, genegeerde,
-gegenereerde, binaire, verouderde, te grote of via symlinks bereikbare doelen
-worden geweigerd. Push, pull, reset, rebase en force-operaties blijven in hun
-eigen interface.
+gegenereerde, binaire, verouderde, te grote en via symlink bereikte doelen
+worden geweigerd. Reset, historie herschrijven, branches verwijderen en elke
+force-operatie blijven in hun eigen scherm.
+
+Een merge of rebase kan op een conflict stranden. Dan stopt de run daar, markeert
+de kaart die regel als mislukt en houdt het aantal al uitgevoerde acties bij, en
+neemt de conflictbanner het over, net als bij dezelfde operatie vanuit de
+werkbalk.
 
 De hele bestandsbatch wordt voor de eerste schrijfactie opnieuw gecontroleerd en
 bij een fout teruggedraaid. Voor een commit controleert Gitcito ook of er iets is
 gestaged. De kaart markeert voltooide, mislukte en overgeslagen acties en bewaart
 gedeeltelijke resultaten. Daarna vat een afzonderlijke aanroep zonder acties het
 werkelijke resultaat samen.
+
+**Hij kan ook `.gitcito.json` schrijven.** De chat krijgt de vorm van het
+[eigen configuratiebestand van de repository](repo-config.md), dus *voeg
+ticketlinks toe voor JIRA-1234* of *bescherm de release-branches* wordt een
+bestandsactie tegen het echte schema in plaats van plausibel ogende sleutels die
+de loader zou weigeren. Bestandsacties moeten aanstaan — dezelfde schakelaar
+voor de alleen-lezen modus.
+
+**Regels die om een plaatje vragen, krijgen er een.** Eén regel samenvatting
+volstaat voor "stage twee bestanden" en bij lange na niet voor "open vier pull
+requests op een stack": regels die vorm beschrijven, tekenen die vorm — de
+branch die een push publiceert en hoever die voorloopt, de twee refs van een
+merge of rebase, de commits die een revert of cherry-pick met hun onderwerp zou
+herhalen, de pull request zoals die eruit komt te zien, en een stack als ladder
+met de basis van elk niveau en wat het indienen daar zou doen: openen, herrichten
+of laten staan.
+
+### Acties die de machine verlaten
+
+Ophalen, pullen, pushen, een pull request openen en een stack indienen staan
+**standaard uit**, achter **Chat mag externe acties voorstellen**. Werk
+publiceren verdient een bewuste keuze, en met de instelling uit hoort het model
+niet eens dat die acties bestaan: het kan er geen voorstellen en geweigerd
+worden — de fout die mensen leert dingen ongelezen aan te zetten.
+
+Met de instelling aan:
+
+| Actie | Doet |
+|---|---|
+| **Ophalen** / **Pullen** | Dezelfde fetch en pull als in de werkbalk; de pull-modus (merge, alleen fast-forward, rebase) hoort bij het voorstel |
+| **Pushen** | Publiceert één branch naar één remote. **Nooit geforceerd**: een force push zit niet in het vocabulaire van een voorstel en kan dus niet worden voorgesteld |
+| **PR openen** | Opent één pull request, concept of niet, tegen de origin van de repository. De kaart bewaart de link |
+| **Stack indienen** | De volledige [stacked-PR-indiening](stacks.md): elk niveau pushen, per niveau een pull request openen of herrichten, de navigatiesectie schrijven, de GitHub-stack registreren |
+
+![Een chatplan dat pusht en een pull request opent](../../screenshots/repo-chat-remote-actions.webp)
+
+Een voorgestelde push doorloopt eerst dezelfde waarborgen als die van de
+werkbalk: de bevestiging voor beschermde branches, de waarschuwing over het
+publiceren van [bestanden die op inloggegevens lijken](security.md) en de
+pre-push-checklist van de repository. Dat zijn dialogen, dus ze worden beantwoord
+voordat het plan start, niet van binnenuit.
+
+### Een plan ongedaan maken
+
+Een plan wordt als geheel goedgekeurd en dus als geheel teruggedraaid. Vóór de
+eerste actie die iets kan wijzigen legt Gitcito vast waar de branch stond en
+maakt het een momentopname van de werkboom; de afgeronde kaart biedt dan **Plan
+ongedaan maken**. Dat zet de branch terug naar die commit en herstelt de boom,
+waarmee alles wat het plan opleverde vervalt — dus wordt eerst bevestigd, met de
+commit erbij. Geopende pull requests blijven open: een remote kan een lokale
+momentopname niet terughalen.
 
 ### Goedkeuringsmodi
 

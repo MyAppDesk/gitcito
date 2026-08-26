@@ -21,6 +21,10 @@ keywords: gitcito.json repo config doctor requirements protected branches scopes
 
 이 파일은 완전히 선택 사항입니다. 없는 저장소는 지금까지와 똑같이 동작합니다.
 
+직접 쓸 필요는 없습니다. [저장소 채팅](repo-chat.md)에 이 파일의 스키마가 주어지므로
+*JIRA-1234용 티켓 링크를 추가해줘*나 *release 브랜치를 보호해줘*가 검토 가능한 파일
+작업으로 돌아옵니다.
+
 ![저장소의 Config 탭 — doctor 행과 규칙 섹션들](../../screenshots/repo-config.webp)
 
 ## 어디서 편집하나

@@ -1184,6 +1184,10 @@ export interface AIConfig {
   /** Prevent chat from proposing file creation, edits, replacement, or deletion.
    *  Git actions remain available. Defaults to on. */
   repoChatReadOnly?: boolean
+  /** Chat may propose actions that leave the machine — fetch, pull, push,
+   *  opening a pull request, submitting a stack. Defaults to off: publishing
+   *  work is a decision the user opts into, not a default of the assistant. */
+  repoChatRemoteActions?: boolean
   /** How chat-proposed actions run. Destructive actions always confirm,
    *  whatever the mode says. Defaults to 'ask'. */
   repoChatApproval?: ChatActionApproval
@@ -1443,6 +1447,28 @@ export type AskAction =
   | { type: 'branch'; name: string; at?: string; checkout?: boolean; description: string }
   | { type: 'checkout'; ref: string; description: string }
   | { type: 'tag'; name: string; message?: string; description: string }
+  | { type: 'fetch'; remote?: string; description: string }
+  | { type: 'pull'; mode?: 'default' | 'ff-only' | 'rebase'; description: string }
+  /** Never carries a force flag — a rewrite of published history is not
+   *  something a model may propose. */
+  | { type: 'push'; branch?: string; remote?: string; description: string }
+  | { type: 'merge'; ref: string; noFf?: boolean; description: string }
+  | { type: 'rebase'; onto: string; description: string }
+  | { type: 'revert'; hashes: string[]; description: string }
+  | { type: 'cherry_pick'; hashes: string[]; description: string }
+  | {
+      type: 'open_pr'
+      title: string
+      body?: string
+      /** Defaults to the checked-out branch. */
+      source?: string
+      target: string
+      draft?: boolean
+      description: string
+    }
+  /** Push every level of a stack and open or retarget one pull request each,
+   *  the same run the Stack modal's Submit performs. GitHub only. */
+  | { type: 'stack_submit'; leaf?: string; description: string }
 
 /** A provider-portable repository file mutation proposed by repository chat. */
 export type RepoChatFileAction =
@@ -1513,6 +1539,12 @@ export interface RepoChatExecutionResult {
     type: RepoChatAction['type']
     status: 'done' | 'failed' | 'skipped'
   }>
+  /** Guard snapshot taken before the plan ran, when it could touch the working
+   *  tree. What the card's "Undo" restores. */
+  snapshot?: { sha: string; head: string }
+  /** Pull requests the plan opened or retargeted — the card links them, because
+   *  a PR that appears silently is indistinguishable from none. */
+  prs?: Array<{ number: number; url: string; branch?: string; base?: string; action?: 'create' | 'retarget' | 'ok' }>
 }
 
 // ─── Launch configurations (VS Code-style .vscode/launch.json) ──────────────

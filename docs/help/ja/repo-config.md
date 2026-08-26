@@ -21,6 +21,10 @@ keywords: gitcito.json repo config doctor requirements protected branches scopes
 
 このファイルは完全に任意です。持たないリポジトリはこれまでどおりに動きます。
 
+手で書く必要はありません。[リポジトリチャット](repo-chat.md)にはこのファイルのスキーマが
+渡されるので、*JIRA-1234 のチケットリンクを追加して* や *release ブランチを保護して* は
+確認できるファイル操作として返ってきます。
+
 ![リポジトリの Config タブ。doctor の行とルールの各セクション](../../screenshots/repo-config.webp)
 
 ## どこで編集するか

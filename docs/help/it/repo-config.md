@@ -24,6 +24,10 @@ push rifiutato.
 Il file è del tutto opzionale. Un repository che non ce l'ha si comporta
 esattamente come prima.
 
+Non serve scriverlo a mano: alla [chat del repository](repo-chat.md) viene dato
+lo schema di questo file, così *aggiungi i link ai ticket per JIRA-1234* o
+*proteggi i branch di release* torna come un'azione su file revisionabile.
+
 ![La scheda Config del repository, con le righe del doctor e le sezioni delle regole](../../screenshots/repo-config.webp)
 
 ## Dove si modifica

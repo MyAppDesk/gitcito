@@ -24,6 +24,10 @@ sie am ersten Tag statt beim ersten abgelehnten Push.
 Die Datei ist völlig optional. Ein Repository ohne sie verhält sich genau wie
 bisher.
 
+Sie müssen sie nicht von Hand schreiben: Der [Repository-Chat](repo-chat.md)
+kennt das Schema dieser Datei, also kommt *füge Ticket-Links für JIRA-1234 hinzu*
+oder *schütze die Release-Branches* als prüfbare Dateiaktion zurück.
+
 ![Der Config-Tab des Repositorys mit den Doctor-Zeilen und den Regelabschnitten](../../screenshots/repo-config.webp)
 
 ## Wo man sie bearbeitet

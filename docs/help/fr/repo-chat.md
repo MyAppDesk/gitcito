@@ -26,6 +26,16 @@ suivis du dépôt. La seconde répond en n’utilisant que les extraits rapport�
 ne peut citer qu’eux : un fichier ou une ligne inventés sont une erreur de
 validation, pas une réponse plausible.
 
+**Un second regard.** La première passe doit deviner quels fichiers comptent à
+partir de leur seul nom, ce qui est exactement la supposition qui échoue sur
+« d'où est-ce appelé ». Une réponse a donc le droit de redemander plutôt que de
+deviner : elle peut nommer d'autres chemins, d'autres recherches littérales ou
+des hachages de commits de l'historique récent, et la question est reposée avec
+ce que cela ramène. Cela arrive deux fois au plus — chaque tour est un appel de
+modèle supplémentaire que vous attendez — et au dernier elle doit répondre avec
+ce qu'elle a. Vous n'en voyez rien, sinon une attente un peu plus longue et une
+meilleure réponse.
+
 | Inclus | Exclu |
 |---|---|
 | Les fichiers suivis, tels qu’ils sont dans votre copie de travail | Les fichiers non suivis |
@@ -74,6 +84,7 @@ touchant un chemin exclu sont retirés de ce diff, pas le commit entier.
 | **Proposer des actions sur les fichiers et Git** | Désactivé, la discussion redevient purement en lecture seule : plus de cartes d’actions ni de menu d’approbation |
 | **Mode fichiers en lecture seule** | Activé, il bloque la création, la modification, le remplacement et la suppression de fichiers tout en gardant les actions Git disponibles. Activé par défaut |
 | **Comment s’exécutent les actions proposées** | Le mode d’approbation — voir [Modes d’approbation](#modes-dapprobation). Les actions destructrices confirment quoi qu’il arrive |
+| **Autoriser le chat à proposer des actions distantes** | Désactivé par défaut. Activé, il ajoute fetch, pull, push, l'ouverture d'une pull request et la soumission d'une pile |
 
 Avec l’IA entièrement désactivée, la discussion disparaît avec elle : plus de
 panneau proposant une réponse que rien ne peut produire.
@@ -126,18 +137,77 @@ n’existe pas est rejetée, pas affichée.
 
 ![Actions proposées dans la discussion](../../screenshots/repo-chat-actions.webp)
 
-La discussion du dépôt peut proposer des modifications exactes, la création ou
-le remplacement complet d’un fichier et la suppression de fichiers, puis les
-actions Git de l’assistant **Exécuter**. Gitcito calcule localement chaque diff
-dépliable. Les fichiers existants doivent provenir des éléments lus ; les cibles
-dangereuses, secrètes, ignorées, générées, binaires, périmées, trop volumineuses
-ou reliées par un lien symbolique sont refusées. Push, pull, reset, rebase et les
-opérations forcées restent dans leur interface dédiée.
+Le chat du dépôt peut proposer des modifications exactes, la création ou le
+remplacement de fichiers entiers et leur suppression, puis des actions Git :
+motifs d'ignorance, indexer, désindexer, commiter, remiser, abandonner, branche,
+changement de branche, étiquette et — parce qu'on lui montre la liste des
+branches et les commits récents — merge, rebase, revert et cherry-pick. Gitcito
+calcule le diff dépliable en local. Les fichiers existants doivent provenir des
+preuves lues ; les cibles risquées, secrètes, ignorées, générées, binaires,
+périmées, trop grosses ou atteintes par lien symbolique sont refusées. Reset,
+réécriture d'historique, suppression de branche et toute opération forcée
+restent dans leur interface dédiée.
+
+Un merge ou un rebase peut s'arrêter sur un conflit. Le cas échéant, l'exécution
+s'arrête là, la carte marque la ligne en échec et conserve le compte de ce qui
+a déjà tourné, et le bandeau de conflit prend le relais exactement comme pour la
+même opération lancée depuis la barre d'outils.
 
 Le lot entier est revérifié avant la première écriture et annulé si une étape
 échoue. Avant un commit, Gitcito vérifie aussi que des changements sont indexés.
 La carte marque chaque action terminée, échouée ou ignorée et conserve les
 résultats partiels. Un appel séparé, sans actions, résume ensuite le résultat réel.
+
+**Il peut aussi écrire `.gitcito.json`.** Le chat reçoit la forme du
+[fichier de configuration du dépôt](repo-config.md) : *ajoute des liens de
+tickets pour JIRA-1234* ou *protège les branches de release* devient une action
+de fichier écrite contre le vrai schéma, et non des clés plausibles que le
+chargeur refuserait. Cela demande les actions de fichier activées — le même
+interrupteur **Mode lecture seule des fichiers**.
+
+**Les lignes qui méritent une image en ont une.** Un résumé d'une ligne suffit
+pour « indexe deux fichiers » et pas du tout pour « ouvre quatre pull requests
+sur une pile » : les lignes qui décrivent une forme la dessinent — la branche
+qu'un push publie et son avance, les deux références d'un merge ou d'un rebase,
+les commits qu'un revert ou un cherry-pick rejouerait avec leur sujet, la pull
+request telle qu'elle sera, et une pile en échelle avec la base de chaque niveau
+et ce que la soumission y ferait : ouvrir, recibler ou laisser tel quel.
+
+### Actions qui quittent la machine
+
+Récupérer, tirer, pousser, ouvrir une pull request et soumettre une pile sont
+**désactivés par défaut**, derrière **Autoriser le chat à proposer des actions
+distantes**. Publier du travail mérite un choix explicite, et avec le réglage
+désactivé le modèle ignore jusqu'à l'existence de ces actions : il ne peut pas
+en proposer une et se faire refuser, le défaut qui apprend aux gens à activer
+des options sans les lire.
+
+Une fois activé :
+
+| Action | Fait |
+|---|---|
+| **Récupérer** / **Tirer** | Le fetch et le pull de la barre d'outils ; le mode de pull (merge, avance rapide seule, rebase) fait partie de la proposition |
+| **Pousser** | Publie une branche vers un dépôt distant. **Jamais en force** : un push forcé n'existe pas dans le vocabulaire d'une proposition, donc il ne peut pas être proposé |
+| **Ouvrir une PR** | Ouvre une pull request, brouillon ou non, contre l'origin du dépôt. La carte en garde le lien ensuite |
+| **Soumettre la pile** | La soumission complète de la [pile de PR](stacks.md) : pousser chaque niveau, ouvrir ou recibler une pull request par niveau, écrire la section de navigation, enregistrer la pile GitHub |
+
+![Un plan de chat qui pousse et ouvre une pull request](../../screenshots/repo-chat-remote-actions.webp)
+
+Un push proposé passe d'abord les mêmes garde-fous que celui de la barre
+d'outils : la confirmation de branche protégée, l'avertissement sur la
+publication de [fichiers ressemblant à des identifiants](security.md) et la
+liste de contrôle avant-push du dépôt. Ce sont des dialogues : on y répond avant
+que le plan démarre, pas depuis l'intérieur.
+
+### Annuler un plan
+
+Un plan est approuvé en bloc, donc il s'annule en bloc. Avant la première action
+capable de changer quoi que ce soit, Gitcito note où était la branche et prend
+un instantané de l'arbre de travail ; la carte terminée propose alors **Annuler
+le plan**. Elle ramène la branche à ce commit et restaure l'arbre, ce qui jette
+ce que le plan a produit : elle demande donc confirmation et nomme le commit de
+retour. Les pull requests ouvertes le restent — un dépôt distant n'est pas
+quelque chose qu'un instantané local peut reprendre.
 
 ### Modes d’approbation
 

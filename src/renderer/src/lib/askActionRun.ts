@@ -5,7 +5,10 @@ import type {
   RepoChatActionErrorCode,
   RepoChatExecutionResult
 } from '../../../shared/types'
-import { gitApi } from '../infrastructure/api'
+import { gitApi, hostingApi } from '../infrastructure/api'
+import { askActionSafety } from './askActions'
+import { useSettingsStore } from '../stores/settings'
+import { submitStackCore, useRepoStore } from '../stores/repo'
 
 export interface AskRunResult {
   applied: number
@@ -164,6 +167,7 @@ export async function executeRepoChatActions(
   }
 
   let untracked: Set<string> | null = null
+  const prs: NonNullable<RepoChatExecutionResult['prs']> = []
   for (let index = fileActions.length; index < actions.length; index++) {
     const action = actions[index]
     if (isPreparedFileAction(action)) {
@@ -212,6 +216,41 @@ export async function executeRepoChatActions(
           undefined,
           action.message ? { message: action.message } : undefined
         )
+      } else if (action.type === 'merge') {
+        await gitApi.merge(repoPath, action.ref, action.noFf ? { noFf: true } : undefined)
+      } else if (action.type === 'rebase') {
+        await gitApi.rebase(repoPath, action.onto)
+      } else if (action.type === 'revert') {
+        // Newest first, as proposed: reverting the tip before the commit under
+        // it is the order that applies cleanly.
+        for (const hash of action.hashes) await gitApi.revertCommit(repoPath, hash)
+      } else if (action.type === 'cherry_pick') {
+        // Proposed newest-first, applied oldest-first — the same flip the
+        // commit list's own cherry-pick does.
+        await gitApi.cherryPickMany(repoPath, [...action.hashes].reverse())
+      } else if (action.type === 'fetch') {
+        if (action.remote) await gitApi.fetchRemote(repoPath, action.remote)
+        else await gitApi.fetchAll(repoPath)
+      } else if (action.type === 'pull') {
+        await gitApi.pull(repoPath, action.mode ?? 'default')
+      } else if (action.type === 'push') {
+        const branch = action.branch ?? (await gitApi.status(repoPath)).current
+        if (!branch) {
+          return failedResult(actions, applied, index, { code: 'unknown', detail: 'No branch to push.' }, actionResults)
+        }
+        // Force is not in the union: a plan may publish work, never rewrite it.
+        await gitApi.push(repoPath, branch, action.remote ? { remote: action.remote } : undefined)
+      } else if (action.type === 'open_pr') {
+        prs.push(await openProposedPr(repoPath, action))
+      } else if (action.type === 'stack_submit') {
+        const outcome = await submitStackCore(repoPath, action.leaf)
+        for (const entry of outcome.entries) {
+          prs.push({ number: entry.number, url: entry.url, branch: entry.branch, base: entry.base, action: entry.action })
+        }
+      } else {
+        // A type this build cannot run must never be reported as applied.
+        actionResults[index] = { index, type: (action as { type: RepoChatAction['type'] }).type, status: 'skipped' }
+        continue
       }
       actionResults[index] = { index, type: action.type, status: 'done' }
       applied++
@@ -220,5 +259,50 @@ export async function executeRepoChatActions(
     }
   }
 
-  return { applied, remaining: 0, actionResults }
+  return { applied, remaining: 0, actionResults, ...(prs.length ? { prs } : {}) }
+}
+
+/**
+ * Open one pull request from a proposal. The remote is the repository's origin
+ * (or its first remote) — the same one the PR list is read from, because a PR
+ * opened against a different remote has a head the host cannot see.
+ */
+async function openProposedPr(
+  repoPath: string,
+  action: Extract<AskAction, { type: 'open_pr' }>
+): Promise<NonNullable<RepoChatExecutionResult['prs']>[number]> {
+  const repo = useRepoStore.getState().repos[repoPath]
+  const origin = repo?.remotes.find((remote) => remote.name === 'origin') ?? repo?.remotes[0]
+  if (!origin) throw new Error('This repository has no remote to open a pull request against.')
+  const source = action.source || repo?.branches.current
+  if (!source) throw new Error('No branch to open a pull request from.')
+  const profile = useSettingsStore.getState().activeProfile()
+  const result = await hostingApi.createPR(origin.url, { github: profile.githubToken || undefined }, {
+    title: action.title,
+    body: action.body ?? '',
+    source,
+    target: action.target,
+    draft: action.draft === true
+  })
+  return { number: result.number, url: result.url, branch: source, base: action.target, action: 'create' }
+}
+
+/**
+ * The one photograph a plan gets, taken before its first action.
+ *
+ * A chat plan is approved as a batch, so it has to be undoable as a batch: the
+ * commit tip it started from, plus a WIP snapshot of the working tree. Actions
+ * that only read or only stage need neither — nothing they do is worth a
+ * snapshot, and a clean tree has nothing to photograph, so both cases return
+ * what the caller can safely ignore.
+ */
+export async function planGuardSnapshot(
+  repoPath: string,
+  actions: RepoChatAction[]
+): Promise<{ sha: string; head: string } | null> {
+  if (!actions.some((action) => askActionSafety(action) !== 'safe')) return null
+  const head = await gitApi.resolveRev(repoPath, 'HEAD').catch(() => null)
+  if (!head) return null
+  const snapshot = await gitApi.createSnapshot(repoPath, 'guard').catch(() => null)
+  return { sha: snapshot?.sha ?? '', head }
 }

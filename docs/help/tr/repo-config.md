@@ -23,6 +23,10 @@ yeni gelen kişi bunları ilk reddedilen push'ta değil, ilk gün öğrenir.
 Dosya tamamen isteğe bağlıdır. Dosyası olmayan bir depo her zamanki gibi
 davranır.
 
+Elle yazmak zorunda değilsiniz: [depo sohbetine](repo-chat.md) bu dosyanın şeması
+verilir, böylece *JIRA-1234 için bilet bağlantıları ekle* ya da *release dallarını
+koru*, gözden geçirilebilir bir dosya eylemi olarak geri döner.
+
 ![Deponun Config sekmesi; doctor satırları ve kural bölümleri](../../screenshots/repo-config.webp)
 
 ## Nerede düzenlenir

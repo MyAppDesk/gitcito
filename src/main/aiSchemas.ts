@@ -108,77 +108,119 @@ export function validateGeneratedFiles(value: unknown, requested: string[]): str
 
 // ─── "Ask" actions ──────────────────────────────────────────────────────────
 
+/** Working-tree and ref bookkeeping — what every action surface may propose. */
+const LOCAL_ACTION_TYPES = [
+  'gitignore', 'stage', 'unstage', 'commit', 'stash', 'discard', 'branch', 'checkout', 'tag'
+]
+
+/** Local actions that move history; they need branch and commit context, so
+ *  only repository chat offers them. */
+const HISTORY_ACTION_TYPES = ['merge', 'rebase', 'revert', 'cherry_pick']
+
+/** Action types that reach a remote or the hosting provider. Offered only when
+ *  the remote-actions setting is on — the model cannot describe what it is not
+ *  given, so a disabled surface is unreachable rather than merely discouraged. */
+const REMOTE_ACTION_TYPES = ['fetch', 'pull', 'push', 'open_pr', 'stack_submit']
+
 /** One entry of the Git-only AskAction union, as loose JSON Schema. */
-export const ASK_ACTION_SCHEMA: Record<string, unknown> = {
-  type: 'object',
-  required: ['type', 'description'],
-  properties: {
-    type: {
-      type: 'string',
-      enum: ['gitignore', 'stage', 'unstage', 'commit', 'stash', 'discard', 'branch', 'checkout', 'tag']
-    },
-    description: { type: 'string' },
-    files: { type: 'array', items: { type: 'string' } },
-    patterns: { type: 'array', items: { type: 'string' } },
-    message: { type: 'string' },
-    name: { type: 'string' },
-    at: { type: 'string' },
-    ref: { type: 'string' },
-    checkout: { type: 'boolean' }
+export function askActionSchema(allow: { history?: boolean; remote?: boolean } = {}): Record<string, unknown> {
+  return {
+    type: 'object',
+    required: ['type', 'description'],
+    properties: {
+      type: {
+        type: 'string',
+        enum: [
+          ...LOCAL_ACTION_TYPES,
+          ...(allow.history ? HISTORY_ACTION_TYPES : []),
+          ...(allow.remote ? REMOTE_ACTION_TYPES : [])
+        ]
+      },
+      description: { type: 'string' },
+      files: { type: 'array', items: { type: 'string' } },
+      patterns: { type: 'array', items: { type: 'string' } },
+      hashes: { type: 'array', items: { type: 'string' } },
+      message: { type: 'string' },
+      name: { type: 'string' },
+      at: { type: 'string' },
+      ref: { type: 'string' },
+      onto: { type: 'string' },
+      checkout: { type: 'boolean' },
+      noFf: { type: 'boolean' },
+      mode: { type: 'string', enum: ['default', 'ff-only', 'rebase'] },
+      remote: { type: 'string' },
+      branch: { type: 'string' },
+      title: { type: 'string' },
+      body: { type: 'string' },
+      source: { type: 'string' },
+      target: { type: 'string' },
+      draft: { type: 'boolean' },
+      leaf: { type: 'string' }
+    }
   }
 }
 
-/** The Ask planner remains Git-only. */
+export const ASK_ACTION_SCHEMA: Record<string, unknown> = askActionSchema()
+
+/** The Ask planner remains local: it has no pull-request context to work from. */
 export const ASK_ACTIONS_SCHEMA: Record<string, unknown> = {
   type: 'array',
   items: ASK_ACTION_SCHEMA
 }
 
+export function askActionsSchema(remote = false): Record<string, unknown> {
+  return { type: 'array', items: askActionSchema({ history: true, remote }) }
+}
+
+/** The three file mutations, shared by every repository-chat action schema. */
+const FILE_ACTION_SCHEMAS: Record<string, unknown>[] = [
+  {
+    type: 'object',
+    additionalProperties: false,
+    required: ['type', 'path', 'oldText', 'newText', 'description'],
+    properties: {
+      type: { const: 'edit_file' },
+      path: { type: 'string' },
+      oldText: { type: 'string' },
+      newText: { type: 'string' },
+      replaceAll: { type: 'boolean' },
+      description: { type: 'string' }
+    }
+  },
+  {
+    type: 'object',
+    additionalProperties: false,
+    required: ['type', 'path', 'content', 'mode', 'description'],
+    properties: {
+      type: { const: 'write_file' },
+      path: { type: 'string' },
+      content: { type: 'string' },
+      mode: { type: 'string', enum: ['create', 'replace'] },
+      description: { type: 'string' }
+    }
+  },
+  {
+    type: 'object',
+    additionalProperties: false,
+    required: ['type', 'path', 'description'],
+    properties: {
+      type: { const: 'delete_file' },
+      path: { type: 'string' },
+      description: { type: 'string' }
+    }
+  }
+]
+
 /** Repository chat may propose a file-action prefix followed by Git actions. */
-export const REPO_CHAT_ACTIONS_SCHEMA: Record<string, unknown> = {
-  type: 'array',
-  maxItems: 64,
-  items: {
-    anyOf: [
-      ASK_ACTION_SCHEMA,
-      {
-        type: 'object',
-        additionalProperties: false,
-        required: ['type', 'path', 'oldText', 'newText', 'description'],
-        properties: {
-          type: { const: 'edit_file' },
-          path: { type: 'string' },
-          oldText: { type: 'string' },
-          newText: { type: 'string' },
-          replaceAll: { type: 'boolean' },
-          description: { type: 'string' }
-        }
-      },
-      {
-        type: 'object',
-        additionalProperties: false,
-        required: ['type', 'path', 'content', 'mode', 'description'],
-        properties: {
-          type: { const: 'write_file' },
-          path: { type: 'string' },
-          content: { type: 'string' },
-          mode: { type: 'string', enum: ['create', 'replace'] },
-          description: { type: 'string' }
-        }
-      },
-      {
-        type: 'object',
-        additionalProperties: false,
-        required: ['type', 'path', 'description'],
-        properties: {
-          type: { const: 'delete_file' },
-          path: { type: 'string' },
-          description: { type: 'string' }
-        }
-      }
-    ]
+export function repoChatActionsSchema(remote = false): Record<string, unknown> {
+  return {
+    type: 'array',
+    maxItems: 64,
+    items: { anyOf: [askActionSchema({ history: true, remote }), ...FILE_ACTION_SCHEMAS] }
   }
 }
+
+export const REPO_CHAT_ACTIONS_SCHEMA: Record<string, unknown> = repoChatActionsSchema()
 
 // ─── Smart staging ──────────────────────────────────────────────────────────
 

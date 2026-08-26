@@ -105,9 +105,12 @@ Commit messages, PR descriptions and branch names from the actual diff ·
 whose findings must anchor to a real `path:line` or get rejected ·
 a [repo wiki](docs/help/repo-wiki.md) where every claim cites its file ·
 [**repository chat**](docs/help/repo-chat.md) that answers from files and commits
-you pin as context, links every answer back to the lines it read, and can propose
-Git actions plus opt-in reviewed file CRUD under always-ask, auto-safe, or
-auto-all approval — right from the conversation (or from an error toast's "fix with AI").
+you pin as context, asks for more evidence instead of guessing, links every answer
+back to the lines it read, and can propose Git actions — up to merge, rebase,
+revert, cherry-pick, and opt-in push, pull request and
+[stacked-PR submit](docs/help/stacks.md) — plus reviewed file CRUD, each drawn as
+a widget you approve under always-ask, auto-safe, or auto-all rules and can undo
+as one plan (or from an error toast's "fix with AI").
 [**Several accounts at once**](docs/help/ai.md) — an OpenAI key for commit
 messages, Claude for chat, a local Ollama for the rest — with model lists fetched
 live from each provider. OpenAI, Anthropic, Google Gemini, OpenRouter, Groq,

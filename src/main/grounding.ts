@@ -327,6 +327,7 @@ export function validateHoverExplain(value: unknown, window: LineWindow): string
   return errors
 }
 
+/** Working-tree and ref bookkeeping — what the Ask planner has always run. */
 const ASK_ACTION_TYPES = new Set([
   'gitignore',
   'stage',
@@ -338,6 +339,41 @@ const ASK_ACTION_TYPES = new Set([
   'checkout',
   'tag'
 ])
+
+/** Local actions that move history. Allowed only for a surface that shows the
+ *  model the branches and commit hashes they must name. */
+const HISTORY_ACTION_TYPES = new Set(['merge', 'rebase', 'revert', 'cherry_pick'])
+
+/** Action types that reach a remote or the hosting provider. Allowed only when
+ *  the caller says the remote-actions setting is on. */
+const REMOTE_ASK_ACTION_TYPES = new Set(['fetch', 'pull', 'push', 'open_pr', 'stack_submit'])
+
+const PULL_MODES = new Set(['default', 'ff-only', 'rebase'])
+const HASH = /^[0-9a-f]{7,40}$/i
+
+/** Field checks for the actions that name refs or commits rather than files. */
+function refActionErrors(type: string, raw: Record<string, unknown>, at: string): string[] {
+  const errors: string[] = []
+  const text = (key: string): string => (typeof raw[key] === 'string' ? (raw[key] as string).trim() : '')
+  if (type === 'merge' && !text('ref')) errors.push(`${at}.ref must be the branch or commit to merge in.`)
+  if (type === 'rebase' && !text('onto')) errors.push(`${at}.onto must be the branch to rebase onto.`)
+  if (type === 'revert' || type === 'cherry_pick') {
+    const hashes = raw.hashes
+    if (!Array.isArray(hashes) || hashes.length === 0) {
+      errors.push(`${at}.hashes must be a non-empty array of commit hashes copied from the history you were shown.`)
+    } else if (hashes.some((hash) => typeof hash !== 'string' || !HASH.test(hash))) {
+      errors.push(`${at}.hashes must contain only commit hashes; never invent one.`)
+    }
+  }
+  if (type === 'pull' && raw.mode !== undefined && !PULL_MODES.has(String(raw.mode))) {
+    errors.push(`${at}.mode must be one of: ${[...PULL_MODES].join(', ')}.`)
+  }
+  if (type === 'open_pr') {
+    if (!text('title')) errors.push(`${at}.title must be the pull request title.`)
+    if (!text('target')) errors.push(`${at}.target must be the branch the pull request merges into.`)
+  }
+  return errors
+}
 
 /** Action fields whose entries must be paths the working tree actually has. */
 const PATH_FIELD = 'files'
@@ -360,9 +396,18 @@ export function validateAskPlan(value: unknown, knownPaths: Set<string>): string
  * replies carry the same action union, grounded against the same working-tree
  * path list.
  */
-export function validateAskActions(value: unknown, knownPaths: Set<string>): string[] {
+export function validateAskActions(
+  value: unknown,
+  knownPaths: Set<string>,
+  allow: { history?: boolean; remote?: boolean } = {}
+): string[] {
   if (!Array.isArray(value)) return ['"actions" must be an array (use [] when nothing can be done).']
   const errors: string[] = []
+  const runnable = new Set([
+    ...ASK_ACTION_TYPES,
+    ...(allow.history ? HISTORY_ACTION_TYPES : []),
+    ...(allow.remote ? REMOTE_ASK_ACTION_TYPES : [])
+  ])
   value.forEach((raw: Record<string, unknown>, i) => {
     const at = `actions[${i}]`
     if (!raw || typeof raw !== 'object') {
@@ -370,10 +415,21 @@ export function validateAskActions(value: unknown, knownPaths: Set<string>): str
       return
     }
     const type = raw.type
-    if (typeof type !== 'string' || !ASK_ACTION_TYPES.has(type)) {
-      errors.push(`${at}.type ${JSON.stringify(type ?? null)} is not an action this app can run. Use one of: ${[...ASK_ACTION_TYPES].join(', ')}.`)
+    if (typeof type !== 'string' || !runnable.has(type)) {
+      // Naming the remote set explicitly is the difference between "the app
+      // cannot do this" and "this repository's settings do not allow it".
+      if (typeof type === 'string' && REMOTE_ASK_ACTION_TYPES.has(type)) {
+        errors.push(`${at}.type ${JSON.stringify(type)} needs remote actions, which are off in Settings. Propose only local actions.`)
+        return
+      }
+      if (typeof type === 'string' && HISTORY_ACTION_TYPES.has(type)) {
+        errors.push(`${at}.type ${JSON.stringify(type)} is not available on this surface. Use repository chat for merge, rebase, revert and cherry-pick.`)
+        return
+      }
+      errors.push(`${at}.type ${JSON.stringify(type ?? null)} is not an action this app can run. Use one of: ${[...runnable].join(', ')}.`)
       return
     }
+    errors.push(...refActionErrors(type, raw, at))
     if (typeof raw.description !== 'string' || !raw.description.trim()) {
       errors.push(`${at}.description must be a short sentence.`)
     }
@@ -415,6 +471,8 @@ export interface RepoChatActionContext {
   evidencePaths: Set<string>
   completePaths: Set<string>
   allowFileActions?: boolean
+  /** Whether the plan may reach a remote or the hosting provider. */
+  allowRemoteActions?: boolean
 }
 
 /**
@@ -492,7 +550,7 @@ export function validateRepoChatActions(value: unknown, context: RepoChatActionC
 
   if (fileActions > 48) errors.push('Repository chat may propose at most 48 file actions.')
   if (gitActions.length > 12) errors.push('Repository chat may propose at most 12 Git actions.')
-  errors.push(...validateAskActions(gitActions, knownGitPaths))
+  errors.push(...validateAskActions(gitActions, knownGitPaths, { history: true, remote: context.allowRemoteActions === true }))
   return errors
 }
 

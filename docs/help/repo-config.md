@@ -22,6 +22,10 @@ a newcomer gets them on day one instead of on their first rejected push.
 The file is entirely optional. A repository without one behaves exactly as it
 always did.
 
+You do not have to write it by hand: [repository chat](repo-chat.md) is given
+this file's schema, so *add ticket links for JIRA-1234* or *protect the release
+branches* comes back as a reviewable file action.
+
 ![The repository's Config tab, with its doctor rows and rule sections](../screenshots/repo-config.webp)
 
 ## Where to edit it

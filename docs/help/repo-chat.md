@@ -3,7 +3,7 @@ title: Repository chat
 category: AI
 order: 82
 summary: Ask questions about this repository, pin files and commits as context, and let it propose reviewed file changes followed by Git actions.
-keywords: chat ask question assistant context attach pin drag drop commit file evidence grounded ai panel actions run approve auto-approve allow fix error toast
+keywords: chat ask question assistant context attach pin drag drop commit file evidence grounded ai panel actions run approve auto-approve allow fix error toast push pull fetch merge rebase revert cherry-pick pull request stacked pr stack undo plan snapshot second look
 ---
 
 # Repository chat
@@ -25,6 +25,15 @@ Every answer is built in two passes. The first picks a small set of paths and
 literal searches from the repository's own tracked-file list. The second answers
 using only the excerpts that pass brings back, and may cite only those excerpts —
 a made-up file or line is a validation error, not a plausible-looking answer.
+
+**A second look.** The first pass has to guess which files matter from their
+names alone, which is exactly the guess that fails on "where is this called
+from". So an answer is allowed to ask back instead of guessing: it can name more
+paths, more literal searches, or commit hashes from the recent history, and the
+question is put again with what those turn up. That happens at most twice — each
+round is another model call you wait for — and on the last one it must answer
+with what it has. You see none of this except a slightly longer wait and a
+better answer.
 
 What it can see:
 
@@ -73,6 +82,7 @@ touch an excluded path are dropped from that diff, not the whole commit.
 | **Committed content only** | Answers from the last commit instead of the working tree: uncommitted edits and diffs never leave the machine |
 | **Propose file and Git actions in chat** | Off makes chat purely read-only again: no action cards, no approval dropdown |
 | **File read-only mode** | On blocks file creation, editing, replacement, and deletion while keeping Git actions available. It is on by default |
+| **Let chat propose remote actions** | Off by default. On adds fetch, pull, push, opening a pull request and submitting a stack to what chat may propose — see [Actions that leave the machine](#actions-that-leave-the-machine) |
 | **How proposed actions run** | The approval mode — see [Approval modes](#approval-modes). Destructive actions confirm regardless |
 
 Which account and model answers chat is set under **Which account answers what**
@@ -127,12 +137,67 @@ exist is rejected, not rendered.
 ![Proposed actions in chat](../screenshots/repo-chat-actions.webp)
 
 Repository chat can propose exact edits, whole-file creation or replacement,
-and file deletion, followed by the toolbar assistant's Git actions: ignore
-patterns, stage, unstage, commit, stash, discard, branch, checkout, and tag.
+and file deletion, followed by Git actions: ignore patterns, stage, unstage,
+commit, stash, discard, branch, checkout, tag, and — because chat is shown the
+branch list and the recent commits — merge, rebase, revert, and cherry-pick.
 Gitcito computes each expandable diff locally. Existing files must come from
 evidence the assistant read; unsafe, secret, ignored, generated, binary, stale,
-oversized, and symlinked targets are refused. Push, pull, reset, rebase, and
-force operations remain available only in their dedicated UI.
+oversized, and symlinked targets are refused. Reset, history rewriting, deleting
+a branch and every force operation remain available only in their dedicated UI.
+
+A merge or a rebase can stop on a conflict. When it does, the run stops there,
+the card marks the row failed and keeps the count of what already ran, and the
+conflict banner takes over exactly as it would for the same operation started
+from the toolbar.
+
+**It can also write `.gitcito.json`.** Chat is handed the shape of
+[the repository's own config file](repo-config.md), so *add ticket links for
+JIRA-1234* or *protect the release branches* becomes a file action written
+against the real schema instead of plausible-looking keys the loader would
+reject. It needs file actions enabled — the same **File read-only mode** switch.
+
+**Rows that need a picture get one.** A one-line summary is enough for "stage
+two files" and nowhere near enough for "open four pull requests against a
+stack", so the rows that describe shape draw it: the branch a push publishes
+and how far ahead it is, the two refs a merge or rebase involves, the commits a
+revert or cherry-pick would replay by their subjects, the pull request as it
+will look, and a stack as a ladder with each level's base and whether the submit
+would open it, retarget it, or leave it alone.
+
+### Actions that leave the machine
+
+Fetching, pulling, pushing, opening a pull request and submitting a stack are
+**off by default**, behind **Let chat propose remote actions**. Publishing work
+is a decision worth opting into, and with the setting off the model is not told
+those actions exist — it cannot propose one and be refused, which is the failure
+mode that teaches people to turn things on without reading.
+
+With it on:
+
+| Action | Does |
+|---|---|
+| **Fetch** / **Pull** | The same fetch and pull the toolbar runs; the pull mode (merge, fast-forward only, rebase) is part of the proposal |
+| **Push** | Publishes one branch to one remote. **Never with force** — a force push is not in the vocabulary a proposal is written in, so it cannot be proposed at all |
+| **Open PR** | Opens one pull request, draft or not, against the repository's own origin. The card keeps the link afterwards |
+| **Submit stack** | The whole [stacked-PR submit](stacks.md): push every level, open or retarget one pull request each, write the navigation section, register the GitHub stack |
+
+![A chat plan that pushes and opens a pull request](../screenshots/repo-chat-remote-actions.webp)
+
+A proposed push clears the same guards the toolbar's push does before anything
+runs — the protected-branch confirm, the warning about publishing
+[credential-looking files](security.md), and the repository's own pre-push
+checklist. They are dialogs, so they are answered before the plan starts rather
+than from inside it.
+
+### Undoing a plan
+
+A plan is approved as a batch, so it is undone as a batch. Before the first
+action that can change anything, Gitcito records where the branch was and takes
+a snapshot of the working tree; a finished card then offers **Undo plan**. It
+moves the branch back to that commit and restores the tree, which throws away
+whatever the plan produced, so it confirms first and names the commit it is
+returning to. Pull requests the plan opened stay open — a remote is not
+something a local snapshot can take back.
 
 With **Auto-run all actions**, a valid file change runs immediately and the
 card records the completed action:

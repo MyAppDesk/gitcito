@@ -26,6 +26,16 @@ zweite antwortet nur mit den Ausschnitten, die dabei herauskommen, und darf auch
 nur diese zitieren: eine erfundene Datei oder Zeile ist ein Validierungsfehler,
 keine plausibel klingende Antwort.
 
+**Ein zweiter Blick.** Der erste Durchgang muss allein am Namen raten, welche
+Dateien zählen — genau die Vermutung, die bei „von wo wird das aufgerufen“
+scheitert. Eine Antwort darf deshalb zurückfragen, statt zu raten: Sie kann
+weitere Pfade, weitere wörtliche Suchen oder Commit-Hashes aus der jüngsten
+Historie nennen, und die Frage wird mit dem Ergebnis erneut gestellt. Das
+passiert höchstens zweimal — jede Runde ist ein weiterer Modellaufruf, auf den
+Sie warten — und in der letzten muss sie mit dem antworten, was sie hat. Sie
+sehen davon nichts außer einer etwas längeren Wartezeit und einer besseren
+Antwort.
+
 | Enthalten | Ausgeschlossen |
 |---|---|
 | Versionierte Dateien, so wie sie im Arbeitsverzeichnis stehen | Nicht versionierte Dateien |
@@ -74,6 +84,7 @@ Commit.
 | **Datei- und Git-Aktionen im Chat vorschlagen** | Aus macht den Chat wieder rein lesend: keine Aktionskarten, kein Freigabe-Menü |
 | **Dateien nur lesen** | Ein verhindert Erstellen, Bearbeiten, Ersetzen und Löschen von Dateien; Git-Aktionen bleiben verfügbar. Standardmäßig eingeschaltet |
 | **Wie vorgeschlagene Aktionen ausgeführt werden** | Der Freigabemodus — siehe [Freigabemodi](#freigabemodi). Destruktive Aktionen bestätigen in jedem Fall |
+| **Chat darf Remote-Aktionen vorschlagen** | Standardmäßig aus. Eingeschaltet kommen Fetch, Pull, Push, das Öffnen eines Pull Requests und das Einreichen eines Stapels hinzu |
 
 Ist die KI ganz aus, verschwindet der Chat mit ihr — kein Panel, das etwas
 anbietet, was niemand beantworten kann.
@@ -126,18 +137,78 @@ nennt, wird abgewiesen, nicht angezeigt.
 ![Vorgeschlagene Aktionen im Chat](../../screenshots/repo-chat-actions.webp)
 
 Der Repository-Chat kann exakte Bearbeitungen, das Erstellen oder vollständige
-Ersetzen sowie das Löschen von Dateien vorschlagen, gefolgt von den Git-Aktionen
-des **Ausführen**-Assistenten. Gitcito berechnet den aufklappbaren Diff lokal.
-Bestehende Dateien müssen aus gelesenen Belegen stammen; unsichere, geheime,
-ignorierte, generierte, binäre, veraltete, zu große oder verlinkte Ziele werden
-abgewiesen. Push, Pull, Reset, Rebase und erzwungene Operationen bleiben in der
-dafür vorgesehenen Oberfläche.
+Ersetzen sowie das Löschen von Dateien vorschlagen, danach Git-Aktionen:
+Ignore-Muster, Stagen, Unstagen, Commit, Stash, Verwerfen, Branch, Wechseln,
+Tag und — weil ihm die Branch-Liste und die jüngsten Commits gezeigt werden —
+Merge, Rebase, Revert und Cherry-Pick. Gitcito berechnet den aufklappbaren Diff
+lokal. Vorhandene Dateien müssen aus gelesenen Belegen stammen; unsichere,
+geheime, ignorierte, generierte, binäre, veraltete, zu große und über Symlinks
+erreichte Ziele werden abgelehnt. Reset, das Umschreiben von Historie, das
+Löschen von Branches und jede Force-Operation bleiben ihrer eigenen Oberfläche
+vorbehalten.
+
+Ein Merge oder ein Rebase kann an einem Konflikt stehenbleiben. Dann endet der
+Lauf dort, die Karte markiert die Zeile als fehlgeschlagen und behält die Zahl
+des bereits Gelaufenen, und das Konfliktbanner übernimmt genau wie bei derselben
+Operation aus der Werkzeugleiste.
 
 Der gesamte Dateistapel wird vor dem ersten Schreiben erneut geprüft und bei
 einem Fehler zurückgerollt. Vor einem Commit prüft Gitcito außerdem, ob etwas
 vorgemerkt ist. Die Karte zeigt abgeschlossene, fehlgeschlagene und übersprungene
 Schritte sowie Teilergebnisse. Danach fasst ein separater Modellaufruf ohne
 Aktionen das tatsächliche Ergebnis zusammen.
+
+**Er kann auch `.gitcito.json` schreiben.** Dem Chat wird die Form der
+[eigenen Konfigurationsdatei des Repositorys](repo-config.md) mitgegeben, also
+wird aus *füge Ticket-Links für JIRA-1234 hinzu* oder *schütze die
+Release-Branches* eine Dateiaktion gegen das echte Schema statt plausibel
+aussehender Schlüssel, die der Loader ablehnen würde. Dafür müssen Dateiaktionen
+erlaubt sein — derselbe Schalter für den Dateien-Lesemodus.
+
+**Zeilen, die ein Bild brauchen, bekommen eines.** Eine Zeile Zusammenfassung
+reicht für „stage zwei Dateien“ und keineswegs für „öffne vier Pull Requests auf
+einem Stapel“. Deshalb zeichnen die Zeilen, die eine Form beschreiben, sie auch:
+den Branch, den ein Push veröffentlicht, samt Vorsprung, die zwei Referenzen
+eines Merge oder Rebase, die Commits, die ein Revert oder Cherry-Pick mit ihrem
+Betreff wiederholen würde, den Pull Request so, wie er aussehen wird, und einen
+Stapel als Leiter mit der Basis jeder Ebene und dem, was das Einreichen dort
+täte: öffnen, neu ausrichten oder in Ruhe lassen.
+
+### Aktionen, die den Rechner verlassen
+
+Abrufen, Pullen, Pushen, einen Pull Request öffnen und einen Stapel einreichen
+sind **standardmäßig aus**, hinter **Chat darf Remote-Aktionen vorschlagen**.
+Arbeit zu veröffentlichen ist eine Entscheidung, die man bewusst trifft, und mit
+ausgeschalteter Option erfährt das Modell nicht einmal, dass es diese Aktionen
+gibt: Es kann keine vorschlagen und abgelehnt werden — der Fehlerfall, der
+Menschen beibringt, Schalter ungelesen umzulegen.
+
+Eingeschaltet:
+
+| Aktion | Tut |
+|---|---|
+| **Abrufen** / **Pullen** | Dasselbe Fetch und Pull wie in der Werkzeugleiste; der Pull-Modus (Merge, nur Fast-Forward, Rebase) gehört zum Vorschlag |
+| **Pushen** | Veröffentlicht einen Branch auf einem Remote. **Nie mit Force** — ein Force-Push kommt im Vokabular eines Vorschlags nicht vor und kann daher gar nicht vorgeschlagen werden |
+| **PR öffnen** | Öffnet einen Pull Request, als Entwurf oder nicht, gegen das origin des Repositorys. Die Karte behält den Link |
+| **Stapel einreichen** | Das komplette [Stacked-PR-Einreichen](stacks.md): jede Ebene pushen, je einen Pull Request öffnen oder neu ausrichten, den Navigationsabschnitt schreiben, den GitHub-Stapel registrieren |
+
+![Ein Chat-Plan, der pusht und einen Pull Request öffnet](../../screenshots/repo-chat-remote-actions.webp)
+
+Ein vorgeschlagener Push durchläuft vorher dieselben Prüfungen wie der Push der
+Werkzeugleiste: die Bestätigung für geschützte Branches, die Warnung vor dem
+Veröffentlichen [zugangsdatenverdächtiger Dateien](security.md) und die
+Pre-Push-Checkliste des Repositorys. Das sind Dialoge, sie werden also
+beantwortet, bevor der Plan startet — nicht aus ihm heraus.
+
+### Einen Plan rückgängig machen
+
+Ein Plan wird als Ganzes freigegeben, also wird er als Ganzes zurückgenommen.
+Vor der ersten Aktion, die etwas ändern kann, merkt sich Gitcito, wo der Branch
+stand, und macht einen Schnappschuss des Arbeitsbaums; die fertige Karte bietet
+dann **Plan rückgängig** an. Sie setzt den Branch auf diesen Commit zurück und
+stellt den Baum wieder her — was der Plan erzeugt hat, ist damit weg, also fragt
+sie vorher nach und nennt den Ziel-Commit. Geöffnete Pull Requests bleiben
+offen: Ein Remote kann ein lokaler Schnappschuss nicht zurückholen.
 
 ### Freigabemodi
 

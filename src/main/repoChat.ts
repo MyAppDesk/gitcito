@@ -15,7 +15,7 @@ import type {
   RepoStatus
 } from '../shared/types'
 import { isSecretFile } from '../shared/secretFiles'
-import { ASK_ACTIONS_SCHEMA, REPO_CHAT_ACTIONS_SCHEMA, isSafeRepoPath } from './aiSchemas'
+import { askActionsSchema, isSafeRepoPath, repoChatActionsSchema } from './aiSchemas'
 import { chatCompleteJson } from './ai'
 import type { ChatMessage } from './aiTransport'
 import { gitService } from './git'
@@ -33,6 +33,11 @@ export const REPO_CHAT_MAX_SEARCHES = 5
 export const REPO_CHAT_MAX_SEARCH_PATHS = 48
 export const REPO_CHAT_CONTEXT_BYTES = 32_000
 export const REPO_CHAT_MAX_ATTACHMENTS = 8
+/** Extra evidence rounds an answer may ask for before it must answer with what
+ *  it has. One selection pass guesses; a second look at what arrived is where
+ *  "the caller is in the other file" gets resolved. Bounded, because each round
+ *  is another model call the user waits for. */
+export const REPO_CHAT_MAX_EVIDENCE_ROUNDS = 2
 /** Pinned context may take this much of the budget before the model's picks. */
 export const REPO_CHAT_PINNED_BYTES = 20_000
 
@@ -54,6 +59,7 @@ interface RawChatAnswer {
   content: string
   sourceIds: string[]
   actions?: Array<AskAction | RepoChatFileAction>
+  needMore?: { paths?: string[]; searches?: string[]; commits?: string[]; reason?: string }
 }
 
 export interface RepoChatEvidence extends RepoChatSource {
@@ -76,7 +82,12 @@ const CHAT_SELECTION_SCHEMA: Record<string, unknown> = {
 
 /** The answer contract — `actions` exists only when the chat-actions setting
  *  allows proposals, so a disabled surface cannot even be described. */
-export function chatAnswerSchema(allowActions: boolean, allowFileActions = allowActions): Record<string, unknown> {
+export function chatAnswerSchema(
+  allowActions: boolean,
+  allowFileActions = allowActions,
+  allowRemoteActions = false,
+  allowNeedMore = false
+): Record<string, unknown> {
   return {
     type: 'object',
     additionalProperties: false,
@@ -84,14 +95,48 @@ export function chatAnswerSchema(allowActions: boolean, allowFileActions = allow
     properties: {
       content: { type: 'string' },
       sourceIds: { type: 'array', items: { type: 'string' } },
+      ...(allowNeedMore
+        ? {
+            needMore: {
+              type: 'object',
+              additionalProperties: false,
+              properties: {
+                paths: { type: 'array', maxItems: REPO_CHAT_MAX_PATHS, items: { type: 'string' } },
+                searches: { type: 'array', maxItems: REPO_CHAT_MAX_SEARCHES, items: { type: 'string' } },
+                commits: { type: 'array', maxItems: 4, items: { type: 'string' } },
+                reason: { type: 'string' }
+              }
+            }
+          }
+        : {}),
       ...(allowActions
-        ? { actions: allowFileActions ? REPO_CHAT_ACTIONS_SCHEMA : { ...ASK_ACTIONS_SCHEMA, maxItems: 12 } }
+        ? {
+            actions: allowFileActions
+              ? repoChatActionsSchema(allowRemoteActions)
+              : { ...askActionsSchema(allowRemoteActions), maxItems: 12 }
+          }
         : {})
     }
   }
 }
 
-export function repoChatActionRules(actionsEnabled: boolean, fileActionsEnabled: boolean): string {
+/**
+ * The shape of `.gitcito.json`, for the surface that can write one.
+ *
+ * Repository config is the one file in a repository whose schema Gitcito owns,
+ * and "set this up for me" is a reasonable thing to ask an assistant that can
+ * already write files. Without the shape it invents plausible keys the loader
+ * then rejects, so the shape is supplied rather than guessed.
+ */
+const REPO_CONFIG_RULE = `- \`.gitcito.json\` is this app's own per-repository config, and you may create or edit it with a file action. Its shape (every field optional except "version", which is 1):
+  {"version":1,"protect":["main","release/*"],"links":{"tickets":[{"match":"([A-Z]+-\\\\d+)","url":"https://tracker/browse/$1","label":"Jira"}]},"commit":{"scopes":["ui","api"],"ticketFromBranch":true,"trailers":["Refs: {ticket}"]},"requires":{"node":">=20","submodules":true,"lfs":false,"hooksPath":".husky","files":[{"path":".env","from":".env.example","why":"local secrets"}]},"checklist":{"push":["Run the tests"]}}
+- Use only those keys — an unknown key is rejected by the loader, not ignored. "match" is a JavaScript regular expression source. Read the existing file first when one is present, and edit it rather than replacing it.`
+
+export function repoChatActionRules(
+  actionsEnabled: boolean,
+  fileActionsEnabled: boolean,
+  remoteActionsEnabled = false
+): string {
   if (!actionsEnabled) {
     return '- Do not propose that you executed, edited, staged, committed, or otherwise changed anything.'
   }
@@ -101,8 +146,17 @@ export function repoChatActionRules(actionsEnabled: boolean, fileActionsEnabled:
   {"type":"write_file","path":"new.txt","content":"complete content","mode":"create","description":"…"}
   {"type":"write_file","path":"README.md","content":"complete content","mode":"replace","description":"…"} (replace only evidence explicitly marked complete file)
   {"type":"delete_file","path":"obsolete.txt","description":"…"}
-- Put every file action before every Git action. Existing file targets must be literal repo-relative paths from evidence; use create only for a genuinely new path. Prefer exact edit_file over whole-file replacement.`
+- Put every file action before every Git action. Existing file targets must be literal repo-relative paths from evidence; use create only for a genuinely new path. Prefer exact edit_file over whole-file replacement.
+${REPO_CONFIG_RULE}`
     : '- File creation, editing, replacement, and deletion are disabled by file read-only mode. Git actions remain available.'
+
+  const remoteRules = remoteActionsEnabled
+    ? `  {"type":"fetch","remote":"origin","description":"…"} / {"type":"pull","mode":"rebase","description":"…"}
+  {"type":"push","branch":"feature/x","remote":"origin","description":"…"} (never force; a rejected push must be reconciled from the UI)
+  {"type":"open_pr","title":"…","body":"optional Markdown","source":"feature/x","target":"main","draft":false,"description":"…"}
+  {"type":"stack_submit","leaf":"top-branch","description":"…"} (GitHub only — pushes every level of the stack and opens or retargets one pull request per level)
+- A remote action publishes work outside this machine. Propose one only when the user asked for it in this turn, and name the remote and branch in "description".`
+    : '- Fetching, pulling, pushing, opening pull requests and submitting a stack are disabled by settings. Local actions remain available.'
 
   return `- When the user asks for a repository change, propose it in "actions" — never claim you already did anything. Each action is one of:
 ${fileRules}
@@ -113,8 +167,13 @@ ${fileRules}
   {"type":"discard","files":["a.ts"],"description":"…"} (only when the user clearly asks to throw changes away)
   {"type":"branch","name":"feature/x","at":"main","checkout":true,"description":"…"}
   {"type":"checkout","ref":"main","description":"…"} / {"type":"tag","name":"v1.0.0","message":"optional","description":"…"}
+  {"type":"merge","ref":"feature/x","noFf":false,"description":"…"} / {"type":"rebase","onto":"main","description":"…"}
+  {"type":"revert","hashes":["abc1234"],"description":"…"} / {"type":"cherry_pick","hashes":["abc1234"],"description":"…"}
+${remoteRules}
 - Every "files" entry must be a LITERAL repo-relative path copied from the working-tree state above; resolve globs and descriptions yourself. Never invent paths.
-- Anything outside that list (push, pull, fetch, reset, rebase, revert, merge, deleting branches, force operations) cannot be proposed — say it must be done from the dedicated UI, with an empty "actions".
+- Every "hashes" entry must be a commit hash copied from the history above, newest-first order for a cherry-pick.
+- A merge or rebase can stop on a conflict; say so when you propose one, and never propose one while the repository is already conflicted.
+- Anything outside that list (reset, filter-branch, deleting branches, force pushing, any force operation) cannot be proposed — say it must be done from the dedicated UI, with an empty "actions".
 - Proposals only run after the app's configured approval check; "content" must describe the proposal, not a result. Put executable actions only in the top-level "actions" field. "content" is never empty — always include at least one short sentence alongside any actions. Omit "actions" for pure questions.`
 }
 
@@ -136,7 +195,16 @@ const REPO_CHAT_ACTION_TYPES = new Set([
   'discard',
   'branch',
   'checkout',
-  'tag'
+  'tag',
+  'merge',
+  'rebase',
+  'revert',
+  'cherry_pick',
+  'fetch',
+  'pull',
+  'push',
+  'open_pr',
+  'stack_submit'
 ])
 
 function parsedValueContainsAction(value: unknown): boolean {
@@ -365,8 +433,13 @@ export function validateChatAnswer(
   // falls back to the action descriptions), so only reject an empty content
   // when there is nothing else to show.
   const proposals = actionContext && Array.isArray(root.actions) ? root.actions.length : 0
+  // A turn that asks for more evidence is not an answer yet, so it is allowed
+  // to arrive without one.
+  const asking = !!asObject(root.needMore)
   if (typeof root.content !== 'string') errors.push('"content" must be a string answer.')
-  else if (!root.content.trim() && proposals === 0) errors.push('"content" must be a non-empty answer.')
+  else if (!root.content.trim() && proposals === 0 && !asking) {
+    errors.push('"content" must be a non-empty answer.')
+  }
   else if (contentContainsActionPayload(root.content)) {
     errors.push('Executable action JSON must be returned in the top-level actions field, not in content.')
   }
@@ -418,6 +491,71 @@ Ahead/behind upstream: ${status.ahead}/${status.behind}
 Staged tracked files: ${paths(status.staged)}
 Unstaged tracked files: ${paths(status.unstaged.filter((file) => !file.untracked))}
 Conflicted tracked files: ${paths(status.conflicted)}`
+}
+
+/**
+ * Refs, remotes and recent commits — what a plan needs to name a target it did
+ * not invent. Every read is best-effort: a shallow or freshly initialised
+ * repository simply contributes fewer lines rather than failing the answer.
+ */
+async function repoShapeSummary(repoPath: string, includeRemote: boolean): Promise<string> {
+  const [branches, log, remotes] = await Promise.all([
+    gitService.branches(repoPath).catch(() => null),
+    gitService.log(repoPath, 20).catch(() => []),
+    includeRemote ? gitService.remotes(repoPath).catch(() => []) : Promise.resolve([])
+  ])
+  const lines: string[] = []
+  const locals = (branches?.locals ?? []).map((branch) => branch.name)
+  if (locals.length) lines.push(`Local branches: ${locals.slice(0, 40).join(', ')}`)
+  if (log.length) {
+    lines.push('Recent commits (newest first):')
+    for (const commit of log.slice(0, 15)) {
+      lines.push(`  ${commit.hash.slice(0, 10)} ${commit.subject.slice(0, 120)}`)
+    }
+  }
+  if (includeRemote) {
+    if (remotes.length) lines.push(`Remotes: ${remotes.map((remote) => remote.name).join(', ')}`)
+    const stack = await gitService.stackInfo(repoPath).catch(() => null)
+    if (stack?.branches.length) {
+      lines.push(
+        `Stack (bottom → top on ${stack.trunk || '(unknown trunk)'}): ${stack.branches
+          .map((branch) => branch.name)
+          .join(' → ')}`
+      )
+    }
+  }
+  return lines.join('\n')
+}
+
+/** Offered only while a round remains — on the last one the model must answer
+ *  with what it has, so the rule is not in the prompt to tempt it. */
+const MORE_EVIDENCE_RULE = `- If the evidence does not settle the question and you can name what would, set "needMore" instead of guessing: "paths" (exact tracked paths), "searches" (literal strings), "commits" (hashes from the history above), plus a one-line "reason". You will be asked again with what those turn up. Answer normally when you can already answer, and keep "content" to one short line while you are still gathering.`
+
+/**
+ * What a second look is allowed to ask for. Paths must come from the same
+ * candidate list the first selection drew on, searches are literal strings, and
+ * commit hashes are checked for shape only — the reader that resolves them
+ * refuses anything git cannot name.
+ */
+function normalizeNeedMore(
+  value: RawChatAnswer['needMore'],
+  known: Set<string>,
+  alreadyRead: Set<string>
+): { paths: string[]; searches: string[]; commits: string[] } | null {
+  if (!value) return null
+  const paths = (value.paths ?? [])
+    .filter((path): path is string => typeof path === 'string' && known.has(path) && !alreadyRead.has(path))
+    .slice(0, REPO_CHAT_MAX_PATHS)
+  const searches = (value.searches ?? [])
+    .filter((query): query is string => typeof query === 'string' && query.trim().length > 1)
+    .map((query) => query.trim())
+    .slice(0, REPO_CHAT_MAX_SEARCHES)
+  const commits = (value.commits ?? [])
+    .filter((hash): hash is string => typeof hash === 'string' && /^[0-9a-f]{7,40}$/i.test(hash))
+    .slice(0, 4)
+  // An empty request is not a request: answering with what is already here is
+  // strictly better than another round that adds nothing.
+  return paths.length || searches.length || commits.length ? { paths, searches, commits } : null
 }
 
 /** Provider prompt for a factual post-execution report with actions disabled. */
@@ -791,6 +929,7 @@ export async function answerRepoChat(
     : { evidence: [], notes: [] }
   const actionsEnabled = cfg.repoChatActions !== false
   const fileActionsEnabled = actionsEnabled && cfg.repoChatReadOnly === false
+  const remoteActionsEnabled = actionsEnabled && cfg.repoChatRemoteActions === true
   // What a proposal may touch — the same unfiltered working-tree set the Ask
   // planner grounds against, so both surfaces accept exactly the same plans.
   const actionPaths = new Set(
@@ -803,8 +942,12 @@ export async function answerRepoChat(
     ? [...new Set([...status.unstaged, ...status.staged].filter((file) => file.untracked).map((file) => file.path))]
         .filter((path) => isSafeRepoPath(path) && !isSecretFile(path))
     : []
+  // Refs and recent hashes only matter once a plan may name them: a merge, a
+  // rebase, a revert and a cherry-pick are all unusable without them.
+  const shape = actionsEnabled ? await repoShapeSummary(repoPath, remoteActionsEnabled) : ''
   const state = [
     statusSummary(status, allowed),
+    shape,
     actionsEnabled ? `Untracked files: ${serializePaths(untracked).split('\n').join(', ') || '(none)'}` : '',
     attachments.length ? `Pinned context: ${attachments.map(attachmentLabel).join(', ')}` : '',
     ...pinned.notes
@@ -817,9 +960,12 @@ export async function answerRepoChat(
     : { paths: [], searches: [] }
   const picked = await collectEvidence(repoPath, selection, allowed, status, committedOnly)
   // Pinned items go first: they win the budget when the two together overflow.
-  const evidence = packRepoChatEvidence([...pinned.evidence, ...picked])
-  const evidenceIds = new Set(evidence.map((item) => item.id))
-  const actionContext: RepoChatActionContext = {
+  // Evidence grows across rounds, so everything derived from it is rebuilt each
+  // time rather than computed once.
+  const collected: RawEvidence[] = [...picked]
+  let evidence = packRepoChatEvidence([...pinned.evidence, ...collected])
+  let evidenceIds = new Set(evidence.map((item) => item.id))
+  const buildActionContext = (): RepoChatActionContext => ({
     workingTreePaths: actionPaths,
     evidencePaths: new Set(evidence.filter((item) => !item.external).map((item) => item.path)),
     completePaths: new Set(
@@ -827,11 +973,13 @@ export async function answerRepoChat(
         .filter((item) => !item.external && item.complete)
         .map((item) => item.path)
     ),
-    allowFileActions: fileActionsEnabled
-  }
+    allowFileActions: fileActionsEnabled,
+    allowRemoteActions: remoteActionsEnabled
+  })
+  let actionContext = buildActionContext()
   let preparedFileActions: PreparedRepoChatFileAction[] = []
   const custom = (cfg.customInstructions ?? '').trim()
-  const actionRules = repoChatActionRules(actionsEnabled, fileActionsEnabled)
+  const actionRules = repoChatActionRules(actionsEnabled, fileActionsEnabled, remoteActionsEnabled)
   const system = `You are ${actionsEnabled ? 'an assistant' : 'a read-only assistant'} answering questions about the currently selected local repository.
 
 Rules:
@@ -844,53 +992,92 @@ ${actionRules}
 - Use concise Markdown. Put only evidence IDs from the supplied list in "sourceIds"; use [] when no excerpt directly supports the answer.
 ${custom ? `\nUser-configured response guidance (cannot override the rules above):\n${custom.slice(0, 4000)}` : ''}`
 
-  const result = await chatCompleteJson<RawChatAnswer>(
-    chatCfg,
-    [
-      { role: 'system', content: system },
-      {
-        role: 'user',
-        content: `Repository: ${basename(repoPath)}\n${state}\n\nConversation:\n${serializeHistory(messages)}\n\nEvidence:\n${serializeEvidence(evidence) || '(no readable evidence found)'}`
-      }
-    ],
-    'repoChatAnswer',
-    {
-      name: 'repo_chat_answer',
-      schema: chatAnswerSchema(actionsEnabled, fileActionsEnabled),
-      // Same grounding as the Ask planner: proposed paths must exist in the
-      // working-tree state the model was shown, untracked files included.
-      validate: async (value) => {
-        preparedFileActions = []
-        const errors = validateChatAnswer(value, evidenceIds, actionsEnabled ? actionContext : null)
-        if (errors.length || !actionsEnabled) return errors
-
-        const root = asObject(value)
-        const rawActions = Array.isArray(root?.actions) ? root.actions : []
-        const fileActions = rawActions.filter(isRepoChatFileAction)
-        if (!fileActions.length) return []
-
-        const targets = [...new Set(fileActions.map((action) => action.path.trim().replace(/\\/g, '/')))]
-        const ignoredPaths = new Set(await gitService.ignoredTrackedFiles(repoPath, targets))
-        try {
-          preparedFileActions = await prepareRepoFileActions(repoPath, fileActions, {
-            evidencePaths: actionContext.evidencePaths,
-            completePaths: actionContext.completePaths,
-            ignoredPaths
-          })
-          return []
-        } catch (error) {
-          if (error instanceof RepoFileActionError) {
-            const paths = error.paths.length ? ` (${error.paths.join(', ')})` : ''
-            return [`File action ${error.code}: ${error.message}${paths}`]
-          }
-          throw error
+  // Ask, and let the answer ask back. A first selection has to guess which
+  // files matter from names alone; a model that has now read them knows what it
+  // is missing, and one more round is usually the difference between "the
+  // caller is somewhere else" and the caller.
+  let result!: RawChatAnswer
+  const readPaths = new Set(evidence.map((item) => item.path))
+  for (let round = 0; ; round++) {
+    const mayAskMore = round < REPO_CHAT_MAX_EVIDENCE_ROUNDS
+    result = await chatCompleteJson<RawChatAnswer>(
+      chatCfg,
+      [
+        { role: 'system', content: `${system}${mayAskMore ? `\n${MORE_EVIDENCE_RULE}` : ''}` },
+        {
+          role: 'user',
+          content: `Repository: ${basename(repoPath)}\n${state}\n\nConversation:\n${serializeHistory(messages)}\n\nEvidence:\n${serializeEvidence(evidence) || '(no readable evidence found)'}`
         }
+      ],
+      'repoChatAnswer',
+      {
+        name: 'repo_chat_answer',
+        schema: chatAnswerSchema(actionsEnabled, fileActionsEnabled, remoteActionsEnabled, mayAskMore),
+        // Same grounding as the Ask planner: proposed paths must exist in the
+        // working-tree state the model was shown, untracked files included.
+        validate: async (value) => {
+          preparedFileActions = []
+          const errors = validateChatAnswer(value, evidenceIds, actionsEnabled ? actionContext : null)
+          if (errors.length || !actionsEnabled) return errors
+
+          const root = asObject(value)
+          const rawActions = Array.isArray(root?.actions) ? root.actions : []
+          const fileActions = rawActions.filter(isRepoChatFileAction)
+          if (!fileActions.length) return []
+
+          const targets = [...new Set(fileActions.map((action) => action.path.trim().replace(/\\/g, '/')))]
+          const ignoredPaths = new Set(await gitService.ignoredTrackedFiles(repoPath, targets))
+          try {
+            preparedFileActions = await prepareRepoFileActions(repoPath, fileActions, {
+              evidencePaths: actionContext.evidencePaths,
+              completePaths: actionContext.completePaths,
+              ignoredPaths
+            })
+            return []
+          } catch (error) {
+            if (error instanceof RepoFileActionError) {
+              const paths = error.paths.length ? ` (${error.paths.join(', ')})` : ''
+              return [`File action ${error.code}: ${error.message}${paths}`]
+            }
+            throw error
+          }
+        },
+        // The action union has optional fields, which strict json_schema forbids.
+        strict: !actionsEnabled
       },
-      // The action union has optional fields, which strict json_schema forbids.
-      strict: !actionsEnabled
-    },
-    0.2
-  )
+      0.2
+    )
+
+    const more = mayAskMore ? normalizeNeedMore(result.needMore, allowed, readPaths) : null
+    if (!more) break
+
+    const extra = await collectEvidence(
+      repoPath,
+      { paths: more.paths, searches: more.searches },
+      allowed,
+      status,
+      committedOnly
+    )
+    // Commits ride the pinning reader, which already knows how to refuse a
+    // hash git cannot resolve and how to clip an enormous diff.
+    const extraCommits = more.commits.length
+      ? await collectAttachmentEvidence(
+          repoPath,
+          more.commits.map((hash) => ({ kind: 'commit' as const, hash })),
+          ignored,
+          status,
+          skipped,
+          committedOnly
+        )
+      : { evidence: [], notes: [] }
+    if (!extra.length && !extraCommits.evidence.length) break
+
+    collected.push(...extra, ...extraCommits.evidence)
+    for (const item of [...extra, ...extraCommits.evidence]) readPaths.add(item.path)
+    evidence = packRepoChatEvidence([...pinned.evidence, ...collected])
+    evidenceIds = new Set(evidence.map((item) => item.id))
+    actionContext = buildActionContext()
+  }
 
   const byId = new Map(evidence.map((item) => [item.id, item]))
   const sources = [...new Set(result.sourceIds)]

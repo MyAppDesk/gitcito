@@ -19,6 +19,16 @@ export function askActionSafety(action: RepoChatAction): AskActionSafety {
     case 'edit_file':
     case 'write_file':
     case 'delete_file':
+    // Moving history, or publishing it, is never "bookkeeping": a pre-approved
+    // mode may run these, a "safe only" mode may not.
+    case 'merge':
+    case 'rebase':
+    case 'revert':
+    case 'cherry_pick':
+    case 'pull':
+    case 'push':
+    case 'open_pr':
+    case 'stack_submit':
       return 'normal'
     default:
       return 'safe'
@@ -57,6 +67,23 @@ export function askActionDetail(action: RepoChatAction, allChangesLabel: string)
     case 'write_file':
     case 'delete_file':
       return action.path
+    case 'merge':
+      return action.ref
+    case 'rebase':
+      return action.onto
+    case 'revert':
+    case 'cherry_pick':
+      return action.hashes.map((hash) => hash.slice(0, 7)).join(', ')
+    case 'fetch':
+      return action.remote ?? ''
+    case 'pull':
+      return action.mode ?? ''
+    case 'push':
+      return [action.remote, action.branch].filter(Boolean).join(' ')
+    case 'open_pr':
+      return `${action.title} · ${action.source ?? ''} → ${action.target}`
+    case 'stack_submit':
+      return action.leaf ?? ''
     default:
       return action.files.join(', ')
   }

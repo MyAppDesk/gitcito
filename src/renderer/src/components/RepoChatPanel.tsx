@@ -50,11 +50,12 @@ import {
 } from '../lib/repoChatContext'
 import { annotateChatHtml, tokenizeChatText } from '../lib/chatText'
 import { askActionDetail, askActionsAutoRun, destructiveAskFiles } from '../lib/askActions'
-import { executeRepoChatActions } from '../lib/askActionRun'
+import { executeRepoChatActions, planGuardSnapshot } from '../lib/askActionRun'
 import { repoChatActionMeta } from '../lib/askActionMeta'
+import { ActionResultLinks, ActionWidget } from './ActionWidgets'
 import { gitApi } from '../infrastructure/api'
 import { useRepoChatStore, type RepoChatEntry } from '../stores/chat'
-import { useRepoStore } from '../stores/repo'
+import { repoActions, useRepoStore } from '../stores/repo'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
 
@@ -188,12 +189,16 @@ function UserText({ content }: { content: string }): React.JSX.Element {
  *  card only renders the entry's action state. */
 function ChatActionCard({
   message,
+  repoPath,
   onRun,
-  onDismiss
+  onDismiss,
+  onUndo
 }: {
   message: RepoChatEntry
+  repoPath: string
   onRun: () => void
   onDismiss: () => void
+  onUndo: () => void
 }): React.JSX.Element {
   const t = useT()
   const actions = message.actions ?? []
@@ -220,11 +225,13 @@ function ChatActionCard({
                   {action.description || detail}
                 </span>
               </div>
-              {isFileAction(action) && (
+              {isFileAction(action) ? (
                 <details className="repo-chat-action-preview">
                   <summary>{action.path}</summary>
                   <pre><code>{action.preview}</code></pre>
                 </details>
+              ) : (
+                <ActionWidget action={action} repoPath={repoPath} />
               )}
             </div>
           )
@@ -252,12 +259,24 @@ function ChatActionCard({
           </span>
         )}
         {state === 'done' && (
-          <span className="repo-chat-actions-status done">
-            <Check size={12} />{' '}
-            {interp(t(message.actionsAuto ? 'chat.actionsAutoRan' : 'chat.actionsRan'), {
-              n: execution?.applied ?? message.actionsApplied ?? actions.length
-            })}
-          </span>
+          <>
+            <span className="repo-chat-actions-status done">
+              <Check size={12} />{' '}
+              {interp(t(message.actionsAuto ? 'chat.actionsAutoRan' : 'chat.actionsRan'), {
+                n: execution?.applied ?? message.actionsApplied ?? actions.length
+              })}
+            </span>
+            {/* The guard snapshot is only worth offering while it still
+                describes the repository — once undone, the button is gone. */}
+            {execution?.snapshot && !message.actionsUndone && (
+              <button type="button" className="btn ghost small" onClick={onUndo}>
+                <RotateCcw size={12} /> {t('chatWidget.undoPlan')}
+              </button>
+            )}
+            {message.actionsUndone && (
+              <span className="repo-chat-actions-status">{t('chatWidget.undonePlan')}</span>
+            )}
+          </>
         )}
         {state === 'failed' && (
           <>
@@ -284,6 +303,7 @@ function ChatActionCard({
           <span className="repo-chat-actions-status">{t('chat.actionsDismissed')}</span>
         )}
       </div>
+      {!!execution?.prs?.length && <ActionResultLinks prs={execution.prs} />}
       {message.finalizationFailed && (
         <div className="repo-chat-actions-finalization-failed">
           {t('chat.actionsFinalizationFailed')}
@@ -297,12 +317,14 @@ function AssistantMessage({
   message,
   repoPath,
   onRunActions,
-  onDismissActions
+  onDismissActions,
+  onUndoActions
 }: {
   message: RepoChatEntry
   repoPath: string
   onRunActions: (message: RepoChatEntry) => void
   onDismissActions: (message: RepoChatEntry) => void
+  onUndoActions: (message: RepoChatEntry) => void
 }): React.JSX.Element {
   const t = useT()
   const setFileView = useUIStore((state) => state.setFileView)
@@ -320,8 +342,10 @@ function AssistantMessage({
         {!!message.actions?.length && (
           <ChatActionCard
             message={message}
+            repoPath={repoPath}
             onRun={() => onRunActions(message)}
             onDismiss={() => onDismissActions(message)}
+            onUndo={() => onUndoActions(message)}
           />
         )}
         {sources.length > 0 && (
@@ -404,6 +428,10 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
   const imgCache = useRef(new Map<string, Promise<string | null>>())
   const endRef = useRef<HTMLDivElement>(null)
   const draftRef = useRef<HTMLTextAreaElement>(null)
+  // Proposals whose push guards have already been answered this session: the
+  // guard re-enters `runActions` after its dialog, and a second pass must not
+  // raise the same dialog again.
+  const pushCleared = useRef(new Set<number>())
   const messages = thread?.messages ?? []
   const pending = thread?.pending ?? false
   const attachments = thread?.attachments ?? []
@@ -460,7 +488,14 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
           repoPath,
           interp(t('chat.actionsRunLabel'), { n: actions.length }),
           async () => {
+            // One guard snapshot for the whole plan, taken while the lock is
+            // held so nothing can slip in between the photo and the first
+            // action. It is what the card's Undo restores — a plan is a batch,
+            // and undoing it one action at a time is not something a user can
+            // reason about.
+            const guard = await planGuardSnapshot(repoPath, actions)
             execution = await executeRepoChatActions(repoPath, actions)
+            if (guard) execution = { ...execution, snapshot: guard }
             void finalizeActions(repoPath, message.id, execution, resolveAI(profile.ai, 'chat'))
             if (execution.error) throw new Error(execution.error.detail ?? execution.error.code)
           },
@@ -485,6 +520,23 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
           }
         })
     }
+    // A push publishes work, so it clears the same guards the toolbar's push
+    // does — protected branches, credential-looking files, the repository's own
+    // pre-push checklist. They open dialogs, so they run before the queue.
+    const pushing = actions.find((action) => action.type === 'push' || action.type === 'stack_submit')
+    if (pushing && !pushCleared.current.has(message.id)) {
+      const branch =
+        (pushing.type === 'push' ? pushing.branch : pushing.leaf) ??
+        useRepoStore.getState().repos[repoPath]?.branches.current
+      if (branch) {
+        void repoActions.pushPreflight(repoPath, branch, () => runActions(message, auto)).then((cleared) => {
+          if (!cleared) return
+          pushCleared.current.add(message.id)
+          runActions(message, auto)
+        })
+        return
+      }
+    }
     // Destructive proposals always confirm, whatever the approval mode says —
     // and the confirm names what would be lost.
     const destructive = destructiveAskFiles(actions)
@@ -500,6 +552,36 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
       return
     }
     execute()
+  }
+
+  /**
+   * Put the repository back where the plan found it: the branch to its old tip,
+   * the working tree to its guard snapshot. Destructive by construction — it
+   * throws away whatever the plan produced — so it confirms first and says so.
+   */
+  const undoActions = (message: RepoChatEntry): void => {
+    const snapshot = message.execution?.snapshot
+    if (!snapshot || message.actionsUndone) return
+    openModal({
+      kind: 'confirm',
+      danger: true,
+      title: t('chatWidget.undoConfirmTitle'),
+      message: interp(t('chatWidget.undoConfirmMessage'), { sha: snapshot.head.slice(0, 7) }),
+      confirmLabel: t('chatWidget.undoConfirmOk'),
+      onConfirm: () => {
+        void useRepoStore
+          .getState()
+          .run(repoPath, t('chatWidget.undoLabel'), async () => {
+            await gitApi.reset(repoPath, snapshot.head, 'hard')
+            // An empty sha means the tree was clean when the plan started —
+            // the reset alone already restored it.
+            if (snapshot.sha) await gitApi.restoreSnapshot(repoPath, snapshot.sha)
+          })
+          .then((ok) => {
+            if (ok) setActions(repoPath, message.id, { actionsUndone: true })
+          })
+      }
+    })
   }
 
   const dismissActions = (message: RepoChatEntry): void => {
@@ -714,6 +796,7 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
                   repoPath={repoPath}
                   onRunActions={(entry) => runActions(entry)}
                   onDismissActions={dismissActions}
+                  onUndoActions={undoActions}
                 />
               ) : (
                 <UserMessage key={message.id} message={message} />

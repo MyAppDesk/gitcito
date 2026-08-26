@@ -773,6 +773,21 @@ export function AIPage({ profile, edit }: { profile: Profile; edit: (p: Partial<
                 </span>
               </label>
 
+              <label className="settings-toggle-card" style={{ marginTop: 12 }}>
+                <input
+                  type="checkbox"
+                  checked={ai.repoChatRemoteActions === true}
+                  onChange={(e) => edit({ ai: { ...ai, repoChatRemoteActions: e.target.checked } })}
+                />
+                <span className="settings-toggle-control" aria-hidden="true">
+                  <span className="settings-toggle-thumb" />
+                </span>
+                <span className="settings-toggle-copy">
+                  <strong>{t('settings.repoChatRemoteActions')}</strong>
+                  <span className="settings-hint">{t('settings.repoChatRemoteActionsHint')}</span>
+                </span>
+              </label>
+
               <label style={{ marginTop: 12 }}>
                 {t('chat.approvalTitle')}
                 <select

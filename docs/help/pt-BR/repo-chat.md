@@ -26,6 +26,15 @@ repositório. A segunda responde usando apenas os trechos trazidos, e só pode
 citar esses trechos: um arquivo ou linha inventados são erro de validação, não
 uma resposta plausível.
 
+**Uma segunda olhada.** A primeira passada precisa adivinhar quais arquivos
+importam só pelo nome, que é exatamente o palpite que falha em “de onde isso é
+chamado”. Por isso uma resposta pode perguntar de volta em vez de adivinhar: ela
+pode nomear mais caminhos, mais buscas literais ou hashes de commits do
+histórico recente, e a pergunta é refeita com o que aquilo trouxer. Isso ocorre
+no máximo duas vezes — cada rodada é outra chamada ao modelo que você espera — e
+na última ela precisa responder com o que tem. Você não vê nada disso além de
+uma espera um pouco maior e uma resposta melhor.
+
 | Incluído | Excluído |
 |---|---|
 | Arquivos rastreados, como estão na sua árvore de trabalho | Arquivos não rastreados |
@@ -74,6 +83,7 @@ tocam um caminho excluído saem daquele diff, não o commit inteiro.
 | **Propor ações de arquivo e Git no chat** | Desligado devolve o chat ao modo somente leitura: sem cartões de ações, sem menu de aprovação |
 | **Modo somente leitura de arquivos** | Ligado bloqueia criação, edição, substituição e exclusão de arquivos, mas mantém as ações Git disponíveis. Vem ligado por padrão |
 | **Como as ações propostas são executadas** | O modo de aprovação — veja [Modos de aprovação](#modos-de-aprovação). Ações destrutivas confirmam de qualquer jeito |
+| **Permitir que o chat proponha ações remotas** | Desligado por padrão. Ligado, acrescenta fetch, pull, push, abrir um pull request e enviar uma pilha |
 
 Com a IA desligada por completo, o chat some junto — nenhum painel oferecendo
 resposta quando nada pode responder.
@@ -124,19 +134,76 @@ arquivo inexistente é rejeitada, não exibida.
 
 ![Ações propostas no chat](../../screenshots/repo-chat-actions.webp)
 
-O chat pode propor edições exatas, criação ou substituição de arquivos inteiros
-e exclusão de arquivos, seguidas das ações Git do assistente **Rodar**: ignore,
-stage, unstage, commit, stash, descartar, branch, checkout e tag. O Gitcito
-calcula localmente cada diff expansível. Arquivos existentes precisam vir da
-evidência lida; alvos inseguros, secretos, ignorados, gerados, binários,
-desatualizados, grandes demais ou ligados por symlink são recusados. Push, pull,
-reset, rebase e operações forçadas continuam na interface dedicada.
+O chat do repositório pode propor edições exatas, criação ou substituição de
+arquivos inteiros e exclusão, e depois ações Git: padrões de ignore, stage,
+unstage, commit, stash, descarte, branch, troca de branch, tag e — porque a
+lista de branches e os commits recentes lhe são mostrados — merge, rebase,
+revert e cherry-pick. O Gitcito calcula o diff expansível localmente. Arquivos
+existentes precisam vir da evidência lida; alvos inseguros, secretos, ignorados,
+gerados, binários, desatualizados, grandes demais ou alcançados por symlink são
+recusados. Reset, reescrita de histórico, exclusão de branch e toda operação
+forçada continuam apenas na interface dedicada.
+
+Um merge ou um rebase pode parar em um conflito. Quando isso acontece, a
+execução para ali, o cartão marca aquela linha como falha e mantém a contagem do
+que já rodou, e o aviso de conflito assume exatamente como faria para a mesma
+operação iniciada pela barra.
 
 O lote inteiro é conferido de novo antes da primeira escrita e sofre rollback
 se um passo falhar. Antes de um commit, o Gitcito confirma que existe algo no
 stage. O cartão marca cada linha concluída, falha ou pulada e preserva resultados
 parciais. Depois, uma chamada separada e sem ações resume o resultado real; se
 esse resumo falhar, o cartão continua sendo o registro autoritativo.
+
+**Ele também pode escrever `.gitcito.json`.** O chat recebe o formato do
+[arquivo de configuração do próprio repositório](repo-config.md), então *adicione
+links de tickets para JIRA-1234* ou *proteja os branches de release* vira uma
+ação de arquivo escrita contra o esquema real, e não chaves plausíveis que o
+carregador recusaria. Exige as ações de arquivo ligadas — a mesma opção de modo
+somente leitura de arquivos.
+
+**As linhas que pedem um desenho têm um.** Um resumo de uma linha basta para
+“prepare dois arquivos” e fica muito aquém de “abra quatro pull requests sobre
+uma pilha”: as linhas que descrevem uma forma a desenham — o branch que um push
+publica e quanto está à frente, as duas referências de um merge ou rebase, os
+commits que um revert ou cherry-pick repetiria com seus assuntos, o pull request
+como ele ficará, e uma pilha como uma escada com a base de cada nível e o que o
+envio faria ali: abrir, redirecionar ou deixar como está.
+
+### Ações que saem da máquina
+
+Buscar, puxar, enviar, abrir um pull request e enviar uma pilha estão
+**desligados por padrão**, atrás de **Permitir que o chat proponha ações
+remotas**. Publicar trabalho merece uma escolha explícita, e com a opção
+desligada o modelo nem fica sabendo que essas ações existem: ele não pode propor
+uma e ser recusado, que é a falha que ensina as pessoas a ligar coisas sem ler.
+
+Com a opção ligada:
+
+| Ação | Faz |
+|---|---|
+| **Buscar** / **Puxar** | O mesmo fetch e pull da barra; o modo de pull (merge, só fast-forward, rebase) faz parte da proposta |
+| **Enviar** | Publica um branch em um remoto. **Nunca com force**: um push forçado não existe no vocabulário de uma proposta, então não pode ser proposto |
+| **Abrir PR** | Abre um pull request, rascunho ou não, contra o origin do repositório. O cartão guarda o link depois |
+| **Enviar pilha** | O envio completo da [pilha de PRs](stacks.md): publicar cada nível, abrir ou redirecionar um pull request por nível, escrever a seção de navegação, registrar a pilha no GitHub |
+
+![Um plano do chat que envia e abre um pull request](../../screenshots/repo-chat-remote-actions.webp)
+
+Um push proposto passa antes pelas mesmas guardas do push da barra: a
+confirmação de branch protegido, o aviso sobre publicar
+[arquivos que parecem credenciais](security.md) e a lista de verificação
+pré-push do repositório. São diálogos, então são respondidos antes de o plano
+começar, não de dentro dele.
+
+### Desfazer um plano
+
+Um plano é aprovado em lote, então é desfeito em lote. Antes da primeira ação
+capaz de mudar algo, o Gitcito registra onde o branch estava e tira um snapshot
+da árvore de trabalho; o cartão concluído passa a oferecer **Desfazer plano**.
+Ele leva o branch de volta àquele commit e restaura a árvore, o que joga fora o
+que o plano produziu — por isso confirma antes e nomeia o commit de destino. Os
+pull requests abertos continuam abertos: um remoto não é algo que um snapshot
+local consiga retirar.
 
 ### Modos de aprovação
 

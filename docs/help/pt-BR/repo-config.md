@@ -24,6 +24,10 @@ recusado.
 O arquivo é totalmente opcional. Um repositório sem ele se comporta exatamente
 como sempre.
 
+Você não precisa escrevê-lo à mão: o [chat do repositório](repo-chat.md) recebe
+o esquema deste arquivo, então *adicione links de tickets para JIRA-1234* ou
+*proteja os branches de release* volta como uma ação de arquivo revisável.
+
 ![A aba Config do repositório, com as linhas do doctor e as seções de regras](../../screenshots/repo-config.webp)
 
 ## Onde editar

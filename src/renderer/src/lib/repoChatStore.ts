@@ -38,6 +38,8 @@ export interface RepoChatEntry {
   actionsError?: string
   /** The approval mode ran the proposal without a click. */
   actionsAuto?: boolean
+  /** The guard snapshot has been restored — the plan is no longer in effect. */
+  actionsUndone?: boolean
 }
 
 export interface RepoChatThread {
@@ -82,7 +84,7 @@ export interface RepoChatState {
   setActions(
     repoPath: string,
     messageId: number,
-    patch: Partial<Pick<RepoChatEntry, 'actionsState' | 'actionsApplied' | 'actionsError' | 'actionsAuto'>>
+    patch: Partial<Pick<RepoChatEntry, 'actionsState' | 'actionsApplied' | 'actionsError' | 'actionsAuto' | 'actionsUndone'>>
   ): void
 }
 

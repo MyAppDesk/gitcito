@@ -24,6 +24,10 @@ pierwszym odrzuconym pushu.
 Plik jest całkowicie opcjonalny. Repozytorium bez niego zachowuje się dokładnie
 tak jak zawsze.
 
+Nie musisz pisać go ręcznie: [czat repozytorium](repo-chat.md) dostaje schemat
+tego pliku, więc *dodaj odnośniki do zgłoszeń dla JIRA-1234* albo *chroń gałęzie
+release* wraca jako akcja na pliku do przejrzenia.
+
 ![Zakładka Config repozytorium z wierszami doctora i sekcjami zasad](../../screenshots/repo-config.webp)
 
 ## Gdzie się go edytuje

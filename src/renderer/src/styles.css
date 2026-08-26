@@ -16001,3 +16001,110 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .cliedit-hints li.error { color: var(--danger); }
 .cliedit-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
 .cliedit-abort { margin-right: auto; font-size: 11px; color: var(--text-3); }
+
+/* ── Chat action widgets ───────────────────────────────────────────────────
+   The picture under a proposed action: which branch lands where, how far a
+   push reaches, what a stack submit would open. Sized to sit inside a chat
+   bubble, so everything here is small, quiet, and clipped rather than wrapped. */
+.action-widget {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-2);
+  font-size: 11px;
+}
+
+.action-widget-ref {
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--bg-3);
+  color: var(--text-1);
+  font-family: var(--mono);
+  font-size: 10px;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.action-widget-ref.base { color: var(--text-2); }
+
+.action-widget-badge {
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: var(--bg-3);
+  color: var(--text-2);
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.action-widget-badge.create { background: var(--accent-soft); color: var(--accent); }
+.action-widget-badge.ok { opacity: 0.6; }
+
+.action-widget-pr { flex-direction: column; align-items: stretch; gap: 4px; }
+.action-widget-pr-head { display: flex; align-items: center; gap: 6px; }
+.action-widget-pr-title {
+  font-weight: 600;
+  color: var(--text-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.action-widget-pr .action-widget-refs { display: flex; align-items: center; gap: 6px; padding: 0; border: 0; background: none; margin: 0; }
+.action-widget-body {
+  margin: 2px 0 0;
+  color: var(--text-2);
+  white-space: pre-wrap;
+  max-height: 72px;
+  overflow: hidden;
+}
+
+/* The stack, top level first — one row per level, trunk drawn as the floor. */
+.action-widget-stack { flex-direction: column; align-items: stretch; gap: 3px; }
+.action-widget-level { display: flex; align-items: center; gap: 6px; }
+.action-widget-level.ok { opacity: 0.65; }
+.action-widget-level-icon { flex: none; color: var(--text-2); }
+.action-widget-trunk {
+  margin-top: 2px;
+  padding-top: 4px;
+  border-top: 1px dashed var(--border);
+  color: var(--text-2);
+  font-family: var(--mono);
+  font-size: 10px;
+}
+
+.action-widget-commits { flex-direction: column; align-items: stretch; gap: 2px; }
+.action-widget-commit { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.action-widget-commit code { color: var(--accent); font-size: 10px; flex: none; }
+.action-widget-subject {
+  color: var(--text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.action-widget-empty { margin: 6px 0 0; color: var(--text-2); font-size: 11px; }
+
+.action-widget-results { flex-direction: column; align-items: stretch; gap: 3px; }
+.action-widget-results-title { color: var(--text-2); font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; }
+.action-widget-result {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 4px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  text-align: start;
+}
+.action-widget-result:hover:not(:disabled) { background: var(--bg-3); }
+.action-widget-result:disabled { cursor: default; opacity: 0.7; }
+.action-widget-result-num { color: var(--accent); font-weight: 600; flex: none; }

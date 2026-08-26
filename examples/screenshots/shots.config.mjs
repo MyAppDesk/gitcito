@@ -352,6 +352,61 @@ export const shots = [
     }
   },
   {
+    // A plan that reaches the network: the push and pull-request widgets under
+    // their action rows. Seeded like the card above — the widgets read the
+    // repository's own branches and remote, so the picture is real even though
+    // the proposal is planted.
+    out: 'repo-chat-remote-actions',
+    repos: ['pr-ready-branch'],
+    themes: ['dark'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['pr-ready-branch']
+      await page.evaluate(async (path) => {
+        const shot = window.__shot
+        await shot.waitForRepo(path)
+        shot.chat.setState({
+          threads: {
+            [path]: {
+              pending: false,
+              error: null,
+              skipped: [],
+              attachments: [],
+              messages: [
+                { id: 1, role: 'user', content: 'Push this branch and open a pull request against main.' },
+                {
+                  id: 2,
+                  role: 'assistant',
+                  content:
+                    'Two steps: publish the branch to origin, then open a pull request onto main. Review and run below.',
+                  sources: [],
+                  actions: [
+                    {
+                      type: 'push',
+                      remote: 'origin',
+                      description: 'Publish the feature branch to origin'
+                    },
+                    {
+                      type: 'open_pr',
+                      title: 'feat: add the awesome helper',
+                      body: 'Adds the helper and its call site.',
+                      target: 'main',
+                      draft: true,
+                      description: 'Open a draft pull request onto main'
+                    }
+                  ],
+                  actionsState: 'pending'
+                }
+              ]
+            }
+          }
+        })
+        shot.ui.getState().openChatPanel()
+      }, repo)
+      await page.waitForSelector('.action-widget-pr')
+      await page.waitForTimeout(400)
+    }
+  },
+  {
     // The chat image hover preview: an answer that mentions a committed image
     // (mascot.png in the image-showcase repo), with the popup open over it.
     out: 'repo-chat-image-hover',

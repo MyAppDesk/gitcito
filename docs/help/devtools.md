@@ -30,6 +30,31 @@ A **hot restart publishes a new address**, and the tab follows it while its
 session lives. Once the session is gone the tab keeps the last address it had,
 which is usually dead: close it and open DevTools again from the new run.
 
+## Which tools
+
+A tool earns a place here by doing two things: serving a web UI on this machine,
+and printing its address.
+
+| Tool | The line it prints |
+|------|--------------------|
+| Flutter DevTools | `The Flutter DevTools … is available at: <url>` |
+| Dart DevTools (`dart devtools`) | `Serving DevTools at <url>` |
+| Vue DevTools (`@vue/devtools`) | `Vue Devtools … listening on <url>` |
+| Prisma Studio | `Prisma Studio is up on <url>` |
+| Drizzle Studio | `Drizzle Studio is up and running on <url>` |
+| webpack-bundle-analyzer | `Webpack Bundle Analyzer is started at <url>` |
+| anything else naming DevTools and an address | falls through to a generic match |
+
+**What cannot be embedded, and why.** The Node inspector prints a `ws://`
+endpoint for a debugger to attach to, not a page — and the Chrome DevTools front
+end it pairs with lives behind a `devtools://` URL that no embedded view is
+allowed to load. React DevTools' standalone build is its own desktop window, not
+a served page. Neither can be a tab here; both would need a debug-protocol client
+rather than an address.
+
+**A dev server is not a dev tool.** Vite on `:5173` is your app, and embedding it
+would be a preview panel — a different feature, deliberately not this one.
+
 ## What it is allowed to do
 
 The embedded view is on a short leash, because this app holds credentials:

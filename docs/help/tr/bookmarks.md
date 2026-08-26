@@ -15,6 +15,10 @@ tıklayınca da seni oraya götürür.
 
 ![Kenar çubuğundaki yer imleri](../../screenshots/bookmarks.webp)
 
+Yer imi konmuş satır kenarda bir işaret taşır; herhangi bir satırın üstüne
+gelmek ise tıklanabilir soluk bir işaret gösterir — bağlam menüsü, özelliğin
+varlığını zaten bildiğin zamanlar içindir.
+
 Yer imleri bu makineye ve bu depoya özeldir. Depoya hiçbir şey yazılmaz: ne
 commit edilebilir, ne push edilebilir, ne de başkası görebilir — tıpkı
 [yapılacaklar](todos.md) gibi.

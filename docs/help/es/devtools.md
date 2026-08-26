@@ -31,6 +31,31 @@ sesión viva. Cuando la sesión desaparece, la pestaña conserva la última dire
 que tuvo, que normalmente ya está muerta: ciérrala y abre DevTools desde la nueva
 ejecución.
 
+## Qué herramientas
+
+Una herramienta entra aquí si hace dos cosas: servir una interfaz web en esta
+máquina, e imprimir su dirección.
+
+| Herramienta | La línea que imprime |
+|-------------|----------------------|
+| Flutter DevTools | `The Flutter DevTools … is available at: <url>` |
+| Dart DevTools (`dart devtools`) | `Serving DevTools at <url>` |
+| Vue DevTools (`@vue/devtools`) | `Vue Devtools … listening on <url>` |
+| Prisma Studio | `Prisma Studio is up on <url>` |
+| Drizzle Studio | `Drizzle Studio is up and running on <url>` |
+| webpack-bundle-analyzer | `Webpack Bundle Analyzer is started at <url>` |
+| cualquier otra que nombre DevTools y una dirección | cae en una coincidencia genérica |
+
+**Qué no se puede embeber, y por qué.** El inspector de Node imprime un endpoint
+`ws://` para que se enganche un depurador, no una página — y el front de Chrome
+DevTools que le acompaña vive tras una URL `devtools://` que ninguna vista
+embebida puede cargar. La build independiente de React DevTools es su propia
+ventana de escritorio, no una página servida. Ninguna puede ser una pestaña aquí;
+ambas necesitarían un cliente de protocolo de depuración, no una dirección.
+
+**Un dev server no es una dev tool.** Vite en `:5173` es tu app, y embeberla
+sería un panel de vista previa: otra feature, deliberadamente no esta.
+
 ## Qué se le permite hacer
 
 La vista embebida va con correa corta, porque esta app maneja credenciales:

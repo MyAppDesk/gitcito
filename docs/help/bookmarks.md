@@ -15,6 +15,10 @@ in the sidebar, and clicking takes you back.
 
 ![Bookmarks in the sidebar](../screenshots/bookmarks.webp)
 
+A bookmarked line carries a mark in the gutter, and hovering any line shows a
+faint one you can click — the context menu is for when you already know the
+feature is there.
+
 Bookmarks are private to this machine and this repository. Nothing is written
 into the repo, so they cannot be committed, pushed, or seen by anyone else —
 exactly like [todos](todos.md).

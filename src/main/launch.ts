@@ -569,10 +569,47 @@ function serverReadyTap(config: LaunchConfig, folder: string): ((chunk: string) 
  * The URL changes when the app restarts, so this keeps reporting rather than
  * firing once like `serverReadyAction`.
  */
-export function extractDevToolsUrl(text: string): string | null {
-  const m = /devtools[^\n]*?available at:?\s*(https?:\/\/\S+)/i.exec(text)
-  // Trailing punctuation from a sentence-shaped log line is not part of it.
-  return m ? m[1].replace(/[).,]+$/, '') : null
+/**
+ * Dev tools that announce themselves on stdout as a page you can open.
+ *
+ * The rule for being in this table is narrow: the tool must *serve a web UI on
+ * loopback* and *print its address*. That is why Flutter is here and the Node
+ * inspector is not — Node prints a `ws://` endpoint for a debugger to attach
+ * to, and the Chrome DevTools front end it pairs with lives behind a
+ * `devtools://` URL that no embedded view may load.
+ *
+ * Order matters only in that the first match wins; the patterns are specific
+ * enough not to overlap.
+ */
+const DEV_TOOL_PATTERNS: { name: string; re: RegExp }[] = [
+  // `flutter run`: "The Flutter DevTools debugger and profiler … is available at: <url>"
+  { name: 'Flutter DevTools', re: /flutter\s+devtools[^\n]*?(?:available at|at):?\s*(https?:\/\/\S+)/i },
+  // `dart devtools`: "Serving DevTools at <url>"
+  { name: 'Dart DevTools', re: /serving devtools at\s*(https?:\/\/\S+)/i },
+  // `npx @vue/devtools`: "Vue Devtools … listening on http://localhost:8098"
+  { name: 'Vue DevTools', re: /vue\s*devtools[^\n]*?(?:listening on|at)\s*(https?:\/\/\S+)/i },
+  // `prisma studio`: "Prisma Studio is up on <url>"
+  { name: 'Prisma Studio', re: /prisma studio is up on\s*(https?:\/\/\S+)/i },
+  // `drizzle-kit studio`: "Drizzle Studio is up and running on <url>"
+  { name: 'Drizzle Studio', re: /drizzle studio is up[^\n]*?on\s*(https?:\/\/\S+)/i },
+  // webpack-bundle-analyzer: "Webpack Bundle Analyzer is started at <url>"
+  { name: 'Bundle Analyzer', re: /bundle analyzer is started at\s*(https?:\/\/\S+)/i },
+  // Last: anything else that says DevTools and an address. A named tool must be
+  // matched by its own line above, or it would be labelled by this one.
+  { name: 'DevTools', re: /devtools[^\n]*?(?:available at|listening on|at):?\s*(https?:\/\/\S+)/i }
+]
+
+/** The address and the name of whatever announced it, or null. */
+export function extractDevToolsUrl(text: string): { url: string; name: string } | null {
+  for (const { name, re } of DEV_TOOL_PATTERNS) {
+    const m = re.exec(text)
+    if (!m) continue
+    // Trailing punctuation from a sentence-shaped log line is not part of it.
+    const url = m[1].replace(/[).,]+$/, '')
+    if (!/^https?:\/\/(localhost|127\.0\.0\.1|\[::1\]|0\.0\.0\.0)(:|\/|$)/i.test(url)) continue
+    return { url, name }
+  }
+  return null
 }
 
 function devToolsTap(wc: WebContents, id: number): (chunk: string) => void {
@@ -581,11 +618,11 @@ function devToolsTap(wc: WebContents, id: number): (chunk: string) => void {
   return (chunk) => {
     // eslint-disable-next-line no-control-regex
     buf = (buf + chunk.replace(/\x1b\[[0-9;?]*[ -/]*[@-~]/g, '')).slice(-8192)
-    const url = extractDevToolsUrl(buf)
-    if (!url || url === last) return
-    last = url
+    const found = extractDevToolsUrl(buf)
+    if (!found || found.url === last) return
+    last = found.url
     buf = ''
-    if (!wc.isDestroyed()) wc.send(`launch:devtools:${id}`, url)
+    if (!wc.isDestroyed()) wc.send(`launch:devtools:${id}`, found)
   }
 }
 

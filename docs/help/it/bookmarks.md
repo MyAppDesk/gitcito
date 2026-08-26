@@ -15,6 +15,10 @@ nella barra laterale, e un clic ti riporta lì.
 
 ![Segnalibri nella barra laterale](../../screenshots/bookmarks.webp)
 
+Una riga con segnalibro porta un segno nel margine, e passando sopra una riga
+qualsiasi ne compare uno tenue su cui cliccare — il menu contestuale serve
+quando sai già che la funzione c’è.
+
 I segnalibri sono privati di questa macchina e di questo repository. Nel repo non
 viene scritto niente: non si committano, non si pushano, nessun altro li vede —
 esattamente come i [todo](todos.md).

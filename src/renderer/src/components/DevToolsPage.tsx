@@ -34,11 +34,13 @@ interface WebviewElement extends HTMLElement {
 export function DevToolsPage({
   launchId,
   url: opened,
-  label
+  label,
+  tool
 }: {
   launchId: number
   url: string
   label: string
+  tool: string
 }): React.JSX.Element {
   const t = useT()
   // While the session lives it owns the address — a hot restart publishes a new
@@ -89,7 +91,8 @@ export function DevToolsPage({
         <button className="icon-btn" title={t('devtools.reload')} onClick={() => ref.current?.reload()}>
           <RefreshCw size={14} />
         </button>
-        <span className="devtools-label">{interp(t('devtools.session'), { name: label })}</span>
+        <span className="devtools-label">{tool}</span>
+        <span className="devtools-session">{interp(t('devtools.session'), { name: label })}</span>
         <span className="devtools-url" title={url}>
           {url}
         </span>
@@ -101,8 +104,8 @@ export function DevToolsPage({
           <ExternalLink size={14} />
         </button>
       </header>
-      {failed && <p className="devtools-note">{t('devtools.failed')}</p>}
-      {loading && !failed && <p className="devtools-note">{t('devtools.loading')}</p>}
+      {failed && <p className="devtools-note">{interp(t('devtools.failed'), { tool })}</p>}
+      {loading && !failed && <p className="devtools-note">{interp(t('devtools.loading'), { tool })}</p>}
       <Webview ref={ref} className="devtools-view" src={url} />
     </div>
   )

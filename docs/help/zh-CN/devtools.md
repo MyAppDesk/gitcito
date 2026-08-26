@@ -27,6 +27,29 @@ http://127.0.0.1:9100?uri=http://127.0.0.1:53412/uJ8k=/
 **热重启会公布一个新地址**，只要会话还活着，标签页就跟着换。会话结束之后，标签页
 留着最后那个地址，而它通常已经死了：关掉它，从新的运行里重新打开 DevTools。
 
+## 支持哪些工具
+
+一个工具要进这张表，得做到两件事：在这台机器上提供一个网页界面，并且把地址打印出来。
+
+| 工具 | 它打印的那一行 |
+|---|---|
+| Flutter DevTools | `The Flutter DevTools … is available at: <url>` |
+| Dart DevTools (`dart devtools`) | `Serving DevTools at <url>` |
+| Vue DevTools (`@vue/devtools`) | `Vue Devtools … listening on <url>` |
+| Prisma Studio | `Prisma Studio is up on <url>` |
+| Drizzle Studio | `Drizzle Studio is up and running on <url>` |
+| webpack-bundle-analyzer | `Webpack Bundle Analyzer is started at <url>` |
+| 其它任何提到 DevTools 和地址的输出 | 走通用匹配 |
+
+**什么嵌不进来，以及为什么。** Node inspector 打印的是给调试器挂上去的 `ws://`
+端点，不是网页 —— 而跟它配套的 Chrome DevTools 前端住在 `devtools://` 地址后面，
+任何内嵌视图都不允许加载。React DevTools 的独立版本是它自己的桌面窗口，不是被
+提供出来的网页。这两个都不能成为这里的标签页；它们要的是调试协议客户端，而不是
+一个地址。
+
+**开发服务器不是开发工具。** `:5173` 上的 Vite 是你的应用，嵌进来那是预览面板 ——
+另一个功能，这里刻意不做。
+
 ## 它被允许做什么
 
 这个内嵌视图拴着短绳，因为这个应用手里有凭据：

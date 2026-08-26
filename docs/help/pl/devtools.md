@@ -30,6 +30,31 @@ po jednej na sesję — dwie działające aplikacje to dwa DevTools.
 sesja. Gdy sesja zniknie, karta zachowa ostatni adres, zwykle już martwy: zamknij
 ją i otwórz DevTools z nowego uruchomienia.
 
+## Które narzędzia
+
+Narzędzie trafia tutaj, jeśli robi dwie rzeczy: serwuje interfejs webowy na tej
+maszynie i wypisuje swój adres.
+
+| Narzędzie | Wypisywana linia |
+|---|---|
+| Flutter DevTools | `The Flutter DevTools … is available at: <url>` |
+| Dart DevTools (`dart devtools`) | `Serving DevTools at <url>` |
+| Vue DevTools (`@vue/devtools`) | `Vue Devtools … listening on <url>` |
+| Prisma Studio | `Prisma Studio is up on <url>` |
+| Drizzle Studio | `Drizzle Studio is up and running on <url>` |
+| webpack-bundle-analyzer | `Webpack Bundle Analyzer is started at <url>` |
+| wszystko inne, co wymienia DevTools i adres | wpada w dopasowanie ogólne |
+
+**Czego nie da się osadzić i dlaczego.** Inspektor Node wypisuje endpoint `ws://`,
+do którego podpina się debugger, a nie stronę — a towarzyszący mu front Chrome
+DevTools mieszka za adresem `devtools://`, którego żaden osadzony widok nie może
+załadować. Samodzielna wersja React DevTools to własne okno pulpitu, nie
+serwowana strona. Żadne z nich nie może tu być kartą; oba wymagałyby klienta
+protokołu debugowania, nie adresu.
+
+**Serwer deweloperski to nie narzędzie deweloperskie.** Vite na `:5173` to twoja
+aplikacja; osadzenie jej byłoby panelem podglądu — inną funkcją, świadomie nie tą.
+
 ## Co wolno osadzonej stronie
 
 Osadzony widok chodzi na krótkiej smyczy, bo ta aplikacja przechowuje

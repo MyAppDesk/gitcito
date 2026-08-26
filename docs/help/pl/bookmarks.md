@@ -15,6 +15,10 @@ bocznym, a kliknięcie zabierze cię z powrotem.
 
 ![Zakładki na pasku bocznym](../../screenshots/bookmarks.webp)
 
+Linia z zakładką ma znacznik na marginesie, a najechanie na dowolną linię
+pokazuje blady znacznik do kliknięcia — menu kontekstowe jest na wtedy, gdy już
+wiesz, że funkcja istnieje.
+
 Zakładki są prywatne dla tej maszyny i tego repozytorium. Nic nie trafia do repo:
 nie da się ich zacommitować ani wypchnąć, nikt inny ich nie zobaczy — dokładnie
 jak [zadania](todos.md).

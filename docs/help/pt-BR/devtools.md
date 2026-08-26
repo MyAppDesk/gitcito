@@ -30,6 +30,31 @@ Um **hot restart publica um endereço novo**, e a aba acompanha enquanto a sess�
 viver. Quando a sessão acaba, a aba guarda o último endereço, que normalmente já
 está morto: feche e abra o DevTools a partir da nova execução.
 
+## Quais ferramentas
+
+Uma ferramenta entra aqui se fizer duas coisas: servir uma interface web nesta
+máquina e imprimir o endereço dela.
+
+| Ferramenta | A linha que ela imprime |
+|---|---|
+| Flutter DevTools | `The Flutter DevTools … is available at: <url>` |
+| Dart DevTools (`dart devtools`) | `Serving DevTools at <url>` |
+| Vue DevTools (`@vue/devtools`) | `Vue Devtools … listening on <url>` |
+| Prisma Studio | `Prisma Studio is up on <url>` |
+| Drizzle Studio | `Drizzle Studio is up and running on <url>` |
+| webpack-bundle-analyzer | `Webpack Bundle Analyzer is started at <url>` |
+| qualquer outra que cite DevTools e um endereço | cai numa correspondência genérica |
+
+**O que não dá para embutir, e por quê.** O inspector do Node imprime um endpoint
+`ws://` para um depurador se plugar, não uma página — e o front do Chrome DevTools
+que o acompanha mora atrás de uma URL `devtools://` que nenhuma visão embutida
+pode carregar. O build standalone do React DevTools é a própria janela de desktop,
+não uma página servida. Nenhum dos dois pode ser uma aba aqui; ambos precisariam
+de um cliente de protocolo de depuração, não de um endereço.
+
+**Dev server não é dev tool.** O Vite na `:5173` é o seu app, e embuti-lo seria um
+painel de preview — outra feature, deliberadamente não esta.
+
 ## O que ele pode fazer
 
 A visão embutida anda na coleira curta, porque este app guarda credenciais:

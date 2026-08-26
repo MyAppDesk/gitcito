@@ -16,6 +16,10 @@ dich zurück.
 
 ![Lesezeichen in der Seitenleiste](../../screenshots/bookmarks.webp)
 
+Eine mit Lesezeichen versehene Zeile trägt eine Marke am Rand, und beim
+Überfahren einer beliebigen Zeile erscheint eine blasse, die sich anklicken
+lässt — das Kontextmenü ist für den Fall, dass du die Funktion schon kennst.
+
 Lesezeichen sind privat für diese Maschine und dieses Repository. Nichts wird ins
 Repo geschrieben: nicht committbar, nicht pushbar, für niemanden sonst sichtbar —
 genau wie [Todos](todos.md).

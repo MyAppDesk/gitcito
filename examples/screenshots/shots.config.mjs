@@ -1139,8 +1139,6 @@ export const shots = [
     repos: ['analyzer-problems'],
     themes: ['dark'],
     appTheme: 'midnight',
-    clipTo: '.sidebar',
-    clipPad: 10,
     drive: async (page, repoPaths) => {
       const repo = repoPaths['analyzer-problems']
       await page.evaluate((p) => {
@@ -1165,7 +1163,18 @@ export const shots = [
           note: 'delete once the refactor lands'
         })
       }, repo)
-      await page.waitForTimeout(900)
+      // Open one of them, so the shot carries the gutter mark as well as the list.
+      await page.waitForTimeout(700)
+      await page.evaluate((p) => {
+        window.__shot.ui.getState().setFileView({
+          repoPath: p,
+          file: 'src/cart.ts',
+          source: { type: 'tree' },
+          mode: 'file',
+          line: 8
+        })
+      }, repo)
+      await page.waitForTimeout(1200)
     }
   },
   {

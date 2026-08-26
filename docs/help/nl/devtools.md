@@ -30,6 +30,31 @@ Een **hot restart publiceert een nieuw adres**, en het tabblad volgt zolang de
 sessie leeft. Is de sessie weg, dan houdt het tabblad het laatste adres vast, dat
 meestal dood is: sluit het en open DevTools opnieuw vanuit de nieuwe run.
 
+## Welke tools
+
+Een tool komt hier binnen als het twee dingen doet: een webinterface serveren op
+deze machine, en zijn adres afdrukken.
+
+| Tool | De regel die het afdrukt |
+|---|---|
+| Flutter DevTools | `The Flutter DevTools … is available at: <url>` |
+| Dart DevTools (`dart devtools`) | `Serving DevTools at <url>` |
+| Vue DevTools (`@vue/devtools`) | `Vue Devtools … listening on <url>` |
+| Prisma Studio | `Prisma Studio is up on <url>` |
+| Drizzle Studio | `Drizzle Studio is up and running on <url>` |
+| webpack-bundle-analyzer | `Webpack Bundle Analyzer is started at <url>` |
+| al het andere dat DevTools en een adres noemt | valt terug op een generieke match |
+
+**Wat niet ingebed kan worden, en waarom.** De Node-inspector drukt een
+`ws://`-endpoint af waar een debugger zich aan hangt, geen pagina — en de
+bijbehorende Chrome DevTools-frontend zit achter een `devtools://`-URL die geen
+ingebedde weergave mag laden. De standalone build van React DevTools is een eigen
+bureaubladvenster, geen geserveerde pagina. Geen van beide kan hier een tabblad
+zijn; beide zouden een debugprotocol-client vragen in plaats van een adres.
+
+**Een dev server is geen dev tool.** Vite op `:5173` is je app; die inbedden zou
+een previewpaneel zijn — een andere functie, bewust niet deze.
+
 ## Wat het mag
 
 De ingebedde weergave loopt aan een korte lijn, want deze app bewaart

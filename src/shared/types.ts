@@ -2595,7 +2595,7 @@ export type PageContent =
   // Flutter DevTools, embedded. `url` is the address at the time the tab was
   // opened; while the session lives, the live one from the store wins, so a
   // hot restart's new address follows without reopening the tab.
-  | { type: 'devtools'; repoPath: string; launchId: number; url: string; label: string }
+  | { type: 'devtools'; repoPath: string; launchId: number; url: string; label: string; tool: string }
   | { type: 'release'; release: ReleaseInfo; repoPath: string }
   | { type: 'issue'; issue: IssueInfo; repoPath: string; remoteUrl: string }
   | { type: 'milestone'; milestone: MilestoneInfo; repoPath: string; remoteUrl: string }

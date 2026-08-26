@@ -15,6 +15,10 @@ aparece na barra lateral, e um clique te leva de volta.
 
 ![Marcadores na barra lateral](../../screenshots/bookmarks.webp)
 
+Uma linha marcada leva uma marca na calha, e passar o mouse por qualquer linha
+mostra uma apagadinha para clicar — o menu de contexto é para quando você já
+sabe que o recurso existe.
+
 Marcadores são privados desta máquina e deste repositório. Nada é escrito no
 repo, então não dá para commitar, empurrar, nem ninguém mais vê — igualzinho aos
 [todos](todos.md).

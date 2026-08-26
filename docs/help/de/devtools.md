@@ -30,6 +30,31 @@ Ein **Hot Restart veröffentlicht eine neue Adresse**, und der Tab folgt ihr,
 solange seine Sitzung lebt. Ist die Sitzung vorbei, behält der Tab die letzte
 Adresse, die meist tot ist: schließen und DevTools aus dem neuen Lauf öffnen.
 
+## Welche Werkzeuge
+
+Ein Werkzeug kommt hier hinein, wenn es zweierlei tut: eine Web-Oberfläche auf
+dieser Maschine ausliefern und ihre Adresse ausgeben.
+
+| Werkzeug | Die Zeile, die es ausgibt |
+|---|---|
+| Flutter DevTools | `The Flutter DevTools … is available at: <url>` |
+| Dart DevTools (`dart devtools`) | `Serving DevTools at <url>` |
+| Vue DevTools (`@vue/devtools`) | `Vue Devtools … listening on <url>` |
+| Prisma Studio | `Prisma Studio is up on <url>` |
+| Drizzle Studio | `Drizzle Studio is up and running on <url>` |
+| webpack-bundle-analyzer | `Webpack Bundle Analyzer is started at <url>` |
+| alles andere, das DevTools und eine Adresse nennt | fällt auf einen generischen Treffer |
+
+**Was sich nicht einbetten lässt, und warum.** Der Node-Inspector gibt einen
+`ws://`-Endpunkt aus, an den sich ein Debugger hängt, keine Seite — und das dazu
+gehörige Chrome-DevTools-Frontend liegt hinter einer `devtools://`-URL, die keine
+eingebettete Ansicht laden darf. Der Standalone-Build von React DevTools ist ein
+eigenes Desktop-Fenster, keine ausgelieferte Seite. Beides kann hier kein Tab
+sein; beides bräuchte einen Debug-Protokoll-Client statt einer Adresse.
+
+**Ein Dev-Server ist kein Dev-Werkzeug.** Vite auf `:5173` ist deine App; sie
+einzubetten wäre ein Vorschau-Panel — ein anderes Feature, bewusst nicht dieses.
+
 ## Was er darf
 
 Die eingebettete Ansicht ist kurz angeleint, denn diese App hält Zugangsdaten:

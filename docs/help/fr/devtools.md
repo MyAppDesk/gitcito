@@ -31,6 +31,33 @@ que sa session vit. Une fois la session terminée, l’onglet conserve la derni�
 adresse, généralement morte : fermez-le et rouvrez DevTools depuis la nouvelle
 exécution.
 
+## Quels outils
+
+Un outil entre ici s’il fait deux choses : servir une interface web sur cette
+machine, et afficher son adresse.
+
+| Outil | La ligne qu’il affiche |
+|---|---|
+| Flutter DevTools | `The Flutter DevTools … is available at: <url>` |
+| Dart DevTools (`dart devtools`) | `Serving DevTools at <url>` |
+| Vue DevTools (`@vue/devtools`) | `Vue Devtools … listening on <url>` |
+| Prisma Studio | `Prisma Studio is up on <url>` |
+| Drizzle Studio | `Drizzle Studio is up and running on <url>` |
+| webpack-bundle-analyzer | `Webpack Bundle Analyzer is started at <url>` |
+| tout autre outil nommant DevTools et une adresse | tombe sur une correspondance générique |
+
+**Ce qui ne peut pas être intégré, et pourquoi.** L’inspecteur Node affiche un
+point de terminaison `ws://` auquel un débogueur se raccroche, pas une page — et
+le front Chrome DevTools qui l’accompagne vit derrière une URL `devtools://`
+qu’aucune vue intégrée n’a le droit de charger. La version autonome de React
+DevTools est sa propre fenêtre de bureau, pas une page servie. Ni l’un ni l’autre
+ne peut être un onglet ici ; les deux demanderaient un client de protocole de
+débogage plutôt qu’une adresse.
+
+**Un serveur de développement n’est pas un outil de développement.** Vite sur
+`:5173`, c’est votre application ; l’intégrer serait un panneau d’aperçu — une
+autre fonctionnalité, délibérément pas celle-ci.
+
 ## Ce qu’il a le droit de faire
 
 La vue intégrée est tenue en laisse courte, car cette application détient des

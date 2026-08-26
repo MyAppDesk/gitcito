@@ -30,6 +30,32 @@ tane — aynı anda çalışan iki uygulama, iki DevTools demektir.
 sekme onu izler. Oturum bittiğinde sekme elindeki son adresi tutar, ki o adres
 genelde ölüdür: sekmeyi kapat ve DevTools’u yeni çalıştırmadan aç.
 
+## Hangi araçlar
+
+Bir araç iki şeyi yaparsa buraya girer: bu makinede bir web arayüzü sunmak ve
+adresini basmak.
+
+| Araç | Bastığı satır |
+|---|---|
+| Flutter DevTools | `The Flutter DevTools … is available at: <url>` |
+| Dart DevTools (`dart devtools`) | `Serving DevTools at <url>` |
+| Vue DevTools (`@vue/devtools`) | `Vue Devtools … listening on <url>` |
+| Prisma Studio | `Prisma Studio is up on <url>` |
+| Drizzle Studio | `Drizzle Studio is up and running on <url>` |
+| webpack-bundle-analyzer | `Webpack Bundle Analyzer is started at <url>` |
+| DevTools ve bir adres anan başka her şey | genel eşleşmeye düşer |
+
+**Neyin gömülemeyeceği ve nedeni.** Node inspector, bir hata ayıklayıcının
+bağlanacağı `ws://` uç noktasını basar, sayfa değil — ve onunla eşleşen Chrome
+DevTools ön yüzü, hiçbir gömülü görünümün yükleyemeyeceği bir `devtools://`
+adresinin ardında yaşar. React DevTools’un bağımsız sürümü kendi masaüstü
+penceresidir, sunulan bir sayfa değil. İkisi de burada sekme olamaz; ikisi de
+adres yerine bir hata ayıklama protokolü istemcisi ister.
+
+**Geliştirme sunucusu bir geliştirme aracı değildir.** `:5173` üzerindeki Vite
+senin uygulamandır; onu gömmek bir önizleme paneli olurdu — başka bir özellik,
+bilerek bu değil.
+
 ## Neye izni var
 
 Gömülü görünüm kısa tasmayla gezer, çünkü bu uygulama kimlik bilgileri tutuyor:

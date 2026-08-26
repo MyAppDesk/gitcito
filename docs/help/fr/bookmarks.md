@@ -15,6 +15,10 @@ apparaît dans la barre latérale, et un clic vous y ramène.
 
 ![Signets dans la barre latérale](../../screenshots/bookmarks.webp)
 
+Une ligne marquée porte un repère dans la gouttière, et survoler n’importe
+quelle ligne en fait apparaître un pâle, cliquable — le menu contextuel est là
+pour quand vous savez déjà que la fonction existe.
+
 Les signets sont privés à cette machine et à ce dépôt. Rien n’est écrit dans le
 dépôt : ni committé, ni poussé, ni visible par qui que ce soit d’autre — comme
 les [todos](todos.md).

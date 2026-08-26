@@ -4063,6 +4063,11 @@ body.col-resizing .node-ava {
   color: var(--text-1);
   white-space: nowrap;
 }
+.devtools-session {
+  font-size: 11.5px;
+  color: var(--text-2);
+  white-space: nowrap;
+}
 .devtools-url {
   flex: 1;
   min-width: 0;
@@ -7297,6 +7302,35 @@ body.col-resizing .node-ava {
 .code-line:hover {
   background: var(--bg-1);
 }
+/* The bookmark gutter. Drawn in CSS rather than as an icon per line: a file
+   with 20k lines would otherwise carry 20k SVGs. Invisible until the line is
+   hovered, unless the line actually is bookmarked. */
+.code-mark {
+  width: 14px;
+  height: 15px;
+  flex-shrink: 0;
+  margin-inline-start: 4px;
+  align-self: center;
+  padding: 0;
+  border: none;
+  background: var(--text-2);
+  opacity: 0;
+  cursor: pointer;
+  /* A bookmark ribbon: a rectangle with a notch bitten out of the bottom. */
+  clip-path: polygon(15% 8%, 85% 8%, 85% 92%, 50% 68%, 15% 92%);
+  transition: opacity 0.1s;
+}
+.code-line:hover .code-mark { opacity: 0.35; }
+.code-mark:hover { opacity: 0.8 !important; }
+.code-mark.on,
+.code-line:hover .code-mark.on {
+  opacity: 1;
+  background: var(--accent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .code-mark { transition: none; }
+}
+
 .code-no {
   width: 48px;
   flex-shrink: 0;

@@ -29,6 +29,30 @@ http://127.0.0.1:9100?uri=http://127.0.0.1:53412/uJ8k=/
 כשההפעלה נגמרת, הלשונית שומרת את הכתובת האחרונה, שבדרך כלל כבר מתה: סגרו אותה
 ופתחו את DevTools מההרצה החדשה.
 
+## אילו כלים
+
+כלי נכנס לכאן אם הוא עושה שני דברים: מגיש ממשק ווב במחשב הזה, ומדפיס את הכתובת
+שלו.
+
+| כלי | השורה שהוא מדפיס |
+|---|---|
+| Flutter DevTools | `The Flutter DevTools … is available at: <url>` |
+| Dart DevTools (`dart devtools`) | `Serving DevTools at <url>` |
+| Vue DevTools (`@vue/devtools`) | `Vue Devtools … listening on <url>` |
+| Prisma Studio | `Prisma Studio is up on <url>` |
+| Drizzle Studio | `Drizzle Studio is up and running on <url>` |
+| webpack-bundle-analyzer | `Webpack Bundle Analyzer is started at <url>` |
+| כל דבר אחר שמזכיר DevTools וכתובת | נופל להתאמה כללית |
+
+**מה אי אפשר להטמיע, ולמה.** מפקח Node מדפיס נקודת קצה `ws://` שמנפה שגיאות
+מתחבר אליה, לא דף — והחזית של Chrome DevTools שמלווה אותו גרה מאחורי כתובת
+`devtools://` שאף תצוגה מוטמעת אינה רשאית לטעון. הגרסה העצמאית של React DevTools
+היא חלון שולחן עבודה משל עצמה, לא דף שמוגש. שניהם אינם יכולים להיות לשונית כאן;
+שניהם היו דורשים לקוח של פרוטוקול ניפוי, לא כתובת.
+
+**שרת פיתוח אינו כלי פיתוח.** ‏Vite על `:5173` הוא האפליקציה שלכם, ולהטמיע אותה
+זה לוח תצוגה מקדימה — פיצ׳ר אחר, ובכוונה לא זה.
+
 ## מה מותר לו
 
 התצוגה המוטמעת מהלכת ברצועה קצרה, כי האפליקציה הזאת מחזיקה אישורי גישה:

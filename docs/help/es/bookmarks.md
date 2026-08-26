@@ -15,6 +15,10 @@ en la barra lateral, y al pulsarla vuelves ahí.
 
 ![Marcadores en la barra lateral](../../screenshots/bookmarks.webp)
 
+Una línea marcada lleva una marca en el margen, y al pasar por encima de
+cualquier línea aparece una tenue en la que puedes hacer clic — el menú
+contextual es para cuando ya sabes que la función existe.
+
 Los marcadores son privados de esta máquina y de este repositorio. No se escribe
 nada dentro del repo, así que no se pueden commitear, ni subir, ni verlos nadie
 más — exactamente como las [tareas](todos.md).

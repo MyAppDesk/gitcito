@@ -30,6 +30,31 @@ http://127.0.0.1:9100?uri=http://127.0.0.1:53412/uJ8k=/
 それに追随します。セッションが終われば、タブは最後のアドレスを保持しますが、たいてい
 それは死んでいます。閉じて、新しい実行から開き直してください。
 
+## どのツールか
+
+ここに載る条件は二つだけです。このマシンで Web の UI を配信すること、そして
+そのアドレスを出力すること。
+
+| ツール | 出力する行 |
+|---|---|
+| Flutter DevTools | `The Flutter DevTools … is available at: <url>` |
+| Dart DevTools (`dart devtools`) | `Serving DevTools at <url>` |
+| Vue DevTools (`@vue/devtools`) | `Vue Devtools … listening on <url>` |
+| Prisma Studio | `Prisma Studio is up on <url>` |
+| Drizzle Studio | `Drizzle Studio is up and running on <url>` |
+| webpack-bundle-analyzer | `Webpack Bundle Analyzer is started at <url>` |
+| ほかに DevTools とアドレスを名乗るもの | 汎用の一致に落ちます |
+
+**埋め込めないもの、その理由。** Node の inspector が出すのはデバッガーが接続する
+`ws://` エンドポイントであって、ページではありません。対になる Chrome DevTools の
+フロントエンドは `devtools://` の URL の向こうにあり、埋め込みビューが読み込むこと
+は許されていません。React DevTools のスタンドアロン版はそれ自体がデスクトップの
+ウィンドウで、配信されるページではありません。どちらもここのタブにはなれません。
+必要なのはアドレスではなくデバッグプロトコルのクライアントだからです。
+
+**開発サーバーは開発ツールではありません。** `:5173` の Vite はあなたのアプリで、
+埋め込めばそれはプレビューパネル — 別の機能であり、ここでは意図的に扱いません。
+
 ## 何が許されているか
 
 埋め込みビューの綱は短くしてあります。このアプリは資格情報を預かっているからです。

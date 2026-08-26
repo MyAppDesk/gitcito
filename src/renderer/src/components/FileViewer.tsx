@@ -5,6 +5,7 @@ import { gitApi, aiApi, shellApi } from '../infrastructure/api'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore, type FileViewMode, type FileViewState } from '../stores/ui'
 import { useRepoStore } from '../stores/repo'
+import { canonicalRepoPath } from '../lib/repoAlias'
 import { filePermalink } from '../lib/autolink'
 import { revealLineWhenReady } from '../lib/reveal'
 import { editorLineMenuItems } from '../lib/editorOpen'
@@ -184,7 +185,31 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
   // commit would send the editor to a line that has since moved.
   const editorSetting = useSettingsStore((s) => s.settings.editor)
   const editorTracksDisk = source.type === 'tree' || source.type === 'wip'
+  // ─── Bookmarks in the gutter ───
+  // A mark on the line itself, and a click target that appears on hover: the
+  // context menu is where you go when you already know the feature exists.
   const addBookmark = useSettingsStore((s) => s.addBookmark)
+  const deleteBookmark = useSettingsStore((s) => s.deleteBookmark)
+  const bookmarksByRepo = useSettingsStore((s) => s.settings.repoBookmarks)
+  const markedLines = useMemo(() => {
+    const marks = new Map<number, string>()
+    for (const b of bookmarksByRepo?.[canonicalRepoPath(repoPath)] ?? []) {
+      if (b.file === file) marks.set(b.line, b.id)
+    }
+    return marks
+  }, [bookmarksByRepo, repoPath, file])
+
+  const toggleBookmark = (line: number, text: string): void => {
+    const existing = markedLines.get(line)
+    if (existing) {
+      deleteBookmark(repoPath, existing)
+      toast('info', t('bookmarks.removed'))
+      return
+    }
+    const branch = useRepoStore.getState().repos[repoPath]?.status?.current
+    addBookmark(repoPath, { file, line, snippet: text, ...(branch ? { branch } : {}) })
+    toast('info', t('bookmarks.added'))
+  }
   const lineMenu = (line: number) => (e: React.MouseEvent): void => {
     // A rewound blame ("blaming at <sha>^") lists lines as they were then, and
     // the row's own menu (the sha actions) wins where it has already answered.
@@ -768,6 +793,14 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
             >
               {fileLines.map((l, i) => (
                 <div className="code-line" key={i} onContextMenu={lineMenu(i + 1)}>
+                  {editorTracksDisk && (
+                    <button
+                      className={`code-mark ${markedLines.has(i + 1) ? 'on' : ''}`}
+                      title={markedLines.has(i + 1) ? t('bookmarks.remove') : t('bookmarks.add')}
+                      aria-label={markedLines.has(i + 1) ? t('bookmarks.remove') : t('bookmarks.add')}
+                      onClick={() => toggleBookmark(i + 1, l)}
+                    />
+                  )}
                   <span className="code-no">{i + 1}</span>
                   <span
                     className="code-text"

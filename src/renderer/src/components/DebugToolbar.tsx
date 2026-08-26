@@ -300,14 +300,15 @@ export function DebugToolbar({ repoPath }: { repoPath: string }): React.JSX.Elem
           {active.devToolsUrl && (
             <button
               className="icon-btn debug-btn hot"
-              title={t('devtools.open')}
+              title={interp(t('devtools.open'), { tool: active.devToolsName ?? 'DevTools' })}
               onClick={() =>
                 useSettingsStore.getState().openPageTab({
                   type: 'devtools',
                   repoPath,
                   launchId: active.launchId,
                   url: active.devToolsUrl!,
-                  label: nameOf(active)
+                  label: nameOf(active),
+                  tool: active.devToolsName ?? 'DevTools'
                 })
               }
             >

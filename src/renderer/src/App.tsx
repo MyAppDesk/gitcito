@@ -246,7 +246,14 @@ function PageView({ tab }: { tab: PageTab }): React.JSX.Element {
     case 'licenses':
       return <LicensesPage />
     case 'devtools':
-      return <DevToolsPage launchId={tab.page.launchId} url={tab.page.url} label={tab.page.label} />
+      return (
+        <DevToolsPage
+          launchId={tab.page.launchId}
+          url={tab.page.url}
+          label={tab.page.label}
+          tool={tab.page.tool}
+        />
+      )
     case 'release':
       return <ReleasePage tab={tab} />
     case 'issue':

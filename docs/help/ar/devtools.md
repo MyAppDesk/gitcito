@@ -29,6 +29,30 @@ DevTools.
 وحين تنتهي الجلسة يحتفظ التبويب بآخر عنوان، وهو ميت غالبًا: أغلقه وافتح DevTools
 من التشغيل الجديد.
 
+## أي الأدوات
+
+تدخل الأداة هنا إذا فعلت أمرين: أن تقدّم واجهة ويب على هذا الجهاز، وأن تطبع
+عنوانها.
+
+| الأداة | السطر الذي تطبعه |
+|---|---|
+| Flutter DevTools | `The Flutter DevTools … is available at: <url>` |
+| Dart DevTools (`dart devtools`) | `Serving DevTools at <url>` |
+| Vue DevTools (`@vue/devtools`) | `Vue Devtools … listening on <url>` |
+| Prisma Studio | `Prisma Studio is up on <url>` |
+| Drizzle Studio | `Drizzle Studio is up and running on <url>` |
+| webpack-bundle-analyzer | `Webpack Bundle Analyzer is started at <url>` |
+| أي شيء آخر يذكر DevTools وعنوانًا | يقع في مطابقة عامة |
+
+**ما لا يمكن تضمينه ولماذا.** يطبع مفتّش Node نقطة `ws://` ليتصل بها مصحّح، لا
+صفحة — أما واجهة Chrome DevTools المرافقة فتقيم خلف عنوان `devtools://` لا يُسمح
+لأي عرض مضمَّن بتحميله. أما بناء React DevTools المستقل فهو نافذة سطح مكتب خاصة
+به لا صفحة مقدَّمة. لا يصلح أيٌّ منهما ليكون تبويبًا هنا؛ كلاهما يحتاج عميل
+بروتوكول تنقيح لا عنوانًا.
+
+**خادم التطوير ليس أداة تطوير.** فايت على `:5173` هو تطبيقك، وتضمينه يكون لوحة
+معاينة — ميزة أخرى، وليست هذه عمدًا.
+
 ## ما المسموح له
 
 العرض المضمَّن مربوط بحبل قصير، لأن هذا التطبيق يحتفظ ببيانات اعتماد:

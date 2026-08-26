@@ -30,6 +30,31 @@ Un **riavvio a caldo pubblica un nuovo indirizzo**, e la scheda lo segue finché
 sua sessione vive. Finita la sessione, la scheda conserva l’ultimo indirizzo, di
 solito morto: chiudila e riapri DevTools dalla nuova esecuzione.
 
+## Quali strumenti
+
+Uno strumento entra qui se fa due cose: servire un’interfaccia web su questa
+macchina e stampare il proprio indirizzo.
+
+| Strumento | La riga che stampa |
+|---|---|
+| Flutter DevTools | `The Flutter DevTools … is available at: <url>` |
+| Dart DevTools (`dart devtools`) | `Serving DevTools at <url>` |
+| Vue DevTools (`@vue/devtools`) | `Vue Devtools … listening on <url>` |
+| Prisma Studio | `Prisma Studio is up on <url>` |
+| Drizzle Studio | `Drizzle Studio is up and running on <url>` |
+| webpack-bundle-analyzer | `Webpack Bundle Analyzer is started at <url>` |
+| qualsiasi altro che nomini DevTools e un indirizzo | ricade su una corrispondenza generica |
+
+**Cosa non si può incorporare, e perché.** L’inspector di Node stampa un endpoint
+`ws://` a cui un debugger si aggancia, non una pagina — e il front di Chrome
+DevTools che lo accompagna vive dietro un URL `devtools://` che nessuna vista
+incorporata può caricare. La build standalone di React DevTools è una finestra
+desktop a sé, non una pagina servita. Nessuno dei due può essere una scheda qui:
+servirebbe un client di protocollo di debug, non un indirizzo.
+
+**Un dev server non è un dev tool.** Vite su `:5173` è la tua app; incorporarla
+sarebbe un pannello di anteprima — un’altra funzione, deliberatamente non questa.
+
 ## Cosa gli è permesso
 
 La vista incorporata sta al guinzaglio corto, perché questa app custodisce

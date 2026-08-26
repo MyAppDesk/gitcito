@@ -344,9 +344,10 @@ const api = {
       ipcRenderer.on(`launch:data:${id}`, listener)
       return () => ipcRenderer.removeListener(`launch:data:${id}`, listener)
     },
-    /** The Flutter DevTools address, as the session announces (and re-announces) it. */
-    onDevTools: (id: number, cb: (url: string) => void): (() => void) => {
-      const listener = (_e: unknown, url: string): void => cb(url)
+    /** The dev-tool address a session announces (and re-announces), with the
+     *  name of whatever announced it. */
+    onDevTools: (id: number, cb: (found: { url: string; name: string }) => void): (() => void) => {
+      const listener = (_e: unknown, found: { url: string; name: string }): void => cb(found)
       ipcRenderer.on(`launch:devtools:${id}`, listener)
       return () => ipcRenderer.removeListener(`launch:devtools:${id}`, listener)
     },

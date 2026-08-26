@@ -15,6 +15,10 @@ regel**; hij verschijnt in de zijbalk, en een klik brengt je terug.
 
 ![Bladwijzers in de zijbalk](../../screenshots/bookmarks.webp)
 
+Een regel met bladwijzer draagt een markering in de kantlijn, en zweven boven
+elke regel toont een vage die je kunt aanklikken — het contextmenu is voor als
+je al weet dat de functie bestaat.
+
 Bladwijzers zijn privé voor deze machine en deze repository. Er wordt niets in de
 repo geschreven: niet te committen, niet te pushen, door niemand anders te zien —
 net als [todo's](todos.md).

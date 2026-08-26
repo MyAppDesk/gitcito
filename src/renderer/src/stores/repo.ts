@@ -935,9 +935,13 @@ async function pushGuards(
         kind: 'confirm',
         danger: true,
         title: t('confirm.protectedForcePush.title'),
-        message: interp(t('confirm.protectedForcePush.message'), { branch }),
+        message: `${interp(t('confirm.protectedForcePush.message'), { branch })}\n\n${t('confirm.protectedHint')}`,
         confirmLabel: t('confirm.forcePush.ok'),
-        onConfirm: retry
+        onConfirm: retry,
+        // Escape hatch: the list is editable, and this dialog is where people
+        // discover it is wrong.
+        secondaryLabel: t('confirm.protectedManage'),
+        onSecondary: () => useUIStore.getState().openModal({ kind: 'repo-settings', repoPath: path, tab: 'general' })
       })
       return false
     }

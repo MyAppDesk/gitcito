@@ -790,18 +790,26 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
     if (flagged.length > 0 || onProtected) {
       const all = flagged.map((f) => f.path)
       const parts: string[] = []
-      if (onProtected) parts.push(`• You're committing directly to protected branch "${repo.branches.current}"`)
+      if (onProtected) parts.push(`• ${interp(t('composer.protectedWarning'), { branch: repo.branches.current })}`)
       for (const f of flagged) parts.push(`• ${f.path} (${f.reason})`)
       useUIStore.getState().openModal({
         kind: 'confirm',
         danger: true,
         title: onProtected && flagged.length === 0 ? t('composer.commitProtectedTitle') : t('composer.commitAnywayTitle'),
-        message: interp(t('composer.commitProtectedMsg'), { warnings: `${parts.join('\n')}\n\nSecrets land in history hard to erase; large blobs bloat the repo forever.` }),
+        message: `${interp(t('composer.commitProtectedMsg'), { warnings: `${parts.join('\n')}\n\nSecrets land in history hard to erase; large blobs bloat the repo forever.` })}${
+          onProtected ? `\n\n${t('confirm.protectedHint')}` : ''
+        }`,
         confirmLabel: t('composer.commitAnywayConfirm'),
         onConfirm: () => void runCommit(message),
-        // Offer untrack only when files were flagged.
-        secondaryLabel: all.length > 0 ? t('composer.ignoreUntrackSecondary') : undefined,
-        onSecondary: all.length > 0 ? () => void repoActions.ignoreAndUntrack(path, all, all) : undefined
+        // Untrack when files were flagged; otherwise point at the list that
+        // caused this warning, since it is editable.
+        secondaryLabel: all.length > 0 ? t('composer.ignoreUntrackSecondary') : onProtected ? t('confirm.protectedManage') : undefined,
+        onSecondary:
+          all.length > 0
+            ? () => void repoActions.ignoreAndUntrack(path, all, all)
+            : onProtected
+              ? () => useUIStore.getState().openModal({ kind: 'repo-settings', repoPath: path, tab: 'general' })
+              : undefined
       })
       return
     }

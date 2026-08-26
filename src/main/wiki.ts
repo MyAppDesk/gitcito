@@ -26,6 +26,7 @@ import {
   WIKI_PROMPT_VERSION,
   orderPlan,
   renderWikiPage,
+  sanitizeWikiPlan,
   validateTechStack,
   validateWikiPage,
   validateWikiPlan,
@@ -140,6 +141,7 @@ Reply ONLY with valid JSON (no markdown fences):
     {
       name: 'wiki_plan',
       schema: WIKI_PLAN_SCHEMA,
+      normalize: (v) => sanitizeWikiPlan(v, known),
       validate: (v) => validateWikiPlan(v, known),
       maxTokens: 2048,
       nativeStructuredOutput: nativeWikiSchema(cfg)

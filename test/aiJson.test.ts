@@ -104,6 +104,71 @@ describe('AI JSON validation', () => {
     expect(bodies[0].max_tokens).toBe(256)
   })
 
+  it.each(['o3-mini', 'gpt-5-mini'])('uses max_completion_tokens for reasoning model %s', async (model) => {
+    const bodies: Record<string, unknown>[] = []
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_input: string | URL | Request, init?: RequestInit) => {
+        bodies.push(JSON.parse(String(init?.body)) as Record<string, unknown>)
+        return new Response('{"choices":[{"message":{"content":"{\\"value\\":\\"x\\"}"}}]}', {
+          status: 200,
+          headers: { 'content-type': 'application/json' }
+        })
+      })
+    )
+
+    const cfg = migrateAIConfig({
+      provider: 'openai',
+      endpoint: 'http://127.0.0.1:8000/v1',
+      apiKey: 'test-key',
+      model
+    })
+    await chatCompleteJson(cfg, [{ role: 'user', content: 'Return JSON.' }], 'test', {
+      name: 'reasoning_model_test',
+      schema: { type: 'object' },
+      validate: () => [],
+      maxTokens: 256
+    })
+
+    expect(bodies).toHaveLength(1)
+    expect(bodies[0].max_completion_tokens).toBe(256)
+    expect(bodies[0].max_tokens).toBeUndefined()
+  })
+
+  it.each([
+    { requested: 99999.9, expected: 8192 },
+    { requested: -4.2, expected: 1 },
+    { requested: Number.NaN, expected: 8192 }
+  ])('sanitizes Anthropic max_tokens $requested to $expected', async ({ requested, expected }) => {
+    const bodies: Record<string, unknown>[] = []
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_input: string | URL | Request, init?: RequestInit) => {
+        bodies.push(JSON.parse(String(init?.body)) as Record<string, unknown>)
+        return new Response('{"content":[{"type":"text","text":"{\\"value\\":\\"x\\"}"}]}', {
+          status: 200,
+          headers: { 'content-type': 'application/json' }
+        })
+      })
+    )
+
+    const cfg = migrateAIConfig({
+      provider: 'anthropic',
+      endpoint: 'http://127.0.0.1:8000',
+      apiKey: 'test-key',
+      model: 'claude-test'
+    })
+    await chatCompleteJson(cfg, [{ role: 'user', content: 'Return JSON.' }], 'test', {
+      name: 'anthropic_token_limit_test',
+      schema: { type: 'object' },
+      validate: () => [],
+      maxTokens: requested
+    })
+
+    expect(bodies).toHaveLength(1)
+    expect(bodies[0].max_tokens).toBe(expected)
+  })
+
   it('can start in prompt-only JSON mode for an unreliable self-hosted schema adapter', async () => {
     const bodies: Record<string, unknown>[] = []
     vi.stubGlobal(

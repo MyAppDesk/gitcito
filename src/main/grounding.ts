@@ -563,9 +563,82 @@ export function validateRepoChatActions(value: unknown, context: RepoChatActionC
  */
 function repairQuotedArrayObjects(value: string): string {
   return value
+    .replace(/,\s*""\s*,\s*(?="[^"]+"\s*:)/g, ',')
+    .replace(/"\s*:\s*"\s*:\s*(?=[{\[])/g, '":')
     .replace(/\{\s*"\s*\{/g, '{')
     .replace(/\{"(\s+)(?="[^"]+"\s*:)/g, '{$1')
     .replace(/\}\s*"\s*(?=[,\]])/g, '}')
+}
+
+/**
+ * Replaces a closing bracket with the delimiter required by the open JSON
+ * container. DiffusionGemma occasionally closes a section object with `]`,
+ * yielding `}]]]` where the schema requires `}]}]`.
+ */
+function repairMismatchedClosers(value: string): string {
+  const chars = [...value]
+  const stack: string[] = []
+  let inString = false
+  let escaped = false
+
+  for (let i = 0; i < chars.length; i++) {
+    const char = chars[i]
+    if (inString) {
+      if (escaped) escaped = false
+      else if (char === '\\') escaped = true
+      else if (char === '"') inString = false
+      continue
+    }
+    if (char === '"') {
+      inString = true
+      continue
+    }
+    if (char === '{' || char === '[') {
+      stack.push(char)
+      continue
+    }
+    if ((char !== '}' && char !== ']') || stack.length === 0) continue
+
+    const open = stack[stack.length - 1]
+    const expected = open === '{' ? '}' : ']'
+    if (char === expected) {
+      stack.pop()
+      continue
+    }
+
+    // A repeated closer means this one replaced the missing delimiter and the
+    // next still closes its array. A lone mismatch is left for jsonrepair,
+    // which can insert a missing delimiter without consuming later fields.
+    let next = i + 1
+    while (/\s/.test(chars[next] ?? '')) next++
+    if (chars[next] === char) {
+      chars[i] = expected
+      stack.pop()
+    }
+  }
+  return chars.join('')
+}
+
+/**
+ * Restores the page schema when a model omits `sections:[{` and writes the
+ * first section's heading directly after the root summary. The remaining
+ * section separators and final array closer are already present in this form.
+ */
+function repairFlattenedWikiSections(value: string): string {
+  const trimmed = value.trim()
+  if (!/^\{\s*"summary"\s*:/.test(trimmed)) return value
+  if (/"sections"\s*:/.test(trimmed)) return value
+  if (!/"claims"\s*:/.test(trimmed) || !/"related"\s*:/.test(trimmed)) return value
+  return value.replace(/,\s*"heading"\s*:/, ',"sections":[{"heading":')
+}
+
+/** Moves a trailing `{ "related": [...] }` out of the sections array. */
+function repairNestedWikiRelated(value: string): string {
+  if (!/"sections"\s*:/.test(value)) return value
+  return value.replace(
+    /,\s*\{\s*"related"\s*:\s*(\[[^\[\]]*\])\s*\}\s*$/,
+    '],"related":$1}'
+  )
 }
 
 /** Decodes providers that return the JSON object escaped as if it were a string. */
@@ -655,7 +728,9 @@ export function parseLooseJson<T>(text: string): T | null {
   const unescaped = unescapeJsonEnvelope(clean(withoutThinking))
   const unescapedResult = parse(unescaped)
   if (unescapedResult !== null) return unescapedResult
-  const normalized = repairQuotedArrayObjects(unescaped)
+  const normalized = repairMismatchedClosers(
+    repairNestedWikiRelated(repairFlattenedWikiSections(repairQuotedArrayObjects(unescaped)))
+  )
   const candidates = jsonContainerCandidates(normalized)
   for (let i = candidates.length - 1; i >= 0; i--) {
     const candidate = parse(candidates[i])

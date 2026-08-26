@@ -189,6 +189,7 @@ import {
   validateWikiPlan,
   validateWikiPage,
   renderWikiPage,
+  sanitizeWikiPlan,
   pageSources,
   wikiFreshness,
   orderPlan,
@@ -1437,6 +1438,88 @@ describe('AI grounding — loose JSON parsing', () => {
     })
   })
 
+  it('repairs a section object closed as an array after quoted claims', () => {
+    const malformed =
+      '{"summary":"x","sections":[{"heading":"i18n","claims":[{"text":"one","sourcePaths":["a.ts"]},{"{"text":"two","sourcePaths":["b.ts"]}]]],"related":[]}'
+    expect(parseLooseJson(malformed)).toEqual({
+      summary: 'x',
+      sections: [
+        {
+          heading: 'i18n',
+          claims: [
+            { text: 'one', sourcePaths: ['a.ts'] },
+            { text: 'two', sourcePaths: ['b.ts'] }
+          ]
+        }
+      ],
+      related: []
+    })
+  })
+
+  it('removes a stray quote and colon before an object or array property value', () => {
+    const malformed =
+      '{"summary":"x","sections":[{"heading":"CLI","claims":":[{"text":"one","sourcePaths":["cli.ts"]}]}],"related":[]}'
+    expect(parseLooseJson(malformed)).toEqual({
+      summary: 'x',
+      sections: [
+        {
+          heading: 'CLI',
+          claims: [{ text: 'one', sourcePaths: ['cli.ts'] }]
+        }
+      ],
+      related: []
+    })
+  })
+
+  it('restores the sections array when a wiki page is flattened after summary', () => {
+    const malformed =
+      '{"summary":"x","heading":"First","claims":[{"text":"one","sourcePaths":["a.ts"]}]},{"heading":"Second","claims":[{"text":"two","sourcePaths":["b.ts"]}]}],"related":["overview"]}'
+    expect(parseLooseJson(malformed)).toEqual({
+      summary: 'x',
+      sections: [
+        {
+          heading: 'First',
+          claims: [{ text: 'one', sourcePaths: ['a.ts'] }]
+        },
+        {
+          heading: 'Second',
+          claims: [{ text: 'two', sourcePaths: ['b.ts'] }]
+        }
+      ],
+      related: ['overview']
+    })
+  })
+
+  it('drops an empty token inserted between object properties', () => {
+    const malformed =
+      '{"summary":"x","sections":[{"heading":"Security","claims":[{"text":"one","","sourcePaths":["keychain.ts"]}]}],"related":[]}'
+    expect(parseLooseJson(malformed)).toEqual({
+      summary: 'x',
+      sections: [
+        {
+          heading: 'Security',
+          claims: [{ text: 'one', sourcePaths: ['keychain.ts'] }]
+        }
+      ],
+      related: []
+    })
+  })
+
+  it('moves a trailing related object out of the wiki sections array', () => {
+    const malformed =
+      '{"summary":"x","sections":[{"heading":"Renderer","claims":[{"text":"one","sourcePaths":["App.tsx"]}]},{"related":["overview","cli"]}'
+    expect(parseLooseJson(malformed)).toEqual({
+      summary: 'x',
+      sections: [
+        {
+          heading: 'Renderer',
+          claims: [{ text: 'one', sourcePaths: ['App.tsx'] }]
+        }
+      ],
+      related: ['overview', 'cli']
+    })
+  })
+
   it('uses the last complete JSON object when a model repeats itself and is truncated', () => {
     const repeated =
       '{"value":"first"}\nWait, here is the corrected object.\n{"value":"second"}\n{"value":"truncated"'
@@ -1929,6 +2012,25 @@ describe('repo wiki — the plan', () => {
   it('rejects a page scoped to a file that is not in the repo', () => {
     const errors = validateWikiPlan({ pages: [overview, page({ scopePaths: ['src/ghost.ts'] })] }, known)
     expect(errors[0]).toContain('src/ghost.ts')
+  })
+
+  it('removes unknown scope paths and drops pages with no real evidence left', () => {
+    const normalized = sanitizeWikiPlan(
+      {
+        pages: [
+          overview,
+          page({ scopePaths: ['src/db.ts', 'src/ghost.ts'] }),
+          page({ slug: 'ghosts', scopePaths: ['src/ghost.ts'] })
+        ]
+      },
+      known
+    ) as { pages: { slug: string; scopePaths: string[] }[] }
+
+    expect(normalized.pages).toEqual([
+      overview,
+      page({ scopePaths: ['src/db.ts'] })
+    ])
+    expect(validateWikiPlan(normalized, known)).toEqual([])
   })
 
   it('requires exactly one overview page', () => {

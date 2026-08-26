@@ -88,6 +88,22 @@ const ANTHROPIC_VERSION = '2023-06-01'
 /** Anthropic requires an explicit cap; large enough for a generated wiki page. */
 const ANTHROPIC_MAX_TOKENS = 8192
 
+function positiveInteger(value: number | undefined, fallback: number, maximum = Number.MAX_SAFE_INTEGER): number {
+  const finite = value !== undefined && Number.isFinite(value) ? Math.floor(value) : fallback
+  return Math.min(maximum, Math.max(1, finite))
+}
+
+/**
+ * OpenAI's reasoning families reject the legacy `max_tokens` field. Model ids
+ * may be provider-qualified (OpenRouter) or fine-tuned, so compare the base id.
+ */
+export function usesMaxCompletionTokens(model: string): boolean {
+  const normalized = model.trim().toLowerCase()
+  const qualifiedBase = normalized.split('/').pop() ?? normalized
+  const base = qualifiedBase.startsWith('ft:') ? qualifiedBase.slice(3).split(':')[0] : qualifiedBase
+  return /^(?:o[1-9](?:[-.]|$)|gpt-5(?:[-.]|$))/.test(base)
+}
+
 export function fetchFailureReason(err: unknown): string | null {
   const cause = err instanceof Error && 'cause' in err ? (err.cause as { code?: string; message?: string } | undefined) : null
   if (cause?.code === 'SELF_SIGNED_CERT_IN_CHAIN') {
@@ -121,6 +137,8 @@ async function callOpenAI(
 ): Promise<ModelReply> {
   const base = baseUrl(cfg)
   const maxTokens = options?.maxTokens
+  const tokenLimit = maxTokens !== undefined ? positiveInteger(maxTokens, 1) : undefined
+  const tokenField = usesMaxCompletionTokens(cfg.model) ? 'max_completion_tokens' : 'max_tokens'
   const provider = cfg.provider ?? 'custom'
   const mayDisableThinking =
     options?.disableThinking === true && (provider === 'custom' || provider === 'ollama')
@@ -128,7 +146,7 @@ async function callOpenAI(
     model: cfg.model,
     temperature,
     messages,
-    ...(maxTokens !== undefined ? { max_tokens: Math.max(1, Math.floor(maxTokens)) } : {}),
+    ...(tokenLimit !== undefined ? { [tokenField]: tokenLimit } : {}),
     ...(mayDisableThinking ? { chat_template_kwargs: { enable_thinking: false } } : {}),
     ...options?.extra
   }
@@ -195,7 +213,7 @@ async function callAnthropic(
       headers: authHeaders(cfg),
       body: JSON.stringify({
         model: cfg.model,
-        max_tokens: options?.maxTokens ?? ANTHROPIC_MAX_TOKENS,
+        max_tokens: positiveInteger(options?.maxTokens, ANTHROPIC_MAX_TOKENS, ANTHROPIC_MAX_TOKENS),
         temperature,
         ...(system ? { system } : {}),
         messages: turns

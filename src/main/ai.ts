@@ -214,6 +214,8 @@ export interface JsonSpec {
   maxTokens?: number
   /** Skip provider-native json_schema when a self-hosted model handles prompt JSON more reliably. */
   nativeStructuredOutput?: boolean
+  /** Safely removes unusable optional entries before semantic validation. */
+  normalize?: (value: unknown) => unknown
 }
 
 /** Parse and semantically validate one provider reply without provider I/O. */
@@ -221,13 +223,14 @@ export async function validateJsonReply<T>(
   text: string,
   spec: JsonSpec
 ): Promise<{ value: T | null; errors: string[] }> {
-  const value = parseLooseJson<T>(text)
-  if (value === null) {
+  const parsed = parseLooseJson<T>(text)
+  if (parsed === null) {
     return {
       value: null,
       errors: ['The reply was not valid JSON. Return a single JSON object and nothing else.']
     }
   }
+  const value = (spec.normalize ? spec.normalize(parsed) : parsed) as T
   return { value, errors: await spec.validate(value) }
 }
 

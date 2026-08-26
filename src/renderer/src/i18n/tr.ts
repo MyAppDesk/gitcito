@@ -1508,6 +1508,8 @@ export const tr: Dict = {
   'toolbar.pop': 'Pop',
   'toolbar.tools': 'Araçlar',
   'toolbar.settings': 'Ayarlar',
+  'toolbar.more': 'Daha',
+  'toolbar.moreTitle': 'Daha fazla eylem',
   'toolbar.switchRepo': 'Depo değiştir',
   'toolbar.switchBranch': 'Dal değiştir',
   'toolbar.undoTitle': 'Son işlemi geri al',

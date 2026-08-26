@@ -1526,6 +1526,8 @@ export const es: Dict = {
   'toolbar.pop': 'Pop',
   'toolbar.tools': 'Herramientas',
   'toolbar.settings': 'Ajustes',
+  'toolbar.more': 'Más',
+  'toolbar.moreTitle': 'Más acciones',
   'toolbar.switchRepo': 'Cambiar repositorio',
   'toolbar.switchBranch': 'Cambiar rama',
   'toolbar.undoTitle': 'Deshacer última operación',

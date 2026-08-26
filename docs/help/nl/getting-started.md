@@ -44,6 +44,8 @@ Twee routes, en ze leiden naar dezelfde plekken:
 
 ![Het Tools-menu: de veelgebruikte tools eerst, de rest gegroepeerd](../../screenshots/tools-menu.webp)
 
+Wordt het venster smal, dan vecht de actiebalk niet langer om ruimte: knoppen die niet meer passen vouwen samen in een menu **Meer** aan het eind, in de volgorde van de balk en met hun submenu’s. Maak het venster breder en ze komen terug.
+
 Alles wat via de een bereikbaar is, is via de ander bereikbaar, dus er is niets
 dat alleen ingewijden kunnen vinden.
 

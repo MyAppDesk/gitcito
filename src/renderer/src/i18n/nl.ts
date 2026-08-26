@@ -1533,6 +1533,8 @@ export const nl: Dict = {
   'toolbar.pop': 'Poppen',
   'toolbar.tools': 'Gereedschap',
   'toolbar.settings': 'Instellingen',
+  'toolbar.more': 'Meer',
+  'toolbar.moreTitle': 'Meer acties',
   'toolbar.switchRepo': 'Van repository wisselen',
   'toolbar.switchBranch': 'Van branch wisselen',
   'toolbar.undoTitle': 'Laatste bewerking ongedaan maken',

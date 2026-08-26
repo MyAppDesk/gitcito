@@ -44,6 +44,8 @@ Dwie drogi, prowadzące w te same miejsca:
 
 ![Menu Narzędzia: najpierw te używane najczęściej, reszta pogrupowana](../../screenshots/tools-menu.webp)
 
+Gdy okno się zwęża, pasek akcji przestaje walczyć o miejsce: przyciski, które już się nie mieszczą, zwijają się do menu **Więcej** na jego końcu — w kolejności paska i z własnymi podmenu. Poszerz okno, a wrócą na swoje miejsce.
+
 Wszystko, co da się osiągnąć jedną drogą, da się osiągnąć i drugą — nie ma więc
 niczego, co znajdą wyłącznie użytkownicy zaawansowani.
 

@@ -45,6 +45,8 @@ Dois caminhos, e eles levam aos mesmos lugares:
 
 ![O menu Ferramentas: as ferramentas frequentes primeiro, o resto agrupado](../../screenshots/tools-menu.webp)
 
+Quando a janela fica estreita, a barra de ações para de disputar espaço: os botões que não cabem mais recolhem-se em um menu **Mais** no final, na ordem da barra e com seus submenus. Alargue a janela e eles voltam.
+
 Tudo o que se alcança por um se alcança pelo outro, então não existe nada que só
 usuários avançados consigam encontrar.
 

@@ -1532,6 +1532,8 @@ export const ar: Dict = {
   'toolbar.pop': 'استرجاع',
   'toolbar.tools': 'الأدوات',
   'toolbar.settings': 'الإعدادات',
+  'toolbar.more': 'المزيد',
+  'toolbar.moreTitle': 'إجراءات أخرى',
   'toolbar.switchRepo': 'تبديل المستودع',
   'toolbar.switchBranch': 'تبديل الفرع',
   'toolbar.undoTitle': 'التراجع عن آخر عملية',

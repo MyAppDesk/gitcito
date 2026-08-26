@@ -45,6 +45,8 @@ Zwei Wege, und sie führen an dieselben Stellen:
 
 ![Das Werkzeuge-Menü: die häufigen Werkzeuge zuerst, der Rest gruppiert](../../screenshots/tools-menu.webp)
 
+Wird das Fenster schmal, kämpft die Aktionsleiste nicht mehr um Platz: Schaltflächen, die nicht mehr passen, wandern in ein Menü **Mehr** am Ende — in der Reihenfolge der Leiste und mit ihren Untermenüs. Wird das Fenster breiter, kommen sie zurück.
+
 Alles, was über den einen Weg erreichbar ist, ist auch über den anderen
 erreichbar — es gibt also nichts, das nur Power-User finden.
 

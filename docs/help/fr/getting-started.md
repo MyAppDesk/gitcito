@@ -45,6 +45,8 @@ Deux chemins, et ils mènent aux mêmes endroits :
 
 ![Le menu Outils : les outils fréquents d'abord, le reste groupé](../../screenshots/tools-menu.webp)
 
+Quand la fenêtre se resserre, la barre d’actions cesse de se disputer la place : les boutons qui ne tiennent plus se replient dans un menu **Plus** à son extrémité, dans l’ordre de la barre et avec leurs sous-menus. Élargissez la fenêtre et ils ressortent.
+
 Tout ce qui est atteignable par l'un l'est par l'autre : il n'y a donc rien que
 seuls les utilisateurs avancés puissent trouver.
 

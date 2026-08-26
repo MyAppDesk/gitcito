@@ -1532,6 +1532,8 @@ export const zhCN: Dict = {
   'toolbar.pop': '弹出',
   'toolbar.tools': '工具',
   'toolbar.settings': '设置',
+  'toolbar.more': '更多',
+  'toolbar.moreTitle': '更多操作',
   'toolbar.switchRepo': '切换仓库',
   'toolbar.switchBranch': '切换分支',
   'toolbar.undoTitle': '撤销上一次操作',

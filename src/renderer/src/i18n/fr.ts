@@ -1508,6 +1508,8 @@ export const fr: Dict = {
   'toolbar.pop': 'Dépiler',
   'toolbar.tools': 'Outils',
   'toolbar.settings': 'Paramètres',
+  'toolbar.more': 'Plus',
+  'toolbar.moreTitle': 'Plus d’actions',
   'toolbar.switchRepo': 'Changer de dépôt',
   'toolbar.switchBranch': 'Changer de branche',
   'toolbar.undoTitle': 'Annuler la dernière opération',

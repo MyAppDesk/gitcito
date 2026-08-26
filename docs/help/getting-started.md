@@ -43,6 +43,8 @@ Two routes, and they lead to the same places:
 
 ![The Tools menu: the frequent tools first, the rest grouped](../screenshots/tools-menu.webp)
 
+When the window gets narrow the action bar stops competing for space: the buttons that no longer fit fold into a **More** dropdown at its end, in bar order and with their own submenus intact. Widen the window and they come back out.
+
 Anything reachable by one is reachable by the other, so there is nothing that
 only power users can find.
 

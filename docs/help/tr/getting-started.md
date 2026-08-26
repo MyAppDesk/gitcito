@@ -44,6 +44,8 @@ hiçbir şey yazılmaz.
 
 ![Araçlar menüsü: önce sık kullanılan araçlar, gerisi gruplanmış](../../screenshots/tools-menu.webp)
 
+Pencere daraldığında eylem çubuğu yer için yarışmayı bırakır: artık sığmayan düğmeler, çubuktaki sırayla ve kendi alt menüleriyle birlikte sonundaki **Daha** menüsüne katlanır. Pencereyi genişletin, geri çıkarlar.
+
 Birinden ulaşılabilen her şeye diğerinden de ulaşılır; yani yalnızca uzman
 kullanıcıların bulabildiği hiçbir şey yok.
 

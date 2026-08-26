@@ -45,6 +45,8 @@ Dos caminos, y llevan a los mismos sitios:
 
 ![El menú Herramientas: primero las herramientas frecuentes, el resto agrupado](../../screenshots/tools-menu.webp)
 
+Cuando la ventana se estrecha, la barra de acciones deja de competir por el espacio: los botones que ya no caben se pliegan en un menú **Más** al final, en el mismo orden y conservando sus submenús. Ensancha la ventana y vuelven a salir.
+
 Todo lo que se alcanza por un camino se alcanza por el otro, así que no hay
 nada que solo encuentren los usuarios avanzados.
 

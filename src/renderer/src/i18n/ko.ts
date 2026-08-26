@@ -1532,6 +1532,8 @@ export const ko: Dict = {
   'toolbar.pop': '팝',
   'toolbar.tools': '도구',
   'toolbar.settings': '설정',
+  'toolbar.more': '더 보기',
+  'toolbar.moreTitle': '추가 작업',
   'toolbar.switchRepo': '저장소 전환',
   'toolbar.switchBranch': '브랜치 전환',
   'toolbar.undoTitle': '마지막 작업 실행 취소',

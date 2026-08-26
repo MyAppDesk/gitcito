@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   Undo2,
@@ -38,6 +38,7 @@ import {
   Magnet,
   Clock,
   Film,
+  MoreHorizontal,
   Boxes as ObjectsIcon,
   Trash2,
   Package,
@@ -64,6 +65,35 @@ import { timeAgo, isStale } from '../lib/timeAgo'
 import { BranchStatusPicker } from './BranchStatusPicker'
 import { RepoStatusPicker } from './RepoStatusPicker'
 
+/**
+ * One slot on the action bar. Everything between the repo pill and the search
+ * box is described as data rather than markup, because a narrow window has to
+ * be able to move the tail of it into a dropdown — see `useOverflow` below.
+ */
+type BarItem =
+  | { id: string; sep: true }
+  | {
+      id: string
+      sep?: false
+      label: string
+      title: string
+      icon: React.JSX.Element
+      /** The same action drawn small, for the overflow menu. */
+      menuIcon: React.JSX.Element
+      disabled?: boolean
+      /** Primary click. Absent means the button only opens `menu`. */
+      run?: () => void
+      /** Split-button dropdown; the overflow menu nests the same entries. */
+      menu?: () => MenuItem[]
+      badge?: number
+      /** Fetch alone hangs its age label under the button. */
+      age?: boolean
+    }
+
+/** Gap between bar items, and the width the "More" button needs for itself. */
+const ITEM_GAP = 2
+const MORE_WIDTH = 64
+
 export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
   const t = useT()
   const { undo, redo } = useRepoStore()
@@ -81,6 +111,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
   const inflight = useUIStore((s) => s.inflight > 0)
   const confirmForcePush = useSettingsStore((s) => s.settings.confirmForcePush)
   const sidebarSide = useSettingsStore((s) => s.settings.sidebarSide)
+  const language = useSettingsStore((s) => s.settings.language ?? 'en')
   const path = repo.path
   const current = repo.branches.locals.find((b) => b.isCurrent)
 
@@ -99,65 +130,84 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
   const fetchStale = isStale(repo.lastFetchAt, Date.now())
   const [fetchHover, setFetchHover] = useState(false)
 
-  const pullMenu = (e: React.MouseEvent): void => {
+  /** Drops a menu under whatever was clicked — a split arrow or a whole button. */
+  const openAt = (e: React.MouseEvent, items: MenuItem[]): void => {
     e.stopPropagation()
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-    openContextMenu(rect.left, rect.bottom + 6, [
-      { label: t('pull.default'), onClick: () => void repoActions.pull(path, 'default') },
-      { label: t('pull.ffOnly'), onClick: () => void repoActions.pull(path, 'ff-only') },
-      { label: t('pull.rebase'), onClick: () => void repoActions.pull(path, 'rebase') }
-    ])
+    openContextMenu(rect.left, rect.bottom + 6, items)
   }
 
-  const pushMenu = (e: React.MouseEvent): void => {
-    e.stopPropagation()
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-    openContextMenu(rect.left, rect.bottom + 6, [
-      { label: t('toolbar.push'), onClick: () => void repoActions.push(path) },
-      // Per-remote entries only earn their place once there is more than one.
-      ...(repo.remotes.length > 1
-        ? [
-            {
-              label: t('push.toRemote'),
-              submenu: repo.remotes.map((r) => ({
-                label: r.name,
-                onClick: () => void repoActions.pushToRemotes(path, [r.name])
-              }))
-            },
-            {
-              label: interp(t('push.allRemotes'), { n: String(repo.remotes.length) }),
-              onClick: () => void repoActions.pushToRemotes(path, repo.remotes.map((r) => r.name))
-            }
-          ]
-        : []),
-      {
-        label: t('push.tags'),
-        submenu: repo.remotes.map((r) => ({
-          label: r.name,
-          onClick: () => void repoActions.pushAllTags(path, r.name)
-        }))
-      },
-      { separator: true },
-      {
-        label: t('push.force'),
-        danger: true,
-        onClick: () => {
-          if (!confirmForcePush) {
-            void repoActions.push(path, true)
-            return
+  const pullItems = (): MenuItem[] => [
+    { label: t('pull.default'), onClick: () => void repoActions.pull(path, 'default') },
+    { label: t('pull.ffOnly'), onClick: () => void repoActions.pull(path, 'ff-only') },
+    { label: t('pull.rebase'), onClick: () => void repoActions.pull(path, 'rebase') }
+  ]
+
+  const pushItems = (): MenuItem[] => [
+    { label: t('toolbar.push'), onClick: () => void repoActions.push(path) },
+    // Per-remote entries only earn their place once there is more than one.
+    ...(repo.remotes.length > 1
+      ? [
+          {
+            label: t('push.toRemote'),
+            submenu: repo.remotes.map((r) => ({
+              label: r.name,
+              onClick: () => void repoActions.pushToRemotes(path, [r.name])
+            }))
+          },
+          {
+            label: interp(t('push.allRemotes'), { n: String(repo.remotes.length) }),
+            onClick: () => void repoActions.pushToRemotes(path, repo.remotes.map((r) => r.name))
           }
-          openModal({
-            kind: 'confirm',
-            title: t('push.forceTitle'),
-            message: interp(t('push.forceMsg'), { branch: repo.branches.current }),
-            danger: true,
-            confirmLabel: t('push.forceConfirm'),
-            onConfirm: () => void repoActions.push(path, true)
-          })
+        ]
+      : []),
+    {
+      label: t('push.tags'),
+      submenu: repo.remotes.map((r) => ({
+        label: r.name,
+        onClick: () => void repoActions.pushAllTags(path, r.name)
+      }))
+    },
+    { separator: true },
+    {
+      label: t('push.force'),
+      danger: true,
+      onClick: () => {
+        if (!confirmForcePush) {
+          void repoActions.push(path, true)
+          return
         }
+        openModal({
+          kind: 'confirm',
+          title: t('push.forceTitle'),
+          message: interp(t('push.forceMsg'), { branch: repo.branches.current }),
+          danger: true,
+          confirmLabel: t('push.forceConfirm'),
+          onConfirm: () => void repoActions.push(path, true)
+        })
       }
-    ])
-  }
+    }
+  ]
+
+  const stashPrompt = (): void =>
+    openModal({
+      kind: 'input',
+      title: t('stash.title'),
+      label: t('stash.msgLabel'),
+      placeholder: t('stash.msgPlaceholder'),
+      allowEmpty: true,
+      submitLabel: t('stash.submit'),
+      onSubmit: (msg) => void repoActions.stash(path, msg.trim() || undefined)
+    })
+
+  const stashItems = (): MenuItem[] => [
+    { label: t('stash.allChanges'), icon: <Archive size={15} />, onClick: stashPrompt },
+    {
+      label: t('stash.selectedFiles'),
+      icon: <Archive size={15} />,
+      onClick: () => openModal({ kind: 'stash-partial', repoPath: path })
+    }
+  ]
 
   /** Notes ride on refs/notes, which normal fetch/push ignore entirely. */
   const notesMenu = (): MenuItem[] => {
@@ -175,9 +225,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
     ]
   }
 
-  const toolsMenu = (e: React.MouseEvent): void => {
-    e.stopPropagation()
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+  const toolsItems = (): MenuItem[] => {
     const applyPatchFile = (am: boolean): void => {
       void window.api.openPatch().then((res) => {
         if (res) void repoActions.applyPatch(path, res.content, am)
@@ -186,7 +234,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
     // The dropdown mirrors the command palette: everything reachable by ⌘K that
     // belongs to a repository is here too, with the rarely-used two thirds
     // folded into groups so the list stays readable.
-    openContextMenu(rect.left, rect.bottom + 6, [
+    return [
       { label: t('tools.reflog'), icon: <History size={15} />, onClick: () => openModal({ kind: 'reflog', repoPath: path }) },
       { label: t('tools.snapshots'), icon: <Camera size={15} />, onClick: () => openModal({ kind: 'snapshots', repoPath: path }) },
       { label: t('timeMachine.open'), icon: <Clock size={15} />, onClick: () => openModal({ kind: 'time-machine', repoPath: path }) },
@@ -288,7 +336,240 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
           { label: t('cmd.secureImport'), icon: <Lock size={15} />, onClick: () => openModal({ kind: 'secure-share', repoPath: path, initialMode: 'import' }) }
         ]
       }
-    ])
+    ]
+  }
+
+  const items: BarItem[] = [
+    {
+      id: 'undo',
+      label: t('toolbar.undo'),
+      title: t('toolbar.undoTitle'),
+      icon: <Undo2 size={17} />,
+      menuIcon: <Undo2 size={15} />,
+      disabled: repo.undoStack.length === 0 || inflight,
+      run: () => void undo(path)
+    },
+    {
+      id: 'redo',
+      label: t('toolbar.redo'),
+      title: t('toolbar.redo'),
+      icon: <Redo2 size={17} />,
+      menuIcon: <Redo2 size={15} />,
+      disabled: repo.redoStack.length === 0 || inflight,
+      run: () => void redo(path)
+    },
+    { id: 'sep-1', sep: true },
+    {
+      id: 'fetch',
+      label: t('toolbar.fetch'),
+      title: t('toolbar.fetchTitle'),
+      icon: busyOp === 'fetch' ? <Loader2 size={17} className="spin" /> : <Download size={17} />,
+      menuIcon: <Download size={15} />,
+      disabled: inflight,
+      run: () => void repoActions.fetchAll(path),
+      age: true
+    },
+    {
+      id: 'pull',
+      label: t('toolbar.pull'),
+      title: t('toolbar.pull'),
+      icon: busyOp === 'pull' ? <Loader2 size={17} className="spin" /> : <ArrowDownToLine size={17} />,
+      menuIcon: <ArrowDownToLine size={15} />,
+      disabled: inflight,
+      run: () => void repoActions.pull(path, 'default'),
+      menu: pullItems,
+      badge: current?.behind
+    },
+    {
+      id: 'push',
+      label: t('toolbar.push'),
+      title: t('toolbar.push'),
+      icon: busyOp === 'push' ? <Loader2 size={17} className="spin" /> : <ArrowUpFromLine size={17} />,
+      menuIcon: <ArrowUpFromLine size={15} />,
+      disabled: inflight,
+      run: () => void repoActions.push(path),
+      menu: pushItems,
+      badge: current?.ahead
+    },
+    {
+      id: 'branch',
+      label: t('toolbar.branch'),
+      title: t('toolbar.branchTitle'),
+      icon: <GitBranchPlus size={17} />,
+      menuIcon: <GitBranchPlus size={15} />,
+      run: () => openModal({ kind: 'create-branch', path, currentBranch: repo.branches.current })
+    },
+    {
+      id: 'stash',
+      label: t('toolbar.stash'),
+      title: t('toolbar.stashWip'),
+      icon: <Archive size={17} />,
+      menuIcon: <Archive size={15} />,
+      disabled: inflight,
+      run: stashPrompt,
+      menu: stashItems
+    },
+    {
+      id: 'pop',
+      label: t('stashPanel.pop'),
+      title: t('toolbar.popTitle'),
+      icon: <ArchiveRestore size={17} />,
+      menuIcon: <ArchiveRestore size={15} />,
+      disabled: repo.stashes.length === 0 || inflight,
+      run: () => void repoActions.stashPop(path, 0)
+    },
+    {
+      id: 'tools',
+      label: t('toolbar.tools'),
+      title: t('toolbar.toolsTitle'),
+      icon: <Wrench size={16} />,
+      menuIcon: <Wrench size={15} />,
+      menu: toolsItems
+    },
+    { id: 'sep-2', sep: true },
+    {
+      id: 'settings',
+      label: t('toolbar.settings'),
+      title: t('toolbar.settingsTitle'),
+      icon: <Settings size={16} />,
+      menuIcon: <Settings size={15} />,
+      run: () => openModal({ kind: 'repo-settings', repoPath: path })
+    }
+  ]
+
+  // ── Overflow ────────────────────────────────────────────────────────────
+  // A narrow window used to let the action bar run under the search box. Now
+  // the tail of it folds into a "More" dropdown instead: every item's natural
+  // width is measured while it is on the bar and cached, so a later resize can
+  // decide how many still fit without rendering them first.
+  const centerRef = useRef<HTMLDivElement>(null)
+  const nodes = useRef(new Map<string, HTMLElement>())
+  const widths = useRef(new Map<string, number>())
+  const [shown, setShown] = useState(items.length)
+  const [avail, setAvail] = useState(0)
+
+  const measureRef = (id: string) => (node: HTMLElement | null): void => {
+    if (node) nodes.current.set(id, node)
+    else nodes.current.delete(id)
+  }
+
+  useEffect(() => {
+    const el = centerRef.current
+    if (!el) return
+    const ro = new ResizeObserver(() => setAvail(el.clientWidth))
+    ro.observe(el)
+    setAvail(el.clientWidth)
+    return () => ro.disconnect()
+  }, [])
+
+  // Labels change length with the language, so every cached width is stale the
+  // moment it switches — put everything back on the bar and measure again.
+  useEffect(() => {
+    widths.current.clear()
+    setShown(items.length)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [language])
+
+  useLayoutEffect(() => {
+    nodes.current.forEach((node, id) => widths.current.set(id, node.offsetWidth))
+    const room = centerRef.current?.clientWidth ?? avail
+    if (!room) return
+    const width = (it: BarItem): number => (widths.current.get(it.id) ?? 0) + ITEM_GAP
+    const total = items.reduce((sum, it) => sum + width(it), 0)
+    let next = items.length
+    if (total > room) {
+      let used = MORE_WIDTH
+      next = 0
+      for (const it of items) {
+        if (used + width(it) > room) break
+        used += width(it)
+        next++
+      }
+      // A separator with nothing behind it is a stray line, not a divider.
+      while (next > 0 && items[next - 1].sep) next--
+    }
+    if (next !== shown) setShown(next)
+  })
+
+  const hidden = items.slice(shown).filter((it): it is Extract<BarItem, { sep?: false }> => !it.sep)
+
+  const moreMenu = (e: React.MouseEvent): void =>
+    openAt(
+      e,
+      hidden.map((it) =>
+        it.menu
+          ? { label: it.label, icon: it.menuIcon, submenu: it.menu() }
+          : { label: it.label, icon: it.menuIcon, disabled: it.disabled, onClick: it.run }
+      )
+    )
+
+  const renderItem = (item: BarItem): React.JSX.Element => {
+    if (item.sep) return <div key={item.id} ref={measureRef(item.id)} className="toolbar-sep" />
+    const button = (
+      <button
+        className={`tool-btn${item.menu ? ' split' : ''}`}
+        title={item.title}
+        disabled={item.disabled}
+        onClick={(e) => (item.run ? item.run() : item.menu && openAt(e, item.menu()))}
+      >
+        {item.icon}
+        <span>
+          {item.label}
+          {item.badge ? <em className="count-pill">{item.badge}</em> : null}
+        </span>
+        {item.menu && (
+          <span
+            className="split-arrow"
+            // A button that already opens the menu needs no second control.
+            {...(item.run
+              ? {
+                  role: 'button',
+                  tabIndex: 0,
+                  'aria-haspopup': 'menu' as const,
+                  'aria-label': t('a11y.moreOptions'),
+                  onClick: (e: React.MouseEvent) => openAt(e, item.menu!()),
+                  onKeyDown: (e: React.KeyboardEvent) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      openAt(e as unknown as React.MouseEvent, item.menu!())
+                    }
+                  }
+                }
+              : { 'aria-hidden': true })}
+          >
+            <ChevronDown size={13} />
+          </span>
+        )}
+      </button>
+    )
+    if (!item.age) return <div key={item.id} ref={measureRef(item.id)} className="bar-item">{button}</div>
+    // The age answers a question you only ask while reaching for the button, so
+    // it lives under it on hover rather than in the layout.
+    return (
+      <div
+        key={item.id}
+        ref={measureRef(item.id)}
+        className="fetch-wrap bar-item"
+        onMouseEnter={() => setFetchHover(true)}
+        onMouseLeave={() => setFetchHover(false)}
+      >
+        {button}
+        <AnimatePresence>
+          {fetchHover && repo.lastFetchAt !== null && (
+            <motion.span
+              className={`age-hint${fetchStale ? ' stale' : ''}`}
+              initial={{ opacity: 0, y: -3 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -3 }}
+              transition={{ duration: 0.14, ease: 'easeOut' }}
+            >
+              <span>{since(repo.lastFetchAt)}</span>
+            </motion.span>
+          )}
+        </AnimatePresence>
+      </div>
+    )
   }
 
   // The sidebar toggle lives on the same edge as the sidebar itself: leftmost
@@ -312,216 +593,17 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
         <BranchStatusPicker repo={repo} />
       </div>
 
-      <div className="toolbar-center">
-      <div className="toolbar-group">
-        <button
-          className="tool-btn"
-          title={t('toolbar.undoTitle')}
-          disabled={repo.undoStack.length === 0 || inflight}
-          onClick={() => void undo(path)}
-        >
-          <Undo2 size={17} />
-          <span>{t('toolbar.undo')}</span>
-        </button>
-        <button
-          className="tool-btn"
-          title={t('toolbar.redo')}
-          disabled={repo.redoStack.length === 0 || inflight}
-          onClick={() => void redo(path)}
-        >
-          <Redo2 size={17} />
-          <span>{t('toolbar.redo')}</span>
-        </button>
-      </div>
-
-      <div className="toolbar-sep" />
-
-      <div className="toolbar-group">
-        {/* The age answers a question you only ask while reaching for the
-            button, so it lives under it on hover rather than in the layout. */}
-        <div
-          className="fetch-wrap"
-          onMouseEnter={() => setFetchHover(true)}
-          onMouseLeave={() => setFetchHover(false)}
-        >
-          <button
-            className="tool-btn"
-            disabled={inflight}
-            onClick={() => void repoActions.fetchAll(path)}
-            title={t('toolbar.fetchTitle')}
-          >
-            {busyOp === 'fetch' ? <Loader2 size={17} className="spin" /> : <Download size={17} />}
-            <span>{t('toolbar.fetch')}</span>
+      <div className="toolbar-center" ref={centerRef}>
+        {items.slice(0, shown).map(renderItem)}
+        {hidden.length > 0 && (
+          <button className="tool-btn split" title={t('toolbar.moreTitle')} onClick={moreMenu}>
+            <MoreHorizontal size={17} />
+            <span>{t('toolbar.more')}</span>
+            <span className="split-arrow" aria-hidden="true">
+              <ChevronDown size={13} />
+            </span>
           </button>
-          <AnimatePresence>
-            {fetchHover && repo.lastFetchAt !== null && (
-              <motion.span
-                className={`age-hint${fetchStale ? ' stale' : ''}`}
-                initial={{ opacity: 0, y: -3 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -3 }}
-                transition={{ duration: 0.14, ease: 'easeOut' }}
-              >
-                <span>{since(repo.lastFetchAt)}</span>
-              </motion.span>
-            )}
-          </AnimatePresence>
-        </div>
-        <button className="tool-btn split" disabled={inflight} onClick={() => void repoActions.pull(path, 'default')} title={t('toolbar.pull')}>
-          {busyOp === 'pull' ? (
-            <Loader2 size={17} className="spin" />
-          ) : (
-            <ArrowDownToLine size={17} />
-          )}
-          <span>
-            {t('toolbar.pull')}
-            {current && current.behind > 0 && <em className="count-pill">{current.behind}</em>}
-          </span>
-          <span
-            className="split-arrow"
-            role="button"
-            tabIndex={0}
-            aria-haspopup="menu"
-            aria-label={t('a11y.moreOptions')}
-            onClick={pullMenu}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault()
-                e.stopPropagation()
-                pullMenu(e as unknown as React.MouseEvent)
-              }
-            }}
-          >
-            <ChevronDown size={13} />
-          </span>
-        </button>
-        <button className="tool-btn split" disabled={inflight} onClick={() => void repoActions.push(path)} title={t('toolbar.push')}>
-          {busyOp === 'push' ? (
-            <Loader2 size={17} className="spin" />
-          ) : (
-            <ArrowUpFromLine size={17} />
-          )}
-          <span>
-            {t('toolbar.push')}
-            {current && current.ahead > 0 && <em className="count-pill">{current.ahead}</em>}
-          </span>
-          <span
-            className="split-arrow"
-            role="button"
-            tabIndex={0}
-            aria-haspopup="menu"
-            aria-label={t('a11y.moreOptions')}
-            onClick={pushMenu}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault()
-                e.stopPropagation()
-                pushMenu(e as unknown as React.MouseEvent)
-              }
-            }}
-          >
-            <ChevronDown size={13} />
-          </span>
-        </button>
-        <button
-          className="tool-btn"
-          title={t('toolbar.branchTitle')}
-          onClick={() => openModal({ kind: 'create-branch', path, currentBranch: repo.branches.current })}
-        >
-          <GitBranchPlus size={17} />
-          <span>{t('toolbar.branch')}</span>
-        </button>
-        <button
-          className="tool-btn split"
-          title={t('toolbar.stashWip')}
-          disabled={inflight}
-          onClick={() =>
-            openModal({
-              kind: 'input',
-              title: t('stash.title'),
-              label: t('stash.msgLabel'),
-              placeholder: t('stash.msgPlaceholder'),
-              allowEmpty: true,
-              submitLabel: t('stash.submit'),
-              onSubmit: (msg) => void repoActions.stash(path, msg.trim() || undefined)
-            })
-          }
-        >
-          <Archive size={17} />
-          <span>{t('toolbar.stash')}</span>
-          <span
-            className="split-arrow"
-            role="button"
-            tabIndex={0}
-            aria-haspopup="menu"
-            aria-label={t('a11y.moreOptions')}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault()
-                e.stopPropagation()
-                ;(e.currentTarget as HTMLElement).click()
-              }
-            }}
-            onClick={(e) => {
-              e.stopPropagation()
-              const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-              openContextMenu(rect.left, rect.bottom + 6, [
-                {
-                  label: t('stash.allChanges'),
-                  icon: <Archive size={15} />,
-                  onClick: () =>
-                    openModal({
-                      kind: 'input',
-                      title: t('stash.title'),
-                      label: t('stash.msgLabel'),
-                      placeholder: t('stash.msgPlaceholder'),
-                      allowEmpty: true,
-                      submitLabel: t('stash.submit'),
-                      onSubmit: (msg) => void repoActions.stash(path, msg.trim() || undefined)
-                    })
-                },
-                {
-                  label: t('stash.selectedFiles'),
-                  icon: <Archive size={15} />,
-                  onClick: () => openModal({ kind: 'stash-partial', repoPath: path })
-                }
-              ])
-            }}
-          >
-            <ChevronDown size={13} />
-          </span>
-        </button>
-        <button
-          className="tool-btn"
-          title={t('toolbar.popTitle')}
-          disabled={repo.stashes.length === 0 || inflight}
-          onClick={() => void repoActions.stashPop(path, 0)}
-        >
-          <ArchiveRestore size={17} />
-          <span>{t('stashPanel.pop')}</span>
-        </button>
-        <button className="tool-btn split" title={t('toolbar.toolsTitle')} onClick={toolsMenu}>
-          <Wrench size={16} />
-          <span>{t('toolbar.tools')}</span>
-          <span className="split-arrow" aria-hidden="true">
-            <ChevronDown size={13} />
-          </span>
-        </button>
-      </div>
-
-      <div className="toolbar-sep" />
-
-      <div className="toolbar-group">
-        <button
-          className="tool-btn"
-          title={t('toolbar.settingsTitle')}
-          onClick={() => openModal({ kind: 'repo-settings', repoPath: path })}
-        >
-          <Settings size={16} />
-          <span>{t('toolbar.settings')}</span>
-        </button>
-      </div>
-
+        )}
       </div>
 
       <div className="toolbar-group right">

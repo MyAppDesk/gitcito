@@ -1508,6 +1508,8 @@ export const ja: Dict = {
   'toolbar.pop': 'ポップ',
   'toolbar.tools': 'ツール',
   'toolbar.settings': '設定',
+  'toolbar.more': 'その他',
+  'toolbar.moreTitle': 'その他の操作',
   'toolbar.switchRepo': 'リポジトリを切り替え',
   'toolbar.switchBranch': 'ブランチを切り替え',
   'toolbar.undoTitle': '直前の操作を取り消す',

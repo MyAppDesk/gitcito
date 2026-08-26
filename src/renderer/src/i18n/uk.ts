@@ -1532,6 +1532,8 @@ export const uk: Dict = {
   'toolbar.pop': 'Витягти',
   'toolbar.tools': 'Інструменти',
   'toolbar.settings': 'Налаштування',
+  'toolbar.more': 'Ще',
+  'toolbar.moreTitle': 'Інші дії',
   'toolbar.switchRepo': 'Перемкнути репозиторій',
   'toolbar.switchBranch': 'Перемкнути гілку',
   'toolbar.undoTitle': 'Скасувати останню операцію',

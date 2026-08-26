@@ -1532,6 +1532,8 @@ export const ru: Dict = {
   'toolbar.pop': 'Извлечь',
   'toolbar.tools': 'Инструменты',
   'toolbar.settings': 'Настройки',
+  'toolbar.more': 'Ещё',
+  'toolbar.moreTitle': 'Другие действия',
   'toolbar.switchRepo': 'Сменить репозиторий',
   'toolbar.switchBranch': 'Сменить ветку',
   'toolbar.undoTitle': 'Отменить последнюю операцию',

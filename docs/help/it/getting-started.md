@@ -45,6 +45,8 @@ Due strade, e portano negli stessi posti:
 
 ![Il menu Strumenti: prima gli strumenti frequenti, il resto raggruppato](../../screenshots/tools-menu.webp)
 
+Quando la finestra si restringe, la barra delle azioni smette di contendersi lo spazio: i pulsanti che non entrano più si ripiegano in un menu **Altro** in fondo, nell’ordine della barra e con i loro sottomenu. Allarga la finestra e tornano fuori.
+
 Tutto ciò che è raggiungibile da una via lo è anche dall'altra, quindi non c'è
 niente che solo gli utenti esperti riescono a trovare.
 

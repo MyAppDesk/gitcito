@@ -1532,6 +1532,8 @@ export const he: Dict = {
   'toolbar.pop': 'שליפה',
   'toolbar.tools': 'כלים',
   'toolbar.settings': 'הגדרות',
+  'toolbar.more': 'עוד',
+  'toolbar.moreTitle': 'פעולות נוספות',
   'toolbar.switchRepo': 'החלפת מאגר',
   'toolbar.switchBranch': 'החלפת ענף',
   'toolbar.undoTitle': 'ביטול הפעולה האחרונה',

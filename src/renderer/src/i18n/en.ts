@@ -1528,6 +1528,8 @@ export const en = {
   'toolbar.pop': 'Pop',
   'toolbar.tools': 'Tools',
   'toolbar.settings': 'Settings',
+  'toolbar.more': 'More',
+  'toolbar.moreTitle': 'More actions',
   'toolbar.switchRepo': 'Switch repository',
   'toolbar.switchBranch': 'Switch branch',
   'toolbar.undoTitle': 'Undo last operation',

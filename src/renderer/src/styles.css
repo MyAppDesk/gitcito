@@ -1018,6 +1018,8 @@ textarea:focus {
 
 .toolbar-group.right {
   gap: 4px;
+  flex: 0 1 auto;
+  min-width: 0;
 }
 
 .toolbar-sep {
@@ -1139,12 +1141,22 @@ textarea:focus {
 }
 
 .toolbar-center {
-  flex: 1;
+  flex: 1 1 auto;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 2px;
   min-width: 0;
+  /* The bar folds its tail into a "More" dropdown rather than wrapping, so
+     anything still mid-measurement is clipped instead of running under the
+     search box. Children never shrink — a squeezed button would measure wrong. */
+  overflow: hidden;
+}
+.toolbar-center > * {
+  flex: 0 0 auto;
+}
+.bar-item {
+  display: flex;
 }
 
 /* Repository ▸ branch switcher on the left. */
@@ -1152,8 +1164,10 @@ textarea:focus {
   display: flex;
   align-items: center;
   gap: 4px;
-  flex: 0 0 auto;
+  flex: 0 1 auto;
+  min-width: 0;
   max-width: 320px;
+  overflow: hidden;
 }
 .repo-pill {
   display: flex;
@@ -1315,6 +1329,10 @@ textarea:focus {
 .graph-search {
   display: flex;
   align-items: center;
+  flex: 0 1 auto;
+  /* Gives the field up before the buttons beside it: a half-width search box
+     still works, a clipped button does not. */
+  min-width: 92px;
   gap: 6px;
   background: var(--bg-0);
   border: 1px solid var(--border);
@@ -1331,6 +1349,7 @@ textarea:focus {
   border: none;
   background: transparent;
   width: 190px;
+  min-width: 0;
   padding: 0;
   box-shadow: none !important;
 }

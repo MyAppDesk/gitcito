@@ -1533,6 +1533,8 @@ export const ptBR: Dict = {
   'toolbar.pop': 'Pop',
   'toolbar.tools': 'Ferramentas',
   'toolbar.settings': 'Configurações',
+  'toolbar.more': 'Mais',
+  'toolbar.moreTitle': 'Mais ações',
   'toolbar.switchRepo': 'Trocar de repositório',
   'toolbar.switchBranch': 'Trocar de branch',
   'toolbar.undoTitle': 'Desfazer a última operação',

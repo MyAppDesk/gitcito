@@ -1532,6 +1532,8 @@ export const de: Dict = {
   'toolbar.pop': 'Pop',
   'toolbar.tools': 'Werkzeuge',
   'toolbar.settings': 'Einstellungen',
+  'toolbar.more': 'Mehr',
+  'toolbar.moreTitle': 'Weitere Aktionen',
   'toolbar.switchRepo': 'Repository wechseln',
   'toolbar.switchBranch': 'Branch wechseln',
   'toolbar.undoTitle': 'Letzte Operation rückgängig machen',

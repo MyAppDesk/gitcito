@@ -3,7 +3,7 @@ title: Avatares de autor
 category: Hazlo tuyo
 order: 103
 summary: Fotos de Gravatar cuando existen, un avatar generado cuando no — y una cara en la barra de título que reacciona al repositorio.
-keywords: avatar avatares gravatar blobatar autor foto imagen identicon cara sin conexión privacidad correo hash ánimo expresión animación movimiento triste enfadado contento
+keywords: avatar avatares gravatar blobatar autor foto imagen identicon cara sin conexión privacidad correo hash ánimo expresión animación movimiento triste enfadado contento pensativa asustada dudosa enferma soñolienta desacoplada stash inactivo
 ---
 
 # Avatares de autor
@@ -43,30 +43,31 @@ persona.
 
 El avatar junto al nombre de tu perfil es el único avatar de Gitcito que
 representa **a ti, en este repositorio, ahora mismo** — así que es el único que
-reacciona al estado del repositorio. Adopta una de cuatro caras:
-
-| Cara | Cuándo |
-|---|---|
-| 😠 Enfadada | Quedan archivos en conflicto. |
-| 🙁 Apagada | 10 commits o más esperando envío, 25 o más por detrás del remoto, o 25 o más cambios sin confirmar. |
-| 🙂 Contenta | Nada local, nada pendiente y un upstream con el que estar sincronizado. |
-| 😐 Neutra | Trabajo en curso normal — y antes de leer el primer estado. |
+reacciona al estado del repositorio. Pone cara cuando pasa algo y se queda neutra
+el resto del tiempo.
 
 ![El avatar de la barra de título con su cara de enfado](../../screenshots/avatar-mood.webp)
 
-Gana lo peor: un repositorio con conflictos *y* cuarenta commits sin enviar está
-enfadado, no apagado. Pasa el ratón por el avatar y la ayuda emergente dice qué
-recuento causó la cara — una imagen que cambia sin motivo declarado es un
-acertijo, no una señal.
+A qué reacciona, lo peor primero: archivos que quedaron en conflicto; una fusión,
+un rebase, un cherry-pick o una reversión que nadie le dijo a git cómo terminar;
+un HEAD desacoplado — alarmado si hay trabajo sin confirmar debajo, sólo dudoso si
+no lo hay; commits acumulándose sin enviar, o sin traer del remoto; cambios
+acumulándose sin confirmar; un cajón de stashes que nadie abre; y un repositorio
+donde no ha llegado nada en un mes.
 
-Los umbrales son altos a propósito. Una cara que se apaga con un solo commit sin
-enviar está apagada para siempre, y una señal permanente es una señal que
+Gana lo peor: un repositorio con conflictos *y* cuarenta commits sin enviar lleva
+los conflictos. Pasa el ratón por el avatar y la ayuda emergente dice exactamente
+qué causó la cara — una imagen que cambia sin motivo declarado es un acertijo, no
+una señal. Lo que se lee es la ayuda emergente; la cara solo hace que mires.
+
+Los umbrales son altos a propósito. Una cara que se preocupa con un solo commit
+sin enviar está preocupada para siempre, y una señal permanente es una señal que
 aprendes a no leer. Una rama sin upstream se queda neutra en vez de contenta:
 «sincronizado» no es algo que se pueda afirmar de una rama que nadie ha enviado.
 
 **Esto es decoración, no instrumentación.** La barra de estado lleva los
 recuentos reales, y es lo que hay que creer. La cara solo dice *algo pasa* de un
-vistazo, y lo dice en cuatro pasos.
+vistazo.
 
 ### Movimiento
 
@@ -108,10 +109,10 @@ ningún ajuste que quite los avatares del todo.
   puede hacerte muecas. Desactiva la consulta si prefieres el blob expresivo.
 - **La cara sigue solo al repositorio activo.** En una pestaña que no es un
   repositorio no hay nada a lo que reaccionar, así que se queda neutra.
-- **Cuatro caras, no un panel de mandos.** No hay cara para «rebase en curso»,
-  «HEAD desacoplada» o «stashes acumulándose»: cuatro poses son todo el
-  vocabulario, y gastarlas en distinciones más finas volvería poco fiable
-  cualquier lectura.
+- **Una lectura cada vez.** La cara muestra lo peor que encontró, así que un
+  repositorio puede estar desordenado de varias maneras y llevar una sola
+  expresión. No es una lista de estado — de eso se encargan la barra de estado y
+  la ayuda emergente.
 - **Pequeño es pequeño.** En la columna de autor del grafo el avatar mide 16px,
   que transmite color y silueta pero no detalle. Los detalles del commit dibujan
   al autor a 38px, y ahí sí se ve la cara.

@@ -3,7 +3,7 @@ title: Yazar avatarları
 category: Kendinize göre uyarlayın
 order: 103
 summary: Varsa Gravatar fotoğrafı, yoksa üretilmiş bir avatar — ve depoya tepki veren, başlık çubuğundaki bir yüz.
-keywords: avatar avatarlar gravatar blobatar yazar fotoğraf resim identicon yüz çevrimdışı gizlilik e-posta hash ruh hali ifade animasyon hareket üzgün kızgın mutlu
+keywords: avatar avatarlar gravatar blobatar yazar fotoğraf resim identicon yüz çevrimdışı gizlilik e-posta hash ruh hali ifade animasyon hareket üzgün kızgın mutlu düşünen korkmuş kararsız hasta uykulu ayrık stash uykuda
 ---
 
 # Yazar avatarları
@@ -38,28 +38,30 @@ adres gerçekten aynı kişiyse [yazar öznitelikleri](attributes.md) ile düzel
 ## Başlık çubuğundaki yüz
 
 Profil adınızın yanındaki avatar, Gitcito'da **sizi, bu depoda, şu anda** temsil eden tek
-avatardır — dolayısıyla deponun durumuna tepki veren tek avatar. Dört yüzden birini takar:
-
-| Yüz | Ne zaman |
-|---|---|
-| 😠 Kızgın | Çakışmalı dosyalar kaldı. |
-| 🙁 Suratı asık | 10 veya daha fazla commit gönderilmeyi bekliyor, uzak depodan 25 veya daha fazla geride, ya da 25 veya daha fazla işlenmemiş değişiklik var. |
-| 🙂 Hoşnut | Yerelde bir şey yok, bekleyen yok ve senkron olunacak bir upstream var. |
-| 😐 Nötr | Olağan, süren çalışma — ve ilk durum okunmadan önce. |
+avatardır — dolayısıyla deponun durumuna tepki veren tek avatar. Bir şey olduğunda yüzünü
+değiştirir, geri kalan zamanda nötr kalır.
 
 ![Başlık çubuğundaki avatar, kızgın yüzüyle](../../screenshots/avatar-mood.webp)
 
-En kötüsü kazanır: çakışmaları *ve* kırk gönderilmemiş commit'i olan bir depo kızgındır,
-suratı asık değil. Avatarın üzerine gelin; ipucu yüze hangi sayının yol açtığını söyler —
-belirtilmemiş bir nedenle değişen bir resim bilmecedir, sinyal değil.
+Neye tepki verir, en kötüden başlayarak: çakışmalı bırakılmış dosyalar; git'e nasıl
+biteceği hiç söylenmemiş bir birleştirme, yeniden temellendirme, cherry-pick ya da
+geri alma; ayrık bir HEAD — altında işlenmemiş çalışma varsa telaşlı, yoksa yalnızca
+kararsız; gönderilmeden ya da uzaktan alınmadan biriken commit'ler; işlenmeden
+biriken değişiklikler; kimsenin açmadığı bir stash çekmecesi; ve bir aydır hiçbir
+şeyin inmediği bir depo.
 
-Eşikler bilinçli olarak yüksek. Tek bir gönderilmemiş commit'te suratını asan bir yüz
-kalıcı olarak asıktır ve kalıcı bir sinyal, okumamayı öğrendiğiniz bir sinyaldir.
-Upstream'i olmayan bir dal hoşnut değil nötr kalır: "senkron", kimsenin göndermediği bir
-dal hakkında yapılabilecek bir iddia değildir.
+En kötüsü kazanır: çakışmaları *ve* kırk gönderilmemiş commit'i olan bir depo
+çakışmaları takar. Avatarın üzerine gelin; ipucu yüze tam olarak neyin yol açtığını
+söyler — belirtilmemiş bir nedenle değişen bir resim bilmecedir, sinyal değil.
+Okunacak olan ipucudur; yüz yalnızca bakmanızı sağlar.
+
+Eşikler bilinçli olarak yüksek. Tek bir gönderilmemiş commit'te endişelenen bir yüz
+kalıcı olarak endişelidir ve kalıcı bir sinyal, okumamayı öğrendiğiniz bir
+sinyaldir. Upstream'i olmayan bir dal hoşnut değil nötr kalır: "senkron", kimsenin
+göndermediği bir dal hakkında yapılabilecek bir iddia değildir.
 
 **Bu süslemedir, ölçüm değil.** Gerçek sayıları durum çubuğu taşır ve güvenilecek olan
-odur. Yüz yalnızca *bir şey var* der, bir bakışta, dört basamakta.
+odur. Yüz yalnızca *bir şey var* der, bir bakışta.
 
 ### Hareket
 
@@ -101,9 +103,9 @@ bir ayar yoktur.
   blobu yeğliyorsanız sorguyu kapatın.
 - **Yüz yalnızca etkin depoyu izler.** Depo olmayan bir sekmede tepki verilecek bir şey
   yoktur, bu yüzden nötr kalır.
-- **Dört yüz, bir gösterge paneli değil.** "Rebase sürüyor", "ayrık HEAD" ya da "zulalar
-  birikiyor" için bir yüz yoktur: dört poz sözlüğün tamamıdır ve bunları daha ince
-  ayrımlara harcamak her okumayı güvenilmez kılardı.
+- **Bir seferde tek okuma.** Yüz, bulduğu en kötü tek şeyi gösterir; yani bir depo
+  birkaç açıdan dağınık olup yine de tek bir ifade takınabilir. Bir durum listesi
+  değildir — o iş durum çubuğunun ve ipucunun işidir.
 - **Küçük küçüktür.** Graftaki yazar sütununda avatar 16px'tir; rengi ve siluetini taşır,
   ayrıntıyı taşımaz. Commit ayrıntıları yazarı 38px çizer ve yüzü gerçekten orada
   görürsünüz.

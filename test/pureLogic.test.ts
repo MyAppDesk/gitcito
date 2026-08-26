@@ -96,9 +96,12 @@ import { blobatarUri } from 'blobatar/uri'
 import {
   repoMood,
   BEHIND_SAD,
+  QUIET_DAYS,
+  STASH_SICK,
   UNCOMMITTED_SAD,
   UNPUSHED_SAD
 } from '../src/renderer/src/lib/repoMood'
+import type { MoodHint, MoodInput } from '../src/renderer/src/lib/repoMood'
 import type { RepoStatus } from '../src/shared/types'
 import type { AIConfig } from '../src/shared/types'
 import {
@@ -4143,54 +4146,112 @@ describe('repo mood (the face the title-bar avatar wears)', () => {
     ...over
   })
 
+  // Most readings need nothing but a status; the rest name the slice they use.
+  const mood = (over: Partial<RepoStatus> = {}, rest: Partial<MoodInput> = {}): MoodHint =>
+    repoMood({ status: status(over), ...rest })
+
   it('is neutral before the first status arrives', () => {
     // Startup must not flash a verdict about a repo nobody has read yet.
-    expect(repoMood(null)).toEqual({ mood: 'idle' })
+    expect(repoMood({ status: null })).toEqual({ mood: 'idle' })
   })
 
   it('is happy only when there is nothing local and an upstream to be in sync with', () => {
-    expect(repoMood(status())).toEqual({ mood: 'happy', key: 'mood.clean' })
+    expect(mood()).toEqual({ mood: 'happy', key: 'mood.clean' })
   })
 
   it('stays neutral on a branch that was never pushed', () => {
     // No upstream means "in sync" is not a claim we can make — not a clean slate.
-    expect(repoMood(status({ tracking: null })).mood).toBe('idle')
+    expect(mood({ tracking: null }).mood).toBe('idle')
   })
 
   it('is mad about conflicts, and says how many', () => {
-    const m = repoMood(status({ conflicted: entries(3) }))
-    expect(m).toEqual({ mood: 'mad', key: 'mood.conflicts', vars: { n: 3 } })
+    expect(mood({ conflicted: entries(3) })).toEqual({ mood: 'mad', key: 'mood.conflicts', vars: { n: 3 } })
   })
 
   it('lets conflicts win over everything else', () => {
     // One face, and the conflicts are the problem worth wearing.
-    const m = repoMood(status({ conflicted: entries(1), ahead: 500, unstaged: entries(99) }))
+    const m = mood({ conflicted: entries(1), ahead: 500, unstaged: entries(99) }, {
+      mergeState: 'rebase',
+      stashCount: 99
+    })
     expect(m.mood).toBe('mad')
+  })
+
+  it('thinks about an operation git was never told how to finish', () => {
+    // Conflict-free but still open: a rebase somebody walked away from.
+    expect(mood({}, { mergeState: 'rebase' })).toEqual({ mood: 'thinking', key: 'mood.opRebase' })
+    expect(mood({}, { mergeState: 'merge' }).key).toBe('mood.opMerge')
+    expect(mood({}, { mergeState: 'cherry-pick' }).key).toBe('mood.opCherryPick')
+    expect(mood({}, { mergeState: 'revert' }).key).toBe('mood.opRevert')
+  })
+
+  it('is scared of uncommitted work on a detached HEAD', () => {
+    // The one state where doing the ordinary next thing loses something.
+    expect(mood({ current: 'HEAD', tracking: null, unstaged: entries(2) })).toEqual({
+      mood: 'scared',
+      key: 'mood.detachedDirty',
+      vars: { n: 2 }
+    })
+  })
+
+  it('is merely unsure about a clean detached HEAD', () => {
+    expect(mood({ current: 'HEAD', tracking: null })).toEqual({ mood: 'unsure', key: 'mood.detached' })
   })
 
   it('shrugs at a normal pile of work in progress', () => {
     // A face that turns sad at one unpushed commit is sad permanently, and a
     // permanent signal is not one.
-    expect(repoMood(status({ ahead: UNPUSHED_SAD - 1 })).mood).toBe('idle')
-    expect(repoMood(status({ behind: BEHIND_SAD - 1 })).mood).toBe('idle')
-    expect(repoMood(status({ unstaged: entries(UNCOMMITTED_SAD - 1) })).mood).toBe('idle')
+    expect(mood({ ahead: UNPUSHED_SAD - 1 }).mood).toBe('idle')
+    expect(mood({ behind: BEHIND_SAD - 1 }).mood).toBe('idle')
+    expect(mood({ unstaged: entries(UNCOMMITTED_SAD - 1) }).mood).toBe('idle')
+    expect(mood({}, { stashCount: STASH_SICK - 1 }).mood).toBe('happy')
   })
 
   it('turns sad once a pile crosses its threshold', () => {
-    expect(repoMood(status({ ahead: UNPUSHED_SAD }))).toEqual({
+    expect(mood({ ahead: UNPUSHED_SAD })).toEqual({
       mood: 'sad',
       key: 'mood.unpushed',
       vars: { n: UNPUSHED_SAD }
     })
-    expect(repoMood(status({ behind: BEHIND_SAD })).key).toBe('mood.behind')
-    expect(repoMood(status({ unstaged: entries(UNCOMMITTED_SAD) })).key).toBe('mood.uncommitted')
+    expect(mood({ behind: BEHIND_SAD }).key).toBe('mood.behind')
+    expect(mood({ unstaged: entries(UNCOMMITTED_SAD) }).key).toBe('mood.uncommitted')
   })
 
   it('counts staged and unstaged together as one pile', () => {
     const half = Math.ceil(UNCOMMITTED_SAD / 2)
-    const m = repoMood(status({ staged: entries(half), unstaged: entries(half) }))
+    const m = mood({ staged: entries(half), unstaged: entries(half) })
     expect(m.mood).toBe('sad')
     expect(m.vars).toEqual({ n: half * 2 })
+  })
+
+  it('looks sick at a stash hoard, but never over blocked work', () => {
+    expect(mood({}, { stashCount: STASH_SICK })).toEqual({
+      mood: 'sick',
+      key: 'mood.stashes',
+      vars: { n: STASH_SICK }
+    })
+    // A pile that is actually in the way still outranks the drawer.
+    expect(mood({ ahead: UNPUSHED_SAD }, { stashCount: STASH_SICK }).mood).toBe('sad')
+  })
+
+  it('falls asleep over a dormant repository, and only a clean one', () => {
+    const now = 1_800_000_000_000
+    const daysAgo = (d: number): number => Math.round(now / 1000 - d * 86_400)
+
+    expect(mood({}, { now, newestCommitAt: daysAgo(QUIET_DAYS) })).toEqual({
+      mood: 'sleepy',
+      key: 'mood.quiet',
+      vars: { n: QUIET_DAYS }
+    })
+    expect(mood({}, { now, newestCommitAt: daysAgo(QUIET_DAYS - 1) }).mood).toBe('happy')
+    // Dormant *and* dirty is not dormant — the work in progress is the story.
+    expect(
+      mood({ unstaged: entries(UNCOMMITTED_SAD) }, { now, newestCommitAt: daysAgo(QUIET_DAYS * 2) }).mood
+    ).toBe('sad')
+  })
+
+  it('never falls asleep without a clock, so a missing slice cannot invent a face', () => {
+    expect(mood({}, { newestCommitAt: 1 }).mood).toBe('happy')
   })
 })
 

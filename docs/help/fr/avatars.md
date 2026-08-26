@@ -3,7 +3,7 @@ title: Avatars d’auteur
 category: Personnalisation
 order: 103
 summary: Les photos Gravatar quand elles existent, un avatar généré sinon — et un visage dans la barre de titre qui réagit au dépôt.
-keywords: avatar avatars gravatar blobatar auteur photo image identicon visage hors ligne confidentialité e-mail hash humeur expression animation mouvement triste fâché content
+keywords: avatar avatars gravatar blobatar auteur photo image identicon visage hors ligne confidentialité e-mail hash humeur expression animation mouvement triste fâché content pensif effrayé hésitant malade endormi détaché remisage dormant
 ---
 
 # Avatars d’auteur
@@ -41,33 +41,34 @@ personne.
 
 ## Le visage de la barre de titre
 
-L’avatar à côté du nom de votre profil est le seul avatar de Gitcito qui
-représente **vous, dans ce dépôt, maintenant** — c’est donc le seul qui réagit à
-l’état du dépôt. Il prend l’un de quatre visages :
-
-| Visage | Quand |
-|---|---|
-| 😠 Fâché | Des fichiers restent en conflit. |
-| 🙁 Morose | 10 commits ou plus en attente de push, 25 ou plus de retard sur le distant, ou 25 modifications non validées ou plus. |
-| 🙂 Content | Rien en local, rien en attente, et un upstream avec lequel être synchronisé. |
-| 😐 Neutre | Travail en cours ordinaire — et avant la première lecture de l’état. |
+L’avatar à côté du nom de votre profil est le seul avatar de Gitcito qui représente
+**vous, dans ce dépôt, maintenant** — c’est donc le seul qui réagit à l’état du
+dépôt. Il fait une tête quand il se passe quelque chose, et reste neutre le reste
+du temps.
 
 ![L’avatar de la barre de titre avec son visage fâché](../../screenshots/avatar-mood.webp)
 
-Le pire l’emporte : un dépôt avec des conflits *et* quarante commits non poussés
-est fâché, pas morose. Survolez l’avatar et l’infobulle indique quel décompte a
-causé le visage — une image qui change sans raison énoncée est une énigme, pas un
-signal.
+Ce à quoi il réagit, le pire d’abord : des fichiers restés en conflit ; une
+fusion, un rebasage, un cherry-pick ou un revert que git n’a jamais su comment
+terminer ; un HEAD détaché — alarmé s’il y a du travail non validé dessous, juste
+hésitant sinon ; des commits qui s’accumulent sans push, ou sans pull depuis le
+distant ; des modifications qui s’accumulent sans validation ; un tiroir de
+remisages que personne n’ouvre ; et un dépôt où rien n’est arrivé depuis un mois.
 
-Les seuils sont volontairement élevés. Un visage qui devient morose au premier
-commit non poussé est morose en permanence, et un signal permanent est un signal
-qu’on apprend à ne plus lire. Une branche sans upstream reste neutre plutôt que
+Le pire l’emporte : un dépôt avec des conflits *et* quarante commits non poussés
+porte les conflits. Survolez l’avatar et l’infobulle indique exactement ce qui a
+causé le visage — une image qui change sans raison énoncée est une énigme, pas un
+signal. C’est l’infobulle qu’on lit ; le visage ne fait que vous faire regarder.
+
+Les seuils sont volontairement élevés. Un visage qui s’inquiète au premier commit
+non poussé est inquiet en permanence, et un signal permanent est un signal qu’on
+apprend à ne plus lire. Une branche sans upstream reste neutre plutôt que
 contente : « synchronisée » n’est pas une affirmation possible pour une branche que
 personne n’a poussée.
 
 **C’est de la décoration, pas de l’instrumentation.** La barre d’état porte les
 vrais décomptes, et c’est elle qu’il faut croire. Le visage dit seulement *il se
-passe quelque chose*, d’un coup d’œil, en quatre paliers.
+passe quelque chose*, d’un coup d’œil.
 
 ### Mouvement
 
@@ -111,10 +112,10 @@ réglage ne supprime complètement les avatars.
   expressif.
 - **Le visage ne suit que le dépôt actif.** Dans un onglet qui n’est pas un dépôt,
   il n’y a rien à quoi réagir : il reste neutre.
-- **Quatre visages, pas un tableau de bord.** Il n’y a pas de visage pour « rebase
-  en cours », « HEAD détachée » ou « stashes qui s’accumulent » : quatre poses sont
-  tout le vocabulaire, et les dépenser sur des distinctions plus fines rendrait
-  chaque lecture peu fiable.
+- **Une lecture à la fois.** Le visage montre la pire chose trouvée : un dépôt
+  peut donc être en désordre de plusieurs façons et n’afficher qu’une expression.
+  Ce n’est pas une liste d’état — c’est le travail de la barre d’état et de
+  l’infobulle.
 - **Petit reste petit.** Dans la colonne auteur du graphe, l’avatar fait 16px, ce
   qui porte la couleur et la silhouette mais pas le détail. Les détails du commit
   dessinent l’auteur à 38px, et c’est là qu’on voit vraiment le visage.

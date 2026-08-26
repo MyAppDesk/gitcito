@@ -130,8 +130,8 @@ you already pay for instead of an API key.
 bound · [profiles](docs/help/profiles.md)
 for separate identities ·
 [author avatars](docs/help/avatars.md) — Gravatar where it exists, a generated
-blob drawn offline where it does not, and a title-bar face that pulls a face at
-conflicts and unpushed piles ·
+blob drawn offline where it does not, and a title-bar face that reacts to
+conflicts, half-finished rebases, a detached HEAD and piles left to grow ·
 [integrated terminal](docs/help/terminal.md) with splits ·
 [**A real CLI**](docs/help/cli.md) — `gitcito .` opens a repo, `gitcito blame
 src/api.ts -l 84` opens it *there*, `gitcito doctor` answers in the terminal with

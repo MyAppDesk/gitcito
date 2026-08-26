@@ -3,7 +3,7 @@ title: Author avatars
 category: Make it yours
 order: 103
 summary: Gravatar photos where they exist, a generated blob avatar where they do not — and a title-bar face that reacts to the repository.
-keywords: avatar avatars gravatar blobatar author photo picture identicon face offline privacy email hash mood expression animation motion sad mad happy
+keywords: avatar avatars gravatar blobatar author photo picture identicon face offline privacy email hash mood expression animation motion sad mad happy thinking scared unsure sick sleepy detached stash dormant
 ---
 
 # Author avatars
@@ -42,29 +42,31 @@ account or a misconfigured `user.email`. Fix it with
 
 The avatar next to your profile name is the one avatar in Gitcito that stands for
 **you, in this repository, right now** — so it is the only one that reacts to the
-repository's state. It holds one of four faces:
-
-| Face | When |
-|---|---|
-| 😠 Cross | Files are left conflicted. |
-| 🙁 Glum | 10 or more commits waiting to push, 25 or more behind the remote, or 25 or more uncommitted changes. |
-| 🙂 Content | Nothing local, nothing waiting, and an upstream to be in sync with. |
-| 😐 Neutral | Ordinary work in progress — and before the first status has been read. |
+repository's state. It pulls a face when something is up, and holds a neutral one
+the rest of the time.
 
 ![The title-bar avatar wearing its cross face](../screenshots/avatar-mood.webp)
 
-Worst wins: a repository with conflicts *and* forty unpushed commits is cross,
-not glum. Hover the avatar and the tooltip says which count caused the face —
-a picture that changes for an unstated reason is a puzzle, not a signal.
+What it reacts to, worst first: files left conflicted; a merge, rebase,
+cherry-pick or revert that git was never told how to finish; a detached HEAD —
+alarmed when there is uncommitted work under it, merely uncertain when there is
+not; commits piling up unpushed, or unpulled from the remote; changes piling up
+uncommitted; a stash drawer nobody opens; and a repository where nothing has
+landed in a month.
 
-The thresholds are deliberately high. A face that turns glum at one unpushed
-commit is glum permanently, and a permanent signal is one you learn to stop
+Worst wins: a repository with conflicts *and* forty unpushed commits wears the
+conflicts. Hover the avatar and the tooltip says exactly what caused the face —
+a picture that changes for an unstated reason is a puzzle, not a signal. The
+tooltip is the part to read; the face is only what makes you look.
+
+The thresholds are deliberately high. A face that turns worried at one unpushed
+commit is worried permanently, and a permanent signal is one you learn to stop
 reading. A branch with no upstream stays neutral rather than content: "in sync"
 is not a claim that can be made about a branch nobody has pushed.
 
 **This is decoration, not instrumentation.** The status bar carries the real
 counts, and it is the thing to trust. The face only ever says *something is up*
-at a glance, and it says it in four steps.
+at a glance.
 
 ### Motion
 
@@ -106,9 +108,9 @@ setting that removes avatars entirely.
   Turn the lookup off if you would rather have the expressive blob.
 - **The face follows the active repository only.** On a tab that is not a
   repository there is nothing to react to, so it stays neutral.
-- **Four faces, not a dashboard.** There is no face for "rebase in progress",
-  "detached HEAD" or "stashes piling up": four poses is the whole vocabulary, and
-  spending them on finer distinctions would make every reading unreliable.
+- **One reading at a time.** The face shows the single worst thing it found, so
+  a repository can be untidy in several ways and still wear one expression. It is
+  not a status list — that is the status bar's job, and the tooltip's.
 - **Small is small.** In the graph's author column the avatar is 16px, which
   carries colour and silhouette but not detail. Commit details draws the author
   at 38px, which is where you actually see the face.

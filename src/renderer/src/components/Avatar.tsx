@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Blobatar } from 'blobatar/react'
-import { happy, idle, mad, sad } from 'blobatar/expression'
+import { happy, idle, mad, sad, scared, sick, sleepy, thinking, unsure } from 'blobatar/expression'
 import { useSettingsStore } from '../stores/settings'
 import { generatedAvatar, gravatarUrl } from '../lib/avatar'
 import type { Mood } from '../lib/repoMood'
@@ -24,7 +24,7 @@ interface AvatarProps {
 
 // Poses are values rather than names so the ones nobody imports stay out of the
 // bundle — blobatar's core carries no pose code at all.
-const POSES = { idle, happy, sad, mad }
+const POSES = { idle, happy, sad, mad, thinking, scared, unsure, sick, sleepy }
 
 /**
  * A person avatar. Shows a Gravatar when available (and enabled in settings),

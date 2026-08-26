@@ -3,7 +3,7 @@ title: Avatar degli autori
 category: Personalizzazione
 order: 103
 summary: Foto Gravatar dove esistono, un avatar generato dove non ci sono — e una faccia nella barra del titolo che reagisce al repository.
-keywords: avatar gravatar blobatar autore foto immagine identicon faccia offline privacy email hash umore espressione animazione movimento triste arrabbiato contento
+keywords: avatar gravatar blobatar autore foto immagine identicon faccia offline privacy email hash umore espressione animazione movimento triste arrabbiato contento pensierosa spaventata incerta malata assonnata scollegata stash dormiente
 ---
 
 # Avatar degli autori
@@ -41,31 +41,32 @@ due indirizzi sono davvero la stessa persona.
 
 L’avatar accanto al nome del tuo profilo è l’unico avatar in Gitcito che
 rappresenta **te, in questo repository, adesso** — quindi è l’unico che reagisce
-allo stato del repository. Assume una di quattro facce:
-
-| Faccia | Quando |
-|---|---|
-| 😠 Arrabbiata | Restano file in conflitto. |
-| 🙁 Abbattuta | 10 o più commit in attesa di push, 25 o più indietro rispetto al remoto, o 25 o più modifiche non committate. |
-| 🙂 Contenta | Niente in locale, niente in attesa, e un upstream con cui essere sincronizzati. |
-| 😐 Neutra | Normale lavoro in corso — e prima che sia stato letto il primo stato. |
+allo stato del repository. Fa una faccia quando c’è qualcosa, e resta neutra il
+resto del tempo.
 
 ![L’avatar della barra del titolo con la sua faccia arrabbiata](../../screenshots/avatar-mood.webp)
 
-Vince il peggio: un repository con conflitti *e* quaranta commit non inviati è
-arrabbiato, non abbattuto. Passa il puntatore sull’avatar e il tooltip dice quale
-conteggio ha causato la faccia — un’immagine che cambia senza motivo dichiarato è
-un enigma, non un segnale.
+A che cosa reagisce, dal peggio in giù: file rimasti in conflitto; un merge, un
+rebase, un cherry-pick o un revert a cui git non è mai stato detto come finire; un
+HEAD scollegato — allarmato se sotto c’è lavoro non committato, solo incerto se
+non c’è; commit che si accumulano senza push, o senza pull dal remoto; modifiche
+che si accumulano senza commit; un cassetto di stash che nessuno apre; e un
+repository dove non arriva niente da un mese.
 
-Le soglie sono alte di proposito. Una faccia che si abbatte al primo commit non
-inviato è abbattuta per sempre, e un segnale permanente è un segnale che si impara
-a non leggere. Un branch senza upstream resta neutro invece che contento:
+Vince il peggio: un repository con conflitti *e* quaranta commit non inviati porta
+i conflitti. Passa il puntatore sull’avatar e il tooltip dice esattamente che cosa
+ha causato la faccia — un’immagine che cambia senza motivo dichiarato è un enigma,
+non un segnale. Si legge il tooltip; la faccia serve solo a farti guardare.
+
+Le soglie sono alte di proposito. Una faccia che si preoccupa al primo commit non
+inviato è preoccupata per sempre, e un segnale permanente è un segnale che si
+impara a non leggere. Un branch senza upstream resta neutro invece che contento:
 «sincronizzato» non è un’affermazione possibile per un branch che nessuno ha
 inviato.
 
 **Questa è decorazione, non strumentazione.** La barra di stato porta i conteggi
 veri, ed è a lei che credere. La faccia dice soltanto *c’è qualcosa*, a
-un’occhiata, in quattro gradini.
+un’occhiata.
 
 ### Movimento
 
@@ -107,10 +108,10 @@ un’impostazione che rimuova del tutto gli avatar.
   farti smorfie. Disattiva la ricerca se preferisci il blob espressivo.
 - **La faccia segue solo il repository attivo.** In una scheda che non è un
   repository non c’è nulla a cui reagire, quindi resta neutra.
-- **Quattro facce, non un pannello di controllo.** Non c’è una faccia per «rebase
-  in corso», «HEAD scollegata» o «stash che si accumulano»: quattro posizioni sono
-  tutto il vocabolario, e spenderle su distinzioni più fini renderebbe ogni lettura
-  inaffidabile.
+- **Una lettura per volta.** La faccia mostra la sola cosa peggiore che ha
+  trovato, quindi un repository può essere disordinato in più modi e indossare
+  comunque una sola espressione. Non è un elenco di stato — quello è compito della
+  barra di stato e del tooltip.
 - **Piccolo è piccolo.** Nella colonna autore del grafo l’avatar è 16px, che porta
   colore e sagoma ma non dettaglio. I dettagli del commit disegnano l’autore a
   38px, ed è lì che la faccia si vede davvero.

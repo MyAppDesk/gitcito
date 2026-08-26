@@ -38,8 +38,14 @@ export function ProfileSwitcher(): React.JSX.Element {
   // "you, in this repository, right now", so it is the only one that reacts —
   // see lib/repoMood.ts. Subscribed to the status slice alone so an unrelated
   // refresh does not re-render the title bar.
+  // Each slice is selected on its own and every one of them is a primitive or
+  // an already-stable reference, so a refresh that touches none of them does
+  // not re-render the title bar.
   const status = useRepoStore((s) => (repo ? s.repos[repo.path]?.status ?? null : null))
-  const hint = repoMood(status)
+  const mergeState = useRepoStore((s) => (repo ? s.repos[repo.path]?.mergeState ?? null : null))
+  const stashCount = useRepoStore((s) => (repo ? s.repos[repo.path]?.stashes.length ?? 0 : 0))
+  const newestCommitAt = useRepoStore((s) => (repo ? s.repos[repo.path]?.commits[0]?.date ?? null : null))
+  const hint = repoMood({ status, mergeState, stashCount, newestCommitAt, now: Date.now() })
   const moodText = hint.key ? interp(t(hint.key), hint.vars ?? {}) : null
 
   const bound = repo ? settings.repoProfiles[repo.path] : undefined

@@ -3,7 +3,7 @@ title: Avatares de autor
 category: Deixe do seu jeito
 order: 103
 summary: Fotos do Gravatar quando existem, um avatar gerado quando não — e um rosto na barra de título que reage ao repositório.
-keywords: avatar avatares gravatar blobatar autor foto imagem identicon rosto offline privacidade e-mail hash humor expressão animação movimento triste irritado contente
+keywords: avatar avatares gravatar blobatar autor foto imagem identicon rosto offline privacidade e-mail hash humor expressão animação movimento triste irritado contente pensativo assustado incerto doente sonolento desanexado stash adormecido
 ---
 
 # Avatares de autor
@@ -42,29 +42,29 @@ pessoa.
 
 O avatar ao lado do nome do seu perfil é o único avatar do Gitcito que representa
 **você, neste repositório, agora** — então é o único que reage ao estado do
-repositório. Ele assume um de quatro rostos:
-
-| Rosto | Quando |
-|---|---|
-| 😠 Irritado | Restam arquivos em conflito. |
-| 🙁 Abatido | 10 ou mais commits esperando push, 25 ou mais atrás do remoto, ou 25 ou mais alterações não commitadas. |
-| 🙂 Contente | Nada local, nada esperando, e um upstream com o qual estar sincronizado. |
-| 😐 Neutro | Trabalho em andamento normal — e antes de o primeiro status ser lido. |
+repositório. Ele faz uma cara quando tem algo, e fica neutro o resto do tempo.
 
 ![O avatar da barra de título com seu rosto irritado](../../screenshots/avatar-mood.webp)
 
-O pior vence: um repositório com conflitos *e* quarenta commits sem push está
-irritado, não abatido. Passe o mouse sobre o avatar e a dica diz qual contagem
-causou o rosto — uma imagem que muda sem motivo declarado é um enigma, não um sinal.
+A que ele reage, do pior para baixo: arquivos deixados em conflito; um merge,
+rebase, cherry-pick ou revert que ninguém disse ao git como terminar; um HEAD
+desanexado — assustado quando há trabalho não commitado embaixo, apenas em dúvida
+quando não há; commits se acumulando sem push, ou sem pull do remoto; alterações
+se acumulando sem commit; uma gaveta de stashes que ninguém abre; e um repositório
+onde nada chegou há um mês.
 
-Os limites são altos de propósito. Um rosto que fica abatido com um único commit
-sem push fica abatido para sempre, e um sinal permanente é um sinal que se aprende a
-não ler. Um branch sem upstream fica neutro em vez de contente: «sincronizado» não é
-uma afirmação possível sobre um branch que ninguém enviou.
+O pior vence: um repositório com conflitos *e* quarenta commits sem push usa os
+conflitos. Passe o mouse sobre o avatar e a dica diz exatamente o que causou o
+rosto — uma imagem que muda sem motivo declarado é um enigma, não um sinal. O que
+se lê é a dica; o rosto só faz você olhar.
+
+Os limites são altos de propósito. Um rosto que fica preocupado com um único commit
+sem push fica preocupado para sempre, e um sinal permanente é um sinal que se
+aprende a não ler. Um branch sem upstream fica neutro em vez de contente:
+«sincronizado» não é uma afirmação possível sobre um branch que ninguém enviou.
 
 **Isto é decoração, não instrumentação.** A barra de status carrega as contagens
-reais, e é nela que se deve acreditar. O rosto só diz *tem algo aí*, de relance, em
-quatro degraus.
+reais, e é nela que se deve acreditar. O rosto só diz *tem algo aí*, de relance.
 
 ### Movimento
 
@@ -106,9 +106,10 @@ configuração que remova os avatares por completo.
   você. Desligue a busca se preferir o blob expressivo.
 - **O rosto segue apenas o repositório ativo.** Numa aba que não é um repositório
   não há a que reagir, então ele fica neutro.
-- **Quatro rostos, não um painel.** Não existe rosto para «rebase em andamento»,
-  «HEAD desanexada» ou «stashes acumulando»: quatro poses são todo o vocabulário, e
-  gastá-las em distinções mais finas deixaria qualquer leitura pouco confiável.
+- **Uma leitura de cada vez.** O rosto mostra a única coisa pior que encontrou,
+  então um repositório pode estar bagunçado de várias formas e ainda usar uma só
+  expressão. Não é uma lista de status — isso é trabalho da barra de status e da
+  dica.
 - **Pequeno é pequeno.** Na coluna de autor do grafo o avatar tem 16px, o que
   carrega cor e silhueta, mas não detalhe. Os detalhes do commit desenham o autor a
   38px, e é aí que o rosto realmente aparece.

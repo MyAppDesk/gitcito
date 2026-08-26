@@ -3,7 +3,7 @@ title: Awatary autorów
 category: Dostosuj do siebie
 order: 103
 summary: Zdjęcia z Gravatara tam, gdzie istnieją, wygenerowany awatar tam, gdzie ich nie ma — i twarz na pasku tytułu reagująca na repozytorium.
-keywords: awatar awatary gravatar blobatar autor zdjęcie obrazek identicon twarz offline prywatność e-mail hash nastrój wyraz animacja ruch smutny zły zadowolony
+keywords: awatar awatary gravatar blobatar autor zdjęcie obrazek identicon twarz offline prywatność e-mail hash nastrój wyraz animacja ruch smutny zły zadowolony zamyślona przestraszona niepewna chora senna odłączony stash uśpione
 ---
 
 # Awatary autorów
@@ -38,32 +38,31 @@ zwykle tak zauważasz konto maszynowe albo źle ustawiony `user.email`. Napraw t
 ## Twarz na pasku tytułu
 
 Awatar obok nazwy Twojego profilu to jedyny awatar w Gitcito, który przedstawia
-**Ciebie, w tym repozytorium, teraz** — więc jedyny, który reaguje na stan
-repozytorium. Nosi jedną z czterech twarzy:
-
-| Twarz | Kiedy |
-|---|---|
-| 😠 Zła | Pozostały pliki z konfliktami. |
-| 🙁 Przygaszona | 10 lub więcej commitów czeka na wypchnięcie, 25 lub więcej za zdalnym repozytorium albo 25 lub więcej niezatwierdzonych zmian. |
-| 🙂 Zadowolona | Nic lokalnego, nic w kolejce i gałąź nadrzędna, z którą można być zsynchronizowanym. |
-| 😐 Neutralna | Zwykła praca w toku — oraz przed odczytaniem pierwszego statusu. |
+**Ciebie, w tym repozytorium, teraz** — więc jedyny, który reaguje na stan repozytorium.
+Robi minę, gdy coś się dzieje, a przez resztę czasu pozostaje neutralny.
 
 ![Awatar na pasku tytułu ze złą miną](../../screenshots/avatar-mood.webp)
 
-Wygrywa najgorsze: repozytorium z konfliktami *i* czterdziestoma niewypchniętymi
-commitami jest złe, nie przygaszone. Najedź na awatar, a podpowiedź powie, która
-liczba spowodowała tę twarz — obrazek, który zmienia się bez podanego powodu, jest
-zagadką, nie sygnałem.
+Na co reaguje, od najgorszego: pliki pozostawione w konflikcie; scalanie, rebase,
+cherry-pick albo revert, któremu nikt nie powiedział, jak się skończyć; odłączony
+HEAD — przestraszony, gdy pod spodem są niezatwierdzone zmiany, a tylko niepewny,
+gdy ich nie ma; commity piętrzące się bez wypchnięcia albo bez pobrania ze
+zdalnego; zmiany piętrzące się bez zatwierdzenia; szuflada stashy, której nikt nie
+otwiera; i repozytorium, do którego od miesiąca nic nie trafiło.
 
-Progi są celowo wysokie. Twarz, która przygasa przy jednym niewypchniętym commicie,
-jest przygaszona na zawsze, a stały sygnał to sygnał, którego uczysz się nie
+Wygrywa najgorsze: repozytorium z konfliktami *i* czterdziestoma niewypchniętymi
+commitami nosi konflikty. Najedź na awatar, a podpowiedź powie dokładnie, co
+spowodowało tę twarz — obrazek, który zmienia się bez podanego powodu, jest
+zagadką, nie sygnałem. Czyta się podpowiedź; twarz tylko każe spojrzeć.
+
+Progi są celowo wysokie. Twarz, która martwi się przy jednym niewypchniętym
+commicie, martwi się na zawsze, a stały sygnał to sygnał, którego uczysz się nie
 czytać. Gałąź bez gałęzi nadrzędnej pozostaje neutralna, a nie zadowolona:
 „zsynchronizowana” to nie stwierdzenie, które można wypowiedzieć o gałęzi, której
 nikt nie wypchnął.
 
 **To dekoracja, nie pomiar.** Pasek statusu nosi prawdziwe liczby i to jemu należy
-wierzyć. Twarz mówi tylko *coś się dzieje*, jednym spojrzeniem, w czterech
-stopniach.
+wierzyć. Twarz mówi tylko *coś się dzieje*, jednym spojrzeniem.
 
 ### Ruch
 
@@ -105,9 +104,9 @@ usuwa awatary całkowicie.
   grymasu. Wyłącz zapytanie, jeśli wolisz ekspresyjny blob.
 - **Twarz podąża wyłącznie za aktywnym repozytorium.** Na karcie, która nie jest
   repozytorium, nie ma na co reagować, więc pozostaje neutralna.
-- **Cztery twarze, nie pulpit sterowniczy.** Nie ma twarzy dla „rebase w toku”,
-  „odłączonego HEAD” czy „rosnącej sterty schowków”: cztery pozy to całe słownictwo, a
-  wydanie ich na drobniejsze różnice uczyniłoby każde odczytanie niepewnym.
+- **Jedno odczytanie naraz.** Twarz pokazuje jedną najgorszą rzecz, jaką znalazła,
+  więc repozytorium może być nieporządne na kilka sposobów i nosić jeden wyraz. To
+  nie jest lista stanu — od tego są pasek statusu i podpowiedź.
 - **Małe jest małe.** W kolumnie autora w grafie awatar ma 16px, co nosi barwę i
   sylwetkę, ale nie szczegół. Szczegóły commita rysują autora w 38px i tam twarz
   naprawdę widać.

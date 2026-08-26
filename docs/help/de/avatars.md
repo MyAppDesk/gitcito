@@ -3,7 +3,7 @@ title: Autor-Avatare
 category: Anpassen
 order: 103
 summary: Gravatar-Fotos, wo es sie gibt, ein generierter Avatar, wo nicht — und ein Gesicht in der Titelleiste, das auf das Repository reagiert.
-keywords: avatar avatare gravatar blobatar autor foto bild identicon gesicht offline datenschutz e-mail hash stimmung ausdruck animation bewegung traurig wütend froh
+keywords: avatar avatare gravatar blobatar autor foto bild identicon gesicht offline datenschutz e-mail hash stimmung ausdruck animation bewegung traurig wütend froh nachdenklich erschrocken unsicher krank schläfrig detached Stash ruhend
 ---
 
 # Autor-Avatare
@@ -42,31 +42,33 @@ eine falsch gesetzte `user.email` auf. Korrigiere es mit
 
 Der Avatar neben deinem Profilnamen ist der einzige Avatar in Gitcito, der für
 **dich, in diesem Repository, jetzt** steht — also der einzige, der auf den Zustand
-des Repositorys reagiert. Er trägt eines von vier Gesichtern:
-
-| Gesicht | Wann |
-|---|---|
-| 😠 Wütend | Dateien sind noch in Konflikt. |
-| 🙁 Bedrückt | 10 oder mehr Commits warten auf den Push, 25 oder mehr hinter dem Remote, oder 25 oder mehr nicht committete Änderungen. |
-| 🙂 Zufrieden | Nichts Lokales, nichts Wartendes, und ein Upstream, mit dem man synchron sein kann. |
-| 😐 Neutral | Normale Arbeit in Gang — und bevor der erste Status gelesen wurde. |
+des Repositorys reagiert. Er zieht ein Gesicht, wenn etwas los ist, und bleibt sonst
+neutral.
 
 ![Der Avatar der Titelleiste mit seinem wütenden Gesicht](../../screenshots/avatar-mood.webp)
 
+Worauf er reagiert, Schlimmstes zuerst: Dateien, die in Konflikt geblieben sind;
+ein Merge, Rebase, Cherry-Pick oder Revert, dem git nie gesagt wurde, wie es zu
+enden hat; ein losgelöster HEAD — alarmiert, wenn nicht committete Arbeit darunter
+liegt, sonst nur unsicher; Commits, die sich ungepusht oder ungeholt stapeln;
+Änderungen, die sich uncommittet stapeln; eine Stash-Schublade, die niemand
+öffnet; und ein Repository, in dem seit einem Monat nichts gelandet ist.
+
 Das Schlimmste gewinnt: ein Repository mit Konflikten *und* vierzig ungepushten
-Commits ist wütend, nicht bedrückt. Beim Überfahren des Avatars nennt der Tooltip
-die Zahl, die das Gesicht verursacht hat — ein Bild, das sich ohne genannten Grund
-ändert, ist ein Rätsel und kein Signal.
+Commits trägt die Konflikte. Beim Überfahren des Avatars nennt der Tooltip genau,
+was das Gesicht verursacht hat — ein Bild, das sich ohne genannten Grund ändert,
+ist ein Rätsel und kein Signal. Zu lesen ist der Tooltip; das Gesicht bringt einen
+nur dazu hinzusehen.
 
 Die Schwellen sind absichtlich hoch. Ein Gesicht, das beim ersten ungepushten
-Commit bedrückt wird, ist dauerhaft bedrückt, und ein dauerhaftes Signal ist eines,
+Commit besorgt wird, ist dauerhaft besorgt, und ein dauerhaftes Signal ist eines,
 das man zu übersehen lernt. Ein Branch ohne Upstream bleibt neutral statt zufrieden:
 „synchron“ ist keine Aussage, die man über einen Branch treffen kann, den niemand
 gepusht hat.
 
 **Das ist Dekoration, keine Messtechnik.** Die Statusleiste trägt die echten
 Zahlen, und ihr ist zu glauben. Das Gesicht sagt nur *da ist etwas*, auf einen
-Blick, in vier Stufen.
+Blick.
 
 ### Bewegung
 
@@ -109,10 +111,10 @@ Einstellung, die Avatare ganz entfernt.
   ziehen. Schalte die Abfrage ab, wenn du lieber den ausdrucksstarken Blob willst.
 - **Das Gesicht folgt nur dem aktiven Repository.** In einem Tab, das kein
   Repository ist, gibt es nichts, worauf zu reagieren wäre — es bleibt neutral.
-- **Vier Gesichter, kein Dashboard.** Es gibt kein Gesicht für „Rebase läuft“,
-  „detached HEAD“ oder „Stashes stapeln sich“: vier Posen sind das ganze Vokabular,
-  und sie für feinere Unterschiede auszugeben würde jede Lesung unzuverlässig
-  machen.
+- **Eine Lesung auf einmal.** Das Gesicht zeigt das eine Schlimmste, was es
+  gefunden hat; ein Repository kann also auf mehrere Arten unordentlich sein und
+  trotzdem einen einzigen Ausdruck tragen. Eine Statusliste ist es nicht — das ist
+  Sache der Statusleiste und des Tooltips.
 - **Klein ist klein.** In der Autorenspalte des Graphen ist der Avatar 16px groß,
   was Farbe und Silhouette trägt, aber kein Detail. Die Commit-Details zeichnen den
   Autor mit 38px, und dort sieht man das Gesicht wirklich.

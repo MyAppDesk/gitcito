@@ -3,7 +3,7 @@ title: Auteursavatars
 category: Naar eigen smaak
 order: 103
 summary: Gravatar-foto's waar ze bestaan, een gegenereerde avatar waar niet — en een gezicht in de titelbalk dat op de repository reageert.
-keywords: avatar avatars gravatar blobatar auteur foto afbeelding identicon gezicht offline privacy e-mail hash stemming uitdrukking animatie beweging verdrietig kwaad blij
+keywords: avatar avatars gravatar blobatar auteur foto afbeelding identicon gezicht offline privacy e-mail hash stemming uitdrukking animatie beweging verdrietig kwaad blij denkend geschrokken twijfelend ziek slaperig losgekoppeld stash slapend
 ---
 
 # Auteursavatars
@@ -39,32 +39,33 @@ verkeerd ingestelde `user.email` op. Herstel het met
 
 ## Het gezicht in de titelbalk
 
-De avatar naast je profielnaam is de enige avatar in Gitcito die staat voor **jou,
-in deze repository, nu** — dus de enige die reageert op de staat van de repository.
-Hij draagt een van vier gezichten:
-
-| Gezicht | Wanneer |
-|---|---|
-| 😠 Kwaad | Er staan nog bestanden in conflict. |
-| 🙁 Sip | 10 of meer commits wachten op pushen, 25 of meer achter op de remote, of 25 of meer niet-vastgelegde wijzigingen. |
-| 🙂 Tevreden | Niets lokaal, niets wachtend, en een upstream om mee in sync te zijn. |
-| 😐 Neutraal | Gewoon werk onderweg — en voordat de eerste status is gelezen. |
+De avatar naast je profielnaam is de enige avatar in Gitcito die staat voor **jou, in
+deze repository, nu** — dus de enige die reageert op de staat van de repository. Hij
+trekt een gezicht als er iets is, en blijft de rest van de tijd neutraal.
 
 ![De avatar in de titelbalk met zijn kwade gezicht](../../screenshots/avatar-mood.webp)
 
-Het ergste wint: een repository met conflicten *én* veertig ongepushte commits is
-kwaad, niet sip. Beweeg over de avatar en de tooltip zegt welk aantal het gezicht
-veroorzaakte — een plaatje dat zonder genoemde reden verandert is een raadsel, geen
-signaal.
+Waar hij op reageert, het ergste eerst: bestanden die in conflict bleven staan;
+een merge, rebase, cherry-pick of revert waarvan git nooit is verteld hoe hij moet
+aflopen; een losgekoppelde HEAD — geschrokken als er niet-vastgelegd werk onder
+ligt, anders alleen twijfelend; commits die zich opstapelen zonder push, of zonder
+pull van de remote; wijzigingen die zich opstapelen zonder commit; een stashlade
+die niemand opent; en een repository waar in een maand niets is geland.
 
-De drempels zijn opzettelijk hoog. Een gezicht dat bij één ongepushte commit sip
-wordt, is voorgoed sip, en een permanent signaal is een signaal dat je leert te
-negeren. Een branch zonder upstream blijft neutraal in plaats van tevreden: "in
-sync" is geen bewering die je kunt doen over een branch die niemand heeft gepusht.
+Het ergste wint: een repository met conflicten *én* veertig ongepushte commits
+draagt de conflicten. Beweeg over de avatar en de tooltip zegt precies wat het
+gezicht veroorzaakte — een plaatje dat zonder genoemde reden verandert is een
+raadsel, geen signaal. De tooltip is wat je leest; het gezicht laat je alleen
+kijken.
+
+De drempels zijn opzettelijk hoog. Een gezicht dat bij één ongepushte commit
+bezorgd wordt, is voorgoed bezorgd, en een permanent signaal is een signaal dat je
+leert te negeren. Een branch zonder upstream blijft neutraal in plaats van
+tevreden: "in sync" is geen bewering die je kunt doen over een branch die niemand
+heeft gepusht.
 
 **Dit is decoratie, geen instrumentatie.** De statusbalk draagt de echte aantallen,
-en die moet je vertrouwen. Het gezicht zegt alleen *er is iets*, met één blik, in
-vier stappen.
+en die moet je vertrouwen. Het gezicht zegt alleen *er is iets*, met één blik.
 
 ### Beweging
 
@@ -107,9 +108,9 @@ die avatars helemaal weghaalt.
   naar je trekken. Zet de opzoeking uit als je liever de expressieve blob hebt.
 - **Het gezicht volgt alleen de actieve repository.** Op een tab die geen repository
   is, is er niets om op te reageren, dus blijft hij neutraal.
-- **Vier gezichten, geen dashboard.** Er is geen gezicht voor "rebase bezig",
-  "detached HEAD" of "stashes stapelen op": vier poses zijn het hele vocabulaire, en
-  ze uitgeven aan fijnere onderscheidingen zou elke lezing onbetrouwbaar maken.
+- **Eén lezing tegelijk.** Het gezicht toont het ene ergste dat het vond, dus een
+  repository kan op meerdere manieren rommelig zijn en toch één uitdrukking dragen.
+  Het is geen statuslijst — dat is het werk van de statusbalk en de tooltip.
 - **Klein is klein.** In de auteurskolom van de graaf is de avatar 16px, wat kleur en
   silhouet meedraagt maar geen detail. De commitdetails tekenen de auteur op 38px, en
   daar zie je het gezicht echt.

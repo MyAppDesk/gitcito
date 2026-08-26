@@ -35,13 +35,17 @@ import {
   Layers,
   ArrowDown,
   Ban,
-  CheckSquare
+  CheckSquare,
+  Smartphone,
+  Globe,
+  Power
 } from 'lucide-react'
 import { FileTree } from './FileTree'
 import { FileSearchBar, EMPTY_FILTER, type FileFilter } from './FileSearchBar'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
 import { useUIStore, type MenuItem } from '../stores/ui'
 import { refIntegrationItems } from '../lib/refMenuItems'
+import { repoWantsDevices, repoDevicePlatforms } from '../lib/launchDevices'
 import { useSettingsStore } from '../stores/settings'
 import { useLaunchStore } from '../stores/launch'
 import { shellApi } from '../infrastructure/api'
@@ -279,6 +283,83 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     if (enableLaunchJson) void discoverLaunch(repo.path)
   }, [repo.path, enableLaunchJson, discoverLaunch])
   const hasLaunch = enableLaunchJson && launchGroups.some((g) => g.configs.length > 0)
+
+  // ─── Run target (which phone / simulator / desktop a config launches on) ───
+  // VS Code's device picker belongs to the Flutter extension; the same choice
+  // exists for React Native, Expo, Capacitor and xcodebuild, so the picker is
+  // shown whenever any config in the repo can take a device at all.
+  const deviceSnapshot = useLaunchStore((s) => s.devicesByRepo[repo.path])
+  const devicesLoading = useLaunchStore((s) => s.devicesLoading[repo.path] === true)
+  const selectedDevice = useLaunchStore((s) => s.deviceByRepo[repo.path]) ?? null
+  const loadDevices = useLaunchStore((s) => s.loadDevices)
+  const selectDevice = useLaunchStore((s) => s.selectDevice)
+  const bootDevice = useLaunchStore((s) => s.bootDevice)
+  const launchConfigs = useMemo(() => launchGroups.flatMap((g) => g.configs), [launchGroups])
+  const launchScripts = useMemo(() => {
+    const out: Record<string, string> = {}
+    for (const g of launchGroups) Object.assign(out, g.scripts ?? {})
+    return out
+  }, [launchGroups])
+  const wantsDevices = hasLaunch && repoWantsDevices(launchConfigs, launchScripts)
+  useEffect(() => {
+    if (!wantsDevices) return
+    // Hydrate the remembered choice, then ask the SDK CLIs once per repo —
+    // they are slow enough that doing it on the first click would feel broken.
+    useLaunchStore.getState().deviceFor(repo.path)
+    if (!useLaunchStore.getState().devicesByRepo[repo.path]) void loadDevices(repo.path)
+  }, [repo.path, wantsDevices, loadDevices])
+
+  const deviceIcon = (d: { platform: string }): React.JSX.Element =>
+    d.platform === 'ios' || d.platform === 'android' ? (
+      <Smartphone size={13} />
+    ) : d.platform === 'web' ? (
+      <Globe size={13} />
+    ) : (
+      <Laptop size={13} />
+    )
+
+  const openDeviceMenu = (x: number, y: number): void => {
+    const platforms = repoDevicePlatforms(launchConfigs, launchScripts)
+    const list = (deviceSnapshot?.devices ?? []).filter((d) => platforms.includes(d.platform))
+    const items: MenuItem[] = [{ label: t('device.title'), disabled: true }]
+    if (list.length === 0) {
+      items.push({ label: devicesLoading ? t('device.scanning') : t('device.none'), disabled: true })
+    }
+    let coldHeader = false
+    for (const d of list) {
+      // Everything below this line has to be booted before it can take a run.
+      if (!d.running && !coldHeader) {
+        items.push({ separator: true }, { label: t('device.notRunning'), disabled: true })
+        coldHeader = true
+      }
+      const selected = selectedDevice?.id === d.id
+      items.push({
+        label: d.detail ? `${d.name}  ·  ${d.detail}` : d.name,
+        icon: selected ? <Check size={13} /> : d.running ? deviceIcon(d) : <Power size={13} />,
+        title: d.running ? undefined : t('device.start'),
+        onClick: () => (d.running ? selectDevice(repo.path, d) : void bootDevice(repo.path, d))
+      })
+    }
+    items.push(
+      { separator: true },
+      {
+        label: t('device.any'),
+        icon: selectedDevice ? undefined : <Check size={13} />,
+        title: t('device.anyTitle'),
+        onClick: () => selectDevice(repo.path, null)
+      },
+      { label: t('device.refresh'), icon: <RefreshCw size={13} />, onClick: () => void loadDevices(repo.path) }
+    )
+    const missing = deviceSnapshot?.missing ?? []
+    if (missing.length > 0) {
+      items.push({
+        label: interp(t('device.missing'), { tools: missing.join(', ') }),
+        disabled: true,
+        title: t('device.missingTitle')
+      })
+    }
+    openContextMenu(x, y, items)
+  }
 
   // Build the Run/Debug picker: root group first, deeper folders after a
   // divider; a lone deeper folder shows with no divider. Within a folder we
@@ -2500,6 +2581,24 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
               }}
             >
               <Play size={13} /> <span className="sb-tab-text">{t('sidebar.launch')}</span>
+              <ChevronDown size={12} className="sb-tab-launch-caret" />
+            </button>
+          )}
+          {wantsDevices && (
+            <button
+              className="sb-tab sb-tab-device"
+              title={
+                selectedDevice
+                  ? interp(t('device.currentTitle'), { name: selectedDevice.name })
+                  : t('device.anyTitle')
+              }
+              onClick={(e) => {
+                const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
+                openDeviceMenu(r.left, r.bottom)
+              }}
+            >
+              {selectedDevice ? deviceIcon(selectedDevice) : <Smartphone size={13} />}
+              <span className="sb-tab-text">{selectedDevice ? selectedDevice.name : t('device.any')}</span>
               <ChevronDown size={12} className="sb-tab-launch-caret" />
             </button>
           )}

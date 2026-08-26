@@ -1,15 +1,31 @@
 import { create } from 'zustand'
-import type { LaunchConfig, LaunchGroup, LaunchStatus } from '../../../shared/types'
+import type { LaunchConfig, LaunchGroup, LaunchStatus, RunDevice, RunDeviceSnapshot } from '../../../shared/types'
 import { useTerminalsStore } from './terminals'
 import { useUIStore } from './ui'
 import { disposeTerm } from '../components/terminalRegistry'
 import { t, interp } from '../i18n'
 import { memberFullyCovered, sharedTaskLabels } from '../lib/launchTasks'
 import { collectInputRefs } from '../lib/launchInputs'
+import { applyDevice } from '../lib/launchDevices'
 
 /** Monotonic id source for compound runs (unique per app session is enough). */
 let compoundSeq = 0
 
+/** The selected run target is a per-machine preference, like the window layout —
+ *  it names a simulator that exists on this laptop and nowhere else. */
+const DEVICE_KEY = 'gitcito.launchDevice.'
+
+function readStoredDevice(repoPath: string): RunDevice | null {
+  try {
+    const raw = localStorage.getItem(DEVICE_KEY + repoPath)
+    if (!raw) return null
+    const v: unknown = JSON.parse(raw)
+    if (typeof v === 'object' && v !== null && typeof (v as RunDevice).id === 'string') return v as RunDevice
+  } catch {
+    // Corrupt entry — no device is the correct fallback.
+  }
+  return null
+}
 
 /** Remove one session's terminal. A compound member is a pane of a shared
  *  split group — remove just its panel so sibling sessions stay alive; only
@@ -97,6 +113,11 @@ function promptForInputs(
 interface LaunchState {
   /** Discovered launch groups, keyed by repo path. */
   groupsByRepo: Record<string, LaunchGroup[]>
+  /** Run targets this machine offers, per repo (the SDK CLIs are asked lazily). */
+  devicesByRepo: Record<string, RunDeviceSnapshot>
+  devicesLoading: Record<string, boolean>
+  /** The chosen run target per repo — persisted, so it survives a restart. */
+  deviceByRepo: Record<string, RunDevice | null>
   sessions: LaunchSession[]
   activeId: number | null
 
@@ -133,10 +154,21 @@ interface LaunchState {
   clearExited(launchId: number): void
   /** Sessions for one repo (newest first). */
   sessionsFor(repoPath: string): LaunchSession[]
+
+  /** Ask the SDK CLIs what this machine can run right now. */
+  loadDevices(repoPath: string): Promise<void>
+  selectDevice(repoPath: string, device: RunDevice | null): void
+  /** Boot a cold simulator/emulator, then refresh the list once it is up. */
+  bootDevice(repoPath: string, device: RunDevice): Promise<void>
+  /** The selected target, hydrated from disk on first read. */
+  deviceFor(repoPath: string): RunDevice | null
 }
 
 export const useLaunchStore = create<LaunchState>((set, get) => ({
   groupsByRepo: {},
+  devicesByRepo: {},
+  devicesLoading: {},
+  deviceByRepo: {},
   sessions: [],
   activeId: null,
 
@@ -260,7 +292,10 @@ export const useLaunchStore = create<LaunchState>((set, get) => ({
     return launchId
   },
 
-  _launch: async (repoPath, group, config, inputValues, compound, skipTasks) => {
+  _launch: async (repoPath, group, rawConfig, inputValues, compound, skipTasks) => {
+    // The picked run target is written into the command here — one place, so a
+    // compound member and a restart both inherit it.
+    const config = applyDevice(rawConfig, get().deviceFor(repoPath), group.scripts)
     const res = await window.api.launch.run({
       dir: group.dir,
       config,
@@ -403,5 +438,55 @@ export const useLaunchStore = create<LaunchState>((set, get) => ({
     })
   },
 
-  sessionsFor: (repoPath) => get().sessions.filter((x) => x.repoPath === repoPath).slice().reverse()
+  sessionsFor: (repoPath) => get().sessions.filter((x) => x.repoPath === repoPath).slice().reverse(),
+
+  loadDevices: async (repoPath) => {
+    if (get().devicesLoading[repoPath]) return
+    set((s) => ({ devicesLoading: { ...s.devicesLoading, [repoPath]: true } }))
+    try {
+      const snapshot = await window.api.devices.list(repoPath)
+      set((s) => ({ devicesByRepo: { ...s.devicesByRepo, [repoPath]: snapshot } }))
+      // A remembered device that is gone (simulator deleted, phone unplugged)
+      // must not silently keep being passed to `-d`.
+      const chosen = get().deviceFor(repoPath)
+      if (chosen && !snapshot.devices.some((d) => d.id === chosen.id)) get().selectDevice(repoPath, null)
+    } catch {
+      set((s) => ({ devicesByRepo: { ...s.devicesByRepo, [repoPath]: { devices: [], missing: [] } } }))
+    } finally {
+      set((s) => ({ devicesLoading: { ...s.devicesLoading, [repoPath]: false } }))
+    }
+  },
+
+  selectDevice: (repoPath, device) => {
+    try {
+      if (device) localStorage.setItem(DEVICE_KEY + repoPath, JSON.stringify(device))
+      else localStorage.removeItem(DEVICE_KEY + repoPath)
+    } catch {
+      // Storage full or blocked — the choice still applies to this session.
+    }
+    set((s) => ({ deviceByRepo: { ...s.deviceByRepo, [repoPath]: device } }))
+  },
+
+  bootDevice: async (repoPath, device) => {
+    const ui = useUIStore.getState()
+    ui.toast('info', interp(t('device.starting'), { name: device.name }))
+    const res = await window.api.devices.boot(device)
+    if ('error' in res) {
+      ui.toast('error', res.error)
+      return
+    }
+    // Selecting it now means the next launch targets it even if it is still
+    // booting — which is what asking for it meant.
+    get().selectDevice(repoPath, device)
+    // A simulator takes a few seconds to show up as running; refresh once.
+    setTimeout(() => void get().loadDevices(repoPath), 5000)
+  },
+
+  deviceFor: (repoPath) => {
+    const known = get().deviceByRepo[repoPath]
+    if (known !== undefined) return known
+    const stored = readStoredDevice(repoPath)
+    set((s) => ({ deviceByRepo: { ...s.deviceByRepo, [repoPath]: stored } }))
+    return stored
+  }
 }))

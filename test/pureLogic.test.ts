@@ -33,6 +33,13 @@ import {
   primaryActions,
   overflowActions
 } from '../src/renderer/src/lib/launchActions'
+import {
+  deviceFamily,
+  familyPlatforms,
+  repoDevicePlatforms,
+  repoWantsDevices,
+  applyDevice
+} from '../src/renderer/src/lib/launchDevices'
 import { collectInputRefs, normalizeOptions, defaultOptionIndex, isPickInput } from '../src/renderer/src/lib/launchInputs'
 import { resolveInputTokens } from '../src/main/launch'
 import { closeTabPrompt, repoCloseStatus, tabCloseStatus } from '../src/renderer/src/lib/tabClose'
@@ -4323,6 +4330,107 @@ describe('launch hot actions (detectHotRuntime)', () => {
     expect(overflowActions(flutter).length).toBeGreaterThan(0)
     // Everything is one or the other, nothing is both.
     expect(primaryActions(flutter).length + overflowActions(flutter).length).toBe(flutter.actions.length)
+  })
+})
+
+describe('launch run targets (device picker)', () => {
+  const cfg = (o: object): never => ({ name: 'X', ...o }) as never
+  const iphone = {
+    id: 'UDID-1',
+    name: 'iPhone 16',
+    platform: 'ios',
+    kind: 'simulator',
+    running: true,
+    source: 'simctl'
+  } as never
+  const pixel = {
+    id: '39121FDJG0018Z',
+    name: 'Pixel 8',
+    platform: 'android',
+    kind: 'device',
+    running: true,
+    source: 'adb'
+  } as never
+  const avd = {
+    id: 'Pixel_7_API_34',
+    name: 'Pixel 7 API 34',
+    platform: 'android',
+    kind: 'simulator',
+    running: false,
+    source: 'avd'
+  } as never
+
+  it('recognises every family that takes a device', () => {
+    expect(deviceFamily(cfg({ type: 'dart', program: 'lib/main.dart' }))).toBe('flutter')
+    expect(deviceFamily(cfg({ command: 'npx react-native run-android' }))).toBe('rn-android')
+    expect(deviceFamily(cfg({ command: 'npx react-native run-ios' }))).toBe('rn-ios')
+    expect(deviceFamily(cfg({ command: 'npx expo run:ios' }))).toBe('expo-run-ios')
+    expect(deviceFamily(cfg({ command: 'npx expo start' }))).toBe('expo')
+    expect(deviceFamily(cfg({ command: 'npx cap run android' }))).toBe('cap-android')
+    expect(deviceFamily(cfg({ command: 'xcodebuild -scheme App' }))).toBe('xcodebuild')
+    // A plain server has no device concept at all.
+    expect(deviceFamily(cfg({ command: 'node server.js' }))).toBeNull()
+  })
+
+  it('limits the picker to the platforms a family can reach', () => {
+    expect(familyPlatforms('rn-android')).toEqual(['android'])
+    expect(familyPlatforms('xcodebuild')).toEqual(['ios'])
+    expect(familyPlatforms('flutter')).toContain('web')
+    expect(familyPlatforms(null)).toEqual([])
+  })
+
+  it('unions the platforms across a repo, and stays quiet when none apply', () => {
+    const configs = [cfg({ command: 'npx react-native run-ios' }), cfg({ command: 'npx cap run android' })]
+    expect(repoDevicePlatforms(configs).sort()).toEqual(['android', 'ios'])
+    expect(repoWantsDevices([cfg({ command: 'node server.js' })])).toBe(false)
+  })
+
+  it('writes the device into the flag each runtime actually reads', () => {
+    expect(applyDevice(cfg({ type: 'flutter' }), iphone).args).toEqual(['-d', 'UDID-1'])
+    expect(applyDevice(cfg({ command: 'npx react-native run-ios' }), iphone).command).toContain('--udid UDID-1')
+    expect(applyDevice(cfg({ command: 'npx react-native run-android' }), pixel).command).toContain(
+      '--deviceId=39121FDJG0018Z'
+    )
+    expect(applyDevice(cfg({ command: 'npx cap run android' }), pixel).command).toContain('--target 39121FDJG0018Z')
+    expect(applyDevice(cfg({ command: 'xcodebuild -scheme App' }), iphone).command).toContain(
+      '-destination id=UDID-1'
+    )
+  })
+
+  it('never overrides a device the config already names', () => {
+    const explicit = cfg({ type: 'flutter', args: ['-d', 'chrome'] })
+    expect(applyDevice(explicit, iphone).args).toEqual(['-d', 'chrome'])
+    const dartCode = cfg({ type: 'dart', program: 'lib/main.dart', deviceId: 'macos' })
+    expect(applyDevice(dartCode, iphone).args).toBeUndefined()
+    const rn = cfg({ command: 'react-native run-ios --simulator "iPhone 15"' })
+    expect(applyDevice(rn, iphone).command).toBe('react-native run-ios --simulator "iPhone 15"')
+  })
+
+  it('always exports the choice to the environment', () => {
+    // The only lever left when a config runs a wrapper script we must not edit.
+    const env = applyDevice(cfg({ command: 'npx expo start' }), pixel).env
+    expect(env).toMatchObject({
+      GITCITO_DEVICE_ID: '39121FDJG0018Z',
+      GITCITO_DEVICE_NAME: 'Pixel 8',
+      GITCITO_DEVICE_PLATFORM: 'android',
+      // What makes a plain adb / Gradle flow hit the same handset.
+      ANDROID_SERIAL: '39121FDJG0018Z'
+    })
+    // An AVD name is not a serial, so it must not be handed to adb.
+    expect(applyDevice(cfg({ command: 'npx expo start' }), avd).env?.ANDROID_SERIAL).toBeUndefined()
+  })
+
+  it('leaves configs with no device concept untouched', () => {
+    const plain = cfg({ command: 'node server.js' })
+    expect(applyDevice(plain, iphone)).toBe(plain)
+    expect(applyDevice(plain, null)).toBe(plain)
+  })
+
+  it('falls back to the environment when an id would need quoting', () => {
+    const odd = { ...(iphone as object), id: 'iPhone 16 Pro Max' } as never
+    const out = applyDevice(cfg({ type: 'flutter' }), odd)
+    expect(out.args).toBeUndefined()
+    expect(out.env?.GITCITO_DEVICE_ID).toBe('iPhone 16 Pro Max')
   })
 })
 

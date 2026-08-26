@@ -17,6 +17,7 @@ import { registerHostingHandlers } from './hosting'
 import { registerLocalCiHandlers } from './localCi'
 import { registerTerminalHandlers } from './terminal'
 import { registerLaunchHandlers } from './launch'
+import { registerDeviceHandlers } from './devices'
 import { registerWatcherHandlers } from './watcher'
 import { registerVaultHandlers } from './vault'
 import { registerKeychainHandlers } from './keychain'
@@ -373,6 +374,7 @@ app.whenReady().then(() => {
   registerLocalCiHandlers()
   registerTerminalHandlers()
   registerLaunchHandlers()
+  registerDeviceHandlers()
   registerWatcherHandlers()
   registerVaultHandlers()
   registerKeychainHandlers()

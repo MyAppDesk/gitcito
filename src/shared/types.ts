@@ -1601,6 +1601,30 @@ export interface LaunchGroup {
 
 export type LaunchStatus = 'running' | 'paused' | 'exited'
 
+/** Where a launch config can be pointed: a handset, a simulator, this desktop. */
+export type DevicePlatform = 'ios' | 'android' | 'macos' | 'windows' | 'linux' | 'web' | 'other'
+
+/** Which SDK tool reported a device — it also decides how the device is booted. */
+export type DeviceSource = 'flutter' | 'flutter-emulator' | 'simctl' | 'adb' | 'avd'
+
+export interface RunDevice {
+  /** The value the runtime wants (`flutter run -d <id>`, `--udid`, `--target`). */
+  id: string
+  name: string
+  platform: DevicePlatform
+  kind: 'device' | 'simulator' | 'desktop' | 'web'
+  /** Booted and able to take a run right now. */
+  running: boolean
+  source: DeviceSource
+  /** Secondary line for the picker — an OS version, a serial. */
+  detail?: string
+}
+
+export interface RunDeviceSnapshot {
+  devices: RunDevice[]
+  /** SDK tools that answered nothing, so the UI can explain a short list. */
+  missing: string[]
+}
 
 /** A full app backup: settings plus the separate info & vault stores. Written
  *  by Settings → Data → Export. `vault` and the profile API tokens are only

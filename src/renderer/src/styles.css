@@ -12280,6 +12280,15 @@ mark.find-hit.active {
   background: color-mix(in srgb, var(--green, #00e6a8) 16%, transparent);
 }
 .sb-tab-launch-caret { opacity: 0.7; margin-inline-start: -2px; }
+/* The run target sits next to LAUNCH and carries a device name, which can be
+   long — it truncates instead of pushing the tabs out of the row. */
+.sb-tab-device { max-width: 46%; }
+.sb-tab-device .sb-tab-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Narrow sidebar: drop the labels rather than clip them. Two thresholds
    because the LAUNCH tab is optional and a third label needs more room; the
    title attribute keeps every tab identifiable once the text is gone. */

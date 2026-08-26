@@ -235,6 +235,12 @@ interface PreloadApi {
   }
   term: TermApi
   launch: LaunchApi
+  devices: {
+    list(repoPath: string): Promise<import('../../shared/types').RunDeviceSnapshot>
+    boot(
+      device: import('../../shared/types').RunDevice
+    ): Promise<{ ok: true } | { error: string }>
+  }
   menu: {
     set(spec: unknown): Promise<void>
     onCommand(cb: (id: string) => void): () => void

@@ -349,6 +349,12 @@ const api = {
     }
   },
 
+  // Run targets for a launch config: phones, simulators, emulators, desktops.
+  devices: {
+    list: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('devices:list', repoPath),
+    boot: (device: unknown): Promise<unknown> => ipcRenderer.invoke('devices:boot', device)
+  },
+
   // The native application menu: the renderer describes it (translated, with
   // the right items enabled) and gets clicks back as command ids.
   menu: {

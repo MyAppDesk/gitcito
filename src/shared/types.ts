@@ -2727,6 +2727,10 @@ export interface UpdateState {
   info: UpdateInfo | null
   progress: UpdateProgress | null
   error: string | null
+  /** Version already downloaded and staged on disk, if any. Survives a later
+   *  check finding something newer — that is what lets the UI say "restart
+   *  installs v1, but v2 is out" instead of silently installing the old one. */
+  staged: string | null
   /** False in dev / unpackaged builds where electron-updater can't install.
    *  The renderer still surfaces "new version available" and falls back to
    *  opening the release page for the download. */

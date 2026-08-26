@@ -411,7 +411,7 @@ const api = {
 
   updates: {
     getState: (): Promise<unknown> => ipcRenderer.invoke('update:getState'),
-    check: (): Promise<void> => ipcRenderer.invoke('update:check'),
+    check: (silent?: boolean): Promise<void> => ipcRenderer.invoke('update:check', silent),
     download: (): Promise<void> => ipcRenderer.invoke('update:download'),
     install: (): void => ipcRenderer.send('update:install'),
     onEvent: (cb: (state: unknown) => void): (() => void) => {

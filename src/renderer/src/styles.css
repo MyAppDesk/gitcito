@@ -15188,6 +15188,23 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
   border-top: 1px solid var(--border-soft);
   font-size: 13px;
 }
+/* Reconciliation lines: a staged-but-superseded build, or GitHub running ahead
+   of the update feed. Quieter than the notes so they read as a caveat. */
+.changelog-update-note {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-2);
+}
+.changelog-update-link {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--accent);
+  cursor: pointer;
+}
+.changelog-update-link:hover { text-decoration: underline; }
 
 /* RepoCosmos — 3D repo-history easter egg */
 .cosmos-overlay {

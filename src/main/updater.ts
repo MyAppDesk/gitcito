@@ -13,7 +13,8 @@ const state: UpdateState = {
   info: null,
   progress: null,
   error: null,
-  supported: app.isPackaged
+  supported: app.isPackaged,
+  staged: null
 }
 
 function broadcast(): void {
@@ -69,9 +70,36 @@ async function checkViaGitHub(): Promise<void> {
   }
 }
 
-// When true, a check was initiated internally to prime the updater before a
-// download; suppress the 'checking' UI flip so the banner doesn't flicker/hide.
-let silentRecheck = false
+// A check the user did not ask for — priming before a download, or the
+// background re-check below. Suppresses the 'checking' UI flip so the banner
+// doesn't flicker or disappear under them. A depth counter, not a boolean,
+// because a background tick can overlap a download prime.
+let silentDepth = 0
+
+async function runCheck(silent: boolean): Promise<void> {
+  if (silent) silentDepth++
+  try {
+    await autoUpdater.checkForUpdates()
+  } finally {
+    if (silent) silentDepth--
+  }
+}
+
+// A session left open for days used to keep offering whatever the launch check
+// found, so the What's-new page (which refetches from GitHub every time it
+// opens) could name a newer version than the updater had ever heard of.
+const RECHECK_MS = 3 * 60 * 60 * 1000
+let recheckTimer: NodeJS.Timeout | null = null
+
+function scheduleRechecks(): void {
+  if (recheckTimer) return
+  recheckTimer = setInterval(() => {
+    // Never interrupt a transfer in flight; it re-checks when it finishes.
+    if (state.status === 'downloading') return
+    void runCheck(true).catch(() => {})
+  }, RECHECK_MS)
+  recheckTimer.unref?.()
+}
 
 let wired = false
 function wireAutoUpdater(): void {
@@ -81,12 +109,17 @@ function wireAutoUpdater(): void {
   autoUpdater.autoInstallOnAppQuit = true
 
   autoUpdater.on('checking-for-update', () => {
-    if (silentRecheck) return
+    if (silentDepth > 0) return
     setState({ status: 'checking', error: null })
   })
-  autoUpdater.on('update-available', (info) =>
+  autoUpdater.on('update-available', (info) => {
+    // Every check re-announces whatever the feed holds, compared against the
+    // *installed* version — so a re-check with something already staged would
+    // otherwise knock the banner back from "restart" to "download".
+    if (state.staged && !isNewerVersion(info.version, state.staged)) return
     setState({
       status: 'available',
+      progress: null,
       info: {
         version: info.version,
         notes: notesToText(info.releaseNotes),
@@ -94,8 +127,12 @@ function wireAutoUpdater(): void {
         url: releaseUrl(info.version)
       }
     })
-  )
-  autoUpdater.on('update-not-available', () => setState({ status: 'not-available' }))
+  })
+  autoUpdater.on('update-not-available', () => {
+    // A staged build is still installable even if the feed now says we're current.
+    if (state.status === 'downloaded') return
+    setState({ status: 'not-available' })
+  })
   autoUpdater.on('download-progress', (p) =>
     setState({
       status: 'downloading',
@@ -111,6 +148,7 @@ function wireAutoUpdater(): void {
     setState({
       status: 'downloaded',
       progress: null,
+      staged: info.version,
       info: {
         version: info.version,
         notes: notesToText(info.releaseNotes),
@@ -119,23 +157,28 @@ function wireAutoUpdater(): void {
       }
     })
   )
-  autoUpdater.on('error', (err) =>
+  autoUpdater.on('error', (err) => {
+    // A failed background re-check must not bury an update already on disk.
+    if (state.status === 'downloaded') return
     setState({ status: 'error', error: err?.message ?? String(err) })
-  )
+  })
 }
 
 export function registerUpdaterHandlers(): void {
   ipcMain.handle('update:getState', (): UpdateState => state)
 
-  ipcMain.handle('update:check', async () => {
+  // `silent` keeps the banner as it is instead of flipping to 'checking' — for
+  // checks the user did not ask for, like opening the What's-new page.
+  ipcMain.handle('update:check', async (_e, silent?: boolean) => {
     if (!app.isPackaged) {
       await checkViaGitHub()
       return
     }
     wireAutoUpdater()
     try {
-      await autoUpdater.checkForUpdates()
+      await runCheck(silent === true)
     } catch (err) {
+      if (silent === true) return
       setState({ status: 'error', error: (err as Error)?.message ?? 'Update check failed.' })
     }
   })
@@ -154,14 +197,7 @@ export function registerUpdaterHandlers(): void {
       // the launch check raced with / lost to the renderer's check, which makes
       // the first Download click silently no-op (a reload re-checks and fixes
       // it). Re-prime with a silent check first so the button always works.
-      if (state.status !== 'downloading' && state.status !== 'downloaded') {
-        silentRecheck = true
-        try {
-          await autoUpdater.checkForUpdates()
-        } finally {
-          silentRecheck = false
-        }
-      }
+      if (state.status !== 'downloading') await runCheck(true)
       await autoUpdater.downloadUpdate()
     } catch (err) {
       setState({ status: 'error', error: (err as Error)?.message ?? 'Download failed.' })
@@ -179,6 +215,7 @@ export function registerUpdaterHandlers(): void {
 export function checkForUpdatesOnLaunch(): void {
   if (!app.isPackaged) return
   wireAutoUpdater()
+  scheduleRechecks()
   setTimeout(() => {
     autoUpdater.checkForUpdates().catch((err) => {
       setState({ status: 'error', error: (err as Error)?.message ?? 'Update check failed.' })

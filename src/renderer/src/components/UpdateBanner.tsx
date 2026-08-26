@@ -2,7 +2,8 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { Sparkles, Download, X, RotateCw, CheckCircle2 } from 'lucide-react'
 import { useUpdatesStore } from '../stores/updates'
 import { useSettingsStore } from '../stores/settings'
-import { useT } from '../i18n'
+import { isNewerVersion } from '../../../shared/version'
+import { useT, interp } from '../i18n'
 
 /** Floating "new version available" card, bottom-right above the status bar.
  *  Drives the whole update flow: download → progress → restart to install.
@@ -12,6 +13,7 @@ export function UpdateBanner(): React.JSX.Element {
   const status = useUpdatesStore((s) => s.status)
   const info = useUpdatesStore((s) => s.info)
   const progress = useUpdatesStore((s) => s.progress)
+  const staged = useUpdatesStore((s) => s.staged)
   const supported = useUpdatesStore((s) => s.supported)
   const dismissed = useUpdatesStore((s) => s.dismissed)
   const download = useUpdatesStore((s) => s.download)
@@ -25,6 +27,11 @@ export function UpdateBanner(): React.JSX.Element {
   const show = active && !dismissed && !!info && info.version !== skippedVersion
 
   const pct = progress ? Math.round(progress.percent) : 0
+
+  // A build is on disk but a newer one has since shipped. Saying nothing here
+  // is the worst option: quitting would install the staged one while the UI
+  // advertises the newer, and the two numbers would never be reconciled.
+  const superseded = !!staged && !!info && isNewerVersion(info.version, staged)
 
   return (
     <AnimatePresence>
@@ -63,7 +70,9 @@ export function UpdateBanner(): React.JSX.Element {
               ? t('update.downloaded.sub')
               : status === 'downloading'
                 ? t('update.downloading')
-                : t('update.available.sub')}
+                : superseded
+                  ? interp(t('update.superseded'), { staged: staged ?? '' })
+                  : t('update.available.sub')}
           </p>
 
           {status === 'downloading' && (

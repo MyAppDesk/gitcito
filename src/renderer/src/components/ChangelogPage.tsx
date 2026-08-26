@@ -6,17 +6,19 @@ import {
   RefreshCw,
   Download,
   ArrowUpCircle,
+  RotateCw,
   ChevronLeft,
   ChevronRight,
   Scale
 } from 'lucide-react'
 import { renderMarkdown } from '../preview/markdown'
 import { bundledChangelog } from '../changelog'
-import { compareVersions, isNewerVersion } from '../../../shared/version'
+import { compareVersions } from '../../../shared/version'
+import { resolveUpdateOffer, type ReleaseRef } from '../lib/updateOffer'
 import type { AppRelease } from '../../../shared/types'
 import { useUpdatesStore } from '../stores/updates'
 import { useSettingsStore } from '../stores/settings'
-import { useT } from '../i18n'
+import { useT, interp } from '../i18n'
 
 type Source = 'loading' | 'live' | 'bundled'
 
@@ -36,7 +38,12 @@ export function ChangelogPage(): React.JSX.Element {
   const [releases, setReleases] = useState<AppRelease[] | null>(null)
   const [idx, setIdx] = useState(0)
   const download = useUpdatesStore((s) => s.download)
+  const install = useUpdatesStore((s) => s.install)
   const supported = useUpdatesStore((s) => s.supported)
+  const updateStatus = useUpdatesStore((s) => s.status)
+  const updateInfo = useUpdatesStore((s) => s.info)
+  const updateProgress = useUpdatesStore((s) => s.progress)
+  const staged = useUpdatesStore((s) => s.staged)
 
   const bundledHtml = useMemo(() => renderMarkdown(bundledChangelog()), [])
 
@@ -47,6 +54,9 @@ export function ChangelogPage(): React.JSX.Element {
   useEffect(() => {
     let cancelled = false
     setSource('loading')
+    // Re-check the updater alongside the GitHub refetch. Opening this page is
+    // exactly when the two have to agree, and the launch check can be days old.
+    useUpdatesStore.getState().check(true)
     window.api
       .appReleases()
       .then((rs) => {
@@ -85,19 +95,24 @@ export function ChangelogPage(): React.JSX.Element {
   const selected = timeline[idx] ?? null
   const isInstalled = !!selected && stripV(selected.tag) === stripV(version)
 
-  // Any release strictly newer than what's installed (top callout).
-  const newer = useMemo(() => {
-    if (!timeline.length || !version) return null
-    const ahead = timeline.find((r) => isNewerVersion(stripV(r.tag), stripV(version)))
-    return ahead ?? null
-  }, [timeline, version])
+  // One decision for the whole callout, shared with the floating banner: the
+  // updater names the build, the timeline only fills in what it cannot.
+  const newer = useMemo(
+    () =>
+      version
+        ? resolveUpdateOffer({ installed: version, info: updateInfo, staged, timeline })
+        : null,
+    [version, updateInfo, staged, timeline]
+  )
+
+  const pct = updateProgress ? Math.round(updateProgress.percent) : 0
 
   const selectedHtml = useMemo(
     () => (selected?.body?.trim() ? renderMarkdown(selected.body) : null),
     [selected]
   )
   const newerHtml = useMemo(
-    () => (newer?.body?.trim() ? renderMarkdown(newer.body) : null),
+    () => (newer?.notes?.trim() ? renderMarkdown(newer.notes) : null),
     [newer]
   )
 
@@ -164,13 +179,35 @@ export function ChangelogPage(): React.JSX.Element {
             <div className="changelog-update-head">
               <ArrowUpCircle size={18} />
               <div>
-                <strong>{t('update.available.title')}</strong>
-                <span className="changelog-update-version">v{stripV(newer.tag)}</span>
+                <strong>
+                  {updateStatus === 'downloaded'
+                    ? t('update.downloaded.title')
+                    : t('update.available.title')}
+                </strong>
+                <span className="changelog-update-version">v{newer.version}</span>
               </div>
-              <button className="update-btn update-btn-primary" onClick={download}>
-                <Download size={13} /> {supported ? t('update.download') : t('update.getIt')}
-              </button>
+              {updateStatus === 'downloaded' ? (
+                <button className="update-btn update-btn-primary" onClick={install}>
+                  <RotateCw size={13} /> {t('update.restart')}
+                </button>
+              ) : updateStatus === 'downloading' ? (
+                <button className="update-btn update-btn-primary" disabled>
+                  {interp(t('update.downloadingPct'), { pct: String(pct) })}
+                </button>
+              ) : (
+                <button className="update-btn update-btn-primary" onClick={download}>
+                  <Download size={13} /> {supported ? t('update.download') : t('update.getIt')}
+                </button>
+              )}
             </div>
+            {newer.supersedes && (
+              <p className="changelog-update-note">
+                {interp(t('update.superseded'), { staged: newer.supersedes })}
+              </p>
+            )}
+            {newer.aheadOnGitHub && (
+              <FeedBehindNote release={newer.aheadOnGitHub} />
+            )}
             {newerHtml && (
               <div
                 className="changelog-update-notes md-preview"
@@ -226,5 +263,23 @@ export function ChangelogPage(): React.JSX.Element {
         )}
       </motion.div>
     </div>
+  )
+}
+
+/** GitHub has a release the update feed is not serving yet. Its own component
+ *  so the link keeps a narrowed, non-null release without an assertion. */
+function FeedBehindNote({ release }: { release: ReleaseRef }): React.JSX.Element {
+  const t = useT()
+  return (
+    <p className="changelog-update-note">
+      {interp(t('update.feedBehind'), { latest: stripV(release.tag) })}{' '}
+      <button
+        type="button"
+        className="changelog-update-link"
+        onClick={() => void window.api.openExternal(release.url)}
+      >
+        {t('update.openGithub')}
+      </button>
+    </p>
   )
 }

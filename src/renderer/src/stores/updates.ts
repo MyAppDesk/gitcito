@@ -9,7 +9,7 @@ interface UpdatesState extends UpdateState {
   started: boolean
 
   init(): void
-  check(): void
+  check(silent?: boolean): void
   download(): void
   install(): void
   dismiss(): void
@@ -25,6 +25,7 @@ export const useUpdatesStore = create<UpdatesState>((set, get) => ({
   progress: null,
   error: null,
   supported: true,
+  staged: null,
   dismissed: false,
   started: false,
 
@@ -43,7 +44,7 @@ export const useUpdatesStore = create<UpdatesState>((set, get) => ({
     get().check()
   },
 
-  check: () => void window.api.updates.check(),
+  check: (silent) => void window.api.updates.check(silent),
 
   download: () => {
     const { supported, info } = get()

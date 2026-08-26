@@ -271,7 +271,7 @@ interface PreloadApi {
   }
   updates: {
     getState(): Promise<import('../../shared/types').UpdateState>
-    check(): Promise<void>
+    check(silent?: boolean): Promise<void>
     download(): Promise<void>
     install(): void
     onEvent(cb: (state: import('../../shared/types').UpdateState) => void): () => void

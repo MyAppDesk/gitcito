@@ -20,6 +20,7 @@ import { acceleratorFromCombo, isMenuRole } from '../src/shared/menu'
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 import { commitHookFailureHint, lintCommit, subjectCounterLevel, parseCcPrefix, applyCcType, parseGitmojiPrefix, applyGitmoji, parseTicketPrefix, applyTicket, ticketFromBranch } from '../src/renderer/src/lib/commitLint'
 import { isSecretFile, maskSecretLine } from '../src/renderer/src/lib/secrets'
+import { resolveUpdateOffer } from '../src/renderer/src/lib/updateOffer'
 import { worktreeForBranch, worktreeTabName } from '../src/renderer/src/lib/worktrees'
 import { focusedHashes, focusedStashes, defaultBranchName } from '../src/renderer/src/lib/graphFocus'
 import type { WorktreeInfo, GraphCommit, GraphFocus, StackInfo, PullRequest } from '../src/shared/types'
@@ -5719,5 +5720,90 @@ describe('repo config in the renderer', () => {
         { id: 'c', kind: 'file', status: 'fail' }
       ])
     ).toEqual({ ok: 1, warn: 1, fail: 1 })
+  })
+})
+
+
+describe('update offer reconciliation', () => {
+  const rel = (tag: string, body: string | null = null) => ({
+    tag,
+    body,
+    url: `https://github.com/MyAppDesk/gitcito/releases/tag/${tag}`
+  })
+  const timeline = [rel('v4.0.0', '4.0 notes'), rel('v3.30.1'), rel('v3.30.0', '3.30 notes')]
+
+  it('offers nothing when nothing is newer than what is installed', () => {
+    expect(
+      resolveUpdateOffer({ installed: '4.0.0', info: null, staged: null, timeline })
+    ).toBeNull()
+  })
+
+  it('falls back to the GitHub timeline when the updater has not checked yet', () => {
+    const offer = resolveUpdateOffer({ installed: '3.28.0', info: null, staged: null, timeline })
+    expect(offer?.version).toBe('4.0.0')
+    expect(offer?.notes).toBe('4.0 notes')
+    expect(offer?.aheadOnGitHub).toBeNull()
+  })
+
+  it('lets the updater override the timeline — one version, not two', () => {
+    // The screenshot bug: the page read GitHub (4.0.0) while the updater had
+    // staged 3.30.0, so the two surfaces advertised different versions.
+    const offer = resolveUpdateOffer({
+      installed: '3.28.0',
+      info: { version: '3.30.0', notes: 'feed notes' },
+      staged: '3.30.0',
+      timeline
+    })
+    expect(offer?.version).toBe('3.30.0')
+    expect(offer?.supersedes).toBeNull()
+    expect(offer?.aheadOnGitHub?.tag).toBe('v4.0.0')
+  })
+
+  it('flags a staged build the newer offer supersedes', () => {
+    const offer = resolveUpdateOffer({
+      installed: '3.28.0',
+      info: { version: '4.0.0', notes: null },
+      staged: '3.30.0',
+      timeline
+    })
+    expect(offer?.version).toBe('4.0.0')
+    expect(offer?.supersedes).toBe('3.30.0')
+    expect(offer?.aheadOnGitHub).toBeNull()
+  })
+
+  it('prefers the GitHub body over the note the feed carries', () => {
+    const offer = resolveUpdateOffer({
+      installed: '3.28.0',
+      info: { version: '4.0.0', notes: 'short feed note' },
+      staged: null,
+      timeline
+    })
+    expect(offer?.notes).toBe('4.0 notes')
+  })
+
+  it('keeps the feed note when the timeline has no body for that tag', () => {
+    const offer = resolveUpdateOffer({
+      installed: '3.28.0',
+      info: { version: '3.30.1', notes: 'feed note' },
+      staged: null,
+      timeline
+    })
+    expect(offer?.notes).toBe('feed note')
+  })
+
+  it('ignores an updater offer that is not actually newer', () => {
+    const offer = resolveUpdateOffer({
+      installed: '3.30.1',
+      info: { version: '3.30.0', notes: null },
+      staged: null,
+      timeline
+    })
+    expect(offer?.version).toBe('4.0.0')
+  })
+
+  it('tolerates a leading v on the installed version', () => {
+    expect(
+      resolveUpdateOffer({ installed: 'v3.28.0', info: null, staged: null, timeline })?.version
+    ).toBe('4.0.0')
   })
 })

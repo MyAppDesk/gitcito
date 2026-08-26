@@ -2,7 +2,7 @@ import { execFile, spawn } from 'child_process'
 import { promisify } from 'util'
 import { existsSync } from 'fs'
 import { homedir } from 'os'
-import { join } from 'path'
+import { basename, join } from 'path'
 import { ipcMain } from 'electron'
 import type { RunDevice, RunDeviceSnapshot } from '../shared/types'
 
@@ -27,9 +27,27 @@ const pexec = promisify(execFile)
 const FLUTTER_TIMEOUT = 25_000
 const TOOL_TIMEOUT = 10_000
 
+/**
+ * Screenshot mode points every SDK lookup at a generated fake tree: a
+ * documentation shot must show a deterministic device list, not whichever phone
+ * happened to be plugged into the machine that captured it. Honoured **only**
+ * under `--shot`, the same shape as `GITCITO_SSH_DIR`.
+ */
+function shotTool(cmd: string): string | undefined {
+  if (!process.argv.includes('--shot')) return undefined
+  const dir = process.env['GITCITO_DEVICE_BIN']
+  if (!dir) return undefined
+  const p = join(dir, basename(cmd))
+  return existsSync(p) ? p : undefined
+}
+
 async function run(cmd: string, args: string[], timeout = TOOL_TIMEOUT): Promise<string | null> {
   try {
-    const { stdout } = await pexec(cmd, args, { timeout, maxBuffer: 4 * 1024 * 1024, windowsHide: true })
+    const { stdout } = await pexec(shotTool(cmd) ?? cmd, args, {
+      timeout,
+      maxBuffer: 4 * 1024 * 1024,
+      windowsHide: true
+    })
     return stdout
   } catch {
     // Missing binary, non-zero exit, timeout — all mean "this source has

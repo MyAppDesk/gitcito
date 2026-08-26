@@ -143,7 +143,9 @@ the sidebar and the status bar, and never written into the repo ·
 [**Open in your editor**](docs/help/editor.md) — repo, file, or the exact line
 you right-clicked ·
 [**Run & debug**](docs/help/launch.md) from your `.vscode/launch.json` —
-compounds as parallel sessions, `stopAll`, `serverReadyAction` ·
+compounds as parallel sessions, `stopAll`, `serverReadyAction`, a
+[hot reload](docs/help/launch.md) button for the runtime you actually launched,
+and a [run target](docs/help/launch.md) picker for the phone or simulator ·
 [previews](docs/help/diffs.md) for Markdown, Word, Excel, PDF, video and images ·
 [open-source licenses](docs/help/licenses.md) for every package the build ships,
 readable in the app.

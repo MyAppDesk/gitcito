@@ -3,7 +3,7 @@ title: הרצה וניפוי באגים (launch.json)
 category: כלי סביבת העבודה
 order: 91
 summary: הריצו את תצורות ההפעלה של VS Code בלי לצאת מ־Gitcito.
-keywords: הפעלה הרצה ניפוי באגים תצורות משימות רקע launch.json run debug vscode configs tasks preLaunchTask input background compound compounds stopAll serverReadyAction סשנים מקביליים
+keywords: הפעלה הרצה ניפוי באגים תצורות משימות רקע launch.json run debug vscode configs tasks preLaunchTask input background compound compounds stopAll serverReadyAction סשנים מקביליים hot reload hot restart device simulator emulator run target flutter metro expo vite nodemon vitest jest mocha ava wrangler dotnet watch adb simctl avd xcodebuild capacitor
 ---
 
 # הרצה וניפוי באגים
@@ -49,5 +49,110 @@ Gitcito קורא את `.vscode/launch.json` שלכם — זה שבשורש וכ�
 אבל הוא לא מנפה — בלי נקודות עצירה, בלי בדיקת משתנים, בלי Debug Adapter
 Protocol. תצורות attach בלבד עובדות כשהן נושאות `preLaunchTask` (המשימה היא
 העבודה); ל‑attach טהור אין מה להריץ.
+
+## פעולות חמות — הדרך המהירה לצד «הפעלה מחדש»
+
+![טעינה חמה שנשלחה משורת הניפוי](../../screenshots/launch-hot.webp)
+
+רוב סביבות הפיתוח כבר טוענות מחדש בהקשה אחת: `flutter run` ב‑**r**, ‏Metro
+ב‑**r**, ‏nodemon ב‑**rs ⏎**, ו‑Vitest מריץ מחדש את החבילה ב‑**a**. להפעיל מחדש
+את תצורת ההרצה כדי להשיג את אותו הדבר היא הדרך האיטית — היא הורגת את התהליך,
+מריצה שוב כל `preLaunchTask` וזורקת את מצב האפליקציה.
+
+לכן Gitcito קורא את הפקודה שהתצורה באמת מריצה — עוקב אחרי `npm run dev` עד
+הסקריפטים שב‑`package.json` — ומעלה את מקשי אותה סביבה לשורת הניפוי. לחיצה
+כותבת את המקש לקלט התקני של ההפעלה, בדיוק כאילו הקלדתם אותו בטרמינל בעצמכם.
+
+| סביבה | כפתורים | מאחורי ⋯ |
+|-------|---------|----------|
+| Flutter (`flutter run`) | טעינה חמה `r`, הפעלה חוזרת חמה `R` | debug paint, שכבת ביצועים, החלפת פלטפורמה, DevTools |
+| Expo | טעינה מחדש `r` | תפריט מפתחים, מנפה שגיאות |
+| Metro / React Native | טעינה מחדש `r` | תפריט מפתחים, מנפה שגיאות |
+| Vite (dev, serve, preview) | הפעלת השרת מחדש `r ⏎` | פתיחה בדפדפן, הצגת כתובות, ניקוי המסוף |
+| nodemon | הפעלה מחדש `rs ⏎` | — |
+| Vitest (מצב watch) | הרצת הכול `a`, הרצת הנכשלות `f` | עדכון תצלומי מצב |
+| Jest (`--watch`) | הרצת הכול `a`, הרצת הנכשלות `f` | קבצים שהשתנו בלבד, עדכון תצלומי מצב |
+| Mocha (`--watch`) | הרצה מחדש `rs ⏎` | — |
+| AVA (`--watch`) | הרצת הכול `r ⏎`, עדכון תצלומי מצב `u ⏎` | — |
+| `dotnet watch` | אילוץ הפעלה מחדש `Ctrl+R` | — |
+| Wrangler (`wrangler dev`) | פתיחה בדפדפן `b` | DevTools, מקומי/מרוחק, ניקוי המסוף |
+
+סביבות שטוענות מחדש מעצמן לא מקבלות כפתורים — `node --watch`, `ng serve`,
+`tsc --watch`, `cargo watch`, `next dev`, webpack-dev-server. כפתור ששולח מקש
+שאיש אינו קורא גרוע מהיעדר כפתור, כי הוא נראה כאילו עבד.
+
+**המגבלות.** הזיהוי טקסטואלי: הוא מתאים את שם התוכנית בשורת הפקודה, ולכן תצורה
+שמפעילה את שרת הפיתוח דרך סקריפט עוטף ש‑Gitcito אינו יכול לקרוא לא תקבל כלום.
+גם אין אישור קבלה להקשה — הכפתור מהבהב, והתשובה האמיתית היא הפלט של התהליך
+עצמו. הפעלה מושהית או שהסתיימה אינה מקבלת קלט, ולכן הכפתורים מעומעמים.
+
+**כשהניחוש שגוי**, אמרו זאת בתצורה עצמה:
+
+```json
+{
+  "name": "API (watch)",
+  "type": "node-terminal",
+  "command": "./scripts/dev.sh",
+  "gitcito": { "hotActions": [{ "label": "Reload", "send": "r", "icon": "reload" }] }
+}
+```
+
+‏`send` נכתב כלשונו — סיימו אותו ב‑`\n` עבור CLI שממתין ל‑Enter.
+‏`icon` הוא רשות: `reload`, `restart`, `rerun`, `failed`, `snapshot`, `menu`, `debugger`,
+`browser`, `clear`, `paint`, `perf`, `platform`, `devtools`, `urls`.
+מערך `hotActions` ריק מכבה את הכפתורים עבור אותה תצורה.
+
+## יעד הרצה — על איזה מכשיר תצורה מופעלת
+
+![בחירת יעד ההרצה לצד לשונית LAUNCH](../../screenshots/launch-device.webp)
+
+לתצורה שבונה אפליקציה לנייד צריך להגיד איפה להריץ אותה. הבחירה הזאת אינה של
+Flutter בלבד — ‏React Native, ‏Expo, ‏Capacitor ו‑xcodebuild מקבלים כולם יעד, וכל
+אחד כותב אותו אחרת. לכן Gitcito שואל פעם אחת, ליד לשונית **LAUNCH**, וכותב את
+התשובה בצורה שסביבת הריצה של אותה תצורה קוראת. הבורר מופיע רק כאשר תצורה כלשהי
+במאגר באמת יכולה לקבל מכשיר.
+
+**מאיפה מגיעה הרשימה** — מכלי ה‑SDK שיש על המחשב, בשאילתה מקבילה:
+
+| כלי | תורם | מתי נשאל |
+|-----|------|----------|
+| `flutter devices` / `flutter emulators` | הכול, כבר מנורמל | כשיש בתיקייה `pubspec.yaml` |
+| `xcrun simctl` | סימולטורי iOS, פעילים וכבויים | ב‑macOS |
+| `adb devices` | מכשירי Android ואמולטורים שכבר עלו | תמיד |
+| `emulator -list-avds` | אמולטורי Android שעדיין כבויים | תמיד |
+
+אותו סימולטור מדווח על ידי עד שלושה מהם, ולכן הרשומות ממוזגות לפי פלטפורמה ושם;
+בתיקו Flutter מנצח, כי המזהה שלו הוא זה ש‑`flutter run -d` מצפה לו. כלים שאינם
+מותקנים מופיעים בשמם בתחתית התפריט — רשימה קצרה צריכה להסביר את עצמה.
+
+**מה הבחירה עושה:**
+
+| משפחה | נכתב כ־ |
+|-------|---------|
+| Flutter | `-d <id>` |
+| React Native iOS | `--udid <id>` |
+| React Native Android | `--deviceId=<id>` |
+| Expo `run:ios` / `run:android` | `--device <id>` |
+| Capacitor / Ionic | `--target <id>` |
+| xcodebuild | `-destination id=<id>` |
+| כל השאר | משתני סביבה בלבד |
+
+כל תצורה שמופעלת מקבלת גם `GITCITO_DEVICE_ID`, ‏`GITCITO_DEVICE_NAME` ו‑
+`GITCITO_DEVICE_PLATFORM` בסביבה שלה, ובנוסף `ANDROID_SERIAL` כשהיעד הוא מכשיר
+Android אמיתי. זה מה שמאפשר לסקריפט עוטף, למשימת Gradle או ל‑`adb` חשוף לפגוע
+באותו מכשיר בלי ש‑Gitcito יכתוב מחדש שום דבר.
+
+**הפעלת מכשיר כבוי.** כל מה שתחת *לא פועל* עולה כשבוחרים בו:
+‏`flutter emulators --launch`, ‏`xcrun simctl boot` (ועוד חלון ה‑Simulator), או
+‏`emulator -avd` מנותק — כך שיציאה מ‑Gitcito לא לוקחת איתה את אמולטור ה‑Android.
+
+**המגבלות.** תצורה שכבר נוקבת במכשיר — ‏`-d` מפורש, ‏`--simulator`, או
+‏`deviceId` של Dart‑Code — נשארת כמות שהיא: הבורר לעולם אינו דורס את מה שהמחבר
+כתב. מזהה שהיה דורש מרכאות נופל אל משתני הסביבה במקום להסתכן בשורת פקודה
+שבורה. התפריט מסונן לפי מה שהתצורות שלכם יכולות להגיע אליו, ולכן מאגר של
+Android בלבד לעולם לא יציע לכם אייפון. והרשימה היא תצלום רגע: חברו טלפון ולחצו
+**רענון המכשירים**.
+
+הבחירה נזכרת לכל מאגר בנפרד, ונשכחת כשהמכשיר חדל להתקיים.
 
 **ראו גם:** [טרמינל משולב](terminal.md)

@@ -13,7 +13,7 @@
 
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { writeFile, mkdir, rm } from 'node:fs/promises'
+import { writeFile, mkdir, rm, chmod } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 
 const ASSETS = join(dirname(fileURLToPath(import.meta.url)), 'assets')
@@ -25,6 +25,8 @@ const DEMO_SSH = join(tmpdir(), 'gitcito-demo-ssh')
 /** A throwaway HOME for the credential-helper shot: the real one holds this
  *  machine's global git config and possibly live passwords. */
 const DEMO_HOME = join(tmpdir(), 'gitcito-demo-home')
+// Stand-in SDK CLIs for the run-target shot — see the launch-device entry.
+const DEMO_SDK = join(tmpdir(), 'gitcito-demo-sdk')
 
 /**
  * Expand sidebar sections by their title (as rendered: 'WORKTREES').
@@ -1128,6 +1130,58 @@ export const shots = [
       // Surface the launch picker so both the dropdown and a live run are shown.
       await page.click('.sb-tab-launch').catch(() => {})
       await page.waitForTimeout(500)
+    }
+  },
+  {
+    // Run target — the device picker next to the LAUNCH tab.
+    //
+    // Driven by a fake SDK tree rather than the real `flutter` / `adb` /
+    // `simctl`: a documentation shot must not photograph whichever phone is
+    // plugged into the machine that captured it, and the list has to be the
+    // same every time. GITCITO_DEVICE_BIN is only honoured under --shot.
+    out: 'launch-device',
+    repos: ['launch-configs'],
+    themes: ['dark'],
+    appTheme: 'midnight',
+    env: { GITCITO_DEVICE_BIN: DEMO_SDK },
+    prepare: async ({ repoPaths }) => {
+      // A pubspec.yaml is what makes Gitcito ask the (fake) Flutter CLI at all.
+      await writeFile(join(repoPaths['launch-configs'], 'pubspec.yaml'), 'name: demo_app\n')
+      await rm(DEMO_SDK, { recursive: true, force: true })
+      await mkdir(DEMO_SDK, { recursive: true })
+      const devices = [
+        { name: 'iPhone 16 Pro', id: 'A1B2C3D4-1111-2222-3333-444455556666', targetPlatform: 'ios', emulator: true, sdk: 'iOS 18.0' },
+        { name: 'Pixel 8', id: '39121FDJG0018Z', targetPlatform: 'android-arm64', emulator: false, sdk: 'Android 14 (API 34)' },
+        { name: 'macOS', id: 'macos', targetPlatform: 'darwin', emulator: false, sdk: 'macOS 15.0' },
+        { name: 'Chrome', id: 'chrome', targetPlatform: 'web-javascript', emulator: false, sdk: 'Google Chrome 129' }
+      ]
+      const flutter = [
+        '#!/usr/bin/env node',
+        `const devices = ${JSON.stringify(devices)}`,
+        "const emulators = ['apple_ios_simulator • iOS Simulator • Apple • ios', 'Pixel_7_API_34 • Pixel 7 API 34 • Google • android']",
+        "if (process.argv[2] === 'devices') console.log(JSON.stringify(devices, null, 2))",
+        "else if (process.argv[2] === 'emulators') console.log('2 available emulators:\\n\\n' + emulators.join('\\n'))",
+        ''
+      ].join('\n')
+      // The real adb / emulator / xcrun must be shadowed too, or the machine's
+      // own devices would leak into the shot.
+      const silent = '#!/usr/bin/env node\n'
+      for (const [name, body] of [['flutter', flutter], ['adb', silent], ['emulator', silent], ['xcrun', silent]]) {
+        await writeFile(join(DEMO_SDK, name), body)
+        await chmod(join(DEMO_SDK, name), 0o755)
+      }
+    },
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['launch-configs']
+      await page.evaluate((p) => {
+        const s = window.__shot
+        s.repo.getState().select(p, { type: 'wip' })
+        void s.launch.getState().discover(p)
+      }, repo)
+      // The SDK sweep is async; give it a moment before opening the menu.
+      await page.waitForTimeout(2500)
+      await page.click('.sb-tab-device').catch(() => {})
+      await page.waitForTimeout(600)
     }
   },
   {

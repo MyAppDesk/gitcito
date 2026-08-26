@@ -565,10 +565,54 @@ interface LaunchSession {
   resize(cols: number, rows: number): void
   kill(): void
   signal(action: 'pause' | 'resume'): void
+  /** Replay whatever the program printed before the terminal was mounted. */
+  attach(): void
 }
 
 let nextId = 1
 const sessions = new Map<number, LaunchSession>()
+
+/** Enough to cover a compiler's banner; a watcher's endless ticks are not the
+ *  point of a backlog, only the lines that arrived before anyone was looking. */
+const BACKLOG_MAX = 256 * 1024
+/** How long an exited session stays around so a late attach still sees why. */
+const EXITED_GRACE = 30_000
+
+/**
+ * The pty starts in main the moment `launch:run` returns, but the renderer only
+ * subscribes once the terminal panel has mounted its xterm. Everything printed
+ * in between — for a fast program, its whole banner — used to be dropped on the
+ * floor. Output is buffered until the renderer attaches, and the exit code with
+ * it, so a program that finishes first still gets to explain itself.
+ */
+function makeSink(
+  wc: WebContents,
+  id: number
+): { emit(text: string): void; exit(code: number): void; attach(): void } {
+  let backlog = ''
+  let attached = false
+  let exitCode: number | null = null
+  return {
+    emit(text) {
+      if (!attached) backlog = (backlog + text).slice(-BACKLOG_MAX)
+      if (!wc.isDestroyed()) wc.send(`launch:data:${id}`, text)
+    },
+    exit(code) {
+      exitCode = code
+      if (!wc.isDestroyed()) wc.send(`launch:exit:${id}`, code)
+      // Keep the session (and its backlog) briefly: a terminal that mounts
+      // after a fast failure must still be able to show it.
+      setTimeout(() => sessions.delete(id), EXITED_GRACE).unref()
+    },
+    attach() {
+      if (attached) return
+      attached = true
+      if (backlog && !wc.isDestroyed()) wc.send(`launch:data:${id}`, backlog)
+      if (exitCode !== null && !wc.isDestroyed()) wc.send(`launch:exit:${id}`, exitCode)
+      backlog = ''
+    }
+  }
+}
 
 function defaultShell(): string {
   if (process.platform === 'win32') return process.env['COMSPEC'] || 'powershell.exe'
@@ -593,6 +637,7 @@ function spawnSession(
   tap?: (chunk: string) => void
 ): LaunchSession {
   const banner = `\x1b[90m> ${display}\x1b[0m\r\n`
+  const sink = makeSink(wc, id)
   try {
     interface PtyProcess {
       readonly pid: number
@@ -614,15 +659,12 @@ function spawnSession(
       rows,
       env: { ...process.env, ...env } as Record<string, string>
     })
-    if (!wc.isDestroyed()) wc.send(`launch:data:${id}`, banner)
+    sink.emit(banner)
     p.onData((d) => {
       tap?.(d)
-      if (!wc.isDestroyed()) wc.send(`launch:data:${id}`, d)
+      sink.emit(d)
     })
-    p.onExit(({ exitCode }) => {
-      sessions.delete(id)
-      if (!wc.isDestroyed()) wc.send(`launch:exit:${id}`, exitCode)
-    })
+    p.onExit(({ exitCode }) => sink.exit(exitCode))
     return {
       pid: p.pid,
       write: (d) => p.write(d),
@@ -635,10 +677,11 @@ function spawnSession(
         } catch {
           /* already gone */
         }
-      }
+      },
+      attach: sink.attach
     }
   } catch {
-    return spawnFallback(wc, id, cwd, commandLine, env, banner, tap)
+    return spawnFallback(wc, id, cwd, commandLine, env, banner, sink, tap)
   }
 }
 
@@ -650,25 +693,20 @@ function spawnFallback(
   commandLine: string,
   env: Record<string, string>,
   banner: string,
+  sink: ReturnType<typeof makeSink>,
   tap?: (chunk: string) => void
 ): LaunchSession {
   const args = process.platform === 'win32' ? ['-NoLogo', '-Command', commandLine] : ['-lic', commandLine]
   const child: ChildProcess = spawn(defaultShell(), args, { cwd, env: { ...process.env, ...env } })
-  const send = (text: string): void => {
-    if (!wc.isDestroyed()) wc.send(`launch:data:${id}`, text)
-  }
-  send(banner)
+  sink.emit(banner)
   const chunk = (d: Buffer): void => {
     const text = d.toString()
     tap?.(text)
-    send(text.replace(/(?<!\r)\n/g, '\r\n'))
+    sink.emit(text.replace(/(?<!\r)\n/g, '\r\n'))
   }
   child.stdout?.on('data', chunk)
   child.stderr?.on('data', chunk)
-  child.on('exit', (code) => {
-    sessions.delete(id)
-    if (!wc.isDestroyed()) wc.send(`launch:exit:${id}`, code ?? 0)
-  })
+  child.on('exit', (code) => sink.exit(code ?? 0))
   return {
     pid: child.pid ?? null,
     write: (d) => child.stdin?.write(d),
@@ -681,7 +719,8 @@ function spawnFallback(
       } catch {
         /* already gone */
       }
-    }
+    },
+    attach: sink.attach
   }
 }
 
@@ -781,6 +820,8 @@ export function registerLaunchHandlers(): void {
     }
   )
 
+  // The renderer says "my terminal is listening now"; the backlog is replayed.
+  ipcMain.on('launch:attach', (_e, id: number) => sessions.get(id)?.attach())
   ipcMain.on('launch:input', (_e, id: number, data: string) => sessions.get(id)?.write(data))
   ipcMain.on('launch:resize', (_e, id: number, cols: number, rows: number) =>
     sessions.get(id)?.resize(cols, rows)

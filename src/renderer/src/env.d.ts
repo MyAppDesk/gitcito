@@ -30,6 +30,7 @@ interface LaunchApi {
     cols: number
     rows: number
   }): Promise<{ id: number } | { error: string }>
+  attach(id: number): void
   input(id: number, data: string): void
   resize(id: number, cols: number, rows: number): void
   signal(id: number, action: 'pause' | 'resume'): void

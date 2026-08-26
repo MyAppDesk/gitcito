@@ -332,6 +332,8 @@ const api = {
       ipcRenderer.invoke('launch:run', payload),
     runTasks: (payload: unknown): Promise<{ id: number } | { error: string }> =>
       ipcRenderer.invoke('launch:runTasks', payload),
+    /** Tell main the terminal is listening, so it can replay early output. */
+    attach: (id: number): void => ipcRenderer.send('launch:attach', id),
     input: (id: number, data: string): void => ipcRenderer.send('launch:input', id, data),
     resize: (id: number, cols: number, rows: number): void =>
       ipcRenderer.send('launch:resize', id, cols, rows),

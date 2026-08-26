@@ -108,6 +108,9 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     )
     term.onData((data) => window.api.launch.input(launchId!, data))
     term.onResize(({ cols, rows }) => window.api.launch.resize(launchId!, cols, rows))
+    // The pty was spawned before this terminal existed — ask for what it has
+    // already printed, or a fast program's whole banner is lost.
+    window.api.launch.attach(launchId!)
     return handle
   }
 

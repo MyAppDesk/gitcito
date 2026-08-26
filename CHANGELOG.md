@@ -1,5 +1,12 @@
 
 
+## [4.0.1](https://github.com/MyAppDesk/gitcito/compare/v4.0.0...v4.0.1) (2026-08-26)
+
+
+### Features
+
+* add support for silent update checks and staged versions ([e75f1be](https://github.com/MyAppDesk/gitcito/commit/e75f1bed1bd5449de8cd9180e4c31e1fa6ecfe44))
+
 ## [4.0.0](https://github.com/MyAppDesk/gitcito/compare/v3.30.1...v4.0.0) (2026-08-26)
 
 

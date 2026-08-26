@@ -189,6 +189,7 @@ import {
   validateWikiPlan,
   validateWikiPage,
   renderWikiPage,
+  sanitizeWikiPlan,
   pageSources,
   wikiFreshness,
   orderPlan,
@@ -1381,6 +1382,168 @@ describe('AI grounding — loose JSON parsing', () => {
   it('returns null instead of throwing on prose', () => {
     expect(parseLooseJson('Sure! Here is the answer.')).toBeNull()
   })
+
+  it('repairs quoted objects emitted inside a DiffusionGemma array', () => {
+    const malformed =
+      '{"summary":"x","sections":[{"heading":"Core","claims":[{"text":"one","sourcePaths":["README.md"]},{"{"text":"two","sourcePaths":["README.md"]}"]}],"related":[]}'
+    expect(parseLooseJson(malformed)).toEqual({
+      summary: 'x',
+      sections: [
+        {
+          heading: 'Core',
+          claims: [
+            { text: 'one', sourcePaths: ['README.md'] },
+            { text: 'two', sourcePaths: ['README.md'] }
+          ]
+        }
+      ],
+      related: []
+    })
+  })
+
+  it('parses a JSON object escaped by one provider response layer', () => {
+    expect(parseLooseJson<{ value: string }>('{\\"value\\":\\"x\\"}')).toEqual({ value: 'x' })
+  })
+
+  it('repairs quoted array objects after removing a provider escape layer', () => {
+    const escapedMalformed =
+      '{\\"summary\\":\\"x\\",\\"sections\\":[{\\"heading\\":\\"Core\\",\\"claims\\":[{\\"text\\":\\"one\\",\\"sourcePaths\\":[\\"README.md\\"]},{\\"{\\"text\\":\\"two\\",\\"sourcePaths\\":[\\"README.md\\"]}\\"]}],\\"related\\":[]}'
+    expect(parseLooseJson(escapedMalformed)).toEqual({
+      summary: 'x',
+      sections: [
+        {
+          heading: 'Core',
+          claims: [
+            { text: 'one', sourcePaths: ['README.md'] },
+            { text: 'two', sourcePaths: ['README.md'] }
+          ]
+        }
+      ],
+      related: []
+    })
+  })
+
+  it('restores a missing section brace in truncated model JSON', () => {
+    const malformed =
+      '{"summary":"x","sections":[{"heading":"CI","claims":[{"text":"one","sourcePaths":["src/main/localCi.ts"]}]],"related":[]}'
+    expect(parseLooseJson(malformed)).toEqual({
+      summary: 'x',
+      sections: [
+        {
+          heading: 'CI',
+          claims: [{ text: 'one', sourcePaths: ['src/main/localCi.ts'] }]
+        }
+      ],
+      related: []
+    })
+  })
+
+  it('repairs a section object closed as an array after quoted claims', () => {
+    const malformed =
+      '{"summary":"x","sections":[{"heading":"i18n","claims":[{"text":"one","sourcePaths":["a.ts"]},{"{"text":"two","sourcePaths":["b.ts"]}]]],"related":[]}'
+    expect(parseLooseJson(malformed)).toEqual({
+      summary: 'x',
+      sections: [
+        {
+          heading: 'i18n',
+          claims: [
+            { text: 'one', sourcePaths: ['a.ts'] },
+            { text: 'two', sourcePaths: ['b.ts'] }
+          ]
+        }
+      ],
+      related: []
+    })
+  })
+
+  it('removes a stray quote and colon before an object or array property value', () => {
+    const malformed =
+      '{"summary":"x","sections":[{"heading":"CLI","claims":":[{"text":"one","sourcePaths":["cli.ts"]}]}],"related":[]}'
+    expect(parseLooseJson(malformed)).toEqual({
+      summary: 'x',
+      sections: [
+        {
+          heading: 'CLI',
+          claims: [{ text: 'one', sourcePaths: ['cli.ts'] }]
+        }
+      ],
+      related: []
+    })
+  })
+
+  it('restores the sections array when a wiki page is flattened after summary', () => {
+    const malformed =
+      '{"summary":"x","heading":"First","claims":[{"text":"one","sourcePaths":["a.ts"]}]},{"heading":"Second","claims":[{"text":"two","sourcePaths":["b.ts"]}]}],"related":["overview"]}'
+    expect(parseLooseJson(malformed)).toEqual({
+      summary: 'x',
+      sections: [
+        {
+          heading: 'First',
+          claims: [{ text: 'one', sourcePaths: ['a.ts'] }]
+        },
+        {
+          heading: 'Second',
+          claims: [{ text: 'two', sourcePaths: ['b.ts'] }]
+        }
+      ],
+      related: ['overview']
+    })
+  })
+
+  it('drops an empty token inserted between object properties', () => {
+    const malformed =
+      '{"summary":"x","sections":[{"heading":"Security","claims":[{"text":"one","","sourcePaths":["keychain.ts"]}]}],"related":[]}'
+    expect(parseLooseJson(malformed)).toEqual({
+      summary: 'x',
+      sections: [
+        {
+          heading: 'Security',
+          claims: [{ text: 'one', sourcePaths: ['keychain.ts'] }]
+        }
+      ],
+      related: []
+    })
+  })
+
+  it('moves a trailing related object out of the wiki sections array', () => {
+    const malformed =
+      '{"summary":"x","sections":[{"heading":"Renderer","claims":[{"text":"one","sourcePaths":["App.tsx"]}]},{"related":["overview","cli"]}'
+    expect(parseLooseJson(malformed)).toEqual({
+      summary: 'x',
+      sections: [
+        {
+          heading: 'Renderer',
+          claims: [{ text: 'one', sourcePaths: ['App.tsx'] }]
+        }
+      ],
+      related: ['overview', 'cli']
+    })
+  })
+
+  it('uses the last complete JSON object when a model repeats itself and is truncated', () => {
+    const repeated =
+      '{"value":"first"}\nWait, here is the corrected object.\n{"value":"second"}\n{"value":"truncated"'
+    expect(parseLooseJson<{ value: string }>(repeated)).toEqual({ value: 'second' })
+  })
+
+  it('extracts a valid repeated object after repairing quoted array entries', () => {
+    const repeated =
+      '{"items":[{"value":"one"},{"{"value":"two"}"]}\nCorrected:\n{"items":[{"value":"three"}]}'
+    expect(parseLooseJson(repeated)).toEqual({ items: [{ value: 'three' }] })
+  })
+
+  it('removes a quote inserted before an indented object property', () => {
+    const malformed = '{"pages":[{"\n  "slug":"overview","title":"Overview"}]}'
+    expect(parseLooseJson(malformed)).toEqual({
+      pages: [{ slug: 'overview', title: 'Overview' }]
+    })
+  })
+
+  it('does not alter valid strings that contain serialized JSON', () => {
+    expect(parseLooseJson<{ value: string }>('{"value":"{\\"nested\\":true}"}')).toEqual({
+      value: '{"nested":true}'
+    })
+  })
 })
 
 describe('profile secrets — keeping credentials out of settings.json', () => {
@@ -1849,6 +2012,25 @@ describe('repo wiki — the plan', () => {
   it('rejects a page scoped to a file that is not in the repo', () => {
     const errors = validateWikiPlan({ pages: [overview, page({ scopePaths: ['src/ghost.ts'] })] }, known)
     expect(errors[0]).toContain('src/ghost.ts')
+  })
+
+  it('removes unknown scope paths and drops pages with no real evidence left', () => {
+    const normalized = sanitizeWikiPlan(
+      {
+        pages: [
+          overview,
+          page({ scopePaths: ['src/db.ts', 'src/ghost.ts'] }),
+          page({ slug: 'ghosts', scopePaths: ['src/ghost.ts'] })
+        ]
+      },
+      known
+    ) as { pages: { slug: string; scopePaths: string[] }[] }
+
+    expect(normalized.pages).toEqual([
+      overview,
+      page({ scopePaths: ['src/db.ts'] })
+    ])
+    expect(validateWikiPlan(normalized, known)).toEqual([])
   })
 
   it('requires exactly one overview page', () => {

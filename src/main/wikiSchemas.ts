@@ -106,6 +106,26 @@ export function validateWikiPlan(value: unknown, knownPaths: Set<string>): strin
   return errors
 }
 
+/**
+ * Drops planner paths that were not in its file list. A non-overview page with
+ * no evidence left is dropped as well; validation still enforces the remaining
+ * plan's slugs, shape and single overview.
+ */
+export function sanitizeWikiPlan(value: unknown, knownPaths: Set<string>): unknown {
+  const root = asObject(value)
+  if (!root || !Array.isArray(root.pages)) return value
+  const pages = root.pages.flatMap((raw: unknown) => {
+    const page = asObject(raw)
+    if (!page || !Array.isArray(page.scopePaths)) return [raw]
+    const scopePaths = page.scopePaths.filter(
+      (path): path is string => typeof path === 'string' && knownPaths.has(path)
+    )
+    if (page.archetype !== 'overview' && scopePaths.length === 0) return []
+    return [{ ...page, scopePaths }]
+  })
+  return { ...root, pages }
+}
+
 // ─── Stage 2: one page ──────────────────────────────────────────────────────
 
 export const WIKI_PAGE_SCHEMA: Record<string, unknown> = {

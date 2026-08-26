@@ -869,6 +869,9 @@ export function TitleBar(): React.JSX.Element {
         onClick={() => {
           setActiveTab(tab.id)
           setGroupActiveRepo(tab.id, repo.path)
+          // Clicking the repository's name means the repository — otherwise a
+          // repo with its wiki and its DevTools open has no way back to itself.
+          setRepoPage(tab.id, null)
         }}
         onContextMenu={(e) => {
           e.preventDefault()

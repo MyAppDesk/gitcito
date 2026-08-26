@@ -23,14 +23,14 @@ http://127.0.0.1:9100?uri=http://127.0.0.1:53412/uJ8k=/
 ```
 
 The launch session watches its own output for it, and the debug toolbar grows a
-button. Click it and DevTools opens **inside the repository's tab**: the tab
-gains a small icon, clicking that icon swaps between the repository and the
-tool, and the ✕ that appears on hover closes it. One icon per session — two
-apps running at once are two DevTools.
+button. Click it and DevTools opens **on the repository itself**, as one of its
+[icons](workspaces.md#pages-that-belong-to-a-repository) rather than a tab of
+its own. One icon per session — two apps running at once are two DevTools.
 
-A **hot restart publishes a new address**, and the tab follows it while its
-session lives. Once the session is gone the tab keeps the last address it had,
-which is usually dead: close it and open DevTools again from the new run.
+A **hot restart publishes a new address**, and the panel follows it while its
+session lives. Once the session is gone the panel keeps the last address it
+had, which is usually dead: close the icon and open DevTools again from the new
+run.
 
 ## Which tools
 

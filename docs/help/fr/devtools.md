@@ -23,15 +23,14 @@ http://127.0.0.1:9100?uri=http://127.0.0.1:53412/uJ8k=/
 ```
 
 La session de lancement surveille sa propre sortie, et la barre de débogage gagne
-un bouton. Un clic ouvre DevTools **dans l’onglet du dépôt** : l’onglet gagne une
-petite icône, un clic dessus bascule entre le dépôt et l’outil, et la ✕ qui
-apparaît au survol le ferme. Une icône par session — deux applications qui
-tournent, ce sont deux DevTools.
+un bouton. Un clic ouvre DevTools **sur le dépôt lui-même**, comme l’une de ses
+[icônes](workspaces.md) plutôt que dans un onglet à part. Une icône par session —
+deux applications qui tournent, ce sont deux DevTools.
 
-Un **redémarrage à chaud publie une nouvelle adresse**, et l’onglet la suit tant
-que sa session vit. Une fois la session terminée, l’onglet conserve la dernière
-adresse, généralement morte : fermez-le et rouvrez DevTools depuis la nouvelle
-exécution.
+Un **redémarrage à chaud publie une nouvelle adresse**, et le panneau la suit
+tant que sa session vit. Une fois la session terminée, le panneau conserve la
+dernière adresse, généralement morte : fermez l’icône et rouvrez DevTools depuis
+la nouvelle exécution.
 
 ## Quels outils
 

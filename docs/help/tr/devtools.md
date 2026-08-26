@@ -23,14 +23,13 @@ http://127.0.0.1:9100?uri=http://127.0.0.1:53412/uJ8k=/
 ```
 
 Başlatma oturumu bu satır için kendi çıktısını izler ve hata ayıklama çubuğunda
-bir düğme belirir. Tıklayınca DevTools **deponun sekmesinin içinde** açılır:
-sekmeye küçük bir simge eklenir, ona tıklamak depo ile araç arasında geçiş yapar,
-üzerine gelince çıkan ✕ ise kapatır. Oturum başına bir simge — aynı anda çalışan
-iki uygulama, iki DevTools demektir.
+bir düğme belirir. Tıklayınca DevTools **deponun kendisinde**, ayrı bir sekme
+yerine onun [simgelerinden](workspaces.md) biri olarak açılır. Oturum başına bir
+simge — aynı anda çalışan iki uygulama, iki DevTools demektir.
 
 **Sıcak yeniden başlatma yeni bir adres yayınlar** ve oturumu yaşadığı sürece
-sekme onu izler. Oturum bittiğinde sekme elindeki son adresi tutar, ki o adres
-genelde ölüdür: sekmeyi kapat ve DevTools’u yeni çalıştırmadan aç.
+panel onu izler. Oturum bittiğinde panel elindeki son adresi tutar, ki o adres
+genelde ölüdür: simgeyi kapat ve DevTools’u yeni çalıştırmadan aç.
 
 ## Hangi araçlar
 

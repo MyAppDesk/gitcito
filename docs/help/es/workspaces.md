@@ -48,6 +48,26 @@ de todo su subárbol.
 > Las carpetas solo organizan. Borrar una sube sus repositorios al nivel
 > superior — nunca cierra un repositorio.
 
+## Páginas que pertenecen a un repositorio
+
+Algunas páginas no son algo aparte: la [wiki](repo-wiki.md) de un repositorio,
+sus [métricas](insights.md), las [dev tools](devtools.md) que anunció una
+sesión de lanzamiento. No ocupan una pestaña — aparecen como iconitos en el
+propio repositorio.
+
+- **Clic en un icono** para ver esa página. **Clic otra vez — o clic en el
+  nombre del repositorio** — para volver al repositorio. Mientras hay una
+  página abierta, el nombre coge cursor de mano y una pastilla al pasar por
+  encima: es el camino de vuelta.
+- **Hover sobre un icono** para la ✕ que cierra solo esa página.
+- Dentro de un **grupo**, los iconos van en el chip del repositorio al que
+  pertenecen, y solo mientras ese repositorio es el seleccionado. Elegir otro
+  repo del grupo muestra *ese* repositorio, no la herramienta del vecino.
+- Reabrir la misma página enciende el icono que ya tiene, en vez de añadir otro.
+
+Un repositorio que no está abierto en ningún sitio no tiene icono que llevar,
+así que una página suya se abre en pestaña propia — abrir algo siempre abre algo.
+
 ## Espacios de trabajo
 
 Un espacio de trabajo es **una tira de pestañas entera, guardada**. Cambiar de

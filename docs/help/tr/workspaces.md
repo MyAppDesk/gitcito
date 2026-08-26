@@ -47,6 +47,25 @@ toplar ve tüm alt ağacını fetch ya da pull edebilir.
 > Klasörler yalnızca düzenler. Birini silmek, içindeki depoları üst düzeye
 > taşır — hiçbir depoyu kapatmaz.
 
+## Bir depoya ait sayfalar
+
+Bazı sayfalar başlı başına bir şey değildir: bir deponun [wiki](repo-wiki.md)
+sayfası, [içgörüleri](insights.md), bir başlatma oturumunun duyurduğu
+[geliştirme araçları](devtools.md). Sekme işgal etmezler — deponun kendisinde
+küçük simgeler olarak belirirler.
+
+- **Bir simgeye tıkla**, o sayfa görünsün. **Tekrar tıkla — ya da deponun adına
+  tıkla** — depoya dönersin. Bir sayfa açıkken ad, işaretçi imleci ve üstüne
+  gelince küçük bir hap alır: dönüş yolu odur.
+- **Bir simgenin üstüne gel**, yalnızca o sayfayı kapatan ✕ çıksın.
+- Bir **grup** içinde simgeler, ait oldukları deponun rozetinde durur ve
+  yalnızca o depo seçiliyken. Gruptan başka bir depo seçmek *o* depoyu gösterir,
+  komşusunun aracını değil.
+- Aynı sayfayı yeniden açmak, ikinci bir simge eklemek yerine var olanı yakar.
+
+Hiçbir yerde açık olmayan bir deponun taşıyacak simgesi yoktur; ona ait bir
+sayfa o zaman kendi sekmesinde açılır — açmak her zaman bir şey açmalıdır.
+
 ## Çalışma alanları
 
 Bir çalışma alanı, **kaydedilmiş bütün bir sekme şerididir**. Geçiş yapmak her

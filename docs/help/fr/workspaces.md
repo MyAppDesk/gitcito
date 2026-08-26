@@ -48,6 +48,28 @@ peut récupérer ou tirer son sous-arbre entier.
 > Les dossiers ne font qu'organiser. En supprimer un remonte ses dépôts au parent
 > — cela ne ferme jamais un dépôt.
 
+## Les pages qui appartiennent à un dépôt
+
+Certaines pages ne sont pas autonomes : le [wiki](repo-wiki.md) d’un dépôt, ses
+[statistiques](insights.md), les [outils de développement](devtools.md) qu’une
+session de lancement a annoncés. Elles ne prennent pas d’onglet — elles
+apparaissent en petites icônes sur le dépôt lui-même.
+
+- **Cliquez une icône** pour afficher la page. **Recliquez — ou cliquez le nom
+  du dépôt** — pour revenir au dépôt. Tant qu’une page est affichée, le nom
+  prend un curseur de pointeur et une petite pastille au survol : c’est le
+  chemin du retour.
+- **Survolez une icône** pour la ✕ qui ferme cette page seule.
+- Dans un **groupe**, les icônes se posent sur la pastille du dépôt auquel
+  elles appartiennent, et seulement tant que ce dépôt est celui qui est
+  sélectionné. Choisir un autre dépôt du groupe affiche *ce* dépôt, pas l’outil
+  du voisin.
+- Rouvrir la même page rallume l’icône existante au lieu d’en ajouter une
+  seconde.
+
+Un dépôt qui n’est ouvert nulle part n’a pas d’icône à porter : une page pour
+lui ouvre alors son propre onglet — ouvrir doit toujours ouvrir quelque chose.
+
 ## Espaces de travail
 
 Un espace de travail est une **barre d'onglets entière, sauvegardée**. En changer

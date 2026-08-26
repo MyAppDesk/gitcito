@@ -47,6 +47,28 @@ o pull sull'intero sottoalbero.
 > Le cartelle servono solo a organizzare. Eliminarne una solleva i suoi
 > repository al livello superiore — non chiude mai un repository.
 
+## Le pagine che appartengono a un repository
+
+Alcune pagine non stanno da sole: il [wiki](repo-wiki.md) di un repository, i
+suoi [insight](insights.md), i [dev tool](devtools.md) che una sessione di
+avvio ha annunciato. Non occupano una scheda — compaiono come piccole icone sul
+repository stesso.
+
+- **Clicca un’icona** per mostrare quella pagina. **Clicca di nuovo — o clicca
+  il nome del repository** — per tornare al repository. Finché una pagina è
+  aperta, il nome prende il cursore a mano e una pastiglia al passaggio: è la
+  via del ritorno.
+- **Passa sopra un’icona** per la ✕ che chiude solo quella pagina.
+- Dentro un **gruppo**, le icone stanno sulla targhetta del repository a cui
+  appartengono, e solo finché quel repository è quello selezionato. Scegliere
+  un altro repo del gruppo mostra *quel* repository, non lo strumento del
+  vicino.
+- Riaprire la stessa pagina accende l’icona che c’è già, invece di aggiungerne
+  una seconda.
+
+Un repository non aperto da nessuna parte non ha un’icona da portare: una sua
+pagina apre allora una scheda propria — aprire deve sempre aprire qualcosa.
+
 ## Aree di lavoro
 
 Un'area di lavoro è un'**intera striscia di schede salvata**. Cambiarla scambia

@@ -23,14 +23,14 @@ http://127.0.0.1:9100?uri=http://127.0.0.1:53412/uJ8k=/
 ```
 
 De launch-sessie bewaakt daarvoor haar eigen uitvoer, en de debugbalk krijgt een
-knop. Eén klik opent DevTools **in het tabblad van de repository**: het tabblad
-krijgt een klein pictogram, erop klikken wisselt tussen repository en tool, en de
-✕ die bij hover verschijnt sluit het. Eén pictogram per sessie — twee draaiende
-apps zijn twee DevTools.
+knop. Eén klik opent DevTools **op de repository zelf**, als een van haar
+[pictogrammen](workspaces.md) in plaats van in een eigen tabblad. Eén pictogram
+per sessie — twee draaiende apps zijn twee DevTools.
 
-Een **hot restart publiceert een nieuw adres**, en het tabblad volgt zolang de
-sessie leeft. Is de sessie weg, dan houdt het tabblad het laatste adres vast, dat
-meestal dood is: sluit het en open DevTools opnieuw vanuit de nieuwe run.
+Een **hot restart publiceert een nieuw adres**, en het paneel volgt zolang de
+sessie leeft. Is de sessie weg, dan houdt het paneel het laatste adres vast, dat
+meestal dood is: sluit het pictogram en open DevTools opnieuw vanuit de nieuwe
+run.
 
 ## Welke tools
 

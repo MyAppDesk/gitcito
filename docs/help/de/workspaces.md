@@ -49,6 +49,27 @@ fetchen oder pullen.
 > Ordner organisieren nur. Löschst du einen, wandern seine Repositorys eine Ebene
 > nach oben — ein Repository wird dabei nie geschlossen.
 
+## Seiten, die zu einem Repository gehören
+
+Manche Seiten sind nichts Eigenes: das [Wiki](repo-wiki.md) eines Repositories,
+seine [Insights](insights.md), die [Dev-Werkzeuge](devtools.md), die eine
+Launch-Sitzung angekündigt hat. Sie belegen keinen Tab — sie erscheinen als
+kleine Symbole am Repository selbst.
+
+- **Klick auf ein Symbol** zeigt die Seite. **Noch einmal klicken — oder auf den
+  Namen des Repositories** — bringt zum Repository zurück. Solange eine Seite
+  gezeigt wird, bekommt der Name einen Zeigefinger-Cursor und beim Überfahren
+  eine kleine Pille: er ist der Weg zurück.
+- **Über ein Symbol fahren** zeigt das ✕, das genau diese Seite schließt.
+- In einer **Gruppe** sitzen die Symbole am Chip des Repositories, zu dem sie
+  gehören, und nur solange dieses Repository ausgewählt ist. Ein anderes Repo
+  der Gruppe zeigt *dieses* Repository, nicht das Werkzeug des Nachbarn.
+- Dieselbe Seite erneut zu öffnen erhellt das vorhandene Symbol, statt ein
+  zweites hinzuzufügen.
+
+Ein Repository, das nirgends offen ist, kann kein Symbol tragen — eine Seite
+dafür öffnet stattdessen einen eigenen Tab: Öffnen muss immer etwas öffnen.
+
 ## Workspaces
 
 Ein Workspace ist eine **komplette gespeicherte Tab-Leiste**. Ein Wechsel tauscht

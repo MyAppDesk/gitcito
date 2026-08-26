@@ -48,6 +48,27 @@ zrobić pull dla całego swojego poddrzewa.
 > Foldery wyłącznie porządkują. Usunięcie folderu przenosi jego repozytoria do
 > rodzica — nigdy nie zamyka repozytorium.
 
+## Strony, które należą do repozytorium
+
+Niektóre strony nie są bytem osobnym: [wiki](repo-wiki.md) repozytorium, jego
+[statystyki](insights.md), [narzędzia deweloperskie](devtools.md) ogłoszone
+przez sesję uruchomienia. Nie zajmują karty — pojawiają się jako małe ikony na
+samym repozytorium.
+
+- **Kliknij ikonę**, żeby pokazać stronę. **Kliknij ponownie — albo kliknij
+  nazwę repozytorium** — żeby wrócić do repozytorium. Dopóki strona jest
+  otwarta, nazwa dostaje kursor wskaźnika i małą plakietkę pod najechaniem: to
+  droga powrotna.
+- **Najedź na ikonę**, żeby zobaczyć ✕ zamykające tylko tę stronę.
+- Wewnątrz **grupy** ikony siedzą na plakietce repozytorium, do którego należą,
+  i tylko dopóki to repozytorium jest wybrane. Wybranie innego repo pokazuje
+  *tamto* repozytorium, nie narzędzie sąsiada.
+- Ponowne otwarcie tej samej strony zapala istniejącą ikonę, zamiast dokładać
+  drugą.
+
+Repozytorium, które nigdzie nie jest otwarte, nie ma ikony do noszenia — jego
+strona otworzy się wtedy we własnej karcie: otwieranie musi zawsze coś otworzyć.
+
 ## Przestrzenie robocze
 
 Przestrzeń robocza to **cały zapisany pasek kart**. Przełączenie podmienia

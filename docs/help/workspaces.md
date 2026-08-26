@@ -44,6 +44,27 @@ and can fetch or pull its whole subtree.
 > Folders only organise. Deleting one lifts its repositories to the parent — it
 > never closes a repository.
 
+## Pages that belong to a repository
+
+Some pages are not their own thing: a repository's [wiki](repo-wiki.md), its
+[insights](insights.md), the [dev tools](devtools.md) a launch session
+announced. They do not take a tab — they appear as small icons on the
+repository itself.
+
+- **Click an icon** to show that page. **Click it again — or click the
+  repository's name** — to come back to the repository. While a page is
+  showing, the name grows a pointer cursor and a small pill on hover: it is the
+  way back.
+- **Hover an icon** for the ✕ that closes just that page.
+- Inside a **group**, the icons sit on the chip of the repository they belong
+  to, and only while that repository is the selected one. Picking another repo
+  in the group shows *that* repository, not its neighbour's tool.
+- Re-opening the same page lights the icon it already has instead of adding a
+  second one.
+
+A repository that is not open anywhere has no icon to carry, so a page for it
+opens as a tab of its own instead — opening something always opens something.
+
 ## Workspaces
 
 A workspace is a **whole saved tab strip**. Switching swaps every tab at once:

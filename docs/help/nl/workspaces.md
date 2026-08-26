@@ -47,6 +47,27 @@ erin op, en kan zijn hele subboom fetchen of pullen.
 > Mappen ordenen alleen. Er een verwijderen tilt zijn repository's naar de ouder
 > — het sluit nooit een repository.
 
+## Pagina's die bij een repository horen
+
+Sommige pagina's zijn niets op zichzelf: de [wiki](repo-wiki.md) van een
+repository, de [insights](insights.md), de [dev tools](devtools.md) die een
+launch-sessie aankondigde. Ze nemen geen tabblad — ze verschijnen als kleine
+pictogrammen op de repository zelf.
+
+- **Klik een pictogram** om die pagina te tonen. **Klik nog eens — of klik de
+  naam van de repository** — om terug te gaan. Zolang een pagina getoond wordt,
+  krijgt de naam een handcursor en bij hover een klein pilletje: dat is de weg
+  terug.
+- **Zweef over een pictogram** voor de ✕ die alleen die pagina sluit.
+- In een **groep** zitten de pictogrammen op de chip van de repository waar ze
+  bij horen, en alleen zolang die repository de geselecteerde is. Een andere
+  repo kiezen toont *die* repository, niet het gereedschap van de buurman.
+- Dezelfde pagina opnieuw openen laat het bestaande pictogram oplichten in
+  plaats van er een tweede bij te zetten.
+
+Een repository die nergens open staat kan geen pictogram dragen: een pagina
+ervoor opent dan een eigen tabblad — openen moet altijd iets openen.
+
 ## Workspaces
 
 Een workspace is een **hele opgeslagen tabbladenstrook**. Wisselen verwisselt elk

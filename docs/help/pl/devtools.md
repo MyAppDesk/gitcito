@@ -23,14 +23,13 @@ http://127.0.0.1:9100?uri=http://127.0.0.1:53412/uJ8k=/
 ```
 
 Sesja uruchomienia pilnuje własnego wyjścia w jej poszukiwaniu, a na pasku
-debugowania pojawia się przycisk. Kliknięcie otwiera DevTools **wewnątrz karty
-repozytorium**: karta dostaje małą ikonę, kliknięcie jej przełącza między
-repozytorium a narzędziem, a ✕ pojawiające się po najechaniu zamyka je. Jedna
-ikona na sesję — dwie działające aplikacje to dwa DevTools.
+debugowania pojawia się przycisk. Kliknięcie otwiera DevTools **na samym
+repozytorium**, jako jedną z jego [ikon](workspaces.md), a nie w osobnej karcie.
+Jedna ikona na sesję — dwie działające aplikacje to dwa DevTools.
 
-**Hot restart publikuje nowy adres**, a karta podąża za nim, dopóki żyje jej
-sesja. Gdy sesja zniknie, karta zachowa ostatni adres, zwykle już martwy: zamknij
-ją i otwórz DevTools z nowego uruchomienia.
+**Hot restart publikuje nowy adres**, a panel podąża za nim, dopóki żyje jego
+sesja. Gdy sesja zniknie, panel zachowa ostatni adres, zwykle już martwy:
+zamknij ikonę i otwórz DevTools z nowego uruchomienia.
 
 ## Które narzędzia
 

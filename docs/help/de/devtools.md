@@ -23,14 +23,14 @@ http://127.0.0.1:9100?uri=http://127.0.0.1:53412/uJ8k=/
 ```
 
 Die Launch-Sitzung beobachtet dafür ihre eigene Ausgabe, und in der Debug-Leiste
-erscheint eine Schaltfläche. Ein Klick öffnet DevTools **im Tab des
-Repositories**: der Tab bekommt ein kleines Symbol, ein Klick darauf wechselt
-zwischen Repository und Werkzeug, und das ✕ beim Überfahren schließt es. Ein
-Symbol pro Sitzung — zwei laufende Apps sind zwei DevTools.
+erscheint eine Schaltfläche. Ein Klick öffnet DevTools **am Repository selbst**,
+als eines seiner [Symbole](workspaces.md) statt als eigener Tab. Ein Symbol pro
+Sitzung — zwei laufende Apps sind zwei DevTools.
 
-Ein **Hot Restart veröffentlicht eine neue Adresse**, und der Tab folgt ihr,
-solange seine Sitzung lebt. Ist die Sitzung vorbei, behält der Tab die letzte
-Adresse, die meist tot ist: schließen und DevTools aus dem neuen Lauf öffnen.
+Ein **Hot Restart veröffentlicht eine neue Adresse**, und das Panel folgt ihr,
+solange seine Sitzung lebt. Ist die Sitzung vorbei, behält das Panel die letzte
+Adresse, die meist tot ist: das Symbol schließen und DevTools aus dem neuen Lauf
+öffnen.
 
 ## Welche Werkzeuge
 

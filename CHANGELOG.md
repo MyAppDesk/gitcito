@@ -1,5 +1,40 @@
 
 
+## [4.0.0](https://github.com/MyAppDesk/gitcito/compare/v3.30.1...v4.0.0) (2026-08-26)
+
+
+### Features
+
+* a Problems dock for the project's own analyzers ([f0dee9d](https://github.com/MyAppDesk/gitcito/commit/f0dee9d9e3e85d19a37da4fbff8b2cd93c845ebe))
+* a TODO tree beside the analyzer's problems ([37c64f1](https://github.com/MyAppDesk/gitcito/commit/37c64f125718bc00d9e73d320f31bd5117f749ca))
+* add new moods to avatar and enhance repoMood logic ([0ad131f](https://github.com/MyAppDesk/gitcito/commit/0ad131f15075fa5b70c4743e5468e566e32453ac))
+* add priority and status icons to todos in sidebar ([8884175](https://github.com/MyAppDesk/gitcito/commit/88841759a579f102da507ef5c0fe00b9151ce9e1))
+* add setting to hide completed todos in sidebar and modal ([8b315c6](https://github.com/MyAppDesk/gitcito/commit/8b315c65716d5cddd1b2b65c3b7327f6df41ccb8))
+* bookmark from the gutter, and embed more than Flutter's DevTools ([0505e6c](https://github.com/MyAppDesk/gitcito/commit/0505e6cf61d4e1d3b202131116c004f0e219939d))
+* bookmarks that survive the line moving ([7e222b9](https://github.com/MyAppDesk/gitcito/commit/7e222b9bd793f71b9939135796e02750bfc11de3))
+* chat can propose history, remote and stacked-PR actions ([e410e10](https://github.com/MyAppDesk/gitcito/commit/e410e101268defc5131504d59d4f2c4467ce951c))
+* choose when the code analyzers may run ([c3f2289](https://github.com/MyAppDesk/gitcito/commit/c3f2289d9a1e8c2a29db7d1e10c3f37c3a717b25))
+* embed Flutter DevTools in a tab ([9a57af8](https://github.com/MyAppDesk/gitcito/commit/9a57af8d871230234292ea9e4817d1ce346e50c6))
+* fold the action bar into a More menu when the window narrows ([e59df5e](https://github.com/MyAppDesk/gitcito/commit/e59df5e21770f6a2d20bf3df2cf5a45990c4749b))
+* give every settings sub-heading an icon ([f658fc1](https://github.com/MyAppDesk/gitcito/commit/f658fc14aadafd23318c48e9576bd3f59854a30d))
+* hide completed todos by default ([6d7e0b8](https://github.com/MyAppDesk/gitcito/commit/6d7e0b8c11e54d41c5fbc5761e9912ef4e512897))
+* pick the run target for a launch config ([72e8ef7](https://github.com/MyAppDesk/gitcito/commit/72e8ef7da587859ff93e51f308995023cb015d54))
+* repo-scoped pages ride on the repository's tab (POC) ([7a2d77a](https://github.com/MyAppDesk/gitcito/commit/7a2d77a3e57e4360b47987512458a07f05cd3dde))
+* send runtime hot keys from the debug toolbar ([66cc4c9](https://github.com/MyAppDesk/gitcito/commit/66cc4c9ddabdd514b5e7164ff0f8adfd62355912))
+* the repo name looks like the way back while a page is open ([0777054](https://github.com/MyAppDesk/gitcito/commit/0777054eafd50b9d64f0cac1e156ba42249be978))
+
+
+### Bug Fixes
+
+* attach repo pages inside group tabs, on the selected repo's chip ([6b2e6da](https://github.com/MyAppDesk/gitcito/commit/6b2e6da64b28b7e463c540eccf5fc03b083c1185))
+* clicking a repo's name in a group goes back to the repository ([77e3c1c](https://github.com/MyAppDesk/gitcito/commit/77e3c1c8a3d9e75d86cfc83bf2bcfcb6bbcf6993))
+* keep generated output out of the Problems dock ([3efd4e0](https://github.com/MyAppDesk/gitcito/commit/3efd4e063a19fe8b90121b75b782ec10ab56ad85))
+* keep the sidebar tab icons at their size ([c7fb058](https://github.com/MyAppDesk/gitcito/commit/c7fb0589e2511b1de4b0af6255e671a43be711e0))
+* let the line menu remove a bookmark ([2e1c6f8](https://github.com/MyAppDesk/gitcito/commit/2e1c6f896d0771aa27b94c0704d2cd7a7faaf65c))
+* opening a repo page must always open something ([561fcb0](https://github.com/MyAppDesk/gitcito/commit/561fcb02739a5d4ea2b7f7ab66430d6a71655266))
+* replay launch output printed before the terminal mounts ([77ad838](https://github.com/MyAppDesk/gitcito/commit/77ad83851efde550a0f14d2519ae56b073fe6161))
+* the problems counter says "not looked at yet", not "clean" ([2cd6a72](https://github.com/MyAppDesk/gitcito/commit/2cd6a72968054deb7eee6b1fb00dea37b83bd1b0))
+
 ## [3.30.1](https://github.com/MyAppDesk/gitcito/compare/v3.30.0...v3.30.1) (2026-08-26)
 
 

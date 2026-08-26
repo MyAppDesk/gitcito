@@ -49,6 +49,28 @@ ancien d'abord, parce que ce qui est ignoré depuis le plus longtemps est ce qui
 mérite d'être vu. Les tâches terminées descendent, la dernière cochée en tête,
 pour qu'annuler une erreur de clic reste immédiat.
 
+## Les mettre dans votre ordre
+
+Le tri par défaut a un avis, et il se trompe parfois : les trois choses que vous
+comptez vraiment faire cet après-midi ne sont pas forcément les trois plus
+bruyantes. Faites glisser une ligne par sa poignée, ou appuyez sur ses boutons
+▲ / ▼ — <kbd>Alt</kbd> avec les flèches fait la même chose au clavier — et la
+liste garde l'ordre que vous lui donnez.
+
+Le premier glissement active **Ordre manuel** pour vous ; décochez-le dans la
+barre de filtres pour rendre la liste au tri par priorité, mémorisé tel quel.
+Deux limites à connaître :
+
+- **Seules les tâches ouvertes bougent.** Les tâches terminées restent dans leur
+  pile en dessous, la plus récemment cochée en premier, quel que soit le mode.
+- **Le réordonnancement s'efface tant que le champ de filtre contient du
+  texte**, car une ligne déplacée au-delà de voisins invisibles atterrit là où
+  vous ne l'attendiez pas.
+
+La priorité reste affichée, sous forme de barres de signal à côté de chaque
+ligne — une barre pour basse, trois pour haute — et pilote toujours la pastille
+jaune de la barre d'état.
+
 ## Les voir sans les chercher
 
 ![La section de la barre latérale et la pastille de la barre d'état, dans une même fenêtre](../../screenshots/todos-markers.webp)

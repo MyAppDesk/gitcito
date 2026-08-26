@@ -49,6 +49,28 @@ perché ciò che è stato ignorato più a lungo è ciò che merita di essere vis
 completate scendono in fondo, con l'ultima spuntata in cima, così annullare un
 clic sbagliato è immediato.
 
+## Metterle nel tuo ordine
+
+L'ordinamento predefinito ha un'opinione, e a volte sbaglia: le tre cose che
+davvero intendi fare questo pomeriggio non sono per forza le tre più rumorose.
+Trascina una riga dalla sua maniglia, oppure premi i pulsanti ▲ / ▼ della riga —
+<kbd>Alt</kbd> con le frecce fa lo stesso da tastiera — e l'elenco conserva
+l'ordine che gli dai.
+
+Il primo trascinamento attiva **Ordine manuale** al posto tuo; togli la spunta
+nella riga dei filtri per restituire l'elenco all'ordinamento per priorità,
+ricordato esattamente com'era. Due limiti da conoscere:
+
+- **Si spostano solo le attività aperte.** Quelle completate restano nella loro
+  pila in basso, dall'ultima spuntata, in qualsiasi modalità.
+- **Il riordino si fa da parte finché il campo filtro contiene del testo**,
+  perché una riga spostata oltre vicini che non vedi finisce dove non te
+  l'aspetti.
+
+La priorità resta visibile, come barre di segnale accanto a ogni riga — una
+barra per bassa, tre per alta — e continua a comandare il chip giallo nella
+barra di stato.
+
 ## Vederle senza cercarle
 
 ![La sezione della barra laterale e il contrassegno nella barra di stato, in un'unica finestra](../../screenshots/todos-markers.webp)

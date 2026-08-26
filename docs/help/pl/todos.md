@@ -48,6 +48,28 @@ nad niskim — a w obrębie priorytetu najstarsze pierwsze, bo to, co jest
 ignorowane najdłużej, zasługuje na uwagę. Ukończone opadają na dół, ostatnio
 odhaczone na górze, żeby cofnięcie pomyłki było jednym ruchem.
 
+## Ustawianie własnej kolejności
+
+Domyślne sortowanie ma zdanie i czasem się myli: trzy rzeczy, które naprawdę
+zamierzasz zrobić dziś po południu, nie muszą być trzema najgłośniejszymi.
+Przeciągnij wiersz za uchwyt albo naciśnij jego przyciski ▲ / ▼ — <kbd>Alt</kbd>
+ze strzałkami robi to samo z klawiatury — a lista zachowa kolejność, którą jej
+nadasz.
+
+Pierwsze przeciągnięcie włącza za ciebie **Kolejność ręczną**; odznacz ją w
+wierszu filtrów, aby oddać listę sortowaniu według priorytetu, zapamiętanemu
+dokładnie takim, jakie było. Dwa ograniczenia warte poznania:
+
+- **Przesuwają się tylko otwarte zadania.** Ukończone zostają na stosie poniżej,
+  ostatnio odhaczone na górze, niezależnie od trybu.
+- **Zmiana kolejności ustępuje, dopóki w polu filtra jest tekst**, bo wiersz
+  przesunięty obok niewidocznych sąsiadów ląduje tam, gdzie się tego nie
+  spodziewasz.
+
+Priorytet nadal widać jako słupki sygnału obok każdego wiersza — jeden słupek
+dla niskiego, trzy dla wysokiego — i nadal steruje żółtym znacznikiem na pasku
+stanu.
+
 ## Widać je bez szukania
 
 ![Sekcja paska bocznego i plakietka na pasku stanu w jednym oknie](../../screenshots/todos-markers.webp)

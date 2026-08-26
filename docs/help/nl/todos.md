@@ -49,6 +49,27 @@ wat het langst genegeerd is, verdient het om gezien te worden. Afgeronde taken
 zakken naar onderen, het laatst afgevinkte bovenaan, zodat een misklik met één
 zet ongedaan is.
 
+## Ze in jouw volgorde zetten
+
+De standaardsortering heeft een mening en zit er soms naast: de drie dingen die
+je vanmiddag echt gaat doen zijn niet per se de drie luidste. Sleep een rij aan
+het greepje, of druk op de ▲/▼-knoppen ervan — <kbd>Alt</kbd> met de
+pijltjestoetsen doet hetzelfde vanaf het toetsenbord — en de lijst houdt de
+volgorde die jij geeft.
+
+De eerste sleep zet **Handmatige volgorde** voor je aan; vink het uit in de
+filterrij om de lijst terug te geven aan de prioriteitssortering, die precies zo
+onthouden wordt als hij was. Twee grenzen die het waard zijn om te kennen:
+
+- **Alleen open taken bewegen.** Afgeronde blijven in hun stapel eronder, de
+  laatst afgevinkte bovenaan, in welke modus dan ook.
+- **Herschikken stapt opzij zolang er tekst in het filterveld staat**, want een
+  rij die langs buren schuift die je niet ziet, landt ergens waar je haar niet
+  verwachtte.
+
+De prioriteit blijft zichtbaar, als signaalbalkjes naast elke rij — één balkje
+voor laag, drie voor hoog — en stuurt nog steeds de gele chip in de statusbalk.
+
 ## Ze zien zonder te kijken
 
 ![De sectie in de zijbalk en de chip in de statusbalk, in één venster](../../screenshots/todos-markers.webp)

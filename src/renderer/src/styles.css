@@ -15217,17 +15217,9 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .sb-todo { gap: 7px; }
 .sb-todo-box { flex: none; margin: 0; cursor: pointer; }
 .sb-todo.done .sb-name { text-decoration: line-through; color: var(--text-2); }
-.sb-todo-prio {
-  flex: none;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--text-2);
-}
-.sb-todo-prio.high { background: var(--red, #f85149); }
-.sb-todo-prio.low { background: var(--text-2); opacity: 0.5; }
 
-.todos { display: flex; flex-direction: column; min-height: 0; }
+
+.todos { display: flex; flex-direction: column; min-height: 0; position: relative; }
 .todos-toolbar { display: flex; align-items: center; gap: 10px; margin: 12px 0 8px; flex-wrap: wrap; }
 .todos-add-input {
   flex: 1;
@@ -15262,10 +15254,10 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .todos-toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-1); cursor: pointer; }
 .todos-summary { font-size: 12px; color: var(--text-2); margin-inline-start: auto; }
 
-.todos-split { display: flex; gap: 12px; flex: 1; min-height: 0; }
+.todos-body { display: flex; flex: 1; min-height: 0; }
 .todos-list {
-  width: 320px;
-  flex-shrink: 0;
+  flex: 1;
+  min-width: 0;
   overflow-y: auto;
   min-height: 0;
   border: 1px solid var(--border-soft);
@@ -15287,11 +15279,170 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .todo-row-title { font-size: 13px; color: var(--text-0); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .todo-row.done .todo-row-title { text-decoration: line-through; color: var(--text-2); }
 .todo-row-meta { font-size: 11px; color: var(--text-2); }
-.todo-prio-dot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--text-2); }
-.todo-prio-dot.high { background: var(--red, #f85149); }
-.todo-prio-dot.low { opacity: 0.5; }
+/* Priority reads as a shape first (a chevron up or down), colour second — the
+   old dot needed a legend, an arrow does not. */
+.todo-prio-icon { flex: none; color: var(--text-2); }
+.todo-prio-icon.high { color: var(--red, #f85149); }
+.todo-prio-icon.normal { opacity: 0.45; }
+.todo-prio-icon.low { color: var(--text-2); opacity: 0.6; }
+.codesearch-tab.prio-chip { display: inline-flex; align-items: center; gap: 4px; }
+.codesearch-tab.prio-chip.high svg { color: var(--red, #f85149); }
+.codesearch-tab.prio-chip.active svg { color: inherit; }
 
-.todos-detail { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
+/* Reorder affordances: the grip and the arrows stay quiet until the row is
+   hovered or focused, so a list nobody is reordering still reads as a list. */
+.todo-grip { flex: none; color: var(--text-2); opacity: 0; cursor: grab; }
+.todo-row:hover .todo-grip,
+.todo-row:focus-within .todo-grip { opacity: 0.7; }
+.todo-row.dragging { opacity: 0.45; }
+.todo-row.drop-target { box-shadow: inset 0 2px 0 0 var(--accent); }
+.todo-move { flex: none; display: inline-flex; gap: 1px; opacity: 0; }
+.todo-row:hover .todo-move,
+.todo-row:focus-within .todo-move { opacity: 1; }
+.todo-move .icon-btn { padding: 2px; }
+
+/* Status colours track the workflow, not the rainbow: muted while queued, live
+   while moving, red when stuck, amber under review, green when out. */
+.todo-status-icon { flex: none; color: var(--text-2); }
+.todo-status-icon.progress { color: var(--accent); }
+.todo-status-icon.blocked { color: var(--red, #f85149); }
+.todo-status-icon.qa { color: var(--yellow, #d29922); }
+.todo-status-icon.done { color: var(--green, #3fb950); }
+.codesearch-tab.status-chip { display: inline-flex; align-items: center; gap: 4px; }
+.todos-status-tabs { flex-wrap: wrap; }
+.sb-todo-sub,
+.todo-sub-count {
+  flex: none;
+  font-size: 10px;
+  color: var(--text-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 999px;
+  padding: 0 5px;
+}
+.todo-row.sub { padding-inline-start: 26px; }
+.todo-row.sub .todo-row-title { font-size: 12px; }
+.todo-sub-arrow { flex: none; color: var(--text-2); }
+.todo-group + .todo-group .todo-row:first-child { border-top: 1px solid var(--border-soft); }
+
+.todo-subrow { display: flex; align-items: center; gap: 6px; }
+.todo-subrow.done .todo-subrow-title { text-decoration: line-through; color: var(--text-2); }
+.todo-subrow-title {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  color: var(--text-0);
+  font-size: 12px;
+  padding: 4px 7px;
+}
+.todo-subrow-title:focus { outline: none; border-color: var(--accent); }
+.todo-subadd { display: flex; align-items: center; gap: 6px; margin-top: 2px; }
+.todo-subadd input {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  color: var(--text-0);
+  font-size: 12px;
+  padding: 4px 7px;
+}
+.todo-subadd input:focus { outline: none; border-color: var(--accent); }
+.todos-parent-link { align-self: flex-start; gap: 5px; }
+
+/* ─── The board ─── */
+/* The board runs out to the modal's edges and pays its own padding back, so a
+   column scrolled to either end is not sliced by the dialog's inner margin. */
+.todo-board {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  margin-inline: -22px;
+  padding: 0 22px 4px;
+  scroll-padding-inline: 22px;
+}
+.todo-col {
+  flex: 1 1 0;
+  min-width: 132px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  background: var(--bg-1);
+}
+.todo-col.drop-target { border-color: var(--accent); }
+.todo-col-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 9px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.todo-col-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.todo-col-count { margin-inline-start: auto; font-size: 11px; color: var(--text-2); }
+.todo-col-body { flex: 1; min-height: 0; overflow-y: auto; padding: 6px; display: flex; flex-direction: column; gap: 6px; }
+.todo-col-empty { font-size: 11px; color: var(--text-2); padding: 6px 2px; }
+.todo-card {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 7px 8px;
+  border: 1px solid var(--border-soft);
+  border-inline-start: 2px solid var(--border-soft);
+  border-radius: 7px;
+  background: var(--bg-2);
+  cursor: grab;
+}
+.todo-card.prio-high { border-inline-start-color: var(--red, #f85149); }
+.todo-card.prio-low { opacity: 0.85; }
+.todo-card:hover { background: var(--bg-3); }
+.todo-card.active { border-color: var(--accent); }
+.todo-card.dragging { opacity: 0.45; }
+.todo-card.drop-target { box-shadow: inset 0 2px 0 0 var(--accent); }
+.todo-card-title { font-size: 12px; color: var(--text-0); overflow-wrap: anywhere; }
+.todo-card-meta { display: flex; align-items: center; gap: 6px; font-size: 10px; color: var(--text-2); }
+.todo-card-branch { display: inline-flex; align-items: center; gap: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* The detail sheet: a panel over the list rather than a second column, so the
+   board keeps the full width and nothing has to say "pick a todo" to fill a
+   pane. The backdrop is inside the modal, not over the window — the app's own
+   modal chrome stays visible and its Close button still means Close. */
+.todo-sheet-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  align-items: stretch;
+  justify-content: flex-end;
+  padding: 6px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--bg-0) 55%, transparent);
+}
+.todo-sheet {
+  width: min(420px, 100%);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: -8px 0 24px rgb(0 0 0 / 0.25);
+}
+.todo-sheet-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.todo-sheet-title { font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-1); }
+.todo-sheet-head .icon-btn { margin-inline-start: auto; }
+.todos-detail { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; padding: 12px; }
 .todos-field { display: flex; flex-direction: column; gap: 4px; }
 .todos-field-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-2); }
 .todos-field input,

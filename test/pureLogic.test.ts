@@ -11,7 +11,7 @@ import { stackOrder, moveLevel, adoptableBranches, targetFor } from '../src/rend
 import { planStackSubmit, summariseStackPlan } from '../src/shared/stackPr'
 import { groupPrStacks, stackRowStates } from '../src/renderer/src/lib/prStacks'
 import { HUGE_SECTION, openUnlessHuge } from '../src/renderer/src/lib/sidebarSections'
-import { clearDoneTodos, createTodo, filterTodos, patchTodo, removeTodo, sortTodos, todoSummary, toggleTodo } from '../src/renderer/src/lib/todos'
+import { childrenOf, clearDoneTodos, createTodo, filterTodos, moveTodo, patchTodo, removeTodo, reorderTodos, setTodoStatus, sortTodos, subtaskProgress, todoStatus, todoSummary, toggleTodo, topLevelTodos } from '../src/renderer/src/lib/todos'
 import { branchMatches, isSafeLinkUrl, isSafeRepoRelPath, parseRepoConfig, satisfiesNodeRange, serializeRepoConfig, validateRepoConfig } from '../src/shared/repoConfig'
 import { appendTrailers, configTrailers, doctorSummary, effectiveProtected, isProtectedBranch, ticketSegments } from '../src/renderer/src/lib/repoConfig'
 import { buildMenuSpec } from '../src/renderer/src/lib/appMenu'
@@ -5152,6 +5152,119 @@ describe('repository todos', () => {
   it('sinks completed todos below open ones, most recently ticked first', () => {
     const ticked = toggleTodo(toggleTodo(base, 'b', at(10)), 'a', at(20))
     expect(sortTodos(ticked).map((td) => td.id)).toEqual(['c', 'a', 'b'])
+  })
+
+  it('keeps storage order for open todos in manual mode', () => {
+    expect(sortTodos(base, true).map((td) => td.id)).toEqual(['a', 'b', 'c'])
+  })
+
+  it('still sinks the done pile in manual mode', () => {
+    const ticked = toggleTodo(base, 'a', at(10))
+    expect(sortTodos(ticked, true).map((td) => td.id)).toEqual(['b', 'c', 'a'])
+  })
+
+  it('moves a todo one slot up or down', () => {
+    expect(moveTodo(base, 'c', -1).map((td) => td.id)).toEqual(['a', 'c', 'b'])
+    expect(moveTodo(base, 'a', 1).map((td) => td.id)).toEqual(['b', 'a', 'c'])
+  })
+
+  it('leaves the list untouched when a move runs off either end', () => {
+    expect(moveTodo(base, 'a', -1)).toBe(base)
+    expect(moveTodo(base, 'c', 1)).toBe(base)
+    expect(moveTodo(base, 'nope', -1)).toBe(base)
+  })
+
+  it('moves within the open run, leaving the done entry in its own slot', () => {
+    const ticked = toggleTodo(base, 'b', at(10))
+    const moved = moveTodo(ticked, 'c', -1)
+    expect(moved.map((td) => td.id)).toEqual(['c', 'b', 'a'])
+    expect(sortTodos(moved, true).map((td) => td.id)).toEqual(['c', 'a', 'b'])
+  })
+
+  it('drops a todo in front of another, or at the end for a null target', () => {
+    expect(reorderTodos(base, 'c', 'a').map((td) => td.id)).toEqual(['c', 'a', 'b'])
+    expect(reorderTodos(base, 'a', null).map((td) => td.id)).toEqual(['b', 'c', 'a'])
+  })
+
+  it('ignores a reorder onto itself or onto an unknown id', () => {
+    expect(reorderTodos(base, 'a', 'a')).toBe(base)
+    expect(reorderTodos(base, 'a', 'ghost')).toBe(base)
+    expect(reorderTodos(base, 'ghost', 'a')).toBe(base)
+  })
+
+  it('reads a status, falling back to the checkbox for older todos', () => {
+    expect(todoStatus(base[0])).toBe('todo')
+    expect(todoStatus({ ...base[0], status: undefined, done: true })).toBe('done')
+    expect(todoStatus({ ...base[0], status: 'qa' })).toBe('qa')
+  })
+
+  it('keeps done and the status column in step', () => {
+    const qa = setTodoStatus(base, 'a', 'qa', at(5))
+    expect(qa.find((td) => td.id === 'a')).toMatchObject({ status: 'qa', done: false })
+    const done = setTodoStatus(qa, 'a', 'done', at(6))
+    expect(done.find((td) => td.id === 'a')).toMatchObject({ status: 'done', done: true, doneAt: at(6) })
+    const back = setTodoStatus(done, 'a', 'progress', at(7))
+    const a = back.find((td) => td.id === 'a')!
+    expect(a).toMatchObject({ status: 'progress', done: false })
+    expect('doneAt' in a).toBe(false)
+  })
+
+  it('unticking a todo returns it to the first column', () => {
+    const done = toggleTodo(setTodoStatus(base, 'a', 'qa', at(5)), 'a', at(6))
+    expect(todoStatus(toggleTodo(done, 'a', at(7)).find((td) => td.id === 'a')!)).toBe('todo')
+  })
+
+  it('completes the subtasks with their parent, but does not drag them elsewhere', () => {
+    const withKid = [...base, { ...createTodo('step one', at(4), { parentId: 'a' }), id: 'k' }]
+    const done = setTodoStatus(withKid, 'a', 'done', at(8))
+    expect(done.find((td) => td.id === 'k')).toMatchObject({ done: true })
+    const moved = setTodoStatus(withKid, 'a', 'progress', at(8))
+    expect(moved.find((td) => td.id === 'k')).toMatchObject({ status: 'todo', done: false })
+  })
+
+  it('separates top-level todos from subtasks and counts the checklist', () => {
+    const withKids = [
+      ...base,
+      { ...createTodo('step one', at(4), { parentId: 'a' }), id: 'k1' },
+      { ...createTodo('step two', at(5), { parentId: 'a' }), id: 'k2' }
+    ]
+    expect(topLevelTodos(withKids).map((td) => td.id)).toEqual(['a', 'b', 'c'])
+    expect(childrenOf(withKids, 'a').map((td) => td.id)).toEqual(['k1', 'k2'])
+    expect(subtaskProgress(withKids, 'a')).toEqual({ done: 0, total: 2 })
+    expect(subtaskProgress(toggleTodo(withKids, 'k1', at(9)), 'a')).toEqual({ done: 1, total: 2 })
+    expect(subtaskProgress(withKids, 'b')).toEqual({ done: 0, total: 0 })
+  })
+
+  it('deleting a todo takes its subtasks with it', () => {
+    const withKid = [...base, { ...createTodo('step one', at(4), { parentId: 'a' }), id: 'k' }]
+    expect(removeTodo(withKid, 'a').map((td) => td.id)).toEqual(['b', 'c'])
+  })
+
+  it('clearing completed drops the subtasks of the todos it removes', () => {
+    const withKid = [...base, { ...createTodo('step one', at(4), { parentId: 'a' }), id: 'k' }]
+    expect(clearDoneTodos(toggleTodo(withKid, 'a', at(9))).map((td) => td.id)).toEqual(['b', 'c'])
+  })
+
+  it('reorders inside one board column and leaves the others alone', () => {
+    const cols = setTodoStatus(setTodoStatus(base, 'a', 'qa', at(5)), 'c', 'qa', at(5))
+    expect(moveTodo(cols, 'c', -1, 'column').map((td) => td.id)).toEqual(['c', 'b', 'a'])
+    expect(moveTodo(cols, 'b', -1, 'column')).toBe(cols)
+  })
+
+  it('refuses a reorder across two different runs', () => {
+    const cols = setTodoStatus(base, 'a', 'qa', at(5))
+    expect(reorderTodos(cols, 'b', 'a', 'column')).toBe(cols)
+  })
+
+  it('reorders subtasks among their own siblings', () => {
+    const withKids = [
+      ...base,
+      { ...createTodo('step one', at(4), { parentId: 'a' }), id: 'k1' },
+      { ...createTodo('step two', at(5), { parentId: 'a' }), id: 'k2' }
+    ]
+    const moved = moveTodo(withKids, 'k2', -1)
+    expect(childrenOf(moved, 'a').map((td) => td.id)).toEqual(['k2', 'k1'])
+    expect(topLevelTodos(moved).map((td) => td.id)).toEqual(['a', 'b', 'c'])
   })
 
   it('stamps doneAt on tick and clears it on untick', () => {

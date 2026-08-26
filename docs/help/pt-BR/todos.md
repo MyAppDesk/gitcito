@@ -49,6 +49,27 @@ primeiro, porque o que está ignorado há mais tempo é o que merece ser visto. 
 concluídas afundam, com a última marcada no topo, para que desfazer um clique
 errado seja imediato.
 
+## Colocando na sua ordem
+
+A ordenação padrão tem opinião e às vezes erra: as três coisas que você
+realmente pretende fazer nesta tarde não são necessariamente as três mais
+barulhentas. Arraste uma linha pela alça, ou pressione os botões ▲ / ▼ dela —
+<kbd>Alt</kbd> com as setas faz o mesmo pelo teclado — e a lista mantém a ordem
+que você deu.
+
+O primeiro arrasto liga **Ordem manual** para você; desmarque na linha de
+filtros para devolver a lista à ordenação por prioridade, lembrada exatamente
+como estava. Dois limites que valem saber:
+
+- **Só as tarefas abertas se movem.** As concluídas ficam na pilha de baixo, a
+  marcada mais recentemente no topo, em qualquer modo.
+- **A reordenação sai de cena enquanto houver texto no filtro**, porque uma
+  linha movida além de vizinhos invisíveis vai parar onde você não esperava.
+
+A prioridade continua visível, como barras de sinal ao lado de cada linha — uma
+barra para baixa, três para alta — e continua mandando no distintivo amarelo da
+barra de status.
+
 ## Vendo sem procurar
 
 ![A seção da barra lateral e o chip da barra de status, na mesma janela](../../screenshots/todos-markers.webp)

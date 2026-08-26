@@ -60,7 +60,9 @@ import { stepRange, claimRangeKeys, ownsRangeKeys, rangeKeysBlocked, domOrder } 
 import { openBranchDropMenu } from '../lib/branchDropMenu'
 import { worktreeForBranch, worktreeTabName } from '../lib/worktrees'
 import { HUGE_SECTION, openUnlessHuge } from '../lib/sidebarSections'
-import { sortTodos, todoSummary } from '../lib/todos'
+import { TODO_STATUSES, sortTodos, subtaskProgress, todoStatus, todoSummary, topLevelTodos } from '../lib/todos'
+import { TodoPriorityIcon } from './TodoPriorityIcon'
+import { TodoStatusIcon, TODO_STATUS_LABEL } from './TodoStatusIcon'
 import { canonicalRepoPath } from '../lib/repoAlias'
 import { defaultSettings } from '../../../shared/types'
 import type { BranchInfo, MergeRiskKind, ReleaseInfo, RemoteBranchInfo, StashInfo, TagInfo, WorktreeInfo, SubmoduleInfo, LaunchGroup, LaunchConfig, PullRequest, IssueInfo, MilestoneInfo, RemoteInfo, RepoTodo } from '../../../shared/types'
@@ -256,6 +258,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   // canonical path, so the same repo opened twice shows one list.
   const todosByRepo = useSettingsStore((s) => s.settings.repoTodos)
   const hideDoneTodos = useSettingsStore((s) => s.settings.todosHideDone)
+  const manualTodoOrder = !!useSettingsStore((s) => s.settings.todosManualOrder)
   const todos = useMemo(
     () => todosByRepo?.[canonicalRepoPath(repo.path)] ?? [],
     [todosByRepo, repo.path]
@@ -1793,7 +1796,11 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   // ─── Todos ───
   // The done pile is hidden here, not deleted — the counts below still read
   // from the full list so the badge does not lie about what exists.
-  const sortedTodos = hideDoneTodos ? sortTodos(todos).filter((td) => !td.done) : sortTodos(todos)
+  // Subtasks stay inside the modal: the sidebar is a glance, and a nested tree
+  // there would cost more height than the section is worth.
+  const sortedTodos = hideDoneTodos
+    ? sortTodos(topLevelTodos(todos), manualTodoOrder).filter((td) => !td.done)
+    : sortTodos(topLevelTodos(todos), manualTodoOrder)
   const todoCounts = todoSummary(todos)
   const PRIORITY_LABEL: Record<RepoTodo['priority'], TranslationKey> = {
     high: 'todos.priorityHigh',
@@ -1808,12 +1815,26 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       { label: td.done ? t('todos.markOpen') : t('todos.markDone'), onClick: () => settings.toggleTodo(path, td.id) },
       { separator: true },
       {
+        label: t('todos.status'),
+        submenu: TODO_STATUSES.map((st) => ({
+          label: `${todoStatus(td) === st ? '✓ ' : '   '}${t(TODO_STATUS_LABEL[st])}`,
+          onClick: () => settings.setTodoStatus(path, td.id, st)
+        }))
+      },
+      {
         label: t('todos.priority'),
         submenu: (['high', 'normal', 'low'] as const).map((p) => ({
           label: `${td.priority === p ? '✓ ' : '   '}${t(PRIORITY_LABEL[p])}`,
           onClick: () => settings.patchTodo(path, td.id, { priority: p })
         }))
       },
+      ...(td.done
+        ? []
+        : [
+            { separator: true },
+            { label: t('todos.moveUp'), onClick: () => settings.moveTodo(path, td.id, -1) },
+            { label: t('todos.moveDown'), onClick: () => settings.moveTodo(path, td.id, 1) }
+          ]),
       { separator: true },
       { label: t('todos.delete'), danger: true, onClick: () => settings.deleteTodo(path, td.id) }
     ]
@@ -1842,10 +1863,14 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         onClick={(e) => e.stopPropagation()}
         onChange={() => useSettingsStore.getState().toggleTodo(path, td.id)}
       />
+      <TodoStatusIcon status={todoStatus(td)} size={12} />
       <span className="sb-name">{td.title}</span>
-      {!td.done && td.priority !== 'normal' && (
-        <span className={`sb-todo-prio ${td.priority}`} title={t(td.priority === 'high' ? 'todos.priorityHigh' : 'todos.priorityLow')} />
+      {subtaskProgress(todos, td.id).total > 0 && (
+        <span className="sb-todo-sub" title={t('todos.subtasks')}>
+          {interp(t('todos.subtaskCount'), subtaskProgress(todos, td.id))}
+        </span>
       )}
+      {!td.done && td.priority !== 'normal' && <TodoPriorityIcon priority={td.priority} size={12} />}
     </div>
   )
 

@@ -49,6 +49,26 @@ antiguo primero, porque lo que lleva más tiempo ignorado es lo que merece
 verse. Lo completado baja al final, con lo último marcado arriba, para que
 deshacer un clic equivocado sea inmediato.
 
+## Ponerlas en tu orden
+
+El orden por defecto tiene opinión, y a veces se equivoca: las tres cosas que de
+verdad piensas hacer esta tarde no son necesariamente las tres más ruidosas.
+Arrastra una fila por su asa, o pulsa sus botones ▲ / ▼ — <kbd>Alt</kbd> con las
+flechas hace lo mismo desde el teclado — y la lista conserva el orden que le des.
+
+El primer arrastre o empujón activa **Orden manual** por ti; desmárcalo en la
+fila de filtros para devolver la lista al orden por prioridad, que se recuerda
+tal y como estaba. Dos límites que conviene conocer:
+
+- **Solo se mueven las tareas abiertas.** Las completadas se quedan en su montón
+  de abajo, la marcada más recientemente arriba, estés en el modo que estés.
+- **La reordenación se aparta mientras el filtro tenga texto**, porque una fila
+  movida más allá de vecinos que no ves acaba donde no esperabas.
+
+La prioridad se sigue mostrando, como barras de señal junto a cada fila — una
+barra para baja, tres para alta — y sigue mandando en el distintivo amarillo de
+la barra de estado.
+
 ## Verlas sin buscarlas
 
 ![La sección de la barra lateral y el indicador de la barra de estado, en una misma ventana](../../screenshots/todos-markers.webp)

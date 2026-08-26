@@ -2707,6 +2707,10 @@ export interface AppSettings {
   /** Hide ticked todos in the sidebar section and the todo list. The entries
    *  are kept — only the display drops them. */
   todosHideDone: boolean
+  /** Order todos by hand — the list keeps the order the user dragged or
+   *  arrowed it into, instead of sorting by priority then age. Flipped on by
+   *  the first reorder, so nobody has to find the switch first. */
+  todosManualOrder?: boolean
   autoFetchMinutes: number
   /** Raise an OS notification for new review-requested / CI inbox items. */
   desktopNotifications?: boolean
@@ -2894,6 +2898,13 @@ export function defaultGraphColumnOrder(): GraphFlowColumnId[] {
 export type TodoPriority = 'low' | 'normal' | 'high'
 
 /**
+ * Which board column a todo sits in. `done` is the same state as the ticked
+ * checkbox — the two are kept in lockstep, so a todo can never be ticked and
+ * sitting in `qa` at once.
+ */
+export type TodoStatus = 'todo' | 'progress' | 'blocked' | 'qa' | 'done'
+
+/**
  * One checklist entry attached to a repository. Stored in app settings keyed by
  * canonical repo path — never written into the repository itself, so a todo
  * cannot leak into a commit, a diff or a colleague's clone.
@@ -2911,6 +2922,13 @@ export interface RepoTodo {
   doneAt?: number
   /** Branch that was checked out when it was written — context, not a filter. */
   branch?: string
+  /** Board column. Absent on todos written before the board existed; read it
+   *  through `todoStatus()`, which falls back to `done`. */
+  status?: TodoStatus
+  /** Parent todo when this is a subtask. One level only — a subtask never has
+   *  children of its own, because a checklist that nests without limit is a
+   *  project plan, and that belongs in an issue tracker. */
+  parentId?: string
 }
 
 /**
@@ -3075,6 +3093,7 @@ export function defaultSettings(): AppSettings {
     repoLayouts: {},
     repoTodos: {},
     todosHideDone: false,
+    todosManualOrder: false,
     autoFetchMinutes: 5,
     desktopNotifications: false,
     confirmForcePush: true,

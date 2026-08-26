@@ -47,6 +47,26 @@ low, and within a priority the oldest first, because the thing that has been
 ignored longest is the thing worth seeing. Completed items sink below, most
 recently ticked at the top, so undoing a mis-click is one move away.
 
+## Putting them in your order
+
+The default sort is opinionated, and sometimes wrong: the three things you
+actually intend to do this afternoon are not necessarily the three loudest ones.
+Drag a row by its grip, or press the ▲ / ▼ buttons on it — <kbd>Alt</kbd> with
+the arrow keys does the same from the keyboard — and the list keeps the order
+you put it in.
+
+The first drag or nudge switches **Manual order** on for you; untick it in the
+filter row to hand the list back to the priority sort, which is remembered
+exactly as it was. Two limits worth knowing:
+
+- **Only open todos move.** Completed ones stay in their pile below, most
+  recently ticked first, whichever mode you are in.
+- **Reordering steps aside while the filter box has text in it**, because a row
+  moved past neighbours you cannot see lands somewhere you did not expect.
+
+Priority is still shown, as signal bars beside each row — one bar for low, three
+for high — and still drives the yellow status-bar chip.
+
 ## Seeing them without looking
 
 ![The sidebar section and the status-bar chip, both on one window](../screenshots/todos-markers.webp)

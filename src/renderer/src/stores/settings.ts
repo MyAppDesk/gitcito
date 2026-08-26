@@ -14,6 +14,7 @@ import {
   type RepoLayout,
   type RepoRef,
   type RepoTodo,
+  type TodoStatus,
   type TabState,
   type Workspace
 } from '../../../shared/types'
@@ -30,7 +31,18 @@ import {
 import { settingsApi } from '../infrastructure/api'
 import { useUIStore } from './ui'
 import { applyRepoAlias, canonicalRepoPath, migrateRepoAliases, repoDisplayName } from '../lib/repoAlias'
-import { clearDoneTodos, createTodo, patchTodo, removeTodo, toggleTodo } from '../lib/todos'
+import {
+  clearDoneTodos,
+  createTodo,
+  moveTodo,
+  patchTodo,
+  removeTodo,
+  reorderTodos,
+  setTodoStatus,
+  sortTodos,
+  toggleTodo,
+  type TodoScope
+} from '../lib/todos'
 
 const uid = (): string => Math.random().toString(36).slice(2, 10)
 
@@ -94,6 +106,24 @@ function withTodos(
   })
 }
 
+/** Reorder helper. A drag or an arrow press is also the moment the list stops
+ *  sorting itself, so the order currently on screen is frozen into storage and
+ *  `todosManualOrder` flips in the same write — otherwise the first nudge would
+ *  be undone by the next re-sort. */
+function withTodoOrder(
+  update: (mut: (s: AppSettings) => AppSettings) => void,
+  path: string,
+  fn: (list: RepoTodo[]) => RepoTodo[]
+): void {
+  const key = canonicalRepoPath(path)
+  update((s) => {
+    const cur = s.repoTodos?.[key] ?? []
+    if (!cur.length) return s
+    const next = fn(s.todosManualOrder ? cur : sortTodos(cur))
+    return { ...s, repoTodos: { ...(s.repoTodos ?? {}), [key]: next }, todosManualOrder: true }
+  })
+}
+
 let saveTimer: ReturnType<typeof setTimeout> | null = null
 function persist(settings: AppSettings): void {
   if (saveTimer) clearTimeout(saveTimer)
@@ -144,12 +174,28 @@ interface SettingsState {
    *  written one for; never undefined, so callers can map straight away. */
   todosFor(path: string): RepoTodo[]
   /** Append a todo. No-op on an empty title, so an accidental Enter is free. */
-  addTodo(path: string, title: string, opts?: { notes?: string; priority?: RepoTodo['priority']; branch?: string }): void
+  addTodo(
+    path: string,
+    title: string,
+    opts?: { notes?: string; priority?: RepoTodo['priority']; branch?: string; parentId?: string }
+  ): void
   patchTodo(path: string, id: string, patch: Partial<Omit<RepoTodo, 'id'>>): void
   /** Tick / untick, stamping `doneAt` on the way in. */
   toggleTodo(path: string, id: string): void
   deleteTodo(path: string, id: string): void
   clearDoneTodos(path: string): void
+  /** Move a todo to a board column, keeping its checkbox in step. */
+  setTodoStatus(path: string, id: string, status: TodoStatus): void
+  /** Nudge an open todo one slot (-1 up, 1 down), switching the list to manual
+   *  order if it was still sorting itself. `scope` picks the run: sibling
+   *  todos, or one board column. */
+  moveTodo(path: string, id: string, dir: -1 | 1, scope?: TodoScope): void
+  /** Drop one open todo in front of another, or at the end when `toId` is
+   *  null. Same manual-order switch as moveTodo. */
+  reorderTodos(path: string, fromId: string, toId: string | null, scope?: TodoScope): void
+  /** Turn hand ordering on or off. Turning it on freezes the order currently
+   *  displayed for `path`, so nothing jumps as the switch flips. */
+  setTodosManualOrder(path: string, on: boolean): void
 
   openRepoTab(repo: RepoRef): void
   /** Open (or focus) a repo requested by the `gitcito` CLI shim. Unlike
@@ -413,6 +459,24 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   deleteTodo: (path, id) => withTodos(get().update, path, (list) => removeTodo(list, id)),
 
   clearDoneTodos: (path) => withTodos(get().update, path, (list) => clearDoneTodos(list)),
+
+  setTodoStatus: (path, id, status) =>
+    withTodos(get().update, path, (list) => setTodoStatus(list, id, status, Date.now())),
+
+  moveTodo: (path, id, dir, scope) =>
+    withTodoOrder(get().update, path, (list) => moveTodo(list, id, dir, scope)),
+
+  reorderTodos: (path, fromId, toId, scope) =>
+    withTodoOrder(get().update, path, (list) => reorderTodos(list, fromId, toId, scope)),
+
+  setTodosManualOrder: (path, on) => {
+    const key = canonicalRepoPath(path)
+    get().update((s) => {
+      const cur = s.repoTodos?.[key] ?? []
+      const repoTodos = on && cur.length ? { ...(s.repoTodos ?? {}), [key]: sortTodos(cur) } : s.repoTodos
+      return { ...s, repoTodos, todosManualOrder: on }
+    })
+  },
 
   openRepoTab: (repo) => {
     leaveMission()

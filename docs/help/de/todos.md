@@ -49,6 +49,29 @@ normale über niedriger —, innerhalb einer Priorität die älteste zuerst, den
 am längsten ignoriert wurde, gehört gesehen. Erledigtes sinkt nach unten, zuletzt
 Abgehaktes oben, damit ein Fehlklick sofort rückgängig zu machen ist.
 
+## In Ihre eigene Reihenfolge bringen
+
+Die Standardsortierung hat eine Meinung und liegt manchmal falsch: Die drei
+Dinge, die Sie heute Nachmittag wirklich vorhaben, sind nicht zwangsläufig die
+drei lautesten. Ziehen Sie eine Zeile am Griff oder drücken Sie ihre
+▲/▼-Schaltflächen – <kbd>Alt</kbd> mit den Pfeiltasten tut dasselbe über die
+Tastatur – und die Liste behält Ihre Reihenfolge.
+
+Das erste Ziehen oder Verschieben schaltet **Manuelle Reihenfolge** für Sie ein;
+entfernen Sie den Haken in der Filterzeile, um die Liste wieder der
+Prioritätssortierung zu überlassen, die genau so erinnert wird, wie sie war.
+Zwei Grenzen, die man kennen sollte:
+
+- **Nur offene Aufgaben bewegen sich.** Erledigte bleiben in ihrem Stapel
+  darunter, die zuletzt abgehakte oben – in jedem Modus.
+- **Das Umsortieren tritt zurück, solange im Filterfeld Text steht**, denn eine
+  Zeile, die an unsichtbaren Nachbarn vorbeizieht, landet dort, wo Sie sie nicht
+  erwartet haben.
+
+Die Priorität wird weiterhin angezeigt, als Signalbalken neben jeder Zeile – ein
+Balken für niedrig, drei für hoch – und steuert nach wie vor den gelben Chip in
+der Statusleiste.
+
 ## Sie sehen, ohne hinzusehen
 
 ![Der Abschnitt in der Seitenleiste und der Chip in der Statusleiste in einem Fenster](../../screenshots/todos-markers.webp)

@@ -46,6 +46,25 @@ normal düşüğün üstünde — ve aynı öncelik içinde en eskisi başta, ç
 süre görmezden gelinen şey görülmeyi hak eder. Tamamlananlar alta iner, en son
 işaretlenen en üstte; böylece yanlış tık tek hamlede geri alınır.
 
+## Kendi sıranıza koymak
+
+Varsayılan sıralamanın bir görüşü var ve bazen yanılıyor: bu öğleden sonra
+gerçekten yapmayı düşündüğünüz üç iş, illa en gürültülü üçü değil. Bir satırı
+tutamacından sürükleyin ya da satırdaki ▲ / ▼ düğmelerine basın — <kbd>Alt</kbd>
+ile ok tuşları klavyeden aynısını yapar — liste verdiğiniz sırayı korur.
+
+İlk sürükleme **Elle sıralama**yı sizin için açar; listeyi yeniden öncelik
+sıralamasına bırakmak için filtre satırındaki kutunun işaretini kaldırın; o
+sıralama tam bıraktığınız gibi hatırlanır. Bilmeye değer iki sınır:
+
+- **Yalnızca açık görevler kımıldar.** Tamamlananlar hangi kipte olursanız olun
+  aşağıdaki yığında, en son işaretlenen üstte kalır.
+- **Filtre kutusunda metin varken yeniden sıralama kenara çekilir**, çünkü
+  göremediğiniz komşuların ötesine taşınan bir satır beklemediğiniz yere düşer.
+
+Öncelik yine görünür: her satırın yanında sinyal çubukları — düşük için bir
+çubuk, yüksek için üç — ve durum çubuğundaki sarı işareti hâlâ o belirler.
+
 ## Bakmadan görmek
 
 ![Kenar çubuğundaki bölüm ve durum çubuğundaki rozet, tek pencerede](../../screenshots/todos-markers.webp)

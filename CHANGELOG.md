@@ -1,5 +1,12 @@
 
 
+## [4.1.0](https://github.com/MyAppDesk/gitcito/compare/v4.0.1...v4.1.0) (2026-08-26)
+
+
+### Bug Fixes
+
+* Make DeepWiki generation robust with self-hosted models ([#37](https://github.com/MyAppDesk/gitcito/issues/37)) ([2361b36](https://github.com/MyAppDesk/gitcito/commit/2361b3656a8e80d764d75c75e76f0793bc9704b3))
+
 ## [4.0.1](https://github.com/MyAppDesk/gitcito/compare/v4.0.0...v4.0.1) (2026-08-26)
 
 

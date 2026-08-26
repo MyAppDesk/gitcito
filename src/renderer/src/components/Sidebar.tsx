@@ -2556,7 +2556,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       {/* The row is a container query context: below a threshold the labels drop
           and the tabs become icons only, so a narrow sidebar never clips them. */}
       <div className="sb-tabs">
-        <div className={`sb-tabs-row ${hasLaunch ? 'has-launch' : ''}`}>
+        <div className={`sb-tabs-row ${hasLaunch ? 'has-launch' : ''} ${wantsDevices ? 'has-device' : ''}`}>
           <button
             className={`sb-tab ${tab === 'git' ? 'active' : ''}`}
             title={t('sidebar.tabGit')}

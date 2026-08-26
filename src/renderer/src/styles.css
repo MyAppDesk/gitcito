@@ -12268,6 +12268,15 @@ mark.find-hit.active {
   cursor: pointer;
   transition: background 0.12s, color 0.12s;
 }
+/* Icons keep their size: a flex child shrinks by default, and with four tabs
+   in the row that squashed the glyphs instead of truncating the labels. */
+.sb-tab > svg { flex: none; }
+.sb-tab .sb-tab-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .sb-tab:hover { color: var(--text-1); background: var(--bg-2); }
 .sb-tab.active { background: var(--accent-soft); color: var(--accent); }
 
@@ -12283,17 +12292,18 @@ mark.find-hit.active {
 /* The run target sits next to LAUNCH and carries a device name, which can be
    long — it truncates instead of pushing the tabs out of the row. */
 .sb-tab-device { max-width: 46%; }
-.sb-tab-device .sb-tab-text {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 
 /* Narrow sidebar: drop the labels rather than clip them. Two thresholds
    because the LAUNCH tab is optional and a third label needs more room; the
    title attribute keeps every tab identifiable once the text is gone. */
 @container (max-width: 128px) {
   .sb-tabs-row:not(.has-launch) .sb-tab-text { display: none; }
+}
+/* Four tabs in the row: the two dropdown chips go icon-only first, so Git and
+   Files keep readable labels instead of every tab collapsing to one letter. */
+@container (max-width: 300px) {
+  .sb-tabs-row.has-device .sb-tab-launch .sb-tab-text,
+  .sb-tabs-row.has-device .sb-tab-device .sb-tab-text { display: none; }
 }
 @container (max-width: 196px) {
   .sb-tabs-row.has-launch .sb-tab-text,

@@ -109,6 +109,19 @@ if (!gotSingleInstanceLock) {
   })
 }
 
+/** True for a URL served by this machine — the only thing the DevTools panel
+ *  is allowed to load. */
+export function isLoopbackUrl(raw: string): boolean {
+  try {
+    const url = new URL(raw)
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return false
+    const host = url.hostname.replace(/^\[|\]$/g, '')
+    return host === 'localhost' || host === '127.0.0.1' || host === '::1' || host === '0.0.0.0'
+  } catch {
+    return false
+  }
+}
+
 function createWindow(): void {
   const win = new BrowserWindow({
     width: 1540,
@@ -126,6 +139,10 @@ function createWindow(): void {
       sandbox: false,
       // Enables Chromium's built-in PDF viewer for the file previewer.
       plugins: true,
+      // The DevTools page embeds a <webview>. It is locked to loopback URLs by
+      // `will-attach-webview` below — this app holds credentials, and a panel
+      // that could navigate anywhere is not something to hand out lightly.
+      webviewTag: true,
       // Forward the screenshot-automation flag into the renderer/preload
       // process so the capture harness can enable its store bridge.
       additionalArguments: process.argv.includes('--shot') ? ['--shot'] : []
@@ -137,6 +154,18 @@ function createWindow(): void {
     shell.openExternal(details.url)
     return { action: 'deny' }
   })
+
+  // ── The <webview> leash ───────────────────────────────────────────────────
+  // Only a dev tool served on this machine may be embedded, and it is embedded
+  // with no preload, no node integration and context isolation on. Anything
+  // else — a redirect, a link inside the page, an attach with another src —
+  // is refused here rather than trusted to behave.
+  win.webContents.on('will-attach-webview', (event, webPreferences, params) => {
+    delete webPreferences.preload
+    webPreferences.nodeIntegration = false
+    webPreferences.contextIsolation = true
+    if (!isLoopbackUrl(params.src)) event.preventDefault()
+  })
   if (process.env['ELECTRON_RENDERER_URL']) {
     win.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
@@ -146,6 +175,19 @@ function createWindow(): void {
 
 app.whenReady().then(() => {
   app.setName(app.isPackaged ? 'Gitcito' : 'Gitcito Dev')
+
+  // The embedded DevTools panel stays on loopback: a link inside it opens in
+  // the real browser, and a redirect off the machine is refused outright.
+  app.on('web-contents-created', (_e, contents) => {
+    if (contents.getType() !== 'webview') return
+    contents.setWindowOpenHandler((details) => {
+      void shell.openExternal(details.url)
+      return { action: 'deny' }
+    })
+    contents.on('will-navigate', (event, url) => {
+      if (!isLoopbackUrl(url)) event.preventDefault()
+    })
+  })
 
   if (process.platform === 'darwin') app.dock?.setIcon(icon)
 

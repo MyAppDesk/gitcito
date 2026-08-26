@@ -23,10 +23,12 @@ import {
   Wrench,
   Link,
   Cloud,
+  AppWindow,
   Ellipsis
 } from 'lucide-react'
 import { useLaunchStore } from '../stores/launch'
 import { useUIStore } from '../stores/ui'
+import { useSettingsStore } from '../stores/settings'
 import { useT, interp } from '../i18n'
 import {
   detectHotRuntime,
@@ -294,6 +296,23 @@ export function DebugToolbar({ repoPath }: { repoPath: string }): React.JSX.Elem
                 </button>
               )}
             </>
+          )}
+          {active.devToolsUrl && (
+            <button
+              className="icon-btn debug-btn hot"
+              title={t('devtools.open')}
+              onClick={() =>
+                useSettingsStore.getState().openPageTab({
+                  type: 'devtools',
+                  repoPath,
+                  launchId: active.launchId,
+                  url: active.devToolsUrl!,
+                  label: nameOf(active)
+                })
+              }
+            >
+              <AppWindow size={14} />
+            </button>
           )}
           <span className="debug-sep" />
           <button

@@ -105,6 +105,29 @@ out('v Open Flutter DevTools.')
 out('q Quit (terminate the application on the device).')
 out('')
 out('A Dart VM Service on iPhone 16 Pro is available at: http://127.0.0.1:53412/uJ8k=/')
+// Serve a stand-in for DevTools and announce it exactly as `flutter run` does,
+// so the embedded DevTools panel has something real to load. The page says what
+// it is: a documentation screenshot must not pass a placeholder off as the
+// actual product.
+const http = require('http')
+const page = `<!doctype html><meta charset="utf-8"><title>Flutter DevTools</title>
+<style>body{margin:0;font:14px/1.5 -apple-system,system-ui,sans-serif;background:#fff;color:#202124}
+header{display:flex;gap:18px;align-items:center;padding:10px 16px;border-bottom:1px solid #dadce0}
+.tab{padding:6px 10px;border-radius:6px}.tab.on{background:#e8f0fe;color:#1967d2;font-weight:600}
+main{padding:24px 16px}code{background:#f1f3f4;padding:2px 5px;border-radius:4px}</style>
+<header><strong>Flutter DevTools</strong><span class="tab on">Network</span><span class="tab">Performance</span>
+<span class="tab">CPU profiler</span><span class="tab">Memory</span><span class="tab">Inspector</span></header>
+<main><p><strong>Stand-in page served by the Gitcito playground.</strong></p>
+<p>The real DevTools is a Flutter web app served by <code>flutter run</code>; Gitcito embeds whatever
+address the session announces. This placeholder stands in for it so the panel can be photographed
+without a Flutter SDK.</p></main>`
+const srv = http.createServer((_q, res) => {
+  res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' })
+  res.end(page)
+})
+srv.listen(0, '127.0.0.1', () => {
+  out(`The Flutter DevTools debugger and profiler on iPhone 16 Pro is available at: http://127.0.0.1:${srv.address().port}/`)
+})
 let libs = 3
 let platform = 'iOS'
 const keys = {

@@ -36,6 +36,7 @@ interface LaunchApi {
   signal(id: number, action: 'pause' | 'resume'): void
   stop(id: number): void
   onData(id: number, cb: (data: string) => void): () => void
+  onDevTools(id: number, cb: (url: string) => void): () => void
   onExit(id: number, cb: (code: number) => void): () => void
 }
 

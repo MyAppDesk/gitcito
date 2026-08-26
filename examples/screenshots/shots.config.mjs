@@ -1205,6 +1205,44 @@ export const shots = [
     }
   },
   {
+    // DevTools embedded in a page tab. The playground's stand-in `flutter`
+    // serves a placeholder that says so and announces it the way the real CLI
+    // does — the shot is of Gitcito's panel, not a fabricated product page.
+    out: 'devtools',
+    repos: ['launch-configs'],
+    themes: ['dark'],
+    appTheme: 'midnight',
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['launch-configs']
+      await page.evaluate(async (p) => {
+        const s = window.__shot
+        s.repo.getState().select(p, { type: 'wip' })
+        const launch = s.launch.getState()
+        await launch.discover(p)
+        const groups = s.launch.getState().groupsByRepo[p] ?? []
+        const root = groups.find((g) => g.isRoot) ?? groups[0]
+        const flutter = root?.configs.find((c) => /flutter/i.test(c.name))
+        if (root && flutter) await launch.run(p, root, flutter)
+      }, repo)
+      // Wait for the session to announce its DevTools address, then open it.
+      await page.waitForTimeout(2600)
+      await page.evaluate((p) => {
+        const s = window.__shot
+        const session = s.launch.getState().sessions.find((x) => x.repoPath === p && x.devToolsUrl)
+        if (session) {
+          s.settings.getState().openPageTab({
+            type: 'devtools',
+            repoPath: p,
+            launchId: session.launchId,
+            url: session.devToolsUrl,
+            label: session.configName
+          })
+        }
+      }, repo)
+      await page.waitForTimeout(2200)
+    }
+  },
+  {
     // Hot actions — the toolbar reads `flutter run` off the command line and
     // offers the keys that CLI already listens for. The shot is taken right
     // after a hot reload, so the button flash and the reload line line up.

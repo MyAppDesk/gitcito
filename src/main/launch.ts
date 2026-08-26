@@ -557,6 +557,38 @@ function serverReadyTap(config: LaunchConfig, folder: string): ((chunk: string) 
   }
 }
 
+/**
+ * Watch a session's output for the Flutter DevTools URL.
+ *
+ * `flutter run` prints "The Flutter DevTools debugger and profiler ... is
+ * available at: http://127.0.0.1:9100?uri=..." once the VM service is up. That
+ * URL is a whole Flutter-web app — network view, timeline, widget inspector,
+ * memory — so Gitcito does not need to speak to the Dart VM Service itself; it
+ * needs to know the address.
+ *
+ * The URL changes when the app restarts, so this keeps reporting rather than
+ * firing once like `serverReadyAction`.
+ */
+export function extractDevToolsUrl(text: string): string | null {
+  const m = /devtools[^\n]*?available at:?\s*(https?:\/\/\S+)/i.exec(text)
+  // Trailing punctuation from a sentence-shaped log line is not part of it.
+  return m ? m[1].replace(/[).,]+$/, '') : null
+}
+
+function devToolsTap(wc: WebContents, id: number): (chunk: string) => void {
+  let buf = ''
+  let last = ''
+  return (chunk) => {
+    // eslint-disable-next-line no-control-regex
+    buf = (buf + chunk.replace(/\x1b\[[0-9;?]*[ -/]*[@-~]/g, '')).slice(-8192)
+    const url = extractDevToolsUrl(buf)
+    if (!url || url === last) return
+    last = url
+    buf = ''
+    if (!wc.isDestroyed()) wc.send(`launch:devtools:${id}`, url)
+  }
+}
+
 // ─── Session execution (pty-backed, like the integrated terminal) ────────────
 
 interface LaunchSession {
@@ -781,7 +813,14 @@ export function registerLaunchHandlers(): void {
       const commandLine = parts.join(' && ')
 
       const id = nextId++
-      const tap = serverReadyTap(config, folder)
+      // Two watchers on the same stream: the config's own serverReadyAction,
+      // and the DevTools address Flutter announces on its own.
+      const ready = serverReadyTap(config, folder)
+      const devtools = devToolsTap(e.sender, id)
+      const tap = (chunk: string): void => {
+        ready?.(chunk)
+        devtools(chunk)
+      }
       const session = spawnSession(e.sender, id, folder, commandLine, display, env, cols || 80, rows || 24, tap)
       sessions.set(id, session)
       return { id }

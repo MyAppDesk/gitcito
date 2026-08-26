@@ -75,6 +75,7 @@
   },
   "pages": {
     "covered": {
+      "devtools": "devtools",
       "insights": "insights",
       "vault": "vault",
       "wiki": "repo-wiki",

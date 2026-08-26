@@ -344,6 +344,12 @@ const api = {
       ipcRenderer.on(`launch:data:${id}`, listener)
       return () => ipcRenderer.removeListener(`launch:data:${id}`, listener)
     },
+    /** The Flutter DevTools address, as the session announces (and re-announces) it. */
+    onDevTools: (id: number, cb: (url: string) => void): (() => void) => {
+      const listener = (_e: unknown, url: string): void => cb(url)
+      ipcRenderer.on(`launch:devtools:${id}`, listener)
+      return () => ipcRenderer.removeListener(`launch:devtools:${id}`, listener)
+    },
     onExit: (id: number, cb: (code: number) => void): (() => void) => {
       const listener = (_e: unknown, code: number): void => cb(code)
       ipcRenderer.on(`launch:exit:${id}`, listener)

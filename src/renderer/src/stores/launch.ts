@@ -78,6 +78,8 @@ export interface LaunchSession {
   /** Set when this session IS the compound's shared-tasks pane (no config of
    *  its own — it runs these task labels and exits). */
   taskLabels?: string[]
+  /** Flutter DevTools address, once the session prints one. */
+  devToolsUrl?: string
 }
 
 /** Prompt the user (one modal per input, in order) for the referenced inputs —
@@ -347,6 +349,14 @@ export const useLaunchStore = create<LaunchState>((set, get) => ({
       ...(skipTasks && skipTasks.length > 0 ? { skipTasks } : {})
     }
     set((s) => ({ sessions: [...s.sessions, session], activeId: launchId }))
+
+    // Flutter announces its DevTools address on the same stream; a restart
+    // announces a new one, so this keeps the latest rather than the first.
+    window.api.launch.onDevTools(launchId, (url) =>
+      set((s) => ({
+        sessions: s.sessions.map((x) => (x.launchId === launchId ? { ...x, devToolsUrl: url } : x))
+      }))
+    )
 
     // Mark exited when the process ends (registry handles the visual notice).
     window.api.launch.onExit(launchId, (code) =>

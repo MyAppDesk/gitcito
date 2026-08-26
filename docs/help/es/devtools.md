@@ -1,0 +1,54 @@
+---
+title: Flutter DevTools
+category: Herramientas del espacio de trabajo
+order: 93
+summary: La vista de red, la línea de tiempo, el inspector y el perfilador de memoria, en una pestaña de Gitcito.
+keywords: devtools flutter dart red network timeline inspector memoria perfilador webview panel embebido vm service
+---
+
+# Flutter DevTools
+
+DevTools ya tiene la vista de red, la línea de tiempo, el inspector de widgets y
+el perfilador de memoria, y es una app Flutter web servida en tu propia máquina.
+Así que Gitcito no reimplementa nada de eso, ni habla él mismo con el Dart VM
+Service: detecta la dirección y la embebe.
+
+![DevTools abierto en una pestaña de Gitcito](../../screenshots/devtools.webp)
+
+`flutter run` imprime la línea en cuanto el VM service está levantado:
+
+```
+The Flutter DevTools debugger and profiler on iPhone 16 Pro is available at:
+http://127.0.0.1:9100?uri=http://127.0.0.1:53412/uJ8k=/
+```
+
+La sesión de lanzamiento vigila su propia salida buscándola, y a la barra de
+depuración le sale un botón. Al pulsarlo, DevTools se abre en su propia pestaña,
+una por sesión — dos apps corriendo a la vez son dos DevTools.
+
+Un **hot restart publica una dirección nueva**, y la pestaña la sigue mientras su
+sesión viva. Cuando la sesión desaparece, la pestaña conserva la última dirección
+que tuvo, que normalmente ya está muerta: ciérrala y abre DevTools desde la nueva
+ejecución.
+
+## Qué se le permite hacer
+
+La vista embebida va con correa corta, porque esta app maneja credenciales:
+
+- **Solo loopback.** `127.0.0.1`, `localhost`, `::1`. Un intento de cargar
+  cualquier otra dirección se rechaza, y una redirección hacia ella también.
+- **Sin preload, sin node integration, con aislamiento de contexto.** La página
+  no tiene ningún puente hacia Gitcito.
+- **Los enlaces se abren en tu navegador de verdad**, en una ventana normal, no
+  dentro del panel.
+
+## Los límites
+
+- **Es DevTools, no algo nuestro.** Lo que pueda esa versión, lo puede el panel;
+  lo que no, tampoco nosotros. No hay una vista de red con sabor a Gitcito.
+- **Solo Flutter se anuncia así.** Un programa Dart normal imprime una URL del VM
+  service pero ninguna dirección de DevTools, así que no aparece botón.
+- **Un panel en blanco significa que la app se paró.** DevTools lo sirve *la app
+  en ejecución*; cuando la app termina, su dirección deja de responder.
+
+**Ver también:** [Ejecutar y depurar](launch.md)

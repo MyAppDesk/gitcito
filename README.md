@@ -149,6 +149,8 @@ bottom, with a toggle for "only the files I changed" ·
 compounds as parallel sessions, `stopAll`, `serverReadyAction`, a
 [hot reload](docs/help/launch.md) button for the runtime you actually launched,
 and a [run target](docs/help/launch.md) picker for the phone or simulator ·
+[**Flutter DevTools**](docs/help/devtools.md) embedded in a tab — network view,
+timeline, inspector — from the address the session announces ·
 [previews](docs/help/diffs.md) for Markdown, Word, Excel, PDF, video and images ·
 [open-source licenses](docs/help/licenses.md) for every package the build ships,
 readable in the app.

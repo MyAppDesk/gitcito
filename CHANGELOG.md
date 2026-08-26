@@ -1,5 +1,12 @@
 
 
+## [3.30.1](https://github.com/MyAppDesk/gitcito/compare/v3.30.0...v3.30.1) (2026-08-26)
+
+
+### Features
+
+* enhance protected force push confirmation dialog ([3925a66](https://github.com/MyAppDesk/gitcito/commit/3925a66106022cd243b7425ae0c76359c9d4bb36))
+
 ## [3.30.0](https://github.com/MyAppDesk/gitcito/compare/v3.29.0...v3.30.0) (2026-08-25)
 
 

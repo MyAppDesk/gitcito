@@ -3120,7 +3120,7 @@ export function defaultSettings(): AppSettings {
     customGraphPalettes: [],
     repoLayouts: {},
     repoTodos: {},
-    todosHideDone: false,
+    todosHideDone: true,
     todosManualOrder: false,
     autoFetchMinutes: 5,
     desktopNotifications: false,

@@ -98,7 +98,7 @@ Kliknij zadanie — na pasku bocznym, na plakietce paska stanu albo przez
 Ten sam widok ma pole filtra, przełącznik **Pokaż ukończone** i **Wyczyść
 ukończone**, które usuwa odhaczone na dobre i pyta wcześniej.
 
-Ten przełącznik to ten sam, co **Ustawienia → Wygląd → Ukryj ukończone zadania**: po wyłączeniu odhaczone zadania znikają i z tej listy, i z sekcji na pasku bocznym. Nic nie jest usuwane, a liczniki nadal je uwzględniają.
+Ten przełącznik to ten sam, co **Ustawienia → Wygląd → Ukryj ukończone zadania**: po wyłączeniu odhaczone zadania znikają i z tej listy, i z sekcji na pasku bocznym. Nic nie jest usuwane, a liczniki nadal je uwzględniają. Domyślnie są ukryte, więc na początku widzisz tylko otwarte zadania.
 
 ## Czego świadomie nie robi
 

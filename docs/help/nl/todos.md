@@ -99,7 +99,7 @@ Dezelfde weergave heeft het filterveld, de schakelaar **Voltooide tonen** en
 **Voltooide wissen**, die afgevinkte taken definitief verwijdert en vooraf
 vraagt.
 
-Die schakelaar is dezelfde als **Instellingen → Weergave → Voltooide taken verbergen**: zet je hem uit, dan verdwijnen afgevinkte taken uit deze lijst én uit het zijbalkonderdeel. Er wordt niets verwijderd en de tellingen nemen ze nog steeds mee.
+Die schakelaar is dezelfde als **Instellingen → Weergave → Voltooide taken verbergen**: zet je hem uit, dan verdwijnen afgevinkte taken uit deze lijst én uit het zijbalkonderdeel. Er wordt niets verwijderd en de tellingen nemen ze nog steeds mee. Verbergen is de standaard, dus je ziet in het begin alleen de openstaande taken.
 
 ## Wat het bewust niet doet
 

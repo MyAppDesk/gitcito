@@ -218,15 +218,15 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
     // The line's own text is stored with the bookmark: it is what finds the
     // line again once the file has moved on (see lib/bookmarks.ts).
     const snippet = (content ?? '').split('\n')[line - 1] ?? ''
+    // The same toggle the gutter offers: a line that already has a bookmark
+    // needs the way back out, not a second copy of it.
+    const marked = markedLines.has(line)
     if (items.length) items.push({ separator: true })
     items.push({
-      label: t('bookmarks.add'),
+      label: marked ? t('bookmarks.remove') : t('bookmarks.add'),
       icon: <BookmarkIcon size={13} />,
-      onClick: () => {
-        const branch = useRepoStore.getState().repos[repoPath]?.status?.current
-        addBookmark(repoPath, { file, line, snippet, ...(branch ? { branch } : {}) })
-        toast('info', t('bookmarks.added'))
-      }
+      ...(marked ? { danger: true } : {}),
+      onClick: () => toggleBookmark(line, snippet)
     })
     e.preventDefault()
     openContextMenu(e.clientX, e.clientY, items)

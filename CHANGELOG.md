@@ -1,5 +1,12 @@
 
 
+## [4.2.0](https://github.com/MyAppDesk/gitcito/compare/v4.1.0...v4.2.0) (2026-08-27)
+
+
+### Features
+
+* add Xcode and iOS project support ([5bc1f2d](https://github.com/MyAppDesk/gitcito/commit/5bc1f2da3b8dee6e6769d48709ab36fe4a1f9d05))
+
 ## [4.1.0](https://github.com/MyAppDesk/gitcito/compare/v4.0.1...v4.1.0) (2026-08-26)
 
 

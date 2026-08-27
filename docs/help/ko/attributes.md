@@ -78,9 +78,9 @@ keywords: 속성 파일속성 줄바꿈 바이너리 차이드라이버 gitattri
 1. git 설정의 `diff.<name>.textconv` — 변환 명령.
 2. `.gitattributes`의 `*.docx diff=<name>` — 어떤 파일에 적용할지.
 
-여기 있는 버튼들이 둘을 한 번에 해 줘요. Word, Excel, JSON은 Gitcito가
+여기 있는 버튼들이 둘을 한 번에 해 줘요. Word, Excel, JSON, `.strings`은 Gitcito가
 **변환기를 직접 동봉해요** — 미리보기가 쓰는 것과 같은 문서 파싱을 앱 안의
-작은 `gitcito-textconv` 명령으로 내놓은 것이라, 이 셋은 아무것도 설치하지
+작은 `gitcito-textconv` 명령으로 내놓은 것이라, 이 넷은 아무것도 설치하지
 않아도 동작해요. 나머지는 여전히 PATH에 진짜 도구가 필요해요. Gitcito는 이를
 확인해서, 첫 번째 차이 비교에서 실패할 드라이버를 적는 대신 없는 것을 흐리게
 표시해요.
@@ -90,8 +90,27 @@ keywords: 속성 파일속성 줄바꿈 바이너리 차이드라이버 gitattri
 | `word` | 없음 — Gitcito에 동봉 | `.docx`의 문장 단위 차이 |
 | `excel` | 없음 — Gitcito에 동봉 | `.xlsx`/`.xls`의 행 단위 차이 (시트별 CSV) |
 | `json` | 없음 — Gitcito에 동봉 | 키 순서가 정렬된, 안정적인 JSON 차이 |
+| `strings` | 없음 — Gitcito에 포함 | git이 바이너리라고 부르는 UTF-16 `.strings`의 줄 단위 diff |
 | `pdf` | `pdftotext` (poppler) | `.pdf`의 텍스트 차이 |
 | `exif` | `exiftool` | 픽셀이 불투명할 때, 이미지에 대해 무엇이 바뀌었는지 |
+
+### iOS 프로젝트를 실제로 무는 것
+
+`Localizable.strings`는 Xcode 역사의 대부분 동안 UTF-16이고, UTF-16은 NUL
+바이트투성이라 git이 바이너리로 취급해 **아무것도** 보여주지 않습니다.
+
+```
+diff --git a/Localizable.strings b/Localizable.strings
+Binary files a/Localizable.strings and b/Localizable.strings differ
+```
+
+누가 어떤 문자열을 옮겼는지 보는 게 가장 중요한 파일이 바로 이것인데요.
+`strings` 드라이버는 diff를 위해서만 디코딩합니다 — 바이트 순서 표시를
+가정하지 않고 읽으므로, 최신 UTF-8 `.strings`는 깨지지 않고 그대로 지나갑니다.
+
+String Catalog(`.xcstrings`, Xcode 15 이상)는 JSON이라 `json` 드라이버가
+처리합니다. 키를 정렬하므로 맨 위에 추가한 번역이 diff에서 파일 전체를 다시
+쓴 것처럼 보이지 않습니다.
 
 동봉된 변환기의 한계를 솔직히 말하면: `.doc`(옛 이진 Word 형식)은 이해하지
 못하고 `.docx`만 돼요. PDF는 다루지 않아요 — Gitcito는 PDF를 브라우저의

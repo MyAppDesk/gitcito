@@ -64,6 +64,71 @@ Yapay zekâ etkinken **Yapay zekâ ile çöz**, çıktı paneline bir birleştir
 önerir. Kendi başına hiçbir şey uygulamaz: siz okur, düzenler ve hazırlarsınız.
 Bkz. [Yapay zekâ özellikleri](ai.md).
 
+## Xcode proje dosyaları
+
+`project.pbxproj`, bir iOS deposundaki başka her dosyadan daha çok çakışır — ve
+neredeyse hiçbir zaman biri karşı çıktığı için değil. 24 haneli onaltılık
+kimliklerle anahtarlanmış tek ve düz bir nesne sözlüğüdür; dolayısıyla tek bir
+dosya eklemek dört girdi yazar: bir `PBXBuildFile`, bir `PBXFileReference`,
+sahibi olan grubun `children` listesinde bir satır ve hedefin derleme
+aşamasında bir satır. Birer dosya ekleyen iki kişi, aynı birkaç satıra düşen
+sekiz girdi yazar. Git bir çakışma görür; çözülecek bir şey yoktur.
+
+Çakışan dosya bir `project.pbxproj` olduğunda, çözücü üç sürümü de metin yerine
+proje olarak okur ve **yapıya göre birleştirmeyi** önerir: nesneleri kimliğe
+göre eşleştir, iki taraftaki her eklemeyi al, `children` ve `files` dizilerini
+birleştir ve gerçekten ayrışan yerde dur. Panellerin üstündeki şerit, her
+tarafın ne eklediğini ve — varsa — sana ne kaldığını söyler.
+
+Yapay zekâ önerisi gibi, çıktı paneline düşer ve hiçbir şeyi hazırlamaz.
+Kaydetmeden önce okursun.
+
+![Bir Xcode proje dosyasında, çakışma panellerinin üstündeki yapısal birleştirme şeridi](../../screenshots/conflict-pbxproj.webp)
+
+### Yapmayı reddettikleri
+
+**İkinizin de oynadığı bir ayarı asla tahmin etmez.** Sen
+`MARKETING_VERSION`'ı `1.1`, onlar `2.0` yaptıysa bu bir karardır ve şeritte
+adıyla yazar — ayar, senin değerin, onlarınki — arkandan çözülmek yerine.
+Çözemediği bir nesne *senin* sürümünü olduğu gibi korur; böylece yarım
+uygulanmış bir birleştirme asla diske ulaşmaz.
+
+**Üç sürümden herhangi biri ayrıştırılamıyorsa dosyanın tamamını reddeder.**
+Xcode'un açamadığı bir `project.pbxproj`, elle birleştirmekten pahalıya gelir;
+bu yüzden kesin okuyamadığı her şey sıradan bir metin çakışması olarak kalır ve
+bunu söyler.
+
+**Farklı nesneler için üretilmiş iki kimliği saptamaz.** Xcode kimlikleri
+rastgele seçtiği için nadirdir — ama olduğunda taraflardan birini almak birinin
+dosyasını sessizce düşürürdü; bu yüzden birleştirilmek yerine bildirilir.
+
+### `merge=union` değil
+
+Bunun için dolaşan çare `.gitattributes` içinde
+[`*.pbxproj merge=union`](attributes.md)'dır. Kullanma. Union, tek değişiklikler
+bağımsız eklemeler olduğu sürece işe yarar; iki kişi aynı derleme ayarını
+düzenlediği anda iki satırı da yazar ve Xcode'un açmayı reddettiği bir dosya
+üretir — hem de diff'i en dikkatsiz okuduğun anda. Yapısal birleştirme aynı
+kolaylığı bu arıza olmadan verir.
+
+## Kilit dosyaları
+
+`Podfile.lock`, `Package.resolved`, `yarn.lock` ve kuzenleri, birinin çözücüsünün
+çoktan çözdüğü bir bağımlılık grafiğini kaydeder. Bir çözümün yarısını
+diğerinin yarısına dikmek, kimsenin çözmediği bir grafik verir: kurulmayabilir,
+kurulursa da iki dalın da denemediği bir şeyi kurar.
+
+Bu yüzden çakışan dosya bir kilit dosyasıysa, şerit ona sahip olan aracı adıyla
+söyler, **Bizimkini tut** ile **Onlarınkini tut** düğmelerini oracıkta sunar ve
+sonrasında onu yeniden üreten komutu verir. Burada bir tarafı seçmek bir uzlaşma
+değil — yöntemin tamamı; doğru kılan da yeniden üretmektir.
+
+![Çakışma panellerinin üstündeki kilit dosyası şeridi](../../screenshots/conflict-lockfile.webp)
+
+Üç panel yerinde kalır, çünkü arada bir neyin değiştiğini gerçekten okumak
+istersin: tanıdığın bir sağlama, beklediğin bir sürüm. Bu iş, seni onları elle
+düzenlemekten caydırmaya çalışıyor.
+
 ## Baştan çakışmaya düşmemek
 
 [Çakışma radarı](conflict-radar.md), herhangi birini birleştirmeden önce hangi

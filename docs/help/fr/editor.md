@@ -58,12 +58,46 @@ l'éditeur et le saut à la ligne fonctionne.
 | L'icône en bout de ligne dans l'arborescence | Ce fichier, en un clic |
 | Clic droit sur une ligne dans la vue **fichier** | Le fichier, à cette ligne |
 | Clic droit sur une ligne dans la vue **blame** | Le fichier, à cette ligne |
+| Un `.xcodeproj` ou autre paquet dans l'arbre de fichiers | Le paquet, dans l'app qui le gère |
 
 Les actions de ligne n'apparaissent que là où le numéro de ligne veut encore dire
 quelque chose : un fichier affiché à un ancien commit, ou un blame rembobiné à
 une révision antérieure, a des lignes qui ne correspondent plus à ce qui est sur
 le disque ; Gitcito ne propose donc aucun saut à cet endroit plutôt que de vous
 envoyer au mauvais.
+
+## Projets Xcode et autres paquets
+
+`MyApp.xcodeproj` est un répertoire. Git le sait, et l'arbre de fichiers le
+savait aussi — jusqu'à ce que ça devienne gênant : le déplier pour trouver
+`project.pbxproj`, `project.xcworkspace` et un dossier par développeur sous
+`xcuserdata`, c'est trois clics de bruit pour une chose que vous n'alliez de
+toute façon jamais éditer à la main.
+
+Ces entrées portent désormais une icône de paquet et **cliquer sur la ligne
+ouvre le paquet**, comme un double-clic dans le Finder. Le chevron reste là :
+la seule fois où vous avez *vraiment* besoin de `project.pbxproj` — un conflit
+de fusion, presque toujours — vous y descendez comme avant.
+
+Reconnus : `.xcodeproj`, `.xcworkspace`, `.xcframework`, `.framework`, `.app`,
+`.appex`, `.dSYM`, `.playground`, `.xcuserdatad`.
+
+**Non** reconnus, volontairement : `.xcassets` et `.lproj`. Ce sont aussi des
+paquets, mais on édite les fichiers qu'ils contiennent — les replier coûterait
+plus que ça ne rapporte.
+
+### Les limites
+
+**Le paquet s'ouvre par le système, pas par votre éditeur.** Un `.xcodeproj`
+donné à un éditeur de texte s'ouvre comme un dossier de property lists, ce que
+personne ne voulait en cliquant — Gitcito le confie donc à ce que le système lui
+associe, c'est-à-dire Xcode sur un Mac où Xcode est installé. Votre choix
+d'éditeur ne bouge pas ; il vaut toujours pour tout fichier ordinaire.
+
+**C'est une convention de nommage, pas un attribut du système de fichiers.**
+Gitcito regarde l'extension : un répertoire que vous auriez nommé `notes.app` se
+replie lui aussi, et sous Linux ou Windows — où ce sont des dossiers ordinaires
+— un clic ouvre le gestionnaire de fichiers plutôt qu'un IDE.
 
 ## Une commande à vous
 

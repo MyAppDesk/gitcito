@@ -56,12 +56,44 @@ editor opnieuw en werkt de sprong naar de regel.
 | Het icoon aan het eind van een rij in de bestandsboom | Dat bestand, met één klik |
 | Rechtsklik een regel in de **bestandsweergave** | Het bestand, op die regel |
 | Rechtsklik een regel in de **blameweergave** | Het bestand, op die regel |
+| Een `.xcodeproj` of ander pakket in de bestandsboom | Het pakket, in de app die het opent |
 
 Regelacties verschijnen alleen waar het regelnummer nog iets betekent: een
 bestand getoond bij een oude commit, of een blame teruggespoeld naar een eerdere
 revisie, heeft regels die niet meer overeenkomen met wat er op schijf staat, dus
 biedt Gitcito daar geen sprong aan in plaats van je naar de verkeerde plek te
 sturen.
+
+## Xcode-projecten en andere pakketten
+
+`MyApp.xcodeproj` is een map. Git weet dat, en de bestandsboom wist het ook —
+tot het ging storen: hem uitklappen om `project.pbxproj`, `project.xcworkspace`
+en onder `xcuserdata` een map per ontwikkelaar te vinden, is drie klikken ruis
+voor iets dat je toch nooit met de hand ging bewerken.
+
+Deze krijgen nu een pakket-icoon en **een klik op de rij opent het pakket**,
+zoals dubbelklikken in de Finder doet. Het pijltje blijft, dus de ene keer dat je
+`project.pbxproj` wél nodig hebt — bijna altijd een merge-conflict — duik je er
+net als vroeger in.
+
+Herkend: `.xcodeproj`, `.xcworkspace`, `.xcframework`, `.framework`, `.app`,
+`.appex`, `.dSYM`, `.playground`, `.xcuserdatad`.
+
+**Niet** herkend, met opzet: `.xcassets` en `.lproj`. Ook pakketten, maar mensen
+bewerken de bestanden erin, dus dichtklappen kost meer dan het oplevert.
+
+### De grenzen
+
+**Het pakket opent via het systeem, niet via je editor.** Een `.xcodeproj` die je
+aan een teksteditor geeft, opent als een map vol property lists — niet wat
+iemand wilde die erop klikte. Gitcito geeft het daarom aan wat het
+besturingssysteem eraan koppelt, op een Mac met Xcode dus aan Xcode. Je
+editorkeuze blijft ongemoeid en geldt nog steeds voor elk gewoon bestand.
+
+**Het is een naamconventie, geen bestandssysteem-vlag.** Gitcito kijkt naar de
+extensie, dus een map die je toevallig `notes.app` noemde klapt ook dicht, en op
+Linux of Windows — waar dit gewone mappen zijn — opent een klik de
+bestandsbeheerder in plaats van een IDE.
 
 ## Een eigen commando
 

@@ -77,10 +77,10 @@ Duas metades, e as duas são necessárias:
 1. `diff.<name>.textconv` no git config — o comando conversor.
 2. `*.docx diff=<name>` no `.gitattributes` — a quais arquivos ele se aplica.
 
-Os botões aqui fazem as duas de uma vez. Para Word, Excel e JSON, o Gitcito
+Os botões aqui fazem as duas de uma vez. Para Word, Excel, JSON e `.strings`, o Gitcito
 **distribui o conversor ele mesmo** — o mesmo parsing de documentos que as suas
 pré-visualizações usam, exposto como um pequeno comando `gitcito-textconv` dentro
-do app — então esses três funcionam sem instalar nada. O resto ainda precisa de
+do app — então esses quatro funcionam sem instalar nada. O resto ainda precisa de
 uma ferramenta de verdade no seu PATH: o Gitcito verifica e deixa acinzentado o
 que falta, em vez de escrever um driver que falha no primeiro diff.
 
@@ -89,8 +89,28 @@ que falta, em vez de escrever um driver que falha no primeiro diff.
 | `word` | nada — vem com o Gitcito | Diffs de prosa em `.docx` |
 | `excel` | nada — vem com o Gitcito | Diffs por linha (CSV por aba) de `.xlsx`/`.xls` |
 | `json` | nada — vem com o Gitcito | Diffs de JSON estáveis, com chaves ordenadas |
+| `strings` | nada — vem com o Gitcito | Diffs por linha de um `.strings` UTF-16, que o git chama de binário |
 | `pdf` | `pdftotext` (poppler) | Diffs de texto em `.pdf` |
 | `exif` | `exiftool` | O que mudou numa imagem, quando os pixels são opacos |
+
+### O que morde projetos iOS
+
+`Localizable.strings` é UTF-16 durante quase toda a história do Xcode, e UTF-16
+é cheio de bytes NUL, então o git o chama de binário e não mostra **nada**:
+
+```
+diff --git a/Localizable.strings b/Localizable.strings
+Binary files a/Localizable.strings and b/Localizable.strings differ
+```
+
+E é justamente o arquivo em que ver qual string alguém mexeu importa mais. O
+driver `strings` o decodifica só para o diff — lendo a marca de ordem de bytes
+em vez de supô-la, para que um `.strings` moderno em UTF-8 passe intacto em vez
+de virar caracteres embaralhados.
+
+String Catalogs (`.xcstrings`, Xcode 15 em diante) são JSON, e o driver `json`
+cobre eles: ordena as chaves, então uma tradução adicionada no topo deixa de
+reescrever o arquivo inteiro no diff.
 
 Os limites do conversor embutido, ditos sem rodeios: `.doc` (o velho formato
 binário do Word) não é entendido, só `.docx`; PDF não é coberto — o Gitcito

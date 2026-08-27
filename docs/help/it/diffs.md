@@ -54,6 +54,36 @@ con evidenziazione della sintassi per tutto il resto.
 
 ![Anteprima di un Markdown](../../screenshots/markdown-preview.webp)
 
+### Property list di Apple
+
+`Info.plist` e `*.entitlements` sono XML, e l'XML non è ciò che qualcuno sta
+cercando di leggere. L'anteprima mostra invece lo schema chiave/valore — la forma
+che mostra l'editor di plist di Xcode — con l'annidamento intatto e il tipo di
+ogni valore accanto.
+
+![Un Info.plist come schema chiave/valore](../../screenshots/preview-plist.webp)
+
+Due limiti. Una plist **binaria** (`bplist00`) viene riconosciuta e nominata, non
+decodificata — passala a `plutil -convert xml1` se la vuoi qui, anche se una
+plist binaria in un repository di solito è un artefatto di build che non
+andrebbe versionato. E i valori `<data>` compaiono come conteggio di byte invece
+che in base64: un blob non ti dice nulla, e un profilo di provisioning
+visualizzato in un pannello che magari stai condividendo dice troppo agli altri.
+
+### Progetti Xcode
+
+Un `project.pbxproj` è un dizionario piatto di oggetti che si puntano a vicenda
+per identificatore, quindi leggerlo in ordine non dice quasi nulla del progetto.
+L'anteprima segue quei riferimenti e ricostruisce le tre cose per cui eri
+venuto: i **target** con le loro fasi di build, l'**albero dei gruppi** come lo
+disegna il navigatore di Xcode e le **impostazioni di build** per configurazione.
+
+![Un project.pbxproj come target, albero dei file e impostazioni](../../screenshots/preview-xcodeproj.webp)
+
+È un lettore, non un editor: nulla di tutto questo scrive nel progetto. Per cosa
+succede quando due rami ne modificano uno, vedi
+[risolvere i conflitti](conflicts.md).
+
 ## File molto grandi
 
 Le anteprime e la vista file caricano l'intero file in memoria, quindi

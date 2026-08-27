@@ -7239,6 +7239,47 @@ body.col-resizing .node-ava {
   user-select: text;
   -webkit-user-select: text;
 }
+
+/* Property lists and Xcode projects: a key/value outline rather than the raw
+   syntax. Three columns — name, type, value — on a monospace grid, because the
+   values are identifiers and versions that misread in a proportional face. */
+.plist-preview {
+  font-family: var(--mono, monospace);
+  font-size: 12px;
+  line-height: 1.55;
+  user-select: text;
+  -webkit-user-select: text;
+  padding: 6px 0;
+}
+.plist-preview .pl-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1.2fr);
+  gap: 12px;
+  align-items: baseline;
+  padding: 1px 12px 1px 0;
+}
+.plist-preview .pl-row:hover { background: var(--bg-2); }
+.plist-preview .pl-key { color: var(--text-0); overflow-wrap: anywhere; }
+.plist-preview .pl-type {
+  color: var(--text-2);
+  font-size: 11px;
+  justify-self: end;
+  white-space: nowrap;
+}
+.plist-preview .pl-val { color: var(--accent); overflow-wrap: anywhere; }
+.plist-preview .pl-section {
+  margin: 12px 0 4px;
+  padding: 0 12px 0 8px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+}
+.plist-preview .pl-counts {
+  padding: 0 12px 6px 8px;
+  font-size: 11px;
+  color: var(--text-2);
+}
 /* Full-pane markdown/word preview (not the floating explain panel). */
 .fv-body > .md-preview {
   padding: 20px 26px;
@@ -13569,6 +13610,37 @@ mark.find-hit.active {
   margin-bottom: 4px;
 }
 .conflict-why-row { display: flex; align-items: baseline; gap: 8px; font-size: 12px; padding: 1px 0; }
+
+/* The structural-merge offer for a project.pbxproj conflict. Sits directly
+   above the panes, like .conflict-why, and is tinted the same way so the two
+   read as one band of annotation rather than as competing headers. */
+.conflict-pbx {
+  flex: 0 0 auto;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-soft);
+  background: color-mix(in srgb, var(--accent) 7%, var(--bg-2));
+  max-height: 190px;
+  overflow-y: auto;
+}
+.conflict-pbx .cp-head {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+.conflict-pbx .cp-line { font-size: 12px; margin: 0 0 6px; }
+.conflict-pbx .cp-list {
+  margin: 0 0 6px;
+  padding-left: 16px;
+  font-size: 12px;
+  color: var(--text-2);
+}
+.conflict-pbx .cp-list li { padding: 1px 0; }
+.conflict-pbx .cp-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .conflict-why-row code { font-family: var(--mono); font-size: 10.5px; color: var(--text-2); flex-shrink: 0; }
 .conflict-why-subject { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .conflict-why-author { flex-shrink: 0; font-size: 11px; color: var(--text-2); }

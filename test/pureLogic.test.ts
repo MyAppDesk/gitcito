@@ -20,6 +20,13 @@ import { acceleratorFromCombo, isMenuRole } from '../src/shared/menu'
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 import { commitHookFailureHint, lintCommit, subjectCounterLevel, parseCcPrefix, applyCcType, parseGitmojiPrefix, applyGitmoji, parseTicketPrefix, applyTicket, ticketFromBranch } from '../src/renderer/src/lib/commitLint'
 import { isSecretFile, maskSecretLine } from '../src/renderer/src/lib/secrets'
+import { isBundleDir } from '../src/renderer/src/lib/bundleDirs'
+import { parsePbxproj, mergePbxproj, isaOf, isPbxprojPath } from '../src/shared/pbxproj'
+import { parsePlist, plistScalar, plistChildCount } from '../src/renderer/src/lib/plist'
+import { pbxprojOutline } from '../src/renderer/src/lib/pbxprojOutline'
+import { previewKind, isBinaryKind } from '../src/renderer/src/preview/registry'
+import { lockfileFor } from '../src/renderer/src/lib/lockfiles'
+import { isBuildNoise, ignoreLineFor } from '../src/renderer/src/lib/buildNoise'
 import { resolveUpdateOffer } from '../src/renderer/src/lib/updateOffer'
 import { worktreeForBranch, worktreeTabName } from '../src/renderer/src/lib/worktrees'
 import { focusedHashes, focusedStashes, defaultBranchName } from '../src/renderer/src/lib/graphFocus'
@@ -595,6 +602,20 @@ describe('secret masking', () => {
       expect(isSecretFile(f)).toBe(true)
     }
     for (const f of ['src/app.ts', 'README.md', 'environment.ts', '.env.example', '.env.sample', 'config/.env.template']) {
+      expect(isSecretFile(f)).toBe(false)
+    }
+  })
+
+  it('recognizes Apple signing material but not public certificates', () => {
+    for (const f of [
+      'App.mobileprovision',
+      'fastlane/profiles/Dev.provisionprofile',
+      'keys/AuthKey_ABC123.p8',
+      'certs/dist.p12'
+    ]) {
+      expect(isSecretFile(f)).toBe(true)
+    }
+    for (const f of ['certs/apple.cer', 'App/Info.plist', 'ExportOptions.plist']) {
       expect(isSecretFile(f)).toBe(false)
     }
   })
@@ -5987,5 +6008,387 @@ describe('update offer reconciliation', () => {
     expect(
       resolveUpdateOffer({ installed: 'v3.28.0', info: null, staged: null, timeline })?.version
     ).toBe('4.0.0')
+  })
+})
+
+describe('bundle directories', () => {
+  it('treats Xcode and macOS packages as single items', () => {
+    for (const n of [
+      'MyApp.xcodeproj',
+      'MyApp.xcworkspace',
+      'Gitcito.app',
+      'Alamofire.framework',
+      'Widget.appex',
+      'Lib.xcframework',
+      'MyApp.dSYM',
+      'Scratch.playground',
+      'carlos.xcuserdatad'
+    ]) {
+      expect(isBundleDir(n)).toBe(true)
+    }
+  })
+
+  it('leaves folders people edit inside alone', () => {
+    for (const n of ['Assets.xcassets', 'en.lproj', 'Sources', 'xcodeproj', 'App.xcodeproj.bak']) {
+      expect(isBundleDir(n)).toBe(false)
+    }
+  })
+})
+
+describe('project.pbxproj', () => {
+  // Tabs are what Xcode writes, and the tests below assert they survive.
+  const proj = (extra?: { id: string; name: string }, version = '1.0'): string =>
+    [
+      '// !$*UTF8*$!',
+      '{',
+      '\tobjectVersion = 56;',
+      '\tobjects = {',
+      '',
+      '/* Begin PBXFileReference section */',
+      '\t\tAA01 /* App.swift */ = {isa = PBXFileReference; path = App.swift; sourceTree = "<group>"; };',
+      ...(extra
+        ? [
+            `\t\t${extra.id} /* ${extra.name} */ = {isa = PBXFileReference; path = ${extra.name}; sourceTree = "<group>"; };`
+          ]
+        : []),
+      '/* End PBXFileReference section */',
+      '',
+      '/* Begin PBXGroup section */',
+      '\t\tBB01 /* Demo */ = {',
+      '\t\t\tisa = PBXGroup;',
+      '\t\t\tchildren = (',
+      '\t\t\t\tAA01 /* App.swift */,',
+      ...(extra ? [`\t\t\t\t${extra.id} /* ${extra.name} */,`] : []),
+      '\t\t\t);',
+      '\t\t\tsourceTree = "<group>";',
+      '\t\t};',
+      '/* End PBXGroup section */',
+      '',
+      '/* Begin XCBuildConfiguration section */',
+      '\t\tCC01 /* Debug */ = {',
+      '\t\t\tisa = XCBuildConfiguration;',
+      '\t\t\tbuildSettings = {',
+      '\t\t\t\tCURRENT_PROJECT_VERSION = 1;',
+      `\t\t\t\tMARKETING_VERSION = ${version};`,
+      '\t\t\t};',
+      '\t\t\tname = Debug;',
+      '\t\t};',
+      '/* End XCBuildConfiguration section */',
+      '\t};',
+      '}'
+    ].join('\n')
+
+  const base = proj()
+  const withLogin = proj({ id: 'AA02', name: 'Login.swift' })
+  const withSignup = proj({ id: 'AA03', name: 'Signup.swift' })
+
+  it('recognizes the path git hands us', () => {
+    expect(isPbxprojPath('Demo.xcodeproj/project.pbxproj')).toBe(true)
+    expect(isPbxprojPath('project.pbxproj')).toBe(true)
+    expect(isPbxprojPath('notes/project.pbxproj.bak')).toBe(false)
+  })
+
+  it('reads objects, their class and the annotation Xcode wrote', () => {
+    const doc = parsePbxproj(base)
+    expect(doc).not.toBeNull()
+    expect(isaOf(doc!.objects.get('AA01')!)).toBe('PBXFileReference')
+    expect(doc!.objects.get('CC01')!.keyComment).toBe('Debug')
+  })
+
+  it('records spans that index back into the exact source', () => {
+    const doc = parsePbxproj(base)!
+    for (const [uuid, entry] of doc.objects) {
+      const slice = base.slice(entry.start, entry.end)
+      expect(slice.startsWith(uuid)).toBe(true)
+      expect(slice.trimEnd().endsWith(';')).toBe(true)
+    }
+  })
+
+  it('returns null rather than guessing at something that is not a plist', () => {
+    expect(parsePbxproj('just some text')).toBeNull()
+    expect(parsePbxproj('{ unterminated = ')).toBeNull()
+    expect(mergePbxproj('nonsense', base, base)).toBeNull()
+  })
+
+  it('takes both sides when each added a different file', () => {
+    const r = mergePbxproj(base, withLogin, withSignup)!
+    expect(r.conflicts).toEqual([])
+    expect(r.text).toContain('Login.swift')
+    expect(r.text).toContain('Signup.swift')
+    expect(parsePbxproj(r.text)).not.toBeNull()
+  })
+
+  it('leaves every byte it did not need to touch alone', () => {
+    const r = mergePbxproj(base, withLogin, withSignup)!
+    // Tabs, the `/* Begin … section */` banners and key order all survive,
+    // because untouched regions are copied rather than re-serialised.
+    for (const line of withLogin.split('\n')) expect(r.text).toContain(line)
+    expect(r.text).toContain('/* Begin PBXFileReference section */')
+    expect(r.text).toContain('\t\tAA03 /* Signup.swift */')
+  })
+
+  it('unions a group children array both sides appended to', () => {
+    const r = mergePbxproj(base, withLogin, withSignup)!
+    const children = /children = \(([\s\S]*?)\);/.exec(r.text)![1]
+    expect(children).toContain('AA01')
+    expect(children).toContain('AA02')
+    expect(children).toContain('AA03')
+  })
+
+  it('names the build setting that diverged, not the block around it', () => {
+    const r = mergePbxproj(base, proj(undefined, '1.1'), proj(undefined, '2.0'))!
+    expect(r.conflicts).toHaveLength(1)
+    expect(r.conflicts[0].key).toBe('MARKETING_VERSION')
+    expect(r.conflicts[0].reason).toBe('setting')
+    expect(r.conflicts[0].ours).toBe('1.1')
+    expect(r.conflicts[0].theirs).toBe('2.0')
+    // An object with an unsettled clash keeps ours verbatim.
+    expect(r.text).toContain('MARKETING_VERSION = 1.1')
+  })
+
+  it('merges two different settings inside the same buildSettings', () => {
+    const ours = proj(undefined, '1.1')
+    const theirs = base.replace('CURRENT_PROJECT_VERSION = 1;', 'CURRENT_PROJECT_VERSION = 7;')
+    const r = mergePbxproj(base, ours, theirs)!
+    expect(r.conflicts).toEqual([])
+    expect(r.text).toContain('MARKETING_VERSION = 1.1')
+    expect(r.text).toContain('CURRENT_PROJECT_VERSION = 7')
+  })
+
+  it('flags one uuid minted for two different objects instead of dropping one', () => {
+    const oursSameId = proj({ id: 'AA02', name: 'Login.swift' })
+    const theirsSameId = proj({ id: 'AA02', name: 'Profile.swift' })
+    const r = mergePbxproj(base, oursSameId, theirsSameId)!
+    expect(r.conflicts.map((c) => c.reason)).toContain('both-added')
+  })
+
+  it('carries a deletion across when ours left that object alone', () => {
+    const theirsGone = base.replace(
+      '\t\tAA01 /* App.swift */ = {isa = PBXFileReference; path = App.swift; sourceTree = "<group>"; };\n',
+      ''
+    )
+    const r = mergePbxproj(base, withLogin, theirsGone)!
+    expect(r.conflicts).toEqual([])
+    expect(r.text).not.toContain('AA01 /* App.swift */ = {isa')
+    expect(r.text).toContain('Login.swift')
+  })
+})
+
+describe('property lists', () => {
+  const xml = [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<plist version="1.0">',
+    '<dict>',
+    '\t<key>CFBundleName</key>',
+    '\t<string>Demo &amp; Co</string>',
+    '\t<key>CFBundleVersion</key>',
+    '\t<integer>12</integer>',
+    '\t<key>LSRequiresIPhoneOS</key>',
+    '\t<true/>',
+    '\t<key>UILaunchScreen</key>',
+    '\t<dict>',
+    '\t\t<key>UIColorName</key>',
+    '\t\t<string>LaunchBackground</string>',
+    '\t</dict>',
+    '\t<key>Orientations</key>',
+    '\t<array>',
+    '\t\t<string>Portrait</string>',
+    '\t\t<string>Landscape</string>',
+    '\t</array>',
+    '</dict>',
+    '</plist>'
+  ].join('\n')
+
+  it('reads keys, nesting and entities', () => {
+    const r = parsePlist(xml)
+    expect(r.ok).toBe(true)
+    if (!r.ok || r.root.kind !== 'dict') return
+    const byKey = new Map(r.root.entries.map((e) => [e.key, e.value]))
+    expect(byKey.get('CFBundleName')).toEqual({ kind: 'string', value: 'Demo & Co' })
+    expect(byKey.get('CFBundleVersion')).toEqual({ kind: 'integer', value: '12' })
+    expect(byKey.get('LSRequiresIPhoneOS')).toEqual({ kind: 'bool', value: true })
+    expect(plistChildCount(byKey.get('UILaunchScreen')!)).toBe(1)
+    expect(plistChildCount(byKey.get('Orientations')!)).toBe(2)
+  })
+
+  it('says a binary plist is binary instead of rendering noise', () => {
+    expect(parsePlist('bplist00 rubbish')).toEqual({ ok: false, problem: 'binary' })
+  })
+
+  it('reports unreadable rather than throwing', () => {
+    expect(parsePlist('<plist><dict><key>a</key></dict></plist>').ok).toBe(false)
+    expect(parsePlist('not xml').ok).toBe(false)
+    expect(parsePlist('<plist><dict><string>no key</string></dict></plist>').ok).toBe(false)
+  })
+
+  it('elides data blobs instead of printing a credential into the pane', () => {
+    const r = parsePlist('<plist><dict><key>k</key><data>AAAAAAAA</data></dict></plist>')
+    expect(r.ok).toBe(true)
+    if (!r.ok || r.root.kind !== 'dict') return
+    expect(plistScalar(r.root.entries[0].value)).toBe('<6 bytes>')
+  })
+
+  it('previews plists and Xcode projects as text, not as bytes', () => {
+    expect(previewKind('Demo/Info.plist')).toBe('plist')
+    expect(previewKind('Demo/Demo.entitlements')).toBe('plist')
+    expect(previewKind('Demo.xcodeproj/project.pbxproj')).toBe('xcodeproj')
+    expect(isBinaryKind('plist')).toBe(false)
+    expect(isBinaryKind('xcodeproj')).toBe(false)
+    expect(isBinaryKind('pdf')).toBe(true)
+  })
+})
+
+describe('Xcode project outline', () => {
+  const proj = [
+    '// !$*UTF8*$!',
+    '{',
+    '\tobjectVersion = 56;',
+    '\tobjects = {',
+    '\t\tAA01 /* App.swift */ = {isa = PBXFileReference; path = App.swift; sourceTree = "<group>"; };',
+    '\t\tBB00 = {',
+    '\t\t\tisa = PBXGroup;',
+    '\t\t\tchildren = (',
+    '\t\t\t\tBB01 /* Demo */,',
+    '\t\t\t);',
+    '\t\t};',
+    '\t\tBB01 /* Demo */ = {',
+    '\t\t\tisa = PBXGroup;',
+    '\t\t\tchildren = (',
+    '\t\t\t\tAA01 /* App.swift */,',
+    '\t\t\t);',
+    '\t\t\tpath = Demo;',
+    '\t\t};',
+    '\t\tDD01 /* Sources */ = {',
+    '\t\t\tisa = PBXSourcesBuildPhase;',
+    '\t\t\tfiles = (',
+    '\t\t\t\tAA01 /* App.swift in Sources */,',
+    '\t\t\t);',
+    '\t\t};',
+    '\t\tEE01 /* Demo */ = {',
+    '\t\t\tisa = PBXNativeTarget;',
+    '\t\t\tbuildPhases = (',
+    '\t\t\t\tDD01 /* Sources */,',
+    '\t\t\t);',
+    '\t\t\tname = Demo;',
+    '\t\t\tproductType = "com.apple.product-type.application";',
+    '\t\t};',
+    '\t\tFF01 /* Debug */ = {',
+    '\t\t\tisa = XCBuildConfiguration;',
+    '\t\t\tbuildSettings = {',
+    '\t\t\t\tSWIFT_VERSION = 5.0;',
+    '\t\t\t};',
+    '\t\t\tname = Debug;',
+    '\t\t};',
+    '\t};',
+    '}'
+  ].join('\n')
+
+  it('puts the flat object dictionary back into a navigator', () => {
+    const o = pbxprojOutline(proj)!
+    expect(o.objectVersion).toBe('56')
+    expect(o.counts).toEqual({ objects: 6, files: 1, groups: 2 })
+    expect(o.targets).toEqual([
+      {
+        name: 'Demo',
+        productType: 'com.apple.product-type.application',
+        phases: [{ name: 'Sources', count: 1 }]
+      }
+    ])
+    expect(o.configurations).toEqual([
+      { name: 'Debug', settings: [{ key: 'SWIFT_VERSION', value: '5.0' }] }
+    ])
+  })
+
+  it('roots the tree at the group nobody claims as a child', () => {
+    const o = pbxprojOutline(proj)!
+    expect(o.tree).toHaveLength(1)
+    // The main group has no name of its own, so it stays unnamed rather than
+    // showing its uuid — the renderer draws its children as the roots.
+    expect(o.tree[0].name).toBe('')
+    expect(o.tree[0].children![0].name).toBe('Demo')
+    expect(o.tree[0].children![0].children![0]).toEqual({ name: 'App.swift' })
+  })
+
+  it('survives a group that lists itself as its own ancestor', () => {
+    const cyclic = proj.replace('\t\t\t\tAA01 /* App.swift */,', '\t\t\t\tBB00,')
+    expect(pbxprojOutline(cyclic)).not.toBeNull()
+  })
+
+  it('returns null for something that is not a project', () => {
+    expect(pbxprojOutline('hello')).toBeNull()
+  })
+})
+
+describe('lockfiles', () => {
+  it('names the manager and the command that regenerates the file', () => {
+    expect(lockfileFor('Podfile.lock')).toEqual({
+      manager: 'CocoaPods',
+      command: 'pod install'
+    })
+    expect(lockfileFor('Package.resolved')?.manager).toBe('Swift Package Manager')
+    expect(lockfileFor('pnpm-lock.yaml')?.command).toBe('pnpm install')
+    expect(lockfileFor('Cargo.lock')?.command).toBe('cargo build')
+    expect(lockfileFor('go.sum')?.command).toBe('go mod tidy')
+  })
+
+  it('finds one nested anywhere in the tree', () => {
+    expect(lockfileFor('ios/App/Podfile.lock')?.manager).toBe('CocoaPods')
+    expect(lockfileFor('packages/web/yarn.lock')?.manager).toBe('Yarn')
+    // Xcode keeps Package.resolved inside the project or workspace package.
+    expect(
+      lockfileFor('Demo.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved')
+    ).not.toBeNull()
+  })
+
+  it('leaves ordinary files alone, including ones that merely look like locks', () => {
+    for (const f of ['src/lock.ts', 'Podfile', 'package.json', 'notes/Cargo.lock.bak', 'go.mod']) {
+      expect(lockfileFor(f)).toBeNull()
+    }
+  })
+})
+
+describe('build noise', () => {
+  it('flags per-developer Xcode state and editor droppings', () => {
+    for (const f of [
+      'Demo.xcodeproj/xcuserdata/carlos.xcuserdatad/UserInterfaceState.xcuserstate',
+      'Demo.xcodeproj/project.xcworkspace/xcuserdata/x.xcuserdatad/WorkspaceSettings.xcsettings',
+      'DerivedData/Demo/Build/Products/Debug/Demo.app',
+      '.DS_Store',
+      'Demo/.DS_Store',
+      'Thumbs.db'
+    ]) {
+      expect(isBuildNoise(f)).toBe(true)
+    }
+  })
+
+  it('leaves alone everything somebody might have meant to commit', () => {
+    // A guard that fires on deliberate files gets dismissed on reflex, and then
+    // it is not a guard.
+    for (const f of [
+      'src/app.ts',
+      'build/README.md',
+      'dist/index.js',
+      'vendor/lib.rb',
+      'node_modules/left-pad/index.js',
+      'Demo/Info.plist',
+      'docs/DerivedDataNotes.md'
+    ]) {
+      expect(isBuildNoise(f)).toBe(false)
+    }
+  })
+
+  it('ignores the folder, not one developer inside it', () => {
+    // Ignoring the exact path leaves the next developer's copy to be committed
+    // all over again.
+    expect(ignoreLineFor('Demo.xcodeproj/xcuserdata/carlos.xcuserdatad/x.xcuserstate')).toBe(
+      'Demo.xcodeproj/xcuserdata/'
+    )
+    expect(ignoreLineFor('xcuserdata/a/b')).toBe('xcuserdata/')
+    expect(ignoreLineFor('DerivedData/Demo/x')).toBe('DerivedData/')
+  })
+
+  it('ignores a stray file by name, wherever it turns up', () => {
+    expect(ignoreLineFor('Demo/nested/.DS_Store')).toBe('.DS_Store')
+    expect(ignoreLineFor('Thumbs.db')).toBe('Thumbs.db')
   })
 })

@@ -44,6 +44,30 @@ keywords: 差异 对比 diff 分栏 并排 split side-by-side 词级 空白 whit
 
 ![Markdown 预览](../../screenshots/markdown-preview.webp)
 
+### Apple 属性列表
+
+`Info.plist` 和 `*.entitlements` 是 XML，而没人是想读 XML 的。预览转而显示
+键值大纲——Xcode 自带的 plist 编辑器展示的那种形态——嵌套原样保留，每个值的类型
+就在旁边。
+
+![以键值大纲显示的 Info.plist](../../screenshots/preview-plist.webp)
+
+两个限制。**二进制** plist（`bplist00`）会被识别并指明，但不解码——想在这里看就先
+用 `plutil -convert xml1` 转一下，不过仓库里的二进制 plist 多半是本就不该提交的
+构建产物。另外 `<data>` 的值显示为字节数而不是 base64：一段 blob 什么也告诉不了
+你，而渲染在你可能正在共享的面板里的描述文件，会告诉别人太多。
+
+### Xcode 项目
+
+`project.pbxproj` 是一个扁平的对象字典，对象之间靠 id 互相指向，所以按顺序读几乎
+说明不了这个项目。预览会顺着这些引用，把你真正想看的三样东西重建出来：带构建阶段
+的**目标**、Xcode 导航器画出来的那种**分组树**，以及按配置分的**构建设置**。
+
+![以目标、文件树和设置显示的 project.pbxproj](../../screenshots/preview-xcodeproj.webp)
+
+它只读，不编辑——这里没有任何东西会写回项目。两个分支同时改动同一个文件会怎样，
+见[解决冲突](conflicts.md)。
+
 ## 超大文件
 
 预览和文件视图会将文件完整加载到内存中，因此两者都会拒绝超过大小上限的文件

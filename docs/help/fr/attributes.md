@@ -82,10 +82,10 @@ Deux moitiés, et les deux sont nécessaires :
 2. `*.docx diff=<name>` dans `.gitattributes` — les fichiers auxquels elle
    s'applique.
 
-Les boutons d'ici font les deux d'un coup. Pour Word, Excel et JSON, Gitcito
+Les boutons d'ici font les deux d'un coup. Pour Word, Excel, JSON et `.strings`, Gitcito
 **livre lui-même le convertisseur** — la même analyse de documents que ses
 aperçus utilisent, exposée comme une petite commande `gitcito-textconv` dans
-l'app — si bien que ces trois-là fonctionnent sans rien installer. Les autres
+l'app — si bien que ces quatre-là fonctionnent sans rien installer. Les autres
 exigent toujours un vrai outil dans votre PATH : Gitcito vérifie et grise ce
 qui manque plutôt que d'écrire un pilote qui échoue au premier diff.
 
@@ -94,8 +94,28 @@ qui manque plutôt que d'écrire un pilote qui échoue au premier diff.
 | `word` | rien — livré avec Gitcito | Des diffs en prose des `.docx` |
 | `excel` | rien — livré avec Gitcito | Des diffs ligne à ligne (CSV par feuille) des `.xlsx`/`.xls` |
 | `json` | rien — livré avec Gitcito | Des diffs JSON stables, à clés triées |
+| `strings` | rien — livré avec Gitcito | Diffs ligne à ligne d'un `.strings` UTF-16, que git dit binaire |
 | `pdf` | `pdftotext` (poppler) | Des diffs textuels des `.pdf` |
 | `exif` | `exiftool` | Ce qui a changé sur une image, quand les pixels sont opaques |
+
+### Celui qui mord les projets iOS
+
+`Localizable.strings` est en UTF-16 pendant presque toute l'histoire d'Xcode, et
+l'UTF-16 est plein d'octets NUL : git le déclare binaire et n'affiche **rien**.
+
+```
+diff --git a/Localizable.strings b/Localizable.strings
+Binary files a/Localizable.strings and b/Localizable.strings differ
+```
+
+C'est précisément le fichier où voir quelle chaîne a bougé compte le plus. Le
+pilote `strings` le décode pour le diff seulement — en lisant la marque d'ordre
+des octets plutôt qu'en la supposant, si bien qu'un `.strings` moderne en UTF-8
+passe intact au lieu de se changer en charabia.
+
+Les String Catalogs (`.xcstrings`, Xcode 15 et suivants) sont du JSON, et le
+pilote `json` les couvre : il trie les clés, si bien qu'une traduction ajoutée
+en tête cesse de réécrire tout le fichier dans le diff.
 
 Les limites du convertisseur embarqué, dites franchement : `.doc` (l'ancien
 format binaire de Word) n'est pas compris, seulement `.docx` ; le PDF n'est pas

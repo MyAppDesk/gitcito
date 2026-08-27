@@ -57,11 +57,44 @@ a skok do linii zadziała.
 | Ikona na końcu wiersza w drzewie plików | Ten plik, jednym kliknięciem |
 | Kliknięcie linii prawym przyciskiem w widoku **pliku** | Plik, na tej linii |
 | Kliknięcie linii prawym przyciskiem w widoku **blame** | Plik, na tej linii |
+| `.xcodeproj` lub inny pakiet w drzewie plików | Pakiet, w aplikacji, która go obsługuje |
 
 Akcje liniowe pojawiają się tylko tam, gdzie numer linii jeszcze coś znaczy:
 plik pokazany na starym commicie albo blame przewinięty do wcześniejszej rewizji
 ma linie, które już nie odpowiadają temu, co jest na dysku — więc Gitcito nie
 oferuje tam skoku, zamiast odesłać cię w złe miejsce.
+
+## Projekty Xcode i inne pakiety
+
+`MyApp.xcodeproj` to katalog. Git o tym wie i drzewo plików też wiedziało —
+dopóki nie zaczęło to przeszkadzać: rozwijanie go, żeby znaleźć
+`project.pbxproj`, `project.xcworkspace` i po jednym folderze na programistę w
+`xcuserdata`, to trzy kliknięcia szumu wokół czegoś, czego i tak nigdy nie
+zamierzałeś edytować ręcznie.
+
+Teraz mają ikonę pakietu, a **kliknięcie wiersza otwiera pakiet** — tak jak
+dwuklik w Finderze. Strzałka została, więc ten jeden raz, kiedy naprawdę
+potrzebujesz `project.pbxproj` — prawie zawsze konflikt scalania — wchodzisz do
+środka jak dotąd.
+
+Rozpoznawane: `.xcodeproj`, `.xcworkspace`, `.xcframework`, `.framework`,
+`.app`, `.appex`, `.dSYM`, `.playground`, `.xcuserdatad`.
+
+**Nie** rozpoznawane, celowo: `.xcassets` i `.lproj`. To też pakiety, ale pliki w
+środku faktycznie się edytuje, więc zwijanie ich kosztowałoby więcej, niż daje.
+
+### Ograniczenia
+
+**Pakiet otwiera system, nie Twój edytor.** `.xcodeproj` podany edytorowi
+tekstu otwiera się jako folder pełen property list, czego nikt klikający nie
+chciał — więc Gitcito przekazuje go temu, co system z nim kojarzy, czyli na Macu
+z Xcode właśnie Xcode'owi. Wybór edytora zostaje nietknięty i nadal rządzi każdym
+zwykłym plikiem.
+
+**To konwencja nazw, nie flaga systemu plików.** Gitcito patrzy na rozszerzenie,
+więc katalog, który przypadkiem nazwałeś `notes.app`, też się zwinie, a na
+Linuksie czy Windowsie — gdzie to zwykłe foldery — kliknięcie otworzy menedżera
+plików zamiast IDE.
 
 ## Własne polecenie
 

@@ -162,6 +162,83 @@ export const shots = [
     }
   },
   {
+    out: 'conflict-lockfile',
+    repos: ['xcode-project'],
+    themes: ['light'],
+    // `pods` bumps Alamofire, main bumps SnapKit — a Podfile.lock collision.
+    prepare: async ({ repoPaths, run }) => {
+      const repo = repoPaths['xcode-project']
+      await run('git', ['-C', repo, 'merge', '--abort'], { allowFail: true })
+      await run('git', ['-C', repo, 'checkout', '-f', 'main'], { allowFail: true })
+      await run('git', ['-C', repo, 'merge', 'pods'], { allowFail: true })
+    },
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['xcode-project']
+      await page.evaluate(async (repoPath) => {
+        const s = window.__shot
+        s.repo.getState().select(repoPath, { type: 'wip' })
+        s.ui.getState().setConflictView({ repoPath, file: 'Podfile.lock' })
+      }, repo)
+    }
+  },
+  {
+    out: 'preview-plist',
+    repos: ['xcode-project'],
+    themes: ['light'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['xcode-project']
+      await page.evaluate(async (repoPath) => {
+        const s = window.__shot
+        s.repo.getState().select(repoPath, { type: 'wip' })
+        s.ui.getState().setFileView({
+          repoPath,
+          file: 'Demo/Info.plist',
+          source: { type: 'tree' },
+          mode: 'preview'
+        })
+      }, repo)
+    }
+  },
+  {
+    out: 'preview-xcodeproj',
+    repos: ['xcode-project'],
+    themes: ['light'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['xcode-project']
+      await page.evaluate(async (repoPath) => {
+        const s = window.__shot
+        s.repo.getState().select(repoPath, { type: 'wip' })
+        s.ui.getState().setFileView({
+          repoPath,
+          file: 'Demo.xcodeproj/project.pbxproj',
+          source: { type: 'tree' },
+          mode: 'preview'
+        })
+      }, repo)
+    }
+  },
+  {
+    out: 'conflict-pbxproj',
+    repos: ['xcode-project'],
+    themes: ['light'],
+    // Merge `feature` into main so the project.pbxproj conflicts. Reset first so
+    // re-runs (which leave the repo mid-merge) stay idempotent.
+    prepare: async ({ repoPaths, run }) => {
+      const repo = repoPaths['xcode-project']
+      await run('git', ['-C', repo, 'merge', '--abort'], { allowFail: true })
+      await run('git', ['-C', repo, 'checkout', '-f', 'main'], { allowFail: true })
+      await run('git', ['-C', repo, 'merge', 'feature'], { allowFail: true })
+    },
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['xcode-project']
+      await page.evaluate(async (repoPath) => {
+        const s = window.__shot
+        s.repo.getState().select(repoPath, { type: 'wip' })
+        s.ui.getState().setConflictView({ repoPath, file: 'Demo.xcodeproj/project.pbxproj' })
+      }, repo)
+    }
+  },
+  {
     out: 'image-diff',
     // A throwaway repo with two commits of the same image, so the diff shows a
     // real before/after (the mascot illustrations in ./assets) instead of a

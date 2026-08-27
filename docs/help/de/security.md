@@ -18,6 +18,9 @@ Git-Host und, falls du es einschaltest, an deinen KI-Anbieter.
 Werte in `.env*`, `*.pem`, `*.key`, `id_rsa`, `credentials.*` und Verwandten
 werden in Diff-, Datei- und Blame-Ansicht als `KEY=••••••` dargestellt, damit
 ein geteilter Bildschirm oder ein Screenshot sie nicht ausplaudern kann.
+Apple-Signaturmaterial zählt dazu: `*.mobileprovision`,
+`*.provisionprofile`, `*.p12` und die `*.p8`-Schlüssel für App Store Connect.
+Ein `*.cer` nicht — ein Zertifikat ist von Haus aus öffentlich.
 
 Das ist **reine Anzeige**: Die Datei wird nie verändert, und was du stagest,
 auch nicht. Ein Augen-Schalter deckt sie pro Ansicht auf. `.env.example`,
@@ -31,6 +34,7 @@ auch nicht. Ein Augen-Schalter deckt sie pro Ansicht auf. `.env.example`,
 |---|---|
 | **Geheimnisdatei** | Du committest etwas, das nach einem Zugangsdatum aussieht — mit *Ignorieren & nicht mehr verfolgen* auf einen Klick |
 | **Große Datei** | Du committest einen übergroßen Blob (Schwellwert unter Einstellungen → Sicherheit) |
+| **Build-Müll** | `xcuserdata/`, `DerivedData/` oder eine `.DS_Store` committen — mit demselben *Ignorieren & aus der Versionierung nehmen* mit einem Klick |
 | **Geschützter Branch** | Du committest direkt auf `main`/`master` oder erzwingst dort einen Push |
 | **Getrackte Geheimnisse** | Du pushst ein Repository, das eine Geheimnisdatei *trackt* — einmal pro Sitzung gewarnt |
 

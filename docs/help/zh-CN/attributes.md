@@ -56,15 +56,32 @@ keywords: gitattributes 属性 attributes 差异驱动 diff driver textconv 合�
 1. git config 里的 `diff.<name>.textconv`——转换器命令。
 2. `.gitattributes` 里的 `*.docx diff=<name>`——它适用于哪些文件。
 
-这里的按钮一次把两件都做了。对 Word、Excel 和 JSON，Gitcito **自己附带了转换器**——就是它的预览所用的那套文档解析，以应用内一条小小的 `gitcito-textconv` 命令的形式提供——所以这三个什么都不用装就能用。其余的仍然需要你 PATH 里有真正的工具：Gitcito 会检查，并把缺的置灰，而不是写下一条在第一次对比时就失败的驱动。
+这里的按钮一次把两件都做了。对 Word、Excel、JSON 和 `.strings`，Gitcito **自己附带了转换器**——就是它的预览所用的那套文档解析，以应用内一条小小的 `gitcito-textconv` 命令的形式提供——所以这四个什么都不用装就能用。其余的仍然需要你 PATH 里有真正的工具：Gitcito 会检查，并把缺的置灰，而不是写下一条在第一次对比时就失败的驱动。
 
 | 驱动 | 需要 | 给你什么 |
 |--------|-------|-----------|
 | `word` | 无——随 Gitcito 附带 | `.docx` 的散文级差异 |
 | `excel` | 无——随 Gitcito 附带 | `.xlsx`/`.xls` 的按行差异（每个工作表一份 CSV） |
 | `json` | 无——随 Gitcito 附带 | 键已排序、结果稳定的 JSON 差异 |
+| `strings` | 无需安装——随 Gitcito 附带 | 让 git 视为二进制的 UTF-16 `.strings` 显示逐行差异 |
 | `pdf` | `pdftotext`（poppler） | `.pdf` 的文本差异 |
 | `exif` | `exiftool` | 当像素本身看不出名堂时，一张图片改了什么 |
+
+### 真正咬到 iOS 项目的那个
+
+`Localizable.strings` 在 Xcode 的大半历史里都是 UTF-16，而 UTF-16 满是 NUL
+字节，所以 git 把它当二进制，**什么也不显示**：
+
+```
+diff --git a/Localizable.strings b/Localizable.strings
+Binary files a/Localizable.strings and b/Localizable.strings differ
+```
+
+而这恰恰是最需要看清谁动了哪条文案的文件。`strings` 驱动只为比较而解码——它读
+字节序标记而不是靠猜，所以现代的 UTF-8 `.strings` 会原样通过，不会变成乱码。
+
+String Catalog（`.xcstrings`，Xcode 15 起）是 JSON，由 `json` 驱动覆盖：它会
+排序键，于是在顶部新增一条翻译不再让整份文件在 diff 里被重写一遍。
 
 附带的转换器的限制，明说：`.doc`（老式二进制 Word 格式）不认识，只认 `.docx`；PDF 没有覆盖——Gitcito 是用浏览器的查看器来预览 PDF 的，没有可以复用的文本提取器；另外每对比一次文档都要付出一小段转换器启动的开销。设置 `git config diff.<name>.cachetextconv true` 可以让 git 按 blob 缓存输出。
 

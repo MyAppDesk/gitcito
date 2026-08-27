@@ -12,6 +12,7 @@ import { Avatar } from './Avatar'
 import { lintCommit, subjectCounterLevel, SUBJECT_IDEAL_LEN, CC_TYPES, parseCcPrefix, applyCcType, applyCcScope, currentCcScope, GITMOJIS, parseGitmojiPrefix, applyGitmoji, parseTicketPrefix, ticketFromBranch } from '../lib/commitLint'
 import { appendTrailers, configTrailers } from '../lib/repoConfig'
 import { isSecretFile } from '../lib/secrets'
+import { isBuildNoise, ignoreLineFor } from '../lib/buildNoise'
 import {
   FileSearchBar,
   EMPTY_FILTER,
@@ -768,10 +769,16 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
       message,
       configTrailers(repoConfig, { ticket: parseTicketPrefix(summary).ticket || branchTicket, branch: repo.branches.current })
     )
-    // Pre-commit guard: flag credential-looking files and oversized blobs before
-    // they enter history. Both are hard to fully erase later.
+    // Pre-commit guard: flag credential-looking files, oversized blobs and build
+    // noise before they enter history. The first two are hard to fully erase
+    // later; the third is merely certain to conflict forever.
     const flagged: { path: string; reason: string }[] = []
-    for (const f of staged) if (isSecretFile(f.path)) flagged.push({ path: f.path, reason: 'secret' })
+    for (const f of staged) {
+      if (isSecretFile(f.path)) flagged.push({ path: f.path, reason: t('composer.reasonSecret') })
+      // Build and editor droppings: not dangerous, just worthless to everyone
+      // but the person who generated them, and a conflict on every merge.
+      else if (isBuildNoise(f.path)) flagged.push({ path: f.path, reason: t('composer.reasonBuildNoise') })
+    }
     if (largeFileKb > 0) {
       const sizes = await gitApi
         .fileSizes(path, staged.map((f) => f.path))
@@ -796,7 +803,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
         kind: 'confirm',
         danger: true,
         title: onProtected && flagged.length === 0 ? t('composer.commitProtectedTitle') : t('composer.commitAnywayTitle'),
-        message: `${interp(t('composer.commitProtectedMsg'), { warnings: `${parts.join('\n')}\n\nSecrets land in history hard to erase; large blobs bloat the repo forever.` })}${
+        message: `${interp(t('composer.commitProtectedMsg'), { warnings: `${parts.join('\n')}\n\n${t('composer.guardConsequences')}` })}${
           onProtected ? `\n\n${t('confirm.protectedHint')}` : ''
         }`,
         confirmLabel: t('composer.commitAnywayConfirm'),
@@ -806,7 +813,11 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
         secondaryLabel: all.length > 0 ? t('composer.ignoreUntrackSecondary') : onProtected ? t('confirm.protectedManage') : undefined,
         onSecondary:
           all.length > 0
-            ? () => void repoActions.ignoreAndUntrack(path, all, all)
+            ? () => void repoActions.ignoreAndUntrack(
+                path,
+                all,
+                [...new Set(all.map((p) => (isBuildNoise(p) ? ignoreLineFor(p) : p)))]
+              )
             : onProtected
               ? () => useUIStore.getState().openModal({ kind: 'repo-settings', repoPath: path, tab: 'general' })
               : undefined

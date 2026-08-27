@@ -3635,7 +3635,10 @@ export const gitService = {
     const candidates: DiffDriverSuggestion[] = [
       { name: 'word', patterns: ['*.docx'], textconv: shimConv, binary: '', bundled: true, available: shimOk },
       { name: 'excel', patterns: ['*.xlsx', '*.xls'], textconv: shimConv, binary: '', bundled: true, available: shimOk },
-      { name: 'json', patterns: ['*.json'], textconv: shimConv, binary: '', bundled: true, available: shimOk },
+      { name: 'json', patterns: ['*.json', '*.xcstrings'], textconv: shimConv, binary: '', bundled: true, available: shimOk },
+      // Git calls a UTF-16 .strings binary and shows no diff at all, which is
+      // the one file where seeing which string moved matters most.
+      { name: 'strings', patterns: ['*.strings'], textconv: shimConv, binary: '', bundled: true, available: shimOk },
       { name: 'pdf', patterns: ['*.pdf'], textconv: 'pdftotext -layout - -', binary: 'pdftotext', available: hasBinary('pdftotext') },
       { name: 'exif', patterns: ['*.jpg', '*.jpeg', '*.png'], textconv: 'exiftool', binary: 'exiftool', available: hasBinary('exiftool') }
     ]

@@ -57,11 +57,44 @@ düzenleyiciyi yeniden seçin, satıra atlama çalışacaktır.
 | Dosya ağacında satır sonundaki simge | O dosyayı, tek tıkla |
 | **Dosya** görünümünde bir satıra sağ tıklama | Dosyayı, o satırda |
 | **Blame** görünümünde bir satıra sağ tıklama | Dosyayı, o satırda |
+| Dosya ağacındaki bir `.xcodeproj` ya da başka paket | Paketi, sahibi olan uygulamada |
 
 Satır eylemleri yalnızca satır numarasının hâlâ bir anlamı olduğu yerlerde
 görünür: eski bir commit'te gösterilen bir dosyanın ya da daha eski bir sürüme
 geri sarılmış bir blame'in satırları diskte olanla artık örtüşmez; bu yüzden
 Gitcito sizi yanlış yere göndermektense orada hiç atlama sunmaz.
+
+## Xcode projeleri ve diğer paketler
+
+`MyApp.xcodeproj` bir dizindir. Git bunu bilir, dosya ağacı da biliyordu — ta ki
+rahatsız etmeye başlayana kadar: `project.pbxproj`, `project.xcworkspace` ve
+`xcuserdata` altında geliştirici başına bir klasör bulmak için onu açmak, elle
+düzenlemeyi hiç düşünmediğiniz bir şey için üç tıklık gürültü demek.
+
+Artık paket simgesiyle görünüyorlar ve **satıra tıklamak paketi açıyor** —
+Finder'da çift tıklamanın yaptığı gibi. Ok yerinde duruyor, yani
+`project.pbxproj`'a gerçekten ihtiyaç duyduğunuz o tek seferde — neredeyse her
+zaman bir birleştirme çakışması — eskisi gibi içine iniyorsunuz.
+
+Tanınanlar: `.xcodeproj`, `.xcworkspace`, `.xcframework`, `.framework`, `.app`,
+`.appex`, `.dSYM`, `.playground`, `.xcuserdatad`.
+
+Bilerek tanın**ma**yanlar: `.xcassets` ve `.lproj`. Onlar da paket, ama
+içlerindeki dosyalar gerçekten düzenleniyor; katlamak kazandırdığından fazlasına
+mal olurdu.
+
+### Sınırlar
+
+**Paketi editörünüz değil, sistem açar.** Bir metin editörüne verilen
+`.xcodeproj`, property list dolu bir klasör olarak açılır — tıklayan hiç kimsenin
+istediği bu değildi. Bu yüzden Gitcito onu işletim sisteminin ilişkilendirdiği
+şeye teslim eder; Xcode kurulu bir Mac'te bu Xcode'dur. Editör seçiminize
+dokunulmaz; sıradan her dosyada hâlâ o geçerlidir.
+
+**Bu bir adlandırma geleneğidir, dosya sistemi bayrağı değil.** Gitcito uzantıya
+bakar; tesadüfen `notes.app` adını verdiğiniz bir dizin de katlanır ve bunların
+sıradan klasör olduğu Linux veya Windows'ta tıklamak bir IDE yerine dosya
+yöneticisini açar.
 
 ## Kendi komutunuz
 

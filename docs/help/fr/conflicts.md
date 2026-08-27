@@ -66,6 +66,77 @@ Avec l'IA activée, **Résoudre avec l'IA** propose une fusion dans le panneau d
 sortie. Elle n'applique jamais rien d'elle-même : vous la lisez, l'éditez et
 l'indexez. Voir [Fonctions IA](ai.md).
 
+## Fichiers de projet Xcode
+
+`project.pbxproj` entre en conflit plus que tout autre fichier d'un dépôt iOS,
+et presque jamais parce que quelqu'un aurait été en désaccord. C'est un
+dictionnaire plat d'objets indexés par des identifiants de 24 caractères
+hexadécimaux : ajouter un fichier écrit donc quatre entrées — un `PBXBuildFile`,
+un `PBXFileReference`, une ligne dans les `children` du groupe qui le contient,
+une ligne dans la phase de compilation de la cible. Deux personnes qui ajoutent
+un fichier chacune écrivent huit entrées qui tombent sur les mêmes quelques
+lignes. Git voit une collision ; il n'y a rien à résoudre.
+
+Quand le fichier en conflit est un `project.pbxproj`, le résolveur lit les trois
+versions comme des projets plutôt que comme du texte et propose de **fusionner
+par structure** : apparier les objets par identifiant, prendre tous les ajouts
+des deux côtés, unir les tableaux `children` et `files`, et s'arrêter sur ce qui
+a réellement divergé. Le bandeau au-dessus des panneaux indique ce que chaque
+côté a ajouté et ce qui — le cas échéant — vous reste à trancher.
+
+Comme la proposition de l'IA, elle atterrit dans le panneau de sortie et
+n'indexe rien. Vous la relisez avant d'enregistrer.
+
+![Le bandeau de fusion structurelle au-dessus des panneaux de conflit, sur un fichier de projet Xcode](../../screenshots/conflict-pbxproj.webp)
+
+### Ce qu'elle refuse de faire
+
+**Elle ne devine jamais un réglage que vous avez tous les deux déplacé.** Si
+vous mettez `MARKETING_VERSION` à `1.1` et eux à `2.0`, c'est une décision,
+nommée dans le bandeau — le réglage, votre valeur, la leur — plutôt que réglée
+dans votre dos. Un objet qu'elle n'a pas pu trancher conserve *votre* version à
+l'identique : une fusion à moitié appliquée n'atteint jamais le disque.
+
+**Elle refuse le fichier entier si l'une des trois versions ne s'analyse pas.**
+Un `project.pbxproj` que Xcode ne peut pas ouvrir coûte plus cher qu'une fusion
+manuelle ; tout ce qu'elle ne peut pas lire avec certitude reste donc un conflit
+de texte ordinaire, et elle le dit.
+
+**Elle ne détecte pas deux identifiants créés pour des objets différents.**
+C'est rare, Xcode les tirant au hasard — mais quand cela arrive, prendre l'un ou
+l'autre côté supprimerait silencieusement le fichier de quelqu'un : c'est donc
+signalé plutôt que fusionné.
+
+### Pas `merge=union`
+
+Le remède qui circule pour cela est `*.pbxproj merge=union` dans
+[`.gitattributes`](attributes.md). À éviter. L'union fonctionne tant que les
+seuls changements sont des ajouts indépendants ; dès que deux personnes
+modifient le même réglage de compilation, elle émet les deux lignes et produit
+un fichier que Xcode refuse d'ouvrir — au moment précis où vous avez le moins de
+chances de relire le diff attentivement. La fusion structurelle offre le même
+confort sans cette défaillance.
+
+## Fichiers de verrouillage
+
+`Podfile.lock`, `Package.resolved`, `yarn.lock` et leurs cousins enregistrent un
+graphe de dépendances que le résolveur de quelqu'un a déjà résolu. La moitié
+d'une solution cousue à la moitié d'une autre est un graphe que personne n'a
+résolu : il peut ne pas s'installer, et s'il s'installe, il installe quelque
+chose qu'aucune des deux branches n'a testé.
+
+Aussi, quand le fichier en conflit est un lockfile, le bandeau nomme l'outil qui
+le gouverne, propose **Garder les nôtres** et **Garder les leurs** sur place, et
+vous donne la commande qui le régénère ensuite. Prendre un côté n'est pas un
+compromis ici — c'est toute la méthode, et c'est la régénération qui la rend
+correcte.
+
+![Le bandeau de lockfile au-dessus des panneaux de conflit](../../screenshots/conflict-lockfile.webp)
+
+Les trois panneaux restent disponibles, car de temps à autre vous voulez lire ce
+qui a changé : une somme de contrôle que vous reconnaissez, une version que vous
+attendiez. C'est de les modifier à la main que ceci cherche à vous dissuader.
+
 ## Les éviter en amont
 
 Le [radar de conflits](conflict-radar.md) vous dit quelles branches vont entrer

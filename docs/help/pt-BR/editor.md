@@ -57,11 +57,44 @@ linha funciona.
 | O ícone no fim da linha na árvore de arquivos | Aquele arquivo, em um clique |
 | Botão direito numa linha na visão de **arquivo** | O arquivo, naquela linha |
 | Botão direito numa linha na visão de **blame** | O arquivo, naquela linha |
+| Um `.xcodeproj` ou outro pacote na árvore de arquivos | O pacote, no app que o abre |
 
 As ações de linha só aparecem onde o número da linha ainda significa alguma coisa:
 um arquivo mostrado num commit antigo, ou um blame rebobinado para uma revisão
 anterior, tem linhas que não correspondem mais ao que está em disco, então o Gitcito
 não oferece pulo ali em vez de te mandar para o lugar errado.
+
+## Projetos do Xcode e outros pacotes
+
+`MyApp.xcodeproj` é um diretório. O Git sabe disso, e a árvore de arquivos
+também sabia — até começar a atrapalhar: expandi-lo para achar
+`project.pbxproj`, `project.xcworkspace` e uma pasta por desenvolvedor dentro de
+`xcuserdata` são três cliques de ruído por algo que você nunca ia editar na mão.
+
+Agora eles aparecem com um ícone de pacote e **clicar na linha abre o pacote**,
+como um duplo clique no Finder faria. A seta continua ali, então na única vez em
+que você *precisa* do `project.pbxproj` — um conflito de merge, quase sempre —
+você desce nele como antes.
+
+Reconhecidos: `.xcodeproj`, `.xcworkspace`, `.xcframework`, `.framework`,
+`.app`, `.appex`, `.dSYM`, `.playground`, `.xcuserdatad`.
+
+**Não** reconhecidos, de propósito: `.xcassets` e `.lproj`. Também são pacotes,
+mas as pessoas editam os arquivos lá dentro, então fechá-los custaria mais do
+que economiza.
+
+### Os limites
+
+**O pacote abre pelo sistema, não pelo seu editor.** Um `.xcodeproj` entregue a
+um editor de texto abre como uma pasta de property lists, que não é o que quem
+clicou queria — então o Gitcito entrega ao que o sistema associa a ele, o que num
+Mac com Xcode instalado é o Xcode. Sua escolha de editor não muda; ela continua
+valendo para qualquer arquivo comum.
+
+**É uma convenção de nomes, não uma marca do sistema de arquivos.** O Gitcito
+olha a extensão, então um diretório que você chamou de `notes.app` também fecha,
+e no Linux ou Windows — onde são pastas comuns — clicar abre o gerenciador de
+arquivos em vez de uma IDE.
 
 ## Um comando seu
 

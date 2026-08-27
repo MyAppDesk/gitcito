@@ -53,6 +53,36 @@ Word (`.docx`), Excel (`.xlsx`), PDF, video, ses, görseller ve geri kalan her
 
 ![Markdown önizlemesi](../../screenshots/markdown-preview.webp)
 
+### Apple özellik listeleri
+
+`Info.plist` ve `*.entitlements` XML'dir, ve kimse XML okumaya çalışmıyor.
+Önizleme onun yerine anahtar/değer taslağını gösterir — Xcode'un kendi plist
+düzenleyicisinin gösterdiği biçim — iç içe yapı bozulmadan ve her değerin türü
+yanında.
+
+![Anahtar/değer taslağı olarak bir Info.plist](../../screenshots/preview-plist.webp)
+
+İki sınır. **İkili** bir plist (`bplist00`) tanınır ve adı söylenir, çözülmez —
+burada görmek istiyorsan `plutil -convert xml1` ile geçir; gerçi bir depodaki
+ikili plist genelde orada bulunmaması gereken bir derleme çıktısıdır. Ve `<data>`
+değerleri base64 yerine bayt sayısı olarak görünür: bir blob sana bir şey
+söylemez, paylaşıyor olabileceğin bir panele çizilmiş bir provizyon profili ise
+herkese fazlasını söyler.
+
+### Xcode projeleri
+
+Bir `project.pbxproj`, birbirine kimlikle işaret eden nesnelerden oluşan tek ve
+düz bir sözlüktür; sırayla okumak proje hakkında neredeyse hiçbir şey anlatmaz.
+Önizleme bu referansları izler ve aslında aradığın üç şeyi yeniden kurar: derleme
+aşamalarıyla **hedefler**, Xcode gezgininin çizdiği hâliyle **grup ağacı** ve
+yapılandırma başına **derleme ayarları**.
+
+![Hedefler, dosya ağacı ve ayarlar olarak bir project.pbxproj](../../screenshots/preview-xcodeproj.webp)
+
+Okur, düzenlemez — buradaki hiçbir şey projeye yazmaz. İki dal aynı dosyayı
+düzenlediğinde ne olduğu için
+[çakışmaları çözme](conflicts.md) sayfasına bak.
+
 ## Çok büyük dosyalar
 
 Önizlemeler ve dosya görünümü bir dosyayı belleğe bütünüyle yükler; bu yüzden

@@ -52,6 +52,35 @@ syntax-highlighted code for everything else.
 
 ![Markdown preview](../screenshots/markdown-preview.webp)
 
+### Apple property lists
+
+`Info.plist` and `*.entitlements` are XML, and XML is not what anyone is trying
+to read. Preview shows the key/value outline instead — the shape Xcode's own
+plist editor shows — with the nesting intact and each value's type beside it.
+
+![An Info.plist as a key and value outline](../screenshots/preview-plist.webp)
+
+Two limits. A **binary** plist (`bplist00`) is recognised and named, not decoded
+— run `plutil -convert xml1` on it if you want it here, though a binary plist in
+a repository is usually a build artefact that should not be committed. And
+`<data>` values are shown as a byte count rather than as base64: a blob tells
+you nothing, and a provisioning profile rendered into a pane you might be
+sharing tells everyone else too much.
+
+### Xcode projects
+
+A `project.pbxproj` is one flat dictionary of objects that point at each other
+by id, so reading it in order tells you almost nothing about the project. The
+preview walks those references and rebuilds the three things you actually came
+for: the **targets** with their build phases, the **group tree** as the Xcode
+navigator draws it, and the **build settings** per configuration.
+
+![A project.pbxproj as targets, a file tree and build settings](../screenshots/preview-xcodeproj.webp)
+
+It is a reader, not an editor — nothing here writes to the project. For what
+happens when two branches both edit one, see
+[resolving conflicts](conflicts.md).
+
 ## Very large files
 
 Previews and the file view load a file fully into memory, so both refuse files

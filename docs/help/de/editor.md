@@ -59,12 +59,47 @@ Zeilensprung funktioniert.
 | Das Icon am Zeilenende im Dateibaum | Diese Datei, mit einem Klick |
 | Rechtsklick auf eine Zeile in der **Datei**-Ansicht | Die Datei, auf dieser Zeile |
 | Rechtsklick auf eine Zeile in der **Blame**-Ansicht | Die Datei, auf dieser Zeile |
+| Ein `.xcodeproj` oder anderes Paket im Dateibaum | Das Paket, in der App, der es gehört |
 
 Zeilenaktionen erscheinen nur dort, wo die Zeilennummer noch etwas bedeutet: Eine
 Datei, die auf einem alten Commit angezeigt wird, oder ein Blame, das auf eine
 frühere Revision zurückgespult wurde, hat Zeilen, die nicht mehr zu dem passen,
 was auf der Platte liegt. Gitcito bietet dort also keinen Sprung an, statt dich
 an die falsche Stelle zu schicken.
+
+## Xcode-Projekte und andere Pakete
+
+`MyApp.xcodeproj` ist ein Verzeichnis. Git weiß das, und der Dateibaum wusste es
+auch — bis es anfing zu stören: es aufzuklappen, um `project.pbxproj`,
+`project.xcworkspace` und unter `xcuserdata` einen Ordner pro Entwickler zu
+finden, sind drei Klicks Rauschen für etwas, das du ohnehin nie von Hand
+bearbeiten wolltest.
+
+Diese Einträge bekommen jetzt ein Paket-Symbol, und **ein Klick auf die Zeile
+öffnet das Paket** — so wie ein Doppelklick im Finder. Der Pfeil bleibt, also
+steigst du in dem einen Fall, in dem du `project.pbxproj` doch brauchst — fast
+immer ein Merge-Konflikt — weiterhin hinein.
+
+Erkannt werden: `.xcodeproj`, `.xcworkspace`, `.xcframework`, `.framework`,
+`.app`, `.appex`, `.dSYM`, `.playground`, `.xcuserdatad`.
+
+**Nicht** erkannt, mit Absicht: `.xcassets` und `.lproj`. Auch sie sind Pakete,
+aber man bearbeitet die Dateien darin, also würde das Zusammenklappen mehr
+kosten als es bringt.
+
+### Die Grenzen
+
+**Das Paket wird über das System geöffnet, nicht über deinen Editor.** Ein
+`.xcodeproj`, das man einem Texteditor übergibt, öffnet sich als Ordner voller
+Property Lists — nicht das, was jemand beim Klicken wollte. Gitcito übergibt es
+deshalb an das, was das Betriebssystem damit verknüpft, auf einem Mac mit Xcode
+also an Xcode. Deine Editor-Wahl bleibt unberührt und gilt weiterhin für jede
+gewöhnliche Datei.
+
+**Es ist eine Namenskonvention, kein Dateisystem-Flag.** Gitcito prüft die
+Endung — ein Verzeichnis, das du zufällig `notes.app` genannt hast, wird also
+ebenfalls zusammengeklappt, und unter Linux oder Windows, wo das gewöhnliche
+Ordner sind, öffnet ein Klick den Dateimanager statt einer IDE.
 
 ## Ein eigener Befehl
 

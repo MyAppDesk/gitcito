@@ -18,6 +18,9 @@ y, si lo activas, a tu proveedor de IA.
 Los valores de `.env*`, `*.pem`, `*.key`, `id_rsa`, `credentials.*` y
 compañía se pintan como `KEY=••••••` en las vistas de diff, archivo y blame,
 para que compartir pantalla o hacer una captura no los filtre.
+El material de firma de Apple cuenta: `*.mobileprovision`,
+`*.provisionprofile`, `*.p12` y las claves `*.p8` de App Store Connect. Un
+`*.cer` no — un certificado es público por diseño.
 
 Es **solo visual**: nunca cambia el archivo y nunca cambia lo que preparas. Un
 botón con forma de ojo los revela por vista. `.env.example`, `.sample` y
@@ -31,6 +34,7 @@ botón con forma de ojo los revela por vista. `.env.example`, `.sample` y
 |---|---|
 | **Archivo de secretos** | Al commitear algo que parece una credencial — con un *Ignorar y dejar de seguir* de un clic |
 | **Archivo grande** | Al commitear un blob desmesurado (el umbral está en Ajustes → Seguridad) |
+| **Ruido de compilación** | Al commitear `xcuserdata/`, `DerivedData/` o un `.DS_Store` — con el mismo *Ignorar y dejar de seguir* de un clic |
 | **Rama protegida** | Al commitear directamente a `main`/`master`, o al hacerle force push |
 | **Secretos con seguimiento** | Al publicar un repositorio que *sigue* un archivo de secretos — se avisa una vez por sesión |
 

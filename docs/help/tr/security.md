@@ -18,6 +18,9 @@ yapay zekâ sağlayıcınıza gider.
 `.env*`, `*.pem`, `*.key`, `id_rsa`, `credentials.*` ve benzerlerindeki
 değerler diff, dosya ve blame görünümlerinde `KEY=••••••` olarak çizilir; böylece
 bir ekran paylaşımı ya da ekran görüntüsü onları sızdıramaz.
+Apple imzalama malzemesi de sayılır: `*.mobileprovision`,
+`*.provisionprofile`, `*.p12` ve App Store Connect'in `*.p8` anahtarları. Bir
+`*.cer` sayılmaz — sertifika tasarımı gereği geneldir.
 
 Bu yalnızca **görüntüyle ilgilidir**: dosyayı asla değiştirmez, neyi
 hazırladığınızı da asla değiştirmez. Bir göz düğmesi onları görünüm başına
@@ -32,6 +35,7 @@ kabul edilir.
 |---|---|
 | **Sır dosyası** | Kimlik bilgisine benzeyen bir şeyi commit'lerken — tek tıklamalık *Yoksay ve izlemeyi bırak* ile |
 | **Büyük dosya** | Aşırı büyük bir blob'u commit'lerken (eşik: Ayarlar → Güvenlik) |
+| **Derleme çöpü** | `xcuserdata/`, `DerivedData/` ya da bir `.DS_Store` işlemek — aynı tek tıklık *Yoksay ve izlemeyi bırak* ile |
 | **Korumalı dal** | Doğrudan `main`/`master`'a commit'lerken ya da birini force push ederken |
 | **İzlenen sırlar** | Bir sır dosyasını *izleyen* bir depoyu push ederken — oturum başına bir kez uyarılır |
 

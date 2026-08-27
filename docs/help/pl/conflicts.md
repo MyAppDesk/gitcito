@@ -66,6 +66,73 @@ Przy włączonym AI **Rozwiąż z AI** proponuje scalenie w panelu wyniku. Nigdy
 nie stosuje samo z siebie: czytasz, poprawiasz i dodajesz do przechowalni.
 Zobacz [funkcje AI](ai.md).
 
+## Pliki projektu Xcode
+
+`project.pbxproj` konfliktuje częściej niż jakikolwiek inny plik w repozytorium
+iOS — i prawie nigdy dlatego, że ktoś się z kimś nie zgadzał. To jeden płaski
+słownik obiektów z 24-znakowymi kluczami szesnastkowymi, więc dodanie jednego
+pliku zapisuje cztery wpisy: `PBXBuildFile`, `PBXFileReference`, wiersz w
+`children` grupy nadrzędnej i wiersz w fazie budowania celu. Dwie osoby dodające
+po jednym pliku zapisują osiem wpisów, które lądują w tych samych kilku
+wierszach. Git widzi kolizję; nie ma czego rozwiązywać.
+
+Gdy plikiem w konflikcie jest `project.pbxproj`, edytor konfliktów czyta
+wszystkie trzy wersje jako projekty, a nie jako tekst, i proponuje **scalenie
+według struktury**: dopasować obiekty po identyfikatorze, wziąć każde dodanie z
+obu stron, połączyć tablice `children` i `files` i zatrzymać się na tym, co
+naprawdę się rozjechało. Pasek nad panelami mówi, co dodała każda strona i co —
+jeśli cokolwiek — zostaje dla ciebie.
+
+Tak jak propozycja AI, ląduje w panelu wyniku i niczego nie przygotowuje do
+zatwierdzenia. Czytasz to przed zapisaniem.
+
+![Pasek scalania strukturalnego nad panelami konfliktu, na pliku projektu Xcode](../../screenshots/conflict-pbxproj.webp)
+
+### Czego odmawia
+
+**Nigdy nie zgaduje ustawienia, które ruszyliście oboje.** Jeśli ty ustawisz
+`MARKETING_VERSION` na `1.1`, a oni na `2.0`, to jest decyzja i jest wymieniona
+z nazwy na pasku — ustawienie, twoja wartość, ich — zamiast być rozstrzygnięta za
+twoimi plecami. Obiekt, którego nie dało się rozstrzygnąć, zachowuje dokładnie
+*twoją* wersję, żeby scalenie zastosowane w połowie nigdy nie trafiło na dysk.
+
+**Odrzuca cały plik, jeśli którakolwiek z trzech wersji się nie parsuje.**
+`project.pbxproj`, którego Xcode nie otworzy, kosztuje więcej niż ręczne
+scalenie, więc wszystko, czego nie da się odczytać z pewnością, zostaje zwykłym
+konfliktem tekstowym — i mówi o tym wprost.
+
+**Nie wykrywa dwóch identyfikatorów nadanych różnym obiektom.** To rzadkie, bo
+Xcode losuje je przypadkowo — ale gdy się zdarzy, wybranie którejkolwiek strony
+po cichu wyrzuciłoby czyjś plik, więc jest zgłaszane zamiast scalane.
+
+### Nie `merge=union`
+
+Krążącym lekarstwem na to jest `*.pbxproj merge=union` w
+[`.gitattributes`](attributes.md). Unikaj go. Union działa, dopóki jedynymi
+zmianami są niezależne dodania, a w chwili gdy dwie osoby edytują to samo
+ustawienie budowania, wypisuje oba wiersze i tworzy plik, którego Xcode odmawia
+otwarcia — dokładnie wtedy, gdy najmniej prawdopodobne jest, że czytasz diff
+uważnie. Scalanie strukturalne daje tę samą wygodę bez tej awarii.
+
+## Pliki blokady
+
+`Podfile.lock`, `Package.resolved`, `yarn.lock` i im podobne zapisują graf
+zależności, który czyjś resolver już rozwiązał. Połowa jednego rozwiązania
+zszyta z połową drugiego to graf, którego nikt nie rozwiązał: może się nie
+zainstalować, a jeśli się zainstaluje, zainstaluje coś, czego nie testowała
+żadna z gałęzi.
+
+Dlatego gdy plikiem w konflikcie jest plik blokady, pasek nazywa narzędzie,
+które nim rządzi, oferuje od razu **Zachowaj nasze** i **Zachowaj ich**, i podaje
+polecenie, które wygeneruje go na nowo. Wybór strony nie jest tu kompromisem —
+to cała metoda, a poprawnym czyni ją dopiero ponowne wygenerowanie.
+
+![Pasek pliku blokady nad panelami konfliktu](../../screenshots/conflict-lockfile.webp)
+
+Trzy panele pozostają dostępne, bo od czasu do czasu naprawdę chcesz przeczytać,
+co się zmieniło: sumę kontrolną, którą rozpoznajesz, wersję, której się
+spodziewałeś. To ręczna edycja jest tym, od czego to wszystko ma cię odwieść.
+
 ## Jak ich w ogóle uniknąć
 
 [Radar konfliktów](conflict-radar.md) mówi ci, które gałęzie wejdą w konflikt,

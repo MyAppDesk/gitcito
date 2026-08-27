@@ -18,6 +18,9 @@ Git et, si vous l'activez, vers votre fournisseur d'IA.
 Les valeurs contenues dans `.env*`, `*.pem`, `*.key`, `id_rsa`, `credentials.*`
 et consorts s'affichent en `KEY=••••••` dans les vues diff, fichier et blame :
 un partage d'écran ou une capture ne peut donc pas les faire fuiter.
+Le matériel de signature Apple en fait partie : `*.mobileprovision`,
+`*.provisionprofile`, `*.p12` et les clés `*.p8` d'App Store Connect. Pas un
+`*.cer` — un certificat est public par nature.
 
 C'est **uniquement de l'affichage** : cela ne modifie jamais le fichier et ne
 modifie jamais ce que vous indexez. Une bascule en forme d'œil les révèle vue par
@@ -32,6 +35,7 @@ comme des secrets.
 |---|---|
 | **Fichier secret** | Vous validez quelque chose qui ressemble à un identifiant — avec un *Ignorer et ne plus suivre* en un clic |
 | **Gros fichier** | Vous validez un blob surdimensionné (seuil dans Réglages → Sécurité) |
+| **Bruit de compilation** | Committer `xcuserdata/`, `DerivedData/` ou un `.DS_Store` — avec le même *Ignorer et cesser de suivre* en un clic |
 | **Branche protégée** | Vous validez directement sur `main`/`master`, ou vous en poussez une en force |
 | **Secrets suivis** | Vous poussez un dépôt qui *suit* un fichier secret — averti une fois par session |
 

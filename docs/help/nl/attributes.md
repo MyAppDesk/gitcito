@@ -82,10 +82,10 @@ Twee helften, en beide zijn nodig:
 2. `*.docx diff=<name>` in `.gitattributes` — op welke bestanden het van
    toepassing is.
 
-De knoppen hier doen allebei tegelijk. Voor Word, Excel en JSON **levert
+De knoppen hier doen allebei tegelijk. Voor Word, Excel, JSON en `.strings` **levert
 Gitcito de converter zelf mee** — dezelfde documentanalyse die zijn
 voorvertoningen gebruiken, beschikbaar als een klein `gitcito-textconv`-commando
-in de app — dus die drie werken zonder iets te installeren. De rest heeft nog
+in de app — dus die vier werken zonder iets te installeren. De rest heeft nog
 steeds een echt hulpmiddel in je PATH nodig: Gitcito controleert dat en grijst
 uit wat ontbreekt, in plaats van een driver te schrijven die bij de eerste diff
 faalt.
@@ -95,8 +95,29 @@ faalt.
 | `word` | niets — zit bij Gitcito | Prozadiffs van `.docx` |
 | `excel` | niets — zit bij Gitcito | Rijdiffs (CSV per werkblad) van `.xlsx`/`.xls` |
 | `json` | niets — zit bij Gitcito | Op sleutel gesorteerde, stabiele JSON-diffs |
+| `strings` | niets — zit in Gitcito | Regeldiffs van een UTF-16-`.strings`, die git binair noemt |
 | `pdf` | `pdftotext` (poppler) | Tekstdiffs van `.pdf` |
 | `exif` | `exiftool` | Wat er aan een afbeelding veranderde, als de pixels ondoorzichtig zijn |
+
+### Degene die iOS-projecten bijt
+
+`Localizable.strings` is UTF-16 gedurende bijna heel Xcode's geschiedenis, en
+UTF-16 zit vol NUL-bytes, dus git noemt hem binair en toont **niets**:
+
+```
+diff --git a/Localizable.strings b/Localizable.strings
+Binary files a/Localizable.strings and b/Localizable.strings differ
+```
+
+Uitgerekend daar is zien welke string iemand verzette het belangrijkst. De
+driver `strings` decodeert hem alleen voor het diffen — hij leest de
+byte-volgordemarkering in plaats van hem aan te nemen, zodat een moderne
+UTF-8-`.strings` ongeschonden doorgaat in plaats van in koeterwaals te
+veranderen.
+
+String Catalogs (`.xcstrings`, Xcode 15 en later) zijn JSON, en de `json`-driver
+dekt ze: die sorteert sleutels, zodat een bovenaan toegevoegde vertaling niet
+langer het hele bestand in de diff herschrijft.
 
 De grenzen van de meegeleverde converter, zonder omhaal: `.doc` (het oude
 binaire Word-formaat) wordt niet begrepen, alleen `.docx`; PDF valt erbuiten —

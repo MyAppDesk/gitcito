@@ -64,6 +64,73 @@ Com a IA ligada, **Resolver com IA** propõe um merge no painel de saída. Ela n
 aplica nada por conta própria: você lê, edita e prepara. Veja
 [Recursos de IA](ai.md).
 
+## Arquivos de projeto do Xcode
+
+`project.pbxproj` entra em conflito mais do que qualquer outro arquivo de um
+repositório iOS, e quase nunca porque alguém discordou. É um único dicionário
+plano de objetos com chaves hexadecimais de 24 dígitos, então adicionar um
+arquivo escreve quatro entradas: um `PBXBuildFile`, um `PBXFileReference`, uma
+linha nos `children` do grupo que o contém e uma na fase de build do target.
+Duas pessoas adicionando um arquivo cada escrevem oito entradas que caem sobre
+as mesmas poucas linhas. O git vê uma colisão; não há nada a resolver.
+
+Quando o arquivo em conflito é um `project.pbxproj`, o resolvedor lê as três
+versões como projetos em vez de texto e oferece **mesclar por estrutura**: casar
+objetos por identificador, pegar toda adição dos dois lados, unir os arrays
+`children` e `files` e parar no que de fato divergiu. A faixa acima dos painéis
+diz o que cada lado adicionou e o que — se algo — sobra para você.
+
+Como a proposta da IA, ela cai no painel de saída e não prepara nada. Você lê
+antes de salvar.
+
+![A faixa de mesclagem estrutural acima dos painéis de conflito, em um arquivo de projeto do Xcode](../../screenshots/conflict-pbxproj.webp)
+
+### O que ela se recusa a fazer
+
+**Nunca adivinha uma configuração que os dois mexeram.** Se você põe
+`MARKETING_VERSION` em `1.1` e eles em `2.0`, isso é uma decisão, e aparece
+nomeada na faixa — a configuração, o seu valor, o deles — em vez de resolvida
+pelas suas costas. Um objeto que ela não conseguiu decidir mantém a *sua* versão
+exata, para que uma mesclagem pela metade nunca chegue ao disco.
+
+**Ela recusa o arquivo inteiro se qualquer uma das três versões não for
+analisável.** Um `project.pbxproj` que o Xcode não consegue abrir custa mais que
+uma mesclagem manual, então tudo que ela não puder ler com certeza continua um
+conflito de texto comum, e ela diz isso.
+
+**Ela não detecta dois identificadores cunhados para objetos diferentes.** Raro,
+já que o Xcode os escolhe aleatoriamente — mas quando acontece, pegar qualquer um
+dos lados descartaria em silêncio o arquivo de alguém, então é relatado em vez de
+mesclado.
+
+### Não use `merge=union`
+
+O remédio que circula para isso é `*.pbxproj merge=union` no
+[`.gitattributes`](attributes.md). Evite. A união funciona enquanto as únicas
+mudanças forem adições independentes, e no instante em que duas pessoas editam a
+mesma configuração de build ela emite as duas linhas e produz um arquivo que o
+Xcode se recusa a abrir — justo no momento em que é menos provável que você esteja
+lendo o diff com atenção. A mesclagem estrutural dá a mesma conveniência sem essa
+falha.
+
+## Lockfiles
+
+`Podfile.lock`, `Package.resolved`, `yarn.lock` e seus primos registram um grafo
+de dependências que o resolvedor de alguém já resolveu. Metade de uma solução
+costurada à metade de outra é um grafo que ninguém resolveu: pode não instalar,
+e se instalar, instala algo que nenhum dos dois branches testou.
+
+Então, quando o arquivo em conflito é um lockfile, a faixa nomeia a ferramenta
+que manda nele, oferece **Ficar com o nosso** e **Ficar com o deles** ali mesmo,
+e te dá o comando que o regenera depois. Escolher um lado aqui não é um meio
+termo — é o método inteiro, e a regeneração é o que o torna correto.
+
+![A faixa do lockfile acima dos painéis de conflito](../../screenshots/conflict-lockfile.webp)
+
+Os três painéis continuam disponíveis, porque de vez em quando você quer mesmo
+ler o que mudou: um checksum que reconhece, uma versão que esperava. Editá-los à
+mão é justamente do que isto tenta te dissuadir.
+
 ## Evitando conflitos antes deles acontecerem
 
 O [radar de conflitos](conflict-radar.md) diz quais branches vão conflitar antes

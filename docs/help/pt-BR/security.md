@@ -18,6 +18,9 @@ se você ligar, para o seu provedor de IA.
 Valores em `.env*`, `*.pem`, `*.key`, `id_rsa`, `credentials.*` e companhia são
 renderizados como `KEY=••••••` nas visões de diff, arquivo e blame, para que um
 compartilhamento de tela ou um print não os vaze.
+Material de assinatura da Apple conta: `*.mobileprovision`,
+`*.provisionprofile`, `*.p12` e as chaves `*.p8` do App Store Connect. Um
+`*.cer` não — um certificado é público por definição.
 
 É **só de exibição**: nunca muda o arquivo e nunca muda o que você prepara. Um
 interruptor de olho os revela por visão. `.env.example`, `.sample` e `.template` são
@@ -31,6 +34,7 @@ tratados como templates, não como segredos.
 |---|---|
 | **Arquivo de segredo** | Ao commitar algo que parece uma credencial — com um *Ignorar e parar de rastrear* em um clique |
 | **Arquivo grande** | Ao commitar um blob acima do tamanho (limite em Configurações → Segurança) |
+| **Lixo de build** | Commitar `xcuserdata/`, `DerivedData/` ou um `.DS_Store` — com o mesmo *Ignorar e parar de rastrear* de um clique |
 | **Branch protegida** | Ao commitar direto na `main`/`master`, ou dar force push numa delas |
 | **Segredos rastreados** | Ao dar push num repositório que *rastreia* um arquivo de segredo — avisado uma vez por sessão |
 

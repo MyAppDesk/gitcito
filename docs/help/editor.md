@@ -55,11 +55,44 @@ scripts*. Once the command exists, pick the editor again and the line jump works
 | The row-end icon in the file tree | That file, in one click |
 | Right-click a line in the **file** view | The file, at that line |
 | Right-click a line in the **blame** view | The file, at that line |
+| An `.xcodeproj` or other package in the file tree | The package, in the app that owns it |
 
 Line actions only appear where the line number still means something: a file
 shown at an old commit, or a blame rewound to an earlier revision, has lines that
 no longer match what is on disk, so Gitcito offers no jump there rather than
 sending you to the wrong place.
+
+## Xcode projects and other packages
+
+`MyApp.xcodeproj` is a directory. Git knows that, and so did the file tree until
+it started to matter: expanding it to find `project.pbxproj`, `project.xcworkspace`
+and a folder per developer under `xcuserdata` is three clicks of noise for a
+thing you were never going to edit by hand.
+
+These now render with a package icon and **clicking the row opens the package**,
+the way double-clicking it in Finder does. The chevron is still there, so the
+one time you *do* need `project.pbxproj` — a merge conflict, almost always — you
+descend into it as before.
+
+Recognised: `.xcodeproj`, `.xcworkspace`, `.xcframework`, `.framework`, `.app`,
+`.appex`, `.dSYM`, `.playground`, `.xcuserdatad`.
+
+**Not** recognised, on purpose: `.xcassets` and `.lproj`. They are packages too,
+but people edit the files inside them, so collapsing them would cost more than
+it saves.
+
+### The limits
+
+**The package opens through the system, not through your editor.** An
+`.xcodeproj` handed to a text editor opens as a folder of property lists, which
+is not what anyone clicking it wanted — so Gitcito hands it to whatever the OS
+associates with it, which on a Mac with Xcode installed is Xcode. Your editor
+choice is untouched; it still governs every ordinary file.
+
+**It is a naming convention, not a filesystem flag.** Gitcito matches the
+extension, so a directory you happened to name `notes.app` collapses too, and on
+Linux or Windows — where these are ordinary folders — clicking one opens it in
+the file manager rather than in an IDE.
 
 ## A command of your own
 

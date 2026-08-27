@@ -77,9 +77,9 @@ Two halves, and both are needed:
 1. `diff.<name>.textconv` in git config — the converter command.
 2. `*.docx diff=<name>` in `.gitattributes` — which files it applies to.
 
-The buttons here do both at once. For Word, Excel and JSON, Gitcito **ships the
-converter itself** — the same document parsing its previews use, exposed as a
-small `gitcito-textconv` command inside the app — so those three work with
+The buttons here do both at once. For Word, Excel, JSON and `.strings`, Gitcito
+**ships the converter itself** — the same parsing its previews use, exposed as a
+small `gitcito-textconv` command inside the app — so those four work with
 nothing installed. The rest still need a real tool on your PATH: Gitcito checks
 and greys out what is missing rather than writing a driver that fails at the
 first diff.
@@ -89,8 +89,28 @@ first diff.
 | `word` | nothing — ships with Gitcito | Prose diffs of `.docx` |
 | `excel` | nothing — ships with Gitcito | Row diffs (CSV per sheet) of `.xlsx`/`.xls` |
 | `json` | nothing — ships with Gitcito | Key-sorted, stable JSON diffs |
+| `strings` | nothing — ships with Gitcito | Line diffs of a UTF-16 `.strings`, which git calls binary |
 | `pdf` | `pdftotext` (poppler) | Text diffs of `.pdf` |
 | `exif` | `exiftool` | What changed about an image, when the pixels are opaque |
+
+### The one that bites iOS projects
+
+`Localizable.strings` is UTF-16 for most of Xcode's history, and UTF-16 is full
+of NUL bytes, so git calls it binary and shows **nothing**:
+
+```
+diff --git a/Localizable.strings b/Localizable.strings
+Binary files a/Localizable.strings and b/Localizable.strings differ
+```
+
+That is the one file where seeing which string somebody moved matters most. The
+`strings` driver decodes it for diffing — reading the byte-order mark rather
+than assuming, so a modern UTF-8 `.strings` passes through unharmed instead of
+turning into mojibake.
+
+String Catalogs (`.xcstrings`, Xcode 15 and later) are JSON, and the `json`
+driver covers them: it sorts keys, so a translation added at the top stops
+rewriting the whole file in the diff.
 
 The bundled converter's limits, stated plainly: `.doc` (the old binary Word
 format) is not understood, only `.docx`; PDF is not covered — Gitcito previews

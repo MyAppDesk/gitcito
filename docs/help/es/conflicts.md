@@ -66,6 +66,75 @@ Con la IA activada, **Resolver con IA** propone una fusión en el panel de salid
 Nunca aplica nada por su cuenta: la lees, la editas y la preparas. Mira
 [Funciones de IA](ai.md).
 
+## Archivos de proyecto de Xcode
+
+`project.pbxproj` entra en conflicto más que cualquier otro archivo de un
+repositorio de iOS, y casi nunca porque alguien discrepara. Es un único
+diccionario plano de objetos con claves de 24 dígitos hexadecimales, así que
+añadir un archivo escribe cuatro entradas: un `PBXBuildFile`, un
+`PBXFileReference`, una línea en los `children` del grupo que lo contiene y otra
+en la fase de compilación del target. Dos personas que añaden un archivo cada
+una escriben ocho entradas que caen sobre las mismas pocas líneas. Git ve una
+colisión; no hay nada que resolver.
+
+Cuando el archivo en conflicto es un `project.pbxproj`, el resolutor lee las
+tres versiones como proyectos en vez de como texto y ofrece **fusionar por
+estructura**: emparejar objetos por identificador, tomar todas las adiciones de
+ambos lados, unir los arrays `children` y `files`, y detenerse en lo que
+realmente divergió. La franja sobre los paneles dice qué añadió cada lado y qué
+queda —si queda algo— para ti.
+
+Igual que la propuesta de la IA, aterriza en el panel de salida y no prepara
+nada. Lo lees antes de guardar.
+
+![La franja de fusión estructural sobre los paneles de conflicto, en un archivo de proyecto de Xcode](../../screenshots/conflict-pbxproj.webp)
+
+### Lo que se niega a hacer
+
+**Nunca adivina un ajuste que ambos movisteis.** Si tú pones
+`MARKETING_VERSION` en `1.1` y ellos en `2.0`, eso es una decisión, y aparece
+nombrada en la franja —el ajuste, tu valor, el suyo— en lugar de resolverse a tus
+espaldas. Un objeto que no pudo zanjar conserva *tu* versión exacta, así que
+nunca llega al disco una fusión a medio aplicar.
+
+**Rechaza el archivo entero si alguna de las tres versiones no se puede
+analizar.** Un `project.pbxproj` que Xcode no pueda abrir cuesta más que una
+fusión manual, así que todo lo que no pueda leer con certeza sigue siendo un
+conflicto de texto normal, y lo dice.
+
+**No detecta dos identificadores acuñados para objetos distintos.** Es raro,
+porque Xcode los elige al azar, pero cuando pasa, tomar cualquiera de los dos
+lados descartaría en silencio el archivo de alguien, así que se informa en vez
+de fusionarse.
+
+### No uses `merge=union`
+
+El remedio que circula para esto es `*.pbxproj merge=union` en
+[`.gitattributes`](attributes.md). Evítalo. La unión funciona mientras los
+únicos cambios sean adiciones independientes, y en cuanto dos personas editan el
+mismo ajuste de compilación emite ambas líneas y produce un archivo que Xcode se
+niega a abrir — justo en el momento en el que menos probable es que estés leyendo
+el diff con atención. La fusión estructural da la misma comodidad sin ese fallo.
+
+## Lockfiles
+
+`Podfile.lock`, `Package.resolved`, `yarn.lock` y sus primos registran un grafo
+de dependencias que el resolutor de alguien ya resolvió. La mitad de una
+solución cosida a la mitad de otra es un grafo que no resolvió nadie: puede que
+no instale, y si instala, instala algo que ninguna de las dos ramas probó.
+
+Así que cuando el archivo en conflicto es un lockfile, la franja nombra la
+herramienta que lo gobierna, ofrece **Quedarme con lo mío** y **Quedarme con lo
+suyo** ahí mismo, y te da el comando que lo vuelve a generar después. Elegir un
+lado no es un apaño aquí — es el método entero, y regenerarlo es lo que lo hace
+correcto.
+
+![La franja de lockfile sobre los paneles de conflicto](../../screenshots/conflict-lockfile.webp)
+
+Los tres paneles siguen disponibles, porque de vez en cuando sí quieres leer qué
+cambió: una suma de comprobación que reconoces, una versión que esperabas.
+Editarlos a mano es justo de lo que esto intenta disuadirte.
+
 ## Evitarlos de entrada
 
 El [radar de conflictos](conflict-radar.md) te dice qué ramas van a dar conflicto

@@ -56,12 +56,46 @@ l'editor e il salto alla riga funziona.
 | L'icona a fine riga nell'albero dei file | Quel file, con un clic |
 | Clic destro su una riga nella vista **file** | Il file, a quella riga |
 | Clic destro su una riga nella vista **blame** | Il file, a quella riga |
+| Un `.xcodeproj` o altro pacchetto nell'albero dei file | Il pacchetto, nell'app che lo gestisce |
 
 Le azioni sulla riga compaiono solo dove il numero di riga significa ancora
 qualcosa: un file mostrato a un commit vecchio, o un blame riavvolto a una
 revisione precedente, ha righe che non corrispondono più a quello che c'è su
 disco, quindi Gitcito lì non offre alcun salto invece di mandarti nel posto
 sbagliato.
+
+## Progetti Xcode e altri pacchetti
+
+`MyApp.xcodeproj` è una cartella. Git lo sa, e lo sapeva anche l'albero dei file
+finché non ha iniziato a dare fastidio: espanderlo per trovare
+`project.pbxproj`, `project.xcworkspace` e una cartella per sviluppatore sotto
+`xcuserdata` sono tre clic di rumore per una cosa che non avresti mai modificato
+a mano.
+
+Ora hanno un'icona a pacchetto e **un clic sulla riga apre il pacchetto**, come
+un doppio clic nel Finder. La freccia resta, così l'unica volta in cui ti serve
+davvero `project.pbxproj` — un conflitto di merge, quasi sempre — ci entri come
+prima.
+
+Riconosciuti: `.xcodeproj`, `.xcworkspace`, `.xcframework`, `.framework`,
+`.app`, `.appex`, `.dSYM`, `.playground`, `.xcuserdatad`.
+
+**Non** riconosciuti, di proposito: `.xcassets` e `.lproj`. Sono pacchetti anche
+loro, ma i file dentro si modificano davvero, quindi chiuderli costerebbe più di
+quanto faccia risparmiare.
+
+### I limiti
+
+**Il pacchetto si apre tramite il sistema, non tramite il tuo editor.** Un
+`.xcodeproj` passato a un editor di testo si apre come una cartella di property
+list, che non è quello che voleva chi ha cliccato — così Gitcito lo passa a ciò
+che il sistema gli associa, che su un Mac con Xcode installato è Xcode. La
+scelta dell'editor resta intatta e continua a valere per ogni file normale.
+
+**È una convenzione sui nomi, non un flag del filesystem.** Gitcito guarda
+l'estensione, quindi anche una cartella che hai chiamato `notes.app` si chiude, e
+su Linux o Windows — dove sono cartelle qualsiasi — un clic apre il gestore file
+invece di un IDE.
 
 ## Un comando tutto tuo
 

@@ -79,10 +79,10 @@ dönüştürülmüş metni karşılaştırır.
 1. Git yapılandırmasında `diff.<name>.textconv` — dönüştürücü komutu.
 2. `.gitattributes` içinde `*.docx diff=<name>` — hangi dosyalara uygulanacağı.
 
-Buradaki düğmeler ikisini birden yapar. Word, Excel ve JSON için dönüştürücüyü
+Buradaki düğmeler ikisini birden yapar. Word, Excel, JSON ve `.strings` için dönüştürücüyü
 **Gitcito'nun kendisi paketinde getirir** — önizlemelerinin kullandığı belge
 ayrıştırmanın aynısı, uygulamanın içinde küçük bir `gitcito-textconv` komutu
-olarak sunulur — dolayısıyla bu üçü hiçbir şey kurmadan çalışır. Geri
+olarak sunulur — dolayısıyla bu dördü hiçbir şey kurmadan çalışır. Geri
 kalanların hâlâ PATH'inizde gerçek bir araca ihtiyacı vardır: Gitcito bunu
 denetler ve eksik olanı soluklaştırır; ilk diff'te başarısız olacak bir sürücü
 yazmaz.
@@ -92,8 +92,29 @@ yazmaz.
 | `word` | hiçbir şey — Gitcito ile gelir | `.docx` dosyalarının düzyazı diff'leri |
 | `excel` | hiçbir şey — Gitcito ile gelir | `.xlsx`/`.xls` dosyalarının satır bazlı diff'leri (sayfa başına CSV) |
 | `json` | hiçbir şey — Gitcito ile gelir | Anahtara göre sıralanmış, kararlı JSON diff'leri |
+| `strings` | hiçbir şey — Gitcito ile gelir | git'in ikili dediği UTF-16 `.strings` dosyasının satır farkları |
 | `pdf` | `pdftotext` (poppler) | `.pdf` dosyalarının metin diff'leri |
 | `exif` | `exiftool` | Pikseller anlaşılmaz olduğunda bir görselde neyin değiştiği |
+
+### iOS projelerini ısıran dosya
+
+`Localizable.strings`, Xcode'un tarihinin neredeyse tamamında UTF-16'dır ve
+UTF-16 NUL baytlarıyla doludur; git de ona ikili der ve **hiçbir şey**
+göstermez:
+
+```
+diff --git a/Localizable.strings b/Localizable.strings
+Binary files a/Localizable.strings and b/Localizable.strings differ
+```
+
+Oysa birinin hangi metni oynattığını görmenin en çok önem taşıdığı dosya tam da
+budur. `strings` sürücüsü onu yalnızca fark için çözer — bayt sırası işaretini
+varsaymak yerine okuyarak, böylece modern bir UTF-8 `.strings` bozulmadan geçer,
+anlamsız karakterlere dönüşmez.
+
+String Catalog dosyaları (`.xcstrings`, Xcode 15 ve sonrası) JSON'dur ve `json`
+sürücüsü onları kapsar: anahtarları sıralar, böylece en üste eklenen bir çeviri
+farkta bütün dosyayı yeniden yazmayı bırakır.
 
 Paketle gelen dönüştürücünün sınırları, açıkça söylersek: `.doc` (Word'ün eski
 ikili biçimi) anlaşılmaz, yalnızca `.docx`; PDF kapsanmaz — Gitcito PDF'leri

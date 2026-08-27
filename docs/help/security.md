@@ -17,7 +17,9 @@ you turn it on, your AI provider.
 
 Values in `.env*`, `*.pem`, `*.key`, `id_rsa`, `credentials.*` and friends
 render as `KEY=••••••` in the diff, file and blame views, so a screen-share or a
-screenshot cannot leak them.
+screenshot cannot leak them. Apple signing material counts:
+`*.mobileprovision`, `*.provisionprofile`, `*.p12` and the `*.p8` App Store
+Connect keys. A `*.cer` does not — a certificate is public by design.
 
 It is **display-only**: it never changes the file and never changes what you
 stage. An eye toggle reveals them per view. `.env.example`, `.sample` and
@@ -31,6 +33,7 @@ stage. An eye toggle reveals them per view. `.env.example`, `.sample` and
 |---|---|
 | **Secret file** | Committing something that looks like a credential — with a one-click *Ignore & untrack* |
 | **Large file** | Committing an oversized blob (threshold in Settings → Security) |
+| **Build noise** | Committing `xcuserdata/`, `DerivedData/` or a `.DS_Store` — with the same one-click *Ignore & untrack* |
 | **Protected branch** | Committing straight to `main`/`master`, or force-pushing one |
 | **Tracked secrets** | Pushing a repository that *tracks* a secret file — warned once per session |
 

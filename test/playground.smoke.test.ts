@@ -70,7 +70,8 @@ const EXPECTED = [
   'attributes',
   'teammate-radar',
   'local-ci',
-  'analyzer-problems'
+  'analyzer-problems',
+  'xcode-project'
 ]
 
 describe('playground fixtures', () => {

@@ -52,6 +52,36 @@ código com destaque de sintaxe para todo o resto.
 
 ![Pré-visualização de Markdown](../../screenshots/markdown-preview.webp)
 
+### Property lists da Apple
+
+`Info.plist` e `*.entitlements` são XML, e XML não é o que ninguém está tentando
+ler. A preview mostra o esquema de chave/valor no lugar — a forma que o próprio
+editor de plist do Xcode mostra — com o aninhamento intacto e o tipo de cada
+valor ao lado.
+
+![Um Info.plist como esquema de chave e valor](../../screenshots/preview-plist.webp)
+
+Dois limites. Uma plist **binária** (`bplist00`) é reconhecida e nomeada, não
+decodificada — passe `plutil -convert xml1` nela se quiser vê-la aqui, embora uma
+plist binária num repositório costume ser um artefato de build que não deveria
+estar versionado. E valores `<data>` aparecem como uma contagem de bytes em vez
+de base64: um blob não te diz nada, e um perfil de provisionamento renderizado
+num painel que você talvez esteja compartilhando diz demais a todo mundo.
+
+### Projetos do Xcode
+
+Um `project.pbxproj` é um único dicionário plano de objetos que apontam uns para
+os outros por identificador, então lê-lo em ordem quase não diz nada sobre o
+projeto. A preview percorre essas referências e reconstrói as três coisas que
+você veio buscar: os **alvos** com suas fases de build, a **árvore de grupos**
+como o navegador do Xcode a desenha, e as **configurações de build** por
+configuração.
+
+![Um project.pbxproj como alvos, árvore de arquivos e configurações](../../screenshots/preview-xcodeproj.webp)
+
+Ela lê, não edita — nada aqui escreve no projeto. Para o que acontece quando dois
+branches mexem no mesmo, veja [resolver conflitos](conflicts.md).
+
 ## Arquivos muito grandes
 
 As pré-visualizações e a visão de arquivo carregam o arquivo inteiro na

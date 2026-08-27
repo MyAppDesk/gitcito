@@ -18,6 +18,9 @@ hostingu Gita i — jeśli to włączysz — do twojego dostawcy AI.
 Wartości w `.env*`, `*.pem`, `*.key`, `id_rsa`, `credentials.*` i spółce
 renderują się jako `KEY=••••••` w widokach diffa, pliku i blame — więc
 udostępnienie ekranu albo zrzut ekranu nie mogą ich wypuścić.
+Materiał podpisujący Apple też się liczy: `*.mobileprovision`,
+`*.provisionprofile`, `*.p12` oraz klucze `*.p8` do App Store Connect. `*.cer`
+już nie — certyfikat z założenia jest publiczny.
 
 To działa **wyłącznie na wyświetlanie**: nigdy nie zmienia pliku i nigdy nie
 zmienia tego, co dodajesz do przechowalni. Przełącznik z okiem odsłania je
@@ -32,6 +35,7 @@ szablony, a nie jak sekrety.
 |---|---|
 | **Plik z sekretem** | Commitowanie czegoś, co wygląda na poświadczenie — z *Ignoruj i przestań śledzić* jednym kliknięciem |
 | **Duży plik** | Commitowanie przerośniętego bloba (próg w Ustawienia → Bezpieczeństwo) |
+| **Śmieci z budowania** | Commit `xcuserdata/`, `DerivedData/` albo `.DS_Store` — z tym samym *Zignoruj i przestań śledzić* jednym kliknięciem |
 | **Chroniona gałąź** | Commit prosto na `main`/`master` albo force push na nią |
 | **Śledzone sekrety** | Push repozytorium, które *śledzi* plik z sekretem — ostrzeżenie raz na sesję |
 

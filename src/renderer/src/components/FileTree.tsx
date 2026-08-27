@@ -1,6 +1,15 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { ChevronRight, File, Folder, FolderOpen, Loader2, ExternalLink, Pencil } from 'lucide-react'
+import {
+  ChevronRight,
+  File,
+  Folder,
+  FolderOpen,
+  Loader2,
+  ExternalLink,
+  Package,
+  Pencil
+} from 'lucide-react'
 import type { CodeSearchHit, FsDropMode, TreeEntry, TreeStatusKind } from '../../../shared/types'
 import { editorApi, gitApi, shellApi } from '../infrastructure/api'
 import { useUIStore, type MenuItem } from '../stores/ui'
@@ -8,6 +17,7 @@ import { repoActions, type RepoData } from '../stores/repo'
 import { useSettingsStore } from '../stores/settings'
 import { openWithMenuItems } from '../lib/openWith'
 import { treeStatusOf } from '../lib/treeStatus'
+import { isBundleDir } from '../lib/bundleDirs'
 import {
   EMPTY_FILTER,
   isFilterActive,
@@ -512,6 +522,9 @@ export function FileTree({
     if (!ents) return []
     return ents.map((node) => {
       const open = node.dir && expanded.has(node.path)
+      // An .xcodeproj is a directory to git and one document to the user: the
+      // row opens it (as Finder would), the chevron still descends into it.
+      const bundle = node.dir && isBundleDir(node.name)
       const status = treeStatusOf(treeStatus, node.path)
       const selected = !node.dir && fileView?.repoPath === path && fileView.file === node.path
       // Collapsed folders show aggregate change counts instead of the plain dot.
@@ -534,13 +547,29 @@ export function FileTree({
             onDragOver={onZoneOver(zone)}
             onDragLeave={onZoneLeave(zone)}
             onDrop={onZoneDrop(zone)}
-            onClick={() => (node.dir ? toggle(node.path) : openFile(node.path))}
+            onClick={() =>
+              bundle
+                ? void shellApi.openPath(abs(path, node.path))
+                : node.dir
+                  ? toggle(node.path)
+                  : openFile(node.path)
+            }
             onContextMenu={(e) => {
               e.preventDefault()
               openContextMenu(e.clientX, e.clientY, menuFor(node))
             }}
           >
-            <span className="tree-arrow">
+            <span
+              className="tree-arrow"
+              onClick={
+                bundle
+                  ? (e): void => {
+                      e.stopPropagation()
+                      toggle(node.path)
+                    }
+                  : undefined
+              }
+            >
               {node.dir ? (
                 <motion.span animate={{ rotate: open ? 90 : 0 }} transition={{ duration: 0.12 }}>
                   <ChevronRight size={12} />
@@ -550,6 +579,8 @@ export function FileTree({
             <span className="tree-icon">
               {loading.has(node.path) ? (
                 <Loader2 size={13} className="spin" />
+              ) : bundle ? (
+                <Package size={13} />
               ) : node.dir ? (
                 open ? <FolderOpen size={13} /> : <Folder size={13} />
               ) : (

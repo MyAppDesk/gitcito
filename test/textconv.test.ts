@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest'
 import { mkdtemp, writeFile, rm } from 'fs/promises'
 import { tmpdir } from 'os'
 import { join } from 'path'
-import { jsonToStable, xlsxToCsv, convertFile } from '../src/main/textconv'
-import { bundledTextconvPath, converterAvailable } from '../src/main/git'
+import { jsonToStable, xlsxToCsv, convertFile, stringsToText } from '../src/main/textconv'
+import { bundledTextconvPath, converterAvailable, gitService } from '../src/main/git'
 
 describe('jsonToStable', () => {
   it('sorts keys recursively and indents consistently', () => {
@@ -80,5 +80,73 @@ describe('bundled converter wiring', () => {
   it('still checks bare commands on PATH', () => {
     expect(converterAvailable('definitely-not-installed --to-text')).toBe(false)
     expect(converterAvailable('git')).toBe(true)
+  })
+})
+
+describe('stringsToText', () => {
+  const SRC = '/* Greeting */\n"hello" = "Hola";\n'
+
+  const utf16le = (t: string): Buffer =>
+    Buffer.concat([Buffer.from([0xff, 0xfe]), Buffer.from(t, 'utf16le')])
+
+  const utf16be = (t: string): Buffer => {
+    const body = Buffer.from(t, 'utf16le')
+    return Buffer.concat([Buffer.from([0xfe, 0xff]), Buffer.from(body).swap16()])
+  }
+
+  it('decodes the UTF-16 that git refuses to diff at all', () => {
+    expect(stringsToText(utf16le(SRC))).toBe(SRC)
+    expect(stringsToText(utf16be(SRC))).toBe(SRC)
+  })
+
+  it('leaves a modern UTF-8 file alone instead of turning it into mojibake', () => {
+    expect(stringsToText(Buffer.from(SRC, 'utf-8'))).toBe(SRC)
+    expect(stringsToText(Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), Buffer.from(SRC)]))).toBe(SRC)
+  })
+
+  it('keeps non-ASCII intact through the decode', () => {
+    const accented = '"greet" = "Buenos días — ¿qué tal?";\n'
+    expect(stringsToText(utf16le(accented))).toBe(accented)
+  })
+
+  it('ends with a newline so the last line diffs like the others', () => {
+    expect(stringsToText(Buffer.from('"a" = "b";'))).toBe('"a" = "b";\n')
+  })
+
+  it('refuses a truncated UTF-16 file rather than emitting half a character', () => {
+    const odd = Buffer.concat([Buffer.from([0xfe, 0xff]), Buffer.from([0x00, 0x61, 0x00])])
+    expect(() => stringsToText(odd)).toThrow(/truncated/)
+  })
+})
+
+describe('Apple localization files end to end', () => {
+  it('converts a .strings and a .xcstrings from disk', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'gitcito-textconv-'))
+    try {
+      const strings = join(dir, 'Localizable.strings')
+      await writeFile(
+        strings,
+        Buffer.concat([Buffer.from([0xff, 0xfe]), Buffer.from('"k" = "v";\n', 'utf16le')])
+      )
+      await expect(convertFile(strings)).resolves.toBe('"k" = "v";\n')
+
+      // A String Catalog is JSON, so it gets the key-sorted rendering.
+      const catalog = join(dir, 'Localizable.xcstrings')
+      await writeFile(catalog, '{"version":"1.0","sourceLanguage":"en"}')
+      await expect(convertFile(catalog)).resolves.toBe(
+        '{\n  "sourceLanguage": "en",\n  "version": "1.0"\n}\n'
+      )
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
+
+  it('offers both as bundled drivers, so nothing has to be installed', async () => {
+    const suggestions = await gitService.diffDriverSuggestions('.')
+    const strings = suggestions.find((d) => d.name === 'strings')
+    expect(strings?.patterns).toEqual(['*.strings'])
+    expect(strings?.bundled).toBe(true)
+    expect(strings?.binary).toBe('')
+    expect(suggestions.find((d) => d.name === 'json')?.patterns).toContain('*.xcstrings')
   })
 })

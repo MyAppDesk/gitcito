@@ -53,6 +53,36 @@ z podświetlaniem składni.
 
 ![Podgląd Markdowna](../../screenshots/markdown-preview.webp)
 
+### Listy właściwości Apple
+
+`Info.plist` i `*.entitlements` to XML, a XML nie jest tym, co ktokolwiek chce
+czytać. Podgląd pokazuje zamiast tego zarys klucz/wartość — postać, którą
+pokazuje sam edytor plist w Xcode — z zachowanym zagnieżdżeniem i typem każdej
+wartości obok.
+
+![Info.plist jako zarys klucz/wartość](../../screenshots/preview-plist.webp)
+
+Dwa ograniczenia. **Binarny** plist (`bplist00`) jest rozpoznawany i nazywany, a
+nie dekodowany — przepuść go przez `plutil -convert xml1`, jeśli chcesz go tutaj,
+choć binarny plist w repozytorium to zwykle artefakt budowania, którego nie
+powinno tam być. A wartości `<data>` pokazują się jako liczba bajtów zamiast
+base64: blob nic ci nie mówi, a profil provisioningu wyrenderowany w panelu,
+który być może udostępniasz, mówi wszystkim innym zdecydowanie za dużo.
+
+### Projekty Xcode
+
+`project.pbxproj` to jeden płaski słownik obiektów wskazujących na siebie
+nawzajem przez identyfikatory, więc czytanie go po kolei prawie nic nie mówi o
+projekcie. Podgląd przechodzi po tych odwołaniach i odtwarza trzy rzeczy, po
+które przyszedłeś: **cele** wraz z ich fazami budowania, **drzewo grup** tak, jak
+rysuje je nawigator Xcode, oraz **ustawienia budowania** dla każdej konfiguracji.
+
+![project.pbxproj jako cele, drzewo plików i ustawienia](../../screenshots/preview-xcodeproj.webp)
+
+To czytnik, nie edytor — nic z tego nie zapisuje do projektu. Co się dzieje, gdy
+dwie gałęzie edytują ten sam, opisuje
+[rozwiązywanie konfliktów](conflicts.md).
+
 ## Bardzo duże pliki
 
 Podglądy i widok pliku wczytują plik w całości do pamięci, więc oba odmawiają

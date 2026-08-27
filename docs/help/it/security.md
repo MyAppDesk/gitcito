@@ -18,6 +18,9 @@ se lo attivi, al tuo provider AI.
 I valori dentro `.env*`, `*.pem`, `*.key`, `id_rsa`, `credentials.*` e simili
 vengono mostrati come `KEY=••••••` nelle viste diff, file e blame, così una
 condivisione dello schermo o uno screenshot non possono farli trapelare.
+Il materiale di firma Apple rientra: `*.mobileprovision`,
+`*.provisionprofile`, `*.p12` e le chiavi `*.p8` di App Store Connect. Un
+`*.cer` no — un certificato è pubblico per definizione.
 
 È **solo visuale**: non cambia mai il file e non cambia mai quello che metti in
 stage. Un interruttore a forma di occhio li rivela per singola vista.
@@ -32,6 +35,7 @@ segreti.
 |---|---|
 | **File di segreti** | Quando committi qualcosa che sembra una credenziale — con un *Ignora e togli dal tracciamento* in un clic |
 | **File grande** | Quando committi un blob fuori misura (soglia in Impostazioni → Sicurezza) |
+| **Rumore di build** | Committare `xcuserdata/`, `DerivedData/` o un `.DS_Store` — con lo stesso *Ignora e smetti di tracciare* in un clic |
 | **Branch protetto** | Quando committi direttamente su `main`/`master`, o ci fai un force push |
 | **Segreti tracciati** | Quando fai push di un repository che *traccia* un file di segreti — avvisato una volta per sessione |
 

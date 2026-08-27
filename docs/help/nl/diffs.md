@@ -54,6 +54,36 @@ code met syntaxkleuring voor al het overige.
 
 ![Markdown-voorbeeld](../../screenshots/markdown-preview.webp)
 
+### Apple property lists
+
+`Info.plist` en `*.entitlements` zijn XML, en XML is niet wat iemand probeert te
+lezen. De preview toont in plaats daarvan het sleutel/waarde-overzicht — de vorm
+die Xcode's eigen plist-editor laat zien — met de nesting intact en het type van
+elke waarde ernaast.
+
+![Een Info.plist als sleutel/waarde-overzicht](../../screenshots/preview-plist.webp)
+
+Twee grenzen. Een **binaire** plist (`bplist00`) wordt herkend en benoemd, niet
+gedecodeerd — haal hem door `plutil -convert xml1` als je hem hier wilt, al is
+een binaire plist in een repository meestal een build-artefact dat er niet in
+hoort. En `<data>`-waarden verschijnen als een aantal bytes in plaats van als
+base64: een blob zegt jou niets, en een provisioning profile weergegeven in een
+paneel dat je misschien deelt zegt iedereen anders veel te veel.
+
+### Xcode-projecten
+
+Een `project.pbxproj` is één platte woordenlijst van objecten die naar elkaar
+verwijzen met een id, dus hem op volgorde lezen zegt bijna niets over het
+project. De preview volgt die verwijzingen en bouwt de drie dingen terug waarvoor
+je kwam: de **targets** met hun buildfasen, de **groepenboom** zoals de
+Xcode-navigator hem tekent, en de **buildinstellingen** per configuratie.
+
+![Een project.pbxproj als targets, bestandsboom en instellingen](../../screenshots/preview-xcodeproj.webp)
+
+Het leest, het bewerkt niet — niets hiervan schrijft naar het project. Wat er
+gebeurt als twee branches er allebei aan zitten, staat bij
+[conflicten oplossen](conflicts.md).
+
 ## Zeer grote bestanden
 
 Voorbeelden en de bestandsweergave laden een bestand volledig in het geheugen,

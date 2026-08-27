@@ -3,7 +3,9 @@ import { gitApi } from '../infrastructure/api'
 import { useT, interp } from '../i18n'
 import { formatBytes, parseTooLargeError } from '../lib/fileSize'
 import { renderMarkdown, sanitizeHtml } from '../preview/markdown'
-import { type PreviewKind } from '../preview/registry'
+import { isBinaryKind, type PreviewKind } from '../preview/registry'
+import { parsePlist, plistChildCount, plistScalar, type PlistValue } from '../lib/plist'
+import { pbxprojOutline, type PbxTreeNode } from '../lib/pbxprojOutline'
 
 /** Resolve relative image URLs in markdown text to data URLs so they render in Electron. */
 async function resolveMarkdownImages(
@@ -104,9 +106,9 @@ export function PreviewPane({ repoPath, file, gitRef, kind }: Props): React.JSX.
 
     const load = async (): Promise<void> => {
       try {
-        if (kind === 'markdown') {
+        if (!isBinaryKind(kind)) {
           let src = await gitApi.fileContent(repoPath, file, gitRef, force)
-          src = await resolveMarkdownImages(src, repoPath, file, gitRef)
+          if (kind === 'markdown') src = await resolveMarkdownImages(src, repoPath, file, gitRef)
           if (!cancelled) setText(src)
           return
         }
@@ -196,7 +198,7 @@ export function PreviewPane({ repoPath, file, gitRef, kind }: Props): React.JSX.
   }
 
   const loading =
-    (kind === 'markdown' && text === null) ||
+    (!isBinaryKind(kind) && text === null) ||
     ((kind === 'image' || kind === 'pdf' || kind === 'video' || kind === 'audio') && dataUrl === null) ||
     (kind === 'sheet' && sheets === null) ||
     (kind === 'word' && html === null) ||
@@ -212,6 +214,12 @@ export function PreviewPane({ repoPath, file, gitRef, kind }: Props): React.JSX.
 
   if (kind === 'markdown' && mdHtml !== null) {
     return <div className="md-preview" dangerouslySetInnerHTML={{ __html: mdHtml }} />
+  }
+  if (kind === 'plist' && text !== null) {
+    return <PlistPreview text={text} />
+  }
+  if (kind === 'xcodeproj' && text !== null) {
+    return <XcodeProjectPreview text={text} />
   }
   if (kind === 'image' && dataUrl) {
     return (
@@ -271,4 +279,158 @@ export function PreviewPane({ repoPath, file, gitRef, kind }: Props): React.JSX.
 
   // Reachable only for a kind with no render branch yet — keeps adding types safe.
   return <div className="fv-error">{t('preview.unsupported')}</div>
+}
+
+// ─── Apple property lists ───────────────────────────────────────────────────
+
+function PlistRows({ value, depth }: { value: PlistValue; depth: number }): React.JSX.Element {
+  if (value.kind === 'dict') {
+    return (
+      <>
+        {value.entries.map((e, i) => (
+          <PlistRow key={`${e.key}-${i}`} label={e.key} value={e.value} depth={depth} />
+        ))}
+      </>
+    )
+  }
+  if (value.kind === 'array') {
+    return (
+      <>
+        {value.items.map((v, i) => (
+          <PlistRow key={i} label={String(i)} value={v} depth={depth} />
+        ))}
+      </>
+    )
+  }
+  return <></>
+}
+
+function PlistRow({
+  label,
+  value,
+  depth
+}: {
+  label: string
+  value: PlistValue
+  depth: number
+}): React.JSX.Element {
+  const count = plistChildCount(value)
+  return (
+    <>
+      <div className="pl-row" style={{ paddingLeft: 8 + depth * 14 }}>
+        <span className="pl-key">{label}</span>
+        <span className="pl-type">{value.kind}</span>
+        <span className="pl-val">
+          {count === null ? plistScalar(value) : count}
+        </span>
+      </div>
+      {count !== null && <PlistRows value={value} depth={depth + 1} />}
+    </>
+  )
+}
+
+function PlistPreview({ text }: { text: string }): React.JSX.Element {
+  const t = useT()
+  const parsed = useMemo(() => parsePlist(text), [text])
+  if (!parsed.ok) {
+    return (
+      <div className="fv-error">
+        {parsed.problem === 'binary' ? t('preview.plistBinary') : t('preview.plistUnreadable')}
+      </div>
+    )
+  }
+  return (
+    <div className="plist-preview">
+      <PlistRows value={parsed.root} depth={0} />
+    </div>
+  )
+}
+
+// ─── Xcode projects ─────────────────────────────────────────────────────────
+
+function PbxTree({ nodes, depth }: { nodes: PbxTreeNode[]; depth: number }): React.JSX.Element {
+  return (
+    <>
+      {nodes.map((n, i) => {
+        // The main group has no name of its own: draw its children as the roots
+        // rather than inventing a folder to hang them under.
+        if (n.children && n.name === '') {
+          return <PbxTree key={i} nodes={n.children} depth={depth} />
+        }
+        return (
+          <div key={`${n.name}-${i}`}>
+            <div className="pl-row" style={{ paddingLeft: 8 + depth * 14 }}>
+              <span className={n.children ? 'pl-key' : 'pl-val'}>
+                {n.children ? `${n.name}/` : n.name}
+              </span>
+            </div>
+            {n.children && <PbxTree nodes={n.children} depth={depth + 1} />}
+          </div>
+        )
+      })}
+    </>
+  )
+}
+
+function XcodeProjectPreview({ text }: { text: string }): React.JSX.Element {
+  const t = useT()
+  const outline = useMemo(() => pbxprojOutline(text), [text])
+  if (!outline) return <div className="fv-error">{t('preview.pbxUnreadable')}</div>
+  return (
+    <div className="plist-preview">
+      <div className="pl-counts">
+        {interp(t('preview.pbxCounts'), {
+          objects: String(outline.counts.objects),
+          files: String(outline.counts.files),
+          groups: String(outline.counts.groups)
+        })}
+      </div>
+
+      {outline.targets.length > 0 && (
+        <>
+          <div className="pl-section">{t('preview.pbxTargets')}</div>
+          {outline.targets.map((tg) => (
+            <div key={tg.name}>
+              <div className="pl-row" style={{ paddingLeft: 8 }}>
+                <span className="pl-key">{tg.name}</span>
+                <span className="pl-type">{tg.productType}</span>
+              </div>
+              {tg.phases.map((ph, i) => (
+                <div key={`${ph.name}-${i}`} className="pl-row" style={{ paddingLeft: 22 }}>
+                  <span className="pl-val">{ph.name}</span>
+                  <span className="pl-type">{ph.count}</span>
+                </div>
+              ))}
+            </div>
+          ))}
+        </>
+      )}
+
+      {outline.tree.length > 0 && (
+        <>
+          <div className="pl-section">{t('preview.pbxFiles')}</div>
+          <PbxTree nodes={outline.tree} depth={0} />
+        </>
+      )}
+
+      {outline.configurations.length > 0 && (
+        <>
+          <div className="pl-section">{t('preview.pbxSettings')}</div>
+          {outline.configurations.map((c, i) => (
+            <div key={`${c.name}-${i}`}>
+              <div className="pl-row" style={{ paddingLeft: 8 }}>
+                <span className="pl-key">{c.name}</span>
+              </div>
+              {c.settings.map((sv) => (
+                <div key={sv.key} className="pl-row" style={{ paddingLeft: 22 }}>
+                  <span className="pl-val">{sv.key}</span>
+                  <span className="pl-type">{sv.value}</span>
+                </div>
+              ))}
+            </div>
+          ))}
+        </>
+      )}
+    </div>
+  )
 }

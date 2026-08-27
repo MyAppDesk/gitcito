@@ -18,6 +18,9 @@ en, als je dat aanzet, naar je AI-provider.
 Waarden in `.env*`, `*.pem`, `*.key`, `id_rsa`, `credentials.*` en consorten
 worden getoond als `KEY=••••••` in de diff-, bestands- en blameweergave, zodat
 een gedeeld scherm of een schermafbeelding ze niet kan laten lekken.
+Apple-ondertekeningsmateriaal telt mee: `*.mobileprovision`,
+`*.provisionprofile`, `*.p12` en de `*.p8`-sleutels van App Store Connect. Een
+`*.cer` niet — een certificaat is per ontwerp openbaar.
 
 Het is **alleen weergave**: het verandert het bestand nooit en verandert nooit
 wat je staget. Een oogschakelaar onthult ze per weergave. `.env.example`,
@@ -31,6 +34,7 @@ wat je staget. Een oogschakelaar onthult ze per weergave. `.env.example`,
 |---|---|
 | **Geheimenbestand** | Iets committen dat op een credential lijkt — met een *Negeren & untracken* in één klik |
 | **Groot bestand** | Een te grote blob committen (drempel in Instellingen → Beveiliging) |
+| **Buildrommel** | `xcuserdata/`, `DerivedData/` of een `.DS_Store` committen — met dezelfde *Negeren & niet meer volgen* in één klik |
 | **Beschermde branch** | Rechtstreeks naar `main`/`master` committen, of er een force-pushen |
 | **Getrackte geheimen** | Een repository pushen die een geheimenbestand *trackt* — één waarschuwing per sessie |
 

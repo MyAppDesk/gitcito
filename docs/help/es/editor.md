@@ -56,11 +56,44 @@ el salto de línea funciona.
 | El icono al final de la fila en el árbol de archivos | Ese archivo, de un clic |
 | Clic derecho en una línea de la vista de **archivo** | El archivo, en esa línea |
 | Clic derecho en una línea de la vista de **blame** | El archivo, en esa línea |
+| Un `.xcodeproj` u otro paquete en el árbol de archivos | El paquete, en la app que lo abre |
 
 Las acciones de línea solo aparecen donde el número de línea aún significa algo:
 un archivo mostrado en un commit antiguo, o un blame rebobinado a una revisión
 anterior, tiene líneas que ya no coinciden con lo que hay en disco, así que
 Gitcito no ofrece ningún salto ahí en lugar de mandarte al sitio equivocado.
+
+## Proyectos de Xcode y otros paquetes
+
+`MyApp.xcodeproj` es un directorio. Git lo sabe, y el árbol de archivos también
+lo sabía hasta que empezó a importar: desplegarlo para encontrar
+`project.pbxproj`, `project.xcworkspace` y una carpeta por desarrollador bajo
+`xcuserdata` son tres clics de ruido para algo que nunca ibas a editar a mano.
+
+Ahora se pintan con un icono de paquete y **hacer clic en la fila abre el
+paquete**, igual que un doble clic en el Finder. La flecha sigue ahí, así que la
+única vez que *sí* necesitas `project.pbxproj` — un conflicto de merge, casi
+siempre — entras como antes.
+
+Se reconocen: `.xcodeproj`, `.xcworkspace`, `.xcframework`, `.framework`,
+`.app`, `.appex`, `.dSYM`, `.playground`, `.xcuserdatad`.
+
+**No** se reconocen, a propósito: `.xcassets` y `.lproj`. También son paquetes,
+pero la gente edita los archivos que hay dentro, así que plegarlos costaría más
+de lo que ahorra.
+
+### Los límites
+
+**El paquete se abre a través del sistema, no de tu editor.** Un `.xcodeproj`
+entregado a un editor de texto se abre como una carpeta de property lists, que no
+es lo que quería nadie al hacer clic — así que Gitcito se lo pasa a lo que el
+sistema tenga asociado, que en un Mac con Xcode instalado es Xcode. Tu elección
+de editor no cambia; sigue mandando en cualquier archivo normal.
+
+**Es una convención de nombres, no una marca del sistema de archivos.** Gitcito
+mira la extensión, así que un directorio que hayas llamado `notes.app` también se
+pliega, y en Linux o Windows — donde son carpetas corrientes — al hacer clic se
+abre el gestor de archivos en vez de un IDE.
 
 ## Un comando tuyo
 

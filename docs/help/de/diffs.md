@@ -54,6 +54,36 @@ alles andere Code mit Syntaxhervorhebung.
 
 ![Markdown-Vorschau](../../screenshots/markdown-preview.webp)
 
+### Apple Property Lists
+
+`Info.plist` und `*.entitlements` sind XML, und XML ist nicht das, was jemand
+lesen will. Die Vorschau zeigt stattdessen die Schlüssel/Wert-Gliederung — die
+Form, die auch Xcodes eigener Plist-Editor zeigt — mit erhaltener Verschachtelung
+und dem Typ jedes Werts daneben.
+
+![Eine Info.plist als Schlüssel/Wert-Gliederung](../../screenshots/preview-plist.webp)
+
+Zwei Grenzen. Eine **binäre** Plist (`bplist00`) wird erkannt und benannt, nicht
+dekodiert — schick sie durch `plutil -convert xml1`, wenn du sie hier willst,
+auch wenn eine binäre Plist im Repository meist ein Build-Artefakt ist, das dort
+nichts zu suchen hat. Und `<data>`-Werte erscheinen als Byte-Anzahl statt als
+Base64: ein Blob sagt dir nichts, und ein Provisioning Profile, das in ein Panel
+gerendert wird, das du vielleicht gerade teilst, sagt allen anderen zu viel.
+
+### Xcode-Projekte
+
+Eine `project.pbxproj` ist ein flaches Wörterbuch von Objekten, die einander per
+ID referenzieren — sie der Reihe nach zu lesen sagt fast nichts über das Projekt.
+Die Vorschau folgt diesen Referenzen und baut die drei Dinge zurück, wegen denen
+du gekommen bist: die **Targets** mit ihren Build-Phasen, den **Gruppenbaum**, wie
+ihn der Xcode-Navigator zeichnet, und die **Build-Einstellungen** je Konfiguration.
+
+![Eine project.pbxproj als Targets, Dateibaum und Einstellungen](../../screenshots/preview-xcodeproj.webp)
+
+Es liest, es bearbeitet nicht — nichts davon schreibt ins Projekt. Was passiert,
+wenn zwei Branches dieselbe ändern, steht unter
+[Konflikte lösen](conflicts.md).
+
 ## Sehr große Dateien
 
 Vorschauen und die Dateiansicht laden eine Datei vollständig in den Speicher,

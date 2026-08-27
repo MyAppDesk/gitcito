@@ -9,6 +9,10 @@ const SECRET_FILE_PATTERNS: RegExp[] = [
   /(^|\/)id_(rsa|dsa|ecdsa|ed25519)$/i,
   /(^|\/)\.npmrc$/i,
   /(^|\/)\.pgpass$/i,
+  // Apple signing material. A .mobileprovision embeds the team's certificates,
+  // and a .p8 is an App Store Connect key — both are committed by accident far
+  // more often than on purpose. A .cer is deliberately public, so it is absent.
+  /\.(mobileprovision|provisionprofile|p8)$/i,
   /(^|\/)\.netrc$/i,
   /(^|\/)credentials(\.json)?$/i,
   /(^|\/)secrets?\.(ya?ml|json|toml|ini)$/i

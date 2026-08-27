@@ -5,6 +5,9 @@ import { tmpdir } from 'node:os'
 import { gitMethodIsRead, gitService } from '../src/main/git'
 import { prepareRepoFileActions } from '../src/main/repoFileActions'
 import { cloneFixture, cleanupFixtures } from './fixtures'
+import { mergePbxproj, parsePbxproj } from '../src/shared/pbxproj'
+import { convertFile } from '../src/main/textconv'
+import { execFileSync } from 'node:child_process'
 
 // Mutation/integration tests: exercise the WRITE paths of gitService (the same
 // code Gitcito runs for merge / cherry-pick / rebase / conflict-resolve / stash
@@ -1980,5 +1983,106 @@ describe('checkout remote: local branch ahead', () => {
     const res = await gitService.checkoutRemote(R, 'origin/feature', 'feature', 'origin')
     expect(res).toMatchObject({ diverged: false, aheadOnly: false, behind: 1 })
     expect(await shaOf(R, 'feature')).toBe(await shaOf(R, 'origin/feature'))
+  })
+})
+
+describe('Xcode project conflicts (project.pbxproj)', () => {
+  const PBX = 'Demo.xcodeproj/project.pbxproj'
+
+  it('merges two independent file additions that git could not', async () => {
+    const R = cloneFixture('xcode-project')
+    await expect(gitService.merge(R, 'feature')).rejects.toThrow()
+    expect((await gitService.status(R)).conflicted.map((f) => f.path)).toContain(PBX)
+
+    const v = await gitService.conflictVersions(R, PBX)
+    const merged = mergePbxproj(v.base!, v.ours!, v.theirs!)
+    expect(merged).not.toBeNull()
+
+    // Each side added one file — four objects apiece, nothing overlapping.
+    expect(merged!.conflicts).toEqual([])
+    // One new Swift file each — four objects apiece, but one file apiece is
+    // what the band actually shows.
+    expect(merged!.summary.addedFiles).toEqual({ ours: 1, theirs: 1 })
+
+    // Both files survive, and the result is still a project Xcode would open.
+    expect(merged!.text).toContain('Signup.swift')
+    expect(merged!.text).toContain('Login.swift')
+    expect(merged!.text).not.toContain('<<<<<<<')
+    expect(parsePbxproj(merged!.text)).not.toBeNull()
+
+    await gitService.resolveConflict(R, PBX, merged!.text)
+    expect((await gitService.status(R)).conflicted.map((f) => f.path)).not.toContain(PBX)
+    expect(readFileSync(join(R, PBX), 'utf-8')).toContain('Login.swift')
+  })
+
+  it('refuses to guess when both sides moved the same build setting', async () => {
+    const R = cloneFixture('xcode-project')
+    await expect(gitService.merge(R, 'bump')).rejects.toThrow()
+
+    const v = await gitService.conflictVersions(R, PBX)
+    const merged = mergePbxproj(v.base!, v.ours!, v.theirs!)
+    expect(merged).not.toBeNull()
+
+    const clash = merged!.conflicts.find((c) => c.key === 'MARKETING_VERSION')
+    expect(clash).toBeDefined()
+    expect(clash!.reason).toBe('setting')
+    expect(clash!.ours).toBe('1.1')
+    expect(clash!.theirs).toBe('2.0')
+
+    // An object it could not settle is left exactly as ours wrote it — a
+    // half-applied edit is worse than no edit at all.
+    expect(merged!.text).toContain('MARKETING_VERSION = 1.1')
+    expect(merged!.text).not.toContain('MARKETING_VERSION = 2.0')
+
+    await gitService.conflictOpAbort(R, 'merge')
+  })
+
+  it('declines the whole file rather than guessing at something unparseable', async () => {
+    const R = cloneFixture('xcode-project')
+    await expect(gitService.merge(R, 'feature')).rejects.toThrow()
+    const v = await gitService.conflictVersions(R, PBX)
+    expect(mergePbxproj(v.base!, 'not a plist at all', v.theirs!)).toBeNull()
+    await gitService.conflictOpAbort(R, 'merge')
+  })
+})
+
+describe('UTF-16 .strings localization files', () => {
+  const FILE = 'Demo/en.lproj/Localizable.strings'
+
+  // What Xcode wrote for most of its life: UTF-16, BOM first, big-endian here.
+  const utf16be = (t: string): Buffer =>
+    Buffer.concat([Buffer.from([0xfe, 0xff]), Buffer.from(Buffer.from(t, 'utf16le')).swap16()])
+
+  const BODY = '/* The greeting on the home screen */\n"home.greeting" = "Hi there";\n"home.subtitle" = "Welcome back";\n'
+
+  it('is what git calls binary, and what the bundled converter turns back into lines', async () => {
+    const R = cloneFixture('xcode-project')
+    const abs = join(R, FILE)
+    writeFileSync(abs, utf16be(BODY))
+
+    // The problem, stated by git itself: one string changed and there is
+    // nothing to read — no added lines, no removed lines.
+    const numstat = execFileSync('git', ['-C', R, 'diff', '--numstat', '--', FILE], {
+      encoding: 'utf-8'
+    })
+    expect(numstat).toContain('-\t-')
+
+    // The same bytes, through the converter git would call.
+    const text = await convertFile(abs)
+    expect(text).toContain('"home.greeting" = "Hi there";')
+    expect(text).toContain('/* The greeting on the home screen */')
+  })
+
+  it('suggests a driver that needs nothing installed, and writes it to git config', async () => {
+    const R = cloneFixture('xcode-project')
+    const suggestion = (await gitService.diffDriverSuggestions(R)).find((d) => d.name === 'strings')
+    expect(suggestion).toBeDefined()
+    expect(suggestion!.bundled).toBe(true)
+
+    await gitService.setDiffDriver(R, suggestion!.name, suggestion!.textconv)
+    const cfg = execFileSync('git', ['-C', R, 'config', '--local', 'diff.strings.textconv'], {
+      encoding: 'utf-8'
+    })
+    expect(cfg.trim()).toBe(suggestion!.textconv.trim())
   })
 })

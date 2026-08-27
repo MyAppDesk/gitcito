@@ -78,10 +78,10 @@ git は変換後のテキストを比較するだけです。
 1. git config の `diff.<name>.textconv` — 変換コマンド。
 2. `.gitattributes` の `*.docx diff=<name>` — どのファイルに適用するか。
 
-ここのボタンは両方を一度に行います。Word・Excel・JSON については、Gitcito が
+ここのボタンは両方を一度に行います。Word・Excel・JSON・`.strings` については、Gitcito が
 **コンバータ自体を同梱しています** — プレビューが使うのと同じドキュメント解析
 を、アプリ内の小さな `gitcito-textconv` コマンドとして公開したもので、この
-3 つは何もインストールせずに動きます。残りは引き続き PATH 上の本物のツールが
+4 つは何もインストールせずに動きます。残りは引き続き PATH 上の本物のツールが
 必要です。Gitcito はそれを確認し、最初の差分で失敗するドライバを書く代わりに、
 足りないものをグレーアウトします。
 
@@ -90,8 +90,27 @@ git は変換後のテキストを比較するだけです。
 | `word` | なし — Gitcito に同梱 | `.docx` の文章としての差分 |
 | `excel` | なし — Gitcito に同梱 | `.xlsx`/`.xls` の行単位の差分（シートごとの CSV） |
 | `json` | なし — Gitcito に同梱 | キー順に並んだ、安定した JSON の差分 |
+| `strings` | 不要 — Gitcito に同梱 | git がバイナリと呼ぶ UTF-16 の `.strings` を行単位で差分表示 |
 | `pdf` | `pdftotext`（poppler） | `.pdf` のテキスト差分 |
 | `exif` | `exiftool` | ピクセルが不透明なとき、画像の何が変わったか |
+
+### iOS プロジェクトで実際に噛みつくもの
+
+`Localizable.strings` は Xcode の歴史のほとんどで UTF-16 であり、UTF-16 は NUL
+バイトだらけです。そのため git はこれをバイナリと呼び、**何も**表示しません。
+
+```
+diff --git a/Localizable.strings b/Localizable.strings
+Binary files a/Localizable.strings and b/Localizable.strings differ
+```
+
+誰がどの文字列を動かしたかを見たい度合いが最も高いのは、まさにこのファイルです。
+`strings` ドライバは差分のためだけにデコードします — バイト順マークを決めつけず
+に読むので、最近の UTF-8 の `.strings` は文字化けせずそのまま通ります。
+
+String Catalog（`.xcstrings`、Xcode 15 以降）は JSON なので `json` ドライバが
+カバーします。キーを並べ替えるため、先頭に追加した翻訳が差分でファイル全体を
+書き換えたように見えることがなくなります。
 
 同梱コンバータの限界を率直に述べておきます。`.doc`（旧来のバイナリ Word 形式）
 は理解できず、`.docx` のみです。PDF は対象外です — Gitcito は PDF をブラウザの

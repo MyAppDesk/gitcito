@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Check, ChevronDown, ChevronUp, ExternalLink, GitMerge, History, Link2, Minus, Pencil, Plus, RotateCcw, Sparkles, Loader2, Unlink2, WrapText, X } from 'lucide-react'
+import { Boxes, Check, ChevronDown, ChevronUp, ExternalLink, GitMerge, History, Link2, Lock, Minus, Pencil, Plus, RotateCcw, Sparkles, Loader2, Unlink2, WrapText, X } from 'lucide-react'
 import hljs from 'highlight.js'
 import { gitApi, aiApi, diffToolApi } from '../infrastructure/api'
 import { useSettingsStore } from '../stores/settings'
@@ -25,6 +25,8 @@ import {
   type ConflictLineSide as Side,
 } from '../lib/conflict'
 import type { ConflictCommit, ConflictRefInfo, ConflictVersions } from '../../../shared/types'
+import { isPbxprojPath, mergePbxproj } from '../../../shared/pbxproj'
+import { lockfileFor } from '../lib/lockfiles'
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -349,6 +351,31 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
     setEditOutput(val)
   }
 
+  // A `project.pbxproj` collision is almost never a disagreement: two people
+  // added a file each, and git collided on the lines those additions happen to
+  // sit on. Merging by object identity settles that, and leaves only what
+  // genuinely diverged — a build setting both sides edited, usually.
+  const pbx = useMemo(() => {
+    if (!isPbxprojPath(file) || !versions) return null
+    const { base, ours, theirs } = versions
+    if (base === null || ours === null || theirs === null) return null
+    return { result: mergePbxproj(base, ours, theirs) }
+  }, [file, versions])
+
+  // A lockfile records a solved dependency graph. Half of one solution stitched
+  // to half of another is a graph nobody solved, so the three panes below are
+  // the wrong tool and saying so is worth more than any merge we could offer.
+  const lockfile = useMemo(() => lockfileFor(file), [file])
+
+  // Lands in the output pane for review, like every other proposal here.
+  const applyPbx = (): void => {
+    const merged = pbx?.result
+    if (!merged) return
+    setEditOutput(merged.text)
+    setTouched(new Set(hunks.map((h) => h.index))) // enable Save; the user still reviews
+    toast('info', t('conflict.pbxApplied'))
+  }
+
   // Ask the AI for a merged proposal. It lands in the editable output pane for review —
   // it is never saved automatically.
   const aiResolve = async (): Promise<void> => {
@@ -522,6 +549,72 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
           <X size={15} />
         </button>
       </div>
+
+      {lockfile && (
+        <div className="conflict-pbx">
+          <div className="cp-head">
+            <Lock size={13} />
+            <strong>{interp(t('conflict.lockTitle'), { manager: lockfile.manager })}</strong>
+          </div>
+          <p className="cp-line">{t('conflict.lockWhy')}</p>
+          <div className="cp-actions">
+            <button className="btn small" disabled={saving} onClick={() => void takeSide('ours')}>
+              {t('conflict.keepOurs')}
+            </button>
+            <button className="btn small" disabled={saving} onClick={() => void takeSide('theirs')}>
+              {t('conflict.keepTheirs')}
+            </button>
+            <span className="settings-hint">
+              {t('conflict.lockThen')} <code>{lockfile.command}</code>
+            </span>
+          </div>
+        </div>
+      )}
+
+      {pbx && (
+        <div className="conflict-pbx">
+          <div className="cp-head">
+            <Boxes size={13} />
+            <strong>{t('conflict.pbxTitle')}</strong>
+          </div>
+          {pbx.result === null ? (
+            <span className="settings-hint">{t('conflict.pbxUnreadable')}</span>
+          ) : (
+            <>
+              <p className="cp-line">
+                {interp(t('conflict.pbxAdds'), {
+                  ours: String(pbx.result.summary.addedFiles.ours),
+                  theirs: String(pbx.result.summary.addedFiles.theirs)
+                })}{' '}
+                {pbx.result.conflicts.length === 0
+                  ? t('conflict.pbxCanMerge')
+                  : interp(t('conflict.pbxLeft'), { n: String(pbx.result.conflicts.length) })}
+              </p>
+              {pbx.result.conflicts.length > 0 && (
+                <ul className="cp-list">
+                  {pbx.result.conflicts.map((c) => (
+                    <li key={`${c.uuid}-${c.key ?? ''}`}>
+                      {c.reason === 'setting'
+                        ? interp(t('conflict.pbxSettingClash'), {
+                            key: c.key ?? '',
+                            ours: c.ours ?? '',
+                            theirs: c.theirs ?? ''
+                          })
+                        : interp(t('conflict.pbxObjectClash'), { label: c.label })}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <div className="cp-actions">
+                <button className="btn small" disabled={saving} onClick={applyPbx}>
+                  <Boxes size={12} /> {t('conflict.pbxApply')}
+                </button>
+                <span className="settings-hint">{t('conflict.pbxReview')}</span>
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       {showHistory && (
         <div className="conflict-why">

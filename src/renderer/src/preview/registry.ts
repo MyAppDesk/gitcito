@@ -6,7 +6,17 @@
  *  src/main/git.ts → fileMime(). Everything else (the Preview button, mode
  *  switching) keys off this map automatically. */
 
-export type PreviewKind = 'markdown' | 'image' | 'pdf' | 'video' | 'audio' | 'sheet' | 'word' | 'slides'
+export type PreviewKind =
+  | 'markdown'
+  | 'image'
+  | 'pdf'
+  | 'video'
+  | 'audio'
+  | 'sheet'
+  | 'word'
+  | 'slides'
+  | 'plist'
+  | 'xcodeproj'
 
 const PREVIEW_KINDS: Record<string, PreviewKind> = {
   // markdown
@@ -25,7 +35,10 @@ const PREVIEW_KINDS: Record<string, PreviewKind> = {
   // word documents
   docx: 'word',
   // presentations
-  pptx: 'slides'
+  pptx: 'slides',
+  // Apple property lists, and the Xcode project that is one in another syntax
+  plist: 'plist', entitlements: 'plist',
+  pbxproj: 'xcodeproj'
 }
 
 function ext(file: string): string {
@@ -40,8 +53,11 @@ export function canPreview(file: string): boolean {
   return previewKind(file) !== null
 }
 
+/** Kinds read as text straight from git. Everything else needs the bytes. */
+const TEXT_KINDS = new Set<PreviewKind>(['markdown', 'plist', 'xcodeproj'])
+
 /** Whether a kind is delivered as binary bytes (needs a data URL / ArrayBuffer)
  *  vs. text content read straight from git. */
 export function isBinaryKind(kind: PreviewKind): boolean {
-  return kind !== 'markdown'
+  return !TEXT_KINDS.has(kind)
 }

@@ -69,6 +69,8 @@ git actually is.
 | **[Commit composer](docs/help/committing.md)** | Conventional, Gitmoji, Ticket, Plain… even Caveman. Co-author picker, message recall, live linter. Amend and undo from the graph menu prefill it. |
 | **[Staging](docs/help/staging.md)** | Whole files, hunks, or **individual lines**. |
 | **[Conflict resolver](docs/help/conflicts.md)** | Three panes, per-line picking, a conflict-by-conflict navigator, editable output. |
+| **[Xcode project merge](docs/help/conflicts.md)** | A `project.pbxproj` conflict merged by object identity instead of by line — and refused, by name, where a build setting genuinely diverged. |
+| **[Lockfile conflicts](docs/help/conflicts.md)** | `Podfile.lock`, `Package.resolved`, `yarn.lock` and friends: take a side, and the command that regenerates it, instead of merging a graph nobody solved. |
 | **[External diff & merge tools](docs/help/diff-tools.md)** | Hand a file to Kaleidoscope, Beyond Compare, Meld — read straight from git's own tool list. |
 | **[Edit any commit](docs/help/commit-edit.md)** | Rewrite a past commit's files or message in place — cascade previewed before anything moves, merges replayed with their recorded resolutions. |
 | **[Interactive rebase](docs/help/rebase.md)** | Drag to reorder, squash, fixup, reword, edit or drop. |
@@ -78,7 +80,7 @@ git actually is.
 | **[Recovery](docs/help/recovery.md)** | Reflog, WIP snapshots of the whole tree — untracked files included, taken automatically before every destructive action — guided bisect, or hand the search to `git bisect run`, and one-click removal of the stale `.lock` file a crashed git left behind. |
 | **[Local CI](docs/help/local-ci.md)** | Run the repo's GitHub Actions on your machine with [act](https://nektosact.com) before pushing — including against a commit or range you're not on, via throwaway worktrees, with the run cost stated up front. |
 | **[Remove a file from history](docs/help/history-purge.md)** | A leaked key or a 400 MB blob out of every commit — measured first, backed up, undoable. |
-| **[File attributes](docs/help/attributes.md)** | `.gitattributes` with a UI: line endings, `merge=union`, `export-ignore`, readable diffs for Word, Excel and JSON (converter included), and clean/smudge filters gated behind a dry run. |
+| **[File attributes](docs/help/attributes.md)** | `.gitattributes` with a UI: line endings, `merge=union`, `export-ignore`, readable diffs for Word, Excel, JSON and the UTF-16 `.strings` git calls binary (converter included), and clean/smudge filters gated behind a dry run. |
 | **[Replace & graft](docs/help/replace.md)** | Shorten a clone's history without rewriting a byte — reversible, and honest about what it hides. |
 | **[Object explorer](docs/help/objects.md)** | Walk blobs, trees, commits and refs — the layer beneath the graph, read-only. |
 | **[Repository maintenance](docs/help/maintenance.md)** | Where the disk went — packed, loose, unreachable — and what gc, repack, prune or fsck would do about it. |
@@ -146,7 +148,8 @@ the sidebar and the status bar, and never written into the repo ·
 [**Bookmarks**](docs/help/bookmarks.md) — remembered places in the code that
 re-locate themselves when the line moves, and say so when it is gone ·
 [**Open in your editor**](docs/help/editor.md) — repo, file, or the exact line
-you right-clicked ·
+you right-clicked, with [Xcode projects and other packages](docs/help/editor.md)
+treated as one item rather than a folder to dig through ·
 [**Problems**](docs/help/problems.md) — what your project's own analyzers
 (`tsc`, `dart analyze`, ESLint, Clippy, `go vet`, Ruff) say, in a dock at the
 bottom, with a toggle for "only the files I changed" ·
@@ -160,7 +163,9 @@ and a [run target](docs/help/launch.md) picker for the phone or simulator ·
 [**Dev tools**](docs/help/devtools.md) embedded on the repository's own tab —
 Flutter DevTools, `dart devtools`, Prisma Studio and friends, from the address
 the session announces ·
-[previews](docs/help/diffs.md) for Markdown, Word, Excel, PDF, video and images ·
+[previews](docs/help/diffs.md) for Markdown, Word, Excel, PDF, video and images —
+plus `Info.plist` and `.entitlements` as a key/value outline, and a
+`project.pbxproj` as the targets, file tree and build settings it really is ·
 [open-source licenses](docs/help/licenses.md) for every package the build ships,
 readable in the app.
 

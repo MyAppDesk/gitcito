@@ -1,19 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { X, Globe, Github, Gitlab, Cloud, Server, Loader2, Search, Lock, ExternalLink, Plug, FolderGit2, Folder, Plus, Check, ChevronDown, ChevronRight, RefreshCw, Sparkles, GitMerge, ArrowUpFromLine, TextCursorInput } from 'lucide-react'
+import { X, Globe, Github, Gitlab, Cloud, Server, Loader2, Search, Lock, FolderGit2, Folder, Plus, Check, ChevronDown, ChevronRight, RefreshCw, Sparkles, GitMerge, ArrowUpFromLine, TextCursorInput } from 'lucide-react'
 import { useUIStore, type ModalSpec } from '../stores/ui'
 import { useSettingsStore, GROUP_COLORS } from '../stores/settings'
 import { hostingApi, gitApi, shellApi, aiApi } from '../infrastructure/api'
 import { repoActions } from '../stores/repo'
-import type {
-  CloneProgress,
-  CreateRepoOpts,
-  DivergedStrategy,
-  GroupTab,
-  RemoteOwner,
-  RemoteRepo,
-  RepoHost,
-  ResetStrategy
+import {
+  defaultProfile,
+  type CloneProgress,
+  type CreateRepoOpts,
+  type DivergedStrategy,
+  type GroupTab,
+  type RemoteOwner,
+  type RemoteRepo,
+  type RepoHost,
+  type ResetStrategy
 } from '../../../shared/types'
 import { SettingsPanel } from './SettingsPanel'
 import { LauncherPanel, type LauncherItem } from './Welcome'
@@ -351,32 +352,23 @@ type RemoteProviderId = (typeof REMOTE_PROVIDERS)[number]['id']
 
 const HOST_META: Record<
   RepoHost,
-  { label: string; tokenField: 'githubToken' | 'gitlabToken' | 'bitbucketToken' | 'azureToken'; tokenUrl: string; tokenHint: string }
+  { label: string; tokenField: 'githubToken' | 'gitlabToken' | 'bitbucketToken' | 'azureToken' }
 > = {
   github: {
     label: 'GitHub',
-    tokenField: 'githubToken',
-    tokenUrl: 'https://github.com/settings/tokens/new?scopes=repo&description=Gitcito',
-    tokenHint: 'Create a personal access token with the “repo” scope.'
+    tokenField: 'githubToken'
   },
   gitlab: {
     label: 'GitLab',
-    tokenField: 'gitlabToken',
-    tokenUrl: 'https://gitlab.com/-/user_settings/personal_access_tokens?name=Gitcito&scopes=read_api,read_repository',
-    tokenHint: 'Create a token with the “read_api” and “read_repository” scopes.'
+    tokenField: 'gitlabToken'
   },
   bitbucket: {
     label: 'Bitbucket',
-    tokenField: 'bitbucketToken',
-    tokenUrl: 'https://bitbucket.org/account/settings/app-passwords/',
-    tokenHint: 'Create an app password with “Repositories: Read”, then store it as username:app_password.'
+    tokenField: 'bitbucketToken'
   },
   azure: {
     label: 'Azure DevOps',
-    tokenField: 'azureToken',
-    tokenUrl:
-      'https://learn.microsoft.com/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate#create-a-pat',
-    tokenHint: 'Create a PAT with the “Code (read)” scope.'
+    tokenField: 'azureToken'
   }
 }
 
@@ -418,10 +410,9 @@ function RepoPicker({
   const openModal = useUIStore((s) => s.openModal)
   const closeModal = useUIStore((s) => s.closeModal)
   const profiles = useSettingsStore((s) => s.settings.profiles)
-  const profile = profiles.find((p) => p.id === profileId) ?? profiles[0]
+  const profile = profiles.find((p) => p.id === profileId) ?? profiles[0] ?? defaultProfile()
   const meta = HOST_META[host]
   const token = profile[meta.tokenField]
-  const connected = !!token.trim()
   const HostIcon = PROVIDER_ICONS[host]
 
   const [org, setOrg] = useState('')
@@ -449,9 +440,11 @@ function RepoPicker({
     setRepos(null)
     setError(null)
     setSearch('')
-    if (connected && host !== 'azure') void load()
+    // A typed token is optional: the main process can borrow the credential
+    // Git already uses, including one supplied by `gh auth login`.
+    if (host !== 'azure') void load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [host, connected, profileId])
+  }, [host, token, profileId])
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -481,34 +474,6 @@ function RepoPicker({
       </select>
     </label>
   )
-
-  if (!connected) {
-    return (
-      <div className="repo-picker">
-        {profileSelector}
-        <div className="remote-connect">
-          <Plug size={28} />
-          <p>
-            {profile.name} hasn’t connected {meta.label} yet.
-          </p>
-          <button
-            className="btn primary"
-            type="button"
-            onClick={() => {
-              closeModal()
-              openModal({ kind: 'settings', page: 'integrations' })
-            }}
-          >
-            {interp(t('modal.connect'), { service: meta.label })}
-          </button>
-          <button className="link-btn" type="button" onClick={() => void window.api.openExternal(meta.tokenUrl)}>
-            <ExternalLink size={12} /> {t('modal.getToken')}
-          </button>
-          <span className="remote-connect-hint">{meta.tokenHint}</span>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="repo-picker">
@@ -543,10 +508,22 @@ function RepoPicker({
         )}
         {!loading && error && (
           <div className="repo-list-state danger">
-            {error}
-            <button className="link-btn" type="button" onClick={() => void load()}>
-              {t('modal.retry')}
-            </button>
+            <span>{error}</span>
+            <div className="remote-connect-actions">
+              <button className="link-btn" type="button" onClick={() => void load()}>
+                {t('modal.retry')}
+              </button>
+              <button
+                className="link-btn"
+                type="button"
+                onClick={() => {
+                  closeModal()
+                  openModal({ kind: 'settings', page: 'integrations' })
+                }}
+              >
+                {interp(t('modal.connect'), { service: meta.label })}
+              </button>
+            </div>
           </div>
         )}
         {!loading && !error && repos && filtered.length === 0 && (
@@ -710,7 +687,7 @@ function ProviderCreateForm({
   const closeModal = useUIStore((s) => s.closeModal)
   const toast = useUIStore((s) => s.toast)
   const profiles = useSettingsStore((s) => s.settings.profiles)
-  const profile = profiles.find((p) => p.id === profileId) ?? profiles[0]
+  const profile = profiles.find((p) => p.id === profileId) ?? profiles[0] ?? defaultProfile()
   const token = profile[HOST_META[host].tokenField]
 
   const [mode, setMode] = useState<'create' | 'existing'>('create')
@@ -1044,7 +1021,7 @@ function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): 
 
   useEffect(() => window.api.onCloneProgress(setProgress), [])
 
-  const profile = profiles.find((p) => p.id === profileId) ?? profiles[0]
+  const profile = profiles.find((p) => p.id === profileId) ?? profiles[0] ?? defaultProfile()
   const host: RepoHost | null = provider === 'url' ? null : provider
   const valid = !!url.trim() && !!name.trim() && !!dir.trim() && !cloning
 
@@ -1119,7 +1096,7 @@ function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): 
       updateSettings((s) => ({ ...s, lastClonePath: dir.trim() }))
       // Pin the new repo to the chosen profile so its identity/tokens apply
       // automatically whenever its tab is active.
-      setRepoProfile(path, profileId)
+      setRepoProfile(path, profile.id)
       closeModal()
       spec.onClone({ path, name: name.trim() })
       toast('success', interp(t('clone.done'), { name: name.trim() }))

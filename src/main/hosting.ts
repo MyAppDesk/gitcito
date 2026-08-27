@@ -1,5 +1,12 @@
 import { ipcMain, shell } from 'electron'
-import { apiToken, forgetCredential, isJwt, type GitCredential } from './credentials'
+import {
+  apiToken,
+  forgetCredential,
+  githubCliAuthStatus,
+  isJwt,
+  type GitCredential,
+  type GitHubCliAuthStatus
+} from './credentials'
 import { mergeStackSection } from '../shared/stackPr'
 import type {
   CiJob,
@@ -225,8 +232,19 @@ async function tokenForProvider(
   return apiToken(providerBaseUrl(provider, org), token)
 }
 
-/** A uniform "no credential at all" message naming both ways to supply one. */
-function noCredential(provider: string, remoteUrl?: string): Error {
+/** Actionable GitHub setup text for the exact local CLI state we observed. */
+export function githubCredentialMessage(status: GitHubCliAuthStatus, host = 'github.com'): string {
+  if (status === 'missing') {
+    return `No GitHub credential for ${host}. GitHub CLI (gh) is not installed. Install gh and run \`gh auth login\`, or add a personal access token in Settings → Integrations.`
+  }
+  if (status === 'signed-out') {
+    return `No GitHub credential for ${host}. GitHub CLI (gh) is installed but not authenticated. Run \`gh auth login\`, or add a personal access token in Settings → Integrations.`
+  }
+  return `No GitHub credential for ${host}. GitHub CLI (gh) is authenticated, but Git is not configured to provide that credential to Gitcito. Run \`gh auth setup-git\`, then retry, or add a personal access token in Settings → Integrations.`
+}
+
+/** A clear "no credential at all" message naming the setup step that failed. */
+async function noCredential(provider: string, remoteUrl?: string): Promise<Error> {
   const host = (() => {
     try {
       return remoteUrl ? new URL(remoteUrl).host : ''
@@ -234,6 +252,9 @@ function noCredential(provider: string, remoteUrl?: string): Error {
       return ''
     }
   })()
+  if (provider.toLowerCase() === 'github') {
+    return new Error(githubCredentialMessage(await githubCliAuthStatus(), host || 'github.com'))
+  }
   return new Error(
     `No ${provider} credential${host ? ` for ${host}` : ''}. Either sign in with git (any credential helper — the same one \`git clone\` uses) or add a token in Settings → Integrations.`
   )
@@ -387,7 +408,7 @@ async function listPullRequests(
   }
 
   // Azure DevOps
-  if (!auth) throw noCredential('Azure DevOps', remoteUrl)
+  if (!auth) throw await noCredential('Azure DevOps', remoteUrl)
   const base = `https://dev.azure.com/${parsed.owner}/${encodeURIComponent(parsed.project)}`
   const data = await withAzureRetry(remoteUrl, auth, (token) =>
     adoJson<{
@@ -523,7 +544,7 @@ async function createPullRequest(
 
   // GitLab merge request
   if (parsed.provider === 'gitlab') {
-    if (!auth) throw noCredential('GitLab', remoteUrl)
+    if (!auth) throw await noCredential('GitLab', remoteUrl)
     const pid = encodeURIComponent(`${parsed.owner}/${parsed.repo}`)
     const res = await fetch(`https://gitlab.com/api/v4/projects/${pid}/merge_requests`, {
       method: 'POST',
@@ -545,7 +566,7 @@ async function createPullRequest(
 
   // Bitbucket pull request
   if (parsed.provider === 'bitbucket') {
-    if (!auth) throw noCredential('Bitbucket', remoteUrl)
+    if (!auth) throw await noCredential('Bitbucket', remoteUrl)
     const res = await fetch(
       `https://api.bitbucket.org/2.0/repositories/${parsed.owner}/${parsed.repo}/pullrequests`,
       {
@@ -568,7 +589,7 @@ async function createPullRequest(
   }
 
   if (parsed.provider === 'github') {
-    if (!auth) throw noCredential('GitHub', remoteUrl)
+    if (!auth) throw await noCredential('GitHub', remoteUrl)
     const res = await fetch(`https://api.github.com/repos/${parsed.owner}/${parsed.repo}/pulls`, {
       method: 'POST',
       headers: {
@@ -593,7 +614,7 @@ async function createPullRequest(
   }
 
   // Azure DevOps
-  if (!auth) throw noCredential('Azure DevOps', remoteUrl)
+  if (!auth) throw await noCredential('Azure DevOps', remoteUrl)
   const base = `https://dev.azure.com/${parsed.owner}/${encodeURIComponent(parsed.project)}`
   const d = await withAzureRetry(remoteUrl, auth, (token) =>
     adoJson<{ pullRequestId: number }>(
@@ -627,7 +648,7 @@ async function ghRepoOf(
     throw new Error('This action currently supports GitHub repositories only.')
   }
   const auth = await apiToken(remoteUrl, token)
-  if (!auth) throw noCredential('GitHub', remoteUrl)
+  if (!auth) throw await noCredential('GitHub', remoteUrl)
   return { owner: parsed.owner, repo: parsed.repo, token: auth.token }
 }
 
@@ -668,7 +689,7 @@ async function glProjectOf(
   const parsed = parseRemoteUrl(remoteUrl)
   if (!parsed || parsed.provider !== 'gitlab') throw new Error('Not a GitLab repository.')
   const auth = await apiToken(remoteUrl, token)
-  if (!auth) throw noCredential('GitLab', remoteUrl)
+  if (!auth) throw await noCredential('GitLab', remoteUrl)
   const pid = encodeURIComponent(`${parsed.owner}/${parsed.repo}`)
   return { base: `https://gitlab.com/api/v4/projects/${pid}`, auth }
 }
@@ -1465,7 +1486,7 @@ async function ensureGithubStack(
 
 async function listRepositories(provider: RepoHost, token: string, org?: string): Promise<RemoteRepo[]> {
   const auth = await tokenForProvider(provider, token, org)
-  if (!auth) throw noCredential(provider, providerBaseUrl(provider, org))
+  if (!auth) throw await noCredential(provider, providerBaseUrl(provider, org))
 
   if (provider === 'github') {
     const res = await fetch(
@@ -1575,7 +1596,7 @@ async function ghJson<T>(url: string, token: string, init?: RequestInit): Promis
 /** Accounts a new repo can be created under: the authenticated user plus their orgs/groups. */
 async function listOwners(provider: RepoHost, token: string, org?: string): Promise<RemoteOwner[]> {
   const auth = await tokenForProvider(provider, token, org)
-  if (!auth) throw noCredential(provider, providerBaseUrl(provider, org))
+  if (!auth) throw await noCredential(provider, providerBaseUrl(provider, org))
 
   if (provider === 'github') {
     const user = await ghJson<{ login: string; avatar_url: string }>('https://api.github.com/user', auth.token)
@@ -1658,7 +1679,7 @@ async function fetchConnectedAccount(
   // Only an explicit "sign in" may open the helper's login window. Merely opening
   // the Settings page must not prompt for four providers at once.
   const auth = await apiToken(providerBaseUrl(provider, org), token, { interactive })
-  if (!auth) throw noCredential(provider, providerBaseUrl(provider, org))
+  if (!auth) throw await noCredential(provider, providerBaseUrl(provider, org))
 
   if (provider === 'github') {
     const user = await ghJson<{ login: string; name: string | null; avatar_url: string; html_url: string }>(
@@ -1782,7 +1803,7 @@ async function createRepository(
 ): Promise<RemoteRepo> {
   if (!opts.name.trim()) throw new Error('Repository name is required.')
   const auth = await tokenForProvider(provider, token, org)
-  if (!auth) throw noCredential(provider, providerBaseUrl(provider, org))
+  if (!auth) throw await noCredential(provider, providerBaseUrl(provider, org))
 
   if (provider === 'github') {
     const url =

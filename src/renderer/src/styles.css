@@ -2125,6 +2125,11 @@ body.col-resizing .node-ava {
   box-shadow: inset 2px 0 0 var(--accent);
 }
 
+/* A fetched commit exists locally, but has not joined the checked-out branch. */
+.graph-row.row-fetched-only:where(:not(.selected):not(.multi-selected)) {
+  opacity: 0.72;
+}
+
 .graph-row.dimmed {
   opacity: 0.25;
 }

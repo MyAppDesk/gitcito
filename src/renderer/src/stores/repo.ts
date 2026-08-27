@@ -1643,6 +1643,8 @@ export const repoActions = {
     let done = 0
     let failed = 0
     for (const path of paths) {
+      const before = new Set((useRepoStore.getState().repos[path]?.commits ?? []).map((c) => c.hash))
+      let synced = false
       ui.setBusy(
         `${verb} ${path.split('/').pop()} (${done + failed + 1}/${paths.length})`,
         op === 'fetch' ? 'fetch' : 'pull'
@@ -1650,13 +1652,20 @@ export const repoActions = {
       try {
         if (op === 'fetch') await gitApi.fetchAll(path)
         else await gitApi.pull(path, mode)
-        useRepoStore.getState().patch(path, { lastFetchAt: Date.now() })
+        synced = true
         done++
       } catch {
         failed++
       }
       // Refresh repos already in the store so their graph/badges update.
-      if (useRepoStore.getState().repos[path]) await useRepoStore.getState().refresh(path)
+      if (useRepoStore.getState().repos[path]) {
+        await useRepoStore.getState().refresh(path)
+        if (synced) {
+          const after = useRepoStore.getState().repos[path]?.commits ?? []
+          const newCommits = before.size ? after.filter((c) => !before.has(c.hash)).map((c) => c.hash) : []
+          useRepoStore.getState().patch(path, { lastFetchAt: Date.now(), newCommits })
+        }
+      }
     }
     ui.setBusy(null)
     const label = op === 'fetch' ? t('act.fetchedWord') : t('act.pulledWord')
@@ -2661,4 +2670,3 @@ export async function submitStackCore(path: string, leaf?: string): Promise<Stac
     if (created || retargeted) toast('info', interp(t('stack.submitReport'), { created, retargeted }))
   return result
 }
-

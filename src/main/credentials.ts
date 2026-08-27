@@ -29,6 +29,8 @@ export interface FillOpts {
   repoPath?: string
 }
 
+export type GitHubCliAuthStatus = 'missing' | 'signed-out' | 'authenticated'
+
 /** Credential lookups are cached per key for this long, to avoid spawning git per API call. */
 const TTL_MS = 5 * 60 * 1000
 /** A helper that opens a GUI gets this long; a silent one should answer immediately. */
@@ -183,6 +185,21 @@ export async function hasCredentialHelper(repoPath?: string): Promise<boolean> {
     execFile('git', [...args, 'config', '--get-all', 'credential.helper'], (err, stdout) =>
       resolve(!err && stdout.trim().length > 0)
     )
+  })
+}
+
+/**
+ * Explain why Git could not borrow a GitHub credential without ever reading or
+ * returning the token itself. `gh auth status` is non-interactive: success means
+ * the CLI has an account, while any ordinary failure means it is installed but
+ * signed out (or its saved login is no longer valid).
+ */
+export function githubCliAuthStatus(): Promise<GitHubCliAuthStatus> {
+  return new Promise((resolve) => {
+    execFile('gh', ['auth', 'status', '--hostname', 'github.com'], { timeout: TIMEOUT_SILENT_MS }, (err) => {
+      if (!err) return resolve('authenticated')
+      resolve((err as NodeJS.ErrnoException).code === 'ENOENT' ? 'missing' : 'signed-out')
+    })
   })
 }
 

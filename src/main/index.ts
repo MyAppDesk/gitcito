@@ -33,6 +33,7 @@ import { registerMenuHandlers } from './menu'
 import { registerSshHandlers } from './ssh'
 import { registerDiffToolHandlers } from './difftool'
 import { parseCliOpenArgs, type CliOpenPayload } from '../shared/cli'
+import { MAIN_WINDOW_STATE, showMainWindow } from './windowState'
 
 // GUI launches inherit a minimal PATH; restore the login-shell PATH so spawned
 // git (and its hooks, e.g. husky → npm) find node/npm. Runs before any spawn.
@@ -129,7 +130,7 @@ function createWindow(): void {
     height: 960,
     minWidth: 1100,
     minHeight: 680,
-    show: false,
+    ...MAIN_WINDOW_STATE,
     icon,
     frame: process.platform === 'darwin',
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : undefined,
@@ -150,7 +151,7 @@ function createWindow(): void {
     }
   })
 
-  win.on('ready-to-show', () => win.show())
+  win.once('ready-to-show', () => showMainWindow(win))
   win.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
     return { action: 'deny' }

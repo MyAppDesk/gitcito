@@ -1,5 +1,12 @@
 
 
+## [4.3.0](https://github.com/MyAppDesk/gitcito/compare/v4.2.0...v4.3.0) (2026-08-28)
+
+
+### Features
+
+* improve desktop setup and sync feedback ([#38](https://github.com/MyAppDesk/gitcito/issues/38)) ([9bc58cb](https://github.com/MyAppDesk/gitcito/commit/9bc58cbd9f2df4719b3c66eee54be71fada7524e))
+
 ## [4.2.0](https://github.com/MyAppDesk/gitcito/compare/v4.1.0...v4.2.0) (2026-08-27)
 
 

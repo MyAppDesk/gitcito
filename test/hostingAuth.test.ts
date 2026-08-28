@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
-import { adoJson, azureAuth, providerBaseUrl } from '../src/main/hosting'
+import { adoJson, azureAuth, githubCredentialMessage, providerBaseUrl } from '../src/main/hosting'
 import { isJwt, parseCredential, providerOfHost } from '../src/main/credentials'
 
 /** A JWT-shaped token — only the header/payload/signature *shape* is checked. */
@@ -120,5 +120,28 @@ describe('providerOfHost', () => {
 
   it('does not claim an unrelated host', () => {
     expect(providerOfHost('git.example.com')).toBeUndefined()
+  })
+})
+
+describe('GitHub credential guidance', () => {
+  it('distinguishes a missing GitHub CLI', () => {
+    expect(githubCredentialMessage('missing')).toContain('GitHub CLI (gh) is not installed')
+    expect(githubCredentialMessage('missing')).toContain('gh auth login')
+  })
+
+  it('distinguishes an installed but signed-out GitHub CLI', () => {
+    expect(githubCredentialMessage('signed-out')).toContain('installed but not authenticated')
+    expect(githubCredentialMessage('signed-out')).toContain('gh auth login')
+  })
+
+  it('explains when gh is authenticated but not wired into Git', () => {
+    expect(githubCredentialMessage('authenticated')).toContain('gh auth setup-git')
+  })
+
+  it('does not claim a signed-out CLI when the probe merely timed out', () => {
+    const msg = githubCredentialMessage('unknown')
+    expect(msg).toContain('timed out')
+    expect(msg).not.toContain('not authenticated')
+    expect(msg).not.toContain('not installed')
   })
 })

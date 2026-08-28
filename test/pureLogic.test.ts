@@ -16,6 +16,7 @@ import { branchMatches, isSafeLinkUrl, isSafeRepoRelPath, parseRepoConfig, satis
 import { appendTrailers, configTrailers, doctorSummary, effectiveProtected, isProtectedBranch, ticketSegments } from '../src/renderer/src/lib/repoConfig'
 import { buildMenuSpec } from '../src/renderer/src/lib/appMenu'
 import { acceleratorFromCombo, isMenuRole } from '../src/shared/menu'
+import { MAIN_WINDOW_STATE, showMainWindow } from '../src/main/windowState'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 import { commitHookFailureHint, lintCommit, subjectCounterLevel, parseCcPrefix, applyCcType, parseGitmojiPrefix, applyGitmoji, parseTicketPrefix, applyTicket, ticketFromBranch } from '../src/renderer/src/lib/commitLint'
@@ -5553,6 +5554,12 @@ describe('buildMenuSpec', () => {
     expect(closeTab?.showOnly).toBe(true)
   })
 
+  it('uses the native macOS Window menu so the system owns Fill and Fn-Control-F', () => {
+    const windowMenu = build().find((item) => item.label === 'menu.window')
+    expect(windowMenu).toMatchObject({ role: 'windowMenu' })
+    expect(windowMenu?.submenu).toBeUndefined()
+  })
+
   it('lists recent repositories, and says so when there are none', () => {
     const recent = build().find((m) => m.label === 'menu.file')?.submenu?.find((i) => i.label === 'menu.openRecent')
     expect(recent?.submenu?.[0]?.id).toBe('open-recent:/a/one')
@@ -5566,6 +5573,18 @@ describe('buildMenuSpec', () => {
     for (const item of flatten(build({ isDev: true }))) {
       if (item.role) expect(isMenuRole(item.role)).toBe(true)
     }
+  })
+})
+
+describe('main window startup', () => {
+  it('keeps native maximize gestures enabled and reveals the window maximized', () => {
+    expect(MAIN_WINDOW_STATE).toEqual({ show: false, maximizable: true })
+    const calls: string[] = []
+    showMainWindow({
+      maximize: () => calls.push('maximize'),
+      show: () => calls.push('show')
+    })
+    expect(calls).toEqual(['maximize', 'show'])
   })
 })
 

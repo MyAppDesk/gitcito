@@ -26,7 +26,8 @@ dépôt d'une centaine.
   courante, d'écraser une suite contiguë, d'exporter un patch combiné unique, ou
   de copier leurs SHA.
 - Les commits arrivés lors de votre **dernier fetch ou pull** sont signalés comme
-  nouveaux.
+  nouveaux. Ceux qui ne font pas encore partie de la branche active restent
+  légèrement translucides jusqu'à ce qu'un pull les intègre.
 - Clic droit sur un commit pour **Amender**, **Annuler**, **Réinitialiser au
   commit…** et **Voir sur GitHub**, en plus du checkout, du cherry-pick, du
   revert, de la branche, de l'étiquette et de la copie. Les actions risquées

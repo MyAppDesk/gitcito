@@ -25,6 +25,8 @@ depo gibi kayar.
   squash edebilir, tek bir birleşik yama dışa aktarabilir veya SHA'larını
   kopyalayabilirsiniz.
 - **Son fetch ya da pull** işleminizle gelen commit'ler yeni olarak işaretlenir.
+  Henüz aktif dala girmemiş olanlar, bir pull onları getirene kadar hafifçe
+  saydam kalır.
 - Bir commit'e sağ tıklamak **Düzelt**, **Geri al**, **Commit’e sıfırla…** ve
   **GitHub’da görüntüle** ile birlikte checkout, cherry-pick, revert, dal,
   etiket ve kopyalama sunar. Güvenli olmayan eylemler görünür kalır ve devre

@@ -26,7 +26,8 @@ commitów przewija się tak jak to ze stoma.
   gałąź, zesquashować ciągły odcinek, wyeksportować jedną zbiorczą łatkę albo
   skopiować ich SHA.
 - Commity, które przyszły z twoim **ostatnim fetchem lub pullem**, są oznaczone
-  jako nowe.
+  jako nowe. Te, które nie trafiły jeszcze do bieżącej gałęzi, pozostają lekko
+  prześwitujące, dopóki pull ich nie wciągnie.
 - Kliknij commit prawym przyciskiem, żeby dostać **Popraw**, **Cofnij**,
   **Zresetuj do commita…** i **Zobacz na GitHubie**, a do tego checkout,
   cherry-pick, revert, gałąź, tag i kopiowanie. Akcje niebezpieczne pozostają

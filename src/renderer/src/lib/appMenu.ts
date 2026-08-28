@@ -183,12 +183,10 @@ export function buildMenuSpec(ctx: MenuContext, t: (key: TranslationKey) => stri
 
   const windowMenu: MenuSpecItem = {
     label: t('menu.window'),
-    submenu: [
-      { role: 'minimize', label: t('menu.minimize') },
-      { role: 'zoom', label: t('menu.zoomWindow') },
-      SEP,
-      { role: 'front', label: t('menu.front') }
-    ]
+    // Let AppKit build the standard Window menu. Besides Minimize, Zoom and
+    // Bring All to Front, this is what gives recent macOS versions ownership
+    // of Fill / Fn-Control-F and the other native Move & Resize commands.
+    role: 'windowMenu'
   }
 
   const helpMenu: MenuSpecItem = {

@@ -25,6 +25,7 @@ import {
 import { branchDropActions, encodeDropRef, BRANCH_DND_TYPE, type DropRef } from '../lib/branchDrop'
 import { togglePin } from '../lib/pinnedBranches'
 import { focusedHashes, focusedStashes, GRAPH_FOCUS_MODES, type FocusInput } from '../lib/graphFocus'
+import { fetchedOnlyHashes } from '../lib/graphCommitState'
 import { openBranchDropMenu } from '../lib/branchDropMenu'
 import { CHAT_COMMIT_MIME } from '../lib/repoChatContext'
 import { refIntegrationItems } from '../lib/refMenuItems'
@@ -625,6 +626,10 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
   }, [repo.status])
 
   const newSet = useMemo(() => new Set(repo.newCommits ?? []), [repo.newCommits])
+  const fetchedOnlySet = useMemo(
+    () => fetchedOnlyHashes(repo.commits, repo.newCommits ?? []),
+    [repo.commits, repo.newCommits]
+  )
   const stashBySha = useMemo(() => new Map(repo.stashes.map((s) => [s.sha, s])), [repo.stashes])
   const remoteNames = useMemo(() => new Set(repo.remotes.map((r) => r.name)), [repo.remotes])
 
@@ -1996,7 +2001,7 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
               aria-setsize={displayCommits.length}
               aria-posinset={row + 1}
               aria-label={`${c.subject} — ${c.author}`}
-              className={`graph-row ${selected ? 'selected' : ''} ${multi.has(c.hash) ? 'multi-selected' : ''} ${newSet.has(c.hash) ? 'row-new' : ''} ${dimmed ? 'dimmed' : ''} ${matches ? 'matched' : ''} ${ghosted ? 'ghosted' : ''}`}
+              className={`graph-row ${selected ? 'selected' : ''} ${multi.has(c.hash) ? 'multi-selected' : ''} ${newSet.has(c.hash) ? 'row-new' : ''} ${fetchedOnlySet.has(c.hash) ? 'row-fetched-only' : ''} ${dimmed ? 'dimmed' : ''} ${matches ? 'matched' : ''} ${ghosted ? 'ghosted' : ''}`}
               style={{ top: row * ROW_H, height: ROW_H, paddingLeft: branchCol + graphCol }}
               // Real commits can be dragged onto repository chat as context.
               // WIP and stash rows have no commit hash to pin.

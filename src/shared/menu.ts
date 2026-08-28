@@ -43,7 +43,8 @@ export const MENU_ROLES = [
   'togglefullscreen',
   'minimize',
   'zoom',
-  'front'
+  'front',
+  'windowMenu'
 ] as const
 
 export type MenuRole = (typeof MENU_ROLES)[number]

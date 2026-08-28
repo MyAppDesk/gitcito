@@ -26,7 +26,8 @@ che ne ha cento.
   fare squash di una sequenza contigua, esportare un'unica patch combinata o
   copiare i loro SHA.
 - I commit arrivati con il tuo **ultimo fetch o pull** sono contrassegnati come
-  nuovi.
+  nuovi. Quelli non ancora entrati nel branch attivo restano leggermente
+  traslucidi finché un pull non li integra.
 - Clic destro su un commit per **Correggi**, **Annulla**, **Reset al commit…** e
   **Apri su GitHub**, oltre a checkout, cherry-pick, revert, branch, tag e
   copia. Le azioni non sicure restano visibili e si disabilitano.

@@ -137,4 +137,11 @@ describe('GitHub credential guidance', () => {
   it('explains when gh is authenticated but not wired into Git', () => {
     expect(githubCredentialMessage('authenticated')).toContain('gh auth setup-git')
   })
+
+  it('does not claim a signed-out CLI when the probe merely timed out', () => {
+    const msg = githubCredentialMessage('unknown')
+    expect(msg).toContain('timed out')
+    expect(msg).not.toContain('not authenticated')
+    expect(msg).not.toContain('not installed')
+  })
 })

@@ -240,6 +240,9 @@ export function githubCredentialMessage(status: GitHubCliAuthStatus, host = 'git
   if (status === 'signed-out') {
     return `No GitHub credential for ${host}. GitHub CLI (gh) is installed but not authenticated. Run \`gh auth login\`, or add a personal access token in Settings → Integrations.`
   }
+  if (status === 'unknown') {
+    return `No GitHub credential for ${host}, and checking the GitHub CLI (gh) timed out — it may be offline. Sign in with git (any credential helper), run \`gh auth login\` then \`gh auth setup-git\`, or add a personal access token in Settings → Integrations.`
+  }
   return `No GitHub credential for ${host}. GitHub CLI (gh) is authenticated, but Git is not configured to provide that credential to Gitcito. Run \`gh auth setup-git\`, then retry, or add a personal access token in Settings → Integrations.`
 }
 

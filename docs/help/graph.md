@@ -23,7 +23,9 @@ with a hundred.
   <kbd>⇧</kbd>-click takes a range. With several selected, right-click to
   cherry-pick them onto the current branch, squash a contiguous run, export one
   combined patch, or copy their SHAs.
-- Commits that arrived in your **last fetch or pull** are flagged as new.
+- Commits that arrived in your **last fetch or pull** are flagged as new. Ones
+  that have not joined the checked-out branch yet stay slightly translucent
+  until a pull brings them in.
 - Right-click a commit for **Amend**, **Undo**, **Reset to Commit…** and
   **View on GitHub**, plus checkout, cherry-pick, revert, branch, tag and
   copy. Unsafe actions stay visible and disable.

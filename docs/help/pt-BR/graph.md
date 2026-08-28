@@ -24,6 +24,8 @@ com cem.
   botão direito para fazer cherry-pick deles na branch atual, dar squash numa
   sequência contígua, exportar um patch combinado, ou copiar os SHAs.
 - Commits que chegaram no seu **último fetch ou pull** são sinalizados como novos.
+  Os que ainda não entraram no branch atual ficam levemente translúcidos até um
+  pull trazê-los.
 - Clique com o botão direito num commit para **Amend**, **Desfazer**,
   **Resetar para o commit…** e **Ver no GitHub**, além de checkout, cherry-pick,
   revert, branch, tag e cópia. Ações inseguras continuam visíveis e se

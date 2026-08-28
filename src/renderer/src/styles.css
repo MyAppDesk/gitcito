@@ -5580,30 +5580,13 @@ body.col-resizing .node-ava {
   text-decoration-thickness: 2px;
 }
 
-.remote-connect {
+/* Recovery links under a failed repository listing: retry, or go and connect. */
+.remote-connect-actions {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
-  text-align: center;
-  padding: 22px 16px;
-  margin: 4px 0;
-  background: var(--bg-3);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  color: var(--text-1);
-}
-.remote-connect svg {
-  color: var(--text-2);
-}
-.remote-connect p {
-  font-size: 13px;
-}
-.remote-connect-hint {
-  font-size: 11px;
-  color: var(--text-2);
-  max-width: 280px;
-  line-height: 1.4;
+  justify-content: center;
+  gap: 14px;
 }
 
 .repo-picker {

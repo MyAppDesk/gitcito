@@ -25,7 +25,8 @@ Commits wie eines mit hundert.
   Cherry-Pick auf den aktuellen Branch machen, eine zusammenhängende Folge
   squashen, einen kombinierten Patch exportieren oder ihre SHAs kopieren.
 - Commits, die mit deinem **letzten Fetch oder Pull** hereinkamen, werden als neu
-  markiert.
+  markiert. Die, die noch nicht im ausgecheckten Branch stecken, bleiben leicht
+  durchscheinend, bis ein Pull sie holt.
 - Rechtsklick auf einen Commit für **Ändern**, **Rückgängig**, **Auf Commit
   zurücksetzen…** und **Auf GitHub anzeigen**, dazu Checkout, Cherry-Pick,
   Revert, Branch, Tag und Kopieren. Unsichere Aktionen bleiben sichtbar und

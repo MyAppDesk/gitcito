@@ -29,7 +29,7 @@ export interface FillOpts {
   repoPath?: string
 }
 
-export type GitHubCliAuthStatus = 'missing' | 'signed-out' | 'authenticated'
+export type GitHubCliAuthStatus = 'missing' | 'signed-out' | 'authenticated' | 'unknown'
 
 /** Credential lookups are cached per key for this long, to avoid spawning git per API call. */
 const TTL_MS = 5 * 60 * 1000
@@ -153,6 +153,7 @@ export async function forgetCredential(url: string, cred: GitCredential): Promis
 /** Drop every cached lookup (e.g. after the user edits their tokens). */
 export function clearCredentialCache(): void {
   cache.clear()
+  ghStatus = null
 }
 
 /**
@@ -189,18 +190,53 @@ export async function hasCredentialHelper(repoPath?: string): Promise<boolean> {
 }
 
 /**
- * Explain why Git could not borrow a GitHub credential without ever reading or
- * returning the token itself. `gh auth status` is non-interactive: success means
- * the CLI has an account, while any ordinary failure means it is installed but
- * signed out (or its saved login is no longer valid).
+ * How long a `gh auth status` verdict may be reused. Far shorter than the
+ * credential TTL: someone who reads "run `gh auth login`", does it and retries
+ * must not be told the same thing again from a stale answer.
  */
-export function githubCliAuthStatus(): Promise<GitHubCliAuthStatus> {
+const GH_STATUS_TTL_MS = 30 * 1000
+
+let ghStatus: { status: GitHubCliAuthStatus; at: number } | null = null
+let ghStatusInFlight: Promise<GitHubCliAuthStatus> | null = null
+
+/** Read `gh auth status` once, mapping how the process ended onto a verdict. */
+function probeGithubCli(): Promise<GitHubCliAuthStatus> {
   return new Promise((resolve) => {
     execFile('gh', ['auth', 'status', '--hostname', 'github.com'], { timeout: TIMEOUT_SILENT_MS }, (err) => {
       if (!err) return resolve('authenticated')
-      resolve((err as NodeJS.ErrnoException).code === 'ENOENT' ? 'missing' : 'signed-out')
+      const e = err as NodeJS.ErrnoException & { killed?: boolean }
+      if (e.code === 'ENOENT') return resolve('missing')
+      // Recent `gh` validates the token over the network, so a slow or offline
+      // link kills the probe on our timeout. That says nothing about the login.
+      if (e.killed) return resolve('unknown')
+      resolve('signed-out')
     })
   })
+}
+
+/**
+ * Explain why Git could not borrow a GitHub credential without ever reading or
+ * returning the token itself. `gh auth status` is non-interactive: success means
+ * the CLI has an account, while an ordinary failure means it is installed but
+ * signed out (or its saved login is no longer valid).
+ *
+ * Cached, and de-duplicated while in flight, because one Settings page can miss
+ * a credential for four providers at once and each miss lands here.
+ */
+export async function githubCliAuthStatus(): Promise<GitHubCliAuthStatus> {
+  if (ghStatus && Date.now() - ghStatus.at < GH_STATUS_TTL_MS) return ghStatus.status
+  if (ghStatusInFlight) return ghStatusInFlight
+
+  ghStatusInFlight = probeGithubCli()
+  try {
+    const status = await ghStatusInFlight
+    // An inconclusive probe is not worth remembering: the next attempt may well
+    // reach the network and produce a real answer.
+    ghStatus = status === 'unknown' ? null : { status, at: Date.now() }
+    return status
+  } finally {
+    ghStatusInFlight = null
+  }
 }
 
 /** Provider a host name belongs to, for picking the right Authorization scheme. */

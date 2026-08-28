@@ -24,6 +24,8 @@ desplaza igual que uno con cien.
   clic derecho para hacerles cherry-pick sobre la rama actual, aplastar un tramo
   contiguo, exportar un único parche combinado, o copiar sus SHA.
 - Los commits que llegaron en tu **último fetch o pull** se marcan como nuevos.
+  Los que aún no están en la rama activa se ven algo translúcidos hasta que un
+  pull los incorpora.
 - Clic derecho en un commit para **Enmendar**, **Deshacer**, **Restablecer al
   commit…** y **Ver en GitHub**, además de checkout, cherry-pick, revert, rama,
   etiqueta y copiar. Las acciones inseguras siguen visibles y se deshabilitan.

@@ -25,7 +25,8 @@ een met honderd.
   aaneengesloten reeks te squashen, één gecombineerde patch te exporteren of hun
   SHA's te kopiëren.
 - Commits die bij je **laatste fetch of pull** binnenkwamen zijn gemarkeerd als
-  nieuw.
+  nieuw. Die nog niet in de uitgecheckte branch zitten blijven licht
+  doorschijnend tot een pull ze binnenhaalt.
 - Rechtsklik een commit voor **Aanpassen**, **Ongedaan maken**, **Resetten naar
   commit…** en **Bekijken op GitHub**, plus checkout, cherry-pick, revert,
   branch, tag en kopiëren. Onveilige acties blijven zichtbaar en worden

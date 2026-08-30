@@ -1,5 +1,12 @@
 
 
+## [4.3.1](https://github.com/MyAppDesk/gitcito/compare/v4.3.0...v4.3.1) (2026-08-30)
+
+
+### Bug Fixes
+
+* handle resize errors in createPty function ([af6be7e](https://github.com/MyAppDesk/gitcito/commit/af6be7eabb31fcc8d319f33a178b15a7be1b9828))
+
 ## [4.3.0](https://github.com/MyAppDesk/gitcito/compare/v4.2.0...v4.3.0) (2026-08-28)
 
 

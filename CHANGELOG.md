@@ -1,5 +1,12 @@
 
 
+## [4.4.0](https://github.com/MyAppDesk/gitcito/compare/v4.3.1...v4.4.0) (2026-08-31)
+
+
+### Features
+
+* add change gutter and minimap components for file viewer ([c3de21e](https://github.com/MyAppDesk/gitcito/commit/c3de21eca543628c66a3dd6104ff91c18b1e51f6))
+
 ## [4.3.1](https://github.com/MyAppDesk/gitcito/compare/v4.3.0...v4.3.1) (2026-08-30)
 
 

@@ -195,3 +195,79 @@ export function buildSplitRows(lines: DiffLine[]): SplitRow[] {
   }
   return rows
 }
+
+/** One changed region against the new (current) file, for the File view's
+ *  change gutter. `lineStart`..`lineEnd` are new-file line numbers the bar
+ *  spans; for a pure deletion (nothing added) they are equal and `edge` says
+ *  which border of that line the marker sits on — the line the deletion
+ *  happened before, or (deletion at EOF) after the last line. */
+export interface GutterChange {
+  index: number
+  type: 'add' | 'mod' | 'del'
+  lineStart: number
+  lineEnd: number
+  edge: 'before' | 'after'
+  removed: string[]
+  added: string[]
+}
+
+/** Parse a unified diff (current file vs. its last committed/staged version)
+ *  into the regions a change gutter decorates. Consecutive del/add runs are
+ *  zipped the same way {@link buildSplitRows} pairs them: a run with both is
+ *  a modification, add-only is an insertion, del-only is a pure deletion
+ *  anchored to the line it now sits next to. */
+export function computeGutterChanges(diff: string): GutterChange[] {
+  const lines = parseDiff(diff)
+  const changes: GutterChange[] = []
+  let lastNewNo = 0
+  let i = 0
+  while (i < lines.length) {
+    const l = lines[i]
+    if (l.kind === 'ctx' && l.newNo != null) lastNewNo = l.newNo
+    if (l.kind !== 'del' && l.kind !== 'add') {
+      i++
+      continue
+    }
+    const dels: typeof lines = []
+    while (i < lines.length && lines[i].kind === 'del') dels.push(lines[i++])
+    const adds: typeof lines = []
+    while (i < lines.length && lines[i].kind === 'add') {
+      lastNewNo = lines[i].newNo ?? lastNewNo
+      adds.push(lines[i++])
+    }
+    if (adds.length > 0) {
+      changes.push({
+        index: changes.length,
+        type: dels.length > 0 ? 'mod' : 'add',
+        lineStart: adds[0].newNo!,
+        lineEnd: adds[adds.length - 1].newNo!,
+        edge: 'before',
+        removed: dels.map((d) => d.text),
+        added: adds.map((a) => a.text)
+      })
+    } else if (dels.length > 0) {
+      const next = lines[i]
+      const atEof = !next || next.newNo == null
+      changes.push({
+        index: changes.length,
+        type: 'del',
+        lineStart: atEof ? Math.max(1, lastNewNo) : next.newNo!,
+        lineEnd: atEof ? Math.max(1, lastNewNo) : next.newNo!,
+        edge: atEof ? 'after' : 'before',
+        removed: dels.map((d) => d.text),
+        added: []
+      })
+    }
+  }
+  return changes
+}
+
+/** Every new-file line number a change touches, mapped back to that change —
+ *  a multi-line insertion/modification marks each of its lines. */
+export function gutterMarksByLine(changes: GutterChange[]): Map<number, GutterChange> {
+  const map = new Map<number, GutterChange>()
+  for (const c of changes) {
+    for (let ln = c.lineStart; ln <= c.lineEnd; ln++) map.set(ln, c)
+  }
+  return map
+}

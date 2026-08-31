@@ -45,6 +45,16 @@ otra, o un tirador para deslizar entre el antes y el después.
 
 ![Diff de imagen](../../screenshots/image-diff.webp)
 
+## Margen de cambios y minimapa
+
+La **vista de archivo** de un archivo del árbol de trabajo — preparado o no, seguido o completamente nuevo — lleva una barra de color junto a cada línea modificada desde HEAD (o el índice, en archivos preparados): verde para una inserción, azul para una modificación, una pequeña cuña roja donde se eliminaron líneas sin reemplazo. Haz clic en una barra para ver ese cambio sin salir del archivo — la ventana emergente muestra las líneas eliminadas y añadidas, con siguiente/anterior para recorrer todos los cambios del archivo.
+
+![Margen de cambios con una ventana emergente abierta, minimapa a la derecha](../../screenshots/change-gutter.webp)
+
+El **minimapa**, desactivado por defecto, añade una vista general a escala de todo el archivo en el borde derecho — haz clic o arrástralo para moverte, como haría una barra de desplazamiento si también pudiera mostrarte la forma del archivo. Ambos son ajustes por máquina en **Ajustes → General → Visor de archivos**.
+
+Ninguno de los dos lee el historial: cambia a Diff, Blame o un commit anterior y el margen de cambios desaparece — esas vistas ya muestran cada cambio directamente.
+
 ## Vista previa de cualquier cosa
 
 El modo **Vista previa** renderiza el archivo en vez de mostrar su código

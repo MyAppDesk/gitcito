@@ -45,6 +45,16 @@ przeciągasz między „przed" a „po".
 
 ![Diff obrazu](../../screenshots/image-diff.webp)
 
+## Pasek zmian i minimapa
+
+**Widok pliku** dla pliku z drzewa roboczego — w staging lub nie, śledzonego albo zupełnie nowego — ma kolorowy pasek obok każdej linii zmienionej od HEAD (lub indeksu, dla plików w staging): zielony dla dodania, niebieski dla modyfikacji, mały czerwony klin tam, gdzie linie usunięto bez zastąpienia. Kliknij pasek, aby zobaczyć tę zmianę bez opuszczania pliku — okienko pokazuje usunięte i dodane linie, z przyciskami dalej/wstecz do przejścia przez wszystkie zmiany w pliku.
+
+![Pasek zmian z otwartym okienkiem, minimapa po prawej](../../screenshots/change-gutter.webp)
+
+**Minimapa**, domyślnie wyłączona, dodaje pomniejszony podgląd całego pliku przy prawej krawędzi — kliknij lub przeciągnij, aby po nim przeskakiwać, tak jak robiłby to pasek przewijania, gdyby dodatkowo pokazywał kształt pliku. Oba ustawienia są lokalne dla urządzenia, w **Ustawienia → Ogólne → Podgląd pliku**.
+
+Żadne z nich nie czyta historii: przełącz się na Diff, Blame albo starszy commit, a pasek zniknie — te widoki już pokazują każdą zmianę bezpośrednio.
+
 ## Podgląd czegokolwiek
 
 Tryb **Podgląd** renderuje plik zamiast pokazywać jego źródło: Markdown, Word

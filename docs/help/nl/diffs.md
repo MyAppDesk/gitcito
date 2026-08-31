@@ -46,6 +46,16 @@ sleepgreep om tussen voor en na te schuiven.
 
 ![Beelddiff](../../screenshots/image-diff.webp)
 
+## Wijzigingsmarge en minimap
+
+De **bestandsweergave** van een working-tree-bestand — gestaged of niet, gevolgd of gloednieuw — draagt een gekleurde balk naast elke regel die is gewijzigd sinds HEAD (of de index, voor gestagede bestanden): groen voor een invoeging, blauw voor een wijziging, een kleine rode wig waar regels zijn verwijderd zonder vervanging. Klik op een balk om die wijziging te zien zonder het bestand te verlaten — de pop-up toont de verwijderde en toegevoegde regels, met volgende/vorige om alle wijzigingen in het bestand te doorlopen.
+
+![Wijzigingsmarge met een geopende pop-up, minimap rechts](../../screenshots/change-gutter.webp)
+
+De **minimap**, standaard uitgeschakeld, voegt een verkleind overzicht van het hele bestand toe aan de rechterrand — klik of sleep om erin te springen, zoals een scrollbalk zou doen als die ook de vorm van het bestand kon tonen. Beide zijn per-machine-instellingen onder **Instellingen → Algemeen → Bestandsviewer**.
+
+Geen van beide leest geschiedenis: schakel over naar Diff, Blame of een oudere commit en de marge verdwijnt — die weergaven tonen elke wijziging al rechtstreeks.
+
 ## Bekijk alles
 
 De modus **Voorbeeld** rendert het bestand in plaats van de broncode te tonen:

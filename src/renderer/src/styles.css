@@ -7514,6 +7514,100 @@ body.col-resizing .node-ava {
   cursor: text;
 }
 
+/* Change gutter: a colored bar next to a line touched by an uncommitted
+   edit (File view, working-tree files only). A pure deletion has no line of
+   its own, so it draws a small wedge on the border of the line it now sits
+   next to instead of a full-height bar. */
+.code-gutter {
+  width: 4px;
+  align-self: stretch;
+  flex-shrink: 0;
+  margin-inline-start: 2px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+}
+.code-gutter.add { background: #3fb950; }
+.code-gutter.mod { background: #58a6ff; }
+.code-gutter.del { background: transparent; }
+.code-gutter.del::after {
+  content: '';
+  position: absolute;
+  inset-inline-start: 0;
+  width: 100%;
+  height: 4px;
+  background: #f85149;
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+}
+.code-gutter.del.edge-before::after { top: -1px; }
+.code-gutter.del.edge-after::after { bottom: -1px; top: auto; }
+.code-gutter.active,
+.code-gutter:hover { filter: brightness(1.3); }
+
+/* The change gutter's peek popup: the removed/added lines of one hunk. */
+.change-gutter-popup {
+  position: fixed;
+  z-index: 60;
+  max-height: 320px;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+.change-gutter-popup-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-1);
+  background: var(--bg-1);
+  border-bottom: 1px solid var(--border-soft);
+  flex-shrink: 0;
+}
+.change-gutter-popup-nav { display: flex; gap: 2px; }
+.change-gutter-popup-body {
+  overflow: auto;
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 4px 0;
+}
+.change-gutter-line {
+  display: flex;
+  gap: 6px;
+  padding: 0 10px;
+  white-space: pre;
+}
+.change-gutter-line .ln-op { flex-shrink: 0; user-select: none; opacity: 0.7; }
+.change-gutter-line.del { background: var(--diff-del-bg, rgba(248, 81, 73, 0.12)); }
+.change-gutter-line.add { background: var(--diff-add-bg, rgba(63, 185, 80, 0.12)); }
+
+/* File minimap: a scaled overview of the whole file, floating at the right
+   edge of the scroll container it is passed. */
+.file-minimap {
+  position: fixed;
+  z-index: 3;
+  cursor: pointer;
+  background: var(--bg-1);
+  border-inline-start: 1px solid var(--border-soft);
+}
+.file-minimap-canvas { display: block; }
+.file-minimap-viewport {
+  position: absolute;
+  inset-inline: 0;
+  background: var(--text-0);
+  opacity: 0.08;
+  border-block: 1px solid var(--border);
+  pointer-events: none;
+}
+
 /* Blame view */
 .blame-rewind-bar {
   position: sticky;

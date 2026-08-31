@@ -20,6 +20,9 @@ import { isSecretFile, maskSecretLine } from '../lib/secrets'
 import { Eye, EyeOff, Bookmark as BookmarkIcon } from 'lucide-react'
 import { ImageDiff } from './ImageDiff'
 import { PreviewPane } from './PreviewPane'
+import { GutterMark, ChangeGutterPopup } from './ChangeGutter'
+import { FileMinimap } from './FileMinimap'
+import { computeGutterChanges, gutterMarksByLine, type GutterChange } from '../lib/diff'
 import { renderMarkdown } from '../preview/markdown'
 import { previewKind, isBinaryKind } from '../preview/registry'
 import { GRAPH_COLORS } from '../graph/layout'
@@ -238,6 +241,51 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
   const fileIsSecret = isSecretFile(file)
   const maskOn = fileIsSecret && maskSecretsSetting && !revealSecrets
   const maybeMask = (l: string): string => (maskOn ? maskSecretLine(l) : l)
+
+  // ─── Change gutter (File view, working-tree files only) + minimap ───
+  const showChangeGutterSetting = useSettingsStore((s) => s.settings.showChangeGutter)
+  const showMinimapSetting = useSettingsStore((s) => s.settings.showMinimap)
+  const [gutterChanges, setGutterChanges] = useState<GutterChange[]>([])
+  const [openChange, setOpenChange] = useState<{ index: number; rect: DOMRect } | null>(null)
+  const gutterByLine = useMemo(() => gutterMarksByLine(gutterChanges), [gutterChanges])
+
+  const gutterWanted = showChangeGutterSetting && source.type === 'wip' && mode === 'file' && !editing
+
+  useEffect(() => {
+    if (!gutterWanted) {
+      setGutterChanges([])
+      return
+    }
+    let cancelled = false
+    gitApi
+      .diffFile(repoPath, file, source.staged, source.untracked, false)
+      .then((diff) => {
+        if (!cancelled) setGutterChanges(computeGutterChanges(diff))
+      })
+      .catch(() => {
+        if (!cancelled) setGutterChanges([])
+      })
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [repoPath, file, gutterWanted, refreshKey, source.type === 'wip' ? source.staged : '', source.type === 'wip' ? source.untracked : ''])
+
+  useEffect(() => setOpenChange(null), [repoPath, file, mode, editing])
+
+  const gotoChange = (index: number): void => {
+    const change = gutterChanges[index]
+    if (!change) return
+    requestAnimationFrame(() => {
+      const row = bodyRef.current?.querySelectorAll('.code-line')[change.lineStart - 1] as HTMLElement | undefined
+      row?.scrollIntoView({ block: 'center' })
+      requestAnimationFrame(() => {
+        const mark = row?.querySelector('.code-gutter') as HTMLElement | undefined
+        const rect = (mark ?? row)?.getBoundingClientRect()
+        if (rect) setOpenChange({ index, rect })
+      })
+    })
+  }
 
   // Re-fetch working-tree content when the window regains focus/visibility.
   // Suspended while editing so a window-focus reload can't discard the buffer.
@@ -786,31 +834,57 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
 
         {!error && content !== null && imageUrl === null && mode === 'file' && !editing && (() => {
           const fileLines = content.split('\n')
+          const showMinimap = showMinimapSetting && fileLines.length <= HUGE_LINES
           return (
-            <div
-              className={`file-content hljs ${fileLines.length > HUGE_LINES ? 'is-huge' : ''} ${hoverArmed ? 'hover-armed' : ''}`}
-              {...hoverProps}
-            >
-              {fileLines.map((l, i) => (
-                <div className="code-line" key={i} onContextMenu={lineMenu(i + 1)}>
-                  {editorTracksDisk && (
-                    <button
-                      className={`code-mark ${markedLines.has(i + 1) ? 'on' : ''}`}
-                      title={markedLines.has(i + 1) ? t('bookmarks.remove') : t('bookmarks.add')}
-                      aria-label={markedLines.has(i + 1) ? t('bookmarks.remove') : t('bookmarks.add')}
-                      onClick={() => toggleBookmark(i + 1, l)}
-                    />
-                  )}
-                  <span className="code-no">{i + 1}</span>
-                  <span
-                    className="code-text"
-                    dangerouslySetInnerHTML={{ __html: highlightHtml(highlightLine(maybeMask(l), lang), layers) || '&nbsp;' }}
-                  />
-                </div>
-              ))}
-            </div>
+            <>
+              <div
+                className={`file-content hljs ${fileLines.length > HUGE_LINES ? 'is-huge' : ''} ${hoverArmed ? 'hover-armed' : ''}`}
+                {...hoverProps}
+              >
+                {fileLines.map((l, i) => {
+                  const change = gutterByLine.get(i + 1)
+                  return (
+                    <div className="code-line" key={i} onContextMenu={lineMenu(i + 1)}>
+                      {change && (
+                        <GutterMark
+                          change={change}
+                          active={openChange?.index === change.index}
+                          onClick={(e) => setOpenChange({ index: change.index, rect: e.currentTarget.getBoundingClientRect() })}
+                        />
+                      )}
+                      {editorTracksDisk && (
+                        <button
+                          className={`code-mark ${markedLines.has(i + 1) ? 'on' : ''}`}
+                          title={markedLines.has(i + 1) ? t('bookmarks.remove') : t('bookmarks.add')}
+                          aria-label={markedLines.has(i + 1) ? t('bookmarks.remove') : t('bookmarks.add')}
+                          onClick={() => toggleBookmark(i + 1, l)}
+                        />
+                      )}
+                      <span className="code-no">{i + 1}</span>
+                      <span
+                        className="code-text"
+                        dangerouslySetInnerHTML={{ __html: highlightHtml(highlightLine(maybeMask(l), lang), layers) || '&nbsp;' }}
+                      />
+                    </div>
+                  )
+                })}
+              </div>
+              {showMinimap && <FileMinimap lines={fileLines} gutterByLine={gutterByLine} scrollRef={bodyRef} />}
+            </>
           )
         })()}
+
+        {openChange && gutterChanges[openChange.index] && (
+          <ChangeGutterPopup
+            change={gutterChanges[openChange.index]}
+            total={gutterChanges.length}
+            lang={lang}
+            anchorRect={openChange.rect}
+            onPrev={() => gotoChange((openChange.index - 1 + gutterChanges.length) % gutterChanges.length)}
+            onNext={() => gotoChange((openChange.index + 1) % gutterChanges.length)}
+            onClose={() => setOpenChange(null)}
+          />
+        )}
 
         {!error && content !== null && mode === 'blame' && (
           <div

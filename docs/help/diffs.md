@@ -3,7 +3,7 @@ title: Diffs & previews
 category: Reading changes
 order: 20
 summary: Split view, word-level highlighting, image diffs and file previews.
-keywords: diff split side-by-side word level whitespace image diff preview markdown docx pdf
+keywords: diff split side-by-side word level whitespace image diff preview markdown docx pdf change gutter minimap
 ---
 
 # Diffs & previews
@@ -43,6 +43,25 @@ Changed images get a real comparison: side by side, or a swipe handle to drag
 between before and after.
 
 ![Image diff](../screenshots/image-diff.webp)
+
+## Change gutter & minimap
+
+The **File view** of a working-tree file — staged or not, tracked or brand new
+— carries a colored bar next to every line touched since HEAD (or the index,
+for staged files): green for an insertion, blue for a modification, a small
+red wedge where lines were removed without replacement. Click a bar to see
+that change without leaving the file — the popup shows the removed and added
+lines, with next/previous to step through every change in the file.
+
+![Change gutter with a hunk popup open, minimap on the right](../screenshots/change-gutter.webp)
+
+The **minimap**, off by default, adds a scaled overview of the whole file at
+the right edge — click or drag it to jump around, the way a scrollbar would if
+it could also show you the shape of the file. Both are per-machine toggles
+under **Settings → General → File viewer**.
+
+Neither reads history: switch to Diff, Blame or an older commit and the gutter
+disappears — those views already show every change directly.
 
 ## Preview anything
 

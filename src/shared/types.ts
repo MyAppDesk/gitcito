@@ -2861,6 +2861,12 @@ export interface AppSettings {
   localCiEnabled: boolean
   /** Mask secret values (KEY=••••) in .env/key files in the diff & file viewer. */
   maskSecrets: boolean
+  /** File view (working-tree files only): a colored bar next to lines changed
+   *  since HEAD/the index, click to see the change. */
+  showChangeGutter: boolean
+  /** File view: a VS Code-style scaled overview of the whole file, floating
+   *  at the right edge of the viewer. */
+  showMinimap: boolean
   /** Surface a Run/Launch picker in the sidebar when a `.vscode/launch.json`
    *  exists. Off → the launch UI is hidden entirely. */
   enableLaunchJson: boolean
@@ -3253,6 +3259,8 @@ export function defaultSettings(): AppSettings {
     snapshotGuard: true,
     localCiEnabled: false,
     maskSecrets: true,
+    showChangeGutter: true,
+    showMinimap: false,
     enableLaunchJson: true,
     shortcuts: {},
     largeFileKb: 5120,

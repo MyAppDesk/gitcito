@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest'
-import { parseDiff, wordDiff, wordRangesByLine, buildSplitRows } from '../src/renderer/src/lib/diff'
+import {
+  parseDiff,
+  wordDiff,
+  wordRangesByLine,
+  buildSplitRows,
+  computeGutterChanges,
+  gutterMarksByLine
+} from '../src/renderer/src/lib/diff'
 
 const SAMPLE = `@@ -1,3 +1,3 @@
  ctx line
@@ -87,5 +94,60 @@ describe('buildSplitRows', () => {
     expect(changes.length).toBe(2)
     expect(changes[1].left).toBeUndefined()
     expect(changes[1].right?.text).toBe('new2')
+  })
+})
+
+describe('computeGutterChanges', () => {
+  it('marks a paired del/add run as a modification anchored at the new line', () => {
+    const changes = computeGutterChanges(SAMPLE)
+    expect(changes).toEqual([
+      {
+        index: 0,
+        type: 'mod',
+        lineStart: 2,
+        lineEnd: 2,
+        edge: 'before',
+        removed: ['const x = foo(a, b)'],
+        added: ['const x = foo(a, c)']
+      }
+    ])
+  })
+
+  it('marks an add-only run as an insertion spanning every added line', () => {
+    const diff = `@@ -1,1 +1,3 @@\n ctx\n+new1\n+new2`
+    const changes = computeGutterChanges(diff)
+    expect(changes).toEqual([
+      { index: 0, type: 'add', lineStart: 2, lineEnd: 3, edge: 'before', removed: [], added: ['new1', 'new2'] }
+    ])
+  })
+
+  it('anchors a mid-file deletion to the line that now follows it', () => {
+    const diff = `@@ -1,3 +1,2 @@\n ctx1\n-gone\n ctx2`
+    const changes = computeGutterChanges(diff)
+    expect(changes).toEqual([
+      { index: 0, type: 'del', lineStart: 2, lineEnd: 2, edge: 'before', removed: ['gone'], added: [] }
+    ])
+  })
+
+  it('anchors a trailing deletion (EOF) after the last remaining line', () => {
+    const diff = `@@ -1,2 +1,1 @@\n ctx1\n-gone`
+    const changes = computeGutterChanges(diff)
+    expect(changes).toEqual([
+      { index: 0, type: 'del', lineStart: 1, lineEnd: 1, edge: 'after', removed: ['gone'], added: [] }
+    ])
+  })
+
+  it('returns nothing for an unchanged file', () => {
+    expect(computeGutterChanges('')).toEqual([])
+  })
+})
+
+describe('gutterMarksByLine', () => {
+  it('maps every line of a multi-line change to the same change object', () => {
+    const changes = computeGutterChanges(`@@ -1,1 +1,3 @@\n ctx\n+new1\n+new2`)
+    const map = gutterMarksByLine(changes)
+    expect(map.get(2)).toBe(changes[0])
+    expect(map.get(3)).toBe(changes[0])
+    expect(map.has(1)).toBe(false)
   })
 })

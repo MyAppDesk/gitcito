@@ -1209,6 +1209,25 @@ export const shots = [
     }
   },
   {
+    // File view's change gutter (colored bars next to edited lines) plus the
+    // minimap toggle, opened on the same modified file the word-diff shot uses.
+    out: 'change-gutter',
+    repos: ['word-diff'],
+    themes: ['light'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['word-diff']
+      await page.evaluate(() => {
+        window.__shot.settings.getState().update((s) => ({ ...s, showMinimap: true }))
+      })
+      await page.evaluate((p) => {
+        window.__shot.ui.getState().setFileView({ repoPath: p, file: 'config.ts', source: { type: 'wip', staged: false, untracked: false }, mode: 'file' })
+      }, repo)
+      await page.waitForTimeout(500)
+      await page.locator('.code-gutter.mod').first().click()
+      await page.waitForTimeout(400)
+    }
+  },
+  {
     // Local vault — OS-keychain-encrypted secrets, per-repo + global.
     out: 'vault',
     repos: ['secrets'],

@@ -46,6 +46,16 @@ Schieberegler, den du zwischen Vorher und Nachher ziehst.
 
 ![Bild-Diff](../../screenshots/image-diff.webp)
 
+## Änderungsrand & Minimap
+
+Die **Dateiansicht** einer Arbeitsverzeichnis-Datei — gestaged oder nicht, verfolgt oder brandneu — trägt neben jeder seit HEAD (oder dem Index, bei gestagten Dateien) geänderten Zeile einen farbigen Balken: Grün für eine Einfügung, Blau für eine Änderung, ein kleiner roter Keil dort, wo Zeilen ohne Ersatz entfernt wurden. Klick auf einen Balken zeigt diese Änderung, ohne die Datei zu verlassen — das Popup zeigt die entfernten und hinzugefügten Zeilen, mit Weiter/Zurück, um jede Änderung der Datei durchzugehen.
+
+![Änderungsrand mit geöffnetem Hunk-Popup, Minimap rechts](../../screenshots/change-gutter.webp)
+
+Die standardmäßig deaktivierte **Minimap** fügt am rechten Rand eine verkleinerte Übersicht der gesamten Datei hinzu — klicken oder ziehen, um darin zu springen, wie es ein Scrollbalken täte, wenn er auch die Form der Datei zeigen könnte. Beide sind pro Maschine umschaltbar unter **Einstellungen → Allgemein → Dateianzeige**.
+
+Keines der beiden liest Historie: Wechsle zu Diff, Blame oder einem älteren Commit, und der Änderungsrand verschwindet — diese Ansichten zeigen jede Änderung bereits direkt.
+
 ## Alles in der Vorschau
 
 Der Modus **Vorschau** rendert die Datei, statt ihren Quelltext zu zeigen:

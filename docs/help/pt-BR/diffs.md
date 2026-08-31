@@ -44,6 +44,16 @@ arrastar entre o antes e o depois.
 
 ![Diff de imagem](../../screenshots/image-diff.webp)
 
+## Barra de alterações e minimapa
+
+A **visualização de arquivo** de um arquivo da árvore de trabalho — staged ou não, rastreado ou totalmente novo — carrega uma barra colorida ao lado de cada linha alterada desde o HEAD (ou o índice, para arquivos staged): verde para uma inserção, azul para uma modificação, uma pequena cunha vermelha onde linhas foram removidas sem substituição. Clique em uma barra para ver essa alteração sem sair do arquivo — o popup mostra as linhas removidas e adicionadas, com próximo/anterior para percorrer todas as alterações do arquivo.
+
+![Barra de alterações com um popup de hunk aberto, minimapa à direita](../../screenshots/change-gutter.webp)
+
+O **minimapa**, desativado por padrão, adiciona uma visão geral em escala do arquivo inteiro na borda direita — clique ou arraste para navegar, como faria uma barra de rolagem se também mostrasse a forma do arquivo. Ambos são configurações por máquina em **Configurações → Geral → Visualizador de arquivos**.
+
+Nenhum dos dois lê o histórico: mude para Diff, Blame ou um commit mais antigo e a barra desaparece — essas visualizações já mostram cada alteração diretamente.
+
 ## Pré-visualize qualquer coisa
 
 O modo **Pré-visualização** renderiza o arquivo em vez de mostrar o código-fonte

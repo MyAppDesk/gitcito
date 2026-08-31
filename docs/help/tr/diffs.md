@@ -45,6 +45,16 @@ sonrası arasında sürükleyebileceğiniz bir kaydırma tutamağı.
 
 ![Görsel diff'i](../../screenshots/image-diff.webp)
 
+## Değişiklik kenar çubuğu ve küçük harita
+
+Bir çalışma ağacı dosyasının **Dosya görünümü** — stage edilmiş olsun ya da olmasın, izlenen ya da yepyeni olsun — HEAD'ten (stage edilmiş dosyalarda indeksten) bu yana değişen her satırın yanında renkli bir çubuk taşır: ekleme için yeşil, değişiklik için mavi, değiştirilmeden silinen satırlarda küçük kırmızı bir kama. Bir çubuğa tıklamak, dosyadan çıkmadan o değişikliği görmenizi sağlar — açılan pencerede silinen ve eklenen satırlar, dosyadaki tüm değişiklikler arasında gezinmek için ileri/geri düğmeleriyle birlikte gösterilir.
+
+![Bir hunk penceresi açık değişiklik kenar çubuğu, sağda küçük harita](../../screenshots/change-gutter.webp)
+
+Varsayılan olarak kapalı olan **küçük harita**, sağ kenara tüm dosyanın küçültülmüş bir genel görünümünü ekler — bir kaydırma çubuğu dosyanın şeklini de gösterebilseydi yapacağı gibi, atlamak için tıklayın veya sürükleyin. Her ikisi de **Ayarlar → Genel → Dosya görüntüleyici** altında makineye özel ayarlardır.
+
+İkisi de geçmişi okumaz: Diff, Blame veya daha eski bir commit'e geçtiğinizde kenar çubuğu kaybolur — bu görünümler zaten her değişikliği doğrudan gösterir.
+
 ## Her şeyi önizleyin
 
 **Önizleme** modu dosyanın kaynağını göstermek yerine dosyayı işler: Markdown,

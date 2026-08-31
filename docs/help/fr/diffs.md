@@ -46,6 +46,16 @@ poignée à faire glisser entre l'avant et l'après.
 
 ![Diff d'image](../../screenshots/image-diff.webp)
 
+## Marge des modifications et mini-carte
+
+La **vue Fichier** d'un fichier de l'arbre de travail — indexé ou non, suivi ou tout nouveau — porte une barre colorée à côté de chaque ligne modifiée depuis HEAD (ou l'index, pour les fichiers indexés) : vert pour un ajout, bleu pour une modification, un petit coin rouge là où des lignes ont été supprimées sans remplacement. Cliquez sur une barre pour voir cette modification sans quitter le fichier — la popup affiche les lignes supprimées et ajoutées, avec suivant/précédent pour parcourir toutes les modifications du fichier.
+
+![Marge des modifications avec une popup ouverte, mini-carte à droite](../../screenshots/change-gutter.webp)
+
+La **mini-carte**, désactivée par défaut, ajoute un aperçu réduit de tout le fichier sur le bord droit — cliquez ou faites-la glisser pour naviguer, comme le ferait une barre de défilement si elle pouvait aussi montrer la forme du fichier. Les deux sont des réglages par machine sous **Réglages → Général → Visionneuse de fichiers**.
+
+Aucune des deux ne lit l'historique : passez à Diff, Blame ou à un commit plus ancien, et la marge disparaît — ces vues affichent déjà chaque modification directement.
+
 ## Prévisualiser n'importe quoi
 
 Le mode **Aperçu** rend le fichier au lieu d'en montrer la source : Markdown,

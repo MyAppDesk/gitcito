@@ -59,7 +59,8 @@ import {
   SlidersHorizontal,
   SquarePen,
   ToggleLeft,
-  Keyboard
+  Keyboard,
+  Map as MapIcon
 } from 'lucide-react'
 import hljs from 'highlight.js'
 import { useSettingsStore } from '../stores/settings'
@@ -2612,6 +2613,43 @@ function GeneralPage(): React.JSX.Element {
       </h4>
       <p className="settings-hint">{t('difftool.intro')}</p>
       <DiffToolCard />
+
+      <h4 className="settings-section-title">
+        <MapIcon size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />
+        {t('settings.fileViewer')}
+      </h4>
+      <p className="settings-hint">{t('settings.fileViewerIntro')}</p>
+      <div className="settings-toggle-list">
+        <label className="settings-toggle-card">
+          <input
+            type="checkbox"
+            checked={settings.showChangeGutter}
+            onChange={(e) => update((s) => ({ ...s, showChangeGutter: e.target.checked }))}
+          />
+          <span className="settings-toggle-control" aria-hidden="true">
+            <span className="settings-toggle-thumb" />
+          </span>
+          <span className="settings-toggle-copy">
+            <strong>{t('settings.showChangeGutter')}</strong>
+            <span className="settings-hint">{t('settings.showChangeGutterHint')}</span>
+          </span>
+        </label>
+
+        <label className="settings-toggle-card">
+          <input
+            type="checkbox"
+            checked={settings.showMinimap}
+            onChange={(e) => update((s) => ({ ...s, showMinimap: e.target.checked }))}
+          />
+          <span className="settings-toggle-control" aria-hidden="true">
+            <span className="settings-toggle-thumb" />
+          </span>
+          <span className="settings-toggle-copy">
+            <strong>{t('settings.showMinimap')}</strong>
+            <span className="settings-hint">{t('settings.showMinimapHint')}</span>
+          </span>
+        </label>
+      </div>
 
       <h4 className="settings-section-title">
         <SquarePen size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />

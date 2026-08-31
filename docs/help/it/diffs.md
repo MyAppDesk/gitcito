@@ -46,6 +46,16 @@ maniglia da trascinare fra il prima e il dopo.
 
 ![Diff di immagini](../../screenshots/image-diff.webp)
 
+## Margine delle modifiche e minimappa
+
+La **vista File** di un file dell'albero di lavoro — in staging o no, tracciato o nuovissimo — porta una barra colorata accanto a ogni riga modificata rispetto a HEAD (o all'indice, per i file in staging): verde per un inserimento, blu per una modifica, un piccolo cuneo rosso dove righe sono state rimosse senza sostituzione. Clicca una barra per vedere quella modifica senza lasciare il file — il popup mostra le righe rimosse e aggiunte, con avanti/indietro per scorrere tutte le modifiche del file.
+
+![Margine delle modifiche con un popup aperto, minimappa a destra](../../screenshots/change-gutter.webp)
+
+La **minimappa**, disattivata per impostazione predefinita, aggiunge una panoramica in scala di tutto il file sul bordo destro — clicca o trascinala per navigare, come farebbe una barra di scorrimento se potesse anche mostrarti la forma del file. Entrambe sono impostazioni per macchina sotto **Impostazioni → Generali → Visualizzatore file**.
+
+Nessuna delle due legge la cronologia: passa a Diff, Blame o a un commit più vecchio e il margine scompare — quelle viste mostrano già ogni modifica direttamente.
+
 ## Anteprima di qualsiasi cosa
 
 La modalità **Anteprima** renderizza il file invece di mostrarne il sorgente:

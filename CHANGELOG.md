@@ -1,5 +1,13 @@
 
 
+## [4.6.0](https://github.com/MyAppDesk/gitcito/compare/v4.5.0...v4.6.0) (2026-09-01)
+
+
+### Bug Fixes
+
+* make stage headers clickable to toggle collapse state ([2814eba](https://github.com/MyAppDesk/gitcito/commit/2814eba96ea4ea0635b6739b04f97dbbe030f589))
+* update change gutter logic for wip and tree sources ([cd93d96](https://github.com/MyAppDesk/gitcito/commit/cd93d9613db3ee383ae5bc22c684cc70124caeff))
+
 ## [4.5.0](https://github.com/MyAppDesk/gitcito/compare/v4.4.0...v4.5.0) (2026-09-01)
 
 

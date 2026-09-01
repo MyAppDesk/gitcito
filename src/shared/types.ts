@@ -3260,7 +3260,7 @@ export function defaultSettings(): AppSettings {
     localCiEnabled: false,
     maskSecrets: true,
     showChangeGutter: true,
-    showMinimap: false,
+    showMinimap: true,
     enableLaunchJson: true,
     shortcuts: {},
     largeFileKb: 5120,

@@ -242,14 +242,15 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
   const maskOn = fileIsSecret && maskSecretsSetting && !revealSecrets
   const maybeMask = (l: string): string => (maskOn ? maskSecretLine(l) : l)
 
-  // ─── Change gutter (File view, working-tree files only) + minimap ───
+  // ─── Change gutter (File view, on-disk files: wip and tree) + minimap ───
   const showChangeGutterSetting = useSettingsStore((s) => s.settings.showChangeGutter)
   const showMinimapSetting = useSettingsStore((s) => s.settings.showMinimap)
   const [gutterChanges, setGutterChanges] = useState<GutterChange[]>([])
   const [openChange, setOpenChange] = useState<{ index: number; rect: DOMRect } | null>(null)
   const gutterByLine = useMemo(() => gutterMarksByLine(gutterChanges), [gutterChanges])
 
-  const gutterWanted = showChangeGutterSetting && source.type === 'wip' && mode === 'file' && !editing
+  const gutterWanted =
+    showChangeGutterSetting && (source.type === 'wip' || source.type === 'tree') && mode === 'file' && !editing
 
   useEffect(() => {
     if (!gutterWanted) {
@@ -257,8 +258,9 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
       return
     }
     let cancelled = false
+    const [staged, untracked] = source.type === 'wip' ? [source.staged, source.untracked] : [false, false]
     gitApi
-      .diffFile(repoPath, file, source.staged, source.untracked, false)
+      .diffFile(repoPath, file, staged, untracked, false)
       .then((diff) => {
         if (!cancelled) setGutterChanges(computeGutterChanges(diff))
       })

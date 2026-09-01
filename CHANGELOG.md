@@ -1,5 +1,12 @@
 
 
+## [4.5.0](https://github.com/MyAppDesk/gitcito/compare/v4.4.0...v4.5.0) (2026-09-01)
+
+
+### Features
+
+* add functionality to rename running Android emulators ([b4bcd5d](https://github.com/MyAppDesk/gitcito/commit/b4bcd5d58a2eee0b9ada247966d18a0b8ea11303))
+
 ## [4.4.0](https://github.com/MyAppDesk/gitcito/compare/v4.3.1...v4.4.0) (2026-08-31)
 
 

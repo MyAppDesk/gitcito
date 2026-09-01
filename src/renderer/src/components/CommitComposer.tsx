@@ -856,11 +856,13 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
       <div className={`composer-lists${splitDragging ? ' dragging' : ''}`}>
         {conflicted.length > 0 && (
           <div className={`stage-section conflict-section${layout.composerConflictedCollapsed ? ' collapsed' : ''}`}>
-            <div className="stage-header conflict-header">
+            <div
+              className="stage-header conflict-header"
+              onClick={() => setLayout({ composerConflictedCollapsed: !layout.composerConflictedCollapsed })}
+            >
               <button
                 className="stage-collapse"
                 title={layout.composerConflictedCollapsed ? t('composer.expand') : t('composer.collapse')}
-                onClick={() => setLayout({ composerConflictedCollapsed: !layout.composerConflictedCollapsed })}
               >
                 <ChevronDown size={13} className={`chevron${layout.composerConflictedCollapsed ? ' collapsed' : ''}`} />
               </button>
@@ -946,17 +948,19 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
           className={`stage-section${layout.composerUnstagedCollapsed ? ' collapsed' : ''}`}
           style={unstagedStyle}
         >
-          <div className="stage-header">
+          <div
+            className="stage-header"
+            onClick={() => setLayout({ composerUnstagedCollapsed: !layout.composerUnstagedCollapsed })}
+          >
             <button
               className="stage-collapse"
               title={layout.composerUnstagedCollapsed ? t('composer.expand') : t('composer.collapse')}
-              onClick={() => setLayout({ composerUnstagedCollapsed: !layout.composerUnstagedCollapsed })}
             >
               <ChevronDown size={13} className={`chevron${layout.composerUnstagedCollapsed ? ' collapsed' : ''}`} />
             </button>
             <span>{t('composer.unstagedFiles')}</span>
             <span className="sb-count">{active ? `${fUnstaged.length}/${unstaged.length}` : unstaged.length}</span>
-            <div className="stage-header-actions">
+            <div className="stage-header-actions" onClick={(e) => e.stopPropagation()}>
               {aiEnabled && (
                 <motion.button
                   className="btn ai-stage-btn"
@@ -1028,11 +1032,13 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
           className={`stage-section${layout.composerStagedCollapsed ? ' collapsed' : ''}`}
           style={stagedStyle}
         >
-          <div className="stage-header">
+          <div
+            className="stage-header"
+            onClick={() => setLayout({ composerStagedCollapsed: !layout.composerStagedCollapsed })}
+          >
             <button
               className="stage-collapse"
               title={layout.composerStagedCollapsed ? t('composer.expand') : t('composer.collapse')}
-              onClick={() => setLayout({ composerStagedCollapsed: !layout.composerStagedCollapsed })}
             >
               <ChevronDown size={13} className={`chevron${layout.composerStagedCollapsed ? ' collapsed' : ''}`} />
             </button>
@@ -1041,7 +1047,8 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
             <button
               className="btn ghost tiny"
               disabled={staged.length === 0}
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation()
                 if (selectedCount('staged') > 1) {
                   void repoActions.unstage(path, [...selection.paths])
                   setSelection({ list: 'staged', paths: new Set() })

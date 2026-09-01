@@ -3612,6 +3612,10 @@ body.col-resizing .node-ava {
   color: var(--text-2);
 }
 
+.stage-header {
+  cursor: pointer;
+}
+
 .stage-header .btn {
   margin-inline-start: auto;
 }

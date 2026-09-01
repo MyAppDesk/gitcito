@@ -264,6 +264,30 @@ export function mergeDevices(lists: RunDevice[][]): RunDevice[] {
   )
 }
 
+/**
+ * `adb`/`flutter devices` name a running Android emulator after its generic
+ * hardware model (e.g. "sdk gphone64 arm64"), not the AVD's own name — so a
+ * booted "Pixel 9a" never key-matches its cold `parseAvds` entry and shows up
+ * twice: once correctly (running, under the model name) and once as a stale
+ * "available" duplicate under the recognisable name, which is the one a
+ * picker's user actually reaches for. `adb -s <serial> emu avd name` gives
+ * the real AVD id back, letting us rename the running entry so it collides
+ * into the AVD's slot instead of sitting beside it.
+ */
+async function emulatorAvdName(adb: string, serial: string): Promise<string | null> {
+  const out = await run(adb, ['-s', serial, 'emu', 'avd', 'name'])
+  const name = out?.split('\n')[0]?.trim()
+  return name || null
+}
+
+export function renameRunningEmulators(devices: RunDevice[], names: Map<string, string>): RunDevice[] {
+  if (names.size === 0) return devices
+  return devices.map((d) => {
+    const avdId = names.get(d.id)
+    return avdId ? { ...d, name: avdId.replace(/_/g, ' ') } : d
+  })
+}
+
 // ─── Collection ──────────────────────────────────────────────────────────────
 
 /**
@@ -290,11 +314,19 @@ export async function listRunDevices(repoPath: string): Promise<RunDeviceSnapsho
   if (adbOut === null) missing.push('adb')
   if (avds === null) missing.push('emulator')
 
+  const adbDevices = adbOut ? parseAdbDevices(adbOut) : []
+  const emulatorSerials = adbDevices.filter((d) => d.platform === 'android' && d.id.startsWith('emulator-')).map((d) => d.id)
+  const avdNames = new Map<string, string>()
+  if (emulatorSerials.length > 0) {
+    const pairs = await Promise.all(emulatorSerials.map(async (id) => [id, await emulatorAvdName(adb, id)] as const))
+    for (const [id, name] of pairs) if (name) avdNames.set(id, name)
+  }
+
   const devices = mergeDevices([
-    flutterDevices ? parseFlutterDevices(flutterDevices) : [],
+    flutterDevices ? renameRunningEmulators(parseFlutterDevices(flutterDevices), avdNames) : [],
     flutterEmulators ? parseFlutterEmulators(flutterEmulators) : [],
     simctl ? parseSimctl(simctl) : [],
-    adbOut ? parseAdbDevices(adbOut) : [],
+    renameRunningEmulators(adbDevices, avdNames),
     avds ? parseAvds(avds) : []
   ])
   return { devices, missing }

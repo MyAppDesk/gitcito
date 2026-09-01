@@ -5,7 +5,8 @@ import {
   parseSimctl,
   parseAdbDevices,
   parseAvds,
-  mergeDevices
+  mergeDevices,
+  renameRunningEmulators
 } from '../src/main/devices'
 
 // Real-shaped output from each SDK tool. These formats are the only contract
@@ -147,6 +148,20 @@ describe('run devices: merging the sources', () => {
     expect(merged[0]).toMatchObject({ name: 'iPhone 16', source: 'flutter' })
     // Running first, so the list opens on what can be launched immediately.
     expect(merged.map((d) => d.running)).toEqual([true, false])
+  })
+
+  it('renames a running emulator to its real AVD name so it collides with the cold AVD entry', () => {
+    // `adb devices -l` names it after the hardware model; `emulator -list-avds`
+    // names it after the AVD. Without the rename these are two devices.
+    const adbOut = `List of devices attached
+emulator-5554          device product:sdk_gphone64_arm64 model:sdk_gphone64_arm64 device:emu64a
+`
+    const avdOut = `Pixel_9a\n`
+    const running = renameRunningEmulators(parseAdbDevices(adbOut), new Map([['emulator-5554', 'Pixel_9a']]))
+    const merged = mergeDevices([running, parseAvds(avdOut)])
+
+    expect(merged).toHaveLength(1)
+    expect(merged[0]).toMatchObject({ id: 'emulator-5554', name: 'Pixel 9a', running: true })
   })
 
   it('sorts by platform once running-ness ties', () => {

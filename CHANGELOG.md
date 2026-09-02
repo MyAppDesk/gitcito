@@ -1,5 +1,12 @@
 
 
+## [4.7.0](https://github.com/MyAppDesk/gitcito/compare/v4.6.1...v4.7.0) (2026-09-02)
+
+
+### Features
+
+* add functionality to handle remotes in dialogs ([3e1721c](https://github.com/MyAppDesk/gitcito/commit/3e1721c2ad109661254ed3d853c210c4238f4bee))
+
 ## [4.6.1](https://github.com/MyAppDesk/gitcito/compare/v4.6.0...v4.6.1) (2026-09-02)
 
 

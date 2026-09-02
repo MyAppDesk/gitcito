@@ -736,9 +736,32 @@ function spawnSession(
     p.onExit(({ exitCode }) => sink.exit(exitCode))
     return {
       pid: p.pid,
-      write: (d) => p.write(d),
-      resize: (c, r) => p.resize(c, r),
-      kill: () => p.kill(),
+      write: (d) => {
+        try {
+          p.write(d)
+        } catch {
+          /* session dying or already dead */
+        }
+      },
+      resize: (c, r) => {
+        // Sessions stay in the map for EXITED_GRACE after the program dies so
+        // a late-mounting terminal can still read the backlog. xterm keeps
+        // firing resize in that window (and after sleep/wake). node-pty's
+        // ioctl then throws synchronously and would crash main.
+        if (c <= 0 || r <= 0) return
+        try {
+          p.resize(c, r)
+        } catch {
+          /* ignore — fd already gone */
+        }
+      },
+      kill: () => {
+        try {
+          p.kill()
+        } catch {
+          /* already gone */
+        }
+      },
       signal: (action) => {
         if (process.platform === 'win32' || !p.pid) return
         try {

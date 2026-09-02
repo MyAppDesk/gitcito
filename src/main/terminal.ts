@@ -58,18 +58,31 @@ function createPty(wc: WebContents, id: number, cwd: string, cols: number, rows:
       if (!wc.isDestroyed()) wc.send(`term:exit:${id}`)
     })
     return {
-      write: (d) => p.write(d),
+      write: (d) => {
+        try {
+          p.write(d)
+        } catch {
+          /* session dying or already dead */
+        }
+      },
       resize: (c, r) => {
         // The pty's fd can go invalid between the exit event and this call
         // (or after a sleep/wake cycle) — node-pty's resize throws ENOTTY
         // synchronously in that case, which would otherwise crash main.
+        if (c <= 0 || r <= 0) return
         try {
           p.resize(c, r)
         } catch {
           // ignore — the session is dying or already dead
         }
       },
-      kill: () => p.kill(),
+      kill: () => {
+        try {
+          p.kill()
+        } catch {
+          /* already gone */
+        }
+      },
       procName: () => {
         try {
           return p.process

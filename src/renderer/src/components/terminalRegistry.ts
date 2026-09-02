@@ -107,7 +107,9 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
       )
     )
     term.onData((data) => window.api.launch.input(launchId!, data))
-    term.onResize(({ cols, rows }) => window.api.launch.resize(launchId!, cols, rows))
+    term.onResize(({ cols, rows }) => {
+      if (cols > 0 && rows > 0) window.api.launch.resize(launchId!, cols, rows)
+    })
     // The pty was spawned before this terminal existed — ask for what it has
     // already printed, or a fast program's whole banner is lost.
     window.api.launch.attach(launchId!)
@@ -124,7 +126,9 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
       )
     )
     term.onData((data) => window.api.term.input(id, data))
-    term.onResize(({ cols, rows }) => window.api.term.resize(id, cols, rows))
+    term.onResize(({ cols, rows }) => {
+      if (cols > 0 && rows > 0) window.api.term.resize(id, cols, rows)
+    })
 
     // Poll the foreground process name (VSCode-style auto title).
     const poll = (): void => {

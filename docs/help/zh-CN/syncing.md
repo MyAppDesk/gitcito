@@ -3,7 +3,7 @@ title: 获取、拉取与推送
 category: 同步与多仓库
 order: 50
 summary: 保持同步，并给那些会咬人的操作加上防护。
-keywords: fetch 获取 pull 拉取 push 推送 force 强制推送 auto-fetch 自动获取 prune 修剪 remotes 远程 upstream 上游 protected branch 受保护分支 multiple remotes 多个远程 fork 复刻 mirror 镜像 push tags 标签 all
+keywords: fetch 获取 pull 拉取 push 推送 force 强制推送 auto-fetch 自动获取 prune 修剪 remotes 远程 upstream 上游 protected branch 受保护分支 multiple remotes 多个远程 fork 复刻 mirror 镜像 push tags 标签 all 没有远程 添加远程
 ---
 
 # 获取、拉取与推送
@@ -34,6 +34,15 @@ Gitcito 读取这个错误，把修复做成一个按钮，并根据远程是否
 强制推送一律使用 `--force-with-lease`——那个安全的变体，只要远程在你上次查看之后动过就拒绝执行。对**受保护分支**做强制推送会要求确认（名单在仓库设置的齿轮里）。
 
 ![受保护分支在强制推送前要求的确认](../../screenshots/force-push-guard.webp)
+
+### 没有远程
+
+推送、拉取和获取都需要一个去处。一个远程都没有的仓库 —— 刚 `git init` 的，或者
+origin 被删掉的克隆 —— 以前会让这些按钮什么都不做，或者把空获取当成成功。现在
+它们打开 **添加远程**，带一句警告，让你粘贴 URL 或在托管上创建仓库。添加完会
+把你开始的动作做完：推送会发布当前分支，拉取会先获取再拉取，获取只获取。
+
+后台自动获取在没有可获取的内容时保持安静。它不会按计时器弹出对话框。
 
 ### 不止一个远程
 
@@ -93,5 +102,7 @@ Gitcito 不需要：在侧边栏或[提交图](graph.md)的分支徽章上右键
 ## 远程
 
 在侧边栏里添加、编辑、删除远程，也可以单独获取某一个。分支行带有按远程划分的存在徽标，所以一眼就能看出哪些远程有这个分支的副本。
+
+**没有远程时获取、拉取或推送**会打开同一个「添加远程」对话框，而不是空跑成功。见[获取、拉取与推送](syncing.md)。
 
 **另请参阅：** [任务中心](mission-control.md) · [托管与拉取请求](hosting.md)

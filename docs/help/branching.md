@@ -135,4 +135,11 @@ was just fetched, so a remote that rejected the fetch (offline, bad
 credentials) is compared against the last known tip. It says nothing about
 whether your commits are *good* — only that they exist here and not there.
 
+## Remotes
+
+The sidebar's Remotes section is where remotes are added, edited, fetched and
+removed. Fetch, pull or push on a repository that has none opens that same
+**Add remote** dialog — paste a URL or create the repo on the host — instead of
+doing nothing. See [fetching, pulling & pushing](syncing.md).
+
 **See also:** [Merging & rebasing](merging.md) · [Worktrees](worktrees.md)

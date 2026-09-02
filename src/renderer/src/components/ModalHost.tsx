@@ -671,6 +671,22 @@ function OwnerSelect({
   )
 }
 
+/** Add the remote, then finish the fetch/pull/push that opened this dialog. */
+function finishAddRemote(
+  spec: Extract<ModalSpec, { kind: 'addRemote' }>,
+  name: string,
+  url: string,
+  pushUrl?: string
+): void {
+  if (spec.resume === 'push') {
+    void repoActions.addRemoteAndPush(spec.path, name, url, pushUrl)
+    return
+  }
+  void repoActions.addRemote(spec.path, name, url, pushUrl).then((ok) => {
+    if (ok && spec.resume === 'pull') void repoActions.pull(spec.path, 'default')
+  })
+}
+
 /** Create-a-new-repo form for a host, with a fallback to attach an existing repo. */
 function ProviderCreateForm({
   host,
@@ -732,7 +748,7 @@ function ProviderCreateForm({
   const attach = (): void => {
     if (!canAttach) return
     closeModal()
-    void repoActions.addRemote(spec.path, remoteName.trim(), existingUrl.trim())
+    finishAddRemote(spec, remoteName.trim(), existingUrl.trim())
   }
 
   const remoteNameField = (
@@ -834,7 +850,7 @@ function ProviderCreateForm({
               {t('common.cancel')}
             </button>
             <button className="btn primary" disabled={!canAttach} onClick={attach} type="button">
-              Add Remote
+              {t('modal.addRemote')}
             </button>
           </div>
         </>
@@ -860,14 +876,15 @@ function AddRemoteModal({ spec }: { spec: Extract<ModalSpec, { kind: 'addRemote'
   const submitUrl = (): void => {
     if (!urlValid) return
     closeModal()
-    void repoActions.addRemote(spec.path, name.trim(), pullUrl.trim(), pushUrl.trim() || undefined)
+    finishAddRemote(spec, name.trim(), pullUrl.trim(), pushUrl.trim() || undefined)
   }
 
   return (
     <>
       <h3 className="modal-title-row">
-        <Cloud size={17} /> Add Remote
+        <Cloud size={17} /> {t('modal.addRemote')}
       </h3>
+      {spec.resume && <p className="pr-warn">{t('confirm.noRemote.message')}</p>}
 
       <div className="remote-tabs">
         {REMOTE_PROVIDERS.map((p) => {
@@ -932,7 +949,7 @@ function AddRemoteModal({ spec }: { spec: Extract<ModalSpec, { kind: 'addRemote'
               {t('common.cancel')}
             </button>
             <button className="btn primary" disabled={!urlValid} onClick={submitUrl} type="button">
-              Add Remote
+              {t('modal.addRemote')}
             </button>
           </div>
         </>

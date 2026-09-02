@@ -3,7 +3,7 @@ title: Traer, hacer pull y hacer push
 category: Sincronizar y muchos repos
 order: 50
 summary: Mantenerte al día, con guardias en las operaciones que muerden.
-keywords: fetch traer pull push publicar force forzar auto-fetch prune podar remotos upstream rama protegida varios remotos fork mirror espejo push tags etiquetas all
+keywords: fetch traer pull push publicar force forzar auto-fetch prune podar remotos upstream rama protegida varios remotos fork mirror espejo push tags etiquetas all sin remoto añadir remoto
 ---
 
 # Traer, hacer pull y hacer push
@@ -44,6 +44,18 @@ sobre una **rama protegida** pide confirmación (la lista está en el engranaje 
 ajustes del repositorio).
 
 ![La confirmación que exige una rama protegida antes de un force push](../../screenshots/force-push-guard.webp)
+
+### Sin remotos
+
+Push, pull y fetch necesitan un destino. Un repositorio sin ninguno — un
+`git init` recién hecho, un clon al que le quitaron origin — hacía que esos
+botones no hicieran nada, o que un fetch vacío contara como éxito. Ahora abren
+**Añadir remoto**, con un aviso, para que pegues una URL o crees el repo en el
+host. Añadirlo termina la acción que empezaste: un push publica la rama actual,
+un pull trae y luego hace pull, un fetch solo trae.
+
+El auto-fetch en segundo plano se queda callado cuando no hay nada que traer.
+No abre un diálogo a intervalos.
 
 ### Más de un remoto
 
@@ -127,5 +139,8 @@ exactamente en el commit al que apuntaba antes.
 Añade, edita, elimina y trae remotos individuales desde la barra lateral. Las
 filas de rama llevan insignias de presencia por remoto, así que ves de un vistazo
 qué remotos tienen una copia de una rama.
+
+**Fetch, pull o push sin remotos** abre ese mismo diálogo de Añadir remoto, en
+vez de completar en vacío. Véase [traer, hacer pull y hacer push](syncing.md).
 
 **Ver también:** [Centro de control](mission-control.md) · [Hosting y pull requests](hosting.md)

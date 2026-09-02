@@ -3,7 +3,7 @@ title: Gałęzie, zdalne repozytoria i panel boczny
 category: Gałęzie i operacje na historii
 order: 40
 summary: Wszystko, co robi lewy panel, oraz przypięte gałęzie.
-keywords: gałąź gałęzie utwórz przełącz zmień nazwę usuń zdalne przypięte panel boczny branch branches create checkout rename delete remote pinned sidebar presence
+keywords: gałąź gałęzie utwórz przełącz zmień nazwę usuń zdalne przypięte panel boczny branch branches create checkout rename delete remote pinned sidebar presence dodaj remote
 ---
 
 # Gałęzie, zdalne repozytoria i panel boczny
@@ -144,5 +144,12 @@ zapasowa zostaje dłużej.
 śledzącą, więc zdalne repozytorium, które odrzuciło pobranie (brak sieci, złe
 dane logowania), zostanie porównane z ostatnio znanym wierzchołkiem. Nie mówi
 nic o tym, czy Twoje commity są *dobre* — tylko że są tu, a nie tam.
+
+## Zdalne repozytoria
+
+Sekcja Zdalne w panelu bocznym to miejsce, gdzie dodaje się, edytuje, pobiera
+i usuwa remote’y. Fetch, pull lub push na repozytorium, które nie ma żadnego,
+otwiera to samo okno **Dodaj remote** — wklej URL albo utwórz repo na hoście —
+zamiast nic nie robić. Zobacz [fetch, pull i push](syncing.md).
 
 **Zobacz też:** [Merge i rebase](merging.md) · [Worktree](worktrees.md)

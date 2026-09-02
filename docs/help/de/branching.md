@@ -3,7 +3,7 @@ title: Branches, Remotes & die Seitenleiste
 category: Branches & Eingriffe
 order: 40
 summary: Alles, was die linke Seitenleiste kann, und angeheftete Branches.
-keywords: branch branches erstellen auschecken checkout umbenennen löschen remote angeheftet pinned seitenleiste sidebar presence
+keywords: branch branches erstellen auschecken checkout umbenennen löschen remote angeheftet pinned seitenleiste sidebar presence remote hinzufügen
 ---
 
 # Branches, Remotes & die Seitenleiste
@@ -147,5 +147,12 @@ schließt; der Backup-Branch überlebt das.
 Tracking-Ref. Ein Remote, das den Fetch abgelehnt hat (offline, falsche
 Zugangsdaten), wird also gegen den zuletzt bekannten Stand verglichen. Ob deine
 Commits *gut* sind, sagt er nicht — nur, dass es sie hier gibt und dort nicht.
+
+## Remotes
+
+In der Remotes-Sektion der Seitenleiste werden Remotes hinzugefügt, bearbeitet,
+geholt und entfernt. Fetch, Pull oder Push auf einem Repository ohne eines
+öffnet denselben Dialog **Remote hinzufügen** — URL einfügen oder das Repo auf
+dem Host anlegen — statt nichts zu tun. Siehe [Fetchen, Pullen und Pushen](syncing.md).
 
 **Siehe auch:** [Mergen & Rebasen](merging.md) · [Worktrees](worktrees.md)

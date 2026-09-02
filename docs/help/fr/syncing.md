@@ -3,7 +3,7 @@ title: Récupérer, tirer et pousser
 category: Synchronisation et multi-dépôts
 order: 50
 summary: Rester au pas, avec des garde-fous sur les opérations qui mordent.
-keywords: fetch récupérer pull tirer push pousser force forcé auto-fetch prune élaguer distants remotes amont upstream branche protégée protected branch plusieurs distants fork miroir mirror push tags all
+keywords: fetch récupérer pull tirer push pousser force forcé auto-fetch prune élaguer distants remotes amont upstream branche protégée protected branch plusieurs distants fork miroir mirror push tags all aucun distant ajouter un distant
 ---
 
 # Récupérer, tirer et pousser
@@ -44,6 +44,19 @@ refuse si le distant a bougé depuis votre dernier regard. Pousser en force une
 des réglages du dépôt).
 
 ![La confirmation qu'exige une branche protégée avant un push forcé](../../screenshots/force-push-guard.webp)
+
+### Aucun distant
+
+Push, pull et fetch ont besoin d'une destination. Un dépôt sans aucun — un
+`git init` tout frais, un clone dont l'origin a été retiré — faisait que ces
+boutons ne faisaient rien, ou qu'un fetch vide comptait pour un succès. Ils
+ouvrent maintenant **Ajouter un distant**, avec un avertissement, pour coller
+une URL ou créer le dépôt sur l'hôte. L'ajouter termine l'action commencée :
+un push publie la branche courante, un pull récupère puis tire, un fetch ne
+fait que récupérer.
+
+Le fetch automatique en arrière-plan reste silencieux s'il n'y a rien à
+récupérer. Il n'ouvre pas de dialogue à l'horloge.
 
 ### Plus d'un distant
 
@@ -129,5 +142,8 @@ depuis](range-diff.md) exactement au commit qu'elle désignait auparavant.
 Ajoutez, modifiez, supprimez et récupérez des distants individuels depuis la
 barre latérale. Les lignes de branche portent des badges de présence par distant :
 vous voyez donc d'un coup d'œil quels distants ont une copie d'une branche.
+
+**Fetch, pull ou push sans distants** ouvre ce même dialogue Ajouter un distant,
+au lieu de réussir dans le vide. Voir [récupérer, tirer et pousser](syncing.md).
 
 **Voir aussi :** [Centre de contrôle](mission-control.md) · [Hébergement et pull requests](hosting.md)

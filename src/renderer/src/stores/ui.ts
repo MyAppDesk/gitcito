@@ -81,6 +81,8 @@ export type ModalSpec =
       defaultName: string
       existingNames: string[]
       matchName?: string
+      /** Sync action that opened this — add remote, then finish that action. */
+      resume?: 'push' | 'pull' | 'fetch'
     }
   | {
       kind: 'editRemote'

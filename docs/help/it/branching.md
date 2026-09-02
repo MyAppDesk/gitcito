@@ -3,7 +3,7 @@ title: Branch, remote e barra laterale
 category: Branch e chirurgia
 order: 40
 summary: Tutto quello che fa la barra laterale sinistra, e i branch appuntati.
-keywords: branch ramo crea checkout rinomina elimina remote pinned appuntati sidebar presenza
+keywords: branch ramo crea checkout rinomina elimina remote pinned appuntati sidebar presenza aggiungi remoto
 ---
 
 # Branch, remote e barra laterale
@@ -141,5 +141,13 @@ backup dura più a lungo.
 appena recuperato, quindi un remoto che ha rifiutato il fetch (offline,
 credenziali errate) viene confrontato con l'ultima punta nota. Non dice se i tuoi
 commit sono *buoni*: solo che esistono qui e non lì.
+
+## Remote
+
+La sezione Remote della barra laterale è dove si aggiungono, modificano,
+recuperano e rimuovono i remote. Fetch, pull o push su un repository che non
+ne ha nessuno apre lo stesso dialogo **Aggiungi remoto** — incolla un URL o
+crea il repo sull'host — invece di non fare nulla. Vedi [fetch, pull e
+push](syncing.md).
 
 **Vedi anche:** [Merge e rebase](merging.md) · [Worktree](worktrees.md)

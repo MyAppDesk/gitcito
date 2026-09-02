@@ -3,7 +3,7 @@ title: Fetchen, pullen & pushen
 category: Synchroniseren & meerdere repo's
 order: 50
 summary: Gelijke tred houden, met bewakingen op de operaties die bijten.
-keywords: fetch pull push force auto-fetch prune remotes upstream beschermde branch meerdere remotes fork mirror push tags all
+keywords: fetch pull push force auto-fetch prune remotes upstream beschermde branch meerdere remotes fork mirror push tags all geen remote remote toevoegen
 ---
 
 # Fetchen, pullen & pushen
@@ -43,6 +43,19 @@ branch** met force pushen vraagt om bevestiging (de lijst staat in het tandwiel
 met repository-instellingen).
 
 ![De bevestiging die een beschermde branch eist vóór een force-push](../../screenshots/force-push-guard.webp)
+
+### Geen remotes
+
+Push, pull en fetch hebben ergens naartoe nodig. Een repository zonder
+enkele — een verse `git init`, een clone waarvan origin is weggehaald — liet
+die knoppen niets doen, of telde een lege fetch als succes. Ze openen nu
+**Remote toevoegen**, met een waarschuwing, zodat je een URL kunt plakken of
+de repo op de host kunt aanmaken. Toevoegen maakt de actie af waarmee je
+begon: een push publiceert de huidige branch, een pull haalt op en pullt, een
+fetch haalt alleen op.
+
+Achtergrond-auto-fetch blijft stil als er niets op te halen valt. Het opent
+geen dialoog op de klok.
 
 ### Meer dan één remote
 
@@ -124,5 +137,9 @@ vroeger naar wees.
 Voeg remotes toe, bewerk ze, verwijder ze en fetch ze afzonderlijk vanuit de
 zijbalk. Branchrijen dragen aanwezigheidsbadges per remote, zodat je in één
 oogopslag ziet welke remotes een kopie van een branch hebben.
+
+**Fetch, pull of push zonder remotes** opent datzelfde dialoogvenster Remote
+toevoegen, in plaats van in het luchtledige te slagen. Zie [fetchen, pullen
+en pushen](syncing.md).
 
 **Zie ook:** [Mission control](mission-control.md) · [Hosting & pull requests](hosting.md)

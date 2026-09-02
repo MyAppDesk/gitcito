@@ -3,7 +3,7 @@ title: Ramas, remotos y la barra lateral
 category: Ramas y cirugía
 order: 40
 summary: Todo lo que hace la barra lateral izquierda, y las ramas fijadas.
-keywords: rama ramas branch branches crear checkout renombrar borrar remoto fijada pinned barra lateral sidebar presencia
+keywords: rama ramas branch branches crear checkout renombrar borrar remoto fijada pinned barra lateral sidebar presencia añadir remoto
 ---
 
 # Ramas, remotos y la barra lateral
@@ -140,5 +140,12 @@ de respaldo dura más.
 recién obtenida, así que un remoto que rechazó el fetch (sin conexión,
 credenciales incorrectas) se compara con la última punta conocida. No dice nada
 sobre si tus commits son *buenos*: solo que existen aquí y no allí.
+
+## Remotos
+
+La sección Remotos de la barra lateral es donde se añaden, editan, traen y
+quitan. Fetch, pull o push en un repositorio que no tiene ninguno abre ese
+mismo diálogo **Añadir remoto** — pega una URL o crea el repo en el host — en
+vez de no hacer nada. Véase [traer, hacer pull y hacer push](syncing.md).
 
 **Ver también:** [Fusionar y rebasar](merging.md) · [Worktrees](worktrees.md)

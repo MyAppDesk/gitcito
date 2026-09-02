@@ -3,7 +3,7 @@ title: Fetch, pull i push
 category: Synchronizacja i wiele repozytoriów
 order: 50
 summary: Trzymanie kroku, z zabezpieczeniami na operacjach, które gryzą.
-keywords: fetch pull push force auto-fetch prune zdalne upstream chroniona gałąź wiele zdalnych fork mirror tagi remotes protected branch multiple remotes tags all
+keywords: fetch pull push force auto-fetch prune zdalne upstream chroniona gałąź wiele zdalnych fork mirror tagi remotes protected branch multiple remotes tags all bez remote dodaj remote
 ---
 
 # Fetch, pull i push
@@ -43,6 +43,17 @@ patrzyłeś. Push z force'em na **chronioną gałąź** prosi o potwierdzenie (l
 znajdziesz w kole zębatym ustawień repozytorium).
 
 ![Potwierdzenie, którego chroniona gałąź żąda przed force pushem](../../screenshots/force-push-guard.webp)
+
+### Brak remote’ów
+
+Push, pull i fetch potrzebują celu. Repozytorium bez żadnego — świeży
+`git init`, klon któremu usunięto origin — sprawiało, że te przyciski nic nie
+robiły, albo pusty fetch liczył się jako sukces. Teraz otwierają **Dodaj
+remote**, z ostrzeżeniem, żeby wkleić URL albo utworzyć repo na hoście.
+Dodanie kończy czynność, od której zacząłeś: push publikuje bieżącą gałąź,
+pull pobiera i robi pull, fetch tylko pobiera.
+
+Auto-fetch w tle milczy, gdy nie ma czego pobierać. Nie otwiera okna na zegar.
 
 ### Więcej niż jedno zdalne repozytorium
 
@@ -128,5 +139,8 @@ wskazywała.
 Dodawaj, edytuj, usuwaj i pobieraj poszczególne zdalne z panelu bocznego.
 Wiersze gałęzi noszą plakietki obecności na poszczególnych zdalnych, więc na
 pierwszy rzut oka widzisz, które z nich mają kopię danej gałęzi.
+
+**Fetch, pull lub push bez remote’ów** otwiera to samo okno Dodaj remote,
+zamiast kończyć w pustce. Zobacz [fetch, pull i push](syncing.md).
 
 **Zobacz też:** [Centrum dowodzenia](mission-control.md) · [Hosting i pull requesty](hosting.md)

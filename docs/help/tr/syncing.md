@@ -3,7 +3,7 @@ title: Fetch, pull ve push
 category: Eşitleme ve çoklu depo
 order: 50
 summary: Ayak uydurmak — ve canınızı yakan işlemlerin başına konmuş korumalar.
-keywords: fetch pull push force zorla otomatik fetch prune uzak depo upstream korumalı dal birden fazla uzak fork mirror etiket tags all
+keywords: fetch pull push force zorla otomatik fetch prune uzak depo upstream korumalı dal birden fazla uzak fork mirror etiket tags all uzak sunucu yok uzak sunucu ekle
 ---
 
 # Fetch, pull ve push
@@ -42,6 +42,18 @@ uzak depo hareket ettiyse reddeden güvenli varyant. **Korumalı bir dala** forc
 ile push etmek onay ister (liste, depo ayarları dişlisinde).
 
 ![Korumalı bir dalın force push öncesinde istediği onay](../../screenshots/force-push-guard.webp)
+
+### Uzak depo yok
+
+Push, pull ve fetch bir hedefe ihtiyaç duyar. Hiçbir uzak deposu olmayan bir
+depo — taze bir `git init`, origin'i silinmiş bir klon — bu düğmelerin hiçbir
+şey yapmamasına, ya da boş bir fetch'in başarı sayılmasına yol açardı. Şimdi
+**Uzak sunucu ekle** açılır, bir uyarıyla: bir URL yapıştırın veya depoyu
+host'ta oluşturun. Eklemek, başladığınız eylemi bitirir: push geçerli dalı
+yayımlar, pull fetch eder sonra pull eder, fetch yalnızca fetch eder.
+
+Arka plan otomatik fetch, çekilecek bir şey yokken sessiz kalır. Saate göre
+diyalog açmaz.
 
 ### Birden fazla uzak depo
 
@@ -124,5 +136,8 @@ adıyla anar ve satırı, tam olarak eskiden gösterdiği commit'te
 Kenar çubuğundan tek tek uzak depo ekleyin, düzenleyin, kaldırın ve fetch edin.
 Dal satırları uzak depo başına varlık rozetleri taşır; böylece hangi uzak
 depolarda bir dalın kopyası olduğunu bir bakışta görürsünüz.
+
+**Uzak deposu yokken fetch, pull veya push** aynı Uzak sunucu ekle penceresini
+açar; boşluğa başarıyla gitmez. Bkz. [fetch, pull ve push](syncing.md).
 
 **Ayrıca bakınız:** [Görev merkezi](mission-control.md) · [Hosting ve pull request'ler](hosting.md)

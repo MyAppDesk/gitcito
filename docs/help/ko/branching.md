@@ -3,7 +3,7 @@ title: 브랜치, 원격, 사이드바
 category: 브랜치와 수술
 order: 40
 summary: 왼쪽 사이드바가 하는 모든 일과 고정 브랜치.
-keywords: 브랜치 branch branches 생성 create 체크아웃 checkout 이름 변경 rename 삭제 delete 원격 remote 고정 pinned 사이드바 sidebar presence
+keywords: 브랜치 branch branches 생성 create 체크아웃 checkout 이름 변경 rename 삭제 delete 원격 remote 고정 pinned 사이드바 sidebar presence 원격 추가
 ---
 
 # 브랜치, 원격, 사이드바
@@ -130,5 +130,12 @@ Gitcito는 병합을 표시하지 않고, 해당 브랜치가 이미 체크아�
 **한계:** 이 대화상자는 방금 가져온 추적 ref와만 비교하므로, 페치를 거부한 원격
 (오프라인, 잘못된 자격 증명)은 마지막으로 알려진 끝과 비교됩니다. 커밋이 *좋은지*는
 말해 주지 않고, 여기에는 있고 저기에는 없다는 사실만 알려 줍니다.
+
+## 원격
+
+사이드바의 원격 칸에서 원격을 추가하고, 고치고, 가져오고, 지워요. 원격이 하나도
+없는 저장소에서 페치, 풀, 푸시를 하면 아무 일도 안 하는 대신 같은 **원격 추가**
+대화상자가 열려요. URL을 붙이거나 호스트에 저장소를 만드세요. [페치, 풀,
+푸시](syncing.md)를 보세요.
 
 **함께 보기:** [머지와 리베이스](merging.md) · [워크트리](worktrees.md)

@@ -12590,6 +12590,9 @@ mark.find-hit.active {
   color: var(--warn, #d29922);
   margin: 6px 0 0;
 }
+.modal-title-row + .pr-warn {
+  margin: 0 0 12px;
+}
 .pr-body {
   width: 100%;
   min-height: 130px;

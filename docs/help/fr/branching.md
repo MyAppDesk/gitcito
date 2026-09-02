@@ -3,7 +3,7 @@ title: Branches, distants et barre latérale
 category: Branches et chirurgie
 order: 40
 summary: Tout ce que fait la barre latérale gauche, et les branches épinglées.
-keywords: branche branch branches créer create extraire checkout renommer rename supprimer delete distant remote épinglée pinned barre latérale sidebar présence
+keywords: branche branch branches créer create extraire checkout renommer rename supprimer delete distant remote épinglée pinned barre latérale sidebar présence ajouter un distant
 ---
 
 # Branches, distants et barre latérale
@@ -151,5 +151,13 @@ qui vient d'être récupérée ; un distant qui a refusé le fetch (hors ligne,
 identifiants invalides) est donc comparé à sa dernière pointe connue. Il ne dit
 rien de la *qualité* de vos commits — seulement qu'ils existent ici et pas
 là-bas.
+
+## Distants
+
+La section Distants de la barre latérale est l'endroit où on ajoute, modifie,
+récupère et retire des distants. Fetch, pull ou push sur un dépôt qui n'en a
+aucun ouvre ce même dialogue **Ajouter un distant** — coller une URL ou créer
+le dépôt sur l'hôte — au lieu de ne rien faire. Voir [récupérer, tirer et
+pousser](syncing.md).
 
 **Voir aussi :** [Fusion et rebase](merging.md) · [Arbres de travail](worktrees.md)

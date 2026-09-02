@@ -3,7 +3,7 @@ title: ブランチ、リモート、サイドバー
 category: ブランチと手術
 order: 40
 summary: 左のサイドバーができることのすべてと、ピン留めしたブランチ。
-keywords: ブランチ branch branches 作成 create チェックアウト checkout 名前変更 rename 削除 delete リモート remote ピン留め pinned サイドバー sidebar 存在 presence
+keywords: ブランチ branch branches 作成 create チェックアウト checkout 名前変更 rename 削除 delete リモート remote ピン留め pinned サイドバー sidebar 存在 presence リモートを追加
 ---
 
 # ブランチ、リモート、サイドバー
@@ -130,5 +130,12 @@ keywords: ブランチ branch branches 作成 create チェックアウト check
 **制限:** このダイアログは取得したばかりの追跡refとしか比較しません。フェッチが失敗した
 リモート（オフライン、認証エラー）は、最後に判明していた先頭と比較されます。コミットが
 *良い*かどうかは何も言いません — ここにあって向こうにない、それだけです。
+
+## リモート
+
+サイドバーのリモート欄で、リモートの追加・編集・フェッチ・削除をします。ひとつも
+ないリポジトリでフェッチ、プル、プッシュすると、何もしない代わりに同じ **リモート
+を追加** ダイアログが開きます。URL を貼るか、ホスト上にリポジトリを作ってくださ
+い。[フェッチ、プル、プッシュ](syncing.md) を参照。
 
 **関連項目:** [マージとリベース](merging.md) · [ワークツリー](worktrees.md)

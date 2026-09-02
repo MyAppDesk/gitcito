@@ -229,6 +229,28 @@ function promptStashOverwrite(message: string, path: string, index: number, pop:
 }
 
 /**
+ * Push, pull or fetch with nowhere to go. Opens Add remote (banner + form)
+ * instead of a silent no-op or a raw git error. Returns true when the caller
+ * must stop — the modal was shown, or the repo is still loading remotes.
+ */
+function promptNoRemote(path: string, resume: 'push' | 'pull' | 'fetch'): boolean {
+  const repo = useRepoStore.getState().repos[path]
+  // Still reading remotes: empty means "not yet", not "has none". Stop the
+  // caller so a clone does not get the Add remote dialog mid-load.
+  if (repo?.loading) return true
+  if (repo?.remotes.length) return false
+  useUIStore.getState().openModal({
+    kind: 'addRemote',
+    path,
+    defaultName: 'origin',
+    existingNames: [],
+    matchName: path.split(/[/\\]/).filter(Boolean).pop(),
+    resume
+  })
+  return true
+}
+
+/**
  * A pull that fetched cleanly but had nothing to merge into: the branch tracks
  * nothing. Git answers with two CLI incantations and leaves the choice to the
  * reader; offer the right one as a button instead. The remote-tracking ref is
@@ -1575,7 +1597,9 @@ export const repoActions = {
       redo: () => gitApi.autosquash(path, base)
     }),
 
-  fetchAll: async (path: string) => {
+  fetchAll: async (path: string, opts?: { skipEmpty?: boolean }) => {
+    if (!opts?.skipEmpty && promptNoRemote(path, 'fetch')) return false
+    if (opts?.skipEmpty && !useRepoStore.getState().repos[path]?.remotes.length) return false
     const before = new Set((useRepoStore.getState().repos[path]?.commits ?? []).map((c) => c.hash))
     let forced: ForcedRefUpdate[] = []
     const ok = await useRepoStore.getState().run(
@@ -1686,6 +1710,7 @@ export const repoActions = {
   },
 
   pull: async (path: string, mode: PullMode) => {
+    if (promptNoRemote(path, 'pull')) return false
     const before = new Set((useRepoStore.getState().repos[path]?.commits ?? []).map((c) => c.hash))
     const ok = await useRepoStore.getState().run(path, interp(t('act.pulledMode'), { mode }), () => gitApi.pull(path, mode), {
       label: interp(t('undoLabel.pull'), { mode }),
@@ -2043,6 +2068,7 @@ export const repoActions = {
 
   /** Push `branch`, or the checked-out one when it is omitted. */
   push: async (path: string, force = false, protectedConfirmed = false, branch?: string): Promise<boolean> => {
+    if (promptNoRemote(path, 'push')) return false
     const repo = useRepoStore.getState().repos[path]
     const current = repo?.branches.current
     const target = branch ?? current
@@ -2055,23 +2081,6 @@ export const repoActions = {
       protectedConfirmed
     )
     if (!cleared) return false
-    if (!repo?.remotes.length) {
-      useUIStore.getState().openModal({
-        kind: 'confirm',
-        title: t('confirm.noRemote.title'),
-        message: t('confirm.noRemote.message'),
-        confirmLabel: t('common.yes'),
-        onConfirm: () =>
-          useUIStore.getState().openModal({
-            kind: 'addRemote',
-            path,
-            defaultName: 'origin',
-            existingNames: [],
-            matchName: path.split(/[/\\]/).filter(Boolean).pop()
-          })
-      })
-      return Promise.resolve(false)
-    }
     return runPush(path, target, force, target === current)
   },
 

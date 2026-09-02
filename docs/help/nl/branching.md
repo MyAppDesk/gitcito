@@ -3,7 +3,7 @@ title: Branches, remotes & de zijbalk
 category: Branches & ingrepen
 order: 40
 summary: Alles wat de linkerzijbalk doet, en vastgezette branches.
-keywords: branch branches aanmaken checkout hernoemen verwijderen remote pinned vastgezet zijbalk sidebar presence
+keywords: branch branches aanmaken checkout hernoemen verwijderen remote pinned vastgezet zijbalk sidebar presence remote toevoegen
 ---
 
 # Branches, remotes & de zijbalk
@@ -141,5 +141,13 @@ undo-stack (⌘Z), maar alleen tot je de repository sluit — de back-upbranch b
 opgehaalde tracking-ref, dus een remote die de fetch weigerde (offline, verkeerde
 inloggegevens) wordt vergeleken met de laatst bekende tip. Het zegt niets over de
 *kwaliteit* van je commits — alleen dat ze hier bestaan en daar niet.
+
+## Remotes
+
+In de sectie Remotes van de zijbalk voeg je remotes toe, bewerk je ze, haal
+je ze op en verwijder je ze. Fetch, pull of push op een repository zonder
+enkele opent datzelfde dialoogvenster **Remote toevoegen** — plak een URL of
+maak de repo aan op de host — in plaats van niets te doen. Zie [fetchen,
+pullen en pushen](syncing.md).
 
 **Zie ook:** [Mergen & rebasen](merging.md) · [Worktrees](worktrees.md)

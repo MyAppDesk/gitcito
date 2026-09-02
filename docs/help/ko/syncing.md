@@ -3,7 +3,7 @@ title: 페치, 풀, 푸시
 category: 동기화와 여러 저장소
 order: 50
 summary: 발을 맞춰 나가되, 무는 작업에는 안전장치를 걸어서요.
-keywords: 페치 fetch 풀 pull 푸시 push 강제 force auto-fetch prune 원격 remotes 업스트림 upstream 보호된 브랜치 protected branch 여러 원격 multiple remotes 포크 fork 미러 mirror push tags all
+keywords: 페치 fetch 풀 pull 푸시 push 강제 force auto-fetch prune 원격 remotes 업스트림 upstream 보호된 브랜치 protected branch 여러 원격 multiple remotes 포크 fork 미러 mirror push tags all 원격 없음 원격 추가
 ---
 
 # 페치, 풀, 푸시
@@ -41,6 +41,17 @@ Gitcito 는 이 오류를 읽고 수리를 버튼으로 제시하며, 원격에 
 물어봐요(목록은 저장소 설정 톱니바퀴에 있어요).
 
 ![강제 푸시 전에 보호된 브랜치가 요구하는 확인](../../screenshots/force-push-guard.webp)
+
+### 원격이 없을 때
+
+푸시, 풀, 페치에는 갈 곳이 필요해요. 원격이 하나도 없는 저장소 — 갓 만든
+`git init`, origin을 지운 클론 — 에서는 그 버튼들이 아무 일도 안 하거나, 빈
+페치를 성공으로 쳤습니다. 이제는 경고와 함께 **원격 추가**가 열려서 URL을
+붙이거나 호스트에 저장소를 만들 수 있어요. 추가하면 시작한 동작이 이어집니다.
+푸시는 현재 브랜치를 공개하고, 풀은 페치한 다음 풀하고, 페치는 페치만 해요.
+
+백그라운드 자동 페치는 가져올 게 없으면 조용히 있어요. 시계에 맞춰 대화상자를
+열지 않습니다.
 
 ### 원격이 하나가 아닐 때
 
@@ -118,5 +129,8 @@ fetch` 도 여기서 돌린 것과 똑같이 셉니다.
 사이드바에서 원격을 개별로 추가하고, 수정하고, 제거하고, 페치할 수 있어요. 브랜치
 행에는 원격별 존재 배지가 붙어 있어서, 어느 원격이 그 브랜치의 사본을 갖고 있는지
 한눈에 볼 수 있어요.
+
+**원격이 없을 때의 페치, 풀, 푸시**는 빈 성공 대신 같은 원격 추가 대화상자를
+열어요. [페치, 풀, 푸시](syncing.md)를 보세요.
 
 **함께 보기:** [미션 컨트롤](mission-control.md) · [호스팅과 풀 리퀘스트](hosting.md)

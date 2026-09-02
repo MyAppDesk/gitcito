@@ -3,7 +3,7 @@ title: Dallar, uzak depolar ve kenar çubuğu
 category: Dallanma ve cerrahi
 order: 40
 summary: Sol kenar çubuğunun yaptığı her şey ve sabitlenmiş dallar.
-keywords: dal dallar oluşturma checkout yeniden adlandırma silme uzak sabitlenmiş kenar çubuğu branch branches remote pinned sidebar presence
+keywords: dal dallar oluşturma checkout yeniden adlandırma silme uzak sabitlenmiş kenar çubuğu branch branches remote pinned sidebar presence uzak sunucu ekle
 ---
 
 # Dallar, uzak depolar ve kenar çubuğu
@@ -138,5 +138,13 @@ girer — ama yalnızca depoyu kapatana kadar; yedek dal daha uzun yaşar.
 karşılaştırır; fetch'i reddeden bir uzak sunucu (çevrimdışı, hatalı kimlik
 bilgileri) son bilinen uçla karşılaştırılır. Commit'lerinizin *iyi* olup
 olmadığını söylemez — yalnızca burada var, orada yok olduğunu.
+
+## Uzak depolar
+
+Kenar çubuğunun Uzak depolar bölümü, uzak depoların eklendiği, düzenlendiği,
+fetch edildiği ve silindiği yerdir. Hiçbir uzak deposu olmayan bir depoda
+fetch, pull veya push aynı **Uzak sunucu ekle** penceresini açar — bir URL
+yapıştırın veya depoyu host'ta oluşturun — hiçbir şey yapmamak yerine. Bkz.
+[fetch, pull ve push](syncing.md).
 
 **Ayrıca bakınız:** [Birleştirme ve rebase](merging.md) · [Çalışma ağaçları](worktrees.md)

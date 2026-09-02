@@ -3,7 +3,7 @@ title: 分支、远程与侧边栏
 category: 分支与手术
 order: 40
 summary: 左侧边栏能做的一切，以及置顶分支。
-keywords: branch 分支 branches create 创建 checkout 检出 rename 重命名 delete 删除 remote 远程 pinned 置顶 sidebar 侧边栏 presence 存在
+keywords: branch 分支 branches create 创建 checkout 检出 rename 重命名 delete 删除 remote 远程 pinned 置顶 sidebar 侧边栏 presence 存在 添加远程
 ---
 
 # 分支、远程与侧边栏
@@ -109,5 +109,11 @@ keywords: branch 分支 branches create 创建 checkout 检出 rename 重命名 
 **限制：** 对话框只把分支和刚刚抓取到的跟踪引用作比较，因此拒绝抓取的远程（离线、
 凭据错误）比较的是上一次已知的提交。它不会判断你的提交*好不好*，只说明它们在这里
 存在、在那边没有。
+
+## 远程
+
+侧边栏的「远程」区用来添加、编辑、获取和删除远程。一个远程都没有的仓库上点获取、
+拉取或推送，会打开同一个 **添加远程** 对话框 —— 粘贴 URL 或在托管上创建仓库 ——
+而不是什么都不做。见[获取、拉取与推送](syncing.md)。
 
 **另请参阅：** [合并与变基](merging.md) · [工作树](worktrees.md)

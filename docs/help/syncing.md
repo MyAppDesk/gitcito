@@ -3,7 +3,7 @@ title: Fetching, pulling & pushing
 category: Sync & many repos
 order: 50
 summary: Staying in step, with guards on the operations that bite.
-keywords: fetch pull push force auto-fetch prune remotes upstream protected branch multiple remotes fork mirror push tags all
+keywords: fetch pull push force auto-fetch prune remotes upstream protected branch multiple remotes fork mirror push tags all no remote add remote
 ---
 
 # Fetching, pulling & pushing
@@ -42,6 +42,18 @@ the remote moved since you last looked. Pushing a **protected branch** with forc
 asks for confirmation (list in the repo-settings gear).
 
 ![The confirmation a protected branch demands before a force-push](../screenshots/force-push-guard.webp)
+
+### No remotes
+
+Push, pull and fetch need somewhere to go. A repository with none — a fresh
+`git init`, a clone whose origin was removed — used to make those buttons do
+nothing, or succeed with an empty fetch. They now open **Add remote** instead,
+with a warning, so you can paste a URL or create the repo on the host. Adding
+it finishes the action you started: a push publishes the current branch, a
+pull fetches then pulls, a fetch just fetches.
+
+Background auto-fetch stays quiet when there is nothing to fetch. It does not
+open a dialog on a timer.
 
 ### More than one remote
 
@@ -122,5 +134,8 @@ the commit it used to point at.
 Add, edit, remove and fetch individual remotes from the sidebar. Branch rows
 carry per-remote presence badges, so you can see at a glance which remotes have
 a copy of a branch.
+
+**Fetch, pull or push with no remotes** opens that same Add remote dialog,
+instead of succeeding at nothing. See [fetching, pulling & pushing](syncing.md).
 
 **See also:** [Mission control](mission-control.md) · [Hosting & pull requests](hosting.md)

@@ -823,7 +823,10 @@ export default function App(): React.JSX.Element {
   useEffect(() => {
     const minutes = settings.autoFetchMinutes ?? 0
     if (!activeRepoPath || minutes <= 0) return
-    const interval = setInterval(() => void repoActions.fetchAll(activeRepoPath), minutes * 60_000)
+    const interval = setInterval(
+      () => void repoActions.fetchAll(activeRepoPath, { skipEmpty: true }),
+      minutes * 60_000
+    )
     return () => clearInterval(interval)
   }, [activeRepoPath, settings.autoFetchMinutes])
 

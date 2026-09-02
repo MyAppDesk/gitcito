@@ -3,7 +3,7 @@ title: Fetchen, Pullen & Pushen
 category: Sync & viele Repos
 order: 50
 summary: Im Gleichschritt bleiben, mit Schutzmechanismen für die Operationen, die beißen.
-keywords: fetch pull push force auto-fetch prune remote remotes upstream geschützter branch mehrere remotes fork mirror push tags all
+keywords: fetch pull push force auto-fetch prune remote remotes upstream geschützter branch mehrere remotes fork mirror push tags all kein remote remote hinzufügen
 ---
 
 # Fetchen, Pullen & Pushen
@@ -43,6 +43,19 @@ Ein **geschützter Branch** mit Force gepusht verlangt eine Bestätigung (die Li
 steckt im Zahnrad der Repository-Einstellungen).
 
 ![Die Bestätigung, die ein geschützter Branch vor einem Force-Push verlangt](../../screenshots/force-push-guard.webp)
+
+### Keine Remotes
+
+Push, Pull und Fetch brauchen ein Ziel. Ein Repository ohne eines — ein
+frisches `git init`, ein Clone dessen Origin entfernt wurde — ließ diese
+Knöpfe bisher nichts tun, oder einen leeren Fetch als Erfolg zählen. Sie
+öffnen jetzt **Remote hinzufügen**, mit einem Hinweis, damit du eine URL
+einfügen oder das Repo auf dem Host anlegen kannst. Das Hinzufügen beendet
+die Aktion, mit der du angefangen hast: ein Push veröffentlicht den aktuellen
+Branch, ein Pull holt und pullt, ein Fetch holt nur.
+
+Der automatische Fetch im Hintergrund bleibt still, wenn es nichts zu holen
+gibt. Er öffnet keinen Dialog nach der Uhr.
 
 ### Mehr als ein Remote
 
@@ -126,5 +139,8 @@ hat](range-diff.md) genau bei dem Commit öffnet, auf den er früher zeigte.
 Einzelne Remotes hinzufügen, bearbeiten, entfernen und fetchen — aus der
 Seitenleiste. Branch-Zeilen tragen Badges für die Präsenz pro Remote, du siehst
 also auf einen Blick, welche Remotes eine Kopie eines Branches haben.
+
+**Fetch, Pull oder Push ohne Remotes** öffnet denselben Dialog „Remote
+hinzufügen“, statt ins Leere zu laufen. Siehe [Fetchen, Pullen und Pushen](syncing.md).
 
 **Siehe auch:** [Mission Control](mission-control.md) · [Hosting & Pull Requests](hosting.md)

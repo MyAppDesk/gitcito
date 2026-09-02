@@ -3,7 +3,7 @@ title: Fetch, pull e push
 category: Sincronização e vários repositórios
 order: 50
 summary: Ficar em dia, com proteções nas operações que mordem.
-keywords: fetch pull push force forçado auto-fetch prune remotes upstream branch protegida vários remotes fork mirror push tags all
+keywords: fetch pull push force forçado auto-fetch prune remotes upstream branch protegida vários remotes fork mirror push tags all sem remoto adicionar remoto
 ---
 
 # Fetch, pull e push
@@ -42,6 +42,18 @@ remote se mexeu desde a última vez que você olhou. Dar push forçado numa **br
 protegida** pede confirmação (a lista fica na engrenagem de configurações do repo).
 
 ![A confirmação que uma branch protegida exige antes de um force-push](../../screenshots/force-push-guard.webp)
+
+### Sem remotes
+
+Push, pull e fetch precisam de um destino. Um repositório sem nenhum — um
+`git init` recém-feito, um clone cujo origin foi removido — fazia esses botões
+não fazerem nada, ou um fetch vazio contar como sucesso. Agora abrem
+**Adicionar remoto**, com um aviso, para colar uma URL ou criar o repo no
+host. Adicionar conclui a ação que você começou: um push publica o branch
+atual, um pull busca e depois faz pull, um fetch só busca.
+
+O auto-fetch em segundo plano fica quieto quando não há nada para buscar. Não
+abre um diálogo no relógio.
 
 ### Mais de um remote
 
@@ -123,5 +135,8 @@ no commit para o qual ela apontava antes.
 Adicione, edite, remova e busque remotes individuais pela barra lateral. As linhas
 de branch carregam selos de presença por remote, então você vê de relance quais
 remotes têm uma cópia de uma branch.
+
+**Fetch, pull ou push sem remotes** abre o mesmo diálogo Adicionar remoto, em
+vez de concluir no vazio. Veja [fetch, pull e push](syncing.md).
 
 **Veja também:** [Central de controle](mission-control.md) · [Hosting e pull requests](hosting.md)

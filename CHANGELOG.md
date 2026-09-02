@@ -1,5 +1,12 @@
 
 
+## [4.6.1](https://github.com/MyAppDesk/gitcito/compare/v4.6.0...v4.6.1) (2026-09-02)
+
+
+### Bug Fixes
+
+* handle errors in terminal write, resize, and kill methods ([0d639c3](https://github.com/MyAppDesk/gitcito/commit/0d639c32ce3deef53ea2b87c770690d4f5614104))
+
 ## [4.6.0](https://github.com/MyAppDesk/gitcito/compare/v4.5.0...v4.6.0) (2026-09-01)
 
 

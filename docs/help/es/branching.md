@@ -3,7 +3,7 @@ title: Ramas, remotos y la barra lateral
 category: Ramas y cirugía
 order: 40
 summary: Todo lo que hace la barra lateral izquierda, y las ramas fijadas.
-keywords: rama ramas branch branches crear checkout renombrar borrar remoto fijada pinned barra lateral sidebar presencia añadir remoto
+keywords: rama ramas branch branches crear checkout renombrar borrar remoto fijada pinned barra lateral sidebar presencia añadir remoto paneles panes
 ---
 
 # Ramas, remotos y la barra lateral
@@ -14,10 +14,19 @@ reordenar (Ajustes → Disposición), y la caja de filtro se aplica a todas.
 Qué secciones y carpetas dejas abiertas o cerradas se recuerda por repositorio,
 incluso tras reiniciar.
 
-Una sección con más de 300 refs empieza cerrada. En un repositorio con miles de
-ramas remotas que nadie ha borrado nunca, lo contrario significa tenerlas todas
-en pantalla sin haberlas pedido; ábrela una vez y esa elección se recuerda como
-cualquier otra.
+La barra lateral es un apilado de paneles, no una lista larga. Una sección
+abierta ocupa la altura que dejan las cerradas, que quedan debajo como filas de
+cabecera; abre varias y se parten esa altura a partes iguales, cada una con su
+propio scroll. Una sección con cientos de tags hace scroll dentro de su panel y
+las demás cabeceras se quedan donde están, así que nada que quieras pulsar se
+sale de la pantalla. Si abres más de las que caben, todos los paneles se encogen
+juntos hasta la cabecera: la barra lateral misma nunca hace scroll.
+
+Solo **Local** empieza abierta en un repositorio que aún no has ordenado; el
+resto empieza como cabecera. Una sección con más de 300 refs empieza cerrada de
+todos modos. En un repositorio con miles de ramas remotas que nadie ha borrado
+nunca, lo contrario significa tenerlas todas en pantalla sin haberlas pedido;
+ábrela una vez y esa elección se recuerda como cualquier otra.
 
 ![La barra lateral, con las ramas fijadas arriba del todo](../../screenshots/pinned-branches.webp)
 

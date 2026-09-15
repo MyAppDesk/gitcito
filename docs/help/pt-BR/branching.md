@@ -14,9 +14,19 @@ reordenada (Configurações → Layout), e a caixa de filtro vale para todas ela
 Quais seções e pastas você deixa abertas ou fechadas fica lembrado por
 repositório, mesmo depois de reiniciar.
 
-Uma seção com mais de 300 refs começa recolhida. Num repositório com milhares de
-branches remotos que ninguém nunca apagou, todos estariam na tela sem você ter
-pedido; abra uma vez e essa escolha é lembrada como qualquer outra.
+A barra lateral é uma pilha de painéis, não uma lista longa. Uma seção aberta
+ocupa a altura que as recolhidas deixam — elas ficam abaixo como linhas de
+cabeçalho. Abra várias e elas partilham essa altura em partes iguais, cada uma
+com o próprio scroll. Uma seção com centenas de tags rola dentro do seu painel e
+os outros cabeçalhos ficam onde estão, então nada que você queira clicar sai da
+tela. Abra mais do que cabe e todos os painéis encolhem juntos até o cabeçalho —
+a barra lateral em si nunca rola.
+
+Só **Local** começa aberta num repositório que você ainda não arrumou; cada
+outra seção começa como cabeçalho. Uma seção com mais de 300 refs começa
+recolhida mesmo assim. Num repositório com milhares de branches remotos que
+ninguém nunca apagou, todos estariam na tela sem você ter pedido; abra uma vez e
+essa escolha é lembrada como qualquer outra.
 
 ![A barra lateral, com as branches fixadas seguras no topo](../../screenshots/pinned-branches.webp)
 

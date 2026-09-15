@@ -146,6 +146,9 @@ tracker links, a push checklist, and a doctor that tells a newcomer why the
 project does not run yet ·
 [**Todos**](docs/help/todos.md) — a private checklist per repository, marked in
 the sidebar and the status bar, and never written into the repo ·
+[**Sidebar panes**](docs/help/branching.md) — open sections share leftover height
+equally, each scrolling on its own; collapsed ones stay as headers, so they
+never drift off screen ·
 [**Bookmarks**](docs/help/bookmarks.md) — remembered places in the code that
 re-locate themselves when the line moves, and say so when it is gone ·
 [**Open in your editor**](docs/help/editor.md) — repo, file, or the exact line

@@ -11,9 +11,10 @@ export const HUGE_SECTION = 300
 /**
  * Whether a section should start open.
  *
- * Sections open by default — except when they hold enough refs that mounting
- * them all is itself what makes the sidebar slow. Below the threshold nothing
- * changes; above it the user opens what they actually want, and that choice is
+ * A section that would otherwise open by default (Local, and every branch
+ * folder) stays closed when it holds enough refs that mounting them all is
+ * itself what makes the sidebar slow. Below the threshold nothing changes;
+ * above it the user opens what they actually want, and that choice is
  * persisted. This picks only the default for a section nobody has touched yet.
  *
  * `base` carries a caller's own reason to stay closed (a non-origin remote),

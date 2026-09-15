@@ -15,10 +15,21 @@ Disposition), et le champ de filtre s'applique à toutes.
 Les sections et dossiers laissés ouverts ou repliés sont mémorisés par dépôt,
 même après un redémarrage.
 
-Une section contenant plus de 300 références démarre repliée. Dans un dépôt
-comptant des milliers de branches distantes jamais supprimées, elles seraient
-sinon toutes à l'écran sans que vous les ayez demandées ; dépliez-la une fois et
-ce choix est mémorisé comme les autres.
+La barre latérale est une pile de panneaux, pas une longue liste. Une section
+ouverte prend la hauteur laissée par les repliées, qui restent en dessous comme
+des en-têtes ; ouvrez-en plusieurs et elles se partagent cette hauteur à parts
+égales, chacune avec son propre défilement. Une section avec des centaines
+d'étiquettes défile dans son panneau et les autres en-têtes restent où ils sont,
+rien à cliquer ne sort de l'écran. Ouvrez plus qu'il n'y a de place et tous les
+panneaux rétrécissent ensemble jusqu'à l'en-tête — la barre elle-même ne défile
+jamais.
+
+Seul **Local** démarre ouvert dans un dépôt que vous n'avez pas encore rangé ;
+chaque autre section démarre comme un en-tête. Une section contenant plus de 300
+références démarre repliée malgré tout. Dans un dépôt comptant des milliers de
+branches distantes jamais supprimées, elles seraient sinon toutes à l'écran sans
+que vous les ayez demandées ; dépliez-la une fois et ce choix est mémorisé comme
+les autres.
 
 ![La barre latérale, avec les branches épinglées maintenues en haut](../../screenshots/pinned-branches.webp)
 

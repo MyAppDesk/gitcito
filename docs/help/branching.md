@@ -3,7 +3,7 @@ title: Branches, remotes & the sidebar
 category: Branching & surgery
 order: 40
 summary: Everything the left sidebar does, and pinned branches.
-keywords: branch branches create checkout rename delete remote pinned sidebar presence
+keywords: branch branches create checkout rename delete remote pinned sidebar presence panes
 ---
 
 # Branches, remotes & the sidebar
@@ -14,10 +14,19 @@ worktrees and submodules**. Every section can be hidden or reordered
 and folders you keep expanded or collapsed is remembered per repository, across
 restarts.
 
-A section holding more than 300 refs starts collapsed. A repository with
-thousands of never-deleted remote branches would otherwise put every one of them
-on screen before you asked for any; open it once and that choice is remembered
-like any other.
+The sidebar is a stack of panes, not one long list. An open section takes the
+height left over by the collapsed ones, which sit below it as header rows; open
+several and they share that height equally, each scrolling on its own. A
+section with hundreds of tags scrolls inside its pane and the other headers stay
+where they are, so nothing you want to click ever drifts off screen. Open more
+sections than fit and every pane shrinks together down to its header — the
+sidebar itself never scrolls.
+
+Only **Local** starts open in a repository you have not arranged yet; every
+other section starts as a header. A section holding more than 300 refs starts
+collapsed regardless. A repository with thousands of never-deleted remote
+branches would otherwise put every one of them on screen before you asked for
+any; open it once and that choice is remembered like any other.
 
 ![The sidebar, with pinned branches held at the top](../screenshots/pinned-branches.webp)
 

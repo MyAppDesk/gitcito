@@ -1410,6 +1410,59 @@ textarea:focus {
   padding-bottom: 16px;
 }
 
+/* The git tab is a stack of panes, not one long scroll. Open sections split
+ * the remaining height in equal shares (flex-basis 0, so content size never
+ * enters the split) and scroll inside their own body; a collapsed section is
+ * just its header, pushed below the open panes. When too many are open they
+ * shrink together — the only floor is the header row, which never clips —
+ * and the sidebar itself never grows a scrollbar. */
+.sb-panes {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  /* Recessed well: mix the sidebar toward the page chrome so the body reads as
+   * a different surface from its header without picking a fixed grey. */
+  --sb-pane-body: color-mix(in srgb, var(--bg-2) 72%, var(--bg-0));
+}
+.sb-panes > .sb-section {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 auto;
+}
+.sb-panes > .sb-section.is-open {
+  flex: 1 1 0;
+}
+.sb-panes > .sb-section > .sb-header {
+  flex: 0 0 auto;
+  background: var(--bg-2);
+}
+.sb-panes > .sb-section > .sb-body {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-bottom: 8px;
+  background: var(--sb-pane-body);
+  animation: sb-body-in 0.15s ease-out;
+}
+.sb-panes .sb-item.current {
+  background: linear-gradient(rgba(63, 208, 164, 0.07), rgba(63, 208, 164, 0.07)), var(--sb-pane-body);
+}
+.sb-panes > .sb-section + .sb-section {
+  border-top: 1px solid var(--border-soft);
+}
+@keyframes sb-body-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sb-panes > .sb-section > .sb-body {
+    animation: none;
+  }
+}
+
 .sb-header {
   display: flex;
   align-items: center;

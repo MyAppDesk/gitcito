@@ -14,10 +14,19 @@ albo przestawić (Ustawienia → Układ), a pole filtra działa na wszystkie nar
 To, które sekcje i katalogi zostawiasz rozwinięte albo zwinięte, jest
 zapamiętywane per repozytorium — także po restarcie.
 
-Sekcja zawierająca ponad 300 referencji startuje zwinięta. W repozytorium z
-tysiącami nigdy nieusuniętych gałęzi zdalnych wszystkie trafiłyby inaczej na
-ekran, choć nikt o to nie prosił; rozwiń ją raz, a ten wybór zostanie
-zapamiętany jak każdy inny.
+Panel boczny to stos paneli, nie długa lista. Otwarta sekcja zajmuje wysokość,
+którą zostawiają zwinięte — te siedzą poniżej jako wiersze nagłówka. Otwórz
+kilka i dzielą tę wysokość po równo, każda ze swoim scrollem. Sekcja z setkami
+tagów przewija się we własnym panelu, a pozostałe nagłówki zostają tam, gdzie
+są, więc nic, co chcesz kliknąć, nie ucieka z ekranu. Otwórz więcej, niż się
+mieści, i wszystkie panele kurczą się razem do nagłówka — sam panel boczny nigdy
+nie przewija.
+
+Tylko **Lokalne** startuje otwarte w repozytorium, którego jeszcze nie
+ułożyłeś; każda inna sekcja startuje jako nagłówek. Sekcja zawierająca ponad 300
+referencji i tak startuje zwinięta. W repozytorium z tysiącami nigdy
+nieusuniętych gałęzi zdalnych wszystkie trafiłyby inaczej na ekran, choć nikt o
+to nie prosił; rozwiń ją raz, a ten wybór zostanie zapamiętany jak każdy inny.
 
 ![Panel boczny z przypiętymi gałęziami trzymanymi na górze](../../screenshots/pinned-branches.webp)
 

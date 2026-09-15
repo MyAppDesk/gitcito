@@ -14,10 +14,18 @@ worktrees en submodules**. Elke sectie kan verborgen of verplaatst worden
 Welke secties en mappen je open of dicht laat staan wordt per repository
 onthouden, ook na een herstart.
 
-Een sectie met meer dan 300 refs begint ingeklapt. In een repository met
-duizenden nooit verwijderde remote branches zouden ze anders allemaal in beeld
-staan zonder dat je erom vroeg; klap hem één keer uit en die keuze wordt net als
-elke andere onthouden.
+De zijbalk is een stapel van panelen, geen lange lijst. Een open sectie neemt de
+hoogte die de ingeklapte overlaten — die zitten eronder als kopregels. Meerdere
+open secties delen die hoogte gelijkelijk, elk met eigen scroll. Een sectie met
+honderden tags scrollt in haar paneel en de andere koppen blijven staan, zodat
+niets wat je wilt aanklikken van het scherm af glijdt. Open je meer dan er past,
+krimpen alle panelen samen tot de kop — de zijbalk zelf scrollt nooit.
+
+Alleen **Lokaal** start open in een repository die je nog niet hebt ingericht;
+elke andere sectie start als kopregel. Een sectie met meer dan 300 refs begint
+toch ingeklapt. In een repository met duizenden nooit verwijderde remote
+branches zouden ze anders allemaal in beeld staan zonder dat je erom vroeg; klap
+hem één keer uit en die keuze wordt net als elke andere onthouden.
 
 ![De zijbalk, met vastgezette branches bovenaan](../../screenshots/pinned-branches.webp)
 

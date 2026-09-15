@@ -14,10 +14,20 @@ riordinata (Impostazioni → Layout), e il filtro di ricerca vale per tutte.
 Quali sezioni e cartelle restano aperte o chiuse viene ricordato per
 repository, anche dopo un riavvio.
 
-Una sezione con più di 300 riferimenti parte chiusa. In un repository con
-migliaia di rami remoti mai cancellati sarebbero altrimenti tutti a schermo
-senza averli chiesti; aprila una volta e la scelta viene ricordata come le
-altre.
+La barra laterale è una pila di riquadri, non una lista lunga. Una sezione
+aperta prende l'altezza lasciata da quelle chiuse, che restano sotto come
+intestazioni; aprine più di una e si dividono quell'altezza in parti uguali,
+ognuna con il proprio scroll. Una sezione con centinaia di tag scorre nel suo
+riquadro e le altre intestazioni restano dove sono, così niente da cliccare esce
+dallo schermo. Se ne apri più di quante ne stiano, tutti i riquadri si
+restringono insieme fino all'intestazione — la barra laterale stessa non scorre
+mai.
+
+Solo **Local** parte aperta in un repository che non hai ancora sistemato; ogni
+altra sezione parte come intestazione. Una sezione con più di 300 riferimenti
+parte chiusa comunque. In un repository con migliaia di rami remoti mai
+cancellati sarebbero altrimenti tutti a schermo senza averli chiesti; aprila una
+volta e la scelta viene ricordata come le altre.
 
 ![La barra laterale, con i branch appuntati tenuti in cima](../../screenshots/pinned-branches.webp)
 

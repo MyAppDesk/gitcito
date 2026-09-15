@@ -15,9 +15,19 @@ kutusu hepsine birden uygulanır.
 Hangi bölümleri ve klasörleri açık ya da kapalı bıraktığınız depo başına
 hatırlanır; yeniden başlatınca da korunur.
 
-300'den fazla referans içeren bir bölüm kapalı başlar. Hiç silinmemiş binlerce
-uzak dalı olan bir depoda aksi hâlde hepsi siz istemeden ekrana gelirdi; bir kez
-açın, bu tercih diğerleri gibi hatırlanır.
+Kenar çubuğu uzun bir liste değil, üst üste paneller. Açık bir bölüm, kapalı
+olanların bıraktığı yüksekliği alır — onlar altta başlık satırları olarak durur.
+Birkaçını açın, o yüksekliği eşit paylaşırlar, her biri kendi kaydırmasıyla.
+Yüzlerce etiketi olan bir bölüm kendi panelinde kayar, diğer başlıklar yerinde
+kalır; tıklamak istediğiniz hiçbir şey ekrandan kaymaz. Sığandan fazlasını
+açarsanız tüm paneller birlikte başlığa kadar küçülür — kenar çubuğunun kendisi
+asla kaymaz.
+
+Yalnızca **Yerel** henüz düzenlemediğiniz bir depoda açık başlar; diğer her
+bölüm bir başlık olarak başlar. 300'den fazla referans içeren bir bölüm yine de
+kapalı başlar. Hiç silinmemiş binlerce uzak dalı olan bir depoda aksi hâlde
+hepsi siz istemeden ekrana gelirdi; bir kez açın, bu tercih diğerleri gibi
+hatırlanır.
 
 ![Sabitlenmiş dalların en üstte tutulduğu kenar çubuğu](../../screenshots/pinned-branches.webp)
 

@@ -15,10 +15,20 @@ für alle.
 Welche Abschnitte und Ordner auf- oder zugeklappt sind, merkt sich die
 Seitenleiste pro Repository — auch über Neustarts hinweg.
 
-Ein Abschnitt mit mehr als 300 Refs startet zugeklappt. In einem Repository mit
-Tausenden nie gelöschter Remote-Branches stünden sonst alle auf dem Bildschirm,
-ohne dass jemand danach gefragt hat; einmal aufklappen genügt, die Entscheidung
-wird wie jede andere gemerkt.
+Die Seitenleiste ist ein Stapel von Panes, keine lange Liste. Ein offener
+Abschnitt nimmt die Höhe, die die zugeklappten übrig lassen — die sitzen darunter
+als Kopfzeilen. Mehrere offene teilen sich diese Höhe gleichmäßig, jede mit
+eigenem Scroll. Ein Abschnitt mit Hunderten Tags scrollt in seinem Pane, die
+anderen Köpfe bleiben stehen, sodass nichts, was du anklicken willst, aus dem
+Bild rutscht. Öffnest du mehr als Platz ist, schrumpfen alle Panes gemeinsam bis
+auf den Kopf — die Seitenleiste selbst scrollt nie.
+
+Nur **Lokal** startet offen in einem Repository, das du noch nicht eingerichtet
+hast; jeder andere Abschnitt startet als Kopfzeile. Ein Abschnitt mit mehr als
+300 Refs startet trotzdem zugeklappt. In einem Repository mit Tausenden nie
+gelöschter Remote-Branches stünden sonst alle auf dem Bildschirm, ohne dass
+jemand danach gefragt hat; einmal aufklappen genügt, die Entscheidung wird wie
+jede andere gemerkt.
 
 ![Die Seitenleiste, mit angehefteten Branches ganz oben](../../screenshots/pinned-branches.webp)
 

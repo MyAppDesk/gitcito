@@ -25,6 +25,8 @@ import {
 import { branchDropActions, encodeDropRef, BRANCH_DND_TYPE, type DropRef } from '../lib/branchDrop'
 import { togglePin } from '../lib/pinnedBranches'
 import { focusedHashes, focusedStashes, GRAPH_FOCUS_MODES, type FocusInput } from '../lib/graphFocus'
+import { withStashRows } from '../lib/stashRows'
+import { StashGlyph } from './StashGlyph'
 import { fetchedOnlyHashes } from '../lib/graphCommitState'
 import { openBranchDropMenu } from '../lib/branchDropMenu'
 import { CHAT_COMMIT_MIME } from '../lib/repoChatContext'
@@ -650,27 +652,9 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
     // and with it the layout memo — survives untouched.
     const keep = focusInput && focusedHashes(repo.commits, focus, focusInput)
     const commits = keep ? repo.commits.filter((c) => keep.has(c.hash)) : repo.commits
-    const out: GraphCommit[] = [...commits]
-    // Stashes float to their chronological slot (by the time they were made),
-    // not glued above their parent commit — the edge still descends to the
-    // parent. Insert newest-first by date, but never below the stash's own
-    // parent (keeps the edge pointing downward / topology valid).
-    for (const s of focusedStashes(repo.stashes, repo.commits, keep)) {
-      const stashCommit: GraphCommit = {
-        hash: s.sha,
-        parents: [s.parentSha],
-        author: '',
-        email: '',
-        date: s.date,
-        refs: [],
-        subject: s.message
-      }
-      const parentIdx = out.findIndex((c) => c.hash === s.parentSha)
-      let dateIdx = out.findIndex((c) => c.date < s.date)
-      if (dateIdx === -1) dateIdx = out.length
-      const idx = parentIdx === -1 ? dateIdx : Math.min(dateIdx, parentIdx)
-      out.splice(idx, 0, stashCommit)
-    }
+    // Stashes sit directly above the commit they were taken from, so related
+    // rows stay adjacent instead of the stash drifting off on its own date.
+    const out = withStashRows(commits, focusedStashes(repo.stashes, repo.commits, keep))
     if (hasWip) {
       out.unshift({
         hash: WIP_HASH,
@@ -1821,59 +1805,14 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
                 const isStash = stashBySha.has(c.hash)
                 if (isStash) {
                   const sc = colorFor(n.color)
-                  // Compact: a dashed, hatched box. Normal: a stacked-cards glyph.
-                  if (compact) {
-                    const size = 13
-                    const bx = cx - size / 2
-                    const by = cy - size / 2
-                    const clipId = `stash-hatch-${c.hash}`
-                    return (
-                      <g key={c.hash} className="graph-node stash-node">
-                        <defs>
-                          <clipPath id={clipId}>
-                            <rect x={bx} y={by} width={size} height={size} rx={2.5} />
-                          </clipPath>
-                        </defs>
-                        <rect x={bx} y={by} width={size} height={size} rx={2.5} fill="var(--bg-1)" />
-                        <g clipPath={`url(#${clipId})`}>
-                          {[-size, -size / 2, 0, size / 2, size].map((off, k) => (
-                            <line key={k} x1={bx + off} y1={by + size} x2={bx + off + size} y2={by} stroke={sc} strokeWidth={1.5} opacity={0.7} />
-                          ))}
-                        </g>
-                        <rect x={bx} y={by} width={size} height={size} rx={2.5} fill="none" stroke={sc} strokeWidth={lineW} strokeDasharray="2.5 2" />
-                      </g>
-                    )
-                  }
-                  // Layered "stack of cards" glyph — reads as saved/stashed work
-                  // with a bit of depth. Both cards fill with bg so the connector
-                  // line behind never peeks through.
+                  // Sized against the commit node beside it: the AVA avatar ball
+                  // in normal, the r=6.5 dot in compact. A shade under the avatar
+                  // because a square carries more visual weight than a circle of
+                  // the same width; level with the dot, which is already small
+                  // enough that shaving it further costs legibility.
                   return (
                     <g key={c.hash} className="graph-node stash-node">
-                      {/* back card, offset up-right and faded for depth */}
-                      <rect
-                        x={cx - 3.75}
-                        y={cy - 7.25}
-                        width={11}
-                        height={11}
-                        rx={3}
-                        fill="var(--bg-1)"
-                        stroke={sc}
-                        strokeWidth={1.5}
-                        opacity={0.55}
-                      />
-                      {/* front card */}
-                      <rect
-                        x={cx - 7.25}
-                        y={cy - 3.75}
-                        width={11}
-                        height={11}
-                        rx={3}
-                        fill="var(--bg-1)"
-                        stroke={sc}
-                        strokeWidth={lineW}
-                      />
-                      {/* tiny dot = the stashed change sitting on the card */}
-                      <circle cx={cx - 1.75} cy={cy + 1.75} r={1.4} fill={sc} />
+                      <StashGlyph cx={cx} cy={cy} color={sc} size={compact ? 13 : AVA - 2} strokeWidth={lineW} />
                     </g>
                   )
                 }

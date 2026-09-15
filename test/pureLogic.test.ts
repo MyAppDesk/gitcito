@@ -892,7 +892,8 @@ import {
   LINE_WIDTH_PX
 } from '../src/renderer/src/graph/style'
 import { layoutGraph } from '../src/renderer/src/graph/layout'
-import { defaultGraphStyle } from '../src/shared/types'
+import { withStashRows } from '../src/renderer/src/lib/stashRows'
+import { defaultGraphStyle, type StashInfo } from '../src/shared/types'
 
 describe('graph style', () => {
   it('default style references the classic palette', () => {
@@ -1054,6 +1055,103 @@ describe('graph layout', () => {
   it('defaults to full topology when none is given', () => {
     const g = layoutGraph(overlappingStashes(), spurs)
     expect(g.nodes.get('s1')!.lane).not.toBe(g.nodes.get('s2')!.lane)
+  })
+
+  // A stash sits directly above its parent, so its tether spans only a row or
+  // two. Any branch whose edge merely *passes through* those rows occupies a
+  // lane there without owning a node in them — the stash must clear those too,
+  // or it lands on a branch line and reads as part of the trunk.
+  const stashUnderCrossingEdge = () => [
+    c('tip', ['base']),
+    c('feat', ['base']), // feat's edge runs lane 1 → lane 0 across the stash row
+    c('s', ['base']),
+    c('base', [])
+  ]
+
+  const clearsCrossingLines = (topology: 'full' | 'simple'): void => {
+    const g = layoutGraph(stashUnderCrossingEdge(), new Set(['s']), topology)
+    const stash = g.nodes.get('s')!
+    const lo = Math.min(stash.row, g.nodes.get('base')!.row)
+    const hi = Math.max(stash.row, g.nodes.get('base')!.row)
+    for (const e of g.edges) {
+      if (e.kind === 'spur') continue
+      const overlaps = e.fromRow <= hi && lo <= e.toRow
+      if (!overlaps) continue
+      expect(e.fromLane).not.toBe(stash.lane)
+      expect(e.toLane).not.toBe(stash.lane)
+    }
+  }
+
+  it('full topology clears branch lines crossing the stash rows', () => {
+    clearsCrossingLines('full')
+  })
+
+  it('simple topology clears branch lines crossing the stash rows', () => {
+    clearsCrossingLines('simple')
+  })
+})
+
+describe('stash row placement', () => {
+  const c = (hash: string, date: number, parents: string[] = []) => ({
+    hash,
+    parents,
+    author: '',
+    email: '',
+    date,
+    refs: [] as string[],
+    subject: hash
+  })
+  const stash = (sha: string, parentSha: string, date: number, index = 0): StashInfo => ({
+    index,
+    sha,
+    parentSha,
+    untrackedSha: null,
+    message: sha,
+    branch: 'main',
+    date
+  })
+
+  // The case that motivated parent-anchoring: a stash is newer than the commit
+  // it was taken from, so date order would float it up among unrelated commits.
+  it('anchors a stash directly above its parent even when it is much newer', () => {
+    const commits = [c('newest', 500), c('other', 400), c('base', 100)]
+    const rows = withStashRows(commits, [stash('s', 'base', 450)])
+    expect(rows.map((r) => r.hash)).toEqual(['newest', 'other', 's', 'base'])
+  })
+
+  it('stacks stashes sharing a parent newest-first above it', () => {
+    const commits = [c('tip', 300), c('base', 100)]
+    // git lists stash@{0} (the newest) first.
+    const rows = withStashRows(commits, [stash('s0', 'base', 250, 0), stash('s1', 'base', 200, 1)])
+    expect(rows.map((r) => r.hash)).toEqual(['tip', 's0', 's1', 'base'])
+  })
+
+  it('falls back to date order when the parent is outside the loaded window', () => {
+    const commits = [c('newest', 500), c('other', 400), c('oldest', 100)]
+    const rows = withStashRows(commits, [stash('s', 'pruned', 450)])
+    expect(rows.map((r) => r.hash)).toEqual(['newest', 's', 'other', 'oldest'])
+  })
+
+  it('appends an orphaned stash older than every commit', () => {
+    const rows = withStashRows([c('a', 500), c('b', 400)], [stash('s', 'pruned', 10)])
+    expect(rows.map((r) => r.hash)).toEqual(['a', 'b', 's'])
+  })
+
+  // The result is spliced into by the caller (the WIP row), so it must never
+  // alias the store's commit array — including on the no-stash fast path.
+  it('never returns or mutates the caller array', () => {
+    const commits = [c('a', 500), c('b', 400)]
+    expect(withStashRows(commits, [])).not.toBe(commits)
+    withStashRows(commits, [stash('s', 'b', 450)])
+    expect(commits.map((r) => r.hash)).toEqual(['a', 'b'])
+  })
+
+  it('carries the stash message and parent onto the pseudo-commit', () => {
+    const rows = withStashRows([c('base', 100)], [stash('s', 'base', 450)])
+    const row = rows.find((r) => r.hash === 's')!
+    expect(row.parents).toEqual(['base'])
+    expect(row.subject).toBe('s')
+    expect(row.refs).toEqual([])
   })
 })
 

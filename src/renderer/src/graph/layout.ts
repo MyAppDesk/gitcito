@@ -138,6 +138,34 @@ export function layoutGraph(
     }
   }
 
+  // Which lanes are visually occupied at which rows, as flat parallel arrays.
+  // Occupancy must come from the drawn segments, not from `lanes`: a branch
+  // converging left frees its lane the moment it is claimed further left, yet
+  // its segment keeps drawing down to the parent's row. A stash sits directly
+  // above its parent, so its tether spans a row or two — short enough that any
+  // segment merely crossing it would otherwise go unnoticed and be drawn over.
+  // Built only when there are spurs that need placing.
+  const segLo: number[] = []
+  const segHi: number[] = []
+  const segLane: number[] = []
+  if (spurs.size > 0 && topology !== 'minimal') {
+    for (const c of commits) {
+      const n = nodes.get(c.hash)
+      if (!n) continue
+      segLo.push(n.row)
+      segHi.push(n.row)
+      segLane.push(n.lane)
+      for (const p of c.parents) {
+        const pn = nodes.get(p)
+        if (!pn) continue
+        segLo.push(Math.min(n.row, pn.row))
+        segHi.push(Math.max(n.row, pn.row))
+        // The segment bends between the two lanes, so it covers both.
+        segLane.push(Math.max(n.lane, pn.lane))
+      }
+    }
+  }
+
   // ── Pass 2: spurs (stashes). How they are laid out depends on `topology`. ──
   // • minimal — inline on the parent's own lane (no extra lanes).
   // • simple  — just right of the busiest lane over the connector's rows; two
@@ -157,13 +185,18 @@ export function layoutGraph(
       // Sit on the parent's lane; the dashed tether runs straight down it.
       lane = parent ? parent.lane : 0
     } else {
-      // Busiest lane across the rows this spur's connector spans. `simple`
-      // counts already-placed spurs (so they can stack up), `full` ignores
-      // them and instead resolves overlaps explicitly below.
+      // Busiest lane across the rows this spur's connector spans — counting
+      // lines that merely cross those rows, not just nodes sitting in them.
+      // `simple` also clears already-placed spurs (so they stack up rather than
+      // collide), `full` ignores them and resolves overlaps explicitly below.
       let maxLane = 0
-      for (const n of nodes.values()) {
-        if (topology === 'full' && spurs.has(n.hash)) continue
-        if (n.row >= lo && n.row <= hi) maxLane = Math.max(maxLane, n.lane)
+      for (let i = 0; i < segLo.length; i++) {
+        if (segLo[i] <= hi && lo <= segHi[i]) maxLane = Math.max(maxLane, segLane[i])
+      }
+      if (topology === 'simple') {
+        for (const n of nodes.values()) {
+          if (spurs.has(n.hash) && n.row >= lo && n.row <= hi) maxLane = Math.max(maxLane, n.lane)
+        }
       }
       lane = maxLane + 1
       if (topology === 'full') {

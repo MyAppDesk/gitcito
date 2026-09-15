@@ -3,7 +3,7 @@ title: The commit graph
 category: Repository & history
 order: 10
 summary: Reading history: lanes, refs, columns, filters and multi-select.
-keywords: graph history commits lanes branches merges columns filter linear first-parent amend undo reset github
+keywords: graph history commits lanes branches merges columns filter linear first-parent amend undo reset github stash stashes order ordering placement spur
 ---
 
 # The commit graph
@@ -57,6 +57,28 @@ with a hundred.
   mini-graph preview.
 
 ![Graph style settings with live preview](../screenshots/settings-graph.webp)
+
+## Where stashes sit
+
+A stash is drawn as its own row, hanging off the commit it was taken from on a
+dashed spur so it never displaces the trunk. It is placed in the row **directly
+above that parent commit**, not in the slot its own timestamp would earn it.
+
+Its marker is an archive box in a dotted frame — the same archive symbol the
+stash list, command palette and details header use, so the graph names a stash
+the way the rest of the app does. The dotted frame is what separates it from a
+commit: sitting one row above its parent, shape has to carry "this is not part
+of the branch".
+
+A stash is nearly always newer than the commit it sits on, so ordering by date
+would float it up among unrelated commits and stretch its tether across half the
+graph. The parent is the only row a stash actually relates to, so that is the one
+it stays next to.
+
+The limit: a stash whose parent commit is not in the loaded window — pruned, or
+scrolled past the end of the log — has nothing to anchor to, and falls back to
+date order until its parent loads. The *Linear history* and *Solo* focus modes
+drop a stash whose parent they drop, as noted above.
 
 ## Commit details
 

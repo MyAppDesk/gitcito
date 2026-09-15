@@ -22,6 +22,8 @@ export function pageTabLabel(page: PageContent, t: (key: TranslationKey) => stri
       return t('tab.insights')
     case 'vault':
       return t('tab.vault')
+    case 'repositories':
+      return t('tab.repositories')
     case 'help':
       return t('tab.help')
     case 'changelog':

@@ -62,7 +62,7 @@ function toggleRightPanel(): void {
   }
 }
 
-function openRepositoryDialog(): void {
+export function openRepositoryDialog(): void {
   void window.api.selectDirectory().then((path) => {
     if (!path) return
     const name = path.split(/[\\/]/).filter(Boolean).pop() ?? path
@@ -147,6 +147,9 @@ export function runAppCommand(id: string): boolean {
       return true
     case 'vault':
       st.openPageTab({ type: 'vault' })
+      return true
+    case 'repositories':
+      st.openPageTab({ type: 'repositories' })
       return true
 
     // ── Repository ──

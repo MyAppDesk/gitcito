@@ -138,6 +138,7 @@ export function buildMenuSpec(ctx: MenuContext, t: (key: TranslationKey) => stri
       bound('toggle-terminal', t('toolbar.terminalTitle'), 'ctrl+`', repo),
       SEP,
       { id: 'mission-control', label: t('mission.open') },
+      { id: 'repositories', label: t('cmd.repositories') },
       bound('vault', t('sc.openVault'), b['vault']),
       SEP,
       { role: 'resetZoom', label: t('menu.actualSize') },

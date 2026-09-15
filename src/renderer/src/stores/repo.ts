@@ -196,7 +196,7 @@ const toast = (kind: 'success' | 'error' | 'info', msg: string, opts?: { repoPat
   useUIStore.getState().toast(kind, msg, opts)
 
 /** How a pull reconciles: git's default, refuse-unless-ff, or rebase. */
-type PullMode = 'default' | 'ff-only' | 'rebase'
+export type PullMode = 'default' | 'ff-only' | 'rebase'
 
 function isConflictErrorMessage(msg: string): boolean {
   return /\bCONFLICT(S)?\b|Automatic merge failed|after resolving the conflicts|CHERRY_PICK_HEAD/i.test(msg)

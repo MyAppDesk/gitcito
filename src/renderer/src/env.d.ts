@@ -169,6 +169,14 @@ interface PreloadApi {
     exportAll(): Promise<unknown>
     importAll(data: unknown): Promise<unknown>
   }
+  repos: {
+    list(): Promise<unknown>
+    remember(repoPath: string): Promise<unknown>
+    forget(repoPath: string): Promise<unknown>
+    scan(rootList: unknown): Promise<unknown>
+    locate(oldPath: string, newPath: string): Promise<unknown>
+    refresh(paths: string[]): Promise<unknown>
+  }
   secureShare: {
     candidates(repoPath: string): Promise<unknown>
     export(repoPath: string, project: string, paths: string[], password: string): Promise<unknown>

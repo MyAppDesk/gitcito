@@ -29,7 +29,9 @@ import {
   pruneFolders,
   updateFolder
 } from '../lib/repoFolders'
-import { settingsApi } from '../infrastructure/api'
+import { reposApi, settingsApi } from '../infrastructure/api'
+import { repathRepoSettings } from '../lib/repoRepath'
+import type { WorkspaceCandidate } from '../lib/workspacePlan'
 import { useUIStore } from './ui'
 import { applyRepoAlias, canonicalRepoPath, migrateRepoAliases, repoDisplayName } from '../lib/repoAlias'
 import { sortBookmarks } from '../lib/bookmarks'
@@ -244,9 +246,21 @@ interface SettingsState {
   renameRepoInGroup(tabId: string, path: string, newName: string): void
   /** Set or clear a path-keyed display alias. Empty / canonical name removes it. */
   setRepoAlias(path: string, alias: string | null): void
+  toggleFavouriteRepo(path: string): void
+  /** Tint one Repositories-page section, or clear it with `null`. Cleared
+   *  colours are deleted rather than stored as empty, so `in` is enough to ask
+   *  whether a section has one. */
+  setRepoSectionColor(key: string, color: string | null): void
+  /** A repo that moved keeps its alias, profile binding and star: all three are
+   *  keyed by path, so re-pointing the registry has to re-key them too. */
+  repathRepo(oldPath: string, newPath: string): void
   reorderReposInGroup(tabId: string, fromPath: string, toPath: string | null): void
   setGroupActiveRepo(tabId: string, path: string | null): void
   closeTab(tabId: string): void
+  /** Close every tab holding repositories. Page tabs are left alone — the
+   *  Repositories page is one, and closing the surface the button sits on
+   *  would be a surprise. */
+  closeAllRepoTabs(): void
   reopenClosedTab(): void
   setActiveTab(tabId: string): void
   renameTab(tabId: string, name: string): void
@@ -274,6 +288,10 @@ interface SettingsState {
 
   /** Create a fresh, empty workspace and switch to it. */
   createWorkspace(name: string): void
+  /** Create or extend workspaces from a scan plan. Appends without switching:
+   *  the active workspace and its live tab strip are left exactly as they are,
+   *  which `createWorkspace` cannot do — it switches and clears. */
+  applyWorkspacePlan(candidates: WorkspaceCandidate[]): { created: number; merged: number; repos: number }
   renameWorkspace(id: string, name: string): void
   /** Reorder the workspace list (drag & drop in the switcher menu). */
   reorderWorkspaces(fromId: string, toId: string, before: boolean): void
@@ -524,7 +542,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
   openRepoTab: (repo) => {
     leaveMission()
-    return get().update((s) => {
+    get().update((s) => {
       const existing = s.tabs.find((t) => t.kind === 'repo' && t.activeRepoPath === repo.path)
       if (existing) return { ...s, activeTabId: existing.id }
       const name = repoDisplayName(repo.path, s.repoAliases, repo.name)
@@ -533,6 +551,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       const recentRepos = [named, ...s.recentRepos.filter((r) => r.path !== repo.path)].slice(0, 8)
       return { ...s, tabs: [...s.tabs, tab], activeTabId: tab.id, recentRepos }
     })
+    // Indexing must never delay opening a tab.
+    void reposApi.remember(repo.path)
   },
 
   openFromCli: (payload) => {
@@ -584,6 +604,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       const tab: TabState = { id: uid(), kind: 'repo', name: displayName, repos: [repo], activeRepoPath: path }
       return { ...s, tabs: [tab, ...s.tabs], activeTabId: tab.id, recentRepos }
     })
+    // Indexing must never delay opening a tab.
+    void reposApi.remember(payload.path)
   },
 
   setRepoPage: (tabId, index) =>
@@ -671,7 +693,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     })
   },
 
-  addRepoToGroup: (tabId, repo) =>
+  addRepoToGroup: (tabId, repo) => {
     get().update((s) => {
       const named = { ...repo, name: repoDisplayName(repo.path, s.repoAliases, repo.name) }
       return {
@@ -683,7 +705,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
             : t
         )
       }
-    }),
+    })
+    void reposApi.remember(repo.path)
+  },
 
   removeRepoFromGroup: (tabId, path) =>
     get().update((s) => {
@@ -708,6 +732,31 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     get().update((s) => applyRepoAlias(s, path, newName)),
 
   setRepoAlias: (path, alias) => get().update((s) => applyRepoAlias(s, path, alias)),
+
+  toggleFavouriteRepo: (path) =>
+    get().update((s) => {
+      const current = s.favouriteRepos ?? []
+      const next = current.includes(path) ? current.filter((p) => p !== path) : [...current, path]
+      return { ...s, favouriteRepos: next }
+    }),
+
+  setRepoSectionColor: (key, color) =>
+    get().update((s) => {
+      const next = { ...(s.repoSectionColors ?? {}) }
+      if (color) next[key] = color
+      else delete next[key]
+      return { ...s, repoSectionColors: next }
+    }),
+
+  repathRepo: (oldPath, newPath) =>
+    get().update((s) => ({
+      ...s,
+      ...repathRepoSettings(
+        { repoAliases: s.repoAliases, repoProfiles: s.repoProfiles, favouriteRepos: s.favouriteRepos ?? [] },
+        oldPath,
+        newPath
+      )
+    })),
 
   reorderReposInGroup: (tabId, fromPath, toPath) =>
     get().update((s) => ({
@@ -744,6 +793,21 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       const activeTabId =
         s.activeTabId === tabId ? (tabs[Math.min(idx, tabs.length - 1)]?.id ?? null) : s.activeTabId
       return { ...s, tabs, activeTabId }
+    }),
+
+  closeAllRepoTabs: () =>
+    get().update((s) => {
+      const keep = s.tabs.filter((tab) => tab.kind === 'page')
+      if (keep.length === s.tabs.length) return s
+      // Pushed right to left so popping with ⌘⇧T brings them back in the order
+      // they sat in the strip. Same ten-deep stack a single close uses.
+      for (let i = s.tabs.length - 1; i >= 0; i--) {
+        const tab = s.tabs[i]
+        if (tab.kind !== 'page') closedTabStack.push({ tab, idx: i })
+      }
+      while (closedTabStack.length > 10) closedTabStack.shift()
+      const stillOpen = keep.some((tab) => tab.id === s.activeTabId)
+      return { ...s, tabs: keep, activeTabId: stillOpen ? s.activeTabId : (keep[0]?.id ?? null) }
     }),
 
   reopenClosedTab: () => {
@@ -897,6 +961,47 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       const ws: Workspace = { id: uid(), name, tabs: [], activeTabId: null }
       return { ...s, workspaces: [...s.workspaces, ws], activeWorkspaceId: ws.id, tabs: [], activeTabId: null }
     }),
+
+  applyWorkspacePlan: (candidates) => {
+    let created = 0
+    let merged = 0
+    let repos = 0
+    // One update for the whole plan, not one per workspace: a plan of a dozen
+    // folders would otherwise write the settings file a dozen times.
+    get().update((s) => {
+      const workspaces = [...s.workspaces]
+      for (const candidate of candidates) {
+        // Generated tabs are ordinary repo tabs — nothing about a workspace
+        // built this way is special once it exists.
+        const tabs: TabState[] = candidate.newRepoPaths.map((path) => {
+          const name = repoDisplayName(path, s.repoAliases)
+          return { id: uid(), kind: 'repo', name, repos: [{ path, name }], activeRepoPath: path }
+        })
+        if (tabs.length === 0) continue
+        repos += tabs.length
+        const idx = workspaces.findIndex((w) => w.id === candidate.existingWorkspaceId)
+        if (idx >= 0) {
+          const existing = workspaces[idx]
+          // Order, name, colour and the active tab are the user's; only append.
+          workspaces[idx] = { ...existing, tabs: [...existing.tabs, ...tabs] }
+          merged += 1
+        } else {
+          workspaces.push({
+            id: uid(),
+            name: candidate.name,
+            tabs,
+            activeTabId: tabs[0].id,
+            sourcePath: candidate.path
+          })
+          created += 1
+        }
+      }
+      // `activeWorkspaceId`, `tabs` and `activeTabId` are deliberately absent:
+      // building workspaces in the background must not move the user.
+      return { ...s, workspaces }
+    })
+    return { created, merged, repos }
+  },
 
   renameWorkspace: (id, name) =>
     get().update((s) => ({

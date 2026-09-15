@@ -214,6 +214,13 @@ export function CommandPalette(): React.JSX.Element {
       }
     }
 
+    // Above the early return on purpose: finding a repository that is *not*
+    // open is the whole point of this page, so it has to be reachable when
+    // nothing is open. Nothing in the entry depends on the active repo.
+    list.push(
+      { id: 'repositories', title: t('cmd.repositories'), group: 'Actions', keywords: 'repositories repos all known registry favourites recent browse find open workspace', icon: <FolderGit2 size={15} />, run: act(() => useSettingsStore.getState().openPageTab({ type: 'repositories' })) }
+    )
+
     if (!repo) return list
     const path = repo.path
 

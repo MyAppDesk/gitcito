@@ -64,7 +64,8 @@
       "commit-edit": "commit-edit",
       "reset-to-commit": "merging",
       "local-ci": "local-ci",
-      "stack-submit": "stacks"
+      "stack-submit": "stacks",
+      "scan-workspaces": "repositories"
     },
     "exempt": {
       "input": "Generic single-field prompt reused everywhere; not a feature.",
@@ -84,7 +85,8 @@
       "release": "hosting",
       "notifications": "hosting",
       "logs": "repo-settings",
-      "licenses": "licenses"
+      "licenses": "licenses",
+      "repositories": "repositories"
     },
     "exempt": {
       "help": "This handbook itself.",
@@ -132,6 +134,7 @@
       "merge-options": "merge-options",
       "objects": "objects",
       "mission-control": "mission-control",
+      "repositories": "repositories",
       "gitflow": "gitflow",
       "history-purge": "history-purge",
       "notifications": "hosting",

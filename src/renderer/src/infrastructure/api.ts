@@ -154,7 +154,10 @@ import type {
   PreparedRepoChatFileAction,
   RepoFileBatchResult,
   RepoWiki,
-  WikiProgress
+  WikiProgress,
+  RegistryRepo,
+  RepoScanRoot,
+  RepoScanResult
 } from '../../../shared/types'
 import type {
   LocalCiStatus,
@@ -735,6 +738,16 @@ export const vaultApi = {
   importAll: (data: VaultExport) => window.api.vault.importAll(data) as Promise<void>
 }
 
+export const reposApi = {
+  list: () => window.api.repos.list() as Promise<RegistryRepo[]>,
+  remember: (repoPath: string) => window.api.repos.remember(repoPath) as Promise<RegistryRepo[]>,
+  forget: (repoPath: string) => window.api.repos.forget(repoPath) as Promise<RegistryRepo[]>,
+  scan: (rootList: RepoScanRoot[]) => window.api.repos.scan(rootList) as Promise<RepoScanResult>,
+  locate: (oldPath: string, newPath: string) =>
+    window.api.repos.locate(oldPath, newPath) as Promise<RegistryRepo[]>,
+  refresh: (paths: string[]) => window.api.repos.refresh(paths) as Promise<RegistryRepo[]>
+}
+
 export const secureShareApi = {
   candidates: (repoPath: string) =>
     window.api.secureShare.candidates(repoPath) as Promise<SecureShareCandidate[]>,
@@ -789,6 +802,7 @@ export const infoApi = {
 }
 
 export const shellApi = {
+  selectDirectory: (title?: string) => window.api.selectDirectory(title),
   revealInFolder: (fullPath: string) => window.api.shell.showItemInFolder(fullPath),
   openPath: (fullPath: string) => window.api.shell.openPath(fullPath),
   openWithPicker: (fullPath: string) => window.api.shell.openWithPicker(fullPath),

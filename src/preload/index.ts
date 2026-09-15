@@ -197,6 +197,15 @@ const api = {
     exportAll: (): Promise<unknown> => ipcRenderer.invoke('vault:exportAll'),
     importAll: (data: unknown): Promise<unknown> => ipcRenderer.invoke('vault:importAll', data)
   },
+  repos: {
+    list: (): Promise<unknown> => ipcRenderer.invoke('repos:list'),
+    remember: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('repos:remember', repoPath),
+    forget: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('repos:forget', repoPath),
+    scan: (rootList: unknown): Promise<unknown> => ipcRenderer.invoke('repos:scan', rootList),
+    locate: (oldPath: string, newPath: string): Promise<unknown> =>
+      ipcRenderer.invoke('repos:locate', oldPath, newPath),
+    refresh: (paths: string[]): Promise<unknown> => ipcRenderer.invoke('repos:refresh', paths)
+  },
   secureShare: {
     candidates: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('secure:candidates', repoPath),
     export: (repoPath: string, project: string, paths: string[], password: string): Promise<unknown> =>

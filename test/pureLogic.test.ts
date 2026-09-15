@@ -36,10 +36,29 @@ import {
   leafCount,
   shouldCollapsePrefix
 } from '../src/renderer/src/lib/prefixTree'
+import {
+  buildSections,
+  defaultSectionColors,
+  filterSections,
+  isSectionBusy,
+  isSyncing,
+  sectionKey
+} from '../src/renderer/src/lib/repoSections'
+import { planWorkspaces } from '../src/renderer/src/lib/workspacePlan'
+import { repathRepoSettings } from '../src/renderer/src/lib/repoRepath'
 import { resolveUpdateOffer } from '../src/renderer/src/lib/updateOffer'
 import { worktreeForBranch, worktreeTabName } from '../src/renderer/src/lib/worktrees'
 import { focusedHashes, focusedStashes, defaultBranchName } from '../src/renderer/src/lib/graphFocus'
-import type { WorktreeInfo, GraphCommit, GraphFocus, StackInfo, PullRequest } from '../src/shared/types'
+import type {
+  WorktreeInfo,
+  GraphCommit,
+  GraphFocus,
+  StackInfo,
+  PullRequest,
+  RegistryRepo,
+  TabState,
+  Workspace
+} from '../src/shared/types'
 import { comboFromEvent, formatCombo, effectiveBindings, isReservedCombo, matchShortcut, tabActionFromEvent, tabIndexFromEvent } from '../src/renderer/src/lib/shortcuts'
 import { terminalCloseTarget, terminalShortcutFromEvent } from '../src/renderer/src/lib/terminalShortcuts'
 import { panelDisplayName, groupDisplayName } from '../src/renderer/src/lib/terminalTitles'
@@ -65,7 +84,6 @@ import { resolveInputTokens } from '../src/main/launch'
 import { closeTabPrompt, repoCloseStatus, tabCloseStatus } from '../src/renderer/src/lib/tabClose'
 import { formatBytes, parseTooLargeError } from '../src/renderer/src/lib/fileSize'
 import { FILE_TOO_LARGE_PREFIX } from '../src/shared/types'
-import type { TabState } from '../src/shared/types'
 import { autolink, remoteWebUrl, filePermalink } from '../src/renderer/src/lib/autolink'
 import { githubCommitUrl, parseGitHubRemote, githubRemote } from '../src/renderer/src/lib/hosting'
 import {
@@ -6604,5 +6622,420 @@ describe('prefixTree', () => {
     expect(shouldCollapsePrefix(feat)).toBe(false)
     expect(feat.item).toBe('feat')
     expect([...feat.children.keys()]).toEqual(['login'])
+  })
+})
+
+describe('workspacePlan', () => {
+  const ws = (over: Partial<Workspace> = {}): Workspace => ({
+    id: 'w1',
+    name: 'Collins',
+    tabs: [],
+    activeTabId: null,
+    ...over
+  })
+
+  const repoTab = (path: string): TabState =>
+    ({
+      id: `t-${path}`,
+      name: path.split('/').pop() ?? path,
+      kind: 'repo',
+      repos: [{ path, name: path.split('/').pop() ?? path }],
+      activeRepoPath: path
+    }) as TabState
+
+  const root = '/Users/gs/Code'
+  const paths = [
+    '/Users/gs/Code/Arduino/blink',
+    '/Users/gs/Code/Arduino/sensors',
+    '/Users/gs/Code/Collins/microtecnica/ilcm',
+    '/Users/gs/Code/Collins/frontend-libraries',
+    '/Users/gs/Code/loose-repo'
+  ]
+
+  it('groups repositories by their first segment below the root', () => {
+    const plan = planWorkspaces({ root, repoPaths: paths, workspaces: [] })
+    expect(plan.filter((c) => !c.loose).map((c) => c.name)).toEqual(['Arduino', 'Collins'])
+  })
+
+  // The attribution rule: the user picked a top-level folder, so that is where
+  // everything under it belongs however deep it actually sits.
+  it('attributes a deeply nested repository to the top-level folder', () => {
+    const plan = planWorkspaces({ root, repoPaths: paths, workspaces: [] })
+    const collins = plan.find((c) => c.name === 'Collins')
+    expect(collins?.repoPaths).toContain('/Users/gs/Code/Collins/microtecnica/ilcm')
+    expect(plan.some((c) => c.name === 'microtecnica')).toBe(false)
+  })
+
+  it('puts a repository directly under the root in a loose row named after the root', () => {
+    const plan = planWorkspaces({ root, repoPaths: paths, workspaces: [] })
+    const loose = plan.find((c) => c.loose)
+    expect(loose?.name).toBe('Code')
+    expect(loose?.repoPaths).toEqual(['/Users/gs/Code/loose-repo'])
+  })
+
+  it('offers nothing for a folder that contains no repositories', () => {
+    const plan = planWorkspaces({ root, repoPaths: ['/Users/gs/Code/Arduino/blink'], workspaces: [] })
+    expect(plan.map((c) => c.name)).toEqual(['Arduino'])
+  })
+
+  it('returns nothing at all for a root with no repositories', () => {
+    expect(planWorkspaces({ root, repoPaths: [], workspaces: [] })).toEqual([])
+  })
+
+  it('counts only repositories the existing workspace does not already hold', () => {
+    const existing = ws({
+      sourcePath: '/Users/gs/Code/Collins',
+      tabs: [repoTab('/Users/gs/Code/Collins/frontend-libraries')]
+    })
+    const collins = planWorkspaces({ root, repoPaths: paths, workspaces: [existing] }).find(
+      (c) => c.name === 'Collins'
+    )
+    expect(collins?.existingWorkspaceId).toBe('w1')
+    expect(collins?.repoPaths).toHaveLength(2)
+    expect(collins?.newRepoPaths).toEqual(['/Users/gs/Code/Collins/microtecnica/ilcm'])
+  })
+
+  // Matching on name alone would find nothing here and create a duplicate.
+  it('still matches a generated workspace that has since been renamed', () => {
+    const renamed = ws({ name: 'Work stuff', sourcePath: '/Users/gs/Code/Collins' })
+    const collins = planWorkspaces({ root, repoPaths: paths, workspaces: [renamed] }).find(
+      (c) => c.name === 'Collins'
+    )
+    expect(collins?.existingWorkspaceId).toBe('w1')
+  })
+
+  it('falls back to a name match for a hand-made workspace with no sourcePath', () => {
+    const byHand = ws({ name: 'Collins' })
+    const collins = planWorkspaces({ root, repoPaths: paths, workspaces: [byHand] }).find(
+      (c) => c.name === 'Collins'
+    )
+    expect(collins?.existingWorkspaceId).toBe('w1')
+  })
+
+  it('does not match a workspace generated from a different folder of the same name', () => {
+    const other = ws({ name: 'Collins', sourcePath: '/Users/gs/Other/Collins' })
+    const collins = planWorkspaces({ root, repoPaths: paths, workspaces: [other] }).find(
+      (c) => c.name === 'Collins'
+    )
+    expect(collins?.existingWorkspaceId).toBeUndefined()
+  })
+
+  it('tolerates a root given with a trailing slash', () => {
+    const plan = planWorkspaces({ root: '/Users/gs/Code/', repoPaths: paths, workspaces: [] })
+    expect(plan.find((c) => c.name === 'Arduino')?.path).toBe('/Users/gs/Code/Arduino')
+  })
+
+  it('ignores paths that are not under the root', () => {
+    const plan = planWorkspaces({
+      root,
+      repoPaths: [...paths, '/Users/gs/Elsewhere/thing'],
+      workspaces: []
+    })
+    expect(plan.flatMap((c) => c.repoPaths)).not.toContain('/Users/gs/Elsewhere/thing')
+  })
+})
+
+describe('repoSections', () => {
+  const repo = (path: string, extra: Partial<RegistryRepo> = {}): RegistryRepo => ({
+    path,
+    name: path.split('/').pop() ?? path,
+    owner: 'top-solution',
+    branch: 'main',
+    source: 'opened',
+    lastOpenedAt: 100,
+    missing: false,
+    ...extra
+  })
+
+  const base = {
+    registry: [repo('/r/alpha'), repo('/r/beta'), repo('/r/gamma', { lastOpenedAt: 300 })],
+    openPaths: ['/r/alpha'],
+    favourites: ['/r/beta'],
+    workspaces: [{ id: 'w1', name: 'Collins', tabs: [], activeTabId: null }],
+    workspaceRepoPaths: { w1: ['/r/alpha', '/r/gamma'] },
+    aliases: {} as Record<string, string>
+  }
+
+  it('builds open, favourites, recent, one per workspace, and all', () => {
+    const kinds = buildSections(base).map((s) => s.kind)
+    expect(kinds).toEqual(['open', 'favourites', 'recent', 'workspace', 'all'])
+  })
+
+  // Each section is a complete answer to its own question. "What is open?"
+  // must not omit an open repo because that repo also happens to be starred.
+  it('lists a repo in every section it qualifies for', () => {
+    const sections = buildSections(base)
+    const paths = (kind: string): string[] =>
+      sections.filter((s) => s.kind === kind).flatMap((s) => s.rows.map((r) => r.repo.path))
+    expect(paths('open')).toContain('/r/alpha')
+    expect(paths('workspace')).toContain('/r/alpha')
+    expect(paths('all')).toContain('/r/alpha')
+  })
+
+  it('orders recent by lastOpenedAt, newest first', () => {
+    const recent = buildSections(base).find((s) => s.kind === 'recent')
+    expect(recent?.rows[0].repo.path).toBe('/r/gamma')
+  })
+
+  it('never shows a repo with lastOpenedAt 0 in recent', () => {
+    const sections = buildSections({
+      ...base,
+      registry: [...base.registry, repo('/r/delta', { source: 'scanned', lastOpenedAt: 0 })]
+    })
+    const recent = sections.find((s) => s.kind === 'recent')
+    expect(recent?.rows.map((r) => r.repo.path)).not.toContain('/r/delta')
+    const all = sections.find((s) => s.kind === 'all')
+    expect(all?.rows.map((r) => r.repo.path)).toContain('/r/delta')
+  })
+
+  it('marks favourite rows so the star renders filled', () => {
+    const all = buildSections(base).find((s) => s.kind === 'all')
+    expect(all?.rows.find((r) => r.repo.path === '/r/beta')?.favourite).toBe(true)
+    expect(all?.rows.find((r) => r.repo.path === '/r/alpha')?.favourite).toBe(false)
+  })
+
+  it('uses the alias as the display name when one is set', () => {
+    const sections = buildSections({ ...base, aliases: { '/r/alpha': 'The Alpha' } })
+    const all = sections.find((s) => s.kind === 'all')
+    expect(all?.rows.find((r) => r.repo.path === '/r/alpha')?.label).toBe('The Alpha')
+  })
+
+  const palette = ['#a', '#b', '#c', '#d', '#e']
+
+  it('gives every section a colour so the page is not a wall of grey', () => {
+    const sections = buildSections(base)
+    const colors = defaultSectionColors(sections, palette)
+    expect(Object.keys(colors).sort()).toEqual(
+      ['all', 'favourites', 'open', 'recent', 'workspace:w1'].sort()
+    )
+  })
+
+  // The search box rebuilds the sections on every keystroke. A colour drawn per
+  // render would strobe, so the assignment has to be a function of the keys.
+  it('assigns the same colours to the same sections every time', () => {
+    const once = defaultSectionColors(buildSections(base), palette)
+    const twice = defaultSectionColors(buildSections(base), palette)
+    expect(twice).toEqual(once)
+  })
+
+  // Why the page must pass the *unfiltered* sections: a search drops sections,
+  // which shifts every later section's palette index. Derive colours from what
+  // survives a query and the whole page recolours as you type.
+  it('assigns different colours once a search has dropped sections', () => {
+    const all = defaultSectionColors(buildSections(base), palette)
+    const filtered = defaultSectionColors(filterSections(buildSections(base), 'beta'), palette)
+    expect(filtered['favourites']).not.toBe(all['favourites'])
+  })
+
+  it('gives adjacent sections different colours', () => {
+    const colors = defaultSectionColors(buildSections(base), palette)
+    const used = Object.values(colors)
+    expect(new Set(used).size).toBe(used.length)
+  })
+
+  // `buildSections` emits `all` last, after the workspaces. Assigning in list
+  // order would recolour "All repositories" every time a workspace was added.
+  it('keeps built-in section colours stable when a workspace is added', () => {
+    const before = defaultSectionColors(buildSections(base), palette)
+    const after = defaultSectionColors(
+      buildSections({
+        ...base,
+        workspaces: [
+          ...base.workspaces,
+          { id: 'w2', name: 'Arduino', tabs: [], activeTabId: null }
+        ],
+        workspaceRepoPaths: { ...base.workspaceRepoPaths, w2: [] }
+      }),
+      palette
+    )
+    for (const key of ['open', 'favourites', 'recent', 'all']) {
+      expect(after[key]).toBe(before[key])
+    }
+  })
+
+  it('wraps around a palette shorter than the section list', () => {
+    const colors = defaultSectionColors(buildSections(base), ['#only', '#two'])
+    expect(new Set(Object.values(colors))).toEqual(new Set(['#only', '#two']))
+  })
+
+  it('keys a workspace section by its id, not its name', () => {
+    const workspace = buildSections(base).find((s) => s.kind === 'workspace')
+    expect(workspace && sectionKey(workspace)).toBe('workspace:w1')
+  })
+
+  // A per-section boolean cannot tell fetch from pull, so the spinner landed
+  // on whichever button happened to render it — always fetch, even when pull
+  // started the run.
+  it('reports a spinner only for the operation that is actually running', () => {
+    const sync = { key: 'open', op: 'pull' as const }
+    expect(isSyncing(sync, 'open', 'pull')).toBe(true)
+    expect(isSyncing(sync, 'open', 'fetch')).toBe(false)
+  })
+
+  it('reports no spinner for a section that is not running', () => {
+    const sync = { key: 'open', op: 'fetch' as const }
+    expect(isSyncing(sync, 'favourites', 'fetch')).toBe(false)
+    expect(isSyncing(null, 'open', 'fetch')).toBe(false)
+  })
+
+  // Disabling is the other question: while either operation runs, both buttons
+  // are unavailable, so this one deliberately ignores the operation.
+  it('treats a section as busy while either operation runs', () => {
+    expect(isSectionBusy({ key: 'open', op: 'pull' }, 'open')).toBe(true)
+    expect(isSectionBusy({ key: 'open', op: 'fetch' }, 'open')).toBe(true)
+    expect(isSectionBusy({ key: 'open', op: 'fetch' }, 'recent')).toBe(false)
+    expect(isSectionBusy(null, 'open')).toBe(false)
+  })
+
+  // A search that leaves twenty "No matches" headings behind has buried its own
+  // answer. Sections that match nothing are dropped while a query is active.
+  it('drops sections that match nothing while searching', () => {
+    const filtered = filterSections(buildSections(base), 'beta')
+    expect(filtered.find((s) => s.kind === 'open')).toBeUndefined()
+    const favourites = filtered.find((s) => s.kind === 'favourites')
+    expect(favourites?.rows.map((r) => r.repo.path)).toEqual(['/r/beta'])
+  })
+
+  it('returns nothing at all when the query matches no repository', () => {
+    expect(filterSections(buildSections(base), 'nothing-matches-this')).toEqual([])
+  })
+
+  // Without a query an empty section is structure, not noise: "Favourites 0"
+  // tells you favourites exist and you have none.
+  it('keeps empty sections when there is no query', () => {
+    const all = filterSections(buildSections({ ...base, favourites: [] }), '')
+    expect(all.find((s) => s.kind === 'favourites')?.rows).toHaveLength(0)
+  })
+
+  it('ignores a query that is only whitespace', () => {
+    const all = filterSections(buildSections({ ...base, favourites: [] }), '   ')
+    expect(all.find((s) => s.kind === 'favourites')).toBeDefined()
+  })
+
+  it('matches the filter against alias, name, owner and path', () => {
+    const sections = buildSections({ ...base, aliases: { '/r/alpha': 'The Alpha' } })
+    expect(filterSections(sections, 'the alpha').find((s) => s.kind === 'all')?.rows).toHaveLength(1)
+    expect(filterSections(sections, 'top-solution').find((s) => s.kind === 'all')?.rows).toHaveLength(3)
+    expect(filterSections(sections, '/r/gamma').find((s) => s.kind === 'all')?.rows).toHaveLength(1)
+  })
+
+  it('returns an empty section rather than omitting a workspace with no repos', () => {
+    const sections = buildSections({ ...base, workspaceRepoPaths: { w1: [] } })
+    const ws = sections.find((s) => s.kind === 'workspace')
+    expect(ws).toBeDefined()
+    expect(ws?.rows).toHaveLength(0)
+  })
+
+  it('does not duplicate a repo starred twice', () => {
+    const sections = buildSections({ ...base, favourites: ['/r/beta', '/r/beta'] })
+    const favourites = sections.find((s) => s.kind === 'favourites')
+    expect(favourites?.rows).toHaveLength(1)
+  })
+
+  // A path only reaches a row through the registry. Skipping rather than
+  // throwing is what keeps a stale tab list from taking the whole page down.
+  it('skips a path the registry has never heard of', () => {
+    const sections = buildSections({
+      ...base,
+      openPaths: ['/r/alpha', '/r/unknown'],
+      favourites: ['/r/unknown']
+    })
+    const rows = (kind: string): string[] =>
+      sections.filter((s) => s.kind === kind).flatMap((s) => s.rows.map((r) => r.repo.path))
+    expect(rows('open')).toEqual(['/r/alpha'])
+    expect(rows('favourites')).toEqual([])
+  })
+
+  it('shows that path once the registry knows it', () => {
+    const sections = buildSections({
+      ...base,
+      registry: [...base.registry, repo('/r/unknown')],
+      openPaths: ['/r/alpha', '/r/unknown'],
+      favourites: ['/r/unknown']
+    })
+    const rows = (kind: string): string[] =>
+      sections.filter((s) => s.kind === kind).flatMap((s) => s.rows.map((r) => r.repo.path))
+    expect(rows('open')).toContain('/r/unknown')
+    expect(rows('favourites')).toEqual(['/r/unknown'])
+  })
+})
+
+describe('repathRepoSettings', () => {
+  it('moves alias, profile and star from oldPath to newPath', () => {
+    const result = repathRepoSettings(
+      {
+        repoAliases: { '/r/old': 'Old Alias' },
+        repoProfiles: { '/r/old': 'profile-1' },
+        favouriteRepos: ['/r/old']
+      },
+      '/r/old',
+      '/r/new'
+    )
+    expect(result.repoAliases).toEqual({ '/r/new': 'Old Alias' })
+    expect(result.repoProfiles).toEqual({ '/r/new': 'profile-1' })
+    expect(result.favouriteRepos).toEqual(['/r/new'])
+  })
+
+  it('keeps the destination alias rather than overwriting it with the moved one', () => {
+    const result = repathRepoSettings(
+      {
+        repoAliases: { '/r/old': 'Old Alias', '/r/new': 'Destination Alias' },
+        repoProfiles: {},
+        favouriteRepos: []
+      },
+      '/r/old',
+      '/r/new'
+    )
+    expect(result.repoAliases).toEqual({ '/r/new': 'Destination Alias' })
+  })
+
+  it('keeps the destination profile rather than overwriting it with the moved one', () => {
+    const result = repathRepoSettings(
+      {
+        repoAliases: {},
+        repoProfiles: { '/r/old': 'profile-1', '/r/new': 'profile-2' },
+        favouriteRepos: []
+      },
+      '/r/old',
+      '/r/new'
+    )
+    expect(result.repoProfiles).toEqual({ '/r/new': 'profile-2' })
+  })
+
+  it('does not duplicate the destination when both paths were starred', () => {
+    const result = repathRepoSettings(
+      { repoAliases: {}, repoProfiles: {}, favouriteRepos: ['/r/old', '/r/new'] },
+      '/r/old',
+      '/r/new'
+    )
+    expect(result.favouriteRepos).toEqual(['/r/new'])
+  })
+
+  it('moves a repo with no alias, profile or star without inventing entries', () => {
+    const result = repathRepoSettings(
+      { repoAliases: {}, repoProfiles: {}, favouriteRepos: [] },
+      '/r/old',
+      '/r/new'
+    )
+    expect(result.repoAliases).toEqual({})
+    expect(result.repoProfiles).toEqual({})
+    expect(result.favouriteRepos).toEqual([])
+  })
+
+  // Same key on both sides: keeping the destination and then dropping the
+  // source would delete the very entry that was kept.
+  it('leaves everything alone when the path does not actually move', () => {
+    const result = repathRepoSettings(
+      {
+        repoAliases: { '/r/same': 'Alias' },
+        repoProfiles: { '/r/same': 'profile-1' },
+        favouriteRepos: ['/r/same']
+      },
+      '/r/same',
+      '/r/same'
+    )
+    expect(result.repoAliases).toEqual({ '/r/same': 'Alias' })
+    expect(result.repoProfiles).toEqual({ '/r/same': 'profile-1' })
+    expect(result.favouriteRepos).toEqual(['/r/same'])
   })
 })

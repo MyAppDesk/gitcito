@@ -56,6 +56,7 @@ import {
   Rows3,
   Ruler,
   ScanSearch,
+  FolderSearch,
   SlidersHorizontal,
   SquarePen,
   ToggleLeft,
@@ -64,6 +65,7 @@ import {
 } from 'lucide-react'
 import hljs from 'highlight.js'
 import { useSettingsStore } from '../stores/settings'
+import { useReposStore } from '../stores/repos'
 import { useUIStore } from '../stores/ui'
 import { Avatar } from './Avatar'
 import { useUpdatesStore, hasPendingUpdate } from '../stores/updates'
@@ -3265,6 +3267,96 @@ function ShortcutsPage(): React.JSX.Element {
   )
 }
 
+/** Folders Gitcito walks looking for repositories. Preferences, not a live
+ *  view — "Scan now" is explicit because a scan spawns a process per
+ *  candidate folder and nobody wants that running unasked. */
+function ScanRootsSection(): React.JSX.Element {
+  const t = useT()
+  const settings = useSettingsStore((s) => s.settings)
+  const update = useSettingsStore((s) => s.update)
+  const toast = useUIStore((s) => s.toast)
+  const scanning = useReposStore((s) => s.scanning)
+  const scan = useReposStore((s) => s.scan)
+  const roots = settings.repoScanRoots
+
+  const setDepth = (path: string, depth: number): void => {
+    update((s) => ({
+      ...s,
+      repoScanRoots: s.repoScanRoots.map((r) => (r.path === path ? { ...r, depth } : r))
+    }))
+  }
+
+  const removeRoot = (path: string): void => {
+    update((s) => ({ ...s, repoScanRoots: s.repoScanRoots.filter((r) => r.path !== path) }))
+  }
+
+  const addRoot = async (): Promise<void> => {
+    const chosen = await shellApi.selectDirectory()
+    if (!chosen) return
+    update((s) => ({ ...s, repoScanRoots: [...s.repoScanRoots, { path: chosen, depth: 3 }] }))
+  }
+
+  const runScan = async (): Promise<void> => {
+    const found = await scan(useSettingsStore.getState().settings.repoScanRoots)
+    toast('success', interp(t('repos.scanFound'), { n: found }))
+  }
+
+  return (
+    <div style={{ marginTop: 28 }}>
+      <h4 className="settings-section-title">
+        <FolderSearch size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />
+        {t('repos.scanRoots')}
+      </h4>
+      <p className="settings-hint">{t('repos.scanRootsHint')}</p>
+
+      {roots.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 10 }}>
+          {roots.map((root) => (
+            <div key={root.path} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span
+                className="settings-hint"
+                style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                title={root.path}
+              >
+                {root.path}
+              </span>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, flex: '0 0 auto' }}>
+                {t('repos.scanDepth')}
+                <input
+                  type="number"
+                  min={1}
+                  max={10}
+                  step={1}
+                  value={root.depth}
+                  onChange={(e) => setDepth(root.path, Math.min(10, Math.max(1, Number(e.target.value) || 1)))}
+                  style={{ maxWidth: 50 }}
+                />
+              </label>
+              <button
+                className="btn ghost small"
+                title={t('repos.removeScanRoot')}
+                onClick={() => removeRoot(root.path)}
+              >
+                <Trash2 size={13} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10 }}>
+        <button className="btn ghost small" onClick={() => void addRoot()}>
+          <Plus size={13} />
+          {t('repos.addScanRoot')}
+        </button>
+        <button className="btn ghost small" onClick={() => void runScan()} disabled={scanning || roots.length === 0}>
+          {scanning ? t('repos.scanning') : t('repos.scanNow')}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function RepoDataSection(): React.JSX.Element {
   const t = useT()
   const settings = useSettingsStore((s) => s.settings)
@@ -3695,6 +3787,7 @@ function DataPage(): React.JSX.Element {
         <p className="settings-hint">{t('settings.dataIntro')}</p>
       </div>
       <DataManagementSection />
+      <ScanRootsSection />
       <RepoDataSection />
       <p className="settings-hint" style={{ marginTop: 12 }}>{t('settings.analyticsMoved')}</p>
     </div>

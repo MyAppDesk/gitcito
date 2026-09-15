@@ -72,6 +72,86 @@ import { useT, interp } from '../i18n'
 import { defaultOptionIndex, isPickInput, normalizeOptions } from '../lib/launchInputs'
 import { AIAccountsNotice } from './AIAccountsNotice'
 
+/**
+ * After a scan, offer the folder tree as workspaces. Up-to-date rows stay
+ * rather than hidden: staying silent about a folder the user knows is there
+ * reads as a bug, not as tidiness.
+ */
+function ScanWorkspacesModal({
+  spec
+}: {
+  spec: Extract<ModalSpec, { kind: 'scan-workspaces' }>
+}): React.JSX.Element {
+  const t = useT()
+  const closeModal = useUIStore((s) => s.closeModal)
+  const actionable = spec.candidates.filter((c) => c.newRepoPaths.length > 0)
+  // Everything with something to add starts ticked, except the loose row: a
+  // folder of odds and ends is rarely a context worth switching into.
+  const [picked, setPicked] = useState<Set<string>>(
+    () => new Set(actionable.filter((c) => !c.loose).map((c) => c.path))
+  )
+
+  const toggle = (path: string): void =>
+    setPicked((prev) => {
+      const next = new Set(prev)
+      if (next.has(path)) next.delete(path)
+      else next.add(path)
+      return next
+    })
+
+  const confirm = (): void => {
+    closeModal()
+    spec.onConfirm(actionable.filter((c) => picked.has(c.path)))
+  }
+
+  return (
+    <>
+      <h3>{t('repos.wsTitle')}</h3>
+      <p className="modal-hint">{interp(t('repos.wsIntro'), { root: spec.root })}</p>
+      {spec.candidates.length === 0 ? (
+        <p className="modal-hint">{t('repos.wsNone')}</p>
+      ) : (
+        <div className="ws-plan">
+          {spec.candidates.map((c) => {
+            const upToDate = c.newRepoPaths.length === 0
+            return (
+              <label key={c.path} className={`ws-plan-row${upToDate ? ' ws-plan-done' : ''}`}>
+                <input
+                  type="checkbox"
+                  disabled={upToDate}
+                  checked={picked.has(c.path)}
+                  onChange={() => toggle(c.path)}
+                />
+                <span className="ws-plan-name">{c.name}</span>
+                <span className="ws-plan-count">
+                  {interp(t('repos.wsCount'), { n: c.repoPaths.length })}
+                </span>
+                <span className="ws-plan-note">
+                  {upToDate
+                    ? t('repos.wsUpToDate')
+                    : c.existingWorkspaceId
+                      ? interp(t('repos.wsMerge'), { n: c.newRepoPaths.length, name: c.name })
+                      : c.loose
+                        ? t('repos.wsLoose')
+                        : ''}
+                </span>
+              </label>
+            )
+          })}
+        </div>
+      )}
+      <div className="modal-actions">
+        <button className="btn ghost" onClick={closeModal}>
+          {t('common.cancel')}
+        </button>
+        <button className="btn primary" disabled={picked.size === 0} onClick={confirm}>
+          {t('repos.wsCreate')}
+        </button>
+      </div>
+    </>
+  )
+}
+
 function GroupColorModal({ spec }: { spec: Extract<ModalSpec, { kind: 'group-color' }> }): React.JSX.Element {
   const t = useT()
   const closeModal = useUIStore((s) => s.closeModal)
@@ -1824,6 +1904,7 @@ export function ModalHost(): React.JSX.Element {
               <AIPRReview repoPath={modal.repoPath} prTitle={modal.prTitle} sourceBranch={modal.sourceBranch} targetBranch={modal.targetBranch} />
             )}
             {modal.kind === 'group-color' && <GroupColorModal spec={modal} />}
+            {modal.kind === 'scan-workspaces' && <ScanWorkspacesModal spec={modal} />}
             {modal.kind === 'reflog' && <ReflogModal repoPath={modal.repoPath} />}
             {modal.kind === 'code-search' && <CodeSearchModal repoPath={modal.repoPath} query={modal.query} />}
             {modal.kind === 'stack' && <StackModal repoPath={modal.repoPath} />}

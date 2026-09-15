@@ -2630,6 +2630,41 @@ export interface RepoFolder {
   folders: RepoFolder[]
 }
 
+/** One repository Gitcito knows about, whether or not it is open. The registry
+ *  file is a cache: lose it and a rescan rebuilds it. */
+export interface RegistryRepo {
+  /** Canonical absolute path — the identity, and the key used everywhere else. */
+  path: string
+  /** Folder name at index time. `repoAliases` still wins for display. */
+  name: string
+  /** First path segment of the remote's namespace. Null with no remote. */
+  owner: string | null
+  /** Branch as of the last index, read from .git/HEAD. Null when detached. */
+  branch: string | null
+  /** How it got here — a scanned repo the user has never opened still lists. */
+  source: 'opened' | 'scanned'
+  /** Unix seconds. Drives the Recent section, which is therefore not capped. */
+  lastOpenedAt: number
+  /** Folder absent at the last existence check. Stored rather than computed:
+   *  stat-ing 200 paths belongs on page load, never in a render. */
+  missing: boolean
+}
+
+/** A folder Gitcito scans for repositories. A preference, not an index. */
+export interface RepoScanRoot {
+  path: string
+  /** How deep to descend. 3 covers ~/Code/<client>/<repo>; deeper gets slow
+   *  fast, and a repo nested further is almost always vendored. */
+  depth: number
+}
+
+/** What a scan produced. `added` is counted where the merge happens, because a
+ *  caller cannot reconstruct it from the registry it is handed. */
+export interface RepoScanResult {
+  repos: RegistryRepo[]
+  added: number
+}
+
 /** A collection of repositories shown under one collapsible chip. Repos not
  *  claimed by any folder in `folders` render at the group root. */
 export interface GroupTab extends TabBase {
@@ -2666,6 +2701,7 @@ export type PageContent =
   | { type: 'insights'; repoPath: string }
   | { type: 'wiki'; repoPath: string }
   | { type: 'vault' }
+  | { type: 'repositories' }
   | { type: 'help'; page?: string }
   | { type: 'licenses' }
   // Flutter DevTools, embedded. `url` is the address at the time the tab was
@@ -2762,6 +2798,10 @@ export interface Workspace {
   name: string
   tabs: TabState[]
   activeTabId: string | null
+  /** Folder a scan generated this workspace from. Survives a rename so the
+   *  next scan merges instead of creating a duplicate. Absent on hand-made
+   *  workspaces, which match by name instead. */
+  sourcePath?: string
 }
 
 export interface AppSettings {
@@ -2785,6 +2825,17 @@ export interface AppSettings {
   workspaces: Workspace[]
   activeWorkspaceId: string
   recentRepos: RepoRef[]
+  /** Folders scanned for repositories by the Repositories page. */
+  repoScanRoots: RepoScanRoot[]
+  /** Starred repositories, by canonical path. Path-keyed for the same reason
+   *  `repoAliases` is: the same folder in two tabs must not diverge. */
+  favouriteRepos: string[]
+  /** Section tints on the Repositories page, keyed by that page's section key
+   *  (`open`, `favourites`, `recent`, `all`, `workspace:<id>`). Page-local: a
+   *  colour here says nothing about the workspace it may name. */
+  repoSectionColors: Record<string, string>
+  /** How a multi-repo pull reconciles when the user has not said otherwise. */
+  pullMode: 'default' | 'ff-only' | 'rebase'
   appThemeId: string
   codeThemeId: string
   themeMode: ThemeMode
@@ -3221,6 +3272,10 @@ export function defaultSettings(): AppSettings {
     workspaces: [{ id: 'default', name: 'Default', tabs: [], activeTabId: null }],
     activeWorkspaceId: 'default',
     recentRepos: [],
+    repoScanRoots: [],
+    favouriteRepos: [],
+    repoSectionColors: {},
+    pullMode: 'default',
     appThemeId: 'gitcito',
     codeThemeId: 'gitcito',
     themeMode: 'auto',

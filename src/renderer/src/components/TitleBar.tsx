@@ -52,6 +52,8 @@ function pageTabIcon(type: string): React.JSX.Element {
       return <BookOpen size={13} />
     case 'vault':
       return <KeyRound size={13} />
+    case 'repositories':
+      return <FolderGit2 size={13} />
     case 'logs':
       return <ScrollText size={13} />
     case 'issue':

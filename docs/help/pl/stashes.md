@@ -17,7 +17,7 @@ Stashowanie w Gitcito nie jest na zasadzie wszystko albo nic.
 | **Apply / Pop** | Cały stash albo **tylko niektóre jego pliki** |
 | **Stash → gałąź** | `git stash branch` — wyjście awaryjne, gdy stash nie chce się czysto nałożyć |
 
-Zaznaczenie stasha pokazuje jego pliki i diffy, dokładnie tak jak przy commicie.
+Zaznaczenie stasha pokazuje jego pliki i diffy, dokładnie tak jak przy commicie. Nagłówek nad listą to to samo rozbicie według rodzaju.
 
 Listę plików zaznacza się grupowo tymi samymi gestami co przy
 [stage](staging.md) — klik z <kbd>⌘</kbd>/<kbd>Ctrl</kbd>, klik z <kbd>⇧</kbd>,

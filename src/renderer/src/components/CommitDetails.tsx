@@ -24,6 +24,7 @@ import type { RepoData } from '../stores/repo'
 import { useT, interp } from '../i18n'
 import { openWithMenuItems } from '../lib/openWith'
 import { stepRange, claimRangeKeys, ownsRangeKeys, rangeKeysBlocked, domOrder } from '../lib/rangeSelect'
+import { ChangeSummary } from './ChangeSummary'
 
 function profileUrl(name: string, email: string, remotes: RemoteInfo[]): string | undefined {
   const origin = remotes.find((r) => r.name === 'origin')?.url ?? remotes[0]?.url
@@ -441,9 +442,12 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
         )}
 
         <div className="panel-toolbar">
-          <span className="panel-title">
-            {interp(files.length === 1 ? t('commitPanel.changedFile') : t('commitPanel.changedFiles'), { n: files.length })}
-          </span>
+          <ChangeSummary
+            files={files}
+            title={interp(files.length === 1 ? t('commitPanel.changedFile') : t('commitPanel.changedFiles'), {
+              n: files.length
+            })}
+          />
           <ViewToggle />
         </div>
         <FileSearchBar value={filter} onChange={setFilter} />

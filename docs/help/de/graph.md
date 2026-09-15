@@ -90,7 +90,7 @@ wie oben beschrieben.
 ## Commit-Details
 
 Wählst du einen Commit aus, siehst du seine geänderten Dateien (als Baum oder
-flach), Autor, SHA, Co-Autoren und seine Signatur. `#123`-Referenzen und
+flach), Autor, SHA, Co-Autoren und seine Signatur. Die Kopfzeile über der Dateiliste teilt die Zahl nach Art, in denselben Farben wie die Glyphen in den Zeilen. Hover zeigt die schlichte Gesamtzahl. `#123`-Referenzen und
 `@mentions` werden automatisch mit deinem Host verlinkt.
 
 Die Dateiliste lässt sich mit den üblichen Gesten mehrfach auswählen

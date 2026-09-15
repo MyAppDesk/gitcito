@@ -13,6 +13,17 @@ Het commitpaneel heeft drie lijsten: **Conflicterend**, **Niet gestaged** en
 
 ![Een niet-gestagede diff, met de knoppen voor hunk en bestand ernaast](../../screenshots/line-staging.webp)
 
+## Wat er veranderde, per soort
+
+De kop boven de lijsten splitst het aantal in chips: gewijzigd, toegevoegd,
+verwijderd, hernoemd, conflicterend. Dezelfde kleuren als de glyfen op de
+rijen. Een soort zonder bestanden ontbreekt gewoon, en wordt niet als nul
+getoond. Hover over de chips voor het kale totaal.
+
+Untracked bestanden tellen als toegevoegd. Dat is de ene plek waar de
+staging-samenvatting afwijkt van die van een commit, omdat een commit geen
+untracked bestanden heeft.
+
 ## Drie niveaus van precisie
 
 | Niveau | Hoe |

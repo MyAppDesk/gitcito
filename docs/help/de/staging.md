@@ -14,6 +14,17 @@ gelassen hast.
 
 ![Ein nicht gestagtes Diff, daneben die Bedienelemente für Hunk und Datei](../../screenshots/line-staging.webp)
 
+## Was sich geändert hat, nach Art
+
+Die Kopfzeile über den Listen teilt die Zahl in Chips: geändert, hinzugefügt,
+gelöscht, umbenannt, in Konflikt. Dieselben Farben wie die Glyphen in den
+Zeilen. Eine Art ohne Dateien fehlt einfach, sie wird nicht als Null gezeigt.
+Hover über die Chips zeigt die schlichte Gesamtzahl.
+
+Untracked Dateien zählen als hinzugefügt. Das ist die eine Stelle, an der die
+Staging-Zusammenfassung von der eines Commits abweicht, weil ein Commit keine
+untracked Dateien hat.
+
 ## Drei Genauigkeitsstufen
 
 | Stufe | Wie |

@@ -28,6 +28,7 @@ import { pbxprojOutline } from '../src/renderer/src/lib/pbxprojOutline'
 import { previewKind, isBinaryKind } from '../src/renderer/src/preview/registry'
 import { lockfileFor } from '../src/renderer/src/lib/lockfiles'
 import { isBuildNoise, ignoreLineFor } from '../src/renderer/src/lib/buildNoise'
+import { bucketOf, fileStats, summaryChips, SAMPLE_STATUS } from '../src/renderer/src/lib/fileStats'
 import { resolveUpdateOffer } from '../src/renderer/src/lib/updateOffer'
 import { worktreeForBranch, worktreeTabName } from '../src/renderer/src/lib/worktrees'
 import { focusedHashes, focusedStashes, defaultBranchName } from '../src/renderer/src/lib/graphFocus'
@@ -6507,5 +6508,51 @@ describe('build noise', () => {
   it('ignores a stray file by name, wherever it turns up', () => {
     expect(ignoreLineFor('Demo/nested/.DS_Store')).toBe('.DS_Store')
     expect(ignoreLineFor('Thumbs.db')).toBe('Thumbs.db')
+  })
+})
+
+describe('fileStats', () => {
+  it('buckets git status letters the way the file tree colours them', () => {
+    expect(bucketOf('M')).toBe('mod')
+    expect(bucketOf('A')).toBe('add')
+    expect(bucketOf('?')).toBe('add')
+    expect(bucketOf('C')).toBe('add')
+    expect(bucketOf('D')).toBe('del')
+    expect(bucketOf('R')).toBe('ren')
+    expect(bucketOf('U')).toBe('conflict')
+    expect(bucketOf('T')).toBe('mod')
+    expect(bucketOf(SAMPLE_STATUS.mod)).toBe('mod')
+    expect(bucketOf(SAMPLE_STATUS.add)).toBe('add')
+    expect(bucketOf(SAMPLE_STATUS.del)).toBe('del')
+    expect(bucketOf(SAMPLE_STATUS.ren)).toBe('ren')
+    expect(bucketOf(SAMPLE_STATUS.conflict)).toBe('conflict')
+  })
+
+  it('counts each kind and omits empty chips', () => {
+    const s = fileStats([
+      { status: 'M' },
+      { status: 'M' },
+      { status: 'A' },
+      { status: '?' },
+      { status: 'D' },
+      { status: 'R' }
+    ])
+    expect(s).toEqual({ add: 2, mod: 2, del: 1, ren: 1, conflict: 0 })
+    expect(summaryChips(s).map((c) => [c.bucket, c.n, c.labelKey])).toEqual([
+      ['mod', 2, 'chg.modified'],
+      ['add', 2, 'chg.added'],
+      ['del', 1, 'chg.deletedOne'],
+      ['ren', 1, 'chg.renamedOne']
+    ])
+  })
+
+  it('uses the singular key for a count of one', () => {
+    expect(summaryChips(fileStats([{ status: 'U' }])).map((c) => c.labelKey)).toEqual([
+      'chg.conflictedOne'
+    ])
+  })
+
+  it('returns no chips for an empty file list', () => {
+    expect(summaryChips(fileStats([]))).toEqual([])
   })
 })

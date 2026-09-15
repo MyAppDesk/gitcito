@@ -18,7 +18,7 @@ Stashen ist in Gitcito kein Alles-oder-nichts.
 | **Stash → Branch** | `git stash branch` — der Notausgang, wenn ein Stash sich nicht sauber anwenden lässt |
 
 Wählst du einen Stash aus, siehst du seine Dateien und Diffs, genau wie bei
-einem Commit.
+einem Commit. Die Kopfzeile über der Liste ist dieselbe Aufschlüsselung nach Art.
 
 Die Dateiliste lässt sich mit denselben Gesten mehrfach auswählen wie beim
 [Staging](staging.md) — <kbd>⌘</kbd>/<kbd>Strg</kbd>-Klick, <kbd>⇧</kbd>-Klick,

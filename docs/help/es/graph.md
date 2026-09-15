@@ -84,7 +84,7 @@ un stash cuyo padre tiran, como se dijo más arriba.
 ## Detalles del commit
 
 Al seleccionar un commit se ven sus archivos modificados (en árbol o en plano),
-la autoría, el SHA, los coautores y su firma. Las referencias `#123` y las
+la autoría, el SHA, los coautores y su firma. La cabecera encima de la lista de archivos parte el recuento por tipo, con los mismos colores que los glifos de las filas. Pasa el cursor para ver el total. Las referencias `#123` y las
 `@menciones` se enlazan automáticamente a tu hosting.
 
 La lista de archivos se selecciona en grupo con los gestos habituales (clic con

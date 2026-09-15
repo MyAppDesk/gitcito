@@ -88,7 +88,7 @@ którego rodzica odrzucają, jak wyżej.
 ## Szczegóły commita
 
 Zaznaczenie commita pokazuje jego zmienione pliki (jako drzewo albo płasko),
-autora, SHA, współautorów i podpis. Referencje `#123` i `@wzmianki` są
+autora, SHA, współautorów i podpis. Nagłówek nad listą plików rozbija liczbę według rodzaju, w tych samych kolorach co glify w wierszach. Najedź, żeby zobaczyć zwykłą sumę. Referencje `#123` i `@wzmianki` są
 automatycznie linkowane do twojego hostingu.
 
 Listę plików zaznacza się grupowo zwykłymi gestami (klik z

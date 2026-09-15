@@ -13,6 +13,17 @@ stage**. Ciascuno si richiude, e ciascuno ricorda se l'hai lasciato aperto.
 
 ![Un diff non in stage, con accanto i controlli per hunk e per file](../../screenshots/line-staging.webp)
 
+## Cosa è cambiato, per tipo
+
+L'intestazione sopra gli elenchi spezza il conteggio in chip: modificati,
+aggiunti, eliminati, rinominati, in conflitto. Gli stessi colori dei glifi
+sulle righe. Un tipo senza file è semplicemente assente, non mostrato come
+zero. Passa il cursore sui chip per il totale.
+
+I file non tracciati contano come aggiunti. È l'unico punto in cui il riepilogo
+dello staging diverge da quello di un commit, perché un commit non ha file non
+tracciati.
+
 ## Tre livelli di precisione
 
 | Livello | Come |

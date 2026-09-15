@@ -18,7 +18,7 @@ Gitcito'da stash'leme ya hep ya hiç değildir.
 | **Stash → dal** | `git stash branch` — bir stash temiz uygulanmadığında acil çıkış kapısı |
 
 Bir stash'i seçmek, tıpkı bir commit'te olduğu gibi dosyalarını ve diff'lerini
-gösterir.
+gösterir. Listenin üstündeki başlık aynı türe göre ayrımdır.
 
 Dosya listesi, [stage](staging.md) ile aynı hareketlerle çoklu seçilir —
 <kbd>⌘</kbd>/<kbd>Ctrl</kbd> ile tıklama, <kbd>⇧</kbd> ile tıklama,

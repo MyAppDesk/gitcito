@@ -88,7 +88,7 @@ hierboven.
 ## Commitdetails
 
 Een commit selecteren toont zijn gewijzigde bestanden (boom of plat), auteur,
-SHA, co-auteurs en zijn handtekening. `#123`-verwijzingen en `@vermeldingen`
+SHA, co-auteurs en zijn handtekening. De kop boven de bestandenlijst splitst het aantal per soort, in dezelfde kleuren als de glyfen op de rijen. Hover voor het kale totaal. `#123`-verwijzingen en `@vermeldingen`
 worden automatisch gelinkt naar je host.
 
 De bestandenlijst is meervoudig te selecteren met de gebruikelijke gebaren

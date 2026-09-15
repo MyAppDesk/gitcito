@@ -86,7 +86,7 @@ lasciano cadere uno stash il cui padre lasciano cadere, come detto sopra.
 ## Dettagli di un commit
 
 Selezionando un commit vedi i suoi file modificati (ad albero o piatti),
-l'autore, lo SHA, i coautori e la sua firma. I riferimenti `#123` e le
+l'autore, lo SHA, i coautori e la sua firma. L'intestazione sopra l'elenco dei file spezza il conteggio per tipo, con gli stessi colori dei glifi sulle righe. Passa il cursore per il totale. I riferimenti `#123` e le
 `@menzioni` diventano automaticamente link al tuo host.
 
 L'elenco dei file si seleziona in gruppo con i gesti consueti (clic

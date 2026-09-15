@@ -12723,6 +12723,73 @@ mark.find-hit.active {
 .tree-badge.tb-deleted { color: var(--red); }
 .tree-badge.tb-renamed { color: var(--blue, #4da3ff); }
 .tree-badge.tb-conflicted { color: var(--red); }
+
+/* Change breakdown in a panel header. Tiles are the same .file-status squares
+   the rows use, so the header is a legend for the list, not a second palette. */
+.change-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+  vertical-align: middle;
+}
+.change-summary-bar {
+  display: inline-flex;
+  flex-shrink: 0;
+  width: 40px;
+  height: 7px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--bg-4);
+}
+.change-summary-seg {
+  display: block;
+  min-width: 3px;
+  height: 100%;
+}
+.change-summary-seg.st-mod { background: var(--yellow); }
+.change-summary-seg.st-add { background: var(--green); }
+.change-summary-seg.st-del { background: var(--red); }
+.change-summary-seg.st-ren { background: var(--blue, #4da3ff); }
+.change-summary-seg.st-conflict { background: var(--red); }
+.change-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.change-chip .file-status {
+  width: 16px;
+  height: 16px;
+  font-size: 9px;
+}
+.change-chip-n {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+.change-chip:has(.st-mod) .change-chip-n { color: var(--yellow); }
+.change-chip:has(.st-add) .change-chip-n { color: var(--green); }
+.change-chip:has(.st-del) .change-chip-n { color: var(--red); }
+.change-chip:has(.st-ren) .change-chip-n { color: var(--blue, #4da3ff); }
+.change-chip:has(.st-conflict) .change-chip-n { color: var(--red); }
+/* The summary's `gap` separates its own chips and stops at its edge, so a
+   sibling after it — the branch name in the composer toolbar — butts straight
+   against the last chip. */
+.change-summary + em {
+  margin-left: 12px;
+}
+/* An empty commit still needs the row to keep its height. */
+.change-summary:empty::after {
+  content: '';
+  display: inline-block;
+  height: 16px;
+}
 .tree-open-with {
   flex-shrink: 0;
   width: 18px;

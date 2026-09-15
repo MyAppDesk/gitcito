@@ -85,7 +85,7 @@ descartam, como acima.
 ## Detalhes do commit
 
 Selecionar um commit mostra os arquivos alterados dele (em árvore ou plano), autor,
-SHA, coautores e a assinatura. Referências `#123` e `@menções` viram links
+SHA, coautores e a assinatura. O cabeçalho acima da lista de arquivos parte a contagem por tipo, nas mesmas cores dos glifos nas linhas. Passe o cursor para o total. Referências `#123` e `@menções` viram links
 automáticos para o seu host.
 
 A lista de arquivos se seleciona em grupo com os gestos de sempre (clique com

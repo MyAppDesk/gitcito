@@ -3,7 +3,7 @@ title: The commit graph
 category: Repository & history
 order: 10
 summary: Reading history: lanes, refs, columns, filters and multi-select.
-keywords: graph history commits lanes branches merges columns filter linear first-parent amend undo reset github stash stashes order ordering placement spur
+keywords: graph history commits lanes branches merges columns filter linear first-parent amend undo reset github stash stashes order ordering placement spur change summary chips
 ---
 
 # The commit graph
@@ -83,7 +83,9 @@ drop a stash whose parent they drop, as noted above.
 ## Commit details
 
 Selecting a commit shows its changed files (tree or flat), author, SHA,
-co-authors, and its signature. `#123` references and `@mentions` are autolinked
+co-authors, and its signature. The header above the file list splits the
+count by kind, coloured like the glyphs on the rows. Hover it for the plain
+total. `#123` references and `@mentions` are autolinked
 to your host.
 
 The file list multi-selects with the usual gestures

@@ -92,7 +92,7 @@ dont ils jettent le parent, comme indiqué plus haut.
 ## Détails d'un commit
 
 Sélectionner un commit affiche ses fichiers modifiés (en arbre ou à plat),
-l'auteur, le SHA, les co-auteurs et sa signature. Les références `#123` et les
+l'auteur, le SHA, les co-auteurs et sa signature. L'en-tête au-dessus de la liste de fichiers découpe le décompte par type, aux mêmes couleurs que les glyphes des lignes. Survolez-le pour le total. Les références `#123` et les
 `@mentions` sont automatiquement liées à votre hébergeur.
 
 La liste de fichiers se sélectionne en groupe avec les gestes habituels (clic

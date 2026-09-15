@@ -13,6 +13,17 @@ O painel de commit tem três listas: **Em conflito**, **Não preparados** e
 
 ![Um diff não preparado, com os controles de hunk e de arquivo ao lado](../../screenshots/line-staging.webp)
 
+## O que mudou, por tipo
+
+O cabeçalho acima das listas parte a contagem em chips: modificados, adicionados,
+excluídos, renomeados, em conflito. As mesmas cores dos glifos nas linhas. Um
+tipo sem arquivos simplesmente não aparece, não é mostrado como zero. Passe o
+cursor nos chips para o total.
+
+Arquivos não rastreados contam como adicionados. É o único lugar em que o
+resumo do staging discorda do de um commit, porque um commit não tem arquivos
+não rastreados.
+
 ## Três níveis de precisão
 
 | Nível | Como |

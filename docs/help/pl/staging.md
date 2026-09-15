@@ -14,6 +14,17 @@ zostawiłeś.
 
 ![Diff poza przechowalnią, obok niego przyciski hunka i pliku](../../screenshots/line-staging.webp)
 
+## Co się zmieniło, według rodzaju
+
+Nagłówek nad listami rozbija liczbę na chipy: zmodyfikowane, dodane, usunięte,
+ze zmienioną nazwą, w konflikcie. Te same kolory co glify w wierszach. Rodzaj
+bez plików po prostu nie występuje, nie pokazuje zera. Najedź na chipy, żeby
+zobaczyć zwykłą sumę.
+
+Pliki nieśledzone liczą się jako dodane. To jedyne miejsce, w którym podsumowanie
+przechowalni różni się od podsumowania commita, bo commit nie ma plików
+nieśledzonych.
+
 ## Trzy poziomy precyzji
 
 | Poziom | Jak |

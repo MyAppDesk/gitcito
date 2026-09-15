@@ -25,6 +25,7 @@ import { useT, interp, type TranslationKey } from '../i18n'
 import { openWithMenuItems } from '../lib/openWith'
 import { buildFilePathClipboardPayload } from '../lib/filePathClipboard'
 import { stepRange, claimRangeKeys, ownsRangeKeys, rangeKeysBlocked, domOrder } from '../lib/rangeSelect'
+import { ChangeSummary } from './ChangeSummary'
 
 type ListName = 'staged' | 'unstaged'
 
@@ -842,7 +843,15 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
     <div className="composer">
       <div className="panel-toolbar">
         <span className="panel-title">
-          {interp(t('composer.fileChanges'), { n: staged.length + unstaged.length, s: staged.length + unstaged.length === 1 ? '' : 's' })}
+          <ChangeSummary
+            files={[...conflicted, ...staged, ...unstaged]}
+            title={interp(
+              conflicted.length + staged.length + unstaged.length === 1
+                ? t('commitPanel.changedFile')
+                : t('commitPanel.changedFiles'),
+              { n: conflicted.length + staged.length + unstaged.length }
+            )}
+          />
           <em>{repo.branches.current}</em>
         </span>
         <ViewToggle />

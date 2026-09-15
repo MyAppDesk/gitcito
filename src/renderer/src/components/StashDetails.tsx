@@ -10,6 +10,7 @@ import { useSettingsStore } from '../stores/settings'
 import { openWithMenuItems } from '../lib/openWith'
 import { stepRange, claimRangeKeys, ownsRangeKeys, rangeKeysBlocked, domOrder } from '../lib/rangeSelect'
 import { useT, interp } from '../i18n'
+import { ChangeSummary } from './ChangeSummary'
 
 export function StashDetails({ repo, sha }: { repo: RepoData; sha: string }): React.JSX.Element {
   const [files, setFiles] = useState<FileEntry[]>([])
@@ -172,9 +173,12 @@ export function StashDetails({ repo, sha }: { repo: RepoData; sha: string }): Re
         </div>
 
         <div className="panel-toolbar">
-          <span className="panel-title">
-            {interp(files.length === 1 ? t('stashPanel.changedFile') : t('stashPanel.changedFiles'), { n: files.length })}
-          </span>
+          <ChangeSummary
+            files={files}
+            title={interp(files.length === 1 ? t('stashPanel.changedFile') : t('stashPanel.changedFiles'), {
+              n: files.length
+            })}
+          />
           {selected.size > 0 && (
             <button
               className="btn ghost tiny"

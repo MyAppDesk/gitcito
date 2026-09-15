@@ -85,7 +85,7 @@ düşürdükleri stash'i de düşürür, yukarıda belirtildiği gibi.
 ## Commit ayrıntıları
 
 Bir commit'i seçmek değişen dosyalarını (ağaç ya da düz), yazarını, SHA'sını,
-ortak yazarlarını ve imzasını gösterir. `#123` referansları ve `@mentions`
+ortak yazarlarını ve imzasını gösterir. Dosya listesinin üstündeki başlık sayıyı türe göre böler, satırlardaki gliflerle aynı renklerde. Yalın toplam için üzerine gelin. `#123` referansları ve `@mentions`
 sunucunuza otomatik bağlanır.
 
 Dosya listesi alışıldık hareketlerle çoklu seçilir

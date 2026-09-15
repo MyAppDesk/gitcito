@@ -18,7 +18,7 @@ Remiser dans Gitcito n'est pas du tout ou rien.
 | **Remisage → branche** | `git stash branch` — la porte de sortie quand un remisage refuse de s'appliquer proprement |
 
 Sélectionner un remisage affiche ses fichiers et ses diffs, exactement comme un
-commit.
+commit. L'en-tête au-dessus de la liste est le même détail par type.
 
 La liste de fichiers se sélectionne en groupe avec les mêmes gestes que
 l'[indexation](staging.md) — clic <kbd>⌘</kbd>/<kbd>Ctrl</kbd>, clic

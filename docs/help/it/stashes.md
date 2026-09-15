@@ -17,7 +17,7 @@ Fare stash in Gitcito non è tutto o niente.
 | **Applica / Pop** | Lo stash intero, oppure **solo alcuni dei suoi file** |
 | **Stash → branch** | `git stash branch` — la via di fuga quando uno stash non si applica pulito |
 
-Selezionando uno stash ne vedi i file e i diff, esattamente come per un commit.
+Selezionando uno stash ne vedi i file e i diff, esattamente come per un commit. L'intestazione sopra l'elenco è lo stesso riepilogo per tipo.
 
 L'elenco dei file si seleziona in gruppo con gli stessi gesti dello
 [staging](staging.md) — clic <kbd>⌘</kbd>/<kbd>Ctrl</kbd>, clic <kbd>⇧</kbd>,

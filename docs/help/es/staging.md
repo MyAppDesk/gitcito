@@ -13,6 +13,17 @@ El panel de commit tiene tres listas: **En conflicto**, **Sin preparar** y
 
 ![Un diff sin preparar, con los controles de hunk y de archivo al lado](../../screenshots/line-staging.webp)
 
+## Qué cambió, por tipo
+
+La cabecera encima de las listas parte el recuento en chips: modificados,
+añadidos, eliminados, renombrados, en conflicto. Los mismos colores que los
+glifos de las filas. Un tipo sin archivos simplemente no aparece, no se muestra
+como cero. Pasa el cursor por los chips para ver el total.
+
+Los archivos sin seguimiento cuentan como añadidos. Es el único sitio en el que
+el resumen de preparación discrepa del de un commit, porque un commit no tiene
+archivos sin seguimiento.
+
 ## Tres niveles de precisión
 
 | Nivel | Cómo |

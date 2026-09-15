@@ -3,6 +3,7 @@ import { ChevronDown, ChevronRight, FolderOpen, Folder, Pencil } from 'lucide-re
 import type { CodeSearchHit, FileEntry } from '../../../shared/types'
 import { useSettingsStore } from '../stores/settings'
 import { stepPath, visiblePaths } from '../lib/fileNav'
+import { bucketOf } from '../lib/fileStats'
 import { MatchRows } from './SearchMatches'
 import { t, type TranslationKey } from '../i18n'
 
@@ -126,14 +127,7 @@ interface FolderCounts {
 function countsOf(node: TreeNode): FolderCounts {
   const c: FolderCounts = { add: 0, mod: 0, del: 0, ren: 0, conflict: 0 }
   const walk = (n: TreeNode): void => {
-    if (n.file) {
-      const cls = statusClass(n.file.status)
-      if (cls === 'st-add') c.add++
-      else if (cls === 'st-del') c.del++
-      else if (cls === 'st-ren') c.ren++
-      else if (cls === 'st-conflict') c.conflict++
-      else c.mod++
-    }
+    if (n.file) c[bucketOf(n.file.status)]++
     for (const child of n.children) walk(child)
   }
   walk(node)

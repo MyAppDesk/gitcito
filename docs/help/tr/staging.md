@@ -14,6 +14,16 @@ hatırlar.
 
 ![Hazırlanmamış bir diff ve yanındaki hunk ile dosya denetimleri](../../screenshots/line-staging.webp)
 
+## Ne değişti, türe göre
+
+Listelerin üstündeki başlık sayıyı çiplere böler: değiştirildi, eklendi,
+silindi, yeniden adlandırıldı, çakışmalı. Satırlardaki gliflerle aynı renkler.
+Dosyası olmayan bir tür basitçe yoktur, sıfır olarak gösterilmez. Yalın toplam
+için çiplerin üzerine gelin.
+
+İzlenmeyen dosyalar eklenen sayılır. Staging özetinin bir commit özetinden
+ayrıldığı tek yer burasıdır, çünkü bir commit'te izlenmeyen dosya yoktur.
+
 ## Üç hassasiyet düzeyi
 
 | Düzey | Nasıl |

@@ -3,7 +3,7 @@ title: Stashes
 category: Sync & many repos
 order: 52
 summary: Partial stashes, per-file apply, and stash → branch.
-keywords: stash stashes partial keep-index apply pop drop untracked branch
+keywords: stash stashes partial keep-index apply pop drop untracked branch change summary chips
 ---
 
 # Stashes
@@ -17,8 +17,9 @@ Stashing in Gitcito is not all-or-nothing.
 | **Apply / Pop** | Whole stash, or **just some of its files** |
 | **Stash → branch** | `git stash branch` — the escape hatch when a stash will not apply cleanly |
 
-Selecting a stash shows its files and diffs, exactly like a commit. Its file
-list multi-selects with the same gestures as [staging](staging.md) —
+Selecting a stash shows its files and diffs, exactly like a commit. The header
+above the list is the same per-kind breakdown. Its file list multi-selects with
+the same gestures as [staging](staging.md) —
 <kbd>⌘</kbd>/<kbd>Ctrl</kbd>-click, <kbd>⇧</kbd>-click,
 <kbd>⇧</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> — and a right-click (or the *Apply n
 files* button) restores just the selection.

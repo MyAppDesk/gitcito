@@ -3,7 +3,7 @@ title: Staging
 category: Working with changes
 order: 30
 summary: Stage whole files, single hunks, or individual lines.
-keywords: staging stage unstage discard hunk lines index partial copy path relative
+keywords: staging stage unstage discard hunk lines index partial copy path relative change summary chips
 ---
 
 # Staging
@@ -12,6 +12,16 @@ The commit panel has three lists: **Conflicted**, **Unstaged** and **Staged**.
 Each collapses, and each remembers whether you left it open.
 
 ![An unstaged diff, with the hunk and file controls beside it](../screenshots/line-staging.webp)
+
+## What changed, by kind
+
+The header above the lists splits the count the way the file rows already
+do: the same status tiles (M, +, −, →, !), a number, and a short bar for the
+mix. A kind with nothing in it is simply absent, not shown as zero. Hover for
+the plain total.
+
+Untracked files count as added. That is the one place staging's summary
+disagrees with a commit's, because a commit has no untracked files.
 
 ## Three levels of precision
 

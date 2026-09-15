@@ -17,7 +17,7 @@ Stashen in Gitcito is geen alles-of-niets.
 | **Toepassen / Poppen** | De hele stash, of **slechts een deel van zijn bestanden** |
 | **Stash → branch** | `git stash branch` — de nooduitgang wanneer een stash niet schoon toe te passen is |
 
-Een stash selecteren toont zijn bestanden en diffs, precies zoals bij een commit.
+Een stash selecteren toont zijn bestanden en diffs, precies zoals bij een commit. De kop boven de lijst is dezelfde uitsplitsing per soort.
 
 De bestandenlijst is meervoudig te selecteren met dezelfde gebaren als bij
 [stagen](staging.md) — <kbd>⌘</kbd>/<kbd>Ctrl</kbd>-klik, <kbd>⇧</kbd>-klik,

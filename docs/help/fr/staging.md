@@ -14,6 +14,17 @@ ouverte.
 
 ![Un diff non indexé, avec les contrôles de section et de fichier à côté](../../screenshots/line-staging.webp)
 
+## Ce qui a changé, par type
+
+L'en-tête au-dessus des listes découpe le décompte en pastilles : modifié,
+ajouté, supprimé, renommé, en conflit. Mêmes couleurs que les glyphes des
+lignes. Un type sans fichier est simplement absent, pas affiché à zéro. Survolez
+les pastilles pour le total.
+
+Les fichiers non suivis comptent comme ajoutés. C'est le seul endroit où le
+résumé de l'indexation diverge de celui d'un commit, parce qu'un commit n'a pas
+de fichiers non suivis.
+
 ## Trois niveaux de précision
 
 | Niveau | Comment |

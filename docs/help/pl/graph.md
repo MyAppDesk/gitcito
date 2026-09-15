@@ -3,7 +3,7 @@ title: Graf commitów
 category: Repozytorium i historia
 order: 10
 summary: Czytanie historii: tory, referencje, kolumny, filtry i zaznaczanie wielu commitów.
-keywords: graf historia commity tory gałęzie merge kolumny filtr liniowy graph lanes branches merges columns filter first-parent amend cofnij undo reset github
+keywords: graf historia commity tory gałęzie merge kolumny filtr liniowy graph lanes branches merges columns filter first-parent amend cofnij undo reset github stash stashes schowek kolejność umiejscowienie spur
 ---
 
 # Graf commitów
@@ -61,6 +61,29 @@ commitów przewija się tak jak to ze stoma.
   z podglądem mini-grafu na żywo.
 
 ![Ustawienia stylu grafu z podglądem na żywo](../../screenshots/settings-graph.webp)
+
+## Gdzie siedzą schowki
+
+Schowek rysowany jest jako własny wiersz, zwisający z commita, z którego
+został wzięty, na przerywanej odnodze, żeby nie przesuwać pnia. Trafia do
+wiersza **bezpośrednio nad tym commit-rodzicem**, nie w miejsce, które
+przysługiwałoby mu z własnej daty.
+
+Jego znacznik to pudełko archiwum w kropkowanej ramce — ten sam symbol
+archiwum co lista schowków, paleta poleceń i nagłówek szczegółów, żeby graf
+nazywał schowek tak samo jak reszta aplikacji. Kropkowana ramka oddziela go
+od commita: siedząc wiersz nad rodzicem, kształt musi nieść «to nie jest
+część gałęzi».
+
+Schowek prawie zawsze jest nowszy niż commit, na którym siedzi, więc porządek
+według daty wyniósłby go między obce commity i rozciągnął linkę przez pół
+grafu. Rodzic to jedyny wiersz, do którego schowek naprawdę należy, więc
+zostaje obok.
+
+Granica: schowek, którego commit-rodzic nie jest w załadowanym oknie —
+przycięty albo za końcem logu — nie ma kotwicy i wraca do porządku dat, aż
+rodzic się załaduje. *Historia liniowa* i *Tryb solo* odrzucają schowek,
+którego rodzica odrzucają, jak wyżej.
 
 ## Szczegóły commita
 

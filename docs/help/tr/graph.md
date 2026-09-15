@@ -3,7 +3,7 @@ title: Commit grafiği
 category: Depo ve geçmiş
 order: 10
 summary: Geçmişi okumak: şeritler, ref'ler, sütunlar, filtreler ve çoklu seçim.
-keywords: grafik geçmiş commit'ler şeritler dallar birleştirmeler sütunlar filtre doğrusal graph history commits lanes branches merges columns filter linear first-parent amend geri al sıfırla undo reset github
+keywords: grafik geçmiş commit'ler şeritler dallar birleştirmeler sütunlar filtre doğrusal graph history commits lanes branches merges columns filter linear first-parent amend geri al sıfırla undo reset github stash stashes sıra yerleşim spur
 ---
 
 # Commit grafiği
@@ -59,6 +59,28 @@ depo gibi kayar.
   mini grafik önizlemesiyle.
 
 ![Canlı önizlemeli grafik biçemi ayarları](../../screenshots/settings-graph.webp)
+
+## Stash'lerin oturduğu yer
+
+Bir stash kendi satırı olarak çizilir, alındığı commit'ten kesik çizgili bir
+mahmuzla sarkar ki gövdeyi kaydırmasın. **O ebeveyn commit'in hemen üstündeki
+satıra** konur, kendi zaman damgasının kazandıracağı yuvaya değil.
+
+İşareti, noktalı çerçeveli bir arşiv kutusudur — stash listesinin, komut
+paletinin ve ayrıntı başlığının kullandığı aynı arşiv simgesi, grafik bir
+stash'i uygulamanın geri kalanı gibi adlandırsın diye. Noktalı çerçeve onu
+commit'ten ayırır: ebeveyninin bir satır üstünde otururken «bu dalın parçası
+değil» demeyi şekil taşır.
+
+Bir stash neredeyse her zaman oturduğu commit'ten yenidir, bu yüzden tarihe
+göre sıralamak onu ilgisiz commit'lerin arasına yükseltir ve ipi grafiğin
+yarısına kadar gerer. Ebeveyn, bir stash'in gerçekten ilişki kurduğu tek
+satırdır, o yüzden yanında kalır.
+
+Sınır: ebeveyn commit'i yüklenen pencerede olmayan bir stash — budanmış ya da
+günlüğün sonunun ötesinde — tutunacak bir yer bulamaz ve ebeveyn yüklenene
+kadar tarih sırasına düşer. *Doğrusal geçmiş* ile *Solo mod* ebeveynini
+düşürdükleri stash'i de düşürür, yukarıda belirtildiği gibi.
 
 ## Commit ayrıntıları
 

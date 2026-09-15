@@ -3,7 +3,7 @@ title: Le graphe des commits
 category: Dépôt et historique
 order: 10
 summary: Lire l'histoire : couloirs, références, colonnes, filtres et sélection multiple.
-keywords: graphe graph historique history commits couloirs lanes branches fusions merges colonnes columns filtre filter linéaire linear first-parent amender amend annuler undo réinitialisation reset github
+keywords: graphe graph historique history commits couloirs lanes branches fusions merges colonnes columns filtre filter linéaire linear first-parent amender amend annuler undo réinitialisation reset github stash stashes remise ordre placement spur
 ---
 
 # Le graphe des commits
@@ -62,6 +62,32 @@ dépôt d'une centaine.
   épaisseur des traits, avec un aperçu en direct sous forme de mini-graphe.
 
 ![Les réglages de style du graphe avec aperçu en direct](../../screenshots/settings-graph.webp)
+
+## Où s'assoient les remises
+
+Une remise est dessinée comme une ligne à elle, accrochée au commit dont elle
+vient par un éperon en pointillés pour ne jamais déplacer le tronc. Elle est
+placée dans la ligne **juste au-dessus de ce commit parent**, pas dans le
+créneau que son propre horodatage lui vaudrait.
+
+Son marqueur est une boîte d'archive dans un cadre pointillé — le même
+symbole d'archive que la liste des remises, la palette de commandes et
+l'en-tête des détails, pour que le graphe nomme une remise comme le reste de
+l'app. Le cadre pointillé est ce qui la sépare d'un commit : assise une ligne
+au-dessus de son parent, c'est la forme qui doit dire « ceci ne fait pas
+partie de la branche ».
+
+Une remise est presque toujours plus récente que le commit sur lequel elle
+repose, donc un tri par date la ferait remonter parmi des commits sans
+rapport et étirerait son fil à travers la moitié du graphe. Le parent est la
+seule ligne à laquelle une remise se rattache vraiment, c'est donc celle
+qu'elle garde à côté.
+
+La limite : une remise dont le commit parent n'est pas dans la fenêtre
+chargée — élagué, ou au-delà de la fin du journal — n'a rien à quoi
+s'ancrer, et retombe sur l'ordre chronologique jusqu'à ce que le parent se
+charge. Les modes *Historique linéaire* et *Mode solo* jettent une remise
+dont ils jettent le parent, comme indiqué plus haut.
 
 ## Détails d'un commit
 

@@ -3,7 +3,7 @@ title: 提交图
 category: 仓库与历史
 order: 10
 summary: 读懂历史：泳道、引用、列、筛选与多选。
-keywords: 提交图 graph 历史 history 提交 commits 泳道 lanes 分支 branches 合并 merges 列 columns 筛选 filter 线性 linear first-parent amend 修补 undo 撤销 reset 重置 github
+keywords: 提交图 graph 历史 history 提交 commits 泳道 lanes 分支 branches 合并 merges 列 columns 筛选 filter 线性 linear first-parent amend 修补 undo 撤销 reset 重置 github stash 贮藏 顺序 位置 spur
 ---
 
 # 提交图
@@ -41,6 +41,22 @@ keywords: 提交图 graph 历史 history 提交 commits 泳道 lanes 分支 bran
 - **样式**：设置 → 主题 → **图**——泳道配色（8 套内置、自定义，或由 AI 生成）、拐角样式、行密度和线条粗细，并带一个实时的迷你图预览。
 
 ![带实时预览的图样式设置](../../screenshots/settings-graph.webp)
+
+## 贮藏放在哪
+
+贮藏画成单独一行，用虚线支线挂在取出它的那次提交上，以免挤开主干。它落在**该
+父提交正上方那一行**，而不是自己的时间戳会占到的位置。
+
+标记是点线框里的归档盒——和贮藏列表、命令面板、详情标题用的同一个归档符号，让
+图用应用其余地方一样的叫法。点线框把它和提交分开：坐在父提交上一行，形状必须
+带上「这不是分支的一部分」。
+
+贮藏几乎总比它所在的提交更新，按时间排会把它漂到无关提交中间，并把连线拉过半
+张图。父提交才是贮藏真正相关的那一行，所以它挨着那一行。
+
+限度：父提交不在已加载窗口里的贮藏——被裁掉，或在日志末尾之外——没有锚点，会退
+回按时间排序，直到父提交载入。*线性历史*和*独奏模式*会连同它们丢掉的父提交一
+起丢掉贮藏，如上所述。
 
 ## 提交详情
 

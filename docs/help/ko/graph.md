@@ -3,7 +3,7 @@ title: 커밋 그래프
 category: 저장소와 히스토리
 order: 10
 summary: 히스토리 읽기 — 레인, 레퍼런스, 열, 필터, 다중 선택.
-keywords: 그래프 graph 히스토리 history 커밋 commits 레인 lanes 브랜치 branches 머지 merges 열 columns 필터 filter 선형 linear first-parent amend 수정 undo 되돌리기 reset 리셋 github
+keywords: 그래프 graph 히스토리 history 커밋 commits 레인 lanes 브랜치 branches 머지 merges 열 columns 필터 filter 선형 linear first-parent amend 수정 undo 되돌리기 reset 리셋 github stash 스태시 순서 위치 spur
 ---
 
 # 커밋 그래프
@@ -55,6 +55,25 @@ keywords: 그래프 graph 히스토리 history 커밋 commits 레인 lanes 브�
   미리 볼 수 있어요.
 
 ![실시간 미리 보기가 있는 그래프 스타일 설정](../../screenshots/settings-graph.webp)
+
+## 스태시가 앉는 자리
+
+스태시는 자기 행으로 그려지고, 찍어 둔 커밋에서 점선 스퍼로 매달려 줄기를
+밀지 않아요. 들어가는 곳은 **그 부모 커밋 바로 위 행**이지, 자기 시각이
+차지했을 칸이 아니에요.
+
+표시는 점선 테두리 안의 보관 상자예요. 스태시 목록, 명령 팔레트, 상세 헤더가
+쓰는 그 보관 기호라서, 그래프도 앱의 나머지와 같은 이름으로 불러요. 점선
+테두리가 커밋과 구분해 줘요. 부모 한 줄 위에 앉으니 «이건 브랜치의 일부가
+아니다»는 모양이 맡아야 해요.
+
+스태시는 거의 언제나 앉아 있는 커밋보다 새로워서, 시각 순이면 관계없는 커밋들
+사이로 떠오르고 줄이 그래프 반쪽을 가로질러요. 부모야말로 스태시가 실제로
+관계하는 유일한 행이라서, 그 옆에 머물러요.
+
+한계: 부모 커밋이 불러온 창에 없는 스태시 — 잘렸거나 로그 끝 너머 — 는 닻이
+없고, 부모가 올라올 때까지 시각 순으로 돌아가요. *선형 히스토리*와 *솔로 모드*는
+떨어뜨리는 부모 위의 스태시도 함께 떨어뜨려요. 위에서 말한 그대로예요.
 
 ## 커밋 상세
 

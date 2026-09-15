@@ -3,7 +3,7 @@ title: El grafo de commits
 category: Repositorio e historial
 order: 10
 summary: Leer el historial: carriles, refs, columnas, filtros y selección múltiple.
-keywords: grafo graph historial commits carriles lanes ramas branches fusiones merges columnas filtro lineal first-parent amend enmendar deshacer undo reset github
+keywords: grafo graph historial commits carriles lanes ramas branches fusiones merges columnas filtro lineal first-parent amend enmendar deshacer undo reset github stash stashes orden colocación spur
 ---
 
 # El grafo de commits
@@ -57,6 +57,29 @@ desplaza igual que uno con cien.
   grosor de línea, con una vista previa en miniatura en vivo.
 
 ![Ajustes de estilo del grafo con vista previa en vivo](../../screenshots/settings-graph.webp)
+
+## Dónde se sientan los stashes
+
+Un stash se dibuja como una fila propia, colgando del commit del que se tomó
+en un espolón discontinuo para no desplazar el tronco. Va en la fila
+**justo encima de ese commit padre**, no en el hueco que le tocaría por su
+propia marca de tiempo.
+
+Su marca es una caja de archivo en un marco de puntos — el mismo símbolo de
+archivo que usan la lista de stashes, la paleta de comandos y la cabecera de
+detalles, para que el grafo nombre un stash como el resto de la app. El marco
+de puntos es lo que lo separa de un commit: al sentarse una fila por encima
+de su padre, la forma tiene que decir «esto no forma parte de la rama».
+
+Un stash casi siempre es más reciente que el commit sobre el que se sienta,
+así que ordenar por fecha lo subiría entre commits que no tienen nada que ver
+y estiraría el cable a lo ancho de medio grafo. El padre es la única fila con
+la que un stash se relaciona de verdad, así que se queda al lado.
+
+El límite: un stash cuyo commit padre no está en la ventana cargada — podado,
+o más allá del final del log — no tiene ancla, y vuelve al orden por fecha
+hasta que el padre cargue. Los modos *Historial lineal* y *Modo solo* tiran
+un stash cuyo padre tiran, como se dijo más arriba.
 
 ## Detalles del commit
 

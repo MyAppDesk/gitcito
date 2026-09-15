@@ -3,7 +3,7 @@ title: O grafo de commits
 category: Repositório e histórico
 order: 10
 summary: Lendo o histórico: faixas, refs, colunas, filtros e seleção múltipla.
-keywords: grafo graph histórico history commits faixas lanes branches merges colunas columns filtro filter linear first-parent amend desfazer undo reset github
+keywords: grafo graph histórico history commits faixas lanes branches merges colunas columns filtro filter linear first-parent amend desfazer undo reset github stash stashes ordem colocação spur
 ---
 
 # O grafo de commits
@@ -58,6 +58,29 @@ com cem.
   espessura dos traços, com uma pré-visualização ao vivo em mini-grafo.
 
 ![Configurações de estilo do grafo com pré-visualização ao vivo](../../screenshots/settings-graph.webp)
+
+## Onde os stashes sentam
+
+Um stash é desenhado como uma linha própria, pendurado no commit de onde foi
+tirado num esporão tracejado para não deslocar o tronco. Ele entra na linha
+**logo acima desse commit pai**, não no lugar que o próprio carimbo de tempo
+lhe daria.
+
+O marcador é uma caixa de arquivo numa moldura pontilhada — o mesmo símbolo
+de arquivo da lista de stashes, da paleta de comandos e do cabeçalho de
+detalhes, para o grafo nomear um stash como o resto do app. A moldura
+pontilhada é o que o separa de um commit: sentado uma linha acima do pai, a
+forma precisa carregar «isto não faz parte do ramo».
+
+Um stash quase sempre é mais novo que o commit em que se senta, então ordenar
+por data o faria subir entre commits sem relação e esticaria o cabo pelo
+meio do grafo. O pai é a única linha com que um stash realmente se relaciona,
+então ele fica ao lado.
+
+O limite: um stash cujo commit pai não está na janela carregada — podado, ou
+além do fim do log — não tem âncora, e volta à ordem por data até o pai
+carregar. *Histórico linear* e *Modo solo* descartam um stash cujo pai
+descartam, como acima.
 
 ## Detalhes do commit
 

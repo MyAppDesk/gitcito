@@ -3,7 +3,7 @@ title: Der Commit-Graph
 category: Repository & Historie
 order: 10
 summary: Historie lesen: Spuren, Refs, Spalten, Filter und Mehrfachauswahl.
-keywords: graph graf historie verlauf commits spuren lanes branches merges spalten columns filter linear first-parent amend rückgängig undo reset github
+keywords: graph graf historie verlauf commits spuren lanes branches merges spalten columns filter linear first-parent amend rückgängig undo reset github stash stashes reihenfolge platzierung spur
 ---
 
 # Der Commit-Graph
@@ -62,6 +62,30 @@ Commits wie eines mit hundert.
   Live-Vorschau als Mini-Graph.
 
 ![Graph-Stileinstellungen mit Live-Vorschau](../../screenshots/settings-graph.webp)
+
+## Wo Stashes sitzen
+
+Ein Stash wird als eigene Zeile gezeichnet, mit einer gestrichelten Spur am
+Commit hängend, von dem er genommen wurde, damit er den Stamm nicht
+verschiebt. Er landet in der Zeile **direkt über diesem Eltern-Commit**, nicht
+im Slot, den sein eigener Zeitstempel verdienen würde.
+
+Seine Markierung ist eine Archivbox in einem gepunkteten Rahmen — dasselbe
+Archivsymbol, das die Stash-Liste, die Befehlspalette und der Detailkopf
+nutzen, damit der Graph einen Stash so benennt wie der Rest der App. Der
+gepunktete Rahmen trennt ihn vom Commit: eine Zeile über dem Elternteil muss
+die Form tragen «das gehört nicht zum Branch».
+
+Ein Stash ist fast immer neuer als der Commit, auf dem er sitzt. Nach Datum
+sortiert würde er zwischen fremden Commits nach oben treiben und die Leine
+über den halben Graphen spannen. Der Eltern-Commit ist die einzige Zeile, zu
+der ein Stash wirklich gehört, also bleibt er daneben.
+
+Die Grenze: ein Stash, dessen Eltern-Commit nicht im geladenen Fenster liegt
+— weggefiltert oder hinter dem Ende des Logs — hat nichts zum Ankern und fällt
+auf Datumsreihenfolge zurück, bis der Elternteil lädt. *Lineare Historie* und
+*Solo-Modus* lassen einen Stash fallen, dessen Elternteil sie fallen lassen,
+wie oben beschrieben.
 
 ## Commit-Details
 

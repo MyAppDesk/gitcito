@@ -3,7 +3,7 @@ title: De commitgrafiek
 category: Repository & geschiedenis
 order: 10
 summary: Geschiedenis lezen: banen, refs, kolommen, filters en meervoudige selectie.
-keywords: grafiek graph geschiedenis history commits banen lanes branches merges kolommen filter lineair first-parent amend aanpassen undo ongedaan maken reset github
+keywords: grafiek graph geschiedenis history commits banen lanes branches merges kolommen filter lineair first-parent amend aanpassen undo ongedaan maken reset github stash stashes volgorde plaatsing spur
 ---
 
 # De commitgrafiek
@@ -60,6 +60,30 @@ een met honderd.
   live minigrafiek als voorbeeld.
 
 ![Grafiekstijlinstellingen met live voorbeeld](../../screenshots/settings-graph.webp)
+
+## Waar stashes zitten
+
+Een stash wordt als eigen rij getekend, hangend aan de commit waarvan hij
+genomen is op een gestippelde spor, zodat hij de stam niet verschuift. Hij
+komt in de rij **direct boven die ouder-commit**, niet in het vak dat zijn
+eigen tijdstempel zou verdienen.
+
+Zijn merkteken is een archiefdoos in een gestippeld kader — hetzelfde
+archiefsymbool als de stashlijst, het opdrachtpalet en de detailkop, zodat
+de grafiek een stash noemt zoals de rest van de app. Het gestippelde kader
+scheidt hem van een commit: één rij boven de ouder moet de vorm dragen «dit
+hoort niet bij de branch».
+
+Een stash is bijna altijd nieuwer dan de commit waarop hij zit, dus op datum
+ordenen zou hem tussen ongerelateerde commits omhoog laten drijven en het
+touw over de halve grafiek spannen. De ouder is de enige rij waar een stash
+echt bij hoort, dus blijft hij ernaast.
+
+De grens: een stash wiens ouder-commit niet in het geladen venster zit —
+gesnoeid, of voorbij het einde van het log — heeft niets om aan te ankeren,
+en valt terug op datumvolgorde tot de ouder laadt. *Lineaire geschiedenis*
+en *Solomodus* laten een stash vallen wiens ouder ze laten vallen, zoals
+hierboven.
 
 ## Commitdetails
 

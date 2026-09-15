@@ -3,7 +3,7 @@ title: Il grafo dei commit
 category: Repository e cronologia
 order: 10
 summary: Leggere la storia: corsie, ref, colonne, filtri e selezione multipla.
-keywords: grafo graph storia cronologia commit corsie lanes branch merge colonne filtro lineare first-parent correggi amend annulla undo reset github
+keywords: grafo graph storia cronologia commit corsie lanes branch merge colonne filtro lineare first-parent correggi amend annulla undo reset github stash stashes ordine collocazione spur
 ---
 
 # Il grafo dei commit
@@ -59,6 +59,29 @@ che ne ha cento.
   spessore delle linee, con un mini-grafo di anteprima dal vivo.
 
 ![Le impostazioni di stile del grafo con anteprima dal vivo](../../screenshots/settings-graph.webp)
+
+## Dove stanno gli stash
+
+Uno stash è disegnato come una riga propria, appeso al commit da cui è stato
+preso su uno sperone tratteggiato così da non spostare il tronco. Va nella
+riga **subito sopra quel commit padre**, non nello slot che gli varrebbe la
+sua data.
+
+Il suo segno è una scatola d'archivio in una cornice a puntini — lo stesso
+simbolo d'archivio della lista stash, della palette comandi e dell'intestazione
+dei dettagli, perché il grafo chiami uno stash come il resto dell'app. La
+cornice a puntini è ciò che lo separa da un commit: seduto una riga sopra il
+padre, è la forma a dover dire «questo non fa parte del branch».
+
+Uno stash è quasi sempre più nuovo del commit su cui siede, quindi l'ordine
+per data lo farebbe salire tra commit che non c'entrano e allungherebbe il
+cavo a metà grafo. Il padre è l'unica riga a cui uno stash si relaziona davvero,
+quindi resta accanto.
+
+Il limite: uno stash il cui commit padre non è nella finestra caricata —
+potato, o oltre la fine del log — non ha un'ancora, e torna all'ordine per
+data finché il padre non si carica. *Cronologia lineare* e *Modalità solo*
+lasciano cadere uno stash il cui padre lasciano cadere, come detto sopra.
 
 ## Dettagli di un commit
 

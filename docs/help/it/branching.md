@@ -33,6 +33,12 @@ mostrano:
 
 I branch con `/` nel nome si raggruppano automaticamente in cartelle
 richiudibili.
+Un prefisso con un solo figlio resta una cartella — `release/1.2.3` è `release`
+con `1.2.3` dentro — così aggiungere `release/1.2.4` dopo non ridisegna l’albero.
+Una sequenza di cartelle con un solo figlio si comprime in un’intestazione
+(`dependabot/npm_and_yarn`). Le intestazioni di cartella hanno il segno cartella;
+la ref, il segno branch, remoto o tag.
+
 Un clic destro sull'intestazione di una cartella agisce sull'intero gruppo:
 *Elimina tutti i branch sotto `feature` (4 branch)* rimuove tutto il contenuto
 dopo un'unica conferma che elenca esattamente quali branch se ne vanno — il

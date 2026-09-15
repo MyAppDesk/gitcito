@@ -32,6 +32,12 @@ rama muestran:
 - un **marcador ⟳** cuando el remoto [reescribió el historial](range-diff.md).
 
 Las ramas con `/` en el nombre se pliegan en carpetas plegables automáticamente.
+Un prefijo con un solo hijo sigue siendo carpeta — `release/1.2.3` es `release`
+con `1.2.3` dentro — así que añadir `release/1.2.4` después no redibuja el árbol.
+Una racha de carpetas de un solo hijo se comprime en una cabecera
+(`dependabot/npm_and_yarn`). Las cabeceras de carpeta llevan marca de carpeta;
+la ref, marca de rama, remoto o tag.
+
 Haz clic derecho en la cabecera de una carpeta para actuar sobre el grupo
 entero: *Eliminar todas las ramas bajo `feature` (4 ramas)* borra todo lo que
 contiene tras una única confirmación que lista exactamente qué ramas se van —

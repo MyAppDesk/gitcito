@@ -1481,6 +1481,26 @@ textarea:focus {
   color: var(--text-1);
   text-transform: none;
 }
+/* Prefix folders: hover like a row; count as a quiet number, not a pill. */
+.sb-section.sb-folder > .sb-header:hover {
+  background: var(--bg-3);
+}
+.sb-section.sb-folder > .sb-header .sb-count {
+  background: transparent;
+  padding: 0 1px;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-2);
+}
+.sb-folder-prefix,
+.sb-folder-slash {
+  color: var(--text-2);
+}
+.sb-folder-slash {
+  padding-inline: 1px;
+}
 .sb-section.nested .sb-item {
   padding-inline-start: calc(28px + var(--sb-indent, 1) * 16px);
 }
@@ -1552,6 +1572,11 @@ textarea:focus {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 12.3px;
+}
+.sb-ref-icon {
+  color: var(--text-2);
+  flex-shrink: 0;
+  opacity: 0.7;
 }
 .sb-stash-name {
   display: flex;

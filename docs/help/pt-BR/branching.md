@@ -31,6 +31,12 @@ mostram:
 - um **marcador ⟳** quando o remote [reescreveu o histórico](range-diff.md).
 
 Branches com `/` no nome se dobram automaticamente em pastas colapsáveis.
+Um prefixo com um filho só continua pasta — `release/1.2.3` é `release` com
+`1.2.3` dentro — então acrescentar `release/1.2.4` depois não redesenha a árvore.
+Uma sequência de pastas de um filho só vira um cabeçalho
+(`dependabot/npm_and_yarn`). Cabeçalhos de pasta levam marca de pasta; a ref,
+marca de branch, remoto ou tag.
+
 Clique com o botão direito no cabeçalho de uma pasta para agir sobre o grupo
 inteiro: *Excluir todas as branches em `feature` (4 branches)* remove tudo o
 que há dentro após uma única confirmação que lista exatamente quais branches se

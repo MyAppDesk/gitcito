@@ -36,6 +36,12 @@ branche affichent :
 
 Les branches dont le nom contient un `/` se replient automatiquement en dossiers
 pliables.
+Un préfixe avec un seul enfant reste un dossier — `release/1.2.3` est `release`
+contenant `1.2.3` — donc ajouter `release/1.2.4` plus tard ne redessine pas
+l’arbre. Une suite de dossiers à un enfant se comprime en un en-tête
+(`dependabot/npm_and_yarn`). Les en-têtes de dossier portent une marque de
+dossier ; la réf, une marque de branche, de distant ou d’étiquette.
+
 Un clic droit sur l'en-tête d'un dossier agit sur tout le groupe : *Supprimer
 toutes les branches sous `feature` (4 branches)* supprime tout son contenu
 après une seule confirmation qui liste exactement les branches concernées — la

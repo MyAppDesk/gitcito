@@ -32,6 +32,11 @@ Dal satırları şunları gösterir:
 - uzak depo [geçmişi yeniden yazdığında](range-diff.md) bir **⟳ işareti**.
 
 Adında `/` bulunan dallar otomatik olarak katlanabilir klasörlere toplanır.
+Tek çocuklu bir önek yine klasördür — `release/1.2.3`, içinde `1.2.3` olan
+`release`dır — sonra `release/1.2.4` eklemek ağacı yeniden çizmez. Tek çocuklu
+klasör zinciri tek başlıkta toplanır (`dependabot/npm_and_yarn`). Klasör
+başlıkları klasör işareti taşır; ref’in kendisi dal, uzak veya etiket işareti.
+
 Bir klasör başlığına sağ tıklamak tüm grup üzerinde çalışır: *`feature`
 altındaki tüm dalları sil (4 dal)*, tam olarak hangi dalların gideceğini
 listeleyen tek bir onaydan sonra içindeki her şeyi kaldırır — üzerinde

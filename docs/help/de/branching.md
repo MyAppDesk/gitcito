@@ -34,6 +34,12 @@ zeigen:
   [die Historie umgeschrieben hat](range-diff.md).
 
 Branches mit `/` im Namen werden automatisch in aufklappbare Ordner gefaltet.
+Ein Präfix mit einem Kind bleibt ein Ordner — `release/1.2.3` ist `release`
+mit `1.2.3` darin — damit `release/1.2.4` den Baum später nicht umbaut.
+Eine Folge von Ordnern mit einem Kind fällt in eine Kopfzeile zusammen
+(`dependabot/npm_and_yarn`). Ordnerköpfe tragen ein Ordnersymbol; die Ref
+selbst ein Branch-, Remote- oder Tag-Zeichen.
+
 Ein Rechtsklick auf einen Ordnerkopf wirkt auf die ganze Gruppe: *Alle Branches
 unter `feature` löschen (4 Branches)* entfernt alles darin nach einer einzigen
 Bestätigung, die genau auflistet, welche Branches gehen — der Branch, auf dem

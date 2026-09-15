@@ -29,6 +29,13 @@ import { previewKind, isBinaryKind } from '../src/renderer/src/preview/registry'
 import { lockfileFor } from '../src/renderer/src/lib/lockfiles'
 import { isBuildNoise, ignoreLineFor } from '../src/renderer/src/lib/buildNoise'
 import { bucketOf, fileStats, summaryChips, SAMPLE_STATUS } from '../src/renderer/src/lib/fileStats'
+import {
+  buildPrefixTree,
+  collapseFolderRun,
+  collectLeaves,
+  leafCount,
+  shouldCollapsePrefix
+} from '../src/renderer/src/lib/prefixTree'
 import { resolveUpdateOffer } from '../src/renderer/src/lib/updateOffer'
 import { worktreeForBranch, worktreeTabName } from '../src/renderer/src/lib/worktrees'
 import { focusedHashes, focusedStashes, defaultBranchName } from '../src/renderer/src/lib/graphFocus'
@@ -6554,5 +6561,48 @@ describe('fileStats', () => {
 
   it('returns no chips for an empty file list', () => {
     expect(summaryChips(fileStats([]))).toEqual([])
+  })
+})
+
+describe('prefixTree', () => {
+  it('builds a tree keyed by slash segments', () => {
+    const root = buildPrefixTree(
+      ['main', 'feature/login', 'feature/payments/stripe'],
+      (s) => s
+    )
+    expect([...root.children.keys()]).toEqual(['main', 'feature'])
+    expect(leafCount(root)).toBe(3)
+    expect(collectLeaves(root.children.get('feature')!)).toEqual([
+      'feature/login',
+      'feature/payments/stripe'
+    ])
+  })
+
+  it('keeps a single-child prefix as a folder, not a flat leaf', () => {
+    const root = buildPrefixTree(['release/1.2.3'], (s) => s)
+    const release = root.children.get('release')!
+    expect(shouldCollapsePrefix(release)).toBe(false)
+    const { node, display } = collapseFolderRun(release, '')
+    expect(display).toBe('release')
+    expect(node.item).toBeUndefined()
+    expect([...node.children.keys()]).toEqual(['1.2.3'])
+  })
+
+  it('collapses a run of empty namespaces into one header', () => {
+    const root = buildPrefixTree(['dependabot/npm_and_yarn/acme-web'], (s) => s)
+    const dep = root.children.get('dependabot')!
+    expect(shouldCollapsePrefix(dep)).toBe(true)
+    const { node, display } = collapseFolderRun(dep, '')
+    expect(display).toBe('dependabot/npm_and_yarn')
+    expect([...node.children.keys()]).toEqual(['acme-web'])
+    expect(node.children.get('acme-web')!.item).toBe('dependabot/npm_and_yarn/acme-web')
+  })
+
+  it('does not collapse a folder that is also a ref', () => {
+    const root = buildPrefixTree(['feat', 'feat/login'], (s) => s)
+    const feat = root.children.get('feat')!
+    expect(shouldCollapsePrefix(feat)).toBe(false)
+    expect(feat.item).toBe('feat')
+    expect([...feat.children.keys()]).toEqual(['login'])
   })
 })

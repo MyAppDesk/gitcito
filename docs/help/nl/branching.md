@@ -32,6 +32,11 @@ tonen:
 - een **⟳-markering** wanneer de remote [de geschiedenis herschreef](range-diff.md).
 
 Branches met een `/` in hun naam vouwen zich automatisch in inklapbare mappen.
+Een prefix met één kind blijft een map — `release/1.2.3` is `release` met
+`1.2.3` erin — zodat `release/1.2.4` de boom later niet herschikt. Een reeks
+mappen met één kind klapt in tot één kop (`dependabot/npm_and_yarn`).
+Mapkoppen dragen een mapteken; de ref zelf een branch-, remote- of tagteken.
+
 Rechtsklik op een mapkop om op de hele groep te werken: *Alle branches onder
 `feature` verwijderen (4 branches)* verwijdert alles erin na één bevestiging
 die precies opsomt welke branches verdwijnen — de branch waarop je staat blijft

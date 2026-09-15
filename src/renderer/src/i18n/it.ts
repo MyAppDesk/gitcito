@@ -777,7 +777,7 @@ export const it: Dict = {
   'settings.avatarMotion': 'Anima l’avatar del profilo',
   'settings.avatarMotionHint': 'L’avatar nella barra del titolo respira e sbatte le palpebre. La sua espressione segue il repository anche quando è disattivato.',
   'settings.groupBranches': 'Raggruppa le ref per prefisso',
-  'settings.groupBranchesHint': 'Raccoglie branch, branch remoti e tag in cartelle richiudibili in base al prefisso prima della “/” (feature/*, release/*). Un prefisso con una sola ref resta piatto.',
+  'settings.groupBranchesHint': 'Raccoglie branch, branch remoti e tag in cartelle richiudibili in base al prefisso prima della “/” (feature/*, release/*). Un prefisso con una sola ref resta una cartella; una sequenza di namespace vuoti si comprime in un’unica intestazione.',
   'settings.todosHideDone': 'Nascondi le attività completate',
   'settings.todosHideDoneHint': 'Le attività spuntate spariscono dalla sezione della barra laterale e dall’elenco. Non viene eliminato nulla: i conteggi continuano a includerle.',
   'settings.behaviour': 'Comportamento',

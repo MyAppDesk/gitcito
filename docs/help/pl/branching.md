@@ -34,6 +34,12 @@ pokazują:
   [przepisało historię](range-diff.md).
 
 Gałęzie z `/` w nazwie same zwijają się w składane katalogi.
+Prefiks z jednym dzieckiem nadal jest folderem — `release/1.2.3` to `release`
+z `1.2.3` w środku — więc dodanie `release/1.2.4` później nie przebudowuje drzewa.
+Ciąg folderów z jednym dzieckiem zwija się do jednego nagłówka
+(`dependabot/npm_and_yarn`). Nagłówki folderów mają znak folderu; ref — znak
+brancha, zdalnego albo tagu.
+
 Kliknij prawym przyciskiem nagłówek katalogu, by zadziałać na całą grupę: *Usuń
 wszystkie branche pod `feature` (4 branchy)* usuwa wszystko w środku po jednym
 potwierdzeniu, które wypisuje dokładnie, które gałęzie znikną — gałąź, na

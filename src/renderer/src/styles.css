@@ -7495,44 +7495,96 @@ body.col-resizing .node-ava {
   display: flex;
   flex-direction: column;
   height: 100%;
+  background: var(--bg-1);
 }
 .sheet-tabs {
   display: flex;
-  gap: 4px;
-  padding: 8px 10px;
+  gap: 2px;
+  padding: 0 8px;
   border-bottom: 1px solid var(--border-soft);
   flex-wrap: wrap;
   flex: none;
+  background: var(--bg-2);
 }
 .sheet-tab {
-  padding: 4px 12px;
+  padding: 7px 12px;
   font-size: 12px;
-  border-radius: 6px;
-  border: 1px solid transparent;
-  background: var(--bg-2);
-  color: var(--text-1);
+  font-weight: 600;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text-2);
   cursor: pointer;
 }
-.sheet-tab.active {
-  background: var(--accent-soft);
-  border-color: var(--accent);
+.sheet-tab:hover {
   color: var(--text-0);
+  background: var(--bg-3);
+}
+.sheet-tab.active {
+  color: var(--text-0);
+  border-bottom-color: var(--accent);
+  background: transparent;
 }
 .sheet-body {
   overflow: auto;
-  padding: 12px;
+  flex: 1;
+  min-height: 0;
+  user-select: text;
+  -webkit-user-select: text;
 }
 .sheet-body table {
   border-collapse: collapse;
   font-size: 12px;
-  font-family: var(--mono, ui-monospace, monospace);
+  font-family: var(--font);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.4;
 }
 .sheet-body td,
 .sheet-body th {
-  border: 1px solid var(--border);
-  padding: 4px 8px;
+  border: 1px solid var(--border-soft);
+  padding: 5px 10px;
   color: var(--text-0);
   white-space: nowrap;
+  min-width: 2.4em;
+}
+.sheet-body td:empty::before {
+  content: '\00a0';
+}
+.sheet-body tr:first-child td,
+.sheet-body tr:first-child th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--bg-3);
+  color: var(--text-1);
+  font-weight: 700;
+  font-size: 11px;
+  box-shadow: 0 1px 0 var(--border);
+}
+.sheet-body td:first-child,
+.sheet-body th:first-child {
+  position: sticky;
+  inset-inline-start: 0;
+  z-index: 1;
+  background: var(--bg-2);
+  color: var(--text-1);
+  box-shadow: calc(1px * var(--dir)) 0 0 var(--border-soft);
+}
+.sheet-body tr:first-child td:first-child,
+.sheet-body tr:first-child th:first-child {
+  z-index: 3;
+  background: var(--bg-3);
+}
+.sheet-body tr:hover td {
+  background: var(--bg-3);
+}
+.sheet-body tr:hover td:first-child {
+  background: var(--bg-3);
+}
+.sheet-body tr:first-child:hover td {
+  background: var(--bg-3);
 }
 
 /* File content view */

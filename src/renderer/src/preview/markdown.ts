@@ -5,7 +5,7 @@ import hljs from 'highlight.js'
 // GitHub-ish defaults: hard line breaks off, GFM on (tables, autolinks, etc).
 marked.setOptions({ gfm: true, breaks: false })
 
-/** Sanitize arbitrary HTML (e.g. converted .docx) for dangerouslySetInnerHTML. */
+/** Sanitize arbitrary HTML (converted .docx or spreadsheet) for dangerouslySetInnerHTML. */
 export function sanitizeHtml(html: string): string {
   return DOMPurify.sanitize(html, { ADD_ATTR: ['target'] })
 }

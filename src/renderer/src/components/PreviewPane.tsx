@@ -131,7 +131,10 @@ export function PreviewPane({ repoPath, file, gitRef, kind }: Props): React.JSX.
           const wb = XLSX.read(dataUrlToArrayBuffer(url), { type: 'array' })
           const parsed = wb.SheetNames.map((name) => ({
             name,
-            html: XLSX.utils.sheet_to_html(wb.Sheets[name])
+            // Same pass as .docx: a cell can hold markup, and this HTML is
+            // dropped into the DOM. CSP blocks script; sanitizing still
+            // strips images and handlers a sheet could use as a beacon.
+            html: sanitizeHtml(XLSX.utils.sheet_to_html(wb.Sheets[name]))
           }))
           if (!cancelled) setSheets(parsed)
         } else if (kind === 'word') {
@@ -249,19 +252,17 @@ export function PreviewPane({ repoPath, file, gitRef, kind }: Props): React.JSX.
     if (sheets.length === 0) return <div className="fv-error">{t('preview.empty')}</div>
     return (
       <div className="sheet-preview">
-        {sheets.length > 1 && (
-          <div className="sheet-tabs">
-            {sheets.map((s, i) => (
-              <button
-                key={s.name}
-                className={`sheet-tab ${i === sheetIdx ? 'active' : ''}`}
-                onClick={() => setSheetIdx(i)}
-              >
-                {s.name}
-              </button>
-            ))}
-          </div>
-        )}
+        <div className="sheet-tabs">
+          {sheets.map((s, i) => (
+            <button
+              key={s.name}
+              className={`sheet-tab ${i === sheetIdx ? 'active' : ''}`}
+              onClick={() => setSheetIdx(i)}
+            >
+              {s.name}
+            </button>
+          ))}
+        </div>
         <div className="sheet-body" dangerouslySetInnerHTML={{ __html: sheets[sheetIdx]?.html ?? '' }} />
       </div>
     )

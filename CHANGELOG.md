@@ -1,5 +1,21 @@
 
 
+## [4.8.0](https://github.com/MyAppDesk/gitcito/compare/v4.7.0...v4.8.0) (2026-09-16)
+
+
+### Features
+
+* fold slash-separated refs into folders from the first branch ([1a22447](https://github.com/MyAppDesk/gitcito/commit/1a224472c916acc4f044468127c0f025feca9e9d))
+* lay out the sidebar as equal-height panes ([7727211](https://github.com/MyAppDesk/gitcito/commit/772721197d2f03914739a34fb58a334926ae8185))
+* list every known repository on one page ([1deb757](https://github.com/MyAppDesk/gitcito/commit/1deb7574db51a55209ed2e64f79280b98eda4122))
+* split file-list headers by change kind ([cee6de7](https://github.com/MyAppDesk/gitcito/commit/cee6de75441a6874ff3058b7c0c20155ad1f0a88))
+
+
+### Bug Fixes
+
+* keep stashes beside their parent commit ([1e66435](https://github.com/MyAppDesk/gitcito/commit/1e6643585f30eae3d10579efafecb44ee8fcac67))
+* sanitize spreadsheet preview HTML ([df1f908](https://github.com/MyAppDesk/gitcito/commit/df1f908aaf6f17989e5af810d3005d8f57522de0))
+
 ## [4.7.0](https://github.com/MyAppDesk/gitcito/compare/v4.6.1...v4.7.0) (2026-09-02)
 
 

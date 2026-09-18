@@ -1,5 +1,12 @@
 
 
+## [4.8.1](https://github.com/MyAppDesk/gitcito/compare/v4.8.0...v4.8.1) (2026-09-18)
+
+
+### Features
+
+* enhance macOS signing process in release workflow ([e33ef49](https://github.com/MyAppDesk/gitcito/commit/e33ef496501e26c2bb3e9a8986c2738f51885a31))
+
 ## [4.8.0](https://github.com/MyAppDesk/gitcito/compare/v4.7.0...v4.8.0) (2026-09-16)
 
 

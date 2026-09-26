@@ -279,6 +279,20 @@ export function TerminalContainer({ cwd }: { cwd: string }): React.JSX.Element {
   return (
     <div className="terminal-container" onKeyDownCapture={onTerminalShortcut}>
       <div className="terminal-main">
+        <button
+          className="terminal-close-button"
+          title={t('terminal.closePane')}
+          aria-label={t('terminal.closePane')}
+          onClick={() => {
+            const current = useTerminalsStore.getState().byRepo[cwd]
+            const close = terminalCloseTarget(current?.groups ?? [], current?.activeGroupId ?? null)
+            if (!close) return
+            removePanel(cwd, close.groupId, close.panelId)
+            if (close.hidePanel) setTerminalOpen(cwd, false)
+          }}
+        >
+          <X size={13} />
+        </button>
         {groups.map((group) => (
           <TerminalGroupView
             key={group.id}

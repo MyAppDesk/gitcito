@@ -1,5 +1,12 @@
 
 
+## [4.9.0](https://github.com/MyAppDesk/gitcito/compare/v4.8.1...v4.9.0) (2026-09-26)
+
+
+### Features
+
+* add close button to terminal container ([94f0c53](https://github.com/MyAppDesk/gitcito/commit/94f0c53f5fffa496d9d5213812995a1e9aa91986))
+
 ## [4.8.1](https://github.com/MyAppDesk/gitcito/compare/v4.8.0...v4.8.1) (2026-09-18)
 
 

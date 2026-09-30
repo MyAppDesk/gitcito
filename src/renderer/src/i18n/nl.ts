@@ -23,6 +23,8 @@ export const nl: Dict = {
   'launch.inputTitle': 'Invoer: {id}',
   'launch.inputStep': 'Invoer {current} van {total}',
   'launch.inputSubmit': 'Doorgaan',
+  'launch.inputFileFailed': 'Kan {source} niet lezen voor invoer {id}. Controleer het bestandspad, de JSON/YAML-indeling en de eigenschap.',
+  'launch.inputUnsupported': 'Invoer {id} gebruikt het niet-ondersteunde type {source}. Gebruik promptString of pickString.',
   'launch.hotTitle': '{runtime} · {label}  ({key})',
   'launch.hotReload': 'Hot reload',
   'launch.hotRestart': 'Hot restart',

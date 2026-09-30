@@ -24,6 +24,8 @@ export const en = {
   'launch.inputTitle': 'Input: {id}',
   'launch.inputStep': 'Input {current} of {total}',
   'launch.inputSubmit': 'Continue',
+  'launch.inputFileFailed': 'Cannot read {source} for input {id}. Check the file path, JSON/YAML format and property.',
+  'launch.inputUnsupported': 'Input {id} uses unsupported type {source}. Use promptString or pickString.',
   'launch.hotTitle': '{runtime} · {label}  ({key})',
   'launch.hotReload': 'Hot reload',
   'launch.hotRestart': 'Hot restart',

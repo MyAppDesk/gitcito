@@ -145,3 +145,24 @@ Gitcito 不必改写任何命令。
 选择按仓库记住，并在该设备不复存在时被忘掉。
 
 **另请参阅：** [终端](terminal.md)
+
+## 从 JSON 和 YAML 获取输入值
+
+输入框可以显示项目文件中的当前版本，或用文件值预填。Gitcito 在每次启动时读取文件，然后显示输入框。无需 VS Code 扩展。
+
+在 promptString 或 pickString 中添加 fileValues。每个值指定相对于启动配置文件夹的路径，以及用点分隔的属性路径。在 description 或 default 中使用 ${fileValue:name}。default 留空时，输入仍为可选。
+
+```json
+{
+  "id": "version",
+  "type": "promptString",
+  "description": "Current: ${fileValue:version} (${fileValue:build})",
+  "default": "",
+  "fileValues": {
+    "version": { "file": "version.yaml", "key": "settings.base.MARKETING_VERSION" },
+    "build": { "file": "version.yaml", "key": "settings.base.CURRENT_PROJECT_VERSION" }
+  }
+}
+```
+
+支持该文件夹内不超过 1 MiB 的 JSON、YAML 和 YML 文件，以及字符串、数字和布尔值。文件缺失、数据无效、属性缺失或文件夹外的路径会导致启动中止并显示错误。不执行命令或 JavaScript 表达式。每次新启动都会重新读取文件；Restart 复用之前的回答。VS Code 不会原生解析这些 Gitcito 字段。

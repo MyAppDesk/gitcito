@@ -174,3 +174,24 @@ Wybór jest pamiętany dla każdego repozytorium i zapominany, gdy urządzenie
 przestaje istnieć.
 
 **Zobacz też:** [Wbudowany terminal](terminal.md)
+
+## Wartości z JSON i YAML
+
+Pole może pokazywać bieżącą wersję lub pobierać wartość początkową z pliku projektu. Gitcito odczytuje plik przy uruchamianiu, przed wyświetleniem pól. Rozszerzenie VS Code nie jest potrzebne.
+
+Dodaj fileValues do pola promptString lub pickString. Każda wartość określa ścieżkę względem folderu konfiguracji uruchamiania oraz właściwość rozdzieloną kropkami. Użyj ${fileValue:name} w description lub default. Pusty default pozostawia pole opcjonalne.
+
+```json
+{
+  "id": "version",
+  "type": "promptString",
+  "description": "Current: ${fileValue:version} (${fileValue:build})",
+  "default": "",
+  "fileValues": {
+    "version": { "file": "version.yaml", "key": "settings.base.MARKETING_VERSION" },
+    "build": { "file": "version.yaml", "key": "settings.base.CURRENT_PROJECT_VERSION" }
+  }
+}
+```
+
+Obsługiwane są pliki JSON, YAML i YML w tym folderze do 1 MiB oraz tekst, liczby i wartości logiczne. Brak pliku, błędne dane, brak właściwości lub ścieżka zewnętrzna zatrzymują uruchomienie z błędem. Polecenia i wyrażenia JavaScript nie są wykonywane. Nowe uruchomienie ponownie odczytuje pliki; Restart używa poprzednich odpowiedzi. VS Code nie obsługuje tych pól Gitcito natywnie.

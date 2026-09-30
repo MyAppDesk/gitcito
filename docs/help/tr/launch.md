@@ -172,3 +172,24 @@ ve **Cihazları yenile**’ye basın.
 Seçim depo başına hatırlanır ve o cihaz ortadan kalktığında unutulur.
 
 **Ayrıca bakınız:** [Tümleşik terminal](terminal.md)
+
+## JSON ve YAML dosyalarından girdi değerleri
+
+Bir alan geçerli sürümü gösterebilir veya proje dosyasından başlangıç değeri alabilir. Gitcito dosyayı her başlatmada, alanlar gösterilmeden önce okur. VS Code eklentisi gerekmez.
+
+promptString veya pickString alanına fileValues ekleyin. Her değer, başlatma yapılandırmasının klasörüne göre dosya yolu ve noktalarla ayrılmış özellik yolu tanımlar. description veya default içinde ${fileValue:name} kullanın. Boş default metin alanını isteğe bağlı tutar.
+
+```json
+{
+  "id": "version",
+  "type": "promptString",
+  "description": "Current: ${fileValue:version} (${fileValue:build})",
+  "default": "",
+  "fileValues": {
+    "version": { "file": "version.yaml", "key": "settings.base.MARKETING_VERSION" },
+    "build": { "file": "version.yaml", "key": "settings.base.CURRENT_PROJECT_VERSION" }
+  }
+}
+```
+
+Klasör içindeki en fazla 1 MiB boyutlu JSON, YAML ve YML dosyaları ile metin, sayı ve mantıksal değerler desteklenir. Eksik dosya, geçersiz veri, eksik özellik ve dış yollar başlatmayı hatayla durdurur. Komut veya JavaScript ifadesi çalıştırılmaz. Her yeni başlatma dosyayı tekrar okur; Restart önceki yanıtları kullanır. VS Code bu Gitcito alanlarını yerleşik olarak çözümlemez.

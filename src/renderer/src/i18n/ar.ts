@@ -23,6 +23,8 @@ export const ar: Dict = {
   'launch.inputTitle': 'الإدخال: {id}',
   'launch.inputStep': 'الإدخال {current} من {total}',
   'launch.inputSubmit': 'متابعة',
+  'launch.inputFileFailed': 'تعذرت قراءة {source} للحقل {id}. تحقق من مسار الملف وتنسيق JSON/YAML والخاصية.',
+  'launch.inputUnsupported': 'يستخدم الحقل {id} النوع غير المدعوم {source}. استخدم promptString أو pickString.',
   'launch.hotTitle': '{runtime} · {label}  ({key})',
   'launch.hotReload': 'إعادة تحميل ساخنة',
   'launch.hotRestart': 'إعادة تشغيل ساخنة',

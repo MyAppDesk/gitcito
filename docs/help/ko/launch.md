@@ -160,3 +160,24 @@ iPhone을 권하는 일은 없습니다. 그리고 목록은 스냅숏입니다.
 선택은 저장소별로 기억되며, 그 기기가 사라지면 잊힙니다.
 
 **함께 보기:** [내장 터미널](terminal.md)
+
+## JSON 및 YAML의 입력값
+
+프로젝트 파일에서 현재 버전을 표시하거나 초기값을 채울 수 있습니다. Gitcito는 실행할 때 입력 필드를 표시하기 전에 파일을 읽습니다. VS Code 확장은 필요하지 않습니다.
+
+promptString 또는 pickString에 fileValues를 추가하세요. 각 값에는 실행 설정 폴더 기준의 상대 경로와 점으로 구분된 속성 경로를 지정합니다. description 또는 default에서 ${fileValue:name}을 사용하세요. default가 비어 있으면 입력은 선택 사항입니다.
+
+```json
+{
+  "id": "version",
+  "type": "promptString",
+  "description": "Current: ${fileValue:version} (${fileValue:build})",
+  "default": "",
+  "fileValues": {
+    "version": { "file": "version.yaml", "key": "settings.base.MARKETING_VERSION" },
+    "build": { "file": "version.yaml", "key": "settings.base.CURRENT_PROJECT_VERSION" }
+  }
+}
+```
+
+폴더 안의 1 MiB 이하 JSON, YAML, YML 파일과 문자열, 숫자, 불리언을 지원합니다. 파일이나 속성이 없거나 데이터가 잘못되었거나 경로가 폴더 밖이면 오류와 함께 실행을 중단합니다. 명령이나 JavaScript 표현식은 실행하지 않습니다. 새 실행마다 파일을 다시 읽으며 Restart는 이전 답변을 재사용합니다. VS Code는 이 Gitcito 전용 필드를 기본 지원하지 않습니다.

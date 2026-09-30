@@ -23,6 +23,8 @@ export const ptBR: Dict = {
   'launch.inputTitle': 'Entrada: {id}',
   'launch.inputStep': 'Entrada {current} de {total}',
   'launch.inputSubmit': 'Continuar',
+  'launch.inputFileFailed': 'Não foi possível ler {source} para o campo {id}. Verifique o caminho, o formato JSON/YAML e a propriedade.',
+  'launch.inputUnsupported': 'O campo {id} usa o tipo não compatível {source}. Use promptString ou pickString.',
   'launch.hotTitle': '{runtime} · {label}  ({key})',
   'launch.hotReload': 'Hot reload',
   'launch.hotRestart': 'Hot restart',

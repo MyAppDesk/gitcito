@@ -22,6 +22,8 @@ export const tr: Dict = {
   'launch.inputTitle': 'Girdi: {id}',
   'launch.inputStep': 'Girdi {current}/{total}',
   'launch.inputSubmit': 'Devam',
+  'launch.inputFileFailed': '{id} girdisi için {source} okunamıyor. Dosya yolunu, JSON/YAML biçimini ve özelliği kontrol edin.',
+  'launch.inputUnsupported': '{id} girdisi desteklenmeyen {source} türünü kullanıyor. promptString veya pickString kullanın.',
   'launch.hotTitle': '{runtime} · {label}  ({key})',
   'launch.hotReload': 'Sıcak yeniden yükleme',
   'launch.hotRestart': 'Sıcak yeniden başlatma',

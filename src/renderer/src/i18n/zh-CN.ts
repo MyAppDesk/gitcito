@@ -23,6 +23,8 @@ export const zhCN: Dict = {
   'launch.inputTitle': '输入：{id}',
   'launch.inputStep': '输入 {current} / {total}',
   'launch.inputSubmit': '继续',
+  'launch.inputFileFailed': '无法为输入项 {id} 读取 {source}。请检查文件路径、JSON/YAML 格式和属性。',
+  'launch.inputUnsupported': '输入项 {id} 使用了不支持的类型 {source}。请使用 promptString 或 pickString。',
   'launch.hotTitle': '{runtime} · {label}  ({key})',
   'launch.hotReload': '热重载',
   'launch.hotRestart': '热重启',

@@ -178,3 +178,24 @@ iPhone. Et la liste est un instantané : branchez un téléphone puis appuyez su
 Le choix est mémorisé par dépôt, et oublié quand l’appareil cesse d’exister.
 
 **Voir aussi :** [Terminal intégré](terminal.md)
+
+## Valeurs depuis JSON et YAML
+
+Un champ peut afficher la version actuelle ou préremplir une valeur depuis un fichier du projet. Gitcito lit le fichier au lancement, avant les champs. Aucune extension VS Code n’est nécessaire.
+
+Ajoutez fileValues à un champ promptString ou pickString. Chaque valeur définit un chemin relatif au dossier de la configuration de lancement et une propriété séparée par des points. Utilisez ${fileValue:name} dans description ou default. Un default vide garde le champ facultatif.
+
+```json
+{
+  "id": "version",
+  "type": "promptString",
+  "description": "Current: ${fileValue:version} (${fileValue:build})",
+  "default": "",
+  "fileValues": {
+    "version": { "file": "version.yaml", "key": "settings.base.MARKETING_VERSION" },
+    "build": { "file": "version.yaml", "key": "settings.base.CURRENT_PROJECT_VERSION" }
+  }
+}
+```
+
+Seuls les fichiers JSON, YAML et YML de ce dossier, de 1 Mio maximum, sont acceptés. Les valeurs doivent être des chaînes, nombres ou booléens. Un fichier absent, des données incorrectes, une propriété manquante ou un chemin externe interrompent le lancement avec une erreur. Aucune commande ni expression JavaScript n’est exécutée. Chaque nouveau lancement relit les fichiers ; Restart réutilise les réponses. VS Code ne résout pas nativement ces champs Gitcito.

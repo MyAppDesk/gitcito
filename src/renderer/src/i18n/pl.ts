@@ -23,6 +23,8 @@ export const pl: Dict = {
   'launch.inputTitle': 'Dane wejściowe: {id}',
   'launch.inputStep': 'Dane {current} z {total}',
   'launch.inputSubmit': 'Dalej',
+  'launch.inputFileFailed': 'Nie można odczytać {source} dla pola {id}. Sprawdź ścieżkę pliku, format JSON/YAML i właściwość.',
+  'launch.inputUnsupported': 'Pole {id} używa nieobsługiwanego typu {source}. Użyj promptString lub pickString.',
   'launch.hotTitle': '{runtime} · {label}  ({key})',
   'launch.hotReload': 'Hot reload',
   'launch.hotRestart': 'Hot restart',

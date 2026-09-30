@@ -1,3 +1,4 @@
+import type { LaunchInput, LaunchInputResolution } from '../../../shared/types'
 import type {
   AskPlan,
   DoctorCheck,
@@ -1017,4 +1018,9 @@ export const cliApi = {
 export const menuApi = {
   set: (spec: MenuSpec) => window.api.menu.set(spec),
   onCommand: (cb: (id: string) => void) => window.api.menu.onCommand(cb)
+}
+
+export const launchApi = {
+  resolveInputs: (dir: string, inputs: LaunchInput[]): Promise<LaunchInputResolution> =>
+    window.api.launch.resolveInputs(dir, inputs)
 }

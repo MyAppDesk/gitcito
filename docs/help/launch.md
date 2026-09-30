@@ -164,3 +164,24 @@ The choice is remembered per repository, and forgotten when that device stops
 existing.
 
 **See also:** [Integrated terminal](terminal.md)
+
+## Input values from JSON and YAML
+
+An input can show the current version or prefill a value from a workspace file. Gitcito reads the file when you press Launch, before showing the prompts. No VS Code extension is needed.
+
+Add fileValues to a promptString or pickString input. Each named value supplies a file path relative to the launch configuration folder and a dot-separated property key. Use ${fileValue:name} in description or default. An empty default keeps the text field optional.
+
+```json
+{
+  "id": "version",
+  "type": "promptString",
+  "description": "Current: ${fileValue:version} (${fileValue:build})",
+  "default": "",
+  "fileValues": {
+    "version": { "file": "version.yaml", "key": "settings.base.MARKETING_VERSION" },
+    "build": { "file": "version.yaml", "key": "settings.base.CURRENT_PROJECT_VERSION" }
+  }
+}
+```
+
+Only JSON, YAML and YML files within that folder are supported, up to 1 MiB. Values must be strings, numbers or booleans. Missing files, malformed data, missing properties and paths outside the folder abort the launch with an error. No commands or JavaScript expressions are evaluated. Files are read again for each new launch; Restart reuses the original answers. These fields are a Gitcito addition to launch.json; VS Code does not expand them natively.

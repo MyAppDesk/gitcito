@@ -336,6 +336,8 @@ const api = {
   },
 
   launch: {
+    resolveInputs: (dir: string, inputs: import('../shared/types').LaunchInput[]): Promise<import('../shared/types').LaunchInputResolution> =>
+      ipcRenderer.invoke('launch:resolveInputs', dir, inputs),
     discover: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('launch:discover', repoPath),
     run: (payload: unknown): Promise<{ id: number } | { error: string }> =>
       ipcRenderer.invoke('launch:run', payload),

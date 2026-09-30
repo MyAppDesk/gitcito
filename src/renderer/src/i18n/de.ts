@@ -23,6 +23,8 @@ export const de: Dict = {
   'launch.inputTitle': 'Eingabe: {id}',
   'launch.inputStep': 'Eingabe {current} von {total}',
   'launch.inputSubmit': 'Weiter',
+  'launch.inputFileFailed': '{source} kann für die Eingabe {id} nicht gelesen werden. Prüfe Dateipfad, JSON/YAML-Format und Eigenschaft.',
+  'launch.inputUnsupported': 'Die Eingabe {id} verwendet den nicht unterstützten Typ {source}. Verwende promptString oder pickString.',
   'launch.hotTitle': '{runtime} · {label}  ({key})',
   'launch.hotReload': 'Hot Reload',
   'launch.hotRestart': 'Hot Restart',

@@ -177,3 +177,24 @@ Die Wahl wird pro Repository gemerkt und vergessen, sobald das Gerät nicht mehr
 existiert.
 
 **Siehe auch:** [Integriertes Terminal](terminal.md)
+
+## Eingabewerte aus JSON und YAML
+
+Eine Eingabe kann die aktuelle Version anzeigen oder einen Wert aus einer Projektdatei vorbelegen. Gitcito liest die Datei beim Start, bevor die Eingaben erscheinen. Eine VS-Code-Erweiterung ist nicht nötig.
+
+Ergänze fileValues bei promptString oder pickString. Jeder Wert enthält einen Dateipfad relativ zum Ordner der Startkonfiguration und einen durch Punkte getrennten Eigenschaftspfad. Verwende ${fileValue:name} in description oder default. Ein leerer default hält das Textfeld optional.
+
+```json
+{
+  "id": "version",
+  "type": "promptString",
+  "description": "Current: ${fileValue:version} (${fileValue:build})",
+  "default": "",
+  "fileValues": {
+    "version": { "file": "version.yaml", "key": "settings.base.MARKETING_VERSION" },
+    "build": { "file": "version.yaml", "key": "settings.base.CURRENT_PROJECT_VERSION" }
+  }
+}
+```
+
+Unterstützt werden JSON-, YAML- und YML-Dateien innerhalb dieses Ordners bis 1 MiB sowie Zeichenfolgen, Zahlen und boolesche Werte. Fehlende Dateien, ungültige Daten, fehlende Eigenschaften und externe Pfade brechen den Start mit einem Fehler ab. Befehle und JavaScript-Ausdrücke werden nicht ausgeführt. Jeder neue Start liest die Dateien erneut; Restart verwendet die bisherigen Antworten. VS Code löst diese Gitcito-Felder nicht nativ auf.

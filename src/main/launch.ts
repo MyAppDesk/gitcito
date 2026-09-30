@@ -4,6 +4,7 @@ import { readFile, readdir } from 'fs/promises'
 import { homedir } from 'os'
 import { join, relative, sep } from 'path'
 import type { LaunchConfig, LaunchGroup, LaunchInput, LaunchTask } from '../shared/types'
+import { resolveLaunchInputs } from './launchInputFiles'
 
 // ─── JSONC parsing ──────────────────────────────────────────────────────────
 // launch.json / tasks.json are JSON-with-comments and allow trailing commas.
@@ -818,6 +819,8 @@ function spawnFallback(
 
 export function registerLaunchHandlers(): void {
   ipcMain.handle('launch:discover', (_e, repoPath: string) => discoverLaunch(repoPath))
+  ipcMain.handle('launch:resolveInputs', (_e, dir: string, inputs: LaunchInput[]) =>
+    resolveLaunchInputs(dir, inputs))
 
   ipcMain.handle(
     'launch:run',

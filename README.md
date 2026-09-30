@@ -161,7 +161,8 @@ bottom, with a toggle for "only the files I changed" ·
 source carries, in the same dock, grouped by tag, by folder, or by the owner in
 `TODO(cgm)` ·
 [**Run & debug**](docs/help/launch.md) from your `.vscode/launch.json` —
-compounds as parallel sessions, `stopAll`, `serverReadyAction`, a
+inputs that read current values from JSON/YAML files, compounds as parallel
+sessions, `stopAll`, `serverReadyAction`, a
 [hot reload](docs/help/launch.md) button for the runtime you actually launched,
 and a [run target](docs/help/launch.md) picker for the phone or simulator ·
 [**Dev tools**](docs/help/devtools.md) embedded on the repository's own tab —

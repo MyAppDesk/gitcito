@@ -23,6 +23,8 @@ export const uk: Dict = {
   'launch.inputTitle': 'Введення: {id}',
   'launch.inputStep': 'Введення {current} з {total}',
   'launch.inputSubmit': 'Продовжити',
+  'launch.inputFileFailed': 'Не вдалося прочитати {source} для поля {id}. Перевірте шлях до файлу, формат JSON/YAML і властивість.',
+  'launch.inputUnsupported': 'Поле {id} використовує непідтримуваний тип {source}. Використовуйте promptString або pickString.',
   'launch.hotTitle': '{runtime} · {label}  ({key})',
   'launch.hotReload': 'Гаряче перезавантаження',
   'launch.hotRestart': 'Гарячий перезапуск',

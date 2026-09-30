@@ -156,3 +156,24 @@ Android בלבד לעולם לא יציע לכם אייפון. והרשימה ה
 הבחירה נזכרת לכל מאגר בנפרד, ונשכחת כשהמכשיר חדל להתקיים.
 
 **ראו גם:** [טרמינל משולב](terminal.md)
+
+## ערכי קלט מקובצי JSON ו-YAML
+
+שדה יכול להציג את הגרסה הנוכחית או לקבל ערך התחלתי מקובץ הפרויקט. Gitcito קורא את הקובץ בכל הפעלה, לפני הצגת השדות. אין צורך בתוסף VS Code.
+
+הוסיפו fileValues לשדה promptString או pickString. כל ערך מגדיר נתיב יחסי לתיקיית הגדרות ההפעלה ומאפיין המופרד בנקודות. השתמשו ב-${fileValue:name} בתוך description או default. ערך default ריק משאיר את השדה אופציונלי.
+
+```json
+{
+  "id": "version",
+  "type": "promptString",
+  "description": "Current: ${fileValue:version} (${fileValue:build})",
+  "default": "",
+  "fileValues": {
+    "version": { "file": "version.yaml", "key": "settings.base.MARKETING_VERSION" },
+    "build": { "file": "version.yaml", "key": "settings.base.CURRENT_PROJECT_VERSION" }
+  }
+}
+```
+
+נתמכים קובצי JSON, YAML ו-YML בתיקייה עד 1 MiB, וערכי טקסט, מספרים ובוליאנים. קבצים חסרים, נתונים לא תקינים, מאפיינים חסרים ונתיבים חיצוניים עוצרים את ההפעלה עם שגיאה. לא מופעלים פקודות או ביטויי JavaScript. כל הפעלה חדשה קוראת שוב את הקבצים; Restart משתמש בתשובות הקודמות. VS Code אינו פותר את שדות Gitcito האלה באופן מובנה.

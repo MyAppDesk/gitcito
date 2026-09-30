@@ -22,6 +22,8 @@ export const ja: Dict = {
   'launch.inputTitle': '入力: {id}',
   'launch.inputStep': '入力 {current} / {total}',
   'launch.inputSubmit': '続行',
+  'launch.inputFileFailed': '入力 {id} の {source} を読み取れません。ファイルパス、JSON/YAML 形式、プロパティを確認してください。',
+  'launch.inputUnsupported': '入力 {id} は未対応の型 {source} を使用しています。promptString または pickString を使用してください。',
   'launch.hotTitle': '{runtime} · {label}  ({key})',
   'launch.hotReload': 'ホットリロード',
   'launch.hotRestart': 'ホットリスタート',

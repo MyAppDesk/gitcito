@@ -161,3 +161,24 @@ Dart-Code の `deviceId` — はそのままです。ピッカーが作者の記
 選択はリポジトリごとに記憶され、そのデバイスが存在しなくなると忘れられます。
 
 **関連項目:** [統合ターミナル](terminal.md)
+
+## JSON と YAML からの入力値
+
+プロジェクトのファイルから現在のバージョンを表示したり、初期値を設定したりできます。Gitcito は起動時に、入力欄を表示する前にファイルを読み込みます。VS Code 拡張機能は不要です。
+
+promptString または pickString に fileValues を追加します。各値に起動設定のフォルダーからの相対パスと、ドットで区切ったプロパティを指定します。description または default で ${fileValue:name} を使います。default が空なら入力は任意です。
+
+```json
+{
+  "id": "version",
+  "type": "promptString",
+  "description": "Current: ${fileValue:version} (${fileValue:build})",
+  "default": "",
+  "fileValues": {
+    "version": { "file": "version.yaml", "key": "settings.base.MARKETING_VERSION" },
+    "build": { "file": "version.yaml", "key": "settings.base.CURRENT_PROJECT_VERSION" }
+  }
+}
+```
+
+フォルダー内の 1 MiB 以下の JSON、YAML、YML ファイルと、文字列、数値、真偽値に対応します。ファイルやプロパティの欠落、不正なデータ、外部へのパスがあればエラーで起動を中止します。コマンドや JavaScript 式は実行しません。新しい起動ごとに読み直します。Restart は前の回答を再利用します。VS Code はこれらの Gitcito 独自フィールドを標準では解決しません。

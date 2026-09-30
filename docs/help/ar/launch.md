@@ -157,3 +157,24 @@ keywords: تشغيل تنقيح إعدادات مهام مدخلات خلفية 
 يُحفظ الاختيار لكل مستودع، ويُنسى حين يختفي ذلك الجهاز.
 
 **انظر أيضًا:** [الطرفية المدمجة](terminal.md)
+
+## قيم الإدخال من JSON وYAML
+
+يمكن للحقل عرض الإصدار الحالي أو تعبئة قيمة أولية من ملف المشروع. يقرأ Gitcito الملف عند كل تشغيل قبل عرض الحقول. لا تحتاج إلى إضافة VS Code.
+
+أضف fileValues إلى حقل promptString أو pickString. تحدد كل قيمة مسار ملف نسبيًا إلى مجلد إعداد التشغيل وخاصية مفصولة بنقاط. استخدم ${fileValue:name} في description أو default. تترك قيمة default الفارغة الحقل اختياريًا.
+
+```json
+{
+  "id": "version",
+  "type": "promptString",
+  "description": "Current: ${fileValue:version} (${fileValue:build})",
+  "default": "",
+  "fileValues": {
+    "version": { "file": "version.yaml", "key": "settings.base.MARKETING_VERSION" },
+    "build": { "file": "version.yaml", "key": "settings.base.CURRENT_PROJECT_VERSION" }
+  }
+}
+```
+
+يدعم ملفات JSON وYAML وYML داخل المجلد حتى 1 MiB، والقيم النصية والرقمية والمنطقية. توقف الملفات المفقودة والبيانات غير الصالحة والخصائص المفقودة والمسارات الخارجية التشغيل مع خطأ. لا تُنفَّذ أوامر أو تعبيرات JavaScript. يعيد كل تشغيل جديد قراءة الملفات؛ يستخدم Restart الإجابات السابقة. لا يحل VS Code حقول Gitcito هذه افتراضيًا.

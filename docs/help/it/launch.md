@@ -175,3 +175,24 @@ La scelta viene ricordata per repository e dimenticata quando quel dispositivo
 smette di esistere.
 
 **Vedi anche:** [Terminale integrato](terminal.md)
+
+## Valori da JSON e YAML
+
+Un campo può mostrare la versione attuale o usare un valore iniziale da un file del progetto. Gitcito legge il file prima di mostrare i campi a ogni avvio. Non servono estensioni VS Code.
+
+Aggiungi fileValues a un campo promptString o pickString. Ogni valore indica un percorso relativo alla cartella della configurazione di avvio e una proprietà separata da punti. Usa ${fileValue:name} in description o default. Un default vuoto mantiene il campo facoltativo.
+
+```json
+{
+  "id": "version",
+  "type": "promptString",
+  "description": "Current: ${fileValue:version} (${fileValue:build})",
+  "default": "",
+  "fileValues": {
+    "version": { "file": "version.yaml", "key": "settings.base.MARKETING_VERSION" },
+    "build": { "file": "version.yaml", "key": "settings.base.CURRENT_PROJECT_VERSION" }
+  }
+}
+```
+
+Sono supportati file JSON, YAML e YML nella cartella, fino a 1 MiB, con stringhe, numeri o booleani. File mancanti, dati errati, proprietà assenti e percorsi esterni bloccano l’avvio con un errore. Non vengono eseguiti comandi o espressioni JavaScript. Ogni nuovo avvio rilegge i file; Restart riusa le risposte. VS Code non risolve questi campi Gitcito in modo nativo.

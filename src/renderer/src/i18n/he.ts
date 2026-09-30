@@ -23,6 +23,8 @@ export const he: Dict = {
   'launch.inputTitle': 'קלט: {id}',
   'launch.inputStep': 'קלט {current} מתוך {total}',
   'launch.inputSubmit': 'המשך',
+  'launch.inputFileFailed': 'לא ניתן לקרוא את {source} עבור השדה {id}. יש לבדוק את נתיב הקובץ, פורמט JSON/YAML והמאפיין.',
+  'launch.inputUnsupported': 'השדה {id} משתמש בסוג {source} שאינו נתמך. יש להשתמש ב-promptString או ב-pickString.',
   'launch.hotTitle': '{runtime} · {label}  ({key})',
   'launch.hotReload': 'טעינה חמה',
   'launch.hotRestart': 'הפעלה חוזרת חמה',

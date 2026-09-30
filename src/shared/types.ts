@@ -1609,7 +1609,13 @@ export interface LaunchInput {
   /** Options for a `pickString`. Each is either a raw value or {label,value}. */
   options?: (string | { label?: string; value: string })[]
   password?: boolean
+  /** Gitcito: replace ${fileValue:name} in description/default with a JSON/YAML scalar. */
+  fileValues?: Record<string, { file: string; key: string }>
 }
+
+export type LaunchInputResolution =
+  | { inputs: LaunchInput[] }
+  | { error: { id: string; source: string; reason: 'file' | 'type' } }
 
 /** All launch configs discovered under one `.vscode/` folder. The root folder's
  *  group renders first; deeper folders follow after a divider. */

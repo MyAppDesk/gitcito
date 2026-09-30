@@ -11,6 +11,7 @@ interface TermApi {
 }
 
 interface LaunchApi {
+  resolveInputs(dir: string, inputs: import('../../shared/types').LaunchInput[]): Promise<import('../../shared/types').LaunchInputResolution>
   discover(repoPath: string): Promise<import('../../shared/types').LaunchGroup[]>
   run(payload: {
     dir: string

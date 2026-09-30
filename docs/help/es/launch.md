@@ -176,3 +176,24 @@ La elección se recuerda por repositorio, y se olvida cuando ese dispositivo dej
 de existir.
 
 **Ver también:** [Terminal integrado](terminal.md)
+
+## Valores de campos desde JSON y YAML
+
+Un campo puede mostrar la versión actual o rellenar un valor desde un archivo del proyecto. Gitcito lee el archivo al pulsar Launch, antes de mostrar los campos. No requiere extensiones de VS Code.
+
+Añade fileValues a un campo promptString o pickString. Cada valor define una ruta relativa a la carpeta de la configuración de lanzamiento y una propiedad separada por puntos. Usa ${fileValue:name} en description o default. Un default vacío mantiene el campo opcional.
+
+```json
+{
+  "id": "version",
+  "type": "promptString",
+  "description": "Current: ${fileValue:version} (${fileValue:build})",
+  "default": "",
+  "fileValues": {
+    "version": { "file": "version.yaml", "key": "settings.base.MARKETING_VERSION" },
+    "build": { "file": "version.yaml", "key": "settings.base.CURRENT_PROJECT_VERSION" }
+  }
+}
+```
+
+Admite archivos JSON, YAML e YML dentro de esa carpeta, de hasta 1 MiB, y valores de texto, números o booleanos. Archivos ausentes, datos inválidos, propiedades inexistentes o rutas externas detienen el lanzamiento con un error. No ejecuta comandos ni expresiones JavaScript. Cada nuevo lanzamiento relee los archivos; Restart reutiliza las respuestas anteriores. Son campos propios de Gitcito; VS Code no los resuelve de forma nativa.

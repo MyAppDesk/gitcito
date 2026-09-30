@@ -23,6 +23,8 @@ export const es: Dict = {
   'launch.inputTitle': 'Entrada: {id}',
   'launch.inputStep': 'Entrada {current} de {total}',
   'launch.inputSubmit': 'Continuar',
+  'launch.inputFileFailed': 'No se puede leer {source} para el campo {id}. Revisa la ruta, el formato JSON/YAML y la propiedad.',
+  'launch.inputUnsupported': 'El campo {id} usa el tipo no compatible {source}. Usa promptString o pickString.',
   'launch.hotTitle': '{runtime} · {label}  ({key})',
   'launch.hotReload': 'Recarga en caliente',
   'launch.hotRestart': 'Reinicio en caliente',

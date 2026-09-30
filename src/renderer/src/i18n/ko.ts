@@ -23,6 +23,8 @@ export const ko: Dict = {
   'launch.inputTitle': '입력: {id}',
   'launch.inputStep': '입력 {current}/{total}',
   'launch.inputSubmit': '계속',
+  'launch.inputFileFailed': '입력 {id}의 {source}을(를) 읽을 수 없습니다. 파일 경로, JSON/YAML 형식 및 속성을 확인하세요.',
+  'launch.inputUnsupported': '입력 {id}에 지원되지 않는 유형 {source}이(가) 사용되었습니다. promptString 또는 pickString을 사용하세요.',
   'launch.hotTitle': '{runtime} · {label}  ({key})',
   'launch.hotReload': '핫 리로드',
   'launch.hotRestart': '핫 리스타트',

@@ -7,6 +7,7 @@ import { t, interp } from '../i18n'
 import { memberFullyCovered, sharedTaskLabels } from '../lib/launchTasks'
 import { collectInputRefs } from '../lib/launchInputs'
 import { applyDevice } from '../lib/launchDevices'
+import { launchApi } from '../infrastructure/api'
 
 /** Monotonic id source for compound runs (unique per app session is enough). */
 let compoundSeq = 0
@@ -231,7 +232,20 @@ export const useLaunchStore = create<LaunchState>((set, get) => ({
     // each before launching; cancelling any prompt aborts the launch.
     const refs = collectInputRefs(group, config)
     if (refs.length > 0) {
-      promptForInputs(group, refs, (values) => void proceed(values))
+      try {
+        const result = await launchApi.resolveInputs(group.dir, refs.map((id) => group.inputs.find((i) => i.id === id)!))
+        if ('error' in result) {
+          const { id, source, reason } = result.error
+          useUIStore.getState().toast('error', interp(
+            t(reason === 'type' ? 'launch.inputUnsupported' : 'launch.inputFileFailed'), { id, source }))
+          return
+        }
+        promptForInputs({ ...group, inputs: result.inputs }, refs, (values) => void proceed(values))
+      } catch {
+        useUIStore.getState().toast('error', interp(t('launch.inputFileFailed'), {
+          id: refs.join(', '), source: group.dir
+        }))
+      }
       return
     }
     await proceed({})

@@ -174,3 +174,24 @@ Simulator) или отсоединённый `emulator -avd` — так выхо
 исчезает.
 
 **См. также:** [Встроенный терминал](terminal.md)
+
+## Значения из JSON и YAML
+
+Поле может показывать текущую версию или получать начальное значение из файла проекта. Gitcito читает файл при запуске, перед показом полей. Расширение VS Code не требуется.
+
+Добавьте fileValues в поле promptString или pickString. Каждое значение задаёт путь относительно папки конфигурации запуска и свойство, разделённое точками. Используйте ${fileValue:name} в description или default. Пустой default оставляет поле необязательным.
+
+```json
+{
+  "id": "version",
+  "type": "promptString",
+  "description": "Current: ${fileValue:version} (${fileValue:build})",
+  "default": "",
+  "fileValues": {
+    "version": { "file": "version.yaml", "key": "settings.base.MARKETING_VERSION" },
+    "build": { "file": "version.yaml", "key": "settings.base.CURRENT_PROJECT_VERSION" }
+  }
+}
+```
+
+Поддерживаются файлы JSON, YAML и YML внутри папки размером до 1 МиБ и значения строкового, числового или логического типа. Отсутствующие файлы, неверные данные, отсутствующие свойства и внешние пути останавливают запуск с ошибкой. Команды и выражения JavaScript не выполняются. Новый запуск перечитывает файлы; Restart использует прежние ответы. VS Code не обрабатывает эти поля Gitcito самостоятельно.

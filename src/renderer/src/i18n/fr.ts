@@ -22,6 +22,8 @@ export const fr: Dict = {
   'launch.inputTitle': 'Saisie : {id}',
   'launch.inputStep': 'Saisie {current} sur {total}',
   'launch.inputSubmit': 'Continuer',
+  'launch.inputFileFailed': 'Impossible de lire {source} pour le champ {id}. Vérifiez le chemin, le format JSON/YAML et la propriété.',
+  'launch.inputUnsupported': 'Le champ {id} utilise le type non pris en charge {source}. Utilisez promptString ou pickString.',
   'launch.hotTitle': '{runtime} · {label}  ({key})',
   'launch.hotReload': 'Rechargement à chaud',
   'launch.hotRestart': 'Redémarrage à chaud',

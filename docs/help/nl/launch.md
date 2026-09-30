@@ -175,3 +175,24 @@ De keuze wordt per repository onthouden, en vergeten zodra dat apparaat niet
 meer bestaat.
 
 **Zie ook:** [Geïntegreerde terminal](terminal.md)
+
+## Invoerwaarden uit JSON en YAML
+
+Een veld kan de huidige versie tonen of een waarde uit een projectbestand invullen. Gitcito leest het bestand bij elke start voordat de invoervelden verschijnen. Geen VS Code-extensie nodig.
+
+Voeg fileValues toe aan promptString of pickString. Elke waarde bevat een bestandspad relatief aan de map van de startconfiguratie en een eigenschapspad met punten. Gebruik ${fileValue:name} in description of default. Met een lege default blijft het tekstveld optioneel.
+
+```json
+{
+  "id": "version",
+  "type": "promptString",
+  "description": "Current: ${fileValue:version} (${fileValue:build})",
+  "default": "",
+  "fileValues": {
+    "version": { "file": "version.yaml", "key": "settings.base.MARKETING_VERSION" },
+    "build": { "file": "version.yaml", "key": "settings.base.CURRENT_PROJECT_VERSION" }
+  }
+}
+```
+
+Ondersteunt JSON-, YAML- en YML-bestanden binnen deze map tot 1 MiB, met tekst, getallen of booleans. Ontbrekende bestanden, ongeldige gegevens, ontbrekende eigenschappen en externe paden stoppen de start met een fout. Er worden geen opdrachten of JavaScript-expressies uitgevoerd. Elke nieuwe start leest opnieuw; Restart hergebruikt de antwoorden. VS Code verwerkt deze Gitcito-velden niet standaard.

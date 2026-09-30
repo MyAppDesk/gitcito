@@ -1,5 +1,12 @@
 
 
+## [4.10.0](https://github.com/MyAppDesk/gitcito/compare/v4.9.0...v4.10.0) (2026-09-30)
+
+
+### Features
+
+* resolve launch input values from JSON and YAML files ([fd05721](https://github.com/MyAppDesk/gitcito/commit/fd057217b2bd87879f8140299ef55635da6574b4))
+
 ## [4.9.0](https://github.com/MyAppDesk/gitcito/compare/v4.8.1...v4.9.0) (2026-09-26)
 
 

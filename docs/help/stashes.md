@@ -8,6 +8,10 @@ keywords: stash stashes partial keep-index apply pop drop untracked branch chang
 
 # Stashes
 
+In the native Rust preview, Stashes has its own tab in Changes, alongside
+Working tree and History. Stash creation, partial selection, stash list and
+file previews stay together in that pane.
+
 Stashing in Gitcito is not all-or-nothing.
 
 | Action | What it does |
@@ -33,6 +37,19 @@ overwrite them and retry, rather than leaving you to work out the incantation.
 
 If the tree has moved too far, **stash → branch** recreates the branch the stash
 was taken from, applies it there cleanly, and drops the stash.
+
+**Native Rust preview:** saving a stash includes untracked files and can keep
+staged changes in the index and working tree with **Keep staged changes in the
+working tree**. The partial-stash panel lets you select dirty paths and undo a
+successful stash. Stashes appear as selectable rows with a per-stash action
+menu for branch, apply, pop and drop. Select a stash to list its changed paths,
+then restore chosen files to the working tree while leaving the index and stash
+intact; restore has guarded undo. Select a path to preview its diff;
+credential-looking paths stay masked, and previews stop at 200 KB. Native path
+selection supports
+<kbd>⌘</kbd>/<kbd>Ctrl</kbd>-click to toggle files, <kbd>⇧</kbd>-click to extend
+a range, and <kbd>⇧</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> to extend from the focused
+path.
 
 ## Not to be confused with snapshots
 

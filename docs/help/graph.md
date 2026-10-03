@@ -12,6 +12,10 @@ Branches, merges and octopus merges drawn properly, in light or dark. Rendering
 is windowed, so a repository with a hundred thousand commits scrolls like one
 with a hundred.
 
+The native Rust preview uses compact outlined badges for branch and tag refs.
+When a commit has more than two refs, the graph shows the first two and a
+`+n` chip; hover the row to read every ref and the full commit ID.
+
 | | |
 |---|---|
 | ![Commit graph, light](../screenshots/graph-light.webp) | ![Commit graph, dark](../screenshots/graph-dark.webp) |

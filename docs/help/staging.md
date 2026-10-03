@@ -39,6 +39,24 @@ commit without deleting it first.
 Discard works at the same levels, and always asks. Untracked files are deleted;
 tracked ones go back to their staged (or committed) state.
 
+In the native Rust preview, Changes has **Working tree**, **History** and
+**Stashes** tabs. Working tree puts staged and unstaged files in separate
+groups on the left, each with its own count and bulk action. The selected
+file's diff stays beside the list on the right; drag the divider to give either
+side more room. Each row has a colored
+Git-status badge, filename and parent path, one vector stage or unstage control,
+and a component menu for discard or ignore actions. The diff and commit composer
+share the available height in Working tree, keeping both in view on a standard
+window. History and Stashes have their own panes, so long commit lists and stash
+tools do not push the diff and composer down the page.
+WIP snapshots, commit notes sync and range-diff live together under **Tools**,
+keeping occasional workflows out of the main staging workspace.
+History uses a resizable master/detail layout: commit graph and filters stay on
+the left, while the selected commit's message, diff and recovery actions stay on
+the right. Each pane scrolls independently.
+Stashes also uses a resizable split: saved stashes stay on the left, while the
+selected stash's changed files and preview stay together on the right.
+
 ## Keyboard
 
 <kbd>↑</kbd> <kbd>↓</kbd> (or <kbd>j</kbd> <kbd>k</kbd>) walk the file lists.

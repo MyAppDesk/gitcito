@@ -118,6 +118,32 @@ The same rules apply outside the window: `gitcito commit-check` reads this file,
 so a `commit-msg` hook and CI enforce exactly what the composer suggests. See
 [the command line](cli.md) and [committing](committing.md).
 
+The native Rust preview supports `ticketFromBranch` and `commit.trailers`: an
+empty message gets a ticket prefix when the branch contains one, and configured
+trailers are filled from the message ticket and current branch at commit time.
+Missing placeholder values drop that trailer; trailers already typed are not
+duplicated. Declared scopes appear in the native composer when the subject has a
+recognized Conventional Commit type; selecting one updates only that prefix.
+The native preview also shows `checklist.push` once per repository per app
+session, before its first branch push. The reminder is optional and does not run
+commands or block later pushes.
+
+Configured `links.tickets` also make matching text clickable in the native
+selected-commit message panel. Only validated HTTP(S) URLs open externally; the
+native graph row itself remains plain text.
+
+The native preview checks `requires.files` and can copy a missing file from its
+declared in-repository example. It will not overwrite an existing target, and
+the copy has undo. It also checks `requires.hooksPath`; the repair writes local
+Git config and can be undone. It checks `requires.node` against the Node version
+available from the repository's working directory. Missing or incompatible
+Node is reported without installing anything. When `.gitmodules` exists,
+`requires.submodules` reports uninitialized modules and offers recursive
+checkout. `requires.lfs` reports missing Git LFS or the first pointer file whose
+object is not downloaded; when Git LFS is installed, it offers `git lfs pull`.
+That repair requires a clean working tree. These checks do not install tools or
+change the repository's declared requirements.
+
 ## The push checklist
 
 `checklist.push` is shown as a confirmation before the first push of a session,

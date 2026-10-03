@@ -29,6 +29,11 @@ _The whole of git — graph, staging by line, rebase, worktrees, submodules, LFS
 > an OpenAI-compatible call shape and are unverified. If it breaks: well, **it
 > works on my machine**. PRs welcome. 💜
 
+The Rust preview includes GitHub issue and milestone browsing, issue creation,
+comments, close/reopen actions, milestone progress, release notes, and a
+notification inbox with mark-as-read controls. See
+[Hosting & pull requests](docs/help/hosting.md).
+
 ## Install
 
 Grab the latest build from **[gitcito's site](https://myappdesk.github.io/gitcito/)**
@@ -67,17 +72,17 @@ git actually is.
 | | |
 |---|---|
 | **[Commit composer](docs/help/committing.md)** | Conventional, Gitmoji, Ticket, Plain… even Caveman. Co-author picker, message recall, live linter. Amend and undo from the graph menu prefill it. |
-| **[Staging](docs/help/staging.md)** | Whole files, hunks, or **individual lines**. File-list headers split the count by modified / added / deleted. |
+| **[Staging](docs/help/staging.md)** | Whole files, hunks, or **individual lines**. The Rust preview splits staged and unstaged files into groups beside a persistent, line-numbered selected-file diff. |
 | **[Conflict resolver](docs/help/conflicts.md)** | Three panes, per-line picking, a conflict-by-conflict navigator, editable output. |
 | **[Xcode project merge](docs/help/conflicts.md)** | A `project.pbxproj` conflict merged by object identity instead of by line — and refused, by name, where a build setting genuinely diverged. |
 | **[Lockfile conflicts](docs/help/conflicts.md)** | `Podfile.lock`, `Package.resolved`, `yarn.lock` and friends: take a side, and the command that regenerates it, instead of merging a graph nobody solved. |
 | **[External diff & merge tools](docs/help/diff-tools.md)** | Hand a file to Kaleidoscope, Beyond Compare, Meld — read straight from git's own tool list. |
 | **[Edit any commit](docs/help/commit-edit.md)** | Rewrite a past commit's files or message in place — cascade previewed before anything moves, merges replayed with their recorded resolutions. |
 | **[Interactive rebase](docs/help/rebase.md)** | Drag to reorder, squash, fixup, reword, edit or drop. |
-| **[Stacked branches](docs/help/stacks.md)** | Graphite-style chains, edited as a route: a start branch and one stop per level, added, swapped, reordered or removed from typeaheads — then one click pushes every level and opens/retargets the chained PRs, registering them as a **native GitHub stack** where that exists and carrying stack navigation in every body where it does not. |
+| **[Stacked branches](docs/help/stacks.md)** | Graphite-style chains, edited as a route: a start branch and one stop per level, added, swapped, reordered or removed from typeaheads — then one click pushes every level and opens/retargets the chained PRs. Rust preview adds a read-only route view. |
 | **[Git flow](docs/help/gitflow.md)** | Start and finish features, releases and hotfixes — merges, tag and cleanup in one step, undoable. |
 | **[Merge options](docs/help/merge-options.md)** | `-X ours`, whitespace-blind merges, squash, `-s subtree` — and the commits behind a conflict. |
-| **[Recovery](docs/help/recovery.md)** | Reflog, WIP snapshots of the whole tree — untracked files included, taken automatically before every destructive action — guided bisect, or hand the search to `git bisect run`, and one-click removal of the stale `.lock` file a crashed git left behind. |
+| **[Recovery](docs/help/recovery.md)** | Reflog, WIP snapshots of the whole tree — untracked files included, taken automatically before every destructive action — guided bisect, or hand the search to `git bisect run`, and one-click removal of the stale `.lock` file a crashed git left behind. The Rust preview can inspect a file at an older commit and restore it to the working copy with confirmation and undo. |
 | **[Local CI](docs/help/local-ci.md)** | Run the repo's GitHub Actions on your machine with [act](https://nektosact.com) before pushing — including against a commit or range you're not on, via throwaway worktrees, with the run cost stated up front. |
 | **[Remove a file from history](docs/help/history-purge.md)** | A leaked key or a 400 MB blob out of every commit — measured first, backed up, undoable. |
 | **[File attributes](docs/help/attributes.md)** | `.gitattributes` with a UI: line endings, `merge=union`, `export-ignore`, readable diffs for Word, Excel, JSON and the UTF-16 `.strings` git calls binary (converter included), and clean/smudge filters gated behind a dry run. |
@@ -90,12 +95,16 @@ git actually is.
 
 | | |
 |---|---|
-| **[Repositories](docs/help/repositories.md)** | Every repository Gitcito has ever opened, plus folders you scan, in one searchable list — open, favourite, recent, and per workspace. |
-| **[Groups & workspaces](docs/help/workspaces.md)** | Tabs with folders nested to any depth, colour-coded, fetch-all per subtree. [Right-click a repository](docs/help/repo-menu.md) for alias, worktrees, GitHub, terminal and remove. |
+| **[Repositories](docs/help/repositories.md)** | Every repository Gitcito has ever opened, plus folders you scan, in one searchable list — open, favourite, recent, and per workspace. The Rust preview adds branch-graph repo marks with clean/changed status, compact rows with overflow actions, collapsible color-tintable sections, nested folder sections, owner, branch, opt-in WIP summaries, aliases, saved scans, Locate, Forget, section fetch/pull with progress and undo, confirmed close-all tabs, copy-name/path actions, native file-manager reveal, View on GitHub, and a repository-scoped terminal. |
+| **[Groups & workspaces](docs/help/workspaces.md)** | Tabs with folders nested to any depth, colour-coded, fetch-all per subtree. The Rust preview adds persistent color-coded groups, nested folder navigation, drag-to-assign tabs and folders, reorder, filtered tab strips, and sequential clean-tree pulls in default, fast-forward-only, or rebase mode with guarded undo. [Right-click a repository](docs/help/repo-menu.md) for alias, worktrees, GitHub, terminal and remove. |
 | **[Pull or push any branch](docs/help/syncing.md)** | Catch a branch up or publish it from its right-click menu, without checking it out first. |
 | **[Untracked-branch repair](docs/help/syncing.md)** | A pull that stops on "no tracking information" offers the fix as a button — link the branch to its remote, or push it if the remote has never seen it. |
-| **[Pull requests](docs/help/hosting.md)** | Create on GitHub, GitLab, Bitbucket and Azure DevOps. Review, comment, approve and merge on GitHub. |
-| **[Plumbing, with a UI](docs/help/lfs-sparse.md)** | Stashes, tags, worktrees, submodules, LFS, sparse-checkout, patches, hooks. |
+| **[Push to every remote](docs/help/syncing.md)** | Native Rust preview pushes the current branch to each remote in order, with separate outcomes and a secret-file guard. |
+| **[Separate fetch and push URLs](docs/help/branching.md#remotes)** | Native Rust preview can route pushes to a mirror while fetching from the primary remote, rename remotes with guarded undo, and reject embedded credentials. |
+| **[Protected branches](docs/help/repo-settings.md)** | Native Rust preview warns before direct commits and force-pushes, combining local patterns with rules shipped in `.gitcito.json`. |
+| **[Repository rules](docs/help/repo-config.md)** | Native Rust preview applies commit rules and push reminders, checks Node, required files, hooks path, submodules and LFS, and offers guarded repairs. |
+| **[Pull requests](docs/help/hosting.md)** | Create on GitHub, GitLab, Bitbucket and Azure DevOps. Review, comment, approve and merge on GitHub; the Rust preview adds inline replies, thread resolution and per-file review progress. |
+| **[Plumbing, with a UI](docs/help/lfs-sparse.md)** | Stashes, tags, worktrees, submodules, LFS, sparse-checkout, patches, hooks. Native Rust preview adds partial stash selection with range gestures, secret-masked file diff previews, selected-file restore with undo, optional keep-index, GPG/SSH-signed and verifiable tags, and confirmed bulk tag deletion with undo. |
 | **[Subtrees](docs/help/subtree.md)** | Vendor another repo into a directory — and remember where it came from, which git does not. |
 | **[Bundles & archives](docs/help/export.md)** | The repository as one file git can clone from — or a tree as a zip, honouring `export-ignore`. |
 | **[Credential helper](docs/help/credentials.md)** | Git's own password store — why https keeps asking, and the plaintext file nobody meant to have. |
@@ -153,7 +162,9 @@ never drift off screen ·
 re-locate themselves when the line moves, and say so when it is gone ·
 [**Open in your editor**](docs/help/editor.md) — repo, file, or the exact line
 you right-clicked, with [Xcode projects and other packages](docs/help/editor.md)
-treated as one item rather than a folder to dig through ·
+treated as one item rather than a folder to dig through; native Rust can open
+repositories and selected files through configured arguments, including blame
+line jumps and detected command-line editor choices ·
 [**Problems**](docs/help/problems.md) — what your project's own analyzers
 (`tsc`, `dart analyze`, ESLint, Clippy, `go vet`, Ruff) say, in a dock at the
 bottom, with a toggle for "only the files I changed" ·

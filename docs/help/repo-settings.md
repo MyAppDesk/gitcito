@@ -27,5 +27,12 @@ The operation log is the honest one: when something behaves oddly, it shows the
 exact command and the exact error, so a bug report can carry facts rather than
 adjectives.
 
+The native Rust preview lets you set comma-separated protected branch names or
+patterns such as `release/*`. It defaults to `main` and `master`. Direct commits
+to a protected branch ask for confirmation; force-push confirmation also warns
+when its branch is protected. The list is stored in local Git config and can be
+undone. Patterns in the committed `.gitcito.json` `protect` list are added to
+the local list and cannot remove those protections.
+
 **See also:** [Repository rules](repo-config.md) · [Security & secrets](security.md) ·
 [Insights](insights.md)

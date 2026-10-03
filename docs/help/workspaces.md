@@ -74,4 +74,31 @@ The workspace name sits top-left, next to the Gitcito mark. Click it to switch,
 create, rename, reorder or delete. Next to it is the gauge that opens
 [Mission control](mission-control.md) for the workspace you are in.
 
+The native Rust preview can save named workspaces from the currently open
+repository tabs, then switch, rename, reorder or delete those saved tab strips.
+Within a workspace, create a group from the **Workspaces** menu; it starts with
+the tabs currently open. Select a group above the repository tabs to filter the
+strip. Drag a repository tab onto a group to assign it; drag it onto another tab
+to change tab order. Drag group names to reorder groups. The tab's group selector
+also moves it or returns it to the group root.
+The menu can rename or delete the selected group. Membership and color persist
+with the workspace; use the colored dot to choose or reset a group's color.
+Use a tab's folder selector to assign nested slash-separated paths such as
+`Clients/Acme`; the folder picker above the tabs navigates that folder and its
+descendants. You can also drag a tab onto a folder chip to assign it there, or
+onto **Group root** to remove its folder assignment. Moving the last repository
+out removes that folder from the picker.
+**Fetch** and **Pull** run on the selected group or folder and its descendants.
+They process repositories one at a time, skip missing folders, and report each
+failure without stopping the rest. Pull requires a clean working tree. Choose
+**default**, **fast-forward-only**, or **rebase** from the pull-mode control; it
+is shared with registry section pulls and persists across launches. Default
+follows each repository's Git pull configuration. Fast-forward-only refuses
+divergent histories. Rebase can rewrite local commits and may leave a rebase
+for conflict resolution. Each successful pull records a guarded undo entry for
+that repository.
+Native groups do not yet support other per-group bulk actions. The searchable repository registry separately
+supports named folder sections with slash-separated nested names; those sections
+organize the registry only.
+
 **See also:** [Mission control](mission-control.md) · [The command line](cli.md)

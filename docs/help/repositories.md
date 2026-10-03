@@ -18,6 +18,9 @@ tab, plus whatever it finds by scanning folders you point it at.
 workspace repositories, each row showing name, owner, branch and working
 state](../screenshots/repositories.webp)
 
+With no repositories registered, the page shows a centered welcome panel with
+direct actions to open an existing repository or clone one.
+
 ## The sections
 
 A repository can appear in **more than one section** — deliberately, so each
@@ -110,6 +113,14 @@ The trailing actions are shown at rest rather than revealed on hover: **open in
 a tab**, and a **⋮** that opens the same [repository context
 menu](repo-menu.md) as a right-click. That menu is the one used everywhere else
 in Gitcito, extended with two entries specific to this page:
+
+The Rust preview uses compact, separator-led rows instead of boxing every
+repository. Name and path lead; branch, owner, and worktree status sit beneath
+them, with open, favourite, and overflow actions kept at the right edge.
+
+In the Rust preview, each row also carries a small branch-graph mark. Its status
+dot is green for a clean worktree, amber when files have changes, and muted
+while status is unavailable. The same mark identifies Gitcito in the sidebar.
 
 | Action | What it does |
 |---|---|
@@ -226,6 +237,55 @@ Turning it on is a deliberate "check everything I can currently see," not a
 standing cost.
 
 ## Limits
+
+The native Rust preview can star or unstar the active repository from the
+header. Its searchable repository picker combines favourites and recent
+repositories, showing each repository with its parent folder to distinguish
+checkouts with the same name. Settings can save scan roots, choose depth from 1
+to 10, and scan for Git repositories without entering hidden or dependency
+folders. Selecting a result
+opens it and adds it to Recent. Scan results persist in the native registry.
+The **Repositories** view searches and groups open, favourite, recent, scanned,
+and saved-workspace repositories. **Locate** asks for the moved folder and
+updates saved paths, favorites, and workspace references; destination entries
+keep their existing favorite state. **Forget** removes the path from the saved
+registry lists but never deletes its folder. A later scan can discover it again.
+The Open repositories section can close the active repository tab, or close all
+open repository tabs after confirming the count. Closing tabs leaves repository
+files untouched. The native toolbar wraps into app and repository rows at
+narrow widths; it shows repository name with the full path on hover.
+Native registry rows use framed cards: repository name and path lead, status
+stays grouped beneath, and Open and Favourite remain at hand. Copy, alias,
+folder, terminal, editor, GitHub, reveal, Locate and Forget actions live in the
+row's overflow menu to keep long lists readable.
+Choose a color beside any section heading to tint that name, and use its reset
+control to restore the default. Colors persist per section in the native app.
+**Create Alias** and **Change Alias** set a display name without moving or
+renaming its folder; **Remove Alias** restores the folder name. Aliases follow
+the repository when you locate it. **Move to folder** assigns a repository to
+a named section; use slash-separated names such as `Clients/Acme` for nested
+sections. Clear the name to remove the assignment. Folder sections can be
+searched with the rest of the registry. Registry rows show remote owner and current
+branch when Git can read them. The **WIP summary** checkbox opts into reading
+each known repository's working-tree status and upstream counts; it shows the
+number of changed paths plus ahead/behind counts when an upstream is configured.
+Status is collected in the background. It refreshes when you toggle the option
+or relaunch the native app, not on a timer. Registry folder sections do not yet
+support drag and drop, empty folders, or custom ordering. Native workspace group
+tabs are documented in [Workspaces](workspaces.md). Native registry sections
+can be collapsed individually or all at once; this state lasts for the current
+app session. Bulk actions are not ported as broadly as Electron. Native
+sections have **Fetch all repositories** and
+**Pull all repositories** actions. Fetch runs across the section. Pull skips
+repositories with local changes and uses the selected **default**,
+**fast-forward-only**, or **rebase** mode. That choice is shared with workspace
+group pulls and persists in native preferences. Progress, per-repository
+errors, a completion summary, and guarded undo for successful pulls are shown.
+Missing paths are skipped. Default mode follows each repository's Git pull
+configuration; rebase can rewrite local commits and may leave a rebase to
+resolve if conflicts occur. Group folders are scoped to a workspace
+group; see
+[Workspaces](workspaces.md) for assignment and navigation.
 
 - **Nothing on this page refreshes on a timer.** Reopen the page, or toggle
   WIP summary off and on, to see current state.

@@ -12,6 +12,13 @@ A commit message is written once and then frozen: changing it rewrites the
 commit, gives it a new hash, and breaks everyone who already has the old one.
 That is fine an hour after committing and impossible a week later.
 
+The native Rust preview supports reading and editing notes on selected commits,
+shows a note marker in history, and puts note edits on the undo stack. Its
+**Share commit notes** section fetches or pushes only `refs/notes/commits` for
+the selected remote. Both actions ask first. Fetch can replace local notes; it
+pins the previous ref and adds a guarded Undo entry. Push is non-force, so a
+remote that has moved ahead must be fetched and reconciled first.
+
 `git notes` is the way out. A note is stored **beside** the commit, under
 `refs/notes/commits`, and attaching one leaves the commit byte-for-byte
 identical. So it works on history that is already published — which is exactly

@@ -82,6 +82,14 @@ Both paths run the same checks as an ordinary push — the protected-branch
 confirmation and the [secret guard](security.md). Publishing to two remotes is
 twice the exposure, not half the caution.
 
+**Native Rust preview:** the toolbar offers **Push to all N remotes** when the
+repository has multiple remotes. It pushes the current branch sequentially,
+checks credential-looking paths against every destination, and continues after
+a rejection. The toast names successful remotes; each failure shows its remote
+and Git's reason. Only the first remote sets the upstream. This preview uses
+ordinary pushes; force-push and protected-branch confirmation are separate
+flows.
+
 ## Branches you are not standing on
 
 `git pull` only ever moves HEAD, which is why most clients make you check a
@@ -131,9 +139,12 @@ the commit it used to point at.
 
 ## Remotes
 
-Add, edit, remove and fetch individual remotes from the sidebar. Branch rows
-carry per-remote presence badges, so you can see at a glance which remotes have
-a copy of a branch.
+Add, edit, rename, remove and fetch individual remotes from the sidebar. Rename
+uses Git's remote rename operation, updating tracking refs and branch upstream
+configuration; Gitcito records guarded undo. If Git cannot rename some tracking
+refs because of a name collision, it reports which refs were skipped. Branch
+rows carry per-remote presence badges, so you can see at a glance which remotes
+have a copy of a branch.
 
 **Fetch, pull or push with no remotes** opens that same Add remote dialog,
 instead of succeeding at nothing. See [fetching, pulling & pushing](syncing.md).

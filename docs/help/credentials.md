@@ -21,6 +21,11 @@ The third one is nobody's idea of a feature until it goes wrong, and then it
 produces the two most common complaints in git: *why is it asking me again?* and
 *why is it still sending the token I revoked?*
 
+The native Rust preview can also store an optional GitHub personal access token
+in the OS keychain after explicit consent. It is used only for Git operations
+over HTTPS with `github.com`; leave the field blank to use Git's configured
+credential helper. Native clone still uses Git CLI and its helper.
+
 `⌘K` → **Credential helper**.
 
 ![The configured helper, per-host rules, and the plaintext-file warning](../screenshots/credentials.webp)

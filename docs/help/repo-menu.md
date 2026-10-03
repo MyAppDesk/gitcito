@@ -31,7 +31,7 @@ opens the launcher.
 | **Create Alias…** / **Change Alias…** | A display name only. Gitcito never renames or moves the folder on disk. The same alias follows the repository across tabs, groups and workspaces. |
 | **Remove Alias** | Shown when an alias exists. Restores the folder name. |
 | **Show Worktrees** | Focuses this repository and opens the sidebar's worktree section. |
-| **New Worktree…** | The same create-worktree prompt used from a branch. Disabled while the path is missing or a merge/rebase/cherry-pick/revert is in progress. |
+| **New Worktree…** | Opens a repository-specific prompt. Choose an existing local branch and type or browse to a destination folder. Git requires an unused path or an empty folder, and refuses branches already checked out elsewhere. |
 | **Copy Repo Name** | Copies the canonical folder name, not the alias. |
 | **Copy Repo Path** | Copies the absolute path. |
 | **View on GitHub** | Origin if it is github.com, otherwise the first parseable GitHub remote. Disabled when none can be derived. |
@@ -42,5 +42,17 @@ opens the launcher.
 
 A missing or invalid path keeps copy, alias and remove available, and greys out
 anything that would open or inspect the directory.
+
+The native Rust Repositories view puts secondary actions in each row's overflow
+menu. **Copy Repo Name** and **Copy Repo Path** copy canonical folder name and
+full path, even when that repository is missing. Existing repositories also have a reveal
+action: macOS selects the folder in Finder, Windows selects it in File Explorer,
+and Linux opens it in the default file manager.
+The native row action **View on GitHub** prefers a GitHub `origin`, then checks
+other remotes; selecting it reports when no GitHub remote is configured.
+**Open in Terminal** starts a native shell tab with that repository as its
+working directory and switches to the Terminal view.
+**Open in External Editor** uses the executable configured in native Settings,
+using configured folder arguments. It stays disabled until executable set.
 
 **See also:** [Workspaces, tabs & groups](workspaces.md) · [Worktrees & submodules](worktrees.md) · [External editor](editor.md) · [Terminal](terminal.md)

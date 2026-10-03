@@ -15,6 +15,11 @@ worthless: every commit after a rebase is a new commit, so everything looks new.
 old positions straight out of the **reflog** — so nothing had to be recorded in
 advance for this to work.
 
+The native Rust preview exposes the same comparison in **What changed since…**
+under Changes. Enter two refs or load the current ref's previous reflog
+positions, optionally set a base, then expand rewritten commits to read their
+interdiff. Native validates refs as commits and uses Git's 85% creation factor.
+
 ![Rewritten, new and dropped commits after a force-push](../screenshots/range-diff.webp)
 
 | Verdict | Meaning |

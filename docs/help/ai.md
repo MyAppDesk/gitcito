@@ -11,6 +11,13 @@ keywords: ai openai anthropic gemini google ollama local llm accounts api key su
 Every AI feature is **optional** and off until you configure an account.
 Nothing is sent anywhere until you ask for something specific.
 
+The native Rust preview currently offers one AI action: **Generate with Codex**
+in the commit panel. It sends the staged diff to the Codex CLI already installed
+and signed in on your machine, then fills the editable commit message. It runs
+in the background, so the window stays responsive. Credential-looking staged
+files block generation. Review the generated message before committing. This
+preview action does not use the provider accounts configured in Electron.
+
 ![AI settings](../screenshots/settings-ai.webp)
 
 ## Accounts

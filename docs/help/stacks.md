@@ -8,6 +8,11 @@ keywords: stack stacked branches graphite restack dependent chain parent PR per 
 
 # Stacked branches
 
+The Rust preview includes a **Stacks** page in the navigation. It shows each
+recorded branch parent, commit count, current branch, and stale-base warning,
+and lets you check out any branch in the displayed stack. Editing routes,
+rebasing, pushing, and submitting stacked PRs remain in Electron.
+
 A stack is a chain of branches where each one builds on the one below:
 `main → api → ui`. Reviewing three small PRs beats reviewing one enormous one.
 

@@ -99,6 +99,18 @@ the file manager rather than in an IDE.
 Pick **Custom command** for anything not in the table — a wrapper script, a
 remote-development launcher, a terminal editor started through your own shim.
 
+The native Rust preview accepts an editor executable plus separate folder and
+file argument templates in **Settings → Editor**. Settings uses a section rail
+for Appearance, Editor, Recovery, Repositories and Git preferences. Arguments
+use shell-style quoting but are passed directly to the process, never through a
+shell. `{path}` and `{repo}` are available for repository and file actions. A
+blame row can jump to its first line when the file template includes `{line}`;
+`{col}` resolves to 1 for that action. For example, VS Code users can set
+`--goto {path}:{line}:{col}`.
+Native file-view line actions are not implemented yet. Settings detects the
+listed command-line editors on `PATH` whenever you open Settings; application
+bundles without a command-line tool are not scanned.
+
 | Field | Meaning |
 |-------|---------|
 | Command | The executable to run. No shell, so no `&&`, pipes or globs. |

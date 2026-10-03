@@ -15,6 +15,13 @@ and read faster than any new one.
 
 **Settings → General → External diff & merge tools.**
 
+In the native Rust preview, open **Settings → Integrations → External diff &
+merge tools**. Gitcito loads the same Git tool catalogue and global config. A
+configured diff tool appears in each changed file's overflow menu; a configured
+merge tool appears beside each conflicted file. Git runs these tools outside
+Gitcito's UI thread, and a successful external merge refreshes the conflict
+state after Git stages the result.
+
 ## It is git's list, not ours
 
 Gitcito keeps no table of its own. The dropdowns are `git difftool --tool-help`

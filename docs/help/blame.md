@@ -26,8 +26,14 @@ of shared history are obvious at a glance.
 
 ## History
 
-Every commit that touched this file, newest first. Selecting one shows that
-commit's version of the file, so you can page through how it grew.
+Every commit that touched this file, newest first. Drag the slider to move
+between revisions: newer commits are on the right, older ones on the left.
+Play starts at the oldest loaded revision and advances toward the newest.
+Gitcito preloads the adjacent revisions to make stepping and playback faster.
+Images and supported document formats render in their preview, while code and
+other text files show their contents with syntax highlighting. The commit
+subject, author, date and short hash identify the selected revision. The slider
+covers up to 200 commits.
 
 ![Every commit that touched one file, newest first](../screenshots/file-history.webp)
 

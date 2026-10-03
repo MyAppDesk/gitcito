@@ -14,6 +14,26 @@ stopped and **between what** — "merging `feature/x` into `main`", not just
 
 ![The conflict resolver](../screenshots/conflict-resolver.webp)
 
+## Native Rust preview
+
+The native preview uses a resizable three-pane editor: **Ours**, **Theirs** and
+editable **Output**. Expand a conflict chunk to inspect both versions and pick
+individual lines, either whole chunk, or every line from one side. Both sides
+can be included. Ours and Theirs use syntax highlighting for the conflicted
+file type. Output stays editable, and changing a pick preserves hand edits;
+**Reset** reapplies the current picks.
+
+Click a path in the conflict card to open this editor. When an external merge
+tool is configured, **Merge in …** hands the file to Git's three-way resolver
+and refreshes after Git stages a successful result. Continue stays disabled
+until every path is resolved; Abort still asks before stopping the operation.
+When Git replays a remembered resolution, the conflict card explains that the
+file is still unmerged and offers **Forget this resolution** to restore its
+conflict markers. Native Settings → Git controls the global `rerere` switches
+and shows the repository's remembered-resolution count.
+
+Electron also offers conflict-history details and line-origin markers in Output.
+
 ## Why this conflicts
 
 **Why this conflicts** in the header lists, per side, the commits that touched

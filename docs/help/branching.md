@@ -157,4 +157,19 @@ removed. Fetch, pull or push on a repository that has none opens that same
 **Add remote** dialog — paste a URL or create the repo on the host — instead of
 doing nothing. See [fetching, pulling & pushing](syncing.md).
 
+The native Rust preview edits both fetch and push URLs. Leave the push URL blank
+to use the fetch URL for both directions. URLs with embedded credentials are
+rejected, and changing either URL can be undone. The Remotes section groups
+remote branches, adding a remote, and editing the selected remote into compact
+cards. Remote branches use the same framed list as local branches; select a row
+to check it out as a local tracking branch, or open its overflow menu to delete
+the remote ref after confirmation. A remote branch matching the current local
+branch gets the selected treatment.
+
+In the native preview, the navigation sidebar keeps the active repository and
+branch together in a compact context card. Repositories with more than eight
+local branches get a filter above the branch list; changing repositories clears
+the filter. Local branches sit in a bordered list, and upstream selection stays
+in a collapsed section until you need to change tracking.
+
 **See also:** [Merging & rebasing](merging.md) · [Worktrees](worktrees.md)

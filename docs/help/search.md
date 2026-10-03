@@ -41,3 +41,15 @@ deployment status. For "only commits that touched this file", use the path
 filter — see [the commit graph](graph.md).
 
 **See also:** [The commit graph](graph.md) · [Keyboard & shortcuts](keyboard.md)
+
+The native Rust preview adds a **Files → Search file contents** mode. It searches
+the current tracked and untracked file list and shows matching paths and line
+numbers. Choose case-sensitive, whole-word, or regular-expression matching.
+Invalid expressions show an inline error. Secret-looking paths, binary files,
+and files over 1 MB are skipped. A run scans at most 20,000 paths and 128 MB,
+and returns at most 500 matches; click a result to open its file preview. Its
+**History (pickaxe)** mode searches all refs with `git log -S` for literal
+changes or `git log -G` for regular-expression changes, returning up to 500
+commits. Select a commit to open its diff. History search uses Git's case-
+sensitive pickaxe behavior; the working-tree-only case and whole-word options
+do not apply there.

@@ -49,6 +49,24 @@ refreshed.
 
 ## Reviewing — GitHub and GitLab
 
+The Rust preview can submit a GitHub review from a pull request's detail view:
+comment, approve, or request changes. It uses the authenticated GitHub CLI
+(`gh`) and requires a comment for comment and request-changes reviews. The
+Rust preview can also merge an open pull request with a merge commit, squash,
+or rebase. It confirms the selected strategy and head commit before submission,
+and rejects the merge if that head changed. It does not delete the remote
+branch. Update branch brings the latest base changes into the PR head, by merge
+commit or rebase. Check rows open their log page when GitHub provides a details
+URL. The detail view also shows conversation comments and submitted reviews
+with author, date, state, and Markdown formatting. Inline review threads are
+grouped by file and line, show resolved or outdated state, and include replies.
+When GitHub grants permission, you can resolve an open thread or reopen a
+resolved one from the thread itself, or reply inline without leaving the detail
+view.
+The native preview loads up to 100 threads and 100 comments per thread. Its
+file checklist tracks viewed state on GitHub and shows review progress; file
+pages load until complete, with a retry message if pagination fails.
+
 | | |
 |---|---|
 | **Conversation** | Comments and review state |
@@ -69,19 +87,39 @@ the surrounding diff hunk, which GitLab's API does not return. Review/merge
 works for projects on **gitlab.com**; self-hosted instances are not supported
 yet. Bitbucket and Azure DevOps still open in the browser for review.
 
-## Issues, milestones, releases — GitHub
+## Issues — GitHub
 
-Browse issues and open a full issue tab: body, comments, labels, assignees,
-milestone, Projects v2 fields, close/reopen, and **create a branch for this
-issue** (with AI naming). Milestones show progress and their issues. Releases
-are browsable with a changelog page.
+The Rust preview can list issues, open their details, create an issue, comment,
+and close or reopen it. Filter the issue list by title, number, state, author,
+label, or assignee. It also lists milestones with due dates, completion
+progress, and their issues. These workflows use the GitHub CLI (`gh`), so sign
+in with `gh auth login` first. The Electron app also supports Projects v2
+fields and creating a branch from an issue; those workflows are not in the
+Rust preview yet.
+
+## Milestones and releases — GitHub
+
+The Rust preview shows milestone due dates, issue progress, and release notes.
+Both views are read-only. Electron also supports planning fields and issue
+branch creation.
 
 ## Notifications — GitHub
 
+The Rust preview loads your GitHub inbox with unread/all filters, opens selected
+threads in the browser, and can mark one thread or the whole inbox as read. It
+uses the GitHub CLI account (`gh auth login`) and refreshes the inbox every five
+minutes while the app is running.
+
+In the Rust preview, **Settings → Integrations → GitHub notifications** can
+raise desktop alerts for new review requests and CI activity. The first inbox
+poll seeds notification history without replaying old items. Clicking an alert
+opens its GitHub thread when the operating system supports notification actions.
+Switching the active `gh` account seeds that account's inbox quietly too.
+
 Your whole inbox — review requests, mentions, CI activity — across every
-repository, with unread/all filters and mark-as-read. The toolbar bell carries
-an unread badge, and optional desktop notifications fire when a review is
-requested or CI finishes.
+repository, with unread/all filters and mark-as-read. In Electron, the toolbar
+bell carries an unread badge, and optional desktop notifications fire when a
+review is requested or CI finishes.
 
 ## Tokens
 

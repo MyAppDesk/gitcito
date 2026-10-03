@@ -13,6 +13,10 @@ keywords: hooks pre-commit husky core.hooksPath gitignore ignore untrack
 List every hook in the repository, see which are real and which are still
 `.sample`, and enable, disable, edit or create them.
 
+In the native Rust preview, **Git hooks** is a disclosure. Each hook is one
+selectable row with its state; clicking opens it, while enable/disable and
+delete live in its action menu.
+
 ![The hooks manager](../screenshots/hooks.webp)
 
 Gitcito detects a custom **`core.hooksPath`** (husky and friends) and a

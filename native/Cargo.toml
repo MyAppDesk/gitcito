@@ -1,0 +1,26 @@
+[package]
+name = "gitcito-native"
+version = "4.10.0"
+edition = "2024"
+description = "Gitcito native desktop Git client"
+license = "MIT"
+
+[dependencies]
+eframe = { version = "0.34", default-features = true }
+egui-components = "0.2"
+notify-rust = "4"
+egui_commonmark = { version = "0.23", default-features = false, features = ["pulldown_cmark"] }
+egui_extras = { version = "0.34", features = ["syntect"] }
+image = { version = "0.25", default-features = false, features = ["gif", "jpeg", "png", "webp"] }
+dirs = "6"
+git2 = "0.20"
+keyring = { version = "3.6.3", default-features = false, features = ["apple-native", "windows-native", "sync-secret-service"] }
+portable-pty = "0.9"
+rfd = "0.15"
+regex = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+shlex = "2.0"
+vt100 = "0.16"
+url = "2.5"
+zeroize = "1"

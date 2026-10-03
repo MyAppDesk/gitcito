@@ -14,6 +14,12 @@ still one `git show` away.
 
 That matters twice — when the file was a credential, and when it was 400 MB.
 
+In the native Rust preview, open **Changes → Tools → Remove a file from
+history**. The window uses a searchable, heaviest-first path list and component
+cards for the impact preview and recoverable backup refs. It rechecks the
+preview before rewriting; if refs changed while the confirmation was open, it
+updates the numbers and asks you to review again.
+
 `⌘K` → **Remove file from history**, or right-click the file — in the project
 tree, in a commit's file list, or in the commit composer. The commit that
 *deleted* a file is usually where someone realises it is still in history, so

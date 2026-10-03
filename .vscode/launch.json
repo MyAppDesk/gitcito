@@ -2,7 +2,18 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Launch App",
+      "name": "Launch Gitcito (Rust)",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["${workspaceFolder}/scripts/run-native.mjs"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"],
+      "presentation": { "group": "1_app", "order": 1 }
+    },
+    {
+      "name": "Launch Gitcito (Electron)",
       "type": "node",
       "request": "launch",
       "preLaunchTask": "Seed dev env from prod",
@@ -11,12 +22,12 @@
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
       "skipFiles": ["<node_internals>/**"],
-      "presentation": { "group": "1_app", "order": 1 }
+      "presentation": { "group": "1_app", "order": 2 }
     },
     {
       // Re-runs the first-run wizard on this launch only, without touching the
       // saved settings — for testing onboarding changes.
-      "name": "Launch App (onboarding)",
+      "name": "Launch Gitcito (Electron, onboarding)",
       "type": "node",
       "request": "launch",
       "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron-vite",
@@ -28,7 +39,7 @@
       "presentation": { "group": "1_app", "order": 3 }
     },
     {
-      "name": "Launch App (keep dev state)",
+      "name": "Launch Gitcito (Electron, keep dev state)",
       "type": "node",
       "request": "launch",
       "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron-vite",

@@ -33,6 +33,12 @@ Pick one in Settings; the composer adapts to it.
   git would.
 - Drafts **persist** per repository, so switching tabs never loses a message.
 
+The native Rust preview places its commit composer in a dedicated card below
+the change list. It shows the staged-file count, keeps template and Codex
+message actions beside the title, and disables Commit until a message and staged
+changes are ready. Amend stays available for a message-only amendment; repository
+scopes appear when configured.
+
 ## The linter
 
 A live, non-blocking check: subject length (with a character counter), a

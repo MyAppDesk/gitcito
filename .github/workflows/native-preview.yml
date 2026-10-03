@@ -1,0 +1,64 @@
+name: Native Rust preview
+
+on:
+  push:
+    branches: [refactor]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Linux native dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes \
+            libasound2-dev \
+            libgl1-mesa-dev \
+            libwayland-dev \
+            libxcb-shape0-dev \
+            libxcb-xfixes0-dev \
+            libx11-dev \
+            libxcursor-dev \
+            libxinerama-dev \
+            libxi-dev \
+            libxkbcommon-dev \
+            libxkbcommon-x11-dev \
+            libxrandr-dev
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            native/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('native/Cargo.lock') }}
+
+      - name: Build native app
+        run: cargo build --manifest-path native/Cargo.toml --release
+
+      - name: Upload native executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: gitcito-native-${{ runner.os }}
+          path: |
+            native/target/release/gitcito-native
+            native/target/release/gitcito-native.exe
+          if-no-files-found: error
+          retention-days: 14

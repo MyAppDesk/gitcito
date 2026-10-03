@@ -49,6 +49,12 @@ panels and toolbars reverse, icons that point somewhere point the other way.
 
 Switching is immediate and needs no restart.
 
+The native Rust preview also saves a language choice from this list. Find it in
+**Settings → Appearance → Language**. Its shared translated labels, WIP
+snapshot controls, file stage/discard controls, and time machine navigation
+follow that choice; much of the native interface is still English, and
+right-to-left layout is not implemented there yet.
+
 ![Gitcito in Arabic, with the layout mirrored](../screenshots/rtl.webp)
 
 ### What deliberately does not mirror

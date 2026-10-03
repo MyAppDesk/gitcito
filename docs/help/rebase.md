@@ -29,6 +29,10 @@ todo for you.
 - **Fixup staged changes into this commit** creates the `fixup!` for you.
 - **Autosquash from here** folds every `fixup!` / `squash!` into its target.
 
+In the native Rust preview, select a commit to open its detail pane. **Fixup**
+stays as the primary action; **More actions** groups autosquash, interactive
+rebase, squash, reset, cherry-pick and revert in one menu.
+
 If you have a pile of review fixes rather than one, [absorb](absorb.md) works
 out which commit each hunk belongs to, so you do not have to.
 

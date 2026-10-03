@@ -46,6 +46,16 @@ restore a **single file** or the whole tree. Restoring copies files out of the
 snapshot over the current copies — a guard snapshot is taken first, so a
 restore is itself undoable.
 
+The native Rust preview supports manual full-tree snapshots from the Changes
+view, automatic snapshots every 5, 15, or 30 minutes (or off), and a guard before
+discarding files or restoring a file from history. Before a snapshot restore it
+saves the current dirty tree as another snapshot. It previews captured file
+contents and can restore an individual captured file. For a path the snapshot
+records as deleted, **Restore file to working tree** brings back its version
+from the snapshot's base commit. This asks first, snapshots current dirty work,
+leaves the index alone, and adds a guarded undo entry. It does not yet preview
+snapshot diffs or guard every destructive Git operation.
+
 **Limits worth knowing.** A timer or guard tick that finds nothing new records
 nothing. Restore overwrites and recreates files, but never deletes a file you
 created after the snapshot. Ignored files are not captured. Snapshots are

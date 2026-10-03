@@ -32,6 +32,12 @@ an indented block against an unindented one, a rename that shifted every line â€
 or when you want to compare two distant regions of the same file, and park each
 half where its own content is.
 
+The native Rust **Changes** view keeps the staged/unstaged file groups on the
+left and the selected file's diff on the right. The diff pane has its own scroll
+area, so moving through a large patch does not move the file list out of view.
+Its gutter shows old and new line numbers; additions, deletions and hunk headers
+use soft theme-aware tints so line type reads without washing out the code.
+
 ![Split diff with word-level highlighting](../screenshots/split-diff.webp)
 
 Above every diff sits the [semantic summary](semantic-diff.md) â€” what changed,
@@ -117,6 +123,30 @@ of memory.
 The left sidebar's **Files** tab browses the working tree itself, with status
 badges on folders (added / modified / deleted) that aggregate what is inside
 them.
+
+The native Rust preview groups files into expandable folders and searches
+paths recursively. Each folder summarizes descendant changes by status.
+In that view, drag the divider beside the tree to resize it from 220 to 460
+points. It starts at 310 points; the width stays within the current window.
+Markdown files render in the preview pane, with a toggle back to source.
+Standalone PNG, JPEG, GIF and WebP files render as images; preview caps files at
+1 MB and images at 12 megapixels. GIF shows its first frame. Embedded Markdown
+images and richer document formats are not supported in the native view yet.
+Changed tracked images compare `HEAD` against the working copy side by side or
+with a draggable swipe handle; new images show the working copy alone.
+Source files use syntax highlighting when their extension is recognised.
+The right pane separates Preview, Blame and History into segmented tabs. Pick a
+history row to open that commit in Changes; choose a file to return to Preview.
+Its Diff view can ignore whitespace changes in staged and unstaged patches; that
+toggle lasts for the current app session. Find in Diff supports Cmd/Ctrl+F,
+previous/next matches, and scrolling to the selected match.
+Its Word diff toggle highlights the differing span inside paired removed and
+added lines; toggle state lasts for the current session.
+Split mode labels old and new panes and aligns rows. **Linked** scroll is on by
+default and synchronizes vertical and horizontal positions; turn it off to
+scroll each pane independently. Both controls last for the session. **Wrap** is
+off by default; turning it on wraps long lines, which can make paired rows
+differ in height. The Linked control is hidden while Wrap is on.
 
 ![The files tab with a preview](../screenshots/file-tree.webp)
 

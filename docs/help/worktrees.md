@@ -19,6 +19,12 @@ stashing.
   removal.
 - Right-click any local branch → **Open in a worktree** to spin one up in a
   sibling folder and open it as a tab.
+- In the native Rust preview, branch actions live behind each branch row's
+  overflow menu; the worktree action opens a focused branch-and-path dialog.
+  Browse for a destination folder there or type a path directly. Existing
+  destination folders must be empty.
+- Lock or unlock a linked worktree from its row. Locking keeps Git from pruning
+  a worktree whose folder is temporarily unavailable; the toggle can be undone.
 - A branch can live in only one worktree at a time, so checking out a branch
   another worktree already holds cannot work — git refuses with *already used by
   worktree at …*. Gitcito takes you there instead: the branch's menu reads *Go

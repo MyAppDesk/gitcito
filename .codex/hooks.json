@@ -1,0 +1,29 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash '/Users/cgutierr/Documents/Projects/gitcito/.codex/hooks/i18n-guard.sh'",
+            "timeout": 30,
+            "statusMessage": "Checking translations…"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash '/Users/cgutierr/Documents/Projects/gitcito/.codex/hooks/verify-gate.sh'",
+            "timeout": 120,
+            "statusMessage": "Verifying typecheck + translations…"
+          }
+        ]
+      }
+    ]
+  }
+}

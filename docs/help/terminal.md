@@ -55,4 +55,14 @@ Anything you run here is invisible to Gitcito's own locking, so a long
 `git rebase` typed by hand and a click in the UI can still collide — the app
 refreshes from disk when the terminal changes something.
 
+The native Rust preview maps `Ctrl+A` through `Ctrl+Z` to terminal control
+bytes, including interrupt, end-of-input, and line navigation controls. Its
+Unix startup also reads `PATH` from the configured login shell before spawning
+Git and other tools, so GUI launches can find tools installed by shell startup
+files. On Windows it inherits the app's `PATH`. The native terminal still lacks
+split panes, terminal links, and platform-specific key parity with xterm.
+Native sessions use a compact segmented tab bar with live PTY state beside the
+session actions. Numbered tabs keep their scrollback; exited sessions retain
+their output and offer a restart action.
+
 **See also:** [Run & debug](launch.md) · [Hooks](hooks.md)

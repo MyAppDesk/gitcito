@@ -20,6 +20,11 @@ palette (`TODOs in the code`) and switch to the second tab.
 The status bar counts the markers beside the analyzers' errors and warnings;
 clicking that counter opens this tab.
 
+In the Rust preview, **TODOs** has its own page in the left sidebar. It keeps the
+same grouping, tag and owner filters, changed-files filter, and refresh behavior;
+summary cards show counts for the active filters, and selecting a row opens its
+file in the Files view and scrolls the preview to the marker line.
+
 ![The TODOs tab, grouped by owner](../screenshots/code-todos.webp)
 
 ## What counts as a marker

@@ -52,6 +52,12 @@ later in **Settings → Security → OS keychain**.
 A fresh install makes **zero** keychain calls until something actually needs
 storing.
 
+The native Rust preview stores an optional GitHub personal access token directly
+in the OS credential store after the same explicit consent. It sends that token
+only to `github.com` over HTTPS for Git operations; without it, Git's configured
+credential helper remains in use. Native clone uses Git CLI and its configured
+helper.
+
 ## Sharing safely
 
 [Secure share](secure-share.md) exports settings, vault entries or whole

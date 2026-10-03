@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { X, GitCommitHorizontal, Sparkles, Loader2, Search, ChevronUp, ChevronDown, Pencil, Save, Link2 } from 'lucide-react'
+import { X, GitCommitHorizontal, Sparkles, Loader2, Search, ChevronUp, ChevronDown, Pencil, Save, Link2, Play, Pause } from 'lucide-react'
 import type { BlameLine, BlobSpec, FileHistoryEntry, NumberedLine } from '../../../shared/types'
 import { gitApi, aiApi, shellApi } from '../infrastructure/api'
 import { useSettingsStore } from '../stores/settings'
@@ -166,6 +166,12 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
   // walk a line's history backwards via "reblame at parent".
   const [blameOverrideRef, setBlameOverrideRef] = useState<string | null>(null)
   const [history, setHistory] = useState<FileHistoryEntry[]>([])
+  const [historyIndex, setHistoryIndex] = useState(0)
+  const [historyContent, setHistoryContent] = useState<string | null>(null)
+  const [historyError, setHistoryError] = useState<string | null>(null)
+  const [historyPlaying, setHistoryPlaying] = useState(false)
+  const [historyPrefetch, setHistoryPrefetch] = useState<Record<string, string>>({})
+  const historyPrefetchPending = useRef(new Set<string>())
   const [explain, setExplain] = useState<string | null>(null)
   const [explaining, setExplaining] = useState(false)
 
@@ -305,6 +311,11 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
   const lang = guessLanguage(file)
   const fileIsImage = isImage(file)
   const pvKind = previewKind(file)
+  const selectedHistory = history[historyIndex]
+  const selectedHistoryPrefetch = selectedHistory ? historyPrefetch[selectedHistory.hash] : undefined
+  const historyCacheScope = `${repoPath}\0${file}`
+  const historyCacheScopeRef = useRef(historyCacheScope)
+  historyCacheScopeRef.current = historyCacheScope
   // Image files already render inline in File view, so they don't need a
   // separate Preview tab. Binary docs (pdf/video/audio/sheet/word) have no
   // meaningful text view — they offer Preview + History only.
@@ -539,6 +550,7 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
           const entries = await gitApi.fileHistory(repoPath, file)
           if (!cancelled) {
             setHistory(entries)
+            setHistoryIndex(0)
             setContent('')
           }
         }
@@ -567,6 +579,70 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
     source.type,
     source.type === 'commit' ? source.hash : source.type === 'stash' ? source.sha : source.type === 'wip' ? source.staged : ''
   ])
+
+  useEffect(() => {
+    if (mode !== 'history' || !selectedHistory || pvKind) {
+      setHistoryContent(null)
+      setHistoryError(null)
+      return
+    }
+    let cancelled = false
+    setHistoryContent(null)
+    setHistoryError(null)
+    const cached = historyPrefetch[selectedHistory.hash]
+    if (cached !== undefined) {
+      setHistoryContent(cached)
+      return () => { cancelled = true }
+    }
+    gitApi.fileContent(repoPath, file, selectedHistory.hash, forceLoad).then(
+      (text) => { if (!cancelled) setHistoryContent(text) },
+      (err: unknown) => { if (!cancelled) setHistoryError(err instanceof Error ? err.message : String(err)) }
+    )
+    return () => { cancelled = true }
+  }, [repoPath, file, mode, selectedHistory?.hash, pvKind, forceLoad, historyPrefetch])
+
+  useEffect(() => {
+    setHistoryPlaying(false)
+    setHistoryPrefetch({})
+    historyPrefetchPending.current.clear()
+  }, [repoPath, file])
+
+  useEffect(() => {
+    if (mode !== 'history') setHistoryPlaying(false)
+  }, [mode])
+
+  useEffect(() => {
+    if (mode !== 'history' || !historyPlaying || !history.length) return
+    const timer = window.setInterval(() => {
+      setHistoryIndex((index) => {
+        if (index <= 1) setHistoryPlaying(false)
+        return Math.max(0, index - 1)
+      })
+    }, 700)
+    return () => window.clearInterval(timer)
+  }, [mode, historyPlaying, history.length])
+
+  useEffect(() => {
+    if (mode !== 'history' || !history.length) return
+    const scope = historyCacheScope
+    const neighbours = [history[historyIndex - 1], history[historyIndex + 1]].filter(
+      (entry): entry is FileHistoryEntry => !!entry && !historyPrefetch[entry.hash] && !historyPrefetchPending.current.has(`${scope}:${entry.hash}`)
+    )
+    for (const entry of neighbours) {
+      const pendingKey = `${scope}:${entry.hash}`
+      historyPrefetchPending.current.add(pendingKey)
+      const load = pvKind && isBinaryKind(pvKind)
+        ? gitApi.fileDataUrl(repoPath, file, entry.hash)
+        : gitApi.fileContent(repoPath, file, entry.hash)
+      void load.then((value) => {
+        if (historyCacheScopeRef.current === scope) setHistoryPrefetch((cache) => {
+          const next = { ...cache, [entry.hash]: value }
+          const recent = Object.entries(next).slice(-2)
+          return Object.fromEntries(recent)
+        })
+      }).catch(() => {}).finally(() => historyPrefetchPending.current.delete(pendingKey))
+    }
+  }, [repoPath, file, mode, history, historyIndex, pvKind, historyPrefetch, historyCacheScope])
 
   // Recount find hits whenever the query/content/layers change; clamp active.
   useEffect(() => {
@@ -932,19 +1008,63 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
 
         {!error && content !== null && mode === 'history' && (
           <div className="history-view">
-            {history.map((h) => (
-              <button
-                key={h.hash}
-                className="history-item"
-                onClick={() => setFileView({ ...view, source: { type: 'commit', hash: h.hash }, mode: 'diff' })}
-              >
-                <GitCommitHorizontal size={14} style={{ color: shaColor(h.hash) }} />
-                <span className="history-subject">{h.subject}</span>
-                <span className="history-author">{h.author}</span>
-                <code>{h.hash.slice(0, 7)}</code>
-                <span className="history-date">{new Date(h.date * 1000).toLocaleDateString()}</span>
-              </button>
-            ))}
+            {selectedHistory && (
+              <>
+                <div className="history-slider">
+                  <button
+                    className="icon-btn"
+                    title={historyPlaying ? t('fileViewer.pauseHistory') : t('fileViewer.playHistory')}
+                    aria-label={historyPlaying ? t('fileViewer.pauseHistory') : t('fileViewer.playHistory')}
+                    disabled={history.length < 2}
+                    onClick={() => {
+                      if (historyPlaying) setHistoryPlaying(false)
+                      else {
+                        if (historyIndex === 0) setHistoryIndex(history.length - 1)
+                        setHistoryPlaying(true)
+                      }
+                    }}
+                  >
+                    {historyPlaying ? <Pause size={14} /> : <Play size={14} />}
+                  </button>
+                  <input
+                    type="range"
+                    min={0}
+                    max={history.length - 1}
+                    step={1}
+                    value={history.length - 1 - historyIndex}
+                    aria-label={t('fileViewer.modeHistory')}
+                    onChange={(e) => {
+                      setHistoryPlaying(false)
+                      setHistoryIndex(history.length - 1 - Number(e.target.value))
+                    }}
+                  />
+                  <span>{history.length - historyIndex}/{history.length}</span>
+                </div>
+                <div className="history-selected">
+                  <GitCommitHorizontal size={14} style={{ color: shaColor(selectedHistory.hash) }} />
+                  <span className="history-subject">{selectedHistory.subject}</span>
+                  <span className="history-author">{selectedHistory.author}</span>
+                  <code>{selectedHistory.hash.slice(0, 7)}</code>
+                  <span className="history-date">{new Date(selectedHistory.date * 1000).toLocaleDateString()}</span>
+                </div>
+                {pvKind ? (
+                  <PreviewPane repoPath={repoPath} file={file} gitRef={selectedHistory.hash} kind={pvKind} prefetchedSource={selectedHistoryPrefetch} />
+                ) : historyError ? (
+                  <div className="fv-error">{historyError}</div>
+                ) : historyContent === null ? (
+                  <div className="graph-empty"><div className="spinner" /></div>
+                ) : (
+                  <div className={`file-content hljs ${historyContent.split('\n').length > HUGE_LINES ? 'is-huge' : ''}`}>
+                    {historyContent.split('\n').map((line, i) => (
+                      <div className="code-line" key={i}>
+                        <span className="code-no">{i + 1}</span>
+                        <span className="code-text" dangerouslySetInnerHTML={{ __html: highlightLine(maybeMask(line), lang) || '&nbsp;' }} />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
             {history.length === 0 && <div className="fv-error">{t('fileViewer.noHistory')}</div>}
           </div>
         )}

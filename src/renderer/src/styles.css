@@ -7842,6 +7842,26 @@ body.col-resizing .node-ava {
   padding: 8px;
   gap: 2px;
 }
+.history-slider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  color: var(--text-2);
+  font-size: 11px;
+}
+.history-slider input {
+  flex: 1;
+  accent-color: var(--accent);
+}
+.history-selected {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
 .history-item {
   display: flex;
   align-items: center;

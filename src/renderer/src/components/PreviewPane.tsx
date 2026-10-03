@@ -60,9 +60,10 @@ interface Props {
   // string git ref as a component ref (crashes when previewing a commit/stash).
   gitRef?: string
   kind: PreviewKind
+  prefetchedSource?: string
 }
 
-export function PreviewPane({ repoPath, file, gitRef, kind }: Props): React.JSX.Element {
+export function PreviewPane({ repoPath, file, gitRef, kind, prefetchedSource }: Props): React.JSX.Element {
   const t = useT()
   const [dataUrl, setDataUrl] = useState<string | null>(null)
   const [text, setText] = useState<string | null>(null)
@@ -107,13 +108,13 @@ export function PreviewPane({ repoPath, file, gitRef, kind }: Props): React.JSX.
     const load = async (): Promise<void> => {
       try {
         if (!isBinaryKind(kind)) {
-          let src = await gitApi.fileContent(repoPath, file, gitRef, force)
+          let src = prefetchedSource ?? await gitApi.fileContent(repoPath, file, gitRef, force)
           if (kind === 'markdown') src = await resolveMarkdownImages(src, repoPath, file, gitRef)
           if (!cancelled) setText(src)
           return
         }
         // Everything else is binary: pull a data URL once, then decode per kind.
-        const url = await gitApi.fileDataUrl(repoPath, file, gitRef, force)
+        const url = prefetchedSource ?? await gitApi.fileDataUrl(repoPath, file, gitRef, force)
         if (cancelled) return
         if (kind === 'video' || kind === 'audio') {
           // Chromium won't reliably play large base64 data: URLs in <video>/<audio>
@@ -157,7 +158,7 @@ export function PreviewPane({ repoPath, file, gitRef, kind }: Props): React.JSX.
       cancelled = true
       if (objUrl) URL.revokeObjectURL(objUrl)
     }
-  }, [repoPath, file, gitRef, kind, refreshKey, force])
+  }, [repoPath, file, gitRef, kind, refreshKey, force, prefetchedSource])
 
   const mdHtml = useMemo(() => (text !== null ? renderMarkdown(text) : null), [text])
 

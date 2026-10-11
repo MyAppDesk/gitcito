@@ -141,6 +141,8 @@ export const en = {
   'sidebar.todos': 'TODOS',
   'sidebar.noTodos': 'No todos yet',
   'sidebar.noPRs': 'No open PRs loaded',
+  'sidebar.upstreamPRs': 'On {repo}',
+  'sidebar.upstreamPRsTitle': 'Your open pull requests on the repository this fork comes from',
   'sidebar.stackOf': 'Stack of {n}',
   'pr.merged': 'Merged',
   'pr.closed': 'Closed',

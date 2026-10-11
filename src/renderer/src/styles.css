@@ -14424,6 +14424,15 @@ mark.find-hit.active {
   flex: 0 0 auto;
 }
 .sb-pr-ci { display: flex; align-items: center; flex: 0 0 auto; }
+/* A fork's PRs on its parent: a quiet caption, then ordinary rows. */
+.sb-pr-upstream-head {
+  padding: 8px 10px 2px 26px;
+  font-size: 11px;
+  color: var(--text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .sb-pr-flag { display: flex; align-items: center; flex: 0 0 auto; }
 .sb-pr-flag.blocked { color: #e0a020; }
 /* Inside a stack the row is one of four, and the title has to survive: the

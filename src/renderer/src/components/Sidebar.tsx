@@ -56,7 +56,7 @@ import { gitApi, shellApi } from '../infrastructure/api'
 import { groupPrStacks, stackRowStates, type StackRowState } from '../lib/prStacks'
 import { ciIcon, CI_STATE_KEY } from './CiIcon'
 import { useT, interp, type TranslationKey } from '../i18n'
-import { repoIsGitHub, repoSupportsPrReview } from '../lib/hosting'
+import { forkUpstream, repoIsGitHub, repoSupportsPrReview } from '../lib/hosting'
 import { folderOpenMenuItems } from '../lib/openWith'
 import { togglePin, selectPinned } from '../lib/pinnedBranches'
 import { branchDropActions, encodeDropRef, BRANCH_DND_TYPE, type DropRef } from '../lib/branchDrop'
@@ -1274,8 +1274,9 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   // every detail view is keyed to, matching the click handlers above.
   const hostOrigin = (): RemoteInfo | undefined => repo.remotes.find((r) => r.name === 'origin') ?? repo.remotes[0]
 
-  const prMenu = (pr: PullRequest): MenuItem[] => {
-    const origin = hostOrigin()
+  // A fork's PRs on its parent live on `upstream`; every other PR on origin.
+  const prMenu = (pr: PullRequest, remote?: RemoteInfo): MenuItem[] => {
+    const origin = remote ?? hostOrigin()
     return [
       ...(repoSupportsPrReview(repo.remotes) && origin
         ? [
@@ -1710,9 +1711,9 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   }
 
   /** One pull request row — shared by the flat list and by a stack's body. */
-  const prRow = (pr: PullRequest, rowState?: StackRowState): React.JSX.Element => (
+  const prRow = (pr: PullRequest, rowState?: StackRowState, remote?: RemoteInfo): React.JSX.Element => (
         <div
-          key={pr.id}
+          key={remote ? `${remote.name}-${pr.id}` : pr.id}
           className="sb-item pr"
           role="button"
           tabIndex={0}
@@ -1723,12 +1724,12 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
               void window.api.openExternal(pr.url)
               return
             }
-            const origin = repo.remotes.find((r) => r.name === 'origin') ?? repo.remotes[0]
+            const origin = remote ?? repo.remotes.find((r) => r.name === 'origin') ?? repo.remotes[0]
             if (origin) openModal({ kind: 'pr-detail', repoPath: path, remoteUrl: origin.url, number: pr.id })
           }}
           onContextMenu={(e) => {
             e.preventDefault()
-            openContextMenu(e.clientX, e.clientY, prMenu(pr))
+            openContextMenu(e.clientX, e.clientY, prMenu(pr, remote))
           }}
           title={pr.title}
         >
@@ -1767,7 +1768,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
             title={t('prPreview.open')}
             onClick={(e) => {
               e.stopPropagation()
-              const origin = repo.remotes.find((r) => r.name === 'origin') ?? repo.remotes[0]
+              const origin = remote ?? repo.remotes.find((r) => r.name === 'origin') ?? repo.remotes[0]
               openModal({
                 kind: 'pr-preview',
                 repoPath: path,
@@ -2065,7 +2066,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       <Section
         title={t('sidebar.pullRequests')}
         icon={<GitPullRequest size={13} />}
-        count={repo.prs.length}
+        count={repo.prs.length + repo.upstreamPrs.length}
         {...dragProps('prs')}
         {...persistOpen('prs', false)}
         actions={
@@ -2101,7 +2102,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
           </>
         }
       >
-        {repo.prs.length === 0 && <div className="sb-empty">{t('sidebar.noPRs')}</div>}
+        {repo.prs.length === 0 && repo.upstreamPrs.length === 0 && <div className="sb-empty">{t('sidebar.noPRs')}</div>}
         {groupPrStacks(repo.prs).map((group) =>
           group.kind === 'single' ? (
             prRow(group.pr)
@@ -2145,6 +2146,18 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
             </div>
           )
         )}
+        {(() => {
+          const fork = forkUpstream(repo.remotes)
+          if (!fork || repo.upstreamPrs.length === 0) return null
+          return (
+            <>
+              <div className="sb-pr-upstream-head" title={interp(t('sidebar.upstreamPRsTitle'), { repo: fork.parent })}>
+                {interp(t('sidebar.upstreamPRs'), { repo: fork.parent })}
+              </div>
+              {repo.upstreamPrs.map((pr) => prRow(pr, undefined, fork.upstream))}
+            </>
+          )
+        })()}
       </Section>
     ),
     issues: (

@@ -603,6 +603,8 @@ export interface PullRequest {
   ci?: CiState
   /** "2 passed · 1 failing", for the row's tooltip. */
   ciSummary?: string
+  /** owner/repo the head branch lives in (GitHub), to tell a fork's PRs apart. */
+  headRepo?: string
 }
 
 export type HostingProvider = 'github' | 'azure' | 'gitlab' | 'bitbucket' | null

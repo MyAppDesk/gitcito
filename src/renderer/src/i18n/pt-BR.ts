@@ -140,6 +140,8 @@ export const ptBR: Dict = {
   'sidebar.todos': 'TAREFAS',
   'sidebar.noTodos': 'Ainda sem tarefas',
   'sidebar.noPRs': 'Nenhum PR aberto carregado',
+  'sidebar.upstreamPRs': 'Em {repo}',
+  'sidebar.upstreamPRsTitle': 'Seus pull requests abertos no repositório de onde este fork veio',
   'sidebar.stackOf': 'Pilha de {n}',
   'pr.merged': 'Mesclado',
   'pr.closed': 'Fechado',

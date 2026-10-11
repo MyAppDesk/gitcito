@@ -140,6 +140,8 @@ export const nl: Dict = {
   'sidebar.todos': 'TAKEN',
   'sidebar.noTodos': 'Nog geen taken',
   'sidebar.noPRs': 'Geen open PR’s geladen',
+  'sidebar.upstreamPRs': 'Op {repo}',
+  'sidebar.upstreamPRsTitle': 'Je open pull requests op de repository waar deze fork van afkomstig is',
   'sidebar.stackOf': 'Stapel van {n}',
   'pr.merged': 'Gemerged',
   'pr.closed': 'Gesloten',

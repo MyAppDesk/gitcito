@@ -140,6 +140,8 @@ export const he: Dict = {
   'sidebar.todos': 'משימות',
   'sidebar.noTodos': 'אין עדיין משימות',
   'sidebar.noPRs': 'לא נטענו בקשות משיכה פתוחות',
+  'sidebar.upstreamPRs': 'ב-{repo}',
+  'sidebar.upstreamPRsTitle': 'בקשות המשיכה הפתוחות שלך במאגר שממנו הפורק הזה נוצר',
   'sidebar.stackOf': 'ערימה של {n}',
   'pr.merged': 'מוזג',
   'pr.closed': 'נסגר',

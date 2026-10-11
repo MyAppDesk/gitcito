@@ -139,6 +139,8 @@ export const tr: Dict = {
   'sidebar.todos': 'YAPILACAKLAR',
   'sidebar.noTodos': 'Henüz görev yok',
   'sidebar.noPRs': 'Yüklenmiş açık PR yok',
+  'sidebar.upstreamPRs': '{repo} üzerinde',
+  'sidebar.upstreamPRsTitle': 'Bu fork’un geldiği depodaki açık pull request’leriniz',
   'sidebar.stackOf': '{n} katmanlı yığın',
   'pr.merged': 'Merge edildi',
   'pr.closed': 'Kapatıldı',

@@ -26,6 +26,7 @@ listed next to their commands in the [menu bar](menu-bar.md).
 | <kbd>⌘T</kbd> / <kbd>Ctrl+T</kbd> | Open the new-tab repository or group picker |
 | <kbd>⌘W</kbd> / <kbd>Ctrl+W</kbd> | Close the active tab — or the window, once no tab is left |
 | <kbd>⌘1</kbd>–<kbd>⌘9</kbd> / <kbd>Ctrl+1</kbd>–<kbd>Ctrl+9</kbd> | Switch to a tab by its position |
+| <kbd>⌘J</kbd> / <kbd>Ctrl+J</kbd> | [Go to an open repository](workspaces.md#going-to-a-repository) by name, most recently used first |
 | <kbd>⌘⇧T</kbd> | Reopen the last closed tab |
 | <kbd>⌃`</kbd> | Show or hide the [integrated terminal](terminal.md) — the physical Control key on every platform |
 | <kbd>⌘⇧E</kbd> / <kbd>Ctrl+Shift+E</kbd> | Show or hide the left sidebar |
@@ -49,8 +50,9 @@ the panel when it was the last. Everywhere else those two keys still belong to
 
 ## Rebinding
 
-**Settings → Shortcuts**. The core navigation shortcuts (palette, code search,
-vault, open repository, settings, and the two panel toggles) are rebindable,
+**Settings → Shortcuts**. The core navigation shortcuts (palette, go to
+repository, code search, vault, open repository, settings, and the two panel
+toggles) are rebindable,
 with conflict detection and a per-shortcut reset.
 
 The fixed shortcuts above are not rebindable, and they are also refused as a

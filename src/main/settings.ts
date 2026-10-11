@@ -128,6 +128,9 @@ function withMigratedAI(settings: AppSettings): AppSettings {
 async function readSettingsWithSecrets(reason: 'tokens' | 'settings' = 'tokens'): Promise<AppSettings> {
   const settings = await readSettings()
   if (secretCache) return settings
+  // Git may already authenticate through its own helper or SSH. With no app
+  // secrets to decrypt or migrate, touching Safe Storage only causes a needless prompt.
+  if (!existsSync(secretsPath()) && !hasSettingsSecrets(settings)) return settings
 
   // An install that already has an encrypted secrets file predates the consent
   // gate — its owner answered the OS prompt long ago, so they are not asked to

@@ -3,6 +3,7 @@ import { readdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { parseRemoteUrl } from '../src/main/hosting'
+import { readDraft, settleDraft } from '../src/renderer/src/lib/boundedNumber'
 
 import { treeStatusOf } from '../src/renderer/src/lib/treeStatus'
 import { timeAgo, isStale, STALE_AFTER_MS } from '../src/renderer/src/lib/timeAgo'
@@ -727,6 +728,8 @@ describe('keyboard shortcuts', () => {
   it('matchShortcut resolves the bound id', () => {
     const b = effectiveBindings(undefined)
     expect(matchShortcut(ev('k', { meta: true }), b)).toBe('command-palette')
+    expect(matchShortcut(ev('j', { meta: true }), b)).toBe('repo-switcher')
+    expect(matchShortcut(ev('j', { ctrl: true }), b)).toBe('repo-switcher')
     expect(matchShortcut(ev('v', { ctrl: true, shift: true }), b)).toBe('vault')
     expect(matchShortcut(ev(',', { meta: true }), b)).toBe('settings')
     expect(matchShortcut(ev('E', { meta: true, shift: true }), b)).toBe('toggle-left-sidebar')
@@ -7073,5 +7076,28 @@ describe('repathRepoSettings', () => {
     expect(result.repoAliases).toEqual({ '/r/same': 'Alias' })
     expect(result.repoProfiles).toEqual({ '/r/same': 'profile-1' })
     expect(result.favouriteRepos).toEqual(['/r/same'])
+  })
+})
+
+describe('bounded number drafts', () => {
+  const bounds = { min: 50, max: 5000 }
+
+  it('lets 2000 be typed digit by digit — the bug was clamping the leading 2 to 50', () => {
+    expect(readDraft('2', bounds)).toEqual({ status: 'out-of-range', nearest: 50 })
+    expect(readDraft('20', bounds)).toEqual({ status: 'out-of-range', nearest: 50 })
+    expect(readDraft('200', bounds)).toEqual({ status: 'valid', value: 200 })
+    expect(readDraft('2000', bounds)).toEqual({ status: 'valid', value: 2000 })
+  })
+
+  it('snaps to the nearest bound on leaving, and keeps the last good value for junk', () => {
+    expect(settleDraft('20', bounds, 300)).toBe(50)
+    expect(settleDraft('99999', bounds, 300)).toBe(5000)
+    expect(settleDraft('', bounds, 300)).toBe(300)
+    expect(settleDraft('1e3', bounds, 300)).toBe(300)
+    expect(settleDraft(' 750 ', bounds, 300)).toBe(750)
+  })
+
+  it('treats a missing max as open-ended', () => {
+    expect(readDraft('123456', { min: 0 })).toEqual({ status: 'valid', value: 123456 })
   })
 })

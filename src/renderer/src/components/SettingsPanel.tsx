@@ -104,6 +104,7 @@ import { useT, interp, type TranslationKey } from '../i18n'
 import { resolveAI } from '../../../shared/aiAccounts'
 import { AIAccountsEditor } from './AIAccounts'
 import { LanguagePicker } from './LanguagePicker'
+import { NumberField } from './NumberField'
 import { ShortcutEditor } from './CheatsheetModal'
 import madLogo from '../assets/mad-high.png'
 
@@ -2362,28 +2363,24 @@ function GeneralPage(): React.JSX.Element {
       <div className="settings-grid two">
         <label className="settings-field">
           <span className="settings-field-label">{t('settings.initialCommitCount')}</span>
-          <input
-            type="number"
+          <NumberField
             min={50}
             max={5000}
             step={50}
             value={settings.initialCommitCount}
-            onChange={(e) =>
-              update((s) => ({ ...s, initialCommitCount: Math.max(50, Number(e.target.value) || 50) }))
-            }
+            onChange={(n) => update((s) => ({ ...s, initialCommitCount: n }))}
           />
           <span className="settings-hint">{t('settings.initialCommitCountHint')}</span>
         </label>
 
         <label className="settings-field">
           <span className="settings-field-label">{t('settings.loadMoreCount')}</span>
-          <input
-            type="number"
+          <NumberField
             min={50}
             max={5000}
             step={50}
             value={settings.loadMoreCount}
-            onChange={(e) => update((s) => ({ ...s, loadMoreCount: Math.max(50, Number(e.target.value) || 50) }))}
+            onChange={(n) => update((s) => ({ ...s, loadMoreCount: n }))}
           />
         </label>
       </div>
@@ -2489,13 +2486,11 @@ function GeneralPage(): React.JSX.Element {
       <div className="settings-grid">
         <label className="settings-field">
           <span className="settings-field-label">{t('settings.autoFetch')}</span>
-          <input
-            type="number"
+          <NumberField
             min={0}
             max={120}
-            step={1}
             value={settings.autoFetchMinutes}
-            onChange={(e) => update((s) => ({ ...s, autoFetchMinutes: Math.max(0, Number(e.target.value) || 0) }))}
+            onChange={(n) => update((s) => ({ ...s, autoFetchMinutes: n }))}
           />
           <span className="settings-hint">{t('settings.autoFetchHint')}</span>
         </label>
@@ -3029,12 +3024,10 @@ function SecurityPage(): React.JSX.Element {
 
       <label style={{ marginTop: 12 }}>
         {t('settings.largeFileWarn')}
-        <input
-          type="number"
+        <NumberField
           min={0}
-          step={1}
           value={Math.round((settings.largeFileKb ?? 0) / 1024)}
-          onChange={(e) => update((s) => ({ ...s, largeFileKb: Math.max(0, Number(e.target.value) || 0) * 1024 }))}
+          onChange={(mb) => update((s) => ({ ...s, largeFileKb: mb * 1024 }))}
           style={{ maxWidth: 120 }}
         />
       </label>
@@ -3322,13 +3315,11 @@ function ScanRootsSection(): React.JSX.Element {
               </span>
               <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, flex: '0 0 auto' }}>
                 {t('repos.scanDepth')}
-                <input
-                  type="number"
+                <NumberField
                   min={1}
                   max={10}
-                  step={1}
                   value={root.depth}
-                  onChange={(e) => setDepth(root.path, Math.min(10, Math.max(1, Number(e.target.value) || 1)))}
+                  onChange={(n) => setDepth(root.path, n)}
                   style={{ maxWidth: 50 }}
                 />
               </label>

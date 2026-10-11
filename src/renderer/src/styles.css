@@ -1190,6 +1190,8 @@ textarea:focus {
   flex-direction: column;
   align-items: flex-start;
   min-width: 0;
+  max-width: 130px;
+  overflow: hidden;
 }
 .repo-pill-label {
   font-size: 9px;
@@ -1198,16 +1200,20 @@ textarea:focus {
   color: var(--text-3);
   line-height: 1.1;
 }
+/* Block, not flex: text-overflow never reaches the anonymous flex item a bare
+   text node becomes, so a long name spilled out under the chevron. Capped at
+   the stack's width so it truncates there instead. */
 .repo-pill-stack strong {
-  display: flex;
-  align-items: center;
-  gap: 4px;
+  display: block;
   font-size: 13px;
   font-weight: 600;
-  max-width: 130px;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.repo-pill-stack strong svg {
+  vertical-align: -2px;
 }
 .repo-pill svg {
   color: var(--text-3);
@@ -7948,6 +7954,16 @@ body.col-resizing .node-ava {
   margin-top: 4px;
 }
 
+/* NumberField: a typed value outside the bounds is flagged, not clamped, until the field is left. */
+.number-field-error {
+  font-size: 11px;
+  color: var(--red);
+}
+input.is-invalid {
+  border-color: var(--red) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--red) 18%, transparent) !important;
+}
+
 @media (max-width: 900px) {
   .settings-grid.two {
     grid-template-columns: 1fr;
@@ -13438,6 +13454,126 @@ mark.find-hit.active {
   padding: 32px;
   color: var(--text-2);
   font-size: 13px;
+}
+
+/* ─── Repository switcher (Cmd/Ctrl+J) ─────────────────────────────────────
+   A sheet hanging from the tab bar, not a modal: no backdrop, nothing dimmed. */
+/* While it is open the title bar stops being a window handle, so a click there
+   reaches the page and closes the switcher instead of starting a window drag. */
+html:has(.repo-switcher) .titlebar {
+  -webkit-app-region: no-drag;
+}
+.repo-switcher {
+  position: fixed;
+  top: 48px;
+  left: 50%;
+  z-index: 1000;
+  width: min(480px, calc(100vw - 32px));
+  max-height: min(440px, 70vh);
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+}
+.repo-switcher-input-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 13px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.repo-switcher-search-icon { color: var(--text-2); flex-shrink: 0; }
+.repo-switcher-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-0);
+  font-size: 14px;
+  outline: none;
+}
+.repo-switcher-input::placeholder { color: var(--text-2); }
+.repo-switcher-list { overflow-y: auto; padding: 5px; }
+.repo-switcher-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  min-width: 0;
+  padding: 7px 9px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-0);
+  text-align: start;
+  cursor: pointer;
+}
+.repo-switcher-row.active { background: var(--accent-soft); }
+.repo-switcher-row.current { opacity: 0.5; cursor: default; }
+.repo-switcher-icon { color: var(--text-2); flex-shrink: 0; }
+.repo-switcher-row.active .repo-switcher-icon { color: var(--accent); }
+.repo-switcher-name {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 0;
+  max-width: 55%;
+}
+.repo-switcher-row.find .repo-switcher-name { font-weight: 400; color: var(--text-1); max-width: none; flex-shrink: 1; }
+.repo-switcher-name mark {
+  background: transparent;
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  text-underline-offset: 2px;
+}
+.repo-switcher-branch {
+  min-width: 0;
+  flex-shrink: 1;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.repo-switcher-group { flex-shrink: 0; font-size: 11px; color: var(--text-2); }
+.repo-switcher-marks { margin-inline-start: auto; display: inline-flex; align-items: center; flex-shrink: 0; }
+.repo-switcher-key {
+  flex-shrink: 0;
+  min-width: 26px;
+  text-align: end;
+  font-size: 11px;
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
+.repo-switcher-sep {
+  padding: 8px 9px 3px;
+  font-size: 11px;
+  color: var(--text-2);
+}
+.repo-switcher-empty { padding: 10px 9px 4px; font-size: 12px; color: var(--text-2); }
+.repo-switcher-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 7px 13px;
+  border-top: 1px solid var(--border-soft);
+  font-size: 11px;
+  color: var(--text-2);
+}
+.repo-switcher-foot kbd {
+  font-family: inherit;
+  font-size: 10px;
+  padding: 0 5px;
+  border: 1px solid var(--border-soft);
+  border-radius: 4px;
+  background: var(--bg-3);
 }
 
 /* ─── Code search modal (⌘⇧F) ──────────────────────────────────────────── */

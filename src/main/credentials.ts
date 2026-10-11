@@ -44,6 +44,29 @@ interface CacheEntry {
 const cache = new Map<string, CacheEntry>()
 
 /**
+ * One shared background lookup per key. The sidebar's hosting sections (pull
+ * requests, issues, milestones, releases) poll in the same tick; without this
+ * each spawned its own `git credential fill`, and on macOS each one raised its
+ * own Keychain dialog.
+ */
+const inFlight = new Map<string, Promise<GitCredential | null>>()
+
+/**
+ * Keys whose background lookup hit the timeout. A helper that never answers is
+ * almost always waiting on a dialog (the macOS Keychain prompt ignores
+ * `credential.interactive=false`), so asking again on every TTL expiry would
+ * re-raise that dialog forever. Background polling stays quiet for these keys
+ * until an interactive lookup — the user connecting on purpose — succeeds.
+ */
+const blocked = new Set<string>()
+
+/**
+ * Bumped by `clearCredentialCache`, so a lookup that was already running when
+ * the cache was dropped cannot write its stale verdict back into it.
+ */
+let generation = 0
+
+/**
  * The parts of a URL the credential helper matches on. Only https is handled:
  * ssh remotes authenticate through the agent and never reach this path.
  */
@@ -71,12 +94,14 @@ function cacheKey(d: { protocol: string; host: string; path: string }): string {
   return `${d.protocol}://${d.host}/${org}`
 }
 
+/**
+ * How a credential command ended. A timeout is kept apart from an ordinary
+ * failure because only a timeout means "something is waiting on the user".
+ */
+type CredentialRun = { kind: 'ok'; stdout: string } | { kind: 'failed' } | { kind: 'timeout' }
+
 /** Feed a `key=value` block to a `git credential <verb>` command. */
-function runCredential(
-  verb: 'fill' | 'reject',
-  input: string,
-  opts: FillOpts
-): Promise<string | null> {
+function runCredential(verb: 'fill' | 'reject', input: string, opts: FillOpts): Promise<CredentialRun> {
   const interactive = !!opts.interactive
   const args: string[] = []
   if (opts.repoPath) args.push('-C', opts.repoPath)
@@ -96,7 +121,12 @@ function runCredential(
       'git',
       args,
       { env, timeout: interactive ? TIMEOUT_INTERACTIVE_MS : TIMEOUT_SILENT_MS },
-      (err, stdout) => resolve(err ? null : stdout)
+      (err, stdout) => {
+        if (!err) return resolve({ kind: 'ok', stdout })
+        // execFile reports its own timeout by killing the child and setting `killed`.
+        const killed = (err as { killed?: boolean }).killed === true
+        resolve({ kind: killed ? 'timeout' : 'failed' })
+      }
     )
     child.stdin?.end(input)
   })
@@ -115,22 +145,50 @@ export function parseCredential(stdout: string): GitCredential | null {
 
 /**
  * Ask git for the credential it would use for `url`, or null when no helper is
- * configured, none is cached and prompting is off, or the helper failed.
+ * configured, none is cached and prompting is off, the helper failed, or a
+ * background lookup for this key previously timed out (see `blocked`).
  */
 export async function credentialFor(url: string, opts: FillOpts = {}): Promise<GitCredential | null> {
   const d = describe(url)
   if (!d) return null
 
   const key = cacheKey(d)
+  const interactive = !!opts.interactive
+  if (!interactive && blocked.has(key)) return null
+
   const hit = cache.get(key)
   // A cached miss is honoured too, so background polling on an unconfigured host
   // does not respawn git every few seconds. An interactive ask ignores it: the
   // user is explicitly trying to connect and deserves the login window.
-  if (hit && Date.now() - hit.at < TTL_MS && !(opts.interactive && !hit.cred)) return hit.cred
+  if (hit && Date.now() - hit.at < TTL_MS && !(interactive && !hit.cred)) return hit.cred
 
-  const stdout = await runCredential('fill', `protocol=${d.protocol}\nhost=${d.host}\npath=${d.path}\n\n`, opts)
-  const cred = stdout ? parseCredential(stdout) : null
+  // Interactive lookups are deliberately not shared: joining a background one
+  // would inherit its short timeout and its suppressed prompt.
+  if (interactive) return lookup(key, d, opts)
+
+  const pending = inFlight.get(key)
+  if (pending) return pending
+  const started = lookup(key, d, opts).finally(() => {
+    if (inFlight.get(key) === started) inFlight.delete(key)
+  })
+  inFlight.set(key, started)
+  return started
+}
+
+/** Run one `git credential fill` and record its verdict in the cache and block list. */
+async function lookup(
+  key: string,
+  d: { protocol: string; host: string; path: string },
+  opts: FillOpts
+): Promise<GitCredential | null> {
+  const startedIn = generation
+  const run = await runCredential('fill', `protocol=${d.protocol}\nhost=${d.host}\npath=${d.path}\n\n`, opts)
+  const cred = run.kind === 'ok' ? parseCredential(run.stdout) : null
+  if (startedIn !== generation) return cred
+
   cache.set(key, { cred, at: Date.now() })
+  if (cred && opts.interactive) blocked.delete(key)
+  else if (run.kind === 'timeout' && !opts.interactive) blocked.add(key)
   return cred
 }
 
@@ -142,7 +200,11 @@ export async function credentialFor(url: string, opts: FillOpts = {}): Promise<G
 export async function forgetCredential(url: string, cred: GitCredential): Promise<void> {
   const d = describe(url)
   if (!d) return
-  cache.delete(cacheKey(d))
+  const key = cacheKey(d)
+  cache.delete(key)
+  // The retry that follows must spawn a fresh fill, not join one that may hand
+  // back the credential being rejected here.
+  inFlight.delete(key)
   await runCredential(
     'reject',
     `protocol=${d.protocol}\nhost=${d.host}\npath=${d.path}\nusername=${cred.username}\npassword=${cred.password}\n\n`,
@@ -150,9 +212,16 @@ export async function forgetCredential(url: string, cred: GitCredential): Promis
   )
 }
 
-/** Drop every cached lookup (e.g. after the user edits their tokens). */
+/**
+ * Drop every cached lookup, in-flight share and background block (e.g. after
+ * the user edits their tokens). Lookups still running finish for their current
+ * callers but no longer write into the fresh cache.
+ */
 export function clearCredentialCache(): void {
+  generation++
   cache.clear()
+  inFlight.clear()
+  blocked.clear()
   ghStatus = null
 }
 

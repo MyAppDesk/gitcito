@@ -65,6 +65,7 @@ import { getFrecency, frecencyScore, bumpFrecency } from '../lib/frecency'
 import { repoIsGitHub } from '../lib/hosting'
 import { openInEditor } from '../lib/editorOpen'
 import { useT, interp, type TranslationKey } from '../i18n'
+import { fuzzyScore } from '../lib/fuzzy'
 
 // Display label for a group id (groups stay English internally for sorting).
 const GROUP_KEYS: Record<string, TranslationKey> = {
@@ -84,30 +85,6 @@ interface Command {
   keywords?: string
   icon: ReactNode
   run: () => void
-}
-
-/** Lightweight fuzzy scorer: subsequence match, contiguous + word-boundary
- *  bonuses, earlier matches rank higher. Returns null when not all query
- *  characters are found (in order). */
-function fuzzyScore(query: string, text: string): number | null {
-  if (!query) return 0
-  const q = query.toLowerCase()
-  const t = text.toLowerCase()
-  let score = 0
-  let ti = 0
-  let prevMatch = -2
-  for (let qi = 0; qi < q.length; qi++) {
-    const ch = q[qi]
-    const found = t.indexOf(ch, ti)
-    if (found === -1) return null
-    score += 1
-    if (found === prevMatch + 1) score += 4 // contiguous run
-    if (found === 0 || /[\s/_\-.]/.test(t[found - 1])) score += 3 // word boundary
-    score -= Math.min(found - ti, 3) * 0.3 // penalise gaps
-    prevMatch = found
-    ti = found + 1
-  }
-  return score
 }
 
 const GROUP_ORDER = ['Recent', 'Repos', 'Actions', 'Branches', 'Commits', 'Files']
@@ -218,7 +195,8 @@ export function CommandPalette(): React.JSX.Element {
     // open is the whole point of this page, so it has to be reachable when
     // nothing is open. Nothing in the entry depends on the active repo.
     list.push(
-      { id: 'repositories', title: t('cmd.repositories'), group: 'Actions', keywords: 'repositories repos all known registry favourites recent browse find open workspace', icon: <FolderGit2 size={15} />, run: act(() => useSettingsStore.getState().openPageTab({ type: 'repositories' })) }
+      { id: 'repositories', title: t('cmd.repositories'), group: 'Actions', keywords: 'repositories repos all known registry favourites recent browse find open workspace', icon: <FolderGit2 size={15} />, run: act(() => useSettingsStore.getState().openPageTab({ type: 'repositories' })) },
+      { id: 'repo-switcher', title: t('cmd.goToRepository'), group: 'Actions', keywords: 'go to jump switch open tabs repositories quick switcher', icon: <FolderGit2 size={15} />, run: act(() => useUIStore.getState().setRepoSwitcher(true)) }
     )
 
     if (!repo) return list

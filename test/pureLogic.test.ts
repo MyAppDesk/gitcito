@@ -727,6 +727,8 @@ describe('keyboard shortcuts', () => {
   it('matchShortcut resolves the bound id', () => {
     const b = effectiveBindings(undefined)
     expect(matchShortcut(ev('k', { meta: true }), b)).toBe('command-palette')
+    expect(matchShortcut(ev('j', { meta: true }), b)).toBe('repo-switcher')
+    expect(matchShortcut(ev('j', { ctrl: true }), b)).toBe('repo-switcher')
     expect(matchShortcut(ev('v', { ctrl: true, shift: true }), b)).toBe('vault')
     expect(matchShortcut(ev(',', { meta: true }), b)).toBe('settings')
     expect(matchShortcut(ev('E', { meta: true, shift: true }), b)).toBe('toggle-left-sidebar')

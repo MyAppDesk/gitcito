@@ -132,6 +132,7 @@ export function buildMenuSpec(ctx: MenuContext, t: (key: TranslationKey) => stri
     label: t('menu.view'),
     submenu: [
       bound('command-palette', t('sc.commandPalette'), b['command-palette']),
+      bound('repo-switcher', t('cmd.goToRepository'), b['repo-switcher'], ctx.hasTabs),
       SEP,
       bound('toggle-left-sidebar', t('sc.toggleLeftSidebar'), b['toggle-left-sidebar'], repo),
       bound('toggle-right-panel', t('sc.toggleRightPanel'), b['toggle-right-panel'], repo),

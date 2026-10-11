@@ -2,8 +2,8 @@
 title: Diffs & previews
 category: Reading changes
 order: 20
-summary: Split view, word-level highlighting, image diffs and file previews.
-keywords: diff split side-by-side word level whitespace image diff preview markdown docx pdf change gutter minimap
+summary: Split view, word-level highlighting, moved code, image diffs and file previews.
+keywords: diff split side-by-side word level whitespace moved code color-moved image diff preview markdown docx pdf change gutter minimap
 ---
 
 # Diffs & previews
@@ -15,6 +15,7 @@ keywords: diff split side-by-side word level whitespace image diff preview markd
 | **Unified ↔ split** | Side-by-side when you want to compare, stacked when you want to read |
 | **Word-level** | Highlights just the changed tokens inside an edited line — red on the old, green on the new |
 | **Ignore whitespace** | Hides reindentation so the real change surfaces |
+| **Moved code** (on by default) | Tints blocks that were only moved, not changed, in blue — shown when the diff has any |
 | **Wrap** (split only) | Folds long lines inside their column instead of scrolling them |
 | **Linked** (split, wrap off) | Scrolls both halves together, vertically and sideways — off, each column scrolls on its own |
 | <kbd>⌘F</kbd> | Find inside the diff, with next/previous stepping |
@@ -33,6 +34,40 @@ or when you want to compare two distant regions of the same file, and park each
 half where its own content is.
 
 ![Split diff with word-level highlighting](../screenshots/split-diff.webp)
+
+### Moved code
+
+A block cut from one place and pasted in another shows up in a diff as a
+deletion and an unrelated-looking addition, and nothing tells you the two are
+the same code — you read it twice to find out nothing changed. **Moved code**
+recognises the pair, after git's own `--color-moved`: a run of deleted lines
+that reappears, line for line, as a run of added lines elsewhere in the same
+file's diff. Both ends get a blue tint, and the margin shows an arrow pointing
+at the other end — hover it for the line number. Neighbouring moved blocks
+alternate between two shades of blue so you can tell where one ends. It works
+in both the unified and the split view.
+
+![A function moved to the end of the file, tinted blue at both ends](../screenshots/moved-code.webp)
+
+Lines are compared without their leading and trailing whitespace, so a block
+moved into a deeper indent still counts. Moved lines skip word-level marks,
+which would compare them with whatever line happens to sit opposite rather than
+with the copy they moved from. Staging works as before: a moved line is still
+an ordinary − or + line underneath.
+
+Limits:
+
+- like git, a block needs at least 20 letters and digits to count, so a
+  shuffled `}` or `return` is not flagged;
+- it only looks within one file, so code moved to another file is a deletion
+  in one diff and an addition in the other;
+- a block that was moved *and* edited is not marked — only the unchanged runs
+  of lines around the edit are, if they are long enough;
+- re-indenting lines in place is not a move, and blank lines are never
+  matched.
+
+The toggle appears only when the diff contains a move, and it remembers its
+state like the others.
 
 Above every diff sits the [semantic summary](semantic-diff.md) — what changed,
 symbol by symbol, rather than line by line.

@@ -349,7 +349,7 @@ async function listPullRequests(
       draft: boolean
       html_url: string
       user: { login: string }
-      head: { ref: string; sha: string }
+      head: { ref: string; sha: string; repo?: { full_name: string } | null }
       base: { ref: string }
       // Present once GitHub's stacked pull requests are in play; absent on a
       // server without them, which is the same as "this one is on its own".
@@ -365,7 +365,8 @@ async function listPullRequests(
       isDraft: p.draft,
       stackNumber: p.stack?.number,
       state: 'open',
-      headSha: p.head.sha
+      headSha: p.head.sha,
+      headRepo: p.head.repo?.full_name
     }))
     if (!auth) return { provider: 'github', prs }
 

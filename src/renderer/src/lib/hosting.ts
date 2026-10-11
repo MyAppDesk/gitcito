@@ -60,3 +60,27 @@ export function repoSupportsPrReview(remotes: RemoteInfo[]): boolean {
   const origin = remotes.find((r) => r.name === 'origin') ?? remotes[0]
   return isReviewableRemote(origin?.url)
 }
+
+/**
+ * The parent a GitHub fork checkout contributes to: the `upstream` remote, when
+ * both it and origin are github.com repositories and they differ. Null for an
+ * ordinary clone, so nothing changes there.
+ */
+export function forkUpstream(
+  remotes: RemoteInfo[]
+): { upstream: RemoteInfo; fork: string; parent: string } | null {
+  const origin = parseGitHubRemote(remotes.find((r) => r.name === 'origin')?.url)
+  const upstream = remotes.find((r) => r.name === 'upstream')
+  const parent = parseGitHubRemote(upstream?.url)
+  if (!origin || !upstream || !parent) return null
+  const fork = `${origin.owner}/${origin.repo}`
+  const parentSlug = `${parent.owner}/${parent.repo}`
+  if (fork.toLowerCase() === parentSlug.toLowerCase()) return null
+  return { upstream, fork, parent: parentSlug }
+}
+
+/** The parent's open PRs that come from this fork — yours, not the parent's whole queue. */
+export function prsFromFork<T extends { headRepo?: string }>(prs: T[], fork: string): T[] {
+  const slug = fork.toLowerCase()
+  return prs.filter((p) => p.headRepo?.toLowerCase() === slug)
+}

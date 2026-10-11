@@ -140,6 +140,8 @@ export const uk: Dict = {
   'sidebar.todos': 'ЗАВДАННЯ',
   'sidebar.noTodos': 'Завдань поки немає',
   'sidebar.noPRs': 'Відкриті PR не завантажено',
+  'sidebar.upstreamPRs': 'У {repo}',
+  'sidebar.upstreamPRsTitle': 'Ваші відкриті пул-реквести в репозиторії, з якого створено цей форк',
   'sidebar.stackOf': 'Стек із {n}',
   'pr.merged': 'Влитий',
   'pr.closed': 'Закритий',

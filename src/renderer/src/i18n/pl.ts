@@ -140,6 +140,8 @@ export const pl: Dict = {
   'sidebar.todos': 'ZADANIA',
   'sidebar.noTodos': 'Brak zadań',
   'sidebar.noPRs': 'Nie wczytano otwartych PR-ów',
+  'sidebar.upstreamPRs': 'W {repo}',
+  'sidebar.upstreamPRsTitle': 'Twoje otwarte pull requesty w repozytorium, z którego pochodzi ten fork',
   'sidebar.stackOf': 'Stos z {n}',
   'pr.merged': 'Scalony',
   'pr.closed': 'Zamknięty',

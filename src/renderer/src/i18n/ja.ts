@@ -139,6 +139,8 @@ export const ja: Dict = {
   'sidebar.todos': 'TODO',
   'sidebar.noTodos': 'TODO はまだありません',
   'sidebar.noPRs': '読み込まれたオープンなプルリクエストはありません',
+  'sidebar.upstreamPRs': '{repo} 上',
+  'sidebar.upstreamPRsTitle': 'このフォークの元のリポジトリにある、あなたのオープンなプルリクエスト',
   'sidebar.stackOf': '{n} 件のスタック',
   'pr.merged': 'マージ済み',
   'pr.closed': 'クローズ済み',

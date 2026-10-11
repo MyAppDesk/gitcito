@@ -140,6 +140,8 @@ export const ar: Dict = {
   'sidebar.todos': 'المهام',
   'sidebar.noTodos': 'لا توجد مهام بعد',
   'sidebar.noPRs': 'لم تُحمَّل أي طلبات سحب مفتوحة',
+  'sidebar.upstreamPRs': 'على {repo}',
+  'sidebar.upstreamPRsTitle': 'طلبات السحب المفتوحة الخاصة بك في المستودع الذي تفرّع منه هذا المستودع',
   'sidebar.stackOf': 'كومة من {n}',
   'pr.merged': 'مُدمج',
   'pr.closed': 'مغلق',

@@ -140,6 +140,8 @@ export const zhCN: Dict = {
   'sidebar.todos': '待办',
   'sidebar.noTodos': '还没有待办',
   'sidebar.noPRs': '未加载任何开启中的拉取请求',
+  'sidebar.upstreamPRs': '位于 {repo}',
+  'sidebar.upstreamPRsTitle': '你在此复刻所来自的仓库上开启的拉取请求',
   'sidebar.stackOf': '{n} 个 PR 的堆栈',
   'pr.merged': '已合并',
   'pr.closed': '已关闭',

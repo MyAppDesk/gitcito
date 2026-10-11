@@ -140,6 +140,8 @@ export const ko: Dict = {
   'sidebar.todos': '할 일',
   'sidebar.noTodos': '아직 할 일이 없습니다',
   'sidebar.noPRs': '불러온 열린 PR이 없습니다',
+  'sidebar.upstreamPRs': '{repo}에서',
+  'sidebar.upstreamPRsTitle': '이 포크의 원본 저장소에 있는 내 열린 풀 리퀘스트',
   'sidebar.stackOf': '{n}개짜리 스택',
   'pr.merged': '병합됨',
   'pr.closed': '닫힘',

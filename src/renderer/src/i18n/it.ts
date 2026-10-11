@@ -139,6 +139,8 @@ export const it: Dict = {
   'sidebar.todos': 'ATTIVITÀ',
   'sidebar.noTodos': 'Ancora nessuna attività',
   'sidebar.noPRs': 'Nessuna PR aperta caricata',
+  'sidebar.upstreamPRs': 'Su {repo}',
+  'sidebar.upstreamPRsTitle': 'Le tue pull request aperte sul repository da cui deriva questo fork',
   'sidebar.stackOf': 'Pila di {n}',
   'pr.merged': 'Unita',
   'pr.closed': 'Chiusa',

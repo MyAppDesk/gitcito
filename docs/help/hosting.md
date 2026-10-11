@@ -47,6 +47,23 @@ going to land. The row's actions appear on hover, so the title keeps the width.
 Reading the checks costs one request per pull request, and only when the list is
 refreshed.
 
+## Your pull requests on the parent of a fork
+
+In a fork, the pull requests that matter are usually the ones you opened on the
+repository you forked from, and those live there, not on your fork. So when a
+repository has an `upstream` remote that points at a different GitHub repository
+than `origin`, the list also asks `upstream` for its open pull requests and keeps
+**only the ones whose branch comes from your fork**. They appear under a caption
+naming the parent, **On owner/repo**, below your fork's own. A click opens the
+same detail view, with its checks and review, on the parent.
+
+![A fork's own pull request, then its pull requests on the parent under On example/pr-ready-branch](../screenshots/fork-upstream-prs.webp)
+
+*Limits:* GitHub only, and only a remote named `upstream`. The parent's other
+pull requests are left out on purpose: that is the parent's queue, not your
+work. Stacks and branch lookups still act on `origin`'s list alone. Listing the
+parent costs one more request per refresh.
+
 ## Reviewing — GitHub and GitLab
 
 | | |

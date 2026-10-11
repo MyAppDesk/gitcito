@@ -981,6 +981,59 @@ export const shots = [
     }
   },
   {
+    // A fork's pull requests on its parent. The checkout gets an origin (the
+    // fork) and an upstream (the parent) on GitHub; neither can be reached from
+    // a shot, so the two lists are seeded straight into the store.
+    out: 'fork-upstream-prs',
+    repos: ['pr-ready-branch'],
+    themes: ['light'],
+    prepare: async ({ repoPaths, run }) => {
+      const repo = repoPaths['pr-ready-branch']
+      await run('git', ['-C', repo, 'remote', 'set-url', 'origin', 'https://github.com/you/pr-ready-branch.git'])
+      await run('git', ['-C', repo, 'remote', 'remove', 'upstream'], { allowFail: true })
+      await run('git', ['-C', repo, 'remote', 'add', 'upstream', 'https://github.com/example/pr-ready-branch.git'])
+    },
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['pr-ready-branch']
+      // Let the load's own PR refresh fail against the unreachable host first,
+      // so it cannot clear the seeded lists afterwards.
+      await page.waitForTimeout(1500)
+      await page.evaluate((p) => {
+        const pr = (id, owner, head, title, extra = {}) => ({
+          id,
+          title,
+          author: 'you',
+          sourceBranch: head,
+          targetBranch: 'main',
+          url: `https://github.com/${owner}/pr-ready-branch/pull/${id}`,
+          isDraft: false,
+          state: 'open',
+          headRepo: 'you/pr-ready-branch',
+          ...extra
+        })
+        window.__shot.repo.getState().patch(p, {
+          prs: [pr(3, 'you', 'try/experiment', 'wip: try the new parser on my fork', { isDraft: true })],
+          upstreamPrs: [
+            pr(128, 'example', 'feat/awesome-feature', 'feat: add the awesome feature', {
+              ci: 'success',
+              ciSummary: '4 passed'
+            }),
+            pr(131, 'example', 'fix/typo', 'docs: fix a typo in the README', {
+              ci: 'pending',
+              ciSummary: '3 passed · 1 running'
+            })
+          ]
+        })
+      }, repo)
+      await page.waitForTimeout(300)
+      const section = page.locator('.sb-header', { hasText: 'PULL REQUESTS' }).first()
+      if (await section.count()) {
+        await section.click()
+        await page.waitForTimeout(400)
+      }
+    }
+  },
+  {
     // The submit screen, on its plan step: what a submit is about to open, and
     // against what. The result step needs a live host, so this is the half that
     // can be photographed deterministically.

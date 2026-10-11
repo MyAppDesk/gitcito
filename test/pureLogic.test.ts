@@ -87,7 +87,7 @@ import { closeTabPrompt, repoCloseStatus, tabCloseStatus } from '../src/renderer
 import { formatBytes, parseTooLargeError } from '../src/renderer/src/lib/fileSize'
 import { FILE_TOO_LARGE_PREFIX } from '../src/shared/types'
 import { autolink, remoteWebUrl, filePermalink } from '../src/renderer/src/lib/autolink'
-import { githubCommitUrl, parseGitHubRemote, githubRemote } from '../src/renderer/src/lib/hosting'
+import { githubCommitUrl, parseGitHubRemote, githubRemote, forkUpstream, prsFromFork } from '../src/renderer/src/lib/hosting'
 import {
   commitMenuCapabilities,
   commitMenuDisabledKey,
@@ -192,7 +192,7 @@ import {
   subtreePaths,
   updateFolder
 } from '../src/renderer/src/lib/repoFolders'
-import type { RepoFolder, RepoRef } from '../src/shared/types'
+import type { RepoFolder, RepoRef, RemoteInfo } from '../src/shared/types'
 import {
   buildDiffEvidence,
   serializeEvidence,
@@ -7077,6 +7077,37 @@ describe('repathRepoSettings', () => {
     expect(result.repoAliases).toEqual({ '/r/same': 'Alias' })
     expect(result.repoProfiles).toEqual({ '/r/same': 'profile-1' })
     expect(result.favouriteRepos).toEqual(['/r/same'])
+  })
+})
+
+describe('fork upstream pull requests', () => {
+  const remote = (name: string, url: string): RemoteInfo => ({ name, url }) as RemoteInfo
+
+  it('finds the parent only when upstream is a different GitHub repository', () => {
+    const fork = forkUpstream([
+      remote('origin', 'https://github.com/someone/gitcito.git'),
+      remote('upstream', 'git@github.com:MyAppDesk/gitcito.git')
+    ])
+    expect(fork?.fork).toBe('someone/gitcito')
+    expect(fork?.parent).toBe('MyAppDesk/gitcito')
+    expect(fork?.upstream.name).toBe('upstream')
+    expect(forkUpstream([remote('origin', 'https://github.com/a/b.git')])).toBeNull()
+    expect(
+      forkUpstream([remote('origin', 'https://github.com/a/b.git'), remote('upstream', 'https://github.com/A/B')])
+    ).toBeNull()
+    expect(
+      forkUpstream([remote('origin', 'https://github.com/a/b.git'), remote('upstream', 'https://gitlab.com/c/b.git')])
+    ).toBeNull()
+  })
+
+  it("keeps only the parent's PRs whose head is the fork", () => {
+    const prs = [
+      { id: 42, headRepo: 'someone/gitcito' },
+      { id: 7, headRepo: 'other/gitcito' },
+      { id: 8, headRepo: 'MyAppDesk/gitcito' },
+      { id: 9 }
+    ]
+    expect(prsFromFork(prs, 'Someone/Gitcito').map((p) => p.id)).toEqual([42])
   })
 })
 

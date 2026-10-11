@@ -4,6 +4,7 @@ import { X, Globe, Github, Gitlab, Cloud, Server, Loader2, Search, Lock, FolderG
 import { useUIStore, type ModalSpec } from '../stores/ui'
 import { useSettingsStore, GROUP_COLORS } from '../stores/settings'
 import { hostingApi, gitApi, shellApi, aiApi } from '../infrastructure/api'
+import { chooseRepositories } from '../openRepositories'
 import { repoActions } from '../stores/repo'
 import {
   defaultProfile,
@@ -1644,14 +1645,14 @@ function LauncherModal({ spec }: { spec: Extract<ModalSpec, { kind: 'launcher' }
     : undefined
 
   const openRepo = async (): Promise<void> => {
-    const path = await window.api.selectDirectory()
-    if (!path) return
-    const repo = { path, name: path.split('/').pop() ?? path }
+    const inGroup = (path: string): boolean => !!groupTab?.repos.some((r) => r.path === path)
+    const repos = await chooseRepositories(spec.groupId ? inGroup : undefined)
+    if (!repos.length) return
     if (spec.groupId) {
-      addRepoToGroup(spec.groupId, repo)
+      for (const repo of repos) addRepoToGroup(spec.groupId, repo)
     } else {
       closeModal()
-      openRepoTab(repo)
+      for (const repo of repos) openRepoTab(repo)
     }
   }
 

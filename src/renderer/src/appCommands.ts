@@ -17,6 +17,7 @@ import { useRepoStore, repoActions } from './stores/repo'
 import { useUIStore } from './stores/ui'
 import { useUpdatesStore } from './stores/updates'
 import { shellApi } from './infrastructure/api'
+import { chooseRepositories } from './openRepositories'
 import { openInEditor } from './lib/editorOpen'
 import { requestCloseTab } from './lib/repositoryMenuItems'
 import { repoChatAvailable, rightPanelToggleAction } from './lib/repoChatUI'
@@ -63,10 +64,8 @@ function toggleRightPanel(): void {
 }
 
 export function openRepositoryDialog(): void {
-  void window.api.selectDirectory().then((path) => {
-    if (!path) return
-    const name = path.split(/[\\/]/).filter(Boolean).pop() ?? path
-    useSettingsStore.getState().openRepoTab({ path, name })
+  void chooseRepositories().then((repos) => {
+    for (const repo of repos) useSettingsStore.getState().openRepoTab(repo)
   })
 }
 
@@ -120,7 +119,12 @@ export function runAppCommand(id: string): boolean {
 
     // ── Views ──
     case 'command-palette':
+      ui.setRepoSwitcher(false)
       ui.toggleCommandPalette()
+      return true
+    case 'repo-switcher':
+      ui.setCommandPalette(false)
+      ui.setRepoSwitcher(!ui.repoSwitcherOpen)
       return true
     case 'code-search': {
       const repo = activeGitRepo()

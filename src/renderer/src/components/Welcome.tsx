@@ -5,6 +5,7 @@ import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
 import { useT } from '../i18n'
 import { confirmRemoveRecentRepo, repositoryMenuItems } from '../lib/repositoryMenuItems'
+import { chooseRepositories } from '../openRepositories'
 import gitcitoLaunch from '../assets/gitcito-launch.png'
 
 export interface LauncherItem {
@@ -206,8 +207,7 @@ export function Welcome(): React.JSX.Element {
   const t = useT()
 
   const openRepo = async (): Promise<void> => {
-    const path = await window.api.selectDirectory()
-    if (path) openRepoTab({ path, name: path.split('/').pop() ?? path })
+    for (const repo of await chooseRepositories()) openRepoTab(repo)
   }
 
   const cloneRepo = (): void => {

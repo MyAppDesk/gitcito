@@ -114,11 +114,36 @@ in Gitcito, extended with two entries specific to this page:
 | Action | What it does |
 |---|---|
 | Star / unstar | Adds or removes the repository from Favourites |
-| Locate… | Re-points a moved or renamed folder — the repo's alias, profile binding and star all carry over. If the destination already had its own settings, **the destination wins** |
+| Locate… | Re-points a moved or renamed folder — the repo's alias, profile binding, star and any tabs showing it all carry over. If the destination already had its own settings, **the destination wins** |
 | Forget | Removes the entry from this list. **Never touches the folder on disk** |
 
 A repository whose folder no longer exists shows as **missing**, with inline
 **Locate…** and **Forget** in place of the usual row actions.
+
+### When an open tab's folder goes missing
+
+Tabs are restored at launch from the paths they had when you quit. If a folder
+has since been moved, deleted, or lives on a drive that is not plugged in, every
+read Gitcito made against it used to fail with its own error toast. Now the
+folder is checked first, and the tab shows **Repository folder not found** with
+the saved path instead of the usual workspace:
+
+![A restored tab whose folder is missing: the Repository folder not found card
+with the saved path and its Locate… and Retry buttons](../screenshots/missing-repository.webp)
+
+| Button | What it does |
+|---|---|
+| Locate… | Pick the folder's new location. It must be a Git repository; the tab, alias, profile binding and star move to it |
+| Retry | Checks the same path again — for a drive or network share that has come back |
+
+The tab is **kept** until you reconnect it or close it yourself: a missing
+external drive is usually temporary, and losing the tab for it would be worse
+than a quiet placeholder. While the folder is missing, the automatic background
+fetch skips it.
+
+Limits: Gitcito does not search for where a folder went — Locate… asks you. A
+folder that exists but is no longer a repository shows the usual **Not a Git
+repository** prompt instead.
 
 The star is a favourite toggle, not a bulk-selection checkbox. Batch work here
 is per section rather than per selection — see below.

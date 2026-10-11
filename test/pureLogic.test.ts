@@ -3,6 +3,7 @@ import { readdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { parseRemoteUrl } from '../src/main/hosting'
+import { readDraft, settleDraft } from '../src/renderer/src/lib/boundedNumber'
 
 import { treeStatusOf } from '../src/renderer/src/lib/treeStatus'
 import { timeAgo, isStale, STALE_AFTER_MS } from '../src/renderer/src/lib/timeAgo'
@@ -15,6 +16,7 @@ import { childrenOf, clearDoneTodos, createTodo, filterTodos, moveTodo, patchTod
 import { branchMatches, isSafeLinkUrl, isSafeRepoRelPath, parseRepoConfig, satisfiesNodeRange, serializeRepoConfig, validateRepoConfig } from '../src/shared/repoConfig'
 import { appendTrailers, configTrailers, doctorSummary, effectiveProtected, isProtectedBranch, ticketSegments } from '../src/renderer/src/lib/repoConfig'
 import { buildMenuSpec } from '../src/renderer/src/lib/appMenu'
+import { planRepositoryPick } from '../src/renderer/src/lib/repositoryPick'
 import { acceleratorFromCombo, isMenuRole } from '../src/shared/menu'
 import { MAIN_WINDOW_STATE, showMainWindow } from '../src/main/windowState'
 
@@ -45,7 +47,7 @@ import {
   sectionKey
 } from '../src/renderer/src/lib/repoSections'
 import { planWorkspaces } from '../src/renderer/src/lib/workspacePlan'
-import { repathRepoSettings } from '../src/renderer/src/lib/repoRepath'
+import { repathRepoSettings, repathRepoTabs } from '../src/renderer/src/lib/repoRepath'
 import { resolveUpdateOffer } from '../src/renderer/src/lib/updateOffer'
 import { worktreeForBranch, worktreeTabName } from '../src/renderer/src/lib/worktrees'
 import { focusedHashes, focusedStashes, defaultBranchName } from '../src/renderer/src/lib/graphFocus'
@@ -727,6 +729,8 @@ describe('keyboard shortcuts', () => {
   it('matchShortcut resolves the bound id', () => {
     const b = effectiveBindings(undefined)
     expect(matchShortcut(ev('k', { meta: true }), b)).toBe('command-palette')
+    expect(matchShortcut(ev('j', { meta: true }), b)).toBe('repo-switcher')
+    expect(matchShortcut(ev('j', { ctrl: true }), b)).toBe('repo-switcher')
     expect(matchShortcut(ev('v', { ctrl: true, shift: true }), b)).toBe('vault')
     expect(matchShortcut(ev(',', { meta: true }), b)).toBe('settings')
     expect(matchShortcut(ev('E', { meta: true, shift: true }), b)).toBe('toggle-left-sidebar')
@@ -6960,6 +6964,42 @@ describe('repoSections', () => {
   })
 })
 
+describe('repathRepoTabs', () => {
+  it('reconnects tabs, nested group folders and repo pages without duplicate entries', () => {
+    const tabs = repathRepoTabs(
+      [
+        {
+          id: 'g',
+          kind: 'group',
+          name: 'Group',
+          activeRepoPath: '/old',
+          repos: [{ path: '/old', name: 'Old' }, { path: '/new', name: 'New' }],
+          folders: [{ id: 'f', name: 'Nested', paths: ['/old'], folders: [] }],
+          pages: [{ type: 'wiki', repoPath: '/old' }]
+        },
+        { id: 'r', kind: 'repo', name: 'Repo', activeRepoPath: '/old', repos: [{ path: '/old', name: 'Repo' }] },
+        { id: 'p', kind: 'page', name: 'Insights', page: { type: 'insights', repoPath: '/old' } }
+      ],
+      '/old',
+      '/new'
+    )
+    expect(JSON.stringify(tabs)).not.toContain('/old')
+    expect(tabs[0]).toMatchObject({
+      activeRepoPath: '/new',
+      repos: [{ path: '/new' }],
+      folders: [{ paths: ['/new'] }],
+      pages: [{ repoPath: '/new' }]
+    })
+    expect(tabs[1]).toMatchObject({ activeRepoPath: '/new', repos: [{ path: '/new' }] })
+    expect(tabs[2]).toMatchObject({ page: { repoPath: '/new' } })
+  })
+
+  it('leaves tabs untouched when the folder did not move', () => {
+    const tabs: TabState[] = [{ id: 'r', kind: 'repo', name: 'Repo', activeRepoPath: '/a', repos: [{ path: '/a', name: 'A' }] }]
+    expect(repathRepoTabs(tabs, '/a', '/a')).toBe(tabs)
+  })
+})
+
 describe('repathRepoSettings', () => {
   it('moves alias, profile and star from oldPath to newPath', () => {
     const result = repathRepoSettings(
@@ -7068,5 +7108,69 @@ describe('fork upstream pull requests', () => {
       { id: 9 }
     ]
     expect(prsFromFork(prs, 'Someone/Gitcito').map((p) => p.id)).toEqual([42])
+  })
+})
+
+describe('planRepositoryPick', () => {
+  it('passes a single pick through, open or not, repository or not', () => {
+    expect(planRepositoryPick([{ path: '/r/plain', open: false, repo: false }])).toEqual({
+      open: [{ path: '/r/plain', name: 'plain' }],
+      notices: []
+    })
+    expect(planRepositoryPick([])).toEqual({ open: [], notices: [] })
+  })
+
+  it('skips open repositories and plain folders in a pick of several, naming each', () => {
+    const plan = planRepositoryPick([
+      { path: '/r/a', open: false, repo: true },
+      { path: '/r/b', open: true, repo: true },
+      { path: '/r/c/', open: false, repo: false },
+      { path: '/r/d', open: false, repo: true }
+    ])
+    expect(plan.open).toEqual([
+      { path: '/r/a', name: 'a' },
+      { path: '/r/d', name: 'd' }
+    ])
+    expect(plan.notices).toEqual([
+      { key: 'repos.skippedOpenOne', vars: { name: 'b' } },
+      { key: 'repos.skippedNotRepoOne', vars: { name: 'c' } }
+    ])
+  })
+
+  it('names several skipped folders in one notice', () => {
+    const plan = planRepositoryPick([
+      { path: '/r/a', open: true, repo: true },
+      { path: '/r/b', open: true, repo: true },
+      { path: 'C:\\r\\x', open: false, repo: false },
+      { path: '/r/y', open: false, repo: false }
+    ])
+    expect(plan.open).toEqual([])
+    expect(plan.notices).toEqual([
+      { key: 'repos.skippedOpenMany', vars: { n: 2, names: 'a, b' } },
+      { key: 'repos.skippedNotRepoMany', vars: { n: 2, names: 'x, y' } }
+    ])
+  })
+})
+
+describe('bounded number drafts', () => {
+  const bounds = { min: 50, max: 5000 }
+
+  it('lets 2000 be typed digit by digit — the bug was clamping the leading 2 to 50', () => {
+    expect(readDraft('2', bounds)).toEqual({ status: 'out-of-range', nearest: 50 })
+    expect(readDraft('20', bounds)).toEqual({ status: 'out-of-range', nearest: 50 })
+    expect(readDraft('200', bounds)).toEqual({ status: 'valid', value: 200 })
+    expect(readDraft('2000', bounds)).toEqual({ status: 'valid', value: 2000 })
+  })
+
+  it('snaps to the nearest bound on leaving, and keeps the last good value for junk', () => {
+    expect(settleDraft('20', bounds, 300)).toBe(50)
+    expect(settleDraft('99999', bounds, 300)).toBe(5000)
+    expect(settleDraft('', bounds, 300)).toBe(300)
+    expect(settleDraft('1e3', bounds, 300)).toBe(300)
+    expect(settleDraft(' 750 ', bounds, 300)).toBe(750)
+  })
+
+  it('treats a missing max as open-ended', () => {
+    expect(readDraft('123456', { min: 0 })).toEqual({ status: 'valid', value: 123456 })
   })
 })

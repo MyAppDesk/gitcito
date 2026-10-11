@@ -51,6 +51,12 @@ under `feature` (4 branches)* removes everything inside after one confirmation
 that lists exactly which branches go — the branch you are on is excluded. The
 same menu exists on remote branch folders, deleting from the remote instead.
 
+The repository and branch pickers sit at the left of the toolbar. When a name
+is longer than the room they have, it is cut short with an ellipsis before the
+dropdown arrow; open the picker to read it in full.
+
+![Long repository and branch names truncated in the toolbar pickers](../screenshots/toolbar-picker-chevron.webp)
+
 The branch dropdown in the toolbar lists local and remote branches. Right-click
 any branch in that dropdown to rename a local branch, copy its name, check it
 out in a new worktree, merge it into the active branch, or delete it. Remote

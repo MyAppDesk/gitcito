@@ -16,12 +16,18 @@ repository until you ask for it.
 ## Open a repository
 
 - **Drag a folder** onto the window, or use **Open repository** on the welcome
-  screen.
+  screen. The picker takes several folders at once: ⌘-click or Shift-click to
+  select them, and each opens in its own tab (or joins the group you opened it
+  from). In a selection of several, a repository that is already open, or a
+  folder that is not a Git repository, is skipped and named in a message, so
+  the others still open. The macOS picker cannot grey out open repositories in
+  advance: Electron does not expose the panel's per-folder hook, so the check
+  happens after you click Open.
 - **Clone** one from a URL or straight from your host — see [cloning](cloning.md)
   for the options that make a huge repository quick to clone.
 - From a terminal, `gitcito .` opens the current folder in the running app —
   see [the command line](cli.md).
-- A folder that is not a Git repository yet still opens, offering to
+- A single folder that is not a Git repository yet still opens, offering to
   initialise it.
 
 ## The three panes

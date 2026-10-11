@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import { gitService } from '../src/main/git'
+import { gitService, gitMethodIsRead } from '../src/main/git'
 import { repoPath } from './helpers'
+import { mkdtempSync, rmSync } from 'fs'
+import { tmpdir } from 'os'
+import { join } from 'path'
 
 // Integration tests: drive the real gitService (simple-git under the hood)
 // against the deterministic playground repos. Assertions target structural
@@ -170,5 +173,30 @@ describe('deep-history-monorepo', () => {
     const firstHashes = new Set(first.map((c) => c.hash))
     expect(second.some((c) => firstHashes.has(c.hash))).toBe(false)
     expect([...first, ...second].map((c) => c.hash)).toEqual(whole.map((c) => c.hash))
+  })
+})
+
+describe('picking several folders to open', () => {
+  it('tells a repository from a plain or missing folder', async () => {
+    const path = repoPath('line-staging')
+    const plain = mkdtempSync(join(tmpdir(), 'gitcito-plain-'))
+    try {
+      expect(await gitService.isRepository(path)).toBe(true)
+      expect(await gitService.isRepository(plain)).toBe(false)
+      expect(await gitService.isRepository(`${path}/does-not-exist`)).toBe(false)
+    } finally {
+      rmSync(plain, { recursive: true, force: true })
+    }
+  })
+})
+
+describe('saved repository folder availability', () => {
+  it('distinguishes missing folders and files before creating a Git instance', async () => {
+    const path = repoPath('line-staging')
+    expect(await gitService.directoryExists(path)).toBe(true)
+    expect(await gitService.directoryExists(`${path}/does-not-exist`)).toBe(false)
+    expect(await gitService.directoryExists(`${path}/README.md`)).toBe(false)
+    expect(await gitService.directoryExists(`${path}/README.md/child`)).toBe(false)
+    expect(gitMethodIsRead('directoryExists')).toBe(true)
   })
 })

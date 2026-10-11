@@ -89,6 +89,13 @@ export function RepositoriesPage(): React.JSX.Element {
   const chosenColors = settings.repoSectionColors ?? {}
 
   const [query, setQuery] = useState('')
+  // The Cmd/Ctrl+J switcher hands over a search it could not answer from open tabs.
+  const handedQuery = useUIStore((s) => s.repositoriesQuery)
+  useEffect(() => {
+    if (handedQuery === null) return
+    setQuery(handedQuery)
+    useUIStore.getState().setRepositoriesQuery(null)
+  }, [handedQuery])
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
   const [wip, setWip] = useState(false)
   const [pulses, setPulses] = useState<Record<string, RepoPulse>>({})

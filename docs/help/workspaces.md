@@ -26,6 +26,33 @@ confirms only when the tab is clean — when there are uncommitted changes or
 conflicts the warning deliberately makes you reach for the button, so a stray
 keypress after <kbd>⌘W</kbd> cannot close work you were still holding.
 
+### Going to a repository
+
+With ten or more repositories open, finding one in the strip means scrolling,
+<kbd>⌘1</kbd>–<kbd>⌘9</kbd> stop at the ninth tab, and the [command
+palette](search.md) mixes open repositories in with every action. Press
+<kbd>⌘J</kbd> / <kbd>Ctrl+J</kbd> (or **View → Go to repository…**) and type a
+few letters of its name, folder or branch, then <kbd>Enter</kbd>.
+
+![The repository switcher, most recently used first](../screenshots/repo-switcher.webp)
+
+The list holds only open repositories, group members included, in the order
+you last looked at them. The one you just left is first, so <kbd>⌘J</kbd>
+<kbd>Enter</kbd> takes you back to it. Each row carries what its tab shows: the
+branch, the uncommitted-work or conflict dot, the group it lives in, and its
+<kbd>⌘1</kbd>–<kbd>⌘9</kbd> key when it has one. The repository on screen sits
+dimmed at the bottom. Nothing dims behind the switcher; a click outside or
+<kbd>Esc</kbd> closes it.
+
+When nothing open matches, the last row, **Find in all repositories**, carries
+your search to the [Repositories](repositories.md) page. The shortcut is
+rebindable in **Settings → Shortcuts**.
+
+*Limits:* the order is remembered for this session only, so after a relaunch it
+starts from tab order. A repository open in two tabs is listed once, at its
+first tab. Repositories in other [workspaces](#workspaces) are not listed —
+switch workspace first, or use the Repositories page.
+
 ## Groups
 
 Bundle related repositories into a named, colour-coded **group tab**. Inside a

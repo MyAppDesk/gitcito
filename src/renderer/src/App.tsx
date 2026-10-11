@@ -13,6 +13,7 @@ import { canonicalRepoPath } from './lib/repoAlias'
 import { applyAppTheme, applyCodeTheme, findAppTheme, findCodeTheme } from './theme/themes'
 import { TitleBar, requestCloseTab } from './components/TitleBar'
 import { Toolbar } from './components/Toolbar'
+import { MissingRepository } from './components/MissingRepository'
 import { Sidebar } from './components/Sidebar'
 import { GraphView } from './components/GraphView'
 import { FileViewer } from './components/FileViewer'
@@ -29,6 +30,7 @@ import { DebugToolbar } from './components/DebugToolbar'
 import { ContextMenu } from './components/ContextMenu'
 import { ModalHost } from './components/ModalHost'
 import { CommandPalette } from './components/CommandPalette'
+import { RepoSwitcher } from './components/RepoSwitcher'
 import { Toasts } from './components/Toasts'
 import { UpdateBanner } from './components/UpdateBanner'
 import { RepoCosmos } from './components/cosmos/RepoCosmos'
@@ -61,6 +63,7 @@ import { hostingApi, gitApi, cliApi, keychainApi } from './infrastructure/api'
 import { cliViewAction, type CliAction } from './lib/cliView'
 import type { CliOpenPayload } from '../../shared/cli'
 import { runAppCommand } from './appCommands'
+import { chooseRepositories } from './openRepositories'
 import { useAppMenu } from './useAppMenu'
 
 /**
@@ -158,9 +161,8 @@ function GroupView({ tab }: { tab: GroupTab }): React.JSX.Element {
   const openModal = useUIStore((s) => s.openModal)
 
   const openRepo = async (): Promise<void> => {
-    const path = await window.api.selectDirectory()
-    if (!path) return
-    addRepoToGroup(tab.id, { path, name: path.split('/').pop() ?? path })
+    const inGroup = (path: string): boolean => tab.repos.some((r) => r.path === path)
+    for (const repo of await chooseRepositories(inGroup)) addRepoToGroup(tab.id, repo)
   }
 
   const cloneRepo = (): void => {
@@ -729,6 +731,11 @@ export default function App(): React.JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settings.activeTabId, settings.activeWorkspaceId])
 
+  // The Cmd/Ctrl+J switcher lists repositories by when you last looked at them.
+  useEffect(() => {
+    if (activeRepoPath) useUIStore.getState().touchRepoMru(activeRepoPath)
+  }, [activeRepoPath])
+
   useEffect(() => {
     if (!activeRepoPath) return
     // First switch to a repo loads it; switching back to an already-loaded
@@ -827,7 +834,10 @@ export default function App(): React.JSX.Element {
     const minutes = settings.autoFetchMinutes ?? 0
     if (!activeRepoPath || minutes <= 0) return
     const interval = setInterval(
-      () => void repoActions.fetchAll(activeRepoPath, { skipEmpty: true }),
+      () => {
+        if (!useRepoStore.getState().repos[activeRepoPath]?.missingFolder)
+          void repoActions.fetchAll(activeRepoPath, { skipEmpty: true })
+      },
       minutes * 60_000
     )
     return () => clearInterval(interval)
@@ -918,7 +928,7 @@ export default function App(): React.JSX.Element {
   const sbSide = settings.sidebarSide
   const rpFull = settings.rightPanelFullHeight
   const workspaceBody =
-    repo && !repo.notGit
+    repo && !repo.notGit && !repo.missingFolder
       ? ((): React.JSX.Element => {
           const termOpen = !!terminalOpenByRepo[repo.path]
           const termIsSide = placement === 'right'
@@ -1194,7 +1204,7 @@ export default function App(): React.JSX.Element {
           title-bar button is its "tab", so the strip stays untouched. */}
       {/* display:contents keeps the flex layout while giving non-repo views a
           main landmark; skipped for the repo workspace, which has its own <main>. */}
-      {!(!missionOpen && activeTab && repo && !repo.notGit && !repoPage) && (
+      {!(!missionOpen && activeTab && repo && !repo.notGit && !repo.missingFolder && !repoPage) && (
         <main style={{ display: 'contents' }}>
           {missionOpen && <MissionControlPage />}
 
@@ -1203,13 +1213,14 @@ export default function App(): React.JSX.Element {
           {!missionOpen && activeTab && activeTab.kind === 'page' && <PageView tab={activeTab} />}
           {/* A page riding on a repo tab: the repository's own view steps aside
               for it, and the tab's icon is how you get back. */}
-          {!missionOpen && repoPage && <PageBody page={repoPage} />}
+          {!missionOpen && repoPage && !repo?.missingFolder && <PageBody page={repoPage} />}
 
-          {!missionOpen && activeTab && repo && repo.notGit && <InitRepo path={repo.path} />}
+          {!missionOpen && activeTab && repo?.missingFolder && <MissingRepository key={repo.path} path={repo.path} />}
+          {!missionOpen && activeTab && repo && !repo.missingFolder && repo.notGit && <InitRepo path={repo.path} />}
         </main>
       )}
 
-      {!missionOpen && activeTab && repo && !repo.notGit && !repoPage && (
+      {!missionOpen && activeTab && repo && !repo.notGit && !repo.missingFolder && !repoPage && (
         <>
           <Toolbar repo={repo} />
           {workspaceBody}
@@ -1308,6 +1319,7 @@ export default function App(): React.JSX.Element {
       <ContextMenu />
       <ModalHost />
       <CommandPalette />
+      <RepoSwitcher />
       <Toasts />
       <UpdateBanner />
       <RepoCosmos />

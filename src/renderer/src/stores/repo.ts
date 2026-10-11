@@ -111,6 +111,9 @@ export interface RepoData {
   notedShas: string[]
   /** The opened folder is not a git repo yet — show the "initialize" prompt. */
   notGit: boolean
+  /** A saved tab points at a folder that is no longer on disk (moved, deleted,
+   *  or on an unplugged drive). The tab stays; its view offers Locate / Retry. */
+  missingFolder?: boolean
   /** Last Conflict Radar scan, kept so branch rows can wear their risk dot. */
   mergeRisk: MergePreviewResult | null
   /** Remote refs rewritten by the last fetch, keyed by short name
@@ -506,10 +509,17 @@ async function doRefresh(path: string, slices: RefreshSlice[]): Promise<void> {
   const store = useRepoStore.getState()
   const repo = store.repos[path]
   const maxCount = repo?.maxCount ?? 400
-  const want = new Set(slices)
+  // Coming back from a missing folder, nothing cached is trustworthy: read every slice.
+  const want = new Set(repo?.missingFolder ? ALL_SLICES : slices)
   const keep = <T>(cur: T | undefined, want: boolean, fetch: () => Promise<T>, fallback: T): Promise<T> =>
     want ? fetch() : Promise.resolve(cur ?? fallback)
   try {
+    // One stat() first: a restored tab whose folder has gone would otherwise fail
+    // every read below, and each failure would surface as an error toast.
+    if (!(await gitApi.directoryExists(path))) {
+      store.patch(path, { loading: false, missingFolder: true, notGit: false })
+      return
+    }
     const [
       commits,
       branches,
@@ -573,13 +583,19 @@ async function doRefresh(path: string, slices: RefreshSlice[]): Promise<void> {
       config,
       loading: false,
       notGit: false,
+      missingFolder: false,
       lastRefreshAt: Date.now()
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
+    // The folder can disappear between the check above and the reads.
+    if (!(await gitApi.directoryExists(path).catch(() => true))) {
+      store.patch(path, { loading: false, missingFolder: true, notGit: false })
+      return
+    }
     // Opened a plain folder, not a repo — offer to `git init` instead of a toast.
     if (/not a git repository/i.test(message)) {
-      store.patch(path, { loading: false, notGit: true })
+      store.patch(path, { loading: false, notGit: true, missingFolder: false })
       return
     }
     store.patch(path, { loading: false })
@@ -605,6 +621,7 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
     evictedUndo.delete(path)
     set((s) => ({ repos: { ...s.repos, [path]: { ...emptyRepo(path), ...revived } } }))
     await get().refresh(path)
+    if (get().repos[path]?.missingFolder) return
     // Hosting data (PRs, releases) lives behind the network, so it is fetched
     // after the local refresh and kept silent — a missing token or offline box
     // should not spam error toasts every time a repo is opened.

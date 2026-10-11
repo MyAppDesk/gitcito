@@ -594,7 +594,7 @@ describe('deleteRemoteBranch (stale tracking ref)', () => {
     const work = mkdtempSync(join(tmpdir(), 'gitcito-work-'))
     try {
       execFileSync('git', ['init', '--bare', remote], { stdio: 'ignore' })
-      execFileSync('git', ['init', work], { stdio: 'ignore' })
+      execFileSync('git', ['init', '-b', 'main', work], { stdio: 'ignore' })
       git(work, 'config', 'user.email', 'test@example.com')
       git(work, 'config', 'user.name', 'Test')
       git(work, 'remote', 'add', 'origin', remote)

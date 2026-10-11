@@ -2277,6 +2277,8 @@ export const nl: Dict = {
   'localCi.rangeTitle': 'Een commit of bereik testen',
   'localCi.rangeHint': 'Voert de workflow uit tegen commits waar je niet op staat: elke commit wordt uitgecheckt in een wegwerp-worktree en kost een volledige run — echte minuten per commit. Oordelen worden aan elke commit in de graaf gehecht.',
   'localCi.budgetLabel': 'Maximaal aantal commits om uit te voeren',
+  'numberField.range': 'Van {min} tot {max}',
+  'numberField.atLeast': '{min} of meer',
   'localCi.preview': 'Voorbeeld',
   'localCi.runRange': '{n} uitvoeren',
   'localCi.rangeEmpty': 'Geen commit komt overeen.',

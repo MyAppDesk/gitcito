@@ -2277,6 +2277,8 @@ export const ptBR: Dict = {
   'localCi.rangeTitle': 'Testar um commit ou intervalo',
   'localCi.rangeHint': 'Executa o workflow contra commits em que você não está: cada um é extraído em um worktree descartável e custa uma execução completa — minutos reais por commit. Os veredictos ficam presos a cada commit no grafo.',
   'localCi.budgetLabel': 'Máximo de commits a executar',
+  'numberField.range': 'De {min} a {max}',
+  'numberField.atLeast': '{min} ou mais',
   'localCi.preview': 'Prévia',
   'localCi.runRange': 'Executar {n}',
   'localCi.rangeEmpty': 'Nenhum commit corresponde.',

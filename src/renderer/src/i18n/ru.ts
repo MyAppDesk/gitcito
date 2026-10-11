@@ -2274,6 +2274,8 @@ export const ru: Dict = {
   'localCi.rangeTitle': 'Проверить коммит или диапазон',
   'localCi.rangeHint': 'Запускает workflow на коммитах, на которых вы не находитесь: каждый выгружается во временное рабочее дерево и стоит полного прогона — реальные минуты на коммит. Вердикты закрепляются за каждым коммитом на графе.',
   'localCi.budgetLabel': 'Максимум коммитов для запуска',
+  'numberField.range': 'От {min} до {max}',
+  'numberField.atLeast': '{min} или больше',
   'localCi.preview': 'Предпросмотр',
   'localCi.runRange': 'Запустить {n}',
   'localCi.rangeEmpty': 'Ни один коммит не подходит.',

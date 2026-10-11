@@ -2270,6 +2270,8 @@ export const en = {
   'localCi.rangeTitle': 'Test a commit or range',
   'localCi.rangeHint': 'Runs the workflow against commits you are not on: each one is checked out into a throwaway worktree and costs a full run — real minutes per commit. Verdicts pin to each commit on the graph.',
   'localCi.budgetLabel': 'Maximum commits to run',
+  'numberField.range': 'From {min} to {max}',
+  'numberField.atLeast': '{min} or more',
   'localCi.preview': 'Preview',
   'localCi.runRange': 'Run {n}',
   'localCi.rangeEmpty': 'No commits match.',

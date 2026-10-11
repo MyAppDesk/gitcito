@@ -2274,6 +2274,8 @@ export const he: Dict = {
   'localCi.rangeTitle': 'בדיקת קומיט או טווח',
   'localCi.rangeHint': 'מריץ את ה-workflow על קומיטים שאינך נמצא עליהם: כל אחד נפרס לעץ עבודה חד-פעמי ועולה הרצה מלאה — דקות אמיתיות לכל קומיט. פסקי הדין מוצמדים לכל קומיט בגרף.',
   'localCi.budgetLabel': 'מספר הקומיטים המרבי להרצה',
+  'numberField.range': 'מ־{min} עד {max}',
+  'numberField.atLeast': '{min} ומעלה',
   'localCi.preview': 'תצוגה מקדימה',
   'localCi.runRange': 'הרצת {n}',
   'localCi.rangeEmpty': 'אף קומיט לא תואם.',

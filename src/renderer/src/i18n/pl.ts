@@ -2274,6 +2274,8 @@ export const pl: Dict = {
   'localCi.rangeTitle': 'Przetestuj commit lub zakres',
   'localCi.rangeHint': 'Uruchamia workflow na commitach, na których nie jesteś: każdy jest wypakowywany do jednorazowego worktree i kosztuje pełny przebieg — realne minuty na commit. Werdykty przypinają się do każdego commita na grafie.',
   'localCi.budgetLabel': 'Maksymalna liczba commitów do uruchomienia',
+  'numberField.range': 'Od {min} do {max}',
+  'numberField.atLeast': '{min} lub więcej',
   'localCi.preview': 'Podgląd',
   'localCi.runRange': 'Uruchom {n}',
   'localCi.rangeEmpty': 'Żaden commit nie pasuje.',

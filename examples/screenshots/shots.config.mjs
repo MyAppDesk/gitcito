@@ -2563,6 +2563,27 @@ export const shots = [
       await page.waitForTimeout(600)
     }
   },
+  {
+    // Settings → General with a value below the range still being typed: the
+    // field is flagged, not clamped, until it is left. Typed for real and never
+    // blurred — leaving the field would snap it to 50 and lose the state.
+    out: 'number-field-range',
+    repos: ['octopus-merge'],
+    themes: ['light'],
+    clipTo: '.modal',
+    drive: async (page) => {
+      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'general' }))
+      await page.waitForTimeout(400)
+      const input = page
+        .locator('.settings-field', { has: page.locator('.settings-field-label', { hasText: 'Initial commits loaded' }) })
+        .locator('input')
+      await input.scrollIntoViewIfNeeded()
+      await input.click()
+      await page.keyboard.press('ControlOrMeta+A')
+      await page.keyboard.type('20')
+      await page.waitForSelector('.number-field-error', { timeout: 5000 })
+    }
+  },
 ]
 // ── Animated clips (GIF) ──────────────────────────────────────────────────────
 // Captured by sampling screenshots at a steady fps, so GIF playback stays

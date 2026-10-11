@@ -2274,6 +2274,8 @@ export const ko: Dict = {
   'localCi.rangeTitle': '커밋 또는 범위 테스트',
   'localCi.rangeHint': '현재 위치가 아닌 커밋에 대해 워크플로를 실행합니다. 각 커밋은 일회용 워크트리로 체크아웃되며 전체 실행 비용 — 커밋당 실제 몇 분 — 이 듭니다. 판정은 그래프의 각 커밋에 고정됩니다.',
   'localCi.budgetLabel': '실행할 최대 커밋 수',
+  'numberField.range': '{min}~{max}',
+  'numberField.atLeast': '{min} 이상',
   'localCi.preview': '미리보기',
   'localCi.runRange': '{n}개 실행',
   'localCi.rangeEmpty': '일치하는 커밋이 없습니다.',

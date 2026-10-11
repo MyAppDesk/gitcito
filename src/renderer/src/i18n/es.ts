@@ -2270,6 +2270,8 @@ export const es: Dict = {
   'localCi.rangeTitle': 'Probar un commit o un rango',
   'localCi.rangeHint': 'Ejecuta el workflow contra commits en los que no estás: cada uno se extrae en un worktree desechable y cuesta una ejecución completa — minutos reales por commit. Los veredictos se anclan a cada commit en el grafo.',
   'localCi.budgetLabel': 'Máximo de commits a ejecutar',
+  'numberField.range': 'De {min} a {max}',
+  'numberField.atLeast': '{min} o más',
   'localCi.preview': 'Vista previa',
   'localCi.runRange': 'Ejecutar {n}',
   'localCi.rangeEmpty': 'Ningún commit coincide.',

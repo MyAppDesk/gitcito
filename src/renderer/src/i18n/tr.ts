@@ -2230,6 +2230,8 @@ export const tr: Dict = {
   'localCi.rangeTitle': 'Bir commit veya aralığı test et',
   'localCi.rangeHint': 'Workflow’u üzerinde olmadığınız commit’lere karşı çalıştırır: her biri kullan-at bir worktree’ye çıkarılır ve tam bir çalıştırmaya mal olur — commit başına gerçek dakikalar. Kararlar grafikte her commit’e sabitlenir.',
   'localCi.budgetLabel': 'Çalıştırılacak en fazla commit',
+  'numberField.range': '{min} ile {max} arası',
+  'numberField.atLeast': '{min} veya daha fazla',
   'localCi.preview': 'Önizleme',
   'localCi.runRange': '{n} çalıştır',
   'localCi.rangeEmpty': 'Eşleşen commit yok.',

@@ -2274,6 +2274,8 @@ export const ar: Dict = {
   'localCi.rangeTitle': 'اختبار إيداع أو نطاق',
   'localCi.rangeHint': 'يشغِّل سير العمل على إيداعات لست عليها: يُستخرج كل إيداع إلى شجرة عمل مؤقتة ويكلِّف تشغيلًا كاملًا — دقائق حقيقية لكل إيداع. تُثبَّت الأحكام على كل إيداع في المخطط.',
   'localCi.budgetLabel': 'الحد الأقصى للإيداعات المشغَّلة',
+  'numberField.range': 'من {min} إلى {max}',
+  'numberField.atLeast': '{min} أو أكثر',
   'localCi.preview': 'معاينة',
   'localCi.runRange': 'تشغيل {n}',
   'localCi.rangeEmpty': 'لا يوجد إيداع مطابق.',

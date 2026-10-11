@@ -7954,6 +7954,16 @@ body.col-resizing .node-ava {
   margin-top: 4px;
 }
 
+/* NumberField: a typed value outside the bounds is flagged, not clamped, until the field is left. */
+.number-field-error {
+  font-size: 11px;
+  color: var(--red);
+}
+input.is-invalid {
+  border-color: var(--red) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--red) 18%, transparent) !important;
+}
+
 @media (max-width: 900px) {
   .settings-grid.two {
     grid-template-columns: 1fr;

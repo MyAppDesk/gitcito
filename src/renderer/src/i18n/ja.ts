@@ -2230,6 +2230,8 @@ export const ja: Dict = {
   'localCi.rangeTitle': 'コミットや範囲をテスト',
   'localCi.rangeHint': '今いない位置のコミットに対してワークフローを実行します。各コミットは使い捨てワークツリーにチェックアウトされ、フル実行ぶんのコスト — コミットごとに実時間で数分 — がかかります。判定はグラフ上の各コミットに固定されます。',
   'localCi.budgetLabel': '実行するコミットの上限',
+  'numberField.range': '{min}〜{max}',
+  'numberField.atLeast': '{min} 以上',
   'localCi.preview': 'プレビュー',
   'localCi.runRange': '{n} 件を実行',
   'localCi.rangeEmpty': '一致するコミットがありません。',

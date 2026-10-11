@@ -2233,6 +2233,8 @@ export const it: Dict = {
   'localCi.rangeTitle': 'Testa un commit o un intervallo',
   'localCi.rangeHint': 'Esegue il workflow su commit in cui non ti trovi: ognuno viene estratto in un worktree usa-e-getta e costa un’esecuzione completa — minuti reali per commit. I verdetti si agganciano a ogni commit nel grafo.',
   'localCi.budgetLabel': 'Numero massimo di commit da eseguire',
+  'numberField.range': 'Da {min} a {max}',
+  'numberField.atLeast': '{min} o più',
   'localCi.preview': 'Anteprima',
   'localCi.runRange': 'Esegui {n}',
   'localCi.rangeEmpty': 'Nessun commit corrisponde.',

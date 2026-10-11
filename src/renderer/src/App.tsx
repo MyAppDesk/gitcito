@@ -13,6 +13,7 @@ import { canonicalRepoPath } from './lib/repoAlias'
 import { applyAppTheme, applyCodeTheme, findAppTheme, findCodeTheme } from './theme/themes'
 import { TitleBar, requestCloseTab } from './components/TitleBar'
 import { Toolbar } from './components/Toolbar'
+import { MissingRepository } from './components/MissingRepository'
 import { Sidebar } from './components/Sidebar'
 import { GraphView } from './components/GraphView'
 import { FileViewer } from './components/FileViewer'
@@ -833,7 +834,10 @@ export default function App(): React.JSX.Element {
     const minutes = settings.autoFetchMinutes ?? 0
     if (!activeRepoPath || minutes <= 0) return
     const interval = setInterval(
-      () => void repoActions.fetchAll(activeRepoPath, { skipEmpty: true }),
+      () => {
+        if (!useRepoStore.getState().repos[activeRepoPath]?.missingFolder)
+          void repoActions.fetchAll(activeRepoPath, { skipEmpty: true })
+      },
       minutes * 60_000
     )
     return () => clearInterval(interval)
@@ -924,7 +928,7 @@ export default function App(): React.JSX.Element {
   const sbSide = settings.sidebarSide
   const rpFull = settings.rightPanelFullHeight
   const workspaceBody =
-    repo && !repo.notGit
+    repo && !repo.notGit && !repo.missingFolder
       ? ((): React.JSX.Element => {
           const termOpen = !!terminalOpenByRepo[repo.path]
           const termIsSide = placement === 'right'
@@ -1200,7 +1204,7 @@ export default function App(): React.JSX.Element {
           title-bar button is its "tab", so the strip stays untouched. */}
       {/* display:contents keeps the flex layout while giving non-repo views a
           main landmark; skipped for the repo workspace, which has its own <main>. */}
-      {!(!missionOpen && activeTab && repo && !repo.notGit && !repoPage) && (
+      {!(!missionOpen && activeTab && repo && !repo.notGit && !repo.missingFolder && !repoPage) && (
         <main style={{ display: 'contents' }}>
           {missionOpen && <MissionControlPage />}
 
@@ -1209,13 +1213,14 @@ export default function App(): React.JSX.Element {
           {!missionOpen && activeTab && activeTab.kind === 'page' && <PageView tab={activeTab} />}
           {/* A page riding on a repo tab: the repository's own view steps aside
               for it, and the tab's icon is how you get back. */}
-          {!missionOpen && repoPage && <PageBody page={repoPage} />}
+          {!missionOpen && repoPage && !repo?.missingFolder && <PageBody page={repoPage} />}
 
-          {!missionOpen && activeTab && repo && repo.notGit && <InitRepo path={repo.path} />}
+          {!missionOpen && activeTab && repo?.missingFolder && <MissingRepository key={repo.path} path={repo.path} />}
+          {!missionOpen && activeTab && repo && !repo.missingFolder && repo.notGit && <InitRepo path={repo.path} />}
         </main>
       )}
 
-      {!missionOpen && activeTab && repo && !repo.notGit && !repoPage && (
+      {!missionOpen && activeTab && repo && !repo.notGit && !repo.missingFolder && !repoPage && (
         <>
           <Toolbar repo={repo} />
           {workspaceBody}

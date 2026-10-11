@@ -1,3 +1,5 @@
+import type { PageContent, RepoFolder, TabState } from '../../../shared/types'
+
 // Re-keying the path-keyed settings maps when a repository's folder moves
 // (Locate). Pure so the "destination wins" rule is testable without going
 // through the settings store.
@@ -38,4 +40,31 @@ export function repathRepoSettings(
   const favouriteRepos = [...new Set(moved)]
 
   return { repoAliases, repoProfiles, favouriteRepos }
+}
+
+/** Point open and saved tabs at a repository's new folder — its entry, the
+ *  selected repo, pages riding on the tab, and nested group folders. A group
+ *  that already held `newPath` keeps one entry, not two. */
+export function repathRepoTabs(tabs: TabState[], oldPath: string, newPath: string): TabState[] {
+  if (oldPath === newPath) return tabs
+  const page = (value: PageContent): PageContent =>
+    'repoPath' in value && value.repoPath === oldPath ? { ...value, repoPath: newPath } : value
+  const folder = (value: RepoFolder): RepoFolder => ({
+    ...value,
+    paths: [...new Set(value.paths.map((p) => (p === oldPath ? newPath : p)))],
+    folders: value.folders.map(folder)
+  })
+  return tabs.map((tab) => {
+    if (tab.kind === 'page') return { ...tab, page: page(tab.page) }
+    const repos = tab.repos
+      .map((r) => (r.path === oldPath ? { ...r, path: newPath } : r))
+      .filter((r, i, all) => all.findIndex((other) => other.path === r.path) === i)
+    return {
+      ...tab,
+      repos,
+      activeRepoPath: tab.activeRepoPath === oldPath ? newPath : tab.activeRepoPath,
+      ...(tab.pages ? { pages: tab.pages.map(page) } : {}),
+      ...(tab.kind === 'group' && tab.folders ? { folders: tab.folders.map(folder) } : {})
+    }
+  })
 }

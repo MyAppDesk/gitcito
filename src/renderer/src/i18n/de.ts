@@ -3816,6 +3816,8 @@ export const de: Dict = {
   'repos.forgetConfirm': '{name} aus der Liste entfernen? Der Ordner auf der Festplatte bleibt unberührt.',
   'repos.forgetAction': 'Vergessen',
   'repos.missing': 'Fehlt',
+  'repos.missingTitle': 'Repository-Ordner nicht gefunden',
+  'repos.missingBody': 'Dieses gespeicherte Repository wurde möglicherweise verschoben oder gelöscht, oder es liegt auf einem nicht verbundenen Laufwerk. Suche den Ordner, um es wieder zu verbinden, oder versuche es erneut, sobald er verfügbar ist.',
   'repos.locate': 'Orten…',
   'repos.locateTitle': 'Wo ist {name}?',
   'repos.wip': 'WIP-Übersicht',

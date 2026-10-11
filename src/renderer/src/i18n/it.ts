@@ -3757,6 +3757,8 @@ export const it: Dict = {
   'repos.forgetConfirm': 'Rimuovere {name} dall’elenco? La cartella sul disco non viene toccata.',
   'repos.forgetAction': 'Dimentica',
   'repos.missing': 'Mancante',
+  'repos.missingTitle': 'Cartella del repository non trovata',
+  'repos.missingBody': 'Questo repository salvato potrebbe essere stato spostato o eliminato, oppure si trova su un’unità scollegata. Individua la sua cartella per ricollegarlo, oppure riprova quando sarà disponibile.',
   'repos.locate': 'Individua…',
   'repos.locateTitle': 'Dov’è {name}?',
   'repos.wip': 'Riepilogo WIP',

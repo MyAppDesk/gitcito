@@ -3811,6 +3811,8 @@ export const he: Dict = {
   'repos.forgetConfirm': 'להסיר את {name} מהרשימה? התיקייה בדיסק לא נגע.',
   'repos.forgetAction': 'שכחה',
   'repos.missing': 'חסר',
+  'repos.missingTitle': 'תיקיית המאגר לא נמצאה',
+  'repos.missingBody': 'ייתכן שהמאגר השמור הועבר, נמחק או נמצא בכונן מנותק. אתרו את התיקייה שלו כדי להתחבר מחדש, או נסו שוב כשהיא תהיה זמינה.',
   'repos.locate': 'איתור…',
   'repos.locateTitle': 'איפה {name}?',
   'repos.wip': 'סיכום WIP',

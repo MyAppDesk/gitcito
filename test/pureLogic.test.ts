@@ -46,7 +46,7 @@ import {
   sectionKey
 } from '../src/renderer/src/lib/repoSections'
 import { planWorkspaces } from '../src/renderer/src/lib/workspacePlan'
-import { repathRepoSettings } from '../src/renderer/src/lib/repoRepath'
+import { repathRepoSettings, repathRepoTabs } from '../src/renderer/src/lib/repoRepath'
 import { resolveUpdateOffer } from '../src/renderer/src/lib/updateOffer'
 import { worktreeForBranch, worktreeTabName } from '../src/renderer/src/lib/worktrees'
 import { focusedHashes, focusedStashes, defaultBranchName } from '../src/renderer/src/lib/graphFocus'
@@ -6960,6 +6960,42 @@ describe('repoSections', () => {
       sections.filter((s) => s.kind === kind).flatMap((s) => s.rows.map((r) => r.repo.path))
     expect(rows('open')).toContain('/r/unknown')
     expect(rows('favourites')).toEqual(['/r/unknown'])
+  })
+})
+
+describe('repathRepoTabs', () => {
+  it('reconnects tabs, nested group folders and repo pages without duplicate entries', () => {
+    const tabs = repathRepoTabs(
+      [
+        {
+          id: 'g',
+          kind: 'group',
+          name: 'Group',
+          activeRepoPath: '/old',
+          repos: [{ path: '/old', name: 'Old' }, { path: '/new', name: 'New' }],
+          folders: [{ id: 'f', name: 'Nested', paths: ['/old'], folders: [] }],
+          pages: [{ type: 'wiki', repoPath: '/old' }]
+        },
+        { id: 'r', kind: 'repo', name: 'Repo', activeRepoPath: '/old', repos: [{ path: '/old', name: 'Repo' }] },
+        { id: 'p', kind: 'page', name: 'Insights', page: { type: 'insights', repoPath: '/old' } }
+      ],
+      '/old',
+      '/new'
+    )
+    expect(JSON.stringify(tabs)).not.toContain('/old')
+    expect(tabs[0]).toMatchObject({
+      activeRepoPath: '/new',
+      repos: [{ path: '/new' }],
+      folders: [{ paths: ['/new'] }],
+      pages: [{ repoPath: '/new' }]
+    })
+    expect(tabs[1]).toMatchObject({ activeRepoPath: '/new', repos: [{ path: '/new' }] })
+    expect(tabs[2]).toMatchObject({ page: { repoPath: '/new' } })
+  })
+
+  it('leaves tabs untouched when the folder did not move', () => {
+    const tabs: TabState[] = [{ id: 'r', kind: 'repo', name: 'Repo', activeRepoPath: '/a', repos: [{ path: '/a', name: 'A' }] }]
+    expect(repathRepoTabs(tabs, '/a', '/a')).toBe(tabs)
   })
 })
 

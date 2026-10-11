@@ -3756,6 +3756,8 @@ export const fr: Dict = {
   'repos.forgetConfirm': 'Retirer {name} de la liste ? Le dossier sur le disque n’est pas touché.',
   'repos.forgetAction': 'Oublier',
   'repos.missing': 'Introuvable',
+  'repos.missingTitle': 'Dossier du dépôt introuvable',
+  'repos.missingBody': 'Ce dépôt enregistré a peut-être été déplacé ou supprimé, ou se trouve sur un disque déconnecté. Localisez son dossier pour le reconnecter, ou réessayez dès qu’il est disponible.',
   'repos.locate': 'Localiser…',
   'repos.locateTitle': 'Où est {name} ?',
   'repos.wip': 'Résumé WIP',

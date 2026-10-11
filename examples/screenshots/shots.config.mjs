@@ -2591,6 +2591,18 @@ export const shots = [
     }
   },
   {
+    // A restored tab whose folder has gone. 'my-project' is not a playground
+    // repo, so its demo path never exists — the tab opens straight onto the
+    // "not found" card with Locate… and Retry, no repo moved on disk.
+    out: 'missing-repository',
+    repos: ['my-project'],
+    themes: ['light'],
+    drive: async (page) => {
+      await page.waitForSelector('.missing-repository', { timeout: 10000 })
+      await page.waitForTimeout(300)
+    }
+  },
+  {
     // Settings → General with a value below the range still being typed: the
     // field is flagged, not clamped, until it is left. Typed for real and never
     // blurred — leaving the field would snap it to 50 and lose the state.

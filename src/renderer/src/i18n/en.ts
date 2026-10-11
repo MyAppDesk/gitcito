@@ -3812,6 +3812,8 @@ export const en = {
   'repos.forgetConfirm': 'Remove {name} from the list? The folder on disk is not touched.',
   'repos.forgetAction': 'Forget',
   'repos.missing': 'Missing',
+  'repos.missingTitle': 'Repository folder not found',
+  'repos.missingBody': 'This saved repository may have moved, been deleted, or be on a disconnected drive. Locate its folder to reconnect, or retry once it is available.',
   'repos.locate': 'Locate…',
   'repos.locateTitle': 'Where is {name}?',
   'repos.wip': 'WIP summary',

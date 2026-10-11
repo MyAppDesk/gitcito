@@ -3,6 +3,8 @@ import { readdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { parseRemoteUrl } from '../src/main/hosting'
+import { parseDiff } from '../src/renderer/src/lib/diff'
+import { buildLinePatch, extractHunks, singleHunkPatch } from '../src/renderer/src/lib/hunkPatch'
 import { readDraft, settleDraft } from '../src/renderer/src/lib/boundedNumber'
 
 import { treeStatusOf } from '../src/renderer/src/lib/treeStatus'
@@ -7172,5 +7174,50 @@ describe('bounded number drafts', () => {
 
   it('treats a missing max as open-ended', () => {
     expect(readDraft('123456', { min: 0 })).toEqual({ status: 'valid', value: 123456 })
+  })
+})
+
+describe('hunk and line patches', () => {
+  const DIFF = [
+    'diff --git a/f.txt b/f.txt',
+    'index 1111111..2222222 100644',
+    '--- a/f.txt',
+    '+++ b/f.txt',
+    '@@ -1,3 +1,3 @@',
+    ' keep',
+    '-old',
+    '+new',
+    ' tail',
+    '@@ -10,2 +10,3 @@',
+    ' ten',
+    '+added',
+    ' eleven',
+    ''
+  ].join('\n')
+  const lines = parseDiff(DIFF)
+  const header = extractHunks(DIFF).header
+  const at = (kind: string, text: string): number => lines.findIndex((l) => l.kind === kind && l.text === text)
+
+  it('splits a diff into its header and hunks, and rebuilds any one hunk alone', () => {
+    const split = extractHunks(DIFF)
+    expect(split.header.split('\n')).toHaveLength(4)
+    expect(split.hunks).toHaveLength(2)
+    expect(singleHunkPatch(split, 1)).toBe(`${split.header}\n@@ -10,2 +10,3 @@\n ten\n+added\n eleven\n\n`)
+  })
+
+  it('keeps an unselected deletion as context going forwards, and drops an unselected addition', () => {
+    const patch = buildLinePatch(lines, header, new Set([at('add', 'new')]), 'forward')
+    expect(patch).toContain('@@ -1,3 +1,4 @@\n keep\n old\n+new\n tail')
+    expect(patch).not.toContain('@@ -10')
+  })
+
+  it('mirrors that for a reversed patch: the unselected addition stays, the deletion goes', () => {
+    const patch = buildLinePatch(lines, header, new Set([at('del', 'old')]), 'reverse')
+    expect(patch).toContain('@@ -1,4 +1,3 @@\n keep\n-old\n new\n tail')
+  })
+
+  it('never claims a line past the end of the diff', () => {
+    const patch = buildLinePatch(lines, header, new Set([at('add', 'added')]), 'forward')
+    expect(patch.endsWith('@@ -10,2 +10,3 @@\n ten\n+added\n eleven\n')).toBe(true)
   })
 })

@@ -11671,26 +11671,45 @@ input[type='range']:focus-visible {
 /* When the AI button is absent, push the open button to the right edge. */
 .sb-item.pr > .sb-pr-open:nth-child(3) { margin-inline-start: auto; }
 
-/* ── Hunk staging button (feature 11) ── */
-.diff-line.hunk { position: relative; }
-.diff-stage-hunk {
-  position: absolute;
+/* ── Hunk action buttons ── */
+/* A hunk can carry several actions (Stage hunk + Discard hunk), so the
+   wrapper is what sits on the bar and the buttons line up inside it.
+   Sticky, not absolute: the diff is as wide as its longest line, so a button
+   anchored to the end of the bar sat off-screen whenever a line ran long. Sticky
+   keeps it against the visible edge. The negative block margin stops the
+   buttons from making the bar taller than a code line. */
+.diff-hunk-actions {
+  position: sticky;
   inset-inline-end: 6px;
-  top: 50%;
-  transform: translateY(-50%);
+  margin-inline-start: auto;
+  margin-block: -3px;
+  padding-inline-start: 12px;
+  align-self: center;
+  display: inline-flex;
+  gap: 6px;
+  z-index: 1;
+}
+.diff-stage-hunk {
   font-size: 10.5px;
   padding: 1px 7px;
   white-space: nowrap;
 }
+.diff-stage-hunk.danger:hover:not(:disabled) {
+  color: var(--red);
+  box-shadow: inset 0 0 0 1px var(--red);
+}
 
-/* ── Line-level staging ── */
-.diff-line.selectable {
+/* ── Line-level actions ── */
+.diff-line.selectable,
+.diff-split-cell.selectable {
   cursor: pointer;
 }
-.diff-line.selectable:hover {
+.diff-line.selectable:hover,
+.diff-split-cell.selectable:hover {
   filter: brightness(1.12);
 }
-.diff-line.line-selected {
+.diff-line.line-selected,
+.diff-split-cell.line-selected {
   box-shadow: inset 3px 0 0 var(--accent);
   background: color-mix(in srgb, var(--accent) 14%, transparent);
 }
@@ -15405,9 +15424,6 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .diff-split { display: flex; flex-direction: column; clear: both; min-width: 0; }
 .diff-split-hunk {
   display: flex; align-items: center; gap: 8px;
-  /* `.diff-stage-hunk` is absolutely positioned; without this it anchors to the
-     scroll container and floats mid-diff instead of sitting on the hunk bar. */
-  position: relative;
   background: var(--bg-2); color: var(--code-comment, var(--text-2));
   padding: 1px 8px; border-top: 1px solid var(--border-soft); border-bottom: 1px solid var(--border-soft);
 }
@@ -15445,16 +15461,10 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .is-nowrap .diff-split-cell,
 .is-nowrap .diff-split-hunk { height: 1.55em; line-height: 1.55; padding-block: 0; }
 .is-nowrap .diff-split-hunk { border-top: 0; border-bottom: 0; }
-/* The hunk bar now runs the length of the longest line, so an end-anchored
-   button would sit off-screen until you scrolled to it. Sticky keeps it against
-   the visible edge of its own column instead. */
+/* The hunk bar runs the length of the longest line; the sticky
+   `.diff-hunk-actions` keeps its buttons against the visible edge of their own
+   column. */
 .is-nowrap .diff-stage-hunk {
-  position: sticky;
-  inset-inline-end: 6px;
-  top: auto;
-  transform: none;
-  margin-inline-start: auto;
-  align-self: center;
   /* Has to fit inside a one-line row without stretching it. */
   padding: 0 7px;
   font-size: 10px;

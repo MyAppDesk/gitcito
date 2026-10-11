@@ -50,7 +50,7 @@ import { forkUpstream, prsFromFork } from '../lib/hosting'
 import { parseRouteConflict } from '../lib/stackOrder'
 import { timeAgo } from '../lib/timeAgo'
 import { splitCommitMessage } from '../lib/commitMenuCapabilities'
-import { t, interp } from '../i18n'
+import { t, interp, type TranslationKey } from '../i18n'
 
 /** Repos already warned this session about pushing tracked secrets (don't nag). */
 const secretPushWarned = new Set<string>()
@@ -1253,6 +1253,24 @@ function isNoOpConflictError(path: string): (message: string) => boolean {
   }
 }
 
+/**
+ * The five things a hunk or line selection can be sent to, and how `git apply`
+ * carries each out. Undo applies the same patch the opposite way to the same
+ * target, which is exact: a patch that applied cleanly one way applies cleanly
+ * back. Keys, not strings, so a language switch is picked up (see i18n rule 4).
+ */
+export type HunkActionKind = 'stage' | 'unstage' | 'discard' | 'revert' | 'apply'
+const HUNK_ACTIONS = {
+  stage: { target: 'index', reverse: false, doneKey: 'act.hunkStaged', undoKey: 'undoLabel.hunkStage' },
+  unstage: { target: 'index', reverse: true, doneKey: 'act.hunkUnstaged', undoKey: 'undoLabel.hunkUnstage' },
+  discard: { target: 'worktree', reverse: true, doneKey: 'act.hunkDiscarded', undoKey: 'undoLabel.hunkDiscard' },
+  revert: { target: 'worktree', reverse: true, doneKey: 'act.hunkReverted', undoKey: 'undoLabel.hunkRevert' },
+  apply: { target: 'worktree', reverse: false, doneKey: 'act.hunkApplied', undoKey: 'undoLabel.hunkApply' }
+} as const satisfies Record<
+  HunkActionKind,
+  { target: 'index' | 'worktree'; reverse: boolean; doneKey: TranslationKey; undoKey: TranslationKey }
+>
+
 export const repoActions = {
   // Refreshes every slice on purpose: moving HEAD rewrites the `HEAD -> …`
   // decoration the graph reads off each commit, plus the per-directory tree
@@ -2251,6 +2269,64 @@ export const repoActions = {
       undefined,
       ['log', 'status', 'branches', 'treeStatus']
     )
+  },
+
+  /**
+   * Send a hunk or line patch where `kind` says. Discard asks first, since it
+   * throws away work that exists nowhere else; the undo entry (and the WIP
+   * snapshot the main process takes) are the second line of defence. `onStart`
+   * fires once the patch is really on its way (after the confirm, for discard).
+   * Resolves false when git refused the patch.
+   */
+  applyHunk: (
+    path: string,
+    patch: string,
+    kind: HunkActionKind,
+    ignoreWhitespace = false,
+    onStart?: () => void
+  ): Promise<boolean> => {
+    const op = HUNK_ACTIONS[kind]
+    // A working-tree action may have needed the three-way merge; when that left
+    // conflict markers, say so after the success toast rather than let it pass
+    // as a clean change.
+    let conflicts = 0
+    const send = async (reverse: boolean): Promise<void> => {
+      conflicts = (await gitApi.applyHunkPatch(path, patch, op.target, reverse, ignoreWhitespace)).conflicts
+    }
+    const perform = (): Promise<boolean> => {
+      onStart?.()
+      return useRepoStore
+        .getState()
+        .run(
+          path,
+          t(op.doneKey),
+          () => send(op.reverse),
+          { label: t(op.undoKey), undo: () => send(!op.reverse), redo: () => send(op.reverse) },
+          null,
+          (msg) => {
+            if (!/patch does not apply|patch failed/i.test(msg)) return false
+            toast('error', t('hunk.doesNotApply'), { repoPath: path })
+            return true
+          },
+          ['status', 'treeStatus']
+        )
+        .then((ok) => {
+          if (ok && conflicts > 0) toast('info', t('hunk.mergedWithConflicts'), { repoPath: path })
+          return ok
+        })
+    }
+    if (kind !== 'discard') return perform()
+    return new Promise((resolve) => {
+      useUIStore.getState().openModal({
+        kind: 'confirm',
+        danger: true,
+        title: t('hunk.discardConfirmTitle'),
+        message: t('hunk.discardConfirmMessage'),
+        confirmLabel: t('hunk.discardConfirmOk'),
+        // Cancelling leaves it pending: there is nothing to follow up on.
+        onConfirm: () => void perform().then(resolve)
+      })
+    })
   },
 
   stashDrop: (path: string, index = 0) =>

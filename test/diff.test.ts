@@ -4,6 +4,7 @@ import {
   wordDiff,
   wordRangesByLine,
   buildSplitRows,
+  splitEditPartners,
   computeGutterChanges,
   gutterMarksByLine
 } from '../src/renderer/src/lib/diff'
@@ -94,6 +95,17 @@ describe('buildSplitRows', () => {
     expect(changes.length).toBe(2)
     expect(changes[1].left).toBeUndefined()
     expect(changes[1].right?.text).toBe('new2')
+  })
+})
+
+describe('splitEditPartners', () => {
+  it('pairs each deletion with the addition opposite it, both ways', () => {
+    const lines = parseDiff(`@@ -1,2 +1,2 @@\n-a\n-b\n+A\n+B`)
+    expect([...splitEditPartners(lines)].sort()).toEqual([[1, 3], [2, 4], [3, 1], [4, 2]])
+  })
+
+  it('leaves unbalanced runs unpaired', () => {
+    expect(splitEditPartners(parseDiff(`@@ -1,1 +1,2 @@\n-old\n+new1\n+new2`)).size).toBe(0)
   })
 })
 

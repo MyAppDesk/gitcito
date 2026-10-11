@@ -61,6 +61,7 @@ import { hostingApi, gitApi, cliApi, keychainApi } from './infrastructure/api'
 import { cliViewAction, type CliAction } from './lib/cliView'
 import type { CliOpenPayload } from '../../shared/cli'
 import { runAppCommand } from './appCommands'
+import { chooseRepositories } from './openRepositories'
 import { useAppMenu } from './useAppMenu'
 
 /**
@@ -158,9 +159,8 @@ function GroupView({ tab }: { tab: GroupTab }): React.JSX.Element {
   const openModal = useUIStore((s) => s.openModal)
 
   const openRepo = async (): Promise<void> => {
-    const path = await window.api.selectDirectory()
-    if (!path) return
-    addRepoToGroup(tab.id, { path, name: path.split('/').pop() ?? path })
+    const inGroup = (path: string): boolean => tab.repos.some((r) => r.path === path)
+    for (const repo of await chooseRepositories(inGroup)) addRepoToGroup(tab.id, repo)
   }
 
   const cloneRepo = (): void => {

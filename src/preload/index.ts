@@ -66,6 +66,7 @@ const api = {
   },
 
   selectDirectory: (title?: string): Promise<string | null> => ipcRenderer.invoke('dialog:selectDirectory', title),
+  selectDirectories: (title?: string): Promise<string[]> => ipcRenderer.invoke('dialog:selectDirectories', title),
   savePatch: (defaultName: string, content: string): Promise<string | null> =>
     ipcRenderer.invoke('dialog:savePatch', defaultName, content),
   openPatch: (): Promise<{ path: string; content: string } | null> => ipcRenderer.invoke('dialog:openPatch'),

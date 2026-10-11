@@ -73,6 +73,7 @@ interface PreloadApi {
     set(granted: boolean): Promise<boolean>
   }
   selectDirectory(title?: string): Promise<string | null>
+  selectDirectories(title?: string): Promise<string[]>
   savePatch(defaultName: string, content: string): Promise<string | null>
   openPatch(): Promise<{ path: string; content: string } | null>
   saveBinary(

@@ -1568,6 +1568,15 @@ async function resolveDrop(repoPath: string, dir: string, name: string, mode: Fs
 }
 
 export const gitService = {
+  /** A folder picked alongside others is skipped, not opened, when this is false. */
+  async isRepository(repoPath: string): Promise<boolean> {
+    try {
+      if (!(await stat(repoPath)).isDirectory()) return false
+      return await gitFor(repoPath).checkIsRepo()
+    } catch {
+      return false
+    }
+  },
   async open(repoPath: string): Promise<RepoSummary> {
     const git = gitFor(repoPath)
     const isRepo = await git.checkIsRepo()
@@ -7379,6 +7388,7 @@ function lockFor(repoPath: string): RwLock {
 const APP_LEVEL_METHODS = new Set<string>(['clone', 'init', 'remoteBranches'])
 
 const READ_METHODS = new Set<string>([
+  'isRepository',
   'open',
   'lastFetchAt',
   'upstreamSuggestion',

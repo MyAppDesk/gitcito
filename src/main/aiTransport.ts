@@ -124,9 +124,37 @@ export function missingCredential(cfg: AIConfig): boolean {
   return !isLocal(baseUrl(cfg))
 }
 
+/** Long enough to keep a gateway's whole explanation, short enough for a toast and an issue URL. */
+const ERROR_BODY_LIMIT = 1500
+
+/**
+ * The provider's own explanation when the body is the usual `{ error: { message } }`
+ * JSON, else the raw body. Cutting the raw JSON at a fixed length used to drop the
+ * part of the message that said what was wrong.
+ */
+export function aiErrorMessage(status: number, body: string): string {
+  let detail = body.trim()
+  try {
+    const parsed = JSON.parse(detail) as { error?: { message?: unknown } | string; message?: unknown }
+    const message =
+      typeof parsed.error === 'string'
+        ? parsed.error
+        : typeof parsed.error?.message === 'string'
+          ? parsed.error.message
+          : typeof parsed.message === 'string'
+            ? parsed.message
+            : null
+    if (message) detail = message.trim()
+  } catch {
+    // Not JSON: keep the body as it came.
+  }
+  if (detail.length > ERROR_BODY_LIMIT) detail = `${detail.slice(0, ERROR_BODY_LIMIT)}…`
+  return `AI request failed (${status}): ${detail}`
+}
+
 async function readError(res: Response): Promise<string> {
   const body = await res.text().catch(() => '')
-  return `AI request failed (${res.status}): ${body.slice(0, 200)}`
+  return aiErrorMessage(res.status, body)
 }
 
 async function callOpenAI(
@@ -165,7 +193,9 @@ async function callOpenAI(
   }
 
   let res = await post(payload)
-  if (!res.ok && mayDisableThinking && (res.status === 400 || res.status === 422)) {
+  // Any status, not only 400/422: LiteLLM forwards the upstream SDK's rejection
+  // of the unknown argument as a 500.
+  if (!res.ok && mayDisableThinking) {
     const body = await res.text().catch(() => '')
     if (/chat_template_kwargs|enable_thinking/i.test(body)) {
       // Strict OpenAI-compatible gateways may reject this self-hosted-model
@@ -173,7 +203,7 @@ async function callOpenAI(
       const { chat_template_kwargs: _ignored, ...compatible } = payload
       res = await post(compatible)
     } else {
-      throw new Error(`AI request failed (${res.status}): ${body.slice(0, 200)}`)
+      throw new Error(aiErrorMessage(res.status, body))
     }
   }
   if (!res.ok) throw new Error(await readError(res))

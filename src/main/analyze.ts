@@ -418,6 +418,9 @@ export async function dropIgnored(repoPath: string, problems: Problem[]): Promis
         done(failed ? new Set() : new Set(stdout.toString().split('\0').filter(Boolean)))
       }
     )
+    // A git that exits before reading (not a repo, no git) closes the pipe; the
+    // exit callback above already handles that, so EPIPE must not escape.
+    child.stdin?.on('error', () => {})
     child.stdin?.end(files.join('\0'))
   })
   return ignored.size === 0 ? candidates : candidates.filter((p) => !ignored.has(p.file))

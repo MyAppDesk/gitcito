@@ -263,6 +263,27 @@ async function noCredential(provider: string, remoteUrl?: string): Promise<Error
   )
 }
 
+/**
+ * A failed read of one GitHub repository. GitHub answers 404, not 403, for a
+ * private repository the caller cannot see, so a bare "404" sent people looking
+ * for a typo when the fix was a credential.
+ */
+export async function githubRepoError(
+  status: number,
+  slug: string,
+  authed: boolean,
+  remoteUrl: string
+): Promise<Error> {
+  if (status !== 404) return new Error(`GitHub API error (${status})`)
+  if (!authed) {
+    const setup = (await noCredential('github', remoteUrl)).message
+    return new Error(`GitHub cannot see ${slug} without signing in — it is probably private. ${setup}`)
+  }
+  return new Error(
+    `GitHub cannot find ${slug} (404). Either the repository is private and your credential has no access to it — for a fine-grained token, add this repository to it — or it was renamed or deleted: check the remote URL.`
+  )
+}
+
 async function listPullRequests(
   remoteUrl: string,
   tokens: HostTokens
@@ -342,7 +363,7 @@ async function listPullRequests(
     const res = await fetch(`https://api.github.com/repos/${parsed.owner}/${parsed.repo}/pulls?state=open&per_page=30`, {
       headers
     })
-    if (!res.ok) throw new Error(`GitHub API error (${res.status})`)
+    if (!res.ok) throw await githubRepoError(res.status, `${parsed.owner}/${parsed.repo}`, !!auth, remoteUrl)
     const data = (await res.json()) as Array<{
       number: number
       title: string
@@ -457,7 +478,7 @@ async function listReleases(
   const res = await fetch(`https://api.github.com/repos/${parsed.owner}/${parsed.repo}/releases?per_page=50`, {
     headers
   })
-  if (!res.ok) throw new Error(`GitHub API error (${res.status})`)
+  if (!res.ok) throw await githubRepoError(res.status, `${parsed.owner}/${parsed.repo}`, !!auth, remoteUrl)
   const data = (await res.json()) as Array<{
     id: number
     tag_name: string | null

@@ -2553,6 +2553,18 @@ export const shots = [
       await page.waitForTimeout(600)
     }
   },
+  {
+    // A restored tab whose folder has gone. 'my-project' is not a playground
+    // repo, so its demo path never exists — the tab opens straight onto the
+    // "not found" card with Locate… and Retry, no repo moved on disk.
+    out: 'missing-repository',
+    repos: ['my-project'],
+    themes: ['light'],
+    drive: async (page) => {
+      await page.waitForSelector('.missing-repository', { timeout: 10000 })
+      await page.waitForTimeout(300)
+    }
+  },
 ]
 // ── Animated clips (GIF) ──────────────────────────────────────────────────────
 // Captured by sampling screenshots at a steady fps, so GIF playback stays

@@ -128,6 +128,9 @@ read Gitcito made against it used to fail with its own error toast. Now the
 folder is checked first, and the tab shows **Repository folder not found** with
 the saved path instead of the usual workspace:
 
+![A restored tab whose folder is missing: the Repository folder not found card
+with the saved path and its Locate… and Retry buttons](../screenshots/missing-repository.webp)
+
 | Button | What it does |
 |---|---|
 | Locate… | Pick the folder's new location. It must be a Git repository; the tab, alias, profile binding and star move to it |

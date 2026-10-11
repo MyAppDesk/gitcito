@@ -16,6 +16,7 @@ import { useUIStore } from '../stores/ui'
 import { useRepoStore } from '../stores/repo'
 import { useSettingsStore } from '../stores/settings'
 import { useT, interp } from '../i18n'
+import { NumberField } from './NumberField'
 
 type RunState = { workflow: string; running: boolean; exit: number | null }
 type SweepRow = { sha: string; subject: string; state: 'pending' | 'running' | 'pass' | 'fail' }
@@ -237,16 +238,15 @@ export function LocalCIModal({ repoPath, rev }: { repoPath: string; rev?: string
                 setRows(null)
               }}
             />
-            <input
+            <NumberField
               className="modal-input localci-budget"
-              type="number"
               min={1}
               max={50}
               value={budget}
-              aria-label={t('localCi.budgetLabel')}
+              ariaLabel={t('localCi.budgetLabel')}
               title={t('localCi.budgetLabel')}
-              onChange={(e) => {
-                setBudget(Math.max(1, Math.min(50, Number(e.target.value) || 1)))
+              onChange={(n) => {
+                setBudget(n)
                 setRows(null)
               }}
             />

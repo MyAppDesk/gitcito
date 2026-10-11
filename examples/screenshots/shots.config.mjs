@@ -877,6 +877,33 @@ export const shots = [
     }
   },
   {
+    // Repository switcher (⌘J). Opens several tabs and visits them so the list
+    // shows its real order: most recently used first, the current one dimmed.
+    out: 'repo-switcher',
+    repos: ['merge-conflict'],
+    recents: ['line-staging', 'octopus-merge', 'tags-and-releases', 'deep-history-monorepo', 'code-search', 'insights'],
+    themes: ['light'],
+    drive: async (page, paths) => {
+      const order = ['insights', 'code-search', 'deep-history-monorepo', 'tags-and-releases', 'octopus-merge', 'line-staging']
+      await page.evaluate(async ({ paths, order }) => {
+        const s = window.__shot
+        for (const name of order) s.settings.getState().openRepoTab({ path: paths[name], name })
+        // Visit them oldest first, ending on merge-conflict, to build the recency list.
+        const tabs = s.settings.getState().settings.tabs
+        for (const name of [...order, 'merge-conflict']) {
+          const tab = tabs.find((t) => t.kind === 'repo' && t.activeRepoPath === paths[name])
+          s.settings.getState().setActiveTab(tab.id)
+          await s.waitForRepo(paths[name]).catch(() => {})
+          await new Promise((r) => setTimeout(r, 150))
+        }
+      }, { paths, order })
+      await page.waitForTimeout(600)
+      await page.evaluate(() => window.__shot.ui.getState().setRepoSwitcher(true))
+      await page.locator('.repo-switcher-row').first().waitFor()
+      await page.waitForTimeout(400)
+    }
+  },
+  {
     // In-app code search (⌘⇧F) — git grep across the working tree.
     out: 'code-search',
     repos: ['code-search'],
@@ -1008,6 +1035,16 @@ export const shots = [
       await page.waitForSelector('.context-menu')
       await page.waitForTimeout(400)
     }
+  },
+  {
+    // The repository and branch pickers with names too long for the toolbar:
+    // each value truncates with an ellipsis and the chevron stays beside it.
+    // Cropped, because the detail is a few pixels in a 1440px window.
+    out: 'toolbar-picker-chevron',
+    repos: ['pr-ready-branch'],
+    themes: ['light'],
+    clipTo: '.toolbar-left',
+    clipPad: 10
   },
   {
     // The same menu on a remote branch — rename drops out and delete targets
@@ -2551,6 +2588,39 @@ export const shots = [
         repo
       )
       await page.waitForTimeout(600)
+    }
+  },
+  {
+    // A restored tab whose folder has gone. 'my-project' is not a playground
+    // repo, so its demo path never exists — the tab opens straight onto the
+    // "not found" card with Locate… and Retry, no repo moved on disk.
+    out: 'missing-repository',
+    repos: ['my-project'],
+    themes: ['light'],
+    drive: async (page) => {
+      await page.waitForSelector('.missing-repository', { timeout: 10000 })
+      await page.waitForTimeout(300)
+    }
+  },
+  {
+    // Settings → General with a value below the range still being typed: the
+    // field is flagged, not clamped, until it is left. Typed for real and never
+    // blurred — leaving the field would snap it to 50 and lose the state.
+    out: 'number-field-range',
+    repos: ['octopus-merge'],
+    themes: ['light'],
+    clipTo: '.modal',
+    drive: async (page) => {
+      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'general' }))
+      await page.waitForTimeout(400)
+      const input = page
+        .locator('.settings-field', { has: page.locator('.settings-field-label', { hasText: 'Initial commits loaded' }) })
+        .locator('input')
+      await input.scrollIntoViewIfNeeded()
+      await input.click()
+      await page.keyboard.press('ControlOrMeta+A')
+      await page.keyboard.type('20')
+      await page.waitForSelector('.number-field-error', { timeout: 5000 })
     }
   },
 ]

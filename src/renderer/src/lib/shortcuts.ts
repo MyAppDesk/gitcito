@@ -22,6 +22,12 @@ export const SHORTCUTS: ShortcutDef[] = [
     defaultCombo: 'mod+k'
   },
   {
+    id: 'repo-switcher',
+    labelKey: 'sc.goToRepository',
+    categoryKey: 'sc.cat.navigation',
+    defaultCombo: 'mod+j'
+  },
+  {
     id: 'code-search',
     labelKey: 'sc.searchCode',
     categoryKey: 'sc.cat.navigation',

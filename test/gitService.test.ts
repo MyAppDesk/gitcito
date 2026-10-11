@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { gitService } from '../src/main/git'
+import { gitService, gitMethodIsRead } from '../src/main/git'
 import { repoPath } from './helpers'
 import { mkdtempSync, rmSync } from 'fs'
 import { tmpdir } from 'os'
@@ -187,5 +187,16 @@ describe('picking several folders to open', () => {
     } finally {
       rmSync(plain, { recursive: true, force: true })
     }
+  })
+})
+
+describe('saved repository folder availability', () => {
+  it('distinguishes missing folders and files before creating a Git instance', async () => {
+    const path = repoPath('line-staging')
+    expect(await gitService.directoryExists(path)).toBe(true)
+    expect(await gitService.directoryExists(`${path}/does-not-exist`)).toBe(false)
+    expect(await gitService.directoryExists(`${path}/README.md`)).toBe(false)
+    expect(await gitService.directoryExists(`${path}/README.md/child`)).toBe(false)
+    expect(gitMethodIsRead('directoryExists')).toBe(true)
   })
 })

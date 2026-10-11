@@ -30,7 +30,7 @@ import {
   updateFolder
 } from '../lib/repoFolders'
 import { reposApi, settingsApi } from '../infrastructure/api'
-import { repathRepoSettings } from '../lib/repoRepath'
+import { repathRepoSettings, repathRepoTabs } from '../lib/repoRepath'
 import type { WorkspaceCandidate } from '../lib/workspacePlan'
 import { useUIStore } from './ui'
 import { applyRepoAlias, canonicalRepoPath, migrateRepoAliases, repoDisplayName } from '../lib/repoAlias'
@@ -251,7 +251,7 @@ interface SettingsState {
    *  colours are deleted rather than stored as empty, so `in` is enough to ask
    *  whether a section has one. */
   setRepoSectionColor(key: string, color: string | null): void
-  /** A repo that moved keeps its alias, profile binding and star: all three are
+  /** A repo that moved keeps its tabs, alias, profile binding and star: all are
    *  keyed by path, so re-pointing the registry has to re-key them too. */
   repathRepo(oldPath: string, newPath: string): void
   reorderReposInGroup(tabId: string, fromPath: string, toPath: string | null): void
@@ -751,6 +751,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   repathRepo: (oldPath, newPath) =>
     get().update((s) => ({
       ...s,
+      tabs: repathRepoTabs(s.tabs, oldPath, newPath),
+      workspaces: s.workspaces.map((w) => ({ ...w, tabs: repathRepoTabs(w.tabs, oldPath, newPath) })),
       ...repathRepoSettings(
         { repoAliases: s.repoAliases, repoProfiles: s.repoProfiles, favouriteRepos: s.favouriteRepos ?? [] },
         oldPath,

@@ -1513,7 +1513,8 @@ async function buildBisectStatus(repoPath: string, lastOut = ''): Promise<Bisect
   }
   if (!inProgress) return empty
 
-  const finishedMatch = lastOut.match(/([0-9a-f]{40}) is the first bad commit/)
+  // Git 2.56 quotes the bisect term; older releases print it unquoted.
+  const finishedMatch = lastOut.match(/([0-9a-f]{40}) is the first '?bad'? commit/)
   const stepsMatch = lastOut.match(/roughly (\d+) step/)
   const needGood = /waiting for good|waiting for both/.test(lastOut)
   const needBad = /waiting for both|bad commit/.test(lastOut) && !/bad commit known/.test(lastOut)
@@ -1575,6 +1576,16 @@ export const gitService = {
       return await gitFor(repoPath).checkIsRepo()
     } catch {
       return false
+    }
+  },
+  /** Check a saved tab's folder before constructing simple-git or starting reads, so a
+   *  moved or unplugged repository reads as "missing" instead of a burst of git errors. */
+  async directoryExists(repoPath: string): Promise<boolean> {
+    try {
+      return (await stat(repoPath)).isDirectory()
+    } catch (err) {
+      if (['ENOENT', 'ENOTDIR'].includes((err as NodeJS.ErrnoException).code ?? '')) return false
+      throw err
     }
   },
   async open(repoPath: string): Promise<RepoSummary> {
@@ -7389,6 +7400,7 @@ const APP_LEVEL_METHODS = new Set<string>(['clone', 'init', 'remoteBranches'])
 
 const READ_METHODS = new Set<string>([
   'isRepository',
+  'directoryExists',
   'open',
   'lastFetchAt',
   'upstreamSuggestion',

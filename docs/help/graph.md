@@ -58,6 +58,15 @@ with a hundred.
 
 ![Graph style settings with live preview](../screenshots/settings-graph.webp)
 
+- **How much history loads**: Settings → General → **Initial commits loaded**
+  and **Commits per "load more"**, each from 50 to 5,000. A number outside that
+  range is outlined in red with the range beneath it while you type, and snaps
+  to the nearest bound when you leave the field or press Enter; Escape puts the
+  saved value back.
+
+![Settings → General with 20 typed into Initial commits loaded: the field is
+outlined in red with "From 50 to 5,000" beneath it](../screenshots/number-field-range.webp)
+
 ## Where stashes sit
 
 A stash is drawn as its own row, hanging off the commit it was taken from on a

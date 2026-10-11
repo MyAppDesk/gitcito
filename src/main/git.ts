@@ -1513,7 +1513,8 @@ async function buildBisectStatus(repoPath: string, lastOut = ''): Promise<Bisect
   }
   if (!inProgress) return empty
 
-  const finishedMatch = lastOut.match(/([0-9a-f]{40}) is the first bad commit/)
+  // Git 2.56 quotes the bisect term; older releases print it unquoted.
+  const finishedMatch = lastOut.match(/([0-9a-f]{40}) is the first '?bad'? commit/)
   const stepsMatch = lastOut.match(/roughly (\d+) step/)
   const needGood = /waiting for good|waiting for both/.test(lastOut)
   const needBad = /waiting for both|bad commit/.test(lastOut) && !/bad commit known/.test(lastOut)

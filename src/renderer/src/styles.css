@@ -1190,6 +1190,8 @@ textarea:focus {
   flex-direction: column;
   align-items: flex-start;
   min-width: 0;
+  max-width: 130px;
+  overflow: hidden;
 }
 .repo-pill-label {
   font-size: 9px;
@@ -1198,16 +1200,20 @@ textarea:focus {
   color: var(--text-3);
   line-height: 1.1;
 }
+/* Block, not flex: text-overflow never reaches the anonymous flex item a bare
+   text node becomes, so a long name spilled out under the chevron. Capped at
+   the stack's width so it truncates there instead. */
 .repo-pill-stack strong {
-  display: flex;
-  align-items: center;
-  gap: 4px;
+  display: block;
   font-size: 13px;
   font-weight: 600;
-  max-width: 130px;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.repo-pill-stack strong svg {
+  vertical-align: -2px;
 }
 .repo-pill svg {
   color: var(--text-3);

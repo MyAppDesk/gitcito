@@ -1010,6 +1010,16 @@ export const shots = [
     }
   },
   {
+    // The repository and branch pickers with names too long for the toolbar:
+    // each value truncates with an ellipsis and the chevron stays beside it.
+    // Cropped, because the detail is a few pixels in a 1440px window.
+    out: 'toolbar-picker-chevron',
+    repos: ['pr-ready-branch'],
+    themes: ['light'],
+    clipTo: '.toolbar-left',
+    clipPad: 10
+  },
+  {
     // The same menu on a remote branch — rename drops out and delete targets
     // the remote after its own confirmation.
     out: 'branch-dropdown-remote-context-menu',

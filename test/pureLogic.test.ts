@@ -16,6 +16,7 @@ import { childrenOf, clearDoneTodos, createTodo, filterTodos, moveTodo, patchTod
 import { branchMatches, isSafeLinkUrl, isSafeRepoRelPath, parseRepoConfig, satisfiesNodeRange, serializeRepoConfig, validateRepoConfig } from '../src/shared/repoConfig'
 import { appendTrailers, configTrailers, doctorSummary, effectiveProtected, isProtectedBranch, ticketSegments } from '../src/renderer/src/lib/repoConfig'
 import { buildMenuSpec } from '../src/renderer/src/lib/appMenu'
+import { planRepositoryPick } from '../src/renderer/src/lib/repositoryPick'
 import { acceleratorFromCombo, isMenuRole } from '../src/shared/menu'
 import { MAIN_WINDOW_STATE, showMainWindow } from '../src/main/windowState'
 
@@ -7076,6 +7077,47 @@ describe('repathRepoSettings', () => {
     expect(result.repoAliases).toEqual({ '/r/same': 'Alias' })
     expect(result.repoProfiles).toEqual({ '/r/same': 'profile-1' })
     expect(result.favouriteRepos).toEqual(['/r/same'])
+  })
+})
+
+describe('planRepositoryPick', () => {
+  it('passes a single pick through, open or not, repository or not', () => {
+    expect(planRepositoryPick([{ path: '/r/plain', open: false, repo: false }])).toEqual({
+      open: [{ path: '/r/plain', name: 'plain' }],
+      notices: []
+    })
+    expect(planRepositoryPick([])).toEqual({ open: [], notices: [] })
+  })
+
+  it('skips open repositories and plain folders in a pick of several, naming each', () => {
+    const plan = planRepositoryPick([
+      { path: '/r/a', open: false, repo: true },
+      { path: '/r/b', open: true, repo: true },
+      { path: '/r/c/', open: false, repo: false },
+      { path: '/r/d', open: false, repo: true }
+    ])
+    expect(plan.open).toEqual([
+      { path: '/r/a', name: 'a' },
+      { path: '/r/d', name: 'd' }
+    ])
+    expect(plan.notices).toEqual([
+      { key: 'repos.skippedOpenOne', vars: { name: 'b' } },
+      { key: 'repos.skippedNotRepoOne', vars: { name: 'c' } }
+    ])
+  })
+
+  it('names several skipped folders in one notice', () => {
+    const plan = planRepositoryPick([
+      { path: '/r/a', open: true, repo: true },
+      { path: '/r/b', open: true, repo: true },
+      { path: 'C:\\r\\x', open: false, repo: false },
+      { path: '/r/y', open: false, repo: false }
+    ])
+    expect(plan.open).toEqual([])
+    expect(plan.notices).toEqual([
+      { key: 'repos.skippedOpenMany', vars: { n: 2, names: 'a, b' } },
+      { key: 'repos.skippedNotRepoMany', vars: { n: 2, names: 'x, y' } }
+    ])
   })
 })
 

@@ -2274,6 +2274,8 @@ export const uk: Dict = {
   'localCi.rangeTitle': 'Перевірити коміт або діапазон',
   'localCi.rangeHint': 'Запускає workflow на комітах, на яких ви не перебуваєте: кожен вивантажується в тимчасове робоче дерево й коштує повного прогону — реальні хвилини на коміт. Вердикти закріплюються за кожним комітом на графі.',
   'localCi.budgetLabel': 'Максимум комітів для запуску',
+  'numberField.range': 'Від {min} до {max}',
+  'numberField.atLeast': '{min} або більше',
   'localCi.preview': 'Попередній перегляд',
   'localCi.runRange': 'Запустити {n}',
   'localCi.rangeEmpty': 'Жоден коміт не підходить.',

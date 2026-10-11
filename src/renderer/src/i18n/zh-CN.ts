@@ -2274,6 +2274,8 @@ export const zhCN: Dict = {
   'localCi.rangeTitle': '测试某个提交或范围',
   'localCi.rangeHint': '对你当前不在的提交运行工作流：每个提交都会检出到一次性工作区，并花费一次完整运行——每个提交都是真实的几分钟。判定会固定到图中的每个提交上。',
   'localCi.budgetLabel': '最多运行的提交数',
+  'numberField.range': '{min} 至 {max}',
+  'numberField.atLeast': '{min} 或更多',
   'localCi.preview': '预览',
   'localCi.runRange': '运行 {n} 个',
   'localCi.rangeEmpty': '没有匹配的提交。',

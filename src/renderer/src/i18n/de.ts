@@ -2276,6 +2276,8 @@ export const de: Dict = {
   'localCi.rangeTitle': 'Einen Commit oder Bereich testen',
   'localCi.rangeHint': 'Führt den Workflow gegen Commits aus, auf denen du nicht stehst: jeder wird in einen Wegwerf-Worktree ausgecheckt und kostet einen vollen Lauf — echte Minuten pro Commit. Urteile heften sich im Graphen an jeden Commit.',
   'localCi.budgetLabel': 'Maximal auszuführende Commits',
+  'numberField.range': 'Von {min} bis {max}',
+  'numberField.atLeast': '{min} oder mehr',
   'localCi.preview': 'Vorschau',
   'localCi.runRange': '{n} ausführen',
   'localCi.rangeEmpty': 'Kein Commit passt.',

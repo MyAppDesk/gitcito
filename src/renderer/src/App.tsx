@@ -29,6 +29,7 @@ import { DebugToolbar } from './components/DebugToolbar'
 import { ContextMenu } from './components/ContextMenu'
 import { ModalHost } from './components/ModalHost'
 import { CommandPalette } from './components/CommandPalette'
+import { RepoSwitcher } from './components/RepoSwitcher'
 import { Toasts } from './components/Toasts'
 import { UpdateBanner } from './components/UpdateBanner'
 import { RepoCosmos } from './components/cosmos/RepoCosmos'
@@ -729,6 +730,11 @@ export default function App(): React.JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settings.activeTabId, settings.activeWorkspaceId])
 
+  // The Cmd/Ctrl+J switcher lists repositories by when you last looked at them.
+  useEffect(() => {
+    if (activeRepoPath) useUIStore.getState().touchRepoMru(activeRepoPath)
+  }, [activeRepoPath])
+
   useEffect(() => {
     if (!activeRepoPath) return
     // First switch to a repo loads it; switching back to an already-loaded
@@ -1308,6 +1314,7 @@ export default function App(): React.JSX.Element {
       <ContextMenu />
       <ModalHost />
       <CommandPalette />
+      <RepoSwitcher />
       <Toasts />
       <UpdateBanner />
       <RepoCosmos />

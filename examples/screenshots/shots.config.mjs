@@ -877,6 +877,33 @@ export const shots = [
     }
   },
   {
+    // Repository switcher (⌘J). Opens several tabs and visits them so the list
+    // shows its real order: most recently used first, the current one dimmed.
+    out: 'repo-switcher',
+    repos: ['merge-conflict'],
+    recents: ['line-staging', 'octopus-merge', 'tags-and-releases', 'deep-history-monorepo', 'code-search', 'insights'],
+    themes: ['light'],
+    drive: async (page, paths) => {
+      const order = ['insights', 'code-search', 'deep-history-monorepo', 'tags-and-releases', 'octopus-merge', 'line-staging']
+      await page.evaluate(async ({ paths, order }) => {
+        const s = window.__shot
+        for (const name of order) s.settings.getState().openRepoTab({ path: paths[name], name })
+        // Visit them oldest first, ending on merge-conflict, to build the recency list.
+        const tabs = s.settings.getState().settings.tabs
+        for (const name of [...order, 'merge-conflict']) {
+          const tab = tabs.find((t) => t.kind === 'repo' && t.activeRepoPath === paths[name])
+          s.settings.getState().setActiveTab(tab.id)
+          await s.waitForRepo(paths[name]).catch(() => {})
+          await new Promise((r) => setTimeout(r, 150))
+        }
+      }, { paths, order })
+      await page.waitForTimeout(600)
+      await page.evaluate(() => window.__shot.ui.getState().setRepoSwitcher(true))
+      await page.locator('.repo-switcher-row').first().waitFor()
+      await page.waitForTimeout(400)
+    }
+  },
+  {
     // In-app code search (⌘⇧F) — git grep across the working tree.
     out: 'code-search',
     repos: ['code-search'],

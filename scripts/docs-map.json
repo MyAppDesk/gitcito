@@ -103,6 +103,7 @@
   },
   "commands": {
     "covered": {
+      "repo-switcher": "workspaces",
       "problems": "problems",
       "code-todos": "code-todos",
       "todos": "todos",

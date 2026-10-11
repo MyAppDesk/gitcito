@@ -2,7 +2,7 @@ import { ipcMain, shell } from 'electron'
 import { simpleGit, SimpleGit, type StatusResult } from 'simple-git'
 import { basename, dirname, join, resolve as resolvePath, sep } from 'path'
 import { pathToFileURL } from 'url'
-import { readFile, writeFile, unlink, stat, chmod, mkdir, readdir, rename, cp, open } from 'fs/promises'
+import { readFile, writeFile, unlink, stat, chmod, mkdir, readdir, rename, cp, open, rm } from 'fs/promises'
 import { tmpdir, homedir } from 'os'
 import { existsSync, accessSync, constants as fsConstants } from 'fs'
 import { spawn, spawnSync, execFile } from 'child_process'
@@ -73,6 +73,7 @@ import type {
   ChurnPoint,
   CosmosCommit,
   ChangelogResult,
+  SavedWork,
   SnapshotInfo,
   SnapshotKind,
   TeammateRadarEntry,
@@ -3321,6 +3322,54 @@ export const gitService = {
     if (untracked.length) await git.raw(['restore', '--source', `${sha}^3`, '--worktree', '--', ...untracked])
   },
 
+  /**
+   * Save what is staged and what is on disk as two trees, right before a
+   * discard, so `restoreWork` can undo it exactly. Writes objects only: no ref,
+   * the real index untouched. Null when there is nothing to save, or when the
+   * index cannot be written as a tree (a merge still has conflicts).
+   */
+  async captureWork(repoPath: string): Promise<SavedWork | null> {
+    const index = (await runGit(repoPath, ['write-tree']).catch(() => '')).trim()
+    if (!index) return null
+    const gitDir = (await runGit(repoPath, ['rev-parse', '--absolute-git-dir'])).trim()
+    const tmpIndex = join(gitDir, `gitcito-save-${process.pid}-${Date.now()}`)
+    const env = { GIT_INDEX_FILE: tmpIndex }
+    try {
+      // Seeded from the staged tree, so `add -A` in the throwaway index records
+      // the disk on top of it — untracked files included, ignored ones not
+      // (a discard leaves those alone anyway).
+      await runGit(repoPath, ['read-tree', index], env)
+      await runGit(repoPath, ['add', '-A'], env)
+      const worktree = (await runGit(repoPath, ['write-tree'], env)).trim()
+      return worktree ? { index, worktree } : null
+    } catch {
+      return null
+    } finally {
+      await unlink(tmpIndex).catch(() => {})
+    }
+  },
+
+  /**
+   * Put `paths` back as `captureWork` saved them: their staged version into the
+   * index, their content on disk. Only those paths — anything else may have
+   * moved on since and is left alone. A path that did not exist then is removed.
+   */
+  async restoreWork(repoPath: string, saved: SavedWork, paths: string[]): Promise<void> {
+    const root = resolvePath(repoPath)
+    for (const path of paths) {
+      const full = resolvePath(repoPath, path)
+      if (!full.startsWith(root + sep)) throw new Error(`Refusing to restore outside the repository: ${path}`)
+      // A path staged neither then nor now matches nothing, which git reports
+      // as an error; there is simply nothing to put back in the index.
+      await runGit(repoPath, ['restore', '--source', saved.index, '--staged', '--', path]).catch((err: Error) => {
+        if (!/did not match/i.test(err.message)) throw err
+      })
+      const existed = (await runGit(repoPath, ['ls-tree', '--name-only', saved.worktree, '--', path])).trim()
+      if (existed) await runGit(repoPath, ['restore', '--source', saved.worktree, '--worktree', '--', path])
+      else await rm(full, { force: true }).catch(() => {})
+    }
+  },
+
   /** Overwrite the working copies of `paths` with their content at `hash` —
    *  "take these changes" from a commit without touching HEAD or the index. */
   async restoreFromCommit(repoPath: string, hash: string, paths: string[]): Promise<void> {
@@ -4217,7 +4266,15 @@ export const gitService = {
       } catch {
         /* not in HEAD — staged-new */
       }
-      await git.raw(['rm', '-f', '--', f]).catch(() => {})
+      // Staged-new: out of the index and off the disk. When it is no longer in
+      // the index either (Discard all unstages first), it is a file git never
+      // had — remove it the way discarding an untracked file would.
+      const removed = await git.raw(['rm', '-f', '--', f]).then(() => true, () => false)
+      if (!removed) {
+        const root = resolvePath(repoPath)
+        const full = resolvePath(repoPath, f)
+        if (full.startsWith(root + sep)) await rm(full, { force: true })
+      }
     }
   },
 

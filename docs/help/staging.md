@@ -3,7 +3,7 @@ title: Staging
 category: Working with changes
 order: 30
 summary: Stage whole files, single hunks, or individual lines.
-keywords: staging stage unstage discard hunk lines index partial copy path relative change summary chips
+keywords: staging stage unstage discard discard all undo discard restore hunk lines index partial copy path relative change summary chips
 ---
 
 # Staging
@@ -38,6 +38,33 @@ commit without deleting it first.
 
 Discard works at the same levels, and always asks. Untracked files are deleted;
 tracked ones go back to their staged (or committed) state.
+
+**Discard everything** (the bin beside the commit button) throws away every
+change, staged and unstaged, newly added files included: a file you had
+`git add`ed but never committed is removed, not left behind as untracked.
+
+![Discard all changes, saying new files go too and that Undo brings them back](../screenshots/discard-all-undo.webp)
+
+### Undoing a discard
+
+Discarding a file, a folder or everything can be undone. Right before it runs,
+Gitcito saves what was staged and what was on disk as two git trees, and the
+discard goes on the undo stack. **Undo** (the toolbar button, or
+*Repository → Undo last operation*) puts the discarded files back exactly as
+they were: the staged part staged, the unstaged part on disk, new and untracked
+files recreated. The confirm tells you whether the discard can be undone.
+
+Undo touches only the files that were discarded. Anything you changed elsewhere
+since is left alone; a discarded file you have edited again since is
+overwritten with the saved version.
+
+**Limits.** While a merge still has conflicts the index cannot be saved as a
+tree, so that discard gets no undo entry and its confirm says it cannot be
+undone. Ignored files are never discarded, so they are never saved either. The
+saved trees are plain git objects with no ref pointing at them: they last as
+long as the undo entry, and `git gc` may prune them after its grace period (two
+weeks by default). For a safety net that outlives the session, see
+[guard snapshots](recovery.md).
 
 ## Keyboard
 

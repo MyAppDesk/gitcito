@@ -16896,3 +16896,26 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .ws-plan-name { font-weight: 600; color: var(--text-0); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ws-plan-count { font-size: 11.5px; color: var(--text-2); white-space: nowrap; }
 .ws-plan-note { font-size: 11px; color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* A saved tab whose folder has gone: Locate / Retry instead of the workspace. */
+.missing-repository .welcome-card {
+  max-width: 560px;
+  text-align: center;
+}
+
+.missing-repository .welcome-card > svg {
+  color: var(--text-2);
+}
+
+.missing-repository-path {
+  display: block;
+  color: var(--text-2);
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
+
+.missing-repository-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}

@@ -1568,6 +1568,16 @@ async function resolveDrop(repoPath: string, dir: string, name: string, mode: Fs
 }
 
 export const gitService = {
+  /** Check a saved tab's folder before constructing simple-git or starting reads, so a
+   *  moved or unplugged repository reads as "missing" instead of a burst of git errors. */
+  async directoryExists(repoPath: string): Promise<boolean> {
+    try {
+      return (await stat(repoPath)).isDirectory()
+    } catch (err) {
+      if (['ENOENT', 'ENOTDIR'].includes((err as NodeJS.ErrnoException).code ?? '')) return false
+      throw err
+    }
+  },
   async open(repoPath: string): Promise<RepoSummary> {
     const git = gitFor(repoPath)
     const isRepo = await git.checkIsRepo()
@@ -7379,6 +7389,7 @@ function lockFor(repoPath: string): RwLock {
 const APP_LEVEL_METHODS = new Set<string>(['clone', 'init', 'remoteBranches'])
 
 const READ_METHODS = new Set<string>([
+  'directoryExists',
   'open',
   'lastFetchAt',
   'upstreamSuggestion',

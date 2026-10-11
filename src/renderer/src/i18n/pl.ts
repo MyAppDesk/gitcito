@@ -3794,6 +3794,8 @@ export const pl: Dict = {
   'repos.forgetConfirm': 'Usunąć {name} z listy? Folder na dysku pozostaje nietknięty.',
   'repos.forgetAction': 'Zapomnij',
   'repos.missing': 'Brakuje',
+  'repos.missingTitle': 'Nie znaleziono folderu repozytorium',
+  'repos.missingBody': 'To zapisane repozytorium mogło zostać przeniesione lub usunięte albo znajduje się na odłączonym dysku. Wskaż jego folder, aby połączyć je ponownie, lub spróbuj ponownie, gdy będzie dostępny.',
   'repos.locate': 'Zlokalizuj…',
   'repos.locateTitle': 'Gdzie jest {name}?',
   'repos.wip': 'Podsumowanie WIP',

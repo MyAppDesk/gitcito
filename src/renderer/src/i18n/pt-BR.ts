@@ -3803,6 +3803,8 @@ export const ptBR: Dict = {
   'repos.forgetConfirm': 'Remover {name} da lista? A pasta no disco não é alterada.',
   'repos.forgetAction': 'Esquecer',
   'repos.missing': 'Ausente',
+  'repos.missingTitle': 'Pasta do repositório não encontrada',
+  'repos.missingBody': 'Este repositório salvo pode ter sido movido ou excluído, ou estar em uma unidade desconectada. Localize a pasta para reconectá-lo ou tente novamente quando ela estiver disponível.',
   'repos.locate': 'Localizar…',
   'repos.locateTitle': 'Onde está {name}?',
   'repos.wip': 'Resumo WIP',

@@ -3797,6 +3797,8 @@ export const es: Dict = {
   'repos.forgetConfirm': '¿Quitar {name} de la lista? La carpeta en disco no se toca.',
   'repos.forgetAction': 'Olvidar',
   'repos.missing': 'Ausente',
+  'repos.missingTitle': 'No se encontró la carpeta del repositorio',
+  'repos.missingBody': 'Es posible que este repositorio guardado se haya movido, eliminado o esté en una unidad desconectada. Ubica su carpeta para volver a conectarlo o reinténtalo cuando esté disponible.',
   'repos.locate': 'Ubicar…',
   'repos.locateTitle': '¿Dónde está {name}?',
   'repos.wip': 'Resumen WIP',

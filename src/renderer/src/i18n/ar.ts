@@ -3797,6 +3797,8 @@ export const ar: Dict = {
   'repos.forgetConfirm': 'إزالة {name} من القائمة؟ المجلد على القرص لا يُمس.',
   'repos.forgetAction': 'نسيان',
   'repos.missing': 'مفقود',
+  'repos.missingTitle': 'لم يُعثر على مجلد المستودع',
+  'repos.missingBody': 'ربما نُقل هذا المستودع المحفوظ أو حُذف، أو أنه على قرص غير متصل. حدّد موقع مجلده لإعادة الربط، أو أعد المحاولة عندما يصبح متاحًا.',
   'repos.locate': 'تحديد الموقع…',
   'repos.locateTitle': 'أين {name}؟',
   'repos.wip': 'ملخص العمل الجاري',

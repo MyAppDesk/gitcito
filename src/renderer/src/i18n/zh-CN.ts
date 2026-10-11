@@ -3794,6 +3794,8 @@ export const zhCN: Dict = {
   'repos.forgetConfirm': '从列表中移除 {name}？磁盘上的文件夹不会被改动。',
   'repos.forgetAction': '忘记',
   'repos.missing': '缺失',
+  'repos.missingTitle': '找不到仓库文件夹',
+  'repos.missingBody': '这个已保存的仓库可能已被移动或删除，或位于未连接的驱动器上。定位它的文件夹以重新连接，或在它可用后重试。',
   'repos.locate': '定位…',
   'repos.locateTitle': '{name} 在哪里？',
   'repos.wip': 'WIP 摘要',

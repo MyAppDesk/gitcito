@@ -3802,6 +3802,8 @@ export const nl: Dict = {
   'repos.forgetConfirm': '{name} uit de lijst verwijderen? De map op schijf blijft onaangeroerd.',
   'repos.forgetAction': 'Vergeten',
   'repos.missing': 'Ontbreekt',
+  'repos.missingTitle': 'Repositorymap niet gevonden',
+  'repos.missingBody': 'Deze opgeslagen repository is mogelijk verplaatst of verwijderd, of staat op een niet-verbonden schijf. Zoek de map om opnieuw te verbinden, of probeer het opnieuw zodra die beschikbaar is.',
   'repos.locate': 'Lokaliseren…',
   'repos.locateTitle': 'Waar is {name}?',
   'repos.wip': 'WIP-overzicht',

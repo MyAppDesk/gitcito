@@ -3734,6 +3734,8 @@ export const ja: Dict = {
   'repos.forgetConfirm': 'リストから {name} を外しますか？ディスク上のフォルダは触れません。',
   'repos.forgetAction': '忘れる',
   'repos.missing': '見つかりません',
+  'repos.missingTitle': 'リポジトリのフォルダが見つかりません',
+  'repos.missingBody': '保存されたこのリポジトリは、移動または削除されたか、接続されていないドライブ上にある可能性があります。フォルダの場所を指定して再接続するか、利用可能になってから再試行してください。',
   'repos.locate': '場所を指定…',
   'repos.locateTitle': '{name} はどこですか？',
   'repos.wip': 'WIP 概要',

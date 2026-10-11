@@ -3737,6 +3737,8 @@ export const tr: Dict = {
   'repos.forgetConfirm': '{name} listeden kaldırılsın mı? Diskteki klasöre dokunulmaz.',
   'repos.forgetAction': 'Unut',
   'repos.missing': 'Eksik',
+  'repos.missingTitle': 'Depo klasörü bulunamadı',
+  'repos.missingBody': 'Kaydedilen bu depo taşınmış, silinmiş ya da bağlı olmayan bir sürücüde olabilir. Yeniden bağlamak için klasörünü bulun veya kullanılabilir olduğunda yeniden deneyin.',
   'repos.locate': 'Konumunu bul…',
   'repos.locateTitle': '{name} nerede?',
   'repos.wip': 'WIP özeti',

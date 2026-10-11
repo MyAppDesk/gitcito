@@ -3794,6 +3794,8 @@ export const ko: Dict = {
   'repos.forgetConfirm': '목록에서 {name}을(를) 제거할까요? 디스크의 폴더는 건드리지 않습니다.',
   'repos.forgetAction': '잊기',
   'repos.missing': '없음',
+  'repos.missingTitle': '저장소 폴더를 찾을 수 없음',
+  'repos.missingBody': '저장된 이 저장소가 이동 또는 삭제되었거나 연결되지 않은 드라이브에 있을 수 있습니다. 폴더 위치를 찾아 다시 연결하거나, 사용할 수 있게 되면 다시 시도하세요.',
   'repos.locate': '위치 찾기…',
   'repos.locateTitle': '{name}은(는) 어디에 있나요?',
   'repos.wip': 'WIP 요약',

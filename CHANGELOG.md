@@ -1,5 +1,25 @@
 
 
+## [4.12.0](https://github.com/MyAppDesk/gitcito/compare/v4.11.1...v4.12.0) (2026-10-11)
+
+
+### Features
+
+* go to any open repository with cmd/ctrl+j ([#50](https://github.com/MyAppDesk/gitcito/issues/50)) ([779e8b7](https://github.com/MyAppDesk/gitcito/commit/779e8b7e3699b00987e7ba16bc78325cbf1739ff))
+* list a fork's pull requests on its parent ([#48](https://github.com/MyAppDesk/gitcito/issues/48)) ([c7b3053](https://github.com/MyAppDesk/gitcito/commit/c7b3053aa2291731848880994dae41f4217003e0))
+* open several repositories from one open repository pick ([#49](https://github.com/MyAppDesk/gitcito/issues/49)) ([0bc65a0](https://github.com/MyAppDesk/gitcito/commit/0bc65a05e42fa624ae4ce93eb95294945872f7b6))
+
+
+### Bug Fixes
+
+* **credentials:** stop stacking Keychain prompts from background polling ([#43](https://github.com/MyAppDesk/gitcito/issues/43)) ([55e1fc5](https://github.com/MyAppDesk/gitcito/commit/55e1fc5f6d04437d88dbfc6f4b25b0a4b147862d))
+* keep tabs for moved or missing repository folders ([#45](https://github.com/MyAppDesk/gitcito/issues/45)) ([04a5e56](https://github.com/MyAppDesk/gitcito/commit/04a5e56c526e78eb2d863259be29bcdd1fd7a3ab))
+* keep the toolbar picker chevron clear of long names ([#47](https://github.com/MyAppDesk/gitcito/issues/47)) ([cf39cdb](https://github.com/MyAppDesk/gitcito/commit/cf39cdbdbac7889ae6967e5d7e52630624da910d))
+* let bounded number fields be typed into ([#46](https://github.com/MyAppDesk/gitcito/issues/46)) ([1dff977](https://github.com/MyAppDesk/gitcito/commit/1dff977b732a04327e87c58483e469e8c3622115))
+* read both bisect wordings and stop tests depending on the default branch ([#42](https://github.com/MyAppDesk/gitcito/issues/42)) ([77231a3](https://github.com/MyAppDesk/gitcito/commit/77231a37a8d9907d398a37b813a7295d20cd74e6))
+* report AI and GitHub errors in full and retry LiteLLM without the thinking toggle ([#51](https://github.com/MyAppDesk/gitcito/issues/51)) ([66c7758](https://github.com/MyAppDesk/gitcito/commit/66c7758ff04226b0447ee42b9b01080f384444f0)), closes [#39](https://github.com/MyAppDesk/gitcito/issues/39) [#41](https://github.com/MyAppDesk/gitcito/issues/41) [#40](https://github.com/MyAppDesk/gitcito/issues/40) [#39](https://github.com/MyAppDesk/gitcito/issues/39) [#40](https://github.com/MyAppDesk/gitcito/issues/40) [#41](https://github.com/MyAppDesk/gitcito/issues/41)
+* **settings:** skip the Safe Storage prompt when there are no secrets ([#44](https://github.com/MyAppDesk/gitcito/issues/44)) ([bde2d8a](https://github.com/MyAppDesk/gitcito/commit/bde2d8a86ce752a0c9e7ff8d63be5a2e7ee7699a))
+
 ## [4.11.1](https://github.com/MyAppDesk/gitcito/compare/v4.11.0...v4.11.1) (2026-10-03)
 
 ## [4.11.0](https://github.com/MyAppDesk/gitcito/compare/v4.10.0...v4.11.0) (2026-10-03)

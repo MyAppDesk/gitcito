@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { chatCompleteJson, validateJsonReply } from '../src/main/ai'
+import { aiErrorMessage } from '../src/main/aiTransport'
 import { migrateAIConfig } from '../src/shared/aiAccounts'
 
 afterEach(() => {
@@ -234,6 +235,53 @@ describe('AI JSON validation', () => {
     expect(bodies[0].chat_template_kwargs).toEqual({ enable_thinking: false })
     expect(bodies[1].chat_template_kwargs).toBeUndefined()
     expect(bodies[1].max_tokens).toBe(256)
+  })
+
+  it('retries without the thinking toggle when LiteLLM rejects it with a 500', async () => {
+    const bodies: Record<string, unknown>[] = []
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_input: string | URL | Request, init?: RequestInit) => {
+        bodies.push(JSON.parse(String(init?.body)) as Record<string, unknown>)
+        if (bodies.length === 1) {
+          return new Response(
+            JSON.stringify({
+              error: {
+                message:
+                  "litellm.InternalServerError: InternalServerError: Custom_openaiException - AsyncCompletions.create() got an unexpected keyword argument 'chat_template_kwargs'."
+              }
+            }),
+            { status: 500 }
+          )
+        }
+        return new Response('{"choices":[{"message":{"content":"{\\"value\\":\\"x\\"}"}}]}', {
+          status: 200,
+          headers: { 'content-type': 'application/json' }
+        })
+      })
+    )
+
+    const cfg = migrateAIConfig({ provider: 'custom', endpoint: 'http://127.0.0.1:4000/v1', model: 'default' })
+    await chatCompleteJson(cfg, [{ role: 'user', content: 'Return JSON.' }], 'test', {
+      name: 'litellm_test',
+      schema: { type: 'object' },
+      validate: () => [],
+      maxTokens: 256
+    })
+
+    expect(bodies).toHaveLength(2)
+    expect(bodies[1].chat_template_kwargs).toBeUndefined()
+  })
+
+  it('reports the provider message rather than a cut-off JSON body', () => {
+    const message = `upstream said no ${'x'.repeat(400)} — the useful end`
+    const reported = aiErrorMessage(500, JSON.stringify({ error: { message } }))
+    expect(reported).toBe(`AI request failed (500): ${message}`)
+    expect(aiErrorMessage(502, 'Bad gateway')).toBe('AI request failed (502): Bad gateway')
+    expect(aiErrorMessage(400, JSON.stringify({ error: 'model not found' }))).toBe(
+      'AI request failed (400): model not found'
+    )
+    expect(aiErrorMessage(500, 'y'.repeat(5000)).length).toBeLessThan(1600)
   })
 
   it('falls back to prompt-only JSON when native structured validation is exhausted', async () => {

@@ -160,6 +160,7 @@ import { parseForcedUpdates } from '../shared/fetchPorcelain'
 import { buildPatch, parsePatch, touchedOldLines } from '../shared/patchHunks'
 import { semanticCompare } from './semantic'
 import { recordEvent } from './analytics'
+import { searchFileMatches, supersedeSearch, type FileSearchOptions } from './fileSearch'
 import { recordLog } from './log'
 import { activeProfileToken, readSettings } from './settings'
 import { applyPreparedRepoFileActions, RepoFileActionError } from './repoFileActions'
@@ -5955,47 +5956,13 @@ export const gitService = {
    * Capped twice: `maxPerFile` keeps one huge file from burying the rest, `max`
    * bounds the whole payload crossing IPC.
    */
-  async searchFileMatches(
+  searchFileMatches(
     repoPath: string,
     files: string[],
     query: string,
-    opts?: {
-      caseSensitive?: boolean
-      wholeWord?: boolean
-      regex?: boolean
-      max?: number
-      maxPerFile?: number
-    }
+    opts?: FileSearchOptions
   ): Promise<CodeSearchHit[]> {
-    if (!query.trim()) return []
-    const max = opts?.max ?? 2000
-    const maxPerFile = opts?.maxPerFile ?? 100
-    let pattern: RegExp
-    try {
-      const src = opts?.regex ? query : query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-      const body = opts?.wholeWord ? `\\b${src}\\b` : src
-      pattern = new RegExp(body, opts?.caseSensitive ? '' : 'i')
-    } catch {
-      return []
-    }
-    const perFile = await Promise.all(
-      files.map(async (f) => {
-        let content: string
-        try {
-          content = await readFile(join(repoPath, f), 'utf-8')
-        } catch {
-          return [] // binary, deleted, or unreadable
-        }
-        if (content.includes('\0')) return [] // binary
-        const hits: CodeSearchHit[] = []
-        const lines = content.split('\n')
-        for (let i = 0; i < lines.length && hits.length < maxPerFile; i++) {
-          if (pattern.test(lines[i])) hits.push({ file: f, line: i + 1, text: lines[i].slice(0, 400) })
-        }
-        return hits
-      })
-    )
-    return perFile.flat().slice(0, max)
+    return searchFileMatches(repoPath, files, query, opts)
   },
 
   /**
@@ -7555,6 +7522,11 @@ export function registerGitHandlers(): void {
     // app-level ones run before (or without) a local repo, so they take no lock.
     const lockKey = repoScoped ? (args[0] as string) : null
     const isWrite = !gitMethodIsRead(method)
+    // A superseded search is stopped before the new one queues for the lock, or
+    // a write waiting between them would hold both back.
+    if (method === 'searchFileMatches' && lockKey) {
+      supersedeSearch(lockKey, (args[3] as FileSearchOptions | undefined)?.searchId)
+    }
     const release = lockKey ? await lockFor(lockKey).acquire(isWrite) : null
 
     try {

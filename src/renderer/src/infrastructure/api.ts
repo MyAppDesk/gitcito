@@ -506,6 +506,7 @@ export const gitApi = {
       regex?: boolean
       max?: number
       maxPerFile?: number
+      searchId?: string
     }
   ) => call<CodeSearchHit[]>('searchFileMatches', path, files, query, opts),
   searchCommitMatches: (

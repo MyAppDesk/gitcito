@@ -268,7 +268,8 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
         .searchFileMatches(path, allPaths, query, {
           caseSensitive: filter.caseSensitive,
           wholeWord: filter.wholeWord,
-          regex: filter.regex
+          regex: filter.regex,
+          searchId: 'commit'
         })
         .then((hits) => {
           if (!cancelled) setContentHits(hits)

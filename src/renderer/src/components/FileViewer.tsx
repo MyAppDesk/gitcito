@@ -12,6 +12,7 @@ import { editorLineMenuItems } from '../lib/editorOpen'
 import { useT, interp, type TranslationKey } from '../i18n'
 import { useHoverExplain } from './HoverExplain'
 import { DiffViewer } from './DiffViewer'
+import { useFollowWipFile } from './useFollowWipFile'
 import { SemanticSummary } from './SemanticSummary'
 import { buildQueryRegExp, highlightHtml, type HighlightLayer } from './FileSearchBar'
 import { fileExt, guessLanguage, highlightLine } from '../lib/highlight'
@@ -182,6 +183,7 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState('')
   const [saving, setSaving] = useState(false)
+  useFollowWipFile(view, editing)
 
   const { repoPath, file, mode, source } = view
 

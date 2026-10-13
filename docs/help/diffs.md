@@ -3,7 +3,7 @@ title: Diffs & previews
 category: Reading changes
 order: 20
 summary: Split view, word-level highlighting, image diffs and file previews.
-keywords: diff split side-by-side word level whitespace image diff preview markdown docx pdf change gutter minimap
+keywords: diff split side-by-side word level whitespace image diff preview markdown docx pdf change gutter minimap stale staged unstaged follow agent terminal
 ---
 
 # Diffs & previews
@@ -36,6 +36,42 @@ half where its own content is.
 
 Above every diff sits the [semantic summary](semantic-diff.md) — what changed,
 symbol by symbol, rather than line by line.
+
+## When the file changes under you
+
+A working-tree file stays open while something else works on it — a terminal,
+an editor, or a coding agent you asked to commit. Its source was fixed when it
+opened, so the pane used to go on diffing the side the file had left: staged
+elsewhere, it said "No changes to display" under an **Unstaged** chip; committed,
+it went blank. Now the viewer keeps up, and the chip in its header — Unstaged,
+Staged, or a commit — says where the file is now:
+
+| What happens outside Gitcito | What the open file does |
+|------------------------------|-------------------------|
+| The file is staged | Switches to the **Staged** diff |
+| The file is unstaged | Switches back to the **Unstaged** diff |
+| Part of the file is staged | Stays on the side you chose; both are real |
+| The file is committed | Follows it into the new commit, so the diff stays on screen |
+| The change is discarded or stashed | Closes, as there is nothing left to show |
+| The commit you are reading is undone | Goes back to the **Staged** or **Unstaged** diff, wherever the change landed |
+| …and its changes thrown away (`reset --hard`) | Closes — the change exists nowhere now, and the commit underneath is a different one |
+| That commit was `HEAD` and is amended or reworded | Moves on to the rewritten commit |
+
+![A diff opened Unstaged, still on screen as Staged after a terminal staged the file](../screenshots/file-follows-git.webp)
+
+Committing from Gitcito's own composer still closes the file, as before: when
+you commit, the result in the graph is what you want to see.
+
+A commit that leaves history some other way — rebased away further back, say —
+keeps its view: its content still exists, and guessing where it went would be
+the surprise.
+
+*Limits:* the viewer notices these changes when the repository is re-read — at
+once with the file watcher, otherwise on the next refresh. While you are
+editing the file in place it holds still, so an unsaved draft is never thrown
+away. It only follows into the commit that `HEAD` now points at: if several
+commits land at once and the file is not in the newest one, the view closes.
+A conflicted file is left to the conflict resolver.
 
 ## Image diffs
 

@@ -1300,6 +1300,22 @@ export const shots = [
     }
   },
   {
+    // Moved code: parseConfig cut from the top of utils.ts and pasted at the
+    // bottom, tinted blue at both ends with arrows pointing at each other,
+    // beside an ordinary one-line edit that stays red and green.
+    out: 'moved-code',
+    repos: ['moved-code'],
+    themes: ['dark'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['moved-code']
+      await page.evaluate((p) => {
+        window.__shot.ui.getState().setFileView({ repoPath: p, file: 'utils.ts', source: { type: 'wip', staged: false, untracked: false }, mode: 'diff' })
+      }, repo)
+      await page.locator('.diff-line.moved').first().waitFor()
+      await page.waitForTimeout(500)
+    }
+  },
+  {
     // File view's change gutter (colored bars next to edited lines) plus the
     // minimap toggle, opened on the same modified file the word-diff shot uses.
     out: 'change-gutter',

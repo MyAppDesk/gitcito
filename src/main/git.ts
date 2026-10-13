@@ -2,7 +2,7 @@ import { ipcMain, shell } from 'electron'
 import { simpleGit, SimpleGit, type StatusResult } from 'simple-git'
 import { basename, dirname, join, resolve as resolvePath, sep } from 'path'
 import { pathToFileURL } from 'url'
-import { readFile, writeFile, unlink, stat, chmod, mkdir, readdir, rename, cp, open, mkdtemp, rm } from 'fs/promises'
+import { readFile, writeFile, unlink, stat, chmod, mkdir, readdir, rename, cp, open, mkdtemp, rm, realpath } from 'fs/promises'
 import { tmpdir, homedir } from 'os'
 import { existsSync, accessSync, constants as fsConstants } from 'fs'
 import { spawn, spawnSync, execFile } from 'child_process'
@@ -73,6 +73,7 @@ import type {
   ChurnPoint,
   CosmosCommit,
   ChangelogResult,
+  SavedWork,
   SnapshotInfo,
   SnapshotKind,
   TeammateRadarEntry,
@@ -160,6 +161,7 @@ import { parseForcedUpdates } from '../shared/fetchPorcelain'
 import { buildPatch, parsePatch, touchedOldLines } from '../shared/patchHunks'
 import { semanticCompare } from './semantic'
 import { recordEvent } from './analytics'
+import { searchFileMatches, supersedeSearch, type FileSearchOptions } from './fileSearch'
 import { recordLog } from './log'
 import { activeProfileToken, readSettings } from './settings'
 import { applyPreparedRepoFileActions, RepoFileActionError } from './repoFileActions'
@@ -886,6 +888,24 @@ async function runGit(
     const e = err as { stderr?: string; message?: string }
     throw new Error(redactCredentials((e.stderr || e.message || 'git command failed').trim()))
   }
+}
+
+function isObjectId(value: unknown): value is string {
+  return typeof value === 'string' && /^[0-9a-f]{40}([0-9a-f]{24})?$/.test(value)
+}
+
+/**
+ * `rel` resolved inside the repository, or null when it escapes it — through
+ * `..` or through a symlinked parent directory. The leaf itself may be a
+ * symlink: removing it removes the link, not its target.
+ */
+async function containedPath(repoPath: string, rel: string): Promise<string | null> {
+  const root = await realpath(repoPath).catch(() => resolvePath(repoPath))
+  const full = resolvePath(root, rel)
+  if (!full.startsWith(root + sep)) return null
+  const parent = await realpath(dirname(full)).catch(() => null)
+  if (parent === null) return full
+  return parent === root || parent.startsWith(root + sep) ? full : null
 }
 
 /**
@@ -3400,6 +3420,64 @@ export const gitService = {
     if (untracked.length) await git.raw(['restore', '--source', `${sha}^3`, '--worktree', '--', ...untracked])
   },
 
+  /**
+   * Save what is staged and what is on disk as two trees, right before a
+   * discard, so `restoreWork` can undo it exactly. Writes objects only: no ref,
+   * the real index untouched. Null when there is nothing to save, or when the
+   * index cannot be written as a tree (a merge still has conflicts).
+   */
+  async captureWork(repoPath: string): Promise<SavedWork | null> {
+    const index = (await runGit(repoPath, ['write-tree']).catch(() => '')).trim()
+    if (!index) return null
+    const gitDir = (await runGit(repoPath, ['rev-parse', '--absolute-git-dir'])).trim()
+    const tmpIndex = join(gitDir, `gitcito-save-${process.pid}-${Date.now()}`)
+    const env = { GIT_INDEX_FILE: tmpIndex }
+    try {
+      // Seeded from a copy of the real index, so `add -A` in the throwaway one
+      // records the disk on top of what is staged — untracked files included,
+      // ignored ones not (a discard leaves those alone anyway). A copy keeps the
+      // stat cache, so only changed files are hashed; `read-tree` would rehash
+      // the whole tree. No index yet (nothing ever staged) seeds from the tree.
+      const realIndex = resolvePath(repoPath, (await runGit(repoPath, ['rev-parse', '--git-path', 'index'])).trim())
+      const copied = await cp(realIndex, tmpIndex).then(() => true, () => false)
+      if (!copied) await runGit(repoPath, ['read-tree', index], env)
+      await runGit(repoPath, ['add', '-A'], env)
+      const worktree = (await runGit(repoPath, ['write-tree'], env)).trim()
+      return worktree ? { index, worktree } : null
+    } catch {
+      return null
+    } finally {
+      await unlink(tmpIndex).catch(() => {})
+    }
+  },
+
+  /**
+   * Put `paths` back as `captureWork` saved them: their staged version into the
+   * index, their content on disk. Only those paths — anything else may have
+   * moved on since and is left alone. A path that did not exist then is removed.
+   */
+  async restoreWork(repoPath: string, saved: SavedWork, paths: string[]): Promise<void> {
+    if (!isObjectId(saved.index) || !isObjectId(saved.worktree)) throw new Error('Invalid saved work')
+    for (const path of paths) {
+      const full = await containedPath(repoPath, path)
+      if (!full) throw new Error(`Refusing to restore outside the repository: ${path}`)
+      // A path staged neither then nor now matches nothing, which git reports
+      // as an error; there is simply nothing to put back in the index.
+      await runGit(repoPath, ['--literal-pathspecs', 'restore', '--source', saved.index, '--staged', '--', path])
+        .catch((err: Error) => {
+          if (!/did not match/i.test(err.message)) throw err
+        })
+      const existed = (
+        await runGit(repoPath, ['--literal-pathspecs', 'ls-tree', '--name-only', saved.worktree, '--', path])
+      ).trim()
+      if (existed) {
+        await runGit(repoPath, ['--literal-pathspecs', 'restore', '--source', saved.worktree, '--worktree', '--', path])
+      } else {
+        await rm(full, { force: true }).catch(() => {})
+      }
+    }
+  },
+
   /** Overwrite the working copies of `paths` with their content at `hash` —
    *  "take these changes" from a commit without touching HEAD or the index. */
   async restoreFromCommit(repoPath: string, hash: string, paths: string[]): Promise<void> {
@@ -4296,7 +4374,25 @@ export const gitService = {
       } catch {
         /* not in HEAD — staged-new */
       }
-      await git.raw(['rm', '-f', '--', f]).catch(() => {})
+      // Staged-new: out of the index and off the disk. When it is no longer in
+      // the index either (Discard all unstages first), it is a file git never
+      // had — remove it the way discarding an untracked file would.
+      const rmError = await git.raw(['rm', '-f', '--', f]).then(() => null, (err: Error) => err)
+      if (!rmError) continue
+      // Only a path git truly does not know is deleted by hand. Anything else
+      // (a held index.lock, a path still in the index or in HEAD) is a real
+      // failure, and wiping the file from disk would lose it for good.
+      const known = async (args: string[]): Promise<boolean> =>
+        runGit(repoPath, args).then(() => true, () => false)
+      if (
+        (await known(['--literal-pathspecs', 'ls-files', '--error-unmatch', '--', f])) ||
+        (await known(['cat-file', '-e', `HEAD:${f}`]))
+      ) {
+        throw rmError
+      }
+      const full = await containedPath(repoPath, f)
+      if (!full) throw new Error(`Refusing to delete outside the repository: ${f}`)
+      await rm(full, { force: true })
     }
   },
 
@@ -6034,47 +6130,13 @@ export const gitService = {
    * Capped twice: `maxPerFile` keeps one huge file from burying the rest, `max`
    * bounds the whole payload crossing IPC.
    */
-  async searchFileMatches(
+  searchFileMatches(
     repoPath: string,
     files: string[],
     query: string,
-    opts?: {
-      caseSensitive?: boolean
-      wholeWord?: boolean
-      regex?: boolean
-      max?: number
-      maxPerFile?: number
-    }
+    opts?: FileSearchOptions
   ): Promise<CodeSearchHit[]> {
-    if (!query.trim()) return []
-    const max = opts?.max ?? 2000
-    const maxPerFile = opts?.maxPerFile ?? 100
-    let pattern: RegExp
-    try {
-      const src = opts?.regex ? query : query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-      const body = opts?.wholeWord ? `\\b${src}\\b` : src
-      pattern = new RegExp(body, opts?.caseSensitive ? '' : 'i')
-    } catch {
-      return []
-    }
-    const perFile = await Promise.all(
-      files.map(async (f) => {
-        let content: string
-        try {
-          content = await readFile(join(repoPath, f), 'utf-8')
-        } catch {
-          return [] // binary, deleted, or unreadable
-        }
-        if (content.includes('\0')) return [] // binary
-        const hits: CodeSearchHit[] = []
-        const lines = content.split('\n')
-        for (let i = 0; i < lines.length && hits.length < maxPerFile; i++) {
-          if (pattern.test(lines[i])) hits.push({ file: f, line: i + 1, text: lines[i].slice(0, 400) })
-        }
-        return hits
-      })
-    )
-    return perFile.flat().slice(0, max)
+    return searchFileMatches(repoPath, files, query, opts)
   },
 
   /**
@@ -7689,6 +7751,11 @@ export function registerGitHandlers(): void {
     // app-level ones run before (or without) a local repo, so they take no lock.
     const lockKey = repoScoped ? (args[0] as string) : null
     const isWrite = !gitMethodIsRead(method)
+    // A superseded search is stopped before the new one queues for the lock, or
+    // a write waiting between them would hold both back.
+    if (method === 'searchFileMatches' && lockKey) {
+      supersedeSearch(lockKey, (args[3] as FileSearchOptions | undefined)?.searchId)
+    }
     const release = lockKey ? await lockFor(lockKey).acquire(isWrite) : null
 
     try {

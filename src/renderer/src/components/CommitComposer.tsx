@@ -268,7 +268,8 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
         .searchFileMatches(path, allPaths, query, {
           caseSensitive: filter.caseSensitive,
           wholeWord: filter.wholeWord,
-          regex: filter.regex
+          regex: filter.regex,
+          searchId: 'commit'
         })
         .then((hits) => {
           if (!cancelled) setContentHits(hits)
@@ -601,20 +602,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
       {
         label: t('composer.discardChanges'),
         danger: true,
-        onClick: () =>
-          useUIStore.getState().openModal({
-            kind: 'confirm',
-            title: t('composer.discardChanges'),
-            message: interp(t('composer.discardMsg'), { file: label }),
-            danger: true,
-            confirmLabel: t('composer.discardConfirm'),
-            onConfirm: async () => {
-              const untracked = targetFiles.filter((f) => f.untracked).map((f) => f.path)
-              const tracked = targetFiles.filter((f) => !f.untracked).map((f) => f.path)
-              if (tracked.length) await repoActions.discard(path, tracked, false)
-              if (untracked.length) await repoActions.discard(path, untracked, true)
-            }
-          })
+        onClick: () => void repoActions.discardChanges(path, targetFiles, { label })
       },
       ...buildIgnoreMenu(targetFiles, label)
     ])
@@ -637,20 +625,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
       {
         label: t('composer.discardFolder'),
         danger: true,
-        onClick: () =>
-          useUIStore.getState().openModal({
-            kind: 'confirm',
-            title: t('composer.discardChanges'),
-            message: interp(t('composer.discardMsg'), { file: label }),
-            danger: true,
-            confirmLabel: t('composer.discardConfirm'),
-            onConfirm: async () => {
-              const untracked = inFolder.filter((f) => f.untracked).map((f) => f.path)
-              const tracked = inFolder.filter((f) => !f.untracked).map((f) => f.path)
-              if (tracked.length) await repoActions.discard(path, tracked, false)
-              if (untracked.length) await repoActions.discard(path, untracked, true)
-            }
-          })
+        onClick: () => void repoActions.discardChanges(path, inFolder, { label })
       },
       ...buildIgnoreMenu(inFolder, `"${folderPath}/"`, folderPath)
     ])
@@ -1281,23 +1256,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
             className="btn ghost small discard-btn"
             title={t('composer.discardEverything')}
             disabled={staged.length + unstaged.length === 0}
-            onClick={() =>
-              useUIStore.getState().openModal({
-                kind: 'confirm',
-                title: t('composer.discardAllTitle'),
-                message: t('composer.discardAllMsg'),
-                danger: true,
-                confirmLabel: t('composer.discardAllConfirm'),
-                onConfirm: async () => {
-                  await gitApi.unstageAll(path).catch(() => undefined)
-                  const all = [...staged, ...unstaged]
-                  const untracked = all.filter((fl) => fl.untracked).map((fl) => fl.path)
-                  const tracked = all.filter((fl) => !fl.untracked).map((fl) => fl.path)
-                  if (tracked.length) await repoActions.discard(path, tracked, false)
-                  if (untracked.length) await repoActions.discard(path, untracked, true)
-                }
-              })
-            }
+            onClick={() => void repoActions.discardChanges(path, [...staged, ...unstaged], { all: true })}
           >
             <Trash2 size={13} />
           </button>

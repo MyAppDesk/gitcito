@@ -166,6 +166,7 @@ export function FileTree({
     if (!filterActive || !allFiles) {
       setResults(null)
       setHits(null)
+      setSearching(false)
       return
     }
     const inc = filter.include.trim()
@@ -177,37 +178,44 @@ export function FileTree({
     if (!q) {
       setResults(scoped.sort())
       setHits(null)
+      setSearching(false)
       return
     }
     if (filter.mode === 'name') {
       const re = buildQueryRegExp(filter)
       setResults(scoped.filter((p) => !re || re.test(p)).sort())
       setHits(null)
+      setSearching(false)
       return
     }
     // Content search runs in the main process over the scoped candidate set and
-    // comes back as file:line:text matches for the expandable results tree.
+    // comes back as file:line:text matches for the expandable results tree. It
+    // waits for a pause in typing, and each new search stops the one before it.
     let cancelled = false
     setSearching(true)
-    gitApi
-      .searchFileMatches(path, [...scoped].sort(), q, {
-        caseSensitive: filter.caseSensitive,
-        wholeWord: filter.wholeWord,
-        regex: filter.regex
-      })
-      .then((found) => {
-        if (cancelled) return
-        setHits(found)
-        setResults([...new Set(found.map((h) => h.file))])
-      })
-      .catch((err) => {
-        if (!cancelled) toast('error', err instanceof Error ? err.message : String(err))
-      })
-      .finally(() => {
-        if (!cancelled) setSearching(false)
-      })
+    const timer = setTimeout(() => {
+      gitApi
+        .searchFileMatches(path, scoped.sort(), q, {
+          caseSensitive: filter.caseSensitive,
+          wholeWord: filter.wholeWord,
+          regex: filter.regex,
+          searchId: 'files'
+        })
+        .then((found) => {
+          if (cancelled) return
+          setHits(found)
+          setResults([...new Set(found.map((h) => h.file))])
+        })
+        .catch((err) => {
+          if (!cancelled) toast('error', err instanceof Error ? err.message : String(err))
+        })
+        .finally(() => {
+          if (!cancelled) setSearching(false)
+        })
+    }, 200)
     return () => {
       cancelled = true
+      clearTimeout(timer)
     }
   }, [filterActive, allFiles, filter, path, toast])
 

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   SplitSquareHorizontal,
   Columns2,
+  MoveVertical,
   Pilcrow,
   Search,
   ChevronUp,
@@ -29,6 +30,7 @@ import {
   type SplitCell,
   type SplitRow
 } from '../lib/diff'
+import { findMovedLines, type MovedMark } from '../lib/movedLines'
 
 /**
  * Wrap the given decoded-character ranges in <mark class> within an HTML string
@@ -85,6 +87,9 @@ export interface HunkAction {
  *  layout/paint for offscreen rows (`content-visibility: auto`) while the DOM
  *  stays complete, so find, staging clicks and selection behave as before. */
 const HUGE_LINES = 5000
+
+const MOVE_ARROW: Record<MovedMark['dir'], string> = { up: '↑', down: '↓' }
+const NO_MOVES = new Map<number, MovedMark>()
 
 export function DiffViewer({
   diff,
@@ -155,6 +160,11 @@ export function DiffViewer({
   const [splitView, setSplitView] = useState(() => localStorage.getItem('gitcito-split-diff') === 'on')
   useEffect(() => localStorage.setItem('gitcito-split-diff', splitView ? 'on' : 'off'), [splitView])
 
+  // Moved code is marked by default: a block that only changed place is the
+  // most common thing a reader mistakes for a rewrite.
+  const [movedOn, setMovedOn] = useState(() => localStorage.getItem('gitcito-diff-moved') !== 'off')
+  useEffect(() => localStorage.setItem('gitcito-diff-moved', movedOn ? 'on' : 'off'), [movedOn])
+
   // Split-view line wrapping. Off by default: one line per row keeps the two
   // sides row-for-row comparable, which is the point of split view. On, long
   // lines fold inside their column instead of scrolling.
@@ -178,6 +188,19 @@ export function DiffViewer({
   // the edit behind.
   const splitPartners = useMemo(() => (splitView ? splitEditPartners(lines) : new Map<number, number>()), [splitView, lines])
 
+  const allMoved = useMemo(() => findMovedLines(lines), [lines])
+  const moved = movedOn ? allMoved : NO_MOVES
+  // The arrow's tip names the other end of the move by its line number.
+  const movedTitle = (m: MovedMark): string =>
+    m.role === 'out'
+      ? interp(t('diff.movedTo'), { line: lines[m.peer].newNo ?? '' })
+      : interp(t('diff.movedFrom'), { line: lines[m.peer].oldNo ?? '' })
+  // Alternate blocks get a second shade, so two moves that touch read as two.
+  const movedClass = (idx: number): string => {
+    const m = moved.get(idx)
+    return m ? ` moved${m.block % 2 ? ' moved-alt' : ''}` : ''
+  }
+
   // ── In-diff find (⌘F) ──
   const viewerRef = useRef<HTMLDivElement>(null)
   const findInputRef = useRef<HTMLInputElement>(null)
@@ -200,7 +223,9 @@ export function DiffViewer({
   const cellHtml = (text: string, idx: number, kind: 'add' | 'del' | 'ctx'): string => {
     const t = maskValues ? maskSecretLine(text) : text
     let html = highlightHtml(highlightLine(t, lang), layers)
-    const wr = !maskValues && wordDiffOn && kind !== 'ctx' ? wordRanges.get(idx) : undefined
+    // A moved line's word marks would compare it with whatever line happened to
+    // sit opposite, which is not what it moved from.
+    const wr = !maskValues && wordDiffOn && kind !== 'ctx' && !moved.has(idx) ? wordRanges.get(idx) : undefined
     if (wr) html = markRanges(html, wr, kind === 'add' ? 'word-add' : 'word-del')
     return html || '&nbsp;'
   }
@@ -232,17 +257,24 @@ export function DiffViewer({
     const selectable = hasHunkActions && !!c && c.kind !== 'ctx'
     const partner = c ? splitPartners.get(c.idx) : undefined
     const idxs = c ? (partner === undefined ? [c.idx] : [c.idx, partner].sort((a, b) => a - b)) : []
+    const m = c ? moved.get(c.idx) : undefined
     return (
       <div
         key={key}
-        className={`diff-split-cell ${c ? c.kind : 'empty'} ${selectable ? 'selectable' : ''} ${
-          c && selected.has(c.idx) ? 'line-selected' : ''
-        }`}
+        className={`diff-split-cell ${c ? c.kind : 'empty'}${c ? movedClass(c.idx) : ''} ${
+          selectable ? 'selectable' : ''
+        } ${c && selected.has(c.idx) ? 'line-selected' : ''}`}
         onClick={selectable ? () => toggleLines(idxs) : undefined}
         onContextMenu={c ? (e) => openLineMenu(e, idxs, c.text) : undefined}
         title={selectable ? t('diff.selectLineTitle') : undefined}
       >
-        <span className="diff-gutter">{c?.no ?? ''}</span>
+        {m ? (
+          <span className="diff-gutter" data-move={MOVE_ARROW[m.dir]} title={movedTitle(m)}>
+            {c?.no ?? ''}
+          </span>
+        ) : (
+          <span className="diff-gutter">{c?.no ?? ''}</span>
+        )}
         {c ? (
           <span className="diff-text" dangerouslySetInnerHTML={{ __html: cellHtml(c.text, c.idx, c.kind) }} />
         ) : (
@@ -374,7 +406,7 @@ export function DiffViewer({
     const n = root.querySelectorAll('.diff-find-hit').length
     setMatchCount(n)
     setMatchIdx((i) => (n ? Math.min(i, n - 1) : 0))
-  }, [findRe, diff, splitView, wordDiffOn, maskValues])
+  }, [findRe, diff, splitView, wordDiffOn, movedOn, maskValues])
 
   // Highlight + scroll the active match into view.
   useEffect(() => {
@@ -412,6 +444,7 @@ export function DiffViewer({
   if (!diff.trim()) return <div className="diff-empty">{t('diff.noChanges')}</div>
 
   const hasWordDiffs = wordRanges.size > 0
+  const hasMoves = allMoved.size > 0
 
   return (
     <div
@@ -469,6 +502,15 @@ export function DiffViewer({
             onClick={() => setWordDiffOn((v) => !v)}
           >
             <SplitSquareHorizontal size={12} /> {t('diff.wordDiff')}
+          </button>
+        )}
+        {hasMoves && (
+          <button
+            className={`diff-word-toggle ${movedOn ? 'on' : ''}`}
+            title={t('diff.movedTitle')}
+            onClick={() => setMovedOn((v) => !v)}
+          >
+            <MoveVertical size={12} /> {t('diff.moved')}
           </button>
         )}
         <button className={`diff-word-toggle ${findOpen ? 'on' : ''}`} title={t('diff.findTitle')} onClick={openFind}>
@@ -581,14 +623,20 @@ export function DiffViewer({
         return (
           <div
             key={i}
-            className={`diff-line ${l.kind} ${selectable ? 'selectable' : ''} ${selected.has(i) ? 'line-selected' : ''}`}
+            className={`diff-line ${l.kind} ${selectable ? 'selectable' : ''} ${selected.has(i) ? 'line-selected' : ''}${movedClass(i)}`}
             onClick={selectable ? () => toggleLine(i) : undefined}
             onContextMenu={(e) => openLineMenu(e, [i], l.text)}
             title={selectable ? t('diff.selectLineTitle') : undefined}
           >
             <span className="diff-gutter">{l.oldNo ?? ''}</span>
             <span className="diff-gutter">{l.newNo ?? ''}</span>
-            <span className="diff-sign">{l.kind === 'add' ? '+' : l.kind === 'del' ? '-' : ' '}</span>
+            {moved.has(i) ? (
+              <span className="diff-sign diff-move-sign" title={movedTitle(moved.get(i)!)}>
+                {MOVE_ARROW[moved.get(i)!.dir]}
+              </span>
+            ) : (
+              <span className="diff-sign">{l.kind === 'add' ? '+' : l.kind === 'del' ? '-' : ' '}</span>
+            )}
             <span
               className="diff-text"
               dangerouslySetInnerHTML={{ __html: cellHtml(l.text, i, l.kind as 'add' | 'del' | 'ctx') }}

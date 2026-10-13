@@ -14767,6 +14767,31 @@ button.insights-row:hover { background: var(--bg-2); }
   --word-add-bg: rgba(0, 180, 135, 0.26);
 }
 
+/* ─── Moved code ───────────────────────────────────────────────────────── */
+/* Blue, like git's --color-moved, and in two shades so neighbouring blocks
+   read as separate moves. The arrow points at the block's other end. */
+:root {
+  --diff-moved-bg: rgba(84, 148, 255, 0.13);
+  --diff-moved-alt-bg: rgba(84, 148, 255, 0.22);
+  --diff-moved-fg: #8fb8ff;
+}
+:root[data-mode='light'] {
+  --diff-moved-bg: rgba(40, 110, 230, 0.1);
+  --diff-moved-alt-bg: rgba(40, 110, 230, 0.18);
+  --diff-moved-fg: #1d4fa8;
+}
+:is(.diff-line, .diff-split-cell).moved:not(.line-selected) { background: var(--diff-moved-bg); }
+:is(.diff-line, .diff-split-cell).moved.moved-alt:not(.line-selected) { background: var(--diff-moved-alt-bg); }
+.diff-move-sign { color: var(--diff-moved-fg); font-weight: 600; }
+.diff-split-cell.moved .diff-gutter { position: relative; }
+.diff-split-cell.moved .diff-gutter::after {
+  content: attr(data-move);
+  position: absolute;
+  inset-inline-end: 0;
+  color: var(--diff-moved-fg);
+  font-weight: 600;
+}
+
 /* ─── WIP snapshots ────────────────────────────────────────────────────── */
 .snapshots { display: flex; flex-direction: column; min-height: 0; }
 .snapshots-toolbar { display: flex; align-items: center; gap: 12px; margin: 12px 0; flex-wrap: wrap; }

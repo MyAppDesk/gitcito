@@ -2510,8 +2510,60 @@ export const repoActions = {
   unstage: (path: string, files: string[]) =>
     useRepoStore.getState().run(path, interp(t('act.unstaged'), { n: files.length }), () => gitApi.unstage(path, files), undefined, null, undefined, ['status', 'treeStatus']),
   unstageAll: (path: string) => useRepoStore.getState().run(path, t('act.unstagedAll'), () => gitApi.unstageAll(path), undefined, null, undefined, ['status', 'treeStatus']),
-  discard: (path: string, files: string[], untracked: boolean) =>
-    useRepoStore.getState().run(path, interp(t('act.discarded'), { n: files.length }), () => gitApi.discard(path, files, untracked), undefined, null, undefined, ['status', 'treeStatus']),
+  /**
+   * Discard files (one, a folder's worth, or with `all` every change, staged
+   * and unstaged) after a confirm. What is staged and what is on disk is saved
+   * first, so Undo puts the discarded paths back exactly, staged parts and new
+   * files included. The confirm says whether Undo can: it cannot while a merge
+   * still has conflicts, because the index cannot be saved then.
+   */
+  discardChanges: async (
+    path: string,
+    files: { path: string; untracked?: boolean }[],
+    opts: { all: true } | { all?: false; label: string }
+  ): Promise<void> => {
+    // A file both staged and changed again is listed twice; discard it once.
+    const unique = [...new Map(files.map((f) => [f.path, f])).values()]
+    const paths = unique.map((f) => f.path)
+    if (paths.length === 0) return
+    const initial = await gitApi.captureWork(path).catch(() => null)
+    let saved = initial
+    const perform = async (): Promise<void> => {
+      // The dialog may sit open while files keep changing, and redo runs later
+      // still: save again right before discarding so Undo restores what was
+      // actually thrown away.
+      if (initial) saved = (await gitApi.captureWork(path).catch(() => null)) ?? saved
+      // Unstaging first turns staged-new files into files git never had;
+      // `discard` removes those from disk as well. (It fails before the first
+      // commit, where there is no HEAD to reset to; discard what it can anyway.)
+      if (opts.all) await gitApi.unstageAll(path).catch(() => undefined)
+      const untracked = unique.filter((f) => f.untracked).map((f) => f.path)
+      const tracked = unique.filter((f) => !f.untracked).map((f) => f.path)
+      if (tracked.length) await gitApi.discard(path, tracked, false)
+      if (untracked.length) await gitApi.discard(path, untracked, true)
+    }
+    const undoEntry: UndoEntry | undefined = initial
+      ? {
+          label: opts.all ? t('undoLabel.discardAll') : interp(t('undoLabel.discard'), { what: opts.label }),
+          undo: () => gitApi.restoreWork(path, saved ?? initial, paths),
+          redo: perform
+        }
+      : undefined
+    const message = opts.all
+      ? t(initial ? 'composer.discardAllMsgUndoable' : 'composer.discardAllMsg')
+      : interp(t(initial ? 'composer.discardMsgUndoable' : 'composer.discardMsg'), { file: opts.label })
+    useUIStore.getState().openModal({
+      kind: 'confirm',
+      title: t(opts.all ? 'composer.discardAllTitle' : 'composer.discardChanges'),
+      message,
+      danger: true,
+      confirmLabel: t(opts.all ? 'composer.discardAllConfirm' : 'composer.discardConfirm'),
+      onConfirm: () =>
+        void useRepoStore
+          .getState()
+          .run(path, interp(t('act.discarded'), { n: paths.length }), perform, undoEntry, null, undefined, ['status', 'treeStatus'])
+    })
+  },
 
   addToGitignore: (path: string, patterns: string[], label?: string) =>
     useRepoStore.getState().run(path, interp(t('act.addedToGitignore'), { what: label ?? interp(t('act.nEntries'), { n: patterns.length }) }), async () => {

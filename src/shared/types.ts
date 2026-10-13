@@ -2047,6 +2047,16 @@ export interface InfoEntry {
 /** What triggered a WIP snapshot. */
 export type SnapshotKind = 'auto' | 'manual' | 'guard'
 
+/**
+ * The changes a discard is about to throw away, saved so Undo can put them back
+ * exactly: what was staged (the index as a tree) and what was on disk (the
+ * working tree, untracked files included). Plain git objects, no ref.
+ */
+export interface SavedWork {
+  index: string
+  worktree: string
+}
+
 /** A saved WIP snapshot (a commit of the whole working tree kept under refs/gitcito/wip). */
 export interface SnapshotInfo {
   ref: string // full ref name (refs/gitcito/wip/<ts>-<a|m|g>)

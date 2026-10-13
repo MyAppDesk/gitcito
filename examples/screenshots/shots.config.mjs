@@ -788,6 +788,23 @@ export const shots = [
     }
   },
   {
+    // Discard everything, asking over a mixed tree that includes a staged new
+    // file — the confirm now says new files go too, and that Undo brings it back.
+    out: 'discard-all-undo',
+    repos: ['change-summary'],
+    themes: ['light'],
+    prepare: async ({ repoPaths, run }) => {
+      await run('git', ['-C', repoPaths['change-summary'], 'add', 'src/http/cache.js'])
+    },
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['change-summary']
+      await page.evaluate((p) => window.__shot.repo.getState().select(p, { type: 'wip' }), repo)
+      await page.waitForSelector('.composer .discard-btn:not([disabled])', { timeout: 10000 })
+      await page.click('.composer .discard-btn')
+      await page.waitForTimeout(500)
+    }
+  },
+  {
     // Commit composer prefilled from commit.template (.gitmessage).
     out: 'commit-template',
     repos: ['commit-template'],

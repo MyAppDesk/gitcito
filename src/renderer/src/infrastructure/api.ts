@@ -120,6 +120,7 @@ import type {
   CosmosCommit,
   ChangelogResult,
   SnapshotInfo,
+  SavedWork,
   SnapshotKind,
   TeammateRadarResult,
   CommitEditInfo,
@@ -285,6 +286,8 @@ export const gitApi = {
     call<void>('stashApplyFiles', path, sha, tracked, untracked),
   restoreFromCommit: (path: string, hash: string, paths: string[]) =>
     call<void>('restoreFromCommit', path, hash, paths),
+  captureWork: (path: string) => call<SavedWork | null>('captureWork', path),
+  restoreWork: (path: string, saved: SavedWork, paths: string[]) => call<void>('restoreWork', path, saved, paths),
 
   stage: (path: string, files: string[]) => call<void>('stage', path, files),
   applyRepoFileActions: (path: string, actions: PreparedRepoChatFileAction[]) =>

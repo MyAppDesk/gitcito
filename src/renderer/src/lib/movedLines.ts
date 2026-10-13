@@ -23,6 +23,15 @@ export interface MovedMark {
  *  shuffled `}` or `return` is not mistaken for a move. Same number as git's. */
 export const MOVED_MIN_ALNUM = 20
 
+/** A line that appears as more additions than this (`}`, `"dev": true,`) does
+ *  not start a block: pairing it with every copy made the search quadratic, and
+ *  a lockfile rewrite froze the viewer for seconds. Such a line still joins a
+ *  block that a rarer line before it started. */
+export const MOVED_MAX_PEERS = 16
+
+/** Past this many lines the diff is a rewrite, not a refactor; skip the search. */
+export const MOVED_MAX_LINES = 20_000
+
 const alnumCount = (s: string): number => (s.match(/[A-Za-z0-9]/g) ?? []).length
 
 /**
@@ -36,6 +45,7 @@ const alnumCount = (s: string): number => (s.match(/[A-Za-z0-9]/g) ?? []).length
  * coincidental one.
  */
 export function findMovedLines(lines: DiffLine[]): Map<number, MovedMark> {
+  if (lines.length > MOVED_MAX_LINES) return new Map()
   // Group = one del-run plus the add-run that follows it; same-group matches
   // are in-place edits.
   const group = new Array<number>(lines.length).fill(-1)
@@ -64,14 +74,22 @@ export function findMovedLines(lines: DiffLine[]): Map<number, MovedMark> {
     else addsByText.set(k, [i])
   })
 
+  const tooCommon = (i: number): boolean => (addsByText.get(key(i))?.length ?? 0) > MOVED_MAX_PEERS
+
   type Block = { del: number; add: number; len: number }
   const candidates: Block[] = []
   lines.forEach((l, d) => {
-    if (l.kind !== 'del' || !key(d)) return
+    if (l.kind !== 'del' || !key(d) || tooCommon(d)) return
     // Only start a block where the previous line could not have extended it.
     for (const a of addsByText.get(key(d)) ?? []) {
       if (group[a] === group[d]) continue
-      if (isKind(d - 1, 'del') && isKind(a - 1, 'add') && key(d - 1) === key(a - 1) && group[a - 1] !== group[d - 1]) {
+      if (
+        isKind(d - 1, 'del') &&
+        isKind(a - 1, 'add') &&
+        key(d - 1) === key(a - 1) &&
+        group[a - 1] !== group[d - 1] &&
+        !tooCommon(d - 1)
+      ) {
         continue
       }
       let len = 1

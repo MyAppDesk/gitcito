@@ -84,3 +84,27 @@ describe('moved code', () => {
     expect(marks.size).toBe(6)
   })
 })
+
+describe('findMovedLines on large rewrites', () => {
+  it('stays fast when the same short line repeats on both sides, as in a lockfile', () => {
+    const body: string[] = []
+    for (let i = 0; i < 6000; i++) body.push(i % 3 ? '-      "dev": true,' : `-  "node_modules/pkg-${i}": {`)
+    body.push(' unchanged')
+    for (let i = 0; i < 6000; i++) body.push(i % 3 ? '+      "dev": true,' : `+  "node_modules/pkg-${i + 1}": {`)
+    const lines = parseDiff(diffOf(...body))
+    const started = performance.now()
+    findMovedLines(lines)
+    expect(performance.now() - started).toBeLessThan(500)
+  })
+
+  it('still marks a move whose first line is a common one', () => {
+    const closers = Array.from({ length: 20 }, () => ['-}', '+}']).flat()
+    const block = ['}', 'function relocatedHelperFunction(input) {', '  return input.trim().toLowerCase()']
+    const lines = parseDiff(
+      diffOf(...block.map((l) => `-${l}`), ' anchor one', ...closers, ' anchor two', ...block.map((l) => `+${l}`))
+    )
+    const marks = findMovedLines(lines)
+    const moved = lines.flatMap((l, i) => (marks.has(i) ? [l.text.trim()] : []))
+    expect(moved).toContain('function relocatedHelperFunction(input) {')
+  })
+})

@@ -1,5 +1,20 @@
 
 
+## [4.13.0](https://github.com/MyAppDesk/gitcito/compare/v4.12.0...v4.13.0) (2026-10-13)
+
+
+### Features
+
+* **diff:** mark code that only moved within a file ([#55](https://github.com/MyAppDesk/gitcito/issues/55)) ([5314e4d](https://github.com/MyAppDesk/gitcito/commit/5314e4df27e4d6df0bff973bab0e2d6c08397f4d))
+* make file discards undoable and remove new files on discard all ([#54](https://github.com/MyAppDesk/gitcito/issues/54)) ([3d43aba](https://github.com/MyAppDesk/gitcito/commit/3d43abae112b5cd57639f8845b897a89318c9b38))
+* unstage, discard, revert and apply by hunk or line, with undo ([#56](https://github.com/MyAppDesk/gitcito/issues/56)) ([5ce4a21](https://github.com/MyAppDesk/gitcito/commit/5ce4a219670d5b5830fc3974b58a71e36e8e6a67))
+
+
+### Bug Fixes
+
+* keep an open file in step with git changes made outside the app ([#53](https://github.com/MyAppDesk/gitcito/issues/53)) ([2560faf](https://github.com/MyAppDesk/gitcito/commit/2560fafff2b1e10c0b48ed347e266335001b71f0))
+* keep the files search responsive while typing ([#52](https://github.com/MyAppDesk/gitcito/issues/52)) ([c8ca607](https://github.com/MyAppDesk/gitcito/commit/c8ca607fdb60a6af3af8100053d54d318018bd71))
+
 ## [4.12.0](https://github.com/MyAppDesk/gitcito/compare/v4.11.1...v4.12.0) (2026-10-11)
 
 

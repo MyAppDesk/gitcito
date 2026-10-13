@@ -2,7 +2,7 @@
 // is on disk before it, restoreWork puts exactly the discarded paths back. And
 // Discard all removes newly added files instead of leaving them untracked.
 import { describe, it, expect, afterAll } from 'vitest'
-import { writeFileSync, readFileSync, existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs'
+import { writeFileSync, readFileSync, existsSync, mkdirSync, mkdtempSync, rmSync, symlinkSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -127,5 +127,50 @@ describe('discard undo', () => {
     const { dir } = repo()
     const saved = await gitService.captureWork(dir)
     await expect(gitService.restoreWork(dir, saved!, ['../escape.txt'])).rejects.toThrow(/outside/)
+  })
+
+  it('refuses a path behind a symlinked folder', async () => {
+    const { dir } = repo()
+    const outside = mkdtempSync(join(tmpdir(), 'gitcito-discard-outside-'))
+    dirs.push(outside)
+    writeFileSync(join(outside, 'victim.txt'), 'precious\n')
+    symlinkSync(outside, join(dir, 'link'))
+    const saved = await gitService.captureWork(dir)
+    await expect(gitService.restoreWork(dir, saved!, ['link/victim.txt'])).rejects.toThrow(/outside/)
+    expect(readFileSync(join(outside, 'victim.txt'), 'utf8')).toBe('precious\n')
+  })
+
+  it('refuses saved work that is not a pair of object ids', async () => {
+    const { dir } = repo()
+    await expect(
+      gitService.restoreWork(dir, { index: '--orphan', worktree: 'HEAD' }, ['a.txt'])
+    ).rejects.toThrow(/Invalid/)
+  })
+
+  it('treats a file name with glob characters literally', async () => {
+    const { dir } = repo()
+    writeFileSync(join(dir, '*.txt'), 'star\n')
+    const saved = await gitService.captureWork(dir)
+    await gitService.discard(dir, ['*.txt'], true)
+    writeFileSync(join(dir, 'a.txt'), 'edited after\n')
+    await gitService.restoreWork(dir, saved!, ['*.txt'])
+    expect(readFileSync(join(dir, '*.txt'), 'utf8')).toBe('star\n')
+    expect(readFileSync(join(dir, 'a.txt'), 'utf8')).toBe('edited after\n')
+  })
+})
+
+describe('discard failures', () => {
+  it('leaves a tracked file on disk when git cannot take the index lock', async () => {
+    const { dir, git } = repo()
+    writeFileSync(join(dir, 'added.txt'), 'staged new\n')
+    git('add', 'added.txt')
+    const lock = join(dir, '.git', 'index.lock')
+    writeFileSync(lock, '')
+    try {
+      await expect(gitService.discard(dir, ['added.txt'], false)).rejects.toThrow()
+    } finally {
+      rmSync(lock, { force: true })
+    }
+    expect(readFileSync(join(dir, 'added.txt'), 'utf8')).toBe('staged new\n')
   })
 })

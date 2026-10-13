@@ -2450,8 +2450,13 @@ export const repoActions = {
     const unique = [...new Map(files.map((f) => [f.path, f])).values()]
     const paths = unique.map((f) => f.path)
     if (paths.length === 0) return
-    const saved = await gitApi.captureWork(path).catch(() => null)
+    const initial = await gitApi.captureWork(path).catch(() => null)
+    let saved = initial
     const perform = async (): Promise<void> => {
+      // The dialog may sit open while files keep changing, and redo runs later
+      // still: save again right before discarding so Undo restores what was
+      // actually thrown away.
+      if (initial) saved = (await gitApi.captureWork(path).catch(() => null)) ?? saved
       // Unstaging first turns staged-new files into files git never had;
       // `discard` removes those from disk as well. (It fails before the first
       // commit, where there is no HEAD to reset to; discard what it can anyway.)
@@ -2461,16 +2466,16 @@ export const repoActions = {
       if (tracked.length) await gitApi.discard(path, tracked, false)
       if (untracked.length) await gitApi.discard(path, untracked, true)
     }
-    const undoEntry: UndoEntry | undefined = saved
+    const undoEntry: UndoEntry | undefined = initial
       ? {
           label: opts.all ? t('undoLabel.discardAll') : interp(t('undoLabel.discard'), { what: opts.label }),
-          undo: () => gitApi.restoreWork(path, saved, paths),
+          undo: () => gitApi.restoreWork(path, saved ?? initial, paths),
           redo: perform
         }
       : undefined
     const message = opts.all
-      ? t(saved ? 'composer.discardAllMsgUndoable' : 'composer.discardAllMsg')
-      : interp(t(saved ? 'composer.discardMsgUndoable' : 'composer.discardMsg'), { file: opts.label })
+      ? t(initial ? 'composer.discardAllMsgUndoable' : 'composer.discardAllMsg')
+      : interp(t(initial ? 'composer.discardMsgUndoable' : 'composer.discardMsg'), { file: opts.label })
     useUIStore.getState().openModal({
       kind: 'confirm',
       title: t(opts.all ? 'composer.discardAllTitle' : 'composer.discardChanges'),

@@ -2,7 +2,7 @@ import { ipcMain, shell } from 'electron'
 import { simpleGit, SimpleGit, type StatusResult } from 'simple-git'
 import { basename, dirname, join, resolve as resolvePath, sep } from 'path'
 import { pathToFileURL } from 'url'
-import { readFile, writeFile, unlink, stat, chmod, mkdir, readdir, rename, cp, open, rm } from 'fs/promises'
+import { readFile, writeFile, unlink, stat, chmod, mkdir, readdir, rename, cp, open, rm, realpath } from 'fs/promises'
 import { tmpdir, homedir } from 'os'
 import { existsSync, accessSync, constants as fsConstants } from 'fs'
 import { spawn, spawnSync, execFile } from 'child_process'
@@ -888,6 +888,24 @@ async function runGit(
     const e = err as { stderr?: string; message?: string }
     throw new Error(redactCredentials((e.stderr || e.message || 'git command failed').trim()))
   }
+}
+
+function isObjectId(value: unknown): value is string {
+  return typeof value === 'string' && /^[0-9a-f]{40}([0-9a-f]{24})?$/.test(value)
+}
+
+/**
+ * `rel` resolved inside the repository, or null when it escapes it — through
+ * `..` or through a symlinked parent directory. The leaf itself may be a
+ * symlink: removing it removes the link, not its target.
+ */
+async function containedPath(repoPath: string, rel: string): Promise<string | null> {
+  const root = await realpath(repoPath).catch(() => resolvePath(repoPath))
+  const full = resolvePath(root, rel)
+  if (!full.startsWith(root + sep)) return null
+  const parent = await realpath(dirname(full)).catch(() => null)
+  if (parent === null) return full
+  return parent === root || parent.startsWith(root + sep) ? full : null
 }
 
 /**
@@ -3336,10 +3354,14 @@ export const gitService = {
     const tmpIndex = join(gitDir, `gitcito-save-${process.pid}-${Date.now()}`)
     const env = { GIT_INDEX_FILE: tmpIndex }
     try {
-      // Seeded from the staged tree, so `add -A` in the throwaway index records
-      // the disk on top of it — untracked files included, ignored ones not
-      // (a discard leaves those alone anyway).
-      await runGit(repoPath, ['read-tree', index], env)
+      // Seeded from a copy of the real index, so `add -A` in the throwaway one
+      // records the disk on top of what is staged — untracked files included,
+      // ignored ones not (a discard leaves those alone anyway). A copy keeps the
+      // stat cache, so only changed files are hashed; `read-tree` would rehash
+      // the whole tree. No index yet (nothing ever staged) seeds from the tree.
+      const realIndex = resolvePath(repoPath, (await runGit(repoPath, ['rev-parse', '--git-path', 'index'])).trim())
+      const copied = await cp(realIndex, tmpIndex).then(() => true, () => false)
+      if (!copied) await runGit(repoPath, ['read-tree', index], env)
       await runGit(repoPath, ['add', '-A'], env)
       const worktree = (await runGit(repoPath, ['write-tree'], env)).trim()
       return worktree ? { index, worktree } : null
@@ -3356,18 +3378,24 @@ export const gitService = {
    * moved on since and is left alone. A path that did not exist then is removed.
    */
   async restoreWork(repoPath: string, saved: SavedWork, paths: string[]): Promise<void> {
-    const root = resolvePath(repoPath)
+    if (!isObjectId(saved.index) || !isObjectId(saved.worktree)) throw new Error('Invalid saved work')
     for (const path of paths) {
-      const full = resolvePath(repoPath, path)
-      if (!full.startsWith(root + sep)) throw new Error(`Refusing to restore outside the repository: ${path}`)
+      const full = await containedPath(repoPath, path)
+      if (!full) throw new Error(`Refusing to restore outside the repository: ${path}`)
       // A path staged neither then nor now matches nothing, which git reports
       // as an error; there is simply nothing to put back in the index.
-      await runGit(repoPath, ['restore', '--source', saved.index, '--staged', '--', path]).catch((err: Error) => {
-        if (!/did not match/i.test(err.message)) throw err
-      })
-      const existed = (await runGit(repoPath, ['ls-tree', '--name-only', saved.worktree, '--', path])).trim()
-      if (existed) await runGit(repoPath, ['restore', '--source', saved.worktree, '--worktree', '--', path])
-      else await rm(full, { force: true }).catch(() => {})
+      await runGit(repoPath, ['--literal-pathspecs', 'restore', '--source', saved.index, '--staged', '--', path])
+        .catch((err: Error) => {
+          if (!/did not match/i.test(err.message)) throw err
+        })
+      const existed = (
+        await runGit(repoPath, ['--literal-pathspecs', 'ls-tree', '--name-only', saved.worktree, '--', path])
+      ).trim()
+      if (existed) {
+        await runGit(repoPath, ['--literal-pathspecs', 'restore', '--source', saved.worktree, '--worktree', '--', path])
+      } else {
+        await rm(full, { force: true }).catch(() => {})
+      }
     }
   },
 
@@ -4270,12 +4298,22 @@ export const gitService = {
       // Staged-new: out of the index and off the disk. When it is no longer in
       // the index either (Discard all unstages first), it is a file git never
       // had — remove it the way discarding an untracked file would.
-      const removed = await git.raw(['rm', '-f', '--', f]).then(() => true, () => false)
-      if (!removed) {
-        const root = resolvePath(repoPath)
-        const full = resolvePath(repoPath, f)
-        if (full.startsWith(root + sep)) await rm(full, { force: true })
+      const rmError = await git.raw(['rm', '-f', '--', f]).then(() => null, (err: Error) => err)
+      if (!rmError) continue
+      // Only a path git truly does not know is deleted by hand. Anything else
+      // (a held index.lock, a path still in the index or in HEAD) is a real
+      // failure, and wiping the file from disk would lose it for good.
+      const known = async (args: string[]): Promise<boolean> =>
+        runGit(repoPath, args).then(() => true, () => false)
+      if (
+        (await known(['--literal-pathspecs', 'ls-files', '--error-unmatch', '--', f])) ||
+        (await known(['cat-file', '-e', `HEAD:${f}`]))
+      ) {
+        throw rmError
       }
+      const full = await containedPath(repoPath, f)
+      if (!full) throw new Error(`Refusing to delete outside the repository: ${f}`)
+      await rm(full, { force: true })
     }
   },
 

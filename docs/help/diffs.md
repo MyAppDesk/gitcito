@@ -2,8 +2,8 @@
 title: Diffs & previews
 category: Reading changes
 order: 20
-summary: Split view, word-level highlighting, image diffs and file previews.
-keywords: diff split side-by-side word level whitespace image diff preview markdown docx pdf change gutter minimap
+summary: Split view, word-level highlighting, moved code, image diffs and file previews.
+keywords: diff split side-by-side word level whitespace moved code color-moved image diff preview markdown docx pdf change gutter minimap stale staged unstaged follow agent terminal
 ---
 
 # Diffs & previews
@@ -15,6 +15,7 @@ keywords: diff split side-by-side word level whitespace image diff preview markd
 | **Unified ↔ split** | Side-by-side when you want to compare, stacked when you want to read |
 | **Word-level** | Highlights just the changed tokens inside an edited line — red on the old, green on the new |
 | **Ignore whitespace** | Hides reindentation so the real change surfaces |
+| **Moved code** (on by default) | Tints blocks that were only moved, not changed, in blue — shown when the diff has any |
 | **Wrap** (split only) | Folds long lines inside their column instead of scrolling them |
 | **Linked** (split, wrap off) | Scrolls both halves together, vertically and sideways — off, each column scrolls on its own |
 | <kbd>⌘F</kbd> | Find inside the diff, with next/previous stepping |
@@ -34,8 +35,78 @@ half where its own content is.
 
 ![Split diff with word-level highlighting](../screenshots/split-diff.webp)
 
+### Moved code
+
+A block cut from one place and pasted in another shows up in a diff as a
+deletion and an unrelated-looking addition, and nothing tells you the two are
+the same code — you read it twice to find out nothing changed. **Moved code**
+recognises the pair, after git's own `--color-moved`: a run of deleted lines
+that reappears, line for line, as a run of added lines elsewhere in the same
+file's diff. Both ends get a blue tint, and the margin shows an arrow pointing
+at the other end — hover it for the line number. Neighbouring moved blocks
+alternate between two shades of blue so you can tell where one ends. It works
+in both the unified and the split view.
+
+![A function moved to the end of the file, tinted blue at both ends](../screenshots/moved-code.webp)
+
+Lines are compared without their leading and trailing whitespace, so a block
+moved into a deeper indent still counts. Moved lines skip word-level marks,
+which would compare them with whatever line happens to sit opposite rather than
+with the copy they moved from. Staging works as before: a moved line is still
+an ordinary − or + line underneath.
+
+Limits:
+
+- like git, a block needs at least 20 letters and digits to count, so a
+  shuffled `}` or `return` is not flagged;
+- it only looks within one file, so code moved to another file is a deletion
+  in one diff and an addition in the other;
+- a block that was moved *and* edited is not marked — only the unchanged runs
+  of lines around the edit are, if they are long enough;
+- re-indenting lines in place is not a move, and blank lines are never
+  matched.
+
+The toggle appears only when the diff contains a move, and it remembers its
+state like the others.
+
 Above every diff sits the [semantic summary](semantic-diff.md) — what changed,
 symbol by symbol, rather than line by line.
+
+## When the file changes under you
+
+A working-tree file stays open while something else works on it — a terminal,
+an editor, or a coding agent you asked to commit. Its source was fixed when it
+opened, so the pane used to go on diffing the side the file had left: staged
+elsewhere, it said "No changes to display" under an **Unstaged** chip; committed,
+it went blank. Now the viewer keeps up, and the chip in its header — Unstaged,
+Staged, or a commit — says where the file is now:
+
+| What happens outside Gitcito | What the open file does |
+|------------------------------|-------------------------|
+| The file is staged | Switches to the **Staged** diff |
+| The file is unstaged | Switches back to the **Unstaged** diff |
+| Part of the file is staged | Stays on the side you chose; both are real |
+| The file is committed | Follows it into the new commit, so the diff stays on screen |
+| The change is discarded or stashed | Closes, as there is nothing left to show |
+| The commit you are reading is undone | Goes back to the **Staged** or **Unstaged** diff, wherever the change landed |
+| …and its changes thrown away (`reset --hard`) | Closes — the change exists nowhere now, and the commit underneath is a different one |
+| That commit was `HEAD` and is amended or reworded | Moves on to the rewritten commit |
+
+![A diff opened Unstaged, still on screen as Staged after a terminal staged the file](../screenshots/file-follows-git.webp)
+
+Committing from Gitcito's own composer still closes the file, as before: when
+you commit, the result in the graph is what you want to see.
+
+A commit that leaves history some other way — rebased away further back, say —
+keeps its view: its content still exists, and guessing where it went would be
+the surprise.
+
+*Limits:* the viewer notices these changes when the repository is re-read — at
+once with the file watcher, otherwise on the next refresh. While you are
+editing the file in place it holds still, so an unsaved draft is never thrown
+away. It only follows into the commit that `HEAD` now points at: if several
+commits land at once and the file is not in the newest one, the view closes.
+A conflicted file is left to the conflict resolver.
 
 ## Image diffs
 
@@ -117,6 +188,12 @@ of memory.
 The left sidebar's **Files** tab browses the working tree itself, with status
 badges on folders (added / modified / deleted) that aggregate what is inside
 them.
+
+The search box above it filters by file name or searches file contents. A
+content search starts once you pause typing, and each new letter stops the
+search before it, so typing stays smooth on a large repository. Plain text runs
+through `git grep` over tracked and untracked files. *Limits:* a regex search
+skips files over 4 MB, and results stop at 2,000 lines (100 per file).
 
 ![The files tab with a preview](../screenshots/file-tree.webp)
 

@@ -19,57 +19,82 @@ export function tokenize(s: string): string[] {
   return s.match(/\s+|[A-Za-z0-9_]+|[^\sA-Za-z0-9_]/g) ?? []
 }
 
+/** Above this many LCS cells the differing middle of a line pair is marked
+ *  changed wholesale: a minified line can hold tens of thousands of tokens, and
+ *  a full table for two of them would exhaust the renderer's memory. */
+export const WORD_DIFF_CELL_BUDGET = 1_000_000
+
 /**
  * Word-level diff of two lines via an LCS over tokens. Returns the changed
  * character ranges on each side (delRanges over `a`, addRanges over `b`).
+ * The common prefix and suffix are matched first, so a small edit inside a huge
+ * line stays cheap.
  */
 export function wordDiff(a: string, b: string): { del: Range[]; add: Range[] } {
   const ta = tokenize(a)
   const tb = tokenize(b)
-  const n = ta.length
-  const m = tb.length
-  const dp: number[][] = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0))
-  for (let i = n - 1; i >= 0; i--) {
-    for (let j = m - 1; j >= 0; j--) {
-      dp[i][j] = ta[i] === tb[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1])
-    }
-  }
+  const max = Math.min(ta.length, tb.length)
+  let p = 0
+  let aPos = 0
+  while (p < max && ta[p] === tb[p]) aPos += ta[p++].length
+  let s = 0
+  while (s < max - p && ta[ta.length - 1 - s] === tb[tb.length - 1 - s]) s++
+  let bPos = aPos
+  const n = ta.length - p - s
+  const m = tb.length - p - s
   const del: Range[] = []
   const add: Range[] = []
-  let i = 0
-  let j = 0
-  let aPos = 0
-  let bPos = 0
   const push = (arr: Range[], start: number, end: number): void => {
     const last = arr[arr.length - 1]
     if (last && last[1] === start) last[1] = end
     else arr.push([start, end])
   }
+  if (n * m > WORD_DIFF_CELL_BUDGET) {
+    let aEnd = aPos
+    for (let k = 0; k < n; k++) aEnd += ta[p + k].length
+    let bEnd = bPos
+    for (let k = 0; k < m; k++) bEnd += tb[p + k].length
+    if (aEnd > aPos) del.push([aPos, aEnd])
+    if (bEnd > bPos) add.push([bPos, bEnd])
+    return { del, add }
+  }
+  const w = m + 1
+  const dp = new Uint32Array((n + 1) * w)
+  for (let i = n - 1; i >= 0; i--) {
+    for (let j = m - 1; j >= 0; j--) {
+      const below = (i + 1) * w + j
+      dp[i * w + j] = ta[p + i] === tb[p + j] ? dp[below + 1] + 1 : Math.max(dp[below], dp[i * w + j + 1])
+    }
+  }
+  let i = 0
+  let j = 0
   while (i < n && j < m) {
-    if (ta[i] === tb[j]) {
-      aPos += ta[i].length
-      bPos += tb[j].length
+    const x = ta[p + i]
+    const y = tb[p + j]
+    if (x === y) {
+      aPos += x.length
+      bPos += y.length
       i++
       j++
-    } else if (dp[i + 1][j] >= dp[i][j + 1]) {
-      push(del, aPos, aPos + ta[i].length)
-      aPos += ta[i].length
+    } else if (dp[(i + 1) * w + j] >= dp[i * w + j + 1]) {
+      push(del, aPos, aPos + x.length)
+      aPos += x.length
       i++
     } else {
-      push(add, bPos, bPos + tb[j].length)
-      bPos += tb[j].length
+      push(add, bPos, bPos + y.length)
+      bPos += y.length
       j++
     }
   }
   while (i < n) {
-    push(del, aPos, aPos + ta[i].length)
-    aPos += ta[i].length
-    i++
+    const x = ta[p + i++]
+    push(del, aPos, aPos + x.length)
+    aPos += x.length
   }
   while (j < m) {
-    push(add, bPos, bPos + tb[j].length)
-    bPos += tb[j].length
-    j++
+    const y = tb[p + j++]
+    push(add, bPos, bPos + y.length)
+    bPos += y.length
   }
   return { del, add }
 }

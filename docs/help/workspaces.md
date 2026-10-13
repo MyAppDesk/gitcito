@@ -17,7 +17,8 @@ new-tab picker and <kbd>⌘W</kbd> / <kbd>Ctrl+W</kbd> to close the active tab.
 You can also drag to reorder, middle-click to close, or press <kbd>⌘⇧T</kbd>
 to reopen the last one you closed. Right-click a repository tab (or a chip
 inside a [group](#groups)) for the [repository context menu](repo-menu.md) —
-alias, worktrees, GitHub, terminal, reveal, editor, and remove. Close the last
+alias, worktrees, GitHub, terminal, reveal, editor, and **Close this repo** and
+**Close others** at the bottom (a chip in a group offers remove instead). Close the last
 tab and <kbd>⌘W</kbd> closes the window instead. A dot on the tab means
 uncommitted work; a different one means conflicts.
 

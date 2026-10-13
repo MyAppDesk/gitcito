@@ -15,6 +15,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { writeFile, mkdir, rm, chmod } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
+import { execFileSync } from 'node:child_process'
 
 const ASSETS = join(dirname(fileURLToPath(import.meta.url)), 'assets')
 
@@ -1315,6 +1316,31 @@ export const shots = [
       await page.waitForTimeout(500)
       await page.locator('.code-gutter.mod').first().click()
       await page.waitForTimeout(400)
+    }
+  },
+  {
+    // An open diff keeping up with git: config.ts is opened on its Unstaged
+    // diff, then staged from outside the app, as a terminal or an agent would.
+    // The viewer follows it to the Staged side instead of reporting no changes.
+    out: 'file-follows-git',
+    repos: ['word-diff'],
+    themes: ['light'],
+    // Start from the unstaged edit even if an earlier run left it staged.
+    prepare: async ({ repoPaths, run }) => {
+      await run('git', ['-C', repoPaths['word-diff'], 'reset', '-q', '--', 'config.ts'], { allowFail: true })
+    },
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['word-diff']
+      await page.evaluate((p) => {
+        window.__shot.ui.getState().setFileView({ repoPath: p, file: 'config.ts', source: { type: 'wip', staged: false, untracked: false }, mode: 'diff' })
+      }, repo)
+      await page.waitForTimeout(600)
+      execFileSync('git', ['-C', repo, 'add', '--', 'config.ts'])
+      await page.evaluate((p) => window.__shot.repo.getState().refresh(p), repo)
+      await page.waitForTimeout(800)
+      // Coming back to the window from the terminal re-reads the open file.
+      await page.evaluate(() => window.dispatchEvent(new Event('focus')))
+      await page.waitForTimeout(1000)
     }
   },
   {

@@ -118,6 +118,12 @@ The left sidebar's **Files** tab browses the working tree itself, with status
 badges on folders (added / modified / deleted) that aggregate what is inside
 them.
 
+The search box above it filters by file name or searches file contents. A
+content search starts once you pause typing, and each new letter stops the
+search before it, so typing stays smooth on a large repository. Plain text runs
+through `git grep` over tracked and untracked files. *Limits:* a regex search
+skips files over 4 MB, and results stop at 2,000 lines (100 per file).
+
 ![The files tab with a preview](../screenshots/file-tree.webp)
 
 ![Folder badges totalling what changed inside each one](../screenshots/tree-badges.webp)

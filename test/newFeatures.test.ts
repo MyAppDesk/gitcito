@@ -76,6 +76,26 @@ describe('code search (code-search playground)', () => {
     expect(hits.length).toBe(2)
   })
 
+  it('searchFileMatches covers untracked files and unusual names', async () => {
+    const C = cloneFixture('code-search')
+    writeFileSync(join(C, 'odd:name ü.txt'), 'needle here\nnone\nNEEDLE again\n')
+    const hits = await gitService.searchFileMatches(C, ['odd:name ü.txt', 'scratch.js'], 'needle')
+    expect(hits).toEqual([
+      { file: 'odd:name ü.txt', line: 1, text: 'needle here' },
+      { file: 'odd:name ü.txt', line: 3, text: 'NEEDLE again' }
+    ])
+    const regex = await gitService.searchFileMatches(C, ['odd:name ü.txt'], 'need\\w+', { regex: true })
+    expect(regex.length).toBe(2)
+  })
+
+  it('searchFileMatches stops a superseded search with the same id', async () => {
+    const files = await gitService.listFiles(R)
+    const first = gitService.searchFileMatches(R, files, 'TODO', { searchId: 't' })
+    const second = gitService.searchFileMatches(R, files, 'TODO', { searchId: 't' })
+    expect(await first).toEqual([])
+    expect((await second).length).toBeGreaterThanOrEqual(3)
+  })
+
   it('searchCommitMatches greps the tree of a commit, not the working copy', async () => {
     // validateToken exists at the commit that added it and is gone from HEAD.
     const added = execFileSync('git', ['-C', R, 'log', '--format=%H', '--grep=add validateToken'], {

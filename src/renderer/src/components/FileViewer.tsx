@@ -4,14 +4,14 @@ import type { BlameLine, BlobSpec, FileHistoryEntry, NumberedLine } from '../../
 import { gitApi, aiApi, shellApi } from '../infrastructure/api'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore, type FileViewMode, type FileViewState } from '../stores/ui'
-import { useRepoStore } from '../stores/repo'
+import { useRepoStore, repoActions, type HunkActionKind } from '../stores/repo'
 import { canonicalRepoPath } from '../lib/repoAlias'
 import { filePermalink } from '../lib/autolink'
 import { revealLineWhenReady } from '../lib/reveal'
 import { editorLineMenuItems } from '../lib/editorOpen'
 import { useT, interp, type TranslationKey } from '../i18n'
 import { useHoverExplain } from './HoverExplain'
-import { DiffViewer } from './DiffViewer'
+import { DiffViewer, type HunkAction } from './DiffViewer'
 import { useFollowWipFile } from './useFollowWipFile'
 import { SemanticSummary } from './SemanticSummary'
 import { buildQueryRegExp, highlightHtml, type HighlightLayer } from './FileSearchBar'
@@ -42,6 +42,16 @@ const IMAGE_EXTS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'ico', '
  *  layout/paint for offscreen rows (`content-visibility: auto`). The DOM stays
  *  complete, so find, reveal-line and text selection behave exactly as before. */
 const HUGE_LINES = 5000
+
+/** Each hunk action's labels: its @@ button, the selection bar's button, and
+ *  the line menu's row for one line. Keys, so a language switch is picked up. */
+const HUNK_LABELS = {
+  stage: { hunk: 'diff.stageHunk', lines: 'hunk.stageLines', line: 'hunk.stageLine' },
+  unstage: { hunk: 'hunk.unstage', lines: 'hunk.unstageLines', line: 'hunk.unstageLine' },
+  discard: { hunk: 'hunk.discard', lines: 'hunk.discardLines', line: 'hunk.discardLine' },
+  revert: { hunk: 'hunk.revert', lines: 'hunk.revertLines', line: 'hunk.revertLine' },
+  apply: { hunk: 'hunk.apply', lines: 'hunk.applyLines', line: 'hunk.applyLine' }
+} as const satisfies Record<HunkActionKind, { hunk: TranslationKey; lines: TranslationKey; line: TranslationKey }>
 
 function isImage(name: string): boolean {
   return IMAGE_EXTS.has(fileExt(name))
@@ -682,6 +692,42 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
     return () => cancelAnimationFrame(id)
   }, [searchRe, content, mode, file, findOpen])
 
+  // Which hunk actions fit the diff on screen. With whitespace ignored they still
+  // work: the patch is applied matching whitespace loosely (see applyHunkPatch),
+  // so they do what the visible diff shows. None for an untracked working file
+  // (no index version to stage against hunk by hunk — stage the file), and none
+  // for a conflicted file, whose combined diff (`diff --cc`) `git apply` cannot
+  // read — resolve it in the conflict view instead.
+  // From the moment a hunk action is sent until it has landed, the diff on
+  // screen is about to change: its actions stay in place but wait.
+  const [hunkPending, setHunkPending] = useState(false)
+  const isCombinedDiff = !!content && /^diff --cc /m.test(content)
+  const hunkActions = useMemo<HunkAction[]>(() => {
+    if (isCombinedDiff) return []
+    const action = (kind: HunkActionKind): HunkAction => ({
+      id: kind,
+      hunkLabel: t(HUNK_LABELS[kind].hunk),
+      linesLabel: (n) => interp(t(HUNK_LABELS[kind].lines), { n }),
+      lineLabel: t(HUNK_LABELS[kind].line),
+      reverse: kind !== 'stage' && kind !== 'apply',
+      danger: kind === 'discard',
+      run: (patch) =>
+        void repoActions
+          .applyHunk(repoPath, patch, kind, ignoreWs, () => setHunkPending(true))
+          .then(() => {
+            setHunkPending(false)
+            setRefreshKey((k) => k + 1)
+          })
+    })
+    if (source.type === 'wip' && !source.untracked) {
+      return source.staged ? [action('unstage')] : [action('stage'), action('discard')]
+    }
+    if (source.type === 'commit') return [action('revert')]
+    // A stash's untracked files diff as new files; applying creates the file.
+    if (source.type === 'stash') return [action('apply')]
+    return []
+  }, [ignoreWs, isCombinedDiff, source, repoPath, t])
+
   const sourceChip =
     source.type === 'commit' ? (
       <span className="fv-chip commit">{source.hash.slice(0, 7)}</span>
@@ -860,18 +906,8 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
             maskValues={maskOn}
             ignoreWs={ignoreWs}
             onToggleIgnoreWs={() => setIgnoreWs((v) => !v)}
-            onStageHunk={
-              source.type === 'wip' && !source.staged && !source.untracked
-                ? async (patch) => {
-                    try {
-                      await gitApi.stagePatch(repoPath, patch)
-                      setRefreshKey((k) => k + 1)
-                    } catch (err) {
-                      toast('error', err instanceof Error ? err.message : String(err))
-                    }
-                  }
-                : undefined
-            }
+            hunkActions={hunkActions}
+            busy={hunkPending}
           />
         )}
 

@@ -16,6 +16,8 @@ import { highlightHtml, buildQueryRegExp, type HighlightLayer } from './FileSear
 import { highlightLine } from '../lib/highlight'
 import { maskSecretLine } from '../lib/secrets'
 import { useT, interp } from '../i18n'
+import { useUIStore, type MenuItem } from '../stores/ui'
+import { buildLinePatch, extractHunks, singleHunkPatch } from '../lib/hunkPatch'
 import { useSettingsStore } from '../stores/settings'
 import { useHoverExplain } from './HoverExplain'
 import type { NumberedLine } from '../../../shared/types'
@@ -23,7 +25,7 @@ import {
   parseDiff,
   wordRangesByLine,
   buildSplitRows,
-  type DiffLine,
+  splitEditPartners,
   type Range,
   type SplitCell,
   type SplitRow
@@ -61,85 +63,24 @@ function markRanges(html: string, ranges: Range[], cls: string): string {
   })
 }
 
-function extractHunks(diff: string): { header: string; hunks: string[] } {
-  const rawLines = diff.split('\n')
-  const headerLines: string[] = []
-  const hunks: string[] = []
-  let currentHunk: string[] | null = null
-
-  for (const line of rawLines) {
-    if (line.startsWith('@@')) {
-      if (currentHunk) hunks.push(currentHunk.join('\n'))
-      currentHunk = [line]
-    } else if (currentHunk !== null) {
-      currentHunk.push(line)
-    } else {
-      headerLines.push(line)
-    }
-  }
-  if (currentHunk) hunks.push(currentHunk.join('\n'))
-
-  return { header: headerLines.join('\n'), hunks }
-}
-
 /**
- * Build a partial patch containing only the selected +/- lines (by index into
- * `lines`). Unselected deletions become context (kept), unselected additions are
- * dropped, and each affected hunk's @@ counts are recomputed — the same shape
- * `git add -p` produces, applied to the index via `git apply --cached`.
+ * Something a hunk (or a line selection) can be sent to. The host decides which
+ * apply to the diff on screen — stage and discard for unstaged changes, unstage
+ * for staged ones, revert for a commit, apply for a stash.
  */
-function buildLinePatch(lines: DiffLine[], header: string, selected: Set<number>): string {
-  const starts = new Map<number, { o: number; n: number }>()
-  for (const l of lines) {
-    if (l.kind === 'hunk') {
-      const m = /@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/.exec(l.text)
-      if (m) starts.set(l.hunkIdx, { o: +m[1], n: +m[2] })
-    }
-  }
-  const hunks = new Map<number, number[]>()
-  lines.forEach((l, i) => {
-    if (l.kind === 'add' || l.kind === 'del' || l.kind === 'ctx') {
-      if (!hunks.has(l.hunkIdx)) hunks.set(l.hunkIdx, [])
-      hunks.get(l.hunkIdx)!.push(i)
-    }
-  })
-
-  const parts: string[] = []
-  for (const [hunkIdx, idxs] of hunks) {
-    if (!idxs.some((i) => selected.has(i))) continue
-    const start = starts.get(hunkIdx) ?? { o: 1, n: 1 }
-    const body: string[] = []
-    let oldC = 0
-    let newC = 0
-    for (const i of idxs) {
-      const l = lines[i]
-      if (l.text.startsWith('\\')) {
-        body.push(l.text) // "\ No newline at end of file" — keep verbatim, don't count
-        continue
-      }
-      if (l.kind === 'ctx') {
-        body.push(` ${l.text}`)
-        oldC++
-        newC++
-      } else if (l.kind === 'del') {
-        if (selected.has(i)) {
-          body.push(`-${l.text}`)
-          oldC++
-        } else {
-          body.push(` ${l.text}`) // keep this deletion out of the stage
-          oldC++
-          newC++
-        }
-      } else if (selected.has(i)) {
-        body.push(`+${l.text}`)
-        newC++
-      }
-      // unselected additions are omitted
-    }
-    parts.push(`@@ -${start.o},${oldC} +${start.n},${newC} @@`)
-    parts.push(...body)
-  }
-  return `${header}\n${parts.join('\n')}\n`
+export interface HunkAction {
+  id: string
+  /** Button on each hunk's @@ bar, and the hunk row of the line menu. */
+  hunkLabel: string
+  /** Button on the line-selection bar, given how many lines are selected. */
+  linesLabel: (n: number) => string
+  /** The right-click menu's row for the one line under the pointer. */
+  lineLabel: string
+  /** The patch will be applied reversed, so a line selection is built mirrored. */
+  reverse: boolean
+  /** Throws work away — drawn in the danger colour. */
+  danger?: boolean
+  run: (patch: string) => void
 }
 
 /** Above this many parsed lines the viewer gets `is-huge` — the browser skips
@@ -158,7 +99,8 @@ export function DiffViewer({
   maskValues = false,
   ignoreWs = false,
   onToggleIgnoreWs,
-  onStageHunk
+  hunkActions = [],
+  busy = false
 }: {
   diff: string
   /** Path of the file being diffed — labels the hover-explain card. */
@@ -171,7 +113,11 @@ export function DiffViewer({
   ignoreWs?: boolean
   /** Re-fetch the diff with/without `-w`. When absent, the toggle is hidden. */
   onToggleIgnoreWs?: () => void
-  onStageHunk?: (patch: string) => void
+  /** Hunk/line actions for this diff; none means a read-only diff. */
+  hunkActions?: HunkAction[]
+  /** A change is still landing: the actions stay in place but are off, so a
+   *  second press cannot act on lines that are already gone. */
+  busy?: boolean
 }): React.JSX.Element {
   const t = useT()
   const lines = useMemo(() => parseDiff(diff), [diff])
@@ -205,7 +151,8 @@ export function DiffViewer({
       return no ?? null
     }
   })
-  const hunkData = useMemo(() => (onStageHunk ? extractHunks(diff) : null), [diff, onStageHunk])
+  const hasHunkActions = hunkActions.length > 0
+  const hunkData = useMemo(() => (hasHunkActions ? extractHunks(diff) : null), [diff, hasHunkActions])
 
   const [wordDiffOn, setWordDiffOn] = useState(() => localStorage.getItem('gitcito-word-diff') !== 'off')
   useEffect(() => localStorage.setItem('gitcito-word-diff', wordDiffOn ? 'on' : 'off'), [wordDiffOn])
@@ -236,6 +183,10 @@ export function DiffViewer({
 
   // Side-by-side rows (ctx mirrored, del-runs zipped with following add-runs).
   const splitRows = useMemo(() => buildSplitRows(lines), [lines])
+  // An edited line in split view is one edit across two cells: clicking or
+  // right-clicking either side acts on both, so staging it never leaves half
+  // the edit behind.
+  const splitPartners = useMemo(() => (splitView ? splitEditPartners(lines) : new Map<number, number>()), [splitView, lines])
 
   const allMoved = useMemo(() => findMovedLines(lines), [lines])
   const moved = movedOn ? allMoved : NO_MOVES
@@ -300,10 +251,23 @@ export function DiffViewer({
 
   // One side of a split row. An absent side is an empty cell rather than a gap,
   // so the two columns keep the same number of rows.
+  // Changed cells are selectable for line actions, exactly as unified rows are —
+  // `idx` points into the same `lines`, so one selection serves both views.
   const splitCell = (c: SplitCell | undefined, key: string): React.JSX.Element => {
+    const selectable = hasHunkActions && !!c && c.kind !== 'ctx'
+    const partner = c ? splitPartners.get(c.idx) : undefined
+    const idxs = c ? (partner === undefined ? [c.idx] : [c.idx, partner].sort((a, b) => a - b)) : []
     const m = c ? moved.get(c.idx) : undefined
     return (
-      <div key={key} className={`diff-split-cell ${c ? c.kind : 'empty'}${c ? movedClass(c.idx) : ''}`}>
+      <div
+        key={key}
+        className={`diff-split-cell ${c ? c.kind : 'empty'}${c ? movedClass(c.idx) : ''} ${
+          selectable ? 'selectable' : ''
+        } ${c && selected.has(c.idx) ? 'line-selected' : ''}`}
+        onClick={selectable ? () => toggleLines(idxs) : undefined}
+        onContextMenu={c ? (e) => openLineMenu(e, idxs, c.text) : undefined}
+        title={selectable ? t('diff.selectLineTitle') : undefined}
+      >
         {m ? (
           <span className="diff-gutter" data-move={MOVE_ARROW[m.dir]} title={movedTitle(m)}>
             {c?.no ?? ''}
@@ -320,25 +284,38 @@ export function DiffViewer({
     )
   }
 
+  // The buttons on a hunk's @@ bar, one per action that fits this diff.
+  const hunkButtons = (hunkIdx: number): React.JSX.Element | null =>
+    hunkData ? (
+      <span className="diff-hunk-actions">
+        {hunkActions.map((a) => (
+          <button
+            key={a.id}
+            type="button"
+            className={`btn ghost tiny diff-stage-hunk${a.danger ? ' danger' : ''}`}
+            disabled={busy}
+            title={busy ? t('diff.busyRow') : undefined}
+            onClick={() => a.run(singleHunkPatch(hunkData, hunkIdx))}
+          >
+            {a.hunkLabel}
+          </button>
+        ))}
+      </span>
+    ) : null
+
   // The @@ bar. Column-major mode draws it in both columns — the left carries
-  // the header text, the right the stage button, and together they read as one
+  // the header text, the right the hunk buttons, and together they read as one
   // bar without either column losing a row.
   const splitHunk = (r: SplitRow, key: number, side?: 'left' | 'right'): React.JSX.Element => (
     <div key={key} className="diff-split-hunk">
       <span className="diff-text">{side === 'right' ? '' : r.hunk}</span>
-      {side !== 'left' && onStageHunk && hunkData && r.hunkIdx !== undefined && (
-        <button
-          className="btn ghost tiny diff-stage-hunk"
-          onClick={() => onStageHunk(`${hunkData.header}\n${hunkData.hunks[r.hunkIdx as number] ?? ''}\n`)}
-        >
-          {t('diff.stageHunk')}
-        </button>
-      )}
+      {side !== 'left' && r.hunkIdx !== undefined && hunkButtons(r.hunkIdx)}
     </div>
   )
 
-  // Line-level staging selection (only when staging is enabled). Keyed by index
-  // into `lines`; cleared whenever the diff changes.
+  // Line selection for the line actions (only when the diff has any). Keyed by
+  // index into `lines`, so it carries across unified and split view; cleared
+  // whenever the diff changes.
   const [selected, setSelected] = useState<Set<number>>(new Set())
   useEffect(() => setSelected(new Set()), [diff])
 
@@ -350,10 +327,73 @@ export function DiffViewer({
       return next
     })
 
-  const stageSelected = (): void => {
-    if (!onStageHunk || !hunkData || selected.size === 0) return
-    onStageHunk(buildLinePatch(lines, hunkData.header, selected))
+  // Several lines at once — a split row's two halves — select together, and
+  // deselect together once all of them are on.
+  const toggleLines = (idxs: number[]): void =>
+    setSelected((prev) => {
+      const next = new Set(prev)
+      const on = idxs.every((i) => next.has(i))
+      for (const i of idxs) {
+        if (on) next.delete(i)
+        else next.add(i)
+      }
+      return next
+    })
+
+  const runOnLines = (action: HunkAction, target: Set<number>): void => {
+    if (!hunkData || target.size === 0) return
+    action.run(buildLinePatch(lines, hunkData.header, target, action.reverse ? 'reverse' : 'forward'))
     setSelected(new Set())
+  }
+
+  // Right-click on a line: act on that line — or on the selection, when the
+  // line is part of one — on its whole hunk, or copy it. `idxs` is what the row
+  // stands for: one line, or a split row's edited pair.
+  const openLineMenu = (e: React.MouseEvent, idxs: number[], text: string): void => {
+    const first = lines[idxs[0]]
+    if (!first) return
+    e.preventDefault()
+    const items: MenuItem[] = []
+    // While the last action is still landing the rows stay, greyed, saying why.
+    const busyRow = busy ? { disabled: true, title: t('diff.busyRow') } : {}
+    if (hunkData && hasHunkActions) {
+      const changed = idxs.filter((i) => lines[i].kind === 'add' || lines[i].kind === 'del')
+      const inSelection = changed.some((i) => selected.has(i))
+      const target = inSelection ? new Set(selected) : new Set(changed)
+      if (target.size > 0) {
+        for (const a of hunkActions) {
+          items.push({
+            label: inSelection ? a.linesLabel(target.size) : a.lineLabel,
+            danger: a.danger,
+            ...busyRow,
+            onClick: () => runOnLines(a, target)
+          })
+        }
+        items.push({ separator: true })
+      }
+      for (const a of hunkActions) {
+        items.push({
+          label: a.hunkLabel,
+          danger: a.danger,
+          ...busyRow,
+          onClick: () => a.run(singleHunkPatch(hunkData, first.hunkIdx))
+        })
+      }
+      items.push({ separator: true })
+    }
+    // Text picked inside the diff wins; otherwise the line, as it is shown (a
+    // secret file's values stay masked on the clipboard too).
+    const picked = window.getSelection()
+    const pickedText = picked && viewerRef.current?.contains(picked.anchorNode) ? picked.toString() : ''
+    items.push(
+      pickedText
+        ? { label: t('diff.copySelection'), onClick: () => void navigator.clipboard.writeText(pickedText) }
+        : {
+            label: t('diff.copyLine'),
+            onClick: () => void navigator.clipboard.writeText(maskValues ? maskSecretLine(text) : text)
+          }
+    )
+    useUIStore.getState().openContextMenu(e.clientX, e.clientY, items)
   }
 
   // Recount find matches whenever the query or rendered content changes.
@@ -508,6 +548,27 @@ export function DiffViewer({
           </button>
         </div>
       )}
+      {hasHunkActions && selected.size > 0 && (
+        <div className="diff-select-bar" role="status">
+          <span>{interp(t('diff.linesSelected'), { n: selected.size, s: selected.size === 1 ? '' : 's' })}</span>
+          <button className="btn ghost tiny" onClick={() => setSelected(new Set())}>
+            {t('diff.clearSelection')}
+          </button>
+          {hunkActions.map((a, i) => (
+            <button
+              key={a.id}
+              type="button"
+              // The first action is the everyday one; the rest stay quieter.
+              className={`btn tiny ${a.danger ? 'danger' : i === 0 ? 'primary' : 'ghost'}`}
+              disabled={busy}
+              title={busy ? t('diff.busyRow') : undefined}
+              onClick={() => runOnLines(a, selected)}
+            >
+              {a.linesLabel(selected.size)}
+            </button>
+          ))}
+        </div>
+      )}
       {splitView ? (
         wrapOn ? (
           <div className="diff-split">
@@ -546,17 +607,6 @@ export function DiffViewer({
         )
       ) : (
         <>
-      {onStageHunk && selected.size > 0 && (
-        <div className="diff-select-bar">
-          <span>{interp(t('diff.linesSelected'), { n: selected.size, s: selected.size === 1 ? '' : 's' })}</span>
-          <button className="btn ghost tiny" onClick={() => setSelected(new Set())}>
-            {t('diff.clearSelection')}
-          </button>
-          <button className="btn primary tiny" onClick={stageSelected}>
-            {interp(t('diff.stageLines'), { n: selected.size, s: selected.size === 1 ? '' : 's' })}
-          </button>
-        </div>
-      )}
       {lines.map((l, i) => {
         if (l.kind === 'meta') return null
         if (l.kind === 'hunk') {
@@ -565,27 +615,18 @@ export function DiffViewer({
               <span className="diff-gutter" />
               <span className="diff-gutter" />
               <span className="diff-text">{l.text}</span>
-              {onStageHunk && hunkData && (
-                <button
-                  className="btn ghost tiny diff-stage-hunk"
-                  onClick={() => {
-                    const patch = `${hunkData.header}\n${hunkData.hunks[l.hunkIdx] ?? ''}\n`
-                    onStageHunk(patch)
-                  }}
-                >
-                  {t('diff.stageHunk')}
-                </button>
-              )}
+              {hunkButtons(l.hunkIdx)}
             </div>
           )
         }
-        const selectable = onStageHunk && (l.kind === 'add' || l.kind === 'del')
+        const selectable = hasHunkActions && (l.kind === 'add' || l.kind === 'del')
         return (
           <div
             key={i}
             className={`diff-line ${l.kind} ${selectable ? 'selectable' : ''} ${selected.has(i) ? 'line-selected' : ''}${movedClass(i)}`}
             onClick={selectable ? () => toggleLine(i) : undefined}
-            title={selectable ? t('diff.stageLinesTitle') : undefined}
+            onContextMenu={(e) => openLineMenu(e, [i], l.text)}
+            title={selectable ? t('diff.selectLineTitle') : undefined}
           >
             <span className="diff-gutter">{l.oldNo ?? ''}</span>
             <span className="diff-gutter">{l.newNo ?? ''}</span>

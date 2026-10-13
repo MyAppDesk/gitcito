@@ -196,6 +196,34 @@ export function buildSplitRows(lines: DiffLine[]): SplitRow[] {
   return rows
 }
 
+/**
+ * The edited lines a split view shows side by side, as each line's partner:
+ * the deletion on the left and the addition opposite it are one edit, so a
+ * line action takes both. Only a deletion run followed by an addition run of
+ * the same length pairs up — otherwise which old line became which new one is
+ * a guess, and acting on half of a guess is worse than acting on one line.
+ */
+export function splitEditPartners(lines: DiffLine[]): Map<number, number> {
+  const partners = new Map<number, number>()
+  let i = 0
+  while (i < lines.length) {
+    if (lines[i].kind !== 'del') {
+      i++
+      continue
+    }
+    const dels: number[] = []
+    while (i < lines.length && lines[i].kind === 'del') dels.push(i++)
+    const adds: number[] = []
+    while (i < lines.length && lines[i].kind === 'add') adds.push(i++)
+    if (dels.length !== adds.length) continue
+    dels.forEach((d, k) => {
+      partners.set(d, adds[k])
+      partners.set(adds[k], d)
+    })
+  }
+  return partners
+}
+
 /** One changed region against the new (current) file, for the File view's
  *  change gutter. `lineStart`..`lineEnd` are new-file line numbers the bar
  *  spans; for a pure deletion (nothing added) they are equal and `edge` says

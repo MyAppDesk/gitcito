@@ -1873,6 +1873,34 @@ export const shots = [
     }
   },
   {
+    // Hunk and line actions — two lines selected (the bar offers Stage and
+    // Discard for just those), Stage hunk + Discard hunk on the hunk bar, and
+    // the right-click menu on a selected line.
+    out: 'hunk-line-actions',
+    repos: ['line-staging'],
+    themes: ['light'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['line-staging']
+      await page.evaluate((p) => {
+        const s = window.__shot
+        s.repo.getState().select(p, { type: 'wip' })
+        s.ui.getState().setFileView({
+          repoPath: p,
+          file: 'config.js',
+          source: { type: 'wip', staged: false, untracked: false },
+          mode: 'diff'
+        })
+      }, repo)
+      await page.locator('.diff-hunk-actions').first().waitFor()
+      await page.waitForTimeout(400)
+      await page.locator('.diff-line.add', { hasText: 'debug' }).click()
+      await page.locator('.diff-line.add', { hasText: 'tls' }).click()
+      await page.locator('.diff-select-bar').waitFor()
+      await page.locator('.diff-line.add', { hasText: 'tls' }).click({ button: 'right' })
+      await page.waitForTimeout(400)
+    }
+  },
+  {
     // Partial stash — pick which files go into the stash.
     out: 'stash-partial',
     repos: ['stash-picking'],

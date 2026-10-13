@@ -602,6 +602,13 @@ export const gitApi = {
   runInteractiveRebase: (path: string, base: string, steps: RebaseStep[]) =>
     call<void>('runInteractiveRebase', path, base, steps),
   stagePatch: (path: string, patch: string) => call<void>('stagePatch', path, patch),
+  applyHunkPatch: (
+    path: string,
+    patch: string,
+    target: 'index' | 'worktree',
+    reverse: boolean,
+    ignoreWhitespace?: boolean
+  ) => call<{ conflicts: number }>('applyHunkPatch', path, patch, target, reverse, ignoreWhitespace),
   compareBranches: (path: string, a: string, b: string) =>
     call<BranchCompareResult>('compareBranches', path, a, b),
   mergePreview: (path: string, base: string, refs: string[]) =>

@@ -35,6 +35,10 @@ half where its own content is.
 
 ![Split diff with word-level highlighting](../screenshots/split-diff.webp)
 
+A diff you can act on — working changes, a commit, a stash — carries buttons
+on each hunk and lets you select lines; see
+[hunk and line actions](staging.md#hunk-and-line-actions) for what each does.
+
 ### Moved code
 
 A block cut from one place and pasted in another shows up in a diff as a

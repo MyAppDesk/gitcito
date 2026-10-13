@@ -15,6 +15,7 @@ Stashing in Gitcito is not all-or-nothing.
 | **Stash** | Everything, including untracked files if you want, with a message |
 | **Partial stash** | Tick just the files you want; optionally `--keep-index` |
 | **Apply / Pop** | Whole stash, or **just some of its files** |
+| **Apply hunk** | Open a file from the stash and bring back one hunk, or selected lines — see [hunk and line actions](staging.md#hunk-and-line-actions) |
 | **Stash → branch** | `git stash branch` — the escape hatch when a stash will not apply cleanly |
 
 Selecting a stash shows its files and diffs, exactly like a commit. The header

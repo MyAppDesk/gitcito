@@ -62,6 +62,8 @@ export type ModalSpec =
       confirmLabel?: string
       autoFocusConfirm?: boolean
       onConfirm: () => void
+      /** Runs when the dialog closes any other way: Cancel, Esc, ✕, or another dialog replacing it. */
+      onCancel?: () => void
       secondaryLabel?: string
       secondaryDanger?: boolean
       onSecondary?: () => void

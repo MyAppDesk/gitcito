@@ -115,6 +115,37 @@ describe('hunk actions', () => {
     expect(config(R)).toMatch(/<<<<<<< working copy[\s\S]*debug: false[\s\S]*>>>>>>> hunk/)
   })
 
+  it('undoes and redoes a conflicted merge exactly, and refuses once the file has changed', async () => {
+    const R = cloneFixture('line-staging')
+    git(R, 'commit', '-qam', 'enable debug and tls')
+    const head = git(R, 'rev-parse', 'HEAD').trim()
+    const diff = await gitService.commitFileDiff(R, head, 'config.js')
+    writeFileSync(join(R, 'config.js'), config(R).replace('debug: true', 'debug: false'))
+    const before = config(R)
+
+    const result = await gitService.applyHunkPatch(R, linesPatch(diff, 'debug', 'reverse'), 'worktree', true)
+    expect(result.conflicts).toBe(1)
+    expect(result.merge).toBeTruthy()
+    const after = config(R)
+
+    await gitService.restoreHunkMerge(R, result.merge!, 'before')
+    expect(config(R)).toBe(before)
+    await gitService.restoreHunkMerge(R, result.merge!, 'after')
+    expect(config(R)).toBe(after)
+
+    // Resolving the conflict by hand is work the undo entry never saw.
+    const resolved = before.replace('debug: false', 'debug: null')
+    writeFileSync(join(R, 'config.js'), resolved)
+    await expect(gitService.restoreHunkMerge(R, result.merge!, 'before')).rejects.toThrow(/changed since/)
+    expect(config(R)).toBe(resolved)
+  })
+
+  it('a plain apply needs no remembered merge', async () => {
+    const R = cloneFixture('line-staging')
+    const patch = linesPatch(await gitService.diffFile(R, 'config.js', false, false), 'debug', 'reverse')
+    expect((await gitService.applyHunkPatch(R, patch, 'worktree', true)).merge).toBeUndefined()
+  })
+
   it('stages a hunk cut from a whitespace-ignoring diff, leaving the hidden whitespace change unstaged', async () => {
     const R = cloneFixture('line-staging')
     git(R, 'checkout', '-q', '--', 'config.js')

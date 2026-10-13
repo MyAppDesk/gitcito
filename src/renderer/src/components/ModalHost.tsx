@@ -1416,6 +1416,16 @@ function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): 
 function ConfirmModal({ spec }: { spec: Extract<ModalSpec, { kind: 'confirm' }> }): React.JSX.Element {
   const t = useT()
   const closeModal = useUIStore((s) => s.closeModal)
+  // Every way out but the two buttons that act (Cancel, Esc, ✕, a click
+  // outside, another confirm taking this one's place) ends this effect, so a
+  // caller waiting on the answer always gets one.
+  const answered = useRef(false)
+  useEffect(() => {
+    answered.current = false
+    return () => {
+      if (!answered.current) spec.onCancel?.()
+    }
+  }, [spec])
   return (
     <>
       <h3>{spec.title}</h3>
@@ -1428,6 +1438,7 @@ function ConfirmModal({ spec }: { spec: Extract<ModalSpec, { kind: 'confirm' }> 
           <button
             className={`btn ${spec.secondaryDanger ? 'danger' : 'ghost'}`}
             onClick={() => {
+              answered.current = true
               closeModal()
               spec.onSecondary?.()
             }}
@@ -1439,6 +1450,7 @@ function ConfirmModal({ spec }: { spec: Extract<ModalSpec, { kind: 'confirm' }> 
           autoFocus={spec.autoFocusConfirm}
           className={`btn ${spec.danger ? 'danger' : 'primary'}`}
           onClick={() => {
+            answered.current = true
             closeModal()
             spec.onConfirm()
           }}

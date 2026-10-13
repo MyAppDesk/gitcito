@@ -160,7 +160,7 @@ import { parseForcedUpdates } from '../shared/fetchPorcelain'
 import { buildPatch, parsePatch, touchedOldLines } from '../shared/patchHunks'
 import { semanticCompare } from './semantic'
 import { recordEvent } from './analytics'
-import { searchFileMatches, type FileSearchOptions } from './fileSearch'
+import { searchFileMatches, supersedeSearch, type FileSearchOptions } from './fileSearch'
 import { recordLog } from './log'
 import { activeProfileToken, readSettings } from './settings'
 import { applyPreparedRepoFileActions, RepoFileActionError } from './repoFileActions'
@@ -7522,6 +7522,11 @@ export function registerGitHandlers(): void {
     // app-level ones run before (or without) a local repo, so they take no lock.
     const lockKey = repoScoped ? (args[0] as string) : null
     const isWrite = !gitMethodIsRead(method)
+    // A superseded search is stopped before the new one queues for the lock, or
+    // a write waiting between them would hold both back.
+    if (method === 'searchFileMatches' && lockKey) {
+      supersedeSearch(lockKey, (args[3] as FileSearchOptions | undefined)?.searchId)
+    }
     const release = lockKey ? await lockFor(lockKey).acquire(isWrite) : null
 
     try {

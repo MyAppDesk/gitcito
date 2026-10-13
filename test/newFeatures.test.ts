@@ -88,6 +88,31 @@ describe('code search (code-search playground)', () => {
     expect(regex.length).toBe(2)
   })
 
+  it('searchFileMatches finds a tracked file that matches .gitignore, and searches long lists in runs', async () => {
+    const C = cloneFixture('code-search')
+    writeFileSync(join(C, '.gitignore'), '*.log\n')
+    writeFileSync(join(C, 'kept.log'), 'needle in a force-added file\n')
+    execFileSync('git', ['-C', C, 'add', '-f', 'kept.log'], { stdio: 'ignore' })
+    expect(await gitService.searchFileMatches(C, ['kept.log'], 'needle')).toEqual([
+      { file: 'kept.log', line: 1, text: 'needle in a force-added file' }
+    ])
+    // Far past one run's pathspec budget; only the real file can match.
+    const padding = Array.from({ length: 3000 }, (_, i) => `missing/${'x'.repeat(20)}-${i}.txt`)
+    const hits = await gitService.searchFileMatches(C, [...padding, 'kept.log'], 'needle')
+    expect(hits.map((h) => h.file)).toEqual(['kept.log'])
+  })
+
+  it('searchFileMatches never reads outside the repository on the regex path', async () => {
+    const outside = mkdtempSync(join(tmpdir(), 'gitcito-outside-'))
+    try {
+      writeFileSync(join(outside, 'secret.txt'), 'needle\n')
+      const rel = join('..', '..', '..', '..', '..', '..', '..', '..', outside, 'secret.txt')
+      expect(await gitService.searchFileMatches(R, [rel], 'need\\w+', { regex: true })).toEqual([])
+    } finally {
+      rmSync(outside, { recursive: true, force: true })
+    }
+  })
+
   it('searchFileMatches stops a superseded search with the same id', async () => {
     const files = await gitService.listFiles(R)
     const first = gitService.searchFileMatches(R, files, 'TODO', { searchId: 't' })

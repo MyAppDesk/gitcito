@@ -1,8 +1,8 @@
 import { ipcMain, shell } from 'electron'
 import { simpleGit, SimpleGit, type StatusResult } from 'simple-git'
-import { basename, dirname, join, resolve as resolvePath, sep } from 'path'
+import { basename, dirname, isAbsolute, join, resolve as resolvePath, sep } from 'path'
 import { pathToFileURL } from 'url'
-import { readFile, writeFile, unlink, stat, chmod, mkdir, readdir, rename, cp, open, mkdtemp, rm, realpath } from 'fs/promises'
+import { readFile, writeFile, unlink, stat, chmod, mkdir, readdir, rename, cp, open, mkdtemp, rm, realpath, lstat } from 'fs/promises'
 import { tmpdir, homedir } from 'os'
 import { existsSync, accessSync, constants as fsConstants } from 'fs'
 import { spawn, spawnSync, execFile } from 'child_process'
@@ -986,24 +986,40 @@ async function mergeHunkIntoFile(
   reverse: boolean,
   ignoreWhitespace: boolean
 ): Promise<{ conflicts: number } | null> {
-  const file = /^\+\+\+ b\/(.+)$/m.exec(patch)?.[1]
+  // Git appends a tab to a `+++` name holding a space, and quotes one holding
+  // anything unusual; the quoted form is left to the plain `git apply` error.
+  const file = /^\+\+\+ b\/(.+)$/m.exec(patch)?.[1]?.replace(/\t$/, '')
   const blobs = /^index ([0-9a-f]+)\.\.([0-9a-f]+)/m.exec(patch)
-  if (!file || !blobs) return null
+  if (!file || !blobs || file.startsWith('"') || isAbsolute(file) || file.split('/').includes('..')) return null
   // Reversed, the patch is undone from its new side; forwards, applied to its old.
   const baseBlob = reverse ? blobs[2] : blobs[1]
   if (/^0+$/.test(baseBlob)) return null
-  const oursPath = join(repoPath, file)
-  if (!existsSync(oursPath)) return null
+  // The patch text comes from the renderer: the file it names must sit inside
+  // the repository and be a regular file, never a symlink we would write through.
+  const oursPath = await containedPath(repoPath, file)
+  if (!oursPath) return null
+  if (!(await lstat(oursPath).catch(() => null))?.isFile()) return null
 
   const dir = await mkdtemp(join(tmpdir(), 'gitcito-merge-'))
   try {
-    const base = await runGit(repoPath, ['cat-file', 'blob', baseBlob]).catch(() => null)
+    // Bytes, and through the file's filters (eol, LFS smudge), so the base is
+    // in the same form as the working copy it is merged with. A patch that then
+    // no longer fits — CRLF on disk, an LFS pointer diff — falls back to the
+    // plain error rather than rewriting the file in the wrong form.
+    const base = await pexecFile('git', ['-C', repoPath, 'cat-file', '--filters', `--path=${file}`, baseBlob], {
+      env: noPromptEnv(),
+      encoding: 'buffer',
+      maxBuffer: 64 * 1024 * 1024
+    }).then(
+      ({ stdout }) => stdout,
+      () => null
+    )
     if (base === null) return null
     // Outside a repository `git apply` patches plain files relative to cwd —
     // here, a scratch copy of the base at the patch's own path.
     const theirsPath = join(dir, file)
     await mkdir(dirname(theirsPath), { recursive: true })
-    await writeFile(theirsPath, base, 'utf-8')
+    await writeFile(theirsPath, base)
     const applyArgs = [
       'apply',
       '--whitespace=nowarn',
@@ -1017,18 +1033,18 @@ async function mergeHunkIntoFile(
     )
     if (!applied) return null
     const basePath = join(dir, '.gitcito-merge-base')
-    await writeFile(basePath, base, 'utf-8')
+    await writeFile(basePath, base)
 
     // merge-file exits with the number of conflicts, so a non-zero exit with
     // output is a result, not a failure. Labels are what the conflict markers say.
     const result = await pexecFile(
       'git',
       ['merge-file', '-p', '-L', 'working copy', '-L', 'base', '-L', 'hunk', oursPath, basePath, theirsPath],
-      { env: noPromptEnv(), maxBuffer: 64 * 1024 * 1024 }
+      { env: noPromptEnv(), encoding: 'buffer', maxBuffer: 64 * 1024 * 1024 }
     ).then(
       ({ stdout }) => ({ stdout, conflicts: 0 }),
-      (err: { stdout?: string; code?: number }) =>
-        typeof err.code === 'number' && err.code > 0 && err.code < 128 && typeof err.stdout === 'string'
+      (err: { stdout?: unknown; code?: number }) =>
+        typeof err.code === 'number' && err.code > 0 && err.code < 128 && Buffer.isBuffer(err.stdout)
           ? { stdout: err.stdout, conflicts: err.code }
           : null
     )
@@ -1036,8 +1052,8 @@ async function mergeHunkIntoFile(
     // Nothing moved — the hunk is already undone (or applied) in the working
     // copy, e.g. a second click. Reporting success would claim a change that
     // never happened; returning null surfaces git's own "does not apply".
-    if (result.stdout === (await readFile(oursPath, 'utf-8'))) return null
-    await writeFile(oursPath, result.stdout, 'utf-8')
+    if (result.stdout.equals(await readFile(oursPath))) return null
+    await writeFile(oursPath, result.stdout)
     return { conflicts: result.conflicts }
   } finally {
     await rm(dir, { recursive: true, force: true }).catch(() => {})

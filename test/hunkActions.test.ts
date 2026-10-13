@@ -1,7 +1,8 @@
 import { describe, it, expect, afterAll } from 'vitest'
-import { readFileSync, writeFileSync } from 'node:fs'
+import { readFileSync, writeFileSync, mkdtempSync, rmSync, symlinkSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
-import { join } from 'node:path'
+import { tmpdir } from 'node:os'
+import { join, relative } from 'node:path'
 import { gitService } from '../src/main/git'
 import { cloneFixture, cleanupFixtures } from './fixtures'
 import { parseDiff, splitEditPartners } from '../src/renderer/src/lib/diff'
@@ -174,5 +175,58 @@ describe('hunk actions', () => {
     const before = config(R)
     await expect(gitService.applyHunkPatch(R, patch, 'worktree', true)).rejects.toThrow(/patch does not apply|patch failed/)
     expect(config(R)).toBe(before)
+  })
+})
+
+describe('hunk merge fallback safety', () => {
+  /** A revert patch that only the three-way fallback can apply (see above). */
+  async function staleRevert(R: string): Promise<string> {
+    git(R, 'commit', '-qam', 'enable debug and tls')
+    const diff = await gitService.commitFileDiff(R, git(R, 'rev-parse', 'HEAD').trim(), 'config.js')
+    writeFileSync(join(R, 'config.js'), config(R).replace('port: 3000', 'port: 8080'))
+    return linesPatch(diff, 'debug', 'reverse')
+  }
+
+  it('refuses a patch naming a file outside the repository', async () => {
+    const R = cloneFixture('line-staging')
+    const patch = await staleRevert(R)
+    const outside = mkdtempSync(join(tmpdir(), 'gitcito-hunk-outside-'))
+    const victim = join(outside, 'victim.js')
+    writeFileSync(victim, config(R))
+    const rel = relative(R, victim)
+    const escaping = patch.replace(/^\+\+\+ b\/config\.js$/m, `+++ b/${rel}`)
+
+    await expect(gitService.applyHunkPatch(R, escaping, 'worktree', true)).rejects.toThrow()
+    expect(readFileSync(victim, 'utf8')).toContain('debug: true')
+    rmSync(outside, { recursive: true, force: true })
+  })
+
+  it('does not write through a symlink', async () => {
+    const R = cloneFixture('line-staging')
+    const patch = await staleRevert(R)
+    const outside = mkdtempSync(join(tmpdir(), 'gitcito-hunk-outside-'))
+    const victim = join(outside, 'victim.js')
+    writeFileSync(victim, config(R))
+    rmSync(join(R, 'config.js'))
+    symlinkSync(victim, join(R, 'config.js'))
+
+    await expect(gitService.applyHunkPatch(R, patch, 'worktree', true)).rejects.toThrow()
+    expect(readFileSync(victim, 'utf8')).toContain('debug: true')
+    rmSync(outside, { recursive: true, force: true })
+  })
+
+  it('never leaves a CRLF working copy with mixed line endings', async () => {
+    const R = cloneFixture('line-staging')
+    git(R, 'commit', '-qam', 'enable debug and tls')
+    const diff = await gitService.commitFileDiff(R, git(R, 'rev-parse', 'HEAD').trim(), 'config.js')
+    git(R, 'config', 'core.autocrlf', 'true')
+    rmSync(join(R, 'config.js'))
+    git(R, 'checkout', '--', 'config.js')
+    expect(config(R)).toContain('\r\n')
+    writeFileSync(join(R, 'config.js'), config(R).replace('port: 3000', 'port: 8080'))
+
+    await gitService.applyHunkPatch(R, linesPatch(diff, 'debug', 'reverse'), 'worktree', true).catch(() => null)
+    expect(config(R)).toContain('port: 8080')
+    expect(config(R).replace(/\r\n/g, '')).not.toContain('\n')
   })
 })

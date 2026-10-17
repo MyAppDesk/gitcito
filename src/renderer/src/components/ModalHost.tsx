@@ -1418,12 +1418,13 @@ function ConfirmModal({ spec }: { spec: Extract<ModalSpec, { kind: 'confirm' }> 
   const closeModal = useUIStore((s) => s.closeModal)
   // Every way out but the two buttons that act (Cancel, Esc, ✕, a click
   // outside, another confirm taking this one's place) ends this effect, so a
-  // caller waiting on the answer always gets one.
+  // caller waiting on the answer always gets one. StrictMode also runs this
+  // cleanup on a dialog still showing; only one that has left the store counts.
   const answered = useRef(false)
   useEffect(() => {
     answered.current = false
     return () => {
-      if (!answered.current) spec.onCancel?.()
+      if (!answered.current && useUIStore.getState().modal !== spec) spec.onCancel?.()
     }
   }, [spec])
   return (

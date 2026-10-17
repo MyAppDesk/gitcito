@@ -7222,6 +7222,18 @@ describe('hunk and line patches', () => {
     const patch = buildLinePatch(lines, header, new Set([at('add', 'added')]), 'forward')
     expect(patch.endsWith('@@ -10,2 +10,3 @@\n ten\n+added\n eleven\n')).toBe(true)
   })
+
+  it('keeps the no-newline marker with its line, and drops it with an omitted line', () => {
+    const eof = ['@@ -1,2 +1,2 @@', ' a', '-b', '\\ No newline at end of file', '+b', ''].join('\n')
+    const eofLines = parseDiff(eof)
+    const del = eofLines.findIndex((l) => l.kind === 'del')
+    const add = eofLines.findIndex((l) => l.kind === 'add')
+    expect(buildLinePatch(eofLines, header, new Set([del, add]), 'forward')).toContain(
+      '@@ -1,2 +1,2 @@\n a\n-b\n\\ No newline at end of file\n+b\n'
+    )
+    // Reversed with only the addition picked, the deletion is omitted and so is its marker.
+    expect(buildLinePatch(eofLines, header, new Set([add]), 'reverse')).not.toContain('No newline')
+  })
 })
 
 describe('followWipFile', () => {

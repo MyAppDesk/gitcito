@@ -2086,6 +2086,7 @@ export const pl: Dict = {
   'diff.linesSelected': 'zaznaczono {n} linię{s}',
   'diff.clearSelection': 'Wyczyść',
   'diff.selectLineTitle': 'Kliknij, aby zaznaczyć',
+  'diff.noEolTitle': 'Brak znaku nowej linii na końcu pliku',
   'hunk.unstage': 'Usuń fragment z indeksu',
   'hunk.discard': 'Odrzuć fragment',
   'hunk.revert': 'Cofnij fragment',

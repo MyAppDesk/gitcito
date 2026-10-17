@@ -2087,6 +2087,7 @@ export const nl: Dict = {
   'diff.linesSelected': '{n} regel{s} geselecteerd',
   'diff.clearSelection': 'Wissen',
   'diff.selectLineTitle': 'Klik om te selecteren',
+  'diff.noEolTitle': 'Geen regeleinde aan het einde van het bestand',
   'hunk.unstage': 'Hunk uit stage halen',
   'hunk.discard': 'Hunk verwerpen',
   'hunk.revert': 'Hunk terugdraaien',

@@ -35,6 +35,10 @@ half where its own content is.
 
 ![Split diff with word-level highlighting](../screenshots/split-diff.webp)
 
+A line the file ends on without a trailing newline carries a small struck-out
+return arrow, where git prints `\ No newline at end of file`. It is a note on
+that line, not a line of the file, so it has no number of its own.
+
 A **deleted file** has nothing left to show on its own side, so File, Preview
 and Blame show it as it was just before the deletion — the parent commit, the
 index or `HEAD` — under a **Deleted** chip. It cannot be edited from there:

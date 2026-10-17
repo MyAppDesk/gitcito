@@ -2087,6 +2087,7 @@ export const ptBR: Dict = {
   'diff.linesSelected': '{n} linha{s} na seleção',
   'diff.clearSelection': 'Limpar',
   'diff.selectLineTitle': 'Clique para selecionar',
+  'diff.noEolTitle': 'Sem quebra de linha no fim do arquivo',
   'hunk.unstage': 'Tirar trecho do stage',
   'hunk.discard': 'Descartar trecho',
   'hunk.revert': 'Reverter trecho',

@@ -93,10 +93,7 @@ export function buildLinePatch(
     let newCount = 0
     for (const i of idxs) {
       const l = lines[i]
-      if (l.text.startsWith('\\')) {
-        body.push(l.text) // "\ No newline at end of file" — verbatim, not counted
-        continue
-      }
+      const before = body.length
       const asContext = l.kind === 'ctx' || (!selected.has(i) && l.kind === keptAsContext)
       if (asContext) {
         body.push(` ${l.text}`)
@@ -111,6 +108,8 @@ export function buildLinePatch(
         body.push(`+${l.text}`)
         newCount++
       }
+      // Git's marker belongs to the line before it, so it goes only where that line went.
+      if (l.noEol && body.length > before) body.push('\\ No newline at end of file')
     }
     parts.push(`@@ -${start.o},${oldCount} +${start.n},${newCount} @@`, ...body)
   }

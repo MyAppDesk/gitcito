@@ -51,6 +51,21 @@ rename to b.txt
 Binary files a/logo.png and b/logo.png differ`
     expect(parseDiff(renamed).every((l) => l.kind === 'meta')).toBe(true)
   })
+
+  // The marker used to parse as context: a row numbered 0 in a deleted file, and
+  // every line after it in the hunk numbered one too high.
+  it('folds "No newline at end of file" into the line before it', () => {
+    const lines = parseDiff(`@@ -1,2 +1,3 @@
+ a
+-b
+\\ No newline at end of file
++b
++c
+\\ No newline at end of file`)
+    expect(lines.map((l) => l.kind)).toEqual(['hunk', 'ctx', 'del', 'add', 'add'])
+    expect(lines.filter((l) => l.kind === 'add').map((l) => l.newNo)).toEqual([2, 3])
+    expect(lines.map((l) => !!l.noEol)).toEqual([false, false, true, false, true])
+  })
 })
 
 describe('wordDiff', () => {

@@ -2080,6 +2080,7 @@ export const es: Dict = {
   'diff.linesSelected': '{n} línea{s} seleccionada{s}',
   'diff.clearSelection': 'Limpiar',
   'diff.selectLineTitle': 'Clic para seleccionar',
+  'diff.noEolTitle': 'Sin salto de línea al final del archivo',
   'hunk.unstage': 'Quitar bloque del stage',
   'hunk.discard': 'Descartar bloque',
   'hunk.revert': 'Revertir bloque',

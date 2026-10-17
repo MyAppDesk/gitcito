@@ -2049,6 +2049,7 @@ export const ja: Dict = {
   'diff.linesSelected': '{n} 行を選択中{s}',
   'diff.clearSelection': 'クリア',
   'diff.selectLineTitle': 'クリックで選択',
+  'diff.noEolTitle': 'ファイル末尾に改行がありません',
   'hunk.unstage': 'ハンクをアンステージ',
   'hunk.discard': 'ハンクを破棄',
   'hunk.revert': 'ハンクを元に戻す',

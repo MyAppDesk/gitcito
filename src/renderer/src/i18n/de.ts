@@ -2086,6 +2086,7 @@ export const de: Dict = {
   'diff.linesSelected': '{n} Zeile{s} ausgewählt',
   'diff.clearSelection': 'Zurücksetzen',
   'diff.selectLineTitle': 'Zum Auswählen klicken',
+  'diff.noEolTitle': 'Kein Zeilenumbruch am Dateiende',
   'hunk.unstage': 'Hunk aus Stage nehmen',
   'hunk.discard': 'Hunk verwerfen',
   'hunk.revert': 'Hunk zurücksetzen',

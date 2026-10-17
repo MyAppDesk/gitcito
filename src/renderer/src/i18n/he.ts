@@ -2086,6 +2086,7 @@ export const he: Dict = {
   'diff.linesSelected': 'נבחרו {n} שורות{s}',
   'diff.clearSelection': 'ניקוי',
   'diff.selectLineTitle': 'לחצו לבחירה',
+  'diff.noEolTitle': 'אין שורה חדשה בסוף הקובץ',
   'hunk.unstage': 'הוצאת הקטע מה-stage',
   'hunk.discard': 'מחיקת הקטע',
   'hunk.revert': 'ביטול הקטע',

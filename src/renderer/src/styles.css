@@ -4084,6 +4084,25 @@ body.col-resizing .node-ava {
 .diff-text {
   flex: 1;
 }
+/* Struck-through return arrow: this line ends the file with no newline. */
+.diff-noeol {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 0 6px;
+  color: var(--text-2);
+  opacity: 0.7;
+}
+.diff-noeol::after {
+  content: '';
+  position: absolute;
+  left: 5px;
+  right: 5px;
+  top: 50%;
+  border-top: 1px solid currentColor;
+  transform: rotate(-35deg);
+}
 
 /* Add/del text colour is a token, not a literal: the pale mint and pink only
    have contrast against a dark canvas — on a light theme they wash out to

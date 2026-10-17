@@ -7,6 +7,9 @@ export interface DiffLine {
   oldNo: number | null
   newNo: number | null
   hunkIdx: number
+  /** Git's `\ No newline at end of file` followed this line. It is a note on the
+   *  line, not a line of the file, so it gets no number and no row of its own. */
+  noEol?: boolean
 }
 
 export type Range = [number, number] // [start, end) in decoded-character coords
@@ -102,6 +105,9 @@ export function parseDiff(diff: string): DiffLine[] {
       EXT_HEADER.test(line)
     ) {
       out.push({ kind: 'meta', text: line, oldNo: null, newNo: null, hunkIdx })
+    } else if (line.startsWith('\\')) {
+      const prev = out[out.length - 1]
+      if (prev) prev.noEol = true
     } else if (line.startsWith('+')) {
       out.push({ kind: 'add', text: line.slice(1), oldNo: null, newNo: newNo++, hunkIdx })
     } else if (line.startsWith('-')) {

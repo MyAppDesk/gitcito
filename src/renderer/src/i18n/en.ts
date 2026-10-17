@@ -2082,6 +2082,7 @@ export const en = {
   'diff.linesSelected': '{n} line{s} selected',
   'diff.clearSelection': 'Clear',
   'diff.selectLineTitle': 'Click to select',
+  'diff.noEolTitle': 'No newline at end of file',
   'hunk.unstage': 'Unstage hunk',
   'hunk.discard': 'Discard hunk',
   'hunk.revert': 'Revert hunk',

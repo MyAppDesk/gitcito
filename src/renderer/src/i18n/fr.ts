@@ -2049,6 +2049,7 @@ export const fr: Dict = {
   'diff.linesSelected': '{n} ligne{s} sélectionnées',
   'diff.clearSelection': 'Effacer',
   'diff.selectLineTitle': 'Cliquer pour sélectionner',
+  'diff.noEolTitle': 'Pas de saut de ligne à la fin du fichier',
   'hunk.unstage': 'Désindexer le bloc',
   'hunk.discard': 'Abandonner le bloc',
   'hunk.revert': 'Annuler le bloc',

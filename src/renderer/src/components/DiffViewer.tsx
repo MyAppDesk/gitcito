@@ -10,6 +10,7 @@ import {
   WrapText,
   Link2,
   Unlink2,
+  CornerDownLeft,
   X
 } from 'lucide-react'
 import { highlightHtml, buildQueryRegExp, type HighlightLayer } from './FileSearchBar'
@@ -249,6 +250,13 @@ export function DiffViewer({
     requestAnimationFrame(() => (syncingScroll.current = false))
   }
 
+  // A line the file ends on without a newline: a quiet mark on the line itself.
+  const noEolMark = (
+    <span className="diff-noeol" title={t('diff.noEolTitle')}>
+      <CornerDownLeft size={11} />
+    </span>
+  )
+
   // One side of a split row. An absent side is an empty cell rather than a gap,
   // so the two columns keep the same number of rows.
   // Changed cells are selectable for line actions, exactly as unified rows are —
@@ -280,6 +288,7 @@ export function DiffViewer({
         ) : (
           <span className="diff-text" />
         )}
+        {c && lines[c.idx].noEol && noEolMark}
       </div>
     )
   }
@@ -641,6 +650,7 @@ export function DiffViewer({
               className="diff-text"
               dangerouslySetInnerHTML={{ __html: cellHtml(l.text, i, l.kind as 'add' | 'del' | 'ctx') }}
             />
+            {l.noEol && noEolMark}
           </div>
         )
       })}

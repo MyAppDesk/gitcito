@@ -2049,6 +2049,7 @@ export const tr: Dict = {
   'diff.linesSelected': '{n} satır{s} seçildi',
   'diff.clearSelection': 'Temizle',
   'diff.selectLineTitle': 'Seçmek için tıklayın',
+  'diff.noEolTitle': 'Dosya sonunda satır sonu yok',
   'hunk.unstage': 'Bloğu stage’den çıkar',
   'hunk.discard': 'Bloğu at',
   'hunk.revert': 'Bloğu geri al',

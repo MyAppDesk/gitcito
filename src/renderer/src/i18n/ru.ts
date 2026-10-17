@@ -2086,6 +2086,7 @@ export const ru: Dict = {
   'diff.linesSelected': 'выбрана {n} строка{s}',
   'diff.clearSelection': 'Очистить',
   'diff.selectLineTitle': 'Нажмите, чтобы выбрать',
+  'diff.noEolTitle': 'Нет перевода строки в конце файла',
   'hunk.unstage': 'Убрать фрагмент из индекса',
   'hunk.discard': 'Отменить фрагмент',
   'hunk.revert': 'Откатить фрагмент',

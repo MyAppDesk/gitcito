@@ -2050,6 +2050,7 @@ export const it: Dict = {
   'diff.linesSelected': '{n} righ{s} selezionate',
   'diff.clearSelection': 'Azzera',
   'diff.selectLineTitle': 'Clic per selezionare',
+  'diff.noEolTitle': 'Nessun a capo alla fine del file',
   'hunk.unstage': 'Rimuovi hunk dallo stage',
   'hunk.discard': 'Scarta hunk',
   'hunk.revert': 'Annulla hunk',

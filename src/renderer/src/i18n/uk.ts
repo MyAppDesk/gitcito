@@ -2086,6 +2086,7 @@ export const uk: Dict = {
   'diff.linesSelected': 'вибрано рядків: {n}{s}',
   'diff.clearSelection': 'Очистити',
   'diff.selectLineTitle': 'Натисніть, щоб вибрати',
+  'diff.noEolTitle': 'Немає переведення рядка в кінці файлу',
   'hunk.unstage': 'Прибрати фрагмент з індексу',
   'hunk.discard': 'Скасувати фрагмент',
   'hunk.revert': 'Відкотити фрагмент',

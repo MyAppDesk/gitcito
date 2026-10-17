@@ -2086,6 +2086,7 @@ export const ko: Dict = {
   'diff.linesSelected': '{n}줄{s} 선택됨',
   'diff.clearSelection': '지우기',
   'diff.selectLineTitle': '클릭하여 선택',
+  'diff.noEolTitle': '파일 끝에 줄바꿈이 없습니다',
   'hunk.unstage': '덩어리 스테이징 해제',
   'hunk.discard': '덩어리 버리기',
   'hunk.revert': '덩어리 되돌리기',

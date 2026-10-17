@@ -2086,6 +2086,7 @@ export const zhCN: Dict = {
   'diff.linesSelected': '已选中 {n} 行{s}',
   'diff.clearSelection': '清除',
   'diff.selectLineTitle': '点击选择',
+  'diff.noEolTitle': '文件末尾没有换行符',
   'hunk.unstage': '取消暂存此块',
   'hunk.discard': '丢弃此块',
   'hunk.revert': '还原此块',

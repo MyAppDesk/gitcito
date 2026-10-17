@@ -2086,6 +2086,7 @@ export const ar: Dict = {
   'diff.linesSelected': '{n} سطر{s} محدد',
   'diff.clearSelection': 'مسح',
   'diff.selectLineTitle': 'انقر للتحديد',
+  'diff.noEolTitle': 'لا يوجد سطر جديد في نهاية الملف',
   'hunk.unstage': 'إلغاء تحضير القطعة',
   'hunk.discard': 'تجاهل القطعة',
   'hunk.revert': 'عكس القطعة',

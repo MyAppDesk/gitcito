@@ -608,7 +608,9 @@ export const gitApi = {
     target: 'index' | 'worktree',
     reverse: boolean,
     ignoreWhitespace?: boolean
-  ) => call<{ conflicts: number }>('applyHunkPatch', path, patch, target, reverse, ignoreWhitespace),
+  ) => call<{ conflicts: number; merge?: string }>('applyHunkPatch', path, patch, target, reverse, ignoreWhitespace),
+  restoreHunkMerge: (path: string, merge: string, side: 'before' | 'after') =>
+    call<void>('restoreHunkMerge', path, merge, side),
   compareBranches: (path: string, a: string, b: string) =>
     call<BranchCompareResult>('compareBranches', path, a, b),
   mergePreview: (path: string, base: string, refs: string[]) =>

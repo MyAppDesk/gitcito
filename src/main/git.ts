@@ -966,6 +966,23 @@ async function guardSnapshot(repoPath: string): Promise<void> {
 }
 
 /**
+ * The file as it was before and after each three-way hunk merge, by id. A merge
+ * is not a patch: reversing it with `git apply` misses (the patch never applied
+ * as is) and merging the reverse again can stack conflict markers on markers.
+ * Undo and redo put back these exact bytes instead. Kept for the session only,
+ * and only the latest few, like the undo stack that refers to them.
+ */
+const hunkMerges = new Map<string, { repoPath: string; file: string; before: Buffer; after: Buffer }>()
+const HUNK_MERGES_KEPT = 50
+
+function rememberHunkMerge(repoPath: string, file: string, before: Buffer, after: Buffer): string {
+  const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`
+  hunkMerges.set(id, { repoPath, file, before, after })
+  if (hunkMerges.size > HUNK_MERGES_KEPT) hunkMerges.delete(hunkMerges.keys().next().value as string)
+  return id
+}
+
+/**
  * The three-way fallback behind `applyHunkPatch` for the working tree.
  *
  * The patch's `index <old>..<new>` line names the exact file it was cut from.
@@ -985,7 +1002,7 @@ async function mergeHunkIntoFile(
   patchFile: string,
   reverse: boolean,
   ignoreWhitespace: boolean
-): Promise<{ conflicts: number } | null> {
+): Promise<{ conflicts: number; merge: string } | null> {
   // Git appends a tab to a `+++` name holding a space, and quotes one holding
   // anything unusual; the quoted form is left to the plain `git apply` error.
   const file = /^\+\+\+ b\/(.+)$/m.exec(patch)?.[1]?.replace(/\t$/, '')
@@ -1052,9 +1069,10 @@ async function mergeHunkIntoFile(
     // Nothing moved — the hunk is already undone (or applied) in the working
     // copy, e.g. a second click. Reporting success would claim a change that
     // never happened; returning null surfaces git's own "does not apply".
-    if (result.stdout.equals(await readFile(oursPath))) return null
+    const before = await readFile(oursPath)
+    if (result.stdout.equals(before)) return null
     await writeFile(oursPath, result.stdout)
-    return { conflicts: result.conflicts }
+    return { conflicts: result.conflicts, merge: rememberHunkMerge(repoPath, file, before, result.stdout) }
   } finally {
     await rm(dir, { recursive: true, force: true }).catch(() => {})
   }
@@ -6807,7 +6825,7 @@ export const gitService = {
     target: 'index' | 'worktree',
     reverse: boolean,
     ignoreWhitespace = false
-  ): Promise<{ conflicts: number }> {
+  ): Promise<{ conflicts: number; merge?: string }> {
     if (target === 'worktree') await guardSnapshot(repoPath)
     const tmpPatch = join(tmpdir(), `gitcito-hunk-${Date.now()}-${Math.random().toString(36).slice(2)}.patch`)
     await writeFile(tmpPatch, patch, 'utf-8')
@@ -6828,6 +6846,25 @@ export const gitService = {
     } finally {
       await unlink(tmpPatch).catch(() => {})
     }
+  },
+
+  /**
+   * Undo (`'before'`) or redo (`'after'`) a three-way hunk merge by writing back
+   * the file exactly as it was on that side. Refuses when the file no longer
+   * matches the other side — edited since, or a conflict resolved — rather than
+   * overwrite work the undo entry never saw.
+   */
+  async restoreHunkMerge(repoPath: string, merge: string, side: 'before' | 'after'): Promise<void> {
+    const entry = hunkMerges.get(merge)
+    if (!entry || entry.repoPath !== repoPath) throw new Error('This merge is no longer remembered, so it cannot be undone.')
+    const path = await containedPath(repoPath, entry.file)
+    if (!path || !(await lstat(path).catch(() => null))?.isFile()) throw new Error(`${entry.file} is no longer a file in this repository.`)
+    const expected = side === 'before' ? entry.after : entry.before
+    if (!(await readFile(path)).equals(expected)) {
+      throw new Error(`${entry.file} has changed since, so it was left as it is.`)
+    }
+    await guardSnapshot(repoPath)
+    await writeFile(path, side === 'before' ? entry.before : entry.after)
   },
 
   // ─── Reflog (recovery) ─────────────────────────────────────────────────────

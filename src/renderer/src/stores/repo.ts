@@ -2290,9 +2290,17 @@ export const repoActions = {
     // conflict markers, say so after the success toast rather than let it pass
     // as a clean change.
     let conflicts = 0
+    // Set when the action went through that merge: undo and redo then restore
+    // the file's exact bytes, since the patch itself never applied as is.
+    let merge: string | undefined
     const send = async (reverse: boolean): Promise<void> => {
-      conflicts = (await gitApi.applyHunkPatch(path, patch, op.target, reverse, ignoreWhitespace)).conflicts
+      const result = await gitApi.applyHunkPatch(path, patch, op.target, reverse, ignoreWhitespace)
+      conflicts = result.conflicts
+      merge = result.merge
     }
+    const undo = (): Promise<void> =>
+      merge ? gitApi.restoreHunkMerge(path, merge, 'before') : send(!op.reverse)
+    const redo = (): Promise<void> => (merge ? gitApi.restoreHunkMerge(path, merge, 'after') : send(op.reverse))
     const perform = (): Promise<boolean> => {
       onStart?.()
       return useRepoStore
@@ -2301,7 +2309,7 @@ export const repoActions = {
           path,
           t(op.doneKey),
           () => send(op.reverse),
-          { label: t(op.undoKey), undo: () => send(!op.reverse), redo: () => send(op.reverse) },
+          { label: t(op.undoKey), undo, redo },
           null,
           (msg) => {
             if (!/patch does not apply|patch failed/i.test(msg)) return false
@@ -2323,8 +2331,8 @@ export const repoActions = {
         title: t('hunk.discardConfirmTitle'),
         message: t('hunk.discardConfirmMessage'),
         confirmLabel: t('hunk.discardConfirmOk'),
-        // Cancelling leaves it pending: there is nothing to follow up on.
-        onConfirm: () => void perform().then(resolve)
+        onConfirm: () => void perform().then(resolve),
+        onCancel: () => resolve(false)
       })
     })
   },

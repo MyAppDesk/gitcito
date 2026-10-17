@@ -200,8 +200,9 @@ export type ModalSpec =
 
 export type FileViewSource =
   | { type: 'wip'; staged: boolean; untracked: boolean }
-  | { type: 'commit'; hash: string }
-  | { type: 'stash'; sha: string; untracked: boolean }
+  // `deleted`: the change removed the file, so the views show it as it was before.
+  | { type: 'commit'; hash: string; deleted?: boolean }
+  | { type: 'stash'; sha: string; untracked: boolean; deleted?: boolean }
   // A plain working-tree file opened from the project tree. Read from disk
   // (no git ref) and editable in place.
   | { type: 'tree' }

@@ -7217,6 +7217,10 @@ body.col-resizing .node-ava {
   background: rgba(242, 204, 96, 0.14);
   color: var(--yellow);
 }
+.fv-chip.deleted {
+  background: color-mix(in srgb, var(--red) 18%, transparent);
+  color: var(--red);
+}
 .fv-modes {
   display: flex;
   margin-inline-start: auto;

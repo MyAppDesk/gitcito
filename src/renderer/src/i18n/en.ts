@@ -3352,6 +3352,8 @@ export const en = {
   'fileViewer.discardMessage': 'Discard unsaved changes to {file}?',
   'fileViewer.discard': 'Discard',
   'fileViewer.chipStash': 'Stash',
+  'fileViewer.chipDeleted': 'Deleted',
+  'fileViewer.chipDeletedTitle': 'This change deletes the file. Showing it as it was just before.',
   'fileViewer.chipUnsaved': 'Unsaved',
   'fileViewer.chipWorkingTree': 'Working tree',
   'fileViewer.chipStaged': 'Staged',

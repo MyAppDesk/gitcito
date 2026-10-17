@@ -63,7 +63,12 @@ function shaColor(sha: string): string {
   return GRAPH_COLORS[Math.abs(h) % GRAPH_COLORS.length]
 }
 
-function sourceRef(view: FileViewState): string | undefined {
+/**
+ * The ref the File, Preview and Blame views read. A deleted file has nothing on
+ * its own side, so they read the version just before the deletion instead.
+ */
+function sourceRef(view: FileViewState, deleted = false): string | undefined {
+  if (deleted) return beforeRef(view)
   if (view.source.type === 'commit') return view.source.hash
   if (view.source.type === 'stash') return view.source.untracked ? `${view.source.sha}^3` : view.source.sha
   if (view.source.type === 'tree') return undefined
@@ -92,7 +97,17 @@ function diffSides(view: FileViewState): { oldSide: BlobSpec; newSide: BlobSpec 
   return null // the project tree has no diff mode
 }
 
-function blameRef(view: FileViewState): string | undefined {
+/** The side a deletion removed the file from: the parent, the index or HEAD. */
+function beforeRef(view: FileViewState): string | undefined {
+  const s = view.source
+  if (s.type === 'commit') return `${s.hash}^`
+  if (s.type === 'stash') return `${s.sha}^1`
+  if (s.type === 'tree') return undefined
+  return s.staged ? 'HEAD' : ':0'
+}
+
+function blameRef(view: FileViewState, deleted = false): string | undefined {
+  if (deleted) return beforeRef(view)
   if (view.source.type === 'commit') return view.source.hash
   if (view.source.type === 'stash') return view.source.untracked ? `${view.source.sha}^3` : view.source.sha
   return undefined
@@ -336,6 +351,13 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
   const canExplain = !fileIsImage && (mode === 'file' || mode === 'diff') && !!content
   // Host permalink to this file at the viewed commit (commit source + a remote).
   const repoData = useRepoStore((s) => s.repos[repoPath])
+  // A WIP deletion is read from the live status, so it follows the file between
+  // staged and unstaged; commits and stashes say so when they open the view.
+  const deleted = useRepoStore((s) => {
+    if (source.type !== 'wip') return source.type !== 'tree' && !!source.deleted
+    const st = s.repos[repoPath]?.status
+    return (source.staged ? st?.staged : st?.unstaged)?.find((f) => f.path === file)?.status === 'D'
+  })
   const originUrl = repoData?.remotes.find((r) => r.name === 'origin')?.url ?? repoData?.remotes[0]?.url
   const permalink = source.type === 'commit' ? filePermalink(originUrl, source.hash, file) : undefined
   // Which two blobs the semantic summary should compare (null for the project
@@ -347,7 +369,7 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
   // File view is otherwise showing the staged (':0') version.
   const onDiskFile = source.type === 'tree' || source.type === 'wip'
   // The file can be edited at all (drives the Edit button, shown from any mode).
-  const editableFile = onDiskFile && !fileIsImage && !binaryDoc
+  const editableFile = onDiskFile && !fileIsImage && !binaryDoc && !deleted
   // The editor is actually mounted (File view + editing toggled on).
   const editable = editableFile && mode === 'file' && content !== null
   const dirty = editing && content !== null && draft !== content
@@ -523,7 +545,7 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
           return
         }
         if (fileIsImage && mode === 'file') {
-          const url = await gitApi.fileDataUrl(repoPath, file, sourceRef(view), forceLoad)
+          const url = await gitApi.fileDataUrl(repoPath, file, sourceRef(view, deleted), forceLoad)
           if (!cancelled) {
             setImageUrl(url)
             setContent('')
@@ -543,7 +565,7 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
         } else if (mode === 'file') {
           // While editing, always read the on-disk working copy (ignore the
           // staged ':0' ref) so edits and saves target the real file.
-          const ref = editing && onDiskFile ? undefined : sourceRef(view)
+          const ref = editing && onDiskFile ? undefined : sourceRef(view, deleted)
           const text = await gitApi.fileContent(repoPath, file, ref, forceLoad)
           if (!cancelled) {
             setContent(text)
@@ -553,7 +575,7 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
             if (editing) setDraft(text)
           }
         } else if (mode === 'blame') {
-          const lines = await gitApi.blameFile(repoPath, file, blameOverrideRef ?? blameRef(view))
+          const lines = await gitApi.blameFile(repoPath, file, blameOverrideRef ?? blameRef(view, deleted))
           if (!cancelled) {
             setBlame(lines)
             setContent('')
@@ -588,6 +610,7 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
     blameOverrideRef,
     editing,
     ignoreWs,
+    deleted,
     source.type,
     source.type === 'commit' ? source.hash : source.type === 'stash' ? source.sha : source.type === 'wip' ? source.staged : ''
   ])
@@ -747,6 +770,11 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
           <strong>{file.split('/').pop()}</strong>
         </span>
         {sourceChip}
+        {deleted && (
+          <span className="fv-chip deleted" title={t('fileViewer.chipDeletedTitle')}>
+            {t('fileViewer.chipDeleted')}
+          </span>
+        )}
         <div className="fv-modes">
           {modes.map((m) => (
             <button
@@ -881,7 +909,7 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
         )}
 
         {!error && mode === 'preview' && pvKind && (
-          <PreviewPane repoPath={repoPath} file={file} gitRef={sourceRef(view)} kind={pvKind} />
+          <PreviewPane repoPath={repoPath} file={file} gitRef={sourceRef(view, deleted)} kind={pvKind} />
         )}
 
         {!error && imgDiff !== null && mode === 'diff' && (

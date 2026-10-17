@@ -3351,6 +3351,8 @@ export const es: Dict = {
   'fileViewer.discardMessage': '¿Descartar los cambios sin guardar de {file}?',
   'fileViewer.discard': 'Descartar',
   'fileViewer.chipStash': 'Stash',
+  'fileViewer.chipDeleted': 'Borrado',
+  'fileViewer.chipDeletedTitle': 'Este cambio borra el archivo. Se muestra tal como era justo antes.',
   'fileViewer.chipUnsaved': 'Sin guardar',
   'fileViewer.chipWorkingTree': 'Árbol de trabajo',
   'fileViewer.chipStaged': 'Preparado',

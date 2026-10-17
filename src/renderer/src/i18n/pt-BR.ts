@@ -3357,6 +3357,8 @@ export const ptBR: Dict = {
   'fileViewer.discardMessage': 'Descartar as alterações não salvas de {file}?',
   'fileViewer.discard': 'Descartar',
   'fileViewer.chipStash': 'Stash',
+  'fileViewer.chipDeleted': 'Excluído',
+  'fileViewer.chipDeletedTitle': 'Esta alteração exclui o arquivo. Ele é exibido como estava logo antes.',
   'fileViewer.chipUnsaved': 'Não salvo',
   'fileViewer.chipWorkingTree': 'Working tree',
   'fileViewer.chipStaged': 'Em stage',

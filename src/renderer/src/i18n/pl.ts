@@ -3348,6 +3348,8 @@ export const pl: Dict = {
   'fileViewer.discardMessage': 'Odrzucić niezapisane zmiany w {file}?',
   'fileViewer.discard': 'Odrzuć',
   'fileViewer.chipStash': 'Stash',
+  'fileViewer.chipDeleted': 'Usunięty',
+  'fileViewer.chipDeletedTitle': 'Ta zmiana usuwa plik. Pokazano go w stanie sprzed usunięcia.',
   'fileViewer.chipUnsaved': 'Niezapisane',
   'fileViewer.chipWorkingTree': 'Katalog roboczy',
   'fileViewer.chipStaged': 'W indeksie',

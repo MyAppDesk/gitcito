@@ -3348,6 +3348,8 @@ export const ru: Dict = {
   'fileViewer.discardMessage': 'Отбросить несохранённые изменения в {file}?',
   'fileViewer.discard': 'Отбросить',
   'fileViewer.chipStash': 'Стеш',
+  'fileViewer.chipDeleted': 'Удалён',
+  'fileViewer.chipDeletedTitle': 'Это изменение удаляет файл. Показан вид файла непосредственно перед удалением.',
   'fileViewer.chipUnsaved': 'Не сохранено',
   'fileViewer.chipWorkingTree': 'Рабочее дерево',
   'fileViewer.chipStaged': 'В индексе',

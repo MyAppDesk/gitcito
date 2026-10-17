@@ -3351,6 +3351,8 @@ export const ar: Dict = {
   'fileViewer.discardMessage': 'أتتجاهل التغييرات غير المحفوظة في {file}؟',
   'fileViewer.discard': 'تجاهل',
   'fileViewer.chipStash': 'مخبأ',
+  'fileViewer.chipDeleted': 'محذوف',
+  'fileViewer.chipDeletedTitle': 'يحذف هذا التغيير الملف. يُعرض كما كان قبل الحذف مباشرة.',
   'fileViewer.chipUnsaved': 'غير محفوظ',
   'fileViewer.chipWorkingTree': 'شجرة العمل',
   'fileViewer.chipStaged': 'محضَّر',

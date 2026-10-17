@@ -3288,6 +3288,8 @@ export const ja: Dict = {
   'fileViewer.discardMessage': '{file} の保存していない変更を破棄しますか？',
   'fileViewer.discard': '破棄',
   'fileViewer.chipStash': 'スタッシュ',
+  'fileViewer.chipDeleted': '削除',
+  'fileViewer.chipDeletedTitle': 'この変更はファイルを削除します。削除直前の内容を表示しています。',
   'fileViewer.chipUnsaved': '未保存',
   'fileViewer.chipWorkingTree': '作業ツリー',
   'fileViewer.chipStaged': 'ステージ済み',

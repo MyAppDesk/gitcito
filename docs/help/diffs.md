@@ -35,6 +35,11 @@ half where its own content is.
 
 ![Split diff with word-level highlighting](../screenshots/split-diff.webp)
 
+A **deleted file** has nothing left to show on its own side, so File, Preview
+and Blame show it as it was just before the deletion — the parent commit, the
+index or `HEAD` — under a **Deleted** chip. It cannot be edited from there:
+restoring it is a discard or a revert, not a save.
+
 A diff you can act on — working changes, a commit, a stash — carries buttons
 on each hunk and lets you select lines; see
 [hunk and line actions](staging.md#hunk-and-line-actions) for what each does.

@@ -3356,6 +3356,8 @@ export const nl: Dict = {
   'fileViewer.discardMessage': 'Niet-opgeslagen wijzigingen in {file} weggooien?',
   'fileViewer.discard': 'Weggooien',
   'fileViewer.chipStash': 'Stash',
+  'fileViewer.chipDeleted': 'Verwijderd',
+  'fileViewer.chipDeletedTitle': 'Deze wijziging verwijdert het bestand. Het wordt getoond zoals het vlak daarvoor was.',
   'fileViewer.chipUnsaved': 'Niet opgeslagen',
   'fileViewer.chipWorkingTree': 'Working tree',
   'fileViewer.chipStaged': 'Gestaged',

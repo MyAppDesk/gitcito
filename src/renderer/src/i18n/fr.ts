@@ -3296,6 +3296,8 @@ export const fr: Dict = {
   'fileViewer.discardMessage': 'Abandonner les modifications non enregistrées de {file} ?',
   'fileViewer.discard': 'Abandonner',
   'fileViewer.chipStash': 'Remisage',
+  'fileViewer.chipDeleted': 'Supprimé',
+  'fileViewer.chipDeletedTitle': 'Cette modification supprime le fichier. Il est affiché tel qu’il était juste avant.',
   'fileViewer.chipUnsaved': 'Non enregistré',
   'fileViewer.chipWorkingTree': 'Copie de travail',
   'fileViewer.chipStaged': 'Indexé',

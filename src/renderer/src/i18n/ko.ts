@@ -3348,6 +3348,8 @@ export const ko: Dict = {
   'fileViewer.discardMessage': '{file}의 저장하지 않은 변경을 버릴까요?',
   'fileViewer.discard': '버리기',
   'fileViewer.chipStash': '스태시',
+  'fileViewer.chipDeleted': '삭제됨',
+  'fileViewer.chipDeletedTitle': '이 변경은 파일을 삭제합니다. 삭제 직전의 내용을 표시합니다.',
   'fileViewer.chipUnsaved': '저장 안 됨',
   'fileViewer.chipWorkingTree': '작업 트리',
   'fileViewer.chipStaged': '스테이징됨',

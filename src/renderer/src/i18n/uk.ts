@@ -3348,6 +3348,8 @@ export const uk: Dict = {
   'fileViewer.discardMessage': 'Відкинути незбережені зміни у {file}?',
   'fileViewer.discard': 'Відкинути',
   'fileViewer.chipStash': 'Стеш',
+  'fileViewer.chipDeleted': 'Видалено',
+  'fileViewer.chipDeletedTitle': 'Ця зміна видаляє файл. Показано його вигляд безпосередньо перед видаленням.',
   'fileViewer.chipUnsaved': 'Не збережено',
   'fileViewer.chipWorkingTree': 'Робоче дерево',
   'fileViewer.chipStaged': 'Проіндексовано',

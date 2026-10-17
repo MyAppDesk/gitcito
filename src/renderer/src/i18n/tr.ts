@@ -3291,6 +3291,8 @@ export const tr: Dict = {
   'fileViewer.discardMessage': '{file} dosyasındaki kaydedilmemiş değişiklikler atılsın mı?',
   'fileViewer.discard': 'At',
   'fileViewer.chipStash': 'Stash',
+  'fileViewer.chipDeleted': 'Silindi',
+  'fileViewer.chipDeletedTitle': 'Bu değişiklik dosyayı siliyor. Dosya, silinmeden hemen önceki hâliyle gösteriliyor.',
   'fileViewer.chipUnsaved': 'Kaydedilmemiş',
   'fileViewer.chipWorkingTree': 'Çalışma ağacı',
   'fileViewer.chipStaged': 'Stage’lenmiş',

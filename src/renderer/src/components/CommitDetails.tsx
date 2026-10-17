@@ -489,7 +489,7 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
             setFileView({
               repoPath: repo.path,
               file: f.path,
-              source: { type: 'commit', hash },
+              source: { type: 'commit', hash, deleted: f.status === 'D' },
               mode: useUIStore.getState().fileView?.mode === 'file' ? 'file' : 'diff'
             })
           }}

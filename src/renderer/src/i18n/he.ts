@@ -3351,6 +3351,8 @@ export const he: Dict = {
   'fileViewer.discardMessage': 'לזרוק שינויים שלא נשמרו בקובץ {file}?',
   'fileViewer.discard': 'זריקה',
   'fileViewer.chipStash': 'סטאש',
+  'fileViewer.chipDeleted': 'נמחק',
+  'fileViewer.chipDeletedTitle': 'השינוי הזה מוחק את הקובץ. הקובץ מוצג כפי שהיה רגע לפני המחיקה.',
   'fileViewer.chipUnsaved': 'לא נשמר',
   'fileViewer.chipWorkingTree': 'עץ העבודה',
   'fileViewer.chipStaged': 'בסטייג׳',

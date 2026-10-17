@@ -3348,6 +3348,8 @@ export const zhCN: Dict = {
   'fileViewer.discardMessage': '放弃对 {file} 未保存的改动？',
   'fileViewer.discard': '放弃',
   'fileViewer.chipStash': '贮藏',
+  'fileViewer.chipDeleted': '已删除',
+  'fileViewer.chipDeletedTitle': '此更改删除了该文件。显示的是删除前的内容。',
   'fileViewer.chipUnsaved': '未保存',
   'fileViewer.chipWorkingTree': '工作区',
   'fileViewer.chipStaged': '已暂存',

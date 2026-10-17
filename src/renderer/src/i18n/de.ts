@@ -3356,6 +3356,8 @@ export const de: Dict = {
   'fileViewer.discardMessage': 'Ungespeicherte Änderungen an {file} verwerfen?',
   'fileViewer.discard': 'Verwerfen',
   'fileViewer.chipStash': 'Stash',
+  'fileViewer.chipDeleted': 'Gelöscht',
+  'fileViewer.chipDeletedTitle': 'Diese Änderung löscht die Datei. Angezeigt wird sie so, wie sie unmittelbar davor war.',
   'fileViewer.chipUnsaved': 'Ungespeichert',
   'fileViewer.chipWorkingTree': 'Arbeitsverzeichnis',
   'fileViewer.chipStaged': 'Gestagt',

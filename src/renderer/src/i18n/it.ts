@@ -3297,6 +3297,8 @@ export const it: Dict = {
   'fileViewer.discardMessage': 'Scartare le modifiche non salvate di {file}?',
   'fileViewer.discard': 'Scarta',
   'fileViewer.chipStash': 'Stash',
+  'fileViewer.chipDeleted': 'Eliminato',
+  'fileViewer.chipDeletedTitle': 'Questa modifica elimina il file. Viene mostrato com’era subito prima.',
   'fileViewer.chipUnsaved': 'Non salvato',
   'fileViewer.chipWorkingTree': 'Working tree',
   'fileViewer.chipStaged': 'In staging',

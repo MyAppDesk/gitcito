@@ -106,7 +106,7 @@ export function StashDetails({ repo, sha }: { repo: RepoData; sha: string }): Re
     setFileView({
       repoPath: repo.path,
       file: file.path,
-      source: { type: 'stash', sha, untracked: !!file.untracked },
+      source: { type: 'stash', sha, untracked: !!file.untracked, deleted: file.status === 'D' },
       mode: useUIStore.getState().fileView?.mode === 'file' ? 'file' : 'diff'
     })
   }

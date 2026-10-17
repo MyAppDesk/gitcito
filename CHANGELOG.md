@@ -1,5 +1,18 @@
 
 
+## [4.14.0](https://github.com/MyAppDesk/gitcito/compare/v4.13.0...v4.14.0) (2026-10-17)
+
+
+### Features
+
+* **viewer:** show a deleted file as it was before the deletion ([64e73b8](https://github.com/MyAppDesk/gitcito/commit/64e73b80d1ae7fbe1ec4f7c24cf86b98fcdd8958))
+
+
+### Bug Fixes
+
+* **diff:** fold "No newline at end of file" into the line before it ([8e0bbb1](https://github.com/MyAppDesk/gitcito/commit/8e0bbb1085a47b556d79c24f597bd0b2dc549e9f))
+* exact undo after a merged hunk, and settle a cancelled discard ([#57](https://github.com/MyAppDesk/gitcito/issues/57)) ([8352e6d](https://github.com/MyAppDesk/gitcito/commit/8352e6d7a2676d917135d122a68608886fea66cc))
+
 ## [4.13.0](https://github.com/MyAppDesk/gitcito/compare/v4.12.0...v4.13.0) (2026-10-13)
 
 

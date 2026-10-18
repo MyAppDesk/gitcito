@@ -754,7 +754,12 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       tabs: repathRepoTabs(s.tabs, oldPath, newPath),
       workspaces: s.workspaces.map((w) => ({ ...w, tabs: repathRepoTabs(w.tabs, oldPath, newPath) })),
       ...repathRepoSettings(
-        { repoAliases: s.repoAliases, repoProfiles: s.repoProfiles, favouriteRepos: s.favouriteRepos ?? [] },
+        {
+          repoAliases: s.repoAliases,
+          repoProfiles: s.repoProfiles,
+          favouriteRepos: s.favouriteRepos ?? [],
+          repoImages: s.repoImages
+        },
         oldPath,
         newPath
       )

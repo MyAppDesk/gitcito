@@ -1574,6 +1574,9 @@ function fileMime(file: string): string {
 // allocates 5× its size across main + IPC + renderer.
 const PREVIEW_MAX_BYTES = 32 * 1024 * 1024
 const TEXT_MAX_BYTES = 16 * 1024 * 1024
+// A tab icon is drawn at 14px and loaded for every open tab on startup; a
+// megabyte is already generous for that.
+const REPO_IMAGE_MAX_BYTES = 1024 * 1024
 
 /** Byte size of a working-tree file or a blob at `ref`, null when unknowable. */
 async function blobSize(repoPath: string, file: string, ref?: string): Promise<number | null> {
@@ -6298,6 +6301,26 @@ export const gitService = {
     return url
   },
 
+  /**
+   * A repository's tab image as a data URL. Null — never a throw — when the
+   * path is missing, escapes the repository (a symlink included), is not an
+   * image, or is too large for a tab icon: that null is the "broken path" the
+   * repository settings warn about, and a tab simply falls back to the name.
+   */
+  async repoImage(repoPath: string, file: string): Promise<string | null> {
+    if (!file || isAbsolute(file) || !fileMime(file).startsWith('image/')) return null
+    try {
+      const root = await realpath(repoPath)
+      const target = await realpath(join(repoPath, file))
+      if (!target.startsWith(root + sep)) return null
+      const info = await stat(target)
+      if (!info.isFile() || info.size > REPO_IMAGE_MAX_BYTES) return null
+      return `data:${fileMime(file)};base64,${(await readFile(target)).toString('base64')}`
+    } catch {
+      return null
+    }
+  },
+
   async imageDiff(
     repoPath: string,
     file: string,
@@ -7730,6 +7753,7 @@ const READ_METHODS = new Set<string>([
   'grepWorkingTree',
   'searchHistory',
   'fileDataUrl',
+  'repoImage',
   'imageDiff',
   'blameFile',
   'fileHistory',

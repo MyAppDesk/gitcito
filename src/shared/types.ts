@@ -2822,6 +2822,8 @@ export interface Workspace {
   sourcePath?: string
 }
 
+export type TabRepoLabel = 'both' | 'name' | 'image'
+
 export interface AppSettings {
   profiles: Profile[]
   activeProfileId: string
@@ -2836,6 +2838,13 @@ export interface AppSettings {
    * workspaces cannot diverge.
    */
   repoAliases: Record<string, string>
+  /** Tab images keyed by canonical repository path; each value is a path
+   *  relative to that repository's root. Relative so the picture follows the
+   *  repository's own files rather than a location on this machine. */
+  repoImages?: Record<string, string>
+  /** What a repository tab shows. A repository without a loadable image always
+   *  shows its name, whatever this says. Absent means `both`. */
+  tabRepoLabel?: TabRepoLabel
   tabs: TabState[]
   activeTabId: string | null
   /** Saved tab layouts. Always has at least one ("Default"); the active one's

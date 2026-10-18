@@ -1,6 +1,22 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Settings, ShieldCheck, Loader2, BarChart3, History, ScrollText, Flame, Info, KeyRound, FileCog } from 'lucide-react'
+import {
+  Settings,
+  ShieldCheck,
+  Loader2,
+  BarChart3,
+  History,
+  ScrollText,
+  Flame,
+  Info,
+  KeyRound,
+  FileCog,
+  Image as ImageIcon,
+  AlertTriangle
+} from 'lucide-react'
 import { gitApi, logApi } from '../infrastructure/api'
+import { applyRepoImage, lookupRepoImage, normalizeImagePath } from '../lib/repoImage'
+import { loadRepoImage } from './RepoTabLabel'
+import { RepoImagePicker } from './RepoImagePicker'
 import { useUIStore } from '../stores/ui'
 import { useRepoStore } from '../stores/repo'
 import { useSettingsStore } from '../stores/settings'
@@ -84,6 +100,12 @@ function GeneralTab({ repoPath }: { repoPath: string }): React.JSX.Element {
   const [protectedBranches, setProtected] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [imagePath, setImagePath] = useState(
+    () => lookupRepoImage(repoPath, useSettingsStore.getState().settings.repoImages) ?? ''
+  )
+  const [preview, setPreview] = useState<{ file: string; url: string | null } | null>(null)
+  const imageFile = normalizeImagePath(imagePath)
+  const imageBroken = imageFile !== '' && preview?.file === imageFile && preview.url === null
 
   useEffect(() => {
     gitApi
@@ -93,9 +115,26 @@ function GeneralTab({ repoPath }: { repoPath: string }): React.JSX.Element {
       .finally(() => setLoading(false))
   }, [repoPath])
 
+  // Debounced so typing a path does not read a file per keystroke. `fresh`
+  // because the point of looking here is often "I replaced the picture".
+  useEffect(() => {
+    if (!imageFile) return
+    let live = true
+    const timer = setTimeout(() => {
+      void loadRepoImage(repoPath, imageFile, true).then((url) => live && setPreview({ file: imageFile, url }))
+    }, 250)
+    return () => {
+      live = false
+      clearTimeout(timer)
+    }
+  }, [repoPath, imageFile])
+
   const save = async (): Promise<void> => {
     setSaving(true)
     try {
+      useSettingsStore
+        .getState()
+        .update((s) => ({ ...s, repoImages: applyRepoImage(s.repoImages, repoPath, imageFile || null) }))
       await gitApi.setProtectedBranches(repoPath, protectedBranches)
       toast('success', 'Repo settings saved')
       closeModal()
@@ -118,6 +157,22 @@ function GeneralTab({ repoPath }: { repoPath: string }): React.JSX.Element {
         </div>
       ) : (
         <BranchMultiSelect options={branchOptions} value={protectedBranches} onChange={setProtected} placeholder={t('repoSettings.addBranch')} />
+      )}
+      <h4 style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 18 }}>
+        <ImageIcon size={14} /> {t('repoSettings.tabImage')}
+      </h4>
+      <span className="settings-hint">{t('repoSettings.tabImageHint')}</span>
+      <RepoImagePicker
+        repoPath={repoPath}
+        value={imagePath}
+        onChange={setImagePath}
+        preview={imageFile && preview?.file === imageFile ? preview.url : null}
+        invalid={imageBroken}
+      />
+      {imageBroken && (
+        <p className="repo-image-warning" role="alert">
+          <AlertTriangle size={13} /> {t('repoSettings.tabImageBroken')}
+        </p>
       )}
       <div className="modal-actions">
         <button className="btn ghost" onClick={closeModal} disabled={saving}>

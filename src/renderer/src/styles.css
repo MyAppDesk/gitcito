@@ -234,6 +234,21 @@ textarea:focus {
   font-size: 12px;
 }
 
+/* Larger than the 13px folder icon it replaces: a picture needs the room to be
+   recognisable, and the 32px tab has it. Alone, it is the tab's only label. */
+.tab-repo-image {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  object-fit: contain;
+}
+
+.tab-repo-image.solo {
+  width: 22px;
+  height: 22px;
+}
+
 .tab-status {
   flex: none;
   width: 6px;
@@ -15590,6 +15605,52 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .repo-settings { display: flex; flex-direction: column; min-height: 0; }
 .repo-settings-tabs { display: flex; gap: 6px; margin: 10px 0; flex-wrap: wrap; }
 .repo-settings-body { overflow-y: auto; min-height: 0; flex: 1; }
+.repo-image-row { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
+.rip-field { position: relative; flex: 1; min-width: 0; display: flex; }
+.rip-field input { flex: 1; min-width: 0; padding-inline-end: 26px; }
+.rip-field input[aria-invalid='true'] { border-color: var(--yellow); }
+.rip-clear {
+  position: absolute; inset-inline-end: 4px; top: 50%; transform: translateY(-50%);
+  display: grid; place-items: center; width: 18px; height: 18px; padding: 0;
+  border: none; border-radius: 4px; background: transparent; color: var(--text-2); cursor: pointer;
+}
+.rip-clear:hover { background: var(--bg-3, var(--bg-2)); color: var(--text-0); }
+.rip-chevron { transition: transform 0.15s ease; }
+.rip-chevron.open { transform: rotate(180deg); }
+.rip-list {
+  margin-top: 6px; max-height: 232px; overflow-y: auto; padding: 4px;
+  border: 1px solid var(--border-soft); border-radius: 8px; background: var(--bg-1);
+  animation: rip-in 0.12s ease-out;
+}
+@keyframes rip-in { from { opacity: 0; transform: translateY(-3px); } }
+@media (prefers-reduced-motion: reduce) { .rip-list { animation: none; } .rip-chevron { transition: none; } }
+.rip-opt {
+  display: flex; align-items: center; gap: 10px; width: 100%; padding: 4px 6px; text-align: start;
+  border: none; border-radius: 6px; background: transparent; color: var(--text-1); cursor: pointer; font-size: 12px;
+}
+.rip-opt.active { background: var(--accent-soft); color: var(--text-0); }
+.rip-opt:disabled { opacity: 0.45; cursor: not-allowed; }
+.rip-thumb {
+  flex: none; width: 28px; height: 28px; border-radius: 5px; display: grid; place-items: center; overflow: hidden;
+  color: var(--text-2);
+  /* A checkerboard, so a transparent PNG reads as transparent rather than as a black square. */
+  background: repeating-conic-gradient(var(--bg-2) 0% 25%, var(--bg-1) 0% 50%) 50% / 8px 8px;
+  border: 1px solid var(--border-soft);
+}
+.rip-thumb img { width: 100%; height: 100%; object-fit: contain; }
+.rip-path { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: ltr; }
+.rip-dir { color: var(--text-2); }
+.rip-name { color: inherit; font-weight: 500; }
+.rip-empty { padding: 12px; text-align: center; font-size: 12px; color: var(--text-2); }
+.repo-image-preview {
+  flex: none; width: 28px; height: 28px; border-radius: 6px; display: grid; place-items: center;
+  background: var(--bg-2); border: 1px solid var(--border-soft); color: var(--text-2); overflow: hidden;
+}
+.repo-image-preview img { width: 100%; height: 100%; object-fit: cover; }
+.repo-image-warning {
+  display: flex; align-items: flex-start; gap: 6px; margin: 8px 0 0; font-size: 12px; color: var(--yellow);
+}
+.repo-image-warning svg { flex: none; margin-top: 2px; }
 
 /* ─── Repo logs tab ────────────────────────────────────────────────────── */
 .repo-logs-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }

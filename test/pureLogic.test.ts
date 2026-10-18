@@ -52,6 +52,14 @@ import {
 } from '../src/renderer/src/lib/repoSections'
 import { planWorkspaces } from '../src/renderer/src/lib/workspacePlan'
 import { repathRepoSettings, repathRepoTabs } from '../src/renderer/src/lib/repoRepath'
+import {
+  applyRepoImage,
+  lookupRepoImage,
+  isImagePath,
+  normalizeImagePath,
+  rankImageCandidates,
+  tabLabelParts
+} from '../src/renderer/src/lib/repoImage'
 import { resolveUpdateOffer } from '../src/renderer/src/lib/updateOffer'
 import { worktreeForBranch, worktreeTabName } from '../src/renderer/src/lib/worktrees'
 import { focusedHashes, focusedStashes, defaultBranchName } from '../src/renderer/src/lib/graphFocus'
@@ -7081,6 +7089,69 @@ describe('repathRepoSettings', () => {
     expect(result.repoAliases).toEqual({ '/r/same': 'Alias' })
     expect(result.repoProfiles).toEqual({ '/r/same': 'profile-1' })
     expect(result.favouriteRepos).toEqual(['/r/same'])
+  })
+
+  it('moves the tab image, keeping the destination one when it has its own', () => {
+    const base = { repoAliases: {}, repoProfiles: {}, favouriteRepos: [] }
+    expect(
+      repathRepoSettings({ ...base, repoImages: { '/r/old': 'logo.png' } }, '/r/old', '/r/new').repoImages
+    ).toEqual({ '/r/new': 'logo.png' })
+    expect(
+      repathRepoSettings({ ...base, repoImages: { '/r/old': 'a.png', '/r/new': 'b.png' } }, '/r/old', '/r/new')
+        .repoImages
+    ).toEqual({ '/r/new': 'b.png' })
+  })
+})
+
+describe('repo tab images', () => {
+  it('normalizes the stored path', () => {
+    expect(normalizeImagePath('  .\\assets\\logo.png ')).toBe('assets/logo.png')
+    expect(normalizeImagePath('./././a.png')).toBe('a.png')
+  })
+
+  it('sets, looks up by canonical path, and clears', () => {
+    const set = applyRepoImage(undefined, 'C:\\Repos\\app\\', './icon.png')
+    expect(set).toEqual({ 'c:/Repos/app': 'icon.png' })
+    expect(lookupRepoImage('c:/Repos/app', set)).toBe('icon.png')
+    expect(applyRepoImage(set, 'c:/Repos/app', '')).toEqual({})
+    expect(applyRepoImage(set, 'c:/Repos/app', null)).toEqual({})
+  })
+
+  it('recognises image files by extension, case-insensitively', () => {
+    expect(isImagePath('assets/Logo.PNG')).toBe(true)
+    expect(isImagePath('a/b.svg')).toBe(true)
+    expect(isImagePath('notes.txt')).toBe(false)
+    expect(isImagePath('png')).toBe(false)
+    expect(isImagePath('weird.png/readme')).toBe(false)
+  })
+
+  it('suggests logo-ish and shallow images first, and never non-images', () => {
+    const files = ['docs/shots/a.png', 'src/index.ts', 'deep/x/y/logo.svg', 'banner.jpg', 'assets/icon.png']
+    expect(rankImageCandidates(files, '')).toEqual(['assets/icon.png', 'deep/x/y/logo.svg', 'banner.jpg', 'docs/shots/a.png'])
+  })
+
+  it('filters by every query word, anywhere in the path', () => {
+    const files = ['assets/logo.png', 'assets/logo-dark.png', 'docs/logo.png', 'assets/hero.webp']
+    expect(rankImageCandidates(files, 'assets dark')).toEqual(['assets/logo-dark.png'])
+    expect(rankImageCandidates(files, 'LOGO')).toHaveLength(3)
+    expect(rankImageCandidates(files, 'nothing')).toEqual([])
+  })
+
+  it('caps the number of suggestions', () => {
+    const files = Array.from({ length: 100 }, (_, i) => `img/${i}.png`)
+    expect(rankImageCandidates(files, '', 40)).toHaveLength(40)
+  })
+
+  it('always shows the name when there is no image', () => {
+    expect(tabLabelParts('image', false)).toEqual({ image: false, name: true })
+    expect(tabLabelParts(undefined, false)).toEqual({ image: false, name: true })
+  })
+
+  it('follows the mode when there is an image, defaulting to both', () => {
+    expect(tabLabelParts(undefined, true)).toEqual({ image: true, name: true })
+    expect(tabLabelParts('both', true)).toEqual({ image: true, name: true })
+    expect(tabLabelParts('name', true)).toEqual({ image: false, name: true })
+    expect(tabLabelParts('image', true)).toEqual({ image: true, name: false })
   })
 })
 

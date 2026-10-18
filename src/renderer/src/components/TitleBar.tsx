@@ -17,6 +17,7 @@ import {
 } from '../lib/repoFolders'
 import { ProfileSwitcher } from './ProfileSwitcher'
 import { WorkspaceSwitcher } from './WorkspaceSwitcher'
+import { RepoTabLabel } from './RepoTabLabel'
 import { tabLabel, pageTabLabel } from '../lib/tabLabel'
 import { pagesForRepo } from '../lib/tabPages'
 import { repoCloseStatus, tabCloseStatus, type TabStatus } from '../lib/tabClose'
@@ -885,13 +886,12 @@ export function TitleBar(): React.JSX.Element {
         exit={{ opacity: 0, width: 0, paddingLeft: 0, paddingRight: 0 }}
         transition={{ duration: 0.2, ease: 'easeInOut' }}
       >
-        <FolderGit2 size={13} />
-        <span
+        <RepoTabLabel
+          repoPath={repo.path}
+          name={repoDisplayName(repo.path, settings.repoAliases, repo.name)}
           className={`tab-name ${isActiveRepo && tab.activePage != null ? 'tab-name-back' : ''}`}
           title={isActiveRepo && tab.activePage != null ? t('titlebar.backToRepo') : undefined}
-        >
-          {repoDisplayName(repo.path, settings.repoAliases, repo.name)}
-        </span>
+        />
         {/* Only on the selected repository: the icons belong to it, and every
             chip carrying its own row of them would drown the group. */}
         {isActiveRepo && renderPageChips(tab.id, tab.pages, tab.activePage, repo.path)}
@@ -1055,13 +1055,12 @@ export function TitleBar(): React.JSX.Element {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.15 }}
               >
-                <FolderGit2 size={13} />
-                <span
+                <RepoTabLabel
+                  repoPath={tab.repos[0]?.path}
+                  name={tab.name}
                   className={`tab-name ${tab.activePage != null ? 'tab-name-back' : ''}`}
                   title={tab.activePage != null ? t('titlebar.backToRepo') : undefined}
-                >
-                  {tab.name}
-                </span>
+                />
                 {renderPageChips(tab.id, tab.pages, tab.activePage, tab.repos[0]?.path ?? '')}
                 {status && (
                   <span

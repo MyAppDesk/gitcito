@@ -537,6 +537,7 @@ export const gitApi = {
   ) => call<HistorySearchHit[]>('searchHistory', path, query, opts),
   fileDataUrl: (path: string, file: string, ref?: string, force?: boolean) =>
     call<string>('fileDataUrl', path, file, ref, force),
+  repoImage: (path: string, file: string) => call<string | null>('repoImage', path, file),
   imageDiff: (path: string, file: string, beforeRef: string | null, afterRef?: string) =>
     call<{ before: string | null; after: string | null }>('imageDiff', path, file, beforeRef, afterRef),
   blameFile: (path: string, file: string, ref?: string) => call<BlameLine[]>('blameFile', path, file, ref),

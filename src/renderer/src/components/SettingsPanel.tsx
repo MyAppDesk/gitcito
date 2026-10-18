@@ -79,7 +79,7 @@ import type { RerereStatus } from '../../../shared/types'
 import { AI_PROVIDERS, emptyAnalytics, defaultGraphStyle, type AIProvider, type Analytics, type AIUsageStat, type ActivityEvent, type RepoStats, type AppSettings, type BranchNamingStyle, type CommitStyle, type ConflictStyle, type ExplainStyle, type Profile, type SigningConfig, type SettingsBundle, type GraphStyle, type GraphPalette, type GraphEdgeStyle, type GraphDensity, type GraphLineWidth, type GraphNodeStyle, type GraphTopology, type GraphFocus, type GraphCommit, type ConnectedAccount } from '../../../shared/types'
 import { hasSettingsSecrets, stripSettingsSecrets } from '../../../shared/secrets'
 import { tabActiveRepoPath } from '../../../shared/types'
-import type { HoverModifier, KeychainConsent } from '../../../shared/types'
+import type { HoverModifier, KeychainConsent, TabRepoLabel } from '../../../shared/types'
 import { allGraphPalettes, findGraphPalette, colorForPalette, edgePath, spurPath, DENSITY_ROW_H, LINE_WIDTH_PX, GRAPH_PALETTES } from '../graph/style'
 import { GRAPH_FOCUS_MODES, focusedHashes, type FocusInput } from '../lib/graphFocus'
 import { layoutGraph } from '../graph/layout'
@@ -2506,6 +2506,19 @@ function GeneralPage(): React.JSX.Element {
             <option value="never">{t('settings.warnOnClose.never')}</option>
           </select>
           <span className="settings-hint">{t('settings.warnOnCloseHint')}</span>
+        </label>
+
+        <label className="settings-field">
+          <span className="settings-field-label">{t('settings.tabRepoLabel')}</span>
+          <select
+            value={settings.tabRepoLabel ?? 'both'}
+            onChange={(e) => update((s) => ({ ...s, tabRepoLabel: e.target.value as TabRepoLabel }))}
+          >
+            <option value="both">{t('settings.tabRepoLabel.both')}</option>
+            <option value="name">{t('settings.tabRepoLabel.name')}</option>
+            <option value="image">{t('settings.tabRepoLabel.image')}</option>
+          </select>
+          <span className="settings-hint">{t('settings.tabRepoLabelHint')}</span>
         </label>
       </div>
 

@@ -1,4 +1,5 @@
 import type { PageContent, RepoFolder, TabState } from '../../../shared/types'
+import { canonicalRepoPath } from './repoAlias'
 
 // Re-keying the path-keyed settings maps when a repository's folder moves
 // (Locate). Pure so the "destination wins" rule is testable without going
@@ -8,10 +9,11 @@ export interface RepathSettings {
   repoAliases: Record<string, string>
   repoProfiles: Record<string, string>
   favouriteRepos: string[]
+  repoImages?: Record<string, string>
 }
 
 /**
- * Move `oldPath`'s alias, profile binding and star to `newPath`.
+ * Move `oldPath`'s alias, profile binding, star and tab image to `newPath`.
  *
  * `newPath` can already be a known repository — nothing in `locateRepo`
  * guarantees otherwise — so the destination's own alias/profile always wins;
@@ -39,7 +41,17 @@ export function repathRepoSettings(
   const moved = (settings.favouriteRepos ?? []).map((p) => (p === oldPath ? newPath : p))
   const favouriteRepos = [...new Set(moved)]
 
-  return { repoAliases, repoProfiles, favouriteRepos }
+  // Images are keyed by canonical path. The relative value stays valid as long
+  // as the files moved with the folder, which is what Locate is for.
+  const repoImages = { ...(settings.repoImages ?? {}) }
+  const oldKey = canonicalRepoPath(oldPath)
+  const newKey = canonicalRepoPath(newPath)
+  if (oldKey !== newKey) {
+    if (repoImages[oldKey] && !repoImages[newKey]) repoImages[newKey] = repoImages[oldKey]
+    delete repoImages[oldKey]
+  }
+
+  return { repoAliases, repoProfiles, favouriteRepos, repoImages }
 }
 
 /** Point open and saved tabs at a repository's new folder — its entry, the

@@ -1,5 +1,12 @@
 
 
+## [4.15.0](https://github.com/MyAppDesk/gitcito/compare/v4.14.0...v4.15.0) (2026-10-18)
+
+
+### Features
+
+* add repository image picker and loading functionality ([bf7dd89](https://github.com/MyAppDesk/gitcito/commit/bf7dd89d5c5c61f4413f8d402356b5f3a43040fe))
+
 ## [4.14.0](https://github.com/MyAppDesk/gitcito/compare/v4.13.0...v4.14.0) (2026-10-17)
 
 

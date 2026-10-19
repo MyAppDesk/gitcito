@@ -3447,6 +3447,8 @@ export const ru: Dict = {
   'titlebar.newFolder': 'Новая папка',
   'titlebar.newSubfolder': 'Новая вложенная папка',
   'titlebar.newFolderMenu': 'Новая папка…',
+  'titlebar.addToGroup': 'Добавить в группу',
+  'titlebar.newGroupMenu': 'Новая группа…',
   'titlebar.newSubfolderMenu': 'Новая вложенная папка…',
   'titlebar.folderName': 'Имя папки',
   'titlebar.renameFolder': 'Переименовать папку',

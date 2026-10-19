@@ -3456,6 +3456,8 @@ export const ptBR: Dict = {
   'titlebar.newFolder': 'Nova pasta',
   'titlebar.newSubfolder': 'Nova subpasta',
   'titlebar.newFolderMenu': 'Nova pasta…',
+  'titlebar.addToGroup': 'Adicionar a um grupo',
+  'titlebar.newGroupMenu': 'Novo grupo…',
   'titlebar.newSubfolderMenu': 'Nova subpasta…',
   'titlebar.folderName': 'Nome da pasta',
   'titlebar.renameFolder': 'Renomear pasta',

@@ -267,6 +267,8 @@ interface SettingsState {
   setTabColor(tabId: string, color: string): void
   reorderTabs(fromId: string, toId: string, before: boolean): void
   moveTabIntoGroup(fromTabId: string, toGroupTabId: string): void
+  /** Turn a standalone repo tab into a new group holding it, in place. */
+  groupRepoTab(tabId: string, name: string): void
   ejectRepoFromGroup(tabId: string, repoPath: string, insertBeforeTabId: string | null): void
   moveRepoBetweenGroups(fromTabId: string, repoPath: string, toTabId: string, insertBeforeRepoPath: string | null): void
   toggleTabCollapsed(tabId: string): void
@@ -876,6 +878,19 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         )
       const activeTabId = s.activeTabId === fromTabId ? toGroupTabId : s.activeTabId
       return { ...s, tabs, activeTabId }
+    }),
+
+  // Converted where it stands, keeping the tab id and its open pages, so the
+  // repo does not jump to the end of the strip or lose its DevTools/wiki.
+  groupRepoTab: (tabId, name) =>
+    get().update((s) => {
+      const color = GROUP_COLORS[s.tabs.filter((t) => t.kind === 'group').length % GROUP_COLORS.length]
+      const tabs = s.tabs.map((t): TabState =>
+        t.id === tabId && t.kind === 'repo'
+          ? { ...t, kind: 'group', name, color, activeRepoPath: t.repos[0]?.path ?? null }
+          : t
+      )
+      return { ...s, tabs }
     }),
 
   ejectRepoFromGroup: (tabId, repoPath, insertBeforeTabId) =>

@@ -3450,6 +3450,8 @@ export const es: Dict = {
   'titlebar.newFolder': 'Nueva carpeta',
   'titlebar.newSubfolder': 'Nueva subcarpeta',
   'titlebar.newFolderMenu': 'Nueva carpeta…',
+  'titlebar.addToGroup': 'Mover a un grupo',
+  'titlebar.newGroupMenu': 'Nuevo grupo…',
   'titlebar.newSubfolderMenu': 'Nueva subcarpeta…',
   'titlebar.folderName': 'Nombre de la carpeta',
   'titlebar.renameFolder': 'Renombrar carpeta',

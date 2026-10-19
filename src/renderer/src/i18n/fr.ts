@@ -3395,6 +3395,8 @@ export const fr: Dict = {
   'titlebar.newFolder': 'Nouveau dossier',
   'titlebar.newSubfolder': 'Nouveau sous-dossier',
   'titlebar.newFolderMenu': 'Nouveau dossier…',
+  'titlebar.addToGroup': 'Ajouter à un groupe',
+  'titlebar.newGroupMenu': 'Nouveau groupe…',
   'titlebar.newSubfolderMenu': 'Nouveau sous-dossier…',
   'titlebar.folderName': 'Nom du dossier',
   'titlebar.renameFolder': 'Renommer le dossier',

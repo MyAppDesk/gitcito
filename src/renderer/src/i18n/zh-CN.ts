@@ -3447,6 +3447,8 @@ export const zhCN: Dict = {
   'titlebar.newFolder': '新建文件夹',
   'titlebar.newSubfolder': '新建子文件夹',
   'titlebar.newFolderMenu': '新建文件夹…',
+  'titlebar.addToGroup': '添加到分组',
+  'titlebar.newGroupMenu': '新建分组…',
   'titlebar.newSubfolderMenu': '新建子文件夹…',
   'titlebar.folderName': '文件夹名称',
   'titlebar.renameFolder': '重命名文件夹',

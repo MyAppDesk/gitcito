@@ -3455,6 +3455,8 @@ export const de: Dict = {
   'titlebar.newFolder': 'Neuer Ordner',
   'titlebar.newSubfolder': 'Neuer Unterordner',
   'titlebar.newFolderMenu': 'Neuer Ordner…',
+  'titlebar.addToGroup': 'Zu Gruppe hinzufügen',
+  'titlebar.newGroupMenu': 'Neue Gruppe…',
   'titlebar.newSubfolderMenu': 'Neuer Unterordner…',
   'titlebar.folderName': 'Ordnername',
   'titlebar.renameFolder': 'Ordner umbenennen',

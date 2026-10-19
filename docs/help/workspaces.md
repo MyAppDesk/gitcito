@@ -59,6 +59,11 @@ Bundle related repositories into a named, colour-coded **group tab**. Inside a
 group you get a second row with one chip per repository, and the group itself
 can **Fetch all** or **Pull all** in one go.
 
+To start one, right-click a repository tab → *New group…*: the tab becomes a
+group holding that repository, where it stood. Once a group exists the same
+menu reads *Add to group →*, listing the open groups. Dragging a repository tab
+onto a group chip does the same.
+
 ![A group tab with several repositories](../screenshots/repo-groups.webp)
 
 Groups can hold **folders, nested to any depth**: right-click the group → *New

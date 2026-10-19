@@ -3387,6 +3387,8 @@ export const ja: Dict = {
   'titlebar.newFolder': '新しいフォルダー',
   'titlebar.newSubfolder': '新しいサブフォルダー',
   'titlebar.newFolderMenu': '新しいフォルダー…',
+  'titlebar.addToGroup': 'グループに追加',
+  'titlebar.newGroupMenu': '新しいグループ…',
   'titlebar.newSubfolderMenu': '新しいサブフォルダー…',
   'titlebar.folderName': 'フォルダー名',
   'titlebar.renameFolder': 'フォルダー名を変更',

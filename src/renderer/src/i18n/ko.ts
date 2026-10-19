@@ -3447,6 +3447,8 @@ export const ko: Dict = {
   'titlebar.newFolder': '새 폴더',
   'titlebar.newSubfolder': '새 하위 폴더',
   'titlebar.newFolderMenu': '새 폴더…',
+  'titlebar.addToGroup': '그룹에 추가',
+  'titlebar.newGroupMenu': '새 그룹…',
   'titlebar.newSubfolderMenu': '새 하위 폴더…',
   'titlebar.folderName': '폴더 이름',
   'titlebar.renameFolder': '폴더 이름 변경',

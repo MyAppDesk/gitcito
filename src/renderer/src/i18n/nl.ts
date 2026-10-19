@@ -3455,6 +3455,8 @@ export const nl: Dict = {
   'titlebar.newFolder': 'Nieuwe map',
   'titlebar.newSubfolder': 'Nieuwe submap',
   'titlebar.newFolderMenu': 'Nieuwe map…',
+  'titlebar.addToGroup': 'Aan groep toevoegen',
+  'titlebar.newGroupMenu': 'Nieuwe groep…',
   'titlebar.newSubfolderMenu': 'Nieuwe submap…',
   'titlebar.folderName': 'Mapnaam',
   'titlebar.renameFolder': 'Map hernoemen',

@@ -35,6 +35,11 @@ l'intérieur d'un groupe, vous obtenez une seconde rangée avec une pastille par
 dépôt, et le groupe lui-même peut faire **Tout récupérer** ou **Tout tirer** d'un
 seul geste.
 
+Pour en créer un, clic droit sur un onglet de dépôt → *Nouveau groupe…* :
+l'onglet devient un groupe contenant ce dépôt, à la même place. Dès qu'un groupe
+existe, le même menu propose *Ajouter à un groupe →*, avec la liste des groupes
+ouverts. Glisser un onglet de dépôt sur la pastille d'un groupe fait de même.
+
 ![Un onglet de groupe contenant plusieurs dépôts](../../screenshots/repo-groups.webp)
 
 Les groupes peuvent contenir des **dossiers, imbriqués à n'importe quelle

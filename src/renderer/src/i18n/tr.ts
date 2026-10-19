@@ -3390,6 +3390,8 @@ export const tr: Dict = {
   'titlebar.newFolder': 'Yeni klasör',
   'titlebar.newSubfolder': 'Yeni alt klasör',
   'titlebar.newFolderMenu': 'Yeni klasör…',
+  'titlebar.addToGroup': 'Gruba ekle',
+  'titlebar.newGroupMenu': 'Yeni grup…',
   'titlebar.newSubfolderMenu': 'Yeni alt klasör…',
   'titlebar.folderName': 'Klasör adı',
   'titlebar.renameFolder': 'Klasörü yeniden adlandır',

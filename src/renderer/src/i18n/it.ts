@@ -3396,6 +3396,8 @@ export const it: Dict = {
   'titlebar.newFolder': 'Nuova cartella',
   'titlebar.newSubfolder': 'Nuova sottocartella',
   'titlebar.newFolderMenu': 'Nuova cartella…',
+  'titlebar.addToGroup': 'Aggiungi a un gruppo',
+  'titlebar.newGroupMenu': 'Nuovo gruppo…',
   'titlebar.newSubfolderMenu': 'Nuova sottocartella…',
   'titlebar.folderName': 'Nome della cartella',
   'titlebar.renameFolder': 'Rinomina la cartella',

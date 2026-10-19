@@ -3447,6 +3447,8 @@ export const uk: Dict = {
   'titlebar.newFolder': 'Нова тека',
   'titlebar.newSubfolder': 'Нова підтека',
   'titlebar.newFolderMenu': 'Нова тека…',
+  'titlebar.addToGroup': 'Додати до групи',
+  'titlebar.newGroupMenu': 'Нова група…',
   'titlebar.newSubfolderMenu': 'Нова підтека…',
   'titlebar.folderName': 'Назва теки',
   'titlebar.renameFolder': 'Перейменувати теку',

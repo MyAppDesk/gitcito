@@ -288,7 +288,19 @@ textarea:focus {
   transition: opacity 0.12s, background 0.12s;
 }
 
+/* The close button takes no room until it is wanted: an invisible-but-present
+   ✕ on every tab is what made the strip so wide. */
+.tab .tab-close {
+  display: none;
+}
+
 .tab:hover .tab-close,
+.tab:focus-within .tab-close {
+  display: flex;
+}
+
+.tab:hover .tab-close,
+.tab:focus-within .tab-close,
 .tab:hover .tab-chevron,
 .tab.active .tab-chevron {
   opacity: 1;

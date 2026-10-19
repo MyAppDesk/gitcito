@@ -99,7 +99,7 @@ export function TitleBar(): React.JSX.Element {
   const {
     settings, setGroupActiveRepo, closeTab, setActiveTab, renameTab, setRepoPage, closeRepoPage,
     setTabColor, toggleTabCollapsed,
-    reorderTabs, moveTabIntoGroup, ejectRepoFromGroup,
+    reorderTabs, moveTabIntoGroup, groupRepoTab, ejectRepoFromGroup,
     moveRepoBetweenGroups, reorderReposInGroup, moveTabToWorkspace,
     createFolder, renameFolder, setFolderColor, removeFolder,
     toggleFolderCollapsed, moveRepoToFolder, moveFolderToFolder
@@ -583,6 +583,41 @@ export function TitleBar(): React.JSX.Element {
     }
   }
 
+  const promptNewGroup = (tabId: string): void =>
+    openModal({
+      kind: 'input',
+      title: t('welcome.newGroup'),
+      label: t('welcome.groupName'),
+      placeholder: t('welcome.groupNamePlaceholder'),
+      initial: '',
+      submitLabel: t('common.create'),
+      onSubmit: (name) => {
+        const trimmed = name.trim()
+        if (trimmed) groupRepoTab(tabId, trimmed)
+      }
+    })
+
+  // With groups open, a submenu listing them plus "New group…"; with none, the
+  // "New group…" entry on its own — a submenu of one is a wasted hover.
+  const addToGroupItem = (tabId: string): MenuItem => {
+    const groups = settings.tabs.filter((x): x is GroupTab => x.kind === 'group')
+    const create: MenuItem = {
+      label: t('titlebar.newGroupMenu'),
+      icon: <FolderPlus size={15} />,
+      onClick: () => promptNewGroup(tabId)
+    }
+    if (groups.length === 0) return create
+    return {
+      label: t('titlebar.addToGroup'),
+      icon: <FolderTree size={15} />,
+      submenu: [
+        ...groups.map((g) => ({ label: g.name, onClick: () => moveTabIntoGroup(tabId, g.id) })),
+        { separator: true },
+        create
+      ]
+    }
+  }
+
   const tabMenu = (tab: TabState): MenuItem[] => {
     if (tab.kind === 'page') {
       const move = moveToWorkspaceItem(tab)
@@ -592,7 +627,7 @@ export function TitleBar(): React.JSX.Element {
       ]
     }
     if (tab.kind === 'repo' && tab.repos[0]) {
-      const extras: MenuItem[] = []
+      const extras: MenuItem[] = [addToGroupItem(tab.id)]
       const move = moveToWorkspaceItem(tab)
       if (move) extras.push(move)
       return repositoryMenuItems(tab.repos[0].path, () => requestCloseTab(tab.id), extras)

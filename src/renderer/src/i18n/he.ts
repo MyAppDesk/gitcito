@@ -3450,6 +3450,8 @@ export const he: Dict = {
   'titlebar.newFolder': 'תיקייה חדשה',
   'titlebar.newSubfolder': 'תת־תיקייה חדשה',
   'titlebar.newFolderMenu': 'תיקייה חדשה…',
+  'titlebar.addToGroup': 'הוספה לקבוצה',
+  'titlebar.newGroupMenu': 'קבוצה חדשה…',
   'titlebar.newSubfolderMenu': 'תת־תיקייה חדשה…',
   'titlebar.folderName': 'שם התיקייה',
   'titlebar.renameFolder': 'שינוי שם התיקייה',

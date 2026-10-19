@@ -3450,6 +3450,8 @@ export const ar: Dict = {
   'titlebar.newFolder': 'مجلد جديد',
   'titlebar.newSubfolder': 'مجلد فرعي جديد',
   'titlebar.newFolderMenu': 'مجلد جديد…',
+  'titlebar.addToGroup': 'إضافة إلى مجموعة',
+  'titlebar.newGroupMenu': 'مجموعة جديدة…',
   'titlebar.newSubfolderMenu': 'مجلد فرعي جديد…',
   'titlebar.folderName': 'اسم المجلد',
   'titlebar.renameFolder': 'إعادة تسمية المجلد',

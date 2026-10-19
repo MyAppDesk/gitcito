@@ -3451,6 +3451,8 @@ export const en = {
   'titlebar.newFolder': 'New folder',
   'titlebar.newSubfolder': 'New subfolder',
   'titlebar.newFolderMenu': 'New folder…',
+  'titlebar.addToGroup': 'Add to group',
+  'titlebar.newGroupMenu': 'New group…',
   'titlebar.newSubfolderMenu': 'New subfolder…',
   'titlebar.folderName': 'Folder name',
   'titlebar.renameFolder': 'Rename folder',

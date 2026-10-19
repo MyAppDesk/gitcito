@@ -1,5 +1,12 @@
 
 
+## [4.16.0](https://github.com/MyAppDesk/gitcito/compare/v4.15.0...v4.16.0) (2026-10-19)
+
+
+### Features
+
+* add group tab functionality for repository management ([32fa7ed](https://github.com/MyAppDesk/gitcito/commit/32fa7edbfec7e2ad80f6e8b82ca992b48e528e5f))
+
 ## [4.15.0](https://github.com/MyAppDesk/gitcito/compare/v4.14.0...v4.15.0) (2026-10-18)
 
 

@@ -68,10 +68,14 @@ onto a group chip does the same.
 no open group is wearing yet, picked at random, so groups do not all begin the
 same.
 
+![The New group dialog, with a name and a colour picked together](../screenshots/new-group-dialog.webp)
+
 To recolour a group, right-click it: the ten colours sit in the menu as a row
 of dots, with a ring around the current one, and one click applies it. *Custom
 color…* below the row opens a picker for any other colour. Folders and the
 sections on the Repositories page use the same row.
+
+![A group's right-click menu: the colour row, Custom color…, Ungroup and Close group](../screenshots/group-color-menu.webp)
 
 To dissolve a group, right-click it → **Ungroup**. Each repository becomes an
 ordinary tab where the group stood, keeping any pages it had open. **Close

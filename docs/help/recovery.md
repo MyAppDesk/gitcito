@@ -3,7 +3,7 @@ title: Recovery & the reflog
 category: Recovery & safety
 order: 60
 summary: The undo net: reflog, WIP snapshots and bisect.
-keywords: reflog recovery undo lost commits snapshots wip guard untracked discard clean bisect bisect run automated script exit code restore hard reset lock index.lock file exists cannot lock ref stale unable to create another git process
+keywords: reflog recovery undo lost commits snapshots wip guard untracked discard clean bisect bisect run automated script exit code restore hard reset lock index.lock file exists cannot lock ref stale unable to create another git process blank window black screen crash freeze frozen unresponsive reload
 ---
 
 # Recovery & the reflog
@@ -122,5 +122,22 @@ to another repository, and are cleared by opening it.
 
 Most operations push an entry onto an undo stack, so <kbd>⌘Z</kbd> reverses the
 last one where git allows it.
+
+## If the window goes blank
+
+The part of Gitcito that draws the window can crash or freeze, for example
+after it runs out of memory in a session left open for many hours. The window
+then shows only its dark background. Gitcito notices and reloads the window by
+itself: right away after a crash or an error that takes down the whole window,
+and about 40 seconds after it stops responding to your clicks and keys. Your
+repositories, tabs and settings come back as they were. Git work runs in a
+separate process, so a crash doesn't interrupt a fetch or push.
+
+*Limits:* text you were typing but hadn't saved, such as a half-written commit
+message, can be lost. A frozen window is only noticed once you click or type in
+it. If the window keeps failing straight after loading, Gitcito waits longer
+between attempts (up to five minutes) instead of reloading over and over. Each
+incident is written to `renderer-recovery.log` in the app's log folder
+(`~/Library/Logs/Gitcito/` on macOS).
 
 **See also:** [What changed since](range-diff.md) · [Stashes](stashes.md)

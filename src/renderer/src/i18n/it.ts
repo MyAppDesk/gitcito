@@ -3371,6 +3371,7 @@ export const it: Dict = {
   'modal.createIn': 'Crea in',
   'modal.creating': 'Creazione in corso…',
   'modal.dialogError': 'Questa finestra ha incontrato un errore',
+  'app.reloadingAfterError': 'Gitcito ha riscontrato un errore e si sta ricaricando…',
   'titlebar.closeGroupDirty': '"{name}" ha {count} repository con {reason}. Chiuderlo?',
   'titlebar.closeGroup': '"{name}" ha {count} repository. Chiuderlo?',
   'titlebar.mergeConflicts': 'conflitti di merge',

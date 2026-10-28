@@ -3422,6 +3422,7 @@ export const pl: Dict = {
   'modal.createIn': 'Utwórz w',
   'modal.creating': 'Tworzenie…',
   'modal.dialogError': 'To okno napotkało błąd',
+  'app.reloadingAfterError': 'Gitcito napotkał błąd i ładuje się ponownie…',
   'titlebar.closeGroupDirty': 'Grupa "{name}" ma {count} repozytoriów, w których są {reason}. Zamknąć ją?',
   'titlebar.closeGroup': 'Grupa "{name}" ma {count} repozytoriów. Zamknąć ją?',
   'titlebar.mergeConflicts': 'konflikty scalania',

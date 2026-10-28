@@ -3430,6 +3430,7 @@ export const de: Dict = {
   'modal.createIn': 'Erstellen in',
   'modal.creating': 'Wird erstellt…',
   'modal.dialogError': 'In diesem Dialog ist ein Fehler aufgetreten',
+  'app.reloadingAfterError': 'Gitcito ist auf einen Fehler gestoßen und lädt neu…',
   'titlebar.closeGroupDirty': '„{name}“ enthält {count} Repositories mit {reason}. Schließen?',
   'titlebar.closeGroup': '„{name}“ enthält {count} Repositories. Schließen?',
   'titlebar.mergeConflicts': 'Merge-Konflikten',

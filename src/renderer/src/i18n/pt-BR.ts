@@ -3431,6 +3431,7 @@ export const ptBR: Dict = {
   'modal.createIn': 'Criar em',
   'modal.creating': 'Criando…',
   'modal.dialogError': 'Este diálogo deu erro',
+  'app.reloadingAfterError': 'O Gitcito encontrou um erro e está recarregando…',
   'titlebar.closeGroupDirty': '"{name}" tem {count} repositórios com {reason}. Fechar mesmo assim?',
   'titlebar.closeGroup': '"{name}" tem {count} repositórios. Fechar?',
   'titlebar.mergeConflicts': 'conflitos de merge',

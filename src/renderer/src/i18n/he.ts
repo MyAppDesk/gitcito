@@ -3425,6 +3425,7 @@ export const he: Dict = {
   'modal.createIn': 'יצירה בתוך',
   'modal.creating': 'יוצר…',
   'modal.dialogError': 'החלון הזה נתקל בשגיאה',
+  'app.reloadingAfterError': 'Gitcito נתקל בשגיאה ונטען מחדש…',
   'titlebar.closeGroupDirty': 'לקבוצה ״{name}״ יש {count} מאגרים עם {reason}. לסגור אותה?',
   'titlebar.closeGroup': 'לקבוצה ״{name}״ יש {count} מאגרים. לסגור אותה?',
   'titlebar.mergeConflicts': 'התנגשויות מיזוג',

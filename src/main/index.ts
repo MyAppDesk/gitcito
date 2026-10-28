@@ -35,6 +35,7 @@ import { registerSshHandlers } from './ssh'
 import { registerDiffToolHandlers } from './difftool'
 import { parseCliOpenArgs, type CliOpenPayload } from '../shared/cli'
 import { MAIN_WINDOW_STATE, showMainWindow } from './windowState'
+import { attachRendererRecovery, registerRendererRecoveryHandlers } from './rendererRecovery'
 
 // GUI launches inherit a minimal PATH; restore the login-shell PATH so spawned
 // git (and its hooks, e.g. husky → npm) find node/npm. Runs before any spawn.
@@ -153,6 +154,7 @@ function createWindow(): void {
   })
 
   win.once('ready-to-show', () => showMainWindow(win))
+  attachRendererRecovery(win)
   win.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
     return { action: 'deny' }
@@ -444,6 +446,7 @@ app.whenReady().then(() => {
   registerSshHandlers()
   registerDiffToolHandlers()
   registerMenuHandlers()
+  registerRendererRecoveryHandlers()
 
   createWindow()
   checkForUpdatesOnLaunch()

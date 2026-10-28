@@ -1041,3 +1041,7 @@ export const launchApi = {
   resolveInputs: (dir: string, inputs: LaunchInput[]): Promise<LaunchInputResolution> =>
     window.api.launch.resolveInputs(dir, inputs)
 }
+
+export const windowApi = {
+  reportUiCrash: (message: string) => window.api.window.reportUiCrash(message)
+}

@@ -3425,6 +3425,7 @@ export const ar: Dict = {
   'modal.createIn': 'الإنشاء في',
   'modal.creating': 'جارٍ الإنشاء…',
   'modal.dialogError': 'واجهت هذه النافذة خطأ',
+  'app.reloadingAfterError': 'واجه Gitcito خطأً ويعيد التحميل الآن…',
   'titlebar.closeGroupDirty': 'المجموعة «{name}» فيها {count} مستودعًا بها {reason}. أتغلقها؟',
   'titlebar.closeGroup': 'المجموعة «{name}» فيها {count} مستودعًا. أتغلقها؟',
   'titlebar.mergeConflicts': 'تعارضات دمج',

@@ -3425,6 +3425,7 @@ export const es: Dict = {
   'modal.createIn': 'Crear en',
   'modal.creating': 'Creando…',
   'modal.dialogError': 'Este diálogo ha fallado',
+  'app.reloadingAfterError': 'Gitcito ha encontrado un error y se está recargando…',
   'titlebar.closeGroupDirty': '«{name}» tiene {count} repositorios con {reason}. ¿Cerrarlo?',
   'titlebar.closeGroup': '«{name}» tiene {count} repositorios. ¿Cerrarlo?',
   'titlebar.mergeConflicts': 'conflictos de merge',

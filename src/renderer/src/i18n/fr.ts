@@ -3370,6 +3370,7 @@ export const fr: Dict = {
   'modal.createIn': 'Créer dans',
   'modal.creating': 'Création…',
   'modal.dialogError': 'Cette boîte de dialogue a rencontré une erreur',
+  'app.reloadingAfterError': 'Gitcito a rencontré une erreur et se recharge…',
   'titlebar.closeGroupDirty': '« {name} » contient {count} dépôts avec {reason}. Le fermer ?',
   'titlebar.closeGroup': '« {name} » contient {count} dépôts. Le fermer ?',
   'titlebar.mergeConflicts': 'des conflits de fusion',

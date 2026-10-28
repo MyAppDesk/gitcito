@@ -24,6 +24,9 @@ export default defineConfig({
   },
   renderer: {
     plugins: [react()],
+    // Transform the renderer's import graph while main builds and Electron boots,
+    // instead of one request at a time once the window asks for it.
+    server: { warmup: { clientFiles: ['./src/main.tsx'] } },
     build: {
       rollupOptions: {
         output: {

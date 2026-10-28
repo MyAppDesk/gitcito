@@ -7,6 +7,7 @@ import { tmpdir, homedir } from 'os'
 import { existsSync, accessSync, constants as fsConstants } from 'fs'
 import { spawn, spawnSync, execFile } from 'child_process'
 import { promisify } from 'util'
+import { shellPathReady } from './fix-path'
 import { createHash } from 'crypto'
 
 const pexecFile = promisify(execFile)
@@ -7833,6 +7834,8 @@ export function registerGitHandlers(): void {
     if (method === 'searchFileMatches' && lockKey) {
       supersedeSearch(lockKey, (args[3] as FileSearchOptions | undefined)?.searchId)
     }
+    // Hooks run on writes and need the login-shell PATH (main/fix-path.ts).
+    if (isWrite) await shellPathReady()
     const release = lockKey ? await lockFor(lockKey).acquire(isWrite) : null
 
     try {

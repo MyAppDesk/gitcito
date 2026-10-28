@@ -64,6 +64,20 @@ group holding that repository, where it stood. Once a group exists the same
 menu reads *Add to group →*, listing the open groups. Dragging a repository tab
 onto a group chip does the same.
 
+*New group…* asks for a name and a colour together. The colour starts on one
+no open group is wearing yet, picked at random, so groups do not all begin the
+same.
+
+To recolour a group, right-click it: the ten colours sit in the menu as a row
+of dots, with a ring around the current one, and one click applies it. *Custom
+color…* below the row opens a picker for any other colour. Folders and the
+sections on the Repositories page use the same row.
+
+To dissolve a group, right-click it → **Ungroup**. Each repository becomes an
+ordinary tab where the group stood, keeping any pages it had open. **Close
+group** closes the group and every repository in it instead. Folders do not
+survive an Ungroup: they only exist inside a group.
+
 ![A group tab with several repositories](../screenshots/repo-groups.webp)
 
 Groups can hold **folders, nested to any depth**: right-click the group → *New

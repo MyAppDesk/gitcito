@@ -3,6 +3,8 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { X, Globe, Github, Gitlab, Cloud, Server, Loader2, Search, Lock, FolderGit2, Folder, Plus, Check, ChevronDown, ChevronRight, RefreshCw, Sparkles, GitMerge, ArrowUpFromLine, TextCursorInput } from 'lucide-react'
 import { useUIStore, type ModalSpec } from '../stores/ui'
 import { useSettingsStore, GROUP_COLORS } from '../stores/settings'
+import { pickGroupColor } from '../lib/groupColors'
+import { colorName } from './colorMenu'
 import { hostingApi, gitApi, shellApi, aiApi } from '../infrastructure/api'
 import { chooseRepositories } from '../openRepositories'
 import { repoActions } from '../stores/repo'
@@ -197,6 +199,63 @@ function GroupColorModal({ spec }: { spec: Extract<ModalSpec, { kind: 'group-col
       <div className="modal-actions">
         <button className="btn ghost" onClick={closeModal}>{t('common.cancel')}</button>
         <button className="btn primary" disabled={!custom} onClick={() => select(custom)}>{t('modal.apply')}</button>
+      </div>
+    </>
+  )
+}
+
+function NewGroupModal({ spec }: { spec: Extract<ModalSpec, { kind: 'new-group' }> }): React.JSX.Element {
+  const t = useT()
+  const closeModal = useUIStore((s) => s.closeModal)
+  const tabs = useSettingsStore((s) => s.settings.tabs)
+  const [name, setName] = useState('')
+  // Preselected so Enter alone still works; one no open group already wears.
+  const [color, setColor] = useState(() => pickGroupColor(tabs.map((x) => (x.kind === 'group' ? x.color : undefined))))
+
+  const submit = (): void => {
+    const trimmed = name.trim()
+    if (!trimmed) return
+    closeModal()
+    spec.onCreate(trimmed, color)
+  }
+
+  return (
+    <>
+      <h3>{t('welcome.newGroup')}</h3>
+      <label className="modal-label">{t('welcome.groupName')}</label>
+      <input
+        autoFocus
+        className="modal-input"
+        value={name}
+        placeholder={t('welcome.groupNamePlaceholder')}
+        onChange={(e) => setName(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') submit()
+          if (e.key === 'Escape') closeModal()
+        }}
+      />
+      <label className="modal-label">{t('modal.color')}</label>
+      <div className="group-color-swatches compact" role="radiogroup" aria-label={t('modal.color')}>
+        {GROUP_COLORS.map((c) => (
+          <button
+            key={c}
+            className={`group-color-swatch ${color === c ? 'selected' : ''}`}
+            style={{ background: c }}
+            role="radio"
+            aria-checked={color === c}
+            aria-label={colorName(c)}
+            title={colorName(c)}
+            onClick={() => setColor(c)}
+          />
+        ))}
+      </div>
+      <div className="modal-actions">
+        <button className="btn ghost" onClick={closeModal}>
+          {t('common.cancel')}
+        </button>
+        <button className="btn primary" disabled={!name.trim()} onClick={submit}>
+          {t('common.create')}
+        </button>
       </div>
     </>
   )
@@ -1693,14 +1752,7 @@ function LauncherModal({ spec }: { spec: Extract<ModalSpec, { kind: 'launcher' }
 
   const createGroup = (): void => {
     closeModal()
-    openModal({
-      kind: 'input',
-      title: t('welcome.newGroup'),
-      label: t('welcome.groupName'),
-      placeholder: t('welcome.groupNamePlaceholder'),
-      submitLabel: t('common.create'),
-      onSubmit: (name) => createGroupTab(name)
-    })
+    openModal({ kind: 'new-group', onCreate: (name, color) => createGroupTab(name, color) })
   }
 
   const items: LauncherItem[] = spec.groupId && groupTab
@@ -1918,6 +1970,7 @@ export function ModalHost(): React.JSX.Element {
               <AIPRReview repoPath={modal.repoPath} prTitle={modal.prTitle} sourceBranch={modal.sourceBranch} targetBranch={modal.targetBranch} />
             )}
             {modal.kind === 'group-color' && <GroupColorModal spec={modal} />}
+            {modal.kind === 'new-group' && <NewGroupModal spec={modal} />}
             {modal.kind === 'scan-workspaces' && <ScanWorkspacesModal spec={modal} />}
             {modal.kind === 'reflog' && <ReflogModal repoPath={modal.repoPath} />}
             {modal.kind === 'code-search' && <CodeSearchModal repoPath={modal.repoPath} query={modal.query} />}

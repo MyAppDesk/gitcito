@@ -71,6 +71,7 @@
       "input": "Generic single-field prompt reused everywhere; not a feature.",
       "confirm": "Generic confirmation dialog.",
       "group-color": "Colour picker inside the group tab UI, documented as part of workspaces.",
+      "new-group": "Name-and-colour prompt for a new group, documented as part of workspaces.",
       "cosmos": "DO NOT DOCUMENT — easter egg (five clicks on the repo-settings title). Documenting it would spoil it."
     }
   },

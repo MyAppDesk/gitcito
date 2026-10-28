@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
-import { Plus, FolderGit2, X, Minus, Square, Settings, Sparkles, LifeBuoy, FileText, Bell, BarChart3, BookOpen, ScrollText, CircleDot, Flag, Tag, Download, ArrowDownToLine, KeyRound, LayoutGrid, Folder, FolderOpen, FolderPlus, FolderTree, Trash2, Scale, Wrench } from 'lucide-react'
+import { Plus, FolderGit2, X, Minus, Square, Settings, Sparkles, LifeBuoy, FileText, Bell, BarChart3, BookOpen, ScrollText, CircleDot, Flag, Tag, Download, ArrowDownToLine, KeyRound, LayoutGrid, Folder, FolderOpen, FolderPlus, FolderTree, Trash2, Scale, Wrench, Ungroup } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { colorMenuItems } from './colorMenu'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore, type MenuItem } from '../stores/ui'
 import { useRepoStore, repoActions } from '../stores/repo'
@@ -99,7 +100,7 @@ export function TitleBar(): React.JSX.Element {
   const {
     settings, setGroupActiveRepo, closeTab, setActiveTab, renameTab, setRepoPage, closeRepoPage,
     setTabColor, toggleTabCollapsed,
-    reorderTabs, moveTabIntoGroup, groupRepoTab, ejectRepoFromGroup,
+    reorderTabs, moveTabIntoGroup, groupRepoTab, ungroupTab, ejectRepoFromGroup,
     moveRepoBetweenGroups, reorderReposInGroup, moveTabToWorkspace,
     createFolder, renameFolder, setFolderColor, removeFolder,
     toggleFolderCollapsed, moveRepoToFolder, moveFolderToFolder
@@ -584,18 +585,7 @@ export function TitleBar(): React.JSX.Element {
   }
 
   const promptNewGroup = (tabId: string): void =>
-    openModal({
-      kind: 'input',
-      title: t('welcome.newGroup'),
-      label: t('welcome.groupName'),
-      placeholder: t('welcome.groupNamePlaceholder'),
-      initial: '',
-      submitLabel: t('common.create'),
-      onSubmit: (name) => {
-        const trimmed = name.trim()
-        if (trimmed) groupRepoTab(tabId, trimmed)
-      }
-    })
+    openModal({ kind: 'new-group', onCreate: (name, color) => groupRepoTab(tabId, name, color) })
 
   // With groups open, a submenu listing them plus "New group…"; with none, the
   // "New group…" entry on its own — a submenu of one is a wasted hover.
@@ -657,22 +647,14 @@ export function TitleBar(): React.JSX.Element {
         icon: <FolderPlus size={15} />,
         onClick: () => promptNewFolder(tab.id, null)
       })
-      items.push({
-        label: t('titlebar.changeColor'),
-        onClick: () =>
-          openModal({
-            kind: 'group-color',
-            tabId: tab.id,
-            current: tab.color,
-            onSelect: (color) => setTabColor(tab.id, color)
-          })
-      })
       if (tab.activeRepoPath) {
         items.push({
           label: t('titlebar.viewGroupHome'),
           onClick: () => setGroupActiveRepo(tab.id, null)
         })
       }
+      items.push({ separator: true })
+      items.push(...colorMenuItems(tab.color, (color) => setTabColor(tab.id, color)))
       items.push({ separator: true })
     }
     items.push({
@@ -689,7 +671,21 @@ export function TitleBar(): React.JSX.Element {
     })
     const move = moveToWorkspaceItem(tab)
     if (move) items.push(move)
-    items.push({ separator: true }, { label: t('titlebar.closeTab'), onClick: () => requestCloseTab(tab.id) })
+    items.push({ separator: true })
+    if (tab.kind === 'group') {
+      // Nothing is lost: each repository stays open as its own tab, keeping its pages.
+      items.push({
+        label: t('titlebar.ungroup'),
+        icon: <Ungroup size={15} />,
+        disabled: tab.repos.length === 0,
+        title: tab.repos.length === 0 ? t('titlebar.ungroupEmpty') : undefined,
+        onClick: () => ungroupTab(tab.id)
+      })
+    }
+    items.push({
+      label: tab.kind === 'group' ? t('titlebar.closeGroupTitle') : t('titlebar.closeTab'),
+      onClick: () => requestCloseTab(tab.id)
+    })
     return items
   }
 
@@ -783,18 +779,10 @@ export function TitleBar(): React.JSX.Element {
           }
         })
     })
-    items.push({
-      label: t('titlebar.changeColor'),
-      onClick: () =>
-        openModal({
-          kind: 'group-color',
-          tabId: tab.id,
-          current: folder.color ?? tab.color,
-          onSelect: (color) => setFolderColor(tab.id, folder.id, color)
-        })
-    })
     const move = moveFolderItem(tab, folder)
     if (move) items.push(move)
+    items.push({ separator: true })
+    items.push(...colorMenuItems(folder.color ?? tab.color, (color) => setFolderColor(tab.id, folder.id, color)))
     items.push(
       { separator: true },
       {

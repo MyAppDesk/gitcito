@@ -2,11 +2,61 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { ChevronRight } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { useUIStore, type MenuItem } from '../stores/ui'
+import { useUIStore, type MenuItem, type MenuSwatches } from '../stores/ui'
 
 /** Focus the first enabled item inside a menu container. */
 function focusFirstItem(container: ParentNode | null): void {
-  container?.querySelector<HTMLButtonElement>('.menu-item:not(:disabled)')?.focus()
+  container?.querySelector<HTMLButtonElement>('.menu-item:not(:disabled), .menu-swatch[data-stop]')?.focus()
+}
+
+/** A row of colour dots, as Finder shows its tags. Arrow keys up and down treat
+ *  the row as one stop (the dot carrying `data-stop`); left and right move
+ *  along it. */
+function SwatchRow({ swatches, close }: { swatches: MenuSwatches; close: () => void }): React.JSX.Element {
+  const { colors, current, label, nameOf, onPick } = swatches
+  const [stop, setStop] = useState(() => Math.max(0, colors.indexOf(current ?? '')))
+  const rowRef = useRef<HTMLDivElement>(null)
+
+  const move = (to: number): void => {
+    const next = (to + colors.length) % colors.length
+    setStop(next)
+    rowRef.current?.querySelectorAll<HTMLButtonElement>('.menu-swatch')[next]?.focus()
+  }
+
+  return (
+    <div
+      ref={rowRef}
+      className="menu-swatches"
+      role="group"
+      aria-label={label}
+      onKeyDown={(e) => {
+        if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
+        e.preventDefault()
+        e.stopPropagation()
+        const rtl = getComputedStyle(e.currentTarget).direction === 'rtl'
+        move(stop + ((e.key === 'ArrowRight') !== rtl ? 1 : -1))
+      }}
+    >
+      {colors.map((c, i) => (
+        <button
+          key={c}
+          className={`menu-swatch ${c === current ? 'selected' : ''}`}
+          role="menuitemradio"
+          aria-checked={c === current}
+          aria-label={nameOf(c)}
+          title={nameOf(c)}
+          data-stop={i === stop ? '' : undefined}
+          tabIndex={i === stop ? 0 : -1}
+          style={{ background: c }}
+          onFocus={() => setStop(i)}
+          onClick={() => {
+            close()
+            onPick(c)
+          }}
+        />
+      ))}
+    </div>
+  )
 }
 
 /** A single menu row. Rows with a `submenu` open a flyout on hover; leaf rows
@@ -33,6 +83,8 @@ function MenuRow({ item, close }: { item: MenuItem; close: () => void }): React.
     closeTimer.current = setTimeout(() => setPos(null), 120)
   }
   useEffect(() => cancelClose, [])
+
+  if (item.swatches) return <SwatchRow swatches={item.swatches} close={close} />
 
   if (!item.submenu) {
     return (
@@ -173,7 +225,11 @@ export function ContextMenu(): React.JSX.Element {
     if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp' && e.key !== 'Home' && e.key !== 'End') return
     const scope = (document.activeElement as HTMLElement | null)?.closest('.context-menu') ?? ref.current
     if (!scope) return
-    const items = Array.from(scope.querySelectorAll<HTMLButtonElement>(':scope > .menu-item:not(:disabled), :scope > .menu-item-sub > .menu-item:not(:disabled)'))
+    const items = Array.from(
+      scope.querySelectorAll<HTMLButtonElement>(
+        ':scope > .menu-item:not(:disabled), :scope > .menu-item-sub > .menu-item:not(:disabled), :scope > .menu-swatches > .menu-swatch[data-stop]'
+      )
+    )
     if (items.length === 0) return
     e.preventDefault()
     const at = items.indexOf(document.activeElement as HTMLButtonElement)

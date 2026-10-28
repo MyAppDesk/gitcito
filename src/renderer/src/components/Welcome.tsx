@@ -219,14 +219,7 @@ export function Welcome(): React.JSX.Element {
   }
 
   const createGroup = (): void => {
-    openModal({
-      kind: 'input',
-      title: t('welcome.newGroup'),
-      label: t('welcome.groupName'),
-      placeholder: t('welcome.groupNamePlaceholder'),
-      submitLabel: t('common.create'),
-      onSubmit: (name) => createGroupTab(name)
-    })
+    openModal({ kind: 'new-group', onCreate: (name, color) => createGroupTab(name, color) })
   }
 
   const recentItems: LauncherItem[] = settings.recentRepos.map((r) => ({

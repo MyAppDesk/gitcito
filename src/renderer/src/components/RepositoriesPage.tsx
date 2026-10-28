@@ -13,6 +13,7 @@ import {
   Search,
   X
 } from 'lucide-react'
+import { colorMenuItems } from './colorMenu'
 import { GROUP_COLORS, useSettingsStore } from '../stores/settings'
 import { useReposStore } from '../stores/repos'
 import { repoActions, type PullMode } from '../stores/repo'
@@ -254,21 +255,13 @@ export function RepositoriesPage(): React.JSX.Element {
     setPulses({})
   }
 
-  // The colour picker is the same modal group tabs and folders use — it takes
-  // a current value and a setter and knows nothing about what it colours.
+  // The same colour row group tabs and folders use — it takes a current value
+  // and a setter and knows nothing about what it colours.
   const openSectionMenu = (e: React.MouseEvent, key: string, current: string): void => {
     e.stopPropagation()
     const rect = e.currentTarget.getBoundingClientRect()
     openContextMenu(rect.left, rect.bottom, [
-      {
-        label: t('repos.sectionColor'),
-        onClick: () =>
-          openModal({
-            kind: 'group-color',
-            current,
-            onSelect: (color) => setRepoSectionColor(key, color)
-          })
-      },
+      ...colorMenuItems(current, (color) => setRepoSectionColor(key, color)),
       // Only offered once a section has been overridden: with no stored colour
       // there is nothing to reset, since the default is what is already showing.
       ...(key in chosenColors

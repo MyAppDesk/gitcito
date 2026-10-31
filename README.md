@@ -2,8 +2,6 @@
 
 <img src="docs/gitcito-mark.png" alt="Gitcito" width="120" />
 
-# I'll be on vacation for a bit, sorry if I do not update it in the meantime :)
-
 # Gitcito
 
 **A fully vibe-coded Git client. Free.**

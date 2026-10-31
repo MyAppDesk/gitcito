@@ -73,7 +73,8 @@ const EXPECTED = [
   'analyzer-problems',
   'xcode-project',
   'change-summary',
-  'moved-code'
+  'moved-code',
+  'huge-line'
 ]
 
 describe('playground fixtures', () => {

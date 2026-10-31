@@ -8,6 +8,7 @@ import { buildLinePatch, extractHunks, singleHunkPatch } from '../src/renderer/s
 import { readDraft, settleDraft } from '../src/renderer/src/lib/boundedNumber'
 
 import { treeStatusOf } from '../src/renderer/src/lib/treeStatus'
+import { focusOpenRepo } from '../src/renderer/src/lib/tabLookup'
 import { timeAgo, isStale, STALE_AFTER_MS } from '../src/renderer/src/lib/timeAgo'
 import { isLockErrorMessage, lockRepairPlan } from '../src/renderer/src/lib/gitLocks'
 import { stackOrder, moveLevel, adoptableBranches, targetFor } from '../src/renderer/src/lib/stackOrder'
@@ -7404,5 +7405,29 @@ describe('headMove', () => {
   it('reads HEAD from the branch, not the log label', () => {
     // A log row that lost its `HEAD ->` decoration does not lose HEAD.
     expect(headOf(on('b', c('b', ['a']), base))?.hash).toBe('b')
+  })
+})
+
+describe('focusOpenRepo', () => {
+  const tabs: TabState[] = [
+    { id: 'a', kind: 'repo', name: 'a', repos: [{ path: '/r/a', name: 'a' }], activeRepoPath: '/r/a' },
+    {
+      id: 'g',
+      kind: 'group',
+      name: 'g',
+      repos: [{ path: '/r/b', name: 'b' }, { path: '/r/c', name: 'c' }],
+      activeRepoPath: '/r/b'
+    }
+  ]
+  it('finds a standalone repo tab', () => {
+    expect(focusOpenRepo(tabs, '/r/a')?.activeTabId).toBe('a')
+  })
+  it('finds a repo inside a group and makes it the group\'s active repo', () => {
+    const open = focusOpenRepo(tabs, '/r/c')
+    expect(open?.activeTabId).toBe('g')
+    expect(open?.tabs.find((t) => t.id === 'g')?.activeRepoPath).toBe('/r/c')
+  })
+  it('returns null for a repo that is not open', () => {
+    expect(focusOpenRepo(tabs, '/r/z')).toBeNull()
   })
 })

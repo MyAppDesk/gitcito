@@ -33,6 +33,7 @@ import { reposApi, settingsApi } from '../infrastructure/api'
 import { repathRepoSettings, repathRepoTabs } from '../lib/repoRepath'
 import type { WorkspaceCandidate } from '../lib/workspacePlan'
 import { useUIStore } from './ui'
+import { focusOpenRepo } from '../lib/tabLookup'
 import { applyRepoAlias, canonicalRepoPath, migrateRepoAliases, repoDisplayName } from '../lib/repoAlias'
 import { sortBookmarks } from '../lib/bookmarks'
 import { planAttach, planClose } from '../lib/tabPages'
@@ -545,8 +546,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   openRepoTab: (repo) => {
     leaveMission()
     get().update((s) => {
-      const existing = s.tabs.find((t) => t.kind === 'repo' && t.activeRepoPath === repo.path)
-      if (existing) return { ...s, activeTabId: existing.id }
+      const open = focusOpenRepo(s.tabs, repo.path)
+      if (open) return { ...s, ...open }
       const name = repoDisplayName(repo.path, s.repoAliases, repo.name)
       const named = { ...repo, name }
       const tab: TabState = { id: uid(), kind: 'repo', name, repos: [named], activeRepoPath: repo.path }
@@ -567,14 +568,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
       // Already open somewhere (standalone or inside a group) — just focus it,
       // matching by path since a repo can be renamed/moved independently.
-      const existing = s.tabs.find((t) => t.kind !== 'page' && t.repos.some((r) => r.path === path))
-      if (existing) {
-        const tabs =
-          existing.kind === 'group'
-            ? s.tabs.map((t) => (t.id === existing.id ? { ...t, activeRepoPath: path } : t))
-            : s.tabs
-        return { ...s, tabs, activeTabId: existing.id }
-      }
+      const open = focusOpenRepo(s.tabs, path)
+      if (open) return { ...s, ...open }
 
       const repo: RepoRef = { path, name: displayName }
       const recentRepos = [repo, ...s.recentRepos.filter((r) => r.path !== path)].slice(0, 8)
@@ -697,6 +692,11 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
   addRepoToGroup: (tabId, repo) => {
     get().update((s) => {
+      // Already open in another tab or group: don't list it twice, show it.
+      const elsewhere = s.tabs.find(
+        (t) => t.id !== tabId && t.kind !== 'page' && t.repos.some((r) => r.path === repo.path)
+      )
+      if (elsewhere) return { ...s, ...focusOpenRepo(s.tabs, repo.path) }
       const named = { ...repo, name: repoDisplayName(repo.path, s.repoAliases, repo.name) }
       return {
         ...s,
@@ -869,10 +869,11 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       if (!from || from.kind !== 'repo' || !toGroup || toGroup.kind !== 'group') return s
       const repo = from.repos[0]
       if (!repo) return s
+      const alreadyThere = toGroup.repos.some((r) => r.path === repo.path)
       const tabs = s.tabs
         .filter((t) => t.id !== fromTabId)
         .map((t) =>
-          t.id === toGroupTabId && t.kind === 'group'
+          t.id === toGroupTabId && t.kind === 'group' && !alreadyThere
             ? { ...t, repos: [...t.repos, repo], activeRepoPath: t.activeRepoPath ?? repo.path }
             : t
         )

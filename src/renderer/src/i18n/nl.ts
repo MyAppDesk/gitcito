@@ -3430,6 +3430,7 @@ export const nl: Dict = {
   'modal.createIn': 'Aanmaken in',
   'modal.creating': 'Aanmaken…',
   'modal.dialogError': 'Er ging iets mis in dit venster',
+  'app.reloadingAfterError': 'Gitcito liep tegen een fout aan en laadt opnieuw…',
   'titlebar.closeGroupDirty': '"{name}" heeft {count} repositories met {reason}. Sluiten?',
   'titlebar.closeGroup': '"{name}" heeft {count} repositories. Sluiten?',
   'titlebar.mergeConflicts': 'merge-conflicten',

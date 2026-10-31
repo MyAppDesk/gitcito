@@ -3365,6 +3365,7 @@ export const tr: Dict = {
   'modal.createIn': 'Şurada oluştur',
   'modal.creating': 'Oluşturuluyor…',
   'modal.dialogError': 'Bu pencerede bir hata oluştu',
+  'app.reloadingAfterError': 'Gitcito bir hatayla karşılaştı ve yeniden yükleniyor…',
   'titlebar.closeGroupDirty': '“{name}” içinde {reason} olan {count} depo var. Kapatılsın mı?',
   'titlebar.closeGroup': '“{name}” içinde {count} depo var. Kapatılsın mı?',
   'titlebar.mergeConflicts': 'birleştirme çakışması',

@@ -3422,6 +3422,7 @@ export const ru: Dict = {
   'modal.createIn': 'Создать в',
   'modal.creating': 'Создание…',
   'modal.dialogError': 'В этом диалоге произошла ошибка',
+  'app.reloadingAfterError': 'В Gitcito произошла ошибка, идёт перезагрузка…',
   'titlebar.closeGroupDirty': 'В группе «{name}» репозиториев: {count}, и в них {reason}. Закрыть её?',
   'titlebar.closeGroup': 'В группе «{name}» репозиториев: {count}. Закрыть её?',
   'titlebar.mergeConflicts': 'конфликты слияния',

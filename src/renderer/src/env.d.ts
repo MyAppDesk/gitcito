@@ -267,6 +267,8 @@ interface PreloadApi {
     onCommand(cb: (id: string) => void): () => void
   }
   window: {
+    /** Tells the main process the whole UI threw, so it can log and reload. */
+    reportUiCrash(message: string): void
     minimize(): void
     maximize(): void
     close(): void

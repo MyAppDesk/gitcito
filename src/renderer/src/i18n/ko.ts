@@ -3422,6 +3422,7 @@ export const ko: Dict = {
   'modal.createIn': '만들 위치',
   'modal.creating': '만드는 중…',
   'modal.dialogError': '이 대화상자에서 오류가 발생했습니다',
+  'app.reloadingAfterError': 'Gitcito에 오류가 발생해 다시 불러오는 중입니다…',
   'titlebar.closeGroupDirty': '"{name}"에는 {reason}이(가) 있는 저장소가 {count}개 있습니다. 닫을까요?',
   'titlebar.closeGroup': '"{name}"에는 저장소가 {count}개 있습니다. 닫을까요?',
   'titlebar.mergeConflicts': '머지 충돌',

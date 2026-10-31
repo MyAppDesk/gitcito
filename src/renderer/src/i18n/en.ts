@@ -3426,6 +3426,7 @@ export const en = {
   'modal.createIn': 'Create in',
   'modal.creating': 'Creating…',
   'modal.dialogError': 'This dialog hit an error',
+  'app.reloadingAfterError': 'Gitcito hit an error and is reloading…',
   'titlebar.closeGroupDirty': '"{name}" has {count} repositories with {reason}. Close it?',
   'titlebar.closeGroup': '"{name}" has {count} repositories. Close it?',
   'titlebar.mergeConflicts': 'merge conflicts',

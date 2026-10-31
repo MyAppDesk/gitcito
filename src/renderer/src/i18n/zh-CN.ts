@@ -3422,6 +3422,7 @@ export const zhCN: Dict = {
   'modal.createIn': '创建于',
   'modal.creating': '正在创建…',
   'modal.dialogError': '这个对话框出错了',
+  'app.reloadingAfterError': 'Gitcito 出错了，正在重新加载…',
   'titlebar.closeGroupDirty': '「{name}」中有 {count} 个仓库存在{reason}。要关闭它吗？',
   'titlebar.closeGroup': '「{name}」中有 {count} 个仓库。要关闭它吗？',
   'titlebar.mergeConflicts': '合并冲突',

@@ -3362,6 +3362,7 @@ export const ja: Dict = {
   'modal.createIn': '作成先',
   'modal.creating': '作成しています…',
   'modal.dialogError': 'このダイアログでエラーが起きました',
+  'app.reloadingAfterError': 'Gitcito でエラーが発生したため再読み込みしています…',
   'titlebar.closeGroupDirty': '「{name}」には{reason}のあるリポジトリが {count} 件あります。閉じますか？',
   'titlebar.closeGroup': '「{name}」には {count} 件のリポジトリがあります。閉じますか？',
   'titlebar.mergeConflicts': 'マージコンフリクト',

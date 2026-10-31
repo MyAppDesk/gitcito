@@ -96,7 +96,7 @@ import {
 } from '../src/renderer/src/lib/launchDevices'
 import { collectInputRefs, normalizeOptions, defaultOptionIndex, isPickInput } from '../src/renderer/src/lib/launchInputs'
 import { resolveInputTokens } from '../src/main/launch'
-import { closeTabPrompt, repoCloseStatus, tabCloseStatus } from '../src/renderer/src/lib/tabClose'
+import { closeOthersPrompt, closeTabPrompt, repoCloseStatus, tabCloseStatus } from '../src/renderer/src/lib/tabClose'
 import { formatBytes, parseTooLargeError } from '../src/renderer/src/lib/fileSize'
 import { FILE_TOO_LARGE_PREFIX } from '../src/shared/types'
 import { autolink, remoteWebUrl, filePermalink } from '../src/renderer/src/lib/autolink'
@@ -883,6 +883,23 @@ describe('closing a tab', () => {
 
     const conflict = closeTabPrompt(groupTab(['/a', '/b']), 'conflict', 'always')
     expect(conflict?.reasonKey).toBe('titlebar.mergeConflicts')
+  })
+
+  it('asks before Close others only as warnOnClose says, and never for page tabs alone', () => {
+    const page = { id: 'p1', kind: 'page', page: { type: 'vault' } } as unknown as TabState
+    const others = [repoTab as TabState, groupTab(['/a', '/b'])]
+    expect(closeOthersPrompt([page, page], 'conflict', 'always')).toBeNull()
+    expect(closeOthersPrompt(others, 'conflict', 'never')).toBeNull()
+    expect(closeOthersPrompt(others, null, 'wip')).toBeNull()
+
+    const plain = closeOthersPrompt([...others, page], null, undefined)
+    expect(plain).toEqual({ messageKey: 'titlebar.closeOthersConfirm', vars: { count: 3 }, autoFocusConfirm: true })
+
+    const wip = closeOthersPrompt(others, 'wip', 'wip')
+    expect(wip?.messageKey).toBe('titlebar.closeOthersDirty')
+    expect(wip?.reasonKey).toBe('titlebar.uncommittedChanges')
+    expect(wip?.autoFocusConfirm).toBe(false)
+    expect(closeOthersPrompt(others, 'conflict', 'always')?.reasonKey).toBe('titlebar.mergeConflicts')
   })
 })
 

@@ -2201,6 +2201,29 @@ export const shots = [
     }
   },
   {
+    // A standalone repository tab's menu ends in Close this repo and Close
+    // others instead of Remove. Three tabs, so Close others has work to do.
+    out: 'repo-tab-close-others',
+    repos: ['octopus-merge', 'merge-conflict', 'code-search'],
+    themes: ['dark'],
+    drive: async (page, repoPaths) => {
+      await page.evaluate((paths) => {
+        const extra = ['merge-conflict', 'code-search'].map((name) => ({
+          id: `shot-${name}`,
+          kind: 'repo',
+          name,
+          repos: [{ path: paths[name], name }],
+          activeRepoPath: paths[name]
+        }))
+        window.__shot.settings.getState().update((s) => ({ ...s, tabs: [...s.tabs, ...extra] }))
+      }, repoPaths)
+      await page.waitForTimeout(1200)
+      await page.click('.tab:has-text("merge-conflict")', { button: 'right' })
+      await page.waitForSelector('.context-menu')
+      await page.waitForTimeout(400)
+    }
+  },
+  {
     // Toolbar repository dropdown — right-click a row for the same repository
     // menu as a tab chip. The picker stays open behind the menu on purpose.
     out: 'repo-dropdown-context-menu',

@@ -103,3 +103,31 @@ export function closeTabPrompt(
     autoFocusConfirm
   }
 }
+
+export type CloseOthersPrompt = {
+  messageKey: TranslationKey
+  vars: { count: number }
+  reasonKey?: TranslationKey
+  autoFocusConfirm: boolean
+}
+
+/** The confirmation Close others needs, or null when the other tabs may just go.
+ *  `status` is the worst across every repo those tabs carry. */
+export function closeOthersPrompt(
+  others: TabState[],
+  status: TabStatus,
+  warnOnClose: 'always' | 'wip' | 'never' | undefined
+): CloseOthersPrompt | null {
+  // Page tabs hold no repository state, so closing only those loses nothing.
+  if (others.every((tab) => tab.kind === 'page')) return null
+  const warn = warnOnClose ?? 'always'
+  if (warn === 'never' || (warn === 'wip' && status === null)) return null
+  const vars = { count: others.length }
+  if (!status) return { messageKey: 'titlebar.closeOthersConfirm', vars, autoFocusConfirm: true }
+  return {
+    messageKey: 'titlebar.closeOthersDirty',
+    vars,
+    reasonKey: status === 'conflict' ? 'titlebar.mergeConflicts' : 'titlebar.uncommittedChanges',
+    autoFocusConfirm: false
+  }
+}

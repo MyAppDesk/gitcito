@@ -25,6 +25,19 @@ export interface MenuItem {
   onClick?: () => void
   /** Nested items — renders a flyout submenu on hover instead of a click action. */
   submenu?: MenuItem[]
+  /** Draws the row as Finder-style colour dots instead of a label: one click picks a colour. */
+  swatches?: MenuSwatches
+}
+
+export interface MenuSwatches {
+  colors: string[]
+  /** Ringed as the one in use. */
+  current?: string
+  /** Names the row for screen readers. */
+  label: string
+  /** Names each dot, for its tooltip and screen readers. */
+  nameOf: (color: string) => string
+  onPick: (color: string) => void
 }
 
 export interface ContextMenuState {
@@ -134,6 +147,8 @@ export type ModalSpec =
       onReset: (mode: 'soft' | 'mixed' | 'hard') => void
     }
   | { kind: 'local-ci'; repoPath: string; rev?: string }
+  /** Name a new group and pick its colour in one go. */
+  | { kind: 'new-group'; onCreate: (name: string, color: string) => void }
   | { kind: 'keychain-consent'; reason: KeychainReason; adopted?: boolean }
   | { kind: 'range-diff'; repoPath: string; branch: string; initialOld?: string }
   | { kind: 'absorb'; repoPath: string }

@@ -2187,6 +2187,32 @@ export const shots = [
     }
   },
   {
+    // New group dialog: name and colour asked together, colour preselected.
+    out: 'new-group-dialog',
+    repos: ['octopus-merge'],
+    themes: ['dark'],
+    drive: async (page) => {
+      await page.evaluate(() =>
+        window.__shot.ui.getState().openModal({ kind: 'new-group', onCreate: () => {} })
+      )
+      await page.waitForSelector('.group-color-swatches')
+      await page.keyboard.type('Services')
+      await page.waitForTimeout(400)
+    }
+  },
+  {
+    // Group chip menu: the colour row sits in the menu, Ungroup below it.
+    out: 'group-color-menu',
+    kind: 'group',
+    repos: ['octopus-merge', 'merge-conflict'],
+    themes: ['dark'],
+    drive: async (page) => {
+      await page.click('.tab-group-chip', { button: 'right' })
+      await page.waitForSelector('.context-menu')
+      await page.waitForTimeout(400)
+    }
+  },
+  {
     // Repository-scoped context menu — same entries on a grouped chip as on a
     // standalone tab. Alias, worktrees, copy, GitHub, terminal, reveal, editor,
     // remove.

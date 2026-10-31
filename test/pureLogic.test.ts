@@ -11,6 +11,7 @@ import { treeStatusOf } from '../src/renderer/src/lib/treeStatus'
 import { focusOpenRepo } from '../src/renderer/src/lib/tabLookup'
 import { timeAgo, isStale, STALE_AFTER_MS } from '../src/renderer/src/lib/timeAgo'
 import { isLockErrorMessage, lockRepairPlan } from '../src/renderer/src/lib/gitLocks'
+import { GROUP_COLORS, colorNameKey, pickGroupColor } from '../src/renderer/src/lib/groupColors'
 import { stackOrder, moveLevel, adoptableBranches, targetFor } from '../src/renderer/src/lib/stackOrder'
 import { planStackSubmit, summariseStackPlan } from '../src/shared/stackPr'
 import { groupPrStacks, stackRowStates } from '../src/renderer/src/lib/prStacks'
@@ -7446,5 +7447,23 @@ describe('focusOpenRepo', () => {
   })
   it('returns null for a repo that is not open', () => {
     expect(focusOpenRepo(tabs, '/r/z')).toBeNull()
+  })
+})
+
+describe('pickGroupColor', () => {
+  it('picks a colour no open group wears yet', () => {
+    const used = GROUP_COLORS.filter((c) => c !== '#10b981')
+    expect(pickGroupColor([...used, undefined], () => 0.99)).toBe('#10b981')
+  })
+  it('does not always start at the first colour', () => {
+    expect(pickGroupColor([], () => 0.5)).toBe(GROUP_COLORS[5])
+    expect(pickGroupColor(['#6366F1'], () => 0)).toBe(GROUP_COLORS[1])
+  })
+  it('falls back to the whole palette once every colour is taken', () => {
+    expect(GROUP_COLORS).toContain(pickGroupColor(GROUP_COLORS, () => 0.3))
+  })
+  it('names palette colours and leaves custom ones unnamed', () => {
+    expect(colorNameKey('#EF4444')).toBe('color.red')
+    expect(colorNameKey('#123456')).toBeNull()
   })
 })

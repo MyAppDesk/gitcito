@@ -673,6 +673,14 @@ textarea:focus {
   transform: scale(1.12);
 }
 
+/* The New Group dialog: the palette sits under the name, a size down from the
+   colour dialog so it reads as a detail of the group rather than the point. */
+.group-color-swatches.compact .group-color-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+}
+
 .group-color-swatch.selected {
   box-shadow: 0 0 0 2px var(--bg-0), 0 0 0 4px currentColor;
 }
@@ -5341,6 +5349,46 @@ body.col-resizing .node-ava {
 .menu-item:disabled {
   opacity: 0.35;
   cursor: default;
+}
+
+/* Finder-style colour dots inside a menu. Indented to line up with the labels
+   above and below; the ring for the colour in use matches the swatch cards. */
+.menu-swatches {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px 6px 35px;
+}
+.menu-swatch {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  cursor: pointer;
+  outline: 2px solid transparent;
+  outline-offset: 0;
+  transition: transform 0.12s, outline-color 0.15s, outline-offset 0.15s;
+}
+.menu-swatch:hover {
+  transform: scale(1.2);
+}
+.menu-swatch.selected {
+  outline-color: var(--text-0);
+  outline-offset: 2px;
+}
+.menu-swatch:focus-visible {
+  outline: 2px dashed var(--text-1);
+  outline-offset: 2px;
+}
+.menu-swatch.selected:focus-visible {
+  outline-style: solid;
+  outline-color: var(--text-0);
+  box-shadow: 0 0 0 6px var(--accent-soft);
+}
+@media (prefers-reduced-motion: reduce) {
+  .menu-swatch {
+    transition: none;
+  }
 }
 
 .menu-separator {

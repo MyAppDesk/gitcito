@@ -40,7 +40,12 @@ import { findMovedLines, type MovedMark } from '../lib/movedLines'
  */
 function markRanges(html: string, ranges: Range[], cls: string): string {
   if (ranges.length === 0) return html
-  const inRange = (idx: number): boolean => ranges.some(([s, e]) => idx >= s && idx < e)
+  // Ranges are sorted and `pos` only grows, so one cursor keeps a huge line linear.
+  let r = 0
+  const inRange = (idx: number): boolean => {
+    while (r < ranges.length && ranges[r][1] <= idx) r++
+    return r < ranges.length && idx >= ranges[r][0]
+  }
   let pos = 0
   return html.replace(/(<[^>]+>)|([^<]+)/g, (_m, tag, text) => {
     if (tag) return tag

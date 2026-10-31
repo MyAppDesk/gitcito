@@ -15140,6 +15140,14 @@ button.insights-row:hover { background: var(--bg-2); }
 
 /* ─── Error boundary fallback ──────────────────────────────────────────── */
 .error-boundary { padding: 4px 2px; }
+/* Shown for the moment between a whole-app error and the automatic reload. */
+.root-error-reload {
+  height: 100vh;
+  display: grid;
+  place-items: center;
+  color: var(--text-2);
+  font-size: 13px;
+}
 .error-boundary h3 { color: var(--red, #e5484d); }
 .error-boundary-msg {
   white-space: pre-wrap;

@@ -1333,6 +1333,21 @@ export const shots = [
     }
   },
   {
+    // A one-word edit inside a ~118,000-character minified line. Word-level
+    // marking used to exhaust the renderer's memory here and leave a black window.
+    out: 'huge-line-diff',
+    repos: ['huge-line'],
+    themes: ['light'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['huge-line']
+      await page.evaluate((p) => {
+        window.__shot.ui.getState().setFileView({ repoPath: p, file: 'index.min.html', source: { type: 'wip', staged: false, untracked: false }, mode: 'diff' })
+      }, repo)
+      await page.waitForSelector('mark.word-add', { timeout: 15000 }).catch(() => {})
+      await page.waitForTimeout(500)
+    }
+  },
+  {
     // File view's change gutter (colored bars next to edited lines) plus the
     // minimap toggle, opened on the same modified file the word-diff shot uses.
     out: 'change-gutter',
@@ -2207,6 +2222,29 @@ export const shots = [
     themes: ['dark'],
     drive: async (page) => {
       await page.click('.tab.in-group', { button: 'right' })
+      await page.waitForSelector('.context-menu')
+      await page.waitForTimeout(400)
+    }
+  },
+  {
+    // A standalone repository tab's menu ends in Close this repo and Close
+    // others instead of Remove. Three tabs, so Close others has work to do.
+    out: 'repo-tab-close-others',
+    repos: ['octopus-merge', 'merge-conflict', 'code-search'],
+    themes: ['dark'],
+    drive: async (page, repoPaths) => {
+      await page.evaluate((paths) => {
+        const extra = ['merge-conflict', 'code-search'].map((name) => ({
+          id: `shot-${name}`,
+          kind: 'repo',
+          name,
+          repos: [{ path: paths[name], name }],
+          activeRepoPath: paths[name]
+        }))
+        window.__shot.settings.getState().update((s) => ({ ...s, tabs: [...s.tabs, ...extra] }))
+      }, repoPaths)
+      await page.waitForTimeout(1200)
+      await page.click('.tab:has-text("merge-conflict")', { button: 'right' })
       await page.waitForSelector('.context-menu')
       await page.waitForTimeout(400)
     }

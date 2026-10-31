@@ -53,7 +53,8 @@ export function revealLabelKey(platform: RepoMenuPlatform): TranslationKey {
   return 'repoMenu.revealFileManager'
 }
 
-export function repoMenuEntries(caps: RepoMenuCapabilities): RepoMenuEntry[] {
+/** `removable: false` drops Remove, for a surface that offers its own close rows instead. */
+export function repoMenuEntries(caps: RepoMenuCapabilities, removable = true): RepoMenuEntry[] {
   const hasAlias = !!caps.alias
   const inspect = !caps.pathAvailable
   const mutateWorktrees = inspect || caps.gitBusy
@@ -89,8 +90,12 @@ export function repoMenuEntries(caps: RepoMenuCapabilities): RepoMenuEntry[] {
       vars: editorVars,
       disabled: inspect || !caps.editorAvailable
     },
-    { kind: 'separator' },
-    { kind: 'action', id: 'remove', labelKey: 'repoMenu.remove', disabled: false, danger: true }
+    ...(removable
+      ? ([
+          { kind: 'separator' },
+          { kind: 'action', id: 'remove', labelKey: 'repoMenu.remove', disabled: false, danger: true }
+        ] satisfies RepoMenuEntry[])
+      : [])
   ]
 }
 

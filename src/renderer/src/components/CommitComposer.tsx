@@ -430,7 +430,14 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
     window.addEventListener('pointerup', up)
   }
 
-  const currentFile = fileView && fileView.repoPath === path && fileView.source.type === 'wip' ? fileView.file : null
+  // A partly staged file sits in both lists; only the list whose diff is open lights up.
+  const currentFor = (list: ListName): string | null =>
+    fileView && fileView.repoPath === path && fileView.source.type === 'wip' &&
+    fileView.source.staged === (list === 'staged')
+      ? fileView.file
+      : null
+  const currentUnstaged = currentFor('unstaged')
+  const currentStaged = currentFor('staged')
 
   const handleClick = (list: ListName) => (file: FileEntry, e: React.MouseEvent) => {
     claimRangeKeys(keyToken)
@@ -981,7 +988,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
               >
                 <FileListView
                   files={fUnstaged}
-                  current={currentFile}
+                  current={currentUnstaged}
                   selected={selection.list === 'unstaged' ? selection.paths : undefined}
                   onFileClick={handleClick('unstaged')}
                   onFileContext={handleContext('unstaged', fUnstaged)}
@@ -1053,7 +1060,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
               >
                 <FileListView
                   files={fStaged}
-                  current={currentFile}
+                  current={currentStaged}
                   selected={selection.list === 'staged' ? selection.paths : undefined}
                   onFileClick={handleClick('staged')}
                   onFileContext={handleContext('staged', fStaged)}

@@ -401,6 +401,7 @@ const api = {
   },
 
   window: {
+    reportUiCrash: (message: string): void => ipcRenderer.send('window:ui-crashed', message),
     minimize: (): void => ipcRenderer.send('window:minimize'),
     maximize: (): void => ipcRenderer.send('window:maximize'),
     close: (): void => ipcRenderer.send('window:close')

@@ -2,8 +2,8 @@
 title: Repository context menu
 category: Start here
 order: 4
-summary: Right-click any repository chip or tab for alias, worktrees, GitHub, terminal and remove.
-keywords: context menu right-click alias worktree github terminal reveal editor remove repository tab
+summary: Right-click any repository chip or tab for alias, worktrees, GitHub, terminal, close and remove.
+keywords: context menu right-click alias worktree github terminal reveal editor remove close others close this repo repository tab
 ---
 
 # Repository context menu
@@ -38,9 +38,29 @@ opens the launcher.
 | **Open in Terminal** | Opens Gitcito's terminal with this repository as the working directory. |
 | **Reveal in Finder / Explorer** | Highlights the repository folder in the platform file manager. |
 | **Open in External Editor** | The editor configured in Settings. Visible but disabled until one is set. |
-| **Remove…** | Closes the tab or drops the chip from the group. Uses the same uncommitted-work warning as the **×** button. It never deletes files from disk. |
+| **Remove…** | Drops the chip from its group, or the row from its list. Uses the same uncommitted-work warning as the chip's **×**. It never deletes files from disk. |
+| **Close this repo** | On a standalone repository tab, in place of Remove. Closes the tab, exactly like its **×**, with the same warning. |
+| **Close others** | On a standalone repository tab. Closes every other tab in the strip, groups and pages included, and makes this one active. Disabled when no other tab is open. |
 
 A missing or invalid path keeps copy, alias and remove available, and greys out
 anything that would open or inspect the directory.
+
+### Closing the other tabs
+
+A strip that has grown to a dozen repositories is hard to work in, and closing
+them one **×** at a time is tedious. **Close others** clears the strip down to
+the tab you right-clicked. It follows the **Warn when closing** setting: with
+*Always* it asks once for the whole batch, with *When changes* it
+asks only when one of the other tabs has uncommitted changes or merge conflicts
+(and says which kind), and with *Never* it just closes. With a single other tab you
+get that tab's ordinary close warning instead.
+
+Nothing is deleted: the repositories stay on disk, and <kbd>⌘⇧T</kbd> /
+<kbd>Ctrl+Shift+T</kbd> reopens the closed tabs one at a time, in their old
+places, however many there were. *Limits:* page tabs and groups close too;
+the menu on a chip inside a group, and the other repository lists, still offer
+Remove rather than these two rows.
+
+![The repository tab's context menu ending in Close this repo and Close others](../screenshots/repo-tab-close-others.webp)
 
 **See also:** [Workspaces, tabs & groups](workspaces.md) · [Worktrees & submodules](worktrees.md) · [External editor](editor.md) · [Terminal](terminal.md)

@@ -3,7 +3,7 @@ title: Diffs & previews
 category: Reading changes
 order: 20
 summary: Split view, word-level highlighting, moved code, image diffs and file previews.
-keywords: diff split side-by-side word level whitespace moved code color-moved image diff preview markdown docx pdf change gutter minimap stale staged unstaged follow agent terminal
+keywords: diff split side-by-side word level whitespace moved code color-moved image diff preview markdown docx pdf change gutter minimap stale staged unstaged follow agent terminal long line minified
 ---
 
 # Diffs & previews
@@ -25,6 +25,15 @@ comparable row for row; each half carries its own sideways scrollbar. Turn
 it on when you would rather read a long line than chase it — the cost is that a
 line folding over three rows on one side no longer sits opposite its
 counterpart. Every toggle remembers its state across files and sessions.
+
+Word-level marks stay cheap on very long lines, such as minified HTML or a
+bundled script: whatever both lines share at the start and the end is matched
+first, so a one-word edit inside a 100,000-character line is marked exactly and
+the diff opens at once. The limit: when one huge line changes in places far
+apart, everything between the first and the last change is marked as one block
+rather than compared token by token.
+
+![A one-word edit marked inside a minified line](../screenshots/huge-line-diff.webp)
 
 With wrap off the two halves scroll **linked** by default — vertically, which
 keeps the rows facing each other, and sideways, so column 90 on the left sits

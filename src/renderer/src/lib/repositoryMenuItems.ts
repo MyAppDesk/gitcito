@@ -15,7 +15,7 @@ import {
   type RepoMenuPlatform
 } from './repositoryMenu'
 import { t, interp } from '../i18n'
-import { closeTabPrompt, repoCloseStatus, tabCloseStatus } from './tabClose'
+import { closeOthersPrompt, closeTabPrompt, repoCloseStatus, tabCloseStatus } from './tabClose'
 
 function platformOf(): RepoMenuPlatform {
   const p = window.api.platform
@@ -137,16 +137,17 @@ function runAction(id: RepoMenuActionId, caps: RepoMenuCapabilities, onRemove: (
   }
 }
 
-/** Shared repository-scoped context menu. `extras` are appended after Remove. */
-export function repositoryMenuItems(path: string, onRemove: () => void, extras?: MenuItem[]): MenuItem[] {
+/** Shared repository-scoped context menu. `extras` are appended after Remove;
+ *  a null `onRemove` leaves Remove out. */
+export function repositoryMenuItems(path: string, onRemove: (() => void) | null, extras?: MenuItem[]): MenuItem[] {
   const caps = repoMenuCapabilities(path)
-  const items: MenuItem[] = repoMenuEntries(caps).map((entry) => {
+  const items: MenuItem[] = repoMenuEntries(caps, onRemove !== null).map((entry) => {
     if (entry.kind === 'separator') return { separator: true }
     return {
       label: entry.vars ? interp(t(entry.labelKey), entry.vars) : t(entry.labelKey),
       disabled: entry.disabled,
       danger: entry.danger,
-      onClick: () => runAction(entry.id, caps, onRemove)
+      onClick: () => runAction(entry.id, caps, () => onRemove?.())
     }
   })
   if (extras?.length) items.push({ separator: true }, ...extras)
@@ -206,6 +207,39 @@ export function requestCloseTab(tabId: string): void {
     confirmLabel: t('common.close'),
     autoFocusConfirm: prompt.autoFocusConfirm,
     onConfirm: () => settingsStore.closeTab(tab.id)
+  })
+}
+
+/** Close every tab but this one, behind the same warnOnClose rules a single close follows. */
+export function requestCloseOtherTabs(tabId: string): void {
+  const settingsStore = useSettingsStore.getState()
+  const others = settingsStore.settings.tabs.filter((tab) => tab.id !== tabId)
+  if (others.length === 0) return
+  // One other tab is an ordinary close, and its own prompt names what it holds.
+  if (others.length === 1) {
+    requestCloseTab(others[0].id)
+    return
+  }
+
+  const repos = others.flatMap((tab) => (tab.kind === 'page' ? [] : tab.repos))
+  const status = tabCloseStatus(repos, useRepoStore.getState().repos)
+  const prompt = closeOthersPrompt(others, status, settingsStore.settings.warnOnClose)
+  if (!prompt) {
+    settingsStore.closeOtherTabs(tabId)
+    return
+  }
+
+  useUIStore.getState().openModal({
+    kind: 'confirm',
+    title: t('titlebar.closeOthersTitle'),
+    message: interp(t(prompt.messageKey), {
+      ...prompt.vars,
+      ...(prompt.reasonKey ? { reason: t(prompt.reasonKey) } : {})
+    }),
+    danger: true,
+    confirmLabel: t('common.close'),
+    autoFocusConfirm: prompt.autoFocusConfirm,
+    onConfirm: () => useSettingsStore.getState().closeOtherTabs(tabId)
   })
 }
 

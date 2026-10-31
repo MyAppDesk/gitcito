@@ -161,6 +161,14 @@ describe('repository context menu builder', () => {
     expect(byId.viewOnGitHub.disabled).toBe(false)
   })
 
+  it('leaves Remove and its separator out when the surface brings its own close rows', () => {
+    const ids = actionIds(caps())
+    const without = repoMenuEntries(caps(), false).flatMap((e) => (e.kind === 'action' ? [e.id] : ['sep']))
+    expect(without).not.toContain('remove')
+    expect(without).toEqual(ids.slice(0, -2))
+    expect(without[without.length - 1]).toBe('openEditor')
+  })
+
   it('disables worktree mutation during an incompatible git operation', () => {
     const entries = repoMenuEntries(caps({ gitBusy: true }))
     const byId = Object.fromEntries(

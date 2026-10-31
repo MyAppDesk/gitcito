@@ -23,7 +23,12 @@ import { tabLabel, pageTabLabel } from '../lib/tabLabel'
 import { pagesForRepo } from '../lib/tabPages'
 import { repoCloseStatus, tabCloseStatus, type TabStatus } from '../lib/tabClose'
 import { repoDisplayName } from '../lib/repoAlias'
-import { confirmRemoveRepoFromGroup, repositoryMenuItems, requestCloseTab } from '../lib/repositoryMenuItems'
+import {
+  confirmRemoveRepoFromGroup,
+  repositoryMenuItems,
+  requestCloseTab,
+  requestCloseOtherTabs
+} from '../lib/repositoryMenuItems'
 import { useT, interp } from '../i18n'
 
 export { requestCloseTab }
@@ -619,8 +624,20 @@ export function TitleBar(): React.JSX.Element {
     if (tab.kind === 'repo' && tab.repos[0]) {
       const extras: MenuItem[] = [addToGroupItem(tab.id)]
       const move = moveToWorkspaceItem(tab)
-      if (move) extras.push(move)
-      return repositoryMenuItems(tab.repos[0].path, () => requestCloseTab(tab.id), extras)
+      if (move) extras.push(move, { separator: true })
+      // A tab closes rather than "removes": nothing leaves the disk, and the
+      // strip's own vocabulary is close, so the last rows say that.
+      const alone = settings.tabs.length < 2
+      extras.push(
+        { label: t('titlebar.closeThisRepo'), onClick: () => requestCloseTab(tab.id) },
+        {
+          label: t('titlebar.closeOthers'),
+          disabled: alone,
+          title: alone ? t('titlebar.closeOthersNone') : undefined,
+          onClick: () => requestCloseOtherTabs(tab.id)
+        }
+      )
+      return repositoryMenuItems(tab.repos[0].path, null, extras)
     }
     const items: MenuItem[] = []
     if (tab.kind === 'group') {

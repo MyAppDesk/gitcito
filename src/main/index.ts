@@ -36,8 +36,8 @@ import { registerDiffToolHandlers } from './difftool'
 import { parseCliOpenArgs, type CliOpenPayload } from '../shared/cli'
 import { MAIN_WINDOW_STATE, showMainWindow } from './windowState'
 
-// GUI launches inherit a minimal PATH; restore the login-shell PATH so spawned
-// git (and its hooks, e.g. husky → npm) find node/npm. Runs before any spawn.
+// GUI launches inherit a minimal PATH; restore the login-shell PATH (cached, then
+// refreshed in the background) so git hooks find node/npm without delaying the window.
 fixPath()
 
 // Sends a CLI-requested path to a window once its page has actually loaded.

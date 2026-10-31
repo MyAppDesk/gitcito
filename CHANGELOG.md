@@ -1,5 +1,26 @@
 
 
+## [4.17.0](https://github.com/MyAppDesk/gitcito/compare/v4.16.0...v4.17.0) (2026-10-31)
+
+
+### Features
+
+* close this repo and close others on a repository tab ([#58](https://github.com/MyAppDesk/gitcito/issues/58)) ([a28905a](https://github.com/MyAppDesk/gitcito/commit/a28905a05ce7223d527f6ca1ee44a2b5ebceaf95))
+* pick group colours from the menu and add ungroup ([#62](https://github.com/MyAppDesk/gitcito/issues/62)) ([87e2da5](https://github.com/MyAppDesk/gitcito/commit/87e2da5c0fe3bf07b27772fc2ca2f2b3dc69a37c))
+
+
+### Bug Fixes
+
+* focus a repo already open in a group instead of opening it twice ([#61](https://github.com/MyAppDesk/gitcito/issues/61)) ([99e5f6f](https://github.com/MyAppDesk/gitcito/commit/99e5f6fbe618c19e7e2e313bfa29bda8a8ee866b))
+* highlight only the file row whose diff is open ([#60](https://github.com/MyAppDesk/gitcito/issues/60)) ([b9074b3](https://github.com/MyAppDesk/gitcito/commit/b9074b33185cbe00a650925ece850e18f7b31984))
+* keep word diff cheap on huge lines so the diff no longer crashes ([#59](https://github.com/MyAppDesk/gitcito/issues/59)) ([4c18714](https://github.com/MyAppDesk/gitcito/commit/4c18714546bf138de0d909d7e5e388ecebf12b78))
+* **window:** reload by itself when the window goes blank ([#64](https://github.com/MyAppDesk/gitcito/issues/64)) ([12b2064](https://github.com/MyAppDesk/gitcito/commit/12b2064dc504e720ba8e58e9a95a5202a1c0f83e))
+
+
+### Performance Improvements
+
+* open the window without waiting for the shell PATH probe ([#63](https://github.com/MyAppDesk/gitcito/issues/63)) ([9e6cd3d](https://github.com/MyAppDesk/gitcito/commit/9e6cd3d21958674b2ae7313260902c61b8e65652))
+
 ## [4.16.0](https://github.com/MyAppDesk/gitcito/compare/v4.15.0...v4.16.0) (2026-10-19)
 
 

@@ -1446,6 +1446,7 @@ export const zhCN: Dict = {
   'settings.cliClaude': 'Claude Code (claude)',
   'settings.cliGemini': 'Gemini CLI (gemini)',
   'settings.cliCodex': 'Codex CLI (codex)',
+  'settings.cliDevin': 'Devin CLI (devin)',
   'settings.cliPath': '命令路径',
   'settings.cliFound': '已在 {path} 找到',
   'settings.cliNotFound': '未在 PATH 中找到。请先安装，或在上方填写完整路径。',

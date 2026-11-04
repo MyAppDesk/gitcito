@@ -954,7 +954,7 @@ export type AIProvider =
 export type AITransport = 'openai' | 'anthropic' | 'cli'
 
 /** A locally installed agent CLI that answers using its own signed-in session. */
-export type AICliBinary = 'claude' | 'gemini' | 'codex'
+export type AICliBinary = 'claude' | 'gemini' | 'codex' | 'devin'
 
 export interface AIProviderPreset {
   id: AIProvider

@@ -1,4 +1,7 @@
 import { execFile } from 'node:child_process'
+import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import type { AICliBinary, AIConfig } from '../shared/types'
 import type { TokenUsage } from './analytics'
 import type { ChatMessage, ModelReply } from './aiTransport'
@@ -35,6 +38,12 @@ interface CliSpec {
   args: (model: string) => string[]
   /** Whether the prompt goes on stdin (true) or as the final argument. */
   stdin: boolean
+  /**
+   * When set, the prompt is written to a temporary file and this argv is
+   * appended instead of using stdin — for CLIs with no stdin prompt mode
+   * (`devin -p --prompt-file`), which also sidesteps the ~32k argv limit.
+   */
+  promptFile?: (path: string) => string[]
   /** Models worth offering before the user types their own. */
   models: string[]
 }
@@ -61,6 +70,16 @@ const CLIS: Record<AICliBinary, CliSpec> = {
     args: (model) => ['exec', ...(model ? ['--model', model] : []), '-'],
     stdin: true,
     models: []
+  },
+  devin: {
+    bin: 'devin',
+    label: 'Devin CLI',
+    args: (model) => [...(model ? ['--model', model] : [])],
+    stdin: false,
+    // `devin -p` cannot read a prompt from stdin; --prompt-file also avoids
+    // the Windows argv length cap on large prompts.
+    promptFile: (path) => ['-p', '--prompt-file', path],
+    models: ['adaptive', 'swe-2-medium', 'swe-2-high', 'swe-2-max']
   }
 }
 
@@ -153,8 +172,23 @@ export async function runCliModel(cfg: AIConfig, messages: ChatMessage[]): Promi
   const spec = cliSpec(binary)
   const file = (cfg.cliPath ?? '').trim() || spec.bin
   const model = (cfg.model ?? '').trim()
+  const prompt = flattenMessages(messages)
 
-  const { code, stdout, stderr } = await run(file, spec.args(model), flattenMessages(messages))
+  let code: number
+  let stdout: string
+  let stderr: string
+  if (spec.promptFile) {
+    const dir = await mkdtemp(join(tmpdir(), 'gitcito-prompt-'))
+    try {
+      const promptPath = join(dir, 'prompt.txt')
+      await writeFile(promptPath, prompt, 'utf8')
+      ;({ code, stdout, stderr } = await run(file, [...spec.args(model), ...spec.promptFile(promptPath)], ''))
+    } finally {
+      await rm(dir, { recursive: true, force: true }).catch(() => {})
+    }
+  } else {
+    ;({ code, stdout, stderr } = await run(file, spec.args(model), prompt))
+  }
   if (code !== 0) {
     const detail = (stderr || stdout).trim().slice(0, 300)
     throw new Error(`\`${spec.bin}\` exited with code ${code}${detail ? `: ${detail}` : ''}`)

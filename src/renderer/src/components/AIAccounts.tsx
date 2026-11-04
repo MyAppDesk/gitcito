@@ -35,7 +35,8 @@ import { interp, useT, type TranslationKey } from '../i18n'
 const CLI_BINARIES: { id: AICliBinary; labelKey: TranslationKey }[] = [
   { id: 'claude', labelKey: 'settings.cliClaude' },
   { id: 'gemini', labelKey: 'settings.cliGemini' },
-  { id: 'codex', labelKey: 'settings.cliCodex' }
+  { id: 'codex', labelKey: 'settings.cliCodex' },
+  { id: 'devin', labelKey: 'settings.cliDevin' }
 ]
 
 const FEATURE_LABELS: Record<AIFeature, TranslationKey> = {

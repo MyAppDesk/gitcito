@@ -1443,6 +1443,7 @@ export const es: Dict = {
   'settings.cliClaude': 'Claude Code (claude)',
   'settings.cliGemini': 'Gemini CLI (gemini)',
   'settings.cliCodex': 'Codex CLI (codex)',
+  'settings.cliDevin': 'Devin CLI (devin)',
   'settings.cliPath': 'Ruta del comando',
   'settings.cliFound': 'Encontrado en {path}',
   'settings.cliNotFound': 'No está en tu PATH. Instálalo o escribe su ruta completa arriba.',

@@ -1446,6 +1446,7 @@ export const uk: Dict = {
   'settings.cliClaude': 'Claude Code (claude)',
   'settings.cliGemini': 'Gemini CLI (gemini)',
   'settings.cliCodex': 'Codex CLI (codex)',
+  'settings.cliDevin': 'Devin CLI (devin)',
   'settings.cliPath': 'Шлях до команди',
   'settings.cliFound': 'Знайдено в {path}',
   'settings.cliNotFound': 'Немає у PATH. Встанови або введи повний шлях вище.',

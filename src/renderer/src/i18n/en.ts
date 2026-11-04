@@ -1440,6 +1440,7 @@ export const en = {
   'settings.cliClaude': 'Claude Code (claude)',
   'settings.cliGemini': 'Gemini CLI (gemini)',
   'settings.cliCodex': 'Codex CLI (codex)',
+  'settings.cliDevin': 'Devin CLI (devin)',
   'settings.cliPath': 'Path to the command',
   'settings.cliFound': 'Found at {path}',
   'settings.cliNotFound': 'Not found on your PATH. Install it, or type its full path above.',

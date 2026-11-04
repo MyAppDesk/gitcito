@@ -1446,6 +1446,7 @@ export const ko: Dict = {
   'settings.cliClaude': 'Claude Code (claude)',
   'settings.cliGemini': 'Gemini CLI (gemini)',
   'settings.cliCodex': 'Codex CLI (codex)',
+  'settings.cliDevin': 'Devin CLI (devin)',
   'settings.cliPath': '명령 경로',
   'settings.cliFound': '{path} 에서 찾았습니다',
   'settings.cliNotFound': 'PATH 에 없습니다. 설치하거나 위에 전체 경로를 입력하세요.',

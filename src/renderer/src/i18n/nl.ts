@@ -1447,6 +1447,7 @@ export const nl: Dict = {
   'settings.cliClaude': 'Claude Code (claude)',
   'settings.cliGemini': 'Gemini CLI (gemini)',
   'settings.cliCodex': 'Codex CLI (codex)',
+  'settings.cliDevin': 'Devin CLI (devin)',
   'settings.cliPath': 'Pad naar het commando',
   'settings.cliFound': 'Gevonden in {path}',
   'settings.cliNotFound': 'Niet gevonden in je PATH. Installeer het, of typ hierboven het volledige pad.',

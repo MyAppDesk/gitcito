@@ -3,7 +3,7 @@ title: AI features
 category: AI
 order: 80
 summary: Optional, provider-agnostic, and grounded in your actual code.
-keywords: ai openai anthropic gemini google ollama local llm accounts api key subscription cli claude codex commit message explain review wiki grounded model picker
+keywords: ai openai anthropic gemini google ollama local llm accounts api key subscription cli claude codex devin commit message explain review wiki grounded model picker
 ---
 
 # AI features
@@ -29,7 +29,7 @@ through Google's OpenAI-compatible endpoint.
 ### Using a subscription instead of an API key
 
 Pick the **Local CLI** provider to answer with an agent CLI already installed
-and signed in on this machine — `claude`, `gemini` or `codex`. Gitcito runs the
+and signed in on this machine — `claude`, `gemini`, `codex` or `devin`. Gitcito runs the
 binary with your prompt and reads its reply; there is no API key to paste and no
 token is stored.
 

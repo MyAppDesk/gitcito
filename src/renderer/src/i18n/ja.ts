@@ -1426,6 +1426,7 @@ export const ja: Dict = {
   'settings.cliClaude': 'Claude Code (claude)',
   'settings.cliGemini': 'Gemini CLI (gemini)',
   'settings.cliCodex': 'Codex CLI (codex)',
+  'settings.cliDevin': 'Devin CLI (devin)',
   'settings.cliPath': 'コマンドのパス',
   'settings.cliFound': '{path} で見つかりました',
   'settings.cliNotFound': 'PATH に見つかりません。インストールするか、上にフルパスを入力してください。',

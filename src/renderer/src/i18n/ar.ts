@@ -1446,6 +1446,7 @@ export const ar: Dict = {
   'settings.cliClaude': 'Claude Code (claude)',
   'settings.cliGemini': 'Gemini CLI (gemini)',
   'settings.cliCodex': 'Codex CLI (codex)',
+  'settings.cliDevin': 'Devin CLI (devin)',
   'settings.cliPath': 'مسار الأمر',
   'settings.cliFound': 'وُجد في {path}',
   'settings.cliNotFound': 'غير موجود في PATH. ثبّته أو اكتب مساره الكامل بالأعلى.',

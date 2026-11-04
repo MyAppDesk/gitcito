@@ -1447,6 +1447,7 @@ export const ptBR: Dict = {
   'settings.cliClaude': 'Claude Code (claude)',
   'settings.cliGemini': 'Gemini CLI (gemini)',
   'settings.cliCodex': 'Codex CLI (codex)',
+  'settings.cliDevin': 'Devin CLI (devin)',
   'settings.cliPath': 'Caminho do comando',
   'settings.cliFound': 'Encontrado em {path}',
   'settings.cliNotFound': 'Não está no seu PATH. Instale-o ou digite o caminho completo acima.',

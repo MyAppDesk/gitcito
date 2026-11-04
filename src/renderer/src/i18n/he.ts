@@ -1446,6 +1446,7 @@ export const he: Dict = {
   'settings.cliClaude': 'Claude Code (claude)',
   'settings.cliGemini': 'Gemini CLI (gemini)',
   'settings.cliCodex': 'Codex CLI (codex)',
+  'settings.cliDevin': 'Devin CLI (devin)',
   'settings.cliPath': 'נתיב לפקודה',
   'settings.cliFound': 'נמצא ב־{path}',
   'settings.cliNotFound': 'לא נמצא ב־PATH. התקן אותו, או הקלד למעלה את הנתיב המלא.',

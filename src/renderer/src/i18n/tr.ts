@@ -1426,6 +1426,7 @@ export const tr: Dict = {
   'settings.cliClaude': 'Claude Code (claude)',
   'settings.cliGemini': 'Gemini CLI (gemini)',
   'settings.cliCodex': 'Codex CLI (codex)',
+  'settings.cliDevin': 'Devin CLI (devin)',
   'settings.cliPath': 'Komutun yolu',
   'settings.cliFound': '{path} konumunda bulundu',
   'settings.cliNotFound': 'PATH üzerinde bulunamadı. Kur ya da tam yolunu yukarıya yaz.',

@@ -23,6 +23,10 @@ stashing.
   `repo--branch` — and decide whether to open the worktree as a tab right away.
 - Right-click any local branch → **Open in a worktree** to spin one up in a
   sibling folder and open it as a tab.
+- If the repository is indexed with codegraph (a `.codegraph/` folder) and the
+  CLI is on PATH, a new worktree is indexed in the background too — agent
+  sessions opened inside it get the same code intelligence without a manual
+  `codegraph init`.
 - A branch can live in only one worktree at a time, so checking out a branch
   another worktree already holds cannot work — git refuses with *already used by
   worktree at …*. Gitcito takes you there instead: the branch's menu reads *Go

@@ -649,6 +649,24 @@ function hasBinary(command: string): boolean {
   }
 }
 
+/** Index a fresh worktree for codegraph, detached so the git op never waits.
+ *  `codegraph` is a .cmd shim on Windows and only resolves through a shell; a
+ *  single quoted command string keeps paths-with-spaces intact. */
+function indexCodegraphAsync(dir: string): void {
+  try {
+    const quoted = `"${dir.replace(/"/g, '')}"`
+    spawn(`codegraph init ${quoted}`, {
+      cwd: dir,
+      shell: true,
+      detached: true,
+      stdio: 'ignore',
+      windowsHide: true
+    }).unref()
+  } catch {
+    /* indexing is best-effort */
+  }
+}
+
 /** The textconv shim Gitcito ships (resources/cli/gitcito-textconv). */
 export function bundledTextconvPath(): string {
   // Packaged: extraResources puts cli/ next to app.asar. Source checkout and
@@ -6440,6 +6458,16 @@ export const gitService = {
       args.push(path, branch)
     }
     await gitFor(repoPath).raw(args)
+    // A worktree is a fresh project root — the parent's .codegraph index does
+    // not carry over, so agents opening it find nothing. When the parent is
+    // indexed and the CLI is on PATH, index the new tree in the background.
+    if (
+      existsSync(resolvePath(repoPath, '.codegraph')) &&
+      !existsSync(resolvePath(target, '.codegraph')) &&
+      hasBinary('codegraph')
+    ) {
+      indexCodegraphAsync(target)
+    }
   },
 
   async worktreeRemove(repoPath: string, path: string, force: boolean): Promise<void> {

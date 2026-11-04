@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { X, Globe, Github, Gitlab, Cloud, Server, Loader2, Search, Lock, FolderGit2, Folder, Plus, Check, ChevronDown, ChevronRight, RefreshCw, Sparkles, GitMerge, GitBranch, ArrowUpFromLine, TextCursorInput } from 'lucide-react'
+import { X, Globe, Github, Gitlab, Cloud, Server, Loader2, Search, Lock, FolderGit2, Folder, Plus, Check, ChevronDown, ChevronRight, RefreshCw, Sparkles, GitMerge, ArrowUpFromLine, TextCursorInput } from 'lucide-react'
 import { useUIStore, type ModalSpec } from '../stores/ui'
 import { useSettingsStore, GROUP_COLORS } from '../stores/settings'
 import { pickGroupColor } from '../lib/groupColors'
@@ -71,6 +71,7 @@ import { ErrorBoundary } from './ErrorBoundary'
 import { CheatsheetModal } from './CheatsheetModal'
 import { CreateIssueModal } from './CreateIssueModal'
 import { RepoSettingsModal } from './RepoSettingsModal'
+import { BranchFieldPicker } from './BranchFieldPicker'
 import { useT, interp } from '../i18n'
 import { defaultOptionIndex, isPickInput, normalizeOptions } from '../lib/launchInputs'
 import { AIAccountsNotice } from './AIAccountsNotice'
@@ -1002,7 +1003,6 @@ function ProviderCreateForm({
 function AddWorktreeModal({ spec }: { spec: Extract<ModalSpec, { kind: 'add-worktree' }> }): React.JSX.Element {
   const t = useT()
   const closeModal = useUIStore((s) => s.closeModal)
-  const openContextMenu = useUIStore((s) => s.openContextMenu)
   const [base, setBase] = useState(spec.current)
   const [newBranch, setNewBranch] = useState('')
   // null = the folder field still follows the suggested path. The Browse button
@@ -1019,7 +1019,7 @@ function AddWorktreeModal({ spec }: { spec: Extract<ModalSpec, { kind: 'add-work
     : spec.suggestDir(effectiveBranch)
   const finalDir = (dirOverride ?? suggestedDir).trim()
   const baseBusy = spec.busyBranches.includes(base)
-  const branchClash = spec.locals.includes(effectiveBranch) && creatingNew
+  const branchClash = spec.locals.some((b) => b.name === effectiveBranch) && creatingNew
   const dirUsed = spec.worktreePaths.some(
     (p) => p.replace(/\\/g, '/').replace(/\/+$/, '') === resolvedDir(finalDir).replace(/\\/g, '/').replace(/\/+$/, '')
   )
@@ -1034,21 +1034,6 @@ function AddWorktreeModal({ spec }: { spec: Extract<ModalSpec, { kind: 'add-work
       else if (seg && seg !== '.') out.push(seg)
     }
     return out.join('/')
-  }
-
-  // A button that opens the app's own menu — a <select> renders with OS chrome
-  // and looks foreign next to the modal's styled inputs.
-  const pickBase = (e: React.MouseEvent): void => {
-    const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
-    openContextMenu(
-      r.left,
-      r.bottom + 4,
-      spec.locals.map((b) => ({
-        label: b,
-        icon: <GitBranch size={13} />,
-        onClick: () => setBase(b)
-      }))
-    )
   }
 
   const browse = async (): Promise<void> => {
@@ -1087,10 +1072,12 @@ function AddWorktreeModal({ spec }: { spec: Extract<ModalSpec, { kind: 'add-work
       </h3>
 
       <label className="modal-label">{t('modal.worktreeBaseBranch')}</label>
-      <button type="button" className="modal-input modal-select-btn" onClick={pickBase}>
-        <span>{base}</span>
-        <ChevronDown size={13} />
-      </button>
+      <BranchFieldPicker
+        branches={spec.locals}
+        value={base}
+        onChange={setBase}
+        ariaLabel={t('modal.worktreeBaseBranch')}
+      />
 
       <label className="modal-label">{t('modal.worktreeNewBranch')}</label>
       <input

@@ -168,6 +168,8 @@ export const he: Dict = {
   'worktree.locked': 'עץ העבודה ננעל.',
   'worktree.unlocked': 'הנעילה של עץ העבודה בוטלה.',
   'worktree.stateChanged': 'מצב הנעילה של עץ העבודה השתנה. יש לרענן ולנסות שוב.',
+  'worktree.branchSearch': '…סינון ענפים',
+  'worktree.currentBadge': 'נוכחי',
   'sidebar.addSubmodule': 'הוספת תת־מודול…',
   'sidebar.updateAllSubmodules': 'עדכון כל התת־מודולים',
   'sidebar.removeSubmodule': 'הסרת התת־מודול',

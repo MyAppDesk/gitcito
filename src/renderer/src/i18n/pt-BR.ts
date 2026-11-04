@@ -168,6 +168,8 @@ export const ptBR: Dict = {
   'worktree.locked': 'Worktree bloqueada.',
   'worktree.unlocked': 'Worktree desbloqueada.',
   'worktree.stateChanged': 'O estado do bloqueio mudou. Atualize e tente novamente.',
+  'worktree.branchSearch': 'Filtrar branches…',
+  'worktree.currentBadge': 'atual',
   'sidebar.addSubmodule': 'Adicionar submódulo…',
   'sidebar.updateAllSubmodules': 'Atualizar todos os submódulos',
   'sidebar.removeSubmodule': 'Remover submódulo',

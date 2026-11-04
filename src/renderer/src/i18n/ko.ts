@@ -168,6 +168,8 @@ export const ko: Dict = {
   'worktree.locked': '워크트리를 잠갔습니다.',
   'worktree.unlocked': '워크트리 잠금을 해제했습니다.',
   'worktree.stateChanged': '워크트리 잠금 상태가 바뀌었습니다. 새로고침한 뒤 다시 시도하세요.',
+  'worktree.branchSearch': '브래마하지…',
+  'worktree.currentBadge': '현재',
   'sidebar.addSubmodule': '서브모듈 추가…',
   'sidebar.updateAllSubmodules': '모든 서브모듈 업데이트',
   'sidebar.removeSubmodule': '서브모듈 제거',

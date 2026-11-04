@@ -167,6 +167,8 @@ export const ja: Dict = {
   'worktree.locked': 'ワークツリーをロックしました。',
   'worktree.unlocked': 'ワークツリーのロックを解除しました。',
   'worktree.stateChanged': 'ワークツリーのロック状態が変わりました。更新して再試行してください。',
+  'worktree.branchSearch': 'ブランチを絞り込む…',
+  'worktree.currentBadge': '現在の',
   'sidebar.addSubmodule': 'サブモジュールを追加…',
   'sidebar.updateAllSubmodules': 'すべてのサブモジュールを更新',
   'sidebar.removeSubmodule': 'サブモジュールを削除',

@@ -168,6 +168,8 @@ export const de: Dict = {
   'worktree.locked': 'Worktree gesperrt.',
   'worktree.unlocked': 'Worktree entsperrt.',
   'worktree.stateChanged': 'Sperrstatus des Worktrees geändert. Aktualisiere und versuche es erneut.',
+  'worktree.branchSearch': 'Branches filtern…',
+  'worktree.currentBadge': 'aktuell',
   'sidebar.addSubmodule': 'Submodul hinzufügen…',
   'sidebar.updateAllSubmodules': 'Alle Submodule aktualisieren',
   'sidebar.removeSubmodule': 'Submodul entfernen',

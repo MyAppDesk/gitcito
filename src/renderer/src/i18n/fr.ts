@@ -167,6 +167,8 @@ export const fr: Dict = {
   'worktree.locked': 'Arbre de travail verrouillé.',
   'worktree.unlocked': 'Arbre de travail déverrouillé.',
   'worktree.stateChanged': 'Le verrouillage a changé. Actualisez puis réessayez.',
+  'worktree.branchSearch': 'Filtrer les branches…',
+  'worktree.currentBadge': 'actuelle',
   'sidebar.addSubmodule': 'Ajouter un sous-module…',
   'sidebar.updateAllSubmodules': 'Mettre à jour tous les sous-modules',
   'sidebar.removeSubmodule': 'Supprimer le sous-module',

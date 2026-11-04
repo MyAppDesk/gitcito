@@ -168,6 +168,8 @@ export const ar: Dict = {
   'worktree.locked': 'تم قفل شجرة العمل.',
   'worktree.unlocked': 'تم إلغاء قفل شجرة العمل.',
   'worktree.stateChanged': 'تغيّرت حالة قفل شجرة العمل. حدّث وحاول مجددًا.',
+  'worktree.branchSearch': '…تصفية الفروع',
+  'worktree.currentBadge': 'الحالي',
   'sidebar.addSubmodule': 'إضافة وحدة فرعية…',
   'sidebar.updateAllSubmodules': 'تحديث كل الوحدات الفرعية',
   'sidebar.removeSubmodule': 'إزالة الوحدة الفرعية',

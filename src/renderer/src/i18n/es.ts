@@ -167,6 +167,8 @@ export const es: Dict = {
   'worktree.locked': 'Worktree bloqueado.',
   'worktree.unlocked': 'Worktree desbloqueado.',
   'worktree.stateChanged': 'Cambió el estado de bloqueo. Actualiza e inténtalo de nuevo.',
+  'worktree.branchSearch': 'Filtrar ramas…',
+  'worktree.currentBadge': 'actual',
   'sidebar.addSubmodule': 'Añadir submódulo…',
   'sidebar.updateAllSubmodules': 'Actualizar todos los submódulos',
   'sidebar.removeSubmodule': 'Eliminar submódulo',

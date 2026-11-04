@@ -169,6 +169,8 @@ export const en = {
   'worktree.locked': 'Worktree locked.',
   'worktree.unlocked': 'Worktree unlocked.',
   'worktree.stateChanged': 'Worktree lock state changed. Refresh and try again.',
+  'worktree.branchSearch': 'Filter branches…',
+  'worktree.currentBadge': 'current',
   'sidebar.addSubmodule': 'Add submodule…',
   'sidebar.updateAllSubmodules': 'Update all submodules',
   'sidebar.removeSubmodule': 'Remove submodule',

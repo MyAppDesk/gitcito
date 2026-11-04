@@ -1,7 +1,7 @@
 import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join, dirname, resolve, sep } from 'path'
 import { existsSync, mkdirSync, readdirSync, copyFileSync } from 'fs'
-import { writeFile, readFile, mkdir, chmod, unlink } from 'fs/promises'
+import { writeFile, readFile, rename, mkdir, chmod, unlink } from 'fs/promises'
 import { execFile, spawn } from 'child_process'
 import icon from '../../resources/icon.png?asset'
 import type { AppRelease } from '../shared/types'
@@ -36,6 +36,7 @@ import { registerDiffToolHandlers } from './difftool'
 import { parseCliOpenArgs, type CliOpenPayload } from '../shared/cli'
 import { MAIN_WINDOW_STATE, showMainWindow } from './windowState'
 import { attachRendererRecovery, registerRendererRecoveryHandlers } from './rendererRecovery'
+import { githubPublicGet } from './credentials'
 
 // GUI launches inherit a minimal PATH; restore the login-shell PATH (cached, then
 // refreshed in the background) so git hooks find node/npm without delaying the window.
@@ -289,12 +290,24 @@ app.whenReady().then(() => {
 
   // Public release notes from GitHub. Done in main (not the renderer) because the
   // renderer CSP forbids cross-origin requests; no token needed for public repos.
-  ipcMain.handle('app:releases', async (): Promise<AppRelease[]> => {
+  // The last good answer is kept on disk: unauthenticated GitHub allows 60 requests
+  // an hour per address, and a refused or offline fetch should still show the list.
+  const releasesCache = join(app.getPath('userData'), 'releases-cache.json')
+  const cachedReleases = async (): Promise<AppRelease[]> => {
     try {
-      const res = await fetch('https://api.github.com/repos/MyAppDesk/gitcito/releases?per_page=20', {
-        headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'gitcito' }
-      })
-      if (!res.ok) return []
+      const parsed = JSON.parse(await readFile(releasesCache, 'utf-8')) as unknown
+      return Array.isArray(parsed) ? (parsed as AppRelease[]) : []
+    } catch {
+      return []
+    }
+  }
+  ipcMain.handle('app:releases', async (): Promise<AppRelease[]> => {
+    // Scripted runs stay off GitHub so they cannot spend the real app's hourly quota.
+    if (process.argv.includes('--shot')) return cachedReleases()
+    try {
+      // What's New waits on this before showing notes, so a hanging network must not stall it.
+      const res = await githubPublicGet('https://api.github.com/repos/MyAppDesk/gitcito/releases?per_page=20')
+      if (!res.ok) return cachedReleases()
       const json = (await res.json()) as Array<{
         tag_name: string
         name: string | null
@@ -304,8 +317,8 @@ app.whenReady().then(() => {
         draft: boolean
         prerelease: boolean
       }>
-      if (!Array.isArray(json)) return []
-      return json
+      if (!Array.isArray(json)) return cachedReleases()
+      const releases = json
         .filter((r) => !r.draft)
         .map((r) => ({
           tag: r.tag_name,
@@ -315,8 +328,16 @@ app.whenReady().then(() => {
           url: r.html_url,
           prerelease: r.prerelease
         }))
+      // Written beside and renamed over, so a crash mid-write never leaves half a file.
+      if (releases.length) {
+        const tmp = `${releasesCache}.tmp`
+        void writeFile(tmp, JSON.stringify(releases))
+          .then(() => rename(tmp, releasesCache))
+          .catch(() => {})
+      }
+      return releases
     } catch {
-      return []
+      return cachedReleases()
     }
   })
 

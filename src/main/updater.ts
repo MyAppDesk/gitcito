@@ -2,6 +2,7 @@ import { app, BrowserWindow, ipcMain, shell } from 'electron'
 import { autoUpdater } from 'electron-updater'
 import type { UpdateState, UpdateInfo } from '../shared/types'
 import { isNewerVersion } from '../shared/version'
+import { githubPublicGet } from './credentials'
 
 const REPO = 'MyAppDesk/gitcito'
 const releaseUrl = (version: string): string =>
@@ -44,10 +45,14 @@ function notesToText(notes: unknown): string | null {
 /** Dev / unpackaged builds can't run electron-updater. Poll the GitHub API so
  *  the "new version available" UI still works (download falls back to the page). */
 async function checkViaGitHub(): Promise<void> {
+  // Scripted runs (screenshots, probes, real-app checks) launch the app many times
+  // an hour; GitHub's anonymous limit is 60 per address, shared with the real app.
+  if (process.argv.includes('--shot')) {
+    setState({ status: 'not-available' })
+    return
+  }
   try {
-    const res = await fetch(`https://api.github.com/repos/${REPO}/releases/latest`, {
-      headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'gitcito' }
-    })
+    const res = await githubPublicGet(`https://api.github.com/repos/${REPO}/releases/latest`)
     if (!res.ok) {
       setState({ status: 'not-available' })
       return

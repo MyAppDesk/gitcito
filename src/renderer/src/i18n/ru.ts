@@ -3437,6 +3437,7 @@ export const ru: Dict = {
   'modal.worktreeBranchBusy': 'Ветка {base} уже выгружена — откройте её worktree или создайте новую ветку.',
   'modal.worktreeBranchClash': 'Ветка с именем «{branch}» уже существует.',
   'modal.worktreeFolder': 'Папка worktree',
+  'modal.worktreeDirUsed': 'В этой папке уже есть worktree.',
   'modal.worktreeBrowseTitle': 'Выберите папку worktree',
   'modal.worktreeOpenAfter': 'Открыть worktree после создания',
   'modal.createRepository': 'Создать репозиторий',

@@ -5461,6 +5461,38 @@ body.col-resizing .node-ava {
   width: 100%;
 }
 
+/* Select-looking button that opens the app's own context menu — a native
+   <select> keeps OS chrome and looks foreign inside a styled modal. Mirrors
+   the shared input appearance (bg, border, radius, padding). */
+.modal-select-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-family: inherit;
+  background: var(--bg-0);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-0);
+  padding: 7px 10px;
+  font-size: 12.5px;
+  text-align: start;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.modal-select-btn:hover {
+  border-color: var(--accent);
+}
+.modal-select-btn:focus-visible {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  outline: none;
+}
+.modal-select-btn svg {
+  flex-shrink: 0;
+  color: var(--text-2);
+}
+
 /* launch.json ${input:…} picker (pickString options) */
 .launch-input-step {
   opacity: 0.7;

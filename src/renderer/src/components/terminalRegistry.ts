@@ -93,16 +93,24 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
       }
       return !copySelectionToClipboard()
     }
-    if (e.ctrlKey && e.shiftKey && e.code === 'KeyV') {
+    if (e.ctrlKey && e.code === 'KeyV') {
+      // Ctrl+V pastes like everywhere else in the app (and VS Code's
+      // terminal); Ctrl+Shift+V does the same for terminal purists.
+      e.preventDefault()
       pasteFromClipboard()
       return false
     }
     if (e.code === 'Insert') {
       if (e.shiftKey && !e.ctrlKey) {
+        // Chromium already binds Shift+Insert to a native paste — without
+        // preventDefault the synthetic paste below lands on top of it and
+        // every paste arrives twice.
+        e.preventDefault()
         pasteFromClipboard()
         return false
       }
       if (e.ctrlKey && !e.shiftKey) {
+        e.preventDefault()
         copySelectionToClipboard()
         return false
       }

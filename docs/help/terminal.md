@@ -36,7 +36,7 @@ your aliases.
 | <kbd>⌘T</kbd> / <kbd>Ctrl+T</kbd> | New terminal, while the terminal has focus |
 | <kbd>⌘W</kbd> / <kbd>Ctrl+W</kbd> | Close the focused terminal; closing the last one hides the panel |
 | <kbd>Ctrl+Shift+C</kbd> | Copy the selection; a bare <kbd>Ctrl+C</kbd> copies too while a selection exists and stays SIGINT when there is none |
-| <kbd>Ctrl+Shift+V</kbd> / <kbd>Shift+Ins</kbd> | Paste from the clipboard |
+| <kbd>Ctrl+V</kbd> / <kbd>Ctrl+Shift+V</kbd> / <kbd>Shift+Ins</kbd> | Paste from the clipboard |
 | Right-click | Copy the selection, or paste when nothing is selected |
 
 The last two are scoped to the terminal on purpose: away from it, they still

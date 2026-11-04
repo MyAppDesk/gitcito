@@ -5492,6 +5492,61 @@ body.col-resizing .node-ava {
   flex-shrink: 0;
   color: var(--text-2);
 }
+.modal-select-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Searchable dropdown attached to a modal field (BranchFieldPicker). Reuses
+   the sidebar .branch-picker-* chrome; these rules add the filter box and
+   the small bits the field variant needs. */
+.branch-picker-field {
+  padding: 5px;
+}
+.branch-picker-search {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: 0 0 auto;
+  margin-bottom: 4px;
+  padding: 5px 9px;
+  color: var(--text-2);
+  background: var(--bg-0);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.branch-picker-search:focus-within {
+  border-color: var(--accent);
+}
+.branch-picker-search input {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--text-0);
+  font-size: 12.5px;
+}
+.branch-picker-search input:focus {
+  outline: none;
+}
+.branch-picker-current {
+  margin-left: auto;
+  flex: 0 0 auto;
+  color: var(--text-3);
+  font-size: 10.5px;
+}
+.branch-picker-empty {
+  padding: 12px;
+  color: var(--text-3);
+  font-size: 12px;
+  text-align: center;
+}
 
 /* launch.json ${input:…} picker (pickString options) */
 .launch-input-step {

@@ -168,6 +168,8 @@ export const nl: Dict = {
   'worktree.locked': 'Worktree vergrendeld.',
   'worktree.unlocked': 'Worktree ontgrendeld.',
   'worktree.stateChanged': 'De vergrendelingsstatus is gewijzigd. Vernieuw en probeer opnieuw.',
+  'worktree.branchSearch': 'Branches filteren…',
+  'worktree.currentBadge': 'huidige',
   'sidebar.addSubmodule': 'Submodule toevoegen…',
   'sidebar.updateAllSubmodules': 'Alle submodules bijwerken',
   'sidebar.removeSubmodule': 'Submodule verwijderen',

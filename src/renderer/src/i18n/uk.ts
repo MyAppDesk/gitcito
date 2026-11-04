@@ -168,6 +168,8 @@ export const uk: Dict = {
   'worktree.locked': 'Робоче дерево заблоковано.',
   'worktree.unlocked': 'Робоче дерево розблоковано.',
   'worktree.stateChanged': 'Стан блокування змінився. Оновіть дані й спробуйте ще раз.',
+  'worktree.branchSearch': 'Фільтр гілок…',
+  'worktree.currentBadge': 'поточна',
   'sidebar.addSubmodule': 'Додати підмодуль…',
   'sidebar.updateAllSubmodules': 'Оновити всі підмодулі',
   'sidebar.removeSubmodule': 'Видалити підмодуль',

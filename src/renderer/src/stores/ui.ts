@@ -114,7 +114,7 @@ export type ModalSpec =
       repoName: string
       /** Currently checked-out branch — the default base. */
       current: string
-      locals: string[]
+      locals: { name: string; isCurrent: boolean }[]
       /** Branches already checked out in some worktree — cannot be reused. */
       busyBranches: string[]
       /** Registered worktree folders — used to warn when one is picked again. */

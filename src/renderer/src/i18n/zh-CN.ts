@@ -168,6 +168,8 @@ export const zhCN: Dict = {
   'worktree.locked': '工作树已锁定。',
   'worktree.unlocked': '工作树已解锁。',
   'worktree.stateChanged': '工作树锁定状态已更改。请刷新后重试。',
+  'worktree.branchSearch': '筛选分支…',
+  'worktree.currentBadge': '当前',
   'sidebar.addSubmodule': '添加子模块…',
   'sidebar.updateAllSubmodules': '更新所有子模块',
   'sidebar.removeSubmodule': '移除子模块',

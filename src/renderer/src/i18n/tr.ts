@@ -167,6 +167,8 @@ export const tr: Dict = {
   'worktree.locked': 'Worktree kilitlendi.',
   'worktree.unlocked': 'Worktree kilidi açıldı.',
   'worktree.stateChanged': 'Worktree kilit durumu değişti. Yenileyip tekrar deneyin.',
+  'worktree.branchSearch': 'Dalları filtrele…',
+  'worktree.currentBadge': 'meşcut',
   'sidebar.addSubmodule': 'Alt modül ekle…',
   'sidebar.updateAllSubmodules': 'Tüm alt modülleri güncelle',
   'sidebar.removeSubmodule': 'Alt modülü kaldır',

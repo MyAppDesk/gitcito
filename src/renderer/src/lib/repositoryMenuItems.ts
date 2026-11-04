@@ -86,7 +86,7 @@ function promptNewWorktree(path: string): void {
     path,
     repoName,
     current: repo.branches.current,
-    locals: repo.branches.locals.map((b) => b.name),
+    locals: repo.branches.locals.map((b) => ({ name: b.name, isCurrent: b.isCurrent })),
     busyBranches: [
       repo.branches.current,
       ...repo.worktrees.map((w) => w.branch).filter((b): b is string => Boolean(b))

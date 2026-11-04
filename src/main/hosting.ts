@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import { ipcMain, shell } from 'electron'
 import {
   apiToken,
@@ -8,6 +9,15 @@ import {
   type GitHubCliAuthStatus
 } from './credentials'
 import { mergeStackSection } from '../shared/stackPr'
+import {
+  type CiCacheEntry,
+  type CiLookup,
+  isCiEntryFresh,
+  mentionsRateLimit,
+  nextCiEntry,
+  rateLimitPauseUntil,
+  rememberCiEntry
+} from './ciCache'
 import type {
   CiJob,
   CiState,
@@ -1926,7 +1936,81 @@ function summariseChecks(status: CiStatus): string {
   return parts.join(' · ')
 }
 
-async function fetchCiStatuses(
+// Answers depend on what a credential can see, so each one keeps its own; a
+// profile per repo or a per-remote credential helper means several in turn.
+// Keyed by a fingerprint so the map never holds the token itself.
+interface CiAccount {
+  cache: Map<string, CiCacheEntry>
+  inFlight: Map<string, Promise<void>>
+  pausedUntil: number
+}
+const ciAccounts = new Map<string, CiAccount>()
+// A refreshed CLI token is a new credential; the old ones' answers go.
+const CI_MAX_ACCOUNTS = 4
+// Few at a time: a burst of 40 trips GitHub's secondary limit, and a limit
+// answer halts the rest of the batch instead of 40 doomed requests.
+const CI_LOOKUP_CONCURRENCY = 6
+
+function ciAccountFor(token: string): CiAccount {
+  const id = createHash('sha256').update(token).digest('hex').slice(0, 16)
+  const account = ciAccounts.get(id) ?? { cache: new Map(), inFlight: new Map(), pausedUntil: 0 }
+  ciAccounts.delete(id)
+  ciAccounts.set(id, account)
+  for (const oldest of ciAccounts.keys()) {
+    if (ciAccounts.size <= CI_MAX_ACCOUNTS) break
+    ciAccounts.delete(oldest)
+  }
+  return account
+}
+
+async function lookUpCiStatus(
+  owner: string,
+  repo: string,
+  sha: string,
+  token: string,
+  account: CiAccount
+): Promise<CiLookup> {
+  try {
+    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/commits/${sha}/check-runs?per_page=30`, {
+      headers: { Accept: 'application/vnd.github+json', Authorization: `Bearer ${token}` }
+    })
+    const limited = (res.status === 403 || res.status === 429) && mentionsRateLimit(await res.text())
+    const pause = rateLimitPauseUntil(
+      {
+        status: res.status,
+        limited,
+        remaining: res.headers.get('x-ratelimit-remaining'),
+        reset: res.headers.get('x-ratelimit-reset'),
+        retryAfter: res.headers.get('retry-after')
+      },
+      Date.now()
+    )
+    if (pause !== null) account.pausedUntil = Math.max(account.pausedUntil, pause)
+    if (!res.ok) return { kind: 'failed' }
+    const data = (await res.json()) as {
+      check_runs: Array<{ name: string; status: string; conclusion: string | null; html_url: string }>
+    }
+    const runs = data.check_runs ?? []
+    if (!runs.length) return { kind: 'none' }
+    const jobs: CiJob[] = runs.map((r) => ({
+      name: r.name,
+      state: ghCiState(r.conclusion, r.status),
+      url: r.html_url
+    }))
+    const overallState: CiState = jobs.some((j) => j.state === 'failure')
+      ? 'failure'
+      : jobs.some((j) => j.state === 'pending')
+        ? 'pending'
+        : jobs.every((j) => j.state === 'neutral')
+          ? 'neutral'
+          : 'success'
+    return { kind: 'found', status: { state: overallState, jobs } }
+  } catch {
+    return { kind: 'failed' }
+  }
+}
+
+export async function fetchCiStatuses(
   remoteUrl: string,
   shas: string[],
   token: string
@@ -1935,44 +2019,50 @@ async function fetchCiStatuses(
   if (!parsed || parsed.provider !== 'github') return {}
   const auth = await apiToken(remoteUrl, token)
   if (!auth) return {}
+  const account = ciAccountFor(auth.token)
+  const keyOf = (sha: string): string => `${parsed.owner}/${parsed.repo}@${sha}`
+
+  const wanted = [...new Set(shas.slice(0, 40))]
+  const now = Date.now()
+  const due = wanted.filter((sha) => !isCiEntryFresh(account.cache.get(keyOf(sha)), now))
+  // Lookups another call already has queued are awaited, not repeated. Every
+  // key this call will look up is claimed before the first request goes out.
+  const sharedLookups = due.map((sha) => account.inFlight.get(keyOf(sha))).filter((p) => p !== undefined)
+  const claimed = due
+    .filter((sha) => !account.inFlight.has(keyOf(sha)))
+    .map((sha) => {
+      let settle: () => void = () => {}
+      const settled = new Promise<void>((resolve) => (settle = resolve))
+      account.inFlight.set(keyOf(sha), settled)
+      return { sha, key: keyOf(sha), settle }
+    })
+  const release = (job: (typeof claimed)[number]): void => {
+    account.inFlight.delete(job.key)
+    job.settle()
+  }
+  const queue = [...claimed]
+  const work = async (): Promise<void> => {
+    // A limit answer stops the batch; what we knew stays as it was.
+    while (queue.length && Date.now() >= account.pausedUntil) {
+      const job = queue.shift()!
+      try {
+        const lookup = await lookUpCiStatus(parsed.owner, parsed.repo, job.sha, auth.token, account)
+        rememberCiEntry(account.cache, job.key, nextCiEntry(account.cache.get(job.key), lookup, Date.now()))
+      } finally {
+        release(job)
+      }
+    }
+  }
+  await Promise.all(Array.from({ length: CI_LOOKUP_CONCURRENCY }, work))
+  // Skipped for a pause: let anyone waiting on them go.
+  queue.forEach(release)
+  await Promise.all(sharedLookups)
 
   const result: Record<string, CiStatus> = {}
-  const headers: Record<string, string> = {
-    Accept: 'application/vnd.github+json',
-    Authorization: `Bearer ${auth.token}`
+  for (const sha of wanted) {
+    const entry = account.cache.get(keyOf(sha))
+    if (entry?.lookup.kind === 'found') result[sha] = entry.lookup.status
   }
-
-  await Promise.all(
-    shas.slice(0, 40).map(async (sha) => {
-      try {
-        const res = await fetch(
-          `https://api.github.com/repos/${parsed.owner}/${parsed.repo}/commits/${sha}/check-runs?per_page=30`,
-          { headers }
-        )
-        if (!res.ok) return
-        const data = (await res.json()) as {
-          check_runs: Array<{ name: string; status: string; conclusion: string | null; html_url: string }>
-        }
-        const runs = data.check_runs ?? []
-        if (!runs.length) return
-        const jobs: CiJob[] = runs.map((r) => ({
-          name: r.name,
-          state: ghCiState(r.conclusion, r.status),
-          url: r.html_url
-        }))
-        const overallState: CiState = jobs.some((j) => j.state === 'failure')
-          ? 'failure'
-          : jobs.some((j) => j.state === 'pending')
-            ? 'pending'
-            : jobs.every((j) => j.state === 'neutral')
-              ? 'neutral'
-              : 'success'
-        result[sha] = { state: overallState, jobs }
-      } catch {
-        /* skip failed SHA */
-      }
-    })
-  )
   return result
 }
 

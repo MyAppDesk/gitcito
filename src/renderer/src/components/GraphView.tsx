@@ -857,16 +857,22 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
     if (repo.remotes.length) void repoActions.refreshRemoteTags(repo.path)
   }, [repo.path, repo.remotes])
 
-  // Fetch CI statuses for visible commits (GitHub only, requires token).
-  // Poll every 15s so a pending badge updates once the CI/deploy finishes —
-  // refreshCiStatuses no-ops when there is nothing missing or pending to fetch,
-  // so an idle (all-resolved) repo makes no network calls.
+  // CI badges for the visible commits (GitHub only). The minute poll lets a
+  // running check settle on screen; main remembers every answer (including
+  // "no checks") and decides which commits are worth asking GitHub about again.
+  // Skipped while the window is hidden (nobody is watching the badges) and
+  // caught up the moment it shows again.
   useEffect(() => {
-    void repoActions.refreshCiStatuses(repo.path)
-    // Poll at 60s (not 15s): each tick can fan out up to ~40 check-run requests,
-    // so 15s blew through GitHub's 5000/hr authenticated limit on busy repos.
-    const id = setInterval(() => void repoActions.refreshCiStatuses(repo.path), 60000)
-    return () => clearInterval(id)
+    const refreshIfShown = (): void => {
+      if (document.visibilityState === 'visible') void repoActions.refreshCiStatuses(repo.path)
+    }
+    refreshIfShown()
+    const id = setInterval(refreshIfShown, 60000)
+    document.addEventListener('visibilitychange', refreshIfShown)
+    return () => {
+      clearInterval(id)
+      document.removeEventListener('visibilitychange', refreshIfShown)
+    }
   }, [repo.path, repo.commits.length])
 
   // Local-CI verdicts (git notes) — a single local read, refreshed with the log.

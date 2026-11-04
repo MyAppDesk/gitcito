@@ -6424,6 +6424,14 @@ export const gitService = {
     newBranch: boolean,
     startPoint?: string
   ): Promise<void> {
+    // git's own "already exists" fatal is terse; refuse an occupied target
+    // first with a message that names the problem. An existing empty folder
+    // is still fine — `git worktree add` accepts it.
+    const target = isAbsolute(path) ? path : resolvePath(repoPath, path)
+    const existing = await readdir(target).catch(() => null)
+    if (existing && existing.length > 0) {
+      throw new Error(`Worktree folder is not empty: ${path}`)
+    }
     const args = ['worktree', 'add']
     if (newBranch) {
       args.push('-b', branch, path)

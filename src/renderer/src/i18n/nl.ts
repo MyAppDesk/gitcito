@@ -3445,6 +3445,7 @@ export const nl: Dict = {
   'modal.worktreeBranchBusy': '{base} is al uitgecheckt — open de bijbehorende worktree of maak een nieuwe branch.',
   'modal.worktreeBranchClash': 'Er bestaat al een branch met de naam "{branch}".',
   'modal.worktreeFolder': 'Worktree-map',
+  'modal.worktreeDirUsed': 'In deze map staat al een worktree.',
   'modal.worktreeBrowseTitle': 'Kies de worktree-map',
   'modal.worktreeOpenAfter': 'Open de worktree zodra deze is aangemaakt',
   'modal.createRepository': 'Repository aanmaken',

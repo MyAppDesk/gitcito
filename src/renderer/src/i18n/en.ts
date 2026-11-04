@@ -3441,6 +3441,7 @@ export const en = {
   'modal.worktreeBranchBusy': '{base} is already checked out — open its worktree instead, or create a new branch.',
   'modal.worktreeBranchClash': 'A branch named "{branch}" already exists.',
   'modal.worktreeFolder': 'Worktree folder',
+  'modal.worktreeDirUsed': 'A worktree already lives in this folder.',
   'modal.worktreeBrowseTitle': 'Choose the worktree folder',
   'modal.worktreeOpenAfter': 'Open the worktree when done',
   'modal.createRepository': 'Create repository',

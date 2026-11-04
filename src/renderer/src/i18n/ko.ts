@@ -3437,6 +3437,7 @@ export const ko: Dict = {
   'modal.worktreeBranchBusy': '{base}는 이미 체크아웃되어 있습니다. 대신 해당 worktree를 열거나 새 브랜치를 만드세요.',
   'modal.worktreeBranchClash': '"{branch}"라는 이름의 브랜치가 이미 존재합니다.',
   'modal.worktreeFolder': 'worktree 폴더',
+  'modal.worktreeDirUsed': '이 폴더에 이미 worktree가 있습니다.',
   'modal.worktreeBrowseTitle': 'worktree 폴더 선택',
   'modal.worktreeOpenAfter': '완료되면 worktree 열기',
   'modal.createRepository': '저장소 만들기',

@@ -117,6 +117,10 @@ export type ModalSpec =
       locals: string[]
       /** Branches already checked out in some worktree — cannot be reused. */
       busyBranches: string[]
+      /** Registered worktree folders — used to warn when one is picked again. */
+      worktreePaths: string[]
+      /** Suggested folder for a branch — follows the repo's existing convention. */
+      suggestDir: (branch: string) => string
     }
   | {
       kind: 'diverged-checkout'

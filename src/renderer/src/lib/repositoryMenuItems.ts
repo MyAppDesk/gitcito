@@ -77,16 +77,24 @@ function promptNewWorktree(path: string): void {
   const repo = useRepoStore.getState().repos[path]
   if (!repo) return
   const segs = path.split(/[/\\]/).filter(Boolean)
+  const repoName = segs[segs.length - 1]
+  const parent = segs.slice(0, -1).join('/')
+  const wtParent = `${parent}/${repoName}.worktrees`
+  const nested = repo.worktrees.some((w) => w.path.replace(/\\/g, '/').startsWith(`${wtParent}/`))
   useUIStore.getState().openModal({
     kind: 'add-worktree',
     path,
-    repoName: segs[segs.length - 1],
+    repoName,
     current: repo.branches.current,
     locals: repo.branches.locals.map((b) => b.name),
     busyBranches: [
       repo.branches.current,
       ...repo.worktrees.map((w) => w.branch).filter((b): b is string => Boolean(b))
-    ]
+    ],
+    worktreePaths: repo.worktrees.map((w) => w.path),
+    suggestDir: nested
+      ? (b) => `${wtParent}/${b}`
+      : (b) => `${parent}/${repoName}--${b.replace(/[^\w.-]+/g, '-')}`
   })
 }
 

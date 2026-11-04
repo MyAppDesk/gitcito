@@ -3377,6 +3377,7 @@ export const ja: Dict = {
   'modal.worktreeBranchBusy': '{base} はすでにチェックアウトされています。代わりにその worktree を開くか、新しいブランチを作成してください。',
   'modal.worktreeBranchClash': '「{branch}」という名前のブランチはすでに存在します。',
   'modal.worktreeFolder': 'worktree フォルダー',
+  'modal.worktreeDirUsed': 'このフォルダーにはすでに worktree があります。',
   'modal.worktreeBrowseTitle': 'worktree フォルダーを選択',
   'modal.worktreeOpenAfter': '作成後に worktree を開く',
   'modal.createRepository': 'リポジトリを作成',

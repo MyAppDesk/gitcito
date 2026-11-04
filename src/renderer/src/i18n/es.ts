@@ -3440,6 +3440,7 @@ export const es: Dict = {
   'modal.worktreeBranchBusy': '{base} ya está extraída — abre su worktree o crea una rama nueva.',
   'modal.worktreeBranchClash': 'Ya existe una rama llamada "{branch}".',
   'modal.worktreeFolder': 'Carpeta del worktree',
+  'modal.worktreeDirUsed': 'Ya hay un worktree en esta carpeta.',
   'modal.worktreeBrowseTitle': 'Elegir la carpeta del worktree',
   'modal.worktreeOpenAfter': 'Abrir el worktree al terminar',
   'modal.createRepository': 'Crear repositorio',

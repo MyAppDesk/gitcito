@@ -37,6 +37,11 @@ Gitcito only ever runs a command you configured as an account, always with an
 argument list rather than a shell, so nothing in a diff or a branch name can be
 interpreted as a command.
 
+Each call starts the CLI with the repository as its working directory, so
+agent CLIs like Devin can open the files you are asking about instead of
+answering blind. Features that have no repository (theme generation, the
+account test button) run it from the app's own directory.
+
 > **This is not more private than an API key.** Your prompts still reach the
 > same vendor, under your own account, exactly as they would with a key. What
 > changes is billing and setup, not where the text goes.

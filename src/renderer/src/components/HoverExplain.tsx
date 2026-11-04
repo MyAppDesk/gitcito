@@ -93,6 +93,8 @@ export function useHoverExplain(opts: {
   file: string
   lang: string
   modifier: HoverModifier
+  /** Repo root — CLI transports run the call there so the agent can read the file. */
+  repoPath?: string
   /** The lines the viewer is showing, with their real file line numbers. */
   getLines: () => NumberedLine[]
   /** The file line number for the row an element sits in. */
@@ -160,7 +162,7 @@ export function useHoverExplain(opts: {
     try {
       const result = await aiApi.hoverExplain(
         { path: state.current.file, lang: state.current.lang, token: target.token, line: target.line, lines },
-        useSettingsStore.getState().aiFor('explain')
+        { ...useSettingsStore.getState().aiFor('explain'), cliCwd: state.current.repoPath }
       )
       if (seq !== requestSeq.current) return
       setCard({ target, status: 'ready', result, error: '' })
@@ -185,7 +187,7 @@ export function useHoverExplain(opts: {
       const text = await aiApi.explainCode(
         `Focus on "${target.token}" (line ${target.line}).\n\n${snippet}`,
         state.current.lang,
-        useSettingsStore.getState().aiFor('explain')
+        { ...useSettingsStore.getState().aiFor('explain'), cliCwd: state.current.repoPath }
       )
       setDetail({ loading: false, markdown: text, error: '' })
     } catch (err) {

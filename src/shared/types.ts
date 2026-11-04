@@ -1162,6 +1162,10 @@ export interface AIConfig {
   /** `cli` transport only. */
   cli?: AICliBinary
   cliPath?: string
+  /** `cli` transport only: working directory for the call — the repo the
+   *  feature is about, so agent CLIs (devin, claude, codex) can read its files.
+   *  Renderer stamps it per call; never persisted with the account. */
+  cliCwd?: string
   commitStyle: CommitStyle
   explainStyle: ExplainStyle
   conflictStyle: ConflictStyle

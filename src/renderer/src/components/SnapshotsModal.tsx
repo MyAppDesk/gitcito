@@ -243,7 +243,7 @@ export function SnapshotsModal({ repoPath }: { repoPath: string }): React.JSX.El
                 </div>
                 <div className="snapshot-diff">
                   {selFile ? (
-                    <DiffViewer diff={diff} file={selFile} maskValues={maskSecrets && isSecretFile(selFile)} />
+                    <DiffViewer diff={diff} file={selFile} maskValues={maskSecrets && isSecretFile(selFile)} repoPath={repoPath} />
                   ) : (
                     <p className="settings-hint" style={{ padding: 10 }}>{t('snapshots.selectFile')}</p>
                   )}

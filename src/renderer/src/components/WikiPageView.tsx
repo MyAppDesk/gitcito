@@ -83,7 +83,7 @@ export function WikiPageView({ repoPath }: { repoPath: string }): React.JSX.Elem
     setGenerating(true)
     setProgress({ phase: 'planning' })
     try {
-      const fresh = await wikiApi.generate(repoPath, aiFor('wiki'))
+      const fresh = await wikiApi.generate(repoPath, { ...aiFor('wiki'), cliCwd: repoPath })
       setWiki(fresh)
       setFreshness('current')
       setSlug(fresh.pages[0]?.slug ?? null)

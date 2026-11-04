@@ -445,7 +445,7 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
     setExplaining(true)
     setExplain(null)
     try {
-      const text = await aiApi.explainCode(snippet, lang, useSettingsStore.getState().aiFor('explain'))
+      const text = await aiApi.explainCode(snippet, lang, { ...useSettingsStore.getState().aiFor('explain'), cliCwd: repoPath })
       setExplain(text || t('explain.empty'))
     } catch (err) {
       setExplain(null)
@@ -467,6 +467,7 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
     file,
     lang,
     modifier: hoverExplainKey,
+    repoPath,
     getLines: hoverLines,
     lineOf: (el) => {
       const no = el.closest('.code-line, .blame-line')?.querySelector('.code-no')?.textContent
@@ -933,6 +934,7 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
             highlightLayers={layers}
             maskValues={maskOn}
             ignoreWs={ignoreWs}
+            repoPath={repoPath}
             onToggleIgnoreWs={() => setIgnoreWs((v) => !v)}
             hunkActions={hunkActions}
             busy={hunkPending}

@@ -120,7 +120,7 @@ export function CommitEditModal({
         toast('info', t('commitPanel.nothingToSummarize'))
         return
       }
-      const msg = await aiApi.commitMessage(diff, aiFor('commit'), { branch })
+      const msg = await aiApi.commitMessage(diff, { ...aiFor('commit'), cliCwd: repoPath }, { branch })
       setMessage(msg.description ? `${msg.summary}\n\n${msg.description}` : msg.summary)
       setPreview(null)
       toast('success', t('commitPanel.aiGenerated'))

@@ -999,6 +999,122 @@ function ProviderCreateForm({
   )
 }
 
+function AddWorktreeModal({ spec }: { spec: Extract<ModalSpec, { kind: 'add-worktree' }> }): React.JSX.Element {
+  const t = useT()
+  const closeModal = useUIStore((s) => s.closeModal)
+  const [base, setBase] = useState(spec.current)
+  const [newBranch, setNewBranch] = useState('')
+  // null = the folder field still follows the suggested sibling path.
+  const [dirOverride, setDirOverride] = useState<string | null>(null)
+  const [openAfter, setOpenAfter] = useState(true)
+
+  const slug = (s: string): string => s.replace(/[^\w.-]+/g, '-')
+  const parent = spec.path.slice(0, spec.path.length - spec.repoName.length - 1)
+  const creatingNew = newBranch.trim().length > 0
+  const effectiveBranch = creatingNew ? newBranch.trim() : base
+  const suggestedDir = `${parent}/${spec.repoName}--${slug(effectiveBranch)}`
+  const finalDir = (dirOverride ?? suggestedDir).trim()
+  const baseBusy = spec.busyBranches.includes(base)
+  const branchClash = spec.locals.includes(effectiveBranch) && creatingNew
+  const invalid = !finalDir || (!creatingNew && baseBusy) || branchClash
+
+  // openRepoTab needs an absolute path — resolve ../ against the repo parent.
+  const resolvedDir = (): string => {
+    if (/^([a-zA-Z]:[\\/]|\\\\|\/)/.test(finalDir)) return finalDir
+    const out: string[] = []
+    for (const seg of `${parent}/${finalDir}`.split(/[\\/]+/)) {
+      if (seg === '..') out.pop()
+      else if (seg && seg !== '.') out.push(seg)
+    }
+    return out.join('/')
+  }
+
+  const browse = async (): Promise<void> => {
+    const picked = await window.api.selectDirectory(t('modal.worktreeBrowseTitle'))
+    if (picked) setDirOverride(picked)
+  }
+
+  const submit = (): void => {
+    if (invalid) return
+    closeModal()
+    void repoActions
+      .worktreeAdd(spec.path, finalDir, effectiveBranch, creatingNew, creatingNew ? base : undefined)
+      .then((ok) => {
+        if (!ok || !openAfter) return
+        useSettingsStore
+          .getState()
+          .openRepoTab({ path: resolvedDir(), name: `${spec.repoName} · ${effectiveBranch}` })
+      })
+  }
+
+  const onKey = (e: React.KeyboardEvent): void => {
+    if (e.key === 'Enter') submit()
+    if (e.key === 'Escape') closeModal()
+  }
+
+  return (
+    <>
+      <h3 className="modal-title-row">
+        <FolderGit2 size={17} /> {t('sidebar.addWorktree')}
+      </h3>
+
+      <label className="modal-label">{t('modal.worktreeBaseBranch')}</label>
+      <select className="modal-input" value={base} onChange={(e) => setBase(e.target.value)} onKeyDown={onKey}>
+        {spec.locals.map((b) => (
+          <option key={b} value={b}>
+            {b}
+          </option>
+        ))}
+      </select>
+
+      <label className="modal-label">{t('modal.worktreeNewBranch')}</label>
+      <input
+        autoFocus
+        className="modal-input"
+        value={newBranch}
+        placeholder={t('modal.branchNamePlaceholder')}
+        onChange={(e) => setNewBranch(e.target.value)}
+        onKeyDown={onKey}
+      />
+      {creatingNew ? (
+        <div className="modal-hint">{interp(t('modal.worktreeNewBranchFrom'), { base })}</div>
+      ) : (
+        <div className={`modal-hint ${baseBusy ? 'danger' : ''}`}>
+          {baseBusy ? interp(t('modal.worktreeBranchBusy'), { base }) : interp(t('modal.worktreeNewBranchHint'), { base })}
+        </div>
+      )}
+      {branchClash && <div className="modal-hint danger">{interp(t('modal.worktreeBranchClash'), { branch: effectiveBranch })}</div>}
+
+      <label className="modal-label">{t('modal.worktreeFolder')}</label>
+      <div className="repo-org-row">
+        <input
+          className="modal-input"
+          value={dirOverride ?? suggestedDir}
+          onChange={(e) => setDirOverride(e.target.value)}
+          onKeyDown={onKey}
+        />
+        <button className="btn ghost" onClick={() => void browse()} type="button">
+          {t('modal.browse')}
+        </button>
+      </div>
+
+      <label className="clone-partial">
+        <input type="checkbox" checked={openAfter} onChange={(e) => setOpenAfter(e.target.checked)} />
+        <span>{t('modal.worktreeOpenAfter')}</span>
+      </label>
+
+      <div className="modal-actions">
+        <button className="btn ghost" onClick={closeModal} type="button">
+          {t('common.cancel')}
+        </button>
+        <button className="btn primary" disabled={invalid} onClick={submit} type="button">
+          {t('common.add')}
+        </button>
+      </div>
+    </>
+  )
+}
+
 function AddRemoteModal({ spec }: { spec: Extract<ModalSpec, { kind: 'addRemote' }> }): React.JSX.Element {
   const t = useT()
   const closeModal = useUIStore((s) => s.closeModal)
@@ -1931,6 +2047,7 @@ export function ModalHost(): React.JSX.Element {
             {modal.kind === 'diverged-checkout' && <DivergedCheckoutModal spec={modal} />}
             {modal.kind === 'ahead-checkout' && <AheadCheckoutModal spec={modal} />}
             {modal.kind === 'addRemote' && <AddRemoteModal spec={modal} />}
+            {modal.kind === 'add-worktree' && <AddWorktreeModal spec={modal} />}
             {modal.kind === 'editRemote' && <EditRemoteModal spec={modal} />}
             {modal.kind === 'clone' && <CloneModal spec={modal} />}
             {modal.kind === 'settings' && <SettingsPanel initialPage={modal.page} initialThemeTab={modal.themeTab} />}

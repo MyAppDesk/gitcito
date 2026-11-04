@@ -58,6 +58,64 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
   )
   term.open(container)
 
+  // Clipboard. xterm copies and pastes through DOM 'copy'/'paste' events,
+  // which on Windows/Linux nothing ever emits — the frameless window carries
+  // no Edit menu for the OS to route them through. Drive the same handlers
+  // from the keyboard and the mouse instead.
+  const copySelectionToClipboard = (): boolean => {
+    if (!term.hasSelection()) return false
+    void navigator.clipboard.writeText(term.getSelection())
+    return true
+  }
+  const pasteFromClipboard = (): void => {
+    void navigator.clipboard.readText().then(
+      (text) => {
+        if (!text || !term.element) return
+        const data = new DataTransfer()
+        data.setData('text/plain', text)
+        // Route through xterm's own paste listener so multi-line text gets the
+        // same sanitising and bracketed-paste treatment as an OS-level paste.
+        term.element.dispatchEvent(
+          new ClipboardEvent('paste', { clipboardData: data, bubbles: true, cancelable: true })
+        )
+      },
+      () => undefined
+    )
+  }
+  term.attachCustomKeyEventHandler((e) => {
+    if (e.type !== 'keydown' || e.metaKey || e.altKey) return true
+    if (e.ctrlKey && e.code === 'KeyC') {
+      // Ctrl+Shift+C always copies; a bare Ctrl+C only steals the key while a
+      // selection exists, so it keeps meaning SIGINT otherwise.
+      if (e.shiftKey) {
+        copySelectionToClipboard()
+        return false
+      }
+      return !copySelectionToClipboard()
+    }
+    if (e.ctrlKey && e.shiftKey && e.code === 'KeyV') {
+      pasteFromClipboard()
+      return false
+    }
+    if (e.code === 'Insert') {
+      if (e.shiftKey && !e.ctrlKey) {
+        pasteFromClipboard()
+        return false
+      }
+      if (e.ctrlKey && !e.shiftKey) {
+        copySelectionToClipboard()
+        return false
+      }
+    }
+    return true
+  })
+  container.addEventListener('contextmenu', (e) => {
+    // Windows Terminal style: right-click copies the selection, or pastes
+    // when there is none.
+    e.preventDefault()
+    if (!copySelectionToClipboard()) pasteFromClipboard()
+  })
+
   const isLaunch = launchId != null
   const cleanups: (() => void)[] = []
 

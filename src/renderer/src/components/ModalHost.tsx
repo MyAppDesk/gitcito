@@ -422,7 +422,7 @@ function CreateBranchModal({ spec }: { spec: Extract<ModalSpec, { kind: 'create-
     if (!description.trim() || aiBusy) return
     setAiBusy(true)
     try {
-      const suggested = await aiApi.generateBranchName(description.trim(), aiFor('commit'), {
+      const suggested = await aiApi.generateBranchName(description.trim(), { ...aiFor('commit'), cliCwd: spec.path }, {
         username: profile.gitName || undefined
       })
       if (suggested.trim()) setName(suggested.trim())

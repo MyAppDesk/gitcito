@@ -59,7 +59,7 @@ export function AIPRReview({
           setLoading(false)
           return
         }
-        const result = await aiApi.reviewPR(diff.diff, aiFor('review'))
+        const result = await aiApi.reviewPR(diff.diff, { ...aiFor('review'), cliCwd: repoPath })
         setSummary(result.summary)
         setRisks(result.risks)
         setSuggestions(result.suggestions)

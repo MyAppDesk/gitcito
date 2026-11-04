@@ -496,7 +496,7 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
             const guard = await planGuardSnapshot(repoPath, actions)
             execution = await executeRepoChatActions(repoPath, actions)
             if (guard) execution = { ...execution, snapshot: guard }
-            void finalizeActions(repoPath, message.id, execution, resolveAI(profile.ai, 'chat'))
+            void finalizeActions(repoPath, message.id, execution, { ...resolveAI(profile.ai, 'chat'), cliCwd: repoPath })
             if (execution.error) throw new Error(execution.error.detail ?? execution.error.code)
           },
           undefined,
@@ -605,7 +605,7 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
     const content = draft.trim()
     if (!canSubmitRepoChat(profile.ai.enabled !== false, pending, content)) return
     setDraft('')
-    void send(repoPath, content, resolveAI(profile.ai, 'chat'))
+    void send(repoPath, content, { ...resolveAI(profile.ai, 'chat'), cliCwd: repoPath })
   }
 
   const resolveImg = (ref: string): Promise<string | null> => {
@@ -829,7 +829,7 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
             {thread?.error && !pending && (
               <div className="repo-chat-error" role="alert">
                 <span>{thread.error}</span>
-                <button type="button" className="btn ghost small" onClick={() => void retry(repoPath, resolveAI(profile.ai, 'chat'))}>
+                <button type="button" className="btn ghost small" onClick={() => void retry(repoPath, { ...resolveAI(profile.ai, 'chat'), cliCwd: repoPath })}>
                   <RotateCcw size={12} /> {t('chat.retry')}
                 </button>
               </div>

@@ -50,7 +50,7 @@ export function CreatePRModal({ spec }: { spec: Extract<ModalSpec, { kind: 'crea
     try {
       const cmp = await gitApi.compareBranches(spec.repoPath, source, target)
       const commits = cmp.aheadCommits.map((c) => `- ${c.subject}`).join('\n')
-      const { title: t, body: b } = await aiApi.prDescription(commits, cmp.diff, aiFor('review'))
+      const { title: t, body: b } = await aiApi.prDescription(commits, cmp.diff, { ...aiFor('review'), cliCwd: spec.repoPath })
       if (t) {
         titleTouched.current = true
         setTitle(t)

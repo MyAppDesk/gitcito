@@ -173,7 +173,7 @@ export function BranchComparison({
             <div className="bc-diff-title">{interp(t('compare.combinedDiff'), { b, a })}</div>
             {result.diff.trim() ? (
               <div className="bc-diff-scroll">
-                <DiffViewer diff={result.diff} />
+                <DiffViewer diff={result.diff} repoPath={repoPath} />
               </div>
             ) : (
               <div className="bc-empty">{t('compare.noDiff')}</div>

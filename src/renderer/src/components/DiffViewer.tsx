@@ -104,6 +104,7 @@ export function DiffViewer({
   highlightLayers = [],
   maskValues = false,
   ignoreWs = false,
+  repoPath,
   onToggleIgnoreWs,
   hunkActions = [],
   busy = false
@@ -117,6 +118,8 @@ export function DiffViewer({
   maskValues?: boolean
   /** Whether the diff was fetched ignoring whitespace (drives the toggle state). */
   ignoreWs?: boolean
+  /** Repo root — lets CLI AI transports run hover-explain inside the repo. */
+  repoPath?: string
   /** Re-fetch the diff with/without `-w`. When absent, the toggle is hidden. */
   onToggleIgnoreWs?: () => void
   /** Hunk/line actions for this diff; none means a read-only diff. */
@@ -147,6 +150,7 @@ export function DiffViewer({
     file,
     lang,
     modifier: hoverKey,
+    repoPath,
     getLines: () => hoverLines,
     lineOf: (el) => {
       const row = el.closest('.diff-line, .diff-split-cell')

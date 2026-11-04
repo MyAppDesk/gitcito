@@ -140,7 +140,7 @@ export function AIConfigWizard({
   const toast = useUIStore((s) => s.toast)
   const activeProfileId = useSettingsStore((s) => s.settings.activeProfileId)
   const profiles = useSettingsStore((s) => s.settings.profiles)
-  const aiCfg: AIConfig = resolveAI((profiles.find((p) => p.id === activeProfileId) ?? profiles[0]).ai, 'chat')
+  const aiCfg: AIConfig = { ...resolveAI((profiles.find((p) => p.id === activeProfileId) ?? profiles[0]).ai, 'chat'), cliCwd: spec.repoPath }
 
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1)
 

@@ -694,7 +694,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
     setAiBusy(true)
     try {
       const stagedDiff = await gitApi.stagedDiff(path)
-      const msg = await aiApi.commitMessage(stagedDiff, aiFor('commit'), { branch: repo.branches.current })
+      const msg = await aiApi.commitMessage(stagedDiff, { ...aiFor('commit'), cliCwd: repo.path }, { branch: repo.branches.current })
       setSummary(msg.summary)
       setDescription(msg.description)
       toast('success', t('composer.aiGenerated'))
@@ -710,7 +710,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
     setAiStageBusy(true)
     try {
       const files = unstaged.map((f) => ({ path: f.path, status: f.status }))
-      const result = await aiApi.smartStage(files, aiFor('commit'))
+      const result = await aiApi.smartStage(files, { ...aiFor('commit'), cliCwd: repo.path })
       if (result.toStage.length === 0) {
         toast('info', t('composer.smartStageNothing'))
         return

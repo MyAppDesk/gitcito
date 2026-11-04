@@ -223,6 +223,8 @@ export function clearCredentialCache(): void {
   inFlight.clear()
   blocked.clear()
   ghStatus = null
+  ghCliToken = null
+  githubTokenRejected = false
 }
 
 /**
@@ -246,6 +248,48 @@ export async function apiToken(
   if (configured?.trim()) return { token: configured.trim() }
   const cred = await credentialFor(remoteUrl, opts)
   return cred ? { token: cred.password, cred } : null
+}
+
+// The GitHub CLI login, read once per session for the public release calls below.
+let ghCliToken: Promise<string | null> | null = null
+function githubCliToken(): Promise<string | null> {
+  ghCliToken ??= new Promise((resolve) => {
+    execFile('gh', ['auth', 'token', '--hostname', 'github.com'], { timeout: TIMEOUT_SILENT_MS }, (err, stdout) =>
+      resolve(err ? null : stdout.trim() || null)
+    )
+  })
+  return ghCliToken
+}
+
+/**
+ * GET a public api.github.com URL, signed in with the GitHub CLI login when there
+ * is one. Anonymous calls share 60 an hour per network address with every other
+ * app on it; signed-in calls get the account's own 5,000. Only the CLI login is
+ * used (no credential-helper lookup), so a background check never touches the
+ * Keychain, and a token GitHub rejects is not offered again this session.
+ */
+let githubTokenRejected = false
+export async function githubPublicGet(url: string, timeoutMs = 8000): Promise<Response> {
+  const headers: Record<string, string> = { Accept: 'application/vnd.github+json', 'User-Agent': 'gitcito' }
+  const target = new URL(url)
+  const signed = target.protocol === 'https:' && target.hostname === 'api.github.com' && !githubTokenRejected
+  // The CLI lookup gets a short budget of its own so it can't eat the request's timeout.
+  const token = signed
+    ? await Promise.race([
+        githubCliToken(),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 2000))
+      ])
+    : null
+  if (token) {
+    const res = await fetch(url, {
+      headers: { ...headers, Authorization: `Bearer ${token}` },
+      signal: AbortSignal.timeout(timeoutMs)
+    })
+    const rateLimited = res.headers.get('x-ratelimit-remaining') === '0'
+    if (res.status !== 401 && !(res.status === 403 && !rateLimited)) return res
+    githubTokenRejected = true
+  }
+  return fetch(url, { headers, signal: AbortSignal.timeout(timeoutMs) })
 }
 
 /** Whether any credential helper is configured at all — used to explain the setup state. */

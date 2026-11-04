@@ -1122,22 +1122,20 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     }
   ]
 
-  const addWorktree = (): void =>
+  const addWorktree = (): void => {
+    const segs = path.split(/[/\\]/).filter(Boolean)
     openModal({
-      kind: 'input',
-      title: t('sidebar.addWorktree'),
-      label: t('sidebar.addWorktreeLabel'),
-      placeholder: t('sidebar.addWorktreePlaceholder'),
-      submitLabel: t('common.add'),
-      onSubmit: (value) => {
-        const parts = value.trim().split(/\s+/)
-        const dir = parts[0]
-        const branch = parts[1] ?? repo.branches.current
-        if (!dir) return
-        const isExisting = repo.branches.locals.some((b) => b.name === branch)
-        void repoActions.worktreeAdd(path, dir, branch, !isExisting)
-      }
+      kind: 'add-worktree',
+      path,
+      repoName: segs[segs.length - 1],
+      current: repo.branches.current,
+      locals: repo.branches.locals.map((b) => b.name),
+      busyBranches: [
+        repo.branches.current,
+        ...repo.worktrees.map((w) => w.branch).filter((b): b is string => Boolean(b))
+      ]
     })
+  }
 
   const addRemote = (): void =>
     openModal({

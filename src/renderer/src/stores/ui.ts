@@ -109,6 +109,16 @@ export type ModalSpec =
       pushUrl?: string
     }
   | {
+      kind: 'add-worktree'
+      path: string
+      repoName: string
+      /** Currently checked-out branch — the default base. */
+      current: string
+      locals: string[]
+      /** Branches already checked out in some worktree — cannot be reused. */
+      busyBranches: string[]
+    }
+  | {
       kind: 'diverged-checkout'
       localName: string
       fullName: string

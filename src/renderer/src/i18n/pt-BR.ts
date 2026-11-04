@@ -3445,6 +3445,7 @@ export const ptBR: Dict = {
   'modal.worktreeBranchBusy': '{base} já tem checkout — abra o worktree correspondente ou crie um novo branch.',
   'modal.worktreeBranchClash': 'Já existe um branch chamado "{branch}".',
   'modal.worktreeFolder': 'Pasta do worktree',
+  'modal.worktreeDirUsed': 'Já existe um worktree nesta pasta.',
   'modal.worktreeBrowseTitle': 'Escolher a pasta do worktree',
   'modal.worktreeOpenAfter': 'Abrir o worktree ao concluir',
   'modal.createRepository': 'Criar repositório',

@@ -3436,6 +3436,7 @@ export const pl: Dict = {
   'modal.worktreeBranchBusy': 'Gałąź {base} jest już wyewidencjonowana — otwórz jej worktree albo utwórz nową gałąź.',
   'modal.worktreeBranchClash': 'Gałąź o nazwie „{branch}” już istnieje.',
   'modal.worktreeFolder': 'Folder worktree',
+  'modal.worktreeDirUsed': 'W tym folderze istnieje już worktree.',
   'modal.worktreeBrowseTitle': 'Wybierz folder worktree',
   'modal.worktreeOpenAfter': 'Otwórz worktree po utworzeniu',
   'modal.createRepository': 'Utwórz repozytorium',

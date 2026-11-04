@@ -3436,6 +3436,7 @@ export const uk: Dict = {
   'modal.worktreeBranchBusy': 'Гілку {base} уже вивантажено — відкрийте її worktree або створіть нову гілку.',
   'modal.worktreeBranchClash': 'Гілка з назвою «{branch}» уже існує.',
   'modal.worktreeFolder': 'Тека worktree',
+  'modal.worktreeDirUsed': 'У цій теці вже є worktree.',
   'modal.worktreeBrowseTitle': 'Виберіть теку worktree',
   'modal.worktreeOpenAfter': 'Відкрити worktree після створення',
   'modal.createRepository': 'Створити репозиторій',

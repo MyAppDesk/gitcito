@@ -3444,6 +3444,7 @@ export const de: Dict = {
   'modal.worktreeBranchBusy': '{base} ist bereits ausgecheckt — öffne stattdessen dessen Worktree oder erstelle einen neuen Branch.',
   'modal.worktreeBranchClash': 'Ein Branch mit dem Namen „{branch}“ existiert bereits.',
   'modal.worktreeFolder': 'Worktree-Ordner',
+  'modal.worktreeDirUsed': 'In diesem Ordner existiert bereits ein Worktree.',
   'modal.worktreeBrowseTitle': 'Worktree-Ordner wählen',
   'modal.worktreeOpenAfter': 'Worktree nach dem Erstellen öffnen',
   'modal.createRepository': 'Repository erstellen',

@@ -1124,16 +1124,28 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
 
   const addWorktree = (): void => {
     const segs = path.split(/[/\\]/).filter(Boolean)
+    const repoName = segs[segs.length - 1]
+    const parent = segs.slice(0, -1).join('/')
+    // Follow the repo's own convention: when worktrees already live under a
+    // sibling "<repo>.worktrees" folder, keep suggesting inside it (branch
+    // slashes become nested dirs, e.g. ui/redesign). Otherwise the
+    // openInWorktree sibling "<repo>--<branch>" shape.
+    const wtParent = `${parent}/${repoName}.worktrees`
+    const nested = repo.worktrees.some((w) => w.path.replace(/\\/g, '/').startsWith(`${wtParent}/`))
     openModal({
       kind: 'add-worktree',
       path,
-      repoName: segs[segs.length - 1],
+      repoName,
       current: repo.branches.current,
       locals: repo.branches.locals.map((b) => b.name),
       busyBranches: [
         repo.branches.current,
         ...repo.worktrees.map((w) => w.branch).filter((b): b is string => Boolean(b))
-      ]
+      ],
+      worktreePaths: repo.worktrees.map((w) => w.path),
+      suggestDir: nested
+        ? (b) => `${wtParent}/${b}`
+        : (b) => `${parent}/${repoName}--${b.replace(/[^\w.-]+/g, '-')}`
     })
   }
 

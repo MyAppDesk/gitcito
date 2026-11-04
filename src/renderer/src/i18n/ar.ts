@@ -3439,6 +3439,7 @@ export const ar: Dict = {
   'modal.worktreeBranchBusy': '{base} مسحوب بالفعل — افتح worktree الخاص به بدلاً من ذلك، أو أنشئ فرعاً جديداً.',
   'modal.worktreeBranchClash': 'يوجد بالفعل فرع باسم "{branch}".',
   'modal.worktreeFolder': 'مجلد worktree',
+  'modal.worktreeDirUsed': 'يوجد worktree في هذا المجلد بالفعل.',
   'modal.worktreeBrowseTitle': 'اختر مجلد worktree',
   'modal.worktreeOpenAfter': 'فتح worktree عند الانتهاء',
   'modal.createRepository': 'إنشاء مستودع',

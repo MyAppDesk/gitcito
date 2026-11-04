@@ -3439,6 +3439,7 @@ export const he: Dict = {
   'modal.worktreeBranchBusy': '{base} כבר מצוי ב-checkout — פתח את ה-worktree שלו במקום, או צור ענף חדש.',
   'modal.worktreeBranchClash': 'כבר קיים ענף בשם "{branch}".',
   'modal.worktreeFolder': 'תיקיית ה-worktree',
+  'modal.worktreeDirUsed': 'כבר קיים worktree בתיקייה הזו.',
   'modal.worktreeBrowseTitle': 'בחר תיקיית worktree',
   'modal.worktreeOpenAfter': 'פתח את ה-worktree בסיום',
   'modal.createRepository': 'יצירת מאגר',

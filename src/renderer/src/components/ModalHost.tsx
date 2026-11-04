@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { X, Globe, Github, Gitlab, Cloud, Server, Loader2, Search, Lock, FolderGit2, Folder, Plus, Check, ChevronDown, ChevronRight, RefreshCw, Sparkles, GitMerge, ArrowUpFromLine, TextCursorInput } from 'lucide-react'
+import { X, Globe, Github, Gitlab, Cloud, Server, Loader2, Search, Lock, FolderGit2, Folder, Plus, Check, ChevronDown, ChevronRight, RefreshCw, Sparkles, GitMerge, GitBranch, ArrowUpFromLine, TextCursorInput } from 'lucide-react'
 import { useUIStore, type ModalSpec } from '../stores/ui'
 import { useSettingsStore, GROUP_COLORS } from '../stores/settings'
 import { pickGroupColor } from '../lib/groupColors'
@@ -1002,36 +1002,64 @@ function ProviderCreateForm({
 function AddWorktreeModal({ spec }: { spec: Extract<ModalSpec, { kind: 'add-worktree' }> }): React.JSX.Element {
   const t = useT()
   const closeModal = useUIStore((s) => s.closeModal)
+  const openContextMenu = useUIStore((s) => s.openContextMenu)
   const [base, setBase] = useState(spec.current)
   const [newBranch, setNewBranch] = useState('')
-  // null = the folder field still follows the suggested sibling path.
+  // null = the folder field still follows the suggested path. The Browse button
+  // fills `browseParent`; a typed value fills `dirOverride`.
   const [dirOverride, setDirOverride] = useState<string | null>(null)
+  const [browseParent, setBrowseParent] = useState<string | null>(null)
   const [openAfter, setOpenAfter] = useState(true)
 
-  const slug = (s: string): string => s.replace(/[^\w.-]+/g, '-')
   const parent = spec.path.slice(0, spec.path.length - spec.repoName.length - 1)
   const creatingNew = newBranch.trim().length > 0
   const effectiveBranch = creatingNew ? newBranch.trim() : base
-  const suggestedDir = `${parent}/${spec.repoName}--${slug(effectiveBranch)}`
+  const suggestedDir = browseParent
+    ? `${browseParent}/${effectiveBranch}`
+    : spec.suggestDir(effectiveBranch)
   const finalDir = (dirOverride ?? suggestedDir).trim()
   const baseBusy = spec.busyBranches.includes(base)
   const branchClash = spec.locals.includes(effectiveBranch) && creatingNew
-  const invalid = !finalDir || (!creatingNew && baseBusy) || branchClash
+  const dirUsed = spec.worktreePaths.some(
+    (p) => p.replace(/\\/g, '/').replace(/\/+$/, '') === resolvedDir(finalDir).replace(/\\/g, '/').replace(/\/+$/, '')
+  )
+  const invalid = !finalDir || (!creatingNew && baseBusy) || branchClash || dirUsed
 
   // openRepoTab needs an absolute path — resolve ../ against the repo parent.
-  const resolvedDir = (): string => {
-    if (/^([a-zA-Z]:[\\/]|\\\\|\/)/.test(finalDir)) return finalDir
+  function resolvedDir(d: string): string {
+    if (/^([a-zA-Z]:[\\/]|\\\\|\/)/.test(d)) return d
     const out: string[] = []
-    for (const seg of `${parent}/${finalDir}`.split(/[\\/]+/)) {
+    for (const seg of `${parent}/${d}`.split(/[\\/]+/)) {
       if (seg === '..') out.pop()
       else if (seg && seg !== '.') out.push(seg)
     }
     return out.join('/')
   }
 
+  // A button that opens the app's own menu — a <select> renders with OS chrome
+  // and looks foreign next to the modal's styled inputs.
+  const pickBase = (e: React.MouseEvent): void => {
+    const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    openContextMenu(
+      r.left,
+      r.bottom + 4,
+      spec.locals.map((b) => ({
+        label: b,
+        icon: <GitBranch size={13} />,
+        onClick: () => setBase(b)
+      }))
+    )
+  }
+
   const browse = async (): Promise<void> => {
     const picked = await window.api.selectDirectory(t('modal.worktreeBrowseTitle'))
-    if (picked) setDirOverride(picked)
+    if (picked) {
+      // The chosen folder is the PARENT — the worktree lands in a new
+      // branch-named folder inside it. Picking an existing folder directly is
+      // the classic "already exists" fatal.
+      setBrowseParent(picked.replace(/[\\/]+$/, ''))
+      setDirOverride(null)
+    }
   }
 
   const submit = (): void => {
@@ -1043,7 +1071,7 @@ function AddWorktreeModal({ spec }: { spec: Extract<ModalSpec, { kind: 'add-work
         if (!ok || !openAfter) return
         useSettingsStore
           .getState()
-          .openRepoTab({ path: resolvedDir(), name: `${spec.repoName} · ${effectiveBranch}` })
+          .openRepoTab({ path: resolvedDir(finalDir), name: `${spec.repoName} · ${effectiveBranch}` })
       })
   }
 
@@ -1059,13 +1087,10 @@ function AddWorktreeModal({ spec }: { spec: Extract<ModalSpec, { kind: 'add-work
       </h3>
 
       <label className="modal-label">{t('modal.worktreeBaseBranch')}</label>
-      <select className="modal-input" value={base} onChange={(e) => setBase(e.target.value)} onKeyDown={onKey}>
-        {spec.locals.map((b) => (
-          <option key={b} value={b}>
-            {b}
-          </option>
-        ))}
-      </select>
+      <button type="button" className="modal-input modal-select-btn" onClick={pickBase}>
+        <span>{base}</span>
+        <ChevronDown size={13} />
+      </button>
 
       <label className="modal-label">{t('modal.worktreeNewBranch')}</label>
       <input
@@ -1090,13 +1115,17 @@ function AddWorktreeModal({ spec }: { spec: Extract<ModalSpec, { kind: 'add-work
         <input
           className="modal-input"
           value={dirOverride ?? suggestedDir}
-          onChange={(e) => setDirOverride(e.target.value)}
+          onChange={(e) => {
+            setDirOverride(e.target.value)
+            setBrowseParent(null)
+          }}
           onKeyDown={onKey}
         />
         <button className="btn ghost" onClick={() => void browse()} type="button">
           {t('modal.browse')}
         </button>
       </div>
+      {dirUsed && <div className="modal-hint danger">{t('modal.worktreeDirUsed')}</div>}
 
       <label className="clone-partial">
         <input type="checkbox" checked={openAfter} onChange={(e) => setOpenAfter(e.target.checked)} />

@@ -3436,6 +3436,7 @@ export const zhCN: Dict = {
   'modal.worktreeBranchBusy': '{base} 已被检出 — 请打开它的 worktree，或创建一个新分支。',
   'modal.worktreeBranchClash': '已存在名为 "{branch}" 的分支。',
   'modal.worktreeFolder': 'Worktree 文件夹',
+  'modal.worktreeDirUsed': '此文件夹中已有 worktree。',
   'modal.worktreeBrowseTitle': '选择 worktree 文件夹',
   'modal.worktreeOpenAfter': '完成后打开 worktree',
   'modal.createRepository': '创建仓库',

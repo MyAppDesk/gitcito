@@ -3379,6 +3379,7 @@ export const tr: Dict = {
   'modal.worktreeBranchBusy': '{base} zaten çıkarılmış — bunun yerine ilgili worktree öğesini açın veya yeni bir dal oluşturun.',
   'modal.worktreeBranchClash': '"{branch}" adında bir dal zaten var.',
   'modal.worktreeFolder': 'Worktree klasörü',
+  'modal.worktreeDirUsed': 'Bu klasörde zaten bir worktree var.',
   'modal.worktreeBrowseTitle': 'Worktree klasörünü seçin',
   'modal.worktreeOpenAfter': 'İşlem tamamlanınca worktree aç',
   'modal.createRepository': 'Depo oluştur',

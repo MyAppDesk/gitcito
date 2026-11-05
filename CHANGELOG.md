@@ -1,5 +1,13 @@
 
 
+## [4.17.1](https://github.com/MyAppDesk/gitcito/compare/v4.17.0...v4.17.1) (2026-11-05)
+
+
+### Bug Fixes
+
+* **hosting:** stop re-asking GitHub for CI on every graph poll ([222dae2](https://github.com/MyAppDesk/gitcito/commit/222dae21535ab397cabfaf35fff07a4824532481))
+* **updates:** sign GitHub release calls in and keep the last list ([e7b67ce](https://github.com/MyAppDesk/gitcito/commit/e7b67ce32a8b37a530ff9fd328cf61e7f664a1cc))
+
 ## [4.17.0](https://github.com/MyAppDesk/gitcito/compare/v4.16.0...v4.17.0) (2026-10-31)
 
 

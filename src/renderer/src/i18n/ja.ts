@@ -3382,6 +3382,7 @@ export const ja: Dict = {
   'modal.worktreeDirUsed': 'このフォルダーにはすでに worktree があります。',
   'modal.worktreeBrowseTitle': 'worktree フォルダーを選択',
   'modal.worktreeOpenAfter': '作成後に worktree を開く',
+  'modal.worktreeIndexCodegraph': 'リポジトリがインデックス済みなら codegraph で worktree をインデックス',
   'modal.createRepository': 'リポジトリを作成',
   'modal.createIn': '作成先',
   'modal.creating': '作成しています…',

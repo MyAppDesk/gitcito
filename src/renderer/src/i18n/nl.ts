@@ -3450,6 +3450,7 @@ export const nl: Dict = {
   'modal.worktreeDirUsed': 'In deze map staat al een worktree.',
   'modal.worktreeBrowseTitle': 'Kies de worktree-map',
   'modal.worktreeOpenAfter': 'Open de worktree zodra deze is aangemaakt',
+  'modal.worktreeIndexCodegraph': 'Worktree indexeren met codegraph als de repository geïndexeerd is',
   'modal.createRepository': 'Repository aanmaken',
   'modal.createIn': 'Aanmaken in',
   'modal.creating': 'Aanmaken…',

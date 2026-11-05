@@ -3445,6 +3445,7 @@ export const he: Dict = {
   'modal.worktreeDirUsed': 'כבר קיים worktree בתיקייה הזו.',
   'modal.worktreeBrowseTitle': 'בחר תיקיית worktree',
   'modal.worktreeOpenAfter': 'פתח את ה-worktree בסיום',
+  'modal.worktreeIndexCodegraph': 'אינדוקס ה-worktree עם codegraph אם המאגר מאונדקס',
   'modal.createRepository': 'יצירת מאגר',
   'modal.createIn': 'יצירה בתוך',
   'modal.creating': 'יוצר…',

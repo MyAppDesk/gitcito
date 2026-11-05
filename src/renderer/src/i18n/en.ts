@@ -3446,6 +3446,7 @@ export const en = {
   'modal.worktreeDirUsed': 'A worktree already lives in this folder.',
   'modal.worktreeBrowseTitle': 'Choose the worktree folder',
   'modal.worktreeOpenAfter': 'Open the worktree when done',
+  'modal.worktreeIndexCodegraph': 'Index the worktree with codegraph if the repository is indexed',
   'modal.createRepository': 'Create repository',
   'modal.createIn': 'Create in',
   'modal.creating': 'Creating…',

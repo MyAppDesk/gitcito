@@ -3442,6 +3442,7 @@ export const pl: Dict = {
   'modal.worktreeDirUsed': 'W tym folderze istnieje już worktree.',
   'modal.worktreeBrowseTitle': 'Wybierz folder worktree',
   'modal.worktreeOpenAfter': 'Otwórz worktree po utworzeniu',
+  'modal.worktreeIndexCodegraph': 'Indeksuj worktree za pomocą codegraph, jeśli repozytorium jest zindeksowane',
   'modal.createRepository': 'Utwórz repozytorium',
   'modal.createIn': 'Utwórz w',
   'modal.creating': 'Tworzenie…',

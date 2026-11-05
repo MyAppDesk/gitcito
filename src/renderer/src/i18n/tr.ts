@@ -3385,6 +3385,7 @@ export const tr: Dict = {
   'modal.worktreeDirUsed': 'Bu klasörde zaten bir worktree var.',
   'modal.worktreeBrowseTitle': 'Worktree klasörünü seçin',
   'modal.worktreeOpenAfter': 'İşlem tamamlanınca worktree aç',
+  'modal.worktreeIndexCodegraph': 'Depo dizinlenmişse worktree’yi codegraph ile dizinle',
   'modal.createRepository': 'Depo oluştur',
   'modal.createIn': 'Şurada oluştur',
   'modal.creating': 'Oluşturuluyor…',

@@ -165,6 +165,7 @@ import { recordEvent } from './analytics'
 import { searchFileMatches, supersedeSearch, type FileSearchOptions } from './fileSearch'
 import { recordLog } from './log'
 import { activeProfileToken, readSettings } from './settings'
+import { indexCodegraphAsync } from './codegraph'
 import { applyPreparedRepoFileActions, RepoFileActionError } from './repoFileActions'
 
 const SEP = '\x1f'
@@ -646,24 +647,6 @@ function hasBinary(command: string): boolean {
     return spawnSync(probe, [command], { stdio: 'ignore' }).status === 0
   } catch {
     return false
-  }
-}
-
-/** Index a fresh worktree for codegraph, detached so the git op never waits.
- *  `codegraph` is a .cmd shim on Windows and only resolves through a shell; a
- *  single quoted command string keeps paths-with-spaces intact. */
-function indexCodegraphAsync(dir: string): void {
-  try {
-    const quoted = `"${dir.replace(/"/g, '')}"`
-    spawn(`codegraph init ${quoted}`, {
-      cwd: dir,
-      shell: true,
-      detached: true,
-      stdio: 'ignore',
-      windowsHide: true
-    }).unref()
-  } catch {
-    /* indexing is best-effort */
   }
 }
 
@@ -6485,12 +6468,14 @@ export const gitService = {
     // A worktree is a fresh project root — the parent's .codegraph index does
     // not carry over, so agents opening it find nothing. When the parent is
     // indexed and the CLI is on PATH, index the new tree in the background.
+    // Opt-in only (Settings, or the add-worktree dialog): it runs a third-party CLI.
     if (
+      (await readSettings()).codegraphIndexWorktrees === true &&
       existsSync(resolvePath(repoPath, '.codegraph')) &&
       !existsSync(resolvePath(target, '.codegraph')) &&
       hasBinary('codegraph')
     ) {
-      indexCodegraphAsync(target)
+      indexCodegraphAsync(target, true)
     }
   },
 

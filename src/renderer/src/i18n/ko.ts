@@ -3442,6 +3442,7 @@ export const ko: Dict = {
   'modal.worktreeDirUsed': '이 폴더에 이미 worktree가 있습니다.',
   'modal.worktreeBrowseTitle': 'worktree 폴더 선택',
   'modal.worktreeOpenAfter': '완료되면 worktree 열기',
+  'modal.worktreeIndexCodegraph': '저장소가 인덱싱되어 있으면 codegraph로 worktree 인덱싱',
   'modal.createRepository': '저장소 만들기',
   'modal.createIn': '만들 위치',
   'modal.creating': '만드는 중…',

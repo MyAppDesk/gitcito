@@ -3445,6 +3445,7 @@ export const ar: Dict = {
   'modal.worktreeDirUsed': 'يوجد worktree في هذا المجلد بالفعل.',
   'modal.worktreeBrowseTitle': 'اختر مجلد worktree',
   'modal.worktreeOpenAfter': 'فتح worktree عند الانتهاء',
+  'modal.worktreeIndexCodegraph': 'فهرسة worktree باستخدام codegraph إذا كان المستودع مفهرسًا',
   'modal.createRepository': 'إنشاء مستودع',
   'modal.createIn': 'الإنشاء في',
   'modal.creating': 'جارٍ الإنشاء…',

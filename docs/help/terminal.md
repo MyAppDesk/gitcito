@@ -16,6 +16,9 @@ your aliases.
 - **Multiple tabs per repository**, each starting in that repository's folder.
 - Dock it **under** the graph or as a **right-hand column**; the pane remembers
   its size.
+- Each terminal remembers **where you were reading**: switch terminals, groups
+  or repo tabs and the scrollback stays put — pinned to the bottom when it was
+  already following output, back on the same line when it was not.
 - Terminal visibility is per repository: switching to a tab that never opened one
   keeps it closed.
 - Tabs name themselves after what is running in them.

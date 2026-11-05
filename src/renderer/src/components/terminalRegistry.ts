@@ -1,4 +1,4 @@
-import { Terminal } from '@xterm/xterm'
+import { Terminal, type IMarker } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import { WebLinksAddon } from '@xterm/addon-web-links'
 import { useTermTitlesStore } from '../stores/termTitles'
@@ -8,6 +8,12 @@ export interface TermHandle {
   fit: FitAddon
   container: HTMLDivElement
   ptyId: number | null
+  // Scroll position snapshotted by the host component just before the
+  // container leaves the DOM — the only moment viewportY is guaranteed to
+  // reflect what the user actually saw. Consumed by the next fitSafely.
+  suspendViewportY: number | null
+  suspendAtBottom: boolean
+  suspend(): void
   fitSafely(): void
   pasteText(text: string): void
   dispose(): void
@@ -45,6 +51,7 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     fontFamily: 'SF Mono, JetBrains Mono, Menlo, monospace',
     fontSize: 12.5,
     cursorBlink: true,
+    scrollback: 5000,
     theme: THEME
   })
   const fit = new FitAddon()
@@ -83,6 +90,14 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     )
   }
   term.attachCustomKeyEventHandler((e) => {
+    // Only the keys xterm itself scrolls the viewport with (Shift+PageUp/
+    // PageDown) count as scroll intent. Marking on every keystroke — or on
+    // selection keys — left the intent window open while the user typed, so
+    // any coincidental trim/clamp event was recorded as a "user scroll" and
+    // poisoned the anchor: the spontaneous auto-scrolls afterwards.
+    if (e.type === 'keydown' && e.shiftKey && (e.code === 'PageUp' || e.code === 'PageDown')) {
+      lastUserScrollAt = Date.now()
+    }
     if (e.type !== 'keydown' || e.metaKey || e.altKey) return true
     if (e.ctrlKey && e.code === 'KeyC') {
       // Ctrl+Shift+C always copies; a bare Ctrl+C only steals the key while a
@@ -127,6 +142,254 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
   const isLaunch = launchId != null
   const cleanups: (() => void)[] = []
 
+  // The anchor is the ONLY source of truth for where the user is reading. It
+  // moves on exactly two inputs: a scroll event with a real gesture behind it
+  // (within the lastUserScrollAt window), or output-following (y reaches
+  // baseY). Every other scroll event — DOM scrollTop clamps during resize,
+  // reflow corrections, scrollback trims, our own restores — carries no user
+  // intent and must never touch it. buf.viewportY is explicitly NOT trusted:
+  // xterm collapses it to 0 the moment the DOM offset is clamped, which is
+  // precisely when an anchor is needed.
+  //
+  // A parked line is tracked by an xterm Marker, not the raw index: markers
+  // follow the content through reflow wraps and scrollback trims on their
+  // own, so a long-running command cannot drift the anchor out from under
+  // the reader.
+  type ScrollAnchor = { kind: 'bottom' } | { kind: 'line'; y: number }
+  let anchor: ScrollAnchor = { kind: 'bottom' }
+  let anchorMarker: IMarker | null = null
+  let lastUserScrollAt = 0
+  const markUserScroll = (): void => {
+    lastUserScrollAt = Date.now()
+  }
+  const parkAt = (y: number): void => {
+    anchor = { kind: 'line', y }
+    anchorMarker?.dispose()
+    anchorMarker = null
+    const buf = term.buffer.active
+    // registerMarker anchors at the cursor's absolute line (baseY + cursorY)
+    // plus an offset; the parked viewport line is absolute index y. Alternate
+    // buffers have no scrollback — nothing worth marking.
+    if (buf.type === 'normal') {
+      try {
+        anchorMarker = term.registerMarker(y - buf.baseY - buf.cursorY) ?? null
+      } catch {
+        anchorMarker = null // anchor.y still works; only reflow/trim tracking is lost
+      }
+    }
+  }
+  // If the DOM offset and the buffer disagree, the scroll delta xterm
+  // computes from scrollTop is garbage — reconcile before its own handlers
+  // (wheel deltas, scrollbar drags) can read the stale value. Safe to write:
+  // the scroll event it triggers resolves to a ~0-line scrollLines.
+  const reconcileScrollTop = (): void => {
+    const vp = container.querySelector('.xterm-viewport')
+    if (!(vp instanceof HTMLElement)) return
+    const buf = term.buffer.active
+    const max = vp.scrollHeight - vp.clientHeight
+    if (max <= 0 || buf.baseY <= 0) return
+    const expected = Math.round((buf.viewportY / buf.baseY) * max)
+    // Only repair a STRUCTURAL collapse — an offset pinned to an edge while
+    // the buffer sits elsewhere — never a mere disagreement. The compositor
+    // applies each wheel tick before xterm's scroll event for it is
+    // processed, so the DOM legitimately leads the buffer mid-gesture; a
+    // "helpful" write then stomps the in-flight delta and snaps the viewport
+    // back — the scrolls-down-jumps-up bug. A gesture delta is small and
+    // mid-range; it can never look like stuck-at-edge.
+    const collapsed =
+      (vp.scrollTop <= 2 && expected > 10) || (vp.scrollTop >= max - 2 && expected < max - 10)
+    if (collapsed) vp.scrollTop = expected
+  }
+  // Only reconcile at the START of a gesture. Mid-gesture the DOM scrollTop
+  // legitimately leads the buffer — the browser has already applied the
+  // user's tick but xterm's scroll event for it is still queued — and
+  // "reconciling" then stomps the in-flight delta, which is exactly the
+  // scroll-down-then-jumps-up race. A gap this long means nothing can be in
+  // flight, so a disagreement there is a real collapse worth fixing.
+  let lastGestureAt = 0
+  const gestureStarted = (): boolean => {
+    const now = Date.now()
+    const fresh = now - lastGestureAt > 200
+    lastGestureAt = now
+    markUserScroll()
+    return fresh
+  }
+  container.addEventListener(
+    'wheel',
+    () => {
+      if (gestureStarted()) reconcileScrollTop()
+    },
+    true
+  )
+  // A scrollbar drag is a scroll gesture; a plain click (focus the pane,
+  // place the cursor, start a selection) is not — but marking it as one
+  // opened the intent window for coincidental trim/clamp events to poison
+  // the anchor. Only the pointer landing on the viewport's own scrollbar
+  // track (target === the scroll element itself, near its right edge) and
+  // moves while that drag is held count.
+  let scrollbarDrag = false
+  const isScrollbarHit = (e: PointerEvent): boolean => {
+    const vp = container.querySelector('.xterm-viewport')
+    if (!(vp instanceof HTMLElement) || e.target !== vp) return false
+    return e.clientX >= vp.getBoundingClientRect().right - 20
+  }
+  container.addEventListener(
+    'pointerdown',
+    (e) => {
+      if (!isScrollbarHit(e)) return
+      scrollbarDrag = true
+      if (gestureStarted()) reconcileScrollTop()
+    },
+    true
+  )
+  container.addEventListener(
+    'pointermove',
+    (e) => {
+      if (e.buttons === 0) {
+        scrollbarDrag = false
+        return
+      }
+      if (scrollbarDrag) {
+        markUserScroll()
+        return
+      }
+      // Drag-selecting near the viewport edge makes xterm auto-scroll — those
+      // scroll events are real user intent (unmarking them would let
+      // snap-back fight the selection). Anywhere else a held-button drag is
+      // just text selection and must not open the intent window.
+      const vp = container.querySelector('.xterm-viewport')
+      if (!(vp instanceof HTMLElement)) return
+      const r = vp.getBoundingClientRect()
+      if (e.clientY < r.top + 30 || e.clientY > r.bottom - 30) markUserScroll()
+    },
+    true
+  )
+  // The rendered rows follow buffer.ydisp, but wheel/scrollbar deltas are
+  // computed from the DOM scrollTop — and xterm only syncs scrollTop from
+  // ydisp on a later animation frame. A scrollTop left behind at 0 (detach,
+  // clamp) turns the user's first wheel tick into `amount = 0 - ydisp` and
+  // the viewport jumps to the top while the content looked right. Write the
+  // offset back synchronously: a scroll event from it computes amount ~= 0,
+  // which is a no-op — so this can never fight xterm.
+  const syncDomScrollTop = (line?: number): void => {
+    const vp = container.querySelector('.xterm-viewport')
+    if (!(vp instanceof HTMLElement)) return
+    const buf = term.buffer.active
+    const y = line ?? buf.viewportY
+    const max = vp.scrollHeight - vp.clientHeight
+    if (max <= 0 || buf.baseY <= 0) return
+    const st = Math.round((Math.min(y, buf.baseY) / buf.baseY) * max)
+    if (Math.abs(vp.scrollTop - st) > 2) vp.scrollTop = st
+  }
+
+  // Restore a mid-scroll position after xterm lost it: scrollLines with a
+  // negative amount is the only path that re-arms the buffer's
+  // "user is scrolling" flag — without it the next write drags the viewport
+  // back to the bottom no matter where we scrolled to.
+  const restoreLine = (line: number): void => {
+    const buf = term.buffer.active
+    const target = Math.min(line, buf.baseY)
+    term.scrollToLine(target)
+    if (target < buf.baseY) {
+      term.scrollLines(1)
+      term.scrollToLine(target)
+    }
+    syncDomScrollTop(target)
+  }
+
+  // Where the anchor wants the viewport, against the NORMAL buffer — the
+  // alternate buffer has no scrollback, so anchor math on it is meaningless
+  // and its scroll events are not allowed to touch anything.
+  const anchorTarget = (): number => {
+    const buf = term.buffer.normal
+    if (anchor.kind === 'bottom') return buf.baseY
+    // The marker rode every reflow/trim since the park, so it points at the
+    // same content no matter how the buffer renumbered itself. A disposed
+    // marker means the parked line was trimmed out of scrollback entirely —
+    // anchor.y is a stale index by then (the buffer renumbered), so the top
+    // is the closest valid position left.
+    if (anchorMarker) {
+      if (anchorMarker.isDisposed) return 0
+      return Math.min(anchorMarker.line, buf.baseY)
+    }
+    // Registration failed (or the park predates markers) — the raw index is
+    // all we have.
+    return Math.max(0, Math.min(anchor.y, buf.baseY))
+  }
+  const restoreAnchor = (): void => {
+    if (term.buffer.active.type !== 'normal') return
+    // A live gesture owns the viewport. Restoring mid-gesture yanks it back
+    // to a stale anchor, and our own restore events would land inside the
+    // intent window and be parkAt'd — hijacking the anchor. Defer; the
+    // gesture's own events drive the position.
+    if (scrollbarDrag || Date.now() - lastUserScrollAt <= 150) {
+      scheduleSnapBack()
+      return
+    }
+    if (anchor.kind === 'bottom') {
+      term.scrollToBottom()
+      return
+    }
+    const target = anchorTarget()
+    if (term.buffer.active.viewportY !== target) restoreLine(target)
+  }
+
+  // A collapsed scroll event with no fit coming to correct it. Checked on a
+  // short delay — never inside the scroll handler, where re-scrolling feeds
+  // the same clamped offset straight back in — and only against the anchor,
+  // so it converges instead of chasing a stale index.
+  let snapBackTimer = 0
+  const scheduleSnapBack = (): void => {
+    if (snapBackTimer) return
+    snapBackTimer = window.setTimeout(() => {
+      snapBackTimer = 0
+      if (!container.isConnected || container.clientHeight === 0) return
+      if (term.buffer.active.type !== 'normal') return
+      if (Date.now() - lastUserScrollAt <= 500) return
+      const buf = term.buffer.normal
+      if (buf.viewportY !== anchorTarget()) restoreAnchor()
+      syncDomScrollTop()
+    }, 50)
+  }
+
+  const scrollListener = term.onScroll((y) => {
+    if (!container.isConnected || container.clientHeight === 0) return
+    // Alternate-buffer apps (vim, less, agent TUIs) scroll their own screen
+    // with no scrollback — every event there reports y >= baseY = 0 and would
+    // poison the anchor with 'bottom', forgetting the parked position the
+    // user returns to when the app exits.
+    if (term.buffer.active.type !== 'normal') return
+    const buf = term.buffer.active
+    // Following output — whether xterm auto-scrolled for a write or the user
+    // scrolled down to it, reaching baseY always means "at the bottom".
+    if (y >= buf.baseY) {
+      anchor = { kind: 'bottom' }
+      anchorMarker?.dispose()
+      anchorMarker = null
+      return
+    }
+    // A real gesture somewhere above the bottom — including the very top,
+    // which collapses cannot fake because gestures are timestamped.
+    // scrollbarDrag stands in for the timestamp during native scrollbar
+    // drags: Chrome swallows pointermove while the compositor owns the
+    // drag, so the 500ms window alone would expire mid-drag and snap-back
+    // would fight the user's hand.
+    if (scrollbarDrag || Date.now() - lastUserScrollAt <= 500) {
+      parkAt(y)
+      return
+    }
+    // No gesture, not the bottom: a DOM clamp, a reflow clamp, a trim
+    // adjustment, or one of our own restores. The anchor stays (the marker
+    // already followed any trim), and if no ResizeObserver fit is coming to
+    // fix a collapsed position, the snap-back does.
+    scheduleSnapBack()
+  })
+  cleanups.push(() => {
+    scrollListener.dispose()
+    anchorMarker?.dispose()
+    if (snapBackTimer) window.clearTimeout(snapBackTimer)
+  })
+
   // Programs push their own tab title via OSC 0/2 (claude, vim, ssh…); prefer
   // it over the polled process name, which can be meaningless for some
   // binaries. Disposed together with the terminal.
@@ -137,9 +400,44 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     fit,
     container,
     ptyId: null,
+    suspendViewportY: null,
+    suspendAtBottom: false,
+    suspend() {
+      // Called by the host just before detaching, while the terminal is still
+      // laid out. Snapshot the NORMAL buffer — parking in it survives an app
+      // holding the alternate screen. When the live offset already collapsed,
+      // trust the anchor instead.
+      const buf = term.buffer.normal
+      const expected = anchorTarget()
+      handle.suspendViewportY = buf.viewportY === expected ? buf.viewportY : expected
+      handle.suspendAtBottom = anchor.kind === 'bottom' || buf.viewportY >= buf.baseY
+    },
     fitSafely() {
       try {
+        // A hidden (display:none) or detached host has no usable size; fitting
+        // to it collapses the terminal into a degenerate resize that reflows
+        // the scrollback and throws the scroll position away — the visible bug
+        // when switching terminal groups or repo tabs.
+        if (!container.isConnected || container.clientWidth === 0 || container.clientHeight === 0) {
+          return
+        }
+        // A snapshot taken at suspend time becomes the new anchor — the DOM
+        // may already have rewritten the offset behind our back.
+        if (handle.suspendViewportY != null) {
+          if (handle.suspendAtBottom) {
+            anchor = { kind: 'bottom' }
+          } else {
+            parkAt(handle.suspendViewportY)
+          }
+          handle.suspendViewportY = null
+        }
         fit.fit()
+        // Reflow shifts buffer lines on resize and a reattached viewport may
+        // have lost its DOM offset entirely; put the scroll position back —
+        // pinned to the bottom when it was already following output, parked
+        // on the marker-tracked line otherwise.
+        restoreAnchor()
+        syncDomScrollTop()
       } catch {
         /* element not visible / zero-size */
       }

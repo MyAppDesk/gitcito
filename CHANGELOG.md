@@ -1,5 +1,20 @@
 
 
+## [4.18.0](https://github.com/MyAppDesk/gitcito/compare/v4.17.1...v4.18.0) (2026-11-05)
+
+
+### Features
+
+* **ai:** support Devin CLI as a local agent backend ([e388ce6](https://github.com/MyAppDesk/gitcito/commit/e388ce6f634d160a88eb95f4bcc15fc92ac9ae4f))
+* **terminal:** add clipboard copy/paste on Windows and Linux ([236f361](https://github.com/MyAppDesk/gitcito/commit/236f3615691303e0e91399468e9f878314d48264))
+
+
+### Bug Fixes
+
+* **ai:** run CLI transports inside the repository being discussed ([1bce2d8](https://github.com/MyAppDesk/gitcito/commit/1bce2d8d88d5b9eaa06d7ada936dc4b32c444651))
+* **terminal:** paste with Ctrl+V and suppress duplicate native paste ([e9b1214](https://github.com/MyAppDesk/gitcito/commit/e9b12149f06ced519a66a014218050f3351c7ea0))
+* **terminal:** preserve scroll position through resize, detach and reflow ([2211a50](https://github.com/MyAppDesk/gitcito/commit/2211a50e0e37cc7d584193053dc1be819c0cd74a))
+
 ## [4.17.1](https://github.com/MyAppDesk/gitcito/compare/v4.17.0...v4.17.1) (2026-11-05)
 
 

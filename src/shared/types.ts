@@ -2941,6 +2941,8 @@ export interface AppSettings {
   snapshotGuard: boolean
   /** Local CI via `act` (optional integration; needs act + Docker installed). */
   localCiEnabled: boolean
+  /** Run `codegraph init` on new worktrees when the parent repo is indexed (opt-in). */
+  codegraphIndexWorktrees: boolean
   /** Mask secret values (KEY=••••) in .env/key files in the diff & file viewer. */
   maskSecrets: boolean
   /** File view (working-tree files only): a colored bar next to lines changed
@@ -3344,6 +3346,7 @@ export function defaultSettings(): AppSettings {
     wipSnapshotMinutes: 15,
     snapshotGuard: true,
     localCiEnabled: false,
+    codegraphIndexWorktrees: false,
     maskSecrets: true,
     showChangeGutter: true,
     showMinimap: true,

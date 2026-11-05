@@ -3451,6 +3451,7 @@ export const ptBR: Dict = {
   'modal.worktreeDirUsed': 'Já existe um worktree nesta pasta.',
   'modal.worktreeBrowseTitle': 'Escolher a pasta do worktree',
   'modal.worktreeOpenAfter': 'Abrir o worktree ao concluir',
+  'modal.worktreeIndexCodegraph': 'Indexar o worktree com codegraph se o repositório estiver indexado',
   'modal.createRepository': 'Criar repositório',
   'modal.createIn': 'Criar em',
   'modal.creating': 'Criando…',

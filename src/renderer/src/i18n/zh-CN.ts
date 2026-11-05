@@ -3442,6 +3442,7 @@ export const zhCN: Dict = {
   'modal.worktreeDirUsed': '此文件夹中已有 worktree。',
   'modal.worktreeBrowseTitle': '选择 worktree 文件夹',
   'modal.worktreeOpenAfter': '完成后打开 worktree',
+  'modal.worktreeIndexCodegraph': '如果仓库已建立索引，则用 codegraph 为 worktree 建立索引',
   'modal.createRepository': '创建仓库',
   'modal.createIn': '创建于',
   'modal.creating': '正在创建…',

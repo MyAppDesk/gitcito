@@ -23,8 +23,9 @@ stashing.
   `repo--branch` — and decide whether to open the worktree as a tab right away.
 - Right-click any local branch → **Open in a worktree** to spin one up in a
   sibling folder and open it as a tab.
-- If the repository is indexed with codegraph (a `.codegraph/` folder) and the
-  CLI is on PATH, a new worktree is indexed in the background too — agent
+- If you tick **Index the worktree with codegraph** in the dialog (off by
+  default), the repository is indexed with codegraph (a `.codegraph/` folder)
+  and the CLI is on PATH, a new worktree is indexed in the background too — agent
   sessions opened inside it get the same code intelligence without a manual
   `codegraph init`.
 - The worktree's `.git` file is written with a relative `gitdir:` path instead

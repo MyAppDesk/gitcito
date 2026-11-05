@@ -3442,6 +3442,7 @@ export const uk: Dict = {
   'modal.worktreeDirUsed': 'У цій теці вже є worktree.',
   'modal.worktreeBrowseTitle': 'Виберіть теку worktree',
   'modal.worktreeOpenAfter': 'Відкрити worktree після створення',
+  'modal.worktreeIndexCodegraph': 'Індексувати worktree за допомогою codegraph, якщо репозиторій проіндексовано',
   'modal.createRepository': 'Створити репозиторій',
   'modal.createIn': 'Створити в',
   'modal.creating': 'Створення…',

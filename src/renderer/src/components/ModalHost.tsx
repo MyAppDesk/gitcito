@@ -1047,6 +1047,9 @@ function AddWorktreeModal({ spec }: { spec: Extract<ModalSpec, { kind: 'add-work
     }
   }
 
+  const indexCodegraph = useSettingsStore((s) => s.settings.codegraphIndexWorktrees === true)
+  const updateSettings = useSettingsStore((s) => s.update)
+
   const submit = (): void => {
     if (invalid) return
     closeModal()
@@ -1117,6 +1120,15 @@ function AddWorktreeModal({ spec }: { spec: Extract<ModalSpec, { kind: 'add-work
       <label className="clone-partial">
         <input type="checkbox" checked={openAfter} onChange={(e) => setOpenAfter(e.target.checked)} />
         <span>{t('modal.worktreeOpenAfter')}</span>
+      </label>
+
+      <label className="clone-partial">
+        <input
+          type="checkbox"
+          checked={indexCodegraph}
+          onChange={(e) => updateSettings((s) => ({ ...s, codegraphIndexWorktrees: e.target.checked }))}
+        />
+        <span>{t('modal.worktreeIndexCodegraph')}</span>
       </label>
 
       <div className="modal-actions">

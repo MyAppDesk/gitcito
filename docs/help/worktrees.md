@@ -27,6 +27,10 @@ stashing.
   CLI is on PATH, a new worktree is indexed in the background too — agent
   sessions opened inside it get the same code intelligence without a manual
   `codegraph init`.
+- The worktree's `.git` file is written with a relative `gitdir:` path instead
+  of the absolute drive-letter path git stamps by default, so the tree keeps
+  working from shells that cannot parse `E:/…` — WSL terminals and the agents
+  that run in them.
 - A branch can live in only one worktree at a time, so checking out a branch
   another worktree already holds cannot work — git refuses with *already used by
   worktree at …*. Gitcito takes you there instead: the branch's menu reads *Go

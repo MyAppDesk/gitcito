@@ -1,6 +1,6 @@
 import { ipcMain, shell } from 'electron'
 import { simpleGit, SimpleGit, type StatusResult } from 'simple-git'
-import { basename, dirname, isAbsolute, join, resolve as resolvePath, sep } from 'path'
+import { basename, dirname, isAbsolute, join, relative, resolve as resolvePath, sep } from 'path'
 import { pathToFileURL } from 'url'
 import { readFile, writeFile, unlink, stat, chmod, mkdir, readdir, rename, cp, open, mkdtemp, rm, realpath, lstat } from 'fs/promises'
 import { tmpdir, homedir } from 'os'
@@ -664,6 +664,29 @@ function indexCodegraphAsync(dir: string): void {
     }).unref()
   } catch {
     /* indexing is best-effort */
+  }
+}
+
+/** Rewrite a fresh worktree's `.git` file so its `gitdir:` line is relative
+ *  to the worktree root. `git worktree add` stamps the absolute drive-letter
+ *  path (`gitdir: E:/repo/.git/worktrees/x`), which shells that don't speak
+ *  drive letters — WSL agents in particular — cannot resolve. Git resolves a
+ *  relative `gitdir:` against the `.git` file's own directory on every
+ *  platform, so the tree works from Windows and WSL alike. The reverse
+ *  `gitdir` file inside the metadata dir stays absolute: git resolves it
+ *  against the process cwd, so relativising it would break `worktree list`. */
+async function makeWorktreeGitfilePortable(worktreePath: string): Promise<void> {
+  try {
+    const gitFile = join(worktreePath, '.git')
+    const text = await readFile(gitFile, 'utf-8')
+    const m = /^gitdir:[ \t]*(.+)$/m.exec(text)
+    if (!m) return
+    const gitDir = resolvePath(worktreePath, m[1].trim())
+    const rel = relative(worktreePath, gitDir).split(sep).join('/')
+    if (!rel || isAbsolute(rel)) return // cross-drive or unresolved — keep git's
+    await writeFile(gitFile, `gitdir: ${rel}\n`)
+  } catch {
+    /* portability rewrite is best-effort */
   }
 }
 
@@ -6458,6 +6481,7 @@ export const gitService = {
       args.push(path, branch)
     }
     await gitFor(repoPath).raw(args)
+    await makeWorktreeGitfilePortable(target)
     // A worktree is a fresh project root — the parent's .codegraph index does
     // not carry over, so agents opening it find nothing. When the parent is
     // indexed and the CLI is on PATH, index the new tree in the background.

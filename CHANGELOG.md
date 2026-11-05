@@ -1,5 +1,21 @@
 
 
+## [4.19.0](https://github.com/MyAppDesk/gitcito/compare/v4.18.0...v4.19.0) (2026-11-05)
+
+
+### Features
+
+* **worktrees:** add worktree dialog with base branch and folder pickers ([7081757](https://github.com/MyAppDesk/gitcito/commit/70817571a9c5232848cd455a3fe1c6163c690a46))
+* **worktrees:** index new worktrees with codegraph when parent is indexed ([ad8acdd](https://github.com/MyAppDesk/gitcito/commit/ad8acddb58d01d8d37859ee08b05e36008dacef5))
+* **worktrees:** searchable branch picker popover in add-worktree modal ([c806331](https://github.com/MyAppDesk/gitcito/commit/c80633177069e3df7b487e8e0822c44d26ab1b0a))
+
+
+### Bug Fixes
+
+* **worktrees:** run codegraph without a shell and only when opted in ([a771850](https://github.com/MyAppDesk/gitcito/commit/a7718504a97269a8004a58758757fe51c2a51338))
+* **worktrees:** styled branch picker, browse as parent folder, occupied-dir guard ([be1bf35](https://github.com/MyAppDesk/gitcito/commit/be1bf35647bb9c331666d8b2030904c613b2c1bf))
+* **worktrees:** write portable relative gitdir paths for WSL/shells ([0e59161](https://github.com/MyAppDesk/gitcito/commit/0e59161e00513221892efc7f5214c6a496a4201f))
+
 ## [4.18.0](https://github.com/MyAppDesk/gitcito/compare/v4.17.1...v4.18.0) (2026-11-05)
 
 

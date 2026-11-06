@@ -405,6 +405,7 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
   // Write-activity counter folded into the event log — separates scroll
   // events driven by output bursts from ones driven by DOM clamps/reflows.
   let writeCount = 0
+  let prevBaseY = 0
   term.onWriteParsed(() => {
     writeCount++
   })
@@ -422,6 +423,13 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     // user returns to when the app exits.
     if (term.buffer.active.type !== 'normal') return
     const buf = term.buffer.active
+    // A genuine wipe drops baseY from thousands to ~0 — dump which
+    // erase-capable sequences arrived so the culprit is identified by name,
+    // not inferred.
+    if (prevBaseY > 200 && buf.baseY < prevBaseY - 200) {
+      sdbg(`wipe base=${prevBaseY}->${buf.baseY} seqs:${recentSeqs || '(none)'}`)
+    }
+    prevBaseY = buf.baseY
     // Inside the resize quiet window with no gesture behind it, every event
     // is a clamp artefact of the last fit — there is nothing to do: the fit
     // already re-asserted the anchor synchronously, and the anchor is
@@ -534,6 +542,7 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
   // the visible "random scroll" the user sees: history vanishes, the screen
   // rewrites from row 0. xterm owns the scrollback, so strip the request —
   // the repaint still redraws the screen, the history survives.
+  let recentSeqs = ''
   let pendingTail = ''
   const writeToTerm = (data: string): void => {
     if (pendingTail) {
@@ -551,6 +560,12 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     if (/\x1b\[\??3(?:;\d*)?J|\x9b\??3(?:;\d*)?J/.test(data)) {
       sdbg('strip scrollback-erase')
       data = data.replace(/\x1b\[\??3(?:;\d*)?J|\x9b\??3(?:;\d*)?J/g, '')
+    }
+    // Forensics: remember every erase/reset-capable sequence so a buffer
+    // wipe in the scroll log can be matched to the exact bytes that did it.
+    const seqs = data.match(/\x1b\[[\d;?]*[JK]|\x1b\[\?\d{3,4}[hl]|\x1bc|\x1b\[!p/g)
+    if (seqs) {
+      recentSeqs = (recentSeqs + ' ' + seqs.join(' ').replace(/\x1b/g, 'ESC')).slice(-160)
     }
     if (data.includes('\x1bc')) sdbg('saw full-reset')
     if (data) term.write(data)

@@ -350,18 +350,34 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
   // short delay — never inside the scroll handler, where re-scrolling feeds
   // the same clamped offset straight back in — and only against the anchor,
   // so it converges instead of chasing a stale index.
+  // During a resize the anchor was never poisoned but the clamp is VISIBLE:
+  // the viewport paints the bottom for ~50ms per drag step before the
+  // timeout snap-back lands. Restore on the next animation frame instead —
+  // before the bad frame paints — so the drag produces no flicker at all.
+  // The timeout still runs as a backstop for occluded renderers where rAF
+  // is throttled, and both firings are idempotent.
   let snapBackTimer = 0
+  let snapBackRaf = 0
+  const snapBackNow = (): void => {
+    if (!container.isConnected || container.clientHeight === 0) return
+    if (term.buffer.active.type !== 'normal') return
+    if (Date.now() - lastUserScrollAt <= 500) return
+    const buf = term.buffer.normal
+    if (buf.viewportY !== anchorTarget()) restoreAnchor()
+    syncDomScrollTop()
+  }
   const scheduleSnapBack = (): void => {
+    if (Date.now() < resizeQuietUntil && !snapBackRaf) {
+      snapBackRaf = requestAnimationFrame(() => {
+        snapBackRaf = 0
+        snapBackNow()
+      })
+    }
     if (snapBackTimer) return
     snapBackTimer = window.setTimeout(() => {
       snapBackTimer = 0
-      if (!container.isConnected || container.clientHeight === 0) return
-      if (term.buffer.active.type !== 'normal') return
-      if (Date.now() - lastUserScrollAt <= 500) return
-      const buf = term.buffer.normal
-      if (buf.viewportY !== anchorTarget()) restoreAnchor()
-      syncDomScrollTop()
-    }, 50)
+      snapBackNow()
+    }, Date.now() < resizeQuietUntil ? 120 : 50)
   }
 
   const scrollListener = term.onScroll((y) => {
@@ -410,6 +426,7 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     scrollListener.dispose()
     anchorMarker?.dispose()
     if (snapBackTimer) window.clearTimeout(snapBackTimer)
+    if (snapBackRaf) cancelAnimationFrame(snapBackRaf)
   })
 
   // Programs push their own tab title via OSC 0/2 (claude, vim, ssh…); prefer

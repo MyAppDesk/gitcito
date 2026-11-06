@@ -159,14 +159,15 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
   let anchor: ScrollAnchor = { kind: 'bottom' }
   let anchorMarker: IMarker | null = null
   let lastUserScrollAt = 0
-  // Set around every fitSafely. xterm maps ydisp proportionally to the DOM
+  // Extended on every fitSafely. xterm maps ydisp proportionally to the DOM
   // scroll range (scrollTop / max * baseY), so a resize that shrinks the
   // range — a taller panel, or a wider one reflowing to fewer wrapped rows —
   // clamps scrollTop to the new max and fires a scroll event reading
-  // exactly baseY. Without this timestamp that artefact is
-  // indistinguishable from a real output-follow and poisons the anchor to
-  // 'bottom' in the middle of a drag.
-  let lastFitAt = 0
+  // exactly baseY. A fixed window after the last fit is not enough: a slow
+  // drag spaces fits further apart than the window, and an in-between clamp
+  // event then passes as a real output-follow and poisons the anchor to
+  // 'bottom'. A rolling deadline stays open for the whole drag instead.
+  let resizeQuietUntil = 0
   const markUserScroll = (): void => {
     lastUserScrollAt = Date.now()
   }
@@ -264,9 +265,12 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
       // Drag-selecting near the viewport edge makes xterm auto-scroll — those
       // scroll events are real user intent (unmarking them would let
       // snap-back fight the selection). Anywhere else a held-button drag is
-      // just text selection and must not open the intent window.
+      // just text selection and must not open the intent window. Only an
+      // actual in-progress selection counts: a splitter drag passing through
+      // the edge zone with the button held selects nothing and would
+      // otherwise mark every resize clamp event as a genuine scroll.
       const vp = container.querySelector('.xterm-viewport')
-      if (!(vp instanceof HTMLElement)) return
+      if (!(vp instanceof HTMLElement) || !term.hasSelection()) return
       const r = vp.getBoundingClientRect()
       if (e.clientY < r.top + 30 || e.clientY > r.bottom - 30) markUserScroll()
     },
@@ -376,7 +380,7 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     // mark "following". Anything else converges through snap-back.
     if (y >= buf.baseY) {
       const realFollow =
-        scrollbarDrag || Date.now() - lastUserScrollAt <= 500 || Date.now() - lastFitAt > 150
+        scrollbarDrag || Date.now() - lastUserScrollAt <= 500 || Date.now() > resizeQuietUntil
       if (!realFollow) {
         scheduleSnapBack()
         return
@@ -449,7 +453,6 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
           }
           handle.suspendViewportY = null
         }
-        lastFitAt = Date.now()
         fit.fit()
         // Reflow shifts buffer lines on resize and a reattached viewport may
         // have lost its DOM offset entirely; put the scroll position back —
@@ -459,8 +462,10 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
         syncDomScrollTop()
         // The clamp events the fit just caused are delivered asynchronously
         // (the viewport's scroll event follows the scrollArea's style change
-        // on a later frame) — keep the fit window open past this call.
-        lastFitAt = Date.now()
+        // on a later frame) — and a drag produces a fit per step, so roll
+        // the quiet window forward from each fit rather than timing it from
+        // the first.
+        resizeQuietUntil = Date.now() + 250
       } catch {
         /* element not visible / zero-size */
       }

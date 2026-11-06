@@ -262,7 +262,7 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
     if (!editorTracksDisk || blameOverrideRef || e.defaultPrevented) return
     const items = editorLineMenuItems(editorSetting, { path: `${repoPath}/${file}`, line, repo: repoPath })
     // Scoped AI edit on the current selection — the Cursor/Ctrl+I flow.
-    if (aiEnabled && editableFile && mode === 'file' && !editing) {
+    if (aiEnabled && editableFile && mode === 'file' && !editing && !maskOn) {
       items.push({
         label: t('fileViewer.aiEdit'),
         icon: <Wand2 size={13} />,
@@ -516,7 +516,7 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
   }
 
   const runAiEdit = async (): Promise<void> => {
-    if (!aiEditSel || content === null) return
+    if (!aiEditSel || content === null || maskOn) return
     const lines = content.split('\n')
     const code = lines.slice(aiEditSel.start - 1, aiEditSel.end).join('\n')
     const ctx = 40
@@ -577,6 +577,10 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
   useEffect(() => {
     setExplain(null)
     setExplaining(false)
+    // A pending AI-edit bar must not survive into another file — its Apply
+    // reads the CURRENT content, so over a masked secret file it would ship
+    // those lines to the provider.
+    setAiEditSel(null)
   }, [repoPath, file, mode, source.type])
 
   // Blame can't run on images or files that don't exist in history (untracked/new).
@@ -904,7 +908,7 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
             {explaining ? <Loader2 size={13} className="spin" /> : <Sparkles size={13} />} {t('explain.action')}
           </button>
         )}
-        {editableFile && aiEnabled && mode === 'file' && !editing && (
+        {editableFile && aiEnabled && mode === 'file' && !editing && !maskOn && (
           <button
             className="btn ghost small fv-ai-edit-btn"
             disabled={aiEditing}
@@ -1124,7 +1128,7 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
                 })}
               </div>
               {showMinimap && <FileMinimap lines={fileLines} gutterByLine={gutterByLine} scrollRef={bodyRef} />}
-              {aiEditSel && (
+              {aiEditSel && !maskOn && (
                 <div className="fv-ai-edit-bar">
                   <Wand2 size={13} />
                   <span className="fv-ai-edit-range">

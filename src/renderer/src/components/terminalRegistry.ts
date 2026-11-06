@@ -159,6 +159,14 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
   let anchor: ScrollAnchor = { kind: 'bottom' }
   let anchorMarker: IMarker | null = null
   let lastUserScrollAt = 0
+  // Set around every fitSafely. xterm maps ydisp proportionally to the DOM
+  // scroll range (scrollTop / max * baseY), so a resize that shrinks the
+  // range — a taller panel, or a wider one reflowing to fewer wrapped rows —
+  // clamps scrollTop to the new max and fires a scroll event reading
+  // exactly baseY. Without this timestamp that artefact is
+  // indistinguishable from a real output-follow and poisons the anchor to
+  // 'bottom' in the middle of a drag.
+  let lastFitAt = 0
   const markUserScroll = (): void => {
     lastUserScrollAt = Date.now()
   }
@@ -362,7 +370,17 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     const buf = term.buffer.active
     // Following output — whether xterm auto-scrolled for a write or the user
     // scrolled down to it, reaching baseY always means "at the bottom".
+    // Except during a resize: a clamp of the DOM offset to the shrunken
+    // scroll-range max reads as exactly baseY with no gesture behind it, so
+    // only a real gesture — or an event that cannot be a fit artefact — may
+    // mark "following". Anything else converges through snap-back.
     if (y >= buf.baseY) {
+      const realFollow =
+        scrollbarDrag || Date.now() - lastUserScrollAt <= 500 || Date.now() - lastFitAt > 150
+      if (!realFollow) {
+        scheduleSnapBack()
+        return
+      }
       anchor = { kind: 'bottom' }
       anchorMarker?.dispose()
       anchorMarker = null
@@ -431,6 +449,7 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
           }
           handle.suspendViewportY = null
         }
+        lastFitAt = Date.now()
         fit.fit()
         // Reflow shifts buffer lines on resize and a reattached viewport may
         // have lost its DOM offset entirely; put the scroll position back —
@@ -438,6 +457,10 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
         // on the marker-tracked line otherwise.
         restoreAnchor()
         syncDomScrollTop()
+        // The clamp events the fit just caused are delivered asynchronously
+        // (the viewport's scroll event follows the scrollArea's style change
+        // on a later frame) — keep the fit window open past this call.
+        lastFitAt = Date.now()
       } catch {
         /* element not visible / zero-size */
       }

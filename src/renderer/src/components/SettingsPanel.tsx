@@ -88,11 +88,13 @@ import type {
   AppThemeColors,
   CodeTheme,
   CodeThemeColors,
+  TerminalThemeColors,
   ThemeMode
 } from '../../../shared/types'
 import {
   APP_THEMES,
   CODE_THEMES,
+  TERMINAL_THEMES,
   allAppThemes,
   allCodeThemes,
   findAppTheme,
@@ -976,6 +978,18 @@ function CodeThemeSwatch({ colors }: { colors: CodeThemeColors }): React.JSX.Ele
       <div style={{ color: c.comment }}>&nbsp;&nbsp;// note</div>
       {/* i18n-ignore code sample */}
       <div>&nbsp;&nbsp;<span style={{ color: c.keyword }}>return</span> <span style={{ color: c.string }}>"hi"</span></div>
+    </div>
+  )
+}
+
+function TerminalThemeSwatch({ colors }: { colors: TerminalThemeColors }): React.JSX.Element {
+  const c = colors
+  return (
+    <div className="theme-swatch" style={{ background: c.background, padding: '6px 8px', fontFamily: 'var(--mono)', fontSize: 9 }}>
+      {/* i18n-ignore terminal sample */}
+      <div style={{ color: c.green }}>➜ <span style={{ color: c.cyan }}>repo</span> <span style={{ color: c.foreground }}>git status</span></div>
+      {/* i18n-ignore terminal sample */}
+      <div style={{ color: c.red }}>M <span style={{ color: c.foreground }}>app.ts</span> <span style={{ color: c.blue }}>main*</span></div>
     </div>
   )
 }
@@ -1925,6 +1939,54 @@ function ThemesPage({ initialTab }: { initialTab?: 'theme' | 'graph' } = {}): Re
       )}
       </>
       )}
+
+      <div className="theme-section-header" style={{ marginTop: 22 }}>
+        <h4><Terminal size={14} /> {t('settings.terminalTheme')}</h4>
+        <div className="theme-section-actions">
+          <div className="theme-font-size-inline">
+            <span>{settings.terminalFontSize}px</span>
+            <input
+              type="range"
+              min={9}
+              max={24}
+              step={0.5}
+              value={settings.terminalFontSize}
+              aria-label={t('settings.terminalTheme')}
+              onChange={(e) => update((s) => ({ ...s, terminalFontSize: Number(e.target.value) }))}
+            />
+          </div>
+        </div>
+      </div>
+      <div className="theme-grid">
+        {TERMINAL_THEMES.map((th) => (
+          <div
+            key={th.id}
+            role="button"
+            tabIndex={0}
+            className={`theme-card ${th.id === settings.terminalThemeId ? 'selected' : ''}`}
+            onClick={() => update((s) => ({ ...s, terminalThemeId: th.id }))}
+            onKeyDown={(e) =>
+              (e.key === 'Enter' || e.key === ' ') &&
+              update((s) => ({ ...s, terminalThemeId: th.id }))
+            }
+          >
+            <TerminalThemeSwatch colors={th.colors} />
+            <div className="theme-card-label">
+              <span>{th.name}</span>
+              {th.id === settings.terminalThemeId && <Check size={13} className="theme-check" />}
+            </div>
+          </div>
+        ))}
+      </div>
+      <label className="settings-field" style={{ marginTop: 12 }}>
+        <span className="settings-field-label">{t('settings.terminalFontFamily')}</span>
+        <span className="settings-hint">{t('settings.terminalFontFamilyHint')}</span>
+        <input
+          value={settings.terminalFontFamily}
+          spellCheck={false}
+          onChange={(e) => update((s) => ({ ...s, terminalFontFamily: e.target.value }))}
+        />
+      </label>
     </>
   )
 }

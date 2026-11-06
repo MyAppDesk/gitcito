@@ -1,6 +1,8 @@
 import { Terminal, type IMarker } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import { WebLinksAddon } from '@xterm/addon-web-links'
+import type { TerminalThemeColors } from '../../../shared/types'
+import { TERMINAL_THEMES } from '../theme/themes'
 import { useTermTitlesStore } from '../stores/termTitles'
 
 export interface TermHandle {
@@ -23,18 +25,32 @@ export interface TermHandle {
 // because the DOM container is moved in/out of the live tree, never destroyed.
 const registry = new Map<string, TermHandle>()
 
-const THEME = {
-  background: '#0f1220',
-  foreground: '#d6dbe8',
-  cursor: '#6c5ce7',
-  selectionBackground: '#2b3759',
-  black: '#1c1f2b',
-  blue: '#6c5ce7',
-  green: '#00e6a8',
-  red: '#ff5c7a',
-  yellow: '#ff7a1a',
-  magenta: '#00d4ff',
-  cyan: '#00d4ff'
+// Terminal appearance comes from Settings (preset + font). The defaults below
+// are what a fresh install sees; App.tsx calls applyTerminalPrefs on start and
+// on every change so existing terminals — which live in the registry across
+// tab switches — pick the new palette/font without a restart.
+const DEFAULT_FONT_FAMILY = 'SF Mono, JetBrains Mono, Menlo, monospace'
+let currentTermTheme: TerminalThemeColors = TERMINAL_THEMES[0].colors
+let currentFontSize = 12.5
+let currentFontFamily = DEFAULT_FONT_FAMILY
+
+export function applyTerminalPrefs(
+  theme: TerminalThemeColors,
+  fontSize: number,
+  fontFamily: string
+): void {
+  currentTermTheme = theme
+  currentFontSize = fontSize || 12.5
+  currentFontFamily = fontFamily.trim() || DEFAULT_FONT_FAMILY
+  registry.forEach((h) => {
+    h.term.options.theme = theme
+    h.term.options.fontSize = currentFontSize
+    h.term.options.fontFamily = currentFontFamily
+    h.container.style.background = theme.background
+    // A font change alters cell metrics — refit so cols/rows and the pty
+    // follow the new size instead of stretching the old grid.
+    h.fitSafely()
+  })
 }
 
 export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number): TermHandle {
@@ -45,14 +61,14 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
   container.className = 'terminal-host-inner'
   // Paint the container with the terminal bg so xterm's row-rounding leftover
   // never shows the app background — stays correct if THEME changes.
-  container.style.background = THEME.background
+  container.style.background = currentTermTheme.background
 
   const term = new Terminal({
-    fontFamily: 'SF Mono, JetBrains Mono, Menlo, monospace',
-    fontSize: 12.5,
+    fontFamily: currentFontFamily,
+    fontSize: currentFontSize,
     cursorBlink: true,
     scrollback: 5000,
-    theme: THEME
+    theme: currentTermTheme
   })
   const fit = new FitAddon()
   term.loadAddon(fit)
@@ -97,6 +113,12 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     // poisoned the anchor: the spontaneous auto-scrolls afterwards.
     if (e.type === 'keydown' && e.shiftKey && (e.code === 'PageUp' || e.code === 'PageDown')) {
       lastUserScrollAt = Date.now()
+    }
+    if (e.type === 'keydown' && e.code.startsWith('Arrow')) {
+      sdbg(
+        `key ${e.code} ctrl=${e.ctrlKey} shift=${e.shiftKey} ` +
+          `appCK=${term.modes.applicationCursorKeysMode}`
+      )
     }
     if (e.type !== 'keydown' || e.metaKey || e.altKey) return true
     if (e.ctrlKey && e.code === 'KeyC') {
@@ -484,6 +506,17 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     if (snapBackRaf) cancelAnimationFrame(snapBackRaf)
   })
 
+  // Outbound input logging — escape sequences only (arrows, F-keys, paste
+  // markers), never plain typed text. A debug run shows whether an arrow
+  // keystroke produced its sequence (xterm emitted) or died earlier (focus /
+  // a swallowed keydown), and which form it took (CSI vs application-mode
+  // SS3) so a stuck DECCKM is visible too.
+  const sendInput = (data: string): void => {
+    if (data.includes('\x1b')) sdbg(`in ${JSON.stringify(data).slice(0, 60)}`)
+    if (isLaunch) window.api.launch.input(launchId!, data)
+    else if (handle.ptyId != null) window.api.term.input(handle.ptyId, data)
+  }
+
   // Programs push their own tab title via OSC 0/2 (claude, vim, ssh…); prefer
   // it over the polled process name, which can be meaningless for some
   // binaries. Disposed together with the terminal.
@@ -571,7 +604,7 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
         term.write(`\r\n\x1b[90m[process exited with code ${code}]\x1b[0m\r\n`)
       )
     )
-    term.onData((data) => window.api.launch.input(launchId!, data))
+    term.onData(sendInput)
     term.onResize(({ cols, rows }) => {
       if (cols > 0 && rows > 0) window.api.launch.resize(launchId!, cols, rows)
     })
@@ -590,7 +623,7 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
         term.write('\r\n\x1b[90m[process exited]\x1b[0m\r\n')
       )
     )
-    term.onData((data) => window.api.term.input(id, data))
+    term.onData(sendInput)
     term.onResize(({ cols, rows }) => {
       if (cols > 0 && rows > 0) window.api.term.resize(id, cols, rows)
     })

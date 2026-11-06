@@ -441,6 +441,18 @@ app.whenReady().then(() => {
   })
   ipcMain.on('window:close', (e) => BrowserWindow.fromWebContents(e.sender)?.close())
 
+  // Terminal scroll forensics (see terminalRegistry.ts): only wired when the
+  // app is launched with GITCITO_SCROLL_DEBUG=1. Lines stream into a plain
+  // text log under userData so the trace is readable on packaged builds.
+  if (process.env.GITCITO_SCROLL_DEBUG === '1') {
+    const scrollLogPath = join(app.getPath('userData'), 'gitcito-scroll-debug.log')
+    ipcMain.on('scroll-debug', (_e, line: unknown) => {
+      if (typeof line === 'string' && line.length < 2000) {
+        void writeFile(scrollLogPath, `${line}\n`, { flag: 'a' }).catch(() => {})
+      }
+    })
+  }
+
   registerGitHandlers()
   registerSettingsHandlers()
   registerAiHandlers()

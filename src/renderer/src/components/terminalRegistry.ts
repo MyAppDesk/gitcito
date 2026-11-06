@@ -168,21 +168,23 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
   // event then passes as a real output-follow and poisons the anchor to
   // 'bottom'. A rolling deadline stays open for the whole drag instead.
   let resizeQuietUntil = 0
-  // Opt-in scroll forensics for the resize-autoscroll hunt:
-  // localStorage 'gitcito:scroll-debug' = '1', reproduce, then dump with
-  // copy(__termScrollLog().join('\n')) in devtools. Ring buffer, off by
-  // default — every decision the listener makes lands here with timestamps.
+  // Opt-in scroll forensics for the resize-autoscroll hunt: launch with
+  // GITCITO_SCROLL_DEBUG=1 and every decision the listener makes is streamed
+  // to userData/gitcito-scroll-debug.log (readable on packaged builds where
+  // DevTools is unavailable) and kept in a ring dumpable from DevTools via
+  // __termScrollLog() on dev builds. Off by default.
   const sdbg = ((): ((msg: string) => void) => {
-    let on: boolean | null = null
+    const on = !!window.api?.scrollDebug?.enabled
     const ring: string[] = []
     const g = window as unknown as { __termScrollLog?: () => string[] }
     const prev = g.__termScrollLog
     g.__termScrollLog = () => [...(prev?.() ?? []), ...ring]
+    if (!on) return () => {}
     return (msg: string): void => {
-      if (on === null) on = localStorage.getItem('gitcito:scroll-debug') === '1'
-      if (!on) return
-      ring.push(`t+${Date.now() % 100000} [${panelId}] ${msg}`)
+      const line = `t+${Date.now() % 100000} [${panelId}] ${msg}`
+      ring.push(line)
       if (ring.length > 400) ring.splice(0, ring.length - 400)
+      window.api.scrollDebug.push(line)
     }
   })()
   const markUserScroll = (): void => {

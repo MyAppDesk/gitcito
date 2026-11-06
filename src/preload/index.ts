@@ -8,6 +8,16 @@ const api = {
   // webPreferences.additionalArguments). Gates the screenshot-automation bridge.
   shotMode: process.argv.includes('--shot'),
 
+  // Terminal scroll forensics: set GITCITO_SCROLL_DEBUG=1 at launch and the
+  // terminal scroll listener streams its decisions through push() into
+  // userData/gitcito-scroll-debug.log. Diagnostic only.
+  scrollDebug: {
+    enabled: process.env.GITCITO_SCROLL_DEBUG === '1',
+    push: (line: string): void => {
+      ipcRenderer.send('scroll-debug', line)
+    }
+  },
+
   git: (method: string, ...args: unknown[]): Promise<unknown> => ipcRenderer.invoke('git', method, ...args),
 
   onCloneProgress: (cb: (p: unknown) => void): (() => void) => {

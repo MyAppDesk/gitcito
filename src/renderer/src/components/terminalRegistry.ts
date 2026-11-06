@@ -388,16 +388,32 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     // user returns to when the app exits.
     if (term.buffer.active.type !== 'normal') return
     const buf = term.buffer.active
+    // Inside the resize quiet window with no gesture behind it, every event
+    // is a clamp artefact of the last fit — there is nothing to do: the fit
+    // already re-asserted the anchor synchronously, and the anchor is
+    // untouched. Answering here is what creates the continuous scrolling the
+    // user sees mid-drag: our snap-back writes the offset, the next clamp
+    // rewrites it, another event, another snap — an endless clamp↔restore
+    // loop. Suppressed events keep the drag silent; anything still wrong
+    // when the window closes converges through the normal path below.
+    if (
+      Date.now() < resizeQuietUntil &&
+      !scrollbarDrag &&
+      Date.now() - lastUserScrollAt > 500
+    ) {
+      return
+    }
     // Following output — whether xterm auto-scrolled for a write or the user
     // scrolled down to it, reaching baseY always means "at the bottom".
-    // Except during a resize: a clamp of the DOM offset to the shrunken
-    // scroll-range max reads as exactly baseY with no gesture behind it, so
-    // only a real gesture — or an event that cannot be a fit artefact — may
-    // mark "following". Anything else converges through snap-back.
+    // But a PARKED anchor cannot legitimately arrive at baseY without a
+    // gesture: output-following only holds the bottom when the anchor is
+    // 'bottom' already, so a parked anchor reading baseY is always a clamp
+    // artefact — during a resize, a reflow, or a scrollback trim. Letting it
+    // flip the anchor to 'bottom' is the resize auto-scroll the user keeps
+    // reporting; snap back instead. (A dead marker already resolves to the
+    // top via anchorTarget, so restoring is still the honest fallback.)
     if (y >= buf.baseY) {
-      const realFollow =
-        scrollbarDrag || Date.now() - lastUserScrollAt <= 500 || Date.now() > resizeQuietUntil
-      if (!realFollow) {
+      if (anchor.kind === 'line' && !scrollbarDrag && Date.now() - lastUserScrollAt > 500) {
         scheduleSnapBack()
         return
       }

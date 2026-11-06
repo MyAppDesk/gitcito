@@ -168,6 +168,23 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
   // event then passes as a real output-follow and poisons the anchor to
   // 'bottom'. A rolling deadline stays open for the whole drag instead.
   let resizeQuietUntil = 0
+  // Opt-in scroll forensics for the resize-autoscroll hunt:
+  // localStorage 'gitcito:scroll-debug' = '1', reproduce, then dump with
+  // copy(__termScrollLog().join('\n')) in devtools. Ring buffer, off by
+  // default — every decision the listener makes lands here with timestamps.
+  const sdbg = ((): ((msg: string) => void) => {
+    let on: boolean | null = null
+    const ring: string[] = []
+    const g = window as unknown as { __termScrollLog?: () => string[] }
+    const prev = g.__termScrollLog
+    g.__termScrollLog = () => [...(prev?.() ?? []), ...ring]
+    return (msg: string): void => {
+      if (on === null) on = localStorage.getItem('gitcito:scroll-debug') === '1'
+      if (!on) return
+      ring.push(`t+${Date.now() % 100000} [${panelId}] ${msg}`)
+      if (ring.length > 400) ring.splice(0, ring.length - 400)
+    }
+  })()
   const markUserScroll = (): void => {
     lastUserScrollAt = Date.now()
   }
@@ -291,7 +308,10 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     const max = vp.scrollHeight - vp.clientHeight
     if (max <= 0 || buf.baseY <= 0) return
     const st = Math.round((Math.min(y, buf.baseY) / buf.baseY) * max)
-    if (Math.abs(vp.scrollTop - st) > 2) vp.scrollTop = st
+    if (Math.abs(vp.scrollTop - st) > 2) {
+      sdbg(`dom st ${vp.scrollTop}->${st} max=${max}`)
+      vp.scrollTop = st
+    }
   }
 
   // Restore a mid-scroll position after xterm lost it: scrollLines with a
@@ -401,8 +421,13 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
       !scrollbarDrag &&
       Date.now() - lastUserScrollAt > 500
     ) {
+      sdbg(`ev y=${y} base=${buf.baseY} a=${anchor.kind}${anchor.kind === 'line' ? ':' + anchor.y : ''} -> quiet-suppress`)
       return
     }
+    sdbg(
+      `ev y=${y} base=${buf.baseY} a=${anchor.kind}${anchor.kind === 'line' ? ':' + anchor.y : ''} ` +
+        `g=${Date.now() - lastUserScrollAt}ms sd=${scrollbarDrag} q=${resizeQuietUntil - Date.now()}ms`
+    )
     // Following output — whether xterm auto-scrolled for a write or the user
     // scrolled down to it, reaching baseY always means "at the bottom".
     // But a PARKED anchor cannot legitimately arrive at baseY without a
@@ -414,9 +439,11 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     // top via anchorTarget, so restoring is still the honest fallback.)
     if (y >= buf.baseY) {
       if (anchor.kind === 'line' && !scrollbarDrag && Date.now() - lastUserScrollAt > 500) {
+        sdbg('  -> fake-bottom snapback')
         scheduleSnapBack()
         return
       }
+      if (anchor.kind !== 'bottom') sdbg('  -> anchor=bottom')
       anchor = { kind: 'bottom' }
       anchorMarker?.dispose()
       anchorMarker = null
@@ -429,14 +456,24 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     // drag, so the 500ms window alone would expire mid-drag and snap-back
     // would fight the user's hand.
     if (scrollbarDrag || Date.now() - lastUserScrollAt <= 500) {
+      sdbg(`  -> park y=${y}`)
       parkAt(y)
       return
     }
     // No gesture, not the bottom: a DOM clamp, a reflow clamp, a trim
     // adjustment, or one of our own restores. The anchor stays (the marker
     // already followed any trim), and if no ResizeObserver fit is coming to
-    // fix a collapsed position, the snap-back does.
-    scheduleSnapBack()
+    // fix a collapsed position, the snap-back does. A bottom-follower gets
+    // the restore immediately — scrollToBottom is clamp-safe and idempotent
+    // inside the handler, and every 50ms of deferral is a visible
+    // "drift then snap" bounce on each output burst or resize step.
+    if (anchor.kind === 'bottom') {
+      sdbg('  -> bottom-follow restore')
+      restoreAnchor()
+    } else {
+      sdbg('  -> snapback')
+      scheduleSnapBack()
+    }
   })
   cleanups.push(() => {
     scrollListener.dispose()
@@ -493,6 +530,7 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
         // on the marker-tracked line otherwise.
         restoreAnchor()
         syncDomScrollTop()
+        sdbg(`fit ${term.cols}x${term.rows} -> a=${anchor.kind}`)
         // The clamp events the fit just caused are delivered asynchronously
         // (the viewport's scroll event follows the scrollArea's style change
         // on a later frame) — and a drag produces a fit per step, so roll

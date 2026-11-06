@@ -523,11 +523,36 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
       sdbg(`pty-resize ${d.cols}x${d.rows}`)
       if (isLaunch) window.api.launch.resize(handle.ptyId, d.cols, d.rows)
       else window.api.term.resize(handle.ptyId, d.cols, d.rows)
-    }, 150)
+    }, 300)
   }
   cleanups.push(() => {
     if (ptyResizeTimer) window.clearTimeout(ptyResizeTimer)
   })
+
+  // ConPTY (and PSReadLine reacting to a resize) answers a pty resize with a
+  // repaint containing CSI 3 J — an "erase scrollback" request. That wipe is
+  // the visible "random scroll" the user sees: history vanishes, the screen
+  // rewrites from row 0. xterm owns the scrollback, so strip the request —
+  // the repaint still redraws the screen, the history survives.
+  let pendingTail = ''
+  const writeToTerm = (data: string): void => {
+    if (pendingTail) {
+      data = pendingTail + data
+      pendingTail = ''
+    }
+    // The sequence may split across pty chunks — hold an incomplete tail.
+    const partial = /(?:\x1b\[?3?|\x9b3?)$/.exec(data)?.[0]
+    if (partial) {
+      pendingTail = partial
+      data = data.slice(0, -partial.length)
+    }
+    if (data.includes('\x1b[3J') || data.includes('\x9b3J')) {
+      sdbg('strip scrollback-erase')
+      data = data.replace(/\x1b\[3J|\x9b3J/g, '')
+    }
+    if (data.includes('\x1bc')) sdbg('saw full-reset')
+    if (data) term.write(data)
+  }
 
   // Programs push their own tab title via OSC 0/2 (claude, vim, ssh…); prefer
   // it over the polled process name, which can be meaningless for some
@@ -620,7 +645,7 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
   if (isLaunch) {
     // Bind to the already-spawned launch pty (created in main by launch:run).
     handle.ptyId = launchId!
-    cleanups.push(window.api.launch.onData(launchId!, (data) => term.write(data)))
+    cleanups.push(window.api.launch.onData(launchId!, writeToTerm))
     cleanups.push(
       window.api.launch.onExit(launchId!, (code) =>
         term.write(`\r\n\x1b[90m[process exited with code ${code}]\x1b[0m\r\n`)
@@ -639,7 +664,7 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
   // Defer fit until the container is attached & sized.
   void window.api.term.create(cwd, term.cols || 80, term.rows || 24).then((id) => {
     handle.ptyId = id
-    cleanups.push(window.api.term.onData(id, (data) => term.write(data)))
+    cleanups.push(window.api.term.onData(id, writeToTerm))
     cleanups.push(
       window.api.term.onExit(id, () =>
         term.write('\r\n\x1b[90m[process exited]\x1b[0m\r\n')

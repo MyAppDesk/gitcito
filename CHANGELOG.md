@@ -1,5 +1,17 @@
 
 
+## [4.20.0](https://github.com/MyAppDesk/gitcito/compare/v4.19.0...v4.20.0) (2026-11-06)
+
+
+### Features
+
+* **ai:** scoped edit of a selected line range in the file viewer ([#73](https://github.com/MyAppDesk/gitcito/issues/73)) ([044a0ab](https://github.com/MyAppDesk/gitcito/commit/044a0abeafb8d4eb8d97f7c9d9caaebbfb186ef5))
+
+
+### Bug Fixes
+
+* **terminal:** do not treat a resize clamp-to-max as output-follow ([#71](https://github.com/MyAppDesk/gitcito/issues/71)) ([3e8da36](https://github.com/MyAppDesk/gitcito/commit/3e8da366c0a7b92b2cd20996a63a6f4cbb445192))
+
 ## [4.19.0](https://github.com/MyAppDesk/gitcito/compare/v4.18.0...v4.19.0) (2026-11-05)
 
 

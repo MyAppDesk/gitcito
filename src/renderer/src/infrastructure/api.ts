@@ -145,6 +145,7 @@ import type {
   PRReviewResult,
   HoverExplainRequest,
   HoverExplainResult,
+  EditSelectionRequest,
   ImportGraph,
   KeychainConsent,
   KeychainReason,
@@ -680,6 +681,8 @@ export const aiApi = {
   detectCli: () => window.api.ai.detectCli() as Promise<DetectedCli[]>,
   explainCode: (code: string, lang: string, cfg: AIConfig) =>
     window.api.ai.explainCode(code, lang, cfg) as Promise<string>,
+  editSelection: (req: EditSelectionRequest, cfg: AIConfig) =>
+    window.api.ai.editSelection(req, cfg) as Promise<string>,
   hoverExplain: (req: HoverExplainRequest, cfg: AIConfig) =>
     window.api.ai.hoverExplain(req, cfg) as Promise<HoverExplainResult>,
   resolveConflict: (file: string, content: string, cfg: AIConfig) =>

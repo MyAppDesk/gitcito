@@ -84,6 +84,7 @@ No provider publishes a ranked or curated list, so the shaping is Gitcito's: dat
 | **Commit message** | Summary (and optional body) from your staged diff, in your chosen style |
 | **Explain this file** | Plain-language explanation in a side panel — Normal, Concise, ELI5… even Pirate |
 | **Hover to explain** | Hold <kbd>⇧</kbd> and point at an identifier for a one-line explanation, plus the lines it drew on |
+| **AI edit selection** | Select lines in a file, describe the change, and the model rewrites just those lines into the editor draft |
 | **Conflict resolution** | Proposes a merge into the editable output — never auto-applies |
 | **PR review** | Summarises a diff and flags risks, each anchored to a real `path:line` |
 | **PR description** · **branch names** | Drafted from the branch's commits and diff |
@@ -91,6 +92,20 @@ No provider publishes a ranked or curated list, so the shaping is Gitcito's: dat
 | **Smart staging** | Suggestions for what belongs in this commit |
 | **[Repository chat](repo-chat.md)** | Grounded questions plus reviewed file changes followed by validated Git actions |
 | **AI config wizard** | Generates assistant configuration files (instructions, agents, hooks) for the repository — the wand button in the chat panel header |
+
+### Edit just the lines you select
+
+In the file view, drag across the lines you want changed and press **AI edit…**
+(or right-click a line and pick it from the menu). A bar at the bottom shows the
+selected range and takes your instruction — "rename this variable", "add null
+checks", "translate these strings". The model sees the selected lines plus a
+little surrounding context and returns only the replacement for that range,
+which lands in the **editor draft** rather than on disk. You review it there and
+save or discard through the normal editing flow, so nothing is written until you
+say so. It works on every configured backend, not just agent CLIs, because the
+answer is text, not a tool call. The limits: it rewrites one contiguous range at
+a time, it cannot create or delete whole files, and a selection that crosses
+diff hunks is refused — select inside the file view instead.
 
 ## Grounded, not guessing
 

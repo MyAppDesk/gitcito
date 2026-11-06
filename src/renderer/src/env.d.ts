@@ -135,6 +135,7 @@ interface PreloadApi {
     listModels(cfg: unknown, force?: boolean): Promise<unknown>
     detectCli(): Promise<unknown>
     explainCode(code: string, lang: string, cfg: unknown): Promise<unknown>
+    editSelection(req: unknown, cfg: unknown): Promise<unknown>
     hoverExplain(req: unknown, cfg: unknown): Promise<unknown>
     resolveConflict(file: string, content: string, cfg: unknown): Promise<unknown>
     generateConfig(repoName: string, artifacts: unknown[], context: string, cfg: unknown): Promise<unknown>

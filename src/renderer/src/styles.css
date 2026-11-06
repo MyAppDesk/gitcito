@@ -7442,6 +7442,46 @@ body.col-resizing .node-ava {
 .fv-explain-btn {
   flex-shrink: 0;
 }
+.fv-ai-edit-btn {
+  flex-shrink: 0;
+}
+.fv-ai-edit-bar {
+  position: absolute;
+  inset-inline: 12px;
+  bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--surface-2, #1c2130);
+  border: 1px solid var(--border, #2c3652);
+  border-radius: 8px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
+  z-index: 30;
+}
+.fv-ai-edit-bar svg {
+  color: var(--accent, #8b6cff);
+  flex-shrink: 0;
+}
+.fv-ai-edit-range {
+  font-size: 11px;
+  color: var(--fg-dim, #8a93ad);
+  white-space: nowrap;
+}
+.fv-ai-edit-input {
+  flex: 1;
+  min-width: 0;
+  background: var(--surface-1, #12152a);
+  border: 1px solid var(--border, #2c3652);
+  border-radius: 5px;
+  color: var(--fg, #d6dbe8);
+  font: inherit;
+  padding: 4px 8px;
+}
+.fv-ai-edit-input:focus {
+  outline: none;
+  border-color: var(--accent, #8b6cff);
+}
 .fv-explain-panel {
   position: absolute;
   inset-inline-end: 12px;

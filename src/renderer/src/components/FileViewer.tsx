@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { X, GitCommitHorizontal, Sparkles, Loader2, Search, ChevronUp, ChevronDown, Pencil, Save, Link2, Play, Pause } from 'lucide-react'
+import { X, GitCommitHorizontal, Sparkles, Loader2, Search, ChevronUp, ChevronDown, Pencil, Save, Link2, Play, Pause, Wand2 } from 'lucide-react'
 import type { BlameLine, BlobSpec, FileHistoryEntry, NumberedLine } from '../../../shared/types'
 import { gitApi, aiApi, shellApi } from '../infrastructure/api'
 import { useSettingsStore } from '../stores/settings'
@@ -210,6 +210,16 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
   const [saving, setSaving] = useState(false)
   useFollowWipFile(view, editing)
 
+  // ─── Scoped AI edit (Ctrl+I-style inline edit) ───
+  // Selection captured at "AI edit" click time — the instruction input then
+  // owns focus without losing it.
+  const [aiEditSel, setAiEditSel] = useState<{ start: number; end: number; text: string } | null>(null)
+  const [aiEditPrompt, setAiEditPrompt] = useState('')
+  const [aiEditing, setAiEditing] = useState(false)
+  // Replacement queued before startEditing() flips `editing` — spliced into
+  // the seeded draft on the next content load.
+  const pendingAiEdit = useRef<{ start: number; end: number; repl: string } | null>(null)
+
   const { repoPath, file, mode, source } = view
 
   // Clear any blame "rewind" when switching files/repos.
@@ -251,6 +261,14 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
     // the row's own menu (the sha actions) wins where it has already answered.
     if (!editorTracksDisk || blameOverrideRef || e.defaultPrevented) return
     const items = editorLineMenuItems(editorSetting, { path: `${repoPath}/${file}`, line, repo: repoPath })
+    // Scoped AI edit on the current selection — the Cursor/Ctrl+I flow.
+    if (aiEnabled && editableFile && mode === 'file' && !editing) {
+      items.push({
+        label: t('fileViewer.aiEdit'),
+        icon: <Wand2 size={13} />,
+        onClick: beginAiEdit
+      })
+    }
     // The line's own text is stored with the bookmark: it is what finds the
     // line again once the file has moved on (see lib/bookmarks.ts).
     const snippet = (content ?? '').split('\n')[line - 1] ?? ''
@@ -455,6 +473,85 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
     }
   }
 
+  // Capture the current DOM selection as a 1-based inclusive line range —
+  // the same `.code-line`/`.code-no` walk hoverExplain uses.
+  const captureSelection = (): { start: number; end: number; text: string } | null => {
+    const sel = window.getSelection()
+    if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return null
+    const range = sel.getRangeAt(0)
+    const lineOf = (node: Node | null): number | null => {
+      const el = node instanceof Element ? node : node?.parentElement
+      const no = el?.closest('.code-line, .blame-line')?.querySelector('.code-no')?.textContent
+      const n = Number(no)
+      return Number.isInteger(n) && n > 0 ? n : null
+    }
+    const a = lineOf(range.startContainer)
+    const b = lineOf(range.endContainer)
+    const text = sel.toString()
+    if (a === null || b === null || !text.trim()) return null
+    return { start: Math.min(a, b), end: Math.max(a, b), text }
+  }
+
+  const beginAiEdit = (): void => {
+    const sel = captureSelection()
+    if (!sel) {
+      toast('error', t('fileViewer.aiEditNoSel'))
+      return
+    }
+    setAiEditSel(sel)
+    setAiEditPrompt('')
+  }
+
+  // Splice the queued replacement into the editor-seeded draft — called by
+  // the content load when `editing` flips on.
+  const applyPendingAiEdit = (text: string): string => {
+    const p = pendingAiEdit.current
+    if (!p) return text
+    pendingAiEdit.current = null
+    const lines = text.split('\n')
+    const head = lines.slice(0, p.start - 1)
+    const tail = lines.slice(Math.min(p.end, lines.length))
+    const repl = p.repl.replace(/\n$/, '')
+    return [...head, repl, ...tail].join('\n')
+  }
+
+  const runAiEdit = async (): Promise<void> => {
+    if (!aiEditSel || content === null) return
+    const lines = content.split('\n')
+    const code = lines.slice(aiEditSel.start - 1, aiEditSel.end).join('\n')
+    const ctx = 40
+    const contextBefore = lines.slice(Math.max(0, aiEditSel.start - 1 - ctx), aiEditSel.start - 1).join('\n')
+    const contextAfter = lines.slice(aiEditSel.end, aiEditSel.end + ctx).join('\n')
+    setAiEditing(true)
+    try {
+      const repl = await aiApi.editSelection(
+        {
+          file,
+          lang,
+          startLine: aiEditSel.start,
+          endLine: aiEditSel.end,
+          code,
+          contextBefore,
+          contextAfter,
+          instruction: aiEditPrompt.trim()
+        },
+        { ...useSettingsStore.getState().aiFor('explain'), cliCwd: repoPath }
+      )
+      if (repl.trim()) {
+        pendingAiEdit.current = { start: aiEditSel.start, end: aiEditSel.end, repl }
+        // Entering edit mode reloads the file and seeds the draft — the
+        // pending splice lands on top of that authoritative text.
+        startEditing()
+        toast('success', t('fileViewer.aiEditDone'))
+      }
+      setAiEditSel(null)
+    } catch (err) {
+      toast('error', err instanceof Error ? err.message : String(err))
+    } finally {
+      setAiEditing(false)
+    }
+  }
+
   // Hover-to-explain over the file and blame views (the diff view has its own,
   // inside DiffViewer). Never over a masked secret file — the token would be a
   // run of bullets — and never while the editor owns the text.
@@ -572,8 +669,9 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
             setContent(text)
             // Seed the editor buffer from this authoritative load (entering edit
             // or switching file/mode). User keystrokes never trigger a reload, so
-            // this can't clobber unsaved typing.
-            if (editing) setDraft(text)
+            // this can't clobber unsaved typing. A queued AI-edit splice lands
+            // on top of the fresh seed.
+            if (editing) setDraft(applyPendingAiEdit(text))
           }
         } else if (mode === 'blame') {
           const lines = await gitApi.blameFile(repoPath, file, blameOverrideRef ?? blameRef(view, deleted))
@@ -806,6 +904,16 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
             {explaining ? <Loader2 size={13} className="spin" /> : <Sparkles size={13} />} {t('explain.action')}
           </button>
         )}
+        {editableFile && aiEnabled && mode === 'file' && !editing && (
+          <button
+            className="btn ghost small fv-ai-edit-btn"
+            disabled={aiEditing}
+            title={t('fileViewer.aiEditTitle')}
+            onClick={beginAiEdit}
+          >
+            {aiEditing ? <Loader2 size={13} className="spin" /> : <Wand2 size={13} />} {t('fileViewer.aiEdit')}
+          </button>
+        )}
         {permalink && (
           <button
             className="btn ghost small"
@@ -1016,6 +1124,35 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
                 })}
               </div>
               {showMinimap && <FileMinimap lines={fileLines} gutterByLine={gutterByLine} scrollRef={bodyRef} />}
+              {aiEditSel && (
+                <div className="fv-ai-edit-bar">
+                  <Wand2 size={13} />
+                  <span className="fv-ai-edit-range">
+                    {interp(t('fileViewer.aiEditRange'), { a: aiEditSel.start, b: aiEditSel.end })}
+                  </span>
+                  <input
+                    className="fv-ai-edit-input"
+                    autoFocus
+                    value={aiEditPrompt}
+                    placeholder={t('fileViewer.aiEditPrompt')}
+                    onChange={(e) => setAiEditPrompt(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') void runAiEdit()
+                      else if (e.key === 'Escape') setAiEditSel(null)
+                    }}
+                  />
+                  <button
+                    className="btn small"
+                    disabled={aiEditing || !aiEditPrompt.trim()}
+                    onClick={() => void runAiEdit()}
+                  >
+                    {aiEditing && <Loader2 size={12} className="spin" />} {t('fileViewer.aiEditApply')}
+                  </button>
+                  <button className="btn ghost small" onClick={() => setAiEditSel(null)}>
+                    {t('common.cancel')}
+                  </button>
+                </div>
+              )}
             </>
           )
         })()}

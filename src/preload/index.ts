@@ -138,6 +138,8 @@ const api = {
     detectCli: (): Promise<unknown> => ipcRenderer.invoke('ai:detectCli'),
     explainCode: (code: string, lang: string, cfg: unknown): Promise<unknown> =>
       ipcRenderer.invoke('ai:explainCode', code, lang, cfg),
+    editSelection: (req: unknown, cfg: unknown): Promise<unknown> =>
+      ipcRenderer.invoke('ai:editSelection', req, cfg),
     hoverExplain: (req: unknown, cfg: unknown): Promise<unknown> =>
       ipcRenderer.invoke('ai:hoverExplain', req, cfg),
     resolveConflict: (file: string, content: string, cfg: unknown): Promise<unknown> =>

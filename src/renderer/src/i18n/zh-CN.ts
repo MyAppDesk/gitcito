@@ -1629,6 +1629,8 @@ export const zhCN: Dict = {
   'settings.appTheme': '应用主题',
   'settings.codeTheme': '代码主题',
   'settings.terminalTheme': '终端主题',
+  'settings.terminalShell': '终端 Shell',
+  'settings.terminalShellHint': '新建集成终端会话使用的 Shell（现有会话保留原 Shell）。',
   'settings.terminalFontFamily': '终端字体',
   'settings.terminalFontFamilyHint': '集成终端的 CSS 字体栈 — 例如 Cascadia Mono、JetBrains Mono、monospace。',
   'settings.tabTheme': '主题',

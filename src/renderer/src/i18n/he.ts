@@ -1629,6 +1629,8 @@ export const he: Dict = {
   'settings.appTheme': 'ערכת נושא לאפליקציה',
   'settings.codeTheme': 'ערכת נושא לקוד',
   'settings.terminalTheme': 'ערכת נושא של טרמינל',
+  'settings.terminalShell': 'מעטפת הטרמינל',
+  'settings.terminalShellHint': 'המעטפת לסשנים חדשים של הטרמינל המשולב (סשנים קיימים שומרים על שלהם).',
   'settings.terminalFontFamily': 'גופן הטרמינל',
   'settings.terminalFontFamilyHint': 'ערימת גופני CSS לטרמינל המשולב — למשל Cascadia Mono, JetBrains Mono, monospace.',
   'settings.tabTheme': 'ערכת נושא',

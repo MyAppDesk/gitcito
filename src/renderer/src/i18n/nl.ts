@@ -1630,6 +1630,8 @@ export const nl: Dict = {
   'settings.appTheme': 'App-thema',
   'settings.codeTheme': 'Codethema',
   'settings.terminalTheme': 'Terminalthema',
+  'settings.terminalShell': 'Terminalshell',
+  'settings.terminalShellHint': 'Shell voor nieuwe geïntegreerde terminalsessies (bestaande sessies behouden de huidige).',
   'settings.terminalFontFamily': 'Terminallettertype',
   'settings.terminalFontFamilyHint': 'CSS-lettertypestapel voor de geïntegreerde terminal — bv. Cascadia Mono, JetBrains Mono, monospace.',
   'settings.tabTheme': 'Thema',

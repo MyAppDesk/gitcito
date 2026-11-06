@@ -1609,6 +1609,8 @@ export const it: Dict = {
   'settings.appTheme': 'Tema dell’app',
   'settings.codeTheme': 'Tema del codice',
   'settings.terminalTheme': 'Tema del terminale',
+  'settings.terminalShell': 'Shell del terminale',
+  'settings.terminalShellHint': 'Shell per le nuove sessioni del terminale integrato (le sessioni esistenti mantengono la propria).',
   'settings.terminalFontFamily': 'Font del terminale',
   'settings.terminalFontFamilyHint': 'Stack di font CSS per il terminale integrato — ad es. Cascadia Mono, JetBrains Mono, monospace.',
   'settings.tabTheme': 'Tema',

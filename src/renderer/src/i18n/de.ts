@@ -1629,6 +1629,8 @@ export const de: Dict = {
   'settings.appTheme': 'App-Theme',
   'settings.codeTheme': 'Code-Design',
   'settings.terminalTheme': 'Terminal-Design',
+  'settings.terminalShell': 'Terminal-Shell',
+  'settings.terminalShellHint': 'Shell für neue integrierte Terminalsitzungen (bestehende Sitzungen behalten ihre Shell).',
   'settings.terminalFontFamily': 'Terminal-Schriftart',
   'settings.terminalFontFamilyHint': 'CSS-Schriftstapel für das integrierte Terminal — z. B. Cascadia Mono, JetBrains Mono, monospace.',
   'settings.tabTheme': 'Theme',

@@ -1625,6 +1625,8 @@ export const en = {
   'settings.appTheme': 'App theme',
   'settings.codeTheme': 'Code theme',
   'settings.terminalTheme': 'Terminal theme',
+  'settings.terminalShell': 'Terminal shell',
+  'settings.terminalShellHint': 'Shell for new integrated-terminal sessions (existing sessions keep theirs).',
   'settings.terminalFontFamily': 'Terminal font family',
   'settings.terminalFontFamilyHint': 'CSS font stack for the integrated terminal — e.g. Cascadia Mono, JetBrains Mono, monospace.',
   'settings.tabTheme': 'Theme',

@@ -1629,6 +1629,8 @@ export const uk: Dict = {
   'settings.appTheme': 'Тема застосунку',
   'settings.codeTheme': 'Тема коду',
   'settings.terminalTheme': 'Тема термінала',
+  'settings.terminalShell': 'Оболонка термінала',
+  'settings.terminalShellHint': 'Оболонка для нових сеансів вбудованого термінала (наявні сеанси зберігають свою).',
   'settings.terminalFontFamily': 'Шрифт термінала',
   'settings.terminalFontFamilyHint': 'CSS-стек шрифтів для вбудованого термінала — напр. Cascadia Mono, JetBrains Mono, monospace.',
   'settings.tabTheme': 'Тема',

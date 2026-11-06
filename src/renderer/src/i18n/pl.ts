@@ -1629,6 +1629,8 @@ export const pl: Dict = {
   'settings.appTheme': 'Motyw aplikacji',
   'settings.codeTheme': 'Motyw kodu',
   'settings.terminalTheme': 'Motyw terminala',
+  'settings.terminalShell': 'Powłoka terminala',
+  'settings.terminalShellHint': 'Powłoka dla nowych sesji zintegrowanego terminala (istniejące sesje zachowują swoją).',
   'settings.terminalFontFamily': 'Czcionka terminala',
   'settings.terminalFontFamilyHint': 'Stos czcionek CSS dla wbudowanego terminala — np. Cascadia Mono, JetBrains Mono, monospace.',
   'settings.tabTheme': 'Motyw',

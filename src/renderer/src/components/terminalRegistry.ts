@@ -4,6 +4,7 @@ import { WebLinksAddon } from '@xterm/addon-web-links'
 import type { TerminalThemeColors } from '../../../shared/types'
 import { TERMINAL_THEMES } from '../theme/themes'
 import { useTermTitlesStore } from '../stores/termTitles'
+import { useSettingsStore } from '../stores/settings'
 
 export interface TermHandle {
   term: Terminal
@@ -614,8 +615,11 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     return handle
   }
 
-  // Defer fit until the container is attached & sized.
-  void window.api.term.create(cwd, term.cols || 80, term.rows || 24).then((id) => {
+  // Defer fit until the container is attached & sized. The shell is read at
+  // creation time — an existing session keeps the shell it was spawned with
+  // even if the setting changes later.
+  const shell = useSettingsStore.getState().settings.terminalShell
+  void window.api.term.create(cwd, term.cols || 80, term.rows || 24, shell).then((id) => {
     handle.ptyId = id
     cleanups.push(window.api.term.onData(id, (data) => term.write(data)))
     cleanups.push(

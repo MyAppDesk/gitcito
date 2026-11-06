@@ -1608,6 +1608,8 @@ export const tr: Dict = {
   'settings.appTheme': 'Uygulama teması',
   'settings.codeTheme': 'Kod teması',
   'settings.terminalTheme': 'Terminal teması',
+  'settings.terminalShell': 'Terminal kabuğu',
+  'settings.terminalShellHint': 'Yeni tümleşik terminal oturumları için kabuk (mevcut oturumlar kendi kabuğunu korur).',
   'settings.terminalFontFamily': 'Terminal yazı tipi',
   'settings.terminalFontFamilyHint': 'Tümleşik terminal için CSS yazı tipi yığını — ör. Cascadia Mono, JetBrains Mono, monospace.',
   'settings.tabTheme': 'Tema',

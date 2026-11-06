@@ -2295,6 +2295,18 @@ function LayoutPreview({
   )
 }
 
+// Windows shell presets for the integrated terminal. Labels stay in English —
+// they are executable names, not copy to translate. 'system' keeps the legacy
+// COMSPEC (cmd.exe) behavior.
+const TERMINAL_SHELL_OPTIONS: { id: string; label: string }[] = [
+  { id: 'powershell', label: 'PowerShell' }, // i18n-ignore proper noun
+  { id: 'pwsh', label: 'PowerShell Core (pwsh)' }, // i18n-ignore proper noun
+  { id: 'cmd', label: 'Command Prompt (cmd)' }, // i18n-ignore proper noun
+  { id: 'gitbash', label: 'Git Bash' }, // i18n-ignore proper noun
+  { id: 'wsl', label: 'WSL' }, // i18n-ignore proper noun
+  { id: 'system', label: 'System default' } // i18n-ignore platform term
+]
+
 function LayoutPage(): React.JSX.Element {
   const settings = useSettingsStore((s) => s.settings)
   const update = useSettingsStore((s) => s.update)
@@ -2340,6 +2352,34 @@ function LayoutPage(): React.JSX.Element {
           ))}
         </div>
       </label>
+
+      {window.api.platform === 'win32' && (
+        <label className="settings-field">
+          <span className="settings-field-label">{t('settings.terminalShell')}</span>
+          <span className="settings-hint">{t('settings.terminalShellHint')}</span>
+          <select
+            value={
+              TERMINAL_SHELL_OPTIONS.some((o) => o.id === settings.terminalShell)
+                ? settings.terminalShell
+                : 'custom'
+            }
+            onChange={(e) => {
+              if (e.target.value !== 'custom') {
+                update((s) => ({ ...s, terminalShell: e.target.value }))
+              }
+            }}
+          >
+            {TERMINAL_SHELL_OPTIONS.map((o) => (
+              <option key={o.id} value={o.id}>
+                {o.label}
+              </option>
+            ))}
+            {!TERMINAL_SHELL_OPTIONS.some((o) => o.id === settings.terminalShell) && (
+              <option value="custom">{settings.terminalShell}</option>
+            )}
+          </select>
+        </label>
+      )}
 
       <label className="settings-field">
         <span className="settings-field-label">{t('settings.sidebarSide')}</span>

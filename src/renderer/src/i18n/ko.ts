@@ -1629,6 +1629,8 @@ export const ko: Dict = {
   'settings.appTheme': '앱 테마',
   'settings.codeTheme': '코드 테마',
   'settings.terminalTheme': '터미널 테마',
+  'settings.terminalShell': '터미널 셸',
+  'settings.terminalShellHint': '새 통합 터미널 세션의 셸입니다 (기존 세션은 현재 셸을 유지합니다).',
   'settings.terminalFontFamily': '터미널 글꼴',
   'settings.terminalFontFamilyHint': '통합 터미널용 CSS 폰트 스택 — 예: Cascadia Mono, JetBrains Mono, monospace.',
   'settings.tabTheme': '테마',

@@ -330,8 +330,8 @@ const api = {
   },
 
   term: {
-    create: (cwd: string, cols: number, rows: number): Promise<number> =>
-      ipcRenderer.invoke('term:create', cwd, cols, rows),
+    create: (cwd: string, cols: number, rows: number, shell?: string): Promise<number> =>
+      ipcRenderer.invoke('term:create', cwd, cols, rows, shell),
     input: (id: number, data: string): void => ipcRenderer.send('term:input', id, data),
     resize: (id: number, cols: number, rows: number): void => ipcRenderer.send('term:resize', id, cols, rows),
     kill: (id: number): void => ipcRenderer.send('term:kill', id),

@@ -2985,6 +2985,11 @@ export interface AppSettings {
   terminalThemeId: string
   terminalFontSize: number
   terminalFontFamily: string
+  /** Shell spawned for new integrated-terminal sessions on Windows: a preset id
+   *  ('powershell' | 'pwsh' | 'cmd' | 'gitbash' | 'wsl' | 'system') or a custom
+   *  executable path. 'system' = COMSPEC (cmd.exe). Existing sessions keep the
+   *  shell they were created with. Ignored on POSIX (uses SHELL). */
+  terminalShell: string
   /** Which side the branches/files sidebar docks on. */
   sidebarSide: 'left' | 'right'
   /** Let the right details panel span the full window height instead of
@@ -3410,6 +3415,7 @@ export function defaultSettings(): AppSettings {
     terminalThemeId: 'gitcito',
     terminalFontSize: 12.5,
     terminalFontFamily: 'SF Mono, JetBrains Mono, Menlo, monospace',
+    terminalShell: 'powershell',
     sidebarSide: 'left',
     rightPanelFullHeight: false
   }

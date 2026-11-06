@@ -1629,6 +1629,8 @@ export const ar: Dict = {
   'settings.appTheme': 'سمة التطبيق',
   'settings.codeTheme': 'سمة الكود',
   'settings.terminalTheme': 'سمة الطرفية',
+  'settings.terminalShell': 'صدفة الطرفية',
+  'settings.terminalShellHint': 'الصدفة لجلسات الطرفية المدمجة الجديدة (الجلسات الحالية تحتفظ بصدفتها).',
   'settings.terminalFontFamily': 'خط الطرفية',
   'settings.terminalFontFamilyHint': 'مجموعة خطوط CSS للطرفية المدمجة — مثل Cascadia Mono أو JetBrains Mono أو monospace.',
   'settings.tabTheme': 'السمة',

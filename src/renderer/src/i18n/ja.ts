@@ -1608,6 +1608,8 @@ export const ja: Dict = {
   'settings.appTheme': 'アプリのテーマ',
   'settings.codeTheme': 'コードテーマ',
   'settings.terminalTheme': 'ターミナルテーマ',
+  'settings.terminalShell': 'ターミナルシェル',
+  'settings.terminalShellHint': '新しい統合ターミナルセッションのシェル（既存のセッションは現在のシェルを維持します）。',
   'settings.terminalFontFamily': 'ターミナルのフォント',
   'settings.terminalFontFamilyHint': '統合ターミナルの CSS フォントスタック — 例: Cascadia Mono, JetBrains Mono, monospace.',
   'settings.tabTheme': 'テーマ',

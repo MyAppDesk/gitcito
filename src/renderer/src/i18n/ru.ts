@@ -1629,6 +1629,8 @@ export const ru: Dict = {
   'settings.appTheme': 'Тема приложения',
   'settings.codeTheme': 'Тема кода',
   'settings.terminalTheme': 'Тема терминала',
+  'settings.terminalShell': 'Оболочка терминала',
+  'settings.terminalShellHint': 'Оболочка для новых сеансов встроенного терминала (существующие сеансы сохраняют свою).',
   'settings.terminalFontFamily': 'Шрифт терминала',
   'settings.terminalFontFamilyHint': 'CSS-стек шрифтов для встроенного терминала — напр. Cascadia Mono, JetBrains Mono, monospace.',
   'settings.tabTheme': 'Тема',

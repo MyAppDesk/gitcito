@@ -44,6 +44,7 @@ interface LaunchApi {
 interface PreloadApi {
   platform: string
   shotMode: boolean
+  scrollDebug: { enabled: boolean; push(line: string): void }
   git(method: string, ...args: unknown[]): Promise<unknown>
   onCloneProgress(cb: (p: import('../../shared/types').CloneProgress) => void): () => void
   /** Live stdout/stderr of a running `git bisect run`. */

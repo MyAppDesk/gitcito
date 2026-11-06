@@ -159,6 +159,34 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
   let anchor: ScrollAnchor = { kind: 'bottom' }
   let anchorMarker: IMarker | null = null
   let lastUserScrollAt = 0
+  // Extended on every fitSafely. xterm maps ydisp proportionally to the DOM
+  // scroll range (scrollTop / max * baseY), so a resize that shrinks the
+  // range — a taller panel, or a wider one reflowing to fewer wrapped rows —
+  // clamps scrollTop to the new max and fires a scroll event reading
+  // exactly baseY. A fixed window after the last fit is not enough: a slow
+  // drag spaces fits further apart than the window, and an in-between clamp
+  // event then passes as a real output-follow and poisons the anchor to
+  // 'bottom'. A rolling deadline stays open for the whole drag instead.
+  let resizeQuietUntil = 0
+  // Opt-in scroll forensics for the resize-autoscroll hunt: launch with
+  // GITCITO_SCROLL_DEBUG=1 and every decision the listener makes is streamed
+  // to userData/gitcito-scroll-debug.log (readable on packaged builds where
+  // DevTools is unavailable) and kept in a ring dumpable from DevTools via
+  // __termScrollLog() on dev builds. Off by default.
+  const sdbg = ((): ((msg: string) => void) => {
+    const on = !!window.api?.scrollDebug?.enabled
+    const ring: string[] = []
+    const g = window as unknown as { __termScrollLog?: () => string[] }
+    const prev = g.__termScrollLog
+    g.__termScrollLog = () => [...(prev?.() ?? []), ...ring]
+    if (!on) return () => {}
+    return (msg: string): void => {
+      const line = `t+${Date.now() % 100000} [${panelId}] ${msg}`
+      ring.push(line)
+      if (ring.length > 400) ring.splice(0, ring.length - 400)
+      window.api.scrollDebug.push(line)
+    }
+  })()
   const markUserScroll = (): void => {
     lastUserScrollAt = Date.now()
   }
@@ -256,9 +284,12 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
       // Drag-selecting near the viewport edge makes xterm auto-scroll — those
       // scroll events are real user intent (unmarking them would let
       // snap-back fight the selection). Anywhere else a held-button drag is
-      // just text selection and must not open the intent window.
+      // just text selection and must not open the intent window. Only an
+      // actual in-progress selection counts: a splitter drag passing through
+      // the edge zone with the button held selects nothing and would
+      // otherwise mark every resize clamp event as a genuine scroll.
       const vp = container.querySelector('.xterm-viewport')
-      if (!(vp instanceof HTMLElement)) return
+      if (!(vp instanceof HTMLElement) || !term.hasSelection()) return
       const r = vp.getBoundingClientRect()
       if (e.clientY < r.top + 30 || e.clientY > r.bottom - 30) markUserScroll()
     },
@@ -279,7 +310,10 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     const max = vp.scrollHeight - vp.clientHeight
     if (max <= 0 || buf.baseY <= 0) return
     const st = Math.round((Math.min(y, buf.baseY) / buf.baseY) * max)
-    if (Math.abs(vp.scrollTop - st) > 2) vp.scrollTop = st
+    if (Math.abs(vp.scrollTop - st) > 2) {
+      sdbg(`dom st ${vp.scrollTop}->${st} max=${max}`)
+      vp.scrollTop = st
+    }
   }
 
   // Restore a mid-scroll position after xterm lost it: scrollLines with a
@@ -338,18 +372,34 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
   // short delay — never inside the scroll handler, where re-scrolling feeds
   // the same clamped offset straight back in — and only against the anchor,
   // so it converges instead of chasing a stale index.
+  // During a resize the anchor was never poisoned but the clamp is VISIBLE:
+  // the viewport paints the bottom for ~50ms per drag step before the
+  // timeout snap-back lands. Restore on the next animation frame instead —
+  // before the bad frame paints — so the drag produces no flicker at all.
+  // The timeout still runs as a backstop for occluded renderers where rAF
+  // is throttled, and both firings are idempotent.
   let snapBackTimer = 0
+  let snapBackRaf = 0
+  const snapBackNow = (): void => {
+    if (!container.isConnected || container.clientHeight === 0) return
+    if (term.buffer.active.type !== 'normal') return
+    if (Date.now() - lastUserScrollAt <= 500) return
+    const buf = term.buffer.normal
+    if (buf.viewportY !== anchorTarget()) restoreAnchor()
+    syncDomScrollTop()
+  }
   const scheduleSnapBack = (): void => {
+    if (Date.now() < resizeQuietUntil && !snapBackRaf) {
+      snapBackRaf = requestAnimationFrame(() => {
+        snapBackRaf = 0
+        snapBackNow()
+      })
+    }
     if (snapBackTimer) return
     snapBackTimer = window.setTimeout(() => {
       snapBackTimer = 0
-      if (!container.isConnected || container.clientHeight === 0) return
-      if (term.buffer.active.type !== 'normal') return
-      if (Date.now() - lastUserScrollAt <= 500) return
-      const buf = term.buffer.normal
-      if (buf.viewportY !== anchorTarget()) restoreAnchor()
-      syncDomScrollTop()
-    }, 50)
+      snapBackNow()
+    }, Date.now() < resizeQuietUntil ? 120 : 50)
   }
 
   const scrollListener = term.onScroll((y) => {
@@ -360,9 +410,42 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     // user returns to when the app exits.
     if (term.buffer.active.type !== 'normal') return
     const buf = term.buffer.active
+    // Inside the resize quiet window with no gesture behind it, every event
+    // is a clamp artefact of the last fit — there is nothing to do: the fit
+    // already re-asserted the anchor synchronously, and the anchor is
+    // untouched. Answering here is what creates the continuous scrolling the
+    // user sees mid-drag: our snap-back writes the offset, the next clamp
+    // rewrites it, another event, another snap — an endless clamp↔restore
+    // loop. Suppressed events keep the drag silent; anything still wrong
+    // when the window closes converges through the normal path below.
+    if (
+      Date.now() < resizeQuietUntil &&
+      !scrollbarDrag &&
+      Date.now() - lastUserScrollAt > 500
+    ) {
+      sdbg(`ev y=${y} base=${buf.baseY} a=${anchor.kind}${anchor.kind === 'line' ? ':' + anchor.y : ''} -> quiet-suppress`)
+      return
+    }
+    sdbg(
+      `ev y=${y} base=${buf.baseY} a=${anchor.kind}${anchor.kind === 'line' ? ':' + anchor.y : ''} ` +
+        `g=${Date.now() - lastUserScrollAt}ms sd=${scrollbarDrag} q=${resizeQuietUntil - Date.now()}ms`
+    )
     // Following output — whether xterm auto-scrolled for a write or the user
     // scrolled down to it, reaching baseY always means "at the bottom".
+    // But a PARKED anchor cannot legitimately arrive at baseY without a
+    // gesture: output-following only holds the bottom when the anchor is
+    // 'bottom' already, so a parked anchor reading baseY is always a clamp
+    // artefact — during a resize, a reflow, or a scrollback trim. Letting it
+    // flip the anchor to 'bottom' is the resize auto-scroll the user keeps
+    // reporting; snap back instead. (A dead marker already resolves to the
+    // top via anchorTarget, so restoring is still the honest fallback.)
     if (y >= buf.baseY) {
+      if (anchor.kind === 'line' && !scrollbarDrag && Date.now() - lastUserScrollAt > 500) {
+        sdbg('  -> fake-bottom snapback')
+        scheduleSnapBack()
+        return
+      }
+      if (anchor.kind !== 'bottom') sdbg('  -> anchor=bottom')
       anchor = { kind: 'bottom' }
       anchorMarker?.dispose()
       anchorMarker = null
@@ -375,19 +458,30 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     // drag, so the 500ms window alone would expire mid-drag and snap-back
     // would fight the user's hand.
     if (scrollbarDrag || Date.now() - lastUserScrollAt <= 500) {
+      sdbg(`  -> park y=${y}`)
       parkAt(y)
       return
     }
     // No gesture, not the bottom: a DOM clamp, a reflow clamp, a trim
     // adjustment, or one of our own restores. The anchor stays (the marker
     // already followed any trim), and if no ResizeObserver fit is coming to
-    // fix a collapsed position, the snap-back does.
-    scheduleSnapBack()
+    // fix a collapsed position, the snap-back does. A bottom-follower gets
+    // the restore immediately — scrollToBottom is clamp-safe and idempotent
+    // inside the handler, and every 50ms of deferral is a visible
+    // "drift then snap" bounce on each output burst or resize step.
+    if (anchor.kind === 'bottom') {
+      sdbg('  -> bottom-follow restore')
+      restoreAnchor()
+    } else {
+      sdbg('  -> snapback')
+      scheduleSnapBack()
+    }
   })
   cleanups.push(() => {
     scrollListener.dispose()
     anchorMarker?.dispose()
     if (snapBackTimer) window.clearTimeout(snapBackTimer)
+    if (snapBackRaf) cancelAnimationFrame(snapBackRaf)
   })
 
   // Programs push their own tab title via OSC 0/2 (claude, vim, ssh…); prefer
@@ -438,6 +532,13 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
         // on the marker-tracked line otherwise.
         restoreAnchor()
         syncDomScrollTop()
+        sdbg(`fit ${term.cols}x${term.rows} -> a=${anchor.kind}`)
+        // The clamp events the fit just caused are delivered asynchronously
+        // (the viewport's scroll event follows the scrollArea's style change
+        // on a later frame) — and a drag produces a fit per step, so roll
+        // the quiet window forward from each fit rather than timing it from
+        // the first.
+        resizeQuietUntil = Date.now() + 250
       } catch {
         /* element not visible / zero-size */
       }

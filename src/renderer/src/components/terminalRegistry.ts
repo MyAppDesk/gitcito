@@ -500,6 +500,36 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     if (snapBackRaf) cancelAnimationFrame(snapBackRaf)
   })
 
+  // Debounce pty resize notifications. A drag produces one fit per step and
+  // every step used to hit the pty: each resize delivers SIGWINCH to the
+  // program, and shells/TUIs (and ConPTY itself) answer by erasing and
+  // rewriting the scrollback — visible as the "random scrolling" that keeps
+  // going seconds after the drag ended. Collapse the flood into a single
+  // trailing-edge notification carrying the settled dims.
+  let pendingPtyResize: { cols: number; rows: number } | null = null
+  let ptyResizeTimer = 0
+  let lastSentCols = 0
+  let lastSentRows = 0
+  const sendPtyResize = (cols: number, rows: number): void => {
+    pendingPtyResize = { cols, rows }
+    if (ptyResizeTimer) return
+    ptyResizeTimer = window.setTimeout(() => {
+      ptyResizeTimer = 0
+      const d = pendingPtyResize
+      pendingPtyResize = null
+      if (!d || handle.ptyId == null) return
+      if (d.cols === lastSentCols && d.rows === lastSentRows) return
+      lastSentCols = d.cols
+      lastSentRows = d.rows
+      sdbg(`pty-resize ${d.cols}x${d.rows}`)
+      if (isLaunch) window.api.launch.resize(handle.ptyId, d.cols, d.rows)
+      else window.api.term.resize(handle.ptyId, d.cols, d.rows)
+    }, 150)
+  }
+  cleanups.push(() => {
+    if (ptyResizeTimer) window.clearTimeout(ptyResizeTimer)
+  })
+
   // Programs push their own tab title via OSC 0/2 (claude, vim, ssh…); prefer
   // it over the polled process name, which can be meaningless for some
   // binaries. Disposed together with the terminal.
@@ -599,7 +629,7 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     )
     term.onData((data) => window.api.launch.input(launchId!, data))
     term.onResize(({ cols, rows }) => {
-      if (cols > 0 && rows > 0) window.api.launch.resize(launchId!, cols, rows)
+      if (cols > 0 && rows > 0) sendPtyResize(cols, rows)
     })
     // The pty was spawned before this terminal existed — ask for what it has
     // already printed, or a fast program's whole banner is lost.
@@ -618,7 +648,7 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     )
     term.onData((data) => window.api.term.input(id, data))
     term.onResize(({ cols, rows }) => {
-      if (cols > 0 && rows > 0) window.api.term.resize(id, cols, rows)
+      if (cols > 0 && rows > 0) sendPtyResize(cols, rows)
     })
 
     // Poll the foreground process name (VSCode-style auto title).

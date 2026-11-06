@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron'
-import type { AIConfig, AppThemeColors, AskAction, AskPlan, BranchNamingStyle, CodeThemeColors, ConflictStyle, ExplainStyle, PRReviewResult, RepoStatus } from '../shared/types'
+import type { AIConfig, AppThemeColors, AskAction, AskPlan, BranchNamingStyle, CodeThemeColors, ConflictStyle, EditSelectionRequest, ExplainStyle, PRReviewResult, RepoStatus } from '../shared/types'
 import { recordAIUsage } from './analytics'
 import { activeProfileAiKey } from './settings'
 import { callModel, missingCredential, type ChatMessage, type ModelCallOptions } from './aiTransport'
@@ -367,6 +367,52 @@ export interface HoverExplainRequest {
   line: number
   /** The lines the viewer has — a whole file, or the hunks of a diff. */
   lines: NumberedLine[]
+}
+
+/** Strip an optional ```lang fenced wrapper from a model's code reply. */
+function stripCodeFences(text: string): string {
+  const t = text.trim()
+  if (!t.startsWith('```')) return t
+  const after = t.slice(3)
+  const nl = after.indexOf('\n')
+  const body = nl >= 0 ? after.slice(nl + 1) : after
+  return body.endsWith('```') ? body.slice(0, -3).replace(/\n$/, '') : body
+}
+
+/** Scoped edit of a contiguous line range — Cursor-style "Ctrl+I edit".
+ *
+ * The model sees the selected lines plus a little surrounding context and
+ * must return ONLY the replacement text for those lines — the renderer
+ * splices it into the editor buffer, where the normal save/discard flow
+ * reviews it. Works on every backend, not just agent CLIs, because the
+ * reply is text, not a file write. */
+async function editSelection(req: EditSelectionRequest, cfg: AIConfig): Promise<string> {
+  const lang = req.lang || 'source'
+  const system = `You are an expert software engineer performing a scoped edit inside an existing ${lang} file.
+You are given one contiguous range of lines plus surrounding context. Output ONLY the
+replacement text for the selected range — complete lines, no commentary, no markdown
+fences, no line numbers, nothing outside the replacement. Preserve the file's style,
+naming and indentation, and keep it consistent with the context lines.`
+  let user = `File: \`${req.file}\`\n`
+  if (req.contextBefore) {
+    user += `Context above (do not repeat):\n${req.contextBefore}\n`
+  }
+  user += `Selected lines ${req.startLine}-${req.endLine} (the lines to replace):\n${req.code}\n`
+  if (req.contextAfter) {
+    user += `Context below (do not repeat):\n${req.contextAfter}\n`
+  }
+  user += `Instruction: ${req.instruction}\n\nOutput the replacement for lines ${req.startLine}-${req.endLine} only.`
+  const raw = await chatCompleteChecked(
+    cfg,
+    [
+      { role: 'system', content: system },
+      { role: 'user', content: user },
+    ],
+    'editSelection',
+    (text: string): string[] => (stripCodeFences(text).trim().length === 0 ? ['empty replacement'] : []),
+    0.2
+  )
+  return stripCodeFences(raw)
 }
 
 export interface HoverExplainResult {
@@ -1003,6 +1049,7 @@ export function registerAiHandlers(): void {
   )
   ipcMain.handle('ai:detectCli', () => detectCliBinaries())
   ipcMain.handle('ai:explainCode', (_e, code: string, lang: string, cfg: AIConfig) => explainCode(code, lang, cfg))
+  ipcMain.handle('ai:editSelection', (_e, req: EditSelectionRequest, cfg: AIConfig) => editSelection(req, cfg))
   ipcMain.handle('ai:hoverExplain', (_e, req: HoverExplainRequest, cfg: AIConfig) => hoverExplain(req, cfg))
   ipcMain.handle('ai:resolveConflict', (_e, file: string, content: string, cfg: AIConfig) =>
     resolveConflictAI(file, content, cfg)

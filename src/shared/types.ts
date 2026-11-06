@@ -1415,6 +1415,21 @@ export interface HoverExplainRequest {
   lines: NumberedLine[]
 }
 
+/** A scoped inline-edit request: replace `startLine..=endLine` (1-based,
+ * inclusive) of `file` to satisfy `instruction`. */
+export interface EditSelectionRequest {
+  file: string
+  lang: string
+  startLine: number
+  endLine: number
+  /** The exact text of the selected lines. */
+  code: string
+  /** Neighbouring lines for context only — the model must not re-emit them. */
+  contextBefore: string
+  contextAfter: string
+  instruction: string
+}
+
 /** A short explanation of a hovered token, citing lines from the window it saw. */
 export interface HoverExplainResult {
   summary: string

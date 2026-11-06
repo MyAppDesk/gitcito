@@ -106,7 +106,9 @@ git actually is.
 ### AI, optional and grounded
 
 Commit messages, PR descriptions and branch names from the actual diff ·
-[hover to explain](docs/help/ai.md) an identifier · [PR review](docs/help/ai.md)
+[hover to explain](docs/help/ai.md) an identifier ·
+[AI edit](docs/help/ai.md) of just the lines you select, applied to the editor
+draft for review · [PR review](docs/help/ai.md)
 whose findings must anchor to a real `path:line` or get rejected ·
 a [repo wiki](docs/help/repo-wiki.md) where every claim cites its file ·
 [**repository chat**](docs/help/repo-chat.md) that answers from files and commits

@@ -457,8 +457,13 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     // top via anchorTarget, so restoring is still the honest fallback.)
     if (y >= buf.baseY) {
       if (anchor.kind === 'line' && !scrollbarDrag && Date.now() - lastUserScrollAt > 500) {
-        sdbg('  -> fake-bottom snapback')
-        scheduleSnapBack()
+        // Restore inline — deferring this was the visible "scroll to bottom,
+        // bounce back" loop: while the snap-back waited, every output write
+        // dragged the viewport to baseY again (userScrolling stays cleared)
+        // and painted another bottom frame. restoreLine re-arms that flag
+        // immediately, so later writes in the same burst can't move it.
+        sdbg('  -> fake-bottom restore')
+        restoreAnchor()
         return
       }
       if (anchor.kind !== 'bottom') sdbg('  -> anchor=bottom')
@@ -480,18 +485,12 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     }
     // No gesture, not the bottom: a DOM clamp, a reflow clamp, a trim
     // adjustment, or one of our own restores. The anchor stays (the marker
-    // already followed any trim), and if no ResizeObserver fit is coming to
-    // fix a collapsed position, the snap-back does. A bottom-follower gets
-    // the restore immediately — scrollToBottom is clamp-safe and idempotent
-    // inside the handler, and every 50ms of deferral is a visible
-    // "drift then snap" bounce on each output burst or resize step.
-    if (anchor.kind === 'bottom') {
-      sdbg('  -> bottom-follow restore')
-      restoreAnchor()
-    } else {
-      sdbg('  -> snapback')
-      scheduleSnapBack()
-    }
+    // already followed any trim). Both anchor kinds restore immediately —
+    // every 50ms of deferral is a visible "drift then snap" bounce, and for
+    // a parked anchor each deferred window is another write that can drag
+    // the viewport to the bottom before userScrolling is re-armed.
+    sdbg('  -> restore')
+    restoreAnchor()
   })
   cleanups.push(() => {
     scrollListener.dispose()

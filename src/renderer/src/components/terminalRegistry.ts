@@ -98,6 +98,23 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     if (e.type === 'keydown' && e.shiftKey && (e.code === 'PageUp' || e.code === 'PageDown')) {
       lastUserScrollAt = Date.now()
     }
+    // Any key xterm will emit input for also triggers its scrollOnUserInput →
+    // scrollToBottom, and this handler runs BEFORE that scroll. Timestamp the
+    // intent so the scroll listener can tell a real "type → jump to bottom"
+    // apart from a synthetic clamp. Modifier-only presses emit no input and
+    // scroll nothing, so they stay unmarked.
+    if (
+      e.type === 'keydown' &&
+      !['Shift', 'Control', 'Alt', 'Meta', 'OS', 'CapsLock', 'AltGraph', 'Dead', 'Process'].includes(e.key)
+    ) {
+      lastUserInputAt = Date.now()
+    }
+    if (e.type === 'keydown' && e.code.startsWith('Arrow')) {
+      sdbg(
+        `key ${e.code} ctrl=${e.ctrlKey} shift=${e.shiftKey} ` +
+          `appCK=${term.modes.applicationCursorKeysMode}`
+      )
+    }
     if (e.type !== 'keydown' || e.metaKey || e.altKey) return true
     if (e.ctrlKey && e.code === 'KeyC') {
       // Ctrl+Shift+C always copies; a bare Ctrl+C only steals the key while a
@@ -159,6 +176,12 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
   let anchor: ScrollAnchor = { kind: 'bottom' }
   let anchorMarker: IMarker | null = null
   let lastUserScrollAt = 0
+  // xterm's scrollOnUserInput scrolls to the bottom on every input-producing
+  // keydown. Our custom key handler runs before that scroll, so a timestamp
+  // here tells the scroll listener "this bottom event is user intent, not a
+  // clamp artefact" — without it typing while parked gets yanked back and the
+  // terminal feels frozen.
+  let lastUserInputAt = 0
   // Extended on every fitSafely. xterm maps ydisp proportionally to the DOM
   // scroll range (scrollTop / max * baseY), so a resize that shrinks the
   // range — a taller panel, or a wider one reflowing to fewer wrapped rows —
@@ -464,7 +487,13 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     // reporting; snap back instead. (A dead marker already resolves to the
     // top via anchorTarget, so restoring is still the honest fallback.)
     if (y >= buf.baseY) {
-      if (anchor.kind === 'line' && !scrollbarDrag && Date.now() - lastUserScrollAt > 500) {
+      const inputDriven = Date.now() - lastUserInputAt <= 500
+      if (
+        anchor.kind === 'line' &&
+        !scrollbarDrag &&
+        !inputDriven &&
+        Date.now() - lastUserScrollAt > 500
+      ) {
         // Restore inline — deferring this was the visible "scroll to bottom,
         // bounce back" loop: while the snap-back waited, every output write
         // dragged the viewport to baseY again (userScrolling stays cleared)
@@ -474,6 +503,7 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
         restoreAnchor()
         return
       }
+      if (inputDriven) sdbg('  -> input-follow bottom')
       if (anchor.kind !== 'bottom') sdbg('  -> anchor=bottom')
       anchor = { kind: 'bottom' }
       anchorMarker?.dispose()

@@ -402,6 +402,18 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     }, Date.now() < resizeQuietUntil ? 120 : 50)
   }
 
+  // Write-activity counter folded into the event log — separates scroll
+  // events driven by output bursts from ones driven by DOM clamps/reflows.
+  let writeCount = 0
+  term.onWriteParsed(() => {
+    writeCount++
+  })
+  const domState = (): string => {
+    const vp = container.querySelector('.xterm-viewport')
+    if (!(vp instanceof HTMLElement)) return ' st=?'
+    const max = vp.scrollHeight - vp.clientHeight
+    return ` st=${vp.scrollTop}/${max} ch=${vp.clientHeight}`
+  }
   const scrollListener = term.onScroll((y) => {
     if (!container.isConnected || container.clientHeight === 0) return
     // Alternate-buffer apps (vim, less, agent TUIs) scroll their own screen
@@ -423,12 +435,16 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
       !scrollbarDrag &&
       Date.now() - lastUserScrollAt > 500
     ) {
-      sdbg(`ev y=${y} base=${buf.baseY} a=${anchor.kind}${anchor.kind === 'line' ? ':' + anchor.y : ''} -> quiet-suppress`)
+      sdbg(
+        `ev y=${y} base=${buf.baseY} a=${anchor.kind}${anchor.kind === 'line' ? ':' + anchor.y : ''} ` +
+          `w=${writeCount}${domState()} -> quiet-suppress`
+      )
       return
     }
     sdbg(
       `ev y=${y} base=${buf.baseY} a=${anchor.kind}${anchor.kind === 'line' ? ':' + anchor.y : ''} ` +
-        `g=${Date.now() - lastUserScrollAt}ms sd=${scrollbarDrag} q=${resizeQuietUntil - Date.now()}ms`
+        `g=${Date.now() - lastUserScrollAt}ms sd=${scrollbarDrag} q=${resizeQuietUntil - Date.now()}ms ` +
+        `w=${writeCount}${domState()}`
     )
     // Following output — whether xterm auto-scrolled for a write or the user
     // scrolled down to it, reaching baseY always means "at the bottom".
@@ -505,14 +521,18 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
       const expected = anchorTarget()
       handle.suspendViewportY = buf.viewportY === expected ? buf.viewportY : expected
       handle.suspendAtBottom = anchor.kind === 'bottom' || buf.viewportY >= buf.baseY
+      sdbg(`suspend y=${buf.viewportY} base=${buf.baseY} -> snap=${handle.suspendViewportY} bot=${handle.suspendAtBottom}`)
     },
     fitSafely() {
       try {
         // A hidden (display:none) or detached host has no usable size; fitting
         // to it collapses the terminal into a degenerate resize that reflows
         // the scrollback and throws the scroll position away — the visible bug
-        // when switching terminal groups or repo tabs.
+        // when switching terminal groups or repo tabs. Snapshot the anchor
+        // instead — the DOM offset can collapse while hidden and xterm may
+        // rewrite viewportY from it before we get to run again.
         if (!container.isConnected || container.clientWidth === 0 || container.clientHeight === 0) {
+          handle.suspend()
           return
         }
         // A snapshot taken at suspend time becomes the new anchor — the DOM
@@ -524,7 +544,13 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
             parkAt(handle.suspendViewportY)
           }
           handle.suspendViewportY = null
+          // The reattach settle lasts longer than a drag step: the viewport's
+          // scrollHeight re-computes across several frames while clamped
+          // scroll events keep arriving. Hold the quiet window open for the
+          // whole settle or each clamp looks like a bottom-follow.
+          resizeQuietUntil = Date.now() + 400
         }
+        const before = `${term.cols}x${term.rows}`
         fit.fit()
         // Reflow shifts buffer lines on resize and a reattached viewport may
         // have lost its DOM offset entirely; put the scroll position back —
@@ -532,7 +558,7 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
         // on the marker-tracked line otherwise.
         restoreAnchor()
         syncDomScrollTop()
-        sdbg(`fit ${term.cols}x${term.rows} -> a=${anchor.kind}`)
+        sdbg(`fit ${before}->${term.cols}x${term.rows} a=${anchor.kind}${domState()}`)
         // The clamp events the fit just caused are delivered asynchronously
         // (the viewport's scroll event follows the scrollArea's style change
         // on a later frame) — and a drag produces a fit per step, so roll

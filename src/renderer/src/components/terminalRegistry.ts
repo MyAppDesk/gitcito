@@ -541,14 +541,16 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
       pendingTail = ''
     }
     // The sequence may split across pty chunks — hold an incomplete tail.
-    const partial = /(?:\x1b\[?3?|\x9b3?)$/.exec(data)?.[0]
+    const partial = /(?:\x1b\[\??3?;?\d*|\x9b\??3?;?\d*)$/.exec(data)?.[0]
     if (partial) {
       pendingTail = partial
       data = data.slice(0, -partial.length)
     }
-    if (data.includes('\x1b[3J') || data.includes('\x9b3J')) {
+    // ED 3 clears scrollback as CSI 3 J; DECSED 3 does the same as CSI ? 3 J,
+    // and params after a ';' don't change that — cover every variant.
+    if (/\x1b\[\??3(?:;\d*)?J|\x9b\??3(?:;\d*)?J/.test(data)) {
       sdbg('strip scrollback-erase')
-      data = data.replace(/\x1b\[3J|\x9b3J/g, '')
+      data = data.replace(/\x1b\[\??3(?:;\d*)?J|\x9b\??3(?:;\d*)?J/g, '')
     }
     if (data.includes('\x1bc')) sdbg('saw full-reset')
     if (data) term.write(data)

@@ -5862,9 +5862,12 @@ body.col-resizing .node-ava {
 
 .modal-hint {
   margin-top: 8px;
+  margin-bottom: 4px;
   font-size: 11.5px;
   color: var(--text-2);
-  word-break: break-all;
+  /* Wrap on word boundaries like normal prose; only overlong tokens (paths,
+     URLs) break mid-token. break-all used to split ordinary words in two. */
+  overflow-wrap: break-word;
 }
 .modal-hint.danger {
   color: var(--red, #e7596c);

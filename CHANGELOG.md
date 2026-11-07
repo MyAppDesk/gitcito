@@ -1,5 +1,12 @@
 
 
+## [4.22.0](https://github.com/MyAppDesk/gitcito/compare/v4.21.1...v4.22.0) (2026-11-07)
+
+
+### Features
+
+* **settings:** global sidebar section defaults with per-repo override ([#78](https://github.com/MyAppDesk/gitcito/issues/78)) ([f373d4e4](https://github.com/MyAppDesk/gitcito/commit/f373d4e4870ab285844c6b4b382bca6c99345a69))
+
 ## [4.21.1](https://github.com/MyAppDesk/gitcito/compare/v4.21.0...v4.21.1) (2026-11-07)
 
 

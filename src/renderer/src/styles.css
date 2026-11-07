@@ -234,6 +234,27 @@ textarea:focus {
   font-size: 12px;
 }
 
+/* Fit mode (Settings → Layout → Tab sizing): browser-like — tabs shrink
+   equally toward a floor before the strip scrolls. Only active when the
+   container carries .fit; the plain rules above keep 'fixed' untouched. */
+.tabs.fit .tab {
+  flex: 0 1 auto;
+  min-width: 84px;
+  overflow: hidden;
+}
+.tabs.fit .tab-name {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+.tabs.fit .tab-group-wrap,
+.tabs.fit .tab-folder {
+  min-width: 84px;
+  overflow: hidden;
+}
+.tabs.fit .tab-add {
+  flex: none;
+}
+
 /* Larger than the 13px folder icon it replaces: a picture needs the room to be
    recognisable, and the 32px tab has it. Alone, it is the tab's only label. */
 .tab-repo-image {

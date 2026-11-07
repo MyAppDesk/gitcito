@@ -84,6 +84,7 @@ function promptNewWorktree(path: string): void {
   useUIStore.getState().openModal({
     kind: 'add-worktree',
     path,
+    rootPath: repo.worktrees.find((w) => w.isMain)?.path ?? path,
     repoName,
     current: repo.branches.current,
     locals: repo.branches.locals.map((b) => ({ name: b.name, isCurrent: b.isCurrent })),

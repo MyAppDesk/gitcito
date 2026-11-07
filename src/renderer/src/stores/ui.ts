@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { ReactNode } from 'react'
-import type { CiState, DivergedStrategy, KeychainReason, ResetStrategy } from '../../../shared/types'
+import type { CiState, DivergedStrategy, KeychainReason, RepoRef, ResetStrategy } from '../../../shared/types'
+import type { WorktreeGroupPlan } from '../lib/worktrees'
 import type { WorkspaceCandidate } from '../lib/workspacePlan'
 import { touchMru } from '../lib/repoSwitcher'
 
@@ -111,6 +112,9 @@ export type ModalSpec =
   | {
       kind: 'add-worktree'
       path: string
+      /** Main-worktree path of the family — `path` itself may be a linked
+       *  worktree, so callers resolve it from `worktrees[].isMain`. */
+      rootPath: string
       repoName: string
       /** Currently checked-out branch — the default base. */
       current: string
@@ -163,6 +167,15 @@ export type ModalSpec =
   | { kind: 'local-ci'; repoPath: string; rev?: string }
   /** Name a new group and pick its colour in one go. */
   | { kind: 'new-group'; onCreate: (name: string, color: string) => void }
+  /** Offer to group an opening worktree with its family: the root's standalone
+   *  tab ('convert' — asks for a group name) or the group the family already
+   *  lives in ('add' — just confirms). */
+  | {
+      kind: 'worktree-group'
+      repo: RepoRef
+      plan: WorktreeGroupPlan
+      onResolve: (choice: 'group' | 'separate', name: string) => void
+    }
   | { kind: 'keychain-consent'; reason: KeychainReason; adopted?: boolean }
   | { kind: 'range-diff'; repoPath: string; branch: string; initialOld?: string }
   | { kind: 'absorb'; repoPath: string }

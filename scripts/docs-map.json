@@ -33,6 +33,7 @@
       "create-tag": "tags",
       "credentials": "credentials",
       "add-worktree": "worktrees",
+      "worktree-group": "worktrees",
    "ahead-checkout": "branching",
       "diverged-checkout": "branching",
       "hooks": "hooks",

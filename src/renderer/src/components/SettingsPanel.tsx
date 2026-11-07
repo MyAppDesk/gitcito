@@ -2539,7 +2539,7 @@ function LayoutPage(): React.JSX.Element {
                 : 'custom'
             }
             onChange={(e) => {
-              // 'custom' clears to an empty path - resolveShell falls back to
+              // 'custom' clears to an empty path — resolveShell falls back to
               // the system shell until a real path is typed below.
               update((s) => ({
                 ...s,
@@ -2566,6 +2566,24 @@ function LayoutPage(): React.JSX.Element {
       )}
 
       <label className="settings-field">
+        <span className="settings-field-label">{t('settings.tabSizing')}</span>
+        <span className="settings-hint">{t('settings.tabSizingHint')}</span>
+        <div className="layout-segmented two">
+          {(['fit', 'fixed'] as const).map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              className={`layout-seg-btn ${settings.tabSizing === mode ? 'active' : ''}`}
+              onClick={() => update((s) => ({ ...s, tabSizing: mode }))}
+            >
+              <strong>{t(mode === 'fit' ? 'settings.tabSizingFit' : 'settings.tabSizingFixed')}</strong>
+              <span>{t(mode === 'fit' ? 'settings.tabSizingFitHint' : 'settings.tabSizingFixedHint')}</span>
+            </button>
+          ))}
+        </div>
+      </label>
+
+      <label className="settings-field">
         <span className="settings-field-label">{t('settings.sidebarSide')}</span>
         <span className="settings-hint">{t('settings.sidebarSideHint')}</span>
         <div className="layout-segmented two">
@@ -2583,6 +2601,20 @@ function LayoutPage(): React.JSX.Element {
       </label>
 
       <div className="settings-toggle-list">
+        <label className="settings-toggle-card">
+          <input
+            type="checkbox"
+            checked={settings.worktreeShortLabels !== false}
+            onChange={(e) => update((s) => ({ ...s, worktreeShortLabels: e.target.checked }))}
+          />
+          <span className="settings-toggle-control" aria-hidden="true">
+            <span className="settings-toggle-thumb" />
+          </span>
+          <span className="settings-toggle-copy">
+            <strong>{t('settings.worktreeShortLabels')}</strong>
+            <span className="settings-hint">{t('settings.worktreeShortLabelsHint')}</span>
+          </span>
+        </label>
         <label className={`settings-toggle-card ${placement !== 'bottom' ? 'disabled' : ''}`}>
           <input
             type="checkbox"

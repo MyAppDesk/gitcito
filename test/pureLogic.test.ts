@@ -64,7 +64,7 @@ import {
   tabLabelParts
 } from '../src/renderer/src/lib/repoImage'
 import { resolveUpdateOffer } from '../src/renderer/src/lib/updateOffer'
-import { worktreeForBranch, worktreeTabName } from '../src/renderer/src/lib/worktrees'
+import { planWorktreeGroup, worktreeForBranch, worktreeLeafLabel, worktreeTabName } from '../src/renderer/src/lib/worktrees'
 import { focusedHashes, focusedStashes, defaultBranchName } from '../src/renderer/src/lib/graphFocus'
 import type {
   WorktreeInfo,
@@ -5353,6 +5353,118 @@ describe('worktreeForBranch', () => {
   it('falls back to the folder when the worktree is detached', () => {
     const w = wt({ path: '/src/gitcito--spike', branch: null, detached: true })
     expect(worktreeTabName('/src/gitcito', w)).toBe('gitcito · gitcito--spike')
+  })
+})
+
+describe('worktree grouping', () => {
+  const ref = (path: string, name = '', worktreeRoot?: string): RepoRef => ({ path, name: name || path, worktreeRoot })
+  const repoTab = (id: string, repo: RepoRef): TabState =>
+    ({ id, kind: 'repo', name: repo.name, repos: [repo], activeRepoPath: repo.path }) as TabState
+  const groupTab = (id: string, name: string, repos: RepoRef[]): TabState =>
+    ({ id, kind: 'group', name, repos, activeRepoPath: repos[0]?.path ?? null }) as TabState
+
+  it('converts the standalone root tab and defaults to its folder name', () => {
+    const tabs = [repoTab('t1', ref('/src/mastery', 'mastery'))]
+    expect(planWorktreeGroup(tabs, '/src/mastery')).toEqual({
+      kind: 'convert',
+      tabId: 't1',
+      defaultName: 'mastery'
+    })
+  })
+
+  it('converts a standalone sibling worktree tab too', () => {
+    const tabs = [repoTab('t1', ref('/src/mastery--feat', 'mastery · feat', '/src/mastery'))]
+    expect(planWorktreeGroup(tabs, '/src/mastery')).toEqual({
+      kind: 'convert',
+      tabId: 't1',
+      defaultName: 'mastery'
+    })
+  })
+
+  it('adds to the group the root already lives in', () => {
+    const tabs = [groupTab('g1', 'Work', [ref('/src/mastery', 'mastery')])]
+    expect(planWorktreeGroup(tabs, '/src/mastery')).toEqual({ kind: 'add', tabId: 'g1', groupName: 'Work' })
+  })
+
+  it('adds to a group holding only a sibling worktree', () => {
+    const tabs = [groupTab('g1', 'Work', [ref('/src/mastery--feat', 'mastery · feat', '/src/mastery')])]
+    expect(planWorktreeGroup(tabs, '/src/mastery')).toEqual({ kind: 'add', tabId: 'g1', groupName: 'Work' })
+  })
+
+  it('returns null when the family is not open', () => {
+    const tabs = [repoTab('t1', ref('/src/other', 'other')), groupTab('g1', 'Work', [ref('/src/again', 'again')])]
+    expect(planWorktreeGroup(tabs, '/src/mastery')).toBeNull()
+  })
+
+  it('does not match a similarly-prefixed different repository', () => {
+    const tabs = [repoTab('t1', ref('/src/mastery2', 'mastery2'))]
+    expect(planWorktreeGroup(tabs, '/src/mastery')).toBeNull()
+  })
+
+  it('matches case-insensitively on drive letters', () => {
+    const tabs = [repoTab('t1', ref('C:/src/mastery', 'mastery'))]
+    expect(planWorktreeGroup(tabs, 'c:/src/mastery')).toEqual({
+      kind: 'convert',
+      tabId: 't1',
+      defaultName: 'mastery'
+    })
+  })
+})
+
+describe('worktreeLeafLabel', () => {
+  const ref = (path: string, name = '', worktreeRoot?: string): RepoRef => ({ path, name: name || path, worktreeRoot })
+
+  it('strips the root prefix when the family is present', () => {
+    const me = ref('/src/m--feat', 'm · feat/x', '/src/m')
+    expect(worktreeLeafLabel(me, [me, ref('/src/m', 'm')])).toBe('feat/x')
+  })
+
+  it('uses the sibling worktree as family too', () => {
+    const me = ref('/src/m--feat', 'm · feat', '/src/m')
+    const sib = ref('/src/m--fix', 'm · fix', '/src/m')
+    expect(worktreeLeafLabel(me, [me, sib])).toBe('feat')
+  })
+
+  it('keeps the full name when alone in the group', () => {
+    const me = ref('/src/m--feat', 'm · feat', '/src/m')
+    expect(worktreeLeafLabel(me, [me, ref('/src/other', 'other')])).toBeNull()
+  })
+
+  it('returns null for ordinary repos', () => {
+    const me = ref('/src/m', 'm')
+    expect(worktreeLeafLabel(me, [me, ref('/src/m--feat', 'x', '/src/m')])).toBeNull()
+  })
+
+  it('handles the older dash separator', () => {
+    const me = ref('/src/m--feat', 'm - feat', '/src/m')
+    expect(worktreeLeafLabel(me, [me, ref('/src/m', 'm')])).toBe('feat')
+  })
+
+  it('falls back to the folder leaf for names without a separator', () => {
+    const me = ref('/src/m--feat', 'customname', '/src/m')
+    expect(worktreeLeafLabel(me, [me, ref('/src/m', 'm')])).toBe('m--feat')
+  })
+
+  it('infers legacy untagged worktrees via the shared prefix with the root repo', () => {
+    const me = ref('/src/m--feat', 'm · feat') // no worktreeRoot — saved before it existed
+    expect(worktreeLeafLabel(me, [me, ref('/src/m', 'm')])).toBe('feat')
+  })
+
+  it('infers legacy untagged worktrees via an untagged sibling sharing the prefix', () => {
+    const me = ref('/src/m--feat', 'm · feat')
+    const sib = ref('/src/m--fix', 'm · fix')
+    expect(worktreeLeafLabel(me, [me, sib])).toBe('feat')
+  })
+
+  it('does not shorten an untagged name whose prefix matches nothing', () => {
+    const me = ref('/src/m--feat', 'm · feat')
+    expect(worktreeLeafLabel(me, [me, ref('/src/other', 'other')])).toBeNull()
+  })
+
+  it('leaves the root repo itself full-named even when prefixed siblings exist', () => {
+    const root = ref('/src/m', 'm')
+    const me = ref('/src/m--feat', 'm · feat')
+    expect(worktreeLeafLabel(root, [root, me])).toBeNull()
   })
 })
 

@@ -27,6 +27,14 @@ confirms only when the tab is clean — when there are uncommitted changes or
 conflicts the warning deliberately makes you reach for the button, so a stray
 keypress after <kbd>⌘W</kbd> cannot close work you were still holding.
 
+### Tab sizing
+
+By default (**Settings → Layout → Tab sizing → Fit**) tabs behave like a
+browser's: when the strip runs out of room they shrink equally toward a
+minimum width, and only scroll once even that floor is reached. **Fixed**
+restores the classic behaviour — every tab keeps its content width and the
+strip scrolls as soon as they do not all fit.
+
 ### Going to a repository
 
 With ten or more repositories open, finding one in the strip means scrolling,

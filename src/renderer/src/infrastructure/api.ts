@@ -545,6 +545,7 @@ export const gitApi = {
   fileHistory: (path: string, file: string) => call<FileHistoryEntry[]>('fileHistory', path, file),
 
   worktrees: (path: string) => call<WorktreeInfo[]>('worktrees', path),
+  worktreeRoot: (path: string) => call<string | null>('worktreeRoot', path),
   worktreeAdd: (path: string, dir: string, branch: string, newBranch: boolean, startPoint?: string) =>
     call<void>('worktreeAdd', path, dir, branch, newBranch, startPoint),
   worktreeRemove: (path: string, dir: string, force?: boolean) => call<void>('worktreeRemove', path, dir, force),

@@ -673,6 +673,39 @@ async function makeWorktreeGitfilePortable(worktreePath: string): Promise<void> 
   }
 }
 
+/** Ignored directories that are generated rather than personal config —
+ *  copying them into a fresh worktree would drag megabytes for nothing. */
+const WORKTREE_COPY_SKIP_DIRS = new Set([
+  'node_modules', 'bower_components', 'vendor', 'dist', 'build', 'out',
+  'target', 'bin', 'obj', 'coverage', '.nyc_output',
+  '.next', '.nuxt', '.svelte-kit', '.output', '.vercel',
+  '.venv', 'venv', 'env', '__pycache__', '.pytest_cache', '.mypy_cache', '.ruff_cache',
+  '.turbo', '.cache', '.parcel-cache', '.gradle', '.idea', '.vs',
+  'DerivedData', 'Pods', '.terraform', '.serverless', '.aws-sam'
+])
+
+/** Bigger than this is a build artefact or dataset, not a local config file. */
+const WORKTREE_COPY_MAX_BYTES = 64 * 1024 * 1024
+
+/** A new worktree starts without .env and friends because git never tracks
+ *  them — copy the source repo's ignored files across so it starts runnable.
+ *  Enumerated through git's own ignore machinery, so nested .gitignore files,
+ *  .git/info/exclude and global excludes all count. */
+async function copyIgnoredIntoWorktree(srcRepo: string, dest: string): Promise<void> {
+  const out = await gitFor(srcRepo)
+    .raw(['ls-files', '--others', '--ignored', '--exclude-standard', '-z'])
+    .catch(() => '')
+  for (const rel of out.split('\0').filter(Boolean)) {
+    if (rel.split('/').some((part) => WORKTREE_COPY_SKIP_DIRS.has(part))) continue
+    const from = join(srcRepo, rel)
+    const info = await lstat(from).catch(() => null)
+    if (!info?.isFile() || info.isSymbolicLink() || info.size > WORKTREE_COPY_MAX_BYTES) continue
+    const to = join(dest, rel)
+    await mkdir(dirname(to), { recursive: true })
+    await cp(from, to)
+  }
+}
+
 /** The textconv shim Gitcito ships (resources/cli/gitcito-textconv). */
 export function bundledTextconvPath(): string {
   // Packaged: extraResources puts cli/ next to app.asar. Source checkout and
@@ -6441,6 +6474,19 @@ export const gitService = {
     return result
   },
 
+  /** Main-worktree path of the repository `repoPath` belongs to. The main
+   *  worktree itself returns its own path; a linked worktree returns the
+   *  root's path; a non-repository returns null. One `rev-parse`, used by the
+   *  header to offer grouping worktrees that share a root. */
+  async worktreeRoot(repoPath: string): Promise<string | null> {
+    const common = await gitFor(repoPath)
+      .raw(['rev-parse', '--path-format=absolute', '--git-common-dir'])
+      .catch(() => '')
+    const dir = common.trim()
+    if (!dir) return null
+    return dirname(dir)
+  },
+
   async worktreeAdd(
     repoPath: string,
     path: string,
@@ -6465,6 +6511,11 @@ export const gitService = {
     }
     await gitFor(repoPath).raw(args)
     await makeWorktreeGitfilePortable(target)
+    // Ignored files don't travel with git — .env has to be copied by hand
+    // otherwise. Opt-in via the add-worktree dialog.
+    if ((await readSettings()).worktreeCopyIgnored === true) {
+      await copyIgnoredIntoWorktree(repoPath, target).catch(() => undefined)
+    }
     // A worktree is a fresh project root — the parent's .codegraph index does
     // not carry over, so agents opening it find nothing. When the parent is
     // indexed and the CLI is on PATH, index the new tree in the background.
@@ -7804,6 +7855,7 @@ const READ_METHODS = new Set<string>([
   'blameFile',
   'fileHistory',
   'worktrees',
+  'worktreeRoot',
   'submodules',
   'signingConfig',
   'hooksInfo',

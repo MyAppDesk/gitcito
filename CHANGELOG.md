@@ -1,5 +1,12 @@
 
 
+## [4.21.1](https://github.com/MyAppDesk/gitcito/compare/v4.21.0...v4.21.1) (2026-11-07)
+
+
+### Bug Fixes
+
+* **modals:** wrap hint prose on word boundaries, not mid-word ([577fae9b](https://github.com/MyAppDesk/gitcito/commit/577fae9bea630834b77c64ac567947853e5c33b3))
+
 ## [4.21.0](https://github.com/MyAppDesk/gitcito/compare/v4.20.0...v4.21.0) (2026-11-07)
 
 

@@ -10,7 +10,8 @@ import { applyDirection } from './i18n/direction'
 import { todoSummary } from './lib/todos'
 import { doctorSummary } from './lib/repoConfig'
 import { canonicalRepoPath } from './lib/repoAlias'
-import { applyAppTheme, applyCodeTheme, findAppTheme, findCodeTheme } from './theme/themes'
+import { applyAppTheme, applyCodeTheme, findAppTheme, findCodeTheme, findTerminalTheme } from './theme/themes'
+import { applyTerminalPrefs } from './components/terminalRegistry'
 import { TitleBar, requestCloseTab } from './components/TitleBar'
 import { Toolbar } from './components/Toolbar'
 import { MissingRepository } from './components/MissingRepository'
@@ -718,6 +719,16 @@ export default function App(): React.JSX.Element {
     settings.customAppThemes,
     settings.customCodeThemes
   ])
+
+  // Terminal palette/font — independent of the app mode switch (terminal
+  // presets are complete palettes), applied live to every persistent xterm.
+  useEffect(() => {
+    applyTerminalPrefs(
+      findTerminalTheme(settings.terminalThemeId).colors,
+      settings.terminalFontSize,
+      settings.terminalFontFamily
+    )
+  }, [settings.terminalThemeId, settings.terminalFontSize, settings.terminalFontFamily])
 
   const missionOpen = useUIStore((s) => s.missionOpen)
   const setMissionOpen = useUIStore((s) => s.setMissionOpen)

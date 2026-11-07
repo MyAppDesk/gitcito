@@ -29,7 +29,31 @@ function shellArgs(): string[] {
   return process.platform === 'win32' ? [] : ['-l']
 }
 
-function createPty(wc: WebContents, id: number, cwd: string, cols: number, rows: number): TermSession | null {
+/** Maps the `terminalShell` setting to an executable + args. Unknown values are
+ *  treated as a custom executable path. POSIX ignores the setting (SHELL is
+ *  already the user's choice); a login-shell arg is kept there. */
+function resolveShell(sel?: string): { file: string; args: string[] } {
+  if (process.platform !== 'win32') return { file: defaultShell(), args: shellArgs() }
+  switch (sel) {
+    case 'powershell':
+      return { file: 'powershell.exe', args: ['-NoLogo'] }
+    case 'pwsh':
+      return { file: 'pwsh.exe', args: ['-NoLogo'] }
+    case 'cmd':
+      return { file: 'cmd.exe', args: [] }
+    case 'gitbash':
+      return { file: 'C:\\Program Files\\Git\\bin\\bash.exe', args: ['-i', '-l'] }
+    case 'wsl':
+      return { file: 'wsl.exe', args: [] }
+    case 'system':
+      return { file: defaultShell(), args: [] }
+    default:
+      // ''/undefined → system default; anything else is a custom exe path.
+      return { file: sel?.trim() ? sel.trim() : defaultShell(), args: [] }
+  }
+}
+
+function createPty(wc: WebContents, id: number, cwd: string, cols: number, rows: number, shell?: string): TermSession | null {
   try {
     interface PtyProcess {
       write(data: string): void
@@ -44,7 +68,8 @@ function createPty(wc: WebContents, id: number, cwd: string, cols: number, rows:
     const pty = require('node-pty') as {
       spawn(file: string, args: string[], opts: Record<string, unknown>): PtyProcess
     }
-    const p = pty.spawn(defaultShell(), shellArgs(), {
+    const sh = resolveShell(shell)
+    const p = pty.spawn(sh.file, sh.args, {
       name: 'xterm-256color',
       cwd,
       cols,
@@ -145,9 +170,9 @@ function createFallback(wc: WebContents, id: number, cwd: string): TermSession {
 }
 
 export function registerTerminalHandlers(): void {
-  ipcMain.handle('term:create', (e, cwd: string, cols: number, rows: number) => {
+  ipcMain.handle('term:create', (e, cwd: string, cols: number, rows: number, shell?: string) => {
     const id = nextId++
-    const session = createPty(e.sender, id, cwd, cols, rows) ?? createFallback(e.sender, id, cwd)
+    const session = createPty(e.sender, id, cwd, cols, rows, shell) ?? createFallback(e.sender, id, cwd)
     sessions.set(id, session)
     return id
   })

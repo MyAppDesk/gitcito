@@ -362,6 +362,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     settings.appThemeId = LEGACY_APP_THEME_IDS[settings.appThemeId] ?? settings.appThemeId
     settings.codeThemeId = LEGACY_CODE_THEME_IDS[settings.codeThemeId] ?? settings.codeThemeId
     settings.codeFontSize = settings.codeFontSize ?? sd.codeFontSize
+    settings.terminalThemeId = settings.terminalThemeId ?? sd.terminalThemeId
+    settings.terminalFontSize = settings.terminalFontSize ?? sd.terminalFontSize
+    settings.terminalFontFamily = settings.terminalFontFamily ?? sd.terminalFontFamily
+    settings.terminalShell = settings.terminalShell ?? sd.terminalShell
     settings.customAppThemes = settings.customAppThemes ?? []
     settings.customCodeThemes = settings.customCodeThemes ?? []
     settings.language = settings.language ?? sd.language

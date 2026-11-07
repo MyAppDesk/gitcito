@@ -1,7 +1,7 @@
 /// <reference types="vite/client" />
 
 interface TermApi {
-  create(cwd: string, cols: number, rows: number): Promise<number>
+  create(cwd: string, cols: number, rows: number, shell?: string): Promise<number>
   input(id: number, data: string): void
   resize(id: number, cols: number, rows: number): void
   kill(id: number): void

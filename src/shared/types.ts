@@ -2981,6 +2981,15 @@ export interface AppSettings {
    *  (default), under the center graph column only (sidebars stay full height),
    *  or as its own right-hand column. */
   terminalPlacement: 'bottom' | 'center' | 'right'
+  /** Integrated-terminal palette preset (`TERMINAL_THEMES` id) and font. */
+  terminalThemeId: string
+  terminalFontSize: number
+  terminalFontFamily: string
+  /** Shell spawned for new integrated-terminal sessions on Windows: a preset id
+   *  ('powershell' | 'pwsh' | 'cmd' | 'gitbash' | 'wsl' | 'system') or a custom
+   *  executable path. 'system' = COMSPEC (cmd.exe). Existing sessions keep the
+   *  shell they were created with. Ignored on POSIX (uses SHELL). */
+  terminalShell: string
   /** Which side the branches/files sidebar docks on. */
   sidebarSide: 'left' | 'right'
   /** Let the right details panel span the full window height instead of
@@ -3251,6 +3260,39 @@ export interface CodeTheme {
   dark: CodeThemeColors
 }
 
+/** Palette for the integrated terminal — a single palette per preset (terminal
+ *  themes are not mode-paired the way app/code themes are). Field names match
+ *  xterm's ITheme so the preset can be assigned straight to `term.options.theme`. */
+export interface TerminalThemeColors {
+  background: string
+  foreground: string
+  cursor: string
+  selectionBackground: string
+  black: string
+  red: string
+  green: string
+  yellow: string
+  blue: string
+  magenta: string
+  cyan: string
+  white: string
+  brightBlack: string
+  brightRed: string
+  brightGreen: string
+  brightYellow: string
+  brightBlue: string
+  brightMagenta: string
+  brightCyan: string
+  brightWhite: string
+}
+
+export interface TerminalTheme {
+  id: string
+  name: string
+  builtin?: boolean
+  colors: TerminalThemeColors
+}
+
 /** The account a fresh install starts with: OpenAI, no key yet. */
 export function defaultAIAccount(): AIAccount {
   return {
@@ -3370,6 +3412,10 @@ export function defaultSettings(): AppSettings {
     largeFileKb: 5120,
     warnOnClose: 'always',
     terminalPlacement: 'bottom',
+    terminalThemeId: 'gitcito',
+    terminalFontSize: 12.5,
+    terminalFontFamily: 'SF Mono, JetBrains Mono, Menlo, monospace',
+    terminalShell: 'powershell',
     sidebarSide: 'left',
     rightPanelFullHeight: false
   }

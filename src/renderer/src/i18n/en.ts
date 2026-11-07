@@ -160,6 +160,8 @@ export const en = {
   'sidebar.openReleases': 'Open releases on web',
   'sidebar.sections': 'Show / hide sections',
   'sidebar.showAllSections': 'Show all sections',
+  'sidebar.applySectionsToAll': 'Apply to all repositories',
+  'sidebar.useGlobalSections': 'Use the global default',
   'sidebar.resetPanel': 'Reset panel',
   'sidebar.addWorktree': 'Add worktree…',
   'sidebar.removeWorktree': 'Remove worktree',
@@ -824,6 +826,9 @@ export const en = {
   'settings.termPlaceRightHint': 'Its own column on the right.',
   'settings.sidebarSide': 'Sidebar side',
   'settings.sidebarSideHint': 'Which edge the branches/files sidebar docks on.',
+  'settings.sidebarSections': 'Sidebar sections',
+  'settings.sidebarSectionsHint':
+    'Sections shown by default in every repository sidebar. A repository can still pick its own set from the sidebar’s sections menu.',
   'settings.sidebarLeft': 'Left',
   'settings.sidebarRight': 'Right',
   'settings.rightPanelFullHeight': 'Full-height details panel',

@@ -1610,6 +1610,8 @@ export const fr: Dict = {
   'settings.terminalTheme': 'Thème du terminal',
   'settings.terminalShell': 'Shell du terminal',
   'settings.terminalShellHint': 'Shell pour les nouvelles sessions du terminal intégré (les sessions existantes gardent le leur).',
+    'settings.terminalShellCustom': 'Personnalisé…',
+    'settings.terminalShellCustomPlaceholder': 'C:\\tools\\nu.exe',
   'settings.terminalFontFamily': 'Police du terminal',
   'settings.terminalFontFamilyHint': 'Pile de polices CSS pour le terminal intégré — p. ex. Cascadia Mono, JetBrains Mono, monospace.',
   'settings.tabTheme': 'Thème',

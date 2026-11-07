@@ -1632,6 +1632,8 @@ export const nl: Dict = {
   'settings.terminalTheme': 'Terminalthema',
   'settings.terminalShell': 'Terminalshell',
   'settings.terminalShellHint': 'Shell voor nieuwe geïntegreerde terminalsessies (bestaande sessies behouden de huidige).',
+    'settings.terminalShellCustom': 'Aangepast…',
+    'settings.terminalShellCustomPlaceholder': 'C:\\tools\\nu.exe',
   'settings.terminalFontFamily': 'Terminallettertype',
   'settings.terminalFontFamilyHint': 'CSS-lettertypestapel voor de geïntegreerde terminal — bv. Cascadia Mono, JetBrains Mono, monospace.',
   'settings.tabTheme': 'Thema',

@@ -2364,9 +2364,12 @@ function LayoutPage(): React.JSX.Element {
                 : 'custom'
             }
             onChange={(e) => {
-              if (e.target.value !== 'custom') {
-                update((s) => ({ ...s, terminalShell: e.target.value }))
-              }
+              // 'custom' clears to an empty path - resolveShell falls back to
+              // the system shell until a real path is typed below.
+              update((s) => ({
+                ...s,
+                terminalShell: e.target.value === 'custom' ? '' : e.target.value
+              }))
             }}
           >
             {TERMINAL_SHELL_OPTIONS.map((o) => (
@@ -2374,10 +2377,16 @@ function LayoutPage(): React.JSX.Element {
                 {o.label}
               </option>
             ))}
-            {!TERMINAL_SHELL_OPTIONS.some((o) => o.id === settings.terminalShell) && (
-              <option value="custom">{settings.terminalShell}</option>
-            )}
+            <option value="custom">{t('settings.terminalShellCustom')}</option>
           </select>
+          {!TERMINAL_SHELL_OPTIONS.some((o) => o.id === settings.terminalShell) && (
+            <input
+              value={settings.terminalShell}
+              spellCheck={false}
+              placeholder={t('settings.terminalShellCustomPlaceholder')}
+              onChange={(e) => update((s) => ({ ...s, terminalShell: e.target.value }))}
+            />
+          )}
         </label>
       )}
 

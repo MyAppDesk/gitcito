@@ -1631,6 +1631,8 @@ export const uk: Dict = {
   'settings.terminalTheme': 'Тема термінала',
   'settings.terminalShell': 'Оболонка термінала',
   'settings.terminalShellHint': 'Оболонка для нових сеансів вбудованого термінала (наявні сеанси зберігають свою).',
+    'settings.terminalShellCustom': 'Інша…',
+    'settings.terminalShellCustomPlaceholder': 'C:\\tools\\nu.exe',
   'settings.terminalFontFamily': 'Шрифт термінала',
   'settings.terminalFontFamilyHint': 'CSS-стек шрифтів для вбудованого термінала — напр. Cascadia Mono, JetBrains Mono, monospace.',
   'settings.tabTheme': 'Тема',

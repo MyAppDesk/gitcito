@@ -1631,6 +1631,8 @@ export const pl: Dict = {
   'settings.terminalTheme': 'Motyw terminala',
   'settings.terminalShell': 'Powłoka terminala',
   'settings.terminalShellHint': 'Powłoka dla nowych sesji zintegrowanego terminala (istniejące sesje zachowują swoją).',
+    'settings.terminalShellCustom': 'Niestandardowa…',
+    'settings.terminalShellCustomPlaceholder': 'C:\\tools\\nu.exe',
   'settings.terminalFontFamily': 'Czcionka terminala',
   'settings.terminalFontFamilyHint': 'Stos czcionek CSS dla wbudowanego terminala — np. Cascadia Mono, JetBrains Mono, monospace.',
   'settings.tabTheme': 'Motyw',

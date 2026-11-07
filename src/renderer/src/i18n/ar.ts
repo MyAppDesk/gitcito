@@ -1631,6 +1631,8 @@ export const ar: Dict = {
   'settings.terminalTheme': 'سمة الطرفية',
   'settings.terminalShell': 'صدفة الطرفية',
   'settings.terminalShellHint': 'الصدفة لجلسات الطرفية المدمجة الجديدة (الجلسات الحالية تحتفظ بصدفتها).',
+    'settings.terminalShellCustom': 'مخصص…',
+    'settings.terminalShellCustomPlaceholder': 'C:\\tools\\nu.exe',
   'settings.terminalFontFamily': 'خط الطرفية',
   'settings.terminalFontFamilyHint': 'مجموعة خطوط CSS للطرفية المدمجة — مثل Cascadia Mono أو JetBrains Mono أو monospace.',
   'settings.tabTheme': 'السمة',

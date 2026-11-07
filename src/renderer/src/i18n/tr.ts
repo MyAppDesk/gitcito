@@ -1610,6 +1610,8 @@ export const tr: Dict = {
   'settings.terminalTheme': 'Terminal teması',
   'settings.terminalShell': 'Terminal kabuğu',
   'settings.terminalShellHint': 'Yeni tümleşik terminal oturumları için kabuk (mevcut oturumlar kendi kabuğunu korur).',
+    'settings.terminalShellCustom': 'Özel…',
+    'settings.terminalShellCustomPlaceholder': 'C:\\tools\\nu.exe',
   'settings.terminalFontFamily': 'Terminal yazı tipi',
   'settings.terminalFontFamilyHint': 'Tümleşik terminal için CSS yazı tipi yığını — ör. Cascadia Mono, JetBrains Mono, monospace.',
   'settings.tabTheme': 'Tema',

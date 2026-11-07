@@ -1631,6 +1631,8 @@ export const ru: Dict = {
   'settings.terminalTheme': 'Тема терминала',
   'settings.terminalShell': 'Оболочка терминала',
   'settings.terminalShellHint': 'Оболочка для новых сеансов встроенного терминала (существующие сеансы сохраняют свою).',
+    'settings.terminalShellCustom': 'Другая…',
+    'settings.terminalShellCustomPlaceholder': 'C:\\tools\\nu.exe',
   'settings.terminalFontFamily': 'Шрифт терминала',
   'settings.terminalFontFamilyHint': 'CSS-стек шрифтов для встроенного терминала — напр. Cascadia Mono, JetBrains Mono, monospace.',
   'settings.tabTheme': 'Тема',

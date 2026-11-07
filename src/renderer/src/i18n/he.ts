@@ -1631,6 +1631,8 @@ export const he: Dict = {
   'settings.terminalTheme': 'ערכת נושא של טרמינל',
   'settings.terminalShell': 'מעטפת הטרמינל',
   'settings.terminalShellHint': 'המעטפת לסשנים חדשים של הטרמינל המשולב (סשנים קיימים שומרים על שלהם).',
+    'settings.terminalShellCustom': 'מותאם אישית…',
+    'settings.terminalShellCustomPlaceholder': 'C:\\tools\\nu.exe',
   'settings.terminalFontFamily': 'גופן הטרמינל',
   'settings.terminalFontFamilyHint': 'ערימת גופני CSS לטרמינל המשולב — למשל Cascadia Mono, JetBrains Mono, monospace.',
   'settings.tabTheme': 'ערכת נושא',

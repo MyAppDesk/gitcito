@@ -58,6 +58,13 @@ into everything it spawns, because a GUI app launched from the Dock inherits
 almost nothing. If a command is still not found, check that it is on `PATH` for
 a login shell and not only for an interactive one.
 
+## Shell & theme
+
+On Windows, Settings → Layout picks the shell each new terminal spawns —
+PowerShell, PowerShell Core (`pwsh`), `cmd`, Git Bash, WSL, or a custom
+executable. Terminal visuals (theme, font size, font family) live under
+Settings → Themes → Terminal theme and apply live to every session.
+
 Anything you run here is invisible to Gitcito's own locking, so a long
 `git rebase` typed by hand and a click in the UI can still collide — the app
 refreshes from disk when the terminal changes something.

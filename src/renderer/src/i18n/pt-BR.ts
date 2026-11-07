@@ -1632,6 +1632,8 @@ export const ptBR: Dict = {
   'settings.terminalTheme': 'Tema do terminal',
   'settings.terminalShell': 'Shell do terminal',
   'settings.terminalShellHint': 'Shell para novas sessões do terminal integrado (sessões existentes mantêm a sua).',
+    'settings.terminalShellCustom': 'Personalizado…',
+    'settings.terminalShellCustomPlaceholder': 'C:\\tools\\nu.exe',
   'settings.terminalFontFamily': 'Fonte do terminal',
   'settings.terminalFontFamilyHint': 'Pilha de fontes CSS para o terminal integrado — ex.: Cascadia Mono, JetBrains Mono, monospace.',
   'settings.tabTheme': 'Tema',

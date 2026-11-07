@@ -26,6 +26,7 @@ import { MAIN_WINDOW_STATE, showMainWindow } from '../src/main/windowState'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 import { commitHookFailureHint, lintCommit, subjectCounterLevel, parseCcPrefix, applyCcType, parseGitmojiPrefix, applyGitmoji, parseTicketPrefix, applyTicket, ticketFromBranch } from '../src/renderer/src/lib/commitLint'
+import { ansiToSpans } from '../src/renderer/src/lib/ansi'
 import { isSecretFile, maskSecretLine } from '../src/renderer/src/lib/secrets'
 import { isBundleDir } from '../src/renderer/src/lib/bundleDirs'
 import { parsePbxproj, mergePbxproj, isaOf, isPbxprojPath } from '../src/shared/pbxproj'
@@ -7465,5 +7466,29 @@ describe('pickGroupColor', () => {
   it('names palette colours and leaves custom ones unnamed', () => {
     expect(colorNameKey('#EF4444')).toBe('color.red')
     expect(colorNameKey('#123456')).toBeNull()
+  })
+})
+
+describe('ansiToSpans', () => {
+  it('parses SGR colors into span styles', () => {
+    const spans = ansiToSpans('[32mgreen[0m plain')
+    expect(spans).toHaveLength(2)
+    expect(spans[0].text).toBe('green')
+    expect(spans[0].style.color).toBe('#00aa00')
+    expect(spans[1].text).toBe(' plain')
+    expect(spans[1].style.color).toBeUndefined()
+  })
+  it('handles 24-bit colors and bold', () => {
+    const spans = ansiToSpans('[1;38;2;255;100;50mx')
+    expect(spans[0].style.color).toBe('#ff6432')
+    expect(spans[0].style.fontWeight).toBe('bold')
+  })
+  it('handles 256-color backgrounds', () => {
+    const spans = ansiToSpans('[48;5;196mx')
+    expect(spans[0].style.backgroundColor).toBe('#ff0000')
+  })
+  it('strips non-SGR escapes (OSC, cursor moves)', () => {
+    const spans = ansiToSpans('[2K[1Gok]8;;http://xurl]8;;')
+    expect(spans.map((s) => s.text).join('')).toBe('okurl')
   })
 })

@@ -2990,6 +2990,10 @@ export interface AppSettings {
    *  executable path. 'system' = COMSPEC (cmd.exe). Existing sessions keep the
    *  shell they were created with. Ignored on POSIX (uses SHELL). */
   terminalShell: string
+  /** Oh My Posh theme for new terminal sessions — a bare theme name (resolved
+   *  under %POSH_THEMES_PATH%) or a full .omp.json path. Empty leaves the
+   *  shell's own POSH_THEME/built-in default in charge. */
+  terminalPoshTheme: string
   /** Which side the branches/files sidebar docks on. */
   sidebarSide: 'left' | 'right'
   /** Let the right details panel span the full window height instead of
@@ -3416,6 +3420,7 @@ export function defaultSettings(): AppSettings {
     terminalFontSize: 12.5,
     terminalFontFamily: 'SF Mono, JetBrains Mono, Menlo, monospace',
     terminalShell: 'powershell',
+    terminalPoshTheme: '',
     sidebarSide: 'left',
     rightPanelFullHeight: false
   }

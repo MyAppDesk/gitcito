@@ -330,12 +330,15 @@ const api = {
   },
 
   term: {
-    create: (cwd: string, cols: number, rows: number, shell?: string): Promise<number> =>
-      ipcRenderer.invoke('term:create', cwd, cols, rows, shell),
+    create: (cwd: string, cols: number, rows: number, shell?: string, poshTheme?: string): Promise<number> =>
+      ipcRenderer.invoke('term:create', cwd, cols, rows, shell, poshTheme),
     input: (id: number, data: string): void => ipcRenderer.send('term:input', id, data),
     resize: (id: number, cols: number, rows: number): void => ipcRenderer.send('term:resize', id, cols, rows),
     kill: (id: number): void => ipcRenderer.send('term:kill', id),
     procName: (id: number): Promise<string> => ipcRenderer.invoke('term:process', id),
+    poshThemes: (): Promise<{ dir: string | null; exe: string | null; themes: string[] }> =>
+      ipcRenderer.invoke('term:posh-themes'),
+    poshPreview: (theme: string): Promise<string | null> => ipcRenderer.invoke('term:posh-preview', theme),
     onData: (id: number, cb: (data: string) => void): (() => void) => {
       const listener = (_e: unknown, data: string): void => cb(data)
       ipcRenderer.on(`term:data:${id}`, listener)

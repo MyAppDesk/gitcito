@@ -33,6 +33,9 @@ export function TerminalPanel({
 
     return () => {
       observer.disconnect()
+      // Snapshot the scroll position before the DOM offset collapses on
+      // detach — fitSafely() only does it when it can still see a zero size.
+      handle.suspend()
       // Detach (keep instance alive); container re-attaches on next mount.
       if (handle.container.parentElement === host) host.removeChild(handle.container)
     }

@@ -98,6 +98,23 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     if (e.type === 'keydown' && e.shiftKey && (e.code === 'PageUp' || e.code === 'PageDown')) {
       lastUserScrollAt = Date.now()
     }
+    // Any key xterm will emit input for also triggers its scrollOnUserInput →
+    // scrollToBottom, and this handler runs BEFORE that scroll. Timestamp the
+    // intent so the scroll listener can tell a real "type → jump to bottom"
+    // apart from a synthetic clamp. Modifier-only presses emit no input and
+    // scroll nothing, so they stay unmarked.
+    if (
+      e.type === 'keydown' &&
+      !['Shift', 'Control', 'Alt', 'Meta', 'OS', 'CapsLock', 'AltGraph', 'Dead', 'Process'].includes(e.key)
+    ) {
+      lastUserInputAt = Date.now()
+    }
+    if (e.type === 'keydown' && e.code.startsWith('Arrow')) {
+      sdbg(
+        `key ${e.code} ctrl=${e.ctrlKey} shift=${e.shiftKey} ` +
+          `appCK=${term.modes.applicationCursorKeysMode}`
+      )
+    }
     if (e.type !== 'keydown' || e.metaKey || e.altKey) return true
     if (e.ctrlKey && e.code === 'KeyC') {
       // Ctrl+Shift+C always copies; a bare Ctrl+C only steals the key while a
@@ -159,6 +176,12 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
   let anchor: ScrollAnchor = { kind: 'bottom' }
   let anchorMarker: IMarker | null = null
   let lastUserScrollAt = 0
+  // xterm's scrollOnUserInput scrolls to the bottom on every input-producing
+  // keydown. Our custom key handler runs before that scroll, so a timestamp
+  // here tells the scroll listener "this bottom event is user intent, not a
+  // clamp artefact" — without it typing while parked gets yanked back and the
+  // terminal feels frozen.
+  let lastUserInputAt = 0
   // Extended on every fitSafely. xterm maps ydisp proportionally to the DOM
   // scroll range (scrollTop / max * baseY), so a resize that shrinks the
   // range — a taller panel, or a wider one reflowing to fewer wrapped rows —
@@ -402,6 +425,19 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     }, Date.now() < resizeQuietUntil ? 120 : 50)
   }
 
+  // Write-activity counter folded into the event log — separates scroll
+  // events driven by output bursts from ones driven by DOM clamps/reflows.
+  let writeCount = 0
+  let prevBaseY = 0
+  term.onWriteParsed(() => {
+    writeCount++
+  })
+  const domState = (): string => {
+    const vp = container.querySelector('.xterm-viewport')
+    if (!(vp instanceof HTMLElement)) return ' st=?'
+    const max = vp.scrollHeight - vp.clientHeight
+    return ` st=${vp.scrollTop}/${max} ch=${vp.clientHeight}`
+  }
   const scrollListener = term.onScroll((y) => {
     if (!container.isConnected || container.clientHeight === 0) return
     // Alternate-buffer apps (vim, less, agent TUIs) scroll their own screen
@@ -410,6 +446,13 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     // user returns to when the app exits.
     if (term.buffer.active.type !== 'normal') return
     const buf = term.buffer.active
+    // A genuine wipe drops baseY from thousands to ~0 — dump which
+    // erase-capable sequences arrived so the culprit is identified by name,
+    // not inferred.
+    if (prevBaseY > 200 && buf.baseY < prevBaseY - 200) {
+      sdbg(`wipe base=${prevBaseY}->${buf.baseY} seqs:${recentSeqs || '(none)'}`)
+    }
+    prevBaseY = buf.baseY
     // Inside the resize quiet window with no gesture behind it, every event
     // is a clamp artefact of the last fit — there is nothing to do: the fit
     // already re-asserted the anchor synchronously, and the anchor is
@@ -423,12 +466,16 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
       !scrollbarDrag &&
       Date.now() - lastUserScrollAt > 500
     ) {
-      sdbg(`ev y=${y} base=${buf.baseY} a=${anchor.kind}${anchor.kind === 'line' ? ':' + anchor.y : ''} -> quiet-suppress`)
+      sdbg(
+        `ev y=${y} base=${buf.baseY} a=${anchor.kind}${anchor.kind === 'line' ? ':' + anchor.y : ''} ` +
+          `w=${writeCount}${domState()} -> quiet-suppress`
+      )
       return
     }
     sdbg(
       `ev y=${y} base=${buf.baseY} a=${anchor.kind}${anchor.kind === 'line' ? ':' + anchor.y : ''} ` +
-        `g=${Date.now() - lastUserScrollAt}ms sd=${scrollbarDrag} q=${resizeQuietUntil - Date.now()}ms`
+        `g=${Date.now() - lastUserScrollAt}ms sd=${scrollbarDrag} q=${resizeQuietUntil - Date.now()}ms ` +
+        `w=${writeCount}${domState()}`
     )
     // Following output — whether xterm auto-scrolled for a write or the user
     // scrolled down to it, reaching baseY always means "at the bottom".
@@ -440,11 +487,23 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     // reporting; snap back instead. (A dead marker already resolves to the
     // top via anchorTarget, so restoring is still the honest fallback.)
     if (y >= buf.baseY) {
-      if (anchor.kind === 'line' && !scrollbarDrag && Date.now() - lastUserScrollAt > 500) {
-        sdbg('  -> fake-bottom snapback')
-        scheduleSnapBack()
+      const inputDriven = Date.now() - lastUserInputAt <= 500
+      if (
+        anchor.kind === 'line' &&
+        !scrollbarDrag &&
+        !inputDriven &&
+        Date.now() - lastUserScrollAt > 500
+      ) {
+        // Restore inline — deferring this was the visible "scroll to bottom,
+        // bounce back" loop: while the snap-back waited, every output write
+        // dragged the viewport to baseY again (userScrolling stays cleared)
+        // and painted another bottom frame. restoreLine re-arms that flag
+        // immediately, so later writes in the same burst can't move it.
+        sdbg('  -> fake-bottom restore')
+        restoreAnchor()
         return
       }
+      if (inputDriven) sdbg('  -> input-follow bottom')
       if (anchor.kind !== 'bottom') sdbg('  -> anchor=bottom')
       anchor = { kind: 'bottom' }
       anchorMarker?.dispose()
@@ -464,18 +523,12 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     }
     // No gesture, not the bottom: a DOM clamp, a reflow clamp, a trim
     // adjustment, or one of our own restores. The anchor stays (the marker
-    // already followed any trim), and if no ResizeObserver fit is coming to
-    // fix a collapsed position, the snap-back does. A bottom-follower gets
-    // the restore immediately — scrollToBottom is clamp-safe and idempotent
-    // inside the handler, and every 50ms of deferral is a visible
-    // "drift then snap" bounce on each output burst or resize step.
-    if (anchor.kind === 'bottom') {
-      sdbg('  -> bottom-follow restore')
-      restoreAnchor()
-    } else {
-      sdbg('  -> snapback')
-      scheduleSnapBack()
-    }
+    // already followed any trim). Both anchor kinds restore immediately —
+    // every 50ms of deferral is a visible "drift then snap" bounce, and for
+    // a parked anchor each deferred window is another write that can drag
+    // the viewport to the bottom before userScrolling is re-armed.
+    sdbg('  -> restore')
+    restoreAnchor()
   })
   cleanups.push(() => {
     scrollListener.dispose()
@@ -483,6 +536,70 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     if (snapBackTimer) window.clearTimeout(snapBackTimer)
     if (snapBackRaf) cancelAnimationFrame(snapBackRaf)
   })
+
+  // Debounce pty resize notifications. A drag produces one fit per step and
+  // every step used to hit the pty: each resize delivers SIGWINCH to the
+  // program, and shells/TUIs (and ConPTY itself) answer by erasing and
+  // rewriting the scrollback — visible as the "random scrolling" that keeps
+  // going seconds after the drag ended. Collapse the flood into a single
+  // trailing-edge notification carrying the settled dims.
+  let pendingPtyResize: { cols: number; rows: number } | null = null
+  let ptyResizeTimer = 0
+  let lastSentCols = 0
+  let lastSentRows = 0
+  const sendPtyResize = (cols: number, rows: number): void => {
+    pendingPtyResize = { cols, rows }
+    if (ptyResizeTimer) return
+    ptyResizeTimer = window.setTimeout(() => {
+      ptyResizeTimer = 0
+      const d = pendingPtyResize
+      pendingPtyResize = null
+      if (!d || handle.ptyId == null) return
+      if (d.cols === lastSentCols && d.rows === lastSentRows) return
+      lastSentCols = d.cols
+      lastSentRows = d.rows
+      sdbg(`pty-resize ${d.cols}x${d.rows}`)
+      if (isLaunch) window.api.launch.resize(handle.ptyId, d.cols, d.rows)
+      else window.api.term.resize(handle.ptyId, d.cols, d.rows)
+    }, 300)
+  }
+  cleanups.push(() => {
+    if (ptyResizeTimer) window.clearTimeout(ptyResizeTimer)
+  })
+
+  // ConPTY (and PSReadLine reacting to a resize) answers a pty resize with a
+  // repaint containing CSI 3 J — an "erase scrollback" request. That wipe is
+  // the visible "random scroll" the user sees: history vanishes, the screen
+  // rewrites from row 0. xterm owns the scrollback, so strip the request —
+  // the repaint still redraws the screen, the history survives.
+  let recentSeqs = ''
+  let pendingTail = ''
+  const writeToTerm = (data: string): void => {
+    if (pendingTail) {
+      data = pendingTail + data
+      pendingTail = ''
+    }
+    // The sequence may split across pty chunks — hold an incomplete tail.
+    const partial = /(?:\x1b\[\??3?;?\d*|\x9b\??3?;?\d*)$/.exec(data)?.[0]
+    if (partial) {
+      pendingTail = partial
+      data = data.slice(0, -partial.length)
+    }
+    // ED 3 clears scrollback as CSI 3 J; DECSED 3 does the same as CSI ? 3 J,
+    // and params after a ';' don't change that — cover every variant.
+    if (/\x1b\[\??3(?:;\d*)?J|\x9b\??3(?:;\d*)?J/.test(data)) {
+      sdbg('strip scrollback-erase')
+      data = data.replace(/\x1b\[\??3(?:;\d*)?J|\x9b\??3(?:;\d*)?J/g, '')
+    }
+    // Forensics: remember every erase/reset-capable sequence so a buffer
+    // wipe in the scroll log can be matched to the exact bytes that did it.
+    const seqs = data.match(/\x1b\[[\d;?]*[JK]|\x1b\[\?\d{3,4}[hl]|\x1bc|\x1b\[!p/g)
+    if (seqs) {
+      recentSeqs = (recentSeqs + ' ' + seqs.join(' ').replace(/\x1b/g, 'ESC')).slice(-160)
+    }
+    if (data.includes('\x1bc')) sdbg('saw full-reset')
+    if (data) term.write(data)
+  }
 
   // Programs push their own tab title via OSC 0/2 (claude, vim, ssh…); prefer
   // it over the polled process name, which can be meaningless for some
@@ -505,14 +622,18 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
       const expected = anchorTarget()
       handle.suspendViewportY = buf.viewportY === expected ? buf.viewportY : expected
       handle.suspendAtBottom = anchor.kind === 'bottom' || buf.viewportY >= buf.baseY
+      sdbg(`suspend y=${buf.viewportY} base=${buf.baseY} -> snap=${handle.suspendViewportY} bot=${handle.suspendAtBottom}`)
     },
     fitSafely() {
       try {
         // A hidden (display:none) or detached host has no usable size; fitting
         // to it collapses the terminal into a degenerate resize that reflows
         // the scrollback and throws the scroll position away — the visible bug
-        // when switching terminal groups or repo tabs.
+        // when switching terminal groups or repo tabs. Snapshot the anchor
+        // instead — the DOM offset can collapse while hidden and xterm may
+        // rewrite viewportY from it before we get to run again.
         if (!container.isConnected || container.clientWidth === 0 || container.clientHeight === 0) {
+          handle.suspend()
           return
         }
         // A snapshot taken at suspend time becomes the new anchor — the DOM
@@ -524,7 +645,13 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
             parkAt(handle.suspendViewportY)
           }
           handle.suspendViewportY = null
+          // The reattach settle lasts longer than a drag step: the viewport's
+          // scrollHeight re-computes across several frames while clamped
+          // scroll events keep arriving. Hold the quiet window open for the
+          // whole settle or each clamp looks like a bottom-follow.
+          resizeQuietUntil = Date.now() + 400
         }
+        const before = `${term.cols}x${term.rows}`
         fit.fit()
         // Reflow shifts buffer lines on resize and a reattached viewport may
         // have lost its DOM offset entirely; put the scroll position back —
@@ -532,7 +659,7 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
         // on the marker-tracked line otherwise.
         restoreAnchor()
         syncDomScrollTop()
-        sdbg(`fit ${term.cols}x${term.rows} -> a=${anchor.kind}`)
+        sdbg(`fit ${before}->${term.cols}x${term.rows} a=${anchor.kind}${domState()}`)
         // The clamp events the fit just caused are delivered asynchronously
         // (the viewport's scroll event follows the scrollArea's style change
         // on a later frame) — and a drag produces a fit per step, so roll
@@ -565,7 +692,7 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
   if (isLaunch) {
     // Bind to the already-spawned launch pty (created in main by launch:run).
     handle.ptyId = launchId!
-    cleanups.push(window.api.launch.onData(launchId!, (data) => term.write(data)))
+    cleanups.push(window.api.launch.onData(launchId!, writeToTerm))
     cleanups.push(
       window.api.launch.onExit(launchId!, (code) =>
         term.write(`\r\n\x1b[90m[process exited with code ${code}]\x1b[0m\r\n`)
@@ -573,7 +700,7 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     )
     term.onData((data) => window.api.launch.input(launchId!, data))
     term.onResize(({ cols, rows }) => {
-      if (cols > 0 && rows > 0) window.api.launch.resize(launchId!, cols, rows)
+      if (cols > 0 && rows > 0) sendPtyResize(cols, rows)
     })
     // The pty was spawned before this terminal existed — ask for what it has
     // already printed, or a fast program's whole banner is lost.
@@ -584,7 +711,7 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
   // Defer fit until the container is attached & sized.
   void window.api.term.create(cwd, term.cols || 80, term.rows || 24).then((id) => {
     handle.ptyId = id
-    cleanups.push(window.api.term.onData(id, (data) => term.write(data)))
+    cleanups.push(window.api.term.onData(id, writeToTerm))
     cleanups.push(
       window.api.term.onExit(id, () =>
         term.write('\r\n\x1b[90m[process exited]\x1b[0m\r\n')
@@ -592,7 +719,7 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     )
     term.onData((data) => window.api.term.input(id, data))
     term.onResize(({ cols, rows }) => {
-      if (cols > 0 && rows > 0) window.api.term.resize(id, cols, rows)
+      if (cols > 0 && rows > 0) sendPtyResize(cols, rows)
     })
 
     // Poll the foreground process name (VSCode-style auto title).

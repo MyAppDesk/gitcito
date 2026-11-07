@@ -2704,6 +2704,20 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     if (sidebarHidden.length) {
       items.push({ separator: true }, { label: t('sidebar.showAllSections'), onClick: () => updateRepoLayout(repo.path, (l) => ({ ...l, sidebarHidden: [] })) })
     }
+    // Section visibility is per-repo by default; these two bridge to the
+    // global `sidebarHidden` so a preference survives new repos/worktrees
+    // instead of being re-set everywhere.
+    items.push({ separator: true }, {
+      label: t('sidebar.applySectionsToAll'),
+      onClick: () =>
+        useSettingsStore.getState().update((s) => ({ ...s, sidebarHidden: [...sidebarHidden] }))
+    })
+    if (repoLayout?.sidebarHidden) {
+      items.push({
+        label: t('sidebar.useGlobalSections'),
+        onClick: () => updateRepoLayout(repo.path, (l) => ({ ...l, sidebarHidden: undefined }))
+      })
+    }
     items.push({ separator: true }, {
       label: t('sidebar.resetPanel'),
       onClick: () => {

@@ -2482,6 +2482,24 @@ const TERMINAL_SHELL_OPTIONS: { id: string; label: string }[] = [
   { id: 'system', label: 'System default' } // i18n-ignore platform term
 ]
 
+/** Sidebar sections a repo can hide — ids must match the `sections` record in
+ *  Sidebar.tsx. Visibility picked here is the global default; a repo's own
+ *  sections menu can still override it per repository. */
+const SIDEBAR_SECTIONS: { id: string; labelKey: TranslationKey }[] = [
+  { id: 'local', labelKey: 'sidebar.local' },
+  { id: 'remotes', labelKey: 'sidebar.remotes' },
+  { id: 'prs', labelKey: 'sidebar.pullRequests' },
+  { id: 'issues', labelKey: 'sidebar.issues' },
+  { id: 'milestones', labelKey: 'sidebar.milestones' },
+  { id: 'tags', labelKey: 'sidebar.tags' },
+  { id: 'releases', labelKey: 'sidebar.releases' },
+  { id: 'stashes', labelKey: 'sidebar.stashes' },
+  { id: 'todos', labelKey: 'sidebar.todos' },
+  { id: 'bookmarks', labelKey: 'sidebar.bookmarks' },
+  { id: 'worktrees', labelKey: 'sidebar.worktrees' },
+  { id: 'submodules', labelKey: 'sidebar.submodules' }
+]
+
 function LayoutPage(): React.JSX.Element {
   const settings = useSettingsStore((s) => s.settings)
   const update = useSettingsStore((s) => s.update)
@@ -2596,6 +2614,38 @@ function LayoutPage(): React.JSX.Element {
             >
               <strong>{t(side === 'left' ? 'settings.sidebarLeft' : 'settings.sidebarRight')}</strong>
             </button>
+          ))}
+        </div>
+      </label>
+
+      <label className="settings-field">
+        <span className="settings-field-label">{t('settings.sidebarSections')}</span>
+        <span className="settings-hint">{t('settings.sidebarSectionsHint')}</span>
+        <div className="settings-toggle-list">
+          {SIDEBAR_SECTIONS.map((sec) => (
+            <label key={sec.id} className="settings-toggle-card">
+              <input
+                type="checkbox"
+                checked={!settings.sidebarHidden?.includes(sec.id)}
+                onChange={(e) =>
+                  update((s) => {
+                    const hidden = s.sidebarHidden ?? []
+                    return {
+                      ...s,
+                      sidebarHidden: e.target.checked
+                        ? hidden.filter((id) => id !== sec.id)
+                        : [...hidden, sec.id]
+                    }
+                  })
+                }
+              />
+              <span className="settings-toggle-control" aria-hidden="true">
+                <span className="settings-toggle-thumb" />
+              </span>
+              <span className="settings-toggle-copy">
+                <strong>{t(sec.labelKey)}</strong>
+              </span>
+            </label>
           ))}
         </div>
       </label>

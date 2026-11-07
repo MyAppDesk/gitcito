@@ -9,10 +9,17 @@ keywords: branch branches create checkout rename delete remote pinned sidebar pr
 # Branches, remotes & the sidebar
 
 One reorderable, searchable sidebar holds **branches, remotes, tags, stashes,
-worktrees and submodules**. Every section can be hidden or reordered
-(Settings → Layout), and the filter box applies to all of them. Which sections
-and folders you keep expanded or collapsed is remembered per repository, across
-restarts.
+worktrees and submodules**. Every section can be hidden or reordered, and the
+filter box applies to all of them. Which sections and folders you keep
+expanded or collapsed is remembered per repository, across restarts.
+
+Section visibility works on two levels. **Settings → Layout → Sidebar
+sections** is the global default every repository and new worktree starts
+with. The sections menu inside the sidebar (the ⚙ button next to the filter
+box) toggles sections for the current repository only; from that same menu,
+*Apply to all repositories* copies the current set into the global default,
+and *Use the global default* drops the repository's own list so it follows
+Settings again.
 
 The sidebar is a stack of panes, not one long list. An open section takes the
 height left over by the collapsed ones, which sit below it as header rows; open

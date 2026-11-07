@@ -1,5 +1,19 @@
 
 
+## [4.21.0](https://github.com/MyAppDesk/gitcito/compare/v4.20.0...v4.21.0) (2026-11-07)
+
+
+### Features
+
+* **terminal:** selectable themes, fonts and shell for new sessions ([#75](https://github.com/MyAppDesk/gitcito/issues/75)) ([b19fb8e1](https://github.com/MyAppDesk/gitcito/commit/b19fb8e18836c85bdf494d29b3e7b7cfc9ba1ff1))
+* **terminal:** Oh My Posh theme picker with live ANSI previews ([#76](https://github.com/MyAppDesk/gitcito/issues/76)) ([41977c18](https://github.com/MyAppDesk/gitcito/commit/41977c18027878f92511475ac02b4c6345b66029))
+* **worktrees:** auto-group siblings, short chip labels, copy gitignored files, elastic tabs ([#77](https://github.com/MyAppDesk/gitcito/issues/77)) ([e8916f26](https://github.com/MyAppDesk/gitcito/commit/e8916f26b8c9ff714ab0a8429105779d18fb86f2))
+
+
+### Bug Fixes
+
+* **terminal:** hold the viewport through resize, output bursts and reattach ([#74](https://github.com/MyAppDesk/gitcito/issues/74)) ([0ccbe044](https://github.com/MyAppDesk/gitcito/commit/0ccbe044a5cd84bb3c1c78067126a7be614d1149))
+
 ## [4.20.0](https://github.com/MyAppDesk/gitcito/compare/v4.19.0...v4.20.0) (2026-11-06)
 
 

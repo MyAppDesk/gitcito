@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import type { BranchInfo, RemoteBranchInfo } from '../../../shared/types'
 import { branchContextActionIds, branchMergeWouldChange, branchWorktreePlan } from '../lib/branchMenu'
+import { canonicalRepoName } from '../lib/repoAlias'
 import { interp, useT } from '../i18n'
 import { repoActions, type RepoData } from '../stores/repo'
 import { useSettingsStore } from '../stores/settings'
@@ -135,9 +136,11 @@ export function BranchStatusPicker({ repo }: { repo: RepoData }): React.JSX.Elem
                 .worktreeAdd(path, plan.dir, plan.branch, plan.newBranch, plan.startPoint)
                 .then((ok) => {
                   if (ok) {
+                    const rootPath = repo.worktrees.find((w) => w.isMain)?.path ?? path
+                    const rootName = canonicalRepoName(rootPath)
                     useSettingsStore
                       .getState()
-                      .openRepoTab({ path: plan.dir, name: `${repo.name} - ${branchName}` })
+                      .openWorktreeRepo({ path: plan.dir, name: `${rootName} · ${branchName}` }, rootPath)
                   }
                 })
             }

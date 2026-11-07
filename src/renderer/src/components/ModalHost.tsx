@@ -22,6 +22,7 @@ import {
 import { SettingsPanel } from './SettingsPanel'
 import { LauncherPanel, type LauncherItem } from './Welcome'
 import { confirmRemoveRecentRepo, confirmRemoveRepoFromGroup } from '../lib/repositoryMenuItems'
+import { planWorktreeGroup, worktreeGroupName } from '../lib/worktrees'
 import { AIConfigWizard } from './AIConfigWizard'
 import { InteractiveRebase } from './InteractiveRebase'
 import { BranchComparison } from './BranchComparison'
@@ -256,6 +257,60 @@ function NewGroupModal({ spec }: { spec: Extract<ModalSpec, { kind: 'new-group' 
         </button>
         <button className="btn primary" disabled={!name.trim()} onClick={submit}>
           {t('common.create')}
+        </button>
+      </div>
+    </>
+  )
+}
+
+/** A worktree is opening while its family is already on the strip. 'convert'
+ *  asks for the group's name (prefilled with the root's); 'add' just confirms
+ *  joining the existing group. */
+function WorktreeGroupModal({ spec }: { spec: Extract<ModalSpec, { kind: 'worktree-group' }> }): React.JSX.Element {
+  const t = useT()
+  const closeModal = useUIStore((s) => s.closeModal)
+  const plan = spec.plan
+  const converting = plan.kind === 'convert'
+  const [name, setName] = useState(plan.kind === 'convert' ? plan.defaultName : plan.groupName)
+  const groupName = plan.kind === 'add' ? plan.groupName : ''
+
+  const submit = (choice: 'group' | 'separate'): void => {
+    closeModal()
+    spec.onResolve(choice, name)
+  }
+
+  return (
+    <>
+      <h3 className="modal-title-row">
+        <FolderGit2 size={17} />
+        {converting ? t('modal.worktreeGroupTitle') : interp(t('modal.worktreeGroupAddTitle'), { name: groupName })}
+      </h3>
+      <div className="modal-hint">
+        {converting
+          ? interp(t('modal.worktreeGroupHint'), { worktree: spec.repo.name })
+          : interp(t('modal.worktreeGroupAddHint'), { worktree: spec.repo.name, name: groupName })}
+      </div>
+      {converting && (
+        <>
+          <label className="modal-label">{t('welcome.groupName')}</label>
+          <input
+            autoFocus
+            className="modal-input"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') submit('group')
+              if (e.key === 'Escape') submit('separate')
+            }}
+          />
+        </>
+      )}
+      <div className="modal-actions">
+        <button className="btn ghost" onClick={() => submit('separate')} type="button">
+          {t('modal.worktreeGroupSeparate')}
+        </button>
+        <button className="btn primary" onClick={() => submit('group')} type="button">
+          {converting ? t('modal.worktreeGroupCreate') : t('modal.worktreeGroupAdd')}
         </button>
       </div>
     </>
@@ -1048,7 +1103,15 @@ function AddWorktreeModal({ spec }: { spec: Extract<ModalSpec, { kind: 'add-work
   }
 
   const indexCodegraph = useSettingsStore((s) => s.settings.codegraphIndexWorktrees === true)
+  const autoGroup = useSettingsStore((s) => s.settings.worktreeAutoGroup === true)
+  const copyIgnored = useSettingsStore((s) => s.settings.worktreeCopyIgnored === true)
   const updateSettings = useSettingsStore((s) => s.update)
+  const [groupName, setGroupName] = useState(() => worktreeGroupName(spec.rootPath))
+  // What grouping can actually do once the worktree lands: join an existing
+  // family group, convert the standalone root tab into a new group, or
+  // nothing — no family member is open.
+  const tabs = useSettingsStore((s) => s.settings.tabs)
+  const groupPlan = autoGroup ? planWorktreeGroup(tabs, spec.rootPath) : null
 
   const submit = (): void => {
     if (invalid) return
@@ -1059,7 +1122,15 @@ function AddWorktreeModal({ spec }: { spec: Extract<ModalSpec, { kind: 'add-work
         if (!ok || !openAfter) return
         useSettingsStore
           .getState()
-          .openRepoTab({ path: resolvedDir(finalDir), name: `${spec.repoName} · ${effectiveBranch}` })
+          .openWorktreeRepo(
+            { path: resolvedDir(finalDir), name: `${spec.repoName} · ${effectiveBranch}` },
+            spec.rootPath,
+            autoGroup
+              ? groupPlan?.kind === 'add'
+                ? groupPlan.groupName
+                : groupName
+              : undefined
+          )
       })
   }
 
@@ -1129,6 +1200,43 @@ function AddWorktreeModal({ spec }: { spec: Extract<ModalSpec, { kind: 'add-work
           onChange={(e) => updateSettings((s) => ({ ...s, codegraphIndexWorktrees: e.target.checked }))}
         />
         <span>{t('modal.worktreeIndexCodegraph')}</span>
+      </label>
+
+      <label className="clone-partial">
+        <input
+          type="checkbox"
+          checked={autoGroup}
+          onChange={(e) => updateSettings((s) => ({ ...s, worktreeAutoGroup: e.target.checked }))}
+        />
+        <span>{t('modal.worktreeAutoGroup')}</span>
+      </label>
+      {autoGroup && groupPlan?.kind === 'add' && (
+        <div className="modal-hint">
+          {interp(t('modal.worktreeGroupJoin'), { name: groupPlan.groupName })}
+        </div>
+      )}
+      {autoGroup && groupPlan?.kind === 'convert' && (
+        <>
+          <label className="modal-label">{t('modal.worktreeGroupName')}</label>
+          <input
+            className="modal-input"
+            value={groupName}
+            onChange={(e) => setGroupName(e.target.value)}
+            onKeyDown={onKey}
+          />
+        </>
+      )}
+      {autoGroup && !groupPlan && (
+        <div className="modal-hint">{t('modal.worktreeGroupNone')}</div>
+      )}
+
+      <label className="clone-partial">
+        <input
+          type="checkbox"
+          checked={copyIgnored}
+          onChange={(e) => updateSettings((s) => ({ ...s, worktreeCopyIgnored: e.target.checked }))}
+        />
+        <span>{t('modal.worktreeCopyIgnored')}</span>
       </label>
 
       <div className="modal-actions">
@@ -2116,6 +2224,7 @@ export function ModalHost(): React.JSX.Element {
             )}
             {modal.kind === 'group-color' && <GroupColorModal spec={modal} />}
             {modal.kind === 'new-group' && <NewGroupModal spec={modal} />}
+            {modal.kind === 'worktree-group' && <WorktreeGroupModal spec={modal} />}
             {modal.kind === 'scan-workspaces' && <ScanWorkspacesModal spec={modal} />}
             {modal.kind === 'reflog' && <ReflogModal repoPath={modal.repoPath} />}
             {modal.kind === 'code-search' && <CodeSearchModal repoPath={modal.repoPath} query={modal.query} />}

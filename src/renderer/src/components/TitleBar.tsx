@@ -22,7 +22,8 @@ import { RepoTabLabel } from './RepoTabLabel'
 import { tabLabel, pageTabLabel } from '../lib/tabLabel'
 import { pagesForRepo } from '../lib/tabPages'
 import { repoCloseStatus, tabCloseStatus, type TabStatus } from '../lib/tabClose'
-import { repoDisplayName } from '../lib/repoAlias'
+import { lookupRepoAlias, repoDisplayName } from '../lib/repoAlias'
+import { worktreeLeafLabel } from '../lib/worktrees'
 import {
   confirmRemoveRepoFromGroup,
   repositoryMenuItems,
@@ -895,6 +896,13 @@ export function TitleBar(): React.JSX.Element {
   const renderRepoChip = (tab: GroupTab, repo: RepoRef): React.JSX.Element => {
     const isActiveRepo = tab.id === settings.activeTabId && tab.activeRepoPath === repo.path
     const rs = repoStatus(repo.path)
+    // Inside a group holding the worktree's family, `root · branch` collapses
+    // to the leaf — the group already says which repo it belongs to. An
+    // explicit alias always wins; standalone tabs keep the full name.
+    const chipLabel =
+      lookupRepoAlias(repo.path, settings.repoAliases) ??
+      (settings.worktreeShortLabels === false ? null : worktreeLeafLabel(repo, tab.repos)) ??
+      repoDisplayName(repo.path, settings.repoAliases, repo.name)
     const repoDc =
       dropClass(dropTarget, 'before-repo', tab.id, repo.path) ||
       dropClass(dropTarget, 'after-repo', tab.id, repo.path)
@@ -928,7 +936,7 @@ export function TitleBar(): React.JSX.Element {
       >
         <RepoTabLabel
           repoPath={repo.path}
-          name={repoDisplayName(repo.path, settings.repoAliases, repo.name)}
+          name={chipLabel}
           className={`tab-name ${isActiveRepo && tab.activePage != null ? 'tab-name-back' : ''}`}
           title={isActiveRepo && tab.activePage != null ? t('titlebar.backToRepo') : undefined}
         />
@@ -943,8 +951,8 @@ export function TitleBar(): React.JSX.Element {
         )}
         <button
           className="tab-close"
-          aria-label={interp(t('a11y.closeTab'), { name: repoDisplayName(repo.path, settings.repoAliases, repo.name) })}
-          title={interp(t('a11y.closeTab'), { name: repoDisplayName(repo.path, settings.repoAliases, repo.name) })}
+          aria-label={interp(t('a11y.closeTab'), { name: chipLabel })}
+          title={interp(t('a11y.closeTab'), { name: chipLabel })}
           onClick={(e) => {
             e.stopPropagation()
             confirmRemoveRepo(tab.id, repo.path)
@@ -1035,7 +1043,7 @@ export function TitleBar(): React.JSX.Element {
     <div className={`titlebar ${isMac ? 'mac' : ''}`}>
       <WorkspaceSwitcher />
       <div
-        className="tabs"
+        className={`tabs ${settings.tabSizing === 'fit' ? 'fit' : ''}`}
         ref={tabsRef}
         role="tablist"
         aria-label={t('a11y.tabStrip')}

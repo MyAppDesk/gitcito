@@ -31,11 +31,12 @@ import {
   pruneFolders,
   updateFolder
 } from '../lib/repoFolders'
-import { reposApi, settingsApi } from '../infrastructure/api'
+import { gitApi, reposApi, settingsApi } from '../infrastructure/api'
 import { repathRepoSettings, repathRepoTabs } from '../lib/repoRepath'
 import type { WorkspaceCandidate } from '../lib/workspacePlan'
 import { useUIStore } from './ui'
 import { focusOpenRepo } from '../lib/tabLookup'
+import { planWorktreeGroup } from '../lib/worktrees'
 import { applyRepoAlias, canonicalRepoPath, migrateRepoAliases, repoDisplayName } from '../lib/repoAlias'
 import { sortBookmarks } from '../lib/bookmarks'
 import { planAttach, planClose } from '../lib/tabPages'
@@ -58,6 +59,9 @@ const uid = (): string => Math.random().toString(36).slice(2, 10)
 // tab has to dismiss it, including re-focusing the tab that is already active
 // (an unchanged `activeTabId` renders no effect, so the click looks dead).
 const leaveMission = (): void => useUIStore.getState().setMissionOpen(false)
+
+/** Canonical paths proven not to be linked worktrees — see openRepoTab. */
+const resolvedNonWorktrees = new Set<string>()
 
 export { GROUP_COLORS }
 
@@ -229,6 +233,10 @@ interface SettingsState {
   setTodosManualOrder(path: string, on: boolean): void
 
   openRepoTab(repo: RepoRef): void
+  /** Open a linked worktree. When `worktreeAutoGroup` is on and its family
+   *  (the root repo or a sibling worktree) is already open, this prompts to
+   *  group instead of landing as a standalone tab — see `planWorktreeGroup`. */
+  openWorktreeRepo(repo: RepoRef, rootPath: string, groupName?: string): void
   /** Open (or focus) a repo requested by the `gitcito` CLI shim. Unlike
    *  openRepoTab, this can target/create a named group and inserts brand-new
    *  standalone tabs at the front (leftmost) since a CLI-opened repo is the
@@ -553,6 +561,26 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   },
 
   openRepoTab: (repo) => {
+    // Auto-group on: with no caller-supplied worktree hint, resolve the repo's
+    // main worktree first so a linked worktree can offer to join its family
+    // rather than landing as a standalone tab it doesn't belong on.
+    // `resolvedNonWorktrees` remembers the negative — a repo's common dir does
+    // not change, so each path costs one rev-parse at most.
+    if (
+      get().settings.worktreeAutoGroup &&
+      repo.worktreeRoot === undefined &&
+      !resolvedNonWorktrees.has(canonicalRepoPath(repo.path))
+    ) {
+      void gitApi.worktreeRoot(repo.path).then((root) => {
+        if (root && canonicalRepoPath(root) !== canonicalRepoPath(repo.path)) {
+          get().openWorktreeRepo(repo, root)
+        } else {
+          resolvedNonWorktrees.add(canonicalRepoPath(repo.path))
+          get().openRepoTab(repo)
+        }
+      })
+      return
+    }
     leaveMission()
     get().update((s) => {
       const open = focusOpenRepo(s.tabs, repo.path)
@@ -565,6 +593,37 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     })
     // Indexing must never delay opening a tab.
     void reposApi.remember(repo.path)
+  },
+
+  openWorktreeRepo: (repo, rootPath, groupName) => {
+    const repoRef: RepoRef = { ...repo, worktreeRoot: rootPath }
+    const s = get().settings
+    const plan = s.worktreeAutoGroup ? planWorktreeGroup(s.tabs, rootPath) : null
+    if (!plan) {
+      get().openRepoTab(repoRef)
+      return
+    }
+    // The caller already asked for the group's name (add-worktree dialog) —
+    // apply it directly instead of asking again.
+    const chosen = groupName?.trim()
+    if (chosen) {
+      if (plan.kind === 'convert') get().groupRepoTab(plan.tabId, chosen)
+      get().addRepoToGroup(plan.tabId, repoRef)
+      return
+    }
+    useUIStore.getState().openModal({
+      kind: 'worktree-group',
+      repo: repoRef,
+      plan,
+      onResolve: (choice, name) => {
+        if (choice !== 'group') {
+          get().openRepoTab(repoRef)
+          return
+        }
+        if (plan.kind === 'convert') get().groupRepoTab(plan.tabId, name.trim() || plan.defaultName)
+        get().addRepoToGroup(plan.tabId, repoRef)
+      }
+    })
   },
 
   openFromCli: (payload) => {

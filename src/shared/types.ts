@@ -2627,6 +2627,10 @@ export interface Profile {
 export interface RepoRef {
   path: string
   name: string
+  /** Absolute path of the main worktree when this repo is a linked worktree.
+   *  Display metadata: group chips collapse `root · branch` to the leaf label
+   *  when siblings share a root. Absent for ordinary repos and roots. */
+  worktreeRoot?: string
 }
 
 /** Fields shared by every tab regardless of kind. */
@@ -2958,6 +2962,17 @@ export interface AppSettings {
   localCiEnabled: boolean
   /** Run `codegraph init` on new worktrees when the parent repo is indexed (opt-in). */
   codegraphIndexWorktrees: boolean
+  /** When a worktree opens while its root repo (or a sibling worktree of the
+   *  same root) is already open, offer to group them into one tab (opt-in,
+   *  toggled from the add-worktree dialog — same pattern as
+   *  codegraphIndexWorktrees). */
+  worktreeAutoGroup: boolean
+  /** Inside a group tab, worktree chips drop the repeated `root · ` prefix and
+   *  show only the branch leaf — the group name already carries the context. */
+  worktreeShortLabels: boolean
+  /** New worktrees get the source repo's gitignored files (.env, local
+   *  overrides) copied across — generated dirs like node_modules are skipped. */
+  worktreeCopyIgnored: boolean
   /** Mask secret values (KEY=••••) in .env/key files in the diff & file viewer. */
   maskSecrets: boolean
   /** File view (working-tree files only): a colored bar next to lines changed
@@ -2994,6 +3009,10 @@ export interface AppSettings {
    *  under %POSH_THEMES_PATH%) or a full .omp.json path. Empty leaves the
    *  shell's own POSH_THEME/built-in default in charge. */
   terminalPoshTheme: string
+  /** Header tab sizing: 'fixed' = tabs keep their content width and the strip
+   *  scrolls on overflow (classic); 'fit' = tabs shrink equally toward a floor
+   *  width like a browser, scrolling only past the floor. */
+  tabSizing: 'fixed' | 'fit'
   /** Which side the branches/files sidebar docks on. */
   sidebarSide: 'left' | 'right'
   /** Let the right details panel span the full window height instead of
@@ -3408,6 +3427,9 @@ export function defaultSettings(): AppSettings {
     snapshotGuard: true,
     localCiEnabled: false,
     codegraphIndexWorktrees: false,
+    worktreeAutoGroup: false,
+    worktreeShortLabels: true,
+    worktreeCopyIgnored: false,
     maskSecrets: true,
     showChangeGutter: true,
     showMinimap: true,
@@ -3421,6 +3443,7 @@ export function defaultSettings(): AppSettings {
     terminalFontFamily: 'SF Mono, JetBrains Mono, Menlo, monospace',
     terminalShell: 'powershell',
     terminalPoshTheme: '',
+    tabSizing: 'fit',
     sidebarSide: 'left',
     rightPanelFullHeight: false
   }

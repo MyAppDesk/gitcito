@@ -934,6 +934,10 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     }
   })
 
+  // The family's main worktree — `path` itself may be a linked worktree, and
+  // grouping/labels key on the root, not on whoever was asked.
+  const worktreeRootPath = repo.worktrees.find((w) => w.isMain)?.path ?? path
+
   // Create a worktree for `branch` in a sibling folder and open it as a tab.
   const openInWorktree = async (branch: string): Promise<void> => {
     const segs = path.split(/[/\\]/).filter(Boolean)
@@ -941,13 +945,18 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     const parent = path.slice(0, path.length - repoName.length - 1)
     const dir = `${parent}/${repoName}--${branch.replace(/[^\w.-]+/g, '-')}`
     const ok = await repoActions.worktreeAdd(path, dir, branch, false)
-    if (ok) useSettingsStore.getState().openRepoTab({ path: dir, name: `${repoName} · ${branch}` })
+    if (ok)
+      useSettingsStore
+        .getState()
+        .openWorktreeRepo({ path: dir, name: `${repoName} · ${branch}` }, worktreeRootPath)
   }
 
   /** Open an existing worktree as its own repo tab — the sibling of
    *  openInWorktree, which creates one first. */
   const openWorktreeTab = (w: WorktreeInfo): void =>
-    useSettingsStore.getState().openRepoTab({ path: w.path, name: worktreeTabName(path, w) })
+    useSettingsStore
+      .getState()
+      .openWorktreeRepo({ path: w.path, name: worktreeTabName(worktreeRootPath, w) }, worktreeRootPath)
 
   const localMenu = (b: BranchInfo): MenuItem[] => [
     ...(worktreeForBranch(repo.worktrees, b.name)
@@ -1135,6 +1144,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     openModal({
       kind: 'add-worktree',
       path,
+      rootPath: worktreeRootPath,
       repoName,
       current: repo.branches.current,
       locals: repo.branches.locals.map((b) => ({ name: b.name, isCurrent: b.isCurrent })),

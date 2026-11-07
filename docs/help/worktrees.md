@@ -28,6 +28,12 @@ stashing.
   and the CLI is on PATH, a new worktree is indexed in the background too — agent
   sessions opened inside it get the same code intelligence without a manual
   `codegraph init`.
+- Tick **Copy gitignored files (.env) into the new worktree** (off by default)
+  and each new worktree starts with the source repo's ignored files already in
+  place — `.env`, local overrides, credentials files — enumerated through
+  git's own ignore machinery so nested .gitignore and global excludes count.
+  Generated directories (`node_modules`, `dist`, `.venv`, …) and files over
+  64 MB are skipped: the point is configs, not build output.
 - The worktree's `.git` file is written with a relative `gitdir:` path instead
   of the absolute drive-letter path git stamps by default, so the tree keeps
   working from shells that cannot parse `E:/…` — WSL terminals and the agents
@@ -37,6 +43,21 @@ stashing.
   worktree at …*. Gitcito takes you there instead: the branch's menu reads *Go
   to `x` in its worktree*, and double-clicking the row opens that worktree's
   tab rather than failing.
+
+### Grouping worktrees in the header
+
+Worktree tabs open with `root · branch` labels, which gets wide fast. Tick
+**Offer to group worktrees that share a root repository** in the add-worktree
+dialog (off by default, remembered like the codegraph option) and the dialog
+adapts to the family: if the root or a sibling worktree already sits in a
+group it says so and the new worktree joins it; if the root is open as a
+standalone tab a **Group name** field appears (prefilled with the root's
+folder name) and both land in a new group; with no family member open it just
+says the worktree opens as its own tab. Inside the group, chips collapse to
+just the leaf (`main`, `feature/x`) because the group already says which
+repository they belong to — a Settings → Layout toggle keeps the full
+`root · branch` name if you prefer. The offer only ever joins worktrees that
+share the same root — it never merges unrelated repositories.
 
 ![The sidebar's worktree and submodule sections, both populated](../screenshots/worktrees.webp)
 

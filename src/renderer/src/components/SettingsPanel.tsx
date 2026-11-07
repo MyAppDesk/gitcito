@@ -99,9 +99,11 @@ import {
   allCodeThemes,
   findAppTheme,
   findCodeTheme,
+  findTerminalTheme,
   resolveAppColors,
   resolveCodeColors
 } from '../theme/themes'
+import { ansiToSpans } from '../lib/ansi'
 import { useT, interp, type TranslationKey } from '../i18n'
 import { resolveAI } from '../../../shared/aiAccounts'
 import { AIAccountsEditor } from './AIAccounts'
@@ -1987,7 +1989,180 @@ function ThemesPage({ initialTab }: { initialTab?: 'theme' | 'graph' } = {}): Re
           onChange={(e) => update((s) => ({ ...s, terminalFontFamily: e.target.value }))}
         />
       </label>
+      {window.api.platform === 'win32' && <PoshThemeField />}
     </>
+  )
+}
+
+/** Oh My Posh prompt theme picker: a card grid like the terminal-theme
+ *  swatches above it — every `*.omp.json` under %POSH_THEMES_PATH% becomes a
+ *  card whose swatch is the real `oh-my-posh print primary` ANSI output.
+ *  Previews render through a small queue (oh-my-posh spawns one process per
+ *  theme; 100+ themes at once would thrash) with the selected theme first. */
+const POSH_PREVIEW_CONCURRENCY = 6
+
+function PoshThemeCard({
+  label,
+  ansi,
+  pending,
+  selected,
+  colors,
+  fontFamily,
+  fontSize,
+  onSelect
+}: {
+  label: string
+  ansi: string | null | undefined
+  pending: boolean
+  selected: boolean
+  colors: TerminalThemeColors
+  fontFamily: string
+  fontSize: number
+  onSelect: () => void
+}): React.JSX.Element {
+  const spans = useMemo(() => (ansi ? ansiToSpans(ansi) : null), [ansi])
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      className={`theme-card ${selected ? 'selected' : ''}`}
+      onClick={onSelect}
+      onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onSelect()}
+    >
+      <div
+        className="theme-swatch posh-swatch"
+        style={{ background: colors.background, color: colors.foreground, fontFamily, fontSize }}
+      >
+        {spans ? (
+          <div className="posh-swatch-line">
+            {spans.map((s, i) => (
+              <span key={i} style={s.style}>
+                {s.text}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <span className="posh-swatch-empty">{pending ? '…' : label}</span>
+        )}
+      </div>
+      <div className="theme-card-label">
+        <span>{label}</span>
+        {selected && <Check size={13} className="theme-check" />}
+      </div>
+    </div>
+  )
+}
+
+function PoshThemeField(): React.JSX.Element {
+  const settings = useSettingsStore((s) => s.settings)
+  const update = useSettingsStore((s) => s.update)
+  const t = useT()
+  const [info, setInfo] = useState<{ dir: string | null; exe: string | null; themes: string[] } | null>(null)
+  const [previews, setPreviews] = useState<Record<string, string | null>>({})
+  const value = settings.terminalPoshTheme ?? ''
+
+  useEffect(() => {
+    let live = true
+    window.api.term
+      .poshThemes()
+      .then((r) => { if (live) setInfo(r) })
+      .catch(() => undefined)
+    return () => { live = false }
+  }, [])
+
+  useEffect(() => {
+    const themes = info?.themes ?? []
+    if (!themes.length) return
+    let live = true
+    const done = new Set<string>()
+    // Selected theme renders first; then the rest fill in through the queue.
+    const queue = [value, ...themes].filter((n): n is string => n !== '')
+    const worker = async (): Promise<void> => {
+      while (queue.length) {
+        const name = queue.shift()
+        if (!name) break
+        if (done.has(name)) continue
+        done.add(name)
+        const ansi = await window.api.term.poshPreview(name).catch(() => null)
+        if (!live) return
+        setPreviews((p) => (name in p ? p : { ...p, [name]: ansi }))
+      }
+    }
+    void Promise.all(Array.from({ length: POSH_PREVIEW_CONCURRENCY }, () => worker()))
+    return () => { live = false }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- value only picks queue order on first run
+  }, [info])
+
+  // Custom paths aren't in the themes queue — preview them on their own.
+  const isKnown = value === '' || (info?.themes ?? []).includes(value)
+  useEffect(() => {
+    if (isKnown || !value.trim()) return
+    let live = true
+    window.api.term
+      .poshPreview(value)
+      .then((ansi) => { if (live) setPreviews((p) => ({ ...p, [value]: ansi })) })
+      .catch(() => undefined)
+    return () => { live = false }
+  }, [value, isKnown])
+
+  const colors = findTerminalTheme(settings.terminalThemeId).colors
+  const [customOpen, setCustomOpen] = useState(false)
+  const select = (v: string): void => {
+    setCustomOpen(false)
+    update((s) => ({ ...s, terminalPoshTheme: v }))
+  }
+  const cardProps = {
+    colors,
+    fontFamily: settings.terminalFontFamily,
+    fontSize: 10
+  }
+
+  return (
+    <div className="settings-field" style={{ marginTop: 12 }}>
+      <span className="settings-field-label">{t('settings.terminalPoshTheme')}</span>
+      <span className="settings-hint">{t('settings.terminalPoshThemeHint')}</span>
+      {info && !info.exe && !info.dir && (
+        <span className="settings-hint">{t('settings.terminalPoshNotInstalled')}</span>
+      )}
+      <div className="theme-grid posh-grid" style={{ marginTop: 8 }}>
+        <PoshThemeCard
+          label={t('settings.terminalPoshDefault')}
+          ansi={undefined}
+          pending={false}
+          selected={value === ''}
+          onSelect={() => select('')}
+          {...cardProps}
+        />
+        {(info?.themes ?? []).map((name) => (
+          <PoshThemeCard
+            key={name}
+            label={name}
+            ansi={previews[name]}
+            pending={!(name in previews)}
+            selected={value === name}
+            onSelect={() => select(name)}
+            {...cardProps}
+          />
+        ))}
+        <PoshThemeCard
+          label={t('settings.terminalPoshCustomPath')}
+          ansi={!isKnown && value ? (previews[value] ?? null) : undefined}
+          pending={!isKnown && !!value && !(value in previews)}
+          selected={!isKnown && value !== ''}
+          onSelect={() => setCustomOpen(true)}
+          {...cardProps}
+        />
+      </div>
+      {(customOpen || !isKnown) && (
+        <input
+          value={value}
+          spellCheck={false}
+          placeholder={t('settings.terminalPoshCustomPlaceholder')}
+          onChange={(e) => update((s) => ({ ...s, terminalPoshTheme: e.target.value }))}
+          style={{ marginTop: 8 }}
+        />
+      )}
+    </div>
   )
 }
 

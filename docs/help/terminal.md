@@ -58,12 +58,22 @@ into everything it spawns, because a GUI app launched from the Dock inherits
 almost nothing. If a command is still not found, check that it is on `PATH` for
 a login shell and not only for an interactive one.
 
-## Shell & theme
+## Shell, theme & Oh My Posh
 
 On Windows, Settings → Layout picks the shell each new terminal spawns —
 PowerShell, PowerShell Core (`pwsh`), `cmd`, Git Bash, WSL, or a custom
 executable. Terminal visuals (theme, font size, font family) live under
 Settings → Themes → Terminal theme and apply live to every session.
+
+If [Oh My Posh](https://ohmyposh.dev) is installed, the terminal theme section
+also lists every `*.omp.json` under `%POSH_THEMES_PATH%` with a live preview —
+choosing one injects it as `POSH_THEME` for new terminals, so a bare
+`oh-my-posh init pwsh` in your profile picks it up. A custom `.omp.json` path
+works too; leaving the field on Default keeps whatever your shell/profile or
+global `POSH_THEME` already sets. Existing sessions keep the theme they were
+created with — close and reopen a terminal to apply a new one. Prompt glyphs
+need a Nerd Font in the terminal font family (e.g. `CaskaydiaMono Nerd Font`)
+or icons render as boxes.
 
 Anything you run here is invisible to Gitcito's own locking, so a long
 `git rebase` typed by hand and a click in the UI can still collide — the app

@@ -17378,3 +17378,24 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
   justify-content: center;
   gap: 10px;
 }
+
+.posh-grid {
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+.posh-swatch {
+  justify-content: center;
+  padding: 6px 8px;
+  text-align: start;
+}
+.posh-swatch-line {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.5;
+}
+.posh-swatch-empty {
+  opacity: 0.5;
+  font-size: 11px;
+  font-style: italic;
+  align-self: center;
+}

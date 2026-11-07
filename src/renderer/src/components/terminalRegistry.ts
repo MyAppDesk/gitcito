@@ -736,11 +736,13 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     return handle
   }
 
-  // Defer fit until the container is attached & sized. The shell is read at
-  // creation time — an existing session keeps the shell it was spawned with
-  // even if the setting changes later.
-  const shell = useSettingsStore.getState().settings.terminalShell
-  void window.api.term.create(cwd, term.cols || 80, term.rows || 24, shell).then((id) => {
+  // Defer fit until the container is attached & sized. Shell and Oh My Posh
+  // theme are read at creation time — an existing session keeps what it was
+  // spawned with even if the settings change later.
+  const { terminalShell, terminalPoshTheme } = useSettingsStore.getState().settings
+  void window.api.term
+    .create(cwd, term.cols || 80, term.rows || 24, terminalShell, terminalPoshTheme)
+    .then((id) => {
     handle.ptyId = id
     cleanups.push(window.api.term.onData(id, writeToTerm))
     cleanups.push(

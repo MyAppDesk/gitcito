@@ -1,5 +1,7 @@
 import { ipcMain, WebContents } from 'electron'
-import { spawn, ChildProcess } from 'child_process'
+import { spawn, ChildProcess, execFile } from 'child_process'
+import { existsSync, readdirSync } from 'fs'
+import { join } from 'path'
 
 interface TermSession {
   write(data: string): void
@@ -53,7 +55,7 @@ function resolveShell(sel?: string): { file: string; args: string[] } {
   }
 }
 
-function createPty(wc: WebContents, id: number, cwd: string, cols: number, rows: number, shell?: string): TermSession | null {
+function createPty(wc: WebContents, id: number, cwd: string, cols: number, rows: number, shell?: string, poshTheme?: string): TermSession | null {
   try {
     interface PtyProcess {
       write(data: string): void
@@ -69,13 +71,27 @@ function createPty(wc: WebContents, id: number, cwd: string, cols: number, rows:
       spawn(file: string, args: string[], opts: Record<string, unknown>): PtyProcess
     }
     const sh = resolveShell(shell)
+    // Oh My Posh honors $env:POSH_THEME at `oh-my-posh init` — inject the
+    // configured theme so a bare name resolves under %POSH_THEMES_PATH%.
+    const theme = poshTheme?.trim()
+    const poshEnv =
+      theme &&
+      (theme.includes('\\') || theme.includes('/') || /\.(json|yaml|yml)$/.test(theme)
+        ? theme
+        : process.env.POSH_THEMES_PATH
+          ? `${process.env.POSH_THEMES_PATH}\\${theme}.omp.json`
+          : theme)
     const p = pty.spawn(sh.file, sh.args, {
       name: 'xterm-256color',
       cwd,
       cols,
       rows,
       // TERM is often unset when the app is launched from Finder/Dock.
-      env: { ...process.env, TERM: 'xterm-256color' } as Record<string, string>
+      env: {
+        ...process.env,
+        TERM: 'xterm-256color',
+        ...(poshEnv ? { POSH_THEME: poshEnv } : {})
+      } as Record<string, string>
     })
     p.onData((d) => !wc.isDestroyed() && wc.send(`term:data:${id}`, d))
     p.onExit(() => {
@@ -169,14 +185,82 @@ function createFallback(wc: WebContents, id: number, cwd: string): TermSession {
   }
 }
 
+/** Directory holding `*.omp.json` theme files. POSH_THEMES_PATH is set by the
+ *  installer/scoop; winget and scoop installs land in well-known places. */
+function poshThemeDir(): string | null {
+  if (process.platform !== 'win32') return null
+  const home = process.env.USERPROFILE || process.env.HOME || ''
+  const candidates = [
+    process.env.POSH_THEMES_PATH,
+    process.env.LOCALAPPDATA ? join(process.env.LOCALAPPDATA, 'Programs', 'oh-my-posh', 'themes') : null,
+    home ? join(home, 'scoop', 'apps', 'oh-my-posh', 'current', 'themes') : null
+  ].filter((d): d is string => !!d)
+  return candidates.find((d) => { try { return existsSync(d) } catch { return false } }) ?? null
+}
+
+function findPoshExe(): string | null {
+  if (process.platform !== 'win32') return null
+  const home = process.env.USERPROFILE || process.env.HOME || ''
+  const candidates = [
+    process.env.POSH_EXE,
+    home ? join(home, 'scoop', 'shims', 'oh-my-posh.exe') : null,
+    process.env.LOCALAPPDATA ? join(process.env.LOCALAPPDATA, 'Programs', 'oh-my-posh', 'bin', 'oh-my-posh.exe') : null,
+    'oh-my-posh.exe', // PATH
+    'oh-my-posh'
+  ].filter((p): p is string => !!p)
+  for (const p of candidates) {
+    try {
+      if (p.includes('\\') || p.includes('/')) {
+        if (existsSync(p)) return p
+      } else {
+        return p // bare name: let spawn resolve it via PATH; failure is caught
+      }
+    } catch { /* keep looking */ }
+  }
+  return null
+}
+
+/** Resolve a `terminalPoshTheme` value to a config path: bare names look up the
+ *  themes dir, anything with a path separator / .json ext is used as given. */
+function poshThemePath(theme: string): string | null {
+  const t = theme.trim()
+  if (!t) return null
+  if (/[/\\]|\.json$/i.test(t)) return t
+  const dir = poshThemeDir()
+  return dir ? join(dir, `${t}.omp.json`) : null
+}
+
 export function registerTerminalHandlers(): void {
-  ipcMain.handle('term:create', (e, cwd: string, cols: number, rows: number, shell?: string) => {
+  ipcMain.handle('term:create', (e, cwd: string, cols: number, rows: number, shell?: string, poshTheme?: string) => {
     const id = nextId++
-    const session = createPty(e.sender, id, cwd, cols, rows, shell) ?? createFallback(e.sender, id, cwd)
+    const session = createPty(e.sender, id, cwd, cols, rows, shell, poshTheme) ?? createFallback(e.sender, id, cwd)
     sessions.set(id, session)
     return id
   })
   ipcMain.handle('term:process', (_e, id: number) => sessions.get(id)?.procName() ?? '')
+  ipcMain.handle('term:posh-themes', () => {
+    const dir = poshThemeDir()
+    if (!dir) return { dir: null, exe: null, themes: [] as string[] }
+    try {
+      const themes = readdirSync(dir)
+        .filter((f) => f.toLowerCase().endsWith('.omp.json'))
+        .map((f) => f.slice(0, -'.omp.json'.length))
+        .sort((a, b) => a.localeCompare(b))
+      return { dir, exe: findPoshExe(), themes }
+    } catch {
+      return { dir, exe: findPoshExe(), themes: [] as string[] }
+    }
+  })
+  ipcMain.handle('term:posh-preview', (_e, theme: string) => new Promise<string | null>((resolve) => {
+    const exe = findPoshExe()
+    const config = poshThemePath(theme)
+    if (!exe || !config) return resolve(null)
+    // `print primary` renders the prompt to stdout as ANSI escapes — the same
+    // bytes the shell would emit, so the settings preview is pixel-honest.
+    execFile(exe, ['print', 'primary', '--config', config, '--shell', 'pwsh'],
+      { timeout: 5000, windowsHide: true, maxBuffer: 64 * 1024 },
+      (err, stdout) => resolve(err ? null : stdout))
+  }))
   ipcMain.on('term:input', (_e, id: number, data: string) => sessions.get(id)?.write(data))
   ipcMain.on('term:resize', (_e, id: number, cols: number, rows: number) => sessions.get(id)?.resize(cols, rows))
   ipcMain.on('term:kill', (_e, id: number) => {

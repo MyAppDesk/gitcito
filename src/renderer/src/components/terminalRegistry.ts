@@ -35,6 +35,11 @@ let currentTermTheme: TerminalThemeColors = TERMINAL_THEMES[0].colors
 let currentFontSize = 12.5
 let currentFontFamily = DEFAULT_FONT_FAMILY
 
+// Palette/font options apply instantly, but the refit they imply does not:
+// every fitSafely reflows the whole scrollback per terminal, and a font-size
+// slider drag fires applyTerminalPrefs per tick — coalesce refits into a
+// single trailing-edge pass instead of N terminals × M ticks of reflows.
+let prefRefitTimer = 0
 export function applyTerminalPrefs(
   theme: TerminalThemeColors,
   fontSize: number,
@@ -48,10 +53,14 @@ export function applyTerminalPrefs(
     h.term.options.fontSize = currentFontSize
     h.term.options.fontFamily = currentFontFamily
     h.container.style.background = theme.background
+  })
+  if (prefRefitTimer) window.clearTimeout(prefRefitTimer)
+  prefRefitTimer = window.setTimeout(() => {
+    prefRefitTimer = 0
     // A font change alters cell metrics — refit so cols/rows and the pty
     // follow the new size instead of stretching the old grid.
-    h.fitSafely()
-  })
+    registry.forEach((h) => h.fitSafely())
+  }, 150)
 }
 
 export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number): TermHandle {
@@ -213,8 +222,12 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
   // to userData/gitcito-scroll-debug.log (readable on packaged builds where
   // DevTools is unavailable) and kept in a ring dumpable from DevTools via
   // __termScrollLog() on dev builds. Off by default.
+  // Scroll forensics are off by default (GITCITO_SCROLL_DEBUG=1); anything
+  // that only exists to feed the log — regex sweeps, sequence capture — must
+  // be gated by this flag, not computed per chunk.
+  const debugOn = !!window.api?.scrollDebug?.enabled
   const sdbg = ((): ((msg: string) => void) => {
-    const on = !!window.api?.scrollDebug?.enabled
+    const on = debugOn
     const ring: string[] = []
     const g = window as unknown as { __termScrollLog?: () => string[] }
     const prev = g.__termScrollLog
@@ -250,8 +263,15 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
   // computes from scrollTop is garbage — reconcile before its own handlers
   // (wheel deltas, scrollbar drags) can read the stale value. Safe to write:
   // the scroll event it triggers resolves to a ~0-line scrollLines.
+  // The xterm viewport element lives for the whole terminal lifetime —
+  // resolve it once lazily instead of querying on every scroll/wheel event.
+  let vpEl: HTMLElement | null = null
+  const viewportEl = (): HTMLElement | null => {
+    if (!vpEl || !vpEl.isConnected) vpEl = container.querySelector('.xterm-viewport')
+    return vpEl
+  }
   const reconcileScrollTop = (): void => {
-    const vp = container.querySelector('.xterm-viewport')
+    const vp = viewportEl()
     if (!(vp instanceof HTMLElement)) return
     const buf = term.buffer.active
     const max = vp.scrollHeight - vp.clientHeight
@@ -297,7 +317,7 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
   // moves while that drag is held count.
   let scrollbarDrag = false
   const isScrollbarHit = (e: PointerEvent): boolean => {
-    const vp = container.querySelector('.xterm-viewport')
+    const vp = viewportEl()
     if (!(vp instanceof HTMLElement) || e.target !== vp) return false
     return e.clientX >= vp.getBoundingClientRect().right - 20
   }
@@ -328,7 +348,7 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
       // actual in-progress selection counts: a splitter drag passing through
       // the edge zone with the button held selects nothing and would
       // otherwise mark every resize clamp event as a genuine scroll.
-      const vp = container.querySelector('.xterm-viewport')
+      const vp = viewportEl()
       if (!(vp instanceof HTMLElement) || !term.hasSelection()) return
       const r = vp.getBoundingClientRect()
       if (e.clientY < r.top + 30 || e.clientY > r.bottom - 30) markUserScroll()
@@ -343,7 +363,7 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
   // offset back synchronously: a scroll event from it computes amount ~= 0,
   // which is a no-op — so this can never fight xterm.
   const syncDomScrollTop = (line?: number): void => {
-    const vp = container.querySelector('.xterm-viewport')
+    const vp = viewportEl()
     if (!(vp instanceof HTMLElement)) return
     const buf = term.buffer.active
     const y = line ?? buf.viewportY
@@ -356,6 +376,23 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     }
   }
 
+  // Every programmatic scroll we perform fires xterm's onScroll
+  // SYNCHRONOUSLY — BufferService.scrollLines emits inline, so a scroll call
+  // inside the scroll listener re-enters it before returning. Without a
+  // guard, restore → emit → listener → restore → emit … is unbounded
+  // recursion that wedges the renderer (the "terminal froze" report).
+  // Scroll events raised by our own restores carry no user intent, so the
+  // listener may ignore everything while the depth is non-zero.
+  let selfScrollDepth = 0
+  const withSelfScroll = (fn: () => void): void => {
+    selfScrollDepth++
+    try {
+      fn()
+    } finally {
+      selfScrollDepth--
+    }
+  }
+
   // Restore a mid-scroll position after xterm lost it: scrollLines with a
   // negative amount is the only path that re-arms the buffer's
   // "user is scrolling" flag — without it the next write drags the viewport
@@ -363,11 +400,13 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
   const restoreLine = (line: number): void => {
     const buf = term.buffer.active
     const target = Math.min(line, buf.baseY)
-    term.scrollToLine(target)
-    if (target < buf.baseY) {
-      term.scrollLines(1)
+    withSelfScroll(() => {
       term.scrollToLine(target)
-    }
+      if (target < buf.baseY) {
+        term.scrollLines(1)
+        term.scrollToLine(target)
+      }
+    })
     syncDomScrollTop(target)
   }
 
@@ -401,7 +440,7 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
       return
     }
     if (anchor.kind === 'bottom') {
-      term.scrollToBottom()
+      withSelfScroll(() => term.scrollToBottom())
       return
     }
     const target = anchorTarget()
@@ -450,12 +489,14 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     writeCount++
   })
   const domState = (): string => {
-    const vp = container.querySelector('.xterm-viewport')
+    const vp = viewportEl()
     if (!(vp instanceof HTMLElement)) return ' st=?'
     const max = vp.scrollHeight - vp.clientHeight
     return ` st=${vp.scrollTop}/${max} ch=${vp.clientHeight}`
   }
   const scrollListener = term.onScroll((y) => {
+    // Our own scroll calls emit synchronously and carry no user intent.
+    if (selfScrollDepth > 0) return
     if (!container.isConnected || container.clientHeight === 0) return
     // Alternate-buffer apps (vim, less, agent TUIs) scroll their own screen
     // with no scrollback — every event there reports y >= baseY = 0 and would
@@ -597,7 +638,9 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
       pendingTail = ''
     }
     // The sequence may split across pty chunks — hold an incomplete tail.
-    const partial = /(?:\x1b\[\??3?;?\d*|\x9b\??3?;?\d*)$/.exec(data)?.[0]
+    // A bare trailing ESC is held too: "\x1b" + "[?3J" in the next chunk is
+    // the same erase and must not slip through.
+    const partial = /(?:\x1b(?:\[\??3?;?\d*)?|\x9b\??3?;?\d*)$/.exec(data)?.[0]
     if (partial) {
       pendingTail = partial
       data = data.slice(0, -partial.length)
@@ -610,14 +653,16 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     }
     // Forensics: remember every erase/reset-capable sequence so a buffer
     // wipe in the scroll log can be matched to the exact bytes that did it.
-    const seqs = data.match(/\x1b\[[\d;?]*[JK]|\x1b\[\?\d{3,4}[hl]|\x1bc|\x1b\[!p/g)
-    if (seqs) {
-      recentSeqs = (recentSeqs + ' ' + seqs.join(' ').replace(/\x1b/g, 'ESC')).slice(-160)
+    // Debug-only work — the regex costs real time on every pty chunk.
+    if (debugOn) {
+      const seqs = data.match(/\x1b\[[\d;?]*[JK]|\x1b\[\?\d{3,4}[hl]|\x1bc|\x1b\[!p/g)
+      if (seqs) {
+        recentSeqs = (recentSeqs + ' ' + seqs.join(' ').replace(/\x1b/g, 'ESC')).slice(-160)
+      }
+      if (data.includes('\x1bc')) sdbg('saw full-reset')
     }
-    if (data.includes('\x1bc')) sdbg('saw full-reset')
     if (data) term.write(data)
   }
-
   // Outbound input logging — escape sequences only (arrows, F-keys, paste
   // markers), never plain typed text. A debug run shows whether an arrow
   // keystroke produced its sequence (xterm emitted) or died earlier (focus /
@@ -736,13 +781,11 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
     return handle
   }
 
-  // Defer fit until the container is attached & sized. Shell and Oh My Posh
-  // theme are read at creation time — an existing session keeps what it was
-  // spawned with even if the settings change later.
+  // Defer fit until the container is attached & sized. The shell is read at
+  // creation time — an existing session keeps the shell it was spawned with
+  // even if the setting changes later.
   const { terminalShell, terminalPoshTheme } = useSettingsStore.getState().settings
-  void window.api.term
-    .create(cwd, term.cols || 80, term.rows || 24, terminalShell, terminalPoshTheme)
-    .then((id) => {
+  void window.api.term.create(cwd, term.cols || 80, term.rows || 24, terminalShell, terminalPoshTheme).then((id) => {
     handle.ptyId = id
     cleanups.push(window.api.term.onData(id, writeToTerm))
     cleanups.push(

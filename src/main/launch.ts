@@ -5,6 +5,7 @@ import { homedir } from 'os'
 import { join, relative, sep } from 'path'
 import type { LaunchConfig, LaunchGroup, LaunchInput, LaunchTask } from '../shared/types'
 import { resolveLaunchInputs } from './launchInputFiles'
+import { makeBatchedSender } from './ptyBatch'
 
 // ─── JSONC parsing ──────────────────────────────────────────────────────────
 // launch.json / tasks.json are JSON-with-comments and allow trailing commas.
@@ -662,13 +663,23 @@ function makeSink(
   let backlog = ''
   let attached = false
   let exitCode: number | null = null
+  // Batch per-chunk sends like the terminal does — launch output (builds,
+  // watchers) produces the same IPC flood otherwise.
+  const send = makeBatchedSender(wc, `launch:data:${id}`)
   return {
     emit(text) {
-      if (!attached) backlog = (backlog + text).slice(-BACKLOG_MAX)
-      if (!wc.isDestroyed()) wc.send(`launch:data:${id}`, text)
+      // Before the renderer attaches the bytes only exist for the backlog
+      // replay — the batched sender must not also queue them or attach()
+      // would deliver the same text twice.
+      if (!attached) {
+        backlog = (backlog + text).slice(-BACKLOG_MAX)
+        return
+      }
+      send.push(text)
     },
     exit(code) {
       exitCode = code
+      send.dispose() // buffered output must land before the exit event
       if (!wc.isDestroyed()) wc.send(`launch:exit:${id}`, code)
       // Keep the session (and its backlog) briefly: a terminal that mounts
       // after a fast failure must still be able to show it.

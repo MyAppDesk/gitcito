@@ -2,6 +2,7 @@ import { ipcMain, WebContents } from 'electron'
 import { spawn, ChildProcess, execFile } from 'child_process'
 import { existsSync, readdirSync } from 'fs'
 import { join } from 'path'
+import { makeBatchedSender } from './ptyBatch'
 
 interface TermSession {
   write(data: string): void
@@ -93,8 +94,12 @@ function createPty(wc: WebContents, id: number, cwd: string, cols: number, rows:
         ...(poshEnv ? { POSH_THEME: poshEnv } : {})
       } as Record<string, string>
     })
-    p.onData((d) => !wc.isDestroyed() && wc.send(`term:data:${id}`, d))
+    // Batch raw chunks into ~frame-sized IPC messages — a repaint storm
+    // otherwise becomes hundreds of dispatches/sec of renderer jank.
+    const send = makeBatchedSender(wc, `term:data:${id}`)
+    p.onData((d) => send.push(d))
     p.onExit(() => {
+      send.dispose() // deliver buffered output before the exit event
       sessions.delete(id)
       if (!wc.isDestroyed()) wc.send(`term:exit:${id}`)
     })

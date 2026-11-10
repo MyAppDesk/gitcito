@@ -75,6 +75,13 @@ created with — close and reopen a terminal to apply a new one. Prompt glyphs
 need a Nerd Font in the terminal font family (e.g. `CaskaydiaMono Nerd Font`)
 or icons render as boxes.
 
+A note on speed: Oh My Posh runs its binary once per prompt — roughly
+100–200 ms on Windows, more for themes with a git segment in a large repo —
+which is felt as a short pause before each prompt, not as Gitcito lag. Themes
+without a git segment are the fastest. PowerShell's prediction style matters
+too: `-PredictionViewStyle InlineView` repaints a small area per keystroke
+while `ListView` redraws a whole block.
+
 Anything you run here is invisible to Gitcito's own locking, so a long
 `git rebase` typed by hand and a click in the UI can still collide — the app
 refreshes from disk when the terminal changes something.

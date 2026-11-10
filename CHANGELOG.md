@@ -1,5 +1,12 @@
 
 
+## [4.22.1](https://github.com/MyAppDesk/gitcito/compare/v4.22.0...v4.22.1) (2026-11-10)
+
+
+### Performance Improvements
+
+* **terminal:** batch pty IPC and stop scroll-restore reentrancy freezes ([#79](https://github.com/MyAppDesk/gitcito/issues/79)) ([0409e84d](https://github.com/MyAppDesk/gitcito/commit/0409e84de98bf1093eef531dbe1d16eb8e6e039d))
+
 ## [4.22.0](https://github.com/MyAppDesk/gitcito/compare/v4.21.1...v4.22.0) (2026-11-07)
 
 

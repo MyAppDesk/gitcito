@@ -165,7 +165,7 @@ import { recordEvent } from './analytics'
 import { searchFileMatches, supersedeSearch, type FileSearchOptions } from './fileSearch'
 import { recordLog } from './log'
 import { activeProfileAuth, boundProfileAuth, readSettings } from './settings'
-import { apiToken } from './credentials'
+import { apiToken, providerOfHost } from './credentials'
 import { pickHostAuth } from '../shared/hostToken'
 import { gitCredentialEnv, type BasicCredential } from './gitCredentialEnv'
 import { AsyncLocalStorage } from 'node:async_hooks'
@@ -880,6 +880,8 @@ function basicAuthFor(host: RepoHost | undefined, token: string): { username: st
 /** Inject credentials into an https clone URL so private integration repos can be cloned non-interactively. */
 function authedCloneUrl(url: string, host?: string, token?: string): string {
   if (!token || !token.trim() || !/^https:\/\//i.test(url)) return url
+  // The caller names the provider; the URL must really be on it.
+  if (!host || hostFromUrl(url) !== host) return url
   const auth = basicAuthFor(host as RepoHost | undefined, token)
   if (!auth) return url
   try {
@@ -893,13 +895,11 @@ function authedCloneUrl(url: string, host?: string, token?: string): string {
 }
 
 /** Map a remote URL's hostname to the provider whose PAT can authenticate it. */
-function hostFromUrl(url: string): RepoHost | undefined {
+export function hostFromUrl(url: string): RepoHost | undefined {
   try {
-    const h = new URL(url).hostname.toLowerCase()
-    if (h.includes('github')) return 'github'
-    if (h.includes('gitlab')) return 'gitlab'
-    if (h.includes('bitbucket')) return 'bitbucket'
-    if (h.includes('azure') || h.endsWith('visualstudio.com')) return 'azure'
+    // Exact host or a dotted subdomain of a known provider: `github.evil.com` or
+    // `notgithub.com` must never be offered the profile's token.
+    return providerOfHost(new URL(url).hostname)
   } catch {
     /* not a parseable URL (e.g. scp-style ssh) → no host */
   }
@@ -1583,7 +1583,26 @@ async function withRemoteAuth<T>(repoPath: string, remote: string, op: () => Pro
   const url = await getRemoteUrl(repoPath, remote)
   const cred = url ? await remoteCredential(repoPath, url).catch(() => null) : null
   const env = url && cred ? gitCredentialEnv(url, cred) : null
-  return env ? remoteAuthEnv.run(env, op) : op()
+  if (!env) return op()
+  // Older git ignores GIT_CONFIG_COUNT and would run without the credential, so
+  // fail with the reason instead of "could not read Username".
+  await assertGitSupportsCredentialEnv()
+  return remoteAuthEnv.run(env, op)
+}
+
+let gitEnvSupport: Promise<void> | null = null
+/** Throws once, with a clear message, when the installed git predates config-from-environment (2.31). */
+function assertGitSupportsCredentialEnv(): Promise<void> {
+  gitEnvSupport ??= pexecFile('git', ['--version']).then(
+    ({ stdout }) => {
+      const m = /(\d+)\.(\d+)/.exec(String(stdout))
+      if (m && (Number(m[1]) < 2 || (Number(m[1]) === 2 && Number(m[2]) < 31))) {
+        throw new Error(`Gitcito needs git 2.31 or newer to use a profile's account for fetch and push (found ${m[0]}). Update git and retry.`)
+      }
+    },
+    () => undefined
+  )
+  return gitEnvSupport
 }
 
 

@@ -167,7 +167,7 @@ import { recordLog } from './log'
 import { activeProfileAuth, boundProfileAuth, readSettings } from './settings'
 import { apiToken, providerOfHost } from './credentials'
 import { pickHostAuth } from '../shared/hostToken'
-import { gitCredentialEnv, type BasicCredential } from './gitCredentialEnv'
+import { gitCredentialEnv, gitSupportsCredentialEnv, MIN_GIT_FOR_CREDENTIAL_ENV, type BasicCredential } from './gitCredentialEnv'
 import { AsyncLocalStorage } from 'node:async_hooks'
 import { indexCodegraphAsync } from './codegraph'
 import { applyPreparedRepoFileActions, RepoFileActionError } from './repoFileActions'
@@ -1595,9 +1595,9 @@ let gitEnvSupport: Promise<void> | null = null
 function assertGitSupportsCredentialEnv(): Promise<void> {
   gitEnvSupport ??= pexecFile('git', ['--version']).then(
     ({ stdout }) => {
-      const m = /(\d+)\.(\d+)/.exec(String(stdout))
-      if (m && (Number(m[1]) < 2 || (Number(m[1]) === 2 && Number(m[2]) < 31))) {
-        throw new Error(`Gitcito needs git 2.31 or newer to use a profile's account for fetch and push (found ${m[0]}). Update git and retry.`)
+      const v = gitSupportsCredentialEnv(String(stdout))
+      if (!v.ok) {
+        throw new Error(`Gitcito needs git ${MIN_GIT_FOR_CREDENTIAL_ENV} or newer to use a profile's account for fetch and push (found ${v.found}). Update git and retry.`)
       }
     },
     () => undefined

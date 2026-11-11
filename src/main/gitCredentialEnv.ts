@@ -63,3 +63,19 @@ export function gitCredentialEnv(
     [GIT_PASSWORD_VAR]: cred.password
   }
 }
+
+/** Config-from-environment (`GIT_CONFIG_COUNT`) arrived in git 2.31. */
+export const MIN_GIT_FOR_CREDENTIAL_ENV = '2.31'
+
+/**
+ * Whether the output of `git --version` names a git that understands
+ * config-from-environment. An output that cannot be read counts as supported:
+ * a wrong guess then surfaces as git's own error, not a false refusal.
+ */
+export function gitSupportsCredentialEnv(versionOutput: string): { ok: boolean; found?: string } {
+  const m = /(\d+)\.(\d+)/.exec(versionOutput)
+  if (!m) return { ok: true }
+  const major = Number(m[1])
+  const minor = Number(m[2])
+  return { ok: major > 2 || (major === 2 && minor >= 31), found: m[0] }
+}

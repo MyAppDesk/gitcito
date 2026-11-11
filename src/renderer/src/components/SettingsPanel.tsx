@@ -2332,13 +2332,14 @@ function WorkspacesPage(): React.JSX.Element {
   const renameWorkspace = useSettingsStore((s) => s.renameWorkspace)
   const deleteWorkspace = useSettingsStore((s) => s.deleteWorkspace)
   const switchWorkspace = useSettingsStore((s) => s.switchWorkspace)
-  const openModal = useUIStore((s) => s.openModal)
+  // Over Settings, not instead of it: a modal would close this screen.
+  const openDialog = useUIStore((s) => s.openDialog)
   const t = useT()
 
   const workspaces = settings.workspaces ?? []
   const wsFallback = (): string => interp(t('ws.placeholder'), { n: workspaces.length + 1 })
   const newWorkspace = (): void =>
-    openModal({
+    openDialog({
       kind: 'input',
       title: t('ws.new'),
       label: t('ws.name'),
@@ -2347,7 +2348,7 @@ function WorkspacesPage(): React.JSX.Element {
       onSubmit: (name) => createWorkspace(name.trim() || wsFallback())
     })
   const editWorkspace = (id: string, current: string): void =>
-    openModal({
+    openDialog({
       kind: 'input',
       title: t('ws.rename'),
       label: t('ws.name'),
@@ -2356,7 +2357,7 @@ function WorkspacesPage(): React.JSX.Element {
       onSubmit: (name) => renameWorkspace(id, name.trim() || current)
     })
   const removeWorkspace = (id: string, name: string): void =>
-    openModal({
+    openDialog({
       kind: 'confirm',
       title: t('ws.delete'),
       message: interp(t('ws.deleteConfirm'), { name }),
@@ -3450,7 +3451,8 @@ const SSH_HOSTS: { id: string; label: string; url: string }[] = [
 function SshKeysCard(): React.JSX.Element {
   const t = useT()
   const toast = useUIStore((s) => s.toast)
-  const openModal = useUIStore((s) => s.openModal)
+  // Over Settings, not instead of it: a modal would close this screen.
+  const openDialog = useUIStore((s) => s.openDialog)
   const profile = useSettingsStore((s) => s.activeProfile())
   const [status, setStatus] = useState<SshStatus | null>(null)
   const [busy, setBusy] = useState('')
@@ -3474,7 +3476,7 @@ function SshKeysCard(): React.JSX.Element {
   }
 
   const generate = (): void => {
-    openModal({
+    openDialog({
       kind: 'input',
       title: t('ssh.generateTitle'),
       label: t('ssh.generateLabel'),
@@ -3498,7 +3500,7 @@ function SshKeysCard(): React.JSX.Element {
   }
 
   const addToAgent = (key: SshKey): void => {
-    openModal({
+    openDialog({
       kind: 'input',
       title: t('ssh.addToAgent'),
       label: t('ssh.passphraseLabel'),
@@ -3519,7 +3521,7 @@ function SshKeysCard(): React.JSX.Element {
   const upload = (key: SshKey): void => {
     const token = profile.githubToken?.trim()
     if (!token) return toast('error', t('ssh.needsGithubToken'))
-    openModal({
+    openDialog({
       kind: 'confirm',
       title: t('confirm.uploadSshKey.title'),
       message: interp(t('confirm.uploadSshKey.message'), { fingerprint: key.fingerprint }),
@@ -4177,7 +4179,8 @@ function readLastPage(): SettingsPage {
 
 export function SettingsPanel({ initialPage, initialThemeTab }: { initialPage?: SettingsPage; initialThemeTab?: 'theme' | 'graph' } = {}): React.JSX.Element {
   const { settings, addProfile, deleteProfile } = useSettingsStore()
-  const openModal = useUIStore((s) => s.openModal)
+  // Over Settings, not instead of it: a modal would close this screen.
+  const openDialog = useUIStore((s) => s.openDialog)
   const closeModal = useUIStore((s) => s.closeModal)
   const [selectedId, setSelectedId] = useState(settings.activeProfileId)
   const [page, setPage] = useState<SettingsPage>(initialPage ?? readLastPage())
@@ -4214,7 +4217,7 @@ export function SettingsPanel({ initialPage, initialThemeTab }: { initialPage?: 
     useSettingsStore.getState().saveProfile({ ...profile, ...partial })
 
   const confirmDeleteProfile = (id: string, name: string): void =>
-    openModal({
+    openDialog({
       kind: 'confirm',
       title: t('settings.deleteProfile'),
       message: t('settings.deleteProfileConfirm').replace('{name}', name),

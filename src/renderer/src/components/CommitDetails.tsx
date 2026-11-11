@@ -25,6 +25,7 @@ import { useT, interp } from '../i18n'
 import { openWithMenuItems } from '../lib/openWith'
 import { stepRange, claimRangeKeys, ownsRangeKeys, rangeKeysBlocked, domOrder } from '../lib/rangeSelect'
 import { ChangeSummary } from './ChangeSummary'
+import { emojifyGitmoji } from '../../../shared/gitmoji'
 
 function profileUrl(name: string, email: string, remotes: RemoteInfo[]): string | undefined {
   const origin = remotes.find((r) => r.name === 'origin')?.url ?? remotes[0]?.url
@@ -371,7 +372,7 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
         </div>
         <p className="commit-subject">
           {autolink(
-            commit.subject,
+            emojifyGitmoji(commit.subject),
             remoteWebUrl(repo.remotes.find((r) => r.name === 'origin')?.url ?? repo.remotes[0]?.url),
             repo.config?.config?.links?.tickets
           )}

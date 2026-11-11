@@ -15,6 +15,7 @@ import {
   type TlState
 } from '../lib/timelapse'
 import { useT, interp } from '../i18n'
+import { emojifyGitmoji } from '../../../shared/gitmoji'
 
 /** Commits per second, so a long history stays watchable. */
 const SPEEDS = [4, 8, 16, 32]
@@ -288,8 +289,8 @@ export function TimelapseModal({ repoPath }: { repoPath: string }): React.JSX.El
       {commit && (
         <div className="tl-now">
           <code className="tl-sha">{commit.hash.slice(0, 7)}</code>
-          <span className="tl-subject" title={commit.subject}>
-            {commit.subject}
+          <span className="tl-subject" title={emojifyGitmoji(commit.subject)}>
+            {emojifyGitmoji(commit.subject)}
           </span>
           <span className="tl-meta">{commit.author}</span>
           <span className="tl-meta">{formatDate(commit.date)}</span>

@@ -6,6 +6,7 @@ import { useUIStore } from '../stores/ui'
 import { repoActions, useRepoStore } from '../stores/repo'
 import { useSettingsStore } from '../stores/settings'
 import { useT, interp } from '../i18n'
+import { emojifyGitmoji } from '../../../shared/gitmoji'
 
 /** Per-file editor state: original blob + current draft. */
 interface FileDraft {
@@ -272,7 +273,7 @@ export function CommitEditModal({
                   <CircleSlash size={12} />
                 )}
                 {s.merge && <GitMerge size={12} className="commitedit-step-merge" aria-hidden="true" />}
-                <span className="commitedit-step-subject">{s.subject}</span>
+                <span className="commitedit-step-subject">{emojifyGitmoji(s.subject)}</span>
                 {s.status === 'conflict' && (
                   <span className="commitedit-step-files" title={s.files.join('\n')}>
                     {interp(t('radar.conflictFiles'), { n: String(s.files.length) })}

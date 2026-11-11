@@ -17,6 +17,7 @@ import { useRepoStore } from '../stores/repo'
 import { useSettingsStore } from '../stores/settings'
 import { useT, interp } from '../i18n'
 import { NumberField } from './NumberField'
+import { emojifyGitmoji } from '../../../shared/gitmoji'
 
 type RunState = { workflow: string; running: boolean; exit: number | null }
 type SweepRow = { sha: string; subject: string; state: 'pending' | 'running' | 'pass' | 'fail' }
@@ -284,8 +285,8 @@ export function LocalCIModal({ repoPath, rev }: { repoPath: string; rev?: string
                 {rows.map((r) => (
                   <div key={r.sha} className="attrs-row">
                     <code className="attrs-pattern">{r.sha.slice(0, 7)}</code>
-                    <span className="attrs-attrs" title={r.subject}>
-                      {r.subject}
+                    <span className="attrs-attrs" title={emojifyGitmoji(r.subject)}>
+                      {emojifyGitmoji(r.subject)}
                     </span>
                     {r.state === 'running' && <Loader2 size={12} className="spin" />}
                     {r.state === 'pass' && (

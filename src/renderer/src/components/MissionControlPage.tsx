@@ -34,6 +34,7 @@ import {
   type PulseSort
 } from '../lib/missionControl'
 import { useT, interp } from '../i18n'
+import { emojifyGitmoji } from '../../../shared/gitmoji'
 
 /** How often the dashboard re-reads the repos while it is on screen. */
 const AUTO_REFRESH_MS = 30_000
@@ -529,7 +530,7 @@ export function MissionControlPage(): React.JSX.Element {
                             {detail.commits.map((c) => (
                               <div key={c.hash} className="mc-detail-item">
                                 <code>{c.hash}</code>
-                                <span title={c.subject}>{c.subject}</span>
+                                <span title={emojifyGitmoji(c.subject)}>{emojifyGitmoji(c.subject)}</span>
                               </div>
                             ))}
                           </div>

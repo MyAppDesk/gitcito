@@ -8,6 +8,7 @@ import { guessLanguage, highlightLine } from '../lib/highlight'
 import { isSecretFile, maskSecretLine } from '../lib/secrets'
 import { useSettingsStore } from '../stores/settings'
 import { useT, interp } from '../i18n'
+import { emojifyGitmoji } from '../../../shared/gitmoji'
 
 /** How long the scrubber waits after the last move before hitting git. */
 const SCRUB_DEBOUNCE_MS = 120
@@ -226,8 +227,8 @@ export function TimeMachineModal({ repoPath }: { repoPath: string }): React.JSX.
 
         <div className="tm-commit">
           <code className="tm-sha">{commit.hash.slice(0, 7)}</code>
-          <span className="tm-subject" title={commit.subject}>
-            {commit.subject}
+          <span className="tm-subject" title={emojifyGitmoji(commit.subject)}>
+            {emojifyGitmoji(commit.subject)}
           </span>
           <span className="tm-author">{commit.author}</span>
           <span className="tm-date">{timeAgo(commit.date)}</span>

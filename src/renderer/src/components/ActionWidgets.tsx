@@ -12,6 +12,7 @@ import { planStackSubmit, type StackPrAction } from '../../../shared/stackPr'
 import { gitApi } from '../infrastructure/api'
 import { useRepoStore } from '../stores/repo'
 import { interp, useT } from '../i18n'
+import { emojifyGitmoji } from '../../../shared/gitmoji'
 
 /**
  * The picture half of a proposed action.
@@ -224,7 +225,7 @@ function CommitsWidget({ hashes, repoPath }: { hashes: string[]; repoPath: strin
             <GitCommitHorizontal size={11} />
             {/* i18n-ignore a commit hash */}
             <code>{hash.slice(0, 7)}</code>
-            {found && <span className="action-widget-subject">{found.subject}</span>}
+            {found && <span className="action-widget-subject">{emojifyGitmoji(found.subject)}</span>}
           </div>
         )
       })}

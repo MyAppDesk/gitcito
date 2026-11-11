@@ -27,6 +27,7 @@ import { computeGutterChanges, gutterMarksByLine, type GutterChange } from '../l
 import { renderMarkdown } from '../preview/markdown'
 import { previewKind, isBinaryKind } from '../preview/registry'
 import { GRAPH_COLORS } from '../graph/layout'
+import { emojifyGitmoji } from '../../../shared/gitmoji'
 
 const MODES: { id: FileViewMode; labelKey: TranslationKey }[] = [
   { id: 'preview', labelKey: 'fileViewer.modePreview' },
@@ -1251,7 +1252,7 @@ export function FileViewer({ view }: { view: FileViewState }): React.JSX.Element
                 </div>
                 <div className="history-selected">
                   <GitCommitHorizontal size={14} style={{ color: shaColor(selectedHistory.hash) }} />
-                  <span className="history-subject">{selectedHistory.subject}</span>
+                  <span className="history-subject">{emojifyGitmoji(selectedHistory.subject)}</span>
                   <span className="history-author">{selectedHistory.author}</span>
                   <code>{selectedHistory.hash.slice(0, 7)}</code>
                   <span className="history-date">{new Date(selectedHistory.date * 1000).toLocaleDateString()}</span>

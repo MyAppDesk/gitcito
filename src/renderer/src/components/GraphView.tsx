@@ -31,6 +31,7 @@ import { fetchedOnlyHashes } from '../lib/graphCommitState'
 import { openBranchDropMenu } from '../lib/branchDropMenu'
 import { CHAT_COMMIT_MIME } from '../lib/repoChatContext'
 import { refIntegrationItems } from '../lib/refMenuItems'
+import { emojifyGitmoji } from '../../../shared/gitmoji'
 
 const LANE_W = 24
 const LEFT_PAD = 16
@@ -1945,7 +1946,7 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
               aria-selected={selected || multi.has(c.hash)}
               aria-setsize={displayCommits.length}
               aria-posinset={row + 1}
-              aria-label={`${c.subject} — ${c.author}`}
+              aria-label={`${emojifyGitmoji(c.subject)} — ${c.author}`}
               className={`graph-row ${selected ? 'selected' : ''} ${multi.has(c.hash) ? 'multi-selected' : ''} ${newSet.has(c.hash) ? 'row-new' : ''} ${fetchedOnlySet.has(c.hash) ? 'row-fetched-only' : ''} ${dimmed ? 'dimmed' : ''} ${matches ? 'matched' : ''} ${ghosted ? 'ghosted' : ''}`}
               style={{ top: row * ROW_H, height: ROW_H, paddingLeft: branchCol + graphCol }}
               // Real commits can be dragged onto repository chat as context.
@@ -2102,7 +2103,7 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
                         </span>
                       </span>
                     ) : (
-                      <span key="message" className="row-subject" title={c.subject}>
+                      <span key="message" className="row-subject" title={emojifyGitmoji(c.subject)}>
                         {newSet.has(c.hash) && <span className="row-new-badge">new</span>}
                         {/* A note is invisible in a plain log, so the row is the
                             only place anyone would find out it exists. */}
@@ -2120,7 +2121,7 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
                             <FlaskConical size={11} />
                           </span>
                         )}
-                        <span className="row-subject-text">{c.subject}</span>
+                        <span className="row-subject-text">{emojifyGitmoji(c.subject)}</span>
                       </span>
                     )
                   if (id === 'deployment')

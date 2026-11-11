@@ -901,6 +901,21 @@ function hostFromUrl(url: string): RepoHost | undefined {
   return undefined
 }
 
+/**
+ * Repositories whose `git log` with signature placeholders failed while the
+ * same log without them worked — a broken gpg config (see `log`). Remembered so
+ * each page does not run the failing command first; retried after the TTL, so
+ * fixing `~/.gitconfig` brings the signature badges back without a restart.
+ */
+const unsignedLogRepos = new Map<string, number>()
+const UNSIGNED_LOG_TTL_MS = 10 * 60 * 1000
+
+/** Whether the graph is currently being read without signature verification. */
+export function logSignaturesDisabled(repoPath: string): boolean {
+  const since = unsignedLogRepos.get(repoPath)
+  return since !== undefined && Date.now() - since < UNSIGNED_LOG_TTL_MS
+}
+
 // Disable git's interactive credential prompt for network ops run from the app.
 // Electron has no controlling TTY, so a prompt fails with the opaque macOS error
 // "could not read Password … Device not configured". With this set, a missing
@@ -1826,7 +1841,7 @@ export const gitService = {
     // stash floating with no parent. `--ignore-missing` keeps a stale/pruned
     // base from failing the whole log.
     const stashBases = await gitService.stashBaseShas(repoPath)
-    const args = [
+    const args = (signatures: boolean): string[] => [
       '-C',
       repoPath,
       'log',
@@ -1841,20 +1856,36 @@ export const gitService = {
       '--date-order',
       `--max-count=${maxCount}`,
       ...(skip > 0 ? [`--skip=${skip}`] : []),
-      `--pretty=format:%H${SEP}%P${SEP}%an${SEP}%ae${SEP}%at${SEP}%D${SEP}%s${SEP}%(trailers:key=Co-authored-by,valueonly,separator=%x1d)${SEP}%G?${SEP}%GS${REC}`
+      // Without signatures the two trailing fields stay, empty, so parsing is unchanged.
+      `--pretty=format:%H${SEP}%P${SEP}%an${SEP}%ae${SEP}%at${SEP}%D${SEP}%s${SEP}%(trailers:key=Co-authored-by,valueonly,separator=%x1d)${SEP}${signatures ? `%G?${SEP}%GS` : SEP}${REC}`
     ]
+    const read = async (signatures: boolean): Promise<string> =>
+      (await pexecFile('git', args(signatures), { maxBuffer: 64 * 1024 * 1024 })).stdout
+    // A repo already known to have a broken gpg config skips the read that fails.
+    const withSignatures = !logSignaturesDisabled(repoPath)
     let raw = ''
     try {
-      const { stdout } = await pexecFile('git', args, { maxBuffer: 64 * 1024 * 1024 })
-      raw = stdout
+      raw = await read(withSignatures)
+      if (withSignatures) unsignedLogRepos.delete(repoPath)
     } catch (err) {
-      // The `%G?`/`%GS` signature placeholders force git to load the gpg config to
-      // verify each commit. A malformed value (e.g. an invalid `gpg.format` in the
-      // user's global gitconfig) makes `git log` exit non-zero *after* it has
-      // already written the commit records to stdout. Salvage that stdout so the
-      // whole graph isn't blanked to "No commits yet" over a signing-config quirk;
-      // a genuinely empty repository simply yields no output here.
-      raw = (err as { stdout?: string }).stdout ?? ''
+      // The `%G?`/`%GS` placeholders make git parse the gpg config, lazily, at the
+      // first *signed* commit. A malformed value (an empty `gpg.format`, as some
+      // GUI clients write into ~/.gitconfig) kills `git log` right there, so its
+      // stdout holds only the commits above that one — a silently truncated graph.
+      // `-c gpg.format=…` cannot override it (the bad file is still parsed), so
+      // the only fix is to ask again without signatures: the history matters more
+      // than the badges. Remembered, so every later page does not fail first.
+      const salvaged = (err as { stdout?: string }).stdout ?? ''
+      if (!withSignatures) raw = salvaged
+      else {
+        try {
+          raw = await read(false)
+          unsignedLogRepos.set(repoPath, Date.now())
+        } catch {
+          // Still failing for another reason: keep whatever the first run printed.
+          raw = salvaged
+        }
+      }
     }
     if (!raw.trim()) return [] // empty repository
     return raw

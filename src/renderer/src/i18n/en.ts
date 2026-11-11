@@ -1412,7 +1412,7 @@ export const en = {
   'settings.notConnected': 'Not connected',
   'settings.integrationsForProfile': 'Connections for {name}',
   'settings.integrationsHint':
-    'Optional. Without a token, Gitcito uses the credential your git already has for the remote — the same one `git clone` uses — so each Azure DevOps organization signs in on its own.',
+    'Optional. Without a token, use Sign in with git to link an account to this profile. Gitcito does not borrow other logins on this machine. Azure DevOps organizations that need different accounts take one profile each, or a token each.',
   'settings.loadingAccount': 'Loading account…',
   'settings.signInWithGit': 'Sign in with git',
   'settings.connectedViaToken': 'Connected with the personal access token below.',

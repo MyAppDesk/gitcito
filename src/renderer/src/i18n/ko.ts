@@ -1418,7 +1418,7 @@ export const ko: Dict = {
   'settings.notConnected': '연결되지 않음',
   'settings.integrationsForProfile': '{name} — 이 프로필의 연결',
   'settings.integrationsHint':
-    '선택 사항입니다. 토큰이 없으면 Gitcito는 git이 이미 해당 원격에 대해 갖고 있는 자격 증명 — `git clone`이 쓰는 바로 그것 — 을 사용합니다. 그래서 Azure DevOps 조직마다 따로 로그인합니다.',
+    '선택 사항입니다. 토큰이 없으면 “Sign in with git”으로 이 프로필에 계정을 연결하세요. Gitcito는 이 컴퓨터의 다른 로그인을 빌려 쓰지 않습니다. 서로 다른 계정이 필요한 Azure DevOps 조직은 프로필을 따로 쓰거나 토큰을 각각 사용합니다.',
   'settings.loadingAccount': '계정을 불러오는 중…',
   'settings.signInWithGit': 'git으로 로그인',
   'settings.connectedViaToken': '아래 개인 액세스 토큰으로 연결되어 있습니다.',

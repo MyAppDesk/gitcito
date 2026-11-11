@@ -1419,7 +1419,7 @@ export const nl: Dict = {
   'settings.notConnected': 'Niet verbonden',
   'settings.integrationsForProfile': 'Verbindingen voor {name}',
   'settings.integrationsHint':
-    'Optioneel. Zonder token gebruikt Gitcito de inloggegevens die je git al voor de remote heeft — dezelfde die `git clone` gebruikt — zodat elke Azure DevOps-organisatie apart inlogt.',
+    'Optioneel. Zonder token koppel je met „Sign in with git” een account aan dit profiel. Gitcito leent geen andere logins van deze computer. Azure DevOps-organisaties die andere accounts nodig hebben, nemen elk een eigen profiel of een eigen token.',
   'settings.loadingAccount': 'Account laden…',
   'settings.signInWithGit': 'Inloggen met git',
   'settings.connectedViaToken': 'Verbonden met het persoonlijke toegangstoken hieronder.',

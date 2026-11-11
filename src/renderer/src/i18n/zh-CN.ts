@@ -1418,7 +1418,7 @@ export const zhCN: Dict = {
   'settings.notConnected': '未连接',
   'settings.integrationsForProfile': '{name} 的连接',
   'settings.integrationsHint':
-    '这是可选的。没有令牌时，Gitcito 会使用你的 git 对该远程已有的凭据——和 `git clone` 用的是同一份——因此每个 Azure DevOps 组织各自登录。',
+    '可选。没有令牌时，请用“Sign in with git”为此配置文件关联一个账户。Gitcito 不会借用这台电脑上的其他登录。需要不同账户的 Azure DevOps 组织，请各用一个配置文件，或各用一个令牌。',
   'settings.loadingAccount': '正在加载账户…',
   'settings.signInWithGit': '用 git 登录',
   'settings.connectedViaToken': '已通过下方的个人访问令牌连接。',

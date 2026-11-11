@@ -1419,7 +1419,7 @@ export const ptBR: Dict = {
   'settings.notConnected': 'Não conectado',
   'settings.integrationsForProfile': 'Conexões de {name}',
   'settings.integrationsHint':
-    'Opcional. Sem um token, o Gitcito usa a credencial que o seu git já tem para o remoto — a mesma que o `git clone` usa — então cada organização do Azure DevOps entra por conta própria.',
+    'Opcional. Sem um token, use «Sign in with git» para vincular uma conta a este perfil. O Gitcito não usa outros logins deste computador. Organizações do Azure DevOps que precisam de contas diferentes usam um perfil cada, ou um token cada.',
   'settings.loadingAccount': 'Carregando a conta…',
   'settings.signInWithGit': 'Entrar com o git',
   'settings.connectedViaToken': 'Conectado com o token de acesso pessoal abaixo.',

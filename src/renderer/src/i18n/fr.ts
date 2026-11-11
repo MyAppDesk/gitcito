@@ -1399,7 +1399,7 @@ export const fr: Dict = {
   'settings.notConnected': 'Non connecté',
   'settings.integrationsForProfile': 'Connexions de {name}',
   'settings.integrationsHint':
-    'Facultatif. Sans jeton, Gitcito utilise l’identifiant que votre git possède déjà pour le distant — le même que celui de `git clone` — si bien que chaque organisation Azure DevOps se connecte de son côté.',
+    'Facultatif. Sans jeton, utilisez « Sign in with git » pour lier un compte à ce profil. Gitcito n’emprunte pas les autres connexions de cet ordinateur. Les organisations Azure DevOps qui exigent des comptes différents prennent chacune un profil, ou chacune un jeton.',
   'settings.loadingAccount': 'Chargement du compte…',
   'settings.signInWithGit': 'Se connecter avec git',
   'settings.connectedViaToken': "Connecté avec le jeton d'accès personnel ci-dessous.",

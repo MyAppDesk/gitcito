@@ -1418,7 +1418,7 @@ export const he: Dict = {
   'settings.notConnected': 'לא מחובר',
   'settings.integrationsForProfile': 'חיבורים עבור {name}',
   'settings.integrationsHint':
-    'רשות. בלי טוקן, Gitcito משתמש באישור שכבר יש ל־git שלכם עבור הרימוט — אותו אחד ש־`git clone` משתמש בו — כך שכל ארגון Azure DevOps מתחבר בנפרד.',
+    'רשות. בלי טוקן, השתמשו ב־„Sign in with git” כדי לקשר חשבון לפרופיל הזה. Gitcito לא שואל כניסות אחרות במחשב הזה. ארגוני Azure DevOps שזקוקים לחשבונות שונים לוקחים כל אחד פרופיל משלו, או טוקן משלו.',
   'settings.loadingAccount': 'טוען את החשבון…',
   'settings.signInWithGit': 'התחברות באמצעות git',
   'settings.connectedViaToken': 'מחובר באמצעות אסימון הגישה האישי שלמטה.',

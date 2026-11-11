@@ -1418,7 +1418,7 @@ export const ru: Dict = {
   'settings.notConnected': 'Не подключено',
   'settings.integrationsForProfile': 'Подключения профиля {name}',
   'settings.integrationsHint':
-    'Необязательно. Без токена Gitcito использует те учётные данные, которые ваш git уже имеет для удалённого репозитория — те же, что использует `git clone`, — поэтому каждая организация Azure DevOps входит отдельно.',
+    'Необязательно. Без токена используйте «Sign in with git», чтобы привязать к профилю аккаунт. Gitcito не берёт другие входы на этом компьютере. Организации Azure DevOps, которым нужны разные аккаунты, используют по отдельному профилю или по отдельному токену.',
   'settings.loadingAccount': 'Загрузка учётной записи…',
   'settings.signInWithGit': 'Войти через git',
   'settings.connectedViaToken': 'Подключено с помощью личного токена доступа ниже.',

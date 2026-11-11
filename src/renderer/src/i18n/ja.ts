@@ -1399,7 +1399,7 @@ export const ja: Dict = {
   'settings.notConnected': '未接続',
   'settings.integrationsForProfile': '{name} の接続',
   'settings.integrationsHint':
-    '任意です。トークンがなければ、Gitcito はそのリモート向けに git がすでに持っている認証情報 — `git clone` が使うのと同じもの — を使うので、Azure DevOps の組織ごとに個別にサインインします。',
+    '任意です。トークンがない場合は「Sign in with git」でこのプロファイルにアカウントを紐付けてください。Gitcito はこのマシン上の他のログインを借用しません。別々のアカウントが必要な Azure DevOps の組織は、プロファイルを分けるか、それぞれトークンを使います。',
   'settings.loadingAccount': 'アカウントを読み込み中…',
   'settings.signInWithGit': 'git でサインイン',
   'settings.connectedViaToken': '下の個人用アクセストークンで接続しています。',

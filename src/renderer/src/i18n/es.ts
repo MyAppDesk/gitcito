@@ -1416,7 +1416,7 @@ export const es: Dict = {
   'settings.notConnected': 'Sin conectar',
   'settings.integrationsForProfile': 'Conexiones de {name}',
   'settings.integrationsHint':
-    'Opcional. Sin token, Gitcito usa la credencial que tu git ya tiene para el remoto — la misma que usa `git clone` — así cada organización de Azure DevOps inicia sesión por su cuenta.',
+    'Opcional. Sin token, usa Sign in with git para vincular una cuenta a este perfil. Gitcito no usa otros inicios de sesión de este equipo. Las organizaciones de Azure DevOps que necesiten cuentas distintas usan un perfil cada una, o un token cada una.',
   'settings.loadingAccount': 'Cargando cuenta…',
   'settings.signInWithGit': 'Iniciar sesión con git',
   'settings.connectedViaToken': 'Conectado con el token de acceso personal de abajo.',

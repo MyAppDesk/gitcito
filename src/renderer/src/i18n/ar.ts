@@ -1418,7 +1418,7 @@ export const ar: Dict = {
   'settings.notConnected': 'غير متصل',
   'settings.integrationsForProfile': 'اتصالات {name}',
   'settings.integrationsHint':
-    'اختياري. بدون رمز يستخدم Gitcito بيانات الاعتماد التي يملكها git لديك للمستودع البعيد — نفسها التي يستخدمها git clone — فتسجّل كل مؤسسة في Azure DevOps دخولها بنفسها.',
+    'اختياري. بدون رمز، استخدم «Sign in with git» لربط حساب بهذا الملف الشخصي. لا يستعير Gitcito عمليات تسجيل دخول أخرى على هذا الجهاز. مؤسسات Azure DevOps التي تحتاج إلى حسابات مختلفة تأخذ كل واحدة ملفًا شخصيًا أو رمزًا خاصًا بها.',
   'settings.loadingAccount': 'جارٍ تحميل الحساب…',
   'settings.signInWithGit': 'تسجيل الدخول عبر git',
   'settings.connectedViaToken': 'متصل باستخدام رمز الوصول الشخصي أدناه.',

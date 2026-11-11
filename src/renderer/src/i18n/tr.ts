@@ -1399,7 +1399,7 @@ export const tr: Dict = {
   'settings.notConnected': 'Bağlı değil',
   'settings.integrationsForProfile': 'Şu profil için bağlantılar: {name}',
   'settings.integrationsHint':
-    'İsteğe bağlı. Belirteç olmadan Gitcito, git’inizin o uzak sunucu için zaten sahip olduğu kimlik bilgisini kullanır — `git clone` ile aynısı — böylece her Azure DevOps kuruluşu kendi başına oturum açar.',
+    'İsteğe bağlı. Belirteç olmadan, bu profile bir hesap bağlamak için “Sign in with git” kullanın. Gitcito bu bilgisayardaki başka oturumları ödünç almaz. Farklı hesap gerektiren Azure DevOps kuruluşları her biri için ayrı bir profil ya da ayrı bir belirteç kullanır.',
   'settings.loadingAccount': 'Hesap yükleniyor…',
   'settings.signInWithGit': 'git ile oturum aç',
   'settings.connectedViaToken': 'Aşağıdaki kişisel erişim belirteciyle bağlı.',

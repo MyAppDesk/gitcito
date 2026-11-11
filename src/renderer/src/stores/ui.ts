@@ -47,6 +47,9 @@ export interface ContextMenuState {
   items: MenuItem[]
 }
 
+/** The modal kinds that can also be stacked over another modal (see `dialog`). */
+export type DialogSpec = Extract<ModalSpec, { kind: 'confirm' } | { kind: 'input' }>
+
 export type ModalSpec =
   | {
       kind: 'input'
@@ -325,6 +328,11 @@ function loadLayout(): PanelLayout {
 interface UIState {
   contextMenu: ContextMenuState | null
   modal: ModalSpec | null
+  /** A confirm or a name prompt drawn *over* the open modal, which stays
+   *  mounted underneath. For a question asked from inside a modal — Settings
+   *  deleting a profile — where `openModal` would replace the very screen the
+   *  user is working in, and every bit of its state with it. */
+  dialog: DialogSpec | null
   toasts: Toast[]
   /** Cmd/Ctrl+K command palette — fuzzy jump to branches, commits, files, actions. */
   commandPaletteOpen: boolean
@@ -398,6 +406,8 @@ interface UIState {
   closeContextMenu(): void
   openModal(modal: ModalSpec): void
   closeModal(): void
+  openDialog(dialog: DialogSpec): void
+  closeDialog(): void
   setCommandPalette(open: boolean): void
   setMissionOpen(open: boolean): void
   toggleCommandPalette(): void
@@ -447,6 +457,7 @@ let revealSeq = 0
 export const useUIStore = create<UIState>((set, get) => ({
   contextMenu: null,
   modal: null,
+  dialog: null,
   toasts: [],
   commandPaletteOpen: false,
   repoSwitcherOpen: false,
@@ -485,8 +496,11 @@ export const useUIStore = create<UIState>((set, get) => ({
 
   openContextMenu: (x, y, items) => set({ contextMenu: { x, y, items } }),
   closeContextMenu: () => set({ contextMenu: null }),
-  openModal: (modal) => set({ modal }),
-  closeModal: () => set({ modal: null }),
+  // A dialog belongs to the modal it was asked over: it goes when that one does.
+  openModal: (modal) => set({ modal, dialog: null }),
+  closeModal: () => set({ modal: null, dialog: null }),
+  openDialog: (dialog) => set({ dialog }),
+  closeDialog: () => set({ dialog: null }),
   setCommandPalette: (commandPaletteOpen) => set({ commandPaletteOpen }),
   setMissionOpen: (missionOpen) => set({ missionOpen }),
   toggleCommandPalette: () => set({ commandPaletteOpen: !get().commandPaletteOpen }),

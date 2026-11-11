@@ -5490,6 +5490,12 @@ body.col-resizing .node-ava {
   align-items: center;
   justify-content: center;
 }
+/* A dialog stacked over an open modal (ui.dialog): above it, on a lighter veil,
+   since the modal underneath already dims the app. */
+.modal-backdrop.modal-backdrop-stacked {
+  z-index: 901;
+  background: rgba(0, 0, 0, 0.25);
+}
 
 .modal {
   position: relative;

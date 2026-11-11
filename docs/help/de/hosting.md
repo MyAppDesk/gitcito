@@ -115,11 +115,14 @@ dieses Profil auf: Ein Token wird gelöscht (beim Anbieter bleibt es gültig, bi
 du es dort widerrufst), eine Verknüpfung entfernt (die Anmeldung bleibt in gh
 oder im Helper).
 
-Verknüpfungen gelten für die API des Anbieters — Pull Requests, Issues, CI.
-Fetch und Push von git selbst über https nutzen weiter das Token des Profils
-oder den Credential Helper von git; `gh auth setup-git` trägt gh als diesen
-Helper ein. Azure DevOps, GitLab und Bitbucket verknüpfen über den Credential
-Helper von git — der Git Credential Manager hält mehrere Konten pro Anbieter —
-oder nutzen ein Token pro Profil. Eine Verknüpfung nennt ein Konto pro Anbieter; Organisationen, die verschiedene Konten brauchen, bekommen je ein Profil.
+Die API des Anbieters — Pull Requests, Issues, CI — und Fetch, Pull und Push von
+git selbst über https nutzen beide das Token oder das verknüpfte Konto des
+Profils. Die Zugangsdaten erreichen git nur für diesen einen Befehl, beschränkt
+auf den Host des Remotes, und werden nie in `.git/config` geschrieben. Ein
+Profil ohne beides überlässt git seinem eigenen Credential Helper. Azure DevOps,
+GitLab und Bitbucket verknüpfen über den Credential Helper von git — der Git
+Credential Manager hält mehrere Konten pro Anbieter — oder nutzen ein Token pro
+Profil. Eine Verknüpfung nennt ein Konto pro Anbieter; Organisationen, die
+verschiedene Konten brauchen, bekommen je ein Profil.
 
 **Siehe auch:** [Gestapelte Branches](stacks.md) · [KI-Funktionen](ai.md)

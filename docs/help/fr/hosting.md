@@ -113,10 +113,14 @@ de git ou son lien avec GitHub CLI, et **Déconnecter** l'annule pour ce profil
 seulement : un jeton est effacé (il reste valide chez l'hébergeur jusqu'à ce que
 vous le révoquiez), un lien est retiré (la connexion reste dans gh ou le helper).
 
-Les liens couvrent l'API de l'hébergeur — pull requests, issues, CI. Le fetch et
-le push de git en https utilisent toujours le jeton du profil ou le credential
-helper de git ; `gh auth setup-git` enregistre gh comme ce helper. Azure DevOps,
-GitLab et Bitbucket se lient via le credential helper de git — Git Credential
-Manager garde plusieurs comptes par hébergeur — ou prennent un jeton par profil. Un lien désigne un compte par hébergeur : des organisations qui demandent des comptes différents prennent chacune un profil.
+L'API de l'hébergeur — pull requests, issues, CI — et les fetch, pull et push
+de git en https utilisent tous le jeton ou le compte lié du profil.
+L'identifiant n'arrive à git que pour cette commande, limité à l'hôte du dépôt
+distant, et n'est jamais écrit dans `.git/config`. Un profil sans l'un ni
+l'autre laisse git à son propre credential helper. Azure DevOps, GitLab et
+Bitbucket se lient via le credential helper de git — Git Credential Manager
+garde plusieurs comptes par hébergeur — ou prennent un jeton par profil. Un lien
+désigne un compte par hébergeur : des organisations qui demandent des comptes
+différents prennent chacune un profil.
 
 **Voir aussi :** [Branches empilées](stacks.md) · [Fonctions IA](ai.md)

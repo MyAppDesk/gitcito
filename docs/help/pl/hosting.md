@@ -108,10 +108,14 @@ czy z GitHub CLI, a **Rozłącz** cofa je tylko dla tego profilu: token zostaje
 usunięty (u dostawcy pozostaje ważny, dopóki go tam nie unieważnisz), powiązanie
 zostaje zdjęte (logowanie zostaje w gh lub w helperze).
 
-Powiązania obejmują API dostawcy — pull requesty, issues, CI. Fetch i push
-samego gita przez https nadal używają tokenu profilu albo credential helpera
-gita; `gh auth setup-git` rejestruje gh jako ten helper. Azure DevOps, GitLab i
-Bitbucket wiążą się przez credential helper gita — Git Credential Manager
-przechowuje kilka kont na dostawcę — albo używają tokenu na profil. Powiązanie wskazuje jedno konto na dostawcę, więc organizacje wymagające różnych kont potrzebują osobnych profili.
+API dostawcy — pull requesty, issues, CI — oraz fetch, pull i push samego gita
+przez https używają tokenu lub powiązanego konta profilu. Dane logowania
+docierają do gita tylko dla tego jednego polecenia, ograniczone do hosta
+zdalnego repozytorium, i nigdy nie trafiają do `.git/config`. Profil bez
+żadnego z nich zostawia gita z jego własnym credential helperem. Azure DevOps,
+GitLab i Bitbucket wiążą się przez credential helper gita — Git Credential
+Manager przechowuje kilka kont na dostawcę — albo używają tokenu na profil.
+Powiązanie wskazuje jedno konto na dostawcę, więc organizacje wymagające
+różnych kont potrzebują osobnych profili.
 
 **Zobacz też:** [Gałęzie w stosie](stacks.md) · [Funkcje AI](ai.md)

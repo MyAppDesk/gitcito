@@ -73,9 +73,11 @@ GitLab 的差别，直说了就是：GitLab 没有单一的“提交评审”调
 关联；**断开连接** 只对当前配置文件生效：令牌会被清除（在你于托管方撤销之前仍然
 有效），关联会被移除（登录仍保留在 gh 或 helper 中）。
 
-关联用于托管方的 API——拉取请求、议题、CI。git 自身通过 https 的 fetch 和 push 仍
-使用配置文件的令牌或 git 的 credential helper；`gh auth setup-git` 会把 gh 注册为
-该 helper。Azure DevOps、GitLab 和 Bitbucket 通过 git 的 credential helper 关联
-（Git Credential Manager 可为每个托管方保存多个账号），或每个配置文件使用一个令牌。一个关联对应每个托管方的一个账号，因此需要不同账号的组织应各用一个配置文件。
+托管方的 API——拉取请求、议题、CI——以及 git 自身通过 https 的 fetch、pull 和
+push，都使用配置文件的令牌或关联账号。凭据只为那一条命令、只针对远程仓库的主机
+交给 git，永远不会写入 `.git/config`。两者都没有的配置文件，git 会使用它自己的
+credential helper。Azure DevOps、GitLab 和 Bitbucket 通过 git 的 credential helper
+关联（Git Credential Manager 可为每个托管方保存多个账号），或每个配置文件使用一个
+令牌。一个关联对应每个托管方的一个账号，因此需要不同账号的组织应各用一个配置文件。
 
 **另请参阅：** [堆叠分支](stacks.md) · [AI 功能](ai.md)

@@ -9,7 +9,8 @@ import { useSettingsStore } from '../stores/settings'
 import { FileListView } from './FileListView'
 import { MatchSummary, matchesByFile } from './SearchMatches'
 import { Avatar } from './Avatar'
-import { lintCommit, subjectCounterLevel, SUBJECT_IDEAL_LEN, CC_TYPES, parseCcPrefix, applyCcType, applyCcScope, currentCcScope, GITMOJIS, parseGitmojiPrefix, applyGitmoji, parseTicketPrefix, ticketFromBranch } from '../lib/commitLint'
+import { lintCommit, subjectCounterLevel, SUBJECT_IDEAL_LEN, CC_TYPES, parseCcPrefix, applyCcType, applyCcTypeWithGitmoji, applyCcScope, currentCcScope, parseGitmojiPrefix, applyGitmoji, parseTicketPrefix, ticketFromBranch } from '../lib/commitLint'
+import { GitmojiPicker } from './GitmojiPicker'
 import { appendTrailers, configTrailers } from '../lib/repoConfig'
 import { isSecretFile } from '../lib/secrets'
 import { isBuildNoise, ignoreLineFor } from '../lib/buildNoise'
@@ -32,12 +33,14 @@ type ListName = 'staged' | 'unstaged'
 /**
  * Commit-style options exposed in the composer dropdown. Styles flagged `ai`
  * only make sense when AI is enabled, so they're hidden otherwise — leaving the
- * manual styles (plain / conventional / gitmoji / ticket) when AI is off.
+ * manual styles (plain / conventional / gitmoji / gitmoji + conventional / ticket)
+ * when AI is off.
  */
 const COMMIT_STYLE_OPTIONS: { id: CommitStyle; key: TranslationKey; ai?: boolean }[] = [
   { id: 'plain', key: 'commitStyle.plain' },
   { id: 'conventional', key: 'commitStyle.conventional' },
   { id: 'gitmoji', key: 'commitStyle.gitmoji' },
+  { id: 'gitmoji-conventional', key: 'commitStyle.gitmojiConventional' },
   { id: 'ticket', key: 'commitStyle.ticket' },
   { id: 'auto', key: 'commitStyle.auto', ai: true },
   { id: 'caveman', key: 'commitStyle.caveman', ai: true },
@@ -102,7 +105,8 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
   const currentCcType = parseCcPrefix(summary).type
   const applyCcTypeToDraft = (ty: string): void => {
     histIdx.current = -1
-    setSummary(applyCcType(summary, ty))
+    // In the combined style the type and its gitmoji move together (feat → ✨).
+    setSummary(commitStyle === 'gitmoji-conventional' ? applyCcTypeWithGitmoji(summary, ty) : applyCcType(summary, ty))
   }
   // Scopes the repository itself declares in `.gitcito.json`. When it lists
   // them, the composer stops being a free-text field and offers the real set —
@@ -117,14 +121,6 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
   const applyGitmojiToDraft = (emoji: string): void => {
     histIdx.current = -1
     setSummary(applyGitmoji(summary, emoji))
-  }
-  // Gitmoji picker shows just the emoji collapsed, but emoji + label in the menu.
-  const openGitmojiMenu = (e: React.MouseEvent): void => {
-    const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
-    openContextMenu(r.left, r.bottom + 4, [
-      { label: `🙂  ${t('gitmoji.none')}`, onClick: () => applyGitmojiToDraft('') },
-      ...GITMOJIS.map((g) => ({ label: `${g.emoji}  ${t(g.labelKey)}`, onClick: () => applyGitmojiToDraft(g.emoji) }))
-    ])
   }
   // Co-author picker: append `Co-authored-by:` trailers from the repo's
   // contributors to the commit body.
@@ -205,6 +201,8 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
   // The Conventional-Commit type dropdown shows only when the profile's commit
   // style is Conventional (Settings → Profile → Preferences).
   const commitStyle = useSettingsStore((s) => s.activeProfile().ai.commitStyle)
+  const usesConventional = commitStyle === 'conventional' || commitStyle === 'gitmoji-conventional'
+  const usesGitmoji = commitStyle === 'gitmoji' || commitStyle === 'gitmoji-conventional'
   // Switch the active commit style straight from the composer. AI-only styles
   // (auto / caveman / haiku) are filtered out when AI is disabled.
   const styleOptions = useMemo(
@@ -1092,6 +1090,9 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
           >
             <ChevronDown size={14} />
           </button>
+          {/* Beside the subject, not in the collapsed style row: with a gitmoji
+              style the emoji is part of every message, so it must be one click away. */}
+          {usesGitmoji && <GitmojiPicker value={currentGitmoji} onPick={applyGitmojiToDraft} />}
           <input
             ref={summaryRef}
             className="commit-summary"
@@ -1146,7 +1147,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.16 }}
             >
-              {commitStyle === 'conventional' && (
+              {usesConventional && (
                 <select
                   className="commit-type"
                   title={t('composer.ccType')}
@@ -1161,7 +1162,7 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
                   ))}
                 </select>
               )}
-              {commitStyle === 'conventional' && declaredScopes.length > 0 && (
+              {usesConventional && declaredScopes.length > 0 && (
                 <select
                   className="commit-type"
                   title={t('composer.ccScope')}
@@ -1176,11 +1177,6 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
                     </option>
                   ))}
                 </select>
-              )}
-              {commitStyle === 'gitmoji' && (
-                <button type="button" className="commit-type commit-gitmoji" title={t('composer.gitmoji')} onClick={openGitmojiMenu}>
-                  {currentGitmoji || '🙂'}
-                </button>
               )}
               {commitStyle === 'ticket' && (
                 <input

@@ -142,6 +142,7 @@ const COMMIT_STYLES: { id: CommitStyle; key: TranslationKey }[] = [
   { id: 'ticket', key: 'commitStyle.ticket' },
   { id: 'conventional', key: 'commitStyle.conventional' },
   { id: 'gitmoji', key: 'commitStyle.gitmoji' },
+  { id: 'gitmoji-conventional', key: 'commitStyle.gitmojiConventional' },
   { id: 'plain', key: 'commitStyle.plain' },
   { id: 'caveman', key: 'commitStyle.caveman' },
   { id: 'haiku', key: 'commitStyle.haiku' }

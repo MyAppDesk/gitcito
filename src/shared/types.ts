@@ -922,7 +922,15 @@ export interface SubmoduleInfo {
 
 // ─── Settings / profiles ─────────────────────────────────────────────────────
 
-export type CommitStyle = 'auto' | 'conventional' | 'gitmoji' | 'ticket' | 'plain' | 'caveman' | 'haiku'
+export type CommitStyle =
+  | 'auto'
+  | 'conventional'
+  | 'gitmoji'
+  | 'gitmoji-conventional'
+  | 'ticket'
+  | 'plain'
+  | 'caveman'
+  | 'haiku'
 
 /** Tone/persona used when the AI explains code. */
 export type ExplainStyle = 'normal' | 'concise' | 'detailed' | 'eli5' | 'caveman' | 'pirate' | 'formal'

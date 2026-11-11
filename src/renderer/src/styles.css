@@ -4037,6 +4037,48 @@ body.col-resizing .node-ava {
 }
 .commit-type:hover { color: var(--text-1); }
 .commit-gitmoji { display: flex; align-items: center; justify-content: center; min-width: 34px; font-size: 15px; }
+
+/* Searchable gitmoji popover — styled like the context menu it replaces. */
+.gitmoji-picker {
+  position: fixed;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 5px;
+  box-shadow: 0 14px 42px rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(8px);
+}
+.gitmoji-search {
+  margin: 2px 2px 6px;
+  padding: 6px 9px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-1);
+  color: var(--text-0);
+  font-size: 12.5px;
+}
+.gitmoji-list { overflow-y: auto; min-height: 0; }
+.gitmoji-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  text-align: start;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  color: var(--text-0);
+}
+.gitmoji-row.active { background: var(--accent); color: #0a1220; }
+.gitmoji-row.current .gitmoji-label { font-weight: 600; }
+.gitmoji-emoji { flex: 0 0 22px; font-size: 15px; text-align: center; }
+.gitmoji-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gitmoji-code { flex: 0 0 auto; font-size: 11px; color: var(--text-2); }
+.gitmoji-row.active .gitmoji-code { color: inherit; opacity: 0.75; }
+.gitmoji-empty { padding: 10px; font-size: 12px; color: var(--text-2); text-align: center; }
 .commit-coauthor { display: flex; align-items: center; justify-content: center; min-width: 34px; }
 .commit-ticket { width: 88px; flex: 0 0 auto; text-transform: uppercase; }
 .commit-ticket::placeholder { text-transform: none; }

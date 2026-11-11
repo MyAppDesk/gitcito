@@ -28,6 +28,7 @@ import { registerSecureShareHandlers } from './secureShare'
 import { registerInfoHandlers } from './info'
 import { registerUpdaterHandlers, checkForUpdatesOnLaunch } from './updater'
 import { fixPath } from './fix-path'
+import { stripEditorGitAskpass } from './editorEnv'
 import { registerCliHandlers, trackWait, releaseAllWaits } from './cli'
 import { registerEditorHandlers } from './editor'
 import { registerMenuHandlers } from './menu'
@@ -41,6 +42,8 @@ import { githubPublicGet } from './credentials'
 // GUI launches inherit a minimal PATH; restore the login-shell PATH (cached, then
 // refreshed in the background) so git hooks find node/npm without delaying the window.
 fixPath()
+// Launched from an editor's terminal: git must not borrow the editor's login prompt.
+stripEditorGitAskpass(process.env)
 
 // Sends a CLI-requested path to a window once its page has actually loaded.
 // Applies to both cold launch and second-instance hand-off (see whenReady()

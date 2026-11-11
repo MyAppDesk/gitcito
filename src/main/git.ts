@@ -5976,16 +5976,24 @@ export const gitService = {
   },
 
   async pushTag(repoPath: string, name: string, remote = 'origin'): Promise<void> {
-    await gitFor(repoPath).push([remote, `refs/tags/${name}`])
+    await withRemoteAuth(repoPath, remote, () => runGit(repoPath, ['push', remote, `refs/tags/${name}`]))
   },
 
   async deleteRemoteTag(repoPath: string, name: string, remote = 'origin'): Promise<void> {
-    await gitFor(repoPath).push([remote, '--delete', `refs/tags/${name}`])
+    await withRemoteAuth(repoPath, remote, () => runGit(repoPath, ['push', remote, '--delete', `refs/tags/${name}`]))
   },
 
   async getRemoteTags(repoPath: string, remote = 'origin'): Promise<string[]> {
     try {
-      const out = await gitFor(repoPath).raw(['ls-remote', '--tags', '--refs', remote])
+      // Runs on every repo open, so it must never prompt: with no token, git would
+      // ask "Username for …" on the launching terminal. This is a READ method
+      // (shared lock), so the token goes in the URL argument rather than through
+      // `withRemoteAuth`, which rewrites `.git/config`.
+      const url = await getRemoteUrl(repoPath, remote)
+      const host = url ? hostFromUrl(url) : undefined
+      const token = host ? await activeProfileToken(host, repoPath) : undefined
+      const target = url && token ? authedCloneUrl(url, host, token) : remote
+      const out = await runGit(repoPath, ['ls-remote', '--tags', '--refs', target])
       return out.split('\n').filter(Boolean).map((line) => {
         const ref = line.split('\t')[1] ?? ''
         return ref.replace('refs/tags/', '')

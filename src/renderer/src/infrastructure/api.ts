@@ -68,6 +68,7 @@ import type {
   RepoHost,
   RemoteRepo,
   RemoteOwner,
+  AccountLink,
   ConnectedAccount,
   CreateRepoOpts,
   CreatePrOpts,
@@ -917,8 +918,12 @@ export const hostingApi = {
     window.api.hosting.listRepos(provider, token, org) as Promise<RemoteRepo[]>,
   listOwners: (provider: RepoHost, token: string, org?: string) =>
     window.api.hosting.listOwners(provider, token, org) as Promise<RemoteOwner[]>,
-  whoAmI: (provider: RepoHost, token: string, org?: string, interactive?: boolean) =>
-    window.api.hosting.whoAmI(provider, token, org, interactive) as Promise<ConnectedAccount>,
+  /** Name of another profile already holding this account (link or token), else null. */
+  accountOwner: (provider: RepoHost, login: string, found: AccountLink, exceptProfileId: string) =>
+    window.api.hosting.accountOwner(provider, login, found, exceptProfileId) as Promise<string | null>,
+  /** Null when the profile has neither a token nor a link and no sign-in was asked for. */
+  whoAmI: (provider: RepoHost, token: string, org?: string, interactive?: boolean, link?: AccountLink) =>
+    window.api.hosting.whoAmI(provider, token, org, interactive, link) as Promise<ConnectedAccount | null>,
   createRepo: (provider: RepoHost, token: string, opts: CreateRepoOpts, org?: string) =>
     window.api.hosting.createRepo(provider, token, opts, org) as Promise<RemoteRepo>,
   // `repoPath` lets main use the profile the repository is bound to (see shared/hostToken.ts).

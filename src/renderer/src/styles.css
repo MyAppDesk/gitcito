@@ -5490,6 +5490,12 @@ body.col-resizing .node-ava {
   align-items: center;
   justify-content: center;
 }
+/* A dialog stacked over an open modal (ui.dialog): above it, on a lighter veil,
+   since the modal underneath already dims the app. */
+.modal-backdrop.modal-backdrop-stacked {
+  z-index: 901;
+  background: rgba(0, 0, 0, 0.25);
+}
 
 .modal {
   position: relative;
@@ -6176,6 +6182,21 @@ body.col-resizing .node-ava {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+/* Where the login comes from, and the way out of it. */
+.connected-account-source {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin-top: 8px;
+}
+.connected-account-source .btn.danger {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+  color: var(--red);
 }
 .connected-account-avatar {
   width: 32px;
@@ -7013,13 +7034,25 @@ body.col-resizing .node-ava {
   color: var(--text-0);
   font-weight: 600;
 }
+/* The delete button sits in space the row reserves for it, beside the active
+   profile's check rather than on top of it: muted at rest, red on hover. */
+.profile-row:has(.profile-delete) .profile-item {
+  padding-inline-end: 30px;
+}
 .profile-delete {
   position: absolute;
   inset-inline-end: 4px;
-  opacity: 0;
-  transition: opacity 0.12s;
+  opacity: 0.45;
+  transition:
+    opacity 0.12s,
+    color 0.12s,
+    background 0.12s;
 }
-.profile-row:hover .profile-delete {
+.profile-row:hover .profile-delete,
+.profile-delete:focus-visible {
+  opacity: 0.8;
+}
+.profile-delete:hover {
   opacity: 1;
 }
 .profile-item span {

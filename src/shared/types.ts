@@ -811,6 +811,11 @@ export interface ConnectedAccount {
   avatarUrl?: string
   profileUrl?: string // link to the provider's profile page
   orgs?: ConnectedOrg[] // organizations/workspaces/groups the account belongs to
+  /** Where the credential came from: the PAT typed in Settings, or the profile's
+   *  link to git's credential helper or the GitHub CLI. */
+  source?: 'token' | 'git' | 'gh'
+  /** Set when a sign-in found a machine login to link — the caller stores it on the profile. */
+  link?: AccountLink
 }
 
 export interface CreateRepoOpts {
@@ -2629,7 +2634,19 @@ export interface Profile {
   azureOrg?: string
   gitlabToken: string
   bitbucketToken: string
+  /** Accounts this profile signed in with from a login already on the machine —
+   *  git's credential helper or the GitHub CLI — one per provider. Without one
+   *  (and without a token) the profile is not connected: a machine-wide login is
+   *  never borrowed implicitly, so two profiles can hold two accounts. */
+  links?: Partial<Record<RepoHost, AccountLink>>
   ai: AIConfig
+}
+
+/** Which machine login a profile uses for a provider. `login` is the gh account,
+ *  or the username git's credential helper filed the credential under. Not a secret. */
+export interface AccountLink {
+  source: 'git' | 'gh'
+  login: string
 }
 
 export interface RepoRef {

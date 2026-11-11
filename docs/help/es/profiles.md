@@ -17,6 +17,15 @@ cuando tienes dos cuentas de GitHub.
 
 ![Un perfil: la identidad de git a un lado, sus tokens de integración al otro](../../screenshots/settings-profiles.webp)
 
+## Cada perfil, sus propias cuentas
+
+Además de un token, un perfil puede **vincular** un inicio de sesión que ya esté
+en el equipo — del credential helper de git o de GitHub CLI — en Ajustes →
+Integraciones. Un vínculo pertenece a un solo perfil: un perfil nuevo empieza
+desconectado, y se rechaza una cuenta que otro perfil ya tiene, así que dos
+perfiles pueden tener dos cuentas de GitHub (o de Azure DevOps) a la vez. Ver
+[Hosting](hosting.md).
+
 ## Vinculación por repositorio
 
 Un repositorio se puede **vincular a un perfil**, de modo que un fetch en segundo

@@ -17,6 +17,14 @@ gdy masz dwa konta GitHub.
 
 ![Profil: tożsamość gita z jednej strony, jej tokeny integracji z drugiej](../../screenshots/settings-profiles.webp)
 
+## Każdy profil ze swoimi kontami
+
+Oprócz tokenu profil może **powiązać** logowanie, które już jest na komputerze —
+z credential helpera gita albo z GitHub CLI — w Ustawienia → Integracje.
+Powiązanie należy do jednego profilu: nowy profil zaczyna niepołączony, a konto,
+które ma już inny profil, zostaje odrzucone, więc dwa profile mogą mieć obok
+siebie dwa konta GitHub (lub Azure DevOps). Zobacz [Hosting](hosting.md).
+
 ## Powiązanie z repozytorium
 
 Repozytorium da się **przypiąć do profilu**, dzięki czemu fetch w tle zawsze

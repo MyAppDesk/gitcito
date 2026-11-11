@@ -18,6 +18,15 @@ oder wenn du zwei GitHub-Konten hast.
 
 ![Ein Profil: Git-Identität auf der einen Seite, die Integrations-Tokens auf der anderen](../../screenshots/settings-profiles.webp)
 
+## Jedes Profil, seine eigenen Konten
+
+Neben einem Token kann ein Profil eine Anmeldung **verknüpfen**, die schon auf
+dem Rechner liegt — aus dem Credential Helper von git oder der GitHub CLI —
+unter Einstellungen → Integrationen. Eine Verknüpfung gehört genau einem Profil:
+Ein neues Profil startet getrennt, und ein Konto, das ein anderes Profil schon
+hält, wird abgelehnt. So können zwei Profile zwei GitHub- (oder Azure-DevOps-)
+Konten nebeneinander haben. Siehe [Hosting](hosting.md).
+
 ## Bindung pro Repository
 
 Ein Repository kann an ein Profil **gebunden** werden, sodass ein

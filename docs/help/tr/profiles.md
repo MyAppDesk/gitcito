@@ -18,6 +18,15 @@ olduğunda işe yarar.
 
 ![Bir profil: bir yanda git kimliği, diğer yanda entegrasyon token'ları](../../screenshots/settings-profiles.webp)
 
+## Her profilin kendi hesapları
+
+Bir profil, belirtecin yanı sıra makinede zaten bulunan bir oturumu — git'in
+credential helper'ından ya da GitHub CLI'dan — Ayarlar → Entegrasyonlar'da
+**bağlayabilir**. Bir bağlantı tek bir profile aittir: yeni bir profil
+bağlantısız başlar ve başka bir profilin zaten tuttuğu hesap reddedilir. Böylece
+iki profil iki GitHub (ya da Azure DevOps) hesabını yan yana tutabilir. Bkz.
+[Barındırma](hosting.md).
+
 ## Depo bazında bağlama
 
 Bir depo bir **profile bağlanabilir**; böylece o depodaki arka plan fetch'i her

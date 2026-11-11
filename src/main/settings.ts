@@ -2,7 +2,8 @@ import { app, ipcMain, dialog, safeStorage } from 'electron'
 import { join } from 'path'
 import { existsSync } from 'fs'
 import { readFile, writeFile, mkdir, copyFile } from 'fs/promises'
-import { defaultSettings, type AppSettings, type RepoHost } from '../shared/types'
+import { defaultSettings, type AccountLink, type AppSettings, type RepoHost } from '../shared/types'
+import { validAccountLink } from '../shared/hostToken'
 import {
   applySecrets,
   extractSecrets,
@@ -181,17 +182,62 @@ export async function activeProfileToken(host: RepoHost, repoPath?: string): Pro
 }
 
 /**
- * The token of the profile a repository is explicitly bound to, wrapped so
- * "bound, but that profile has no token" stays distinct from "not bound".
- * Undefined when the repository is not bound (or its profile was deleted).
- * Decrypts only for a bound repository — an unbound one never needs it.
+ * What one profile brings to a host's API: its PAT and its link to a machine
+ * login (git's credential helper or the GitHub CLI). The link is plain settings,
+ * but the PAT outranks it, so the secrets are always read — through the same
+ * consent gate as `activeProfileToken`, which skips the keychain entirely when
+ * no secrets file exists.
  */
-export async function boundProfileToken(host: RepoHost, repoPath: string): Promise<{ token?: string } | undefined> {
+async function profileAuth(host: RepoHost, profileId: string | undefined): Promise<{ token?: string; link?: AccountLink }> {
+  const plain = await readSettings()
+  const profile =
+    (profileId ? plain.profiles.find((p) => p.id === profileId) : undefined) ??
+    plain.profiles.find((p) => p.id === plain.activeProfileId) ??
+    plain.profiles[0]
+  if (!profile) return {}
+  // Links are plain settings and arrive with imports too: a malformed one is no link.
+  const link = validAccountLink(profile.links?.[host])
+  const settings = await readSettingsWithSecrets('tokens')
+  const token = settings.profiles.find((p) => p.id === profile.id)?.[TOKEN_FIELD[host]]?.trim() || undefined
+  return { token, link }
+}
+
+/** The active profile's PAT and link for a host. */
+export function activeProfileAuth(host: RepoHost): Promise<{ token?: string; link?: AccountLink }> {
+  return profileAuth(host, undefined)
+}
+
+/**
+ * Every profile's PAT and link for a host, with its name — for "is this account
+ * already another profile's?", which has to see tokens the renderer may not
+ * have decrypted (the onboarding wizard runs before any `settings:unlock`).
+ */
+export async function allProfileAuth(
+  host: RepoHost
+): Promise<Array<{ id: string; name: string; token?: string; link?: AccountLink; azureOrg?: string }>> {
+  const settings = await readSettingsWithSecrets('tokens')
+  return settings.profiles.map((p) => ({
+    id: p.id,
+    name: p.name,
+    token: p[TOKEN_FIELD[host]]?.trim() || undefined,
+    link: validAccountLink(p.links?.[host]),
+    azureOrg: p.azureOrg?.trim() || undefined
+  }))
+}
+
+/**
+ * The PAT and link of the profile a repository is explicitly bound to.
+ * Undefined when the repository is not bound (or its profile was deleted), so
+ * "bound, with nothing configured" stays distinct from "not bound".
+ */
+export async function boundProfileAuth(
+  host: RepoHost,
+  repoPath: string
+): Promise<{ token?: string; link?: AccountLink } | undefined> {
   const plain = await readSettings()
   const boundId = plain.repoProfiles?.[repoPath]
   if (!boundId || !plain.profiles.some((p) => p.id === boundId)) return undefined
-  const settings = await readSettingsWithSecrets('tokens')
-  return { token: settings.profiles.find((p) => p.id === boundId)?.[TOKEN_FIELD[host]] }
+  return profileAuth(host, boundId)
 }
 
 /**

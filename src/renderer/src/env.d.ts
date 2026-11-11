@@ -221,7 +221,8 @@ interface PreloadApi {
     listRepos(provider: string, token: string, org?: string): Promise<unknown>
     uploadSshKey(token: string, title: string, publicKey: string): Promise<unknown>
     listOwners(provider: string, token: string, org?: string): Promise<unknown>
-    whoAmI(provider: string, token: string, org?: string, interactive?: boolean): Promise<unknown>
+    accountOwner(provider: string, login: string, found: unknown, exceptProfileId: string): Promise<unknown>
+    whoAmI(provider: string, token: string, org?: string, interactive?: boolean, link?: unknown): Promise<unknown>
     createRepo(provider: string, token: string, opts: unknown, org?: string): Promise<unknown>
     listPRs(remoteUrl: string, tokens: unknown, repoPath?: string): Promise<unknown>
     listReleases(remoteUrl: string, tokens: unknown, repoPath?: string): Promise<unknown>

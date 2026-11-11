@@ -95,4 +95,27 @@ credential helper** al bevat, dus een organisatie waarvoor je al geauthenticeerd
 bent vergt vaak helemaal geen instelwerk. Zie
 [Beveiliging & geheimen](security.md).
 
+Elk profiel **koppelt zijn eigen account**. In Instellingen → Integraties zoekt
+**Inloggen met git** een login die al op de machine staat — in de credential
+helper van git, dan het actieve account van de **GitHub CLI**, dan het
+aanmeldvenster van de helper — en koppelt dat account aan het profiel. Niets
+wordt stilzwijgend gedeeld: een nieuw profiel begint ontkoppeld, en een account
+dat een ander profiel al koppelde, wordt geweigerd. Voor een tweede
+GitHub-account voeg je het toe aan gh (`gh auth login`), maak je het actief
+(`gh auth switch`) en meld je aan vanuit het andere profiel — of plak je het
+token van dat account. Git vraagt nooit in een terminal om gebruikersnaam en
+wachtwoord.
+
+De pagina toont of de verbinding het token van het profiel is, de koppeling met
+de helper van git of met de GitHub CLI, en **Ontkoppelen** maakt dat alleen voor
+dit profiel ongedaan: een token wordt gewist (bij de host blijft het geldig tot
+je het daar intrekt), een koppeling verwijderd (de login blijft in gh of de helper).
+
+Koppelingen gelden voor de API van de host — pull requests, issues, CI. Fetch en
+push van git zelf over https gebruiken nog het token van het profiel of de
+credential helper van git; `gh auth setup-git` registreert gh als die helper.
+Azure DevOps, GitLab en Bitbucket koppelen via de credential helper van git — Git
+Credential Manager bewaart meerdere accounts per host — of gebruiken een token
+per profiel. Een koppeling noemt één account per host, dus organisaties die verschillende accounts nodig hebben, krijgen elk een profiel.
+
 **Zie ook:** [Gestapelde branches](stacks.md) · [AI-functies](ai.md)

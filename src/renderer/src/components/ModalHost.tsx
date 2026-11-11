@@ -317,9 +317,17 @@ function WorktreeGroupModal({ spec }: { spec: Extract<ModalSpec, { kind: 'worktr
   )
 }
 
-function InputModal({ spec }: { spec: Extract<ModalSpec, { kind: 'input' }> }): React.JSX.Element {
+function InputModal({
+  spec,
+  onClose
+}: {
+  spec: Extract<ModalSpec, { kind: 'input' }>
+  /** How this one closes — the modal slot by default, the stacked dialog otherwise. */
+  onClose?: () => void
+}): React.JSX.Element {
   const t = useT()
-  const closeModal = useUIStore((s) => s.closeModal)
+  const storeClose = useUIStore((s) => s.closeModal)
+  const closeModal = onClose ?? storeClose
   const [value, setValue] = useState(spec.initial ?? '')
   const canSubmit = spec.allowEmpty || !!value.trim()
 
@@ -341,7 +349,12 @@ function InputModal({ spec }: { spec: Extract<ModalSpec, { kind: 'input' }> }): 
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === 'Enter') submit()
-          if (e.key === 'Escape') closeModal()
+          if (e.key === 'Escape') {
+            // Handled here: left to bubble, the window's Esc listener would find
+            // the stacked dialog already gone and close the modal underneath too.
+            e.stopPropagation()
+            closeModal()
+          }
         }}
       />
       <div className="modal-actions">
@@ -1724,9 +1737,17 @@ function CloneModal({ spec }: { spec: Extract<ModalSpec, { kind: 'clone' }> }): 
   )
 }
 
-function ConfirmModal({ spec }: { spec: Extract<ModalSpec, { kind: 'confirm' }> }): React.JSX.Element {
+function ConfirmModal({
+  spec,
+  onClose
+}: {
+  spec: Extract<ModalSpec, { kind: 'confirm' }>
+  /** How this one closes — the modal slot by default, the stacked dialog otherwise. */
+  onClose?: () => void
+}): React.JSX.Element {
   const t = useT()
-  const closeModal = useUIStore((s) => s.closeModal)
+  const storeClose = useUIStore((s) => s.closeModal)
+  const closeModal = onClose ?? storeClose
   // Every way out but the two buttons that act (Cancel, Esc, ✕, a click
   // outside, another confirm taking this one's place) ends this effect, so a
   // caller waiting on the answer always gets one. StrictMode also runs this
@@ -1735,7 +1756,8 @@ function ConfirmModal({ spec }: { spec: Extract<ModalSpec, { kind: 'confirm' }> 
   useEffect(() => {
     answered.current = false
     return () => {
-      if (!answered.current && useUIStore.getState().modal !== spec) spec.onCancel?.()
+      const { modal, dialog } = useUIStore.getState()
+      if (!answered.current && modal !== spec && dialog !== spec) spec.onCancel?.()
     }
   }, [spec])
   return (
@@ -2059,18 +2081,54 @@ function LauncherModal({ spec }: { spec: Extract<ModalSpec, { kind: 'launcher' }
   )
 }
 
+/** Keep Tab cycling inside `box`; the background is visually inert but still in the tab order. */
+function trapTabIn(e: React.KeyboardEvent, box: HTMLElement | null): void {
+  if (e.key !== 'Tab' || !box) return
+  const focusables = Array.from(
+    box.querySelectorAll<HTMLElement>(
+      'a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])'
+    )
+  ).filter((el) => el.offsetParent !== null)
+  if (focusables.length === 0) return
+  const first = focusables[0]
+  const last = focusables[focusables.length - 1]
+  if (e.shiftKey && document.activeElement === first) {
+    e.preventDefault()
+    last.focus()
+  } else if (!e.shiftKey && document.activeElement === last) {
+    e.preventDefault()
+    first.focus()
+  }
+}
+
 export function ModalHost(): React.JSX.Element {
   const t = useT()
-  const { modal, closeModal } = useUIStore()
+  const { modal, closeModal, dialog, closeDialog } = useUIStore()
   const dialogRef = useRef<HTMLDivElement>(null)
+  const stackedRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') closeModal()
+      if (e.key !== 'Escape') return
+      // Esc answers the question on top, not the screen it was asked over.
+      if (useUIStore.getState().dialog) closeDialog()
+      else closeModal()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [closeModal])
+  }, [closeModal, closeDialog])
+
+  // The stacked dialog takes focus while it is up, and gives it back to the
+  // control in the modal underneath that asked the question.
+  useEffect(() => {
+    if (!dialog) return
+    const opener = document.activeElement as HTMLElement | null
+    const box = stackedRef.current
+    if (box && !box.contains(document.activeElement)) box.focus()
+    return () => {
+      if (opener && document.contains(opener)) opener.focus()
+    }
+  }, [dialog])
 
   // Dialog semantics: name the dialog after its own heading, move focus inside
   // on open (unless a child already autofocused), and hand it back on close.
@@ -2093,190 +2151,210 @@ export function ModalHost(): React.JSX.Element {
 
   // Keep Tab inside the dialog — the background is visually inert but would
   // otherwise still be in the tab order.
-  const trapTab = (e: React.KeyboardEvent): void => {
-    if (e.key !== 'Tab' || !dialogRef.current) return
-    const focusables = Array.from(
-      dialogRef.current.querySelectorAll<HTMLElement>(
-        'a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])'
-      )
-    ).filter((el) => el.offsetParent !== null)
-    if (focusables.length === 0) return
-    const first = focusables[0]
-    const last = focusables[focusables.length - 1]
-    if (e.shiftKey && document.activeElement === first) {
-      e.preventDefault()
-      last.focus()
-    } else if (!e.shiftKey && document.activeElement === last) {
-      e.preventDefault()
-      first.focus()
-    }
-  }
+  const trapTab = (e: React.KeyboardEvent): void => trapTabIn(e, dialogRef.current)
+
 
   return (
-    <AnimatePresence>
-      {modal && (
-        <motion.div
-          className="modal-backdrop"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.15 }}
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget) closeModal()
-          }}
-        >
+    <>
+      <AnimatePresence>
+        {modal && (
           <motion.div
-            className={`modal ${
-              modal.kind === 'settings' || modal.kind === 'ai-config-wizard'
-                ? 'modal-wide'
-                : modal.kind === 'interactive-rebase' ||
-                    modal.kind === 'branch-compare' ||
-                    modal.kind === 'conflict-radar' ||
-                    modal.kind === 'range-diff' ||
-                    modal.kind === 'time-machine' ||
-                    modal.kind === 'timelapse' ||
-                    modal.kind === 'ai-pr-review' ||
-                    modal.kind === 'reflog' ||
-                    modal.kind === 'hooks' ||
-                    modal.kind === 'lfs' ||
-                    modal.kind === 'sparse' ||
-                    modal.kind === 'pr-detail' ||
-                    modal.kind === 'code-search' ||
-                    modal.kind === 'clean' ||
-                    modal.kind === 'maintenance' ||
-                    modal.kind === 'objects' ||
-                    modal.kind === 'attributes' ||
-                    modal.kind === 'credentials' ||
-                    modal.kind === 'replace' ||
-                    modal.kind === 'changelog-gen' ||
-                    modal.kind === 'repo-settings' ||
-                    modal.kind === 'secure-share' ||
-                    modal.kind === 'secure-workspace' ||
-                    modal.kind === 'snapshots' ||
-                    modal.kind === 'todos' ||
-                    modal.kind === 'teammate-radar' ||
-                    modal.kind === 'commit-edit' ||
-                    modal.kind === 'local-ci' ||
-                    modal.kind === 'cli-edit' ||
-                    modal.kind === 'stack'
-                  ? 'modal-tall'
-                  : ''
-            }`}
-            initial={{ opacity: 0, scale: 0.94, y: 16 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.96, y: 8 }}
-            transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-            ref={dialogRef}
-            role="dialog"
-            aria-modal="true"
-            tabIndex={-1}
-            onKeyDown={trapTab}
+            className="modal-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            onMouseDown={(e) => {
+              if (e.target === e.currentTarget) closeModal()
+            }}
           >
-            <button className="modal-close" onClick={closeModal} aria-label={t('common.close')} title={t('common.close')}>
-              <X size={15} />
-            </button>
-            <ErrorBoundary key={modal.kind} label={t('modal.dialogError')} onReset={closeModal}>
-            {modal.kind === 'input' && <InputModal spec={modal} />}
-            {modal.kind === 'launch-input' && <LaunchInputModal spec={modal} />}
-            {modal.kind === 'create-branch' && <CreateBranchModal spec={modal} />}
-            {modal.kind === 'confirm' && <ConfirmModal spec={modal} />}
-            {modal.kind === 'diverged-checkout' && <DivergedCheckoutModal spec={modal} />}
-            {modal.kind === 'ahead-checkout' && <AheadCheckoutModal spec={modal} />}
-            {modal.kind === 'addRemote' && <AddRemoteModal spec={modal} />}
-            {modal.kind === 'add-worktree' && <AddWorktreeModal spec={modal} />}
-            {modal.kind === 'editRemote' && <EditRemoteModal spec={modal} />}
-            {modal.kind === 'clone' && <CloneModal spec={modal} />}
-            {modal.kind === 'settings' && <SettingsPanel initialPage={modal.page} initialThemeTab={modal.themeTab} />}
-            {modal.kind === 'launcher' && <LauncherModal spec={modal} />}
-            {modal.kind === 'create-repo' && <CreateRepoModal spec={modal} />}
-            {modal.kind === 'ai-config-wizard' && <AIConfigWizard spec={modal} />}
-            {modal.kind === 'interactive-rebase' && (
-              <InteractiveRebase repoPath={modal.repoPath} base={modal.base} baseSubject={modal.baseSubject} />
-            )}
-            {modal.kind === 'branch-compare' && (
-              <BranchComparison repoPath={modal.repoPath} branchA={modal.branchA} branchB={modal.branchB} />
-            )}
-            {modal.kind === 'keychain-consent' && (
-              <KeychainConsentModal reason={modal.reason} adopted={modal.adopted} />
-            )}
-            {modal.kind === 'absorb' && <AbsorbModal repoPath={modal.repoPath} />}
-            {modal.kind === 'cli-edit' && (
-              <CliEditModal file={modal.file} sentinel={modal.sentinel} content={modal.content} />
-            )}
-            {modal.kind === 'time-machine' && <TimeMachineModal repoPath={modal.repoPath} />}
-            {modal.kind === 'timelapse' && <TimelapseModal repoPath={modal.repoPath} />}
-            {modal.kind === 'range-diff' && (
-              <RangeDiffModal repoPath={modal.repoPath} branch={modal.branch} initialOld={modal.initialOld} />
-            )}
-            {modal.kind === 'pr-preview' && (
-              <PrPreviewModal
-                repoPath={modal.repoPath}
-                initialNumber={modal.number}
-                initialRemote={modal.remote}
-                initialBranch={modal.branch}
-              />
-            )}
-            {modal.kind === 'conflict-radar' && (
-              <ConflictRadar repoPath={modal.repoPath} initialBase={modal.base} />
-            )}
-            {modal.kind === 'ai-pr-review' && (
-              <AIPRReview repoPath={modal.repoPath} prTitle={modal.prTitle} sourceBranch={modal.sourceBranch} targetBranch={modal.targetBranch} />
-            )}
-            {modal.kind === 'group-color' && <GroupColorModal spec={modal} />}
-            {modal.kind === 'new-group' && <NewGroupModal spec={modal} />}
-            {modal.kind === 'worktree-group' && <WorktreeGroupModal spec={modal} />}
-            {modal.kind === 'scan-workspaces' && <ScanWorkspacesModal spec={modal} />}
-            {modal.kind === 'reflog' && <ReflogModal repoPath={modal.repoPath} />}
-            {modal.kind === 'code-search' && <CodeSearchModal repoPath={modal.repoPath} query={modal.query} />}
-            {modal.kind === 'stack' && <StackModal repoPath={modal.repoPath} />}
-            {modal.kind === 'stack-submit' && <StackSubmitModal spec={modal} />}
-            {modal.kind === 'gitflow' && <GitflowModal repoPath={modal.repoPath} />}
-            {modal.kind === 'subtree' && <SubtreeModal repoPath={modal.repoPath} />}
-            {modal.kind === 'clean' && <CleanModal repoPath={modal.repoPath} />}
-            {modal.kind === 'export' && <ExportModal repoPath={modal.repoPath} initialTab={modal.tab} />}
-            {modal.kind === 'maintenance' && <MaintenanceModal repoPath={modal.repoPath} />}
-            {modal.kind === 'merge-options' && (
-              <MergeOptionsModal repoPath={modal.repoPath} source={modal.source} />
-            )}
-            {modal.kind === 'objects' && <ObjectExplorer repoPath={modal.repoPath} rev={modal.rev} />}
-            {modal.kind === 'attributes' && <AttributesModal repoPath={modal.repoPath} />}
-            {modal.kind === 'credentials' && <CredentialsModal repoPath={modal.repoPath} />}
-            {modal.kind === 'replace' && <ReplaceModal repoPath={modal.repoPath} commit={modal.commit} />}
-            {modal.kind === 'history-purge' && (
-              <HistoryPurgeModal repoPath={modal.repoPath} initialPath={modal.initialPath} />
-            )}
-            {modal.kind === 'changelog-gen' && <ChangelogGenModal repoPath={modal.repoPath} />}
-            {modal.kind === 'snapshots' && <SnapshotsModal repoPath={modal.repoPath} />}
-            {modal.kind === 'todos' && <TodosModal repoPath={modal.repoPath} focusId={modal.focusId} />}
-            {modal.kind === 'teammate-radar' && <TeammateRadarModal repoPath={modal.repoPath} />}
-            {modal.kind === 'commit-edit' && (
-              <CommitEditModal repoPath={modal.repoPath} sha={modal.sha} subject={modal.subject} />
-            )}
-            {modal.kind === 'reset-to-commit' && <ResetToCommitModal spec={modal} />}
-            {modal.kind === 'local-ci' && <LocalCIModal repoPath={modal.repoPath} rev={modal.rev} />}
-            {modal.kind === 'secure-share' && (
-              <SecureShareModal repoPath={modal.repoPath} initialMode={modal.initialMode} />
-            )}
-            {modal.kind === 'secure-workspace' && <SecureWorkspaceModal initialMode={modal.initialMode} />}
-            {modal.kind === 'stash-partial' && <StashPartialModal repoPath={modal.repoPath} />}
-            {modal.kind === 'create-tag' && <CreateTagModal repoPath={modal.repoPath} hash={modal.hash} at={modal.at} />}
-            {modal.kind === 'cheatsheet' && <CheatsheetModal />}
-            {modal.kind === 'ai-accounts-notice' && <AIAccountsNotice />}
-            {modal.kind === 'create-issue' && <CreateIssueModal repoPath={modal.repoPath} remoteUrl={modal.remoteUrl} />}
-            {modal.kind === 'repo-settings' && <RepoSettingsModal repoPath={modal.repoPath} initialTab={modal.tab} />}
-            {modal.kind === 'bisect' && <BisectModal repoPath={modal.repoPath} />}
-            {modal.kind === 'hooks' && <HooksModal repoPath={modal.repoPath} />}
-            {modal.kind === 'lfs' && <LfsModal repoPath={modal.repoPath} />}
-            {modal.kind === 'sparse' && <SparseCheckoutModal repoPath={modal.repoPath} />}
-            {modal.kind === 'create-pr' && <CreatePRModal spec={modal} />}
-            {modal.kind === 'ignore' && <IgnoreModal spec={modal} />}
-            {modal.kind === 'pr-detail' && (
-              <PRDetailModal repoPath={modal.repoPath} remoteUrl={modal.remoteUrl} number={modal.number} />
-            )}
-            </ErrorBoundary>
+            <motion.div
+              className={`modal ${
+                modal.kind === 'settings' || modal.kind === 'ai-config-wizard'
+                  ? 'modal-wide'
+                  : modal.kind === 'interactive-rebase' ||
+                      modal.kind === 'branch-compare' ||
+                      modal.kind === 'conflict-radar' ||
+                      modal.kind === 'range-diff' ||
+                      modal.kind === 'time-machine' ||
+                      modal.kind === 'timelapse' ||
+                      modal.kind === 'ai-pr-review' ||
+                      modal.kind === 'reflog' ||
+                      modal.kind === 'hooks' ||
+                      modal.kind === 'lfs' ||
+                      modal.kind === 'sparse' ||
+                      modal.kind === 'pr-detail' ||
+                      modal.kind === 'code-search' ||
+                      modal.kind === 'clean' ||
+                      modal.kind === 'maintenance' ||
+                      modal.kind === 'objects' ||
+                      modal.kind === 'attributes' ||
+                      modal.kind === 'credentials' ||
+                      modal.kind === 'replace' ||
+                      modal.kind === 'changelog-gen' ||
+                      modal.kind === 'repo-settings' ||
+                      modal.kind === 'secure-share' ||
+                      modal.kind === 'secure-workspace' ||
+                      modal.kind === 'snapshots' ||
+                      modal.kind === 'todos' ||
+                      modal.kind === 'teammate-radar' ||
+                      modal.kind === 'commit-edit' ||
+                      modal.kind === 'local-ci' ||
+                      modal.kind === 'cli-edit' ||
+                      modal.kind === 'stack'
+                    ? 'modal-tall'
+                    : ''
+              }`}
+              initial={{ opacity: 0, scale: 0.94, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 8 }}
+              transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+              ref={dialogRef}
+              role="dialog"
+              aria-modal="true"
+              tabIndex={-1}
+              onKeyDown={trapTab}
+            >
+              <button className="modal-close" onClick={closeModal} aria-label={t('common.close')} title={t('common.close')}>
+                <X size={15} />
+              </button>
+              <ErrorBoundary key={modal.kind} label={t('modal.dialogError')} onReset={closeModal}>
+              {modal.kind === 'input' && <InputModal spec={modal} />}
+              {modal.kind === 'launch-input' && <LaunchInputModal spec={modal} />}
+              {modal.kind === 'create-branch' && <CreateBranchModal spec={modal} />}
+              {modal.kind === 'confirm' && <ConfirmModal spec={modal} />}
+              {modal.kind === 'diverged-checkout' && <DivergedCheckoutModal spec={modal} />}
+              {modal.kind === 'ahead-checkout' && <AheadCheckoutModal spec={modal} />}
+              {modal.kind === 'addRemote' && <AddRemoteModal spec={modal} />}
+              {modal.kind === 'add-worktree' && <AddWorktreeModal spec={modal} />}
+              {modal.kind === 'editRemote' && <EditRemoteModal spec={modal} />}
+              {modal.kind === 'clone' && <CloneModal spec={modal} />}
+              {modal.kind === 'settings' && <SettingsPanel initialPage={modal.page} initialThemeTab={modal.themeTab} />}
+              {modal.kind === 'launcher' && <LauncherModal spec={modal} />}
+              {modal.kind === 'create-repo' && <CreateRepoModal spec={modal} />}
+              {modal.kind === 'ai-config-wizard' && <AIConfigWizard spec={modal} />}
+              {modal.kind === 'interactive-rebase' && (
+                <InteractiveRebase repoPath={modal.repoPath} base={modal.base} baseSubject={modal.baseSubject} />
+              )}
+              {modal.kind === 'branch-compare' && (
+                <BranchComparison repoPath={modal.repoPath} branchA={modal.branchA} branchB={modal.branchB} />
+              )}
+              {modal.kind === 'keychain-consent' && (
+                <KeychainConsentModal reason={modal.reason} adopted={modal.adopted} />
+              )}
+              {modal.kind === 'absorb' && <AbsorbModal repoPath={modal.repoPath} />}
+              {modal.kind === 'cli-edit' && (
+                <CliEditModal file={modal.file} sentinel={modal.sentinel} content={modal.content} />
+              )}
+              {modal.kind === 'time-machine' && <TimeMachineModal repoPath={modal.repoPath} />}
+              {modal.kind === 'timelapse' && <TimelapseModal repoPath={modal.repoPath} />}
+              {modal.kind === 'range-diff' && (
+                <RangeDiffModal repoPath={modal.repoPath} branch={modal.branch} initialOld={modal.initialOld} />
+              )}
+              {modal.kind === 'pr-preview' && (
+                <PrPreviewModal
+                  repoPath={modal.repoPath}
+                  initialNumber={modal.number}
+                  initialRemote={modal.remote}
+                  initialBranch={modal.branch}
+                />
+              )}
+              {modal.kind === 'conflict-radar' && (
+                <ConflictRadar repoPath={modal.repoPath} initialBase={modal.base} />
+              )}
+              {modal.kind === 'ai-pr-review' && (
+                <AIPRReview repoPath={modal.repoPath} prTitle={modal.prTitle} sourceBranch={modal.sourceBranch} targetBranch={modal.targetBranch} />
+              )}
+              {modal.kind === 'group-color' && <GroupColorModal spec={modal} />}
+              {modal.kind === 'new-group' && <NewGroupModal spec={modal} />}
+              {modal.kind === 'worktree-group' && <WorktreeGroupModal spec={modal} />}
+              {modal.kind === 'scan-workspaces' && <ScanWorkspacesModal spec={modal} />}
+              {modal.kind === 'reflog' && <ReflogModal repoPath={modal.repoPath} />}
+              {modal.kind === 'code-search' && <CodeSearchModal repoPath={modal.repoPath} query={modal.query} />}
+              {modal.kind === 'stack' && <StackModal repoPath={modal.repoPath} />}
+              {modal.kind === 'stack-submit' && <StackSubmitModal spec={modal} />}
+              {modal.kind === 'gitflow' && <GitflowModal repoPath={modal.repoPath} />}
+              {modal.kind === 'subtree' && <SubtreeModal repoPath={modal.repoPath} />}
+              {modal.kind === 'clean' && <CleanModal repoPath={modal.repoPath} />}
+              {modal.kind === 'export' && <ExportModal repoPath={modal.repoPath} initialTab={modal.tab} />}
+              {modal.kind === 'maintenance' && <MaintenanceModal repoPath={modal.repoPath} />}
+              {modal.kind === 'merge-options' && (
+                <MergeOptionsModal repoPath={modal.repoPath} source={modal.source} />
+              )}
+              {modal.kind === 'objects' && <ObjectExplorer repoPath={modal.repoPath} rev={modal.rev} />}
+              {modal.kind === 'attributes' && <AttributesModal repoPath={modal.repoPath} />}
+              {modal.kind === 'credentials' && <CredentialsModal repoPath={modal.repoPath} />}
+              {modal.kind === 'replace' && <ReplaceModal repoPath={modal.repoPath} commit={modal.commit} />}
+              {modal.kind === 'history-purge' && (
+                <HistoryPurgeModal repoPath={modal.repoPath} initialPath={modal.initialPath} />
+              )}
+              {modal.kind === 'changelog-gen' && <ChangelogGenModal repoPath={modal.repoPath} />}
+              {modal.kind === 'snapshots' && <SnapshotsModal repoPath={modal.repoPath} />}
+              {modal.kind === 'todos' && <TodosModal repoPath={modal.repoPath} focusId={modal.focusId} />}
+              {modal.kind === 'teammate-radar' && <TeammateRadarModal repoPath={modal.repoPath} />}
+              {modal.kind === 'commit-edit' && (
+                <CommitEditModal repoPath={modal.repoPath} sha={modal.sha} subject={modal.subject} />
+              )}
+              {modal.kind === 'reset-to-commit' && <ResetToCommitModal spec={modal} />}
+              {modal.kind === 'local-ci' && <LocalCIModal repoPath={modal.repoPath} rev={modal.rev} />}
+              {modal.kind === 'secure-share' && (
+                <SecureShareModal repoPath={modal.repoPath} initialMode={modal.initialMode} />
+              )}
+              {modal.kind === 'secure-workspace' && <SecureWorkspaceModal initialMode={modal.initialMode} />}
+              {modal.kind === 'stash-partial' && <StashPartialModal repoPath={modal.repoPath} />}
+              {modal.kind === 'create-tag' && <CreateTagModal repoPath={modal.repoPath} hash={modal.hash} at={modal.at} />}
+              {modal.kind === 'cheatsheet' && <CheatsheetModal />}
+              {modal.kind === 'ai-accounts-notice' && <AIAccountsNotice />}
+              {modal.kind === 'create-issue' && <CreateIssueModal repoPath={modal.repoPath} remoteUrl={modal.remoteUrl} />}
+              {modal.kind === 'repo-settings' && <RepoSettingsModal repoPath={modal.repoPath} initialTab={modal.tab} />}
+              {modal.kind === 'bisect' && <BisectModal repoPath={modal.repoPath} />}
+              {modal.kind === 'hooks' && <HooksModal repoPath={modal.repoPath} />}
+              {modal.kind === 'lfs' && <LfsModal repoPath={modal.repoPath} />}
+              {modal.kind === 'sparse' && <SparseCheckoutModal repoPath={modal.repoPath} />}
+              {modal.kind === 'create-pr' && <CreatePRModal spec={modal} />}
+              {modal.kind === 'ignore' && <IgnoreModal spec={modal} />}
+              {modal.kind === 'pr-detail' && (
+                <PRDetailModal repoPath={modal.repoPath} remoteUrl={modal.remoteUrl} number={modal.number} />
+              )}
+              </ErrorBoundary>
+            </motion.div>
           </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+        )}
+      </AnimatePresence>
+      {/* A question asked from inside the modal, drawn over it so the modal
+          underneath keeps its state (Settings: the profile, the tab, the scroll). */}
+      <AnimatePresence>
+        {dialog && (
+          <motion.div
+            key="stacked-dialog"
+            className="modal-backdrop modal-backdrop-stacked"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.12 }}
+            onMouseDown={(e) => {
+              if (e.target === e.currentTarget) closeDialog()
+            }}
+          >
+            <motion.div
+              className="modal"
+              initial={{ opacity: 0, scale: 0.96, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.97, y: 6 }}
+              transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+              ref={stackedRef}
+              // A confirm is an alert; a name prompt is an ordinary dialog.
+              role={dialog.kind === 'confirm' ? 'alertdialog' : 'dialog'}
+              aria-modal="true"
+              tabIndex={-1}
+              onKeyDown={(e) => trapTabIn(e, stackedRef.current)}
+            >
+              {dialog.kind === 'confirm' && <ConfirmModal spec={dialog} onClose={closeDialog} />}
+              {dialog.kind === 'input' && <InputModal spec={dialog} onClose={closeDialog} />}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   )
 }

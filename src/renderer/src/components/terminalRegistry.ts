@@ -243,21 +243,37 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
   const markUserScroll = (): void => {
     lastUserScrollAt = Date.now()
   }
-  const parkAt = (y: number): void => {
-    anchor = { kind: 'line', y }
+  // Marker churn: re-registering the anchor marker on every wheel tick pays
+  // buffer-marker array ops per scroll event — exactly the work that makes a
+  // fast flick feel janky. anchor.y carries the position instantly; the
+  // marker (needed only so reflows/trims can follow the content) refreshes
+  // once the gesture settles.
+  let anchorMarkerTimer = 0
+  const refreshAnchorMarker = (): void => {
     anchorMarker?.dispose()
     anchorMarker = null
     const buf = term.buffer.active
     // registerMarker anchors at the cursor's absolute line (baseY + cursorY)
-    // plus an offset; the parked viewport line is absolute index y. Alternate
-    // buffers have no scrollback — nothing worth marking.
-    if (buf.type === 'normal') {
-      try {
-        anchorMarker = term.registerMarker(y - buf.baseY - buf.cursorY) ?? null
-      } catch {
-        anchorMarker = null // anchor.y still works; only reflow/trim tracking is lost
-      }
+    // plus an offset; the parked viewport line is absolute index anchor.y.
+    // Alternate buffers have no scrollback — nothing worth marking.
+    if (buf.type !== 'normal' || anchor.kind !== 'line') return
+    try {
+      anchorMarker = term.registerMarker(anchor.y - buf.baseY - buf.cursorY) ?? null
+    } catch {
+      anchorMarker = null // anchor.y still works; only reflow/trim tracking is lost
     }
+  }
+  const parkAt = (y: number): void => {
+    anchor = { kind: 'line', y }
+    // Dispose the stale marker immediately — anchorTarget() must fall back
+    // to anchor.y during the debounce window, never to the previous line.
+    anchorMarker?.dispose()
+    anchorMarker = null
+    if (anchorMarkerTimer) window.clearTimeout(anchorMarkerTimer)
+    anchorMarkerTimer = window.setTimeout(() => {
+      anchorMarkerTimer = 0
+      refreshAnchorMarker()
+    }, 400)
   }
   // If the DOM offset and the buffer disagree, the scroll delta xterm
   // computes from scrollTop is garbage — reconcile before its own handlers
@@ -462,7 +478,21 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
   const snapBackNow = (): void => {
     if (!container.isConnected || container.clientHeight === 0) return
     if (term.buffer.active.type !== 'normal') return
-    if (Date.now() - lastUserScrollAt <= 500) return
+    // A live gesture owns the viewport — but a silent return DROPS the
+    // restore, leaving a clamped offset in place until some unrelated event
+    // fixes it (the "scroll feels stuck, circling one spot" report). Re-arm
+    // just past the gesture window so the correction still lands once the
+    // hand lets go.
+    const gestureLeft = 500 - (Date.now() - lastUserScrollAt)
+    if (scrollbarDrag || gestureLeft > 0) {
+      if (!snapBackTimer) {
+        snapBackTimer = window.setTimeout(() => {
+          snapBackTimer = 0
+          snapBackNow()
+        }, Math.max(20, gestureLeft))
+      }
+      return
+    }
     const buf = term.buffer.normal
     if (buf.viewportY !== anchorTarget()) restoreAnchor()
     syncDomScrollTop()
@@ -566,6 +596,10 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
       anchor = { kind: 'bottom' }
       anchorMarker?.dispose()
       anchorMarker = null
+      if (anchorMarkerTimer) {
+        window.clearTimeout(anchorMarkerTimer)
+        anchorMarkerTimer = 0
+      }
       return
     }
     // A real gesture somewhere above the bottom — including the very top,
@@ -591,6 +625,7 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
   cleanups.push(() => {
     scrollListener.dispose()
     anchorMarker?.dispose()
+    if (anchorMarkerTimer) window.clearTimeout(anchorMarkerTimer)
     if (snapBackTimer) window.clearTimeout(snapBackTimer)
     if (snapBackRaf) cancelAnimationFrame(snapBackRaf)
   })
@@ -718,6 +753,11 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
             parkAt(handle.suspendViewportY)
           }
           handle.suspendViewportY = null
+          // Pin the DOM offset to the target NOW — the fit below reflows and
+          // its clamps otherwise paint transient top/bottom positions until
+          // the snap-back lands, which reads as the terminal scrolling on
+          // its own after a tab switch.
+          syncDomScrollTop(anchorTarget())
           // The reattach settle lasts longer than a drag step: the viewport's
           // scrollHeight re-computes across several frames while clamped
           // scroll events keep arriving. Hold the quiet window open for the

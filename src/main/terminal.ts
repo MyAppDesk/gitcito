@@ -153,6 +153,8 @@ function createFallback(wc: WebContents, id: number, cwd: string): TermSession {
   const sendChunk = (d: Buffer): void => send(d.toString().replace(/(?<!\r)\n/g, '\r\n'))
   child.stdout?.on('data', sendChunk)
   child.stderr?.on('data', sendChunk)
+  // Typing after the shell exited writes into a closed pipe (EPIPE).
+  child.stdin?.on('error', () => undefined)
   child.on('exit', () => {
     sessions.delete(id)
     if (!wc.isDestroyed()) wc.send(`term:exit:${id}`)

@@ -3799,6 +3799,7 @@ export const gitService = {
       child.stderr.on('data', (d: Buffer) => (err += d.toString()))
       child.on('error', reject)
       child.on('close', (code) => (code === 0 ? resolve() : reject(new Error(err.trim() || `git credential reject exited ${code}`))))
+      child.stdin.on('error', () => undefined) // command may exit without reading stdin
       child.stdin.end(`protocol=${protocol}\nhost=${target}\n\n`)
     })
   },

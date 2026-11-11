@@ -810,6 +810,8 @@ function spawnFallback(
   }
   child.stdout?.on('data', chunk)
   child.stderr?.on('data', chunk)
+  // Typing after the process exited writes into a closed pipe (EPIPE).
+  child.stdin?.on('error', () => undefined)
   child.on('exit', (code) => sink.exit(code ?? 0))
   return {
     pid: child.pid ?? null,

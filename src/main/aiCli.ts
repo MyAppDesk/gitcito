@@ -120,6 +120,10 @@ function run(
         resolve({ code: typeof code === 'number' ? code : 1, stdout, stderr })
       }
     )
+    // A CLI that exits without reading stdin (`which`, a missing binary, an
+    // early auth failure) turns this write into EPIPE. Unhandled, that is an
+    // uncaught exception in the main process; the exit code already reports it.
+    child.stdin?.on('error', () => undefined)
     child.stdin?.end(input)
   })
 }

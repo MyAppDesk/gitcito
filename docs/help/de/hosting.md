@@ -98,4 +98,28 @@ dein **git credential helper** ohnehin schon hält — eine Organisation, für d
 dich bereits authentifiziert hast, braucht deshalb oft gar keine Einrichtung.
 Siehe [Sicherheit & Secrets](security.md).
 
+Jedes Profil **verknüpft sein eigenes Konto**. Unter Einstellungen →
+Integrationen sucht **Mit git anmelden** nach einer Anmeldung, die schon auf dem
+Rechner liegt — im Credential Helper von git, dann im aktiven Konto der **GitHub
+CLI**, dann im Anmeldefenster des Helpers — und verknüpft dieses Konto mit dem
+Profil. Nichts wird stillschweigend geteilt: Ein neues Profil startet getrennt,
+und ein Konto, das ein anderes Profil schon verknüpft hat, wird abgelehnt. Für
+ein zweites GitHub-Konto fügst du es zu gh hinzu (`gh auth login`), machst es
+aktiv (`gh auth switch`) und meldest dich im anderen Profil an — oder fügst das
+Token dieses Kontos ein. Git fragt nie in einem Terminal nach Benutzername und
+Passwort.
+
+Die Seite zeigt, ob die Verbindung das Token des Profils, seine Verknüpfung mit
+dem Helper von git oder mit der GitHub CLI ist, und **Trennen** hebt sie nur für
+dieses Profil auf: Ein Token wird gelöscht (beim Anbieter bleibt es gültig, bis
+du es dort widerrufst), eine Verknüpfung entfernt (die Anmeldung bleibt in gh
+oder im Helper).
+
+Verknüpfungen gelten für die API des Anbieters — Pull Requests, Issues, CI.
+Fetch und Push von git selbst über https nutzen weiter das Token des Profils
+oder den Credential Helper von git; `gh auth setup-git` trägt gh als diesen
+Helper ein. Azure DevOps, GitLab und Bitbucket verknüpfen über den Credential
+Helper von git — der Git Credential Manager hält mehrere Konten pro Anbieter —
+oder nutzen ein Token pro Profil. Eine Verknüpfung nennt ein Konto pro Anbieter; Organisationen, die verschiedene Konten brauchen, bekommen je ein Profil.
+
 **Siehe auch:** [Gestapelte Branches](stacks.md) · [KI-Funktionen](ai.md)

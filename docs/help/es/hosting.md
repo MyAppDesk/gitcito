@@ -97,4 +97,25 @@ de credenciales de git**, así que una organización para la que ya te has
 autenticado a menudo no necesita configuración ninguna. Mira [Seguridad y
 secretos](security.md).
 
+Cada perfil **vincula su propia cuenta**. En Ajustes → Integraciones, **Iniciar
+sesión con git** busca un inicio de sesión que ya esté en el equipo — el
+credential helper de git, luego la cuenta activa de **GitHub CLI**, luego la
+ventana de inicio de sesión del propio helper — y vincula esa cuenta al perfil.
+Nada se comparte implícitamente: un perfil nuevo empieza desconectado, y se
+rechaza una cuenta que otro perfil ya vinculó. Para vincular una segunda cuenta
+de GitHub, añádela a gh (`gh auth login`), actívala (`gh auth switch`) e inicia
+sesión desde el otro perfil — o pega el token de esa cuenta. Git nunca pide
+usuario y contraseña en una terminal.
+
+La página indica si la conexión es el token del perfil, su vínculo con el helper
+de git o su vínculo con GitHub CLI, y **Desconectar** lo deshace solo para este
+perfil: un token se borra (sigue siendo válido en el servicio hasta que lo
+revoques allí), un vínculo se quita (el inicio de sesión sigue en gh o en el helper).
+
+Los vínculos cubren la API del servicio — pull requests, issues, CI. El fetch y
+el push del propio git por https siguen usando el token del perfil o el
+credential helper de git; `gh auth setup-git` registra gh como ese helper. Azure
+DevOps, GitLab y Bitbucket se vinculan mediante el credential helper de git — Git
+Credential Manager guarda varias cuentas por servicio — o usan un token por perfil. Un vínculo nombra una cuenta por servicio, así que organizaciones que necesitan cuentas distintas llevan un perfil cada una.
+
 **Ver también:** [Ramas apiladas](stacks.md) · [Funciones de IA](ai.md)

@@ -96,4 +96,25 @@ tuo **credential helper di git** già custodisce, quindi un'organizzazione per c
 ti sei già autenticato spesso non richiede alcuna configurazione. Vedi
 [Sicurezza e segreti](security.md).
 
+Ogni profilo **collega il proprio account**. In Impostazioni → Integrazioni,
+**Accedi con git** cerca un accesso già presente sulla macchina — il credential
+helper di git, poi l'account attivo di **GitHub CLI**, poi la finestra di
+accesso dell'helper — e collega quell'account al profilo. Nulla è condiviso
+implicitamente: un nuovo profilo parte disconnesso, e un account che un altro
+profilo ha già collegato viene rifiutato. Per collegare un secondo account
+GitHub, aggiungilo a gh (`gh auth login`), rendilo attivo (`gh auth switch`) e
+accedi dall'altro profilo — oppure incolla il token di quell'account. Git non
+chiede mai nome utente e password in un terminale.
+
+La pagina indica se la connessione è il token del profilo, il suo collegamento
+all'helper di git o a GitHub CLI, e **Disconnetti** la annulla solo per questo
+profilo: un token viene cancellato (resta valido sul servizio finché non lo
+revochi lì), un collegamento viene rimosso (l'accesso resta in gh o nell'helper).
+
+I collegamenti valgono per l'API del servizio — pull request, issue, CI. Fetch e
+push di git via https usano ancora il token del profilo o il credential helper
+di git; `gh auth setup-git` registra gh come quel helper. Azure DevOps, GitLab e
+Bitbucket si collegano tramite il credential helper di git — Git Credential
+Manager conserva più account per servizio — o usano un token per profilo. Un collegamento indica un account per servizio, quindi organizzazioni che richiedono account diversi vogliono un profilo ciascuna.
+
 **Vedi anche:** [Branch impilate](stacks.md) · [Funzioni AI](ai.md)

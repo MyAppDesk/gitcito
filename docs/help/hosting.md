@@ -107,4 +107,24 @@ Gitcito can also borrow whatever your **git credential helper** already holds,
 so an org you have already authenticated for often needs no setup at all. See
 [Security & secrets](security.md).
 
+Each profile **links its own account**. In Settings → Integrations, **Sign in
+with git** looks for a login already on the machine — git's credential helper,
+then the **GitHub CLI**'s active account, then the helper's own sign-in window
+— and ties that account to the profile. Nothing is shared implicitly: a new
+profile starts disconnected, and an account another profile already linked is
+refused. To link a second GitHub account, add it to gh (`gh auth login`), make
+it active (`gh auth switch`) and sign in from the other profile — or paste that
+account's token. Git never asks for a username and password on a terminal.
+
+The page says whether the connection is the profile's token, its link to git's
+helper or its link to the GitHub CLI, and **Disconnect** undoes it for this
+profile only: a token is cleared (it stays valid on the host until you revoke
+it there), a link is dropped (the login stays in gh or the helper).
+
+Links cover the host's API — pull requests, issues, CI. Git's own fetch and
+push over https still use the profile's token or git's credential helper;
+`gh auth setup-git` registers gh as that helper. Azure DevOps, GitLab and
+Bitbucket link through git's credential helper — Git Credential Manager keeps
+several accounts per host — or take a token per profile. A link names one account per provider, so organizations that need different accounts take one profile each.
+
 **See also:** [Stacked branches](stacks.md) · [AI features](ai.md)

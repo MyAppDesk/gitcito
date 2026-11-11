@@ -62,4 +62,20 @@ GitLab 的差别，直说了就是：GitLab 没有单一的“提交评审”调
 
 按配置档保存的令牌，可以对应多个账号或组织，存在你操作系统的钥匙串里。Gitcito 也可以直接借用你的 **git credential helper** 里已经有的凭据，所以一个你早就认证过的组织往往完全不需要配置。见[安全与机密](security.md)。
 
+每个配置文件**关联它自己的账号**。在 设置 → 集成 中，**用 git 登录** 会查找
+机器上已有的登录——先是 git 的 credential helper，然后是 **GitHub CLI** 的活动
+账号，然后是 helper 自己的登录窗口——并把该账号关联到配置文件。不会有任何隐式
+共享：新配置文件一开始是未连接的，已被其他配置文件关联的账号会被拒绝。要关联第二
+个 GitHub 账号，请把它加入 gh（`gh auth login`），设为活动账号（`gh auth switch`），
+再从另一个配置文件登录——或粘贴该账号的令牌。git 永远不会在终端里询问用户名和密码。
+
+页面会显示连接使用的是配置文件的令牌、与 git helper 的关联，还是与 GitHub CLI 的
+关联；**断开连接** 只对当前配置文件生效：令牌会被清除（在你于托管方撤销之前仍然
+有效），关联会被移除（登录仍保留在 gh 或 helper 中）。
+
+关联用于托管方的 API——拉取请求、议题、CI。git 自身通过 https 的 fetch 和 push 仍
+使用配置文件的令牌或 git 的 credential helper；`gh auth setup-git` 会把 gh 注册为
+该 helper。Azure DevOps、GitLab 和 Bitbucket 通过 git 的 credential helper 关联
+（Git Credential Manager 可为每个托管方保存多个账号），或每个配置文件使用一个令牌。一个关联对应每个托管方的一个账号，因此需要不同账号的组织应各用一个配置文件。
+
 **另请参阅：** [堆叠分支](stacks.md) · [AI 功能](ai.md)

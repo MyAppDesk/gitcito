@@ -93,4 +93,25 @@ twojego systemu. Gitcito potrafi też pożyczyć to, co już trzyma twój
 uwierzytelniłeś, często nie wymaga w ogóle żadnej konfiguracji. Zobacz
 [Bezpieczeństwo i sekrety](security.md).
 
+Każdy profil **wiąże własne konto**. W Ustawienia → Integracje przycisk
+**Zaloguj się przez gita** szuka logowania, które już jest na komputerze — w
+credential helperze gita, potem aktywne konto **GitHub CLI**, potem okno
+logowania samego helpera — i wiąże to konto z profilem. Nic nie jest dzielone
+niejawnie: nowy profil zaczyna niepołączony, a konto powiązane już z innym
+profilem zostaje odrzucone. Aby powiązać drugie konto GitHub, dodaj je do gh
+(`gh auth login`), ustaw jako aktywne (`gh auth switch`) i zaloguj się z drugiego
+profilu — albo wklej token tego konta. Git nigdy nie pyta w terminalu o nazwę
+użytkownika i hasło.
+
+Strona pokazuje, czy połączenie to token profilu, jego powiązanie z helperem gita
+czy z GitHub CLI, a **Rozłącz** cofa je tylko dla tego profilu: token zostaje
+usunięty (u dostawcy pozostaje ważny, dopóki go tam nie unieważnisz), powiązanie
+zostaje zdjęte (logowanie zostaje w gh lub w helperze).
+
+Powiązania obejmują API dostawcy — pull requesty, issues, CI. Fetch i push
+samego gita przez https nadal używają tokenu profilu albo credential helpera
+gita; `gh auth setup-git` rejestruje gh jako ten helper. Azure DevOps, GitLab i
+Bitbucket wiążą się przez credential helper gita — Git Credential Manager
+przechowuje kilka kont na dostawcę — albo używają tokenu na profil. Powiązanie wskazuje jedno konto na dostawcę, więc organizacje wymagające różnych kont potrzebują osobnych profili.
+
 **Zobacz też:** [Gałęzie w stosie](stacks.md) · [Funkcje AI](ai.md)

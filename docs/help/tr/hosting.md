@@ -95,4 +95,26 @@ zaten tuttuğu bilgileri ödünç alabilir; böylece hâlihazırda kimlik
 doğruladığınız bir kuruluş çoğu zaman hiçbir kuruluma ihtiyaç duymaz.
 [Güvenlik ve sırlar](security.md) sayfasına bakın.
 
+Her profil **kendi hesabını bağlar**. Ayarlar → Entegrasyonlar'da **git ile
+oturum aç**, makinede zaten bulunan bir oturumu arar — git'in credential
+helper'ı, ardından **GitHub CLI**'ın etkin hesabı, ardından helper'ın kendi
+oturum açma penceresi — ve o hesabı profile bağlar. Hiçbir şey örtük olarak
+paylaşılmaz: yeni bir profil bağlantısız başlar ve başka bir profilin zaten
+bağladığı hesap reddedilir. İkinci bir GitHub hesabı bağlamak için onu gh'ye
+ekleyin (`gh auth login`), etkin yapın (`gh auth switch`) ve diğer profilden
+oturum açın — ya da o hesabın belirtecini yapıştırın. git hiçbir zaman bir
+terminalde kullanıcı adı ve parola sormaz.
+
+Sayfa, bağlantının profilin belirteci mi, git helper'ına mı yoksa GitHub CLI'a mı
+bağlı olduğunu gösterir; **Bağlantıyı kes** bunu yalnızca bu profil için geri
+alır: belirteç silinir (siz orada iptal edene kadar sağlayıcıda geçerli kalır),
+bağlantı kaldırılır (oturum gh'de ya da helper'da kalır).
+
+Bağlantılar sağlayıcının API'sini kapsar — pull request'ler, issue'lar, CI.
+git'in https üzerinden kendi fetch ve push işlemleri hâlâ profilin belirtecini
+ya da git'in credential helper'ını kullanır; `gh auth setup-git`, gh'yi o helper
+olarak kaydeder. Azure DevOps, GitLab ve Bitbucket git'in credential helper'ı
+üzerinden bağlanır — Git Credential Manager sağlayıcı başına birden fazla hesap
+tutar — ya da profil başına bir belirteç kullanır. Bir bağlantı sağlayıcı başına tek bir hesabı adlandırır; farklı hesaplar gerektiren kuruluşlar her biri için ayrı bir profil ister.
+
 **Ayrıca bakınız:** [Yığılmış dallar](stacks.md) · [Yapay zekâ özellikleri](ai.md)

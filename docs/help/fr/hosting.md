@@ -98,4 +98,25 @@ trousseau de votre système. Gitcito peut aussi emprunter ce que votre
 vous vous êtes déjà authentifié ne demande souvent aucune configuration. Voir
 [Sécurité et secrets](security.md).
 
+Chaque profil **lie son propre compte**. Dans Réglages → Intégrations, **Se
+connecter avec git** cherche une connexion déjà présente sur la machine — le
+credential helper de git, puis le compte actif de **GitHub CLI**, puis la fenêtre
+de connexion du helper — et lie ce compte au profil. Rien n'est partagé
+implicitement : un nouveau profil commence déconnecté, et un compte déjà lié à
+un autre profil est refusé. Pour lier un second compte GitHub, ajoutez-le à gh
+(`gh auth login`), rendez-le actif (`gh auth switch`) et connectez-vous depuis
+l'autre profil — ou collez le jeton de ce compte. Git ne demande jamais
+d'identifiant ni de mot de passe dans un terminal.
+
+La page indique si la connexion est le jeton du profil, son lien avec le helper
+de git ou son lien avec GitHub CLI, et **Déconnecter** l'annule pour ce profil
+seulement : un jeton est effacé (il reste valide chez l'hébergeur jusqu'à ce que
+vous le révoquiez), un lien est retiré (la connexion reste dans gh ou le helper).
+
+Les liens couvrent l'API de l'hébergeur — pull requests, issues, CI. Le fetch et
+le push de git en https utilisent toujours le jeton du profil ou le credential
+helper de git ; `gh auth setup-git` enregistre gh comme ce helper. Azure DevOps,
+GitLab et Bitbucket se lient via le credential helper de git — Git Credential
+Manager garde plusieurs comptes par hébergeur — ou prennent un jeton par profil. Un lien désigne un compte par hébergeur : des organisations qui demandent des comptes différents prennent chacune un profil.
+
 **Voir aussi :** [Branches empilées](stacks.md) · [Fonctions IA](ai.md)

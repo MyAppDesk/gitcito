@@ -4241,8 +4241,21 @@ export function SettingsPanel({ initialPage, initialThemeTab }: { initialPage?: 
                 className="icon-btn"
                 title={t('settings.newProfile')}
                 onClick={() => {
-                  addProfile(`Profile ${settings.profiles.length + 1}`)
-                  setSelectedId(useSettingsStore.getState().settings.activeProfileId)
+                  // Named up front, as from the profile switcher — a "Profile 3" to
+                  // rename afterwards is a step people skip.
+                  const fallback = interp(t('settings.profileNameDefault'), { n: settings.profiles.length + 1 })
+                  openDialog({
+                    kind: 'input',
+                    title: t('settings.newProfile'),
+                    label: t('settings.profileName'),
+                    placeholder: fallback,
+                    submitLabel: t('settings.newProfile'),
+                    allowEmpty: true,
+                    onSubmit: (name) => {
+                      addProfile(name.trim() || fallback)
+                      setSelectedId(useSettingsStore.getState().settings.activeProfileId)
+                    }
+                  })
                 }}
               >
                 <Plus size={14} />

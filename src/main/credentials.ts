@@ -110,11 +110,12 @@ function runCredential(verb: 'fill' | 'reject', input: string, opts: FillOpts): 
   if (!interactive) args.push('-c', 'credential.interactive=false')
   args.push('credential', verb)
 
-  const env: NodeJS.ProcessEnv = { ...process.env }
-  if (!interactive) {
-    env.GIT_TERMINAL_PROMPT = '0'
-    env.GCM_INTERACTIVE = 'never'
-  }
+  // Never git's own terminal prompt, even for an interactive sign-in: the app has
+  // no terminal a user is watching. Run from `npm run dev` the prompt landed on
+  // the launching shell ("Username for 'https://github.com':") and the sign-in
+  // hung for two minutes. Interactive means a helper may open its own window.
+  const env: NodeJS.ProcessEnv = { ...process.env, GIT_TERMINAL_PROMPT: '0' }
+  if (!interactive) env.GCM_INTERACTIVE = 'never'
 
   return new Promise((resolve) => {
     const child = execFile(

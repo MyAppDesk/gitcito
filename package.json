@@ -7,7 +7,7 @@
   "license": "MIT",
   "author": "MyAppDesk <team@myappdesk.dev>",
   "scripts": {
-    "dev": "electron-vite dev",
+    "dev": "electron-vite dev -w",
     "build": "node scripts/sync-grammars.mjs && node scripts/gen-licenses.mjs && electron-vite build",
     "dist:mac": "electron-builder --mac",
     "dist:win": "electron-builder --win",

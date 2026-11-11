@@ -164,7 +164,11 @@ import { semanticCompare } from './semantic'
 import { recordEvent } from './analytics'
 import { searchFileMatches, supersedeSearch, type FileSearchOptions } from './fileSearch'
 import { recordLog } from './log'
-import { activeProfileToken, readSettings } from './settings'
+import { activeProfileAuth, boundProfileAuth, readSettings } from './settings'
+import { apiToken } from './credentials'
+import { pickHostAuth } from '../shared/hostToken'
+import { gitCredentialEnv, type BasicCredential } from './gitCredentialEnv'
+import { AsyncLocalStorage } from 'node:async_hooks'
 import { indexCodegraphAsync } from './codegraph'
 import { applyPreparedRepoFileActions, RepoFileActionError } from './repoFileActions'
 
@@ -927,10 +931,11 @@ const noPromptEnv = (): NodeJS.ProcessEnv => ({ ...process.env, GIT_TERMINAL_PRO
 /**
  * Strip `user:secret@` out of every URL in a message.
  *
- * Git echoes the remote URL back in its errors, and `withRemoteAuth` puts the
- * active PAT into that URL for the duration of a network call — so without this
- * an unlucky failure prints the token into the UI, the operation log, and any
- * screenshot of either.
+ * Git echoes the remote URL back in its errors, and a clone or a clone-dialog
+ * `ls-remote` still carries the PAT in that URL (`authedCloneUrl`) — so without
+ * this an unlucky failure prints the token into the UI, the operation log, and
+ * any screenshot of either. A legacy `.git/config` with a token in its remote
+ * URL is caught the same way.
  */
 export function redactCredentials(msg: string): string {
   return msg.replace(/(:\/\/)[^/\s@]+(?::[^/\s@]*)?@/g, '$1***@')
@@ -954,7 +959,8 @@ async function runGit(
 ): Promise<string> {
   try {
     const { stdout } = await pexecFile('git', ['-C', repoPath, ...args], {
-      env: extraEnv ? { ...noPromptEnv(), ...extraEnv } : noPromptEnv(),
+      // Inside withRemoteAuth, the profile's credential rides along (see gitCredentialEnv).
+      env: { ...noPromptEnv(), ...(remoteAuthEnv.getStore() ?? {}), ...(extraEnv ?? {}) },
       ...(maxBuffer ? { maxBuffer } : {})
     })
     return stdout
@@ -1537,26 +1543,47 @@ async function upstreamRemote(repoPath: string): Promise<string> {
 }
 
 /**
- * Run a network git operation (push/pull/fetch) against `remote`, injecting the
- * active profile's PAT for the duration of the call. The token is matched to the
- * remote's host and written into the remote URL only transiently — reset in
- * `finally` — so it is never persisted to `.git/config`, mirroring `clone()`.
- * When no token applies (ssh remote, unknown host, or none configured) the op
- * runs as-is and relies on `GIT_TERMINAL_PROMPT=0` to fail fast.
+ * The git credential environment for network calls made inside `withRemoteAuth`.
+ * An AsyncLocalStorage, not a parameter, so every `runGit` an operation spawns —
+ * including the second push in a rename, or a fetch nested in a helper — gets it
+ * without threading it through twenty call sites.
+ */
+const remoteAuthEnv = new AsyncLocalStorage<NodeJS.ProcessEnv>()
+
+/**
+ * The credential a repository's profile has for an https remote: its PAT, else
+ * the account it linked (the GitHub CLI's, or one git's helper holds), else
+ * none. The profile is the one the repository is bound to, else the active one.
+ */
+async function remoteCredential(repoPath: string, url: string): Promise<BasicCredential | null> {
+  if (!/^https:\/\//i.test(url)) return null
+  const host = hostFromUrl(url)
+  if (!host) return null
+  const auth = await pickHostAuth({
+    bound: await boundProfileAuth(host, repoPath),
+    active: () => activeProfileAuth(host)
+  })
+  if (auth.token) return basicAuthFor(host, auth.token)
+  if (!auth.link) return null
+  const linked = await apiToken(url, { link: auth.link })
+  if (!linked) return null
+  return linked.cred ? { username: linked.cred.username, password: linked.cred.password } : basicAuthFor(host, linked.token)
+}
+
+/**
+ * Run a network git operation (fetch, pull, push, ls-remote) against `remote`
+ * as the repository's profile. Its credential goes to git through the
+ * environment (`gitCredentialEnv`): scoped to the remote's host, never written
+ * to `.git/config`, never in an argument list. Nothing on disk changes, so a
+ * read under the shared lock can use it too. With no profile credential (ssh,
+ * an unknown host, nothing configured) the op runs as-is — git's own helper may
+ * still answer — and `GIT_TERMINAL_PROMPT=0` makes a miss fail fast.
  */
 async function withRemoteAuth<T>(repoPath: string, remote: string, op: () => Promise<T>): Promise<T> {
   const url = await getRemoteUrl(repoPath, remote)
-  const host = url ? hostFromUrl(url) : undefined
-  const token = host ? await activeProfileToken(host, repoPath) : undefined
-  const authed = token ? authedCloneUrl(url, host, token) : url
-  if (!authed || authed === url) return op()
-  await pexecFile('git', ['-C', repoPath, 'remote', 'set-url', remote, authed])
-  try {
-    return await op()
-  } finally {
-    // Restore the token-free URL so the PAT does not linger on disk.
-    await pexecFile('git', ['-C', repoPath, 'remote', 'set-url', remote, url]).catch(() => undefined)
-  }
+  const cred = url ? await remoteCredential(repoPath, url).catch(() => null) : null
+  const env = url && cred ? gitCredentialEnv(url, cred) : null
+  return env ? remoteAuthEnv.run(env, op) : op()
 }
 
 
@@ -2563,9 +2590,10 @@ export const gitService = {
    * Returns null when the remote publishes no such ref (the host does not
    * mirror PR heads, or the number does not exist).
    *
-   * Deliberately **not** a READ_METHOD despite reading nothing: `withRemoteAuth`
-   * rewrites `.git/config` to inject the PAT, so two of these under the shared
-   * read lock race for `.git/config.lock` and one loses.
+   * Not a READ_METHOD, for a reason that is gone: `withRemoteAuth` used to
+   * rewrite `.git/config` to inject the PAT, and two of these under the shared
+   * lock raced for `.git/config.lock`. It now writes nothing, so this could move
+   * to READ_METHODS; the exclusive lock it keeps is merely conservative.
    */
   async resolvePrRef(repoPath: string, remote: string, number: number): Promise<PrRefProbe | null> {
     const candidates = prRefCandidates(number, await getRemoteUrl(repoPath, remote))
@@ -2648,12 +2676,12 @@ export const gitService = {
     if (remote) {
       // Refresh the remote-tracking ref first, so "checkout as local" always
       // picks up the actual remote tip instead of whatever was last fetched.
-      // Uses the shared `gitFor` instance (not a raw exec) so it's queued
-      // alongside every other git op on this repo — a bare exec here would run
-      // truly concurrently with in-flight status/checkout/stash calls and can
-      // collide on `.git/index.lock`. Best-effort: offline/auth hiccups
-      // shouldn't block checking out the locally-known ref.
-      await withRemoteAuth(repoPath, remote, () => git.fetch(remote, localName)).catch(() => {})
+      // runGit, so the profile's credential from withRemoteAuth reaches it.
+      // checkoutRemote is a write method: the dispatcher holds this repo's
+      // exclusive lock, so nothing else runs alongside to collide on
+      // `.git/index.lock`. Best-effort: offline/auth hiccups shouldn't block
+      // checking out the locally-known ref.
+      await withRemoteAuth(repoPath, remote, () => runGit(repoPath, ['fetch', remote, localName])).catch(() => {})
     }
     // If a local branch with that name already exists, just switch to it
     // instead of trying to recreate a tracking branch (which would fail with
@@ -5986,15 +6014,13 @@ export const gitService = {
 
   async getRemoteTags(repoPath: string, remote = 'origin'): Promise<string[]> {
     try {
-      // Runs on every repo open, so it must never prompt: with no token, git would
-      // ask "Username for …" on the launching terminal. This is a READ method
-      // (shared lock), so the token goes in the URL argument rather than through
-      // `withRemoteAuth`, which rewrites `.git/config`.
-      const url = await getRemoteUrl(repoPath, remote)
-      const host = url ? hostFromUrl(url) : undefined
-      const token = host ? await activeProfileToken(host, repoPath) : undefined
-      const target = url && token ? authedCloneUrl(url, host, token) : remote
-      const out = await runGit(repoPath, ['ls-remote', '--tags', '--refs', target])
+      // Runs on every repo open, so it must never prompt (runGit sets
+      // GIT_TERMINAL_PROMPT=0). A READ method under the shared lock: fine now
+      // that withRemoteAuth writes nothing to disk — and the token stays out of
+      // the argument list, where it used to go and where `ps` could read it.
+      const out = await withRemoteAuth(repoPath, remote, () =>
+        runGit(repoPath, ['ls-remote', '--tags', '--refs', remote])
+      )
       return out.split('\n').filter(Boolean).map((line) => {
         const ref = line.split('\t')[1] ?? ''
         return ref.replace('refs/tags/', '')

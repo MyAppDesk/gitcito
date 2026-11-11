@@ -110,11 +110,15 @@ bağlı olduğunu gösterir; **Bağlantıyı kes** bunu yalnızca bu profil içi
 alır: belirteç silinir (siz orada iptal edene kadar sağlayıcıda geçerli kalır),
 bağlantı kaldırılır (oturum gh'de ya da helper'da kalır).
 
-Bağlantılar sağlayıcının API'sini kapsar — pull request'ler, issue'lar, CI.
-git'in https üzerinden kendi fetch ve push işlemleri hâlâ profilin belirtecini
-ya da git'in credential helper'ını kullanır; `gh auth setup-git`, gh'yi o helper
-olarak kaydeder. Azure DevOps, GitLab ve Bitbucket git'in credential helper'ı
-üzerinden bağlanır — Git Credential Manager sağlayıcı başına birden fazla hesap
-tutar — ya da profil başına bir belirteç kullanır. Bir bağlantı sağlayıcı başına tek bir hesabı adlandırır; farklı hesaplar gerektiren kuruluşlar her biri için ayrı bir profil ister.
+Sağlayıcının API'si — pull request'ler, issue'lar, CI — ve git'in https üzerinden
+kendi fetch, pull ve push işlemleri, profilin belirtecini ya da bağlı hesabını
+kullanır. Kimlik bilgisi git'e yalnızca o komut için, uzak deponun ana
+makinesiyle sınırlı olarak ulaşır ve asla `.git/config` dosyasına yazılmaz. İkisi
+de olmayan bir profil, git'i kendi credential helper'ına bırakır. Azure DevOps,
+GitLab ve Bitbucket git'in credential helper'ı üzerinden bağlanır — Git
+Credential Manager sağlayıcı başına birden fazla hesap tutar — ya da profil
+başına bir belirteç kullanır. Bir bağlantı sağlayıcı başına tek bir hesabı
+adlandırır; farklı hesaplar gerektiren kuruluşlar her biri için ayrı bir profil
+ister.
 
 **Ayrıca bakınız:** [Yığılmış dallar](stacks.md) · [Yapay zekâ özellikleri](ai.md)

@@ -121,10 +121,13 @@ helper or its link to the GitHub CLI, and **Disconnect** undoes it for this
 profile only: a token is cleared (it stays valid on the host until you revoke
 it there), a link is dropped (the login stays in gh or the helper).
 
-Links cover the host's API — pull requests, issues, CI. Git's own fetch and
-push over https still use the profile's token or git's credential helper;
-`gh auth setup-git` registers gh as that helper. Azure DevOps, GitLab and
-Bitbucket link through git's credential helper — Git Credential Manager keeps
-several accounts per host — or take a token per profile. A link names one account per provider, so organizations that need different accounts take one profile each.
+The host's API — pull requests, issues, CI — and git's own fetch, pull and
+push over https both use the profile's token or linked account. The credential
+reaches git for that one command, scoped to the remote's host, and is never
+written to `.git/config`. A profile with neither leaves git to its own
+credential helper. Azure DevOps, GitLab and Bitbucket link through git's
+credential helper — Git Credential Manager keeps several accounts per host — or
+take a token per profile. A link names one account per provider, so
+organizations that need different accounts take one profile each.
 
 **See also:** [Stacked branches](stacks.md) · [AI features](ai.md)

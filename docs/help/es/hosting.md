@@ -112,10 +112,14 @@ de git o su vínculo con GitHub CLI, y **Desconectar** lo deshace solo para este
 perfil: un token se borra (sigue siendo válido en el servicio hasta que lo
 revoques allí), un vínculo se quita (el inicio de sesión sigue en gh o en el helper).
 
-Los vínculos cubren la API del servicio — pull requests, issues, CI. El fetch y
-el push del propio git por https siguen usando el token del perfil o el
-credential helper de git; `gh auth setup-git` registra gh como ese helper. Azure
-DevOps, GitLab y Bitbucket se vinculan mediante el credential helper de git — Git
-Credential Manager guarda varias cuentas por servicio — o usan un token por perfil. Un vínculo nombra una cuenta por servicio, así que organizaciones que necesitan cuentas distintas llevan un perfil cada una.
+La API del servicio — pull requests, issues, CI — y el fetch, pull y push del
+propio git por https usan el token o la cuenta vinculada del perfil. La
+credencial llega a git solo para ese comando, limitada al host del remoto, y
+nunca se escribe en `.git/config`. Un perfil sin ninguno de los dos deja a git
+con su propio credential helper. Azure DevOps, GitLab y Bitbucket se vinculan
+mediante el credential helper de git — Git Credential Manager guarda varias
+cuentas por servicio — o usan un token por perfil. Un vínculo nombra una cuenta
+por servicio, así que organizaciones que necesitan cuentas distintas llevan un
+perfil cada una.
 
 **Ver también:** [Ramas apiladas](stacks.md) · [Funciones de IA](ai.md)

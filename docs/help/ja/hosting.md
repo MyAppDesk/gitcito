@@ -105,11 +105,14 @@ GitHub CLI との連携のどれなのかが表示され、**接続を解除** �
 だけを元に戻します。トークンは消去され（ホスト側で取り消すまで有効なまま
 です）、連携は外されます（ログインは gh や helper に残ります）。
 
-連携が使われるのはホストの API（プルリクエスト、Issue、CI）です。https での
-git 自体の fetch と push は、引き続きプロファイルのトークンか git の
-credential helper を使います。`gh auth setup-git` で gh をその helper として
-登録できます。Azure DevOps、GitLab、Bitbucket は git の credential helper
-（Git Credential Manager はホストごとに複数のアカウントを保持します）で連携
-するか、プロファイルごとのトークンを使います。連携はホストごとに1つのアカウントを指すため、別々のアカウントが必要な組織はそれぞれ別のプロファイルにします。
+ホストの API（プルリクエスト、Issue、CI）も、https での git 自体の fetch・
+pull・push も、プロファイルのトークンか連携したアカウントを使います。認証情報は
+そのコマンドのためだけに、リモートのホストに限定して git に渡され、
+`.git/config` に書き込まれることはありません。どちらもないプロファイルでは、
+git は自身の credential helper を使います。Azure DevOps、GitLab、Bitbucket は
+git の credential helper（Git Credential Manager はホストごとに複数のアカウントを
+保持します）で連携するか、プロファイルごとのトークンを使います。連携はホストごとに
+1つのアカウントを指すため、別々のアカウントが必要な組織はそれぞれ別の
+プロファイルにします。
 
 **関連項目:** [スタックブランチ](stacks.md) · [AI 機能](ai.md)

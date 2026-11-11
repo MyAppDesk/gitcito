@@ -111,11 +111,14 @@ de helper van git of met de GitHub CLI, en **Ontkoppelen** maakt dat alleen voor
 dit profiel ongedaan: een token wordt gewist (bij de host blijft het geldig tot
 je het daar intrekt), een koppeling verwijderd (de login blijft in gh of de helper).
 
-Koppelingen gelden voor de API van de host — pull requests, issues, CI. Fetch en
-push van git zelf over https gebruiken nog het token van het profiel of de
-credential helper van git; `gh auth setup-git` registreert gh als die helper.
-Azure DevOps, GitLab en Bitbucket koppelen via de credential helper van git — Git
-Credential Manager bewaart meerdere accounts per host — of gebruiken een token
-per profiel. Een koppeling noemt één account per host, dus organisaties die verschillende accounts nodig hebben, krijgen elk een profiel.
+De API van de host — pull requests, issues, CI — en fetch, pull en push van git
+zelf over https gebruiken allebei het token of het gekoppelde account van het
+profiel. De inloggegevens bereiken git alleen voor dat ene commando, beperkt tot
+de host van de remote, en worden nooit in `.git/config` geschreven. Een profiel
+zonder beide laat git aan zijn eigen credential helper over. Azure DevOps,
+GitLab en Bitbucket koppelen via de credential helper van git — Git Credential
+Manager bewaart meerdere accounts per host — of gebruiken een token per
+profiel. Een koppeling noemt één account per host, dus organisaties die
+verschillende accounts nodig hebben, krijgen elk een profiel.
 
 **Zie ook:** [Gestapelde branches](stacks.md) · [AI-functies](ai.md)

@@ -100,10 +100,13 @@ GitHub 계정을 연결하려면 gh에 추가하고(`gh auth login`), 활성 계
 지워지고(호스트에서 취소하기 전까지 유효합니다), 연결은 해제됩니다(로그인은
 gh나 helper에 남습니다).
 
-연결은 호스트의 API(풀 리퀘스트, 이슈, CI)에 사용됩니다. https를 통한 git
-자체의 fetch와 push는 여전히 프로필의 토큰이나 git의 credential helper를
-사용합니다. `gh auth setup-git`으로 gh를 그 helper로 등록할 수 있습니다. Azure
+호스트의 API(풀 리퀘스트, 이슈, CI)와 https를 통한 git 자체의 fetch·pull·push
+모두 프로필의 토큰이나 연결된 계정을 사용합니다. 자격 증명은 그 명령 하나를
+위해서만, 원격 저장소의 호스트로 한정되어 git에 전달되며, `.git/config`에 기록되지
+않습니다. 둘 다 없는 프로필은 git이 자체 credential helper를 쓰도록 둡니다. Azure
 DevOps, GitLab, Bitbucket은 git의 credential helper(Git Credential Manager는
-호스트마다 여러 계정을 보관합니다)로 연결하거나 프로필별 토큰을 사용합니다. 연결은 호스트마다 계정 하나를 가리키므로, 서로 다른 계정이 필요한 조직은 각각 별도의 프로필을 씁니다.
+호스트마다 여러 계정을 보관합니다)로 연결하거나 프로필별 토큰을 사용합니다. 연결은
+호스트마다 계정 하나를 가리키므로, 서로 다른 계정이 필요한 조직은 각각 별도의
+프로필을 씁니다.
 
 **함께 보기:** [스택 브랜치](stacks.md) · [AI 기능](ai.md)

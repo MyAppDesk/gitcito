@@ -1,5 +1,23 @@
 
 
+## [4.22.2-beta](https://github.com/MyAppDesk/gitcito/compare/v4.22.1...v4.22.2-beta) (2026-11-11)
+
+
+### Features
+
+* **composer:** full gitmoji catalogue and a Gitmoji + Conventional style ([932612dd](https://github.com/MyAppDesk/gitcito/commit/932612ddab924e1e0be045940c796f3b6b4e78d6))
+* **graph:** show gitmoji shortcodes as emoji in history views ([4951f356](https://github.com/MyAppDesk/gitcito/commit/4951f356eb2925619c7a1e42267a246c9346c025))
+
+
+### Bug Fixes
+
+* **git:** do not inherit the editor's login prompt from its terminal ([8034cf55](https://github.com/MyAppDesk/gitcito/commit/8034cf557f5a42cc208b26971014c63914ae645a))
+* **graph:** stop truncating the graph on a broken gpg config ([a834e274](https://github.com/MyAppDesk/gitcito/commit/a834e274c83559c9aafdf32cf3e1cfd22d9ad383))
+* **hosting:** say why the GitHub API refused a request ([c706b7b9](https://github.com/MyAppDesk/gitcito/commit/c706b7b992e522db761e70e329f374c0867a886f))
+* **hosting:** use the profile token for API calls from the first refresh ([86c94ec7](https://github.com/MyAppDesk/gitcito/commit/86c94ec749dfe81cce4113815b77d335b7ef45f7))
+* **main:** stop EPIPE crashes when writing to a child process's stdin ([300d2723](https://github.com/MyAppDesk/gitcito/commit/300d27238a3513d43c759532051f066731d68b84))
+* **tags:** read and push remote tags without a terminal prompt ([068ed623](https://github.com/MyAppDesk/gitcito/commit/068ed6232551138951433f59749f338560e15469))
+
 ## [4.22.1](https://github.com/MyAppDesk/gitcito/compare/v4.22.0...v4.22.1) (2026-11-10)
 
 

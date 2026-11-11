@@ -6,6 +6,7 @@ import { useUIStore } from '../stores/ui'
 import { useRepoStore } from '../stores/repo'
 import { RefPicker, type RefOption } from './RefPicker'
 import { useT, interp } from '../i18n'
+import { emojifyGitmoji } from '../../../shared/gitmoji'
 
 const ICON: Record<RangeDiffKind, typeof Plus> = {
   unchanged: Equal,
@@ -205,8 +206,8 @@ export function RangeDiffModal({
                     <code className={`rd-sha ${e.oldSha ? '' : 'none'}`}>{e.oldSha?.slice(0, 7) ?? '—'}</code>
                     <ArrowRight size={11} className="rd-row-arrow" />
                     <code className={`rd-sha ${e.newSha ? '' : 'none'}`}>{e.newSha?.slice(0, 7) ?? '—'}</code>
-                    <span className="rd-subject" title={e.subject}>
-                      {e.subject}
+                    <span className="rd-subject" title={emojifyGitmoji(e.subject)}>
+                      {emojifyGitmoji(e.subject)}
                     </span>
                     <span className={`rd-kind ${e.kind}`}>{t(`rangeDiff.kind.${e.kind}` as 'rangeDiff.kind.added')}</span>
                   </div>

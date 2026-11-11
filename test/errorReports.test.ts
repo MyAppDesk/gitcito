@@ -35,4 +35,20 @@ describe('GitHub repository read errors', () => {
     const err = await githubRepoError(500, 'acme/repo', true, 'https://github.com/acme/repo.git')
     expect(err.message).toBe('GitHub API error (500)')
   })
+
+  it("passes GitHub's own reason through, so a 403 says which permission is missing", async () => {
+    const message = 'Resource not accessible by personal access token'
+    const err = await githubRepoError(403, 'acme/repo', true, 'https://github.com/acme/repo.git', { message })
+    expect(err.message).toBe(`GitHub API error (403): ${message}`)
+  })
+
+  it('names an exhausted rate limit instead of quoting a bare 403', async () => {
+    const url = 'https://github.com/acme/repo.git'
+    const anon = await githubRepoError(403, 'acme/repo', false, url, { rateLimited: true })
+    expect(anon.message).toMatch(/rate limit/)
+    expect(anon.message).toMatch(/60 an hour/)
+    const authed = await githubRepoError(403, 'acme/repo', true, url, { rateLimited: true })
+    expect(authed.message).toMatch(/rate limit/)
+    expect(authed.message).not.toMatch(/60 an hour/)
+  })
 })

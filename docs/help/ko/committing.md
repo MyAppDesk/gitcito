@@ -16,11 +16,50 @@ keywords: 커밋 commit 메시지 message 작성기 composer conventional gitmoj
 |---|---|
 | **Conventional** | `feat(api)!: add rate limiting` — 타입 드롭다운과 함께 |
 | **Gitmoji** | `✨ add rate limiting` — 이모지 선택기와 함께 |
+| **Gitmoji + 컨벤셔널** | `✨ feat(api): add rate limiting` — 이모지 선택기*와* 타입 드롭다운 |
 | **티켓** | `ABC-123: add rate limiting` — 브랜치 이름에서 가져와 채워 줘요 |
 | **일반** · **자동** | 입력하는 그대로. 자동은 AI가 형식을 정하게 해요 |
 | **원시인** · **하이쿠** | 딱 이름 그대로예요 |
 
 ![커밋 템플릿으로 미리 채워진 작성기](../../screenshots/commit-template.webp)
+
+### Gitmoji
+
+[Gitmoji](https://gitmoji.dev)는 제목 앞에 이모지를 붙여 히스토리를 한눈에 읽을
+수 있게 합니다. 🐛 수정, ✨ 기능, 🔥 삭제처럼요. 두 gitmoji 스타일 모두에서 이모지
+버튼은 제목 입력란 바로 옆에 있습니다. 버튼을 누르면 **공식 gitmoji 75개 전체**가
+열리고, 이모지, `:코드:`(gitmoji-cli 사용자가 입력하는 것), 또는 사용자 언어로 된
+의미로 검색할 수 있습니다.
+
+**Gitmoji + 컨벤셔널**은 타입과 이모지를 함께 맞춰 둡니다. 타입을 고르면 그
+이모지가 따라오고, 타입을 바꾸면 이모지도 바뀝니다. 단, 이모지를 직접 고른
+경우(예: `fix`에 🚑️)에는 절대 덮어쓰지 않습니다.
+
+| 타입 | Emoji | 타입 | Emoji |
+|---|---|---|---|
+| `feat` | ✨ | `test` | ✅ |
+| `fix` | 🐛 | `build` | 📦️ |
+| `docs` | 📝 | `ci` | 👷 |
+| `style` | 🎨 | `chore` | 🔧 |
+| `refactor` | ♻️ | `revert` | ⏪️ |
+| `perf` | ⚡️ | | |
+
+AI도 같은 형식으로 작성합니다. 모델이 이모지를 빠뜨리거나 `:shortcode:`로
+답하면, 제목이 입력란에 들어가기 전에 바로잡힙니다.
+
+다른 도구가 `:sparkles: add login`으로 작성한 커밋은 그래프, 커밋 상세, 히스토리
+화면에서 `✨ add login`으로 **표시**됩니다.
+
+제한:
+
+- 선택기는 항상 **유니코드** 이모지를 쓰며, `:shortcode:`는 쓰지 않습니다.
+- shortcode는 표시할 때만 변환됩니다. 커밋 자체는 다시 쓰이지 않고, 히스토리
+  검색은 커밋된 그대로의 텍스트와 일치합니다.
+- gitmoji만 해당됩니다. 다른 이모지로 시작하는 제목은 그대로 둡니다.
+- `commit-msg` 훅이 기본 Conventional 프리셋으로 commitlint를 실행하는
+  저장소는 맨 앞의 이모지를 거부합니다. 이는 Gitcito가 아니라 훅의 규칙입니다.
+  commitlint를 gitmoji용으로 설정하거나, 그 저장소에서는 순수 Conventional을
+  사용하세요.
 
 ## 작성기가 대신 해 주는 것들
 

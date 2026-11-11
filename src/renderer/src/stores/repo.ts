@@ -755,12 +755,16 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
     if (!repo || !origin) return
     const profile = useSettingsStore.getState().activeProfile()
     try {
-      const { provider, prs } = await hostingApi.listPRs(origin.url, {
-        github: profile.githubToken || undefined,
-        azure: profile.azureToken || undefined,
-        gitlab: profile.gitlabToken || undefined,
-        bitbucket: profile.bitbucketToken || undefined
-      })
+      const { provider, prs } = await hostingApi.listPRs(
+        origin.url,
+        {
+          github: profile.githubToken || undefined,
+          azure: profile.azureToken || undefined,
+          gitlab: profile.gitlabToken || undefined,
+          bitbucket: profile.bitbucketToken || undefined
+        },
+        path
+      )
       get().patch(path, { prs, prProvider: provider })
     } catch (err) {
       if (!opts?.silent) toast('error', err instanceof Error ? err.message : String(err))
@@ -773,7 +777,7 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
       return
     }
     try {
-      const { prs } = await hostingApi.listPRs(fork.upstream.url, { github: profile.githubToken || undefined })
+      const { prs } = await hostingApi.listPRs(fork.upstream.url, { github: profile.githubToken || undefined }, path)
       get().patch(path, { upstreamPrs: prsFromFork(prs, fork.fork) })
     } catch (err) {
       if (!opts?.silent) toast('error', err instanceof Error ? err.message : String(err))
@@ -786,7 +790,7 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
     if (!origin) return
     const profile = useSettingsStore.getState().activeProfile()
     try {
-      const { issues } = await hostingApi.listIssues(origin.url, { github: profile.githubToken || undefined })
+      const { issues } = await hostingApi.listIssues(origin.url, { github: profile.githubToken || undefined }, path)
       get().patch(path, { issues })
     } catch (err) {
       if (!opts?.silent) toast('error', err instanceof Error ? err.message : String(err))
@@ -799,7 +803,11 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
     if (!origin) return
     const profile = useSettingsStore.getState().activeProfile()
     try {
-      const { milestones } = await hostingApi.listMilestones(origin.url, { github: profile.githubToken || undefined })
+      const { milestones } = await hostingApi.listMilestones(
+        origin.url,
+        { github: profile.githubToken || undefined },
+        path
+      )
       get().patch(path, { milestones })
     } catch (err) {
       if (!opts?.silent) toast('error', err instanceof Error ? err.message : String(err))
@@ -812,9 +820,11 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
     if (!origin) return
     const profile = useSettingsStore.getState().activeProfile()
     try {
-      const { provider, releases } = await hostingApi.listReleases(origin.url, {
-        github: profile.githubToken || undefined
-      })
+      const { provider, releases } = await hostingApi.listReleases(
+        origin.url,
+        { github: profile.githubToken || undefined },
+        path
+      )
       get().patch(path, { releases, releaseProvider: provider })
     } catch (err) {
       if (!opts?.silent) toast('error', err instanceof Error ? err.message : String(err))

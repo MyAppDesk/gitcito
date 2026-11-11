@@ -128,6 +128,8 @@ function runCredential(verb: 'fill' | 'reject', input: string, opts: FillOpts): 
         resolve({ kind: killed ? 'timeout' : 'failed' })
       }
     )
+    // git may exit before reading stdin (bad config, no helper) — EPIPE must not crash main.
+    child.stdin?.on('error', () => undefined)
     child.stdin?.end(input)
   })
 }

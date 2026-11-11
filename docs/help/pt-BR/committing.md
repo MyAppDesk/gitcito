@@ -16,11 +16,50 @@ Escolha um nas Configurações; o compositor se adapta a ele.
 |---|---|
 | **Conventional** | `feat(api)!: add rate limiting` — com um dropdown de tipo |
 | **Gitmoji** | `✨ add rate limiting` — com um seletor de emoji |
+| **Gitmoji + Convencional** | `✨ feat(api): add rate limiting` — seletor de emoji *e* dropdown de tipo |
 | **Ticket** | `ABC-123: add rate limiting` — semeado a partir do nome da branch |
 | **Simples** · **Auto** | O que você digitar; o Auto deixa a IA decidir o formato |
 | **Homem das cavernas** · **Haicai** | Exatamente o que o nome sugere |
 
 ![Compositor pré-preenchido a partir de um template de commit](../../screenshots/commit-template.webp)
+
+### Gitmoji
+
+O [Gitmoji](https://gitmoji.dev) coloca um emoji na frente do assunto para que o
+histórico seja lido de relance: 🐛 correções, ✨ features, 🔥 remoções. Com
+qualquer um dos estilos gitmoji, o botão de emoji fica ao lado do campo de
+assunto. Ele abre **os 75 gitmojis oficiais**, com busca por emoji, por `:código:`
+(o que quem usa o gitmoji-cli digita) ou pelo significado no seu idioma.
+
+O **Gitmoji + Convencional** mantém tipo e emoji em sincronia. Escolha um tipo e
+o emoji acompanha; troque o tipo e ele troca junto, a menos que você tenha
+escolhido o emoji à mão (🚑️ num `fix`, por exemplo). Esse nunca é sobrescrito.
+
+| Tipo | Emoji | Tipo | Emoji |
+|---|---|---|---|
+| `feat` | ✨ | `test` | ✅ |
+| `fix` | 🐛 | `build` | 📦️ |
+| `docs` | 📝 | `ci` | 👷 |
+| `style` | 🎨 | `chore` | 🔧 |
+| `refactor` | ♻️ | `revert` | ⏪️ |
+| `perf` | ⚡️ | | |
+
+A IA escreve no mesmo formato. Se o modelo esquecer o emoji ou responder com um
+`:shortcode:`, o assunto é corrigido antes de chegar ao campo.
+
+Commits feitos por outras ferramentas como `:sparkles: add login` são
+**exibidos** como `✨ add login` no grafo, nos detalhes do commit e nas telas de
+histórico.
+
+Limites:
+
+- O seletor sempre grava o emoji **unicode**, nunca um `:shortcode:`.
+- Os shortcodes são convertidos só na exibição. O commit não é reescrito, e a
+  busca no histórico casa com o texto como foi commitado.
+- Só gitmojis contam: um assunto que começa com outro emoji fica como está.
+- Um repositório cujo hook `commit-msg` roda o commitlint com o preset
+  Conventional padrão rejeita um emoji no início. A regra é do hook, não do
+  Gitcito: configure o commitlint para gitmoji ou use Conventional puro ali.
 
 ## Coisas que o compositor faz por você
 

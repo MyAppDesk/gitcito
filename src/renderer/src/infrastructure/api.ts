@@ -921,10 +921,15 @@ export const hostingApi = {
     window.api.hosting.whoAmI(provider, token, org, interactive) as Promise<ConnectedAccount>,
   createRepo: (provider: RepoHost, token: string, opts: CreateRepoOpts, org?: string) =>
     window.api.hosting.createRepo(provider, token, opts, org) as Promise<RemoteRepo>,
-  listPRs: (remoteUrl: string, tokens: { github?: string; azure?: string; gitlab?: string; bitbucket?: string }) =>
-    window.api.hosting.listPRs(remoteUrl, tokens) as Promise<{ provider: HostingProvider; prs: PullRequest[] }>,
-  listReleases: (remoteUrl: string, tokens: { github?: string }) =>
-    window.api.hosting.listReleases(remoteUrl, tokens) as Promise<{ provider: HostingProvider; releases: ReleaseInfo[] }>,
+  // `repoPath` lets main use the profile the repository is bound to (see shared/hostToken.ts).
+  listPRs: (
+    remoteUrl: string,
+    tokens: { github?: string; azure?: string; gitlab?: string; bitbucket?: string },
+    repoPath?: string
+  ) =>
+    window.api.hosting.listPRs(remoteUrl, tokens, repoPath) as Promise<{ provider: HostingProvider; prs: PullRequest[] }>,
+  listReleases: (remoteUrl: string, tokens: { github?: string }, repoPath?: string) =>
+    window.api.hosting.listReleases(remoteUrl, tokens, repoPath) as Promise<{ provider: HostingProvider; releases: ReleaseInfo[] }>,
   ciStatuses: (remoteUrl: string, shas: string[], token: string) =>
     window.api.hosting.ciStatuses(remoteUrl, shas, token) as Promise<Record<string, CiStatus>>,
   openCreatePR: (remoteUrl: string, source: string, target: string) =>
@@ -965,8 +970,8 @@ export const hostingApi = {
     window.api.hosting.markNotificationRead(token, id) as Promise<void>,
   markAllNotificationsRead: (token: string) =>
     window.api.hosting.markAllNotificationsRead(token) as Promise<void>,
-  listIssues: (remoteUrl: string, tokens: { github?: string }) =>
-    window.api.hosting.listIssues(remoteUrl, tokens) as Promise<{ provider: HostingProvider; issues: IssueInfo[] }>,
+  listIssues: (remoteUrl: string, tokens: { github?: string }, repoPath?: string) =>
+    window.api.hosting.listIssues(remoteUrl, tokens, repoPath) as Promise<{ provider: HostingProvider; issues: IssueInfo[] }>,
   /** Register a public key on the user's GitHub account (GitHub only). */
   uploadSshKey: (token: string, title: string, publicKey: string) =>
     window.api.hosting.uploadSshKey(token, title, publicKey) as Promise<{ id: number }>,
@@ -993,8 +998,8 @@ export const hostingApi = {
   /** Register chained PRs as a native GitHub stack; null when unavailable. */
   ensureStack: (remoteUrl: string, tokens: { github?: string }, numbers: number[]) =>
     window.api.hosting.ensureStack(remoteUrl, tokens, numbers) as Promise<GithubStackInfo | null>,
-  listMilestones: (remoteUrl: string, tokens: { github?: string }) =>
-    window.api.hosting.listMilestones(remoteUrl, tokens) as Promise<{
+  listMilestones: (remoteUrl: string, tokens: { github?: string }, repoPath?: string) =>
+    window.api.hosting.listMilestones(remoteUrl, tokens, repoPath) as Promise<{
       provider: HostingProvider
       milestones: MilestoneInfo[]
     }>,

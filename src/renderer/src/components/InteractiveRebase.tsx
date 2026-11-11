@@ -5,6 +5,7 @@ import { gitApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
 import { useRepoStore } from '../stores/repo'
 import { useT } from '../i18n'
+import { emojifyGitmoji } from '../../../shared/gitmoji'
 
 type ActionKind = RebaseStep['action']
 
@@ -151,7 +152,7 @@ export function InteractiveRebase({
                 placeholder={t('rebase.rewordPlaceholder')}
               />
             ) : (
-              <span className="ir-subject" title={s.subject}>{s.subject}</span>
+              <span className="ir-subject" title={emojifyGitmoji(s.subject)}>{emojifyGitmoji(s.subject)}</span>
             )}
           </div>
         ))}

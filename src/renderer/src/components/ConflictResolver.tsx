@@ -27,6 +27,7 @@ import {
 import type { ConflictCommit, ConflictRefInfo, ConflictVersions } from '../../../shared/types'
 import { isPbxprojPath, mergePbxproj } from '../../../shared/pbxproj'
 import { lockfileFor } from '../lib/lockfiles'
+import { emojifyGitmoji } from '../../../shared/gitmoji'
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -635,7 +636,7 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
                   .map((c) => (
                     <div key={c.sha} className="conflict-why-row" title={`${c.author} · ${c.date.slice(0, 10)}`}>
                       <code>{c.sha.slice(0, 7)}</code>
-                      <span className="conflict-why-subject">{c.subject}</span>
+                      <span className="conflict-why-subject">{emojifyGitmoji(c.subject)}</span>
                       <span className="conflict-why-author">{c.author}</span>
                     </div>
                   ))}

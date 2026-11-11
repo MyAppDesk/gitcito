@@ -18,7 +18,8 @@ vi.mock('child_process', () => ({
   execFile: (_cmd: string, args: string[], _opts: unknown, cb: ExecCallback) => {
     const spawn: Spawn = { args, input: '', answer: cb }
     spawns.push(spawn)
-    return { stdin: { end: (input: string) => (spawn.input = input) } }
+    // `on` because the caller guards stdin against EPIPE, as on any real stream.
+    return { stdin: { on: () => undefined, end: (input: string) => (spawn.input = input) } }
   }
 }))
 

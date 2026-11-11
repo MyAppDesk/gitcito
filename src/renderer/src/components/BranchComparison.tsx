@@ -8,6 +8,7 @@ import { useSettingsStore } from '../stores/settings'
 import { DiffViewer } from './DiffViewer'
 import { RefPicker, type RefOption } from './RefPicker'
 import { useT, interp } from '../i18n'
+import { emojifyGitmoji } from '../../../shared/gitmoji'
 
 function timeAgo(unix: number): string {
   const d = Date.now() / 1000 - unix
@@ -141,7 +142,7 @@ export function BranchComparison({
                   result.aheadCommits.map((c) => (
                     <div key={c.hash} className="bc-commit">
                       <code className="bc-sha">{c.hash.slice(0, 7)}</code>
-                      <span className="bc-msg" title={c.subject}>{c.subject}</span>
+                      <span className="bc-msg" title={emojifyGitmoji(c.subject)}>{emojifyGitmoji(c.subject)}</span>
                       <span className="bc-date">{timeAgo(c.date)}</span>
                     </div>
                   ))
@@ -160,7 +161,7 @@ export function BranchComparison({
                   result.behindCommits.map((c) => (
                     <div key={c.hash} className="bc-commit">
                       <code className="bc-sha">{c.hash.slice(0, 7)}</code>
-                      <span className="bc-msg" title={c.subject}>{c.subject}</span>
+                      <span className="bc-msg" title={emojifyGitmoji(c.subject)}>{emojifyGitmoji(c.subject)}</span>
                       <span className="bc-date">{timeAgo(c.date)}</span>
                     </div>
                   ))

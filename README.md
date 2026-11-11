@@ -66,7 +66,7 @@ git actually is.
 
 | | |
 |---|---|
-| **[Commit composer](docs/help/committing.md)** | Conventional, Gitmoji, Ticket, Plain… even Caveman. Co-author picker, message recall, live linter. Amend and undo from the graph menu prefill it. |
+| **[Commit composer](docs/help/committing.md)** | Conventional, [Gitmoji](docs/help/committing.md#gitmoji) (all 75, searchable in your language), Gitmoji + Conventional with the emoji following the type, Ticket, Plain… even Caveman. Co-author picker, message recall, live linter. Amend and undo from the graph menu prefill it. Other tools' `:sparkles:` subjects read as ✨ across the history views. |
 | **[Staging](docs/help/staging.md)** | Whole files, hunks, or **individual lines** — and the same precision to [unstage, discard, revert or apply](docs/help/staging.md#hunk-and-line-actions) one hunk or a few lines, each undoable. File-list headers split the count by modified / added / deleted. |
 | **[Conflict resolver](docs/help/conflicts.md)** | Three panes, per-line picking, a conflict-by-conflict navigator, editable output. |
 | **[Xcode project merge](docs/help/conflicts.md)** | A `project.pbxproj` conflict merged by object identity instead of by line — and refused, by name, where a build setting genuinely diverged. |
@@ -100,7 +100,7 @@ git actually is.
 | **[Plumbing, with a UI](docs/help/lfs-sparse.md)** | Stashes, tags, worktrees, submodules, LFS, sparse-checkout, patches, hooks. |
 | **[Subtrees](docs/help/subtree.md)** | Vendor another repo into a directory — and remember where it came from, which git does not. |
 | **[Bundles & archives](docs/help/export.md)** | The repository as one file git can clone from — or a tree as a zip, honouring `export-ignore`. |
-| **[Credential helper](docs/help/credentials.md)** | Git's own password store — why https keeps asking, and the plaintext file nobody meant to have. |
+| **[Credential helper](docs/help/credentials.md)** | Git's own password store — why https keeps asking, and the plaintext file nobody meant to have. Launched from an editor's terminal, git never borrows that editor's sign-in window. |
 | **[SSH keys](docs/help/ssh-keys.md)** | See which key the agent is holding, generate one, test the host — the auth path tokens never covered. |
 
 ### AI, optional and grounded

@@ -1,4 +1,5 @@
 import type { TranslationKey } from '../i18n'
+import { CC_TYPE_GITMOJI, findGitmoji, splitGitmoji } from '../../../shared/gitmoji'
 
 export type LintLevel = 'warn' | 'error'
 
@@ -38,7 +39,8 @@ export function lintCommit(summary: string, body: string): LintHint[] {
 
   if (/[.]$/.test(s)) hints.push({ level: 'warn', key: 'commitLint.trailingPeriod' })
 
-  const isConventional = CONVENTIONAL.test(s)
+  // `✨ feat: x` is still Conventional — the gitmoji sits in front of the type.
+  const isConventional = CONVENTIONAL.test(splitGitmoji(s).rest)
   // For non-conventional subjects, nudge toward an imperative, capitalized verb.
   if (!isConventional) {
     const first = s[0]
@@ -71,8 +73,7 @@ export const CC_TYPES = ['feat', 'fix', 'docs', 'style', 'refactor', 'perf', 'te
 
 const CC_PREFIX = /^(\w+)(\([^)]*\))?(!)?:\s*/
 
-/** Split a summary into its Conventional-Commit prefix parts (empty type if none). */
-export function parseCcPrefix(summary: string): { type: string; scope: string; bang: string; rest: string } {
+function parsePlainCc(summary: string): { type: string; scope: string; bang: string; rest: string } {
   const m = CC_PREFIX.exec(summary)
   if (m && (CC_TYPES as readonly string[]).includes(m[1])) {
     return { type: m[1], scope: m[2] ?? '', bang: m[3] ?? '', rest: summary.slice(m[0].length) }
@@ -80,20 +81,38 @@ export function parseCcPrefix(summary: string): { type: string; scope: string; b
   return { type: '', scope: '', bang: '', rest: summary }
 }
 
+/** Run `fn` on the subject after any leading gitmoji, then put the gitmoji back
+ *  exactly as it was written — so the Conventional helpers work the same on
+ *  `feat: x` and on `✨ feat: x` (or `:sparkles: feat: x`). */
+function behindGitmoji(summary: string, fn: (plain: string) => string): string {
+  const { raw, rest } = splitGitmoji(summary)
+  return raw ? `${raw} ${fn(rest)}` : fn(summary)
+}
+
+/** Split a summary into its Conventional-Commit prefix parts (empty type if
+ *  none). A leading gitmoji is skipped and not part of `rest`. */
+export function parseCcPrefix(summary: string): { type: string; scope: string; bang: string; rest: string } {
+  return parsePlainCc(splitGitmoji(summary).rest)
+}
+
 /** Apply (or, with an empty type, strip) a Conventional-Commit type prefix,
- *  preserving any existing scope/`!` and the rest of the subject. */
+ *  preserving any existing scope/`!`, the rest of the subject and a leading gitmoji. */
 export function applyCcType(summary: string, type: string): string {
-  const { rest, scope, bang } = parseCcPrefix(summary)
-  return type ? `${type}${scope}${bang}: ${rest}` : rest
+  return behindGitmoji(summary, (plain) => {
+    const { rest, scope, bang } = parsePlainCc(plain)
+    return type ? `${type}${scope}${bang}: ${rest}` : rest
+  })
 }
 
 /** Apply (or, with an empty scope, strip) a Conventional-Commit scope. Only
  *  meaningful once a type is set — a bare `(scope):` is not a valid prefix. */
 export function applyCcScope(summary: string, scope: string): string {
-  const { type, bang, rest } = parseCcPrefix(summary)
-  if (!type) return summary
-  const s = scope.trim()
-  return `${type}${s ? `(${s})` : ''}${bang}: ${rest}`
+  return behindGitmoji(summary, (plain) => {
+    const { type, bang, rest } = parsePlainCc(plain)
+    if (!type) return plain
+    const s = scope.trim()
+    return `${type}${s ? `(${s})` : ''}${bang}: ${rest}`
+  })
 }
 
 /** The scope currently written on the subject, without its parentheses. */
@@ -101,40 +120,32 @@ export function currentCcScope(summary: string): string {
   return parseCcPrefix(summary).scope.replace(/^\(|\)$/g, '')
 }
 
-/** Common gitmoji, each with a short intent label (shown in the picker).
- *  Labels are dictionary keys — resolve them with `t()` at render time. */
-export const GITMOJIS: { emoji: string; labelKey: TranslationKey }[] = [
-  { emoji: '✨', labelKey: 'gitmoji.feature' },
-  { emoji: '🐛', labelKey: 'gitmoji.fix' },
-  { emoji: '📝', labelKey: 'gitmoji.docs' },
-  { emoji: '💄', labelKey: 'gitmoji.style' },
-  { emoji: '♻️', labelKey: 'gitmoji.refactor' },
-  { emoji: '⚡️', labelKey: 'gitmoji.performance' },
-  { emoji: '✅', labelKey: 'gitmoji.tests' },
-  { emoji: '👷', labelKey: 'gitmoji.ci' },
-  { emoji: '🔧', labelKey: 'gitmoji.chore' },
-  { emoji: '⏪️', labelKey: 'gitmoji.revert' },
-  { emoji: '🎉', labelKey: 'gitmoji.init' },
-  { emoji: '🔥', labelKey: 'gitmoji.remove' },
-  { emoji: '🚧', labelKey: 'gitmoji.wip' },
-  { emoji: '🔒️', labelKey: 'gitmoji.security' },
-  { emoji: '⬆️', labelKey: 'gitmoji.upgradeDeps' },
-  { emoji: '🚀', labelKey: 'gitmoji.deploy' }
-]
-
-/** Find a leading gitmoji on the summary (empty emoji if none). */
+/** Find a leading gitmoji on the summary — unicode or `:shortcode:` — as its
+ *  canonical emoji (empty emoji if none). */
 export function parseGitmojiPrefix(summary: string): { emoji: string; rest: string } {
-  for (const g of GITMOJIS) {
-    if (summary === g.emoji) return { emoji: g.emoji, rest: '' }
-    if (summary.startsWith(g.emoji + ' ')) return { emoji: g.emoji, rest: summary.slice(g.emoji.length + 1) }
-  }
-  return { emoji: '', rest: summary }
+  const { emoji, rest } = splitGitmoji(summary)
+  return { emoji, rest }
 }
 
 /** Apply (or, with an empty emoji, strip) a leading gitmoji on the subject. */
 export function applyGitmoji(summary: string, emoji: string): string {
-  const { rest } = parseGitmojiPrefix(summary)
+  const { rest } = splitGitmoji(summary)
   return emoji ? `${emoji} ${rest}` : rest
+}
+
+/**
+ * Change the Conventional type in the combined `✨ feat: …` style, keeping the
+ * gitmoji in step: an empty gitmoji, or the one the previous type would have
+ * seeded, follows the new type (`feat`→`fix` turns ✨ into 🐛). A gitmoji the
+ * user picked by hand (say 🚑️ on a fix) is never overwritten.
+ */
+export function applyCcTypeWithGitmoji(summary: string, type: string): string {
+  const { emoji } = splitGitmoji(summary)
+  const prevSeed = CC_TYPE_GITMOJI[parseCcPrefix(summary).type] ?? ''
+  const auto = !emoji || findGitmoji(emoji)?.emoji === findGitmoji(prevSeed)?.emoji
+  const typed = applyCcType(summary, type)
+  if (!auto) return typed
+  return applyGitmoji(typed, type ? (CC_TYPE_GITMOJI[type] ?? '') : '')
 }
 
 const TICKET_PREFIX = /^([A-Z][A-Z0-9]+-\d+):\s*/

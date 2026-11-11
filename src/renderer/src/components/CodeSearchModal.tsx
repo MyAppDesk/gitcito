@@ -7,6 +7,7 @@ import { buildQueryRegExp, highlightHtml, type HighlightLayer } from './FileSear
 import { guessLanguage, highlightLine } from '../lib/highlight'
 import type { CodeSearchHit, HistorySearchHit } from '../../../shared/types'
 import { useT } from '../i18n'
+import { emojifyGitmoji } from '../../../shared/gitmoji'
 
 type Tab = 'files' | 'history'
 
@@ -186,7 +187,7 @@ export function CodeSearchModal({ repoPath, query: initial }: { repoPath: string
             <button key={h.hash} className="codesearch-commit" onClick={() => openHistHit(h)}>
               <GitCommit size={14} className="codesearch-commit-icon" />
               <span className="codesearch-commit-body">
-                <span className="codesearch-commit-subject">{h.subject}</span>
+                <span className="codesearch-commit-subject">{emojifyGitmoji(h.subject)}</span>
                 <span className="codesearch-commit-meta">
                   {h.hash.slice(0, 7)} · {h.author}
                 </span>

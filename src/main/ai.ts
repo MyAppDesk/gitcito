@@ -6,6 +6,7 @@ import { callModel, missingCredential, type ChatMessage, type ModelCallOptions }
 import { listAccountModels } from './aiModels'
 import { detectCliBinaries } from './aiCli'
 import { createHash } from 'node:crypto'
+import { normalizeGitmojiConventional, normalizeGitmojiUnicode } from '../shared/gitmoji'
 import {
   APP_THEME_KEYS,
   APP_THEME_SCHEMA,
@@ -87,7 +88,11 @@ function styleGuidance(cfg: AIConfig, branch: string): string {
       break
     case 'gitmoji':
       rule =
-        'Start the summary with the most fitting gitmoji (✨ feature, 🐛 fix, ♻️ refactor, 📝 docs, ✅ tests, 🔧 config, ⚡️ perf) followed by a space and an imperative description. No other prefix.'
+        'Start the summary with the most fitting gitmoji from gitmoji.dev (e.g. ✨ feature, 🐛 fix, 🚑️ hotfix, ♻️ refactor, 📝 docs, ✅ tests, 🔧 config, ⚡️ perf, 🔥 remove, 🎨 format) as the unicode emoji — never a :shortcode: — followed by a space and an imperative description. No other prefix.'
+      break
+    case 'gitmoji-conventional':
+      rule =
+        'Format the summary as "<gitmoji> <type>(<optional scope>): <imperative description>", e.g. "✨ feat(auth): add login validation". The type is a Conventional Commits type (feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert). The gitmoji is the unicode emoji from gitmoji.dev — never a :shortcode: — that best fits the change; default to the one matching the type: feat ✨, fix 🐛, docs 📝, style 🎨, refactor ♻️, perf ⚡️, test ✅, build 📦️, ci 👷, chore 🔧, revert ⏪️.'
       break
     case 'ticket':
       rule =
@@ -174,14 +179,23 @@ async function generateCommitMessage(diff: string, cfg: AIConfig, ctx: AICommitC
       schema: COMMIT_SCHEMA,
       validate: validateCommitMessage
     })
-    return { summary: parsed.summary.trim(), description: omitDesc ? '' : (parsed.description ?? '').trim() }
+    return { summary: shapeSummary(parsed.summary, cfg), description: omitDesc ? '' : (parsed.description ?? '').trim() }
   } catch (err) {
     if (!(err instanceof InvalidAIResponse) || !err.lastReply.trim()) throw err
     // Rather than fail the commit outright, fall back to reading the reply as
     // plain text — the first line is the subject, the rest the body.
     const [first, ...rest] = err.lastReply.trim().split('\n')
-    return { summary: first.trim(), description: omitDesc ? '' : rest.join('\n').trim() }
+    return { summary: shapeSummary(first, cfg), description: omitDesc ? '' : rest.join('\n').trim() }
   }
+}
+
+/** Hold the gitmoji styles to their format even when the model drifts: a
+ *  `:shortcode:` becomes the emoji, and the combined style gets the emoji that
+ *  matches the type when the model left it out. */
+function shapeSummary(summary: string, cfg: AIConfig): string {
+  if (cfg.commitStyle === 'gitmoji-conventional') return normalizeGitmojiConventional(summary)
+  if (cfg.commitStyle === 'gitmoji') return normalizeGitmojiUnicode(summary)
+  return summary.trim()
 }
 
 /** One chat completion against the account's provider, as raw message text. */

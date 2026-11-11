@@ -5,6 +5,7 @@ import { gitApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
 import { useRepoStore } from '../stores/repo'
 import { useT, interp } from '../i18n'
+import { emojifyGitmoji } from '../../../shared/gitmoji'
 
 /**
  * Absorb — route each staged hunk back into the commit that introduced the
@@ -94,8 +95,8 @@ export function AbsorbModal({ repoPath }: { repoPath: string }): React.JSX.Eleme
               <div className="ab-target-head">
                 <GitCommitHorizontal size={13} className="ab-target-icon" />
                 <code className="ab-sha">{target.sha.slice(0, 7)}</code>
-                <span className="ab-subject" title={target.subject}>
-                  {target.subject}
+                <span className="ab-subject" title={emojifyGitmoji(target.subject)}>
+                  {emojifyGitmoji(target.subject)}
                 </span>
                 <span className="ab-count">{interp(t('absorb.hunkCount'), { n: String(target.hunks.length) })}</span>
               </div>

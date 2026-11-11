@@ -16,11 +16,49 @@ Pick one in Settings; the composer adapts to it.
 |---|---|
 | **Conventional** | `feat(api)!: add rate limiting` — with a type dropdown |
 | **Gitmoji** | `✨ add rate limiting` — with an emoji picker |
+| **Gitmoji + Conventional** | `✨ feat(api): add rate limiting` — emoji picker *and* type dropdown |
 | **Ticket** | `ABC-123: add rate limiting` — seeded from the branch name |
 | **Plain** · **Auto** | Whatever you type; Auto lets the AI decide the shape |
 | **Caveman** · **Haiku** | Exactly what they sound like |
 
 ![Composer prefilled from a commit template](../screenshots/commit-template.webp)
+
+### Gitmoji
+
+[Gitmoji](https://gitmoji.dev) puts an emoji in front of the subject so a
+history reads at a glance — 🐛 fixes, ✨ features, 🔥 removals. With either
+gitmoji style, the emoji button sits right beside the subject field: it opens
+**all 75 official gitmoji**, searchable by emoji, by `:code:` (what gitmoji-cli
+users type) or by meaning in your own language.
+
+**Gitmoji + Conventional** keeps the type and the emoji in step. Pick a type
+and its emoji follows; change the type and it changes too — unless you chose
+the emoji yourself (🚑️ on a `fix`, say), which is never overwritten.
+
+| Type | Emoji | Type | Emoji |
+|---|---|---|---|
+| `feat` | ✨ | `test` | ✅ |
+| `fix` | 🐛 | `build` | 📦️ |
+| `docs` | 📝 | `ci` | 👷 |
+| `style` | 🎨 | `chore` | 🔧 |
+| `refactor` | ♻️ | `revert` | ⏪️ |
+| `perf` | ⚡️ | | |
+
+The AI writes in the same shape, and if a model forgets the emoji or answers
+with a `:shortcode:`, the subject is corrected before it reaches the field.
+
+Commits written by other tools as `:sparkles: add login` are **shown** as
+`✨ add login` in the graph, the commit details and the history views.
+
+Limits:
+
+- The picker always writes the **unicode** emoji, never a `:shortcode:`.
+- Shortcodes are converted for display only. The commit itself is not
+  rewritten, and searching the history matches the text as it was committed.
+- Only gitmoji count: a subject that starts with any other emoji is left alone.
+- A repository whose `commit-msg` hook runs commitlint with the stock
+  Conventional preset rejects a leading emoji. That is the hook's rule, not
+  Gitcito's — configure commitlint for gitmoji or use plain Conventional there.
 
 ## Things the composer does for you
 

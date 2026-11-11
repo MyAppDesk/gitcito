@@ -25,7 +25,9 @@ import { acceleratorFromCombo, isMenuRole } from '../src/shared/menu'
 import { MAIN_WINDOW_STATE, showMainWindow } from '../src/main/windowState'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
-import { commitHookFailureHint, lintCommit, subjectCounterLevel, parseCcPrefix, applyCcType, parseGitmojiPrefix, applyGitmoji, parseTicketPrefix, applyTicket, ticketFromBranch } from '../src/renderer/src/lib/commitLint'
+import { commitHookFailureHint, lintCommit, subjectCounterLevel, parseCcPrefix, applyCcType, applyCcScope, applyCcTypeWithGitmoji, currentCcScope, CC_TYPES, parseGitmojiPrefix, applyGitmoji, parseTicketPrefix, applyTicket, ticketFromBranch } from '../src/renderer/src/lib/commitLint'
+import { CC_TYPE_GITMOJI, GITMOJI_CATALOG, emojifyGitmoji, findGitmoji, normalizeGitmojiConventional, normalizeGitmojiUnicode } from '../src/shared/gitmoji'
+import { GITMOJI_LABELS, searchGitmoji } from '../src/renderer/src/lib/gitmoji'
 import { ansiToSpans } from '../src/renderer/src/lib/ansi'
 import { isSecretFile, maskSecretLine } from '../src/renderer/src/lib/secrets'
 import { isBundleDir } from '../src/renderer/src/lib/bundleDirs'
@@ -619,6 +621,83 @@ describe('gitmoji prefix', () => {
     expect(applyGitmoji('add thing', '✨')).toBe('✨ add thing')
     expect(applyGitmoji('✨ add thing', '🐛')).toBe('🐛 add thing')
     expect(applyGitmoji('✨ add thing', '')).toBe('add thing')
+  })
+
+  it('recognises gitmoji with or without the U+FE0F variation selector', () => {
+    // gitmoji.dev writes ⚡️ (with VS16); many keyboards write ⚡ (without).
+    expect(parseGitmojiPrefix('⚡ speed up graph')).toEqual({ emoji: '⚡️', rest: 'speed up graph' })
+    expect(parseGitmojiPrefix('⚡️ speed up graph')).toEqual({ emoji: '⚡️', rest: 'speed up graph' })
+    expect(applyGitmoji('♻ tidy', '🐛')).toBe('🐛 tidy')
+  })
+
+  it('recognises a :shortcode: prefix as its gitmoji', () => {
+    expect(parseGitmojiPrefix(':sparkles: add thing')).toEqual({ emoji: '✨', rest: 'add thing' })
+    expect(applyGitmoji(':bug: fix it', '🚑️')).toBe('🚑️ fix it')
+  })
+
+  it('handles ZWJ gitmoji and leaves non-gitmoji emoji alone', () => {
+    expect(parseGitmojiPrefix('🧑‍💻 better dx')).toEqual({ emoji: '🧑‍💻', rest: 'better dx' })
+    expect(parseGitmojiPrefix('😀 hello').emoji).toBe('')
+    expect(parseGitmojiPrefix('✨add').emoji).toBe('')
+  })
+})
+
+describe('gitmoji catalogue', () => {
+  it('holds every official gitmoji once, each with a label', () => {
+    expect(GITMOJI_CATALOG).toHaveLength(75)
+    expect(new Set(GITMOJI_CATALOG.map((g) => g.code)).size).toBe(75)
+    expect(new Set(GITMOJI_CATALOG.map((g) => g.emoji)).size).toBe(75)
+    for (const g of GITMOJI_CATALOG) expect(GITMOJI_LABELS[g.code]).toMatch(/^gitmoji\./)
+  })
+
+  it('maps every Conventional type to a catalogue gitmoji', () => {
+    for (const ty of CC_TYPES) expect(findGitmoji(CC_TYPE_GITMOJI[ty])).toBeDefined()
+  })
+
+  it('searches by code prefix first, then code, emoji and translated label', () => {
+    const label = (k: string): string => (k === 'gitmoji.fix' ? 'correção' : k)
+    expect(searchGitmoji('spark', label)[0].code).toBe('sparkles')
+    expect(searchGitmoji(':bug:', label)[0].code).toBe('bug')
+    expect(searchGitmoji('correcao', label).map((g) => g.code)).toContain('bug')
+    expect(searchGitmoji('🔥', label).map((g) => g.code)).toEqual(['fire'])
+    expect(searchGitmoji('', label)).toHaveLength(75)
+  })
+
+  it('shows gitmoji shortcodes as emoji, leaving other colons alone', () => {
+    expect(emojifyGitmoji(':sparkles: feat(api): add x')).toBe('✨ feat(api): add x')
+    expect(emojifyGitmoji('fix :bug: at 10:30:45')).toBe('fix 🐛 at 10:30:45')
+    expect(emojifyGitmoji(':not_a_gitmoji: keep')).toBe(':not_a_gitmoji: keep')
+    expect(emojifyGitmoji(':t-rex: compat')).toBe('🦖 compat')
+  })
+})
+
+describe('gitmoji + conventional', () => {
+  it('parses and edits the Conventional prefix behind a gitmoji', () => {
+    expect(parseCcPrefix('✨ feat(api)!: add x')).toEqual({ type: 'feat', scope: '(api)', bang: '!', rest: 'add x' })
+    expect(applyCcType('✨ feat(api): add x', 'fix')).toBe('✨ fix(api): add x')
+    expect(applyCcScope('✨ feat: add x', 'ui')).toBe('✨ feat(ui): add x')
+    expect(currentCcScope(':sparkles: feat(core): x')).toBe('core')
+    // The shortcode is preserved exactly as written.
+    expect(applyCcType(':sparkles: feat: add x', 'fix')).toBe(':sparkles: fix: add x')
+  })
+
+  it('treats a gitmoji-led Conventional subject as Conventional in the linter', () => {
+    expect(lintCommit('✨ feat(api): add endpoint', '')).toEqual([])
+  })
+
+  it('moves a seeded gitmoji with the type, but never one picked by hand', () => {
+    expect(applyCcTypeWithGitmoji('add login', 'feat')).toBe('✨ feat: add login')
+    expect(applyCcTypeWithGitmoji('✨ feat: add login', 'fix')).toBe('🐛 fix: add login')
+    expect(applyCcTypeWithGitmoji('🚑️ fix: prod crash', 'feat')).toBe('🚑️ feat: prod crash')
+    expect(applyCcTypeWithGitmoji('🐛 fix: x', '')).toBe('x')
+  })
+
+  it('normalises a model reply into the combined shape', () => {
+    expect(normalizeGitmojiConventional('feat(auth): add login')).toBe('✨ feat(auth): add login')
+    expect(normalizeGitmojiConventional(':bug: fix: crash')).toBe('🐛 fix: crash')
+    expect(normalizeGitmojiConventional('🚑️ fix: crash')).toBe('🚑️ fix: crash')
+    expect(normalizeGitmojiConventional('update readme')).toBe('update readme')
+    expect(normalizeGitmojiUnicode(':memo: update readme')).toBe('📝 update readme')
   })
 })
 

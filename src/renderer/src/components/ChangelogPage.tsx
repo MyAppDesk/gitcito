@@ -15,6 +15,7 @@ import { renderMarkdown } from '../preview/markdown'
 import { bundledChangelog } from '../changelog'
 import { compareVersions } from '../../../shared/version'
 import { resolveUpdateOffer, type ReleaseRef } from '../lib/updateOffer'
+import { whatsNewTimeline } from '../lib/changelogNotes'
 import type { AppRelease } from '../../../shared/types'
 import { useUpdatesStore } from '../stores/updates'
 import { useSettingsStore } from '../stores/settings'
@@ -72,13 +73,22 @@ export function ChangelogPage(): React.JSX.Element {
     }
   }, [])
 
-  // Browsable timeline: real releases only, newest first.
-  const timeline = useMemo(
+  // Published releases only, newest first — what the update offer and the
+  // "latest" badge reason about.
+  const published = useMemo(
     () =>
       (releases ?? [])
         .filter((r) => !r.prerelease)
         .sort((a, b) => -compareVersions(a.tag, b.tag)),
     [releases]
+  )
+  // Browsable timeline: the published releases plus the installed build when
+  // GitHub does not have it yet (a beta, a local build), from the bundled notes.
+  // Offline there are no releases, and the whole bundled changelog shows instead.
+  const timeline = useMemo(
+    () =>
+      version && releases?.length ? whatsNewTimeline(releases, version, bundledChangelog()) : published,
+    [releases, version, published]
   )
 
   // Open on the installed version (else newest) once the timeline lands.
@@ -90,7 +100,7 @@ export function ChangelogPage(): React.JSX.Element {
 
   // The badge is a way *out* of the app: it points at the newest published
   // release, which is what "latest from GitHub" means to a reader.
-  const latestUrl = timeline[0]?.url || RELEASES_URL
+  const latestUrl = published[0]?.url || RELEASES_URL
 
   const selected = timeline[idx] ?? null
   const isInstalled = !!selected && stripV(selected.tag) === stripV(version)
@@ -100,9 +110,9 @@ export function ChangelogPage(): React.JSX.Element {
   const newer = useMemo(
     () =>
       version
-        ? resolveUpdateOffer({ installed: version, info: updateInfo, staged, timeline })
+        ? resolveUpdateOffer({ installed: version, info: updateInfo, staged, timeline: published })
         : null,
-    [version, updateInfo, staged, timeline]
+    [version, updateInfo, staged, published]
   )
 
   const pct = updateProgress ? Math.round(updateProgress.percent) : 0

@@ -134,8 +134,12 @@ describe('GitHub credential guidance', () => {
     expect(githubCredentialMessage('signed-out')).toContain('gh auth login')
   })
 
-  it('explains when gh is authenticated but not wired into Git', () => {
-    expect(githubCredentialMessage('authenticated')).toContain('gh auth setup-git')
+  it('points a signed-in gh at linking it to the profile, not at setup-git', () => {
+    // A profile uses only a machine login it linked; setup-git alone connects nothing.
+    const msg = githubCredentialMessage('authenticated')
+    expect(msg).toContain('Settings → Integrations')
+    expect(msg).toContain('link')
+    expect(msg).not.toContain('setup-git')
   })
 
   it('does not claim a signed-out CLI when the probe merely timed out', () => {

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import {
   Plus,
@@ -9,6 +9,7 @@ import {
   LayoutGrid,
   X,
   UserCircle2,
+  Unplug,
   Bot,
   Github,
   Cloud,
@@ -76,7 +77,7 @@ import type { DetectedEditor, EditorSetting } from '../../../shared/editors'
 import type { SshKey, SshStatus, SshTest } from '../../../shared/sshKeys'
 import type { DiffToolConfig, DiffToolInfo } from '../../../shared/diffTools'
 import type { RerereStatus } from '../../../shared/types'
-import { AI_PROVIDERS, emptyAnalytics, defaultGraphStyle, type AIProvider, type Analytics, type AIUsageStat, type ActivityEvent, type RepoStats, type AppSettings, type BranchNamingStyle, type CommitStyle, type ConflictStyle, type ExplainStyle, type Profile, type SigningConfig, type SettingsBundle, type GraphStyle, type GraphPalette, type GraphEdgeStyle, type GraphDensity, type GraphLineWidth, type GraphNodeStyle, type GraphTopology, type GraphFocus, type GraphCommit, type ConnectedAccount } from '../../../shared/types'
+import { AI_PROVIDERS, emptyAnalytics, defaultGraphStyle, type AIProvider, type Analytics, type AIUsageStat, type ActivityEvent, type RepoStats, type AppSettings, type BranchNamingStyle, type CommitStyle, type ConflictStyle, type ExplainStyle, type Profile, type SigningConfig, type SettingsBundle, type GraphStyle, type GraphPalette, type GraphEdgeStyle, type GraphDensity, type GraphLineWidth, type GraphNodeStyle, type GraphTopology, type GraphFocus, type GraphCommit, type ConnectedAccount, type AccountLink, type RepoHost } from '../../../shared/types'
 import { hasSettingsSecrets, stripSettingsSecrets } from '../../../shared/secrets'
 import { tabActiveRepoPath } from '../../../shared/types'
 import type { HoverModifier, KeychainConsent, TabRepoLabel } from '../../../shared/types'
@@ -418,10 +419,39 @@ export function IntegrationsPage({
   const [accountError, setAccountError] = useState<string | null>(null)
   const [loadingAccount, setLoadingAccount] = useState(false)
 
-  // A token is no longer the only way to be connected: git's own credential
-  // helper may already hold one for this host. So the connected state is
-  // "an account resolved", not "a token was typed".
+  // Connected means "an account resolved" for this profile: its token, or its
+  // link to a login git or the GitHub CLI holds. Another profile's link, or a
+  // login nobody linked, does not count.
   const connected = !!account
+  const link = profile.links?.[active.id]
+  const linkKey = link ? `${link.source}:${link.login}` : ''
+  // Read inside the async check without making it a dependency: `edit` and the
+  // profile change identity on every render, and a check that re-ran on each
+  // one would call the host API in a loop.
+  const latest = useRef({ edit, profile, link, label: active.label, t })
+  latest.current = { edit, profile, link, label: active.label, t }
+
+  // Disconnecting lets go of everything this profile holds for the provider —
+  // the PAT and the link. Clearing only the one shown let the other take over at
+  // once, which reads as "Disconnect did nothing". The login in gh or git's
+  // helper stays, for other profiles or for signing in again.
+  const askDisconnect = (source: 'token' | 'git' | 'gh', login: string): void => {
+    const key: TranslationKey =
+      source === 'gh' ? 'settings.disconnectLinkGh' : source === 'git' ? 'settings.disconnectLinkGit' : 'settings.disconnectConfirm'
+    useUIStore.getState().openDialog({
+      kind: 'confirm',
+      title: interp(t('settings.disconnectTitle'), { provider: active.label }),
+      message: interp(t(key), { provider: active.label, profile: profile.name, login }),
+      danger: true,
+      confirmLabel: t('settings.disconnect'),
+      onConfirm: () => {
+        const { edit, profile: current } = latest.current
+        const links = { ...current.links }
+        delete links[active.id]
+        edit({ [active.field]: '', links } as Partial<Profile>)
+      }
+    })
+  }
 
   const check = useCallback(
     (interactive: boolean): (() => void) => {
@@ -437,9 +467,28 @@ export function IntegrationsPage({
       }
       setLoadingAccount(true)
       void hostingApi
-        .whoAmI(active.id, token, whoAmIOrg, interactive)
-        .then((info) => {
-          if (alive) setAccount(info)
+        // Signing in is always a fresh look for a login: reusing the current link
+        // would ask again for an account that may be gone, with no way to pick another.
+        .whoAmI(active.id, token, whoAmIOrg, interactive, interactive ? undefined : latest.current.link)
+        .then(async (info) => {
+          if (!alive) return
+          const { edit, profile, label, t } = latest.current
+          if (info?.link) {
+            // A sign-in found a login on this machine. It becomes this profile's
+            // only if no other profile already holds that account — linked, or
+            // through its own token: each profile is its own account, which is
+            // the point of having profiles.
+            const found = info.link
+            const owner = await hostingApi.accountOwner(active.id, info.login, found, profile.id).catch(() => null)
+            if (!alive) return
+            if (owner) {
+              const key = active.id === 'github' ? 'settings.alreadyLinked' : 'settings.alreadyLinkedOther'
+              setAccountError(interp(t(key), { provider: label, login: info.login, profile: owner }))
+              return
+            }
+            edit({ links: { ...profile.links, [active.id]: found } })
+          }
+          setAccount(info)
         })
         .catch((err: Error) => {
           if (alive) setAccountError(err.message)
@@ -451,7 +500,8 @@ export function IntegrationsPage({
         alive = false
       }
     },
-    [active.id, token, whoAmIOrg, azureOrgRequired]
+    // linkKey, not the link object: a new object with the same account is no reason to re-check.
+    [active.id, token, linkKey, whoAmIOrg, azureOrgRequired]
   )
 
   // Silent on mount — opening Settings must never pop four sign-in windows.
@@ -477,7 +527,7 @@ export function IntegrationsPage({
           const Icon = i.icon
           // For the tab being viewed the resolved state is known; the others can
           // only report whether a token is configured, without probing them all.
-          const isConnected = i.id === tab ? connected : !!profile[i.field].trim()
+          const isConnected = i.id === tab ? connected : !!profile[i.field].trim() || !!profile.links?.[i.id]
           return (
             <button
               key={i.id}
@@ -512,6 +562,21 @@ export function IntegrationsPage({
       <div className="connected-account">
         {loadingAccount && <span className="settings-hint">{t('settings.loadingAccount')}</span>}
         {!loadingAccount && accountError && <span className="connected-account-error">{accountError}</span>}
+        {/* A link whose account is gone (gh logged out, the helper lost it, an
+            imported profile): still shown, with its way out — otherwise the only
+            fix would be editing the settings file. */}
+        {!loadingAccount && !account && link && (
+          <div className="connected-account-source">
+            <span className="settings-hint">{interp(t('settings.linkUnresolved'), { login: link.login })}</span>
+            <button
+              className="btn ghost small danger"
+              type="button"
+              onClick={() => askDisconnect(link.source, link.login)}
+            >
+              <Unplug size={13} /> {t('settings.disconnect')}
+            </button>
+          </div>
+        )}
         {!loadingAccount && !account && !(active.id === 'azure' && !whoAmIOrg) && (
           <button className="btn ghost small" type="button" onClick={() => check(true)}>
             {t('settings.signInWithGit')}
@@ -567,6 +632,10 @@ export function IntegrationsPage({
                 </div>
               </details>
             )}
+            <ConnectionSource
+              source={account.source}
+              onDisconnect={() => askDisconnect(account.source ?? 'token', account.login)}
+            />
           </>
         )}
       </div>
@@ -602,6 +671,36 @@ export function IntegrationsPage({
       <LocalCiSection />
     </>
   )
+}
+
+/**
+ * Where a connected account's credential comes from, and the way out of it —
+ * "Connected" with no Disconnect reads as a dead end. Disconnecting is always
+ * this profile's: a PAT is cleared, a link to gh or git's helper is dropped.
+ */
+function ConnectionSource({
+  source,
+  onDisconnect
+}: {
+  source: ConnectedAccount['source']
+  onDisconnect: () => void
+}): React.JSX.Element | null {
+  const t = useT()
+  if (!source) return null
+  return (
+    <div className="connected-account-source">
+      <span className="settings-hint">{t(CONNECTION_SOURCE[source].via)}</span>
+      <button className="btn ghost small danger" type="button" onClick={onDisconnect}>
+        <Unplug size={13} /> {t('settings.disconnect')}
+      </button>
+    </div>
+  )
+}
+
+const CONNECTION_SOURCE: Record<NonNullable<ConnectedAccount['source']>, { via: TranslationKey }> = {
+  token: { via: 'settings.connectedViaToken' },
+  git: { via: 'settings.connectedViaGit' },
+  gh: { via: 'settings.connectedViaGh' }
 }
 
 /** Local CI (act) — an opt-in tool integration, not a host account. */

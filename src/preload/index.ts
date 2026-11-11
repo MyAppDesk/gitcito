@@ -271,8 +271,10 @@ const api = {
       ipcRenderer.invoke('hosting:listRepos', provider, token, org),
     listOwners: (provider: string, token: string, org?: string): Promise<unknown> =>
       ipcRenderer.invoke('hosting:listOwners', provider, token, org),
-    whoAmI: (provider: string, token: string, org?: string, interactive?: boolean): Promise<unknown> =>
-      ipcRenderer.invoke('hosting:whoAmI', provider, token, org, interactive),
+    accountOwner: (provider: string, login: string, found: unknown, exceptProfileId: string): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:accountOwner', provider, login, found, exceptProfileId),
+    whoAmI: (provider: string, token: string, org?: string, interactive?: boolean, link?: unknown): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:whoAmI', provider, token, org, interactive, link),
     createRepo: (provider: string, token: string, opts: unknown, org?: string): Promise<unknown> =>
       ipcRenderer.invoke('hosting:createRepo', provider, token, opts, org),
     listPRs: (remoteUrl: string, tokens: unknown, repoPath?: string): Promise<unknown> =>

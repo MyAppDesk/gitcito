@@ -1,5 +1,6 @@
 import { execFile } from 'child_process'
-import type { RepoHost } from '../shared/types'
+import type { AccountLink, RepoHost } from '../shared/types'
+import { isAccountLogin } from '../shared/hostToken'
 
 /**
  * Credentials borrowed from git's own credential helper.
@@ -11,9 +12,14 @@ import type { RepoHost } from '../shared/types'
  * provider per profile, which is why multi-org Azure DevOps was painful: one
  * PAT field cannot hold four organizations' tokens.
  *
- * Asking `git credential fill` instead makes the credential *per URL*, so every
- * organization resolves independently with no configuration at all. A PAT typed
- * into Settings still wins — this is the fallback for when none is set.
+ * Asking `git credential fill` makes the credential *per URL*, so each Azure
+ * DevOps organization resolves on its own. A PAT typed into Settings still wins.
+ *
+ * A machine login is used only by a profile that has **linked** it (see
+ * `apiToken`): it used to be borrowed by every profile, which showed one
+ * account everywhere and left no way to connect a second. A link names one
+ * account per provider, so a profile whose organizations need *different*
+ * accounts takes a PAT per profile — or one profile per account.
  */
 
 export interface GitCredential {
@@ -27,6 +33,9 @@ export interface FillOpts {
   interactive?: boolean
   /** Run inside this repo so repo-local `credential.*` config applies. */
   repoPath?: string
+  /** Ask for this account's credential. Helpers that keep several accounts per
+   *  host (Git Credential Manager, osxkeychain, libsecret) match on it. */
+  username?: string
 }
 
 export type GitHubCliAuthStatus = 'missing' | 'signed-out' | 'authenticated' | 'unknown'
@@ -89,9 +98,10 @@ function describe(url: string): { protocol: string; host: string; path: string }
  * each org needs its own token, so the key has to include it — keying on host
  * alone would hand org B the credential minted for org A.
  */
-function cacheKey(d: { protocol: string; host: string; path: string }): string {
+function cacheKey(d: { protocol: string; host: string; path: string }, username?: string): string {
   const org = d.host.endsWith('dev.azure.com') ? d.path.split('/')[0] : ''
-  return `${d.protocol}://${d.host}/${org}`
+  // Per account too, or two profiles linked to two accounts would share one answer.
+  return `${d.protocol}://${username ? `${encodeURIComponent(username)}@` : ''}${d.host}/${org}`
 }
 
 /**
@@ -155,7 +165,9 @@ export async function credentialFor(url: string, opts: FillOpts = {}): Promise<G
   const d = describe(url)
   if (!d) return null
 
-  const key = cacheKey(d)
+  // A username is written into the credential protocol, one field per line.
+  if (opts.username !== undefined && !isAccountLogin(opts.username)) return null
+  const key = cacheKey(d, opts.username)
   const interactive = !!opts.interactive
   if (!interactive && blocked.has(key)) return null
 
@@ -185,7 +197,9 @@ async function lookup(
   opts: FillOpts
 ): Promise<GitCredential | null> {
   const startedIn = generation
-  const run = await runCredential('fill', `protocol=${d.protocol}\nhost=${d.host}\npath=${d.path}\n\n`, opts)
+  // `credentialFor` refuses a username that could add protocol fields; this is the line it guards.
+  const user = opts.username ? `username=${opts.username}\n` : ''
+  const run = await runCredential('fill', `protocol=${d.protocol}\nhost=${d.host}\npath=${d.path}\n${user}\n`, opts)
   const cred = run.kind === 'ok' ? parseCredential(run.stdout) : null
   if (startedIn !== generation) return cred
 
@@ -203,11 +217,13 @@ async function lookup(
 export async function forgetCredential(url: string, cred: GitCredential): Promise<void> {
   const d = describe(url)
   if (!d) return
-  const key = cacheKey(d)
-  cache.delete(key)
-  // The retry that follows must spawn a fresh fill, not join one that may hand
-  // back the credential being rejected here.
-  inFlight.delete(key)
+  // Both keys: the lookup may have been for the linked account or the default one.
+  for (const key of new Set([cacheKey(d), cacheKey(d, cred.username)])) {
+    cache.delete(key)
+    // The retry that follows must spawn a fresh fill, not join one that may hand
+    // back the credential being rejected here.
+    inFlight.delete(key)
+  }
   await runCredential(
     'reject',
     `protocol=${d.protocol}\nhost=${d.host}\npath=${d.path}\nusername=${cred.username}\npassword=${cred.password}\n\n`,
@@ -226,7 +242,8 @@ export function clearCredentialCache(): void {
   inFlight.clear()
   blocked.clear()
   ghStatus = null
-  ghCliToken = null
+  ghTokens.clear()
+  ghTokenInFlight.clear()
   githubTokenRejected = false
 }
 
@@ -238,30 +255,104 @@ export function isJwt(token: string): boolean {
   return /^ey[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\./.test(token)
 }
 
-/**
- * The token a host's REST API should use, preferring one the user typed into
- * Settings and falling back to whatever git already has for that remote.
- * Returns the source too, so a 401 can invalidate a borrowed credential.
- */
-export async function apiToken(
-  remoteUrl: string,
-  configured: string | undefined,
-  opts: FillOpts = {}
-): Promise<{ token: string; cred?: GitCredential } | null> {
-  if (configured?.trim()) return { token: configured.trim() }
-  const cred = await credentialFor(remoteUrl, opts)
-  return cred ? { token: cred.password, cred } : null
+/** Where an API token came from — shown in Settings so "Connected" can be undone. */
+export type TokenSource = 'token' | 'git' | 'gh'
+
+/** What a profile brings to a host call: its own PAT, or its link to a machine login. */
+export interface HostAuth {
+  token?: string
+  link?: AccountLink
 }
 
-// The GitHub CLI login, read once per session for the public release calls below.
-let ghCliToken: Promise<string | null> | null = null
-function githubCliToken(): Promise<string | null> {
-  ghCliToken ??= new Promise((resolve) => {
-    execFile('gh', ['auth', 'token', '--hostname', 'github.com'], { timeout: TIMEOUT_SILENT_MS }, (err, stdout) =>
-      resolve(err ? null : stdout.trim() || null)
-    )
+export interface ApiAuth {
+  token: string
+  /** Set for a git-helper credential, so a 401 can evict it. */
+  cred?: GitCredential
+  source: TokenSource
+  /** The account behind a machine login — what a sign-in links. Unknown (until
+   *  the API says) for the GitHub CLI's active account. */
+  login?: string
+}
+
+/**
+ * The token a host's REST API should use for one profile:
+ *
+ * 1. its PAT;
+ * 2. else its link — that exact account, from `gh auth token --user` or from
+ *    git's credential helper with `username=` — so two profiles linked to two
+ *    accounts on the same machine each get their own;
+ * 3. else nothing. A login git or `gh` holds is **not** borrowed implicitly: it
+ *    used to be, and every profile then showed the same account, with no way to
+ *    connect a second one. Linking is a deliberate sign-in.
+ *
+ * Only an interactive sign-in (`opts.interactive`, no PAT, no link) looks for a
+ * machine login to link: git's helper silently, then the GitHub CLI's active
+ * account, then the helper's own login window. Git never prompts on a terminal.
+ */
+export async function apiToken(remoteUrl: string, auth: HostAuth, opts: FillOpts = {}): Promise<ApiAuth | null> {
+  if (auth.token?.trim()) return { token: auth.token.trim(), source: 'token' }
+  const host = hostOf(remoteUrl)
+  const isGithub = !!host && providerOfHost(host) === 'github'
+
+  if (auth.link) {
+    if (auth.link.source === 'gh') {
+      const token = isGithub ? await githubCliToken(host, auth.link.login) : null
+      return token ? { token, source: 'gh', login: auth.link.login } : null
+    }
+    const cred = await credentialFor(remoteUrl, { ...opts, username: auth.link.login })
+    return cred ? { token: cred.password, cred, source: 'git', login: cred.username || auth.link.login } : null
+  }
+
+  if (!opts.interactive) return null
+  const silent = await credentialFor(remoteUrl, { ...opts, interactive: false })
+  if (silent) return { token: silent.password, cred: silent, source: 'git', login: silent.username }
+  if (isGithub) {
+    const gh = await githubCliToken(host)
+    if (gh) return { token: gh, source: 'gh' }
+  }
+  const cred = await credentialFor(remoteUrl, opts)
+  return cred ? { token: cred.password, cred, source: 'git', login: cred.username } : null
+}
+
+function hostOf(url: string): string | undefined {
+  try {
+    return new URL(url).host || undefined
+  } catch {
+    return undefined
+  }
+}
+
+/**
+ * A GitHub CLI login for a host, via `gh auth token` (non-interactive): the
+ * account `user` names, or gh's *active* one without it — gh keeps several per
+ * host. Every answer, token or miss, is reused only for `GH_STATUS_TTL_MS`, so
+ * `gh auth login` and `gh auth switch` show up without restarting the app.
+ * Concurrent callers (four sidebar panels on one refresh) share one `gh` process.
+ */
+const ghTokens = new Map<string, { token: string | null; at: number }>()
+const ghTokenInFlight = new Map<string, Promise<string | null>>()
+function githubCliToken(host = 'github.com', user?: string): Promise<string | null> {
+  const key = `${user ?? ''}@${host}`
+  const hit = ghTokens.get(key)
+  if (hit && Date.now() - hit.at < GH_STATUS_TTL_MS) return Promise.resolve(hit.token)
+  const pending = ghTokenInFlight.get(key)
+  if (pending) return pending
+  const startedIn = generation
+  if (user !== undefined && !isAccountLogin(user)) return Promise.resolve(null)
+  // `--user=` in one argument, so a value can never be read as a flag of its own.
+  const args = ['auth', 'token', '--hostname', host, ...(user ? [`--user=${user}`] : [])]
+  const started = new Promise<string | null>((resolve) => {
+    execFile('gh', args, { timeout: TIMEOUT_SILENT_MS }, (err, stdout) => {
+      const token = err ? null : stdout.trim() || null
+      // A lookup that began before clearCredentialCache must not refill it.
+      if (startedIn === generation) ghTokens.set(key, { token, at: Date.now() })
+      resolve(token)
+    })
+  }).finally(() => {
+    if (ghTokenInFlight.get(key) === started) ghTokenInFlight.delete(key)
   })
-  return ghCliToken
+  ghTokenInFlight.set(key, started)
+  return started
 }
 
 /**

@@ -3,13 +3,14 @@ import { ipcMain, shell } from 'electron'
 import {
   apiToken,
   forgetCredential,
+  type ApiAuth,
   githubCliAuthStatus,
   isJwt,
   type GitCredential,
   type GitHubCliAuthStatus
 } from './credentials'
-import { activeProfileToken, boundProfileToken } from './settings'
-import { pickHostToken } from '../shared/hostToken'
+import { activeProfileAuth, allProfileAuth, boundProfileAuth } from './settings'
+import { linkHoldsAccount, pickHostAuth, validAccountLink, type HostAuthInput } from '../shared/hostToken'
 import { mergeStackSection } from '../shared/stackPr'
 import {
   type CiCacheEntry,
@@ -24,6 +25,7 @@ import type {
   CiJob,
   CiState,
   CiStatus,
+  AccountLink,
   ConnectedAccount,
   CreateRepoOpts,
   CreatePrOpts,
@@ -180,16 +182,16 @@ function isAuthFailure(err: unknown): boolean {
 export type HostTokens = { github?: string; azure?: string; gitlab?: string; bitbucket?: string }
 
 /**
- * The PAT for a hosting call — precedence in `pickHostToken`. Resolved here
- * rather than trusted from the renderer: its settings carry no tokens until
- * Settings is opened, and it only knows the *active* profile, not the one a
- * background tab's repository is bound to.
+ * The profile credentials for a hosting call — precedence in `pickHostAuth`.
+ * Resolved here rather than trusted from the renderer: its settings carry no
+ * tokens until Settings is opened, it never sends links, and it only knows the
+ * *active* profile, not the one a background tab's repository is bound to.
  */
-async function profileToken(provider: RepoHost, sent: string | undefined, repoPath?: string): Promise<string | undefined> {
-  return pickHostToken({
+async function profileAuth(provider: RepoHost, sent: string | undefined, repoPath?: string): Promise<HostAuthInput> {
+  return pickHostAuth({
     sent,
-    bound: repoPath ? await boundProfileToken(provider, repoPath) : undefined,
-    active: () => activeProfileToken(provider)
+    bound: repoPath ? await boundProfileAuth(provider, repoPath) : undefined,
+    active: () => activeProfileAuth(provider)
   })
 }
 
@@ -199,8 +201,8 @@ async function remoteApiToken(
   provider: RepoHost,
   sent: string | undefined,
   repoPath?: string
-): Promise<{ token: string; cred?: GitCredential } | null> {
-  return apiToken(remoteUrl, await profileToken(provider, sent, repoPath))
+): Promise<ApiAuth | null> {
+  return apiToken(remoteUrl, await profileAuth(provider, sent, repoPath))
 }
 
 /** A repo path off the IPC boundary — only ever a lookup key into `repoProfiles`. */
@@ -218,7 +220,7 @@ async function tokenForRemote(
   provider: Exclude<HostingProvider, null>,
   tokens: HostTokens,
   repoPath?: string
-): Promise<{ token: string; cred?: GitCredential } | null> {
+): Promise<ApiAuth | null> {
   return remoteApiToken(remoteUrl, provider, tokens[provider], repoPath)
 }
 
@@ -230,7 +232,7 @@ async function tokenForRemote(
  */
 async function withAzureRetry<T>(
   remoteUrl: string,
-  auth: { token: string; cred?: GitCredential },
+  auth: ApiAuth,
   run: (token: string) => Promise<T>
 ): Promise<T> {
   try {
@@ -238,7 +240,8 @@ async function withAzureRetry<T>(
   } catch (err) {
     if (!auth.cred || !isAuthFailure(err)) throw err
     await forgetCredential(remoteUrl, auth.cred)
-    const fresh = await apiToken(remoteUrl, undefined)
+    // Ask again for the same account: the profile's link names it.
+    const fresh = await apiToken(remoteUrl, { link: { source: 'git', login: auth.cred.username } })
     if (!fresh) throw err
     return run(fresh.token)
   }
@@ -270,22 +273,27 @@ async function tokenForProvider(
   provider: RepoHost,
   token: string,
   org?: string
-): Promise<{ token: string; cred?: GitCredential } | null> {
-  return apiToken(providerBaseUrl(provider, org), await profileToken(provider, token))
+): Promise<ApiAuth | null> {
+  return apiToken(providerBaseUrl(provider, org), await profileAuth(provider, token))
 }
 
-/** Actionable GitHub setup text for the exact local CLI state we observed. */
+/**
+ * Actionable GitHub setup text for the exact local CLI state we observed. A
+ * profile only uses a machine login it has *linked*, so every route ends at
+ * Settings → Integrations — `gh auth setup-git` alone no longer connects anything.
+ */
 export function githubCredentialMessage(status: GitHubCliAuthStatus, host = 'github.com'): string {
+  const lead = `No GitHub account is linked to this profile for ${host}.`
   if (status === 'missing') {
-    return `No GitHub credential for ${host}. GitHub CLI (gh) is not installed. Install gh and run \`gh auth login\`, or add a personal access token in Settings → Integrations.`
+    return `${lead} GitHub CLI (gh) is not installed: add a personal access token in Settings → Integrations, or install gh, run \`gh auth login\` and sign in there.`
   }
   if (status === 'signed-out') {
-    return `No GitHub credential for ${host}. GitHub CLI (gh) is installed but not authenticated. Run \`gh auth login\`, or add a personal access token in Settings → Integrations.`
+    return `${lead} GitHub CLI (gh) is installed but not authenticated: run \`gh auth login\`, then sign in from Settings → Integrations, or add a personal access token there.`
   }
   if (status === 'unknown') {
-    return `No GitHub credential for ${host}, and checking the GitHub CLI (gh) timed out — it may be offline. Sign in with git (any credential helper), run \`gh auth login\` then \`gh auth setup-git\`, or add a personal access token in Settings → Integrations.`
+    return `${lead} Checking the GitHub CLI (gh) timed out — it may be offline. Sign in from Settings → Integrations, or add a personal access token there.`
   }
-  return `No GitHub credential for ${host}. GitHub CLI (gh) is authenticated, but Git is not configured to provide that credential to Gitcito. Run \`gh auth setup-git\`, then retry, or add a personal access token in Settings → Integrations.`
+  return `${lead} GitHub CLI (gh) is signed in: sign in from Settings → Integrations to link that account to this profile, or add a personal access token there.`
 }
 
 /** A clear "no credential at all" message naming the setup step that failed. */
@@ -301,7 +309,7 @@ async function noCredential(provider: string, remoteUrl?: string): Promise<Error
     return new Error(githubCredentialMessage(await githubCliAuthStatus(), host || 'github.com'))
   }
   return new Error(
-    `No ${provider} credential${host ? ` for ${host}` : ''}. Either sign in with git (any credential helper — the same one \`git clone\` uses) or add a token in Settings → Integrations.`
+    `No ${provider} account is linked to this profile${host ? ` for ${host}` : ''}. Sign in from Settings → Integrations to link a login git's credential helper holds, or add a token there.`
   )
 }
 
@@ -1773,12 +1781,55 @@ async function fetchConnectedAccount(
   provider: RepoHost,
   token: string,
   org?: string,
-  interactive = false
-): Promise<ConnectedAccount> {
+  interactive = false,
+  link?: AccountLink
+): Promise<ConnectedAccount | null> {
+  // Nothing on this profile and no sign-in asked for: simply not connected. A
+  // login elsewhere on the machine is not this profile's until it is linked.
+  if (!token.trim() && !link && !interactive) return null
   // Only an explicit "sign in" may open the helper's login window. Merely opening
   // the Settings page must not prompt for four providers at once.
-  const auth = await apiToken(providerBaseUrl(provider, org), token, { interactive })
+  const auth = await apiToken(providerBaseUrl(provider, org), { token, link }, { interactive })
   if (!auth) throw await noCredential(provider, providerBaseUrl(provider, org))
+  const account = await describeAccount(provider, auth, org)
+  if (link || auth.source === 'token') return account
+  // A sign-in found a machine login: hand back the link for the profile to keep.
+  // gh is asked by account name, which is the GitHub login; git by the username
+  // the helper filed the credential under.
+  const login = auth.source === 'gh' ? account.login : auth.login || account.login
+  // A helper's username is whatever it filed; one that could not be asked for
+  // again safely is not linked (the account still shows, so the PAT route is open).
+  const found = validAccountLink({ source: auth.source, login })
+  return found ? { ...account, link: found } : account
+}
+
+/**
+ * The name of another profile that already holds the account a sign-in found —
+ * by its link, or by the account its own PAT signs in as — else null. Run here,
+ * not in the renderer, because only the main process can read every profile's
+ * token. A token that no longer resolves holds nobody.
+ */
+async function accountOwner(
+  provider: RepoHost,
+  login: string,
+  found: AccountLink,
+  exceptProfileId: string
+): Promise<string | null> {
+  const others = (await allProfileAuth(provider)).filter((p) => p.id !== exceptProfileId)
+  const linked = others.find((p) => linkHoldsAccount(p.link, login, found))
+  if (linked) return linked.name
+  for (const p of others) {
+    if (!p.token) continue
+    const org = provider === 'azure' ? p.azureOrg : undefined
+    if (provider === 'azure' && !org) continue
+    const account = await describeAccount(provider, { token: p.token, source: 'token' }, org).catch(() => null)
+    if (account && account.login.toLowerCase() === login.toLowerCase()) return p.name
+  }
+  return null
+}
+
+/** The account behind a resolved credential, for Settings → Integrations. */
+async function describeAccount(provider: RepoHost, auth: ApiAuth, org?: string): Promise<ConnectedAccount> {
 
   if (provider === 'github') {
     const user = await ghJson<{ login: string; name: string | null; avatar_url: string; html_url: string }>(
@@ -1790,6 +1841,7 @@ async function fetchConnectedAccount(
       auth.token
     ).catch(() => [])
     return {
+      source: auth.source,
       login: user.login,
       name: user.name ?? undefined,
       avatarUrl: user.avatar_url,
@@ -1813,6 +1865,7 @@ async function fetchConnectedAccount(
       ? ((await groupsRes.json()) as Array<{ full_path: string; avatar_url: string | null; web_url: string }>)
       : []
     return {
+      source: auth.source,
       login: user.username,
       name: user.name ?? undefined,
       avatarUrl: user.avatar_url ?? undefined,
@@ -1841,6 +1894,7 @@ async function fetchConnectedAccount(
         ).values
       : []
     return {
+      source: auth.source,
       login: user.username,
       name: user.display_name ?? undefined,
       avatarUrl: user.links?.avatar?.href,
@@ -1874,6 +1928,7 @@ async function fetchConnectedAccount(
     const email = user?.properties?.Account?.$value
     const displayName = user?.providerDisplayName
     return {
+      source: auth.source,
       login: email ?? displayName ?? orgName,
       name: displayName,
       orgs: [{ login: orgName, url: `https://dev.azure.com/${encodeURIComponent(orgName)}` }]
@@ -1888,6 +1943,7 @@ async function fetchConnectedAccount(
     throw err instanceof AzureAuthError ? new Error(azureAuthError(err.status)) : err
   })
   return {
+    source: auth.source,
     login: profile.emailAddress ?? profile.displayName,
     name: profile.displayName
   }
@@ -2224,8 +2280,18 @@ export function registerHostingHandlers(): void {
   ipcMain.handle('hosting:listOwners', (_e, provider: RepoHost, token: string, org?: string) =>
     listOwners(provider, token, org)
   )
-  ipcMain.handle('hosting:whoAmI', (_e, provider: RepoHost, token: string, org?: string, interactive?: boolean) =>
-    fetchConnectedAccount(provider, token, org, interactive)
+  ipcMain.handle(
+    'hosting:accountOwner',
+    (_e, provider: RepoHost, login: unknown, found: unknown, exceptProfileId: unknown) => {
+      const link = validAccountLink(found)
+      if (!link || typeof login !== 'string' || typeof exceptProfileId !== 'string') return null
+      return accountOwner(provider, login, link, exceptProfileId)
+    }
+  )
+  ipcMain.handle(
+    'hosting:whoAmI',
+    (_e, provider: RepoHost, token: string, org?: string, interactive?: boolean, link?: unknown) =>
+      fetchConnectedAccount(provider, token, org, interactive, validAccountLink(link))
   )
   ipcMain.handle('hosting:createRepo', (_e, provider: RepoHost, token: string, opts: CreateRepoOpts, org?: string) =>
     createRepository(provider, token, opts, org)

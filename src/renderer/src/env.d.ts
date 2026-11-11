@@ -223,8 +223,8 @@ interface PreloadApi {
     listOwners(provider: string, token: string, org?: string): Promise<unknown>
     whoAmI(provider: string, token: string, org?: string, interactive?: boolean): Promise<unknown>
     createRepo(provider: string, token: string, opts: unknown, org?: string): Promise<unknown>
-    listPRs(remoteUrl: string, tokens: unknown): Promise<unknown>
-    listReleases(remoteUrl: string, tokens: unknown): Promise<unknown>
+    listPRs(remoteUrl: string, tokens: unknown, repoPath?: string): Promise<unknown>
+    listReleases(remoteUrl: string, tokens: unknown, repoPath?: string): Promise<unknown>
     ciStatuses(remoteUrl: string, shas: string[], token: string): Promise<unknown>
     openCreatePR(remoteUrl: string, source: string, target: string): Promise<boolean>
     createPR(remoteUrl: string, tokens: unknown, opts: unknown): Promise<unknown>
@@ -238,7 +238,7 @@ interface PreloadApi {
     listNotifications(token: string, all?: boolean): Promise<unknown>
     markNotificationRead(token: string, id: string): Promise<unknown>
     markAllNotificationsRead(token: string): Promise<unknown>
-    listIssues(remoteUrl: string, tokens: unknown): Promise<unknown>
+    listIssues(remoteUrl: string, tokens: unknown, repoPath?: string): Promise<unknown>
     issueDetail(remoteUrl: string, tokens: unknown, number: number): Promise<unknown>
     setIssueState(remoteUrl: string, tokens: unknown, number: number, state: string): Promise<unknown>
     createIssue(remoteUrl: string, tokens: unknown, opts: unknown): Promise<unknown>
@@ -246,7 +246,7 @@ interface PreloadApi {
     updatePR(remoteUrl: string, tokens: unknown, number: number, patch: unknown): Promise<unknown>
     mergedPrHeads(remoteUrl: string, tokens: unknown, branches: string[]): Promise<unknown>
     ensureStack(remoteUrl: string, tokens: unknown, numbers: number[]): Promise<unknown>
-    listMilestones(remoteUrl: string, tokens: unknown): Promise<unknown>
+    listMilestones(remoteUrl: string, tokens: unknown, repoPath?: string): Promise<unknown>
     milestoneIssues(remoteUrl: string, tokens: unknown, number: number): Promise<unknown>
   }
   term: TermApi

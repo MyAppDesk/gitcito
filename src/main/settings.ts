@@ -181,6 +181,20 @@ export async function activeProfileToken(host: RepoHost, repoPath?: string): Pro
 }
 
 /**
+ * The token of the profile a repository is explicitly bound to, wrapped so
+ * "bound, but that profile has no token" stays distinct from "not bound".
+ * Undefined when the repository is not bound (or its profile was deleted).
+ * Decrypts only for a bound repository — an unbound one never needs it.
+ */
+export async function boundProfileToken(host: RepoHost, repoPath: string): Promise<{ token?: string } | undefined> {
+  const plain = await readSettings()
+  const boundId = plain.repoProfiles?.[repoPath]
+  if (!boundId || !plain.profiles.some((p) => p.id === boundId)) return undefined
+  const settings = await readSettingsWithSecrets('tokens')
+  return { token: settings.profiles.find((p) => p.id === boundId)?.[TOKEN_FIELD[host]] }
+}
+
+/**
  * The API key for one AI account of the active profile, or undefined when none
  * is configured.
  *

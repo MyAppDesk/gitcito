@@ -8,6 +8,8 @@ import {
   type GitCredential,
   type GitHubCliAuthStatus
 } from './credentials'
+import { activeProfileToken, boundProfileToken } from './settings'
+import { pickHostToken } from '../shared/hostToken'
 import { mergeStackSection } from '../shared/stackPr'
 import {
   type CiCacheEntry,
@@ -178,6 +180,35 @@ function isAuthFailure(err: unknown): boolean {
 export type HostTokens = { github?: string; azure?: string; gitlab?: string; bitbucket?: string }
 
 /**
+ * The PAT for a hosting call — precedence in `pickHostToken`. Resolved here
+ * rather than trusted from the renderer: its settings carry no tokens until
+ * Settings is opened, and it only knows the *active* profile, not the one a
+ * background tab's repository is bound to.
+ */
+async function profileToken(provider: RepoHost, sent: string | undefined, repoPath?: string): Promise<string | undefined> {
+  return pickHostToken({
+    sent,
+    bound: repoPath ? await boundProfileToken(provider, repoPath) : undefined,
+    active: () => activeProfileToken(provider)
+  })
+}
+
+/** `apiToken` for a repository's remote, with the profile resolution above. */
+async function remoteApiToken(
+  remoteUrl: string,
+  provider: RepoHost,
+  sent: string | undefined,
+  repoPath?: string
+): Promise<{ token: string; cred?: GitCredential } | null> {
+  return apiToken(remoteUrl, await profileToken(provider, sent, repoPath))
+}
+
+/** A repo path off the IPC boundary — only ever a lookup key into `repoProfiles`. */
+function asRepoPath(value: unknown): string | undefined {
+  return typeof value === 'string' && value ? value : undefined
+}
+
+/**
  * The token to use for a remote: the one configured in Settings, else whatever
  * git's credential helper already holds for that URL. Returns the borrowed
  * credential alongside it so an auth failure can evict it.
@@ -185,9 +216,10 @@ export type HostTokens = { github?: string; azure?: string; gitlab?: string; bit
 async function tokenForRemote(
   remoteUrl: string,
   provider: Exclude<HostingProvider, null>,
-  tokens: HostTokens
+  tokens: HostTokens,
+  repoPath?: string
 ): Promise<{ token: string; cred?: GitCredential } | null> {
-  return apiToken(remoteUrl, tokens[provider])
+  return remoteApiToken(remoteUrl, provider, tokens[provider], repoPath)
 }
 
 /**
@@ -239,7 +271,7 @@ async function tokenForProvider(
   token: string,
   org?: string
 ): Promise<{ token: string; cred?: GitCredential } | null> {
-  return apiToken(providerBaseUrl(provider, org), token)
+  return apiToken(providerBaseUrl(provider, org), await profileToken(provider, token))
 }
 
 /** Actionable GitHub setup text for the exact local CLI state we observed. */
@@ -296,11 +328,12 @@ export async function githubRepoError(
 
 async function listPullRequests(
   remoteUrl: string,
-  tokens: HostTokens
+  tokens: HostTokens,
+  repoPath?: string
 ): Promise<{ provider: HostingProvider; prs: PullRequest[] }> {
   const parsed = parseRemoteUrl(remoteUrl)
   if (!parsed) return { provider: null, prs: [] }
-  const auth = await tokenForRemote(remoteUrl, parsed.provider, tokens)
+  const auth = await tokenForRemote(remoteUrl, parsed.provider, tokens, repoPath)
 
   // GitLab merge requests
   if (parsed.provider === 'gitlab') {
@@ -476,14 +509,15 @@ async function listPullRequests(
 
 async function listReleases(
   remoteUrl: string,
-  tokens: { github?: string }
+  tokens: { github?: string },
+  repoPath?: string
 ): Promise<{ provider: HostingProvider; releases: ReleaseInfo[] }> {
   const parsed = parseRemoteUrl(remoteUrl)
   // Releases are a GitHub concept; Azure DevOps "releases" are pipelines, not this.
   if (!parsed || parsed.provider !== 'github') return { provider: parsed?.provider ?? null, releases: [] }
 
   const headers: Record<string, string> = { Accept: 'application/vnd.github+json' }
-  const auth = await apiToken(remoteUrl, tokens.github)
+  const auth = await remoteApiToken(remoteUrl, 'github', tokens.github, repoPath)
   if (auth) headers['Authorization'] = `Bearer ${auth.token}`
   const res = await fetch(`https://api.github.com/repos/${parsed.owner}/${parsed.repo}/releases?per_page=50`, {
     headers
@@ -682,7 +716,7 @@ async function ghRepoOf(
   if (!parsed || parsed.provider !== 'github') {
     throw new Error('This action currently supports GitHub repositories only.')
   }
-  const auth = await apiToken(remoteUrl, token)
+  const auth = await remoteApiToken(remoteUrl, 'github', token)
   if (!auth) throw await noCredential('GitHub', remoteUrl)
   return { owner: parsed.owner, repo: parsed.repo, token: auth.token }
 }
@@ -723,7 +757,7 @@ async function glProjectOf(
 ): Promise<{ base: string; auth: { token: string; cred?: GitCredential } }> {
   const parsed = parseRemoteUrl(remoteUrl)
   if (!parsed || parsed.provider !== 'gitlab') throw new Error('Not a GitLab repository.')
-  const auth = await apiToken(remoteUrl, token)
+  const auth = await remoteApiToken(remoteUrl, 'gitlab', token)
   if (!auth) throw await noCredential('GitLab', remoteUrl)
   const pid = encodeURIComponent(`${parsed.owner}/${parsed.repo}`)
   return { base: `https://gitlab.com/api/v4/projects/${pid}`, auth }
@@ -1122,11 +1156,12 @@ async function mergePr(
 
 async function listIssues(
   remoteUrl: string,
-  tokens: { github?: string }
+  tokens: { github?: string },
+  repoPath?: string
 ): Promise<{ provider: HostingProvider; issues: IssueInfo[] }> {
   const parsed = parseRemoteUrl(remoteUrl)
   if (!parsed || parsed.provider !== 'github') return { provider: parsed?.provider ?? null, issues: [] }
-  const auth = await apiToken(remoteUrl, tokens.github)
+  const auth = await remoteApiToken(remoteUrl, 'github', tokens.github, repoPath)
   if (!auth) return { provider: 'github', issues: [] }
   const data = await ghJson<
     Array<{
@@ -1157,11 +1192,12 @@ async function listIssues(
 
 async function listMilestones(
   remoteUrl: string,
-  tokens: { github?: string }
+  tokens: { github?: string },
+  repoPath?: string
 ): Promise<{ provider: HostingProvider; milestones: MilestoneInfo[] }> {
   const parsed = parseRemoteUrl(remoteUrl)
   if (!parsed || parsed.provider !== 'github') return { provider: parsed?.provider ?? null, milestones: [] }
-  const auth = await apiToken(remoteUrl, tokens.github)
+  const auth = await remoteApiToken(remoteUrl, 'github', tokens.github, repoPath)
   if (!auth) return { provider: 'github', milestones: [] }
   const data = await ghJson<
     Array<{
@@ -2017,7 +2053,7 @@ export async function fetchCiStatuses(
 ): Promise<Record<string, CiStatus>> {
   const parsed = parseRemoteUrl(remoteUrl)
   if (!parsed || parsed.provider !== 'github') return {}
-  const auth = await apiToken(remoteUrl, token)
+  const auth = await remoteApiToken(remoteUrl, 'github', token)
   if (!auth) return {}
   const account = ciAccountFor(auth.token)
   const keyOf = (sha: string): string => `${parsed.owner}/${parsed.repo}@${sha}`
@@ -2166,11 +2202,11 @@ export function registerHostingHandlers(): void {
   ipcMain.handle('hosting:createRepo', (_e, provider: RepoHost, token: string, opts: CreateRepoOpts, org?: string) =>
     createRepository(provider, token, opts, org)
   )
-  ipcMain.handle('hosting:listPRs', (_e, remoteUrl: string, tokens: { github?: string; azure?: string; gitlab?: string; bitbucket?: string }) =>
-    listPullRequests(remoteUrl, tokens)
+  ipcMain.handle('hosting:listPRs', (_e, remoteUrl: string, tokens: HostTokens, repoPath?: unknown) =>
+    listPullRequests(remoteUrl, tokens, asRepoPath(repoPath))
   )
-  ipcMain.handle('hosting:listReleases', (_e, remoteUrl: string, tokens: { github?: string }) =>
-    listReleases(remoteUrl, tokens)
+  ipcMain.handle('hosting:listReleases', (_e, remoteUrl: string, tokens: { github?: string }, repoPath?: unknown) =>
+    listReleases(remoteUrl, tokens, asRepoPath(repoPath))
   )
   ipcMain.handle('hosting:ciStatuses', (_e, remoteUrl: string, shas: string[], token: string) =>
     fetchCiStatuses(remoteUrl, shas, token)
@@ -2239,11 +2275,11 @@ export function registerHostingHandlers(): void {
   ipcMain.handle('hosting:markAllNotificationsRead', (_e, token: string) =>
     markAllNotificationsRead(token)
   )
-  ipcMain.handle('hosting:listIssues', (_e, remoteUrl: string, tokens: { github?: string }) =>
-    listIssues(remoteUrl, tokens)
+  ipcMain.handle('hosting:listIssues', (_e, remoteUrl: string, tokens: { github?: string }, repoPath?: unknown) =>
+    listIssues(remoteUrl, tokens, asRepoPath(repoPath))
   )
-  ipcMain.handle('hosting:listMilestones', (_e, remoteUrl: string, tokens: { github?: string }) =>
-    listMilestones(remoteUrl, tokens)
+  ipcMain.handle('hosting:listMilestones', (_e, remoteUrl: string, tokens: { github?: string }, repoPath?: unknown) =>
+    listMilestones(remoteUrl, tokens, asRepoPath(repoPath))
   )
   ipcMain.handle('hosting:milestoneIssues', (_e, remoteUrl: string, tokens: { github?: string }, number: number) =>
     milestoneIssues(remoteUrl, tokens, number)

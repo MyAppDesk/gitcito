@@ -275,10 +275,10 @@ const api = {
       ipcRenderer.invoke('hosting:whoAmI', provider, token, org, interactive),
     createRepo: (provider: string, token: string, opts: unknown, org?: string): Promise<unknown> =>
       ipcRenderer.invoke('hosting:createRepo', provider, token, opts, org),
-    listPRs: (remoteUrl: string, tokens: unknown): Promise<unknown> =>
-      ipcRenderer.invoke('hosting:listPRs', remoteUrl, tokens),
-    listReleases: (remoteUrl: string, tokens: unknown): Promise<unknown> =>
-      ipcRenderer.invoke('hosting:listReleases', remoteUrl, tokens),
+    listPRs: (remoteUrl: string, tokens: unknown, repoPath?: string): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:listPRs', remoteUrl, tokens, repoPath),
+    listReleases: (remoteUrl: string, tokens: unknown, repoPath?: string): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:listReleases', remoteUrl, tokens, repoPath),
     ciStatuses: (remoteUrl: string, shas: string[], token: string): Promise<unknown> =>
       ipcRenderer.invoke('hosting:ciStatuses', remoteUrl, shas, token),
     openCreatePR: (remoteUrl: string, source: string, target: string): Promise<boolean> =>
@@ -305,8 +305,8 @@ const api = {
       ipcRenderer.invoke('hosting:markNotificationRead', token, id),
     markAllNotificationsRead: (token: string): Promise<unknown> =>
       ipcRenderer.invoke('hosting:markAllNotificationsRead', token),
-    listIssues: (remoteUrl: string, tokens: unknown): Promise<unknown> =>
-      ipcRenderer.invoke('hosting:listIssues', remoteUrl, tokens),
+    listIssues: (remoteUrl: string, tokens: unknown, repoPath?: string): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:listIssues', remoteUrl, tokens, repoPath),
     uploadSshKey: (token: string, title: string, publicKey: string): Promise<unknown> =>
       ipcRenderer.invoke('hosting:uploadSshKey', token, title, publicKey),
     issueDetail: (remoteUrl: string, tokens: unknown, number: number): Promise<unknown> =>
@@ -323,8 +323,8 @@ const api = {
       ipcRenderer.invoke('hosting:mergedPrHeads', remoteUrl, tokens, branches),
     ensureStack: (remoteUrl: string, tokens: unknown, numbers: number[]): Promise<unknown> =>
       ipcRenderer.invoke('hosting:ensureStack', remoteUrl, tokens, numbers),
-    listMilestones: (remoteUrl: string, tokens: unknown): Promise<unknown> =>
-      ipcRenderer.invoke('hosting:listMilestones', remoteUrl, tokens),
+    listMilestones: (remoteUrl: string, tokens: unknown, repoPath?: string): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:listMilestones', remoteUrl, tokens, repoPath),
     milestoneIssues: (remoteUrl: string, tokens: unknown, number: number): Promise<unknown> =>
       ipcRenderer.invoke('hosting:milestoneIssues', remoteUrl, tokens, number)
   },

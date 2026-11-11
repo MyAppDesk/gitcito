@@ -305,6 +305,20 @@ async function noCredential(provider: string, remoteUrl?: string): Promise<Error
   )
 }
 
+/** What GitHub said about a failed request, beyond the status code. */
+export interface GithubFailure {
+  message?: string
+  rateLimited?: boolean
+}
+
+/** Read GitHub's own reason from a failed response — body `message` and the rate-limit header. */
+async function githubFailure(res: Response): Promise<GithubFailure> {
+  const rateLimited = (res.status === 403 || res.status === 429) && res.headers.get('x-ratelimit-remaining') === '0'
+  const body = (await res.json().catch(() => null)) as { message?: unknown } | null
+  const message = typeof body?.message === 'string' ? body.message.trim() : undefined
+  return { message: message || undefined, rateLimited }
+}
+
 /**
  * A failed read of one GitHub repository. GitHub answers 404, not 403, for a
  * private repository the caller cannot see, so a bare "404" sent people looking
@@ -314,9 +328,17 @@ export async function githubRepoError(
   status: number,
   slug: string,
   authed: boolean,
-  remoteUrl: string
+  remoteUrl: string,
+  why: GithubFailure = {}
 ): Promise<Error> {
-  if (status !== 404) return new Error(`GitHub API error (${status})`)
+  if (why.rateLimited) {
+    return new Error(
+      `GitHub API rate limit reached (${status})${authed ? '' : ' — unauthenticated requests get 60 an hour; add a token in Settings → Integrations to raise it'}.`
+    )
+  }
+  // A 403 on a repository the token can clone is almost always a permission the
+  // token lacks or an organization policy — GitHub says which, so pass it on.
+  if (status !== 404) return new Error(`GitHub API error (${status})${why.message ? `: ${why.message}` : ''}`)
   if (!authed) {
     const setup = (await noCredential('github', remoteUrl)).message
     return new Error(`GitHub cannot see ${slug} without signing in — it is probably private. ${setup}`)
@@ -406,7 +428,10 @@ async function listPullRequests(
     const res = await fetch(`https://api.github.com/repos/${parsed.owner}/${parsed.repo}/pulls?state=open&per_page=30`, {
       headers
     })
-    if (!res.ok) throw await githubRepoError(res.status, `${parsed.owner}/${parsed.repo}`, !!auth, remoteUrl)
+    if (!res.ok) {
+      const slug = `${parsed.owner}/${parsed.repo}`
+      throw await githubRepoError(res.status, slug, !!auth, remoteUrl, await githubFailure(res))
+    }
     const data = (await res.json()) as Array<{
       number: number
       title: string
@@ -522,7 +547,10 @@ async function listReleases(
   const res = await fetch(`https://api.github.com/repos/${parsed.owner}/${parsed.repo}/releases?per_page=50`, {
     headers
   })
-  if (!res.ok) throw await githubRepoError(res.status, `${parsed.owner}/${parsed.repo}`, !!auth, remoteUrl)
+  if (!res.ok) {
+    const slug = `${parsed.owner}/${parsed.repo}`
+    throw await githubRepoError(res.status, slug, !!auth, remoteUrl, await githubFailure(res))
+  }
   const data = (await res.json()) as Array<{
     id: number
     tag_name: string | null

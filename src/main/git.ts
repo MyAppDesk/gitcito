@@ -848,39 +848,40 @@ async function localBranches(repoPath: string): Promise<string[]> {
   return raw.split('\n').map((l) => l.trim()).filter(Boolean)
 }
 
+/**
+ * The username/password pair a provider's HTTPS git endpoint takes for a token.
+ * GitHub and GitLab accept the token with a fixed username, Azure DevOps with
+ * any (git sends an empty one), and a Bitbucket app password is stored as
+ * `username:app_password`.
+ */
+function basicAuthFor(host: RepoHost | undefined, token: string): { username: string; password: string } | null {
+  const t = token.trim()
+  if (!t) return null
+  switch (host) {
+    case 'github':
+    case 'gitlab':
+      return { username: 'oauth2', password: t }
+    case 'bitbucket': {
+      if (!t.includes(':')) return { username: 'x-token-auth', password: t }
+      const [user, ...rest] = t.split(':')
+      return { username: user, password: rest.join(':') }
+    }
+    case 'azure':
+      return { username: '', password: t }
+    default:
+      return null
+  }
+}
+
 /** Inject credentials into an https clone URL so private integration repos can be cloned non-interactively. */
 function authedCloneUrl(url: string, host?: string, token?: string): string {
   if (!token || !token.trim() || !/^https:\/\//i.test(url)) return url
+  const auth = basicAuthFor(host as RepoHost | undefined, token)
+  if (!auth) return url
   try {
     const u = new URL(url)
-    const t = token.trim()
-    switch (host) {
-      case 'github':
-        u.username = 'oauth2'
-        u.password = t
-        break
-      case 'gitlab':
-        u.username = 'oauth2'
-        u.password = t
-        break
-      case 'bitbucket':
-        // token stored as username:app_password
-        if (t.includes(':')) {
-          const [user, ...rest] = t.split(':')
-          u.username = user
-          u.password = rest.join(':')
-        } else {
-          u.username = 'x-token-auth'
-          u.password = t
-        }
-        break
-      case 'azure':
-        u.username = ''
-        u.password = t
-        break
-      default:
-        return url
-    }
+    u.username = auth.username
+    u.password = auth.password
     return u.toString()
   } catch {
     return url

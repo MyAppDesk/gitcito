@@ -66,7 +66,7 @@ git actually is.
 
 | | |
 |---|---|
-| **[Commit composer](docs/help/committing.md)** | Conventional, Gitmoji, Ticket, Plain… even Caveman. Co-author picker, message recall, live linter. Amend and undo from the graph menu prefill it. |
+| **[Commit composer](docs/help/committing.md)** | Conventional, Gitmoji (all 75, searchable), Gitmoji + Conventional, Ticket, Plain… even Caveman. Co-author picker, message recall, live linter. Amend and undo from the graph menu prefill it. |
 | **[Staging](docs/help/staging.md)** | Whole files, hunks, or **individual lines** — and the same precision to [unstage, discard, revert or apply](docs/help/staging.md#hunk-and-line-actions) one hunk or a few lines, each undoable. File-list headers split the count by modified / added / deleted. |
 | **[Conflict resolver](docs/help/conflicts.md)** | Three panes, per-line picking, a conflict-by-conflict navigator, editable output. |
 | **[Xcode project merge](docs/help/conflicts.md)** | A `project.pbxproj` conflict merged by object identity instead of by line — and refused, by name, where a build setting genuinely diverged. |

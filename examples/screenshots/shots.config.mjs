@@ -816,6 +816,31 @@ export const shots = [
     }
   },
   {
+    // Gitmoji + Conventional: the subject carries both, and the picker beside it
+    // is open on a search, so the shot shows the style and the 75-entry list.
+    out: 'gitmoji-picker',
+    repos: ['commit-template'],
+    themes: ['dark'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['commit-template']
+      await page.evaluate(() => {
+        window.__shot.settings.getState().update((s) => ({
+          ...s,
+          profiles: s.profiles.map((p) =>
+            p.id === s.activeProfileId ? { ...p, ai: { ...p.ai, commitStyle: 'gitmoji-conventional' } } : p
+          )
+        }))
+      })
+      await page.evaluate((p) => window.__shot.repo.getState().select(p, { type: 'wip' }), repo)
+      await page.waitForTimeout(500)
+      await page.fill('.commit-summary', '🐛 fix(graph): keep the commits below a signed one')
+      await page.click('.commit-gitmoji')
+      await page.waitForTimeout(200)
+      await page.fill('.gitmoji-search', 'fix')
+      await page.waitForTimeout(300)
+    }
+  },
+  {
     // Integrated terminal — a real PTY (xterm + node-pty) docked under the repo.
     out: 'terminal',
     repos: ['deep-history-monorepo'],

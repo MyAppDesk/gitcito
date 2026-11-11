@@ -16,11 +16,50 @@ keywords: commit message composer conventional gitmoji ticket amend template co-
 |---|---|
 | **Conventional** | `feat(api)!: add rate limiting` — 型を選ぶドロップダウン付き |
 | **Gitmoji** | `✨ add rate limiting` — 絵文字ピッカー付き |
+| **Gitmoji + Conventional** | `✨ feat(api): add rate limiting`——絵文字ピッカー*と*種類のドロップダウン |
 | **チケット** | `ABC-123: add rate limiting` — ブランチ名から自動で埋まる |
 | **そのまま** · **自動** | 打ったとおり。自動は形を AI に決めさせる |
 | **原始人** · **俳句** | 名前のとおりのもの |
 
 ![コミットテンプレートから内容が埋まった入力欄](../../screenshots/commit-template.webp)
+
+### Gitmoji
+
+[Gitmoji](https://gitmoji.dev) は件名の前に絵文字を付けて、履歴をひと目で読める
+ようにします。🐛 は修正、✨ は機能追加、🔥 は削除です。どちらの gitmoji スタイル
+でも、絵文字ボタンは件名の入力欄のすぐ横にあります。ボタンを押すと **公式の
+gitmoji 75 個すべて** が開き、絵文字、`:コード:`（gitmoji-cli の利用者が入力する
+もの）、またはあなたの言語での意味で検索できます。
+
+**Gitmoji + Conventional** は種類と絵文字を連動させます。種類を選ぶと絵文字が
+付き、種類を変えると絵文字も変わります。ただし、絵文字を自分で選んだ場合
+（たとえば `fix` に 🚑️）は決して上書きされません。
+
+| 種類 | Emoji | 種類 | Emoji |
+|---|---|---|---|
+| `feat` | ✨ | `test` | ✅ |
+| `fix` | 🐛 | `build` | 📦️ |
+| `docs` | 📝 | `ci` | 👷 |
+| `style` | 🎨 | `chore` | 🔧 |
+| `refactor` | ♻️ | `revert` | ⏪️ |
+| `perf` | ⚡️ | | |
+
+AI も同じ形で書きます。モデルが絵文字を忘れたり `:shortcode:` で答えたりしても、
+件名は入力欄に入る前に修正されます。
+
+他のツールが `:sparkles: add login` として書いたコミットは、グラフ、コミットの
+詳細、履歴の画面で `✨ add login` として**表示**されます。
+
+制限:
+
+- ピッカーは常に **unicode** の絵文字を書き込み、`:shortcode:` は使いません。
+- shortcode の変換は表示だけです。コミット自体は書き換えられず、履歴の検索は
+  コミットされたときのテキストに一致します。
+- 対象は gitmoji だけです。ほかの絵文字で始まる件名はそのままです。
+- `commit-msg` フックが標準の Conventional プリセットで commitlint を実行する
+  リポジトリでは、先頭の絵文字が拒否されます。これは Gitcito ではなくフックの
+  ルールです。commitlint を gitmoji 向けに設定するか、そこでは素の Conventional を
+  使ってください。
 
 ## 入力欄がやってくれること
 

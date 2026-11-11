@@ -16,11 +16,51 @@ Kies er een in de instellingen; de opsteller past zich eraan aan.
 |---|---|
 | **Conventional** | `feat(api)!: add rate limiting` — met een typekeuzelijst |
 | **Gitmoji** | `✨ add rate limiting` — met een emoji-kiezer |
+| **Gitmoji + Conventional** | `✨ feat(api): add rate limiting` — emoji-kiezer *én* type-keuzelijst |
 | **Ticket** | `ABC-123: add rate limiting` — voorgevuld vanuit de branchnaam |
 | **Plain** · **Auto** | Wat je maar typt; bij Auto bepaalt de AI de vorm |
 | **Caveman** · **Haiku** | Precies wat je erbij voorstelt |
 
 ![Opsteller voorgevuld vanuit een commitsjabloon](../../screenshots/commit-template.webp)
+
+### Gitmoji
+
+[Gitmoji](https://gitmoji.dev) zet een emoji voor het onderwerp, zodat een
+geschiedenis in één oogopslag leesbaar is: 🐛 fixes, ✨ features, 🔥
+verwijderingen. Bij beide gitmoji-stijlen staat de emoji-knop direct naast het
+onderwerpveld. Die opent **alle 75 officiële gitmoji**, doorzoekbaar op emoji,
+op `:code:` (wat gitmoji-cli-gebruikers typen) of op betekenis in je eigen taal.
+
+**Gitmoji + Conventional** houdt type en emoji gelijk. Kies een type en de emoji
+volgt; verander het type en hij verandert mee — tenzij je de emoji zelf koos
+(🚑️ bij een `fix`, bijvoorbeeld). Die wordt nooit overschreven.
+
+| Type | Emoji | Type | Emoji |
+|---|---|---|---|
+| `feat` | ✨ | `test` | ✅ |
+| `fix` | 🐛 | `build` | 📦️ |
+| `docs` | 📝 | `ci` | 👷 |
+| `style` | 🎨 | `chore` | 🔧 |
+| `refactor` | ♻️ | `revert` | ⏪️ |
+| `perf` | ⚡️ | | |
+
+De AI schrijft in dezelfde vorm. Vergeet een model de emoji of antwoordt het met
+een `:shortcode:`, dan wordt het onderwerp gecorrigeerd voordat het in het veld
+komt.
+
+Commits die andere tools schreven als `:sparkles: add login` worden in de graaf,
+de commitdetails en de geschiedenisweergaven **getoond** als `✨ add login`.
+
+Grenzen:
+
+- De kiezer schrijft altijd de **unicode**-emoji, nooit een `:shortcode:`.
+- Shortcodes worden alleen voor weergave omgezet. De commit zelf wordt niet
+  herschreven, en zoeken in de geschiedenis vindt de tekst zoals die gecommit is.
+- Alleen gitmoji tellen: een onderwerp dat met een andere emoji begint, blijft zoals het is.
+- Een repository waarvan de `commit-msg`-hook commitlint met de standaard
+  Conventional-preset draait, weigert een emoji vooraan. Dat is de regel van de
+  hook, niet van Gitcito — stel commitlint in voor gitmoji of gebruik daar puur
+  Conventional.
 
 ## Wat de opsteller voor je doet
 

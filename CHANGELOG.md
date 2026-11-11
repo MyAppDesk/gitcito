@@ -1,4 +1,15 @@
 
+## [4.23.0](https://github.com/MyAppDesk/gitcito/compare/v4.22.1...v4.23.0) (2026-11-11)
+
+
+### Features
+
+* **composer:** full gitmoji catalogue, picker and Gitmoji + Conventional style ([#81](https://github.com/MyAppDesk/gitcito/issues/81)) ([e05a946a](https://github.com/MyAppDesk/gitcito/commit/e05a946ada2d1e977c432c9549f791079582f911))
+
+### Bug Fixes
+
+* **terminal:** reschedule dropped snap-backs, debounce anchor markers, pin reattach offset ([#80](https://github.com/MyAppDesk/gitcito/issues/80)) ([0a30d824](https://github.com/MyAppDesk/gitcito/commit/0a30d824740836f975efb81b70fd4cfa5c88e9b0))
+
 
 ## [4.22.1](https://github.com/MyAppDesk/gitcito/compare/v4.22.0...v4.22.1) (2026-11-10)
 

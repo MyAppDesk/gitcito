@@ -7019,13 +7019,25 @@ body.col-resizing .node-ava {
   color: var(--text-0);
   font-weight: 600;
 }
+/* The delete button sits in space the row reserves for it, beside the active
+   profile's check rather than on top of it: muted at rest, red on hover. */
+.profile-row:has(.profile-delete) .profile-item {
+  padding-inline-end: 30px;
+}
 .profile-delete {
   position: absolute;
   inset-inline-end: 4px;
-  opacity: 0;
-  transition: opacity 0.12s;
+  opacity: 0.45;
+  transition:
+    opacity 0.12s,
+    color 0.12s,
+    background 0.12s;
 }
-.profile-row:hover .profile-delete {
+.profile-row:hover .profile-delete,
+.profile-delete:focus-visible {
+  opacity: 0.8;
+}
+.profile-delete:hover {
   opacity: 1;
 }
 .profile-item span {

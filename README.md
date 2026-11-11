@@ -135,7 +135,7 @@ you already pay for instead of an API key.
 [rebindable shortcuts](docs/help/keyboard.md) ·
 [a native macOS menu bar](docs/help/menu-bar.md) that shows the keys you actually
 bound · [profiles](docs/help/profiles.md)
-for separate identities ·
+for separate identities and accounts, each linking its own ·
 [author avatars](docs/help/avatars.md) — Gravatar where it exists, a generated
 blob drawn offline where it does not, and a title-bar face that reacts to
 conflicts, half-finished rebases, a detached HEAD and piles left to grow ·

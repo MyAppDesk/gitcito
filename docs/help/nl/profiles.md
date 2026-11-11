@@ -17,6 +17,15 @@ twee GitHub-accounts hebt.
 
 ![Een profiel: git-identiteit aan de ene kant, de integratietokens aan de andere](../../screenshots/settings-profiles.webp)
 
+## Elk profiel zijn eigen accounts
+
+Naast een token kan een profiel een login **koppelen** die al op de machine
+staat — uit de credential helper van git of de GitHub CLI — in Instellingen →
+Integraties. Een koppeling hoort bij één profiel: een nieuw profiel begint
+ontkoppeld, en een account dat een ander profiel al heeft, wordt geweigerd. Zo
+kunnen twee profielen twee GitHub- (of Azure DevOps-)accounts naast elkaar
+hebben. Zie [Hosting](hosting.md).
+
 ## Binding per repository
 
 Een repository kan **aan een profiel gebonden** worden, zodat een fetch op de

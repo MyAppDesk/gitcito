@@ -16,6 +16,13 @@ keywords: profile 配置档 profiles identity 身份 git user email 邮箱 token
 
 ![一个配置档：一边是 git 身份，另一边是它的集成令牌](../../screenshots/settings-profiles.webp)
 
+## 每个配置文件有自己的账号
+
+除了令牌，配置文件还可以在 设置 → 集成 中**关联**机器上已有的登录——来自 git 的
+credential helper 或 GitHub CLI。一个关联只属于一个配置文件：新配置文件一开始是
+未连接的，已被其他配置文件持有的账号会被拒绝，因此两个配置文件可以并存两个
+GitHub（或 Azure DevOps）账号。参见[托管](hosting.md)。
+
 ## 按仓库绑定
 
 一个仓库可以**绑定到某个配置档**上，这样对它做后台获取时，用的永远是那个正确的

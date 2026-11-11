@@ -17,6 +17,15 @@ quand vous avez deux comptes GitHub.
 
 ![Un profil : l'identité git d'un côté, ses jetons d'intégration de l'autre](../../screenshots/settings-profiles.webp)
 
+## Chaque profil, ses propres comptes
+
+En plus d'un jeton, un profil peut **lier** une connexion déjà présente sur la
+machine — du credential helper de git ou de GitHub CLI — dans Réglages →
+Intégrations. Un lien appartient à un seul profil : un nouveau profil commence
+déconnecté, et un compte qu'un autre profil détient déjà est refusé, si bien que
+deux profils peuvent tenir deux comptes GitHub (ou Azure DevOps) côte à côte.
+Voir [Hébergement](hosting.md).
+
 ## Rattachement par dépôt
 
 Un dépôt peut être **rattaché à un profil**, pour qu'une récupération en arrière-

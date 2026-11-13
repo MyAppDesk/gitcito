@@ -1,4 +1,19 @@
 
+
+## [4.24.0](https://github.com/MyAppDesk/gitcito/compare/v4.23.0...v4.24.0) (2026-11-13)
+
+
+### Bug Fixes
+
+* **git:** fetch and push as the profile, without writing the token to disk ([#84](https://github.com/MyAppDesk/gitcito/issues/84)) ([5201233](https://github.com/MyAppDesk/gitcito/commit/5201233ee7861c594c5a6de6184b9b772c5bb509))
+* one linked account per profile, and Settings dialogs that keep Settings open ([#83](https://github.com/MyAppDesk/gitcito/issues/83)) ([2694b42](https://github.com/MyAppDesk/gitcito/commit/2694b426da8a005c459716d10d40f697a75ea9e7))
+* **terminal:** keep repo terminal containers mounted, hide instead of unmount ([#85](https://github.com/MyAppDesk/gitcito/issues/85)) ([f210225](https://github.com/MyAppDesk/gitcito/commit/f2102250526144aeed67c67a90eca6aa2ceddf9e))
+
+
+### Performance Improvements
+
+* **git:** batch discard and undo — probes instead of per-file spawns ([#86](https://github.com/MyAppDesk/gitcito/issues/86)) ([83adc47](https://github.com/MyAppDesk/gitcito/commit/83adc4769cec364d7238740632d600106198890b))
+
 ## [4.23.0](https://github.com/MyAppDesk/gitcito/compare/v4.22.1...v4.23.0) (2026-11-11)
 
 

@@ -989,6 +989,95 @@ async function containedPath(repoPath: string, rel: string): Promise<string | nu
 }
 
 /**
+ * Paths out of a batched `ls-*` probe that git knows, parsed from -z output.
+ * Probes are read-only and answer for every pathspec in one spawn — the cheap
+ * classifier behind discard/restore batching (each spawned git costs tens of
+ * ms, so per-file probes would defeat the point). `--literal-pathspecs` keeps
+ * file names with glob characters from matching their neighbors.
+ */
+async function probePaths(repoPath: string, args: string[]): Promise<Set<string>> {
+  const out = await runGit(repoPath, ['--literal-pathspecs', ...args]).catch(() => '')
+  return new Set(out.split('\0').filter(Boolean))
+}
+
+/**
+ * Does a pathspec — usually a file, but the UI also hands over folder prefixes
+ * like `dir/` — cover anything in a probe result? A folder prefix never
+ * appears verbatim in `ls-files`/`ls-tree` output; its children do.
+ */
+function pathspecMatches(set: Set<string>, pathspec: string): boolean {
+  if (set.has(pathspec)) return true
+  const prefix = pathspec.endsWith('/') ? pathspec : `${pathspec}/`
+  for (const p of set) if (p.startsWith(prefix)) return true
+  return false
+}
+
+/** restoreWork for a single path — the fallback when a batched restore fails. */
+async function restoreWorkPath(repoPath: string, saved: SavedWork, path: string): Promise<void> {
+  const full = await containedPath(repoPath, path)
+  if (!full) throw new Error(`Refusing to restore outside the repository: ${path}`)
+  // A path staged neither then nor now matches nothing, which git reports
+  // as an error; there is simply nothing to put back in the index.
+  await runGit(repoPath, ['--literal-pathspecs', 'restore', '--source', saved.index, '--staged', '--', path])
+    .catch((err: Error) => {
+      if (!/did not match/i.test(err.message)) throw err
+    })
+  const existed = (
+    await runGit(repoPath, ['--literal-pathspecs', 'ls-tree', '--name-only', saved.worktree, '--', path])
+  ).trim()
+  if (existed) {
+    await runGit(repoPath, ['--literal-pathspecs', 'restore', '--source', saved.worktree, '--worktree', '--', path])
+  } else {
+    await rm(full, { force: true }).catch(() => {})
+  }
+}
+
+/**
+ * Discard one tracked path — the fallback when a batched checkout fails.
+ * Per-file so one tricky path doesn't fail the rest:
+ *  1. `checkout -- f` restores a modified file from the index (keeps staged
+ *     changes — the common case, unchanged behavior).
+ *  2. staged deletions/renames aren't in the index, so fall back to
+ *     `checkout HEAD -- f` to bring the file back from the last commit.
+ *  3. staged-new files don't exist in HEAD either, so drop them from the
+ *     index and disk with `rm -f`.
+ */
+async function discardOne(repoPath: string, f: string): Promise<void> {
+  const git = gitFor(repoPath)
+  try {
+    await git.raw(['checkout', '--', f])
+    return
+  } catch {
+    /* not in index — try HEAD */
+  }
+  try {
+    await git.raw(['checkout', 'HEAD', '--', f])
+    return
+  } catch {
+    /* not in HEAD — staged-new */
+  }
+  // Staged-new: out of the index and off the disk. When it is no longer in
+  // the index either (Discard all unstages first), it is a file git never
+  // had — remove it the way discarding an untracked file would.
+  const rmError = await git.raw(['rm', '-f', '--', f]).then(() => null, (err: Error) => err)
+  if (!rmError) return
+  // Only a path git truly does not know is deleted by hand. Anything else
+  // (a held index.lock, a path still in the index or in HEAD) is a real
+  // failure, and wiping the file from disk would lose it for good.
+  const known = async (args: string[]): Promise<boolean> =>
+    runGit(repoPath, args).then(() => true, () => false)
+  if (
+    (await known(['--literal-pathspecs', 'ls-files', '--error-unmatch', '--', f])) ||
+    (await known(['cat-file', '-e', `HEAD:${f}`]))
+  ) {
+    throw rmError
+  }
+  const full = await containedPath(repoPath, f)
+  if (!full) throw new Error(`Refusing to delete outside the repository: ${f}`)
+  await rm(full, { force: true })
+}
+
+/**
  * Undo the initial commit: leave an unborn branch, keep the working tree,
  * unstage everything. Deleted worktree files are restored first so they are
  * not lost when the index is emptied.
@@ -3599,8 +3688,11 @@ export const gitService = {
    * discard, so `restoreWork` can undo it exactly. Writes objects only: no ref,
    * the real index untouched. Null when there is nothing to save, or when the
    * index cannot be written as a tree (a merge still has conflicts).
+   * With `paths` (the paths about to be discarded) the disk sweep is scoped to
+   * them — `restoreWork` only ever restores those, so rehashing every dirty
+   * file in the repo would be work thrown away.
    */
-  async captureWork(repoPath: string): Promise<SavedWork | null> {
+  async captureWork(repoPath: string, paths?: string[]): Promise<SavedWork | null> {
     const index = (await runGit(repoPath, ['write-tree']).catch(() => '')).trim()
     if (!index) return null
     const gitDir = (await runGit(repoPath, ['rev-parse', '--absolute-git-dir'])).trim()
@@ -3615,7 +3707,7 @@ export const gitService = {
       const realIndex = resolvePath(repoPath, (await runGit(repoPath, ['rev-parse', '--git-path', 'index'])).trim())
       const copied = await cp(realIndex, tmpIndex).then(() => true, () => false)
       if (!copied) await runGit(repoPath, ['read-tree', index], env)
-      await runGit(repoPath, ['add', '-A'], env)
+      await runGit(repoPath, ['--literal-pathspecs', 'add', '-A', ...(paths?.length ? ['--', ...paths] : [])], env)
       const worktree = (await runGit(repoPath, ['write-tree'], env)).trim()
       return worktree ? { index, worktree } : null
     } catch {
@@ -3632,23 +3724,42 @@ export const gitService = {
    */
   async restoreWork(repoPath: string, saved: SavedWork, paths: string[]): Promise<void> {
     if (!isObjectId(saved.index) || !isObjectId(saved.worktree)) throw new Error('Invalid saved work')
+    // The containment check stays per path — it is cheap fs work and it is the
+    // guard that keeps a crafted path from reaching outside the repository.
     for (const path of paths) {
-      const full = await containedPath(repoPath, path)
-      if (!full) throw new Error(`Refusing to restore outside the repository: ${path}`)
-      // A path staged neither then nor now matches nothing, which git reports
-      // as an error; there is simply nothing to put back in the index.
-      await runGit(repoPath, ['--literal-pathspecs', 'restore', '--source', saved.index, '--staged', '--', path])
-        .catch((err: Error) => {
-          if (!/did not match/i.test(err.message)) throw err
-        })
-      const existed = (
-        await runGit(repoPath, ['--literal-pathspecs', 'ls-tree', '--name-only', saved.worktree, '--', path])
-      ).trim()
-      if (existed) {
-        await runGit(repoPath, ['--literal-pathspecs', 'restore', '--source', saved.worktree, '--worktree', '--', path])
-      } else {
-        await rm(full, { force: true }).catch(() => {})
+      if (!(await containedPath(repoPath, path))) {
+        throw new Error(`Refusing to restore outside the repository: ${path}`)
       }
+    }
+    // Two probes classify all paths at once; two restores then move them all.
+    // The old per-file loop paid ~3 spawns per path — undo of a large discard
+    // felt as slow as the discard itself.
+    const inIndexTree = await probePaths(repoPath, [
+      'ls-tree', '-r', '-z', '--name-only', saved.index, '--', ...paths
+    ])
+    const inWorkTree = await probePaths(repoPath, [
+      'ls-tree', '-r', '-z', '--name-only', saved.worktree, '--', ...paths
+    ])
+    const staged = paths.filter((p) => pathspecMatches(inIndexTree, p))
+    const worktree = paths.filter((p) => pathspecMatches(inWorkTree, p))
+    try {
+      if (staged.length) {
+        await runGit(repoPath, ['--literal-pathspecs', 'restore', '--source', saved.index, '--staged', '--', ...staged])
+      }
+      if (worktree.length) {
+        await runGit(repoPath, ['--literal-pathspecs', 'restore', '--source', saved.worktree, '--worktree', '--', ...worktree])
+      }
+    } catch {
+      // A batch restore is all-or-nothing — one odd path fails it whole, so
+      // replay every path through the per-file tolerance the old loop had.
+      for (const path of paths) await restoreWorkPath(repoPath, saved, path)
+      return
+    }
+    // Paths absent from the saved worktree tree did not exist then — remove.
+    for (const path of paths) {
+      if (pathspecMatches(inWorkTree, path)) continue
+      const full = await containedPath(repoPath, path)
+      if (full) await rm(full, { force: true }).catch(() => {})
     }
   },
 
@@ -4529,41 +4640,48 @@ export const gitService = {
       await git.clean('f', ['--', ...files])
       return
     }
-    // Per-file so one tricky path doesn't fail the whole batch:
-    //  1. `checkout -- f` restores a modified file from the index (keeps staged
-    //     changes — the common case, unchanged behavior).
-    //  2. staged deletions/renames aren't in the index, so fall back to
-    //     `checkout HEAD -- f` to bring the file back from the last commit.
-    //  3. staged-new files don't exist in HEAD either, so drop them from the
-    //     index and disk with `rm -f`.
-    for (const f of files) {
-      try {
-        await git.raw(['checkout', '--', f])
-        continue
-      } catch {
-        /* not in index — try HEAD */
+    // Batched, not per-file: each spawned git costs tens of ms, and the old
+    // cascade paid up to five per path — a 20-file discard could spend seconds
+    // on process spawns alone. Two read-only probes classify every pathspec in
+    // one go, then one checkout per class does the work:
+    //  - in the index: `checkout --` restores the staged version (the common
+    //    case — staged changes are kept, exactly as before).
+    //  - only in HEAD (staged deletions/renames): `checkout HEAD --` brings the
+    //    file back from the last commit.
+    //  - in neither: a staged-new file Discard all just unstaged, or a path git
+    //    truly never had — deleted like an untracked file.
+    // A batch checkout is all-or-nothing — one odd path (unmerged, vanished
+    // mid-op) fails it whole — so a failure replays that class through the
+    // per-file cascade, which keeps its exact tolerances for the rare file.
+    const inIndex = await probePaths(repoPath, ['ls-files', '-z', '--', ...files])
+    const inHead = await probePaths(repoPath, [
+      'ls-tree', '-r', '-z', '--name-only', 'HEAD', '--', ...files
+    ])
+    const fromIndex = files.filter((f) => pathspecMatches(inIndex, f))
+    const fromHead = files.filter((f) => !pathspecMatches(inIndex, f) && pathspecMatches(inHead, f))
+    const unknown = files.filter((f) => !pathspecMatches(inIndex, f) && !pathspecMatches(inHead, f))
+    try {
+      if (fromIndex.length) {
+        await runGit(repoPath, ['--literal-pathspecs', 'checkout', '--', ...fromIndex])
       }
-      try {
-        await git.raw(['checkout', 'HEAD', '--', f])
-        continue
-      } catch {
-        /* not in HEAD — staged-new */
+      if (fromHead.length) {
+        await runGit(repoPath, ['--literal-pathspecs', 'checkout', 'HEAD', '--', ...fromHead])
       }
-      // Staged-new: out of the index and off the disk. When it is no longer in
-      // the index either (Discard all unstages first), it is a file git never
-      // had — remove it the way discarding an untracked file would.
-      const rmError = await git.raw(['rm', '-f', '--', f]).then(() => null, (err: Error) => err)
-      if (!rmError) continue
-      // Only a path git truly does not know is deleted by hand. Anything else
-      // (a held index.lock, a path still in the index or in HEAD) is a real
-      // failure, and wiping the file from disk would lose it for good.
-      const known = async (args: string[]): Promise<boolean> =>
-        runGit(repoPath, args).then(() => true, () => false)
-      if (
-        (await known(['--literal-pathspecs', 'ls-files', '--error-unmatch', '--', f])) ||
-        (await known(['cat-file', '-e', `HEAD:${f}`]))
-      ) {
-        throw rmError
+    } catch {
+      for (const f of [...fromIndex, ...fromHead]) await discardOne(repoPath, f)
+    }
+    if (!unknown.length) return
+    // Before a filesystem delete, one more batched membership check catches a
+    // path git learned between the probes and now — anything git knows is a
+    // real failure to report, not a file to wipe by hand.
+    const lateIndex = await probePaths(repoPath, ['ls-files', '-z', '--', ...unknown])
+    const lateHead = await probePaths(repoPath, [
+      'ls-tree', '-r', '-z', '--name-only', 'HEAD', '--', ...unknown
+    ])
+    for (const f of unknown) {
+      if (pathspecMatches(lateIndex, f) || pathspecMatches(lateHead, f)) {
+        await discardOne(repoPath, f)
+        continue
       }
       const full = await containedPath(repoPath, f)
       if (!full) throw new Error(`Refusing to delete outside the repository: ${f}`)

@@ -288,7 +288,7 @@ export const gitApi = {
     call<void>('stashApplyFiles', path, sha, tracked, untracked),
   restoreFromCommit: (path: string, hash: string, paths: string[]) =>
     call<void>('restoreFromCommit', path, hash, paths),
-  captureWork: (path: string) => call<SavedWork | null>('captureWork', path),
+  captureWork: (path: string, paths?: string[]) => call<SavedWork | null>('captureWork', path, paths),
   restoreWork: (path: string, saved: SavedWork, paths: string[]) => call<void>('restoreWork', path, saved, paths),
 
   stage: (path: string, files: string[]) => call<void>('stage', path, files),

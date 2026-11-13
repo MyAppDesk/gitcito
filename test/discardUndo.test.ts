@@ -42,6 +42,48 @@ describe('discard all', () => {
     expect(existsSync(join(dir, 'added.txt'))).toBe(false)
     expect(git('status', '--porcelain').trim()).toBe('')
   })
+
+  it('discards a mixed batch in one call — modified, staged deletion, staged-new', async () => {
+    const { dir, git } = repo()
+    writeFileSync(join(dir, 'a.txt'), 'modified\n')
+    git('rm', '-q', 'keep.txt')
+    writeFileSync(join(dir, 'added.txt'), 'staged new\n')
+    git('add', 'added.txt')
+    await discardAll(dir, ['a.txt', 'keep.txt', 'added.txt'], [])
+    expect(git('status', '--porcelain').trim()).toBe('')
+    expect(readFileSync(join(dir, 'a.txt'), 'utf8').replace(/\r\n/g, '\n')).toBe('one\n')
+    expect(readFileSync(join(dir, 'keep.txt'), 'utf8').replace(/\r\n/g, '\n')).toBe('keep\n')
+    expect(existsSync(join(dir, 'added.txt'))).toBe(false)
+  })
+
+  it('restores a staged file to its staged version, not HEAD', async () => {
+    const { dir, git } = repo()
+    writeFileSync(join(dir, 'a.txt'), 'one\nstaged\n')
+    git('add', 'a.txt')
+    writeFileSync(join(dir, 'a.txt'), 'one\nstaged\nunstaged\n')
+    await gitService.discard(dir, ['a.txt'], false)
+    expect(readFileSync(join(dir, 'a.txt'), 'utf8').replace(/\r\n/g, '\n')).toBe('one\nstaged\n')
+  })
+
+  it('resolves an unmerged path to HEAD through the per-file fallback', async () => {
+    const { dir, git } = repo()
+    git('checkout', '-qb', 'side')
+    writeFileSync(join(dir, 'a.txt'), 'side\n')
+    git('commit', '-qam', 'side')
+    git('checkout', '-q', 'main')
+    writeFileSync(join(dir, 'a.txt'), 'main\n')
+    git('commit', '-qam', 'main')
+    try {
+      execFileSync('git', ['-C', dir, 'merge', 'side'], { stdio: 'ignore' })
+    } catch {
+      /* the conflict is the point */
+    }
+    // `checkout --` refuses an unmerged path, so the batch fails and the
+    // cascade's `checkout HEAD --` resolves the conflict to the HEAD version.
+    await gitService.discard(dir, ['a.txt'], false)
+    expect(git('status', '--porcelain').trim()).toBe('')
+    expect(readFileSync(join(dir, 'a.txt'), 'utf8').replace(/\r\n/g, '\n')).toBe('main\n')
+  })
 })
 
 describe('discard undo', () => {
@@ -66,6 +108,24 @@ describe('discard undo', () => {
     expect(git('diff', '--cached')).toBe(stagedBefore)
     expect(readFileSync(join(dir, 'a.txt'), 'utf8')).toBe('one\nstaged\nunstaged\n')
     expect(readFileSync(join(dir, 'new.txt'), 'utf8')).toBe('untracked\n')
+  })
+
+  it('captures only the given paths and still undoes the discard exactly', async () => {
+    const { dir, git } = repo()
+    writeFileSync(join(dir, 'a.txt'), 'one\nstaged\n')
+    git('add', 'a.txt')
+    writeFileSync(join(dir, 'a.txt'), 'one\nstaged\nunstaged\n')
+    // Dirty but not being discarded — scoped capture does not rehash it, and
+    // restore must leave it alone either way.
+    writeFileSync(join(dir, 'keep.txt'), 'other dirty\n')
+    const statusBefore = git('status', '--porcelain')
+    const saved = await gitService.captureWork(dir, ['a.txt'])
+    expect(saved).not.toBeNull()
+    await gitService.discard(dir, ['a.txt'], false)
+    await gitService.restoreWork(dir, saved!, ['a.txt'])
+    expect(git('status', '--porcelain')).toBe(statusBefore)
+    expect(readFileSync(join(dir, 'a.txt'), 'utf8').replace(/\r\n/g, '\n')).toBe('one\nstaged\nunstaged\n')
+    expect(readFileSync(join(dir, 'keep.txt'), 'utf8').replace(/\r\n/g, '\n')).toBe('other dirty\n')
   })
 
   it('puts back a deleted file and a new untracked folder', async () => {

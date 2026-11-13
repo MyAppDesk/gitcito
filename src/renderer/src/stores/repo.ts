@@ -2544,13 +2544,13 @@ export const repoActions = {
     const unique = [...new Map(files.map((f) => [f.path, f])).values()]
     const paths = unique.map((f) => f.path)
     if (paths.length === 0) return
-    const initial = await gitApi.captureWork(path).catch(() => null)
+    const initial = await gitApi.captureWork(path, paths).catch(() => null)
     let saved = initial
     const perform = async (): Promise<void> => {
       // The dialog may sit open while files keep changing, and redo runs later
       // still: save again right before discarding so Undo restores what was
       // actually thrown away.
-      if (initial) saved = (await gitApi.captureWork(path).catch(() => null)) ?? saved
+      if (initial) saved = (await gitApi.captureWork(path, paths).catch(() => null)) ?? saved
       // Unstaging first turns staged-new files into files git never had;
       // `discard` removes those from disk as well. (It fails before the first
       // commit, where there is no HEAD to reset to; discard what it can anyway.)

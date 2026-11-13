@@ -943,6 +943,13 @@ export default function App(): React.JSX.Element {
       ? ((): React.JSX.Element => {
           const termOpen = !!terminalOpenByRepo[repo.path]
           const termIsSide = placement === 'right'
+          // Every repo with an open terminal keeps its own mounted container;
+          // a worktree/repo switch hides it with display:none instead of
+          // unmounting. The xterm DOM inside never detaches, so the scroll
+          // offset, the buffer and the layout all survive the switch.
+          const openTermRepos = Object.keys(terminalOpenByRepo).filter(
+            (p) => terminalOpenByRepo[p]
+          )
           const terminalNode = (
             <AnimatePresence>
               {termOpen && (
@@ -966,7 +973,14 @@ export default function App(): React.JSX.Element {
                     onChange={(v) => setLayout(termIsSide ? { terminalWidth: v } : { terminalHeight: v })}
                     onDragging={setResizing}
                   />
-                  <TerminalContainer cwd={repo.path} />
+                  {openTermRepos.map((path) => (
+                    <div
+                      key={path}
+                      style={{ display: path === repo.path ? 'contents' : 'none' }}
+                    >
+                      <TerminalContainer cwd={path} />
+                    </div>
+                  ))}
                 </motion.div>
               )}
             </AnimatePresence>

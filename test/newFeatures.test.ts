@@ -1,5 +1,5 @@
 import { describe, it, expect, afterAll, beforeAll } from 'vitest'
-import { writeFileSync, readFileSync, existsSync, mkdtempSync, rmSync, utimesSync } from 'node:fs'
+import { writeFileSync, readFileSync, existsSync, mkdtempSync, rmSync, utimesSync, mkdirSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import { tmpdir } from 'node:os'
 import { join, dirname } from 'node:path'
@@ -211,6 +211,45 @@ describe('remote branch worktree checkout', () => {
       'feature/topic'
     )
     expect(readFileSync(join(worktree, 'state.txt'), 'utf-8')).toBe('remote\n')
+  })
+})
+
+describe('worktreeAdd ignored-file copy', () => {
+  // The electron stub points userData at os.tmpdir(), so a settings file with
+  // worktreeCopyEnabled:true opts the copy in; removed in finally so no other
+  // test file can observe it.
+  it('copies ignored config, skips generated dirs and nested .git internals', async () => {
+    const R = cloneFixture('snapshots')
+    // An untracked .gitignore still applies ignore rules — it seeds the
+    // ignore set without touching the fixture's commits.
+    writeFileSync(join(R, '.gitignore'), 'ignored-dir/\n*.local\nnode_modules/\n')
+    writeFileSync(join(R, 'app.local'), 'secret=1\n')
+    mkdirSync(join(R, 'ignored-dir/nested'), { recursive: true })
+    writeFileSync(join(R, 'ignored-dir/a.txt'), 'a')
+    writeFileSync(join(R, 'ignored-dir/nested/b.txt'), 'b')
+    // An ignored dir holding a nested repo: git's own listing never descends
+    // a .git dir, and the fs walk of a collapsed dir must match that.
+    mkdirSync(join(R, 'ignored-dir/.git/objects'), { recursive: true })
+    writeFileSync(join(R, 'ignored-dir/.git/config'), 'x')
+    mkdirSync(join(R, 'node_modules/pkg'), { recursive: true })
+    writeFileSync(join(R, 'node_modules/pkg/index.js'), 'x')
+
+    const settingsFile = join(tmpdir(), 'gitcito-settings.json')
+    const dest = join(mkdtempSync(join(tmpdir(), 'wt-')), 'wt')
+    writeFileSync(settingsFile, JSON.stringify({ worktreeCopyIgnored: true }))
+    try {
+      await gitService.worktreeAdd(R, dest, 'wt-copy', true)
+    } finally {
+      rmSync(settingsFile, { force: true })
+    }
+
+    expect(readFileSync(join(dest, 'app.local'), 'utf-8')).toBe('secret=1\n')
+    // A fully-ignored dir collapses to 'ignored-dir/' in ls-files — the
+    // recursive copy must carry its files, including nested dirs.
+    expect(readFileSync(join(dest, 'ignored-dir/a.txt'), 'utf-8')).toBe('a')
+    expect(readFileSync(join(dest, 'ignored-dir/nested/b.txt'), 'utf-8')).toBe('b')
+    expect(existsSync(join(dest, 'ignored-dir/.git'))).toBe(false)
+    expect(existsSync(join(dest, 'node_modules'))).toBe(false)
   })
 })
 

@@ -2634,12 +2634,34 @@ export const repoActions = {
   worktreeAdd: (path: string, dir: string, branch: string, newBranch: boolean, startPoint?: string) =>
     useRepoStore
       .getState()
-      .run(path, interp(t('act.addedWorktree'), { dir }), () =>
-        gitApi.worktreeAdd(path, dir, branch, newBranch, startPoint)
+      .run(
+        path,
+        interp(t('act.addedWorktree'), { dir }),
+        () => gitApi.worktreeAdd(path, dir, branch, newBranch, startPoint),
+        // Adding a worktree touches only the worktree list and — when it
+        // creates a branch — the branch refs. The commit the branch points at
+        // already exists, so the 'log' slice (the heaviest refetch) doesn't
+        // change; refreshing only these two keeps the create path fast.
+        undefined,
+        null,
+        undefined,
+        ['worktrees', 'branches']
       ),
 
   worktreeRemove: (path: string, dir: string, force = false) =>
-    useRepoStore.getState().run(path, interp(t('act.removedWorktree'), { dir }), () => gitApi.worktreeRemove(path, dir, force)),
+    useRepoStore
+      .getState()
+      .run(
+        path,
+        interp(t('act.removedWorktree'), { dir }),
+        () => gitApi.worktreeRemove(path, dir, force),
+        // Same narrowing as worktreeAdd: removing a worktree cannot change
+        // commits, only the worktree list (branches survive a remove).
+        undefined,
+        null,
+        undefined,
+        ['worktrees', 'branches']
+      ),
 
   submoduleAdd: (path: string, url: string, dir: string, branch?: string) =>
     useRepoStore.getState().run(path, interp(t('act.addedSubmodule'), { dir }), () => gitApi.submoduleAdd(path, url, dir, branch)),

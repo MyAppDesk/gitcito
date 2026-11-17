@@ -2634,12 +2634,32 @@ export const repoActions = {
   worktreeAdd: (path: string, dir: string, branch: string, newBranch: boolean, startPoint?: string) =>
     useRepoStore
       .getState()
-      .run(path, interp(t('act.addedWorktree'), { dir }), () =>
-        gitApi.worktreeAdd(path, dir, branch, newBranch, startPoint)
+      .run(
+        path,
+        interp(t('act.addedWorktree'), { dir }),
+        () => gitApi.worktreeAdd(path, dir, branch, newBranch, startPoint),
+        // A new branch also changes the ref decorations stored in the log.
+        // Existing-branch worktrees can keep the cached history unchanged.
+        undefined,
+        null,
+        undefined,
+        newBranch ? ['worktrees', 'branches', 'log'] : ['worktrees', 'branches']
       ),
 
   worktreeRemove: (path: string, dir: string, force = false) =>
-    useRepoStore.getState().run(path, interp(t('act.removedWorktree'), { dir }), () => gitApi.worktreeRemove(path, dir, force)),
+    useRepoStore
+      .getState()
+      .run(
+        path,
+        interp(t('act.removedWorktree'), { dir }),
+        () => gitApi.worktreeRemove(path, dir, force),
+        // Same narrowing as worktreeAdd: removing a worktree cannot change
+        // commits, only the worktree list (branches survive a remove).
+        undefined,
+        null,
+        undefined,
+        ['worktrees', 'branches']
+      ),
 
   submoduleAdd: (path: string, url: string, dir: string, branch?: string) =>
     useRepoStore.getState().run(path, interp(t('act.addedSubmodule'), { dir }), () => gitApi.submoduleAdd(path, url, dir, branch)),

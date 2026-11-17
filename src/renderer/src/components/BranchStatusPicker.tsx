@@ -9,6 +9,7 @@ import {
   GitBranchPlus,
   GitMerge,
   Pencil,
+  Search,
   Trash2
 } from 'lucide-react'
 import type { BranchInfo, RemoteBranchInfo } from '../../../shared/types'
@@ -34,11 +35,42 @@ export function BranchStatusPicker({ repo }: { repo: RepoData }): React.JSX.Elem
   const t = useT()
   const triggerRef = useRef<HTMLButtonElement>(null)
   const popoverRef = useRef<HTMLDivElement>(null)
+  const searchRef = useRef<HTMLInputElement>(null)
   const [position, setPosition] = useState<PickerPosition | null>(null)
+  const [query, setQuery] = useState('')
+  const [activeIndex, setActiveIndex] = useState(0)
   const { openContextMenu, openModal } = useUIStore()
   const path = repo.path
 
-  const close = (): void => setPosition(null)
+  const q = query.trim().toLowerCase()
+  const locals = q
+    ? repo.branches.locals.filter((branch) => branch.name.toLowerCase().includes(q))
+    : repo.branches.locals
+  const remotes = q
+    ? repo.branches.remotes.filter(
+        (branch) => branch.fullName.toLowerCase().includes(q) || branch.name.toLowerCase().includes(q)
+      )
+    : repo.branches.remotes
+  // Flat arrow-key order across both sections — index i is rendered as
+  // data-idx so the scroll-into-view effect can find the row.
+  const navTargets: BranchTarget[] = [
+    ...locals.map((branch): BranchTarget => ({ kind: 'local', branch })),
+    ...remotes.map((branch): BranchTarget => ({ kind: 'remote', branch }))
+  ]
+
+  const close = (): void => {
+    setPosition(null)
+    setQuery('')
+  }
+
+  const activate = (target: BranchTarget): void => {
+    close()
+    if (target.kind === 'local') {
+      if (!target.branch.isCurrent) void repoActions.checkout(path, target.branch.name)
+    } else {
+      void repoActions.checkoutRemote(path, target.branch.fullName, target.branch.name, target.branch.remote)
+    }
+  }
 
   useEffect(() => {
     if (!position) return
@@ -62,6 +94,15 @@ export function BranchStatusPicker({ repo }: { repo: RepoData }): React.JSX.Elem
     }
   }, [position])
 
+  // Keep the highlighted row in view while arrow-keying, and — on open —
+  // scroll the preselected current branch into the list's visible area.
+  useEffect(() => {
+    if (!position) return
+    popoverRef.current
+      ?.querySelector(`[data-idx="${activeIndex}"]`)
+      ?.scrollIntoView({ block: 'nearest' })
+  }, [activeIndex, position])
+
   const toggle = (): void => {
     if (position) {
       close()
@@ -73,6 +114,25 @@ export function BranchStatusPicker({ repo }: { repo: RepoData }): React.JSX.Elem
     const left = Math.max(8, Math.min(rect.left, window.innerWidth - width - 8))
     const top = rect.bottom + 6
     setPosition({ left, top, width, maxHeight: window.innerHeight - top - 8 })
+    setQuery('')
+    // With no query the locals list is unfiltered, so the current branch's
+    // index here is the same index it gets in navTargets.
+    setActiveIndex(Math.max(0, repo.branches.locals.findIndex((branch) => branch.isCurrent)))
+    requestAnimationFrame(() => searchRef.current?.focus())
+  }
+
+  const onSearchKey = (event: React.KeyboardEvent): void => {
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault()
+      if (navTargets.length === 0) return
+      setActiveIndex(
+        (i) => (i + (event.key === 'ArrowDown' ? 1 : -1) + navTargets.length) % navTargets.length
+      )
+    } else if (event.key === 'Enter') {
+      event.preventDefault()
+      const target = navTargets[Math.min(activeIndex, navTargets.length - 1)]
+      if (target) activate(target)
+    }
   }
 
   const contextItems = (target: BranchTarget): MenuItem[] => {
@@ -236,45 +296,71 @@ export function BranchStatusPicker({ repo }: { repo: RepoData }): React.JSX.Elem
               maxHeight: position.maxHeight
             }}
           >
+            <div className="branch-picker-search">
+              <Search size={13} aria-hidden="true" />
+              <input
+                ref={searchRef}
+                type="text"
+                value={query}
+                placeholder={t('worktree.branchSearch')}
+                aria-label={t('worktree.branchSearch')}
+                onChange={(event) => {
+                  setQuery(event.target.value)
+                  setActiveIndex(0)
+                }}
+                onKeyDown={onSearchKey}
+              />
+            </div>
             <div className="branch-picker-scroll">
-              <div className="branch-picker-heading">{t('sidebar.local')}</div>
-              {repo.branches.locals.map((branch) => (
-                <button
-                  key={`local:${branch.name}`}
-                  type="button"
-                  className={`branch-picker-item ${branch.isCurrent ? 'active' : ''}`}
-                  role="menuitem"
-                  onClick={() => {
-                    close()
-                    if (!branch.isCurrent) void repoActions.checkout(path, branch.name)
-                  }}
-                  onContextMenu={(event) => openBranchContextMenu(event, { kind: 'local', branch })}
-                >
-                  <span className="branch-picker-check">{branch.isCurrent && <Check size={15} />}</span>
-                  <span className="branch-picker-name">{branch.name}</span>
-                </button>
-              ))}
+              {navTargets.length === 0 && (
+                <div className="branch-picker-empty">{t('cmdp.noMatches')}</div>
+              )}
+              {locals.length > 0 && (
+                <>
+                  <div className="branch-picker-heading">{t('sidebar.local')}</div>
+                  {locals.map((branch, i) => (
+                    <button
+                      key={`local:${branch.name}`}
+                      type="button"
+                      data-idx={i}
+                      className={`branch-picker-item ${branch.isCurrent ? 'active' : ''} ${i === activeIndex ? 'focused' : ''}`}
+                      role="menuitem"
+                      onMouseEnter={() => setActiveIndex(i)}
+                      onClick={() => activate({ kind: 'local', branch })}
+                      onContextMenu={(event) => openBranchContextMenu(event, { kind: 'local', branch })}
+                    >
+                      <span className="branch-picker-check">{branch.isCurrent && <Check size={15} />}</span>
+                      <span className="branch-picker-name">{branch.name}</span>
+                      {branch.isCurrent && (
+                        <span className="branch-picker-current">{t('worktree.currentBadge')}</span>
+                      )}
+                    </button>
+                  ))}
+                </>
+              )}
 
-              {repo.branches.remotes.length > 0 && (
+              {remotes.length > 0 && (
                 <>
                   <div className="branch-picker-separator" />
                   <div className="branch-picker-heading">{t('sidebar.remotes')}</div>
-                  {repo.branches.remotes.map((branch) => (
-                    <button
-                      key={`remote:${branch.fullName}`}
-                      type="button"
-                      className="branch-picker-item"
-                      role="menuitem"
-                      onClick={() => {
-                        close()
-                        void repoActions.checkoutRemote(path, branch.fullName, branch.name, branch.remote)
-                      }}
-                      onContextMenu={(event) => openBranchContextMenu(event, { kind: 'remote', branch })}
-                    >
-                      <span className="branch-picker-check" />
-                      <span className="branch-picker-name">{branch.fullName}</span>
-                    </button>
-                  ))}
+                  {remotes.map((branch, j) => {
+                    const idx = locals.length + j
+                    return (
+                      <button
+                        key={`remote:${branch.fullName}`}
+                        type="button"
+                        data-idx={idx}
+                        className={`branch-picker-item ${idx === activeIndex ? 'focused' : ''}`}
+                        role="menuitem"
+                        onMouseEnter={() => setActiveIndex(idx)}
+                        onClick={() => activate({ kind: 'remote', branch })}
+                        onContextMenu={(event) => openBranchContextMenu(event, { kind: 'remote', branch })}
+                      >
+                        <span className="branch-picker-check" />
+                        <span className="branch-picker-name">{branch.fullName}</span>
+                      </button>
+                    )
+                  })}
                 </>
               )}
             </div>

@@ -1,5 +1,6 @@
-import { describe, it, expect, afterAll, beforeAll } from 'vitest'
-import { writeFileSync, readFileSync, existsSync, mkdtempSync, rmSync, utimesSync } from 'node:fs'
+import { describe, it, expect, afterAll, beforeAll, vi } from 'vitest'
+import { app } from 'electron'
+import { writeFileSync, readFileSync, existsSync, mkdtempSync, rmSync, utimesSync, mkdirSync, symlinkSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import { tmpdir } from 'node:os'
 import { join, dirname } from 'node:path'
@@ -211,6 +212,62 @@ describe('remote branch worktree checkout', () => {
       'feature/topic'
     )
     expect(readFileSync(join(worktree, 'state.txt'), 'utf-8')).toBe('remote\n')
+  })
+})
+
+describe('worktreeAdd ignored-file copy', () => {
+  // Keep this opt-in in a private settings directory, not the shared temp root.
+  it('copies ignored config, skips generated dirs and nested .git internals', async () => {
+    const R = cloneFixture('snapshots')
+    // An untracked .gitignore still applies ignore rules — it seeds the
+    // ignore set without touching the fixture's commits.
+    writeFileSync(join(R, '.gitignore'), 'ignored-dir/\n*.local\nnode_modules/\n')
+    writeFileSync(join(R, 'app.local'), 'secret=1\n')
+    mkdirSync(join(R, 'ignored-dir/nested'), { recursive: true })
+    writeFileSync(join(R, 'ignored-dir/a.txt'), 'a')
+    writeFileSync(join(R, 'ignored-dir/nested/b.txt'), 'b')
+    // An ignored dir holding a nested repo: git's own listing never descends
+    // a .git dir, and the fs walk of a collapsed dir must match that.
+    mkdirSync(join(R, 'ignored-dir/.git/objects'), { recursive: true })
+    writeFileSync(join(R, 'ignored-dir/.git/config'), 'x')
+    mkdirSync(join(R, 'node_modules/pkg'), { recursive: true })
+    writeFileSync(join(R, 'node_modules/pkg/index.js'), 'x')
+
+    mkdirSync(join(R, 'mixed'), { recursive: true })
+    writeFileSync(join(R, 'mixed/config.local'), 'ignored config')
+    writeFileSync(join(R, 'mixed/untracked.txt'), 'not ignored')
+    // Creating symlinks needs special privileges on Windows.
+    if (process.platform !== 'win32') {
+      symlinkSync(join(R, 'app.local'), join(R, 'ignored-dir/link.local'))
+      symlinkSync(join(R, 'mixed'), join(R, 'ignored-dir/linked-dir'))
+    }
+    mkdirSync(join(R, 'ignored-dir/generated/node_modules'), { recursive: true })
+    writeFileSync(join(R, 'ignored-dir/generated/node_modules/skip.txt'), 'generated')
+
+    const settingsDir = mkdtempSync(join(tmpdir(), 'wt-settings-'))
+    const settingsFile = join(settingsDir, 'gitcito-settings.json')
+    const destRoot = mkdtempSync(join(tmpdir(), 'wt-'))
+    const dest = join(destRoot, 'wt')
+    const getPath = vi.spyOn(app, 'getPath').mockReturnValue(settingsDir)
+    writeFileSync(settingsFile, JSON.stringify({ worktreeCopyIgnored: true }))
+    try {
+      await gitService.worktreeAdd(R, dest, 'wt-copy', true)
+
+      expect(readFileSync(join(dest, 'app.local'), 'utf-8')).toBe('secret=1\n')
+      expect(readFileSync(join(dest, 'ignored-dir/a.txt'), 'utf-8')).toBe('a')
+      expect(readFileSync(join(dest, 'ignored-dir/nested/b.txt'), 'utf-8')).toBe('b')
+      expect(readFileSync(join(dest, 'mixed/config.local'), 'utf-8')).toBe('ignored config')
+      expect(existsSync(join(dest, 'mixed/untracked.txt'))).toBe(false)
+      expect(existsSync(join(dest, 'ignored-dir/.git'))).toBe(false)
+      expect(existsSync(join(dest, 'ignored-dir/link.local'))).toBe(false)
+      expect(existsSync(join(dest, 'ignored-dir/linked-dir'))).toBe(false)
+      expect(existsSync(join(dest, 'ignored-dir/generated/node_modules'))).toBe(false)
+      expect(existsSync(join(dest, 'node_modules'))).toBe(false)
+    } finally {
+      getPath.mockRestore()
+      rmSync(settingsDir, { recursive: true, force: true })
+      rmSync(destRoot, { recursive: true, force: true })
+    }
   })
 })
 

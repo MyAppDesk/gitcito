@@ -1335,6 +1335,14 @@ textarea:focus {
   background: var(--bg-2);
 }
 
+/* Keyboard-cursor row in pickers with a search box — the buttons are never
+ * DOM-focused (typing stays in the filter input), so the highlight needs a
+ * class rather than :focus. Same accent treatment as hover. */
+.branch-picker-item.focused {
+  color: #0a1220;
+  background: var(--accent);
+}
+
 .branch-picker-item.active:hover,
 .branch-picker-item.active:focus-visible {
   color: #0a1220;

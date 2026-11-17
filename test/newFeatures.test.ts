@@ -236,8 +236,11 @@ describe('worktreeAdd ignored-file copy', () => {
     mkdirSync(join(R, 'mixed'), { recursive: true })
     writeFileSync(join(R, 'mixed/config.local'), 'ignored config')
     writeFileSync(join(R, 'mixed/untracked.txt'), 'not ignored')
-    symlinkSync(join(R, 'app.local'), join(R, 'ignored-dir/link.local'))
-    symlinkSync(join(R, 'mixed'), join(R, 'ignored-dir/linked-dir'))
+    // Creating symlinks needs special privileges on Windows.
+    if (process.platform !== 'win32') {
+      symlinkSync(join(R, 'app.local'), join(R, 'ignored-dir/link.local'))
+      symlinkSync(join(R, 'mixed'), join(R, 'ignored-dir/linked-dir'))
+    }
     mkdirSync(join(R, 'ignored-dir/generated/node_modules'), { recursive: true })
     writeFileSync(join(R, 'ignored-dir/generated/node_modules/skip.txt'), 'generated')
 

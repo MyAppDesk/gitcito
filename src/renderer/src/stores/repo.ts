@@ -2638,14 +2638,12 @@ export const repoActions = {
         path,
         interp(t('act.addedWorktree'), { dir }),
         () => gitApi.worktreeAdd(path, dir, branch, newBranch, startPoint),
-        // Adding a worktree touches only the worktree list and — when it
-        // creates a branch — the branch refs. The commit the branch points at
-        // already exists, so the 'log' slice (the heaviest refetch) doesn't
-        // change; refreshing only these two keeps the create path fast.
+        // A new branch also changes the ref decorations stored in the log.
+        // Existing-branch worktrees can keep the cached history unchanged.
         undefined,
         null,
         undefined,
-        ['worktrees', 'branches']
+        newBranch ? ['worktrees', 'branches', 'log'] : ['worktrees', 'branches']
       ),
 
   worktreeRemove: (path: string, dir: string, force = false) =>

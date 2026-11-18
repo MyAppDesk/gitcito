@@ -3,6 +3,7 @@ import { FolderGit2 } from 'lucide-react'
 import { gitApi } from '../infrastructure/api'
 import { useSettingsStore } from '../stores/settings'
 import { lookupRepoImage, tabLabelParts } from '../lib/repoImage'
+import type { TabStatus } from '../lib/tabClose'
 
 // One read per repository and path for the life of the window: every tab strip
 // re-render would otherwise ship the image across IPC again. The settings
@@ -51,31 +52,44 @@ export function useRepoImage(repoPath: string | undefined): string | null {
 }
 
 /** Icon-and-name of a repository tab, following the "repository tabs show"
- *  setting. The name moves into the image's tooltip when it is hidden. */
+ *  setting. The name moves into the image's tooltip when it is hidden. Owns the
+ *  working-tree dot too: beside the name it trails the label, but on an
+ *  image-only tab it sits on the image's corner so the tab stays icon-sized. */
 export function RepoTabLabel({
   repoPath,
   name,
   className,
-  title
+  title,
+  status,
+  statusTitle
 }: {
   repoPath: string | undefined
   name: string
   className: string
   title?: string
+  status?: TabStatus
+  statusTitle?: string
 }): React.JSX.Element {
   const mode = useSettingsStore((s) => s.settings.tabRepoLabel)
   const url = useRepoImage(repoPath)
   const show = tabLabelParts(mode, url !== null)
+  const solo = show.image && !show.name && url !== null
+  const dot = status ? (
+    <span className={`tab-status tab-status-${status} ${solo ? 'stacked' : ''}`} title={statusTitle} />
+  ) : null
   return (
     <>
       {show.image && url ? (
-        <img
-          className={`tab-repo-image ${show.name ? '' : 'solo'}`}
-          src={url}
-          alt={show.name ? '' : name}
-          title={show.name ? undefined : (title ?? name)}
-          draggable={false}
-        />
+        <span className="tab-repo-image-wrap">
+          <img
+            className={`tab-repo-image ${solo ? 'solo' : ''}`}
+            src={url}
+            alt={show.name ? '' : name}
+            title={show.name ? undefined : (title ?? name)}
+            draggable={false}
+          />
+          {solo && dot}
+        </span>
       ) : (
         <FolderGit2 size={13} />
       )}
@@ -84,6 +98,7 @@ export function RepoTabLabel({
           {name}
         </span>
       )}
+      {!solo && dot}
     </>
   )
 }

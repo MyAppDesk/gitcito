@@ -174,7 +174,7 @@ textarea:focus {
   display: flex;
   align-items: flex-end;
   height: 100%;
-  gap: 1px;
+  gap: 3px;
   flex: 1;
   min-width: 0;
   overflow-x: auto;
@@ -191,17 +191,20 @@ textarea:focus {
   /* Never shrink: the strip scrolls instead. A tab that clips its own overflow
      (the changelog shimmer) would otherwise resolve min-width to 0 and collapse. */
   flex: none;
-  gap: 6px;
+  --tab-gap: 6px;
+  gap: var(--tab-gap);
   height: 32px;
   padding: 0 8px 0 12px;
   border-radius: 7px 7px 0 0;
   color: var(--text-2);
-  background: transparent;
+  /* A faint fill of the active tab's colour, so every tab reads as a tab and
+     not as loose icons floating on the title bar. */
+  background: color-mix(in srgb, var(--bg-2) 50%, transparent);
   cursor: pointer;
   white-space: nowrap;
   border: 1px solid transparent;
   border-bottom: none;
-  transition: background 0.15s, color 0.15s;
+  transition: background 0.18s ease, color 0.18s ease;
   position: relative;
 }
 
@@ -246,10 +249,13 @@ textarea:focus {
   flex: 0 1 auto;
   min-width: 0;
 }
+/* Groups and folders get no floor of their own: their automatic minimum is the
+   sum of their children's, so the repo tabs inside shrink to 84px each and
+   stop there. A fixed floor here clipped a whole group down to one tab. */
 .tabs.fit .tab-group-wrap,
 .tabs.fit .tab-folder {
-  min-width: 84px;
-  overflow: hidden;
+  flex: 0 1 auto;
+  min-width: auto;
 }
 .tabs.fit .tab-add {
   flex: none;
@@ -268,6 +274,48 @@ textarea:focus {
 .tab-repo-image.solo {
   width: 22px;
   height: 22px;
+}
+
+.tab-repo-image-wrap {
+  position: relative;
+  display: flex;
+  flex: none;
+}
+
+/* Image-only tab: the picture is the whole label, so the tab hugs it. The
+   !important beats the inline padding the group chips animate in with. */
+.tab:has(> .tab-repo-image-wrap > .tab-repo-image.solo) {
+  padding-inline: 5px !important;
+  --tab-gap: 2px;
+}
+
+/* Fit mode's 84px floor is sized for a name; an icon has nothing to shrink. */
+.tabs.fit .tab:has(> .tab-repo-image-wrap > .tab-repo-image.solo) {
+  flex: none;
+  min-width: 0;
+}
+
+/* Stacked on the image's top-right corner, ringed in the tab's background so
+   it reads as a badge rather than a stray pixel. */
+.tab-status.stacked {
+  position: absolute;
+  top: -2px;
+  inset-inline-end: -2px;
+  width: 7px;
+  height: 7px;
+  margin: 0;
+  box-shadow: 0 0 0 1.5px var(--bg-0);
+  opacity: 1;
+}
+
+.tab:hover .tab-status.stacked,
+.tab.active .tab-status.stacked {
+  box-shadow: 0 0 0 1.5px var(--bg-2);
+}
+
+/* The faded grey of the inline dot vanishes against a picture. */
+.tab-status-wip.stacked {
+  background: var(--text-1);
 }
 
 .tab-status {
@@ -310,14 +358,21 @@ textarea:focus {
 }
 
 /* The close button takes no room until it is wanted: an invisible-but-present
-   ✕ on every tab is what made the strip so wide. */
+   ✕ on every tab is what made the strip so wide. It slides open rather than
+   popping in — the negative margin swallows the flex gap while it is shut. */
 .tab .tab-close {
-  display: none;
+  width: 0;
+  padding-inline: 0;
+  margin-inline-start: calc(-1 * var(--tab-gap));
+  overflow: hidden;
+  transition: width 0.16s ease, padding 0.16s ease, margin 0.16s ease, opacity 0.16s ease, background 0.12s;
 }
 
 .tab:hover .tab-close,
 .tab:focus-within .tab-close {
-  display: flex;
+  width: 16px;
+  padding-inline: 2px;
+  margin-inline-start: 0;
 }
 
 .tab:hover .tab-close,
@@ -15977,7 +16032,7 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
   display: flex; align-items: center; justify-content: center;
   font-size: 9px; font-weight: 700; line-height: 1;
   color: #fff; background: var(--red, #e5484d);
-  border-radius: 8px; box-shadow: 0 0 0 1.5px var(--bg-1);
+  border-radius: 8px; box-shadow: 0 0 0 1.5px var(--bg-0);
 }
 /* In the title bar the bell sits on --bg-0, so match the badge ring. */
 .titlebar-action.notif-bell .notif-badge { box-shadow: 0 0 0 1.5px var(--bg-0); }

@@ -939,16 +939,12 @@ export function TitleBar(): React.JSX.Element {
           name={chipLabel}
           className={`tab-name ${isActiveRepo && tab.activePage != null ? 'tab-name-back' : ''}`}
           title={isActiveRepo && tab.activePage != null ? t('titlebar.backToRepo') : undefined}
+          status={rs}
+          statusTitle={rs === 'conflict' ? t('titlebar.conflictsInProgress') : t('titlebar.uncommittedChangesShort')}
         />
         {/* Only on the selected repository: the icons belong to it, and every
             chip carrying its own row of them would drown the group. */}
         {isActiveRepo && renderPageChips(tab.id, tab.pages, tab.activePage, repo.path)}
-        {rs && (
-          <span
-            className={`tab-status tab-status-${rs}`}
-            title={rs === 'conflict' ? t('titlebar.conflictsInProgress') : t('titlebar.uncommittedChangesShort')}
-          />
-        )}
         <button
           className="tab-close"
           aria-label={interp(t('a11y.closeTab'), { name: chipLabel })}
@@ -1108,14 +1104,12 @@ export function TitleBar(): React.JSX.Element {
                   name={tab.name}
                   className={`tab-name ${tab.activePage != null ? 'tab-name-back' : ''}`}
                   title={tab.activePage != null ? t('titlebar.backToRepo') : undefined}
+                  status={status}
+                  statusTitle={
+                    status === 'conflict' ? t('titlebar.conflictsInProgress') : t('titlebar.uncommittedChangesShort')
+                  }
                 />
                 {renderPageChips(tab.id, tab.pages, tab.activePage, tab.repos[0]?.path ?? '')}
-                {status && (
-                  <span
-                    className={`tab-status tab-status-${status}`}
-                    title={status === 'conflict' ? t('titlebar.conflictsInProgress') : t('titlebar.uncommittedChangesShort')}
-                  />
-                )}
                 <button
                   className="tab-close"
                   aria-label={interp(t('a11y.closeTab'), { name: tab.name })}

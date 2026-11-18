@@ -3107,6 +3107,7 @@ export const ko: Dict = {
   'graph.wipPlaceholder': '작업 중',
   'toolbar.stashWip': '작업 중인 변경 스태시',
   'toolbar.fetchedAgo': '{when} 페치함',
+  'toolbar.loadingRepo': '저장소 불러오는 중…',
   'aiPrReview.title': 'AI PR 리뷰',
   'aiPrReview.analysing': 'diff를 분석하는 중…',
   'aiPrReview.summary': '요약',

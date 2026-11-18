@@ -3115,6 +3115,7 @@ export const ptBR: Dict = {
   'graph.wipPlaceholder': 'Trabalho em andamento',
   'toolbar.stashWip': 'Guardar o trabalho em andamento no stash',
   'toolbar.fetchedAgo': 'Fetch {when}',
+  'toolbar.loadingRepo': 'Carregando repositório…',
   'aiPrReview.title': 'Review de PR com IA',
   'aiPrReview.analysing': 'Analisando o diff…',
   'aiPrReview.summary': 'Resumo',

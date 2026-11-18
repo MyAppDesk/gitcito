@@ -3107,6 +3107,7 @@ export const pl: Dict = {
   'graph.wipPlaceholder': 'Praca w toku',
   'toolbar.stashWip': 'Odłóż pracę w toku do stasha',
   'toolbar.fetchedAgo': 'Pobrano {when}',
+  'toolbar.loadingRepo': 'Wczytywanie repozytorium…',
   'aiPrReview.title': 'Review PR-a przez AI',
   'aiPrReview.analysing': 'Analizowanie diffa…',
   'aiPrReview.summary': 'Podsumowanie',

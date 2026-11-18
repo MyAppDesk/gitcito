@@ -94,6 +94,9 @@ type BarItem =
 const ITEM_GAP = 2
 const MORE_WIDTH = 64
 
+/** How long a switch may take before it gets a loading signal. */
+const SWITCH_LOADING_DELAY_MS = 150
+
 export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
   const t = useT()
   const { undo, redo } = useRepoStore()
@@ -101,6 +104,18 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
   const terminalOpen = useUIStore((s) => !!s.terminalOpenByRepo[repo.path])
   const sidebarCollapsed = useUIStore((s) => s.sidebarCollapsed)
   const busyOp = useUIStore((s) => s.busyOp)
+  // Loading because the user switched here. Shown only past a short delay: a
+  // refresh that lands within it would just make the toolbar blink.
+  const switching = useUIStore((s) => s.repoSwitching === repo.path)
+  const [showSwitching, setShowSwitching] = useState(false)
+  useEffect(() => {
+    if (!switching) {
+      setShowSwitching(false)
+      return
+    }
+    const id = setTimeout(() => setShowSwitching(true), SWITCH_LOADING_DELAY_MS)
+    return () => clearTimeout(id)
+  }, [switching])
   const chatAvailable = useSettingsStore((s) => repoChatAvailable(s.activeProfile().ai))
   const chatPanelOpen = useUIStore((s) => s.chatPanelOpen)
   const rightPanelTab = useUIStore((s) => s.rightPanelTab)
@@ -586,6 +601,7 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
 
   return (
     <div className="toolbar">
+      {showSwitching && <div className="repo-loading-bar" aria-hidden="true" />}
       <div className="toolbar-left">
         {sidebarSide === 'left' && sidebarToggle}
         <RepoStatusPicker repo={repo} />
@@ -615,6 +631,12 @@ export function Toolbar({ repo }: { repo: RepoData }): React.JSX.Element {
             title={interp(t('toolbar.fetchedAgo'), { when: since(repo.lastFetchAt) })}
           >
             <Loader2 size={13} className="spin" /> {busy}
+          </span>
+        )}
+        {/* An operation's own label wins; this only fills the silence of a switch. */}
+        {showSwitching && !busy && (
+          <span className="busy-indicator" role="status" aria-live="polite">
+            <Loader2 size={13} className="spin" /> {t('toolbar.loadingRepo')}
           </span>
         )}
         <div className="graph-search">

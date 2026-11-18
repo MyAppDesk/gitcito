@@ -377,6 +377,10 @@ interface UIState {
   /** Dim commits that didn't touch this path (file/folder). null = off. */
   pathFilter: string | null
   busy: string | null
+  /** The repository being loaded because the user just switched to it (see
+   *  `trackRepoSwitch`), for the toolbar's loading signal. Background refreshes
+   *  never set it. */
+  repoSwitching: string | null
   /** Which toolbar operation is in flight, so the spinner can render on the
    *  relevant tool button instead of a layout-shifting label on the right. */
   busyOp: 'push' | 'pull' | 'fetch' | null
@@ -434,6 +438,7 @@ interface UIState {
   setAuthorFilter(author: string | null): void
   setPathFilter(path: string | null): void
   setBusy(label: string | null, op?: 'push' | 'pull' | 'fetch' | null): void
+  setRepoSwitching(path: string | null): void
   beginInflight(): void
   endInflight(): void
   requestComposerIntent(intent: { path: string; summary: string; description: string; amend: boolean }): void
@@ -482,6 +487,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   authorFilter: null,
   pathFilter: null,
   busy: null,
+  repoSwitching: null,
   busyOp: null,
   inflight: 0,
   composerIntent: null,
@@ -549,6 +555,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   setAuthorFilter: (authorFilter) => set({ authorFilter }),
   setPathFilter: (pathFilter) => set({ pathFilter }),
   setBusy: (busy, op = null) => set({ busy, busyOp: op }),
+  setRepoSwitching: (repoSwitching) => set({ repoSwitching }),
   beginInflight: () => set((s) => ({ inflight: s.inflight + 1 })),
   endInflight: () => set((s) => ({ inflight: Math.max(0, s.inflight - 1) })),
   requestComposerIntent: (composerIntent) => set({ composerIntent }),

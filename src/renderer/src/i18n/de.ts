@@ -3114,6 +3114,7 @@ export const de: Dict = {
   'graph.wipPlaceholder': 'In Arbeit',
   'toolbar.stashWip': 'Angefangene Arbeit stashen',
   'toolbar.fetchedAgo': 'Abgerufen {when}',
+  'toolbar.loadingRepo': 'Repository wird geladen…',
   'aiPrReview.title': 'KI-PR-Review',
   'aiPrReview.analysing': 'Diff wird analysiert…',
   'aiPrReview.summary': 'Zusammenfassung',

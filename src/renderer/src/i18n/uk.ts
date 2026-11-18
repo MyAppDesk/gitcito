@@ -3107,6 +3107,7 @@ export const uk: Dict = {
   'graph.wipPlaceholder': 'Незавершена робота',
   'toolbar.stashWip': 'Відкласти незавершену роботу',
   'toolbar.fetchedAgo': 'Отримано {when}',
+  'toolbar.loadingRepo': 'Завантаження репозиторію…',
   'aiPrReview.title': 'Рецензія PR від ШІ',
   'aiPrReview.analysing': 'Аналіз diff…',
   'aiPrReview.summary': 'Підсумок',

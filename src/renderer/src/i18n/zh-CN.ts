@@ -3107,6 +3107,7 @@ export const zhCN: Dict = {
   'graph.wipPlaceholder': '进行中的工作',
   'toolbar.stashWip': '贮藏进行中的工作',
   'toolbar.fetchedAgo': '{when}获取过',
+  'toolbar.loadingRepo': '正在加载仓库…',
   'aiPrReview.title': 'AI 拉取请求评审',
   'aiPrReview.analysing': '正在分析差异…',
   'aiPrReview.summary': '总结',

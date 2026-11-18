@@ -3110,6 +3110,7 @@ export const ar: Dict = {
   'graph.wipPlaceholder': 'عمل قيد التنفيذ',
   'toolbar.stashWip': 'إخفاء العمل الجاري',
   'toolbar.fetchedAgo': 'جُلب {when}',
+  'toolbar.loadingRepo': 'جارٍ تحميل المستودع…',
   'aiPrReview.title': 'مراجعة طلب السحب بالذكاء الاصطناعي',
   'aiPrReview.analysing': 'جارٍ تحليل الفروق…',
   'aiPrReview.summary': 'الملخّص',

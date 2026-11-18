@@ -1306,10 +1306,12 @@ export const repoActions = {
         label: interp(t('undoLabel.checkout'), { ref }),
         undo: () => gitApi.checkout(path, prev ?? '-'),
         redo: () => gitApi.checkout(path, ref)
-      },
-      null,
-      undefined,
-      ['branches', 'status', 'treeStatus']
+      }
+      // No refetch list: every slice, as the comment above says. A narrowed list
+      // ('branches', 'status', 'treeStatus') crept back in and the graph kept
+      // `HEAD ->` on the old branch. It used to be masked on Linux by the file
+      // watcher's late events (after the 2 s self-mute) forcing a full refresh;
+      // an inotify watch reports within the mute, so nothing masks it now.
     )
   },
 

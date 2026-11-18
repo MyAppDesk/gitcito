@@ -1,5 +1,17 @@
 
 
+## Unreleased
+
+
+### Performance Improvements
+
+* **watcher:** switching repositories no longer stalls the app on Linux. The file watcher followed the whole working tree recursively, and Node walks that tree synchronously on Linux — about a second per switch next to a large `node_modules` (20k directories), with every other call waiting. It now watches `.git` and the directories that hold tracked files, asynchronously: about 10 ms for the same repository.
+
+
+### Features
+
+* **toolbar:** a loading bar and "Loading repository…" show while a repository you switched to is refreshing, once that takes longer than 150 ms.
+
 ## [4.25.0](https://github.com/MyAppDesk/gitcito/compare/v4.24.0...v4.25.0) (2026-11-18)
 
 

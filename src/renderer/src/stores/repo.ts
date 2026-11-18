@@ -1631,6 +1631,31 @@ export const repoActions = {
       })
   },
 
+  /** Move branch `target` (not the one checked out) forward to `source`, no
+   *  checkout, no merge commit. The main process refuses anything that is not a
+   *  fast-forward; undo puts the branch back where it was. */
+  fastForwardBranch: (path: string, target: string, source: string) => {
+    let before = ''
+    return useRepoStore.getState().run(
+      path,
+      interp(t('act.fastForwarded'), { source, target }),
+      async () => {
+        before = await gitApi.fastForwardBranch(path, target, source)
+      },
+      {
+        label: interp(t('undoLabel.fastForward'), { source, target }),
+        undo: () => gitApi.setBranchRef(path, target, before),
+        redo: async () => {
+          before = await gitApi.fastForwardBranch(path, target, source)
+        }
+      },
+      null,
+      undefined,
+      // The moved branch's badge sits on a commit in the log.
+      ['log', 'branches']
+    )
+  },
+
   rebase: (path: string, onto: string) =>
     useRepoStore.getState().run(path, interp(t('act.rebased'), { onto }), () => gitApi.rebase(path, onto), {
       label: interp(t('undoLabel.rebase'), { onto }),
@@ -1839,6 +1864,29 @@ export const repoActions = {
    * branch and secret checks as a normal push — publishing to two remotes is
    * twice the exposure, not half the caution.
    */
+  /**
+   * Push local `source` to `remoteBranch` on `remote` — the drop menu's "Push
+   * feature to origin/main". The same secret and checklist guards as any push;
+   * never forced, so the remote refuses it unless it is a fast-forward. Not
+   * undoable (no push is): the confirmation is that git checks the history.
+   */
+  pushRefTo: async (path: string, source: string, remote: string, remoteBranch: string): Promise<boolean> => {
+    if (!(await pushGuards(path, source, false, () => void repoActions.pushRefTo(path, source, remote, remoteBranch)))) {
+      return false
+    }
+    return useRepoStore
+      .getState()
+      .run(
+        path,
+        interp(t('act.pushedRefTo'), { source, target: `${remote}/${remoteBranch}` }),
+        () => gitApi.pushRef(path, source, remote, remoteBranch),
+        undefined,
+        'push',
+        undefined,
+        ['branches', 'log']
+      )
+  },
+
   pushToRemotes: async (path: string, remotes: string[], opts: { force?: boolean; tags?: boolean } = {}) => {
     const repo = useRepoStore.getState().repos[path]
     const branch = repo?.branches.current

@@ -247,6 +247,9 @@ export const gitApi = {
   /** When the repo last fetched, from FETCH_HEAD — a CLI fetch counts too. */
   lastFetchAt: (path: string) => call<number | null>('lastFetchAt', path),
   pull: (path: string, mode: 'default' | 'ff-only' | 'rebase') => call<void>('pull', path, mode),
+  /** Push `local` to a differently named branch on `remote`; never forced. */
+  pushRef: (path: string, local: string, remote: string, remoteBranch: string) =>
+    call<void>('pushRef', path, local, remote, remoteBranch),
   push: (path: string, branch: string, opts?: { force?: boolean; remote?: string }) =>
     call<void>('push', path, branch, opts),
   /** Why a pull found no tracking information, and which repair fits. */
@@ -261,6 +264,11 @@ export const gitApi = {
   /** Fast-forward a local branch from its upstream without checking it out. */
   pullBranch: (path: string, branch: string) => call<void>('pullBranch', path, branch),
   setBranchRef: (path: string, branch: string, sha: string) => call<void>('setBranchRef', path, branch, sha),
+  isAncestor: (path: string, ancestor: string, descendant: string) =>
+    call<boolean>('isAncestor', path, ancestor, descendant),
+  /** Returns the commit `target` was on, for undo. */
+  fastForwardBranch: (path: string, target: string, source: string) =>
+    call<string>('fastForwardBranch', path, target, source),
   /** One push per remote, reported separately — one rejection does not cancel
    *  the rest. */
   pushToRemotes: (path: string, branch: string, remotes: string[], opts?: { force?: boolean; tags?: boolean }) =>

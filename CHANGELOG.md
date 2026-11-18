@@ -1,5 +1,22 @@
 
 
+## [4.25.0](https://github.com/MyAppDesk/gitcito/compare/v4.24.0...v4.25.0) (2026-11-18)
+
+
+### Features
+
+* **tabs:** compact image-only tabs and clearer tab strip ([d934f15](https://github.com/MyAppDesk/gitcito/commit/d934f15360b794a30c7b5e71ea1dde911e026a5f))
+
+
+### Bug Fixes
+
+* **worktrees:** refresh new branch graph refs and isolate copy tests ([ac72986](https://github.com/MyAppDesk/gitcito/commit/ac7298678892ee1de21108fa2b8f7b8b9336e254))
+
+
+### Performance Improvements
+
+* **worktrees:** collapse ignored-dir sweep + narrow refresh; branch picker search ([2568838](https://github.com/MyAppDesk/gitcito/commit/2568838784108d49feeb5a8ef2ca74904783361f))
+
 ## [4.24.0](https://github.com/MyAppDesk/gitcito/compare/v4.23.0...v4.24.0) (2026-11-13)
 
 

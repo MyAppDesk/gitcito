@@ -1,6 +1,7 @@
 import { ipcMain, type WebContents } from 'electron'
+import { execFile } from 'child_process'
 import { watch, type FSWatcher } from 'fs'
-import { join } from 'path'
+import { join, posix, resolve } from 'path'
 
 interface RepoWatch {
   path: string
@@ -22,6 +23,50 @@ const hooked = new Set<number>()
 
 const DEBOUNCE_MS = 350
 
+/**
+ * Where `fs.watch(dir, { recursive: true })` is native and cheap: FSEvents on
+ * macOS, ReadDirectoryChangesW on Windows — one handle for the whole tree.
+ *
+ * Linux has no recursive inotify. Since Node 20 `recursive: true` works there
+ * anyway, but implemented in JavaScript: it walks the whole tree and registers
+ * every directory, synchronously, ignored ones included. On a repository with a
+ * node_modules that blocked the main process for about a second on *every*
+ * repository switch (20k directories, 125k files), stalling every IPC call —
+ * the refresh the switch had just asked for among them.
+ */
+const NATIVE_RECURSIVE = process.platform === 'darwin' || process.platform === 'win32'
+
+/** More inotify watches than this is a tree we should not watch dir by dir;
+ *  `.git` plus the periodic and on-focus refreshes still cover it. */
+const MAX_DIR_WATCHES = 4000
+
+/**
+ * The directories that hold tracked files (the root included), from
+ * `git ls-files` output. These are where a change can show up in `git status`
+ * for a tracked file; ignored trees (node_modules, build output) are left out,
+ * which is what keeps this to a few hundred directories instead of tens of
+ * thousands. Paths are repo-relative, '' for the root.
+ */
+export function trackedDirs(files: string[]): string[] {
+  const dirs = new Set<string>([''])
+  for (const f of files) {
+    let d = posix.dirname(f)
+    while (d !== '.' && d !== '' && !dirs.has(d)) {
+      dirs.add(d)
+      d = posix.dirname(d)
+    }
+  }
+  return [...dirs]
+}
+
+function gitOut(repoPath: string, args: string[]): Promise<string> {
+  return new Promise((resolve, reject) => {
+    execFile('git', ['-C', repoPath, ...args], { maxBuffer: 256 * 1024 * 1024 }, (err, stdout) =>
+      err ? reject(err) : resolve(stdout)
+    )
+  })
+}
+
 // Paths inside .git that churn constantly without meaningful state changes.
 function isNoise(rel: string): boolean {
   // Normalise Windows separators.
@@ -42,7 +87,7 @@ function isGitMeta(rel: string): boolean {
   return p === '.git' || p.startsWith('.git/')
 }
 
-function clearWatch(id: number): void {
+export function clearWatch(id: number): void {
   const w = active.get(id)
   if (!w) return
   if (w.timer) clearTimeout(w.timer)
@@ -56,7 +101,7 @@ function clearWatch(id: number): void {
   active.delete(id)
 }
 
-function setWatch(sender: WebContents, repoPath: string): void {
+export function setWatch(sender: WebContents, repoPath: string): void {
   const id = sender.id
   const existing = active.get(id)
   if (existing && existing.path === repoPath) return
@@ -87,31 +132,72 @@ function setWatch(sender: WebContents, repoPath: string): void {
     }, DEBOUNCE_MS)
   }
 
-  try {
-    // Recursive watch covers both .git metadata and the working tree. Supported
-    // on macOS and Windows.
-    const w = watch(repoPath, { recursive: true }, (_evt, filename) =>
-      onChange(typeof filename === 'string' ? filename : null)
-    )
-    w.on('error', () => clearWatch(id))
-    state.watchers.push(w)
-  } catch {
-    // Platforms without recursive support (e.g. Linux): fall back to watching
-    // the .git directory recursively so branch/commit changes still surface.
+  active.set(id, state)
+  if (NATIVE_RECURSIVE) {
     try {
-      const gitDir = join(repoPath, '.git')
-      const w = watch(gitDir, { recursive: true }, (_evt, filename) =>
-        onChange(filename ? join('.git', filename.toString()) : null)
+      // One native handle covers both .git metadata and the working tree.
+      const w = watch(repoPath, { recursive: true }, (_evt, filename) =>
+        onChange(typeof filename === 'string' ? filename : null)
       )
       w.on('error', () => clearWatch(id))
       state.watchers.push(w)
     } catch {
-      return
+      // Unwatchable (gone, permissions): the polling refreshes still run.
+    }
+    return
+  }
+  void watchTrackedTree(id, state, onChange)
+}
+
+/**
+ * The Linux watch: the git directory recursively (small: refs, HEAD, index,
+ * logs, and 256 object fan-out dirs), plus one non-recursive watch per directory
+ * holding tracked files. All async, so a switch never stalls the main process.
+ * A change in a new untracked directory's contents is not seen until the next
+ * switch; creating the directory itself is (its parent is watched), and the
+ * focus and periodic refreshes cover the rest.
+ */
+async function watchTrackedTree(id: number, state: RepoWatch, onChange: (rel: string | null) => void): Promise<void> {
+  // Superseded by a later switch (or closed) while git was answering.
+  const stale = (): boolean => active.get(id) !== state
+  const add = (dir: string, recursive: boolean, toRel: (f: string) => string): void => {
+    try {
+      const w = watch(dir, { recursive }, (_evt, filename) => onChange(filename ? toRel(filename.toString()) : null))
+      // A directory deleted under us: drop that one watch, keep the rest.
+      w.on('error', () => {
+        try {
+          w.close()
+        } catch {
+          // already closed
+        }
+      })
+      state.watchers.push(w)
+    } catch {
+      // Gone between ls-files and here, or not watchable: skip it.
     }
   }
 
-  active.set(id, state)
+  // The git dir by asking git: in a linked worktree `.git` is a file, and the
+  // refs live in the common dir, not the worktree's own.
+  const [gitDir, commonDir] = await gitOut(state.path, ['rev-parse', '--absolute-git-dir', '--git-common-dir'])
+    .then((out) => out.trim().split('\n'))
+    .catch(() => [join(state.path, '.git')])
+  if (stale()) return
+  // --git-common-dir is relative to the repo outside a worktree and absolute inside one.
+  for (const dir of new Set([gitDir, commonDir && resolve(state.path, commonDir)].filter(Boolean) as string[])) {
+    add(dir, true, (f) => join('.git', f))
+  }
+
+  const files = await gitOut(state.path, ['ls-files', '-z'])
+    .then((out) => out.split('\0').filter(Boolean))
+    .catch(() => [] as string[])
+  if (stale()) return
+  const dirs = trackedDirs(files)
+  if (dirs.length > MAX_DIR_WATCHES) return
+  for (const dir of dirs) add(join(state.path, dir), false, (f) => (dir ? posix.join(dir, f) : f))
 }
+
+
 
 export function registerWatcherHandlers(): void {
   ipcMain.handle('watch:repo', (e, repoPath: string | null) => {

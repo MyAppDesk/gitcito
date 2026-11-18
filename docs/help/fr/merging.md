@@ -31,8 +31,14 @@ la survolez.
 
 | Dépôt | Signifie |
 |------|-------|
+| **Avance rapide de {target} jusqu'à {source}** | Avance la cible jusqu'à la source sans l'extraire — proposé seulement si la cible est une branche locale en retard sur la source, et pas celle extraite |
 | **Fusionner {source} → {cible}** | Extrait la cible et y fusionne la source |
 | **Rebaser {source} sur {cible}** | Rejoue les commits de la source par-dessus la cible |
+| **Rebase interactif de {source} sur {target}…** | Ouvre le planificateur de [rebase interactif](rebase.md) — proposé quand la source est la branche extraite |
+| **Pousser {source} vers {target}** | Pousse la source vers la branche distante de la cible (`origin/main`) — jamais forcé, le dépôt distant refuse donc tout ce qui n'est pas une avance rapide ; les mêmes contrôles de secrets que pour tout push |
+| **Réinitialiser {source} sur {target}…** | Ouvre la boîte de réinitialisation — soft, mixed ou hard, avec ce que chacun garde — quand la source est la branche extraite |
+| **Créer une pull request {source} → {target}…** | Ouvre le formulaire de [pull request](hosting.md) avec les deux branches — proposé quand le dépôt distant est chez un hébergeur pris en charge |
+| **Pousser {source} et ouvrir une pull request vers {target}…** | Remplace *Créer une pull request* quand la source n'est pas encore sur le dépôt distant : la pousse, puis ouvre le formulaire |
 | **Comparer** | Ouvre la [comparaison](#comparer-deux-références-quelconques) — ne change rien |
 
 **Le menu ne propose que ce que git sait faire.** Fusionner valide un commit sur

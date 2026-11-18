@@ -28,8 +28,14 @@ in any combination; the drop target highlights while you hover it.
 
 | Drop | Means |
 |------|-------|
+| **Fast-forward {target} to {source}** | Moves the target up to the source without checking it out — offered only when the target is a local branch behind the source, and not the one checked out |
 | **Merge {source} → {target}** | Checks the target out and merges the source into it |
 | **Rebase {source} onto {target}** | Replays the source's commits on top of the target |
+| **Interactive rebase {source} onto {target}…** | Opens the [interactive rebase](rebase.md) planner — offered when the source is the branch checked out |
+| **Push {source} to {target}** | Pushes the source to the target's remote branch (`origin/main`) — never forced, so the remote refuses anything but a fast-forward; the same secret checks as any push |
+| **Reset {source} to {target}…** | Opens the reset dialog — soft, mixed or hard, with what each keeps — offered when the source is the branch checked out |
+| **Create pull request {source} → {target}…** | Opens the [pull request](hosting.md) form with both branches filled in — offered when the remote is on a supported host |
+| **Push {source} and start a pull request to {target}…** | Replaces *Create pull request* when the source is not on the remote yet: pushes it, then opens the form |
 | **Compare** | Opens the [comparison](#compare-any-two-refs) — changes nothing |
 
 **The menu only offers what git can do.** Merging commits onto the target, so

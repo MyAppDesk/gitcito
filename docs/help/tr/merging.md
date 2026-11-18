@@ -29,8 +29,14 @@ geldiğinizde bırakma hedefi vurgulanır.
 
 | Bırakma | Anlamı |
 |------|-------|
+| **{target} dalını {source} dalına ileri sar** | Hedefi checkout yapmadan kaynağa kadar ilerletir — yalnızca hedef, kaynağın gerisindeki yerel bir dalsa ve etkin dal değilse |
 | **{kaynak} → {hedef} birleştir** | Hedefi checkout eder ve kaynağı onun içine birleştirir |
 | **{kaynak}'ı {hedef} üzerine rebase et** | Kaynağın commit'lerini hedefin üzerinde yeniden oynatır |
+| **{source} dalını {target} üzerine etkileşimli rebase…** | [Etkileşimli rebase](rebase.md) planlayıcısını açar — kaynak etkin dal olduğunda |
+| **{source} dalını {target} dalına gönder** | Kaynağı hedefin uzak dalına (`origin/main`) gönderir — asla zorlanmaz, bu yüzden uzak depo ileri sarma olmayan her şeyi reddeder; her push'taki gizli bilgi denetimleri burada da geçerli |
+| **{source} dalını {target} noktasına sıfırla…** | Sıfırlama penceresini açar — soft, mixed ya da hard, her birinin neyi koruduğuyla — kaynak etkin dal olduğunda |
+| **Pull request oluştur: {source} → {target}…** | [Pull request](hosting.md) formunu iki dal doldurulmuş olarak açar — uzak depo desteklenen bir sağlayıcıdaysa |
+| **{source} dalını gönder ve {target} için pull request başlat…** | Kaynak henüz uzak depoda değilse *Pull request oluştur* seçeneğinin yerini alır: önce gönderir, sonra formu açar |
 | **Karşılaştır** | [Karşılaştırmayı](#herhangi-iki-refi-karşılaştırma) açar — hiçbir şeyi değiştirmez |
 
 **Menü yalnızca git'in yapabildiklerini önerir.** Birleştirme hedefin üzerine

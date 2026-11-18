@@ -29,8 +29,14 @@ upuszczenia podświetla się, gdy nad nim wisisz.
 
 | Upuszczenie | Oznacza |
 |------|-------|
+| **Przewiń {target} do {source} (fast-forward)** | Przesuwa cel do źródła bez checkoutu — tylko gdy cel jest lokalną gałęzią za źródłem i nie jest gałęzią bieżącą |
 | **Zmerguj {source} → {target}** | Przełącza na cel i wmerguje w niego źródło |
 | **Zrebase'uj {source} na {target}** | Odtwarza commity źródła na wierzchu celu |
+| **Interaktywny rebase {source} na {target}…** | Otwiera planer [interaktywnego rebase](rebase.md) — gdy źródło jest gałęzią bieżącą |
+| **Wypchnij {source} do {target}** | Wypycha źródło do zdalnej gałęzi celu (`origin/main`) — nigdy wymuszenie, więc zdalne repozytorium odrzuca wszystko poza fast-forward; te same kontrole sekretów co przy każdym pushu |
+| **Zresetuj {source} do {target}…** | Otwiera okno resetu — soft, mixed lub hard, z opisem, co każdy zachowuje — gdy źródło jest gałęzią bieżącą |
+| **Utwórz pull request {source} → {target}…** | Otwiera formularz [pull requesta](hosting.md) z obiema gałęziami — gdy zdalne repozytorium jest u obsługiwanego dostawcy |
+| **Wypchnij {source} i utwórz pull request do {target}…** | Zastępuje *Utwórz pull request*, gdy źródła jeszcze nie ma w zdalnym repozytorium: wypycha je, potem otwiera formularz |
 | **Porównaj** | Otwiera [porównanie](#porównanie-dowolnych-dwóch-referencji) — nic nie zmienia |
 
 **Menu proponuje tylko to, co git potrafi.** Merge commituje na cel, więc cel

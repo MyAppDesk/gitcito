@@ -29,8 +29,14 @@ Drop-Ziel leuchtet auf, während du darüber schwebst.
 
 | Drop | Bedeutet |
 |------|-------|
+| **{target} per Fast-Forward auf {source}** | Bringt das Ziel ohne Checkout auf den Stand der Quelle — nur wenn das Ziel ein lokaler Branch hinter der Quelle ist und nicht der ausgecheckte |
 | **Merge {source} → {target}** | Checkt das Ziel aus und merged die Quelle hinein |
 | **Rebase {source} auf {target}** | Spielt die Commits der Quelle oben auf dem Ziel neu ab |
+| **Interaktiver Rebase von {source} auf {target}…** | Öffnet die Planung des [interaktiven Rebase](rebase.md) — wenn die Quelle der ausgecheckte Branch ist |
+| **{source} nach {target} pushen** | Pusht die Quelle auf den Remote-Branch des Ziels (`origin/main`) — nie erzwungen, das Remote lehnt also alles außer Fast-Forward ab; dieselben Geheimnis-Prüfungen wie jeder Push |
+| **{source} auf {target} zurücksetzen…** | Öffnet den Reset-Dialog — soft, mixed oder hard, mit dem, was jeder behält — wenn die Quelle der ausgecheckte Branch ist |
+| **Pull Request {source} → {target} erstellen…** | Öffnet das [Pull-Request](hosting.md)-Formular mit beiden Branches — wenn das Remote bei einem unterstützten Anbieter liegt |
+| **{source} pushen und Pull Request nach {target} starten…** | Ersetzt *Pull Request erstellen*, wenn die Quelle noch nicht auf dem Remote ist: pusht sie und öffnet dann das Formular |
 | **Vergleichen** | Öffnet den [Vergleich](#beliebige-zwei-refs-vergleichen) — ändert nichts |
 
 **Das Menü bietet nur an, was Git kann.** Mergen committet auf das Ziel, also

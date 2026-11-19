@@ -185,6 +185,7 @@ export const ja: Dict = {
   'worktree.moveSubmit': '移動',
   'worktree.moveOpenTab': 'タブで開いています — 先にタブを閉じてください',
   'worktree.removeCleanMsg': '{path} のワークツリーを削除しますか？ブランチ {name} は残ります。そのフォルダ内の無視ファイル（.env、node_modules、ビルド出力）も一緒に削除され、元に戻しても復元されません。',
+  'worktree.removeDetachedMsg': '{path} のワークツリーを削除しますか？どのブランチにもありません（コミット {name}）。そこで作られ、どのブランチにも含まれないコミットは、削除後に復元が難しくなります。そのフォルダ内の無視ファイル（.env、node_modules、ビルド出力）も一緒に削除され、元に戻しても復元されません。',
   'worktree.removeDirtyTitle': '変更を破棄して削除しますか？',
   'worktree.removeDirtyMsg': '{path} 内の未コミットの変更があるファイル: {count}。ワークツリーを削除すると、.env などの無視ファイルとともに完全に消去されます。元に戻せません。',
   'worktree.removeDirtyConfirm': '破棄して削除',

@@ -185,6 +185,7 @@ export const tr: Dict = {
   'worktree.moveSubmit': 'Taşı',
   'worktree.moveOpenTab': 'Bir sekmede açık — önce sekmeyi kapatın',
   'worktree.removeCleanMsg': '{path} konumundaki worktree kaldırılsın mı? {name} dalı korunur. O klasördeki yok sayılan dosyalar (.env, node_modules, derleme çıktısı) onunla birlikte silinir ve geri alma bunları geri getirmez.',
+  'worktree.removeDetachedMsg': '{path} konumundaki worktree kaldırılsın mı? Hiçbir dalda değil (commit {name}): orada yapılan ve hiçbir dalın içermediği commit’ler kaldırıldıktan sonra zor kurtarılır. O klasördeki yok sayılan dosyalar (.env, node_modules, derleme çıktısı) onunla birlikte silinir ve geri alma bunları geri getirmez.',
   'worktree.removeDirtyTitle': 'Değişiklikler atılıp kaldırılsın mı?',
   'worktree.removeDirtyMsg': '{path} içinde commit edilmemiş değişiklik olan dosyalar: {count}. Worktree’yi kaldırmak bunları .env gibi yok sayılan dosyalarla birlikte kalıcı olarak siler. Bu geri alınamaz.',
   'worktree.removeDirtyConfirm': 'At ve kaldır',

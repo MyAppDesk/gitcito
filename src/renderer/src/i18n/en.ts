@@ -187,6 +187,7 @@ export const en = {
   'worktree.moveSubmit': 'Move',
   'worktree.moveOpenTab': 'It is open in a tab — close the tab first',
   'worktree.removeCleanMsg': 'Remove the worktree at {path}? Branch {name} is kept. Ignored files in that folder (.env, node_modules, build output) are deleted with it, and undo does not bring them back.',
+  'worktree.removeDetachedMsg': 'Remove the worktree at {path}? It is on no branch (commit {name}): commits made there that no branch contains become hard to recover once it is gone. Ignored files in that folder (.env, node_modules, build output) are deleted with it, and undo does not bring them back.',
   'worktree.removeDirtyTitle': 'Discard changes and remove?',
   'worktree.removeDirtyMsg': 'Files with uncommitted changes in {path}: {count}. Removing the worktree deletes them for good, along with ignored files such as .env. This cannot be undone.',
   'worktree.removeDirtyConfirm': 'Discard and remove',

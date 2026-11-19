@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { execFileSync } from 'child_process'
-import { existsSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from 'fs'
+import { existsSync, mkdtempSync, readFileSync, realpathSync, renameSync, rmSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
 import { gitService } from '../src/main/git'
@@ -20,7 +20,8 @@ describe('worktree management', () => {
   }
 
   beforeEach(() => {
-    dir = mkdtempSync(join(tmpdir(), 'gitcito-wt-'))
+    // realpath: macOS tmpdir is /var, a symlink, but git reports /private/var.
+    dir = realpathSync(mkdtempSync(join(tmpdir(), 'gitcito-wt-')))
     repo = join(dir, 'repo')
     execFileSync('git', ['init', '-q', '-b', 'main', repo])
     git(repo, 'config', 'user.name', 'T')

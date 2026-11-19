@@ -1136,7 +1136,12 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     openModal({
       kind: 'confirm',
       title: t('sidebar.removeWorktree'),
-      message: interp(t('worktree.removeCleanMsg'), { path: w.path, name: worktreeDisplayName(w) }),
+      // A detached HEAD has no branch to keep; its commits survive only in the
+      // worktree's own reflog, which removal deletes.
+      message: interp(t(w.branch ? 'worktree.removeCleanMsg' : 'worktree.removeDetachedMsg'), {
+        path: w.path,
+        name: worktreeDisplayName(w)
+      }),
       danger: true,
       confirmLabel: t('common.delete'),
       onConfirm: () => void repoActions.worktreeRemove(path, w)

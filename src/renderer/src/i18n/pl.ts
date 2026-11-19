@@ -186,6 +186,7 @@ export const pl: Dict = {
   'worktree.moveSubmit': 'Przenieś',
   'worktree.moveOpenTab': 'Jest otwarte w karcie — najpierw zamknij kartę',
   'worktree.removeCleanMsg': 'Usunąć worktree w {path}? Gałąź {name} zostaje. Ignorowane pliki w tym folderze (.env, node_modules, wyniki builda) zostaną usunięte razem z nim, a cofnięcie ich nie przywróci.',
+  'worktree.removeDetachedMsg': 'Usunąć worktree w {path}? Nie jest na żadnej gałęzi (commit {name}): commity utworzone w nim, których nie zawiera żadna gałąź, będzie trudno odzyskać po jego usunięciu. Ignorowane pliki w tym folderze (.env, node_modules, wyniki builda) zostaną usunięte razem z nim, a cofnięcie ich nie przywróci.',
   'worktree.removeDirtyTitle': 'Odrzucić zmiany i usunąć?',
   'worktree.removeDirtyMsg': 'Pliki z niezatwierdzonymi zmianami w {path}: {count}. Usunięcie worktree kasuje je na zawsze, razem z ignorowanymi plikami, takimi jak .env. Tego nie można cofnąć.',
   'worktree.removeDirtyConfirm': 'Odrzuć i usuń',

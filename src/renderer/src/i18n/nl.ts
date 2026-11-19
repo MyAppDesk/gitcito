@@ -186,6 +186,7 @@ export const nl: Dict = {
   'worktree.moveSubmit': 'Verplaatsen',
   'worktree.moveOpenTab': 'Hij is geopend in een tabblad — sluit eerst het tabblad',
   'worktree.removeCleanMsg': 'De worktree in {path} verwijderen? Branch {name} blijft behouden. Genegeerde bestanden in die map (.env, node_modules, build-uitvoer) worden mee verwijderd, en ongedaan maken brengt ze niet terug.',
+  'worktree.removeDetachedMsg': 'De worktree in {path} verwijderen? Hij staat op geen enkele branch (commit {name}): commits die daar zijn gemaakt en in geen branch zitten, zijn daarna moeilijk terug te halen. Genegeerde bestanden in die map (.env, node_modules, build-uitvoer) worden mee verwijderd, en ongedaan maken brengt ze niet terug.',
   'worktree.removeDirtyTitle': 'Wijzigingen weggooien en verwijderen?',
   'worktree.removeDirtyMsg': 'Bestanden met niet-gecommitte wijzigingen in {path}: {count}. Het verwijderen van de worktree wist ze definitief, samen met genegeerde bestanden zoals .env. Dit kan niet ongedaan worden gemaakt.',
   'worktree.removeDirtyConfirm': 'Weggooien en verwijderen',

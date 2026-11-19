@@ -186,6 +186,7 @@ export const ptBR: Dict = {
   'worktree.moveSubmit': 'Mover',
   'worktree.moveOpenTab': 'Está aberta numa aba — feche a aba antes',
   'worktree.removeCleanMsg': 'Remover a worktree em {path}? A branch {name} é mantida. Os arquivos ignorados da pasta (.env, node_modules, saída de build) são apagados junto, e o desfazer não os traz de volta.',
+  'worktree.removeDetachedMsg': 'Remover a worktree em {path}? Ela não está em nenhuma branch (commit {name}): commits feitos ali que nenhuma branch contém ficam difíceis de recuperar depois que ela sumir. Os arquivos ignorados da pasta (.env, node_modules, saída de build) são apagados junto, e o desfazer não os traz de volta.',
   'worktree.removeDirtyTitle': 'Descartar alterações e remover?',
   'worktree.removeDirtyMsg': 'Arquivos com alterações não commitadas em {path}: {count}. Remover a worktree apaga essas alterações de vez, junto com arquivos ignorados como o .env. Não dá para desfazer.',
   'worktree.removeDirtyConfirm': 'Descartar e remover',

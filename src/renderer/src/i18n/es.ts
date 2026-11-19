@@ -185,6 +185,7 @@ export const es: Dict = {
   'worktree.moveSubmit': 'Mover',
   'worktree.moveOpenTab': 'Está abierto en una pestaña: ciérrala primero',
   'worktree.removeCleanMsg': '¿Eliminar el worktree en {path}? La rama {name} se conserva. Los archivos ignorados de esa carpeta (.env, node_modules, resultados de compilación) se borran con él y deshacer no los recupera.',
+  'worktree.removeDetachedMsg': '¿Eliminar el worktree en {path}? No está en ninguna rama (commit {name}): los commits hechos allí que ninguna rama contiene serán difíciles de recuperar cuando desaparezca. Los archivos ignorados de esa carpeta (.env, node_modules, resultados de compilación) se borran con él y deshacer no los recupera.',
   'worktree.removeDirtyTitle': '¿Descartar cambios y eliminar?',
   'worktree.removeDirtyMsg': 'Archivos con cambios sin confirmar en {path}: {count}. Eliminar el worktree los borra definitivamente, junto con archivos ignorados como .env. No se puede deshacer.',
   'worktree.removeDirtyConfirm': 'Descartar y eliminar',

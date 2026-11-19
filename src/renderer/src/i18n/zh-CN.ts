@@ -186,6 +186,7 @@ export const zhCN: Dict = {
   'worktree.moveSubmit': '移动',
   'worktree.moveOpenTab': '它已在标签页中打开 — 请先关闭该标签页',
   'worktree.removeCleanMsg': '删除位于 {path} 的工作树？分支 {name} 会保留。该文件夹中被忽略的文件（.env、node_modules、构建输出）会一并删除，撤销也无法恢复。',
+  'worktree.removeDetachedMsg': '删除位于 {path} 的工作树？它不在任何分支上（提交 {name}）：在那里创建、且不属于任何分支的提交在删除后将难以恢复。该文件夹中被忽略的文件（.env、node_modules、构建输出）会一并删除，撤销也无法恢复。',
   'worktree.removeDirtyTitle': '放弃更改并删除？',
   'worktree.removeDirtyMsg': '{path} 中有未提交更改的文件：{count}。删除工作树会永久清除这些更改，以及 .env 等被忽略的文件。此操作无法撤销。',
   'worktree.removeDirtyConfirm': '放弃并移除',

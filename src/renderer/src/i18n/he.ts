@@ -186,6 +186,7 @@ export const he: Dict = {
   'worktree.moveSubmit': 'העבר',
   'worktree.moveOpenTab': 'הוא פתוח בלשונית — סגור קודם את הלשונית',
   'worktree.removeCleanMsg': 'להסיר את עץ העבודה שב-{path}? הענף {name} נשמר. קבצים מוחרגים בתיקייה (.env, node_modules, תוצרי בנייה) נמחקים יחד איתו, והביטול לא מחזיר אותם.',
+  'worktree.removeDetachedMsg': 'להסיר את עץ העבודה שב-{path}? הוא אינו על אף ענף (קומיט {name}): קומיטים שנוצרו בו ואינם כלולים באף ענף יהיו קשים לשחזור לאחר הסרתו. קבצים מוחרגים בתיקייה (.env, node_modules, תוצרי בנייה) נמחקים יחד איתו, והביטול לא מחזיר אותם.',
   'worktree.removeDirtyTitle': 'למחוק את השינויים ולהסיר?',
   'worktree.removeDirtyMsg': 'קבצים עם שינויים שלא בוצע להם commit ב-{path}: {count}. הסרת עץ העבודה מוחקת אותם לצמיתות, יחד עם קבצים מוחרגים כמו .env. אי אפשר לבטל זאת.',
   'worktree.removeDirtyConfirm': 'מחק והסר',

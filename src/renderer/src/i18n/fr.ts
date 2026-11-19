@@ -185,6 +185,7 @@ export const fr: Dict = {
   'worktree.moveSubmit': 'Déplacer',
   'worktree.moveOpenTab': 'Il est ouvert dans un onglet — fermez d’abord l’onglet',
   'worktree.removeCleanMsg': 'Supprimer l’arbre de travail situé dans {path} ? La branche {name} est conservée. Les fichiers ignorés de ce dossier (.env, node_modules, sorties de build) sont supprimés avec lui, et l’annulation ne les restaure pas.',
+  'worktree.removeDetachedMsg': 'Supprimer l’arbre de travail situé dans {path} ? Il n’est sur aucune branche (commit {name}) : les commits faits là-bas qu’aucune branche ne contient deviendront difficiles à récupérer après sa suppression. Les fichiers ignorés de ce dossier (.env, node_modules, sorties de build) sont supprimés avec lui, et l’annulation ne les restaure pas.',
   'worktree.removeDirtyTitle': 'Abandonner les modifications et supprimer ?',
   'worktree.removeDirtyMsg': 'Fichiers avec des modifications non validées dans {path} : {count}. Supprimer l’arbre de travail les efface définitivement, avec les fichiers ignorés comme .env. Cette action est irréversible.',
   'worktree.removeDirtyConfirm': 'Abandonner et supprimer',

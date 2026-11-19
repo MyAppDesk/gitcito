@@ -186,6 +186,7 @@ export const ko: Dict = {
   'worktree.moveSubmit': '이동',
   'worktree.moveOpenTab': '탭에서 열려 있습니다 — 먼저 탭을 닫으세요',
   'worktree.removeCleanMsg': '{path}의 워크트리를 제거할까요? {name} 브랜치는 유지됩니다. 해당 폴더의 무시된 파일(.env, node_modules, 빌드 출력)도 함께 삭제되며, 실행 취소로 복원되지 않습니다.',
+  'worktree.removeDetachedMsg': '{path}의 워크트리를 제거할까요? 어떤 브랜치에도 있지 않습니다(커밋 {name}). 그곳에서 만들었지만 어떤 브랜치에도 포함되지 않은 커밋은 제거 후 복구하기 어려워집니다. 해당 폴더의 무시된 파일(.env, node_modules, 빌드 출력)도 함께 삭제되며, 실행 취소로 복원되지 않습니다.',
   'worktree.removeDirtyTitle': '변경 사항을 버리고 제거할까요?',
   'worktree.removeDirtyMsg': '{path}에서 커밋되지 않은 변경 사항이 있는 파일: {count}. 워크트리를 제거하면 .env 같은 무시된 파일과 함께 영구히 삭제됩니다. 되돌릴 수 없습니다.',
   'worktree.removeDirtyConfirm': '버리고 제거',

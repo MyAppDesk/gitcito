@@ -185,6 +185,7 @@ export const it: Dict = {
   'worktree.moveSubmit': 'Sposta',
   'worktree.moveOpenTab': 'È aperto in una scheda: chiudi prima la scheda',
   'worktree.removeCleanMsg': 'Rimuovere il worktree in {path}? Il branch {name} viene mantenuto. I file ignorati di quella cartella (.env, node_modules, output di build) vengono eliminati con esso e l’annullamento non li ripristina.',
+  'worktree.removeDetachedMsg': 'Rimuovere il worktree in {path}? Non è su nessun branch (commit {name}): i commit fatti lì che nessun branch contiene diventeranno difficili da recuperare una volta rimosso. I file ignorati di quella cartella (.env, node_modules, output di build) vengono eliminati con esso e l’annullamento non li ripristina.',
   'worktree.removeDirtyTitle': 'Scartare le modifiche e rimuovere?',
   'worktree.removeDirtyMsg': 'File con modifiche non committate in {path}: {count}. Rimuovere il worktree le elimina definitivamente, insieme ai file ignorati come .env. Non si può annullare.',
   'worktree.removeDirtyConfirm': 'Scarta e rimuovi',

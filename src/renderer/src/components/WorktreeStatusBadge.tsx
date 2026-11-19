@@ -12,6 +12,11 @@ import type { WorktreeInfo, WorktreeStatus } from '../../../shared/types'
  * worktree's HEAD moves, and when the window regains focus — the moment the
  * user may have been working in it elsewhere — never on the refresh tick.
  */
+// Every row listens for focus, so alt-tabbing back would spawn one `git status`
+// per worktree each time; skip a row whose status is still fresh.
+const FOCUS_REFETCH_MS = 5000
+const loadedAt = new Map<string, number>()
+
 export function WorktreeStatusBadge({ repoPath, worktree }: { repoPath: string; worktree: WorktreeInfo }): React.JSX.Element | null {
   const t = useT()
   const [status, setStatus] = useState<WorktreeStatus | null>(null)
@@ -19,16 +24,20 @@ export function WorktreeStatusBadge({ repoPath, worktree }: { repoPath: string; 
   useEffect(() => {
     let cancelled = false
     const load = (): void => {
+      loadedAt.set(worktree.path, Date.now())
       gitApi
         .getWorktreeStatus(repoPath, worktree.path)
         .then((s) => !cancelled && setStatus(s))
         .catch(() => !cancelled && setStatus(null))
     }
+    const onFocus = (): void => {
+      if (Date.now() - (loadedAt.get(worktree.path) ?? 0) >= FOCUS_REFETCH_MS) load()
+    }
     load()
-    window.addEventListener('focus', load)
+    window.addEventListener('focus', onFocus)
     return () => {
       cancelled = true
-      window.removeEventListener('focus', load)
+      window.removeEventListener('focus', onFocus)
     }
   }, [repoPath, worktree.path, worktree.head])
 

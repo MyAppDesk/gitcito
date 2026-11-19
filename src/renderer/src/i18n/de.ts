@@ -186,6 +186,7 @@ export const de: Dict = {
   'worktree.moveSubmit': 'Verschieben',
   'worktree.moveOpenTab': 'Er ist in einem Tab geöffnet – schließe zuerst den Tab',
   'worktree.removeCleanMsg': 'Worktree unter {path} entfernen? Der Branch {name} bleibt erhalten. Ignorierte Dateien in diesem Ordner (.env, node_modules, Build-Ausgaben) werden mit gelöscht, und Rückgängig stellt sie nicht wieder her.',
+  'worktree.removeDetachedMsg': 'Worktree unter {path} entfernen? Er steht auf keinem Branch (Commit {name}): Commits, die dort entstanden und in keinem Branch enthalten sind, lassen sich danach nur schwer wiederherstellen. Ignorierte Dateien in diesem Ordner (.env, node_modules, Build-Ausgaben) werden mit gelöscht, und Rückgängig stellt sie nicht wieder her.',
   'worktree.removeDirtyTitle': 'Änderungen verwerfen und entfernen?',
   'worktree.removeDirtyMsg': 'Dateien mit nicht committeten Änderungen in {path}: {count}. Das Entfernen des Worktrees löscht sie endgültig, zusammen mit ignorierten Dateien wie .env. Das lässt sich nicht rückgängig machen.',
   'worktree.removeDirtyConfirm': 'Verwerfen und entfernen',

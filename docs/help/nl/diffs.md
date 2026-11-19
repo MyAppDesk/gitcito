@@ -15,7 +15,7 @@ keywords: diff split side-by-side gesplitst woordniveau word level witruimte whi
 | **Unified ↔ split** | Naast elkaar als je wilt vergelijken, gestapeld als je wilt lezen |
 | **Woordniveau** | Markeert alleen de gewijzigde tokens binnen een bewerkte regel — rood op de oude, groen op de nieuwe |
 | **Witruimte negeren** | Verbergt herinspringen zodat de echte wijziging bovendrijft |
-| **Terugloop** (alleen gesplitste weergave) | Laat lange regels teruglopen binnen hun kolom in plaats van te scrollen |
+| **Terugloop** | Laat lange regels teruglopen in plaats van ze zijwaarts te scrollen — binnen het paneel in de samengevoegde weergave, binnen hun kolom in de gesplitste |
 | **Gekoppeld** (gesplitst, zonder terugloop) | Scrolt beide helften samen, verticaal en zijwaarts — uit scrolt elke kolom apart |
 | <kbd>⌘F</kbd> | Zoeken binnen de diff, met stappen naar volgende/vorige |
 

@@ -1,5 +1,12 @@
 
 
+## Unreleased
+
+
+### Features
+
+* **diff:** **Wrap** now works in the unified view too, not only side by side: a long line — minified code, a paragraph of prose — folds inside the pane instead of scrolling sideways. One setting for both views, off by default, remembered across files and sessions.
+
 ## [4.25.0](https://github.com/MyAppDesk/gitcito/compare/v4.24.0...v4.25.0) (2026-11-18)
 
 

@@ -15,7 +15,7 @@ keywords: diff split dividido lado a lado side-by-side palavra word level espaç
 | **Unificado ↔ dividido** | Lado a lado quando você quer comparar, empilhado quando você quer ler |
 | **Nível de palavra** | Destaca só os tokens alterados dentro de uma linha editada — vermelho no antigo, verde no novo |
 | **Ignorar espaços em branco** | Esconde reindentação para a mudança de verdade aparecer |
-| **Quebrar linha** (só na visão lado a lado) | Quebra linhas longas dentro da coluna em vez de rolá-las |
+| **Quebrar linha** | Quebra linhas longas em vez de rolá-las para o lado — dentro do painel na visão unificada, dentro da coluna na visão lado a lado |
 | **Vinculado** (lado a lado, sem quebra) | Rola as duas metades juntas, na vertical e na horizontal — desligado, cada coluna rola sozinha |
 | <kbd>⌘F</kbd> | Buscar dentro do diff, com navegação para o próximo/anterior |
 

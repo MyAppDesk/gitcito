@@ -15,7 +15,7 @@ keywords: diff bölünmüş yan yana sözcük düzeyi boşluk görsel önizleme 
 | **Birleşik ↔ bölünmüş** | Karşılaştırmak istediğinizde yan yana, okumak istediğinizde alt alta |
 | **Sözcük düzeyi** | Düzenlenmiş bir satırın içinde yalnızca değişen belirteçleri vurgular — eskisinde kırmızı, yenisinde yeşil |
 | **Boşlukları yok say** | Yeniden girintilemeyi gizler, böylece gerçek değişiklik öne çıkar |
-| **Satır kaydırma** (yalnızca bölünmüş görünüm) | Uzun satırları kaydırmak yerine kendi sütununda alt satıra taşır |
+| **Satır kaydır** | Uzun satırları yana kaydırmak yerine alt satıra taşır — birleşik görünümde panel içinde, bölünmüş görünümde kendi sütununda |
 | **Bağlı** (bölünmüş, kaydırma kapalı) | İki yarıyı dikeyde ve yatayda birlikte kaydırır — kapalıyken her sütun kendi başına kayar |
 | <kbd>⌘F</kbd> | Diff içinde arama, sonraki/önceki adımlamasıyla |
 

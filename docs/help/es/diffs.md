@@ -15,7 +15,7 @@ keywords: diff partido split lado a lado side-by-side palabra word level espacio
 | **Unificado ↔ partido** | Lado a lado cuando quieres comparar, apilado cuando quieres leer |
 | **Por palabras** | Resalta solo los tokens que cambiaron dentro de una línea editada — rojo en la vieja, verde en la nueva |
 | **Ignorar espacios** | Oculta los reindentados para que salga a la superficie el cambio de verdad |
-| **Ajustar** (solo en vista partida) | Pliega las líneas largas dentro de su columna en vez de desplazarlas |
+| **Ajustar** | Pliega las líneas largas en vez de desplazarlas de lado — dentro del panel en la vista unificada, dentro de su columna en la vista partida |
 | **Vinculado** (partido, sin ajuste) | Desplaza las dos mitades a la vez, en vertical y en horizontal — desactivado, cada columna va por su cuenta |
 | <kbd>⌘F</kbd> | Buscar dentro del diff, con salto al siguiente/anterior |
 

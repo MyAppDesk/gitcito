@@ -16,7 +16,7 @@ keywords: diff split side-by-side word level whitespace moved code color-moved i
 | **Word-level** | Highlights just the changed tokens inside an edited line — red on the old, green on the new |
 | **Ignore whitespace** | Hides reindentation so the real change surfaces |
 | **Moved code** (on by default) | Tints blocks that were only moved, not changed, in blue — shown when the diff has any |
-| **Wrap** (split only) | Folds long lines inside their column instead of scrolling them |
+| **Wrap** | Folds long lines instead of scrolling them sideways — inside the pane in the unified view, inside their column in split view |
 | **Linked** (split, wrap off) | Scrolls both halves together, vertically and sideways — off, each column scrolls on its own |
 | <kbd>⌘F</kbd> | Find inside the diff, with next/previous stepping |
 

@@ -15,7 +15,7 @@ keywords: diff split affiancato side-by-side parola whitespace spazi immagine an
 | **Unificato ↔ affiancato** | Affiancato quando vuoi confrontare, impilato quando vuoi leggere |
 | **A livello di parola** | Evidenzia solo i token cambiati dentro una riga modificata — rosso sul vecchio, verde sul nuovo |
 | **Ignora gli spazi** | Nasconde le reindentazioni così emerge la modifica vera |
-| **A capo** (solo vista affiancata) | Manda a capo le righe lunghe dentro la loro colonna invece di scorrerle |
+| **A capo** | Manda a capo le righe lunghe invece di scorrerle di lato — nel pannello nella vista unificata, nella loro colonna in quella affiancata |
 | **Collegato** (affiancata, senza a capo) | Fa scorrere le due metà insieme, in verticale e in orizzontale — disattivato, ogni colonna scorre per conto suo |
 | <kbd>⌘F</kbd> | Cerca dentro il diff, con avanti/indietro |
 

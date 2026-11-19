@@ -2460,6 +2460,8 @@ export const ar: Dict = {
   'keychain.settingsTitle': 'سلسلة مفاتيح نظام التشغيل',
   'keychain.statusGranted': 'مفعّلة — الرموز ومدخلات الخزنة مشفَّرة بسلسلة مفاتيح نظام التشغيل.',
   'keychain.statusDeclined': 'معطّلة — تُحفظ الرموز في الذاكرة لهذه الجلسة فقط والخزنة غير متاحة.',
+  'keychain.tokenSessionOnly': 'يُحفَظ فقط حتى تغلق Gitcito: سلسلة مفاتيح النظام معطّلة.',
+  'keychain.tokenNoKeyring': 'يُحفَظ فقط حتى تغلق Gitcito: لا يوفّر نظامك سلسلة مفاتيح لتشفيره.',
   'keychain.statusUnset': 'لم تُعد بعد — سيشرح Gitcito ويسأل أول مرة يحتاج فيها إلى تخزين سر.',
   'keychain.updateFailed': 'تعذّر على Gitcito تحديث بيانات الاعتماد هذه في سلسلة مفاتيح نظام التشغيل.',
   'settings.githubGitTokenHint': 'يُستخدم لعمليات Git عبر HTTPS مع github.com. اتركه فارغًا لاستخدام مساعد بيانات اعتماد Git المُعد.',

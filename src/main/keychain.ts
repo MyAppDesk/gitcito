@@ -126,6 +126,17 @@ export async function ensureKeychain(reason: KeychainReason): Promise<boolean> {
   }
 }
 
+/**
+ * Run when the user turns the keychain on from Settings. Registered by the
+ * settings module (which imports this one, so it cannot be imported back):
+ * tokens typed while the keychain was off live only in memory, and turning it
+ * on is the moment to put them where they survive a restart.
+ */
+const grantedListeners: Array<() => Promise<void>> = []
+export function onKeychainEnabled(listener: () => Promise<void>): void {
+  grantedListeners.push(listener)
+}
+
 export function registerKeychainHandlers(): void {
   ipcMain.handle('keychain:answer', (_e, granted: boolean) => {
     answer?.(!!granted)
@@ -143,6 +154,8 @@ export function registerKeychainHandlers(): void {
     // Turning it on from Settings → Security is itself an informed choice, so
     // it counts as explained: no dialog on the next keychain use.
     await setConsent('granted')
-    return canUseKeychain()
+    const usable = await canUseKeychain()
+    if (usable) for (const listener of grantedListeners) await listener().catch(() => undefined)
+    return usable
   })
 }

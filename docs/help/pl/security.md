@@ -54,6 +54,8 @@ później w **Ustawienia → Bezpieczeństwo → Pęk kluczy systemu**.
 Świeża instalacja wykonuje **zero** wywołań do pęku kluczy, dopóki coś naprawdę
 nie wymaga zapisania.
 
+Dopóki jest wyłączony, pole tokenu w Integracjach o tym mówi — *Zapisany tylko do zamknięcia Gitcito: systemowy pęk kluczy jest wyłączony.* — z przyciskiem **Włącz** obok. Włączenie go, stamtąd lub stąd, zapisuje też tokeny wpisane już w tej sesji, więc nie trzeba ich wklejać ponownie.
+
 ## Bezpieczne dzielenie się
 
 [Bezpieczne udostępnianie](secure-share.md) eksportuje ustawienia, wpisy sejfu

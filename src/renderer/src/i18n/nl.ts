@@ -2465,6 +2465,8 @@ export const nl: Dict = {
   'keychain.settingsTitle': 'OS-keychain',
   'keychain.statusGranted': 'Aan — tokens en kluisitems worden versleuteld met je OS-keychain.',
   'keychain.statusDeclined': 'Uit — tokens blijven alleen tijdens deze sessie in het geheugen en de kluis is niet beschikbaar.',
+  'keychain.tokenSessionOnly': 'Alleen bewaard tot je Gitcito afsluit: de OS-keychain staat uit.',
+  'keychain.tokenNoKeyring': 'Alleen bewaard tot je Gitcito afsluit: je systeem biedt geen keychain om het te versleutelen.',
   'keychain.statusUnset': 'Nog niet ingesteld — Gitcito legt het uit en vraagt het de eerste keer dat het een geheim moet opslaan.',
   'keychain.updateFailed': 'Gitcito kon deze inloggegevens niet bijwerken in de sleutelhanger van je besturingssysteem.',
   'settings.githubGitTokenHint': 'Wordt gebruikt voor Git-bewerkingen via HTTPS met github.com. Laat leeg om je ingestelde Git-inloggegevenshulp te gebruiken.',

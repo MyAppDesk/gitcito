@@ -2419,6 +2419,8 @@ export const it: Dict = {
   'keychain.settingsTitle': 'Portachiavi del sistema',
   'keychain.statusGranted': 'Attivo — i token e le voci della cassaforte sono cifrati con il portachiavi del tuo sistema.',
   'keychain.statusDeclined': 'Disattivo — i token restano in memoria solo per questa sessione e la cassaforte non è disponibile.',
+  'keychain.tokenSessionOnly': 'Conservato solo finché non chiudi Gitcito: il portachiavi di sistema è disattivato.',
+  'keychain.tokenNoKeyring': 'Conservato solo finché non chiudi Gitcito: il sistema non offre un portachiavi per cifrarlo.',
   'keychain.statusUnset': 'Non ancora configurato — Gitcito ti spiegherà tutto e te lo chiederà la prima volta che dovrà conservare un segreto.',
   'keychain.updateFailed': 'Gitcito non è riuscito ad aggiornare queste credenziali nel portachiavi del sistema operativo.',
   'settings.githubGitTokenHint': 'Usato per le operazioni Git via HTTPS con github.com. Lascia vuoto per usare il gestore credenziali Git configurato.',

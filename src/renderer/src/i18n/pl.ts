@@ -2457,6 +2457,8 @@ export const pl: Dict = {
   'keychain.settingsTitle': 'Pęk kluczy systemu',
   'keychain.statusGranted': 'Włączone — tokeny i wpisy Sejfu są szyfrowane pękiem kluczy systemu.',
   'keychain.statusDeclined': 'Wyłączone — tokeny są trzymane w pamięci tylko na czas sesji, a Sejf jest niedostępny.',
+  'keychain.tokenSessionOnly': 'Zapisany tylko do zamknięcia Gitcito: systemowy pęk kluczy jest wyłączony.',
+  'keychain.tokenNoKeyring': 'Zapisany tylko do zamknięcia Gitcito: system nie oferuje pęku kluczy do zaszyfrowania.',
   'keychain.statusUnset': 'Jeszcze nieskonfigurowane — Gitcito wyjaśni sprawę i zapyta, gdy pierwszy raz będzie musiał zapisać sekret.',
   'keychain.updateFailed': 'Gitcito nie mógł zaktualizować tych danych logowania w pęku kluczy systemu.',
   'settings.githubGitTokenHint': 'Służy do operacji Git przez HTTPS z github.com. Pozostaw puste, aby użyć skonfigurowanego pomocnika poświadczeń Git.',

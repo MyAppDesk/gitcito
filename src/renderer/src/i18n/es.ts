@@ -2458,6 +2458,8 @@ export const es: Dict = {
   'keychain.settingsTitle': 'Llavero del sistema',
   'keychain.statusGranted': 'Activado — los tokens y el Vault se cifran con el llavero del sistema.',
   'keychain.statusDeclined': 'Desactivado — los tokens solo viven en memoria durante la sesión y el Vault no está disponible.',
+  'keychain.tokenSessionOnly': 'Se guarda solo hasta que cierres Gitcito: el llavero del sistema está desactivado.',
+  'keychain.tokenNoKeyring': 'Se guarda solo hasta que cierres Gitcito: tu sistema no ofrece un llavero para cifrarlo.',
   'keychain.statusUnset': 'Sin configurar — Gitcito te lo explicará y te preguntará la primera vez que necesite guardar un secreto.',
   'keychain.updateFailed': 'Gitcito no pudo actualizar estas credenciales en el llavero del sistema.',
   'settings.githubGitTokenHint': 'Se usa en operaciones Git por HTTPS con github.com. Déjalo vacío para usar el ayudante de credenciales de Git configurado.',

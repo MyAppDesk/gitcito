@@ -2456,6 +2456,8 @@ export const en = {
   'keychain.settingsTitle': 'OS keychain',
   'keychain.statusGranted': 'Enabled — tokens and Vault entries are encrypted with your OS keychain.',
   'keychain.statusDeclined': 'Off — tokens are kept in memory for the session only and the Vault is unavailable.',
+  'keychain.tokenSessionOnly': 'Saved only until you quit Gitcito: the OS keychain is off.',
+  'keychain.tokenNoKeyring': 'Saved only until you quit Gitcito: your system offers no keyring to encrypt it.',
   'keychain.statusUnset': 'Not set up yet — Gitcito will explain and ask the first time it needs to store a secret.',
   'keychain.updateFailed': 'Gitcito could not update this credential in your OS keychain.',
   'settings.githubGitTokenHint': 'Used for Git operations over HTTPS with github.com. Leave blank to use your configured Git credential helper.',

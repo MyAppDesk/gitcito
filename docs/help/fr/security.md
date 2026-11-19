@@ -57,6 +57,8 @@ système**.
 Une installation neuve fait **zéro** appel au trousseau tant que rien n'a
 réellement besoin d'être stocké.
 
+Tant qu’il est désactivé, le champ du jeton dans Intégrations le signale — *Conservé seulement jusqu’à la fermeture de Gitcito : le trousseau du système est désactivé.* — avec un bouton **Activer** à côté. L’activer, depuis là ou d’ici, enregistre aussi les jetons déjà saisis pendant la session : inutile de les recoller.
+
 ## Partager sans risque
 
 Le [partage sécurisé](secure-share.md) exporte les réglages, les entrées du

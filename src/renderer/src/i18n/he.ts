@@ -2460,6 +2460,8 @@ export const he: Dict = {
   'keychain.settingsTitle': 'מחזיק המפתחות של מערכת ההפעלה',
   'keychain.statusGranted': 'מופעל — הטוקנים ורשומות הכספת מוצפנים בעזרת מחזיק המפתחות של מערכת ההפעלה.',
   'keychain.statusDeclined': 'כבוי — הטוקנים נשמרים בזיכרון למשך הסשן בלבד והכספת אינה זמינה.',
+  'keychain.tokenSessionOnly': 'נשמר רק עד שתסגור את Gitcito: מחזיק המפתחות של המערכת כבוי.',
+  'keychain.tokenNoKeyring': 'נשמר רק עד שתסגור את Gitcito: המערכת שלך לא מציעה מחזיק מפתחות להצפנה.',
   'keychain.statusUnset': 'עדיין לא הוגדר — Gitcito יסביר וישאל בפעם הראשונה שהוא יצטרך לשמור סוד.',
   'keychain.updateFailed': 'Gitcito לא הצליח לעדכן את פרטי ההתחברות האלה במחזיק המפתחות של מערכת ההפעלה.',
   'settings.githubGitTokenHint': 'משמש לפעולות Git דרך HTTPS מול github.com. השאר ריק כדי להשתמש בעוזר האישורים שהוגדר ב-Git.',

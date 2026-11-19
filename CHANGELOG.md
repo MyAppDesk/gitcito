@@ -1,5 +1,12 @@
 
 
+## Unreleased
+
+
+### Bug Fixes
+
+* **git:** fetch, pull, push and clone with an Azure DevOps personal access token work again. The token went to git with an empty username, and with an empty username git never sends the password, so a valid token failed with "Authentication failed". The remote URL's username (Azure writes the organization there) is used, else a fixed one.
+
 ## [4.25.0](https://github.com/MyAppDesk/gitcito/compare/v4.24.0...v4.25.0) (2026-11-18)
 
 

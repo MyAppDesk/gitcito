@@ -1,5 +1,12 @@
 
 
+## Unreleased
+
+
+### Features
+
+* **worktrees:** each linked worktree shows its uncommitted files (●) and commits ahead/behind its upstream. Lock one with a reason, unlock, move it, reconnect a folder that was moved by hand, or forget worktrees whose folder is gone (eraser in the section header). Remove asks git first: a clean worktree gets a plain confirm with undo; one with uncommitted changes gets "Discard and remove", with no undo. Both say that ignored files such as `.env` are deleted too.
+
 ## [4.25.0](https://github.com/MyAppDesk/gitcito/compare/v4.24.0...v4.25.0) (2026-11-18)
 
 

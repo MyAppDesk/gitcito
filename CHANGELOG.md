@@ -1,5 +1,40 @@
 
 
+## [4.26.0](https://github.com/MyAppDesk/gitcito/compare/v4.25.0...v4.26.0) (2026-11-19)
+
+
+### Features
+
+* **diff:** wrap long lines in the unified view too ([b9c033f](https://github.com/MyAppDesk/gitcito/commit/b9c033f467851e8546bd743bde087ed379a0c8a9))
+* **graph:** offer what GitKraken does when a branch is dropped on another ([813b5cb](https://github.com/MyAppDesk/gitcito/commit/813b5cb737a5e95f9a5c9bc6aa4c168418c73aca))
+* **profiles:** choose the profile picture — account, icon or your own image ([a27215b](https://github.com/MyAppDesk/gitcito/commit/a27215b42eb75e8a13d0929fd832bbe1c453c5e7))
+* **toolbar:** show a loading signal while a switched-to repository refreshes ([54f1737](https://github.com/MyAppDesk/gitcito/commit/54f1737dd9e7c404fbacbc2cc7a70fe70d0903a3))
+* **worktrees:** lock, move, repair and forget worktrees, and show what each one holds ([41eb3e2](https://github.com/MyAppDesk/gitcito/commit/41eb3e2cbe981fc3dd04d80f1414a687aff4ae87))
+
+
+### Bug Fixes
+
+* **changelog:** show the installed build's notes when GitHub has not published it yet ([687a11f](https://github.com/MyAppDesk/gitcito/commit/687a11ffed3004fad67a5070edb9b1fdcb201b39))
+* **drag:** drop a branch across panels, and without a no-drop cursor on Wayland ([b92fe4c](https://github.com/MyAppDesk/gitcito/commit/b92fe4cc81d4ca643f5a4895a28c708e17fd2191))
+* **git:** send an Azure DevOps PAT with a username, so git uses it ([d433f3d](https://github.com/MyAppDesk/gitcito/commit/d433f3dac4d9b45c1ed9a69125307b5c8a2132e9))
+* **graph:** confirm pushes from a branch drop, skip fast-forward onto a busy worktree ([bdaa8df](https://github.com/MyAppDesk/gitcito/commit/bdaa8dff2baeedd214a6362c5d8893e021c04c5e))
+* **graph:** move the HEAD badge on checkout again ([a993c7a](https://github.com/MyAppDesk/gitcito/commit/a993c7a219c490aff18c432cda772b32401a4c64))
+* keep the clone token out of argv and .git/config ([47029cf](https://github.com/MyAppDesk/gitcito/commit/47029cfebdbb155c4694818feb01d65a8eb35259))
+* **keychain:** report a failed token move instead of claiming success ([8b7e2c0](https://github.com/MyAppDesk/gitcito/commit/8b7e2c004a490572916b99bbc898ae13a73e1bb0))
+* **profiles:** harden picture import and translate the picker ([3d3b877](https://github.com/MyAppDesk/gitcito/commit/3d3b8772c743c2b6c7f47876e50d863018f4a337))
+* **screenshots:** wait for the shot bridge by polling, not by animation frame ([1fe0540](https://github.com/MyAppDesk/gitcito/commit/1fe054076fd31d2159c104b5d06ce7db27eabeef))
+* **settings:** say when a token will not survive a restart, and keep it once the keychain is on ([9f9f064](https://github.com/MyAppDesk/gitcito/commit/9f9f0647c27cc2eaa1cc275d63e4a500b641f98b))
+* **tabs:** reach a group's own page from the group, to add repositories to it ([0948806](https://github.com/MyAppDesk/gitcito/commit/0948806106f4bcc454b50fa533633d390c56f637))
+* **ui:** ask over a window instead of closing it ([175d20f](https://github.com/MyAppDesk/gitcito/commit/175d20f3ec65bdb6dec57b93c87f8730c7f7fca0)), closes [#83](https://github.com/MyAppDesk/gitcito/issues/83)
+* **watcher:** keep the switch marker through A-B-A and narrow checkout refetch ([f4d769e](https://github.com/MyAppDesk/gitcito/commit/f4d769efe60ce8db96e260086430f60167117676))
+* **worktrees:** relativise the gitdir pointer from the realpath ([861338c](https://github.com/MyAppDesk/gitcito/commit/861338ca06717eee4f4cf81b91621a5679a87f58))
+* **worktrees:** warn before removing a detached worktree, fix tests on macOS ([71ac7ca](https://github.com/MyAppDesk/gitcito/commit/71ac7caaec4c3f2752a05e98cc8d56881893cfa9))
+
+
+### Performance Improvements
+
+* **watcher:** watch .git and tracked dirs on Linux instead of the whole tree ([85554dc](https://github.com/MyAppDesk/gitcito/commit/85554dc64d19b9a97f84ba9e6d7a597e93438879))
+
 ## [4.25.0](https://github.com/MyAppDesk/gitcito/compare/v4.24.0...v4.25.0) (2026-11-18)
 
 

@@ -29,11 +29,11 @@ resalta mientras pasas por encima.
 
 | Soltar | Significa |
 |------|-------|
-| **Avance rápido de {target} hasta {source}** | Mueve el destino hasta el origen sin hacer checkout — solo cuando el destino es una rama local por detrás del origen y no la activa |
+| **Avance rápido de {target} hasta {source}** | Mueve el destino hasta el origen sin hacer checkout — solo cuando el destino es una rama local por detrás del origen y no está activa ni aquí ni en otro [worktree](worktrees.md) |
 | **Merge {origen} → {destino}** | Hace checkout del destino y fusiona el origen en él |
 | **Rebase {origen} sobre {destino}** | Repite los commits del origen encima del destino |
 | **Rebase interactivo de {source} sobre {target}…** | Abre el planificador de [rebase interactivo](rebase.md) — cuando el origen es la rama activa |
-| **Push de {source} a {target}** | Envía el origen a la rama remota del destino (`origin/main`) — nunca forzado, así que el remoto rechaza lo que no sea avance rápido; las mismas comprobaciones de secretos que cualquier push |
+| **Push de {source} a {target}** | Envía el origen a la rama remota del destino (`origin/main`) — nunca forzado, así que el remoto rechaza lo que no sea avance rápido; pregunta antes y aplica las mismas comprobaciones de secretos que cualquier push |
 | **Reset de {source} a {target}…** | Abre el diálogo de reset — soft, mixed o hard, con lo que conserva cada uno — cuando el origen es la rama activa |
 | **Crear pull request {source} → {target}…** | Abre el formulario de [pull request](hosting.md) con ambas ramas — cuando el remoto está en un servicio compatible |
 | **Push de {source} y abrir pull request a {target}…** | Sustituye a *Crear pull request* cuando el origen aún no está en el remoto: lo envía y abre el formulario |
@@ -47,8 +47,10 @@ rama remota y lo único que se te ofrece es *Comparar*, porque es sinceramente
 todo lo que hay.
 
 El rebase pide confirmación antes: le da un hash nuevo a cada commit repetido, lo
-que significa un force push si la rama ya está publicada. La fusión no pregunta
-— solo añade. En cualquier caso, un solo **Deshacer** te devuelve.
+que significa un force push si la rama ya está publicada. El push también
+pregunta: todo el que haga pull del destino recibe sus commits, y un push no se
+puede deshacer desde Gitcito. La fusión no pregunta — solo añade. La fusión y el
+rebase se revierten con un solo **Deshacer**.
 
 ## Merge
 

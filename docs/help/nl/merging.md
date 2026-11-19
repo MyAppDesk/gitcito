@@ -28,11 +28,11 @@ ertussen in elke combinatie; het doel licht op zolang je erboven zweeft.
 
 | Drop | Betekent |
 |------|----------|
-| **{target} fast-forwarden naar {source}** | Zet het doel zonder checkout bij op de bron — alleen als het doel een lokale branch achter de bron is en niet de uitgecheckte |
+| **{target} fast-forwarden naar {source}** | Zet het doel zonder checkout bij op de bron — alleen als het doel een lokale branch achter de bron is en niet hier of in een andere [worktree](worktrees.md) is uitgecheckt |
 | **Merge {bron} → {doel}** | Checkt het doel uit en merget de bron erin |
 | **Rebase {bron} op {doel}** | Speelt de commits van de bron bovenop het doel opnieuw af |
 | **Interactieve rebase van {source} op {target}…** | Opent de planner voor [interactieve rebase](rebase.md) — als de bron de uitgecheckte branch is |
-| **{source} pushen naar {target}** | Pusht de bron naar de remote-branch van het doel (`origin/main`) — nooit geforceerd, dus de remote weigert alles behalve een fast-forward; dezelfde geheimencontroles als elke push |
+| **{source} pushen naar {target}** | Pusht de bron naar de remote-branch van het doel (`origin/main`) — nooit geforceerd, dus de remote weigert alles behalve een fast-forward; vraagt eerst en doet dezelfde geheimencontroles als elke push |
 | **{source} resetten naar {target}…** | Opent het resetvenster — soft, mixed of hard, met wat elk behoudt — als de bron de uitgecheckte branch is |
 | **Pull request {source} → {target} aanmaken…** | Opent het [pull request](hosting.md)-formulier met beide branches — als de remote bij een ondersteunde host staat |
 | **{source} pushen en pull request naar {target} starten…** | Vervangt *Pull request aanmaken* als de bron nog niet op de remote staat: pusht hem en opent dan het formulier |
@@ -46,8 +46,9 @@ Laat een tag op een remote branch vallen en het enige dat je krijgt is
 
 Rebasen vraagt eerst om bevestiging: het geeft elke opnieuw afgespeelde commit
 een nieuwe hash, wat een force push betekent als de branch al gepubliceerd is.
-Mergen vraagt niets — het voegt alleen toe. Hoe dan ook zet één keer **Ongedaan
-maken** je terug.
+Pushen vraagt ook: iedereen die het doel pullt krijgt de commits, en een push
+kun je vanuit Gitcito niet ongedaan maken. Mergen vraagt niets — het voegt alleen
+toe. Mergen en rebasen draai je terug met één keer **Ongedaan maken**.
 
 ## Mergen
 

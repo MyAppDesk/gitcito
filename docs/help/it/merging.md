@@ -29,11 +29,11 @@ mentre ci passi sopra.
 
 | Rilascio | Significa |
 |------|-------|
-| **Fast-forward di {target} fino a {source}** | Porta il target fino alla sorgente senza checkout — solo se il target è un branch locale indietro rispetto alla sorgente e non quello attivo |
+| **Fast-forward di {target} fino a {source}** | Porta il target fino alla sorgente senza checkout — solo se il target è un branch locale indietro rispetto alla sorgente e non è attivo né qui né in un altro [worktree](worktrees.md) |
 | **Fondi {origine} → {destinazione}** | Fa il checkout della destinazione e vi fonde l'origine |
 | **Rebase di {origine} su {destinazione}** | Riapplica i commit dell'origine sopra la destinazione |
 | **Rebase interattivo di {source} su {target}…** | Apre il pianificatore del [rebase interattivo](rebase.md) — quando la sorgente è il branch attivo |
-| **Push di {source} su {target}** | Invia la sorgente al branch remoto del target (`origin/main`) — mai forzato, quindi il remoto rifiuta ciò che non è un fast-forward; gli stessi controlli sui segreti di ogni push |
+| **Push di {source} su {target}** | Invia la sorgente al branch remoto del target (`origin/main`) — mai forzato, quindi il remoto rifiuta ciò che non è un fast-forward; chiede prima conferma ed esegue gli stessi controlli sui segreti di ogni push |
 | **Reset di {source} a {target}…** | Apre la finestra di reset — soft, mixed o hard, con ciò che ciascuno conserva — quando la sorgente è il branch attivo |
 | **Crea pull request {source} → {target}…** | Apre il modulo di [pull request](hosting.md) con entrambi i branch — quando il remoto è su un servizio supportato |
 | **Push di {source} e apri una pull request verso {target}…** | Sostituisce *Crea pull request* quando la sorgente non è ancora sul remoto: la invia, poi apre il modulo |
@@ -47,9 +47,10 @@ un branch remoto e l'unica cosa che ti viene offerta è *Confronta*, perché è
 davvero tutto quello che c'è.
 
 Il rebase chiede prima conferma: dà a ogni commit riapplicato un nuovo hash, il
-che significa un force push se il branch è già pubblicato. Il merge non chiede —
-si limita ad aggiungere. In entrambi i casi, un solo **Annulla** ti riporta
-indietro.
+che significa un force push se il branch è già pubblicato. Anche il push
+chiede: chiunque faccia pull del target riceve i suoi commit, e un push non si
+può annullare da Gitcito. Il merge non chiede — si limita ad aggiungere. Merge e
+rebase si annullano con un solo **Annulla**.
 
 ## Merge
 

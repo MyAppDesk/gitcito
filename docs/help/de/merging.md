@@ -29,11 +29,11 @@ Drop-Ziel leuchtet auf, während du darüber schwebst.
 
 | Drop | Bedeutet |
 |------|-------|
-| **{target} per Fast-Forward auf {source}** | Bringt das Ziel ohne Checkout auf den Stand der Quelle — nur wenn das Ziel ein lokaler Branch hinter der Quelle ist und nicht der ausgecheckte |
+| **{target} per Fast-Forward auf {source}** | Bringt das Ziel ohne Checkout auf den Stand der Quelle — nur wenn das Ziel ein lokaler Branch hinter der Quelle ist und weder hier noch in einem anderen [Worktree](worktrees.md) ausgecheckt ist |
 | **Merge {source} → {target}** | Checkt das Ziel aus und merged die Quelle hinein |
 | **Rebase {source} auf {target}** | Spielt die Commits der Quelle oben auf dem Ziel neu ab |
 | **Interaktiver Rebase von {source} auf {target}…** | Öffnet die Planung des [interaktiven Rebase](rebase.md) — wenn die Quelle der ausgecheckte Branch ist |
-| **{source} nach {target} pushen** | Pusht die Quelle auf den Remote-Branch des Ziels (`origin/main`) — nie erzwungen, das Remote lehnt also alles außer Fast-Forward ab; dieselben Geheimnis-Prüfungen wie jeder Push |
+| **{source} nach {target} pushen** | Pusht die Quelle auf den Remote-Branch des Ziels (`origin/main`) — nie erzwungen, das Remote lehnt also alles außer Fast-Forward ab; fragt vorher nach und führt dieselben Geheimnis-Prüfungen durch wie jeder Push |
 | **{source} auf {target} zurücksetzen…** | Öffnet den Reset-Dialog — soft, mixed oder hard, mit dem, was jeder behält — wenn die Quelle der ausgecheckte Branch ist |
 | **Pull Request {source} → {target} erstellen…** | Öffnet das [Pull-Request](hosting.md)-Formular mit beiden Branches — wenn das Remote bei einem unterstützten Anbieter liegt |
 | **{source} pushen und Pull Request nach {target} starten…** | Ersetzt *Pull Request erstellen*, wenn die Quelle noch nicht auf dem Remote ist: pusht sie und öffnet dann das Formular |
@@ -48,8 +48,9 @@ tatsächlich alles ist, was es gibt.
 
 Rebase fragt vorher nach: Es gibt jedem neu abgespielten Commit einen neuen
 Hash, was einen Force-Push bedeutet, wenn der Branch schon veröffentlicht ist.
-Merge fragt nicht — es fügt nur hinzu. So oder so bringt dich ein
-**Rückgängig** wieder zurück.
+Push fragt ebenfalls: Wer das Ziel pullt, bekommt seine Commits, und ein Push
+lässt sich in Gitcito nicht rückgängig machen. Merge fragt nicht — es fügt nur
+hinzu. Merge und Rebase holt ein einziges **Rückgängig** zurück.
 
 ## Merge
 

@@ -31,11 +31,11 @@ la survolez.
 
 | Dépôt | Signifie |
 |------|-------|
-| **Avance rapide de {target} jusqu'à {source}** | Avance la cible jusqu'à la source sans l'extraire — proposé seulement si la cible est une branche locale en retard sur la source, et pas celle extraite |
+| **Avance rapide de {target} jusqu'à {source}** | Avance la cible jusqu'à la source sans l'extraire — proposé seulement si la cible est une branche locale en retard sur la source, et qu'elle n'est extraite ni ici ni dans un autre [arbre de travail](worktrees.md) |
 | **Fusionner {source} → {cible}** | Extrait la cible et y fusionne la source |
 | **Rebaser {source} sur {cible}** | Rejoue les commits de la source par-dessus la cible |
 | **Rebase interactif de {source} sur {target}…** | Ouvre le planificateur de [rebase interactif](rebase.md) — proposé quand la source est la branche extraite |
-| **Pousser {source} vers {target}** | Pousse la source vers la branche distante de la cible (`origin/main`) — jamais forcé, le dépôt distant refuse donc tout ce qui n'est pas une avance rapide ; les mêmes contrôles de secrets que pour tout push |
+| **Pousser {source} vers {target}** | Pousse la source vers la branche distante de la cible (`origin/main`) — jamais forcé, le dépôt distant refuse donc tout ce qui n'est pas une avance rapide ; demande d'abord confirmation, et applique les mêmes contrôles de secrets que pour tout push |
 | **Réinitialiser {source} sur {target}…** | Ouvre la boîte de réinitialisation — soft, mixed ou hard, avec ce que chacun garde — quand la source est la branche extraite |
 | **Créer une pull request {source} → {target}…** | Ouvre le formulaire de [pull request](hosting.md) avec les deux branches — proposé quand le dépôt distant est chez un hébergeur pris en charge |
 | **Pousser {source} et ouvrir une pull request vers {target}…** | Remplace *Créer une pull request* quand la source n'est pas encore sur le dépôt distant : la pousse, puis ouvre le formulaire |
@@ -49,9 +49,10 @@ une branche distante et tout ce qu'on vous propose est *Comparer*, parce que
 c'est sincèrement tout ce qui existe.
 
 Le rebase demande d'abord confirmation : il donne un nouveau hash à chaque commit
-rejoué, ce qui signifie un push forcé si la branche est déjà publiée. La fusion,
-elle, ne demande rien — elle ne fait qu'ajouter. Dans les deux cas, un seul
-**Annuler** vous ramène.
+rejoué, ce qui signifie un push forcé si la branche est déjà publiée. Le push
+demande aussi : tous ceux qui tirent la cible reçoivent ses commits, et un push
+ne peut pas être annulé depuis Gitcito. La fusion, elle, ne demande rien — elle
+ne fait qu'ajouter. Fusion et rebase se défont d'un seul **Annuler**.
 
 ## Fusion
 

@@ -29,11 +29,11 @@ geldiğinizde bırakma hedefi vurgulanır.
 
 | Bırakma | Anlamı |
 |------|-------|
-| **{target} dalını {source} dalına ileri sar** | Hedefi checkout yapmadan kaynağa kadar ilerletir — yalnızca hedef, kaynağın gerisindeki yerel bir dalsa ve etkin dal değilse |
+| **{target} dalını {source} dalına ileri sar** | Hedefi checkout yapmadan kaynağa kadar ilerletir — yalnızca hedef, kaynağın gerisindeki yerel bir dalsa ve burada ya da başka bir [çalışma ağacında](worktrees.md) etkin dal değilse |
 | **{kaynak} → {hedef} birleştir** | Hedefi checkout eder ve kaynağı onun içine birleştirir |
 | **{kaynak}'ı {hedef} üzerine rebase et** | Kaynağın commit'lerini hedefin üzerinde yeniden oynatır |
 | **{source} dalını {target} üzerine etkileşimli rebase…** | [Etkileşimli rebase](rebase.md) planlayıcısını açar — kaynak etkin dal olduğunda |
-| **{source} dalını {target} dalına gönder** | Kaynağı hedefin uzak dalına (`origin/main`) gönderir — asla zorlanmaz, bu yüzden uzak depo ileri sarma olmayan her şeyi reddeder; her push'taki gizli bilgi denetimleri burada da geçerli |
+| **{source} dalını {target} dalına gönder** | Kaynağı hedefin uzak dalına (`origin/main`) gönderir — asla zorlanmaz, bu yüzden uzak depo ileri sarma olmayan her şeyi reddeder; önce onay ister ve her push'taki gizli bilgi denetimlerini burada da uygular |
 | **{source} dalını {target} noktasına sıfırla…** | Sıfırlama penceresini açar — soft, mixed ya da hard, her birinin neyi koruduğuyla — kaynak etkin dal olduğunda |
 | **Pull request oluştur: {source} → {target}…** | [Pull request](hosting.md) formunu iki dal doldurulmuş olarak açar — uzak depo desteklenen bir sağlayıcıdaysa |
 | **{source} dalını gönder ve {target} için pull request başlat…** | Kaynak henüz uzak depoda değilse *Pull request oluştur* seçeneğinin yerini alır: önce gönderir, sonra formu açar |
@@ -47,8 +47,9 @@ bırakırsanız size yalnızca *Karşılaştır* önerilir, çünkü gerçekten 
 tek şey budur.
 
 Rebase önce onay ister: yeniden oynatılan her commit'e yeni bir hash verir, bu
-da dal zaten yayımlanmışsa force push demektir. Birleştirme sormaz — yalnızca
-ekler. Her iki durumda da tek bir **Geri al** sizi eski hâlinize döndürür.
+da dal zaten yayımlanmışsa force push demektir. Push da sorar: hedefi pull eden
+herkes onun commit'lerini alır ve bir push Gitcito'dan geri alınamaz. Birleştirme
+sormaz — yalnızca ekler. Birleştirme ve rebase tek bir **Geri al** ile geri döner.
 
 ## Birleştirme
 

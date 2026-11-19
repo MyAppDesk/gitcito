@@ -28,11 +28,11 @@ in any combination; the drop target highlights while you hover it.
 
 | Drop | Means |
 |------|-------|
-| **Fast-forward {target} to {source}** | Moves the target up to the source without checking it out — offered only when the target is a local branch behind the source, and not the one checked out |
+| **Fast-forward {target} to {source}** | Moves the target up to the source without checking it out — offered only when the target is a local branch behind the source, and not checked out here or in another [worktree](worktrees.md) |
 | **Merge {source} → {target}** | Checks the target out and merges the source into it |
 | **Rebase {source} onto {target}** | Replays the source's commits on top of the target |
 | **Interactive rebase {source} onto {target}…** | Opens the [interactive rebase](rebase.md) planner — offered when the source is the branch checked out |
-| **Push {source} to {target}** | Pushes the source to the target's remote branch (`origin/main`) — never forced, so the remote refuses anything but a fast-forward; the same secret checks as any push |
+| **Push {source} to {target}** | Pushes the source to the target's remote branch (`origin/main`) — never forced, so the remote refuses anything but a fast-forward; asks first, and runs the same secret checks as any push |
 | **Reset {source} to {target}…** | Opens the reset dialog — soft, mixed or hard, with what each keeps — offered when the source is the branch checked out |
 | **Create pull request {source} → {target}…** | Opens the [pull request](hosting.md) form with both branches filled in — offered when the remote is on a supported host |
 | **Push {source} and start a pull request to {target}…** | Replaces *Create pull request* when the source is not on the remote yet: pushes it, then opens the form |
@@ -45,8 +45,10 @@ branch. Drop a tag on a remote branch and all you are offered is *Compare*,
 because that is genuinely all there is.
 
 Rebase asks for confirmation first: it gives every replayed commit a new hash,
-which means a force push if the branch is already published. Merge does not ask
-— it only adds. Either way, one **Undo** puts you back.
+which means a force push if the branch is already published. Push asks too:
+everyone who pulls the target gets its commits, and a push cannot be undone from
+Gitcito. Merge does not ask — it only adds. Merge and rebase come back with one
+**Undo**.
 
 ## Merge
 

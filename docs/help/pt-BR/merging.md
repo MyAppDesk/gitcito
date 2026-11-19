@@ -29,11 +29,11 @@ por cima.
 
 | Drop | Significa |
 |------|-------|
-| **Fast-forward de {target} até {source}** | Avança o alvo até a origem sem fazer checkout — aparece só quando o alvo é uma branch local atrás da origem, e não a que está em uso |
+| **Fast-forward de {target} até {source}** | Avança o alvo até a origem sem fazer checkout — aparece só quando o alvo é uma branch local atrás da origem, e não está em uso nem aqui nem em outro [worktree](worktrees.md) |
 | **Merge {origem} → {destino}** | Faz checkout do destino e faz merge da origem nele |
 | **Rebase {origem} sobre {destino}** | Reaplica os commits da origem em cima do destino |
 | **Rebase interativo de {source} sobre {target}…** | Abre o planejador de [rebase interativo](rebase.md) — aparece quando a origem é a branch em uso |
-| **Push de {source} para {target}** | Envia a origem para a branch remota do alvo (`origin/main`) — nunca forçado, então o remoto recusa o que não for fast-forward; as mesmas verificações de segredo de qualquer push |
+| **Push de {source} para {target}** | Envia a origem para a branch remota do alvo (`origin/main`) — nunca forçado, então o remoto recusa o que não for fast-forward; pergunta antes e faz as mesmas verificações de segredo de qualquer push |
 | **Reset de {source} para {target}…** | Abre o diálogo de reset — soft, mixed ou hard, com o que cada um mantém — aparece quando a origem é a branch em uso |
 | **Criar pull request {source} → {target}…** | Abre o formulário de [pull request](hosting.md) com as duas branches preenchidas — aparece quando o remote está num serviço suportado |
 | **Push de {source} e abrir pull request para {target}…** | Substitui *Criar pull request* quando a origem ainda não está no remoto: envia e depois abre o formulário |
@@ -46,8 +46,10 @@ origem precisa ser uma branch local. Solte uma tag sobre uma branch remota e tud
 que você recebe é *Comparar*, porque é genuinamente tudo que existe ali.
 
 O rebase pede confirmação antes: ele dá um hash novo a cada commit reaplicado, o
-que significa um force push se a branch já foi publicada. O merge não pergunta —
-ele só acrescenta. De qualquer forma, um **Desfazer** traz você de volta.
+que significa um force push se a branch já foi publicada. O push também
+pergunta: todo mundo que fizer pull do alvo recebe os commits dele, e um push não
+pode ser desfeito pelo Gitcito. O merge não pergunta — ele só acrescenta. Merge e
+rebase voltam com um **Desfazer**.
 
 ## Merge
 

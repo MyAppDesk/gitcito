@@ -29,11 +29,11 @@ upuszczenia podświetla się, gdy nad nim wisisz.
 
 | Upuszczenie | Oznacza |
 |------|-------|
-| **Przewiń {target} do {source} (fast-forward)** | Przesuwa cel do źródła bez checkoutu — tylko gdy cel jest lokalną gałęzią za źródłem i nie jest gałęzią bieżącą |
+| **Przewiń {target} do {source} (fast-forward)** | Przesuwa cel do źródła bez checkoutu — tylko gdy cel jest lokalną gałęzią za źródłem i nie jest gałęzią bieżącą ani tutaj, ani w innym [worktree](worktrees.md) |
 | **Zmerguj {source} → {target}** | Przełącza na cel i wmerguje w niego źródło |
 | **Zrebase'uj {source} na {target}** | Odtwarza commity źródła na wierzchu celu |
 | **Interaktywny rebase {source} na {target}…** | Otwiera planer [interaktywnego rebase](rebase.md) — gdy źródło jest gałęzią bieżącą |
-| **Wypchnij {source} do {target}** | Wypycha źródło do zdalnej gałęzi celu (`origin/main`) — nigdy wymuszenie, więc zdalne repozytorium odrzuca wszystko poza fast-forward; te same kontrole sekretów co przy każdym pushu |
+| **Wypchnij {source} do {target}** | Wypycha źródło do zdalnej gałęzi celu (`origin/main`) — nigdy wymuszenie, więc zdalne repozytorium odrzuca wszystko poza fast-forward; najpierw pyta i przeprowadza te same kontrole sekretów co przy każdym pushu |
 | **Zresetuj {source} do {target}…** | Otwiera okno resetu — soft, mixed lub hard, z opisem, co każdy zachowuje — gdy źródło jest gałęzią bieżącą |
 | **Utwórz pull request {source} → {target}…** | Otwiera formularz [pull requesta](hosting.md) z obiema gałęziami — gdy zdalne repozytorium jest u obsługiwanego dostawcy |
 | **Wypchnij {source} i utwórz pull request do {target}…** | Zastępuje *Utwórz pull request*, gdy źródła jeszcze nie ma w zdalnym repozytorium: wypycha je, potem otwiera formularz |
@@ -46,9 +46,10 @@ gałęzią. Upuść tag na gałąź zdalną, a jedyne, co dostaniesz, to *Porów
 naprawdę tylko tyle da się zrobić.
 
 Rebase najpierw prosi o potwierdzenie: nadaje każdemu odtworzonemu commitowi
-nowy hash, co oznacza force push, jeśli gałąź jest już opublikowana. Merge nie
-pyta — on tylko dokłada. Tak czy inaczej jedno **Cofnij** przywraca cię na
-miejsce.
+nowy hash, co oznacza force push, jeśli gałąź jest już opublikowana. Push też
+pyta: każdy, kto pobierze cel, dostanie jego commity, a pusha nie da się cofnąć
+z poziomu Gitcito. Merge nie pyta — on tylko dokłada. Merge i rebase cofa jedno
+**Cofnij**.
 
 ## Merge
 

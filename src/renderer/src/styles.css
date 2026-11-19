@@ -4245,6 +4245,13 @@ body.col-resizing .node-ava {
 .diff-text {
   flex: 1;
 }
+/* Unified view with Wrap on: the viewer takes the pane's width instead of the
+   longest line's, and a long line folds under itself. The gutter and sign stay
+   at the top of a folded row; `anywhere` breaks minified code that has no
+   spaces to break at. */
+.diff-viewer.is-wrap { width: 100%; min-width: 0; }
+.diff-viewer.is-wrap .diff-line { white-space: pre-wrap; }
+.diff-viewer.is-wrap .diff-text { min-width: 0; overflow-wrap: anywhere; }
 /* Struck-through return arrow: this line ends the file with no newline. */
 .diff-noeol {
   position: relative;

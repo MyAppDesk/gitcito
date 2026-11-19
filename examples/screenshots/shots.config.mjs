@@ -1373,6 +1373,23 @@ export const shots = [
     }
   },
   {
+    // The same minified line in the unified view with Wrap on: it folds under
+    // itself inside the pane instead of running off to the right.
+    out: 'diff-wrap',
+    repos: ['huge-line'],
+    themes: ['dark'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['huge-line']
+      await page.evaluate((p) => {
+        window.__shot.ui.getState().setFileView({ repoPath: p, file: 'index.min.html', source: { type: 'wip', staged: false, untracked: false }, mode: 'diff' })
+      }, repo)
+      await page.waitForSelector('mark.word-add', { timeout: 15000 }).catch(() => {})
+      // By label, as the split shot does: the toggles' order changes with the diff.
+      await page.click('.diff-toggles button:has-text("Wrap")').catch(() => {})
+      await page.waitForTimeout(500)
+    }
+  },
+  {
     // File view's change gutter (colored bars next to edited lines) plus the
     // minimap toggle, opened on the same modified file the word-diff shot uses.
     out: 'change-gutter',

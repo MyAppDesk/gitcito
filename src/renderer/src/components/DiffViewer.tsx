@@ -175,9 +175,12 @@ export function DiffViewer({
   const [movedOn, setMovedOn] = useState(() => localStorage.getItem('gitcito-diff-moved') !== 'off')
   useEffect(() => localStorage.setItem('gitcito-diff-moved', movedOn ? 'on' : 'off'), [movedOn])
 
-  // Split-view line wrapping. Off by default: one line per row keeps the two
-  // sides row-for-row comparable, which is the point of split view. On, long
-  // lines fold inside their column instead of scrolling.
+  // Line wrapping, one preference for both views. Off by default: in split
+  // view one line per row keeps the two sides row-for-row comparable; in the
+  // unified view it keeps the gutter's line numbers one per row. On, long lines
+  // fold — inside their column side by side, inside the pane when unified —
+  // instead of scrolling sideways, which is what a minified file or a long
+  // prose line needs.
   const [wrapOn, setWrapOn] = useState(() => localStorage.getItem('gitcito-diff-wrap') === 'on')
   useEffect(() => localStorage.setItem('gitcito-diff-wrap', wrapOn ? 'on' : 'off'), [wrapOn])
 
@@ -467,6 +470,8 @@ export function DiffViewer({
   return (
     <div
       className={`diff-viewer hljs ${splitView ? 'is-split' : ''} ${splitView && !wrapOn ? 'is-nowrap' : ''} ${
+        !splitView && wrapOn ? 'is-wrap' : ''
+      } ${
         lines.length > HUGE_LINES ? 'is-huge' : ''
       } ${hoverArmed ? 'hover-armed' : ''}`}
       ref={viewerRef}
@@ -476,17 +481,14 @@ export function DiffViewer({
     >
       {hoverCard}
       <div className="diff-toggles">
-        {/* Only meaningful side-by-side: the unified view has the full width to
-            scroll a long line through, a 50% column does not. */}
-        {splitView && (
-          <button
-            className={`diff-word-toggle ${wrapOn ? 'on' : ''}`}
-            title={t('diff.wrapTitle')}
-            onClick={() => setWrapOn((v) => !v)}
-          >
-            <WrapText size={12} /> {t('diff.wrap')}
-          </button>
-        )}
+        <button
+          className={`diff-word-toggle ${wrapOn ? 'on' : ''}`}
+          title={t('diff.wrapTitle')}
+          aria-pressed={wrapOn}
+          onClick={() => setWrapOn((v) => !v)}
+        >
+          <WrapText size={12} /> {t('diff.wrap')}
+        </button>
         {/* Only means anything when each column has its own scroller. */}
         {splitView && !wrapOn && (
           <button

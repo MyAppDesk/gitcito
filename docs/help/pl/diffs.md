@@ -15,7 +15,7 @@ keywords: diff widok dzielony obok siebie słowa białe znaki obraz podgląd mar
 | **Ujednolicony ↔ dzielony** | Obok siebie, gdy chcesz porównywać; jeden pod drugim, gdy chcesz czytać |
 | **Na poziomie słów** | Podświetla tylko zmienione tokeny wewnątrz edytowanej linii — na czerwono w starej, na zielono w nowej |
 | **Ignoruj białe znaki** | Ukrywa zmiany wcięć, żeby na wierzch wypłynęła prawdziwa zmiana |
-| **Zawijanie** (tylko widok podzielony) | Zawija długie wiersze w ich kolumnie zamiast je przewijać |
+| **Zawijaj** | Zawija długie wiersze zamiast przewijać je w bok — w panelu w widoku zunifikowanym, w ich kolumnie w widoku podzielonym |
 | **Powiązane** (podzielony, bez zawijania) | Przewija obie połowy razem, w pionie i w poziomie — wyłączone, każda kolumna osobno |
 | <kbd>⌘F</kbd> | Szukaj wewnątrz diffa, z przechodzeniem do następnego/poprzedniego |
 

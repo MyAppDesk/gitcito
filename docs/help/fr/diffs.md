@@ -15,7 +15,7 @@ keywords: diff différence split côte à côte side-by-side mot word level espa
 | **Unifié ↔ partagé** | Côte à côte quand vous voulez comparer, empilé quand vous voulez lire |
 | **Au niveau du mot** | Ne surligne que les jetons modifiés à l'intérieur d'une ligne éditée — rouge sur l'ancienne, vert sur la nouvelle |
 | **Ignorer les espaces** | Masque les réindentations pour faire remonter le vrai changement |
-| **Retour à la ligne** (vue côte à côte) | Coupe les lignes longues dans leur colonne au lieu de les faire défiler |
+| **Retour à la ligne** | Coupe les lignes longues au lieu de les faire défiler sur le côté — dans le panneau en vue unifiée, dans leur colonne en vue côte à côte |
 | **Lié** (côte à côte, sans retour à la ligne) | Fait défiler les deux moitiés ensemble, verticalement et latéralement — désactivé, chaque colonne défile seule |
 | <kbd>⌘F</kbd> | Chercher dans le diff, avec passage au suivant/précédent |
 

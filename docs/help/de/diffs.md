@@ -15,7 +15,7 @@ keywords: diff geteilt split side-by-side nebeneinander wortgenau word level whi
 | **Unified ↔ geteilt** | Nebeneinander, wenn du vergleichen willst; übereinander, wenn du lesen willst |
 | **Wortgenau** | Hebt nur die geänderten Tokens innerhalb einer bearbeiteten Zeile hervor — rot auf der alten, grün auf der neuen |
 | **Whitespace ignorieren** | Blendet Neu-Einrückungen aus, damit die eigentliche Änderung sichtbar wird |
-| **Umbruch** (nur geteilte Ansicht) | Bricht lange Zeilen in ihrer Spalte um, statt sie zu scrollen |
+| **Umbruch** | Bricht lange Zeilen um, statt sie seitwärts zu scrollen — im Fenster in der einheitlichen Ansicht, in ihrer Spalte in der geteilten |
 | **Verknüpft** (geteilt, ohne Umbruch) | Scrollt beide Hälften gemeinsam, vertikal und seitlich — aus scrollt jede Spalte für sich |
 | <kbd>⌘F</kbd> | Suchen innerhalb des Diffs, mit Sprüngen zum nächsten/vorherigen Treffer |
 

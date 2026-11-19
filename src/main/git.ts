@@ -668,8 +668,11 @@ async function makeWorktreeGitfilePortable(worktreePath: string): Promise<void> 
     const text = await readFile(gitFile, 'utf-8')
     const m = /^gitdir:[ \t]*(.+)$/m.exec(text)
     if (!m) return
-    const gitDir = resolvePath(worktreePath, m[1].trim())
-    const rel = relative(worktreePath, gitDir).split(sep).join('/')
+    // Git stamps the realpath, so relativise from the realpath too: through a
+    // symlink (macOS /var → /private/var) the hops would otherwise miss by one.
+    const root = await realpath(worktreePath)
+    const gitDir = await realpath(resolvePath(root, m[1].trim()))
+    const rel = relative(root, gitDir).split(sep).join('/')
     if (!rel || isAbsolute(rel)) return // cross-drive or unresolved — keep git's
     await writeFile(gitFile, `gitdir: ${rel}\n`)
   } catch {

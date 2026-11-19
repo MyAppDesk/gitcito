@@ -1282,11 +1282,12 @@ const HUNK_ACTIONS = {
 >
 
 export const repoActions = {
-  // Refreshes every slice on purpose: moving HEAD rewrites the `HEAD -> …`
-  // decoration the graph reads off each commit, plus the per-directory tree
-  // status and each worktree's HEAD. Refetching only branches/status left the
-  // graph's head badge (and the file-tree markers) on the previous branch until
-  // something else triggered a full refresh — e.g. switching repo tabs.
+  // Moving HEAD rewrites the `HEAD -> …` decoration the graph reads off each
+  // commit ('log' — it comes from `%D`), the per-directory tree status and each
+  // worktree's HEAD; `.gitmodules` and the repo config are tracked files the
+  // checkout may swap. Refetching only branches/status left the graph's head
+  // badge on the previous branch. Stashes, remotes and merge state cannot move,
+  // so they keep their identity.
   checkout: (path: string, ref: string) => {
     // A branch checked out in another worktree cannot be checked out here —
     // git says so, in words that answer a question nobody asked. Go where the
@@ -1306,12 +1307,10 @@ export const repoActions = {
         label: interp(t('undoLabel.checkout'), { ref }),
         undo: () => gitApi.checkout(path, prev ?? '-'),
         redo: () => gitApi.checkout(path, ref)
-      }
-      // No refetch list: every slice, as the comment above says. A narrowed list
-      // ('branches', 'status', 'treeStatus') crept back in and the graph kept
-      // `HEAD ->` on the old branch. It used to be masked on Linux by the file
-      // watcher's late events (after the 2 s self-mute) forcing a full refresh;
-      // an inotify watch reports within the mute, so nothing masks it now.
+      },
+      null,
+      undefined,
+      ['log', 'branches', 'status', 'treeStatus', 'worktrees', 'submodules', 'config']
     )
   },
 

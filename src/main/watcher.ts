@@ -13,6 +13,10 @@ interface RepoWatch {
    *  before the app performs its own git write, so the app's own mutation does
    *  not trigger a second, redundant refresh on top of its post-action one. */
   muteUntil: number
+  /** Linux only: the watch on each repo-relative tracked directory, and the
+   *  pending re-scan that follows the index across a checkout or pull. */
+  dirs: Map<string, FSWatcher>
+  rescan: NodeJS.Timeout | null
 }
 
 // One active watch per renderer (keyed by webContents id). The app uses a
@@ -39,6 +43,9 @@ const NATIVE_RECURSIVE = process.platform === 'darwin' || process.platform === '
 /** More inotify watches than this is a tree we should not watch dir by dir;
  *  `.git` plus the periodic and on-focus refreshes still cover it. */
 const MAX_DIR_WATCHES = 4000
+
+/** A checkout writes HEAD, refs and the index in a burst; re-list once it settles. */
+const RESCAN_MS = 1000
 
 /**
  * The directories that hold tracked files (the root included), from
@@ -91,6 +98,7 @@ export function clearWatch(id: number): void {
   const w = active.get(id)
   if (!w) return
   if (w.timer) clearTimeout(w.timer)
+  if (w.rescan) clearTimeout(w.rescan)
   for (const fsw of w.watchers) {
     try {
       fsw.close()
@@ -116,12 +124,29 @@ export function setWatch(sender: WebContents, repoPath: string): void {
     })
   }
 
-  const state: RepoWatch = { path: repoPath, watchers: [], timer: null, gitChanged: false, muteUntil: 0 }
+  const state: RepoWatch = {
+    path: repoPath,
+    watchers: [],
+    timer: null,
+    gitChanged: false,
+    muteUntil: 0,
+    dirs: new Map(),
+    rescan: null
+  }
 
   const onChange = (rel: string | null): void => {
+    if (rel && isNoise(rel)) return
+    // Before the mute check: the app's own checkout is muted, and it is exactly
+    // what adds tracked directories the Linux watch set does not cover yet.
+    if (!NATIVE_RECURSIVE && rel && isGitMeta(rel)) {
+      if (state.rescan) clearTimeout(state.rescan)
+      state.rescan = setTimeout(() => {
+        state.rescan = null
+        void watchTrackedDirs(id, state, onChange)
+      }, RESCAN_MS)
+    }
     // Ignore events during a self-mute window (the app's own git write).
     if (Date.now() < state.muteUntil) return
-    if (rel && isNoise(rel)) return
     if (rel && isGitMeta(rel)) state.gitChanged = true
     if (state.timer) clearTimeout(state.timer)
     state.timer = setTimeout(() => {
@@ -158,46 +183,70 @@ export function setWatch(sender: WebContents, repoPath: string): void {
  * focus and periodic refreshes cover the rest.
  */
 async function watchTrackedTree(id: number, state: RepoWatch, onChange: (rel: string | null) => void): Promise<void> {
-  // Superseded by a later switch (or closed) while git was answering.
-  const stale = (): boolean => active.get(id) !== state
-  const add = (dir: string, recursive: boolean, toRel: (f: string) => string): void => {
-    try {
-      const w = watch(dir, { recursive }, (_evt, filename) => onChange(filename ? toRel(filename.toString()) : null))
-      // A directory deleted under us: drop that one watch, keep the rest.
-      w.on('error', () => {
-        try {
-          w.close()
-        } catch {
-          // already closed
-        }
-      })
-      state.watchers.push(w)
-    } catch {
-      // Gone between ls-files and here, or not watchable: skip it.
-    }
-  }
-
   // The git dir by asking git: in a linked worktree `.git` is a file, and the
   // refs live in the common dir, not the worktree's own.
   const [gitDir, commonDir] = await gitOut(state.path, ['rev-parse', '--absolute-git-dir', '--git-common-dir'])
     .then((out) => out.trim().split('\n'))
     .catch(() => [join(state.path, '.git')])
-  if (stale()) return
+  if (active.get(id) !== state) return
   // --git-common-dir is relative to the repo outside a worktree and absolute inside one.
   for (const dir of new Set([gitDir, commonDir && resolve(state.path, commonDir)].filter(Boolean) as string[])) {
-    add(dir, true, (f) => join('.git', f))
+    addWatch(state, dir, true, (f) => join('.git', f), onChange)
   }
+  await watchTrackedDirs(id, state, onChange)
+}
 
+/**
+ * Bring the per-directory watches in line with the index. Run once on a switch
+ * and again after `.git` changes, so directories a checkout or a pull brings in
+ * get watched, and ones it removes stop holding an inotify watch.
+ */
+async function watchTrackedDirs(id: number, state: RepoWatch, onChange: (rel: string | null) => void): Promise<void> {
   const files = await gitOut(state.path, ['ls-files', '-z'])
     .then((out) => out.split('\0').filter(Boolean))
     .catch(() => [] as string[])
-  if (stale()) return
+  // Superseded by a later switch (or closed) while git was answering.
+  if (active.get(id) !== state) return
   const dirs = trackedDirs(files)
   if (dirs.length > MAX_DIR_WATCHES) return
-  for (const dir of dirs) add(join(state.path, dir), false, (f) => (dir ? posix.join(dir, f) : f))
+  const wanted = new Set(dirs)
+  for (const [dir, w] of state.dirs) if (!wanted.has(dir)) dropWatch(state, w)
+  for (const dir of dirs) {
+    if (state.dirs.has(dir)) continue
+    const w = addWatch(state, join(state.path, dir), false, (f) => (dir ? posix.join(dir, f) : f), onChange)
+    if (w) state.dirs.set(dir, w)
+  }
 }
 
+function dropWatch(state: RepoWatch, w: FSWatcher): void {
+  try {
+    w.close()
+  } catch {
+    // already closed
+  }
+  state.watchers = state.watchers.filter((x) => x !== w)
+  for (const [d, dw] of state.dirs) if (dw === w) state.dirs.delete(d)
+}
 
+function addWatch(
+  state: RepoWatch,
+  dir: string,
+  recursive: boolean,
+  toRel: (f: string) => string,
+  onChange: (rel: string | null) => void
+): FSWatcher | null {
+  try {
+    const w = watch(dir, { recursive }, (_evt, filename) => onChange(filename ? toRel(filename.toString()) : null))
+    // A directory deleted under us: drop that one watch, keep the rest. The
+    // next re-scan watches it again if a checkout brought it back.
+    w.on('error', () => dropWatch(state, w))
+    state.watchers.push(w)
+    return w
+  } catch {
+    // Gone between ls-files and here, or not watchable: skip it.
+    return null
+  }
+}
 
 export function registerWatcherHandlers(): void {
   ipcMain.handle('watch:repo', (e, repoPath: string | null) => {

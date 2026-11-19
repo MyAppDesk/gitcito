@@ -13,17 +13,21 @@ export interface RepoSwitchSlot {
  * on the way. Only a switch sets it — background polls stay silent, or the
  * indicator would flicker every few seconds.
  *
- * The marker is cleared only if it still names `path`: switching A → B → A
- * quickly must not let A's first, slower refresh clear the marker B or the
- * second A set. A failed refresh clears it too; the refresh reports its own error.
+ * Only the latest switch clears the marker. Comparing paths is not enough:
+ * switching A → B → A quickly would let A's first refresh, finishing while the
+ * second is still running, clear the marker the second A set. A failed refresh
+ * clears it too; the refresh reports its own error.
  */
+let seq = 0
+
 export async function trackRepoSwitch(path: string, work: Promise<unknown>, slot: RepoSwitchSlot): Promise<void> {
+  const mine = ++seq
   slot.set(path)
   try {
     await work
   } catch {
     // The refresh toasts its own failure; the marker only has to go away.
   } finally {
-    if (slot.get() === path) slot.set(null)
+    if (mine === seq) slot.set(null)
   }
 }

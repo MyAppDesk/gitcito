@@ -46,8 +46,7 @@ describe('trackRepoSwitch', () => {
     expect(s.value).toBe('/a') // B finishing does not touch A's marker
     firstA.resolve()
     await t1
-    // The first A clears it — same path. Harmless: both A refreshes coalesce into
-    // one run in the store, so the second resolves with it.
+    expect(s.value).toBe('/a') // the first A finishing does not clear the second A's marker
     secondA.resolve()
     await t3
     expect(s.value).toBeNull()

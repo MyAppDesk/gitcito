@@ -1948,6 +1948,11 @@ async function resolveDrop(repoPath: string, dir: string, name: string, mode: Fs
   throw new Error(`No free name left for ${name}`)
 }
 
+/** A ref name passed straight to git: not empty, and never read as an option. */
+function isPlainRef(ref: string): boolean {
+  return typeof ref === 'string' && ref.length > 0 && !ref.startsWith('-') && !/[\s\0]/.test(ref)
+}
+
 export const gitService = {
   /** A folder picked alongside others is skipped, not opened, when this is false. */
   async isRepository(repoPath: string): Promise<boolean> {
@@ -3550,6 +3555,20 @@ export const gitService = {
   },
 
   /**
+   * Push local branch `local` to `remoteBranch` on `remote` — a different name
+   * than its own, as dropping a branch on another's remote counterpart means
+   * ("push feature to origin/main"). Never forced: the remote refuses anything
+   * that is not a fast-forward, which is the safety this gesture needs. The
+   * local branch's upstream is left alone.
+   */
+  async pushRef(repoPath: string, local: string, remote: string, remoteBranch: string): Promise<void> {
+    if (![local, remote, remoteBranch].every(isPlainRef)) throw new Error(`Not a branch name: ${local}`)
+    await withRemoteAuth(repoPath, remote, () =>
+      runGit(repoPath, ['push', remote, `refs/heads/${local}:refs/heads/${remoteBranch}`])
+    )
+  },
+
+  /**
    * Update a local branch from its upstream **without checking it out**.
    *
    * `git pull` only ever moves HEAD, which is why a branch you are not standing
@@ -3592,6 +3611,43 @@ export const gitService = {
    */
   async setBranchRef(repoPath: string, branch: string, sha: string): Promise<void> {
     await runGit(repoPath, ['branch', '-f', branch, sha])
+  },
+
+  /**
+   * Whether `ancestor` is a strict ancestor of `descendant`: the one can be
+   * fast-forwarded to the other. False for the same commit (nothing to move),
+   * for an unknown ref, and for a name that would read as an option.
+   */
+  async isAncestor(repoPath: string, ancestor: string, descendant: string): Promise<boolean> {
+    if (!isPlainRef(ancestor) || !isPlainRef(descendant)) return false
+    const sha = (ref: string): Promise<string> =>
+      runGit(repoPath, ['rev-parse', '--verify', '--quiet', `${ref}^{commit}`]).then((o) => o.trim(), () => '')
+    const [a, d] = await Promise.all([sha(ancestor), sha(descendant)])
+    if (!a || !d || a === d) return false
+    return runGit(repoPath, ['merge-base', '--is-ancestor', a, d]).then(
+      () => true,
+      () => false
+    )
+  },
+
+  /**
+   * Move local branch `target` forward to `source` without checking it out —
+   * a fast-forward, refused when it would not be one. The branch checked out
+   * here is left to merge (which already fast-forwards when it can), and one
+   * checked out in another worktree is refused by `git branch -f` itself, so
+   * no worktree's index is left behind a moved branch. Returns the commit the
+   * branch was on, for undo.
+   */
+  async fastForwardBranch(repoPath: string, target: string, source: string): Promise<string> {
+    if (!isPlainRef(target) || !isPlainRef(source)) throw new Error(`Not a branch name: ${target}`)
+    const head = await runGit(repoPath, ['symbolic-ref', '--quiet', '--short', 'HEAD']).then((s) => s.trim(), () => '')
+    if (head === target) throw new Error(`${target} is checked out — merge ${source} into it instead.`)
+    const before = (await runGit(repoPath, ['rev-parse', '--verify', `refs/heads/${target}^{commit}`])).trim()
+    const after = (await runGit(repoPath, ['rev-parse', '--verify', `${source}^{commit}`])).trim()
+    const ff = await runGit(repoPath, ['merge-base', '--is-ancestor', before, after]).then(() => true, () => false)
+    if (!ff || before === after) throw new Error(`${target} cannot be fast-forwarded to ${source}: they have diverged.`)
+    await runGit(repoPath, ['branch', '-f', target, after])
+    return before
   },
 
   /**
@@ -8010,6 +8066,7 @@ function lockFor(repoPath: string): RwLock {
 const APP_LEVEL_METHODS = new Set<string>(['clone', 'init', 'remoteBranches'])
 
 const READ_METHODS = new Set<string>([
+  'isAncestor',
   'isRepository',
   'directoryExists',
   'open',

@@ -46,7 +46,7 @@ import {
 import { FileTree } from './FileTree'
 import { FileSearchBar, EMPTY_FILTER, type FileFilter } from './FileSearchBar'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
-import { useUIStore, type MenuItem } from '../stores/ui'
+import { draggingRef, useUIStore, type MenuItem } from '../stores/ui'
 import { refIntegrationItems } from '../lib/refMenuItems'
 import { repoWantsDevices, repoDevicePlatforms } from '../lib/launchDevices'
 import { locateBookmark, bookmarkLabel, sortBookmarks, baseName } from '../lib/bookmarks'
@@ -433,7 +433,10 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   const [dragId, setDragId] = useState<string | null>(null)
   const [overId, setOverId] = useState<string | null>(null)
   // Drag-a-branch-onto-another (merge / rebase gesture).
-  const [dragRef, setDragRef] = useState<DropRef | null>(null)
+  // The dragged ref lives in the UI store, shared with the graph, and is read at
+  // event time (`draggingRef()`) — a row rendered before the drag began would
+  // otherwise still see "nothing dragged" and refuse the drop.
+  const setDragRef = useUIStore((s) => s.setDraggingRef)
   const [dropBranch, setDropBranch] = useState<string | null>(null)
   const path = repo.path
   const f = filter.trim().toLowerCase()
@@ -906,7 +909,10 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     draggable: true,
     onDragStart: (e) => {
       setDragRef(ref)
-      e.dataTransfer.effectAllowed = 'link'
+      // 'move', not 'link': Wayland's drag-and-drop has only copy, move and ask.
+      // A 'link' drag maps to no action there, so the compositor shows the
+      // no-drop cursor over every target — though the drop still arrives.
+      e.dataTransfer.effectAllowed = 'move'
       e.dataTransfer.setData(BRANCH_DND_TYPE, encodeDropRef(ref))
       e.dataTransfer.setData('text/plain', ref.name)
     },
@@ -919,18 +925,19 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   /** Drop props for a local branch row — the only kind git can merge into. */
   const refDrop = (target: DropRef): React.HTMLAttributes<HTMLDivElement> => ({
     onDragOver: (e) => {
+      const dragRef = draggingRef()
       if (!dragRef || !branchDropActions(dragRef, target).length) return
       e.preventDefault()
-      e.dataTransfer.dropEffect = 'link'
+      e.dataTransfer.dropEffect = 'move'
       if (dropBranch !== target.name) setDropBranch(target.name)
     },
     onDragLeave: () => dropBranch === target.name && setDropBranch(null),
     onDrop: (e) => {
       e.preventDefault()
-      const source = dragRef
+      const source = draggingRef()
       setDragRef(null)
       setDropBranch(null)
-      if (source) openBranchDropMenu(path, source, target, e.clientX, e.clientY)
+      if (source) void openBranchDropMenu(path, source, target, e.clientX, e.clientY)
     }
   })
 

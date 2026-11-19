@@ -8,7 +8,7 @@ import { GraphHeaderFilter, type FilterOption } from './GraphHeaderFilter'
 import { layoutGraph } from '../graph/layout'
 import { edgePath, spurPath, colorForPalette, findGraphPalette, DENSITY_ROW_H, LINE_WIDTH_PX } from '../graph/style'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
-import { useUIStore, type MenuItem } from '../stores/ui'
+import { draggingRef, useUIStore, type MenuItem } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { useT, interp, type TranslationKey } from '../i18n'
 import { Avatar } from './Avatar'
@@ -692,7 +692,11 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
   const [previewHash, setPreviewHash] = useState<string | null>(null)
   // Dragging one ref badge onto another is the graph's version of the sidebar's
   // branch-onto-branch drop: same rules, same menu.
-  const [dragRef, setDragRef] = useState<DropRef | null>(null)
+  // The dragged ref lives in the UI store, shared with the sidebar, and is read
+  // at event time (`draggingRef()`), never from a render closure: a badge
+  // rendered before the drag began would otherwise still see "nothing dragged"
+  // and refuse the drop. Not subscribed, so a drag does not re-render the graph.
+  const setDragRef = useUIStore((s) => s.setDraggingRef)
   const [dropRefKey, setDropRefKey] = useState<string | null>(null)
   // Row hovered with no ref of its own — show which branch contains it.
   const [hoverRow, setHoverRow] = useState<string | null>(null)
@@ -1669,7 +1673,10 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
         onDragStart={(e) => {
           e.stopPropagation()
           setDragRef(ref)
-          e.dataTransfer.effectAllowed = 'link'
+          // 'move', not 'link': Wayland's drag-and-drop has only copy, move and ask.
+          // A 'link' drag maps to no action there, so the compositor shows the
+          // no-drop cursor over every target — though the drop still arrives.
+          e.dataTransfer.effectAllowed = 'move'
           e.dataTransfer.setData(BRANCH_DND_TYPE, encodeDropRef(ref))
           e.dataTransfer.setData('text/plain', ref.name)
         }}
@@ -1678,20 +1685,21 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
           setDropRefKey(null)
         }}
         onDragOver={(e) => {
+          const dragRef = draggingRef()
           if (!dragRef || !branchDropActions(dragRef, ref).length) return
           e.preventDefault()
           e.stopPropagation()
-          e.dataTransfer.dropEffect = 'link'
+          e.dataTransfer.dropEffect = 'move'
           if (dropRefKey !== g.key) setDropRefKey(g.key)
         }}
         onDragLeave={() => setDropRefKey((k) => (k === g.key ? null : k))}
         onDrop={(e) => {
           e.preventDefault()
           e.stopPropagation()
-          const source = dragRef
+          const source = draggingRef()
           setDragRef(null)
           setDropRefKey(null)
-          if (source) openBranchDropMenu(repo.path, source, ref, e.clientX, e.clientY)
+          if (source) void openBranchDropMenu(repo.path, source, ref, e.clientX, e.clientY)
         }}
         onMouseEnter={() => setPreviewHash(c.hash)}
         onMouseLeave={() => setPreviewHash((h) => (h === c.hash ? null : h))}

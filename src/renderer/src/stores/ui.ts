@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import type { DropRef } from '../lib/branchDrop'
 import type { ReactNode } from 'react'
 import type { CiState, DivergedStrategy, KeychainReason, RepoRef, ResetStrategy } from '../../../shared/types'
 import type { WorktreeGroupPlan } from '../lib/worktrees'
@@ -386,6 +387,10 @@ interface UIState {
    *  `trackRepoSwitch`), for the toolbar's loading signal. Background refreshes
    *  never set it. */
   repoSwitching: string | null
+  /** The ref being dragged, wherever the drag started. One for the whole
+   *  window, because a drop target cannot read the drag's payload until the
+   *  drop — and a sidebar row and a graph badge are different components. */
+  draggingRef: DropRef | null
   /** Which toolbar operation is in flight, so the spinner can render on the
    *  relevant tool button instead of a layout-shifting label on the right. */
   busyOp: 'push' | 'pull' | 'fetch' | null
@@ -444,6 +449,7 @@ interface UIState {
   setPathFilter(path: string | null): void
   setBusy(label: string | null, op?: 'push' | 'pull' | 'fetch' | null): void
   setRepoSwitching(path: string | null): void
+  setDraggingRef(ref: DropRef | null): void
   beginInflight(): void
   endInflight(): void
   requestComposerIntent(intent: { path: string; summary: string; description: string; amend: boolean }): void
@@ -493,6 +499,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   pathFilter: null,
   busy: null,
   repoSwitching: null,
+  draggingRef: null,
   busyOp: null,
   inflight: 0,
   composerIntent: null,
@@ -569,6 +576,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   setPathFilter: (pathFilter) => set({ pathFilter }),
   setBusy: (busy, op = null) => set({ busy, busyOp: op }),
   setRepoSwitching: (repoSwitching) => set({ repoSwitching }),
+  setDraggingRef: (draggingRef) => set({ draggingRef }),
   beginInflight: () => set((s) => ({ inflight: s.inflight + 1 })),
   endInflight: () => set((s) => ({ inflight: Math.max(0, s.inflight - 1) })),
   requestComposerIntent: (composerIntent) => set({ composerIntent }),
@@ -604,3 +612,8 @@ export const useUIStore = create<UIState>((set, get) => ({
   openCosmos: (repoPath) => set({ cosmos: { repoPath } }),
   closeCosmos: () => set({ cosmos: null })
 }))
+
+/** The ref being dragged right now, read at event time — see `draggingRef` in the store. */
+export function draggingRef(): DropRef | null {
+  return useUIStore.getState().draggingRef
+}

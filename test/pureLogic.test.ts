@@ -126,7 +126,14 @@ import {
 import { parseWorkflowName } from '../src/shared/localCi'
 import { parseRangeDiff } from '../src/shared/rangeDiff'
 import { editorArgs, editorLaunch, supportsLine } from '../src/shared/editors'
-import { branchDropActions, encodeDropRef, decodeDropRef, type DropRef } from '../src/renderer/src/lib/branchDrop'
+import {
+  branchDropActions,
+  fastForwardCandidate,
+  branchNameOf,
+  encodeDropRef,
+  decodeDropRef,
+  type DropRef
+} from '../src/renderer/src/lib/branchDrop'
 import { refIntegrationActions } from '../src/renderer/src/lib/refMenu'
 import {
   branchContextActionIds,
@@ -4057,6 +4064,121 @@ describe('branch drop rules', () => {
     for (const action of branchDropActions(local('feature'), local('main'))) {
       expect(action.vars).toEqual({ source: 'feature', target: 'main' })
     }
+  })
+
+  describe('with what the repository knows', () => {
+    const ctxIds = (a: DropRef, b: DropRef, ctx: Parameters<typeof branchDropActions>[2]): string[] =>
+      branchDropActions(a, b, ctx).map((x) => x.id)
+
+    it('leads with fast-forward when the target is behind, and only onto a local branch', () => {
+      expect(ctxIds(local('feature'), local('main'), { canFastForward: true })).toEqual([
+        'fastForward',
+        'merge',
+        'rebase',
+        'compare'
+      ])
+      expect(ctxIds(local('feature'), remote('origin/main'), { canFastForward: true })).not.toContain('fastForward')
+      expect(ctxIds(local('feature'), local('main'), { canFastForward: false })).not.toContain('fastForward')
+    })
+
+    it('offers an interactive rebase only for the branch that is checked out', () => {
+      expect(ctxIds(local('feature'), local('main'), { currentBranch: 'feature' })).toContain('interactiveRebase')
+      expect(ctxIds(local('feature'), local('main'), { currentBranch: 'main' })).not.toContain('interactiveRebase')
+      expect(ctxIds(remote('origin/feature'), local('main'), { currentBranch: 'origin/feature' })).not.toContain(
+        'interactiveRebase'
+      )
+    })
+
+    it('opens a pull request by branch name, never for a tag or a branch onto its own remote copy', () => {
+      const pr = branchDropActions(remote('origin/feature'), local('main'), { canCreatePr: true }).find(
+        (a) => a.id === 'createPr'
+      )
+      expect(pr?.vars).toEqual({ source: 'feature', target: 'main' })
+      expect(ctxIds(tag('v1'), local('main'), { canCreatePr: true })).not.toContain('createPr')
+      expect(ctxIds(local('feature'), remote('origin/feature'), { canCreatePr: true })).not.toContain('createPr')
+      expect(ctxIds(local('feature'), local('main'), {})).not.toContain('createPr')
+    })
+
+    it('orders everything as the menu groups it, and marks only what rewrites history', () => {
+      const all = branchDropActions(local('feature'), local('main'), {
+        canFastForward: true,
+        currentBranch: 'feature',
+        canCreatePr: true,
+        targetRemote: 'origin/main',
+        sourceOnRemote: true
+      })
+      expect(all.map((a) => a.id)).toEqual([
+        'fastForward',
+        'merge',
+        'rebase',
+        'interactiveRebase',
+        'pushTo',
+        'reset',
+        'createPr',
+        'compare'
+      ])
+      expect(all.map((a) => a.group)).toEqual([
+        'integrate',
+        'integrate',
+        'integrate',
+        'integrate',
+        'move',
+        'move',
+        'share',
+        'inspect'
+      ])
+      expect(all.filter((a) => a.danger).map((a) => a.id)).toEqual(['rebase', 'reset'])
+    })
+
+    it("pushes a local source to the target's remote branch, named in the label", () => {
+      const push = branchDropActions(local('feature'), local('main'), { targetRemote: 'origin/main' }).find(
+        (a) => a.id === 'pushTo'
+      )
+      expect(push?.vars).toEqual({ source: 'feature', target: 'origin/main' })
+      expect(ids(remote('origin/feature'), local('main'))).not.toContain('pushTo')
+      expect(
+        branchDropActions(remote('origin/x'), remote('origin/main'), { targetRemote: 'origin/main' }).map((a) => a.id)
+      ).not.toContain('pushTo')
+    })
+
+    it('skips fast-forward onto a branch checked out here or in another worktree', () => {
+      const wt = (branch: string, isCurrent = false): WorktreeInfo => ({
+        path: `/wt/${branch}`,
+        branch,
+        head: 'abc1234',
+        isMain: false,
+        isCurrent,
+        locked: false,
+        detached: false
+      })
+      expect(fastForwardCandidate(local('feature'), local('main'), 'feature', [])).toBe(true)
+      expect(fastForwardCandidate(local('feature'), local('main'), 'main', [])).toBe(false)
+      // `git branch -f` refuses a branch another worktree has checked out.
+      expect(fastForwardCandidate(local('feature'), local('main'), 'feature', [wt('main')])).toBe(false)
+      expect(fastForwardCandidate(local('feature'), local('main'), 'feature', [wt('other')])).toBe(true)
+      expect(fastForwardCandidate(local('feature'), remote('origin/main'), 'feature', [])).toBe(false)
+      expect(fastForwardCandidate(local('main'), local('main'), undefined, [])).toBe(false)
+    })
+
+    it('resets only the branch that is checked out', () => {
+      expect(ctxIds(local('feature'), tag('v1'), { currentBranch: 'feature' })).toContain('reset')
+      expect(ctxIds(local('feature'), local('main'), { currentBranch: 'main' })).not.toContain('reset')
+    })
+
+    it('pushes first a source the remote has never seen, before the pull request', () => {
+      expect(ctxIds(local('feature'), local('main'), { canCreatePr: true, sourceOnRemote: false })).toContain(
+        'pushAndCreatePr'
+      )
+      expect(ctxIds(local('feature'), local('main'), { canCreatePr: true, sourceOnRemote: false })).not.toContain(
+        'createPr'
+      )
+      expect(ctxIds(local('feature'), local('main'), { canCreatePr: true, sourceOnRemote: true })).toContain('createPr')
+    })
+
+    it('names a remote-tracking ref by its branch for the host', () => {
+      expect(branchNameOf(remote('origin/feat/x'))).toBe('feat/x')
+      expect(branchNameOf(local('feat/x'))).toBe('feat/x')
+    })
   })
 
   it('round-trips a drag payload and rejects anything else', () => {

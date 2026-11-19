@@ -29,8 +29,14 @@ resalta mientras pasas por encima.
 
 | Soltar | Significa |
 |------|-------|
+| **Avance rápido de {target} hasta {source}** | Mueve el destino hasta el origen sin hacer checkout — solo cuando el destino es una rama local por detrás del origen y no la activa |
 | **Merge {origen} → {destino}** | Hace checkout del destino y fusiona el origen en él |
 | **Rebase {origen} sobre {destino}** | Repite los commits del origen encima del destino |
+| **Rebase interactivo de {source} sobre {target}…** | Abre el planificador de [rebase interactivo](rebase.md) — cuando el origen es la rama activa |
+| **Push de {source} a {target}** | Envía el origen a la rama remota del destino (`origin/main`) — nunca forzado, así que el remoto rechaza lo que no sea avance rápido; las mismas comprobaciones de secretos que cualquier push |
+| **Reset de {source} a {target}…** | Abre el diálogo de reset — soft, mixed o hard, con lo que conserva cada uno — cuando el origen es la rama activa |
+| **Crear pull request {source} → {target}…** | Abre el formulario de [pull request](hosting.md) con ambas ramas — cuando el remoto está en un servicio compatible |
+| **Push de {source} y abrir pull request a {target}…** | Sustituye a *Crear pull request* cuando el origen aún no está en el remoto: lo envía y abre el formulario |
 | **Comparar** | Abre la [comparación](#comparar-dos-refs-cualesquiera) — no cambia nada |
 
 **El menú solo ofrece lo que git puede hacer.** Fusionar hace un commit sobre el

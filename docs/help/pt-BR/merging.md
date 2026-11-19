@@ -29,8 +29,14 @@ por cima.
 
 | Drop | Significa |
 |------|-------|
+| **Fast-forward de {target} até {source}** | Avança o alvo até a origem sem fazer checkout — aparece só quando o alvo é uma branch local atrás da origem, e não a que está em uso |
 | **Merge {origem} → {destino}** | Faz checkout do destino e faz merge da origem nele |
 | **Rebase {origem} sobre {destino}** | Reaplica os commits da origem em cima do destino |
+| **Rebase interativo de {source} sobre {target}…** | Abre o planejador de [rebase interativo](rebase.md) — aparece quando a origem é a branch em uso |
+| **Push de {source} para {target}** | Envia a origem para a branch remota do alvo (`origin/main`) — nunca forçado, então o remoto recusa o que não for fast-forward; as mesmas verificações de segredo de qualquer push |
+| **Reset de {source} para {target}…** | Abre o diálogo de reset — soft, mixed ou hard, com o que cada um mantém — aparece quando a origem é a branch em uso |
+| **Criar pull request {source} → {target}…** | Abre o formulário de [pull request](hosting.md) com as duas branches preenchidas — aparece quando o remote está num serviço suportado |
+| **Push de {source} e abrir pull request para {target}…** | Substitui *Criar pull request* quando a origem ainda não está no remoto: envia e depois abre o formulário |
 | **Comparar** | Abre a [comparação](#compare-duas-refs-quaisquer) — não muda nada |
 
 **O menu só oferece o que o git consegue fazer.** O merge commita no destino,

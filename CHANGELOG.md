@@ -20,6 +20,15 @@
 ### Features
 
 * **toolbar:** a loading bar and "Loading repository…" show while a repository you switched to is refreshing, once that takes longer than 150 ms.
+### Features
+
+* **graph:** dropping a branch on another now offers what git would accept, grouped like GitKraken: fast-forward the target (without a checkout, undoable), merge, rebase or interactive rebase, push to the target's remote branch, reset, open a pull request — pushing the branch first when it is not on the remote yet — or compare.
+
+
+### Bug Fixes
+
+* **drag:** a branch picked up in the sidebar can be dropped on a graph badge and the other way round; before, each panel only saw its own drags, so the drop menu never appeared.
+* **drag:** on Wayland, dragging a branch no longer shows the no-drop cursor over every target.
 
 ## [4.25.0](https://github.com/MyAppDesk/gitcito/compare/v4.24.0...v4.25.0) (2026-11-18)
 

@@ -38,7 +38,10 @@ const DEBOUNCE_MS = 350
  * repository switch (20k directories, 125k files), stalling every IPC call —
  * the refresh the switch had just asked for among them.
  */
-const NATIVE_RECURSIVE = process.platform === 'darwin' || process.platform === 'win32'
+const NATIVE_RECURSIVE =
+  (process.platform === 'darwin' || process.platform === 'win32') &&
+  // The test suite forces the Linux path so it runs on every platform.
+  process.env.GITCITO_WATCH_PER_DIR !== '1'
 
 /** More inotify watches than this is a tree we should not watch dir by dir;
  *  `.git` plus the periodic and on-focus refreshes still cover it. */

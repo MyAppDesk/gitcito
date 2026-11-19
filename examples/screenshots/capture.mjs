@@ -212,7 +212,11 @@ async function launch(shot, theme) {
     },
     { w: WIDTH, h: HEIGHT }
   )
-  await page.waitForFunction(() => window.__shot?.ready === true, { timeout: 20000 })
+  // Options are the *third* argument (the second is `arg`). Interval polling,
+  // not the default requestAnimationFrame: a window the compositor considers
+  // hidden (Wayland, another workspace) never gets a frame, so rAF polling
+  // never runs and the wait times out with the bridge long since ready.
+  await page.waitForFunction(() => window.__shot?.ready === true, undefined, { timeout: 20000, polling: 250 })
   const activePath = shot.groupLanding ? null : repoPaths[shot.repos[0]]
   if (activePath) {
     await page.evaluate((p) => window.__shot.waitForRepo(p), activePath).catch(() => {})

@@ -1,5 +1,13 @@
 
 
+## Unreleased
+
+
+### Bug Fixes
+
+* **tabs:** a group shows its own page — open, clone, create, recents — when created, but once one of its repositories was open that page was reachable only from the group's context menu, so adding a repository meant opening it elsewhere and dragging it in. A **+** beside the group's name now goes straight to it.
+* **i18n:** the group page's "Fetch all" and "Pull all" buttons were English in every language.
+
 ## [4.25.0](https://github.com/MyAppDesk/gitcito/compare/v4.24.0...v4.25.0) (2026-11-18)
 
 

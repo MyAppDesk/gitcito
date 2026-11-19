@@ -3533,6 +3533,7 @@ export const tr: Dict = {
   'titlebar.moveToWorkspace': 'Çalışma alanına taşı',
   'titlebar.manageRepos': 'Depoları yönet…',
   'titlebar.viewGroupHome': 'Grup ana sayfasını görüntüle',
+  'titlebar.addReposToGroup': '{group} grubuna depo ekle',
   'titlebar.renameTab': 'Sekmeyi yeniden adlandır',
   'titlebar.rename': 'Yeniden adlandır…',
   'titlebar.fetchAll': 'Tümünü getir ({count})',

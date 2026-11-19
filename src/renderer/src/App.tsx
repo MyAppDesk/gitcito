@@ -207,10 +207,10 @@ function GroupView({ tab }: { tab: GroupTab }): React.JSX.Element {
         {tab.repos.length > 0 && (
           <div className="group-batch-row">
             <button className="btn ghost small" onClick={() => void repoActions.batch(tab.repos.map((r) => r.path), 'fetch')}>
-              <Download size={13} /> Fetch all ({tab.repos.length})
+              <Download size={13} /> {interp(t('titlebar.fetchAll'), { count: tab.repos.length })}
             </button>
             <button className="btn ghost small" onClick={() => void repoActions.batch(tab.repos.map((r) => r.path), 'pull')}>
-              <ArrowDownToLine size={13} /> Pull all
+              <ArrowDownToLine size={13} /> {interp(t('titlebar.pullAll'), { count: tab.repos.length })}
             </button>
           </div>
         )}

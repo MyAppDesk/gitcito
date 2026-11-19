@@ -3590,6 +3590,7 @@ export const ko: Dict = {
   'titlebar.moveToWorkspace': '워크스페이스로 옮기기',
   'titlebar.manageRepos': '저장소 관리…',
   'titlebar.viewGroupHome': '그룹 홈 보기',
+  'titlebar.addReposToGroup': '{group}에 저장소 추가',
   'titlebar.renameTab': '탭 이름 변경',
   'titlebar.rename': '이름 변경…',
   'titlebar.fetchAll': '모두 페치 ({count})',

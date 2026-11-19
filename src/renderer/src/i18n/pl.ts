@@ -3590,6 +3590,7 @@ export const pl: Dict = {
   'titlebar.moveToWorkspace': 'Przenieś do przestrzeni roboczej',
   'titlebar.manageRepos': 'Zarządzaj repozytoriami…',
   'titlebar.viewGroupHome': 'Pokaż stronę główną grupy',
+  'titlebar.addReposToGroup': 'Dodaj repozytoria do {group}',
   'titlebar.renameTab': 'Zmień nazwę karty',
   'titlebar.rename': 'Zmień nazwę…',
   'titlebar.fetchAll': 'Fetch wszystkich ({count})',

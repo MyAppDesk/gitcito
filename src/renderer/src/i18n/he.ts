@@ -3593,6 +3593,7 @@ export const he: Dict = {
   'titlebar.moveToWorkspace': 'העברה לסביבת עבודה',
   'titlebar.manageRepos': 'ניהול מאגרים…',
   'titlebar.viewGroupHome': 'הצגת עמוד הבית של הקבוצה',
+  'titlebar.addReposToGroup': 'הוספת מאגרים אל {group}',
   'titlebar.renameTab': 'שינוי שם הלשונית',
   'titlebar.rename': 'שינוי שם…',
   'titlebar.fetchAll': 'הבאה מהכול ({count})',

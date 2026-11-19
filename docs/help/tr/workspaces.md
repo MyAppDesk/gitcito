@@ -47,6 +47,8 @@ toplar ve tüm alt ağacını fetch ya da pull edebilir.
 > Klasörler yalnızca düzenler. Birini silmek, içindeki depoları üst düzeye
 > taşır — hiçbir depoyu kapatmaz.
 
+Grupta henüz olmayan bir depoyu eklemek için grup adının yanındaki **+** düğmesine tıklayın. Grubun kendi sayfasını gösterir — klasör açma, klonlama, oluşturma ya da son kullanılan bir depoyu seçme — depolarından biri açıkken bile; bir çipe tıklamak sizi ona geri götürür.
+
 ## Bir depoya ait sayfalar
 
 Bazı sayfalar başlı başına bir şey değildir: bir deponun [wiki](repo-wiki.md)

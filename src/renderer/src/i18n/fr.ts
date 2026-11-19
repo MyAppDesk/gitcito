@@ -3538,6 +3538,7 @@ export const fr: Dict = {
   'titlebar.moveToWorkspace': 'Déplacer vers un espace de travail',
   'titlebar.manageRepos': 'Gérer les dépôts…',
   'titlebar.viewGroupHome': 'Voir l’accueil du groupe',
+  'titlebar.addReposToGroup': 'Ajouter des dépôts à {group}',
   'titlebar.renameTab': 'Renommer l’onglet',
   'titlebar.rename': 'Renommer…',
   'titlebar.fetchAll': 'Tout récupérer ({count})',

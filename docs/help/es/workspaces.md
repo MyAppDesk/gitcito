@@ -48,6 +48,8 @@ de todo su subárbol.
 > Las carpetas solo organizan. Borrar una sube sus repositorios al nivel
 > superior — nunca cierra un repositorio.
 
+Para añadir un repositorio que el grupo aún no tiene, haz clic en el **+** junto al nombre del grupo. Muestra la página del propio grupo — abrir una carpeta, clonar, crear o elegir un repositorio reciente — aunque uno de sus repositorios esté abierto; al hacer clic en un chip vuelves a él.
+
 ## Páginas que pertenecen a un repositorio
 
 Algunas páginas no son algo aparte: la [wiki](repo-wiki.md) de un repositorio,

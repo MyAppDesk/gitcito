@@ -103,6 +103,8 @@ and can fetch or pull its whole subtree.
 > Folders only organise. Deleting one lifts its repositories to the parent — it
 > never closes a repository.
 
+To add a repository the group does not hold yet, click the **+** beside the group's name. It shows the group's own page — open a folder, clone, create, or pick a recent repository — even while one of its repositories is open; clicking a chip takes you back to it.
+
 ## Pages that belong to a repository
 
 Some pages are not their own thing: a repository's [wiki](repo-wiki.md), its

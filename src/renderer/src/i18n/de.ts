@@ -3598,6 +3598,7 @@ export const de: Dict = {
   'titlebar.moveToWorkspace': 'In Arbeitsbereich verschieben',
   'titlebar.manageRepos': 'Repositories verwalten…',
   'titlebar.viewGroupHome': 'Gruppenübersicht anzeigen',
+  'titlebar.addReposToGroup': 'Repositories zu {group} hinzufügen',
   'titlebar.renameTab': 'Tab umbenennen',
   'titlebar.rename': 'Umbenennen…',
   'titlebar.fetchAll': 'Alle abrufen ({count})',

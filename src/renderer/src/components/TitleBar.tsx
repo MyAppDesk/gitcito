@@ -1252,6 +1252,21 @@ export function TitleBar(): React.JSX.Element {
                   <Download size={12} />
                 </button>
               )}
+              {/* The group's own page — open, clone, create, recents — is the only
+                  place to add repositories to it, and once a repository is open it
+                  was reachable only from the context menu. Always one click away. */}
+              <button
+                className="tab-group-sync"
+                title={interp(t('titlebar.addReposToGroup'), { group: tab.name })}
+                aria-label={interp(t('titlebar.addReposToGroup'), { group: tab.name })}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setActiveTab(tab.id)
+                  setGroupActiveRepo(tab.id, null)
+                }}
+              >
+                <Plus size={12} />
+              </button>
 
               <AnimatePresence initial={false}>
                 {looseRepos.map((repo) => renderRepoChip(tab, repo))}

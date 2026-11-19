@@ -53,6 +53,8 @@ peut récupérer ou tirer son sous-arbre entier.
 > Les dossiers ne font qu'organiser. En supprimer un remonte ses dépôts au parent
 > — cela ne ferme jamais un dépôt.
 
+Pour ajouter un dépôt que le groupe ne contient pas encore, cliquez sur le **+** à côté du nom du groupe. Il affiche la page du groupe — ouvrir un dossier, cloner, créer ou choisir un dépôt récent — même quand l’un de ses dépôts est ouvert ; un clic sur une puce vous y ramène.
+
 ## Les pages qui appartiennent à un dépôt
 
 Certaines pages ne sont pas autonomes : le [wiki](repo-wiki.md) d’un dépôt, ses

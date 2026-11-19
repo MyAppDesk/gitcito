@@ -49,6 +49,8 @@ fetchen oder pullen.
 > Ordner organisieren nur. Löschst du einen, wandern seine Repositorys eine Ebene
 > nach oben — ein Repository wird dabei nie geschlossen.
 
+Um ein Repository hinzuzufügen, das die Gruppe noch nicht enthält, klicke auf das **+** neben dem Gruppennamen. Es zeigt die Seite der Gruppe – Ordner öffnen, klonen, anlegen oder ein zuletzt genutztes Repository wählen –, auch wenn eines ihrer Repositories geöffnet ist; ein Klick auf einen Chip führt dorthin zurück.
+
 ## Seiten, die zu einem Repository gehören
 
 Manche Seiten sind nichts Eigenes: das [Wiki](repo-wiki.md) eines Repositories,

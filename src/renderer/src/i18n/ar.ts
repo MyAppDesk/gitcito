@@ -3593,6 +3593,7 @@ export const ar: Dict = {
   'titlebar.moveToWorkspace': 'النقل إلى مساحة عمل',
   'titlebar.manageRepos': 'إدارة المستودعات…',
   'titlebar.viewGroupHome': 'عرض صفحة المجموعة',
+  'titlebar.addReposToGroup': 'إضافة مستودعات إلى {group}',
   'titlebar.renameTab': 'إعادة تسمية التبويب',
   'titlebar.rename': 'إعادة تسمية…',
   'titlebar.fetchAll': 'جلب الكل ({count})',

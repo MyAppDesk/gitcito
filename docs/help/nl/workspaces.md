@@ -47,6 +47,8 @@ erin op, en kan zijn hele subboom fetchen of pullen.
 > Mappen ordenen alleen. Er een verwijderen tilt zijn repository's naar de ouder
 > — het sluit nooit een repository.
 
+Om een repository toe te voegen die de groep nog niet heeft, klik je op de **+** naast de groepsnaam. Die toont de pagina van de groep — een map openen, klonen, aanmaken of een recente repository kiezen — ook als een van de repositories open is; een klik op een chip brengt je ernaar terug.
+
 ## Pagina's die bij een repository horen
 
 Sommige pagina's zijn niets op zichzelf: de [wiki](repo-wiki.md) van een

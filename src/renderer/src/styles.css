@@ -1874,6 +1874,20 @@ textarea:focus {
   background: rgba(231, 89, 108, 0.15);
   color: var(--red);
 }
+/* A linked worktree with uncommitted work — what a remove would destroy. */
+.badge.dirty {
+  background: color-mix(in srgb, var(--yellow) 15%, transparent);
+  color: var(--yellow);
+}
+/* Its folder is gone; the row is only git's leftover record. */
+.badge.missing {
+  background: color-mix(in srgb, var(--red) 15%, transparent);
+  color: var(--red);
+}
+.sb-item.worktree-missing .sb-name {
+  opacity: 0.55;
+  text-decoration: line-through;
+}
 
 /* Branch/tag presence icons (local + remotes) */
 .sb-presence {

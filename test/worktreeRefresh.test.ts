@@ -18,6 +18,7 @@ vi.mock('../src/renderer/src/stores/settings', () => ({
 vi.mock('../src/renderer/src/i18n', () => ({ t: (key: string) => key, interp: (value: string) => value }))
 
 import { repoActions, useRepoStore } from '../src/renderer/src/stores/repo'
+import type { WorktreeInfo } from '../src/shared/types'
 
 const refresh = vi.fn(async () => undefined)
 describe('worktree refresh scopes', () => {
@@ -37,7 +38,12 @@ describe('worktree refresh scopes', () => {
   })
 
   it('avoids rereading history when removing a worktree', async () => {
-    await repoActions.worktreeRemove('/repo', '/wt')
+    const worktree: WorktreeInfo = {
+      path: '/wt', branch: 'feature', head: 'abc1234', isMain: false, isCurrent: false,
+      locked: false, lockReason: null, detached: false, prunable: false
+    }
+    await repoActions.worktreeRemove('/repo', worktree)
+    expect(gitApi.worktreeRemove).toHaveBeenCalledWith('/repo', '/wt', false)
     expect(refresh).toHaveBeenCalledWith('/repo', { only: ['worktrees', 'branches'] })
   })
 })

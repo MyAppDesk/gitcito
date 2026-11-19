@@ -41,7 +41,8 @@ import {
   Power,
   Bookmark as BookmarkIcon,
   Folder,
-  FolderOpen
+  FolderOpen,
+  Eraser
 } from 'lucide-react'
 import { FileTree } from './FileTree'
 import { FileSearchBar, EMPTY_FILTER, type FileFilter } from './FileSearchBar'
@@ -62,7 +63,14 @@ import { togglePin, selectPinned } from '../lib/pinnedBranches'
 import { branchDropActions, encodeDropRef, BRANCH_DND_TYPE, type DropRef } from '../lib/branchDrop'
 import { stepRange, claimRangeKeys, ownsRangeKeys, rangeKeysBlocked, domOrder } from '../lib/rangeSelect'
 import { openBranchDropMenu } from '../lib/branchDropMenu'
-import { worktreeForBranch, worktreeTabName } from '../lib/worktrees'
+import {
+  isRepoOpenInTabs,
+  prunableWorktreeCount,
+  worktreeDisplayName,
+  worktreeForBranch,
+  worktreeTabName
+} from '../lib/worktrees'
+import { WorktreeStatusBadge } from './WorktreeStatusBadge'
 import { HUGE_SECTION, openUnlessHuge } from '../lib/sidebarSections'
 import {
   buildPrefixTree,
@@ -1117,26 +1125,131 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     }
   ]
 
-  const worktreeMenu = (w: WorktreeInfo): MenuItem[] => [
-    { label: t('sidebar.openWorktree'), disabled: w.isCurrent, onClick: () => openWorktreeTab(w) },
-    { label: t('sidebar.revealWorktree'), onClick: () => void shellApi.revealInFolder(w.path) },
-    { label: t('sidebar.copyPath'), onClick: () => void navigator.clipboard.writeText(w.path) },
-    { separator: true },
-    {
-      label: t('sidebar.removeWorktree'),
-      danger: true,
-      disabled: w.isMain || w.isCurrent,
-      onClick: () =>
-        openModal({
-          kind: 'confirm',
-          title: t('sidebar.removeWorktree'),
-          message: interp(t('sidebar.removeWorktreeMsg'), { path: w.path }),
-          danger: true,
-          confirmLabel: t('common.delete'),
-          onConfirm: () => void repoActions.worktreeRemove(path, w.path)
-        })
+  /** Ask git what removing `w` would destroy, then pick the dialog: a plain
+   *  confirm (with undo) when it is clean, an explicit "discard" otherwise. */
+  const confirmRemoveWorktree = async (w: WorktreeInfo): Promise<void> => {
+    const status = await gitApi.getWorktreeStatus(path, w.path).catch(() => null)
+    if (status && status.changes > 0) {
+      openModal({
+        kind: 'confirm',
+        title: t('worktree.removeDirtyTitle'),
+        message: interp(t('worktree.removeDirtyMsg'), { path: w.path, count: status.changes }),
+        danger: true,
+        confirmLabel: t('worktree.removeDirtyConfirm'),
+        onConfirm: () => void repoActions.worktreeRemove(path, w, true)
+      })
+      return
     }
-  ]
+    openModal({
+      kind: 'confirm',
+      title: t('sidebar.removeWorktree'),
+      // A detached HEAD has no branch to keep; its commits survive only in the
+      // worktree's own reflog, which removal deletes.
+      message: interp(t(w.branch ? 'worktree.removeCleanMsg' : 'worktree.removeDetachedMsg'), {
+        path: w.path,
+        name: worktreeDisplayName(w)
+      }),
+      danger: true,
+      confirmLabel: t('common.delete'),
+      onConfirm: () => void repoActions.worktreeRemove(path, w)
+    })
+  }
+
+  const confirmPruneWorktrees = (): void => {
+    const count = prunableWorktreeCount(repo.worktrees)
+    openModal({
+      kind: 'confirm',
+      title: t('worktree.prune'),
+      message: interp(t('worktree.pruneMsg'), { count }),
+      confirmLabel: t('worktree.pruneConfirm'),
+      onConfirm: () => void repoActions.worktreePrune(path, count)
+    })
+  }
+
+  const worktreeMenu = (w: WorktreeInfo): MenuItem[] => {
+    const name = worktreeDisplayName(w)
+    // A missing folder can only be reconnected or forgotten; everything else
+    // would fail against a path that is not there.
+    if (w.prunable)
+      return [
+        {
+          label: t('worktree.repair'),
+          onClick: () =>
+            openModal({
+              kind: 'input',
+              title: t('worktree.repair'),
+              label: interp(t('worktree.repairLabel'), { name }),
+              initial: w.path,
+              submitLabel: t('worktree.repairSubmit'),
+              onSubmit: (dir) => {
+                if (dir.trim()) void repoActions.worktreeRepair(path, dir.trim())
+              }
+            })
+        },
+        { label: t('sidebar.copyPath'), onClick: () => void navigator.clipboard.writeText(w.path) },
+        { separator: true },
+        {
+          label: t('worktree.prune'),
+          disabled: w.locked,
+          title: w.locked ? t('worktree.lockedHint') : undefined,
+          onClick: confirmPruneWorktrees
+        }
+      ]
+    const { settings } = useSettingsStore.getState()
+    const openInTab = isRepoOpenInTabs([settings.tabs, ...(settings.workspaces ?? []).map((ws) => ws.tabs)], w.path)
+    const moveBlocked = w.locked ? t('worktree.lockedHint') : openInTab ? t('worktree.moveOpenTab') : undefined
+    return [
+      { label: t('sidebar.openWorktree'), disabled: w.isCurrent, onClick: () => openWorktreeTab(w) },
+      { label: t('sidebar.revealWorktree'), onClick: () => void shellApi.revealInFolder(w.path) },
+      { label: t('sidebar.copyPath'), onClick: () => void navigator.clipboard.writeText(w.path) },
+      { separator: true },
+      // The main worktree is the repository itself: git cannot lock or move it.
+      ...(w.isMain
+        ? []
+        : [
+            w.locked
+              ? { label: t('worktree.unlock'), onClick: () => void repoActions.worktreeUnlock(path, w) }
+              : {
+                  label: t('worktree.lock'),
+                  onClick: () =>
+                    openModal({
+                      kind: 'input',
+                      title: t('worktree.lock'),
+                      label: t('worktree.lockReasonLabel'),
+                      placeholder: t('worktree.lockReasonPlaceholder'),
+                      submitLabel: t('worktree.lock'),
+                      allowEmpty: true,
+                      onSubmit: (reason) => void repoActions.worktreeLock(path, w.path, reason.trim() || undefined)
+                    })
+                },
+            {
+              label: t('worktree.move'),
+              disabled: !!moveBlocked || w.isCurrent,
+              title: moveBlocked,
+              onClick: () =>
+                openModal({
+                  kind: 'input',
+                  title: t('worktree.move'),
+                  label: interp(t('worktree.moveLabel'), { name }),
+                  initial: w.path,
+                  submitLabel: t('worktree.moveSubmit'),
+                  onSubmit: (dir) => {
+                    const to = dir.trim()
+                    if (to && to !== w.path) void repoActions.worktreeMove(path, w.path, to)
+                  }
+                })
+            } satisfies MenuItem,
+            { separator: true }
+          ]),
+      {
+        label: t('sidebar.removeWorktree'),
+        danger: true,
+        disabled: w.isMain || w.isCurrent || w.locked,
+        title: w.locked ? t('worktree.lockedHint') : undefined,
+        onClick: () => void confirmRemoveWorktree(w)
+      }
+    ]
+  }
 
   const addWorktree = (): void => {
     const segs = path.split(/[/\\]/).filter(Boolean)
@@ -2568,36 +2681,67 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         {...dragProps('worktrees')}
         {...persistOpen('worktrees', false)}
         actions={
-          <span
-            className="icon-btn"
-            role="button"
-            tabIndex={0}
-            aria-label={t('sidebar.addWorktree')}
-            onKeyDown={keyActivate}
-            title={t('sidebar.addWorktree')}
-            onClick={(e) => {
-              e.stopPropagation()
-              addWorktree()
-            }}
-          >
-            +
-          </span>
+          <>
+            {prunableWorktreeCount(repo.worktrees) > 0 && (
+              <span
+                className="icon-btn"
+                role="button"
+                tabIndex={0}
+                aria-label={t('worktree.prune')}
+                onKeyDown={keyActivate}
+                title={t('worktree.prune')}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  confirmPruneWorktrees()
+                }}
+              >
+                <Eraser size={12} />
+              </span>
+            )}
+            <span
+              className="icon-btn"
+              role="button"
+              tabIndex={0}
+              aria-label={t('sidebar.addWorktree')}
+              onKeyDown={keyActivate}
+              title={t('sidebar.addWorktree')}
+              onClick={(e) => {
+                e.stopPropagation()
+                addWorktree()
+              }}
+            >
+              +
+            </span>
+          </>
         }
       >
         {repo.worktrees.length === 0 && <div className="sb-empty">{t('sidebar.noWorktrees')}</div>}
         {repo.worktrees.map((w) => (
           <div
             key={w.path}
-            className={`sb-item ${w.isCurrent ? 'current' : ''}`}
-            onDoubleClick={() => !w.isCurrent && openWorktreeTab(w)}
+            className={`sb-item ${w.isCurrent ? 'current' : ''} ${w.prunable ? 'worktree-missing' : ''}`}
+            onDoubleClick={() => !w.isCurrent && !w.prunable && openWorktreeTab(w)}
             onContextMenu={(e) => {
               e.preventDefault()
               openContextMenu(e.clientX, e.clientY, worktreeMenu(w))
             }}
-            title={w.path}
+            title={w.prunable ? interp(t('worktree.missingHint'), { path: w.path }) : w.path}
           >
-            <span className="sb-name">{w.branch ?? (w.detached ? w.head.slice(0, 7) : w.path.split('/').pop())}</span>
-            {w.locked && <Lock size={11} className="text-2" />}
+            <span className="sb-name">{worktreeDisplayName(w)}</span>
+            {w.locked && (
+              <span
+                className="text-2"
+                title={w.lockReason ? interp(t('worktree.lockedReason'), { reason: w.lockReason }) : t('worktree.lockedNoReason')}
+              >
+                <Lock size={11} />
+              </span>
+            )}
+            {w.prunable ? (
+              <span className="badge missing">{t('worktree.missing')}</span>
+            ) : (
+              // The current checkout's state is already the repo's own status panel.
+              !w.isCurrent && <WorktreeStatusBadge repoPath={path} worktree={w} />
+            )}
             {w.isMain && <span className="badge">main</span>}
           </div>
         ))}

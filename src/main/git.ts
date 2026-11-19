@@ -59,6 +59,7 @@ import type {
   StashInfo,
   TagInfo,
   WorktreeInfo,
+  WorktreeStatus,
   SubmoduleInfo,
   SubmoduleStatus,
   TreeEntry,
@@ -6762,7 +6763,9 @@ export const gitService = {
           isMain: false,
           isCurrent: false,
           locked: cur.locked ?? false,
-          detached: cur.detached ?? false
+          lockReason: cur.lockReason ?? null,
+          detached: cur.detached ?? false,
+          prunable: cur.prunable ?? false
         })
       }
       cur = null
@@ -6781,6 +6784,12 @@ export const gitService = {
         cur.detached = true
       } else if (line === 'locked' || line.startsWith('locked ')) {
         cur.locked = true
+        // `locked <reason>` — the reason is the only hint of *why* (a USB
+        // drive, a network share), so it is kept for the row's tooltip.
+        cur.lockReason = line.slice('locked'.length).trim() || null
+      } else if (line === 'prunable' || line.startsWith('prunable ')) {
+        // The folder is gone (deleted or moved by hand); only the record is left.
+        cur.prunable = true
       }
     }
     flush()
@@ -6856,6 +6865,86 @@ export const gitService = {
     if (force) args.push('--force')
     args.push(path)
     await gitFor(repoPath).raw(args)
+  },
+
+  /**
+   * What removing a worktree would cost: uncommitted changes, and commits its
+   * branch has that the upstream does not. Null when the folder is gone.
+   * Read on demand (opening the section, before a remove) — never per refresh,
+   * because it spawns one `git status` inside every linked worktree.
+   */
+  // `_repoPath` is unused here but stays first: the dispatcher locks on args[0].
+  async getWorktreeStatus(_repoPath: string, worktreePath: string): Promise<WorktreeStatus | null> {
+    if (!existsSync(worktreePath)) return null
+    // Status is per checkout, so it has to run inside the worktree itself.
+    const out = await runGit(worktreePath, ['status', '--porcelain=v2', '--branch']).catch(() => null)
+    if (out === null) return null
+    let changes = 0
+    let ahead = 0
+    let behind = 0
+    let upstream: string | null = null
+    for (const line of out.split('\n')) {
+      if (!line) continue
+      if (line.startsWith('# branch.upstream ')) upstream = line.slice('# branch.upstream '.length).trim()
+      else if (line.startsWith('# branch.ab ')) {
+        const m = /\+(\d+) -(\d+)/.exec(line)
+        if (m) {
+          ahead = +m[1]
+          behind = +m[2]
+        }
+      } else if (!line.startsWith('#')) changes++
+    }
+    return { changes, ahead, behind, upstream }
+  },
+
+  /** Keep `git worktree prune` (and other clients) from discarding a worktree
+   *  whose folder is temporarily unreachable — a USB drive, a network share. */
+  async worktreeLock(repoPath: string, worktreePath: string, reason?: string): Promise<void> {
+    const args = ['worktree', 'lock']
+    if (reason?.trim()) args.push('--reason', reason.trim())
+    args.push(worktreePath)
+    await runGit(repoPath, args)
+  },
+
+  async worktreeUnlock(repoPath: string, worktreePath: string): Promise<void> {
+    await runGit(repoPath, ['worktree', 'unlock', worktreePath])
+  },
+
+  /**
+   * Forget worktrees whose folder no longer exists. Only git's bookkeeping in
+   * `.git/worktrees/` goes — there is no folder left to delete — and locked
+   * worktrees are skipped by git itself. Returns how many were forgotten.
+   */
+  async worktreePrune(repoPath: string): Promise<number> {
+    // `prune --verbose` reports on stderr, which runGit does not return, so
+    // count the records before and after instead of parsing its chatter.
+    const before = (await gitService.worktrees(repoPath)).length
+    await runGit(repoPath, ['worktree', 'prune'])
+    return before - (await gitService.worktrees(repoPath)).length
+  },
+
+  /** Move a worktree's folder and update both sides of the link. Git refuses a
+   *  locked worktree and the main one; the UI does not offer either. */
+  async worktreeMove(repoPath: string, from: string, to: string): Promise<void> {
+    const target = isAbsolute(to) ? to : resolvePath(repoPath, to)
+    // Same courtesy as worktreeAdd: name the problem instead of git's terse fatal.
+    if (existsSync(target)) throw new Error(`Worktree destination already exists: ${to}`)
+    // git renames the folder but will not create the parent it lands in.
+    await mkdir(dirname(target), { recursive: true })
+    await runGit(repoPath, ['worktree', 'move', from, target])
+    // `move` rewrites the `.git` file with an absolute path again.
+    await makeWorktreeGitfilePortable(target)
+  },
+
+  /**
+   * Re-link a worktree whose folder was moved by hand. Run from the main
+   * repository with the folder's new location, git rewrites both pointers.
+   */
+  async worktreeRepair(repoPath: string, newPath: string): Promise<void> {
+    const target = isAbsolute(newPath) ? newPath : resolvePath(repoPath, newPath)
+    if (!existsSync(join(target, '.git'))) throw new Error(`Not a worktree folder: ${newPath}`)
+    await runGit(repoPath, ['worktree', 'repair', target])
+    await makeWorktreeGitfilePortable(target)
   },
 
   // ─── Submodules ──────────────────────────────────────────────────────────
@@ -8178,6 +8267,7 @@ const READ_METHODS = new Set<string>([
   'fileHistory',
   'worktrees',
   'worktreeRoot',
+  'getWorktreeStatus',
   'submodules',
   'signingConfig',
   'hooksInfo',

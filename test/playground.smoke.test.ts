@@ -74,7 +74,8 @@ const EXPECTED = [
   'xcode-project',
   'change-summary',
   'moved-code',
-  'huge-line'
+  'huge-line',
+  'worktree-care'
 ]
 
 describe('playground fixtures', () => {

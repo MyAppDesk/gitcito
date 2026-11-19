@@ -98,7 +98,7 @@ git actually is.
 | **[Pull or push any branch](docs/help/syncing.md)** | Catch a branch up or publish it from its right-click menu, without checking it out first. |
 | **[Untracked-branch repair](docs/help/syncing.md)** | A pull that stops on "no tracking information" offers the fix as a button — link the branch to its remote, or push it if the remote has never seen it. |
 | **[Pull requests](docs/help/hosting.md)** | Create on GitHub, GitLab, Bitbucket and Azure DevOps. Review, comment, approve and merge on GitHub. Each profile [links its own account](docs/help/hosting.md#tokens) — a token, or a login git's credential helper or the GitHub CLI already holds. |
-| **[Plumbing, with a UI](docs/help/lfs-sparse.md)** | Stashes, tags, worktrees, submodules, LFS, sparse-checkout, patches, hooks. |
+| **[Plumbing, with a UI](docs/help/lfs-sparse.md)** | Stashes, tags, [worktrees](docs/help/worktrees.md#looking-after-worktrees) (with what each one holds, lock, move and repair), submodules, LFS, sparse-checkout, patches, hooks. |
 | **[Subtrees](docs/help/subtree.md)** | Vendor another repo into a directory — and remember where it came from, which git does not. |
 | **[Bundles & archives](docs/help/export.md)** | The repository as one file git can clone from — or a tree as a zip, honouring `export-ignore`. |
 | **[Credential helper](docs/help/credentials.md)** | Git's own password store — why https keeps asking, and the plaintext file nobody meant to have. Launched from an editor's terminal, git never borrows that editor's sign-in window. |

@@ -32,6 +32,9 @@
 * **git:** fetch, pull, push and clone with an Azure DevOps personal access token work again. The token went to git with an empty username, and with an empty username git never sends the password, so a valid token failed with "Authentication failed". The remote URL's username (Azure writes the organization there) is used, else a fixed one.
 * **settings:** with the OS keychain off, a token is kept only until you quit — on purpose, rather than written to disk in the clear — but nothing said so where you type it. The token field in Integrations now does, with an **Enable** button beside it.
 * **settings:** turning the keychain on stores the tokens already typed in that session. Before, they stayed in memory until some other setting was saved, and quitting first lost them again.
+### Features
+
+* **worktrees:** each linked worktree shows its uncommitted files (●) and commits ahead/behind its upstream. Lock one with a reason, unlock, move it, reconnect a folder that was moved by hand, or forget worktrees whose folder is gone (eraser in the section header). Remove asks git first: a clean worktree gets a plain confirm with undo; one with uncommitted changes gets "Discard and remove", with no undo. Both say that ignored files such as `.env` are deleted too.
 
 ## [4.25.0](https://github.com/MyAppDesk/gitcito/compare/v4.24.0...v4.25.0) (2026-11-18)
 

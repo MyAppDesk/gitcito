@@ -85,7 +85,7 @@ Awatar na pasku tytułu i na liście profili jest Twój, więc możesz go wybra�
 | **Automatyczny** | Domyślnie: Twój Gravatar dla e-maila git profilu albo wygenerowana twarz — ta, która reaguje na repozytorium. |
 | **Z integracji** | Zdjęcie konta GitHub lub GitLab połączonego z tym profilem w Integracjach. Wyłączone, dopóki takiego nie ma. |
 | **Ikona** | Jeden z 24 symboli na wybranym kolorze. |
-| **Obraz** | Wybrany plik — PNG, JPEG, WebP lub GIF. Zmniejszany do 256 px i przechowywany na tym komputerze, w folderze danych Gitcito, a nie w pliku ustawień. |
+| **Obraz** | Wybrany plik — PNG lub JPEG. Zmniejszany do 256 px i przechowywany na tym komputerze, w folderze danych Gitcito, a nie w pliku ustawień. |
 
 Obraz trafia do **Ustawienia → Dane → Eksportuj ustawienia** i wraca przy imporcie; usunięcie
 profilu go usuwa.

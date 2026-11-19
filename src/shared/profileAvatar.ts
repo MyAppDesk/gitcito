@@ -83,6 +83,86 @@ export function avatarDataUrlPayload(value: unknown): string | null {
   return m[1]
 }
 
+/** Largest side and pixel count an image may declare before it is decoded. The
+ *  file-size cap alone does not bound memory: a tiny PNG can claim 50 000 × 50 000. */
+export const AVATAR_MAX_DECODE_SIDE = 4096
+export const AVATAR_MAX_DECODE_PIXELS = 16 * 1024 * 1024
+
+/**
+ * The dimensions a PNG or JPEG declares in its header, read without decoding
+ * anything. Null for any other format, or a header too short to say — and
+ * nativeImage decodes only these two, so null means "not an avatar".
+ */
+export function imageHeaderSize(buf: Uint8Array): { width: number; height: number } | null {
+  const u32 = (i: number): number => ((buf[i] << 24) | (buf[i + 1] << 16) | (buf[i + 2] << 8) | buf[i + 3]) >>> 0
+  const u16 = (i: number): number => (buf[i] << 8) | buf[i + 1]
+  const PNG = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]
+  if (buf.length >= 24 && PNG.every((b, i) => buf[i] === b)) {
+    // IHDR is always the first chunk: length, 'IHDR', width, height.
+    if (String.fromCharCode(buf[12], buf[13], buf[14], buf[15]) !== 'IHDR') return null
+    return { width: u32(16), height: u32(20) }
+  }
+  if (buf.length >= 4 && buf[0] === 0xff && buf[1] === 0xd8) {
+    let i = 2
+    while (i + 3 < buf.length) {
+      if (buf[i] !== 0xff) return null
+      const marker = buf[i + 1]
+      // Fill bytes, and the markers that carry no length.
+      if (marker === 0xff) {
+        i++
+        continue
+      }
+      if (marker === 0x01 || (marker >= 0xd0 && marker <= 0xd7)) {
+        i += 2
+        continue
+      }
+      const len = u16(i + 2)
+      if (len < 2) return null
+      // SOF0..SOF15, except DHT (C4), JPG (C8) and DAC (CC), which share the range.
+      if (marker >= 0xc0 && marker <= 0xcf && marker !== 0xc4 && marker !== 0xc8 && marker !== 0xcc) {
+        if (i + 9 > buf.length) return null
+        return { width: u16(i + 7), height: u16(i + 5) }
+      }
+      if (marker === 0xda || marker === 0xd9) return null
+      i += 2 + len
+    }
+  }
+  return null
+}
+
+/** Whether an image's header is one nativeImage can be trusted to decode within bounds. */
+export function avatarHeaderOk(buf: Uint8Array): boolean {
+  if (buf.length > AVATAR_MAX_BYTES) return false
+  const size = imageHeaderSize(buf)
+  if (!size || size.width <= 0 || size.height <= 0) return false
+  if (size.width > AVATAR_MAX_DECODE_SIDE || size.height > AVATAR_MAX_DECODE_SIDE) return false
+  return size.width * size.height <= AVATAR_MAX_DECODE_PIXELS
+}
+
+/**
+ * Hosts an account picture may be loaded from, per integration — the ones the
+ * account lookup in main/hosting.ts actually returns. The URL is drawn as an
+ * <img>, and settings files are imported, so an arbitrary https URL would make
+ * the app fetch from whatever host the file names.
+ */
+const ACCOUNT_AVATAR_HOSTS: Record<'github' | 'gitlab', readonly string[]> = {
+  github: ['avatars.githubusercontent.com'],
+  // gitlab.com serves uploaded pictures itself and falls back to Gravatar.
+  gitlab: ['gitlab.com', 'secure.gravatar.com', 'www.gravatar.com']
+}
+
+export function isAccountAvatarUrl(host: 'github' | 'gitlab', value: unknown): value is string {
+  if (typeof value !== 'string') return false
+  let url: URL
+  try {
+    url = new URL(value)
+  } catch {
+    return false
+  }
+  if (url.protocol !== 'https:' || url.username || url.password || url.port) return false
+  return ACCOUNT_AVATAR_HOSTS[host].includes(url.hostname)
+}
+
 /** The size to scale an image to so its longest side is at most `max`. Never upscales. */
 export function avatarFitSize(width: number, height: number, max = AVATAR_MAX_SIDE): { width: number; height: number } {
   const longest = Math.max(width, height)
@@ -111,7 +191,7 @@ export function validProfileAvatar(value: unknown): ProfileAvatar | undefined {
     }
     case 'account': {
       const host = v.accountHost === 'github' || v.accountHost === 'gitlab' ? v.accountHost : undefined
-      const url = typeof v.accountUrl === 'string' && /^https:\/\//.test(v.accountUrl) ? v.accountUrl : undefined
+      const url = host && isAccountAvatarUrl(host, v.accountUrl) ? v.accountUrl : undefined
       return host && url ? { source: 'account', accountHost: host, accountUrl: url } : undefined
     }
     default:

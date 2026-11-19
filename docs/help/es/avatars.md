@@ -90,7 +90,7 @@ El avatar de la barra de título y de la lista de perfiles es tuyo, así que pue
 | **Automático** | El predeterminado: tu Gravatar del correo git del perfil, o la cara generada, la que reacciona al repositorio. |
 | **De la integración** | La foto de la cuenta de GitHub o GitLab que este perfil tiene conectada en Integraciones. Desactivado hasta que haya una. |
 | **Icono** | Uno de 24 símbolos sobre el color que elijas. |
-| **Imagen** | Un archivo que eliges: PNG, JPEG, WebP o GIF. Se reduce a 256 px y se guarda en este equipo, en la carpeta de datos de Gitcito, no en el archivo de configuración. |
+| **Imagen** | Un archivo que eliges: PNG o JPEG. Se reduce a 256 px y se guarda en este equipo, en la carpeta de datos de Gitcito, no en el archivo de configuración. |
 
 La imagen viaja con **Ajustes → Datos → Exportar ajustes** y vuelve al importar;
 borrar el perfil la borra.

@@ -91,7 +91,7 @@ Der Avatar in der Titelleiste und in der Profilliste gehört dir – also kannst
 | **Automatisch** | Der Standard: dein Gravatar zur Git-E-Mail des Profils oder das generierte Gesicht – das, das auf das Repository reagiert. |
 | **Aus der Integration** | Das Bild des GitHub- oder GitLab-Kontos, das dieses Profil unter Integrationen verbunden hat. Deaktiviert, solange keins verbunden ist. |
 | **Symbol** | Eines von 24 Symbolen auf einer Farbe deiner Wahl. |
-| **Bild** | Eine Datei deiner Wahl – PNG, JPEG, WebP oder GIF. Sie wird auf 256 px verkleinert und auf diesem Computer im Datenordner von Gitcito abgelegt, nicht in der Einstellungsdatei. |
+| **Bild** | Eine Datei deiner Wahl – PNG oder JPEG. Sie wird auf 256 px verkleinert und auf diesem Computer im Datenordner von Gitcito abgelegt, nicht in der Einstellungsdatei. |
 
 Das Bild wandert mit **Einstellungen → Daten → Einstellungen exportieren** und kommt beim Import
 zurück; wird das Profil gelöscht, wird es mitgelöscht.

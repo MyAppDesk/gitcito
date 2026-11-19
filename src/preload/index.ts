@@ -203,7 +203,8 @@ const api = {
   },
   profileAvatar: {
     get: (id: string): Promise<unknown> => ipcRenderer.invoke('profileAvatar:get', id),
-    pick: (id: string): Promise<unknown> => ipcRenderer.invoke('profileAvatar:pick', id),
+    pick: (id: string, title: string, filterName: string): Promise<unknown> =>
+      ipcRenderer.invoke('profileAvatar:pick', id, title, filterName),
     remove: (id: string): Promise<unknown> => ipcRenderer.invoke('profileAvatar:remove', id),
     exportAll: (ids: string[]): Promise<unknown> => ipcRenderer.invoke('profileAvatar:exportAll', ids),
     importAll: (data: unknown): Promise<unknown> => ipcRenderer.invoke('profileAvatar:importAll', data)

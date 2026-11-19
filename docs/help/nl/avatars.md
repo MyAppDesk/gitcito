@@ -88,7 +88,7 @@ De avatar in de titelbalk en de profiellijst is van jou, dus je kunt hem kiezen.
 | **Automatisch** | De standaard: je Gravatar voor het git-e-mailadres van het profiel, of het gegenereerde gezicht — dat op de repository reageert. |
 | **Uit de integratie** | De foto van het GitHub- of GitLab-account dat dit profiel in Integraties heeft gekoppeld. Uitgeschakeld tot er een is. |
 | **Pictogram** | Een van 24 symbolen op een kleur naar keuze. |
-| **Afbeelding** | Een bestand dat je kiest — PNG, JPEG, WebP of GIF. Verkleind tot 256 px en bewaard op deze computer, in de gegevensmap van Gitcito, niet in het instellingenbestand. |
+| **Afbeelding** | Een bestand dat je kiest — PNG of JPEG. Verkleind tot 256 px en bewaard op deze computer, in de gegevensmap van Gitcito, niet in het instellingenbestand. |
 
 De afbeelding gaat mee met **Instellingen → Gegevens → Instellingen exporteren** en komt terug bij
 importeren; het profiel verwijderen verwijdert haar.

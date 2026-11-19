@@ -91,7 +91,7 @@ L’avatar de la barre de titre et de la liste des profils est le vôtre : vous 
 | **Automatique** | Par défaut : votre Gravatar pour l’e-mail git du profil, ou le visage généré — celui qui réagit au dépôt. |
 | **De l’intégration** | La photo du compte GitHub ou GitLab connecté à ce profil dans Intégrations. Désactivé tant qu’il n’y en a pas. |
 | **Icône** | L’un des 24 symboles, sur la couleur de votre choix. |
-| **Image** | Un fichier que vous choisissez — PNG, JPEG, WebP ou GIF. Réduit à 256 px et conservé sur cet ordinateur, dans le dossier de données de Gitcito, pas dans le fichier de réglages. |
+| **Image** | Un fichier que vous choisissez — PNG ou JPEG. Réduit à 256 px et conservé sur cet ordinateur, dans le dossier de données de Gitcito, pas dans le fichier de réglages. |
 
 L’image suit **Paramètres → Données → Exporter les paramètres** et revient à l’import ; supprimer le
 profil la supprime.

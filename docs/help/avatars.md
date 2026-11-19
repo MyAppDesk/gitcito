@@ -89,7 +89,7 @@ The avatar in the title bar and the profile list is yours, so you can choose it.
 | **Automatic** | The default: your Gravatar for the profile's git email, or the generated face — the one that reacts to the repository. |
 | **From integration** | The picture of the GitHub or GitLab account this profile is connected to in Integrations. Disabled until one is. |
 | **Icon** | One of 24 glyphs on a colour you pick. |
-| **Image** | A file you choose — PNG, JPEG, WebP or GIF. It is scaled to 256 px and kept on this computer, in Gitcito's data folder, not in the settings file. |
+| **Image** | A file you choose — PNG or JPEG. It is scaled to 256 px and kept on this computer, in Gitcito's data folder, not in the settings file. |
 
 An image travels with **Settings → Data → Export settings** and comes back on import;
 deleting the profile deletes it.

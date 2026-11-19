@@ -90,6 +90,7 @@ export function ProfileAvatarSettings({
       const result = await pickProfileImage(profile.id)
       if (result === 'picked') setAvatar({ source: 'image' })
       else if (result === 'unreadable') toast('error', t('profileAvatar.imageFailed'))
+      else if (result === 'tooLarge') toast('error', t('profileAvatar.imageTooLarge'))
     } finally {
       setPicking(false)
     }

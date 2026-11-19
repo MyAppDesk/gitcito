@@ -84,7 +84,7 @@ Başlık çubuğundaki ve profil listesindeki avatar sizindir, bu yüzden seçeb
 | **Otomatik** | Varsayılan: profilin git e-postasına ait Gravatar’ınız ya da oluşturulmuş yüz — depoya tepki veren yüz. |
 | **Entegrasyondan** | Bu profilin Entegrasyonlar’da bağlı olduğu GitHub veya GitLab hesabının resmi. Bağlı hesap yoksa devre dışıdır. |
 | **Simge** | Seçtiğiniz bir renk üzerinde 24 simgeden biri. |
-| **Görsel** | Seçtiğiniz bir dosya — PNG, JPEG, WebP veya GIF. 256 px’e küçültülür ve ayarlar dosyasında değil, Gitcito’nun veri klasöründe, bu bilgisayarda saklanır. |
+| **Görsel** | Seçtiğiniz bir dosya — PNG veya JPEG. 256 px’e küçültülür ve ayarlar dosyasında değil, Gitcito’nun veri klasöründe, bu bilgisayarda saklanır. |
 
 Görsel **Ayarlar → Veri → Ayarları dışa aktar** ile birlikte gider ve içe aktarınca geri
 gelir; profili silmek onu da siler.

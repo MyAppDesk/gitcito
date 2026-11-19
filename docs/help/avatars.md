@@ -79,6 +79,32 @@ Only this one avatar animates. An animated avatar has to be drawn as live SVG
 rather than a cached image, which is fine for one and wasteful for the several
 hundred a scrolling graph draws.
 
+## Your profile's picture
+
+The avatar in the title bar and the profile list is yours, so you can choose it.
+**Settings → Profile → Avatar** offers four sources:
+
+| Source | What it shows |
+|---|---|
+| **Automatic** | The default: your Gravatar for the profile's git email, or the generated face — the one that reacts to the repository. |
+| **From integration** | The picture of the GitHub or GitLab account this profile is connected to in Integrations. Disabled until one is. |
+| **Icon** | One of 24 glyphs on a colour you pick. |
+| **Image** | A file you choose — PNG, JPEG, WebP or GIF. It is scaled to 256 px and kept on this computer, in Gitcito's data folder, not in the settings file. |
+
+An image travels with **Settings → Data → Export settings** and comes back on import;
+deleting the profile deletes it.
+
+**A commit never carries a picture.** It holds a name and an email, and that is
+all. GitHub and GitLab show your account picture on a commit when its email
+belongs to your account. If you would rather not publish your real address, the
+profile's git identity offers **Use my GitHub noreply email** once the account
+is connected — an address the host keeps private that still links your commits
+to you.
+
+This is for your own profiles only. Every other author still gets the picture of
+their commit email, as described above. A chosen picture, like a Gravatar photo,
+has no expression: the face that reacts to the repository is the automatic one.
+
 ## Turning the lookup off
 
 **Settings → Themes → Graph → Show avatars.**

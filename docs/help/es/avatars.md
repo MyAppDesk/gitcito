@@ -80,6 +80,31 @@ Solo se anima este avatar. Un avatar animado tiene que dibujarse como SVG vivo e
 lugar de una imagen en caché, lo cual está bien para uno y es un derroche para los
 varios cientos que dibuja un grafo al desplazarse.
 
+## La imagen de tu perfil
+
+El avatar de la barra de título y de la lista de perfiles es tuyo, así que puedes elegirlo.
+**Ajustes → Perfil → Avatar** ofrece cuatro fuentes:
+
+| Fuente | Qué muestra |
+|---|---|
+| **Automático** | El predeterminado: tu Gravatar del correo git del perfil, o la cara generada, la que reacciona al repositorio. |
+| **De la integración** | La foto de la cuenta de GitHub o GitLab que este perfil tiene conectada en Integraciones. Desactivado hasta que haya una. |
+| **Icono** | Uno de 24 símbolos sobre el color que elijas. |
+| **Imagen** | Un archivo que eliges: PNG, JPEG, WebP o GIF. Se reduce a 256 px y se guarda en este equipo, en la carpeta de datos de Gitcito, no en el archivo de configuración. |
+
+La imagen viaja con **Ajustes → Datos → Exportar ajustes** y vuelve al importar;
+borrar el perfil la borra.
+
+**Un commit nunca lleva una imagen.** Guarda un nombre y un correo, nada más. GitHub
+y GitLab muestran la foto de tu cuenta en un commit cuando su correo pertenece a tu
+cuenta. Si prefieres no publicar tu dirección real, la identidad git del perfil
+ofrece **Usar mi correo noreply de GitHub** una vez conectada la cuenta: una
+dirección que el servicio mantiene privada y que sigue vinculando tus commits a ti.
+
+Esto vale solo para tus perfiles. El resto de autores sigue con la imagen de su
+correo de commit, como se describe arriba. Una imagen elegida, como una foto de
+Gravatar, no tiene expresión: la cara que reacciona al repositorio es la automática.
+
 ## Desactivar la consulta
 
 **Ajustes → Temas → Grafo → Mostrar avatares.**

@@ -201,6 +201,13 @@ const api = {
     clear: (): Promise<unknown> => ipcRenderer.invoke('analytics:clear'),
     setRetention: (days: number): Promise<unknown> => ipcRenderer.invoke('analytics:setRetention', days)
   },
+  profileAvatar: {
+    get: (id: string): Promise<unknown> => ipcRenderer.invoke('profileAvatar:get', id),
+    pick: (id: string): Promise<unknown> => ipcRenderer.invoke('profileAvatar:pick', id),
+    remove: (id: string): Promise<unknown> => ipcRenderer.invoke('profileAvatar:remove', id),
+    exportAll: (ids: string[]): Promise<unknown> => ipcRenderer.invoke('profileAvatar:exportAll', ids),
+    importAll: (data: unknown): Promise<unknown> => ipcRenderer.invoke('profileAvatar:importAll', data)
+  },
   vault: {
     list: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('vault:list', repoPath),
     upsert: (scope: string, repoPath: string, entry: unknown): Promise<unknown> =>

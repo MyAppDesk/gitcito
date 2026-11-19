@@ -74,6 +74,31 @@ Yalnızca bu avatar canlanır. Canlandırılmış bir avatarın önbelleğe alı
 canlı SVG olarak çizilmesi gerekir; bu bir tane için uygun, kaydırılan bir grafın çizdiği
 birkaç yüz tane için ise savurganlıktır.
 
+## Profilinizin resmi
+
+Başlık çubuğundaki ve profil listesindeki avatar sizindir, bu yüzden seçebilirsiniz.
+**Ayarlar → Profil → Avatar** dört kaynak sunar:
+
+| Kaynak | Ne gösterir |
+|---|---|
+| **Otomatik** | Varsayılan: profilin git e-postasına ait Gravatar’ınız ya da oluşturulmuş yüz — depoya tepki veren yüz. |
+| **Entegrasyondan** | Bu profilin Entegrasyonlar’da bağlı olduğu GitHub veya GitLab hesabının resmi. Bağlı hesap yoksa devre dışıdır. |
+| **Simge** | Seçtiğiniz bir renk üzerinde 24 simgeden biri. |
+| **Görsel** | Seçtiğiniz bir dosya — PNG, JPEG, WebP veya GIF. 256 px’e küçültülür ve ayarlar dosyasında değil, Gitcito’nun veri klasöründe, bu bilgisayarda saklanır. |
+
+Görsel **Ayarlar → Veri → Ayarları dışa aktar** ile birlikte gider ve içe aktarınca geri
+gelir; profili silmek onu da siler.
+
+**Bir commit asla görsel taşımaz.** Yalnızca bir ad ve bir e-posta içerir. GitHub ve
+GitLab, e-postası hesabınıza ait olan bir commit’te hesap resminizi gösterir. Gerçek
+adresinizi yayımlamak istemiyorsanız, hesap bağlandıktan sonra profilin git kimliği
+**GitHub noreply e-postamı kullan** seçeneğini sunar — hizmetin gizli tuttuğu ama
+commit’lerinizi yine size bağlayan bir adres.
+
+Bu yalnızca sizin profilleriniz için geçerlidir. Diğer tüm yazarlar, yukarıda
+anlatıldığı gibi commit e-postalarının resmini almaya devam eder. Seçilen bir görsel,
+Gravatar fotoğrafı gibi ifade taşımaz: depoya tepki veren yüz otomatik olandır.
+
 ## Sorguyu kapatmak
 
 **Ayarlar → Temalar → Graf → Avatarları göster.**

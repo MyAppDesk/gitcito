@@ -168,6 +168,13 @@ interface PreloadApi {
     clear(): Promise<unknown>
     setRetention(days: number): Promise<unknown>
   }
+  profileAvatar: {
+    get(id: string): Promise<unknown>
+    pick(id: string): Promise<unknown>
+    remove(id: string): Promise<unknown>
+    exportAll(ids: string[]): Promise<unknown>
+    importAll(data: unknown): Promise<unknown>
+  }
   vault: {
     list(repoPath: string): Promise<unknown>
     upsert(scope: string, repoPath: string, entry: unknown): Promise<unknown>

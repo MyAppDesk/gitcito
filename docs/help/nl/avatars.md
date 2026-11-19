@@ -78,6 +78,31 @@ Alleen deze ene avatar animeert. Een geanimeerde avatar moet als levende SVG wor
 getekend in plaats van als gecachte afbeelding, wat prima is voor één en verspilling
 voor de honderden die een scrollende graaf tekent.
 
+## De afbeelding van je profiel
+
+De avatar in de titelbalk en de profiellijst is van jou, dus je kunt hem kiezen.
+**Instellingen → Profiel → Avatar** biedt vier bronnen:
+
+| Bron | Wat hij toont |
+|---|---|
+| **Automatisch** | De standaard: je Gravatar voor het git-e-mailadres van het profiel, of het gegenereerde gezicht — dat op de repository reageert. |
+| **Uit de integratie** | De foto van het GitHub- of GitLab-account dat dit profiel in Integraties heeft gekoppeld. Uitgeschakeld tot er een is. |
+| **Pictogram** | Een van 24 symbolen op een kleur naar keuze. |
+| **Afbeelding** | Een bestand dat je kiest — PNG, JPEG, WebP of GIF. Verkleind tot 256 px en bewaard op deze computer, in de gegevensmap van Gitcito, niet in het instellingenbestand. |
+
+De afbeelding gaat mee met **Instellingen → Gegevens → Instellingen exporteren** en komt terug bij
+importeren; het profiel verwijderen verwijdert haar.
+
+**Een commit bevat nooit een afbeelding.** Alleen een naam en een e-mailadres. GitHub
+en GitLab tonen je accountfoto bij een commit waarvan het e-mailadres bij je account
+hoort. Wil je je echte adres niet publiceren, dan biedt de git-identiteit van het
+profiel na het koppelen **Mijn GitHub-noreply-adres gebruiken** — een adres dat de
+dienst privé houdt en dat je commits toch aan jou koppelt.
+
+Dit geldt alleen voor je eigen profielen. Alle andere auteurs houden de afbeelding van
+hun commit-e-mailadres, zoals hierboven beschreven. Een gekozen afbeelding heeft, net
+als een Gravatar-foto, geen uitdrukking: het gezicht dat op de repository reageert is het automatische.
+
 ## De opzoeking uitzetten
 
 **Instellingen → Thema's → Graaf → Avatars weergeven.**

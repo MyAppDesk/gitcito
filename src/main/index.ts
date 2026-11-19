@@ -22,6 +22,7 @@ import { registerAnalyzeHandlers } from './analyze'
 import { registerTodoScanHandlers } from './todoScan'
 import { registerWatcherHandlers } from './watcher'
 import { registerVaultHandlers } from './vault'
+import { registerProfileAvatarHandlers } from './profileAvatar'
 import { registerRepoRegistryHandlers } from './repoRegistry'
 import { registerKeychainHandlers } from './keychain'
 import { registerSecureShareHandlers } from './secureShare'
@@ -472,6 +473,7 @@ app.whenReady().then(() => {
   registerTodoScanHandlers()
   registerWatcherHandlers()
   registerVaultHandlers()
+  registerProfileAvatarHandlers()
   registerRepoRegistryHandlers()
   registerKeychainHandlers()
   registerSecureShareHandlers()

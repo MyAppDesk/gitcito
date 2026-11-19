@@ -6,7 +6,7 @@ import { useRepoStore } from '../stores/repo'
 import { useUIStore } from '../stores/ui'
 import { useT, interp } from '../i18n'
 import { repoMood } from '../lib/repoMood'
-import { Avatar } from './Avatar'
+import { ProfileAvatar } from './ProfileAvatar'
 
 /**
  * Title-bar profile selector. Shows the active profile's avatar + name and
@@ -111,9 +111,8 @@ export function ProfileSwitcher(): React.JSX.Element {
         }
         onClick={toggle}
       >
-        <Avatar
-          email={active.gitEmail}
-          name={active.name}
+        <ProfileAvatar
+          profile={active}
           // Bigger than the 20px it used to be: an expression needs room. A
           // Gravatar photo reads fine at 20, a face does not.
           size={26}
@@ -167,7 +166,7 @@ export function ProfileSwitcher(): React.JSX.Element {
                 }}
               >
                 <span className="profile-switcher-check">{p.id === checkedId ? '✓' : ''}</span>
-                <Avatar email={p.gitEmail} name={p.name} size={20} />
+                <ProfileAvatar profile={p} size={20} />
                 <span className="profile-switcher-label">{p.name}</span>
               </button>
             ))}

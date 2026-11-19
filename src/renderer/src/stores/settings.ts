@@ -35,6 +35,7 @@ import { gitApi, reposApi, settingsApi } from '../infrastructure/api'
 import { repathRepoSettings, repathRepoTabs } from '../lib/repoRepath'
 import type { WorkspaceCandidate } from '../lib/workspacePlan'
 import { useUIStore } from './ui'
+import { useProfileAvatarsStore } from './profileAvatars'
 import { focusOpenRepo } from '../lib/tabLookup'
 import { planWorktreeGroup } from '../lib/worktrees'
 import { applyRepoAlias, canonicalRepoPath, migrateRepoAliases, repoDisplayName } from '../lib/repoAlias'
@@ -483,8 +484,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       return { ...s, profiles: [...s.profiles, profile], activeProfileId: profile.id }
     }),
 
-  deleteProfile: (id) =>
-    get().update((s) => {
+  deleteProfile: (id) => {
+    // Its stored picture goes too: nothing would ever read that file again.
+    void useProfileAvatarsStore.getState().removeProfileImage(id).catch(() => undefined)
+    return get().update((s) => {
       const profiles = s.profiles.filter((p) => p.id !== id)
       if (!profiles.length) profiles.push(defaultProfile())
       // Drop repo bindings that pointed at the deleted profile so they don't
@@ -498,7 +501,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         repoProfiles,
         activeProfileId: s.activeProfileId === id ? profiles[0].id : s.activeProfileId
       }
-    }),
+    })
+  },
 
   setRepoProfile: (path, profileId) =>
     get().update((s) => {

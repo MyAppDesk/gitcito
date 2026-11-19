@@ -2088,6 +2088,24 @@ export const shots = [
     }
   },
   {
+    // Profile avatar — an icon picked over the generated face, so the shot shows
+    // the source switch, the icon grid and the colours. The seeded profile has
+    // no integration, so "From integration" is the disabled one, as it should be.
+    out: 'profile-avatar',
+    repos: ['octopus-merge'],
+    themes: ['dark'],
+    drive: async (page) => {
+      await page.evaluate(() =>
+        window.__shot.settings.getState().update((s) => ({
+          ...s,
+          profiles: s.profiles.map((p, i) => (i === 0 ? { ...p, avatar: { source: 'icon', icon: 'rocket', color: '#0ea5e9' } } : p))
+        }))
+      )
+      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'profile' }))
+      await page.waitForTimeout(600)
+    }
+  },
+  {
     // Secure share — an encrypted bundle of settings/vault entries for another
     // machine.
     out: 'secure-share',

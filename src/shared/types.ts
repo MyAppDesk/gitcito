@@ -809,6 +809,9 @@ export interface ConnectedAccount {
   login: string // username/handle
   name?: string // display name, if different from login
   avatarUrl?: string
+  /** The address the host keeps private for this account (GitHub, GitLab). A
+   *  commit with it shows this account's picture — see shared/profileAvatar.ts. */
+  noreplyEmail?: string
   profileUrl?: string // link to the provider's profile page
   orgs?: ConnectedOrg[] // organizations/workspaces/groups the account belongs to
   /** Where the credential came from: the PAT typed in Settings, or the profile's
@@ -1782,6 +1785,8 @@ export interface SettingsBundle {
   settings: AppSettings
   info?: InfoExport
   vault?: VaultExport
+  /** Profile pictures chosen as an image, by profile id, as PNG data URLs. */
+  avatars?: Record<string, string>
 }
 
 /** Result of interpreting a free-form instruction against the repo's current state. */
@@ -2653,8 +2658,26 @@ export interface Profile {
    *  (and without a token) the profile is not connected: a machine-wide login is
    *  never borrowed implicitly, so two profiles can hold two accounts. */
   links?: Partial<Record<RepoHost, AccountLink>>
+  /** Where the profile's picture comes from. Absent means `auto`. */
+  avatar?: ProfileAvatar
   ai: AIConfig
 }
+
+/**
+ * The picture a profile shows in the title bar and the profile list. Only the
+ * choice lives in settings; an `image` is a file in the user-data folder, keyed
+ * by profile id (main/profileAvatar.ts). Commits never carry it — see
+ * `noreplyEmail` for what makes a hosting site show a picture on a commit.
+ */
+export type ProfileAvatar =
+  /** Gravatar for the git email, else a generated face (the default). */
+  | { source: 'auto' }
+  /** The connected account's picture, remembered as the URL the host gave. */
+  | { source: 'account'; accountHost: 'github' | 'gitlab'; accountUrl: string }
+  /** A glyph from PROFILE_AVATAR_ICONS on a colour from PROFILE_AVATAR_COLORS. */
+  | { source: 'icon'; icon: string; color: string }
+  /** An image the user chose, stored on this computer. */
+  | { source: 'image' }
 
 /** Which machine login a profile uses for a provider. `login` is the gh account,
  *  or the username git's credential helper filed the credential under. Not a secret. */

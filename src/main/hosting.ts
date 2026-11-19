@@ -11,6 +11,7 @@ import {
 } from './credentials'
 import { activeProfileAuth, allProfileAuth, boundProfileAuth } from './settings'
 import { linkHoldsAccount, pickHostAuth, validAccountLink, type HostAuthInput } from '../shared/hostToken'
+import { noreplyEmail } from '../shared/profileAvatar'
 import { mergeStackSection } from '../shared/stackPr'
 import {
   type CiCacheEntry,
@@ -1832,7 +1833,7 @@ async function accountOwner(
 async function describeAccount(provider: RepoHost, auth: ApiAuth, org?: string): Promise<ConnectedAccount> {
 
   if (provider === 'github') {
-    const user = await ghJson<{ login: string; name: string | null; avatar_url: string; html_url: string }>(
+    const user = await ghJson<{ id: number; login: string; name: string | null; avatar_url: string; html_url: string }>(
       'https://api.github.com/user',
       auth.token
     )
@@ -1845,6 +1846,7 @@ async function describeAccount(provider: RepoHost, auth: ApiAuth, org?: string):
       login: user.login,
       name: user.name ?? undefined,
       avatarUrl: user.avatar_url,
+      noreplyEmail: noreplyEmail('github', user.id, user.login) ?? undefined,
       profileUrl: user.html_url,
       orgs: orgs.map((o) => ({ login: o.login, avatarUrl: o.avatar_url, url: `https://github.com/${o.login}` }))
     }
@@ -1855,6 +1857,7 @@ async function describeAccount(provider: RepoHost, auth: ApiAuth, org?: string):
     const userRes = await fetch('https://gitlab.com/api/v4/user', { headers })
     if (!userRes.ok) throw new Error(`GitLab API error (${userRes.status})`)
     const user = (await userRes.json()) as {
+      id: number
       username: string
       name: string | null
       avatar_url: string | null
@@ -1869,6 +1872,7 @@ async function describeAccount(provider: RepoHost, auth: ApiAuth, org?: string):
       login: user.username,
       name: user.name ?? undefined,
       avatarUrl: user.avatar_url ?? undefined,
+      noreplyEmail: noreplyEmail('gitlab', user.id, user.username) ?? undefined,
       profileUrl: user.web_url,
       orgs: groups.map((g) => ({ login: g.full_path, avatarUrl: g.avatar_url ?? undefined, url: g.web_url }))
     }

@@ -75,6 +75,31 @@ Animuje się tylko ten jeden awatar. Animowany awatar musi być rysowany jako ż
 a nie obrazek z pamięci podręcznej — w porządku dla jednego, marnotrawstwo dla kilkuset,
 które graf rysuje podczas przewijania.
 
+## Obraz Twojego profilu
+
+Awatar na pasku tytułu i na liście profili jest Twój, więc możesz go wybrać.
+**Ustawienia → Profil → Awatar** oferuje cztery źródła:
+
+| Źródło | Co pokazuje |
+|---|---|
+| **Automatyczny** | Domyślnie: Twój Gravatar dla e-maila git profilu albo wygenerowana twarz — ta, która reaguje na repozytorium. |
+| **Z integracji** | Zdjęcie konta GitHub lub GitLab połączonego z tym profilem w Integracjach. Wyłączone, dopóki takiego nie ma. |
+| **Ikona** | Jeden z 24 symboli na wybranym kolorze. |
+| **Obraz** | Wybrany plik — PNG lub JPEG. Zmniejszany do 256 px i przechowywany na tym komputerze, w folderze danych Gitcito, a nie w pliku ustawień. |
+
+Obraz trafia do **Ustawienia → Dane → Eksportuj ustawienia** i wraca przy imporcie; usunięcie
+profilu go usuwa.
+
+**Commit nigdy nie zawiera obrazu.** Ma tylko imię i e-mail. GitHub i GitLab pokazują
+zdjęcie Twojego konta przy commicie, którego e-mail należy do Twojego konta. Jeśli
+wolisz nie publikować prawdziwego adresu, tożsamość git profilu po połączeniu konta
+oferuje **Użyj mojego adresu noreply z GitHub** — adres, który serwis trzyma w
+tajemnicy, a który nadal łączy Twoje commity z Tobą.
+
+Dotyczy to tylko Twoich profili. Pozostali autorzy nadal mają obraz swojego e-maila z
+commita, jak opisano wyżej. Wybrany obraz, tak jak zdjęcie z Gravatara, nie ma
+wyrazu: twarz reagująca na repozytorium to ta automatyczna.
+
 ## Wyłączanie zapytania
 
 **Ustawienia → Motywy → Graf → Pokaż awatary.**

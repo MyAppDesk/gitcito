@@ -62,16 +62,19 @@ import {
   SquarePen,
   ToggleLeft,
   Keyboard,
-  Map as MapIcon
+  Map as MapIcon,
+  Image as ImageIcon
 } from 'lucide-react'
 import hljs from 'highlight.js'
 import { useSettingsStore } from '../stores/settings'
 import { useReposStore } from '../stores/repos'
 import { useUIStore } from '../stores/ui'
+import { useProfileAvatarsStore } from '../stores/profileAvatars'
 import { Avatar } from './Avatar'
 import { TokenKeychainNotice } from './TokenKeychainNotice'
+import { NoreplyEmailButtons, ProfileAvatarSettings, useProfileAccounts } from './ProfileAvatarSettings'
 import { useUpdatesStore, hasPendingUpdate } from '../stores/updates'
-import { gitApi, aiApi, settingsApi, analyticsApi, logApi, infoApi, vaultApi, shellApi, hostingApi, keychainApi, editorApi, sshApi, diffToolApi, localCiApi } from '../infrastructure/api'
+import { gitApi, aiApi, settingsApi, analyticsApi, logApi, infoApi, vaultApi, profileAvatarApi, shellApi, hostingApi, keychainApi, editorApi, sshApi, diffToolApi, localCiApi } from '../infrastructure/api'
 import type { AnalyzerMode } from '../../../shared/types'
 import type { LocalCiStatus } from '../../../shared/localCi'
 import type { DetectedEditor, EditorSetting } from '../../../shared/editors'
@@ -279,6 +282,7 @@ function ProfilePage({ profile, edit }: { profile: Profile; edit: (p: Partial<Pr
   const { settings, setActiveProfile, deleteProfile, activeRepo } = useSettingsStore()
   const toast = useUIStore((s) => s.toast)
   const t = useT()
+  const accounts = useProfileAccounts(profile)
 
   const applyToRepo = async (): Promise<void> => {
     const repo = activeRepo()
@@ -318,6 +322,11 @@ function ProfilePage({ profile, edit }: { profile: Profile; edit: (p: Partial<Pr
       </div>
 
       <h4>
+        <ImageIcon size={14} /> {t('profileAvatar.title')}
+      </h4>
+      <ProfileAvatarSettings profile={profile} edit={edit} accounts={accounts} />
+
+      <h4>
         <UserCircle2 size={14} /> {t('settings.gitIdentity')}
       </h4>
       <div className="form-row two">
@@ -330,6 +339,7 @@ function ProfilePage({ profile, edit }: { profile: Profile; edit: (p: Partial<Pr
           <input value={profile.gitEmail} onChange={(e) => edit({ gitEmail: e.target.value })} />
         </label>
       </div>
+      <NoreplyEmailButtons profile={profile} edit={edit} accounts={accounts} />
       <button className="btn ghost small" onClick={() => void applyToRepo()}>
         {t('settings.applyIdentity')}
       </button>
@@ -2330,6 +2340,12 @@ function DataManagementSection(): React.JSX.Element {
         info: await infoApi.exportAll()
       }
       if (exportIncludeSecrets) bundle.vault = await vaultApi.exportAll()
+      // Pictures live outside settings (one PNG per profile); ship the ones in use.
+      const withImage = settings.profiles.filter((p) => p.avatar?.source === 'image').map((p) => p.id)
+      if (withImage.length) {
+        const avatars = await profileAvatarApi.exportAll(withImage)
+        if (Object.keys(avatars).length) bundle.avatars = avatars
+      }
       const ok = await settingsApi.exportFile(bundle)
       if (ok) toast('success', t('settings.exported'))
     } catch {
@@ -2355,6 +2371,10 @@ function DataManagementSection(): React.JSX.Element {
       if (incomingSettings) update((s) => ({ ...s, ...incomingSettings }))
       if (bundle?.info) await infoApi.importAll(bundle.info)
       if (bundle?.vault) await vaultApi.importAll(bundle.vault)
+      if (bundle?.avatars) {
+        await profileAvatarApi.importAll(bundle.avatars)
+        useProfileAvatarsStore.getState().reloadProfileImages()
+      }
       toast('success', t('settings.imported'))
     } catch {
       toast('error', t('settings.importFailed'))

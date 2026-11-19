@@ -765,6 +765,18 @@ export const logApi = {
   clear: () => window.api.log.clear() as Promise<LogEntry[]>
 }
 
+/** Profile pictures stored as images (main/profileAvatar.ts). */
+export const profileAvatarApi = {
+  get: (id: string) => window.api.profileAvatar.get(id) as Promise<string | null>,
+  /** The new picture as a data URL; null when cancelled; `{ error }` when unreadable or too large.
+   *  `title` and `filterName` label the native file dialog, so they arrive translated. */
+  pick: (id: string, title: string, filterName: string) =>
+    window.api.profileAvatar.pick(id, title, filterName) as Promise<string | null | { error: string }>,
+  remove: (id: string) => window.api.profileAvatar.remove(id) as Promise<void>,
+  exportAll: (ids: string[]) => window.api.profileAvatar.exportAll(ids) as Promise<Record<string, string>>,
+  importAll: (data: Record<string, string>) => window.api.profileAvatar.importAll(data) as Promise<number>
+}
+
 export const vaultApi = {
   list: (repoPath: string) => window.api.vault.list(repoPath) as Promise<VaultListResult>,
   upsert: (scope: 'repo' | 'global', repoPath: string, entry: Partial<VaultEntry>) =>

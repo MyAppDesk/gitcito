@@ -1,44 +1,5 @@
 
 
-## Unreleased
-
-
-### Bug Fixes
-
-* **ui:** a confirmation asked from inside a window no longer closes that window. Deleting an AI account closed Settings; in Credentials, Hooks, Todos, Attributes, Clean, Git flow, Snapshots, Reflog, History purge and others, the list a confirmed action was meant to refresh was already gone, and Cancel lost the window too. The question now opens over the window, which stays as it was.
-### Features
-
-* **diff:** **Wrap** now works in the unified view too, not only side by side: a long line — minified code, a paragraph of prose — folds inside the pane instead of scrolling sideways. One setting for both views, off by default, remembered across files and sessions.
-* **changelog:** What's new shows the notes of the build you are running when it is a beta or a local build GitHub has not published yet; before, it opened on the newest published release and those notes were never shown.
-* **tabs:** a group shows its own page — open, clone, create, recents — when created, but once one of its repositories was open that page was reachable only from the group's context menu, so adding a repository meant opening it elsewhere and dragging it in. A **+** beside the group's name now goes straight to it.
-* **i18n:** the group page's "Fetch all" and "Pull all" buttons were English in every language.
-### Performance Improvements
-
-* **watcher:** switching repositories no longer stalls the app on Linux. The file watcher followed the whole working tree recursively, and Node walks that tree synchronously on Linux — about a second per switch next to a large `node_modules` (20k directories), with every other call waiting. It now watches `.git` and the directories that hold tracked files, asynchronously: about 10 ms for the same repository.
-
-
-### Features
-
-* **toolbar:** a loading bar and "Loading repository…" show while a repository you switched to is refreshing, once that takes longer than 150 ms.
-### Features
-
-* **graph:** dropping a branch on another now offers what git would accept, grouped like GitKraken: fast-forward the target (without a checkout, undoable), merge, rebase or interactive rebase, push to the target's remote branch, reset, open a pull request — pushing the branch first when it is not on the remote yet — or compare.
-
-
-### Bug Fixes
-
-* **drag:** a branch picked up in the sidebar can be dropped on a graph badge and the other way round; before, each panel only saw its own drags, so the drop menu never appeared.
-* **drag:** on Wayland, dragging a branch no longer shows the no-drop cursor over every target.
-* **git:** fetch, pull, push and clone with an Azure DevOps personal access token work again. The token went to git with an empty username, and with an empty username git never sends the password, so a valid token failed with "Authentication failed". The remote URL's username (Azure writes the organization there) is used, else a fixed one.
-* **settings:** with the OS keychain off, a token is kept only until you quit — on purpose, rather than written to disk in the clear — but nothing said so where you type it. The token field in Integrations now does, with an **Enable** button beside it.
-* **settings:** turning the keychain on stores the tokens already typed in that session. Before, they stayed in memory until some other setting was saved, and quitting first lost them again.
-### Features
-
-* **worktrees:** each linked worktree shows its uncommitted files (●) and commits ahead/behind its upstream. Lock one with a reason, unlock, move it, reconnect a folder that was moved by hand, or forget worktrees whose folder is gone (eraser in the section header). Remove asks git first: a clean worktree gets a plain confirm with undo; one with uncommitted changes gets "Discard and remove", with no undo. Both say that ignored files such as `.env` are deleted too.
-### Features
-
-* **profiles:** choose the profile picture — automatic (Gravatar or the generated face), the connected GitHub/GitLab account's picture, an icon on a colour, or an image of your own, kept on this computer and included in settings exports. Under the git identity, "Use my GitHub/GitLab noreply email" fills the private address that makes the host show your picture on commits without publishing your real one.
-
 ## [4.25.0](https://github.com/MyAppDesk/gitcito/compare/v4.24.0...v4.25.0) (2026-11-18)
 
 

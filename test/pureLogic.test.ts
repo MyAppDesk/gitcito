@@ -126,7 +126,14 @@ import {
 import { parseWorkflowName } from '../src/shared/localCi'
 import { parseRangeDiff } from '../src/shared/rangeDiff'
 import { editorArgs, editorLaunch, supportsLine } from '../src/shared/editors'
-import { branchDropActions, branchNameOf, encodeDropRef, decodeDropRef, type DropRef } from '../src/renderer/src/lib/branchDrop'
+import {
+  branchDropActions,
+  fastForwardCandidate,
+  branchNameOf,
+  encodeDropRef,
+  decodeDropRef,
+  type DropRef
+} from '../src/renderer/src/lib/branchDrop'
 import { refIntegrationActions } from '../src/renderer/src/lib/refMenu'
 import {
   branchContextActionIds,
@@ -4132,6 +4139,25 @@ describe('branch drop rules', () => {
       expect(
         branchDropActions(remote('origin/x'), remote('origin/main'), { targetRemote: 'origin/main' }).map((a) => a.id)
       ).not.toContain('pushTo')
+    })
+
+    it('skips fast-forward onto a branch checked out here or in another worktree', () => {
+      const wt = (branch: string, isCurrent = false): WorktreeInfo => ({
+        path: `/wt/${branch}`,
+        branch,
+        head: 'abc1234',
+        isMain: false,
+        isCurrent,
+        locked: false,
+        detached: false
+      })
+      expect(fastForwardCandidate(local('feature'), local('main'), 'feature', [])).toBe(true)
+      expect(fastForwardCandidate(local('feature'), local('main'), 'main', [])).toBe(false)
+      // `git branch -f` refuses a branch another worktree has checked out.
+      expect(fastForwardCandidate(local('feature'), local('main'), 'feature', [wt('main')])).toBe(false)
+      expect(fastForwardCandidate(local('feature'), local('main'), 'feature', [wt('other')])).toBe(true)
+      expect(fastForwardCandidate(local('feature'), remote('origin/main'), 'feature', [])).toBe(false)
+      expect(fastForwardCandidate(local('main'), local('main'), undefined, [])).toBe(false)
     })
 
     it('resets only the branch that is checked out', () => {

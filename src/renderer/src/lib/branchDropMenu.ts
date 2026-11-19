@@ -2,7 +2,13 @@ import type { MenuItem } from '../stores/ui'
 import { useUIStore } from '../stores/ui'
 import { repoActions, useRepoStore } from '../stores/repo'
 import { gitApi } from '../infrastructure/api'
-import { branchDropActions, type BranchDropAction, type DropContext, type DropRef } from './branchDrop'
+import {
+  branchDropActions,
+  fastForwardCandidate,
+  type BranchDropAction,
+  type DropContext,
+  type DropRef
+} from './branchDrop'
 import { t, interp } from '../i18n'
 
 /**
@@ -17,10 +23,7 @@ async function dropContext(repoPath: string, source: DropRef, target: DropRef): 
   const repo = useRepoStore.getState().repos[repoPath]
   const branches = repo?.branches
   const currentBranch = branches?.current || undefined
-  // The checked-out branch is merged into instead: merge already fast-forwards
-  // when it can, and `git branch -f` refuses to move HEAD's branch.
-  const ffCandidate = target.kind === 'local' && target.name !== currentBranch && source.name !== target.name
-  const canFastForward = ffCandidate
+  const canFastForward = fastForwardCandidate(source, target, currentBranch, repo?.worktrees ?? [])
     ? await gitApi.isAncestor(repoPath, target.name, source.name).catch(() => false)
     : false
   const targetRemote =
@@ -102,7 +105,19 @@ function dropItem(repoPath: string, source: DropRef, target: DropRef, action: Br
       const slash = action.vars.target.indexOf('/')
       const remote = action.vars.target.slice(0, slash)
       const remoteBranch = action.vars.target.slice(slash + 1)
-      return { label, onClick: () => void repoActions.pushRefTo(repoPath, source.name, remote, remoteBranch) }
+      // Publishing to a shared branch is seen by everyone at once and has no
+      // undo, so the drop asks first — and says which remote branch moves.
+      return {
+        label,
+        onClick: () =>
+          ui.openModal({
+            kind: 'confirm',
+            title: t('confirm.dropPush.title'),
+            message: interp(t('confirm.dropPush.message'), action.vars),
+            confirmLabel: t('confirm.dropPush.ok'),
+            onConfirm: () => void repoActions.pushRefTo(repoPath, source.name, remote, remoteBranch)
+          })
+      }
     }
     case 'reset': {
       // The same dialog as the graph's "Reset to this commit": it explains what

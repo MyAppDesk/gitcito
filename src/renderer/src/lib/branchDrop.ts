@@ -1,4 +1,6 @@
 import type { TranslationKey } from '../i18n'
+import type { WorktreeInfo } from '../../../shared/types'
+import { worktreeForBranch } from './worktrees'
 
 /**
  * Dropping one ref onto another — the graph's ref badges and the sidebar's
@@ -73,6 +75,26 @@ export interface BranchDropAction {
   /** Rewrites history — the caller confirms before running it. */
   danger: boolean
   group: BranchDropGroup
+}
+
+/**
+ * Whether a fast-forward of `target` up to `source` is worth asking git about.
+ * `git branch -f` refuses to move a branch that is checked out — here (merge
+ * already fast-forwards when it can) or in another worktree — so neither is a
+ * candidate, and the ancestry check is skipped for them.
+ */
+export function fastForwardCandidate(
+  source: DropRef,
+  target: DropRef,
+  currentBranch: string | undefined,
+  worktrees: WorktreeInfo[]
+): boolean {
+  return (
+    target.kind === 'local' &&
+    source.name !== target.name &&
+    target.name !== currentBranch &&
+    !worktreeForBranch(worktrees, target.name)
+  )
 }
 
 /** What dropping `source` onto `target` may offer, most likely first. Empty when it means nothing. */

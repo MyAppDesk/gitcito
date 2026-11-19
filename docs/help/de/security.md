@@ -55,6 +55,8 @@ Arbeitsspeicher, der Tresor bleibt zu, und du kannst es später unter
 Eine frische Installation macht **null** Aufrufe an den Schlüsselbund, bis
 tatsächlich etwas gespeichert werden muss.
 
+Solange er aus ist, sagt das Token-Feld unter Integrationen es an — *Nur gespeichert, bis du Gitcito beendest: der System-Schlüsselbund ist aus.* — mit einer Schaltfläche **Aktivieren** daneben. Ihn dort oder hier einzuschalten speichert auch die Tokens, die du in dieser Sitzung schon eingegeben hast; nichts muss neu eingefügt werden.
+
 ## Sicher teilen
 
 [Sicheres Teilen](secure-share.md) exportiert Einstellungen, Tresor-Einträge

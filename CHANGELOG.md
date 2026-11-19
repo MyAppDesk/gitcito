@@ -29,6 +29,9 @@
 
 * **drag:** a branch picked up in the sidebar can be dropped on a graph badge and the other way round; before, each panel only saw its own drags, so the drop menu never appeared.
 * **drag:** on Wayland, dragging a branch no longer shows the no-drop cursor over every target.
+* **git:** fetch, pull, push and clone with an Azure DevOps personal access token work again. The token went to git with an empty username, and with an empty username git never sends the password, so a valid token failed with "Authentication failed". The remote URL's username (Azure writes the organization there) is used, else a fixed one.
+* **settings:** with the OS keychain off, a token is kept only until you quit — on purpose, rather than written to disk in the clear — but nothing said so where you type it. The token field in Integrations now does, with an **Enable** button beside it.
+* **settings:** turning the keychain on stores the tokens already typed in that session. Before, they stayed in memory until some other setting was saved, and quitting first lost them again.
 
 ## [4.25.0](https://github.com/MyAppDesk/gitcito/compare/v4.24.0...v4.25.0) (2026-11-18)
 

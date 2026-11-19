@@ -889,11 +889,21 @@ async function localBranches(repoPath: string): Promise<string[]> {
 
 /**
  * The username/password pair a provider's HTTPS git endpoint takes for a token.
- * GitHub and GitLab accept the token with a fixed username, Azure DevOps with
- * any (git sends an empty one), and a Bitbucket app password is stored as
- * `username:app_password`.
+ * GitHub and GitLab accept the token with a fixed username, and a Bitbucket app
+ * password is stored as `username:app_password`.
+ *
+ * Azure DevOps ignores the username when the password is a PAT — but it must not
+ * be **empty**: given an empty username, git never sends the password at all
+ * (no Authorization header goes out) and reports "Authentication failed" for a
+ * valid token. So the remote URL's username is used when it has one — Azure
+ * writes `https://<org>@dev.azure.com/…` into every clone URL it hands out — and
+ * a fixed placeholder otherwise. test/azureBasicAuth.test.ts shows the difference.
  */
-function basicAuthFor(host: RepoHost | undefined, token: string): { username: string; password: string } | null {
+export function basicAuthFor(
+  host: RepoHost | undefined,
+  token: string,
+  url?: string
+): { username: string; password: string } | null {
   const t = token.trim()
   if (!t) return null
   switch (host) {
@@ -906,9 +916,22 @@ function basicAuthFor(host: RepoHost | undefined, token: string): { username: st
       return { username: user, password: rest.join(':') }
     }
     case 'azure':
-      return { username: '', password: t }
+      return { username: urlUsername(url) || AZURE_PAT_USERNAME, password: t }
     default:
       return null
+  }
+}
+
+/** Any non-empty name works with an Azure DevOps PAT; this one says what it is. */
+const AZURE_PAT_USERNAME = 'pat'
+
+/** The username written in an https URL (`https://user@host/…`), or ''. */
+function urlUsername(url: string | undefined): string {
+  if (!url) return ''
+  try {
+    return decodeURIComponent(new URL(url).username)
+  } catch {
+    return ''
   }
 }
 
@@ -917,7 +940,7 @@ function authedCloneUrl(url: string, host?: string, token?: string): string {
   if (!token || !token.trim() || !/^https:\/\//i.test(url)) return url
   // The caller names the provider; the URL must really be on it.
   if (!host || hostFromUrl(url) !== host) return url
-  const auth = basicAuthFor(host as RepoHost | undefined, token)
+  const auth = basicAuthFor(host as RepoHost | undefined, token, url)
   if (!auth) return url
   try {
     const u = new URL(url)
@@ -1687,11 +1710,11 @@ async function remoteCredential(repoPath: string, url: string): Promise<BasicCre
     bound: await boundProfileAuth(host, repoPath),
     active: () => activeProfileAuth(host)
   })
-  if (auth.token) return basicAuthFor(host, auth.token)
+  if (auth.token) return basicAuthFor(host, auth.token, url)
   if (!auth.link) return null
   const linked = await apiToken(url, { link: auth.link })
   if (!linked) return null
-  return linked.cred ? { username: linked.cred.username, password: linked.cred.password } : basicAuthFor(host, linked.token)
+  return linked.cred ? { username: linked.cred.username, password: linked.cred.password } : basicAuthFor(host, linked.token, url)
 }
 
 /**

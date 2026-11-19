@@ -14,7 +14,13 @@ import {
   type SecretStore
 } from '../shared/secrets'
 import { accountFor, migrateAIConfig } from '../shared/aiAccounts'
-import { adoptExistingConsent, canUseKeychain, ensureKeychain } from './keychain'
+import {
+  adoptExistingConsent,
+  canUseKeychain,
+  ensureKeychain,
+  onKeychainEnabled,
+  onSessionOnlyProbe
+} from './keychain'
 
 const settingsPath = (): string => join(app.getPath('userData'), 'gitcito-settings.json')
 const secretsPath = (): string => join(app.getPath('userData'), 'gitcito-secrets.enc')
@@ -268,6 +274,29 @@ export async function activeProfileAiKey(accountId?: string): Promise<string | u
   const key = account?.apiKey ?? profile.ai.apiKey
   return key && key.trim() ? key.trim() : undefined
 }
+
+/**
+ * Move the tokens held in memory into the encrypted store. They are there
+ * because they were typed while the keychain was off; without this, turning it
+ * on changed nothing until some other setting happened to be saved, and
+ * quitting before that lost them again.
+ */
+async function persistSessionSecrets(): Promise<void> {
+  if (Object.keys(sessionSecrets).length === 0) return
+  const ids = (await readSettings()).profiles.map((p) => p.id)
+  const stored = secretCache ?? (await loadSecrets())
+  const merged = pruneSecrets(mergeSecretStores(stored, sessionSecrets), ids)
+  await saveSecrets(merged)
+  secretCache = merged
+  sessionSecrets = {}
+}
+onKeychainEnabled(persistSessionSecrets)
+
+/** True while some token exists only in memory and would be lost on quit. */
+export function hasSessionOnlySecrets(): boolean {
+  return Object.keys(sessionSecrets).length > 0
+}
+onSessionOnlyProbe(hasSessionOnlySecrets)
 
 async function writeSettings(settings: AppSettings): Promise<void> {
   await mkdir(app.getPath('userData'), { recursive: true })

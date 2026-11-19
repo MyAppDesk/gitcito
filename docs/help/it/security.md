@@ -56,6 +56,8 @@ avanti in **Impostazioni → Sicurezza → Portachiavi di sistema**.
 Un'installazione appena fatta effettua **zero** chiamate al portachiavi finché
 non c'è davvero qualcosa da conservare.
 
+Finché è disattivato, il campo del token in Integrazioni lo segnala — *Conservato solo finché non chiudi Gitcito: il portachiavi di sistema è disattivato.* — con un pulsante **Attiva** accanto. Attivarlo, da lì o da qui, salva anche i token già inseriti in questa sessione, quindi non serve incollarli di nuovo.
+
 ## Condividere in sicurezza
 
 La [condivisione sicura](secure-share.md) esporta impostazioni, voci della

@@ -55,6 +55,8 @@ del sistema**.
 Una instalación recién hecha hace **cero** llamadas al llavero hasta que algo
 necesita guardarse de verdad.
 
+Mientras esté desactivado, el campo del token en Integraciones lo indica — *Se guarda solo hasta que cierres Gitcito: el llavero del sistema está desactivado.* — con un botón **Activar** al lado. Activarlo, desde allí o desde aquí, también guarda los tokens que ya escribiste en esta sesión, así que no hay que pegarlos de nuevo.
+
 ## Compartir sin riesgo
 
 [Compartir seguro](secure-share.md) exporta ajustes, entradas de la caja fuerte

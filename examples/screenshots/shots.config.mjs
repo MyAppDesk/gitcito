@@ -683,6 +683,18 @@ export const shots = [
       await page.waitForTimeout(400)
     }
   },
+  {
+    // Integrations with the keychain off — the default every shot launches with
+    // (`keychain` unset) — so the notice under the token field says the token
+    // lasts until quit, with its Enable button.
+    out: 'token-keychain-notice',
+    repos: ['octopus-merge'],
+    themes: ['dark'],
+    drive: async (page) => {
+      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'integrations' }))
+      await page.waitForTimeout(500)
+    }
+  },
 
   // ── Features added since v0.12 ──────────────────────────────────────────────
   {

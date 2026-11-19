@@ -11679,6 +11679,14 @@ input[type='range']:focus-visible {
 .kc-dot.granted { background: var(--green); }
 .kc-dot.declined { background: var(--danger, #f85149); }
 .kc-dot.unset { background: var(--warn, #d29922); }
+/* Under a token field when the keychain is off: the token will not survive a restart. */
+.token-keychain-notice {
+  display: flex; align-items: center; gap: 8px; margin: -2px 0 8px;
+  padding: 6px 10px; border-radius: 6px; font-size: 12px;
+  color: var(--warn, #d29922);
+  background: color-mix(in srgb, var(--warn, #d29922) 12%, transparent);
+}
+.token-keychain-notice span { flex: 1; }
 
 /* ── Semantic diff summary ── */
 .sem-root {

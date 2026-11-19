@@ -52,6 +52,8 @@ later in **Settings → Security → OS keychain**.
 A fresh install makes **zero** keychain calls until something actually needs
 storing.
 
+While it is off, the token field in Integrations says so — *Saved only until you quit Gitcito: the OS keychain is off.* — with an **Enable** button beside it. Turning it on, from there or from here, also stores the tokens you already typed in this session, so nothing has to be pasted again.
+
 ## Sharing safely
 
 [Secure share](secure-share.md) exports settings, vault entries or whole

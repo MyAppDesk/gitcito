@@ -55,6 +55,8 @@ OS-sleutelhanger**.
 Een verse installatie doet **nul** aanroepen naar de sleutelhanger tot er
 werkelijk iets opgeslagen moet worden.
 
+Zolang hij uit staat, meldt het tokenveld bij Integraties dat — *Alleen bewaard tot je Gitcito afsluit: de OS-keychain staat uit.* — met een knop **Inschakelen** ernaast. Inschakelen, daar of hier, bewaart ook de tokens die je in deze sessie al hebt ingevoerd, dus je hoeft niets opnieuw te plakken.
+
 ## Veilig delen
 
 [Veilig delen](secure-share.md) exporteert instellingen, kluisregels of hele

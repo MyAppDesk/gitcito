@@ -126,13 +126,39 @@ export async function ensureKeychain(reason: KeychainReason): Promise<boolean> {
   }
 }
 
+/**
+ * Run when the user turns the keychain on from Settings. Registered by the
+ * settings module (which imports this one, so it cannot be imported back):
+ * tokens typed while the keychain was off live only in memory, and turning it
+ * on is the moment to put them where they survive a restart.
+ */
+const grantedListeners: Array<() => Promise<void>> = []
+export function onKeychainEnabled(listener: () => Promise<void>): void {
+  grantedListeners.push(listener)
+}
+
+/**
+ * Whether tokens are still held in memory only. Registered by the settings
+ * module for the same import-cycle reason, so the token notice can stay up
+ * until they have really reached the encrypted store.
+ */
+let sessionOnlyProbe: () => boolean = () => false
+export function onSessionOnlyProbe(probe: () => boolean): void {
+  sessionOnlyProbe = probe
+}
+
 export function registerKeychainHandlers(): void {
   ipcMain.handle('keychain:answer', (_e, granted: boolean) => {
     answer?.(!!granted)
   })
   ipcMain.handle('keychain:status', async () => {
     const { consent, explained } = await readFileState()
-    return { consent, explained, available: consent === 'granted' ? await canUseKeychain() : null }
+    return {
+      consent,
+      explained,
+      available: consent === 'granted' ? await canUseKeychain() : null,
+      sessionOnly: sessionOnlyProbe()
+    }
   })
   // Settings → Security: turn it on or off after the fact.
   ipcMain.handle('keychain:set', async (_e, granted: boolean) => {
@@ -143,6 +169,10 @@ export function registerKeychainHandlers(): void {
     // Turning it on from Settings → Security is itself an informed choice, so
     // it counts as explained: no dialog on the next keychain use.
     await setConsent('granted')
-    return canUseKeychain()
+    const usable = await canUseKeychain()
+    // No catch: a failed move must reject this call. Swallowing it reported the
+    // keychain as on while the tokens stayed in memory and vanished on quit.
+    if (usable) for (const listener of grantedListeners) await listener()
+    return usable
   })
 }

@@ -56,6 +56,8 @@ istediğinizde **Ayarlar → Güvenlik → İşletim sistemi anahtar zinciri**
 Yeni bir kurulum, gerçekten saklanması gereken bir şey çıkana kadar **sıfır**
 anahtar zinciri çağrısı yapar.
 
+Kapalıyken Entegrasyonlar’daki token alanı bunu belirtir — *Yalnızca Gitcito’yu kapatana kadar saklanır: işletim sistemi anahtarlığı kapalı.* — yanında bir **Etkinleştir** düğmesiyle. Oradan ya da buradan açmak, bu oturumda girdiğiniz token’ları da kaydeder; yeniden yapıştırmanız gerekmez.
+
 ## Güvenle paylaşmak
 
 [Güvenli paylaşım](secure-share.md) ayarları, kasa kayıtlarını veya bütün

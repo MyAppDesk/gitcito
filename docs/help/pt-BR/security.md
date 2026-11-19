@@ -54,6 +54,8 @@ ligar depois em **Configurações → Segurança → Keychain do sistema**.
 Uma instalação nova faz **zero** chamadas ao keychain até algo de fato precisar ser
 guardado.
 
+Enquanto ele estiver desligado, o campo de token em Integrações avisa — *Guardado só até você fechar o Gitcito: o chaveiro do sistema está desligado.* — com um botão **Ativar** ao lado. Ativar, por ali ou por aqui, também guarda os tokens que você já digitou nesta sessão, então não é preciso colá-los de novo.
+
 ## Compartilhando com segurança
 
 O [compartilhamento seguro](secure-share.md) exporta configurações, entradas do

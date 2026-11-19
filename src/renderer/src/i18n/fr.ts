@@ -2420,6 +2420,8 @@ export const fr: Dict = {
   'keychain.statusDeclined': 'Désactivé — les jetons ne restent en mémoire que le temps de la session et le coffre-fort est indisponible.',
   'keychain.tokenSessionOnly': 'Conservé seulement jusqu’à la fermeture de Gitcito : le trousseau du système est désactivé.',
   'keychain.tokenNoKeyring': 'Conservé seulement jusqu’à la fermeture de Gitcito : votre système n’offre aucun trousseau pour le chiffrer.',
+  'keychain.tokenNotMoved': 'Conservé seulement jusqu’à la fermeture de Gitcito : il n’a pas encore atteint le trousseau du système.',
+  'keychain.enableFailed': 'Gitcito n’a pas pu déplacer vos jetons dans le trousseau du système. Ils ne sont conservés que jusqu’à la fermeture.',
   'keychain.statusUnset': 'Pas encore configuré — Gitcito vous expliquera et vous demandera la première fois qu’il devra stocker un secret.',
   'keychain.updateFailed': 'Gitcito n’a pas pu mettre à jour ces identifiants dans le trousseau de votre système.',
   'settings.githubGitTokenHint': 'Utilisé pour les opérations Git en HTTPS avec github.com. Laissez vide pour utiliser l’assistant d’identifiants Git configuré.',

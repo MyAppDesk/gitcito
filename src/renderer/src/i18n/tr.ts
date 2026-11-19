@@ -2416,6 +2416,8 @@ export const tr: Dict = {
   'keychain.statusDeclined': 'Kapalı — belirteçler yalnızca oturum boyunca bellekte tutulur ve Kasa kullanılamaz.',
   'keychain.tokenSessionOnly': 'Yalnızca Gitcito’yu kapatana kadar saklanır: işletim sistemi anahtarlığı kapalı.',
   'keychain.tokenNoKeyring': 'Yalnızca Gitcito’yu kapatana kadar saklanır: sisteminiz şifrelemek için bir anahtarlık sunmuyor.',
+  'keychain.tokenNotMoved': 'Yalnızca Gitcito’yu kapatana kadar saklanır: henüz sistem anahtarlığına ulaşmadı.',
+  'keychain.enableFailed': 'Gitcito belirteçlerinizi sistem anahtarlığına taşıyamadı. Yalnızca uygulamayı kapatana kadar saklanırlar.',
   'keychain.statusUnset': 'Henüz kurulmadı — Gitcito bir sırrı ilk saklaması gerektiğinde açıklayıp izin isteyecek.',
   'keychain.updateFailed': 'Gitcito bu kimlik bilgilerini işletim sisteminin anahtar zincirinde güncelleyemedi.',
   'settings.githubGitTokenHint': 'github.com ile HTTPS üzerinden Git işlemlerinde kullanılır. Boş bırakırsanız yapılandırılmış Git kimlik bilgisi yardımcısı kullanılır.',

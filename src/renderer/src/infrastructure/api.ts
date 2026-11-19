@@ -1023,6 +1023,8 @@ export const keychainApi = {
       consent: KeychainConsent
       explained: boolean
       available: boolean | null
+      /** Some token is held in memory only and will not survive a quit. */
+      sessionOnly: boolean
     }>,
   set: (granted: boolean) => window.api.keychain.set(granted)
 }

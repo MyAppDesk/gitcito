@@ -14,7 +14,13 @@ import {
   type SecretStore
 } from '../shared/secrets'
 import { accountFor, migrateAIConfig } from '../shared/aiAccounts'
-import { adoptExistingConsent, canUseKeychain, ensureKeychain, onKeychainEnabled } from './keychain'
+import {
+  adoptExistingConsent,
+  canUseKeychain,
+  ensureKeychain,
+  onKeychainEnabled,
+  onSessionOnlyProbe
+} from './keychain'
 
 const settingsPath = (): string => join(app.getPath('userData'), 'gitcito-settings.json')
 const secretsPath = (): string => join(app.getPath('userData'), 'gitcito-secrets.enc')
@@ -285,6 +291,12 @@ async function persistSessionSecrets(): Promise<void> {
   sessionSecrets = {}
 }
 onKeychainEnabled(persistSessionSecrets)
+
+/** True while some token exists only in memory and would be lost on quit. */
+export function hasSessionOnlySecrets(): boolean {
+  return Object.keys(sessionSecrets).length > 0
+}
+onSessionOnlyProbe(hasSessionOnlySecrets)
 
 async function writeSettings(settings: AppSettings): Promise<void> {
   await mkdir(app.getPath('userData'), { recursive: true })

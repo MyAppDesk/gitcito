@@ -2458,6 +2458,8 @@ export const en = {
   'keychain.statusDeclined': 'Off — tokens are kept in memory for the session only and the Vault is unavailable.',
   'keychain.tokenSessionOnly': 'Saved only until you quit Gitcito: the OS keychain is off.',
   'keychain.tokenNoKeyring': 'Saved only until you quit Gitcito: your system offers no keyring to encrypt it.',
+  'keychain.tokenNotMoved': 'Saved only until you quit Gitcito: it has not reached the OS keychain yet.',
+  'keychain.enableFailed': 'Gitcito could not move your tokens into the OS keychain. They are kept only until you quit.',
   'keychain.statusUnset': 'Not set up yet — Gitcito will explain and ask the first time it needs to store a secret.',
   'keychain.updateFailed': 'Gitcito could not update this credential in your OS keychain.',
   'settings.githubGitTokenHint': 'Used for Git operations over HTTPS with github.com. Leave blank to use your configured Git credential helper.',

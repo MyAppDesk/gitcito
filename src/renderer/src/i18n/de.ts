@@ -2466,6 +2466,8 @@ export const de: Dict = {
   'keychain.statusDeclined': 'Aus — Tokens bleiben nur für diese Sitzung im Speicher, und der Tresor steht nicht zur Verfügung.',
   'keychain.tokenSessionOnly': 'Nur gespeichert, bis du Gitcito beendest: der System-Schlüsselbund ist aus.',
   'keychain.tokenNoKeyring': 'Nur gespeichert, bis du Gitcito beendest: dein System bietet keinen Schlüsselbund zum Verschlüsseln.',
+  'keychain.tokenNotMoved': 'Nur gespeichert, bis du Gitcito beendest: es ist noch nicht im Schlüsselbund des Systems angekommen.',
+  'keychain.enableFailed': 'Gitcito konnte deine Tokens nicht in den Schlüsselbund des Systems übertragen. Sie bleiben nur bis zum Beenden erhalten.',
   'keychain.statusUnset': 'Noch nicht eingerichtet — Gitcito erklärt es und fragt beim ersten Mal, wenn es ein Geheimnis speichern muss.',
   'keychain.updateFailed': 'Gitcito konnte diese Anmeldedaten nicht im Betriebssystem-Schlüsselbund aktualisieren.',
   'settings.githubGitTokenHint': 'Für Git-Vorgänge über HTTPS mit github.com. Leer lassen, um deinen konfigurierten Git-Anmeldeinformationshelfer zu verwenden.',

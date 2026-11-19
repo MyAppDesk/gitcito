@@ -2413,6 +2413,8 @@ export const ja: Dict = {
   'keychain.statusDeclined': 'オフ — トークンはこのセッションの間だけメモリーに置かれ、保管庫は使えません。',
   'keychain.tokenSessionOnly': 'Gitcito を終了するまでしか保持されません: OS のキーチェーンがオフです。',
   'keychain.tokenNoKeyring': 'Gitcito を終了するまでしか保持されません: 暗号化に使えるキーリングがシステムにありません。',
+  'keychain.tokenNotMoved': 'Gitcito を終了するまでしか保持されません: まだ OS のキーチェーンに保存されていません。',
+  'keychain.enableFailed': 'トークンを OS のキーチェーンに移せませんでした。Gitcito を終了するまでしか保持されません。',
   'keychain.statusUnset': 'まだ設定されていません — シークレットを保存する必要が最初に生じたとき、Gitcito が説明したうえで尋ねます。',
   'keychain.updateFailed': 'Gitcito はこの認証情報を OS のキーチェーンで更新できませんでした。',
   'settings.githubGitTokenHint': 'github.com への HTTPS 経由の Git 操作に使います。空欄の場合は設定済みの Git 認証ヘルパーを使います。',

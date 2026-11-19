@@ -8,6 +8,7 @@ import { join } from 'path'
 // quitting first lost the token again. Real handlers, a fake keyring.
 const dir = mkdtempSync(join(tmpdir(), 'gitcito-keychain-'))
 const handlers = new Map<string, (...args: unknown[]) => unknown>()
+const keyring = { broken: false }
 
 vi.mock('electron', () => ({
   app: { getPath: () => dir, isPackaged: false },
@@ -18,7 +19,10 @@ vi.mock('electron', () => ({
   // Reversible and obviously fake: enough to see what reaches the file.
   safeStorage: {
     isEncryptionAvailable: () => true,
-    encryptString: (s: string) => Buffer.from(`enc:${s}`),
+    encryptString: (s: string) => {
+      if (keyring.broken) throw new Error('keyring refused the write')
+      return Buffer.from(`enc:${s}`)
+    },
     decryptString: (b: Buffer) => b.toString().replace(/^enc:/, '')
   }
 }))
@@ -48,8 +52,23 @@ describe('turning the keychain on', () => {
     expect(reread.profiles[0].azureToken).toBe('TYPED-WHILE-OFF')
   })
 
+  it('fails the call, and keeps saying so, when the token cannot be moved', async () => {
+    keyring.broken = true
+    try {
+      await expect(call('keychain:set', true)).rejects.toThrow('keyring refused the write')
+    } finally {
+      keyring.broken = false
+    }
+
+    expect(existsSync(join(dir, 'gitcito-secrets.enc'))).toBe(false)
+    expect(await call('keychain:status')).toMatchObject({ consent: 'granted', sessionOnly: true })
+    const reread = (await call('settings:get')) as { profiles: Array<Record<string, unknown>> }
+    expect(reread.profiles[0].azureToken).toBe('TYPED-WHILE-OFF')
+  })
+
   it('writes that token to the encrypted store as soon as it is turned on', async () => {
     expect(await call('keychain:set', true)).toBe(true)
+    expect(await call('keychain:status')).toMatchObject({ sessionOnly: false })
 
     const file = join(dir, 'gitcito-secrets.enc')
     expect(existsSync(file)).toBe(true)

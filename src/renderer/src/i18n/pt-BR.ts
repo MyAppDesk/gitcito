@@ -2467,6 +2467,8 @@ export const ptBR: Dict = {
   'keychain.statusDeclined': 'Desligado — os tokens ficam na memória só durante a sessão e o Cofre fica indisponível.',
   'keychain.tokenSessionOnly': 'Guardado só até você fechar o Gitcito: o chaveiro do sistema está desligado.',
   'keychain.tokenNoKeyring': 'Guardado só até você fechar o Gitcito: o sistema não oferece um chaveiro para criptografá-lo.',
+  'keychain.tokenNotMoved': 'Guardado só até você fechar o Gitcito: ainda não chegou ao chaveiro do sistema.',
+  'keychain.enableFailed': 'O Gitcito não conseguiu mover seus tokens para o chaveiro do sistema. Eles ficam guardados só até você fechá-lo.',
   'keychain.statusUnset': 'Ainda não configurado — o Gitcito vai explicar e perguntar na primeira vez que precisar guardar um segredo.',
   'keychain.updateFailed': 'O Gitcito não conseguiu atualizar essas credenciais nas chaves do sistema operacional.',
   'settings.githubGitTokenHint': 'Usado em operações Git por HTTPS com github.com. Deixe vazio para usar o auxiliar de credenciais Git configurado.',

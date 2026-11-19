@@ -1,5 +1,12 @@
 
 
+## Unreleased
+
+
+### Features
+
+* **profiles:** choose the profile picture — automatic (Gravatar or the generated face), the connected GitHub/GitLab account's picture, an icon on a colour, or an image of your own, kept on this computer and included in settings exports. Under the git identity, "Use my GitHub/GitLab noreply email" fills the private address that makes the host show your picture on commits without publishing your real one.
+
 ## [4.25.0](https://github.com/MyAppDesk/gitcito/compare/v4.24.0...v4.25.0) (2026-11-18)
 
 

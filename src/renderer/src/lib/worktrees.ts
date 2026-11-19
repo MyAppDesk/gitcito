@@ -94,3 +94,29 @@ function leafFromName(repo: RepoRef): string | null {
   if (dash >= 0) return repo.name.slice(dash + 3).trim() || null
   return canonicalRepoName(repo.path)
 }
+
+/** The row label: the branch, else the short commit of a detached checkout,
+ *  else the folder name. */
+export function worktreeDisplayName(w: WorktreeInfo): string {
+  if (w.branch) return w.branch
+  if (w.detached && w.head) return w.head.slice(0, 7)
+  return w.path.replace(/[\\/]+$/, '').split(/[\\/]/).pop() ?? w.path
+}
+
+/** Worktrees `git worktree prune` would forget: folder gone and not locked
+ *  (git skips locked ones, so counting them would promise too much). */
+export function prunableWorktreeCount(worktrees: WorktreeInfo[]): number {
+  return worktrees.filter((w) => w.prunable && !w.locked).length
+}
+
+/**
+ * Whether `path` is open in any tab of any workspace. Tabs, aliases and
+ * layouts are all keyed by repo path, so moving a worktree out from under an
+ * open tab would leave that tab pointing at nothing.
+ */
+export function isRepoOpenInTabs(tabSets: TabState[][], path: string): boolean {
+  const target = canonicalRepoPath(path)
+  return tabSets.some((tabs) =>
+    tabs.some((tab) => tab.kind !== 'page' && tab.repos.some((r) => canonicalRepoPath(r.path) === target))
+  )
+}

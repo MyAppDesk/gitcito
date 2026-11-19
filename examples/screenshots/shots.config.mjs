@@ -2164,6 +2164,20 @@ export const shots = [
     }
   },
   {
+    // Worktree care — uncommitted work and commits ahead, a lock, a missing
+    // folder with the "forget" eraser in the header. Each row's counts come
+    // from a git status inside that worktree, so give them time to land.
+    out: 'worktree-care',
+    repos: ['worktree-care'],
+    themes: ['dark'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['worktree-care']
+      await page.evaluate((p) => window.__shot.repo.getState().select(p, { type: 'wip' }), repo)
+      await openSections(page, ['WORKTREES'])
+      await page.waitForTimeout(1200)
+    }
+  },
+  {
     // Submodule states — behind, modified, uninitialised, each with its badge.
     out: 'submodule-states',
     repos: ['submodule-states'],

@@ -74,6 +74,7 @@ import type {
   CreatePrOpts,
   CreatePrResult,
   WorktreeInfo,
+  WorktreeStatus,
   SubmoduleInfo,
   SubtreeInfo,
   CleanPreview,
@@ -550,6 +551,12 @@ export const gitApi = {
   worktreeAdd: (path: string, dir: string, branch: string, newBranch: boolean, startPoint?: string) =>
     call<void>('worktreeAdd', path, dir, branch, newBranch, startPoint),
   worktreeRemove: (path: string, dir: string, force?: boolean) => call<void>('worktreeRemove', path, dir, force),
+  getWorktreeStatus: (path: string, dir: string) => call<WorktreeStatus | null>('getWorktreeStatus', path, dir),
+  worktreeLock: (path: string, dir: string, reason?: string) => call<void>('worktreeLock', path, dir, reason),
+  worktreeUnlock: (path: string, dir: string) => call<void>('worktreeUnlock', path, dir),
+  worktreePrune: (path: string) => call<number>('worktreePrune', path),
+  worktreeMove: (path: string, from: string, to: string) => call<void>('worktreeMove', path, from, to),
+  worktreeRepair: (path: string, dir: string) => call<void>('worktreeRepair', path, dir),
 
   submodules: (path: string) => call<SubmoduleInfo[]>('submodules', path),
   submoduleAdd: (path: string, url: string, dir: string, branch?: string) =>

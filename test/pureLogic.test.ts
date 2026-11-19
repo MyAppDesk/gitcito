@@ -66,7 +66,15 @@ import {
   tabLabelParts
 } from '../src/renderer/src/lib/repoImage'
 import { resolveUpdateOffer } from '../src/renderer/src/lib/updateOffer'
-import { planWorktreeGroup, worktreeForBranch, worktreeLeafLabel, worktreeTabName } from '../src/renderer/src/lib/worktrees'
+import {
+  isRepoOpenInTabs,
+  planWorktreeGroup,
+  prunableWorktreeCount,
+  worktreeDisplayName,
+  worktreeForBranch,
+  worktreeLeafLabel,
+  worktreeTabName
+} from '../src/renderer/src/lib/worktrees'
 import { focusedHashes, focusedStashes, defaultBranchName } from '../src/renderer/src/lib/graphFocus'
 import type {
   WorktreeInfo,
@@ -5398,7 +5406,9 @@ describe('worktreeForBranch', () => {
     isMain: false,
     isCurrent: false,
     locked: false,
+    lockReason: null,
     detached: false,
+    prunable: false,
     ...over
   })
 
@@ -5432,6 +5442,28 @@ describe('worktreeForBranch', () => {
   it('falls back to the folder when the worktree is detached', () => {
     const w = wt({ path: '/src/gitcito--spike', branch: null, detached: true })
     expect(worktreeTabName('/src/gitcito', w)).toBe('gitcito · gitcito--spike')
+  })
+
+  it('labels a row by branch, then short commit, then folder', () => {
+    expect(worktreeDisplayName(wt({ branch: 'feat' }))).toBe('feat')
+    expect(worktreeDisplayName(wt({ detached: true, head: 'abcdef1234' }))).toBe('abcdef1')
+    expect(worktreeDisplayName(wt({ path: 'C:\\src\\repo--x\\' }))).toBe('repo--x')
+  })
+
+  it('counts only the missing worktrees prune would actually forget', () => {
+    const trees = [
+      wt({ path: '/a', prunable: true }),
+      wt({ path: '/b', prunable: true, locked: true }),
+      wt({ path: '/c' })
+    ]
+    expect(prunableWorktreeCount(trees)).toBe(1)
+  })
+
+  it('finds a worktree open in any workspace, whatever the path spelling', () => {
+    const tab = (path: string): TabState => ({ id: path, kind: 'repo', name: path, repos: [{ path, name: path }], activeRepoPath: path })
+    const page: TabState = { id: 'p', kind: 'page', name: 'p', page: { type: 'changelog' } } as TabState
+    expect(isRepoOpenInTabs([[page], [tab('D:/src/wt/')]], 'd:\\src\\wt')).toBe(true)
+    expect(isRepoOpenInTabs([[page, tab('/src/other')]], '/src/wt')).toBe(false)
   })
 })
 

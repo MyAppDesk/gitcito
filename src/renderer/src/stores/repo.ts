@@ -2638,28 +2638,118 @@ export const repoActions = {
         path,
         interp(t('act.addedWorktree'), { dir }),
         () => gitApi.worktreeAdd(path, dir, branch, newBranch, startPoint),
-        // A new branch also changes the ref decorations stored in the log.
-        // Existing-branch worktrees can keep the cached history unchanged.
-        undefined,
+        {
+          label: interp(t('undoLabel.addWorktree'), { dir }),
+          // A non-forced remove: if work was done in it meanwhile, git refuses and
+          // the undo fails loudly instead of throwing that work away. `-d`, not
+          // `-D`, for the same reason — a branch that gained commits is kept.
+          undo: async () => {
+            await gitApi.worktreeRemove(path, dir, false)
+            if (newBranch) await gitApi.deleteBranch(path, branch, false)
+          },
+          redo: () => gitApi.worktreeAdd(path, dir, branch, newBranch, startPoint)
+        },
         null,
         undefined,
+        // A new branch also changes the ref decorations stored in the log.
+        // Existing-branch worktrees can keep the cached history unchanged.
         newBranch ? ['worktrees', 'branches', 'log'] : ['worktrees', 'branches']
       ),
 
-  worktreeRemove: (path: string, dir: string, force = false) =>
+  /** `force` discards uncommitted changes, so it records no undo: the
+   *  recreated worktree would come back without them. */
+  worktreeRemove: (path: string, w: WorktreeInfo, force = false) =>
     useRepoStore
       .getState()
       .run(
         path,
-        interp(t('act.removedWorktree'), { dir }),
-        () => gitApi.worktreeRemove(path, dir, force),
-        // Same narrowing as worktreeAdd: removing a worktree cannot change
-        // commits, only the worktree list (branches survive a remove).
-        undefined,
+        interp(t('act.removedWorktree'), { dir: w.path }),
+        () => gitApi.worktreeRemove(path, w.path, force),
+        force
+          ? undefined
+          : {
+              label: interp(t('undoLabel.removeWorktree'), { dir: w.path }),
+              // Same branch, same folder; a detached worktree comes back at its commit.
+              undo: () => gitApi.worktreeAdd(path, w.path, w.branch ?? w.head, false),
+              redo: () => gitApi.worktreeRemove(path, w.path, false)
+            },
         null,
         undefined,
+        // Same narrowing as worktreeAdd: removing a worktree cannot change
+        // commits, only the worktree list (branches survive a remove).
         ['worktrees', 'branches']
       ),
+
+  worktreeLock: (path: string, dir: string, reason?: string) =>
+    useRepoStore.getState().run(
+      path,
+      t('worktree.locked'),
+      () => gitApi.worktreeLock(path, dir, reason),
+      {
+        label: interp(t('undoLabel.lockWorktree'), { dir }),
+        undo: () => gitApi.worktreeUnlock(path, dir),
+        redo: () => gitApi.worktreeLock(path, dir, reason)
+      },
+      null,
+      undefined,
+      ['worktrees']
+    ),
+
+  worktreeUnlock: (path: string, w: WorktreeInfo) =>
+    useRepoStore.getState().run(
+      path,
+      t('worktree.unlocked'),
+      () => gitApi.worktreeUnlock(path, w.path),
+      {
+        label: interp(t('undoLabel.unlockWorktree'), { dir: w.path }),
+        // Re-lock with the reason it had, so undo restores the tooltip too.
+        undo: () => gitApi.worktreeLock(path, w.path, w.lockReason ?? undefined),
+        redo: () => gitApi.worktreeUnlock(path, w.path)
+      },
+      null,
+      undefined,
+      ['worktrees']
+    ),
+
+  /** No undo: the folders were already gone, and the records cannot be rebuilt. */
+  worktreePrune: (path: string, count: number) =>
+    useRepoStore.getState().run(
+      path,
+      interp(t('act.prunedWorktrees'), { count: String(count) }),
+      async () => {
+        await gitApi.worktreePrune(path)
+      },
+      undefined,
+      null,
+      undefined,
+      ['worktrees']
+    ),
+
+  worktreeMove: (path: string, from: string, to: string) =>
+    useRepoStore.getState().run(
+      path,
+      interp(t('act.movedWorktree'), { dir: to }),
+      () => gitApi.worktreeMove(path, from, to),
+      {
+        label: interp(t('undoLabel.moveWorktree'), { dir: from }),
+        undo: () => gitApi.worktreeMove(path, to, from),
+        redo: () => gitApi.worktreeMove(path, from, to)
+      },
+      null,
+      undefined,
+      ['worktrees']
+    ),
+
+  worktreeRepair: (path: string, dir: string) =>
+    useRepoStore.getState().run(
+      path,
+      interp(t('act.repairedWorktree'), { dir }),
+      () => gitApi.worktreeRepair(path, dir),
+      undefined,
+      null,
+      undefined,
+      ['worktrees', 'branches']
+    ),
 
   submoduleAdd: (path: string, url: string, dir: string, branch?: string) =>
     useRepoStore.getState().run(path, interp(t('act.addedSubmodule'), { dir }), () => gitApi.submoduleAdd(path, url, dir, branch)),

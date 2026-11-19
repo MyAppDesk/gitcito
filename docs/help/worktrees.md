@@ -44,6 +44,49 @@ stashing.
   to `x` in its worktree*, and double-clicking the row opens that worktree's
   tab rather than failing.
 
+### Looking after worktrees
+
+A worktree you made last month is easy to forget, and the questions come when
+you clean up: is there work in it? Is that folder still there? Each linked row
+answers them before you have to ask.
+
+| On the row | Means |
+|---|---|
+| **●3** | Three files with uncommitted changes in that worktree |
+| **↑2 ↓1** | Its branch is two commits ahead of, one behind, its upstream |
+| 🔒 | Locked — hover it for the reason given when it was locked |
+| **missing**, name struck through | The folder is gone; git only has its record left |
+
+The counts are read when the section opens, when that worktree's commit moves
+and when the window regains focus — not on every refresh, because each one is a
+`git status` inside another folder.
+
+Right-click a row for:
+
+| Action | What it does |
+|---|---|
+| **Lock worktree** | Stops git (and any other client) from pruning, moving or removing it. Give a reason — *on the external drive* — and it shows on the lock. For worktrees on media that is not always plugged in. |
+| **Unlock worktree** | The reverse. Undo puts the lock back with the same reason. |
+| **Move worktree…** | Moves the folder and updates git's links both ways. Not offered while the worktree is locked or open in a tab — tabs and their layout are remembered by path, so the tab would be left pointing at nothing. Close it first. Undo moves it back. |
+| **Remove worktree** | Asks git what would be lost first. A clean worktree gets a normal confirm, and undo recreates it on the same branch in the same folder. One with uncommitted changes gets a separate *Discard and remove* confirm that names the count, and no undo — the changes are gone. |
+| **Reconnect moved folder…** | Only on a *missing* row: point it at where the folder went (you moved it in a file manager) and git re-links it with `git worktree repair`. |
+| **Forget missing worktrees** | Also the eraser button in the section header, shown when any row is missing. Runs `git worktree prune`. |
+
+What these do **not** do:
+
+- **Removing a worktree deletes its ignored files too** — `.env`, `node_modules`,
+  build output. Git does not count them as changes, so even the "clean" confirm
+  says so, and undo cannot bring them back.
+- **Forgetting only drops git's record.** There are no files to delete — the
+  folder is already gone — and locked worktrees are skipped, because a locked
+  worktree on an unplugged drive looks exactly like a deleted one.
+- A lock is a promise between git clients, not file protection: it does not stop
+  anything outside git from deleting the folder.
+- The main worktree — the repository itself — cannot be locked, moved or
+  removed.
+- Removing a worktree never deletes its branch. Delete it from the branch list
+  if you are done with it.
+
 ### Grouping worktrees in the header
 
 Worktree tabs open with `root · branch` labels, which gets wide fast. Tick

@@ -891,7 +891,21 @@ export interface WorktreeInfo {
   isMain: boolean
   isCurrent: boolean
   locked: boolean
+  /** The `--reason` given when it was locked, if any. */
+  lockReason: string | null
   detached: boolean
+  /** The folder is gone (deleted or moved by hand) — git only has the record. */
+  prunable: boolean
+}
+
+/** What a linked worktree holds that removing it would put at risk. */
+export interface WorktreeStatus {
+  /** Modified, staged, conflicted and untracked paths (ignored files excluded). */
+  changes: number
+  /** Commits ahead of / behind the upstream; both 0 without one. */
+  ahead: number
+  behind: number
+  upstream: string | null
 }
 
 /**

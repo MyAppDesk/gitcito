@@ -1451,6 +1451,42 @@ textarea:focus {
   font-size: 12px;
 }
 
+/* A switch to a repository is refreshing what is on screen: a thin bar along the
+   toolbar's bottom edge, sliding, so the old state reads as "updating". */
+.repo-loading-bar {
+  position: absolute;
+  inset-inline: 0;
+  bottom: -1px;
+  height: 2px;
+  overflow: hidden;
+  pointer-events: none;
+}
+.repo-loading-bar::after {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  width: 35%;
+  background: var(--accent);
+  border-radius: 2px;
+  animation: repo-loading-slide 1.1s ease-in-out infinite;
+}
+@keyframes repo-loading-slide {
+  from {
+    inset-inline-start: -35%;
+  }
+  to {
+    inset-inline-start: 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .repo-loading-bar::after {
+    width: 100%;
+    inset-inline-start: 0;
+    opacity: 0.6;
+    animation: none;
+  }
+}
+
 .graph-search {
   display: flex;
   align-items: center;

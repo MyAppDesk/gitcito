@@ -3115,6 +3115,7 @@ export const nl: Dict = {
   'graph.wipPlaceholder': 'Werk in uitvoering',
   'toolbar.stashWip': 'Werk in uitvoering stashen',
   'toolbar.fetchedAgo': 'Gefetcht {when}',
+  'toolbar.loadingRepo': 'Repository laden…',
   'aiPrReview.title': 'AI-PR-review',
   'aiPrReview.analysing': 'Diff analyseren…',
   'aiPrReview.summary': 'Samenvatting',

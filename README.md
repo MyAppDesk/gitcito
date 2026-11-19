@@ -91,7 +91,7 @@ git actually is.
 | | |
 |---|---|
 | **[Repositories](docs/help/repositories.md)** | Every repository Gitcito has ever opened, plus folders you scan, in one searchable list — open, favourite, recent, and per workspace. |
-| **[Go to repository](docs/help/workspaces.md#going-to-a-repository)** (`⌘J`) | Jump to any open repository by name, folder or branch — group members included, most recently used first. |
+| **[Go to repository](docs/help/workspaces.md#going-to-a-repository)** (`⌘J`) | Jump to any open repository by name, folder or branch — group members included, most recently used first. Switching is instant even next to a huge `node_modules`: the file watcher follows only what git tracks, and a bar under the toolbar shows while the repository you switched to catches up. |
 | **[Groups & workspaces](docs/help/workspaces.md)** | Tabs with folders nested to any depth, colour-coded, fetch-all per subtree. Browser-like tab sizing, opt-in auto-grouping of [worktrees](docs/help/worktrees.md#grouping-worktrees-in-the-header). [Right-click a repository](docs/help/repo-menu.md) for alias, worktrees, GitHub, terminal and remove. |
 | **[Tab images](docs/help/repo-settings.md#tab-image)** | Give a repository a small picture from its own files, and show tabs as image, name or both. |
 | **[Pull or push any branch](docs/help/syncing.md)** | Catch a branch up or publish it from its right-click menu, without checking it out first. |

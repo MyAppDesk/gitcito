@@ -3109,6 +3109,7 @@ export const es: Dict = {
   'graph.wipPlaceholder': 'Trabajo en curso',
   'toolbar.stashWip': 'Guardar el trabajo en curso',
   'toolbar.fetchedAgo': 'Fetch {when}',
+  'toolbar.loadingRepo': 'Cargando repositorio…',
   'aiPrReview.title': 'Revisión de PR con IA',
   'aiPrReview.analysing': 'Analizando el diff…',
   'aiPrReview.summary': 'Resumen',

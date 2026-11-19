@@ -66,6 +66,7 @@ import type { CliOpenPayload } from '../../shared/cli'
 import { runAppCommand } from './appCommands'
 import { chooseRepositories } from './openRepositories'
 import { useAppMenu } from './useAppMenu'
+import { trackRepoSwitch } from './lib/repoSwitch'
 
 /**
  * Carry out what a `gitcito <verb>` invocation asked for, once its repository
@@ -752,8 +753,14 @@ export default function App(): React.JSX.Element {
     // First switch to a repo loads it; switching back to an already-loaded
     // repo re-refreshes so the graph reflects changes made elsewhere.
     const repo = useRepoStore.getState().repos[activeRepoPath]
-    if (repo && !repo.loading) void useRepoStore.getState().refresh(activeRepoPath)
-    else void ensure(activeRepoPath)
+    const work = repo && !repo.loading ? useRepoStore.getState().refresh(activeRepoPath) : ensure(activeRepoPath)
+    // The old state shows at once and the refresh runs underneath: say so, or
+    // the switch looks like it did nothing until the data changes by itself.
+    const ui = useUIStore.getState()
+    void trackRepoSwitch(activeRepoPath, work, {
+      get: () => useUIStore.getState().repoSwitching,
+      set: ui.setRepoSwitching
+    })
   }, [activeRepoPath, ensure])
 
   // Auto-switch the active profile to the one bound to the active repo. Keeps

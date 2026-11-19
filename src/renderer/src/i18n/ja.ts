@@ -3047,6 +3047,7 @@ export const ja: Dict = {
   'graph.wipPlaceholder': '作業中の変更',
   'toolbar.stashWip': '作業中の変更をスタッシュ',
   'toolbar.fetchedAgo': '{when} にフェッチ',
+  'toolbar.loadingRepo': 'リポジトリを読み込み中…',
   'aiPrReview.title': 'AI による PR レビュー',
   'aiPrReview.analysing': '差分を分析しています…',
   'aiPrReview.summary': '要約',

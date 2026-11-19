@@ -3110,6 +3110,7 @@ export const he: Dict = {
   'graph.wipPlaceholder': 'עבודה בתהליך',
   'toolbar.stashWip': 'שמירת העבודה בתהליך בסטאש',
   'toolbar.fetchedAgo': 'הובא {when}',
+  'toolbar.loadingRepo': 'טוען את המאגר…',
   'aiPrReview.title': 'ביקורת AI לבקשת משיכה',
   'aiPrReview.analysing': 'מנתח את הדיף…',
   'aiPrReview.summary': 'תקציר',

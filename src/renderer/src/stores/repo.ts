@@ -1282,11 +1282,12 @@ const HUNK_ACTIONS = {
 >
 
 export const repoActions = {
-  // Refreshes every slice on purpose: moving HEAD rewrites the `HEAD -> …`
-  // decoration the graph reads off each commit, plus the per-directory tree
-  // status and each worktree's HEAD. Refetching only branches/status left the
-  // graph's head badge (and the file-tree markers) on the previous branch until
-  // something else triggered a full refresh — e.g. switching repo tabs.
+  // Moving HEAD rewrites the `HEAD -> …` decoration the graph reads off each
+  // commit ('log' — it comes from `%D`), the per-directory tree status and each
+  // worktree's HEAD; `.gitmodules` and the repo config are tracked files the
+  // checkout may swap. Refetching only branches/status left the graph's head
+  // badge on the previous branch. Stashes, remotes and merge state cannot move,
+  // so they keep their identity.
   checkout: (path: string, ref: string) => {
     // A branch checked out in another worktree cannot be checked out here —
     // git says so, in words that answer a question nobody asked. Go where the
@@ -1309,7 +1310,7 @@ export const repoActions = {
       },
       null,
       undefined,
-      ['branches', 'status', 'treeStatus']
+      ['log', 'branches', 'status', 'treeStatus', 'worktrees', 'submodules', 'config']
     )
   },
 

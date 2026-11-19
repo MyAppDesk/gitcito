@@ -3050,6 +3050,7 @@ export const tr: Dict = {
   'graph.wipPlaceholder': 'Devam eden çalışma',
   'toolbar.stashWip': 'Devam eden çalışmayı stash’le',
   'toolbar.fetchedAgo': 'Getirildi: {when}',
+  'toolbar.loadingRepo': 'Depo yükleniyor…',
   'aiPrReview.title': 'Yapay Zekâ PR İncelemesi',
   'aiPrReview.analysing': 'Fark çözümleniyor…',
   'aiPrReview.summary': 'Özet',

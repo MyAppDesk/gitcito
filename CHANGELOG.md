@@ -12,6 +12,14 @@
 * **changelog:** What's new shows the notes of the build you are running when it is a beta or a local build GitHub has not published yet; before, it opened on the newest published release and those notes were never shown.
 * **tabs:** a group shows its own page — open, clone, create, recents — when created, but once one of its repositories was open that page was reachable only from the group's context menu, so adding a repository meant opening it elsewhere and dragging it in. A **+** beside the group's name now goes straight to it.
 * **i18n:** the group page's "Fetch all" and "Pull all" buttons were English in every language.
+### Performance Improvements
+
+* **watcher:** switching repositories no longer stalls the app on Linux. The file watcher followed the whole working tree recursively, and Node walks that tree synchronously on Linux — about a second per switch next to a large `node_modules` (20k directories), with every other call waiting. It now watches `.git` and the directories that hold tracked files, asynchronously: about 10 ms for the same repository.
+
+
+### Features
+
+* **toolbar:** a loading bar and "Loading repository…" show while a repository you switched to is refreshing, once that takes longer than 150 ms.
 
 ## [4.25.0](https://github.com/MyAppDesk/gitcito/compare/v4.24.0...v4.25.0) (2026-11-18)
 

@@ -3114,6 +3114,7 @@ export const en = {
   'graph.wipPlaceholder': 'Work in progress',
   'toolbar.stashWip': 'Stash work in progress',
   'toolbar.fetchedAgo': 'Fetched {when}',
+  'toolbar.loadingRepo': 'Loading repository…',
   'aiPrReview.title': 'AI PR Review',
   'aiPrReview.analysing': 'Analysing diff…',
   'aiPrReview.summary': 'Summary',

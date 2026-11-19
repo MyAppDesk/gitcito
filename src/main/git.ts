@@ -936,21 +936,39 @@ function urlUsername(url: string | undefined): string {
   }
 }
 
-/** Inject credentials into an https clone URL so private integration repos can be cloned non-interactively. */
-function authedCloneUrl(url: string, host?: string, token?: string): string {
-  if (!token || !token.trim() || !/^https:\/\//i.test(url)) return url
+/**
+ * The environment that lets a clone or a clone-dialog `ls-remote` authenticate
+ * with the integration's PAT, or null when it does not apply. Same mechanism as
+ * `withRemoteAuth`: the token never enters the URL, so it is in neither the
+ * process list nor the new repository's `.git/config` — not even for the
+ * duration of the clone, which a crash or a kill would otherwise leave behind.
+ */
+function cloneCredentialEnv(url: string, host?: string, token?: string): NodeJS.ProcessEnv | null {
+  if (!token || !token.trim() || !/^https:\/\//i.test(url)) return null
   // The caller names the provider; the URL must really be on it.
-  if (!host || hostFromUrl(url) !== host) return url
+  if (!host || hostFromUrl(url) !== host) return null
   const auth = basicAuthFor(host as RepoHost | undefined, token, url)
-  if (!auth) return url
-  try {
-    const u = new URL(url)
-    u.username = auth.username
-    u.password = auth.password
-    return u.toString()
-  } catch {
-    return url
-  }
+  return auth ? gitCredentialEnv(url, auth) : null
+}
+
+/**
+ * simple-git refuses an `.env()` that names a credential helper or carries
+ * `GIT_CONFIG_COUNT` — and, since it scans the whole object, any inherited
+ * variable such as `GIT_ASKPASS` or `PAGER`. The helper is ours and the rest is
+ * the app's own environment, which every `runGit` child inherits anyway. The
+ * argument checks (`--upload-pack`, `-u`) stay on.
+ */
+const CLONE_ENV_UNSAFE = {
+  allowUnsafeCredentialHelper: true,
+  allowUnsafeConfigEnvCount: true,
+  allowUnsafeAskPass: true,
+  allowUnsafeConfigPaths: true,
+  allowUnsafeDiffExternal: true,
+  allowUnsafeEditor: true,
+  allowUnsafeGitProxy: true,
+  allowUnsafePager: true,
+  allowUnsafeSshCommand: true,
+  allowUnsafeTemplateDir: true
 }
 
 /** Map a remote URL's hostname to the provider whose PAT can authenticate it. */
@@ -991,7 +1009,7 @@ const noPromptEnv = (): NodeJS.ProcessEnv => ({ ...process.env, GIT_TERMINAL_PRO
  * Strip `user:secret@` out of every URL in a message.
  *
  * Git echoes the remote URL back in its errors, and a clone or a clone-dialog
- * `ls-remote` still carries the PAT in that URL (`authedCloneUrl`) — so without
+ * a URL the user pasted with `user:token@` in it is echoed as-is — so without
  * this an unlucky failure prints the token into the UI, the operation log, and
  * any screenshot of either. A legacy `.git/config` with a token in its remote
  * URL is caught the same way.
@@ -7093,9 +7111,12 @@ export const gitService = {
   /** Branch names a remote advertises, for the clone dialog's branch picker.
    *  Never touches disk — `ls-remote` is a network read with no local repo. */
   async remoteBranches(url: string, host?: string, token?: string): Promise<string[]> {
-    const authed = authedCloneUrl(url, host, token)
+    const credEnv = cloneCredentialEnv(url, host, token)
+    if (credEnv) await assertGitSupportsCredentialEnv()
     try {
-      const { stdout } = await pexecFile('git', ['ls-remote', '--heads', authed], { env: noPromptEnv() })
+      const { stdout } = await pexecFile('git', ['ls-remote', '--heads', url], {
+        env: { ...noPromptEnv(), ...(credEnv ?? {}) }
+      })
       return stdout
         .split('\n')
         .map((line) => line.split('\t')[1]?.replace(/^refs\/heads\//, '') ?? '')
@@ -7121,17 +7142,19 @@ export const gitService = {
     // hardlinks the object store instead of fetching — so a shallow request on
     // a local repository only takes effect through a file:// URL.
     const localShallow = !!opts.depth && !/^[a-z][a-z0-9+.-]*:/i.test(url) && !url.includes('@') && existsSync(url)
-    const cloneUrl = localShallow
-      ? pathToFileURL(resolvePath(url)).href
-      : authedCloneUrl(url, opts.host, opts.token)
+    const cloneUrl = localShallow ? pathToFileURL(resolvePath(url)).href : url
+    const credEnv = localShallow ? null : cloneCredentialEnv(url, opts.host, opts.token)
+    if (credEnv) await assertGitSupportsCredentialEnv()
     // Streaming the underlying `git clone --progress` so the UI can show real progress;
     // simpleGit auto-appends --progress when a progress handler is configured.
     const git = simpleGit({
       baseDir: parentDir,
       progress: onProgress
         ? ({ stage, progress, processed, total }) => onProgress({ stage, progress, processed, total })
-        : undefined
+        : undefined,
+      ...(credEnv ? { unsafe: CLONE_ENV_UNSAFE } : {})
     })
+    if (credEnv) git.env({ ...noPromptEnv(), ...credEnv })
     const args: string[] = []
     // A blob filter (e.g. "blob:none") makes this a partial clone — history without
     // file blobs, fetched on demand. Great for very large repos.
@@ -7144,7 +7167,7 @@ export const gitService = {
     if (opts.branch?.trim()) args.push('--branch', opts.branch.trim())
     if (opts.recurseSubmodules) args.push('--recurse-submodules')
     await git.clone(cloneUrl, folder, args.length ? args : undefined)
-    // Reset the origin URL back to the token-free version so the PAT is not persisted on disk.
+    // A shallow local clone went through file:// — point origin back at the path the user gave.
     if (cloneUrl !== url) {
       try {
         await simpleGit(target).remote(['set-url', 'origin', url])

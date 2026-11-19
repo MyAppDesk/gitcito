@@ -1,5 +1,12 @@
 
 
+## Unreleased
+
+
+### Bug Fixes
+
+* **ui:** a confirmation asked from inside a window no longer closes that window. Deleting an AI account closed Settings; in Credentials, Hooks, Todos, Attributes, Clean, Git flow, Snapshots, Reflog, History purge and others, the list a confirmed action was meant to refresh was already gone, and Cancel lost the window too. The question now opens over the window, which stays as it was.
+
 ## [4.25.0](https://github.com/MyAppDesk/gitcito/compare/v4.24.0...v4.25.0) (2026-11-18)
 
 

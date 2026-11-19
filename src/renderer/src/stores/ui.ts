@@ -50,6 +50,11 @@ export interface ContextMenuState {
 /** The modal kinds that can also be stacked over another modal (see `dialog`). */
 export type DialogSpec = Extract<ModalSpec, { kind: 'confirm' } | { kind: 'input' }>
 
+/** Whether a modal spec is a question that can be stacked over another modal. */
+export function isDialogSpec(modal: ModalSpec): modal is DialogSpec {
+  return modal.kind === 'confirm' || modal.kind === 'input'
+}
+
 export type ModalSpec =
   | {
       kind: 'input'
@@ -497,7 +502,15 @@ export const useUIStore = create<UIState>((set, get) => ({
   openContextMenu: (x, y, items) => set({ contextMenu: { x, y, items } }),
   closeContextMenu: () => set({ contextMenu: null }),
   // A dialog belongs to the modal it was asked over: it goes when that one does.
-  openModal: (modal) => set({ modal, dialog: null }),
+  //
+  // A question (a confirm, a one-line input) asked while a modal is open goes
+  // OVER it, wherever it was asked from. Opened in the modal slot it replaced
+  // the modal: deleting an AI account closed Settings, and the handlers that
+  // reload a list or clear a selection after "Yes" (credentials, hooks, todos,
+  // attributes…) ran against a modal that was already gone — Cancel lost it
+  // too. Callers that mean to close the modal after the answer already call
+  // closeModal() themselves, which still closes both.
+  openModal: (modal) => set((s) => (s.modal && isDialogSpec(modal) ? { dialog: modal } : { modal, dialog: null })),
   closeModal: () => set({ modal: null, dialog: null }),
   openDialog: (dialog) => set({ dialog }),
   closeDialog: () => set({ dialog: null }),

@@ -48,6 +48,8 @@ zrobić pull dla całego swojego poddrzewa.
 > Foldery wyłącznie porządkują. Usunięcie folderu przenosi jego repozytoria do
 > rodzica — nigdy nie zamyka repozytorium.
 
+Aby dodać repozytorium, którego grupa jeszcze nie ma, kliknij **+** obok nazwy grupy. Pokazuje on stronę grupy — otwórz folder, sklonuj, utwórz albo wybierz ostatnie repozytorium — nawet gdy jedno z jej repozytoriów jest otwarte; kliknięcie chipa wraca do niego.
+
 ## Strony, które należą do repozytorium
 
 Niektóre strony nie są bytem osobnym: [wiki](repo-wiki.md) repozytorium, jego

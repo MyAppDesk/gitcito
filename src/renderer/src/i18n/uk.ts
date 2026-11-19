@@ -3590,6 +3590,7 @@ export const uk: Dict = {
   'titlebar.moveToWorkspace': 'Перемістити в робочий простір',
   'titlebar.manageRepos': 'Керувати репозиторіями…',
   'titlebar.viewGroupHome': 'Переглянути головну групи',
+  'titlebar.addReposToGroup': 'Додати репозиторії до {group}',
   'titlebar.renameTab': 'Перейменувати вкладку',
   'titlebar.rename': 'Перейменувати…',
   'titlebar.fetchAll': 'Отримати все ({count})',

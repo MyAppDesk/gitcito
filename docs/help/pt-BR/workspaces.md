@@ -47,6 +47,8 @@ a sua subárvore.
 > Pastas só organizam. Apagar uma sobe os repositórios dela para a pasta-mãe —
 > nunca fecha um repositório.
 
+Para adicionar um repositório que o grupo ainda não tem, clique no **+** ao lado do nome do grupo. Ele mostra a página do próprio grupo — abrir uma pasta, clonar, criar ou escolher um repositório recente — mesmo com um dos repositórios aberto; clicar num chip leva de volta a ele.
+
 ## Páginas que pertencem a um repositório
 
 Algumas páginas não são coisa à parte: a [wiki](repo-wiki.md) de um

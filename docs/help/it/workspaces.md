@@ -47,6 +47,8 @@ o pull sull'intero sottoalbero.
 > Le cartelle servono solo a organizzare. Eliminarne una solleva i suoi
 > repository al livello superiore — non chiude mai un repository.
 
+Per aggiungere un repository che il gruppo non contiene ancora, fai clic sul **+** accanto al nome del gruppo. Mostra la pagina del gruppo — aprire una cartella, clonare, creare o scegliere un repository recente — anche quando uno dei suoi repository è aperto; un clic su un chip ti riporta lì.
+
 ## Le pagine che appartengono a un repository
 
 Alcune pagine non stanno da sole: il [wiki](repo-wiki.md) di un repository, i

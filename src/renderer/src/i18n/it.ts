@@ -3539,6 +3539,7 @@ export const it: Dict = {
   'titlebar.moveToWorkspace': 'Sposta in uno spazio di lavoro',
   'titlebar.manageRepos': 'Gestisci i repository…',
   'titlebar.viewGroupHome': 'Vedi la home del gruppo',
+  'titlebar.addReposToGroup': 'Aggiungi repository a {group}',
   'titlebar.renameTab': 'Rinomina la scheda',
   'titlebar.rename': 'Rinomina…',
   'titlebar.fetchAll': 'Fetch di tutti ({count})',

@@ -10,6 +10,8 @@
 
 * **diff:** **Wrap** now works in the unified view too, not only side by side: a long line — minified code, a paragraph of prose — folds inside the pane instead of scrolling sideways. One setting for both views, off by default, remembered across files and sessions.
 * **changelog:** What's new shows the notes of the build you are running when it is a beta or a local build GitHub has not published yet; before, it opened on the newest published release and those notes were never shown.
+* **tabs:** a group shows its own page — open, clone, create, recents — when created, but once one of its repositories was open that page was reachable only from the group's context menu, so adding a repository meant opening it elsewhere and dragging it in. A **+** beside the group's name now goes straight to it.
+* **i18n:** the group page's "Fetch all" and "Pull all" buttons were English in every language.
 
 ## [4.25.0](https://github.com/MyAppDesk/gitcito/compare/v4.24.0...v4.25.0) (2026-11-18)
 

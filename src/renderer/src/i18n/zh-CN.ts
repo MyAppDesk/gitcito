@@ -3590,6 +3590,7 @@ export const zhCN: Dict = {
   'titlebar.moveToWorkspace': '移到工作区',
   'titlebar.manageRepos': '管理仓库…',
   'titlebar.viewGroupHome': '查看分组主页',
+  'titlebar.addReposToGroup': '向 {group} 添加仓库',
   'titlebar.renameTab': '重命名标签页',
   'titlebar.rename': '重命名…',
   'titlebar.fetchAll': '全部获取（{count}）',

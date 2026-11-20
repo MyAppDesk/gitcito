@@ -1,5 +1,6 @@
 /**
- * `npm run <script>` suggestions in the terminal.
+ * Suggestions in the terminal: `npm run <script>`, `composer run`, `make
+ * <target>` and `git checkout <branch>`.
  *
  * The app never sees the shell's line editor — only the keys sent to it — so
  * it follows the line typed since the last Enter and gives up the moment it
@@ -40,7 +41,48 @@ export function trackInput(state: LineState, data: string): LineState {
 
 export type Runner = 'npm' | 'pnpm' | 'yarn' | 'bun'
 
-const RUNNER = /^\s*(npm\s+(?:run|run-script)|pnpm(?:\s+run)?|yarn(?:\s+run)?|bun\s+run)\s+(\S*)$/
+/** Where a command's completions come from — one reader each in the main process. */
+export type CompletionKind = 'scripts' | 'composer' | 'make' | 'branches'
+
+/**
+ * The commands that get a list, and what fills it. Each pattern ends on the
+ * word being typed, so the list only shows while that word is the last one.
+ */
+const COMMANDS: readonly { kind: CompletionKind; re: RegExp }[] = [
+  { kind: 'scripts', re: /^\s*(?:npm\s+(?:run|run-script)|pnpm(?:\s+run)?|yarn(?:\s+run)?|bun\s+run)\s+(\S*)$/ },
+  { kind: 'composer', re: /^\s*composer\s+(?:run|run-script)\s+(\S*)$/ },
+  // Short flags such as -j4 may come first; a flag taking a separate value (-C dir) is not followed.
+  { kind: 'make', re: /^\s*make\s+(?:-[A-Za-z]\S*\s+)*([^\s-]\S*|)$/ },
+  // No flags: `git checkout -b x` names a new branch, so existing ones would only be in the way.
+  { kind: 'branches', re: /^\s*git\s+(?:checkout|switch|merge|rebase)\s+([^\s-]\S*|)$/ }
+]
+
+/** The word that starts any command with a list — a cheap test before asking the main process. */
+export const COMPLETING_COMMAND = /^\s*(?:npm|pnpm|yarn|bun|composer|make|git)\s/
+
+export interface CompletionContext {
+  kind: CompletionKind
+  /** What has been typed of the name so far. */
+  partial: string
+}
+
+/** Which list fits the line, or null when none does or the line is not known. */
+export function completionContext(state: LineState): CompletionContext | null {
+  if (!state.known) return null
+  for (const { kind, re } of COMMANDS) {
+    const m = re.exec(state.line)
+    if (m) return { kind, partial: m[1] }
+  }
+  return null
+}
+
+/** Names fitting `partial`, best first: those starting with it, then those containing it. */
+export function rankNames(partial: string, names: readonly string[], max = 8): string[] {
+  const p = partial.toLowerCase()
+  const starts = names.filter((s) => s.toLowerCase().startsWith(p))
+  const contains = names.filter((s) => !s.toLowerCase().startsWith(p) && s.toLowerCase().includes(p))
+  return [...starts, ...contains].filter((s) => s !== partial).slice(0, max)
+}
 
 export interface ScriptMatch {
   /** What has been typed of the script name so far. */
@@ -54,15 +96,10 @@ export interface ScriptMatch {
  * Names starting with what was typed come first, then names containing it.
  */
 export function matchScripts(state: LineState, scripts: readonly string[], max = 8): ScriptMatch | null {
-  if (!state.known) return null
-  const m = RUNNER.exec(state.line)
-  if (!m) return null
-  const partial = m[2]
-  const p = partial.toLowerCase()
-  const starts = scripts.filter((s) => s.toLowerCase().startsWith(p))
-  const contains = scripts.filter((s) => !s.toLowerCase().startsWith(p) && s.toLowerCase().includes(p))
-  const names = [...starts, ...contains].filter((s) => s !== partial).slice(0, max)
-  return names.length ? { partial, names } : null
+  const ctx = completionContext(state)
+  if (!ctx || ctx.kind !== 'scripts') return null
+  const names = rankNames(ctx.partial, scripts, max)
+  return names.length ? { partial: ctx.partial, names } : null
 }
 
 /** The keys that turn the typed partial into `name`: erase what does not fit, then type the rest. */

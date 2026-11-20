@@ -3,7 +3,8 @@ import { spawn, ChildProcess, execFile } from 'child_process'
 import { existsSync, readdirSync } from 'fs'
 import { join } from 'path'
 import { makeBatchedSender } from './ptyBatch'
-import { readPackageScripts, shellCwd } from './packageScripts'
+import { shellCwd } from './packageScripts'
+import { readCompletions, type CompletionKind } from './termCompletions'
 
 interface TermSession {
   write(data: string): void
@@ -255,12 +256,13 @@ export function registerTerminalHandlers(): void {
     return id
   })
   ipcMain.handle('term:process', (_e, id: number) => sessions.get(id)?.procName() ?? '')
-  // The package.json scripts nearest the shell's current directory, for the
-  // terminal's `npm run …` suggestions.
-  ipcMain.handle('term:scripts', async (_e, id: number) => {
+  // What the terminal's suggestion list offers after `npm run`, `make`,
+  // `git checkout`…, read from the shell's current directory.
+  const KINDS: readonly CompletionKind[] = ['scripts', 'composer', 'make', 'branches']
+  ipcMain.handle('term:completions', async (_e, id: number, kind: unknown) => {
     const s = sessions.get(id)
-    if (!s) return null
-    return readPackageScripts((await shellCwd(s.pid)) ?? s.startCwd)
+    if (!s || !KINDS.includes(kind as CompletionKind)) return null
+    return readCompletions(kind as CompletionKind, (await shellCwd(s.pid)) ?? s.startCwd)
   })
   ipcMain.handle('term:posh-themes', () => {
     const dir = poshThemeDir()

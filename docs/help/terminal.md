@@ -3,7 +3,7 @@ title: Integrated terminal
 category: Workspace tools
 order: 90
 summary: A real PTY docked under the repo, with tabs per repository.
-keywords: terminal shell pty xterm console tabs docked
+keywords: terminal shell pty xterm console tabs docked autocomplete npm run scripts make makefile composer branch checkout
 ---
 
 # Integrated terminal
@@ -57,6 +57,17 @@ scripts appears at the cursor, filtered as you type: `npm run loc` finds
 | **Tab** | Completes the selected script |
 | **↑ / ↓** | Choose another |
 | **Esc** | Closes the list until you type again |
+
+Other commands get a list of their own:
+
+| Typed | Lists | Read from |
+|-------|-------|-----------|
+| `composer run ` | Composer scripts | the nearest `composer.json` |
+| `make ` | Makefile targets, with the `## text` after a target as its description | the `Makefile` of the current directory, as `make` reads it |
+| `git checkout `, `switch`, `merge`, `rebase` | Local branches, then remote ones by their short name | the repository the shell is in |
+
+A Makefile target built from variables or a pattern (`%.o`) is not listed, and
+`git checkout -b` gets no list: it names a new branch.
 
 The scripts come from the `package.json` nearest the shell's **current**
 directory, so after `cd frontend` you get the frontend's. Names starting with

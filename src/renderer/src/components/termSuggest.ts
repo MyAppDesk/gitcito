@@ -1,11 +1,20 @@
 import type { Terminal } from '@xterm/xterm'
-import { FRESH_LINE, completionInput, matchScripts, trackInput, type LineState, type ScriptMatch } from '../lib/termComplete'
+import {
+  COMPLETING_COMMAND,
+  FRESH_LINE,
+  completionContext,
+  completionInput,
+  rankNames,
+  trackInput,
+  type CompletionKind,
+  type LineState,
+  type ScriptMatch
+} from '../lib/termComplete'
 import { t } from '../i18n'
 
-interface PackageScripts {
-  dir: string
-  manager: string
-  scripts: Record<string, string>
+/** Name → what it runs, as the main process reads it for one kind of list. */
+interface Completions {
+  items: Record<string, string>
 }
 
 export interface TermSuggest {
@@ -16,13 +25,13 @@ export interface TermSuggest {
   dispose(): void
 }
 
-/** How long a read of package.json is trusted: long enough to type a name. */
-const SCRIPTS_TTL_MS = 4000
+/** How long a read is trusted: long enough to type a name. */
+const COMPLETIONS_TTL_MS = 4000
 
 /**
- * The `npm run …` suggestion list of one shell terminal: a small popup at the
- * cursor, filled from the package.json nearest the shell's current directory.
- * Plain DOM, like the terminal it sits on.
+ * The suggestion list of one shell terminal: a small popup at the cursor, filled
+ * from the shell's current directory — package.json or composer.json scripts,
+ * Makefile targets, git branches. Plain DOM, like the terminal it sits on.
  */
 export function createTermSuggest(opts: {
   term: Terminal
@@ -36,7 +45,7 @@ export function createTermSuggest(opts: {
   let selected = 0
   // Esc hides the list until the line changes again.
   let dismissedFor: string | null = null
-  let cache: { at: number; value: PackageScripts | null } | null = null
+  const cache = new Map<CompletionKind, { at: number; value: Completions | null }>()
   let disposed = false
 
   const el = document.createElement('div')
@@ -45,10 +54,11 @@ export function createTermSuggest(opts: {
   el.hidden = true
   container.appendChild(el)
 
-  const scripts = async (): Promise<PackageScripts | null> => {
-    if (cache && Date.now() - cache.at < SCRIPTS_TTL_MS) return cache.value
-    const value = (await window.api.term.scripts(ptyId).catch(() => null)) as PackageScripts | null
-    cache = { at: Date.now(), value }
+  const completions = async (kind: CompletionKind): Promise<Completions | null> => {
+    const hit = cache.get(kind)
+    if (hit && Date.now() - hit.at < COMPLETIONS_TTL_MS) return hit.value
+    const value = (await window.api.term.completions(ptyId, kind).catch(() => null)) as Completions | null
+    cache.set(kind, { at: Date.now(), value })
     return value
   }
 
@@ -70,7 +80,7 @@ export function createTermSuggest(opts: {
     el.style.top = `${below + el.offsetHeight > container.clientHeight ? Math.max(0, y - el.offsetHeight - 2) : below}px`
   }
 
-  const render = (pkg: PackageScripts): void => {
+  const render = (src: Completions): void => {
     if (!match) return close()
     el.replaceChildren()
     match.names.forEach((name, i) => {
@@ -83,7 +93,7 @@ export function createTermSuggest(opts: {
       n.textContent = name
       const cmd = document.createElement('span')
       cmd.className = 'term-suggest-cmd'
-      cmd.textContent = pkg.scripts[name] ?? ''
+      cmd.textContent = src.items[name] ?? ''
       row.append(n, cmd)
       row.addEventListener('mousedown', (e) => {
         e.preventDefault() // keep focus in the terminal
@@ -101,18 +111,25 @@ export function createTermSuggest(opts: {
     place()
   }
 
-  let lastPkg: PackageScripts | null = null
+  let lastSrc: Completions | null = null
   const refresh = async (): Promise<void> => {
-    // Cheap check first: only a run command is worth reading package.json for.
-    if (!state.known || !/^\s*(npm|pnpm|yarn|bun)\s/.test(state.line) || state.line === dismissedFor) return close()
-    const pkg = await scripts()
+    // Cheap checks first: only a command with a list is worth asking the main process about.
+    if (!state.known || !COMPLETING_COMMAND.test(state.line) || state.line === dismissedFor) return close()
+    const ctx = completionContext(state)
+    if (!ctx) return close()
+    const src = await completions(ctx.kind)
     if (disposed) return
-    lastPkg = pkg
-    const next = pkg ? matchScripts(state, Object.keys(pkg.scripts)) : null
-    if (!next) return close()
+    // The line may have moved on while the read was out (git can take a moment):
+    // rank against what is typed now, and leave a different kind to its own refresh.
+    const now = completionContext(state)
+    if (!now || now.kind !== ctx.kind || state.line === dismissedFor) return
+    lastSrc = src
+    const names = src ? rankNames(now.partial, Object.keys(src.items)) : []
+    if (!src || !names.length) return close()
+    const next: ScriptMatch = { partial: now.partial, names }
     if (!match || match.names.join('\n') !== next.names.join('\n')) selected = 0
     match = next
-    render(pkg!)
+    render(src)
   }
 
   const accept = (): void => {
@@ -140,7 +157,7 @@ export function createTermSuggest(opts: {
         e.preventDefault()
         const n = match.names.length
         selected = (selected + (e.key === 'ArrowDown' ? 1 : n - 1)) % n
-        if (lastPkg) render(lastPkg)
+        if (lastSrc) render(lastSrc)
         return true
       }
       if (e.key === 'Escape') {

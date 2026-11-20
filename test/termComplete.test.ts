@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { FRESH_LINE, completionInput, matchScripts, trackInput, type LineState } from '../src/renderer/src/lib/termComplete'
+import { FRESH_LINE, completionInput, matchScripts, trackInput, type LineState, completionContext, rankNames } from '../src/renderer/src/lib/termComplete'
 
 const type = (keys: string[], from: LineState = FRESH_LINE): LineState => keys.reduce(trackInput, from)
 const SCRIPTS = ['dev', 'build', 'build:web', 'test', 'test:watch', 'lint', 'LOCAL_SERVER']
@@ -62,5 +62,34 @@ describe('completionInput', () => {
   it('types the rest, or erases a partial that is not a prefix', () => {
     expect(completionInput('te', 'test:watch')).toBe('st:watch')
     expect(completionInput('local', 'LOCAL_SERVER')).toBe('\x7f\x7f\x7f\x7f\x7fLOCAL_SERVER')
+  })
+})
+
+describe('completionContext — which list a command gets', () => {
+  const at = (line: string) => completionContext({ line, known: true })
+
+  it('maps each command to its source and the word being typed', () => {
+    expect(at('npm run de')).toEqual({ kind: 'scripts', partial: 'de' })
+    expect(at('composer run te')).toEqual({ kind: 'composer', partial: 'te' })
+    expect(at('make ')).toEqual({ kind: 'make', partial: '' })
+    expect(at('make -j4 bu')).toEqual({ kind: 'make', partial: 'bu' })
+    expect(at('git checkout fe')).toEqual({ kind: 'branches', partial: 'fe' })
+    expect(at('git switch ')).toEqual({ kind: 'branches', partial: '' })
+    expect(at('git rebase ma')).toEqual({ kind: 'branches', partial: 'ma' })
+  })
+
+  it('stays out of lines it cannot complete well', () => {
+    expect(at('git checkout -b new')).toBeNull() // a new branch: existing names only get in the way
+    expect(at('git checkout -- file')).toBeNull()
+    expect(at('make -C dir ta')).toBeNull() // a flag with a separate value
+    expect(at('composer install')).toBeNull() // composer's own commands, not scripts
+    expect(at('git status ')).toBeNull()
+    expect(at('make build ')).toBeNull() // past the word
+    expect(completionContext({ line: 'git checkout ma', known: false })).toBeNull()
+  })
+
+  it('ranks names starting with the partial before names containing it', () => {
+    expect(rankNames('ma', ['feat/main-fix', 'main', 'master', 'other'])).toEqual(['main', 'master', 'feat/main-fix'])
+    expect(rankNames('main', ['main'])).toEqual([]) // already typed in full
   })
 })

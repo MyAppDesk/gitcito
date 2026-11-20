@@ -42,7 +42,8 @@ import {
   Bookmark as BookmarkIcon,
   Folder,
   FolderOpen,
-  Eraser
+  Eraser,
+  Eye
 } from 'lucide-react'
 import { FileTree } from './FileTree'
 import { FileSearchBar, EMPTY_FILTER, type FileFilter } from './FileSearchBar'
@@ -1914,6 +1915,12 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
           {rowState === 'blocked' && (
             <span className="sb-pr-flag blocked" title={t('pr.blockedDownstack')}>
               <Ban size={11} />
+            </span>
+          )}
+          {/* You are a pending reviewer here — the one thing in the list that is yours to do. */}
+          {pr.awaitingYou && (
+            <span className="sb-pr-flag awaiting" title={t('pr.awaitingYourReview')} aria-label={t('pr.awaitingYourReview')}>
+              <Eye size={11} />
             </span>
           )}
           {/* Unlike the detail view, previewing works on every host — the PR

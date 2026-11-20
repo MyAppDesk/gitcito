@@ -92,6 +92,7 @@ interface FjPull {
   user?: { login?: string }
   head?: { ref?: string; sha?: string; repo?: { full_name?: string } | null }
   base?: { ref?: string }
+  requested_reviewers?: Array<{ login?: string }> | null
 }
 
 /** Forgejo marks a draft with a title prefix on older versions, `draft` on newer ones. */
@@ -107,7 +108,8 @@ export function mapForgejoPull(p: FjPull): PullRequest {
     url: p.html_url,
     isDraft: !!p.draft || WIP.test(p.title),
     ...(p.head?.sha ? { headSha: p.head.sha } : {}),
-    ...(p.head?.repo?.full_name ? { headRepo: p.head.repo.full_name } : {})
+    ...(p.head?.repo?.full_name ? { headRepo: p.head.repo.full_name } : {}),
+    requestedReviewers: (p.requested_reviewers ?? []).map((u) => u.login ?? '').filter(Boolean)
   }
 }
 

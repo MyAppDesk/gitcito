@@ -21,7 +21,8 @@ import {
   Milestone,
   FileDiff,
   CircleDot,
-  CalendarDays
+  CalendarDays,
+  Sparkles
 } from 'lucide-react'
 import type { PageContent, PrCheck, PrDetail, PrFile, PrMergeMethod, PrReviewEvent } from '../../../shared/types'
 import { hostingApi, shellApi } from '../infrastructure/api'
@@ -184,6 +185,27 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
     useUIStore.getState().openModal({ kind: 'pr-preview', repoPath, number, remote })
   }
 
+  const aiEnabled = profile.ai.enabled !== false
+  // The AI review reads the PR's diff as the host gave it, once the files are
+  // in; until then it falls back to comparing the branches locally.
+  const reviewWithAi = (): void => {
+    if (!pr) return
+    const diff = files?.length
+      ? files
+          .filter((f) => f.patch)
+          .map((f) => `diff --git a/${f.previousFilename ?? f.filename} b/${f.filename}\n--- a/${f.previousFilename ?? f.filename}\n+++ b/${f.filename}\n${f.patch}`)
+          .join('\n')
+      : undefined
+    useUIStore.getState().openModal({
+      kind: 'ai-pr-review',
+      repoPath,
+      prTitle: pr.title,
+      sourceBranch: pr.source,
+      targetBranch: pr.target,
+      ...(diff ? { diff } : {})
+    })
+  }
+
   const web = remoteWebUrl(remoteUrl)
   const status = pr ? prStatus(pr) : null
   const canMerge = !!pr && pr.state === 'open' && !pr.merged
@@ -207,6 +229,11 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
           <button className="icon-btn" title={t('prPage.refresh')} onClick={() => void load()} disabled={busy}>
             <RefreshCw size={14} />
           </button>
+          {aiEnabled && pr && (
+            <button className="icon-btn" title={t('sidebar.aiPrReview')} onClick={reviewWithAi}>
+              <Sparkles size={14} />
+            </button>
+          )}
           <button className="icon-btn" title={t('prPreview.open')} onClick={previewLocally}>
             <GitPullRequestArrow size={14} />
           </button>

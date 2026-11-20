@@ -76,7 +76,9 @@ top-level tab instead. If the repository is not open anywhere, the PR opens in a
 tab of its own.
 
 The work happens in the main column, and the sidebar says what the PR *is*, so
-you do not have to scroll through it.
+you do not have to scroll through it. With AI on, the ✨ button in the header
+reviews the PR's diff as the host reports it, so it works even for a branch you
+have never fetched (a fork, someone else's).
 
 The main column has three sections:
 
@@ -194,6 +196,20 @@ On a [Forgejo](#forgejo) server the same lists and pages work, with the
 profile's Forgejo token. Two things are GitHub's alone and stay empty there:
 Projects v2 fields, and the pull requests linked to an issue. Releases list the
 most recent ones, not the whole history.
+
+## Waiting for your review
+
+In the sidebar's pull request list, a 👁 marks the PRs where **you** are a
+reviewer who has not answered yet — on GitHub, GitLab and Forgejo alike. Who
+"you" are is asked of the host with the profile's credential and remembered for
+ten minutes. A token that cannot read its own user (no `read:user` on Forgejo,
+for example) marks nothing.
+
+With **Settings → Desktop notifications** on, a GitLab or Forgejo pull request
+that *starts* waiting for you raises one; clicking it opens the PR page. The
+first look at a repository only takes note of what is already waiting, so
+opening the app does not replay a backlog. GitHub's review requests are left to
+its notifications inbox, below, which already announces them.
 
 ## Notifications — GitHub and Forgejo
 

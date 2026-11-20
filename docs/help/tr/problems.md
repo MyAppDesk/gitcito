@@ -74,6 +74,28 @@ değer bir sorudur.
 Önem düzeyi rozetleri de süzer. Sönükken *hepsini göster* demektir; birini
 yakmak listeyi ona daraltır.
 
+## Testler
+
+Panelin üçüncü sekmesi projenin test paketini çalıştırır ve sonucu bir ağaç olarak gösterir: her test dosyası, içinde testleri, önce başarısızlar. Komut paletindeki **Testleri çalıştır** sekmeyi açar ve çalıştırmayı başlatır; sekmedeki ▶ düğmesi aynısını yapar, ↻ yeniden çalıştırır.
+
+| Satır | Tıklayınca |
+|---|---|
+| Başarısız bir test | Test dosyasını hatanın gösterdiği satırda açar ve hata mesajını satırın altında açar |
+| Geçen ya da atlanan bir test | Test dosyasını açar |
+| Hiçbir test çalışmadan başarısız olan bir dosya (sözdizimi hatası, bozuk import) | Dosyayı açar; mesajı onu neyin durdurduğunu söyler |
+
+**Yalnızca başarısızlar** sadece hataları bırakır; arama test adına göre, ya da tüm dosyayı tutmak için yola göre süzer.
+
+Çalıştırıcının kendi makine raporunu okur — `vitest run --reporter=json` veya `jest --json` — çıktısını değil; bu yüzden adlar, süreler ve mesajlar kesindir. Satır, hatanın yığınından gelir: testin başı değil, başarısız olan doğrulamadır.
+
+Sınırlar, açıkça:
+
+- **Yalnızca vitest ve jest**, deponun kökündeki `package.json` içinde bulunanlar; ikisi de varsa vitest kazanır. Bir monorepodaki her paketin paketi tek tek çalıştırılmaz.
+- **Yalnızca kurulu çalıştırıcı çalışır** — `node_modules` içindeki paket, doğrudan Node ile başlatılır (kabuk yok, yani hiçbir yol asla komut olarak okunmaz). Listede olup kurulu değilse sekme bunu söyler; sizin yerinize hiçbir şey indirilmez.
+- **Her seferinde tüm paket.** Henüz “yalnızca değiştirdiklerim” yok ve yavaş bir paket burada da terminaldeki kadar sürer. On dakika sonra durdurulur.
+- Çalıştırıcı raporunu yazmadan çökerse sekme yazdırdıklarını gösterir.
+- Projenin kodunu çalıştırır, tıpkı `npm test` gibi — istediğinizde, asla kendiliğinden değil.
+
 ## Sınırlar
 
 - **Dil sunucusu yok.** Bu bir tarama, bir arka plan servisi değil: yazarken

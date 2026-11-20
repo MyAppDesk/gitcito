@@ -58,7 +58,9 @@ abre como aba separada. Se o repositório não estiver aberto em nenhuma aba, o 
 abre numa aba própria.
 
 O trabalho fica na coluna principal, e a barra lateral diz o que o PR *é*, sem
-precisar rolar a tela.
+precisar rolar a tela. Com a IA ligada, o botão ✨ do cabeçalho revisa o diff do
+PR como o host o informa, então funciona mesmo para uma branch que você nunca
+baixou (um fork, de outra pessoa).
 
 A coluna principal tem três seções:
 
@@ -179,6 +181,20 @@ Num servidor [Forgejo](#forgejo), as mesmas listas e páginas funcionam, com o
 token Forgejo do perfil. Duas coisas são só do GitHub e ficam vazias lá: os
 campos do Projects v2 e os pull requests vinculados a uma issue. Releases
 listam as mais recentes, não o histórico inteiro.
+
+## Aguardando a sua revisão
+
+Na lista de pull requests da sidebar, um 👁 marca os PRs em que **você** é
+revisor e ainda não respondeu — no GitHub, no GitLab e no Forgejo. Quem é
+"você" é perguntado ao host com a credencial do perfil e lembrado por dez
+minutos. Um token que não consegue ler o próprio usuário (sem `read:user` no
+Forgejo, por exemplo) não marca nada.
+
+Com **Configurações → Notificações do sistema** ligado, um pull request do GitLab
+ou do Forgejo que *passa* a esperar por você dispara uma; clicar nela abre a
+página do PR. A primeira olhada num repositório só registra o que já está
+esperando, então abrir o app não repete o acúmulo. Os pedidos de review do GitHub
+ficam com a caixa de notificações dele, mais abaixo, que já avisa.
 
 ## Notificações — GitHub e Forgejo
 

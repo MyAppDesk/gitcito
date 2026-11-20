@@ -3,6 +3,8 @@ import { spawn, ChildProcess, execFile } from 'child_process'
 import { existsSync, readdirSync } from 'fs'
 import { join } from 'path'
 import { makeBatchedSender } from './ptyBatch'
+import { shellCwd } from './packageScripts'
+import { readCompletions, type CompletionKind } from './termCompletions'
 
 interface TermSession {
   write(data: string): void
@@ -10,6 +12,10 @@ interface TermSession {
   kill(): void
   /** Name of the foreground process running in the pty (e.g. zsh, claude, vim). */
   procName(): string
+  /** The shell's pid, to find its current directory (absent in basic mode). */
+  pid?: number
+  /** Where the session started — the fallback when the current dir is unknown. */
+  startCwd: string
 }
 
 let nextId = 1
@@ -66,6 +72,8 @@ function createPty(wc: WebContents, id: number, cwd: string, cols: number, rows:
       onExit(cb: () => void): void
       /** node-pty getter: title of the current foreground process. */
       readonly process: string
+      /** The shell's process id. */
+      readonly pid: number
     }
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const pty = require('node-pty') as {
@@ -135,7 +143,9 @@ function createPty(wc: WebContents, id: number, cwd: string, cols: number, rows:
         } catch {
           return ''
         }
-      }
+      },
+      pid: p.pid,
+      startCwd: cwd
     }
   } catch {
     return null
@@ -188,7 +198,8 @@ function createFallback(wc: WebContents, id: number, cwd: string): TermSession {
     },
     resize: () => undefined,
     kill: () => child.kill(),
-    procName: () => defaultShell().split('/').pop() || ''
+    procName: () => defaultShell().split('/').pop() || '',
+    startCwd: cwd
   }
 }
 
@@ -245,6 +256,14 @@ export function registerTerminalHandlers(): void {
     return id
   })
   ipcMain.handle('term:process', (_e, id: number) => sessions.get(id)?.procName() ?? '')
+  // What the terminal's suggestion list offers after `npm run`, `make`,
+  // `git checkout`…, read from the shell's current directory.
+  const KINDS: readonly CompletionKind[] = ['scripts', 'composer', 'make', 'branches']
+  ipcMain.handle('term:completions', async (_e, id: number, kind: unknown) => {
+    const s = sessions.get(id)
+    if (!s || !KINDS.includes(kind as CompletionKind)) return null
+    return readCompletions(kind as CompletionKind, (await shellCwd(s.pid)) ?? s.startCwd)
+  })
   ipcMain.handle('term:posh-themes', () => {
     const dir = poshThemeDir()
     if (!dir) return { dir: null, exe: null, themes: [] as string[] }

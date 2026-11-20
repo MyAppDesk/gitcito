@@ -146,6 +146,7 @@ export const ru: Dict = {
   'pr.merged': 'Влит',
   'pr.closed': 'Закрыт',
   'pr.blockedDownstack': 'Заблокирован ниже',
+  'pr.awaitingYourReview': 'Ждёт вашего ревью',
   'sidebar.stackNumbered': 'Стек #{n}',
   'sidebar.noTags': 'Тегов нет',
   'sidebar.noReleases': 'Релизы не загружены',

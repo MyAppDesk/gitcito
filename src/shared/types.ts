@@ -605,6 +605,10 @@ export interface PullRequest {
   ciSummary?: string
   /** owner/repo the head branch lives in (GitHub), to tell a fork's PRs apart. */
   headRepo?: string
+  /** Logins asked to review and not answered yet, as the list reports them. */
+  requestedReviewers?: string[]
+  /** You are one of those reviewers — the sidebar marks the row. */
+  awaitingYou?: boolean
 }
 
 export type HostingProvider = 'github' | 'azure' | 'gitlab' | 'bitbucket' | 'forgejo' | null

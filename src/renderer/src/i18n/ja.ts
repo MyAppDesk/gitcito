@@ -145,6 +145,7 @@ export const ja: Dict = {
   'pr.merged': 'マージ済み',
   'pr.closed': 'クローズ済み',
   'pr.blockedDownstack': '下位でブロック',
+  'pr.awaitingYourReview': 'あなたのレビュー待ち',
   'sidebar.stackNumbered': 'スタック #{n}',
   'sidebar.noTags': 'タグはありません',
   'sidebar.noReleases': '読み込まれたリリースはありません',

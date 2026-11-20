@@ -146,6 +146,7 @@ export const zhCN: Dict = {
   'pr.merged': '已合并',
   'pr.closed': '已关闭',
   'pr.blockedDownstack': '被下游挡住',
+  'pr.awaitingYourReview': '等待你的评审',
   'sidebar.stackNumbered': '堆栈 #{n}',
   'sidebar.noTags': '没有标签',
   'sidebar.noReleases': '未加载任何发布',

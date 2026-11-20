@@ -145,6 +145,7 @@ export const tr: Dict = {
   'pr.merged': 'Merge edildi',
   'pr.closed': 'Kapatıldı',
   'pr.blockedDownstack': 'Alttan engellendi',
+  'pr.awaitingYourReview': 'İncelemeni bekliyor',
   'sidebar.stackNumbered': 'Yığın #{n}',
   'sidebar.noTags': 'Etiket yok',
   'sidebar.noReleases': 'Yüklenmiş sürüm yok',

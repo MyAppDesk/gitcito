@@ -146,6 +146,7 @@ export const ar: Dict = {
   'pr.merged': 'مُدمج',
   'pr.closed': 'مغلق',
   'pr.blockedDownstack': 'محجوب من الأسفل',
+  'pr.awaitingYourReview': 'بانتظار مراجعتك',
   'sidebar.stackNumbered': 'الكومة #{n}',
   'sidebar.noTags': 'لا توجد وسوم',
   'sidebar.noReleases': 'لم تُحمَّل أي إصدارات',

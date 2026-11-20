@@ -146,6 +146,7 @@ export const ptBR: Dict = {
   'pr.merged': 'Mesclado',
   'pr.closed': 'Fechado',
   'pr.blockedDownstack': 'Bloqueado abaixo',
+  'pr.awaitingYourReview': 'Aguardando a sua revisão',
   'sidebar.stackNumbered': 'Pilha #{n}',
   'sidebar.noTags': 'Nenhuma tag',
   'sidebar.noReleases': 'Nenhum release carregado',

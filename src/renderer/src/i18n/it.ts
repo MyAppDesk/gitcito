@@ -145,6 +145,7 @@ export const it: Dict = {
   'pr.merged': 'Unita',
   'pr.closed': 'Chiusa',
   'pr.blockedDownstack': 'Bloccata più in basso',
+  'pr.awaitingYourReview': 'In attesa della tua revisione',
   'sidebar.stackNumbered': 'Pila #{n}',
   'sidebar.noTags': 'Nessun tag',
   'sidebar.noReleases': 'Nessuna release caricata',

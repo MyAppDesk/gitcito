@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { explainGitError } from '../lib/gitErrorHint'
 import type { DropRef } from '../lib/branchDrop'
 import type { ReactNode } from 'react'
 import type { CiState, DivergedStrategy, KeychainReason, RepoRef, ResetStrategy } from '../../../shared/types'
@@ -541,7 +542,9 @@ export const useUIStore = create<UIState>((set, get) => ({
   toast: (kind, message, opts) => {
     const id = ++toastId
     set({ toasts: [...get().toasts, { id, kind, message, ...(opts?.repoPath ? { repoPath: opts.repoPath } : {}) }] })
-    setTimeout(() => get().dismissToast(id), kind === 'error' ? 7000 : 3500)
+    // An explained error carries a next step to read and act on: it stays longer.
+    const ms = kind === 'error' ? (explainGitError(message) ? 15000 : 7000) : 3500
+    setTimeout(() => get().dismissToast(id), ms)
   },
   dismissToast: (id) => set({ toasts: get().toasts.filter((t) => t.id !== id) }),
 

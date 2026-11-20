@@ -6585,6 +6585,18 @@ body.col-resizing .node-ava {
   color: var(--accent) !important;
   background: none;
 }
+/* Git's own text behind an explained error — kept, readable, out of the way. */
+.toast-detail {
+  margin: 6px 0 0;
+  max-height: 160px;
+  overflow: auto;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: var(--bg-1);
+  font-size: 11px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
 .toast-more:hover {
   text-decoration: underline;
 }

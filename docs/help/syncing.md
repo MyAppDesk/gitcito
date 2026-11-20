@@ -43,6 +43,27 @@ asks for confirmation (list in the repo-settings gear).
 
 ![The confirmation a protected branch demands before a force-push](../screenshots/force-push-guard.webp)
 
+### When the host refuses
+
+Git's own error text is written for a terminal. For the refusals that have one
+clear cause, the error toast says what happened and what to do next, in your
+language, and stays on screen longer. **Details** shows git's original text, and
+copy, report and AI-fix still use the original text.
+
+| Error | What the toast tells you |
+|-------|--------------------------|
+| Workflow file pushed without the `workflow` scope | The file that triggered it, and the fix. That fix differs for a GitHub CLI / OAuth login (`gh auth refresh -h github.com -s workflow`) and for a personal access token (add the scope). |
+| File over GitHub's 100 MB limit | Which file it is, and to remove it from the commits or use Git LFS. |
+| Protected branch | Push to a new branch and open a pull request. |
+| No credential for the host | Which host it is, and where to connect an account. |
+| 403 / permission denied | The active profile's account cannot write here. |
+| Repository not found | The URL is wrong, or the account cannot see the repository. |
+| SSH key refused | Check the agent's key and your account. |
+
+The matching recognises these messages by their text. A host that words an error
+differently gets the raw message, as before. Non-fast-forward rejections and stale
+`.lock` files do not appear here, because they already open their own dialog.
+
 ### No remotes
 
 Push, pull and fetch need somewhere to go. A repository with none — a fresh

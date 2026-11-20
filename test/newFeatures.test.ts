@@ -1236,9 +1236,14 @@ describe('repoPulse activity + repoDetail (mission control)', () => {
     const R = cloneFixture('absorb')
     const p = await gitService.repoPulse(R)
     expect(p.activity).toHaveLength(14)
-    // The fixture's commits were made just now, so they land in the last bucket.
-    expect(p.activity[13]).toBeGreaterThan(0)
-    expect(p.activity.slice(0, 13).every((n) => n === 0)).toBe(true)
+    // The playground is generated once and reused, so its commits are as old as
+    // the playground — not "just now". Expect them in the bucket their age puts
+    // them in (the last one for a fresh playground), and nowhere else.
+    const at = Number(execFileSync('git', ['-C', R, 'log', '-1', '--format=%ct'], { encoding: 'utf8' }).trim())
+    const bucket = 13 - Math.floor((Date.now() / 1000 - at) / 86400)
+    // Older than the fortnight: every bucket is empty, which is the right answer too.
+    if (bucket >= 0) expect(p.activity[bucket]).toBeGreaterThan(0)
+    expect(p.activity.every((n, i) => i === bucket || n === 0)).toBe(true)
   })
 
   it('lists what is dirty and what is waiting to be pushed', async () => {

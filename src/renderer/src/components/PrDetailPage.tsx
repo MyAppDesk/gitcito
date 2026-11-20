@@ -84,7 +84,8 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   const [pr, setPr] = useState<PrDetail | null>(null)
   const [checks, setChecks] = useState<PrCheck[] | null>(null)
   // The check whose log is open under its row.
-  const [openLog, setOpenLog] = useState<number | null>(null)
+  // The check whose log is open, by its link: a refresh may reorder the list.
+  const [openLog, setOpenLog] = useState<string | null>(null)
   const [files, setFiles] = useState<PrFile[] | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -427,9 +428,9 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                     {c.hasLog && (
                       <button
                         className="prd-check-logs"
-                        title={openLog === i ? t('prPage.hideLog') : t('prPage.showLog')}
-                        aria-expanded={openLog === i}
-                        onClick={() => setOpenLog(openLog === i ? null : i)}
+                        title={openLog === c.url ? t('prPage.hideLog') : t('prPage.showLog')}
+                        aria-expanded={openLog === c.url}
+                        onClick={() => setOpenLog(openLog === c.url ? null : c.url)}
                       >
                         <ScrollText size={12} />
                       </button>
@@ -440,7 +441,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                       </button>
                     )}
                   </div>
-                  {openLog === i && <CheckLogPanel remoteUrl={remoteUrl} tokens={tokens} url={c.url} />}
+                  {openLog === c.url && <CheckLogPanel remoteUrl={remoteUrl} tokens={tokens} url={c.url} />}
                 </div>
               ))}
             </div>

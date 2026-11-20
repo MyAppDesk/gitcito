@@ -47,7 +47,7 @@ import { isProtectedBranch } from '../lib/repoConfig'
 import { commitHookFailureHint } from '../lib/commitLint'
 import { isLockErrorMessage, lockRepairPlan } from '../lib/gitLocks'
 import { forkUpstream, prsFromFork } from '../lib/hosting'
-import { newlyAwaitingReview, notifiesReviewRequests } from '../lib/reviewNotify'
+import { awaitingSeenKey, newlyAwaitingReview, notifiesReviewRequests } from '../lib/reviewNotify'
 import { parseRouteConflict } from '../lib/stackOrder'
 import { timeAgo } from '../lib/timeAgo'
 import { splitCommitMessage } from '../lib/commitMenuCapabilities'
@@ -604,7 +604,7 @@ async function doRefresh(path: string, slices: RefreshSlice[]): Promise<void> {
   }
 }
 
-/** Per repository, the PRs that were waiting for your review at the last look. */
+/** Per profile and repository, the PRs that were waiting for your review at the last look. */
 const awaitingSeen = new Map<string, Set<number>>()
 
 /**
@@ -613,9 +613,10 @@ const awaitingSeen = new Map<string, Set<number>>()
  * page. Off unless desktop notifications are on in Settings.
  */
 function announceReviewRequests(path: string, remoteUrl: string, provider: HostingProvider, prs: PullRequest[]): void {
-  const { fresh, seen } = newlyAwaitingReview(awaitingSeen.get(path), prs)
-  awaitingSeen.set(path, seen)
   const settings = useSettingsStore.getState()
+  const key = awaitingSeenKey(settings.settings.activeProfileId, path)
+  const { fresh, seen } = newlyAwaitingReview(awaitingSeen.get(key), prs)
+  awaitingSeen.set(key, seen)
   if (!fresh.length || !notifiesReviewRequests(provider) || !settings.settings.desktopNotifications) return
   const repoName = path.split(/[\\/]/).pop() ?? path
   for (const pr of fresh) {

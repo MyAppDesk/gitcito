@@ -3405,6 +3405,7 @@ export const ru: Dict = {
   'sidebar.openTagOnRemote': 'Открыть {name} на сервере',
   'sidebar.openRemoteOnWeb': 'Открыть {name} в браузере',
   'sidebar.aiPrReview': 'Ревью пул-реквеста от ИИ',
+  'aiReview.noDiff': 'Между этими ветками нет различий — проверять нечего.',
   'sidebar.newIssue': 'Новая задача',
   'common.expand': 'Развернуть',
   'common.collapse': 'Свернуть',

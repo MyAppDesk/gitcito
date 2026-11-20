@@ -58,7 +58,9 @@ abre como aba separada. Se o repositório não estiver aberto em nenhuma aba, o 
 abre numa aba própria.
 
 O trabalho fica na coluna principal, e a barra lateral diz o que o PR *é*, sem
-precisar rolar a tela.
+precisar rolar a tela. Com a IA ligada, o botão ✨ do cabeçalho revisa o diff do
+PR como o host o informa, então funciona mesmo para uma branch que você nunca
+baixou (um fork, de outra pessoa).
 
 A coluna principal tem três seções:
 
@@ -163,7 +165,8 @@ Limites:
 - Revisar, comentar e fazer merge de um pull request ainda abre no navegador.
   Por enquanto, essa tela de revisão é só do GitHub e do GitLab.
 - Só https, um servidor Forgejo por perfil.
-- As listas mostram os primeiros 50 pull requests e repositórios.
+- As listas param depois de vinte requisições: 1.000 pull requests ou
+  repositórios no tamanho de página padrão do servidor.
 
 ## Issues, milestones, releases — GitHub
 

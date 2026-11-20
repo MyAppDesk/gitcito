@@ -3413,6 +3413,7 @@ export const de: Dict = {
   'sidebar.openTagOnRemote': '{name} auf dem Remote öffnen',
   'sidebar.openRemoteOnWeb': '{name} im Web öffnen',
   'sidebar.aiPrReview': 'KI-PR-Review',
+  'aiReview.noDiff': 'Keine Unterschiede zwischen diesen Branches – nichts zu prüfen.',
   'sidebar.newIssue': 'Neues Issue',
   'common.expand': 'Ausklappen',
   'common.collapse': 'Einklappen',

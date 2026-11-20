@@ -3348,6 +3348,7 @@ export const tr: Dict = {
   'sidebar.openTagOnRemote': '{name} etiketini uzak sunucuda aç',
   'sidebar.openRemoteOnWeb': '{name} sunucusunu web’de aç',
   'sidebar.aiPrReview': 'Yapay zekâ PR incelemesi',
+  'aiReview.noDiff': 'Bu dallar arasında fark yok — incelenecek bir şey yok.',
   'sidebar.newIssue': 'Yeni sorun',
   'common.expand': 'Genişlet',
   'common.collapse': 'Daralt',

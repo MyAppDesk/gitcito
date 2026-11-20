@@ -3412,6 +3412,7 @@ export const en = {
   'sidebar.openTagOnRemote': 'Open {name} on remote',
   'sidebar.openRemoteOnWeb': 'Open {name} on web',
   'sidebar.aiPrReview': 'AI PR review',
+  'aiReview.noDiff': 'No differences between these branches — nothing to review.',
   'sidebar.newIssue': 'New issue',
   'common.expand': 'Expand',
   'common.collapse': 'Collapse',

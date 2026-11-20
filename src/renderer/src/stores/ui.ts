@@ -192,7 +192,7 @@ export type ModalSpec =
   | { kind: 'absorb'; repoPath: string }
   | { kind: 'time-machine'; repoPath: string }
   | { kind: 'timelapse'; repoPath: string }
-  | { kind: 'ai-pr-review'; repoPath: string; prTitle: string; sourceBranch: string; targetBranch: string }
+  | { kind: 'ai-pr-review'; repoPath: string; prTitle: string; sourceBranch: string; targetBranch: string; diff?: string }
   /** The colour picker. Deliberately knows nothing about what it is colouring:
    *  it is used by group tabs, folders and Repositories-page sections alike.
    *  `tabId` is optional so a page-local colour can reuse the same modal. */

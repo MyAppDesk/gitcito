@@ -658,24 +658,27 @@ async function listPullRequestsOf(
   // Azure DevOps
   if (!auth) throw await noCredential('Azure DevOps', remoteUrl)
   const base = `https://dev.azure.com/${parsed.owner}/${encodeURIComponent(parsed.project)}`
-  const data = await withAzureRetry(remoteUrl, auth, (token) =>
-    adoJson<{
-      value: Array<{
-        pullRequestId: number
-        title: string
-        isDraft: boolean
-        createdBy: { displayName: string }
-        sourceRefName: string
-        targetRefName: string
-      }>
-    }>(
-      `${base}/_apis/git/repositories/${encodeURIComponent(parsed.repo)}/pullrequests?searchCriteria.status=active&api-version=7.1`,
-      token
+  type AzPull = {
+    pullRequestId: number
+    title: string
+    isDraft: boolean
+    createdBy: { displayName: string }
+    sourceRefName: string
+    targetRefName: string
+  }
+  // Unpaged, the API stops at about a hundred; $top/$skip walk the rest.
+  const prs = await withAzureRetry(remoteUrl, auth, (token) =>
+    allPages((page) =>
+      adoJson<{ value: AzPull[] }>(
+        `${base}/_apis/git/repositories/${encodeURIComponent(parsed.repo)}/pullrequests` +
+          `?searchCriteria.status=active&$top=100&$skip=${(page - 1) * 100}&api-version=7.1`,
+        token
+      ).then((d) => d.value)
     )
   )
   return {
     provider: 'azure',
-    prs: data.value.map((p) => ({
+    prs: prs.map((p) => ({
       id: p.pullRequestId,
       title: p.title,
       author: p.createdBy.displayName,
@@ -1006,9 +1009,9 @@ async function glMergeRequestDetail(remoteUrl: string, token: string | undefined
       source_project_id?: number
       project_id?: number
     }>(`${mrUrl}?with_labels_details=true`, auth),
-    glJson<Array<{ id: string; notes: GlNote[] }>>(`${mrUrl}/discussions?per_page=100`, auth).catch(
-      () => [] as Array<{ id: string; notes: GlNote[] }>
-    ),
+    allPages((page) =>
+      glJson<Array<{ id: string; notes: GlNote[] }>>(`${mrUrl}/discussions?per_page=100&page=${page}`, auth)
+    ).catch(() => [] as Array<{ id: string; notes: GlNote[] }>),
     glJson<{ approved_by?: Array<{ user: GlUser | null }> }>(`${mrUrl}/approvals`, auth).catch(() => ({
       approved_by: []
     })),
@@ -1240,6 +1243,19 @@ interface GhUser {
   avatar_url?: string
 }
 
+/** An inline review comment on a GitHub PR. */
+interface GhReviewComment {
+  id: number
+  user: GhUser | null
+  body: string
+  created_at: string
+  path: string
+  line: number | null
+  original_line: number | null
+  diff_hunk: string
+  in_reply_to_id?: number
+}
+
 async function pullRequestDetail(
   remoteUrl: string,
   tokens: HostTokens,
@@ -1276,27 +1292,19 @@ async function pullRequestDetail(
       changed_files?: number
       commits?: number
     }>(`${api}/pulls/${number}`, token),
-    ghJson<Array<{ user: GhUser | null; body: string; created_at: string }>>(
-      `${api}/issues/${number}/comments?per_page=100`,
-      token
+    // Every page: a long discussion used to stop at its first 100 comments.
+    allPages((page) =>
+      ghJson<Array<{ user: GhUser | null; body: string; created_at: string }>>(
+        `${api}/issues/${number}/comments?per_page=100&page=${page}`,
+        token
+      )
     ),
-    ghJson<Array<{ user: GhUser | null; state: string }>>(
-      `${api}/pulls/${number}/reviews?per_page=100`,
-      token
+    allPages((page) =>
+      ghJson<Array<{ user: GhUser | null; state: string }>>(`${api}/pulls/${number}/reviews?per_page=100&page=${page}`, token)
     ),
-    ghJson<
-      Array<{
-        id: number
-        user: GhUser | null
-        body: string
-        created_at: string
-        path: string
-        line: number | null
-        original_line: number | null
-        diff_hunk: string
-        in_reply_to_id?: number
-      }>
-    >(`${api}/pulls/${number}/comments?per_page=100`, token).catch(() => [])
+    allPages((page) =>
+      ghJson<GhReviewComment[]>(`${api}/pulls/${number}/comments?per_page=100&page=${page}`, token)
+    ).catch(() => [] as GhReviewComment[])
   ])
 
   // Group inline review comments into threads. Replies (in_reply_to_id) attach to

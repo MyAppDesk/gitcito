@@ -1,3 +1,4 @@
+import { prRemoteIdentity } from '../src/renderer/src/lib/hosting'
 import { describe, it, expect } from 'vitest'
 import {
   checkCounts,
@@ -125,4 +126,9 @@ describe('allPages', () => {
     const capped = await allPages(async () => Array.from({ length: 100 }, () => 0), 2)
     expect(capped).toHaveLength(200)
   })
+})
+
+it('keeps credentials out of saved PR tab identities', () => {
+  expect(prRemoteIdentity('https://user:fixture@gitlab.com/group/repo.git?extra=value')).toBe('https://gitlab.com/group/repo.git')
+  expect(prRemoteIdentity('git@github.com:team/repo.git')).toBe('git@github.com:team/repo.git')
 })

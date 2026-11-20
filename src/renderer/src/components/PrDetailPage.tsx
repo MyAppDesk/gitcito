@@ -24,10 +24,11 @@ import {
   CalendarDays
 } from 'lucide-react'
 import type { PageContent, PrCheck, PrDetail, PrFile, PrMergeMethod, PrReviewEvent } from '../../../shared/types'
-import { hostingApi } from '../infrastructure/api'
+import { hostingApi, shellApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { useRepoStore } from '../stores/repo'
+import { prRemoteIdentity } from '../lib/hosting'
 import { autolink, remoteWebUrl } from '../lib/autolink'
 import {
   checkCounts,
@@ -179,7 +180,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   const previewLocally = (): void => {
     const remotes = useRepoStore.getState().repos[repoPath]?.remotes ?? []
     const stripped = (u: string): string => u.replace(/\.git$/, '').replace(/\/+$/, '')
-    const remote = remotes.find((r) => stripped(r.url) === stripped(remoteUrl))?.name
+    const remote = remotes.find((r) => stripped(prRemoteIdentity(r.url)) === stripped(remoteUrl))?.name
     useUIStore.getState().openModal({ kind: 'pr-preview', repoPath, number, remote })
   }
 
@@ -210,7 +211,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
             <GitPullRequestArrow size={14} />
           </button>
           {pr && (
-            <button className="icon-btn" title={t('common.openInBrowser')} onClick={() => void window.api.openExternal(pr.url)}>
+            <button className="icon-btn" title={t('common.openInBrowser')} onClick={() => void shellApi.openExternal(pr.url)}>
               <ExternalLink size={14} />
             </button>
           )}
@@ -382,7 +383,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                   <span className="prd-check-name">{c.name}</span>
                   <span className="prd-check-state">{c.status === 'completed' ? c.conclusion : c.status}</span>
                   {c.url && (
-                    <button className="prd-check-logs" title={t('prDetail.viewLogs')} onClick={() => void window.api.openExternal(c.url)}>
+                    <button className="prd-check-logs" title={t('prDetail.viewLogs')} onClick={() => void shellApi.openExternal(c.url)}>
                       <ExternalLink size={12} />
                     </button>
                   )}
@@ -735,7 +736,7 @@ function FilesSection({
               <div className="prp-no-patch">
                 <p>{t('prPage.noPatch')}</p>
                 <button className="btn ghost small" // GitHub lists a PR's files at /files, GitLab an MR's at /diffs.
-                  onClick={() => void window.api.openExternal(`${prUrl}${prUrl.includes('/-/merge_requests/') ? '/diffs' : '/files'}`)}>
+                  onClick={() => void shellApi.openExternal(`${prUrl}${prUrl.includes('/-/merge_requests/') ? '/diffs' : '/files'}`)}>
                   <ExternalLink size={13} /> {t('common.openInBrowser')}
                 </button>
               </div>

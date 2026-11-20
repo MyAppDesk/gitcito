@@ -664,6 +664,28 @@ export const shots = [
     }
   },
   {
+    out: 'pull-request-page',
+    repos: ['octopus-merge'],
+    drive: async (page, repos, app) => {
+      await app.evaluate(({ ipcMain }) => {
+        for (const method of ['prDetail', 'prChecks', 'prFiles']) ipcMain.removeHandler('hosting:' + method)
+        ipcMain.handle('hosting:prDetail', () => ({
+          number: 42, title: 'Add workspace search', author: 'sam', source: 'workspace-search', target: 'main',
+          body: 'Search filenames across open repositories from the command palette.',
+          state: 'open', draft: false, merged: false, mergeable: true, url: 'https://github.com/example/workspace/pull/42',
+          comments: [], reviews: [], reviewThreads: [], requestedReviewers: [{ login: 'alex' }],
+          labels: [{ name: 'enhancement', color: '84c5dd' }], commits: 3, changedFiles: 2, additions: 84, deletions: 12
+        }))
+        ipcMain.handle('hosting:prChecks', () => [])
+        ipcMain.handle('hosting:prFiles', () => [])
+      })
+      await page.evaluate((repoPath) => window.__shot.settings.getState().openPageTab({
+        type: 'pr', repoPath, remoteUrl: 'https://github.com/example/workspace.git', number: 42, title: 'Add workspace search'
+      }), repos['octopus-merge'])
+      await page.locator('.prp-head h2').waitFor()
+    }
+  },
+  {
     // Settings → Shortcuts tab (rebindable shortcut editor).
     out: 'settings-shortcuts',
     repos: ['octopus-merge'],

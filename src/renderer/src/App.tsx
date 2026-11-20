@@ -242,7 +242,7 @@ function PageBody({ page }: { page: PageContent }): React.JSX.Element | null {
     case 'devtools':
       return <DevToolsPage launchId={page.launchId} url={page.url} label={page.label} tool={page.tool} />
     case 'pr':
-      return <PrDetailPage page={page} />
+      return <PrDetailPage key={JSON.stringify([page.repoPath, page.remoteUrl, page.number])} page={page} />
     default:
       return null
   }
@@ -286,7 +286,7 @@ function PageView({ tab }: { tab: PageTab }): React.JSX.Element {
     case 'milestone':
       return <MilestoneDetailPage page={tab.page} />
     case 'pr':
-      return <PrDetailPage page={tab.page} />
+      return <PrDetailPage key={JSON.stringify([tab.page.repoPath, tab.page.remoteUrl, tab.page.number])} page={tab.page} />
     default:
       return <Welcome />
   }

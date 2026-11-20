@@ -40,6 +40,7 @@ import { focusOpenRepo } from '../lib/tabLookup'
 import { planWorktreeGroup } from '../lib/worktrees'
 import { applyRepoAlias, canonicalRepoPath, migrateRepoAliases, repoDisplayName } from '../lib/repoAlias'
 import { sortBookmarks } from '../lib/bookmarks'
+import { prRemoteIdentity } from '../lib/hosting'
 import { planAttach, planClose } from '../lib/tabPages'
 import {
   clearDoneTodos,
@@ -697,6 +698,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     })),
 
   openPageTab: (page, opts) => {
+    if (page.type === 'pr') page = { ...page, remoteUrl: prRemoteIdentity(page.remoteUrl) }
     leaveMission()
     // A repo-scoped page rides on its repository's tab rather than taking one of
     // its own. When there is no such tab — the repo lives in a group, or is not

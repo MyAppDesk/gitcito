@@ -66,6 +66,8 @@ parent costs one more request per refresh.
 
 ## Reviewing — GitHub and GitLab
 
+![Pull request page with conversation and reviewer sidebar](../screenshots/pull-request-page.webp)
+
 Clicking a pull request opens it as a **page of its own**. It rides on its
 repository like the wiki does: an icon with the PR number on the repository's
 tab, or on its chip inside a group. Click the icon again, or the repository's

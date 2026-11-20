@@ -320,7 +320,7 @@ async function clipFor(page, shot) {
 async function capturePngTheme(shot, theme) {
   const { app, page, userDataDir } = await launch(shot, theme)
   try {
-    if (shot.drive) await shot.drive(page, repoPathsFor(shot))
+    if (shot.drive) await shot.drive(page, repoPathsFor(shot), app)
     await settle(page)
     const suffix = (shot.themes ?? ['dark']).length > 1 ? `-${theme}` : ''
     const file = join(OUT_DIR, `${shot.out}${suffix}.webp`)

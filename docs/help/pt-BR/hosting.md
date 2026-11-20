@@ -48,6 +48,8 @@ atualizada.
 
 ## Revisando — GitHub e GitLab
 
+![Página do pull request com conversa e revisores](../../screenshots/pull-request-page.webp)
+
 Clicar num pull request abre ele como uma **página própria**. Ela fica presa ao
 repositório, como o wiki: um ícone com o número do PR na aba do repositório, ou
 no chip dele dentro de um grupo. Clique no ícone de novo, ou no nome do

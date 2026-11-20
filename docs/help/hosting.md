@@ -178,7 +178,8 @@ Limits:
 - Reviewing, commenting on and merging a pull request still opens in the
   browser. That review surface is GitHub and GitLab only for now.
 - https only, one Forgejo server per profile.
-- Lists show the first 50 pull requests and repositories.
+- Lists stop after twenty requests: 1,000 pull requests or repositories at the
+  server's default page size.
 
 ## Issues, milestones, releases — GitHub
 

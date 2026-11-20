@@ -163,7 +163,8 @@ Limites:
 - Revisar, comentar e fazer merge de um pull request ainda abre no navegador.
   Por enquanto, essa tela de revisão é só do GitHub e do GitLab.
 - Só https, um servidor Forgejo por perfil.
-- As listas mostram os primeiros 50 pull requests e repositórios.
+- As listas param depois de vinte requisições: 1.000 pull requests ou
+  repositórios no tamanho de página padrão do servidor.
 
 ## Issues, milestones, releases — GitHub
 

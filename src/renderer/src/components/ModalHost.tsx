@@ -2177,7 +2177,9 @@ export function ModalHost(): React.JSX.Element {
           >
             <motion.div
               className={`modal ${
-                modal.kind === 'settings' || modal.kind === 'ai-config-wizard'
+                modal.kind === 'settings'
+                  ? 'modal-wide modal-settings'
+                  : modal.kind === 'ai-config-wizard'
                   ? 'modal-wide'
                   : modal.kind === 'interactive-rebase' ||
                       modal.kind === 'branch-compare' ||

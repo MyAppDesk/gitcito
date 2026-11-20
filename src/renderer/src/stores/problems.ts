@@ -72,6 +72,9 @@ export interface ProblemsState {
   setFailedOnly(on: boolean): void
 }
 
+/** Per repository, the id of the test run whose result the panel should show. */
+const testRun: Record<string, number> = {}
+
 export const useProblemsStore = create<ProblemsState>((set, get) => ({
   resultByRepo: {},
   runningByRepo: {},
@@ -174,22 +177,28 @@ export const useProblemsStore = create<ProblemsState>((set, get) => ({
 
   runTests: async (repoPath) => {
     if (get().testRunningByRepo[repoPath]) return
-    // Ask again: dependencies may have been installed since the panel opened.
-    await get().detectTests(repoPath)
-    if (!get().testRunnerByRepo[repoPath]?.installed) return // the panel says why, translated
+    // Marked before any await, so a double click starts one run, not two.
+    const run = (testRun[repoPath] = (testRun[repoPath] ?? 0) + 1)
+    const current = (): boolean => testRun[repoPath] === run
     set((s) => ({ testRunningByRepo: { ...s.testRunningByRepo, [repoPath]: true } }))
     try {
+      // Ask again: dependencies may have been installed since the panel opened.
+      await get().detectTests(repoPath)
+      if (!get().testRunnerByRepo[repoPath]?.installed) return // the panel says why, translated
       const result = await window.api.tests.run(repoPath)
-      // A stopped run has nothing to show; keep what the last real run said.
-      if (!result.cancelled && !result.unavailable) set((s) => ({ testByRepo: { ...s.testByRepo, [repoPath]: result } }))
+      // A stopped run has nothing to show, and neither has one a newer run replaced.
+      if (current() && !result.cancelled && !result.unavailable)
+        set((s) => ({ testByRepo: { ...s.testByRepo, [repoPath]: result } }))
     } catch (e) {
-      useUIStore.getState().toast('error', e instanceof Error ? e.message : String(e))
+      if (current()) useUIStore.getState().toast('error', e instanceof Error ? e.message : String(e))
     } finally {
-      set((s) => ({ testRunningByRepo: { ...s.testRunningByRepo, [repoPath]: false } }))
+      if (current()) set((s) => ({ testRunningByRepo: { ...s.testRunningByRepo, [repoPath]: false } }))
     }
   },
 
   cancelTests: (repoPath) => {
+    // The cancelled run is no longer current: whatever it returns is ignored.
+    testRun[repoPath] = (testRun[repoPath] ?? 0) + 1
     window.api.tests.cancel(repoPath)
     set((s) => ({ testRunningByRepo: { ...s.testRunningByRepo, [repoPath]: false } }))
   },

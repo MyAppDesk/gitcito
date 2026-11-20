@@ -172,14 +172,16 @@ function nodeCommand(): { cmd: string; env: Record<string, string> } {
   return { cmd: process.execPath, env: { ELECTRON_RUN_AS_NODE: '1' } }
 }
 
-const running = new Map<string, ChildProcess>()
-/** Runs the user stopped: their result is dropped, not shown as a failure. */
-const cancelled = new Set<string>()
+/** The run in flight per repository, by its id — a cancelled run must not be confused with the next one. */
+const running = new Map<string, { child: ChildProcess; id: number }>()
+/** Ids of runs the user stopped: their result is dropped, not shown as a failure. */
+const cancelled = new Set<number>()
+let nextRunId = 1
 
 export async function runTests(repoPath: string): Promise<TestRunResult> {
   const started = Date.now()
   cancelTests(repoPath)
-  cancelled.delete(repoPath)
+  const runId = nextRunId++
   const { runner } = installedRunner(repoPath)
   const entry = runner ? runnerEntry(repoPath, runner) : null
   // Not a failure to report in English: the panel already says which, translated.
@@ -208,15 +210,15 @@ export async function runTests(repoPath: string): Promise<TestRunResult> {
       },
       // A failing suite exits non-zero — that is the normal case, not an error.
       (err, stdout, stderr) =>
-        done({ printed: `${stderr}\n${stdout}`, timedOut: !!err && err.killed === true && !cancelled.has(repoPath) })
+        done({ printed: `${stderr}\n${stdout}`, timedOut: !!err && err.killed === true && !cancelled.has(runId) })
     )
-    running.set(repoPath, child)
+    running.set(repoPath, { child, id: runId })
   })
-  running.delete(repoPath)
+  if (running.get(repoPath)?.id === runId) running.delete(repoPath)
   const ms = Date.now() - started
   const json = await readFile(out, 'utf8').catch(() => null)
   await rm(dir, { recursive: true, force: true })
-  if (cancelled.delete(repoPath)) return { runner, files: [], passed: 0, failed: 0, skipped: 0, ms, cancelled: true }
+  if (cancelled.delete(runId)) return { runner, files: [], passed: 0, failed: 0, skipped: 0, ms, cancelled: true }
   if (!json) {
     const tail = stripAnsi(printed).trim().slice(-MESSAGE_CAP)
     return { runner, files: [], passed: 0, failed: 0, skipped: 0, ms, error: tail, ...(timedOut ? { timedOut: true } : {}) }
@@ -225,11 +227,11 @@ export async function runTests(repoPath: string): Promise<TestRunResult> {
 }
 
 export function cancelTests(repoPath: string): void {
-  const child = running.get(repoPath)
-  if (!child) return
-  cancelled.add(repoPath)
+  const run = running.get(repoPath)
+  if (!run) return
+  cancelled.add(run.id)
   try {
-    child.kill()
+    run.child.kill()
   } catch {
     /* already gone */
   }

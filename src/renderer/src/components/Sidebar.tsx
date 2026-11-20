@@ -89,6 +89,13 @@ import type { BranchInfo, MergeRiskKind, ReleaseInfo, RemoteBranchInfo, StashInf
 
 import { RemoteIcon } from './RemoteIcon'
 
+/** The Forgejo servers the profiles point at, read when a menu is built. */
+const forgejoInstances = (): string[] =>
+  useSettingsStore
+    .getState()
+    .settings.profiles.map((p) => p.forgejoUrl?.trim() ?? '')
+    .filter(Boolean)
+
 /** The self-managed GitLabs the profiles point at, read when a menu is built. */
 const gitlabInstances = (): string[] =>
   useSettingsStore
@@ -1429,7 +1436,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   const prMenu = (pr: PullRequest, remote?: RemoteInfo): MenuItem[] => {
     const origin = remote ?? hostOrigin()
     return [
-      ...(repoSupportsPrReview(repo.remotes, gitlabInstances()) && origin
+      ...(repoSupportsPrReview(repo.remotes, gitlabInstances(), forgejoInstances()) && origin
         ? [
             {
               label: t('sidebar.openDetails'),
@@ -1880,7 +1887,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
           onKeyDown={keyActivate}
           onClick={() => {
             // Rich PR detail exists for GitHub and GitLab; other hosts open in browser.
-            if (!repoSupportsPrReview(repo.remotes, gitlabInstances())) {
+            if (!repoSupportsPrReview(repo.remotes, gitlabInstances(), forgejoInstances())) {
               void window.api.openExternal(pr.url)
               return
             }

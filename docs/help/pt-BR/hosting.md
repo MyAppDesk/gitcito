@@ -154,7 +154,7 @@ A partir daí, os remotes nesse servidor são Forgejo:
 | Funciona | Como |
 |----------|------|
 | Push e fetch | Login com o token do perfil |
-| Pull requests abertos | Listados na sidebar, como em qualquer host |
+| Pull requests abertos | Listados na sidebar, e abrem na [página do pull request](#revisando--github-e-gitlab): conversa, diff de cada arquivo, checks (status de commit, incluindo o Forgejo Actions), comentar, aprovar, pedir mudanças, e merge / squash / rebase |
 | Criar pull request | Pelo app; um rascunho leva o prefixo `WIP:` que o Forgejo usa |
 | Navegador de clone, criar repositório | Nesse servidor, na sua conta ou numa organização |
 
@@ -164,8 +164,9 @@ servidor padrão para onde cair.
 
 Limites:
 
-- Revisar, comentar e fazer merge de um pull request ainda abre no navegador.
-  Por enquanto, essa tela de revisão é só do GitHub e do GitLab.
+- As threads de comentário de linha aparecem, mas não dá para responder pelo
+  app: o Forgejo não tem API para responder dentro de uma thread existente.
+  Responda no servidor.
 - Só https, um servidor Forgejo por perfil.
 - As listas param depois de vinte requisições: 1.000 pull requests ou
   repositórios no tamanho de página padrão do servidor.

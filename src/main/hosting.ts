@@ -13,6 +13,12 @@ import { activeProfileAuth, allProfileAuth, boundProfileAuth, profileForgejoInst
 import {
   createForgejoPull,
   createForgejoRepo,
+  forgejoComment,
+  forgejoMerge,
+  forgejoPullChecks,
+  forgejoPullDetail,
+  forgejoPullFiles,
+  forgejoReview,
   describeForgejoAccount,
   fjJson,
   forgejoCompareUrl,
@@ -1282,6 +1288,19 @@ interface GhUser {
   avatar_url?: string
 }
 
+/** Resolve a Forgejo remote to its instance, owner/repo and token — through
+ *  remoteApiToken, so only the profile owning that instance's token is used. */
+async function fjRepoOf(
+  remoteUrl: string,
+  sent: string | undefined
+): Promise<{ base: string; owner: string; repo: string; token: string }> {
+  const parsed = parseRemoteUrl(remoteUrl)
+  if (!parsed || parsed.provider !== 'forgejo' || !parsed.base) throw new Error('Not a Forgejo repository.')
+  const auth = await remoteApiToken(remoteUrl, 'forgejo', sent)
+  if (!auth) throw await noCredential('Forgejo', remoteUrl)
+  return { base: parsed.base, owner: parsed.owner, repo: parsed.repo, token: auth.token }
+}
+
 /** An inline review comment on a GitHub PR. */
 interface GhReviewComment {
   id: number
@@ -1301,6 +1320,10 @@ async function pullRequestDetail(
   number: number
 ): Promise<PrDetail> {
   if (parseRemoteUrl(remoteUrl)?.provider === 'gitlab') return glMergeRequestDetail(remoteUrl, tokens.gitlab, number)
+  if (parseRemoteUrl(remoteUrl)?.provider === 'forgejo') {
+    const f = await fjRepoOf(remoteUrl, tokens.forgejo)
+    return forgejoPullDetail(f.base, f.owner, f.repo, f.token, number)
+  }
   const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
   const api = `https://api.github.com/repos/${owner}/${repo}`
   const [pr, comments, reviews, reviewComments] = await Promise.all([
@@ -1425,6 +1448,10 @@ async function pullRequestChecks(
   number: number
 ): Promise<PrCheck[]> {
   if (parseRemoteUrl(remoteUrl)?.provider === 'gitlab') return glMergeRequestChecks(remoteUrl, tokens.gitlab, number)
+  if (parseRemoteUrl(remoteUrl)?.provider === 'forgejo') {
+    const f = await fjRepoOf(remoteUrl, tokens.forgejo)
+    return forgejoPullChecks(f.base, f.owner, f.repo, f.token, number)
+  }
   const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
   const api = `https://api.github.com/repos/${owner}/${repo}`
   const pr = await ghJson<{ head: { sha: string } }>(`${api}/pulls/${number}`, token)
@@ -1446,6 +1473,10 @@ async function pullRequestFiles(
   number: number
 ): Promise<PrFile[]> {
   if (parseRemoteUrl(remoteUrl)?.provider === 'gitlab') return glMergeRequestFiles(remoteUrl, tokens.gitlab, number)
+  if (parseRemoteUrl(remoteUrl)?.provider === 'forgejo') {
+    const f = await fjRepoOf(remoteUrl, tokens.forgejo)
+    return forgejoPullFiles(f.base, f.owner, f.repo, f.token, number)
+  }
   const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
   type GhFile = {
     filename: string
@@ -1479,6 +1510,10 @@ async function replyReviewComment(
   body: string
 ): Promise<void> {
   // GitHub threads reply to a numeric comment id; GitLab to a discussion id string.
+  if (parseRemoteUrl(remoteUrl)?.provider === 'forgejo') {
+    // The page hides the reply box for Forgejo; this guards any other caller.
+    throw new Error('Forgejo has no API to reply inside a line thread — reply on the host.')
+  }
   if (parseRemoteUrl(remoteUrl)?.provider === 'gitlab') {
     return glReplyReviewComment(remoteUrl, tokens.gitlab, number, String(inReplyTo), body)
   }
@@ -1496,6 +1531,10 @@ async function commentOnPr(
   body: string
 ): Promise<void> {
   if (parseRemoteUrl(remoteUrl)?.provider === 'gitlab') return glCommentOnMr(remoteUrl, tokens.gitlab, number, body)
+  if (parseRemoteUrl(remoteUrl)?.provider === 'forgejo') {
+    const f = await fjRepoOf(remoteUrl, tokens.forgejo)
+    return forgejoComment(f.base, f.owner, f.repo, f.token, number, body)
+  }
   const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
   await ghJson(`https://api.github.com/repos/${owner}/${repo}/issues/${number}/comments`, token, {
     method: 'POST',
@@ -1511,6 +1550,10 @@ async function reviewPr(
   body: string
 ): Promise<void> {
   if (parseRemoteUrl(remoteUrl)?.provider === 'gitlab') return glReviewMr(remoteUrl, tokens.gitlab, number, event, body)
+  if (parseRemoteUrl(remoteUrl)?.provider === 'forgejo') {
+    const f = await fjRepoOf(remoteUrl, tokens.forgejo)
+    return forgejoReview(f.base, f.owner, f.repo, f.token, number, event, body)
+  }
   const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
   await ghJson(`https://api.github.com/repos/${owner}/${repo}/pulls/${number}/reviews`, token, {
     method: 'POST',
@@ -1525,6 +1568,10 @@ async function mergePr(
   method: PrMergeMethod
 ): Promise<void> {
   if (parseRemoteUrl(remoteUrl)?.provider === 'gitlab') return glMergeMr(remoteUrl, tokens.gitlab, number, method)
+  if (parseRemoteUrl(remoteUrl)?.provider === 'forgejo') {
+    const f = await fjRepoOf(remoteUrl, tokens.forgejo)
+    return forgejoMerge(f.base, f.owner, f.repo, f.token, number, method)
+  }
   const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
   await ghJson(`https://api.github.com/repos/${owner}/${repo}/pulls/${number}/merge`, token, {
     method: 'PUT',

@@ -7,6 +7,13 @@ import type {
   IssueDetail,
   IssueInfo,
   MilestoneInfo,
+  PrCheck,
+  PrDetail,
+  PrFile,
+  PrMergeMethod,
+  PrReview,
+  PrReviewEvent,
+  PrReviewThread,
   PullRequest,
   ReleaseInfo,
   RemoteOwner,
@@ -212,6 +219,255 @@ export async function describeForgejoAccount(base: string, token: string): Promi
     profileUrl: user.html_url ?? `${base}/${user.login}`,
     orgs: orgs.filter(orgLogin).map((o) => ({ login: orgLogin(o), avatarUrl: o.avatar_url, url: `${base}/${orgLogin(o)}` }))
   }
+}
+
+// ─── Pull request review ────────────────────────────────────────────────────
+// The PR page's GitHub/GitLab surface, for Forgejo. One gap: Forgejo has no
+// API to reply inside an existing line thread, so threads are read-only here.
+
+/** GET a non-JSON body (the PR's .diff). */
+async function fjText(url: string, token: string): Promise<string> {
+  const res = await fetch(url, { headers: { Authorization: `token ${token}` } })
+  if (!res.ok) throw new Error(`Forgejo API error (${res.status})`)
+  return res.text()
+}
+
+const repoApi = (base: string, owner: string, repo: string): string =>
+  `${api(base)}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`
+
+/**
+ * One unified diff for the whole PR, split into a file each — Forgejo's file
+ * list endpoint carries no patch, but `/pulls/:n.diff` has them all.
+ */
+export function splitUnifiedDiff(diff: string): PrFile[] {
+  const files: PrFile[] = []
+  const chunks = diff.split(/^(?=diff --git )/m).filter((c) => c.startsWith('diff --git '))
+  for (const chunk of chunks) {
+    const header = /^diff --git a\/(.+?) b\/(.+)$/m.exec(chunk)
+    if (!header) continue
+    let [, oldPath, newPath] = header
+    const renameFrom = /^rename from (.+)$/m.exec(chunk)?.[1]
+    const renameTo = /^rename to (.+)$/m.exec(chunk)?.[1]
+    if (renameFrom && renameTo) [oldPath, newPath] = [renameFrom, renameTo]
+    const status = /^new file mode/m.test(chunk)
+      ? 'added'
+      : /^deleted file mode/m.test(chunk)
+        ? 'removed'
+        : renameFrom
+          ? 'renamed'
+          : 'modified'
+    const hunkAt = chunk.search(/^@@ /m)
+    const patch = hunkAt >= 0 ? chunk.slice(hunkAt).replace(/\n$/, '') : ''
+    let additions = 0
+    let deletions = 0
+    for (const line of patch.split('\n')) {
+      if (line.startsWith('+')) additions++
+      else if (line.startsWith('-')) deletions++
+    }
+    files.push({
+      filename: status === 'removed' ? oldPath : newPath,
+      status,
+      additions,
+      deletions,
+      ...(patch ? { patch } : {}),
+      ...(status === 'renamed' ? { previousFilename: oldPath } : {})
+    })
+  }
+  return files
+}
+
+interface FjDetail extends FjPull {
+  body?: string
+  state: string
+  merged: boolean
+  mergeable: boolean
+  created_at: string
+  updated_at: string
+  closed_at: string | null
+  merged_at: string | null
+  merged_by: FjUser | null
+  assignees?: FjUser[] | null
+  requested_reviewers?: FjUser[] | null
+  labels?: Array<{ name: string; color?: string }> | null
+  milestone: { title: string } | null
+  additions?: number
+  deletions?: number
+  changed_files?: number
+  base?: { ref?: string; repo?: { full_name?: string } | null }
+  user?: FjUser
+}
+
+interface FjReview {
+  id: number
+  state: string
+  dismissed?: boolean
+  user: FjUser | null
+  body?: string
+  submitted_at?: string
+}
+
+interface FjReviewComment {
+  id: number
+  body: string
+  user: FjUser | null
+  path: string
+  line?: number
+  original_position?: number
+  position?: number
+  diff_hunk?: string
+  created_at: string
+}
+
+/** Forgejo review states → the ones the PR page understands. A pending review
+ *  or a review request is not a decision, so it is left out. */
+export function mapForgejoReviewState(r: Pick<FjReview, 'state' | 'dismissed'>): PrReview['state'] | null {
+  if (r.dismissed) return 'DISMISSED'
+  switch (r.state) {
+    case 'APPROVED':
+      return 'APPROVED'
+    case 'REQUEST_CHANGES':
+      return 'CHANGES_REQUESTED'
+    case 'COMMENT':
+      return 'COMMENTED'
+    default:
+      return null
+  }
+}
+
+export async function forgejoPullDetail(
+  base: string,
+  owner: string,
+  repo: string,
+  token: string,
+  number: number
+): Promise<PrDetail> {
+  const r = repoApi(base, owner, repo)
+  const [pr, comments, reviews] = await Promise.all([
+    fjJson<FjDetail>(`${r}/pulls/${number}`, token),
+    fjJson<Array<{ user: FjUser | null; body: string; created_at: string }>>(
+      `${r}/issues/${number}/comments?limit=50`,
+      token
+    ).catch(() => []),
+    fjJson<FjReview[]>(`${r}/pulls/${number}/reviews?limit=50`, token).catch(() => [] as FjReview[])
+  ])
+  // Line comments hang off each review; one request per review that has any.
+  const reviewThreads: PrReviewThread[] = []
+  for (const rv of reviews) {
+    const lineComments = await fjJson<FjReviewComment[]>(`${r}/pulls/${number}/reviews/${rv.id}/comments`, token).catch(
+      () => [] as FjReviewComment[]
+    )
+    for (const c of lineComments) {
+      reviewThreads.push({
+        path: c.path,
+        line: c.line ?? c.position ?? c.original_position ?? null,
+        diffHunk: c.diff_hunk ?? '',
+        rootId: c.id,
+        comments: [{ id: c.id, author: c.user?.login ?? 'unknown', body: c.body, createdAt: c.created_at }]
+      })
+    }
+  }
+
+  const avatars: Record<string, string> = {}
+  const seen = (u: FjUser | null | undefined): void => {
+    if (u?.login && u.avatar_url) avatars[u.login] = u.avatar_url
+  }
+  ;[pr.user, pr.merged_by, ...(pr.assignees ?? []), ...(pr.requested_reviewers ?? [])].forEach(seen)
+  comments.forEach((c) => seen(c.user))
+  reviews.forEach((rv) => seen(rv.user))
+
+  const headRepo = pr.head?.repo?.full_name
+  const baseRepo = pr.base?.repo?.full_name
+  return {
+    number: pr.number,
+    title: pr.title,
+    body: pr.body ?? '',
+    author: pr.user?.login ?? 'unknown',
+    source: pr.head?.ref ?? '',
+    target: pr.base?.ref ?? '',
+    draft: !!pr.draft || /^\s*(?:\[wip\]|wip:|draft:)/i.test(pr.title),
+    state: pr.state === 'closed' ? 'closed' : 'open',
+    merged: !!pr.merged,
+    mergeable: pr.state === 'open' ? !!pr.mergeable : null,
+    url: pr.html_url,
+    comments: comments.map((c) => ({ author: c.user?.login ?? 'unknown', body: c.body, createdAt: c.created_at })),
+    reviews: reviews.flatMap((rv) => {
+      const state = mapForgejoReviewState(rv)
+      return state ? [{ author: rv.user?.login ?? 'unknown', state }] : []
+    }),
+    reviewThreads,
+    createdAt: pr.created_at,
+    updatedAt: pr.updated_at,
+    closedAt: pr.closed_at,
+    mergedAt: pr.merged_at,
+    mergedBy: pr.merged_by?.login ?? null,
+    assignees: (pr.assignees ?? []).map((u) => ({ login: u.login })),
+    requestedReviewers: (pr.requested_reviewers ?? []).map((u) => ({ login: u.login })),
+    labels: (pr.labels ?? []).map((l) => ({ name: l.name, ...(l.color ? { color: l.color } : {}) })),
+    milestone: pr.milestone?.title ?? null,
+    ...(pr.additions !== undefined ? { additions: pr.additions } : {}),
+    ...(pr.deletions !== undefined ? { deletions: pr.deletions } : {}),
+    ...(pr.changed_files !== undefined ? { changedFiles: pr.changed_files } : {}),
+    sourceRepo: headRepo && baseRepo && headRepo !== baseRepo ? headRepo : null,
+    avatars
+  }
+}
+
+export async function forgejoPullFiles(base: string, owner: string, repo: string, token: string, number: number): Promise<PrFile[]> {
+  return splitUnifiedDiff(await fjText(`${repoApi(base, owner, repo)}/pulls/${number}.diff`, token))
+}
+
+/** Commit statuses on the PR head — Forgejo Actions and external CI both report there. */
+export async function forgejoPullChecks(base: string, owner: string, repo: string, token: string, number: number): Promise<PrCheck[]> {
+  const r = repoApi(base, owner, repo)
+  const pr = await fjJson<FjPull>(`${r}/pulls/${number}`, token)
+  const sha = pr.head?.sha
+  if (!sha) return []
+  const st = await fjJson<{ statuses?: Array<{ context: string; status: string; target_url?: string }> }>(
+    `${r}/commits/${sha}/status`,
+    token
+  ).catch(() => ({ statuses: [] }))
+  return (st.statuses ?? []).map((s) => ({
+    name: s.context,
+    status: s.status === 'pending' ? 'in_progress' : 'completed',
+    conclusion: s.status === 'pending' ? null : s.status === 'success' ? 'success' : s.status === 'warning' ? 'neutral' : 'failure',
+    url: s.target_url ?? ''
+  }))
+}
+
+export async function forgejoComment(base: string, owner: string, repo: string, token: string, number: number, body: string): Promise<void> {
+  await fjJson(`${repoApi(base, owner, repo)}/issues/${number}/comments`, token, { method: 'POST', body: JSON.stringify({ body }) })
+}
+
+const REVIEW_EVENT: Record<PrReviewEvent, string> = { APPROVE: 'APPROVED', REQUEST_CHANGES: 'REQUEST_CHANGES', COMMENT: 'COMMENT' }
+
+export async function forgejoReview(
+  base: string,
+  owner: string,
+  repo: string,
+  token: string,
+  number: number,
+  event: PrReviewEvent,
+  body: string
+): Promise<void> {
+  await fjJson(`${repoApi(base, owner, repo)}/pulls/${number}/reviews`, token, {
+    method: 'POST',
+    body: JSON.stringify({ event: REVIEW_EVENT[event], body })
+  })
+}
+
+export async function forgejoMerge(
+  base: string,
+  owner: string,
+  repo: string,
+  token: string,
+  number: number,
+  method: PrMergeMethod
+): Promise<void> {
+  // Forgejo spells the method "Do"; rebase is a real per-request option here.
+  await fjJson(`${repoApi(base, owner, repo)}/pulls/${number}/merge`, token, {
+    method: 'POST',
+    body: JSON.stringify({ Do: method })
+  })
 }
 
 // ── Issues, milestones, releases, notifications ─────────────────────────────

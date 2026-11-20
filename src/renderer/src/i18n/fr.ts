@@ -3360,6 +3360,7 @@ export const fr: Dict = {
   'terminal.showList': 'Afficher les terminaux',
   'terminal.listTitle': 'Terminaux',
   'terminal.new': 'Nouveau terminal',
+  'terminal.suggestHint': 'Tab pour compléter · ↑ ↓ pour choisir · Échap pour fermer',
   'terminal.hideList': 'Masquer la liste',
   'terminal.closePane': 'Fermer le panneau du terminal',
   'terminal.rename': 'Renommer…',

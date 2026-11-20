@@ -3421,6 +3421,7 @@ export const ptBR: Dict = {
   'terminal.showList': 'Mostrar os terminais',
   'terminal.listTitle': 'Terminais',
   'terminal.new': 'Novo terminal',
+  'terminal.suggestHint': 'Tab completa · ↑ ↓ escolhe · Esc fecha',
   'terminal.hideList': 'Ocultar a lista',
   'terminal.closePane': 'Fechar o painel do terminal',
   'terminal.rename': 'Renomear…',

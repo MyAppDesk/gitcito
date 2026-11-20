@@ -46,6 +46,28 @@ The last two are scoped to the terminal on purpose: away from it, they still
 open and close [workspace tabs](workspaces.md). On macOS the Edit menu's
 Copy/Paste work the same way.
 
+## Script suggestions
+
+Type `npm run ` (or `pnpm`, `yarn`, `bun run`) and a list of the project's
+scripts appears at the cursor, filtered as you type: `npm run loc` finds
+`LOCAL_SERVER`. Each name shows the command it runs.
+
+| Key | Does |
+|-----|------|
+| **Tab** | Completes the selected script |
+| **↑ / ↓** | Choose another |
+| **Esc** | Closes the list until you type again |
+
+The scripts come from the `package.json` nearest the shell's **current**
+directory, so after `cd frontend` you get the frontend's. Names starting with
+what you typed come first, then names containing it.
+
+The list only knows the keys you typed since the last Enter. Recalling a command
+with ↑, moving the cursor or using the shell's own Tab completion changes the
+line out of its sight, so it stays quiet until the next Enter rather than
+complete the wrong thing. On Windows the current directory cannot be read, so
+the list follows the folder the terminal opened in.
+
 ## Your PATH
 
 The shell starts as a **login shell**, the same as Terminal.app or iTerm, so

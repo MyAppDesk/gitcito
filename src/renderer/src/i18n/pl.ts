@@ -3412,6 +3412,7 @@ export const pl: Dict = {
   'terminal.showList': 'Pokaż terminale',
   'terminal.listTitle': 'Terminale',
   'terminal.new': 'Nowy terminal',
+  'terminal.suggestHint': 'Tab uzupełnia · ↑ ↓ wybiera · Esc zamyka',
   'terminal.hideList': 'Ukryj listę',
   'terminal.closePane': 'Zamknij panel terminala',
   'terminal.rename': 'Zmień nazwę…',

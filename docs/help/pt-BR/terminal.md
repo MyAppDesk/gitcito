@@ -28,6 +28,28 @@ prompt, seus aliases.
 
 ![Dois painéis divididos lado a lado num mesmo grupo de terminal](../../screenshots/terminal-split.webp)
 
+## Sugestão de scripts
+
+Digite `npm run ` (ou `pnpm`, `yarn`, `bun run`) e uma lista com os scripts do
+projeto aparece no cursor, filtrada enquanto você digita: `npm run loc` acha o
+`LOCAL_SERVER`. Cada nome mostra o comando que ele roda.
+
+| Tecla | Faz |
+|-------|-----|
+| **Tab** | Completa o script selecionado |
+| **↑ / ↓** | Escolhe outro |
+| **Esc** | Fecha a lista até você digitar de novo |
+
+Os scripts vêm do `package.json` mais próximo da pasta **atual** do shell, então
+depois de `cd frontend` aparecem os do frontend. Nomes que começam com o que você
+digitou vêm primeiro, depois os que o contêm.
+
+A lista só conhece as teclas digitadas desde o último Enter. Trazer um comando
+com ↑, mover o cursor ou usar o Tab do próprio shell muda a linha sem ela ver,
+então ela fica quieta até o próximo Enter em vez de completar errado. No Windows
+não dá para ler a pasta atual, então a lista segue a pasta em que o terminal
+abriu.
+
 ## O seu PATH
 
 O shell sobe como **shell de login**, igual ao Terminal.app ou ao iTerm, então

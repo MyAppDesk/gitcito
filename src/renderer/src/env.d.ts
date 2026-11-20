@@ -6,6 +6,7 @@ interface TermApi {
   resize(id: number, cols: number, rows: number): void
   kill(id: number): void
   procName(id: number): Promise<string>
+  scripts(id: number): Promise<unknown>
   poshThemes(): Promise<{ dir: string | null; exe: string | null; themes: string[] }>
   poshPreview(theme: string): Promise<string | null>
   onData(id: number, cb: (data: string) => void): () => void

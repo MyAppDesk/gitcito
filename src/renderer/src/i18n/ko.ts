@@ -3412,6 +3412,7 @@ export const ko: Dict = {
   'terminal.showList': '터미널 목록 보기',
   'terminal.listTitle': '터미널',
   'terminal.new': '새 터미널',
+  'terminal.suggestHint': 'Tab 완성 · ↑ ↓ 선택 · Esc 닫기',
   'terminal.hideList': '목록 숨기기',
   'terminal.closePane': '터미널 패널 닫기',
   'terminal.rename': '이름 변경…',

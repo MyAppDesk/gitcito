@@ -5059,7 +5059,27 @@ body.col-resizing .node-ava {
 
 .terminal-host-inner {
   height: 100%;
+  /* Anchors the `npm run` suggestion list at the cursor. */
+  position: relative;
 }
+.term-suggest {
+  position: absolute;
+  z-index: 5;
+  min-width: 220px;
+  max-width: min(520px, 90%);
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-1);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  font-size: 12px;
+}
+.term-suggest[hidden] { display: none; }
+.term-suggest-row { display: flex; gap: 10px; align-items: baseline; padding: 3px 8px; border-radius: 4px; cursor: pointer; }
+.term-suggest-row.selected { background: var(--accent-soft); }
+.term-suggest-name { flex: none; font-weight: 600; color: var(--text-0); font-family: var(--font-mono, monospace); }
+.term-suggest-cmd { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-3); font-family: var(--font-mono, monospace); }
+.term-suggest-hint { margin-top: 3px; padding: 3px 8px 1px; border-top: 1px solid var(--border); color: var(--text-3); font-size: 11px; }
 
 /* ─── Terminal right-side list ──────────────────────────────────────────── */
 

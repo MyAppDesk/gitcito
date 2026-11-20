@@ -3419,6 +3419,7 @@ export const en = {
   'terminal.showList': 'Show terminals',
   'terminal.listTitle': 'Terminals',
   'terminal.new': 'New terminal',
+  'terminal.suggestHint': 'Tab to complete · ↑ ↓ to choose · Esc to close',
   'terminal.hideList': 'Hide list',
   'terminal.closePane': 'Close terminal panel',
   'terminal.rename': 'Rename…',

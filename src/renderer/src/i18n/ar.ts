@@ -3415,6 +3415,7 @@ export const ar: Dict = {
   'terminal.showList': 'إظهار الطرفيات',
   'terminal.listTitle': 'الطرفيات',
   'terminal.new': 'طرفية جديدة',
+  'terminal.suggestHint': 'Tab للإكمال · ↑ ↓ للاختيار · Esc للإغلاق',
   'terminal.hideList': 'إخفاء القائمة',
   'terminal.closePane': 'إغلاق لوحة الطرفية',
   'terminal.rename': 'إعادة تسمية…',

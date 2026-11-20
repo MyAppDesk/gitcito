@@ -61,31 +61,42 @@ interface ParsedRemote {
 }
 
 export function parseRemoteUrl(url: string): ParsedRemote | null {
-  // Each provider's name must start the host or follow a dot (`(?:^|[/@.])`):
-  // `mygitlab.com` and `notgithub.com` are someone else's servers. Same rule as
-  // `providerOfHost`.
-  let m = /(?:^|[/@.])github\.com[/:]([^/]+)\/([^/]+?)(\.git)?$/.exec(url)
+  // Match the authority separately so a provider name inside a project path cannot select it.
+  const scp = /^(?:[\w.-]+@)?([\w.-]+):([^/].*)$/.exec(url)
+  let target: string
+  if (scp) {
+    target = scp[1].toLowerCase() + '/' + scp[2]
+  } else {
+    try {
+      const parsed = new URL(url)
+      if (!['https:', 'http:', 'ssh:', 'git:'].includes(parsed.protocol)) return null
+      target = parsed.hostname.toLowerCase() + parsed.pathname
+    } catch {
+      return null
+    }
+  }
+  let m = /^(?:[\w-]+\.)*github\.com\/([^/]+)\/([^/]+?)(\.git)?$/.exec(target)
   if (m) return { provider: 'github', owner: m[1], project: '', repo: m[2] }
 
-  m = /(?:^|[/@.])dev\.azure\.com\/([^/]+)\/([^/]+)\/_git\/([^/]+?)(\.git)?$/.exec(url)
+  m = /^dev\.azure\.com\/([^/]+)\/([^/]+)\/_git\/([^/]+?)(\.git)?$/.exec(target)
   if (m) return { provider: 'azure', owner: m[1], project: decodeURIComponent(m[2]), repo: decodeURIComponent(m[3]) }
 
-  m = /(?:^|[/@.])ssh\.dev\.azure\.com[/:]v3\/([^/]+)\/([^/]+)\/(.+?)(\.git)?$/.exec(url)
+  m = /^ssh\.dev\.azure\.com[/:]v3\/([^/]+)\/([^/]+)\/(.+?)(\.git)?$/.exec(target)
   if (m) return { provider: 'azure', owner: m[1], project: m[2], repo: m[3] }
 
-  m = /([^/@:]+)\.visualstudio\.com\/([^/]+)\/_git\/([^/]+?)(\.git)?$/.exec(url)
+  m = /^([^/@:]+)\.visualstudio\.com\/([^/]+)\/_git\/([^/]+?)(\.git)?$/.exec(target)
   if (m) return { provider: 'azure', owner: m[1], project: decodeURIComponent(m[2]), repo: decodeURIComponent(m[3]) }
 
   // GitLab: namespace may be multi-level (group/subgroup/repo) — owner holds the
   // full namespace path, repo the last segment.
-  m = /(?:^|[/@.])gitlab\.com[/:](.+?)(?:\.git)?$/.exec(url)
+  m = /^(?:[\w-]+\.)*gitlab\.com[/:](.+?)(?:\.git)?$/.exec(target)
   if (m) {
     const full = m[1]
     const i = full.lastIndexOf('/')
     if (i > 0) return { provider: 'gitlab', owner: full.slice(0, i), project: '', repo: full.slice(i + 1) }
   }
 
-  m = /(?:^|[/@.])bitbucket\.org[/:]([^/]+)\/(.+?)(?:\.git)?$/.exec(url)
+  m = /^(?:[\w-]+\.)*bitbucket\.org[/:]([^/]+)\/(.+?)(?:\.git)?$/.exec(target)
   if (m) return { provider: 'bitbucket', owner: m[1], project: '', repo: m[2] }
 
   return null

@@ -342,6 +342,7 @@ describe('parseRemoteUrl', () => {
   })
 
   it('matches a provider only at a host boundary, never inside another name', () => {
+    expect(parseRemoteUrl('https://example.org/github.com/group/repo.git')).toBeNull()
     expect(parseRemoteUrl('https://mygitlab.com/group/repo.git')).toBeNull()
     expect(parseRemoteUrl('git@notgithub.com:o/r.git')).toBeNull()
     expect(parseRemoteUrl('https://evilbitbucket.org/team/repo.git')).toBeNull()

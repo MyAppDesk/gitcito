@@ -62,7 +62,7 @@ import { useSettingsStore } from '../stores/settings'
 import { gitApi, cliApi } from '../infrastructure/api'
 import { tabActiveRepoPath } from '../../../shared/types'
 import { getFrecency, frecencyScore, bumpFrecency } from '../lib/frecency'
-import { repoIsGitHub } from '../lib/hosting'
+import { repoHasIssueTracker } from '../lib/hosting'
 import { openInEditor } from '../lib/editorOpen'
 import { useT, interp, type TranslationKey } from '../i18n'
 import { fuzzyScore } from '../lib/fuzzy'
@@ -232,8 +232,9 @@ export function CommandPalette(): React.JSX.Element {
       { id: 'create-pr', title: t('cmd.createPr'), group: 'Actions', keywords: 'pr github merge request', icon: <GitPullRequest size={15} />, run: act(() => ui.openModal({ kind: 'create-pr', repoPath: path, source: repo.branches.current })) },
       ...((): Command[] => {
         const origin = repo.remotes.find((r) => r.name === 'origin') ?? repo.remotes[0]
-        return origin && repoIsGitHub(repo.remotes)
-          ? [{ id: 'create-issue', title: t('cmd.createIssue'), group: 'Actions', keywords: 'github issue new bug report', icon: <CircleDot size={15} />, run: act(() => ui.openModal({ kind: 'create-issue', repoPath: path, remoteUrl: origin.url })) } as Command]
+        const forgejoUrls = useSettingsStore.getState().settings.profiles.map((p) => p.forgejoUrl)
+        return origin && repoHasIssueTracker(repo.remotes, forgejoUrls)
+          ? [{ id: 'create-issue', title: t('cmd.createIssue'), group: 'Actions', keywords: 'github forgejo issue new bug report', icon: <CircleDot size={15} />, run: act(() => ui.openModal({ kind: 'create-issue', repoPath: path, remoteUrl: origin.url })) } as Command]
           : []
       })(),
       { id: 'subtree', title: t('cmd.subtree'), group: 'Actions', keywords: 'subtree vendor library embed prefix split monorepo submodule alternative', icon: <FolderInput size={15} />, run: act(() => ui.openModal({ kind: 'subtree', repoPath: path })) },

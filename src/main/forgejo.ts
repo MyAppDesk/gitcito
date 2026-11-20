@@ -3,7 +3,12 @@ import type {
   CreatePrOpts,
   CreatePrResult,
   CreateRepoOpts,
+  GitHubNotification,
+  IssueDetail,
+  IssueInfo,
+  MilestoneInfo,
   PullRequest,
+  ReleaseInfo,
   RemoteOwner,
   RemoteRepo
 } from '../shared/types'
@@ -207,4 +212,215 @@ export async function describeForgejoAccount(base: string, token: string): Promi
     profileUrl: user.html_url ?? `${base}/${user.login}`,
     orgs: orgs.filter(orgLogin).map((o) => ({ login: orgLogin(o), avatarUrl: o.avatar_url, url: `${base}/${orgLogin(o)}` }))
   }
+}
+
+// ── Issues, milestones, releases, notifications ─────────────────────────────
+
+const repoPath = (owner: string, repo: string): string => `${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`
+
+interface FjIssue {
+  number: number
+  title: string
+  body?: string | null
+  user?: { login?: string } | null
+  state: string
+  html_url: string
+  comments?: number
+  created_at?: string
+  labels?: Array<{ name?: string }> | null
+  assignees?: Array<{ login?: string }> | null
+  milestone?: { title?: string } | null
+  /** Set when the "issue" is a pull request (Forgejo lists both under /issues). */
+  pull_request?: unknown
+}
+
+export function mapForgejoIssue(i: FjIssue): IssueInfo {
+  return {
+    number: i.number,
+    title: i.title,
+    author: i.user?.login ?? 'unknown',
+    state: i.state === 'closed' ? 'closed' : 'open',
+    url: i.html_url,
+    comments: i.comments ?? 0
+  }
+}
+
+/** Open issues — `type=issues` keeps pull requests out, as GitHub's list filters them. */
+export async function listForgejoIssues(base: string, owner: string, repo: string, token: string): Promise<IssueInfo[]> {
+  const data = await fjList<FjIssue>(`${api(base)}/repos/${repoPath(owner, repo)}/issues?state=open&type=issues`, token)
+  return data.filter((i) => !i.pull_request).map(mapForgejoIssue)
+}
+
+export async function forgejoIssueDetail(
+  base: string,
+  owner: string,
+  repo: string,
+  token: string,
+  number: number
+): Promise<IssueDetail> {
+  const at = `${api(base)}/repos/${repoPath(owner, repo)}/issues/${number}`
+  const [i, comments] = await Promise.all([
+    fjJson<FjIssue>(at, token),
+    fjList<{ user?: { login?: string } | null; body?: string; created_at?: string }>(`${at}/comments`, token)
+  ])
+  return {
+    ...mapForgejoIssue(i),
+    body: i.body ?? '',
+    labels: (i.labels ?? []).map((l) => l.name ?? '').filter(Boolean),
+    assignees: (i.assignees ?? []).map((a) => a.login ?? '').filter(Boolean),
+    milestone: i.milestone?.title ?? null,
+    createdAt: i.created_at ?? '',
+    comments: comments.map((c) => ({ author: c.user?.login ?? 'unknown', body: c.body ?? '', createdAt: c.created_at ?? '' })),
+    // GitHub-only: the timeline's cross-references and Projects v2 fields.
+    linkedPrs: [],
+    projectFields: []
+  }
+}
+
+export async function setForgejoIssueState(
+  base: string,
+  owner: string,
+  repo: string,
+  token: string,
+  number: number,
+  state: 'open' | 'closed'
+): Promise<void> {
+  await fjJson(`${api(base)}/repos/${repoPath(owner, repo)}/issues/${number}`, token, {
+    method: 'PATCH',
+    body: JSON.stringify({ state })
+  })
+}
+
+export async function createForgejoIssue(
+  base: string,
+  owner: string,
+  repo: string,
+  token: string,
+  opts: { title: string; body?: string }
+): Promise<{ number: number; url: string }> {
+  const d = await fjJson<{ number: number; html_url: string }>(`${api(base)}/repos/${repoPath(owner, repo)}/issues`, token, {
+    method: 'POST',
+    body: JSON.stringify({ title: opts.title, body: opts.body || '' })
+  })
+  return { number: d.number, url: d.html_url }
+}
+
+interface FjMilestone {
+  id: number
+  title: string
+  description?: string | null
+  state: string
+  due_on?: string | null
+  open_issues?: number
+  closed_issues?: number
+}
+
+/** A milestone has no html_url in Forgejo's API; its page is /owner/repo/milestone/<id>. */
+export function mapForgejoMilestone(base: string, owner: string, repo: string, m: FjMilestone): MilestoneInfo {
+  return {
+    number: m.id,
+    title: m.title,
+    description: m.description ?? '',
+    state: m.state === 'closed' ? 'closed' : 'open',
+    dueOn: m.due_on ?? null,
+    openIssues: m.open_issues ?? 0,
+    closedIssues: m.closed_issues ?? 0,
+    url: `${base}/${repoPath(owner, repo)}/milestone/${m.id}`
+  }
+}
+
+export async function listForgejoMilestones(base: string, owner: string, repo: string, token: string): Promise<MilestoneInfo[]> {
+  const data = await fjList<FjMilestone>(`${api(base)}/repos/${repoPath(owner, repo)}/milestones?state=all`, token)
+  return data.map((m) => mapForgejoMilestone(base, owner, repo, m))
+}
+
+export async function forgejoMilestoneIssues(
+  base: string,
+  owner: string,
+  repo: string,
+  token: string,
+  id: number
+): Promise<IssueInfo[]> {
+  const data = await fjList<FjIssue>(
+    `${api(base)}/repos/${repoPath(owner, repo)}/issues?state=all&type=issues&milestones=${id}`,
+    token
+  )
+  return data.filter((i) => !i.pull_request).map(mapForgejoIssue)
+}
+
+interface FjRelease {
+  id: number
+  tag_name?: string | null
+  name?: string | null
+  body?: string | null
+  draft?: boolean
+  prerelease?: boolean
+  published_at?: string | null
+  html_url: string
+}
+
+export function mapForgejoRelease(r: FjRelease): ReleaseInfo {
+  return {
+    id: r.id,
+    tag: r.tag_name || null,
+    name: r.name || null,
+    body: r.body ?? null,
+    publishedAt: r.draft ? null : (r.published_at ?? null),
+    url: r.html_url,
+    prerelease: !!r.prerelease,
+    draft: !!r.draft
+  }
+}
+
+export async function listForgejoReleases(base: string, owner: string, repo: string, token: string): Promise<ReleaseInfo[]> {
+  // Releases are many and old ones rarely matter: two requests' worth is plenty.
+  const data = await fjList<FjRelease>(`${api(base)}/repos/${repoPath(owner, repo)}/releases`, token, 2)
+  return data.map(mapForgejoRelease)
+}
+
+interface FjNotification {
+  id: number
+  unread: boolean
+  updated_at: string
+  subject?: { title?: string; type?: string; html_url?: string; url?: string } | null
+  repository?: { full_name?: string; html_url?: string } | null
+}
+
+/** The id prefix that routes a notification back to Forgejo when it is marked read. */
+export const FORGEJO_NOTIFICATION = 'fj:'
+
+/** Forgejo's subject types, in the vocabulary of the notifications page. */
+const SUBJECT: Record<string, string> = { Pull: 'PullRequest', Issue: 'Issue', Commit: 'Commit', Repository: 'Repository' }
+
+export function mapForgejoNotification(n: FjNotification): GitHubNotification {
+  const htmlUrl = n.subject?.html_url ?? ''
+  const tail = htmlUrl.split('/').pop() ?? ''
+  return {
+    id: `${FORGEJO_NOTIFICATION}${n.id}`,
+    // Forgejo gives no reason (mention, review request…), only the subject.
+    reason: '',
+    title: n.subject?.title ?? '',
+    type: SUBJECT[n.subject?.type ?? ''] ?? (n.subject?.type || ''),
+    repoFullName: n.repository?.full_name ?? '',
+    repoUrl: n.repository?.html_url ?? '',
+    number: /^\d+$/.test(tail) ? Number(tail) : null,
+    unread: n.unread,
+    updatedAt: Math.floor(new Date(n.updated_at).getTime() / 1000),
+    url: htmlUrl || n.repository?.html_url || ''
+  }
+}
+
+export async function listForgejoNotifications(base: string, token: string, all: boolean): Promise<GitHubNotification[]> {
+  const data = await fjList<FjNotification>(`${api(base)}/notifications?all=${all ? 'true' : 'false'}`, token, 2)
+  return data.map(mapForgejoNotification)
+}
+
+export async function markForgejoNotificationRead(base: string, token: string, id: string): Promise<void> {
+  const n = id.startsWith(FORGEJO_NOTIFICATION) ? id.slice(FORGEJO_NOTIFICATION.length) : id
+  if (!/^\d+$/.test(n)) return
+  await fjJson(`${api(base)}/notifications/threads/${n}`, token, { method: 'PATCH' })
+}
+
+export async function markAllForgejoNotificationsRead(base: string, token: string): Promise<void> {
+  await fjJson(`${api(base)}/notifications`, token, { method: 'PUT' })
 }

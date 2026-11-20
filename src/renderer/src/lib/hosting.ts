@@ -1,5 +1,5 @@
 import type { RemoteInfo } from '../../../shared/types'
-import { gitlabInstanceOf, normalizeGitlabUrl } from '../../../shared/gitlabInstance'
+import { forgejoInstanceOf, gitlabInstanceOf, normalizeGitlabUrl } from '../../../shared/gitlabInstance'
 
 // PR tabs are saved to settings. Keep credentials and URL parameters out of that file.
 export function prRemoteIdentity(raw: string): string {
@@ -65,6 +65,18 @@ export function githubCommitUrl(remotes: RemoteInfo[], sha: string): string | nu
 export function repoIsGitHub(remotes: RemoteInfo[]): boolean {
   const origin = remotes.find((r) => r.name === 'origin') ?? remotes[0]
   return isGitHubRemote(origin?.url)
+}
+
+/**
+ * True when the repo's origin is on GitHub or on a Forgejo server some profile
+ * names — the hosts whose issues, milestones and releases the sidebar lists.
+ */
+export function repoHasIssueTracker(remotes: RemoteInfo[], forgejoUrls: readonly (string | undefined)[]): boolean {
+  const origin = remotes.find((r) => r.name === 'origin') ?? remotes[0]
+  if (!origin) return false
+  if (isGitHubRemote(origin.url)) return true
+  const bases = forgejoUrls.map((u) => normalizeGitlabUrl(u)).filter((b): b is string => !!b)
+  return !!forgejoInstanceOf(origin.url, bases)
 }
 
 /**
